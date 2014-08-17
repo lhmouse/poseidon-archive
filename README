@@ -1,0 +1,17 @@
+* 编译环境
+automake
+autoconf
+libtool
+pkg-config
+gettext
+make
+g++
+libboost-dev
+libmysqlcppconn5
+
+* 运行环境
+Debian Linux
+mysql-server
+
+* 问题反馈
+请联系 lh_mouse at 126 dot com。

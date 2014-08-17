@@ -1,21 +1,15 @@
-# Compiled Object files
-*.slo
 *.lo
 *.o
-*.obj
-
-# Compiled Dynamic libraries
 *.so
-*.dylib
-*.dll
-
-# Compiled Static libraries
-*.lai
 *.la
 *.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+*.log
+autom4te.cache
+config.*
+.dirstamp
+.libs
+.deps
+lib
+bin
+sbin
+*.m4
