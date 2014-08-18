@@ -14939,45 +14939,6 @@ _ACEOF
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_chrono-mt" >&5
-$as_echo_n "checking for main in -lboost_chrono-mt... " >&6; }
-if ${ac_cv_lib_boost_chrono_mt_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lboost_chrono-mt  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_boost_chrono_mt_main=yes
-else
-  ac_cv_lib_boost_chrono_mt_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_boost_chrono_mt_main" >&5
-$as_echo "$ac_cv_lib_boost_chrono_mt_main" >&6; }
-if test "x$ac_cv_lib_boost_chrono_mt_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBBOOST_CHRONO_MT 1
-_ACEOF
-
-  LIBS="-lboost_chrono-mt $LIBS"
-
-fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_thread-mt" >&5
 $as_echo_n "checking for main in -lboost_thread-mt... " >&6; }
 if ${ac_cv_lib_boost_thread_mt_main+:} false; then :

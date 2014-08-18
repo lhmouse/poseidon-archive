@@ -11,7 +11,6 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 
 AC_CHECK_LIB([ltdl], [main])
-AC_CHECK_LIB([boost_chrono-mt], [main])
 AC_CHECK_LIB([boost_thread-mt], [main])
 AC_CHECK_LIB([boost_system], [main])
 AC_CHECK_LIB([mysqlcppconn], [main])

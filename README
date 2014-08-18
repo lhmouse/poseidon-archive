@@ -1,16 +1,16 @@
-* 编译环境
+* 最低编译环境
 automake
 autoconf
 libtool
 pkg-config
 gettext
 make
-g++
-libboost-dev
-libmysqlcppconn5
+g++-4.4
+libboost1.42-dev 
+libmysqlcppconn-dev
 
 * 运行环境
-Debian Linux
+Debian Linux Squeeze
 mysql-server
 
 * 问题反馈

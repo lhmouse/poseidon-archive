@@ -110,7 +110,8 @@ am_lib_libposeidon_template_la_OBJECTS =
 lib_libposeidon_template_la_OBJECTS =  \
 	$(am_lib_libposeidon_template_la_OBJECTS)
 PROGRAMS = $(sbin_PROGRAMS)
-am_sbin_poseidon_OBJECTS = src/main/main.$(OBJEXT)
+am_sbin_poseidon_OBJECTS = src/main/main.$(OBJEXT) \
+	src/main/log.$(OBJEXT)
 sbin_poseidon_OBJECTS = $(am_sbin_poseidon_OBJECTS)
 sbin_poseidon_DEPENDENCIES = lib/libposeidon-main.la
 DEFAULT_INCLUDES = 
@@ -293,7 +294,8 @@ CLEANFILES = \
 	$(PRECOMPILED_HEADER).gch
 
 sbin_poseidon_SOURCES = \
-	src/main/main.cpp
+	src/main/main.cpp	\
+	src/main/log.cpp
 
 sbin_poseidon_LDADD = \
 	lib/libposeidon-main.la
@@ -460,6 +462,8 @@ clean-sbinPROGRAMS:
 	rm -f $$list
 src/main/main.$(OBJEXT): src/main/$(am__dirstamp) \
 	src/main/$(DEPDIR)/$(am__dirstamp)
+src/main/log.$(OBJEXT): src/main/$(am__dirstamp) \
+	src/main/$(DEPDIR)/$(am__dirstamp)
 sbin/$(am__dirstamp):
 	@$(MKDIR_P) sbin
 	@: > sbin/$(am__dirstamp)
@@ -469,6 +473,7 @@ sbin/poseidon$(EXEEXT): $(sbin_poseidon_OBJECTS) $(sbin_poseidon_DEPENDENCIES) $
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f src/main/log.$(OBJEXT)
 	-rm -f src/main/main.$(OBJEXT)
 	-rm -f src/main/utilities.$(OBJEXT)
 	-rm -f src/main/utilities.lo
@@ -476,6 +481,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@src/main/$(DEPDIR)/log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/main/$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/main/$(DEPDIR)/utilities.Plo@am__quote@
 

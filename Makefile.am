@@ -18,7 +18,8 @@ sbin_PROGRAMS=	\
 	sbin/poseidon
 
 sbin_poseidon_SOURCES=	\
-	src/main/main.cpp
+	src/main/main.cpp	\
+	src/main/log.cpp
 
 sbin_poseidon_LDADD=	\
 	lib/libposeidon-main.la

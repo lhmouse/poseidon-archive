@@ -1,20 +1,27 @@
 #include "../precompiled.hpp"
 #include "utilities.hpp"
-#include <boost/chrono/chrono.hpp>
+#include "log.hpp"
 #include <boost/thread/tss.hpp>
+#include <time.h>
 using namespace Poseidon;
 
 namespace Poseidon {
 
 boost::uint64_t getLocalTime(){
-	return boost::chrono::nanoseconds(
-		boost::chrono::system_clock::now().time_since_epoch()
-	).count() / 1000000;
+	::timespec ts;
+	if(::clock_gettime(CLOCK_REALTIME, &ts) != 0){
+		LOG_FATAL <<"Realtime clock is not supported.";
+		std::abort();
+	}
+	return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 boost::uint64_t getMonoClock(){
-	return boost::chrono::nanoseconds(
-		boost::chrono::steady_clock::now().time_since_epoch()
-	).count() / 1000;
+	::timespec ts;
+	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
+		LOG_FATAL <<"Monotonic clock is not supported.";
+		std::abort();
+	}
+	return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
 }
 
 namespace {
