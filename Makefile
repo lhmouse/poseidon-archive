@@ -102,7 +102,8 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(sbindir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 lib_libposeidon_main_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_lib_libposeidon_main_la_OBJECTS = src/main/utilities.lo
+am_lib_libposeidon_main_la_OBJECTS = src/main/utilities.lo \
+	src/main/log.lo src/main/job_dispatcher.lo
 lib_libposeidon_main_la_OBJECTS =  \
 	$(am_lib_libposeidon_main_la_OBJECTS)
 lib_libposeidon_template_la_DEPENDENCIES = lib/libposeidon-main.la
@@ -110,8 +111,7 @@ am_lib_libposeidon_template_la_OBJECTS =
 lib_libposeidon_template_la_OBJECTS =  \
 	$(am_lib_libposeidon_template_la_OBJECTS)
 PROGRAMS = $(sbin_PROGRAMS)
-am_sbin_poseidon_OBJECTS = src/main/main.$(OBJEXT) \
-	src/main/log.$(OBJEXT)
+am_sbin_poseidon_OBJECTS = src/main/main.$(OBJEXT)
 sbin_poseidon_OBJECTS = $(am_sbin_poseidon_OBJECTS)
 sbin_poseidon_DEPENDENCIES = lib/libposeidon-main.la
 DEFAULT_INCLUDES = 
@@ -170,7 +170,7 @@ AR = ar
 AUTOCONF = ${SHELL} /home/lh_mouse/poseidon/missing --run autoconf
 AUTOHEADER = ${SHELL} /home/lh_mouse/poseidon/missing --run autoheader
 AUTOMAKE = ${SHELL} /home/lh_mouse/poseidon/missing --run automake-1.11
-AWK = mawk
+AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -O0 -g -std=c99
@@ -179,7 +179,7 @@ CPPFLAGS = -D_GLIBCXX_DEBUG
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -O0 -g -std=c++03
+CXXFLAGS = -O0 -g -std=c++98
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -294,8 +294,7 @@ CLEANFILES = \
 	$(PRECOMPILED_HEADER).gch
 
 sbin_poseidon_SOURCES = \
-	src/main/main.cpp	\
-	src/main/log.cpp
+	src/main/main.cpp
 
 sbin_poseidon_LDADD = \
 	lib/libposeidon-main.la
@@ -305,7 +304,9 @@ lib_LTLIBRARIES = \
 	lib/libposeidon-template.la
 
 lib_libposeidon_main_la_SOURCES = \
-	src/main/utilities.cpp
+	src/main/utilities.cpp	\
+	src/main/log.cpp	\
+	src/main/job_dispatcher.cpp
 
 lib_libposeidon_template_la_SOURCES = \
 	#src/template/module_main.cpp
@@ -407,6 +408,10 @@ src/main/$(DEPDIR)/$(am__dirstamp):
 	@: > src/main/$(DEPDIR)/$(am__dirstamp)
 src/main/utilities.lo: src/main/$(am__dirstamp) \
 	src/main/$(DEPDIR)/$(am__dirstamp)
+src/main/log.lo: src/main/$(am__dirstamp) \
+	src/main/$(DEPDIR)/$(am__dirstamp)
+src/main/job_dispatcher.lo: src/main/$(am__dirstamp) \
+	src/main/$(DEPDIR)/$(am__dirstamp)
 lib/$(am__dirstamp):
 	@$(MKDIR_P) lib
 	@: > lib/$(am__dirstamp)
@@ -462,8 +467,6 @@ clean-sbinPROGRAMS:
 	rm -f $$list
 src/main/main.$(OBJEXT): src/main/$(am__dirstamp) \
 	src/main/$(DEPDIR)/$(am__dirstamp)
-src/main/log.$(OBJEXT): src/main/$(am__dirstamp) \
-	src/main/$(DEPDIR)/$(am__dirstamp)
 sbin/$(am__dirstamp):
 	@$(MKDIR_P) sbin
 	@: > sbin/$(am__dirstamp)
@@ -473,7 +476,10 @@ sbin/poseidon$(EXEEXT): $(sbin_poseidon_OBJECTS) $(sbin_poseidon_DEPENDENCIES) $
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f src/main/job_dispatcher.$(OBJEXT)
+	-rm -f src/main/job_dispatcher.lo
 	-rm -f src/main/log.$(OBJEXT)
+	-rm -f src/main/log.lo
 	-rm -f src/main/main.$(OBJEXT)
 	-rm -f src/main/utilities.$(OBJEXT)
 	-rm -f src/main/utilities.lo
@@ -481,7 +487,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include src/main/$(DEPDIR)/log.Po
+include src/main/$(DEPDIR)/job_dispatcher.Plo
+include src/main/$(DEPDIR)/log.Plo
 include src/main/$(DEPDIR)/main.Po
 include src/main/$(DEPDIR)/utilities.Plo
 

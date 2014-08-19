@@ -18,8 +18,7 @@ sbin_PROGRAMS=	\
 	sbin/poseidon
 
 sbin_poseidon_SOURCES=	\
-	src/main/main.cpp	\
-	src/main/log.cpp
+	src/main/main.cpp
 
 sbin_poseidon_LDADD=	\
 	lib/libposeidon-main.la
@@ -29,7 +28,9 @@ lib_LTLIBRARIES=	\
 	lib/libposeidon-template.la
 
 lib_libposeidon_main_la_SOURCES=	\
-	src/main/utilities.cpp
+	src/main/utilities.cpp	\
+	src/main/log.cpp	\
+	src/main/job_dispatcher.cpp
 
 lib_libposeidon_template_la_SOURCES=	\
 	#src/template/module_main.cpp

@@ -10,11 +10,11 @@ namespace Poseidon {
 class Log : private boost::noncopyable {
 public:
 	enum {
-		FATAL,
-		ERROR,
-		WARNING,
-		INFO,
-		DEBUG,
+		FATAL,		// 0
+		ERROR,		// 1
+		WARNING,	// 2
+		INFO,		// 3
+		DEBUG,		// 4
 	};
 
 public:
@@ -22,6 +22,7 @@ public:
 	static void setLogLevel(unsigned newLevel);
 
 private:
+	const unsigned m_level;
 	const char *const m_comment;
 	const char *const m_file;
 	const std::size_t m_line;
@@ -29,7 +30,7 @@ private:
 	std::stringstream m_stream;
 
 public:
-	Log(const char *comment, const char *file, std::size_t line) throw();
+	Log(unsigned level, const char *comment, const char *file, std::size_t line) throw();
 	~Log() throw();
 
 public:
@@ -47,7 +48,7 @@ public:
 
 #define LOG_LEVEL(level)	\
 	if(::Poseidon::Log::getLogLevel() >= ::Poseidon::Log::level)	\
-		::Poseidon::Log(#level, __FILE__, __LINE__)
+		::Poseidon::Log(::Poseidon::Log::level, #level, __FILE__, __LINE__)
 
 #define LOG_FATAL		LOG_LEVEL(FATAL)
 #define LOG_ERROR		LOG_LEVEL(ERROR)
