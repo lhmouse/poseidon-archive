@@ -63,6 +63,13 @@ public:
 	}
 };
 
+template<typename Handle, typename Closer>
+void swap(ScopedHandle<Handle, Closer> &lhs,
+	ScopedHandle<Handle, Closer> &rhs) throw()
+{
+	lhs.swap(rhs);
+}
+
 }
 
 #endif
