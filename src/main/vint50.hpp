@@ -5,7 +5,7 @@ namespace Poseidon {
 
 // 最多输出七个字节，返回值是指向最后一个有效字节后面的指针。
 inline unsigned char *vuint50ToBinary(unsigned long long val, unsigned char *write){
-	for(unsigned i = 0; i < 7; ++i){
+	for(unsigned i = 0; i < 6; ++i){
 		*write = val & 0x7F;
 		++write;
 		val >>= 7;
@@ -35,7 +35,7 @@ inline const unsigned char * vuint50FromBinary(unsigned long long &val,
 	const unsigned char *read, const unsigned char *end)
 {
 	val = 0;
-	for(unsigned i = 0; i < 7; ++i){
+	for(unsigned i = 0; i < 6; ++i){
 		if(read == end){
 			return 0;
 		}
