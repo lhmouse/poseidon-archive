@@ -1,11 +1,14 @@
 #include "../precompiled.hpp"
 #include "utilities.hpp"
 #include "log.hpp"
+#include "exception.hpp"
 #include <iostream>
 using namespace Poseidon;
 
 int main(){
-	LOG_FATAL <<"meow 1";
-	LOG_ERROR <<"meow 2";
-	LOG_WARNING <<"meow 3";
+	try {
+		DEBUG_THROW(SystemError, ENOMEM);
+	} catch(Exception &e){
+		LOG_FATAL <<e.what() <<" FILE " <<e.file() <<" LINE " <<e.line();
+	}
 }
