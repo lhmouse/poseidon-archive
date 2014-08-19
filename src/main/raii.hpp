@@ -70,6 +70,45 @@ void swap(ScopedHandle<Handle, Closer> &lhs,
 	lhs.swap(rhs);
 }
 
+template<typename Handle, typename Closer>
+bool operator==(const ScopedHandle<Handle, Closer> &lhs,
+	const ScopedHandle<Handle, Closer> &rhs) throw()
+{
+	return lhs.get() == rhs.get();
+}
+template<typename Handle, typename Closer>
+bool operator!=(const ScopedHandle<Handle, Closer> &lhs,
+	const ScopedHandle<Handle, Closer> &rhs) throw()
+{
+	return lhs.get() != rhs.get();
+}
+
+template<typename Handle, typename Closer>
+bool operator==(Handle lhs,
+	const ScopedHandle<Handle, Closer> &rhs) throw()
+{
+	return lhs == rhs.get();
+}
+template<typename Handle, typename Closer>
+bool operator!=(Handle lhs,
+	const ScopedHandle<Handle, Closer> &rhs) throw()
+{
+	return lhs != rhs.get();
+}
+
+template<typename Handle, typename Closer>
+bool operator==(const ScopedHandle<Handle, Closer> &lhs,
+	Handle rhs) throw()
+{
+	return lhs.get() == rhs;
+}
+template<typename Handle, typename Closer>
+bool operator!=(const ScopedHandle<Handle, Closer> &lhs,
+	Handle rhs) throw()
+{
+	return lhs.get() != rhs;
+}
+
 }
 
 #endif
