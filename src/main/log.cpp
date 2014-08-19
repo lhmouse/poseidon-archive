@@ -1,5 +1,6 @@
 #include "../precompiled.hpp"
 #include "log.hpp"
+#include "atomic.hpp"
 #include "utilities.hpp"
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -12,11 +13,11 @@ boost::mutex g_coutMutex;
 
 }
 
-unsigned int Log::getLogLevel(){
-	return g_logLevel;
+unsigned int Log::getLevel(){
+	return atomicLoad(g_logLevel);
 }
-void Log::setLogLevel(unsigned int newLevel){
-	g_logLevel = newLevel;
+void Log::setLevel(unsigned int newLevel){
+	atomicStore(g_logLevel, newLevel);
 }
 
 Log::Log(unsigned level, const char *comment, const char *file, std::size_t line) throw()
@@ -29,9 +30,10 @@ Log::~Log() throw() {
 	try {
 		AUTO(const now, boost::posix_time::second_clock::local_time());
 		AUTO(const str, m_stream.str());
+		AUTO(const color, (m_level >= COUNT_OF(COLORS)) ? "0" : COLORS[m_level]);
 
 		const boost::mutex::scoped_lock lock(g_coutMutex);
-		std::cout <<"\x9B" <<COLORS[m_level] << 'm'
+		std::cout <<"\x9B" <<color << 'm'
 			<<now <<' ' <<std::setw(8) <<std::left <<m_comment
 			<<m_file <<':' <<m_line <<' ' <<str
 			<<"\x9B\x30m" <<std::endl;

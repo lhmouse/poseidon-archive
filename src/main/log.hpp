@@ -18,8 +18,8 @@ public:
 	};
 
 public:
-	static unsigned getLogLevel();
-	static void setLogLevel(unsigned newLevel);
+	static unsigned getLevel();
+	static void setLevel(unsigned newLevel);
 
 private:
 	const unsigned m_level;
@@ -47,7 +47,7 @@ public:
 }
 
 #define LOG_LEVEL(level)	\
-	if(::Poseidon::Log::getLogLevel() >= ::Poseidon::Log::level)	\
+	if(::Poseidon::Log::getLevel() >= ::Poseidon::Log::level)	\
 		::Poseidon::Log(::Poseidon::Log::level, #level, __FILE__, __LINE__)
 
 #define LOG_FATAL		LOG_LEVEL(FATAL)

@@ -89,6 +89,13 @@ int main(int argc, char **argv){
 	LOG_INFO <<"Loading config from " <<confPath <<"...";
 	AUTO(const config, loadConfig(confPath));
 
+	AUTO_REF(logLevel, config["log_level"]);
+	if(!logLevel.empty()){
+		const int newLevel = boost::lexical_cast<int>(logLevel);
+		LOG_INFO <<"Setting log level to " <<newLevel <<", was " <<Log::getLevel() <<"...";
+		Log::setLevel(newLevel);
+	}
+
 	LOG_INFO <<"Setting up signal handlers...";
 	std::signal(SIGINT, sigIntProc);
 	std::signal(SIGTERM, sigTermProc);
