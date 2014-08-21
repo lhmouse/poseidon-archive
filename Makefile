@@ -105,8 +105,9 @@ am__dirstamp = $(am__leading_dot)dirstamp
 am_lib_libposeidon_main_la_OBJECTS = src/main/utilities.lo \
 	src/main/log.lo src/main/raii.lo \
 	src/main/singletons/job_dispatcher.lo \
-	src/main/singletons/session_manager.lo \
-	src/main/socket_server_base.lo
+	src/main/singletons/epoll_dispatcher.lo \
+	src/main/socket_server_base.lo src/main/tcp_peer.lo \
+	src/main/player_session_manager.lo src/main/player_session.lo
 lib_libposeidon_main_la_OBJECTS =  \
 	$(am_lib_libposeidon_main_la_OBJECTS)
 lib_libposeidon_template_la_DEPENDENCIES = lib/libposeidon-main.la
@@ -311,8 +312,11 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/log.cpp	\
 	src/main/raii.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
-	src/main/singletons/session_manager.cpp	\
-	src/main/socket_server_base.cpp
+	src/main/singletons/epoll_dispatcher.cpp	\
+	src/main/socket_server_base.cpp	\
+	src/main/tcp_peer.cpp	\
+	src/main/player_session_manager.cpp	\
+	src/main/player_session.cpp
 
 lib_libposeidon_template_la_SOURCES = \
 	#src/template/module_main.cpp
@@ -427,10 +431,16 @@ src/main/singletons/$(DEPDIR)/$(am__dirstamp):
 src/main/singletons/job_dispatcher.lo:  \
 	src/main/singletons/$(am__dirstamp) \
 	src/main/singletons/$(DEPDIR)/$(am__dirstamp)
-src/main/singletons/session_manager.lo:  \
+src/main/singletons/epoll_dispatcher.lo:  \
 	src/main/singletons/$(am__dirstamp) \
 	src/main/singletons/$(DEPDIR)/$(am__dirstamp)
 src/main/socket_server_base.lo: src/main/$(am__dirstamp) \
+	src/main/$(DEPDIR)/$(am__dirstamp)
+src/main/tcp_peer.lo: src/main/$(am__dirstamp) \
+	src/main/$(DEPDIR)/$(am__dirstamp)
+src/main/player_session_manager.lo: src/main/$(am__dirstamp) \
+	src/main/$(DEPDIR)/$(am__dirstamp)
+src/main/player_session.lo: src/main/$(am__dirstamp) \
 	src/main/$(DEPDIR)/$(am__dirstamp)
 lib/$(am__dirstamp):
 	@$(MKDIR_P) lib
@@ -499,14 +509,20 @@ mostlyclean-compile:
 	-rm -f src/main/log.$(OBJEXT)
 	-rm -f src/main/log.lo
 	-rm -f src/main/main.$(OBJEXT)
+	-rm -f src/main/player_session.$(OBJEXT)
+	-rm -f src/main/player_session.lo
+	-rm -f src/main/player_session_manager.$(OBJEXT)
+	-rm -f src/main/player_session_manager.lo
 	-rm -f src/main/raii.$(OBJEXT)
 	-rm -f src/main/raii.lo
+	-rm -f src/main/singletons/epoll_dispatcher.$(OBJEXT)
+	-rm -f src/main/singletons/epoll_dispatcher.lo
 	-rm -f src/main/singletons/job_dispatcher.$(OBJEXT)
 	-rm -f src/main/singletons/job_dispatcher.lo
-	-rm -f src/main/singletons/session_manager.$(OBJEXT)
-	-rm -f src/main/singletons/session_manager.lo
 	-rm -f src/main/socket_server_base.$(OBJEXT)
 	-rm -f src/main/socket_server_base.lo
+	-rm -f src/main/tcp_peer.$(OBJEXT)
+	-rm -f src/main/tcp_peer.lo
 	-rm -f src/main/utilities.$(OBJEXT)
 	-rm -f src/main/utilities.lo
 
@@ -515,11 +531,14 @@ distclean-compile:
 
 include src/main/$(DEPDIR)/log.Plo
 include src/main/$(DEPDIR)/main.Po
+include src/main/$(DEPDIR)/player_session.Plo
+include src/main/$(DEPDIR)/player_session_manager.Plo
 include src/main/$(DEPDIR)/raii.Plo
 include src/main/$(DEPDIR)/socket_server_base.Plo
+include src/main/$(DEPDIR)/tcp_peer.Plo
 include src/main/$(DEPDIR)/utilities.Plo
+include src/main/singletons/$(DEPDIR)/epoll_dispatcher.Plo
 include src/main/singletons/$(DEPDIR)/job_dispatcher.Plo
-include src/main/singletons/$(DEPDIR)/session_manager.Plo
 
 .cpp.o:
 	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

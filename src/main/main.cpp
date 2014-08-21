@@ -3,7 +3,7 @@
 #include "log.hpp"
 #include "exception.hpp"
 #include "optional_map.hpp"
-#include "singletons/session_manager.hpp"
+#include "singletons/epoll_dispatcher.hpp"
 #include "singletons/job_dispatcher.hpp"
 #include <fstream>
 #include <csignal>
@@ -84,59 +84,64 @@ OptionalMap loadConfig(const char *confPath){
 }
 
 }
-
-static bool idle1(){
-	DEBUG_THROW(Exception, "idle1");
-	return true;
-}
-static bool idle2(){
-	static int cnt = 10;
-	LOG_WARNING <<"idle2, count = " <<--cnt;
-	return cnt;
-}
-
+#include "player_session_manager.hpp"
 int main(int argc, char **argv){
 	LOG_INFO <<"-------------------------- Starting up -------------------------";
-SessionManager::registerIdleCallback(idle1);
-SessionManager::registerIdleCallback(idle2);
-	const char *confPath = "/var/poseidon/config/conf.rc";
-	if(1 < argc){
-		confPath = argv[1];
+
+	try {
+		const char *confPath = "/var/poseidon/config/conf.rc";
+		if(1 < argc){
+			confPath = argv[1];
+		}
+		LOG_INFO <<"Loading config from " <<confPath <<"...";
+		AUTO(const config, loadConfig(confPath));
+
+		AUTO_REF(logLevel, config["log_level"]);
+		if(!logLevel.empty()){
+			const int newLevel = boost::lexical_cast<int>(logLevel);
+			LOG_INFO <<"Setting log level to " <<newLevel <<", was " <<Log::getLevel() <<"...";
+			Log::setLevel(newLevel);
+		}
+
+		LOG_INFO <<"Setting up signal handlers...";
+		std::signal(SIGINT, sigIntProc);
+		std::signal(SIGTERM, sigTermProc);
+
+		LOG_INFO <<"Starting timer daemon...";
+		//EpollDispatcher::startDaemon();
+
+		LOG_INFO <<"Starting database daemon...";
+		//EpollDispatcher::startDaemon();
+
+		LOG_INFO <<"Starting player session manager...";
+		boost::shared_ptr<PlayerSessionManager> psm(
+			new PlayerSessionManager(config["socket_bind"], boost::lexical_cast<unsigned>(config["socket_port"]))
+		);
+		psm->start();
+		//EpollDispatcher::startDaemon();
+
+		LOG_INFO <<"Starting http daemon...";
+		//EpollDispatcher::startDaemon();
+
+		LOG_INFO <<"Starting epoll daemon...";
+		EpollDispatcher::startDaemon();
+
+		LOG_INFO <<"Entering modal loop...";
+		JobDispatcher::doModal();
+
+		LOG_INFO <<"----------------- main() has exited gracefully -----------------";
+		return EXIT_SUCCESS;
+	} catch(Exception &e){
+		LOG_ERROR <<"Exception thrown in job dispatcher: file = "
+			<<e.file() <<", line = " <<e.line() <<": what = " <<e.what();
+	} catch(std::exception &e){
+		LOG_ERROR <<"std::exception thrown in job dispatcher: what = " <<e.what();
+	} catch(...){
+		LOG_ERROR <<"Unknown exception thrown in job dispatcher";
 	}
-	LOG_INFO <<"Loading config from " <<confPath <<"...";
-	AUTO(const config, loadConfig(confPath));
 
-	AUTO_REF(logLevel, config["log_level"]);
-	if(!logLevel.empty()){
-		const int newLevel = boost::lexical_cast<int>(logLevel);
-		LOG_INFO <<"Setting log level to " <<newLevel <<", was " <<Log::getLevel() <<"...";
-		Log::setLevel(newLevel);
-	}
-
-	LOG_INFO <<"Setting up signal handlers...";
-	std::signal(SIGINT, sigIntProc);
-	std::signal(SIGTERM, sigTermProc);
-
-	LOG_INFO <<"Starting timer daemon...";
-	//SessionManager::startDaemon();
-
-	LOG_INFO <<"Starting database daemon...";
-	//SessionManager::startDaemon();
-
-	LOG_INFO <<"Starting socket server...";
-	//SessionManager::startDaemon();
-
-	LOG_INFO <<"Starting http daemon...";
-	//SessionManager::startDaemon();
-
-	LOG_INFO <<"Starting epoll daemon...";
-	SessionManager::startDaemon();
-
-	LOG_INFO <<"Entering modal loop...";
-	JobDispatcher::doModal();
-
-	LOG_INFO <<"----------------- main() has exited gracefully -----------------";
-	return EXIT_SUCCESS;
+	LOG_INFO <<"----------------- main() has exited abnormally -----------------";
+	return EXIT_FAILURE;
 }
 
 namespace {
@@ -145,13 +150,13 @@ namespace {
 struct GlobalCleanup : boost::noncopyable {
 	~GlobalCleanup() throw() {
 		LOG_INFO <<"Stopping epoll daemon...";
-		SessionManager::stopDaemon();
+		EpollDispatcher::stopDaemon();
 
 		LOG_INFO <<"Stopping database daemon...";
-		//SessionManager::stopDaemon();
+		//EpollDispatcher::stopDaemon();
 
 		LOG_INFO <<"Stopping timer daemon...";
-		//SessionManager::stopDaemon();
+		//EpollDispatcher::stopDaemon();
 	}
 } const g_globalCleanup;
 

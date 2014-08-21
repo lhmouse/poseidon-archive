@@ -4,7 +4,7 @@
 #include "log.hpp"
 #include "atomic.hpp"
 #include "exception.hpp"
-#include "singletons/session_manager.hpp"
+#include "singletons/epoll_dispatcher.hpp"
 #include "tcp_peer.hpp"
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
@@ -15,52 +15,75 @@ bool SocketServerBase::tryAccept(boost::shared_ptr<const SocketServerBase> serve
 	if(!atomicLoad(server->m_running)){
 		return false;
 	}
-	unsigned char sa[INET_ADDRSTRLEN | INET6_ADDRSTRLEN];
-	::socklen_t salen = sizeof(sa);
-	ScopedFile client(::accept(server->m_listen.get(), (::sockaddr *)sa, &salen));
+
+	ScopedFile client(::accept(server->m_listen.get(), NULL, NULL));
 	if(!client){
 		return true;
 	}
-	AUTO(peer, server->onClientConnected(client));
+	AUTO(peer, server->onClientConnect(client));
 	if(!peer){
 		return true;
 	}
-	LOG_INFO <<"Client " <<peer->getRemoteHost() <<" has connected.";
-	const int FALSE_VALUE = false;
-	if(::ioctl(peer->getFd(), FIONBIO, &FALSE_VALUE) < 0){
-		DEBUG_THROW(SystemError, errno);
-	}
-	SessionManager::registerTcpPeer(peer);
+	EpollDispatcher::registerTcpPeer(peer);
+	LOG_INFO <<"Client '" <<peer->getRemoteIp() <<"' has connected.";
 	return true;
 }
 
-SocketServerBase::SocketServerBase(const std::string &bindAddr)
-	: m_bindAddr(bindAddr), m_running(false)
+SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPort)
+	: m_running(false)
 {
-	LOG_INFO <<"Creating socket server on " <<m_bindAddr;
+	union {
+		::sockaddr sa;
+		::sockaddr_in sin;
+		::sockaddr_in6 sin6;
+	} u;
+	::socklen_t salen = sizeof(u);
 
-	unsigned char sa[INET_ADDRSTRLEN | INET6_ADDRSTRLEN];
-	::socklen_t salen;
-	if(::inet_pton(AF_INET, m_bindAddr.c_str(), sa) == 1){
-		salen = INET_ADDRSTRLEN;
-	} else if(::inet_pton(AF_INET6, m_bindAddr.c_str(), sa) == 1){
-		salen = INET6_ADDRSTRLEN;
+	m_bindAddr.resize(63);
+	const char *text;
+	if(::inet_pton(AF_INET, bindAddr.c_str(), &u.sin.sin_addr) == 1){
+		u.sin.sin_family = AF_INET;
+		u.sin.sin_port = ::htons(bindPort);
+		salen = sizeof(::sockaddr_in);
+		text = ::inet_ntop(AF_INET, &u.sin.sin_addr, &m_bindAddr[0], m_bindAddr.size());
+	} else if(::inet_pton(AF_INET6, bindAddr.c_str(), &u.sin6.sin6_addr) == 1){
+		u.sin6.sin6_family = AF_INET6;
+		u.sin6.sin6_port = ::htons(bindPort);
+		salen = sizeof(::sockaddr_in6);
+		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &m_bindAddr[0], m_bindAddr.size());
 	} else {
-		DEBUG_THROW(SystemError, EINVAL);
+		DEBUG_THROW(Exception, "Unknown address format. IP expected.");
 	}
-	m_listen.reset(::socket(((::sockaddr *)sa)->sa_family, SOCK_STREAM, IPPROTO_TCP));
-	if(!m_listen){
+	if(!text){
 		DEBUG_THROW(SystemError, errno);
+	}
+	m_bindAddr.resize(std::strlen(text));
+	m_bindAddr += ':';
+	m_bindAddr += boost::lexical_cast<std::string>(bindPort);
+
+	LOG_INFO <<"Creating socket server on " <<m_bindAddr <<"...";
+
+	m_listen.reset(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
+	if(!m_listen){
+		const int code = errno;
+		LOG_ERROR <<"Error creating socket.";
+		DEBUG_THROW(SystemError, code);
 	}
 	const int TRUE_VALUE = true;
 	if(::ioctl(m_listen.get(), FIONBIO, &TRUE_VALUE) < 0){
-		DEBUG_THROW(SystemError, errno);
+		const int code = errno;
+		LOG_ERROR <<"Could not set listen socket to non-block mode.";
+		DEBUG_THROW(SystemError, code);
 	}
-	if(::bind(m_listen.get(), (::sockaddr *)sa, salen)){
-		DEBUG_THROW(SystemError, errno);
+	if(::bind(m_listen.get(), &u.sa, salen)){
+		const int code = errno;
+		LOG_ERROR <<"Could not bind socket onto the specified address.";
+		DEBUG_THROW(SystemError, code);
 	}
 	if(::listen(m_listen.get(), SOMAXCONN)){
-		DEBUG_THROW(SystemError, errno);
+		const int code = errno;
+		LOG_ERROR <<"Could not listen on socket.";
+		DEBUG_THROW(SystemError, code);
 	}
 }
 SocketServerBase::~SocketServerBase(){
@@ -71,7 +94,7 @@ void SocketServerBase::start(){
 	if(atomicExchange(m_running, true) != false){
 		return;
 	}
-	SessionManager::registerIdleCallback(boost::bind(&tryAccept, shared_from_this()));
+	EpollDispatcher::registerIdleCallback(boost::bind(&tryAccept, shared_from_this()));
 }
 void SocketServerBase::stop(){
 	atomicStore(m_running, false);

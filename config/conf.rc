@@ -1,10 +1,17 @@
-# ---------- 系统配置 ----------
-server_id = 1		# 服务器 ID，唯一标识符
-log_level = 4		# 数值越高日志越详细
+# ----------- 通用配置 -----------
+server_id = 1						# 服务器 ID，唯一标识符
+log_level = 4						# 数值越高日志越详细
 
 # ---------- 数据库配置 ----------
-dbserver_addr = tcp://localhost		# 使用 MySQL 的格式
-dbserver_port = 3306
-dbserver_database = poseidon
-dbserver_username = root
-dbserver_password = root
+database_addr = tcp://localhost		# 使用 MySQL 的格式
+database_port = 3306
+database_database = poseidon
+database_username = root
+database_password = root
+
+# ---------- 套接字配置 ----------
+socket_bind = 0.0.0.0				# 0.0.0.0 表示任意地址
+socket_port = 8850
+http_bind = 0.0.0.0					# 同上
+http_port = 8860
+

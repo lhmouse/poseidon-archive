@@ -1,38 +1,75 @@
 #include "../precompiled.hpp"
 #include "tcp_peer.hpp"
-#include "../exceptions.hpp"
+#include "exception.hpp"
+#include "singletons/epoll_dispatcher.hpp"
+#include "log.hpp"
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <errno.h>
 using namespace Poseidon;
 
-TcpPeer::TcpPeer(ScopedFile &socket){
+TcpPeer::TcpPeer(ScopedFile &socket)
+	: m_shutdown(false)
+{
 	m_socket.swap(socket);
 
-	unsigned char sa[INET_ADDRSTRLEN | INET6_ADDRSTRLEN];
-	::socklen_t salen = sizeof(sa);
-	if(::getpeername(m_socket.get(), (::sockaddr *)sa, &salen) != 0){
-		THROW(SystemException, errno);
+	union {
+		::sockaddr sa;
+		::sockaddr_in sin;
+		::sockaddr_in6 sin6;
+	} u;
+	::socklen_t salen = sizeof(u);
+
+	if(::getpeername(m_socket.get(), &u.sa, &salen) != 0){
+		const int code = errno;
+		LOG_ERROR <<"Could not get peer address.";
+		DEBUG_THROW(SystemError, code);
 	}
-	m_remoteHost.resize(63);
-	const char *const text = ::inet_ntop(
-		((::sockaddr *)sa)->sa_family, sa, &m_remoteHost[0], m_remoteHost.size()
-	);
+	m_remoteIp.resize(63);
+	const char *text;
+	if(u.sa.sa_family == AF_INET){
+		text = ::inet_ntop(AF_INET, &u.sin.sin_addr, &m_remoteIp[0], m_remoteIp.size());
+	} else if(u.sa.sa_family == AF_INET6){
+		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &m_remoteIp[0], m_remoteIp.size());
+	} else {
+		DEBUG_THROW(Exception, "Unknown IP protocol " + boost::lexical_cast<std::string>(u.sa.sa_family));
+	}
 	if(!text){
-		THROW(SystemException, errno);
+		DEBUG_THROW(SystemError, errno);
 	}
-	m_remoteHost.resize(std::strlen(text));
+	m_remoteIp.resize(std::strlen(text));
+
+	LOG_INFO <<"Created tcp peer, remote ip = " <<m_remoteIp;
+}
+TcpPeer::~TcpPeer(){
+	LOG_INFO <<"Destroyed tcp peer, remote ip = " <<m_remoteIp;
+}
+
+std::size_t TcpPeer::peekWriteAvail(void *data, std::size_t size) const {
+	const boost::mutex::scoped_lock lock(m_queueMutex);
+	const std::size_t avail = std::min(m_sendQueue.size(), size);
+	AUTO(it, m_sendQueue.begin());
+	for(std::size_t i = 0; i < avail; ++i){
+		((unsigned char *)data)[i] = *it;
+		++it;
+	}
+	return avail;
+}
+void TcpPeer::notifyWritten(std::size_t size){
+	const boost::mutex::scoped_lock lock(m_queueMutex);
+	m_sendQueue.erase(m_sendQueue.begin(), m_sendQueue.begin() + size);
 }
 
 void TcpPeer::send(const void *data, std::size_t size){
-	std::size_t total = 0;
-	while(total < size){
-		const int written = ::send(m_socket.get(),
-			(const char *)data + total, std::min<unsigned>(size - total, 0x400u), 0
-		);
-		if(written < 0){
-			THROW(SystemException, errno);
-		}
-		total += (unsigned)written;
+	if(atomicLoad(m_shutdown) != false){
+		DEBUG_THROW(Exception, "Trying to send on a socket that has been shut down.");
 	}
+	{
+		const boost::mutex::scoped_lock lock(m_queueMutex);
+		m_sendQueue.insert(m_sendQueue.end(), (const char *)data, (const char *)data + size);
+	}
+	EpollDispatcher::pendWrite(shared_from_this());
+}
+void TcpPeer::shutdown(){
+	atomicStore(m_shutdown, true);
 }

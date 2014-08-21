@@ -8,6 +8,9 @@
 
 namespace Poseidon {
 
+class TcpPeer;
+
+// 抽象工厂模式
 class SocketServerBase : boost::noncopyable
 	, public boost::enable_shared_from_this<SocketServerBase>
 {
@@ -15,20 +18,21 @@ private:
 	static bool tryAccept(boost::shared_ptr<const SocketServerBase> server);
 
 private:
-	const std::string m_bindAddr;
+	std::string m_bindAddr;
 	volatile bool m_running;
 	ScopedFile m_listen;
 
 public:
-	explicit SocketServerBase(const std::string &bindAddr);
+	SocketServerBase(const std::string &bindAddr, unsigned bindPort);
 	virtual ~SocketServerBase();
 
 public:
 	void start();
 	void stop();
 
+	// 工厂函数。
 	// 如果该成员函数返回空指针，连接会被立即挂断。
-	virtual boost::shared_ptr<class TcpPeer> onClientConnected(ScopedFile &client) const = 0;
+	virtual boost::shared_ptr<TcpPeer> onClientConnect(ScopedFile &client) const = 0;
 };
 
 }

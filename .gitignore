@@ -4,6 +4,7 @@
 *.la
 *.a
 *.log
+*.gch
 autom4te.cache
 config.*
 .dirstamp
