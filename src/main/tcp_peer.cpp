@@ -72,4 +72,5 @@ void TcpPeer::send(const void *data, std::size_t size){
 }
 void TcpPeer::shutdown(){
 	atomicStore(m_shutdown, true);
+	EpollDispatcher::pendWrite(shared_from_this());
 }

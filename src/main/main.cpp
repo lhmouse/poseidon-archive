@@ -99,7 +99,7 @@ int main(int argc, char **argv){
 		AUTO_REF(logLevel, config["log_level"]);
 		if(!logLevel.empty()){
 			const int newLevel = boost::lexical_cast<int>(logLevel);
-			LOG_INFO <<"Setting log level to " <<newLevel <<", was " <<Log::getLevel() <<"...";
+			LOG_WARNING <<"Setting log level to " <<newLevel <<", was " <<Log::getLevel() <<"...";
 			Log::setLevel(newLevel);
 		}
 
