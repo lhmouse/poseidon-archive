@@ -1,12 +1,11 @@
 #ifndef POSEIDON_PLAYER_SESSION_HPP_
 #define POSEIDON_PLAYER_SESSION_HPP_
 
-#include <boost/shared_ptr.hpp>
-#include <boost/nopncopyable.hpp>
+#include "tcp_peer.hpp"
 
 namespace Poseidon {
 
-class PlayerSession : boost::noncopyable {
+class PlayerSession : public TcpPeer {
 private:
 
 public:
