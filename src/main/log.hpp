@@ -7,7 +7,7 @@
 
 namespace Poseidon {
 
-class Log : private boost::noncopyable {
+class Log : boost::noncopyable {
 public:
 	enum {
 		FATAL,		// 0

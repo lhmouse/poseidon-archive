@@ -1,0 +1,10 @@
+# ---------- 系统配置 ----------
+server_id = 1		# 服务器 ID，唯一标识符
+log_level = 4		# 数值越高日志越详细
+
+# ---------- 数据库配置 ----------
+dbserver_addr = tcp://localhost		# 使用 MySQL 的格式
+dbserver_port = 3306
+dbserver_database = poseidon
+dbserver_username = root
+dbserver_password = root

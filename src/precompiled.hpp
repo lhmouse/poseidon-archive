@@ -11,7 +11,6 @@
 #include <utility>
 #include <sstream>
 
-#include <cassert>
 #include <cstring>
 //#include <cstdlib> // 使用 <boost/cstdlib.hpp>。
 #include <cstddef>

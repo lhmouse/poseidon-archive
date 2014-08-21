@@ -103,7 +103,10 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 lib_libposeidon_main_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_lib_libposeidon_main_la_OBJECTS = src/main/utilities.lo \
-	src/main/log.lo src/main/job_dispatcher.lo
+	src/main/log.lo src/main/raii.lo \
+	src/main/singletons/job_dispatcher.lo \
+	src/main/singletons/session_manager.lo \
+	src/main/socket_server_base.lo
 lib_libposeidon_main_la_OBJECTS =  \
 	$(am_lib_libposeidon_main_la_OBJECTS)
 lib_libposeidon_template_la_DEPENDENCIES = lib/libposeidon-main.la
@@ -306,7 +309,10 @@ lib_LTLIBRARIES = \
 lib_libposeidon_main_la_SOURCES = \
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
-	src/main/job_dispatcher.cpp
+	src/main/raii.cpp	\
+	src/main/singletons/job_dispatcher.cpp	\
+	src/main/singletons/session_manager.cpp	\
+	src/main/socket_server_base.cpp
 
 lib_libposeidon_template_la_SOURCES = \
 	#src/template/module_main.cpp
@@ -410,7 +416,21 @@ src/main/utilities.lo: src/main/$(am__dirstamp) \
 	src/main/$(DEPDIR)/$(am__dirstamp)
 src/main/log.lo: src/main/$(am__dirstamp) \
 	src/main/$(DEPDIR)/$(am__dirstamp)
-src/main/job_dispatcher.lo: src/main/$(am__dirstamp) \
+src/main/raii.lo: src/main/$(am__dirstamp) \
+	src/main/$(DEPDIR)/$(am__dirstamp)
+src/main/singletons/$(am__dirstamp):
+	@$(MKDIR_P) src/main/singletons
+	@: > src/main/singletons/$(am__dirstamp)
+src/main/singletons/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/main/singletons/$(DEPDIR)
+	@: > src/main/singletons/$(DEPDIR)/$(am__dirstamp)
+src/main/singletons/job_dispatcher.lo:  \
+	src/main/singletons/$(am__dirstamp) \
+	src/main/singletons/$(DEPDIR)/$(am__dirstamp)
+src/main/singletons/session_manager.lo:  \
+	src/main/singletons/$(am__dirstamp) \
+	src/main/singletons/$(DEPDIR)/$(am__dirstamp)
+src/main/socket_server_base.lo: src/main/$(am__dirstamp) \
 	src/main/$(DEPDIR)/$(am__dirstamp)
 lib/$(am__dirstamp):
 	@$(MKDIR_P) lib
@@ -476,21 +496,30 @@ sbin/poseidon$(EXEEXT): $(sbin_poseidon_OBJECTS) $(sbin_poseidon_DEPENDENCIES) $
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f src/main/job_dispatcher.$(OBJEXT)
-	-rm -f src/main/job_dispatcher.lo
 	-rm -f src/main/log.$(OBJEXT)
 	-rm -f src/main/log.lo
 	-rm -f src/main/main.$(OBJEXT)
+	-rm -f src/main/raii.$(OBJEXT)
+	-rm -f src/main/raii.lo
+	-rm -f src/main/singletons/job_dispatcher.$(OBJEXT)
+	-rm -f src/main/singletons/job_dispatcher.lo
+	-rm -f src/main/singletons/session_manager.$(OBJEXT)
+	-rm -f src/main/singletons/session_manager.lo
+	-rm -f src/main/socket_server_base.$(OBJEXT)
+	-rm -f src/main/socket_server_base.lo
 	-rm -f src/main/utilities.$(OBJEXT)
 	-rm -f src/main/utilities.lo
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@src/main/$(DEPDIR)/job_dispatcher.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/main/$(DEPDIR)/log.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/main/$(DEPDIR)/main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/main/$(DEPDIR)/raii.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/main/$(DEPDIR)/socket_server_base.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/main/$(DEPDIR)/utilities.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/main/singletons/$(DEPDIR)/job_dispatcher.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/main/singletons/$(DEPDIR)/session_manager.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -524,6 +553,7 @@ clean-libtool:
 	-rm -rf lib/.libs lib/_libs
 	-rm -rf sbin/.libs sbin/_libs
 	-rm -rf src/main/.libs src/main/_libs
+	-rm -rf src/main/singletons/.libs src/main/singletons/_libs
 
 distclean-libtool:
 	-rm -f libtool config.lt
@@ -782,6 +812,8 @@ distclean-generic:
 	-rm -f sbin/$(am__dirstamp)
 	-rm -f src/main/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/main/$(am__dirstamp)
+	-rm -f src/main/singletons/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/main/singletons/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -794,7 +826,7 @@ clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf src/main/$(DEPDIR)
+	-rm -rf src/main/$(DEPDIR) src/main/singletons/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -842,7 +874,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf src/main/$(DEPDIR)
+	-rm -rf src/main/$(DEPDIR) src/main/singletons/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

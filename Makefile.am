@@ -30,7 +30,10 @@ lib_LTLIBRARIES=	\
 lib_libposeidon_main_la_SOURCES=	\
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
-	src/main/job_dispatcher.cpp
+	src/main/raii.cpp	\
+	src/main/singletons/job_dispatcher.cpp	\
+	src/main/singletons/session_manager.cpp	\
+	src/main/socket_server_base.cpp
 
 lib_libposeidon_template_la_SOURCES=	\
 	#src/template/module_main.cpp

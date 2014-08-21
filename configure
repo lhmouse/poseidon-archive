@@ -14900,6 +14900,45 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lpthread" >&5
+$as_echo_n "checking for main in -lpthread... " >&6; }
+if ${ac_cv_lib_pthread_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpthread  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_pthread_main=yes
+else
+  ac_cv_lib_pthread_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pthread_main" >&5
+$as_echo "$ac_cv_lib_pthread_main" >&6; }
+if test "x$ac_cv_lib_pthread_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPTHREAD 1
+_ACEOF
+
+  LIBS="-lpthread $LIBS"
+
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lltdl" >&5
 $as_echo_n "checking for main in -lltdl... " >&6; }
 if ${ac_cv_lib_ltdl_main+:} false; then :
@@ -14978,13 +15017,13 @@ _ACEOF
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_system" >&5
-$as_echo_n "checking for main in -lboost_system... " >&6; }
-if ${ac_cv_lib_boost_system_main+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_system-mt" >&5
+$as_echo_n "checking for main in -lboost_system-mt... " >&6; }
+if ${ac_cv_lib_boost_system_mt_main+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lboost_system  $LIBS"
+LIBS="-lboost_system-mt  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14998,22 +15037,22 @@ return main ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_boost_system_main=yes
+  ac_cv_lib_boost_system_mt_main=yes
 else
-  ac_cv_lib_boost_system_main=no
+  ac_cv_lib_boost_system_mt_main=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_boost_system_main" >&5
-$as_echo "$ac_cv_lib_boost_system_main" >&6; }
-if test "x$ac_cv_lib_boost_system_main" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_boost_system_mt_main" >&5
+$as_echo "$ac_cv_lib_boost_system_mt_main" >&6; }
+if test "x$ac_cv_lib_boost_system_mt_main" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBBOOST_SYSTEM 1
+#define HAVE_LIBBOOST_SYSTEM_MT 1
 _ACEOF
 
-  LIBS="-lboost_system $LIBS"
+  LIBS="-lboost_system-mt $LIBS"
 
 fi
 
