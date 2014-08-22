@@ -111,7 +111,7 @@ void threadProc(){
 		} catch(std::exception &e){
 			LOG_ERROR <<"std::exception thrown while dispatching timer job, what = " <<e.what();
 		} catch(...){
-			LOG_ERROR <<"Unknown exception thrown while dispatching timer job";
+			LOG_ERROR <<"Unknown exception thrown while dispatching timer job.";
 		}
 	}
 }
