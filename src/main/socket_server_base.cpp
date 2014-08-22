@@ -1,37 +1,16 @@
 #include "../precompiled.hpp"
 #include "socket_server_base.hpp"
 #include <boost/bind.hpp>
-#include "log.hpp"
-#include "atomic.hpp"
-#include "exception.hpp"
-#include "singletons/epoll_dispatcher.hpp"
-#include "tcp_peer.hpp"
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include "log.hpp"
+#include "exception.hpp"
+#include "singletons/epoll_daemon.hpp"
+#include "tcp_peer.hpp"
 using namespace Poseidon;
 
-bool SocketServerBase::tryAccept(boost::shared_ptr<const SocketServerBase> server){
-	if(!atomicLoad(server->m_running)){
-		return false;
-	}
-
-	ScopedFile client(::accept(server->m_listen.get(), NULL, NULL));
-	if(!client){
-		return true;
-	}
-	AUTO(peer, server->onClientConnect(client));
-	if(!peer){
-		return true;
-	}
-	EpollDispatcher::registerTcpPeer(peer);
-	LOG_INFO <<"Client '" <<peer->getRemoteIp() <<"' has connected.";
-	return true;
-}
-
-SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPort)
-	: m_running(false)
-{
+SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPort){
 	union {
 		::sockaddr sa;
 		::sockaddr_in sin;
@@ -95,12 +74,22 @@ SocketServerBase::~SocketServerBase(){
 	LOG_INFO <<"Destroyed socket server on " <<m_bindAddr;
 }
 
-void SocketServerBase::start(){
-	if(atomicExchange(m_running, true) != false){
-		return;
+bool SocketServerBase::tryAccept() const {
+	ScopedFile client(::accept(m_listen.get(), NULL, NULL));
+	if(!client){
+		return true;
 	}
-	EpollDispatcher::registerIdleCallback(boost::bind(&tryAccept, shared_from_this()));
+	AUTO(peer, onClientConnect(client));
+	if(!peer){
+		return true;
+	}
+	EpollDaemon::registerTcpPeer(peer);
+	LOG_INFO <<"Client '" <<peer->getRemoteIp() <<"' has connected.";
+	return true;
 }
-void SocketServerBase::stop(){
-	atomicStore(m_running, false);
+
+void SocketServerBase::handOver() const {
+	EpollDaemon::registerIdleCallback(boost::bind(
+		&SocketServerBase::tryAccept, shared_from_this()
+	));
 }

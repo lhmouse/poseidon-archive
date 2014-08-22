@@ -9,7 +9,17 @@ using namespace Poseidon;
 
 namespace Poseidon {
 
-boost::uint64_t getLocalTime(){
+namespace {
+
+struct TzSetHelper {
+	TzSetHelper(){
+		::tzset();
+	}
+} const g_tzSetHelper;
+
+}
+
+boost::uint64_t getUtcTime(){
 	::timespec ts;
 	if(::clock_gettime(CLOCK_REALTIME, &ts) != 0){
 		LOG_FATAL <<"Realtime clock is not supported.";
@@ -17,6 +27,16 @@ boost::uint64_t getLocalTime(){
 	}
 	return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
+boost::uint64_t getLocalTime(){
+	return getLocalTimeFromUtc(getUtcTime());
+}
+boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local){
+	return local + ::timezone * 1000;
+}
+boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
+	return utc - ::timezone * 1000;
+}
+
 boost::uint64_t getMonoClock(){
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){

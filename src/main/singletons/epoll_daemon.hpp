@@ -1,5 +1,5 @@
-#ifndef POSEIDON_EPOLL_DISPATCHER_HPP_
-#define POSEIDON_EPOLL_DISPATCHER_HPP_
+#ifndef POSEIDON_EPOLL_DAEMON_HPP_
+#define POSEIDON_EPOLL_DAEMON_HPP_
 
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -9,9 +9,9 @@ namespace Poseidon {
 
 class TcpPeer;
 
-struct EpollDispatcher {
-	static void startDaemon();
-	static void stopDaemon();
+struct EpollDaemon {
+	static void start();
+	static void stop();
 
 	// 加入 epoll，一旦有数据则调用其 onDataAvail() 成员函数，
 	// 一旦出错或被挂断则从 epoll 中移除。
@@ -22,7 +22,7 @@ struct EpollDispatcher {
 	static void registerIdleCallback(boost::function<bool ()> callback);
 
 private:
-	EpollDispatcher();
+	EpollDaemon();
 };
 
 }

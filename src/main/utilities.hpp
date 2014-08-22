@@ -32,7 +32,11 @@ inline std::vector<std::string> split<std::string>(const std::string &s, char de
     return ret;
 }
 
+boost::uint64_t getUtcTime();		// 单位毫秒。
 boost::uint64_t getLocalTime();		// 单位毫秒。
+boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local);
+boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc);
+
 boost::uint64_t getMonoClock();		// 单位微秒。
 
 // 在区间 [lower, upper) 范围内生成伪随机数。

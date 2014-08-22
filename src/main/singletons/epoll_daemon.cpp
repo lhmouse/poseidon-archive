@@ -1,5 +1,5 @@
 #include "../../precompiled.hpp"
-#include "epoll_dispatcher.hpp"
+#include "epoll_daemon.hpp"
 #include <set>
 #include <list>
 #include <boost/thread.hpp>
@@ -186,7 +186,7 @@ void threadProc() throw() {
 
 }
 
-void EpollDispatcher::startDaemon(){
+void EpollDaemon::start(){
 	if(atomicExchange(g_daemonRunning, true) != false){
 		LOG_FATAL <<"Only one daemon is allowed at the same time.";
 		std::abort();
@@ -199,7 +199,7 @@ void EpollDispatcher::startDaemon(){
 	}
 	boost::thread(threadProc).swap(g_daemonThread);
 }
-void EpollDispatcher::stopDaemon(){
+void EpollDaemon::stop(){
 	LOG_INFO <<"Stopping epoll daemon...";
 
 	atomicStore(g_daemonRunning, false);
@@ -210,13 +210,13 @@ void EpollDispatcher::stopDaemon(){
 	g_idleCallbacks.clear();
 }
 
-void EpollDispatcher::registerTcpPeer(const boost::shared_ptr<TcpPeer> &readable){
+void EpollDaemon::registerTcpPeer(const boost::shared_ptr<TcpPeer> &readable){
 	addSocket(readable);
 }
-void EpollDispatcher::pendWrite(const boost::shared_ptr<TcpPeer> &writeable){
+void EpollDaemon::pendWrite(const boost::shared_ptr<TcpPeer> &writeable){
 	addSocket(writeable);
 }
-void EpollDispatcher::registerIdleCallback(boost::function<bool ()> callback){
+void EpollDaemon::registerIdleCallback(boost::function<bool ()> callback){
 	const boost::mutex::scoped_lock lock(g_mutex);
 	g_idleCallbacks.push_back(callback);
 }

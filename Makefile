@@ -105,7 +105,9 @@ am__dirstamp = $(am__leading_dot)dirstamp
 am_lib_libposeidon_main_la_OBJECTS = src/main/utilities.lo \
 	src/main/log.lo src/main/raii.lo \
 	src/main/singletons/job_dispatcher.lo \
-	src/main/singletons/epoll_dispatcher.lo \
+	src/main/singletons/database_daemon.lo \
+	src/main/singletons/timer_daemon.lo \
+	src/main/singletons/epoll_daemon.lo \
 	src/main/socket_server_base.lo src/main/tcp_peer.lo \
 	src/main/player_session_manager.lo src/main/player_session.lo
 lib_libposeidon_main_la_OBJECTS =  \
@@ -312,7 +314,9 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/log.cpp	\
 	src/main/raii.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
-	src/main/singletons/epoll_dispatcher.cpp	\
+	src/main/singletons/database_daemon.cpp	\
+	src/main/singletons/timer_daemon.cpp	\
+	src/main/singletons/epoll_daemon.cpp	\
 	src/main/socket_server_base.cpp	\
 	src/main/tcp_peer.cpp	\
 	src/main/player_session_manager.cpp	\
@@ -431,7 +435,13 @@ src/main/singletons/$(DEPDIR)/$(am__dirstamp):
 src/main/singletons/job_dispatcher.lo:  \
 	src/main/singletons/$(am__dirstamp) \
 	src/main/singletons/$(DEPDIR)/$(am__dirstamp)
-src/main/singletons/epoll_dispatcher.lo:  \
+src/main/singletons/database_daemon.lo:  \
+	src/main/singletons/$(am__dirstamp) \
+	src/main/singletons/$(DEPDIR)/$(am__dirstamp)
+src/main/singletons/timer_daemon.lo:  \
+	src/main/singletons/$(am__dirstamp) \
+	src/main/singletons/$(DEPDIR)/$(am__dirstamp)
+src/main/singletons/epoll_daemon.lo:  \
 	src/main/singletons/$(am__dirstamp) \
 	src/main/singletons/$(DEPDIR)/$(am__dirstamp)
 src/main/socket_server_base.lo: src/main/$(am__dirstamp) \
@@ -515,10 +525,14 @@ mostlyclean-compile:
 	-rm -f src/main/player_session_manager.lo
 	-rm -f src/main/raii.$(OBJEXT)
 	-rm -f src/main/raii.lo
-	-rm -f src/main/singletons/epoll_dispatcher.$(OBJEXT)
-	-rm -f src/main/singletons/epoll_dispatcher.lo
+	-rm -f src/main/singletons/database_daemon.$(OBJEXT)
+	-rm -f src/main/singletons/database_daemon.lo
+	-rm -f src/main/singletons/epoll_daemon.$(OBJEXT)
+	-rm -f src/main/singletons/epoll_daemon.lo
 	-rm -f src/main/singletons/job_dispatcher.$(OBJEXT)
 	-rm -f src/main/singletons/job_dispatcher.lo
+	-rm -f src/main/singletons/timer_daemon.$(OBJEXT)
+	-rm -f src/main/singletons/timer_daemon.lo
 	-rm -f src/main/socket_server_base.$(OBJEXT)
 	-rm -f src/main/socket_server_base.lo
 	-rm -f src/main/tcp_peer.$(OBJEXT)
@@ -537,8 +551,10 @@ include src/main/$(DEPDIR)/raii.Plo
 include src/main/$(DEPDIR)/socket_server_base.Plo
 include src/main/$(DEPDIR)/tcp_peer.Plo
 include src/main/$(DEPDIR)/utilities.Plo
-include src/main/singletons/$(DEPDIR)/epoll_dispatcher.Plo
+include src/main/singletons/$(DEPDIR)/database_daemon.Plo
+include src/main/singletons/$(DEPDIR)/epoll_daemon.Plo
 include src/main/singletons/$(DEPDIR)/job_dispatcher.Plo
+include src/main/singletons/$(DEPDIR)/timer_daemon.Plo
 
 .cpp.o:
 	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

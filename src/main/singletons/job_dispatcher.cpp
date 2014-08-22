@@ -4,14 +4,14 @@
 #include "../exception.hpp"
 #include "../log.hpp"
 #include <boost/thread.hpp>
-#include <deque>
+#include <list>
 using namespace Poseidon;
 
 namespace {
 
 volatile bool g_running = false;
 boost::mutex g_queueMutex;
-std::deque<boost::shared_ptr<const JobBase> > g_jobQueue;
+std::list<boost::shared_ptr<const JobBase> > g_queue, g_pool;
 boost::condition_variable g_newJobAvail;
 
 }
@@ -20,8 +20,15 @@ JobBase::~JobBase(){
 }
 
 void JobBase::pend() const {
-	const boost::mutex::scoped_lock lock(g_queueMutex);
-	g_jobQueue.push_back(shared_from_this());
+	{
+		const boost::mutex::scoped_lock lock(g_queueMutex);
+		if(g_pool.empty()){
+			g_queue.push_back(boost::shared_ptr<const JobBase>());
+		} else {
+			g_queue.splice(g_queue.end(), g_pool, g_pool.begin());
+		}
+		g_queue.back() = shared_from_this();
+	}
 	g_newJobAvail.notify_one();
 }
 
@@ -31,16 +38,19 @@ void JobDispatcher::doModal(){
 		std::abort();
 	}
 	for(;;){
-		boost::mutex::scoped_lock lock(g_queueMutex);
-		while(g_jobQueue.empty()){
-			g_newJobAvail.wait(lock);
-			if(atomicLoad(g_running) == false){
-				return;
+		boost::shared_ptr<const JobBase> job;
+		{
+			boost::mutex::scoped_lock lock(g_queueMutex);
+			while(g_queue.empty()){
+				g_newJobAvail.wait(lock);
+				if(atomicLoad(g_running) == false){
+					return;
+				}
 			}
+			job = g_queue.front();
+			g_queue.front().reset();
+			g_pool.splice(g_pool.begin(), g_queue, g_queue.begin());
 		}
-		AUTO(const job, g_jobQueue.front());
-		g_jobQueue.pop_front();
-		lock.unlock();
 
 		try {
 			job->perform();

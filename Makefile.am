@@ -32,7 +32,9 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/log.cpp	\
 	src/main/raii.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
-	src/main/singletons/epoll_dispatcher.cpp	\
+	src/main/singletons/database_daemon.cpp	\
+	src/main/singletons/timer_daemon.cpp	\
+	src/main/singletons/epoll_daemon.cpp	\
 	src/main/socket_server_base.cpp	\
 	src/main/tcp_peer.cpp	\
 	src/main/player_session_manager.cpp	\

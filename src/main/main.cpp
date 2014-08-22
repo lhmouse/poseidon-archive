@@ -1,12 +1,15 @@
 #include "../precompiled.hpp"
 #include "utilities.hpp"
+#include <fstream>
+#include <csignal>
 #include "log.hpp"
 #include "exception.hpp"
 #include "optional_map.hpp"
-#include "singletons/epoll_dispatcher.hpp"
+#include "singletons/database_daemon.hpp"
+#include "singletons/timer_daemon.hpp"
+#include "singletons/epoll_daemon.hpp"
 #include "singletons/job_dispatcher.hpp"
-#include <fstream>
-#include <csignal>
+#include "player_session_manager.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -77,14 +80,35 @@ OptionalMap loadConfig(const char *confPath){
 			val.resize(pos + 1);
 		}
 
-		LOG_DEBUG <<key <<" = " <<val;
+		LOG_DEBUG <<"Config: " <<key <<" = " <<val;
 		config.set(key, val);
 	}
 	return config;
 }
 
+template<typename T>
+struct RaiiSingletonRunner : boost::noncopyable {
+	RaiiSingletonRunner(){
+		T::start();
+	}
+	~RaiiSingletonRunner(){
+		T::stop();
+	}
+};
+
 }
-#include "player_session_manager.hpp"
+
+#define RUN_SING_2_(name_, ln_)		const ::RaiiSingletonRunner<name_> runner_ ## ln_ ## _
+#define RUN_SING_1_(name_, ln_)		RUN_SING_2_(name_, ln_)
+#define RUN_SINGLETON(name_)		RUN_SING_1_(name_, __LINE__)
+
+static void meow(){
+	LOG_WARNING <<"meow!!";
+}
+static void bark(){
+	LOG_WARNING <<"bark!!";
+}
+
 int main(int argc, char **argv){
 	LOG_INFO <<"-------------------------- Starting up -------------------------";
 
@@ -103,29 +127,24 @@ int main(int argc, char **argv){
 			Log::setLevel(newLevel);
 		}
 
+		//RUN_SINGLETON(DatabaseDaemon);
+		RUN_SINGLETON(TimerDaemon);
+		RUN_SINGLETON(EpollDaemon);
+
+		LOG_INFO <<"Creating player session manager...";
+		boost::make_shared<PlayerSessionManager>(
+			config["socket_bind"], boost::lexical_cast<unsigned>(config["socket_port"])
+			)->handOver();
+
+		LOG_INFO <<"Creating http server...";
+		// http
+
 		LOG_INFO <<"Setting up signal handlers...";
 		std::signal(SIGINT, sigIntProc);
 		std::signal(SIGTERM, sigTermProc);
 
-		LOG_INFO <<"Starting timer daemon...";
-		//EpollDispatcher::startDaemon();
-
-		LOG_INFO <<"Starting database daemon...";
-		//EpollDispatcher::startDaemon();
-
-		LOG_INFO <<"Starting player session manager...";
-		boost::shared_ptr<PlayerSessionManager> psm(
-			new PlayerSessionManager(config["socket_bind"], boost::lexical_cast<unsigned>(config["socket_port"]))
-		);
-		psm->start();
-		//EpollDispatcher::startDaemon();
-
-		LOG_INFO <<"Starting http daemon...";
-		//EpollDispatcher::startDaemon();
-
-		LOG_INFO <<"Starting epoll daemon...";
-		EpollDispatcher::startDaemon();
-
+TimerDaemon::registerTimer(meow, 5000, 10000);
+TimerDaemon::registerTimer(bark, 2000, 8000);
 		LOG_INFO <<"Entering modal loop...";
 		JobDispatcher::doModal();
 
@@ -142,22 +161,4 @@ int main(int argc, char **argv){
 
 	LOG_INFO <<"----------------- main() has exited abnormally -----------------";
 	return EXIT_FAILURE;
-}
-
-namespace {
-
-// 这部分一定要放在翻译单元末尾。
-struct GlobalCleanup : boost::noncopyable {
-	~GlobalCleanup() throw() {
-		LOG_INFO <<"Stopping epoll daemon...";
-		EpollDispatcher::stopDaemon();
-
-		LOG_INFO <<"Stopping database daemon...";
-		//EpollDispatcher::stopDaemon();
-
-		LOG_INFO <<"Stopping timer daemon...";
-		//EpollDispatcher::stopDaemon();
-	}
-} const g_globalCleanup;
-
 }

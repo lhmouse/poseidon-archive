@@ -1,7 +1,7 @@
 #include "../precompiled.hpp"
 #include "tcp_peer.hpp"
 #include "exception.hpp"
-#include "singletons/epoll_dispatcher.hpp"
+#include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -68,9 +68,9 @@ void TcpPeer::send(const void *data, std::size_t size){
 		const boost::mutex::scoped_lock lock(m_queueMutex);
 		m_sendQueue.insert(m_sendQueue.end(), (const char *)data, (const char *)data + size);
 	}
-	EpollDispatcher::pendWrite(shared_from_this());
+	EpollDaemon::pendWrite(shared_from_this());
 }
 void TcpPeer::shutdown(){
 	atomicStore(m_shutdown, true);
-	EpollDispatcher::pendWrite(shared_from_this());
+	EpollDaemon::pendWrite(shared_from_this());
 }
