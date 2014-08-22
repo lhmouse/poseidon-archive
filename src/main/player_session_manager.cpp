@@ -15,6 +15,6 @@ boost::shared_ptr<TcpPeer> PlayerSessionManager::onClientConnect(ScopedFile &cli
 	AUTO(ps, boost::make_shared<PlayerSession>(boost::ref(client)));
 
 	LOG_INFO <<"Created player session from client " <<ps->getRemoteIp();
-	ps->shutdown();
+//	ps->shutdown();
 	return ps;
 }

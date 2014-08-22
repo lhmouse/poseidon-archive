@@ -70,6 +70,11 @@ SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPor
 		DEBUG_THROW(SystemError, code);
 	}
 	const int TRUE_VALUE = true;
+	if(::setsockopt(m_listen.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
+		const int code = errno;
+		LOG_ERROR <<"Could not set socket to reuse address.";
+		DEBUG_THROW(SystemError, code);
+	}
 	if(::ioctl(m_listen.get(), FIONBIO, &TRUE_VALUE) < 0){
 		const int code = errno;
 		LOG_ERROR <<"Could not set listen socket to non-block mode.";
