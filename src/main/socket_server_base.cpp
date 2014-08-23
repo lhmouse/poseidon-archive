@@ -40,38 +40,38 @@ SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPor
 	m_bindAddr += ':';
 	m_bindAddr += boost::lexical_cast<std::string>(bindPort);
 
-	LOG_INFO,"Creating socket server on ",m_bindAddr,"...";
+	LOG_INFO, "Creating socket server on ", m_bindAddr, "...";
 
 	m_listen.reset(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
 	if(!m_listen){
 		const int code = errno;
-		LOG_ERROR,"Error creating socket.";
+		LOG_ERROR, "Error creating socket.";
 		DEBUG_THROW(SystemError, code);
 	}
 	const int TRUE_VALUE = true;
 	if(::setsockopt(m_listen.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 		const int code = errno;
-		LOG_ERROR,"Could not set socket to reuse address.";
+		LOG_ERROR, "Could not set socket to reuse address.";
 		DEBUG_THROW(SystemError, code);
 	}
 	if(::ioctl(m_listen.get(), FIONBIO, &TRUE_VALUE) < 0){
 		const int code = errno;
-		LOG_ERROR,"Could not set listen socket to non-block mode.";
+		LOG_ERROR, "Could not set listen socket to non-block mode.";
 		DEBUG_THROW(SystemError, code);
 	}
 	if(::bind(m_listen.get(), &u.sa, salen)){
 		const int code = errno;
-		LOG_ERROR,"Could not bind socket onto the specified address.";
+		LOG_ERROR, "Could not bind socket onto the specified address.";
 		DEBUG_THROW(SystemError, code);
 	}
 	if(::listen(m_listen.get(), SOMAXCONN)){
 		const int code = errno;
-		LOG_ERROR,"Could not listen on socket.";
+		LOG_ERROR, "Could not listen on socket.";
 		DEBUG_THROW(SystemError, code);
 	}
 }
 SocketServerBase::~SocketServerBase(){
-	LOG_INFO,"Destroyed socket server on ",m_bindAddr;
+	LOG_INFO, "Destroyed socket server on ", m_bindAddr;
 }
 
 bool SocketServerBase::tryAccept() const {
@@ -84,7 +84,7 @@ bool SocketServerBase::tryAccept() const {
 		return true;
 	}
 	EpollDaemon::registerTcpPeer(peer);
-	LOG_INFO,"Client '",peer->getRemoteIp(),"' has connected.";
+	LOG_INFO, "Client '", peer->getRemoteIp(), "' has connected.";
 	return true;
 }
 

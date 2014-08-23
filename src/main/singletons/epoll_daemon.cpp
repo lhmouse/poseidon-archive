@@ -47,18 +47,18 @@ void removeSocket(const boost::shared_ptr<TcpPeer> &peer) throw() {
 	const boost::mutex::scoped_lock lock(g_mutex);
 	AUTO(const it, g_epollSockets.find(peer));
 	if(it == g_epollSockets.end()){
-		LOG_WARNING,"Trying to remove a non-existent socket.";
+		LOG_WARNING, "Trying to remove a non-existent socket.";
 		return;
 	}
 	g_epollSockets.erase(it);
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, peer->getFd(), NULL) != 0){
 		const int code = errno;
-		LOG_WARNING,"::epoll_ctl() failed, errno = ",code;
+		LOG_WARNING, "::epoll_ctl() failed, errno = ", code;
 	}
 }
 
 void threadProc() throw() {
-	LOG_INFO,"Epoll daemon started.";
+	LOG_INFO, "Epoll daemon started.";
 
 	unsigned epollTimeout = 1;
 	while(atomicLoad(g_daemonRunning)){
@@ -68,13 +68,13 @@ void threadProc() throw() {
 		if(ready < 0){
 			char temp[256];
 			const char *const desc = ::strerror_r(errno, temp, sizeof(temp));
-			LOG_ERROR,"::epoll_wait() has failed: ",desc;
+			LOG_ERROR, "::epoll_wait() has failed: ", desc;
 		} else for(std::size_t i = 0; i < (unsigned)ready; ++i){
 			epoll_event &event = events[i];
 			boost::shared_ptr<TcpPeer> peer = ((TcpPeer *)event.data.ptr)->shared_from_this();
 			try {
 				if(event.events & EPOLLHUP){
-					LOG_INFO,"Socket has been hung up. Remove it.";
+					LOG_INFO, "Socket has been hung up. Remove it.";
 					removeSocket(peer);
 					continue;
 				}
@@ -95,7 +95,7 @@ void threadProc() throw() {
 							DEBUG_THROW(SystemError, errno);
 						}
 					} else if(bytesRead == 0){
-						LOG_INFO,"Socket has been closed by peer. Remove it.";
+						LOG_INFO, "Socket has been closed by peer. Remove it.";
 						removeSocket(peer);
 						continue;
 					}
@@ -135,14 +135,14 @@ void threadProc() throw() {
 					}
 				}
 			} catch(Exception &e){
-				LOG_ERROR,"Exception thrown while dispatching data: file = ",
-					e.file(),", line = ",e.line(),", what = ",e.what();
+				LOG_ERROR, "Exception thrown while dispatching data: file = ",
+					e.file(), ", line = ", e.line(), ", what = ", e.what();
 				removeSocket(peer);
 			} catch(std::exception &e){
-				LOG_ERROR,"std::exception thrown while dispatching data: what = ",e.what();
+				LOG_ERROR, "std::exception thrown while dispatching data: what = ", e.what();
 				removeSocket(peer);
 			} catch(...){
-				LOG_ERROR,"Unknown exception thrown while dispatching data.";
+				LOG_ERROR, "Unknown exception thrown while dispatching data.";
 				removeSocket(peer);
 			}
 		}
@@ -163,34 +163,34 @@ void threadProc() throw() {
 			try {
 				result = (*it)();
 			} catch(Exception &e){
-				LOG_ERROR,"Exception thrown while executing an idle callback, file = ",
-					e.file(),", line = ",e.line(),": what = ",e.what();
+				LOG_ERROR, "Exception thrown while executing an idle callback, file = ",
+					e.file(), ", line = ", e.line(), ": what = ", e.what();
 			} catch(std::exception &e){
-				LOG_ERROR,"std::exception thrown while executing an idle callback: what = ",e.what();
+				LOG_ERROR, "std::exception thrown while executing an idle callback: what = ", e.what();
 			} catch(...){
-				LOG_ERROR,"Unknown exception thrown while dispatching data.";
+				LOG_ERROR, "Unknown exception thrown while dispatching data.";
 			}
 			lock.lock();
 			if(result){
 				++it;
 			} else {
-				LOG_DEBUG,"An idle callback returned false, remove it.";
+				LOG_DEBUG, "An idle callback returned false, remove it.";
 				it = g_idleCallbacks.erase(it);
 			}
 		}
 	}
 
-	LOG_INFO,"Epoll daemon stopped.";
+	LOG_INFO, "Epoll daemon stopped.";
 }
 
 }
 
 void EpollDaemon::start(){
 	if(atomicExchange(g_daemonRunning, true) != false){
-		LOG_FATAL,"Only one daemon is allowed at the same time.";
+		LOG_FATAL, "Only one daemon is allowed at the same time.";
 		std::abort();
 	}
-	LOG_INFO,"Starting epoll daemon...";
+	LOG_INFO, "Starting epoll daemon...";
 
 	g_epoll.reset(::epoll_create(4096));
 	if(!g_epoll){
@@ -199,7 +199,7 @@ void EpollDaemon::start(){
 	boost::thread(threadProc).swap(g_daemonThread);
 }
 void EpollDaemon::stop(){
-	LOG_INFO,"Stopping epoll daemon...";
+	LOG_INFO, "Stopping epoll daemon...";
 
 	atomicStore(g_daemonRunning, false);
 	if(g_daemonThread.joinable()){

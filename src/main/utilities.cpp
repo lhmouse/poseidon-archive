@@ -22,7 +22,7 @@ struct TzSetHelper {
 boost::uint64_t getUtcTime(){
 	::timespec ts;
 	if(::clock_gettime(CLOCK_REALTIME, &ts) != 0){
-		LOG_FATAL,"Realtime clock is not supported.";
+		LOG_FATAL, "Realtime clock is not supported.";
 		std::abort();
 	}
 	return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
@@ -40,7 +40,7 @@ boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
 boost::uint64_t getMonoClock(){
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
-		LOG_FATAL,"Monotonic clock is not supported.";
+		LOG_FATAL, "Monotonic clock is not supported.";
 		std::abort();
 	}
 	return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
@@ -58,7 +58,7 @@ public:
 		if(code != 0){
 			char temp[256];
 			const char *const desc = ::strerror_r(errno, temp, sizeof(temp));
-			LOG_FATAL,"Error allocating thread specific key for rand seed: ",desc;
+			LOG_FATAL, "Error allocating thread specific key for rand seed: ", desc;
 			std::abort();
 		}
 	}
