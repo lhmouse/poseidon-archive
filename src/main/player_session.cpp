@@ -5,7 +5,7 @@
 using namespace Poseidon;
 
 PlayerSession::PlayerSession(ScopedFile &socket)
-	: TcpPeer(socket)
+	: TcpPeer(socket), m_payloadLen(-1)
 {
 }
 
@@ -18,4 +18,6 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 	vuint50ToBinary(ll, write);
 	vuint50FromBinary(ll2, read, write);
 	LOG_DEBUG, "read = ", (void *)read, ", write = ", (void *)write, ", serialized = ", (write - tmp), ", ll2 = ", std::hex, ll2;
+}
+void PlayerSession::perform() const {
 }

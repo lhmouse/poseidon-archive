@@ -102,13 +102,6 @@ struct RaiiSingletonRunner : boost::noncopyable {
 #define RUN_SING_1_(name_, ln_)		RUN_SING_2_(name_, ln_)
 #define RUN_SINGLETON(name_)		RUN_SING_1_(name_, __LINE__)
 
-static void meow(){
-	LOG_WARNING, "meow!!";
-}
-static void bark(){
-	LOG_WARNING, "bark!!";
-}
-
 int main(int argc, char **argv){
 	LOG_INFO, "-------------------------- Starting up -------------------------";
 
@@ -143,8 +136,6 @@ int main(int argc, char **argv){
 		std::signal(SIGINT, sigIntProc);
 		std::signal(SIGTERM, sigTermProc);
 
-TimerDaemon::registerTimer(meow, 5000, 10000);
-TimerDaemon::registerTimer(bark, 2000, 8000);
 		LOG_INFO, "Entering modal loop...";
 		JobDispatcher::doModal();
 	} catch(Exception &e){

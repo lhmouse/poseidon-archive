@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <boost/noncopyable.hpp>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
 #include "raii.hpp"
 #include "atomic.hpp"
 

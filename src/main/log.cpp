@@ -2,7 +2,7 @@
 #include "log.hpp"
 #include "atomic.hpp"
 #include "utilities.hpp"
-#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <sys/syscall.h>
 using namespace Poseidon;

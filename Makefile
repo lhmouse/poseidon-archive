@@ -103,7 +103,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 lib_libposeidon_main_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_lib_libposeidon_main_la_OBJECTS = src/main/utilities.lo \
-	src/main/log.lo src/main/raii.lo \
+	src/main/log.lo src/main/raii.lo src/main/stream_buffer.lo \
 	src/main/singletons/job_dispatcher.lo \
 	src/main/singletons/database_daemon.lo \
 	src/main/singletons/timer_daemon.lo \
@@ -313,6 +313,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
 	src/main/raii.cpp	\
+	src/main/stream_buffer.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
 	src/main/singletons/database_daemon.cpp	\
 	src/main/singletons/timer_daemon.cpp	\
@@ -426,6 +427,8 @@ src/main/log.lo: src/main/$(am__dirstamp) \
 	src/main/$(DEPDIR)/$(am__dirstamp)
 src/main/raii.lo: src/main/$(am__dirstamp) \
 	src/main/$(DEPDIR)/$(am__dirstamp)
+src/main/stream_buffer.lo: src/main/$(am__dirstamp) \
+	src/main/$(DEPDIR)/$(am__dirstamp)
 src/main/singletons/$(am__dirstamp):
 	@$(MKDIR_P) src/main/singletons
 	@: > src/main/singletons/$(am__dirstamp)
@@ -535,6 +538,8 @@ mostlyclean-compile:
 	-rm -f src/main/singletons/timer_daemon.lo
 	-rm -f src/main/socket_server_base.$(OBJEXT)
 	-rm -f src/main/socket_server_base.lo
+	-rm -f src/main/stream_buffer.$(OBJEXT)
+	-rm -f src/main/stream_buffer.lo
 	-rm -f src/main/tcp_peer.$(OBJEXT)
 	-rm -f src/main/tcp_peer.lo
 	-rm -f src/main/utilities.$(OBJEXT)
@@ -549,6 +554,7 @@ include src/main/$(DEPDIR)/player_session.Plo
 include src/main/$(DEPDIR)/player_session_manager.Plo
 include src/main/$(DEPDIR)/raii.Plo
 include src/main/$(DEPDIR)/socket_server_base.Plo
+include src/main/$(DEPDIR)/stream_buffer.Plo
 include src/main/$(DEPDIR)/tcp_peer.Plo
 include src/main/$(DEPDIR)/utilities.Plo
 include src/main/singletons/$(DEPDIR)/database_daemon.Plo
