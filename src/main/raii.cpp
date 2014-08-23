@@ -13,7 +13,7 @@ void closeFile(int fd) throw() {
 		const int code = errno;
 		char temp[256];
 		const char *const reason = ::strerror_r(code, temp, sizeof(temp));
-		LOG_WARNING <<"::close() has failed, errno = " <<code <<": " <<reason;
+		LOG_WARNING,"::close() has failed, errno = ",code,": ",reason;
 	}
 }
 

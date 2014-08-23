@@ -35,7 +35,7 @@ public:
 
 public:
 	template<typename T>
-	Log &operator<<(const T &info) throw() {
+	Log &operator,(const T &info) throw() {
 		try {
 			m_stream <<info;
 		} catch(...){
