@@ -69,5 +69,16 @@ void TcpPeer::send(const void *data, std::size_t size){
 }
 void TcpPeer::shutdown(){
 	atomicStore(m_shutdown, true);
-	EpollDaemon::notifyWriteable(virtualSharedFromThis<TcpPeer>());
+	{
+		const boost::mutex::scoped_lock lock(m_queueMutex);
+		if(m_sendBuffer.empty()){
+			::shutdown(getFd(), SHUT_RDWR);
+		} else {
+			EpollDaemon::notifyWriteable(virtualSharedFromThis<TcpPeer>());
+		}
+	}
+}
+void TcpPeer::forceShutdown(){
+	atomicStore(m_shutdown, true);
+	::shutdown(getFd(), SHUT_RDWR);
 }

@@ -79,27 +79,20 @@ SocketServerBase::~SocketServerBase(){
 	LOG_INFO, "Destroyed socket server on ", m_bindAddr;
 }
 
-bool SocketServerBase::tryAccept() const {
+boost::shared_ptr<TcpPeer> SocketServerBase::tryAccept() const {
 	ScopedFile client(::accept(m_listen.get(), NULL, NULL));
 	if(!client){
-		return true;
+		return boost::shared_ptr<TcpPeer>();
 	}
 	AUTO(peer, onClientConnect(client));
 	if(!peer){
-		return true;
+		return boost::shared_ptr<TcpPeer>();
 	}
 	if(::ioctl(peer->getFd(), FIONBIO, &TRUE_VALUE) < 0){
 		const int code = errno;
 		LOG_ERROR, "Could not set listen socket to non-block mode.";
 		DEBUG_THROW(SystemError, code);
 	}
-	EpollDaemon::notifyReadable(peer);
 	LOG_INFO, "Client '", peer->getRemoteIp(), "' has connected.";
-	return true;
-}
-
-void SocketServerBase::handOver() const {
-	EpollDaemon::registerIdleCallback(boost::bind(
-		&SocketServerBase::tryAccept, virtualSharedFromThis<SocketServerBase>()
-	));
+	return peer;
 }

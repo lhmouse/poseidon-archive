@@ -45,6 +45,7 @@ public:
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
 	void send(const void *data, std::size_t size);
 	void shutdown();
+	void forceShutdown();
 };
 
 }

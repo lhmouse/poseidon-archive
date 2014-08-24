@@ -22,18 +22,13 @@ public:
 	SocketServerBase(const std::string &bindAddr, unsigned bindPort);
 	virtual ~SocketServerBase();
 
-private:
-	bool tryAccept() const;
-
 protected:
 	// 工厂函数。
 	// 如果该成员函数返回空指针，连接会被立即挂断。
 	virtual boost::shared_ptr<TcpPeer> onClientConnect(ScopedFile &client) const = 0;
 
 public:
-	// 交由 epoll 调度。这里使用自己的 shared_ptr 附带转移了所有权。
-	// 该对象将在 epoll 守护线程停止时被销毁。
-	void handOver() const;
+	boost::shared_ptr<TcpPeer> tryAccept() const;
 };
 
 }

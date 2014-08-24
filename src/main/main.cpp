@@ -96,58 +96,52 @@ struct RaiiSingletonRunner : boost::noncopyable {
 	}
 };
 
-}
-
-#define RUN_SING_2_(name_, ln_)		const ::RaiiSingletonRunner<name_> runner_ ## ln_ ## _
+#define RUN_SING_2_(name_, ln_)		const RaiiSingletonRunner<name_> runner_ ## ln_ ## _
 #define RUN_SING_1_(name_, ln_)		RUN_SING_2_(name_, ln_)
 #define RUN_SINGLETON(name_)		RUN_SING_1_(name_, __LINE__)
+
+void run(const OptionalMap &config){
+	AUTO_REF(logLevel, config["log_level"]);
+	if(!logLevel.empty()){
+		const int newLevel = boost::lexical_cast<int>(logLevel);
+		LOG_WARNING, "Setting log level to ", newLevel, ", was ", Log::getLevel(), "...";
+		Log::setLevel(newLevel);
+	}
+
+	//RUN_SINGLETON(DatabaseDaemon);
+	RUN_SINGLETON(TimerDaemon);
+	RUN_SINGLETON(EpollDaemon);
+
+	LOG_INFO, "Creating player session manager...";
+	EpollDaemon::addSocketServer(
+		boost::make_shared<PlayerSessionManager>(
+			config["socket_bind"], boost::lexical_cast<unsigned>(config["socket_port"])
+		)
+	);
+
+	LOG_INFO, "Creating http server...";
+	// http
+
+	LOG_INFO, "Entering modal loop...";
+	JobDispatcher::doModal();
+}
+
+}
 
 int main(int argc, char **argv){
 	LOG_INFO, "-------------------------- Starting up -------------------------";
 
-	try {
-		const char *confPath = "/var/poseidon/config/conf.rc";
-		if(1 < argc){
-			confPath = argv[1];
-		}
-		LOG_INFO, "Loading config from ", confPath, "...";
-		AUTO(const config, loadConfig(confPath));
+	LOG_INFO, "Setting up signal handlers...";
+	std::signal(SIGINT, sigIntProc);
+	std::signal(SIGTERM, sigTermProc);
 
-		AUTO_REF(logLevel, config["log_level"]);
-		if(!logLevel.empty()){
-			const int newLevel = boost::lexical_cast<int>(logLevel);
-			LOG_WARNING, "Setting log level to ", newLevel, ", was ", Log::getLevel(), "...";
-			Log::setLevel(newLevel);
-		}
-
-		//RUN_SINGLETON(DatabaseDaemon);
-		RUN_SINGLETON(TimerDaemon);
-		RUN_SINGLETON(EpollDaemon);
-
-		LOG_INFO, "Creating player session manager...";
-		boost::make_shared<PlayerSessionManager>(
-			config["socket_bind"], boost::lexical_cast<unsigned>(config["socket_port"])
-			)->handOver();
-
-		LOG_INFO, "Creating http server...";
-		// http
-
-		LOG_INFO, "Setting up signal handlers...";
-		std::signal(SIGINT, sigIntProc);
-		std::signal(SIGTERM, sigTermProc);
-
-		LOG_INFO, "Entering modal loop...";
-		JobDispatcher::doModal();
-	} catch(Exception &e){
-		LOG_ERROR, "Exception thrown in job dispatcher: file = ", e.file(), ", line = ", e.line(), ": what = ", e.what();
-		return EXIT_FAILURE;
-	} catch(std::exception &e){
-		LOG_ERROR, "std::exception thrown in job dispatcher: what = ", e.what();
-		return EXIT_FAILURE;
-	} catch(...){
-		LOG_ERROR, "Unknown exception thrown in job dispatcher";
-		return EXIT_FAILURE;
+	const char *confPath = "/var/poseidon/config/conf.rc";
+	if(1 < argc){
+		confPath = argv[1];
 	}
+	LOG_INFO, "Loading config from ", confPath, "...";
+
+	run(loadConfig(confPath));
 
 	LOG_INFO, "------------- Server has been shut down gracefully -------------";
 	return EXIT_SUCCESS;
