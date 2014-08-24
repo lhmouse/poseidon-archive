@@ -9,6 +9,7 @@
 #include <boost/cstdint.hpp>
 #include <string.h>
 #include <errno.h>
+#include "utilities.hpp"
 
 namespace Poseidon {
 
@@ -40,36 +41,11 @@ public:
 
 class SystemError : public Exception {
 private:
-	static std::string stringFromErrno(int code){
-		std::string ret;
-		ret.resize(127);
-		int count;
-#ifdef __GLIBC__
-		const char *const result = ::strerror_r(code, &ret[0], ret.size());
-		if(result != NULL){
-			ret.assign(result);
-			count = ret.size();
-#else
-		int result = ::strerror_r(code, &ret[0], ret.size());
-		if(result == 0){
-			count = std::strlen(ret.c_str());
-#endif
-		} else {
-			count = ::snprintf(&ret[0], ret.size(), "Unknown errno %d", code);
-			if(count < 0){
-				count = 0;
-			}
-		}
-		ret.resize(count);
-		return ret;
-	}
-
-private:
 	const int m_code;
 
 public:
 	SystemError(const char *file, std::size_t line, int code = errno)
-		: Exception(file, line, stringFromErrno(code)), m_code(code)
+		: Exception(file, line, getErrorDesc(code).get()), m_code(code)
 	{
 	}
 

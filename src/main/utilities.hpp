@@ -5,7 +5,9 @@
 #include <string>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
+#include <errno.h>
 
 namespace Poseidon {
 
@@ -45,6 +47,8 @@ boost::uint32_t rand32();
 boost::uint64_t rand64();
 boost::uint32_t rand32(boost::uint32_t lower, boost::uint32_t upper);
 double randDouble(double lower = 0.0, double upper = 1.0);
+
+boost::shared_ptr<const char> getErrorDesc(int errCode = errno) throw();
 
 }
 

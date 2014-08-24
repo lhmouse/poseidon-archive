@@ -56,8 +56,7 @@ public:
 	RandSeed(){
 		const int code = ::pthread_key_create(&m_key, NULL);
 		if(code != 0){
-			char temp[256];
-			const char *const desc = ::strerror_r(errno, temp, sizeof(temp));
+			AUTO(const desc, getErrorDesc());
 			LOG_FATAL, "Error allocating thread specific key for rand seed: ", desc;
 			std::abort();
 		}
@@ -116,6 +115,33 @@ double randDouble(double lower, double upper){
 		return lower;
 	}
 	return lower + rand64() / 0x1p64 * delta;
+}
+
+namespace {
+
+struct ArrayDeleter {
+	void operator()(char *p){
+		delete[] p;
+	}
+};
+
+}
+
+boost::shared_ptr<const char> getErrorDesc(int errCode) throw() {
+	char temp[1024];
+	const char *desc = ::strerror_r(errCode, temp, sizeof(temp));
+	if(desc == temp){
+		const std::size_t size = std::strlen(desc) + 1;
+		try {
+			boost::shared_ptr<char> ret(new char[size], ArrayDeleter());
+			std::memcpy(ret.get(), desc, size);
+			return ret;
+		} catch(...){
+			desc = "Insufficient memory.";
+		}
+	}
+	// desc 指向一个静态的字符串。
+	return boost::shared_ptr<const char>(boost::shared_ptr<void>(), desc);
 }
 
 }

@@ -45,11 +45,14 @@ TcpPeer::~TcpPeer(){
 	LOG_INFO, "Destroyed tcp peer, remote ip = ", m_remoteIp;
 }
 
-std::size_t TcpPeer::peekWriteAvail(void *data, std::size_t size) const {
+std::size_t TcpPeer::peekWriteAvail(void *data, std::size_t size) const throw() {
 	const boost::mutex::scoped_lock lock(m_queueMutex);
+	if(size == 0){
+		return m_sendBuffer.size();
+	}
 	return m_sendBuffer.peek(data, size);
 }
-void TcpPeer::notifyWritten(std::size_t size){
+void TcpPeer::notifyWritten(std::size_t size) throw() {
 	const boost::mutex::scoped_lock lock(m_queueMutex);
 	m_sendBuffer.discard(size);
 }
@@ -62,9 +65,9 @@ void TcpPeer::send(const void *data, std::size_t size){
 		const boost::mutex::scoped_lock lock(m_queueMutex);
 		m_sendBuffer.put(data, size);
 	}
-	EpollDaemon::addPeer(virtualSharedFromThis<TcpPeer>());
+	EpollDaemon::notifyWriteable(virtualSharedFromThis<TcpPeer>());
 }
 void TcpPeer::shutdown(){
 	atomicStore(m_shutdown, true);
-	EpollDaemon::addPeer(virtualSharedFromThis<TcpPeer>());
+	EpollDaemon::notifyWriteable(virtualSharedFromThis<TcpPeer>());
 }

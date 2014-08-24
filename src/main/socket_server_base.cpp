@@ -10,6 +10,12 @@
 #include "tcp_peer.hpp"
 using namespace Poseidon;
 
+namespace {
+
+const int TRUE_VALUE = true;
+
+}
+
 SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPort){
 	union {
 		::sockaddr sa;
@@ -48,7 +54,6 @@ SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPor
 		LOG_ERROR, "Error creating socket.";
 		DEBUG_THROW(SystemError, code);
 	}
-	const int TRUE_VALUE = true;
 	if(::setsockopt(m_listen.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 		const int code = errno;
 		LOG_ERROR, "Could not set socket to reuse address.";
@@ -83,7 +88,12 @@ bool SocketServerBase::tryAccept() const {
 	if(!peer){
 		return true;
 	}
-	EpollDaemon::addPeer(peer);
+	if(::ioctl(peer->getFd(), FIONBIO, &TRUE_VALUE) < 0){
+		const int code = errno;
+		LOG_ERROR, "Could not set listen socket to non-block mode.";
+		DEBUG_THROW(SystemError, code);
+	}
+	EpollDaemon::notifyReadable(peer);
 	LOG_INFO, "Client '", peer->getRemoteIp(), "' has connected.";
 	return true;
 }

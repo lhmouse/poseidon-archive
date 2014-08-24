@@ -38,8 +38,9 @@ public:
 		return atomicLoad(m_shutdown);
 	}
 
-	std::size_t peekWriteAvail(void *data, std::size_t size) const;
-	void notifyWritten(std::size_t size);
+	// 如果 size 为零则返回所有待发送字节数。
+	std::size_t peekWriteAvail(void *data, std::size_t size) const throw();
+	void notifyWritten(std::size_t size) throw();
 
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
 	void send(const void *data, std::size_t size);

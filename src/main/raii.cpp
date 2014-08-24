@@ -4,16 +4,15 @@
 #include <errno.h>
 #include <string.h>
 #include "log.hpp"
+#include "utilities.hpp"
 using namespace Poseidon;
 
 namespace Poseidon {
 
 void closeFile(int fd) throw() {
 	if(::close(fd) != 0){
-		const int code = errno;
-		char temp[256];
-		const char *const reason = ::strerror_r(code, temp, sizeof(temp));
-		LOG_WARNING, "::close() has failed, errno = ", code, ": ", reason;
+		AUTO(const desc, getErrorDesc());
+		LOG_WARNING, "::close() has failed: ", desc.get();
 	}
 }
 
