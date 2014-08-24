@@ -47,17 +47,11 @@ TcpPeer::~TcpPeer(){
 
 std::size_t TcpPeer::peekWriteAvail(void *data, std::size_t size) const {
 	const boost::mutex::scoped_lock lock(m_queueMutex);
-	const std::size_t avail = std::min(m_sendQueue.size(), size);
-	AUTO(it, m_sendQueue.begin());
-	for(std::size_t i = 0; i < avail; ++i){
-		((unsigned char *)data)[i] = *it;
-		++it;
-	}
-	return avail;
+	return m_sendBuffer.peek(data, size);
 }
 void TcpPeer::notifyWritten(std::size_t size){
 	const boost::mutex::scoped_lock lock(m_queueMutex);
-	m_sendQueue.erase(m_sendQueue.begin(), m_sendQueue.begin() + size);
+	m_sendBuffer.discard(size);
 }
 
 void TcpPeer::send(const void *data, std::size_t size){
@@ -66,7 +60,7 @@ void TcpPeer::send(const void *data, std::size_t size){
 	}
 	{
 		const boost::mutex::scoped_lock lock(m_queueMutex);
-		m_sendQueue.insert(m_sendQueue.end(), (const char *)data, (const char *)data + size);
+		m_sendBuffer.put(data, size);
 	}
 	EpollDaemon::addPeer(virtualSharedFromThis<TcpPeer>());
 }

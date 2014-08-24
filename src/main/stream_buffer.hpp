@@ -37,6 +37,7 @@ public:
 	// 返回值是 data 中写入的字节数并且不大于 size。
 	std::size_t peek(void *data, std::size_t size) const;
 	std::size_t get(void *data, std::size_t size);
+	std::size_t discard(std::size_t);
 	// 向末尾追加指定的字节数。
 	void put(const void *data, std::size_t size);
 

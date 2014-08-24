@@ -7,7 +7,7 @@ using namespace Poseidon;
 struct Poseidon::ImplDisposableBuffer {
 	std::size_t readPos;
 	std::size_t writePos;
-	unsigned char data[3];
+	unsigned char data[1024];
 
 	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
 	// 因此在 list 中会被 value-initialize 即填零，然而这是没有任何意义的。
@@ -160,6 +160,28 @@ std::size_t StreamBuffer::get(void *data, std::size_t size){
 		const std::size_t toCopy = std::min(ret - copied, front.writePos - front.readPos);
 		std::memcpy(write, front.data + front.readPos, toCopy);
 		write += toCopy;
+		front.readPos += toCopy;
+		m_size -= toCopy;
+		copied += toCopy;
+		if(copied == ret){
+			break;
+		}
+		popFrontPooled(m_chunks);
+	}
+	return ret;
+}
+std::size_t StreamBuffer::discard(std::size_t size){
+	if(m_size == 0){
+		return 0;
+	}
+
+	const std::size_t ret = std::min(m_size, size);
+	std::size_t copied = 0;
+	for(;;){
+		assert(!m_chunks.empty());
+
+		AUTO_REF(front, m_chunks.front());
+		const std::size_t toCopy = std::min(ret - copied, front.writePos - front.readPos);
 		front.readPos += toCopy;
 		m_size -= toCopy;
 		copied += toCopy;

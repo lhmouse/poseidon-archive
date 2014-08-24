@@ -2,13 +2,13 @@
 #define POSEIDON_TCP_PEER_HPP_
 
 #include <string>
-#include <deque>
 #include <cstddef>
 #include <boost/noncopyable.hpp>
 #include <boost/thread/mutex.hpp>
+#include "virtual_shared_from_this.hpp"
 #include "raii.hpp"
 #include "atomic.hpp"
-#include "virtual_shared_from_this.hpp"
+#include "stream_buffer.hpp"
 
 namespace Poseidon {
 
@@ -21,7 +21,7 @@ private:
 
 	volatile bool m_shutdown;
 	mutable boost::mutex m_queueMutex;
-	std::deque<unsigned char> m_sendQueue;
+	StreamBuffer m_sendBuffer;
 
 protected:
 	explicit TcpPeer(ScopedFile &socket);

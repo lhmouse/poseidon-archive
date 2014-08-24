@@ -11,7 +11,7 @@ PlayerSession::PlayerSession(ScopedFile &socket)
 
 void PlayerSession::onReadAvail(const void *data, std::size_t size){
 	LOG_DEBUG, "Received ", std::string((const char *)data, size);
-	send("meow!!!", 7);
+	send("meow meow meow!!!", 17);
 	unsigned char tmp[7];
 	unsigned long long ll = 0x12345, ll2;
 	unsigned char *write = tmp, *read = tmp;
