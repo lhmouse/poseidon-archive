@@ -25,8 +25,9 @@ volatile bool g_daemonRunning = false;
 ScopedFile g_readerEpoll;
 boost::thread g_readerThread;
 
-boost::mutex g_readableMutex;
 std::set<boost::shared_ptr<TcpPeer> > g_readableEpolled;
+
+std::set<boost::shared_ptr<TcpPeer> > g_readableQueue;
 
 boost::mutex g_serverMutex;
 std::set<boost::shared_ptr<const SocketServerBase> > g_servers;
@@ -79,42 +80,67 @@ bool readerLoop(unsigned timeout){
 				DEBUG_THROW(SystemError, err);
 			}
 			if(event.events & EPOLLIN){
-				for(;;){
-					unsigned char data[1024];
-					const ::ssize_t bytesRead = ::recv(peer->getFd(), data, sizeof(data), MSG_NOSIGNAL);
-					if(bytesRead < 0){
-						if(errno == EINTR){
-							continue;
-						}
-						if(errno == EAGAIN){
-							break;
-						}
-						DEBUG_THROW(SystemError, errno);
-					} else if(bytesRead == 0){
-						LOG_INFO, "Socket has been closed by peer. Remove it.";
-						removeReaderEpolled(peer);
-						break;
-					}
-					peer->onReadAvail(data, bytesRead);
-				}
+				g_readableQueue.insert(peer);
 			}
 		} catch(Exception &e){
-			LOG_ERROR, "Exception thrown while dispatching data: file = ", e.file(),
+			LOG_ERROR, "Exception thrown while reading socket: file = ", e.file(),
 				", line = ", e.line(), ", what = ", e.what();
 			removeReaderEpolled(peer);
 			peer->forceShutdown();
 		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while dispatching data: what = ", e.what();
+			LOG_ERROR, "std::exception thrown while reading socket: what = ", e.what();
 			removeReaderEpolled(peer);
 			peer->forceShutdown();
 		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while dispatching data.";
+			LOG_ERROR, "Unknown exception thrown while reading socket.";
 			removeReaderEpolled(peer);
 			peer->forceShutdown();
 		}
 	}
 
 	bool notIdle = false;
+	AUTO(it, g_readableQueue.begin());
+	while(it != g_readableQueue.end()){
+		AUTO(const peer, *it);
+		try {
+			if(peer->hasBeenShutdown()){
+				g_readableQueue.erase(it++);
+				continue;
+			}
+
+			unsigned char data[1024];
+			const ::ssize_t bytesRead = ::recv(peer->getFd(), data, sizeof(data), MSG_NOSIGNAL);
+			if(bytesRead < 0){
+				if(errno == EINTR){
+					continue;
+				}
+				if(errno == EAGAIN){
+					continue;
+				}
+				DEBUG_THROW(SystemError, errno);
+			} else if(bytesRead == 0){
+				LOG_INFO, "Socket has been closed by peer. Remove it.";
+				removeReaderEpolled(peer);
+				g_readableQueue.erase(it++);
+				continue;
+			}
+			peer->onReadAvail(data, bytesRead);
+		} catch(Exception &e){
+			LOG_ERROR, "Exception thrown while dispatching data: file = ", e.file(),
+				", line = ", e.line(), ", what = ", e.what();
+			peer->forceShutdown();
+			g_readableQueue.erase(it++);
+		} catch(std::exception &e){
+			LOG_ERROR, "std::exception thrown while dispatching data: what = ", e.what();
+			peer->forceShutdown();
+			g_readableQueue.erase(it++);
+		} catch(...){
+			LOG_ERROR, "Unknown exception thrown while dispatching data.";
+			peer->forceShutdown();
+			g_readableQueue.erase(it++);
+		}
+	}
+
 	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 	servers.reserve(16);
 	{
@@ -208,11 +234,11 @@ bool writerLoop(unsigned timeout){
 			removeWriterEpolled(peer);
 			peer->forceShutdown();
 		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while dispatching data: what = ", e.what();
+			LOG_ERROR, "std::exception thrown while writing socket: what = ", e.what();
 			removeWriterEpolled(peer);
 			peer->forceShutdown();
 		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while dispatching data.";
+			LOG_ERROR, "Unknown exception thrown while writing socket.";
 			removeWriterEpolled(peer);
 			peer->forceShutdown();
 		}
@@ -265,10 +291,10 @@ bool writerLoop(unsigned timeout){
 				", line = ", e.line(), ", what = ", e.what();
 			peer->forceShutdown();
 		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while dispatching data: what = ", e.what();
+			LOG_ERROR, "std::exception thrown while writing socket: what = ", e.what();
 			peer->forceShutdown();
 		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while dispatching data.";
+			LOG_ERROR, "Unknown exception thrown while writing socket.";
 			peer->forceShutdown();
 		}
 	}

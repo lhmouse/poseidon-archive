@@ -18,7 +18,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 	vuint50ToBinary(ll, write);
 	vuint50FromBinary(ll2, read, write);
 	LOG_DEBUG, "read = ", (void *)read, ", write = ", (void *)write, ", serialized = ", (write - tmp), ", ll2 = ", std::hex, ll2;*/
-	for(int i = 0; i < 6553600; ++i){
+	for(int i = 0; i < 65536; ++i){
 		send("\0", 1);
 	}
 }
