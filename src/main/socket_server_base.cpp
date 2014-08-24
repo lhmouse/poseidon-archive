@@ -28,12 +28,12 @@ SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPor
 	const char *text;
 	if(::inet_pton(AF_INET, bindAddr.c_str(), &u.sin.sin_addr) == 1){
 		u.sin.sin_family = AF_INET;
-		u.sin.sin_port = ::htons(bindPort);
+		u.sin.sin_port = htons(bindPort);
 		salen = sizeof(::sockaddr_in);
 		text = ::inet_ntop(AF_INET, &u.sin.sin_addr, &m_bindAddr[0], m_bindAddr.size());
 	} else if(::inet_pton(AF_INET6, bindAddr.c_str(), &u.sin6.sin6_addr) == 1){
 		u.sin6.sin6_family = AF_INET6;
-		u.sin6.sin6_port = ::htons(bindPort);
+		u.sin6.sin6_port = htons(bindPort);
 		salen = sizeof(::sockaddr_in6);
 		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &m_bindAddr[0], m_bindAddr.size());
 	} else {
