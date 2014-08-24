@@ -7,7 +7,7 @@ using namespace Poseidon;
 struct Poseidon::ImplDisposableBuffer {
 	std::size_t readPos;
 	std::size_t writePos;
-	unsigned char data[3];
+	unsigned char data[256];
 
 	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
 	// 因此在 list 中会被 value-initialize 即填零，然而这是没有任何意义的。
@@ -44,6 +44,12 @@ void popFrontPooled(std::list<ImplDisposableBuffer> &src){
 	const boost::mutex::scoped_lock lock(g_poolMutex);
 	g_pool.splice(g_pool.begin(), src, src.begin());
 }
+void clearPooled(std::list<ImplDisposableBuffer> &src){
+	assert(!src.empty());
+
+	const boost::mutex::scoped_lock lock(g_poolMutex);
+	g_pool.splice(g_pool.begin(), src);
+}
 
 }
 
@@ -60,10 +66,11 @@ StreamBuffer &StreamBuffer::operator=(const StreamBuffer &rhs){
 	return *this;
 }
 StreamBuffer::~StreamBuffer(){
+	clear();
 }
 
 void StreamBuffer::clear(){
-	m_chunks.clear();
+	clearPooled(m_chunks);
 	m_size = 0;
 }
 
