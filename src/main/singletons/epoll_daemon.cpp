@@ -134,7 +134,7 @@ void threadProc(){
 				continue;
 			}
 			if(event.events & EPOLLIN){
-				bool toRemove = false;
+				bool toRemove = true;
 				for(;;){
 					unsigned char data[1024];
 					const ::ssize_t bytesRead = ::recv(peer->getFd(), data, sizeof(data), 0);
@@ -143,15 +143,14 @@ void threadProc(){
 							continue;
 						}
 						if(errno == EAGAIN){
+							toRemove = false;
 							break;
 						}
 						AUTO(const desc, getErrorDesc(errno));
 						LOG_WARNING, "Read error in socket: ", desc;
-						toRemove = true;
 						break;
 					} else if(bytesRead == 0){
 						LOG_INFO, "Socket has been closed by peer. Remove it.";
-						toRemove = true;
 						break;
 					}
 					try {
@@ -159,15 +158,12 @@ void threadProc(){
 					} catch(Exception &e){
 						LOG_ERROR, "Exception thrown while dispatching data: file = ", e.file(),
 							", line = ", e.line(), ", what = ", e.what();
-						toRemove = true;
 						break;
 					} catch(std::exception &e){
 						LOG_ERROR, "std::exception thrown while dispatching data: what = ", e.what();
-						toRemove = true;
 						break;
 					} catch(...){
 						LOG_ERROR, "Unknown exception thrown while dispatching data.";
-						toRemove = true;
 						break;
 					}
 				}
