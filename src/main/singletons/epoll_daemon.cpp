@@ -71,7 +71,7 @@ void threadProc() throw() {
 			LOG_ERROR, "::epoll_wait() has failed: ", desc;
 		} else for(std::size_t i = 0; i < (unsigned)ready; ++i){
 			epoll_event &event = events[i];
-			boost::shared_ptr<TcpPeer> peer = ((TcpPeer *)event.data.ptr)->shared_from_this();
+			AUTO(const peer, static_cast<TcpPeer *>(event.data.ptr)->virtualSharedFromThis<TcpPeer>());
 			try {
 				if(event.events & EPOLLHUP){
 					LOG_INFO, "Socket has been hung up. Remove it.";
@@ -209,11 +209,10 @@ void EpollDaemon::stop(){
 	g_idleCallbacks.clear();
 }
 
-void EpollDaemon::registerTcpPeer(const boost::shared_ptr<TcpPeer> &readable){
-	addSocket(readable);
-}
-void EpollDaemon::pendWrite(const boost::shared_ptr<TcpPeer> &writeable){
-	addSocket(writeable);
+void EpollDaemon::addPeer(const boost::shared_ptr<TcpPeer> &peer){
+	assert(peer);
+
+	addSocket(peer);
 }
 void EpollDaemon::registerIdleCallback(boost::function<bool ()> callback){
 	const boost::mutex::scoped_lock lock(g_mutex);

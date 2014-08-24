@@ -83,13 +83,13 @@ bool SocketServerBase::tryAccept() const {
 	if(!peer){
 		return true;
 	}
-	EpollDaemon::registerTcpPeer(peer);
+	EpollDaemon::addPeer(peer);
 	LOG_INFO, "Client '", peer->getRemoteIp(), "' has connected.";
 	return true;
 }
 
 void SocketServerBase::handOver() const {
 	EpollDaemon::registerIdleCallback(boost::bind(
-		&SocketServerBase::tryAccept, shared_from_this()
+		&SocketServerBase::tryAccept, virtualSharedFromThis<SocketServerBase>()
 	));
 }

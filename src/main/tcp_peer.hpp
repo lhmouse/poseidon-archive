@@ -5,15 +5,15 @@
 #include <deque>
 #include <cstddef>
 #include <boost/noncopyable.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <boost/thread/mutex.hpp>
 #include "raii.hpp"
 #include "atomic.hpp"
+#include "virtual_shared_from_this.hpp"
 
 namespace Poseidon {
 
 class TcpPeer : boost::noncopyable
-	, public boost::enable_shared_from_this<TcpPeer>
+	, public virtual VirtualSharedFromThis
 {
 private:
 	ScopedFile m_socket;

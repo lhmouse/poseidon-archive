@@ -27,7 +27,7 @@ void JobBase::pend() const {
 		} else {
 			g_queue.splice(g_queue.end(), g_pool, g_pool.begin());
 		}
-		g_queue.back() = shared_from_this();
+		g_queue.back() = virtualSharedFromThis<JobBase>();
 	}
 	g_newJobAvail.notify_one();
 }

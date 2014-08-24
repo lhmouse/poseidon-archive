@@ -68,9 +68,9 @@ void TcpPeer::send(const void *data, std::size_t size){
 		const boost::mutex::scoped_lock lock(m_queueMutex);
 		m_sendQueue.insert(m_sendQueue.end(), (const char *)data, (const char *)data + size);
 	}
-	EpollDaemon::pendWrite(shared_from_this());
+	EpollDaemon::addPeer(virtualSharedFromThis<TcpPeer>());
 }
 void TcpPeer::shutdown(){
 	atomicStore(m_shutdown, true);
-	EpollDaemon::pendWrite(shared_from_this());
+	EpollDaemon::addPeer(virtualSharedFromThis<TcpPeer>());
 }

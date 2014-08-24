@@ -3,8 +3,8 @@
 
 #include <string>
 #include <boost/noncopyable.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include "raii.hpp"
+#include "virtual_shared_from_this.hpp"
 
 namespace Poseidon {
 
@@ -12,7 +12,7 @@ class TcpPeer;
 
 // 抽象工厂模式
 class SocketServerBase : boost::noncopyable
-	, public boost::enable_shared_from_this<SocketServerBase>
+	, public virtual VirtualSharedFromThis
 {
 private:
 	std::string m_bindAddr;

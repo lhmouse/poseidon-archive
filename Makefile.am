@@ -31,6 +31,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
 	src/main/raii.cpp	\
+	src/main/virtual_shared_from_this.cpp	\
 	src/main/stream_buffer.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
 	src/main/singletons/database_daemon.cpp	\

@@ -1,13 +1,13 @@
 #ifndef POSEIDON_JOB_DISPATCHER_HPP_
 #define POSEIDON_JOB_DISPATCHER_HPP_
 
-#include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
+#include "../virtual_shared_from_this.hpp"
 
 namespace Poseidon {
 
 class JobBase
-	: public boost::enable_shared_from_this<JobBase>
+	: public virtual VirtualSharedFromThis
 {
 public:
 	virtual ~JobBase();
