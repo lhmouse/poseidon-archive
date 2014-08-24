@@ -7,7 +7,7 @@ using namespace Poseidon;
 struct Poseidon::ImplDisposableBuffer {
 	std::size_t readPos;
 	std::size_t writePos;
-	unsigned char data[256];
+	unsigned char data[3];
 
 	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
 	// 因此在 list 中会被 value-initialize 即填零，然而这是没有任何意义的。
@@ -45,7 +45,9 @@ void popFrontPooled(std::list<ImplDisposableBuffer> &src){
 	g_pool.splice(g_pool.begin(), src, src.begin());
 }
 void clearPooled(std::list<ImplDisposableBuffer> &src){
-	assert(!src.empty());
+	if(src.empty()){
+		return;
+	}
 
 	const boost::mutex::scoped_lock lock(g_poolMutex);
 	g_pool.splice(g_pool.begin(), src);
@@ -121,6 +123,10 @@ void StreamBuffer::put(unsigned char by){
 }
 
 std::size_t StreamBuffer::peek(void *data, std::size_t size) const {
+	if(m_size == 0){
+		return 0;
+	}
+
 	const std::size_t ret = std::min(m_size, size);
 	unsigned char *write = (unsigned char *)data;
 	std::size_t copied = 0;
@@ -140,6 +146,10 @@ std::size_t StreamBuffer::peek(void *data, std::size_t size) const {
 	return ret;
 }
 std::size_t StreamBuffer::get(void *data, std::size_t size){
+	if(m_size == 0){
+		return 0;
+	}
+
 	const std::size_t ret = std::min(m_size, size);
 	unsigned char *write = (unsigned char *)data;
 	std::size_t copied = 0;
@@ -187,4 +197,44 @@ void StreamBuffer::put(const void *data, std::size_t size){
 void StreamBuffer::swap(StreamBuffer &rhs){
 	m_chunks.swap(rhs.m_chunks);
 	std::swap(m_size, rhs.m_size);
+}
+
+StreamBuffer StreamBuffer::cut(std::size_t size){
+	StreamBuffer ret;
+	if(m_size <= size){
+		ret.swap(*this);
+	} else {
+		AUTO(it, m_chunks.begin());
+		std::size_t total = 0; // 这是 [m_chunks.begin(), it) 的字节数，不含零头。
+		while(total < size){
+			assert(it != m_chunks.end());
+
+			const std::size_t remaining = size - total;
+			const std::size_t avail = it->writePos - it->readPos;
+			if(remaining < avail){
+				pushBackPooled(ret.m_chunks);
+				AUTO_REF(back, ret.m_chunks.back());
+				std::memcpy(back.data, it->data + it->readPos, remaining);
+				back.writePos = remaining;
+				it->readPos += remaining;
+				ret.m_size += remaining;
+				m_size -= remaining;
+				break;
+			}
+			total += avail;
+			++it;
+		}
+		ret.m_chunks.splice(ret.m_chunks.begin(), m_chunks, m_chunks.begin(), it);
+		ret.m_size += total;
+		m_size -= total;
+	}
+	return ret;
+}
+void StreamBuffer::splice(StreamBuffer &src){
+	if(&src == this){
+		return;
+	}
+	m_chunks.splice(m_chunks.end(), src.m_chunks);
+	m_size += src.m_size;
+	src.m_size = 0;
 }
