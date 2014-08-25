@@ -45,14 +45,15 @@ TcpPeer::~TcpPeer(){
 	LOG_INFO, "Destroyed tcp peer, remote ip = ", m_remoteIp;
 }
 
-std::size_t TcpPeer::peekWriteAvail(void *data, std::size_t size) const throw() {
-	const boost::mutex::scoped_lock lock(m_queueMutex);
+std::size_t TcpPeer::peekWriteAvail(boost::mutex::scoped_lock &lock, void *data, std::size_t size) const {
+	boost::mutex::scoped_lock(m_queueMutex).swap(lock);
 	if(size == 0){
 		return m_sendBuffer.size();
+	} else {
+		return m_sendBuffer.peek(data, size);
 	}
-	return m_sendBuffer.peek(data, size);
 }
-void TcpPeer::notifyWritten(std::size_t size) throw() {
+void TcpPeer::notifyWritten(std::size_t size){
 	const boost::mutex::scoped_lock lock(m_queueMutex);
 	m_sendBuffer.discard(size);
 }

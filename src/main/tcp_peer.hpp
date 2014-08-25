@@ -39,10 +39,12 @@ public:
 	}
 
 	// 如果 size 为零则返回所有待发送字节数。
-	std::size_t peekWriteAvail(void *data, std::size_t size) const throw();
-	void notifyWritten(std::size_t size) throw();
+	std::size_t peekWriteAvail(boost::mutex::scoped_lock &lock,
+		void *data, std::size_t size) const;
+	void notifyWritten(std::size_t size);
 
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
+
 	void send(const void *data, std::size_t size);
 	void shutdown();
 	void forceShutdown();

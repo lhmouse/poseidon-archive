@@ -202,25 +202,28 @@ bool writerLoop(unsigned timeout){
 			if(event.events & EPOLLOUT){
 				notIdle = true;
 				unsigned char data[1024];
-				const std::size_t bytesToWrite = peer->peekWriteAvail(data, sizeof(data));
-				if(bytesToWrite > 0){
-					const ::ssize_t bytesWritten = ::send(peer->getFd(), data, bytesToWrite, MSG_NOSIGNAL);
-					if(bytesWritten < 0){
-						if((errno == EINTR) || (errno == EAGAIN)){
-							continue;
-						}
-						DEBUG_THROW(SystemError, errno);
-					} else if(bytesWritten == 0){
-						continue;
-					}
-					peer->notifyWritten(bytesWritten);
-				} else {
-					if(peer->hasBeenShutdown()){
-						peer->forceShutdown();
+				std::size_t bytesToWrite;
+				{
+					boost::mutex::scoped_lock lock;
+					bytesToWrite = peer->peekWriteAvail(lock, data, sizeof(data));
+					if(bytesToWrite == 0){
 						removeWriteable(peer);
+						if(peer->hasBeenShutdown()){
+							peer->forceShutdown();
+						}
 						continue;
 					}
 				}
+				const ::ssize_t bytesWritten = ::send(peer->getFd(), data, bytesToWrite, MSG_NOSIGNAL);
+				if(bytesWritten < 0){
+					if((errno == EINTR) || (errno == EAGAIN)){
+						continue;
+					}
+					DEBUG_THROW(SystemError, errno);
+				} else if(bytesWritten == 0){
+					continue;
+				}
+				peer->notifyWritten(bytesWritten);
 			}
 		} catch(Exception &e){
 			LOG_ERROR, "Exception thrown while writing socket: file = ", e.file(),
