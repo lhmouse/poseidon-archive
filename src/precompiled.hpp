@@ -44,7 +44,7 @@ char (&countOfHelper(const Type (&)[COUNT]))[COUNT];
 
 #define DECLTYPE(expr)			__typeof__(expr)
 #define AUTO(id, init)			DECLTYPE(::Poseidon::valueOfHelper(init)) id(init)
-#define AUTO_REF(id, init)		DECLTYPE(init) &id(init)
+#define AUTO_REF(id, init)		DECLTYPE(init) &id = (init)
 
 #define COUNT_OF(ar)			sizeof(::Poseidon::countOfHelper(ar))
 
