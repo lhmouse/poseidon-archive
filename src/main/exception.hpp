@@ -2,7 +2,7 @@
 #define POSEIDON_EXCEPTION_HPP_
 
 #include <string>
-#include <exception>
+#include <stdexcept>
 #include <cstdio>
 #include <cstddef>
 #include <cstring>
@@ -13,15 +13,14 @@
 
 namespace Poseidon {
 
-class Exception : public std::exception {
+class Exception : public std::runtime_error {
 protected:
 	const char *const m_file;
 	const std::size_t m_line;
-	const std::string m_what;
 
 public:
 	Exception(const char *file, std::size_t line, const std::string &what)
-		: m_file(file), m_line(line), m_what(what)
+		: std::runtime_error(what), m_file(file), m_line(line)
 	{
 	}
 	~Exception() throw() {
@@ -33,9 +32,6 @@ public:
 	}
 	std::size_t line() const throw() {
 		return m_line;
-	}
-	const char *what() const throw() {
-		return m_what.c_str();
 	}
 };
 
