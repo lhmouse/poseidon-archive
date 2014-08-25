@@ -25,37 +25,40 @@ volatile bool g_daemonRunning = false;
 ScopedFile g_readerEpoll;
 boost::thread g_readerThread;
 
-std::set<boost::shared_ptr<TcpPeer> > g_readableEpolled;
-
-std::set<boost::shared_ptr<TcpPeer> > g_readableQueue;
+std::set<boost::shared_ptr<TcpPeer> > g_readable;
 
 boost::mutex g_serverMutex;
 std::set<boost::shared_ptr<const SocketServerBase> > g_servers;
 
-int addReaderEpolled(const boost::shared_ptr<TcpPeer> &peer){
-	AUTO(const result, g_readableEpolled.insert(peer));
+int addReadable(const boost::shared_ptr<TcpPeer> &peer){
+	AUTO(const result, g_readable.insert(peer));
 	if(result.second){
 		::epoll_event event;
-		event.events = EPOLLHUP | EPOLLERR | EPOLLIN | EPOLLET;
+		event.events = EPOLLHUP | EPOLLERR | EPOLLIN;
 		event.data.ptr = peer.get();
 		if(::epoll_ctl(g_readerEpoll.get(), EPOLL_CTL_ADD, peer->getFd(), &event) != 0){
-			g_readableEpolled.erase(result.first);
+			g_readable.erase(result.first);
 			return errno;
 		}
 	}
 	return 0;
 }
-void removeReaderEpolled(const boost::shared_ptr<TcpPeer> &peer){
-	AUTO(const it, g_readableEpolled.find(peer));
-	if(it == g_readableEpolled.end()){
+void removeReadable(const boost::shared_ptr<TcpPeer> &peer){
+	AUTO(const it, g_readable.find(peer));
+	if(it == g_readable.end()){
 		return;
 	}
-	g_readableEpolled.erase(it);
-	::epoll_ctl(g_readerEpoll.get(), EPOLL_CTL_DEL, peer->getFd(), NULL);
+	g_readable.erase(it);
+	if(::epoll_ctl(g_readerEpoll.get(), EPOLL_CTL_DEL, peer->getFd(), NULL)){
+		AUTO(const desc, getErrorDesc());
+		LOG_WARNING, "Epoll failed to remove socket: ", desc;
+	}
 }
 
 bool readerLoop(unsigned timeout){
-	::epoll_event events[64];
+	bool notIdle = false;
+
+	::epoll_event events[256];
 	const int ready = ::epoll_wait(g_readerEpoll.get(), events, COUNT_OF(events), timeout);
 	if(ready < 0){
 		AUTO(const desc, getErrorDesc());
@@ -68,7 +71,7 @@ bool readerLoop(unsigned timeout){
 		try {
 			if(event.events & EPOLLHUP){
 				LOG_INFO, "Socket has been hung up. Remove it.";
-				removeReaderEpolled(peer);
+				EpollDaemon::resetPeer(peer);
 				continue;
 			}
 			if(event.events & EPOLLERR){
@@ -80,64 +83,31 @@ bool readerLoop(unsigned timeout){
 				DEBUG_THROW(SystemError, err);
 			}
 			if(event.events & EPOLLIN){
-				g_readableQueue.insert(peer);
+				notIdle = true;
+				unsigned char data[1024];
+				const ::ssize_t bytesRead = ::recv(peer->getFd(), data, sizeof(data), MSG_NOSIGNAL);
+				if(bytesRead < 0){
+					if((errno == EINTR) || (errno == EAGAIN)){
+						continue;
+					}
+					DEBUG_THROW(SystemError, errno);
+				} else if(bytesRead == 0){
+					LOG_INFO, "Socket has been closed by peer. Remove it.";
+					removeReadable(peer);
+					continue;
+				}
+				peer->onReadAvail(data, bytesRead);
 			}
 		} catch(Exception &e){
 			LOG_ERROR, "Exception thrown while reading socket: file = ", e.file(),
 				", line = ", e.line(), ", what = ", e.what();
-			removeReaderEpolled(peer);
-			peer->forceShutdown();
+			EpollDaemon::resetPeer(peer);
 		} catch(std::exception &e){
 			LOG_ERROR, "std::exception thrown while reading socket: what = ", e.what();
-			removeReaderEpolled(peer);
-			peer->forceShutdown();
+			EpollDaemon::resetPeer(peer);
 		} catch(...){
 			LOG_ERROR, "Unknown exception thrown while reading socket.";
-			removeReaderEpolled(peer);
-			peer->forceShutdown();
-		}
-	}
-
-	bool notIdle = false;
-	AUTO(it, g_readableQueue.begin());
-	while(it != g_readableQueue.end()){
-		AUTO(const peer, *it);
-		try {
-			if(peer->hasBeenShutdown()){
-				g_readableQueue.erase(it++);
-				continue;
-			}
-
-			unsigned char data[1024];
-			const ::ssize_t bytesRead = ::recv(peer->getFd(), data, sizeof(data), MSG_NOSIGNAL);
-			if(bytesRead < 0){
-				if(errno == EINTR){
-					continue;
-				}
-				if(errno == EAGAIN){
-					continue;
-				}
-				DEBUG_THROW(SystemError, errno);
-			} else if(bytesRead == 0){
-				LOG_INFO, "Socket has been closed by peer. Remove it.";
-				removeReaderEpolled(peer);
-				g_readableQueue.erase(it++);
-				continue;
-			}
-			peer->onReadAvail(data, bytesRead);
-		} catch(Exception &e){
-			LOG_ERROR, "Exception thrown while dispatching data: file = ", e.file(),
-				", line = ", e.line(), ", what = ", e.what();
-			peer->forceShutdown();
-			g_readableQueue.erase(it++);
-		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while dispatching data: what = ", e.what();
-			peer->forceShutdown();
-			g_readableQueue.erase(it++);
-		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while dispatching data.";
-			peer->forceShutdown();
-			g_readableQueue.erase(it++);
+			EpollDaemon::resetPeer(peer);
 		}
 	}
 
@@ -153,7 +123,8 @@ bool readerLoop(unsigned timeout){
 			if(!peer){
 				continue;
 			}
-			addReaderEpolled(peer);
+			notIdle = true;
+			addReadable(peer);
 		} catch(Exception &e){
 			LOG_ERROR, "Exception thrown while accepting client: file = ", e.file(),
 				", line = ", e.line(), ", what = ", e.what();
@@ -163,6 +134,7 @@ bool readerLoop(unsigned timeout){
 			LOG_ERROR, "Unknown exception thrown while accepting client.";
 		}
 	}
+
 	return notIdle;
 }
 
@@ -170,35 +142,40 @@ bool readerLoop(unsigned timeout){
 ScopedFile g_writerEpoll;
 boost::thread g_writerThread;
 
-std::set<boost::shared_ptr<TcpPeer> > g_writeableEpolled;
-
 boost::mutex g_writeableMutex;
-std::set<boost::shared_ptr<TcpPeer> > g_writeableQueue;
+std::set<boost::shared_ptr<TcpPeer> > g_writeable;
 
-int addWriterEpolled(const boost::shared_ptr<TcpPeer> &peer){
-	AUTO(const result, g_writeableEpolled.insert(peer));
+int addWritable(const boost::shared_ptr<TcpPeer> &peer){
+	const boost::mutex::scoped_lock lock(g_writeableMutex);
+	AUTO(const result, g_writeable.insert(peer));
 	if(result.second){
 		::epoll_event event;
-		event.events = EPOLLHUP | EPOLLERR | EPOLLOUT | EPOLLET;
+		event.events = EPOLLHUP | EPOLLERR | EPOLLOUT;
 		event.data.ptr = peer.get();
 		if(::epoll_ctl(g_writerEpoll.get(), EPOLL_CTL_ADD, peer->getFd(), &event) != 0){
-			g_writeableEpolled.erase(result.first);
+			g_writeable.erase(result.first);
 			return errno;
 		}
 	}
 	return 0;
 }
-void removeWriterEpolled(const boost::shared_ptr<TcpPeer> &peer){
-	AUTO(const it, g_writeableEpolled.find(peer));
-	if(it == g_writeableEpolled.end()){
+void removeWriteable(const boost::shared_ptr<TcpPeer> &peer){
+	const boost::mutex::scoped_lock lock(g_writeableMutex);
+	AUTO(const it, g_writeable.find(peer));
+	if(it == g_writeable.end()){
 		return;
 	}
-	g_writeableEpolled.erase(it);
-	::epoll_ctl(g_writerEpoll.get(), EPOLL_CTL_DEL, peer->getFd(), NULL);
+	g_writeable.erase(it);
+	if(::epoll_ctl(g_writerEpoll.get(), EPOLL_CTL_DEL, peer->getFd(), NULL) != 0){
+		AUTO(const desc, getErrorDesc());
+		LOG_WARNING, "Epoll failed to remove socket: ", desc;
+	}
 }
 
 bool writerLoop(unsigned timeout){
-	::epoll_event events[64];
+	bool notIdle = false;
+
+	::epoll_event events[256];
 	const int ready = ::epoll_wait(g_writerEpoll.get(), events, COUNT_OF(events), timeout);
 	if(ready < 0){
 		AUTO(const desc, getErrorDesc());
@@ -211,7 +188,7 @@ bool writerLoop(unsigned timeout){
 		try {
 			if(event.events & EPOLLHUP){
 				LOG_INFO, "Socket has been hung up. Remove it.";
-				removeWriterEpolled(peer);
+				EpollDaemon::resetPeer(peer);
 				continue;
 			}
 			if(event.events & EPOLLERR){
@@ -223,81 +200,41 @@ bool writerLoop(unsigned timeout){
 				DEBUG_THROW(SystemError, err);
 			}
 			if(event.events & EPOLLOUT){
-				removeWriterEpolled(peer);
-
-				const boost::mutex::scoped_lock lock(g_writeableMutex);
-				g_writeableQueue.insert(peer);
-			}
-		} catch(Exception &e){
-			LOG_ERROR, "Exception thrown while writing socket: file = ", e.file(),
-				", line = ", e.line(), ", what = ", e.what();
-			removeWriterEpolled(peer);
-			peer->forceShutdown();
-		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while writing socket: what = ", e.what();
-			removeWriterEpolled(peer);
-			peer->forceShutdown();
-		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while writing socket.";
-			removeWriterEpolled(peer);
-			peer->forceShutdown();
-		}
-	}
-
-	bool notIdle = false;
-	for(;;){
-		boost::shared_ptr<TcpPeer> peer;
-		{
-			const boost::mutex::scoped_lock lock(g_writeableMutex);
-			if(g_writeableQueue.empty()){
-				break;
-			}
-			peer = *(g_writeableQueue.begin());
-			g_writeableQueue.erase(g_writeableQueue.begin());
-		}
-		try {
-			unsigned char data[1024];
-			const std::size_t bytesToWrite = peer->peekWriteAvail(data, sizeof(data));
-			if(bytesToWrite == 0){
-				if(peer->hasBeenShutdown()){
-					peer->forceShutdown();
-				}
-				continue;
-			}
-			notIdle = true;
-			const ::ssize_t bytesWritten = ::send(peer->getFd(), data, bytesToWrite, MSG_NOSIGNAL);
-			if(bytesWritten < 0){
-				if(errno == EINTR){
-					const boost::mutex::scoped_lock lock(g_writeableMutex);
-					g_writeableQueue.insert(peer);
-					continue;
-				}
-				if(errno == EPIPE){
-					peer->forceShutdown();
-					continue;
-				}
-				if(errno == EAGAIN){
-					const int err = addWriterEpolled(peer);
-					if(err != 0){
-						DEBUG_THROW(SystemError, err);
+				notIdle = true;
+				unsigned char data[1024];
+				const std::size_t bytesToWrite = peer->peekWriteAvail(data, sizeof(data));
+				if(bytesToWrite > 0){
+					const ::ssize_t bytesWritten = ::send(peer->getFd(), data, bytesToWrite, MSG_NOSIGNAL);
+					if(bytesWritten < 0){
+						if((errno == EINTR) || (errno == EAGAIN)){
+							continue;
+						}
+						DEBUG_THROW(SystemError, errno);
+					} else if(bytesWritten == 0){
+						continue;
 					}
-					continue;
+					peer->notifyWritten(bytesWritten);
+				} else {
+					if(peer->hasBeenShutdown()){
+						peer->forceShutdown();
+						removeWriteable(peer);
+						continue;
+					}
 				}
-				DEBUG_THROW(SystemError, errno);
 			}
-			peer->notifyWritten(bytesWritten);
 		} catch(Exception &e){
 			LOG_ERROR, "Exception thrown while writing socket: file = ", e.file(),
 				", line = ", e.line(), ", what = ", e.what();
-			peer->forceShutdown();
+			EpollDaemon::resetPeer(peer);
 		} catch(std::exception &e){
 			LOG_ERROR, "std::exception thrown while writing socket: what = ", e.what();
-			peer->forceShutdown();
+			EpollDaemon::resetPeer(peer);
 		} catch(...){
 			LOG_ERROR, "Unknown exception thrown while writing socket.";
-			peer->forceShutdown();
+			EpollDaemon::resetPeer(peer);
 		}
 	}
+
 	return notIdle;
 }
 
@@ -373,20 +310,26 @@ void EpollDaemon::stop(){
 		g_writerThread.join();
 	}
 
-	g_readableEpolled.clear();
+	g_readable.clear();
+	g_writeable.clear();
 	g_servers.clear();
-	g_writeableQueue.clear();
 }
 
 void EpollDaemon::notifyWriteable(boost::shared_ptr<TcpPeer> peer){
 	assert(peer);
 
-	const boost::mutex::scoped_lock lock(g_writeableMutex);
-	g_writeableQueue.insert(peer);
+	addWritable(peer);
 }
 void EpollDaemon::addSocketServer(boost::shared_ptr<SocketServerBase> server){
 	assert(server);
 
 	const boost::mutex::scoped_lock lock(g_serverMutex);
 	g_servers.insert(server);
+}
+void EpollDaemon::resetPeer(boost::shared_ptr<TcpPeer> peer){
+	assert(peer);
+
+	peer->forceShutdown();
+	removeReadable(peer);
+	removeWriteable(peer);
 }

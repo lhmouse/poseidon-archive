@@ -18,6 +18,8 @@ struct EpollDaemon {
 	// 注册 TCP socket 服务器。这里收养了所有权。
 	static void addSocketServer(boost::shared_ptr<SocketServerBase> server);
 
+	static void resetPeer(boost::shared_ptr<TcpPeer> peer);
+
 private:
 	EpollDaemon();
 };
