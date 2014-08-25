@@ -10,7 +10,7 @@ using namespace Poseidon;
 namespace {
 
 volatile unsigned g_logLevel = Log::DEBUG;
-boost::mutex g_coutMutex;
+boost::mutex g_cerrMutex;
 
 }
 
@@ -33,8 +33,8 @@ Log::~Log() throw() {
 		AUTO(const str, m_stream.str());
 		AUTO(const color, (m_level >= COUNT_OF(COLORS)) ? '9' : COLORS[m_level]);
 
-		const boost::mutex::scoped_lock lock(g_coutMutex);
-		std::cout <<now <<" [" <<::syscall(SYS_gettid) <<"] "
+		const boost::mutex::scoped_lock lock(g_cerrMutex);
+		std::cerr <<now <<" [" <<std::setw(5) <<::syscall(SYS_gettid) <<"] "
 			<<"\x9B\x33" <<color << 'm'
 			<<m_comment <<' ' <<m_file <<':' <<m_line <<' ' <<str
 			<<"\x9B\x30m" <<std::endl;
