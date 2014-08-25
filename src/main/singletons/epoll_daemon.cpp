@@ -99,14 +99,14 @@ bool readerLoop(unsigned timeout){
 				peer->onReadAvail(data, bytesRead);
 			}
 		} catch(Exception &e){
-			LOG_ERROR, "Exception thrown while reading socket: file = ", e.file(),
+			LOG_ERROR, "Exception thrown while dispatching data: file = ", e.file(),
 				", line = ", e.line(), ", what = ", e.what();
 			EpollDaemon::resetPeer(peer);
 		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while reading socket: what = ", e.what();
+			LOG_ERROR, "std::exception thrown while dispatching data: what = ", e.what();
 			EpollDaemon::resetPeer(peer);
 		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while reading socket.";
+			LOG_ERROR, "Unknown exception thrown while dispatching data.";
 			EpollDaemon::resetPeer(peer);
 		}
 	}
