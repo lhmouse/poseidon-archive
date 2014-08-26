@@ -10,13 +10,6 @@
 #include "tcp_peer.hpp"
 using namespace Poseidon;
 
-namespace {
-
-const int FALSE_VALUE	= false;
-const int TRUE_VALUE	= true;
-
-}
-
 SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPort){
 	union {
 		::sockaddr sa;
@@ -55,6 +48,7 @@ SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPor
 		LOG_ERROR("Error creating socket.");
 		DEBUG_THROW(SystemError, code);
 	}
+	const int TRUE_VALUE = true;
 	if(::setsockopt(m_listen.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 		const int code = errno;
 		LOG_ERROR("Could not set socket to reuse address.");
@@ -95,13 +89,13 @@ boost::shared_ptr<TcpPeer> SocketServerBase::tryAccept() const {
 	if(!peer){
 		return boost::shared_ptr<TcpPeer>();
 	}
-	const int flags = ::fcntl(m_listen.get(), F_GETFL);
+	const int flags = ::fcntl(peer->getFd(), F_GETFL);
 	if(flags == -1){
 		const int code = errno;
 		LOG_ERROR("Could not get fcntl flags on socket.");
 		DEBUG_THROW(SystemError, code);
 	}
-	if(::fcntl(m_listen.get(), F_SETFL, flags | O_NONBLOCK) != 0){
+	if(::fcntl(peer->getFd(), F_SETFL, flags | O_NONBLOCK) != 0){
 		const int code = errno;
 		LOG_ERROR("Could not set fcntl flags on socket.");
 		DEBUG_THROW(SystemError, code);

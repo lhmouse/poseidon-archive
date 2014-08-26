@@ -30,6 +30,7 @@ lib_LTLIBRARIES=	\
 lib_libposeidon_main_la_SOURCES=	\
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
+	src/main/profiler.cpp	\
 	src/main/raii.cpp	\
 	src/main/virtual_shared_from_this.cpp	\
 	src/main/stream_buffer.cpp	\

@@ -2,7 +2,6 @@
 #include "utilities.hpp"
 #include "log.hpp"
 #include <time.h>
-#include <pthread.h>
 #include <errno.h>
 #include <string.h>
 using namespace Poseidon;
@@ -48,42 +47,18 @@ boost::uint64_t getMonoClock(){
 
 namespace {
 
-class RandSeed : boost::noncopyable {
-private:
-	pthread_key_t m_key;
-
-public:
-	RandSeed(){
-		const int code = ::pthread_key_create(&m_key, NULL);
-		if(code != 0){
-			const AUTO(desc, getErrorDesc());
-			LOG_FATAL("Error allocating thread specific key for rand seed: ", desc);
-			std::abort();
-		}
-	}
-	~RandSeed(){
-		:: pthread_key_delete(m_key);
-	}
-
-public:
-	boost::uint32_t get() const {
-		return (std::size_t)::pthread_getspecific(m_key);
-	}
-	void set(boost::uint32_t val){
-		::pthread_setspecific(m_key, (void *)(std::size_t)val);
-	}
-} g_randSeed;
+__thread boost::uint32_t g_randSeed = 0;
 
 }
 
 boost::uint32_t rand32(){
-	boost::uint64_t seed = g_randSeed.get();
+	boost::uint64_t seed = g_randSeed;
 	if(seed == 0){
 		seed = getMonoClock();
 	}
 	// MMIX by Donald Knuth
 	seed = seed * 6364136223846793005ull + 1442695040888963407ull;
-	g_randSeed.set(seed);
+	g_randSeed = seed;
 	return seed >> 32;
 }
 boost::uint64_t rand64(){
