@@ -1,6 +1,28 @@
 #ifndef POSEIDON_MULTI_INDEX_MAP_HPP_
 #define POSEIDON_MULTI_INDEX_MAP_HPP_
 
+/*
+
+定义时需要指定索引。
+
+typedef std::pair<int, std::string> Item;
+
+MULTI_INDEX_MAP(Container, Item,
+	UNIQUE_INDEX(first),
+	MULTI_INDEX(second)
+);
+
+基本用法和 std::map 类似，只是 find, lowerBound, upperBound, equalRange
+成员函数需要带一个非类型模板参数，指定使用第几个索引。
+
+Container c;
+c.insert(Item(1, "abc"));
+c.insert(Item(2, "def"));
+std::cout <<c.find<0>(1)->second <<std::endl;	// "abc";
+assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
+
+*/
+
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
