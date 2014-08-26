@@ -10,14 +10,14 @@ PlayerSession::PlayerSession(ScopedFile &socket)
 }
 
 void PlayerSession::onReadAvail(const void *data, std::size_t size){
-	LOG_DEBUG, "Received ", std::string((const char *)data, size);
+	LOG_DEBUG("Received ", std::string((const char *)data, size));
 /*	send("meow meow meow!!!", 17);
 	unsigned char tmp[7];
 	unsigned long long ll = 0x12345, ll2;
 	unsigned char *write = tmp, *read = tmp;
 	vuint50ToBinary(ll, write);
 	vuint50FromBinary(ll2, read, write);
-	LOG_DEBUG, "read = ", (void *)read, ", write = ", (void *)write, ", serialized = ", (write - tmp), ", ll2 = ", std::hex, ll2;*/
+	LOG_DEBUG("read = ", (void *)read, ", write = ", (void *)write, ", serialized = ", (write - tmp), ", ll2 = ", std::hex, ll2);*/
 	for(int i = 0; i < 10; ++i){
 		char data = '0' + i;
 		send(&data, 1);

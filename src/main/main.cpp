@@ -15,7 +15,7 @@ using namespace Poseidon;
 namespace {
 
 void sigTermProc(int sig){
-    LOG_WARNING, "Received SIGTERM, will now exit...";
+    LOG_WARNING("Received SIGTERM, will now exit...");
     JobDispatcher::quitModal();
 }
 
@@ -30,11 +30,11 @@ void sigIntProc(int sig){
 		s_safetyTimer = now + 5 * 1000000;
 	}
 	if(now < s_safetyTimer){
-		LOG_WARNING, "Received SIGINT, trying to exit gracefully...";
-		LOG_WARNING, "If I don't terminate in 5 seconds, press ^C again.";
+		LOG_WARNING("Received SIGINT, trying to exit gracefully...");
+		LOG_WARNING("If I don't terminate in 5 seconds, press ^C again.");
 		std::raise(SIGTERM);
 	} else {
-		LOG_FATAL, "Received SIGINT, will now terminate abnormally...";
+		LOG_FATAL("Received SIGINT, will now terminate abnormally...");
 		std::raise(SIGKILL);
 	}
 }
@@ -43,7 +43,7 @@ OptionalMap loadConfig(const char *confPath){
 	OptionalMap config;
 	std::ifstream ifs(confPath);
 	if(!ifs.good()){
-		LOG_FATAL, "Cannot open config file.";
+		LOG_FATAL("Cannot open config file.");
 		std::abort();
 	}
 	std::string line;
@@ -60,11 +60,11 @@ OptionalMap loadConfig(const char *confPath){
 		}
 		std::size_t equ = line.find('=', pos);
 		if(equ == pos){
-			LOG_FATAL, "Error in config file on line ", count, ": Name expected.";
+			LOG_FATAL("Error in config file on line ", count, ": Name expected.");
 			std::abort();
 		}
 		if(equ == std::string::npos){
-			LOG_FATAL, "Error in config file on line ", count, ": '=' expected.";
+			LOG_FATAL("Error in config file on line ", count, ": '=' expected.");
 			std::abort();
 		}
 
@@ -80,7 +80,7 @@ OptionalMap loadConfig(const char *confPath){
 			val.resize(pos + 1);
 		}
 
-		LOG_DEBUG, "Config: ", key, " = ", val;
+		LOG_DEBUG("Config: ", key, " = ", val);
 		config.set(key, val);
 	}
 	return config;
@@ -104,7 +104,7 @@ void run(const OptionalMap &config){
 	AUTO_REF(logLevel, config["log_level"]);
 	if(!logLevel.empty()){
 		const int newLevel = boost::lexical_cast<int>(logLevel);
-		LOG_WARNING, "Setting log level to ", newLevel, ", was ", Log::getLevel(), "...";
+		LOG_WARNING("Setting log level to ", newLevel, ", was ", Log::getLevel(), "...");
 		Log::setLevel(newLevel);
 	}
 
@@ -112,26 +112,26 @@ void run(const OptionalMap &config){
 	RUN_SINGLETON(TimerDaemon);
 	RUN_SINGLETON(EpollDaemon);
 
-	LOG_INFO, "Creating player session manager...";
+	LOG_INFO("Creating player session manager...");
 	EpollDaemon::addSocketServer(
 		boost::make_shared<PlayerSessionManager>(
 			config["socket_bind"], boost::lexical_cast<unsigned>(config["socket_port"])
 		)
 	);
 
-	LOG_INFO, "Creating http server...";
+	LOG_INFO("Creating http server...");
 	// http
 
-	LOG_INFO, "Entering modal loop...";
+	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();
 }
 
 }
 
 int main(int argc, char **argv){
-	LOG_INFO, "-------------------------- Starting up -------------------------";
+	LOG_INFO("-------------------------- Starting up -------------------------");
 
-	LOG_INFO, "Setting up signal handlers...";
+	LOG_INFO("Setting up signal handlers...");
 	std::signal(SIGINT, sigIntProc);
 	std::signal(SIGTERM, sigTermProc);
 
@@ -139,10 +139,10 @@ int main(int argc, char **argv){
 	if(1 < argc){
 		confPath = argv[1];
 	}
-	LOG_INFO, "Loading config from ", confPath, "...";
+	LOG_INFO("Loading config from ", confPath, "...");
 
 	run(loadConfig(confPath));
 
-	LOG_INFO, "------------- Server has been shut down gracefully -------------";
+	LOG_INFO("------------- Server has been shut down gracefully -------------");
 	return EXIT_SUCCESS;
 }

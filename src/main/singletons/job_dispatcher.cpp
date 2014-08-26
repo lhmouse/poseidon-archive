@@ -30,7 +30,7 @@ void JobBase::pend() const {
 
 void JobDispatcher::doModal(){
 	if(atomicExchange(g_running, true) != false){
-		LOG_FATAL, "Only one modal loop is allowed at the same time.";
+		LOG_FATAL("Only one modal loop is allowed at the same time.");
 		std::abort();
 	}
 	for(;;){
@@ -55,12 +55,12 @@ void JobDispatcher::doModal(){
 			}
 			job->perform();
 		} catch(Exception &e){
-			LOG_ERROR, "Exception thrown in job dispatcher: file = ", e.file(),
-				", line = ", e.line(), ": what = ", e.what();
+			LOG_ERROR("Exception thrown in job dispatcher: file = ", e.file(),
+				", line = ", e.line(), ": what = ", e.what());
 		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown in job dispatcher: what = ", e.what();
+			LOG_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 		} catch(...){
-			LOG_ERROR, "Unknown exception thrown in job dispatcher";
+			LOG_ERROR("Unknown exception thrown in job dispatcher");
 		}
 	}
 }

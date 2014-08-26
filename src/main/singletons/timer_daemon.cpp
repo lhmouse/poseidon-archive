@@ -80,12 +80,12 @@ void registerTimerUsingMove(unsigned long long period,
 		std::push_heap(g_timerHeap.begin(), g_timerHeap.end(), timerItemComp);
 	}
 
-	LOG_INFO, "Registered timer with period ", period,
-		" millisecond(s) and will be triggered after ", first, " millisecond(s).";
+	LOG_INFO("Registered timer with period ", period,
+		" millisecond(s) and will be triggered after ", first, " millisecond(s).");
 }
 
 void threadProc(){
-	LOG_INFO, "Timer daemon started.";
+	LOG_INFO("Timer daemon started.");
 
 	while(atomicLoad(g_daemonRunning)){
 		const unsigned long long now = getMonoClock();
@@ -107,31 +107,31 @@ void threadProc(){
 			continue;
 		}
 		try {
-			LOG_INFO, "Preparing a timer job for dispatching.";
+			LOG_INFO("Preparing a timer job for dispatching.");
 			ti->pend();
 		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while dispatching timer job, what = ", e.what();
+			LOG_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
 		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while dispatching timer job.";
+			LOG_ERROR("Unknown exception thrown while dispatching timer job.");
 		}
 	}
 
-	LOG_INFO, "Timer daemon stopped.";
+	LOG_INFO("Timer daemon stopped.");
 }
 
 }
 
 void TimerDaemon::start(){
 	if(atomicExchange(g_daemonRunning, true) != false){
-		LOG_FATAL, "Only one daemon is allowed at the same time.";
+		LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_INFO, "Starting timer daemon...";
+	LOG_INFO("Starting timer daemon...");
 
 	boost::thread(threadProc).swap(g_daemonThread);
 }
 void TimerDaemon::stop(){
-	LOG_INFO, "Stopping timer daemon...";
+	LOG_INFO("Stopping timer daemon...");
 
 	atomicStore(g_daemonRunning, false);
 	if(g_daemonThread.joinable()){

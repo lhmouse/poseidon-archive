@@ -22,7 +22,7 @@ TcpPeer::TcpPeer(ScopedFile &socket)
 
 	if(::getpeername(m_socket.get(), &u.sa, &salen) != 0){
 		const int code = errno;
-		LOG_ERROR, "Could not get peer address.";
+		LOG_ERROR("Could not get peer address.");
 		DEBUG_THROW(SystemError, code);
 	}
 	m_remoteIp.resize(63);
@@ -39,10 +39,10 @@ TcpPeer::TcpPeer(ScopedFile &socket)
 	}
 	m_remoteIp.resize(std::strlen(text));
 
-	LOG_INFO, "Created tcp peer, remote ip = ", m_remoteIp;
+	LOG_INFO("Created tcp peer, remote ip = ", m_remoteIp);
 }
 TcpPeer::~TcpPeer(){
-	LOG_INFO, "Destroyed tcp peer, remote ip = ", m_remoteIp;
+	LOG_INFO("Destroyed tcp peer, remote ip = ", m_remoteIp);
 }
 
 std::size_t TcpPeer::peekWriteAvail(boost::mutex::scoped_lock &lock, void *data, std::size_t size) const {

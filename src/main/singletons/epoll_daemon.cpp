@@ -51,7 +51,7 @@ void removeReadable(const boost::shared_ptr<TcpPeer> &peer){
 	g_readable.erase(it);
 	if(::epoll_ctl(g_readerEpoll.get(), EPOLL_CTL_DEL, peer->getFd(), NULL)){
 		AUTO(const desc, getErrorDesc());
-		LOG_WARNING, "Epoll failed to remove socket: ", desc;
+		LOG_WARNING("Epoll failed to remove socket: ", desc);
 	}
 }
 
@@ -62,7 +62,7 @@ bool readerLoop(unsigned timeout){
 	const int ready = ::epoll_wait(g_readerEpoll.get(), events, COUNT_OF(events), timeout);
 	if(ready < 0){
 		AUTO(const desc, getErrorDesc());
-		LOG_ERROR, "::epoll_wait() failed: ", desc;
+		LOG_ERROR("::epoll_wait() failed: ", desc);
 		return false;
 	}
 	for(unsigned i = 0; i < (unsigned)ready; ++i){
@@ -70,7 +70,7 @@ bool readerLoop(unsigned timeout){
 		AUTO(const peer, static_cast<TcpPeer *>(event.data.ptr)->virtualSharedFromThis<TcpPeer>());
 		try {
 			if(event.events & EPOLLHUP){
-				LOG_INFO, "Socket has been hung up. Remove it.";
+				LOG_INFO("Socket has been hung up. Remove it.");
 				EpollDaemon::resetPeer(peer);
 				continue;
 			}
@@ -92,21 +92,21 @@ bool readerLoop(unsigned timeout){
 					}
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
-					LOG_INFO, "Socket has been closed by peer. Remove it.";
+					LOG_INFO("Socket has been closed by peer. Remove it.");
 					removeReadable(peer);
 					continue;
 				}
 				peer->onReadAvail(data, bytesRead);
 			}
 		} catch(Exception &e){
-			LOG_ERROR, "Exception thrown while dispatching data: file = ", e.file(),
-				", line = ", e.line(), ", what = ", e.what();
+			LOG_ERROR("Exception thrown while dispatching data: file = ", e.file(),
+				", line = ", e.line(), ", what = ", e.what());
 			EpollDaemon::resetPeer(peer);
 		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while dispatching data: what = ", e.what();
+			LOG_ERROR("std::exception thrown while dispatching data: what = ", e.what());
 			EpollDaemon::resetPeer(peer);
 		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while dispatching data.";
+			LOG_ERROR("Unknown exception thrown while dispatching data.");
 			EpollDaemon::resetPeer(peer);
 		}
 	}
@@ -126,12 +126,12 @@ bool readerLoop(unsigned timeout){
 			notIdle = true;
 			addReadable(peer);
 		} catch(Exception &e){
-			LOG_ERROR, "Exception thrown while accepting client: file = ", e.file(),
-				", line = ", e.line(), ", what = ", e.what();
+			LOG_ERROR("Exception thrown while accepting client: file = ", e.file(),
+				", line = ", e.line(), ", what = ", e.what());
 		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while accepting client: what = ", e.what();
+			LOG_ERROR("std::exception thrown while accepting client: what = ", e.what());
 		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while accepting client.";
+			LOG_ERROR("Unknown exception thrown while accepting client.");
 		}
 	}
 
@@ -168,7 +168,7 @@ void removeWriteable(const boost::shared_ptr<TcpPeer> &peer){
 	g_writeable.erase(it);
 	if(::epoll_ctl(g_writerEpoll.get(), EPOLL_CTL_DEL, peer->getFd(), NULL) != 0){
 		AUTO(const desc, getErrorDesc());
-		LOG_WARNING, "Epoll failed to remove socket: ", desc;
+		LOG_WARNING("Epoll failed to remove socket: ", desc);
 	}
 }
 
@@ -179,7 +179,7 @@ bool writerLoop(unsigned timeout){
 	const int ready = ::epoll_wait(g_writerEpoll.get(), events, COUNT_OF(events), timeout);
 	if(ready < 0){
 		AUTO(const desc, getErrorDesc());
-		LOG_ERROR, "::epoll_wait() failed: ", desc;
+		LOG_ERROR("::epoll_wait() failed: ", desc);
 		return false;
 	}
 	for(unsigned i = 0; i < (unsigned)ready; ++i){
@@ -187,7 +187,7 @@ bool writerLoop(unsigned timeout){
 		AUTO(const peer, static_cast<TcpPeer *>(event.data.ptr)->virtualSharedFromThis<TcpPeer>());
 		try {
 			if(event.events & EPOLLHUP){
-				LOG_INFO, "Socket has been hung up. Remove it.";
+				LOG_INFO("Socket has been hung up. Remove it.");
 				EpollDaemon::resetPeer(peer);
 				continue;
 			}
@@ -226,14 +226,14 @@ bool writerLoop(unsigned timeout){
 				peer->notifyWritten(bytesWritten);
 			}
 		} catch(Exception &e){
-			LOG_ERROR, "Exception thrown while writing socket: file = ", e.file(),
-				", line = ", e.line(), ", what = ", e.what();
+			LOG_ERROR("Exception thrown while writing socket: file = ", e.file(),
+				", line = ", e.line(), ", what = ", e.what());
 			EpollDaemon::resetPeer(peer);
 		} catch(std::exception &e){
-			LOG_ERROR, "std::exception thrown while writing socket: what = ", e.what();
+			LOG_ERROR("std::exception thrown while writing socket: what = ", e.what());
 			EpollDaemon::resetPeer(peer);
 		} catch(...){
-			LOG_ERROR, "Unknown exception thrown while writing socket.";
+			LOG_ERROR("Unknown exception thrown while writing socket.");
 			EpollDaemon::resetPeer(peer);
 		}
 	}
@@ -243,7 +243,7 @@ bool writerLoop(unsigned timeout){
 
 // 线程起始函数。
 void readerThreadProc(){
-	LOG_INFO, "Epoll reader thread started.";
+	LOG_INFO("Epoll reader thread started.");
 
 	std::signal(SIGPIPE, SIG_IGN);
 
@@ -257,10 +257,10 @@ void readerThreadProc(){
 		}
 	}
 
-	LOG_INFO, "Epoll reader thread stopped.";
+	LOG_INFO("Epoll reader thread stopped.");
 }
 void writerThreadProc(){
-	LOG_INFO, "Epoll writer thread started.";
+	LOG_INFO("Epoll writer thread started.");
 
 	std::signal(SIGPIPE, SIG_IGN);
 
@@ -274,28 +274,28 @@ void writerThreadProc(){
 		}
 	}
 
-	LOG_INFO, "Epoll writer thread stopped.";
+	LOG_INFO("Epoll writer thread stopped.");
 }
 
 }
 
 void EpollDaemon::start(){
 	if(atomicExchange(g_daemonRunning, true) != false){
-		LOG_FATAL, "Only one daemon is allowed at the same time.";
+		LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_INFO, "Starting epoll daemon...";
+	LOG_INFO("Starting epoll daemon...");
 
 	g_readerEpoll.reset(::epoll_create(4096));
 	if(!g_readerEpoll){
 		AUTO(desc, getErrorDesc());
-		LOG_FATAL, "Error creating reader epoll: ", desc;
+		LOG_FATAL("Error creating reader epoll: ", desc);
 		std::abort();
 	}
 	g_writerEpoll.reset(::epoll_create(4096));
 	if(!g_writerEpoll){
 		AUTO(desc, getErrorDesc());
-		LOG_FATAL, "Error creating writer epoll: ", desc;
+		LOG_FATAL("Error creating writer epoll: ", desc);
 		std::abort();
 	}
 
@@ -303,7 +303,7 @@ void EpollDaemon::start(){
 	boost::thread(writerThreadProc).swap(g_writerThread);
 }
 void EpollDaemon::stop(){
-	LOG_INFO, "Stopping epoll daemon...";
+	LOG_INFO("Stopping epoll daemon...");
 
 	atomicStore(g_daemonRunning, false);
 	if(g_readerThread.joinable()){
