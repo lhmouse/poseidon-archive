@@ -46,14 +46,14 @@ public:
 
 }
 
-#define LOG_LEVEL(level)	\
+#define LOG_LEVEL(level, ...)	\
 	if(::Poseidon::Log::getLevel() >= ::Poseidon::Log::level)	\
-		::Poseidon::Log(::Poseidon::Log::level, #level, __FILE__, __LINE__)
+		::Poseidon::Log(::Poseidon::Log::level, #level, __FILE__, __LINE__), __VA_ARGS__
 
-#define LOG_FATAL		LOG_LEVEL(FATAL)
-#define LOG_ERROR		LOG_LEVEL(ERROR)
-#define LOG_WARNING		LOG_LEVEL(WARNING)
-#define LOG_INFO		LOG_LEVEL(INFO)
-#define LOG_DEBUG		LOG_LEVEL(DEBUG)
+#define LOG_FATAL(...)		LOG_LEVEL(FATAL, __VA_ARGS__)
+#define LOG_ERROR(...)		LOG_LEVEL(ERROR, __VA_ARGS__)
+#define LOG_WARNING(...)	LOG_LEVEL(WARNING, __VA_ARGS__)
+#define LOG_INFO(...)		LOG_LEVEL(INFO, __VA_ARGS__)
+#define LOG_DEBUG(...)		LOG_LEVEL(DEBUG, __VA_ARGS__)
 
 #endif
