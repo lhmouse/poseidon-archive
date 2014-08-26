@@ -12,7 +12,7 @@ MULTI_INDEX_MAP(Container, Item,
 	MULTI_INDEX(second)
 );
 
-基本用法和 std::map 类似，只是 find, lowerBound, upperBound, equalRange
+基本用法和 std::map 类似，只是 find, count, lowerBound, upperBound, equalRange 等
 成员函数需要带一个非类型模板参数，指定使用第几个索引。
 
 Container c;
@@ -107,15 +107,15 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		{	\
 			return getIndex<IndexId>().replace(pos, val);	\
 		}	\
-		template<unsigned long IndexId> \
+		template<unsigned long IndexId, unsigned long IndexToSet> \
 		bool setKey(typename delegate_container::nth_index<IndexId>::type::iterator pos,   \
-			const typename delegate_container::nth_index<IndexId>::type::key_type &key)	\
+			const typename delegate_container::nth_index<IndexToSet>::type::key_type &key)	\
 		{	\
-			return getIndex<IndexId>().modify_key(	\
-				pos,	\
-				KeyModifier<IndexId>(key),	\
-				KeyModifier<IndexId>(	\
-					typename delegate_container::nth_index<IndexId>::type::key_from_value()(*pos)	\
+			return getIndex<IndexToSet>().modify_key(	\
+				m_delegate.project<IndexToSet>(pos),	\
+				KeyModifier<IndexToSet>(key),	\
+				KeyModifier<IndexToSet>(	\
+					typename delegate_container::nth_index<IndexToSet>::type::key_from_value()(*pos)	\
 				)	\
 			);	\
 		}	\
@@ -157,6 +157,13 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 			find(const typename delegate_container::nth_index<IndexId>::type::key_type &key)	\
 		{	\
 			return getIndex<IndexId>().find(key);	\
+		}	\
+		\
+		template<unsigned IndexId>  \
+		std::size_t	\
+			count(const typename delegate_container::nth_index<IndexId>::type::key_type &key) const	\
+		{	\
+			return getIndex<IndexId>().count(key);	\
 		}	\
 		\
 		template<unsigned IndexId>  \

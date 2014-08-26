@@ -29,9 +29,9 @@ Log::~Log() throw() {
 	static const char COLORS[] = { '5', '1', '3', '2', '6' };
 
 	try {
-		AUTO(const now, boost::posix_time::second_clock::local_time());
-		AUTO(const str, m_stream.str());
-		AUTO(const color, (m_level >= COUNT_OF(COLORS)) ? '9' : COLORS[m_level]);
+		const AUTO(now, boost::posix_time::second_clock::local_time());
+		const AUTO(str, m_stream.str());
+		const AUTO(color, (m_level >= COUNT_OF(COLORS)) ? '9' : COLORS[m_level]);
 
 		const boost::mutex::scoped_lock lock(g_cerrMutex);
 		std::cerr <<now <<" [" <<std::setw(5) <<::syscall(SYS_gettid) <<"] "

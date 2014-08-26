@@ -56,7 +56,7 @@ public:
 	RandSeed(){
 		const int code = ::pthread_key_create(&m_key, NULL);
 		if(code != 0){
-			AUTO(const desc, getErrorDesc());
+			const AUTO(desc, getErrorDesc());
 			LOG_FATAL("Error allocating thread specific key for rand seed: ", desc);
 			std::abort();
 		}
@@ -95,7 +95,7 @@ boost::uint32_t rand32(boost::uint32_t lower, boost::uint32_t upper){
 		lower = upper + 1;
 		upper = tmp - 1;
 	}
-	AUTO(const delta, upper - lower);
+	const AUTO(delta, upper - lower);
 	if(delta == 0){
 		return lower;
 	}
@@ -110,7 +110,7 @@ double randDouble(double lower, double upper){
 		lower = upper;
 		upper = tmp;
 	}
-	AUTO(const delta, upper - lower);
+	const AUTO(delta, upper - lower);
 	if(delta == 0){
 		return lower;
 	}
