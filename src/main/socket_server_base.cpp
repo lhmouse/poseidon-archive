@@ -2,7 +2,7 @@
 #include "socket_server_base.hpp"
 #include <boost/bind.hpp>
 #include <arpa/inet.h>
-#include <sys/ioctl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include "log.hpp"
 #include "exception.hpp"
@@ -12,7 +12,8 @@ using namespace Poseidon;
 
 namespace {
 
-const int TRUE_VALUE = true;
+const int FALSE_VALUE	= false;
+const int TRUE_VALUE	= true;
 
 }
 
@@ -59,9 +60,15 @@ SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPor
 		LOG_ERROR("Could not set socket to reuse address.");
 		DEBUG_THROW(SystemError, code);
 	}
-	if(::ioctl(m_listen.get(), FIONBIO, &TRUE_VALUE) < 0){
+	const int flags = ::fcntl(m_listen.get(), F_GETFL);
+	if(flags == -1){
 		const int code = errno;
-		LOG_ERROR("Could not set listen socket to non-block mode.");
+		LOG_ERROR("Could not get fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+	if(::fcntl(m_listen.get(), F_SETFL, flags | O_NONBLOCK) != 0){
+		const int code = errno;
+		LOG_ERROR("Could not set fcntl flags on socket.");
 		DEBUG_THROW(SystemError, code);
 	}
 	if(::bind(m_listen.get(), &u.sa, salen)){
@@ -88,9 +95,15 @@ boost::shared_ptr<TcpPeer> SocketServerBase::tryAccept() const {
 	if(!peer){
 		return boost::shared_ptr<TcpPeer>();
 	}
-	if(::ioctl(peer->getFd(), FIONBIO, &TRUE_VALUE) < 0){
+	const int flags = ::fcntl(m_listen.get(), F_GETFL);
+	if(flags == -1){
 		const int code = errno;
-		LOG_ERROR("Could not set listen socket to non-block mode.");
+		LOG_ERROR("Could not get fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+	if(::fcntl(m_listen.get(), F_SETFL, flags | O_NONBLOCK) != 0){
+		const int code = errno;
+		LOG_ERROR("Could not set fcntl flags on socket.");
 		DEBUG_THROW(SystemError, code);
 	}
 	LOG_INFO("Client '", peer->getRemoteIp(), "' has connected.");
