@@ -35,6 +35,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/virtual_shared_from_this.cpp	\
 	src/main/transaction.cpp	\
 	src/main/stream_buffer.cpp	\
+	src/main/optional_map.cpp	\
 	src/main/singletons/config_file.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
 	src/main/singletons/database_daemon.cpp	\
@@ -43,7 +44,8 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/socket_server.cpp	\
 	src/main/tcp_peer.cpp	\
 	src/main/player_session.cpp	\
-	src/main/http_session.cpp
+	src/main/http_session.cpp	\
+	src/main/data_object.cpp
 
 lib_libposeidon_template_la_SOURCES=	\
 	#src/template/module_main.cpp
