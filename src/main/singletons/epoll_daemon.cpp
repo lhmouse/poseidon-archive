@@ -166,6 +166,7 @@ void threadProc(){
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
 					session->onRemoteClose();
+					session->shutdown();
 					continue;
 				} else {
 					session->onReadAvail(data, bytesRead);
