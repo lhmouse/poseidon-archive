@@ -1,10 +1,9 @@
 #include "../precompiled.hpp"
 #include "utilities.hpp"
-#include <fstream>
 #include <csignal>
 #include "log.hpp"
 #include "exception.hpp"
-#include "optional_map.hpp"
+#include "singletons/config_file.hpp"
 #include "singletons/database_daemon.hpp"
 #include "singletons/timer_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
@@ -39,53 +38,6 @@ void sigIntProc(int sig){
 	}
 }
 
-OptionalMap loadConfig(const char *confPath){
-	OptionalMap config;
-	std::ifstream ifs(confPath);
-	if(!ifs.good()){
-		LOG_FATAL("Cannot open config file.");
-		std::abort();
-	}
-	std::string line;
-	std::size_t count = 0;
-	while(std::getline(ifs, line)){
-		++count;
-		std::size_t pos = line.find('#');
-		if(pos != std::string::npos){
-			line.resize(pos);
-		}
-		pos = line.find_first_not_of(" \t");
-		if(pos == std::string::npos){
-			continue;
-		}
-		std::size_t equ = line.find('=', pos);
-		if(equ == pos){
-			LOG_FATAL("Error in config file on line ", count, ": Name expected.");
-			std::abort();
-		}
-		if(equ == std::string::npos){
-			LOG_FATAL("Error in config file on line ", count, ": '=' expected.");
-			std::abort();
-		}
-
-		std::string key = line.substr(pos, equ);
-		key.resize(key.find_last_not_of(" \t") + 1);
-		pos = line.find_first_not_of(" \t", equ + 1);
-
-		std::string val = line.substr(pos);
-		pos = val.find_last_not_of(" \t");
-		if(pos == std::string::npos){
-			val.clear();
-		} else {
-			val.resize(pos + 1);
-		}
-
-		LOG_DEBUG("Config: ", key, " = ", val);
-		config.set(key, val);
-	}
-	return config;
-}
-
 template<typename T>
 struct RaiiSingletonRunner : boost::noncopyable {
 	RaiiSingletonRunner(){
@@ -100,8 +52,8 @@ struct RaiiSingletonRunner : boost::noncopyable {
 #define RUN_SING_1_(name_, ln_)		RUN_SING_2_(name_, ln_)
 #define RUN_SINGLETON(name_)		RUN_SING_1_(name_, __LINE__)
 
-void run(const OptionalMap &config){
-	AUTO_REF(logLevel, config["log_level"]);
+void run(){
+	AUTO_REF(logLevel, ConfigFile::get("log_level"));
 	if(!logLevel.empty()){
 		const int newLevel = boost::lexical_cast<int>(logLevel);
 		LOG_WARNING("Setting log level to ", newLevel, ", was ", Log::getLevel(), "...");
@@ -115,7 +67,8 @@ void run(const OptionalMap &config){
 	LOG_INFO("Creating player session manager...");
 	EpollDaemon::addSocketServer(
 		boost::make_shared<PlayerSessionManager>(
-			config["socket_bind"], boost::lexical_cast<unsigned>(config["socket_port"])
+			ConfigFile::get("socket_bind"),
+			boost::lexical_cast<unsigned>(ConfigFile::get("socket_port"))
 		)
 	);
 
@@ -139,9 +92,9 @@ int main(int argc, char **argv){
 	if(1 < argc){
 		confPath = argv[1];
 	}
-	LOG_INFO("Loading config from ", confPath, "...");
+	ConfigFile::reload(confPath);
 
-	run(loadConfig(confPath));
+	run();
 
 	LOG_INFO("------------- Server has been shut down gracefully -------------");
 	return EXIT_SUCCESS;

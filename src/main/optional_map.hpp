@@ -3,29 +3,48 @@
 
 #include <map>
 #include <string>
+#include <cstddef>
 
 namespace Poseidon {
 
-namespace {
-	static std::string EMPTY_STRING;
-}
+const std::string EMPTY_STRING;
 
-class OptionalMap
-	: public std::map<std::string, std::string>
-{
+class OptionalMap {
 public:
+	typedef std::map<std::string, std::string> delegate_container;
+
+private:
+	delegate_container m_delegate;
+
+public:
+	bool empty() const {
+		return m_delegate.empty();
+	}
+	std::size_t size() const {
+		return m_delegate.size();
+	}
+	void clear(){
+		m_delegate.clear();
+	}
+
 	const std::string &get(const std::string &key) const {
-		const std::map<std::string, std::string>::const_iterator it = find(key);
-		if(it == end()){
+		delegate_container::const_iterator it = m_delegate.find(key);
+		if(it == m_delegate.end()){
 			return EMPTY_STRING;
 		}
 		return it->second;
 	}
-	void set(std::string key, std::string val){
-		std::map<std::string, std::string>::operator[](key).swap(val);
+	std::string &get(const std::string &key){
+		return m_delegate[key];
+	}
+	void set(const std::string &key, std::string val){
+		m_delegate[key].swap(val);
 	}
 
 	const std::string &operator[](const std::string &key) const {
+		return get(key);
+	}
+	std::string &operator[](const std::string &key){
 		return get(key);
 	}
 };
