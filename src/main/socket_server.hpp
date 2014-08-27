@@ -13,7 +13,7 @@
 
 namespace Poseidon {
 
-class TcpPeer;
+class TcpSessionBase;
 
 // 抽象工厂模式
 class SocketServerBase : boost::noncopyable
@@ -30,16 +30,16 @@ public:
 protected:
 	// 工厂函数。
 	// 如果该成员函数返回空指针，连接会被立即挂断。
-	virtual boost::shared_ptr<TcpPeer> onClientConnect(ScopedFile &client) const = 0;
+	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(ScopedFile &client) const = 0;
 
 public:
-	boost::shared_ptr<TcpPeer> tryAccept() const;
+	boost::shared_ptr<TcpSessionBase> tryAccept() const;
 };
 
-// onClientConnect() 返回值要求 DerivedTcpPeer 必须是 TcpPeer 的派生类。
-template<class DerivedTcpPeer,
+// onClientConnect() 返回值要求 DerivedTcpSessionBase 必须是 TcpSessionBase 的派生类。
+template<class DerivedTcpSessionBase,
 	typename boost::enable_if_c<
-		boost::is_base_of<TcpPeer, DerivedTcpPeer>::value,
+		boost::is_base_of<TcpSessionBase, DerivedTcpSessionBase>::value,
 		int>::type = 0
 	>
 class SocketServer : public SocketServerBase {
@@ -50,8 +50,8 @@ public:
 	}
 
 protected:
-	virtual boost::shared_ptr<TcpPeer> onClientConnect(ScopedFile &client) const {
-		return boost::make_shared<DerivedTcpPeer>(boost::ref(client));
+	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(ScopedFile &client) const {
+		return boost::make_shared<DerivedTcpSessionBase>(boost::ref(client));
 	}
 };
 

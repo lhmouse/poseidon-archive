@@ -13,7 +13,7 @@
 #include "../atomic.hpp"
 #include "../utilities.hpp"
 #include "../exception.hpp"
-#include "../tcp_peer.hpp"
+#include "../tcp_session_base.hpp"
 #include "../socket_server.hpp"
 #include "../multi_index_map.hpp"
 using namespace Poseidon;
@@ -26,209 +26,209 @@ boost::thread g_daemonThread;
 
 class EpollRaii : boost::noncopyable {
 private:
-	TcpPeer *const m_peer;
+	TcpSessionBase *const m_session;
 
 public:
-	explicit EpollRaii(TcpPeer *peer)
-		: m_peer(peer)
+	explicit EpollRaii(TcpSessionBase *session)
+		: m_session(session)
 	{
 		::epoll_event event;
 		event.events = EPOLLHUP | EPOLLERR | EPOLLIN | EPOLLOUT | EPOLLET;
-		event.data.ptr = m_peer;
-		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, m_peer->getFd(), &event) != 0){
+		event.data.ptr = m_session;
+		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, m_session->getFd(), &event) != 0){
 			DEBUG_THROW(SystemError, errno);
 		}
 	}
 	~EpollRaii(){
-		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, m_peer->getFd(), NULL) != 0){
+		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, m_session->getFd(), NULL) != 0){
 			LOG_WARNING("Deleting from epoll failed. We can do nothing but ignore it.");
 		}
 	}
 };
 
-struct PeerMapElement {
-	const boost::shared_ptr<TcpPeer> m_peer;
+struct SessionMapElement {
+	const boost::shared_ptr<TcpSessionBase> m_session;
 	// 时间戳，零表示无数据可读/写。
 	unsigned long long m_lastRead;
 	unsigned long long m_lastWritten;
 
 	const boost::shared_ptr<EpollRaii> m_epollRaii;
 
-	explicit PeerMapElement(boost::shared_ptr<TcpPeer> peer,
+	explicit SessionMapElement(boost::shared_ptr<TcpSessionBase> session,
 		unsigned long long lastRead = 0, unsigned long long lastWritten = 0)
-		: m_peer(peer), m_lastRead(lastRead), m_lastWritten(lastWritten)
-		, m_epollRaii(boost::make_shared<EpollRaii>(peer.get()))
+		: m_session(session), m_lastRead(lastRead), m_lastWritten(lastWritten)
+		, m_epollRaii(boost::make_shared<EpollRaii>(session.get()))
 	{
 	}
 };
 
-MULTI_INDEX_MAP(PeerMap, PeerMapElement,
-	UNIQUE_INDEX(m_peer),
+MULTI_INDEX_MAP(SessionMap, SessionMapElement,
+	UNIQUE_INDEX(m_session),
 	MULTI_INDEX(m_lastRead),
 	MULTI_INDEX(m_lastWritten)
 );
 
 enum {
-	IDX_PEER,
+	IDX_SESSION,
 	IDX_READ,
 	IDX_WRITE,
 };
 
-boost::mutex g_peerMutex;
-PeerMap g_peers;
+boost::mutex g_sessionMutex;
+SessionMap g_sessions;
 
 boost::mutex g_serverMutex;
 std::set<boost::shared_ptr<const SocketServerBase> > g_servers;
 
-void addPeer(const boost::shared_ptr<TcpPeer> &peer){
-	const boost::mutex::scoped_lock lock(g_peerMutex);
-	g_peers.insert(PeerMapElement(peer));
+void addSession(const boost::shared_ptr<TcpSessionBase> &session){
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	g_sessions.insert(SessionMapElement(session));
 }
-void removePeer(const boost::shared_ptr<TcpPeer> &peer){
-	const boost::mutex::scoped_lock lock(g_peerMutex);
-	const AUTO(it, g_peers.find<IDX_PEER>(peer));
-	if(it == g_peers.end<IDX_PEER>()){
+void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
+	if(it == g_sessions.end<IDX_SESSION>()){
 		LOG_ERROR("Socket not in epoll?");
 		return;
 	}
-	g_peers.erase<IDX_PEER>(it);
-}
-
-void deepollReadable(const boost::shared_ptr<TcpPeer> &peer){
-	const unsigned long long now = getMonoClock();
-	const boost::mutex::scoped_lock lock(g_peerMutex);
-	const AUTO(it, g_peers.find<IDX_PEER>(peer));
-	if(it == g_peers.end<IDX_PEER>()){
-		LOG_ERROR("Socket not in epoll?");
-		return;
-	}
-	g_peers.setKey<IDX_PEER, IDX_READ>(it, now);
-}
-void reepollReadable(const boost::shared_ptr<TcpPeer> &peer){
-	const boost::mutex::scoped_lock lock(g_peerMutex);
-	const AUTO(it, g_peers.find<IDX_PEER>(peer));
-	if(it == g_peers.end<IDX_PEER>()){
-		LOG_ERROR("Socket not in epoll?");
-		return;
-	}
-	g_peers.setKey<IDX_PEER, IDX_READ>(it, 0);
+	g_sessions.erase<IDX_SESSION>(it);
 }
 
-void deepollWriteable(const boost::shared_ptr<TcpPeer> &peer){
+void deepollReadable(const boost::shared_ptr<TcpSessionBase> &session){
 	const unsigned long long now = getMonoClock();
-	const boost::mutex::scoped_lock lock(g_peerMutex);
-	const AUTO(it, g_peers.find<IDX_PEER>(peer));
-	if(it == g_peers.end<IDX_PEER>()){
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
+	if(it == g_sessions.end<IDX_SESSION>()){
 		LOG_ERROR("Socket not in epoll?");
 		return;
 	}
-	g_peers.setKey<IDX_PEER, IDX_WRITE>(it, now);
+	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
 }
-void reepollWriteable(const boost::shared_ptr<TcpPeer> &peer){
-	const boost::mutex::scoped_lock lock(g_peerMutex);
-	const AUTO(it, g_peers.find<IDX_PEER>(peer));
-	if(it == g_peers.end<IDX_PEER>()){
+void reepollReadable(const boost::shared_ptr<TcpSessionBase> &session){
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
+	if(it == g_sessions.end<IDX_SESSION>()){
 		LOG_ERROR("Socket not in epoll?");
 		return;
 	}
-	g_peers.setKey<IDX_PEER, IDX_WRITE>(it, 0);
+	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, 0);
+}
+
+void deepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
+	const unsigned long long now = getMonoClock();
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
+	if(it == g_sessions.end<IDX_SESSION>()){
+		LOG_ERROR("Socket not in epoll?");
+		return;
+	}
+	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
+}
+void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
+	if(it == g_sessions.end<IDX_SESSION>()){
+		LOG_ERROR("Socket not in epoll?");
+		return;
+	}
+	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, 0);
 }
 
 void threadProc(){
 	LOG_INFO("Epoll daemon thread started.");
 
-	std::vector<boost::shared_ptr<TcpPeer> > peers;
+	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
 	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 	unsigned char data[1024];
 
 	while(atomicLoad(g_daemonRunning)){
 		// 第一部分，处理可接收的数据。
 		{
-			peers.clear();
-			const boost::mutex::scoped_lock lock(g_peerMutex);
-			for(AUTO(it, g_peers.upperBound<IDX_READ>(0)); it != g_peers.end<IDX_READ>(); ++it){
-				peers.push_back(it->m_peer);
+			sessions.clear();
+			const boost::mutex::scoped_lock lock(g_sessionMutex);
+			for(AUTO(it, g_sessions.upperBound<IDX_READ>(0)); it != g_sessions.end<IDX_READ>(); ++it){
+				sessions.push_back(it->m_session);
 			}
 		}
-		for(AUTO(it, peers.begin()); it != peers.end(); ++it){
-			const AUTO_REF(peer, *it);
+		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
+			const AUTO_REF(session, *it);
 			try {
-				const ::ssize_t bytesRead = ::recv(peer->getFd(), data, sizeof(data), MSG_NOSIGNAL);
+				const ::ssize_t bytesRead = ::recv(session->getFd(), data, sizeof(data), MSG_NOSIGNAL);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
 					}
 					if(errno == EAGAIN){
-						reepollReadable(peer);
+						reepollReadable(session);
 						continue;
 					}
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
-					LOG_INFO("Socket has been closed by peer. Remove it.");
-					peer->onRemoteClose();
-					removePeer(peer);
+					LOG_INFO("Socket has been closed by remote host. Remove it.");
+					session->onRemoteClose();
+					removeSession(session);
 					continue;
 				} else {
-					peer->onReadAvail(data, bytesRead);
+					session->onReadAvail(data, bytesRead);
 				}
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while dispatching data: file = ", e.file(),
 					", line = ", e.line(), ", what = ", e.what());
-				removePeer(peer);
+				removeSession(session);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while dispatching data: what = ", e.what());
-				removePeer(peer);
+				removeSession(session);
 			} catch(...){
 				LOG_ERROR("Unknown exception thrown while dispatching data.");
-				removePeer(peer);
+				removeSession(session);
 			}
 		}
 
 		// 第二部分，处理可发送的数据。
 		{
-			peers.clear();
-			const boost::mutex::scoped_lock lock(g_peerMutex);
-			for(AUTO(it, g_peers.upperBound<IDX_WRITE>(0)); it != g_peers.end<IDX_WRITE>(); ++it){
-				peers.push_back(it->m_peer);
+			sessions.clear();
+			const boost::mutex::scoped_lock lock(g_sessionMutex);
+			for(AUTO(it, g_sessions.upperBound<IDX_WRITE>(0)); it != g_sessions.end<IDX_WRITE>(); ++it){
+				sessions.push_back(it->m_session);
 			}
 		}
-		for(AUTO(it, peers.begin()); it != peers.end(); ++it){
-			const AUTO_REF(peer, *it);
+		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
+			const AUTO_REF(session, *it);
 			try {
 				std::size_t bytesToWrite;
 				{
-					boost::mutex::scoped_lock peerLock;
-					bytesToWrite = peer->peekWriteAvail(peerLock, data, sizeof(data));
+					boost::mutex::scoped_lock sessionLock;
+					bytesToWrite = session->peekWriteAvail(sessionLock, data, sizeof(data));
 					if(bytesToWrite == 0){
-						reepollWriteable(peer);
+						reepollWriteable(session);
 						continue;
 					}
 				}
-				const ::ssize_t bytesWritten = ::send(peer->getFd(), data, bytesToWrite, MSG_NOSIGNAL);
+				const ::ssize_t bytesWritten = ::send(session->getFd(), data, bytesToWrite, MSG_NOSIGNAL);
 				if(bytesWritten < 0){
 					if(errno == EINTR){
 						continue;
 					}
 					if(errno == EAGAIN){
-						reepollWriteable(peer);
+						reepollWriteable(session);
 						continue;
 					}
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesWritten == 0){
-					reepollWriteable(peer);
+					reepollWriteable(session);
 					continue;
 				}
-				peer->notifyWritten(bytesWritten);
+				session->notifyWritten(bytesWritten);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while writing socket: file = ", e.file(),
 					", line = ", e.line(), ", what = ", e.what());
-				removePeer(peer);
+				removeSession(session);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while writing socket: what = ", e.what());
-				removePeer(peer);
+				removeSession(session);
 			} catch(...){
 				LOG_ERROR("Unknown exception thrown while writing socket.");
-				removePeer(peer);
+				removeSession(session);
 			}
 		}
 
@@ -240,11 +240,11 @@ void threadProc(){
 		}
 		for(AUTO(it, servers.begin()); it != servers.end(); ++it){
 			try {
-				AUTO(peer, (*it)->tryAccept());
-				if(!peer){
+				AUTO(session, (*it)->tryAccept());
+				if(!session){
 					continue;
 				}
-				addPeer(peer);
+				addSession(session);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while accepting client: file = ", e.file(),
 					", line = ", e.line(), ", what = ", e.what());
@@ -263,40 +263,40 @@ void threadProc(){
 			LOG_ERROR("::epoll_wait() failed: ", desc);
 		} else for(unsigned i = 0; i < (unsigned)ready; ++i){
 			::epoll_event &event = events[i];
-			const AUTO(peer, static_cast<TcpPeer *>(event.data.ptr)->virtualSharedFromThis<TcpPeer>());
+			const AUTO(session, static_cast<TcpSessionBase *>(event.data.ptr)->virtualSharedFromThis<TcpSessionBase>());
 			try {
 				if(event.events & EPOLLHUP){
 					LOG_INFO("Socket has been hung up. Remove it.");
-					removePeer(peer);
+					removeSession(session);
 					continue;
 				}
 				if(event.events & EPOLLERR){
 					int err;
 					::socklen_t errLen = sizeof(err);
-					if(::getsockopt(peer->getFd(), SOL_SOCKET, SO_ERROR, &err, &errLen) != 0){
+					if(::getsockopt(session->getFd(), SOL_SOCKET, SO_ERROR, &err, &errLen) != 0){
 						err = errno;
 					}
 					const AUTO(desc, getErrorDesc());
 					LOG_WARNING("Socket error: ", desc);
-					removePeer(peer);
+					removeSession(session);
 					continue;
 				}
 				if(event.events & EPOLLIN){
-					deepollReadable(peer);
+					deepollReadable(session);
 				}
 				if(event.events & EPOLLOUT){
-					deepollWriteable(peer);
+					deepollWriteable(session);
 				}
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while epolling: file = ", e.file(),
 					", line = ", e.line(), ", what = ", e.what());
-				removePeer(peer);
+				removeSession(session);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while epolling: what = ", e.what());
-				removePeer(peer);
+				removeSession(session);
 			} catch(...){
 				LOG_ERROR("Unknown exception thrown while epolling.");
-				removePeer(peer);
+				removeSession(session);
 			}
 		}
 	}
@@ -330,24 +330,24 @@ void EpollDaemon::stop(){
 		g_daemonThread.join();
 	}
 
-	g_peers.clear();
+	g_sessions.clear();
 	g_servers.clear();
 }
 
-void EpollDaemon::refreshPeer(boost::shared_ptr<TcpPeer> peer){
-	assert(peer);
+void EpollDaemon::refreshSession(boost::shared_ptr<TcpSessionBase> session){
+	assert(session);
 
-	if(peer->hasBeenShutdown()){
+	if(session->hasBeenShutdown()){
 		return;
 	}
 	const unsigned long long now = getMonoClock();
-	const boost::mutex::scoped_lock lock(g_peerMutex);
-	const AUTO(it, g_peers.find<0>(peer));
-	if(it == g_peers.end<0>()){
-		g_peers.insert(PeerMapElement(peer, now, now));
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	const AUTO(it, g_sessions.find<0>(session));
+	if(it == g_sessions.end<0>()){
+		g_sessions.insert(SessionMapElement(session, now, now));
 	} else {
-		g_peers.setKey<IDX_PEER, IDX_READ>(it, now);
-		g_peers.setKey<IDX_PEER, IDX_WRITE>(it, now);
+		g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
+		g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 	}
 }
 void EpollDaemon::addSocketServer(boost::shared_ptr<SocketServerBase> server){

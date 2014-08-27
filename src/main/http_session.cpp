@@ -4,7 +4,7 @@
 using namespace Poseidon;
 
 HttpSession::HttpSession(ScopedFile &socket)
-	: TcpPeer(socket)
+	: TcpSessionBase(socket)
 {
 }
 

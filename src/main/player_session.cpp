@@ -5,7 +5,7 @@
 using namespace Poseidon;
 
 PlayerSession::PlayerSession(ScopedFile &socket)
-	: TcpPeer(socket), m_payloadLen(-1)
+	: TcpSessionBase(socket), m_payloadLen(-1)
 {
 }
 

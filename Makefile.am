@@ -42,7 +42,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/timer_daemon.cpp	\
 	src/main/singletons/epoll_daemon.cpp	\
 	src/main/socket_server.cpp	\
-	src/main/tcp_peer.cpp	\
+	src/main/tcp_session_base.cpp	\
 	src/main/player_session.cpp	\
 	src/main/http_session.cpp	\
 	src/main/data_object.cpp

@@ -6,14 +6,14 @@
 
 namespace Poseidon {
 
-class TcpPeer;
+class TcpSessionBase;
 class SocketServerBase;
 
 struct EpollDaemon {
 	static void start();
 	static void stop();
 
-	static void refreshPeer(boost::shared_ptr<TcpPeer> peer);
+	static void refreshSession(boost::shared_ptr<TcpSessionBase> session);
 	// 注册 TCP socket 服务器。这里收养了所有权。
 	static void addSocketServer(boost::shared_ptr<SocketServerBase> server);
 

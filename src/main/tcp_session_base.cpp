@@ -1,5 +1,5 @@
 #include "../precompiled.hpp"
-#include "tcp_peer.hpp"
+#include "tcp_session_base.hpp"
 #include "exception.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
@@ -8,7 +8,7 @@
 #include <errno.h>
 using namespace Poseidon;
 
-TcpPeer::TcpPeer(ScopedFile &socket)
+TcpSessionBase::TcpSessionBase(ScopedFile &socket)
 	: m_shutdown(false)
 {
 	m_socket.swap(socket);
@@ -41,11 +41,11 @@ TcpPeer::TcpPeer(ScopedFile &socket)
 
 	LOG_INFO("Created tcp peer, remote ip = ", m_remoteIp);
 }
-TcpPeer::~TcpPeer(){
+TcpSessionBase::~TcpSessionBase(){
 	LOG_INFO("Destroyed tcp peer, remote ip = ", m_remoteIp);
 }
 
-std::size_t TcpPeer::peekWriteAvail(boost::mutex::scoped_lock &lock, void *data, std::size_t size) const {
+std::size_t TcpSessionBase::peekWriteAvail(boost::mutex::scoped_lock &lock, void *data, std::size_t size) const {
 	boost::mutex::scoped_lock(m_queueMutex).swap(lock);
 	if(size == 0){
 		return m_sendBuffer.size();
@@ -53,15 +53,15 @@ std::size_t TcpPeer::peekWriteAvail(boost::mutex::scoped_lock &lock, void *data,
 		return m_sendBuffer.peek(data, size);
 	}
 }
-void TcpPeer::notifyWritten(std::size_t size){
+void TcpSessionBase::notifyWritten(std::size_t size){
 	const boost::mutex::scoped_lock lock(m_queueMutex);
 	m_sendBuffer.discard(size);
 }
 
-void TcpPeer::onRemoteClose(){
+void TcpSessionBase::onRemoteClose(){
 }
 
-void TcpPeer::send(const void *data, std::size_t size){
+void TcpSessionBase::send(const void *data, std::size_t size){
 	if(atomicLoad(m_shutdown) != false){
 		DEBUG_THROW(Exception, "Trying to send on a socket that has been shut down.");
 	}
@@ -69,9 +69,9 @@ void TcpPeer::send(const void *data, std::size_t size){
 		const boost::mutex::scoped_lock lock(m_queueMutex);
 		m_sendBuffer.put(data, size);
 	}
-	EpollDaemon::refreshPeer(virtualSharedFromThis<TcpPeer>());
+	EpollDaemon::refreshSession(virtualSharedFromThis<TcpSessionBase>());
 }
-void TcpPeer::shutdown(){
+void TcpSessionBase::shutdown(){
 	atomicStore(m_shutdown, true);
 	{
 		const boost::mutex::scoped_lock lock(m_queueMutex);
@@ -80,7 +80,7 @@ void TcpPeer::shutdown(){
 		}
 	}
 }
-void TcpPeer::forceShutdown(){
+void TcpSessionBase::forceShutdown(){
 	atomicStore(m_shutdown, true);
 	::shutdown(getFd(), SHUT_RDWR);
 }

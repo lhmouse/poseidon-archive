@@ -1,5 +1,5 @@
-#ifndef POSEIDON_TCP_PEER_HPP_
-#define POSEIDON_TCP_PEER_HPP_
+#ifndef POSEIDON_TCP_SESSION_BASE_HPP_
+#define POSEIDON_TCP_SESSION_BASE_HPP_
 
 #include <string>
 #include <cstddef>
@@ -12,7 +12,7 @@
 
 namespace Poseidon {
 
-class TcpPeer : boost::noncopyable
+class TcpSessionBase : boost::noncopyable
 	, public virtual VirtualSharedFromThis
 {
 private:
@@ -24,8 +24,8 @@ private:
 	StreamBuffer m_sendBuffer;
 
 protected:
-	explicit TcpPeer(ScopedFile &socket);
-	virtual ~TcpPeer();
+	explicit TcpSessionBase(ScopedFile &socket);
+	virtual ~TcpSessionBase();
 
 public:
 	int getFd() const {

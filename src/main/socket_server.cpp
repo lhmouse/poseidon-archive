@@ -7,7 +7,7 @@
 #include "log.hpp"
 #include "exception.hpp"
 #include "singletons/epoll_daemon.hpp"
-#include "tcp_peer.hpp"
+#include "tcp_session_base.hpp"
 using namespace Poseidon;
 
 SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPort){
@@ -80,26 +80,26 @@ SocketServerBase::~SocketServerBase(){
 	LOG_INFO("Destroyed socket server on ", m_bindAddr);
 }
 
-boost::shared_ptr<TcpPeer> SocketServerBase::tryAccept() const {
+boost::shared_ptr<TcpSessionBase> SocketServerBase::tryAccept() const {
 	ScopedFile client(::accept(m_listen.get(), NULL, NULL));
 	if(!client){
-		return boost::shared_ptr<TcpPeer>();
+		return boost::shared_ptr<TcpSessionBase>();
 	}
-	AUTO(peer, onClientConnect(client));
-	if(!peer){
-		return boost::shared_ptr<TcpPeer>();
+	AUTO(session, onClientConnect(client));
+	if(!session){
+		return boost::shared_ptr<TcpSessionBase>();
 	}
-	const int flags = ::fcntl(peer->getFd(), F_GETFL);
+	const int flags = ::fcntl(session->getFd(), F_GETFL);
 	if(flags == -1){
 		const int code = errno;
 		LOG_ERROR("Could not get fcntl flags on socket.");
 		DEBUG_THROW(SystemError, code);
 	}
-	if(::fcntl(peer->getFd(), F_SETFL, flags | O_NONBLOCK) != 0){
+	if(::fcntl(session->getFd(), F_SETFL, flags | O_NONBLOCK) != 0){
 		const int code = errno;
 		LOG_ERROR("Could not set fcntl flags on socket.");
 		DEBUG_THROW(SystemError, code);
 	}
-	LOG_INFO("Client '", peer->getRemoteIp(), "' has connected.");
-	return peer;
+	LOG_INFO("Client '", session->getRemoteIp(), "' has connected.");
+	return session;
 }
