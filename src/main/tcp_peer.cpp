@@ -58,6 +58,9 @@ void TcpPeer::notifyWritten(std::size_t size){
 	m_sendBuffer.discard(size);
 }
 
+void TcpPeer::onRemoteClose(){
+}
+
 void TcpPeer::send(const void *data, std::size_t size){
 	if(atomicLoad(m_shutdown) != false){
 		DEBUG_THROW(Exception, "Trying to send on a socket that has been shut down.");

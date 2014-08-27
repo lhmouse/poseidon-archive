@@ -1,5 +1,5 @@
-#ifndef POSEIDON_PLAYER_SESSION_HPP_
-#define POSEIDON_PLAYER_SESSION_HPP_
+#ifndef POSEIDON_HTTP_SESSION_HPP_
+#define POSEIDON_HTTP_SESSION_HPP_
 
 #include <cstddef>
 #include "tcp_peer.hpp"
@@ -8,19 +8,16 @@
 
 namespace Poseidon {
 
-class PlayerSession : public TcpPeer, public JobBase {
+class HttpSession : public TcpPeer, public JobBase {
 private:
 	StreamBuffer m_received;
 
-	long m_payloadLen;
-	unsigned m_protocolId;
 
 public:
-	explicit PlayerSession(ScopedFile &socket);
+	explicit HttpSession(ScopedFile &socket);
 
 private:
 	void onReadAvail(const void *data, std::size_t size);
-
 	void perform() const;
 };
 

@@ -14,7 +14,7 @@
 #include "../utilities.hpp"
 #include "../exception.hpp"
 #include "../tcp_peer.hpp"
-#include "../socket_server_base.hpp"
+#include "../socket_server.hpp"
 #include "../multi_index_map.hpp"
 using namespace Poseidon;
 
@@ -165,6 +165,7 @@ void threadProc(){
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
 					LOG_INFO("Socket has been closed by peer. Remove it.");
+					peer->onRemoteClose();
 					removePeer(peer);
 					continue;
 				} else {

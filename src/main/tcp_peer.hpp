@@ -44,6 +44,7 @@ public:
 	void notifyWritten(std::size_t size);
 
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
+	virtual void onRemoteClose();
 
 	void send(const void *data, std::size_t size);
 	void shutdown();

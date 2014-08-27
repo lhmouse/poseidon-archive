@@ -40,10 +40,10 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/database_daemon.cpp	\
 	src/main/singletons/timer_daemon.cpp	\
 	src/main/singletons/epoll_daemon.cpp	\
-	src/main/socket_server_base.cpp	\
+	src/main/socket_server.cpp	\
 	src/main/tcp_peer.cpp	\
-	src/main/player_session_manager.cpp	\
-	src/main/player_session.cpp
+	src/main/player_session.cpp	\
+	src/main/http_session.cpp
 
 lib_libposeidon_template_la_SOURCES=	\
 	#src/template/module_main.cpp

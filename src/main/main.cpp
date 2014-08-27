@@ -8,7 +8,9 @@
 #include "singletons/timer_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/job_dispatcher.hpp"
-#include "player_session_manager.hpp"
+#include "socket_server.hpp"
+#include "player_session.hpp"
+#include "http_session.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -64,16 +66,21 @@ void run(){
 	RUN_SINGLETON(TimerDaemon);
 	RUN_SINGLETON(EpollDaemon);
 
-	LOG_INFO("Creating player session manager...");
+	LOG_INFO("Creating player session server...");
 	EpollDaemon::addSocketServer(
-		boost::make_shared<PlayerSessionManager>(
+		boost::make_shared<SocketServer<PlayerSession> >(
 			ConfigFile::get("socket_bind"),
 			boost::lexical_cast<unsigned>(ConfigFile::get("socket_port"))
 		)
 	);
 
 	LOG_INFO("Creating http server...");
-	// http
+	EpollDaemon::addSocketServer(
+		boost::make_shared<SocketServer<HttpSession> >(
+			ConfigFile::get("http_bind"),
+			boost::lexical_cast<unsigned>(ConfigFile::get("http_port"))
+		)
+	);
 
 	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();
