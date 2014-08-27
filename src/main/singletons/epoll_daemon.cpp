@@ -140,6 +140,7 @@ void threadProc(){
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
 	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 	unsigned char data[1024];
+	unsigned epollTimeout = 1;
 
 	while(atomicLoad(g_daemonRunning)){
 		// 第一部分，处理可接收的数据。
@@ -164,9 +165,7 @@ void threadProc(){
 					}
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
-					LOG_INFO("Socket has been closed by remote host. Remove it.");
 					session->onRemoteClose();
-					removeSession(session);
 					continue;
 				} else {
 					session->onReadAvail(data, bytesRead);
@@ -238,12 +237,17 @@ void threadProc(){
 			const boost::mutex::scoped_lock lock(g_serverMutex);
 			std::copy(g_servers.begin(), g_servers.end(), std::back_inserter(servers));
 		}
+		// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
+		if(epollTimeout < 0x100){
+			epollTimeout <<= 1;
+		}
 		for(AUTO(it, servers.begin()); it != servers.end(); ++it){
 			try {
 				AUTO(session, (*it)->tryAccept());
 				if(!session){
 					continue;
 				}
+				epollTimeout = 1;
 				addSession(session);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while accepting client: file = ", e.file(),
@@ -257,13 +261,14 @@ void threadProc(){
 
 		// 第四部分，检测新的数据。
 		::epoll_event events[256];
-		const int ready = ::epoll_wait(g_epoll.get(), events, COUNT_OF(events), 100);
+		const int ready = ::epoll_wait(g_epoll.get(), events, COUNT_OF(events), epollTimeout);
 		if(ready < 0){
 			const AUTO(desc, getErrorDesc());
 			LOG_ERROR("::epoll_wait() failed: ", desc);
 		} else for(unsigned i = 0; i < (unsigned)ready; ++i){
 			::epoll_event &event = events[i];
-			const AUTO(session, static_cast<TcpSessionBase *>(event.data.ptr)->virtualSharedFromThis<TcpSessionBase>());
+			const AUTO(session, static_cast<TcpSessionBase *>(event.data.ptr)->
+				virtualSharedFromThis<TcpSessionBase>());
 			try {
 				if(event.events & EPOLLHUP){
 					LOG_INFO("Socket has been hung up. Remove it.");

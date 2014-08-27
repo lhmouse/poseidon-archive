@@ -11,5 +11,8 @@ HttpSession::HttpSession(ScopedFile &socket)
 void HttpSession::onReadAvail(const void *data, std::size_t size){
 	LOG_DEBUG("Received ", std::string((const char *)data, size));
 }
+void HttpSession::onRemoteClose(){
+}
+
 void HttpSession::perform() const {
 }
