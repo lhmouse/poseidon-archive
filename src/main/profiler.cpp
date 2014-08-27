@@ -1,15 +1,28 @@
 #include "../precompiled.hpp"
 #include "profiler.hpp"
 #include <map>
+#include <cstring>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
-#include <pthread.h>
 #include "log.hpp"
 #include "atomic.hpp"
 #include "utilities.hpp"
 using namespace Poseidon;
 
 namespace {
+
+struct ProfileKey {
+	const char *file;
+	unsigned long line;
+};
+
+bool operator<(const ProfileKey &lhs, const ProfileKey &rhs){
+	const int fileCmp = std::strcmp(lhs.file, rhs.file);
+	if(fileCmp != 0){
+		return fileCmp < 0;
+	}
+	return lhs.line < rhs.line;
+}
 
 struct ProfileCounters {
 	volatile unsigned long long samples;
@@ -22,10 +35,7 @@ const ProfileCounters ZERO_ITEM = { 0, 0, 0 };
 __thread Profiler *g_topProfiler = NULL;
 
 boost::shared_mutex g_mutex;
-std::map<
-	std::pair<const char *, unsigned long>,
-	ProfileCounters
-	> g_profile;
+std::map<ProfileKey, ProfileCounters> g_profile;
 
 }
 
@@ -35,8 +45,8 @@ std::vector<ProfileItem> Profiler::snapshot(){
 	ret.reserve(g_profile.size());
 	for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
 		ProfileItem pi;
-		pi.file = it->first.first;
-		pi.line = it->first.second;
+		pi.file = it->first.file;
+		pi.line = it->first.line;
 		pi.samples = atomicLoad(it->second.samples);
 		pi.usTotal = atomicLoad(it->second.usTotal);
 		pi.usExclusive = atomicLoad(it->second.usExclusive);
@@ -50,16 +60,17 @@ Profiler::Profiler(const char *file, unsigned long line)
 {
 	const AUTO(now, getMonoClock());
 
+	ProfileKey key;
+	key.file = m_file;
+	key.line = m_line;
 	{
 		boost::shared_lock<boost::shared_mutex> slock(g_mutex);
-		AUTO(it, g_profile.find(std::make_pair(m_file, m_line)));
+		AUTO(it, g_profile.find(key));
 		if(it == g_profile.end()){
 			slock.unlock();
 
 			const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
-			g_profile.insert(std::make_pair(
-				std::make_pair(m_file, m_line), ZERO_ITEM
-			));
+			g_profile.insert(std::make_pair(key, ZERO_ITEM));
 		}
 	}
 
@@ -81,9 +92,12 @@ Profiler::~Profiler() throw() {
 		m_prev->m_exclusiveStart = now;
 	}
 
+	ProfileKey key;
+	key.file = m_file;
+	key.line = m_line;
 	{
 		const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
-		AUTO(it, g_profile.find(std::make_pair(m_file, m_line)));
+		AUTO(it, g_profile.find(key));
 		if(it != g_profile.end()){
 			atomicAdd(it->second.samples, 1);
 			atomicAdd(it->second.usTotal, now - m_start);
