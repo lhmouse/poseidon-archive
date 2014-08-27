@@ -77,8 +77,6 @@ void TcpPeer::shutdown(){
 		const boost::mutex::scoped_lock lock(m_queueMutex);
 		if(m_sendBuffer.empty()){
 			::shutdown(getFd(), SHUT_RDWR);
-		} else {
-			EpollDaemon::refreshPeer(virtualSharedFromThis<TcpPeer>());
 		}
 	}
 }
