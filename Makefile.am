@@ -33,6 +33,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/profiler.cpp	\
 	src/main/raii.cpp	\
 	src/main/virtual_shared_from_this.cpp	\
+	src/main/transaction.cpp	\
 	src/main/stream_buffer.cpp	\
 	src/main/singletons/config_file.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
