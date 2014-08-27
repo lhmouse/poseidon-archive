@@ -8,7 +8,7 @@
 
 namespace Poseidon {
 
-class TransactionItemBase : private boost::noncopyable {
+class TransactionItemBase : boost::noncopyable {
     friend class Transaction;
 
 private:
@@ -48,7 +48,7 @@ private:
     }
 };
 
-class Transaction : private boost::noncopyable {
+class Transaction : boost::noncopyable {
 private:
     std::vector<boost::shared_ptr<TransactionItemBase> > m_items;
 
