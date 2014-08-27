@@ -54,8 +54,9 @@ struct PeerMapElement {
 
 	const boost::shared_ptr<EpollRaii> m_epollRaii;
 
-	explicit PeerMapElement(boost::shared_ptr<TcpPeer> peer)
-		: m_peer(peer), m_lastRead(0), m_lastWritten(0)
+	explicit PeerMapElement(boost::shared_ptr<TcpPeer> peer,
+		unsigned long long lastRead = 0, unsigned long long lastWritten = 0)
+		: m_peer(peer), m_lastRead(lastRead), m_lastWritten(lastWritten)
 		, m_epollRaii(boost::make_shared<EpollRaii>(peer.get()))
 	{
 	}
@@ -95,7 +96,6 @@ void removePeer(const boost::shared_ptr<TcpPeer> &peer){
 
 void deepollReadable(const boost::shared_ptr<TcpPeer> &peer){
 	const unsigned long long now = getMonoClock();
-
 	const boost::mutex::scoped_lock lock(g_peerMutex);
 	const AUTO(it, g_peers.find<IDX_PEER>(peer));
 	if(it == g_peers.end<IDX_PEER>()){
@@ -116,7 +116,6 @@ void reepollReadable(const boost::shared_ptr<TcpPeer> &peer){
 
 void deepollWriteable(const boost::shared_ptr<TcpPeer> &peer){
 	const unsigned long long now = getMonoClock();
-
 	const boost::mutex::scoped_lock lock(g_peerMutex);
 	const AUTO(it, g_peers.find<IDX_PEER>(peer));
 	if(it == g_peers.end<IDX_PEER>()){
@@ -334,15 +333,20 @@ void EpollDaemon::stop(){
 	g_servers.clear();
 }
 
-void EpollDaemon::notifyWriteable(boost::shared_ptr<TcpPeer> peer){
+void EpollDaemon::refreshPeer(boost::shared_ptr<TcpPeer> peer){
 	assert(peer);
 
+	if(peer->hasBeenShutdown()){
+		return;
+	}
 	const unsigned long long now = getMonoClock();
-
 	const boost::mutex::scoped_lock lock(g_peerMutex);
-	const AUTO(it, g_peers.find<IDX_PEER>(peer));
-	if(it != g_peers.end<IDX_PEER>()){
-		g_peers.setKey<0, 2>(it, now);
+	const AUTO(it, g_peers.find<0>(peer));
+	if(it == g_peers.end<0>()){
+		g_peers.insert(PeerMapElement(peer, now, now));
+	} else {
+		g_peers.setKey<IDX_PEER, IDX_READ>(it, now);
+		g_peers.setKey<IDX_PEER, IDX_WRITE>(it, now);
 	}
 }
 void EpollDaemon::addSocketServer(boost::shared_ptr<SocketServerBase> server){
