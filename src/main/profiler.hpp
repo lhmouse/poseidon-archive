@@ -27,6 +27,8 @@ private:
 	const char *const m_file;
 	const unsigned long m_line;
 
+	void *m_impl;
+
 	unsigned long long m_start;
 	unsigned long long m_exclusiveTotal;
 	unsigned long long m_exclusiveStart;

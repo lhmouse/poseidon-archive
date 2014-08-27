@@ -176,16 +176,16 @@ std::size_t StreamBuffer::discard(std::size_t size){
 	}
 
 	const std::size_t ret = std::min(m_size, size);
-	std::size_t copied = 0;
+	std::size_t dropped = 0;
 	for(;;){
 		assert(!m_chunks.empty());
 
 		AUTO_REF(front, m_chunks.front());
-		const std::size_t toCopy = std::min(ret - copied, front.writePos - front.readPos);
-		front.readPos += toCopy;
-		m_size -= toCopy;
-		copied += toCopy;
-		if(copied == ret){
+		const std::size_t toDrop = std::min(ret - dropped, front.writePos - front.readPos);
+		front.readPos += toDrop;
+		m_size -= toDrop;
+		dropped += toDrop;
+		if(dropped == ret){
 			break;
 		}
 		popFrontPooled(m_chunks);
