@@ -19,18 +19,21 @@ struct KeyComparator {
 	}
 };
 
-const std::string EMPTY_STRING;
-
-std::map<
+typedef std::map<
 	boost::shared_ptr<const char>, std::string,
 	KeyComparator
-> g_config;
+> ConfigMap;
+
+const std::string EMPTY_STRING;
+
+ConfigMap g_config;
 
 }
 
 void ConfigFile::reload(const char *path){
 	LOG_INFO("Loading config from ", path, "...");
 
+	ConfigMap config;
 	std::ifstream ifs(path);
 	if(!ifs.good()){
 		LOG_FATAL("Could not open config file ", path);
@@ -71,8 +74,9 @@ void ConfigFile::reload(const char *path){
 		}
 
 		LOG_DEBUG("Config: ", *key, " = ", val);
-		g_config[boost::shared_ptr<const char>(key, key->c_str())].swap(val);
+		config[boost::shared_ptr<const char>(key, key->c_str())].swap(val);
 	}
+	config.swap(g_config);
 }
 const std::string &ConfigFile::get(const char *key){
 	AUTO(it, g_config.find(boost::shared_ptr<const char>(boost::shared_ptr<void>(), key)));
