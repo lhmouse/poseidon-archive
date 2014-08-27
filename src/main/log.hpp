@@ -42,6 +42,36 @@ public:
 		}
 		return *this;
 	}
+
+	Log &operator,(signed char ch) throw() {
+		try {
+			m_stream <<(signed)ch;
+		} catch(...){
+		}
+		return *this;
+	}
+	Log &operator,(unsigned char ch) throw() {
+		try {
+			m_stream <<(unsigned)ch;
+		} catch(...){
+		}
+		return *this;
+	}
+
+	Log &operator,(const signed char *p) throw() {
+		try {
+			m_stream <<(const void *)p;
+		} catch(...){
+		}
+		return *this;
+	}
+	Log &operator,(const unsigned char *p) throw() {
+		try {
+			m_stream <<(const void *)p;
+		} catch(...){
+		}
+		return *this;
+	}
 };
 
 }
