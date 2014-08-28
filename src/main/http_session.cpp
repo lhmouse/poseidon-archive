@@ -2,7 +2,6 @@
 #include "http_session.hpp"
 #include "http_status.hpp"
 #include "log.hpp"
-#include <stdio.h>	// C99 snprintf()
 using namespace Poseidon;
 
 namespace {
