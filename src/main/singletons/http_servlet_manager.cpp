@@ -1,12 +1,12 @@
-#include "../precompiled.hpp"
+#include "../../precompiled.hpp"
 #include "http_servlet_manager.hpp"
 #include <string>
 #include <map>
 #include <boost/noncopyable.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
-#include "log.hpp"
-#include "exception.hpp"
+#include "../log.hpp"
+#include "../exception.hpp"
 using namespace Poseidon;
 
 namespace {

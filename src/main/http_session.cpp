@@ -1,11 +1,12 @@
 #include "../precompiled.hpp"
 #include "http_session.hpp"
-#include "http_servlet_manager.hpp"
 #include "http_status.hpp"
 #include "log.hpp"
 #include "singletons/job_dispatcher.hpp"
+#include "singletons/http_servlet_manager.hpp"
 #include "stream_buffer.hpp"
 #include "utilities.hpp"
+#include "exception.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -205,8 +206,17 @@ protected:
 		}
 		OptionalMap headers;
 		std::string contents;
-		const HttpStatus status = (*servlet)(headers, contents, m_verb, m_getParams, m_postParams);
-		respond(m_session, status, &headers, &contents);
+		try {
+			const HttpStatus status = (*servlet)(headers, contents,
+				m_verb, m_getParams, m_postParams);
+			respond(m_session, status, &headers, &contents);
+		} catch(ProtocolException &e){
+			LOG_ERROR("ProtocolException thrown in HTTP servlet, code = ", e.code(),
+				", file = ", e.file(), ", line = ", e.line(), ", what = ", e.what());
+			if(e.code() > 0){
+				respond(m_session, (HttpStatus)e.code());
+			}
+		}
 	}
 };
 

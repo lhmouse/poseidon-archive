@@ -5,9 +5,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/function.hpp>
-#include "http_status.hpp"
-#include "http_verb.hpp"
-#include "optional_map.hpp"
+#include "../http_status.hpp"
+#include "../http_verb.hpp"
+#include "../optional_map.hpp"
 
 namespace Poseidon {
 
