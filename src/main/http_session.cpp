@@ -2,23 +2,24 @@
 #include "http_session.hpp"
 #include "http_status.hpp"
 #include "log.hpp"
+#include <stdio.h>	// C99 snprintf()
 using namespace Poseidon;
 
 namespace {
 
-void respond(HttpSession &session, HttpStatus status,
-	OptionalMap &headers, std::string &contents)
-{
-	std::ostringstream ss;
-	std::string str;
-
+void respond(HttpSession &session, HttpStatus status, OptionalMap &headers, std::string &contents){
 	const AUTO(desc, getHttpStatusCodeDesc(status));
+	const AUTO(codeStatus, boost::lexical_cast<std::string>((unsigned)status) + ' ' + desc.descShort);
+
 	if(contents.empty() && ((unsigned)status / 100 != 2)){
-		ss <<"<html><head><title>" <<(unsigned)status <<' ' <<desc.descShort
-			<<"</title></head><body><h1>" <<(unsigned)status <<' ' <<desc.descShort
-			<<"</h1><hr /><p>" <<desc.descLong <<"</p></body></html>";
-		contents = ss.str();
-		headers.set("Content-Length", boost::lexical_cast<std::string>(contents.size()));
+		contents = "<html><head><title>";
+		contents += codeStatus;
+		contents += "</title></head><body><h1>";
+		contents += codeStatus;
+		contents += "</h1><hr /><p>";
+		contents += desc.descLong;
+		contents += "</p></body></html>";
+
 		headers.set("Content-Type", "text/html");
 	} else {
 		AUTO_REF(contentType, headers["Content-Type"]);
@@ -26,17 +27,21 @@ void respond(HttpSession &session, HttpStatus status,
 			contentType.assign("text/plain; charset=utf-8");
 		}
 	}
+	headers.set("Content-Length", boost::lexical_cast<std::string>(contents.size()));
 
-	ss.str("");
-	ss <<"HTTP/1.1 " <<(unsigned)status <<' ' <<desc.descShort <<"\r\n";
+	session.send("HTTP/1.1 ", 9);
+	session.send(codeStatus.data(), codeStatus.size());
+	session.send("\r\n", 2);
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-		ss <<it->first.get() <<": " <<it->second <<"\r\n";
+		if(!it->second.empty()){
+			session.send(it->first.get(), std::strlen(it->first.get()));
+			session.send(": ", 2);
+			session.send(it->second.data(), it->second.size());
+			session.send("\r\n", 2);
+		}
 	}
-	ss <<"\r\n";
-	ss <<contents;
-
-	str = ss.str();
-	session.send(str.data(), str.size());
+	session.send("\r\n", 2);
+	session.send(contents.data(), contents.size());
 }
 
 }
@@ -51,7 +56,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 
 	OptionalMap headers;
 	std::string contents;
-	respond(*this, HTTP_NOT_FOUND, headers, contents);
+	respond(*this, HTTP_NOT_SUPPORTED, headers, contents);
 }
 void HttpSession::onRemoteClose(){
 }
