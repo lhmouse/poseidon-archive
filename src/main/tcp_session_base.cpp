@@ -9,7 +9,7 @@
 using namespace Poseidon;
 
 TcpSessionBase::TcpSessionBase(ScopedFile &socket)
-	: m_shutdown(false)
+	: m_readShutdown(false), m_shutdown(false)
 {
 	m_socket.swap(socket);
 
@@ -46,7 +46,7 @@ TcpSessionBase::~TcpSessionBase(){
 }
 
 std::size_t TcpSessionBase::peekWriteAvail(boost::mutex::scoped_lock &lock, void *data, std::size_t size) const {
-	boost::mutex::scoped_lock(m_queueMutex).swap(lock);
+	boost::mutex::scoped_lock(m_bufferMutex).swap(lock);
 	if(size == 0){
 		return m_sendBuffer.size();
 	} else {
@@ -54,30 +54,41 @@ std::size_t TcpSessionBase::peekWriteAvail(boost::mutex::scoped_lock &lock, void
 	}
 }
 void TcpSessionBase::notifyWritten(std::size_t size){
-	const boost::mutex::scoped_lock lock(m_queueMutex);
+	const boost::mutex::scoped_lock lock(m_bufferMutex);
 	m_sendBuffer.discard(size);
 }
 
 void TcpSessionBase::send(const void *data, std::size_t size){
-	if(atomicLoad(m_shutdown) != false){
-		DEBUG_THROW(Exception, "Trying to send on a socket that has been shut down.");
-	}
+	StreamBuffer tmp;
+	tmp.put(data, size);
+	sendWithMove(tmp);
+}
+void TcpSessionBase::send(const StreamBuffer &buffer){
+	StreamBuffer tmp(buffer);
+	sendWithMove(tmp);
+}
+void TcpSessionBase::sendWithMove(StreamBuffer &buffer){
 	{
-		const boost::mutex::scoped_lock lock(m_queueMutex);
-		m_sendBuffer.put(data, size);
+		const boost::mutex::scoped_lock lock(m_bufferMutex);
+		if(atomicLoad(m_shutdown) != false){
+			DEBUG_THROW(Exception, "Trying to send on a socket that has been shut down.");
+		}
+		m_sendBuffer.splice(buffer);
 	}
 	EpollDaemon::refreshSession(virtualSharedFromThis<TcpSessionBase>());
 }
+
+void TcpSessionBase::shutdownRead(){
+	atomicStore(m_readShutdown, true);
+	::shutdown(getFd(), SHUT_RD);
+}
 void TcpSessionBase::shutdown(){
+	atomicStore(m_readShutdown, true);
 	atomicStore(m_shutdown, true);
-	{
-		const boost::mutex::scoped_lock lock(m_queueMutex);
-		if(m_sendBuffer.empty()){
-			::shutdown(getFd(), SHUT_RDWR);
-		}
-	}
+	::shutdown(getFd(), SHUT_RD);
 }
 void TcpSessionBase::forceShutdown(){
+	atomicStore(m_readShutdown, true);
 	atomicStore(m_shutdown, true);
 	::shutdown(getFd(), SHUT_RDWR);
 }

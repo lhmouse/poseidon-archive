@@ -20,7 +20,7 @@ public:
 
 private:
 	void onReadAvail(const void *data, std::size_t size);
-	void onRemoteClose();
+	void onReadComplete();
 
 	void perform() const;
 };

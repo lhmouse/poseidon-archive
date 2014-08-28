@@ -33,7 +33,7 @@ public:
 		: m_session(session)
 	{
 		::epoll_event event;
-		event.events = EPOLLHUP | EPOLLERR | EPOLLIN | EPOLLOUT | EPOLLET;
+		event.events = EPOLLHUP | EPOLLERR | EPOLLRDHUP | EPOLLIN | EPOLLOUT | EPOLLET;
 		event.data.ptr = m_session;
 		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, m_session->getFd(), &event) != 0){
 			DEBUG_THROW(SystemError, errno);
@@ -164,11 +164,7 @@ void threadProc(){
 						continue;
 					}
 					DEBUG_THROW(SystemError, errno);
-				} else if(bytesRead == 0){
-					session->onRemoteClose();
-					session->shutdown();
-					continue;
-				} else {
+				} else if(bytesRead > 0){
 					session->onReadAvail(data, bytesRead);
 				}
 			} catch(Exception &e){
@@ -196,13 +192,18 @@ void threadProc(){
 			const AUTO_REF(session, *it);
 			try {
 				std::size_t bytesToWrite;
+				bool readShutdown;
 				{
 					boost::mutex::scoped_lock sessionLock;
 					bytesToWrite = session->peekWriteAvail(sessionLock, data, sizeof(data));
-					if(bytesToWrite == 0){
+					readShutdown = session->hasReadBeenShutdown();
+					if((bytesToWrite == 0) && !readShutdown){
 						reepollWriteable(session);
-						continue;
 					}
+				}
+				if((bytesToWrite == 0) && readShutdown){
+					removeSession(session);
+					continue;
 				}
 				const ::ssize_t bytesWritten = ::send(session->getFd(), data, bytesToWrite, MSG_NOSIGNAL);
 				if(bytesWritten < 0){
@@ -214,11 +215,9 @@ void threadProc(){
 						continue;
 					}
 					DEBUG_THROW(SystemError, errno);
-				} else if(bytesWritten == 0){
-					reepollWriteable(session);
-					continue;
+				} else if(bytesWritten > 0){
+					session->notifyWritten(bytesWritten);
 				}
-				session->notifyWritten(bytesWritten);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while writing socket: file = ", e.file(),
 					", line = ", e.line(), ", what = ", e.what());
@@ -286,6 +285,13 @@ void threadProc(){
 					LOG_WARNING("Socket error: ", desc);
 					removeSession(session);
 					continue;
+				}
+
+				if(event.events & EPOLLRDHUP){
+					LOG_INFO("Socket read complete.");
+					session->onReadComplete();
+					session->shutdownRead();
+					deepollWriteable(session);
 				}
 				if(event.events & EPOLLIN){
 					deepollReadable(session);

@@ -23,7 +23,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 		send(&data, 1);
 	}
 }
-void PlayerSession::onRemoteClose(){
+void PlayerSession::onReadComplete(){
 }
 
 void PlayerSession::perform() const {

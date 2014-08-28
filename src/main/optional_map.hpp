@@ -33,14 +33,15 @@ private:
 public:
 	const std::string &get(const char *key) const;
 	const std::string &get(const std::string &key) const;
-	std::string &get(const char *key);
-	std::string &get(const std::string &key);
+
+	std::string &create(const char *key);
+	std::string &create(const std::string &key);
 
 	void set(const char *key, std::string val){
-		get(key).swap(val);
+		create(key).swap(val);
 	}
 	void set(const std::string &key, std::string val){
-		get(key).swap(val);
+		create(key).swap(val);
 	}
 
 	bool empty() const {
@@ -73,7 +74,7 @@ public:
 	const std::string &operator[](const std::string &key) const {
 		return get(key);
 	}
-	std::string &operator[](const std::string &key){
+	const std::string &operator[](const std::string &key){
 		return get(key);
 	}
 };
