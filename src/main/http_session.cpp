@@ -354,7 +354,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 }
 void HttpSession::onReadComplete(){
 	if(m_headerIndex != 0){
-		LOG_WARNING("Now that this connection has been shutdown, "
+		LOG_WARNING("Now that this connection has been shut down, "
 			"an incomplete request has been discarded.");
 	}
 }
