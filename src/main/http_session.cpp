@@ -275,33 +275,30 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				if(m_line.empty()){
 					continue;
 				}
-				std::string verb;
-				std::string uri;
-				std::string version;
-				std::istringstream ss(m_line);
-				if(!(ss >>verb >>uri >>version)){
+				const AUTO(parts, split<std::string>(m_line, ' '));
+				if(parts.size() != 3){
 					LOG_WARNING("Bad HTTP header: ", m_line);
 					kill(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
 					return;
 				}
-				m_verb = translateVerb(verb);
+				m_verb = translateVerb(parts[0]);
 				if(m_verb == HTTP_INVALID_VERB){
-					LOG_WARNING("Bad HTTP verb: ", verb);
+					LOG_WARNING("Bad HTTP verb: ", parts[0]);
 					kill(virtualSharedFromThis<HttpSession>(), HTTP_BAD_METHOD);
 					return;
 				}
-				if((version != "HTTP/1.0") && (version != "HTTP/1.1")){
-					LOG_WARNING("Bad HTTP version: ", version);
-					kill(virtualSharedFromThis<HttpSession>(), HTTP_VERSION_NOT_SUP);
-					return;
-				}
-				const std::size_t questionPos = uri.find('?');
+				const std::size_t questionPos = parts[1].find('?');
 				if(questionPos == std::string::npos){
-					m_uri = uri;
+					m_uri = parts[1];
 					m_getParams.clear();
 				} else {
-					m_uri = uri.substr(0, questionPos);
-					m_getParams = optionalMapFromUrlEncoded(uri.substr(questionPos + 1));
+					m_uri = parts[1].substr(0, questionPos);
+					m_getParams = optionalMapFromUrlEncoded(parts[1].substr(questionPos + 1));
+				}
+				if((parts[2] != "HTTP/1.0") && (parts[2] != "HTTP/1.1")){
+					LOG_WARNING("Unsupported HTTP version: ", parts[2]);
+					kill(virtualSharedFromThis<HttpSession>(), HTTP_VERSION_NOT_SUP);
+					return;
 				}
 				++m_headerIndex;
 			} else if(!m_line.empty()){
