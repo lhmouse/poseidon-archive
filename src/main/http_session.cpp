@@ -67,33 +67,6 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 	session->sendWithMove(buffer);
 }
 
-class HttpErrorJob : public JobBase {
-private:
-	const boost::weak_ptr<HttpSession> m_session;
-	const HttpStatus m_status;
-
-public:
-	HttpErrorJob(boost::weak_ptr<HttpSession> session, HttpStatus status)
-		: m_session(session), m_status(status)
-	{
-	}
-
-protected:
-	void perform() const {
-		const AUTO(session, m_session.lock());
-		if(!session){
-			LOG_WARNING("The specified HTTP session has expired.");
-			return;
-		}
-		respond(session, m_status);
-	}
-};
-
-void kill(const boost::shared_ptr<HttpSession> &session, HttpStatus status){
-	boost::make_shared<HttpErrorJob>(session, status)->pend();
-	session->shutdownRead();
-}
-
 HttpVerb translateVerb(const std::string &verb){
 	switch(verb.size()){
 	case 3:
@@ -252,7 +225,8 @@ HttpSession::~HttpSession(){
 
 void HttpSession::onReadAvail(const void *data, std::size_t size){
 	if(m_totalLength + size >= MAX_REQUEST_LENGTH){
-		kill(virtualSharedFromThis<HttpSession>(), HTTP_REQUEST_TOO_LARGE);
+		respond(virtualSharedFromThis<HttpSession>(), HTTP_REQUEST_TOO_LARGE);
+		shutdownRead();
 		return;
 	}
 	m_totalLength += size;
@@ -278,13 +252,21 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				const AUTO(parts, explode<std::string>(' ', m_line, 3));
 				if(parts.size() != 3){
 					LOG_WARNING("Bad HTTP header: ", m_line);
-					kill(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
+					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
+					shutdownRead();
 					return;
 				}
 				m_verb = translateVerb(parts[0]);
 				if(m_verb == HTTP_INVALID_VERB){
 					LOG_WARNING("Bad HTTP verb: ", parts[0]);
-					kill(virtualSharedFromThis<HttpSession>(), HTTP_BAD_METHOD);
+					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_METHOD);
+					shutdownRead();
+					return;
+				}
+				if(parts[1].empty() || (parts[1][0] != '/')){
+					LOG_WARNING("Bad HTTP request URI: ", parts[1]);
+					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
+					shutdownRead();
 					return;
 				}
 				const std::size_t questionPos = parts[1].find('?');
@@ -297,7 +279,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				}
 				if((parts[2] != "HTTP/1.0") && (parts[2] != "HTTP/1.1")){
 					LOG_WARNING("Unsupported HTTP version: ", parts[2]);
-					kill(virtualSharedFromThis<HttpSession>(), HTTP_VERSION_NOT_SUP);
+					respond(virtualSharedFromThis<HttpSession>(), HTTP_VERSION_NOT_SUP);
+					shutdownRead();
 					return;
 				}
 				++m_headerIndex;
@@ -305,7 +288,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				const std::size_t delimPos = m_line.find(": ");
 				if(delimPos == std::string::npos){
 					LOG_WARNING("Bad HTTP header: ", m_line);
-					kill(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
+					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
+					shutdownRead();
 					return;
 				}
 				if(m_line.compare(0, delimPos, "Content-Length") == 0){
@@ -315,7 +299,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						"application/x-www-form-urlencoded", 33) != 0)
 					{
 						LOG_WARNING("Unexpected HTTP Content-Type: ", m_line.substr(delimPos + 2));
-						kill(virtualSharedFromThis<HttpSession>(), HTTP_UNSUPPORTED_MEDIA);
+						respond(virtualSharedFromThis<HttpSession>(), HTTP_UNSUPPORTED_MEDIA);
+						shutdownRead();
 						return;
 					}
 				}
