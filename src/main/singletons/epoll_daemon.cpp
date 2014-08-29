@@ -164,6 +164,9 @@ void threadProc(){
 						continue;
 					}
 					DEBUG_THROW(SystemError, errno);
+				} else if(bytesRead == 0){
+					reepollReadable(session);
+					continue;
 				}
 				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
 				session->onReadAvail(data, bytesRead);
@@ -215,6 +218,9 @@ void threadProc(){
 						continue;
 					}
 					DEBUG_THROW(SystemError, errno);
+				} else if(bytesWritten == 0){
+					reepollWriteable(session);
+					continue;
 				}
 				LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp());
 				session->notifyWritten(bytesWritten);
