@@ -69,18 +69,23 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 
 class HttpErrorJob : public JobBase {
 private:
-	const boost::shared_ptr<HttpSession> m_session;
+	const boost::weak_ptr<HttpSession> m_session;
 	const HttpStatus m_status;
 
 public:
-	HttpErrorJob(boost::shared_ptr<HttpSession> session, HttpStatus status)
+	HttpErrorJob(boost::weak_ptr<HttpSession> session, HttpStatus status)
 		: m_session(session), m_status(status)
 	{
 	}
 
 protected:
 	void perform() const {
-		respond(m_session, m_status);
+		const AUTO(session, m_session.lock());
+		if(!session){
+			LOG_WARNING("The specified HTTP session has expired.");
+			return;
+		}
+		respond(session, m_status);
 	}
 };
 
@@ -149,6 +154,10 @@ std::string urlDecode(const std::string &source){
 	while(i < size){
 		const char ch = source[i];
 		++i;
+		if(ch == '+'){
+			ret.push_back(' ');
+			continue;
+		}
 		if((ch != '%') || ((i + 1) >= size)){
 			ret.push_back(ch);
 			continue;
@@ -181,7 +190,7 @@ OptionalMap optionalMapFromUrlEncoded(const std::string &encoded){
 
 class HttpRequestJob : public JobBase {
 private:
-	const boost::shared_ptr<HttpSession> m_session;
+	const boost::weak_ptr<HttpSession> m_session;
 
 	const HttpVerb m_verb;
 	const std::string m_uri;
@@ -189,7 +198,7 @@ private:
 	const OptionalMap m_postParams;
 
 public:
-	HttpRequestJob(boost::shared_ptr<HttpSession> session, HttpVerb verb,
+	HttpRequestJob(boost::weak_ptr<HttpSession> session, HttpVerb verb,
 		std::string uri, OptionalMap getParams, OptionalMap postParams)
 		: m_session(session), m_verb(verb)
 		, m_uri(uri), m_getParams(getParams), m_postParams(postParams)
@@ -198,10 +207,16 @@ public:
 
 protected:
 	void perform() const {
-		AUTO(const servlet, HttpServletManager::getServlet(m_uri));
+		const AUTO(session, m_session.lock());
+		if(!session){
+			LOG_WARNING("The specified HTTP session has expired.");
+			return;
+		}
+
+		const AUTO(servlet, HttpServletManager::getServlet(m_uri));
 		if(!servlet){
 			LOG_WARNING("No servlet for URI ", m_uri);
-			respond(m_session, HTTP_NOT_FOUND);
+			respond(session, HTTP_NOT_FOUND);
 			return;
 		}
 		OptionalMap headers;
@@ -209,12 +224,12 @@ protected:
 		try {
 			const HttpStatus status = (*servlet)(headers, contents,
 				m_verb, m_getParams, m_postParams);
-			respond(m_session, status, &headers, &contents);
+			respond(session, status, &headers, &contents);
 		} catch(ProtocolException &e){
 			LOG_ERROR("ProtocolException thrown in HTTP servlet, code = ", e.code(),
 				", file = ", e.file(), ", line = ", e.line(), ", what = ", e.what());
 			if(e.code() > 0){
-				respond(m_session, (HttpStatus)e.code());
+				respond(session, (HttpStatus)e.code());
 			}
 		}
 	}
@@ -238,7 +253,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	AUTO(read, (const char *)data);
 	const AUTO(end, read + size);
 	while(read != end){
-		if(m_headerIndex != (std::size_t)-1){	// -1 表示正文。
+		if(m_headerIndex != -1){	// -1 表示正文。
 			const char ch = *read;
 			++read;
 			if(ch != '\n'){
@@ -304,13 +319,13 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			} else if(m_contentLength == 0){
 				// 没有正文。
 				boost::make_shared<HttpRequestJob>(
-					virtualSharedFromThis<HttpSession>(), m_verb,
-					m_uri, m_getParams, m_postParams
+					virtualWeakFromThis<HttpSession>(),
+					m_verb, m_uri, m_getParams, m_postParams
 					)->pend();
 				m_headerIndex = 0;
 				m_totalLength = 0;
 			} else {
-				m_headerIndex = (std::size_t)-1;
+				m_headerIndex = -1;
 			}
 			m_line.clear();
 		} else {
@@ -327,8 +342,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_postParams = optionalMapFromUrlEncoded(m_line);
 
 			boost::make_shared<HttpRequestJob>(
-				virtualSharedFromThis<HttpSession>(), m_verb,
-				m_uri, m_getParams, m_postParams
+				virtualWeakFromThis<HttpSession>(),
+				m_verb, m_uri, m_getParams, m_postParams
 				)->pend();
 			m_headerIndex = 0;
 			m_totalLength = 0;
@@ -338,4 +353,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	}
 }
 void HttpSession::onReadComplete(){
+	if(m_headerIndex != 0){
+		LOG_WARNING("Now that this connection has been shutdown, "
+			"an incomplete request has been discarded.");
+	}
 }

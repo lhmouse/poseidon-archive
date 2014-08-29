@@ -11,7 +11,7 @@ namespace Poseidon {
 
 class HttpSession : public TcpSessionBase {
 private:
-	std::size_t m_headerIndex;
+	int m_headerIndex;
 	std::size_t m_totalLength;
 	std::size_t m_contentLength;
 	std::string m_line;

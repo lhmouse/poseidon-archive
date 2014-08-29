@@ -59,6 +59,11 @@ StreamBuffer::StreamBuffer()
 	: m_size(0)
 {
 }
+StreamBuffer::StreamBuffer(const void *data, std::size_t size)
+	: m_size(0)
+{
+	put(data, size);
+}
 StreamBuffer::StreamBuffer(const StreamBuffer &rhs)
 	: m_chunks(rhs.m_chunks), m_size(rhs.m_size)
 {

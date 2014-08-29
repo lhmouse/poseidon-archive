@@ -11,16 +11,16 @@
 
 namespace Poseidon {
 
-struct HttpServlet;
+class HttpServlet;
+
+typedef boost::function<
+	HttpStatus (OptionalMap &headers, std::string &contents,
+		HttpVerb verb, const OptionalMap &getParams, const OptionalMap &postParams)
+	> HttpServletCallback;
 
 struct HttpServletManager {
-	typedef boost::function<HttpStatus (
-		OptionalMap &headers, std::string &contents,
-		HttpVerb verb, const OptionalMap &getParams, const OptionalMap &postParams
-	)> HttpServletCallback;
-
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
-	static boost::shared_ptr<HttpServlet> registerServlet(const std::string &uri,
+	static boost::shared_ptr<const HttpServlet> registerServlet(const std::string &uri,
 		boost::weak_ptr<void> dependency, HttpServletCallback callback);
 
 	static boost::shared_ptr<const HttpServletCallback> getServlet(const std::string &uri);

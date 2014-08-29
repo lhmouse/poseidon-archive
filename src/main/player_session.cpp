@@ -1,30 +1,100 @@
 #include "../precompiled.hpp"
 #include "player_session.hpp"
 #include "log.hpp"
-#include "vint50.hpp"
+#include "exception.hpp"
+#include "singletons/job_dispatcher.hpp"
+#include "singletons/player_servlet_manager.hpp"
 using namespace Poseidon;
 
+namespace {
+
+class PlayerRequestJob : public JobBase {
+private:
+	const boost::weak_ptr<PlayerSession> m_session;
+	const unsigned m_protocolId;
+	const StreamBuffer m_packet;
+
+public:
+	PlayerRequestJob(boost::weak_ptr<PlayerSession> session,
+		unsigned protocolId, StreamBuffer packet)
+		: m_session(session), m_protocolId(protocolId), m_packet(packet)
+	{
+	}
+
+protected:
+	void perform() const {
+		const AUTO(session, m_session.lock());
+		if(!session){
+			LOG_WARNING("The specified player session has expired.");
+			return;
+		}
+
+		const AUTO(servlet, PlayerServletManager::getServlet(m_protocolId));
+		if(!servlet){
+			LOG_WARNING("No servlet for protocol ", m_protocolId);
+			session->shutdownRead();
+			return;
+		}
+		(*servlet)(session, m_packet);
+	}
+};
+
+}
+
 PlayerSession::PlayerSession(ScopedFile &socket)
-	: TcpSessionBase(socket), m_payloadLen(-1)
+	: TcpSessionBase(socket)
+	, m_payloadLen(-1), m_protocolId(0), m_payload()
 {
 }
 
 void PlayerSession::onReadAvail(const void *data, std::size_t size){
-	LOG_DEBUG("Received ", std::string((const char *)data, size));
-/*	send("meow meow meow!!!", 17);
-	unsigned char tmp[7];
-	unsigned long long ll = 0x12345, ll2;
-	unsigned char *write = tmp, *read = tmp;
-	vuint50ToBinary(ll, write);
-	vuint50FromBinary(ll2, read, write);
-	LOG_DEBUG("read = ", (void *)read, ", write = ", (void *)write, ", serialized = ", (write - tmp), ", ll2 = ", std::hex, ll2);*/
-	for(int i = 0; i < 10; ++i){
-		char data = '0' + i;
-		send(&data, 1);
+	m_payload.put(data, size);
+
+	for(;;){
+		if(m_payloadLen == -1){
+			if(m_payload.size() < 4){
+				break;
+			}
+			m_protocolId = m_payload.get() & 0xFF;
+			m_protocolId |= (m_payload.get() & 0xFF) << 8;
+
+			m_payloadLen = m_payload.get() & 0xFF;
+			m_payloadLen |= (m_payload.get() & 0xFF) << 8;
+			m_payloadLen &= 0x3FFF;
+		}
+		if(m_payload.size() < (unsigned)m_payloadLen){
+			break;
+		}
+		StreamBuffer packet = m_payload.cut(m_payloadLen);
+		boost::make_shared<PlayerRequestJob>(
+			virtualWeakFromThis<PlayerSession>(),
+			m_protocolId, boost::ref(packet)
+			)->pend();
+		m_payloadLen = -1;
 	}
 }
 void PlayerSession::onReadComplete(){
+	if(!m_payload.empty()){
+		LOG_WARNING("Now that this connection has been shutdown, "
+			"an incomplete packet has been discarded, size = ", m_payload.size());
+	}
 }
 
-void PlayerSession::perform() const {
+void PlayerSession::send(boost::uint16_t status, const StreamBuffer &payload){
+	StreamBuffer temp(payload);
+	sendWithMove(status, temp);
+}
+void PlayerSession::sendWithMove(boost::uint16_t status, StreamBuffer &payload){
+	const std::size_t size = payload.size();
+	if(size > 0xFFFF){
+		LOG_WARNING("Respond packet too large, size = ", size);
+		DEBUG_THROW(Exception, "Packet too large");
+	}
+	StreamBuffer temp;
+	temp.put(status & 0xFF);
+	temp.put(status >> 8);
+	temp.put(size & 0xFF);
+	temp.put(size >> 8);
+	temp.splice(payload);
+	TcpSessionBase::send(temp);
 }

@@ -35,6 +35,25 @@ public:
 	{
 		return boost::dynamic_pointer_cast<Derived>(shared_from_this());
 	}
+
+	template<typename Derived>
+	typename boost::enable_if_c<
+		boost::is_virtual_base_of<VirtualSharedFromThis, Derived>::value,
+		boost::weak_ptr<const Derived>
+	>::type
+		virtualWeakFromThis() const
+	{
+		return virtualSharedFromThis<const Derived>();
+	}
+	template<typename Derived>
+	typename boost::enable_if_c<
+		boost::is_virtual_base_of<VirtualSharedFromThis, Derived>::value,
+		boost::weak_ptr<Derived>
+	>::type
+		virtualWeakFromThis()
+	{
+		return virtualSharedFromThis<Derived>();
+	}
 };
 
 }

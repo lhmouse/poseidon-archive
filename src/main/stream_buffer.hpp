@@ -15,6 +15,7 @@ private:
 
 public:
 	StreamBuffer();
+	StreamBuffer(const void *data, std::size_t size);
 	StreamBuffer(const StreamBuffer &rhs);
 	StreamBuffer &operator=(const StreamBuffer &rhs);
 	~StreamBuffer();
