@@ -242,6 +242,12 @@ HttpSession::HttpSession(ScopedFile &socket)
 	, m_headerIndex(0), m_totalLength(0), m_contentLength(0), m_line()
 {
 }
+HttpSession::~HttpSession(){
+	if(m_headerIndex != 0){
+		LOG_WARNING("Now that this HTTP session is to be destroyed, "
+			"a premature request has to be discarded.");
+	}
+}
 
 void HttpSession::onReadAvail(const void *data, std::size_t size){
 	if(m_totalLength + size >= MAX_REQUEST_LENGTH){

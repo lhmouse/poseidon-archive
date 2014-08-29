@@ -23,6 +23,7 @@ private:
 
 public:
 	explicit HttpSession(ScopedFile &socket);
+	~HttpSession();
 
 protected:
 	void onReadAvail(const void *data, std::size_t size);

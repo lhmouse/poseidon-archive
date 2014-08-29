@@ -88,24 +88,7 @@ void run(){
 
 }
 
-
-
-
-
-#include "singletons/player_servlet_manager.hpp"
-
-static void respond(boost::shared_ptr<PlayerSession> ps, StreamBuffer &incoming){
-	char data[32];
-	unsigned len = incoming.peek(data, sizeof(data) - 1);
-	data[len] = 0;
-	LOG_DEBUG("PlayerSession - received: ", data);
-
-	ps->sendWithMove(65, incoming);
-}
-
 int main(int argc, char **argv){
-	AUTO(p, PlayerServletManager::registerServlet(100, boost::weak_ptr<void>(), respond));
-
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
 	LOG_INFO("Setting up signal handlers...");

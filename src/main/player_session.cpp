@@ -46,6 +46,12 @@ PlayerSession::PlayerSession(ScopedFile &socket)
 	, m_payloadLen(-1), m_protocolId(0), m_payload()
 {
 }
+PlayerSession::~PlayerSession(){
+	if(m_payloadLen != -1){
+		LOG_WARNING("Now that this player session is to be destroyed, a premature packet "
+			"has to be discarded, payload size = ", m_payloadLen);
+	}
+}
 
 void PlayerSession::onReadAvail(const void *data, std::size_t size){
 	m_payload.put(data, size);
