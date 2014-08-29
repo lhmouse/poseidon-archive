@@ -275,7 +275,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				if(m_line.empty()){
 					continue;
 				}
-				const AUTO(parts, explode<std::string>(' ', m_line));
+				const AUTO(parts, explode<std::string>(' ', m_line, 3));
 				if(parts.size() != 3){
 					LOG_WARNING("Bad HTTP header: ", m_line);
 					kill(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
