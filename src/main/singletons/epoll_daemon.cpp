@@ -154,6 +154,12 @@ void threadProc(){
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
 			const AUTO_REF(session, *it);
 			try {
+				if(session->hasReadBeenShutdown()){
+					LOG_INFO("Socket read has completed.");
+					session->onReadComplete();
+					reepollReadable(session);
+					continue;
+				}
 				const ::ssize_t bytesRead = ::recv(session->getFd(), data, sizeof(data), MSG_NOSIGNAL);
 				if(bytesRead < 0){
 					if(errno == EINTR){
@@ -288,10 +294,9 @@ void threadProc(){
 				}
 
 				if(event.events & EPOLLRDHUP){
-					LOG_INFO("Socket read complete.");
-					session->onReadComplete();
 					session->shutdownRead();
-					deepollWriteable(session);
+					event.events |= EPOLLIN;
+					event.events |= EPOLLOUT;
 				}
 				if(event.events & EPOLLIN){
 					deepollReadable(session);
