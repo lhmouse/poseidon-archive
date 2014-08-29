@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include <sstream>
+#include <cstddef>
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
@@ -11,27 +11,69 @@
 
 namespace Poseidon {
 
+// 参考 PHP 的 explode() 函数。
 template<typename Type>
-inline std::vector<Type> split(const std::string &str, char delim){
-    std::vector<Type> ret;
-    std::istringstream ss(str);
-    std::string tmp;
-    while(std::getline(ss, tmp, delim)){
-        ret.push_back(boost::lexical_cast<Type>(tmp));
-    }
-    return ret;
+inline std::vector<Type> explode(char separator, const std::string &str, std::size_t limit = 0){
+	std::vector<Type> ret;
+	std::size_t begin = 0;
+	for(;;){
+		const std::size_t end = str.find(separator, begin);
+		if(end == std::string::npos){
+			if(begin < str.size()){
+				ret.push_back(boost::lexical_cast<Type>(str.c_str() + begin, str.size() - begin));
+			}
+			break;
+		}
+		if(ret.size() == limit - 1){	// 如果 limit 为零则 limit - 1 会变成 SIZE_MAX。
+			ret.push_back(boost::lexical_cast<Type>(str.c_str() + begin, str.size() - begin));
+			break;
+		}
+		ret.push_back(boost::lexical_cast<Type>(str.c_str() + begin, end - begin));
+		begin = end + 1;
+	}
+	return ret;
+}
+template<>
+inline std::vector<std::string> explode(char separator, const std::string &str, std::size_t limit){
+	std::vector<std::string> ret;
+	std::size_t begin = 0;
+	for(;;){
+		const std::size_t end = str.find(separator, begin);
+		if(end == std::string::npos){
+			if(begin < str.size()){
+				ret.push_back(str.substr(begin));
+			}
+			break;
+		}
+		if(ret.size() == limit - 1){	// 如果 limit 为零则 limit - 1 会变成 SIZE_MAX。
+			ret.push_back(str.substr(begin));
+			break;
+		}
+		ret.push_back(str.substr(begin, end - begin));
+		begin = end + 1;
+	}
+	return ret;
 }
 
+template<typename Type>
+inline std::string inplode(char separator, const std::vector<Type> &vec){
+	std::ostringstream oss;
+	for(typename std::vector<Type>::const_iterator it = vec.begin(); it != vec.end(); ++it){
+		oss <<*it <<separator;
+	}
+	std::string ret = oss.str();
+	if(!ret.empty()){
+		ret.erase(--ret.end());
+	}
+	return ret;
+}
 template<>
-inline std::vector<std::string> split<std::string>(const std::string &s, char delim){
-    std::vector<std::string> ret;
-    std::istringstream ss(s);
-    ret.push_back(std::string());
-    while(std::getline(ss, ret.back(), delim)){
-        ret.push_back(std::string());
-    }
-    ret.pop_back();
-    return ret;
+inline std::string inplode(char separator, const std::vector<std::string> &vec){
+	std::string ret;
+	for(std::vector<std::string>::const_iterator it = vec.begin(); it != vec.end(); ++it){
+		ret.append(*it);
+	}
+	return ret;
 }
 
 boost::uint64_t getUtcTime();		// 单位毫秒。
