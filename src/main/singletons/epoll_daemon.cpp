@@ -154,12 +154,6 @@ void threadProc(){
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
 			const AUTO_REF(session, *it);
 			try {
-				if(session->hasReadBeenShutdown()){
-					LOG_INFO("Socket read has completed.");
-					session->onReadComplete();
-					reepollReadable(session);
-					continue;
-				}
 				const ::ssize_t bytesRead = ::recv(session->getFd(), data, sizeof(data), MSG_NOSIGNAL);
 				if(bytesRead < 0){
 					if(errno == EINTR){
@@ -170,9 +164,8 @@ void threadProc(){
 						continue;
 					}
 					DEBUG_THROW(SystemError, errno);
-				} else if(bytesRead > 0){
-					session->onReadAvail(data, bytesRead);
 				}
+				session->onReadAvail(data, bytesRead);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while dispatching data: file = ", e.file(),
 					", line = ", e.line(), ", what = ", e.what());
@@ -221,9 +214,8 @@ void threadProc(){
 						continue;
 					}
 					DEBUG_THROW(SystemError, errno);
-				} else if(bytesWritten > 0){
-					session->notifyWritten(bytesWritten);
 				}
+				session->notifyWritten(bytesWritten);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while writing socket: file = ", e.file(),
 					", line = ", e.line(), ", what = ", e.what());

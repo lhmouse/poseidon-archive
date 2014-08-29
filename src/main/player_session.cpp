@@ -73,12 +73,6 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 		m_payloadLen = -1;
 	}
 }
-void PlayerSession::onReadComplete(){
-	if(!m_payload.empty()){
-		LOG_WARNING("Now that this connection has been shut down, "
-			"an incomplete packet has been discarded, size = ", m_payload.size());
-	}
-}
 
 void PlayerSession::send(boost::uint16_t status, const StreamBuffer &payload){
 	StreamBuffer temp(payload);

@@ -26,7 +26,6 @@ public:
 
 protected:
 	void onReadAvail(const void *data, std::size_t size);
-	void onReadComplete();
 };
 
 }

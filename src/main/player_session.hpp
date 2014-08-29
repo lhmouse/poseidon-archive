@@ -19,9 +19,9 @@ public:
 
 protected:
 	void onReadAvail(const void *data, std::size_t size);
-	void onReadComplete();
 
 public:
+	// 这两个函数是线程安全的。
 	void send(boost::uint16_t status, const StreamBuffer &payload);
 	void sendWithMove(boost::uint16_t status, StreamBuffer &payload);
 };

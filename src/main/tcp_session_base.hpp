@@ -50,9 +50,8 @@ public:
 
 	// 有数据可读触发回调，size 始终不为零。
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
-	// 对端正常关闭触发回调。异常关闭（超时，重置等）不触发。
-	virtual void onReadComplete() = 0;
 
+	// 这三个函数是线程安全的。
 	void send(const void *data, std::size_t size);
 	void send(const StreamBuffer &buffer);
 	// 执行后 buffer 置空。这个函数不会抛出异常。
