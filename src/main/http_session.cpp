@@ -219,6 +219,7 @@ protected:
 			respond(session, HTTP_NOT_FOUND);
 			return;
 		}
+		LOG_DEBUG("Dispatching http request: URI = ", m_uri, ", verb = ", m_verb);
 		OptionalMap headers;
 		std::string contents;
 		try {

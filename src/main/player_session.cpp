@@ -35,6 +35,8 @@ protected:
 			session->shutdownRead();
 			return;
 		}
+		LOG_DEBUG("Dispatching packet: protocol = ", m_protocolId,
+			", payload size = ", m_packet.size());
 		(*servlet)(session, m_packet);
 	}
 };

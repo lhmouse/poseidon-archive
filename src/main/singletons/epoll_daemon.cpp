@@ -165,6 +165,7 @@ void threadProc(){
 					}
 					DEBUG_THROW(SystemError, errno);
 				}
+				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
 				session->onReadAvail(data, bytesRead);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while dispatching data: file = ", e.file(),
@@ -215,6 +216,7 @@ void threadProc(){
 					}
 					DEBUG_THROW(SystemError, errno);
 				}
+				LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp());
 				session->notifyWritten(bytesWritten);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while writing socket: file = ", e.file(),
@@ -245,6 +247,7 @@ void threadProc(){
 				if(!session){
 					continue;
 				}
+				LOG_DEBUG("Accepted socket connection from ", session->getRemoteIp());
 				epollTimeout = 1;
 				addSession(session);
 			} catch(Exception &e){
