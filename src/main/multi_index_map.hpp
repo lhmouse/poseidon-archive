@@ -115,36 +115,26 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		{	\
 			typename delegate_container::nth_index<IndexToSet>::type::key_type old =	\
 				typename delegate_container::nth_index<IndexToSet>::type::key_from_value()(*pos);	\
-			return getIndex<IndexToSet>().modify_key(	\
-				m_delegate.project<IndexToSet>(pos),	\
-				KeyModifier<IndexToSet>(key),	\
-				KeyModifier<IndexToSet>(old)	\
+			return getIndex<IndexToSet>().modify_key(m_delegate.project<IndexToSet>(pos),	\
+				KeyModifier<IndexToSet>(key), KeyModifier<IndexToSet>(old)	\
 			);	\
 		}	\
 		\
 		template<unsigned IndexId>  \
-		typename delegate_container::nth_index<IndexId>::type::const_iterator   \
-			begin() const	\
-		{	\
+		typename delegate_container::nth_index<IndexId>::type::const_iterator begin() const {	\
 			return getIndex<IndexId>().begin();	\
 		}	\
 		template<unsigned IndexId>  \
-		typename delegate_container::nth_index<IndexId>::type::iterator   \
-			begin()	\
-		{	\
+		typename delegate_container::nth_index<IndexId>::type::iterator begin(){	\
 			return getIndex<IndexId>().begin();	\
 		}	\
 		\
 		template<unsigned IndexId>  \
-		typename delegate_container::nth_index<IndexId>::type::const_iterator   \
-			end() const	\
-		{	\
+		typename delegate_container::nth_index<IndexId>::type::const_iterator end() const {	\
 			return getIndex<IndexId>().end();	\
 		}	\
 		template<unsigned IndexId>  \
-		typename delegate_container::nth_index<IndexId>::type::iterator   \
-			end()	\
-		{	\
+		typename delegate_container::nth_index<IndexId>::type::iterator end(){	\
 			return getIndex<IndexId>().end();	\
 		}	\
 		\
@@ -170,44 +160,48 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		\
 		template<unsigned IndexId>  \
 		typename delegate_container::nth_index<IndexId>::type::const_iterator	\
-			lowerBound(const typename delegate_container::nth_index<IndexId>::type::key_type &key) const	\
-		{	\
+			lowerBound(	\
+				const typename delegate_container::nth_index<IndexId>::type::key_type &key	\
+		) const {	\
 			return getIndex<IndexId>().lower_bound(key);	\
 		}	\
 		template<unsigned IndexId>  \
 		typename delegate_container::nth_index<IndexId>::type::iterator	\
-			lowerBound(const typename delegate_container::nth_index<IndexId>::type::key_type &key)	\
-		{	\
+			lowerBound(	\
+				const typename delegate_container::nth_index<IndexId>::type::key_type &key	\
+		){	\
 			return getIndex<IndexId>().lower_bound(key);	\
 		}	\
 		\
 		template<unsigned IndexId>  \
 		typename delegate_container::nth_index<IndexId>::type::const_iterator	\
-			upperBound(const typename delegate_container::nth_index<IndexId>::type::key_type &key) const	\
-		{	\
+			upperBound(	\
+				const typename delegate_container::nth_index<IndexId>::type::key_type &key	\
+		) const {	\
 			return getIndex<IndexId>().upper_bound(key);	\
 		}	\
 		template<unsigned IndexId>  \
 		typename delegate_container::nth_index<IndexId>::type::iterator	\
-			upperBound(const typename delegate_container::nth_index<IndexId>::type::key_type &key)	\
-		{	\
+			upperBound(	\
+				const typename delegate_container::nth_index<IndexId>::type::key_type &key	\
+		){	\
 			return getIndex<IndexId>().upper_bound(key);	\
 		}	\
 		\
 		template<unsigned IndexId>  \
 		std::pair<typename delegate_container::nth_index<IndexId>::type::const_iterator,	\
-			typename delegate_container::nth_index<IndexId>::type::const_iterator	\
-		>	\
-			equalRange(const typename delegate_container::nth_index<IndexId>::type::key_type &key) const	\
-		{	\
+			typename delegate_container::nth_index<IndexId>::type::const_iterator>	\
+			equalRange(	\
+				const typename delegate_container::nth_index<IndexId>::type::key_type &key	\
+		) const {	\
 			return getIndex<IndexId>().equal_range(key);	\
 		}	\
 		template<unsigned IndexId>  \
 		std::pair<typename delegate_container::nth_index<IndexId>::type::iterator,	\
-			typename delegate_container::nth_index<IndexId>::type::iterator	\
-		>	\
-			equalRange(const typename delegate_container::nth_index<IndexId>::type::key_type &key)	\
-		{	\
+			typename delegate_container::nth_index<IndexId>::type::iterator>	\
+			equalRange(	\
+				const typename delegate_container::nth_index<IndexId>::type::key_type &key	\
+		){	\
 			return getIndex<IndexId>().equal_range(key);	\
 		}	\
 	};
