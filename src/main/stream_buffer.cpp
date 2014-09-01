@@ -72,11 +72,22 @@ StreamBuffer &StreamBuffer::operator=(const StreamBuffer &rhs){
 	StreamBuffer(rhs).swap(*this);
 	return *this;
 }
-StreamBuffer::~StreamBuffer(){
+#ifdef POSEIDON_CXX11
+StreamBuffer::StreamBuffer(StreamBuffer &&rhs)
+	: m_size(0)
+{
+	swap(rhs);
+}
+StreamBuffer &StreamBuffer::operator=(StreamBuffer &&rhs){
+	rhs.swap(*this);
+	return *this;
+}
+#endif
+StreamBuffer::~StreamBuffer() throw() {
 	clear();
 }
 
-void StreamBuffer::clear(){
+void StreamBuffer::clear() throw() {
 	clearPooled(m_chunks);
 	m_size = 0;
 }
@@ -221,7 +232,7 @@ void StreamBuffer::put(const void *data, std::size_t size){
 	}
 }
 
-void StreamBuffer::swap(StreamBuffer &rhs){
+void StreamBuffer::swap(StreamBuffer &rhs) throw() {
 	m_chunks.swap(rhs.m_chunks);
 	std::swap(m_size, rhs.m_size);
 }
@@ -257,7 +268,7 @@ StreamBuffer StreamBuffer::cut(std::size_t size){
 	}
 	return ret;
 }
-void StreamBuffer::splice(StreamBuffer &src){
+void StreamBuffer::splice(StreamBuffer &src) throw() {
 	if(&src == this){
 		return;
 	}

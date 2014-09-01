@@ -23,6 +23,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 
 */
 
+#include <utility>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -40,18 +41,19 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 	private:	\
 		template<unsigned long IndexId>	\
 		struct KeyModifier {	\
-			typedef typename delegate_container::nth_index<IndexId>::type::key_type	\
+			typedef	\
+				typename delegate_container::nth_index<IndexId>::type::key_type	\
 				key_type;	\
 			\
-			const key_type m_key;	\
+			key_type &m_key;	\
 			\
-			explicit KeyModifier(key_type key)	\
+			explicit KeyModifier(key_type &key)	\
 				: m_key(key)	\
 			{	\
 			}	\
 			\
 			void operator()(key_type &old){	\
-				old = m_key;	\
+				std::swap(old, m_key);	\
 			}	\
 		};	\
 		\
@@ -59,13 +61,13 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		delegate_container m_delegate;	\
 		\
 	public:	\
-		bool empty() const {	\
+		bool empty() const throw() {	\
 			return m_delegate.empty();	\
 		}	\
-		std::size_t size(){	\
+		std::size_t size() const throw() {	\
 			return m_delegate.size();	\
 		}	\
-		void clear(){	\
+		void clear() throw() {	\
 			m_delegate.clear();	\
 		}	\
 		\
@@ -109,14 +111,14 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 		template<unsigned long IndexId, unsigned long IndexToSet> \
 		bool setKey(typename delegate_container::nth_index<IndexId>::type::iterator pos,   \
-			const typename delegate_container::nth_index<IndexToSet>::type::key_type &key)	\
+			typename delegate_container::nth_index<IndexToSet>::type::key_type key)	\
 		{	\
+			typename delegate_container::nth_index<IndexToSet>::type::key_type old =	\
+				typename delegate_container::nth_index<IndexToSet>::type::key_from_value()(*pos);	\
 			return getIndex<IndexToSet>().modify_key(	\
 				m_delegate.project<IndexToSet>(pos),	\
 				KeyModifier<IndexToSet>(key),	\
-				KeyModifier<IndexToSet>(	\
-					typename delegate_container::nth_index<IndexToSet>::type::key_from_value()(*pos)	\
-				)	\
+				KeyModifier<IndexToSet>(old)	\
 			);	\
 		}	\
 		\

@@ -26,16 +26,8 @@
 #include <boost/function.hpp>
 #include <boost/cstdlib.hpp>
 #include <boost/cstdint.hpp>
-#include <boost/type_traits/remove_cv.hpp>
-#include <boost/type_traits/remove_reference.hpp>
 
 namespace Poseidon {
-
-template<typename Type>
-typename boost::remove_cv<
-	typename boost::remove_reference<Type>::type
-	>::type
-	valueOfHelper(const Type &);
 
 template<typename Type, std::size_t COUNT>
 char (&countOfHelper(const Type (&)[COUNT]))[COUNT];
@@ -51,12 +43,10 @@ Type *arrayEnd(Type (&array)[COUNT]){
 
 }
 
-#define DECLTYPE(expr)			__typeof__(expr)
-#define AUTO(id, init)			DECLTYPE(::Poseidon::valueOfHelper(init)) id(init)
-#define AUTO_REF(id, init)		DECLTYPE(init) &id = (init)
-
 #define COUNT_OF(ar)			sizeof(::Poseidon::countOfHelper(ar))
 #define ARRAY_BEGIN(ar)			(::Poseidon::arrayBegin(ar))
 #define ARRAY_END(ar)			(::Poseidon::arrayEnd(ar))
+
+#include "cxxver.hpp"
 
 #endif
