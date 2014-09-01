@@ -86,7 +86,7 @@ void PlayerSession::send(boost::uint16_t status, const StreamBuffer &payload){
 	StreamBuffer temp(payload);
 	sendWithMove(status, temp);
 }
-void PlayerSession::sendWithMove(boost::uint16_t status, StreamBuffer &payload){
+void PlayerSession::sendWithMove(boost::uint16_t status, StreamBuffer &payload) throw() {
 	const std::size_t size = payload.size();
 	if(size > 0xFFFF){
 		LOG_WARNING("Respond packet too large, size = ", size);

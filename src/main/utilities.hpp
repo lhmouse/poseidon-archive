@@ -1,6 +1,7 @@
 #ifndef POSEIDON_UTILITIES_HPP_
 #define POSEIDON_UTILITIES_HPP_
 
+#include "../cxxver.hpp"
 #include <vector>
 #include <string>
 #include <cstddef>
@@ -58,19 +59,23 @@ inline std::vector<std::string> explode(char separator, const std::string &str, 
 template<typename Type>
 inline std::string inplode(char separator, const std::vector<Type> &vec){
 	std::ostringstream oss;
-	for(typename std::vector<Type>::const_iterator it = vec.begin(); it != vec.end(); ++it){
+	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
 		oss <<*it <<separator;
 	}
 	std::string ret = oss.str();
 	if(!ret.empty()){
+#ifdef POSEIDON_CXX11
+		ret.pop_back();
+#else
 		ret.erase(--ret.end());
+#endif
 	}
 	return ret;
 }
 template<>
 inline std::string inplode(char separator, const std::vector<std::string> &vec){
 	std::string ret;
-	for(std::vector<std::string>::const_iterator it = vec.begin(); it != vec.end(); ++it){
+	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
 		ret.append(*it);
 	}
 	return ret;
@@ -91,6 +96,7 @@ boost::uint32_t rand32(boost::uint32_t lower, boost::uint32_t upper);
 double randDouble(double lower = 0.0, double upper = 1.0);
 
 boost::shared_ptr<const char> getErrorDesc(int errCode = errno) throw();
+std::string getErrorDescAsString(int errCode = errno);
 
 }
 

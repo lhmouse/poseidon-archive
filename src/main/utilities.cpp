@@ -118,5 +118,16 @@ boost::shared_ptr<const char> getErrorDesc(int errCode) throw() {
 	// desc 指向一个静态的字符串。
 	return boost::shared_ptr<const char>(boost::shared_ptr<void>(), desc);
 }
+std::string getErrorDescAsString(int errCode){
+	std::string ret;
+	ret.resize(1024);
+	const char *desc = ::strerror_r(errCode, &ret[0], ret.size());
+	if(desc == &ret[0]){
+		ret.resize(std::strlen(desc));
+	} else {
+		ret.assign(desc);
+	}
+	return ret;
+}
 
 }

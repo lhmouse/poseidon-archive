@@ -54,6 +54,11 @@ public:
 	StreamBuffer cut(std::size_t size);
 	// cut() 的逆操作。该函数返回后 src 为空。
 	void splice(StreamBuffer &src) throw();
+#ifdef POSEIDON_CXX11
+	void splice(StreamBuffer &&src) throw() {
+		splice(std::move(src));
+	}
+#endif
 };
 
 }

@@ -1,6 +1,7 @@
 #ifndef POSEIDON_PLAYER_SESSION_HPP_
 #define POSEIDON_PLAYER_SESSION_HPP_
 
+#include "../cxxver.hpp"
 #include <cstddef>
 #include <boost/cstdint.hpp>
 #include "tcp_session_base.hpp"
@@ -24,7 +25,12 @@ protected:
 public:
 	// 这两个函数是线程安全的。
 	void send(boost::uint16_t status, const StreamBuffer &payload);
-	void sendWithMove(boost::uint16_t status, StreamBuffer &payload);
+	void sendWithMove(boost::uint16_t status, StreamBuffer &payload) throw();
+#ifdef POSEIDON_CXX11
+	void sendWithMove(boost::uint16_t status, StreamBuffer &&payload) throw() {
+		sendWithMove(status, std::move(payload));
+	}
+#endif
 };
 
 }

@@ -1,6 +1,7 @@
 #ifndef POSEIDON_EXCEPTION_HPP_
 #define POSEIDON_EXCEPTION_HPP_
 
+#include "../cxxver.hpp"
 #include <string>
 #include <stdexcept>
 #include <cstdio>
@@ -19,8 +20,8 @@ protected:
 	const std::size_t m_line;
 
 public:
-	Exception(const char *file, std::size_t line, const std::string &what)
-		: std::runtime_error(what), m_file(file), m_line(line)
+	Exception(const char *file, std::size_t line, std::string what)
+		: std::runtime_error(STD_MOVE(what)), m_file(file), m_line(line)
 	{
 	}
 	~Exception() throw() {
@@ -41,7 +42,7 @@ private:
 
 public:
 	SystemError(const char *file, std::size_t line, int code = errno)
-		: Exception(file, line, getErrorDesc(code).get()), m_code(code)
+		: Exception(file, line, getErrorDescAsString(code)), m_code(code)
 	{
 	}
 
@@ -65,8 +66,8 @@ private:
 	const int m_code;
 
 public:
-	ProtocolException(const char *file, std::size_t line, const std::string &what, int code)
-		: Exception(file, line, what), m_code(code)
+	ProtocolException(const char *file, std::size_t line, std::string what, int code)
+		: Exception(file, line, STD_MOVE(what)), m_code(code)
 	{
 	}
 
