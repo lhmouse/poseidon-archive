@@ -43,7 +43,7 @@ void JobDispatcher::doModal(){
 						break;
 					}
 					if(!g_queue.empty()){
-						job = g_queue.front();
+						job = STD_MOVE(g_queue.front());
 						g_queue.pop();
 						break;
 					}

@@ -72,8 +72,7 @@ void registerTimerUsingMove(unsigned long long period,
 	boost::function<void ()> &callback, unsigned long long first)
 {
 	AUTO(item, boost::make_shared<TimerItem>(
-		period * 1000, boost::ref(callback), getMonoClock() + first * 1000
-	));
+		period * 1000, boost::ref(callback), getMonoClock() + first * 1000));
 	{
 		const boost::mutex::scoped_lock lock(g_mutex);
 		g_timerHeap.push_back(item);
@@ -94,10 +93,11 @@ void threadProc(){
 			const boost::mutex::scoped_lock lock(g_mutex);
 			if(!g_timerHeap.empty() && !g_timerHeap.front()->isLaterThan(now)){
 				std::pop_heap(g_timerHeap.begin(), g_timerHeap.end(), timerItemComp);
-				ti = g_timerHeap.back();
-				if(ti->increment()){
+				if(g_timerHeap.back()->increment()){
+					ti = g_timerHeap.back();
 					std::push_heap(g_timerHeap.begin(), g_timerHeap.end(), timerItemComp);
 				} else {
+					ti = STD_MOVE(g_timerHeap.back());
 					g_timerHeap.pop_back();
 				}
 			}
