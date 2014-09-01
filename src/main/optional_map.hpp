@@ -1,6 +1,7 @@
 #ifndef POSEIDON_OPTIONAL_MAP_HPP_
 #define POSEIDON_OPTIONAL_MAP_HPP_
 
+#include "../cxxver.hpp"
 #include <map>
 #include <string>
 #include <cstring>
@@ -34,23 +35,31 @@ public:
 	const std::string &get(const char *key) const;
 	const std::string &get(const std::string &key) const;
 
-	std::string &create(const char *key);
-	std::string &create(const std::string &key);
+	std::string &create(const char *key){
+		return create(key, std::strlen(key));
+	}
+	std::string &create(const char *key, std::size_t len);
+	std::string &create(const std::string &key){
+		return create(key.data(), key.size());
+	}
 
 	void set(const char *key, std::string val){
 		create(key).swap(val);
 	}
+	void set(const char *key, std::size_t len, std::string val){
+		create(key, len).swap(val);
+	}
 	void set(const std::string &key, std::string val){
-		create(key).swap(val);
+		create(key.data(), key.size()).swap(val);
 	}
 
-	bool empty() const {
+	bool empty() const throw() {
 		return m_delegate.empty();
 	}
-	std::size_t size() const {
+	std::size_t size() const throw() {
 		return m_delegate.size();
 	}
-	void clear(){
+	void clear() throw() {
 		m_delegate.clear();
 	}
 
@@ -67,7 +76,7 @@ public:
 		return m_delegate.end();
 	}
 
-	void swap(OptionalMap &rhs){
+	void swap(OptionalMap &rhs) throw() {
 		m_delegate.swap(rhs.m_delegate);
 	}
 

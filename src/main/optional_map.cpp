@@ -23,7 +23,7 @@ const std::string &OptionalMap::get(const std::string &key) const {
 	return get(key.c_str());
 }
 
-std::string &OptionalMap::create(const char *key){
+std::string &OptionalMap::create(const char *key, std::size_t len){
 #if __cplusplus >= 201103L
 	AUTO(hint, m_delegate.upper_bound(boost::shared_ptr<const char>(boost::shared_ptr<void>(), key)));
 	if(hint != m_delegate.begin()){
@@ -44,11 +44,8 @@ std::string &OptionalMap::create(const char *key){
 		--hint;
 	}
 #endif
-	const std::size_t size = std::strlen(key) + 1;
-	boost::shared_ptr<char> str(new char[size], &deleteCharArray);
-	std::memcpy(str.get(), key, size);
+	boost::shared_ptr<char> str(new char[len + 1], &deleteCharArray);
+	std::memcpy(str.get(), key, len);
+	str.get()[len] = 0;
 	return m_delegate.insert(hint, std::make_pair(str, std::string()))->second;
-}
-std::string &OptionalMap::create(const std::string &key){
-	return create(key.c_str());
 }
