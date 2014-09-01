@@ -4,8 +4,8 @@
 #include <cassert>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility/enable_if.hpp>
 #include <boost/type_traits/is_virtual_base_of.hpp>
+#include <boost/static_assert.hpp>
 
 namespace Poseidon {
 
@@ -18,40 +18,28 @@ public:
 
 public:
 	template<typename Derived>
-	typename boost::enable_if_c<
-		boost::is_virtual_base_of<VirtualSharedFromThis, Derived>::value,
-		boost::shared_ptr<const Derived>
-	>::type
-		virtualSharedFromThis() const
-	{
+	boost::shared_ptr<const Derived> virtualSharedFromThis() const {
+		BOOST_STATIC_ASSERT_MSG(
+			(boost::is_virtual_base_of<VirtualSharedFromThis, Derived>::value),
+			"Please virtually derive from VirtualSharedFromThis.");
+
 		return boost::dynamic_pointer_cast<const Derived>(shared_from_this());
 	}
 	template<typename Derived>
-	typename boost::enable_if_c<
-		boost::is_virtual_base_of<VirtualSharedFromThis, Derived>::value,
-		boost::shared_ptr<Derived>
-	>::type
-		virtualSharedFromThis()
-	{
+	boost::shared_ptr<Derived> virtualSharedFromThis(){
+		BOOST_STATIC_ASSERT_MSG(
+			(boost::is_virtual_base_of<VirtualSharedFromThis, Derived>::value),
+			"Please virtually derive from VirtualSharedFromThis.");
+
 		return boost::dynamic_pointer_cast<Derived>(shared_from_this());
 	}
 
 	template<typename Derived>
-	typename boost::enable_if_c<
-		boost::is_virtual_base_of<VirtualSharedFromThis, Derived>::value,
-		boost::weak_ptr<const Derived>
-	>::type
-		virtualWeakFromThis() const
-	{
+	boost::weak_ptr<const Derived> virtualWeakFromThis() const {
 		return virtualSharedFromThis<const Derived>();
 	}
 	template<typename Derived>
-	typename boost::enable_if_c<
-		boost::is_virtual_base_of<VirtualSharedFromThis, Derived>::value,
-		boost::weak_ptr<Derived>
-	>::type
-		virtualWeakFromThis()
-	{
+	boost::weak_ptr<Derived> virtualWeakFromThis(){
 		return virtualSharedFromThis<Derived>();
 	}
 };
