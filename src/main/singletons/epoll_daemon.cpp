@@ -152,7 +152,7 @@ void threadProc(){
 			}
 		}
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
-			const AUTO_REF(session, *it);
+			AUTO_REF(session, *it);
 			try {
 				const ::ssize_t bytesRead = ::recv(session->getFd(), data, sizeof(data), MSG_NOSIGNAL);
 				if(bytesRead < 0){
@@ -192,7 +192,7 @@ void threadProc(){
 			}
 		}
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
-			const AUTO_REF(session, *it);
+			AUTO_REF(session, *it);
 			try {
 				std::size_t bytesToWrite;
 				bool readShutdown;
