@@ -34,7 +34,7 @@ typename boost::remove_cv<
 #	define AUTO(id_, init_)			DECLTYPE(::Poseidon::valueOfHelper_(init_)) id_(init_)
 #	define AUTO_REF(id_, init_)		DECLTYPE(init_) &id_ = (init_)
 #	define STD_MOVE(expr_)			(expr_)
-#	define STD_FORWARD(t_, expr_)	(expr)
+#	define STD_FORWARD(t_, expr_)	(expr_)
 #endif
 
 #endif
