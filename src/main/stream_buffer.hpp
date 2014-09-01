@@ -25,7 +25,6 @@ public:
 #endif
 	~StreamBuffer() throw();
 
-
 public:
 	bool empty() const throw() {
 		return m_size == 0;

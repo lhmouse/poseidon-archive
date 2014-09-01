@@ -54,7 +54,12 @@ public:
 	// 这三个函数是线程安全的。
 	void send(const void *data, std::size_t size);
 	void send(const StreamBuffer &buffer);
-	// 执行后 buffer 置空。这个函数不会抛出异常。
+#ifdef POSEIDON_CXX11
+	void send(StreamBuffer &&buffer){
+		sendWithMove(buffer);
+	}
+#endif
+	// 执行后 buffer 置空。
 	void sendWithMove(StreamBuffer &buffer);
 
 	// 关闭读端，调用后 onReadAvail() 将不会被触发，但是依然可写。
