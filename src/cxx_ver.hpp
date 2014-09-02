@@ -1,5 +1,5 @@
-#ifndef POSEIDON_CXXVER_HPP_
-#define POSEIDON_CXXVER_HPP_
+#ifndef POSEIDON_CXX_VER_HPP_
+#define POSEIDON_CXX_VER_HPP_
 
 #include <utility>
 #include <boost/type_traits/remove_cv.hpp>

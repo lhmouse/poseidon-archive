@@ -27,26 +27,7 @@
 #include <boost/cstdlib.hpp>
 #include <boost/cstdint.hpp>
 
-namespace Poseidon {
-
-template<typename Type, std::size_t COUNT>
-char (&countOfHelper(const Type (&)[COUNT]))[COUNT];
-
-template<typename Type, std::size_t COUNT>
-Type *arrayBegin(Type (&array)[COUNT]){
-	return array;
-}
-template<typename Type, std::size_t COUNT>
-Type *arrayEnd(Type (&array)[COUNT]){
-	return array + COUNT;
-}
-
-}
-
-#define COUNT_OF(ar)			sizeof(::Poseidon::countOfHelper(ar))
-#define ARRAY_BEGIN(ar)			(::Poseidon::arrayBegin(ar))
-#define ARRAY_END(ar)			(::Poseidon::arrayEnd(ar))
-
-#include "cxxver.hpp"
+#include "cxx_ver.hpp"
+#include "cxx_util.hpp"
 
 #endif
