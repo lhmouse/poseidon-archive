@@ -35,22 +35,28 @@ public:
 	const std::string &get(const char *key) const;
 	const std::string &get(const std::string &key) const;
 
+	std::string &create(const char *key, std::size_t len);
 	std::string &create(const char *key){
 		return create(key, std::strlen(key));
 	}
-	std::string &create(const char *key, std::size_t len);
 	std::string &create(const std::string &key){
 		return create(key.data(), key.size());
 	}
 
-	void set(const char *key, std::string val){
-		create(key).swap(val);
+	std::string &set(const char *key, std::size_t len, std::string val){
+		std::string &ret = create(key, len);
+		ret.swap(val);
+		return ret;
 	}
-	void set(const char *key, std::size_t len, std::string val){
-		create(key, len).swap(val);
+	std::string &set(const char *key, std::string val){
+		std::string &ret = create(key, std::strlen(key));
+		ret.swap(val);
+		return ret;
 	}
-	void set(const std::string &key, std::string val){
-		create(key.data(), key.size()).swap(val);
+	std::string &set(const std::string &key, std::string val){
+		std::string &ret = create(key.data(), key.size());
+		ret.swap(val);
+		return ret;
 	}
 
 	bool empty() const throw() {
