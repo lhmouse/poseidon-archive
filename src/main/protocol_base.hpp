@@ -27,8 +27,10 @@ namespace Poseidon {
 #define PF_STRING(name_)	\
 	::std::string name_;	\
 
-#define PF_REPEAT(...)	\
-	struct REP
-	::std::vector<
+#define PF_REPEAT(name_, ...)	\
+	struct UNIQUE_ID {	\
+		__VA_ARGS__	\
+	};	\
+	::std::vector<UNIQUE_ID> name_;	\
 
 #endif

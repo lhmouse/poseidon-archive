@@ -18,19 +18,23 @@ template<typename Type>
 inline std::vector<Type> explode(char separator, const std::string &str, std::size_t limit = 0){
 	std::vector<Type> ret;
 	std::size_t begin = 0;
+	std::string temp;
 	for(;;){
 		const std::size_t end = str.find(separator, begin);
 		if(end == std::string::npos){
 			if(begin < str.size()){
-				ret.push_back(boost::lexical_cast<Type>(str.c_str() + begin, str.size() - begin));
+				temp.assign(str.begin() + begin, str.end());
+				ret.push_back(boost::lexical_cast<Type>(temp));
 			}
 			break;
 		}
 		if(ret.size() == limit - 1){	// 如果 limit 为零则 limit - 1 会变成 SIZE_MAX。
-			ret.push_back(boost::lexical_cast<Type>(str.c_str() + begin, str.size() - begin));
+			temp.assign(str.begin() + begin, str.end());
+			ret.push_back(boost::lexical_cast<Type>(temp));
 			break;
 		}
-		ret.push_back(boost::lexical_cast<Type>(str.c_str() + begin, end - begin));
+		temp.assign(str.begin() + begin, str.begin() + end);
+		ret.push_back(boost::lexical_cast<Type>(temp));
 		begin = end + 1;
 	}
 	return ret;

@@ -18,6 +18,7 @@ private:
 
 	HttpVerb m_verb;
 	std::string m_uri;
+	std::string m_contentType;
 	OptionalMap m_getParams;
 	OptionalMap m_postParams;
 

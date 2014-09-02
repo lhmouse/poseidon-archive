@@ -285,23 +285,28 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				}
 				++m_headerIndex;
 			} else if(!m_line.empty()){
-				const std::size_t delimPos = m_line.find(": ");
+				const std::size_t delimPos = m_line.find(':');
 				if(delimPos == std::string::npos){
 					LOG_WARNING("Bad HTTP header: ", m_line);
 					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
 					shutdownRead();
 					return;
 				}
+				const char *value = m_line.c_str() + delimPos + 1;
+				while(*value == ' '){
+					++value;
+					if(*value == 0){
+						break;
+					}
+				}
+				const std::size_t valueLen = m_line.c_str() + m_line.size() - value;
 				if(m_line.compare(0, delimPos, "Content-Length") == 0){
-					m_contentLength = boost::lexical_cast<std::size_t>(m_line.substr(delimPos + 2));
+					m_contentLength = boost::lexical_cast<std::size_t>(std::string(value, valueLen));
 				} else if(m_line.compare(0, delimPos, "Content-Type") == 0){
-					if(m_line.compare(delimPos + 2, std::string::npos,
-						"application/x-www-form-urlencoded", 33) != 0)
-					{
-						LOG_WARNING("Unexpected HTTP Content-Type: ", m_line.substr(delimPos + 2));
-						respond(virtualSharedFromThis<HttpSession>(), HTTP_UNSUPPORTED_MEDIA);
-						shutdownRead();
-						return;
+					m_contentType.assign(value, valueLen);
+					const std::size_t semicolPos = m_contentType.find(';');
+					if(semicolPos != std::string::npos){
+						m_contentType.resize(semicolPos);
 					}
 				}
 				++m_headerIndex;
@@ -328,7 +333,11 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_line.append(read, bytesRemaining);
 			read += bytesRemaining;
 
-			m_postParams = optionalMapFromUrlEncoded(m_line);
+			if(m_contentType == "application/x-www-form-urlencoded"){
+				m_postParams = optionalMapFromUrlEncoded(m_line);
+			} else {
+				LOG_WARNING("Ignored unknown content type: ", m_contentType);
+			}
 
 			boost::make_shared<HttpRequestJob>(
 				virtualWeakFromThis<HttpSession>(),
