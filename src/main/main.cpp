@@ -50,9 +50,8 @@ struct RaiiSingletonRunner : boost::noncopyable {
 	}
 };
 
-#define RUN_SING_2_(name_, ln_)		const RaiiSingletonRunner<name_> runner_ ## ln_ ## _
-#define RUN_SING_1_(name_, ln_)		RUN_SING_2_(name_, ln_)
-#define RUN_SINGLETON(name_)		RUN_SING_1_(name_, __LINE__)
+#define RUN_SINGLETON(name_)	\
+	const RaiiSingletonRunner<name_> UNIQUE_ID
 
 void run(){
 	AUTO_REF(logLevel, ConfigFile::get("log_level"));

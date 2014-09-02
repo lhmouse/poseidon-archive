@@ -1,6 +1,7 @@
 #ifndef POSEIDON_PROFILER_HPP_
 #define POSEIDON_PROFILER_HPP_
 
+#include "../cxx_util.hpp"
 #include <vector>
 #include <boost/noncopyable.hpp>
 
@@ -40,8 +41,7 @@ public:
 
 }
 
-#define PROFILE_ME_2_(file_, ln_)	const ::Poseidon::Profiler profiler_ ## ln_ ## _(file_, ln_)
-#define PROFILE_ME_1_(file_, ln_)	PROFILE_ME_2_(file_, ln_)
-#define PROFILE_ME					PROFILE_ME_1_(__FILE__, __LINE__)
+#define PROFILE_ME	\
+	const ::Poseidon::Profiler UNIQUE_ID(__FILE__, __LINE__)
 
 #endif

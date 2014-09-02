@@ -17,8 +17,12 @@ Type *arrayEnd(Type (&array)[COUNT]){
 
 }
 
-#define COUNT_OF(ar)			sizeof(::Poseidon::countOfHelper(ar))
-#define ARRAY_BEGIN(ar)			(::Poseidon::arrayBegin(ar))
-#define ARRAY_END(ar)			(::Poseidon::arrayEnd(ar))
+#define COUNT_OF(ar)		sizeof(::Poseidon::countOfHelper(ar))
+#define ARRAY_BEGIN(ar)		(::Poseidon::arrayBegin(ar))
+#define ARRAY_END(ar)		(::Poseidon::arrayEnd(ar))
+
+#define MAGIC_LN_2_(ln_)	Poseidon_magic_ ## ln_ ## _
+#define MAGIC_LN_1_(ln_)	MAGIC_LN_2_(ln_)
+#define UNIQUE_ID			MAGIC_LN_1_(__LINE__)
 
 #endif
