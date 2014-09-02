@@ -53,7 +53,8 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 			}	\
 			\
 			void operator()(key_type &old){	\
-				std::swap(old, m_key);	\
+				using std::swap;	\
+				swap(old, m_key);	\
 			}	\
 		};	\
 		\

@@ -61,13 +61,13 @@ void TcpSessionBase::notifyWritten(std::size_t size){
 void TcpSessionBase::send(const void *data, std::size_t size){
 	StreamBuffer tmp;
 	tmp.put(data, size);
-	sendWithMove(tmp);
+	sendUsingMove(tmp);
 }
 void TcpSessionBase::send(const StreamBuffer &buffer){
 	StreamBuffer tmp(buffer);
-	sendWithMove(tmp);
+	sendUsingMove(tmp);
 }
-void TcpSessionBase::sendWithMove(StreamBuffer &buffer){
+void TcpSessionBase::sendUsingMove(StreamBuffer &buffer){
 	{
 		const boost::mutex::scoped_lock lock(m_bufferMutex);
 		if(atomicLoad(m_shutdown) != false){

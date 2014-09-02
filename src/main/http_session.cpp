@@ -64,7 +64,7 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 	buffer.put("\r\n", 2);
 	buffer.put(contents->data(), contents->size());
 
-	session->sendWithMove(buffer);
+	session->sendUsingMove(buffer);
 }
 
 HttpVerb translateVerb(const std::string &verb){
