@@ -77,7 +77,7 @@ public:
 }
 
 #define LOG_LEVEL(level, ...)	\
-	if(::Poseidon::Log::getLevel() >= ::Poseidon::Log::level)	\
+	if((long long)::Poseidon::Log::getLevel() + 1 >= (long long)::Poseidon::Log::level + 1)	\
 		::Poseidon::Log(::Poseidon::Log::level, #level, __FILE__, __LINE__), __VA_ARGS__
 
 #define LOG_FATAL(...)		LOG_LEVEL(FATAL, __VA_ARGS__)

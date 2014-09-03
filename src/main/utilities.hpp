@@ -82,6 +82,7 @@ inline std::string inplode(char separator, const std::vector<std::string> &vec){
 	std::string ret;
 	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
 		ret.append(*it);
+		ret.push_back(separator);
 	}
 	return ret;
 }

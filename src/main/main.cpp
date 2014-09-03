@@ -15,12 +15,12 @@ using namespace Poseidon;
 
 namespace {
 
-void sigTermProc(int sig){
+void sigTermProc(int){
     LOG_WARNING("Received SIGTERM, will now exit...");
     JobDispatcher::quitModal();
 }
 
-void sigIntProc(int sig){
+void sigIntProc(int){
 	static const unsigned long long SAFETY_TIMER_EXPIRES = 300 * 1000000;
 	static unsigned long long s_safetyTimer = 0;
 

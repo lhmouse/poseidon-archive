@@ -106,7 +106,7 @@ void threadProc(){
 	while(atomicLoad(g_daemonRunning)){
 		const unsigned long long now = getMonoClock();
 		boost::shared_ptr<const TimerCallback> callback;
-		unsigned long long period;
+		unsigned long long period = 0;
 		{
 			const boost::mutex::scoped_lock lock(g_mutex);
 			while(!g_timers.empty() && (now >= g_timers.front().next)){
