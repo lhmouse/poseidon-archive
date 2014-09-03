@@ -24,7 +24,8 @@ private:
 	const PlayerServletCallback m_callback;
 
 public:
-	PlayerServlet(boost::uint16_t protocolId, boost::weak_ptr<void> dependency, PlayerServletCallback callback)
+	PlayerServlet(boost::uint16_t protocolId,
+		const boost::weak_ptr<void> &dependency, const PlayerServletCallback &callback)
 		: m_protocolId(protocolId), m_dependency(dependency), m_callback(callback)
 	{
 		LOG_INFO("Created player servlet for protocol ", m_protocolId);
@@ -38,14 +39,14 @@ public:
 		if(!(m_dependency < NULL_WEAK_PTR) && !(NULL_WEAK_PTR < m_dependency)){
 			return boost::shared_ptr<const PlayerServletCallback>(shared_from_this(), &m_callback);
 		}
-		const AUTO(lockedDep, m_dependency.lock());
+		AUTO(lockedDep, m_dependency.lock());
 		if(!lockedDep){
 			return boost::shared_ptr<const PlayerServletCallback>();
 		}
 		return boost::shared_ptr<const PlayerServletCallback>(
 			boost::make_shared<
 				std::pair<boost::shared_ptr<void>, boost::shared_ptr<const PlayerServlet> >
-				>(lockedDep, shared_from_this()),
+				>(STD_MOVE(lockedDep), shared_from_this()),
 			&m_callback
 		);
 	}
@@ -59,9 +60,9 @@ std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> > g_servlets;
 }
 
 boost::shared_ptr<const PlayerServlet> PlayerServletManager::registerServlet(boost::uint16_t protocolId,
-	boost::weak_ptr<void> dependency, const PlayerServletCallback &callback)
+	const boost::weak_ptr<void> &dependency, const PlayerServletCallback &callback)
 {
-	const AUTO(newServlet, boost::make_shared<PlayerServlet>(
+	AUTO(newServlet, boost::make_shared<PlayerServlet>(
 		protocolId, boost::ref(dependency), boost::ref(callback)));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);

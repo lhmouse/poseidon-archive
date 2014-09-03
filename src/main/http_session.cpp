@@ -173,7 +173,7 @@ private:
 public:
 	HttpRequestJob(boost::weak_ptr<HttpSession> session, HttpVerb verb,
 		std::string uri, OptionalMap getParams, OptionalMap postParams)
-		: m_session(session), m_verb(verb)
+		: m_session(STD_MOVE(session)), m_verb(verb)
 		, m_uri(uri), m_getParams(getParams), m_postParams(postParams)
 	{
 	}

@@ -4,8 +4,8 @@
 #include "log.hpp"
 #include "exception.hpp"
 #include "singletons/config_file.hpp"
-#include "singletons/database_daemon.hpp"
 #include "singletons/timer_daemon.hpp"
+#include "singletons/database_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/job_dispatcher.hpp"
 #include "socket_server.hpp"
@@ -61,8 +61,8 @@ void run(){
 		Log::setLevel(newLevel);
 	}
 
-	//RUN_SINGLETON(DatabaseDaemon);
 	RUN_SINGLETON(TimerDaemon);
+	//RUN_SINGLETON(DatabaseDaemon);
 	RUN_SINGLETON(EpollDaemon);
 
 	LOG_INFO("Creating player session server...");

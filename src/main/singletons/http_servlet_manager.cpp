@@ -25,8 +25,9 @@ private:
 	const HttpServletCallback m_callback;
 
 public:
-	HttpServlet(std::string uri, boost::weak_ptr<void> dependency, HttpServletCallback callback)
-		: m_uri(uri), m_dependency(dependency), m_callback(callback)
+	HttpServlet(std::string uri,
+		const boost::weak_ptr<void> &dependency, const HttpServletCallback &callback)
+		: m_uri(STD_MOVE(uri)), m_dependency(dependency), m_callback(callback)
 	{
 		LOG_INFO("Created http servlet for URI ", m_uri);
 	}
@@ -39,14 +40,14 @@ public:
 		if(!(m_dependency < NULL_WEAK_PTR) && !(NULL_WEAK_PTR < m_dependency)){
 			return boost::shared_ptr<const HttpServletCallback>(shared_from_this(), &m_callback);
 		}
-		const AUTO(lockedDep, m_dependency.lock());
+		AUTO(lockedDep, m_dependency.lock());
 		if(!lockedDep){
 			return boost::shared_ptr<const HttpServletCallback>();
 		}
 		return boost::shared_ptr<const HttpServletCallback>(
 			boost::make_shared<
 				std::pair<boost::shared_ptr<void>, boost::shared_ptr<const HttpServlet> >
-				>(lockedDep, shared_from_this()),
+				>(STD_MOVE(lockedDep), shared_from_this()),
 			&m_callback
 		);
 	}
@@ -60,7 +61,7 @@ std::map<std::string, boost::weak_ptr<const HttpServlet> > g_servlets;
 }
 
 boost::shared_ptr<const HttpServlet> HttpServletManager::registerServlet(const std::string &uri,
-	boost::weak_ptr<void> dependency, const HttpServletCallback &callback)
+	const boost::weak_ptr<void> &dependency, const HttpServletCallback &callback)
 {
 	const AUTO(newServlet, boost::make_shared<HttpServlet>(
 		uri, boost::ref(dependency), boost::ref(callback)));
