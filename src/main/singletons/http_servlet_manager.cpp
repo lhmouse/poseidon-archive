@@ -25,9 +25,9 @@ private:
 	const HttpServletCallback m_callback;
 
 public:
-	HttpServlet(std::string uri,
+	HttpServlet(const std::string &uri,
 		const boost::weak_ptr<void> &dependency, const HttpServletCallback &callback)
-		: m_uri(STD_MOVE(uri)), m_dependency(dependency), m_callback(callback)
+		: m_uri(uri), m_dependency(dependency), m_callback(callback)
 	{
 		LOG_INFO("Created http servlet for URI ", m_uri);
 	}
@@ -64,7 +64,7 @@ boost::shared_ptr<const HttpServlet> HttpServletManager::registerServlet(const s
 	const boost::weak_ptr<void> &dependency, const HttpServletCallback &callback)
 {
 	const AUTO(newServlet, boost::make_shared<HttpServlet>(
-		uri, boost::ref(dependency), boost::ref(callback)));
+		boost::ref(uri), boost::ref(dependency), boost::ref(callback)));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(servlet, g_servlets[uri]);

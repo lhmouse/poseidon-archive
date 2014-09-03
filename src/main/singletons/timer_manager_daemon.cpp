@@ -152,8 +152,8 @@ boost::shared_ptr<const TimerServlet> TimerManager::registerTimer(
 	unsigned long long first, unsigned long long period,
 	const boost::weak_ptr<void> &dependency, const TimerCallback &callback)
 {
-	AUTO(servlet, boost::make_shared<TimerServlet>(period * 1000,
-		boost::ref(dependency), boost::ref(callback)));
+	AUTO(servlet, boost::make_shared<TimerServlet>(
+		period * 1000, boost::ref(dependency), boost::ref(callback)));
 	TimerItem ti;
 	ti.next = getMonoClock() + first * 1000;
 	ti.servlet = servlet;
