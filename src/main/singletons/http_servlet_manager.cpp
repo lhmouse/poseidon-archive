@@ -60,7 +60,7 @@ std::map<std::string, boost::weak_ptr<const HttpServlet> > g_servlets;
 }
 
 boost::shared_ptr<const HttpServlet> HttpServletManager::registerServlet(const std::string &uri,
-	boost::weak_ptr<void> dependency, HttpServletCallback callback)
+	boost::weak_ptr<void> dependency, const HttpServletCallback &callback)
 {
 	const AUTO(newServlet, boost::make_shared<HttpServlet>(
 		uri, boost::ref(dependency), boost::ref(callback)));

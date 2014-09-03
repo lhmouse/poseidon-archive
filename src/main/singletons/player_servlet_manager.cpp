@@ -59,7 +59,7 @@ std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> > g_servlets;
 }
 
 boost::shared_ptr<const PlayerServlet> PlayerServletManager::registerServlet(boost::uint16_t protocolId,
-	boost::weak_ptr<void> dependency, PlayerServletCallback callback)
+	boost::weak_ptr<void> dependency, const PlayerServletCallback &callback)
 {
 	const AUTO(newServlet, boost::make_shared<PlayerServlet>(
 		protocolId, boost::ref(dependency), boost::ref(callback)));
