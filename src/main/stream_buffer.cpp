@@ -250,8 +250,7 @@ StreamBuffer StreamBuffer::cut(std::size_t size){
 			const std::size_t remaining = size - total;
 			const std::size_t avail = it->writePos - it->readPos;
 			if(remaining < avail){
-				pushBackPooled(ret.m_chunks);
-				AUTO_REF(back, ret.m_chunks.back());
+				AUTO_REF(back, pushBackPooled(ret.m_chunks));
 				std::memcpy(back.data, it->data + it->readPos, remaining);
 				back.writePos = remaining;
 				it->readPos += remaining;
