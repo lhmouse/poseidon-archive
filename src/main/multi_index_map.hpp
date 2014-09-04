@@ -210,20 +210,22 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 #define MULTI_INDEX_MAP_DECLTYPE_(struct_, member_)	\
 	__typeof__(((struct_ *)1)->member_)
 
-#define UNIQUE_INDEX(member_)	\
+#define UNIQUE_INDEX(member_, ...)	\
 	::boost::multi_index::ordered_unique<	\
 		::boost::multi_index::member<value_type,	\
 			MULTI_INDEX_MAP_DECLTYPE_(value_type, member_),	\
 			&value_type::member_	\
-		>	\
+		>,	\
+		## __VA_ARGS__	\
 	>
 
-#define MULTI_INDEX(member_)	\
+#define MULTI_INDEX(member_, ...)	\
 	::boost::multi_index::ordered_non_unique<	\
 		::boost::multi_index::member<value_type,	\
 			MULTI_INDEX_MAP_DECLTYPE_(value_type, member_),	\
 			&value_type::member_	\
-		>	\
+		>,	\
+		## __VA_ARGS__	\
 	>
 
 #endif
