@@ -3,6 +3,7 @@
 
 #include "../cxx_ver.hpp"
 #include <list>
+#include <iterator>
 #include <cstddef>
 
 namespace Poseidon {
@@ -58,6 +59,60 @@ public:
 		splice(std::move(src));
 	}
 #endif
+};
+
+class StreamBufferReadIterator
+	: public std::iterator<std::input_iterator_tag, int>
+{
+private:
+	StreamBuffer *m_owner;
+
+public:
+	explicit StreamBufferReadIterator(StreamBuffer &owner)
+		: m_owner(&owner)
+	{
+	}
+
+public:
+	int operator*() const {
+		return m_owner->peek();
+	}
+	StreamBufferReadIterator &operator++(){
+		m_owner->get();
+		return *this;
+	}
+	StreamBufferReadIterator operator++(int){
+		m_owner->get();
+		return *this;
+	}
+};
+
+class StreamBufferWriteIterator
+	: public std::iterator<std::output_iterator_tag, unsigned char>
+{
+private:
+	StreamBuffer *m_owner;
+
+public:
+	explicit StreamBufferWriteIterator(StreamBuffer &owner)
+		: m_owner(&owner)
+	{
+	}
+
+public:
+	StreamBufferWriteIterator &operator=(unsigned char byte){
+		m_owner->put(byte);
+		return *this;
+	}
+	StreamBufferWriteIterator &operator*(){
+		return *this;
+	}
+	StreamBufferWriteIterator &operator++(){
+		return *this;
+	}
+	StreamBufferWriteIterator &operator++(int){
+		return *this;
+	}
 };
 
 }

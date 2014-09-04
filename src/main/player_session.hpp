@@ -25,9 +25,9 @@ protected:
 public:
 	// 这两个函数是线程安全的。
 	void send(boost::uint16_t status, const StreamBuffer &payload);
-	void sendUsingMove(boost::uint16_t status, StreamBuffer &payload) throw();
+	void sendUsingMove(boost::uint16_t status, StreamBuffer &payload);
 #ifdef POSEIDON_CXX11
-	void sendUsingMove(boost::uint16_t status, StreamBuffer &&payload) throw() {
+	void sendUsingMove(boost::uint16_t status, StreamBuffer &&payload){
 		sendUsingMove(status, std::move(payload));
 	}
 #endif
