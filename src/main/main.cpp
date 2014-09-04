@@ -87,6 +87,41 @@ void run(){
 
 }
 
+#define PROTOCOL_NAMESPACE  TestNs
+#define PROTOCOL_NAME       TestProtocol
+#define PROTOCOL_FIELDS     \
+	FIELD_VINT50(num)   \
+	FIELD_ARRAY(array1,	\
+		FIELD_VUINT50(num1)	\
+		FIELD_VINT50(real)	\
+	)	\
+	FIELD_STRING(str)
+
+#include "protocol/protocol_generator.hpp"
+#include "singletons/player_servlet_manager.hpp"
+
+static void servletProc(const boost::shared_ptr<PlayerSession> &, StreamBuffer){
+	TestNs::TestProtocol p1, p2;
+	StreamBuffer buf;
+	p1.num = 123;
+	p1.array1.resize(2);
+	p1.array1[0].num1 = 45;
+	p1.array1[0].real = 678;
+	p1.array1[1].num1 = 901;
+	p1.array1[1].real = 2345;
+	p1.str = "meow";
+	p1 >> buf;
+	p2 << buf;
+	LOG_DEBUG("num = ", p2.num,
+		", array[0].num1 = ", p2.array1.at(0).num1,
+		", array[0].real = ", p2.array1.at(0).real,
+		", array[1].num1 = ", p2.array1.at(1).num1,
+		", array[1].real = ", p2.array1.at(1).real,
+		", str = ", p2.str
+	);
+}
+const AUTO(srv, PlayerServletManager::registerServlet(100, boost::weak_ptr<void>(), servletProc));
+
 int main(int argc, char **argv){
 	LOG_INFO("-------------------------- Starting up -------------------------");
 

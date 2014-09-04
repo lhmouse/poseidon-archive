@@ -55,11 +55,9 @@ public:
 class ProtocolException : public Exception {
 public:
 	enum {
-		ERR_BROKEN_HEADER	= -1,
-		ERR_TRUNCATED_BODY	= -2,
-		ERR_END_OF_STREAM	= -3,
-		ERR_BAD_REQUEST		= -4,
-		ERR_INTERNAL_ERROR	= -5,
+		ERR_END_OF_STREAM	= -1,
+		ERR_BAD_REQUEST		= -2,
+		ERR_INTERNAL_ERROR	= -3,
 	};
 
 private:
