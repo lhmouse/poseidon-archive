@@ -21,9 +21,7 @@ TcpSessionBase::TcpSessionBase(ScopedFile &socket)
 	::socklen_t salen = sizeof(u);
 
 	if(::getpeername(m_socket.get(), &u.sa, &salen) != 0){
-		const int code = errno;
-		LOG_ERROR("Could not get peer address.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemError, errno);
 	}
 	m_remoteIp.resize(63);
 	const char *text;
@@ -32,7 +30,8 @@ TcpSessionBase::TcpSessionBase(ScopedFile &socket)
 	} else if(u.sa.sa_family == AF_INET6){
 		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &m_remoteIp[0], m_remoteIp.size());
 	} else {
-		DEBUG_THROW(Exception, "Unknown IP protocol " + boost::lexical_cast<std::string>(u.sa.sa_family));
+		LOG_ERROR("Unknown IP protocol: ", u.sa.sa_family);
+		DEBUG_THROW(Exception, "Unknown IP protocol.");
 	}
 	if(!text){
 		DEBUG_THROW(SystemError, errno);
