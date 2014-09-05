@@ -68,11 +68,12 @@ void TcpSessionBase::send(const StreamBuffer &buffer){
 	sendUsingMove(tmp);
 }
 void TcpSessionBase::sendUsingMove(StreamBuffer &buffer){
+	if(atomicLoad(m_shutdown)){
+		LOG_DEBUG("Attempting to send data on a closed socket.");
+		return;
+	}
 	{
 		const boost::mutex::scoped_lock lock(m_bufferMutex);
-		if(atomicLoad(m_shutdown) != false){
-			DEBUG_THROW(Exception, "Trying to send on a socket that has been shut down.");
-		}
 		m_sendBuffer.splice(buffer);
 	}
 	EpollDaemon::refreshSession(virtualSharedFromThis<TcpSessionBase>());
