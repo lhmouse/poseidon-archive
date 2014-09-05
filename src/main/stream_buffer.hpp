@@ -18,6 +18,7 @@ private:
 public:
 	StreamBuffer();
 	StreamBuffer(const void *data, std::size_t size);
+	StreamBuffer(const char *str);
 	StreamBuffer(const StreamBuffer &rhs);
 	StreamBuffer &operator=(const StreamBuffer &rhs);
 #ifdef POSEIDON_CXX11
@@ -47,6 +48,7 @@ public:
 	std::size_t discard(std::size_t size);
 	// 向末尾追加指定的字节数。
 	void put(const void *data, std::size_t size);
+	void put(const char *str);
 
 	void swap(StreamBuffer &rhs) throw();
 

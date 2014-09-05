@@ -8,13 +8,14 @@
 #include "../http_status.hpp"
 #include "../http_verb.hpp"
 #include "../optional_map.hpp"
+#include "../stream_buffer.hpp"
 
 namespace Poseidon {
 
 class HttpServlet;
 
 typedef boost::function<
-	HttpStatus (OptionalMap &headers, std::string &contents,
+	HttpStatus (OptionalMap &headers, StreamBuffer &contents,
 		HttpVerb verb, const OptionalMap &getParams, const OptionalMap &postParams)
 	> HttpServletCallback;
 

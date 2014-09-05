@@ -14,7 +14,7 @@ namespace {
 const unsigned long long MAX_REQUEST_LENGTH = 0x4000;	// 头部加正文总长度。
 
 void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
-	OptionalMap *headers = NULL, std::string *contents = NULL)
+	OptionalMap *headers = NULL, StreamBuffer *contents = NULL)
 {
 	LOG_DEBUG("Sending HTTP response: status = ", (unsigned)status);
 
@@ -26,19 +26,19 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 		headers = &emptyHeaders;
 	}
 
-	std::string emptyContents;
+	StreamBuffer emptyContents;
 	if(!contents){
 		contents = &emptyContents;
 	}
 
 	if(contents->empty() && ((unsigned)status / 100 != 2)){
-		*contents = "<html><head><title>";
-		*contents += codeStatus;
-		*contents += "</title></head><body><h1>";
-		*contents += codeStatus;
-		*contents += "</h1><hr /><p>";
-		*contents += desc.descLong;
-		*contents += "</p></body></html>";
+		contents->put("<html><head><title>");
+		contents->put(codeStatus.c_str());
+		contents->put("</title></head><body><h1>");
+		contents->put(codeStatus.c_str());
+		contents->put("</h1><hr /><p>");
+		contents->put(desc.descLong);
+		contents->put("</p></body></html>");
 
 		headers->set("Content-Type", "text/html");
 	} else {
@@ -62,7 +62,7 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 		}
 	}
 	buffer.put("\r\n", 2);
-	buffer.put(contents->data(), contents->size());
+	buffer.splice(*contents);
 
 	session->sendUsingMove(buffer);
 }
@@ -194,10 +194,9 @@ protected:
 		}
 		LOG_DEBUG("Dispatching http request: URI = ", m_uri, ", verb = ", m_verb);
 		OptionalMap headers;
-		std::string contents;
+		StreamBuffer contents;
 		try {
-			const HttpStatus status = (*servlet)(headers, contents,
-				m_verb, m_getParams, m_postParams);
+			const HttpStatus status = (*servlet)(headers, contents, m_verb, m_getParams, m_postParams);
 			respond(session, status, &headers, &contents);
 		} catch(ProtocolException &e){
 			LOG_ERROR("ProtocolException thrown in HTTP servlet, code = ", e.code(),
