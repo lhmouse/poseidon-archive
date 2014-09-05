@@ -9,7 +9,8 @@ typedef std::pair<int, std::string> Item;
 
 MULTI_INDEX_MAP(Container, Item,
 	UNIQUE_INDEX(first),
-	MULTI_INDEX(second)
+	MULTI_INDEX(second),
+	SEQUENCED_INDEX()
 );
 
 基本用法和 std::map 类似，只是 find, count, lowerBound, upperBound, equalRange 等
@@ -27,6 +28,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
 
 #define MULTI_INDEX_MAP(class_name_, value_type_, ...)	\
 	class class_name_ {	\
@@ -254,5 +256,8 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		>,	\
 		## __VA_ARGS__	\
 	>
+
+#define SEQUENCED_INDEX()	\
+	::boost::multi_index::sequenced<>
 
 #endif
