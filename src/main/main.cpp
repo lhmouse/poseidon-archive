@@ -90,18 +90,30 @@ void run(){
 int main(int argc, char **argv){
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
-	LOG_INFO("Setting up signal handlers...");
-	std::signal(SIGINT, sigIntProc);
-	std::signal(SIGTERM, sigTermProc);
+	try {
+		LOG_INFO("Setting up signal handlers...");
+		std::signal(SIGINT, sigIntProc);
+		std::signal(SIGTERM, sigTermProc);
 
-	const char *confPath = "/var/poseidon/config/conf.rc";
-	if(1 < argc){
-		confPath = argv[1];
+		const char *confPath = "/var/poseidon/config/conf.rc";
+		if(1 < argc){
+			confPath = argv[1];
+		}
+		ConfigFile::reload(confPath);
+
+		run();
+
+		LOG_INFO("------------- Server has been shut down gracefully -------------");
+		return EXIT_SUCCESS;
+	} catch(Exception &e){
+		LOG_ERROR("Exception thrown in main(): file = ", e.file(),
+			", line = ", e.line(), ": what = ", e.what());
+	} catch(std::exception &e){
+		LOG_ERROR("std::exception thrown in main(): what = ", e.what());
+	} catch(...){
+		LOG_ERROR("Unknown exception thrown in main().");
 	}
-	ConfigFile::reload(confPath);
 
-	run();
-
-	LOG_INFO("------------- Server has been shut down gracefully -------------");
-	return EXIT_SUCCESS;
+	LOG_INFO("----------------- Server has exited abnormally -----------------");
+	return EXIT_FAILURE;
 }

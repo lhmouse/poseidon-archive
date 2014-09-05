@@ -60,7 +60,7 @@ void JobDispatcher::doModal(){
 		} catch(std::exception &e){
 			LOG_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 		} catch(...){
-			LOG_ERROR("Unknown exception thrown in job dispatcher");
+			LOG_ERROR("Unknown exception thrown in job dispatcher.");
 		}
 	}
 }

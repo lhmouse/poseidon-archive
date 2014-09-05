@@ -67,7 +67,7 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 	session->sendUsingMove(buffer);
 }
 
-HttpVerb translateVerb(const std::string &verb){
+HttpVerb verbFromString(const std::string &verb){
 	switch(verb.size()){
 	case 3:
 		if(verb == "GET"){
@@ -106,6 +106,19 @@ HttpVerb translateVerb(const std::string &verb){
 		break;
 	}
 	return HTTP_INVALID_VERB;
+}
+const char *stringFromVerb(HttpVerb verb){
+	switch(verb){
+	case HTTP_GET:		return "GET";
+	case HTTP_POST:		return "POST";
+	case HTTP_HEAD:		return "HEAD";
+	case HTTP_PUT:		return "PUT";
+	case HTTP_DELETE:	return "DELETE";
+	case HTTP_TRACE:	return "TRACT";
+	case HTTP_CONNECT:	return "CONNECT";
+	case HTTP_OPTIONS:	return "OPTIONS";
+	default:			return "INVALID_VERB";
+	}
 }
 
 int getHexLiteral(char ch){
@@ -192,7 +205,7 @@ protected:
 			respond(session, HTTP_NOT_FOUND);
 			return;
 		}
-		LOG_DEBUG("Dispatching http request: URI = ", m_uri, ", verb = ", m_verb);
+		LOG_DEBUG("Dispatching http request: URI = ", m_uri, ", verb = ", stringFromVerb(m_verb));
 		OptionalMap headers;
 		StreamBuffer contents;
 		try {
@@ -255,7 +268,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					shutdownRead();
 					return;
 				}
-				m_verb = translateVerb(parts[0]);
+				m_verb = verbFromString(parts[0]);
 				if(m_verb == HTTP_INVALID_VERB){
 					LOG_WARNING("Bad HTTP verb: ", parts[0]);
 					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_METHOD);
