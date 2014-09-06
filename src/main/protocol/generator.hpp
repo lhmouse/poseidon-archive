@@ -10,12 +10,19 @@
 #define POSEIDON_PROTOCOL_GENERATOR_HPP_
 
 #include <algorithm>
-#include "protocol_base.hpp"
+#include "base.hpp"
 #include "../exception.hpp"
 
 #define THROW_EOS_	\
 	DEBUG_THROW(::Poseidon::ProtocolException,	\
 		"End of stream encountered.", ::Poseidon::ProtocolException::ERR_END_OF_STREAM)
+
+namespace Poseidon {
+
+struct ProtocolBase {
+};
+
+}
 
 #endif // POSEIDON_PROTOCOL_GENERATOR_HPP_
 
@@ -23,7 +30,7 @@
 namespace PROTOCOL_NAMESPACE {
 #endif
 
-struct PROTOCOL_NAME {
+struct PROTOCOL_NAME : public ProtocolBase {
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
@@ -46,6 +53,29 @@ struct PROTOCOL_NAME {
 	::std::vector<ElementOf ## name_ ## _> name_;
 
 	PROTOCOL_FIELDS
+
+	PROTOCOL_NAME() throw()
+		: ProtocolBase()
+
+#undef FIELD_VINT50
+#undef FIELD_VUINT50
+#undef FIELD_STRING
+#undef FIELD_ARRAY
+
+#define FIELD_VINT50(name_)	\
+	, name_()
+
+#define FIELD_VUINT50(name_)	\
+	, name_()
+
+#define FIELD_STRING(name_)	\
+	, name_()
+
+#define FIELD_ARRAY(name_, fields_)	\
+	, name_()
+
+	{
+	}
 
 	void operator>>(::Poseidon::StreamBuffer &buffer_) const {
 		typedef PROTOCOL_NAME Cur_;
