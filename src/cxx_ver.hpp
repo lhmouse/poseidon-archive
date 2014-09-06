@@ -26,7 +26,7 @@ typename boost::remove_cv<
 #ifdef POSEIDON_CXX11
 #	define DECLTYPE(expr_)			decltype(expr_)
 #	define AUTO(id_, init_)			auto id_ = init_
-#	define AUTO_REF(id_, init_)		auto &&id_ = init_
+#	define AUTO_REF(id_, init_)		auto &id_ = init_
 #	define STD_MOVE(expr_)			::std::move(expr_)
 #	define STD_FORWARD(t_, expr_)	::std::forward<t_>(expr_)
 #else

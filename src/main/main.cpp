@@ -54,7 +54,7 @@ struct RaiiSingletonRunner : boost::noncopyable {
 	const RaiiSingletonRunner<name_> UNIQUE_ID
 
 void run(){
-	AUTO_REF(logLevel, ConfigFile::get("log_level"));
+	const AUTO_REF(logLevel, ConfigFile::get("log_level"));
 	if(!logLevel.empty()){
 		const int newLevel = boost::lexical_cast<int>(logLevel);
 		LOG_WARNING("Setting log level to ", newLevel, ", was ", Log::getLevel(), "...");
