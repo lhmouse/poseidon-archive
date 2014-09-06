@@ -1,5 +1,5 @@
-#ifndef POSEIDON_EPOLL_DAEMON_HPP_
-#define POSEIDON_EPOLL_DAEMON_HPP_
+#ifndef POSEIDON_SINGLETONS_EPOLL_DAEMON_HPP_
+#define POSEIDON_SINGLETONS_EPOLL_DAEMON_HPP_
 
 #include <boost/shared_ptr.hpp>
 #include "../raii.hpp"

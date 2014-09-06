@@ -1,11 +1,11 @@
 #ifndef POSEIDON_PLAYER_SESSION_HPP_
 #define POSEIDON_PLAYER_SESSION_HPP_
 
-#include "../cxx_ver.hpp"
+#include "../../cxx_ver.hpp"
 #include <cstddef>
 #include <boost/cstdint.hpp>
-#include "tcp_session_base.hpp"
-#include "stream_buffer.hpp"
+#include "../tcp_session_base.hpp"
+#include "../stream_buffer.hpp"
 
 namespace Poseidon {
 

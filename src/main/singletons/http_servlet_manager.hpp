@@ -1,12 +1,12 @@
-#ifndef POSEIDON_HTTP_SERVLET_MANAGER_HPP_
-#define POSEIDON_HTTP_SERVLET_MANAGER_HPP_
+#ifndef POSEIDON_SINGLETONS_HTTP_SERVLET_MANAGER_HPP_
+#define POSEIDON_SINGLETONS_HTTP_SERVLET_MANAGER_HPP_
 
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/function.hpp>
-#include "../http_status.hpp"
-#include "../http_verb.hpp"
+#include "../http/status.hpp"
+#include "../http/verb.hpp"
 #include "../optional_map.hpp"
 #include "../stream_buffer.hpp"
 

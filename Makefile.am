@@ -40,14 +40,14 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/job_dispatcher.cpp	\
 	src/main/singletons/database_daemon.cpp	\
 	src/main/singletons/epoll_daemon.cpp	\
-	src/main/socket_server.cpp	\
-	src/main/tcp_session_base.cpp	\
-	src/main/player_session.cpp	\
-	src/main/http_session.cpp	\
-	src/main/http_status.cpp	\
 	src/main/singletons/timer_manager_daemon.cpp	\
 	src/main/singletons/player_servlet_manager.cpp	\
 	src/main/singletons/http_servlet_manager.cpp	\
+	src/main/tcp_session_base.cpp	\
+	src/main/http/session.cpp	\
+	src/main/http/status.cpp	\
+	src/main/player/session.cpp	\
+	src/main/socket_server.cpp	\
 	src/main/data_object.cpp
 
 lib_libposeidon_template_la_SOURCES=	\

@@ -1,5 +1,5 @@
-#ifndef POSEIDON_JOB_DISPATCHER_HPP_
-#define POSEIDON_JOB_DISPATCHER_HPP_
+#ifndef POSEIDON_SINGLETONS_JOB_DISPATCHER_HPP_
+#define POSEIDON_SINGLETONS_JOB_DISPATCHER_HPP_
 
 #include <boost/shared_ptr.hpp>
 #include "../virtual_shared_from_this.hpp"

@@ -1,12 +1,12 @@
-#include "../precompiled.hpp"
-#include "http_session.hpp"
-#include "http_status.hpp"
-#include "log.hpp"
-#include "singletons/job_dispatcher.hpp"
-#include "singletons/http_servlet_manager.hpp"
-#include "stream_buffer.hpp"
-#include "utilities.hpp"
-#include "exception.hpp"
+#include "../../precompiled.hpp"
+#include "session.hpp"
+#include "status.hpp"
+#include "../log.hpp"
+#include "../singletons/job_dispatcher.hpp"
+#include "../singletons/http_servlet_manager.hpp"
+#include "../stream_buffer.hpp"
+#include "../utilities.hpp"
+#include "../exception.hpp"
 using namespace Poseidon;
 
 namespace {

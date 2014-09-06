@@ -9,8 +9,8 @@
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/job_dispatcher.hpp"
 #include "socket_server.hpp"
-#include "player_session.hpp"
-#include "http_session.hpp"
+#include "player/session.hpp"
+#include "http/session.hpp"
 using namespace Poseidon;
 
 namespace {

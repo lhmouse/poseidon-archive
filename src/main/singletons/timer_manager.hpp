@@ -1,5 +1,5 @@
-#ifndef POSEIDON_TIMER_MANAGER_HPP_
-#define POSEIDON_TIMER_MANAGER_HPP_
+#ifndef POSEIDON_SINGLETONS_TIMER_MANAGER_HPP_
+#define POSEIDON_SINGLETONS_TIMER_MANAGER_HPP_
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>

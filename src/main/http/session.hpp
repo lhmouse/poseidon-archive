@@ -3,9 +3,9 @@
 
 #include <string>
 #include <cstddef>
-#include "tcp_session_base.hpp"
-#include "optional_map.hpp"
-#include "http_verb.hpp"
+#include "../tcp_session_base.hpp"
+#include "../optional_map.hpp"
+#include "verb.hpp"
 
 namespace Poseidon {
 
