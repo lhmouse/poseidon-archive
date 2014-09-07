@@ -6,11 +6,11 @@
 #	error PROTOCOL_FIELDS is undefined.
 #endif
 
-#ifndef POSEIDON_PROTOCOL_GENERATOR_HPP_
-#define POSEIDON_PROTOCOL_GENERATOR_HPP_
+#ifndef POSEIDON_PLAYER_PROTOCOL_GENERATOR_HPP_
+#define POSEIDON_PLAYER_PROTOCOL_GENERATOR_HPP_
 
 #include <algorithm>
-#include "base.hpp"
+#include "protocol_base.hpp"
 #include "../exception.hpp"
 
 #define THROW_EOS_	\
