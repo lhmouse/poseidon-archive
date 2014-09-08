@@ -24,7 +24,7 @@ boost::uint64_t getUtcTime(){
 		LOG_FATAL("Realtime clock is not supported.");
 		std::abort();
 	}
-	return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+	return (boost::uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 boost::uint64_t getLocalTime(){
 	return getLocalTimeFromUtc(getUtcTime());
@@ -42,7 +42,7 @@ boost::uint64_t getMonoClock(){
 		LOG_FATAL("Monotonic clock is not supported.");
 		std::abort();
 	}
-	return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+	return (boost::uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
 }
 
 namespace {
