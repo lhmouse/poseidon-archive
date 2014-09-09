@@ -47,7 +47,7 @@ public:
     	}
     	const AUTO(lockedDep, m_dependency.lock());
     	if(!lockedDep){
-    		return boost::shared_ptr<const TimerCallback>();
+    		return NULLPTR;
     	}
     	return boost::shared_ptr<const TimerCallback>(
     		boost::make_shared<

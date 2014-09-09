@@ -40,7 +40,7 @@ public:
 		}
 	}
 	~EpollRaii(){
-		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, m_session->getFd(), NULL) != 0){
+		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, m_session->getFd(), NULLPTR) != 0){
 			LOG_WARNING("Deleting from epoll failed. We can do nothing but ignore it.");
 		}
 	}

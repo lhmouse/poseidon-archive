@@ -81,13 +81,13 @@ SocketServerBase::~SocketServerBase(){
 }
 
 boost::shared_ptr<TcpSessionBase> SocketServerBase::tryAccept() const {
-	ScopedFile client(::accept(m_listen.get(), NULL, NULL));
+	ScopedFile client(::accept(m_listen.get(), NULLPTR, NULLPTR));
 	if(!client){
-		return boost::shared_ptr<TcpSessionBase>();
+		return NULLPTR;
 	}
 	AUTO(session, onClientConnect(client));
 	if(!session){
-		return boost::shared_ptr<TcpSessionBase>();
+		return NULLPTR;
 	}
 	const int flags = ::fcntl(session->getFd(), F_GETFL);
 	if(flags == -1){

@@ -14,7 +14,7 @@ namespace {
 const unsigned long long MAX_REQUEST_LENGTH = 0x4000;	// 头部加正文总长度。
 
 void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
-	OptionalMap *headers = NULL, StreamBuffer *contents = NULL)
+	OptionalMap *headers = NULLPTR, StreamBuffer *contents = NULLPTR)
 {
 	LOG_DEBUG("Sending HTTP response: status = ", (unsigned)status);
 

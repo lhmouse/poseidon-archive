@@ -42,7 +42,7 @@ public:
 		}
 		AUTO(lockedDep, m_dependency.lock());
 		if(!lockedDep){
-			return boost::shared_ptr<const HttpServletCallback>();
+			return NULLPTR;
 		}
 		return boost::shared_ptr<const HttpServletCallback>(
 			boost::make_shared<
@@ -80,11 +80,11 @@ boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(cons
 	boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(uri));
 	if(it == g_servlets.end()){
-		return boost::shared_ptr<const HttpServletCallback>();
+		return NULLPTR;
 	}
 	const AUTO(servlet, it->second.lock());
 	if(!servlet){
-		return boost::shared_ptr<const HttpServletCallback>();
+		return NULLPTR;
 	}
 	return servlet->lock();
 }

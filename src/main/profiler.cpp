@@ -40,7 +40,7 @@ struct ProfileCounters {
 	}
 };
 
-__thread Profiler *g_topProfiler = NULL;
+__thread Profiler *g_topProfiler = 0;
 
 boost::shared_mutex g_mutex;
 std::map<ProfileKey, ProfileCounters> g_profile;

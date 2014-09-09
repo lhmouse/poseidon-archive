@@ -41,7 +41,7 @@ public:
 		}
 		AUTO(lockedDep, m_dependency.lock());
 		if(!lockedDep){
-			return boost::shared_ptr<const PlayerServletCallback>();
+			return NULLPTR;
 		}
 		return boost::shared_ptr<const PlayerServletCallback>(
 			boost::make_shared<
@@ -79,11 +79,11 @@ boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(
 	boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(protocolId));
 	if(it == g_servlets.end()){
-		return boost::shared_ptr<const PlayerServletCallback>();
+		return NULLPTR;
 	}
 	const AUTO(servlet, it->second.lock());
 	if(!servlet){
-		return boost::shared_ptr<const PlayerServletCallback>();
+		return NULLPTR;
 	}
 	return servlet->lock();
 }
