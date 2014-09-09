@@ -3,22 +3,22 @@
 
 namespace Poseidon {
 
-template<typename Handle, typename Closer>
+template<typename HandleT, typename CloserT>
 class ScopedHandle {
 private:
-	Handle m_handle;
+	HandleT m_handle;
 
 public:
 	ScopedHandle() throw()
-		: m_handle(Closer()())
+		: m_handle(CloserT()())
 	{
 	}
-	explicit ScopedHandle(Handle handle)
-		: m_handle(Closer()())
+	explicit ScopedHandle(HandleT handle)
+		: m_handle(CloserT()())
 	{
 		reset(handle);
 	}
-	ScopedHandle &operator=(Handle handle) throw() {
+	ScopedHandle &operator=(HandleT handle) throw() {
 		reset(handle);
 		return *this;
 	}
@@ -31,19 +31,19 @@ private:
 	void operator=(const ScopedHandle &);
 
 public:
-	Handle get() const throw() {
+	HandleT get() const throw() {
 		return m_handle;
 	}
-	Handle release() throw() {
-		const Handle ret = m_handle;
-		m_handle = Closer()();
+	HandleT release() throw() {
+		const HandleT ret = m_handle;
+		m_handle = CloserT()();
 		return ret;
 	}
-	void reset(Handle handle = Closer()()) throw() {
-		const Handle old = m_handle;
+	void reset(HandleT handle = CloserT()()) throw() {
+		const HandleT old = m_handle;
 		m_handle = handle;
-		if(old != Closer()()){
-			Closer()(old);
+		if(old != CloserT()()){
+			CloserT()(old);
 		}
 	}
 	void reset(ScopedHandle &rhs) throw() {
@@ -54,19 +54,19 @@ public:
 		rhs.reset();
 	}
 	void swap(ScopedHandle &rhs) throw() {
-		const Handle my = m_handle;
+		const HandleT my = m_handle;
 		m_handle = rhs.m_handle;
 		rhs.m_handle = my;
 	}
 	operator bool() const throw() {
-		return get() != Closer()();
+		return get() != CloserT()();
 	}
 };
 
-template<typename Handle, typename Closer>
+template<typename HandleT, typename CloserT>
 class SharedHandle {
 private:
-	typedef ScopedHandle<Handle, Closer> Scoped;
+	typedef ScopedHandle<HandleT, CloserT> Scoped;
 
 	struct Control {
 		Scoped h;
@@ -81,7 +81,7 @@ public:
 		: m_control(0)
 	{
 	}
-	explicit SharedHandle(Handle handle)
+	explicit SharedHandle(HandleT handle)
 		: m_control(0)
 	{
 		reset(handle);
@@ -91,7 +91,7 @@ public:
 	{
 		reset(rhs);
 	}
-	SharedHandle &operator=(Handle handle){
+	SharedHandle &operator=(HandleT handle){
 		Scoped tmp(handle);
 		reset(tmp);
 		return *this;
@@ -105,9 +105,9 @@ public:
 	}
 
 public:
-	Handle get() const throw() {
+	HandleT get() const throw() {
 		if(!m_control){
-			return Closer()();
+			return CloserT()();
 		}
 		return m_control->h.get();
 	}
@@ -128,7 +128,7 @@ public:
 		}
 		m_control = 0;
 	}
-	void reset(Handle handle){
+	void reset(HandleT handle){
 		Scoped tmp(handle);
 		reset(tmp);
 	}
@@ -166,40 +166,40 @@ public:
 		rhs.m_control = my;
 	}
 	operator bool() const throw() {
-		return get() != Closer()();
+		return get() != CloserT()();
 	}
 };
 
-template<typename Handle, typename Closer>
-void swap(ScopedHandle<Handle, Closer> &lhs,
-	ScopedHandle<Handle, Closer> &rhs) throw()
+template<typename HandleT, typename CloserT>
+void swap(ScopedHandle<HandleT, CloserT> &lhs,
+	ScopedHandle<HandleT, CloserT> &rhs) throw()
 {
 	lhs.swap(rhs);
 }
 
-template<typename Handle, typename Closer>
-void swap(SharedHandle<Handle, Closer> &lhs,
-	SharedHandle<Handle, Closer> &rhs) throw()
+template<typename HandleT, typename CloserT>
+void swap(SharedHandle<HandleT, CloserT> &lhs,
+	SharedHandle<HandleT, CloserT> &rhs) throw()
 {
 	lhs.swap(rhs);
 }
 
 #define DEFINE_RATIONAL_OPERATOR_(temp_, op_)	\
-	template<typename Handle, typename Closer>	\
-	bool operator op_(const temp_<Handle, Closer> &lhs,	\
-		const temp_<Handle, Closer> &rhs) throw()	\
+	template<typename HandleT, typename CloserT>	\
+	bool operator op_(const temp_<HandleT, CloserT> &lhs,	\
+		const temp_<HandleT, CloserT> &rhs) throw()	\
 	{	\
 		return lhs.get() op_ rhs.get();	\
 	}	\
-	template<typename Handle, typename Closer>	\
-	bool operator op_(Handle lhs,	\
-		const temp_<Handle, Closer> &rhs) throw()	\
+	template<typename HandleT, typename CloserT>	\
+	bool operator op_(HandleT lhs,	\
+		const temp_<HandleT, CloserT> &rhs) throw()	\
 	{	\
 		return lhs op_ rhs.get();	\
 	}	\
-	template<typename Handle, typename Closer>	\
-	bool operator op_(const temp_<Handle, Closer> &lhs,	\
-		Handle rhs) throw()	\
+	template<typename HandleT, typename CloserT>	\
+	bool operator op_(const temp_<HandleT, CloserT> &lhs,	\
+		HandleT rhs) throw()	\
 	{	\
 		return lhs.get() op_ rhs;	\
 	}
@@ -222,7 +222,7 @@ DEFINE_RATIONAL_OPERATOR_(SharedHandle, >=)
 
 extern void closeFile(int fd) throw();
 
-struct FileCloser {
+struct FileCloserT {
 	int operator()() const throw() {
 		return -1;
 	}
@@ -231,8 +231,8 @@ struct FileCloser {
 	}
 };
 
-typedef ScopedHandle<int, FileCloser> ScopedFile;
-typedef SharedHandle<int, FileCloser> SharedFile;
+typedef ScopedHandle<int, FileCloserT> ScopedFile;
+typedef SharedHandle<int, FileCloserT> SharedFile;
 
 }
 

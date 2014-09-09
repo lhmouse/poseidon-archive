@@ -1,6 +1,7 @@
 #ifndef POSEIDON_TRANSACTION_HPP_
 #define POSEIDON_TRANSACTION_HPP_
 
+#include "../cxx_ver.hpp"
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -9,60 +10,61 @@
 namespace Poseidon {
 
 class TransactionItemBase : boost::noncopyable {
-    friend class Transaction;
+	friend class Transaction;
 
 private:
-    virtual bool lock() = 0;
-    virtual void unlock() throw() = 0;
-    virtual void commit() throw() = 0;
+	virtual bool lock() = 0;
+	virtual void unlock() throw() = 0;
+	virtual void commit() throw() = 0;
 };
 
-template<class Lock, class Unlock, class Commit>
+template<class LockT, class UnlockT, class CommitT>
 class TransactionItem : public TransactionItemBase {
 private:
-    const Lock m_lock;
-    const Unlock m_unlock;
-    const Commit m_commit;
+	const LockT m_lock;
+	const UnlockT m_unlock;
+	const CommitT m_commit;
 
 public:
-    TransactionItem(Lock lock, Unlock unlock, Commit commit)
-        : m_lock(lock), m_unlock(unlock), m_commit(commit)
-    {
-    }
+	TransactionItem(LockT lock, UnlockT unlock, CommitT commit)
+		: m_lock(STD_MOVE(lock)), m_unlock(STD_MOVE(unlock)), m_commit(STD_MOVE(commit))
+	{
+	}
 
 private:
-    virtual bool lock(){
-        return m_lock();
-    }
-    virtual void unlock() throw() {
-        try {
-            m_unlock();
-        } catch(...){
-        }
-    }
-    virtual void commit() throw() {
-        try {
-            m_commit();
-        } catch(...){
-        }
-    }
+	virtual bool lock(){
+		return m_lock();
+	}
+	virtual void unlock() throw() {
+		try {
+			m_unlock();
+		} catch(...){
+		}
+	}
+	virtual void commit() throw() {
+		try {
+			m_commit();
+		} catch(...){
+		}
+	}
 };
 
 class Transaction : boost::noncopyable {
 private:
-    std::vector<boost::shared_ptr<TransactionItemBase> > m_items;
+	std::vector<boost::shared_ptr<TransactionItemBase> > m_items;
 
 public:
-    bool empty() const;
-    void add(boost::shared_ptr<TransactionItemBase> item);
-    void clear();
+	bool empty() const;
+	void add(boost::shared_ptr<TransactionItemBase> item);
+	void clear();
 
-    bool commit() const;
+	bool commit() const;
 
-    template<class Lock, class Unlock, class Commit>
-    void add(Lock lock, Unlock unlock, Commit commit){
-        add(boost::make_shared<TransactionItem<Lock, Unlock, Commit> >(lock, unlock, commit));
-    }
+	template<class LockT, class UnlockT, class CommitT>
+	void add(LockT lock, UnlockT unlock, CommitT commit){
+		add(boost::make_shared<TransactionItem<LockT, UnlockT, CommitT> >(
+			STD_MOVE(lock), STD_MOVE(unlock), STD_MOVE(commit)));
+	}
 };
 
 }

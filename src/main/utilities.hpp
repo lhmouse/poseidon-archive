@@ -14,9 +14,9 @@
 namespace Poseidon {
 
 // 参考 PHP 的 explode() 函数。
-template<typename Type>
-inline std::vector<Type> explode(char separator, const std::string &str, std::size_t limit = 0){
-	std::vector<Type> ret;
+template<typename T>
+inline std::vector<T> explode(char separator, const std::string &str, std::size_t limit = 0){
+	std::vector<T> ret;
 	std::size_t begin = 0;
 	std::string temp;
 	for(;;){
@@ -24,17 +24,17 @@ inline std::vector<Type> explode(char separator, const std::string &str, std::si
 		if(end == std::string::npos){
 			if(begin < str.size()){
 				temp.assign(str.begin() + begin, str.end());
-				ret.push_back(boost::lexical_cast<Type>(temp));
+				ret.push_back(boost::lexical_cast<T>(temp));
 			}
 			break;
 		}
 		if(ret.size() == limit - 1){	// 如果 limit 为零则 limit - 1 会变成 SIZE_MAX。
 			temp.assign(str.begin() + begin, str.end());
-			ret.push_back(boost::lexical_cast<Type>(temp));
+			ret.push_back(boost::lexical_cast<T>(temp));
 			break;
 		}
 		temp.assign(str.begin() + begin, str.begin() + end);
-		ret.push_back(boost::lexical_cast<Type>(temp));
+		ret.push_back(boost::lexical_cast<T>(temp));
 		begin = end + 1;
 	}
 	return ret;
@@ -61,8 +61,8 @@ inline std::vector<std::string> explode(char separator, const std::string &str, 
 	return ret;
 }
 
-template<typename Type>
-inline std::string inplode(char separator, const std::vector<Type> &vec){
+template<typename T>
+inline std::string inplode(char separator, const std::vector<T> &vec){
 	std::ostringstream oss;
 	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
 		oss <<*it <<separator;

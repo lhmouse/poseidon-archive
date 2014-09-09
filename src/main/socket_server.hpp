@@ -36,10 +36,10 @@ public:
 	boost::shared_ptr<TcpSessionBase> tryAccept() const;
 };
 
-// onClientConnect() 返回值要求 DerivedTcpSessionBase 必须是 TcpSessionBase 的派生类。
-template<class DerivedTcpSessionBase,
+// onClientConnect() 返回值要求 DerivedTcpSessionBaseT 必须是 TcpSessionBase 的派生类。
+template<class DerivedTcpSessionBaseT,
 	typename boost::enable_if_c<
-		boost::is_base_of<TcpSessionBase, DerivedTcpSessionBase>::value,
+		boost::is_base_of<TcpSessionBase, DerivedTcpSessionBaseT>::value,
 		int>::type = 0
 	>
 class SocketServer : public SocketServerBase {
@@ -51,7 +51,7 @@ public:
 
 protected:
 	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(ScopedFile &client) const {
-		return boost::make_shared<DerivedTcpSessionBase>(boost::ref(client));
+		return boost::make_shared<DerivedTcpSessionBaseT>(boost::ref(client));
 	}
 };
 
