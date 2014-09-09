@@ -26,6 +26,13 @@ typename boost::remove_cv<
 	valueOfHelper_(const Type &);
 
 struct Nullptr_t {
+#ifdef POSEIDON_CXX11
+	explicit
+#endif
+	operator bool() const {
+		return false;
+	}
+
 	template<typename T>
 	operator T *() const {
 		return 0;
@@ -34,6 +41,11 @@ struct Nullptr_t {
 	operator C M::*() const {
 		return 0;
 	}
+#ifdef POSEIDON_CXX11
+	operator std::nullptr_t() const {
+		return nullptr;
+	}
+#endif
 
 	template<typename T>
 	operator std::auto_ptr<T>() const {
@@ -52,6 +64,11 @@ struct Nullptr_t {
 	operator boost::scoped_ptr<T>() const {
 		return boost::scoped_ptr<T>();
 	}
+
+private:
+	void *unused_;
+
+	void operator&() const;
 };
 
 }
@@ -62,7 +79,7 @@ struct Nullptr_t {
 #	define AUTO_REF(id_, init_)		auto &id_ = init_
 #	define STD_MOVE(expr_)			(::std::move(expr_))
 #	define STD_FORWARD(t_, expr_)	(::std::forward<t_>(expr_))
-#	define NULLPTR					(nullptr)
+#	define NULLPTR					(::Poseidon::Nullptr_t())	// (nullptr)
 #else
 #	define DECLTYPE(expr_)			__typeof__(expr_)
 #	define AUTO(id_, init_)			DECLTYPE(::Poseidon::valueOfHelper_(init_)) id_(init_)
