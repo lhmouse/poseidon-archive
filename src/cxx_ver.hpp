@@ -17,6 +17,14 @@
 #	define POSEIDON_CXX14
 #endif
 
+#ifdef POSEIDON_CXX11
+#	define DECLTYPE(expr_)			decltype(expr_)
+#	define CONSTEXPR				constexpr
+#else
+#	define DECLTYPE(expr_)			__typeof__(expr_)
+#	define CONSTEXPR
+#endif
+
 namespace Poseidon {
 
 template<typename Type>
@@ -25,24 +33,24 @@ typename boost::remove_cv<
 	>::type
 	valueOfHelper_(const Type &);
 
-struct Nullptr_t {
+struct Nullptr_t_ {
 #ifdef POSEIDON_CXX11
 	explicit
 #endif
-	operator bool() const {
+	CONSTEXPR operator bool() const {
 		return false;
 	}
 
 	template<typename T>
-	operator T *() const {
+	CONSTEXPR operator T *() const {
 		return 0;
 	}
 	template<typename C, typename M>
-	operator C M::*() const {
+	CONSTEXPR operator C M::*() const {
 		return 0;
 	}
 #ifdef POSEIDON_CXX11
-	operator std::nullptr_t() const {
+	CONSTEXPR operator std::nullptr_t() const {
 		return nullptr;
 	}
 #endif
@@ -74,19 +82,17 @@ private:
 }
 
 #ifdef POSEIDON_CXX11
-#	define DECLTYPE(expr_)			decltype(expr_)
 #	define AUTO(id_, init_)			auto id_ = init_
 #	define AUTO_REF(id_, init_)		auto &id_ = init_
 #	define STD_MOVE(expr_)			(::std::move(expr_))
 #	define STD_FORWARD(t_, expr_)	(::std::forward<t_>(expr_))
-#	define NULLPTR					(::Poseidon::Nullptr_t())	// (nullptr)
+#	define NULLPTR					(::Poseidon::Nullptr_t_())	// (nullptr)
 #else
-#	define DECLTYPE(expr_)			__typeof__(expr_)
 #	define AUTO(id_, init_)			DECLTYPE(::Poseidon::valueOfHelper_(init_)) id_(init_)
 #	define AUTO_REF(id_, init_)		DECLTYPE(init_) &id_ = (init_)
 #	define STD_MOVE(expr_)			(expr_)
 #	define STD_FORWARD(t_, expr_)	(expr_)
-#	define NULLPTR					(::Poseidon::Nullptr_t())
+#	define NULLPTR					(::Poseidon::Nullptr_t_())
 #endif
 
 #endif
