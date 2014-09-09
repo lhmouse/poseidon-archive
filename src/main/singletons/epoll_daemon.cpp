@@ -63,9 +63,9 @@ struct SessionMapElement {
 };
 
 MULTI_INDEX_MAP(SessionMap, SessionMapElement,
-	UNIQUE_INDEX(m_session),
-	MULTI_INDEX(m_lastRead),
-	MULTI_INDEX(m_lastWritten)
+	UNIQUE_MEMBER_INDEX(m_session),
+	MULTI_MEMBER_INDEX(m_lastRead),
+	MULTI_MEMBER_INDEX(m_lastWritten)
 );
 
 enum {

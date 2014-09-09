@@ -48,7 +48,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/http/status.cpp	\
 	src/main/player/session.cpp	\
 	src/main/socket_server.cpp	\
-	src/main/data_object.cpp
+	src/main/database/object.cpp
 
 lib_libposeidon_template_la_SOURCES=	\
 	#src/template/module_main.cpp

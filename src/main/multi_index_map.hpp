@@ -8,8 +8,8 @@
 typedef std::pair<int, std::string> Item;
 
 MULTI_INDEX_MAP(Container, Item,
-	UNIQUE_INDEX(first),
-	MULTI_INDEX(second),
+	UNIQUE_MEMBER_INDEX(first),
+	MULTI_MEMBER_INDEX(second),
 	SEQUENCED_INDEX()
 );
 
@@ -26,6 +26,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 
 #include <utility>
 #include <boost/multi_index_container.hpp>
+#include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
@@ -239,7 +240,25 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 #define MULTI_INDEX_MAP_DECLTYPE_(struct_, member_)	\
 	__typeof__(((struct_ *)1)->member_)
 
-#define UNIQUE_INDEX(member_, ...)	\
+#define UNIQUE_INDEX_(ignored_, ...)	\
+	::boost::multi_index::ordered_unique<	\
+		::boost::multi_index::identity<value_type>,	\
+		## __VA_ARGS__	\
+	>
+
+#define MULTI_INDEX_(ignored_, ...)	\
+	::boost::multi_index::ordered_non_unique<	\
+		::boost::multi_index::identity<value_type>,	\
+		## __VA_ARGS__	\
+	>
+
+#define UNIQUE_INDEX(ignored_, ...)	\
+	UNIQUE_INDEX_(int, ## __VA_ARGS__)
+
+#define MULTI_INDEX(ignored_, ...)	\
+	MULTI_INDEX_(int, ## __VA_ARGS__)
+
+#define UNIQUE_MEMBER_INDEX(member_, ...)	\
 	::boost::multi_index::ordered_unique<	\
 		::boost::multi_index::member<value_type,	\
 			MULTI_INDEX_MAP_DECLTYPE_(value_type, member_),	\
@@ -248,7 +267,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		## __VA_ARGS__	\
 	>
 
-#define MULTI_INDEX(member_, ...)	\
+#define MULTI_MEMBER_INDEX(member_, ...)	\
 	::boost::multi_index::ordered_non_unique<	\
 		::boost::multi_index::member<value_type,	\
 			MULTI_INDEX_MAP_DECLTYPE_(value_type, member_),	\
