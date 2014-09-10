@@ -359,18 +359,22 @@ void EpollDaemon::refreshSession(boost::shared_ptr<TcpSessionBase> session){
 		return;
 	}
 	const unsigned long long now = getMonoClock();
-	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(it, g_sessions.find<0>(session));
-	if(it == g_sessions.end<0>()){
-		g_sessions.insert(SessionMapElement(session, now, now));
-	} else {
-		g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
-		g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
+	{
+		const boost::mutex::scoped_lock lock(g_sessionMutex);
+		const AUTO(it, g_sessions.find<0>(session));
+		if(it == g_sessions.end<0>()){
+			g_sessions.insert(SessionMapElement(session, now, now));
+		} else {
+			g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
+			g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
+		}
 	}
 }
 void EpollDaemon::addSocketServer(boost::shared_ptr<SocketServerBase> server){
 	assert(server);
 
-	const boost::mutex::scoped_lock lock(g_serverMutex);
-	g_servers.insert(server);
+	{
+		const boost::mutex::scoped_lock lock(g_serverMutex);
+		g_servers.insert(server);
+	}
 }

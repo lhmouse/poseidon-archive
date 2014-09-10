@@ -89,17 +89,6 @@ boost::shared_ptr<TcpSessionBase> SocketServerBase::tryAccept() const {
 	if(!session){
 		return NULLPTR;
 	}
-	const int flags = ::fcntl(session->getFd(), F_GETFL);
-	if(flags == -1){
-		const int code = errno;
-		LOG_ERROR("Could not get fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
-	}
-	if(::fcntl(session->getFd(), F_SETFL, flags | O_NONBLOCK) != 0){
-		const int code = errno;
-		LOG_ERROR("Could not set fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
-	}
 	LOG_INFO("Client '", session->getRemoteIp(), "' has connected.");
 	return session;
 }

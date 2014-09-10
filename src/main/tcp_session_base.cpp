@@ -5,6 +5,7 @@
 #include "log.hpp"
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #include <errno.h>
 using namespace Poseidon;
 
@@ -13,15 +14,28 @@ TcpSessionBase::TcpSessionBase(ScopedFile &socket)
 {
 	m_socket.swap(socket);
 
+	const int flags = ::fcntl(m_socket.get(), F_GETFL);
+	if(flags == -1){
+		const int code = errno;
+		LOG_ERROR("Could not get fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
+		const int code = errno;
+		LOG_ERROR("Could not set fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+
 	union {
 		::sockaddr sa;
 		::sockaddr_in sin;
 		::sockaddr_in6 sin6;
 	} u;
 	::socklen_t salen = sizeof(u);
-
 	if(::getpeername(m_socket.get(), &u.sa, &salen) != 0){
-		DEBUG_THROW(SystemError, errno);
+		const int code = errno;
+		LOG_ERROR("Could not get peer name on socket.");
+		DEBUG_THROW(SystemError, code);
 	}
 	m_remoteIp.resize(63);
 	const char *text;
@@ -58,11 +72,19 @@ void TcpSessionBase::notifyWritten(std::size_t size){
 }
 
 void TcpSessionBase::send(const void *data, std::size_t size){
+	if(atomicLoad(m_shutdown)){
+		LOG_DEBUG("Attempting to send data on a closed socket.");
+		return;
+	}
 	StreamBuffer tmp;
 	tmp.put(data, size);
 	sendUsingMove(tmp);
 }
 void TcpSessionBase::send(const StreamBuffer &buffer){
+	if(atomicLoad(m_shutdown)){
+		LOG_DEBUG("Attempting to send data on a closed socket.");
+		return;
+	}
 	StreamBuffer tmp(buffer);
 	sendUsingMove(tmp);
 }
