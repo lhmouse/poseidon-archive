@@ -15,12 +15,6 @@
 #include "job_dispatcher.hpp"
 using namespace Poseidon;
 
-namespace {
-
-const boost::weak_ptr<void> NULL_WEAK_PTR;
-
-}
-
 class Poseidon::TimerServlet : boost::noncopyable,
 	public boost::enable_shared_from_this<TimerServlet>
 {
@@ -41,21 +35,21 @@ public:
 	}
 
 public:
-    boost::shared_ptr<const TimerCallback> lock() const {
-    	if(!(m_dependency < NULL_WEAK_PTR) && !(NULL_WEAK_PTR < m_dependency)){
+	boost::shared_ptr<const TimerCallback> lock() const {
+		if(!(m_dependency < boost::weak_ptr<void>()) && !(boost::weak_ptr<void>() < m_dependency)){
     		return boost::shared_ptr<const TimerCallback>(shared_from_this(), &m_callback);
     	}
-    	const AUTO(lockedDep, m_dependency.lock());
-    	if(!lockedDep){
-    		return NULLPTR;
-    	}
+		const AUTO(lockedDep, m_dependency.lock());
+		if(!lockedDep){
+			return NULLPTR;
+		}
     	return boost::shared_ptr<const TimerCallback>(
     		boost::make_shared<
     			std::pair<boost::shared_ptr<void>, boost::shared_ptr<const TimerServlet> >
     			>(lockedDep, shared_from_this()),
     		&m_callback
     	);
-    }
+	}
 
 	unsigned long long getPeriod() const {
 		return m_period;

@@ -10,12 +10,6 @@
 #include "../exception.hpp"
 using namespace Poseidon;
 
-namespace {
-
-const boost::weak_ptr<void> NULL_WEAK_PTR;
-
-}
-
 class Poseidon::HttpServlet : boost::noncopyable,
 	public boost::enable_shared_from_this<HttpServlet>
 {
@@ -37,7 +31,7 @@ public:
 
 public:
 	boost::shared_ptr<const HttpServletCallback> lock() const {
-		if(!(m_dependency < NULL_WEAK_PTR) && !(NULL_WEAK_PTR < m_dependency)){
+		if(!(m_dependency < boost::weak_ptr<void>()) && !(boost::weak_ptr<void>() < m_dependency)){
 			return boost::shared_ptr<const HttpServletCallback>(shared_from_this(), &m_callback);
 		}
 		AUTO(lockedDep, m_dependency.lock());
