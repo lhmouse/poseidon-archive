@@ -82,6 +82,9 @@ struct PROTOCOL_NAME : public ProtocolBase {
 		const Cur_ &cur_ = *this;
 		::Poseidon::StreamBufferWriteIterator write_(buffer_);
 
+		(void)cur_;
+		(void)write_;
+
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
 #undef FIELD_STRING
@@ -116,6 +119,9 @@ struct PROTOCOL_NAME : public ProtocolBase {
 		typedef PROTOCOL_NAME Cur_;
 		Cur_ &cur_ = *this;
 		::Poseidon::StreamBufferReadIterator read_(buffer_);
+
+		(void)cur_;
+		(void)read_;
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
