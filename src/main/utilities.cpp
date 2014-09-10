@@ -94,11 +94,9 @@ double randDouble(double lower, double upper){
 
 namespace {
 
-struct ArrayDeleter {
-	void operator()(char *p){
-		delete[] p;
-	}
-};
+void deleteCharArray(char *p){
+	delete[] p;
+}
 
 }
 
@@ -108,7 +106,7 @@ boost::shared_ptr<const char> getErrorDesc(int errCode) throw() {
 	if(desc == temp){
 		const std::size_t size = std::strlen(desc) + 1;
 		try {
-			boost::shared_ptr<char> ret(new char[size], ArrayDeleter());
+			boost::shared_ptr<char> ret(new char[size], &deleteCharArray);
 			std::memcpy(ret.get(), desc, size);
 			return ret;
 		} catch(...){
