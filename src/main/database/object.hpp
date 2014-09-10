@@ -1,5 +1,5 @@
-#ifndef POSEIDON_Database_OBJECT_HPP_
-#define POSEIDON_Database_OBJECT_HPP_
+#ifndef POSEIDON_DATABASE_OBJECT_HPP_
+#define POSEIDON_DATABASE_OBJECT_HPP_
 
 #include "../../cxx_ver.hpp"
 #include "../virtual_shared_from_this.hpp"
