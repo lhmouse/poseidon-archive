@@ -16,8 +16,8 @@ using namespace Poseidon;
 namespace {
 
 void sigTermProc(int){
-    LOG_WARNING("Received SIGTERM, will now exit...");
-    JobDispatcher::quitModal();
+	LOG_WARNING("Received SIGTERM, will now exit...");
+	JobDispatcher::quitModal();
 }
 
 void sigIntProc(int){
