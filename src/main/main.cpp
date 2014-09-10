@@ -13,26 +13,9 @@
 #include "http/session.hpp"
 using namespace Poseidon;
 
-#include "multi_index_map.hpp"
-typedef std::pair<int, std::string> Item;
-
-MULTI_INDEX_MAP(Container, Item,
-    UNIQUE_INDEX(),
-        MULTI_MEMBER_INDEX(second),
-            SEQUENCED_INDEX()
-            );
-            
 namespace {
 
 void sigTermProc(int){
-
-
-            Container c;
-            c.insert(Item(1, "abc"));
-            c.insert(Item(2, "def"));
-//            std::cout <<c.find<0>(1)->second <<std::endl;   // "abc";
-            assert(c.upperBound<1>("zzz") == c.end<1>());   // 通过。
-
     LOG_WARNING("Received SIGTERM, will now exit...");
     JobDispatcher::quitModal();
 }
@@ -79,7 +62,7 @@ void run(){
 	}
 
 	RUN_SINGLETON(TimerDaemon);
-	//RUN_SINGLETON(DatabaseDaemon);
+	RUN_SINGLETON(DatabaseDaemon);
 	RUN_SINGLETON(EpollDaemon);
 
 	LOG_INFO("Creating player session server...");

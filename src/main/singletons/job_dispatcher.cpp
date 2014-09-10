@@ -12,7 +12,7 @@ namespace {
 
 volatile bool g_running = false;
 boost::mutex g_queueMutex;
-std::queue<boost::shared_ptr<const JobBase> > g_queue;
+std::queue<boost::shared_ptr<const JobBase> > g_jobQueue;
 boost::condition_variable g_newJobAvail;
 
 }
@@ -23,7 +23,7 @@ JobBase::~JobBase(){
 void JobBase::pend() const {
 	{
 		const boost::mutex::scoped_lock lock(g_queueMutex);
-		g_queue.push(virtualSharedFromThis<JobBase>());
+		g_jobQueue.push(virtualSharedFromThis<JobBase>());
 	}
 	g_newJobAvail.notify_one();
 }
@@ -39,12 +39,12 @@ void JobDispatcher::doModal(){
 			{
 				boost::mutex::scoped_lock lock(g_queueMutex);
 				for(;;){
-					if(!atomicLoad(g_running)){
+					if(!g_jobQueue.empty()){
+						job = STD_MOVE(g_jobQueue.front());
+						g_jobQueue.pop();
 						break;
 					}
-					if(!g_queue.empty()){
-						job = STD_MOVE(g_queue.front());
-						g_queue.pop();
+					if(!atomicLoad(g_running)){
 						break;
 					}
 					g_newJobAvail.wait(lock);

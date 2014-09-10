@@ -135,7 +135,7 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 }
 
 void threadProc(){
-	LOG_INFO("Epoll daemon thread started.");
+	LOG_INFO("Epoll daemon started.");
 
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
 	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
@@ -319,7 +319,7 @@ void threadProc(){
 		}
 	}
 
-	LOG_INFO("Epoll daemon thread stopped.");
+	LOG_INFO("Epoll daemon stopped.");
 }
 
 }
