@@ -54,13 +54,16 @@ public:
 	// 这三个函数是线程安全的。
 	void send(const void *data, std::size_t size);
 	void send(const StreamBuffer &buffer);
+	// 执行后 buffer 置空。
+	void sendUsingMove(StreamBuffer &buffer);
 #ifdef POSEIDON_CXX11
 	void send(StreamBuffer &&buffer){
 		sendUsingMove(buffer);
 	}
+	void sendUsingMove(StreamBuffer &&buffer){
+		sendUsingMove(buffer);
+	}
 #endif
-	// 执行后 buffer 置空。
-	void sendUsingMove(StreamBuffer &buffer);
 
 	// 关闭读端，调用后 onReadAvail() 将不会被触发，但是依然可写。
 	// 一旦无任何数据可写，该会话会被立即关闭。

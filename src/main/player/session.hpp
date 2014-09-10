@@ -27,8 +27,11 @@ public:
 	void send(boost::uint16_t status, const StreamBuffer &payload);
 	void sendUsingMove(boost::uint16_t status, StreamBuffer &payload);
 #ifdef POSEIDON_CXX11
+	void send(boost::uint16_t status, StreamBuffer &&payload){
+		sendUsingMove(status, payload);
+	}
 	void sendUsingMove(boost::uint16_t status, StreamBuffer &&payload){
-		sendUsingMove(status, std::move(payload));
+		sendUsingMove(status, payload);
 	}
 #endif
 };
