@@ -24,14 +24,14 @@ public:
 		: std::runtime_error(STD_MOVE(what)), m_file(file), m_line(line)
 	{
 	}
-	~Exception() throw() {
+	~Exception() NOEXCEPT {
 	}
 
 public:
-	const char *file() const throw() {
+	const char *file() const NOEXCEPT {
 		return m_file;
 	}
-	std::size_t line() const throw() {
+	std::size_t line() const NOEXCEPT {
 		return m_line;
 	}
 };
@@ -47,7 +47,7 @@ public:
 	}
 
 public:
-	int code() const throw() {
+	int code() const NOEXCEPT {
 		return m_code;
 	}
 };
@@ -70,7 +70,7 @@ public:
 	}
 
 public:
-	int code() const throw() {
+	int code() const NOEXCEPT {
 		return m_code;
 	}
 };

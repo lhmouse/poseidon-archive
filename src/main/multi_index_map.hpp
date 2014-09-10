@@ -64,13 +64,13 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		delegate_container m_delegate;	\
 		\
 	public:	\
-		bool empty() const throw() {	\
+		bool empty() const {	\
 			return m_delegate.empty();	\
 		}	\
-		std::size_t size() const throw() {	\
+		std::size_t size() const {	\
 			return m_delegate.size();	\
 		}	\
-		void clear() throw() {	\
+		void clear() {	\
 			m_delegate.clear();	\
 		}	\
 		\

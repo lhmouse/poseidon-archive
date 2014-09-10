@@ -100,7 +100,7 @@ void deleteCharArray(char *p){
 
 }
 
-boost::shared_ptr<const char> getErrorDesc(int errCode) throw() {
+boost::shared_ptr<const char> getErrorDesc(int errCode) NOEXCEPT {
 	char temp[1024];
 	const char *desc = ::strerror_r(errCode, temp, sizeof(temp));
 	if(desc == temp){

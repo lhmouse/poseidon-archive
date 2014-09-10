@@ -89,7 +89,7 @@ Profiler::Profiler(const char *file, unsigned long line)
 	}
 	g_topProfiler = this;
 }
-Profiler::~Profiler() throw() {
+Profiler::~Profiler() NOEXCEPT {
 	const AUTO(now, getMonoClock());
 
 	g_topProfiler = m_prev;

@@ -59,13 +59,13 @@ public:
 		return ret;
 	}
 
-	bool empty() const throw() {
+	bool empty() const {
 		return m_delegate.empty();
 	}
-	std::size_t size() const throw() {
+	std::size_t size() const {
 		return m_delegate.size();
 	}
-	void clear() throw() {
+	void clear(){
 		m_delegate.clear();
 	}
 
@@ -82,7 +82,7 @@ public:
 		return m_delegate.end();
 	}
 
-	void swap(OptionalMap &rhs) throw() {
+	void swap(OptionalMap &rhs) NOEXCEPT {
 		m_delegate.swap(rhs.m_delegate);
 	}
 

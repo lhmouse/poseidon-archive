@@ -1,6 +1,8 @@
 #ifndef POSEIDON_RAII_HPP_
 #define POSEIDON_RAII_HPP_
 
+#include "../cxx_ver.hpp"
+
 namespace Poseidon {
 
 template<typename HandleT, typename CloserT>
@@ -9,20 +11,20 @@ private:
 	HandleT m_handle;
 
 public:
-	ScopedHandle() throw()
+	ScopedHandle() NOEXCEPT
 		: m_handle(CloserT()())
 	{
 	}
-	explicit ScopedHandle(HandleT handle)
+	explicit ScopedHandle(HandleT handle) NOEXCEPT
 		: m_handle(CloserT()())
 	{
 		reset(handle);
 	}
-	ScopedHandle &operator=(HandleT handle) throw() {
+	ScopedHandle &operator=(HandleT handle) NOEXCEPT {
 		reset(handle);
 		return *this;
 	}
-	~ScopedHandle() throw() {
+	~ScopedHandle() NOEXCEPT {
 		reset();
 	}
 
@@ -31,34 +33,37 @@ private:
 	void operator=(const ScopedHandle &);
 
 public:
-	HandleT get() const throw() {
+	HandleT get() const NOEXCEPT {
 		return m_handle;
 	}
-	HandleT release() throw() {
+	HandleT release() NOEXCEPT {
 		const HandleT ret = m_handle;
 		m_handle = CloserT()();
 		return ret;
 	}
-	void reset(HandleT handle = CloserT()()) throw() {
+	void reset(HandleT handle = CloserT()()) NOEXCEPT {
 		const HandleT old = m_handle;
 		m_handle = handle;
 		if(old != CloserT()()){
 			CloserT()(old);
 		}
 	}
-	void reset(ScopedHandle &rhs) throw() {
+	void reset(ScopedHandle &rhs) NOEXCEPT {
 		if(&rhs == this){
 			return;
 		}
 		swap(rhs);
 		rhs.reset();
 	}
-	void swap(ScopedHandle &rhs) throw() {
+	void swap(ScopedHandle &rhs) NOEXCEPT {
 		const HandleT my = m_handle;
 		m_handle = rhs.m_handle;
 		rhs.m_handle = my;
 	}
-	operator bool() const throw() {
+#ifdef POSEIDON_CXX11
+	explicit
+#endif
+	operator bool() const NOEXCEPT {
 		return get() != CloserT()();
 	}
 };
@@ -77,7 +82,7 @@ private:
 	Control *m_control;
 
 public:
-	SharedHandle() throw()
+	SharedHandle() NOEXCEPT
 		: m_control(0)
 	{
 	}
@@ -86,7 +91,7 @@ public:
 	{
 		reset(handle);
 	}
-	SharedHandle(const SharedHandle &rhs) throw()
+	SharedHandle(const SharedHandle &rhs) NOEXCEPT
 		: m_control(0)
 	{
 		reset(rhs);
@@ -96,22 +101,22 @@ public:
 		reset(tmp);
 		return *this;
 	}
-	SharedHandle &operator=(const SharedHandle &rhs) throw() {
+	SharedHandle &operator=(const SharedHandle &rhs) NOEXCEPT {
 		reset(rhs);
 		return *this;
 	}
-	~SharedHandle() throw() {
+	~SharedHandle() NOEXCEPT {
 		reset();
 	}
 
 public:
-	HandleT get() const throw() {
+	HandleT get() const NOEXCEPT {
 		if(!m_control){
 			return CloserT()();
 		}
 		return m_control->h.get();
 	}
-	bool unique() const throw() {
+	bool unique() const NOEXCEPT {
 		if(!m_control){
 			return false;
 		}
@@ -119,7 +124,7 @@ public:
 		__sync_lock_test_and_set(&barrier, 1);
 		return m_control->ref == 1;
 	}
-	void reset() throw() {
+	void reset() NOEXCEPT {
 		if(!m_control){
 			return;
 		}
@@ -149,7 +154,7 @@ public:
 			__sync_lock_release(&barrier);
 		}
 	}
-	void reset(const SharedHandle &rhs) throw() {
+	void reset(const SharedHandle &rhs) NOEXCEPT {
 		if(&rhs == this){
 			return;
 		}
@@ -160,26 +165,29 @@ public:
 			reset();
 		}
 	}
-	void swap(SharedHandle &rhs) throw() {
+	void swap(SharedHandle &rhs) NOEXCEPT {
 		Control *const my = m_control;
 		m_control = rhs.m_control;
 		rhs.m_control = my;
 	}
-	operator bool() const throw() {
+#ifdef POSEIDON_CXX11
+	explicit
+#endif
+	operator bool() const NOEXCEPT {
 		return get() != CloserT()();
 	}
 };
 
 template<typename HandleT, typename CloserT>
 void swap(ScopedHandle<HandleT, CloserT> &lhs,
-	ScopedHandle<HandleT, CloserT> &rhs) throw()
+	ScopedHandle<HandleT, CloserT> &rhs) NOEXCEPT
 {
 	lhs.swap(rhs);
 }
 
 template<typename HandleT, typename CloserT>
 void swap(SharedHandle<HandleT, CloserT> &lhs,
-	SharedHandle<HandleT, CloserT> &rhs) throw()
+	SharedHandle<HandleT, CloserT> &rhs) NOEXCEPT
 {
 	lhs.swap(rhs);
 }
@@ -187,19 +195,19 @@ void swap(SharedHandle<HandleT, CloserT> &lhs,
 #define DEFINE_RATIONAL_OPERATOR_(temp_, op_)	\
 	template<typename HandleT, typename CloserT>	\
 	bool operator op_(const temp_<HandleT, CloserT> &lhs,	\
-		const temp_<HandleT, CloserT> &rhs) throw()	\
+		const temp_<HandleT, CloserT> &rhs) NOEXCEPT	\
 	{	\
 		return lhs.get() op_ rhs.get();	\
 	}	\
 	template<typename HandleT, typename CloserT>	\
 	bool operator op_(HandleT lhs,	\
-		const temp_<HandleT, CloserT> &rhs) throw()	\
+		const temp_<HandleT, CloserT> &rhs) NOEXCEPT	\
 	{	\
 		return lhs op_ rhs.get();	\
 	}	\
 	template<typename HandleT, typename CloserT>	\
 	bool operator op_(const temp_<HandleT, CloserT> &lhs,	\
-		HandleT rhs) throw()	\
+		HandleT rhs) NOEXCEPT	\
 	{	\
 		return lhs.get() op_ rhs;	\
 	}
@@ -220,13 +228,13 @@ DEFINE_RATIONAL_OPERATOR_(SharedHandle, >=)
 
 #undef DEFINE_RATIONAL_OPERATOR_
 
-extern void closeFile(int fd) throw();
+extern void closeFile(int fd) NOEXCEPT;
 
 struct FileCloserT {
-	int operator()() const throw() {
+	int operator()() const NOEXCEPT {
 		return -1;
 	}
-	void operator()(int fd) const throw() {
+	void operator()(int fd) const NOEXCEPT {
 		closeFile(fd);
 	}
 };

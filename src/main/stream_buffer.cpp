@@ -88,11 +88,11 @@ StreamBuffer &StreamBuffer::operator=(StreamBuffer &&rhs) noexcept {
 	return *this;
 }
 #endif
-StreamBuffer::~StreamBuffer() throw() {
+StreamBuffer::~StreamBuffer(){
 	clear();
 }
 
-void StreamBuffer::clear() throw() {
+void StreamBuffer::clear(){
 	clearPooled(m_chunks);
 	m_size = 0;
 }
@@ -243,7 +243,7 @@ void StreamBuffer::put(const void *data, std::size_t size){
 	}
 }
 
-void StreamBuffer::swap(StreamBuffer &rhs) throw() {
+void StreamBuffer::swap(StreamBuffer &rhs) NOEXCEPT {
 	m_chunks.swap(rhs.m_chunks);
 	std::swap(m_size, rhs.m_size);
 }
@@ -278,7 +278,7 @@ StreamBuffer StreamBuffer::cut(std::size_t size){
 	}
 	return ret;
 }
-void StreamBuffer::splice(StreamBuffer &src) throw() {
+void StreamBuffer::splice(StreamBuffer &src) NOEXCEPT {
 	if(&src == this){
 		return;
 	}

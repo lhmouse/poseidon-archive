@@ -9,7 +9,7 @@ using namespace Poseidon;
 
 namespace Poseidon {
 
-void closeFile(int fd) throw() {
+void closeFile(int fd) NOEXCEPT {
 	if(::close(fd) != 0){
 		const AUTO(desc, getErrorDesc());
 		LOG_WARNING("::close() has failed: ", desc.get());

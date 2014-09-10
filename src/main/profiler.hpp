@@ -36,7 +36,7 @@ private:
 
 public:
 	Profiler(const char *file, unsigned long line);
-	~Profiler() throw();
+	~Profiler() NOEXCEPT;
 };
 
 }

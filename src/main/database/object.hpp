@@ -18,8 +18,7 @@ private:
 	ValueT m_val;
 
 public:
-	explicit DatabaseField(DatabaseObject *owner,
-		ValueT val = ValueT())
+	explicit DatabaseField(DatabaseObject *owner, ValueT val = ValueT())
 		: m_val(STD_MOVE(val))
 	{
 	}

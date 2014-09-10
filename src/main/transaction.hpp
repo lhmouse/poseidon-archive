@@ -1,7 +1,6 @@
 #ifndef POSEIDON_TRANSACTION_HPP_
 #define POSEIDON_TRANSACTION_HPP_
 
-#include "../cxx_ver.hpp"
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -14,8 +13,8 @@ class TransactionItemBase : boost::noncopyable {
 
 private:
 	virtual bool lock() = 0;
-	virtual void unlock() throw() = 0;
-	virtual void commit() throw() = 0;
+	virtual void unlock() = 0;
+	virtual void commit() = 0;
 };
 
 template<class LockT, class UnlockT, class CommitT>
@@ -35,13 +34,13 @@ private:
 	virtual bool lock(){
 		return m_lock();
 	}
-	virtual void unlock() throw() {
+	virtual void unlock(){
 		try {
 			m_unlock();
 		} catch(...){
 		}
 	}
-	virtual void commit() throw() {
+	virtual void commit(){
 		try {
 			m_commit();
 		} catch(...){

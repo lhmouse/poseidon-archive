@@ -9,24 +9,24 @@ struct Identity_ {
 };
 
 template<typename T>
-T atomicLoad(const volatile T &mem) throw() {
+T atomicLoad(const volatile T &mem){
 	volatile int barrier;
 	__sync_lock_test_and_set(&barrier, 1);
 	return mem;
 }
 template<typename T>
-void atomicStore(volatile T &mem, typename Identity_<T>::type val) throw() {
+void atomicStore(volatile T &mem, typename Identity_<T>::type val){
 	mem = val;
 	volatile int barrier;
 	__sync_lock_release(&barrier);
 }
 
 template<typename T>
-T atomicAdd(volatile T &mem, typename Identity_<T>::type val) throw() {
+T atomicAdd(volatile T &mem, typename Identity_<T>::type val){
 	return __sync_add_and_fetch(&mem, val);
 }
 template<typename T>
-T atomicSub(volatile T &mem, typename Identity_<T>::type val) throw() {
+T atomicSub(volatile T &mem, typename Identity_<T>::type val){
 	return __sync_sub_and_fetch(&mem, val);
 }
 
@@ -37,7 +37,7 @@ T atomicCmpExchange(volatile T &mem, typename Identity_<T>::type cmp,
 	return __sync_val_compare_and_swap(&mem, cmp, xchg);
 }
 template<typename T>
-T atomicExchange(volatile T &mem, typename Identity_<T>::type xchg) throw() {
+T atomicExchange(volatile T &mem, typename Identity_<T>::type xchg){
 	T cmp = mem;
 	for(;;){
 		const T old = __sync_val_compare_and_swap(&mem, cmp, xchg);

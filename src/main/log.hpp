@@ -1,6 +1,7 @@
 #ifndef POSEIDON_LOG_HPP_
 #define POSEIDON_LOG_HPP_
 
+#include "../cxx_ver.hpp"
 #include <sstream>
 #include <cstddef>
 #include <boost/noncopyable.hpp>
@@ -30,12 +31,13 @@ private:
 	std::stringstream m_stream;
 
 public:
-	Log(unsigned level, const char *comment, const char *file, std::size_t line) throw();
-	~Log() throw();
+	Log(unsigned level, const char *comment,
+		const char *file, std::size_t line) NOEXCEPT;
+	~Log() NOEXCEPT;
 
 public:
 	template<typename T>
-	Log &operator,(const T &info) throw() {
+	Log &operator,(const T &info) NOEXCEPT {
 		try {
 			m_stream <<info;
 		} catch(...){
@@ -43,14 +45,14 @@ public:
 		return *this;
 	}
 
-	Log &operator,(signed char ch) throw() {
+	Log &operator,(signed char ch) NOEXCEPT {
 		try {
 			m_stream <<(signed)ch;
 		} catch(...){
 		}
 		return *this;
 	}
-	Log &operator,(unsigned char ch) throw() {
+	Log &operator,(unsigned char ch) NOEXCEPT {
 		try {
 			m_stream <<(unsigned)ch;
 		} catch(...){
@@ -58,14 +60,14 @@ public:
 		return *this;
 	}
 
-	Log &operator,(const signed char *p) throw() {
+	Log &operator,(const signed char *p) NOEXCEPT {
 		try {
 			m_stream <<(const void *)p;
 		} catch(...){
 		}
 		return *this;
 	}
-	Log &operator,(const unsigned char *p) throw() {
+	Log &operator,(const unsigned char *p) NOEXCEPT {
 		try {
 			m_stream <<(const void *)p;
 		} catch(...){

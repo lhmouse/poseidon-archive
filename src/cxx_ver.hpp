@@ -20,9 +20,11 @@
 #ifdef POSEIDON_CXX11
 #	define DECLTYPE(expr_)			decltype(expr_)
 #	define CONSTEXPR				constexpr
+#	define NOEXCEPT					noexcept
 #else
 #	define DECLTYPE(expr_)			__typeof__(expr_)
 #	define CONSTEXPR
+#	define NOEXCEPT					throw()
 #endif
 
 namespace Poseidon {
@@ -37,39 +39,39 @@ struct Nullptr_t_ {
 #ifdef POSEIDON_CXX11
 	explicit
 #endif
-	CONSTEXPR operator bool() const {
+	CONSTEXPR operator bool() const NOEXCEPT {
 		return false;
 	}
 
 	template<typename T>
-	CONSTEXPR operator T *() const {
+	CONSTEXPR operator T *() const NOEXCEPT {
 		return 0;
 	}
 	template<typename C, typename M>
-	CONSTEXPR operator C M::*() const {
+	CONSTEXPR operator C M::*() const NOEXCEPT {
 		return 0;
 	}
 #ifdef POSEIDON_CXX11
-	CONSTEXPR operator std::nullptr_t() const {
+	CONSTEXPR operator std::nullptr_t() const noexcept {
 		return nullptr;
 	}
 #endif
 
 	template<typename T>
-	operator std::auto_ptr<T>() const {
+	operator std::auto_ptr<T>() const NOEXCEPT {
 		return std::auto_ptr<T>();
 	}
 
 	template<typename T>
-	operator boost::shared_ptr<T>() const {
+	operator boost::shared_ptr<T>() const NOEXCEPT {
 		return boost::shared_ptr<T>();
 	}
 	template<typename T>
-	operator boost::weak_ptr<T>() const {
+	operator boost::weak_ptr<T>() const NOEXCEPT {
 		return boost::weak_ptr<T>();
 	}
 	template<typename T>
-	operator boost::scoped_ptr<T>() const {
+	operator boost::scoped_ptr<T>() const NOEXCEPT {
 		return boost::scoped_ptr<T>();
 	}
 

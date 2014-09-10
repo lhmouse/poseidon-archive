@@ -21,11 +21,11 @@ void Log::setLevel(unsigned int newLevel){
 	atomicStore(g_logLevel, newLevel);
 }
 
-Log::Log(unsigned level, const char *comment, const char *file, std::size_t line) throw()
+Log::Log(unsigned level, const char *comment, const char *file, std::size_t line) NOEXCEPT
 	: m_level(level), m_comment(comment), m_file(file), m_line(line)
 {
 }
-Log::~Log() throw() {
+Log::~Log() NOEXCEPT {
 	static const char COLORS[] = { '5', '1', '3', '2', '6' };
 
 	try {
