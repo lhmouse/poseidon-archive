@@ -178,21 +178,23 @@ class HttpRequestJob : public JobBase {
 private:
 	const boost::weak_ptr<HttpSession> m_session;
 
-	const HttpVerb m_verb;
-	const std::string m_uri;
-	const OptionalMap m_getParams;
-	const OptionalMap m_incomingHeaders;
-	const std::string m_incomingContents;
+	HttpVerb m_verb;
+	std::string m_uri;
+	OptionalMap m_getParams;
+	OptionalMap m_incomingHeaders;
+	std::string m_incomingContents;
 
 public:
-	HttpRequestJob(boost::weak_ptr<HttpSession> session, HttpVerb verb,
-		std::string uri, OptionalMap getParams,
-		OptionalMap incomingHeaders, std::string incomingContents)
-		: m_session(STD_MOVE(session)), m_verb(verb)
-		, m_uri(STD_MOVE(uri)), m_getParams(STD_MOVE(getParams))
-		, m_incomingHeaders(STD_MOVE(incomingHeaders))
-		, m_incomingContents(STD_MOVE(incomingContents))
+	HttpRequestJob(boost::weak_ptr<HttpSession> session,
+		HttpVerb verb, std::string &uri, OptionalMap &getParams,
+		OptionalMap &incomingHeaders, std::string &incomingContents)
+		: m_session(STD_MOVE(session))
 	{
+		m_verb = verb;
+		m_uri.swap(uri);
+		m_getParams.swap(getParams);
+		m_incomingHeaders.swap(incomingHeaders);
+		m_incomingContents.swap(incomingContents);
 	}
 
 protected:
@@ -332,12 +334,10 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			}
 			m_line.append(read, bytesRemaining);
 			read += bytesRemaining;
+			boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
+				boost::ref(m_verb), boost::ref(m_uri), boost::ref(m_getParams),
+				boost::ref(m_headers), boost::ref(m_line))->pend();
 
-			boost::make_shared<HttpRequestJob>(
-				virtualWeakFromThis<HttpSession>(),
-				m_verb, STD_MOVE(m_uri), STD_MOVE(m_getParams),
-				STD_MOVE(m_headers), STD_MOVE(m_line)
-				)->pend();
 			m_state = ST_FIRST_HEADER;
 			m_totalLength = 0;
 			m_contentLength = 0;
