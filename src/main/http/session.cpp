@@ -42,9 +42,9 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 
 		headers->set("Content-Type", "text/html");
 	} else {
-		const AUTO(contentType, headers->create("Content-Type"));
-		if(contentType->second.empty()){
-			contentType->second.assign("text/plain; charset=utf-8");
+		AUTO_REF(contentType, headers->create("Content-Type"));
+		if(contentType.empty()){
+			contentType.assign("text/plain; charset=utf-8");
 		}
 	}
 	headers->set("Content-Length", boost::lexical_cast<std::string>(contents->size()));
@@ -181,13 +181,17 @@ private:
 	const HttpVerb m_verb;
 	const std::string m_uri;
 	const OptionalMap m_getParams;
-	const OptionalMap m_postParams;
+	const OptionalMap m_incomingHeaders;
+	const std::string m_incomingContents;
 
 public:
 	HttpRequestJob(boost::weak_ptr<HttpSession> session, HttpVerb verb,
-		std::string uri, OptionalMap getParams, OptionalMap postParams)
+		std::string uri, OptionalMap getParams,
+		OptionalMap incomingHeaders, std::string incomingContents)
 		: m_session(STD_MOVE(session)), m_verb(verb)
-		, m_uri(uri), m_getParams(getParams), m_postParams(postParams)
+		, m_uri(STD_MOVE(uri)), m_getParams(STD_MOVE(getParams))
+		, m_incomingHeaders(STD_MOVE(incomingHeaders))
+		, m_incomingContents(STD_MOVE(incomingContents))
 	{
 	}
 
@@ -209,7 +213,8 @@ protected:
 		OptionalMap headers;
 		StreamBuffer contents;
 		try {
-			const HttpStatus status = (*servlet)(headers, contents, m_verb, m_getParams, m_postParams);
+			const HttpStatus status = (*servlet)(headers, contents, m_verb, m_getParams,
+				m_incomingHeaders, m_incomingContents);
 			respond(session, status, &headers, &contents);
 		} catch(ProtocolException &e){
 			LOG_ERROR("ProtocolException thrown in HTTP servlet, code = ", e.code(),
@@ -225,11 +230,11 @@ protected:
 
 HttpSession::HttpSession(ScopedFile &socket)
 	: TcpSessionBase(socket)
-	, m_headerIndex(0), m_totalLength(0), m_contentLength(0), m_line()
+	, m_state(ST_FIRST_HEADER), m_totalLength(0), m_contentLength(0), m_line()
 {
 }
 HttpSession::~HttpSession(){
-	if(m_headerIndex != 0){
+	if(m_state != ST_FIRST_HEADER){
 		LOG_WARNING("Now that this HTTP session is to be destroyed, "
 			"a premature request has to be discarded.");
 	}
@@ -246,7 +251,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	AUTO(read, (const char *)data);
 	const AUTO(end, read + size);
 	while(read != end){
-		if(m_headerIndex != -1){	// -1 表示正文。
+		if(m_state != ST_CONTENTS){
 			const char ch = *read;
 			++read;
 			if(ch != '\n'){
@@ -257,7 +262,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			if((lineLen > 0) && (m_line[lineLen - 1] == '\r')){
 				m_line.resize(lineLen - 1);
 			}
-			if(m_headerIndex == 0){
+			if(m_state == ST_FIRST_HEADER){
 				if(m_line.empty()){
 					continue;
 				}
@@ -295,7 +300,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					shutdownRead();
 					return;
 				}
-				++m_headerIndex;
+				m_state = ST_HEADERS;
 			} else if(!m_line.empty()){
 				const std::size_t delimPos = m_line.find(':');
 				if(delimPos == std::string::npos){
@@ -311,30 +316,13 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						break;
 					}
 				}
-				const std::size_t valueLen = m_line.c_str() + m_line.size() - value;
-				if(m_line.compare(0, delimPos, "Content-Length") == 0){
-					m_contentLength = boost::lexical_cast<std::size_t>(std::string(value, valueLen));
-				} else if(m_line.compare(0, delimPos, "Content-Type") == 0){
-					m_contentType.assign(value, valueLen);
-					const std::size_t semicolPos = m_contentType.find(';');
-					if(semicolPos != std::string::npos){
-						m_contentType.resize(semicolPos);
-					}
-				}
-				++m_headerIndex;
-			} else if(m_contentLength == 0){
-				// 没有正文。
-				boost::make_shared<HttpRequestJob>(
-					virtualWeakFromThis<HttpSession>(),
-					m_verb, m_uri, m_getParams, m_postParams
-					)->pend();
-				m_headerIndex = 0;
-				m_totalLength = 0;
+				m_headers.add(m_line.c_str(), delimPos,
+					std::string(value, m_line.c_str() + m_line.size()));
 			} else {
-				m_headerIndex = -1;
+				m_state = ST_CONTENTS;
 			}
-			m_line.clear();
-		} else {
+		}
+		if(m_state == ST_CONTENTS){
 			const std::size_t bytesAvail = (std::size_t)(end - read);
 			const std::size_t bytesRemaining = m_contentLength - m_line.size();
 			if(bytesAvail < bytesRemaining){
@@ -345,20 +333,15 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_line.append(read, bytesRemaining);
 			read += bytesRemaining;
 
-			if(m_contentType == "application/x-www-form-urlencoded"){
-				m_postParams = optionalMapFromUrlEncoded(m_line);
-			} else {
-				LOG_WARNING("Ignored unknown content type: ", m_contentType);
-			}
-
 			boost::make_shared<HttpRequestJob>(
 				virtualWeakFromThis<HttpSession>(),
-				m_verb, m_uri, m_getParams, m_postParams
+				m_verb, STD_MOVE(m_uri), STD_MOVE(m_getParams),
+				STD_MOVE(m_headers), STD_MOVE(m_line)
 				)->pend();
-			m_headerIndex = 0;
+			m_state = ST_FIRST_HEADER;
 			m_totalLength = 0;
 			m_contentLength = 0;
-			m_line.clear();
 		}
+		m_line.clear();
 	}
 }

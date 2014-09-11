@@ -78,28 +78,28 @@ public:
 		return get(key);
 	}
 
-	iterator create(const char *key, std::size_t len);
-	iterator create(const char *key){
+	std::string &create(const char *key, std::size_t len);
+	std::string &create(const char *key){
 		return create(key, std::strlen(key));
 	}
-	iterator create(const std::string &key){
+	std::string &create(const std::string &key){
 		return create(key.data(), key.size());
 	}
 
-	iterator set(const char *key, std::size_t len, std::string val){
-		iterator ret = create(key, len);
-		val.swap(ret->second);
-		return STD_MOVE(ret);
+	std::string &set(const char *key, std::size_t len, std::string val){
+		std::string &ret = create(key, len);
+		ret.swap(val);
+		return ret;
 	}
-	iterator set(const char *key, std::string val){
-		iterator ret = create(key);
-		val.swap(ret->second);
-		return STD_MOVE(ret);
+	std::string &set(const char *key, std::string val){
+		std::string &ret = create(key);
+		ret.swap(val);
+		return ret;
 	}
-	iterator set(const std::string &key, std::string val){
-		iterator ret = create(key);
-		val.swap(ret->second);
-		return STD_MOVE(ret);
+	std::string &set(const std::string &key, std::string val){
+		std::string &ret = create(key);
+		ret.swap(val);
+		return ret;
 	}
 
 	// 一对多的接口。

@@ -11,14 +11,21 @@ namespace Poseidon {
 
 class HttpSession : public TcpSessionBase {
 private:
-	int m_headerIndex;
+	enum State {
+		ST_FIRST_HEADER,
+		ST_HEADERS,
+		ST_CONTENTS,
+	};
+
+private:
+	State m_state;
 	std::size_t m_totalLength;
 	std::size_t m_contentLength;
 	std::string m_line;
 
 	HttpVerb m_verb;
 	std::string m_uri;
-	std::string m_contentType;
+	OptionalMap m_headers;
 	OptionalMap m_getParams;
 	OptionalMap m_postParams;
 
