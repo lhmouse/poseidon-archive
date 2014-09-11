@@ -43,6 +43,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/timer_manager_daemon.cpp	\
 	src/main/singletons/player_servlet_manager.cpp	\
 	src/main/singletons/http_servlet_manager.cpp	\
+	src/main/job_base.cpp	\
 	src/main/tcp_session_base.cpp	\
 	src/main/http/session.cpp	\
 	src/main/http/status.cpp	\

@@ -2,8 +2,8 @@
 #include "session.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
-#include "../singletons/job_dispatcher.hpp"
 #include "../singletons/player_servlet_manager.hpp"
+#include "../job_base.hpp"
 using namespace Poseidon;
 
 namespace {

@@ -2,7 +2,6 @@
 #define POSEIDON_SINGLETONS_EPOLL_DAEMON_HPP_
 
 #include <boost/shared_ptr.hpp>
-#include "../raii.hpp"
 
 namespace Poseidon {
 

@@ -1,5 +1,6 @@
 #include "../../precompiled.hpp"
 #include "job_dispatcher.hpp"
+#include "../job_base.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -15,17 +16,6 @@ boost::mutex g_queueMutex;
 std::queue<boost::shared_ptr<const JobBase> > g_jobQueue;
 boost::condition_variable g_newJobAvail;
 
-}
-
-JobBase::~JobBase(){
-}
-
-void JobBase::pend() const {
-	{
-		const boost::mutex::scoped_lock lock(g_queueMutex);
-		g_jobQueue.push(virtualSharedFromThis<JobBase>());
-	}
-	g_newJobAvail.notify_one();
 }
 
 void JobDispatcher::doModal(){
@@ -66,5 +56,13 @@ void JobDispatcher::doModal(){
 }
 void JobDispatcher::quitModal(){
 	atomicStore(g_running, false);
+	g_newJobAvail.notify_one();
+}
+
+void JobDispatcher::pend(boost::shared_ptr<const JobBase> job){
+	{
+		const boost::mutex::scoped_lock lock(g_queueMutex);
+		g_jobQueue.push(STD_MOVE(job));
+	}
 	g_newJobAvail.notify_one();
 }

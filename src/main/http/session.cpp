@@ -2,11 +2,11 @@
 #include "session.hpp"
 #include "status.hpp"
 #include "../log.hpp"
-#include "../singletons/job_dispatcher.hpp"
 #include "../singletons/http_servlet_manager.hpp"
 #include "../stream_buffer.hpp"
 #include "../utilities.hpp"
 #include "../exception.hpp"
+#include "../job_base.hpp"
 using namespace Poseidon;
 
 namespace {

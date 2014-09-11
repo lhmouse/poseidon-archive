@@ -12,7 +12,7 @@
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../utilities.hpp"
-#include "job_dispatcher.hpp"
+#include "../job_base.hpp"
 using namespace Poseidon;
 
 class Poseidon::TimerServlet : boost::noncopyable,

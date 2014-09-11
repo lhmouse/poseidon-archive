@@ -1,5 +1,6 @@
 #include "../../precompiled.hpp"
 #include "database_daemon.hpp"
+#include "../database/object.hpp"
 #include <queue>
 #include <boost/thread.hpp>
 #include <boost/make_shared.hpp>
@@ -13,7 +14,7 @@ namespace {
 volatile bool g_daemonRunning = false;
 boost::thread g_daemonThread;
 boost::mutex g_queueMutex;
-std::queue<boost::shared_ptr<const DatabaseObjectBase> > g_dirtyQueue;
+std::queue<boost::shared_ptr<const DatabaseObject> > g_dirtyQueue;
 boost::condition_variable g_dirtyAvail;
 
 void threadProc(){
@@ -21,7 +22,7 @@ void threadProc(){
 
 	for(;;){
 		try {
-			boost::shared_ptr<const DatabaseObjectBase> dbObj;
+			boost::shared_ptr<const DatabaseObject> dbObj;
 			{
 				boost::mutex::scoped_lock lock(g_queueMutex);
 				for(;;){
