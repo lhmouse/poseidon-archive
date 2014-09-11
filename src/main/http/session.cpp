@@ -42,9 +42,9 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 
 		headers->set("Content-Type", "text/html");
 	} else {
-		AUTO_REF(contentType, headers->create("Content-Type"));
-		if(contentType.empty()){
-			contentType.assign("text/plain; charset=utf-8");
+		const AUTO(contentType, headers->create("Content-Type"));
+		if(contentType->second.empty()){
+			contentType->second.assign("text/plain; charset=utf-8");
 		}
 	}
 	headers->set("Content-Length", boost::lexical_cast<std::string>(contents->size()));
