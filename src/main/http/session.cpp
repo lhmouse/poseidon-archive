@@ -1,6 +1,7 @@
 #include "../../precompiled.hpp"
 #include "session.hpp"
 #include "status.hpp"
+#include "utilities.hpp"
 #include "../log.hpp"
 #include "../singletons/http_servlet_manager.hpp"
 #include "../stream_buffer.hpp"
@@ -119,59 +120,6 @@ const char *stringFromVerb(HttpVerb verb){
 	case HTTP_OPTIONS:	return "OPTIONS";
 	default:			return "INVALID_VERB";
 	}
-}
-
-int getHexLiteral(char ch){
-	if(('0' <= ch) && (ch <= '9')){
-		return ch - '0';
-	} else if(('A' <= ch) && (ch <= 'F')){
-		return ch - 'A' + 0x0A;
-	} else if(('a' <= ch) && (ch <= 'f')){
-		return ch - 'a' + 0x0A;
-	}
-	return -1;
-}
-
-std::string urlDecode(const std::string &source){
-	std::string ret;
-	const std::size_t size = source.size();
-	ret.reserve(size);
-	std::size_t i = 0;
-	while(i < size){
-		const char ch = source[i];
-		++i;
-		if(ch == '+'){
-			ret.push_back(' ');
-			continue;
-		}
-		if((ch != '%') || ((i + 1) >= size)){
-			ret.push_back(ch);
-			continue;
-		}
-		const int high = getHexLiteral(source[i]);
-		const int low = getHexLiteral(source[i + 1]);
-		if((high == -1) || (low == -1)){
-			ret.push_back(ch);
-			continue;
-		}
-		i += 2;
-		ret.push_back((high << 4) | low);
-	}
-	return ret;
-}
-
-OptionalMap optionalMapFromUrlEncoded(const std::string &encoded){
-	OptionalMap ret;
-	const AUTO(parts, explode<std::string>('&', encoded));
-	for(AUTO(it, parts.begin()); it != parts.end(); ++it){
-		const std::size_t pos = it->find('=');
-		if(pos == std::string::npos){
-			ret.set(urlDecode(*it), std::string());
-		} else {
-			ret.set(urlDecode(it->substr(0, pos)), urlDecode(it->substr(pos + 1)));
-		}
-	}
-	return ret;
 }
 
 class HttpRequestJob : public JobBase {
