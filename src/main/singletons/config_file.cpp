@@ -66,6 +66,3 @@ void ConfigFile::reload(const char *path){
 const std::string &ConfigFile::get(const char *key){
 	return g_config.get(key);
 }
-const std::string &ConfigFile::get(const std::string &key){
-	return g_config.get(key);
-}

@@ -9,7 +9,7 @@ using namespace Poseidon;
 
 namespace {
 
-volatile unsigned g_logLevel = Log::DEBUG;
+volatile unsigned g_logLevel = 100;
 boost::mutex g_cerrMutex;
 
 }

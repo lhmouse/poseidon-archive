@@ -54,12 +54,9 @@ struct RaiiSingletonRunner : boost::noncopyable {
 	const RaiiSingletonRunner<name_> UNIQUE_ID
 
 void run(){
-	const AUTO_REF(logLevel, ConfigFile::get("log_level"));
-	if(!logLevel.empty()){
-		const int newLevel = boost::lexical_cast<int>(logLevel);
-		LOG_WARNING("Setting log level to ", newLevel, ", was ", Log::getLevel(), "...");
-		Log::setLevel(newLevel);
-	}
+	const unsigned logLevel = ConfigFile::get<unsigned>("log_level", Log::LV_INFO);
+	LOG_INFO("Setting log level to ", logLevel, "...");
+	Log::setLevel(logLevel);
 
 	RUN_SINGLETON(TimerDaemon);
 	RUN_SINGLETON(DatabaseDaemon);
@@ -68,18 +65,14 @@ void run(){
 	LOG_INFO("Creating player session server...");
 	EpollDaemon::addSocketServer(
 		boost::make_shared<SocketServer<PlayerSession> >(
-			ConfigFile::get("socket_bind"),
-			boost::lexical_cast<unsigned>(ConfigFile::get("socket_port"))
-		)
-	);
+			ConfigFile::get("socket_bind"), ConfigFile::get<unsigned>("socket_port", 0)
+		));
 
 	LOG_INFO("Creating http server...");
 	EpollDaemon::addSocketServer(
 		boost::make_shared<SocketServer<HttpSession> >(
-			ConfigFile::get("http_bind"),
-			boost::lexical_cast<unsigned>(ConfigFile::get("http_port"))
-		)
-	);
+			ConfigFile::get("http_bind"), ConfigFile::get<unsigned>("http_port", 0)
+		));
 
 	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();

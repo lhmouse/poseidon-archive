@@ -1,8 +1,6 @@
 #include "../../precompiled.hpp"
 #include "epoll_daemon.hpp"
 #include <boost/thread.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/noncopyable.hpp>
 #include <sys/epoll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,6 +14,7 @@
 #include "../tcp_session_base.hpp"
 #include "../socket_server.hpp"
 #include "../multi_index_map.hpp"
+#include "config_file.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -137,10 +136,19 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 void threadProc(){
 	LOG_INFO("Epoll daemon started.");
 
+	const AUTO(TCP_BUFFER_SIZE,
+		ConfigFile::get<std::size_t>("tcp_buffer_size", 1024));
+	const AUTO(MAX_EPOLL_TIMEOUT,
+		ConfigFile::get<std::size_t>("max_epoll_timeout", 100));
+
+	LOG_INFO("TCP_BUFFER_SIZE = ", TCP_BUFFER_SIZE,
+		", MAX_EPOLL_TIMEOUT = ", MAX_EPOLL_TIMEOUT);
+
+	const boost::scoped_array<unsigned char> data(new unsigned char[TCP_BUFFER_SIZE]);
+	std::size_t epollTimeout = 0;
+
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
 	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
-	unsigned char data[1024];
-	unsigned epollTimeout = 0;
 
 	while(atomicLoad(g_daemonRunning)){
 		// 第一部分，处理可接收的数据。
@@ -155,7 +163,7 @@ void threadProc(){
 			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
-				const ::ssize_t bytesRead = ::recv(session->getFd(), data, sizeof(data), MSG_NOSIGNAL);
+				const ::ssize_t bytesRead = ::recv(session->getFd(), data.get(), TCP_BUFFER_SIZE, MSG_NOSIGNAL);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -170,7 +178,7 @@ void threadProc(){
 					continue;
 				}
 				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
-				session->onReadAvail(data, bytesRead);
+				session->onReadAvail(data.get(), bytesRead);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while dispatching data: file = ", e.file(),
 					", line = ", e.line(), ", what = ", e.what());
@@ -200,7 +208,7 @@ void threadProc(){
 				bool readShutdown;
 				{
 					boost::mutex::scoped_lock sessionLock;
-					bytesToWrite = session->peekWriteAvail(sessionLock, data, sizeof(data));
+					bytesToWrite = session->peekWriteAvail(sessionLock, data.get(), TCP_BUFFER_SIZE);
 					readShutdown = session->hasReadBeenShutdown();
 					if((bytesToWrite == 0) && !readShutdown){
 						reepollWriteable(session);
@@ -210,7 +218,7 @@ void threadProc(){
 					removeSession(session);
 					continue;
 				}
-				const ::ssize_t bytesWritten = ::send(session->getFd(), data, bytesToWrite, MSG_NOSIGNAL);
+				const ::ssize_t bytesWritten = ::send(session->getFd(), data.get(), bytesToWrite, MSG_NOSIGNAL);
 				if(bytesWritten < 0){
 					if(errno == EINTR){
 						continue;
@@ -318,7 +326,7 @@ void threadProc(){
 		}
 
 		// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
-		if(epollTimeout < 100){
+		if(epollTimeout < MAX_EPOLL_TIMEOUT){
 			epollTimeout = (epollTimeout << 1) | 1;
 		}
 	}
