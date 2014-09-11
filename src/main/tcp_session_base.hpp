@@ -25,8 +25,12 @@ private:
 	StreamBuffer m_sendBuffer;
 
 protected:
+	TcpSessionBase();
 	explicit TcpSessionBase(ScopedFile &socket);
 	virtual ~TcpSessionBase();
+
+protected:
+	void init(ScopedFile &socket);
 
 public:
 	int getFd() const {

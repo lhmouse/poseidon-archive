@@ -10,9 +10,22 @@
 #include <errno.h>
 using namespace Poseidon;
 
+TcpSessionBase::TcpSessionBase()
+	: m_readShutdown(false), m_shutdown(false)
+{
+}
 TcpSessionBase::TcpSessionBase(ScopedFile &socket)
 	: m_readShutdown(false), m_shutdown(false)
 {
+	init(socket);
+}
+TcpSessionBase::~TcpSessionBase(){
+	if(m_socket){
+		LOG_INFO("Destroyed tcp peer, remote ip = ", m_remoteIp);
+	}
+}
+
+void TcpSessionBase::init(ScopedFile &socket){
 	m_socket.swap(socket);
 
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
@@ -48,11 +61,10 @@ TcpSessionBase::TcpSessionBase(ScopedFile &socket)
 
 	LOG_INFO("Created tcp peer, remote ip = ", m_remoteIp);
 }
-TcpSessionBase::~TcpSessionBase(){
-	LOG_INFO("Destroyed tcp peer, remote ip = ", m_remoteIp);
-}
 
-std::size_t TcpSessionBase::peekWriteAvail(boost::mutex::scoped_lock &lock, void *data, std::size_t size) const {
+std::size_t TcpSessionBase::peekWriteAvail(boost::mutex::scoped_lock &lock,
+	void *data, std::size_t size) const
+{
 	boost::mutex::scoped_lock(m_bufferMutex).swap(lock);
 	if(size == 0){
 		return m_sendBuffer.size();
