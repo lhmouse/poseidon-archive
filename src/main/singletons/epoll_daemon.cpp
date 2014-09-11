@@ -140,7 +140,7 @@ void threadProc(){
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
 	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 	unsigned char data[1024];
-	unsigned epollTimeout = 1;
+	unsigned epollTimeout = 0;
 
 	while(atomicLoad(g_daemonRunning)){
 		// 第一部分，处理可接收的数据。
@@ -152,6 +152,7 @@ void threadProc(){
 			}
 		}
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
+			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
 				const ::ssize_t bytesRead = ::recv(session->getFd(), data, sizeof(data), MSG_NOSIGNAL);
@@ -192,6 +193,7 @@ void threadProc(){
 			}
 		}
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
+			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
 				std::size_t bytesToWrite;
@@ -243,11 +245,8 @@ void threadProc(){
 			const boost::mutex::scoped_lock lock(g_serverMutex);
 			std::copy(g_servers.begin(), g_servers.end(), std::back_inserter(servers));
 		}
-		// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
-		if(epollTimeout < 0x100){
-			epollTimeout <<= 1;
-		}
 		for(AUTO(it, servers.begin()); it != servers.end(); ++it){
+			epollTimeout = 0;
 			try {
 				AUTO(session, (*it)->tryAccept());
 				if(!session){
@@ -316,6 +315,11 @@ void threadProc(){
 				LOG_ERROR("Unknown exception thrown while epolling.");
 				removeSession(session);
 			}
+		}
+
+		// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
+		if(epollTimeout < 100){
+			epollTimeout = (epollTimeout << 1) | 1;
 		}
 	}
 
