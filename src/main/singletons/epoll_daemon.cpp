@@ -210,12 +210,16 @@ void threadProc(){
 					boost::mutex::scoped_lock sessionLock;
 					bytesToWrite = session->peekWriteAvail(sessionLock, data.get(), TCP_BUFFER_SIZE);
 					readShutdown = session->hasReadBeenShutdown();
-					if((bytesToWrite == 0) && !readShutdown){
-						reepollWriteable(session);
+					if(bytesToWrite == 0){
+						if(!readShutdown){
+							reepollWriteable(session);
+						}
 					}
 				}
-				if((bytesToWrite == 0) && readShutdown){
-					removeSession(session);
+				if(bytesToWrite == 0){
+					if(readShutdown){
+						removeSession(session);
+					}
 					continue;
 				}
 				const ::ssize_t bytesWritten = ::send(session->getFd(), data.get(), bytesToWrite, MSG_NOSIGNAL);
@@ -254,14 +258,13 @@ void threadProc(){
 			std::copy(g_servers.begin(), g_servers.end(), std::back_inserter(servers));
 		}
 		for(AUTO(it, servers.begin()); it != servers.end(); ++it){
-			epollTimeout = 0;
 			try {
 				AUTO(session, (*it)->tryAccept());
 				if(!session){
 					continue;
 				}
 				LOG_DEBUG("Accepted socket connection from ", session->getRemoteIp());
-				epollTimeout = 1;
+				epollTimeout = 0;
 				addSession(session);
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while accepting client: file = ", e.file(),

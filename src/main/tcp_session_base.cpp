@@ -4,6 +4,7 @@
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include <arpa/inet.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -16,14 +17,10 @@ TcpSessionBase::TcpSessionBase(ScopedFile &socket)
 
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
-		const int code = errno;
-		LOG_ERROR("Could not get fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemError, errno);
 	}
 	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
-		const int code = errno;
-		LOG_ERROR("Could not set fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemError, errno);
 	}
 
 	union {
@@ -33,9 +30,7 @@ TcpSessionBase::TcpSessionBase(ScopedFile &socket)
 	} u;
 	::socklen_t salen = sizeof(u);
 	if(::getpeername(m_socket.get(), &u.sa, &salen) != 0){
-		const int code = errno;
-		LOG_ERROR("Could not get peer name on socket.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemError, errno);
 	}
 	m_remoteIp.resize(63);
 	const char *text;
@@ -44,7 +39,6 @@ TcpSessionBase::TcpSessionBase(ScopedFile &socket)
 	} else if(u.sa.sa_family == AF_INET6){
 		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &m_remoteIp[0], m_remoteIp.size());
 	} else {
-		LOG_ERROR("Unknown IP protocol: ", u.sa.sa_family);
 		DEBUG_THROW(Exception, "Unknown IP protocol.");
 	}
 	if(!text){
