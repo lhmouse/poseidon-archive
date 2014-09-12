@@ -6,7 +6,7 @@
 
 namespace Poseidon {
 
-template<typename HandleT, typename CloserT>
+template<typename CloserT>
 class ScopedHandle {
 public:
 #ifdef POSEIDON_CXX11
@@ -32,15 +32,18 @@ public:
 	};
 #endif
 
+public:
+	typedef DECLTYPE(CloserT()()) Handle;
+
 private:
-	HandleT m_handle;
+	Handle m_handle;
 
 public:
 	ScopedHandle() NOEXCEPT
 		: m_handle(CloserT()())
 	{
 	}
-	explicit ScopedHandle(HandleT handle) NOEXCEPT
+	explicit ScopedHandle(Handle handle) NOEXCEPT
 		: m_handle(CloserT()())
 	{
 		reset(handle);
@@ -50,7 +53,7 @@ public:
 	{
 		reset(STD_MOVE(rhs));
 	}
-	ScopedHandle &operator=(HandleT handle) NOEXCEPT {
+	ScopedHandle &operator=(Handle handle) NOEXCEPT {
 		reset(handle);
 		return *this;
 	}
@@ -67,19 +70,19 @@ private:
 	void operator=(const ScopedHandle &);
 
 public:
-	HandleT get() const NOEXCEPT {
+	Handle get() const NOEXCEPT {
 		return m_handle;
 	}
-	HandleT release() NOEXCEPT {
-		const HandleT ret = m_handle;
+	Handle release() NOEXCEPT {
+		const Handle ret = m_handle;
 		m_handle = CloserT()();
 		return ret;
 	}
 	Move move() NOEXCEPT {
 		return Move(*this);
 	}
-	void reset(HandleT handle = CloserT()()) NOEXCEPT {
-		const HandleT old = m_handle;
+	void reset(Handle handle = CloserT()()) NOEXCEPT {
+		const Handle old = m_handle;
 		m_handle = handle;
 		if(old != CloserT()()){
 			CloserT()(old);
@@ -104,10 +107,13 @@ public:
 	}
 };
 
-template<typename HandleT, typename CloserT>
+template<typename CloserT>
 class SharedHandle {
+public:
+	typedef DECLTYPE(CloserT()()) Handle;
+
 private:
-	typedef ScopedHandle<HandleT, CloserT> Scoped;
+	typedef ScopedHandle<CloserT> Scoped;
 
 	struct Control {
 		Scoped h;
@@ -122,7 +128,7 @@ public:
 		: m_control(0)
 	{
 	}
-	explicit SharedHandle(HandleT handle)
+	explicit SharedHandle(Handle handle)
 		: m_control(0)
 	{
 		reset(handle);
@@ -132,7 +138,7 @@ public:
 	{
 		reset(rhs);
 	}
-	SharedHandle &operator=(HandleT handle){
+	SharedHandle &operator=(Handle handle){
 		Scoped tmp(handle);
 		reset(tmp);
 		return *this;
@@ -157,7 +163,7 @@ public:
 	}
 
 public:
-	HandleT get() const NOEXCEPT {
+	Handle get() const NOEXCEPT {
 		if(!m_control){
 			return CloserT()();
 		}
@@ -180,7 +186,7 @@ public:
 		}
 		m_control = 0;
 	}
-	void reset(HandleT handle){
+	void reset(Handle handle){
 		Scoped tmp(handle);
 		reset(tmp);
 	}
@@ -228,36 +234,32 @@ public:
 	}
 };
 
-template<typename HandleT, typename CloserT>
-void swap(ScopedHandle<HandleT, CloserT> &lhs,
-	ScopedHandle<HandleT, CloserT> &rhs) NOEXCEPT
-{
+template<typename CloserT>
+void swap(ScopedHandle<CloserT> &lhs, ScopedHandle<CloserT> &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-template<typename HandleT, typename CloserT>
-void swap(SharedHandle<HandleT, CloserT> &lhs,
-	SharedHandle<HandleT, CloserT> &rhs) NOEXCEPT
-{
+template<typename CloserT>
+void swap(SharedHandle<CloserT> &lhs, SharedHandle<CloserT> &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
 #define DEFINE_RATIONAL_OPERATOR_(temp_, op_)	\
-	template<typename HandleT, typename CloserT>	\
-	bool operator op_(const temp_<HandleT, CloserT> &lhs,	\
-		const temp_<HandleT, CloserT> &rhs) NOEXCEPT	\
+	template<typename CloserT>	\
+	bool operator op_(const temp_<CloserT> &lhs,	\
+		const temp_<CloserT> &rhs) NOEXCEPT	\
 	{	\
 		return lhs.get() op_ rhs.get();	\
 	}	\
-	template<typename HandleT, typename CloserT>	\
-	bool operator op_(HandleT lhs,	\
-		const temp_<HandleT, CloserT> &rhs) NOEXCEPT	\
+	template<typename CloserT>	\
+	bool operator op_(typename temp_<CloserT>::Handle lhs,	\
+		const temp_<CloserT> &rhs) NOEXCEPT	\
 	{	\
 		return lhs op_ rhs.get();	\
 	}	\
-	template<typename HandleT, typename CloserT>	\
-	bool operator op_(const temp_<HandleT, CloserT> &lhs,	\
-		HandleT rhs) NOEXCEPT	\
+	template<typename CloserT>	\
+	bool operator op_(const temp_<CloserT> &lhs,	\
+		typename temp_<CloserT>::Handle rhs) NOEXCEPT	\
 	{	\
 		return lhs.get() op_ rhs;	\
 	}
@@ -280,7 +282,7 @@ DEFINE_RATIONAL_OPERATOR_(SharedHandle, >=)
 
 extern void closeFile(int fd) NOEXCEPT;
 
-struct FileCloserT {
+struct FileCloser {
 	int operator()() const NOEXCEPT {
 		return -1;
 	}
@@ -289,8 +291,8 @@ struct FileCloserT {
 	}
 };
 
-typedef ScopedHandle<int, FileCloserT> ScopedFile;
-typedef SharedHandle<int, FileCloserT> SharedFile;
+typedef ScopedHandle<FileCloser> ScopedFile;
+typedef SharedHandle<FileCloser> SharedFile;
 
 }
 
