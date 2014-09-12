@@ -16,7 +16,7 @@ private:
 	StreamBuffer m_payload;
 
 public:
-	explicit PlayerSession(ScopedFile &socket);
+	explicit PlayerSession(ScopedFile::Move socket);
 	~PlayerSession();
 
 protected:

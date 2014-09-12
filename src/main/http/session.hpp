@@ -30,7 +30,7 @@ private:
 	OptionalMap m_postParams;
 
 public:
-	explicit HttpSession(ScopedFile &socket);
+	explicit HttpSession(ScopedFile::Move socket);
 	~HttpSession();
 
 protected:

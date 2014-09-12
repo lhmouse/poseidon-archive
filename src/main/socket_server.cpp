@@ -85,7 +85,7 @@ boost::shared_ptr<TcpSessionBase> SocketServerBase::tryAccept() const {
 	if(!client){
 		return NULLPTR;
 	}
-	AUTO(session, onClientConnect(client));
+	AUTO(session, onClientConnect(client.move()));
 	if(!session){
 		return NULLPTR;
 	}

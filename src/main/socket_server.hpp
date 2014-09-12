@@ -5,7 +5,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
 #include <boost/utility.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 #include "raii.hpp"
@@ -30,7 +29,8 @@ public:
 protected:
 	// 工厂函数。
 	// 如果该成员函数返回空指针，连接会被立即挂断。
-	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(ScopedFile &client) const = 0;
+	virtual boost::shared_ptr<TcpSessionBase>
+		onClientConnect(ScopedFile::Move client) const = 0;
 
 public:
 	boost::shared_ptr<TcpSessionBase> tryAccept() const;
@@ -50,8 +50,10 @@ public:
 	}
 
 protected:
-	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(ScopedFile &client) const {
-		return boost::make_shared<DerivedTcpSessionBaseT>(boost::ref(client));
+	virtual boost::shared_ptr<TcpSessionBase>
+		onClientConnect(ScopedFile::Move client) const
+	{
+		return boost::make_shared<DerivedTcpSessionBaseT>(client);
 	}
 };
 

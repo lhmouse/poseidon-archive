@@ -2,11 +2,36 @@
 #define POSEIDON_RAII_HPP_
 
 #include "../cxx_ver.hpp"
+#include <utility>
 
 namespace Poseidon {
 
 template<typename HandleT, typename CloserT>
 class ScopedHandle {
+public:
+#ifdef POSEIDON_CXX11
+	using Move = ScopedHandle &&;
+#else
+	class Move {
+		friend class ScopedHandle;
+
+	private:
+		ScopedHandle &m_holds;
+
+	private:
+		explicit Move(ScopedHandle &holds) NOEXCEPT
+			: m_holds(holds)
+		{
+		}
+
+	public:
+		Move(const Move &rhs) NOEXCEPT
+			: m_holds(rhs.m_holds)
+		{
+		}
+	};
+#endif
+
 private:
 	HandleT m_handle;
 
@@ -20,8 +45,17 @@ public:
 	{
 		reset(handle);
 	}
+	ScopedHandle(Move rhs) NOEXCEPT
+		: m_handle(CloserT()())
+	{
+		reset(STD_MOVE(rhs));
+	}
 	ScopedHandle &operator=(HandleT handle) NOEXCEPT {
 		reset(handle);
+		return *this;
+	}
+	ScopedHandle &operator=(Move rhs) NOEXCEPT {
+		reset(STD_MOVE(rhs));
 		return *this;
 	}
 	~ScopedHandle() NOEXCEPT {
@@ -41,6 +75,9 @@ public:
 		m_handle = CloserT()();
 		return ret;
 	}
+	Move move() NOEXCEPT {
+		return Move(*this);
+	}
 	void reset(HandleT handle = CloserT()()) NOEXCEPT {
 		const HandleT old = m_handle;
 		m_handle = handle;
@@ -48,17 +85,16 @@ public:
 			CloserT()(old);
 		}
 	}
-	void reset(ScopedHandle &rhs) NOEXCEPT {
-		if(&rhs == this){
-			return;
-		}
+	void reset(Move rhs) NOEXCEPT {
+#ifdef POSEIDON_CXX11
 		swap(rhs);
-		rhs.reset();
+#else
+		swap(rhs.m_holds);
+#endif
 	}
 	void swap(ScopedHandle &rhs) NOEXCEPT {
-		const HandleT my = m_handle;
-		m_handle = rhs.m_handle;
-		rhs.m_handle = my;
+		using std::swap;
+		swap(m_handle, rhs.m_handle);
 	}
 #ifdef POSEIDON_CXX11
 	explicit
@@ -105,6 +141,17 @@ public:
 		reset(rhs);
 		return *this;
 	}
+#ifdef POSEIDON_CXX11
+	SharedHandle(SharedHandle &&rhs) noexcept
+		: m_control(0)
+	{
+		reset(std::move(rhs));
+	}
+	SharedHandle &operator=(SharedHandle &&rhs) noexcept {
+		reset(std::move(rhs));
+		return *this;
+	}
+#endif
 	~SharedHandle() NOEXCEPT {
 		reset();
 	}
@@ -137,18 +184,17 @@ public:
 		Scoped tmp(handle);
 		reset(tmp);
 	}
-	void reset(Scoped &scoped){
+	void reset(typename Scoped::Move scoped){
 		if(!scoped){
 			reset();
 			return;
 		}
 		if(unique()){
-			m_control->h.swap(scoped);
-			scoped.reset();
+			m_control->h.reset(scoped);
 		} else {
 			reset();
 			m_control = new Control;
-			m_control->h.swap(scoped);
+			m_control->h.reset(scoped);
 			m_control->ref = 1;
 			volatile int barrier;
 			__sync_lock_release(&barrier);
@@ -165,10 +211,14 @@ public:
 			reset();
 		}
 	}
+#ifdef POSEIDON_CXX11
+	void reset(SharedHandle &&rhs) noexcept {
+		swap(rhs);
+	}
+#endif
 	void swap(SharedHandle &rhs) NOEXCEPT {
-		Control *const my = m_control;
-		m_control = rhs.m_control;
-		rhs.m_control = my;
+		using std::swap;
+		swap(m_control, rhs.m_control);
 	}
 #ifdef POSEIDON_CXX11
 	explicit

@@ -16,8 +16,8 @@ class TcpSessionBase : boost::noncopyable
 	, public virtual VirtualSharedFromThis
 {
 private:
-	ScopedFile m_socket;
-	std::string m_remoteIp;
+	const ScopedFile m_socket;
+	const std::string m_remoteIp;
 
 	volatile bool m_readShutdown;
 	volatile bool m_shutdown;
@@ -25,12 +25,8 @@ private:
 	StreamBuffer m_sendBuffer;
 
 protected:
-	TcpSessionBase();
-	explicit TcpSessionBase(ScopedFile &socket);
+	explicit TcpSessionBase(ScopedFile::Move socket);
 	virtual ~TcpSessionBase();
-
-protected:
-	void init(ScopedFile &socket);
 
 public:
 	int getFd() const {

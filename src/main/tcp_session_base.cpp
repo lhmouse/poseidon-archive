@@ -10,29 +10,16 @@
 #include <errno.h>
 using namespace Poseidon;
 
-TcpSessionBase::TcpSessionBase()
-	: m_readShutdown(false), m_shutdown(false)
-{
-}
-TcpSessionBase::TcpSessionBase(ScopedFile &socket)
-	: m_readShutdown(false), m_shutdown(false)
-{
-	init(socket);
-}
-TcpSessionBase::~TcpSessionBase(){
-	if(m_socket){
-		LOG_INFO("Destroyed tcp peer, remote ip = ", m_remoteIp);
-	}
-}
+namespace {
 
-void TcpSessionBase::init(ScopedFile &socket){
-	m_socket.swap(socket);
+std::string getIpFromSocket(int fd){
+	std::string ret;
 
-	const int flags = ::fcntl(m_socket.get(), F_GETFL);
+	const int flags = ::fcntl(fd, F_GETFL);
 	if(flags == -1){
 		DEBUG_THROW(SystemError, errno);
 	}
-	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
+	if(::fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0){
 		DEBUG_THROW(SystemError, errno);
 	}
 
@@ -42,24 +29,39 @@ void TcpSessionBase::init(ScopedFile &socket){
 		::sockaddr_in6 sin6;
 	} u;
 	::socklen_t salen = sizeof(u);
-	if(::getpeername(m_socket.get(), &u.sa, &salen) != 0){
+	if(::getpeername(fd, &u.sa, &salen) != 0){
 		DEBUG_THROW(SystemError, errno);
 	}
-	m_remoteIp.resize(63);
+	ret.resize(63);
 	const char *text;
 	if(u.sa.sa_family == AF_INET){
-		text = ::inet_ntop(AF_INET, &u.sin.sin_addr, &m_remoteIp[0], m_remoteIp.size());
+		text = ::inet_ntop(AF_INET, &u.sin.sin_addr, &ret[0], ret.size());
 	} else if(u.sa.sa_family == AF_INET6){
-		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &m_remoteIp[0], m_remoteIp.size());
+		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &ret[0], ret.size());
 	} else {
 		DEBUG_THROW(Exception, "Unknown IP protocol.");
 	}
 	if(!text){
 		DEBUG_THROW(SystemError, errno);
 	}
-	m_remoteIp.resize(std::strlen(text));
+	ret.resize(std::strlen(text));
+
+	return STD_MOVE(ret);
+}
+
+}
+
+TcpSessionBase::TcpSessionBase(ScopedFile::Move socket)
+	: m_socket(socket), m_remoteIp(getIpFromSocket(m_socket.get()))
+	, m_readShutdown(false), m_shutdown(false)
+{
 
 	LOG_INFO("Created tcp peer, remote ip = ", m_remoteIp);
+}
+TcpSessionBase::~TcpSessionBase(){
+	if(m_socket){
+		LOG_INFO("Destroyed tcp peer, remote ip = ", m_remoteIp);
+	}
 }
 
 std::size_t TcpSessionBase::peekWriteAvail(boost::mutex::scoped_lock &lock,
