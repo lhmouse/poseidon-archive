@@ -53,7 +53,7 @@ protected:
 	virtual boost::shared_ptr<TcpSessionBase>
 		onClientConnect(ScopedFile::Move client) const
 	{
-		return boost::make_shared<DerivedTcpSessionBaseT>(client);
+		return boost::make_shared<DerivedTcpSessionBaseT>(STD_MOVE(client));
 	}
 };
 

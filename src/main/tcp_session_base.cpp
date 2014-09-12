@@ -52,7 +52,7 @@ std::string getIpFromSocket(int fd){
 }
 
 TcpSessionBase::TcpSessionBase(ScopedFile::Move socket)
-	: m_socket(socket), m_remoteIp(getIpFromSocket(m_socket.get()))
+	: m_socket(STD_MOVE(socket)), m_remoteIp(getIpFromSocket(m_socket.get()))
 	, m_readShutdown(false), m_shutdown(false)
 {
 
