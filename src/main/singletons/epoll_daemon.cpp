@@ -56,7 +56,7 @@ struct SessionMapElement {
 	explicit SessionMapElement(boost::shared_ptr<TcpSessionBase> session,
 		unsigned long long lastRead = 0, unsigned long long lastWritten = 0)
 		: m_session(STD_MOVE(session)), m_lastRead(lastRead), m_lastWritten(lastWritten)
-		, m_epollRaii(boost::make_shared<EpollRaii>(session.get()))
+		, m_epollRaii(boost::make_shared<EpollRaii>(m_session.get()))
 	{
 	}
 };
