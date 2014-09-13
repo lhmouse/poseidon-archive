@@ -155,7 +155,9 @@ void threadProc(){
 		{
 			sessions.clear();
 			const boost::mutex::scoped_lock lock(g_sessionMutex);
-			for(AUTO(it, g_sessions.upperBound<IDX_READ>(0)); it != g_sessions.end<IDX_READ>(); ++it){
+			for(AUTO(it, g_sessions.upperBound<IDX_READ>(0));
+				it != g_sessions.end<IDX_READ>(); ++it)
+			{
 				sessions.push_back(it->m_session);
 			}
 		}
@@ -163,7 +165,8 @@ void threadProc(){
 			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
-				const ::ssize_t bytesRead = ::recv(session->getFd(), data.get(), TCP_BUFFER_SIZE, MSG_NOSIGNAL);
+				const ::ssize_t bytesRead = ::recv(session->getFd(),
+					data.get(), TCP_BUFFER_SIZE, MSG_NOSIGNAL);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -196,7 +199,9 @@ void threadProc(){
 		{
 			sessions.clear();
 			const boost::mutex::scoped_lock lock(g_sessionMutex);
-			for(AUTO(it, g_sessions.upperBound<IDX_WRITE>(0)); it != g_sessions.end<IDX_WRITE>(); ++it){
+			for(AUTO(it, g_sessions.upperBound<IDX_WRITE>(0));
+				it != g_sessions.end<IDX_WRITE>(); ++it)
+			{
 				sessions.push_back(it->m_session);
 			}
 		}
@@ -222,7 +227,8 @@ void threadProc(){
 					}
 					continue;
 				}
-				const ::ssize_t bytesWritten = ::send(session->getFd(), data.get(), bytesToWrite, MSG_NOSIGNAL);
+				const ::ssize_t bytesWritten = ::send(session->getFd(),
+					data.get(), bytesToWrite, MSG_NOSIGNAL);
 				if(bytesWritten < 0){
 					if(errno == EINTR){
 						continue;

@@ -42,14 +42,14 @@ public:
 		return atomicLoad(m_shutdown);
 	}
 
+	// 有数据可读触发回调，size 始终不为零。
+	virtual void onReadAvail(const void *data, std::size_t size) = 0;
+
 	// 如果 size 为零则返回所有待发送字节数。
 	std::size_t peekWriteAvail(boost::mutex::scoped_lock &lock,
 		void *data, std::size_t size) const;
 	// 从队列中移除指定的字节数。
 	void notifyWritten(std::size_t size);
-
-	// 有数据可读触发回调，size 始终不为零。
-	virtual void onReadAvail(const void *data, std::size_t size) = 0;
 
 	// 这三个函数是线程安全的。
 	void send(const void *data, std::size_t size);
