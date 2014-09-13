@@ -110,10 +110,10 @@ void threadProc(){
 					callback = servlet->lock();
 					if(callback){
 						period = servlet->getPeriod();
-						if(servlet->getPeriod() == 0){
+						if(period == 0){
 							g_timers.pop_back();
 						} else {
-							g_timers.back().next += servlet->getPeriod();
+							g_timers.back().next += period;
 							std::push_heap(g_timers.begin(), g_timers.end());
 						}
 						break;
