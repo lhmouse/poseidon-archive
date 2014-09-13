@@ -31,11 +31,11 @@
 
 namespace Poseidon {
 
-template<typename Type>
+template<typename T>
 typename boost::remove_cv<
-	typename boost::remove_reference<Type>::type
+	typename boost::remove_reference<T>::type
 	>::type
-	valueOfHelper_(const Type &) NOEXCEPT;
+	valueOfHelper_(const T &) NOEXCEPT;
 
 struct Nullptr_t_ {
 #ifdef POSEIDON_CXX11
@@ -101,8 +101,97 @@ private:
 	void operator&() const;
 };
 
-template<typename Type>
-typename boost::add_reference<Type>::type declRef_() NOEXCEPT;
+template<typename T>
+class Move_ {
+private:
+	T &m_holds;
+
+public:
+	explicit Move_(T &rhs) NOEXCEPT
+		: m_holds(rhs)
+	{
+	}
+	Move_(const Move_ &rhs) NOEXCEPT
+		: m_holds(rhs.m_holds)
+	{
+	}
+
+public:
+	void swap(T &rhs){
+		using std::swap;
+		swap(m_holds, rhs);
+	}
+	void swap(Move_ &rhs){
+		using std::swap;
+		swap(m_holds, rhs.m_holds);
+	}
+
+public:
+	operator T() const {
+		T ret;
+		ret.swap(m_holds);
+		return ret;	// RVO
+	}
+};
+
+template<typename T>
+class Move_<Move_<T> > : public Move_<T> {
+private:
+	typedef Move_<T> Delegate;
+
+public:
+	explicit Move_(T &rhs) NOEXCEPT
+		: Delegate(rhs)
+	{
+	}
+	Move_(const Delegate &rhs) NOEXCEPT
+		: Delegate(rhs)
+	{
+	}
+	Move_(const Move_ &rhs) NOEXCEPT
+		: Delegate(rhs)
+	{
+	}
+
+public:
+	using Delegate::swap;
+
+	void swap(Move_ &rhs){
+		Delegate::swap(rhs);
+	}
+
+public:
+	using Delegate::operator T;
+};
+
+template<typename T>
+void swap(Move_<T> &lhs, Move_<T> &rhs){
+	lhs.swap(rhs);
+}
+template<typename T>
+void swap(Move_<T> &lhs, T &rhs){
+	lhs.swap(rhs);
+}
+template<typename T>
+void swap(T &lhs, Move_<T> &rhs){
+	rhs.swap(lhs);
+}
+
+template<typename T>
+Move_<T> move(const T &rhs) NOEXCEPT {
+	return Move_<T>(const_cast<T &>(rhs));
+}
+template<typename T>
+Move_<T> move(T &rhs) NOEXCEPT {
+	return Move_<T>(rhs);
+}
+template<typename T>
+Move_<T> move(Move_<T> rhs) NOEXCEPT {
+	return rhs;
+}
+
+template<typename T>
+typename boost::add_reference<T>::type declRef_() NOEXCEPT;
 
 }
 
@@ -117,7 +206,7 @@ typename boost::add_reference<Type>::type declRef_() NOEXCEPT;
 #	define AUTO(id_, init_)			DECLTYPE(::Poseidon::valueOfHelper_(init_)) id_(init_)
 #	define AUTO_REF(id_, init_)		DECLTYPE(init_) &id_ = (init_)
 #	define NULLPTR					(::Poseidon::Nullptr_t_())
-#	define STD_MOVE(expr_)			(expr_)
+#	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
 #	define STD_FORWARD(t_, expr_)	(expr_)
 #	define DECLREF(t_)				(::Poseidon::declRef_<t_>())
 #endif

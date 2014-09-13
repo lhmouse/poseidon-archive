@@ -2,7 +2,8 @@ PRECOMPILED_HEADER=src/precompiled.hpp
 
 ACLOCAL_AMFLAGS=-I m4
 AUTOMAKE_OPTIONS=foreign nostdinc subdir-objects
-AM_CPPFLAGS=-Wall -Wextra -Werror -include $(PRECOMPILED_HEADER)
+AM_CPPFLAGS=-Wall -Wextra -Werror	\
+	-Wsuggest-attribute=noreturn -include $(PRECOMPILED_HEADER)
 AM_CXXFLAGS=
 
 BUILT_SOURCES=	\

@@ -12,24 +12,7 @@ public:
 #ifdef POSEIDON_CXX11
 	using Move = ScopedHandle &&;
 #else
-	class Move {
-		friend class ScopedHandle;
-
-	private:
-		ScopedHandle &m_holds;
-
-	private:
-		explicit Move(ScopedHandle &holds) NOEXCEPT
-			: m_holds(holds)
-		{
-		}
-
-	public:
-		Move(const Move &rhs) NOEXCEPT
-			: m_holds(rhs.m_holds)
-		{
-		}
-	};
+	typedef Move_<ScopedHandle<CloserT> > Move;
 #endif
 
 public:
@@ -89,11 +72,7 @@ public:
 		}
 	}
 	void reset(Move rhs) NOEXCEPT {
-#ifdef POSEIDON_CXX11
-		swap(rhs);
-#else
-		swap(rhs.m_holds);
-#endif
+		rhs.swap(*this);
 	}
 	void swap(ScopedHandle &rhs) NOEXCEPT {
 		using std::swap;
