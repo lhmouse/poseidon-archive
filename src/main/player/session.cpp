@@ -29,7 +29,8 @@ protected:
 			return;
 		}
 
-		const AUTO(servlet, PlayerServletManager::getServlet(m_protocolId));
+		boost::shared_ptr<void> lockedDep;
+		const AUTO(servlet, PlayerServletManager::getServlet(lockedDep, m_protocolId));
 		if(!servlet){
 			LOG_WARNING("No servlet for protocol ", m_protocolId);
 			session->shutdownRead();

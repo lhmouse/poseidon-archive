@@ -29,20 +29,19 @@ public:
 	}
 
 public:
-	boost::shared_ptr<const PlayerServletCallback> lock() const {
-		if(!(m_dependency < boost::weak_ptr<void>()) && !(boost::weak_ptr<void>() < m_dependency)){
-			return boost::shared_ptr<const PlayerServletCallback>(shared_from_this(), &m_callback);
-		}
-		AUTO(lockedDep, m_dependency.lock());
-		if(!lockedDep){
-			return NULLPTR;
+	boost::shared_ptr<const PlayerServletCallback>
+		lock(boost::shared_ptr<void> &lockedDep) const
+	{
+		if((m_dependency < boost::weak_ptr<void>()) ||
+			(boost::weak_ptr<void>() < m_dependency))
+		{
+			lockedDep = m_dependency.lock();
+			if(!lockedDep){
+				return NULLPTR;
+			}
 		}
 		return boost::shared_ptr<const PlayerServletCallback>(
-			boost::make_shared<
-				std::pair<boost::shared_ptr<void>, boost::shared_ptr<const PlayerServlet> >
-				>(STD_MOVE(lockedDep), shared_from_this()),
-			&m_callback
-		);
+			shared_from_this(), &m_callback);
 	}
 };
 
@@ -53,8 +52,9 @@ std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> > g_servlets;
 
 }
 
-boost::shared_ptr<const PlayerServlet> PlayerServletManager::registerServlet(boost::uint16_t protocolId,
-	const boost::weak_ptr<void> &dependency, const PlayerServletCallback &callback)
+boost::shared_ptr<const PlayerServlet>
+	PlayerServletManager::registerServlet(boost::uint16_t protocolId,
+		const boost::weak_ptr<void> &dependency, const PlayerServletCallback &callback)
 {
 	AUTO(newServlet, boost::make_shared<PlayerServlet>(
 		protocolId, boost::ref(dependency), boost::ref(callback)));
@@ -69,8 +69,10 @@ boost::shared_ptr<const PlayerServlet> PlayerServletManager::registerServlet(boo
 	return newServlet;
 }
 
-boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(boost::uint16_t protocolId){
-	boost::shared_lock<boost::shared_mutex> slock(g_mutex);
+boost::shared_ptr<const PlayerServletCallback>
+	PlayerServletManager::getServlet(boost::shared_ptr<void> &lockedDep, boost::uint16_t protocolId)
+{
+	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(protocolId));
 	if(it == g_servlets.end()){
 		return NULLPTR;
@@ -79,5 +81,5 @@ boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(
 	if(!servlet){
 		return NULLPTR;
 	}
-	return servlet->lock();
+	return servlet->lock(lockedDep);
 }

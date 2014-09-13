@@ -35,20 +35,19 @@ public:
 	}
 
 public:
-	boost::shared_ptr<const TimerCallback> lock() const {
-		if(!(m_dependency < boost::weak_ptr<void>()) && !(boost::weak_ptr<void>() < m_dependency)){
-			return boost::shared_ptr<const TimerCallback>(shared_from_this(), &m_callback);
-		}
-		const AUTO(lockedDep, m_dependency.lock());
-		if(!lockedDep){
-			return NULLPTR;
+	boost::shared_ptr<const TimerCallback>
+		lock(boost::shared_ptr<void> &lockedDep) const
+	{
+		if((m_dependency < boost::weak_ptr<void>()) ||
+			(boost::weak_ptr<void>() < m_dependency))
+		{
+			lockedDep = m_dependency.lock();
+			if(!lockedDep){
+				return NULLPTR;
+			}
 		}
 		return boost::shared_ptr<const TimerCallback>(
-			boost::make_shared<
-				std::pair<boost::shared_ptr<void>, boost::shared_ptr<const TimerServlet> >
-				>(lockedDep, shared_from_this()),
-			&m_callback
-		);
+			shared_from_this(), &m_callback);
 	}
 
 	unsigned long long getPeriod() const {
@@ -64,12 +63,15 @@ const unsigned long long MILLISECS_PER_WEEK	= 7 * MILLISECS_PER_DAY;
 
 class TimerJob : public JobBase {
 private:
+	const boost::shared_ptr<void> m_dependency;
 	const boost::shared_ptr<const TimerCallback> m_callback;
 	const unsigned long long m_period;
 
 public:
-	TimerJob(boost::shared_ptr<const TimerCallback> callback, unsigned long long period)
-		: m_callback(STD_MOVE(callback)), m_period(period)
+	TimerJob(boost::shared_ptr<void> dependency,
+		boost::shared_ptr<const TimerCallback> callback, unsigned long long period)
+		: m_dependency(STD_MOVE(dependency))
+		, m_callback(STD_MOVE(callback)), m_period(period)
 	{
 	}
 
@@ -99,6 +101,7 @@ void threadProc(){
 
 	while(atomicLoad(g_daemonRunning)){
 		const unsigned long long now = getMonoClock();
+		boost::shared_ptr<void> lockedDep;
 		boost::shared_ptr<const TimerCallback> callback;
 		unsigned long long period = 0;
 		{
@@ -107,7 +110,7 @@ void threadProc(){
 				const AUTO(servlet, g_timers.front().servlet.lock());
 				std::pop_heap(g_timers.begin(), g_timers.end());
 				if(servlet){
-					callback = servlet->lock();
+					callback = servlet->lock(lockedDep);
 					if(callback){
 						period = servlet->getPeriod();
 						if(period == 0){
@@ -129,7 +132,8 @@ void threadProc(){
 		try {
 			LOG_INFO("Preparing a timer job for dispatching.");
 
-			boost::make_shared<TimerJob>(STD_MOVE(callback), period)->pend();
+			boost::make_shared<TimerJob>(STD_MOVE(lockedDep), STD_MOVE(callback),
+				period)->pend();
 		} catch(std::exception &e){
 			LOG_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
 		} catch(...){

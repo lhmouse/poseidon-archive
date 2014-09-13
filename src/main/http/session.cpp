@@ -153,7 +153,8 @@ protected:
 			return;
 		}
 
-		const AUTO(servlet, HttpServletManager::getServlet(m_uri));
+		boost::shared_ptr<void> lockedDep;
+		const AUTO(servlet, HttpServletManager::getServlet(lockedDep, m_uri));
 		if(!servlet){
 			LOG_WARNING("No servlet for URI ", m_uri);
 			respond(session, HTTP_NOT_FOUND);
@@ -163,8 +164,8 @@ protected:
 		OptionalMap headers;
 		StreamBuffer contents;
 		try {
-			const HttpStatus status = (*servlet)(headers, contents, m_verb, m_getParams,
-				m_incomingHeaders, m_incomingContents);
+			const HttpStatus status = (*servlet)(headers, contents,
+				m_verb, m_getParams, m_incomingHeaders, m_incomingContents);
 			respond(session, status, &headers, &contents);
 		} catch(ProtocolException &e){
 			LOG_ERROR("ProtocolException thrown in HTTP servlet, code = ", e.code(),
