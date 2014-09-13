@@ -5,9 +5,7 @@
 
 namespace Poseidon {
 
-class JobBase
-	: public virtual VirtualSharedFromThis
-{
+class JobBase : public virtual VirtualSharedFromThis {
 public:
 	virtual ~JobBase();
 

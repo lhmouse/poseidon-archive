@@ -11,9 +11,7 @@ namespace Poseidon {
 class DatabaseObject;
 
 template<typename ValueT>
-class DatabaseField
-	: public virtual VirtualSharedFromThis
-{
+class DatabaseField : public virtual VirtualSharedFromThis {
 private:
 	ValueT m_val;
 
@@ -33,9 +31,7 @@ public:
 	}
 };
 
-class DatabaseObject
-	: public virtual VirtualSharedFromThis
-{
+class DatabaseObject : public virtual VirtualSharedFromThis {
 private:
 	
 };
