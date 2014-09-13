@@ -91,7 +91,7 @@ void PlayerSession::sendUsingMove(boost::uint16_t status, StreamBuffer &payload)
 	const std::size_t size = payload.size();
 	if(size > 0xFFFF){
 		LOG_WARNING("Respond packet too large, size = ", size);
-		DEBUG_THROW(Exception, "Packet too large");
+		DEBUG_THROW(Exception, "Packet too large: " + boost::lexical_cast<std::string>(size));
 	}
 	StreamBuffer temp;
 	temp.put(status & 0xFF);

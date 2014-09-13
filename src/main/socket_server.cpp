@@ -31,7 +31,7 @@ SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPor
 		salen = sizeof(::sockaddr_in6);
 		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &m_bindAddr[0], m_bindAddr.size());
 	} else {
-		DEBUG_THROW(Exception, "Unknown address format. IP expected.");
+		DEBUG_THROW(Exception, "Unknown address format: " + bindAddr);
 	}
 	if(!text){
 		DEBUG_THROW(SystemError, errno);

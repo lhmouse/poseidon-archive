@@ -63,7 +63,7 @@ boost::shared_ptr<const HttpServlet>
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(servlet, g_servlets[uri]);
 		if(!servlet.expired()){
-			DEBUG_THROW(Exception, "Duplicate http servlet.");
+			DEBUG_THROW(Exception, "Duplicate http servlet: " + uri);
 		}
 		servlet = newServlet;
 	}

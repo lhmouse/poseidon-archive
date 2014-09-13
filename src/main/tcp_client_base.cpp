@@ -27,7 +27,7 @@ ScopedFile::Move socketConnect(const std::string &ip, unsigned port){
 		u.sin6.sin6_port = htons(port);
 		salen = sizeof(::sockaddr_in6);
 	} else {
-		DEBUG_THROW(Exception, "Unknown address format. IP expected.");
+		DEBUG_THROW(Exception, "Unknown address format: " + ip);
 	}
 
 	ScopedFile client(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
