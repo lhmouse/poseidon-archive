@@ -72,7 +72,7 @@ inline std::string inplode(char separator, const std::vector<T> &vec){
 #ifdef POSEIDON_CXX11
 		ret.pop_back();
 #else
-		ret.erase(--ret.end());
+		ret.erase(ret.end() - 1);
 #endif
 	}
 	return ret;

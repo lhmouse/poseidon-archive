@@ -33,7 +33,7 @@ public:
 #endif
 
 public:
-	typedef DECLTYPE(CloserT()()) Handle;
+	typedef DECLTYPE(DECLREF(CloserT)()) Handle;
 
 private:
 	Handle m_handle;
@@ -110,7 +110,7 @@ public:
 template<typename CloserT>
 class SharedHandle {
 public:
-	typedef DECLTYPE(CloserT()()) Handle;
+	typedef DECLTYPE(DECLREF(CloserT)()) Handle;
 
 private:
 	typedef ScopedHandle<CloserT> Scoped;
