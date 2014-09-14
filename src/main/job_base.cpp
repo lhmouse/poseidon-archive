@@ -7,5 +7,5 @@ JobBase::~JobBase(){
 }
 
 void JobBase::pend() const {
-	JobDispatcher::pend(virtualSharedFromThis<JobBase>());
+	JobDispatcher::pend(virtualShared<JobBase>());
 }

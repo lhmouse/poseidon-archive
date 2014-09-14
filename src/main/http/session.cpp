@@ -193,7 +193,7 @@ HttpSession::~HttpSession(){
 
 void HttpSession::onReadAvail(const void *data, std::size_t size){
 	if(m_totalLength + size >= MAX_REQUEST_LENGTH){
-		respond(virtualSharedFromThis<HttpSession>(), HTTP_REQUEST_TOO_LARGE);
+		respond(virtualShared<HttpSession>(), HTTP_REQUEST_TOO_LARGE);
 		shutdownRead();
 		return;
 	}
@@ -220,20 +220,20 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				const AUTO(parts, explode<std::string>(' ', m_line, 3));
 				if(parts.size() != 3){
 					LOG_WARNING("Bad HTTP header: ", m_line);
-					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
+					respond(virtualShared<HttpSession>(), HTTP_BAD_REQUEST);
 					shutdownRead();
 					return;
 				}
 				m_verb = verbFromString(parts[0]);
 				if(m_verb == HTTP_INVALID_VERB){
 					LOG_WARNING("Bad HTTP verb: ", parts[0]);
-					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_METHOD);
+					respond(virtualShared<HttpSession>(), HTTP_BAD_METHOD);
 					shutdownRead();
 					return;
 				}
 				if(parts[1].empty() || (parts[1][0] != '/')){
 					LOG_WARNING("Bad HTTP request URI: ", parts[1]);
-					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
+					respond(virtualShared<HttpSession>(), HTTP_BAD_REQUEST);
 					shutdownRead();
 					return;
 				}
@@ -247,7 +247,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				}
 				if((parts[2] != "HTTP/1.0") && (parts[2] != "HTTP/1.1")){
 					LOG_WARNING("Unsupported HTTP version: ", parts[2]);
-					respond(virtualSharedFromThis<HttpSession>(), HTTP_VERSION_NOT_SUP);
+					respond(virtualShared<HttpSession>(), HTTP_VERSION_NOT_SUP);
 					shutdownRead();
 					return;
 				}
@@ -256,7 +256,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				const std::size_t delimPos = m_line.find(':');
 				if(delimPos == std::string::npos){
 					LOG_WARNING("Bad HTTP header: ", m_line);
-					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
+					respond(virtualShared<HttpSession>(), HTTP_BAD_REQUEST);
 					shutdownRead();
 					return;
 				}
@@ -283,7 +283,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			}
 			m_line.append(read, bytesRemaining);
 			read += bytesRemaining;
-			boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
+			boost::make_shared<HttpRequestJob>(virtualWeak<HttpSession>(),
 				boost::ref(m_verb), boost::ref(m_uri), boost::ref(m_getParams),
 				boost::ref(m_headers), boost::ref(m_line))->pend();
 

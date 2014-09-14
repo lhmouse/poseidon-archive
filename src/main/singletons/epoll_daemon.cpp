@@ -291,7 +291,7 @@ void threadProc(){
 		} else for(unsigned i = 0; i < (unsigned)ready; ++i){
 			::epoll_event &event = events[i];
 			const AUTO(session, static_cast<TcpSessionBase *>(event.data.ptr)->
-				virtualSharedFromThis<TcpSessionBase>());
+				virtualShared<TcpSessionBase>());
 			try {
 				if(event.events & EPOLLHUP){
 					LOG_INFO("Socket has been hung up. Remove it.");
