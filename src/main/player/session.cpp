@@ -76,7 +76,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 		}
 		StreamBuffer packet = m_payload.cut(m_payloadLen);
 		boost::make_shared<PlayerRequestJob>(
-			virtualWeak<PlayerSession>(),
+			virtualWeakFromThis<PlayerSession>(),
 			m_protocolId, boost::ref(packet)
 			)->pend();
 		m_payloadLen = -1;

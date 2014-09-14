@@ -1,8 +1,7 @@
 #ifndef POSEIDON_VIRTUAL_SHARED_FROM_THIS_HPP_
 #define POSEIDON_VIRTUAL_SHARED_FROM_THIS_HPP_
 
-#include "../cxx_ver.hpp"
-#include <stdexcept>
+#include <cassert>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/type_traits/is_virtual_base_of.hpp>
@@ -19,7 +18,7 @@ public:
 
 public:
 	template<typename DerivedT>
-	boost::shared_ptr<const DerivedT> virtualShared() const {
+	boost::shared_ptr<const DerivedT> virtualSharedFromThis() const {
 		BOOST_STATIC_ASSERT_MSG(
 			(boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value),
 			"Please virtually derive from VirtualSharedFromThis.");
@@ -31,7 +30,7 @@ public:
 		return boost::shared_ptr<const DerivedT>(shared_from_this(), virtThis);
 	}
 	template<typename DerivedT>
-	boost::shared_ptr<DerivedT> virtualShared(){
+	boost::shared_ptr<DerivedT> virtualSharedFromThis(){
 		BOOST_STATIC_ASSERT_MSG(
 			(boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value),
 			"Please virtually derive from VirtualSharedFromThis.");
@@ -44,12 +43,12 @@ public:
 	}
 
 	template<typename DerivedT>
-	boost::weak_ptr<const DerivedT> virtualWeak() const {
-		return virtualShared<const DerivedT>();
+	boost::weak_ptr<const DerivedT> virtualWeakFromThis() const {
+		return virtualSharedFromThis<const DerivedT>();
 	}
 	template<typename DerivedT>
-	boost::weak_ptr<DerivedT> virtualWeak(){
-		return virtualShared<DerivedT>();
+	boost::weak_ptr<DerivedT> virtualWeakFromThis(){
+		return virtualSharedFromThis<DerivedT>();
 	}
 };
 

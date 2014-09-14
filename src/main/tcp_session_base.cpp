@@ -106,7 +106,7 @@ void TcpSessionBase::sendUsingMove(StreamBuffer &buffer){
 		const boost::mutex::scoped_lock lock(m_bufferMutex);
 		m_sendBuffer.splice(buffer);
 	}
-	EpollDaemon::refreshSession(virtualShared<TcpSessionBase>());
+	EpollDaemon::refreshSession(virtualSharedFromThis<TcpSessionBase>());
 }
 
 void TcpSessionBase::shutdownRead(){
