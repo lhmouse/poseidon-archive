@@ -30,7 +30,7 @@ timer_daemon.hpp | 计时器线程，负责调度计时器，在计时器触发�
 
 ## 运行环境
 - Debian Linux Squeeze
-- mysql-server
+- mysql-server-5.1
 
 ## 问题反馈
 请联系 ```lh_mouse at 126 dot com```。
