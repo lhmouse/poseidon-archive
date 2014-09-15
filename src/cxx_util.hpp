@@ -19,7 +19,7 @@ Type *arrayEnd(Type (&array)[COUNT]){
 
 }
 
-#define COUNT_OF(ar)		sizeof(::Poseidon::countOfHelper(ar))
+#define COUNT_OF(ar)		(sizeof(::Poseidon::countOfHelper(ar)))
 #define ARRAY_BEGIN(ar)		(::Poseidon::arrayBegin(ar))
 #define ARRAY_END(ar)		(::Poseidon::arrayEnd(ar))
 

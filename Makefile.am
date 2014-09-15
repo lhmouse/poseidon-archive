@@ -55,7 +55,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/tcp_client_base.cpp
 
 lib_libposeidon_template_la_SOURCES=	\
-	#src/template/module_main.cpp
+	src/template/module_main.cpp
 
 lib_libposeidon_template_la_LIBADD=	\
 	lib/libposeidon-main.la
