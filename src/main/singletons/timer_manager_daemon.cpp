@@ -162,6 +162,22 @@ boost::shared_ptr<const TimerServlet> TimerManager::registerTimer(
 	}
 	return servlet;
 }
+boost::shared_ptr<const TimerServlet> registerAbsoluteTimer(
+	unsigned long long timePoint,
+	const boost::weak_ptr<void> &dependency, const TimerCallback &callback)
+{
+	AUTO(servlet, boost::make_shared<TimerServlet>(
+		0, boost::ref(dependency), boost::ref(callback)));
+	TimerItem ti;
+	ti.next = timePoint;
+	ti.servlet = servlet;
+	{
+		const boost::mutex::scoped_lock lock(g_mutex);
+		g_timers.push_back(ti);
+		std::push_heap(g_timers.begin(), g_timers.end());
+	}
+	return servlet;
+}
 
 boost::shared_ptr<const TimerServlet> TimerManager::registerHourlyTimer(
 	unsigned minute, unsigned second,

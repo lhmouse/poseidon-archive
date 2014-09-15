@@ -22,6 +22,9 @@ struct TimerManager {
 	static boost::shared_ptr<const TimerServlet> registerTimer(
 		unsigned long long first, unsigned long long period,
 		const boost::weak_ptr<void> &dependency, const TimerCallback &callback);
+	static boost::shared_ptr<const TimerServlet> registerAbsoluteTimer(
+		unsigned long long timePoint,
+		const boost::weak_ptr<void> &dependency, const TimerCallback &callback);
 
 	static boost::shared_ptr<const TimerServlet> registerHourlyTimer(
 		unsigned minute, unsigned second,
