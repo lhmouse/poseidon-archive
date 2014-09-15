@@ -1,6 +1,8 @@
 #ifndef POSEIDON_CXX_UTIL_HPP_
 #define POSEIDON_CXX_UTIL_HPP_
 
+#include <cstddef>
+
 namespace Poseidon {
 
 template<typename Type, std::size_t COUNT>
