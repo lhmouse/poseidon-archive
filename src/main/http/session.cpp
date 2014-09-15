@@ -41,7 +41,7 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 		contents->put(desc.descLong);
 		contents->put("</p></body></html>");
 
-		headers->set("Content-Type", "text/html");
+		headers->set("Content-Type", "text/html; charset=utf-8");
 	} else {
 		AUTO_REF(contentType, headers->create("Content-Type"));
 		if(contentType.empty()){
