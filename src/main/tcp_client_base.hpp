@@ -10,6 +10,9 @@ namespace Poseidon {
 class TcpClientBase : public TcpSessionBase {
 public:
 	TcpClientBase(const std::string &ip, unsigned port);
+
+public:
+	void addIntoEpoll();
 };
 
 }

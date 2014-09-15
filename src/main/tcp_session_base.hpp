@@ -32,6 +32,7 @@ public:
 	int getFd() const {
 		return m_socket.get();
 	}
+
 	const std::string &getRemoteIp() const {
 		return m_remoteIp;
 	}

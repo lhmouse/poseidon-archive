@@ -12,7 +12,8 @@ struct EpollDaemon {
 	static void start();
 	static void stop();
 
-	static void refreshSession(boost::shared_ptr<TcpSessionBase> session);
+	static void addSession(const boost::shared_ptr<TcpSessionBase> &session);
+	static void refreshSession(const boost::shared_ptr<TcpSessionBase> &session);
 	// 注册 TCP socket 服务器。这里拷贝了所有权。
 	static void addSocketServer(boost::shared_ptr<SocketServerBase> server);
 

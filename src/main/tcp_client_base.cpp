@@ -4,8 +4,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include "singletons/epoll_daemon.hpp"
 #include "exception.hpp"
-#include "log.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -46,4 +46,8 @@ ScopedFile::Move socketConnect(const std::string &ip, unsigned port){
 TcpClientBase::TcpClientBase(const std::string &ip, unsigned port)
 	: TcpSessionBase(socketConnect(ip, port))
 {
+}
+
+void TcpClientBase::addIntoEpoll(){
+	EpollDaemon::addSession(virtualSharedFromThis<TcpSessionBase>());
 }

@@ -23,24 +23,50 @@ volatile bool g_daemonRunning = false;
 ScopedFile g_epoll;
 boost::thread g_daemonThread;
 
-class EpollRaii : boost::noncopyable {
+class EpollRaii {
 private:
-	TcpSessionBase *const m_session;
+	int m_fd;
 
 public:
-	explicit EpollRaii(TcpSessionBase *session)
-		: m_session(session)
+	EpollRaii()
+		: m_fd(-1)
 	{
-		::epoll_event event;
-		event.events = EPOLLHUP | EPOLLERR | EPOLLRDHUP | EPOLLIN | EPOLLOUT | EPOLLET;
-		event.data.ptr = m_session;
-		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, m_session->getFd(), &event) != 0){
-			DEBUG_THROW(SystemError, errno);
+	}
+	~EpollRaii() NOEXCEPT {
+		reset();
+	}
+
+#ifdef POSEIDON_CXX11
+	EpollRaii(const EpollRaii &rhs) = delete;
+#else
+	EpollRaii(const EpollRaii &rhs)
+		: m_fd(-1)
+	{
+		assert(rhs.m_fd == -1);
+	}
+#endif
+
+public:
+	void reset(int fd, void *ctx){
+		if(m_fd != -1){
+			reset();
+		}
+		if(fd != -1){
+			::epoll_event event;
+			event.events = EPOLLHUP | EPOLLERR | EPOLLRDHUP | EPOLLIN | EPOLLOUT | EPOLLET;
+			event.data.ptr = ctx;
+			if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, fd, &event) != 0){
+				DEBUG_THROW(SystemError, errno);
+			}
+			m_fd = fd;
 		}
 	}
-	~EpollRaii(){
-		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, m_session->getFd(), NULLPTR) != 0){
-			LOG_WARNING("Deleting from epoll failed. We can do nothing but ignore it.");
+	void reset() NOEXCEPT {
+		if(m_fd != -1){
+			if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, m_fd, NULLPTR) != 0){
+				LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
+			}
+			m_fd = -1;
 		}
 	}
 };
@@ -51,12 +77,11 @@ struct SessionMapElement {
 	unsigned long long m_lastRead;
 	unsigned long long m_lastWritten;
 
-	const boost::shared_ptr<EpollRaii> m_epollRaii;
+	EpollRaii m_epollRaii;
 
-	explicit SessionMapElement(boost::shared_ptr<TcpSessionBase> session,
-		unsigned long long lastRead = 0, unsigned long long lastWritten = 0)
+	SessionMapElement(boost::shared_ptr<TcpSessionBase> session,
+		unsigned long long lastRead, unsigned long long lastWritten)
 		: m_session(STD_MOVE(session)), m_lastRead(lastRead), m_lastWritten(lastWritten)
-		, m_epollRaii(boost::make_shared<EpollRaii>(m_session.get()))
 	{
 	}
 };
@@ -80,14 +105,32 @@ boost::mutex g_serverMutex;
 std::set<boost::shared_ptr<const SocketServerBase> > g_servers;
 
 void addSession(const boost::shared_ptr<TcpSessionBase> &session){
+	const unsigned long long now = getMonoClock();
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	g_sessions.insert(SessionMapElement(session));
+	const AUTO(result, g_sessions.insert(SessionMapElement(session, now, now)));
+	if(!result.second){
+		LOG_WARNING("Socket already in epoll?");
+		return;
+	}
+	const_cast<EpollRaii &>(result.first->m_epollRaii).reset(
+		session->getFd(), session.get());
+}
+void touchSession(const boost::shared_ptr<TcpSessionBase> &session){
+	const unsigned long long now = getMonoClock();
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	const AUTO(it, g_sessions.find<0>(session));
+	if(it == g_sessions.end<0>()){
+		LOG_WARNING("Socket already in epoll?");
+		return;
+	}
+	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
+	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
 void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
 	if(it == g_sessions.end<IDX_SESSION>()){
-		LOG_ERROR("Socket not in epoll?");
+		LOG_WARNING("Socket not in epoll?");
 		return;
 	}
 	g_sessions.erase<IDX_SESSION>(it);
@@ -136,15 +179,12 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 void threadProc(){
 	LOG_INFO("Epoll daemon started.");
 
-	const AUTO(TCP_BUFFER_SIZE,
-		ConfigFile::get<std::size_t>("tcp_buffer_size", 1024));
-	const AUTO(MAX_EPOLL_TIMEOUT,
-		ConfigFile::get<std::size_t>("max_epoll_timeout", 100));
+	const AUTO(tcpBufferSize, ConfigFile::get<std::size_t>("tcp_buffer_size", 1024));
+	const AUTO(maxEpollTimeout, ConfigFile::get<std::size_t>("max_epoll_timeout", 100));
 
-	LOG_INFO("TCP_BUFFER_SIZE = ", TCP_BUFFER_SIZE,
-		", MAX_EPOLL_TIMEOUT = ", MAX_EPOLL_TIMEOUT);
+	LOG_INFO("TCP buffer size = ", tcpBufferSize, ", max epoll timeout = ", maxEpollTimeout);
 
-	const boost::scoped_array<unsigned char> data(new unsigned char[TCP_BUFFER_SIZE]);
+	const boost::scoped_array<unsigned char> data(new unsigned char[tcpBufferSize]);
 	std::size_t epollTimeout = 0;
 
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
@@ -166,7 +206,7 @@ void threadProc(){
 			const AUTO_REF(session, *it);
 			try {
 				const ::ssize_t bytesRead = ::recv(session->getFd(),
-					data.get(), TCP_BUFFER_SIZE, MSG_NOSIGNAL);
+					data.get(), tcpBufferSize, MSG_NOSIGNAL);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -213,7 +253,8 @@ void threadProc(){
 				bool readShutdown;
 				{
 					boost::mutex::scoped_lock sessionLock;
-					bytesToWrite = session->peekWriteAvail(sessionLock, data.get(), TCP_BUFFER_SIZE);
+					bytesToWrite = session->peekWriteAvail(sessionLock,
+						data.get(), tcpBufferSize);
 					readShutdown = session->hasReadBeenShutdown();
 					if(bytesToWrite == 0){
 						if(!readShutdown){
@@ -335,8 +376,9 @@ void threadProc(){
 		}
 
 		// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
-		if(epollTimeout < MAX_EPOLL_TIMEOUT){
-			epollTimeout = (epollTimeout << 1) | 1;
+		epollTimeout <<= 1;
+		if(epollTimeout > maxEpollTimeout){
+			epollTimeout = maxEpollTimeout;
 		}
 	}
 
@@ -373,23 +415,21 @@ void EpollDaemon::stop(){
 	g_servers.clear();
 }
 
-void EpollDaemon::refreshSession(boost::shared_ptr<TcpSessionBase> session){
+void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	assert(session);
 
 	if(session->hasBeenShutdown()){
 		return;
 	}
-	const unsigned long long now = getMonoClock();
-	{
-		const boost::mutex::scoped_lock lock(g_sessionMutex);
-		const AUTO(it, g_sessions.find<0>(session));
-		if(it == g_sessions.end<0>()){
-			g_sessions.insert(SessionMapElement(session, now, now));
-		} else {
-			g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
-			g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
-		}
+	addSession(session);
+}
+void EpollDaemon::refreshSession(const boost::shared_ptr<TcpSessionBase> &session){
+	assert(session);
+
+	if(session->hasBeenShutdown()){
+		return;
 	}
+	touchSession(session);
 }
 void EpollDaemon::addSocketServer(boost::shared_ptr<SocketServerBase> server){
 	assert(server);
