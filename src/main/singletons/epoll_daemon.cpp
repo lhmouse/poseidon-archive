@@ -28,23 +28,18 @@ private:
 	int m_fd;
 
 public:
-	EpollRaii()
+	CONSTEXPR EpollRaii() NOEXCEPT
 		: m_fd(-1)
 	{
 	}
-	~EpollRaii() NOEXCEPT {
-		reset();
-	}
-
-#ifdef POSEIDON_CXX11
-	EpollRaii(const EpollRaii &rhs) = delete;
-#else
-	EpollRaii(const EpollRaii &rhs)
+	EpollRaii(const EpollRaii &rhs) NOEXCEPT
 		: m_fd(-1)
 	{
 		assert(rhs.m_fd == -1);
 	}
-#endif
+	~EpollRaii() NOEXCEPT {
+		reset();
+	}
 
 public:
 	void reset(int fd, void *ctx){
