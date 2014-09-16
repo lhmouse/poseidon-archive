@@ -23,56 +23,11 @@ volatile bool g_daemonRunning = false;
 ScopedFile g_epoll;
 boost::thread g_daemonThread;
 
-class EpollRaii {
-private:
-	int m_fd;
-
-public:
-	CONSTEXPR EpollRaii() NOEXCEPT
-		: m_fd(-1)
-	{
-	}
-	EpollRaii(const EpollRaii &rhs) NOEXCEPT
-		: m_fd(-1)
-	{
-		assert(rhs.m_fd == -1);
-	}
-	~EpollRaii() NOEXCEPT {
-		reset();
-	}
-
-public:
-	void reset(int fd, void *ctx){
-		if(m_fd != -1){
-			reset();
-		}
-		if(fd != -1){
-			::epoll_event event;
-			event.events = EPOLLHUP | EPOLLERR | EPOLLRDHUP | EPOLLIN | EPOLLOUT | EPOLLET;
-			event.data.ptr = ctx;
-			if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, fd, &event) != 0){
-				DEBUG_THROW(SystemError, errno);
-			}
-			m_fd = fd;
-		}
-	}
-	void reset() NOEXCEPT {
-		if(m_fd != -1){
-			if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, m_fd, NULLPTR) != 0){
-				LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
-			}
-			m_fd = -1;
-		}
-	}
-};
-
 struct SessionMapElement {
 	const boost::shared_ptr<TcpSessionBase> m_session;
 	// 时间戳，零表示无数据可读/写。
 	unsigned long long m_lastRead;
 	unsigned long long m_lastWritten;
-
-	EpollRaii m_epollRaii;
 
 	SessionMapElement(boost::shared_ptr<TcpSessionBase> session,
 		unsigned long long lastRead, unsigned long long lastWritten)
@@ -101,21 +56,30 @@ std::set<boost::shared_ptr<const SocketServerBase> > g_servers;
 
 void addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const unsigned long long now = getMonoClock();
-	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(result, g_sessions.insert(SessionMapElement(session, now, now)));
-	if(!result.second){
-		LOG_WARNING("Socket already in epoll?");
-		return;
+	std::pair<SessionMap::iterator, bool> result;
+	{
+		const boost::mutex::scoped_lock lock(g_sessionMutex);
+		result = g_sessions.insert(SessionMapElement(session, now, now));
+		if(!result.second){
+			LOG_WARNING("Socket already in epoll?");
+			return;
+		}
 	}
-	const_cast<EpollRaii &>(result.first->m_epollRaii).reset(
-		session->getFd(), session.get());
+	::epoll_event event;
+	event.events = EPOLLHUP | EPOLLERR | EPOLLRDHUP | EPOLLIN | EPOLLOUT | EPOLLET;
+	event.data.ptr = session.get();
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
+		const boost::mutex::scoped_lock lock(g_sessionMutex);
+		g_sessions.erase(result.first);
+		DEBUG_THROW(SystemError, errno);
+	}
 }
 void touchSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const unsigned long long now = getMonoClock();
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	const AUTO(it, g_sessions.find<0>(session));
 	if(it == g_sessions.end<0>()){
-		LOG_WARNING("Socket already in epoll?");
+		LOG_WARNING("Socket not in epoll?");
 		return;
 	}
 	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
@@ -127,6 +91,9 @@ void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 	if(it == g_sessions.end<IDX_SESSION>()){
 		LOG_WARNING("Socket not in epoll?");
 		return;
+	}
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+		LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
 	}
 	g_sessions.erase<IDX_SESSION>(it);
 }
