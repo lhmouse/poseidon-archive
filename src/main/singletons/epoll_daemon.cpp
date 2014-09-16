@@ -86,14 +86,14 @@ void touchSession(const boost::shared_ptr<TcpSessionBase> &session){
 	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
 void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+		LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
+	}
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
 	if(it == g_sessions.end<IDX_SESSION>()){
 		LOG_WARNING("Socket not in epoll?");
 		return;
-	}
-	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
-		LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
 	}
 	g_sessions.erase<IDX_SESSION>(it);
 }
