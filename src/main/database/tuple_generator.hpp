@@ -15,8 +15,7 @@
 #include <vector>
 #include <cstddef>
 #include <boost/cstdint.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
 #include "../stream_buffer.hpp"
@@ -60,7 +59,9 @@ struct DATABASE_TUPLE_NAME
 #define FIELD_BIGINT(name_)					long long name_;
 #define FIELD_BIGINT_UNSIGNED(name_)		unsigned long long name_;
 #define FIELD_VARCHAR(name_)				::std::string name_;
-#define FIELD_BLOB(name_)					::Poseidon::StreamBuffer name_;
+#define FIELD_BLOB(name_)	\
+	StreamBuffer name_;	\
+	boost::scoped_ptr< ::std::stringstream> streamOf_ ## name_ ## _;
 
 	DATABASE_TUPLE_FIELDS
 
@@ -164,14 +165,12 @@ struct DATABASE_TUPLE_NAME
 		;
 	}
 
-	void serialize(::sql::PreparedStatement &ps_,
-		std::vector<boost::shared_ptr<void> > &context) const
-	{
+	void serialize(::sql::PreparedStatement &ps_){
 		(void)ps_;
 		unsigned index_ = 0;
 		(void)index_;
 
-		boost::shared_ptr<std::stringstream> ss_;
+		std::stringstream *ss_;
 		char buf_[1024];
 		std::size_t count_;
 		(void)ss_;
@@ -201,15 +200,15 @@ struct DATABASE_TUPLE_NAME
 #define FIELD_BIGINT_UNSIGNED(name_)		ps_.setUInt64(++index_, name_);
 #define FIELD_VARCHAR(name_)				ps_.setString(++index_, name_);
 #define FIELD_BLOB(name_)	\
-		ss_ = ::boost::make_shared<::std::stringstream>();	\
+		ss_ = new ::std::stringstream;	\
+		(streamOf_ ## name_ ## _).reset(ss_);	\
 		for(;;){	\
 			count_ = name_.get(buf_, sizeof(buf_));	\
 			if(count_ == 0){	\
 				break;	\
 			}	\
 			ss_->write(buf_, count_);	\
-		}	\
-		context.push_back(ss_);
+		}
 
 		DATABASE_TUPLE_FIELDS
 	}
