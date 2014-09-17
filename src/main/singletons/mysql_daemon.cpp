@@ -1,6 +1,6 @@
 #include "../../precompiled.hpp"
-#include "database_daemon.hpp"
-#include "../database/object.hpp"
+#include "mysql_daemon.hpp"
+#include "../mysql/object.hpp"
 #include <queue>
 #include <boost/thread.hpp>
 #include <boost/make_shared.hpp>
@@ -14,15 +14,15 @@ namespace {
 volatile bool g_daemonRunning = false;
 boost::thread g_daemonThread;
 boost::mutex g_queueMutex;
-std::queue<boost::shared_ptr<const DatabaseObject> > g_dirtyQueue;
+std::queue<boost::shared_ptr<const MySqlObject> > g_dirtyQueue;
 boost::condition_variable g_dirtyAvail;
 
 void threadProc(){
-	LOG_INFO("Database daemon started.");
+	LOG_INFO("MySql daemon started.");
 
 	for(;;){
 		try {
-			boost::shared_ptr<const DatabaseObject> dbObj;
+			boost::shared_ptr<const MySqlObject> dbObj;
 			{
 				boost::mutex::scoped_lock lock(g_queueMutex);
 				for(;;){
@@ -42,31 +42,31 @@ void threadProc(){
 			}
 			//job->perform();
 		} catch(Exception &e){
-			LOG_ERROR("Exception thrown in database daemon: file = ", e.file(),
+			LOG_ERROR("Exception thrown in mysql daemon: file = ", e.file(),
 				", line = ", e.line(), ": what = ", e.what());
 		} catch(std::exception &e){
-			LOG_ERROR("std::exception thrown in database daemon: what = ", e.what());
+			LOG_ERROR("std::exception thrown in mysql daemon: what = ", e.what());
 		} catch(...){
-			LOG_ERROR("Unknown exception thrown in database daemon.");
+			LOG_ERROR("Unknown exception thrown in mysql daemon.");
 		}
 	}
 
-	LOG_INFO("Database daemon stopped.");
+	LOG_INFO("MySql daemon stopped.");
 }
 
 }
 
-void DatabaseDaemon::start(){
+void MySqlDaemon::start(){
 	if(atomicExchange(g_daemonRunning, true) != false){
 		LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_INFO("Starting database daemon...");
+	LOG_INFO("Starting mysql daemon...");
 
 	boost::thread(threadProc).swap(g_daemonThread);
 }
-void DatabaseDaemon::stop(){
-	LOG_INFO("Stopping database daemon...");
+void MySqlDaemon::stop(){
+	LOG_INFO("Stopping mysql daemon...");
 
 	atomicStore(g_daemonRunning, false);
 	g_dirtyAvail.notify_one();

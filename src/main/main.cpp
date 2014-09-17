@@ -5,7 +5,7 @@
 #include "exception.hpp"
 #include "singletons/config_file.hpp"
 #include "singletons/timer_daemon.hpp"
-#include "singletons/database_daemon.hpp"
+#include "singletons/mysql_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/job_dispatcher.hpp"
 #include "socket_server.hpp"
@@ -59,7 +59,7 @@ void run(){
 	Log::setLevel(logLevel);
 
 	RUN_SINGLETON(TimerDaemon);
-	RUN_SINGLETON(DatabaseDaemon);
+	RUN_SINGLETON(MySqlDaemon);
 	RUN_SINGLETON(EpollDaemon);
 
 	LOG_INFO("Creating player session server...");

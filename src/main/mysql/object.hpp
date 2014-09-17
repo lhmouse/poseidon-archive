@@ -1,5 +1,5 @@
-#ifndef POSEIDON_DATABASE_OBJECT_HPP_
-#define POSEIDON_DATABASE_OBJECT_HPP_
+#ifndef POSEIDON_MYSQL_OBJECT_HPP_
+#define POSEIDON_MYSQL_OBJECT_HPP_
 
 #include "../../cxx_ver.hpp"
 #include "../virtual_shared_from_this.hpp"
@@ -8,15 +8,15 @@
 
 namespace Poseidon {
 
-class DatabaseObject;
+class MySqlObject;
 
 template<typename ValueT>
-class DatabaseField : public virtual VirtualSharedFromThis {
+class MySqlField : public virtual VirtualSharedFromThis {
 private:
 	ValueT m_val;
 
 public:
-	explicit DatabaseField(DatabaseObject *owner, ValueT val = ValueT())
+	explicit MySqlField(MySqlObject *owner, ValueT val = ValueT())
 		: m_val(STD_MOVE(val))
 	{
 	}
@@ -31,7 +31,7 @@ public:
 	}
 };
 
-class DatabaseObject : public virtual VirtualSharedFromThis {
+class MySqlObject : public virtual VirtualSharedFromThis {
 private:
 	
 };
