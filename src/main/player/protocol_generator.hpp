@@ -30,22 +30,18 @@ struct ProtocolBase {
 namespace PROTOCOL_NAMESPACE {
 #endif
 
-struct PROTOCOL_NAME : public ProtocolBase {
+struct PROTOCOL_NAME
+	: public ::Poseidon::ProtocolBase
+{
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT50(name_)	\
-	long long name_;
-
-#define FIELD_VUINT50(name_)	\
-	unsigned long long name_;
-
-#define FIELD_STRING(name_)	\
-	::std::string name_;
-
+#define FIELD_VINT50(name_)		long long name_;
+#define FIELD_VUINT50(name_)	unsigned long long name_;
+#define FIELD_STRING(name_)		::std::string name_;
 #define FIELD_ARRAY(name_, fields_)	\
 	struct ElementOf ## name_ ## _ {	\
 		fields_	\
@@ -54,26 +50,20 @@ struct PROTOCOL_NAME : public ProtocolBase {
 
 	PROTOCOL_FIELDS
 
-	PROTOCOL_NAME() throw()
-		: ProtocolBase()
+	PROTOCOL_NAME()
+		: ::Poseidon::ProtocolBase()
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT50(name_)	\
-	, name_()
+#define FIELD_VINT50(name_)				, name_()
+#define FIELD_VUINT50(name_)			, name_()
+#define FIELD_STRING(name_)				, name_()
+#define FIELD_ARRAY(name_, fields_)		, name_()
 
-#define FIELD_VUINT50(name_)	\
-	, name_()
-
-#define FIELD_STRING(name_)	\
-	, name_()
-
-#define FIELD_ARRAY(name_, fields_)	\
-	, name_()
-
+		PROTOCOL_FIELDS
 	{
 	}
 
@@ -81,9 +71,11 @@ struct PROTOCOL_NAME : public ProtocolBase {
 		typedef PROTOCOL_NAME Cur_;
 		const Cur_ &cur_ = *this;
 		::Poseidon::StreamBufferWriteIterator write_(buffer_);
-
 		(void)cur_;
 		(void)write_;
+
+		unsigned long long count_;
+		(void)count_;
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
@@ -101,9 +93,9 @@ struct PROTOCOL_NAME : public ProtocolBase {
 		write_ = ::std::copy(cur_.name_.begin(), cur_.name_.end(), write_);
 
 #define FIELD_ARRAY(name_, fields_)	\
-		const unsigned long long countOf ## name_ ## _ = cur_.name_.size();	\
-		::Poseidon::vuint50ToBinary(countOf ## name_ ## _, write_);	\
-		for(unsigned long long i = 0; i < countOf ## name_ ## _; ++i){	\
+		count_ = cur_.name_.size();	\
+		::Poseidon::vuint50ToBinary(count_, write_);	\
+		for(unsigned long long i = 0; i < count_; ++i){	\
 			typedef Cur_::ElementOf ## name_ ## _ Element_;	\
 			const Element_ &element_ = cur_.name_[i];	\
 			typedef Element_ Cur_;	\
@@ -119,9 +111,11 @@ struct PROTOCOL_NAME : public ProtocolBase {
 		typedef PROTOCOL_NAME Cur_;
 		Cur_ &cur_ = *this;
 		::Poseidon::StreamBufferReadIterator read_(buffer_);
-
 		(void)cur_;
 		(void)read_;
+
+		unsigned long long count_;
+		(void)count_;
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
@@ -139,25 +133,23 @@ struct PROTOCOL_NAME : public ProtocolBase {
 		}
 
 #define FIELD_STRING(name_)	\
-		unsigned long long countOf ## name_ ## _;	\
-		if(!::Poseidon::vuint50FromBinary(countOf ## name_ ## _, read_, buffer_.size())){	\
+		if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
 			THROW_EOS_;	\
 		}	\
-		if(buffer_.size() < countOf ## name_ ## _){	\
+		if(buffer_.size() < count_){	\
 			THROW_EOS_;	\
 		}	\
-		cur_.name_.resize(countOf ## name_ ## _);	\
-		for(unsigned long long i = 0; i < countOf ## name_ ## _; ++i){	\
+		cur_.name_.resize(count_);	\
+		for(unsigned long long i = 0; i < count_; ++i){	\
 			cur_.name_[i] = buffer_.get();	\
 		}
 
 #define FIELD_ARRAY(name_, fields_)	\
-		unsigned long long countOf ## name_ ## _;	\
-		if(!::Poseidon::vuint50FromBinary(countOf ## name_ ## _, read_, buffer_.size())){	\
+		if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
 			THROW_EOS_;  \
 		}	\
 		cur_.name_.clear();	\
-		for(unsigned long long i = 0; i < countOf ## name_ ## _; ++i){	\
+		for(unsigned long long i = 0; i < count_; ++i){	\
 			typedef Cur_::ElementOf ## name_ ## _ Element_;	\
 			cur_.name_.push_back(Element_());	\
 			Element_ &element_ = cur_.name_.back();	\
