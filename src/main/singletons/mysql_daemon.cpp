@@ -42,12 +42,12 @@ void threadProc(){
 			}
 			//job->perform();
 		} catch(Exception &e){
-			LOG_ERROR("Exception thrown in mysql daemon: file = ", e.file(),
+			LOG_ERROR("Exception thrown in MySql daemon: file = ", e.file(),
 				", line = ", e.line(), ": what = ", e.what());
 		} catch(std::exception &e){
-			LOG_ERROR("std::exception thrown in mysql daemon: what = ", e.what());
+			LOG_ERROR("std::exception thrown in MySql daemon: what = ", e.what());
 		} catch(...){
-			LOG_ERROR("Unknown exception thrown in mysql daemon.");
+			LOG_ERROR("Unknown exception thrown in MySql daemon.");
 		}
 	}
 
@@ -61,12 +61,12 @@ void MySqlDaemon::start(){
 		LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_INFO("Starting mysql daemon...");
+	LOG_INFO("Starting MySql daemon...");
 
 	boost::thread(threadProc).swap(g_daemonThread);
 }
 void MySqlDaemon::stop(){
-	LOG_INFO("Stopping mysql daemon...");
+	LOG_INFO("Stopping MySql daemon...");
 
 	atomicStore(g_daemonRunning, false);
 	g_dirtyAvail.notify_one();
