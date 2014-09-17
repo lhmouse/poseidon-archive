@@ -51,18 +51,18 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 	headers->set("Content-Length", boost::lexical_cast<std::string>(contents->size()));
 
 	StreamBuffer buffer;
-	buffer.put("HTTP/1.1 ", 9);
+	buffer.put("HTTP/1.1 ");
 	buffer.put(codeStatus.data(), codeStatus.size());
-	buffer.put("\r\n", 2);
+	buffer.put("\r\n");
 	for(AUTO(it, headers->begin()); it != headers->end(); ++it){
 		if(!it->second.empty()){
 			buffer.put(it->first.get(), std::strlen(it->first.get()));
-			buffer.put(": ", 2);
+			buffer.put(": ");
 			buffer.put(it->second.data(), it->second.size());
-			buffer.put("\r\n", 2);
+			buffer.put("\r\n");
 		}
 	}
-	buffer.put("\r\n", 2);
+	buffer.put("\r\n");
 	buffer.splice(*contents);
 
 	session->sendUsingMove(buffer);
