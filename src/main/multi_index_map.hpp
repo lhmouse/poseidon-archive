@@ -113,15 +113,26 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		){	\
 			return getIndex<IndexIdT>().replace(pos, val);	\
 		}	\
-		template<unsigned IndexIdT, unsigned IndexIdoSetT> \
+		template<unsigned IndexIdToSetT> \
+		bool setKey(	\
+			typename delegate_container::iterator pos,   \
+			typename delegate_container::nth_index<IndexIdToSetT>::type::key_type key	\
+		){	\
+			typename delegate_container::nth_index<IndexIdToSetT>::type::key_type old =	\
+				typename delegate_container::nth_index<IndexIdToSetT>::type::key_from_value()(*pos);	\
+			return getIndex<IndexIdToSetT>().modify_key(m_delegate.project<IndexIdToSetT>(pos),	\
+				KeyModifier<IndexIdToSetT>(key), KeyModifier<IndexIdToSetT>(old)	\
+			);	\
+		}	\
+		template<unsigned IndexIdT, unsigned IndexIdToSetT> \
 		bool setKey(	\
 			typename delegate_container::nth_index<IndexIdT>::type::iterator pos,   \
-			typename delegate_container::nth_index<IndexIdoSetT>::type::key_type key	\
+			typename delegate_container::nth_index<IndexIdToSetT>::type::key_type key	\
 		){	\
-			typename delegate_container::nth_index<IndexIdoSetT>::type::key_type old =	\
-				typename delegate_container::nth_index<IndexIdoSetT>::type::key_from_value()(*pos);	\
-			return getIndex<IndexIdoSetT>().modify_key(m_delegate.project<IndexIdoSetT>(pos),	\
-				KeyModifier<IndexIdoSetT>(key), KeyModifier<IndexIdoSetT>(old)	\
+			typename delegate_container::nth_index<IndexIdToSetT>::type::key_type old =	\
+				typename delegate_container::nth_index<IndexIdToSetT>::type::key_from_value()(*pos);	\
+			return getIndex<IndexIdToSetT>().modify_key(m_delegate.project<IndexIdToSetT>(pos),	\
+				KeyModifier<IndexIdToSetT>(key), KeyModifier<IndexIdToSetT>(old)	\
 			);	\
 		}	\
 		\
