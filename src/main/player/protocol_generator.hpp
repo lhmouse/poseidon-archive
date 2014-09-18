@@ -6,25 +6,7 @@
 #	error PROTOCOL_FIELDS is undefined.
 #endif
 
-#ifndef POSEIDON_PLAYER_PROTOCOL_GENERATOR_HPP_
-#define POSEIDON_PLAYER_PROTOCOL_GENERATOR_HPP_
-
-#include <algorithm>
 #include "protocol_base.hpp"
-#include "../exception.hpp"
-
-#define THROW_EOS_	\
-	DEBUG_THROW(::Poseidon::ProtocolException,	\
-		"End of stream encountered.", ::Poseidon::ProtocolException::ERR_END_OF_STREAM)
-
-namespace Poseidon {
-
-struct ProtocolBase {
-};
-
-}
-
-#endif // POSEIDON_PROTOCOL_GENERATOR_HPP_
 
 #ifdef PROTOCOL_NAMESPACE
 namespace PROTOCOL_NAMESPACE {
