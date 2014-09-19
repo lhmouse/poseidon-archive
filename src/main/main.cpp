@@ -91,9 +91,9 @@ struct test_mysql : public MySqlObjectBase {
 
 	test_mysql()
 		: MySqlObjectBase("test")
-		, id(this, "id")
-		, name(this, "name")
-		, time(this, "time")
+		, id(*this, "id")
+		, name(*this, "name", "meow")
+		, time(*this, "time")
 	{
 	}
 };
@@ -105,15 +105,15 @@ int main(int argc, char **argv){
 	con = driver->connect("tcp://127.0.0.1:3306", "root", "root");
 	con->setSchema("test");
 	test_mysql t;
-/*
+
 	t.id.set(123);
-	t.name.set("meow");
+//	t.name.set("meow");
 	t.time.set(456.789);
 	t.syncSave(con, false);
-*/
+/*
 	t.syncLoad(con, "");
 	LOG_FATAL("id = ", t.id.get(), ", name = ", t.name.get(), ", time = ", t.time.get());
-
+*/
 	delete con;
 
 

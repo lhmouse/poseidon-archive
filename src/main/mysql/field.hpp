@@ -94,7 +94,7 @@ private:
 	volatile unsigned long long m_timeStamp;
 
 public:
-	MySqlFieldBase(class MySqlObjectBase *owner, const char *name);
+	MySqlFieldBase(class MySqlObjectBase &owner, const char *name);
 	virtual ~MySqlFieldBase(); // 定义在别处，否则 RTTI 会有问题。
 
 public:
@@ -115,7 +115,7 @@ private:
 	T m_val;
 
 public:
-	MySqlField(MySqlObjectBase *owner, const char *name, T val = T())
+	MySqlField(MySqlObjectBase &owner, const char *name, T val = T())
 		: MySqlFieldBase(owner, name), m_val(STD_MOVE(val))
 	{
 	}

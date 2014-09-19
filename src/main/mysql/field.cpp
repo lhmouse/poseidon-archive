@@ -8,10 +8,10 @@ using namespace Poseidon;
 MySqlFieldSnapshotBase::~MySqlFieldSnapshotBase(){
 }
 
-MySqlFieldBase::MySqlFieldBase(MySqlObjectBase *owner, const char *name)
+MySqlFieldBase::MySqlFieldBase(MySqlObjectBase &owner, const char *name)
 	: m_name(name)
 {
-	owner->m_fields.push_back(boost::ref(*this));
+	owner.m_fields.push_back(boost::ref(*this));
 }
 MySqlFieldBase::~MySqlFieldBase(){
 }
