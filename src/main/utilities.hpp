@@ -65,7 +65,10 @@ template<typename T>
 inline std::string inplode(char separator, const std::vector<T> &vec){
 	std::ostringstream oss;
 	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
-		oss <<*it <<separator;
+		oss <<*it;
+		if(separator != 0){
+			oss.put(separator);
+		}
 	}
 	std::string ret = oss.str();
 	if(!ret.empty()){
@@ -82,7 +85,9 @@ inline std::string inplode(char separator, const std::vector<std::string> &vec){
 	std::string ret;
 	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
 		ret.append(*it);
-		ret.push_back(separator);
+		if(separator != 0){
+			ret.push_back(separator);
+		}
 	}
 	return ret;
 }
