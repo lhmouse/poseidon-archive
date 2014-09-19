@@ -143,14 +143,7 @@ void MySqlField<long double>::fetch(unsigned int index, sql::ResultSet *rs){
 }
 template<>
 void MySqlField<std::string>::fetch(unsigned int index, sql::ResultSet *rs){
-	m_val.clear();
-
-	std::istream *const is = rs->getBlob(index + 1);
-	char temp[256];
-	std::size_t count;
-	while((count = is->readsome(temp, sizeof(temp))) != 0){
-		m_val.append(temp, count);
-	}
+	rs->getString(index + 1)->swap(m_val); // 我能说脏话么？
 }
 
 }

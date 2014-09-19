@@ -104,16 +104,16 @@ int main(int argc, char **argv){
 	driver = get_driver_instance();
 	con = driver->connect("tcp://127.0.0.1:3306", "root", "root");
 	con->setSchema("test");
-	test_mysql t;
+	test_mysql t, t2;
 
 	t.id.set(123);
 //	t.name.set("meow");
 	t.time.set(456.789);
 	t.syncSave(con, false);
-/*
-	t.syncLoad(con, "");
-	LOG_FATAL("id = ", t.id.get(), ", name = ", t.name.get(), ", time = ", t.time.get());
-*/
+
+	t2.syncLoad(con, "");
+	LOG_FATAL("id = ", t2.id.get(), ", name = ", t2.name.get(), ", time = ", t2.time.get());
+
 	delete con;
 
 

@@ -15,7 +15,7 @@ MySqlObjectBase::MySqlObjectBase(const char *table)
 {
 }
 
-void MySqlObjectBase::syncLoad(sql::Connection *conn, const std::string &where){
+void MySqlObjectBase::syncLoad(sql::Connection *conn, const std::string &filter){
 	if(m_fields.empty()){
 		return;
 	}
@@ -30,11 +30,8 @@ void MySqlObjectBase::syncLoad(sql::Connection *conn, const std::string &where){
 	sql.erase(sql.end() - 2, sql.end());
 	sql += " FROM `";
 	sql += m_table;
-	sql += '`';
-	if(!where.empty()){
-		sql += " WHERE ";
-		sql += where;
-	}
+	sql += "` ";
+	sql += filter;
 	sql += " LIMIT 1";
 
 	LOG_DEBUG("Sync load: SQL = ", sql);

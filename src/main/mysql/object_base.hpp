@@ -38,11 +38,10 @@ public:
 	explicit MySqlObjectBase(const char *table);
 
 public:
-	// 参数是 SQL 里面的 where 子句。
-	void syncLoad(sql::Connection *conn, const std::string &where);
+	void syncLoad(sql::Connection *conn, const std::string &filter);
 	void syncSave(sql::Connection *conn, bool invalidatedOnly = true);
 
-	void asyncLoad(std::string where,
+	void asyncLoad(std::string filter,
 		boost::function<void (const boost::shared_ptr<MySqlObjectBase> &)> callback);
 	void asyncSave();
 };
