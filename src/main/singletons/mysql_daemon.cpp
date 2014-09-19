@@ -1,12 +1,12 @@
 #include "../../precompiled.hpp"
 #include "mysql_daemon.hpp"
-#include "../mysql/object.hpp"
 #include <queue>
 #include <boost/thread.hpp>
 #include <boost/make_shared.hpp>
 #include "../exception.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
+#include "../mysql/object_base.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -14,7 +14,7 @@ namespace {
 volatile bool g_daemonRunning = false;
 boost::thread g_daemonThread;
 boost::mutex g_queueMutex;
-std::queue<boost::shared_ptr<const MySqlObject> > g_dirtyQueue;
+std::queue<boost::shared_ptr<const MySqlObjectBase> > g_dirtyQueue;
 boost::condition_variable g_dirtyAvail;
 
 void threadProc(){
@@ -22,7 +22,7 @@ void threadProc(){
 
 	for(;;){
 		try {
-			boost::shared_ptr<const MySqlObject> dbObj;
+			boost::shared_ptr<const MySqlObjectBase> dbObj;
 			{
 				boost::mutex::scoped_lock lock(g_queueMutex);
 				for(;;){
