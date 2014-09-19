@@ -15,12 +15,22 @@
 namespace Poseidon {
 
 class MySqlFieldSnapshotBase : boost::noncopyable {
+private:
+	const char *const m_name;
+
 protected:
+	explicit MySqlFieldSnapshotBase(const char *name)
+		: m_name(name)
+	{
+	}
 	virtual ~MySqlFieldSnapshotBase(); // 定义在别处，否则 RTTI 会有问题。
 
 public:
-	virtual void serialize(unsigned int index, sql::PreparedStatement *ps) = 0;
-	virtual void deserialize(unsigned int index, sql::ResultSet *rs) = 0;
+	const char *name() const {
+		return m_name;
+	}
+
+	virtual void pack(unsigned int index, sql::PreparedStatement *ps) = 0;
 };
 
 template<typename T>
@@ -29,8 +39,8 @@ private:
 	T m_val;
 
 public:
-	explicit MySqlFieldSnapshot(T val)
-		: m_val(val)
+	MySqlFieldSnapshot(const char *name, T val)
+		: MySqlFieldSnapshotBase(name), m_val(val)
 	{
 	}
 
@@ -39,8 +49,7 @@ public:
 		return m_val;
 	}
 
-	void serialize(unsigned int index, sql::PreparedStatement *ps);
-	void deserialize(unsigned int index, sql::ResultSet *rs);
+	void pack(unsigned int index, sql::PreparedStatement *ps);
 };
 
 template<>
@@ -49,8 +58,8 @@ private:
 	std::stringstream m_val;
 
 public:
-	explicit MySqlFieldSnapshot(const std::string &val)
-		: m_val(val)
+	MySqlFieldSnapshot(const char *name, const std::string &val)
+		: MySqlFieldSnapshotBase(name), m_val(val)
 	{
 	}
 
@@ -59,8 +68,7 @@ public:
 		return m_val.str();
 	}
 
-	void serialize(unsigned int index, sql::PreparedStatement *ps);
-	void deserialize(unsigned int index, sql::ResultSet *rs);
+	void pack(unsigned int index, sql::PreparedStatement *ps);
 };
 
 template class MySqlFieldSnapshot<bool>;
@@ -86,14 +94,8 @@ private:
 	volatile unsigned long long m_timeStamp;
 
 public:
-	explicit MySqlFieldBase(const char *name)
-		: m_name(name), m_timeStamp(0)
-	{
-	}
+	MySqlFieldBase(class MySqlObjectBase *owner, const char *name);
 	virtual ~MySqlFieldBase(); // 定义在别处，否则 RTTI 会有问题。
-
-protected:
-	void invalidate();
 
 public:
 	const char *name() const {
@@ -101,9 +103,10 @@ public:
 	}
 
 	bool isInvalidated(unsigned long long time) const;
+	void invalidate();
 
 	virtual boost::shared_ptr<MySqlFieldSnapshotBase> snapshot() const = 0;
-	virtual void fetch(const boost::shared_ptr<MySqlFieldSnapshotBase> &snapshot) = 0;
+	virtual void fetch(unsigned int index, sql::ResultSet *rs) = 0;
 };
 
 template<typename T>
@@ -112,8 +115,8 @@ private:
 	T m_val;
 
 public:
-	explicit MySqlField(const char *name, T val = T())
-		: MySqlFieldBase(name), m_val(STD_MOVE(val))
+	MySqlField(MySqlObjectBase *owner, const char *name, T val = T())
+		: MySqlFieldBase(owner, name), m_val(STD_MOVE(val))
 	{
 	}
 
@@ -127,11 +130,9 @@ public:
 	}
 
 	boost::shared_ptr<MySqlFieldSnapshotBase> snapshot() const {
-		return boost::make_shared<MySqlFieldSnapshot<T> >(m_val);
+		return boost::make_shared<MySqlFieldSnapshot<T> >(name(), get());
 	}
-	void fetch(const boost::shared_ptr<MySqlFieldSnapshotBase> &snapshot){
-		m_val = static_cast<const MySqlFieldSnapshot<T> *>(snapshot.get())->get();
-	}
+	void fetch(unsigned int index, sql::ResultSet *rs);
 };
 
 template class MySqlField<bool>;

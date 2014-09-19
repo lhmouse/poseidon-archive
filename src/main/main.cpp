@@ -80,7 +80,44 @@ void run(){
 
 }
 
+#include <cppconn/driver.h>
+#include "mysql/object_base.hpp"
+#include "mysql/field.hpp"
+
+struct test_mysql : public MySqlObjectBase {
+	MySqlField<unsigned long long> id;
+	MySqlField<std::string> name;
+	MySqlField<double> time;
+
+	test_mysql()
+		: MySqlObjectBase("test")
+		, id(this, "id")
+		, name(this, "name")
+		, time(this, "time")
+	{
+	}
+};
+
 int main(int argc, char **argv){
+	sql::Driver *driver;
+	sql::Connection *con;
+	driver = get_driver_instance();
+	con = driver->connect("tcp://127.0.0.1:3306", "root", "root");
+	con->setSchema("test");
+	test_mysql t;
+/*
+	t.id.set(123);
+	t.name.set("meow");
+	t.time.set(456.789);
+	t.syncSave(con, false);
+*/
+	t.syncLoad(con, "");
+	LOG_FATAL("id = ", t.id.get(), ", name = ", t.name.get(), ", time = ", t.time.get());
+
+	delete con;
+
+
+
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
 	try {

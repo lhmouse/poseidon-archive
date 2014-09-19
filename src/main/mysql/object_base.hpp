@@ -10,29 +10,41 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 
+namespace sql {
+
+class Connection;
+class PreparedStatement;
+class ResultSet;
+
+}
+
 namespace Poseidon {
+
+class MySqlFieldBase;
 
 class MySqlObjectBase
 	: public virtual VirtualSharedFromThis
 {
+	friend class MySqlFieldBase;
+
 private:
 	const char *const m_table;
 
-	unsigned long long m_timeStamp;
+	unsigned long long m_lastWrittenTime;
 	mutable boost::mutex m_fieldMutex;
-	std::vector<boost::reference_wrapper<class MySqlFieldBase> > m_fields;
+	std::vector<boost::reference_wrapper<MySqlFieldBase> > m_fields;
 
 public:
 	explicit MySqlObjectBase(const char *table);
 
 public:
 	// 参数是 SQL 里面的 where 子句。
-	void asyncLoad(const std::string &where,
-		boost::function<void (const boost::shared_ptr<MySqlObjectBase> &)> callback);
+	void syncLoad(sql::Connection *conn, const std::string &where);
+	void syncSave(sql::Connection *conn, bool invalidatedOnly = true);
 
-	// 可能返回空字符串。
-	std::string dumpSql(bool invalidatedOnly = true);
-	void notifyStored(unsigned long long time);
+	void asyncLoad(std::string where,
+		boost::function<void (const boost::shared_ptr<MySqlObjectBase> &)> callback);
+	void asyncSave();
 };
 
 }
