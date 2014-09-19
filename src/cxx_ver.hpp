@@ -129,7 +129,8 @@ public:
 public:
 	operator T() const {
 		T ret;
-		ret.swap(m_holds);
+		using std::swap;
+		swap(ret, m_holds);
 		return ret;	// RVO
 	}
 };
