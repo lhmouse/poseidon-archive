@@ -274,7 +274,7 @@ private:
 
 public:
 	explicit MySqlFieldBase(const char *name)
-		: m_name(name)
+		: m_name(name), m_invalidated(true)
 	{
 	}
 	virtual ~MySqlFieldBase(); // 定义在别处，否则 RTTI 会有问题。
@@ -282,6 +282,16 @@ public:
 public:
 	const char *name() const {
 		return m_name;
+	}
+
+	bool isInvalidated() const {
+		return m_invalidated;
+	}
+	void validate(){
+		m_invalidated = false;
+	}
+	void invalidate(){
+		m_invalidated = true;
 	}
 
 	virtual boost::shared_ptr<MySqlFieldSnapshotBase> snapshot() const = 0;
