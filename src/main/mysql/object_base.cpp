@@ -8,79 +8,16 @@
 #include "../singletons/mysql_daemon.hpp"
 using namespace Poseidon;
 
-class MySqlObjectBase::AsyncPrepareJob : public JobBase {
+class MySqlObjectBase::AsyncLoadJob : public JobBase {
 };
 
 class MySqlObjectBase::AsyncSaveJob : public JobBase {
 };
 
-class MySqlObjectBase::AsyncLoadJob : public JobBase {
-};
-/*
-void MySqlObjectBase::syncLoad(sql::Connection *conn, const std::string &filter){
-	if(m_fields.empty()){
-		return;
-	}
-
-	std::string sql;
-	sql = "SELECT ";
-	for(AUTO(it, m_fields.begin()); it != m_fields.end(); ++it){
-		sql += '`';
-		sql += it->get().name();
-		sql += "`, ";
-	}
-	sql.erase(sql.end() - 2, sql.end());
-	sql += " FROM `";
-	sql += m_table;
-	sql += "` ";
-	sql += filter;
-	sql += " LIMIT 1";
-
-	LOG_DEBUG("Sync load: SQL = ", sql);
-
-	const boost::scoped_ptr<sql::PreparedStatement> stmt(conn->prepareStatement(sql));
-	const boost::scoped_ptr<sql::ResultSet> rs(stmt->executeQuery());
-	if(rs->first()){
-		for(std::size_t i = 0; i < m_fields.size(); ++i){
-			m_fields[i].get().fetch(i, rs.get());
-		}
-	} else {
-		LOG_DEBUG("Empty set returned.");
-	}
-}
-void MySqlObjectBase::syncSave(sql::Connection *conn){
-	std::string sql;
-	sql = "REPLACE INTO `";
-	sql += m_table;
-	sql += "`(";
-	for(AUTO(it, m_fields.begin()); it != m_fields.end(); ++it){
-		sql += '`';
-		sql += it->get().name();
-		sql += "`, ";
-	}
-	sql.erase(sql.end() - 2, sql.end());
-	sql += ") VALUES(";
-	for(AUTO(it, m_fields.begin()); it != m_fields.end(); ++it){
-		sql += "?, ";
-	}
-	sql.erase(sql.end() - 2, sql.end());
-	sql += ')';
-
-	LOG_DEBUG("Sync save: SQL = ", sql);
-
-	const boost::scoped_ptr<sql::PreparedStatement> ps(conn->prepareStatement(sql));
-	std::vector<boost::any> contexts;
-	for(std::size_t i = 0; i < m_fields.size(); ++i){
-		m_fields[i].get().pack(i, ps.get(), contexts);
-	}
-	ps->executeUpdate();
-}
-*/
-void MySqlObjectBase::asyncLoad(std::string filter,
-	boost::function<void (const boost::shared_ptr<MySqlObjectBase> &)> callback)
-{
+void MySqlObjectBase::asyncLoad(std::string filter, MySqlObjectBase::AsyncCallback callback){
 	(void)filter;
 	(void)callback;
 }
-void MySqlObjectBase::asyncSave(){
+void MySqlObjectBase::asyncSave(AsyncCallback callback){
+	(void)callback;
 }

@@ -23,9 +23,8 @@ class MySqlObjectBase
 	: public virtual VirtualSharedFromThis
 {
 private:
-	class AsyncPrepareJob;
-	class AsyncSaveJob;
 	class AsyncLoadJob;
+	class AsyncSaveJob;
 
 public:
 	typedef boost::function<
@@ -58,8 +57,8 @@ public:
 		return m_table;
 	}
 
-	void asyncLoad(std::string filter, AsyncCallback callback);
-	void asyncSave();
+	void asyncLoad(std::string filter, AsyncCallback callback = AsyncCallback());
+	void asyncSave(AsyncCallback callback = AsyncCallback());
 };
 
 }

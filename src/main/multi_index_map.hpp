@@ -40,8 +40,8 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 			value_type, ::boost::multi_index::indexed_by<__VA_ARGS__>	\
 			> delegate_container;	\
 		\
-		typedef typename delegate_container::const_iterator const_iterator;	\
-		typedef typename delegate_container::iterator iterator;	\
+		typedef delegate_container::const_iterator const_iterator;	\
+		typedef delegate_container::iterator iterator;	\
 	private:	\
 		template<unsigned IndexIdT>	\
 		struct KeyModifier {	\
@@ -104,6 +104,10 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		template<unsigned IndexIdT>  \
 		void erase(typename delegate_container::nth_index<IndexIdT>::type::iterator pos){	\
 			getIndex<IndexIdT>().erase(pos);	\
+		}	\
+		template<unsigned IndexIdT>  \
+		void erase(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key){	\
+			getIndex<IndexIdT>().erase(key);	\
 		}	\
 		\
 		template<unsigned IndexIdT> \

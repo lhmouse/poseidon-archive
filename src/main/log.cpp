@@ -35,9 +35,9 @@ Log::~Log() NOEXCEPT {
 
 		const boost::mutex::scoped_lock lock(g_cerrMutex);
 		std::cerr <<now <<" [" <<std::setw(5) <<::syscall(SYS_gettid) <<"] "
-			<<"\x9B\x33" <<color << 'm'
+			<<"\x1B[3" <<color << 'm'
 			<<m_comment <<' ' <<m_file <<':' <<m_line <<' ' <<str
-			<<"\x9B\x30m" <<std::endl;
+			<<"\x1B[0m" <<std::endl;
 	} catch(...){
 	}
 }
