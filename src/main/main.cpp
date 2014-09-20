@@ -81,22 +81,15 @@ void run(){
 }
 
 #include <cppconn/driver.h>
-#include "mysql/object_base.hpp"
-#include "mysql/field.hpp"
 
-struct test_mysql : public MySqlObjectBase {
-	MySqlField<unsigned long long> id;
-	MySqlField<std::string> name;
-	MySqlField<double> time;
+#define MYSQL_OBJECT_NAMESPACE		Tn
+#define MYSQL_OBJECT_NAME			test
+#define MYSQL_OBJECT_FIELDS	\
+	FIELD_BIGINT_UNSIGNED	(id)	\
+	FIELD_STRING			(name)	\
+	FIELD_INTEGER			(time)
 
-	test_mysql()
-		: MySqlObjectBase("test")
-		, id(*this, "id")
-		, name(*this, "name", "meow")
-		, time(*this, "time")
-	{
-	}
-};
+#include "mysql/object_generator.hpp"
 
 int main(int argc, char **argv){
 	sql::Driver *driver;
@@ -104,15 +97,22 @@ int main(int argc, char **argv){
 	driver = get_driver_instance();
 	con = driver->connect("tcp://127.0.0.1:3306", "root", "root");
 	con->setSchema("test");
-	test_mysql t, t2;
+	Tn::test t, t2;
 
-	t.id.set(123);
-//	t.name.set("meow");
-	t.time.set(456.789);
-	t.syncSave(con);
+	t.set_id(123);
+	t.set_name("meow");
+	t.set_time(456.789);
 
-	t2.syncLoad(con, "");
-	LOG_FATAL("id = ", t2.id.get(), ", name = ", t2.name.get(), ", time = ", t2.time.get());
+	boost::scoped_ptr<sql::PreparedStatement> ps;
+	std::vector<boost::any> ctx;
+	t.prepare(ps, con);
+	t.pack(ps.get(), ctx);
+	ps->executeUpdate();
+
+	boost::scoped_ptr<sql::ResultSet> rs;
+	t2.query(rs, con, "");
+	t2.fetch(rs.get());
+	LOG_FATAL("id = ", t2.get_id(), ", name = ", t2.get_name(), ", time = ", t2.get_time());
 
 	delete con;
 

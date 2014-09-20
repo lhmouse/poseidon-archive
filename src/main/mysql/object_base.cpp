@@ -4,15 +4,19 @@
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
 #include "../log.hpp"
+#include "../job_base.hpp"
 #include "../singletons/mysql_daemon.hpp"
-#include "field.hpp"
 using namespace Poseidon;
 
-MySqlObjectBase::MySqlObjectBase(const char *table)
-	: m_table(table)
-{
-}
+class MySqlObjectBase::AsyncPrepareJob : public JobBase {
+};
 
+class MySqlObjectBase::AsyncSaveJob : public JobBase {
+};
+
+class MySqlObjectBase::AsyncLoadJob : public JobBase {
+};
+/*
 void MySqlObjectBase::syncLoad(sql::Connection *conn, const std::string &filter){
 	if(m_fields.empty()){
 		return;
@@ -70,4 +74,13 @@ void MySqlObjectBase::syncSave(sql::Connection *conn){
 		m_fields[i].get().pack(i, ps.get(), contexts);
 	}
 	ps->executeUpdate();
+}
+*/
+void MySqlObjectBase::asyncLoad(std::string filter,
+	boost::function<void (const boost::shared_ptr<MySqlObjectBase> &)> callback)
+{
+	(void)filter;
+	(void)callback;
+}
+void MySqlObjectBase::asyncSave(){
 }
