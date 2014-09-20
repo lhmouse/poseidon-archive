@@ -30,7 +30,6 @@ class MySqlObjectBase
 private:
 	const char *const m_table;
 
-	unsigned long long m_lastWrittenTime;
 	mutable boost::mutex m_fieldMutex;
 	std::vector<boost::reference_wrapper<MySqlFieldBase> > m_fields;
 
@@ -39,7 +38,7 @@ public:
 
 public:
 	void syncLoad(sql::Connection *conn, const std::string &filter);
-	void syncSave(sql::Connection *conn, bool invalidatedOnly = true);
+	void syncSave(sql::Connection *conn);
 
 	void asyncLoad(std::string filter,
 		boost::function<void (const boost::shared_ptr<MySqlObjectBase> &)> callback);

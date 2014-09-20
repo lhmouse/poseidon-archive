@@ -109,7 +109,7 @@ int main(int argc, char **argv){
 	t.id.set(123);
 //	t.name.set("meow");
 	t.time.set(456.789);
-	t.syncSave(con, false);
+	t.syncSave(con);
 
 	t2.syncLoad(con, "");
 	LOG_FATAL("id = ", t2.id.get(), ", name = ", t2.name.get(), ", time = ", t2.time.get());
