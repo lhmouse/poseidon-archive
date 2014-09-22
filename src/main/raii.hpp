@@ -9,13 +9,6 @@ namespace Poseidon {
 template<typename CloserT>
 class ScopedHandle {
 public:
-#ifdef POSEIDON_CXX11
-	using Move = ScopedHandle &&;
-#else
-	typedef Move_<ScopedHandle<CloserT> > Move;
-#endif
-
-public:
 	typedef DECLTYPE(DECLREF(CloserT)()) Handle;
 
 private:
@@ -31,7 +24,7 @@ public:
 	{
 		reset(handle);
 	}
-	ScopedHandle(Move rhs) NOEXCEPT
+	ScopedHandle(Move<ScopedHandle> rhs) NOEXCEPT
 		: m_handle(CloserT()())
 	{
 		reset(STD_MOVE(rhs));
@@ -40,7 +33,7 @@ public:
 		reset(handle);
 		return *this;
 	}
-	ScopedHandle &operator=(Move rhs) NOEXCEPT {
+	ScopedHandle &operator=(Move<ScopedHandle> rhs) NOEXCEPT {
 		reset(STD_MOVE(rhs));
 		return *this;
 	}
@@ -61,8 +54,8 @@ public:
 		m_handle = CloserT()();
 		return ret;
 	}
-	Move move() NOEXCEPT {
-		return Move(*this);
+	Move<ScopedHandle> move() NOEXCEPT {
+		return Move<ScopedHandle>(*this);
 	}
 	void reset(Handle handle = CloserT()()) NOEXCEPT {
 		const Handle old = m_handle;
@@ -71,7 +64,7 @@ public:
 			CloserT()(old);
 		}
 	}
-	void reset(Move rhs) NOEXCEPT {
+	void reset(Move<ScopedHandle> rhs) NOEXCEPT {
 		rhs.swap(*this);
 	}
 	void swap(ScopedHandle &rhs) NOEXCEPT {

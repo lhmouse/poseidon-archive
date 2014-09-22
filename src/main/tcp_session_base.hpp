@@ -25,7 +25,7 @@ private:
 	StreamBuffer m_sendBuffer;
 
 protected:
-	explicit TcpSessionBase(ScopedFile::Move socket);
+	explicit TcpSessionBase(Move<ScopedFile> socket);
 	virtual ~TcpSessionBase();
 
 public:

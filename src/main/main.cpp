@@ -80,8 +80,6 @@ void run(){
 
 }
 
-#include <cppconn/driver.h>
-
 #define MYSQL_OBJECT_NAMESPACE		Tn
 #define MYSQL_OBJECT_NAME			test
 #define MYSQL_OBJECT_FIELDS	\
@@ -92,29 +90,18 @@ void run(){
 #include "mysql/object_generator.hpp"
 
 int main(int argc, char **argv){
-	sql::Driver *driver;
-	sql::Connection *con;
-	driver = get_driver_instance();
-	con = driver->connect("tcp://127.0.0.1:3306", "root", "root");
-	con->setSchema("test");
-	Tn::test t, t2;
+	AUTO(t, boost::make_shared<Tn::test>()), t2(boost::make_shared<Tn::test>());
+	t->set_id(123);
+	t->set_name("meow");
+	t->set_time(456.789);
+	t->asyncSave();
+	t2->asyncLoad("");
+	LOG_FATAL("id = ", t2->get_id(), ", name = ", t2->get_name(), ", time = ", t2->get_time());
+	::sleep(1);
+	LOG_FATAL("id = ", t2->get_id(), ", name = ", t2->get_name(), ", time = ", t2->get_time());
 
-	t.set_id(123);
-	t.set_name("meow");
-	t.set_time(456.789);
 
-	boost::scoped_ptr<sql::PreparedStatement> ps;
-	std::vector<boost::any> ctx;
-	t.prepare(ps, con);
-	t.pack(ps.get(), ctx);
-	ps->executeUpdate();
 
-	boost::scoped_ptr<sql::ResultSet> rs;
-	t2.query(rs, con, "");
-	t2.fetch(rs.get());
-	LOG_FATAL("id = ", t2.get_id(), ", name = ", t2.get_name(), ", time = ", t2.get_time());
-
-	delete con;
 
 
 
@@ -137,7 +124,7 @@ int main(int argc, char **argv){
 		return EXIT_SUCCESS;
 	} catch(Exception &e){
 		LOG_ERROR("Exception thrown in main(): file = ", e.file(),
-			", line = ", e.line(), ": what = ", e.what());
+			", line = ", e.line(), ", what = ", e.what());
 	} catch(std::exception &e){
 		LOG_ERROR("std::exception thrown in main(): what = ", e.what());
 	} catch(...){

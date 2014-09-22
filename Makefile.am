@@ -41,7 +41,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/job_dispatcher.cpp	\
 	src/main/singletons/mysql_daemon.cpp	\
 	src/main/singletons/epoll_daemon.cpp	\
-	src/main/singletons/timer_manager_daemon.cpp	\
+	src/main/singletons/timer_daemon.cpp	\
 	src/main/singletons/player_servlet_manager.cpp	\
 	src/main/singletons/http_servlet_manager.cpp	\
 	src/main/http/session.cpp	\

@@ -179,7 +179,7 @@ protected:
 
 }
 
-HttpSession::HttpSession(ScopedFile::Move socket)
+HttpSession::HttpSession(Move<ScopedFile> socket)
 	: TcpSessionBase(STD_MOVE(socket))
 	, m_state(ST_FIRST_HEADER), m_totalLength(0), m_contentLength(0), m_line()
 {

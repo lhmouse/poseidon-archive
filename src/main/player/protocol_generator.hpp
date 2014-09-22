@@ -29,7 +29,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 
 	PROTOCOL_FIELDS
 
-	PROTOCOL_NAME() throw()
+	PROTOCOL_NAME()
 		: ProtocolBase()
 
 #undef FIELD_VINT50

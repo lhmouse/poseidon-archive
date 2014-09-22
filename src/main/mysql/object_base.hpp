@@ -1,19 +1,13 @@
 #ifndef POSEIDON_MYSQL_OBJECT_BASE_HPP_
 #define POSEIDON_MYSQL_OBJECT_BASE_HPP_
 
-#include "../../cxx_ver.hpp"
 #include "../virtual_shared_from_this.hpp"
-#include <vector>
 #include <string>
-#include <boost/any.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/function.hpp>
+#include <boost/thread/shared_mutex.hpp>
 
 namespace sql {
 
 class Connection;
-class PreparedStatement;
-class ResultSet;
 
 }
 
@@ -22,43 +16,16 @@ namespace Poseidon {
 class MySqlObjectBase
 	: public virtual VirtualSharedFromThis
 {
-private:
-	class AsyncLoadJob;
-	class AsyncSaveJob;
+protected:
+	mutable boost::shared_mutex m_mutex;
 
 public:
-	typedef boost::function<
-		void (const boost::shared_ptr<MySqlObjectBase> &)
-		> AsyncCallback;
+	bool shouldSyncSaveNow() const;
+	virtual void syncSave(sql::Connection *conn) const = 0;
+	virtual bool syncLoad(sql::Connection *conn, const char *filter) = 0;
 
-private:
-	const char *const m_table;
-
-public:
-	explicit MySqlObjectBase(const char *table)
-		: m_table(table)
-	{
-	}
-
-private:
-	// 数据库线程处理。
-	virtual void prepare(boost::scoped_ptr<sql::PreparedStatement> &ps, sql::Connection *conn) = 0;
-	// 主线程处理。
-	virtual void pack(sql::PreparedStatement *ps, std::vector<boost::any> &contexts) = 0;
-
-	// 数据库线程处理。
-	virtual bool query(boost::scoped_ptr<sql::ResultSet> &rs, sql::Connection *conn,
-		const char *filter) const = 0;
-	// 主线程处理。
-	virtual void fetch(sql::ResultSet *rs) = 0;
-
-public:
-	const char *table() const {
-		return m_table;
-	}
-
-	void asyncLoad(std::string filter, AsyncCallback callback = AsyncCallback());
-	void asyncSave(AsyncCallback callback = AsyncCallback());
+	void asyncSave() const;
+	void asyncLoad(std::string filter);
 };
 
 }

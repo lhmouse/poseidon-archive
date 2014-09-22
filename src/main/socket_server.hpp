@@ -30,7 +30,7 @@ protected:
 	// 工厂函数。
 	// 如果该成员函数返回空指针，连接会被立即挂断。
 	virtual boost::shared_ptr<TcpSessionBase>
-		onClientConnect(ScopedFile::Move client) const = 0;
+		onClientConnect(Move<ScopedFile> client) const = 0;
 
 public:
 	boost::shared_ptr<TcpSessionBase> tryAccept() const;
@@ -51,7 +51,7 @@ public:
 
 protected:
 	virtual boost::shared_ptr<TcpSessionBase>
-		onClientConnect(ScopedFile::Move client) const
+		onClientConnect(Move<ScopedFile> client) const
 	{
 		return boost::make_shared<DerivedTcpSessionBaseT>(STD_MOVE(client));
 	}

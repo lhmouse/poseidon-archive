@@ -10,7 +10,7 @@ using namespace Poseidon;
 
 namespace {
 
-ScopedFile::Move socketConnect(const std::string &ip, unsigned port){
+Move<ScopedFile> socketConnect(const std::string &ip, unsigned port){
 	union {
 		::sockaddr sa;
 		::sockaddr_in sin;

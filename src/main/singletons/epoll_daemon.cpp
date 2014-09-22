@@ -19,6 +19,9 @@ using namespace Poseidon;
 
 namespace {
 
+std::size_t g_tcpBufferSize		= 1024;
+std::size_t g_maxEpollTimeout	= 100;
+
 volatile bool g_daemonRunning = false;
 ScopedFile g_epoll;
 boost::thread g_daemonThread;
@@ -141,12 +144,16 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 void threadProc(){
 	LOG_INFO("Epoll daemon started.");
 
-	const AUTO(tcpBufferSize, ConfigFile::get<std::size_t>("tcp_buffer_size", 1024));
-	const AUTO(maxEpollTimeout, ConfigFile::get<std::size_t>("max_epoll_timeout", 100));
+	g_tcpBufferSize =
+		ConfigFile::get<std::size_t>("tcp_buffer_size", g_tcpBufferSize);
+	LOG_DEBUG("TCP buffer size = ", g_tcpBufferSize);
 
-	LOG_INFO("TCP buffer size = ", tcpBufferSize, ", max epoll timeout = ", maxEpollTimeout);
+	g_maxEpollTimeout =
+		ConfigFile::get<std::size_t>("max_epoll_timeout", g_maxEpollTimeout);
+	LOG_DEBUG("Max epoll timeout = ", g_maxEpollTimeout);
 
-	const boost::scoped_array<unsigned char> data(new unsigned char[tcpBufferSize]);
+	const boost::scoped_array<unsigned char> data(
+		new unsigned char[g_tcpBufferSize]);
 	std::size_t epollTimeout = 0;
 
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
@@ -168,7 +175,7 @@ void threadProc(){
 			const AUTO_REF(session, *it);
 			try {
 				const ::ssize_t bytesRead = ::recv(session->getFd(),
-					data.get(), tcpBufferSize, MSG_NOSIGNAL);
+					data.get(), g_tcpBufferSize, MSG_NOSIGNAL);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -180,6 +187,9 @@ void threadProc(){
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
 					reepollReadable(session);
+					continue;
+				}
+				if(session->hasReadBeenShutdown()){
 					continue;
 				}
 				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
@@ -216,7 +226,7 @@ void threadProc(){
 				{
 					boost::mutex::scoped_lock sessionLock;
 					bytesToWrite = session->peekWriteAvail(sessionLock,
-						data.get(), tcpBufferSize);
+						data.get(), g_tcpBufferSize);
 					readShutdown = session->hasReadBeenShutdown();
 					if(bytesToWrite == 0){
 						if(!readShutdown){
@@ -338,9 +348,13 @@ void threadProc(){
 		}
 
 		// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
-		epollTimeout <<= 1;
-		if(epollTimeout > maxEpollTimeout){
-			epollTimeout = maxEpollTimeout;
+		if(epollTimeout == 0){
+			epollTimeout = 1;
+		} else {
+			epollTimeout <<= 1;
+		}
+		if(epollTimeout > g_maxEpollTimeout){
+			epollTimeout = g_maxEpollTimeout;
 		}
 	}
 

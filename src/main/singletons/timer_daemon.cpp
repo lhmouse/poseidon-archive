@@ -1,5 +1,4 @@
 #include "../../precompiled.hpp"
-#include "timer_manager.hpp"
 #include "timer_daemon.hpp"
 #include <vector>
 #include <algorithm>
@@ -15,8 +14,8 @@
 #include "../job_base.hpp"
 using namespace Poseidon;
 
-class Poseidon::TimerServlet : boost::noncopyable,
-	public boost::enable_shared_from_this<TimerServlet>
+class Poseidon::TimerItem : boost::noncopyable,
+	public boost::enable_shared_from_this<TimerItem>
 {
 private:
 	const unsigned long long m_period;
@@ -24,14 +23,14 @@ private:
 	const TimerCallback m_callback;
 
 public:
-	TimerServlet(unsigned long long period,
+	TimerItem(unsigned long long period,
 		const boost::weak_ptr<void> &dependency, const TimerCallback &callback)
 		: m_period(period), m_dependency(dependency), m_callback(callback)
 	{
-		LOG_INFO("Created timer servlet with period = ", m_period, " microseconds");
+		LOG_INFO("Created timer item with period = ", m_period, " microseconds");
 	}
-	~TimerServlet(){
-		LOG_INFO("Destroyed timer servlet with period = ", m_period, " microseconds");
+	~TimerItem(){
+		LOG_INFO("Destroyed timer item with period = ", m_period, " microseconds");
 	}
 
 public:
@@ -81,11 +80,11 @@ public:
 	}
 };
 
-struct TimerItem {
+struct TimerQueueElement {
 	unsigned long long next;
-	boost::weak_ptr<TimerServlet> servlet;
+	boost::weak_ptr<TimerItem> item;
 
-	bool operator<(const TimerItem &rhs) const {
+	bool operator<(const TimerQueueElement &rhs) const {
 		return next > rhs.next;
 	}
 };
@@ -94,7 +93,7 @@ volatile bool g_daemonRunning = false;
 boost::thread g_daemonThread;
 
 boost::mutex g_mutex;
-std::vector<TimerItem> g_timers;
+std::vector<TimerQueueElement> g_timers;
 
 void threadProc(){
 	LOG_INFO("Timer daemon started.");
@@ -107,12 +106,12 @@ void threadProc(){
 		{
 			const boost::mutex::scoped_lock lock(g_mutex);
 			while(!g_timers.empty() && (now >= g_timers.front().next)){
-				const AUTO(servlet, g_timers.front().servlet.lock());
+				const AUTO(item, g_timers.front().item.lock());
 				std::pop_heap(g_timers.begin(), g_timers.end());
-				if(servlet){
-					callback = servlet->lock(lockedDep);
+				if(item){
+					callback = item->lock(lockedDep);
 					if(callback){
-						period = servlet->getPeriod();
+						period = item->getPeriod();
 						if(period == 0){
 							g_timers.pop_back();
 						} else {
@@ -132,8 +131,8 @@ void threadProc(){
 		try {
 			LOG_INFO("Preparing a timer job for dispatching.");
 
-			boost::make_shared<TimerJob>(STD_MOVE(lockedDep), STD_MOVE(callback),
-				period)->pend();
+			boost::make_shared<TimerJob>(
+				STD_MOVE(lockedDep), STD_MOVE(callback), period)->pend();
 		} catch(std::exception &e){
 			LOG_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
 		} catch(...){
@@ -146,40 +145,40 @@ void threadProc(){
 
 }
 
-boost::shared_ptr<const TimerServlet> TimerManager::registerTimer(
+boost::shared_ptr<const TimerItem> TimerDaemon::registerTimer(
 	unsigned long long first, unsigned long long period,
 	const boost::weak_ptr<void> &dependency, const TimerCallback &callback)
 {
-	AUTO(servlet, boost::make_shared<TimerServlet>(
+	AUTO(item, boost::make_shared<TimerItem>(
 		period * 1000, boost::ref(dependency), boost::ref(callback)));
-	TimerItem ti;
-	ti.next = getMonoClock() + first * 1000;
-	ti.servlet = servlet;
+	TimerQueueElement tqe;
+	tqe.next = getMonoClock() + first * 1000;
+	tqe.item = item;
 	{
 		const boost::mutex::scoped_lock lock(g_mutex);
-		g_timers.push_back(ti);
+		g_timers.push_back(tqe);
 		std::push_heap(g_timers.begin(), g_timers.end());
 	}
-	return servlet;
+	return item;
 }
-boost::shared_ptr<const TimerServlet> registerAbsoluteTimer(
+boost::shared_ptr<const TimerItem> registerAbsoluteTimer(
 	unsigned long long timePoint,
 	const boost::weak_ptr<void> &dependency, const TimerCallback &callback)
 {
-	AUTO(servlet, boost::make_shared<TimerServlet>(
+	AUTO(item, boost::make_shared<TimerItem>(
 		0, boost::ref(dependency), boost::ref(callback)));
-	TimerItem ti;
-	ti.next = timePoint;
-	ti.servlet = servlet;
+	TimerQueueElement tqe;
+	tqe.next = timePoint;
+	tqe.item = item;
 	{
 		const boost::mutex::scoped_lock lock(g_mutex);
-		g_timers.push_back(ti);
+		g_timers.push_back(tqe);
 		std::push_heap(g_timers.begin(), g_timers.end());
 	}
-	return servlet;
+	return item;
 }
 
-boost::shared_ptr<const TimerServlet> TimerManager::registerHourlyTimer(
+boost::shared_ptr<const TimerItem> TimerDaemon::registerHourlyTimer(
 	unsigned minute, unsigned second,
 	const boost::weak_ptr<void> &dependency, const TimerCallback &callback)
 {
@@ -189,7 +188,7 @@ boost::shared_ptr<const TimerServlet> TimerManager::registerHourlyTimer(
 		MILLISECS_PER_HOUR - delta % MILLISECS_PER_HOUR, MILLISECS_PER_HOUR,
 		dependency, callback);
 }
-boost::shared_ptr<const TimerServlet> TimerManager::registerDailyTimer(
+boost::shared_ptr<const TimerItem> TimerDaemon::registerDailyTimer(
 	unsigned hour, unsigned minute, unsigned second,
 	const boost::weak_ptr<void> &dependency, const TimerCallback &callback)
 {
@@ -199,7 +198,7 @@ boost::shared_ptr<const TimerServlet> TimerManager::registerDailyTimer(
 		MILLISECS_PER_DAY - delta % MILLISECS_PER_DAY, MILLISECS_PER_DAY,
 		dependency, callback);
 }
-boost::shared_ptr<const TimerServlet> TimerManager::registerWeeklyTimer(
+boost::shared_ptr<const TimerItem> TimerDaemon::registerWeeklyTimer(
 	unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second,
 	const boost::weak_ptr<void> &dependency, const TimerCallback &callback)
 {

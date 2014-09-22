@@ -1,22 +1,24 @@
 # ----------- 系统配置 -----------
-server_id = 1				# 服务器 ID，唯一标识符
-log_level = 4				# 数值越高日志越详细
-tcp_buffer_size = 1024		# 每次从每个 TCP 连接上读取的最大字节数
-							# 较大的数值可以提高吞吐量
-max_epoll_timeout = 100		# epoll 超时最大值，单位毫秒
-							# 较大的数值可以提升性能，但是会降低空闲时的响应速度
+server_id = 1				# 服务器 ID，唯一标识符。
+log_level = 4				# 数值越高日志越详细。
+tcp_buffer_size = 1024		# 每次从每个 TCP 连接上读取的最大字节数。
+							# 较大的数值可以提高吞吐量。
+max_epoll_timeout = 100		# epoll 超时最大值，单位毫秒。
+							# 较大的数值可以提升性能，但是会降低空闲时的响应速度。
 
 # ---------- 数据库配置 ----------
-database_addr = tcp://localhost		# 使用 MySQL 的格式
-database_port = 3306
-database_database = poseidon
+database_server = tcp://localhost:3306		# 使用 MySQL 的格式。
 database_username = root
 database_password = root
+database_database = poseidon
+
+database_save_delay = 5000					# 写入延迟，单位毫秒。
+database_max_reconn_delay = 60000			# 如果连接掉线，等待这些毫秒后重试。
 
 # ---------- 套接字配置 ----------
-socket_bind = 0.0.0.0		# 0.0.0.0 表示任意地址
+socket_bind = 0.0.0.0		# 0.0.0.0 表示任意地址。
 socket_port = 8850
-http_bind = 0.0.0.0			# 同上
+http_bind = 0.0.0.0			# 同上。
 http_port = 8860
 
 # ----------- 初始模块 -----------

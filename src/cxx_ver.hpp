@@ -35,9 +35,9 @@ template<typename T>
 typename boost::remove_cv<
 	typename boost::remove_reference<T>::type
 	>::type
-	valueOfHelper_(const T &) NOEXCEPT;
+	valueOfHelper(const T &) NOEXCEPT;
 
-struct Nullptr_t_ {
+struct Nullptr_t {
 #ifdef POSEIDON_CXX11
 	explicit
 #endif
@@ -96,22 +96,30 @@ struct Nullptr_t_ {
 	}
 
 private:
-	void *unused_;
+	void *unused;
 
+private:
 	void operator&() const;
 };
 
 template<typename T>
-class Move_ {
+typename boost::add_reference<T>::type declRef() NOEXCEPT;
+
+#ifdef POSEIDON_CXX11
+template<typename T>
+using Move = typename boost::remove_reference<T>::type &&;
+#else
+template<typename T>
+class Move {
 private:
 	T &m_holds;
 
 public:
-	explicit Move_(T &rhs) NOEXCEPT
+	explicit Move(T &rhs) NOEXCEPT
 		: m_holds(rhs)
 	{
 	}
-	Move_(const Move_ &rhs) NOEXCEPT
+	Move(const Move &rhs) NOEXCEPT
 		: m_holds(rhs.m_holds)
 	{
 	}
@@ -121,7 +129,7 @@ public:
 		using std::swap;
 		swap(m_holds, rhs);
 	}
-	void swap(Move_ &rhs){
+	void swap(Move &rhs){
 		using std::swap;
 		swap(m_holds, rhs.m_holds);
 	}
@@ -136,20 +144,20 @@ public:
 };
 
 template<typename T>
-class Move_<Move_<T> > : public Move_<T> {
+class Move<Move<T> > : public Move<T> {
 private:
-	typedef Move_<T> Delegate;
+	typedef Move<T> Delegate;
 
 public:
-	explicit Move_(T &rhs) NOEXCEPT
+	explicit Move(T &rhs) NOEXCEPT
 		: Delegate(rhs)
 	{
 	}
-	Move_(const Delegate &rhs) NOEXCEPT
+	Move(const Delegate &rhs) NOEXCEPT
 		: Delegate(rhs)
 	{
 	}
-	Move_(const Move_ &rhs) NOEXCEPT
+	Move(const Move &rhs) NOEXCEPT
 		: Delegate(rhs)
 	{
 	}
@@ -157,7 +165,7 @@ public:
 public:
 	using Delegate::swap;
 
-	void swap(Move_ &rhs){
+	void swap(Move &rhs){
 		Delegate::swap(rhs);
 	}
 
@@ -166,50 +174,48 @@ public:
 };
 
 template<typename T>
-void swap(Move_<T> &lhs, Move_<T> &rhs){
+void swap(Move<T> &lhs, Move<T> &rhs){
 	lhs.swap(rhs);
 }
 template<typename T>
-void swap(Move_<T> &lhs, T &rhs){
+void swap(Move<T> &lhs, T &rhs){
 	lhs.swap(rhs);
 }
 template<typename T>
-void swap(T &lhs, Move_<T> &rhs){
+void swap(T &lhs, Move<T> &rhs){
 	rhs.swap(lhs);
 }
+#endif
 
 template<typename T>
-Move_<T> move(const T &rhs) NOEXCEPT {
-	return Move_<T>(const_cast<T &>(rhs));
+Move<T> move(const T &rhs) NOEXCEPT {
+	return Move<T>(const_cast<T &>(rhs));
 }
 template<typename T>
-Move_<T> move(T &rhs) NOEXCEPT {
-	return Move_<T>(rhs);
+Move<T> move(T &rhs) NOEXCEPT {
+	return Move<T>(rhs);
 }
 template<typename T>
-Move_<T> move(Move_<T> rhs) NOEXCEPT {
+Move<T> move(Move<T> rhs) NOEXCEPT {
 	return rhs;
 }
-
-template<typename T>
-typename boost::add_reference<T>::type declRef_() NOEXCEPT;
 
 }
 
 #ifdef POSEIDON_CXX11
 #	define AUTO(id_, init_)			auto id_ = init_
 #	define AUTO_REF(id_, init_)		auto &id_ = init_
-#	define NULLPTR					(::Poseidon::Nullptr_t_())	// (nullptr)
+#	define NULLPTR					(::Poseidon::Nullptr_t())	// (nullptr)
 #	define STD_MOVE(expr_)			(::std::move(expr_))
 #	define STD_FORWARD(t_, expr_)	(::std::forward<t_>(expr_))
 #	define DECLREF(t_)				(::std::declval<typename ::std::remove_reference<t_>::type>())
 #else
-#	define AUTO(id_, init_)			DECLTYPE(::Poseidon::valueOfHelper_(init_)) id_(init_)
+#	define AUTO(id_, init_)			DECLTYPE(::Poseidon::valueOfHelper(init_)) id_(init_)
 #	define AUTO_REF(id_, init_)		DECLTYPE(init_) &id_ = (init_)
-#	define NULLPTR					(::Poseidon::Nullptr_t_())
+#	define NULLPTR					(::Poseidon::Nullptr_t())
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
 #	define STD_FORWARD(t_, expr_)	(expr_)
-#	define DECLREF(t_)				(::Poseidon::declRef_<t_>())
+#	define DECLREF(t_)				(::Poseidon::declRef<t_>())
 #endif
 
 #endif
