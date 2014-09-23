@@ -136,8 +136,10 @@ void threadProc(){
 		ConfigFile::get<std::size_t>("database_max_reconn_delay", g_databaseMaxReconnDelay);
 	LOG_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
 
-	boost::scoped_ptr<sql::Connection> connection;
+	LOG_INFO("Initializing MySQL thread...");
+	::get_driver_instance()->threadInit();
 
+	boost::scoped_ptr<sql::Connection> connection;
 	for(;;){
 		try {
 			if(!connection){
@@ -181,6 +183,7 @@ void threadProc(){
 				asi.object->syncSave(connection.get());
 			} else if(ali.object){
 				ali.object->syncLoad(connection.get(), ali.filter.c_str());
+				ali.object->enableAutoSaving();
 
 				if(ali.callback){
 					boost::make_shared<AsyncLoadCallbackJob>(
@@ -204,6 +207,9 @@ void threadProc(){
 			LOG_ERROR("Unknown exception thrown in MySQL daemon.");
 		}
 	}
+
+	LOG_INFO("Uninitializing MySQL thread...");
+	::get_driver_instance()->threadEnd();
 
 	LOG_INFO("MySQL daemon stopped.");
 }

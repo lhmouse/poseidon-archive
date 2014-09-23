@@ -107,7 +107,7 @@ public:
 	}	\
 	void set_ ## name_(bool val_){	\
 		atomicStore(name_, val_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 #define FIELD_TINYINT(name_)	\
@@ -116,7 +116,7 @@ public:
 	}	\
 	void set_ ## name_(signed char val_){	\
 		atomicStore(name_, val_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 #define FIELD_TINYINT_UNSIGNED(name_)	\
@@ -125,7 +125,7 @@ public:
 	}	\
 	void set_ ## name_(unsigned char val_){	\
 		atomicStore(name_, val_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 #define FIELD_SMALLINT(name_)	\
@@ -134,7 +134,7 @@ public:
 	}	\
 	void set_ ## name_(short val_){	\
 		atomicStore(name_, val_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 #define FIELD_SMALLINT_UNSIGNED(name_)	\
@@ -143,7 +143,7 @@ public:
 	}	\
 	void set_ ## name_(unsigned short val_){	\
 		atomicStore(name_, val_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 #define FIELD_INTEGER(name_)	\
@@ -152,7 +152,7 @@ public:
 	}	\
 	void set_ ## name_(int val_){	\
 		atomicStore(name_, val_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 #define FIELD_INTEGER_UNSIGNED(name_)	\
@@ -161,7 +161,7 @@ public:
 	}	\
 	void set_ ## name_(unsigned val_){	\
 		atomicStore(name_, val_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 #define FIELD_BIGINT(name_)	\
@@ -170,7 +170,7 @@ public:
 	}	\
 	void set_ ## name_(long long val_){	\
 		atomicStore(name_, val_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 #define FIELD_BIGINT_UNSIGNED(name_)	\
@@ -179,7 +179,7 @@ public:
 	}	\
 	void set_ ## name_(unsigned long long val_){	\
 		atomicStore(name_, val_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 #define FIELD_STRING(name_)	\
@@ -190,7 +190,7 @@ public:
 	void set_ ## name_(std::string val_){	\
 		const ::boost::unique_lock<boost::shared_mutex> slock(m_mutex);	\
 		val_.swap(name_);	\
-		asyncSave();	\
+		invalidate();	\
 	}
 
 	MYSQL_OBJECT_FIELDS
