@@ -55,13 +55,12 @@ public:
 		return m_delegate.end();
 	}
 
-#ifdef POSEIDON_CXX11
-	void erase(const_iterator pos){
-		m_delegate.erase(pos);
-	}
-#endif
 	void erase(iterator pos){
 		m_delegate.erase(pos);
+	}
+	void erase(const char *key){
+		m_delegate.erase(boost::shared_ptr<const char>(
+			boost::shared_ptr<void>(), key));
 	}
 
 	void swap(OptionalMap &rhs) NOEXCEPT {
