@@ -80,31 +80,7 @@ void run(){
 
 }
 
-#define MYSQL_OBJECT_NAMESPACE		Tn
-#define MYSQL_OBJECT_NAME			test
-#define MYSQL_OBJECT_FIELDS	\
-	FIELD_BIGINT_UNSIGNED	(id)	\
-	FIELD_STRING			(name)	\
-	FIELD_INTEGER			(time)
-
-#include "mysql/object_generator.hpp"
-
 int main(int argc, char **argv){
-	AUTO(t, boost::make_shared<Tn::test>()), t2(boost::make_shared<Tn::test>());
-	t->set_id(123);
-	t->set_name("meow");
-	t->set_time(456.789);
-	t->asyncSave();
-	t2->asyncLoad("");
-	LOG_FATAL("id = ", t2->get_id(), ", name = ", t2->get_name(), ", time = ", t2->get_time());
-	::sleep(1);
-	LOG_FATAL("id = ", t2->get_id(), ", name = ", t2->get_name(), ", time = ", t2->get_time());
-
-
-
-
-
-
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
 	try {

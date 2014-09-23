@@ -89,8 +89,8 @@ struct TimerQueueElement {
 	}
 };
 
-volatile bool g_daemonRunning = false;
-boost::thread g_daemonThread;
+volatile bool g_running = false;
+boost::thread g_thread;
 
 boost::mutex g_mutex;
 std::vector<TimerQueueElement> g_timers;
@@ -98,7 +98,7 @@ std::vector<TimerQueueElement> g_timers;
 void threadProc(){
 	LOG_INFO("Timer daemon started.");
 
-	while(atomicLoad(g_daemonRunning)){
+	while(atomicLoad(g_running)){
 		const unsigned long long now = getMonoClock();
 		boost::shared_ptr<void> lockedDep;
 		boost::shared_ptr<const TimerCallback> callback;
@@ -211,20 +211,20 @@ boost::shared_ptr<const TimerItem> TimerDaemon::registerWeeklyTimer(
 }
 
 void TimerDaemon::start(){
-	if(atomicExchange(g_daemonRunning, true) != false){
+	if(atomicExchange(g_running, true) != false){
 		LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
 	LOG_INFO("Starting timer daemon...");
 
-	boost::thread(threadProc).swap(g_daemonThread);
+	boost::thread(threadProc).swap(g_thread);
 }
 void TimerDaemon::stop(){
 	LOG_INFO("Stopping timer daemon...");
 
-	atomicStore(g_daemonRunning, false);
-	if(g_daemonThread.joinable()){
-		g_daemonThread.join();
+	atomicStore(g_running, false);
+	if(g_thread.joinable()){
+		g_thread.join();
 	}
 	g_timers.clear();
 }

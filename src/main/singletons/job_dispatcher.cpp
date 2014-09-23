@@ -16,7 +16,6 @@ volatile bool g_running = false;
 boost::mutex g_mutex;
 std::list<boost::shared_ptr<const JobBase> > g_queue;
 std::list<boost::shared_ptr<const JobBase> > g_pool;
-
 boost::condition_variable g_newJobAvail;
 
 }
@@ -34,7 +33,7 @@ void JobDispatcher::doModal(){
 				for(;;){
 					if(!g_queue.empty()){
 						job.swap(g_queue.front());
-						g_pool.splice(g_pool.end(), g_queue, g_queue.begin());
+						g_pool.splice(g_pool.begin(), g_queue, g_queue.begin());
 						break;
 					}
 					if(!atomicLoad(g_running)){
@@ -43,10 +42,11 @@ void JobDispatcher::doModal(){
 					g_newJobAvail.wait(lock);
 				}
 			}
-			if(!job){
+			if(job){
+				job->perform();
+			} else {
 				break;
 			}
-			job->perform();
 		} catch(Exception &e){
 			LOG_ERROR("Exception thrown in job dispatcher: file = ", e.file(),
 				", line = ", e.line(), ", what = ", e.what());
@@ -59,17 +59,16 @@ void JobDispatcher::doModal(){
 }
 void JobDispatcher::quitModal(){
 	atomicStore(g_running, false);
-	g_newJobAvail.notify_one();
+	const boost::mutex::scoped_lock lock(g_mutex);
+	g_newJobAvail.notify_all();
 }
 
 void JobDispatcher::pend(boost::shared_ptr<const JobBase> job){
-	{
-		const boost::mutex::scoped_lock lock(g_mutex);
-		if(g_pool.empty()){
-			g_pool.push_front(NULLPTR);
-		}
-		g_pool.front().swap(job);
-		g_queue.splice(g_queue.end(), g_pool, g_pool.begin());
+	const boost::mutex::scoped_lock lock(g_mutex);
+	if(g_pool.empty()){
+		g_pool.push_front(NULLPTR);
 	}
-	g_newJobAvail.notify_one();
+	g_queue.splice(g_queue.end(), g_pool, g_pool.begin());
+	g_queue.back().swap(job);
+	g_newJobAvail.notify_all();
 }

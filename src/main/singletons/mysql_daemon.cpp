@@ -11,6 +11,7 @@
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
+#include "../job_base.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -23,12 +24,56 @@ sql::SQLString g_databaseName			= "test";
 std::size_t g_databaseSaveDelay			= 5000;
 std::size_t g_databaseMaxReconnDelay	= 60000;
 
-volatile bool g_daemonRunning = false;
-boost::thread g_daemonThread;
+class AsyncLoadCallbackJob : public JobBase {
+private:
+	MySqlAsyncLoadCallback m_callback;
+	boost::shared_ptr<MySqlObjectBase> m_object;
+
+public:
+	AsyncLoadCallbackJob(MySqlAsyncLoadCallback callback,
+		boost::shared_ptr<MySqlObjectBase> object)
+	{
+		m_callback.swap(callback);
+		m_object.swap(object);
+	}
+
+protected:
+	void perform() const {
+		m_callback(m_object);
+	}
+};
+
+struct AsyncSaveItem {
+	boost::shared_ptr<const MySqlObjectBase> object;
+	unsigned long long timeStamp;
+
+	void swap(AsyncSaveItem &rhs) throw() {
+		object.swap(rhs.object);
+		std::swap(timeStamp, rhs.timeStamp);
+	}
+};
+
+struct AsyncLoadItem {
+	boost::shared_ptr<MySqlObjectBase> object;
+	std::string filter;
+	MySqlAsyncLoadCallback callback;
+
+	void swap(AsyncLoadItem &rhs) throw() {
+		object.swap(rhs.object);
+		filter.swap(rhs.filter);
+		callback.swap(rhs.callback);
+	}
+};
+
+volatile bool g_running = false;
+boost::thread g_thread;
 
 boost::mutex g_mutex;
-
-boost::condition_variable g_objectAvail;
+std::list<AsyncSaveItem> g_saveQueue;
+std::list<AsyncSaveItem> g_savePool;
+std::list<AsyncLoadItem> g_loadQueue;
+std::list<AsyncLoadItem> g_loadPool;
+boost::condition_variable g_newObjectAvail;
 boost::condition_variable g_queueEmpty;
 
 void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
@@ -40,12 +85,14 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 			connection.reset(::get_driver_instance()->connect(
 				g_databaseServer, g_databaseUsername, g_databasePassword));
 			connection->setSchema(g_databaseName);
-			break;
 		} catch(sql::SQLException &e){
 			LOG_ERROR("Error connecting to MySQL server: code = ", e.getErrorCode(),
 				", state = ", e.getSQLState(), ", what = ", e.what());
+			connection.reset();
 		}
-
+		if(connection){
+			break;
+		}
 		if(reconnectDelay == 0){
 			reconnectDelay = 1;
 		} else {
@@ -59,7 +106,7 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 		}
 	}
 
-	LOG_INFO("Successfully connected.");
+	LOG_INFO("Successfully connected to MySQL server.");
 }
 
 void threadProc(){
@@ -96,26 +143,52 @@ void threadProc(){
 			if(!connection){
 				getMySqlConnection(connection);
 			}
-/*
-			boost::shared_ptr<const MySqlObjectBase> object;
+
+			AsyncSaveItem asi;
+			AsyncLoadItem ali;
 			{
 				boost::mutex::scoped_lock lock(g_mutex);
 				for(;;){
-					if(!g_queue.empty()){
-						object = STD_MOVE(g_queue.front());
-						g_queue.pop_front();
+					if(!g_saveQueue.empty()){
+						AUTO_REF(head, g_saveQueue.front());
+						if(head.timeStamp > getMonoClock()){
+							goto skip;
+						}
+						if(atomicLoad(head.object->m_context) != &head){
+							AsyncSaveItem().swap(head);
+						} else {
+							asi.swap(head);
+						}
+						g_savePool.splice(g_savePool.begin(), g_saveQueue, g_saveQueue.begin());
+						if(!asi.object){
+							goto skip;
+						}
 						break;
 					}
-					if(!atomicLoad(g_daemonRunning)){
+				skip:
+					if(!g_loadQueue.empty()){
+						ali.swap(g_loadQueue.front());
+						g_loadPool.splice(g_loadPool.begin(), g_loadQueue, g_loadQueue.begin());
 						break;
 					}
-					g_objectAvail.wait(lock);
+					if(!atomicLoad(g_running)){
+						break;
+					}
+					g_newObjectAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
 			}
-			if(!object){
+			if(asi.object){
+				asi.object->syncSave(connection.get());
+			} else if(ali.object){
+				ali.object->syncLoad(connection.get(), ali.filter.c_str());
+
+				if(ali.callback){
+					boost::make_shared<AsyncLoadCallbackJob>(
+						boost::ref(ali.callback), boost::ref(ali.object))->pend();
+				}
+			} else {
 				break;
 			}
-*/			//job->perform();
 		} catch(sql::SQLException &e){
 			LOG_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
 				", state = ", e.getSQLState(), ", what = ", e.what());
@@ -138,41 +211,61 @@ void threadProc(){
 }
 
 void MySqlDaemon::start(){
-	if(atomicExchange(g_daemonRunning, true) != false){
+	if(atomicExchange(g_running, true) != false){
 		LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
 	LOG_INFO("Starting MySQL daemon...");
 
-	boost::thread(threadProc).swap(g_daemonThread);
+	boost::thread(threadProc).swap(g_thread);
 }
 void MySqlDaemon::stop(){
 	LOG_INFO("Stopping MySQL daemon...");
 
-	atomicStore(g_daemonRunning, false);
-	g_objectAvail.notify_one();
-	if(g_daemonThread.joinable()){
-		g_daemonThread.join();
+	atomicStore(g_running, false);
+	{
+		const boost::mutex::scoped_lock lock(g_mutex);
+		g_newObjectAvail.notify_all();
+	}
+	if(g_thread.joinable()){
+		g_thread.join();
 	}
 }
 
 void MySqlDaemon::waitForAllAsyncOperations(){
-/*	boost::mutex::scoped_lock lock(g_mutex);
-	while(!g_queue.empty()){
+	boost::mutex::scoped_lock lock(g_mutex);
+	while(!(g_saveQueue.empty() && g_loadQueue.empty())){
 		g_queueEmpty.wait(lock);
 	}
-*/
 }
 
 void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object){
-(void)object;
-	g_objectAvail.notify_one();
+	const boost::mutex::scoped_lock lock(g_mutex);
+	if(g_savePool.empty()){
+		g_savePool.push_front(AsyncSaveItem());
+	}
+	g_saveQueue.splice(g_saveQueue.end(), g_savePool, g_savePool.begin());
+
+	AUTO_REF(asi, g_saveQueue.back());
+	asi.object.swap(object);
+	asi.timeStamp = getMonoClock() + g_databaseSaveDelay * 1000;
+	atomicStore(asi.object->m_context, &asi);
+
+	g_newObjectAvail.notify_all();
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	std::string filter, MySqlAsyncLoadCallback callback)
 {
-(void)object;
-(void)filter;
-(void)callback;
-	g_objectAvail.notify_one();
+	const boost::mutex::scoped_lock lock(g_mutex);
+	if(g_loadPool.empty()){
+		g_loadPool.push_front(AsyncLoadItem());
+	}
+	g_loadQueue.splice(g_loadQueue.end(), g_loadPool, g_loadPool.begin());
+
+	AUTO_REF(ali, g_loadQueue.back());
+	ali.object.swap(object);
+	ali.filter.swap(filter);
+	ali.callback.swap(callback);
+
+	g_newObjectAvail.notify_all();
 }

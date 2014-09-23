@@ -22,9 +22,9 @@ namespace {
 std::size_t g_tcpBufferSize		= 1024;
 std::size_t g_maxEpollTimeout	= 100;
 
-volatile bool g_daemonRunning = false;
+volatile bool g_running = false;
 ScopedFile g_epoll;
-boost::thread g_daemonThread;
+boost::thread g_thread;
 
 struct SessionMapElement {
 	const boost::shared_ptr<TcpSessionBase> m_session;
@@ -159,7 +159,7 @@ void threadProc(){
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
 	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 
-	while(atomicLoad(g_daemonRunning)){
+	while(atomicLoad(g_running)){
 		// 第一部分，处理可接收的数据。
 		{
 			sessions.clear();
@@ -364,7 +364,7 @@ void threadProc(){
 }
 
 void EpollDaemon::start(){
-	if(atomicExchange(g_daemonRunning, true) != false){
+	if(atomicExchange(g_running, true) != false){
 		LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
@@ -377,14 +377,14 @@ void EpollDaemon::start(){
 		std::abort();
 	}
 
-	boost::thread(threadProc).swap(g_daemonThread);
+	boost::thread(threadProc).swap(g_thread);
 }
 void EpollDaemon::stop(){
 	LOG_INFO("Stopping epoll daemon...");
 
-	atomicStore(g_daemonRunning, false);
-	if(g_daemonThread.joinable()){
-		g_daemonThread.join();
+	atomicStore(g_running, false);
+	if(g_thread.joinable()){
+		g_thread.join();
 	}
 
 	g_sessions.clear();

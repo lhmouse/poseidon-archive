@@ -7,11 +7,11 @@
 
 namespace Poseidon {
 
+class TimerItem;
+
 typedef boost::function<
 	void (unsigned long long period)
 	> TimerCallback;
-
-class TimerItem;
 
 struct TimerDaemon {
 	static void start();

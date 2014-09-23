@@ -129,20 +129,20 @@ private:
 	HttpVerb m_verb;
 	std::string m_uri;
 	OptionalMap m_getParams;
-	OptionalMap m_incomingHeaders;
-	std::string m_incomingContents;
+	OptionalMap m_inHeaders;
+	std::string m_inContents;
 
 public:
 	HttpRequestJob(boost::weak_ptr<HttpSession> session,
-		HttpVerb verb, std::string &uri, OptionalMap &getParams,
-		OptionalMap &incomingHeaders, std::string &incomingContents)
+		HttpVerb verb, std::string uri, OptionalMap getParams,
+		OptionalMap inHeaders, std::string inContents)
 		: m_session(STD_MOVE(session))
 	{
 		m_verb = verb;
 		m_uri.swap(uri);
 		m_getParams.swap(getParams);
-		m_incomingHeaders.swap(incomingHeaders);
-		m_incomingContents.swap(incomingContents);
+		m_inHeaders.swap(inHeaders);
+		m_inContents.swap(inContents);
 	}
 
 protected:
@@ -165,7 +165,7 @@ protected:
 		StreamBuffer contents;
 		try {
 			const HttpStatus status = (*servlet)(headers, contents,
-				m_verb, m_getParams, m_incomingHeaders, m_incomingContents);
+				m_verb, m_getParams, m_inHeaders, m_inContents);
 			respond(session, status, &headers, &contents);
 		} catch(ProtocolException &e){
 			LOG_ERROR("ProtocolException thrown in HTTP servlet, code = ", e.code(),
@@ -284,8 +284,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_line.append(read, bytesRemaining);
 			read += bytesRemaining;
 			boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
-				boost::ref(m_verb), boost::ref(m_uri), boost::ref(m_getParams),
-				boost::ref(m_headers), boost::ref(m_line))->pend();
+				STD_MOVE(m_verb), STD_MOVE(m_uri), STD_MOVE(m_getParams),
+				STD_MOVE(m_headers), STD_MOVE(m_line))->pend();
 
 			m_state = ST_FIRST_HEADER;
 			m_totalLength = 0;
