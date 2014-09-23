@@ -120,33 +120,7 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 	LOG_INFO("Successfully connected to MySQL server.");
 }
 
-void threadProc(){
-	LOG_INFO("MySQL daemon started.");
-
-	g_databaseServer =
-		ConfigFile::get<std::string>("database_server", g_databaseServer);
-	LOG_DEBUG("MySQL server = ", g_databaseServer);
-
-	g_databaseUsername =
-		ConfigFile::get<std::string>("database_username", g_databaseUsername);
-	LOG_DEBUG("MySQL username = ", g_databaseUsername);
-
-	g_databasePassword =
-		ConfigFile::get<std::string>("database_password", g_databasePassword);
-	LOG_DEBUG("MySQL password = ", g_databasePassword);
-
-	g_databaseName =
-		ConfigFile::get<std::string>("database_name", g_databaseName);
-	LOG_DEBUG("MySQL database name = ", g_databaseName);
-
-	g_databaseSaveDelay =
-		ConfigFile::get<std::size_t>("database_save_delay", g_databaseSaveDelay);
-	LOG_DEBUG("MySQL save delay = ", g_databaseSaveDelay);
-
-	g_databaseMaxReconnDelay =
-		ConfigFile::get<std::size_t>("database_max_reconn_delay", g_databaseMaxReconnDelay);
-	LOG_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
-
+void daemonLoop(){
 	const MySQLThreadInitializer initializer;
 
 	boost::scoped_ptr<sql::Connection> connection;
@@ -217,6 +191,36 @@ void threadProc(){
 			LOG_ERROR("Unknown exception thrown in MySQL daemon.");
 		}
 	}
+}
+
+void threadProc(){
+	LOG_INFO("MySQL daemon started.");
+
+	g_databaseServer =
+		ConfigFile::get<std::string>("database_server", g_databaseServer);
+	LOG_DEBUG("MySQL server = ", g_databaseServer);
+
+	g_databaseUsername =
+		ConfigFile::get<std::string>("database_username", g_databaseUsername);
+	LOG_DEBUG("MySQL username = ", g_databaseUsername);
+
+	g_databasePassword =
+		ConfigFile::get<std::string>("database_password", g_databasePassword);
+	LOG_DEBUG("MySQL password = ", g_databasePassword);
+
+	g_databaseName =
+		ConfigFile::get<std::string>("database_name", g_databaseName);
+	LOG_DEBUG("MySQL database name = ", g_databaseName);
+
+	g_databaseSaveDelay =
+		ConfigFile::get<std::size_t>("database_save_delay", g_databaseSaveDelay);
+	LOG_DEBUG("MySQL save delay = ", g_databaseSaveDelay);
+
+	g_databaseMaxReconnDelay =
+		ConfigFile::get<std::size_t>("database_max_reconn_delay", g_databaseMaxReconnDelay);
+	LOG_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
+
+	daemonLoop();
 
 	LOG_INFO("MySQL daemon stopped.");
 }

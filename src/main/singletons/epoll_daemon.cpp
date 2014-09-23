@@ -141,17 +141,7 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, 0);
 }
 
-void threadProc(){
-	LOG_INFO("Epoll daemon started.");
-
-	g_tcpBufferSize =
-		ConfigFile::get<std::size_t>("tcp_buffer_size", g_tcpBufferSize);
-	LOG_DEBUG("TCP buffer size = ", g_tcpBufferSize);
-
-	g_maxEpollTimeout =
-		ConfigFile::get<std::size_t>("max_epoll_timeout", g_maxEpollTimeout);
-	LOG_DEBUG("Max epoll timeout = ", g_maxEpollTimeout);
-
+void daemonLoop(){
 	const boost::scoped_array<unsigned char> data(
 		new unsigned char[g_tcpBufferSize]);
 	std::size_t epollTimeout = 0;
@@ -357,6 +347,20 @@ void threadProc(){
 			epollTimeout = g_maxEpollTimeout;
 		}
 	}
+}
+
+void threadProc(){
+	LOG_INFO("Epoll daemon started.");
+
+	g_tcpBufferSize =
+		ConfigFile::get<std::size_t>("tcp_buffer_size", g_tcpBufferSize);
+	LOG_DEBUG("TCP buffer size = ", g_tcpBufferSize);
+
+	g_maxEpollTimeout =
+		ConfigFile::get<std::size_t>("max_epoll_timeout", g_maxEpollTimeout);
+	LOG_DEBUG("Max epoll timeout = ", g_maxEpollTimeout);
+
+	daemonLoop();
 
 	LOG_INFO("Epoll daemon stopped.");
 }

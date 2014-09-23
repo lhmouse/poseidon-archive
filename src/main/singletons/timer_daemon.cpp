@@ -95,9 +95,7 @@ boost::thread g_thread;
 boost::mutex g_mutex;
 std::vector<TimerQueueElement> g_timers;
 
-void threadProc(){
-	LOG_INFO("Timer daemon started.");
-
+void daemonLoop(){
 	while(atomicLoad(g_running)){
 		const unsigned long long now = getMonoClock();
 		boost::shared_ptr<void> lockedDep;
@@ -139,6 +137,12 @@ void threadProc(){
 			LOG_ERROR("Unknown exception thrown while dispatching timer job.");
 		}
 	}
+}
+
+void threadProc(){
+	LOG_INFO("Timer daemon started.");
+
+	daemonLoop();
 
 	LOG_INFO("Timer daemon stopped.");
 }
