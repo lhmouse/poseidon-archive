@@ -10,7 +10,7 @@ max_epoll_timeout = 100		# epoll 超时最大值，单位毫秒。
 database_server = tcp://localhost:3306		# 使用 MySQL 的格式。
 database_username = root
 database_password = root
-database_database = poseidon
+database_name = test
 
 database_save_delay = 5000					# 写入延迟，单位毫秒。
 database_max_reconn_delay = 60000			# 如果连接掉线，等待这些毫秒后重试。

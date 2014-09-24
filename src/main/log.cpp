@@ -37,10 +37,10 @@ Log::Log(unsigned level, const char *comment, const char *file, std::size_t line
 }
 Log::~Log() NOEXCEPT {
 	static const char COLORS[] = { '5', '1', '3', '2', '6' };
-	static const char TAGS[][8] = { "P   ", " E  ", "  T ", "   D" };
+	static const char TAGS[][8] = { "P   ", " T  ", "  D ", "   E" };
 
 	try {
-		const bool withColor = ::isatty(STDERR_FILENO);
+		const bool withColors = ::isatty(STDERR_FILENO);
 		const AUTO(color, (m_level >= COUNT_OF(COLORS)) ? '9' : COLORS[m_level]);
 		const AUTO(tag, (t_tag >= COUNT_OF(TAGS)) ? "" : TAGS[t_tag]);
 
@@ -56,7 +56,7 @@ Log::~Log() NOEXCEPT {
 		line += ']';
 		line += ' ';
 
-		if(withColor){
+		if(withColors){
 			line +="\x1B[3";
 			line += color;
 			line += 'm';
@@ -75,7 +75,7 @@ Log::~Log() NOEXCEPT {
 			line.append(temp, count);
 		}
 		line += '\n';
-		if(withColor){
+		if(withColors){
 			line += "\x1B[0m";
 		}
 
