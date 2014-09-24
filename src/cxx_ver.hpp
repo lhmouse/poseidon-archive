@@ -4,6 +4,7 @@
 #include <utility>
 #include <memory>
 #include <cstddef>
+#include <boost/type_traits/add_reference.hpp>
 #include <boost/type_traits/remove_cv.hpp>
 #include <boost/type_traits/remove_reference.hpp>
 #include <boost/scoped_ptr.hpp>
