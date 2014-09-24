@@ -47,18 +47,18 @@ boost::uint64_t getMonoClock(){
 
 namespace {
 
-__thread boost::uint32_t g_randSeed = 0;
+__thread boost::uint32_t t_randSeed = 0;
 
 }
 
 boost::uint32_t rand32(){
-	boost::uint64_t seed = g_randSeed;
+	boost::uint64_t seed = t_randSeed;
 	if(seed == 0){
 		seed = getMonoClock();
 	}
 	// MMIX by Donald Knuth
 	seed = seed * 6364136223846793005ull + 1442695040888963407ull;
-	g_randSeed = seed;
+	t_randSeed = seed;
 	return seed >> 32;
 }
 boost::uint64_t rand64(){

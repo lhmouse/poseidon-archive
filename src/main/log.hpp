@@ -18,9 +18,19 @@ public:
 		LV_DEBUG,		// 4
 	};
 
+	enum {
+		TAG_PRIMARY,	// 0
+		TAG_EPOLL,		// 1
+		TAG_TIMER,		// 2
+		TAG_DATABASE,	// 3
+	};
+
 public:
 	static unsigned getLevel();
 	static void setLevel(unsigned newLevel);
+
+	static unsigned getThreadTag();
+	static void setThreadTag(unsigned newTag);
 
 private:
 	const unsigned m_level;

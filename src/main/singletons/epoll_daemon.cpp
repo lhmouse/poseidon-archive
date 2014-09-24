@@ -350,6 +350,7 @@ void daemonLoop(){
 }
 
 void threadProc(){
+	Log::setThreadTag(Log::TAG_EPOLL);
 	LOG_INFO("Epoll daemon started.");
 
 	g_tcpBufferSize =

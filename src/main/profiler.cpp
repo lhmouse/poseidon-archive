@@ -40,7 +40,7 @@ struct ProfileCounters {
 	}
 };
 
-__thread Profiler *g_topProfiler = 0;
+__thread Profiler *t_topProfiler = 0;
 
 boost::shared_mutex g_mutex;
 std::map<ProfileKey, ProfileCounters> g_profile;
@@ -64,7 +64,7 @@ std::vector<ProfileItem> Profiler::snapshot(){
 }
 
 Profiler::Profiler(const char *file, unsigned long line)
-	: m_prev(g_topProfiler), m_file(file), m_line(line)
+	: m_prev(t_topProfiler), m_file(file), m_line(line)
 {
 	const AUTO(now, getMonoClock());
 
@@ -87,12 +87,12 @@ Profiler::Profiler(const char *file, unsigned long line)
 	if(m_prev){
 		m_prev->m_exclusiveTotal += now - m_prev->m_exclusiveStart;
 	}
-	g_topProfiler = this;
+	t_topProfiler = this;
 }
 Profiler::~Profiler() NOEXCEPT {
 	const AUTO(now, getMonoClock());
 
-	g_topProfiler = m_prev;
+	t_topProfiler = m_prev;
 	m_exclusiveTotal += now - m_exclusiveStart;
 	if(m_prev){
 		m_prev->m_exclusiveStart = now;

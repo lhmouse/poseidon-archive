@@ -81,6 +81,7 @@ void run(){
 }
 
 int main(int argc, char **argv){
+	Log::setThreadTag(Log::TAG_PRIMARY);
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
 	try {

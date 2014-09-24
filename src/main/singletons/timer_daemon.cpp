@@ -140,6 +140,7 @@ void daemonLoop(){
 }
 
 void threadProc(){
+	Log::setThreadTag(Log::TAG_TIMER);
 	LOG_INFO("Timer daemon started.");
 
 	daemonLoop();
