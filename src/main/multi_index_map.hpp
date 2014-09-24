@@ -167,10 +167,10 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 			m_delegate.swap(rhs.m_delegate);	\
 		}	\
 		\
-		std::pair<iterator, bool> insert(const value_type &val){	\
+		std::pair<iterator, bool> insert(value_type val){	\
 			return m_delegate.insert(val);	\
 		}	\
-		iterator insert(iterator pos, const value_type &val){	\
+		iterator insert(iterator pos, value_type val){	\
 			return m_delegate.insert(pos, val);	\
 		}	\
 		void erase(iterator pos){	\
@@ -179,9 +179,15 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		\
 		template<unsigned IndexIdT>	\
 		std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator, bool>	\
+			insert(value_type val)	\
+		{	\
+			return getIndex<IndexIdT>().insert(val);	\
+		}	\
+		template<unsigned IndexIdT>	\
+		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
 			insert(	\
 				typename delegate_container::nth_index<IndexIdT>::type::iterator hint,	\
-				const value_type &val	\
+				value_type val	\
 			)	\
 		{	\
 			return getIndex<IndexIdT>().insert(hint, val);	\
@@ -198,7 +204,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		template<unsigned IndexIdT> \
 		bool replace(	\
 			typename delegate_container::nth_index<IndexIdT>::type::iterator pos,	\
-			const value_type &val	\
+			value_type val	\
 		){	\
 			return getIndex<IndexIdT>().replace(pos, val);	\
 		}	\
