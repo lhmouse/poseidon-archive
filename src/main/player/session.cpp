@@ -51,8 +51,9 @@ PlayerSession::PlayerSession(Move<ScopedFile> socket)
 }
 PlayerSession::~PlayerSession(){
 	if(m_payloadLen != -1){
-		LOG_WARNING("Now that this player session is to be destroyed, a premature packet "
-			"has to be discarded, payload size = ", m_payloadLen);
+		LOG_WARNING("Now that this player session is to be destroyed, "
+			"a premature packet has to be discarded, "
+			"payload size = ", m_payloadLen, ", read = ", m_payload.size());
 	}
 }
 
