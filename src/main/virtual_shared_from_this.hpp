@@ -19,9 +19,7 @@ public:
 public:
 	template<typename DerivedT>
 	boost::shared_ptr<const DerivedT> virtualSharedFromThis() const {
-		BOOST_STATIC_ASSERT_MSG(
-			(boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value),
-			"Please virtually derive from VirtualSharedFromThis.");
+		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value));
 
 		const AUTO(virtThis, dynamic_cast<const DerivedT *>(this));
 		if(!virtThis){
@@ -31,9 +29,7 @@ public:
 	}
 	template<typename DerivedT>
 	boost::shared_ptr<DerivedT> virtualSharedFromThis(){
-		BOOST_STATIC_ASSERT_MSG(
-			(boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value),
-			"Please virtually derive from VirtualSharedFromThis.");
+		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value));
 
 		const AUTO(virtThis, dynamic_cast<DerivedT *>(this));
 		if(!virtThis){
