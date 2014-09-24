@@ -5,7 +5,7 @@
 
 定义时需要指定索引。
 
-typedef std::pair<int, std::string> Item;
+typedef ::std::pair<int, ::std::string> Item;
 
 MULTI_INDEX_MAP(Container, Item,
 	UNIQUE_MEMBER_INDEX(first),
@@ -13,18 +13,18 @@ MULTI_INDEX_MAP(Container, Item,
 	SEQUENCED_INDEX()
 );
 
-基本用法和 std::map 类似，只是 find, count, lowerBound, upperBound, equalRange 等
+基本用法和 ::std::map 类似，只是 find, count, lowerBound, upperBound, equalRange 等
 成员函数需要带一个非类型模板参数，指定使用第几个索引。
 
 Container c;
 c.insert(Item(1, "abc"));
 c.insert(Item(2, "def"));
-std::cout <<c.find<0>(1)->second <<std::endl;	// "abc";
+::std::cout <<c.find<0>(1)->second <<::std::endl;	// "abc";
 assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 
 */
 
-#include <utility>
+#include "../cxx_ver.hpp"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
@@ -59,7 +59,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 			}	\
 			\
 			void operator()(key_type &old){	\
-				using std::swap;	\
+				using ::std::swap;	\
 				swap(old, m_key);	\
 			}	\
 		};	\
@@ -156,7 +156,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		bool empty() const {	\
 			return m_delegate.empty();	\
 		}	\
-		std::size_t size() const {	\
+		::std::size_t size() const {	\
 			return m_delegate.size();	\
 		}	\
 		void clear() {	\
@@ -167,19 +167,27 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 			m_delegate.swap(rhs.m_delegate);	\
 		}	\
 		\
-		std::pair<iterator, bool> insert(value_type val){	\
+		::std::pair<iterator, bool> insert(const value_type &val){	\
 			return m_delegate.insert(val);	\
 		}	\
-		iterator insert(iterator pos, value_type val){	\
+		iterator insert(iterator pos, const value_type &val){	\
 			return m_delegate.insert(pos, val);	\
 		}	\
+	ENABLE_IF_CXX11(	\
+		::std::pair<iterator, bool> insert(value_type &&val){	\
+			return m_delegate.insert(::std::move(val));	\
+		}	\
+		iterator insert(iterator pos, value_type &&val){	\
+			return m_delegate.insert(pos, ::std::move(val));	\
+		}	\
+	)	\
 		void erase(iterator pos){	\
 			m_delegate.erase(pos);	\
 		}	\
 		\
 		template<unsigned IndexIdT>	\
-		std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator, bool>	\
-			insert(value_type val)	\
+		::std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator, bool>	\
+			insert(const value_type &val)	\
 		{	\
 			return getIndex<IndexIdT>().insert(val);	\
 		}	\
@@ -187,11 +195,28 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
 			insert(	\
 				typename delegate_container::nth_index<IndexIdT>::type::iterator hint,	\
-				value_type val	\
+				const value_type &val	\
 			)	\
 		{	\
 			return getIndex<IndexIdT>().insert(hint, val);	\
 		}	\
+	ENABLE_IF_CXX11(	\
+		template<unsigned IndexIdT>	\
+		::std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator, bool>	\
+			insert(value_type &&val)	\
+		{	\
+			return getIndex<IndexIdT>().insert(::std::move(val));	\
+		}	\
+		template<unsigned IndexIdT>	\
+		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
+			insert(	\
+				typename delegate_container::nth_index<IndexIdT>::type::iterator hint,	\
+				value_type &&val	\
+			)	\
+		{	\
+			return getIndex<IndexIdT>().insert(hint, ::std::move(val));	\
+		}	\
+	)	\
 		template<unsigned IndexIdT>  \
 		void erase(typename delegate_container::nth_index<IndexIdT>::type::iterator pos){	\
 			getIndex<IndexIdT>().erase(pos);	\
@@ -204,10 +229,19 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		template<unsigned IndexIdT> \
 		bool replace(	\
 			typename delegate_container::nth_index<IndexIdT>::type::iterator pos,	\
-			value_type val	\
+			const value_type &val	\
 		){	\
 			return getIndex<IndexIdT>().replace(pos, val);	\
 		}	\
+	ENABLE_IF_CXX11(	\
+		template<unsigned IndexIdT> \
+		bool replace(	\
+			typename delegate_container::nth_index<IndexIdT>::type::iterator pos,	\
+			value_type &&val	\
+		){	\
+			return getIndex<IndexIdT>().replace(pos, ::std::move(val));	\
+		}	\
+	)	\
 		template<unsigned IndexIdToSetT> \
 		bool setKey(	\
 			typename delegate_container::iterator pos,   \
@@ -249,7 +283,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 		\
 		template<unsigned IndexIdT>  \
-		std::size_t	\
+		::std::size_t	\
 			count(	\
 				const typename delegate_container::nth_index<IndexIdT>::type::key_type &key	\
 			) const	\
@@ -292,7 +326,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 		\
 		template<unsigned IndexIdT>  \
-		std::pair<typename delegate_container::nth_index<IndexIdT>::type::const_iterator,	\
+		::std::pair<typename delegate_container::nth_index<IndexIdT>::type::const_iterator,	\
 			typename delegate_container::nth_index<IndexIdT>::type::const_iterator>	\
 			equalRange(	\
 				const typename delegate_container::nth_index<IndexIdT>::type::key_type &key	\
@@ -301,7 +335,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 			return getIndex<IndexIdT>().equal_range(key);	\
 		}	\
 		template<unsigned IndexIdT>  \
-		std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator,	\
+		::std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator,	\
 			typename delegate_container::nth_index<IndexIdT>::type::iterator>	\
 			equalRange(	\
 				const typename delegate_container::nth_index<IndexIdT>::type::key_type &key	\

@@ -71,10 +71,7 @@ public:
 		using std::swap;
 		swap(m_handle, rhs.m_handle);
 	}
-#ifdef POSEIDON_CXX11
-	explicit
-#endif
-	operator bool() const NOEXCEPT {
+	ENABLE_IF_CXX11(explicit) operator bool() const NOEXCEPT {
 		return get() != CloserT()();
 	}
 };
