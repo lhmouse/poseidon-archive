@@ -6,6 +6,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <unistd.h>
+#include <time.h>
 using namespace Poseidon;
 
 namespace {
@@ -45,11 +46,18 @@ Log::~Log() NOEXCEPT {
 		const AUTO(tag, (t_tag >= COUNT_OF(TAGS)) ? "" : TAGS[t_tag]);
 
 		char temp[256];
+		const AUTO(now, getLocalTime());
+		::tm desc;
+		const ::time_t seconds = now / 1000;
+		const unsigned milliseconds = now % 1000;
+		::gmtime_r(&seconds, &desc);
+		const int len = std::sprintf(temp, "%04u-%02u-%02u %02u:%02u:%02u.%03u ",
+			1900 + desc.tm_year, 1 + desc.tm_mon, desc.tm_mday,
+			desc.tm_hour, desc.tm_min, desc.tm_sec, milliseconds);
 
-		std::string line(boost::lexical_cast<std::string>(
-			boost::posix_time::second_clock::local_time()));
+		std::string line;
 		line.reserve(255);
-		line += ' ';
+		line.assign(temp, len);
 
 		line += '[';
 		line += tag;
