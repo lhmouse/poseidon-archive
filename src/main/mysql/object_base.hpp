@@ -18,12 +18,12 @@ namespace Poseidon {
 class MySqlObjectBase
 	: public virtual VirtualSharedFromThis
 {
-protected:
+private:
 	mutable volatile bool m_autoSaves;
-	mutable boost::shared_mutex m_mutex;
-
-public:
 	mutable void *volatile m_context;
+
+protected:
+	mutable boost::shared_mutex m_mutex;
 
 public:
 	MySqlObjectBase()
@@ -35,6 +35,13 @@ protected:
 	void invalidate() const;
 
 public:
+	void *getContext() const {
+		return atomicLoad(m_context);
+	}
+	void setContext(void *context) const {
+		atomicStore(m_context, context);
+	}
+
 	bool isAutoSavingEnabled() const {
 		return atomicLoad(m_autoSaves);
 	}

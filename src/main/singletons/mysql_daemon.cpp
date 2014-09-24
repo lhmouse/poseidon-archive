@@ -140,7 +140,7 @@ void daemonLoop(){
 						if(head.timeStamp > getMonoClock()){
 							goto skip;
 						}
-						if(atomicLoad(head.object->m_context) != &head){
+						if(head.object->getContext() != &head){
 							AsyncSaveItem().swap(head);
 						} else {
 							asi.swap(head);
@@ -267,7 +267,7 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object)
 	AUTO_REF(asi, g_saveQueue.back());
 	asi.object.swap(object);
 	asi.timeStamp = getMonoClock() + g_databaseSaveDelay * 1000;
-	atomicStore(asi.object->m_context, &asi);
+	asi.object->setContext(&asi);
 
 	g_newObjectAvail.notify_all();
 }
