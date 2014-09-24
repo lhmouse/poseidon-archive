@@ -2,6 +2,7 @@
 #include "log.hpp"
 #include "atomic.hpp"
 #include "utilities.hpp"
+#include <cstdio>
 #include <boost/thread/mutex.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <unistd.h>
@@ -43,8 +44,12 @@ Log::~Log() NOEXCEPT {
 		const AUTO(color, (m_level >= COUNT_OF(COLORS)) ? '9' : COLORS[m_level]);
 		const AUTO(tag, (t_tag >= COUNT_OF(TAGS)) ? "" : TAGS[t_tag]);
 
-		std::string line;
+		char temp[256];
+
+		std::string line(boost::lexical_cast<std::string>(
+			boost::posix_time::second_clock::local_time()));
 		line.reserve(255);
+		line += ' ';
 
 		line += '[';
 		line += tag;
@@ -62,13 +67,20 @@ Log::~Log() NOEXCEPT {
 		line += ':';
 		line += boost::lexical_cast<std::string>(m_line);
 		line += ' ';
-		line += m_stream.str();
+		for(;;){
+			const std::size_t count = m_stream.readsome(temp, COUNT_OF(temp));
+			if(count == 0){
+				break;
+			}
+			line.append(temp, count);
+		}
+		line += '\n';
 		if(withColor){
 			line += "\x1B[0m";
 		}
 
 		const boost::mutex::scoped_lock lock(g_cerrMutex);
-		std::cerr <<boost::posix_time::second_clock::local_time() <<' ' <<line <<std::endl;
+		std::fwrite(line.c_str(), line.size(), sizeof(char), stderr);
 	} catch(...){
 	}
 }
