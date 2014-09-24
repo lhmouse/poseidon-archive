@@ -44,19 +44,6 @@ protected:
 	}
 };
 
-struct MySQLThreadInitializer : boost::noncopyable {
-	MySQLThreadInitializer(){
-		LOG_INFO("Initializing MySQL thread...");
-		if(::mysql_thread_init() != 0){
-			DEBUG_THROW(Exception, "::mysql_thread_init() failed.");
-		}
-	}
-	~MySQLThreadInitializer(){
-		LOG_INFO("Uninitializing MySQL thread...");
-		::mysql_thread_end();
-	}
-};
-
 struct AsyncSaveItem {
 	boost::shared_ptr<const MySqlObjectBase> object;
 	unsigned long long timeStamp;
@@ -124,8 +111,6 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 }
 
 void daemonLoop(){
-	const MySQLThreadInitializer initializer;
-
 	boost::scoped_ptr<sql::Connection> connection;
 	for(;;){
 		try {
@@ -225,6 +210,7 @@ void threadProc(){
 	LOG_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
 
 	daemonLoop();
+	::mysql_thread_end();
 
 	LOG_INFO("MySQL daemon stopped.");
 }
