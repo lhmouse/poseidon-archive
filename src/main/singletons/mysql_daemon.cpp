@@ -5,6 +5,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
+#include <mysql/mysql.h>
 #include <unistd.h>
 #include "config_file.hpp"
 #include "../mysql/object_base.hpp"
@@ -46,11 +47,13 @@ protected:
 struct MySQLThreadInitializer : boost::noncopyable {
 	MySQLThreadInitializer(){
 		LOG_INFO("Initializing MySQL thread...");
-		::get_driver_instance()->threadInit();
+		if(::mysql_thread_init() != 0){
+			DEBUG_THROW(Exception, "::mysql_thread_init() failed.");
+		}
 	}
 	~MySQLThreadInitializer(){
 		LOG_INFO("Uninitializing MySQL thread...");
-		::get_driver_instance()->threadEnd();
+		::mysql_thread_end();
 	}
 };
 
