@@ -1,4 +1,4 @@
-AC_PREREQ([2.67])
+AC_PREREQ([2.69])
 AC_INIT([poseidon], [0.1], [lh_mouse@126.com])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
