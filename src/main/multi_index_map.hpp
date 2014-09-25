@@ -181,8 +181,11 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 			return m_delegate.insert(pos, ::std::move(val));	\
 		}	\
 	)	\
-		void erase(iterator pos){	\
+		iterator erase(iterator pos){	\
+			iterator ret = pos;	\
+			++ret;	\
 			m_delegate.erase(pos);	\
+			return ret;	\
 		}	\
 		\
 		template<unsigned IndexIdT>	\
@@ -218,8 +221,13 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 	)	\
 		template<unsigned IndexIdT>  \
-		void erase(typename delegate_container::nth_index<IndexIdT>::type::iterator pos){	\
+		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
+			erase(typename delegate_container::nth_index<IndexIdT>::type::iterator pos)	\
+		{	\
+			typename delegate_container::nth_index<IndexIdT>::type::iterator ret = pos;	\
+			++ret;	\
 			getIndex<IndexIdT>().erase(pos);	\
+			return ret;	\
 		}	\
 		template<unsigned IndexIdT>  \
 		void erase(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key){	\
