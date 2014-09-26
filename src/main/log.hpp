@@ -19,6 +19,10 @@ public:
 	};
 
 	enum {
+		MAX_COMMENT_WIDTH = 7	// WARNING
+	};
+
+	enum {
 		TAG_PRIMARY,	// 0
 		TAG_TIMER,		// 1
 		TAG_DATABASE,	// 2

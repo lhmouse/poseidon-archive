@@ -51,7 +51,7 @@ Log::~Log() NOEXCEPT {
 		const ::time_t seconds = now / 1000;
 		const unsigned milliseconds = now % 1000;
 		::gmtime_r(&seconds, &desc);
-		const int len = std::sprintf(temp, "%04u-%02u-%02u %02u:%02u:%02u.%03u ",
+		unsigned len = std::sprintf(temp, "%04u-%02u-%02u %02u:%02u:%02u.%03u ",
 			1900 + desc.tm_year, 1 + desc.tm_mon, desc.tm_mday,
 			desc.tm_hour, desc.tm_min, desc.tm_sec, milliseconds);
 
@@ -65,16 +65,26 @@ Log::~Log() NOEXCEPT {
 		line += ' ';
 
 		if(withColors){
-			line +="\x1B[3";
+			line +="\x1B[30;4";
 			line += color;
 			line += 'm';
 		}
-		line += m_comment;
+		len = std::strlen(m_comment);
+		assert(len <= MAX_COMMENT_WIDTH);
+		const unsigned right = (MAX_COMMENT_WIDTH - len) / 2;
+		const unsigned left = MAX_COMMENT_WIDTH - len - right;
+		line.append(left, ' ');
+		line.append(m_comment, len);
+		line.append(right, ' ');
+		if(withColors){
+			line +="\x1B[40;3";
+			line += color;
+			line += 'm';
+		}
 		line += ' ';
 		line += m_file;
-		line += ':';
-		line += boost::lexical_cast<std::string>(m_line);
-		line += ' ';
+		len = std::sprintf(temp, ":%lu ", (unsigned long)m_line);
+		line.append(temp, len);
 		for(;;){
 			const std::size_t count = m_stream.readsome(temp, COUNT_OF(temp));
 			if(count == 0){
