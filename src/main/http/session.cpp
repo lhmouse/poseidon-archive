@@ -68,60 +68,6 @@ void respond(const boost::shared_ptr<HttpSession> &session, HttpStatus status,
 	session->sendUsingMove(buffer);
 }
 
-HttpVerb verbFromString(const std::string &verb){
-	switch(verb.size()){
-	case 3:
-		if(verb == "GET"){
-			return HTTP_GET;
-		} else if(verb == "PUT"){
-			return HTTP_PUT;
-		}
-		break;
-
-	case 4:
-		if(verb == "POST"){
-			return HTTP_POST;
-		} else if(verb == "HEAD"){
-			return HTTP_HEAD;
-		}
-		break;
-
-	case 5:
-		if(verb == "TRACE"){
-			return HTTP_TRACE;
-		}
-		break;
-
-	case 6:
-		if(verb == "DELETE"){
-			return HTTP_DELETE;
-		}
-		break;
-
-	case 7:
-		if(verb == "CONNECT"){
-			return HTTP_CONNECT;
-		} else if(verb == "OPTIONS"){
-			return HTTP_OPTIONS;
-		}
-		break;
-	}
-	return HTTP_INVALID_VERB;
-}
-const char *stringFromVerb(HttpVerb verb){
-	switch(verb){
-	case HTTP_GET:		return "GET";
-	case HTTP_POST:		return "POST";
-	case HTTP_HEAD:		return "HEAD";
-	case HTTP_PUT:		return "PUT";
-	case HTTP_DELETE:	return "DELETE";
-	case HTTP_TRACE:	return "TRACT";
-	case HTTP_CONNECT:	return "CONNECT";
-	case HTTP_OPTIONS:	return "OPTIONS";
-	default:			return "INVALID_VERB";
-	}
-}
-
 class HttpRequestJob : public JobBase {
 private:
 	const boost::weak_ptr<HttpSession> m_session;
@@ -160,7 +106,7 @@ protected:
 			respond(session, HTTP_NOT_FOUND);
 			return;
 		}
-		LOG_DEBUG("Dispatching http request: URI = ", m_uri, ", verb = ", stringFromVerb(m_verb));
+		LOG_DEBUG("Dispatching http request: URI = ", m_uri, ", verb = ", stringFromHttpVerb(m_verb));
 		OptionalMap headers;
 		StreamBuffer contents;
 		try {
@@ -224,7 +170,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					shutdown();
 					return;
 				}
-				m_verb = verbFromString(parts[0]);
+				m_verb = httpVerbFromString(parts[0].c_str());
 				if(m_verb == HTTP_INVALID_VERB){
 					LOG_WARNING("Bad HTTP verb: ", parts[0]);
 					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_METHOD);

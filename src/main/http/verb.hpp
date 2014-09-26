@@ -3,7 +3,7 @@
 
 namespace Poseidon {
 
-typedef enum {
+enum HttpVerb {
 	HTTP_INVALID_VERB,
 	HTTP_GET,
 	HTTP_POST,
@@ -13,7 +13,10 @@ typedef enum {
 	HTTP_TRACE,
 	HTTP_CONNECT,
 	HTTP_OPTIONS
-} HttpVerb;
+};
+
+HttpVerb httpVerbFromString(const char *str);
+const char *stringFromHttpVerb(HttpVerb verb);
 
 }
 

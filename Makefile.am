@@ -45,6 +45,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/http_servlet_manager.cpp	\
 	src/main/http/session.cpp	\
 	src/main/http/status.cpp	\
+	src/main/http/verb.cpp	\
 	src/main/http/utilities.cpp	\
 	src/main/mysql/object_base.cpp	\
 	src/main/job_base.cpp	\

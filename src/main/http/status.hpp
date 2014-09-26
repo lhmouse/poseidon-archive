@@ -3,7 +3,7 @@
 
 namespace Poseidon {
 
-typedef enum {
+enum HttpStatus {
 	HTTP_CONTINUE			 	= 100,
 	HTTP_SWITCH_PROTOCOLS		= 101,
 	HTTP_OK 					= 200,
@@ -44,7 +44,7 @@ typedef enum {
 	HTTP_SERVICE_UNAVAIL 		= 503,
 	HTTP_GATEWAY_TIMEOUT 		= 504,
 	HTTP_VERSION_NOT_SUP 		= 505
-} HttpStatus;
+};
 
 struct HttpStatusDesc {
 	const char *descShort;
