@@ -144,6 +144,10 @@ public:
 	}
 
 public:
+	T &ref() const {
+		return m_holds;
+	}
+
 	operator T() const {
 		T ret;
 		using std::swap;
@@ -177,9 +181,6 @@ public:
 	void swap(Move &rhs){
 		Delegate::swap(rhs);
 	}
-
-public:
-	using Delegate::operator T;
 };
 
 template<typename T>
@@ -194,6 +195,85 @@ template<typename T>
 void swap(T &lhs, Move<T> &rhs){
 	rhs.swap(lhs);
 }
+
+template<typename T>
+bool operator==(const Move<T> &lhs, const Move<T> &rhs){
+	return static_cast<const T &>(lhs.ref()) == static_cast<const T &>(rhs.ref());
+}
+template<typename T>
+bool operator==(const Move<T> &lhs, const T &rhs){
+	return static_cast<const T &>(lhs.ref()) == rhs;
+}
+template<typename T>
+bool operator==(const T &lhs, const Move<T> &rhs){
+	return lhs == static_cast<const T &>(rhs.ref());
+}
+
+template<typename T>
+bool operator!=(const Move<T> &lhs, const Move<T> &rhs){
+	return static_cast<const T &>(lhs.ref()) != static_cast<const T &>(rhs.ref());
+}
+template<typename T>
+bool operator!=(const Move<T> &lhs, const T &rhs){
+	return static_cast<const T &>(lhs.ref()) != rhs;
+}
+template<typename T>
+bool operator!=(const T &lhs, const Move<T> &rhs){
+	return lhs != static_cast<const T &>(rhs.ref());
+}
+
+template<typename T>
+bool operator<(const Move<T> &lhs, const Move<T> &rhs){
+	return static_cast<const T &>(lhs.ref()) < static_cast<const T &>(rhs.ref());
+}
+template<typename T>
+bool operator<(const Move<T> &lhs, const T &rhs){
+	return static_cast<const T &>(lhs.ref()) < rhs;
+}
+template<typename T>
+bool operator<(const T &lhs, const Move<T> &rhs){
+	return lhs < static_cast<const T &>(rhs.ref());
+}
+
+template<typename T>
+bool operator>(const Move<T> &lhs, const Move<T> &rhs){
+	return static_cast<const T &>(lhs.ref()) > static_cast<const T &>(rhs.ref());
+}
+template<typename T>
+bool operator>(const Move<T> &lhs, const T &rhs){
+	return static_cast<const T &>(lhs.ref()) > rhs;
+}
+template<typename T>
+bool operator>(const T &lhs, const Move<T> &rhs){
+	return lhs > static_cast<const T &>(rhs.ref());
+}
+
+template<typename T>
+bool operator<=(const Move<T> &lhs, const Move<T> &rhs){
+	return static_cast<const T &>(lhs.ref()) <= static_cast<const T &>(rhs.ref());
+}
+template<typename T>
+bool operator<=(const Move<T> &lhs, const T &rhs){
+	return static_cast<const T &>(lhs.ref()) <= rhs;
+}
+template<typename T>
+bool operator<=(const T &lhs, const Move<T> &rhs){
+	return lhs <= static_cast<const T &>(rhs.ref());
+}
+
+template<typename T>
+bool operator>=(const Move<T> &lhs, const Move<T> &rhs){
+	return static_cast<const T &>(lhs.ref()) >= static_cast<const T &>(rhs.ref());
+}
+template<typename T>
+bool operator>=(const Move<T> &lhs, const T &rhs){
+	return static_cast<const T &>(lhs.ref()) >= rhs;
+}
+template<typename T>
+bool operator>=(const T &lhs, const Move<T> &rhs){
+	return lhs >= static_cast<const T &>(rhs.ref());
+}
+
 #endif
 
 template<typename T>
