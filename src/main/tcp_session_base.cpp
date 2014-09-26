@@ -54,7 +54,7 @@ std::string getIpFromSocket(int fd){
 
 TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
 	: m_socket(STD_MOVE(socket)), m_remoteIp(getIpFromSocket(m_socket.get()))
-	, m_readShutdown(false), m_shutdown(false)
+	, m_shutdown(false)
 {
 
 	LOG_INFO("Created tcp peer, remote ip = ", m_remoteIp);
@@ -109,17 +109,11 @@ void TcpSessionBase::sendUsingMove(StreamBuffer &buffer){
 	EpollDaemon::refreshSession(virtualSharedFromThis<TcpSessionBase>());
 }
 
-void TcpSessionBase::shutdownRead(){
-	atomicStore(m_readShutdown, true);
-	::shutdown(getFd(), SHUT_RD);
-}
 void TcpSessionBase::shutdown(){
-	atomicStore(m_readShutdown, true);
 	atomicStore(m_shutdown, true);
 	::shutdown(getFd(), SHUT_RD);
 }
 void TcpSessionBase::forceShutdown(){
-	atomicStore(m_readShutdown, true);
 	atomicStore(m_shutdown, true);
 	::shutdown(getFd(), SHUT_RDWR);
 }

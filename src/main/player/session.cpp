@@ -33,7 +33,7 @@ protected:
 		const AUTO(servlet, PlayerServletManager::getServlet(lockedDep, m_protocolId));
 		if(!servlet){
 			LOG_WARNING("No servlet for protocol ", m_protocolId);
-			session->shutdownRead();
+			session->shutdown();
 			return;
 		}
 		LOG_DEBUG("Dispatching packet: protocol = ", m_protocolId,

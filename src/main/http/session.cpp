@@ -194,7 +194,7 @@ HttpSession::~HttpSession(){
 void HttpSession::onReadAvail(const void *data, std::size_t size){
 	if(m_totalLength + size >= MAX_REQUEST_LENGTH){
 		respond(virtualSharedFromThis<HttpSession>(), HTTP_REQUEST_TOO_LARGE);
-		shutdownRead();
+		shutdown();
 		return;
 	}
 	m_totalLength += size;
@@ -221,20 +221,20 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				if(parts.size() != 3){
 					LOG_WARNING("Bad HTTP header: ", m_line);
 					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
-					shutdownRead();
+					shutdown();
 					return;
 				}
 				m_verb = verbFromString(parts[0]);
 				if(m_verb == HTTP_INVALID_VERB){
 					LOG_WARNING("Bad HTTP verb: ", parts[0]);
 					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_METHOD);
-					shutdownRead();
+					shutdown();
 					return;
 				}
 				if(parts[1].empty() || (parts[1][0] != '/')){
 					LOG_WARNING("Bad HTTP request URI: ", parts[1]);
 					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
-					shutdownRead();
+					shutdown();
 					return;
 				}
 				const std::size_t questionPos = parts[1].find('?');
@@ -248,7 +248,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				if((parts[2] != "HTTP/1.0") && (parts[2] != "HTTP/1.1")){
 					LOG_WARNING("Unsupported HTTP version: ", parts[2]);
 					respond(virtualSharedFromThis<HttpSession>(), HTTP_VERSION_NOT_SUP);
-					shutdownRead();
+					shutdown();
 					return;
 				}
 				m_state = ST_HEADERS;
@@ -257,7 +257,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				if(delimPos == std::string::npos){
 					LOG_WARNING("Bad HTTP header: ", m_line);
 					respond(virtualSharedFromThis<HttpSession>(), HTTP_BAD_REQUEST);
-					shutdownRead();
+					shutdown();
 					return;
 				}
 				const char *value = m_line.c_str() + delimPos + 1;

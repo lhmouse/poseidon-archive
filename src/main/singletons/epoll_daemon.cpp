@@ -179,7 +179,7 @@ void daemonLoop(){
 					reepollReadable(session);
 					continue;
 				}
-				if(session->hasReadBeenShutdown()){
+				if(session->hasBeenShutdown()){
 					continue;
 				}
 				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
@@ -212,20 +212,20 @@ void daemonLoop(){
 			const AUTO_REF(session, *it);
 			try {
 				std::size_t bytesToWrite;
-				bool readShutdown;
+				bool shutdown;
 				{
 					boost::mutex::scoped_lock sessionLock;
 					bytesToWrite = session->peekWriteAvail(sessionLock,
 						data.get(), g_tcpBufferSize);
-					readShutdown = session->hasReadBeenShutdown();
+					shutdown = session->hasBeenShutdown();
 					if(bytesToWrite == 0){
-						if(!readShutdown){
+						if(!shutdown){
 							reepollWriteable(session);
 						}
 					}
 				}
 				if(bytesToWrite == 0){
-					if(readShutdown){
+					if(shutdown){
 						removeSession(session);
 					}
 					continue;
@@ -314,7 +314,7 @@ void daemonLoop(){
 				}
 
 				if(event.events & EPOLLRDHUP){
-					session->shutdownRead();
+					session->shutdown();
 					event.events |= EPOLLIN;
 					event.events |= EPOLLOUT;
 				}

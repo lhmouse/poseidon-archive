@@ -19,7 +19,6 @@ private:
 	const ScopedFile m_socket;
 	const std::string m_remoteIp;
 
-	volatile bool m_readShutdown;
 	volatile bool m_shutdown;
 	mutable boost::mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
@@ -35,9 +34,6 @@ public:
 
 	const std::string &getRemoteIp() const {
 		return m_remoteIp;
-	}
-	bool hasReadBeenShutdown() const {
-		return atomicLoad(m_readShutdown);
 	}
 	bool hasBeenShutdown() const {
 		return atomicLoad(m_shutdown);
@@ -66,10 +62,8 @@ ENABLE_IF_CXX11(
 	}
 )
 
-	// 关闭读端，调用后 onReadAvail() 将不会被触发，但是依然可写。
-	// 一旦无任何数据可写，该会话会被立即关闭。
-	void shutdownRead();
-	// 关闭会话，此后任何 send() 或 sendUsingMove() 将抛出一个异常。
+	// 调用后 onReadAvail() 将不会被触发，
+	// 此后任何 send() 或 sendUsingMove() 将抛出一个异常。
 	// 套接字将会在未发送的数据被全部发送之后被正常关闭。
 	void shutdown();
 	// 强行关闭会话以及套接字，未发送数据丢失。
