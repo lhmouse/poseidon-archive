@@ -33,6 +33,9 @@ public:
 	explicit HttpSession(Move<ScopedFile> socket);
 	~HttpSession();
 
+private:
+	void onHeader(const char *name, std::size_t len, const std::string &val);
+
 protected:
 	void onReadAvail(const void *data, std::size_t size);
 };

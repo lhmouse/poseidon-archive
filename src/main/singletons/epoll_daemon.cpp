@@ -79,26 +79,46 @@ void addSession(const boost::shared_ptr<TcpSessionBase> &session){
 }
 void touchSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const unsigned long long now = getMonoClock();
-	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(it, g_sessions.find<0>(session));
-	if(it == g_sessions.end<0>()){
-		LOG_WARNING("Socket not in epoll?");
-		return;
+	{
+		const boost::mutex::scoped_lock lock(g_sessionMutex);
+		const AUTO(it, g_sessions.find<0>(session));
+		if(it == g_sessions.end<0>()){
+			LOG_WARNING("Socket not in epoll?");
+			return;
+		}
+		g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
+		g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 	}
-	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
-	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
 void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
 		LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
 	}
-	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
-	if(it == g_sessions.end<IDX_SESSION>()){
-		LOG_WARNING("Socket not in epoll?");
-		return;
+	{
+		const boost::mutex::scoped_lock lock(g_sessionMutex);
+		const AUTO(it, g_sessions.find<IDX_SESSION>(session));
+		if(it == g_sessions.end<IDX_SESSION>()){
+			LOG_WARNING("Socket not in epoll?");
+			return;
+		}
+		g_sessions.erase<IDX_SESSION>(it);
 	}
-	g_sessions.erase<IDX_SESSION>(it);
+	for(;;){
+		unsigned char temp[1024];
+		std::size_t bytesToWrite;
+		{
+			boost::mutex::scoped_lock sessionLock;
+			bytesToWrite = session->peekWriteAvail(sessionLock, temp, sizeof(temp));
+		}
+		if(bytesToWrite == 0){
+			break;
+		}
+		const ::ssize_t bytesWritten = ::send(session->getFd(), temp, bytesToWrite, MSG_NOSIGNAL);
+		if(bytesWritten <= 0){
+			break;
+		}
+		session->notifyWritten(bytesWritten);
+	}
 }
 
 void deepollReadable(const boost::shared_ptr<TcpSessionBase> &session){
@@ -142,8 +162,7 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 }
 
 void daemonLoop(){
-	const boost::scoped_array<unsigned char> data(
-		new unsigned char[g_tcpBufferSize]);
+	const boost::scoped_array<unsigned char> data(new unsigned char[g_tcpBufferSize]);
 	std::size_t epollTimeout = 0;
 
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
