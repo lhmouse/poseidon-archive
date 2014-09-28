@@ -58,7 +58,7 @@ boost::mutex g_serverMutex;
 std::set<boost::shared_ptr<const SocketServerBase> > g_servers;
 
 void addSession(const boost::shared_ptr<TcpSessionBase> &session){
-	const unsigned long long now = getMonoClock();
+	const AUTO(now, getMonoClock());
 	std::pair<SessionMap::iterator, bool> result;
 	{
 		const boost::mutex::scoped_lock lock(g_sessionMutex);
@@ -78,7 +78,7 @@ void addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	}
 }
 void touchSession(const boost::shared_ptr<TcpSessionBase> &session){
-	const unsigned long long now = getMonoClock();
+	const AUTO(now, getMonoClock());
 	{
 		const boost::mutex::scoped_lock lock(g_sessionMutex);
 		const AUTO(it, g_sessions.find<0>(session));
@@ -124,7 +124,7 @@ void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 }
 
 void deepollReadable(const boost::shared_ptr<TcpSessionBase> &session){
-	const unsigned long long now = getMonoClock();
+	const AUTO(now, getMonoClock());
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
 	if(it == g_sessions.end<IDX_SESSION>()){
@@ -144,7 +144,7 @@ void reepollReadable(const boost::shared_ptr<TcpSessionBase> &session){
 }
 
 void deepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
-	const unsigned long long now = getMonoClock();
+	const AUTO(now, getMonoClock());
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
 	if(it == g_sessions.end<IDX_SESSION>()){
