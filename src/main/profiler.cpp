@@ -68,16 +68,17 @@ Profiler::Profiler(const char *file, unsigned long line)
 {
 	const AUTO(now, getMonoClock());
 
+	m_impl = NULLPTR;
 	{
-		boost::shared_lock<boost::shared_mutex> slock(g_mutex);
+		const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 		AUTO(it, g_profile.find(ProfileKey(m_file, m_line)));
 		if(it != g_profile.end()){
 			m_impl = &(it->second);
-		} else {
-			slock.unlock();
-			const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
-			m_impl = &(g_profile[ProfileKey(m_file, m_line)]);
 		}
+	}
+	if(!m_impl){
+		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		m_impl = &(g_profile[ProfileKey(m_file, m_line)]);
 	}
 
 	m_start = now;
