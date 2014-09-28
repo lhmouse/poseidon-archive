@@ -62,7 +62,7 @@ inline std::vector<std::string> explode(char separator, const std::string &str, 
 }
 
 template<typename T>
-inline std::string inplode(char separator, const std::vector<T> &vec){
+inline std::string implode(char separator, const std::vector<T> &vec){
 	std::ostringstream oss;
 	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
 		oss <<*it;
@@ -75,13 +75,13 @@ inline std::string inplode(char separator, const std::vector<T> &vec){
 #ifdef POSEIDON_CXX11
 		ret.pop_back();
 #else
-		ret.erase(ret.end() - 1);
+		ret.erase(ret.end() - 1, ret.end());
 #endif
 	}
 	return ret;
 }
 template<>
-inline std::string inplode(char separator, const std::vector<std::string> &vec){
+inline std::string implode(char separator, const std::vector<std::string> &vec){
 	std::string ret;
 	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
 		ret.append(*it);
