@@ -63,7 +63,7 @@ ENABLE_IF_CXX11(
 )
 
 	// 调用后 onReadAvail() 将不会被触发，
-	// 此后任何 send() 或 sendUsingMove() 将抛出一个异常。
+	// 此后任何 send() 或 sendUsingMove() 将不会进行任何操作。
 	// 套接字将会在未发送的数据被全部发送之后被正常关闭。
 	void shutdown();
 	// 强行关闭会话以及套接字，未发送数据丢失。
