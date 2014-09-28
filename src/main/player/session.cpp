@@ -4,6 +4,7 @@
 #include "../exception.hpp"
 #include "../singletons/player_servlet_manager.hpp"
 #include "../job_base.hpp"
+#include "../profiler.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -58,8 +59,9 @@ PlayerSession::~PlayerSession(){
 }
 
 void PlayerSession::onReadAvail(const void *data, std::size_t size){
-	m_payload.put(data, size);
+	PROFILE_ME;
 
+	m_payload.put(data, size);
 	for(;;){
 		if(m_payloadLen == -1){
 			if(m_payload.size() < 4){

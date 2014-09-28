@@ -9,6 +9,7 @@
 #include "../utilities.hpp"
 #include "../exception.hpp"
 #include "../job_base.hpp"
+#include "../profiler.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -163,6 +164,8 @@ void HttpSession::onHeader(const char *name, std::size_t len, const std::string 
 }
 
 void HttpSession::onReadAvail(const void *data, std::size_t size){
+	PROFILE_ME;
+
 	try {
 		if(m_totalLength + size >= MAX_REQUEST_LENGTH){
 			LOG_WARNING("Request size is ", m_totalLength + size,
