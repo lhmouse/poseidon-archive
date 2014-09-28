@@ -77,7 +77,7 @@ StreamBuffer &StreamBuffer::operator=(const StreamBuffer &rhs){
 	StreamBuffer(rhs).swap(*this);
 	return *this;
 }
-ENABLE_IF_CXX11(
+#ifdef POSEIDON_CXX11
 StreamBuffer::StreamBuffer(StreamBuffer &&rhs) noexcept
 	: m_size(0)
 {
@@ -87,7 +87,7 @@ StreamBuffer &StreamBuffer::operator=(StreamBuffer &&rhs) noexcept {
 	rhs.swap(*this);
 	return *this;
 }
-)
+#endif
 StreamBuffer::~StreamBuffer(){
 	clear();
 }

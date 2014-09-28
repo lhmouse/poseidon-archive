@@ -21,10 +21,10 @@ public:
 	StreamBuffer(const char *str);
 	StreamBuffer(const StreamBuffer &rhs);
 	StreamBuffer &operator=(const StreamBuffer &rhs);
-ENABLE_IF_CXX11(
+#ifdef POSEIDON_CXX11
 	StreamBuffer(StreamBuffer &&rhs) noexcept;
 	StreamBuffer &operator=(StreamBuffer &&rhs) noexcept;
-)
+#endif
 	~StreamBuffer();
 
 public:
@@ -56,11 +56,11 @@ public:
 	StreamBuffer cut(std::size_t size);
 	// cut() 的逆操作。该函数返回后 src 为空。
 	void splice(StreamBuffer &src) NOEXCEPT;
-ENABLE_IF_CXX11(
+#ifdef POSEIDON_CXX11
 	void splice(StreamBuffer &&src) noexcept {
 		splice(std::move(src));
 	}
-)
+#endif
 };
 
 class StreamBufferReadIterator

@@ -53,14 +53,14 @@ public:
 	void send(const StreamBuffer &buffer);
 	// 执行后 buffer 置空。
 	void sendUsingMove(StreamBuffer &buffer);
-ENABLE_IF_CXX11(
+#ifdef POSEIDON_CXX11
 	void send(StreamBuffer &&buffer){
 		sendUsingMove(buffer);
 	}
 	void sendUsingMove(StreamBuffer &&buffer){
 		sendUsingMove(buffer);
 	}
-)
+#endif
 
 	// 调用后 onReadAvail() 将不会被触发，
 	// 此后任何 send() 或 sendUsingMove() 将不会进行任何操作。

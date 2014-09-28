@@ -24,16 +24,19 @@ protected:
 
 public:
 	// 这两个函数是线程安全的。
-	void send(boost::uint16_t status, const StreamBuffer &payload);
+	void send(boost::uint16_t status, const StreamBuffer &payload){
+		StreamBuffer temp(payload);
+		sendUsingMove(status, temp);
+	}
 	void sendUsingMove(boost::uint16_t status, StreamBuffer &payload);
-ENABLE_IF_CXX11(
+#ifdef POSEIDON_CXX11
 	void send(boost::uint16_t status, StreamBuffer &&payload){
 		sendUsingMove(status, payload);
 	}
 	void sendUsingMove(boost::uint16_t status, StreamBuffer &&payload){
 		sendUsingMove(status, payload);
 	}
-)
+#endif
 };
 
 }

@@ -239,25 +239,32 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					m_state = ST_CONTENTS;
 				}
 			}
-			if(m_state == ST_CONTENTS){
-				const std::size_t bytesAvail = (std::size_t)(end - read);
-				const std::size_t bytesRemaining = m_contentLength - m_line.size();
-				if(bytesAvail < bytesRemaining){
-					m_line.append(read, bytesAvail);
-					read += bytesAvail;
-					continue;
-				}
-				m_line.append(read, bytesRemaining);
-				read += bytesRemaining;
-				boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
-					STD_MOVE(m_verb), STD_MOVE(m_uri), STD_MOVE(m_getParams),
-					STD_MOVE(m_headers), STD_MOVE(m_line))->pend();
-
-				m_state = ST_FIRST_HEADER;
-				m_totalLength = 0;
-				m_contentLength = 0;
+			if(m_state != ST_CONTENTS){
+				m_line.clear();
+				continue;
 			}
+			const std::size_t bytesAvail = (std::size_t)(end - read);
+			const std::size_t bytesRemaining = m_contentLength - m_line.size();
+			if(bytesAvail < bytesRemaining){
+				m_line.append(read, bytesAvail);
+				read += bytesAvail;
+				continue;
+			}
+
+			m_line.append(read, bytesRemaining);
+			read += bytesRemaining;
+			boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
+				STD_MOVE(m_verb), STD_MOVE(m_uri), STD_MOVE(m_getParams),
+				STD_MOVE(m_headers), STD_MOVE(m_line))->pend();
+
+			m_state = ST_FIRST_HEADER;
+			m_totalLength = 0;
+			m_contentLength = 0;
 			m_line.clear();
+
+			m_uri.clear();
+			m_getParams.clear();
+			m_headers.clear();
 		}
 	} catch(HttpException &e){
 		LOG_ERROR("HttpException thrown while parsing HTTP data, status = ", e.status(),
