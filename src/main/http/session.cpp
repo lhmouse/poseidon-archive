@@ -1,6 +1,7 @@
 #include "../../precompiled.hpp"
 #include "session.hpp"
 #include "status.hpp"
+#include "exception.hpp"
 #include "utilities.hpp"
 #include "../log.hpp"
 #include "../singletons/http_servlet_manager.hpp"
@@ -9,8 +10,6 @@
 #include "../exception.hpp"
 #include "../job_base.hpp"
 using namespace Poseidon;
-
-#define HTTP_THROW(st_)		DEBUG_THROW(::Poseidon::ProtocolException, #st_, st_)
 
 namespace {
 
@@ -112,10 +111,10 @@ protected:
 				const HttpStatus status = (*servlet)(headers, contents,
 					m_verb, m_getParams, m_inHeaders, m_inContents);
 				respond(session.get(), status, &headers, &contents);
-			} catch(ProtocolException &e){
-				LOG_ERROR("ProtocolException thrown in HTTP servlet, code = ", e.code(),
-					", file = ", e.file(), ", line = ", e.line(), ", what = ", e.what());
-				respond(session.get(), (e.code() > 0) ? static_cast<HttpStatus>(e.code()) : HTTP_SERVER_ERROR);
+			} catch(HttpException &e){
+				LOG_ERROR("HttpException thrown in HTTP servlet, status = ", e.status(),
+					", file = ", e.file(), ", line = ", e.line());
+				respond(session.get(), e.status());
 				session->shutdown();
 			}
 		} catch(...){
@@ -147,10 +146,10 @@ void HttpSession::onHeader(const char *name, std::size_t len, const std::string 
 		if(std::memcmp(name, "Expect", 6) == 0){
 //			if(val != "100-continue"){
 //				LOG_WARNING("Unknown HTTP header Expect: ", val);
-//				HTTP_THROW(HTTP_NOT_SUPPORTED);
+//				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 //			}
 //			respond(this, HTTP_CONTINUE);
-			HTTP_THROW(HTTP_NOT_SUPPORTED);
+			DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 		}
 		break;
 
@@ -168,7 +167,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		if(m_totalLength + size >= MAX_REQUEST_LENGTH){
 			LOG_WARNING("Request size is ", m_totalLength + size,
 				" and has exceeded MAX_REQUEST_LENGTH which is ", MAX_REQUEST_LENGTH);
-			HTTP_THROW(HTTP_REQUEST_TOO_LARGE);
+			DEBUG_THROW(HttpException, HTTP_REQUEST_TOO_LARGE);
 		}
 		m_totalLength += size;
 
@@ -193,16 +192,16 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					const AUTO(parts, explode<std::string>(' ', m_line, 3));
 					if(parts.size() != 3){
 						LOG_WARNING("Bad HTTP header: ", m_line);
-						HTTP_THROW(HTTP_BAD_REQUEST);
+						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					m_verb = httpVerbFromString(parts[0].c_str());
 					if(m_verb == HTTP_INVALID_VERB){
 						LOG_WARNING("Bad HTTP verb: ", parts[0]);
-						HTTP_THROW(HTTP_BAD_METHOD);
+						DEBUG_THROW(HttpException, HTTP_BAD_METHOD);
 					}
 					if(parts[1].empty() || (parts[1][0] != '/')){
 						LOG_WARNING("Bad HTTP request URI: ", parts[1]);
-						HTTP_THROW(HTTP_BAD_REQUEST);
+						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					const std::size_t questionPos = parts[1].find('?');
 					if(questionPos == std::string::npos){
@@ -214,14 +213,14 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					}
 					if((parts[2] != "HTTP/1.0") && (parts[2] != "HTTP/1.1")){
 						LOG_WARNING("Unsupported HTTP version: ", parts[2]);
-						HTTP_THROW(HTTP_VERSION_NOT_SUP);
+						DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUP);
 					}
 					m_state = ST_HEADERS;
 				} else if(!m_line.empty()){
 					const std::size_t delimPos = m_line.find(':');
 					if(delimPos == std::string::npos){
 						LOG_WARNING("Bad HTTP header: ", m_line);
-						HTTP_THROW(HTTP_BAD_REQUEST);
+						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					const char *valueBegin = m_line.c_str() + delimPos + 1;
 					while(*valueBegin == ' '){
@@ -257,10 +256,10 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			}
 			m_line.clear();
 		}
-	} catch(ProtocolException &e){
-		LOG_ERROR("ProtocolException thrown while parsing HTTP data, code = ", e.code(),
-			", file = ", e.file(), ", line = ", e.line(), ", what = ", e.what());
-		respond(this, (e.code() > 0) ? static_cast<HttpStatus>(e.code()) : HTTP_SERVER_ERROR);
+	} catch(HttpException &e){
+		LOG_ERROR("HttpException thrown while parsing HTTP data, status = ", e.status(),
+			", file = ", e.file(), ", line = ", e.line());
+		respond(this, e.status());
 		shutdown();
 	} catch(...){
 		LOG_ERROR("Forwarding exception... shutdown the session first.");
