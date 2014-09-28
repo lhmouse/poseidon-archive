@@ -113,10 +113,12 @@ void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 		if(bytesToWrite == 0){
 			break;
 		}
-		const ::ssize_t bytesWritten = ::send(session->getFd(), temp, bytesToWrite, MSG_NOSIGNAL);
+		const ::ssize_t bytesWritten = ::send(session->getFd(),
+			temp, bytesToWrite, MSG_NOSIGNAL);
 		if(bytesWritten <= 0){
 			break;
 		}
+		LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp());
 		session->notifyWritten(bytesWritten);
 	}
 }
