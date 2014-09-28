@@ -21,33 +21,27 @@ const std::string &OptionalMap::get(const char *key) const {
 	return it->second;
 }
 
-std::string &OptionalMap::create(const char *key, std::size_t len){
-#if __cplusplus >= 201103L
-	AUTO(hint, m_delegate.upper_bound(
+std::string &OptionalMap::create(const char *key){
+	AUTO(range, m_delegate.equal_range(
 		boost::shared_ptr<const char>(boost::shared_ptr<void>(), key)));
-	if(hint != m_delegate.begin()){
-		AUTO(it, hint);
-		--it;
-		if(std::strcmp(key, it->first.get()) == 0){
-			return it->second;
-		}
+	AUTO(it, range.first);
+	if(it != range.second){
+		++range.first;
+		m_delegate.erase(range.first, range.second);
+		return it->second;
 	}
+	const std::size_t len = std::strlen(key);
+	boost::shared_ptr<char> newKey(new char[len + 1], &deleteCharArray);
+	std::memcpy(newKey.get(), key, len + 1);
+#ifdef POSEIDON_CXX11
+	return m_delegate.insert(range.second,
 #else
-	AUTO(hint, m_delegate.lower_bound(
-		boost::shared_ptr<const char>(boost::shared_ptr<void>(), key)));
-	if(hint != m_delegate.end()){
-		if(std::strcmp(key, hint->first.get()) == 0){
-			return hint->second;
-		}
+	if(range.first != m_delegate.begin()){
+		--range.first;
 	}
-	if(hint != m_delegate.begin()){
-		--hint;
-	}
+	return m_delegate.insert(range.first,
 #endif
-	boost::shared_ptr<char> str(new char[len + 1], &deleteCharArray);
-	std::memcpy(str.get(), key, len);
-	str.get()[len] = 0;
-	return m_delegate.insert(hint, std::make_pair(str, EMPTY_STRING))->second;
+		std::make_pair(newKey, EMPTY_STRING))->second;
 }
 
 std::pair<OptionalMap::const_iterator, OptionalMap::const_iterator>

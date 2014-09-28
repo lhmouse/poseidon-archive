@@ -77,19 +77,11 @@ public:
 		return get(key);
 	}
 
-	std::string &create(const char *key, std::size_t len);
-	std::string &create(const char *key){
-		return create(key, std::strlen(key));
-	}
+	std::string &create(const char *key);
 	std::string &create(const std::string &key){
-		return create(key.data(), key.size());
+		return create(key.c_str());
 	}
 
-	std::string &set(const char *key, std::size_t len, std::string val){
-		std::string &ret = create(key, len);
-		ret.swap(val);
-		return ret;
-	}
 	std::string &set(const char *key, std::string val){
 		std::string &ret = create(key);
 		ret.swap(val);
