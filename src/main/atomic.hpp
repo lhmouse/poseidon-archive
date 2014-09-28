@@ -1,7 +1,7 @@
 #ifndef POSEIDON_ATOMIC_HPP_
 #define POSEIDON_ATOMIC_HPP_
 
-#if __GNUC__ * 100 + __GNUC_MINOR__ > 407
+#if __GNUC__ * 100 + __GNUC_MINOR__ >= 407
 #	define GCC_HAS_ATOMIC_
 #endif
 
