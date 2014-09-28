@@ -83,12 +83,9 @@ public:
 		HttpVerb verb, std::string uri, OptionalMap getParams,
 		OptionalMap inHeaders, std::string inContents)
 		: m_session(STD_MOVE(session))
+		, m_verb(STD_MOVE(verb)), m_uri(STD_MOVE(uri)), m_getParams(STD_MOVE(getParams))
+		, m_inHeaders(STD_MOVE(inHeaders)), m_inContents(STD_MOVE(inContents))
 	{
-		m_verb = verb;
-		m_uri.swap(uri);
-		m_getParams.swap(getParams);
-		m_inHeaders.swap(inHeaders);
-		m_inContents.swap(inContents);
 	}
 
 protected:
