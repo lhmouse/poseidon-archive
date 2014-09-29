@@ -20,7 +20,8 @@ HttpStatus loadProc(OptionalMap &, StreamBuffer &contents, HttpVerb, OptionalMap
 	const boost::weak_ptr<const Module> &module)
 {
 	if(g_meow){
-		return HTTP_NOT_MODIFIED;
+		contents.put("Already loaded");
+		return HTTP_OK;
 	}
 	g_meow = HttpServletManager::registerServlet("/meow", module, &meowProc);
 	contents.put("OK");
@@ -29,11 +30,12 @@ HttpStatus loadProc(OptionalMap &, StreamBuffer &contents, HttpVerb, OptionalMap
 HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpVerb, OptionalMap get, OptionalMap, std::string){
 	if(get["unload_module"] == "1"){
 		ModuleManager::unload("libposeidon-template.so");
-		contents.put("Unloaded");
+		contents.put("Module unloaded");
 		return HTTP_OK;
 	}
 	if(!g_meow){
-		return HTTP_NOT_MODIFIED;
+		contents.put("Already unloaded");
+		return HTTP_OK;
 	}
 	g_meow.reset();
 	contents.put("OK");
