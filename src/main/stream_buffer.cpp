@@ -1,5 +1,6 @@
 #include "../precompiled.hpp"
 #include "stream_buffer.hpp"
+#include <iostream>
 #include <cassert>
 #include <boost/thread/mutex.hpp>
 using namespace Poseidon;
@@ -7,7 +8,7 @@ using namespace Poseidon;
 struct Poseidon::ImplDisposableBuffer {
 	std::size_t readPos;
 	std::size_t writePos;
-	unsigned char data[1024];
+	char data[1024];
 
 	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
 	// 因此在 list 中会被 value-initialize 即填零，然而这是没有任何意义的。
@@ -131,7 +132,7 @@ int StreamBuffer::get(){
 void StreamBuffer::put(unsigned char by){
 	AUTO(rit, m_chunks.rbegin());
 	if((rit != m_chunks.rend()) && (rit->writePos < sizeof(rit->data))){
-		rit->data[rit->writePos] = by;
+		rit->data[rit->writePos] = static_cast<char>(by);
 		++(rit->writePos);
 		++m_size;
 		return;
@@ -145,7 +146,7 @@ void StreamBuffer::put(unsigned char by){
 void StreamBuffer::put(const char *str){
 	char ch;
 	while((ch = *(str++)) != 0){
-		put((unsigned char)ch);
+		put(ch);
 	}
 }
 
@@ -155,7 +156,7 @@ std::size_t StreamBuffer::peek(void *data, std::size_t size) const {
 	}
 
 	const std::size_t ret = std::min(m_size, size);
-	unsigned char *write = (unsigned char *)data;
+	char *write = static_cast<char *>(data);
 	std::size_t copied = 0;
 	AUTO(it, m_chunks.begin());
 	for(;;){
@@ -178,7 +179,7 @@ std::size_t StreamBuffer::get(void *data, std::size_t size){
 	}
 
 	const std::size_t ret = std::min(m_size, size);
-	unsigned char *write = (unsigned char *)data;
+	char *write = static_cast<char *>(data);
 	std::size_t copied = 0;
 	for(;;){
 		assert(!m_chunks.empty());
@@ -220,7 +221,7 @@ std::size_t StreamBuffer::discard(std::size_t size){
 	return ret;
 }
 void StreamBuffer::put(const void *data, std::size_t size){
-	const unsigned char *read = (const unsigned char *)data;
+	const char *read = (const char *)data;
 	std::size_t copied = 0;
 
 	AUTO(rit, m_chunks.rbegin());
@@ -285,4 +286,32 @@ void StreamBuffer::splice(StreamBuffer &src) NOEXCEPT {
 	m_chunks.splice(m_chunks.end(), src.m_chunks);
 	m_size += src.m_size;
 	src.m_size = 0;
+}
+
+std::string StreamBuffer::dump() const {
+	std::string ret;
+	ret.reserve(size());
+	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
+		ret.append(it->data + it->readPos, it->data + it->writePos);
+	}
+	return ret;
+}
+void StreamBuffer::dump(std::ostream &os) const {
+	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
+		os.write(it->data + it->readPos, it->writePos - it->readPos);
+	}
+}
+void StreamBuffer::load(const std::string &str){
+	clear();
+	put(str.data(), str.size());
+}
+void StreamBuffer::load(std::istream &is){
+	clear();
+	for(;;){
+		AUTO_REF(back, pushBackPooled(m_chunks));
+		back.writePos = is.readsome(back.data, sizeof(back.data));
+		if(back.writePos == 0){
+			break;
+		}
+	}
 }

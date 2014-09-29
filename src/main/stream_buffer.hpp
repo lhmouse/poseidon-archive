@@ -3,6 +3,8 @@
 
 #include "../cxx_ver.hpp"
 #include <list>
+#include <string>
+#include <iosfwd>
 #include <iterator>
 #include <cstddef>
 
@@ -61,6 +63,11 @@ public:
 		splice(std::move(src));
 	}
 #endif
+
+	std::string dump() const;
+	void dump(std::ostream &os) const;
+	void load(const std::string &str);
+	void load(std::istream &is);
 };
 
 class StreamBufferReadIterator
