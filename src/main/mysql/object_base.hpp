@@ -20,7 +20,7 @@ class MySqlObjectBase
 {
 private:
 	mutable volatile bool m_autoSaves;
-	mutable void *volatile m_context;
+	mutable void *m_context;
 
 protected:
 	mutable boost::shared_mutex m_mutex;
@@ -36,10 +36,10 @@ protected:
 
 public:
 	void *getContext() const {
-		return atomicLoad(m_context);
+		return m_context;
 	}
 	void setContext(void *context) const {
-		atomicStore(m_context, context);
+		m_context = context;
 	}
 
 	bool isAutoSavingEnabled() const {
