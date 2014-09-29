@@ -304,7 +304,7 @@ Move<T> move(Move<T> rhs) NOEXCEPT {
 #	define AUTO_REF(id_, init_)		DECLTYPE(init_) &id_ = (init_)
 #	define NULLPTR					(::Poseidon::Nullptr_t())
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
-#	define UNIV_REF(t_)				t_ &
+#	define UNIV_REF(t_)				const t_ &
 #	define STD_FORWARD(t_, expr_)	(expr_)
 #	define DECLREF(t_)				(::Poseidon::declRef<t_>())
 #endif
