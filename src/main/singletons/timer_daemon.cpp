@@ -12,6 +12,7 @@
 #include "../exception.hpp"
 #include "../utilities.hpp"
 #include "../job_base.hpp"
+#include "../profiler.hpp"
 using namespace Poseidon;
 
 class Poseidon::TimerItem : boost::noncopyable,
@@ -140,6 +141,7 @@ void daemonLoop(){
 }
 
 void threadProc(){
+	PROFILE_ME;
 	Log::setThreadTag(Log::TAG_TIMER);
 	LOG_INFO("Timer daemon started.");
 

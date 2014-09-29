@@ -13,6 +13,7 @@
 #include "../exception.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"
+#include "../profiler.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -182,6 +183,7 @@ void daemonLoop(){
 }
 
 void threadProc(){
+	PROFILE_ME;
 	Log::setThreadTag(Log::TAG_DATABASE);
 	LOG_INFO("MySQL daemon started.");
 

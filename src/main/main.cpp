@@ -11,6 +11,7 @@
 #include "socket_server.hpp"
 #include "player/session.hpp"
 #include "http/session.hpp"
+#include "profiler.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -77,6 +78,7 @@ void run(){
 }
 
 int main(int argc, char **argv){
+	PROFILE_ME;
 	Log::setThreadTag(Log::TAG_PRIMARY);
 	LOG_INFO("-------------------------- Starting up -------------------------");
 

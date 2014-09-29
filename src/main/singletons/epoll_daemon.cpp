@@ -14,6 +14,7 @@
 #include "../tcp_session_base.hpp"
 #include "../socket_server.hpp"
 #include "../multi_index_map.hpp"
+#include "../profiler.hpp"
 #include "config_file.hpp"
 using namespace Poseidon;
 
@@ -349,6 +350,7 @@ void daemonLoop(){
 }
 
 void threadProc(){
+	PROFILE_ME;
 	Log::setThreadTag(Log::TAG_EPOLL);
 	LOG_INFO("Epoll daemon started.");
 
