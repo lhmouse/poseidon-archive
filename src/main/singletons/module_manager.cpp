@@ -54,7 +54,7 @@ boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
 	if(module){
 		return module;
 	}
-	module = Module::load(path.c_str());
+	module = Module::load(path);
 	{
 		const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
 		g_modules[path] = STD_MOVE(module);

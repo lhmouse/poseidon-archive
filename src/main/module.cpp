@@ -29,8 +29,10 @@ private:
 	ModuleUninitProc m_uninitProc;
 
 public:
-	explicit RealModule(const char *path){
-		m_handle.reset(::dlopen(path, RTLD_LAZY));
+	explicit RealModule(std::string path)
+		: Module(STD_MOVE(path))
+	{
+		m_handle.reset(::dlopen(getPath().c_str(), RTLD_LAZY));
 		if(!m_handle){
 			const char *const error = ::dlerror();
 			LOG_ERROR("Error loading dynamic library ", path, ", error = ", error);
@@ -63,11 +65,15 @@ public:
 
 }
 
-boost::shared_ptr<Module> Module::load(const char *path){
-	AUTO(module, boost::make_shared<RealModule>(path));
+boost::shared_ptr<Module> Module::load(std::string path){
+	AUTO(module, boost::make_shared<RealModule>(STD_MOVE(path)));
 	module->init();
 	return module;
 }
 
+Module::Module(std::string path)
+	: m_path(STD_MOVE(path))
+{
+}
 Module::~Module(){
 }
