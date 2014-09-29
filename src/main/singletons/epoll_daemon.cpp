@@ -79,48 +79,26 @@ void addSession(const boost::shared_ptr<TcpSessionBase> &session){
 }
 void touchSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const AUTO(now, getMonoClock());
-	{
-		const boost::mutex::scoped_lock lock(g_sessionMutex);
-		const AUTO(it, g_sessions.find<0>(session));
-		if(it == g_sessions.end<0>()){
-			LOG_WARNING("Socket not in epoll?");
-			return;
-		}
-		g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
-		g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	const AUTO(it, g_sessions.find<0>(session));
+	if(it == g_sessions.end<0>()){
+		LOG_WARNING("Socket not in epoll?");
+		return;
 	}
+	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
+	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
 void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
 		LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
 	}
-	{
-		const boost::mutex::scoped_lock lock(g_sessionMutex);
-		const AUTO(it, g_sessions.find<IDX_SESSION>(session));
-		if(it == g_sessions.end<IDX_SESSION>()){
-			LOG_WARNING("Socket not in epoll?");
-			return;
-		}
-		g_sessions.erase<IDX_SESSION>(it);
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
+	if(it == g_sessions.end<IDX_SESSION>()){
+		LOG_WARNING("Socket not in epoll?");
+		return;
 	}
-	for(;;){
-		unsigned char temp[1024];
-		std::size_t bytesToWrite;
-		{
-			boost::mutex::scoped_lock sessionLock;
-			bytesToWrite = session->peekWriteAvail(sessionLock, temp, sizeof(temp));
-		}
-		if(bytesToWrite == 0){
-			break;
-		}
-		const ::ssize_t bytesWritten = ::send(session->getFd(),
-			temp, bytesToWrite, MSG_NOSIGNAL);
-		if(bytesWritten <= 0){
-			break;
-		}
-		LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp());
-		session->notifyWritten(bytesWritten);
-	}
+	g_sessions.erase<IDX_SESSION>(it);
 }
 
 void deepollReadable(const boost::shared_ptr<TcpSessionBase> &session){
@@ -208,13 +186,13 @@ void daemonLoop(){
 			} catch(Exception &e){
 				LOG_ERROR("Exception thrown while dispatching data: file = ", e.file(),
 					", line = ", e.line(), ", what = ", e.what());
-				removeSession(session);
+				session->shutdown();
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while dispatching data: what = ", e.what());
-				removeSession(session);
+				session->shutdown();
 			} catch(...){
 				LOG_ERROR("Unknown exception thrown while dispatching data.");
-				removeSession(session);
+				session->shutdown();
 			}
 		}
 
