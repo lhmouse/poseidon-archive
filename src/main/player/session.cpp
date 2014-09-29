@@ -12,8 +12,9 @@ namespace {
 class PlayerRequestJob : public JobBase {
 private:
 	const boost::weak_ptr<PlayerSession> m_session;
-	const unsigned m_protocolId;
-	const StreamBuffer m_packet;
+
+	unsigned m_protocolId;
+	StreamBuffer m_packet;
 
 public:
 	PlayerRequestJob(boost::weak_ptr<PlayerSession> session,
@@ -39,7 +40,7 @@ protected:
 		}
 		LOG_DEBUG("Dispatching packet: protocol = ", m_protocolId,
 			", payload size = ", m_packet.size());
-		(*servlet)(session, m_packet);
+		(*servlet)(STD_MOVE(session), STD_MOVE(m_packet));
 	}
 };
 

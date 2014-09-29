@@ -38,16 +38,13 @@ public:
 	boost::shared_ptr<const TimerCallback>
 		lock(boost::shared_ptr<const void> &lockedDep) const
 	{
-		if((m_dependency < boost::weak_ptr<void>()) ||
-			(boost::weak_ptr<void>() < m_dependency))
-		{
+		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
 			lockedDep = m_dependency.lock();
 			if(!lockedDep){
 				return NULLPTR;
 			}
 		}
-		return boost::shared_ptr<const TimerCallback>(
-			shared_from_this(), &m_callback);
+		return boost::shared_ptr<const TimerCallback>(shared_from_this(), &m_callback);
 	}
 
 	unsigned long long getPeriod() const {

@@ -24,8 +24,8 @@ public:
 
 	enum {
 		TAG_PRIMARY,	// 0
-		TAG_TIMER,		// 1
-		TAG_DATABASE,	// 2
+		TAG_MYSQL,		// 1
+		TAG_TIMER,		// 2
 		TAG_EPOLL,		// 3
 	};
 

@@ -63,6 +63,16 @@ void ConfigFile::reload(const char *path){
 	}
 	config.swap(g_config);
 }
+
 const std::string &ConfigFile::get(const char *key){
 	return g_config.get(key);
+}
+std::vector<std::string> ConfigFile::getAll(const char *key){
+	std::vector<std::string> ret;
+	const AUTO(range, g_config.range(key));
+	ret.reserve(std::distance(range.first, range.second));
+	for(AUTO(it, range.first); it != range.second; ++it){
+		ret.push_back(it->second);
+	}
+	return ret;
 }

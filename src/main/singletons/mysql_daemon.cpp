@@ -184,7 +184,7 @@ void daemonLoop(){
 
 void threadProc(){
 	PROFILE_ME;
-	Log::setThreadTag(Log::TAG_DATABASE);
+	Log::setThreadTag(Log::TAG_MYSQL);
 	LOG_INFO("MySQL daemon started.");
 
 	g_databaseServer =

@@ -6,7 +6,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 
-AC_CHECK_LIB([ltdl], [main])
+AC_CHECK_LIB([dl], [main])
 AC_CHECK_LIB([boost_thread-mt], [main])
 AC_CHECK_LIB([boost_system-mt], [main])
 AC_CHECK_LIB([mysqlcppconn], [main])

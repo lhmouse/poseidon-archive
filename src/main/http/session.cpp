@@ -110,7 +110,7 @@ protected:
 			StreamBuffer contents;
 			try {
 				const HttpStatus status = (*servlet)(headers, contents,
-					m_verb, m_getParams, m_inHeaders, m_inContents);
+					m_verb, STD_MOVE(m_getParams), STD_MOVE(m_inHeaders), STD_MOVE(m_inContents));
 				respond(session.get(), status, &headers, &contents);
 			} catch(HttpException &e){
 				LOG_ERROR("HttpException thrown in HTTP servlet, status = ", e.status(),

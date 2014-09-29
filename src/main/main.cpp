@@ -8,6 +8,7 @@
 #include "singletons/mysql_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/job_dispatcher.hpp"
+#include "singletons/module_manager.hpp"
 #include "socket_server.hpp"
 #include "player/session.hpp"
 #include "http/session.hpp"
@@ -51,17 +52,18 @@ struct RaiiSingletonRunner : boost::noncopyable {
 	}
 };
 
-#define RUN_SINGLETON(name_)	\
-	const RaiiSingletonRunner<name_> UNIQUE_ID
-
 void run(){
 	const unsigned logLevel = ConfigFile::get<unsigned>("log_level", Log::LV_INFO);
 	LOG_INFO("Setting log level to ", logLevel, "...");
 	Log::setLevel(logLevel);
 
-	RUN_SINGLETON(TimerDaemon);
-	RUN_SINGLETON(MySqlDaemon);
-	RUN_SINGLETON(EpollDaemon);
+	const RaiiSingletonRunner<MySqlDaemon> mySql;
+	const RaiiSingletonRunner<TimerDaemon> timer;
+	const RaiiSingletonRunner<EpollDaemon> epoll;
+	const RaiiSingletonRunner<ModuleManager> moduleManager;
+
+	LOG_INFO("Waiting for all MySQL operations to complete...");
+	MySqlDaemon::waitForAllAsyncOperations();
 
 	LOG_INFO("Creating player session server...");
 	EpollDaemon::addSocketServer(boost::make_shared<SocketServer<PlayerSession> >(

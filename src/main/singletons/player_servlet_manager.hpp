@@ -11,9 +11,10 @@
 namespace Poseidon {
 
 class PlayerServlet;
+class PlayerSession;
 
 typedef boost::function<
-	void (const boost::shared_ptr<class PlayerSession> &ps, StreamBuffer incoming)
+	void (boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming)
 	> PlayerServletCallback;
 
 struct PlayerServletManager {

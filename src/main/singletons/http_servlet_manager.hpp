@@ -16,8 +16,8 @@ class HttpServlet;
 
 typedef boost::function<
 	HttpStatus (OptionalMap &headers, StreamBuffer &contents,
-		HttpVerb verb, const OptionalMap &getParams,
-		const OptionalMap &incomingHeaders, const std::string &incomingContents)
+		HttpVerb verb, OptionalMap getParams,
+		OptionalMap incomingHeaders, std::string incomingContents)
 	> HttpServletCallback;
 
 struct HttpServletManager {

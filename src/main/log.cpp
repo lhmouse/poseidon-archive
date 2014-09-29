@@ -38,7 +38,7 @@ Log::Log(unsigned level, const char *comment, const char *file, std::size_t line
 }
 Log::~Log() NOEXCEPT {
 	static const char COLORS[] = { '5', '1', '3', '2', '6' };
-	static const char TAGS[][8] = { "P   ", " T  ", "  M ", "   E" };
+	static const char TAGS[][8] = { "P   ", " M  ", "  T ", "   E" };
 
 	try {
 		const bool withColors = ::isatty(STDERR_FILENO);
