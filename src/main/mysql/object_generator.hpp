@@ -364,7 +364,7 @@ public:
 			obj_->doFetch(rs_.get());
 			ret_.push_back(STD_MOVE(obj_));
 		}
-		return STD_MOVE(ret_);
+		return ret_;
 	}
 };
 

@@ -84,7 +84,7 @@ std::string urlEncode(const std::string &decoded){
 		ret.push_back(getHex(ch & 0x0F));
 		ret.push_back(getHex((ch >> 4) & 0x0F));
 	}
-	return STD_MOVE(ret);
+	return ret;
 }
 std::string urlDecode(const std::string &encoded){
 	std::string ret;
@@ -111,7 +111,7 @@ std::string urlDecode(const std::string &encoded){
 		i += 2;
 		ret.push_back((high << 4) | low);
 	}
-	return STD_MOVE(ret);
+	return ret;
 }
 
 std::string urlEncodedFromOptionalMap(const OptionalMap &decoded){
@@ -126,7 +126,7 @@ std::string urlEncodedFromOptionalMap(const OptionalMap &decoded){
 		parts.push_back(std::string());
 		parts.back().swap(tmp);
 	}
-	return STD_MOVE(ret);
+	return ret;
 }
 OptionalMap optionalMapFromUrlEncoded(const std::string &encoded){
 	OptionalMap ret;
@@ -139,7 +139,7 @@ OptionalMap optionalMapFromUrlEncoded(const std::string &encoded){
 			ret.set(urlDecode(it->substr(0, pos)), urlDecode(it->substr(pos + 1)));
 		}
 	}
-	return STD_MOVE(ret);
+	return ret;
 }
 
 }

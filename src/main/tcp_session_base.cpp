@@ -47,7 +47,7 @@ std::string getIpFromSocket(int fd){
 	}
 	ret.resize(std::strlen(text));
 
-	return STD_MOVE(ret);
+	return ret;
 }
 
 }

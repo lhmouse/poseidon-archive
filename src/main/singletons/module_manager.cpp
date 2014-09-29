@@ -46,7 +46,7 @@ std::vector<ModuleInfo> ModuleManager::getLoadedList(){
 		mi.name = it->first;
 		mi.refCount = it->second.use_count();
 	}
-	return STD_MOVE(ret);
+	return ret;
 }
 
 boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
