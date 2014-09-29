@@ -24,21 +24,21 @@ struct TimerDaemon {
 	// period 填零表示只触发一次。
 	static boost::shared_ptr<const TimerItem> registerTimer(
 		unsigned long long first, unsigned long long period,
-		const boost::weak_ptr<void> &dependency, const TimerCallback &callback);
+		const boost::weak_ptr<const void> &dependency, const TimerCallback &callback);
 	static boost::shared_ptr<const TimerItem> registerAbsoluteTimer(
 		unsigned long long timePoint,
-		const boost::weak_ptr<void> &dependency, const TimerCallback &callback);
+		const boost::weak_ptr<const void> &dependency, const TimerCallback &callback);
 
 	static boost::shared_ptr<const TimerItem> registerHourlyTimer(
 		unsigned minute, unsigned second,
-		const boost::weak_ptr<void> &dependency, const TimerCallback &callback);
+		const boost::weak_ptr<const void> &dependency, const TimerCallback &callback);
 	static boost::shared_ptr<const TimerItem> registerDailyTimer(
 		unsigned hour, unsigned minute, unsigned second,
-		const boost::weak_ptr<void> &dependency, const TimerCallback &callback);
+		const boost::weak_ptr<const void> &dependency, const TimerCallback &callback);
 	// 0 = 星期日
 	static boost::shared_ptr<const TimerItem> registerWeeklyTimer(
 		unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second,
-		const boost::weak_ptr<void> &dependency, const TimerCallback &callback);
+		const boost::weak_ptr<const void> &dependency, const TimerCallback &callback);
 
 private:
 	TimerDaemon();

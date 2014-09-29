@@ -25,10 +25,10 @@ struct HttpServletManager {
 	// callback 禁止 move，否则可能出现主模块中引用子模块内存的情况。
 	static boost::shared_ptr<const HttpServlet>
 		registerServlet(const std::string &uri,
-			const boost::weak_ptr<void> &dependency, const HttpServletCallback &callback);
+			const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback);
 
 	static boost::shared_ptr<const HttpServletCallback>
-		getServlet(boost::shared_ptr<void> &lockedDep, const std::string &uri);
+		getServlet(boost::shared_ptr<const void> &lockedDep, const std::string &uri);
 
 private:
 	HttpServletManager();

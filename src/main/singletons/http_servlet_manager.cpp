@@ -15,12 +15,12 @@ class Poseidon::HttpServlet : boost::noncopyable,
 {
 private:
 	const std::string m_uri;
-	const boost::weak_ptr<void> m_dependency;
+	const boost::weak_ptr<const void> m_dependency;
 	const HttpServletCallback m_callback;
 
 public:
 	HttpServlet(const std::string &uri,
-		const boost::weak_ptr<void> &dependency, const HttpServletCallback &callback)
+		const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback)
 		: m_uri(uri), m_dependency(dependency), m_callback(callback)
 	{
 		LOG_INFO("Created http servlet for URI ", m_uri);
@@ -31,7 +31,7 @@ public:
 
 public:
 	boost::shared_ptr<const HttpServletCallback>
-		lock(boost::shared_ptr<void> &lockedDep) const
+		lock(boost::shared_ptr<const void> &lockedDep) const
 	{
 		if((m_dependency < boost::weak_ptr<void>()) ||
 			(boost::weak_ptr<void>() < m_dependency))
@@ -55,7 +55,7 @@ std::map<std::string, boost::weak_ptr<const HttpServlet> > g_servlets;
 
 boost::shared_ptr<const HttpServlet>
 	HttpServletManager::registerServlet(const std::string &uri,
-		const boost::weak_ptr<void> &dependency, const HttpServletCallback &callback)
+		const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback)
 {
 	const AUTO(newServlet, boost::make_shared<HttpServlet>(
 		boost::ref(uri), boost::ref(dependency), boost::ref(callback)));
@@ -71,7 +71,7 @@ boost::shared_ptr<const HttpServlet>
 }
 
 boost::shared_ptr<const HttpServletCallback>
-	HttpServletManager::getServlet(boost::shared_ptr<void> &lockedDep, const std::string &uri)
+	HttpServletManager::getServlet(boost::shared_ptr<const void> &lockedDep, const std::string &uri)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(uri));

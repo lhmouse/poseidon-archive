@@ -14,12 +14,12 @@ class Poseidon::PlayerServlet : boost::noncopyable,
 {
 private:
 	const boost::uint16_t m_protocolId;
-	const boost::weak_ptr<void> m_dependency;
+	const boost::weak_ptr<const void> m_dependency;
 	const PlayerServletCallback m_callback;
 
 public:
 	PlayerServlet(boost::uint16_t protocolId,
-		const boost::weak_ptr<void> &dependency, const PlayerServletCallback &callback)
+		const boost::weak_ptr<const void> &dependency, const PlayerServletCallback &callback)
 		: m_protocolId(protocolId), m_dependency(dependency), m_callback(callback)
 	{
 		LOG_INFO("Created player servlet for protocol ", m_protocolId);
@@ -30,7 +30,7 @@ public:
 
 public:
 	boost::shared_ptr<const PlayerServletCallback>
-		lock(boost::shared_ptr<void> &lockedDep) const
+		lock(boost::shared_ptr<const void> &lockedDep) const
 	{
 		if((m_dependency < boost::weak_ptr<void>()) ||
 			(boost::weak_ptr<void>() < m_dependency))
@@ -54,7 +54,7 @@ std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> > g_servlets;
 
 boost::shared_ptr<const PlayerServlet>
 	PlayerServletManager::registerServlet(boost::uint16_t protocolId,
-		const boost::weak_ptr<void> &dependency, const PlayerServletCallback &callback)
+		const boost::weak_ptr<const void> &dependency, const PlayerServletCallback &callback)
 {
 	AUTO(newServlet, boost::make_shared<PlayerServlet>(
 		protocolId, boost::ref(dependency), boost::ref(callback)));
@@ -71,7 +71,7 @@ boost::shared_ptr<const PlayerServlet>
 }
 
 boost::shared_ptr<const PlayerServletCallback>
-	PlayerServletManager::getServlet(boost::shared_ptr<void> &lockedDep, boost::uint16_t protocolId)
+	PlayerServletManager::getServlet(boost::shared_ptr<const void> &lockedDep, boost::uint16_t protocolId)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(protocolId));

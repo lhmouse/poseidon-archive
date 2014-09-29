@@ -21,10 +21,10 @@ struct PlayerServletManager {
 	// callback 禁止 move，否则可能出现主模块中引用子模块内存的情况。
 	static boost::shared_ptr<const PlayerServlet>
 		registerServlet(boost::uint16_t protocolId,
-			const boost::weak_ptr<void> &dependency, const PlayerServletCallback &callback);
+			const boost::weak_ptr<const void> &dependency, const PlayerServletCallback &callback);
 
 	static boost::shared_ptr<const PlayerServletCallback>
-		getServlet(boost::shared_ptr<void> &lockedDep, boost::uint16_t protocolId);
+		getServlet(boost::shared_ptr<const void> &lockedDep, boost::uint16_t protocolId);
 
 private:
 	PlayerServletManager();

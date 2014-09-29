@@ -6,6 +6,9 @@ tcp_buffer_size = 1024		# 每次从每个 TCP 连接上读取的最大字节数�
 max_epoll_timeout = 100		# epoll 超时最大值，单位毫秒。
 							# 较大的数值可以提升性能，但是会降低空闲时的响应速度。
 
+http_sys_path = /~sys		# 服务器状态查询及管理的 HTTP 路径前缀。
+							# 必须以 / 开始，末尾不要加 /。
+
 # ---------- 数据库配置 ----------
 database_server = tcp://localhost:3306		# 使用 MySQL 的格式。
 database_username = root

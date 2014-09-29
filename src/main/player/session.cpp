@@ -30,7 +30,7 @@ protected:
 			return;
 		}
 
-		boost::shared_ptr<void> lockedDep;
+		boost::shared_ptr<const void> lockedDep;
 		const AUTO(servlet, PlayerServletManager::getServlet(lockedDep, m_protocolId));
 		if(!servlet){
 			LOG_WARNING("No servlet for protocol ", m_protocolId);

@@ -98,7 +98,7 @@ protected:
 			return;
 		}
 		try {
-			boost::shared_ptr<void> lockedDep;
+			boost::shared_ptr<const void> lockedDep;
 			const AUTO(servlet, HttpServletManager::getServlet(lockedDep, m_uri));
 			if(!servlet){
 				LOG_WARNING("No servlet for URI ", m_uri);
