@@ -32,7 +32,7 @@ public:
 	explicit RealModule(std::string path)
 		: Module(STD_MOVE(path))
 	{
-		m_handle.reset(::dlopen(getPath().c_str(), RTLD_NOW));
+		m_handle.reset(::dlopen(getPath().c_str(), RTLD_LAZY));
 		if(!m_handle){
 			const char *const error = ::dlerror();
 			LOG_ERROR("Error loading dynamic library ", path, ", error = ", error);
