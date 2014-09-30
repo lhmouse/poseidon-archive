@@ -67,7 +67,7 @@ SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPor
 	}
 	if(::bind(m_listen.get(), &u.sa, salen)){
 		const int code = errno;
-		LOG_ERROR("Could not bind socket onto the specified address.");
+		LOG_ERROR("Could not bind socket onto specified address.");
 		DEBUG_THROW(SystemError, code);
 	}
 	if(::listen(m_listen.get(), SOMAXCONN)){
