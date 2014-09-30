@@ -25,7 +25,6 @@ void ModuleManager::start(){
 void ModuleManager::stop(){
 	LOG_INFO("Unloading all modules...");
 
-	const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
 	g_modules.clear();
 }
 
@@ -50,6 +49,8 @@ std::vector<ModuleInfo> ModuleManager::getLoadedList(){
 }
 
 boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
+	LOG_INFO("Loading module: ", path);
+
 	AUTO(module, get(path));
 	if(module){
 		return module;
@@ -62,6 +63,8 @@ boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
 	return module;
 }
 bool ModuleManager::unload(const std::string &path){
+	LOG_INFO("Unloading module: ", path);
+
 	const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
 	const AUTO(it, g_modules.find(path));
 	if(it == g_modules.end()){

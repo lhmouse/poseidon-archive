@@ -43,6 +43,15 @@ HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpRequest request
 	return HTTP_OK;
 }
 
+struct Tracked {
+	Tracked(){
+		LOG_FATAL("Tracked::Tracked()");
+	}
+	~Tracked(){
+		LOG_FATAL("Tracked::~Tracked()");
+	}
+} g_tracked;
+
 }
 
 extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){

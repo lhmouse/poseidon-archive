@@ -49,6 +49,14 @@ std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> > g_servlets;
 
 }
 
+void PlayerServletManager::start(){
+}
+void PlayerServletManager::stop(){
+	LOG_INFO("Unloading all player servlets...");
+
+	g_servlets.clear();
+}
+
 boost::shared_ptr<const PlayerServlet>
 	PlayerServletManager::registerServlet(boost::uint16_t protocolId,
 		const boost::weak_ptr<const void> &dependency, const PlayerServletCallback &callback)

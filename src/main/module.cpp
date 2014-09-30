@@ -32,7 +32,7 @@ public:
 	explicit RealModule(std::string path)
 		: Module(STD_MOVE(path))
 	{
-		m_handle.reset(::dlopen(getPath().c_str(), RTLD_LAZY));
+		m_handle.reset(::dlopen(getPath().c_str(), RTLD_NOW));
 		if(!m_handle){
 			const char *const error = ::dlerror();
 			LOG_ERROR("Error loading dynamic library ", path, ", error = ", error);
@@ -54,12 +54,16 @@ public:
 		}
 	}
 	~RealModule(){
+		LOG_DEBUG("Uninitializing module: ", getPath());
+
 		(*m_uninitProc)();
 	}
 
 public:
-	void init() const {
-		(*m_initProc)(virtualWeakFromThis<const RealModule>());
+	void init(){
+		LOG_DEBUG("Initializing module: ", getPath());
+
+		(*m_initProc)(virtualWeakFromThis<RealModule>());
 	}
 };
 

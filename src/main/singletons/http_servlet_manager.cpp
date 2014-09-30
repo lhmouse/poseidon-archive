@@ -50,6 +50,14 @@ std::map<std::string, boost::weak_ptr<const HttpServlet> > g_servlets;
 
 }
 
+void HttpServletManager::start(){
+}
+void HttpServletManager::stop(){
+	LOG_INFO("Unloading all http servlets...");
+
+	g_servlets.clear();
+}
+
 boost::shared_ptr<const HttpServlet>
 	HttpServletManager::registerServlet(const std::string &uri,
 		const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback)
