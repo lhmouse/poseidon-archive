@@ -24,8 +24,8 @@ public:
 	}
 
 protected:
-	void perform() const {
-		const AUTO(session, m_session.lock());
+	void perform(){
+		AUTO(session, m_session.lock());
 		if(!session){
 			LOG_WARNING("The specified player session has expired.");
 			return;

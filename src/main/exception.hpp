@@ -4,13 +4,8 @@
 #include "../cxx_ver.hpp"
 #include <string>
 #include <stdexcept>
-#include <cstdio>
+#include <cerrno>
 #include <cstddef>
-#include <cstring>
-#include <boost/cstdint.hpp>
-#include <string.h>
-#include <errno.h>
-#include "utilities.hpp"
 
 namespace Poseidon {
 
@@ -20,12 +15,7 @@ protected:
 	const std::size_t m_line;
 
 public:
-	Exception(const char *file, std::size_t line, std::string what)
-		: std::runtime_error(STD_MOVE(what)), m_file(file), m_line(line)
-	{
-	}
-	~Exception() NOEXCEPT {
-	}
+	Exception(const char *file, std::size_t line, std::string what);
 
 public:
 	const char *file() const NOEXCEPT {
@@ -41,10 +31,7 @@ private:
 	const int m_code;
 
 public:
-	SystemError(const char *file, std::size_t line, int code = errno)
-		: Exception(file, line, getErrorDescAsString(code)), m_code(code)
-	{
-	}
+	SystemError(const char *file, std::size_t line, int code = errno);
 
 public:
 	int code() const NOEXCEPT {
@@ -64,10 +51,7 @@ private:
 	const int m_code;
 
 public:
-	ProtocolException(const char *file, std::size_t line, std::string what, int code)
-		: Exception(file, line, STD_MOVE(what)), m_code(code)
-	{
-	}
+	ProtocolException(const char *file, std::size_t line, std::string what, int code);
 
 public:
 	int code() const NOEXCEPT {
@@ -77,7 +61,6 @@ public:
 
 }
 
-#define DEBUG_THROW(etype_, ...)	\
-	throw etype_(__FILE__, __LINE__, __VA_ARGS__)
+#define DEBUG_THROW(etype_, ...)	throw etype_(__FILE__, __LINE__, __VA_ARGS__)
 
 #endif

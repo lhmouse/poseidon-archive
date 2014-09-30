@@ -10,11 +10,11 @@ public:
 	virtual ~JobBase();
 
 public:
-	virtual void perform() const = 0;
+	virtual void perform() = 0;
 
 public:
 	// 加到全局队列中（外部不可见），线程安全的。
-	void pend() const;
+	void pend();
 };
 
 }

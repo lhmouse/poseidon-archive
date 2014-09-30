@@ -14,6 +14,7 @@
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
+#include "../utilities.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -40,7 +41,7 @@ public:
 	}
 
 protected:
-	void perform() const {
+	void perform(){
 		m_callback(m_object);
 	}
 };
@@ -114,6 +115,8 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 void daemonLoop(){
 	boost::scoped_ptr<sql::Connection> connection;
 	for(;;){
+		bool discardConnection = false;
+
 		try {
 			if(!connection){
 				getMySqlConnection(connection);
@@ -168,16 +171,18 @@ void daemonLoop(){
 		} catch(sql::SQLException &e){
 			LOG_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
 				", state = ", e.getSQLState(), ", what = ", e.what());
-
-			LOG_INFO("The connection was left in an indeterminate state. Free it.");
-			connection.reset();
-		} catch(Exception &e){
-			LOG_ERROR("Exception thrown in MySQL daemon: file = ", e.file(),
-				", line = ", e.line(), ", what = ", e.what());
+			discardConnection = true;
 		} catch(std::exception &e){
 			LOG_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());
+			discardConnection = true;
 		} catch(...){
 			LOG_ERROR("Unknown exception thrown in MySQL daemon.");
+			discardConnection = true;
+		}
+
+		if(discardConnection){
+			LOG_INFO("The connection was left in an indeterminate state. Discard it.");
+			connection.reset();
 		}
 	}
 }

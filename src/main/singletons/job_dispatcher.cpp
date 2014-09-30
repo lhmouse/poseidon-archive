@@ -14,8 +14,8 @@ namespace {
 volatile bool g_running = false;
 
 boost::mutex g_mutex;
-std::list<boost::shared_ptr<const JobBase> > g_queue;
-std::list<boost::shared_ptr<const JobBase> > g_pool;
+std::list<boost::shared_ptr<JobBase> > g_queue;
+std::list<boost::shared_ptr<JobBase> > g_pool;
 boost::condition_variable g_newJobAvail;
 
 }
@@ -27,7 +27,7 @@ void JobDispatcher::doModal(){
 	}
 	for(;;){
 		try {
-			boost::shared_ptr<const JobBase> job;
+			boost::shared_ptr<JobBase> job;
 			{
 				boost::mutex::scoped_lock lock(g_mutex);
 				for(;;){
@@ -47,9 +47,6 @@ void JobDispatcher::doModal(){
 			} else {
 				break;
 			}
-		} catch(Exception &e){
-			LOG_ERROR("Exception thrown in job dispatcher: file = ", e.file(),
-				", line = ", e.line(), ", what = ", e.what());
 		} catch(std::exception &e){
 			LOG_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 		} catch(...){
@@ -63,7 +60,7 @@ void JobDispatcher::quitModal(){
 	g_newJobAvail.notify_all();
 }
 
-void JobDispatcher::pend(boost::shared_ptr<const JobBase> job){
+void JobDispatcher::pend(boost::shared_ptr<JobBase> job){
 	const boost::mutex::scoped_lock lock(g_mutex);
 	if(g_pool.empty()){
 		g_pool.push_front(NULLPTR);

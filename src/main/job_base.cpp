@@ -6,6 +6,6 @@ using namespace Poseidon;
 JobBase::~JobBase(){
 }
 
-void JobBase::pend() const {
+void JobBase::pend(){
 	JobDispatcher::pend(virtualSharedFromThis<JobBase>());
 }

@@ -277,10 +277,6 @@ bool operator>=(const T &lhs, const Move<T> &rhs){
 #endif
 
 template<typename T>
-Move<T> move(const T &rhs) NOEXCEPT {
-	return Move<T>(const_cast<T &>(rhs));
-}
-template<typename T>
 Move<T> move(T &rhs) NOEXCEPT {
 	return Move<T>(rhs);
 }

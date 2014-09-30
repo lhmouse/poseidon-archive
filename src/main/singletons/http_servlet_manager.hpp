@@ -6,7 +6,7 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/function.hpp>
 #include "../http/status.hpp"
-#include "../http/verb.hpp"
+#include "../http/request.hpp"
 #include "../optional_map.hpp"
 #include "../stream_buffer.hpp"
 
@@ -15,9 +15,7 @@ namespace Poseidon {
 class HttpServlet;
 
 typedef boost::function<
-	HttpStatus (OptionalMap &headers, StreamBuffer &contents,
-		HttpVerb verb, OptionalMap getParams,
-		OptionalMap incomingHeaders, std::string incomingContents)
+	HttpStatus (OptionalMap &headers, StreamBuffer &contents, HttpRequest request)
 	> HttpServletCallback;
 
 struct HttpServletManager {

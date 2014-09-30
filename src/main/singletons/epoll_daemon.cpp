@@ -184,10 +184,6 @@ void daemonLoop(){
 				}
 				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
 				session->onReadAvail(data.get(), bytesRead);
-			} catch(Exception &e){
-				LOG_ERROR("Exception thrown while dispatching data: file = ", e.file(),
-					", line = ", e.line(), ", what = ", e.what());
-				session->shutdown();
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while dispatching data: what = ", e.what());
 				session->shutdown();
@@ -247,10 +243,6 @@ void daemonLoop(){
 				}
 				LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp());
 				session->notifyWritten(bytesWritten);
-			} catch(Exception &e){
-				LOG_ERROR("Exception thrown while writing socket: file = ", e.file(),
-					", line = ", e.line(), ", what = ", e.what());
-				removeSession(session);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while writing socket: what = ", e.what());
 				removeSession(session);
@@ -275,9 +267,6 @@ void daemonLoop(){
 				LOG_DEBUG("Accepted socket connection from ", session->getRemoteIp());
 				epollTimeout = 0;
 				addSession(session);
-			} catch(Exception &e){
-				LOG_ERROR("Exception thrown while accepting client: file = ", e.file(),
-					", line = ", e.line(), ", what = ", e.what());
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while accepting client: what = ", e.what());
 			} catch(...){
@@ -324,10 +313,6 @@ void daemonLoop(){
 				if(event.events & EPOLLOUT){
 					deepollWriteable(session);
 				}
-			} catch(Exception &e){
-				LOG_ERROR("Exception thrown while epolling: file = ", e.file(),
-					", line = ", e.line(), ", what = ", e.what());
-				removeSession(session);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while epolling: what = ", e.what());
 				removeSession(session);

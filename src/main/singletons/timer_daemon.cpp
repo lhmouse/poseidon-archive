@@ -73,7 +73,7 @@ public:
 	}
 
 public:
-	void perform() const {
+	void perform(){
 		(*m_callback)(m_period);
 	}
 };

@@ -5,12 +5,14 @@
 
 namespace Poseidon {
 
+class JobBase;
+
 struct JobDispatcher {
 	// 调用 doModal() 之后会阻塞直到任意线程调用 quitModal() 为止。
 	static void doModal();
 	static void quitModal();
 
-	static void pend(boost::shared_ptr<const class JobBase> job);
+	static void pend(boost::shared_ptr<JobBase> job);
 
 private:
 	JobDispatcher();

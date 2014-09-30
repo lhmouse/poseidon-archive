@@ -34,7 +34,7 @@ public:
 	~HttpSession();
 
 private:
-	void onHeader(const char *name, std::size_t len, const std::string &val);
+	void onHeader(const std::string &name, const std::string &value);
 
 protected:
 	void onReadAvail(const void *data, std::size_t size);

@@ -30,36 +30,37 @@ void ConfigFile::reload(const char *path){
 		++count;
 		std::size_t pos = line.find('#');
 		if(pos != std::string::npos){
-			line.resize(pos);
+			line.erase(line.begin() + pos, line.end());
 		}
 		pos = line.find_first_not_of(" \t");
 		if(pos == std::string::npos){
 			continue;
 		}
 		std::size_t equ = line.find('=', pos);
-		if(equ == pos){
-			LOG_FATAL("Error in config file on line ", count, ": Name expected.");
-			DEBUG_THROW(SystemError, EINVAL);
-		}
 		if(equ == std::string::npos){
 			LOG_FATAL("Error in config file on line ", count, ": '=' expected.");
 			DEBUG_THROW(SystemError, EINVAL);
 		}
 
 		std::string key = line.substr(pos, equ);
-		key.resize(key.find_last_not_of(" \t") + 1);
+		pos = key.find_last_not_of(" \t");
+		if(pos == std::string::npos){
+			LOG_FATAL("Error in config file on line ", count, ": Name expected.");
+			DEBUG_THROW(SystemError, EINVAL);
+		}
+		key.erase(key.begin() + pos + 1, key.end());
 
 		pos = line.find_first_not_of(" \t", equ + 1);
-		std::string val = line.substr(pos);
-		pos = val.find_last_not_of(" \t");
 		if(pos == std::string::npos){
-			val.clear();
+			line.clear();
 		} else {
-			val.resize(pos + 1);
+			line.erase(line.begin(), line.begin() + pos);
+			pos = line.find_last_not_of(" \t");
+			line.erase(line.begin() + pos + 1, line.end());
 		}
 
-		LOG_DEBUG("Config: ", key, " = ", val);
-		config.set(key, val);
+		LOG_DEBUG("Config: ", key, " = ", line);
+		config.set(STD_MOVE(key), STD_MOVE(line));
 	}
 	config.swap(g_config);
 }
