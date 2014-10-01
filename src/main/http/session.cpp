@@ -22,15 +22,20 @@ void respond(HttpSession *session, HttpStatus status,
 {
 	LOG_DEBUG("Sending HTTP response: status = ", (unsigned)status);
 
+	char codeStatus[512];
+	std::size_t codeStatusLen = std::sprintf(codeStatus, "%u ", (unsigned)status);
 	const AUTO(desc, getHttpStatusCodeDesc(status));
-	const AUTO(codeStatus, boost::lexical_cast<std::string>((unsigned)status) + ' ' + desc.descShort);
+	const std::size_t toAppend = std::min(
+		sizeof(codeStatus) - codeStatusLen, std::strlen(desc.descShort));
+	std::memcpy(codeStatus + codeStatusLen, desc.descShort, toAppend);
+	codeStatusLen += toAppend;
 
 	StreamBuffer realContents;
 	if(!contents){
 		realContents.put("<html><head><title>");
-		realContents.put(codeStatus.c_str());
+		realContents.put(codeStatus, codeStatusLen);
 		realContents.put("</title></head><body><h1>");
-		realContents.put(codeStatus.c_str());
+		realContents.put(codeStatus, codeStatusLen);
 		realContents.put("</h1><hr /><p>");
 		realContents.put(desc.descLong);
 		realContents.put("</p></body></html>");
@@ -49,7 +54,7 @@ void respond(HttpSession *session, HttpStatus status,
 
 	StreamBuffer buffer;
 	buffer.put("HTTP/1.1 ");
-	buffer.put(codeStatus.data(), codeStatus.size());
+	buffer.put(codeStatus, codeStatusLen);
 	buffer.put("\r\n");
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 		if(!it->second.empty()){
