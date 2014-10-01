@@ -56,6 +56,7 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 	if((it == g_servlets.end()) || (it->first.size() < uri.size()) ||
 		(it->first.compare(0, uri.size(), uri) != 0))
 	{
+		LOG_DEBUG("No more handlers: ", uri);
 		return false;
 	}
 	if(it->first.size() == uri.size()){
