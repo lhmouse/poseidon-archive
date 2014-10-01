@@ -38,6 +38,14 @@
 #	define ENABLE_IF_CXX14(...)
 #endif
 
+#ifdef POSEIDON_CXX11
+#	define TR1						::std
+#	define TR2						::std
+#else
+#	define TR1						::std::tr1
+#	define TR2						::std::tr2
+#endif
+
 namespace Poseidon {
 
 template<typename T>
@@ -303,14 +311,6 @@ Move<T> move(Move<T> rhs) NOEXCEPT {
 #	define UNIV_REF(t_)				const t_ &
 #	define STD_FORWARD(t_, expr_)	(expr_)
 #	define DECLREF(t_)				(::Poseidon::declRef<t_>())
-#endif
-
-#ifdef POSEIDON_CXX11
-#	define TR1						::std
-#	define TR2						::std
-#else
-#	define TR1						::std::tr1
-#	define TR2						::std::tr2
 #endif
 
 #endif
