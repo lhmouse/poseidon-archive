@@ -57,6 +57,8 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/tcp_client_base.cpp	\
 	src/main/module.cpp
 
+lib_libposeidon_main_la_LDFLAGS=$(AM_LDFLAGS) -rdynamic
+
 lib_libposeidon_template_la_SOURCES=	\
 	src/template/module_main.cpp
 
