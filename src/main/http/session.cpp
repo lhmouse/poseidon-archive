@@ -120,20 +120,23 @@ protected:
 			if(!servlet){
 				LOG_DEBUG("Searching for fallback handlers for URI ", m_request.uri);
 
+				bool skipOnce = true;
 				std::string fallback(m_request.uri);
 				if(*fallback.rbegin() != '/'){
 					fallback.push_back('/');
+					skipOnce = false;
 				}
 				for(;;){
 					assert(!fallback.empty());
 
-					if(fallback != m_request.uri){
+					if(!skipOnce){
 						LOG_DEBUG("Trying fallback URI handler ", fallback);
 						servlet = HttpServletManager::getServlet(lockedDep, fallback);
 						if(servlet){
 							break;
 						}
 					}
+					skipOnce = false;
 					const std::size_t pos = fallback.rfind('/', fallback.size() - 2);
 					if((pos == 0) || (pos == std::string::npos)){
 						break;
