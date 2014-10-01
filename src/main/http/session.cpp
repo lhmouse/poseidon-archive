@@ -118,36 +118,8 @@ protected:
 			boost::shared_ptr<const void> lockedDep;
 			AUTO(servlet, HttpServletManager::getServlet(lockedDep, m_request.uri));
 			if(!servlet){
-				LOG_DEBUG("Searching for fallback handlers for URI ", m_request.uri);
-
-				bool skipOnce = true;
-				std::string fallback(m_request.uri);
-				if(*fallback.rbegin() != '/'){
-					fallback.push_back('/');
-					skipOnce = false;
-				}
-				for(;;){
-					assert(!fallback.empty());
-
-					if(!skipOnce){
-						LOG_DEBUG("Trying fallback URI handler ", fallback);
-						servlet = HttpServletManager::getServlet(lockedDep, fallback);
-						if(servlet){
-							break;
-						}
-					}
-					skipOnce = false;
-					const std::size_t pos = fallback.rfind('/', fallback.size() - 2);
-					if((pos == 0) || (pos == std::string::npos)){
-						break;
-					}
-					fallback.erase(fallback.begin() + pos + 1, fallback.end());
-				}
-				if(!servlet){
-					LOG_WARNING("No handler matches URI ", m_request.uri);
-					DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
-				}
-				LOG_DEBUG("Using fallback handler ", fallback);
+				LOG_WARNING("No handler matches URI ", m_request.uri);
+				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 			}
 			LOG_DEBUG("Dispatching http request: URI = ", m_request.uri,
 				", verb = ", stringFromHttpVerb(m_request.verb));

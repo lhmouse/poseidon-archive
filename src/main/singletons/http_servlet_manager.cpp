@@ -48,6 +48,25 @@ namespace {
 boost::shared_mutex g_mutex;
 std::map<std::string, boost::weak_ptr<const HttpServlet> > g_servlets;
 
+bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
+	boost::shared_ptr<const void> &lockedDep, const std::string &uri)
+{
+	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
+	const AUTO(it, g_servlets.lower_bound(uri));
+	if((it == g_servlets.end()) || (it->first.size() < uri.size()) ||
+		(it->first.compare(0, uri.size(), uri) != 0))
+	{
+		return false;
+	}
+	if(it->first.size() == uri.size()){
+		const AUTO(servlet, it->second.lock());
+		if(servlet){
+			servlet->lock(lockedDep).swap(ret);
+		}
+	}
+	return true;
+}
+
 }
 
 void HttpServletManager::start(){
@@ -78,14 +97,48 @@ boost::shared_ptr<const HttpServlet>
 boost::shared_ptr<const HttpServletCallback>
 	HttpServletManager::getServlet(boost::shared_ptr<const void> &lockedDep, const std::string &uri)
 {
-	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
-	const AUTO(it, g_servlets.find(uri));
-	if(it == g_servlets.end()){
-		return NULLPTR;
+	boost::shared_ptr<const HttpServletCallback> ret;
+	if(uri[0] != '/'){
+		LOG_DEBUG("URI must begin with /: ", uri);
+		return ret;
 	}
-	const AUTO(servlet, it->second.lock());
-	if(!servlet){
-		return NULLPTR;
+
+	getExactServlet(ret, lockedDep, uri);
+	if(ret){
+		return ret;
 	}
-	return servlet->lock(lockedDep);
+
+	LOG_DEBUG("Searching for fallback handlers for URI ", uri);
+	std::string fallback;
+	fallback.reserve(uri.size() + 1);
+	fallback.push_back('/');
+	std::size_t slash = 0;
+	for(;;){
+		LOG_DEBUG("Trying fallback URI handler ", fallback);
+
+		boost::shared_ptr<const HttpServletCallback> test;
+		boost::shared_ptr<const void> testDep;
+		if(!getExactServlet(test, testDep, fallback)){
+			break;
+		}
+		if(test){
+			LOG_DEBUG("Fallback handler matches: ", fallback);
+
+			ret.swap(test);
+			lockedDep.swap(testDep);
+		}
+
+		if(slash >= uri.size() - 1){
+			break;
+		}
+		const std::size_t nextSlash = uri.find('/', slash + 1);
+		if(nextSlash == std::string::npos){
+			fallback.append(uri.begin() + slash + 1, uri.end());
+		} else {
+			fallback.append(uri.begin() + slash + 1, uri.begin() + nextSlash);
+		}
+		fallback.push_back('/');
+		slash = nextSlash;
+	}
+	return ret;
 }
