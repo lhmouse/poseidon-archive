@@ -1,8 +1,8 @@
 PRECOMPILED_HEADER=src/precompiled.hpp
 
 ACLOCAL_AMFLAGS=-I m4
-AUTOMAKE_OPTIONS=foreign nostdinc subdir-objects
-AM_CPPFLAGS=-Wall -Wextra -Werror -include $(PRECOMPILED_HEADER)
+AUTOMAKE_OPTIONS=foreign subdir-objects
+AM_CPPFLAGS=-Wall -Wextra -Werror -Wno-error=unused-parameter -include $(PRECOMPILED_HEADER)
 AM_CXXFLAGS=
 
 BUILT_SOURCES=	\
@@ -56,8 +56,6 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/socket_server.cpp	\
 	src/main/tcp_client_base.cpp	\
 	src/main/module.cpp
-
-lib_libposeidon_main_la_LDFLAGS=$(AM_LDFLAGS) -rdynamic
 
 lib_libposeidon_template_la_SOURCES=	\
 	src/template/module_main.cpp
