@@ -1,15 +1,21 @@
 #ifndef POSEIDON_SINGLETONS_TIMER_DAEMON_HPP_
 #define POSEIDON_SINGLETONS_TIMER_DAEMON_HPP_
 
+#include "../../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include <boost/function.hpp>
+
+#ifdef POSEIDON_CXX11
+#	include <functional>
+#else
+#	include <tr1/functional>
+#endif
 
 namespace Poseidon {
 
 class TimerItem;
 
-typedef boost::function<
+typedef TR1::function<
 	void (unsigned long long period)
 	> TimerCallback;
 

@@ -1,5 +1,4 @@
 #include "../precompiled.hpp"
-#include <boost/bind.hpp>
 #include "../main/module.hpp"
 #include "../main/log.hpp"
 #include "../main/exception.hpp"
@@ -57,8 +56,9 @@ struct Tracked {
 extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
 	LOG_FATAL("poseidonModuleInit()");
 
+	using namespace TR1::placeholders;
 	g_load = HttpServletManager::registerServlet("/load", module,
-		boost::bind(&loadProc, _1, _2, _3, module));
+		TR1::bind(&loadProc, _1, _2, _3, module));
 	g_unload = HttpServletManager::registerServlet("/unload", module, &unloadProc);
 }
 

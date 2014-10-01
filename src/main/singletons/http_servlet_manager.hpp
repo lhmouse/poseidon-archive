@@ -1,20 +1,26 @@
 #ifndef POSEIDON_SINGLETONS_HTTP_SERVLET_MANAGER_HPP_
 #define POSEIDON_SINGLETONS_HTTP_SERVLET_MANAGER_HPP_
 
+#include "../../cxx_ver.hpp"
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include <boost/function.hpp>
 #include "../http/status.hpp"
 #include "../http/request.hpp"
 #include "../optional_map.hpp"
 #include "../stream_buffer.hpp"
 
+#ifdef POSEIDON_CXX11
+#   include <functional>
+#else
+#   include <tr1/functional>
+#endif
+
 namespace Poseidon {
 
 class HttpServlet;
 
-typedef boost::function<
+typedef TR1::function<
 	HttpStatus (OptionalMap &headers, StreamBuffer &contents, HttpRequest request)
 	> HttpServletCallback;
 

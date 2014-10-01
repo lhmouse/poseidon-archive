@@ -1,19 +1,25 @@
 #ifndef POSEIDON_SINGLETONS_PLAYER_SERVLET_MANAGER_HPP_
 #define POSEIDON_SINGLETONS_PLAYER_SERVLET_MANAGER_HPP_
 
+#include "../../cxx_ver.hpp"
 #include <string>
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include <boost/function.hpp>
 #include "../stream_buffer.hpp"
+
+#ifdef POSEIDON_CXX11
+#   include <functional>
+#else
+#   include <tr1/functional>
+#endif
 
 namespace Poseidon {
 
 class PlayerServlet;
 class PlayerSession;
 
-typedef boost::function<
+typedef TR1::function<
 	void (boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming)
 	> PlayerServletCallback;
 

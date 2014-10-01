@@ -1,14 +1,20 @@
 #ifndef POSEIDON_SINGLETONS_MYSQL_DAEMON_HPP_
 #define POSEIDON_SINGLETONS_MYSQL_DAEMON_HPP_
 
+#include "../../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
+
+#ifdef POSEIDON_CXX11
+#   include <functional>
+#else
+#   include <tr1/functional>
+#endif
 
 namespace Poseidon {
 
 class MySqlObjectBase;
 
-typedef boost::function<
+typedef TR1::function<
 	void (const boost::shared_ptr<MySqlObjectBase> &obj)
 	> MySqlAsyncLoadCallback;
 

@@ -23,7 +23,6 @@
 #include <boost/scoped_array.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/function.hpp>
 #include <boost/ref.hpp>
 #include <boost/cstdlib.hpp>
 #include <boost/cstdint.hpp>
