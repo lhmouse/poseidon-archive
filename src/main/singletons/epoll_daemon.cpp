@@ -21,6 +21,7 @@ using namespace Poseidon;
 namespace {
 
 std::size_t g_tcpBufferSize		= 1024;
+std::size_t g_epollBufferSize	= 256;
 std::size_t g_maxEpollTimeout	= 100;
 
 volatile bool g_running = false;
@@ -143,7 +144,10 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 }
 
 void daemonLoop(){
-	const boost::scoped_array<unsigned char> data(new unsigned char[g_tcpBufferSize]);
+	const boost::scoped_array<unsigned char>
+		data(new unsigned char[g_tcpBufferSize]);
+	const boost::scoped_array< ::epoll_event>
+		events(new ::epoll_event[g_epollBufferSize]);
 	std::size_t epollTimeout = 0;
 
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
@@ -275,8 +279,7 @@ void daemonLoop(){
 		}
 
 		// 第四部分，检测新的数据。
-		::epoll_event events[256];
-		const int ready = ::epoll_wait(g_epoll.get(), events, COUNT_OF(events), epollTimeout);
+		const int ready = ::epoll_wait(g_epoll.get(), events.get(), g_epollBufferSize, epollTimeout);
 		if(ready < 0){
 			const AUTO(desc, getErrorDesc());
 			LOG_ERROR("::epoll_wait() failed: ", desc);
@@ -342,6 +345,10 @@ void threadProc(){
 	g_tcpBufferSize =
 		ConfigFile::get<std::size_t>("tcp_buffer_size", g_tcpBufferSize);
 	LOG_DEBUG("TCP buffer size = ", g_tcpBufferSize);
+
+	g_epollBufferSize =
+		ConfigFile::get<std::size_t>("epoll_buffer_size", g_epollBufferSize);
+	LOG_DEBUG("Epoll buffer size = ", g_epollBufferSize);
 
 	g_maxEpollTimeout =
 		ConfigFile::get<std::size_t>("max_epoll_timeout", g_maxEpollTimeout);
