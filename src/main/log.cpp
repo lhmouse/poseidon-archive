@@ -12,7 +12,7 @@ using namespace Poseidon;
 namespace {
 
 volatile unsigned g_logLevel = 100;
-boost::mutex g_cerrMutex;
+boost::mutex g_mutex;
 
 __thread unsigned t_tag;
 
@@ -40,8 +40,9 @@ Log::~Log() NOEXCEPT {
 	static const char COLORS[] = { '5', '1', '3', '2', '6' };
 	static const char TAGS[][8] = { "P   ", " M  ", "  T ", "   E" };
 
+	static const bool withColors = ::isatty(STDOUT_FILENO);
+
 	try {
-		const bool withColors = ::isatty(STDERR_FILENO);
 		const AUTO(color, (m_level >= COUNT_OF(COLORS)) ? '9' : COLORS[m_level]);
 		const AUTO(tag, (t_tag >= COUNT_OF(TAGS)) ? "" : TAGS[t_tag]);
 
@@ -97,8 +98,8 @@ Log::~Log() NOEXCEPT {
 			line += "\x1B[0m";
 		}
 
-		const boost::mutex::scoped_lock lock(g_cerrMutex);
-		std::fwrite(line.c_str(), line.size(), sizeof(char), stderr);
+		const boost::mutex::scoped_lock lock(g_mutex);
+		std::fwrite(line.c_str(), line.size(), sizeof(char), stdout);
 	} catch(...){
 	}
 }
