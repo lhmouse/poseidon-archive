@@ -112,11 +112,7 @@ struct Nullptr_t {
 		return boost::weak_ptr<T>();
 	}
 
-private:
-	void *unused;
-
-private:
-	void operator&() const;
+	void *unused_;
 };
 
 template<typename T>
