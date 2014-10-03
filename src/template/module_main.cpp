@@ -61,7 +61,3 @@ extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
 		TR1::bind(&loadProc, _1, _2, _3, module));
 	g_unload = HttpServletManager::registerServlet("/unload", module, &unloadProc);
 }
-
-extern "C" void poseidonModuleUninit(){
-	LOG_FATAL("poseidonModuleUninit()");
-}

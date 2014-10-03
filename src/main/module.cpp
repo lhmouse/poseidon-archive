@@ -8,9 +8,6 @@ using namespace Poseidon;
 
 namespace {
 
-typedef void (*ModuleInitProc)(const boost::weak_ptr<const Module> &module);
-typedef void (*ModuleUninitProc)();
-
 struct DynamicLibraryCloser {
 	CONSTEXPR void *operator()() NOEXCEPT {
 		return NULLPTR;
@@ -25,8 +22,6 @@ struct DynamicLibraryCloser {
 class RealModule : public Module {
 private:
 	ScopedHandle<DynamicLibraryCloser> m_handle;
-	ModuleInitProc m_initProc;
-	ModuleUninitProc m_uninitProc;
 
 public:
 	explicit RealModule(std::string path)
@@ -35,35 +30,28 @@ public:
 		m_handle.reset(::dlopen(getPath().c_str(), RTLD_NOW));
 		if(!m_handle){
 			const char *const error = ::dlerror();
-			LOG_ERROR("Error loading dynamic library ", path, ", error = ", error);
-			DEBUG_THROW(Exception, error);
-		}
-		m_initProc = reinterpret_cast<ModuleInitProc>(
-			::dlsym(m_handle.get(), "poseidonModuleInit"));
-		if(!m_initProc){
-			const char *const error = ::dlerror();
-			LOG_ERROR("Error getting address of poseidonModuleInit(), error = ", error);
-			DEBUG_THROW(Exception, error);
-		}
-		m_uninitProc = reinterpret_cast<ModuleUninitProc>(
-			::dlsym(m_handle.get(), "poseidonModuleUninit"));
-		if(!m_uninitProc){
-			const char *const error = ::dlerror();
-			LOG_ERROR("Error getting address of poseidonModuleUninit(), error = ", error);
+			LOG_ERROR("Error loading dynamic library ", getPath(), ", error = ", error);
 			DEBUG_THROW(Exception, error);
 		}
 	}
 	~RealModule(){
 		LOG_DEBUG("Uninitializing module: ", getPath());
-
-		(*m_uninitProc)();
 	}
 
 public:
 	void init(){
 		LOG_DEBUG("Initializing module: ", getPath());
 
-		(*m_initProc)(virtualWeakFromThis<RealModule>());
+		const AUTO(initProc, reinterpret_cast<
+			void (*)(const boost::weak_ptr<const Module> &module)
+			>(::dlsym(m_handle.get(), "poseidonModuleInit")));
+		if(!initProc){
+			const char *const error = ::dlerror();
+			LOG_ERROR("Error getting address of poseidonModuleInit() in module ",
+				getPath(), ", error = ", error);
+			DEBUG_THROW(Exception, error);
+		}
+		(*initProc)(virtualWeakFromThis<Module>());
 	}
 };
 
