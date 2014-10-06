@@ -17,7 +17,7 @@ private:
 
 public:
 	PlayerRequestJob(unsigned protocolId,
-		boost::weak_ptr<PlayerSession> session, Move<StreamBuffer> packet)
+		boost::weak_ptr<PlayerSession> session, StreamBuffer packet)
 		: m_protocolId(protocolId)
 		, m_session(STD_MOVE(session)), m_packet(STD_MOVE(packet))
 	{
