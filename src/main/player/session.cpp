@@ -11,15 +11,15 @@ namespace {
 
 class PlayerRequestJob : public JobBase {
 private:
-	const boost::weak_ptr<PlayerSession> m_session;
-
 	unsigned m_protocolId;
+	boost::weak_ptr<PlayerSession> m_session;
 	StreamBuffer m_packet;
 
 public:
-	PlayerRequestJob(boost::weak_ptr<PlayerSession> session,
-		unsigned protocolId, StreamBuffer packet)
-		: m_session(STD_MOVE(session)), m_protocolId(protocolId), m_packet(STD_MOVE(packet))
+	PlayerRequestJob(unsigned protocolId,
+		boost::weak_ptr<PlayerSession> session, Move<StreamBuffer> packet)
+		: m_protocolId(protocolId)
+		, m_session(STD_MOVE(session)), m_packet(STD_MOVE(packet))
 	{
 	}
 
@@ -79,10 +79,8 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			break;
 		}
 		StreamBuffer packet = m_payload.cut(m_payloadLen);
-		boost::make_shared<PlayerRequestJob>(
-			virtualWeakFromThis<PlayerSession>(),
-			m_protocolId, boost::ref(packet)
-			)->pend();
+		boost::make_shared<PlayerRequestJob>(m_protocolId,
+			virtualWeakFromThis<PlayerSession>(), STD_MOVE(packet))->pend();
 		m_payloadLen = -1;
 	}
 }

@@ -45,6 +45,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/player_servlet_manager.cpp	\
 	src/main/singletons/http_servlet_manager.cpp	\
 	src/main/singletons/module_manager.cpp	\
+	src/main/singletons/event_listener_manager.cpp	\
 	src/main/http/session.cpp	\
 	src/main/http/status.cpp	\
 	src/main/http/verb.cpp	\
@@ -55,7 +56,8 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/player/session.cpp	\
 	src/main/socket_server.cpp	\
 	src/main/tcp_client_base.cpp	\
-	src/main/module.cpp
+	src/main/module.cpp	\
+	src/main/event_base.cpp
 
 lib_libposeidon_template_la_SOURCES=	\
 	src/template/module_main.cpp

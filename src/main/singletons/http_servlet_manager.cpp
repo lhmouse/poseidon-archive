@@ -82,13 +82,13 @@ boost::shared_ptr<const HttpServlet>
 	HttpServletManager::registerServlet(const std::string &uri,
 		const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback)
 {
-	const AUTO(newServlet, boost::make_shared<HttpServlet>(
+	AUTO(newServlet, boost::make_shared<HttpServlet>(
 		boost::ref(uri), boost::ref(dependency), boost::ref(callback)));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(servlet, g_servlets[uri]);
 		if(!servlet.expired()){
-			DEBUG_THROW(Exception, "Duplicate http servlet: " + uri);
+			DEBUG_THROW(Exception, "Duplicate http servlet.");
 		}
 		servlet = newServlet;
 	}

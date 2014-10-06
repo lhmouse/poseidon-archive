@@ -11,6 +11,7 @@
 #include "singletons/player_servlet_manager.hpp"
 #include "singletons/http_servlet_manager.hpp"
 #include "singletons/module_manager.hpp"
+#include "singletons/event_listener_manager.hpp"
 #include "socket_server.hpp"
 #include "player/session.hpp"
 #include "http/session.hpp"
@@ -59,13 +60,14 @@ void run(){
 	LOG_INFO("Setting log level to ", logLevel, "...");
 	Log::setLevel(logLevel);
 
-	const RaiiSingletonRunner<MySqlDaemon> r0;
-	const RaiiSingletonRunner<TimerDaemon> r1;
-	const RaiiSingletonRunner<EpollDaemon> r2;
+	const RaiiSingletonRunner<MySqlDaemon> UNIQUE_ID;
+	const RaiiSingletonRunner<TimerDaemon> UNIQUE_ID;
+	const RaiiSingletonRunner<EpollDaemon> UNIQUE_ID;
 
-	const RaiiSingletonRunner<PlayerServletManager> r3;
-	const RaiiSingletonRunner<HttpServletManager> r4;
-	const RaiiSingletonRunner<ModuleManager> r5;
+	const RaiiSingletonRunner<PlayerServletManager> UNIQUE_ID;
+	const RaiiSingletonRunner<HttpServletManager> UNIQUE_ID;
+	const RaiiSingletonRunner<ModuleManager> UNIQUE_ID;
+	const RaiiSingletonRunner<EventListenerManager> UNIQUE_ID;
 
 	LOG_INFO("Waiting for all MySQL operations to complete...");
 	MySqlDaemon::waitForAllAsyncOperations();

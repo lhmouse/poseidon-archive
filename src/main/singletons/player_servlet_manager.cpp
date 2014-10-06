@@ -67,8 +67,7 @@ boost::shared_ptr<const PlayerServlet>
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(servlet, g_servlets[protocolId]);
 		if(!servlet.expired()){
-			DEBUG_THROW(Exception, "Duplicate protocol servlet: " +
-				boost::lexical_cast<std::string>(protocolId));
+			DEBUG_THROW(Exception, "Duplicate protocol servlet.");
 		}
 		servlet = newServlet;
 	}

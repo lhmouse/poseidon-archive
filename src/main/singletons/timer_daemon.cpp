@@ -127,8 +127,7 @@ void daemonLoop(){
 		try {
 			LOG_INFO("Preparing a timer job for dispatching.");
 
-			boost::make_shared<TimerJob>(
-				STD_MOVE(lockedDep), STD_MOVE(callback), period)->pend();
+			boost::make_shared<TimerJob>(STD_MOVE(lockedDep), STD_MOVE(callback), period)->pend();
 		} catch(std::exception &e){
 			LOG_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
 		} catch(...){

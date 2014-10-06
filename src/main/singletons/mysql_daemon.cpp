@@ -42,7 +42,7 @@ public:
 
 protected:
 	void perform(){
-		m_callback(m_object);
+		m_callback(STD_MOVE(m_object));
 	}
 };
 

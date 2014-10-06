@@ -15,7 +15,7 @@ namespace Poseidon {
 class MySqlObjectBase;
 
 typedef TR1::function<
-	void (const boost::shared_ptr<MySqlObjectBase> &obj)
+	void (boost::shared_ptr<MySqlObjectBase> obj)
 	> MySqlAsyncLoadCallback;
 
 struct MySqlDaemon {
