@@ -3,9 +3,9 @@
 #include "singletons/event_listener_manager.hpp"
 using namespace Poseidon;
 
-EventBase::~EventBase(){
+EventBaseWithoutId::~EventBaseWithoutId(){
 }
 
-void EventBase::raise(){
+void EventBaseWithoutId::raise(){
 	EventListenerManager::raise(shared_from_this());
 }

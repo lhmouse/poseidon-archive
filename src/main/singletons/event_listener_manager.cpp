@@ -51,11 +51,11 @@ std::map<unsigned, std::list<boost::weak_ptr<const EventListener> > > g_listener
 class EventJob : public JobBase {
 private:
 	boost::shared_ptr<const EventListenerCallback> m_callback;
-	boost::shared_ptr<EventBase> m_event;
+	boost::shared_ptr<EventBaseWithoutId> m_event;
 
 public:
 	EventJob(boost::shared_ptr<const EventListenerCallback> callback,
-		boost::shared_ptr<EventBase> event){
+		boost::shared_ptr<EventBaseWithoutId> event){
 		m_callback.swap(callback);
 		m_event.swap(event);
 	}
@@ -84,19 +84,7 @@ void EventListenerManager::stop(){
 	g_listeners.clear();
 }
 
-boost::shared_ptr<const EventListener> EventListenerManager::registerListener(unsigned id,
-	const boost::weak_ptr<const void> &dependency, const EventListenerCallback &callback)
-{
-	AUTO(newServlet, boost::make_shared<EventListener>(
-		id, boost::ref(dependency), boost::ref(callback)));
-	{
-		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
-		g_listeners[id].push_back(newServlet);
-	}
-	return newServlet;
-}
-
-void EventListenerManager::raise(const boost::shared_ptr<EventBase> &event){
+void EventListenerManager::raise(const boost::shared_ptr<EventBaseWithoutId> &event){
 	const unsigned eventId = event->id();
 
 	std::vector<boost::shared_ptr<const EventListener> > listeners;
@@ -137,4 +125,16 @@ void EventListenerManager::raise(const boost::shared_ptr<EventBase> &event){
 			}
 		}
 	}
+}
+
+boost::shared_ptr<const EventListener> EventListenerManager::doRegisterListener(unsigned id,
+	const boost::weak_ptr<const void> &dependency, const EventListenerCallback &callback)
+{
+	AUTO(newServlet, boost::make_shared<EventListener>(
+		id, boost::ref(dependency), boost::ref(callback)));
+	{
+		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		g_listeners[id].push_back(newServlet);
+	}
+	return newServlet;
 }

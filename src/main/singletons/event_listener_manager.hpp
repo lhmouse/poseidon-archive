@@ -18,7 +18,7 @@ namespace Poseidon {
 class EventListener;
 
 typedef TR1::function<
-	void (boost::shared_ptr<EventBase> event)
+	void (boost::shared_ptr<EventBaseWithoutId> event)
 	> EventListenerCallback;
 
 void logInvalidDynamicEventType(unsigned id);
@@ -29,36 +29,36 @@ struct EventListenerManager {
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	// callback 禁止 move，否则可能出现主模块中引用子模块内存的情况。
-	static boost::shared_ptr<const EventListener> registerListener(unsigned id,
-		const boost::weak_ptr<const void> &dependency, const EventListenerCallback &callback);
-
 	template<class EventT>
 	static boost::shared_ptr<const EventListener> registerListener(
 		const boost::weak_ptr<const void> &dependency,
 		const TR1::function<void (boost::shared_ptr<EventT>)> &callback)
 	{
-		BOOST_STATIC_ASSERT((boost::is_base_of<EventBase, EventT>::value));
+		BOOST_STATIC_ASSERT((boost::is_base_of<EventBaseWithoutId, EventT>::value));
 
 		struct Helper {
-			static void checkedForward(boost::shared_ptr<EventBase> event,
+			static void checkedForward(boost::shared_ptr<EventBaseWithoutId> event,
 				const TR1::function<void (boost::shared_ptr<EventT>)> &derivedCallback)
 			{
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
-					logInvalidDynamicEventType(EventT().id());
+					logInvalidDynamicEventType(EventT::EVENT_ID);
 					return;
 				}
 				derivedCallback(STD_MOVE(derived));
 			}
 		};
-		return registerListener(EventT().id(), dependency,
+		return doRegisterListener(EventT::EVENT_ID, dependency,
 			TR1::bind(&Helper::checkedForward, TR1::placeholders::_1, callback));
 	}
 
-	static void raise(const boost::shared_ptr<EventBase> &event);
+	static void raise(const boost::shared_ptr<EventBaseWithoutId> &event);
 
 private:
 	EventListenerManager();
+
+	static boost::shared_ptr<const EventListener> doRegisterListener(unsigned id,
+		const boost::weak_ptr<const void> &dependency, const EventListenerCallback &callback);
 };
 
 }

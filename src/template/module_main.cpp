@@ -9,21 +9,13 @@ using namespace Poseidon;
 
 namespace {
 
-struct TestEvent1 : public EventBase {
+struct TestEvent1 : public EventBase<1> {
 	int i;
 	std::string s;
-
-	virtual unsigned id() const {
-		return 1;
-	}
 };
 
-struct TestEvent2 : public EventBase {
+struct TestEvent2 : public EventBase<1> {
 	double d;
-
-	virtual unsigned id() const {
-		return 1;
-	}
 };
 
 void event1Proc(boost::shared_ptr<TestEvent1> event){
