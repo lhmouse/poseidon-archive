@@ -16,7 +16,7 @@ struct HttpRequest {
 	std::string contents;
 };
 
-inline void swap(HttpRequest &lhs, HttpRequest &rhs) NOEXCEPT {
+static inline void swap(HttpRequest &lhs, HttpRequest &rhs) NOEXCEPT {
 	using std::swap;
 	swap(lhs.verb, rhs.verb);
 	swap(lhs.uri, rhs.uri);

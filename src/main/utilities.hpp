@@ -72,11 +72,7 @@ inline std::string implode(char separator, const std::vector<T> &vec){
 	}
 	std::string ret = oss.str();
 	if(!ret.empty()){
-#ifdef POSEIDON_CXX11
-		ret.pop_back();
-#else
 		ret.erase(ret.end() - 1, ret.end());
-#endif
 	}
 	return ret;
 }
