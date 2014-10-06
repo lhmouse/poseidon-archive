@@ -1,7 +1,7 @@
 #include "../../precompiled.hpp"
 #include "event_listener_manager.hpp"
 #include <map>
-#include <list>
+#include <vector>
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/thread/shared_mutex.hpp>
@@ -46,7 +46,7 @@ public:
 namespace {
 
 boost::shared_mutex g_mutex;
-std::map<unsigned, std::list<boost::weak_ptr<const EventListener> > > g_listeners;
+std::map<unsigned, std::vector<boost::weak_ptr<const EventListener> > > g_listeners;
 
 class EventJob : public JobBase {
 private:
