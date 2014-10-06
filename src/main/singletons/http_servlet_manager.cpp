@@ -109,7 +109,11 @@ boost::shared_ptr<const HttpServletCallback>
 		return ret;
 	}
 
+	if(uri == "/"){
+		return ret;
+	}
 	LOG_DEBUG("Searching for fallback handlers for URI ", uri);
+
 	std::string fallback;
 	fallback.reserve(uri.size() + 1);
 	fallback.push_back('/');
