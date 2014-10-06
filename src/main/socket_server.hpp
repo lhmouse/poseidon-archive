@@ -8,16 +8,13 @@
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 #include "raii.hpp"
-#include "virtual_shared_from_this.hpp"
 
 namespace Poseidon {
 
 class TcpSessionBase;
 
 // 抽象工厂模式
-class SocketServerBase : boost::noncopyable
-	, public virtual VirtualSharedFromThis
-{
+class SocketServerBase : boost::noncopyable {
 private:
 	std::string m_bindAddr;
 	ScopedFile m_listen;

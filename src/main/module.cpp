@@ -51,7 +51,7 @@ public:
 				getPath(), ", error = ", error);
 			DEBUG_THROW(Exception, error);
 		}
-		(*initProc)(virtualWeakFromThis<Module>());
+		(*initProc)(boost::weak_ptr<Module>(shared_from_this()));
 	}
 };
 

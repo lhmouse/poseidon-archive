@@ -4,12 +4,12 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include "virtual_shared_from_this.hpp"
+#include <boost/enable_shared_from_this.hpp>
 
 namespace Poseidon {
 
 class Module : boost::noncopyable
-	, public virtual VirtualSharedFromThis
+	, public boost::enable_shared_from_this<Module>
 {
 public:
 	static boost::shared_ptr<Module> load(std::string path);
