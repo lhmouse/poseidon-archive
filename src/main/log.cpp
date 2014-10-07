@@ -93,10 +93,10 @@ Log::~Log() NOEXCEPT {
 			}
 			line.append(temp, count);
 		}
-		line += '\n';
 		if(withColors){
 			line += "\x1B[0m";
 		}
+		line += '\n';
 
 		const boost::mutex::scoped_lock lock(g_mutex);
 		std::fwrite(line.c_str(), line.size(), sizeof(char), stdout);
