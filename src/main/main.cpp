@@ -12,6 +12,7 @@
 #include "singletons/http_servlet_manager.hpp"
 #include "singletons/module_manager.hpp"
 #include "singletons/event_listener_manager.hpp"
+#include "singletons/profile_manager.hpp"
 #include "socket_server.hpp"
 #include "player/session.hpp"
 #include "http/session.hpp"
@@ -59,6 +60,8 @@ void run(){
 	const unsigned logLevel = ConfigFile::get<unsigned>("log_level", Log::LV_INFO);
 	LOG_INFO("Setting log level to ", logLevel, "...");
 	Log::setLevel(logLevel);
+
+	const RaiiSingletonRunner<ProfileManager> UNIQUE_ID;
 
 	const RaiiSingletonRunner<MySqlDaemon> UNIQUE_ID;
 	const RaiiSingletonRunner<TimerDaemon> UNIQUE_ID;
