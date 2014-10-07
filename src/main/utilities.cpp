@@ -36,7 +36,7 @@ boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
 	return utc - ::timezone * 1000;
 }
 
-boost::uint64_t getMonoClock(){
+boost::uint64_t getMonoClock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
 		LOG_FATAL("Monotonic clock is not supported.");

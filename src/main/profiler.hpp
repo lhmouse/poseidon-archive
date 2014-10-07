@@ -17,7 +17,7 @@ private:
 	unsigned long long m_exclusiveStart;
 
 public:
-	Profiler(const char *file, unsigned long line);
+	Profiler(const char *file, unsigned long line) NOEXCEPT;
 	~Profiler() NOEXCEPT;
 };
 

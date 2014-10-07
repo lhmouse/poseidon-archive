@@ -10,7 +10,7 @@ __thread Profiler *t_topProfiler = 0;
 
 }
 
-Profiler::Profiler(const char *file, unsigned long line)
+Profiler::Profiler(const char *file, unsigned long line) NOEXCEPT
 	: m_prev(t_topProfiler), m_file(file), m_line(line)
 {
 	if(ProfileManager::isEnabled()){

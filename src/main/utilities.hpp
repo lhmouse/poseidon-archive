@@ -93,7 +93,7 @@ boost::uint64_t getLocalTime();		// 单位毫秒。
 boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local);
 boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc);
 
-boost::uint64_t getMonoClock();		// 单位微秒。
+boost::uint64_t getMonoClock() NOEXCEPT;	// 单位微秒。
 
 // 在区间 [lower, upper) 范围内生成伪随机数。
 // 前置条件：lower < upper
