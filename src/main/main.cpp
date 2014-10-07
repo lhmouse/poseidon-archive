@@ -57,11 +57,11 @@ struct RaiiSingletonRunner : boost::noncopyable {
 };
 
 void run(){
+	PROFILE_ME;
+
 	const unsigned logLevel = ConfigFile::get<unsigned>("log_level", Log::LV_INFO);
 	LOG_INFO("Setting log level to ", logLevel, "...");
 	Log::setLevel(logLevel);
-
-	const RaiiSingletonRunner<ProfileManager> UNIQUE_ID;
 
 	const RaiiSingletonRunner<MySqlDaemon> UNIQUE_ID;
 	const RaiiSingletonRunner<TimerDaemon> UNIQUE_ID;
@@ -90,9 +90,10 @@ void run(){
 }
 
 int main(int argc, char **argv){
-	PROFILE_ME;
 	Log::setThreadTag(Log::TAG_PRIMARY);
 	LOG_INFO("-------------------------- Starting up -------------------------");
+
+	const RaiiSingletonRunner<ProfileManager> UNIQUE_ID;
 
 	try {
 		LOG_INFO("Setting up signal handlers...");

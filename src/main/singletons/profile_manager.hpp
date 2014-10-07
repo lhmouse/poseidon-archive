@@ -10,6 +10,7 @@ namespace Poseidon {
 struct ProfileItem {
 	const char *file;
 	unsigned long line;
+	const char *func;
 
 	// 采样数。
 	unsigned long long samples;
@@ -24,7 +25,7 @@ struct ProfileManager {
 	static void stop();
 
 	static bool isEnabled();
-	static void accumulate(const char *file, unsigned long line,
+	static void accumulate(const char *file, unsigned long line, const char *func,
 		unsigned long long total, unsigned long long exclusive) NOEXCEPT;
 
 	static std::vector<ProfileItem> snapshot();

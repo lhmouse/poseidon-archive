@@ -11,19 +11,20 @@ private:
 	Profiler *const m_prev;
 	const char *const m_file;
 	const unsigned long m_line;
+	const char *const m_func;
 
 	unsigned long long m_start;
 	unsigned long long m_exclusiveTotal;
 	unsigned long long m_exclusiveStart;
 
 public:
-	Profiler(const char *file, unsigned long line) NOEXCEPT;
+	Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT;
 	~Profiler() NOEXCEPT;
 };
 
 }
 
 #define PROFILE_ME	\
-	const ::Poseidon::Profiler UNIQUE_ID(__FILE__, __LINE__)
+	const ::Poseidon::Profiler UNIQUE_ID(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 
 #endif

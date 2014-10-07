@@ -13,9 +13,10 @@ namespace {
 struct ProfileKey {
 	const char *file;
 	unsigned long line;
+	const char *func;
 
-	ProfileKey(const char *file_, unsigned long line_)
-		: file(file_), line(line_)
+	ProfileKey(const char *file_, unsigned long line_, const char *func_)
+		: file(file_), line(line_), func(func_)
 	{
 	}
 
@@ -62,12 +63,12 @@ bool ProfileManager::isEnabled(){
 	return g_enabled;
 }
 
-void ProfileManager::accumulate(const char *file, unsigned long line,
+void ProfileManager::accumulate(const char *file, unsigned long line, const char *func,
 	unsigned long long total, unsigned long long exclusive) NOEXCEPT
 {
 	try {
 		std::map<ProfileKey, ProfileCounters>::iterator it;
-		const ProfileKey key(file, line);
+		const ProfileKey key(file, line, func);
 		{
 			const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 			it = g_profile.find(key);
@@ -86,7 +87,7 @@ void ProfileManager::accumulate(const char *file, unsigned long line,
 		atomicAdd(it->second.usExclusive, exclusive);
 
 		LOG_DEBUG("Accumulated profile info: file = ", file, ", line = ", line,
-			", total = ", total, " us , exclusive = ", exclusive, " us");
+			", func = ", func, ", total = ", total, " us , exclusive = ", exclusive, " us");
 	} catch(...){
 	}
 }
@@ -100,6 +101,7 @@ std::vector<ProfileItem> ProfileManager::snapshot(){
 			ProfileItem pi;
 			pi.file = it->first.file;
 			pi.line = it->first.line;
+			pi.func = it->first.func;
 			pi.samples = atomicLoad(it->second.samples);
 			pi.usTotal = atomicLoad(it->second.usTotal);
 			pi.usExclusive = atomicLoad(it->second.usExclusive);

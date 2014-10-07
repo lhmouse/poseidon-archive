@@ -10,8 +10,8 @@ __thread Profiler *t_topProfiler = 0;
 
 }
 
-Profiler::Profiler(const char *file, unsigned long line) NOEXCEPT
-	: m_prev(t_topProfiler), m_file(file), m_line(line)
+Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT
+	: m_prev(t_topProfiler), m_file(file), m_line(line), m_func(func)
 {
 	if(ProfileManager::isEnabled()){
 		const AUTO(now, getMonoClock());
@@ -40,6 +40,6 @@ Profiler::~Profiler() NOEXCEPT {
 			m_prev->m_exclusiveStart = now;
 		}
 
-		ProfileManager::accumulate(m_file, m_line, now - m_start, m_exclusiveTotal);
+		ProfileManager::accumulate(m_file, m_line, m_func, now - m_start, m_exclusiveTotal);
 	}
 }
