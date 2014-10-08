@@ -12,7 +12,6 @@
 #include "../../cxx_ver.hpp"
 #include <sstream>
 #include <cstdio>
-#include <boost/any.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <cppconn/connection.h>
@@ -305,7 +304,7 @@ private:
 			MYSQL_OBJECT_TO_STR_(MYSQL_OBJECT_NAME), "::prepare(): ", str_);
 
 		const boost::scoped_ptr<sql::PreparedStatement> ps_(conn_->prepareStatement(str_));
-		std::vector<boost::any> contexts_;
+		std::vector<boost::shaed_ptr<void> > contexts_;
 		unsigned index_ = 0;
 
 #undef FIELD_BOOLEAN

@@ -1,6 +1,5 @@
 #include "../precompiled.hpp"
 #include "socket_server.hpp"
-#include <boost/bind.hpp>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <errno.h>

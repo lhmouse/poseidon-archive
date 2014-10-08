@@ -5,7 +5,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/locks.hpp>
 #include "../log.hpp"
 #include "../exception.hpp"
 using namespace Poseidon;

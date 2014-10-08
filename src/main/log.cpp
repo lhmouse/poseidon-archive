@@ -4,7 +4,6 @@
 #include "utilities.hpp"
 #include <cstdio>
 #include <boost/thread/mutex.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <unistd.h>
 #include <time.h>
 using namespace Poseidon;
