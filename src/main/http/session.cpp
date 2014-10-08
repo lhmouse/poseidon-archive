@@ -227,7 +227,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				}
 				const std::size_t lineLen = m_line.size();
 				if((lineLen > 0) && (m_line[lineLen - 1] == '\r')){
-					m_line.resize(lineLen - 1);
+					m_line.erase(m_line.end() - 1, m_line.end());
 				}
 				if(m_state == ST_FIRST_HEADER){
 					if(m_line.empty()){
