@@ -6,6 +6,8 @@
 #include "utilities.hpp"
 #include "../log.hpp"
 #include "../singletons/http_servlet_manager.hpp"
+#include "../singletons/config_file.hpp"
+#include "../singletons/timer_daemon.hpp"
 #include "../stream_buffer.hpp"
 #include "../utilities.hpp"
 #include "../exception.hpp"
@@ -84,6 +86,21 @@ void normalizeUri(std::string &uri){
 		++write;
 	}
 	uri.erase(uri.begin() + write, uri.end());
+}
+
+unsigned long long getHttpKeepAliveTimeout(){
+	static unsigned long long ret =
+		ConfigFile::get<unsigned long long>("http_keep_alive_timeout", 15000);
+	return ret;
+}
+
+void onSessionTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned long long){
+	const AUTO(session, observer.lock());
+	if(session){
+		LOG_WARNING("HTTP session times out, remote ip = ", session->getRemoteIp());
+		respond(session.get(), HTTP_REQUEST_TIMEOUT);
+		session->shutdown();
+	}
 }
 
 class HttpRequestJob : public JobBase {
@@ -183,6 +200,14 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	try {
+		if(!m_shutdownTimer){
+			const AUTO(timeout, getHttpKeepAliveTimeout());
+			LOG_DEBUG("HTTP timeout = ", timeout);
+
+			m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, NULLPTR,
+				TR1::bind(&onSessionTimeout, virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+		}
+
 		if(m_totalLength + size >= MAX_REQUEST_LENGTH){
 			LOG_WARNING("Request size is ", m_totalLength + size,
 				" and has exceeded MAX_REQUEST_LENGTH which is ", MAX_REQUEST_LENGTH);

@@ -3,6 +3,8 @@
 
 #include <string>
 #include <cstddef>
+#include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include "../tcp_session_base.hpp"
 #include "../optional_map.hpp"
 #include "verb.hpp"
@@ -27,6 +29,8 @@ private:
 	std::string m_uri;
 	OptionalMap m_getParams;
 	OptionalMap m_headers;
+
+	boost::shared_ptr<const class TimerItem> m_shutdownTimer;
 
 public:
 	explicit HttpSession(Move<ScopedFile> socket);

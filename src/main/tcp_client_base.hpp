@@ -8,8 +8,11 @@
 namespace Poseidon {
 
 class TcpClientBase : public TcpSessionBase {
-public:
-	TcpClientBase(const std::string &ip, unsigned port);
+protected:
+	static void connect(ScopedFile &socket, const std::string &ip, unsigned port);
+
+protected:
+	explicit TcpClientBase(Move<ScopedFile> socket);
 
 public:
 	void addIntoEpoll();

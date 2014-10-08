@@ -1,6 +1,7 @@
 #ifndef POSEIDON_SOCKET_SERVER_HPP_
 #define POSEIDON_SOCKET_SERVER_HPP_
 
+#include "../cxx_ver.hpp"
 #include <string>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>

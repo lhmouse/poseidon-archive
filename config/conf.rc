@@ -23,6 +23,7 @@ socket_port = 8850
 
 http_bind = 0.0.0.0							# 同上。
 http_port = 8860
+http_keep_alive_timeout = 30000				# 超时自动挂断。
 http_sys_path = /~sys						# 服务器状态查询及管理的 HTTP 路径前缀。
 											# 必须以 / 开始，末尾不要加 /。
 

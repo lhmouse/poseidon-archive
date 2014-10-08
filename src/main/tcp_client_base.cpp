@@ -8,9 +8,7 @@
 #include "exception.hpp"
 using namespace Poseidon;
 
-namespace {
-
-Move<ScopedFile> socketConnect(const std::string &ip, unsigned port){
+void TcpClientBase::connect(ScopedFile &client, const std::string &ip, unsigned port){
 	union {
 		::sockaddr sa;
 		::sockaddr_in sin;
@@ -30,21 +28,17 @@ Move<ScopedFile> socketConnect(const std::string &ip, unsigned port){
 		DEBUG_THROW(Exception, "Unknown address format: " + ip);
 	}
 
-	ScopedFile client(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
+	client.reset(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
 	if(!client){
 		DEBUG_THROW(SystemError, errno);
 	}
 	if(::connect(client.get(), &u.sa, salen) != 0){
 		DEBUG_THROW(SystemError, errno);
 	}
-
-	return client.move();
 }
 
-}
-
-TcpClientBase::TcpClientBase(const std::string &ip, unsigned port)
-	: TcpSessionBase(socketConnect(ip, port))
+TcpClientBase::TcpClientBase(Move<ScopedFile> socket)
+	: TcpSessionBase(STD_MOVE(socket))
 {
 }
 
