@@ -26,7 +26,7 @@ void event2Proc(boost::shared_ptr<TestEvent2> event){
 	LOG_FATAL("event2Proc: d = ", event->d);
 }
 
-boost::shared_ptr<const HttpServlet> g_load, g_unload, g_meow;
+boost::shared_ptr<const HttpServlet> g_load, g_unload, g_meow, g_meowMeow;
 boost::shared_ptr<const EventListener> g_event1, g_event2;
 
 HttpStatus meowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
@@ -37,6 +37,16 @@ HttpStatus meowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
 
 	headers.set("Content-Type", "text/html");
 	contents.put("<h1>Meow!</h1>");
+	return HTTP_OK;
+}
+HttpStatus meowMeowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
+	AUTO(event, boost::make_shared<TestEvent1>());
+	event->i = 123;
+	event->s = "meow/meow";
+	event->raise();
+
+	headers.set("Content-Type", "text/html");
+	contents.put("<h1>Meow! Meow!</h1>");
 	return HTTP_OK;
 }
 HttpStatus loadProc(OptionalMap &, StreamBuffer &contents, HttpRequest,
@@ -52,6 +62,7 @@ HttpStatus loadProc(OptionalMap &, StreamBuffer &contents, HttpRequest,
 	}
 	// 通配路径 /meow/*
 	g_meow = HttpServletManager::registerServlet("/meow/", module, &meowProc);
+	g_meowMeow = HttpServletManager::registerServlet("/meow/meow/", module, &meowMeowProc);
 	contents.put("OK");
 	return HTTP_OK;
 }
@@ -70,6 +81,7 @@ HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpRequest request
 		return HTTP_OK;
 	}
 	g_meow.reset();
+	g_meowMeow.reset();
 	contents.put("OK");
 	return HTTP_OK;
 }

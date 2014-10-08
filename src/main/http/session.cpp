@@ -156,25 +156,21 @@ HttpSession::~HttpSession(){
 	}
 }
 
-void HttpSession::onHeader(const std::string &name, const std::string &value){
-	switch(name.size()){
-	case 6:
-		if(std::memcmp(name.c_str(), "Expect", 6) == 0){
-//			if(val != "100-continue"){
-//				LOG_WARNING("Unknown HTTP header Expect: ", val);
-//				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-//			}
-//			respond(this, HTTP_CONTINUE);
-			DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-		}
-		break;
+void HttpSession::onAllHeadersRead(){
+	for(AUTO(it, m_headers.begin()); it != m_headers.end(); ++it){
+		const char *const name = it->first.get();
+		const std::string &val = it->second;
 
-	case 14:
-		if(std::memcmp(name.c_str(), "Content-Length", 14) == 0){
-			m_contentLength = boost::lexical_cast<std::size_t>(value);
+		if(std::strcmp(name, "Expect") == 0){
+			if(val != "100-continue"){
+				LOG_WARNING("Unknown HTTP header Expect: ", val);
+				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+			}
+			respond(this, HTTP_CONTINUE);
+		} else if(std::strcmp(name, "Content-Length") == 0){
+			m_contentLength = boost::lexical_cast<std::size_t>(val);
 			LOG_DEBUG("Content-Length: ", m_contentLength);
 		}
-		break;
 	}
 }
 
@@ -247,10 +243,11 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					}
 					std::string value(valueBegin, m_line.end());
 					m_line.erase(m_line.begin() + delimPos, m_line.end());
-					onHeader(m_line, value);
 					m_headers.add(m_line, STD_MOVE(value));
 				} else {
 					m_state = ST_CONTENTS;
+
+					onAllHeadersRead();
 				}
 			}
 			if(m_state != ST_CONTENTS){

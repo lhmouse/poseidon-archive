@@ -25,16 +25,15 @@ private:
 
 	HttpVerb m_verb;
 	std::string m_uri;
-	OptionalMap m_headers;
 	OptionalMap m_getParams;
-	OptionalMap m_postParams;
+	OptionalMap m_headers;
 
 public:
 	explicit HttpSession(Move<ScopedFile> socket);
 	~HttpSession();
 
 private:
-	void onHeader(const std::string &name, const std::string &value);
+	void onAllHeadersRead();
 
 protected:
 	void onReadAvail(const void *data, std::size_t size);
