@@ -42,7 +42,7 @@ void respond(HttpSession *session, HttpStatus status,
 
 		headers.set("Content-Type", "text/html; charset=utf-8");
 		headers.set("Content-Length", boost::lexical_cast<std::string>(realContents.size()));
-	} else {
+	} else if(!contents->empty()){
 		realContents.splice(*contents);
 
 		AUTO_REF(contentType, headers.create("Content-Type"));
@@ -126,6 +126,9 @@ protected:
 			OptionalMap headers;
 			StreamBuffer contents;
 			const HttpStatus status = (*servlet)(headers, contents, STD_MOVE(m_request));
+			if(m_request.verb == HTTP_HEAD){
+				contents.clear();
+			}
 			respond(session.get(), status, STD_MOVE(headers), &contents);
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, status = ", e.status(),
