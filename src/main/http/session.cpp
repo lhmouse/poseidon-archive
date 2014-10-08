@@ -126,7 +126,9 @@ protected:
 			OptionalMap headers;
 			StreamBuffer contents;
 			const HttpStatus status = (*servlet)(headers, contents, STD_MOVE(m_request));
-			if(m_request.verb == HTTP_HEAD){
+			if((m_request.verb == HTTP_HEAD) || (status == HTTP_NO_CONTENT) ||
+				(static_cast<unsigned>(status) / 100 == 1))
+			{
 				contents.clear();
 			}
 			respond(session.get(), status, STD_MOVE(headers), &contents);
