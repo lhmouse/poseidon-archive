@@ -6,7 +6,7 @@ tcp_buffer_size = 1024						# 每次从每个 TCP 连接上读取的最大字节
 epoll_buffer_size = 256						# 一次性监听的 epoll 事件最大数量。
 max_epoll_timeout = 100						# epoll 超时最大值，单位毫秒。
 											# 较大的数值可以提升性能，但是会降低空闲时的响应速度。
-enable_profiler = 1							# 设为非零值可以关闭性能分析器。
+enable_profiler = 1							# 设为零可以关闭性能分析器。
 
 # ---------- 数据库配置 ----------
 database_server = tcp://localhost:3306		# 使用 MySQL 的格式。
