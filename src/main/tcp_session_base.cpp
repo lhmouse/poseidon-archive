@@ -77,23 +77,6 @@ void TcpSessionBase::notifyWritten(std::size_t size){
 	m_sendBuffer.discard(size);
 }
 
-void TcpSessionBase::send(const void *data, std::size_t size){
-	if(atomicLoad(m_shutdown)){
-		LOG_DEBUG("Attempting to send data on a closed socket.");
-		return;
-	}
-	StreamBuffer tmp;
-	tmp.put(data, size);
-	sendUsingMove(tmp);
-}
-void TcpSessionBase::send(const StreamBuffer &buffer){
-	if(atomicLoad(m_shutdown)){
-		LOG_DEBUG("Attempting to send data on a closed socket.");
-		return;
-	}
-	StreamBuffer tmp(buffer);
-	sendUsingMove(tmp);
-}
 void TcpSessionBase::sendUsingMove(StreamBuffer &buffer){
 	if(atomicLoad(m_shutdown)){
 		LOG_DEBUG("Attempting to send data on a closed socket.");

@@ -49,11 +49,17 @@ public:
 	// 从队列中移除指定的字节数。
 	void notifyWritten(std::size_t size);
 
-	// 这三个函数是线程安全的。
-	void send(const void *data, std::size_t size);
-	void send(const StreamBuffer &buffer);
-	// 执行后 buffer 置空。
+	// 执行后 buffer 置空。这个函数是线程安全的。
 	void sendUsingMove(StreamBuffer &buffer);
+
+	void send(const void *data, std::size_t size){
+		StreamBuffer tmp(data, size);
+		sendUsingMove(tmp);
+	}
+	void send(const StreamBuffer &buffer){
+		StreamBuffer tmp(buffer);
+		sendUsingMove(tmp);
+	}
 #ifdef POSEIDON_CXX11
 	void send(StreamBuffer &&buffer){
 		sendUsingMove(buffer);

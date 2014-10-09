@@ -4,7 +4,6 @@
 #include <string>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 #include "../tcp_session_base.hpp"
 #include "../optional_map.hpp"
 #include "verb.hpp"
