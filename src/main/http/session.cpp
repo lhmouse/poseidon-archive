@@ -249,12 +249,16 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					m_uri = STD_MOVE(parts[1]);
-					const std::size_t questionPos = m_uri.find('?');
-					if(questionPos == std::string::npos){
+					std::size_t pos = m_uri.find('#');
+					if(pos != std::string::npos){
+						m_uri.erase(m_uri.begin() + pos, m_uri.end());
+					}
+					pos = m_uri.find('?');
+					if(pos == std::string::npos){
 						m_getParams.clear();
 					} else {
-						m_getParams = optionalMapFromUrlEncoded(m_uri.substr(questionPos + 1));
-						m_uri.erase(m_uri.begin() + questionPos, m_uri.end());
+						m_getParams = optionalMapFromUrlEncoded(m_uri.substr(pos + 1));
+						m_uri.erase(m_uri.begin() + pos, m_uri.end());
 					}
 					normalizeUri(m_uri);
 					if((parts[2] != "HTTP/1.0") && (parts[2] != "HTTP/1.1")){
