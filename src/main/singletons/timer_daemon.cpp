@@ -96,6 +96,7 @@ std::vector<TimerQueueElement> g_timers;
 void daemonLoop(){
 	while(atomicLoad(g_running)){
 		const unsigned long long now = getMonoClock();
+
 		boost::shared_ptr<const void> lockedDep;
 		boost::shared_ptr<const TimerCallback> callback;
 		unsigned long long period = 0;
@@ -121,9 +122,11 @@ void daemonLoop(){
 			}
 		}
 		if(!callback){
+			lockedDep.reset();
 			::sleep(1);
 			continue;
 		}
+
 		try {
 			LOG_INFO("Preparing a timer job for dispatching.");
 

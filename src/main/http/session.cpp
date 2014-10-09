@@ -105,9 +105,10 @@ void onSessionTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned lon
 
 class HttpRequestJob : public JobBase {
 private:
-	const boost::weak_ptr<HttpSession> m_session;
-
+	boost::weak_ptr<HttpSession> m_session;
 	HttpRequest m_request;
+
+	boost::shared_ptr<const void> m_lockedDep;
 
 public:
 	HttpRequestJob(boost::weak_ptr<HttpSession> session,
@@ -132,8 +133,7 @@ protected:
 			return;
 		}
 		try {
-			boost::shared_ptr<const void> lockedDep;
-			AUTO(servlet, HttpServletManager::getServlet(lockedDep, m_request.uri));
+			AUTO(servlet, HttpServletManager::getServlet(m_lockedDep, m_request.uri));
 			if(!servlet){
 				LOG_WARNING("No handler matches URI ", m_request.uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);

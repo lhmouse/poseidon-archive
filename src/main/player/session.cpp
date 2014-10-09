@@ -15,6 +15,8 @@ private:
 	boost::weak_ptr<PlayerSession> m_session;
 	StreamBuffer m_packet;
 
+	boost::shared_ptr<const void> m_lockedDep;
+
 public:
 	PlayerRequestJob(unsigned protocolId,
 		boost::weak_ptr<PlayerSession> session, StreamBuffer packet)
@@ -31,8 +33,7 @@ protected:
 			return;
 		}
 
-		boost::shared_ptr<const void> lockedDep;
-		const AUTO(servlet, PlayerServletManager::getServlet(lockedDep, m_protocolId));
+		const AUTO(servlet, PlayerServletManager::getServlet(m_lockedDep, m_protocolId));
 		if(!servlet){
 			LOG_WARNING("No servlet for protocol ", m_protocolId);
 			session->shutdown();
