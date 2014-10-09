@@ -50,14 +50,19 @@ std::map<unsigned, std::vector<boost::weak_ptr<const EventListener> > > g_listen
 
 class EventJob : public JobBase {
 private:
-	boost::shared_ptr<const EventListenerCallback> m_callback;
+	const boost::shared_ptr<const void> m_lockedDep;
+	const boost::shared_ptr<const EventListenerCallback> m_callback;
+
 	boost::shared_ptr<EventBaseWithoutId> m_event;
 
 public:
-	EventJob(boost::shared_ptr<const EventListenerCallback> callback,
-		boost::shared_ptr<EventBaseWithoutId> event){
-		m_callback.swap(callback);
-		m_event.swap(event);
+	EventJob(boost::shared_ptr<const void> lockedDep,
+		boost::shared_ptr<const EventListenerCallback> callback,
+		boost::shared_ptr<EventBaseWithoutId> event)
+		: m_lockedDep(STD_MOVE(lockedDep))
+		, m_callback(STD_MOVE(callback))
+		, m_event(STD_MOVE(event))
+	{
 	}
 
 protected:
@@ -109,7 +114,8 @@ void EventListenerManager::raise(const boost::shared_ptr<EventBaseWithoutId> &ev
 		if(!callback){
 			continue;
 		}
-		boost::make_shared<EventJob>(STD_MOVE(callback), boost::ref(event))->pend();
+		boost::make_shared<EventJob>(
+			STD_MOVE(lockedDep), STD_MOVE(callback), boost::ref(event))->pend();
 	}
 	if(needsCleanup){
 		LOG_DEBUG("Cleaning up event listener list for event ", eventId);
