@@ -12,6 +12,8 @@
 namespace Poseidon {
 
 class HttpSession : public TcpSessionBase {
+	friend class HttpServer;
+
 private:
 	enum State {
 		ST_FIRST_HEADER,
@@ -20,6 +22,8 @@ private:
 	};
 
 private:
+	boost::shared_ptr<const class TimerItem> m_shutdownTimer;
+
 	State m_state;
 	std::size_t m_totalLength;
 	std::size_t m_contentLength;
@@ -30,13 +34,13 @@ private:
 	OptionalMap m_getParams;
 	OptionalMap m_headers;
 
-	boost::shared_ptr<const class TimerItem> m_shutdownTimer;
-
 public:
 	explicit HttpSession(Move<ScopedFile> socket);
 	~HttpSession();
 
 private:
+	void resetTimeout(unsigned long long timeout);
+
 	void onAllHeadersRead();
 
 protected:

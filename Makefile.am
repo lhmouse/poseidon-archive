@@ -47,15 +47,17 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/module_manager.cpp	\
 	src/main/singletons/event_listener_manager.cpp	\
 	src/main/singletons/profile_manager.cpp	\
+	src/main/player/session.cpp	\
+	src/main/player/server.cpp	\
 	src/main/http/session.cpp	\
+	src/main/http/server.cpp	\
 	src/main/http/status.cpp	\
 	src/main/http/verb.cpp	\
 	src/main/http/utilities.cpp	\
 	src/main/mysql/object_base.cpp	\
 	src/main/job_base.cpp	\
 	src/main/tcp_session_base.cpp	\
-	src/main/player/session.cpp	\
-	src/main/socket_server.cpp	\
+	src/main/tcp_server_base.cpp	\
 	src/main/tcp_client_base.cpp	\
 	src/main/module.cpp	\
 	src/main/event_base.cpp

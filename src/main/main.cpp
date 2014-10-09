@@ -13,9 +13,8 @@
 #include "singletons/module_manager.hpp"
 #include "singletons/event_listener_manager.hpp"
 #include "singletons/profile_manager.hpp"
-#include "socket_server.hpp"
-#include "player/session.hpp"
-#include "http/session.hpp"
+#include "player/server.hpp"
+#include "http/server.hpp"
 #include "profiler.hpp"
 using namespace Poseidon;
 
@@ -75,12 +74,12 @@ void run(){
 	LOG_INFO("Waiting for all MySQL operations to complete...");
 	MySqlDaemon::waitForAllAsyncOperations();
 
-	LOG_INFO("Creating player session server...");
-	EpollDaemon::addSocketServer(boost::make_shared<SocketServer<PlayerSession> >(
+	LOG_INFO("Creating player server...");
+	EpollDaemon::addSocketServer(boost::make_shared<PlayerServer>(
 		ConfigFile::get("socket_bind"), ConfigFile::get<unsigned>("socket_port", 0)));
 
 	LOG_INFO("Creating HTTP server...");
-	EpollDaemon::addSocketServer(boost::make_shared<SocketServer<HttpSession> >(
+	EpollDaemon::addSocketServer(boost::make_shared<HttpServer>(
 		ConfigFile::get("http_bind"), ConfigFile::get<unsigned>("http_port", 0)));
 
 	LOG_INFO("Entering modal loop...");

@@ -12,7 +12,7 @@
 #include "../utilities.hpp"
 #include "../exception.hpp"
 #include "../tcp_session_base.hpp"
-#include "../socket_server.hpp"
+#include "../tcp_server_base.hpp"
 #include "../multi_index_map.hpp"
 #include "../profiler.hpp"
 #include "config_file.hpp"
@@ -21,8 +21,8 @@ using namespace Poseidon;
 namespace {
 
 std::size_t g_tcpBufferSize		= 1024;
-std::size_t g_epollBufferSize	= 256;
-std::size_t g_maxEpollTimeout	= 100;
+std::size_t g_eventBufferSize	= 256;
+std::size_t g_maxTimeout		= 100;
 
 volatile bool g_running = false;
 ScopedFile g_epoll;
@@ -57,7 +57,7 @@ boost::mutex g_sessionMutex;
 SessionMap g_sessions;
 
 boost::mutex g_serverMutex;
-std::set<boost::shared_ptr<const SocketServerBase> > g_servers;
+std::set<boost::shared_ptr<const TcpServerBase> > g_servers;
 
 void addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const AUTO(now, getMonoClock());
@@ -147,11 +147,11 @@ void daemonLoop(){
 	const boost::scoped_array<unsigned char>
 		data(new unsigned char[g_tcpBufferSize]);
 	const boost::scoped_array< ::epoll_event>
-		events(new ::epoll_event[g_epollBufferSize]);
+		events(new ::epoll_event[g_eventBufferSize]);
 	std::size_t epollTimeout = 0;
 
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
-	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
+	std::vector<boost::shared_ptr<const TcpServerBase> > servers;
 
 	while(atomicLoad(g_running)){
 		// 第一部分，处理可接收的数据。
@@ -279,7 +279,7 @@ void daemonLoop(){
 		}
 
 		// 第四部分，检测新的数据。
-		const int ready = ::epoll_wait(g_epoll.get(), events.get(), g_epollBufferSize, epollTimeout);
+		const int ready = ::epoll_wait(g_epoll.get(), events.get(), g_eventBufferSize, epollTimeout);
 		if(ready < 0){
 			const AUTO(desc, getErrorDesc());
 			LOG_ERROR("::epoll_wait() failed: ", desc);
@@ -331,8 +331,8 @@ void daemonLoop(){
 		} else {
 			epollTimeout <<= 1;
 		}
-		if(epollTimeout > g_maxEpollTimeout){
-			epollTimeout = g_maxEpollTimeout;
+		if(epollTimeout > g_maxTimeout){
+			epollTimeout = g_maxTimeout;
 		}
 	}
 }
@@ -341,18 +341,6 @@ void threadProc(){
 	PROFILE_ME;
 	Log::setThreadTag(Log::TAG_EPOLL);
 	LOG_INFO("Epoll daemon started.");
-
-	g_tcpBufferSize =
-		ConfigFile::get<std::size_t>("tcp_buffer_size", g_tcpBufferSize);
-	LOG_DEBUG("TCP buffer size = ", g_tcpBufferSize);
-
-	g_epollBufferSize =
-		ConfigFile::get<std::size_t>("epoll_buffer_size", g_epollBufferSize);
-	LOG_DEBUG("Epoll buffer size = ", g_epollBufferSize);
-
-	g_maxEpollTimeout =
-		ConfigFile::get<std::size_t>("max_epoll_timeout", g_maxEpollTimeout);
-	LOG_DEBUG("Max epoll timeout = ", g_maxEpollTimeout);
 
 	daemonLoop();
 
@@ -367,6 +355,18 @@ void EpollDaemon::start(){
 		std::abort();
 	}
 	LOG_INFO("Starting epoll daemon...");
+
+	g_tcpBufferSize =
+		ConfigFile::get<std::size_t>("epoll_tcp_buffer_size", g_tcpBufferSize);
+	LOG_DEBUG("TCP buffer size = ", g_tcpBufferSize);
+
+	g_eventBufferSize =
+		ConfigFile::get<std::size_t>("epoll_event_buffer_size", g_eventBufferSize);
+	LOG_DEBUG("Event buffer size = ", g_eventBufferSize);
+
+	g_maxTimeout =
+		ConfigFile::get<std::size_t>("epoll_max_timeout", g_maxTimeout);
+	LOG_DEBUG("Max timeout = ", g_maxTimeout);
 
 	g_epoll.reset(::epoll_create(4096));
 	if(!g_epoll){
@@ -405,7 +405,7 @@ void EpollDaemon::refreshSession(const boost::shared_ptr<TcpSessionBase> &sessio
 	}
 	touchSession(session);
 }
-void EpollDaemon::addSocketServer(boost::shared_ptr<SocketServerBase> server){
+void EpollDaemon::addSocketServer(boost::shared_ptr<TcpServerBase> server){
 	assert(server);
 
 	{

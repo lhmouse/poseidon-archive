@@ -1,5 +1,5 @@
 #include "../precompiled.hpp"
-#include "socket_server.hpp"
+#include "tcp_server_base.hpp"
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -9,7 +9,7 @@
 #include "tcp_session_base.hpp"
 using namespace Poseidon;
 
-SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPort){
+TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort){
 	union {
 		::sockaddr sa;
 		::sockaddr_in sin;
@@ -75,11 +75,11 @@ SocketServerBase::SocketServerBase(const std::string &bindAddr, unsigned bindPor
 		DEBUG_THROW(SystemError, code);
 	}
 }
-SocketServerBase::~SocketServerBase(){
+TcpServerBase::~TcpServerBase(){
 	LOG_INFO("Destroyed socket server on ", m_bindAddr);
 }
 
-boost::shared_ptr<TcpSessionBase> SocketServerBase::tryAccept() const {
+boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 	ScopedFile client(::accept(m_listen.get(), NULLPTR, NULLPTR));
 	if(!client){
 		return NULLPTR;

@@ -192,6 +192,21 @@ void threadProc(){
 	Log::setThreadTag(Log::TAG_MYSQL);
 	LOG_INFO("MySQL daemon started.");
 
+	daemonLoop();
+	::mysql_thread_end();
+
+	LOG_INFO("MySQL daemon stopped.");
+}
+
+}
+
+void MySqlDaemon::start(){
+	if(atomicExchange(g_running, true) != false){
+		LOG_FATAL("Only one daemon is allowed at the same time.");
+		std::abort();
+	}
+	LOG_INFO("Starting MySQL daemon...");
+
 	g_databaseServer =
 		ConfigFile::get<std::string>("database_server", g_databaseServer);
 	LOG_DEBUG("MySQL server = ", g_databaseServer);
@@ -215,21 +230,6 @@ void threadProc(){
 	g_databaseMaxReconnDelay =
 		ConfigFile::get<std::size_t>("database_max_reconn_delay", g_databaseMaxReconnDelay);
 	LOG_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
-
-	daemonLoop();
-	::mysql_thread_end();
-
-	LOG_INFO("MySQL daemon stopped.");
-}
-
-}
-
-void MySqlDaemon::start(){
-	if(atomicExchange(g_running, true) != false){
-		LOG_FATAL("Only one daemon is allowed at the same time.");
-		std::abort();
-	}
-	LOG_INFO("Starting MySQL daemon...");
 
 	boost::thread(threadProc).swap(g_thread);
 }

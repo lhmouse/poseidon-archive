@@ -5,6 +5,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
+#include "config_file.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
 using namespace Poseidon;
@@ -44,6 +45,9 @@ public:
 
 namespace {
 
+std::size_t g_maxRequestLength = 16 * 0x400;
+unsigned long long g_keepAliveTimeout = 30000;
+
 boost::shared_mutex g_mutex;
 std::map<std::string, boost::weak_ptr<const HttpServlet> > g_servlets;
 
@@ -70,11 +74,25 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 }
 
 void HttpServletManager::start(){
+	g_maxRequestLength =
+		ConfigFile::get<std::size_t>("http_max_request_length", g_maxRequestLength);
+	LOG_DEBUG("Max request length = ", g_maxRequestLength);
+
+	g_keepAliveTimeout =
+		ConfigFile::get<unsigned long long>("http_keep_alive_timeout", g_keepAliveTimeout);
+	LOG_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
 }
 void HttpServletManager::stop(){
 	LOG_INFO("Unloading all http servlets...");
 
 	g_servlets.clear();
+}
+
+std::size_t HttpServletManager::getMaxRequestLength(){
+	return g_maxRequestLength;
+}
+unsigned long long HttpServletManager::getKeepAliveTimeout(){
+	return g_keepAliveTimeout;
 }
 
 boost::shared_ptr<const HttpServlet>

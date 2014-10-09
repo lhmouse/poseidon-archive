@@ -57,11 +57,11 @@ TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
 	, m_shutdown(false)
 {
 
-	LOG_INFO("Created tcp peer, remote ip = ", m_remoteIp);
+	LOG_INFO("Created TCP peer, remote ip = ", m_remoteIp);
 }
 TcpSessionBase::~TcpSessionBase(){
 	if(m_socket){
-		LOG_INFO("Destroyed tcp peer, remote ip = ", m_remoteIp);
+		LOG_INFO("Destroyed TCP peer, remote ip = ", m_remoteIp);
 	}
 }
 

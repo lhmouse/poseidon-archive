@@ -28,6 +28,9 @@ struct HttpServletManager {
 	static void start();
 	static void stop();
 
+	static std::size_t getMaxRequestLength();
+	static unsigned long long getKeepAliveTimeout();
+
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	// callback 禁止 move，否则可能出现主模块中引用子模块内存的情况。
 	static boost::shared_ptr<const HttpServlet>

@@ -10,6 +10,8 @@
 namespace Poseidon {
 
 class PlayerSession : public TcpSessionBase {
+	friend class PlayerServer;
+
 private:
 	int m_payloadLen;
 	unsigned m_protocolId;
