@@ -5,6 +5,7 @@
 #include "../main/singletons/http_servlet_manager.hpp"
 #include "../main/singletons/module_manager.hpp"
 #include "../main/singletons/event_listener_manager.hpp"
+#include "../main/singletons/timer_daemon.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -28,6 +29,11 @@ void event2Proc(boost::shared_ptr<TestEvent2> event){
 
 boost::shared_ptr<const HttpServlet> g_load, g_unload, g_meow, g_meowMeow;
 boost::shared_ptr<const EventListener> g_event1, g_event2;
+boost::shared_ptr<const TimerItem> g_tick;
+
+void tickProc(unsigned long long now, unsigned long long period){
+	LOG_FATAL("Tick, now = ", now, ", period = ", period);
+}
 
 HttpStatus meowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
 	AUTO(event, boost::make_shared<TestEvent1>());
@@ -63,6 +69,7 @@ HttpStatus loadProc(OptionalMap &, StreamBuffer &contents, HttpRequest,
 	// 通配路径 /meow/*
 	g_meow = HttpServletManager::registerServlet("/meow/", module, &meowProc);
 	g_meowMeow = HttpServletManager::registerServlet("/meow/meow/", module, &meowMeowProc);
+	g_tick = TimerDaemon::registerTimer(5000, 10000, module, &tickProc);
 	contents.put("OK");
 	return HTTP_OK;
 }
@@ -82,6 +89,7 @@ HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpRequest request
 	}
 	g_meow.reset();
 	g_meowMeow.reset();
+	g_tick.reset();
 	contents.put("OK");
 	return HTTP_OK;
 }

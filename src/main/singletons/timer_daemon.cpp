@@ -28,10 +28,9 @@ public:
 		const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
 		: m_period(period), m_dependency(dependency), m_callback(callback)
 	{
-		LOG_INFO("Created timer item with period = ", m_period, " microseconds");
 	}
 	~TimerItem(){
-		LOG_INFO("Destroyed timer item with period = ", m_period, " microseconds");
+		LOG_INFO("Destroyed a timer item which has a period of ", m_period, " microsecond(s).");
 	}
 
 public:
@@ -62,19 +61,22 @@ class TimerJob : public JobBase {
 private:
 	const boost::shared_ptr<const void> m_dependency;
 	const boost::shared_ptr<const TimerCallback> m_callback;
+	const unsigned long long m_now;
 	const unsigned long long m_period;
 
 public:
 	TimerJob(boost::shared_ptr<const void> dependency,
-		boost::shared_ptr<const TimerCallback> callback, unsigned long long period)
+		boost::shared_ptr<const TimerCallback> callback,
+		unsigned long long now, unsigned long long period)
 		: m_dependency(STD_MOVE(dependency))
-		, m_callback(STD_MOVE(callback)), m_period(period)
+		, m_callback(STD_MOVE(callback))
+		, m_now(now), m_period(period)
 	{
 	}
 
 public:
 	void perform(){
-		(*m_callback)(m_period);
+		(*m_callback)(m_now, m_period);
 	}
 };
 
@@ -129,8 +131,8 @@ void daemonLoop(){
 
 		try {
 			LOG_INFO("Preparing a timer job for dispatching.");
-
-			boost::make_shared<TimerJob>(STD_MOVE(lockedDep), STD_MOVE(callback), period)->pend();
+			boost::make_shared<TimerJob>(
+				STD_MOVE(lockedDep), STD_MOVE(callback), now, period)->pend();
 		} catch(std::exception &e){
 			LOG_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
 		} catch(...){
@@ -151,28 +153,12 @@ void threadProc(){
 
 }
 
-boost::shared_ptr<const TimerItem> TimerDaemon::registerTimer(
-	unsigned long long first, unsigned long long period,
+boost::shared_ptr<const TimerItem> TimerDaemon::registerAbsoluteTimer(
+	unsigned long long timePoint, unsigned long long period,
 	const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
 {
 	AUTO(item, boost::make_shared<TimerItem>(
 		period * 1000, boost::ref(dependency), boost::ref(callback)));
-	TimerQueueElement tqe;
-	tqe.next = getMonoClock() + first * 1000;
-	tqe.item = item;
-	{
-		const boost::mutex::scoped_lock lock(g_mutex);
-		g_timers.push_back(tqe);
-		std::push_heap(g_timers.begin(), g_timers.end());
-	}
-	return item;
-}
-boost::shared_ptr<const TimerItem> registerAbsoluteTimer(
-	unsigned long long timePoint,
-	const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
-{
-	AUTO(item, boost::make_shared<TimerItem>(
-		0, boost::ref(dependency), boost::ref(callback)));
 	TimerQueueElement tqe;
 	tqe.next = timePoint;
 	tqe.item = item;
@@ -181,7 +167,17 @@ boost::shared_ptr<const TimerItem> registerAbsoluteTimer(
 		g_timers.push_back(tqe);
 		std::push_heap(g_timers.begin(), g_timers.end());
 	}
+	LOG_INFO("Created a timer item which will be triggered ",
+		std::max<long long>(0, timePoint - getMonoClock()),
+		" microsecond(s) later and has a period of ", item->getPeriod(), " microsecond(s).");
 	return item;
+}
+boost::shared_ptr<const TimerItem> TimerDaemon::registerTimer(
+	unsigned long long first, unsigned long long period,
+	const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
+{
+	return registerAbsoluteTimer(
+		getMonoClock() + first * 1000, period, dependency, callback);
 }
 
 boost::shared_ptr<const TimerItem> TimerDaemon::registerHourlyTimer(
