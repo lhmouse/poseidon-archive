@@ -75,11 +75,11 @@ void run(){
 	MySqlDaemon::waitForAllAsyncOperations();
 
 	LOG_INFO("Creating player server...");
-	EpollDaemon::addSocketServer(boost::make_shared<PlayerServer>(
+	EpollDaemon::addTcpServer(boost::make_shared<PlayerServer>(
 		ConfigFile::get("socket_bind"), ConfigFile::get<unsigned>("socket_port", 0)));
 
 	LOG_INFO("Creating HTTP server...");
-	EpollDaemon::addSocketServer(boost::make_shared<HttpServer>(
+	EpollDaemon::addTcpServer(boost::make_shared<HttpServer>(
 		ConfigFile::get("http_bind"), ConfigFile::get<unsigned>("http_port", 0)));
 
 	LOG_INFO("Entering modal loop...");

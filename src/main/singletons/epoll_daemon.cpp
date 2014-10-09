@@ -390,26 +390,19 @@ void EpollDaemon::stop(){
 }
 
 void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
-	assert(session);
-
 	if(session->hasBeenShutdown()){
 		return;
 	}
 	addSession(session);
 }
 void EpollDaemon::refreshSession(const boost::shared_ptr<TcpSessionBase> &session){
-	assert(session);
-
 	if(session->hasBeenShutdown()){
 		return;
 	}
 	touchSession(session);
 }
-void EpollDaemon::addSocketServer(boost::shared_ptr<TcpServerBase> server){
-	assert(server);
 
-	{
-		const boost::mutex::scoped_lock lock(g_serverMutex);
-		g_servers.insert(server);
-	}
+void EpollDaemon::addTcpServer(boost::shared_ptr<const TcpServerBase> server){
+	const boost::mutex::scoped_lock lock(g_serverMutex);
+	g_servers.insert(STD_MOVE(server));
 }
