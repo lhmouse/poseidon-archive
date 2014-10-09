@@ -100,8 +100,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #define FIELD_VUINT50(name_)			if(!::Poseidon::vuint50FromBinary(cur_.name_, read_, buffer_.size())){	\
 											THROW_EOS_;	\
 										}
-#define FIELD_STRING(name_)				unsigned long long count_;	\
-										if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
+#define FIELD_STRING(name_)				if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
 											THROW_EOS_;	\
 										}	\
 										if(buffer_.size() < count_){	\
