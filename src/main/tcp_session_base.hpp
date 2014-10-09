@@ -39,9 +39,6 @@ public:
 		return atomicLoad(m_shutdown);
 	}
 
-	virtual void onInit(){
-	}
-
 	// 有数据可读触发回调，size 始终不为零。
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
 
