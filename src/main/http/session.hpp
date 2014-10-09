@@ -12,6 +12,7 @@ namespace Poseidon {
 
 class HttpSession : public TcpSessionBase {
 	friend class HttpServer;
+	friend class HttpUpgradedSessionBase;
 
 private:
 	enum State {
@@ -22,12 +23,13 @@ private:
 
 private:
 	boost::shared_ptr<const class TimerItem> m_shutdownTimer;
-	boost::shared_ptr<class HttpUpgradedSessionBase> m_upgradedSession;
 
 	State m_state;
 	std::size_t m_totalLength;
 	std::size_t m_contentLength;
 	std::string m_line;
+
+	boost::shared_ptr<class HttpUpgradedSessionBase> m_upgradedSession;
 
 	HttpVerb m_verb;
 	std::string m_uri;

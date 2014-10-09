@@ -289,9 +289,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				m_line.clear();
 				continue;
 			}
-			if(m_upgradedSession){
-				break;
-			}
+
 			const std::size_t bytesAvail = (std::size_t)(end - read);
 			const std::size_t bytesRemaining = m_contentLength - m_line.size();
 			if(bytesAvail < bytesRemaining){
@@ -326,8 +324,5 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		respond(this, HTTP_SERVER_ERROR);
 		shutdown();
 		throw;
-	}
-	if(m_upgradedSession){
-		m_upgradedSession->onReadAvail(read, end - read);
 	}
 }
