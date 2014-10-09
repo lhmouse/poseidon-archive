@@ -79,7 +79,7 @@ void run(){
 	EpollDaemon::addSocketServer(boost::make_shared<SocketServer<PlayerSession> >(
 		ConfigFile::get("socket_bind"), ConfigFile::get<unsigned>("socket_port", 0)));
 
-	LOG_INFO("Creating http server...");
+	LOG_INFO("Creating HTTP server...");
 	EpollDaemon::addSocketServer(boost::make_shared<SocketServer<HttpSession> >(
 		ConfigFile::get("http_bind"), ConfigFile::get<unsigned>("http_port", 0)));
 
