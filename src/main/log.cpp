@@ -98,7 +98,7 @@ Log::~Log() NOEXCEPT {
 		line += '\n';
 
 		const boost::mutex::scoped_lock lock(g_mutex);
-		std::fwrite(line.c_str(), line.size(), sizeof(char), stdout);
+		std::fwrite(line.data(), line.size(), sizeof(char), stdout);
 	} catch(...){
 	}
 }
