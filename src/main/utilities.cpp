@@ -47,7 +47,7 @@ boost::uint64_t getMonoClock() NOEXCEPT {
 
 namespace {
 
-__thread boost::uint32_t t_randSeed = 0;
+__thread boost::uint64_t t_randSeed = 0;
 
 }
 
