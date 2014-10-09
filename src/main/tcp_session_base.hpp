@@ -8,7 +8,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/thread/mutex.hpp>
 #include "raii.hpp"
-#include "atomic.hpp"
 #include "stream_buffer.hpp"
 
 namespace Poseidon {
@@ -29,6 +28,7 @@ protected:
 public:
 	void onReadAvail(const void *data, std::size_t size) = 0;
 	void sendUsingMove(StreamBuffer &buffer);
+	bool hasBeenShutdown() const;
 	void shutdown();
 	void forceShutdown();
 
@@ -43,9 +43,6 @@ public:
 
 	const std::string &getRemoteIp() const {
 		return m_remoteIp;
-	}
-	bool hasBeenShutdown() const {
-		return atomicLoad(m_shutdown);
 	}
 
 	void send(const void *data, std::size_t size){

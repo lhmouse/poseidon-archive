@@ -1,13 +1,14 @@
 #include "../precompiled.hpp"
 #include "tcp_session_base.hpp"
-#include "exception.hpp"
-#include "singletons/epoll_daemon.hpp"
-#include "log.hpp"
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <errno.h>
+#include "exception.hpp"
+#include "singletons/epoll_daemon.hpp"
+#include "log.hpp"
+#include "atomic.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -72,6 +73,9 @@ void TcpSessionBase::sendUsingMove(StreamBuffer &buffer){
 		m_sendBuffer.splice(buffer);
 	}
 	EpollDaemon::refreshSession(virtualSharedFromThis<TcpSessionBase>());
+}
+bool TcpSessionBase::hasBeenShutdown() const {
+	return atomicLoad(m_shutdown);
 }
 void TcpSessionBase::shutdown(){
 	atomicStore(m_shutdown, true);

@@ -4,6 +4,7 @@
 #include "request.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
+#include "upgraded_session_base.hpp"
 #include "../log.hpp"
 #include "../singletons/http_servlet_manager.hpp"
 #include "../singletons/timer_daemon.hpp"
@@ -203,6 +204,12 @@ void HttpSession::onAllHeadersRead(){
 void HttpSession::onReadAvail(const void *data, std::size_t size){
 	PROFILE_ME;
 
+	if(m_upgradedSession){
+		return m_upgradedSession->onReadAvail(data, size);
+	}
+
+	AUTO(read, (const char *)data);
+	const AUTO(end, read + size);
 	try {
 		const std::size_t maxRequestLength = HttpServletManager::getMaxRequestLength();
 		if(m_totalLength + size >= maxRequestLength){
@@ -211,8 +218,6 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		}
 		m_totalLength += size;
 
-		AUTO(read, (const char *)data);
-		const AUTO(end, read + size);
 		while(read != end){
 			if(m_state != ST_CONTENTS){
 				const char ch = *read;
@@ -280,6 +285,9 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				m_line.clear();
 				continue;
 			}
+			if(m_upgradedSession){
+				break;
+			}
 			const std::size_t bytesAvail = (std::size_t)(end - read);
 			const std::size_t bytesRemaining = m_contentLength - m_line.size();
 			if(bytesAvail < bytesRemaining){
@@ -314,5 +322,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		respond(this, HTTP_SERVER_ERROR);
 		shutdown();
 		throw;
+	}
+	if(m_upgradedSession){
+		m_upgradedSession->onReadAvail(read, end - read);
 	}
 }

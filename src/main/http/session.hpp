@@ -22,6 +22,7 @@ private:
 
 private:
 	boost::shared_ptr<const class TimerItem> m_shutdownTimer;
+	boost::shared_ptr<class HttpUpgradedSessionBase> m_upgradedSession;
 
 	State m_state;
 	std::size_t m_totalLength;
