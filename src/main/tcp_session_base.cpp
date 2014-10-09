@@ -56,13 +56,10 @@ TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
 	: m_socket(STD_MOVE(socket)), m_remoteIp(getIpFromSocket(m_socket.get()))
 	, m_shutdown(false)
 {
-
 	LOG_INFO("Created TCP peer, remote ip = ", m_remoteIp);
 }
 TcpSessionBase::~TcpSessionBase(){
-	if(m_socket){
-		LOG_INFO("Destroyed TCP peer, remote ip = ", m_remoteIp);
-	}
+	LOG_INFO("Destroyed TCP peer, remote ip = ", m_remoteIp);
 }
 
 std::size_t TcpSessionBase::peekWriteAvail(boost::mutex::scoped_lock &lock,

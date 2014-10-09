@@ -1,6 +1,7 @@
 #ifndef POSEIDON_TCP_SESSION_BASE_HPP_
 #define POSEIDON_TCP_SESSION_BASE_HPP_
 
+#include "../cxx_ver.hpp"
 #include <string>
 #include <cstddef>
 #include <boost/noncopyable.hpp>
@@ -16,8 +17,8 @@ class TcpSessionBase : boost::noncopyable
 	, public virtual VirtualSharedFromThis
 {
 private:
-	const ScopedFile m_socket;
-	const std::string m_remoteIp;
+	ScopedFile m_socket;
+	std::string m_remoteIp;
 
 	volatile bool m_shutdown;
 	mutable boost::mutex m_bufferMutex;
