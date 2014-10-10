@@ -240,8 +240,7 @@ bool WebSocketSession::send(StreamBuffer buffer, bool binary, bool masked){
 		makeFrame(binary ? WS_DATA_BIN : WS_DATA_TEXT, STD_MOVE(buffer), masked));
 }
 bool WebSocketSession::shutdown(WebSocketStatus status){
-	StreamBuffer reason(getWebSocketStatusDesc(status));
-	return shutdown(status, STD_MOVE(reason));
+	return shutdown(status, StreamBuffer(getWebSocketStatusDesc(status)));
 }
 bool WebSocketSession::shutdown(WebSocketStatus status, StreamBuffer reason){
 	StreamBuffer payload;
