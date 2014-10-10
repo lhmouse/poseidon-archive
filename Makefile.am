@@ -44,6 +44,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/timer_daemon.cpp	\
 	src/main/singletons/player_servlet_manager.cpp	\
 	src/main/singletons/http_servlet_manager.cpp	\
+	src/main/singletons/websocket_servlet_manager.cpp	\
 	src/main/singletons/module_manager.cpp	\
 	src/main/singletons/event_listener_manager.cpp	\
 	src/main/singletons/profile_manager.cpp	\

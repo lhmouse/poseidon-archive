@@ -4,8 +4,11 @@
 #include "../session.hpp"
 #include "../../optional_map.hpp"
 #include "../../singletons/job_dispatcher.hpp"
+#include "../../singletons/websocket_servlet_manager.hpp"
 #include "../../log.hpp"
 #include "../../utilities.hpp"
+#include "../../job_base.hpp"
+#include "../../profiler.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -51,6 +54,42 @@ bool sendFrame(WebSocketSession *session,
 	return session->HttpUpgradedSessionBase::send(STD_MOVE(frame));
 }
 
+class WebSocketRequestJob : public JobBase {
+private:
+	const std::string m_uri;
+	const boost::weak_ptr<WebSocketSession> m_session;
+
+	StreamBuffer m_incoming;
+
+	boost::shared_ptr<const void> m_lockedDep;
+
+public:
+	WebSocketRequestJob(std::string uri,
+		boost::weak_ptr<WebSocketSession> session, StreamBuffer incoming)
+		: m_uri(STD_MOVE(uri)), m_session(STD_MOVE(session))
+		, m_incoming(STD_MOVE(incoming))
+	{
+	}
+
+protected:
+	void perform(){
+		AUTO(session, m_session.lock());
+		if(!session){
+			LOG_WARNING("The specified WebSocket session has expired.");
+			return;
+		}
+
+		const AUTO(servlet, WebSocketServletManager::getServlet(m_lockedDep, m_uri));
+		if(!servlet){
+			LOG_WARNING("No servlet for URI ", m_uri);
+			session->shutdown(WS_INACCEPTABLE);
+			return;
+		}
+		LOG_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_incoming.size());
+		(*servlet)(STD_MOVE(session), STD_MOVE(m_incoming));
+	}
+};
+
 }
 
 WebSocketSession::WebSocketSession(boost::weak_ptr<HttpSession> parent)
@@ -60,9 +99,12 @@ WebSocketSession::WebSocketSession(boost::weak_ptr<HttpSession> parent)
 }
 
 void WebSocketSession::onReadAvail(const void *data, std::size_t size){
+	PROFILE_ME;
+
 	m_incoming.put(data, size);
 	try {
-		DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR);
+		boost::make_shared<WebSocketRequestJob>(boost::ref(getUri()),
+			virtualWeakFromThis<WebSocketSession>(), StreamBuffer(data, size))->pend();
 	} catch(WebSocketException &e){
 		LOG_ERROR("WebSocketException thrown while reading, status = ", e.status(),
 			", file = ", e.file(), ", line = ", e.line(), ", what = ", e.what());

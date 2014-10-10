@@ -11,17 +11,18 @@ namespace {
 
 class PlayerRequestJob : public JobBase {
 private:
-	unsigned m_protocolId;
-	boost::weak_ptr<PlayerSession> m_session;
-	StreamBuffer m_packet;
+	const unsigned m_protocolId;
+	const boost::weak_ptr<PlayerSession> m_session;
+
+	StreamBuffer m_incoming;
 
 	boost::shared_ptr<const void> m_lockedDep;
 
 public:
 	PlayerRequestJob(unsigned protocolId,
-		boost::weak_ptr<PlayerSession> session, StreamBuffer packet)
-		: m_protocolId(protocolId)
-		, m_session(STD_MOVE(session)), m_packet(STD_MOVE(packet))
+		boost::weak_ptr<PlayerSession> session, StreamBuffer incoming)
+		: m_protocolId(protocolId), m_session(STD_MOVE(session))
+		, m_incoming(STD_MOVE(incoming))
 	{
 	}
 
@@ -39,9 +40,8 @@ protected:
 			session->shutdown();
 			return;
 		}
-		LOG_DEBUG("Dispatching packet: protocol = ", m_protocolId,
-			", payload size = ", m_packet.size());
-		(*servlet)(STD_MOVE(session), STD_MOVE(m_packet));
+		LOG_DEBUG("Dispatching packet: protocol = ", m_protocolId, ", payload size = ", m_incoming.size());
+		(*servlet)(STD_MOVE(session), STD_MOVE(m_incoming));
 	}
 };
 
@@ -79,9 +79,8 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 		if(m_incoming.size() < (unsigned)m_payloadLen){
 			break;
 		}
-		StreamBuffer packet = m_incoming.cut(m_payloadLen);
 		boost::make_shared<PlayerRequestJob>(m_protocolId,
-			virtualWeakFromThis<PlayerSession>(), STD_MOVE(packet))->pend();
+			virtualWeakFromThis<PlayerSession>(), m_incoming.cut(m_payloadLen))->pend();
 		m_payloadLen = -1;
 	}
 }

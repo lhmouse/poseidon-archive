@@ -2,7 +2,6 @@
 #define POSEIDON_SINGLETONS_PLAYER_SERVLET_MANAGER_HPP_
 
 #include "../../cxx_ver.hpp"
-#include <string>
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>

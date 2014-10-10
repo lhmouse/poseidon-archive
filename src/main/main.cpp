@@ -10,6 +10,7 @@
 #include "singletons/job_dispatcher.hpp"
 #include "singletons/player_servlet_manager.hpp"
 #include "singletons/http_servlet_manager.hpp"
+#include "singletons/websocket_servlet_manager.hpp"
 #include "singletons/module_manager.hpp"
 #include "singletons/event_listener_manager.hpp"
 #include "singletons/profile_manager.hpp"
@@ -68,6 +69,7 @@ void run(){
 
 	const RaiiSingletonRunner<PlayerServletManager> UNIQUE_ID;
 	const RaiiSingletonRunner<HttpServletManager> UNIQUE_ID;
+	const RaiiSingletonRunner<WebSocketServletManager> UNIQUE_ID;
 	const RaiiSingletonRunner<ModuleManager> UNIQUE_ID;
 	const RaiiSingletonRunner<EventListenerManager> UNIQUE_ID;
 

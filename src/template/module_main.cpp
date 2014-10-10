@@ -6,6 +6,8 @@
 #include "../main/singletons/module_manager.hpp"
 #include "../main/singletons/event_listener_manager.hpp"
 #include "../main/singletons/timer_daemon.hpp"
+#include "../main/singletons/websocket_servlet_manager.hpp"
+#include "../main/http/websocket/session.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -30,6 +32,7 @@ void event2Proc(boost::shared_ptr<TestEvent2> event){
 boost::shared_ptr<const HttpServlet> g_load, g_unload, g_meow, g_meowMeow;
 boost::shared_ptr<const EventListener> g_event1, g_event2;
 boost::shared_ptr<const TimerItem> g_tick;
+boost::shared_ptr<const WebSocketServlet> g_ws;
 
 void tickProc(unsigned long long now, unsigned long long period){
 	LOG_FATAL("Tick, now = ", now, ", period = ", period);
@@ -94,6 +97,14 @@ HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpRequest request
 	return HTTP_OK;
 }
 
+void webSocketProc(boost::shared_ptr<WebSocketSession> wss, StreamBuffer incoming){
+	LOG_FATAL("Received packet: ", HexDumper(incoming));
+	std::string s = incoming.dump();
+	StreamBuffer out;
+	std::copy(s.rbegin(), s.rend(), StreamBufferWriteIterator(out));
+	wss->send(STD_MOVE(out));
+}
+
 struct Tracked {
 	Tracked(){
 		LOG_FATAL("Tracked::Tracked()");
@@ -115,4 +126,6 @@ extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
 
 	g_event1 = EventListenerManager::registerListener<TestEvent1>(module, &event1Proc);
 	g_event2 = EventListenerManager::registerListener<TestEvent2>(module, &event2Proc);
+
+	g_ws = WebSocketServletManager::registerServlet("/wstest", module, &webSocketProc);
 }

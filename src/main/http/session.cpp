@@ -96,7 +96,8 @@ void onSessionTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned lon
 
 class HttpRequestJob : public JobBase {
 private:
-	boost::weak_ptr<HttpSession> m_session;
+	const boost::weak_ptr<HttpSession> m_session;
+
 	HttpRequest m_request;
 
 	boost::shared_ptr<const void> m_lockedDep;

@@ -23,10 +23,10 @@ public:
 		const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback)
 		: m_uri(uri), m_dependency(dependency), m_callback(callback)
 	{
-		LOG_INFO("Created http servlet for URI ", m_uri);
+		LOG_INFO("Created HTTP servlet for URI ", m_uri);
 	}
 	~HttpServlet(){
-		LOG_INFO("Destroyed http servlet for URI ", m_uri);
+		LOG_INFO("Destroyed HTTP servlet for URI ", m_uri);
 	}
 
 public:
@@ -83,7 +83,7 @@ void HttpServletManager::start(){
 	LOG_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
 }
 void HttpServletManager::stop(){
-	LOG_INFO("Unloading all http servlets...");
+	LOG_INFO("Unloading all HTTP servlets...");
 
 	g_servlets.clear();
 }
@@ -105,7 +105,7 @@ boost::shared_ptr<const HttpServlet>
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(servlet, g_servlets[uri]);
 		if(!servlet.expired()){
-			DEBUG_THROW(Exception, "Duplicate http servlet.");
+			DEBUG_THROW(Exception, "Duplicate HTTP servlet.");
 		}
 		servlet = newServlet;
 	}
