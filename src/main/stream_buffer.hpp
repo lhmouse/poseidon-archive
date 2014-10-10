@@ -68,6 +68,8 @@ public:
 	void dump(std::ostream &os) const;
 	void load(const std::string &str);
 	void load(std::istream &is);
+
+	void dumpHex(std::ostream &os) const;
 };
 
 class StreamBufferReadIterator
@@ -123,6 +125,24 @@ public:
 		return *this;
 	}
 };
+
+static inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
+
+struct HexDumper {
+	const StreamBuffer &buffer;
+
+	explicit HexDumper(const StreamBuffer &buffer_)
+		: buffer(buffer_)
+	{
+	}
+};
+
+static inline std::ostream &operator<<(std::ostream &os, const HexDumper &rhs){
+	rhs.buffer.dumpHex(os);
+	return os;
+}
 
 }
 

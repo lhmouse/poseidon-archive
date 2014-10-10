@@ -2,26 +2,13 @@
 #define POSEIDON_CXX_UTIL_HPP_
 
 #include <cstddef>
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
+#include <boost/range/size.hpp>
 
-namespace Poseidon {
-
-template<typename Type, std::size_t COUNT>
-char (&countOfHelper(const Type (&)[COUNT]))[COUNT];
-
-template<typename Type, std::size_t COUNT>
-Type *arrayBegin(Type (&array)[COUNT]){
-	return array;
-}
-template<typename Type, std::size_t COUNT>
-Type *arrayEnd(Type (&array)[COUNT]){
-	return array + COUNT;
-}
-
-}
-
-#define COUNT_OF(ar)		(sizeof(::Poseidon::countOfHelper(ar)))
-#define ARRAY_BEGIN(ar)		(::Poseidon::arrayBegin(ar))
-#define ARRAY_END(ar)		(::Poseidon::arrayEnd(ar))
+#define COUNT_OF(ar)		(::boost::size(ar))
+#define BEGIN(ar)			(::boost::begin(ar))
+#define END(ar)				(::boost::end(ar))
 
 #define MAGIC_LN_2_(ln_)	Poseidon_magic_ ## ln_ ## _
 #define MAGIC_LN_1_(ln_)	MAGIC_LN_2_(ln_)

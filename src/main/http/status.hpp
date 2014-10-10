@@ -51,7 +51,7 @@ struct HttpStatusDesc {
 	const char *descLong;
 };
 
-HttpStatusDesc getHttpStatusCodeDesc(HttpStatus status);
+HttpStatusDesc getHttpStatusDesc(HttpStatus status);
 
 }
 

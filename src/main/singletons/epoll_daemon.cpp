@@ -306,7 +306,9 @@ void daemonLoop(){
 				}
 
 				if(event.events & EPOLLRDHUP){
-					session->shutdown();
+					if(session->shutdown()){
+						LOG_INFO("Socket closed by remote host: ", session->getRemoteIp());
+					}
 					event.events |= EPOLLIN;
 					event.events |= EPOLLOUT;
 				}

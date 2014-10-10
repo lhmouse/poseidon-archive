@@ -10,7 +10,7 @@ class HttpException : public ProtocolException {
 public:
 	HttpException(const char *file, std::size_t line, HttpStatus status)
 		: ProtocolException(file, line,
-			getHttpStatusCodeDesc(status).descShort, static_cast<int>(status))
+			getHttpStatusDesc(status).descShort, static_cast<int>(status))
 	{
 	}
 

@@ -9,38 +9,45 @@ HttpUpgradedSessionBase::HttpUpgradedSessionBase(boost::weak_ptr<HttpSession> pa
 {
 }
 
-void HttpUpgradedSessionBase::sendUsingMove(StreamBuffer &buffer){
-	const AUTO(parent, m_parent.lock());
+void HttpUpgradedSessionBase::onInitContents(const void *data, std::size_t size){
+	(void)data;
+	(void)size;
+}
+bool HttpUpgradedSessionBase::send(StreamBuffer buffer){
+	const AUTO(parent, getParent());
 	if(!parent){
-		return;
+		return false;
 	}
-	parent->sendUsingMove(buffer);
+	return parent->TcpSessionBase::send(STD_MOVE(buffer));
 }
 bool HttpUpgradedSessionBase::hasBeenShutdown() const {
-	const AUTO(parent, m_parent.lock());
+	const AUTO(parent, getParent());
 	if(!parent){
 		return true;
 	}
-	return parent->hasBeenShutdown();
+	return parent->TcpSessionBase::hasBeenShutdown();
 }
-void HttpUpgradedSessionBase::shutdown(){
-	const AUTO(parent, m_parent.lock());
+bool HttpUpgradedSessionBase::shutdown(){
+	const AUTO(parent, getParent());
 	if(!parent){
-		return;
+		return false;
 	}
-	parent->shutdown();
+	return parent->TcpSessionBase::shutdown();
 }
-void HttpUpgradedSessionBase::forceShutdown(){
-	const AUTO(parent, m_parent.lock());
+bool HttpUpgradedSessionBase::forceShutdown(){
+	const AUTO(parent, getParent());
 	if(!parent){
-		return;
+		return false;
 	}
-	parent->forceShutdown();
+	return parent->TcpSessionBase::forceShutdown();
 }
 
 const std::string &HttpUpgradedSessionBase::getUri() const {
-	return getParent()->m_uri;
+	return getSafeParent()->m_uri;
 }
 const OptionalMap &HttpUpgradedSessionBase::getParams() const {
-	return getParent()->m_getParams;
+	return getSafeParent()->m_getParams;
+}
+const OptionalMap &HttpUpgradedSessionBase::getHeaders() const {
+	return getSafeParent()->m_headers;
 }

@@ -27,10 +27,10 @@ protected:
 
 public:
 	void onReadAvail(const void *data, std::size_t size) = 0;
-	void sendUsingMove(StreamBuffer &buffer);
+	bool send(StreamBuffer buffer);
 	bool hasBeenShutdown() const;
-	void shutdown();
-	void forceShutdown();
+	bool shutdown();
+	bool forceShutdown();
 
 	int getFd() const {
 		return m_socket.get();
@@ -44,23 +44,6 @@ public:
 	const std::string &getRemoteIp() const {
 		return m_remoteIp;
 	}
-
-	void send(const void *data, std::size_t size){
-		StreamBuffer tmp(data, size);
-		sendUsingMove(tmp);
-	}
-	void send(const StreamBuffer &buffer){
-		StreamBuffer tmp(buffer);
-		sendUsingMove(tmp);
-	}
-#ifdef POSEIDON_CXX11
-	void send(StreamBuffer &&buffer){
-		sendUsingMove(buffer);
-	}
-	void sendUsingMove(StreamBuffer &&buffer){
-		sendUsingMove(buffer);
-	}
-#endif
 };
 
 }

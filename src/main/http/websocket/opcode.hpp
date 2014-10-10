@@ -1,0 +1,18 @@
+#ifndef POSEIDON_HTTP_WEBSOCKET_OPCODE_HPP_
+#define POSEIDON_HTTP_WEBSOCKET_OPCODE_HPP_
+
+namespace Poseidon {
+
+enum WebSocketOpCode {
+	WS_INVALID_OPCODE = -1,
+	WS_CONTINUATION = 0x00,
+	WS_DATA_TEXT = 0x01,
+	WS_DATA_BIN = 0x02,
+	WS_CLOSE = 0x08,
+	WS_PING = 0x09,
+	WS_PONG = 0x0A,
+};
+
+}
+
+#endif

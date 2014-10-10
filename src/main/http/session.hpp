@@ -7,6 +7,7 @@
 #include "../tcp_session_base.hpp"
 #include "../optional_map.hpp"
 #include "verb.hpp"
+#include "status.hpp"
 
 namespace Poseidon {
 
@@ -44,9 +45,13 @@ private:
 	void resetTimeout(unsigned long long timeout);
 
 	void onAllHeadersRead();
+	void onExpect(const std::string &val);
+	void onContentLength(const std::string &val);
+	void onUpgrade(const std::string &val);
 
-protected:
+public:
 	void onReadAvail(const void *data, std::size_t size);
+	bool shutdown(HttpStatus status);
 };
 
 }

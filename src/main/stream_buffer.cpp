@@ -1,6 +1,7 @@
 #include "../precompiled.hpp"
 #include "stream_buffer.hpp"
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <boost/thread/mutex.hpp>
 using namespace Poseidon;
@@ -312,6 +313,16 @@ void StreamBuffer::load(std::istream &is){
 		back.writePos = is.readsome(back.data, sizeof(back.data));
 		if(back.writePos == 0){
 			break;
+		}
+	}
+}
+
+void StreamBuffer::dumpHex(std::ostream &os) const {
+	os <<std::hex;
+	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
+		for(std::size_t i = it->readPos; i < it->writePos; ++i){
+			os <<std::setfill('0') <<std::setw(2)
+				<<(unsigned)(unsigned char)it->data[i] <<' ';
 		}
 	}
 }

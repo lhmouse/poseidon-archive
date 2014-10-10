@@ -19,21 +19,30 @@ protected:
 	explicit HttpUpgradedSessionBase(boost::weak_ptr<HttpSession> parent);
 
 public:
+	virtual void onInitContents(const void *data, std::size_t size);
 	void onReadAvail(const void *data, std::size_t size) = 0;
-	void sendUsingMove(StreamBuffer &buffer);
+	bool send(StreamBuffer buffer);
 	bool hasBeenShutdown() const;
-	void shutdown();
-	void forceShutdown();
+	bool shutdown();
+	bool forceShutdown();
 
 	boost::shared_ptr<const HttpSession> getParent() const {
-		return boost::shared_ptr<const HttpSession>(m_parent);
+		return m_parent.lock();
 	}
 	boost::shared_ptr<HttpSession> getParent(){
+		return m_parent.lock();
+	}
+
+	boost::shared_ptr<const HttpSession> getSafeParent() const {
+		return boost::shared_ptr<const HttpSession>(m_parent);
+	}
+	boost::shared_ptr<HttpSession> getSafeParent(){
 		return boost::shared_ptr<HttpSession>(m_parent);
 	}
 
 	const std::string &getUri() const;
 	const OptionalMap &getParams() const;
+	const OptionalMap &getHeaders() const;
 };
 
 }

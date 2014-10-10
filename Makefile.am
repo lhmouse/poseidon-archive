@@ -56,6 +56,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/http/utilities.cpp	\
 	src/main/http/upgraded_session_base.cpp	\
 	src/main/http/websocket/session.cpp	\
+	src/main/http/websocket/status.cpp	\
 	src/main/mysql/object_base.cpp	\
 	src/main/job_base.cpp	\
 	src/main/tcp_session_base.cpp	\

@@ -12,6 +12,12 @@ std::string urlDecode(const std::string &encoded);
 std::string urlEncodedFromOptionalMap(const OptionalMap &decoded);
 OptionalMap optionalMapFromUrlEncoded(const std::string &encoded);
 
+std::string hexEncode(const std::string &decoded);
+std::string hexDecode(const std::string &encoded);
+
+std::string base64Encode(const std::string &decoded);
+std::string base64Decode(const std::string &encoded);
+
 }
 
 #endif

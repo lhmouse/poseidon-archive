@@ -1,10 +1,11 @@
 #include "../../precompiled.hpp"
 #include "session.hpp"
-#include "status.hpp"
+#include <openssl/sha.h>
 #include "request.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
 #include "upgraded_session_base.hpp"
+#include "websocket/session.hpp"
 #include "../log.hpp"
 #include "../singletons/http_servlet_manager.hpp"
 #include "../singletons/timer_daemon.hpp"
@@ -24,7 +25,7 @@ void respond(HttpSession *session, HttpStatus status,
 
 	char codeStatus[512];
 	std::size_t codeStatusLen = std::sprintf(codeStatus, "%u ", (unsigned)status);
-	const AUTO(desc, getHttpStatusCodeDesc(status));
+	const AUTO(desc, getHttpStatusDesc(status));
 	const std::size_t toAppend = std::min(
 		sizeof(codeStatus) - codeStatusLen, std::strlen(desc.descShort));
 	std::memcpy(codeStatus + codeStatusLen, desc.descShort, toAppend);
@@ -67,7 +68,7 @@ void respond(HttpSession *session, HttpStatus status,
 	buffer.put("\r\n");
 	buffer.splice(realContents);
 
-	session->sendUsingMove(buffer);
+	session->send(STD_MOVE(buffer));
 }
 
 void normalizeUri(std::string &uri){
@@ -90,8 +91,7 @@ void onSessionTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned lon
 	const AUTO(session, observer.lock());
 	if(session){
 		LOG_WARNING("HTTP session times out, remote ip = ", session->getRemoteIp());
-		respond(session.get(), HTTP_REQUEST_TIMEOUT);
-		session->shutdown();
+		session->shutdown(HTTP_REQUEST_TIMEOUT);
 	}
 }
 
@@ -136,22 +136,18 @@ protected:
 			OptionalMap headers;
 			StreamBuffer contents;
 			const HttpStatus status = (*servlet)(headers, contents, STD_MOVE(m_request));
-			if((verb == HTTP_HEAD) || (status == HTTP_NO_CONTENT) ||
-				(static_cast<unsigned>(status) / 100 == 1))
-			{
+			if((verb == HTTP_HEAD) || (status == HTTP_NO_CONTENT) || ((unsigned)status / 100 == 1)){
 				contents.clear();
 			}
 			respond(session.get(), status, STD_MOVE(headers), &contents);
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, status = ", e.status(),
 				", file = ", e.file(), ", line = ", e.line());
-			respond(session.get(), e.status());
-			session->shutdown();
+			session->shutdown(e.status());
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... shutdown the session first.");
-			respond(session.get(), HTTP_SERVER_ERROR);
-			session->shutdown();
+			session->shutdown(HTTP_SERVER_ERROR);
 			throw;
 		}
 	}
@@ -178,33 +174,88 @@ void HttpSession::resetTimeout(unsigned long long timeout){
 		m_shutdownTimer.reset();
 	} else {
 		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, NULLPTR,
-			TR1::bind(&onSessionTimeout,
-				virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+			TR1::bind(&onSessionTimeout, virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
 	}
 }
 
 void HttpSession::onAllHeadersRead(){
-	for(AUTO(it, m_headers.begin()); it != m_headers.end(); ++it){
-		const char *const name = it->first.get();
-		const std::string &val = it->second;
+	typedef std::pair<const char *, void (HttpSession::*)(const std::string &)> TableItem;
 
-		if(std::strcmp(name, "Expect") == 0){
-			if(val != "100-continue"){
-				LOG_WARNING("Unknown HTTP header Expect: ", val);
-				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	static const TableItem JUMP_TABLE[] = {
+		std::make_pair("Content-Length", &HttpSession::onContentLength),
+		std::make_pair("Expect", &HttpSession::onExpect),
+		std::make_pair("Upgrade", &HttpSession::onUpgrade),
+	};
+
+	for(AUTO(it, m_headers.begin()); it != m_headers.end(); ++it){
+		AUTO(lower, BEGIN(JUMP_TABLE));
+		AUTO(upper, END(JUMP_TABLE));
+		void (HttpSession::*found)(const std::string &) = 0;
+		do {
+			const AUTO(middle, lower + (upper - lower) / 2);
+			const int result = std::strcmp(it->first.get(), middle->first);
+			if(result == 0){
+				found = middle->second;
+				break;
+			} else if(result < 0){
+				upper = middle;
+			} else {
+				lower = middle + 1;
 			}
-			respond(this, HTTP_CONTINUE);
-		} else if(std::strcmp(name, "Content-Length") == 0){
-			m_contentLength = boost::lexical_cast<std::size_t>(val);
-			LOG_DEBUG("Content-Length: ", m_contentLength);
+		} while(lower != upper);
+
+		if(found){
+			(this->*found)(it->second);
 		}
 	}
+}
+void HttpSession::onExpect(const std::string &val){
+	if(val != "100-continue"){
+		LOG_WARNING("Unknown HTTP header Expect: ", val);
+		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	}
+	respond(this, HTTP_CONTINUE);
+}
+void HttpSession::onContentLength(const std::string &val){
+	m_contentLength = boost::lexical_cast<std::size_t>(val);
+	LOG_DEBUG("Content-Length: ", m_contentLength);
+}
+void HttpSession::onUpgrade(const std::string &val){
+	if(val != "websocket"){
+		LOG_WARNING("Unknown HTTP header Upgrade: ", val);
+		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	}
+	AUTO_REF(version, m_headers.get("Sec-WebSocket-Version"));
+	if(version != "13"){
+		LOG_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
+		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	}
+
+	std::string key = m_headers.get("Sec-WebSocket-Key");
+	if(key.empty()){
+		LOG_WARNING("No Sec-WebSocket-Key specified.");
+		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+	}
+	key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+	unsigned char sha[SHA_DIGEST_LENGTH];
+	::SHA1((const unsigned char *)key.data(), key.size(), sha);
+	key.assign((const char *)sha, sizeof(sha));
+	key = base64Encode(key);
+
+	OptionalMap headers;
+	headers.set("Upgrade", "websocket");
+	headers.set("Connection", "Upgrade");
+	headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
+	StreamBuffer contents;
+	respond(this, HTTP_SWITCH_PROTOCOLS, headers, &contents);
+
+	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualWeakFromThis<HttpSession>());
 }
 
 void HttpSession::onReadAvail(const void *data, std::size_t size){
 	PROFILE_ME;
 
-	if(m_upgradedSession){
+	if((m_state == ST_FIRST_HEADER) && m_upgradedSession){
 		return m_upgradedSession->onReadAvail(data, size);
 	}
 
@@ -300,29 +351,40 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 
 			m_line.append(read, bytesRemaining);
 			read += bytesRemaining;
-			boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
-				STD_MOVE(m_verb), STD_MOVE(m_uri), STD_MOVE(m_getParams),
-				STD_MOVE(m_headers), STD_MOVE(m_line))->pend();
-
 			m_state = ST_FIRST_HEADER;
-			m_totalLength = 0;
-			m_contentLength = 0;
-			m_line.clear();
 
-			m_uri.clear();
-			m_getParams.clear();
-			m_headers.clear();
+			if(m_upgradedSession){
+				m_upgradedSession->onInitContents(m_line.data(), m_line.size());
+				resetTimeout(0);
+			} else {
+				boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
+					STD_MOVE(m_verb), STD_MOVE(m_uri), STD_MOVE(m_getParams),
+					STD_MOVE(m_headers), STD_MOVE(m_line))->pend();
+
+				m_totalLength = 0;
+				m_contentLength = 0;
+				m_line.clear();
+
+				m_uri.clear();
+				m_getParams.clear();
+				m_headers.clear();
+			}
 		}
 	} catch(HttpException &e){
 		LOG_ERROR("HttpException thrown while parsing HTTP data, status = ", e.status(),
 			", file = ", e.file(), ", line = ", e.line());
-		respond(this, e.status());
-		shutdown();
+		shutdown(e.status());
 		throw;
 	} catch(...){
 		LOG_ERROR("Forwarding exception... shutdown the session first.");
-		respond(this, HTTP_SERVER_ERROR);
-		shutdown();
+		shutdown(HTTP_SERVER_ERROR);
 		throw;
 	}
+}
+bool HttpSession::shutdown(HttpStatus status){
+	const bool ret = TcpSessionBase::shutdown();
+	if(ret){
+		respond(this, status);
+	}
+	return ret;
 }

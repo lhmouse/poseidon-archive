@@ -63,27 +63,30 @@ TcpSessionBase::~TcpSessionBase(){
 	LOG_INFO("Destroyed TCP peer, remote ip = ", m_remoteIp);
 }
 
-void TcpSessionBase::sendUsingMove(StreamBuffer &buffer){
+bool TcpSessionBase::send(StreamBuffer buffer){
 	if(atomicLoad(m_shutdown)){
 		LOG_DEBUG("Attempting to send data on a closed socket.");
-		return;
+		return false;
 	}
 	{
 		const boost::mutex::scoped_lock lock(m_bufferMutex);
 		m_sendBuffer.splice(buffer);
 	}
 	EpollDaemon::refreshSession(virtualSharedFromThis<TcpSessionBase>());
+	return true;
 }
 bool TcpSessionBase::hasBeenShutdown() const {
 	return atomicLoad(m_shutdown);
 }
-void TcpSessionBase::shutdown(){
-	atomicStore(m_shutdown, true);
+bool TcpSessionBase::shutdown(){
+	const bool ret = !atomicExchange(m_shutdown, true);
 	::shutdown(getFd(), SHUT_RD);
+	return ret;
 }
-void TcpSessionBase::forceShutdown(){
-	atomicStore(m_shutdown, true);
+bool TcpSessionBase::forceShutdown(){
+	const bool ret = !atomicExchange(m_shutdown, true);
 	::shutdown(getFd(), SHUT_RDWR);
+	return ret;
 }
 
 std::size_t TcpSessionBase::peekWriteAvail(boost::mutex::scoped_lock &lock,

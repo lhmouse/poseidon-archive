@@ -49,44 +49,44 @@ protected:
 
 PlayerSession::PlayerSession(Move<ScopedFile> socket)
 	: TcpSessionBase(STD_MOVE(socket))
-	, m_payloadLen(-1), m_protocolId(0), m_payload()
+	, m_payloadLen(-1), m_protocolId(0)
 {
 }
 PlayerSession::~PlayerSession(){
 	if(m_payloadLen != -1){
 		LOG_WARNING("Now that this player session is to be destroyed, "
 			"a premature packet has to be discarded: payload size = ",
-			m_payloadLen, ", read = ", m_payload.size());
+			m_payloadLen, ", read = ", m_incoming.size());
 	}
 }
 
 void PlayerSession::onReadAvail(const void *data, std::size_t size){
 	PROFILE_ME;
 
-	m_payload.put(data, size);
+	m_incoming.put(data, size);
 	for(;;){
 		if(m_payloadLen == -1){
-			if(m_payload.size() < 4){
+			if(m_incoming.size() < 4){
 				break;
 			}
-			m_protocolId = m_payload.get() & 0xFF;
-			m_protocolId |= (m_payload.get() & 0xFF) << 8;
+			m_protocolId = m_incoming.get() & 0xFF;
+			m_protocolId |= (m_incoming.get() & 0xFF) << 8;
 
-			m_payloadLen = m_payload.get() & 0xFF;
-			m_payloadLen |= (m_payload.get() & 0xFF) << 8;
+			m_payloadLen = m_incoming.get() & 0xFF;
+			m_payloadLen |= (m_incoming.get() & 0xFF) << 8;
 			m_payloadLen &= 0x3FFF;
 		}
-		if(m_payload.size() < (unsigned)m_payloadLen){
+		if(m_incoming.size() < (unsigned)m_payloadLen){
 			break;
 		}
-		StreamBuffer packet = m_payload.cut(m_payloadLen);
+		StreamBuffer packet = m_incoming.cut(m_payloadLen);
 		boost::make_shared<PlayerRequestJob>(m_protocolId,
 			virtualWeakFromThis<PlayerSession>(), STD_MOVE(packet))->pend();
 		m_payloadLen = -1;
 	}
 }
 
-void PlayerSession::sendUsingMove(boost::uint16_t status, StreamBuffer &payload){
+bool PlayerSession::send(boost::uint16_t status, StreamBuffer payload){
 	const std::size_t size = payload.size();
 	if(size > 0xFFFF){
 		LOG_WARNING("Respond packet too large, size = ", size);
@@ -98,5 +98,5 @@ void PlayerSession::sendUsingMove(boost::uint16_t status, StreamBuffer &payload)
 	temp.put(size & 0xFF);
 	temp.put(size >> 8);
 	temp.splice(payload);
-	TcpSessionBase::send(temp);
+	return TcpSessionBase::send(STD_MOVE(temp));
 }

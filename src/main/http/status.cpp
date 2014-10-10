@@ -137,13 +137,13 @@ const DescElement DESC_TABLE[] = {
 
 namespace Poseidon {
 
-HttpStatusDesc getHttpStatusCodeDesc(HttpStatus status){
+HttpStatusDesc getHttpStatusDesc(HttpStatus status){
 	HttpStatusDesc ret;
 	const AUTO(element,
-		std::lower_bound(ARRAY_BEGIN(DESC_TABLE), ARRAY_END(DESC_TABLE),
+		std::lower_bound(BEGIN(DESC_TABLE), END(DESC_TABLE),
 			static_cast<unsigned>(status), DescElementComparator())
 	);
-	if((element != ARRAY_END(DESC_TABLE)) && (element->status == (unsigned)status)){
+	if((element != END(DESC_TABLE)) && (element->status == (unsigned)status)){
 		ret.descShort = element->descShort;
 		ret.descLong = element->descLong;
 	} else {
