@@ -70,25 +70,24 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 		throw;
 	} catch(...){
 		LOG_ERROR("Forwarding exception... shutdown the session first.");
-		shutdown(WS_INTERNAL_ERROR, NULLPTR);
+		shutdown(WS_INTERNAL_ERROR);
 		throw;
 	}
 }
 bool WebSocketSession::send(StreamBuffer buffer, bool binary, bool masked){
 	return sendFrame(this, binary ? WS_DATA_BIN : WS_DATA_TEXT, STD_MOVE(buffer), masked);
 }
-bool WebSocketSession::shutdown(WebSocketStatus status, const char *reason){
-	const bool ret = HttpUpgradedSessionBase::shutdown();
-	if(ret){
-		StreamBuffer frame;
-		const boost::uint16_t codeBe = htobe16(static_cast<unsigned>(status));
-		frame.put(&codeBe, 2);
-		if(reason){
-			frame.put(reason);
-		} else {
-			frame.put(getWebSocketStatusDesc(status));
-		}
-		sendFrame(this, WS_CLOSE, STD_MOVE(frame), false);
-	}
-	return ret;
+bool WebSocketSession::shutdown(WebSocketStatus status){
+	StreamBuffer frame;
+	const boost::uint16_t codeBe = htobe16(static_cast<unsigned>(status));
+	frame.put(&codeBe, 2);
+	frame.put(getWebSocketStatusDesc(status));
+	return HttpUpgradedSessionBase::shutdown(STD_MOVE(frame));
+}
+bool WebSocketSession::shutdown(WebSocketStatus status, StreamBuffer reason){
+	StreamBuffer frame;
+	const boost::uint16_t codeBe = htobe16(static_cast<unsigned>(status));
+	frame.put(&codeBe, 2);
+	frame.splice(reason);
+	return HttpUpgradedSessionBase::shutdown(STD_MOVE(frame));
 }

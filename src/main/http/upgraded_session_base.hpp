@@ -24,6 +24,7 @@ public:
 	bool send(StreamBuffer buffer);
 	bool hasBeenShutdown() const;
 	bool shutdown();
+	virtual bool shutdown(StreamBuffer buffer);
 	bool forceShutdown();
 
 	boost::shared_ptr<const HttpSession> getParent() const {

@@ -18,10 +18,10 @@ using namespace Poseidon;
 
 namespace {
 
-void respond(HttpSession *session, HttpStatus status,
+StreamBuffer makeResponse(HttpStatus status,
 	OptionalMap headers = OptionalMap(), StreamBuffer *contents = NULLPTR)
 {
-	LOG_DEBUG("Sending HTTP response: status = ", (unsigned)status);
+	LOG_DEBUG("Making HTTP response: status = ", (unsigned)status);
 
 	char codeStatus[512];
 	std::size_t codeStatusLen = std::sprintf(codeStatus, "%u ", (unsigned)status);
@@ -53,22 +53,21 @@ void respond(HttpSession *session, HttpStatus status,
 		headers.set("Content-Length", boost::lexical_cast<std::string>(realContents.size()));
 	}
 
-	StreamBuffer buffer;
-	buffer.put("HTTP/1.1 ");
-	buffer.put(codeStatus, codeStatusLen);
-	buffer.put("\r\n");
+	StreamBuffer ret;
+	ret.put("HTTP/1.1 ");
+	ret.put(codeStatus, codeStatusLen);
+	ret.put("\r\n");
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 		if(!it->second.empty()){
-			buffer.put(it->first.get(), std::strlen(it->first.get()));
-			buffer.put(": ");
-			buffer.put(it->second.data(), it->second.size());
-			buffer.put("\r\n");
+			ret.put(it->first.get(), std::strlen(it->first.get()));
+			ret.put(": ");
+			ret.put(it->second.data(), it->second.size());
+			ret.put("\r\n");
 		}
 	}
-	buffer.put("\r\n");
-	buffer.splice(realContents);
-
-	session->send(STD_MOVE(buffer));
+	ret.put("\r\n");
+	ret.splice(realContents);
+	return ret;
 }
 
 void normalizeUri(std::string &uri){
@@ -139,7 +138,7 @@ protected:
 			if((verb == HTTP_HEAD) || (status == HTTP_NO_CONTENT) || ((unsigned)status / 100 == 1)){
 				contents.clear();
 			}
-			respond(session.get(), status, STD_MOVE(headers), &contents);
+			session->send(makeResponse(status, STD_MOVE(headers), &contents));
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, status = ", e.status(),
 				", file = ", e.file(), ", line = ", e.line());
@@ -214,7 +213,7 @@ void HttpSession::onExpect(const std::string &val){
 		LOG_WARNING("Unknown HTTP header Expect: ", val);
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 	}
-	respond(this, HTTP_CONTINUE);
+	send(makeResponse(HTTP_CONTINUE));
 }
 void HttpSession::onContentLength(const std::string &val){
 	m_contentLength = boost::lexical_cast<std::size_t>(val);
@@ -247,7 +246,7 @@ void HttpSession::onUpgrade(const std::string &val){
 	headers.set("Connection", "Upgrade");
 	headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
 	StreamBuffer contents;
-	respond(this, HTTP_SWITCH_PROTOCOLS, headers, &contents);
+	send(makeResponse(HTTP_SWITCH_PROTOCOLS, headers, &contents));
 
 	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualWeakFromThis<HttpSession>());
 }
@@ -382,9 +381,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	}
 }
 bool HttpSession::shutdown(HttpStatus status){
-	const bool ret = TcpSessionBase::shutdown();
-	if(ret){
-		respond(this, status);
-	}
-	return ret;
+	return TcpSessionBase::shutdown(makeResponse(status));
+}
+bool HttpSession::shutdown(HttpStatus status, OptionalMap headers, StreamBuffer contents){
+	return TcpSessionBase::shutdown(makeResponse(status, STD_MOVE(headers), &contents));
 }

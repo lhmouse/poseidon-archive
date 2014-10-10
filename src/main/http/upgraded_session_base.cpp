@@ -34,6 +34,13 @@ bool HttpUpgradedSessionBase::shutdown(){
 	}
 	return parent->TcpSessionBase::shutdown();
 }
+bool HttpUpgradedSessionBase::shutdown(StreamBuffer buffer){
+	const AUTO(parent, getParent());
+	if(!parent){
+		return false;
+	}
+	return parent->TcpSessionBase::shutdown(STD_MOVE(buffer));
+}
 bool HttpUpgradedSessionBase::forceShutdown(){
 	const AUTO(parent, getParent());
 	if(!parent){

@@ -103,3 +103,13 @@ void TcpSessionBase::notifyWritten(std::size_t size){
 	const boost::mutex::scoped_lock lock(m_bufferMutex);
 	m_sendBuffer.discard(size);
 }
+
+bool TcpSessionBase::shutdown(StreamBuffer buffer){
+	const bool ret = !atomicExchange(m_shutdown, true);
+	if(ret){
+		const boost::mutex::scoped_lock lock(m_bufferMutex);
+		m_sendBuffer.splice(buffer);
+	}
+	::shutdown(getFd(), SHUT_RD);
+	return ret;
+}

@@ -44,6 +44,8 @@ public:
 	const std::string &getRemoteIp() const {
 		return m_remoteIp;
 	}
+
+	bool shutdown(StreamBuffer buffer);
 };
 
 }
