@@ -104,7 +104,7 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	std::string s = incoming.dump();
 	StreamBuffer out;
 	std::copy(s.rbegin(), s.rend(), StreamBufferWriteIterator(out));
-	wss->send(STD_MOVE(out));
+	wss->send(STD_MOVE(out), opcode == WS_DATA_BIN);
 }
 
 struct Tracked {
