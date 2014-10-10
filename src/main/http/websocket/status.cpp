@@ -32,7 +32,7 @@ const DescElement DESC_TABLE[] = {
 	{ 1006, "Reserved Abnormal" },
 	{ 1007, "Inconsistent Payload" },
 	{ 1008, "Access Denied" },
-	{ 1009, "Message Too Big" },
+	{ 1009, "Message Too Large" },
 	{ 1010, "Extension Not Available" },
 	{ 1011, "Internal Server Error" },
 	{ 1015, "Reserved TLS Error" }

@@ -13,31 +13,31 @@ using namespace Poseidon;
 
 namespace {
 
-bool sendFrame(WebSocketSession *session,
-	WebSocketOpCode opcode, StreamBuffer buffer, bool masked)
-{
-	StreamBuffer frame;
-	unsigned char ch = 0x80 | opcode;
-	frame.put(ch);
+const std::size_t MAX_PACKET_SIZE = 0x4000;
+
+StreamBuffer makeFrame(WebSocketOpCode opcode, StreamBuffer buffer, bool masked){
+	StreamBuffer ret;
+	unsigned char ch = opcode | WS_FL_FIN;
+	ret.put(ch);
 	const std::size_t size = buffer.size();
 	ch = masked ? 0x80 : 0;
 	if(size < 0xFE){
 		ch |= size;
-		frame.put(ch);
+		ret.put(ch);
 	} else if(size < 0x10000){
 		ch |= 0xFE;
-		frame.put(ch);
+		ret.put(ch);
 		const boost::uint16_t temp = htobe16(size);
-		frame.put(&temp, 2);
+		ret.put(&temp, 2);
 	} else {
 		ch |= 0xFF;
-		frame.put(ch);
+		ret.put(ch);
 		const boost::uint64_t temp = htobe64(size);
-		frame.put(&temp, 8);
+		ret.put(&temp, 8);
 	}
 	if(masked){
 		boost::uint32_t mask = htole32(rand32());
-		frame.put(&mask, 4);
+		ret.put(&mask, 4);
 		int ch;
 		for(;;){
 			ch = buffer.get();
@@ -45,13 +45,13 @@ bool sendFrame(WebSocketSession *session,
 				break;
 			}
 			ch ^= mask;
-			frame.put(ch);
+			ret.put(ch);
 			mask = (mask << 24) | (mask >> 8);
 		}
 	} else {
-		frame.splice(buffer);
+		ret.splice(buffer);
 	}
-	return session->HttpUpgradedSessionBase::send(STD_MOVE(frame));
+	return ret;
 }
 
 class WebSocketRequestJob : public JobBase {
@@ -59,15 +59,16 @@ private:
 	const std::string m_uri;
 	const boost::weak_ptr<WebSocketSession> m_session;
 
-	StreamBuffer m_incoming;
+	const WebSocketOpCode m_opcode;
+	StreamBuffer m_payload;
 
 	boost::shared_ptr<const void> m_lockedDep;
 
 public:
-	WebSocketRequestJob(std::string uri,
-		boost::weak_ptr<WebSocketSession> session, StreamBuffer incoming)
+	WebSocketRequestJob(std::string uri, boost::weak_ptr<WebSocketSession> session,
+		WebSocketOpCode opcode, StreamBuffer payload)
 		: m_uri(STD_MOVE(uri)), m_session(STD_MOVE(session))
-		, m_incoming(STD_MOVE(incoming))
+		, m_opcode(opcode), m_payload(STD_MOVE(payload))
 	{
 	}
 
@@ -78,15 +79,14 @@ protected:
 			LOG_WARNING("The specified WebSocket session has expired.");
 			return;
 		}
-
 		const AUTO(servlet, WebSocketServletManager::getServlet(m_lockedDep, m_uri));
 		if(!servlet){
 			LOG_WARNING("No servlet for URI ", m_uri);
 			session->shutdown(WS_INACCEPTABLE);
 			return;
 		}
-		LOG_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_incoming.size());
-		(*servlet)(STD_MOVE(session), STD_MOVE(m_incoming));
+		LOG_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_payload.size());
+		(*servlet)(STD_MOVE(session), m_opcode, STD_MOVE(m_payload));
 	}
 };
 
@@ -98,13 +98,132 @@ WebSocketSession::WebSocketSession(boost::weak_ptr<HttpSession> parent)
 {
 }
 
+void WebSocketSession::onControlFrame(){
+	LOG_DEBUG("Control frame, opcode = ", m_opcode);
+
+	switch(m_opcode){
+	case WS_CLOSE:
+		HttpUpgradedSessionBase::shutdown(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false));
+		break;
+
+	case WS_PING:
+		HttpUpgradedSessionBase::send(makeFrame(WS_PING, STD_MOVE(m_whole), false));
+		break;
+
+	case WS_PONG:
+		break;
+
+	default:
+		DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Invalid opcode");
+		break;
+	}
+}
+
 void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 	PROFILE_ME;
 
-	m_incoming.put(data, size);
+	m_payload.put(data, size);
 	try {
-		boost::make_shared<WebSocketRequestJob>(boost::ref(getUri()),
-			virtualWeakFromThis<WebSocketSession>(), StreamBuffer(data, size))->pend();
+		for(;;){
+			int ch;
+			std::size_t remaining;
+
+			switch(m_state){
+			case ST_OPCODE:
+				ch = m_payload.get();
+				if(ch == -1){
+					goto exit_for;
+				}
+				if(ch & (WS_FL_RSV1 | WS_FL_RSV2 | WS_FL_RSV3)){
+					LOG_WARNING("Aborting because some reserved bits are set, opcode = ", ch);
+					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Reserved bits set");
+				}
+				m_final = ch & WS_FL_FIN;
+				m_opcode = static_cast<WebSocketOpCode>(ch & WS_FL_OPCODE);
+				if((m_opcode & WS_FL_CONTROL) && !m_final){
+					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Control frame fragemented");
+				}
+				m_state = ST_PAYLOAD_LEN;
+				break;
+
+			case ST_PAYLOAD_LEN:
+				ch = m_payload.get();
+				if(ch == -1){
+					goto exit_for;
+				}
+				if((ch & 0x80) == 0){
+					DEBUG_THROW(WebSocketException, WS_ACCESS_DENIED, "Non-masked frames not allowed");
+				}
+				m_payloadLen = (unsigned char)(ch & 0x7F);
+				if((m_payloadLen == 0x7E) || (m_payloadLen == 0x7F)){
+					if(m_opcode & WS_FL_CONTROL){
+						DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Control frame too large");
+					}
+					m_state = ST_EX_PAYLOAD_LEN;
+				} else {
+					m_state = ST_MASK;
+				}
+				break;
+
+			case ST_EX_PAYLOAD_LEN:
+				if(m_payloadLen == 0x7E){
+					if(m_payload.size() < 2){
+						goto exit_for;
+					}
+					boost::uint16_t temp;
+					m_payload.get(&temp, 2);
+					m_payloadLen = be16toh(temp);
+				} else {
+					if(m_payload.size() < 8){
+						goto exit_for;
+					}
+					m_payload.get(&m_payloadLen, 8);
+					m_payloadLen = be64toh(m_payloadLen);
+				}
+				m_state = ST_MASK;
+				break;
+
+			case ST_MASK:
+				LOG_DEBUG("Payload length = ", m_payloadLen);
+
+				if(m_payload.size() < 4){
+					goto exit_for;
+				}
+				m_payload.get(&m_payloadMask, 4);
+				m_payloadMask = le32toh(m_payloadMask);
+				m_state = ST_PAYLOAD;
+				break;
+
+			case ST_PAYLOAD:
+				remaining = m_payloadLen - m_whole.size();
+				if(m_whole.size() + remaining >= MAX_PACKET_SIZE){
+					DEBUG_THROW(WebSocketException, WS_MESSAGE_TOO_LARGE, "Packet too large");
+				}
+				if(m_payload.size() < remaining){
+					goto exit_for;
+				}
+				for(std::size_t i = 0; i < remaining; ++i){
+					ch = m_payload.get();
+					ch ^= m_payloadMask;
+					m_payloadMask = (m_payloadMask << 24) | (m_payloadMask >> 8);
+					m_whole.put(ch);
+				}
+				if(m_final){
+					if((m_opcode & WS_FL_CONTROL) == 0){
+						boost::make_shared<WebSocketRequestJob>(boost::ref(getUri()),
+							virtualWeakFromThis<WebSocketSession>(), m_opcode, STD_MOVE(m_whole)
+							)->pend();
+					} else {
+						onControlFrame();
+					}
+					m_whole.clear();
+				}
+				m_state = ST_OPCODE;
+				break;
+			}
+		}
+	exit_for:
+		;
 	} catch(WebSocketException &e){
 		LOG_ERROR("WebSocketException thrown while reading, status = ", e.status(),
 			", file = ", e.file(), ", line = ", e.line(), ", what = ", e.what());
@@ -117,19 +236,17 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 	}
 }
 bool WebSocketSession::send(StreamBuffer buffer, bool binary, bool masked){
-	return sendFrame(this, binary ? WS_DATA_BIN : WS_DATA_TEXT, STD_MOVE(buffer), masked);
+	return HttpUpgradedSessionBase::send(
+		makeFrame(binary ? WS_DATA_BIN : WS_DATA_TEXT, STD_MOVE(buffer), masked));
 }
 bool WebSocketSession::shutdown(WebSocketStatus status){
-	StreamBuffer frame;
-	const boost::uint16_t codeBe = htobe16(static_cast<unsigned>(status));
-	frame.put(&codeBe, 2);
-	frame.put(getWebSocketStatusDesc(status));
-	return HttpUpgradedSessionBase::shutdown(STD_MOVE(frame));
+	StreamBuffer reason(getWebSocketStatusDesc(status));
+	return shutdown(status, STD_MOVE(reason));
 }
 bool WebSocketSession::shutdown(WebSocketStatus status, StreamBuffer reason){
-	StreamBuffer frame;
+	StreamBuffer payload;
 	const boost::uint16_t codeBe = htobe16(static_cast<unsigned>(status));
-	frame.put(&codeBe, 2);
-	frame.splice(reason);
-	return HttpUpgradedSessionBase::shutdown(STD_MOVE(frame));
+	payload.put(&codeBe, 2);
+	payload.splice(reason);
+	return HttpUpgradedSessionBase::shutdown(makeFrame(WS_CLOSE, STD_MOVE(payload), false));
 }

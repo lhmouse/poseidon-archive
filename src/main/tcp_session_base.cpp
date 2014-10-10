@@ -63,6 +63,9 @@ TcpSessionBase::~TcpSessionBase(){
 	LOG_INFO("Destroyed TCP peer, remote ip = ", m_remoteIp);
 }
 
+const std::string &TcpSessionBase::getRemoteIp() const {
+	return m_remoteIp;
+}
 bool TcpSessionBase::send(StreamBuffer buffer){
 	if(atomicLoad(m_shutdown)){
 		LOG_DEBUG("Attempting to send data on a closed socket.");

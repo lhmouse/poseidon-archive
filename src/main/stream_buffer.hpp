@@ -63,6 +63,15 @@ public:
 		splice(std::move(src));
 	}
 #endif
+	std::size_t transferFrom(StreamBuffer &src, std::size_t size){
+		StreamBuffer tmp(src.cut(size));
+		const std::size_t ret = tmp.size();
+		splice(tmp);
+		return ret;
+	}
+	std::size_t transferTo(StreamBuffer &dst, std::size_t size){
+		return dst.transferFrom(*this, size);
+	}
 
 	std::string dump() const;
 	void dump(std::ostream &os) const;

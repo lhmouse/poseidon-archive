@@ -8,6 +8,7 @@
 #include "websocket/session.hpp"
 #include "../log.hpp"
 #include "../singletons/http_servlet_manager.hpp"
+#include "../singletons/websocket_servlet_manager.hpp"
 #include "../singletons/timer_daemon.hpp"
 #include "../stream_buffer.hpp"
 #include "../utilities.hpp"
@@ -229,6 +230,12 @@ void HttpSession::onUpgrade(const std::string &val){
 	if(version != "13"){
 		LOG_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	}
+
+	// 仅测试。
+	boost::shared_ptr<const void> lockedDep;
+	if(!WebSocketServletManager::getServlet(lockedDep, m_uri)){
+		DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 	}
 
 	std::string key = m_headers.get("Sec-WebSocket-Key");

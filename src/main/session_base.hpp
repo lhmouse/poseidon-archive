@@ -13,6 +13,8 @@ class SessionBase : boost::noncopyable,
 	public virtual VirtualSharedFromThis
 {
 public:
+	// 实现定义。
+	virtual const std::string &getRemoteIp() const = 0;
 	// 有数据可读触发回调，size 始终不为零。
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
 	// 执行后 buffer 置空。这个函数是线程安全的。

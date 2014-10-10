@@ -13,6 +13,9 @@ void HttpUpgradedSessionBase::onInitContents(const void *data, std::size_t size)
 	(void)data;
 	(void)size;
 }
+const std::string &HttpUpgradedSessionBase::getRemoteIp() const {
+	return getSafeParent()->getRemoteIp();
+}
 bool HttpUpgradedSessionBase::send(StreamBuffer buffer){
 	const AUTO(parent, getParent());
 	if(!parent){

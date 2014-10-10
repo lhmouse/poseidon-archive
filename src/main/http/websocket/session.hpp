@@ -5,6 +5,7 @@
 #include "../upgraded_session_base.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/cstdint.hpp>
 #include "../../stream_buffer.hpp"
 #include "opcode.hpp"
 #include "status.hpp"
@@ -28,12 +29,16 @@ private:
 	State m_state;
 	bool m_final;
 	WebSocketOpCode m_opcode;
-	unsigned long long m_payloadLen;
-	unsigned char m_incomingMask[4];
-	StreamBuffer m_incoming;
+	boost::uint64_t m_payloadLen;
+	boost::uint32_t m_payloadMask;
+	StreamBuffer m_payload;
+	StreamBuffer m_whole;
 
 public:
 	explicit WebSocketSession(boost::weak_ptr<HttpSession> parent);
+
+private:
+	void onControlFrame();
 
 public:
 	void onReadAvail(const void *data, std::size_t size);

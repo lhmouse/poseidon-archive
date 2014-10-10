@@ -26,6 +26,7 @@ protected:
 	virtual ~TcpSessionBase();
 
 public:
+	const std::string &getRemoteIp() const;
 	void onReadAvail(const void *data, std::size_t size) = 0;
 	bool send(StreamBuffer buffer);
 	bool hasBeenShutdown() const;
@@ -40,10 +41,6 @@ public:
 		void *data, std::size_t size) const;
 	// 从队列中移除指定的字节数。
 	void notifyWritten(std::size_t size);
-
-	const std::string &getRemoteIp() const {
-		return m_remoteIp;
-	}
 
 	bool shutdown(StreamBuffer buffer);
 };

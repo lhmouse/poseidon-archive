@@ -97,8 +97,10 @@ HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpRequest request
 	return HTTP_OK;
 }
 
-void webSocketProc(boost::shared_ptr<WebSocketSession> wss, StreamBuffer incoming){
-	LOG_FATAL("Received packet: ", HexDumper(incoming));
+void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
+	WebSocketOpCode opcode, StreamBuffer incoming)
+{
+	LOG_FATAL("Received packet: opcode = ", opcode, ", payload = ", HexDumper(incoming));
 	std::string s = incoming.dump();
 	StreamBuffer out;
 	std::copy(s.rbegin(), s.rend(), StreamBufferWriteIterator(out));

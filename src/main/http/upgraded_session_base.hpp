@@ -20,6 +20,7 @@ protected:
 
 public:
 	virtual void onInitContents(const void *data, std::size_t size);
+	const std::string &getRemoteIp() const;
 	void onReadAvail(const void *data, std::size_t size) = 0;
 	bool send(StreamBuffer buffer);
 	bool hasBeenShutdown() const;

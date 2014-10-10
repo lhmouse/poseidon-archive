@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include "../stream_buffer.hpp"
+#include "../http/websocket/opcode.hpp"
 
 #ifdef POSEIDON_CXX11
 #   include <functional>
@@ -19,7 +20,7 @@ class WebSocketServlet;
 class WebSocketSession;
 
 typedef TR1::function<
-	void (boost::shared_ptr<WebSocketSession> wss, StreamBuffer incoming)
+	void (boost::shared_ptr<WebSocketSession> wss, WebSocketOpCode opcode, StreamBuffer incoming)
 	> WebSocketServletCallback;
 
 struct WebSocketServletManager {

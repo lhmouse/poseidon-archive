@@ -14,7 +14,7 @@ class PlayerSession : public TcpSessionBase {
 private:
 	int m_payloadLen;
 	unsigned m_protocolId;
-	StreamBuffer m_incoming;
+	StreamBuffer m_payload;
 
 public:
 	explicit PlayerSession(Move<ScopedFile> socket);
