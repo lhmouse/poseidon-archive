@@ -33,6 +33,7 @@ private:
 	boost::shared_ptr<class HttpUpgradedSessionBase> m_upgradedSession;
 
 	HttpVerb m_verb;
+	std::string m_version;
 	std::string m_uri;
 	OptionalMap m_getParams;
 	OptionalMap m_headers;

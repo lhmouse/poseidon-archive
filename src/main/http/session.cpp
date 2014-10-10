@@ -222,6 +222,10 @@ void HttpSession::onContentLength(const std::string &val){
 	LOG_DEBUG("Content-Length: ", m_contentLength);
 }
 void HttpSession::onUpgrade(const std::string &val){
+	if(m_version != "1.1"){
+		LOG_WARNING("HTTP 1.1 is required to use WebSocket");
+		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	}
 	if(val != "websocket"){
 		LOG_WARNING("Unknown HTTP header Upgrade: ", val);
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
@@ -319,8 +323,13 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						m_uri.erase(m_uri.begin() + pos, m_uri.end());
 					}
 					normalizeUri(m_uri);
-					if((parts[2] != "HTTP/1.0") && (parts[2] != "HTTP/1.1")){
-						LOG_WARNING("Unsupported HTTP version: ", parts[2]);
+					if(parts[2].compare(0, 5, "HTTP/") != 0){
+						LOG_WARNING("Bad protocol type: ", parts[2]);
+						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+					}
+					m_version = parts[2].substr(5);
+					if((m_version != "1.0") && (m_version != "1.1")){
+						LOG_WARNING("Unsupported HTTP version: ", m_version);
 						DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUP);
 					}
 					m_state = ST_HEADERS;
