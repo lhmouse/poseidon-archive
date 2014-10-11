@@ -372,11 +372,11 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		## __VA_ARGS__	\
 	>
 
-#define UNIQUE_INDEX(ignored_, ...)	\
-	UNIQUE_INDEX_(int, ## __VA_ARGS__)
+#define UNIQUE_INDEX(...)	\
+	UNIQUE_INDEX_(void, ## __VA_ARGS__)
 
-#define MULTI_INDEX(ignored_, ...)	\
-	MULTI_INDEX_(int, ## __VA_ARGS__)
+#define MULTI_INDEX(...)	\
+	MULTI_INDEX_(void, ## __VA_ARGS__)
 
 #define UNIQUE_MEMBER_INDEX(member_, ...)	\
 	::boost::multi_index::ordered_unique<	\
