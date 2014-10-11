@@ -57,10 +57,10 @@ TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
 	: m_socket(STD_MOVE(socket)), m_remoteIp(getIpFromSocket(m_socket.get()))
 	, m_shutdown(false)
 {
-	LOG_INFO("Created TCP peer, remote ip = ", m_remoteIp);
+	LOG_INFO("Created TCP peer, remote IP = ", m_remoteIp);
 }
 TcpSessionBase::~TcpSessionBase(){
-	LOG_INFO("Destroyed TCP peer, remote ip = ", m_remoteIp);
+	LOG_INFO("Destroyed TCP peer, remote IP = ", m_remoteIp);
 }
 
 const std::string &TcpSessionBase::getRemoteIp() const {

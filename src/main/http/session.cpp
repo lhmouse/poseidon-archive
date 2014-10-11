@@ -93,7 +93,7 @@ void normalizeUri(std::string &uri){
 void onSessionTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned long long){
 	const AUTO(session, observer.lock());
 	if(session){
-		LOG_WARNING("HTTP session times out, remote ip = ", session->getRemoteIp());
+		LOG_WARNING("HTTP session times out, remote IP = ", session->getRemoteIp());
 		session->shutdown(HTTP_REQUEST_TIMEOUT);
 	}
 }
@@ -266,6 +266,7 @@ void HttpSession::onUpgrade(const std::string &val){
 	send(makeResponse(HTTP_SWITCH_PROTOCOLS, m_version, headers, &contents));
 
 	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualWeakFromThis<HttpSession>());
+	LOG_INFO("Upgraded to WebSocketSession, remote IP = ", getRemoteIp());
 }
 
 void HttpSession::onReadAvail(const void *data, std::size_t size){
