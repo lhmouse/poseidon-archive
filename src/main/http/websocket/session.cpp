@@ -21,16 +21,16 @@ StreamBuffer makeFrame(WebSocketOpCode opcode, StreamBuffer buffer, bool masked)
 	ret.put(ch);
 	const std::size_t size = buffer.size();
 	ch = masked ? 0x80 : 0;
-	if(size < 0xFE){
+	if(size < 0x7E){
 		ch |= size;
 		ret.put(ch);
 	} else if(size < 0x10000){
-		ch |= 0xFE;
+		ch |= 0x7E;
 		ret.put(ch);
 		const boost::uint16_t temp = htobe16(size);
 		ret.put(&temp, 2);
 	} else {
-		ch |= 0xFF;
+		ch |= 0x7F;
 		ret.put(ch);
 		const boost::uint64_t temp = htobe64(size);
 		ret.put(&temp, 8);
