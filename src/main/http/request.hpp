@@ -11,6 +11,7 @@ namespace Poseidon {
 struct HttpRequest {
 	HttpVerb verb;
 	std::string uri;
+	unsigned version;
 	OptionalMap getParams;
 	OptionalMap headers;
 	std::string contents;
@@ -20,6 +21,7 @@ static inline void swap(HttpRequest &lhs, HttpRequest &rhs) NOEXCEPT {
 	using std::swap;
 	swap(lhs.verb, rhs.verb);
 	swap(lhs.uri, rhs.uri);
+	swap(lhs.version, rhs.version);
 	swap(lhs.getParams, rhs.getParams);
 	swap(lhs.headers, rhs.headers);
 	swap(lhs.contents, rhs.contents);

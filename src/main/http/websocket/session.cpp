@@ -62,8 +62,6 @@ private:
 	const WebSocketOpCode m_opcode;
 	StreamBuffer m_payload;
 
-	boost::shared_ptr<const void> m_lockedDep;
-
 public:
 	WebSocketRequestJob(std::string uri, boost::weak_ptr<WebSocketSession> session,
 		WebSocketOpCode opcode, StreamBuffer payload)
@@ -79,7 +77,8 @@ protected:
 			LOG_WARNING("The specified WebSocket session has expired.");
 			return;
 		}
-		const AUTO(servlet, WebSocketServletManager::getServlet(m_lockedDep, m_uri));
+		boost::shared_ptr<const void> lockedDep;
+		const AUTO(servlet, WebSocketServletManager::getServlet(lockedDep, m_uri));
 		if(!servlet){
 			LOG_WARNING("No servlet for URI ", m_uri);
 			session->shutdown(WS_INACCEPTABLE);

@@ -19,7 +19,7 @@ using namespace Poseidon;
 
 namespace {
 
-StreamBuffer makeResponse(HttpStatus status,
+StreamBuffer makeResponse(HttpStatus status, unsigned version,
 	OptionalMap headers = OptionalMap(), StreamBuffer *contents = NULLPTR)
 {
 	LOG_DEBUG("Making HTTP response: status = ", (unsigned)status);
@@ -54,8 +54,11 @@ StreamBuffer makeResponse(HttpStatus status,
 		headers.set("Content-Length", boost::lexical_cast<std::string>(realContents.size()));
 	}
 
+	char versionStr[64];
+	const std::size_t versionStrLen = std::sprintf(
+		versionStr, "HTTP/%u.%u ", version / 10000, version % 10000);
 	StreamBuffer ret;
-	ret.put("HTTP/1.1 ");
+	ret.put(versionStr, versionStrLen);
 	ret.put(codeStatus, codeStatusLen);
 	ret.put("\r\n");
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
@@ -101,16 +104,15 @@ private:
 
 	HttpRequest m_request;
 
-	boost::shared_ptr<const void> m_lockedDep;
-
 public:
 	HttpRequestJob(boost::weak_ptr<HttpSession> session,
-		HttpVerb verb, std::string uri, OptionalMap getParams,
-		OptionalMap headers, std::string contents)
+		HttpVerb verb, std::string uri, unsigned version,
+		OptionalMap getParams, OptionalMap headers, std::string contents)
 		: m_session(STD_MOVE(session))
 	{
 		m_request.verb = verb;
 		m_request.uri.swap(uri);
+		m_request.version = version;
 		m_request.getParams.swap(getParams);
 		m_request.headers.swap(headers);
 		m_request.contents.swap(contents);
@@ -126,7 +128,8 @@ protected:
 			return;
 		}
 		try {
-			AUTO(servlet, HttpServletManager::getServlet(m_lockedDep, m_request.uri));
+			boost::shared_ptr<const void> lockedDep;
+			AUTO(servlet, HttpServletManager::getServlet(lockedDep, m_request.uri));
 			if(!servlet){
 				LOG_WARNING("No handler matches URI ", m_request.uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
@@ -134,13 +137,14 @@ protected:
 			LOG_DEBUG("Dispatching http request: URI = ", m_request.uri,
 				", verb = ", stringFromHttpVerb(m_request.verb));
 			const HttpVerb verb = m_request.verb;
+			const unsigned version = m_request.version;
 			OptionalMap headers;
 			StreamBuffer contents;
 			const HttpStatus status = (*servlet)(headers, contents, STD_MOVE(m_request));
 			if((verb == HTTP_HEAD) || (status == HTTP_NO_CONTENT) || ((unsigned)status / 100 == 1)){
 				contents.clear();
 			}
-			session->send(makeResponse(status, STD_MOVE(headers), &contents));
+			session->send(makeResponse(status, version, STD_MOVE(headers), &contents));
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, status = ", e.status(),
 				", file = ", e.file(), ", line = ", e.line());
@@ -158,7 +162,8 @@ protected:
 
 HttpSession::HttpSession(Move<ScopedFile> socket)
 	: TcpSessionBase(STD_MOVE(socket))
-	, m_state(ST_FIRST_HEADER), m_totalLength(0), m_contentLength(0), m_line()
+	, m_state(ST_FIRST_HEADER), m_totalLength(0), m_contentLength(0)
+	, m_verb(HTTP_GET), m_version(10000)
 {
 }
 HttpSession::~HttpSession(){
@@ -215,14 +220,14 @@ void HttpSession::onExpect(const std::string &val){
 		LOG_WARNING("Unknown HTTP header Expect: ", val);
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 	}
-	send(makeResponse(HTTP_CONTINUE));
+	send(makeResponse(HTTP_CONTINUE, m_version));
 }
 void HttpSession::onContentLength(const std::string &val){
 	m_contentLength = boost::lexical_cast<std::size_t>(val);
 	LOG_DEBUG("Content-Length: ", m_contentLength);
 }
 void HttpSession::onUpgrade(const std::string &val){
-	if(m_version != "1.1"){
+	if(m_version < 10001){
 		LOG_WARNING("HTTP 1.1 is required to use WebSocket");
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 	}
@@ -258,7 +263,7 @@ void HttpSession::onUpgrade(const std::string &val){
 	headers.set("Connection", "Upgrade");
 	headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
 	StreamBuffer contents;
-	send(makeResponse(HTTP_SWITCH_PROTOCOLS, headers, &contents));
+	send(makeResponse(HTTP_SWITCH_PROTOCOLS, m_version, headers, &contents));
 
 	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualWeakFromThis<HttpSession>());
 }
@@ -301,11 +306,13 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						LOG_WARNING("Bad HTTP header: ", m_line);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
+
 					m_verb = httpVerbFromString(parts[0].c_str());
 					if(m_verb == HTTP_INVALID_VERB){
 						LOG_WARNING("Bad HTTP verb: ", parts[0]);
 						DEBUG_THROW(HttpException, HTTP_BAD_METHOD);
 					}
+
 					if(parts[1].empty() || (parts[1][0] != '/')){
 						LOG_WARNING("Bad HTTP request URI: ", parts[1]);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
@@ -323,15 +330,21 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						m_uri.erase(m_uri.begin() + pos, m_uri.end());
 					}
 					normalizeUri(m_uri);
-					if(parts[2].compare(0, 5, "HTTP/") != 0){
-						LOG_WARNING("Bad protocol type: ", parts[2]);
+
+					char versionMajor[16];
+					char versionMinor[16];
+					const int result = std::sscanf(parts[2].c_str(),
+						"HTTP/%15[0-9].%15[0-9]%*c", versionMajor, versionMinor);
+					if(result != 2){
+						LOG_WARNING("Bad protocol string: ", parts[2]);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
-					m_version = parts[2].substr(5);
-					if((m_version != "1.0") && (m_version != "1.1")){
-						LOG_WARNING("Unsupported HTTP version: ", m_version);
+					m_version = std::atoi(versionMajor) * 10000 + std::atoi(versionMinor);
+					if((m_version != 10000) && (m_version != 10001)){
+						LOG_WARNING("Bad HTTP version: ", parts[2]);
 						DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUP);
 					}
+
 					m_state = ST_HEADERS;
 				} else if(!m_line.empty()){
 					const std::size_t delimPos = m_line.find(':');
@@ -374,14 +387,17 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				resetTimeout(0);
 			} else {
 				boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
-					STD_MOVE(m_verb), STD_MOVE(m_uri), STD_MOVE(m_getParams),
-					STD_MOVE(m_headers), STD_MOVE(m_line))->pend();
+					m_verb, STD_MOVE(m_uri), m_version,
+					STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)
+					)->pend();
 
 				m_totalLength = 0;
 				m_contentLength = 0;
 				m_line.clear();
 
+				m_verb = HTTP_GET;
 				m_uri.clear();
+				m_version = 10000;
 				m_getParams.clear();
 				m_headers.clear();
 			}
@@ -398,8 +414,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	}
 }
 bool HttpSession::shutdown(HttpStatus status){
-	return TcpSessionBase::shutdown(makeResponse(status));
+	return TcpSessionBase::shutdown(makeResponse(status, m_version));
 }
 bool HttpSession::shutdown(HttpStatus status, OptionalMap headers, StreamBuffer contents){
-	return TcpSessionBase::shutdown(makeResponse(status, STD_MOVE(headers), &contents));
+	return TcpSessionBase::shutdown(makeResponse(status, m_version, STD_MOVE(headers), &contents));
 }
