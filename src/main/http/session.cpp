@@ -1,5 +1,6 @@
 #include "../../precompiled.hpp"
 #include "session.hpp"
+#include <string.h>
 #include <openssl/sha.h>
 #include "request.hpp"
 #include "exception.hpp"
@@ -231,7 +232,7 @@ void HttpSession::onUpgrade(const std::string &val){
 		LOG_WARNING("HTTP 1.1 is required to use WebSocket");
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 	}
-	if(val != "websocket"){
+	if(::strcasecmp(val.c_str(), "websocket") != 0){
 		LOG_WARNING("Unknown HTTP header Upgrade: ", val);
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 	}
