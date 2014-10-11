@@ -29,22 +29,22 @@ ScopedFile g_epoll;
 boost::thread g_thread;
 
 struct SessionMapElement {
-	const boost::shared_ptr<TcpSessionBase> m_session;
+	const boost::shared_ptr<TcpSessionBase> session;
 	// 时间戳，零表示无数据可读/写。
-	unsigned long long m_lastRead;
-	unsigned long long m_lastWritten;
+	unsigned long long lastRead;
+	unsigned long long lastWritten;
 
-	SessionMapElement(boost::shared_ptr<TcpSessionBase> session,
-		unsigned long long lastRead, unsigned long long lastWritten)
-		: m_session(STD_MOVE(session)), m_lastRead(lastRead), m_lastWritten(lastWritten)
+	SessionMapElement(boost::shared_ptr<TcpSessionBase> session_,
+		unsigned long long lastRead_, unsigned long long lastWritten_)
+		: session(STD_MOVE(session_)), lastRead(lastRead_), lastWritten(lastWritten_)
 	{
 	}
 };
 
 MULTI_INDEX_MAP(SessionMap, SessionMapElement,
-	UNIQUE_MEMBER_INDEX(m_session),
-	MULTI_MEMBER_INDEX(m_lastRead),
-	MULTI_MEMBER_INDEX(m_lastWritten)
+	UNIQUE_MEMBER_INDEX(session),
+	MULTI_MEMBER_INDEX(lastRead),
+	MULTI_MEMBER_INDEX(lastWritten)
 );
 
 enum {
@@ -161,7 +161,7 @@ void daemonLoop(){
 			for(AUTO(it, g_sessions.upperBound<IDX_READ>(0));
 				it != g_sessions.end<IDX_READ>(); ++it)
 			{
-				sessions.push_back(it->m_session);
+				sessions.push_back(it->session);
 			}
 		}
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
@@ -204,7 +204,7 @@ void daemonLoop(){
 			for(AUTO(it, g_sessions.upperBound<IDX_WRITE>(0));
 				it != g_sessions.end<IDX_WRITE>(); ++it)
 			{
-				sessions.push_back(it->m_session);
+				sessions.push_back(it->session);
 			}
 		}
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){

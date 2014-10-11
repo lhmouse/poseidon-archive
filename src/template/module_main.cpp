@@ -101,10 +101,24 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	WebSocketOpCode opcode, StreamBuffer incoming)
 {
 	LOG_FATAL("Received packet: opcode = ", opcode, ", payload = ", HexDumper(incoming));
-	std::string s = incoming.dump();
 	StreamBuffer out;
-	std::copy(s.rbegin(), s.rend(), StreamBufferWriteIterator(out));
-	wss->send(STD_MOVE(out), opcode == WS_DATA_BIN);
+	std::string s = incoming.dump();
+	if(opcode == WS_DATA_TEXT){
+		AUTO(from, s.rbegin()), rit = from;
+		while(rit != s.rend()){
+			if((*rit & 0xC0) != 0x80){
+				++rit;
+				std::reverse_copy(from, rit, StreamBufferWriteIterator(out));
+				from = rit;
+			} else {
+				++rit;
+			}
+		}
+		wss->send(STD_MOVE(out), false);
+	} else {
+		std::reverse_copy(s.begin(), s.end(), StreamBufferWriteIterator(out));
+		wss->send(STD_MOVE(out), true);
+	}
 }
 
 struct Tracked {
