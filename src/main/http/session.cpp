@@ -256,8 +256,7 @@ void HttpSession::onUpgrade(const std::string &val){
 	key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 	unsigned char sha1[20];
 	sha1Sum(sha1, key.data(), key.size());
-	key.assign((const char *)sha1, sizeof(sha1));
-	key = base64Encode(key);
+	key = base64Encode(sha1, sizeof(sha1));
 
 	OptionalMap headers;
 	headers.set("Upgrade", "websocket");

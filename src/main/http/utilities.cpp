@@ -28,13 +28,10 @@ bool isCharSafe(char ch){
 	return SAFE_CHARS[(unsigned char)ch];
 }
 
-const char HEX_TABLE[16] = {
-	'0', '1', '2', '3', '4', '5', '6', '7',
-	'8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-};
+const char HEX_TABLE[33] = "00112233445566778899aAbBcCdDeEfF";
 
-char getHex(char ch){
-	return HEX_TABLE[(unsigned char)ch];
+char getHex(char ch, bool upperCase = true){
+	return HEX_TABLE[(unsigned char)ch * 2 + upperCase];
 }
 
 const signed char HEX_LITERAL_TABLE[256] = {
@@ -64,13 +61,12 @@ int getHexLiteral(char ch){
 
 namespace Poseidon {
 
-std::string urlEncode(const std::string &decoded){
+std::string urlEncode(const void *data, std::size_t size){
 	std::string ret;
-	const std::size_t size = decoded.size();
 	ret.reserve(size + (size >> 1));
 	std::size_t i = 0;
 	while(i < size){
-		const char ch = decoded[i];
+		const char ch = ((const char *)data)[i];
 		++i;
 		if(ch == ' '){
 			ret.push_back('+');
@@ -86,13 +82,12 @@ std::string urlEncode(const std::string &decoded){
 	}
 	return ret;
 }
-std::string urlDecode(const std::string &encoded){
+std::string urlDecode(const void *data, std::size_t size){
 	std::string ret;
-	const std::size_t size = encoded.size();
 	ret.reserve(size);
 	std::size_t i = 0;
 	while(i < size){
-		const char ch = encoded[i];
+		const char ch = ((const char *)data)[i];
 		++i;
 		if(ch == '+'){
 			ret.push_back(' ');
@@ -102,8 +97,8 @@ std::string urlDecode(const std::string &encoded){
 			ret.push_back(ch);
 			continue;
 		}
-		const int high = getHexLiteral(encoded[i]);
-		const int low = getHexLiteral(encoded[i + 1]);
+		const int high = getHexLiteral(ch);
+		const int low = getHexLiteral(((const char *)data)[i + 1]);
 		if((high == -1) || (low == -1)){
 			ret.push_back(ch);
 			continue;
@@ -142,25 +137,27 @@ OptionalMap optionalMapFromUrlEncoded(const std::string &encoded){
 	return ret;
 }
 
-std::string hexEncode(const std::string &decoded){
+std::string hexEncode(const void *data, std::size_t size, bool upperCase){
 	std::string ret;
-	ret.reserve(decoded.size() * 2);
-	for(AUTO(it, decoded.begin()); it != decoded.end(); ++it){
-		ret.push_back(getHex(*it & 0x0F));
-		ret.push_back(getHex((*it >> 4) & 0x0F));
+	ret.reserve(size * 2);
+	for(std::size_t i = 0; i < size; ++i){
+		const unsigned char by = ((const unsigned char *)data)[i];
+		ret.push_back(getHex((by >> 4) & 0x0F, upperCase));
+		ret.push_back(getHex(by & 0x0F, upperCase));
 	}
 	return ret;
 }
-std::string hexDecode(const std::string &encoded){
+std::string hexDecode(const void *data, std::size_t size){
 	std::string ret;
-	ret.reserve(encoded.size() / 2);
+	ret.reserve(size / 2);
 	int high = -1;
-	for(AUTO(it, encoded.begin()); it != encoded.end(); ++it){
+	for(std::size_t i = 0; i < size; ++i){
+		const char ch = ((const char *)data)[i];
 		if(high == -1){
-			high = getHexLiteral(*it);
+			high = getHexLiteral(ch);
 			continue;
 		}
-		const int low = getHexLiteral(*it);
+		const int low = getHexLiteral(ch);
 		if(low == -1){
 			continue;
 		}
@@ -170,28 +167,28 @@ std::string hexDecode(const std::string &encoded){
 	return ret;
 }
 
-std::string base64Encode(const std::string &decoded){
+std::string base64Encode(const void *data, std::size_t size){
 	static const char TABLE[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 	std::string ret;
-	const std::size_t words = decoded.size() / 3;
+	const std::size_t words = size / 3;
 	const std::size_t whole = words * 3;
 	ret.reserve(words * 4 + 4);
 	unsigned word;
 	for(std::size_t i = 0; i < whole; i += 3){
-		word = (unsigned char)decoded[i];
+		word = ((const unsigned char *)data)[i];
 		ret.push_back(TABLE[(word >> 2) & 0x3F]);
 		word <<= 8;
-		word |= (unsigned char)decoded[i + 1];
+		word |= ((const unsigned char *)data)[i + 1];
 		ret.push_back(TABLE[(word >> 4) & 0x3F]);
 		word <<= 8;
-		word |= (unsigned char)decoded[i + 2];
+		word |= ((const unsigned char *)data)[i + 2];
 		ret.push_back(TABLE[(word >> 6) & 0x3F]);
 		ret.push_back(TABLE[word & 0x3F]);
 	}
-	switch(decoded.size() - whole){
+	switch(size - whole){
 	case 1:
-		word = (unsigned char)decoded[whole];
+		word = ((const unsigned char *)data)[whole];
 		ret.push_back(TABLE[(word >> 2) & 0x3F]);
 		ret.push_back(TABLE[(word << 4) & 0x3F]);
 		ret.push_back('=');
@@ -199,10 +196,10 @@ std::string base64Encode(const std::string &decoded){
 		break;
 
 	case 2:
-		word = (unsigned char)decoded[whole];
+		word = ((const unsigned char *)data)[whole];
 		ret.push_back(TABLE[(word >> 2) & 0x3F]);
 		word <<= 8;
-		word |= (unsigned char)decoded[whole + 1];
+		word |= ((const unsigned char *)data)[whole + 1];
 		ret.push_back(TABLE[(word >> 4) & 0x3F]);
 		ret.push_back(TABLE[(word << 2) & 0x3F]);
 		ret.push_back('=');
@@ -210,7 +207,7 @@ std::string base64Encode(const std::string &decoded){
 	}
 	return ret;
 }
-std::string base64Decode(const std::string &encoded){
+std::string base64Decode(const void *data, std::size_t size){
 	static const unsigned char TABLE[] = {
 		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -231,11 +228,11 @@ std::string base64Decode(const std::string &encoded){
 	};
 
 	std::string ret;
-	ret.reserve(encoded.size() / 4 * 3 + 3);
+	ret.reserve(size / 4 * 3 + 3);
 	long word = 0;
 	unsigned count = 0;
-	for(AUTO(it, encoded.begin()); it != encoded.end(); ++it){
-		const unsigned char ch = TABLE[(unsigned char)*it];
+	for(std::size_t i = 0; i < size; ++i){
+		const unsigned char ch = TABLE[((const unsigned char *)data)[i]];
 		if(ch > 0x3F){
 			continue;
 		}

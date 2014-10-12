@@ -8,6 +8,8 @@
 #include "../main/singletons/timer_daemon.hpp"
 #include "../main/singletons/websocket_servlet_manager.hpp"
 #include "../main/http/websocket/session.hpp"
+#include "../main/http/utilities.hpp"
+#include "../main/hash.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -101,24 +103,29 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	WebSocketOpCode opcode, StreamBuffer incoming)
 {
 	LOG_FATAL("Received packet: opcode = ", opcode, ", payload = ", HexDumper(incoming));
-	StreamBuffer out;
+
 	std::string s = incoming.dump();
-	if(opcode == WS_DATA_TEXT){
-		AUTO(from, s.rbegin()), rit = from;
-		while(rit != s.rend()){
-			if((*rit & 0xC0) != 0x80){
-				++rit;
-				std::reverse_copy(from, rit, StreamBufferWriteIterator(out));
-				from = rit;
-			} else {
-				++rit;
-			}
-		}
-		wss->send(STD_MOVE(out), false);
-	} else {
-		std::reverse_copy(s.begin(), s.end(), StreamBufferWriteIterator(out));
-		wss->send(STD_MOVE(out), true);
-	}
+
+	char crc32Str[16];
+	std::sprintf(crc32Str, "%08lx", (unsigned long)crc32Sum(s.data(), s.size()));
+
+	unsigned char md5[16];
+	md5Sum(md5, s.data(), s.size());
+	std::string md5Str = hexEncode(md5, sizeof(md5));
+
+	unsigned char sha1[20];
+	sha1Sum(sha1, s.data(), s.size());
+	std::string sha1Str = hexEncode(sha1, sizeof(sha1));
+
+	StreamBuffer out;
+	out.put("CRC32: ");
+	out.put(crc32Str);
+	out.put("\nMD5: ");
+	out.put(md5Str.data(), md5Str.size());
+	out.put("\nSHA1: ");
+	out.put(sha1Str.data(), sha1Str.size());
+	out.put('\n');
+	wss->send(STD_MOVE(out), false);
 }
 
 struct Tracked {
