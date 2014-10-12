@@ -7,7 +7,6 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 
 AC_CHECK_LIB([dl], [main])
-AC_CHECK_LIB([ssl], [main])
 AC_CHECK_LIB([boost_thread], [main])
 AC_CHECK_LIB([mysqlcppconn], [main])
 

@@ -37,6 +37,13 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/transaction.cpp	\
 	src/main/stream_buffer.cpp	\
 	src/main/optional_map.cpp	\
+	src/main/job_base.cpp	\
+	src/main/tcp_session_base.cpp	\
+	src/main/tcp_server_base.cpp	\
+	src/main/tcp_client_base.cpp	\
+	src/main/module.cpp	\
+	src/main/event_base.cpp	\
+	src/main/hash.cpp	\
 	src/main/singletons/config_file.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
 	src/main/singletons/mysql_daemon.cpp	\
@@ -58,13 +65,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/http/upgraded_session_base.cpp	\
 	src/main/http/websocket/session.cpp	\
 	src/main/http/websocket/status.cpp	\
-	src/main/mysql/object_base.cpp	\
-	src/main/job_base.cpp	\
-	src/main/tcp_session_base.cpp	\
-	src/main/tcp_server_base.cpp	\
-	src/main/tcp_client_base.cpp	\
-	src/main/module.cpp	\
-	src/main/event_base.cpp
+	src/main/mysql/object_base.cpp
 
 lib_libposeidon_template_la_SOURCES=	\
 	src/template/module_main.cpp

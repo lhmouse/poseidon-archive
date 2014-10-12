@@ -1,7 +1,6 @@
 #include "../../precompiled.hpp"
 #include "session.hpp"
 #include <string.h>
-#include <openssl/sha.h>
 #include "request.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
@@ -16,6 +15,7 @@
 #include "../exception.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
+#include "../hash.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -254,9 +254,9 @@ void HttpSession::onUpgrade(const std::string &val){
 		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 	}
 	key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-	unsigned char sha[SHA_DIGEST_LENGTH];
-	::SHA1((const unsigned char *)key.data(), key.size(), sha);
-	key.assign((const char *)sha, sizeof(sha));
+	unsigned char sha1[20];
+	sha1Sum(sha1, key.data(), key.size());
+	key.assign((const char *)sha1, sizeof(sha1));
 	key = base64Encode(key);
 
 	OptionalMap headers;

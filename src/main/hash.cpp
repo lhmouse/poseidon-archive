@@ -1,11 +1,12 @@
+#include "../precompiled.hpp"
 #include "hash.hpp"
 #include <cstring>
-#include <intrin.h>
+#include <endian.h>
 using namespace Poseidon;
 
 namespace {
 
-static const std::uint32_t CRC32_TABLE[256] = {
+static const boost::uint32_t CRC32_TABLE[256] = {
 	0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
 	0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988, 0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91,
 	0x1DB71064, 0x6AB020F2, 0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7,
@@ -40,20 +41,27 @@ static const std::uint32_t CRC32_TABLE[256] = {
 	0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94, 0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
 };
 
-void md5Chunk(std::uint32_t (&result)[4], const unsigned char *chunk){
+inline boost::uint32_t rotl(boost::uint32_t u, int bits){
+	return (u << bits) | (u >> (32 - bits));
+}
+inline boost::uint32_t rotr(boost::uint32_t u, int bits){
+	return (u >> bits) | (u << (32 - bits));
+}
+
+void md5Chunk(boost::uint32_t (&result)[4], const unsigned char *chunk){
 	// https://en.wikipedia.org/wiki/Md5
-	const auto w = (const std::uint32_t *)chunk;
+	const AUTO(w, (const boost::uint32_t *)chunk);
 
-	register std::uint32_t a = result[0];
-	register std::uint32_t b = result[1];
-	register std::uint32_t c = result[2];
-	register std::uint32_t d = result[3];
+	register boost::uint32_t a = result[0];
+	register boost::uint32_t b = result[1];
+	register boost::uint32_t c = result[2];
+	register boost::uint32_t d = result[3];
 
-	register std::uint32_t f, g;
+	register boost::uint32_t f, g;
 
 #define MD5_STEP(i_, spec_, a_, b_, c_, d_, k_, r_)	\
 	spec_(i_, a_, b_, c_, d_);	\
-	a_ = b_ + ::_rotl(a_ + f + k_ + w[g], r_);
+	a_ = b_ + rotl(a_ + f + k_ + htole32(w[g]), r_);
 
 #define MD5_SPEC_0(i_, a_, b_, c_, d_)	(f = d_ ^ (b_ & (c_ ^ d_)), g = i_)
 #define MD5_SPEC_1(i_, a_, b_, c_, d_)	(f = c_ ^ (d_ & (b_ ^ c_)), g = (5 * i_ + 1) % 16)
@@ -134,32 +142,32 @@ void md5Chunk(std::uint32_t (&result)[4], const unsigned char *chunk){
 	result[3] += d;
 }
 
-void sha1Chunk(std::uint32_t (&result)[5], const unsigned char *chunk){
+void sha1Chunk(boost::uint32_t (&result)[5], const unsigned char *chunk){
 	// https://en.wikipedia.org/wiki/Sha1
-	std::uint32_t w[80];
+	boost::uint32_t w[80];
 
 	for(std::size_t i = 0; i < 16; ++i){
-		w[i] = ::_byteswap_ulong(((const std::uint32_t *)chunk)[i]);
+		w[i] = htobe32(((const boost::uint32_t *)chunk)[i]);
 	}
 	for(std::size_t i = 16; i < 32; ++i){
-		w[i] = ::_rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
+		w[i] = rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
 	}
 	for(std::size_t i = 32; i < 80; ++i){
-		w[i] = ::_rotl(w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32], 2);
+		w[i] = rotl(w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32], 2);
 	}
 
-	register std::uint32_t a = result[0];
-	register std::uint32_t b = result[1];
-	register std::uint32_t c = result[2];
-	register std::uint32_t d = result[3];
-	register std::uint32_t e = result[4];
+	register boost::uint32_t a = result[0];
+	register boost::uint32_t b = result[1];
+	register boost::uint32_t c = result[2];
+	register boost::uint32_t d = result[3];
+	register boost::uint32_t e = result[4];
 
-	register std::uint32_t f, k;
+	register boost::uint32_t f, k;
 
 #define SHA1_STEP(i_, spec_, a_, b_, c_, d_, e_)	\
 	spec_(a_, b_, c_, d_, e_);	\
-	e_ += ::_rotl(a_, 5) + f + k + w[i_];	\
-	b_ = ::_rotl(b_, 30);
+	e_ += rotl(a_, 5) + f + k + w[i_];	\
+	b_ = rotl(b_, 30);
 
 #define SHA1_SPEC_0(a_, b_, c_, d_, e_)	(f = d_ ^ (b_ & (c_ ^ d_)), k = 0x5A827999)
 #define SHA1_SPEC_1(a_, b_, c_, d_, e_)	(f = b_ ^ c_ ^ d_, k = 0x6ED9EBA1)
@@ -170,84 +178,84 @@ void sha1Chunk(std::uint32_t (&result)[5], const unsigned char *chunk){
 	SHA1_STEP( 1, SHA1_SPEC_0, e, a, b, c, d)
 	SHA1_STEP( 2, SHA1_SPEC_0, d, e, a, b, c)
 	SHA1_STEP( 3, SHA1_SPEC_0, c, d, e, a, b)
-	SHA1_STEP( 4, SHA1_SPEC_0, b, c, d, e, a)	
-	SHA1_STEP( 5, SHA1_SPEC_0, a, b, c, d, e)	
-	SHA1_STEP( 6, SHA1_SPEC_0, e, a, b, c, d)	
+	SHA1_STEP( 4, SHA1_SPEC_0, b, c, d, e, a)
+	SHA1_STEP( 5, SHA1_SPEC_0, a, b, c, d, e)
+	SHA1_STEP( 6, SHA1_SPEC_0, e, a, b, c, d)
 	SHA1_STEP( 7, SHA1_SPEC_0, d, e, a, b, c)
-	SHA1_STEP( 8, SHA1_SPEC_0, c, d, e, a, b)	
-	SHA1_STEP( 9, SHA1_SPEC_0, b, c, d, e, a)	
-	SHA1_STEP(10, SHA1_SPEC_0, a, b, c, d, e)	
+	SHA1_STEP( 8, SHA1_SPEC_0, c, d, e, a, b)
+	SHA1_STEP( 9, SHA1_SPEC_0, b, c, d, e, a)
+	SHA1_STEP(10, SHA1_SPEC_0, a, b, c, d, e)
 	SHA1_STEP(11, SHA1_SPEC_0, e, a, b, c, d)
-	SHA1_STEP(12, SHA1_SPEC_0, d, e, a, b, c)	
-	SHA1_STEP(13, SHA1_SPEC_0, c, d, e, a, b)	
-	SHA1_STEP(14, SHA1_SPEC_0, b, c, d, e, a)	
+	SHA1_STEP(12, SHA1_SPEC_0, d, e, a, b, c)
+	SHA1_STEP(13, SHA1_SPEC_0, c, d, e, a, b)
+	SHA1_STEP(14, SHA1_SPEC_0, b, c, d, e, a)
 	SHA1_STEP(15, SHA1_SPEC_0, a, b, c, d, e)
-	SHA1_STEP(16, SHA1_SPEC_0, e, a, b, c, d)	
-	SHA1_STEP(17, SHA1_SPEC_0, d, e, a, b, c)	
-	SHA1_STEP(18, SHA1_SPEC_0, c, d, e, a, b)	
+	SHA1_STEP(16, SHA1_SPEC_0, e, a, b, c, d)
+	SHA1_STEP(17, SHA1_SPEC_0, d, e, a, b, c)
+	SHA1_STEP(18, SHA1_SPEC_0, c, d, e, a, b)
 	SHA1_STEP(19, SHA1_SPEC_0, b, c, d, e, a)
 
 	SHA1_STEP(20, SHA1_SPEC_1, a, b, c, d, e)
 	SHA1_STEP(21, SHA1_SPEC_1, e, a, b, c, d)
 	SHA1_STEP(22, SHA1_SPEC_1, d, e, a, b, c)
 	SHA1_STEP(23, SHA1_SPEC_1, c, d, e, a, b)
-	SHA1_STEP(24, SHA1_SPEC_1, b, c, d, e, a)	
-	SHA1_STEP(25, SHA1_SPEC_1, a, b, c, d, e)	
-	SHA1_STEP(26, SHA1_SPEC_1, e, a, b, c, d)	
+	SHA1_STEP(24, SHA1_SPEC_1, b, c, d, e, a)
+	SHA1_STEP(25, SHA1_SPEC_1, a, b, c, d, e)
+	SHA1_STEP(26, SHA1_SPEC_1, e, a, b, c, d)
 	SHA1_STEP(27, SHA1_SPEC_1, d, e, a, b, c)
-	SHA1_STEP(28, SHA1_SPEC_1, c, d, e, a, b)	
-	SHA1_STEP(29, SHA1_SPEC_1, b, c, d, e, a)	
-	SHA1_STEP(30, SHA1_SPEC_1, a, b, c, d, e)	
+	SHA1_STEP(28, SHA1_SPEC_1, c, d, e, a, b)
+	SHA1_STEP(29, SHA1_SPEC_1, b, c, d, e, a)
+	SHA1_STEP(30, SHA1_SPEC_1, a, b, c, d, e)
 	SHA1_STEP(31, SHA1_SPEC_1, e, a, b, c, d)
-	SHA1_STEP(32, SHA1_SPEC_1, d, e, a, b, c)	
-	SHA1_STEP(33, SHA1_SPEC_1, c, d, e, a, b)	
-	SHA1_STEP(34, SHA1_SPEC_1, b, c, d, e, a)	
+	SHA1_STEP(32, SHA1_SPEC_1, d, e, a, b, c)
+	SHA1_STEP(33, SHA1_SPEC_1, c, d, e, a, b)
+	SHA1_STEP(34, SHA1_SPEC_1, b, c, d, e, a)
 	SHA1_STEP(35, SHA1_SPEC_1, a, b, c, d, e)
-	SHA1_STEP(36, SHA1_SPEC_1, e, a, b, c, d)	
-	SHA1_STEP(37, SHA1_SPEC_1, d, e, a, b, c)	
-	SHA1_STEP(38, SHA1_SPEC_1, c, d, e, a, b)	
+	SHA1_STEP(36, SHA1_SPEC_1, e, a, b, c, d)
+	SHA1_STEP(37, SHA1_SPEC_1, d, e, a, b, c)
+	SHA1_STEP(38, SHA1_SPEC_1, c, d, e, a, b)
 	SHA1_STEP(39, SHA1_SPEC_1, b, c, d, e, a)
 
 	SHA1_STEP(40, SHA1_SPEC_2, a, b, c, d, e)
 	SHA1_STEP(41, SHA1_SPEC_2, e, a, b, c, d)
 	SHA1_STEP(42, SHA1_SPEC_2, d, e, a, b, c)
 	SHA1_STEP(43, SHA1_SPEC_2, c, d, e, a, b)
-	SHA1_STEP(44, SHA1_SPEC_2, b, c, d, e, a)	
-	SHA1_STEP(45, SHA1_SPEC_2, a, b, c, d, e)	
-	SHA1_STEP(46, SHA1_SPEC_2, e, a, b, c, d)	
+	SHA1_STEP(44, SHA1_SPEC_2, b, c, d, e, a)
+	SHA1_STEP(45, SHA1_SPEC_2, a, b, c, d, e)
+	SHA1_STEP(46, SHA1_SPEC_2, e, a, b, c, d)
 	SHA1_STEP(47, SHA1_SPEC_2, d, e, a, b, c)
-	SHA1_STEP(48, SHA1_SPEC_2, c, d, e, a, b)	
-	SHA1_STEP(49, SHA1_SPEC_2, b, c, d, e, a)	
-	SHA1_STEP(50, SHA1_SPEC_2, a, b, c, d, e)	
+	SHA1_STEP(48, SHA1_SPEC_2, c, d, e, a, b)
+	SHA1_STEP(49, SHA1_SPEC_2, b, c, d, e, a)
+	SHA1_STEP(50, SHA1_SPEC_2, a, b, c, d, e)
 	SHA1_STEP(51, SHA1_SPEC_2, e, a, b, c, d)
-	SHA1_STEP(52, SHA1_SPEC_2, d, e, a, b, c)	
-	SHA1_STEP(53, SHA1_SPEC_2, c, d, e, a, b)	
-	SHA1_STEP(54, SHA1_SPEC_2, b, c, d, e, a)	
+	SHA1_STEP(52, SHA1_SPEC_2, d, e, a, b, c)
+	SHA1_STEP(53, SHA1_SPEC_2, c, d, e, a, b)
+	SHA1_STEP(54, SHA1_SPEC_2, b, c, d, e, a)
 	SHA1_STEP(55, SHA1_SPEC_2, a, b, c, d, e)
-	SHA1_STEP(56, SHA1_SPEC_2, e, a, b, c, d)	
-	SHA1_STEP(57, SHA1_SPEC_2, d, e, a, b, c)	
-	SHA1_STEP(58, SHA1_SPEC_2, c, d, e, a, b)	
+	SHA1_STEP(56, SHA1_SPEC_2, e, a, b, c, d)
+	SHA1_STEP(57, SHA1_SPEC_2, d, e, a, b, c)
+	SHA1_STEP(58, SHA1_SPEC_2, c, d, e, a, b)
 	SHA1_STEP(59, SHA1_SPEC_2, b, c, d, e, a)
 
 	SHA1_STEP(60, SHA1_SPEC_3, a, b, c, d, e)
 	SHA1_STEP(61, SHA1_SPEC_3, e, a, b, c, d)
 	SHA1_STEP(62, SHA1_SPEC_3, d, e, a, b, c)
 	SHA1_STEP(63, SHA1_SPEC_3, c, d, e, a, b)
-	SHA1_STEP(64, SHA1_SPEC_3, b, c, d, e, a)	
-	SHA1_STEP(65, SHA1_SPEC_3, a, b, c, d, e)	
-	SHA1_STEP(66, SHA1_SPEC_3, e, a, b, c, d)	
+	SHA1_STEP(64, SHA1_SPEC_3, b, c, d, e, a)
+	SHA1_STEP(65, SHA1_SPEC_3, a, b, c, d, e)
+	SHA1_STEP(66, SHA1_SPEC_3, e, a, b, c, d)
 	SHA1_STEP(67, SHA1_SPEC_3, d, e, a, b, c)
-	SHA1_STEP(68, SHA1_SPEC_3, c, d, e, a, b)	
-	SHA1_STEP(69, SHA1_SPEC_3, b, c, d, e, a)	
-	SHA1_STEP(70, SHA1_SPEC_3, a, b, c, d, e)	
+	SHA1_STEP(68, SHA1_SPEC_3, c, d, e, a, b)
+	SHA1_STEP(69, SHA1_SPEC_3, b, c, d, e, a)
+	SHA1_STEP(70, SHA1_SPEC_3, a, b, c, d, e)
 	SHA1_STEP(71, SHA1_SPEC_3, e, a, b, c, d)
-	SHA1_STEP(72, SHA1_SPEC_3, d, e, a, b, c)	
-	SHA1_STEP(73, SHA1_SPEC_3, c, d, e, a, b)	
-	SHA1_STEP(74, SHA1_SPEC_3, b, c, d, e, a)	
+	SHA1_STEP(72, SHA1_SPEC_3, d, e, a, b, c)
+	SHA1_STEP(73, SHA1_SPEC_3, c, d, e, a, b)
+	SHA1_STEP(74, SHA1_SPEC_3, b, c, d, e, a)
 	SHA1_STEP(75, SHA1_SPEC_3, a, b, c, d, e)
-	SHA1_STEP(76, SHA1_SPEC_3, e, a, b, c, d)	
-	SHA1_STEP(77, SHA1_SPEC_3, d, e, a, b, c)	
-	SHA1_STEP(78, SHA1_SPEC_3, c, d, e, a, b)	
+	SHA1_STEP(76, SHA1_SPEC_3, e, a, b, c, d)
+	SHA1_STEP(77, SHA1_SPEC_3, d, e, a, b, c)
+	SHA1_STEP(78, SHA1_SPEC_3, c, d, e, a, b)
 	SHA1_STEP(79, SHA1_SPEC_3, b, c, d, e, a)
 
 	result[0] += a;
@@ -261,9 +269,9 @@ void sha1Chunk(std::uint32_t (&result)[5], const unsigned char *chunk){
 
 namespace Poseidon {
 
-std::uint32_t crc32Sum(const void *data, std::size_t size){
-	register std::uint32_t reg = -1;
-	auto read = (const unsigned char *)data;
+boost::uint32_t crc32Sum(const void *data, std::size_t size){
+	register boost::uint32_t reg = -1;
+	AUTO(read, (const unsigned char *)data);
 	for(std::size_t i= 0; i < size; ++i){
 		reg = CRC32_TABLE[(reg ^ *read) & 0xFF] ^ (reg >> 8);
 		++read;
@@ -272,10 +280,10 @@ std::uint32_t crc32Sum(const void *data, std::size_t size){
 }
 
 void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size){
-	std::uint32_t result[4] = {
+	boost::uint32_t result[4] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u
 	};
-	auto read = (const unsigned char *)data;
+	AUTO(read, (const unsigned char *)data);
 	std::size_t remaining = size;
 	while(remaining >= 64){
 		md5Chunk(result, read);
@@ -292,16 +300,18 @@ void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size){
 	} else {
 		std::memset(chunk + remaining + 1, 0, 56 - remaining - 1);
 	}
-	*(std::uint64_t *)(chunk + 56) = size * 8ull;
+	*(boost::uint64_t *)(chunk + 56) = htole64(size * 8ull);
 	md5Chunk(result, chunk);
-	std::memcpy(hash, result, sizeof(hash));
+	for(unsigned i = 0; i < 4; ++i){
+		((boost::uint32_t *)hash)[i] = htole32(result[i]);
+	}
 }
 
 void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size){
-	std::uint32_t result[5] = {
+	boost::uint32_t result[5] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u
 	};
-	auto read = (const unsigned char *)data;
+	AUTO(read, (const unsigned char *)data);
 	std::size_t remaining = size;
 	while(remaining >= 64){
 		sha1Chunk(result, read);
@@ -318,12 +328,11 @@ void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size){
 	} else {
 		std::memset(chunk + remaining + 1, 0, 56 - remaining - 1);
 	}
-	*(std::uint64_t *)(chunk + 56) = ::_byteswap_uint64(size * 8ull);
+	*(boost::uint64_t *)(chunk + 56) = htobe64(size * 8ull);
 	sha1Chunk(result, chunk);
 	for(unsigned i = 0; i < 5; ++i){
-		result[i] = ::_byteswap_ulong(result[i]);
+		((boost::uint32_t *)hash)[i] = htobe32(result[i]);
 	}
-	std::memcpy(hash, result, sizeof(hash));
 }
 
 }
