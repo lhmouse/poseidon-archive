@@ -384,8 +384,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_state = ST_FIRST_HEADER;
 
 			if(m_upgradedSession){
-				m_upgradedSession->onInitContents(m_line.data(), m_line.size());
 				resetTimeout(0);
+				m_upgradedSession->onInitContents(m_line.data(), m_line.size());
 			} else {
 				boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
 					m_verb, STD_MOVE(m_uri), m_version,
