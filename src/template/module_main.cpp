@@ -11,6 +11,7 @@
 #include "../main/http/utilities.hpp"
 #include "../main/hash.hpp"
 #include "../main/profiler.hpp"
+#include "../main/singletons/profile_manager.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -34,7 +35,7 @@ void event2Proc(boost::shared_ptr<TestEvent2> event){
 	LOG_FATAL("event2Proc: d = ", event->d);
 }
 
-boost::shared_ptr<const HttpServlet> g_load, g_unload, g_meow, g_meowMeow;
+boost::shared_ptr<const HttpServlet> g_profile, g_load, g_unload, g_meow, g_meowMeow;
 boost::shared_ptr<const EventListener> g_event1, g_event2;
 boost::shared_ptr<const TimerItem> g_tick;
 boost::shared_ptr<const WebSocketServlet> g_ws;
@@ -42,6 +43,23 @@ boost::shared_ptr<const WebSocketServlet> g_ws;
 void tickProc(unsigned long long now, unsigned long long period){
 	PROFILE_ME;
 	LOG_FATAL("Tick, now = ", now, ", period = ", period);
+}
+
+HttpStatus profileProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
+	PROFILE_ME;
+
+	headers.set("Content-Type", "text/plain");
+	contents.put("   Samples      Total time(us)  Exclusive time(us)    Function\n");
+	const AUTO(profile, ProfileManager::snapshot());
+	for(AUTO(it, profile.begin()); it != profile.end(); ++it){
+		char temp[128];
+		const int len = std::sprintf(temp, "%10llu%20llu%20llu    ",
+			it->samples, it->usTotal, it->usExclusive);
+		contents.put(temp, len);
+		contents.put(it->func);
+		contents.put('\n');
+	}
+	return HTTP_OK;
 }
 
 HttpStatus meowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
@@ -155,6 +173,8 @@ struct Tracked {
 
 extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
 	LOG_FATAL("poseidonModuleInit()");
+
+	g_profile = HttpServletManager::registerServlet("/profile", module, &profileProc);
 
 	using namespace TR1::placeholders;
 	g_load = HttpServletManager::registerServlet("/load", module,
