@@ -289,13 +289,11 @@ void StreamBuffer::splice(StreamBuffer &src) NOEXCEPT {
 	src.m_size = 0;
 }
 
-std::string StreamBuffer::dump() const {
-	std::string ret;
-	ret.reserve(size());
+void StreamBuffer::dump(std::string &str) const {
+	str.reserve(str.size() + size());
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
-		ret.append(it->data + it->readPos, it->data + it->writePos);
+		str.append(it->data + it->readPos, it->data + it->writePos);
 	}
-	return ret;
 }
 void StreamBuffer::dump(std::ostream &os) const {
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){

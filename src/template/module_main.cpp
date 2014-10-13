@@ -104,7 +104,8 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 {
 	LOG_FATAL("Received packet: opcode = ", opcode, ", payload = ", HexDumper(incoming));
 
-	std::string s = incoming.dump();
+	std::string s;
+	incoming.dump(s);
 
 	char crc32Str[16];
 	std::sprintf(crc32Str, "%08lx", (unsigned long)crc32Sum(s.data(), s.size()));

@@ -73,7 +73,7 @@ public:
 		return dst.transferFrom(*this, size);
 	}
 
-	std::string dump() const;
+	void dump(std::string &str) const;
 	void dump(std::ostream &os) const;
 	void load(const std::string &str);
 	void load(std::istream &is);
