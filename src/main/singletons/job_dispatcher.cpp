@@ -27,8 +27,6 @@ void JobDispatcher::doModal(){
 		std::abort();
 	}
 	for(;;){
-		PROFILE_ME;
-
 		try {
 			boost::shared_ptr<JobBase> job;
 			{
