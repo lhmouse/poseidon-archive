@@ -158,7 +158,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					DEBUG_THROW(WebSocketException, WS_ACCESS_DENIED, "Non-masked frames not allowed");
 				}
 				m_payloadLen = (unsigned char)(ch & 0x7F);
-				if((m_payloadLen == 0x7E) || (m_payloadLen == 0x7F)){
+				if(m_payloadLen >= 0x7E){
 					if(m_opcode & WS_FL_CONTROL){
 						DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Control frame too large");
 					}
