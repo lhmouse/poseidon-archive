@@ -49,16 +49,11 @@
 namespace Poseidon {
 
 template<typename T>
-typename boost::remove_cv<
-	typename boost::remove_reference<T>::type
-	>::type
+typename boost::remove_cv<typename boost::remove_reference<T>::type>::type
 	valueOfHelper(const T &) NOEXCEPT;
 
 struct Nullptr_t {
-#ifdef POSEIDON_CXX11
-	explicit
-#endif
-	CONSTEXPR operator bool() const NOEXCEPT {
+	ENABLE_IF_CXX11(explicit) CONSTEXPR operator bool() const NOEXCEPT {
 		return false;
 	}
 
