@@ -102,14 +102,18 @@ void WebSocketSession::onControlFrame(){
 
 	switch(m_opcode){
 	case WS_CLOSE:
+		LOG_INFO("Received close frame from ", getRemoteIp(),
+			", the connection will be shut down.");
 		HttpUpgradedSessionBase::shutdown(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false));
 		break;
 
 	case WS_PING:
-		HttpUpgradedSessionBase::send(makeFrame(WS_PING, STD_MOVE(m_whole), false));
+		LOG_INFO("Received ping frame from ", getRemoteIp());
+		HttpUpgradedSessionBase::send(makeFrame(WS_PONG, STD_MOVE(m_whole), false));
 		break;
 
 	case WS_PONG:
+		LOG_INFO("Received pong frame from ", getRemoteIp());
 		break;
 
 	default:
