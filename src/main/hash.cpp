@@ -272,7 +272,7 @@ namespace Poseidon {
 boost::uint32_t crc32Sum(const void *data, std::size_t size){
 	register boost::uint32_t reg = -1;
 	AUTO(read, (const unsigned char *)data);
-	for(std::size_t i= 0; i < size; ++i){
+	for(std::size_t i = 0; i < size; ++i){
 		reg = CRC32_TABLE[(reg ^ *read) & 0xFF] ^ (reg >> 8);
 		++read;
 	}
