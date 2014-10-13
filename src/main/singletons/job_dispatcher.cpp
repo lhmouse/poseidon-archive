@@ -7,6 +7,7 @@
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
+#include "../profiler.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -26,6 +27,8 @@ void JobDispatcher::doModal(){
 		std::abort();
 	}
 	for(;;){
+		PROFILE_ME;
+
 		try {
 			boost::shared_ptr<JobBase> job;
 			{

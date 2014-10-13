@@ -11,17 +11,18 @@ using namespace Poseidon;
 namespace {
 
 struct ProfileKey {
-	const char *file;
+	boost::shared_ptr<const char> file;
 	unsigned long line;
-	const char *func;
+	boost::shared_ptr<const char> func;
 
-	ProfileKey(const char *file_, unsigned long line_, const char *func_)
-		: file(file_), line(line_), func(func_)
+	ProfileKey(boost::shared_ptr<const char> file_, unsigned long line_,
+		boost::shared_ptr<const char> func_)
+		: file(STD_MOVE(file_)), line(line_), func(STD_MOVE(func_))
 	{
 	}
 
 	bool operator<(const ProfileKey &rhs) const {
-		const int fileCmp = std::strcmp(file, rhs.file);
+		const int fileCmp = std::strcmp(file.get(), rhs.file.get());
 		if(fileCmp != 0){
 			return fileCmp < 0;
 		}
@@ -50,6 +51,10 @@ bool isProfilerEnabled(){
 	return s_val;
 }
 
+void deleteCharArray(char *s){
+	delete[] s;
+}
+
 }
 
 void ProfileManager::start(){
@@ -68,7 +73,8 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 {
 	try {
 		std::map<ProfileKey, ProfileCounters>::iterator it;
-		const ProfileKey key(file, line, func);
+		ProfileKey key(boost::shared_ptr<const char>(boost::shared_ptr<void>(), file),
+			line, boost::shared_ptr<const char>(boost::shared_ptr<void>(), func));
 		{
 			const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 			it = g_profile.find(key);
@@ -77,6 +83,19 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 			}
 		}
 		{
+			std::size_t len;
+			boost::shared_ptr<char> str;
+
+			len = std::strlen(file);
+			str.reset(new char[len + 1], &deleteCharArray);
+			std::memcpy(str.get(), file, len + 1);
+			key.file = str;
+
+			len = std::strlen(func);
+			str.reset(new char[len + 1], &deleteCharArray);
+			std::memcpy(str.get(), func, len + 1);
+			key.func = str;
+
 			const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 			it = g_profile.insert(std::make_pair(key, ProfileCounters())).first;
 		}

@@ -56,7 +56,7 @@ HttpStatus profileProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest
 		const int len = std::sprintf(temp, "%10llu%20llu%20llu    ",
 			it->samples, it->usTotal, it->usExclusive);
 		contents.put(temp, len);
-		contents.put(it->func);
+		contents.put(it->func.get());
 		contents.put('\n');
 	}
 	return HTTP_OK;

@@ -4,13 +4,14 @@
 #include "../../cxx_ver.hpp"
 #include "../../cxx_util.hpp"
 #include <vector>
+#include <boost/shared_ptr.hpp>
 
 namespace Poseidon {
 
 struct ProfileItem {
-	const char *file;
+	boost::shared_ptr<const char> file;
 	unsigned long line;
-	const char *func;
+	boost::shared_ptr<const char> func;
 
 	// 采样数。
 	unsigned long long samples;
