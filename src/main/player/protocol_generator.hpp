@@ -16,11 +16,13 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
+#undef FIELD_BYTES
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
 #define FIELD_VINT50(name_)				long long name_;
 #define FIELD_VUINT50(name_)			unsigned long long name_;
+#define FIELD_BYTES(name_, size_)		unsigned char name_[size_];
 #define FIELD_STRING(name_)				::std::string name_;
 #define FIELD_ARRAY(name_, fields_)		struct ElementOf ## name_ ## _ {	\
 											fields_	\
@@ -34,11 +36,13 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
+#undef FIELD_BYTES
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
 #define FIELD_VINT50(name_)				, name_()
 #define FIELD_VUINT50(name_)			, name_()
+#define FIELD_BYTES(name_, size_)		, name_()
 #define FIELD_STRING(name_)				, name_()
 #define FIELD_ARRAY(name_, fields_)		, name_()
 
@@ -58,11 +62,13 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
+#undef FIELD_BYTES
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
 #define FIELD_VINT50(name_)				::Poseidon::vint50ToBinary(cur_.name_, write_);
 #define FIELD_VUINT50(name_)			::Poseidon::vuint50ToBinary(cur_.name_, write_);
+#define FIELD_BYTES(name_, size_)		write_ = ::std::copy(cur_.name_, cur_name_ + size_, write_);
 #define FIELD_STRING(name_)				::Poseidon::vuint50ToBinary(cur_.name_.size(), write_);	\
 										write_ = ::std::copy(cur_.name_.begin(), cur_.name_.end(), write_);
 #define FIELD_ARRAY(name_, fields_)		count_ = cur_.name_.size();	\
@@ -91,6 +97,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 
 #undef FIELD_VINT50
 #undef FIELD_VUINT50
+#undef FIELD_BYTES
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
@@ -100,18 +107,21 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #define FIELD_VUINT50(name_)			if(!::Poseidon::vuint50FromBinary(cur_.name_, read_, buffer_.size())){	\
 											THROW_EOS_;	\
 										}
+#define FIELD_BYTES(name_, size_)		if(buffer_.size() < size_){	\
+											THROW_EOS_;	\
+										}	\
+										buffer_.get(cur_.name_, size_);
 #define FIELD_STRING(name_)				if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
 											THROW_EOS_;	\
 										}	\
 										if(buffer_.size() < count_){	\
 											THROW_EOS_;	\
 										}	\
-										cur_.name_.resize(count_);	\
 										for(unsigned long long i = 0; i < count_; ++i){	\
-											cur_.name_[i] = buffer_.get();	\
+											cur_.name_.push_back(buffer_.get());	\
 										}
 #define FIELD_ARRAY(name_, fields_)		if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
-											THROW_EOS_;  \
+											THROW_EOS_;	\
 										}	\
 										cur_.name_.clear();	\
 										for(unsigned long long i = 0; i < count_; ++i){	\
