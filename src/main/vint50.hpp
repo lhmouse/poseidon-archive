@@ -18,7 +18,7 @@ void vuint50ToBinary(unsigned long long val, OutputIterT &write){
 		++write;
 	}
 	if(val != 0){
-		*write = val;
+		*write = (unsigned char)val;
 		++write;
 	}
 }
