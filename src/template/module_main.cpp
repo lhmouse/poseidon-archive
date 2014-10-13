@@ -10,6 +10,7 @@
 #include "../main/http/websocket/session.hpp"
 #include "../main/http/utilities.hpp"
 #include "../main/hash.hpp"
+#include "../main/profiler.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -24,10 +25,12 @@ struct TestEvent2 : public EventBase<1> {
 };
 
 void event1Proc(boost::shared_ptr<TestEvent1> event){
+	PROFILE_ME;
 	LOG_FATAL("event1Proc: i = ", event->i, ", s = ", event->s);
 }
 
 void event2Proc(boost::shared_ptr<TestEvent2> event){
+	PROFILE_ME;
 	LOG_FATAL("event2Proc: d = ", event->d);
 }
 
@@ -37,10 +40,13 @@ boost::shared_ptr<const TimerItem> g_tick;
 boost::shared_ptr<const WebSocketServlet> g_ws;
 
 void tickProc(unsigned long long now, unsigned long long period){
+	PROFILE_ME;
 	LOG_FATAL("Tick, now = ", now, ", period = ", period);
 }
 
 HttpStatus meowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
+	PROFILE_ME;
+
 	AUTO(event, boost::make_shared<TestEvent1>());
 	event->i = 123;
 	event->s = "meow";
@@ -51,6 +57,8 @@ HttpStatus meowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
 	return HTTP_OK;
 }
 HttpStatus meowMeowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
+	PROFILE_ME;
+
 	AUTO(event, boost::make_shared<TestEvent1>());
 	event->i = 123;
 	event->s = "meow/meow";
@@ -63,6 +71,8 @@ HttpStatus meowMeowProc(OptionalMap &headers, StreamBuffer &contents, HttpReques
 HttpStatus loadProc(OptionalMap &, StreamBuffer &contents, HttpRequest,
 	const boost::weak_ptr<const Module> &module)
 {
+	PROFILE_ME;
+
 	AUTO(event, boost::make_shared<TestEvent2>());
 	event->d = 123.45;
 	event->raise();
@@ -79,6 +89,8 @@ HttpStatus loadProc(OptionalMap &, StreamBuffer &contents, HttpRequest,
 	return HTTP_OK;
 }
 HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpRequest request){
+	PROFILE_ME;
+
 	AUTO(event, boost::make_shared<TestEvent2>());
 	event->d = 67.89;
 	event->raise();
@@ -102,6 +114,7 @@ HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpRequest request
 void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	WebSocketOpCode opcode, StreamBuffer incoming)
 {
+	PROFILE_ME;
 	LOG_FATAL("Received packet: opcode = ", opcode, ", payload = ", HexDumper(incoming));
 
 	std::string s;
