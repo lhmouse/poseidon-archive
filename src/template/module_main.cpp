@@ -12,9 +12,19 @@
 #include "../main/hash.hpp"
 #include "../main/profiler.hpp"
 #include "../main/singletons/profile_manager.hpp"
+#include "../main/tcp_client_base.hpp"
 using namespace Poseidon;
 
 namespace {
+
+struct Tracked {
+	Tracked(){
+		LOG_FATAL("Tracked::Tracked()");
+	}
+	~Tracked(){
+		LOG_FATAL("Tracked::~Tracked()");
+	}
+} g_tracked;
 
 struct TestEvent1 : public EventBase<1> {
 	int i;
@@ -160,14 +170,31 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	wss->send(STD_MOVE(out), false);
 }
 
-struct Tracked {
-	Tracked(){
-		LOG_FATAL("Tracked::Tracked()");
+class TestClient : public TcpClientBase {
+public:
+	static boost::shared_ptr<TestClient> create(){
+		ScopedFile socket;
+		TestClient::connect(socket, "127.0.0.1", 443);
+		AUTO(ret, boost::make_shared<TestClient>(STD_MOVE(socket)));
+		ret->initSslClient();
+		ret->addIntoEpoll();
+		return STD_MOVE(ret);
 	}
-	~Tracked(){
-		LOG_FATAL("Tracked::~Tracked()");
+
+public:
+	explicit TestClient(Move<ScopedFile> socket)
+		: TcpClientBase(STD_MOVE(socket))
+	{
 	}
-} g_tracked;
+
+public:
+	void onReadAvail(const void *data, std::size_t size){
+		AUTO(read, (const char *)data);
+		for(std::size_t i = 0; i < size; ++i){
+			std::putchar(read[i]);
+		}
+	}
+};
 
 }
 
@@ -185,4 +212,7 @@ extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
 	g_event2 = EventListenerManager::registerListener<TestEvent2>(module, &event2Proc);
 
 	g_ws = WebSocketServletManager::registerServlet("/wstest", module, &webSocketProc);
+
+	AUTO(client, TestClient::create());
+	client->send("GET / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
 }

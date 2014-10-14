@@ -28,6 +28,7 @@ timer_daemon.hpp | 计时器线程，负责调度计时器，在计时器触发�
 - g++-4.4
 - libboost1.42-dev
 - libmysqlcppconn-dev
+- libssl-dev
 
 ## 运行环境
 - 至少 Debian Linux Squeeze

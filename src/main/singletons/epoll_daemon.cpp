@@ -19,11 +19,16 @@
 using namespace Poseidon;
 
 struct Poseidon::TcpSessionImpl {
-	static int getFd(const boost::shared_ptr<const TcpSessionBase> &session){
-		return session->m_socket.get();
+	static int doGetFd(const TcpSessionBase &session){
+		return session.m_socket.get();
 	}
-	static int getFd(const boost::shared_ptr<TcpSessionBase> &session){
-		return session->m_socket.get();
+	static long doRead(TcpSessionBase &session, void *buffer, unsigned long size){
+		return session.doRead(buffer, size);
+	}
+	static long doWrite(TcpSessionBase &session, boost::mutex::scoped_lock &lock,
+		void *hint, unsigned long hintSize)
+	{
+		return session.doWrite(lock, hint, hintSize);
 	}
 };
 
@@ -68,7 +73,7 @@ SessionMap g_sessions;
 boost::mutex g_serverMutex;
 std::set<boost::shared_ptr<const TcpServerBase> > g_servers;
 
-void addSession(const boost::shared_ptr<TcpSessionBase> &session){
+void add(const boost::shared_ptr<TcpSessionBase> &session){
 	const AUTO(now, getMonoClock());
 	std::pair<SessionMap::iterator, bool> result;
 	{
@@ -83,14 +88,14 @@ void addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	event.events = EPOLLHUP | EPOLLERR | EPOLLRDHUP | EPOLLIN | EPOLLOUT | EPOLLET;
 	event.data.ptr = session.get();
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD,
-		TcpSessionImpl::getFd(session), &event) != 0)
+		TcpSessionImpl::doGetFd(*session), &event) != 0)
 	{
 		const boost::mutex::scoped_lock lock(g_sessionMutex);
 		g_sessions.erase(result.first);
 		DEBUG_THROW(SystemError, errno);
 	}
 }
-void touchSession(const boost::shared_ptr<TcpSessionBase> &session){
+void touch(const boost::shared_ptr<TcpSessionBase> &session){
 	const AUTO(now, getMonoClock());
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	const AUTO(it, g_sessions.find<0>(session));
@@ -101,9 +106,9 @@ void touchSession(const boost::shared_ptr<TcpSessionBase> &session){
 	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
 	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
-void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
+void remove(const boost::shared_ptr<TcpSessionBase> &session){
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL,
-		TcpSessionImpl::getFd(session), NULLPTR) != 0)
+		TcpSessionImpl::doGetFd(*session), NULLPTR) != 0)
 	{
 		LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
 	}
@@ -179,7 +184,8 @@ void daemonLoop(){
 			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
-				const ::ssize_t bytesRead = session->doRead(data.get(), g_tcpBufferSize);
+				const ::ssize_t bytesRead =
+					TcpSessionImpl::doRead(*session, data.get(), g_tcpBufferSize);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -225,7 +231,8 @@ void daemonLoop(){
 				bool shutdown;
 				{
 					boost::mutex::scoped_lock sessionLock;
-					bytesWritten = session->doWrite(sessionLock, data.get(), g_tcpBufferSize);
+					bytesWritten = TcpSessionImpl::doWrite(
+						*session, sessionLock, data.get(), g_tcpBufferSize);
 					shutdown = session->hasBeenShutdown();
 					if(bytesWritten == 0){
 						if(!shutdown){
@@ -245,17 +252,17 @@ void daemonLoop(){
 				}
 				if(bytesWritten == 0){
 					if(shutdown){
-						removeSession(session);
+						remove(session);
 					}
 					continue;
 				}
 				LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp());
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while writing socket: what = ", e.what());
-				removeSession(session);
+				remove(session);
 			} catch(...){
 				LOG_ERROR("Unknown exception thrown while writing socket.");
-				removeSession(session);
+				remove(session);
 			}
 		}
 
@@ -273,7 +280,7 @@ void daemonLoop(){
 				}
 				LOG_DEBUG("Accepted socket connection from ", session->getRemoteIp());
 				epollTimeout = 0;
-				addSession(session);
+				add(session);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while accepting client: what = ", e.what());
 			} catch(...){
@@ -293,18 +300,20 @@ void daemonLoop(){
 			try {
 				if(event.events & EPOLLHUP){
 					LOG_INFO("Socket has been hung up. Remove it.");
-					removeSession(session);
+					remove(session);
 					continue;
 				}
 				if(event.events & EPOLLERR){
 					int err;
 					::socklen_t errLen = sizeof(err);
-					if(::getsockopt(TcpSessionImpl::getFd(session), SOL_SOCKET, SO_ERROR, &err, &errLen) != 0){
+					if(::getsockopt(TcpSessionImpl::doGetFd(*session),
+						SOL_SOCKET, SO_ERROR, &err, &errLen) != 0)
+					{
 						err = errno;
 					}
 					const AUTO(desc, getErrorDesc());
 					LOG_WARNING("Socket error: ", desc);
-					removeSession(session);
+					remove(session);
 					continue;
 				}
 
@@ -323,10 +332,10 @@ void daemonLoop(){
 				}
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while epolling: what = ", e.what());
-				removeSession(session);
+				remove(session);
 			} catch(...){
 				LOG_ERROR("Unknown exception thrown while epolling.");
-				removeSession(session);
+				remove(session);
 			}
 		}
 
@@ -398,13 +407,13 @@ void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	if(session->hasBeenShutdown()){
 		return;
 	}
-	addSession(session);
+	add(session);
 }
-void EpollDaemon::refreshSession(const boost::shared_ptr<TcpSessionBase> &session){
+void EpollDaemon::touchSession(const boost::shared_ptr<TcpSessionBase> &session){
 	if(session->hasBeenShutdown()){
 		return;
 	}
-	touchSession(session);
+	touch(session);
 }
 
 void EpollDaemon::addTcpServer(boost::shared_ptr<const TcpServerBase> server){

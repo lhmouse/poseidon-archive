@@ -14,7 +14,7 @@ protected:
 protected:
 	explicit TcpClientBase(Move<ScopedFile> socket);
 
-public:
+protected:
 	void addIntoEpoll();
 };
 
