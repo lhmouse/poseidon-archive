@@ -157,10 +157,8 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 }
 
 void daemonLoop(){
-	const boost::scoped_array<unsigned char>
-		data(new unsigned char[g_tcpBufferSize]);
-	const boost::scoped_array< ::epoll_event>
-		events(new ::epoll_event[g_eventBufferSize]);
+	const boost::scoped_array<unsigned char> data(new unsigned char[g_tcpBufferSize]);
+	const boost::scoped_array< ::epoll_event> events(new ::epoll_event[g_eventBufferSize]);
 	std::size_t epollTimeout = 0;
 
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
