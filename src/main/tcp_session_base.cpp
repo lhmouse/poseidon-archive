@@ -92,8 +92,8 @@ bool TcpSessionBase::forceShutdown(){
 	return ret;
 }
 
-std::size_t TcpSessionBase::peekWriteAvail(boost::mutex::scoped_lock &lock,
-	void *data, std::size_t size) const
+std::size_t TcpSessionBase::peekWriteAvail(
+	boost::mutex::scoped_lock &lock, void *data, std::size_t size) const
 {
 	boost::mutex::scoped_lock(m_bufferMutex).swap(lock);
 	if(size == 0){

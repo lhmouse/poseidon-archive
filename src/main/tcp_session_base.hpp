@@ -37,8 +37,8 @@ public:
 		return m_socket.get();
 	}
 	// 如果 size 为零则返回所有待发送字节数。
-	std::size_t peekWriteAvail(boost::mutex::scoped_lock &lock,
-		void *data, std::size_t size) const;
+	std::size_t peekWriteAvail(
+		boost::mutex::scoped_lock &lock, void *data, std::size_t size) const;
 	// 从队列中移除指定的字节数。
 	void notifyWritten(std::size_t size);
 
