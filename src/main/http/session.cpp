@@ -91,11 +91,17 @@ void normalizeUri(std::string &uri){
 	uri.erase(uri.begin() + write, uri.end());
 }
 
-void onSessionTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned long long){
+void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned long long){
 	const AUTO(session, observer.lock());
 	if(session){
-		LOG_WARNING("HTTP session times out, remote IP = ", session->getRemoteIp());
+		LOG_WARNING("HTTP request times out, remote IP = ", session->getRemoteIp());
 		session->shutdown(HTTP_REQUEST_TIMEOUT);
+	}
+}
+void onKeepAliveTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned long long){
+	const AUTO(session, observer.lock());
+	if(session){
+		session->TcpSessionBase::shutdown();
 	}
 }
 
@@ -128,6 +134,7 @@ protected:
 			LOG_WARNING("The specified HTTP session has expired.");
 			return;
 		}
+		const unsigned version = m_request.version;
 		try {
 			boost::shared_ptr<const void> lockedDep;
 			AUTO(servlet, HttpServletManager::getServlet(lockedDep, m_request.uri));
@@ -138,7 +145,6 @@ protected:
 			LOG_DEBUG("Dispatching http request: URI = ", m_request.uri,
 				", verb = ", stringFromHttpVerb(m_request.verb));
 			const HttpVerb verb = m_request.verb;
-			const unsigned version = m_request.version;
 			OptionalMap headers;
 			StreamBuffer contents;
 			const HttpStatus status = (*servlet)(headers, contents, STD_MOVE(m_request));
@@ -149,11 +155,11 @@ protected:
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, status = ", e.status(),
 				", file = ", e.file(), ", line = ", e.line());
-			session->shutdown(e.status());
+			session->send(makeResponse(e.status(), version));
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... shutdown the session first.");
-			session->shutdown(HTTP_SERVER_ERROR);
+			session->send(makeResponse(HTTP_SERVER_ERROR, version));
 			throw;
 		}
 	}
@@ -174,14 +180,14 @@ HttpSession::~HttpSession(){
 	}
 }
 
-void HttpSession::resetTimeout(unsigned long long timeout){
-	LOG_DEBUG("Setting timeout to ", timeout);
+void HttpSession::setRequestTimeout(unsigned long long timeout){
+	LOG_DEBUG("Setting request timeout to ", timeout);
 
 	if(timeout == 0){
 		m_shutdownTimer.reset();
 	} else {
 		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, NULLPTR,
-			TR1::bind(&onSessionTimeout, virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+			TR1::bind(&onRequestTimeout, virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
 	}
 }
 
@@ -384,9 +390,15 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_state = ST_FIRST_HEADER;
 
 			if(m_upgradedSession){
-				resetTimeout(0);
+				m_shutdownTimer.reset();
+
 				m_upgradedSession->onInitContents(m_line.data(), m_line.size());
 			} else {
+				m_shutdownTimer = TimerDaemon::registerTimer(
+					HttpServletManager::getKeepAliveTimeout(), 0, NULLPTR,
+					TR1::bind(&onKeepAliveTimeout,
+						virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+
 				boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
 					m_verb, STD_MOVE(m_uri), m_version,
 					STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)

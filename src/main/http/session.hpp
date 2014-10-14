@@ -43,7 +43,7 @@ public:
 	~HttpSession();
 
 private:
-	void resetTimeout(unsigned long long timeout);
+	void setRequestTimeout(unsigned long long timeout);
 
 	void onAllHeadersRead();
 	void onExpect(const std::string &val);

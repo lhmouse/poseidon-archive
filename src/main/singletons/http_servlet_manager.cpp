@@ -46,7 +46,8 @@ public:
 namespace {
 
 std::size_t g_maxRequestLength = 16 * 0x400;
-unsigned long long g_keepAliveTimeout = 30000;
+unsigned long long g_requestTimeout = 30000;
+unsigned long long g_keepAliveTimeout = 5000;
 
 boost::shared_mutex g_mutex;
 std::map<std::string, boost::weak_ptr<const HttpServlet> > g_servlets;
@@ -78,6 +79,10 @@ void HttpServletManager::start(){
 		ConfigFile::get<std::size_t>("http_max_request_length", g_maxRequestLength);
 	LOG_DEBUG("Max request length = ", g_maxRequestLength);
 
+	g_requestTimeout =
+		ConfigFile::get<unsigned long long>("http_request_timeout", g_requestTimeout);
+	LOG_DEBUG("Request timeout = ", g_requestTimeout);
+
 	g_keepAliveTimeout =
 		ConfigFile::get<unsigned long long>("http_keep_alive_timeout", g_keepAliveTimeout);
 	LOG_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
@@ -90,6 +95,9 @@ void HttpServletManager::stop(){
 
 std::size_t HttpServletManager::getMaxRequestLength(){
 	return g_maxRequestLength;
+}
+unsigned long long HttpServletManager::getRequestTimeout(){
+	return g_requestTimeout;
 }
 unsigned long long HttpServletManager::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;

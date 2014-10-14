@@ -13,6 +13,6 @@ boost::shared_ptr<TcpSessionBase>
 	HttpServer::onClientConnect(Move<ScopedFile> client) const
 {
 	AUTO(session, boost::make_shared<HttpSession>(STD_MOVE(client)));
-	session->resetTimeout(HttpServletManager::getKeepAliveTimeout());
+	session->setRequestTimeout(HttpServletManager::getRequestTimeout());
 	return session;
 }
