@@ -12,7 +12,11 @@
 
 namespace Poseidon {
 
+struct TcpSessionImpl;
+
 class TcpSessionBase : public SessionBase {
+	friend class TcpSessionImpl;
+
 private:
 	ScopedFile m_socket;
 	std::string m_remoteIp;
@@ -33,14 +37,8 @@ public:
 	bool shutdown();
 	bool forceShutdown();
 
-	int getFd() const {
-		return m_socket.get();
-	}
-	// 如果 size 为零则返回所有待发送字节数。
-	std::size_t peekWriteAvail(
-		boost::mutex::scoped_lock &lock, void *data, std::size_t size) const;
-	// 从队列中移除指定的字节数。
-	void notifyWritten(std::size_t size);
+	long doRead(void *buffer, unsigned long size);
+	long doWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
 
 	bool shutdown(StreamBuffer buffer);
 };

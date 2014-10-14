@@ -83,28 +83,35 @@ bool TcpSessionBase::hasBeenShutdown() const {
 }
 bool TcpSessionBase::shutdown(){
 	const bool ret = !atomicExchange(m_shutdown, true);
-	::shutdown(getFd(), SHUT_RD);
+	::shutdown(m_socket.get(), SHUT_RD);
 	return ret;
 }
 bool TcpSessionBase::forceShutdown(){
 	const bool ret = !atomicExchange(m_shutdown, true);
-	::shutdown(getFd(), SHUT_RDWR);
+	::shutdown(m_socket.get(), SHUT_RDWR);
 	return ret;
 }
 
-std::size_t TcpSessionBase::peekWriteAvail(
-	boost::mutex::scoped_lock &lock, void *data, std::size_t size) const
+
+long TcpSessionBase::doRead(void *buffer, unsigned long size){
+	return ::recv(m_socket.get(), buffer, size, MSG_NOSIGNAL);
+}
+long TcpSessionBase::doWrite(boost::mutex::scoped_lock &lock,
+	void *hint, unsigned long hintSize)
 {
 	boost::mutex::scoped_lock(m_bufferMutex).swap(lock);
+	const std::size_t size = m_sendBuffer.peek(hint, hintSize);
+	lock.unlock();
 	if(size == 0){
-		return m_sendBuffer.size();
-	} else {
-		return m_sendBuffer.peek(data, size);
+		return 0;
 	}
-}
-void TcpSessionBase::notifyWritten(std::size_t size){
-	const boost::mutex::scoped_lock lock(m_bufferMutex);
-	m_sendBuffer.discard(size);
+
+	lock.lock();
+	const ::ssize_t ret = ::send(m_socket.get(), hint, size, MSG_NOSIGNAL);
+	if(ret > 0){
+		m_sendBuffer.discard(ret);
+	}
+	return ret;
 }
 
 bool TcpSessionBase::shutdown(StreamBuffer buffer){
@@ -113,6 +120,6 @@ bool TcpSessionBase::shutdown(StreamBuffer buffer){
 		const boost::mutex::scoped_lock lock(m_bufferMutex);
 		m_sendBuffer.splice(buffer);
 	}
-	::shutdown(getFd(), SHUT_RD);
+	::shutdown(m_socket.get(), SHUT_RD);
 	return ret;
 }

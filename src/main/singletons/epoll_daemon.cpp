@@ -18,6 +18,15 @@
 #include "config_file.hpp"
 using namespace Poseidon;
 
+struct Poseidon::TcpSessionImpl {
+	static int getFd(const boost::shared_ptr<const TcpSessionBase> &session){
+		return session->m_socket.get();
+	}
+	static int getFd(const boost::shared_ptr<TcpSessionBase> &session){
+		return session->m_socket.get();
+	}
+};
+
 namespace {
 
 std::size_t g_tcpBufferSize		= 1024;
@@ -73,7 +82,9 @@ void addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	::epoll_event event;
 	event.events = EPOLLHUP | EPOLLERR | EPOLLRDHUP | EPOLLIN | EPOLLOUT | EPOLLET;
 	event.data.ptr = session.get();
-	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD,
+		TcpSessionImpl::getFd(session), &event) != 0)
+	{
 		const boost::mutex::scoped_lock lock(g_sessionMutex);
 		g_sessions.erase(result.first);
 		DEBUG_THROW(SystemError, errno);
@@ -91,7 +102,9 @@ void touchSession(const boost::shared_ptr<TcpSessionBase> &session){
 	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
 void removeSession(const boost::shared_ptr<TcpSessionBase> &session){
-	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL,
+		TcpSessionImpl::getFd(session), NULLPTR) != 0)
+	{
 		LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
 	}
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
@@ -168,8 +181,7 @@ void daemonLoop(){
 			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
-				const ::ssize_t bytesRead = ::recv(session->getFd(),
-					data.get(), g_tcpBufferSize, MSG_NOSIGNAL);
+				const ::ssize_t bytesRead = session->doRead(data.get(), g_tcpBufferSize);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -211,27 +223,18 @@ void daemonLoop(){
 			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
-				std::size_t bytesToWrite;
+				::ssize_t bytesWritten;
 				bool shutdown;
 				{
 					boost::mutex::scoped_lock sessionLock;
-					bytesToWrite = session->peekWriteAvail(sessionLock,
-						data.get(), g_tcpBufferSize);
+					bytesWritten = session->doWrite(sessionLock, data.get(), g_tcpBufferSize);
 					shutdown = session->hasBeenShutdown();
-					if(bytesToWrite == 0){
+					if(bytesWritten == 0){
 						if(!shutdown){
 							reepollWriteable(session);
 						}
 					}
 				}
-				if(bytesToWrite == 0){
-					if(shutdown){
-						removeSession(session);
-					}
-					continue;
-				}
-				const ::ssize_t bytesWritten = ::send(session->getFd(),
-					data.get(), bytesToWrite, MSG_NOSIGNAL);
 				if(bytesWritten < 0){
 					if(errno == EINTR){
 						continue;
@@ -241,12 +244,14 @@ void daemonLoop(){
 						continue;
 					}
 					DEBUG_THROW(SystemError, errno);
-				} else if(bytesWritten == 0){
-					reepollWriteable(session);
+				}
+				if(bytesWritten == 0){
+					if(shutdown){
+						removeSession(session);
+					}
 					continue;
 				}
 				LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp());
-				session->notifyWritten(bytesWritten);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while writing socket: what = ", e.what());
 				removeSession(session);
@@ -296,7 +301,7 @@ void daemonLoop(){
 				if(event.events & EPOLLERR){
 					int err;
 					::socklen_t errLen = sizeof(err);
-					if(::getsockopt(session->getFd(), SOL_SOCKET, SO_ERROR, &err, &errLen) != 0){
+					if(::getsockopt(TcpSessionImpl::getFd(session), SOL_SOCKET, SO_ERROR, &err, &errLen) != 0){
 						err = errno;
 					}
 					const AUTO(desc, getErrorDesc());
