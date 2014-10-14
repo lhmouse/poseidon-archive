@@ -123,15 +123,6 @@ TcpSessionBase::~TcpSessionBase(){
 	LOG_INFO("Destroyed TCP peer, remote IP = ", m_remoteIp);
 }
 
-void TcpSessionBase::initSslClient(){
-	SslCtxPtr ctx(::SSL_CTX_new(::SSLv23_client_method()));
-	::SSL_CTX_set_verify(ctx.get(), SSL_VERIFY_NONE, NULLPTR);
-	SslPtr ssl(::SSL_new(ctx.get()));
-	m_ssl.reset(new SslImpl(STD_MOVE(ctx), STD_MOVE(ssl), m_socket.get()));
-}
-void TcpSessionBase::initSslServer(const char *certPath, const char *privKeyPath){
-}
-
 const std::string &TcpSessionBase::getRemoteIp() const {
 	return m_remoteIp;
 }
@@ -201,4 +192,13 @@ bool TcpSessionBase::shutdown(StreamBuffer buffer){
 	}
 	::shutdown(m_socket.get(), SHUT_RD);
 	return ret;
+}
+
+void TcpSessionBase::initSslClient(){
+	SslCtxPtr ctx(::SSL_CTX_new(::SSLv23_client_method()));
+	::SSL_CTX_set_verify(ctx.get(), SSL_VERIFY_NONE, NULLPTR);
+	SslPtr ssl(::SSL_new(ctx.get()));
+	m_ssl.reset(new SslImpl(STD_MOVE(ctx), STD_MOVE(ssl), m_socket.get()));
+}
+void TcpSessionBase::initSslServer(const char *certPath, const char *privKeyPath){
 }

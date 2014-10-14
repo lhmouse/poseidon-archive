@@ -38,10 +38,6 @@ private:
 	long doRead(void *date, unsigned long size);
 	long doWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
 
-protected:
-	void initSslClient();
-	void initSslServer(const char *certPath, const char *privKeyPath);
-
 public:
 	const std::string &getRemoteIp() const;
 	void onReadAvail(const void *data, std::size_t size) = 0;
@@ -51,6 +47,9 @@ public:
 	bool forceShutdown();
 
 	bool shutdown(StreamBuffer buffer);
+
+	void initSslClient();
+	void initSslServer(const char *certPath, const char *privKeyPath);
 };
 
 }
