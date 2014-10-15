@@ -42,15 +42,25 @@ public:
 		if(!::SSL_set_fd(m_ssl.get(), fd)){
 			DEBUG_THROW(Exception, "::SSL_set_fd() failed");
 		}
-		if(!::SSL_connect(m_ssl.get())){
-			DEBUG_THROW(Exception, "::SSL_connect() failed");
-		}
 	}
 	~SslImpl(){
 		::SSL_shutdown(m_ssl.get());
 	}
 
 public:
+	// Client
+	void connect(){
+		if(::SSL_connect(m_ssl.get()) != 1){
+			DEBUG_THROW(Exception, "::SSL_connect() failed");
+		}
+	}
+	// Server
+	void accept(){
+		if(::SSL_accept(m_ssl.get()) != 1){
+			DEBUG_THROW(Exception, "::SSL_accept() failed");
+		}
+	}
+
 	long doRead(void *data, unsigned long size){
 		return ::SSL_read(m_ssl.get(), data, size);
 	}
