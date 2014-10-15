@@ -119,7 +119,7 @@ int main(int argc, char **argv){
 		if(realDir != confDir.c_str()){
 			confDir = realDir;
 		}
-		LOG_INFO("Setting working directory to ", confDir);
+		LOG_INFO("Setting working directory to ", confDir, "...");
 		if(::chdir(confDir.c_str()) != 0){
 			LOG_FATAL("Error setting working directory.");
 			std::abort();
