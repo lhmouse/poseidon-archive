@@ -8,6 +8,9 @@
 namespace Poseidon {
 
 class TcpClientBase : public TcpSessionBase {
+private:
+	class SslImplClient;
+
 protected:
 	static void connect(ScopedFile &socket, const std::string &ip, unsigned port);
 

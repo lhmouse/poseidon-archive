@@ -8,7 +8,6 @@
 #include <boost/noncopyable.hpp>
 #include <openssl/ssl.h>
 #include "raii.hpp"
-#include "exception.hpp"
 
 namespace Poseidon {
 
@@ -36,38 +35,21 @@ class TcpSessionBase::SslImpl : boost::noncopyable {
 private:
 	const SslPtr m_ssl;
 
-public:
-	SslImpl(Move<SslPtr> ssl, int fd)
-		: m_ssl(STD_MOVE(ssl))
-	{
-		if(!::SSL_set_fd(m_ssl.get(), fd)){
-			DEBUG_THROW(Exception, "::SSL_set_fd() failed");
-		}
-	}
-	~SslImpl(){
-		::SSL_shutdown(m_ssl.get());
-	}
+	bool m_established;
 
 public:
-	// Client
-	void connect(){
-		if(::SSL_connect(m_ssl.get()) != 1){
-			DEBUG_THROW(Exception, "::SSL_connect() failed");
-		}
-	}
-	// Server
-	void accept(){
-		if(::SSL_accept(m_ssl.get()) != 1){
-			DEBUG_THROW(Exception, "::SSL_accept() failed");
-		}
-	}
+	SslImpl(Move<SslPtr> ssl, int fd);
+	virtual ~SslImpl();
 
-	long doRead(void *data, unsigned long size){
-		return ::SSL_read(m_ssl.get(), data, size);
+protected:
+	::SSL *getSsl() const {
+		return m_ssl.get();
 	}
-	long doWrite(const void *data, unsigned long size){
-		return ::SSL_write(m_ssl.get(), data, size);
-	}
+	virtual bool establishConnection() = 0;
+
+public:
+	long doRead(void *data, unsigned long size);
+	long doWrite(const void *data, unsigned long size);
 };
 
 }

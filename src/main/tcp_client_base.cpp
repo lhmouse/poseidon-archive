@@ -10,6 +10,7 @@
 #include <openssl/ssl.h>
 #include "singletons/epoll_daemon.hpp"
 #include "exception.hpp"
+#include "log.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -25,6 +26,27 @@ struct ClientSslCtx {
 } g_clientSslCtx;
 
 }
+
+class TcpClientBase::SslImplClient : public TcpSessionBase::SslImpl {
+public:
+	SslImplClient(Move<SslPtr> ssl, int fd)
+		: SslImpl(STD_MOVE(ssl), fd)
+	{
+	}
+
+protected:
+	bool establishConnection(){
+		const int ret = ::SSL_connect(getSsl());
+		if(ret == 1){
+			return true;
+		}
+		const int err = ::SSL_get_error(getSsl(), ret);
+		if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
+			return false;
+		}
+		DEBUG_THROW(Exception, "::SSL_connect() failed");
+	}
+};
 
 void TcpClientBase::connect(ScopedFile &client, const std::string &ip, unsigned port){
 	union {
@@ -62,8 +84,7 @@ TcpClientBase::TcpClientBase(Move<ScopedFile> socket)
 
 void TcpClientBase::sslConnect(){
 	SslPtr ssl(::SSL_new(g_clientSslCtx.ctx.get()));
-	boost::scoped_ptr<SslImpl> impl(new SslImpl(STD_MOVE(ssl), getFd()));
-	impl->connect();
+	boost::scoped_ptr<SslImpl> impl(new SslImplClient(STD_MOVE(ssl), getFd()));
 	initSsl(impl);
 }
 void TcpClientBase::goResident(){

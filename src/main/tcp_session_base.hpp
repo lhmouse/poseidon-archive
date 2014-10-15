@@ -22,8 +22,9 @@ protected:
 	class SslImpl;
 
 private:
-	ScopedFile m_socket;
-	std::string m_remoteIp;
+	const ScopedFile m_socket;
+	const std::string m_remoteIp;
+
 	boost::scoped_ptr<SslImpl> m_ssl;
 
 	volatile bool m_shutdown;
