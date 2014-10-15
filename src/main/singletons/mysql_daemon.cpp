@@ -19,10 +19,10 @@ using namespace Poseidon;
 
 namespace {
 
-sql::SQLString g_databaseServer			= "tcp://localhost:3306";
-sql::SQLString g_databaseUsername		= "root";
-sql::SQLString g_databasePassword		= "root";
-sql::SQLString g_databaseName			= "test";
+std::string g_databaseServer			= "tcp://localhost:3306";
+std::string g_databaseUsername			= "root";
+std::string g_databasePassword			= "root";
+std::string g_databaseName				= "test";
 
 std::size_t g_databaseSaveDelay			= 5000;
 std::size_t g_databaseMaxReconnDelay	= 60000;
@@ -207,28 +207,22 @@ void MySqlDaemon::start(){
 	}
 	LOG_INFO("Starting MySQL daemon...");
 
-	g_databaseServer =
-		ConfigFile::get<std::string>("database_server", g_databaseServer);
+	ConfigFile::get(g_databaseServer, "database_server");
 	LOG_DEBUG("MySQL server = ", g_databaseServer);
 
-	g_databaseUsername =
-		ConfigFile::get<std::string>("database_username", g_databaseUsername);
+	ConfigFile::get(g_databaseUsername, "database_username");
 	LOG_DEBUG("MySQL username = ", g_databaseUsername);
 
-	g_databasePassword =
-		ConfigFile::get<std::string>("database_password", g_databasePassword);
+	ConfigFile::get(g_databasePassword, "database_password");
 	LOG_DEBUG("MySQL password = ", g_databasePassword);
 
-	g_databaseName =
-		ConfigFile::get<std::string>("database_name", g_databaseName);
+	ConfigFile::get(g_databaseName, "database_name");
 	LOG_DEBUG("MySQL database name = ", g_databaseName);
 
-	g_databaseSaveDelay =
-		ConfigFile::get<std::size_t>("database_save_delay", g_databaseSaveDelay);
+	ConfigFile::get(g_databaseSaveDelay, "database_save_delay");
 	LOG_DEBUG("MySQL save delay = ", g_databaseSaveDelay);
 
-	g_databaseMaxReconnDelay =
-		ConfigFile::get<std::size_t>("database_max_reconn_delay", g_databaseMaxReconnDelay);
+	ConfigFile::get(g_databaseMaxReconnDelay, "database_max_reconn_delay");
 	LOG_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
 
 	boost::thread(threadProc).swap(g_thread);

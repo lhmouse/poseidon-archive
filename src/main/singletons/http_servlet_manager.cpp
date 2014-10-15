@@ -75,16 +75,13 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 }
 
 void HttpServletManager::start(){
-	g_maxRequestLength =
-		ConfigFile::get<std::size_t>("http_max_request_length", g_maxRequestLength);
+	ConfigFile::get(g_maxRequestLength, "http_max_request_length");
 	LOG_DEBUG("Max request length = ", g_maxRequestLength);
 
-	g_requestTimeout =
-		ConfigFile::get<unsigned long long>("http_request_timeout", g_requestTimeout);
+	ConfigFile::get(g_requestTimeout, "http_request_timeout");
 	LOG_DEBUG("Request timeout = ", g_requestTimeout);
 
-	g_keepAliveTimeout =
-		ConfigFile::get<unsigned long long>("http_keep_alive_timeout", g_keepAliveTimeout);
+	ConfigFile::get(g_keepAliveTimeout, "http_keep_alive_timeout");
 	LOG_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
 }
 void HttpServletManager::stop(){

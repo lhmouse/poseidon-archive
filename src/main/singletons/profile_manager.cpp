@@ -46,11 +46,6 @@ bool g_enabled = true;
 boost::shared_mutex g_mutex;
 std::map<ProfileKey, ProfileCounters> g_profile;
 
-bool isProfilerEnabled(){
-	static const bool s_val = ConfigFile::get<bool>("enable_profiler", false);
-	return s_val;
-}
-
 void deleteCharArray(char *s){
 	delete[] s;
 }
@@ -58,7 +53,7 @@ void deleteCharArray(char *s){
 }
 
 void ProfileManager::start(){
-	g_enabled = ConfigFile::get<bool>("enable_profiler", g_enabled);
+	ConfigFile::get(g_enabled, "enable_profiler");
 	LOG_DEBUG("Enable profiler = ", g_enabled);
 }
 void ProfileManager::stop(){

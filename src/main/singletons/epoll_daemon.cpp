@@ -378,16 +378,13 @@ void EpollDaemon::start(){
 	}
 	LOG_INFO("Starting epoll daemon...");
 
-	g_tcpBufferSize =
-		ConfigFile::get<std::size_t>("epoll_tcp_buffer_size", g_tcpBufferSize);
+	ConfigFile::get(g_tcpBufferSize, "epoll_tcp_buffer_size");
 	LOG_DEBUG("TCP buffer size = ", g_tcpBufferSize);
 
-	g_eventBufferSize =
-		ConfigFile::get<std::size_t>("epoll_event_buffer_size", g_eventBufferSize);
+	ConfigFile::get(g_eventBufferSize, "epoll_event_buffer_size");
 	LOG_DEBUG("Event buffer size = ", g_eventBufferSize);
 
-	g_maxTimeout =
-		ConfigFile::get<std::size_t>("epoll_max_timeout", g_maxTimeout);
+	ConfigFile::get(g_maxTimeout, "epoll_max_timeout");
 	LOG_DEBUG("Max timeout = ", g_maxTimeout);
 
 	g_epoll.reset(::epoll_create(4096));

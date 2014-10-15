@@ -1,6 +1,8 @@
 #include "../precompiled.hpp"
 #include "utilities.hpp"
-#include <csignal>
+#include <signal.h>
+#include <libgen.h>
+#include <unistd.h>
 #include "log.hpp"
 #include "exception.hpp"
 #include "singletons/config_file.hpp"
@@ -39,10 +41,10 @@ void sigIntProc(int){
 	if(now < s_safetyTimer){
 		LOG_WARNING("Received SIGINT, trying to exit gracefully...");
 		LOG_WARNING("If I don't terminate in 5 seconds, press ^C again.");
-		std::raise(SIGTERM);
+		::raise(SIGTERM);
 	} else {
 		LOG_FATAL("Received SIGINT, will now terminate abnormally...");
-		std::raise(SIGKILL);
+		::raise(SIGKILL);
 	}
 }
 
@@ -59,7 +61,8 @@ struct RaiiSingletonRunner : boost::noncopyable {
 void run(){
 	PROFILE_ME;
 
-	const unsigned logLevel = ConfigFile::get<unsigned>("log_level", Log::LV_INFO);
+	unsigned logLevel = Log::LV_INFO;
+	ConfigFile::get(logLevel, "log_level");
 	LOG_INFO("Setting log level to ", logLevel, "...");
 	Log::setLevel(logLevel);
 
@@ -77,12 +80,16 @@ void run(){
 	MySqlDaemon::waitForAllAsyncOperations();
 
 	LOG_INFO("Creating player server...");
-	EpollDaemon::addTcpServer(boost::make_shared<PlayerServer>(
-		ConfigFile::get("socket_bind"), ConfigFile::get<unsigned>("socket_port", 0)));
+	std::string bind("0.0.0.0");
+	boost::uint16_t port = 0;
+	ConfigFile::get(bind, "socket_bind");
+	ConfigFile::get(port, "socket_port");
+	EpollDaemon::addTcpServer(boost::make_shared<PlayerServer>(bind, port));
 
 	LOG_INFO("Creating HTTP server...");
-	EpollDaemon::addTcpServer(boost::make_shared<HttpServer>(
-		ConfigFile::get("http_bind"), ConfigFile::get<unsigned>("http_port", 0)));
+	bind = "0.0.0.0";
+	port = 0;
+	EpollDaemon::addTcpServer(boost::make_shared<HttpServer>(bind, port));
 
 	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();
@@ -98,14 +105,25 @@ int main(int argc, char **argv){
 
 	try {
 		LOG_INFO("Setting up signal handlers...");
-		std::signal(SIGINT, sigIntProc);
-		std::signal(SIGTERM, sigTermProc);
+		::signal(SIGINT, sigIntProc);
+		::signal(SIGTERM, sigTermProc);
 
 		const char *confPath = "/var/poseidon/config/conf.rc";
 		if(1 < argc){
 			confPath = argv[1];
 		}
 		ConfigFile::reload(confPath);
+
+		std::string confDir(confPath);
+		char *const realDir = ::dirname(&confDir[0]);
+		if(realDir != confDir.c_str()){
+			confDir = realDir;
+		}
+		LOG_INFO("Setting working directory to ", confDir);
+		if(::chdir(confDir.c_str()) != 0){
+			LOG_FATAL("Error setting working directory.");
+			std::abort();
+		}
 
 		run();
 
