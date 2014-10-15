@@ -13,7 +13,7 @@
 
 namespace Poseidon {
 
-struct TcpSessionImpl;
+class TcpSessionImpl;
 
 class TcpSessionBase : public SessionBase {
 	friend class TcpSessionImpl;

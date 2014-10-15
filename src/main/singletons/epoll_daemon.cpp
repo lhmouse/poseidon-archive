@@ -12,25 +12,12 @@
 #include "../utilities.hpp"
 #include "../exception.hpp"
 #include "../tcp_session_base.hpp"
+#include "../tcp_session_impl.hpp"
 #include "../tcp_server_base.hpp"
 #include "../multi_index_map.hpp"
 #include "../profiler.hpp"
 #include "config_file.hpp"
 using namespace Poseidon;
-
-struct Poseidon::TcpSessionImpl {
-	static int doGetFd(const TcpSessionBase &session){
-		return session.m_socket.get();
-	}
-	static long doRead(TcpSessionBase &session, void *buffer, unsigned long size){
-		return session.doRead(buffer, size);
-	}
-	static long doWrite(TcpSessionBase &session, boost::mutex::scoped_lock &lock,
-		void *hint, unsigned long hintSize)
-	{
-		return session.doWrite(lock, hint, hintSize);
-	}
-};
 
 namespace {
 

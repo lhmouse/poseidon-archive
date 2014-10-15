@@ -1,11 +1,10 @@
 #ifndef POSEIDON_TCP_SESSION_BASE_HPP_
-#	error Please do not #include "tcp_session_ssl_impl.hpp" directly.
+#	error Please do not #include "tcp_session_ssl_impl.hpp".
 #endif
 
 #ifndef POSEIDON_TCP_SESSION_SSL_IMPL_HPP_
 #define POSEIDON_TCP_SESSION_SSL_IMPL_HPP_
 
-#include "tcp_session_base.hpp"
 #include <openssl/ssl.h>
 #include "raii.hpp"
 #include "exception.hpp"

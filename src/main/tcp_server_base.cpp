@@ -85,6 +85,17 @@ boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 	if(!client){
 		return NULLPTR;
 	}
+	const int flags = ::fcntl(client.get(), F_GETFL);
+	if(flags == -1){
+		const int code = errno;
+		LOG_ERROR("Could not get fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+	if(::fcntl(client.get(), F_SETFL, flags & ~O_NONBLOCK) != 0){
+		const int code = errno;
+		LOG_ERROR("Could not set fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
 	AUTO(session, onClientConnect(client.move()));
 	if(!session){
 		return NULLPTR;
