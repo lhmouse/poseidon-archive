@@ -127,6 +127,7 @@ public:
 
 protected:
 	void perform(){
+		PROFILE_ME;
 		assert(!m_request.uri.empty());
 
 		const AUTO(session, m_session.lock());

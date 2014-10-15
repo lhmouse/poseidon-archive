@@ -72,6 +72,8 @@ public:
 
 protected:
 	void perform(){
+		PROFILE_ME;
+
 		AUTO(session, m_session.lock());
 		if(!session){
 			LOG_WARNING("The specified WebSocket session has expired.");

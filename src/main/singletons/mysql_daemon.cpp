@@ -42,6 +42,8 @@ public:
 
 protected:
 	void perform(){
+		PROFILE_ME;
+
 		m_callback(STD_MOVE(m_object));
 	}
 };

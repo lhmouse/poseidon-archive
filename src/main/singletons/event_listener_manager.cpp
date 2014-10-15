@@ -8,6 +8,7 @@
 #include "job_dispatcher.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"
+#include "../profiler.hpp"
 using namespace Poseidon;
 
 class Poseidon::EventListener : boost::noncopyable,
@@ -67,6 +68,8 @@ public:
 
 protected:
 	void perform(){
+		PROFILE_ME;
+
 		(*m_callback)(STD_MOVE(m_event));
 	}
 };

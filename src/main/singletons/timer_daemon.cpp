@@ -76,6 +76,8 @@ public:
 
 public:
 	void perform(){
+		PROFILE_ME;
+
 		(*m_callback)(m_now, m_period);
 	}
 };
