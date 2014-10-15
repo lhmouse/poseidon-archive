@@ -176,8 +176,8 @@ public:
 		ScopedFile socket;
 		TestClient::connect(socket, "127.0.0.1", 443);
 		AUTO(ret, boost::make_shared<TestClient>(STD_MOVE(socket)));
-		ret->initSslClient();
-		ret->addIntoEpoll();
+		ret->sslConnect();
+		ret->goResident();
 		return STD_MOVE(ret);
 	}
 

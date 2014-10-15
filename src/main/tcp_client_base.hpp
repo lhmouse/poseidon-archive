@@ -15,7 +15,8 @@ protected:
 	explicit TcpClientBase(Move<ScopedFile> socket);
 
 protected:
-	void addIntoEpoll();
+	void sslConnect();
+	void goResident();
 };
 
 }

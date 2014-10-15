@@ -1,13 +1,29 @@
 #include "../precompiled.hpp"
 #include "tcp_client_base.hpp"
+#include "tcp_session_ssl_impl.hpp"
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
 #include <endian.h>
+#include <openssl/ssl.h>
 #include "singletons/epoll_daemon.hpp"
 #include "exception.hpp"
 using namespace Poseidon;
+
+namespace {
+
+struct ClientSslCtx {
+	const SslCtxPtr ctx;
+
+	ClientSslCtx()
+		: ctx(::SSL_CTX_new(::SSLv23_client_method()))
+	{
+		::SSL_CTX_set_verify(ctx.get(), SSL_VERIFY_NONE, NULLPTR);
+	}
+} g_clientSslCtx;
+
+}
 
 void TcpClientBase::connect(ScopedFile &client, const std::string &ip, unsigned port){
 	union {
@@ -43,6 +59,11 @@ TcpClientBase::TcpClientBase(Move<ScopedFile> socket)
 {
 }
 
-void TcpClientBase::addIntoEpoll(){
+void TcpClientBase::sslConnect(){
+	SslPtr ssl(::SSL_new(g_clientSslCtx.ctx.get()));
+	boost::scoped_ptr<SslImpl> impl(new SslImpl(STD_MOVE(ssl), getFd()));
+	initSsl(impl);
+}
+void TcpClientBase::goResident(){
 	EpollDaemon::addSession(virtualSharedFromThis<TcpSessionBase>());
 }

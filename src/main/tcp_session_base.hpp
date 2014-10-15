@@ -18,7 +18,7 @@ struct TcpSessionImpl;
 class TcpSessionBase : public SessionBase {
 	friend class TcpSessionImpl;
 
-private:
+protected:
 	class SslImpl;
 
 private:
@@ -38,6 +38,12 @@ private:
 	long doRead(void *date, unsigned long size);
 	long doWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
 
+protected:
+	int getFd() const {
+		return m_socket.get();
+	}
+	void initSsl(boost::scoped_ptr<SslImpl> &ssl);
+
 public:
 	const std::string &getRemoteIp() const;
 	void onReadAvail(const void *data, std::size_t size) = 0;
@@ -47,9 +53,6 @@ public:
 	bool forceShutdown();
 
 	bool shutdown(StreamBuffer buffer);
-
-	void initSslClient();
-	void initSslServer(const char *certPath, const char *privKeyPath);
 };
 
 }

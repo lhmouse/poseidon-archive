@@ -1,5 +1,6 @@
 #include "../precompiled.hpp"
 #include "tcp_session_base.hpp"
+#include "tcp_session_ssl_impl.hpp"
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -53,56 +54,7 @@ struct OpenSslInitializer {
 	}
 } g_openSslInitializer;
 
-struct SslCtxDeleter {
-	CONSTEXPR ::SSL_CTX *operator()() NOEXCEPT {
-		return NULLPTR;
-	}
-	void operator()(::SSL_CTX *ctx) NOEXCEPT {
-		::SSL_CTX_free(ctx);
-	}
-};
-typedef ScopedHandle<SslCtxDeleter> SslCtxPtr;
-
-struct SslDeleter {
-	CONSTEXPR ::SSL *operator()() NOEXCEPT {
-		return NULLPTR;
-	}
-	void operator()(::SSL *ssl) NOEXCEPT {
-		::SSL_free(ssl);
-	}
-};
-typedef ScopedHandle<SslDeleter> SslPtr;
-
 }
-
-class TcpSessionBase::SslImpl : boost::noncopyable {
-private:
-	const SslCtxPtr m_ctx;
-	const SslPtr m_ssl;
-
-public:
-	SslImpl(Move<SslCtxPtr> ctx, Move<SslPtr> ssl, int fd)
-		: m_ctx(STD_MOVE(ctx)), m_ssl(STD_MOVE(ssl))
-	{
-		if(!::SSL_set_fd(m_ssl.get(), fd)){
-			DEBUG_THROW(Exception, "::SSL_set_fd() failed");
-		}
-		if(!::SSL_connect(m_ssl.get())){
-			DEBUG_THROW(Exception, "::SSL_connect() failed");
-		}
-	}
-	~SslImpl(){
-		::SSL_shutdown(m_ssl.get());
-	}
-
-public:
-	long doRead(void *data, unsigned long size){
-		return ::SSL_read(m_ssl.get(), data, size);
-	}
-	long doWrite(const void *data, unsigned long size){
-		return ::SSL_write(m_ssl.get(), data, size);
-	}
-};
 
 TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
 	: m_socket(STD_MOVE(socket)), m_remoteIp(getIpFromSocket(m_socket.get()))
@@ -112,6 +64,10 @@ TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
 }
 TcpSessionBase::~TcpSessionBase(){
 	LOG_INFO("Destroyed TCP peer, remote IP = ", m_remoteIp);
+}
+
+void TcpSessionBase::initSsl(boost::scoped_ptr<SslImpl> &ssl){
+	m_ssl.swap(ssl);
 }
 
 const std::string &TcpSessionBase::getRemoteIp() const {
@@ -183,13 +139,4 @@ bool TcpSessionBase::shutdown(StreamBuffer buffer){
 	}
 	::shutdown(m_socket.get(), SHUT_RD);
 	return ret;
-}
-
-void TcpSessionBase::initSslClient(){
-	SslCtxPtr ctx(::SSL_CTX_new(::SSLv23_client_method()));
-	::SSL_CTX_set_verify(ctx.get(), SSL_VERIFY_NONE, NULLPTR);
-	SslPtr ssl(::SSL_new(ctx.get()));
-	m_ssl.reset(new SslImpl(STD_MOVE(ctx), STD_MOVE(ssl), m_socket.get()));
-}
-void TcpSessionBase::initSslServer(const char *certPath, const char *privKeyPath){
 }
