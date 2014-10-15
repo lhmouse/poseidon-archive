@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <openssl/ssl.h>
 #include "exception.hpp"
@@ -61,6 +62,18 @@ TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
 	: m_socket(STD_MOVE(socket)), m_remoteIp(getIpFromSocket(m_socket.get()))
 	, m_shutdown(false)
 {
+	const int flags = ::fcntl(m_socket.get(), F_GETFL);
+	if(flags == -1){
+		const int code = errno;
+		LOG_ERROR("Could not get fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
+		const int code = errno;
+		LOG_ERROR("Could not set fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+
 	LOG_INFO("Created TCP peer, remote IP = ", m_remoteIp);
 }
 TcpSessionBase::~TcpSessionBase(){

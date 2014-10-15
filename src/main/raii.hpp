@@ -54,9 +54,6 @@ public:
 		m_handle = CloserT()();
 		return ret;
 	}
-	Move<ScopedHandle> move() NOEXCEPT {
-		return Move<ScopedHandle>(*this);
-	}
 	void reset(Handle handle = CloserT()()) NOEXCEPT {
 		const Handle old = m_handle;
 		m_handle = handle;

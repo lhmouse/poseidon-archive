@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <string.h>
-#include <fcntl.h>
 #include "../log.hpp"
 #include "../atomic.hpp"
 #include "../utilities.hpp"
@@ -62,14 +61,6 @@ boost::mutex g_serverMutex;
 std::set<boost::shared_ptr<const TcpServerBase> > g_servers;
 
 void add(const boost::shared_ptr<TcpSessionBase> &session){
-	const int flags = ::fcntl(TcpSessionImpl::doGetFd(*session), F_GETFL);
-	if(flags == -1){
-		DEBUG_THROW(SystemError, errno);
-	}
-	if(::fcntl(TcpSessionImpl::doGetFd(*session), F_SETFL, flags | O_NONBLOCK) != 0){
-		DEBUG_THROW(SystemError, errno);
-	}
-
 	const AUTO(now, getMonoClock());
 	std::pair<SessionMap::iterator, bool> result;
 	{
