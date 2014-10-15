@@ -179,8 +179,8 @@ void daemonLoop(){
 			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
-				const ::ssize_t bytesRead =
-					TcpSessionImpl::doRead(*session, data.get(), g_tcpBufferSize);
+				const ::ssize_t bytesRead = TcpSessionImpl::doRead(*session,
+					data.get(), g_tcpBufferSize);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -226,8 +226,8 @@ void daemonLoop(){
 				bool shutdown;
 				{
 					boost::mutex::scoped_lock sessionLock;
-					bytesWritten = TcpSessionImpl::doWrite(
-						*session, sessionLock, data.get(), g_tcpBufferSize);
+					bytesWritten = TcpSessionImpl::doWrite(*session,
+						sessionLock, data.get(), g_tcpBufferSize);
 					shutdown = session->hasBeenShutdown();
 					if(bytesWritten == 0){
 						if(!shutdown){
