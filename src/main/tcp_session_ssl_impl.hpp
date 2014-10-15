@@ -32,7 +32,7 @@ struct SslDeleter {
 typedef ScopedHandle<SslDeleter> SslPtr;
 
 class TcpSessionBase::SslImpl : boost::noncopyable {
-private:
+protected:
 	const SslPtr m_ssl;
 
 	bool m_established;
@@ -42,9 +42,6 @@ public:
 	virtual ~SslImpl();
 
 protected:
-	::SSL *getSsl() const {
-		return m_ssl.get();
-	}
 	virtual bool establishConnection() = 0;
 
 public:

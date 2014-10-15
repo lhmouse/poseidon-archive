@@ -82,14 +82,26 @@ void run(){
 	LOG_INFO("Creating player server...");
 	std::string bind("0.0.0.0");
 	boost::uint16_t port = 0;
+	std::string certificate;
+	std::string privateKey;
 	ConfigFile::get(bind, "socket_bind");
 	ConfigFile::get(port, "socket_port");
-	EpollDaemon::addTcpServer(boost::make_shared<PlayerServer>(bind, port));
+	ConfigFile::get(certificate, "socket_certificate");
+	ConfigFile::get(privateKey, "socket_private_key");
+	EpollDaemon::addTcpServer(
+		boost::make_shared<PlayerServer>(bind, port, certificate, privateKey));
 
 	LOG_INFO("Creating HTTP server...");
 	bind = "0.0.0.0";
 	port = 0;
-	EpollDaemon::addTcpServer(boost::make_shared<HttpServer>(bind, port));
+	certificate.clear();
+	privateKey.clear();
+	ConfigFile::get(bind, "http_bind");
+	ConfigFile::get(port, "http_port");
+	ConfigFile::get(certificate, "http_certificate");
+	ConfigFile::get(privateKey, "http_private_key");
+	EpollDaemon::addTcpServer(
+		boost::make_shared<HttpServer>(bind, port, certificate, privateKey));
 
 	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();

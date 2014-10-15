@@ -3,6 +3,7 @@
 
 #include <string>
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "raii.hpp"
 
@@ -11,11 +12,17 @@ namespace Poseidon {
 // 抽象工厂模式
 class TcpServerBase : boost::noncopyable {
 private:
+	class SslImplServer;
+	class SslImplClient;
+
+private:
 	std::string m_bindAddr;
 	ScopedFile m_listen;
+	boost::scoped_ptr<SslImplServer> m_sslImplServer;
 
 public:
-	TcpServerBase(const std::string &bindAddr, unsigned bindPort);
+	TcpServerBase(const std::string &bindAddr, unsigned bindPort,
+		const std::string &cert, const std::string &privateKey);
 	virtual ~TcpServerBase();
 
 protected:

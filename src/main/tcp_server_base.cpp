@@ -13,7 +13,75 @@
 #include "tcp_session_base.hpp"
 using namespace Poseidon;
 
-TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort){
+class TcpServerBase::SslImplServer : boost::noncopyable {
+private:
+	const SslCtxPtr m_sslCtx;
+
+public:
+	SslImplServer(const std::string &cert, const std::string &privateKey)
+		: m_sslCtx(::SSL_CTX_new(::SSLv23_server_method()))
+	{
+		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER, NULLPTR);
+
+		LOG_INFO("Loading server certificate: ", cert);
+		if(::SSL_CTX_use_certificate_file(
+			m_sslCtx.get(), cert.c_str(), SSL_FILETYPE_PEM) != 1)
+		{
+			DEBUG_THROW(Exception, "::SSL_CTX_use_certificate_file() failed");
+		}
+
+		LOG_INFO("Loading server private key: ", privateKey);
+		if(::SSL_CTX_use_PrivateKey_file(
+			m_sslCtx.get(), privateKey.c_str(), SSL_FILETYPE_PEM) != 1)
+		{
+			DEBUG_THROW(Exception, "::SSL_CTX_use_PrivateKey_file() failed");
+		}
+
+		LOG_INFO("Verifying private key...");
+		if(::SSL_CTX_check_private_key(m_sslCtx.get()) != 1){
+			DEBUG_THROW(Exception, "::SSL_CTX_check_private_key() failed");
+		}
+	}
+
+public:
+	void createSsl(SslPtr &ssl){
+		ssl.reset(::SSL_new(m_sslCtx.get()));
+	}
+};
+
+class TcpServerBase::SslImplClient : public TcpSessionBase::SslImpl {
+public:
+	SslImplClient(Move<SslPtr> ssl, int fd)
+		: SslImpl(STD_MOVE(ssl), fd)
+	{
+	}
+
+protected:
+	bool establishConnection(){
+		const int ret = ::SSL_accept(m_ssl.get());
+		if(ret == 1){
+			return true;
+		}
+		const int err = ::SSL_get_error(m_ssl.get(), ret);
+		if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
+			return false;
+		}
+		LOG_ERROR("::SSL_accept() = ", ret, ", ::SSL_get_error() = ", err);
+		DEBUG_THROW(Exception, "::SSL_accept() failed");
+	}
+};
+
+TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort,
+	const std::string &cert, const std::string &privateKey)
+{
+	char port[16];
+	const unsigned len = std::sprintf(port, ":%hu", bindPort);
+	m_bindAddr.reserve(bindAddr.size() + len);
+	m_bindAddr.assign(bindAddr);
+	m_bindAddr.append(port, len);
+
+	LOG_INFO("Creating SSL socket server on ", m_bindAddr, "...");
+
 	union {
 		::sockaddr sa;
 		::sockaddr_in sin;
@@ -21,62 +89,45 @@ TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort){
 	} u;
 	::socklen_t salen = sizeof(u);
 
-	m_bindAddr.resize(63);
-	const char *text;
 	if(::inet_pton(AF_INET, bindAddr.c_str(), &u.sin.sin_addr) == 1){
 		u.sin.sin_family = AF_INET;
 		u.sin.sin_port = be16toh(bindPort);
 		salen = sizeof(::sockaddr_in);
-		text = ::inet_ntop(AF_INET, &u.sin.sin_addr, &m_bindAddr[0], m_bindAddr.size());
 	} else if(::inet_pton(AF_INET6, bindAddr.c_str(), &u.sin6.sin6_addr) == 1){
 		u.sin6.sin6_family = AF_INET6;
 		u.sin6.sin6_port = be16toh(bindPort);
 		salen = sizeof(::sockaddr_in6);
-		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &m_bindAddr[0], m_bindAddr.size());
 	} else {
-		DEBUG_THROW(Exception, "Unknown address format: " + bindAddr);
+		LOG_ERROR("Unknown address format: ", bindAddr);
+		DEBUG_THROW(Exception, "Unknown address format");
 	}
-	if(!text){
-		DEBUG_THROW(SystemError, errno);
-	}
-	m_bindAddr.resize(std::strlen(text));
-	m_bindAddr += ':';
-	m_bindAddr += boost::lexical_cast<std::string>(bindPort);
-
-	LOG_INFO("Creating socket server on ", m_bindAddr, "...");
 
 	m_listen.reset(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
 	if(!m_listen){
-		const int code = errno;
-		LOG_ERROR("Error creating socket.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemError, errno);
 	}
 	const int TRUE_VALUE = true;
-	if(::setsockopt(m_listen.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
-		const int code = errno;
-		LOG_ERROR("Could not set socket to reuse address.");
-		DEBUG_THROW(SystemError, code);
+	if(::setsockopt(m_listen.get(),
+		SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0)
+	{
+		DEBUG_THROW(SystemError, errno);
 	}
 	const int flags = ::fcntl(m_listen.get(), F_GETFL);
 	if(flags == -1){
-		const int code = errno;
-		LOG_ERROR("Could not get fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemError, errno);
 	}
 	if(::fcntl(m_listen.get(), F_SETFL, flags | O_NONBLOCK) != 0){
-		const int code = errno;
-		LOG_ERROR("Could not set fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemError, errno);
 	}
 	if(::bind(m_listen.get(), &u.sa, salen)){
-		const int code = errno;
-		LOG_ERROR("Could not bind socket onto specified address.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemError, errno);
 	}
 	if(::listen(m_listen.get(), SOMAXCONN)){
-		const int code = errno;
-		LOG_ERROR("Could not listen on socket.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemError, errno);
+	}
+
+	if(!cert.empty()){
+		m_sslImplServer.reset(new SslImplServer(cert, privateKey));
 	}
 }
 TcpServerBase::~TcpServerBase(){
@@ -92,6 +143,15 @@ boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 	if(!session){
 		return NULLPTR;
 	}
-	LOG_INFO("Client '", session->getRemoteIp(), "' has connected.");
+	if(m_sslImplServer){
+		LOG_INFO("Waiting for SSL handshake...");
+
+		SslPtr ssl;
+		m_sslImplServer->createSsl(ssl);
+		boost::scoped_ptr<TcpSessionBase::SslImpl>
+			sslImpl(new SslImplClient(STD_MOVE(ssl), session->m_socket.get()));
+		session->initSsl(STD_MOVE(sslImpl));
+	}
+	LOG_INFO("Client ", session->getRemoteIp(), " has connected.");
 	return session;
 }

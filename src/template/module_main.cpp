@@ -212,7 +212,4 @@ extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
 	g_event2 = EventListenerManager::registerListener<TestEvent2>(module, &event2Proc);
 
 	g_ws = WebSocketServletManager::registerServlet("/wstest", module, &webSocketProc);
-
-	AUTO(client, TestClient::create());
-	client->send("GET / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
 }

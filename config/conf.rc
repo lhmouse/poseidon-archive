@@ -22,6 +22,8 @@ database_max_reconn_delay = 60000			# 如果连接掉线，等待这些毫秒后
 # ---------- 套接字配置 ----------
 socket_bind = 0.0.0.0						# 0.0.0.0 表示任意地址。
 socket_port = 8850
+socket_certificate =
+socket_private_key =
 
 http_bind = 0.0.0.0							# 同上。
 http_port = 8860
@@ -30,6 +32,8 @@ http_request_timeout = 30000				# 超时自动挂断。0 为禁用。
 http_keep_alive_timeout = 5000				# 同上。
 http_sys_path = /~sys						# 服务器状态查询及管理的 HTTP 路径前缀。
 											# 必须以 / 开始，末尾不要加 /。
+http_certificate = server.crt				# 留空不使用 HTTPS。
+http_private_key = server.key
 
 # ----------- 初始模块 -----------
 init_module = libposeidon-template.so

@@ -7,11 +7,11 @@ namespace Poseidon {
 
 class PlayerServer : public TcpServerBase {
 public:
-	PlayerServer(const std::string &bindAddr, unsigned bindPort);
+	PlayerServer(const std::string &bindAddr, unsigned bindPort,
+		const std::string &cert, const std::string &privateKey);
 
 protected:
-	boost::shared_ptr<class TcpSessionBase>
-		onClientConnect(Move<ScopedFile> client) const;
+	boost::shared_ptr<class TcpSessionBase> onClientConnect(Move<ScopedFile> client) const;
 };
 
 }

@@ -1,5 +1,6 @@
 #include "../precompiled.hpp"
 #include "tcp_client_base.hpp"
+#include "tcp_session_base.hpp"
 #define POSEIDON_TCP_SESSION_SSL_IMPL_
 #include "tcp_session_ssl_impl.hpp"
 #include <arpa/inet.h>
@@ -15,13 +16,20 @@ using namespace Poseidon;
 
 namespace {
 
-struct ClientSslCtx {
-	const SslCtxPtr ctx;
+class ClientSslCtx {
+private:
+	const SslCtxPtr m_sslCtx;
 
+public:
 	ClientSslCtx()
-		: ctx(::SSL_CTX_new(::SSLv23_client_method()))
+		: m_sslCtx(::SSL_CTX_new(::SSLv23_client_method()))
 	{
-		::SSL_CTX_set_verify(ctx.get(), SSL_VERIFY_NONE, NULLPTR);
+		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, NULLPTR);
+	}
+
+public:
+	void createSsl(SslPtr &ssl){
+		ssl.reset(::SSL_new(m_sslCtx.get()));
 	}
 } g_clientSslCtx;
 
@@ -36,11 +44,11 @@ public:
 
 protected:
 	bool establishConnection(){
-		const int ret = ::SSL_connect(getSsl());
+		const int ret = ::SSL_connect(m_ssl.get());
 		if(ret == 1){
 			return true;
 		}
-		const int err = ::SSL_get_error(getSsl(), ret);
+		const int err = ::SSL_get_error(m_ssl.get(), ret);
 		if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
 			return false;
 		}
@@ -66,7 +74,8 @@ void TcpClientBase::connect(ScopedFile &client, const std::string &ip, unsigned 
 		u.sin6.sin6_port = be16toh(port);
 		salen = sizeof(::sockaddr_in6);
 	} else {
-		DEBUG_THROW(Exception, "Unknown address format: " + ip);
+		LOG_ERROR("Unknown address format: ", ip);
+		DEBUG_THROW(Exception, "Unknown address format");
 	}
 
 	client.reset(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
@@ -84,9 +93,13 @@ TcpClientBase::TcpClientBase(Move<ScopedFile> socket)
 }
 
 void TcpClientBase::sslConnect(){
-	SslPtr ssl(::SSL_new(g_clientSslCtx.ctx.get()));
-	boost::scoped_ptr<SslImpl> impl(new SslImplClient(STD_MOVE(ssl), m_socket.get()));
-	initSsl(STD_MOVE(impl));
+	LOG_INFO("Initiating SSL handshake...");
+
+	SslPtr ssl;
+	g_clientSslCtx.createSsl(ssl);
+	boost::scoped_ptr<TcpSessionBase::SslImpl>
+		sslImpl(new SslImplClient(STD_MOVE(ssl), m_socket.get()));
+	initSsl(STD_MOVE(sslImpl));
 }
 void TcpClientBase::goResident(){
 	EpollDaemon::addSession(virtualSharedFromThis<TcpSessionBase>());

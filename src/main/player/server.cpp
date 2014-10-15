@@ -3,8 +3,9 @@
 #include "session.hpp"
 using namespace Poseidon;
 
-PlayerServer::PlayerServer(const std::string &bindAddr, unsigned bindPort)
-	: TcpServerBase(bindAddr, bindPort)
+PlayerServer::PlayerServer(const std::string &bindAddr, unsigned bindPort,
+	const std::string &cert, const std::string &privateKey)
+	: TcpServerBase(bindAddr, bindPort, cert, privateKey)
 {
 }
 
