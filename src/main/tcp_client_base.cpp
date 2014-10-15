@@ -44,6 +44,7 @@ protected:
 		if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
 			return false;
 		}
+		LOG_ERROR("::SSL_connect() = ", ret, ", ::SSL_get_error() = ", err);
 		DEBUG_THROW(Exception, "::SSL_connect() failed");
 	}
 };
