@@ -11,6 +11,7 @@
 #include "../atomic.hpp"
 #include "../utilities.hpp"
 #include "../exception.hpp"
+#define POSEIDON_TCP_SESSION_IMPL_
 #include "../tcp_session_base.hpp"
 #include "../tcp_session_impl.hpp"
 #include "../tcp_server_base.hpp"

@@ -1,4 +1,4 @@
-#ifndef POSEIDON_TCP_SESSION_BASE_HPP_
+#ifndef POSEIDON_TCP_SESSION_IMPL_
 #	error Please do not #include "tcp_session_impl.hpp".
 #endif
 

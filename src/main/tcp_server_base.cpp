@@ -1,5 +1,8 @@
 #include "../precompiled.hpp"
 #include "tcp_server_base.hpp"
+#include "tcp_session_base.hpp"
+#define POSEIDON_TCP_SESSION_SSL_IMPL_
+#include "tcp_session_ssl_impl.hpp"
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <errno.h>
