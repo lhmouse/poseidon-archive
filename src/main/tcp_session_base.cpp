@@ -3,7 +3,6 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <openssl/ssl.h>
 #include "exception.hpp"
@@ -16,14 +15,6 @@ namespace {
 
 std::string getIpFromSocket(int fd){
 	std::string ret;
-
-	const int flags = ::fcntl(fd, F_GETFL);
-	if(flags == -1){
-		DEBUG_THROW(SystemError, errno);
-	}
-	if(::fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0){
-		DEBUG_THROW(SystemError, errno);
-	}
 
 	union {
 		::sockaddr sa;
