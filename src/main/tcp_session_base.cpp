@@ -80,10 +80,6 @@ TcpSessionBase::~TcpSessionBase(){
 	LOG_INFO("Destroyed TCP peer, remote IP = ", m_remoteIp);
 }
 
-void TcpSessionBase::initSsl(boost::scoped_ptr<SslImpl> &ssl){
-	m_ssl.swap(ssl);
-}
-
 const std::string &TcpSessionBase::getRemoteIp() const {
 	return m_remoteIp;
 }
@@ -111,6 +107,10 @@ bool TcpSessionBase::forceShutdown(){
 	const bool ret = !atomicExchange(m_shutdown, true);
 	::shutdown(m_socket.get(), SHUT_RDWR);
 	return ret;
+}
+
+void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslImpl> > ssl){
+	ssl.swap(m_ssl);
 }
 
 long TcpSessionBase::doRead(void *data, unsigned long size){

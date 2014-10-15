@@ -13,12 +13,12 @@
 
 namespace Poseidon {
 
-class TcpSessionImpl;
-
 class TcpSessionBase : public SessionBase {
 	friend class TcpSessionImpl;
+	friend class TcpServerBase;
+	friend class TcpClientBase;
 
-protected:
+private:
 	class SslImpl;
 
 private:
@@ -36,14 +36,10 @@ protected:
 	virtual ~TcpSessionBase();
 
 private:
+	void initSsl(Move<boost::scoped_ptr<SslImpl> > ssl);
+
 	long doRead(void *date, unsigned long size);
 	long doWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
-
-protected:
-	int getFd() const {
-		return m_socket.get();
-	}
-	void initSsl(boost::scoped_ptr<SslImpl> &ssl);
 
 public:
 	const std::string &getRemoteIp() const;

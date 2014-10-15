@@ -84,8 +84,8 @@ TcpClientBase::TcpClientBase(Move<ScopedFile> socket)
 
 void TcpClientBase::sslConnect(){
 	SslPtr ssl(::SSL_new(g_clientSslCtx.ctx.get()));
-	boost::scoped_ptr<SslImpl> impl(new SslImplClient(STD_MOVE(ssl), getFd()));
-	initSsl(impl);
+	boost::scoped_ptr<SslImpl> impl(new SslImplClient(STD_MOVE(ssl), m_socket.get()));
+	initSsl(STD_MOVE(impl));
 }
 void TcpClientBase::goResident(){
 	EpollDaemon::addSession(virtualSharedFromThis<TcpSessionBase>());
