@@ -110,14 +110,17 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 											THROW_EOS_;	\
 										}	\
 										buffer_.get(cur_.name_, size_);
-#define FIELD_STRING(name_)				if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
-											THROW_EOS_;	\
-										}	\
-										if(buffer_.size() < count_){	\
-											THROW_EOS_;	\
-										}	\
-										for(unsigned long long i = 0; i < count_; ++i){	\
-											cur_.name_.push_back(buffer_.get());	\
+#define FIELD_STRING(name_)				{	\
+											unsigned long long count_;	\
+											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
+												THROW_EOS_;	\
+											}	\
+											if(buffer_.size() < count_){	\
+												THROW_EOS_;	\
+											}	\
+											for(unsigned long long i = 0; i < count_; ++i){	\
+												cur_.name_.push_back(buffer_.get());	\
+											}	\
 										}
 #define FIELD_ARRAY(name_, fields_)		{	\
 											unsigned long long count_;	\
@@ -131,7 +134,6 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 												Element_ &element_ = cur_.name_.back();	\
 												typedef Element_ Cur_;	\
 												Cur_ &cur_ = element_;	\
-												unsigned long long count_;	\
 												\
 												fields_	\
 											}	\

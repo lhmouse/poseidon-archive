@@ -51,7 +51,7 @@ boost::shared_ptr<const HttpServlet> g_profile, g_load, g_unload, g_meow, g_meow
 boost::shared_ptr<const EventListener> g_event1, g_event2;
 boost::shared_ptr<const TimerItem> g_tick;
 boost::shared_ptr<const WebSocketServlet> g_ws;
-boost::shared_ptr<const PlayerServlet> g_player;
+std::vector<boost::shared_ptr<const PlayerServlet> > g_player;
 
 void tickProc(unsigned long long now, unsigned long long period){
 	PROFILE_ME;
@@ -203,19 +203,85 @@ public:
 
 #define PROTOCOL_NAMESPACE TestNs
 
-#define PROTOCOL_NAME	TestProtocol
-#define PROTOCOL_FIELDS	\
-	FIELD_VINT(i)	\
-	FIELD_VUINT(j)	\
-	FIELD_ARRAY(a,	\
-		FIELD_STRING(s)	\
-		FIELD_VUINT(k)	\
+#define PROTOCOL_NAME		TestInt
+#define PROTOCOL_FIELDS		FIELD_VINT(i)
+#include "../main/player/protocol_generator.hpp"
+
+#define PROTOCOL_NAME		TestUInt
+#define PROTOCOL_FIELDS 	FIELD_VUINT(u)
+#include "../main/player/protocol_generator.hpp"
+
+#define PROTOCOL_NAME		TestString
+#define PROTOCOL_FIELDS		FIELD_STRING(s)
+#include "../main/player/protocol_generator.hpp"
+
+#define PROTOCOL_NAME		TestIntArray
+#define PROTOCOL_FIELDS		FIELD_ARRAY(a, FIELD_VINT(i))
+#include "../main/player/protocol_generator.hpp"
+
+#define PROTOCOL_NAME		TestUIntArray
+#define PROTOCOL_FIELDS		FIELD_ARRAY(a, FIELD_VUINT(u))
+#include "../main/player/protocol_generator.hpp"
+
+#define PROTOCOL_NAME		TestStringArray
+#define PROTOCOL_FIELDS		FIELD_ARRAY(a, FIELD_STRING(s))
+#include "../main/player/protocol_generator.hpp"
+
+#define PROTOCOL_NAME   	TestProtocol
+#define PROTOCOL_FIELDS \
+	FIELD_VINT(i)   \
+	FIELD_VUINT(j)  \
+	FIELD_ARRAY(a,  \
+		FIELD_STRING(s) \
+		FIELD_VUINT(k)  \
 	)
 #include "../main/player/protocol_generator.hpp"
 
-static void playerProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	const TestNs::TestProtocol req(incoming);
+namespace {
 
+void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+	const TestNs::TestInt req(incoming);
+	LOG_WARNING("sint = ", req.i);
+	ps->send(1000, req);
+}
+void TestUIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+	const TestNs::TestUInt req(incoming);
+	LOG_WARNING("int = ", req.u);
+	ps->send(1001, req);
+}
+void TestStringProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+	const TestNs::TestString req(incoming);
+	LOG_WARNING("string = ", req.s);
+	ps->send(1002, req);
+}
+
+void TestIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+	const TestNs::TestIntArray req(incoming);
+	LOG_WARNING("sint array: size = ", req.a.size());
+	for(std::size_t i = 0; i < req.a.size(); ++i){
+		LOG_WARNING("  ", i, " = ", req.a.at(i).i);
+	}
+	ps->send(1003, req);
+}
+void TestUIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+	const TestNs::TestUIntArray req(incoming);
+	LOG_WARNING("sint array: size = ", req.a.size());
+	for(std::size_t i = 0; i < req.a.size(); ++i){
+		LOG_WARNING("  ", i, " = ", req.a.at(i).u);
+	}
+	ps->send(1004, req);
+}
+void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+	const TestNs::TestStringArray req(incoming);
+	LOG_WARNING("sint array: size = ", req.a.size());
+	for(std::size_t i = 0; i < req.a.size(); ++i){
+		LOG_WARNING("  ", i, " = ", req.a.at(i).s);
+	}
+	ps->send(1005, req);
+}
+
+void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+	const TestNs::TestProtocol req(incoming);
 	LOG_WARNING("req.i = ", req.i);
 	LOG_WARNING("req.j = ", req.j);
 	LOG_WARNING("req.a.size() = ", req.a.size());
@@ -223,14 +289,13 @@ static void playerProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incomin
 		LOG_WARNING("req.a[", i, "].s = ", req.a.at(i).s);
 		LOG_WARNING("req.a[", i, "].k = ", req.a.at(i).k);
 	}
+	ps->send(1006, req);
+}
 
-	ps->send(200, req);
 }
 
 extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
 	LOG_FATAL("poseidonModuleInit()");
-
-	g_player = PlayerServletManager::registerServlet(100, module, &playerProc);
 
 	g_profile = HttpServletManager::registerServlet("/profile", module, &profileProc);
 
@@ -243,4 +308,12 @@ extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
 	g_event2 = EventListenerManager::registerListener<TestEvent2>(module, &event2Proc);
 
 	g_ws = WebSocketServletManager::registerServlet("/wstest", module, &webSocketProc);
+
+	g_player.push_back(PlayerServletManager::registerServlet(100, module, &TestIntProc));
+	g_player.push_back(PlayerServletManager::registerServlet(101, module, &TestUIntProc));
+	g_player.push_back(PlayerServletManager::registerServlet(102, module, &TestStringProc));
+	g_player.push_back(PlayerServletManager::registerServlet(103, module, &TestIntArrayProc));
+	g_player.push_back(PlayerServletManager::registerServlet(104, module, &TestUIntArrayProc));
+	g_player.push_back(PlayerServletManager::registerServlet(105, module, &TestStringArrayProc));
+	g_player.push_back(PlayerServletManager::registerServlet(106, module, &TestProc));
 }
