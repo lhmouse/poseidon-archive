@@ -24,6 +24,10 @@ public:
 	ClientSslCtx()
 		: m_sslCtx(::SSL_CTX_new(::SSLv23_client_method()))
 	{
+		if(!m_sslCtx){
+			LOG_FATAL("Could not create client SSL context");
+			std::abort();
+		}
 		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, NULLPTR);
 	}
 

@@ -21,6 +21,10 @@ public:
 	SslImplServer(const std::string &cert, const std::string &privateKey)
 		: m_sslCtx(::SSL_CTX_new(::SSLv23_server_method()))
 	{
+		if(!m_sslCtx){
+			LOG_FATAL("Could not create server SSL context");
+			std::abort();
+		}
 		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER, NULLPTR);
 
 		LOG_INFO("Loading server certificate: ", cert);
