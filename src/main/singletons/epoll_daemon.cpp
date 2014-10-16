@@ -72,7 +72,7 @@ void add(const boost::shared_ptr<TcpSessionBase> &session){
 		}
 	}
 	::epoll_event event;
-	event.events = EPOLLHUP | EPOLLERR | EPOLLRDHUP | EPOLLIN | EPOLLOUT | EPOLLET;
+	event.events = EPOLLHUP | EPOLLERR | EPOLLIN | EPOLLOUT | EPOLLET;
 	event.data.ptr = session.get();
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD,
 		TcpSessionImpl::doGetFd(*session), &event) != 0)
@@ -171,6 +171,9 @@ void daemonLoop(){
 			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
+				if(session->hasBeenShutdown()){
+					continue;
+				}
 				const ::ssize_t bytesRead = TcpSessionImpl::doRead(*session,
 					data.get(), g_tcpBufferSize);
 				if(bytesRead < 0){
@@ -183,10 +186,7 @@ void daemonLoop(){
 					}
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
-					reepollReadable(session);
-					continue;
-				}
-				if(session->hasBeenShutdown()){
+					session->shutdown();
 					continue;
 				}
 				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
@@ -304,11 +304,6 @@ void daemonLoop(){
 					continue;
 				}
 
-				if(event.events & EPOLLRDHUP){
-					LOG_INFO("Socket read hung up, ip = ", session->getRemoteIp());
-					event.events |= EPOLLIN;
-					event.events |= EPOLLOUT;
-				}
 				if(event.events & EPOLLIN){
 					deepollReadable(session);
 				}
