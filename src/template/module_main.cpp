@@ -209,34 +209,20 @@ public:
 	FIELD_VUINT50(j)	\
 	FIELD_ARRAY(a,	\
 		FIELD_STRING(s)	\
-	)
-#include "../main/player/protocol_generator.hpp"
-
-#define PROTOCOL_NAME	TestReponse
-#define PROTOCOL_FIELDS	\
-	FIELD_VINT50(i)	\
-	FIELD_VUINT50(j)	\
-	FIELD_ARRAY(a,	\
-		FIELD_STRING(s)	\
+		FIELD_VUINT50(k)	\
 	)
 #include "../main/player/protocol_generator.hpp"
 
 static void playerProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestProtocol req;
-	TestNs::TestReponse res;
 	req << incoming;
 
 	LOG_WARNING("req.i = ", req.i);
 	LOG_WARNING("req.j = ", req.j);
 	LOG_WARNING("req.a.size() = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_WARNING("req.a[", i, "].s = ", req.a[i].s);
-	}
-
-	res.i = req.j;
-	res.j = req.i;
-	for(std::size_t i = 0; i < req.a.size(); ++i){
-		req.a[req.a.size() - 1 - i].s = req.a[i].s;
+		LOG_WARNING("req.a[", i, "].s = ", req.a.at(i).s);
+		LOG_WARNING("req.a[", i, "].k = ", req.a.at(i).k);
 	}
 
 	StreamBuffer buf;
