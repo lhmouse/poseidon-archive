@@ -69,12 +69,15 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			if(m_payload.size() < 4){
 				break;
 			}
+
 			m_protocolId = m_payload.get() & 0xFF;
 			m_protocolId |= (m_payload.get() & 0xFF) << 8;
 
 			m_payloadLen = m_payload.get() & 0xFF;
 			m_payloadLen |= (m_payload.get() & 0xFF) << 8;
 			m_payloadLen &= 0x3FFF;
+
+			LOG_DEBUG("Protocol id = ", m_protocolId, ", len = ", m_payloadLen);
 		}
 		if(m_payload.size() < (unsigned)m_payloadLen){
 			break;

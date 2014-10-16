@@ -286,7 +286,7 @@ void daemonLoop(){
 				virtualSharedFromThis<TcpSessionBase>());
 			try {
 				if(event.events & EPOLLHUP){
-					LOG_INFO("Socket has been hung up. Remove it.");
+					LOG_INFO("Socket hung up, ip = ", session->getRemoteIp());
 					remove(session);
 					continue;
 				}
@@ -305,9 +305,7 @@ void daemonLoop(){
 				}
 
 				if(event.events & EPOLLRDHUP){
-					if(session->shutdown()){
-						LOG_INFO("Socket closed by remote host: ", session->getRemoteIp());
-					}
+					LOG_INFO("Socket read hung up, ip = ", session->getRemoteIp());
 					event.events |= EPOLLIN;
 					event.events |= EPOLLOUT;
 				}
