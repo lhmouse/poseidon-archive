@@ -107,12 +107,12 @@ void onKeepAliveTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned l
 
 class HttpRequestJob : public JobBase {
 private:
-	const boost::weak_ptr<HttpSession> m_session;
+	const boost::shared_ptr<HttpSession> m_session;
 
 	HttpRequest m_request;
 
 public:
-	HttpRequestJob(boost::weak_ptr<HttpSession> session,
+	HttpRequestJob(boost::shared_ptr<HttpSession> session,
 		HttpVerb verb, std::string uri, unsigned version,
 		OptionalMap getParams, OptionalMap headers, std::string contents)
 		: m_session(STD_MOVE(session))
@@ -130,11 +130,6 @@ protected:
 		PROFILE_ME;
 		assert(!m_request.uri.empty());
 
-		const AUTO(session, m_session.lock());
-		if(!session){
-			LOG_WARNING("The specified HTTP session has expired.");
-			return;
-		}
 		const unsigned version = m_request.version;
 		try {
 			boost::shared_ptr<const void> lockedDep;
@@ -152,15 +147,15 @@ protected:
 			if((verb == HTTP_HEAD) || (status == HTTP_NO_CONTENT) || ((unsigned)status / 100 == 1)){
 				contents.clear();
 			}
-			session->send(makeResponse(status, version, STD_MOVE(headers), &contents));
+			m_session->send(makeResponse(status, version, STD_MOVE(headers), &contents));
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, status = ", e.status(),
 				", file = ", e.file(), ", line = ", e.line());
-			session->send(makeResponse(e.status(), version));
+			m_session->send(makeResponse(e.status(), version));
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... shutdown the session first.");
-			session->send(makeResponse(HTTP_SERVER_ERROR, version));
+			m_session->send(makeResponse(HTTP_SERVER_ERROR, version));
 			throw;
 		}
 	}
@@ -400,7 +395,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					TR1::bind(&onKeepAliveTimeout,
 						virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
 
-				boost::make_shared<HttpRequestJob>(virtualWeakFromThis<HttpSession>(),
+				boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
 					m_verb, STD_MOVE(m_uri), m_version,
 					STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)
 					)->pend();

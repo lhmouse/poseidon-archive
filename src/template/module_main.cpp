@@ -13,6 +13,8 @@
 #include "../main/profiler.hpp"
 #include "../main/singletons/profile_manager.hpp"
 #include "../main/tcp_client_base.hpp"
+#include "../main/player/session.hpp"
+#include "../main/singletons/player_servlet_manager.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -49,6 +51,7 @@ boost::shared_ptr<const HttpServlet> g_profile, g_load, g_unload, g_meow, g_meow
 boost::shared_ptr<const EventListener> g_event1, g_event2;
 boost::shared_ptr<const TimerItem> g_tick;
 boost::shared_ptr<const WebSocketServlet> g_ws;
+boost::shared_ptr<const PlayerServlet> g_player;
 
 void tickProc(unsigned long long now, unsigned long long period){
 	PROFILE_ME;
@@ -198,8 +201,54 @@ public:
 
 }
 
+#define PROTOCOL_NAMESPACE TestNs
+
+#define PROTOCOL_NAME	TestProtocol
+#define PROTOCOL_FIELDS	\
+	FIELD_VINT50(i)	\
+	FIELD_VUINT50(j)	\
+	FIELD_ARRAY(a,	\
+		FIELD_STRING(s)	\
+	)
+#include "../main/player/protocol_generator.hpp"
+
+#define PROTOCOL_NAME	TestReponse
+#define PROTOCOL_FIELDS	\
+	FIELD_VINT50(i)	\
+	FIELD_VUINT50(j)	\
+	FIELD_ARRAY(a,	\
+		FIELD_STRING(s)	\
+	)
+#include "../main/player/protocol_generator.hpp"
+
+static void playerProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+	TestNs::TestProtocol req;
+	TestNs::TestReponse res;
+	req << incoming;
+
+	LOG_WARNING("req.i = ", req.i);
+	LOG_WARNING("req.j = ", req.j);
+	LOG_WARNING("req.a.size() = ", req.a.size());
+	for(std::size_t i = 0; i < req.a.size(); ++i){
+		LOG_WARNING("req.a[", i, "].s = ", req.a[i].s);
+	}
+
+	res.i = req.j;
+	res.j = req.i;
+	for(std::size_t i = 0; i < req.a.size(); ++i){
+		req.a[req.a.size() - 1 - i].s = req.a[i].s;
+	}
+
+	StreamBuffer buf;
+	req >> buf;
+	LOG_FATAL("Sending: ", HexDumper(buf));
+	ps->send(200, STD_MOVE(buf));
+}
+
 extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
 	LOG_FATAL("poseidonModuleInit()");
+
+	g_player = PlayerServletManager::registerServlet(100, module, &playerProc);
 
 	g_profile = HttpServletManager::registerServlet("/profile", module, &profileProc);
 

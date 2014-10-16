@@ -12,13 +12,13 @@ namespace {
 class PlayerRequestJob : public JobBase {
 private:
 	const unsigned m_protocolId;
-	const boost::weak_ptr<PlayerSession> m_session;
+	const boost::shared_ptr<PlayerSession> m_session;
 
 	StreamBuffer m_payload;
 
 public:
 	PlayerRequestJob(unsigned protocolId,
-		boost::weak_ptr<PlayerSession> session, StreamBuffer payload)
+		boost::shared_ptr<PlayerSession> session, StreamBuffer payload)
 		: m_protocolId(protocolId), m_session(STD_MOVE(session))
 		, m_payload(STD_MOVE(payload))
 	{
@@ -28,20 +28,15 @@ protected:
 	void perform(){
 		PROFILE_ME;
 
-		AUTO(session, m_session.lock());
-		if(!session){
-			LOG_WARNING("The specified player session has expired.");
-			return;
-		}
 		boost::shared_ptr<const void> lockedDep;
 		const AUTO(servlet, PlayerServletManager::getServlet(lockedDep, m_protocolId));
 		if(!servlet){
 			LOG_WARNING("No servlet for protocol ", m_protocolId);
-			session->shutdown();
+			m_session->shutdown();
 			return;
 		}
 		LOG_DEBUG("Dispatching packet: protocol = ", m_protocolId, ", payload size = ", m_payload.size());
-		(*servlet)(STD_MOVE(session), STD_MOVE(m_payload));
+		(*servlet)(m_session, STD_MOVE(m_payload));
 	}
 };
 
@@ -83,7 +78,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			break;
 		}
 		boost::make_shared<PlayerRequestJob>(m_protocolId,
-			virtualWeakFromThis<PlayerSession>(), m_payload.cut(m_payloadLen))->pend();
+			virtualSharedFromThis<PlayerSession>(), m_payload.cut(m_payloadLen))->pend();
 		m_payloadLen = -1;
 	}
 }
@@ -92,7 +87,7 @@ bool PlayerSession::send(boost::uint16_t status, StreamBuffer payload){
 	const std::size_t size = payload.size();
 	if(size > 0xFFFF){
 		LOG_WARNING("Respond packet too large, size = ", size);
-		DEBUG_THROW(Exception, "Packet too large: " + boost::lexical_cast<std::string>(size));
+		DEBUG_THROW(Exception, "Packet too large");
 	}
 	StreamBuffer temp;
 	temp.put(status & 0xFF);
