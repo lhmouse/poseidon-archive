@@ -28,15 +28,21 @@ protected:
 	void perform(){
 		PROFILE_ME;
 
-		boost::shared_ptr<const void> lockedDep;
-		const AUTO(servlet, PlayerServletManager::getServlet(lockedDep, m_protocolId));
-		if(!servlet){
-			LOG_WARNING("No servlet for protocol ", m_protocolId);
-			m_session->shutdown();
-			return;
+		try {
+			boost::shared_ptr<const void> lockedDep;
+			const AUTO(servlet, PlayerServletManager::getServlet(lockedDep, m_protocolId));
+			if(!servlet){
+				LOG_WARNING("No servlet for protocol ", m_protocolId);
+				m_session->shutdown();
+				return;
+			}
+			LOG_DEBUG("Dispatching packet: protocol = ", m_protocolId,
+				", payload size = ", m_payload.size());
+			(*servlet)(m_session, STD_MOVE(m_payload));
+		} catch(...){
+			LOG_ERROR("Forwarding exception... protocol id = ", m_protocolId);
+			throw;
 		}
-		LOG_DEBUG("Dispatching packet: protocol = ", m_protocolId, ", payload size = ", m_payload.size());
-		(*servlet)(m_session, STD_MOVE(m_payload));
 	}
 };
 
