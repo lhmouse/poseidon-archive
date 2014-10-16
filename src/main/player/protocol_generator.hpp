@@ -14,14 +14,14 @@ namespace PROTOCOL_NAMESPACE {
 
 struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 
-#undef FIELD_VINT50
-#undef FIELD_VUINT50
+#undef FIELD_VINT
+#undef FIELD_VUINT
 #undef FIELD_BYTES
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT50(name_)				long long name_;
-#define FIELD_VUINT50(name_)			unsigned long long name_;
+#define FIELD_VINT(name_)				long long name_;
+#define FIELD_VUINT(name_)				unsigned long long name_;
 #define FIELD_BYTES(name_, size_)		unsigned char name_[size_];
 #define FIELD_STRING(name_)				::std::string name_;
 #define FIELD_ARRAY(name_, fields_)		struct ElementOf ## name_ ## _ {	\
@@ -34,14 +34,14 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 	PROTOCOL_NAME()
 		: ProtocolBase()
 
-#undef FIELD_VINT50
-#undef FIELD_VUINT50
+#undef FIELD_VINT
+#undef FIELD_VUINT
 #undef FIELD_BYTES
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT50(name_)				, name_()
-#define FIELD_VUINT50(name_)			, name_()
+#define FIELD_VINT(name_)				, name_()
+#define FIELD_VUINT(name_)				, name_()
 #define FIELD_BYTES(name_, size_)		, name_()
 #define FIELD_STRING(name_)				, name_()
 #define FIELD_ARRAY(name_, fields_)		, name_()
@@ -61,14 +61,14 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 		typedef PROTOCOL_NAME Cur_;
 		const Cur_ &cur_ = *this;
 
-#undef FIELD_VINT50
-#undef FIELD_VUINT50
+#undef FIELD_VINT
+#undef FIELD_VUINT
 #undef FIELD_BYTES
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT50(name_)				::Poseidon::vint50ToBinary(cur_.name_, write_);
-#define FIELD_VUINT50(name_)			::Poseidon::vuint50ToBinary(cur_.name_, write_);
+#define FIELD_VINT(name_)				::Poseidon::vint50ToBinary(cur_.name_, write_);
+#define FIELD_VUINT(name_)				::Poseidon::vuint50ToBinary(cur_.name_, write_);
 #define FIELD_BYTES(name_, size_)		write_ = ::std::copy(cur_.name_, cur_name_ + size_, write_);
 #define FIELD_STRING(name_)				::Poseidon::vuint50ToBinary(cur_.name_.size(), write_);	\
 										write_ = ::std::copy(cur_.name_.begin(), cur_.name_.end(), write_);
@@ -94,16 +94,16 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 		typedef PROTOCOL_NAME Cur_;
 		Cur_ &cur_ = *this;
 
-#undef FIELD_VINT50
-#undef FIELD_VUINT50
+#undef FIELD_VINT
+#undef FIELD_VUINT
 #undef FIELD_BYTES
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT50(name_)				if(!::Poseidon::vint50FromBinary(cur_.name_, read_, buffer_.size())){	\
+#define FIELD_VINT(name_)				if(!::Poseidon::vint50FromBinary(cur_.name_, read_, buffer_.size())){	\
 											THROW_EOS_;	\
 										}
-#define FIELD_VUINT50(name_)			if(!::Poseidon::vuint50FromBinary(cur_.name_, read_, buffer_.size())){	\
+#define FIELD_VUINT(name_)				if(!::Poseidon::vuint50FromBinary(cur_.name_, read_, buffer_.size())){	\
 											THROW_EOS_;	\
 										}
 #define FIELD_BYTES(name_, size_)		if(buffer_.size() < size_){	\

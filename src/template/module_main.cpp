@@ -205,11 +205,11 @@ public:
 
 #define PROTOCOL_NAME	TestProtocol
 #define PROTOCOL_FIELDS	\
-	FIELD_VINT50(i)	\
-	FIELD_VUINT50(j)	\
+	FIELD_VINT(i)	\
+	FIELD_VUINT(j)	\
 	FIELD_ARRAY(a,	\
 		FIELD_STRING(s)	\
-		FIELD_VUINT50(k)	\
+		FIELD_VUINT(k)	\
 	)
 #include "../main/player/protocol_generator.hpp"
 

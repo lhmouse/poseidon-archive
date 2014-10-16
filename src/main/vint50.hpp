@@ -1,5 +1,5 @@
-#ifndef POSEIDON_VINT50_HPP_
-#define POSEIDON_VINT50_HPP_
+#ifndef POSEIDON_VINT_HPP_
+#define POSEIDON_VINT_HPP_
 
 namespace Poseidon {
 
