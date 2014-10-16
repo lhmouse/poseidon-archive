@@ -65,14 +65,14 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 				break;
 			}
 
-			m_protocolId = m_payload.get() & 0xFF;
-			m_protocolId |= (m_payload.get() & 0xFF) << 8;
-
 			m_payloadLen = m_payload.get() & 0xFF;
 			m_payloadLen |= (m_payload.get() & 0xFF) << 8;
 			m_payloadLen &= 0x3FFF;
 
-			LOG_DEBUG("Protocol id = ", m_protocolId, ", len = ", m_payloadLen);
+			m_protocolId = m_payload.get() & 0xFF;
+			m_protocolId |= (m_payload.get() & 0xFF) << 8;
+
+			LOG_DEBUG("Protocol len = ", m_payloadLen, "id = ", m_protocolId);
 		}
 		if(m_payload.size() < (unsigned)m_payloadLen){
 			break;
@@ -90,10 +90,10 @@ bool PlayerSession::send(boost::uint16_t status, StreamBuffer payload){
 		DEBUG_THROW(Exception, "Packet too large");
 	}
 	StreamBuffer temp;
-	temp.put(status & 0xFF);
-	temp.put(status >> 8);
 	temp.put(size & 0xFF);
 	temp.put(size >> 8);
+	temp.put(status & 0xFF);
+	temp.put(status >> 8);
 	temp.splice(payload);
 	return TcpSessionBase::send(STD_MOVE(temp));
 }

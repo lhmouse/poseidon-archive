@@ -240,48 +240,54 @@ public:
 namespace {
 
 void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	const TestNs::TestInt req(incoming);
+	TestNs::TestInt req(incoming);
 	LOG_WARNING("sint = ", req.i);
+	req.i /= 10;
 	ps->send(1000, req);
 }
 void TestUIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	const TestNs::TestUInt req(incoming);
+	TestNs::TestUInt req(incoming);
 	LOG_WARNING("int = ", req.u);
+	req.u /= 10;
 	ps->send(1001, req);
 }
 void TestStringProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	const TestNs::TestString req(incoming);
+	TestNs::TestString req(incoming);
 	LOG_WARNING("string = ", req.s);
+	req.s += "_0123456789";
 	ps->send(1002, req);
 }
 
 void TestIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	const TestNs::TestIntArray req(incoming);
+	TestNs::TestIntArray req(incoming);
 	LOG_WARNING("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
 		LOG_WARNING("  ", i, " = ", req.a.at(i).i);
+		req.a.at(i).i /= 10;
 	}
 	ps->send(1003, req);
 }
 void TestUIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	const TestNs::TestUIntArray req(incoming);
+	TestNs::TestUIntArray req(incoming);
 	LOG_WARNING("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
 		LOG_WARNING("  ", i, " = ", req.a.at(i).u);
+		req.a.at(i).u /= 10;
 	}
 	ps->send(1004, req);
 }
 void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	const TestNs::TestStringArray req(incoming);
+	TestNs::TestStringArray req(incoming);
 	LOG_WARNING("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
 		LOG_WARNING("  ", i, " = ", req.a.at(i).s);
+		req.a.at(i).s += "_0123456789";
 	}
 	ps->send(1005, req);
 }
 
 void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	const TestNs::TestProtocol req(incoming);
+	TestNs::TestProtocol req(incoming);
 	LOG_WARNING("req.i = ", req.i);
 	LOG_WARNING("req.j = ", req.j);
 	LOG_WARNING("req.a.size() = ", req.a.size());
