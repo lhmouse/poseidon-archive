@@ -127,7 +127,7 @@ void daemonLoop(){
 		}
 		if(!callback){
 			lockedDep.reset();
-			::sleep(1);
+			::usleep(100000);
 			continue;
 		}
 
