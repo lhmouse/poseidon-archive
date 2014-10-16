@@ -214,7 +214,7 @@ public:
 #include "../main/player/protocol_generator.hpp"
 
 static void playerProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	TestNs::TestProtocol req(incoming);
+	const TestNs::TestProtocol req(incoming);
 
 	LOG_WARNING("req.i = ", req.i);
 	LOG_WARNING("req.j = ", req.j);
