@@ -85,7 +85,7 @@ TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort,
 	m_bindAddr.assign(bindAddr);
 	m_bindAddr.append(port, len);
 
-	LOG_INFO("Creating SSL socket server on ", m_bindAddr, "...");
+	LOG_INFO("Creating ", (cert.empty() ? "" : "SSL "), "socket server on ", m_bindAddr, "...");
 
 	union {
 		::sockaddr sa;
