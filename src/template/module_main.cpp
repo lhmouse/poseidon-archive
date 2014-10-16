@@ -214,8 +214,7 @@ public:
 #include "../main/player/protocol_generator.hpp"
 
 static void playerProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	TestNs::TestProtocol req;
-	req << incoming;
+	TestNs::TestProtocol req(incoming);
 
 	LOG_WARNING("req.i = ", req.i);
 	LOG_WARNING("req.j = ", req.j);
@@ -225,10 +224,7 @@ static void playerProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incomin
 		LOG_WARNING("req.a[", i, "].k = ", req.a.at(i).k);
 	}
 
-	StreamBuffer buf;
-	req >> buf;
-	LOG_FATAL("Sending: ", HexDumper(buf));
-	ps->send(200, STD_MOVE(buf));
+	ps->send(200, req);
 }
 
 extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){

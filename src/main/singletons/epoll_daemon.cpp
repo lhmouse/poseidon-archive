@@ -186,6 +186,7 @@ void daemonLoop(){
 					}
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
+					LOG_INFO("Connection closed by remote host: ip = ", session->getRemoteIp());
 					session->shutdown();
 					continue;
 				}

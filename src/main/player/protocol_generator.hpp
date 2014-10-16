@@ -49,6 +49,11 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 		PROTOCOL_FIELDS
 	{
 	}
+	explicit PROTOCOL_NAME(::Poseidon::StreamBuffer &buffer_)
+		: ProtocolBase()
+	{
+		*this << buffer_;
+	}
 
 	void operator>>(::Poseidon::StreamBuffer &buffer_) const {
 		::Poseidon::StreamBufferWriteIterator write_(buffer_);
