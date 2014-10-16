@@ -7,7 +7,6 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <openssl/ssl.h>
 #include "exception.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
@@ -45,16 +44,6 @@ std::string getIpFromSocket(int fd){
 
 	return ret;
 }
-
-struct OpenSslInitializer {
-	OpenSslInitializer(){
-		::OpenSSL_add_all_algorithms();
-		::SSL_library_init();
-	}
-	~OpenSslInitializer(){
-		::EVP_cleanup();
-	}
-} g_openSslInitializer;
 
 }
 
