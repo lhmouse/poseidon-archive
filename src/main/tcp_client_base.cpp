@@ -3,7 +3,6 @@
 #include "tcp_session_base.hpp"
 #define POSEIDON_TCP_SESSION_SSL_IMPL_
 #include "tcp_session_ssl_impl.hpp"
-#include <boost/thread/once.hpp>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -17,17 +16,27 @@ using namespace Poseidon;
 
 namespace {
 
-boost::once_flag g_clientSslCtxInit;
-SslCtxPtr g_clientSslCtx;
+class ClientSslCtx : boost::noncopyable {
+private:
+	SslCtxPtr m_sslCtx;
 
-void initClientSslCtx(){
-	g_clientSslCtx.reset(::SSL_CTX_new(::SSLv23_client_method()));
-	if(!g_clientSslCtx){
-		LOG_FATAL("Could not create client SSL context");
-		std::abort();
+public:
+	ClientSslCtx(){
+		requireSsl();
+
+		m_sslCtx.reset(::SSL_CTX_new(::SSLv23_client_method()));
+		if(!m_sslCtx){
+			LOG_FATAL("Could not create client SSL context");
+			std::abort();
+		}
+		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, NULLPTR);
 	}
-	::SSL_CTX_set_verify(g_clientSslCtx.get(), SSL_VERIFY_NONE, NULLPTR);
-}
+
+public:
+	void createSsl(SslPtr &ssl){
+		ssl.reset(::SSL_new(m_sslCtx.get()));
+	}
+} g_clientSslCtx;
 
 }
 
@@ -91,10 +100,10 @@ TcpClientBase::TcpClientBase(Move<ScopedFile> socket)
 void TcpClientBase::sslConnect(){
 	LOG_INFO("Initiating SSL handshake...");
 
-	boost::call_once(&initClientSslCtx, g_clientSslCtxInit);
-
-	SslPtr ssl(::SSL_new(g_clientSslCtx.get()));
-	boost::scoped_ptr<SslImpl> sslImpl(new SslImplClient(STD_MOVE(ssl), m_socket.get()));
+	SslPtr ssl;
+	g_clientSslCtx.createSsl(ssl);
+	boost::scoped_ptr<TcpSessionBase::SslImpl>
+		sslImpl(new SslImplClient(STD_MOVE(ssl), m_socket.get()));
 	initSsl(STD_MOVE(sslImpl));
 }
 void TcpClientBase::goResident(){

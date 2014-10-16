@@ -11,6 +11,8 @@
 
 namespace Poseidon {
 
+extern void requireSsl();
+
 struct SslCtxDeleter {
 	CONSTEXPR ::SSL_CTX *operator()() NOEXCEPT {
 		return NULLPTR;

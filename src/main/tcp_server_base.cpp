@@ -15,12 +15,13 @@ using namespace Poseidon;
 
 class TcpServerBase::SslImplServer : boost::noncopyable {
 private:
-	const SslCtxPtr m_sslCtx;
+	SslCtxPtr m_sslCtx;
 
 public:
-	SslImplServer(const std::string &cert, const std::string &privateKey)
-		: m_sslCtx(::SSL_CTX_new(::SSLv23_server_method()))
-	{
+	SslImplServer(const std::string &cert, const std::string &privateKey){
+		requireSsl();
+
+		m_sslCtx.reset(::SSL_CTX_new(::SSLv23_server_method()));
 		if(!m_sslCtx){
 			LOG_FATAL("Could not create server SSL context");
 			std::abort();

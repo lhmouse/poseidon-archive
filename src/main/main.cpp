@@ -3,7 +3,6 @@
 #include <signal.h>
 #include <libgen.h>
 #include <unistd.h>
-#include <openssl/ssl.h>
 #include "log.hpp"
 #include "exception.hpp"
 #include "singletons/config_file.hpp"
@@ -23,16 +22,6 @@
 using namespace Poseidon;
 
 namespace {
-
-struct OpenSslInitializer : boost::noncopyable {
-	OpenSslInitializer(){
-		::OpenSSL_add_all_algorithms();
-		::SSL_library_init();
-	}
-	~OpenSslInitializer(){
-		::EVP_cleanup();
-	}
-} g_openSslInitializer;
 
 void sigTermProc(int){
 	LOG_WARNING("Received SIGTERM, will now exit...");
