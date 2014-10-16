@@ -14,6 +14,8 @@ namespace {
 boost::once_flag g_sslInitFlag;
 
 void initSsl(){
+	LOG_INFO("Initializing SSL library...");
+
 	::OpenSSL_add_all_algorithms();
 	::SSL_library_init();
 
