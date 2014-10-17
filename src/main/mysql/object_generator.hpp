@@ -188,8 +188,8 @@ public:
 	}	\
 	void set_ ## name_(std::string val_){	\
 		{	\
-			const ::boost::unique_lock<boost::shared_mutex> slock(m_mutex);	\
-			val_.swap(name_);	\
+			const ::boost::unique_lock<boost::shared_mutex> ulock(m_mutex);	\
+			name_.swap(val_);	\
 		}	\
 		invalidate();	\
 	}
@@ -233,8 +233,7 @@ private:
 		str_->append(filter_);
 		str_->append(limit_);
 
-		LOG_DEBUG(MYSQL_OBJECT_TO_STR_(MYSQL_OBJECT_NAMESPACE), "::",
-			MYSQL_OBJECT_TO_STR_(MYSQL_OBJECT_NAME), "::query(): ", str_);
+		LOG_DEBUG(__PRETTY_FUNCTION__, ": ", str_);
 
 		rs_.reset(conn_->prepareStatement(str_)->executeQuery());
 	}
@@ -302,8 +301,7 @@ private:
 			"SET " MYSQL_OBJECT_FIELDS);
 		str_->erase(str_->end() - 2, str_->end());
 
-		LOG_DEBUG(MYSQL_OBJECT_TO_STR_(MYSQL_OBJECT_NAMESPACE), "::",
-			MYSQL_OBJECT_TO_STR_(MYSQL_OBJECT_NAME), "::prepare(): ", str_);
+		LOG_DEBUG(__PRETTY_FUNCTION__, ": ", str_);
 
 		const boost::scoped_ptr<sql::PreparedStatement> ps_(conn_->prepareStatement(str_));
 		std::vector<boost::shaed_ptr<void> > contexts_;
