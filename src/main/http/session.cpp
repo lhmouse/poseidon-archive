@@ -107,56 +107,64 @@ void onKeepAliveTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned l
 
 class HttpRequestJob : public JobBase {
 private:
-	const std::string m_uri;
 	const boost::shared_ptr<HttpSession> m_session;
 
-	HttpRequest m_request;
+	const HttpVerb m_verb;
+	const std::string m_uri;
+	const unsigned m_version;
+
+	OptionalMap m_getParams;
+	OptionalMap m_headers;
+	std::string m_contents;
 
 public:
 	HttpRequestJob(boost::shared_ptr<HttpSession> session,
 		HttpVerb verb, std::string uri, unsigned version,
 		OptionalMap getParams, OptionalMap headers, std::string contents)
-		: m_uri(uri), m_session(STD_MOVE(session))
+		: m_session(STD_MOVE(session))
+		, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
+		, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers))
+		, m_contents(STD_MOVE(contents))
 	{
-		m_request.verb = verb;
-		m_request.uri.swap(uri);
-		m_request.version = version;
-		m_request.getParams.swap(getParams);
-		m_request.headers.swap(headers);
-		m_request.contents.swap(contents);
 	}
 
 protected:
 	void perform(){
 		PROFILE_ME;
-		assert(!m_request.uri.empty());
+		assert(!m_uri.empty());
 
-		const unsigned version = m_request.version;
 		try {
 			boost::shared_ptr<const void> lockedDep;
-			AUTO(servlet, HttpServletManager::getServlet(lockedDep, m_request.uri));
+			AUTO(servlet, HttpServletManager::getServlet(lockedDep, m_uri));
 			if(!servlet){
-				LOG_WARNING("No handler matches URI ", m_request.uri);
+				LOG_WARNING("No handler matches URI ", m_uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 			}
-			LOG_DEBUG("Dispatching http request: URI = ", m_request.uri,
-				", verb = ", stringFromHttpVerb(m_request.verb));
-			const HttpVerb verb = m_request.verb;
+
+			HttpRequest request;
+			request.verb = m_verb;
+			request.uri = m_uri;
+			request.getParams.swap(m_getParams);
+			request.headers.swap(m_headers);
+			request.contents.swap(m_contents);
+
+			LOG_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", stringFromHttpVerb(m_verb));
 			OptionalMap headers;
 			StreamBuffer contents;
-			const HttpStatus status = (*servlet)(headers, contents, STD_MOVE(m_request));
-			if((verb == HTTP_HEAD) || (status == HTTP_NO_CONTENT) || ((unsigned)status / 100 == 1)){
+			const HttpStatus status = (*servlet)(headers, contents, STD_MOVE(request));
+
+			if((m_verb == HTTP_HEAD) || (status == HTTP_NO_CONTENT) || ((unsigned)status / 100 == 1)){
 				contents.clear();
 			}
-			m_session->send(makeResponse(status, version, STD_MOVE(headers), &contents));
+			m_session->send(makeResponse(status, m_version, STD_MOVE(headers), &contents));
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
 				", status = ", e.status(), ", file = ", e.file(), ", line = ", e.line());
-			m_session->send(makeResponse(e.status(), version));
+			m_session->send(makeResponse(e.status(), m_version));
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... request URI = ", m_uri);
-			m_session->send(makeResponse(HTTP_SERVER_ERROR, version));
+			m_session->send(makeResponse(HTTP_SERVER_ERROR, m_version));
 			throw;
 		}
 	}

@@ -72,7 +72,7 @@ void add(const boost::shared_ptr<TcpSessionBase> &session){
 		}
 	}
 	::epoll_event event;
-	event.events = EPOLLHUP | EPOLLERR | EPOLLIN | EPOLLOUT | EPOLLET;
+	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	event.data.ptr = session.get();
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD,
 		TcpSessionImpl::doGetFd(*session), &event) != 0)

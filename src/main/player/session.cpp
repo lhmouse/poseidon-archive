@@ -36,8 +36,8 @@ protected:
 				m_session->shutdown();
 				return;
 			}
-			LOG_DEBUG("Dispatching packet: protocol = ", m_protocolId,
-				", payload size = ", m_payload.size());
+
+			LOG_DEBUG("Dispatching: protocol = ", m_protocolId, ", payload size = ", m_payload.size());
 			(*servlet)(m_session, STD_MOVE(m_payload));
 		} catch(...){
 			LOG_ERROR("Forwarding exception... protocol id = ", m_protocolId);
