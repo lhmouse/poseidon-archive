@@ -102,6 +102,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 				// 仅测试。
 				boost::shared_ptr<const void> lockedDep;
 				if(!PlayerServletManager::getServlet(lockedDep, m_protocolId)){
+					LOG_WARNING("No servlet for protocol ", m_protocolId);
 					DEBUG_THROW(PlayerException, PLAYER_NOT_FOUND);
 				}
 			}
