@@ -1,5 +1,6 @@
 #include "../precompiled.hpp"
 #include "module.hpp"
+#include <boost/thread/mutex.hpp>
 #include <dlfcn.h>
 #include "raii.hpp"
 #include "log.hpp"
@@ -8,11 +9,14 @@ using namespace Poseidon;
 
 namespace {
 
+boost::mutex g_dlMutex;
+
 struct DynamicLibraryCloser {
 	CONSTEXPR void *operator()() NOEXCEPT {
 		return NULLPTR;
 	}
 	void operator()(void *handle) NOEXCEPT {
+		const boost::mutex::scoped_lock lock(g_dlMutex);
 		if(::dlclose(handle) != 0){
 			LOG_WARNING("Error unloading module: ", ::dlerror());
 		}
@@ -27,6 +31,7 @@ public:
 	explicit RealModule(std::string path)
 		: Module(STD_MOVE(path))
 	{
+		const boost::mutex::scoped_lock lock(g_dlMutex);
 		m_handle.reset(::dlopen(getPath().c_str(), RTLD_NOW));
 		if(!m_handle){
 			const char *const error = ::dlerror();
@@ -42,16 +47,19 @@ public:
 	void init(){
 		LOG_DEBUG("Initializing module: ", getPath());
 
-		const AUTO(initProc, reinterpret_cast<
-			void (*)(boost::weak_ptr<const Module> module)
-			>(::dlsym(m_handle.get(), "poseidonModuleInit")));
-		if(!initProc){
-			const char *const error = ::dlerror();
-			LOG_ERROR("Error getting address of poseidonModuleInit() in module ",
-				getPath(), ", error = ", error);
-			DEBUG_THROW(Exception, error);
+		const void *sym;
+		{
+			const boost::mutex::scoped_lock lock(g_dlMutex);
+			sym = ::dlsym(m_handle.get(), "poseidonModuleInit");
+			if(!sym){
+				const char *const error = ::dlerror();
+				LOG_ERROR("Error getting address of poseidonModuleInit(), path = ", getPath(),
+					", error = ", error);
+				DEBUG_THROW(Exception, error);
+			}
 		}
-		(*initProc)(boost::weak_ptr<Module>(shared_from_this()));
+		(*reinterpret_cast<void (*)(boost::weak_ptr<const Module> module)>(sym))(
+			shared_from_this());
 	}
 };
 
