@@ -117,7 +117,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 	} catch(PlayerException &e){
 		LOG_ERROR("PlayerException thrown while dispatching player data, protocol id = ", m_protocolId,
 			", status = ", static_cast<unsigned>(e.status()));
-		shutdown(e.status());
+		shutdown(e.status(), m_protocolId);
 		throw;
 	} catch(...){
 		LOG_ERROR("Forwarding exception... protocol id = ", m_protocolId);
