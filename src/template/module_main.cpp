@@ -71,7 +71,7 @@ HttpStatus profileProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest
 			it->samples, it->usTotal, it->usExclusive);
 		contents.put(temp, len);
 		contents.put(it->file.get());
-		len = std::sprintf(temp, "%lu\n", it->line);
+		len = std::sprintf(temp, ":%lu\n", it->line);
 		contents.put(temp, len);
 	}
 	return HTTP_OK;
