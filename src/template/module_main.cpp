@@ -287,6 +287,7 @@ void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incom
 }
 
 void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+	LOG_WARNING("Received: ", HexDumper(incoming));
 	TestNs::TestProtocol req(incoming);
 	LOG_WARNING("req.i = ", req.i);
 	LOG_WARNING("req.j = ", req.j);

@@ -187,8 +187,10 @@ public:
 		return name_;	\
 	}	\
 	void set_ ## name_(std::string val_){	\
-		const ::boost::unique_lock<boost::shared_mutex> slock(m_mutex);	\
-		val_.swap(name_);	\
+		{	\
+			const ::boost::unique_lock<boost::shared_mutex> slock(m_mutex);	\
+			val_.swap(name_);	\
+		}	\
 		invalidate();	\
 	}
 
