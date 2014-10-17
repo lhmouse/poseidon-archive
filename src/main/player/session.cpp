@@ -115,7 +115,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			m_payloadLen = -1;
 		}
 	} catch(PlayerException &e){
-		LOG_ERROR("PlayerException while dispatching player data, protocol id = ", m_protocolId,
+		LOG_ERROR("PlayerException thrown while dispatching player data, protocol id = ", m_protocolId,
 			", status = ", static_cast<unsigned>(e.status()));
 		shutdown(e.status());
 		throw;
