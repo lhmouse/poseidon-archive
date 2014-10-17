@@ -99,31 +99,6 @@ WebSocketSession::WebSocketSession(boost::weak_ptr<HttpSession> parent)
 {
 }
 
-void WebSocketSession::onControlFrame(){
-	LOG_DEBUG("Control frame, opcode = ", m_opcode);
-
-	switch(m_opcode){
-	case WS_CLOSE:
-		LOG_INFO("Received close frame from ", getRemoteIp(),
-			", the connection will be shut down.");
-		HttpUpgradedSessionBase::shutdown(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false));
-		break;
-
-	case WS_PING:
-		LOG_INFO("Received ping frame from ", getRemoteIp());
-		HttpUpgradedSessionBase::send(makeFrame(WS_PONG, STD_MOVE(m_whole), false));
-		break;
-
-	case WS_PONG:
-		LOG_INFO("Received pong frame from ", getRemoteIp());
-		break;
-
-	default:
-		DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Invalid opcode");
-		break;
-	}
-}
-
 void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 	PROFILE_ME;
 
@@ -240,6 +215,32 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 		throw;
 	}
 }
+
+void WebSocketSession::onControlFrame(){
+	LOG_DEBUG("Control frame, opcode = ", m_opcode);
+
+	switch(m_opcode){
+	case WS_CLOSE:
+		LOG_INFO("Received close frame from ", getRemoteIp(),
+			", the connection will be shut down.");
+		HttpUpgradedSessionBase::shutdown(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false));
+		break;
+
+	case WS_PING:
+		LOG_INFO("Received ping frame from ", getRemoteIp());
+		HttpUpgradedSessionBase::send(makeFrame(WS_PONG, STD_MOVE(m_whole), false));
+		break;
+
+	case WS_PONG:
+		LOG_INFO("Received pong frame from ", getRemoteIp());
+		break;
+
+	default:
+		DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Invalid opcode");
+		break;
+	}
+}
+
 bool WebSocketSession::send(StreamBuffer buffer, bool binary, bool masked){
 	return HttpUpgradedSessionBase::send(
 		makeFrame(binary ? WS_DATA_BIN : WS_DATA_TEXT, STD_MOVE(buffer), masked));

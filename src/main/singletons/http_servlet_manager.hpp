@@ -19,9 +19,10 @@
 namespace Poseidon {
 
 class HttpServlet;
+class HttpSession;
 
 typedef TR1::function<
-	HttpStatus (OptionalMap &headers, StreamBuffer &contents, HttpRequest request)
+	void (boost::shared_ptr<HttpSession> hs, HttpRequest request)
 	> HttpServletCallback;
 
 struct HttpServletManager {

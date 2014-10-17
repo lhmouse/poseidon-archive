@@ -163,6 +163,12 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 
 		PROTOCOL_FIELDS
 	}
+
+	operator ::Poseidon::StreamBuffer() const {
+		::Poseidon::StreamBuffer buffer_;
+		*this >> buffer_;
+		return buffer_;
+	}
 };
 
 #ifdef PROTOCOL_NAMESPACE

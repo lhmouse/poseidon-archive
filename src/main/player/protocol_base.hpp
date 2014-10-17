@@ -9,7 +9,7 @@
 #include "exception.hpp"
 
 #define THROW_EOS_	\
-	DEBUG_THROW(::Poseidon::PlayerException, PLAYER_END_OF_STREAM)
+	DEBUG_THROW(::Poseidon::PlayerProtocolException, PLAYER_END_OF_STREAM)
 
 namespace Poseidon {
 

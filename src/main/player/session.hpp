@@ -11,6 +11,8 @@
 
 namespace Poseidon {
 
+const boost::uint16_t PLAYER_ERROR_PROTOCOL_ID = 0;
+
 class ProtocolBase;
 
 class PlayerSession : public TcpSessionBase {
@@ -25,22 +27,23 @@ public:
 	explicit PlayerSession(Move<ScopedFile> socket);
 	~PlayerSession();
 
-public:
+private:
 	void onReadAvail(const void *data, std::size_t size);
 
-	bool shutdown(PlayerStatus status,
-		boost::uint16_t protocolId = 0, StreamBuffer additional = StreamBuffer());
-
-	bool send(boost::uint16_t protocolId, StreamBuffer protocolData);
+public:
+	bool send(boost::uint16_t protocolId, StreamBuffer contents);
+	bool sendError(boost::uint16_t protocolId, PlayerStatus status,
+		StreamBuffer additional = StreamBuffer());
 
 	template<class ProtocolT>
 	typename boost::enable_if<boost::is_base_of<ProtocolBase, ProtocolT>, bool>::type
-		send(boost::uint16_t protocolId, const ProtocolT &protocolData)
+		send(boost::uint16_t protocolId, const ProtocolT &contents)
 	{
-		StreamBuffer temp;
-		protocolData >> temp;
-		return send(protocolId, STD_MOVE(temp));
+		return send(protocolId, StreamBuffer(contents));
 	}
+
+	bool shutdown(boost::uint16_t protocolId, PlayerStatus status,
+		StreamBuffer additional = StreamBuffer());
 };
 
 }

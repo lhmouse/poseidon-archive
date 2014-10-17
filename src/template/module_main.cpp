@@ -14,6 +14,7 @@
 #include "../main/singletons/profile_manager.hpp"
 #include "../main/tcp_client_base.hpp"
 #include "../main/player/session.hpp"
+#include "../main/http/session.hpp"
 #include "../main/player/protocol_base.hpp"
 #include "../main/singletons/player_servlet_manager.hpp"
 using namespace Poseidon;
@@ -59,8 +60,11 @@ void tickProc(unsigned long long now, unsigned long long period){
 	LOG_FATAL("Tick, now = ", now, ", period = ", period);
 }
 
-HttpStatus profileProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
+void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
+
+	OptionalMap headers;
+	StreamBuffer contents;
 
 	headers.set("Content-Type", "text/plain");
 	contents.put("   Samples      Total time(us)  Exclusive time(us)    File:Line\n");
@@ -74,11 +78,14 @@ HttpStatus profileProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest
 		len = std::sprintf(temp, ":%lu\n", it->line);
 		contents.put(temp, len);
 	}
-	return HTTP_OK;
+	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
 }
 
-HttpStatus meowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
+void meowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
+
+	OptionalMap headers;
+	StreamBuffer contents;
 
 	AUTO(event, boost::make_shared<TestEvent1>());
 	event->i = 123;
@@ -87,10 +94,13 @@ HttpStatus meowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
 
 	headers.set("Content-Type", "text/html");
 	contents.put("<h1>Meow!</h1>");
-	return HTTP_OK;
+	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
 }
-HttpStatus meowMeowProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest){
+void meowMeowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
+
+	OptionalMap headers;
+	StreamBuffer contents;
 
 	AUTO(event, boost::make_shared<TestEvent1>());
 	event->i = 123;
@@ -99,12 +109,13 @@ HttpStatus meowMeowProc(OptionalMap &headers, StreamBuffer &contents, HttpReques
 
 	headers.set("Content-Type", "text/html");
 	contents.put("<h1>Meow! Meow!</h1>");
-	return HTTP_OK;
+	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
 }
-HttpStatus loadProc(OptionalMap &, StreamBuffer &contents, HttpRequest,
-	const boost::weak_ptr<const Module> &module)
-{
+void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest, boost::weak_ptr<const Module> module){
 	PROFILE_ME;
+
+	OptionalMap headers;
+	StreamBuffer contents;
 
 	AUTO(event, boost::make_shared<TestEvent2>());
 	event->d = 123.45;
@@ -112,17 +123,20 @@ HttpStatus loadProc(OptionalMap &, StreamBuffer &contents, HttpRequest,
 
 	if(g_meow){
 		contents.put("Already loaded");
-		return HTTP_OK;
+	} else {
+		// 通配路径 /meow/*
+		g_meow = HttpServletManager::registerServlet("/meow/", module, &meowProc);
+		g_meowMeow = HttpServletManager::registerServlet("/meow/meow/", module, &meowMeowProc);
+		g_tick = TimerDaemon::registerTimer(5000, 10000, module, &tickProc);
+		contents.put("OK");
 	}
-	// 通配路径 /meow/*
-	g_meow = HttpServletManager::registerServlet("/meow/", module, &meowProc);
-	g_meowMeow = HttpServletManager::registerServlet("/meow/meow/", module, &meowMeowProc);
-	g_tick = TimerDaemon::registerTimer(5000, 10000, module, &tickProc);
-	contents.put("OK");
-	return HTTP_OK;
+	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
 }
-HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpRequest request){
+void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest request){
 	PROFILE_ME;
+
+	OptionalMap headers;
+	StreamBuffer contents;
 
 	AUTO(event, boost::make_shared<TestEvent2>());
 	event->d = 67.89;
@@ -131,17 +145,15 @@ HttpStatus unloadProc(OptionalMap &, StreamBuffer &contents, HttpRequest request
 	if(request.getParams["unload_module"] == "1"){
 		ModuleManager::unload("libposeidon-template.so");
 		contents.put("Module unloaded");
-		return HTTP_OK;
-	}
-	if(!g_meow){
+	} else if(!g_meow){
 		contents.put("Already unloaded");
-		return HTTP_OK;
+	} else {
+		g_meow.reset();
+		g_meowMeow.reset();
+		g_tick.reset();
+		contents.put("OK");
 	}
-	g_meow.reset();
-	g_meowMeow.reset();
-	g_tick.reset();
-	contents.put("OK");
-	return HTTP_OK;
+	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
 }
 
 void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
@@ -192,7 +204,7 @@ public:
 	{
 	}
 
-public:
+private:
 	void onReadAvail(const void *data, std::size_t size){
 		AUTO(read, (const char *)data);
 		for(std::size_t i = 0; i < size; ++i){
@@ -303,14 +315,13 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 
 }
 
-extern "C" void poseidonModuleInit(const boost::weak_ptr<const Module> &module){
+extern "C" void poseidonModuleInit(boost::weak_ptr<const Module> module){
 	LOG_FATAL("poseidonModuleInit()");
 
 	g_profile = HttpServletManager::registerServlet("/profile", module, &profileProc);
 
 	using namespace TR1::placeholders;
-	g_load = HttpServletManager::registerServlet("/load", module,
-		TR1::bind(&loadProc, _1, _2, _3, module));
+	g_load = HttpServletManager::registerServlet("/load", module, TR1::bind(&loadProc, _1, _2, module));
 	g_unload = HttpServletManager::registerServlet("/unload", module, &unloadProc);
 
 	g_event1 = EventListenerManager::registerListener<TestEvent1>(module, &event1Proc);

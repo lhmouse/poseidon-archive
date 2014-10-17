@@ -43,7 +43,7 @@ public:
 		LOG_DEBUG("Initializing module: ", getPath());
 
 		const AUTO(initProc, reinterpret_cast<
-			void (*)(const boost::weak_ptr<const Module> &module)
+			void (*)(boost::weak_ptr<const Module> module)
 			>(::dlsym(m_handle.get(), "poseidonModuleInit")));
 		if(!initProc){
 			const char *const error = ::dlerror();

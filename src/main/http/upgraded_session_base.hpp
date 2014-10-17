@@ -12,16 +12,21 @@ class OptionalMap;
 class HttpSession;
 
 class HttpUpgradedSessionBase : public SessionBase {
+	friend class HttpSession;
+
 private:
 	const boost::weak_ptr<HttpSession> m_parent;
 
 protected:
 	explicit HttpUpgradedSessionBase(boost::weak_ptr<HttpSession> parent);
 
-public:
+private:
 	virtual void onInitContents(const void *data, std::size_t size);
-	const std::string &getRemoteIp() const;
+
 	void onReadAvail(const void *data, std::size_t size) = 0;
+
+public:
+	const std::string &getRemoteIp() const;
 	bool send(StreamBuffer buffer);
 	bool hasBeenShutdown() const;
 	bool shutdown();

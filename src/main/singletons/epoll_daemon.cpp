@@ -191,7 +191,6 @@ void daemonLoop(){
 					continue;
 				}
 				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
-				session->onReadAvail(data.get(), bytesRead);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while dispatching data: what = ", e.what());
 				session->shutdown();

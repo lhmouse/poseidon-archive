@@ -41,14 +41,16 @@ private:
 	long doRead(void *date, unsigned long size);
 	long doWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
 
-public:
-	const std::string &getRemoteIp() const;
+protected:
 	void onReadAvail(const void *data, std::size_t size) = 0;
 	bool send(StreamBuffer buffer);
+
+public:
 	bool hasBeenShutdown() const;
 	bool shutdown();
 	bool forceShutdown();
 
+	const std::string &getRemoteIp() const;
 	bool shutdown(StreamBuffer buffer);
 };
 

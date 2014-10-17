@@ -11,6 +11,8 @@
 
 namespace Poseidon {
 
+class HttpUpgradedSessionBase;
+
 class HttpSession : public TcpSessionBase {
 	friend class HttpServer;
 	friend class HttpUpgradedSessionBase;
@@ -30,7 +32,7 @@ private:
 	std::size_t m_contentLength;
 	std::string m_line;
 
-	boost::shared_ptr<class HttpUpgradedSessionBase> m_upgradedSession;
+	boost::shared_ptr<HttpUpgradedSessionBase> m_upgradedSession;
 
 	HttpVerb m_verb;
 	unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
@@ -43,6 +45,8 @@ public:
 	~HttpSession();
 
 private:
+	void onReadAvail(const void *data, std::size_t size);
+
 	void setRequestTimeout(unsigned long long timeout);
 
 	void onAllHeadersRead();
@@ -51,10 +55,11 @@ private:
 	void onUpgrade(const std::string &val);
 
 public:
-	void onReadAvail(const void *data, std::size_t size);
+	bool send(HttpStatus status, StreamBuffer contents, OptionalMap headers = OptionalMap());
+	bool sendDefault(HttpStatus status, OptionalMap headers = OptionalMap());
 
 	bool shutdown(HttpStatus status);
-	bool shutdown(HttpStatus status, OptionalMap headers, StreamBuffer contents);
+	bool shutdown(HttpStatus status, StreamBuffer contents, OptionalMap headers = OptionalMap());
 };
 
 }

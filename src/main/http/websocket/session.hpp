@@ -38,10 +38,11 @@ public:
 	explicit WebSocketSession(boost::weak_ptr<HttpSession> parent);
 
 private:
+	void onReadAvail(const void *data, std::size_t size);
+
 	void onControlFrame();
 
 public:
-	void onReadAvail(const void *data, std::size_t size);
 	bool send(StreamBuffer buffer, bool binary = true, bool masked = false);
 	bool shutdown(WebSocketStatus status);
 	bool shutdown(WebSocketStatus status, StreamBuffer reason);

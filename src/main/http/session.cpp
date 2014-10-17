@@ -20,9 +20,7 @@ using namespace Poseidon;
 
 namespace {
 
-StreamBuffer makeResponse(HttpStatus status, unsigned version,
-	OptionalMap headers = OptionalMap(), StreamBuffer *contents = NULLPTR)
-{
+StreamBuffer makeResponse(HttpStatus status, OptionalMap headers, StreamBuffer *contents){
 	LOG_DEBUG("Making HTTP response: status = ", (unsigned)status);
 
 	char codeStatus[512];
@@ -55,11 +53,8 @@ StreamBuffer makeResponse(HttpStatus status, unsigned version,
 		headers.set("Content-Length", boost::lexical_cast<std::string>(realContents.size()));
 	}
 
-	char versionStr[64];
-	const std::size_t versionStrLen = std::sprintf(
-		versionStr, "HTTP/%u.%u ", version / 10000, version % 10000);
 	StreamBuffer ret;
-	ret.put(versionStr, versionStrLen);
+	ret.put("HTTP/1.1 ");
 	ret.put(codeStatus, codeStatusLen);
 	ret.put("\r\n");
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
@@ -149,22 +144,15 @@ protected:
 			request.contents.swap(m_contents);
 
 			LOG_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", stringFromHttpVerb(m_verb));
-			OptionalMap headers;
-			StreamBuffer contents;
-			const HttpStatus status = (*servlet)(headers, contents, STD_MOVE(request));
-
-			if((m_verb == HTTP_HEAD) || (status == HTTP_NO_CONTENT) || ((unsigned)status / 100 == 1)){
-				contents.clear();
-			}
-			m_session->send(makeResponse(status, m_version, STD_MOVE(headers), &contents));
+			(*servlet)(m_session, STD_MOVE(request));
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.status()));
-			m_session->send(makeResponse(e.status(), m_version));
+			m_session->sendDefault(e.status());
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... request URI = ", m_uri);
-			m_session->send(makeResponse(HTTP_SERVER_ERROR, m_version));
+			m_session->sendDefault(HTTP_SERVER_ERROR);
 			throw;
 		}
 	}
@@ -183,112 +171,6 @@ HttpSession::~HttpSession(){
 		LOG_WARNING("Now that this HTTP session is to be destroyed, "
 			"a premature request has to be discarded.");
 	}
-}
-
-void HttpSession::setRequestTimeout(unsigned long long timeout){
-	LOG_DEBUG("Setting request timeout to ", timeout);
-
-	if(timeout == 0){
-		m_shutdownTimer.reset();
-	} else {
-		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, NULLPTR,
-			TR1::bind(&onRequestTimeout,
-				virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
-	}
-}
-
-void HttpSession::onAllHeadersRead(){
-	typedef std::pair<const char *, void (HttpSession::*)(const std::string &)> TableItem;
-
-	static const TableItem JUMP_TABLE[] = {
-		std::make_pair("Content-Length", &HttpSession::onContentLength),
-		std::make_pair("Expect", &HttpSession::onExpect),
-		std::make_pair("Upgrade", &HttpSession::onUpgrade),
-	};
-
-	for(AUTO(it, m_headers.begin()); it != m_headers.end(); ++it){
-		AUTO(lower, BEGIN(JUMP_TABLE));
-		AUTO(upper, END(JUMP_TABLE));
-		void (HttpSession::*found)(const std::string &) = 0;
-		do {
-			const AUTO(middle, lower + (upper - lower) / 2);
-			const int result = std::strcmp(it->first.get(), middle->first);
-			if(result == 0){
-				found = middle->second;
-				break;
-			} else if(result < 0){
-				upper = middle;
-			} else {
-				lower = middle + 1;
-			}
-		} while(lower != upper);
-
-		if(found){
-			(this->*found)(it->second);
-		}
-	}
-
-	if(!m_upgradedSession){
-		// 仅测试。
-		boost::shared_ptr<const void> lockedDep;
-		if(!HttpServletManager::getServlet(lockedDep, m_uri)){
-			LOG_WARNING("No servlet for URI", m_uri);
-			DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
-		}
-	}
-}
-void HttpSession::onExpect(const std::string &val){
-	if(val != "100-continue"){
-		LOG_WARNING("Unknown HTTP header Expect: ", val);
-		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-	}
-	send(makeResponse(HTTP_CONTINUE, m_version));
-}
-void HttpSession::onContentLength(const std::string &val){
-	m_contentLength = boost::lexical_cast<std::size_t>(val);
-	LOG_DEBUG("Content-Length: ", m_contentLength);
-}
-void HttpSession::onUpgrade(const std::string &val){
-	if(m_version < 10001){
-		LOG_WARNING("HTTP 1.1 is required to use WebSocket");
-		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-	}
-	if(::strcasecmp(val.c_str(), "websocket") != 0){
-		LOG_WARNING("Unknown HTTP header Upgrade: ", val);
-		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-	}
-	AUTO_REF(version, m_headers.get("Sec-WebSocket-Version"));
-	if(version != "13"){
-		LOG_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
-		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-	}
-
-	// 仅测试。
-	boost::shared_ptr<const void> lockedDep;
-	if(!WebSocketServletManager::getServlet(lockedDep, m_uri)){
-		LOG_WARNING("No servlet for URI", m_uri);
-		DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
-	}
-
-	std::string key = m_headers.get("Sec-WebSocket-Key");
-	if(key.empty()){
-		LOG_WARNING("No Sec-WebSocket-Key specified.");
-		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
-	}
-	key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-	unsigned char sha1[20];
-	sha1Sum(sha1, key.data(), key.size());
-	key = base64Encode(sha1, sizeof(sha1));
-
-	OptionalMap headers;
-	headers.set("Upgrade", "websocket");
-	headers.set("Connection", "Upgrade");
-	headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
-	StreamBuffer contents;
-	send(makeResponse(HTTP_SWITCH_PROTOCOLS, m_version, headers, &contents));
-
-	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualWeakFromThis<HttpSession>());
-	LOG_INFO("Upgraded to WebSocketSession, remote IP = ", getRemoteIp());
 }
 
 void HttpSession::onReadAvail(const void *data, std::size_t size){
@@ -443,9 +325,121 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	}
 }
 
-bool HttpSession::shutdown(HttpStatus status){
-	return TcpSessionBase::shutdown(makeResponse(status, m_version));
+void HttpSession::setRequestTimeout(unsigned long long timeout){
+	LOG_DEBUG("Setting request timeout to ", timeout);
+
+	if(timeout == 0){
+		m_shutdownTimer.reset();
+	} else {
+		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, NULLPTR,
+			TR1::bind(&onRequestTimeout, virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+	}
 }
-bool HttpSession::shutdown(HttpStatus status, OptionalMap headers, StreamBuffer contents){
-	return TcpSessionBase::shutdown(makeResponse(status, m_version, STD_MOVE(headers), &contents));
+
+void HttpSession::onAllHeadersRead(){
+	typedef std::pair<const char *, void (HttpSession::*)(const std::string &)> TableItem;
+
+	static const TableItem JUMP_TABLE[] = {
+		std::make_pair("Content-Length", &HttpSession::onContentLength),
+		std::make_pair("Expect", &HttpSession::onExpect),
+		std::make_pair("Upgrade", &HttpSession::onUpgrade),
+	};
+
+	for(AUTO(it, m_headers.begin()); it != m_headers.end(); ++it){
+		AUTO(lower, BEGIN(JUMP_TABLE));
+		AUTO(upper, END(JUMP_TABLE));
+		void (HttpSession::*found)(const std::string &) = 0;
+		do {
+			const AUTO(middle, lower + (upper - lower) / 2);
+			const int result = std::strcmp(it->first.get(), middle->first);
+			if(result == 0){
+				found = middle->second;
+				break;
+			} else if(result < 0){
+				upper = middle;
+			} else {
+				lower = middle + 1;
+			}
+		} while(lower != upper);
+
+		if(found){
+			(this->*found)(it->second);
+		}
+	}
+
+	if(!m_upgradedSession){
+		// 仅测试。
+		boost::shared_ptr<const void> lockedDep;
+		if(!HttpServletManager::getServlet(lockedDep, m_uri)){
+			LOG_WARNING("No servlet for URI", m_uri);
+			DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
+		}
+	}
+}
+void HttpSession::onExpect(const std::string &val){
+	if(val != "100-continue"){
+		LOG_WARNING("Unknown HTTP header Expect: ", val);
+		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	}
+	TcpSessionBase::send(makeResponse(HTTP_CONTINUE, OptionalMap(), NULLPTR));
+}
+void HttpSession::onContentLength(const std::string &val){
+	m_contentLength = boost::lexical_cast<std::size_t>(val);
+	LOG_DEBUG("Content-Length: ", m_contentLength);
+}
+void HttpSession::onUpgrade(const std::string &val){
+	if(m_version < 10001){
+		LOG_WARNING("HTTP 1.1 is required to use WebSocket");
+		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	}
+	if(::strcasecmp(val.c_str(), "websocket") != 0){
+		LOG_WARNING("Unknown HTTP header Upgrade: ", val);
+		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	}
+	AUTO_REF(version, m_headers.get("Sec-WebSocket-Version"));
+	if(version != "13"){
+		LOG_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
+		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+	}
+
+	// 仅测试。
+	boost::shared_ptr<const void> lockedDep;
+	if(!WebSocketServletManager::getServlet(lockedDep, m_uri)){
+		LOG_WARNING("No servlet for URI", m_uri);
+		DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
+	}
+
+	std::string key = m_headers.get("Sec-WebSocket-Key");
+	if(key.empty()){
+		LOG_WARNING("No Sec-WebSocket-Key specified.");
+		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+	}
+	key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+	unsigned char sha1[20];
+	sha1Sum(sha1, key.data(), key.size());
+	key = base64Encode(sha1, sizeof(sha1));
+
+	OptionalMap headers;
+	headers.set("Upgrade", "websocket");
+	headers.set("Connection", "Upgrade");
+	headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
+	StreamBuffer contents;
+	TcpSessionBase::send(makeResponse(HTTP_SWITCH_PROTOCOLS, headers, &contents));
+
+	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualWeakFromThis<HttpSession>());
+	LOG_INFO("Upgraded to WebSocketSession, remote IP = ", getRemoteIp());
+}
+
+bool HttpSession::send(HttpStatus status, StreamBuffer contents, OptionalMap headers){
+	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), &contents));
+}
+bool HttpSession::sendDefault(HttpStatus status, OptionalMap headers){
+	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), NULLPTR));
+}
+
+bool HttpSession::shutdown(HttpStatus status){
+	return TcpSessionBase::shutdown(makeResponse(status, OptionalMap(), NULLPTR));
+}
+bool HttpSession::shutdown(HttpStatus status, StreamBuffer contents, OptionalMap headers){
+	return TcpSessionBase::shutdown(makeResponse(status, STD_MOVE(headers), &contents));
 }
