@@ -41,6 +41,7 @@ TcpSessionBase::SslImpl::SslImpl(Move<SslPtr> ssl, int fd)
 }
 TcpSessionBase::SslImpl::~SslImpl(){
 	if(m_established){
+		LOG_DEBUG("Shutting down SSL...");
 		::SSL_shutdown(m_ssl.get());
 	}
 }
