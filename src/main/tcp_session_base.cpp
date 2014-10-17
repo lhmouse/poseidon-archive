@@ -111,7 +111,7 @@ long TcpSessionBase::doRead(void *data, unsigned long size){
 		ret = ::recv(m_socket.get(), data, size, MSG_NOSIGNAL);
 	}
 	if(ret > 0){
-		onReadAvail(data, size);
+		onReadAvail(data, ret);
 	}
 	return ret;
 }

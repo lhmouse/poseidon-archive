@@ -115,7 +115,8 @@ private:
 public:
 	HttpRequestJob(boost::shared_ptr<HttpSession> session,
 		HttpVerb verb, std::string uri, unsigned version,
-		OptionalMap getParams, OptionalMap headers, std::string contents)
+		OptionalMap getParams, OptionalMap headers,
+		std::string contents)
 		: m_session(STD_MOVE(session))
 		, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
 		, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers))
