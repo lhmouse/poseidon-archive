@@ -20,6 +20,9 @@ private:
 public:
 	Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT;
 	~Profiler() NOEXCEPT;
+
+private:
+	void flush(unsigned long long hint) NOEXCEPT;
 };
 
 }

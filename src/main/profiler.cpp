@@ -34,12 +34,24 @@ Profiler::~Profiler() NOEXCEPT {
 
 	if(m_start != 0){
 		const AUTO(now, getMonoClock());
-
-		m_exclusiveTotal += now - m_exclusiveStart;
+		flush(now);
 		if(m_prev){
-			m_prev->m_exclusiveStart = now;
+			m_prev->flush(now);
+		}
+	}
+}
+
+void Profiler::flush(unsigned long long hint) NOEXCEPT {
+	if(m_start != 0){
+		m_exclusiveTotal += hint - m_exclusiveStart;
+		if(m_prev){
+			m_prev->m_exclusiveStart = hint;
 		}
 
-		ProfileManager::accumulate(m_file, m_line, m_func, now - m_start, m_exclusiveTotal);
+		ProfileManager::accumulate(m_file, m_line, m_func, hint - m_start, m_exclusiveTotal);
+
+		m_start = hint;
+		m_exclusiveTotal = 0;
+		m_exclusiveStart = hint;
 	}
 }
