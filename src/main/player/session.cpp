@@ -119,13 +119,6 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 				m_payloadLen &= 0x3FFF;
 
 				LOG_DEBUG("Protocol id = ", m_protocolId, ", len = ", m_payloadLen);
-
-				// 仅测试。
-				boost::shared_ptr<const void> lockedDep;
-				if(!PlayerServletManager::getServlet(lockedDep, m_protocolId)){
-					LOG_WARNING("No servlet for protocol ", m_protocolId);
-					DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND);
-				}
 			}
 			if(m_payload.size() < (unsigned)m_payloadLen){
 				break;

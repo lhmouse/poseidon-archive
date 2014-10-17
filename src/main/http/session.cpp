@@ -367,15 +367,6 @@ void HttpSession::onAllHeadersRead(){
 			(this->*found)(it->second);
 		}
 	}
-
-	if(!m_upgradedSession){
-		// 仅测试。
-		boost::shared_ptr<const void> lockedDep;
-		if(!HttpServletManager::getServlet(lockedDep, m_uri)){
-			LOG_WARNING("No servlet for URI", m_uri);
-			DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
-		}
-	}
 }
 void HttpSession::onExpect(const std::string &val){
 	if(val != "100-continue"){
@@ -401,13 +392,6 @@ void HttpSession::onUpgrade(const std::string &val){
 	if(version != "13"){
 		LOG_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-	}
-
-	// 仅测试。
-	boost::shared_ptr<const void> lockedDep;
-	if(!WebSocketServletManager::getServlet(lockedDep, m_uri)){
-		LOG_WARNING("No servlet for URI", m_uri);
-		DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 	}
 
 	std::string key = m_headers.get("Sec-WebSocket-Key");
