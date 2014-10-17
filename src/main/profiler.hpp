@@ -7,6 +7,9 @@
 namespace Poseidon {
 
 class Profiler : boost::noncopyable {
+public:
+	static void flushProfilersInThread();
+
 private:
 	Profiler *const m_prev;
 	const char *const m_file;

@@ -6,6 +6,7 @@
 #include "config_file.hpp"
 #include "../atomic.hpp"
 #include "../log.hpp"
+#include "../profiler.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -107,6 +108,8 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 }
 
 std::vector<ProfileItem> ProfileManager::snapshot(){
+	Profiler::flushProfilersInThread();
+
 	std::vector<ProfileItem> ret;
 	{
 		const boost::shared_lock<boost::shared_mutex> slock(g_mutex);

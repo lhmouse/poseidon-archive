@@ -10,6 +10,13 @@ __thread Profiler *t_topProfiler = 0;
 
 }
 
+void Profiler::flushProfilersInThread(){
+	const AUTO(now, getMonoClock());
+	for(AUTO(cur, t_topProfiler); cur; cur = cur->m_prev){
+		cur->flush(now);
+	}
+}
+
 Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT
 	: m_prev(t_topProfiler), m_file(file), m_line(line), m_func(func)
 {

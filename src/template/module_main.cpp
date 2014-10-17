@@ -63,15 +63,16 @@ HttpStatus profileProc(OptionalMap &headers, StreamBuffer &contents, HttpRequest
 	PROFILE_ME;
 
 	headers.set("Content-Type", "text/plain");
-	contents.put("   Samples      Total time(us)  Exclusive time(us)    Function\n");
+	contents.put("   Samples      Total time(us)  Exclusive time(us)    File:Line\n");
 	const AUTO(profile, ProfileManager::snapshot());
 	for(AUTO(it, profile.begin()); it != profile.end(); ++it){
 		char temp[128];
-		const int len = std::sprintf(temp, "%10llu%20llu%20llu    ",
+		int len = std::sprintf(temp, "%10llu%20llu%20llu    ",
 			it->samples, it->usTotal, it->usExclusive);
 		contents.put(temp, len);
-		contents.put(it->func.get());
-		contents.put('\n');
+		contents.put(it->file.get());
+		len = std::sprintf(temp, "%lu\n", it->line);
+		contents.put(temp, len);
 	}
 	return HTTP_OK;
 }
