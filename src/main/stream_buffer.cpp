@@ -9,7 +9,7 @@ using namespace Poseidon;
 struct Poseidon::ImplDisposableBuffer {
 	std::size_t readPos;
 	std::size_t writePos;
-	char data[1024];
+	char data[256];
 
 	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
 	// 因此在 list 中会被 value-initialize 即填零，然而这是没有任何意义的。

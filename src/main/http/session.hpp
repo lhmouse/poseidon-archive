@@ -52,6 +52,7 @@ private:
 
 public:
 	void onReadAvail(const void *data, std::size_t size);
+
 	bool shutdown(HttpStatus status);
 	bool shutdown(HttpStatus status, OptionalMap headers, StreamBuffer contents);
 };

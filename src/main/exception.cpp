@@ -17,7 +17,7 @@ SystemError::SystemError(const char *file, std::size_t line, int code)
 }
 
 ProtocolException::ProtocolException(const char *file, std::size_t line,
-	std::string what, int code)
+	std::string what, unsigned code)
 	: Exception(file, line, STD_MOVE(what)), m_code(code)
 {
 }

@@ -14,6 +14,7 @@
 #include "../main/singletons/profile_manager.hpp"
 #include "../main/tcp_client_base.hpp"
 #include "../main/player/session.hpp"
+#include "../main/player/protocol_base.hpp"
 #include "../main/singletons/player_servlet_manager.hpp"
 using namespace Poseidon;
 

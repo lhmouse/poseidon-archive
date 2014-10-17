@@ -12,7 +12,7 @@ public:
 		const char *reason = NULLPTR)
 		: ProtocolException(file, line,
 			reason ? reason : getWebSocketStatusDesc(status),
-			static_cast<int>(status))
+			static_cast<unsigned>(status))
 	{
 	}
 

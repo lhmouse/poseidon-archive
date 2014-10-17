@@ -7,6 +7,7 @@
 #include <boost/utility/enable_if.hpp>
 #include "../tcp_session_base.hpp"
 #include "../stream_buffer.hpp"
+#include "status.hpp"
 
 namespace Poseidon {
 
@@ -27,15 +28,18 @@ public:
 public:
 	void onReadAvail(const void *data, std::size_t size);
 
-	bool send(boost::uint16_t status, StreamBuffer payload);
+	bool shutdown(PlayerStatus status,
+		boost::uint16_t protocolId = 0, StreamBuffer additional = StreamBuffer());
+
+	bool send(boost::uint16_t protocolId, StreamBuffer protocolData);
 
 	template<class ProtocolT>
 	typename boost::enable_if<boost::is_base_of<ProtocolBase, ProtocolT>, bool>::type
-		send(boost::uint16_t status, const ProtocolT &protocol)
+		send(boost::uint16_t protocolId, const ProtocolT &protocolData)
 	{
 		StreamBuffer temp;
-		protocol >> temp;
-		return send(status, STD_MOVE(temp));
+		protocolData >> temp;
+		return send(protocolId, STD_MOVE(temp));
 	}
 };
 

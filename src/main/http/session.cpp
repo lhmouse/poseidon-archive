@@ -159,7 +159,7 @@ protected:
 			m_session->send(makeResponse(status, m_version, STD_MOVE(headers), &contents));
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
-				", status = ", e.status(), ", file = ", e.file(), ", line = ", e.line());
+				", status = ", static_cast<unsigned>(e.status()));
 			m_session->send(makeResponse(e.status(), m_version));
 			throw;
 		} catch(...){
@@ -192,7 +192,8 @@ void HttpSession::setRequestTimeout(unsigned long long timeout){
 		m_shutdownTimer.reset();
 	} else {
 		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, NULLPTR,
-			TR1::bind(&onRequestTimeout, virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+			TR1::bind(&onRequestTimeout,
+				virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
 	}
 }
 
@@ -421,8 +422,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			}
 		}
 	} catch(HttpException &e){
-		LOG_ERROR("HttpException thrown while parsing HTTP data, status = ", e.status(),
-			", file = ", e.file(), ", line = ", e.line());
+		LOG_ERROR("HttpException thrown while parsing HTTP data, URI = ", m_uri,
+			", status = ", static_cast<unsigned>(e.status()));
 		shutdown(e.status());
 		throw;
 	} catch(...){
@@ -431,6 +432,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		throw;
 	}
 }
+
 bool HttpSession::shutdown(HttpStatus status){
 	return TcpSessionBase::shutdown(makeResponse(status, m_version));
 }

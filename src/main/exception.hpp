@@ -40,21 +40,15 @@ public:
 };
 
 class ProtocolException : public Exception {
-public:
-	enum {
-		ERR_END_OF_STREAM	= -1,
-		ERR_BAD_REQUEST		= -2,
-		ERR_INTERNAL_ERROR	= -3,
-	};
-
 private:
-	const int m_code;
+	const unsigned m_code;
 
 public:
-	ProtocolException(const char *file, std::size_t line, std::string what, int code);
+	ProtocolException(const char *file, std::size_t line,
+		std::string what, unsigned code);
 
 public:
-	int code() const NOEXCEPT {
+	unsigned code() const NOEXCEPT {
 		return m_code;
 	}
 };

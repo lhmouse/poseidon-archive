@@ -6,6 +6,10 @@
 #	error MYSQL_OBJECT_FIELDS is undefined.
 #endif
 
+#ifndef POSEIDON_MYSQL_OBJECT_BASE_HPP_
+#	error Please #include "object_base.hpp" first.
+#endif
+
 #ifndef POSEIDON_MYSQL_OBJECT_GENERATOR_HPP_
 #define POSEIDON_MYSQL_OBJECT_GENERATOR_HPP_
 
@@ -17,7 +21,6 @@
 #include <cppconn/connection.h>
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
-#include "object_base.hpp"
 #include "../atomic.hpp"
 #include "../log.hpp"
 
