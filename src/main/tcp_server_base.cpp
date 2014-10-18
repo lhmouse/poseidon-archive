@@ -26,7 +26,7 @@ public:
 			LOG_FATAL("Could not create server SSL context");
 			std::abort();
 		}
-		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER, NULLPTR);
+		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, NULLPTR);
 
 		LOG_INFO("Loading server certificate: ", cert);
 		if(::SSL_CTX_use_certificate_file(
