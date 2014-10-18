@@ -58,8 +58,8 @@ public:
 	bool send(HttpStatus status, StreamBuffer contents, OptionalMap headers = OptionalMap());
 	bool sendDefault(HttpStatus status, OptionalMap headers = OptionalMap());
 
-	bool shutdown(HttpStatus status);
 	bool shutdown(HttpStatus status, StreamBuffer contents, OptionalMap headers = OptionalMap());
+	bool shutdown(HttpStatus status);
 };
 
 }

@@ -20,43 +20,26 @@ using namespace Poseidon;
 
 namespace {
 
-StreamBuffer makeResponse(HttpStatus status, OptionalMap headers, StreamBuffer *contents){
-	LOG_DEBUG("Making HTTP response: status = ", (unsigned)status);
+StreamBuffer makeResponse(HttpStatus status, OptionalMap headers, StreamBuffer contents){
+	LOG_DEBUG("Making HTTP response: status = ", static_cast<unsigned>(status));
 
-	char codeStatus[512];
-	std::size_t codeStatusLen = std::sprintf(codeStatus, "%u ", (unsigned)status);
+	StreamBuffer ret;
+
+	ret.put("HTTP/1.1 ");
+	char code[32];
+	const unsigned codeLen = std::sprintf(code, "%u", static_cast<unsigned>(status));
+	ret.put(code, codeLen);
 	const AUTO(desc, getHttpStatusDesc(status));
-	const std::size_t toAppend = std::min(
-		sizeof(codeStatus) - codeStatusLen, std::strlen(desc.descShort));
-	std::memcpy(codeStatus + codeStatusLen, desc.descShort, toAppend);
-	codeStatusLen += toAppend;
+	ret.put(desc.descShort);
+	ret.put("\r\n");
 
-	StreamBuffer realContents;
-	if(!contents){
-		realContents.put("<html><head><title>");
-		realContents.put(codeStatus, codeStatusLen);
-		realContents.put("</title></head><body><h1>");
-		realContents.put(codeStatus, codeStatusLen);
-		realContents.put("</h1><hr /><p>");
-		realContents.put(desc.descLong);
-		realContents.put("</p></body></html>");
-
-		headers.set("Content-Type", "text/html; charset=utf-8");
-		headers.set("Content-Length", boost::lexical_cast<std::string>(realContents.size()));
-	} else if(!contents->empty()){
-		realContents.splice(*contents);
-
+	if(!contents.empty()){
 		AUTO_REF(contentType, headers.create("Content-Type"));
 		if(contentType.empty()){
 			contentType.assign("text/plain; charset=utf-8");
 		}
-		headers.set("Content-Length", boost::lexical_cast<std::string>(realContents.size()));
+		headers.set("Content-Length", boost::lexical_cast<std::string>(contents.size()));
 	}
-
-	StreamBuffer ret;
-	ret.put("HTTP/1.1 ");
-	ret.put(codeStatus, codeStatusLen);
-	ret.put("\r\n");
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 		if(!it->second.empty()){
 			ret.put(it->first.get(), std::strlen(it->first.get()));
@@ -66,8 +49,26 @@ StreamBuffer makeResponse(HttpStatus status, OptionalMap headers, StreamBuffer *
 		}
 	}
 	ret.put("\r\n");
-	ret.splice(realContents);
+
+	ret.splice(contents);
+
 	return ret;
+}
+StreamBuffer makeDefaultResponse(HttpStatus status, OptionalMap headers){
+	LOG_DEBUG("Making default HTTP response: status = ", static_cast<unsigned>(status));
+
+	headers.set("Content-Type", "text/html; charset=utf-8");
+
+	StreamBuffer contents;
+	contents.put("<html><head><title>");
+	const AUTO(desc, getHttpStatusDesc(status));
+	contents.put(desc.descShort);
+	contents.put("</title></head><body><h1>");
+	contents.put(desc.descShort);
+	contents.put("</h1><hr /><p>");
+	contents.put(desc.descLong);
+	contents.put("</p></body></html>");
+	return makeResponse(status, STD_MOVE(headers), STD_MOVE(contents));
 }
 
 void normalizeUri(std::string &uri){
@@ -373,7 +374,7 @@ void HttpSession::onExpect(const std::string &val){
 		LOG_WARNING("Unknown HTTP header Expect: ", val);
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 	}
-	TcpSessionBase::send(makeResponse(HTTP_CONTINUE, OptionalMap(), NULLPTR));
+	sendDefault(HTTP_CONTINUE);
 }
 void HttpSession::onContentLength(const std::string &val){
 	m_contentLength = boost::lexical_cast<std::size_t>(val);
@@ -408,23 +409,22 @@ void HttpSession::onUpgrade(const std::string &val){
 	headers.set("Upgrade", "websocket");
 	headers.set("Connection", "Upgrade");
 	headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
-	StreamBuffer contents;
-	TcpSessionBase::send(makeResponse(HTTP_SWITCH_PROTOCOLS, headers, &contents));
+	sendDefault(HTTP_SWITCH_PROTOCOLS, STD_MOVE(headers));
 
 	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualWeakFromThis<HttpSession>());
 	LOG_INFO("Upgraded to WebSocketSession, remote IP = ", getRemoteIp());
 }
 
 bool HttpSession::send(HttpStatus status, StreamBuffer contents, OptionalMap headers){
-	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), &contents));
+	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), STD_MOVE(contents)));
 }
 bool HttpSession::sendDefault(HttpStatus status, OptionalMap headers){
-	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), NULLPTR));
+	return TcpSessionBase::send(makeDefaultResponse(status, STD_MOVE(headers)));
 }
 
-bool HttpSession::shutdown(HttpStatus status){
-	return TcpSessionBase::shutdown(makeResponse(status, OptionalMap(), NULLPTR));
-}
 bool HttpSession::shutdown(HttpStatus status, StreamBuffer contents, OptionalMap headers){
-	return TcpSessionBase::shutdown(makeResponse(status, STD_MOVE(headers), &contents));
+	return TcpSessionBase::shutdown(makeResponse(status, STD_MOVE(headers), STD_MOVE(contents)));
+}
+bool HttpSession::shutdown(HttpStatus status){
+	return TcpSessionBase::shutdown(makeDefaultResponse(status, OptionalMap()));
 }
