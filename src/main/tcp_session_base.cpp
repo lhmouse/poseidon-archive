@@ -100,7 +100,7 @@ bool TcpSessionBase::forceShutdown(){
 }
 
 void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslImpl> > ssl){
-	ssl.swap(m_ssl);
+	swap(m_ssl, ssl);
 }
 
 long TcpSessionBase::doRead(void *data, unsigned long size){
