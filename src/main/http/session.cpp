@@ -91,13 +91,13 @@ void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned lon
 	const AUTO(session, observer.lock());
 	if(session){
 		LOG_WARNING("HTTP request times out, remote IP = ", session->getRemoteIp());
-		session->shutdown(HTTP_REQUEST_TIMEOUT);
+		session->sendDefault(HTTP_REQUEST_TIMEOUT, true);
 	}
 }
 void onKeepAliveTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned long long){
 	const AUTO(session, observer.lock());
 	if(session){
-		session->TcpSessionBase::shutdown();
+		static_cast<TcpSessionBase *>(session.get())->send(StreamBuffer(), true);
 	}
 }
 
@@ -150,11 +150,11 @@ protected:
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.status()));
-			m_session->sendDefault(e.status());
+			m_session->sendDefault(e.status(), true);
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... request URI = ", m_uri);
-			m_session->sendDefault(HTTP_SERVER_ERROR);
+			m_session->sendDefault(HTTP_SERVER_ERROR, true);
 			throw;
 		}
 	}
@@ -170,8 +170,7 @@ HttpSession::HttpSession(Move<ScopedFile> socket)
 }
 HttpSession::~HttpSession(){
 	if(m_state != ST_FIRST_HEADER){
-		LOG_WARNING("Now that this HTTP session is to be destroyed, "
-			"a premature request has to be discarded.");
+		LOG_WARNING("Now that this session is to be destroyed, a premature request has to be discarded.");
 	}
 }
 
@@ -316,13 +315,12 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			}
 		}
 	} catch(HttpException &e){
-		LOG_ERROR("HttpException thrown while parsing HTTP data, URI = ", m_uri,
-			", status = ", static_cast<unsigned>(e.status()));
-		shutdown(e.status());
+		LOG_ERROR("HttpException thrown while parsing data, URI = ", m_uri, ", status = ", static_cast<unsigned>(e.status()));
+		sendDefault(e.status(), true);
 		throw;
 	} catch(...){
 		LOG_ERROR("Forwarding exception... shutdown the session first.");
-		shutdown(HTTP_SERVER_ERROR);
+		sendDefault(HTTP_SERVER_ERROR, true);
 		throw;
 	}
 }
@@ -411,20 +409,13 @@ void HttpSession::onUpgrade(const std::string &val){
 	headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
 	sendDefault(HTTP_SWITCH_PROTOCOLS, STD_MOVE(headers));
 
-	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualWeakFromThis<HttpSession>());
+	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualSharedFromThis<HttpSession>());
 	LOG_INFO("Upgraded to WebSocketSession, remote IP = ", getRemoteIp());
 }
 
-bool HttpSession::send(HttpStatus status, StreamBuffer contents, OptionalMap headers){
-	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), STD_MOVE(contents)));
+bool HttpSession::send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool final){
+	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), STD_MOVE(contents)), final);
 }
-bool HttpSession::sendDefault(HttpStatus status, OptionalMap headers){
-	return TcpSessionBase::send(makeDefaultResponse(status, STD_MOVE(headers)));
-}
-
-bool HttpSession::shutdown(HttpStatus status, StreamBuffer contents, OptionalMap headers){
-	return TcpSessionBase::shutdown(makeResponse(status, STD_MOVE(headers), STD_MOVE(contents)));
-}
-bool HttpSession::shutdown(HttpStatus status){
-	return TcpSessionBase::shutdown(makeDefaultResponse(status, OptionalMap()));
+bool HttpSession::sendDefault(HttpStatus status, OptionalMap headers, bool final){
+	return TcpSessionBase::send(makeDefaultResponse(status, STD_MOVE(headers)), final);
 }

@@ -13,13 +13,13 @@ using namespace Poseidon;
 
 namespace {
 
-const std::size_t MAX_PACKET_SIZE = 0x4000;
+const std::size_t MAX_PACKET_SIZE = 0x3FFF;
 
-StreamBuffer makeFrame(WebSocketOpCode opcode, StreamBuffer buffer, bool masked){
+StreamBuffer makeFrame(WebSocketOpCode opcode, StreamBuffer contents, bool masked){
 	StreamBuffer ret;
 	unsigned char ch = opcode | WS_FL_FIN;
 	ret.put(ch);
-	const std::size_t size = buffer.size();
+	const std::size_t size = contents.size();
 	ch = masked ? 0x80 : 0;
 	if(size < 0x7E){
 		ch |= size;
@@ -40,7 +40,7 @@ StreamBuffer makeFrame(WebSocketOpCode opcode, StreamBuffer buffer, bool masked)
 		ret.put(&mask, 4);
 		int ch;
 		for(;;){
-			ch = buffer.get();
+			ch = contents.get();
 			if(ch == -1){
 				break;
 			}
@@ -49,24 +49,32 @@ StreamBuffer makeFrame(WebSocketOpCode opcode, StreamBuffer buffer, bool masked)
 			mask = (mask << 24) | (mask >> 8);
 		}
 	} else {
-		ret.splice(buffer);
+		ret.splice(contents);
 	}
 	return ret;
 }
 
+StreamBuffer makeCloseFrame(WebSocketStatus status, StreamBuffer contents){
+	StreamBuffer temp;
+	const boost::uint16_t codeBe = htobe16(static_cast<unsigned>(status));
+	temp.put(&codeBe, 2);
+	temp.splice(contents);
+	return makeFrame(WS_CLOSE, STD_MOVE(temp), false);
+}
+
 class WebSocketRequestJob : public JobBase {
 private:
+	const boost::shared_ptr<WebSocketSession> m_session;
 	const std::string m_uri;
-	const boost::weak_ptr<WebSocketSession> m_session;
-
 	const WebSocketOpCode m_opcode;
+
 	StreamBuffer m_payload;
 
 public:
-	WebSocketRequestJob(std::string uri, boost::weak_ptr<WebSocketSession> session,
-		WebSocketOpCode opcode, StreamBuffer payload)
-		: m_uri(STD_MOVE(uri)), m_session(STD_MOVE(session))
-		, m_opcode(opcode), m_payload(STD_MOVE(payload))
+	WebSocketRequestJob(boost::shared_ptr<WebSocketSession> session,
+		std::string uri, WebSocketOpCode opcode, StreamBuffer payload)
+		: m_session(STD_MOVE(session)), m_uri(STD_MOVE(uri)), m_opcode(opcode)
+		, m_payload(STD_MOVE(payload))
 	{
 	}
 
@@ -74,27 +82,34 @@ protected:
 	void perform(){
 		PROFILE_ME;
 
-		AUTO(session, m_session.lock());
-		if(!session){
-			LOG_WARNING("The specified WebSocket session has expired.");
-			return;
+		try {
+			boost::shared_ptr<const void> lockedDep;
+			const AUTO(servlet, WebSocketServletManager::getServlet(lockedDep, m_uri));
+			if(!servlet){
+				LOG_WARNING("No servlet for URI ", m_uri);
+				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE);
+				return;
+			}
+
+			LOG_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_payload.size());
+			(*servlet)(m_session, m_opcode, STD_MOVE(m_payload));
+		} catch(WebSocketException &e){
+			LOG_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(),
+				", what = ", e.what());
+			m_session->shutdown(e.status(), StreamBuffer(e.what()));
+			throw;
+		} catch(...){
+			LOG_ERROR("Forwarding exception... shutdown the session first.");
+			m_session->shutdown(WS_INTERNAL_ERROR);
+			throw;
 		}
-		boost::shared_ptr<const void> lockedDep;
-		const AUTO(servlet, WebSocketServletManager::getServlet(lockedDep, m_uri));
-		if(!servlet){
-			LOG_WARNING("No servlet for URI ", m_uri);
-			session->shutdown(WS_INACCEPTABLE);
-			return;
-		}
-		LOG_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_payload.size());
-		(*servlet)(STD_MOVE(session), m_opcode, STD_MOVE(m_payload));
 	}
 };
 
 }
 
-WebSocketSession::WebSocketSession(boost::weak_ptr<HttpSession> parent)
-	: HttpUpgradedSessionBase(STD_MOVE(parent))
+WebSocketSession::WebSocketSession(const boost::shared_ptr<HttpSession> &parent)
+	: HttpUpgradedSessionBase(parent)
 	, m_state(ST_OPCODE)
 {
 }
@@ -190,8 +205,9 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				}
 				if(m_final){
 					if((m_opcode & WS_FL_CONTROL) == 0){
-						boost::make_shared<WebSocketRequestJob>(boost::ref(getUri()),
-							virtualWeakFromThis<WebSocketSession>(), m_opcode, STD_MOVE(m_whole)
+						boost::make_shared<WebSocketRequestJob>(
+							virtualSharedFromThis<WebSocketSession>(),
+							getUri(), m_opcode, STD_MOVE(m_whole)
 							)->pend();
 					} else {
 						onControlFrame();
@@ -205,9 +221,9 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 	exit_for:
 		;
 	} catch(WebSocketException &e){
-		LOG_ERROR("WebSocketException thrown while reading, status = ", e.status(),
-			", file = ", e.file(), ", line = ", e.line(), ", what = ", e.what());
-		shutdown(e.status(), e.what());
+		LOG_ERROR("WebSocketException thrown while parseing data, status = ", e.status(),
+			", what = ", e.what());
+		shutdown(e.status(), StreamBuffer(e.what()));
 		throw;
 	} catch(...){
 		LOG_ERROR("Forwarding exception... shutdown the session first.");
@@ -221,14 +237,13 @@ void WebSocketSession::onControlFrame(){
 
 	switch(m_opcode){
 	case WS_CLOSE:
-		LOG_INFO("Received close frame from ", getRemoteIp(),
-			", the connection will be shut down.");
-		HttpUpgradedSessionBase::shutdown(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false));
+		LOG_INFO("Received close frame from ", getRemoteIp(), ", the connection will be shut down.");
+		HttpUpgradedSessionBase::send(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false), true);
 		break;
 
 	case WS_PING:
 		LOG_INFO("Received ping frame from ", getRemoteIp());
-		HttpUpgradedSessionBase::send(makeFrame(WS_PONG, STD_MOVE(m_whole), false));
+		HttpUpgradedSessionBase::send(makeFrame(WS_PONG, STD_MOVE(m_whole), false), false);
 		break;
 
 	case WS_PONG:
@@ -241,17 +256,18 @@ void WebSocketSession::onControlFrame(){
 	}
 }
 
-bool WebSocketSession::send(StreamBuffer buffer, bool binary, bool masked){
-	return HttpUpgradedSessionBase::send(
-		makeFrame(binary ? WS_DATA_BIN : WS_DATA_TEXT, STD_MOVE(buffer), masked));
+bool WebSocketSession::send(StreamBuffer contents, bool binary, bool final, bool masked){
+	if(!HttpUpgradedSessionBase::send(
+		makeFrame(binary ? WS_DATA_BIN : WS_DATA_TEXT, STD_MOVE(contents), masked), false))
+	{
+		return false;
+	}
+	if(final){
+		return HttpUpgradedSessionBase::send(makeCloseFrame(WS_NORMAL_CLOSURE, StreamBuffer()), true);
+	}
+	return true;
 }
-bool WebSocketSession::shutdown(WebSocketStatus status){
-	return shutdown(status, StreamBuffer(getWebSocketStatusDesc(status)));
-}
-bool WebSocketSession::shutdown(WebSocketStatus status, StreamBuffer reason){
-	StreamBuffer payload;
-	const boost::uint16_t codeBe = htobe16(static_cast<unsigned>(status));
-	payload.put(&codeBe, 2);
-	payload.splice(reason);
-	return HttpUpgradedSessionBase::shutdown(makeFrame(WS_CLOSE, STD_MOVE(payload), false));
+
+bool WebSocketSession::shutdown(WebSocketStatus status, StreamBuffer additional){
+	return HttpUpgradedSessionBase::send(makeCloseFrame(status, STD_MOVE(additional)), true);
 }

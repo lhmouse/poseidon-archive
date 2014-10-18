@@ -18,6 +18,7 @@
 #include "singletons/profile_manager.hpp"
 #include "player/server.hpp"
 #include "http/server.hpp"
+#include "http/session.hpp"
 #include "profiler.hpp"
 using namespace Poseidon;
 
@@ -57,6 +58,14 @@ struct RaiiSingletonRunner : boost::noncopyable {
 		T::stop();
 	}
 };
+
+boost::shared_ptr<const HttpServlet> g_load;
+
+void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
+	ModuleManager::load("libposeidon-template.so");
+
+	hs->sendDefault(HTTP_OK);
+}
 
 void run(){
 	PROFILE_ME;
@@ -102,6 +111,8 @@ void run(){
 	ConfigFile::get(privateKey, "http_private_key");
 	EpollDaemon::addTcpServer(
 		boost::make_shared<HttpServer>(bind, port, certificate, privateKey));
+
+	g_load = HttpServletManager::registerServlet("/~load", NULLPTR, &loadProc);
 
 	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();

@@ -187,16 +187,16 @@ void daemonLoop(){
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
 					LOG_INFO("Connection closed by remote host: ip = ", session->getRemoteIp());
-					session->shutdown();
+					session->send(StreamBuffer(), true);
 					continue;
 				}
 				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while dispatching data: what = ", e.what());
-				session->shutdown();
+				session->send(StreamBuffer(), true);
 			} catch(...){
 				LOG_ERROR("Unknown exception thrown while dispatching data.");
-				session->shutdown();
+				session->send(StreamBuffer(), true);
 			}
 		}
 

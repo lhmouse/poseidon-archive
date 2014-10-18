@@ -5,6 +5,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include "../optional_map.hpp"
 
 namespace Poseidon {
 
@@ -16,9 +17,14 @@ class HttpUpgradedSessionBase : public SessionBase {
 
 private:
 	const boost::weak_ptr<HttpSession> m_parent;
+	const std::string m_remoteIp;
+
+	const std::string m_uri;
+	const OptionalMap m_getParams;
+	const OptionalMap m_headers;
 
 protected:
-	explicit HttpUpgradedSessionBase(boost::weak_ptr<HttpSession> parent);
+	explicit HttpUpgradedSessionBase(const boost::shared_ptr<HttpSession> &parent);
 
 private:
 	virtual void onInitContents(const void *data, std::size_t size);
@@ -27,10 +33,8 @@ private:
 
 public:
 	const std::string &getRemoteIp() const;
-	bool send(StreamBuffer buffer);
+	bool send(StreamBuffer buffer, bool final = false);
 	bool hasBeenShutdown() const;
-	bool shutdown();
-	virtual bool shutdown(StreamBuffer buffer);
 	bool forceShutdown();
 
 	boost::shared_ptr<const HttpSession> getParent() const {
@@ -47,9 +51,15 @@ public:
 		return boost::shared_ptr<HttpSession>(m_parent);
 	}
 
-	const std::string &getUri() const;
-	const OptionalMap &getParams() const;
-	const OptionalMap &getHeaders() const;
+	const std::string &getUri() const {
+		return m_uri;
+	}
+	const OptionalMap &getGetParams() const {
+		return m_getParams;
+	}
+	const OptionalMap &getHeaders() const {
+		return m_headers;
+	}
 };
 
 }

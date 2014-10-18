@@ -15,7 +15,8 @@ namespace {
 #define PROTOCOL_NAME	ErrorProtocol
 #define PROTOCOL_FIELDS	\
 	FIELD_VUINT(protocolId)	\
-	FIELD_VUINT(status)
+	FIELD_VUINT(status)	\
+	FIELD_STRING(reason)
 #include "protocol_generator.hpp"
 
 StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
@@ -33,9 +34,7 @@ StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
 	return ret;
 }
 
-StreamBuffer makeErrorResponse(boost::uint16_t protocolId, PlayerStatus status,
-	StreamBuffer contents = StreamBuffer())
-{
+StreamBuffer makeErrorResponse(boost::uint16_t protocolId, PlayerStatus status, StreamBuffer contents){
 	ErrorProtocol error(protocolId, static_cast<unsigned>(status));
 	StreamBuffer temp;
 	error >> temp;
@@ -74,12 +73,12 @@ protected:
 			(*servlet)(m_session, STD_MOVE(m_payload));
 		} catch(PlayerProtocolException &e){
 			LOG_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ", m_protocolId,
-				", status = ", static_cast<unsigned>(e.status()));
-			m_session->sendError(m_protocolId, e.status());
+				", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
+			m_session->sendError(m_protocolId, e.status(), StreamBuffer(e.what()), true);
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... protocol id = ", m_protocolId);
-			m_session->sendError(m_protocolId, PLAYER_INTERNAL_ERROR);
+			m_session->sendError(m_protocolId, PLAYER_INTERNAL_ERROR, true);
 			throw;
 		}
 	}
@@ -94,9 +93,7 @@ PlayerSession::PlayerSession(Move<ScopedFile> socket)
 }
 PlayerSession::~PlayerSession(){
 	if(m_payloadLen != -1){
-		LOG_WARNING("Now that this player session is to be destroyed, "
-			"a premature packet has to be discarded: payload size = ",
-			m_payloadLen, ", read = ", m_payload.size());
+		LOG_WARNING("Now that this session is to be destroyed, a premature request has to be discarded.");
 	}
 }
 
@@ -129,24 +126,23 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			m_protocolId = 0;
 		}
 	} catch(PlayerProtocolException &e){
-		LOG_ERROR("PlayerProtocolException thrown while dispatching player data, "
-			"protocol id = ", m_protocolId, ", status = ", static_cast<unsigned>(e.status()));
-		shutdown(m_protocolId, e.status());
+		LOG_ERROR("PlayerProtocolException thrown while parsing data, protocol id = ", m_protocolId,
+			", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
+		sendError(m_protocolId, e.status(), StreamBuffer(e.what()), true);
 		throw;
 	} catch(...){
 		LOG_ERROR("Forwarding exception... protocol id = ", m_protocolId);
-		shutdown(m_protocolId, PLAYER_INTERNAL_ERROR);
+		sendError(m_protocolId, PLAYER_INTERNAL_ERROR, true);
 		throw;
 	}
 }
 
-bool PlayerSession::send(boost::uint16_t protocolId, StreamBuffer contents){
-	return TcpSessionBase::send(makeResponse(protocolId, STD_MOVE(contents)));
-}
-bool PlayerSession::sendError(boost::uint16_t protocolId, PlayerStatus status, StreamBuffer additional){
-	return TcpSessionBase::send(makeErrorResponse(protocolId, status, STD_MOVE(additional)));
+bool PlayerSession::send(boost::uint16_t protocolId, StreamBuffer contents, bool final){
+	return TcpSessionBase::send(makeResponse(protocolId, STD_MOVE(contents)), final);
 }
 
-bool PlayerSession::shutdown(boost::uint16_t protocolId, PlayerStatus status, StreamBuffer additional){
-	return TcpSessionBase::shutdown(makeErrorResponse(protocolId, status, STD_MOVE(additional)));
+bool PlayerSession::sendError(boost::uint16_t protocolId, PlayerStatus status,
+	StreamBuffer additional, bool final)
+{
+	return TcpSessionBase::send(makeErrorResponse(protocolId, status, STD_MOVE(additional)), final);
 }

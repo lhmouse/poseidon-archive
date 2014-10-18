@@ -71,6 +71,11 @@ StreamBuffer::StreamBuffer(const char *str)
 {
 	put(str);
 }
+StreamBuffer::StreamBuffer(const std::string &str)
+	: m_size(0)
+{
+	put(str);
+}
 StreamBuffer::StreamBuffer(const StreamBuffer &rhs)
 	: m_chunks(rhs.m_chunks), m_size(rhs.m_size)
 {
@@ -143,12 +148,6 @@ void StreamBuffer::put(unsigned char by){
 	back.data[back.writePos] = by;
 	++(back.writePos);
 	++m_size;
-}
-void StreamBuffer::put(const char *str){
-	char ch;
-	while((ch = *(str++)) != 0){
-		put(ch);
-	}
 }
 
 std::size_t StreamBuffer::peek(void *data, std::size_t size) const {
@@ -243,6 +242,15 @@ void StreamBuffer::put(const void *data, std::size_t size){
 		m_size += toCopy;
 		copied += toCopy;
 	}
+}
+void StreamBuffer::put(const char *str){
+	char ch;
+	while((ch = *(str++)) != 0){
+		put(ch);
+	}
+}
+void StreamBuffer::put(const std::string &str){
+	put(str.data(), str.size());
 }
 
 void StreamBuffer::swap(StreamBuffer &rhs) NOEXCEPT {

@@ -78,7 +78,7 @@ void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 		len = std::sprintf(temp, ":%lu\n", it->line);
 		contents.put(temp, len);
 	}
-	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
+	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 
 void meowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
@@ -94,7 +94,7 @@ void meowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 
 	headers.set("Content-Type", "text/html");
 	contents.put("<h1>Meow!</h1>");
-	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
+	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 void meowMeowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
@@ -109,7 +109,7 @@ void meowMeowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 
 	headers.set("Content-Type", "text/html");
 	contents.put("<h1>Meow! Meow!</h1>");
-	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
+	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest, boost::weak_ptr<const Module> module){
 	PROFILE_ME;
@@ -130,7 +130,7 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest, boost::weak_ptr<co
 		g_tick = TimerDaemon::registerTimer(5000, 10000, module, &tickProc);
 		contents.put("OK");
 	}
-	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
+	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest request){
 	PROFILE_ME;
@@ -153,7 +153,7 @@ void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest request){
 		g_tick.reset();
 		contents.put("OK");
 	}
-	hs->send(HTTP_OK, STD_MOVE(contents), STD_MOVE(headers));
+	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 
 void webSocketProc(boost::shared_ptr<WebSocketSession> wss,

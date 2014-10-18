@@ -8,9 +8,9 @@ namespace Poseidon {
 
 class PlayerProtocolException : public ProtocolException {
 public:
-	PlayerProtocolException(const char *file, std::size_t line, PlayerStatus status)
-		: ProtocolException(file, line, "Player protocol exception",
-			static_cast<unsigned>(status))
+	PlayerProtocolException(const char *file, std::size_t line, PlayerStatus status,
+		std::string reason = std::string())
+		: ProtocolException(file, line, STD_MOVE(reason), static_cast<unsigned>(status))
 	{
 	}
 

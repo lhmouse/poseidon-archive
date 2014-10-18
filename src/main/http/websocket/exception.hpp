@@ -9,10 +9,8 @@ namespace Poseidon {
 class WebSocketException : public ProtocolException {
 public:
 	WebSocketException(const char *file, std::size_t line, WebSocketStatus status,
-		const char *reason = NULLPTR)
-		: ProtocolException(file, line,
-			reason ? reason : getWebSocketStatusDesc(status),
-			static_cast<unsigned>(status))
+		std::string reason = std::string())
+		: ProtocolException(file, line, STD_MOVE(reason), static_cast<unsigned>(status))
 	{
 	}
 

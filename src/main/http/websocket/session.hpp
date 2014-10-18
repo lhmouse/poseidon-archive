@@ -35,7 +35,7 @@ private:
 	StreamBuffer m_whole;
 
 public:
-	explicit WebSocketSession(boost::weak_ptr<HttpSession> parent);
+	explicit WebSocketSession(const boost::shared_ptr<HttpSession> &parent);
 
 private:
 	void onReadAvail(const void *data, std::size_t size);
@@ -43,9 +43,9 @@ private:
 	void onControlFrame();
 
 public:
-	bool send(StreamBuffer buffer, bool binary = true, bool masked = false);
-	bool shutdown(WebSocketStatus status);
-	bool shutdown(WebSocketStatus status, StreamBuffer reason);
+	bool send(StreamBuffer contents, bool binary = true, bool final = false, bool masked = false);
+
+	bool shutdown(WebSocketStatus status, StreamBuffer additional = StreamBuffer());
 };
 
 }

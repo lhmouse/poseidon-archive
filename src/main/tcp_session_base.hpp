@@ -43,15 +43,12 @@ private:
 
 protected:
 	void onReadAvail(const void *data, std::size_t size) = 0;
-	bool send(StreamBuffer buffer);
 
 public:
-	bool hasBeenShutdown() const;
-	bool shutdown();
-	bool forceShutdown();
-
 	const std::string &getRemoteIp() const;
-	bool shutdown(StreamBuffer buffer);
+	bool send(StreamBuffer buffer, bool final = false); // final 置 true 则发送完毕后挂断连接。
+	bool hasBeenShutdown() const;
+	bool forceShutdown();
 };
 
 }

@@ -1,6 +1,7 @@
 #ifndef POSEIDON_HTTP_SESSION_HPP_
 #define POSEIDON_HTTP_SESSION_HPP_
 
+#include "../../cxx_ver.hpp"
 #include <string>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
@@ -55,11 +56,15 @@ private:
 	void onUpgrade(const std::string &val);
 
 public:
-	bool send(HttpStatus status, StreamBuffer contents, OptionalMap headers = OptionalMap());
-	bool sendDefault(HttpStatus status, OptionalMap headers = OptionalMap());
+	bool send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool final = false);
+	bool send(HttpStatus status, StreamBuffer contents = StreamBuffer(), bool final = false){
+		return send(status, OptionalMap(), STD_MOVE(contents), final);
+	}
 
-	bool shutdown(HttpStatus status, StreamBuffer contents, OptionalMap headers = OptionalMap());
-	bool shutdown(HttpStatus status);
+	bool sendDefault(HttpStatus status, OptionalMap headers, bool final = false);
+	bool sendDefault(HttpStatus status, bool final = false){
+		return sendDefault(status, OptionalMap(), final);
+	}
 };
 
 }

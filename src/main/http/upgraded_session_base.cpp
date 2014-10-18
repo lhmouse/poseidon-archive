@@ -4,8 +4,9 @@
 #include "../optional_map.hpp"
 using namespace Poseidon;
 
-HttpUpgradedSessionBase::HttpUpgradedSessionBase(boost::weak_ptr<HttpSession> parent)
-	: m_parent(STD_MOVE(parent))
+HttpUpgradedSessionBase::HttpUpgradedSessionBase(const boost::shared_ptr<HttpSession> &parent)
+	: m_parent(parent), m_remoteIp(parent->getRemoteIp())
+	, m_uri(parent->m_uri), m_getParams(parent->m_getParams), m_headers(parent->m_headers)
 {
 }
 
@@ -15,50 +16,26 @@ void HttpUpgradedSessionBase::onInitContents(const void *data, std::size_t size)
 }
 
 const std::string &HttpUpgradedSessionBase::getRemoteIp() const {
-	return getSafeParent()->getRemoteIp();
-}
-bool HttpUpgradedSessionBase::send(StreamBuffer buffer){
-	const AUTO(parent, getParent());
-	if(!parent){
-		return false;
-	}
-	return parent->TcpSessionBase::send(STD_MOVE(buffer));
+	return m_remoteIp;
 }
 bool HttpUpgradedSessionBase::hasBeenShutdown() const {
 	const AUTO(parent, getParent());
 	if(!parent){
-		return true;
+		return false;
 	}
-	return parent->TcpSessionBase::hasBeenShutdown();
+	return static_cast<const TcpSessionBase *>(parent.get())->hasBeenShutdown();
 }
-bool HttpUpgradedSessionBase::shutdown(){
+bool HttpUpgradedSessionBase::send(StreamBuffer buffer, bool final){
 	const AUTO(parent, getParent());
 	if(!parent){
 		return false;
 	}
-	return parent->TcpSessionBase::shutdown();
-}
-bool HttpUpgradedSessionBase::shutdown(StreamBuffer buffer){
-	const AUTO(parent, getParent());
-	if(!parent){
-		return false;
-	}
-	return parent->TcpSessionBase::shutdown(STD_MOVE(buffer));
+	return static_cast<TcpSessionBase *>(parent.get())->send(STD_MOVE(buffer), final);
 }
 bool HttpUpgradedSessionBase::forceShutdown(){
 	const AUTO(parent, getParent());
 	if(!parent){
 		return false;
 	}
-	return parent->TcpSessionBase::forceShutdown();
-}
-
-const std::string &HttpUpgradedSessionBase::getUri() const {
-	return getSafeParent()->m_uri;
-}
-const OptionalMap &HttpUpgradedSessionBase::getParams() const {
-	return getSafeParent()->m_getParams;
-}
-const OptionalMap &HttpUpgradedSessionBase::getHeaders() const {
-	return getSafeParent()->m_headers;
+	return static_cast<TcpSessionBase *>(parent.get())->forceShutdown();
 }

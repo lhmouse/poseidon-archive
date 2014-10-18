@@ -31,19 +31,20 @@ private:
 	void onReadAvail(const void *data, std::size_t size);
 
 public:
-	bool send(boost::uint16_t protocolId, StreamBuffer contents);
-	bool sendError(boost::uint16_t protocolId, PlayerStatus status,
-		StreamBuffer additional = StreamBuffer());
+	bool send(boost::uint16_t protocolId, StreamBuffer contents, bool final = false);
 
 	template<class ProtocolT>
 	typename boost::enable_if<boost::is_base_of<ProtocolBase, ProtocolT>, bool>::type
-		send(boost::uint16_t protocolId, const ProtocolT &contents)
+		send(boost::uint16_t protocolId, const ProtocolT &contents, bool final = false)
 	{
-		return send(protocolId, StreamBuffer(contents));
+		return send(protocolId, StreamBuffer(contents), final);
 	}
 
-	bool shutdown(boost::uint16_t protocolId, PlayerStatus status,
-		StreamBuffer additional = StreamBuffer());
+	bool sendError(boost::uint16_t protocolId, PlayerStatus status, StreamBuffer additional,
+		bool final = false);
+	bool sendError(boost::uint16_t protocolId, PlayerStatus status, bool final = false){
+		return sendError(protocolId, status, StreamBuffer(), final);
+	}
 };
 
 }

@@ -19,8 +19,6 @@ enum WebSocketStatus {
 	WS_RESERVED_TLS			= 1015,
 };
 
-const char *getWebSocketStatusDesc(WebSocketStatus status);
-
 }
 
 #endif
