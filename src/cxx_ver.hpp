@@ -123,7 +123,7 @@ typename boost::add_reference<T>::type declRef() NOEXCEPT;
 
 #ifdef POSEIDON_CXX11
 template<typename T>
-using Move = typename boost::remove_reference<T>::type &&;
+using Move = typename std::remove_reference<T>::type &&;
 #else
 template<typename T>
 class Move {
