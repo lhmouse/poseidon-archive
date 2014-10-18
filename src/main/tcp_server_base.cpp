@@ -21,7 +21,7 @@ public:
 	SslImplServer(const std::string &cert, const std::string &privateKey){
 		requireSsl();
 
-		m_sslCtx.reset(::SSL_CTX_new(::SSLv23_server_method()));
+		m_sslCtx.reset(::SSL_CTX_new(::TLSv1_server_method()));
 		if(!m_sslCtx){
 			LOG_FATAL("Could not create server SSL context");
 			std::abort();
@@ -29,11 +29,6 @@ public:
 		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULLPTR);
 
 		LOG_INFO("Loading server certificate: ", cert);
-		if(::SSL_CTX_load_verify_locations(
-			m_sslCtx.get(), cert.c_str(), NULLPTR) != 1)
-		{
-			DEBUG_THROW(Exception, "::SSL_CTX_load_verify_locations() failed");
-		}
 		if(::SSL_CTX_use_certificate_file(
 			m_sslCtx.get(), cert.c_str(), SSL_FILETYPE_PEM) != 1)
 		{
