@@ -4,9 +4,7 @@
 #include <utility>
 #include <memory>
 #include <cstddef>
-#include <boost/type_traits/add_reference.hpp>
-#include <boost/type_traits/remove_cv.hpp>
-#include <boost/type_traits/remove_reference.hpp>
+
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/shared_ptr.hpp>
@@ -18,6 +16,14 @@
 
 #if __cplusplus >= 201402l
 #	define POSEIDON_CXX14
+#endif
+
+#ifdef POSEIDON_CXX11
+#	include <type_traits>
+#else
+#	include <boost/type_traits/add_reference.hpp>
+#	include <boost/type_traits/remove_cv.hpp>
+#	include <boost/type_traits/remove_reference.hpp>
 #endif
 
 #ifdef POSEIDON_CXX11
