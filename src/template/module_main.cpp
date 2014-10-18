@@ -1,5 +1,5 @@
 #include "../precompiled.hpp"
-#include "../main/module.hpp"
+#include "../main/singletons/module_manager.hpp"
 #include "../main/log.hpp"
 #include "../main/exception.hpp"
 #include "../main/singletons/http_servlet_manager.hpp"
@@ -28,7 +28,7 @@ struct Tracked {
 	~Tracked(){
 		LOG_FATAL("Tracked::~Tracked()");
 	}
-} g_tracked;
+};
 
 struct TestEvent1 : public EventBase<1> {
 	int i;
@@ -315,7 +315,9 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 
 }
 
-extern "C" void poseidonModuleInit(boost::weak_ptr<const Module> module){
+extern "C" void poseidonModuleInit(boost::weak_ptr<const Module> module, boost::shared_ptr<const void> &context){
+	context = boost::make_shared<Tracked>();
+
 	LOG_FATAL("poseidonModuleInit()");
 
 	g_profile = HttpServletManager::registerServlet("/profile", module, &profileProc);

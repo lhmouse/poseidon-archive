@@ -42,7 +42,6 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/tcp_session_ssl_impl.cpp	\
 	src/main/tcp_server_base.cpp	\
 	src/main/tcp_client_base.cpp	\
-	src/main/module.cpp	\
 	src/main/event_base.cpp	\
 	src/main/hash.cpp	\
 	src/main/singletons/config_file.cpp	\
