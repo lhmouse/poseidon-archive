@@ -85,8 +85,12 @@ Log::~Log() NOEXCEPT {
 		line += m_file;
 		len = std::sprintf(temp, ":%lu ", (unsigned long)m_line);
 		line.append(temp, len);
-		while((len = m_stream.readsome(temp, COUNT_OF(temp))) > 0){
-			line.append(temp, len);
+		char ch;
+		while(m_stream.get(ch)){
+			if(((unsigned char)ch + 1 <= 0x20) || (ch == 0x7F)){
+				ch = '.';
+			}
+			line.push_back(ch);
 		}
 		if(withColors){
 			line += "\x1B[0m";
