@@ -25,10 +25,9 @@ StreamBuffer makeResponse(HttpStatus status, OptionalMap headers, StreamBuffer c
 
 	StreamBuffer ret;
 
-	ret.put("HTTP/1.1 ");
-	char code[32];
-	const unsigned codeLen = std::sprintf(code, "%u", static_cast<unsigned>(status));
-	ret.put(code, codeLen);
+	char first[64];
+	const unsigned firstLen = std::sprintf(first, "HTTP/1.1 %u ", static_cast<unsigned>(status));
+	ret.put(first, firstLen);
 	const AUTO(desc, getHttpStatusDesc(status));
 	ret.put(desc.descShort);
 	ret.put("\r\n");
@@ -57,17 +56,19 @@ StreamBuffer makeResponse(HttpStatus status, OptionalMap headers, StreamBuffer c
 StreamBuffer makeDefaultResponse(HttpStatus status, OptionalMap headers){
 	LOG_DEBUG("Making default HTTP response: status = ", static_cast<unsigned>(status));
 
-	headers.set("Content-Type", "text/html; charset=utf-8");
-
 	StreamBuffer contents;
-	contents.put("<html><head><title>");
-	const AUTO(desc, getHttpStatusDesc(status));
-	contents.put(desc.descShort);
-	contents.put("</title></head><body><h1>");
-	contents.put(desc.descShort);
-	contents.put("</h1><hr /><p>");
-	contents.put(desc.descLong);
-	contents.put("</p></body></html>");
+	if((static_cast<unsigned>(status) / 100 != 1) && (status != HTTP_NO_CONTENT)){
+		headers.set("Content-Type", "text/html; charset=utf-8");
+
+		contents.put("<html><head><title>");
+		const AUTO(desc, getHttpStatusDesc(status));
+		contents.put(desc.descShort);
+		contents.put("</title></head><body><h1>");
+		contents.put(desc.descShort);
+		contents.put("</h1><hr /><p>");
+		contents.put(desc.descLong);
+		contents.put("</p></body></html>");
+	}
 	return makeResponse(status, STD_MOVE(headers), STD_MOVE(contents));
 }
 

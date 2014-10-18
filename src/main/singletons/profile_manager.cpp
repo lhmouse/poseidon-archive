@@ -102,7 +102,7 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 		atomicAdd(it->second.usExclusive, exclusive);
 
 		LOG_DEBUG("Accumulated profile info: file = ", file, ", line = ", line,
-			", func = ", func, ", total = ", total, " us , exclusive = ", exclusive, " us");
+			", func = ", func, ", total = ", total, " us, exclusive = ", exclusive, " us");
 	} catch(...){
 	}
 }
