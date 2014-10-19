@@ -2,7 +2,6 @@
 #define POSEIDON_PROFILE_MANAGER_HPP_
 
 #include "../../cxx_ver.hpp"
-#include "../../cxx_util.hpp"
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
