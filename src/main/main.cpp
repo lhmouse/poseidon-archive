@@ -40,8 +40,8 @@ void sigIntProc(int){
 		s_safetyTimer = now + 5 * 1000000;
 	}
 	if(now < s_safetyTimer){
-		LOG_WARNING("Received SIGINT, trying to exit gracefully...");
-		LOG_WARNING("If I don't terminate in 5 seconds, press ^C again.");
+		LOG_WARNING("Received SIGINT, trying to exit gracefully... "
+			"If I don't terminate in 5 seconds, press ^C again.");
 		::raise(SIGTERM);
 	} else {
 		LOG_FATAL("Received SIGINT, will now terminate abnormally...");
