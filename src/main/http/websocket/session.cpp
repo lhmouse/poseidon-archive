@@ -7,6 +7,7 @@
 #include "../../singletons/websocket_servlet_manager.hpp"
 #include "../../log.hpp"
 #include "../../utilities.hpp"
+#include "../../endian.hpp"
 #include "../../job_base.hpp"
 #include "../../profiler.hpp"
 using namespace Poseidon;
@@ -27,16 +28,19 @@ StreamBuffer makeFrame(WebSocketOpCode opcode, StreamBuffer contents, bool maske
 	} else if(size < 0x10000){
 		ch |= 0x7E;
 		ret.put(ch);
-		const boost::uint16_t temp = htobe16(size);
+		boost::uint16_t temp;
+		storeBe(temp, size);
 		ret.put(&temp, 2);
 	} else {
 		ch |= 0x7F;
 		ret.put(ch);
-		const boost::uint64_t temp = htobe64(size);
+		boost::uint64_t temp;
+		storeBe(temp, size);
 		ret.put(&temp, 8);
 	}
 	if(masked){
-		boost::uint32_t mask = htole32(rand32());
+		boost::uint32_t mask;
+		storeLe(mask, rand32());
 		ret.put(&mask, 4);
 		int ch;
 		for(;;){
@@ -167,13 +171,14 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					}
 					boost::uint16_t temp;
 					m_payload.get(&temp, 2);
-					m_payloadLen = be16toh(temp);
+					m_payloadLen = loadBe(temp);
 				} else {
 					if(m_payload.size() < 8){
 						goto exit_for;
 					}
-					m_payload.get(&m_payloadLen, 8);
-					m_payloadLen = be64toh(m_payloadLen);
+					boost::uint64_t temp;
+					m_payload.get(&temp, 8);
+					m_payloadLen = loadBe(temp);
 				}
 				m_state = ST_MASK;
 				break;
@@ -184,8 +189,9 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				if(m_payload.size() < 4){
 					goto exit_for;
 				}
-				m_payload.get(&m_payloadMask, 4);
-				m_payloadMask = le32toh(m_payloadMask);
+				boost::uint32_t temp;
+				m_payload.get(&temp, 4);
+				m_payloadMask = loadLe(temp);
 				m_state = ST_PAYLOAD;
 				break;
 
