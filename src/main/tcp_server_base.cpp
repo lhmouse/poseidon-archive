@@ -6,10 +6,10 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <endian.h>
+#include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include "exception.hpp"
-#include "singletons/epoll_daemon.hpp"
+#include "endian.hpp"
 #include "tcp_session_base.hpp"
 using namespace Poseidon;
 
@@ -96,11 +96,11 @@ TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort,
 
 	if(::inet_pton(AF_INET, bindAddr.c_str(), &u.sin.sin_addr) == 1){
 		u.sin.sin_family = AF_INET;
-		u.sin.sin_port = be16toh(bindPort);
+		storeBe(u.sin.sin_port, bindPort);
 		salen = sizeof(::sockaddr_in);
 	} else if(::inet_pton(AF_INET6, bindAddr.c_str(), &u.sin6.sin6_addr) == 1){
 		u.sin6.sin6_family = AF_INET6;
-		u.sin6.sin6_port = be16toh(bindPort);
+		storeBe(u.sin6.sin6_port, bindPort);
 		salen = sizeof(::sockaddr_in6);
 	} else {
 		LOG_ERROR("Unknown address format: ", bindAddr);

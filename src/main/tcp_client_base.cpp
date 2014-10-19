@@ -7,11 +7,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
-#include <endian.h>
 #include <openssl/ssl.h>
 #include "singletons/epoll_daemon.hpp"
 #include "exception.hpp"
 #include "log.hpp"
+#include "endian.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -72,11 +72,11 @@ void TcpClientBase::connect(ScopedFile &client, const std::string &ip, unsigned 
 
 	if(::inet_pton(AF_INET, ip.c_str(), &u.sin.sin_addr) == 1){
 		u.sin.sin_family = AF_INET;
-		u.sin.sin_port = be16toh(port);
+		storeBe(u.sin.sin_port, port);
 		salen = sizeof(::sockaddr_in);
 	} else if(::inet_pton(AF_INET6, ip.c_str(), &u.sin6.sin6_addr) == 1){
 		u.sin6.sin6_family = AF_INET6;
-		u.sin6.sin6_port = be16toh(port);
+		storeBe(u.sin6.sin6_port, port);
 		salen = sizeof(::sockaddr_in6);
 	} else {
 		LOG_ERROR("Unknown address format: ", ip);

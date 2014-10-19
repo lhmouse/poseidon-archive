@@ -1,7 +1,7 @@
 #include "../precompiled.hpp"
 #include "hash.hpp"
 #include <cstring>
-#include <endian.h>
+#include "endian.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -50,7 +50,7 @@ inline boost::uint32_t rotr(boost::uint32_t u, int bits){
 
 void md5Chunk(boost::uint32_t (&result)[4], const unsigned char *chunk){
 	// https://en.wikipedia.org/wiki/Md5
-	const AUTO(w, (const boost::uint32_t *)chunk);
+	const AUTO(w, reinterpret_cast<const boost::uint32_t *>(chunk));
 
 	register boost::uint32_t a = result[0];
 	register boost::uint32_t b = result[1];
@@ -61,7 +61,7 @@ void md5Chunk(boost::uint32_t (&result)[4], const unsigned char *chunk){
 
 #define MD5_STEP(i_, spec_, a_, b_, c_, d_, k_, r_)	\
 	spec_(i_, a_, b_, c_, d_);	\
-	a_ = b_ + rotl(a_ + f + k_ + htole32(w[g]), r_);
+	a_ = b_ + rotl(a_ + f + k_ + loadLe(w[g]), r_);
 
 #define MD5_SPEC_0(i_, a_, b_, c_, d_)	(f = d_ ^ (b_ & (c_ ^ d_)), g = i_)
 #define MD5_SPEC_1(i_, a_, b_, c_, d_)	(f = c_ ^ (d_ & (b_ ^ c_)), g = (5 * i_ + 1) % 16)
@@ -147,7 +147,7 @@ void sha1Chunk(boost::uint32_t (&result)[5], const unsigned char *chunk){
 	boost::uint32_t w[80];
 
 	for(std::size_t i = 0; i < 16; ++i){
-		w[i] = htobe32(((const boost::uint32_t *)chunk)[i]);
+		w[i] = loadBe(reinterpret_cast<const boost::uint32_t *>(chunk)[i]);
 	}
 	for(std::size_t i = 16; i < 32; ++i){
 		w[i] = rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
@@ -283,7 +283,7 @@ void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size){
 	boost::uint32_t result[4] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u
 	};
-	AUTO(read, (const unsigned char *)data);
+	AUTO(read, reinterpret_cast<const unsigned char *>(data));
 	std::size_t remaining = size;
 	while(remaining >= 64){
 		md5Chunk(result, read);
@@ -300,10 +300,10 @@ void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size){
 	} else {
 		std::memset(chunk + remaining + 1, 0, 56 - remaining - 1);
 	}
-	*(boost::uint64_t *)(chunk + 56) = htole64(size * 8ull);
+	storeLe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
 	md5Chunk(result, chunk);
 	for(unsigned i = 0; i < 4; ++i){
-		((boost::uint32_t *)hash)[i] = htole32(result[i]);
+		storeLe(reinterpret_cast<boost::uint32_t *>(hash)[i], result[i]);
 	}
 }
 
@@ -311,7 +311,7 @@ void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size){
 	boost::uint32_t result[5] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u
 	};
-	AUTO(read, (const unsigned char *)data);
+	AUTO(read, reinterpret_cast<const unsigned char *>(data));
 	std::size_t remaining = size;
 	while(remaining >= 64){
 		sha1Chunk(result, read);
@@ -328,10 +328,10 @@ void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size){
 	} else {
 		std::memset(chunk + remaining + 1, 0, 56 - remaining - 1);
 	}
-	*(boost::uint64_t *)(chunk + 56) = htobe64(size * 8ull);
+	storeBe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
 	sha1Chunk(result, chunk);
 	for(unsigned i = 0; i < 5; ++i){
-		((boost::uint32_t *)hash)[i] = htobe32(result[i]);
+		storeBe(reinterpret_cast<boost::uint32_t *>(hash)[i], result[i]);
 	}
 }
 

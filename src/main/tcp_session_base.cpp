@@ -34,8 +34,8 @@ std::string getIpFromSocket(int fd){
 	} else if(u.sa.sa_family == AF_INET6){
 		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &ret[0], ret.size());
 	} else {
-		DEBUG_THROW(Exception, "Unknown IP protocol: "
-			+ boost::lexical_cast<std::string>(u.sa.sa_family));
+		LOG_WARNING("Unknown IP protocol ", u.sa.sa_family);
+		DEBUG_THROW(Exception, "Unknown IP protocol");
 	}
 	if(!text){
 		DEBUG_THROW(SystemError, errno);
