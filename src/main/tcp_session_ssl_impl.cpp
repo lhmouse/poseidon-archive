@@ -22,6 +22,33 @@ void initSsl(){
 	std::atexit(&::EVP_cleanup);
 }
 
+void setErrnoBySslRet(::SSL *ssl, int ret){
+	if(ret <= 0){
+		const int err = ::SSL_get_error(ssl, ret);
+		LOG_DEBUG("SSL error: ", err);
+		switch(err){
+		case SSL_ERROR_NONE:
+		case SSL_ERROR_ZERO_RETURN:
+			errno = 0;
+			break;
+
+		case SSL_ERROR_WANT_READ:
+		case SSL_ERROR_WANT_WRITE:
+		case SSL_ERROR_WANT_CONNECT:
+		case SSL_ERROR_WANT_ACCEPT:
+			errno = EAGAIN;
+			break;
+
+		case SSL_ERROR_SYSCALL:
+			break;
+
+		default:
+			errno = EIO;
+			break;
+		}
+	}
+}
+
 }
 
 namespace Poseidon {
@@ -52,7 +79,9 @@ long TcpSessionBase::SslImpl::doRead(void *data, unsigned long size){
 		errno = EAGAIN;
 		return -1;
 	}
-	return ::SSL_read(m_ssl.get(), data, size);
+	const long ret = ::SSL_read(m_ssl.get(), data, size);
+	setErrnoBySslRet(m_ssl.get(), ret);
+	return ret;
 }
 long TcpSessionBase::SslImpl::doWrite(const void *data, unsigned long size){
 	if(!m_established && !(m_established = establishConnection())){
@@ -60,5 +89,7 @@ long TcpSessionBase::SslImpl::doWrite(const void *data, unsigned long size){
 		errno = EAGAIN;
 		return -1;
 	}
-	return ::SSL_write(m_ssl.get(), data, size);
+	const long ret = ::SSL_write(m_ssl.get(), data, size);
+	setErrnoBySslRet(m_ssl.get(), ret);
+	return ret;
 }
