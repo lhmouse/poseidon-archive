@@ -69,8 +69,9 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 {
 	try {
 		std::map<ProfileKey, ProfileCounters>::iterator it;
-		ProfileKey key(boost::shared_ptr<const char>(boost::shared_ptr<void>(), file),
-			line, boost::shared_ptr<const char>(boost::shared_ptr<void>(), func));
+		ProfileKey key(
+			boost::shared_ptr<const char>(boost::shared_ptr<void>(), file), line,
+			boost::shared_ptr<const char>(boost::shared_ptr<void>(), func));
 		{
 			const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 			it = g_profile.find(key);
