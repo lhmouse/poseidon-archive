@@ -333,7 +333,7 @@ void daemonLoop(){
 
 void threadProc(){
 	PROFILE_ME;
-	Log::setThreadTag(Log::TAG_EPOLL);
+	Logger::setThreadTag(Logger::TAG_EPOLL);
 	LOG_INFO("Epoll daemon started.");
 
 	daemonLoop();

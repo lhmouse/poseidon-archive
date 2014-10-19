@@ -8,7 +8,7 @@
 
 namespace Poseidon {
 
-class Log : boost::noncopyable {
+class Logger : boost::noncopyable {
 public:
 	enum {
 		LV_FATAL,		// 0
@@ -45,13 +45,13 @@ private:
 	std::stringstream m_stream;
 
 public:
-	Log(unsigned level, const char *comment,
+	Logger(unsigned level, const char *comment,
 		const char *file, std::size_t line) NOEXCEPT;
-	~Log() NOEXCEPT;
+	~Logger() NOEXCEPT;
 
 public:
 	template<typename T>
-	Log &operator,(const T &info) NOEXCEPT {
+	Logger &operator,(const T &info) NOEXCEPT {
 		try {
 			m_stream <<info;
 		} catch(...){
@@ -59,14 +59,14 @@ public:
 		return *this;
 	}
 
-	Log &operator,(signed char ch) NOEXCEPT {
+	Logger &operator,(signed char ch) NOEXCEPT {
 		try {
 			m_stream <<(signed)ch;
 		} catch(...){
 		}
 		return *this;
 	}
-	Log &operator,(unsigned char ch) NOEXCEPT {
+	Logger &operator,(unsigned char ch) NOEXCEPT {
 		try {
 			m_stream <<(unsigned)ch;
 		} catch(...){
@@ -74,14 +74,14 @@ public:
 		return *this;
 	}
 
-	Log &operator,(const signed char *p) NOEXCEPT {
+	Logger &operator,(const signed char *p) NOEXCEPT {
 		try {
 			m_stream <<(const void *)p;
 		} catch(...){
 		}
 		return *this;
 	}
-	Log &operator,(const unsigned char *p) NOEXCEPT {
+	Logger &operator,(const unsigned char *p) NOEXCEPT {
 		try {
 			m_stream <<(const void *)p;
 		} catch(...){
@@ -94,10 +94,10 @@ public:
 
 #define LOG_LEVEL(level_, ...)	\
 	do {	\
-		if((long)::Poseidon::Log::getLevel() + 1 >=	\
-			(long)::Poseidon::Log::LV_ ## level_ + 1)	\
+		if((long)::Poseidon::Logger::getLevel() + 1 >=	\
+			(long)::Poseidon::Logger::LV_ ## level_ + 1)	\
 		{	\
-			::Poseidon::Log(::Poseidon::Log::LV_ ## level_,	\
+			::Poseidon::Logger(::Poseidon::Logger::LV_ ## level_,	\
 			 	#level_, __FILE__, __LINE__), __VA_ARGS__;	\
 		}	\
 	} while(false)

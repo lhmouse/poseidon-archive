@@ -125,17 +125,18 @@ long TcpSessionBase::doWrite(boost::mutex::scoped_lock &lock,
 	boost::mutex::scoped_lock(m_bufferMutex).swap(lock);
 	const std::size_t size = m_sendBuffer.peek(hint, hintSize);
 	lock.unlock();
+
 	if(size == 0){
 		return 0;
 	}
-
-	lock.lock();
 	::ssize_t ret;
 	if(m_ssl){
 		ret = m_ssl->doWrite(hint, size);
 	} else {
 		ret = ::send(m_socket.get(), hint, size, MSG_NOSIGNAL);
 	}
+
+	lock.lock();
 	if(ret > 0){
 		m_sendBuffer.discard(ret);
 	}

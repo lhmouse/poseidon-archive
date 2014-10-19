@@ -70,10 +70,10 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 void run(){
 	PROFILE_ME;
 
-	unsigned logLevel = Log::LV_INFO;
+	unsigned logLevel = Logger::LV_INFO;
 	ConfigFile::get(logLevel, "log_level");
 	LOG_INFO("Setting log level to ", logLevel, "...");
-	Log::setLevel(logLevel);
+	Logger::setLevel(logLevel);
 
 	const RaiiSingletonRunner<MySqlDaemon> UNIQUE_ID;
 	const RaiiSingletonRunner<TimerDaemon> UNIQUE_ID;
@@ -121,7 +121,7 @@ void run(){
 }
 
 int main(int argc, char **argv){
-	Log::setThreadTag(Log::TAG_PRIMARY);
+	Logger::setThreadTag(Logger::TAG_PRIMARY);
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
 	const RaiiSingletonRunner<ProfileManager> UNIQUE_ID;

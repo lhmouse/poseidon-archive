@@ -17,25 +17,25 @@ __thread unsigned t_tag;
 
 }
 
-unsigned int Log::getLevel(){
+unsigned int Logger::getLevel(){
 	return atomicLoad(g_logLevel);
 }
-void Log::setLevel(unsigned int newLevel){
+void Logger::setLevel(unsigned int newLevel){
 	atomicStore(g_logLevel, newLevel);
 }
 
-unsigned Log::getThreadTag(){
+unsigned Logger::getThreadTag(){
 	return t_tag;
 }
-void Log::setThreadTag(unsigned newTag){
+void Logger::setThreadTag(unsigned newTag){
 	t_tag = newTag;
 }
 
-Log::Log(unsigned level, const char *comment, const char *file, std::size_t line) NOEXCEPT
+Logger::Logger(unsigned level, const char *comment, const char *file, std::size_t line) NOEXCEPT
 	: m_level(level), m_comment(comment), m_file(file), m_line(line)
 {
 }
-Log::~Log() NOEXCEPT {
+Logger::~Logger() NOEXCEPT {
 	static const char COLORS[] = { '5', '1', '3', '2', '6' };
 	static const char TAGS[][8] = { "P   ", " M  ", "  T ", "   E" };
 
