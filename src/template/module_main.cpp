@@ -315,7 +315,7 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 
 }
 
-extern "C" void poseidonModuleInit(boost::weak_ptr<const Module> module, boost::shared_ptr<const void> &context){
+extern "C" void poseidonModuleInit(boost::weak_ptr<Module> module, boost::shared_ptr<const void> &context){
 	context = boost::make_shared<Tracked>();
 
 	LOG_FATAL("poseidonModuleInit()");

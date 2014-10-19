@@ -21,8 +21,6 @@ typedef TR1::function<
 	void (boost::shared_ptr<EventBaseWithoutId> event)
 	> EventListenerCallback;
 
-void logInvalidDynamicEventType(unsigned id);
-
 struct EventListenerManager {
 	static void start();
 	static void stop();
@@ -30,7 +28,7 @@ struct EventListenerManager {
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	// callback 禁止 move，否则可能出现主模块中引用子模块内存的情况。
 	template<class EventT>
-	static boost::shared_ptr<const EventListener> registerListener(
+	static boost::shared_ptr<EventListener> registerListener(
 		const boost::weak_ptr<const void> &dependency,
 		const TR1::function<void (boost::shared_ptr<EventT>)> &callback)
 	{
@@ -57,8 +55,10 @@ struct EventListenerManager {
 private:
 	EventListenerManager();
 
-	static boost::shared_ptr<const EventListener> doRegisterListener(unsigned id,
+	static boost::shared_ptr<EventListener> doRegisterListener(unsigned id,
 		const boost::weak_ptr<const void> &dependency, const EventListenerCallback &callback);
+
+	static void logInvalidDynamicEventType(unsigned id);
 };
 
 }

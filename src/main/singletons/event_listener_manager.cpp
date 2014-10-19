@@ -11,8 +11,10 @@
 #include "../profiler.hpp"
 using namespace Poseidon;
 
-class Poseidon::EventListener : boost::noncopyable,
-	public boost::enable_shared_from_this<EventListener>
+namespace {
+
+class RealEventListener : boost::noncopyable,
+	public boost::enable_shared_from_this<RealEventListener>
 {
 private:
 	const unsigned m_id;
@@ -20,20 +22,18 @@ private:
 	const EventListenerCallback m_callback;
 
 public:
-	EventListener(unsigned id,
+	RealEventListener(unsigned id,
 		const boost::weak_ptr<const void> &dependency, const EventListenerCallback &callback)
 		: m_id(id), m_dependency(dependency), m_callback(callback)
 	{
 		LOG_INFO("Created event listener for event ", m_id);
 	}
-	~EventListener(){
+	~RealEventListener(){
 		LOG_INFO("Destroyed event listener for event ", m_id);
 	}
 
 public:
-	boost::shared_ptr<const EventListenerCallback>
-		lock(boost::shared_ptr<const void> &lockedDep) const
-	{
+	boost::shared_ptr<const EventListenerCallback> lock(boost::shared_ptr<const void> &lockedDep) const {
 		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
 			lockedDep = m_dependency.lock();
 			if(!lockedDep){
@@ -41,6 +41,17 @@ public:
 			}
 		}
 		return boost::shared_ptr<const EventListenerCallback>(shared_from_this(), &m_callback);
+	}
+};
+
+}
+
+struct Poseidon::EventListener : boost::noncopyable {
+	const boost::shared_ptr<RealEventListener> realEventListener;
+
+	explicit EventListener(boost::shared_ptr<RealEventListener> realEventListener_)
+		: realEventListener(STD_MOVE(realEventListener_))
+	{
 	}
 };
 
@@ -76,14 +87,6 @@ protected:
 
 }
 
-namespace Poseidon {
-
-void logInvalidDynamicEventType(unsigned id){
-	LOG_ERROR("Invalid dynamic event type: event id = ", id);
-}
-
-}
-
 void EventListenerManager::start(){
 }
 void EventListenerManager::stop(){
@@ -113,7 +116,7 @@ void EventListenerManager::raise(const boost::shared_ptr<EventBaseWithoutId> &ev
 	}
 	for(AUTO(it, listeners.begin()); it != listeners.end(); ++it){
 		boost::shared_ptr<const void> lockedDep;
-		AUTO(callback, (*it)->lock(lockedDep));
+		AUTO(callback, (*it)->realEventListener->lock(lockedDep));
 		if(!callback){
 			continue;
 		}
@@ -136,14 +139,18 @@ void EventListenerManager::raise(const boost::shared_ptr<EventBaseWithoutId> &ev
 	}
 }
 
-boost::shared_ptr<const EventListener> EventListenerManager::doRegisterListener(unsigned id,
+boost::shared_ptr<EventListener> EventListenerManager::doRegisterListener(unsigned id,
 	const boost::weak_ptr<const void> &dependency, const EventListenerCallback &callback)
 {
-	AUTO(newServlet, boost::make_shared<EventListener>(
-		id, boost::ref(dependency), boost::ref(callback)));
+	AUTO(newListener, boost::make_shared<EventListener>(boost::make_shared<RealEventListener>(
+		id, boost::ref(dependency), boost::ref(callback))));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
-		g_listeners[id].push_back(newServlet);
+		g_listeners[id].push_back(newListener);
 	}
-	return newServlet;
+	return newListener;
+}
+
+void EventListenerManager::logInvalidDynamicEventType(unsigned id){
+	LOG_ERROR("Invalid dynamic event type: event id = ", id);
 }

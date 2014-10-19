@@ -14,7 +14,7 @@ using namespace Poseidon;
 namespace {
 
 struct ModuleItem {
-	boost::shared_ptr<const Module> module;
+	boost::shared_ptr<Module> module;
 	boost::shared_ptr<const void> context;
 };
 
@@ -49,12 +49,13 @@ public:
 		LOG_INFO("Loading module: ", m_path);
 
 		const boost::mutex::scoped_lock lock(g_dlMutex);
-		m_handle.reset(::dlopen(m_path.c_str(), RTLD_NOW));
+		m_handle.reset(::dlopen(m_path.c_str(), RTLD_LAZY));
 		if(!m_handle){
 			const char *const error = ::dlerror();
 			LOG_ERROR("Error loading dynamic library: ", error);
 			DEBUG_THROW(Exception, error);
 		}
+		LOG_DEBUG("Handle = ", m_handle.get());
 	}
 	~Module(){
 		LOG_INFO("Unloading module: ", m_path);
@@ -62,23 +63,22 @@ public:
 
 public:
 	void init(boost::shared_ptr<const void> &context){
-		typedef typename boost::decay<DECLTYPE(poseidonModuleInit)>::type ModuleInitProc;
-
-		ModuleInitProc initProc;
+		void *procSymAddr;
 		{
 			const boost::mutex::scoped_lock lock(g_dlMutex);
-			initProc = reinterpret_cast<ModuleInitProc>(
-				::dlsym(m_handle.get(), "poseidonModuleInit"));
-			if(!initProc){
+			procSymAddr = ::dlsym(m_handle.get(), "poseidonModuleInit");
+			if(!procSymAddr){
 				const char *const error = ::dlerror();
-				LOG_ERROR("Error getting address of poseidonModuleInit(): module = ", m_path,
-					", error = ", error);
+				LOG_ERROR("Error getting init function: ", error);
 				DEBUG_THROW(Exception, error);
 			}
 		}
 
 		LOG_INFO("Initializing module: ", m_path);
-		(*initProc)(shared_from_this(), context);
+		typedef typename boost::decay<DECLTYPE(poseidonModuleInit)>::type ModuleInitProc;
+		(*reinterpret_cast<
+			typename boost::decay<DECLTYPE(poseidonModuleInit)>::type>(procSymAddr)
+			)(shared_from_this(), context);
 		LOG_INFO("Done initializing module: ", m_path);
 	}
 };
@@ -97,7 +97,7 @@ void ModuleManager::stop(){
 	g_modules.clear();
 }
 
-boost::shared_ptr<const Module> ModuleManager::get(const std::string &path){
+boost::shared_ptr<Module> ModuleManager::get(const std::string &path){
 	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
 	const AUTO(it, g_modules.find(path));
 	if(it == g_modules.end()){
@@ -117,13 +117,11 @@ std::vector<ModuleInfo> ModuleManager::getLoadedList(){
 	return ret;
 }
 
-boost::shared_ptr<const Module> ModuleManager::load(const std::string &path){
+boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
 	AUTO(module, get(path));
 	if(module){
 		return module;
 	}
-
-	LOG_INFO("Loading module: ", path);
 
 	const AUTO(newModule, boost::make_shared<Module>(path));
 	boost::shared_ptr<const void> context;
@@ -143,8 +141,6 @@ bool ModuleManager::unload(const std::string &path){
 	if(it == g_modules.end()){
 		return false;
 	}
-
-	LOG_INFO("Unloading module: ", path);
 
 	try {
 		LOG_INFO("Destroying context of module: ", path);

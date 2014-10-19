@@ -9,8 +9,10 @@
 #include "../exception.hpp"
 using namespace Poseidon;
 
-class Poseidon::PlayerServlet : boost::noncopyable,
-	public boost::enable_shared_from_this<PlayerServlet>
+namespace {
+
+class RealPlayerServlet : boost::noncopyable,
+	public boost::enable_shared_from_this<RealPlayerServlet>
 {
 private:
 	const boost::uint16_t m_protocolId;
@@ -18,20 +20,18 @@ private:
 	const PlayerServletCallback m_callback;
 
 public:
-	PlayerServlet(boost::uint16_t protocolId,
+	RealPlayerServlet(boost::uint16_t protocolId,
 		const boost::weak_ptr<const void> &dependency, const PlayerServletCallback &callback)
 		: m_protocolId(protocolId), m_dependency(dependency), m_callback(callback)
 	{
 		LOG_INFO("Created player servlet for protocol ", m_protocolId);
 	}
-	~PlayerServlet(){
+	~RealPlayerServlet(){
 		LOG_INFO("Destroyed player servlet for protocol", m_protocolId);
 	}
 
 public:
-	boost::shared_ptr<const PlayerServletCallback>
-		lock(boost::shared_ptr<const void> &lockedDep) const
-	{
+	boost::shared_ptr<const PlayerServletCallback> lock(boost::shared_ptr<const void> &lockedDep) const {
 		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
 			lockedDep = m_dependency.lock();
 			if(!lockedDep){
@@ -39,6 +39,17 @@ public:
 			}
 		}
 		return boost::shared_ptr<const PlayerServletCallback>(shared_from_this(), &m_callback);
+	}
+};
+
+}
+
+struct Poseidon::PlayerServlet : boost::noncopyable {
+	const boost::shared_ptr<RealPlayerServlet> realPlayerServlet;
+
+	explicit PlayerServlet(boost::shared_ptr<RealPlayerServlet> realPlayerServlet_)
+		: realPlayerServlet(STD_MOVE(realPlayerServlet_))
+	{
 	}
 };
 
@@ -57,12 +68,11 @@ void PlayerServletManager::stop(){
 	g_servlets.clear();
 }
 
-boost::shared_ptr<const PlayerServlet>
-	PlayerServletManager::registerServlet(boost::uint16_t protocolId,
-		const boost::weak_ptr<const void> &dependency, const PlayerServletCallback &callback)
+boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(boost::uint16_t protocolId,
+	const boost::weak_ptr<const void> &dependency, const PlayerServletCallback &callback)
 {
-	AUTO(newServlet, boost::make_shared<PlayerServlet>(
-		protocolId, boost::ref(dependency), boost::ref(callback)));
+	AUTO(newServlet, boost::make_shared<PlayerServlet>(boost::make_shared<RealPlayerServlet>(
+		protocolId, boost::ref(dependency), boost::ref(callback))));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(servlet, g_servlets[protocolId]);
@@ -74,8 +84,8 @@ boost::shared_ptr<const PlayerServlet>
 	return newServlet;
 }
 
-boost::shared_ptr<const PlayerServletCallback>
-	PlayerServletManager::getServlet(boost::shared_ptr<const void> &lockedDep, boost::uint16_t protocolId)
+boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(
+	boost::shared_ptr<const void> &lockedDep, boost::uint16_t protocolId)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(protocolId));
@@ -86,5 +96,5 @@ boost::shared_ptr<const PlayerServletCallback>
 	if(!servlet){
 		return NULLPTR;
 	}
-	return servlet->lock(lockedDep);
+	return servlet->realPlayerServlet->lock(lockedDep);
 }

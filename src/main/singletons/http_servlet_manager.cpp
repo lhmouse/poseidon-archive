@@ -10,8 +10,10 @@
 #include "../exception.hpp"
 using namespace Poseidon;
 
-class Poseidon::HttpServlet : boost::noncopyable,
-	public boost::enable_shared_from_this<HttpServlet>
+namespace {
+
+class RealHttpServlet : boost::noncopyable,
+	public boost::enable_shared_from_this<RealHttpServlet>
 {
 private:
 	const std::string m_uri;
@@ -19,20 +21,18 @@ private:
 	const HttpServletCallback m_callback;
 
 public:
-	HttpServlet(const std::string &uri,
+	RealHttpServlet(const std::string &uri,
 		const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback)
 		: m_uri(uri), m_dependency(dependency), m_callback(callback)
 	{
 		LOG_INFO("Created HTTP servlet for URI ", m_uri);
 	}
-	~HttpServlet(){
+	~RealHttpServlet(){
 		LOG_INFO("Destroyed HTTP servlet for URI ", m_uri);
 	}
 
 public:
-	boost::shared_ptr<const HttpServletCallback>
-		lock(boost::shared_ptr<const void> &lockedDep) const
-	{
+	boost::shared_ptr<const HttpServletCallback> lock(boost::shared_ptr<const void> &lockedDep) const {
 		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
 			lockedDep = m_dependency.lock();
 			if(!lockedDep){
@@ -40,6 +40,17 @@ public:
 			}
 		}
 		return boost::shared_ptr<const HttpServletCallback>(shared_from_this(), &m_callback);
+	}
+};
+
+}
+
+struct Poseidon::HttpServlet : boost::noncopyable {
+	const boost::shared_ptr<RealHttpServlet> realHttpServlet;
+
+	explicit HttpServlet(boost::shared_ptr<RealHttpServlet> realHttpServlet_)
+		: realHttpServlet(STD_MOVE(realHttpServlet_))
+	{
 	}
 };
 
@@ -66,7 +77,7 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 	if(it->first.size() == uri.size()){
 		const AUTO(servlet, it->second.lock());
 		if(servlet){
-			servlet->lock(lockedDep).swap(ret);
+			servlet->realHttpServlet->lock(lockedDep).swap(ret);
 		}
 	}
 	return true;
@@ -100,12 +111,11 @@ unsigned long long HttpServletManager::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;
 }
 
-boost::shared_ptr<const HttpServlet>
-	HttpServletManager::registerServlet(const std::string &uri,
-		const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback)
+boost::shared_ptr<HttpServlet> HttpServletManager::registerServlet(const std::string &uri,
+	const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback)
 {
-	AUTO(newServlet, boost::make_shared<HttpServlet>(
-		boost::ref(uri), boost::ref(dependency), boost::ref(callback)));
+	AUTO(newServlet, boost::make_shared<HttpServlet>(boost::make_shared<RealHttpServlet>(
+		boost::ref(uri), boost::ref(dependency), boost::ref(callback))));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(servlet, g_servlets[uri]);
@@ -117,8 +127,8 @@ boost::shared_ptr<const HttpServlet>
 	return newServlet;
 }
 
-boost::shared_ptr<const HttpServletCallback>
-	HttpServletManager::getServlet(boost::shared_ptr<const void> &lockedDep, const std::string &uri)
+boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(
+	boost::shared_ptr<const void> &lockedDep, const std::string &uri)
 {
 	boost::shared_ptr<const HttpServletCallback> ret;
 	if(uri[0] != '/'){

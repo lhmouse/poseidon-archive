@@ -29,12 +29,11 @@ struct WebSocketServletManager {
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	// callback 禁止 move，否则可能出现主模块中引用子模块内存的情况。
-	static boost::shared_ptr<const WebSocketServlet>
-		registerServlet(const std::string &uri,
-			const boost::weak_ptr<const void> &dependency, const WebSocketServletCallback &callback);
+	static boost::shared_ptr<WebSocketServlet> registerServlet(const std::string &uri,
+		const boost::weak_ptr<const void> &dependency, const WebSocketServletCallback &callback);
 
-	static boost::shared_ptr<const WebSocketServletCallback>
-		getServlet(boost::shared_ptr<const void> &lockedDep, const std::string &uri);
+	static boost::shared_ptr<const WebSocketServletCallback> getServlet(
+		boost::shared_ptr<const void> &lockedDep, const std::string &uri);
 
 private:
 	WebSocketServletManager();

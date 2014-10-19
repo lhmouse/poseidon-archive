@@ -9,8 +9,10 @@
 #include "../exception.hpp"
 using namespace Poseidon;
 
-class Poseidon::WebSocketServlet : boost::noncopyable,
-	public boost::enable_shared_from_this<WebSocketServlet>
+namespace {
+
+class RealWebSocketServlet : boost::noncopyable,
+	public boost::enable_shared_from_this<RealWebSocketServlet>
 {
 private:
 	const std::string m_uri;
@@ -18,20 +20,18 @@ private:
 	const WebSocketServletCallback m_callback;
 
 public:
-	WebSocketServlet(const std::string &uri,
+	RealWebSocketServlet(const std::string &uri,
 		const boost::weak_ptr<const void> &dependency, const WebSocketServletCallback &callback)
 		: m_uri(uri), m_dependency(dependency), m_callback(callback)
 	{
 		LOG_INFO("Created WebSocket servlet for URI ", m_uri);
 	}
-	~WebSocketServlet(){
+	~RealWebSocketServlet(){
 		LOG_INFO("Destroyed WebSocket servlet for URI ", m_uri);
 	}
 
 public:
-	boost::shared_ptr<const WebSocketServletCallback>
-		lock(boost::shared_ptr<const void> &lockedDep) const
-	{
+	boost::shared_ptr<const WebSocketServletCallback> lock(boost::shared_ptr<const void> &lockedDep) const {
 		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
 			lockedDep = m_dependency.lock();
 			if(!lockedDep){
@@ -39,6 +39,17 @@ public:
 			}
 		}
 		return boost::shared_ptr<const WebSocketServletCallback>(shared_from_this(), &m_callback);
+	}
+};
+
+}
+
+struct Poseidon::WebSocketServlet : boost::noncopyable {
+	const boost::shared_ptr<RealWebSocketServlet> realWebSocketServlet;
+
+	explicit WebSocketServlet(boost::shared_ptr<RealWebSocketServlet> realWebSocketServlet_)
+		: realWebSocketServlet(STD_MOVE(realWebSocketServlet_))
+	{
 	}
 };
 
@@ -57,12 +68,11 @@ void WebSocketServletManager::stop(){
 	g_servlets.clear();
 }
 
-boost::shared_ptr<const WebSocketServlet>
-	WebSocketServletManager::registerServlet(const std::string &uri,
-		const boost::weak_ptr<const void> &dependency, const WebSocketServletCallback &callback)
+boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(const std::string &uri,
+	const boost::weak_ptr<const void> &dependency, const WebSocketServletCallback &callback)
 {
-	AUTO(newServlet, boost::make_shared<WebSocketServlet>(
-		boost::ref(uri), boost::ref(dependency), boost::ref(callback)));
+	AUTO(newServlet, boost::make_shared<WebSocketServlet>(boost::make_shared<RealWebSocketServlet>(
+		boost::ref(uri), boost::ref(dependency), boost::ref(callback))));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(servlet, g_servlets[uri]);
@@ -74,8 +84,8 @@ boost::shared_ptr<const WebSocketServlet>
 	return newServlet;
 }
 
-boost::shared_ptr<const WebSocketServletCallback>
-	WebSocketServletManager::getServlet(boost::shared_ptr<const void> &lockedDep, const std::string &uri)
+boost::shared_ptr<const WebSocketServletCallback> WebSocketServletManager::getServlet(
+	boost::shared_ptr<const void> &lockedDep, const std::string &uri)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(uri));
@@ -86,5 +96,5 @@ boost::shared_ptr<const WebSocketServletCallback>
 	if(!servlet){
 		return NULLPTR;
 	}
-	return servlet->lock(lockedDep);
+	return servlet->realWebSocketServlet->lock(lockedDep);
 }

@@ -35,12 +35,11 @@ struct HttpServletManager {
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	// callback 禁止 move，否则可能出现主模块中引用子模块内存的情况。
-	static boost::shared_ptr<const HttpServlet>
-		registerServlet(const std::string &uri,
-			const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback);
+	static boost::shared_ptr<HttpServlet> registerServlet(const std::string &uri,
+		const boost::weak_ptr<const void> &dependency, const HttpServletCallback &callback);
 
-	static boost::shared_ptr<const HttpServletCallback>
-		getServlet(boost::shared_ptr<const void> &lockedDep, const std::string &uri);
+	static boost::shared_ptr<const HttpServletCallback> getServlet(
+		boost::shared_ptr<const void> &lockedDep, const std::string &uri);
 
 private:
 	HttpServletManager();
