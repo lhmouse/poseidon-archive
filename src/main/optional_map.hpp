@@ -20,10 +20,8 @@ public:
 		}
 	};
 
-	typedef std::multimap<
-		boost::shared_ptr<const char>, std::string,
-		Comparator
-		> delegate_container;
+	typedef std::multimap<boost::shared_ptr<const char>,
+		std::string, Comparator> delegate_container;
 
 	typedef delegate_container::const_iterator const_iterator;
 	typedef delegate_container::iterator iterator;
