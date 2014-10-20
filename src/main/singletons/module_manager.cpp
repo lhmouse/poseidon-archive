@@ -75,10 +75,8 @@ public:
 		}
 
 		LOG_INFO("Initializing module: ", m_path);
-		typedef typename boost::decay<DECLTYPE(poseidonModuleInit)>::type ModuleInitProc;
-		(*reinterpret_cast<
-			typename boost::decay<DECLTYPE(poseidonModuleInit)>::type>(procSymAddr)
-			)(shared_from_this(), context);
+		const AUTO(initProc, reinterpret_cast<DECLTYPE(poseidonModuleInit) *>(procSymAddr));
+		(*initProc)(shared_from_this(), context);
 		LOG_INFO("Done initializing module: ", m_path);
 	}
 };
