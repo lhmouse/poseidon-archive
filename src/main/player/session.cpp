@@ -8,6 +8,7 @@
 #include "../singletons/player_servlet_manager.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
+#include "../endian.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -26,10 +27,11 @@ StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
 		DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE);
 	}
 	StreamBuffer ret;
-	ret.put(protocolId & 0xFF);
-	ret.put(protocolId >> 8);
-	ret.put(size & 0xFF);
-	ret.put(size >> 8);
+	boost::uint16_t tmp;
+	storeLe(tmp, protocolId);
+	ret.put(&tmp, 2);
+	storeLe(tmp, size);
+	ret.put(&tmp, 2);
 	ret.splice(contents);
 	return ret;
 }
@@ -107,15 +109,18 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 				if(m_payload.size() < 4){
 					break;
 				}
-
-				m_protocolId = m_payload.get() & 0xFF;
-				m_protocolId |= (m_payload.get() & 0xFF) << 8;
-
-				m_payloadLen = m_payload.get() & 0xFF;
-				m_payloadLen |= (m_payload.get() & 0xFF) << 8;
-				m_payloadLen &= 0x3FFF;
-
+				boost::uint16_t tmp;
+				m_payload.get(&tmp, 2);
+				m_protocolId = loadLe(tmp);
+				m_payload.get(&tmp, 2);
+				m_payloadLen = loadLe(tmp);
 				LOG_DEBUG("Protocol id = ", m_protocolId, ", len = ", m_payloadLen);
+
+				const std::size_t maxRequestLength = PlayerServletManager::getMaxRequestLength();
+				if((unsigned)m_payloadLen >= maxRequestLength){
+					LOG_WARNING("Request size = ", m_payloadLen, ", max = ", maxRequestLength);
+					DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE);
+				}
 			}
 			if(m_payload.size() < (unsigned)m_payloadLen){
 				break;

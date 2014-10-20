@@ -93,10 +93,10 @@ void run(){
 	boost::uint16_t port = 0;
 	std::string certificate;
 	std::string privateKey;
-	ConfigFile::get(bind, "socket_bind");
-	ConfigFile::get(port, "socket_port");
-	ConfigFile::get(certificate, "socket_certificate");
-	ConfigFile::get(privateKey, "socket_private_key");
+	ConfigFile::get(bind, "player_bind");
+	ConfigFile::get(port, "player_port");
+	ConfigFile::get(certificate, "player_certificate");
+	ConfigFile::get(privateKey, "player_private_key");
 	EpollDaemon::addTcpServer(
 		boost::make_shared<PlayerServer>(bind, port, certificate, privateKey));
 

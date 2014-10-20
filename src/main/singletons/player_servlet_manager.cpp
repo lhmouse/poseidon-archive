@@ -5,6 +5,7 @@
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#include "config_file.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
 using namespace Poseidon;
@@ -55,17 +56,25 @@ struct Poseidon::PlayerServlet : boost::noncopyable {
 
 namespace {
 
+std::size_t g_maxRequestLength = 16 * 0x400;
+
 boost::shared_mutex g_mutex;
 std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> > g_servlets;
 
 }
 
 void PlayerServletManager::start(){
+	ConfigFile::get(g_maxRequestLength, "player_max_request_length");
+	LOG_DEBUG("Max request length = ", g_maxRequestLength);
 }
 void PlayerServletManager::stop(){
 	LOG_INFO("Unloading all player servlets...");
 
 	g_servlets.clear();
+}
+
+std::size_t PlayerServletManager::getMaxRequestLength(){
+	return g_maxRequestLength;
 }
 
 boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(boost::uint16_t protocolId,
