@@ -77,8 +77,11 @@ StreamBuffer::StreamBuffer(const std::string &str)
 	put(str);
 }
 StreamBuffer::StreamBuffer(const StreamBuffer &rhs)
-	: m_chunks(rhs.m_chunks), m_size(rhs.m_size)
+	: m_size(0)
 {
+	for(AUTO(it, rhs.m_chunks.begin()); it != rhs.m_chunks.end(); ++it){
+		put(it->data + it->readPos, it->writePos - it->readPos);
+	}
 }
 StreamBuffer &StreamBuffer::operator=(const StreamBuffer &rhs){
 	StreamBuffer(rhs).swap(*this);
