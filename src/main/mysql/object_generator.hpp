@@ -252,8 +252,8 @@ private:
 		str_->append(filter_);
 		str_->append(limit_);
 
-		LOG_DEBUG(TOKEN_TO_STR(MYSQL_OBJECT_NAME) "::"
-			TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) ": ", str_);
+		LOG_DEBUG("MySQL error in " TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) "::"
+			TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
 
 		rs_.reset(conn_->prepareStatement(str_)->executeQuery());
 	}
@@ -321,8 +321,8 @@ private:
 			"SET " MYSQL_OBJECT_FIELDS);
 		str_->erase(str_->end() - 2, str_->end());
 
-		LOG_DEBUG(TOKEN_TO_STR(MYSQL_OBJECT_NAME) "::"
-			TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) ": ", str_);
+		LOG_DEBUG("MySQL error in " TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) "::"
+			TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
 
 		const boost::scoped_ptr<sql::PreparedStatement> ps_(conn_->prepareStatement(str_));
 		std::vector<boost::shared_ptr<void> > contexts_;
