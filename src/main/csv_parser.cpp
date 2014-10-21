@@ -41,7 +41,7 @@ bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 				const std::size_t begin = token.find_first_not_of(" \t\r\n");
 				if(begin != std::string::npos){
 					const std::size_t end = token.find_last_not_of(" \t\r\n") + 1;
-					trimmed = token.substr(begin, end - begin);
+					token.substr(begin, end - begin).swap(trimmed);
 				}
 				token.clear();
 				row.push_back(STD_MOVE(trimmed));
