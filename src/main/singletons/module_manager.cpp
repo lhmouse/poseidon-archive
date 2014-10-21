@@ -49,7 +49,7 @@ public:
 		LOG_INFO("Loading module: ", m_path);
 
 		const boost::mutex::scoped_lock lock(g_dlMutex);
-		m_handle.reset(::dlopen(m_path.c_str(), RTLD_LAZY));
+		m_handle.reset(::dlopen(m_path.c_str(), RTLD_NOW));
 		if(!m_handle){
 			const char *const error = ::dlerror();
 			LOG_ERROR("Error loading dynamic library: ", error);
