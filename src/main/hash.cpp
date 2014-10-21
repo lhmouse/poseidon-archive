@@ -267,7 +267,6 @@ void sha1Chunk(boost::uint32_t (&result)[5], const unsigned char *chunk){
 
 void sha256Chunk(boost::uint32_t (&result)[8], const unsigned char *chunk){
 	// https://en.wikipedia.org/wiki/SHA-2
-	// http://download.intel.com/embedded/processor/whitepaper/327457.pdf
 	boost::uint32_t w[64];
 
 	for(std::size_t i = 0; i < 16; ++i){
