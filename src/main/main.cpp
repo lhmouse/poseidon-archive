@@ -131,7 +131,7 @@ int main(int argc, char **argv){
 		::signal(SIGINT, sigIntProc);
 		::signal(SIGTERM, sigTermProc);
 
-		const char *confPath = "/var/poseidon/config/conf.rc";
+		const char *confPath = "/var/poseidon/config/poseidon.conf";
 		if(1 < argc){
 			confPath = argv[1];
 		}

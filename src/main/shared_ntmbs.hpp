@@ -80,8 +80,14 @@ static inline bool operator==(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
 static inline bool operator==(const SharedNtmbs &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) == 0;
 }
+static inline bool operator==(const SharedNtmbs &lhs, const std::string &rhs){
+	return lhs.get() == rhs;
+}
 static inline bool operator==(const char *lhs, const SharedNtmbs &rhs){
 	return std::strcmp(lhs, rhs.get()) == 0;
+}
+static inline bool operator==(const std::string &lhs, const SharedNtmbs &rhs){
+	return lhs == rhs.get();
 }
 
 static inline bool operator!=(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
@@ -90,8 +96,14 @@ static inline bool operator!=(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
 static inline bool operator!=(const SharedNtmbs &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) != 0;
 }
+static inline bool operator!=(const SharedNtmbs &lhs, const std::string &rhs){
+	return lhs.get() != rhs;
+}
 static inline bool operator!=(const char *lhs, const SharedNtmbs &rhs){
 	return std::strcmp(lhs, rhs.get()) != 0;
+}
+static inline bool operator!=(const std::string &lhs, const SharedNtmbs &rhs){
+	return lhs != rhs.get();
 }
 
 static inline bool operator<(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
@@ -100,8 +112,14 @@ static inline bool operator<(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
 static inline bool operator<(const SharedNtmbs &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) < 0;
 }
+static inline bool operator<(const SharedNtmbs &lhs, const std::string &rhs){
+	return lhs.get() < rhs;
+}
 static inline bool operator<(const char *lhs, const SharedNtmbs &rhs){
 	return std::strcmp(lhs, rhs.get()) < 0;
+}
+static inline bool operator<(const std::string &lhs, const SharedNtmbs &rhs){
+	return lhs < rhs.get();
 }
 
 static inline bool operator>(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
@@ -110,8 +128,14 @@ static inline bool operator>(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
 static inline bool operator>(const SharedNtmbs &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) > 0;
 }
+static inline bool operator>(const SharedNtmbs &lhs, const std::string &rhs){
+	return lhs.get() > rhs;
+}
 static inline bool operator>(const char *lhs, const SharedNtmbs &rhs){
 	return std::strcmp(lhs, rhs.get()) > 0;
+}
+static inline bool operator>(const std::string &lhs, const SharedNtmbs &rhs){
+	return lhs > rhs.get();
 }
 
 static inline bool operator<=(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
@@ -120,8 +144,14 @@ static inline bool operator<=(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
 static inline bool operator<=(const SharedNtmbs &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) <= 0;
 }
+static inline bool operator<=(const SharedNtmbs &lhs, const std::string &rhs){
+	return lhs.get() <= rhs;
+}
 static inline bool operator<=(const char *lhs, const SharedNtmbs &rhs){
 	return std::strcmp(lhs, rhs.get()) <= 0;
+}
+static inline bool operator<=(const std::string &lhs, const SharedNtmbs &rhs){
+	return lhs <= rhs.get();
 }
 
 static inline bool operator>=(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
@@ -130,8 +160,14 @@ static inline bool operator>=(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
 static inline bool operator>=(const SharedNtmbs &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) >= 0;
 }
+static inline bool operator>=(const SharedNtmbs &lhs, const std::string &rhs){
+	return lhs.get() >= rhs;
+}
 static inline bool operator>=(const char *lhs, const SharedNtmbs &rhs){
 	return std::strcmp(lhs, rhs.get()) >= 0;
+}
+static inline bool operator>=(const std::string &lhs, const SharedNtmbs &rhs){
+	return lhs >= rhs.get();
 }
 
 static inline void swap(SharedNtmbs &lhs, SharedNtmbs &rhs) NOEXCEPT {

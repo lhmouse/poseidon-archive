@@ -11,7 +11,7 @@ namespace Poseidon {
 
 class CsvParser {
 private:
-	std::vector<OptionalMap> m_rows;
+	std::vector<OptionalMap> m_data;
 
 public:
 	CsvParser(){
@@ -35,24 +35,24 @@ public:
 	}
 
 	bool empty() const {
-		return m_rows.size();
+		return m_data.size();
 	}
 	void clear(){
-		m_rows.clear();
+		m_data.clear();
 	}
 
 	std::size_t rows() const {
-		return m_rows.size();
+		return m_data.size();
 	}
 
 	const std::string &get(std::size_t row, const SharedNtmbs &key){
-		return m_rows.at(row).get(key);
+		return m_data.at(row).get(key);
 	}
 	const std::string &get(std::size_t row, const char *key){
-		return m_rows.at(row).get(key);
+		return m_data.at(row).get(key);
 	}
 	const std::string &get(std::size_t row, const std::string &key){
-		return m_rows.at(row).get(key);
+		return m_data.at(row).get(key);
 	}
 
 	template<typename T>
