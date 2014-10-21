@@ -28,7 +28,7 @@ public:
 		LOG_INFO("Created player servlet for protocol ", m_protocolId);
 	}
 	~RealPlayerServlet(){
-		LOG_INFO("Destroyed player servlet for protocol", m_protocolId);
+		LOG_INFO("Destroyed player servlet for protocol ", m_protocolId);
 	}
 
 public:
