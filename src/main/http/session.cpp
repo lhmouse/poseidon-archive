@@ -88,14 +88,14 @@ void normalizeUri(std::string &uri){
 	uri.erase(uri.begin() + write, uri.end());
 }
 
-void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned long long){
+void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer){
 	const AUTO(session, observer.lock());
 	if(session){
 		LOG_WARNING("HTTP request times out, remote IP = ", session->getRemoteIp());
 		session->sendDefault(HTTP_REQUEST_TIMEOUT, true);
 	}
 }
-void onKeepAliveTimeout(const boost::weak_ptr<HttpSession> &observer, unsigned long long){
+void onKeepAliveTimeout(const boost::weak_ptr<HttpSession> &observer){
 	const AUTO(session, observer.lock());
 	if(session){
 		static_cast<TcpSessionBase *>(session.get())->send(StreamBuffer(), true);
@@ -307,8 +307,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 
 				m_shutdownTimer = TimerDaemon::registerTimer(
 					HttpServletManager::getKeepAliveTimeout(), 0, VAL_INIT,
-					TR1::bind(&onKeepAliveTimeout,
-						virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+					TR1::bind(&onKeepAliveTimeout, virtualWeakFromThis<HttpSession>()));
 
 				boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
 					m_verb, STD_MOVE(m_uri), m_version,
@@ -344,7 +343,7 @@ void HttpSession::setRequestTimeout(unsigned long long timeout){
 		m_shutdownTimer.reset();
 	} else {
 		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, VAL_INIT,
-			TR1::bind(&onRequestTimeout, virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+			TR1::bind(&onRequestTimeout, virtualWeakFromThis<HttpSession>()));
 	}
 }
 
