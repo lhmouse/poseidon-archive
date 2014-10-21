@@ -288,7 +288,7 @@ void sha256Chunk(boost::uint32_t (&result)[8], const unsigned char *chunk){
 	register boost::uint32_t g = result[6];
 	register boost::uint32_t h = result[7];
 
-	register std::uint32_t S0, maj, t2, S1, ch, t1;
+	register boost::uint32_t S0, maj, t2, S1, ch, t1;
 
 #define SHA256_STEP(i_, a_, b_, c_, d_, e_, f_, g_, h_, k_)	\
 	S0 = rotr(rotr(rotr(a_, 9) ^ a_, 11) ^ a_, 2);	\

@@ -351,9 +351,9 @@ private:
 #define FIELD_STRING(name_)					if(get_ ## name_().size() <= 255){	\
 												ps_->setString(++index_, get_ ## name_());	\
 											} else {	\
-												AUTO(ss_, ::boost::make_shared< ::std::stringstream>(	\
-													get_ ## name_()));	\
-												contexts_.push_back(STD_MOVE(ss_));	\
+												AUTO(ss_, ::boost::make_shared<	\
+													::std::stringstream>(get_ ## name_()));	\
+												contexts_.push_back(ss_);	\
 												ps_->setBlob(++index_, ss_.get());	\
 											}
 
