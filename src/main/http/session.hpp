@@ -53,10 +53,6 @@ private:
 	void setRequestTimeout(unsigned long long timeout);
 
 	void onAllHeadersRead();
-	void onExpect(const std::string &val);
-	void onContentLength(const std::string &val);
-	void onUpgrade(const std::string &val);
-	void onAuthorization(const std::string &val);
 
 public:
 	void setAuthInfo(boost::shared_ptr<std::set<std::string> > authInfo){

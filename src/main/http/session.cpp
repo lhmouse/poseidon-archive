@@ -291,28 +291,30 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_state = ST_FIRST_HEADER;
 
 			if(m_authInfo){
-				continue;
-			}
+				OptionalMap headers;
+				headers.set("WWW-Authenticate", "Basic realm=\"Authentication required\"");
+				sendDefault(HTTP_DENIED, STD_MOVE(headers));
+			} else {
+				if(m_upgradedSession){
+					m_shutdownTimer.reset();
 
-			if(m_upgradedSession){
-				m_shutdownTimer.reset();
-
-				m_upgradedSession->onInitContents(m_line.data(), m_line.size());
-				if(read != end){
-					m_upgradedSession->onReadAvail(read, end - read);
+					m_upgradedSession->onInitContents(m_line.data(), m_line.size());
+					if(read != end){
+						m_upgradedSession->onReadAvail(read, end - read);
+					}
+					return;
 				}
-				break;
+
+				m_shutdownTimer = TimerDaemon::registerTimer(
+					HttpServletManager::getKeepAliveTimeout(), 0, VAL_INIT,
+					TR1::bind(&onKeepAliveTimeout,
+						virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+
+				boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
+					m_verb, STD_MOVE(m_uri), m_version,
+					STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)
+					)->pend();
 			}
-
-			m_shutdownTimer = TimerDaemon::registerTimer(
-				HttpServletManager::getKeepAliveTimeout(), 0, VAL_INIT,
-				TR1::bind(&onKeepAliveTimeout,
-					virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
-
-			boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
-				m_verb, STD_MOVE(m_uri), m_version,
-				STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)
-				)->pend();
 
 			m_totalLength = 0;
 			m_contentLength = 0;
@@ -347,13 +349,85 @@ void HttpSession::setRequestTimeout(unsigned long long timeout){
 }
 
 void HttpSession::onAllHeadersRead(){
-	typedef std::pair<const char *, void (HttpSession::*)(const std::string &)> TableItem;
+	struct Dispatcher {
+		static void onExpect(HttpSession *session, const std::string &val){
+			if(val != "100-continue"){
+				LOG_WARNING("Unknown HTTP header Expect: ", val);
+				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+			}
+			session->sendDefault(HTTP_CONTINUE);
+		}
+		static void onContentLength(HttpSession *session, const std::string &val){
+			session->m_contentLength = boost::lexical_cast<std::size_t>(val);
+			LOG_DEBUG("Content-Length: ", session->m_contentLength);
+		}
+		static void onUpgrade(HttpSession *session, const std::string &val){
+			if(session->m_version < 10001){
+				LOG_WARNING("HTTP 1.1 is required to use WebSocket");
+				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+			}
+			if(::strcasecmp(val.c_str(), "websocket") != 0){
+				LOG_WARNING("Unknown HTTP header Upgrade: ", val);
+				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+			}
+			AUTO_REF(version, session->m_headers.get("Sec-WebSocket-Version"));
+			if(version != "13"){
+				LOG_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
+				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+			}
 
-	static const TableItem JUMP_TABLE[] = {
-		std::make_pair("Authorization", &HttpSession::onAuthorization),
-		std::make_pair("Content-Length", &HttpSession::onContentLength),
-		std::make_pair("Expect", &HttpSession::onExpect),
-		std::make_pair("Upgrade", &HttpSession::onUpgrade),
+			std::string key = session->m_headers.get("Sec-WebSocket-Key");
+			if(key.empty()){
+				LOG_WARNING("No Sec-WebSocket-Key specified.");
+				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+			}
+			key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+			unsigned char sha1[20];
+			sha1Sum(sha1, key.data(), key.size());
+			key = base64Encode(sha1, sizeof(sha1));
+
+			OptionalMap headers;
+			headers.set("Upgrade", "websocket");
+			headers.set("Connection", "Upgrade");
+			headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
+			session->sendDefault(HTTP_SWITCH_PROTOCOLS, STD_MOVE(headers));
+
+			session->m_upgradedSession = boost::make_shared<WebSocketSession>(
+				session->virtualSharedFromThis<HttpSession>());
+			LOG_INFO("Upgraded to WebSocketSession, remote IP = ", session->getRemoteIp());
+		}
+		static void onAuthorization(HttpSession *session, const std::string &val){
+			if(!session->m_authInfo){
+				return;
+			}
+
+			const std::size_t pos = val.find(' ');
+			if(pos == std::string::npos){
+				LOG_WARNING("Bad Authorization: ", val);
+				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+			}
+			std::string temp(val);
+			temp.at(pos) = 0;
+			if(::strcasecmp(temp.c_str(), "basic") != 0){
+				LOG_WARNING("Unknown auth method: ", temp.c_str());
+				DEBUG_THROW(HttpException, HTTP_NONE_ACCEPTABLE);
+			}
+			temp.erase(temp.begin(), temp.begin() + pos + 1);
+			if(session->m_authInfo->find(temp) == session->m_authInfo->end()){
+				DEBUG_THROW(HttpException, HTTP_DENIED);
+			}
+			session->m_authInfo.reset();
+		}
+	};
+
+	static const std::pair<
+		const char *, void (*)(HttpSession *, const std::string &)
+		> JUMP_TABLE[] =
+	{
+		std::make_pair("Authorization", &Dispatcher::onAuthorization),
+		std::make_pair("Content-Length", &Dispatcher::onContentLength),
+		std::make_pair("Expect", &Dispatcher::onExpect),
+		std::make_pair("Upgrade", &Dispatcher::onUpgrade),
 	};
 
 	for(AUTO(it, m_headers.begin()); it != m_headers.end(); ++it){
@@ -361,7 +435,7 @@ void HttpSession::onAllHeadersRead(){
 
 		AUTO(lower, BEGIN(JUMP_TABLE));
 		AUTO(upper, END(JUMP_TABLE));
-		void (HttpSession::*found)(const std::string &) = 0;
+		void (*found)(HttpSession *, const std::string &) = VAL_INIT;
 		do {
 			const AUTO(middle, lower + (upper - lower) / 2);
 			const int result = std::strcmp(it->first.get(), middle->first);
@@ -376,82 +450,9 @@ void HttpSession::onAllHeadersRead(){
 		} while(lower != upper);
 
 		if(found){
-			(this->*found)(it->second);
+			(*found)(this, it->second);
 		}
 	}
-
-	if(m_authInfo){
-		OptionalMap headers;
-		headers.set("WWW-Authenticate", "Basic realm=\"Authentication required\"");
-		sendDefault(HTTP_DENIED, STD_MOVE(headers));
-	}
-}
-void HttpSession::onExpect(const std::string &val){
-	if(val != "100-continue"){
-		LOG_WARNING("Unknown HTTP header Expect: ", val);
-		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-	}
-	sendDefault(HTTP_CONTINUE);
-}
-void HttpSession::onContentLength(const std::string &val){
-	m_contentLength = boost::lexical_cast<std::size_t>(val);
-	LOG_DEBUG("Content-Length: ", m_contentLength);
-}
-void HttpSession::onUpgrade(const std::string &val){
-	if(m_version < 10001){
-		LOG_WARNING("HTTP 1.1 is required to use WebSocket");
-		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-	}
-	if(::strcasecmp(val.c_str(), "websocket") != 0){
-		LOG_WARNING("Unknown HTTP header Upgrade: ", val);
-		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-	}
-	AUTO_REF(version, m_headers.get("Sec-WebSocket-Version"));
-	if(version != "13"){
-		LOG_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
-		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
-	}
-
-	std::string key = m_headers.get("Sec-WebSocket-Key");
-	if(key.empty()){
-		LOG_WARNING("No Sec-WebSocket-Key specified.");
-		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
-	}
-	key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-	unsigned char sha1[20];
-	sha1Sum(sha1, key.data(), key.size());
-	key = base64Encode(sha1, sizeof(sha1));
-
-	OptionalMap headers;
-	headers.set("Upgrade", "websocket");
-	headers.set("Connection", "Upgrade");
-	headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
-	sendDefault(HTTP_SWITCH_PROTOCOLS, STD_MOVE(headers));
-
-	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualSharedFromThis<HttpSession>());
-	LOG_INFO("Upgraded to WebSocketSession, remote IP = ", getRemoteIp());
-}
-void HttpSession::onAuthorization(const std::string &val){
-	if(!m_authInfo){
-		return;
-	}
-
-	const std::size_t pos = val.find(' ');
-	if(pos == std::string::npos){
-		LOG_WARNING("Bad Authorization: ", val);
-		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
-	}
-	std::string temp(val);
-	temp.at(pos) = 0;
-	if(::strcasecmp(temp.c_str(), "basic") != 0){
-		LOG_WARNING("Unknown auth method: ", temp.c_str());
-		DEBUG_THROW(HttpException, HTTP_NONE_ACCEPTABLE);
-	}
-	temp.erase(temp.begin(), temp.begin() + pos + 1);
-	if(m_authInfo->find(temp) == m_authInfo->end()){
-		DEBUG_THROW(HttpException, HTTP_DENIED);
-	}
-	m_authInfo.reset();
 }
 
 bool HttpSession::send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool final){
