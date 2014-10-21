@@ -10,6 +10,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include <errno.h>
+#include "shared_ntmbs.hpp"
 
 namespace Poseidon {
 
@@ -102,7 +103,7 @@ boost::uint64_t rand64();
 boost::uint32_t rand32(boost::uint32_t lower, boost::uint32_t upper);
 double randDouble(double lower = 0.0, double upper = 1.0);
 
-boost::shared_ptr<const char> getErrorDesc(int errCode = errno) NOEXCEPT;
+SharedNtmbs getErrorDesc(int errCode = errno) NOEXCEPT;
 std::string getErrorDescAsString(int errCode = errno);
 
 }

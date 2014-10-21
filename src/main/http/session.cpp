@@ -265,7 +265,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					}
 					std::string value(valueBegin, m_line.end());
 					m_line.erase(m_line.begin() + delimPos, m_line.end());
-					m_headers.add(m_line, STD_MOVE(value));
+					m_headers.append(m_line, STD_MOVE(value));
 				} else {
 					m_state = ST_CONTENTS;
 

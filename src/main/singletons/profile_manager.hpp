@@ -4,13 +4,14 @@
 #include "../../cxx_ver.hpp"
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include "../shared_ntmbs.hpp"
 
 namespace Poseidon {
 
 struct ProfileItem {
-	boost::shared_ptr<const char> file;
+	SharedNtmbs file;
 	unsigned long line;
-	boost::shared_ptr<const char> func;
+	SharedNtmbs func;
 
 	// 采样数。
 	unsigned long long samples;

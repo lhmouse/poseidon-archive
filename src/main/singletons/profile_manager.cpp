@@ -7,17 +7,17 @@
 #include "../atomic.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
+#include "../shared_ntmbs.hpp"
 using namespace Poseidon;
 
 namespace {
 
 struct ProfileKey {
-	boost::shared_ptr<const char> file;
+	SharedNtmbs file;
 	unsigned long line;
-	boost::shared_ptr<const char> func;
+	SharedNtmbs func;
 
-	ProfileKey(boost::shared_ptr<const char> file_, unsigned long line_,
-		boost::shared_ptr<const char> func_)
+	ProfileKey(SharedNtmbs file_, unsigned long line_, SharedNtmbs func_)
 		: file(STD_MOVE(file_)), line(line_), func(STD_MOVE(func_))
 	{
 	}
@@ -47,10 +47,6 @@ bool g_enabled = true;
 boost::shared_mutex g_mutex;
 std::map<ProfileKey, ProfileCounters> g_profile;
 
-void deleteCharArray(char *s){
-	delete[] s;
-}
-
 }
 
 void ProfileManager::start(){
@@ -69,9 +65,8 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 {
 	try {
 		std::map<ProfileKey, ProfileCounters>::iterator it;
-		ProfileKey key(
-			boost::shared_ptr<const char>(boost::shared_ptr<void>(), file), line,
-			boost::shared_ptr<const char>(boost::shared_ptr<void>(), func));
+		ProfileKey key(SharedNtmbs::createNonOwning(file), line,
+			SharedNtmbs::createNonOwning(func));
 		{
 			const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 			it = g_profile.find(key);
@@ -80,18 +75,8 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 			}
 		}
 		{
-			std::size_t len;
-			boost::shared_ptr<char> str;
-
-			len = std::strlen(file);
-			str.reset(new char[len + 1], &deleteCharArray);
-			std::memcpy(str.get(), file, len + 1);
-			key.file = str;
-
-			len = std::strlen(func);
-			str.reset(new char[len + 1], &deleteCharArray);
-			std::memcpy(str.get(), func, len + 1);
-			key.func = str;
+			key.file = SharedNtmbs::createOwning(file);
+			key.func = SharedNtmbs::createOwning(func);
 
 			const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 			it = g_profile.insert(std::make_pair(key, ProfileCounters())).first;

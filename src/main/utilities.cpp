@@ -92,29 +92,18 @@ double randDouble(double lower, double upper){
 	return lower + rand64() / 0x1p64 * delta;
 }
 
-namespace {
-
-void deleteCharArray(char *p){
-	delete[] p;
-}
-
-}
-
-boost::shared_ptr<const char> getErrorDesc(int errCode) NOEXCEPT {
+SharedNtmbs getErrorDesc(int errCode) NOEXCEPT {
 	char temp[1024];
 	const char *desc = ::strerror_r(errCode, temp, sizeof(temp));
 	if(desc == temp){
-		const std::size_t size = std::strlen(desc) + 1;
 		try {
-			boost::shared_ptr<char> ret(new char[size], &deleteCharArray);
-			std::memcpy(ret.get(), desc, size);
-			return ret;
+			return SharedNtmbs::createOwning(desc);
 		} catch(...){
 			desc = "Insufficient memory.";
 		}
 	}
 	// desc 指向一个静态的字符串。
-	return boost::shared_ptr<const char>(boost::shared_ptr<void>(), desc);
+	return SharedNtmbs::createNonOwning(desc);
 }
 std::string getErrorDescAsString(int errCode){
 	std::string ret;

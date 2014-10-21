@@ -3,28 +3,19 @@
 
 #include "../cxx_ver.hpp"
 #include <map>
-#include <string>
-#include <cstring>
-#include <cstddef>
-#include <boost/shared_ptr.hpp>
+#include "shared_ntmbs.hpp"
 
 namespace Poseidon {
 
 class OptionalMap {
 public:
-	struct Comparator {
-		bool operator()(const boost::shared_ptr<const char> &lhs,
-			const boost::shared_ptr<const char> &rhs) const
-		{
-			return std::strcmp(lhs.get(), rhs.get()) < 0;
-		}
-	};
-
-	typedef std::multimap<boost::shared_ptr<const char>,
-		std::string, Comparator> delegate_container;
+	typedef std::multimap<SharedNtmbs, std::string> delegate_container;
 
 	typedef delegate_container::const_iterator const_iterator;
 	typedef delegate_container::iterator iterator;
+
+private:
+	static const std::string EMPTY_STRING;
 
 private:
 	delegate_container m_delegate;
@@ -56,9 +47,14 @@ public:
 	void erase(iterator pos){
 		m_delegate.erase(pos);
 	}
+	void erase(const SharedNtmbs &key){
+		m_delegate.erase(key);
+	}
 	void erase(const char *key){
-		m_delegate.erase(boost::shared_ptr<const char>(
-			boost::shared_ptr<void>(), key));
+		m_delegate.erase(SharedNtmbs::createNonOwning(key));
+	}
+	void erase(const std::string &key){
+		m_delegate.erase(SharedNtmbs::createNonOwning(key));
 	}
 
 	void swap(OptionalMap &rhs) NOEXCEPT {
@@ -66,20 +62,43 @@ public:
 	}
 
 	// 一对一的接口。
-	const std::string &get(const char *key) const;
+	const std::string &get(const SharedNtmbs &key) const {
+		const_iterator it = m_delegate.find(key);
+		if(it == m_delegate.end()){
+			return EMPTY_STRING;
+		}
+		return it->second;
+	}
+	const std::string &get(const char *key) const {
+		return get(SharedNtmbs::createNonOwning(key));
+	}
 	const std::string &get(const std::string &key) const {
-		return get(key.c_str());
+		return get(SharedNtmbs::createNonOwning(key));
 	}
 
 	const std::string &operator[](const std::string &key) const {
 		return get(key);
 	}
 
-	std::string &create(const char *key);
+	std::string &create(const SharedNtmbs &key){
+		iterator it = m_delegate.find(key);
+		if(it == m_delegate.end()){
+			it = m_delegate.insert(it, std::make_pair(key.forkOwning(), std::string()));
+		}
+		return it->second;
+	}
+	std::string &create(const char *key){
+		return create(SharedNtmbs::createNonOwning(key));
+	}
 	std::string &create(const std::string &key){
-		return create(key.c_str());
+		return create(SharedNtmbs::createNonOwning(key));
 	}
 
+	std::string &set(const SharedNtmbs &key, std::string val){
+		std::string &ret = create(key);
+		ret.swap(val);
+		return ret;
+	}
 	std::string &set(const char *key, std::string val){
 		std::string &ret = create(key);
 		ret.swap(val);
@@ -92,22 +111,37 @@ public:
 	}
 
 	// 一对多的接口。
-	std::pair<const_iterator, const_iterator> range(const char *key) const;
+	std::pair<const_iterator, const_iterator> range(const SharedNtmbs &key) const {
+		return m_delegate.equal_range(key);
+	}
+	std::pair<const_iterator, const_iterator> range(const char *key) const {
+		return range(SharedNtmbs::createNonOwning(key));
+	}
 	std::pair<const_iterator, const_iterator> range(const std::string &key) const {
-		return range(key.c_str());
+		return range(SharedNtmbs::createNonOwning(key));
 	}
 
-	std::size_t count(const char *key) const;
+	std::size_t count(const SharedNtmbs &key) const {
+		return m_delegate.count(key);
+	}
+	std::size_t count(const char *key) const {
+		return count(SharedNtmbs::createNonOwning(key));
+	}
 	std::size_t count(const std::string &key) const {
-		return count(key.c_str());
+		return count(SharedNtmbs::createNonOwning(key));
 	}
 
-	iterator add(const char *key, std::size_t len, std::string val);
-	iterator add(const char *key, std::string val){
-		return add(key, std::strlen(key), STD_MOVE(val));
+	iterator append(const SharedNtmbs &key, std::string val){
+		return m_delegate.insert(m_delegate.end(),
+			std::make_pair(key.forkOwning(), STD_MOVE(val)));
 	}
-	iterator add(const std::string &key, std::string val){
-		return add(key.data(), key.size(), STD_MOVE(val));
+	iterator append(const char *key, std::string val){
+		return m_delegate.insert(m_delegate.end(),
+			std::make_pair(SharedNtmbs::createNonOwning(key), STD_MOVE(val)));
+	}
+	iterator append(const std::string &key, std::string val){
+		return m_delegate.insert(m_delegate.end(),
+			std::make_pair(SharedNtmbs::createNonOwning(key), STD_MOVE(val)));
 	}
 };
 

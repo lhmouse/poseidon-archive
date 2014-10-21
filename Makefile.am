@@ -36,7 +36,9 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/virtual_shared_from_this.cpp	\
 	src/main/transaction.cpp	\
 	src/main/stream_buffer.cpp	\
+	src/main/shared_ntmbs.cpp	\
 	src/main/optional_map.cpp	\
+	src/main/csv_parser.cpp	\
 	src/main/job_base.cpp	\
 	src/main/tcp_session_base.cpp	\
 	src/main/tcp_session_ssl_impl.cpp	\
