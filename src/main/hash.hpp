@@ -13,6 +13,7 @@ namespace Poseidon {
 extern boost::uint32_t crc32Sum(const void *data, std::size_t size);
 extern void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size);
 extern void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size);
+extern void sha256Sum(unsigned char (&hash)[32], const void *data, std::size_t size);
 
 }
 

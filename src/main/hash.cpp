@@ -265,6 +265,123 @@ void sha1Chunk(boost::uint32_t (&result)[5], const unsigned char *chunk){
 	result[4] += e;
 }
 
+void sha256Chunk(boost::uint32_t (&result)[8], const unsigned char *chunk){
+	// https://en.wikipedia.org/wiki/SHA-2
+	// http://download.intel.com/embedded/processor/whitepaper/327457.pdf
+	boost::uint32_t w[64];
+
+	for(std::size_t i = 0; i < 16; ++i){
+		w[i] = loadBe(reinterpret_cast<const boost::uint32_t *>(chunk)[i]);
+	}
+	for(std::size_t i = 16; i < 64; ++i){
+		const boost::uint32_t s0 = rotr((rotr(w[i - 15], 11) ^ w[i - 15]), 7) ^ (w[i - 15] >> 3);
+		const boost::uint32_t s1 = rotr((rotr(w[i - 2], 2) ^ w[i - 2]), 17) ^ (w[i - 2] >> 10);
+		w[i] = w[i - 16] + w[i - 7] + s0 + s1;
+	}
+
+	register boost::uint32_t a = result[0];
+	register boost::uint32_t b = result[1];
+	register boost::uint32_t c = result[2];
+	register boost::uint32_t d = result[3];
+	register boost::uint32_t e = result[4];
+	register boost::uint32_t f = result[5];
+	register boost::uint32_t g = result[6];
+	register boost::uint32_t h = result[7];
+
+	register std::uint32_t S0, maj, t2, S1, ch, t1;
+
+#define SHA256_STEP(i_, a_, b_, c_, d_, e_, f_, g_, h_, k_)	\
+	S0 = rotr(rotr(rotr(a_, 9) ^ a_, 11) ^ a_, 2);	\
+	maj = (a_ & b_) | (c_ & (a_ ^ b_));	\
+	t2 = S0 + maj;	\
+	S1 = rotr(rotr(rotr(e_, 14) ^ e_, 5) ^ e_, 6);	\
+	ch = g_ ^ (e_ & (f_ ^ g_));	\
+	t1 = h_ + S1 + ch + k_ + w[i_];	\
+	d_ += t1;	\
+	h_ = t1 + t2;
+
+	SHA256_STEP( 0, a, b, c, d, e, f, g, h, 0x428A2F98)
+	SHA256_STEP( 1, h, a, b, c, d, e, f, g, 0x71374491)
+	SHA256_STEP( 2, g, h, a, b, c, d, e, f, 0xB5C0FBCF)
+	SHA256_STEP( 3, f, g, h, a, b, c, d, e, 0xE9B5DBA5)
+	SHA256_STEP( 4, e, f, g, h, a, b, c, d, 0x3956C25B)
+	SHA256_STEP( 5, d, e, f, g, h, a, b, c, 0x59F111F1)
+	SHA256_STEP( 6, c, d, e, f, g, h, a, b, 0x923F82A4)
+	SHA256_STEP( 7, b, c, d, e, f, g, h, a, 0xAB1C5ED5)
+
+	SHA256_STEP( 8, a, b, c, d, e, f, g, h, 0xD807AA98)
+	SHA256_STEP( 9, h, a, b, c, d, e, f, g, 0x12835B01)
+	SHA256_STEP(10, g, h, a, b, c, d, e, f, 0x243185BE)
+	SHA256_STEP(11, f, g, h, a, b, c, d, e, 0x550C7DC3)
+	SHA256_STEP(12, e, f, g, h, a, b, c, d, 0x72BE5D74)
+	SHA256_STEP(13, d, e, f, g, h, a, b, c, 0x80DEB1FE)
+	SHA256_STEP(14, c, d, e, f, g, h, a, b, 0x9BDC06A7)
+	SHA256_STEP(15, b, c, d, e, f, g, h, a, 0xC19BF174)
+
+	SHA256_STEP(16, a, b, c, d, e, f, g, h, 0xE49B69C1)
+	SHA256_STEP(17, h, a, b, c, d, e, f, g, 0xEFBE4786)
+	SHA256_STEP(18, g, h, a, b, c, d, e, f, 0x0FC19DC6)
+	SHA256_STEP(19, f, g, h, a, b, c, d, e, 0x240CA1CC)
+	SHA256_STEP(20, e, f, g, h, a, b, c, d, 0x2DE92C6F)
+	SHA256_STEP(21, d, e, f, g, h, a, b, c, 0x4A7484AA)
+	SHA256_STEP(22, c, d, e, f, g, h, a, b, 0x5CB0A9DC)
+	SHA256_STEP(23, b, c, d, e, f, g, h, a, 0x76F988DA)
+
+	SHA256_STEP(24, a, b, c, d, e, f, g, h, 0x983E5152)
+	SHA256_STEP(25, h, a, b, c, d, e, f, g, 0xA831C66D)
+	SHA256_STEP(26, g, h, a, b, c, d, e, f, 0xB00327C8)
+	SHA256_STEP(27, f, g, h, a, b, c, d, e, 0xBF597FC7)
+	SHA256_STEP(28, e, f, g, h, a, b, c, d, 0xC6E00BF3)
+	SHA256_STEP(29, d, e, f, g, h, a, b, c, 0xD5A79147)
+	SHA256_STEP(30, c, d, e, f, g, h, a, b, 0x06CA6351)
+	SHA256_STEP(31, b, c, d, e, f, g, h, a, 0x14292967)
+
+	SHA256_STEP(32, a, b, c, d, e, f, g, h, 0x27B70A85)
+	SHA256_STEP(33, h, a, b, c, d, e, f, g, 0x2E1B2138)
+	SHA256_STEP(34, g, h, a, b, c, d, e, f, 0x4D2C6DFC)
+	SHA256_STEP(35, f, g, h, a, b, c, d, e, 0x53380D13)
+	SHA256_STEP(36, e, f, g, h, a, b, c, d, 0x650A7354)
+	SHA256_STEP(37, d, e, f, g, h, a, b, c, 0x766A0ABB)
+	SHA256_STEP(38, c, d, e, f, g, h, a, b, 0x81C2C92E)
+	SHA256_STEP(39, b, c, d, e, f, g, h, a, 0x92722C85)
+
+	SHA256_STEP(40, a, b, c, d, e, f, g, h, 0xA2BFE8A1)
+	SHA256_STEP(41, h, a, b, c, d, e, f, g, 0xA81A664B)
+	SHA256_STEP(42, g, h, a, b, c, d, e, f, 0xC24B8B70)
+	SHA256_STEP(43, f, g, h, a, b, c, d, e, 0xC76C51A3)
+	SHA256_STEP(44, e, f, g, h, a, b, c, d, 0xD192E819)
+	SHA256_STEP(45, d, e, f, g, h, a, b, c, 0xD6990624)
+	SHA256_STEP(46, c, d, e, f, g, h, a, b, 0xF40E3585)
+	SHA256_STEP(47, b, c, d, e, f, g, h, a, 0x106AA070)
+
+	SHA256_STEP(48, a, b, c, d, e, f, g, h, 0x19A4C116)
+	SHA256_STEP(49, h, a, b, c, d, e, f, g, 0x1E376C08)
+	SHA256_STEP(50, g, h, a, b, c, d, e, f, 0x2748774C)
+	SHA256_STEP(51, f, g, h, a, b, c, d, e, 0x34B0BCB5)
+	SHA256_STEP(52, e, f, g, h, a, b, c, d, 0x391C0CB3)
+	SHA256_STEP(53, d, e, f, g, h, a, b, c, 0x4ED8AA4A)
+	SHA256_STEP(54, c, d, e, f, g, h, a, b, 0x5B9CCA4F)
+	SHA256_STEP(55, b, c, d, e, f, g, h, a, 0x682E6FF3)
+
+	SHA256_STEP(56, a, b, c, d, e, f, g, h, 0x748F82EE)
+	SHA256_STEP(57, h, a, b, c, d, e, f, g, 0x78A5636F)
+	SHA256_STEP(58, g, h, a, b, c, d, e, f, 0x84C87814)
+	SHA256_STEP(59, f, g, h, a, b, c, d, e, 0x8CC70208)
+	SHA256_STEP(60, e, f, g, h, a, b, c, d, 0x90BEFFFA)
+	SHA256_STEP(61, d, e, f, g, h, a, b, c, 0xA4506CEB)
+	SHA256_STEP(62, c, d, e, f, g, h, a, b, 0xBEF9A3F7)
+	SHA256_STEP(63, b, c, d, e, f, g, h, a, 0xC67178F2)
+
+	result[0] += a;
+	result[1] += b;
+	result[2] += c;
+	result[3] += d;
+	result[4] += e;
+	result[5] += f;
+	result[6] += g;
+	result[7] += h;
+}
+
 }
 
 namespace Poseidon {
@@ -280,7 +397,7 @@ boost::uint32_t crc32Sum(const void *data, std::size_t size){
 }
 
 void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size){
-	boost::uint32_t result[4] = {
+	boost::uint32_t result[] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u
 	};
 	AUTO(read, reinterpret_cast<const unsigned char *>(data));
@@ -302,13 +419,13 @@ void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size){
 	}
 	storeLe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
 	md5Chunk(result, chunk);
-	for(unsigned i = 0; i < 4; ++i){
+	for(unsigned i = 0; i < sizeof(hash) / 4; ++i){
 		storeLe(reinterpret_cast<boost::uint32_t *>(hash)[i], result[i]);
 	}
 }
 
 void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size){
-	boost::uint32_t result[5] = {
+	boost::uint32_t result[] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u
 	};
 	AUTO(read, reinterpret_cast<const unsigned char *>(data));
@@ -330,7 +447,36 @@ void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size){
 	}
 	storeBe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
 	sha1Chunk(result, chunk);
-	for(unsigned i = 0; i < 5; ++i){
+	for(unsigned i = 0; i < sizeof(hash) / 4; ++i){
+		storeBe(reinterpret_cast<boost::uint32_t *>(hash)[i], result[i]);
+	}
+}
+
+void sha256Sum(unsigned char (&hash)[32], const void *data, std::size_t size){
+	boost::uint32_t result[] = {
+		0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au,
+		0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u
+	};
+	AUTO(read, reinterpret_cast<const unsigned char *>(data));
+	std::size_t remaining = size;
+	while(remaining >= 64){
+		sha256Chunk(result, read);
+		read += 64;
+		remaining -= 64;
+	}
+	unsigned char chunk[64];
+	std::memcpy(chunk, read, remaining);
+	chunk[remaining] = 0x80;
+	if(remaining >= 56){
+		std::memset(chunk + remaining + 1, 0, 64 - remaining - 1);
+		sha256Chunk(result, chunk);
+		std::memset(chunk, 0, 56);
+	} else {
+		std::memset(chunk + remaining + 1, 0, 56 - remaining - 1);
+	}
+	storeBe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
+	sha256Chunk(result, chunk);
+	for(unsigned i = 0; i < sizeof(hash) / 4; ++i){
 		storeBe(reinterpret_cast<boost::uint32_t *>(hash)[i], result[i]);
 	}
 }
