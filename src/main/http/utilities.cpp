@@ -118,7 +118,7 @@ std::string urlEncodedFromOptionalMap(const OptionalMap &decoded){
 		tmp += '=';
 		tmp += urlEncode(it->second);
 
-		parts.push_back(std::string());
+		parts.push_back(VAL_INIT);
 		parts.back().swap(tmp);
 	}
 	return ret;
@@ -129,7 +129,7 @@ OptionalMap optionalMapFromUrlEncoded(const std::string &encoded){
 	for(AUTO(it, parts.begin()); it != parts.end(); ++it){
 		const std::size_t pos = it->find('=');
 		if(pos == std::string::npos){
-			ret.set(urlDecode(*it), std::string());
+			ret.set(urlDecode(*it), VAL_INIT);
 		} else {
 			ret.set(urlDecode(it->substr(0, pos)), urlDecode(it->substr(pos + 1)));
 		}
