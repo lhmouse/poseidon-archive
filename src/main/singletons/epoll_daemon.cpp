@@ -168,7 +168,6 @@ void daemonLoop(){
 			}
 		}
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
-			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
 				if(session->hasBeenShutdown()){
@@ -198,6 +197,7 @@ void daemonLoop(){
 				LOG_ERROR("Unknown exception thrown while dispatching data.");
 				session->send(StreamBuffer(), true);
 			}
+			epollTimeout = 0;
 		}
 
 		// 第二部分，处理可发送的数据。
@@ -211,7 +211,6 @@ void daemonLoop(){
 			}
 		}
 		for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
-			epollTimeout = 0;
 			const AUTO_REF(session, *it);
 			try {
 				::ssize_t bytesWritten;
@@ -251,6 +250,7 @@ void daemonLoop(){
 				LOG_ERROR("Unknown exception thrown while writing socket.");
 				remove(session);
 			}
+			epollTimeout = 0;
 		}
 
 		// 第三部分，侦听新的连接。
@@ -266,15 +266,13 @@ void daemonLoop(){
 					continue;
 				}
 				LOG_DEBUG("Accepted socket connection from ", session->getRemoteIp());
-				epollTimeout = 0;
 				add(session);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while accepting client: what = ", e.what());
-				epollTimeout = 0;
 			} catch(...){
 				LOG_ERROR("Unknown exception thrown while accepting client.");
-				epollTimeout = 0;
 			}
+			epollTimeout = 0;
 		}
 
 		// 第四部分，检测新的数据。

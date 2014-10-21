@@ -26,8 +26,7 @@ public:
 	virtual ~TcpServerBase();
 
 protected:
-	// 工厂函数。
-	// 如果该成员函数返回空指针，连接会被立即挂断。
+	// 工厂函数。返回空指针导致抛出一个异常。
 	virtual boost::shared_ptr<class TcpSessionBase>
 		onClientConnect(Move<ScopedFile> client) const = 0;
 

@@ -149,7 +149,8 @@ boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 	}
 	AUTO(session, onClientConnect(STD_MOVE(client)));
 	if(!session){
-		return VAL_INIT;
+		LOG_WARNING("onClientConnect() returns a null pointer.");
+		DEBUG_THROW(Exception, "Null client pointer");
 	}
 	if(m_sslImplServer){
 		LOG_INFO("Waiting for SSL handshake...");
