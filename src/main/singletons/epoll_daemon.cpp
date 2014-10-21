@@ -270,8 +270,10 @@ void daemonLoop(){
 				add(session);
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while accepting client: what = ", e.what());
+				epollTimeout = 0;
 			} catch(...){
 				LOG_ERROR("Unknown exception thrown while accepting client.");
+				epollTimeout = 0;
 			}
 		}
 

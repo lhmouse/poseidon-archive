@@ -142,6 +142,9 @@ TcpServerBase::~TcpServerBase(){
 boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 	ScopedFile client(::accept(m_listen.get(), VAL_INIT, VAL_INIT));
 	if(!client){
+		if(errno != EAGAIN){
+			DEBUG_THROW(SystemError, errno);
+		}
 		return VAL_INIT;
 	}
 	AUTO(session, onClientConnect(STD_MOVE(client)));
