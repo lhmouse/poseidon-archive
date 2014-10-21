@@ -36,7 +36,7 @@ public:
 		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
 			lockedDep = m_dependency.lock();
 			if(!lockedDep){
-				return VALUE_INIT;
+				return VAL_INIT;
 			}
 		}
 		return boost::shared_ptr<const HttpServletCallback>(shared_from_this(), &m_callback);

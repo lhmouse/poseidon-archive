@@ -35,7 +35,7 @@ public:
 		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
 			lockedDep = m_dependency.lock();
 			if(!lockedDep){
-				return VALUE_INIT;
+				return VAL_INIT;
 			}
 		}
 		return boost::shared_ptr<const WebSocketServletCallback>(shared_from_this(), &m_callback);
@@ -90,11 +90,11 @@ boost::shared_ptr<const WebSocketServletCallback> WebSocketServletManager::getSe
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(uri));
 	if(it == g_servlets.end()){
-		return VALUE_INIT;
+		return VAL_INIT;
 	}
 	const AUTO(servlet, it->second.lock());
 	if(!servlet){
-		return VALUE_INIT;
+		return VAL_INIT;
 	}
 	return servlet->realWebSocketServlet->lock(lockedDep);
 }

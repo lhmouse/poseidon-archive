@@ -295,7 +295,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				m_upgradedSession->onInitContents(m_line.data(), m_line.size());
 			} else {
 				m_shutdownTimer = TimerDaemon::registerTimer(
-					HttpServletManager::getKeepAliveTimeout(), 0, VALUE_INIT,
+					HttpServletManager::getKeepAliveTimeout(), 0, VAL_INIT,
 					TR1::bind(&onKeepAliveTimeout,
 						virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
 
@@ -332,7 +332,7 @@ void HttpSession::setRequestTimeout(unsigned long long timeout){
 	if(timeout == 0){
 		m_shutdownTimer.reset();
 	} else {
-		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, VALUE_INIT,
+		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, VAL_INIT,
 			TR1::bind(&onRequestTimeout, virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
 	}
 }

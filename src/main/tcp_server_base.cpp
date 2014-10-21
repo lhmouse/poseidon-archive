@@ -26,7 +26,7 @@ public:
 			LOG_FATAL("Could not create server SSL context");
 			std::abort();
 		}
-		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, VALUE_INIT);
+		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, VAL_INIT);
 
 		LOG_INFO("Loading server certificate: ", cert);
 		if(::SSL_CTX_use_certificate_file(
@@ -140,13 +140,13 @@ TcpServerBase::~TcpServerBase(){
 }
 
 boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
-	ScopedFile client(::accept(m_listen.get(), VALUE_INIT, VALUE_INIT));
+	ScopedFile client(::accept(m_listen.get(), VAL_INIT, VAL_INIT));
 	if(!client){
-		return VALUE_INIT;
+		return VAL_INIT;
 	}
 	AUTO(session, onClientConnect(STD_MOVE(client)));
 	if(!session){
-		return VALUE_INIT;
+		return VAL_INIT;
 	}
 	if(m_sslImplServer){
 		LOG_INFO("Waiting for SSL handshake...");

@@ -15,7 +15,7 @@ extern void requireSsl();
 
 struct SslCtxDeleter {
 	CONSTEXPR ::SSL_CTX *operator()() NOEXCEPT {
-		return VALUE_INIT;
+		return VAL_INIT;
 	}
 	void operator()(::SSL_CTX *ctx) NOEXCEPT {
 		::SSL_CTX_free(ctx);
@@ -25,7 +25,7 @@ typedef ScopedHandle<SslCtxDeleter> SslCtxPtr;
 
 struct SslDeleter {
 	CONSTEXPR ::SSL *operator()() NOEXCEPT {
-		return VALUE_INIT;
+		return VAL_INIT;
 	}
 	void operator()(::SSL *ssl) NOEXCEPT {
 		::SSL_free(ssl);

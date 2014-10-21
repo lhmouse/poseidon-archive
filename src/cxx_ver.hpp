@@ -135,7 +135,7 @@ Move<T> move(Move<T> rhs) NOEXCEPT {
 #	define UNIV_REF(t_)				t_ &&
 #	define STD_FORWARD(t_, expr_)	(::std::forward<t_>(expr_))
 #	define DECLREF(t_)				(::std::declval<typename ::std::remove_reference<t_>::type>())
-#	define VALUE_INIT				{ }
+#	define VAL_INIT				{ }
 #else
 #	define AUTO(id_, init_)			DECLTYPE(::Poseidon::valueOfHelper(init_)) id_(init_)
 #	define AUTO_REF(id_, init_)		DECLTYPE(init_) &id_ = (init_)
@@ -143,7 +143,7 @@ Move<T> move(Move<T> rhs) NOEXCEPT {
 #	define UNIV_REF(t_)				const t_ &
 #	define STD_FORWARD(t_, expr_)	(expr_)
 #	define DECLREF(t_)				(::Poseidon::declRef<t_>())
-#	define VALUE_INIT				(::Poseidon::ValueInitializer())
+#	define VAL_INIT				(::Poseidon::ValueInitializer())
 #endif
 
 #endif
