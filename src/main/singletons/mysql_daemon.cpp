@@ -79,6 +79,8 @@ std::list<AsyncSaveItem> g_savePool;
 std::list<AsyncLoadItem> g_loadQueue;
 std::list<AsyncLoadItem> g_loadPool;
 boost::condition_variable g_newObjectAvail;
+
+volatile std::size_t g_waiting = 0;
 boost::condition_variable g_queueEmpty;
 
 void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
@@ -131,7 +133,7 @@ void daemonLoop(){
 				for(;;){
 					if(!g_saveQueue.empty()){
 						AUTO_REF(head, g_saveQueue.front());
-						if(head.timeStamp > getMonoClock()){
+						if((atomicLoad(g_waiting) == 0) && (head.timeStamp > getMonoClock())){
 							goto skip;
 						}
 						if(head.object->getContext() != &head){
@@ -244,10 +246,15 @@ void MySqlDaemon::stop(){
 }
 
 void MySqlDaemon::waitForAllAsyncOperations(){
-	boost::mutex::scoped_lock lock(g_mutex);
-	while(!(g_saveQueue.empty() && g_loadQueue.empty())){
-		g_queueEmpty.wait(lock);
+	atomicAdd(g_waiting, 1);
+	try {
+		boost::mutex::scoped_lock lock(g_mutex);
+		while(!(g_saveQueue.empty() && g_loadQueue.empty())){
+			g_queueEmpty.wait(lock);
+		}
+	} catch(...){
 	}
+	atomicSub(g_waiting, 1);
 }
 
 void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object){
