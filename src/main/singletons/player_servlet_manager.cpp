@@ -36,7 +36,7 @@ public:
 		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
 			lockedDep = m_dependency.lock();
 			if(!lockedDep){
-				return NULLPTR;
+				return VALUE_INIT;
 			}
 		}
 		return boost::shared_ptr<const PlayerServletCallback>(shared_from_this(), &m_callback);
@@ -99,11 +99,11 @@ boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(protocolId));
 	if(it == g_servlets.end()){
-		return NULLPTR;
+		return VALUE_INIT;
 	}
 	const AUTO(servlet, it->second.lock());
 	if(!servlet){
-		return NULLPTR;
+		return VALUE_INIT;
 	}
 	return servlet->realPlayerServlet->lock(lockedDep);
 }

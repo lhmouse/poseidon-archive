@@ -76,8 +76,14 @@ public:
 		return get(SharedNtmbs::createNonOwning(key));
 	}
 
-	const std::string &operator[](const std::string &key) const {
-		return get(key);
+	bool hasKey(const SharedNtmbs &key) const {
+		return m_delegate.find(key) != m_delegate.end();
+	}
+	bool hasKey(const char *key) const {
+		return hasKey(SharedNtmbs::createNonOwning(key));
+	}
+	bool hasKey(const std::string &key) const {
+		return hasKey(SharedNtmbs::createNonOwning(key));
 	}
 
 	std::string &create(const SharedNtmbs &key){

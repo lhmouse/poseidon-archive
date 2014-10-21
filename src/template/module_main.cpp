@@ -142,7 +142,7 @@ void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest request){
 	event->d = 67.89;
 	event->raise();
 
-	if(request.getParams["unload_module"] == "1"){
+	if(request.getParams.get("unload_module") == "1"){
 		ModuleManager::unload("libposeidon-template.so");
 		contents.put("Module unloaded");
 	} else if(!g_meow){

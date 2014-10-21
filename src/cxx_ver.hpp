@@ -5,11 +5,6 @@
 #include <memory>
 #include <cstddef>
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/scoped_array.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-
 #if __cplusplus >= 201103l
 #	define POSEIDON_CXX11
 #endif
@@ -58,65 +53,14 @@ namespace Poseidon {
 template<typename T>
 typename boost::remove_cv<typename boost::remove_reference<T>::type>::type
 	valueOfHelper(const T &) NOEXCEPT;
-#endif
 
-struct Nullptr_t {
-	ENABLE_IF_CXX11(explicit) CONSTEXPR operator bool() const NOEXCEPT {
-		return false;
-	}
-
+struct ValueInitializer {
 	template<typename T>
-	CONSTEXPR operator T *() const NOEXCEPT {
-		return 0;
+	ENABLE_IF_CXX11(explicit) CONSTEXPR operator T() const {
+		return T();
 	}
-	template<typename C, typename M>
-	CONSTEXPR operator C M::*() const NOEXCEPT {
-		return 0;
-	}
-#ifdef POSEIDON_CXX11
-	CONSTEXPR operator std::nullptr_t() const noexcept {
-		return nullptr;
-	}
-#endif
-
-	template<typename T>
-	operator std::auto_ptr<T>() const NOEXCEPT {
-		return std::auto_ptr<T>();
-	}
-#ifdef POSEIDON_CXX11
-	template<typename T, typename D>
-	operator std::unique_ptr<T, D>() const NOEXCEPT {
-		return std::unique_ptr<T, D>();
-	}
-	template<typename T>
-	operator std::shared_ptr<T>() const NOEXCEPT {
-		return std::shared_ptr<T>();
-	}
-	template<typename T>
-	operator std::weak_ptr<T>() const NOEXCEPT {
-		return std::weak_ptr<T>();
-	}
-#endif
-
-	template<typename T>
-	operator boost::scoped_ptr<T>() const NOEXCEPT {
-		return boost::scoped_ptr<T>();
-	}
-	template<typename T>
-	operator boost::scoped_array<T>() const NOEXCEPT {
-		return boost::scoped_array<T>();
-	}
-	template<typename T>
-	operator boost::shared_ptr<T>() const NOEXCEPT {
-		return boost::shared_ptr<T>();
-	}
-	template<typename T>
-	operator boost::weak_ptr<T>() const NOEXCEPT {
-		return boost::weak_ptr<T>();
-	}
-
-	void *unused_;
 };
+#endif
 
 template<typename T>
 typename boost::add_reference<T>::type declRef() NOEXCEPT;
@@ -186,19 +130,19 @@ Move<T> move(Move<T> rhs) NOEXCEPT {
 #ifdef POSEIDON_CXX11
 #	define AUTO(id_, init_)			auto id_ = init_
 #	define AUTO_REF(id_, init_)		auto &id_ = init_
-#	define NULLPTR					(::Poseidon::Nullptr_t())	// (nullptr)
 #	define STD_MOVE(expr_)			(::std::move(expr_))
 #	define UNIV_REF(t_)				t_ &&
 #	define STD_FORWARD(t_, expr_)	(::std::forward<t_>(expr_))
 #	define DECLREF(t_)				(::std::declval<typename ::std::remove_reference<t_>::type>())
+#	define VALUE_INIT				{ }
 #else
 #	define AUTO(id_, init_)			DECLTYPE(::Poseidon::valueOfHelper(init_)) id_(init_)
 #	define AUTO_REF(id_, init_)		DECLTYPE(init_) &id_ = (init_)
-#	define NULLPTR					(::Poseidon::Nullptr_t())
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
 #	define UNIV_REF(t_)				const t_ &
 #	define STD_FORWARD(t_, expr_)	(expr_)
 #	define DECLREF(t_)				(::Poseidon::declRef<t_>())
+#	define VALUE_INIT				(::Poseidon::ValueInitializer())
 #endif
 
 #endif

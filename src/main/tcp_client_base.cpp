@@ -29,7 +29,7 @@ public:
 			LOG_FATAL("Could not create client SSL context");
 			std::abort();
 		}
-		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, NULLPTR);
+		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, VALUE_INIT);
 	}
 
 public:

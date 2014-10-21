@@ -64,7 +64,7 @@ void JobDispatcher::quitModal(){
 void JobDispatcher::pend(boost::shared_ptr<JobBase> job){
 	const boost::mutex::scoped_lock lock(g_mutex);
 	if(g_pool.empty()){
-		g_pool.push_front(NULLPTR);
+		g_pool.push_front(VALUE_INIT);
 	}
 	g_queue.splice(g_queue.end(), g_pool, g_pool.begin());
 	g_queue.back().swap(job);

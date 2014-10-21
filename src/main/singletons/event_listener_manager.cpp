@@ -37,7 +37,7 @@ public:
 		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
 			lockedDep = m_dependency.lock();
 			if(!lockedDep){
-				return NULLPTR;
+				return VALUE_INIT;
 			}
 		}
 		return boost::shared_ptr<const EventListenerCallback>(shared_from_this(), &m_callback);

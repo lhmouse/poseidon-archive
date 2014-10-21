@@ -95,7 +95,7 @@ void touch(const boost::shared_ptr<TcpSessionBase> &session){
 }
 void remove(const boost::shared_ptr<TcpSessionBase> &session){
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL,
-		TcpSessionImpl::doGetFd(*session), NULLPTR) != 0)
+		TcpSessionImpl::doGetFd(*session), VALUE_INIT) != 0)
 	{
 		LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
 	}

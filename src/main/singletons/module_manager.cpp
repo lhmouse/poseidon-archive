@@ -24,7 +24,7 @@ std::map<std::string, ModuleItem> g_modules;
 
 struct DynamicLibraryCloser {
 	CONSTEXPR void *operator()() NOEXCEPT {
-		return NULLPTR;
+		return VALUE_INIT;
 	}
 	void operator()(void *handle) NOEXCEPT {
 		const boost::mutex::scoped_lock lock(g_dlMutex);
@@ -99,7 +99,7 @@ boost::shared_ptr<Module> ModuleManager::get(const std::string &path){
 	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
 	const AUTO(it, g_modules.find(path));
 	if(it == g_modules.end()){
-		return NULLPTR;
+		return VALUE_INIT;
 	}
 	return it->second.module;
 }

@@ -112,7 +112,7 @@ void run(){
 	EpollDaemon::addTcpServer(
 		boost::make_shared<HttpServer>(bind, port, certificate, privateKey));
 
-	g_load = HttpServletManager::registerServlet("/~load", NULLPTR, &loadProc);
+	g_load = HttpServletManager::registerServlet("/~load", VALUE_INIT, &loadProc);
 
 	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();
