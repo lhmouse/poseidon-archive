@@ -32,7 +32,7 @@ public:
 	{
 	}
 	~RealTimerItem(){
-		LOG_INFO("Destroyed a timer item which has a period of ", m_period, " microsecond(s).");
+		LOG_INFO("Destroyed a timer item");
 	}
 
 public:
