@@ -151,6 +151,7 @@ void daemonLoop(){
 						g_loadPool.splice(g_loadPool.begin(), g_loadQueue, g_loadQueue.begin());
 						break;
 					}
+					g_queueEmpty.notify_all();
 					if(!atomicLoad(g_running)){
 						break;
 					}

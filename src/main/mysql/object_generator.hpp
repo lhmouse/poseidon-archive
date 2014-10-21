@@ -10,10 +10,8 @@
 #	error Please #include "object_base.hpp" first.
 #endif
 
-#ifndef POSEIDON_MYSQL_OBJECT_GENERATOR_HPP_
-#define POSEIDON_MYSQL_OBJECT_GENERATOR_HPP_
-
 #include "../../cxx_ver.hpp"
+#include "../../cxx_util.hpp"
 #include <sstream>
 #include <cstdio>
 #include <boost/shared_ptr.hpp>
@@ -23,11 +21,6 @@
 #include <cppconn/resultset.h>
 #include "../atomic.hpp"
 #include "../log.hpp"
-
-#define MYSQL_OBJECT_TO_STR_2_(x_)			# x_
-#define MYSQL_OBJECT_TO_STR_(x_)			MYSQL_OBJECT_TO_STR_2_(x_)
-
-#endif
 
 #ifdef MYSQL_OBJECT_NAMESPACE
 namespace MYSQL_OBJECT_NAMESPACE {
@@ -61,7 +54,30 @@ private:
 	MYSQL_OBJECT_FIELDS
 
 public:
-	MYSQL_OBJECT_NAME()
+
+#undef FIELD_BOOLEAN
+#undef FIELD_TINYINT
+#undef FIELD_TINYINT_UNSIGNED
+#undef FIELD_SMALLINT
+#undef FIELD_SMALLINT_UNSIGNED
+#undef FIELD_INTEGER
+#undef FIELD_INTEGER_UNSIGNED
+#undef FIELD_BIGINT
+#undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_STRING
+
+#define FIELD_BOOLEAN(name_)				, bool name_ = false
+#define FIELD_TINYINT(name_)				, signed char name_ ## _ = 0
+#define FIELD_TINYINT_UNSIGNED(name_)		, unsigned char name_ ## _ = 0
+#define FIELD_SMALLINT(name_)				, short name_ ## _ = 0
+#define FIELD_SMALLINT_UNSIGNED(name_)		, unsigned short name_ ## _ = 0
+#define FIELD_INTEGER(name_)				, int name_ ## _ = 0
+#define FIELD_INTEGER_UNSIGNED(name_)		, unsigned name_ ## _ = 0
+#define FIELD_BIGINT(name_)					, long long name_ ## _ = 0
+#define FIELD_BIGINT_UNSIGNED(name_)		, unsigned long long name_ ## _ = 0
+#define FIELD_STRING(name_)					, ::std::string name_ ## _ = ::std::string()
+
+	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
 		: MySqlObjectBase()
 
 #undef FIELD_BOOLEAN
@@ -75,16 +91,16 @@ public:
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
 
-#define FIELD_BOOLEAN(name_)				, name_()
-#define FIELD_TINYINT(name_)				, name_()
-#define FIELD_TINYINT_UNSIGNED(name_)		, name_()
-#define FIELD_SMALLINT(name_)				, name_()
-#define FIELD_SMALLINT_UNSIGNED(name_)		, name_()
-#define FIELD_INTEGER(name_)				, name_()
-#define FIELD_INTEGER_UNSIGNED(name_)		, name_()
-#define FIELD_BIGINT(name_)					, name_()
-#define FIELD_BIGINT_UNSIGNED(name_)		, name_()
-#define FIELD_STRING(name_)					, name_()
+#define FIELD_BOOLEAN(name_)				, name_(name_ ## _)
+#define FIELD_TINYINT(name_)				, name_(name_ ## _)
+#define FIELD_TINYINT_UNSIGNED(name_)		, name_(name_ ## _)
+#define FIELD_SMALLINT(name_)				, name_(name_ ## _)
+#define FIELD_SMALLINT_UNSIGNED(name_)		, name_(name_ ## _)
+#define FIELD_INTEGER(name_)				, name_(name_ ## _)
+#define FIELD_INTEGER_UNSIGNED(name_)		, name_(name_ ## _)
+#define FIELD_BIGINT(name_)					, name_(name_ ## _)
+#define FIELD_BIGINT_UNSIGNED(name_)		, name_(name_ ## _)
+#define FIELD_STRING(name_)					, name_(STD_MOVE(name_ ## _))
 
 		MYSQL_OBJECT_FIELDS
 	{
@@ -217,7 +233,7 @@ private:
 
 #undef MYSQL_OBJECT_NAME_COMMA_
 #define MYSQL_OBJECT_NAME_COMMA_(name_)	\
-	"`" MYSQL_OBJECT_TO_STR_(MYSQL_OBJECT_NAME) "`.`" MYSQL_OBJECT_TO_STR_(name_) "`, "
+	"`" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "`.`" TOKEN_TO_STR(name_) "`, "
 
 #define FIELD_BOOLEAN(name_)				MYSQL_OBJECT_NAME_COMMA_(name_)
 #define FIELD_TINYINT(name_)				MYSQL_OBJECT_NAME_COMMA_(name_)
@@ -232,11 +248,12 @@ private:
 
 		sql::SQLString str_("SELECT " MYSQL_OBJECT_FIELDS);
 		str_->erase(str_->end() - 2, str_->end());
-		str_->append(" FROM `" MYSQL_OBJECT_TO_STR_(MYSQL_OBJECT_NAME) "` ");
+		str_->append(" FROM `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` ");
 		str_->append(filter_);
 		str_->append(limit_);
 
-		LOG_DEBUG(__PRETTY_FUNCTION__, ": ", str_);
+		LOG_DEBUG(TOKEN_TO_STR(MYSQL_OBJECT_NAME) "::"
+			TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) ": ", str_);
 
 		rs_.reset(conn_->prepareStatement(str_)->executeQuery());
 	}
@@ -286,7 +303,7 @@ private:
 
 #undef MYSQL_OBJECT_NAME_ASSIGN_COMMA_
 #define MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)	\
-	"`" MYSQL_OBJECT_TO_STR_(name_) "` = ?, "
+	"`" TOKEN_TO_STR(name_) "` = ?, "
 
 #define FIELD_BOOLEAN(name_)				MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
 #define FIELD_TINYINT(name_)				MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
@@ -300,14 +317,15 @@ private:
 #define FIELD_STRING(name_)					MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
 
 		sql::SQLString str_(
-			"REPLACE INTO `" MYSQL_OBJECT_TO_STR_(MYSQL_OBJECT_NAME) "` "
+			"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` "
 			"SET " MYSQL_OBJECT_FIELDS);
 		str_->erase(str_->end() - 2, str_->end());
 
-		LOG_DEBUG(__PRETTY_FUNCTION__, ": ", str_);
+		LOG_DEBUG(TOKEN_TO_STR(MYSQL_OBJECT_NAME) "::"
+			TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) ": ", str_);
 
 		const boost::scoped_ptr<sql::PreparedStatement> ps_(conn_->prepareStatement(str_));
-		std::vector<boost::shaed_ptr<void> > contexts_;
+		std::vector<boost::shared_ptr<void> > contexts_;
 		unsigned index_ = 0;
 
 #undef FIELD_BOOLEAN

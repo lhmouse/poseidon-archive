@@ -10,13 +10,7 @@
 #   error Please #include "protocol_base.hpp" first.
 #endif
 
-#ifndef POSEIDON_PLAYER_PROTOCOL_GENERATOR_HPP_
-#define POSEIDON_PLAYER_PROTOCOL_GENERATOR_HPP_
-
-#define PROTOCOL_STRIP_FIRST_2_(_, ...)		__VA_ARGS__
-#define PROTOCOL_STRIP_FIRST_(...)			PROTOCOL_STRIP_FIRST_2_(__VA_ARGS__)
-
-#endif
+#include "../../cxx_util.hpp"
 
 #ifdef PROTOCOL_NAMESPACE
 namespace PROTOCOL_NAMESPACE {
@@ -53,7 +47,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #define FIELD_STRING(name_)				, ::std::string name_ ## _ = ::std::string()
 #define FIELD_ARRAY(name_, fields_)
 
-	explicit PROTOCOL_NAME(PROTOCOL_STRIP_FIRST_(void PROTOCOL_FIELDS))
+	explicit PROTOCOL_NAME(STRIP_FIRST(void PROTOCOL_FIELDS))
 		: ProtocolBase()
 
 #undef FIELD_VINT
@@ -62,8 +56,8 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT(name_)				, name_(STD_MOVE(name_ ## _))
-#define FIELD_VUINT(name_)				, name_(STD_MOVE(name_ ## _))
+#define FIELD_VINT(name_)				, name_(name_ ## _)
+#define FIELD_VUINT(name_)				, name_(name_ ## _)
 #define FIELD_BYTES(name_, size_)		, name_()
 #define FIELD_STRING(name_)				, name_(STD_MOVE(name_ ## _))
 #define FIELD_ARRAY(name_, fields_)		, name_()

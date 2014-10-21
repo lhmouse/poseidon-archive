@@ -17,6 +17,7 @@
 #include "../main/http/session.hpp"
 #include "../main/player/protocol_base.hpp"
 #include "../main/singletons/player_servlet_manager.hpp"
+#include "../main/mysql/object_base.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -251,6 +252,15 @@ private:
 	)
 #include "../main/player/protocol_generator.hpp"
 
+#define MYSQL_OBJECT_NAMESPACE	TestNs
+
+#define MYSQL_OBJECT_NAME	MySqlObj
+#define MYSQL_OBJECT_FIELDS	\
+	FIELD_SMALLINT(si)	\
+	FIELD_STRING(str)	\
+	FIELD_BIGINT(bi)
+#include "../main/mysql/object_generator.hpp"
+
 namespace {
 
 void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
@@ -338,4 +348,10 @@ extern "C" void poseidonModuleInit(boost::weak_ptr<Module> module, boost::shared
 	g_player.push_back(PlayerServletManager::registerServlet(104, module, &TestUIntArrayProc));
 	g_player.push_back(PlayerServletManager::registerServlet(105, module, &TestStringArrayProc));
 	g_player.push_back(PlayerServletManager::registerServlet(106, module, &TestProc));
+
+	AUTO(obj, boost::make_shared<TestNs::MySqlObj>());
+	obj->set_si(123);
+	obj->set_str("meow");
+	obj->set_bi(456789);
+	obj->asyncSave();
 }
