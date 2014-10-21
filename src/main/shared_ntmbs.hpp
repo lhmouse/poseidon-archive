@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <cstring>
 #include <boost/shared_ptr.hpp>
-#include <boost/smart_ptr/owner_less.hpp>
 
 namespace Poseidon {
 
@@ -50,10 +49,7 @@ public:
 		return m_ptr.get();
 	}
 
-	bool isOwning() const {
-		typedef boost::owner_less<NtmbsPtr> OwnerLess;
-		return OwnerLess()(m_ptr, NtmbsPtr()) || OwnerLess()(NtmbsPtr(), m_ptr);
-	}
+	bool isOwning() const;
 	SharedNtmbs forkOwning() const {
 		if(isOwning()){
 			return *this;

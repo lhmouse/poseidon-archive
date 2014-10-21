@@ -1,5 +1,6 @@
 #include "../cxx_ver.hpp"
 #include "shared_ntmbs.hpp"
+#include <boost/weak_ptr.hpp>
 using namespace Poseidon;
 
 namespace {
@@ -17,4 +18,10 @@ SharedNtmbs SharedNtmbs::createOwning(const char *str, std::size_t len){
 	std::memcpy(sp.get(), str, len);
 	sp.get()[len] = 0;
 	return SharedNtmbs(sp);
+}
+
+bool SharedNtmbs::isOwning() const {
+	const boost::weak_ptr<const char> tmp(m_ptr);
+	const boost::weak_ptr<const char> null;
+	return (tmp < null) || (null < tmp);
 }
