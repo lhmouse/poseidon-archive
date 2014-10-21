@@ -142,12 +142,10 @@ public:
 			std::make_pair(key.forkOwning(), STD_MOVE(val)));
 	}
 	iterator append(const char *key, std::string val){
-		return m_delegate.insert(m_delegate.end(),
-			std::make_pair(SharedNtmbs::createNonOwning(key), STD_MOVE(val)));
+		return append(SharedNtmbs::createNonOwning(key), STD_MOVE(val));
 	}
 	iterator append(const std::string &key, std::string val){
-		return m_delegate.insert(m_delegate.end(),
-			std::make_pair(SharedNtmbs::createNonOwning(key), STD_MOVE(val)));
+		return append(SharedNtmbs::createNonOwning(key), STD_MOVE(val));
 	}
 };
 

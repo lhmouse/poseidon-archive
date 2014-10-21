@@ -3,6 +3,7 @@
 
 #include "../../cxx_ver.hpp"
 #include <string>
+#include <set>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include "../tcp_session_base.hpp"
@@ -34,6 +35,7 @@ private:
 	std::string m_line;
 
 	boost::shared_ptr<HttpUpgradedSessionBase> m_upgradedSession;
+	boost::shared_ptr<std::set<std::string> > m_authInfo;
 
 	HttpVerb m_verb;
 	unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
@@ -54,8 +56,13 @@ private:
 	void onExpect(const std::string &val);
 	void onContentLength(const std::string &val);
 	void onUpgrade(const std::string &val);
+	void onAuthorization(const std::string &val);
 
 public:
+	void setAuthInfo(boost::shared_ptr<std::set<std::string> > authInfo){
+		m_authInfo.swap(authInfo);
+	}
+
 	bool send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool final = false);
 	bool send(HttpStatus status, StreamBuffer contents = StreamBuffer(), bool final = false){
 		return send(status, OptionalMap(), STD_MOVE(contents), final);

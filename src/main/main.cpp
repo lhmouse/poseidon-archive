@@ -91,14 +91,13 @@ void run(){
 	LOG_INFO("Creating player server...");
 	std::string bind("0.0.0.0");
 	boost::uint16_t port = 0;
-	std::string certificate;
-	std::string privateKey;
+	std::string certificate, privateKey;
 	ConfigFile::get(bind, "player_bind");
 	ConfigFile::get(port, "player_port");
 	ConfigFile::get(certificate, "player_certificate");
 	ConfigFile::get(privateKey, "player_private_key");
-	EpollDaemon::addTcpServer(
-		boost::make_shared<PlayerServer>(bind, port, certificate, privateKey));
+	EpollDaemon::addTcpServer(boost::make_shared<PlayerServer>(
+		bind, port, certificate, privateKey));
 
 	LOG_INFO("Creating HTTP server...");
 	bind = "0.0.0.0";
@@ -109,8 +108,10 @@ void run(){
 	ConfigFile::get(port, "http_port");
 	ConfigFile::get(certificate, "http_certificate");
 	ConfigFile::get(privateKey, "http_private_key");
-	EpollDaemon::addTcpServer(
-		boost::make_shared<HttpServer>(bind, port, certificate, privateKey));
+	std::vector<std::string> authUserPasses;
+	ConfigFile::getAll(authUserPasses, "http_auth_user_pass");
+	EpollDaemon::addTcpServer(boost::make_shared<HttpServer>(
+		bind, port, certificate, privateKey, authUserPasses));
 
 	g_load = HttpServletManager::registerServlet("/~load", VAL_INIT, &loadProc);
 

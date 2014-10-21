@@ -179,7 +179,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	if((m_state == ST_FIRST_HEADER) && m_upgradedSession){
-		return m_upgradedSession->onReadAvail(data, size);
+		m_upgradedSession->onReadAvail(data, size);
+		return;
 	}
 
 	AUTO(read, (const char *)data);
@@ -289,31 +290,39 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			read += bytesRemaining;
 			m_state = ST_FIRST_HEADER;
 
+			if(m_authInfo){
+				continue;
+			}
+
 			if(m_upgradedSession){
 				m_shutdownTimer.reset();
 
 				m_upgradedSession->onInitContents(m_line.data(), m_line.size());
-			} else {
-				m_shutdownTimer = TimerDaemon::registerTimer(
-					HttpServletManager::getKeepAliveTimeout(), 0, VAL_INIT,
-					TR1::bind(&onKeepAliveTimeout,
-						virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
-
-				boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
-					m_verb, STD_MOVE(m_uri), m_version,
-					STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)
-					)->pend();
-
-				m_totalLength = 0;
-				m_contentLength = 0;
-				m_line.clear();
-
-				m_verb = HTTP_GET;
-				m_uri.clear();
-				m_version = 10000;
-				m_getParams.clear();
-				m_headers.clear();
+				if(read != end){
+					m_upgradedSession->onReadAvail(read, end - read);
+				}
+				break;
 			}
+
+			m_shutdownTimer = TimerDaemon::registerTimer(
+				HttpServletManager::getKeepAliveTimeout(), 0, VAL_INIT,
+				TR1::bind(&onKeepAliveTimeout,
+					virtualWeakFromThis<HttpSession>(), TR1::placeholders::_1));
+
+			boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
+				m_verb, STD_MOVE(m_uri), m_version,
+				STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)
+				)->pend();
+
+			m_totalLength = 0;
+			m_contentLength = 0;
+			m_line.clear();
+
+			m_verb = HTTP_GET;
+			m_uri.clear();
+			m_version = 10000;
+			m_getParams.clear();
+			m_headers.clear();
 		}
 	} catch(HttpException &e){
 		LOG_ERROR("HttpException thrown while parsing data, URI = ", m_uri, ", status = ", static_cast<unsigned>(e.status()));
@@ -341,12 +350,15 @@ void HttpSession::onAllHeadersRead(){
 	typedef std::pair<const char *, void (HttpSession::*)(const std::string &)> TableItem;
 
 	static const TableItem JUMP_TABLE[] = {
+		std::make_pair("Authorization", &HttpSession::onAuthorization),
 		std::make_pair("Content-Length", &HttpSession::onContentLength),
 		std::make_pair("Expect", &HttpSession::onExpect),
 		std::make_pair("Upgrade", &HttpSession::onUpgrade),
 	};
 
 	for(AUTO(it, m_headers.begin()); it != m_headers.end(); ++it){
+		LOG_DEBUG("HTTP header: ", it->first.get(), " = ", it->second);
+
 		AUTO(lower, BEGIN(JUMP_TABLE));
 		AUTO(upper, END(JUMP_TABLE));
 		void (HttpSession::*found)(const std::string &) = 0;
@@ -366,6 +378,12 @@ void HttpSession::onAllHeadersRead(){
 		if(found){
 			(this->*found)(it->second);
 		}
+	}
+
+	if(m_authInfo){
+		OptionalMap headers;
+		headers.set("WWW-Authenticate", "Basic realm=\"Authentication required\"");
+		sendDefault(HTTP_DENIED, STD_MOVE(headers));
 	}
 }
 void HttpSession::onExpect(const std::string &val){
@@ -412,6 +430,28 @@ void HttpSession::onUpgrade(const std::string &val){
 
 	m_upgradedSession = boost::make_shared<WebSocketSession>(virtualSharedFromThis<HttpSession>());
 	LOG_INFO("Upgraded to WebSocketSession, remote IP = ", getRemoteIp());
+}
+void HttpSession::onAuthorization(const std::string &val){
+	if(!m_authInfo){
+		return;
+	}
+
+	const std::size_t pos = val.find(' ');
+	if(pos == std::string::npos){
+		LOG_WARNING("Bad Authorization: ", val);
+		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+	}
+	std::string temp(val);
+	temp.at(pos) = 0;
+	if(::strcasecmp(temp.c_str(), "basic") != 0){
+		LOG_WARNING("Unknown auth method: ", temp.c_str());
+		DEBUG_THROW(HttpException, HTTP_NONE_ACCEPTABLE);
+	}
+	temp.erase(temp.begin(), temp.begin() + pos + 1);
+	if(m_authInfo->find(temp) == m_authInfo->end()){
+		DEBUG_THROW(HttpException, HTTP_DENIED);
+	}
+	m_authInfo.reset();
 }
 
 bool HttpSession::send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool final){
