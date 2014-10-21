@@ -249,6 +249,7 @@ void MySqlDaemon::waitForAllAsyncOperations(){
 	atomicAdd(g_waiting, 1);
 	try {
 		boost::mutex::scoped_lock lock(g_mutex);
+		g_newObjectAvail.notify_all();
 		while(!(g_saveQueue.empty() && g_loadQueue.empty())){
 			g_queueEmpty.wait(lock);
 		}
