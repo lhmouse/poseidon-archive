@@ -6,7 +6,6 @@
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include <mysql/mysql.h>
-#include <unistd.h>
 #include "config_file.hpp"
 #include "../mysql/object_base.hpp"
 #include "../atomic.hpp"
@@ -29,22 +28,22 @@ std::size_t g_databaseMaxReconnDelay	= 60000;
 
 class AsyncLoadCallbackJob : public JobBase {
 private:
-	MySqlAsyncLoadCallback m_callback;
-	boost::shared_ptr<MySqlObjectBase> m_object;
+	/*const*/ MySqlAsyncLoadCallback m_callback;
+	const boost::shared_ptr<MySqlObjectBase> m_object;
 
 public:
 	AsyncLoadCallbackJob(MySqlAsyncLoadCallback callback,
 		boost::shared_ptr<MySqlObjectBase> object)
+		: /*m_callback(STD_MOVE(callback)),*/ m_object(STD_MOVE(object))
 	{
 		m_callback.swap(callback);
-		m_object.swap(object);
 	}
 
 protected:
 	void perform(){
 		PROFILE_ME;
 
-		m_callback(STD_MOVE(m_object));
+		m_callback(m_object);
 	}
 };
 
@@ -104,12 +103,19 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 			reconnectDelay = 1;
 		} else {
 			LOG_INFO("Will retry after ", reconnectDelay, " milliseconds.");
-			::usleep(reconnectDelay * 1000);
+			{
+				boost::mutex::scoped_lock lock(g_mutex);
+				g_newObjectAvail.timed_wait(lock,
+					boost::posix_time::milliseconds(reconnectDelay));
+			}
 
 			reconnectDelay <<= 1;
 			if(reconnectDelay > g_databaseMaxReconnDelay){
 				reconnectDelay = g_databaseMaxReconnDelay;
 			}
+		}
+		if(!atomicLoad(g_running)){
+			DEBUG_THROW(Exception, "Shutting down");
 		}
 	}
 
@@ -154,15 +160,20 @@ void daemonLoop(){
 						break;
 					}
 					g_queueEmpty.notify_all();
+
 					if(!atomicLoad(g_running)){
 						break;
 					}
 					g_newObjectAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
 			}
+			if(!asi.object && !ali.object){
+				break;
+			}
 			if(asi.object){
 				asi.object->syncSave(connection.get());
-			} else if(ali.object){
+			}
+			if(ali.object){
 				ali.object->syncLoad(connection.get(), ali.filter.c_str());
 				ali.object->enableAutoSaving();
 
@@ -170,8 +181,6 @@ void daemonLoop(){
 					boost::make_shared<AsyncLoadCallbackJob>(
 						boost::ref(ali.callback), boost::ref(ali.object))->pend();
 				}
-			} else {
-				break;
 			}
 		} catch(sql::SQLException &e){
 			LOG_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
@@ -185,10 +194,14 @@ void daemonLoop(){
 			discardConnection = true;
 		}
 
-		if(discardConnection){
+		if(discardConnection && connection){
 			LOG_INFO("The connection was left in an indeterminate state. Discard it.");
 			connection.reset();
 		}
+	}
+
+	if(!g_saveQueue.empty()){
+		LOG_FATAL("There are still ", g_saveQueue.size(), " object(s) in MySQL save queue");
 	}
 }
 
