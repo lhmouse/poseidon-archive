@@ -3,7 +3,8 @@
 #include <cstring>
 #include <fstream>
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <stdlib.h>
+#include <unistd.h>
 #include "../log.hpp"
 #include "../exception.hpp"
 #include "../optional_map.hpp"
@@ -13,16 +14,44 @@ namespace {
 
 OptionalMap g_config;
 
+std::string getRealPath(const char *path){
+	std::string ret;
+	char *realPath = VAL_INIT;
+	try {
+		realPath = ::realpath(path, VAL_INIT);
+		if(!realPath){
+			LOG_ERROR("Could not resolve path: ", path);
+			DEBUG_THROW(SystemError, errno);
+		}
+		ret = realPath;
+		::free(realPath);
+	} catch(...){
+		::free(realPath);
+		throw;
+	}
+	return ret;
+}
+
+}
+
+void ConfigFile::setRunPath(const char *path){
+	const AUTO(realPath, getRealPath(path));
+	LOG_INFO("Setting working directory: ", realPath);
+
+	if(::chdir(realPath.c_str()) != 0){
+		DEBUG_THROW(SystemError, errno);
+	}
 }
 
 void ConfigFile::reload(const char *path){
-	LOG_INFO("Loading config from ", path, "...");
+	const AUTO(realPath, getRealPath(path));
+	LOG_INFO("Loading config file: ", realPath);
 
 	OptionalMap config;
-	std::ifstream ifs(path);
-	if(!ifs.good()){
-		LOG_FATAL("Could not open config file ", path);
-		DEBUG_THROW(SystemError, ENOENT);
+	std::ifstream ifs(realPath.c_str());
+	if(!ifs){
+		LOG_FATAL("Could not open config file.");
+		DEBUG_THROW(SystemError, EACCES);
 	}
 	std::string line;
 	std::size_t count = 0;

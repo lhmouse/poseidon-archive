@@ -1,8 +1,6 @@
 #include "../precompiled.hpp"
 #include "utilities.hpp"
 #include <signal.h>
-#include <libgen.h>
-#include <unistd.h>
 #include "log.hpp"
 #include "exception.hpp"
 #include "singletons/config_file.hpp"
@@ -132,22 +130,8 @@ int main(int argc, char **argv){
 		::signal(SIGINT, sigIntProc);
 		::signal(SIGTERM, sigTermProc);
 
-		const char *confPath = "/var/poseidon/config/poseidon.conf";
-		if(1 < argc){
-			confPath = argv[1];
-		}
-		ConfigFile::reload(confPath);
-
-		std::string confDir(confPath);
-		char *const realDir = ::dirname(&confDir[0]);
-		if(realDir != confDir.c_str()){
-			confDir = realDir;
-		}
-		LOG_INFO("Setting working directory to ", confDir, "...");
-		if(::chdir(confDir.c_str()) != 0){
-			LOG_FATAL("Error setting working directory.");
-			std::abort();
-		}
+		ConfigFile::setRunPath((1 < argc) ? argv[1] : "/var/poseidon");
+		ConfigFile::reload("main.conf");
 
 		run();
 

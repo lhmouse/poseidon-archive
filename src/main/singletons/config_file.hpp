@@ -8,6 +8,7 @@
 namespace Poseidon {
 
 struct ConfigFile {
+	static void setRunPath(const char *path);
 	static void reload(const char *path);
 
 	static const std::string &get(const char *key);
