@@ -49,7 +49,7 @@ void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
 void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
 	AUTO_REF(name, getParams.get("module"));
 	if(name.empty()){
-		LOG_WARNING("Missing parameter `module`");
+		LOG_WARNING("Missing parameter module=");
 		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 	}
 	if(!ModuleManager::loadNoThrow(name)){
@@ -61,7 +61,7 @@ void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
 	AUTO_REF(name, getParams.get("module"));
 	if(name.empty()){
-		LOG_WARNING("Missing parameter `module`");
+		LOG_WARNING("Missing parameter module=");
 		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 	}
 	if(!ModuleManager::unload(name)){
@@ -97,7 +97,7 @@ void onProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
 void onModules(boost::shared_ptr<HttpSession> session, OptionalMap){
 	OptionalMap headers;
 	headers.set("Content-Type", "text/csv; charset=utf-8");
-	headers.set("Content-Disposition", "attachment; name=\"profile.csv\"");
+	headers.set("Content-Disposition", "attachment; name=\"modules.csv\"");
 
 	StreamBuffer contents;
 	contents.put("path,ref_count\r\n");
