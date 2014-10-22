@@ -23,10 +23,6 @@ sbin_poseidon_SOURCES=	\
 sbin_poseidon_LDADD=	\
 	lib/libposeidon-main.la
 
-lib_LTLIBRARIES=	\
-	lib/libposeidon-main.la	\
-	lib/libposeidon-template.la
-
 lib_libposeidon_main_la_SOURCES=	\
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
@@ -68,8 +64,19 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/http/websocket/session.cpp	\
 	src/main/mysql/object_base.cpp
 
-lib_libposeidon_template_la_SOURCES=	\
-	src/template/module_main.cpp
+lib_LTLIBRARIES=	\
+	lib/libposeidon-main.la	\
+	lib/libposeidon-player-server.la	\
+	lib/libposeidon-http-server.la
 
-lib_libposeidon_template_la_LIBADD=	\
+lib_libposeidon_player_server_la_SOURCES=	\
+	src/player_server/module_main.cpp
+
+lib_libposeidon_player_server_la_LIBADD=	\
+	lib/libposeidon-main.la
+
+lib_libposeidon_http_server_la_SOURCES=	\
+	src/http_server/module_main.cpp
+
+lib_libposeidon_http_server_la_LIBADD=	\
 	lib/libposeidon-main.la

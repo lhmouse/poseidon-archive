@@ -43,8 +43,8 @@ void ConfigFile::setRunPath(const char *path){
 	}
 }
 
-void ConfigFile::reload(const char *path){
-	const AUTO(realPath, getRealPath(path));
+void ConfigFile::reload(){
+	const AUTO(realPath, getRealPath("main.conf"));
 	LOG_INFO("Loading config file: ", realPath);
 
 	OptionalMap config;

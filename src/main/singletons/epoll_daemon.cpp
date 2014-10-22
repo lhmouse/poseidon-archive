@@ -1,5 +1,6 @@
 #include "../../precompiled.hpp"
 #include "epoll_daemon.hpp"
+#include "config_file.hpp"
 #include <boost/thread.hpp>
 #include <sys/epoll.h>
 #include <sys/types.h>
@@ -13,10 +14,10 @@
 #define POSEIDON_TCP_SESSION_IMPL_
 #include "../tcp_session_base.hpp"
 #include "../tcp_session_impl.hpp"
-#include "../tcp_server_base.hpp"
 #include "../multi_index_map.hpp"
 #include "../profiler.hpp"
-#include "config_file.hpp"
+#include "../player/server.hpp"
+#include "../http/server.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -58,7 +59,7 @@ boost::mutex g_sessionMutex;
 SessionMap g_sessions;
 
 boost::mutex g_serverMutex;
-std::set<boost::shared_ptr<const TcpServerBase> > g_servers;
+std::list<boost::weak_ptr<const TcpServerBase> > g_servers;
 
 void add(const boost::shared_ptr<TcpSessionBase> &session){
 	const AUTO(now, getMonoClock());
@@ -159,7 +160,6 @@ void daemonLoop(){
 	while(atomicLoad(g_running)){
 		// 第一部分，处理可接收的数据。
 		{
-			sessions.clear();
 			const boost::mutex::scoped_lock lock(g_sessionMutex);
 			for(AUTO(it, g_sessions.upperBound<IDX_READ>(0));
 				it != g_sessions.end<IDX_READ>(); ++it)
@@ -199,10 +199,10 @@ void daemonLoop(){
 			}
 			epollTimeout = 0;
 		}
+		sessions.clear();
 
 		// 第二部分，处理可发送的数据。
 		{
-			sessions.clear();
 			const boost::mutex::scoped_lock lock(g_sessionMutex);
 			for(AUTO(it, g_sessions.upperBound<IDX_WRITE>(0));
 				it != g_sessions.end<IDX_WRITE>(); ++it)
@@ -252,12 +252,21 @@ void daemonLoop(){
 			}
 			epollTimeout = 0;
 		}
+		sessions.clear();
 
 		// 第三部分，侦听新的连接。
 		{
-			servers.clear();
 			const boost::mutex::scoped_lock lock(g_serverMutex);
-			std::copy(g_servers.begin(), g_servers.end(), std::back_inserter(servers));
+			AUTO(it, g_servers.begin());
+			while(it != g_servers.end()){
+				AUTO(server, it->lock());
+				if(!server){
+					it = g_servers.erase(it);
+					continue;
+				}
+				servers.push_back(STD_MOVE(server));
+				++it;
+			}
 		}
 		for(AUTO(it, servers.begin()); it != servers.end(); ++it){
 			try {
@@ -274,6 +283,7 @@ void daemonLoop(){
 			}
 			epollTimeout = 0;
 		}
+		servers.clear();
 
 		// 第四部分，检测新的数据。
 		const int ready = ::epoll_wait(g_epoll.get(), events.get(), g_eventBufferSize, epollTimeout);
@@ -393,7 +403,25 @@ void EpollDaemon::touchSession(const boost::shared_ptr<TcpSessionBase> &session)
 	touch(session);
 }
 
-void EpollDaemon::addTcpServer(boost::shared_ptr<const TcpServerBase> server){
-	const boost::mutex::scoped_lock lock(g_serverMutex);
-	g_servers.insert(STD_MOVE(server));
+boost::shared_ptr<PlayerServer> EpollDaemon::registerPlayerServer(
+	const std::string &bindAddr, unsigned bindPort,
+	const std::string &cert, const std::string &privateKey)
+{
+	AUTO(newServer, boost::make_shared<PlayerServer>(bindAddr, bindPort, cert, privateKey));
+	{
+		const boost::mutex::scoped_lock lock(g_serverMutex);
+		g_servers.push_back(newServer);
+	}
+	return newServer;
+}
+boost::shared_ptr<HttpServer> EpollDaemon::registerHttpServer(
+	const std::string &bindAddr, unsigned bindPort,
+	const std::string &cert, const std::string &privateKey, const std::vector<std::string> &auth)
+{
+	AUTO(newServer, boost::make_shared<HttpServer>(bindAddr, bindPort, cert, privateKey, auth));
+	{
+		const boost::mutex::scoped_lock lock(g_serverMutex);
+		g_servers.push_back(newServer);
+	}
+	return newServer;
 }

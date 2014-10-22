@@ -9,7 +9,8 @@ namespace Poseidon {
 
 struct ConfigFile {
 	static void setRunPath(const char *path);
-	static void reload(const char *path);
+
+	static void reload();
 
 	static const std::string &get(const char *key);
 	static std::vector<std::string> getAll(const char *key);

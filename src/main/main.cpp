@@ -7,16 +7,13 @@
 #include "singletons/timer_daemon.hpp"
 #include "singletons/mysql_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
-#include "singletons/job_dispatcher.hpp"
 #include "singletons/player_servlet_manager.hpp"
 #include "singletons/http_servlet_manager.hpp"
 #include "singletons/websocket_servlet_manager.hpp"
+#include "singletons/job_dispatcher.hpp"
 #include "singletons/module_manager.hpp"
 #include "singletons/event_listener_manager.hpp"
 #include "singletons/profile_manager.hpp"
-#include "player/server.hpp"
-#include "http/server.hpp"
-#include "http/session.hpp"
 #include "profiler.hpp"
 using namespace Poseidon;
 
@@ -78,31 +75,6 @@ void run(){
 	LOG_INFO("Waiting for all MySQL operations to complete...");
 	MySqlDaemon::waitForAllAsyncOperations();
 
-	LOG_INFO("Creating player server...");
-	std::string bind("0.0.0.0");
-	boost::uint16_t port = 0;
-	std::string certificate, privateKey;
-	ConfigFile::get(bind, "player_bind");
-	ConfigFile::get(port, "player_port");
-	ConfigFile::get(certificate, "player_certificate");
-	ConfigFile::get(privateKey, "player_private_key");
-	EpollDaemon::addTcpServer(boost::make_shared<PlayerServer>(
-		bind, port, certificate, privateKey));
-
-	LOG_INFO("Creating HTTP server...");
-	bind = "0.0.0.0";
-	port = 0;
-	certificate.clear();
-	privateKey.clear();
-	ConfigFile::get(bind, "http_bind");
-	ConfigFile::get(port, "http_port");
-	ConfigFile::get(certificate, "http_certificate");
-	ConfigFile::get(privateKey, "http_private_key");
-	std::vector<std::string> authUserPasses;
-	ConfigFile::getAll(authUserPasses, "http_auth_user_pass");
-	EpollDaemon::addTcpServer(boost::make_shared<HttpServer>(
-		bind, port, certificate, privateKey, authUserPasses));
-
 	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();
 }
@@ -121,7 +93,7 @@ int main(int argc, char **argv){
 		::signal(SIGTERM, sigTermProc);
 
 		ConfigFile::setRunPath((1 < argc) ? argv[1] : "/var/poseidon");
-		ConfigFile::reload("main.conf");
+		ConfigFile::reload();
 
 		run();
 
