@@ -84,43 +84,15 @@ boost::condition_variable g_queueEmpty;
 
 void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 	LOG_INFO("Connecting to MySQL server...");
-
-	std::size_t reconnectDelay = 0;
-	for(;;){
-		if(!atomicLoad(g_running)){
-			DEBUG_THROW(Exception, "Shutting down");
-		}
-
-		try {
-			connection.reset(::get_driver_instance()->connect(
-				g_databaseServer, g_databaseUsername, g_databasePassword));
-			connection->setSchema(g_databaseName);
-		} catch(sql::SQLException &e){
-			LOG_ERROR("Error connecting to MySQL server: code = ", e.getErrorCode(),
-				", state = ", e.getSQLState(), ", what = ", e.what());
-			connection.reset();
-		}
-		if(connection){
-			break;
-		}
-		if(reconnectDelay == 0){
-			reconnectDelay = 1;
-		} else {
-			LOG_INFO("Will retry after ", reconnectDelay, " milliseconds.");
-			{
-				boost::mutex::scoped_lock lock(g_mutex);
-				g_newObjectAvail.timed_wait(lock,
-					boost::posix_time::milliseconds(reconnectDelay));
-			}
-
-			reconnectDelay <<= 1;
-			if(reconnectDelay > g_databaseMaxReconnDelay){
-				reconnectDelay = g_databaseMaxReconnDelay;
-			}
-		}
+	try {
+		connection.reset(::get_driver_instance()->connect(
+			g_databaseServer, g_databaseUsername, g_databasePassword));
+		connection->setSchema(g_databaseName);
+	} catch(sql::SQLException &e){
+		LOG_ERROR("Error connecting to MySQL server: code = ", e.getErrorCode(),
+			", state = ", e.getSQLState(), ", what = ", e.what());
+		throw;
 	}
-
-	LOG_INFO("Successfully connected to MySQL server.");
 }
 
 void daemonLoop(){
@@ -134,11 +106,31 @@ void daemonLoop(){
 		std::abort();
 	}
 
+	std::size_t reconnectDelay = 0;
 	for(;;){
 		bool discardConnection = false;
 
 		try {
 			if(!connection){
+				LOG_WARNING("Lost connection to MySQL server. Reconnecting...");
+
+				if(!atomicLoad(g_running)){
+					DEBUG_THROW(Exception, "Shutting down");
+				}
+				if(reconnectDelay == 0){
+					reconnectDelay = 1;
+				} else {
+					LOG_INFO("Will retry after ", reconnectDelay, " milliseconds.");
+
+					boost::mutex::scoped_lock lock(g_mutex);
+					g_newObjectAvail.timed_wait(lock,
+						boost::posix_time::milliseconds(reconnectDelay));
+
+					reconnectDelay <<= 1;
+					if(reconnectDelay > g_databaseMaxReconnDelay){
+						reconnectDelay = g_databaseMaxReconnDelay;
+					}
+				}
 				getMySqlConnection(connection);
 			}
 
