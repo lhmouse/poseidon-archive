@@ -125,6 +125,15 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 
 void daemonLoop(){
 	boost::scoped_ptr<sql::Connection> connection;
+	try {
+		LOG_INFO("Intializing MySQL connection...");
+		getMySqlConnection(connection);
+	} catch(sql::SQLException &e){
+		LOG_ERROR("SQLException thrown while connecting to MySQL server: code = ", e.getErrorCode(),
+			", state = ", e.getSQLState(), ", what = ", e.what());
+		std::abort();
+	}
+
 	for(;;){
 		bool discardConnection = false;
 
