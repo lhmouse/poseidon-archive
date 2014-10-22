@@ -87,6 +87,10 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 
 	std::size_t reconnectDelay = 0;
 	for(;;){
+		if(!atomicLoad(g_running)){
+			DEBUG_THROW(Exception, "Shutting down");
+		}
+
 		try {
 			connection.reset(::get_driver_instance()->connect(
 				g_databaseServer, g_databaseUsername, g_databasePassword));
@@ -113,9 +117,6 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 			if(reconnectDelay > g_databaseMaxReconnDelay){
 				reconnectDelay = g_databaseMaxReconnDelay;
 			}
-		}
-		if(!atomicLoad(g_running)){
-			DEBUG_THROW(Exception, "Shutting down");
 		}
 	}
 
