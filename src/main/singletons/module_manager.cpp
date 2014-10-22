@@ -133,6 +133,16 @@ boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
 	}
 	return module;
 }
+boost::shared_ptr<Module> ModuleManager::loadNoThrow(const std::string &path){
+	try {
+		return load(path);
+	} catch(std::exception &e){
+		LOG_ERROR("std::exception thrown while loading module: ", path, ", what = ", e.what());
+	} catch(...){
+		LOG_ERROR("Unknown exception thrown while loading module: ", path);
+	}
+	return VAL_INIT;
+}
 bool ModuleManager::unload(const std::string &path){
 	const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
 	const AUTO(it, g_modules.find(path));

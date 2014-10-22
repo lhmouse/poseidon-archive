@@ -26,6 +26,7 @@ struct ModuleManager {
 	static std::vector<ModuleInfo> getLoadedList();
 
 	static boost::shared_ptr<Module> load(const std::string &path);
+	static boost::shared_ptr<Module> loadNoThrow(const std::string &path);
 	static bool unload(const std::string &path);
 
 private:

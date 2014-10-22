@@ -126,8 +126,8 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest, boost::weak_ptr<co
 		contents.put("Already loaded");
 	} else {
 		// 通配路径 /meow/*
-		g_meow = HttpServletManager::registerServlet("/meow/", module, &meowProc);
-		g_meowMeow = HttpServletManager::registerServlet("/meow/meow/", module, &meowMeowProc);
+		g_meow = HttpServletManager::registerServlet(8860, "/meow/", module, &meowProc);
+		g_meowMeow = HttpServletManager::registerServlet(8860, "/meow/meow/", module, &meowMeowProc);
 		g_tick = TimerDaemon::registerTimer(5000, 10000, module, &tickProc);
 		contents.put("OK");
 	}
@@ -330,24 +330,24 @@ extern "C" void poseidonModuleInit(boost::weak_ptr<Module> module, boost::shared
 
 	LOG_FATAL("poseidonModuleInit()");
 
-	g_profile = HttpServletManager::registerServlet("/profile", module, &profileProc);
+	g_profile = HttpServletManager::registerServlet(8860, "/profile", module, &profileProc);
 
 	using namespace TR1::placeholders;
-	g_load = HttpServletManager::registerServlet("/load", module, TR1::bind(&loadProc, _1, _2, module));
-	g_unload = HttpServletManager::registerServlet("/unload", module, &unloadProc);
+	g_load = HttpServletManager::registerServlet(8860, "/load", module, TR1::bind(&loadProc, _1, _2, module));
+	g_unload = HttpServletManager::registerServlet(8860, "/unload", module, &unloadProc);
 
 	g_event1 = EventListenerManager::registerListener<TestEvent1>(module, &event1Proc);
 	g_event2 = EventListenerManager::registerListener<TestEvent2>(module, &event2Proc);
 
 	g_ws = WebSocketServletManager::registerServlet("/wstest", module, &webSocketProc);
 
-	g_player.push_back(PlayerServletManager::registerServlet(100, module, &TestIntProc));
-	g_player.push_back(PlayerServletManager::registerServlet(101, module, &TestUIntProc));
-	g_player.push_back(PlayerServletManager::registerServlet(102, module, &TestStringProc));
-	g_player.push_back(PlayerServletManager::registerServlet(103, module, &TestIntArrayProc));
-	g_player.push_back(PlayerServletManager::registerServlet(104, module, &TestUIntArrayProc));
-	g_player.push_back(PlayerServletManager::registerServlet(105, module, &TestStringArrayProc));
-	g_player.push_back(PlayerServletManager::registerServlet(106, module, &TestProc));
+	g_player.push_back(PlayerServletManager::registerServlet(8850, 100, module, &TestIntProc));
+	g_player.push_back(PlayerServletManager::registerServlet(8850, 101, module, &TestUIntProc));
+	g_player.push_back(PlayerServletManager::registerServlet(8850, 102, module, &TestStringProc));
+	g_player.push_back(PlayerServletManager::registerServlet(8850, 103, module, &TestIntArrayProc));
+	g_player.push_back(PlayerServletManager::registerServlet(8850, 104, module, &TestUIntArrayProc));
+	g_player.push_back(PlayerServletManager::registerServlet(8850, 105, module, &TestStringArrayProc));
+	g_player.push_back(PlayerServletManager::registerServlet(8850, 106, module, &TestProc));
 
 	AUTO(obj, boost::make_shared<TestNs::MySqlObj>());
 	obj->set_si(123);
