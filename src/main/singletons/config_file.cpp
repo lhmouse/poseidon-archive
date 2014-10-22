@@ -80,16 +80,14 @@ void ConfigFile::reload(){
 		key.erase(key.begin() + pos + 1, key.end());
 
 		pos = line.find_first_not_of(" \t", equ + 1);
-		if(pos == std::string::npos){
-			line.clear();
-		} else {
+		if(pos != std::string::npos){
 			line.erase(line.begin(), line.begin() + pos);
 			pos = line.find_last_not_of(" \t");
 			line.erase(line.begin() + pos + 1, line.end());
-		}
 
-		LOG_DEBUG("Config: ", key, " = ", line);
-		config.set(STD_MOVE(key), STD_MOVE(line));
+			LOG_DEBUG("Config: ", key, " = ", line);
+			config.set(STD_MOVE(key), STD_MOVE(line));
+		}
 	}
 	config.swap(g_config);
 }

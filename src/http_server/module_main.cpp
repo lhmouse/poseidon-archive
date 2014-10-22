@@ -16,11 +16,11 @@ extern "C" void poseidonModuleInit(boost::weak_ptr<Module>, boost::shared_ptr<co
 	std::string privateKey;
 	std::vector<std::string> authUserPasses;
 
-	ConfigFile::get(bind, "http_bind");
-	ConfigFile::get(port, "http_port");
-	ConfigFile::get(certificate, "http_certificate");
-	ConfigFile::get(privateKey, "http_private_key");
-	ConfigFile::getAll(authUserPasses, "http_auth_user_pass");
+	ConfigFile::get(bind, "http_server_bind");
+	ConfigFile::get(port, "http_server_port");
+	ConfigFile::get(certificate, "http_server_certificate");
+	ConfigFile::get(privateKey, "http_server_private_key");
+	ConfigFile::getAll(authUserPasses, "http_server_auth_user_pass");
 
 	context = EpollDaemon::registerHttpServer(bind, port, certificate, privateKey, authUserPasses);
 }

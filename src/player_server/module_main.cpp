@@ -14,10 +14,10 @@ extern "C" void poseidonModuleInit(boost::weak_ptr<Module>, boost::shared_ptr<co
 	std::string certificate;
 	std::string privateKey;
 
-	ConfigFile::get(bind, "player_bind");
-	ConfigFile::get(port, "player_port");
-	ConfigFile::get(certificate, "player_certificate");
-	ConfigFile::get(privateKey, "player_private_key");
+	ConfigFile::get(bind, "player_server_bind");
+	ConfigFile::get(port, "player_server_port");
+	ConfigFile::get(certificate, "player_server_certificate");
+	ConfigFile::get(privateKey, "player_server_private_key");
 
 	context = EpollDaemon::registerPlayerServer(bind, port, certificate, privateKey);
 }
