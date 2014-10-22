@@ -79,6 +79,7 @@ std::list<AsyncLoadItem> g_loadQueue;
 std::list<AsyncLoadItem> g_loadPool;
 boost::condition_variable g_newObjectAvail;
 
+bool g_connected = false;
 volatile std::size_t g_waiting = 0;
 boost::condition_variable g_queueEmpty;
 
@@ -100,10 +101,15 @@ void daemonLoop(){
 	try {
 		LOG_INFO("Intializing MySQL connection...");
 		getMySqlConnection(connection);
-	} catch(sql::SQLException &e){
-		LOG_ERROR("SQLException thrown while connecting to MySQL server: code = ", e.getErrorCode(),
-			", state = ", e.getSQLState(), ", what = ", e.what());
+	} catch(...){
+		LOG_FATAL("Failed to connect MySQL server. Bail out.");
 		std::abort();
+	}
+
+	{
+		const boost::mutex::scoped_lock lock(g_mutex);
+		g_connected = true;
+		g_queueEmpty.notify_all();
 	}
 
 	std::size_t reconnectDelay = 0;
@@ -265,7 +271,7 @@ void MySqlDaemon::waitForAllAsyncOperations(){
 	try {
 		boost::mutex::scoped_lock lock(g_mutex);
 		g_newObjectAvail.notify_all();
-		while(!(g_saveQueue.empty() && g_loadQueue.empty())){
+		while(!g_connected || !(g_saveQueue.empty() && g_loadQueue.empty())){
 			g_queueEmpty.wait(lock);
 		}
 	} catch(...){

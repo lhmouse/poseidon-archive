@@ -15,6 +15,9 @@ boost::shared_ptr<HttpServer> g_systemServer;
 boost::shared_ptr<HttpServlet> g_systemServlet;
 
 void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request){
+	LOG_INFO("Accepted system HTTP request from ", session->getRemoteIp());
+
+	//
 }
 
 }
