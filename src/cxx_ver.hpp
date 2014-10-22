@@ -19,15 +19,14 @@
 #	include <boost/type_traits/add_reference.hpp>
 #	include <boost/type_traits/remove_cv.hpp>
 #	include <boost/type_traits/remove_reference.hpp>
+#	include <boost/type_traits/decay.hpp>
 #endif
 
 #ifdef POSEIDON_CXX11
-#	define DECLTYPE(expr_)			decltype(expr_)
 #	define CONSTEXPR				constexpr
 #	define NOEXCEPT					noexcept
 #	define ENABLE_IF_CXX11(...)		__VA_ARGS__
 #else
-#	define DECLTYPE(expr_)			__typeof__(expr_)
 #	define CONSTEXPR
 #	define NOEXCEPT					throw()
 #	define ENABLE_IF_CXX11(...)
@@ -49,22 +48,21 @@
 
 namespace Poseidon {
 
-#ifndef POSEIDON_CXX11
+#ifdef POSEIDON_CXX11
+template<typename T>
+typename std::remove_cv<
+	typename std::remove_reference<
+		typename std::decay<T>::type
+		>::type
+	>::type valueOfHelper(const T &);
+#else
 template<typename T>
 typename boost::remove_cv<
-	typename boost::remove_reference<T>::type
+	typename boost::remove_reference<
+		typename boost::decay<T>::type
+		>::type
 	>::type valueOfHelper(const T &);
-
-struct ValueInitializer {
-	template<typename T>
-	operator T() const {
-		return T();
-	}
-};
 #endif
-
-template<typename T>
-typename boost::add_reference<T>::type declRef() NOEXCEPT;
 
 #ifdef POSEIDON_CXX11
 template<typename T>
@@ -126,22 +124,32 @@ Move<T> move(Move<T> rhs) NOEXCEPT {
 }
 #endif
 
+#ifndef POSEIDON_CXX11
+template<typename T>
+typename boost::add_reference<T>::type declRef() NOEXCEPT;
+
+struct ValueInitializer {
+	template<typename T>
+	operator T() const {
+		return T();
+	}
+};
+#endif
+
 }
 
 #ifdef POSEIDON_CXX11
+#	define VALUE_TYPE(expr_)		decltype(::Poseidon::valueOfHelper(expr_))
 #	define AUTO(id_, init_)			auto id_ = init_
 #	define AUTO_REF(id_, init_)		auto &id_ = init_
 #	define STD_MOVE(expr_)			(::std::move(expr_))
-#	define UNIV_REF(t_)				t_ &&
-#	define STD_FORWARD(t_, expr_)	(::std::forward<t_>(expr_))
 #	define DECLREF(t_)				(::std::declval<typename ::std::remove_reference<t_>::type>())
 #	define VAL_INIT					{ }
 #else
-#	define AUTO(id_, init_)			DECLTYPE(::Poseidon::valueOfHelper(init_)) id_(init_)
-#	define AUTO_REF(id_, init_)		DECLTYPE(init_) &id_ = (init_)
+#	define VALUE_TYPE(expr_)		__typeof__(::Poseidon::valueOfHelper(expr_))
+#	define AUTO(id_, init_)			VALUE_TYPE(init_) id_(init_)
+#	define AUTO_REF(id_, init_)		__typeof__(init_) &id_ = (init_)
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
-#	define UNIV_REF(t_)				const t_ &
-#	define STD_FORWARD(t_, expr_)	(expr_)
 #	define DECLREF(t_)				(::Poseidon::declRef<t_>())
 #	define VAL_INIT					(::Poseidon::ValueInitializer())
 #endif

@@ -75,7 +75,7 @@ public:
 		}
 
 		LOG_INFO("Initializing module: ", m_path);
-		const AUTO(initProc, reinterpret_cast<DECLTYPE(poseidonModuleInit) *>(procSymAddr));
+		const AUTO(initProc, reinterpret_cast<VALUE_TYPE(poseidonModuleInit)>(procSymAddr));
 		(*initProc)(shared_from_this(), context);
 		LOG_INFO("Done initializing module: ", m_path);
 	}

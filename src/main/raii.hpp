@@ -9,7 +9,7 @@ namespace Poseidon {
 template<typename CloserT>
 class ScopedHandle {
 public:
-	typedef DECLTYPE(DECLREF(CloserT)()) Handle;
+	typedef VALUE_TYPE(DECLREF(CloserT)()) Handle;
 
 private:
 	Handle m_handle;

@@ -45,15 +45,13 @@ void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParam
 	session->sendDefault(HTTP_OK);
 }
 
-struct JumpTableElement {
-	const char *path;
-	void (*func)(boost::shared_ptr<HttpSession>, OptionalMap);
-};
-
-const JumpTableElement JUMP_TABLE[] = {
-	{ "load_module",		&onLoadModule },
-	{ "shutdown",			&onShutdown },
-	{ "unload_module",		&onUnloadModule },
+const std::pair<
+	const char *, void (*)(boost::shared_ptr<HttpSession>, OptionalMap)
+	> JUMP_TABLE[] =
+{
+	std::make_pair("load_module", &onLoadModule),
+	std::make_pair("shutdown", &onShutdown),
+	std::make_pair("unload_module", &onUnloadModule),
 };
 
 boost::shared_ptr<HttpServer> g_systemServer;
@@ -72,12 +70,12 @@ void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request, st
 
 	AUTO(lower, BEGIN(JUMP_TABLE));
 	AUTO(upper, END(JUMP_TABLE));
-	void (*found)(boost::shared_ptr<HttpSession>, OptionalMap) = VAL_INIT;
+	VALUE_TYPE(JUMP_TABLE[0].second) found = VAL_INIT;
 	do {
 		const AUTO(middle, lower + (upper - lower) / 2);
-		const int result = std::strcmp(request.uri.c_str() + cut, middle->path);
+		const int result = std::strcmp(request.uri.c_str() + cut, middle->first);
 		if(result == 0){
-			found = middle->func;
+			found = middle->second;
 			break;
 		} else if(result < 0){
 			upper = middle;
