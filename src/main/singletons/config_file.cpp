@@ -86,7 +86,7 @@ void ConfigFile::reload(){
 			line.erase(line.begin() + pos + 1, line.end());
 
 			LOG_DEBUG("Config: ", key, " = ", line);
-			config.set(STD_MOVE(key), STD_MOVE(line));
+			config.append(STD_MOVE(key), STD_MOVE(line));
 		}
 	}
 	config.swap(g_config);

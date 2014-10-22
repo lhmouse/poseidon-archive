@@ -57,11 +57,6 @@ struct RaiiSingletonRunner : boost::noncopyable {
 void run(){
 	PROFILE_ME;
 
-	unsigned logLevel = Logger::LV_INFO;
-	ConfigFile::get(logLevel, "log_level");
-	LOG_INFO("Setting log level to ", logLevel, "...");
-	Logger::setLevel(logLevel);
-
 	const RaiiSingletonRunner<MySqlDaemon> UNIQUE_ID;
 	const RaiiSingletonRunner<TimerDaemon> UNIQUE_ID;
 	const RaiiSingletonRunner<EpollDaemon> UNIQUE_ID;
@@ -81,19 +76,33 @@ void run(){
 
 }
 
+namespace Poseidon {
+
+extern void initSystemHttpInterface();
+
+}
+
 int main(int argc, char **argv){
 	Logger::setThreadTag(Logger::TAG_PRIMARY);
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
 	const RaiiSingletonRunner<ProfileManager> UNIQUE_ID;
 
-	try {
-		LOG_INFO("Setting up signal handlers...");
-		::signal(SIGINT, sigIntProc);
-		::signal(SIGTERM, sigTermProc);
+	LOG_INFO("Setting up signal handlers...");
+	::signal(SIGINT, sigIntProc);
+	::signal(SIGTERM, sigTermProc);
 
+	try {
 		ConfigFile::setRunPath((1 < argc) ? argv[1] : "/var/poseidon");
 		ConfigFile::reload();
+
+		unsigned logLevel = Logger::LV_INFO;
+		ConfigFile::get(logLevel, "log_level");
+		LOG_INFO("Setting log level to ", logLevel, "...");
+		Logger::setLevel(logLevel);
+
+		LOG_INFO("Initializing system HTTP interface...");
+		initSystemHttpInterface();
 
 		run();
 

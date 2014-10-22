@@ -24,6 +24,7 @@ sbin_poseidon_LDADD=	\
 	lib/libposeidon-main.la
 
 lib_libposeidon_main_la_SOURCES=	\
+	src/main/system_http.cpp	\
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
 	src/main/exception.cpp	\
