@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
+#include "../shared_ntmbs.hpp"
 
 namespace Poseidon {
 
@@ -14,7 +15,7 @@ extern "C" void poseidonModuleInit(
 	boost::weak_ptr<Module> module, boost::shared_ptr<const void> &context);
 
 struct ModuleSnapshotItem {
-	std::string path;
+	SharedNtmbs path;
 	std::size_t refCount;
 };
 

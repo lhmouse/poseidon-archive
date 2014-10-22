@@ -2,6 +2,7 @@
 #define POSEIDON_SHARED_NTMBS_HPP_
 
 #include "../cxx_ver.hpp"
+#include <iosfwd>
 #include <cstddef>
 #include <cstring>
 #include <boost/shared_ptr.hpp>
@@ -168,6 +169,10 @@ static inline bool operator>=(const std::string &lhs, const SharedNtmbs &rhs){
 
 static inline void swap(SharedNtmbs &lhs, SharedNtmbs &rhs) NOEXCEPT {
 	lhs.swap(rhs);
+}
+
+static inline std::ostream &operator<<(std::ostream &os, const SharedNtmbs &rhs){
+	return os <<rhs.get();
 }
 
 }

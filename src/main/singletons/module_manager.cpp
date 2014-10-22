@@ -13,14 +13,9 @@ using namespace Poseidon;
 
 namespace {
 
-struct ModuleItem {
-	boost::shared_ptr<Module> module;
-	boost::shared_ptr<const void> context;
-};
-
 boost::mutex g_dlMutex;
 boost::shared_mutex g_mutex;
-std::map<std::string, ModuleItem> g_modules;
+std::map<SharedNtmbs, struct ModuleItem> g_modules;
 
 struct DynamicLibraryCloser {
 	CONSTEXPR void *operator()() NOEXCEPT {
@@ -39,29 +34,33 @@ struct DynamicLibraryCloser {
 class Poseidon::Module : boost::noncopyable
 	, public boost::enable_shared_from_this<Module> {
 private:
-	std::string m_path;
+	const SharedNtmbs m_path;
 	ScopedHandle<DynamicLibraryCloser> m_handle;
 
 public:
-	explicit Module(std::string path)
-		: m_path(STD_MOVE(path))
+	explicit Module(const SharedNtmbs &path)
+		: m_path(path.forkOwning())
 	{
 		LOG_INFO("Loading module: ", m_path);
 
 		const boost::mutex::scoped_lock lock(g_dlMutex);
-		m_handle.reset(::dlopen(m_path.c_str(), RTLD_NOW));
+		m_handle.reset(::dlopen(m_path.get(), RTLD_NOW));
 		if(!m_handle){
 			const char *const error = ::dlerror();
 			LOG_ERROR("Error loading dynamic library: ", error);
 			DEBUG_THROW(Exception, error);
 		}
-		LOG_DEBUG("Handle = ", m_handle.get());
+		LOG_DEBUG("Handle = ", m_handle);
 	}
 	~Module(){
 		LOG_INFO("Unloading module: ", m_path);
 	}
 
 public:
+	const SharedNtmbs &getPath() const {
+		return m_path;
+	}
+
 	void init(boost::shared_ptr<const void> &context){
 		void *procSymAddr;
 		{
@@ -81,6 +80,19 @@ public:
 	}
 };
 
+namespace {
+
+struct ModuleItem {
+	boost::shared_ptr<Module> module;
+	boost::shared_ptr<const void> context;
+
+	bool operator<(const ModuleItem &rhs) const {
+		return module->getPath() < rhs.module->getPath();
+	}
+};
+
+}
+
 void ModuleManager::start(){
 	LOG_INFO("Loading init modules...");
 
@@ -96,8 +108,10 @@ void ModuleManager::stop(){
 }
 
 boost::shared_ptr<Module> ModuleManager::get(const std::string &path){
+	const AUTO(key, SharedNtmbs::createNonOwning(path));
+
 	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
-	const AUTO(it, g_modules.find(path));
+	const AUTO(it, g_modules.find(key));
 	if(it == g_modules.end()){
 		return VAL_INIT;
 	}
@@ -109,13 +123,15 @@ boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
 		return module;
 	}
 
-	const AUTO(newModule, boost::make_shared<Module>(path));
+	const AUTO(key, SharedNtmbs::createOwning(path));
+
+	const AUTO(newModule, boost::make_shared<Module>(key));
 	boost::shared_ptr<const void> context;
 	newModule->init(context);
 	module = newModule;
 	{
 		const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
-		AUTO_REF(item, g_modules[path]);
+		AUTO_REF(item, g_modules[key]);
 		item.module = newModule;
 		item.context.swap(context);
 	}
@@ -132,8 +148,10 @@ boost::shared_ptr<Module> ModuleManager::loadNoThrow(const std::string &path){
 	return VAL_INIT;
 }
 bool ModuleManager::unload(const std::string &path){
+	const AUTO(key, SharedNtmbs::createNonOwning(path));
+
 	const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
-	const AUTO(it, g_modules.find(path));
+	const AUTO(it, g_modules.find(key));
 	if(it == g_modules.end()){
 		return false;
 	}
@@ -152,12 +170,14 @@ bool ModuleManager::unload(const std::string &path){
 
 std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 	std::vector<ModuleSnapshotItem> ret;
-	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
-	for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
-		ret.push_back(ModuleSnapshotItem());
-		ModuleSnapshotItem &mi = ret.back();
-		mi.path = it->first;
-		mi.refCount = it->second.module.use_count();
+	{
+		const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
+		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
+			ret.push_back(ModuleSnapshotItem());
+			ModuleSnapshotItem &mi = ret.back();
+			mi.path = it->first;
+			mi.refCount = it->second.module.use_count();
+		}
 	}
 	return ret;
 }
