@@ -43,11 +43,10 @@ void JobDispatcher::doModal(){
 					g_newJobAvail.wait(lock);
 				}
 			}
-			if(job){
-				job->perform();
-			} else {
+			if(!job){
 				break;
 			}
+			job->perform();
 		} catch(std::exception &e){
 			LOG_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 		} catch(...){
