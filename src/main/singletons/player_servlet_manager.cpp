@@ -59,7 +59,7 @@ namespace {
 std::size_t g_maxRequestLength = 16 * 0x400;
 
 boost::shared_mutex g_mutex;
-std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> > g_servlets;
+std::map<unsigned, std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> > > g_servlets;
 
 }
 
@@ -77,16 +77,18 @@ std::size_t PlayerServletManager::getMaxRequestLength(){
 	return g_maxRequestLength;
 }
 
-boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(boost::uint16_t protocolId,
+boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(
+	unsigned port, boost::uint16_t protocolId,
 	const boost::weak_ptr<const void> &dependency, const PlayerServletCallback &callback)
 {
 	AUTO(newServlet, boost::make_shared<PlayerServlet>(boost::make_shared<RealPlayerServlet>(
 		protocolId, boost::ref(dependency), boost::ref(callback))));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
-		AUTO_REF(servlet, g_servlets[protocolId]);
+		AUTO_REF(servlet, g_servlets[port][protocolId]);
 		if(!servlet.expired()){
-			DEBUG_THROW(Exception, "Duplicate protocol servlet.");
+			LOG_ERROR("Duplicate player protocol servlet for id ", protocolId, " on port ", port);
+			DEBUG_THROW(Exception, "Duplicate player protocol servlet");
 		}
 		servlet = newServlet;
 	}
@@ -94,15 +96,24 @@ boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(boost::ui
 }
 
 boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(
-	boost::shared_ptr<const void> &lockedDep, boost::uint16_t protocolId)
+	unsigned port, boost::shared_ptr<const void> &lockedDep, boost::uint16_t protocolId)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
-	const AUTO(it, g_servlets.find(protocolId));
+	const AUTO(it, g_servlets.find(port));
 	if(it == g_servlets.end()){
+		LOG_DEBUG("No servlet on port ", port);
 		return VAL_INIT;
 	}
-	const AUTO(servlet, it->second.lock());
+
+	AUTO_REF(servletsOnPort, it->second);
+	const AUTO(sit, servletsOnPort.find(protocolId));
+	if(sit == servletsOnPort.end()){
+		LOG_DEBUG("No servlet for protocol ", protocolId);
+		return VAL_INIT;
+	}
+	const AUTO(servlet, sit->second.lock());
 	if(!servlet){
+		LOG_DEBUG("Servlet expired");
 		return VAL_INIT;
 	}
 	return servlet->realPlayerServlet->lock(lockedDep);

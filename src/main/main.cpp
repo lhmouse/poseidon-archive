@@ -10,6 +10,7 @@
 #include "singletons/player_servlet_manager.hpp"
 #include "singletons/http_servlet_manager.hpp"
 #include "singletons/websocket_servlet_manager.hpp"
+#include "singletons/system_http_server.hpp"
 #include "singletons/job_dispatcher.hpp"
 #include "singletons/module_manager.hpp"
 #include "singletons/event_listener_manager.hpp"
@@ -54,18 +55,22 @@ struct RaiiSingletonRunner : boost::noncopyable {
 	}
 };
 
+#define START(x_)	const RaiiSingletonRunner<x_> UNIQUE_ID
+
 void run(){
 	PROFILE_ME;
 
-	const RaiiSingletonRunner<MySqlDaemon> UNIQUE_ID;
-	const RaiiSingletonRunner<TimerDaemon> UNIQUE_ID;
-	const RaiiSingletonRunner<EpollDaemon> UNIQUE_ID;
+	START(MySqlDaemon);
+	START(TimerDaemon);
+	START(EpollDaemon);
 
-	const RaiiSingletonRunner<PlayerServletManager> UNIQUE_ID;
-	const RaiiSingletonRunner<HttpServletManager> UNIQUE_ID;
-	const RaiiSingletonRunner<WebSocketServletManager> UNIQUE_ID;
-	const RaiiSingletonRunner<ModuleManager> UNIQUE_ID;
-	const RaiiSingletonRunner<EventListenerManager> UNIQUE_ID;
+	START(PlayerServletManager);
+	START(HttpServletManager);
+	START(WebSocketServletManager);
+	START(ModuleManager);
+	START(EventListenerManager);
+
+	START(SystemHttpServer);
 
 	LOG_INFO("Waiting for all MySQL operations to complete...");
 	MySqlDaemon::waitForAllAsyncOperations();
@@ -76,17 +81,11 @@ void run(){
 
 }
 
-namespace Poseidon {
-
-extern void initSystemHttpInterface();
-
-}
-
 int main(int argc, char **argv){
 	Logger::setThreadTag(Logger::TAG_PRIMARY);
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
-	const RaiiSingletonRunner<ProfileManager> UNIQUE_ID;
+	START(ProfileManager);
 
 	LOG_INFO("Setting up signal handlers...");
 	::signal(SIGINT, sigIntProc);
@@ -100,9 +99,6 @@ int main(int argc, char **argv){
 		ConfigFile::get(logLevel, "log_level");
 		LOG_INFO("Setting log level to ", logLevel, "...");
 		Logger::setLevel(logLevel);
-
-		LOG_INFO("Initializing system HTTP interface...");
-		initSystemHttpInterface();
 
 		run();
 

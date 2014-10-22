@@ -30,10 +30,10 @@ struct PlayerServletManager {
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	// callback 禁止 move，否则可能出现主模块中引用子模块内存的情况。
-	static boost::shared_ptr<PlayerServlet> registerServlet(boost::uint16_t protocolId,
+	static boost::shared_ptr<PlayerServlet> registerServlet(unsigned port, boost::uint16_t protocolId,
 		const boost::weak_ptr<const void> &dependency, const PlayerServletCallback &callback);
 
-	static boost::shared_ptr<const PlayerServletCallback> getServlet(
+	static boost::shared_ptr<const PlayerServletCallback> getServlet(unsigned port,
 		boost::shared_ptr<const void> &lockedDep, boost::uint16_t protocolId);
 
 private:

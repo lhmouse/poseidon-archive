@@ -133,7 +133,8 @@ protected:
 
 		try {
 			boost::shared_ptr<const void> lockedDep;
-			AUTO(servlet, HttpServletManager::getServlet(lockedDep, m_uri));
+			const AUTO(servlet,
+				HttpServletManager::getServlet(m_session->getLocalPort(), lockedDep, m_uri));
 			if(!servlet){
 				LOG_WARNING("No handler matches URI ", m_uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);

@@ -24,7 +24,6 @@ sbin_poseidon_LDADD=	\
 	lib/libposeidon-main.la
 
 lib_libposeidon_main_la_SOURCES=	\
-	src/main/system_http.cpp	\
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
 	src/main/exception.cpp	\
@@ -54,6 +53,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/module_manager.cpp	\
 	src/main/singletons/event_listener_manager.cpp	\
 	src/main/singletons/profile_manager.cpp	\
+	src/main/singletons/system_http_server.cpp	\
 	src/main/player/session.cpp	\
 	src/main/player/server.cpp	\
 	src/main/http/session.cpp	\

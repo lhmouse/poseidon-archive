@@ -11,11 +11,12 @@
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include "atomic.hpp"
+#include "endian.hpp"
 using namespace Poseidon;
 
 namespace {
 
-std::string getIpFromSocket(int fd){
+std::string getRemoteIpFromSocket(int fd){
 	std::string ret;
 
 	union {
@@ -45,10 +46,31 @@ std::string getIpFromSocket(int fd){
 	return ret;
 }
 
+unsigned getLocalPortFromSocket(int fd){
+	union {
+		::sockaddr sa;
+		::sockaddr_in sin;
+		::sockaddr_in6 sin6;
+	} u;
+	::socklen_t salen = sizeof(u);
+	if(::getsockname(fd, &u.sa, &salen) != 0){
+		DEBUG_THROW(SystemError, errno);
+	}
+	if(u.sa.sa_family == AF_INET){
+		return loadBe(u.sin.sin_port);
+	} else if(u.sa.sa_family == AF_INET6){
+		return loadBe(u.sin6.sin6_port);
+	} else {
+		LOG_WARNING("Unknown IP protocol ", u.sa.sa_family);
+		DEBUG_THROW(Exception, "Unknown IP protocol");
+	}
+}
+
 }
 
 TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
-	: m_socket(STD_MOVE(socket)), m_remoteIp(getIpFromSocket(m_socket.get()))
+	: m_socket(STD_MOVE(socket)), m_remoteIp(getRemoteIpFromSocket(m_socket.get()))
+	, m_localPort(getLocalPortFromSocket(m_socket.get()))
 	, m_shutdown(false)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);

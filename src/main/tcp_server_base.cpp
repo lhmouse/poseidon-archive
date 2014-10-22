@@ -128,10 +128,10 @@ TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort,
 		m_sslImplServer.reset(new SslImplServer(cert, privateKey));
 	}
 
-	LOG_INFO("Created ", (m_sslImplServer ? "" : "SSL "), "socket server on ", m_bindAddr, ':', m_bindPort);
+	LOG_INFO("Created ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_bindAddr, ':', m_bindPort);
 }
 TcpServerBase::~TcpServerBase(){
-	LOG_INFO("Destroyed ", (m_sslImplServer ? "" : "SSL "), "socket server on ", m_bindAddr, ':', m_bindPort);
+	LOG_INFO("Destroyed ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_bindAddr, ':', m_bindPort);
 }
 
 boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {

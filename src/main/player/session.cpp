@@ -65,7 +65,8 @@ protected:
 
 		try {
 			boost::shared_ptr<const void> lockedDep;
-			const AUTO(servlet, PlayerServletManager::getServlet(lockedDep, m_protocolId));
+			const AUTO(servlet,
+				PlayerServletManager::getServlet(m_session->getLocalPort(), lockedDep, m_protocolId));
 			if(!servlet){
 				LOG_WARNING("No servlet for protocol ", m_protocolId);
 				DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND);

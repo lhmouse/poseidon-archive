@@ -24,6 +24,7 @@ private:
 private:
 	const ScopedFile m_socket;
 	const std::string m_remoteIp;
+	const unsigned m_localPort;
 
 	boost::scoped_ptr<SslImpl> m_ssl;
 
@@ -49,6 +50,10 @@ public:
 	bool send(StreamBuffer buffer, bool final = false); // final 置 true 则发送完毕后挂断连接。
 	bool hasBeenShutdown() const;
 	bool forceShutdown();
+
+	unsigned getLocalPort() const {
+		return m_localPort;
+	}
 };
 
 }

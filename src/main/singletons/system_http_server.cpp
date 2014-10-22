@@ -1,11 +1,12 @@
-#include "../precompiled.hpp"
-#include "singletons/epoll_daemon.hpp"
-#include "singletons/http_servlet_manager.hpp"
-#include "singletons/config_file.hpp"
-#include "log.hpp"
-#include "exception.hpp"
-#include "profiler.hpp"
-#include "http/session.hpp"
+#include "../../precompiled.hpp"
+#include "system_http_server.hpp"
+#include "epoll_daemon.hpp"
+#include "http_servlet_manager.hpp"
+#include "config_file.hpp"
+#include "../log.hpp"
+#include "../exception.hpp"
+#include "../profiler.hpp"
+#include "../http/session.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -18,10 +19,8 @@ void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request){
 
 }
 
-namespace Poseidon {
-
-void initSystemHttpInterface(){
-	LOG_INFO("Initializing system HTTP interface...");
+void SystemHttpServer::start(){
+	LOG_INFO("Initializing system HTTP server...");
 
 	std::string bind("127.0.0.1");
 	boost::uint16_t port = 0;
@@ -38,7 +37,15 @@ void initSystemHttpInterface(){
 	ConfigFile::get(path, "system_http_path");
 
 	g_systemServer = EpollDaemon::registerHttpServer(bind, port, certificate, privateKey, authUserPasses);
-	g_systemServlet = HttpServletManager::registerServlet(bind, VAL_INIT, &servletProc);
-}
+	g_systemServlet = HttpServletManager::registerServlet(port, path, VAL_INIT, &servletProc);
 
+	LOG_INFO("Done initializing system HTTP server.");
+}
+void SystemHttpServer::stop(){
+	LOG_INFO("Shutting down system HTTP server...");
+
+	g_systemServlet.reset();
+	g_systemServer.reset();
+
+	LOG_INFO("Done shutting down system HTTP server.");
 }
