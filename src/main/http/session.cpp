@@ -151,7 +151,7 @@ protected:
 		} catch(HttpException &e){
 			LOG_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.status()));
-			m_session->sendDefault(e.status(), true);
+			m_session->sendDefault(e.status(), e.headers(), true);
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... request URI = ", m_uri);
@@ -291,29 +291,35 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_state = ST_FIRST_HEADER;
 
 			if(m_authInfo){
-				OptionalMap headers;
-				headers.set("WWW-Authenticate", "Basic realm=\"Authentication required\"");
-				sendDefault(HTTP_DENIED, STD_MOVE(headers));
-			} else {
-				if(m_upgradedSession){
-					m_shutdownTimer.reset();
-
-					m_upgradedSession->onInitContents(m_line.data(), m_line.size());
-					if(read != end){
-						m_upgradedSession->onReadAvail(read, end - read);
-					}
-					return;
-				}
-
-				m_shutdownTimer = TimerDaemon::registerTimer(
-					HttpServletManager::getKeepAliveTimeout(), 0, VAL_INIT,
-					TR1::bind(&onKeepAliveTimeout, virtualWeakFromThis<HttpSession>()));
-
-				boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
-					m_verb, STD_MOVE(m_uri), m_version,
-					STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)
-					)->pend();
+				OptionalMap authHeader;
+				authHeader.set("WWW-Authenticate", "Basic realm=\"Authentication required\"");
+				DEBUG_THROW(HttpException, HTTP_DENIED, STD_MOVE(authHeader));
 			}
+
+			if(m_upgradedSession){
+				m_shutdownTimer.reset();
+
+				m_upgradedSession->onInitContents(m_line.data(), m_line.size());
+
+				m_totalLength = 0;
+				m_contentLength = 0;
+				m_line.clear();
+
+				if(read != end){
+					m_upgradedSession->onReadAvail(read, end - read);
+				}
+				read = end;
+				break;
+			}
+
+			m_shutdownTimer = TimerDaemon::registerTimer(
+				HttpServletManager::getKeepAliveTimeout(), 0, VAL_INIT,
+				TR1::bind(&onKeepAliveTimeout, virtualWeakFromThis<HttpSession>()));
+
+			boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
+				m_verb, STD_MOVE(m_uri), m_version,
+				STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)
+				)->pend();
 
 			m_totalLength = 0;
 			m_contentLength = 0;
@@ -326,8 +332,9 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_headers.clear();
 		}
 	} catch(HttpException &e){
-		LOG_ERROR("HttpException thrown while parsing data, URI = ", m_uri, ", status = ", static_cast<unsigned>(e.status()));
-		sendDefault(e.status(), true);
+		LOG_ERROR("HttpException thrown while parsing data, URI = ", m_uri,
+			", status = ", static_cast<unsigned>(e.status()));
+		sendDefault(e.status(), e.headers(), true);
 		throw;
 	} catch(...){
 		LOG_ERROR("Forwarding exception... shutdown the session first.");
@@ -413,7 +420,10 @@ void HttpSession::onAllHeadersRead(){
 			}
 			temp.erase(temp.begin(), temp.begin() + pos + 1);
 			if(session->m_authInfo->find(temp) == session->m_authInfo->end()){
-				DEBUG_THROW(HttpException, HTTP_DENIED);
+				LOG_WARNING("Invalid username or password");
+				OptionalMap authHeader;
+				authHeader.set("WWW-Authenticate", "Basic realm=\"Invalid username or password\"");
+				DEBUG_THROW(HttpException, HTTP_DENIED, STD_MOVE(authHeader));
 			}
 			session->m_authInfo.reset();
 		}

@@ -57,14 +57,6 @@ struct RaiiSingletonRunner : boost::noncopyable {
 	}
 };
 
-boost::shared_ptr<const HttpServlet> g_load;
-
-void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
-	ModuleManager::load("libposeidon-template.so");
-
-	hs->sendDefault(HTTP_OK);
-}
-
 void run(){
 	PROFILE_ME;
 
@@ -110,8 +102,6 @@ void run(){
 	ConfigFile::getAll(authUserPasses, "http_auth_user_pass");
 	EpollDaemon::addTcpServer(boost::make_shared<HttpServer>(
 		bind, port, certificate, privateKey, authUserPasses));
-
-	g_load = HttpServletManager::registerServlet("/~load", VAL_INIT, &loadProc);
 
 	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();
