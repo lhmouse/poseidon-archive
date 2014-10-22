@@ -17,8 +17,6 @@ private:
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
 
 public:
-	// 实现定义。
-	virtual const std::string &getRemoteIp() const = 0;
 	// 在使用 final = true 调用 send() 或调用 forceShutdown() 之后返回 true。
 	virtual bool hasBeenShutdown() const = 0;
 	// 若 final = true，调用后 onReadAvail() 将不会被触发，

@@ -114,10 +114,36 @@ void onModules(boost::shared_ptr<HttpSession> session, OptionalMap){
 	session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 
+void onConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
+	OptionalMap headers;
+	headers.set("Content-Type", "text/csv; charset=utf-8");
+	headers.set("Content-Disposition", "attachment; name=\"connections.csv\"");
+
+	StreamBuffer contents;
+	contents.put("remote_ip,remote_port,local_ip,local_port,us_online\r\n");
+	AUTO(snapshot, EpollDaemon::snapshot());
+	std::string str;
+	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
+		escapeCsvField(str, it->remoteIp.get());
+		contents.put(str);
+		char temp[64];
+		unsigned len = std::sprintf(temp, ",%u,", it->remotePort);
+		contents.put(temp, len);
+		escapeCsvField(str, it->localIp.get());
+		contents.put(str);
+		len = std::sprintf(temp, ",%u,%llu\r\n", it->localPort, it->usOnline);
+		contents.put(temp, len);
+	}
+
+	session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
+}
+
 const std::pair<
 	const char *, void (*)(boost::shared_ptr<HttpSession>, OptionalMap)
 	> JUMP_TABLE[] =
 {
+	// 确保字母顺序。
+	std::make_pair("connections", &onConnections),
 	std::make_pair("load_module", &onLoadModule),
 	std::make_pair("modules", &onModules),
 	std::make_pair("profile", &onProfile),

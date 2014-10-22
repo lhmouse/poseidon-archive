@@ -390,6 +390,23 @@ void EpollDaemon::stop(){
 	g_servers.clear();
 }
 
+std::vector<EpollSnapshotItem> EpollDaemon::snapshot(){
+	std::vector<EpollSnapshotItem> ret;
+	const AUTO(now, getMonoClock());
+	const boost::mutex::scoped_lock lock(g_sessionMutex);
+	ret.reserve(g_sessions.size());
+	for(AUTO(it, g_sessions.begin()); it != g_sessions.end(); ++it){
+		ret.push_back(VAL_INIT);
+		AUTO_REF(item, ret.back());
+		item.remoteIp = it->session->getRemoteIp();
+		item.remotePort = it->session->getRemotePort();
+		item.localIp = it->session->getLocalIp();
+		item.localPort  = it->session->getLocalPort();
+		item.usOnline = now - it->session->getCreatedTime();
+	}
+	return ret;
+}
+
 void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	if(session->hasBeenShutdown()){
 		return;

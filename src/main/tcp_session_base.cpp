@@ -12,65 +12,63 @@
 #include "log.hpp"
 #include "atomic.hpp"
 #include "endian.hpp"
+#include "utilities.hpp"
 using namespace Poseidon;
 
 namespace {
 
-std::string getRemoteIpFromSocket(int fd){
-	std::string ret;
+union SockAddr {
+	::sockaddr sa;
+	::sockaddr_in sin;
+	::sockaddr_in6 sin6;
+};
 
-	union {
-		::sockaddr sa;
-		::sockaddr_in sin;
-		::sockaddr_in6 sin6;
-	} u;
-	::socklen_t salen = sizeof(u);
-	if(::getpeername(fd, &u.sa, &salen) != 0){
-		DEBUG_THROW(SystemError, errno);
-	}
-	ret.resize(63);
-	const char *text;
-	if(u.sa.sa_family == AF_INET){
-		text = ::inet_ntop(AF_INET, &u.sin.sin_addr, &ret[0], ret.size());
-	} else if(u.sa.sa_family == AF_INET6){
-		text = ::inet_ntop(AF_INET6, &u.sin6.sin6_addr, &ret[0], ret.size());
+std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
+	char ip[64];
+	unsigned port;
+	const char *ret;
+	if(sa.sa.sa_family == AF_INET){
+		ret = ::inet_ntop(AF_INET, &sa.sin.sin_addr, ip, sizeof(ip));
+		port = loadBe(sa.sin.sin_port);
+	} else if(sa.sa.sa_family == AF_INET6){
+		ret = ::inet_ntop(AF_INET6, &sa.sin6.sin6_addr, ip, sizeof(ip));
+		port = loadBe(sa.sin6.sin6_port);
 	} else {
-		LOG_WARNING("Unknown IP protocol ", u.sa.sa_family);
+		LOG_WARNING("Unknown IP protocol ", sa.sa.sa_family);
 		DEBUG_THROW(Exception, "Unknown IP protocol");
 	}
-	if(!text){
+	if(!ret){
+		LOG_WARNING("Failed to format IP address to string.");
 		DEBUG_THROW(SystemError, errno);
 	}
-	ret.resize(std::strlen(text));
-
-	return ret;
+	return std::make_pair(SharedNtmbs::createOwning(ip), port);
 }
 
-unsigned getLocalPortFromSocket(int fd){
-	union {
-		::sockaddr sa;
-		::sockaddr_in sin;
-		::sockaddr_in6 sin6;
-	} u;
-	::socklen_t salen = sizeof(u);
-	if(::getsockname(fd, &u.sa, &salen) != 0){
+std::pair<SharedNtmbs, unsigned> getRemoteAddrFromFd(int fd){
+	SockAddr sa;
+	::socklen_t salen = sizeof(sa);
+	if(::getpeername(fd, &sa.sa, &salen) != 0){
+		LOG_ERROR("Failed to get remote socket addr.");
 		DEBUG_THROW(SystemError, errno);
 	}
-	if(u.sa.sa_family == AF_INET){
-		return loadBe(u.sin.sin_port);
-	} else if(u.sa.sa_family == AF_INET6){
-		return loadBe(u.sin6.sin6_port);
-	} else {
-		LOG_WARNING("Unknown IP protocol ", u.sa.sa_family);
-		DEBUG_THROW(Exception, "Unknown IP protocol");
+	return getAddrPortFromSockAddr(sa);
+}
+std::pair<SharedNtmbs, unsigned> getLocalAddrFromFd(int fd){
+	SockAddr sa;
+	::socklen_t salen = sizeof(sa);
+	if(::getsockname(fd, &sa.sa, &salen) != 0){
+		LOG_ERROR("Failed to get local socket addr.");
+		DEBUG_THROW(SystemError, errno);
 	}
+	return getAddrPortFromSockAddr(sa);
 }
 
 }
 
 TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
-	: m_socket(STD_MOVE(socket)), m_remoteIp(getRemoteIpFromSocket(m_socket.get()))
-	, m_localPort(getLocalPortFromSocket(m_socket.get()))
+	: m_socket(STD_MOVE(socket)), m_createdTime(getMonoClock())
+	, m_remoteAddr(getRemoteAddrFromFd(m_socket.get()))
+	, m_localAddr(getLocalAddrFromFd(m_socket.get()))
 	, m_shutdown(false)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
@@ -85,10 +83,10 @@ TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
 		DEBUG_THROW(SystemError, code);
 	}
 
-	LOG_INFO("Created TCP peer, remote IP = ", m_remoteIp);
+	LOG_INFO("Created TCP peer to ", m_remoteAddr.first, ':', m_remoteAddr.second);
 }
 TcpSessionBase::~TcpSessionBase(){
-	LOG_INFO("Destroyed TCP peer, remote IP = ", m_remoteIp);
+	LOG_INFO("Destroyed TCP peer to ", m_remoteAddr.first, ':', m_remoteAddr.second);
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer, bool final){
@@ -99,7 +97,7 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool final){
 		closed = atomicLoad(m_shutdown);
 	}
 	if(closed){
-		LOG_DEBUG("Socket has already been closed, remote ip = ", getRemoteIp());
+		LOG_DEBUG("Socket to ", m_remoteAddr.first, ':', m_remoteAddr.second, " has been closed.");
 		return false;
 	}
 	if(!buffer.empty()){
@@ -113,9 +111,6 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool final){
 	return true;
 }
 
-const std::string &TcpSessionBase::getRemoteIp() const {
-	return m_remoteIp;
-}
 bool TcpSessionBase::hasBeenShutdown() const {
 	return atomicLoad(m_shutdown);
 }

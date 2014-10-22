@@ -434,6 +434,7 @@ void HttpSession::onAllHeadersRead(){
 		const char *, void (*)(HttpSession *, const std::string &)
 		> JUMP_TABLE[] =
 	{
+		// 确保字母顺序。
 		std::make_pair("Authorization", &Dispatcher::onAuthorization),
 		std::make_pair("Content-Length", &Dispatcher::onContentLength),
 		std::make_pair("Expect", &Dispatcher::onExpect),

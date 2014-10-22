@@ -5,8 +5,7 @@
 using namespace Poseidon;
 
 HttpUpgradedSessionBase::HttpUpgradedSessionBase(const boost::shared_ptr<HttpSession> &parent)
-	: m_parent(parent), m_remoteIp(parent->getRemoteIp())
-	, m_uri(parent->m_uri), m_getParams(parent->m_getParams), m_headers(parent->m_headers)
+	: m_parent(parent)
 {
 }
 
@@ -15,9 +14,6 @@ void HttpUpgradedSessionBase::onInitContents(const void *data, std::size_t size)
 	(void)size;
 }
 
-const std::string &HttpUpgradedSessionBase::getRemoteIp() const {
-	return m_remoteIp;
-}
 bool HttpUpgradedSessionBase::hasBeenShutdown() const {
 	const AUTO(parent, getParent());
 	if(!parent){
@@ -38,4 +34,14 @@ bool HttpUpgradedSessionBase::forceShutdown(){
 		return false;
 	}
 	return static_cast<TcpSessionBase *>(parent.get())->forceShutdown();
+}
+
+const std::string &HttpUpgradedSessionBase::getUri() const {
+	return getSafeParent()->m_uri;
+}
+const OptionalMap &HttpUpgradedSessionBase::getGetParams() const {
+	return getSafeParent()->m_getParams;
+}
+const OptionalMap &HttpUpgradedSessionBase::getHeaders() const {
+	return getSafeParent()->m_headers;
 }

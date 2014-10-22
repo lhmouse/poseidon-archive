@@ -17,11 +17,6 @@ class HttpUpgradedSessionBase : public SessionBase {
 
 private:
 	const boost::weak_ptr<HttpSession> m_parent;
-	const std::string m_remoteIp;
-
-	const std::string m_uri;
-	const OptionalMap m_getParams;
-	const OptionalMap m_headers;
 
 protected:
 	explicit HttpUpgradedSessionBase(const boost::shared_ptr<HttpSession> &parent);
@@ -32,7 +27,6 @@ private:
 	void onReadAvail(const void *data, std::size_t size) = 0;
 
 public:
-	const std::string &getRemoteIp() const;
 	bool send(StreamBuffer buffer, bool final = false);
 	bool hasBeenShutdown() const;
 	bool forceShutdown();
@@ -51,15 +45,9 @@ public:
 		return boost::shared_ptr<HttpSession>(m_parent);
 	}
 
-	const std::string &getUri() const {
-		return m_uri;
-	}
-	const OptionalMap &getGetParams() const {
-		return m_getParams;
-	}
-	const OptionalMap &getHeaders() const {
-		return m_headers;
-	}
+	const std::string &getUri() const;
+	const OptionalMap &getGetParams() const;
+	const OptionalMap &getHeaders() const;
 };
 
 }

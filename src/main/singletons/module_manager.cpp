@@ -150,12 +150,12 @@ bool ModuleManager::unload(const std::string &path){
 	return true;
 }
 
-std::vector<ModuleInfo> ModuleManager::snapshot(){
-	std::vector<ModuleInfo> ret;
+std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
+	std::vector<ModuleSnapshotItem> ret;
 	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
 	for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
-		ret.push_back(ModuleInfo());
-		ModuleInfo &mi = ret.back();
+		ret.push_back(ModuleSnapshotItem());
+		ModuleSnapshotItem &mi = ret.back();
 		mi.path = it->first;
 		mi.refCount = it->second.module.use_count();
 	}

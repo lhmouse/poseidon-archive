@@ -2,14 +2,25 @@
 #define POSEIDON_SINGLETONS_EPOLL_DAEMON_HPP_
 
 #include <boost/shared_ptr.hpp>
+#include "../shared_ntmbs.hpp"
 
 namespace Poseidon {
+
+struct EpollSnapshotItem {
+	SharedNtmbs remoteIp;
+	unsigned remotePort;
+	SharedNtmbs localIp;
+	unsigned localPort;
+	unsigned long long usOnline;
+};
 
 class TcpSessionBase;
 
 struct EpollDaemon {
 	static void start();
 	static void stop();
+
+	static std::vector<EpollSnapshotItem> snapshot();
 
 	static void addSession(const boost::shared_ptr<TcpSessionBase> &session);
 	static void touchSession(const boost::shared_ptr<TcpSessionBase> &session);

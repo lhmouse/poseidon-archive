@@ -13,7 +13,7 @@ class Module;
 extern "C" void poseidonModuleInit(
 	boost::weak_ptr<Module> module, boost::shared_ptr<const void> &context);
 
-struct ModuleInfo {
+struct ModuleSnapshotItem {
 	std::string path;
 	std::size_t refCount;
 };
@@ -27,7 +27,7 @@ struct ModuleManager {
 	static boost::shared_ptr<Module> loadNoThrow(const std::string &path);
 	static bool unload(const std::string &path);
 
-	static std::vector<ModuleInfo> snapshot();
+	static std::vector<ModuleSnapshotItem> snapshot();
 
 private:
 	ModuleManager();

@@ -241,19 +241,22 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 void WebSocketSession::onControlFrame(){
 	LOG_DEBUG("Control frame, opcode = ", m_opcode);
 
+	const AUTO(parent, getSafeParent());
+
 	switch(m_opcode){
 	case WS_CLOSE:
-		LOG_INFO("Received close frame from ", getRemoteIp(), ", the connection will be shut down.");
+		LOG_INFO("Received close frame from ", parent->getRemoteIp(), ':', parent->getRemotePort(),
+			", the connection will be shut down.");
 		HttpUpgradedSessionBase::send(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false), true);
 		break;
 
 	case WS_PING:
-		LOG_INFO("Received ping frame from ", getRemoteIp());
+		LOG_INFO("Received ping frame from ", parent->getRemoteIp(), ':', parent->getRemotePort());
 		HttpUpgradedSessionBase::send(makeFrame(WS_PONG, STD_MOVE(m_whole), false), false);
 		break;
 
 	case WS_PONG:
-		LOG_INFO("Received pong frame from ", getRemoteIp());
+		LOG_INFO("Received pong frame from ", parent->getRemoteIp(), ':', parent->getRemotePort());
 		break;
 
 	default:

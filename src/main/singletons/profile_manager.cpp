@@ -93,15 +93,15 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 	}
 }
 
-std::vector<ProfileItem> ProfileManager::snapshot(){
+std::vector<ProfileSnapshotItem> ProfileManager::snapshot(){
 	Profiler::flushProfilersInThread();
 
-	std::vector<ProfileItem> ret;
+	std::vector<ProfileSnapshotItem> ret;
 	{
 		const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 		ret.reserve(g_profile.size());
 		for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
-			ProfileItem pi;
+			ProfileSnapshotItem pi;
 			pi.file = it->first.file;
 			pi.line = it->first.line;
 			pi.func = it->first.func;

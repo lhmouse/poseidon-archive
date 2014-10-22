@@ -8,7 +8,7 @@
 
 namespace Poseidon {
 
-struct ProfileItem {
+struct ProfileSnapshotItem {
 	SharedNtmbs file;
 	unsigned long line;
 	SharedNtmbs func;
@@ -29,7 +29,7 @@ struct ProfileManager {
 	static void accumulate(const char *file, unsigned long line, const char *func,
 		unsigned long long total, unsigned long long exclusive) NOEXCEPT;
 
-	static std::vector<ProfileItem> snapshot();
+	static std::vector<ProfileSnapshotItem> snapshot();
 
 private:
 	ProfileManager();
