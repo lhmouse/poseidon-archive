@@ -4,6 +4,7 @@
 #include "epoll_daemon.hpp"
 #include "http_servlet_manager.hpp"
 #include "module_manager.hpp"
+#include "profile_manager.hpp"
 #include "config_file.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
@@ -14,6 +15,30 @@
 using namespace Poseidon;
 
 namespace {
+
+void escapeCsvField(std::string &dst, const char *src){
+	bool needsQuotes = false;
+	dst.clear();
+	for(;;){
+		const char ch = *(src++);
+		if(ch == 0){
+			break;
+		}
+		switch(ch){
+		case '\"':
+			dst.push_back('\"');
+		case ',':
+		case '\r':
+		case '\n':
+			needsQuotes = true;
+		}
+		dst.push_back(ch);
+	}
+	if(needsQuotes){
+		dst.insert(dst.begin(), '\"');
+		dst.push_back('\"');
+	}
+}
 
 void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
 	LOG_WARNING("Received shutdown HTTP request. The server will be shutdown now.");
@@ -45,11 +70,57 @@ void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParam
 	session->sendDefault(HTTP_OK);
 }
 
+void onProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
+	OptionalMap headers;
+	headers.set("Content-Type", "text/csv; charset=utf-8");
+	headers.set("Content-Disposition", "attachment; name=\"profile.csv\"");
+
+	StreamBuffer contents;
+	contents.put("file,line,func,samples,us_total,us_exclusive\r\n");
+	AUTO(snapshot, ProfileManager::snapshot());
+	std::string str;
+	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
+		escapeCsvField(str, it->file.get());
+		contents.put(str);
+		char temp[256];
+		unsigned len = std::sprintf(temp, ",%llu,", (unsigned long long)it->line);
+		contents.put(temp, len);
+		escapeCsvField(str, it->func.get());
+		contents.put(str);
+		len = std::sprintf(temp, ",%llu,%llu,%llu\r\n", it->samples, it->usTotal, it->usExclusive);
+		contents.put(temp, len);
+	}
+
+	session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
+}
+
+void onModules(boost::shared_ptr<HttpSession> session, OptionalMap){
+	OptionalMap headers;
+	headers.set("Content-Type", "text/csv; charset=utf-8");
+	headers.set("Content-Disposition", "attachment; name=\"profile.csv\"");
+
+	StreamBuffer contents;
+	contents.put("path,ref_count\r\n");
+	AUTO(snapshot, ModuleManager::snapshot());
+	std::string str;
+	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
+		escapeCsvField(str, it->path.c_str());
+		contents.put(str);
+		char temp[64];
+		const unsigned len = std::sprintf(temp, ",%llu\r\n", (unsigned long long)it->refCount);
+		contents.put(temp, len);
+	}
+
+	session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
+}
+
 const std::pair<
 	const char *, void (*)(boost::shared_ptr<HttpSession>, OptionalMap)
 	> JUMP_TABLE[] =
 {
 	std::make_pair("load_module", &onLoadModule),
+	std::make_pair("modules", &onModules),
+	std::make_pair("profile", &onProfile),
 	std::make_pair("shutdown", &onShutdown),
 	std::make_pair("unload_module", &onUnloadModule),
 };

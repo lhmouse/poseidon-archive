@@ -103,18 +103,6 @@ boost::shared_ptr<Module> ModuleManager::get(const std::string &path){
 	}
 	return it->second.module;
 }
-std::vector<ModuleInfo> ModuleManager::getLoadedList(){
-	std::vector<ModuleInfo> ret;
-	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
-	for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
-		ret.push_back(ModuleInfo());
-		ModuleInfo &mi = ret.back();
-		mi.name = it->first;
-		mi.refCount = it->second.module.use_count();
-	}
-	return ret;
-}
-
 boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
 	AUTO(module, get(path));
 	if(module){
@@ -160,4 +148,16 @@ bool ModuleManager::unload(const std::string &path){
 		LOG_ERROR("Unknown exception thrown while unloading module: ", path);
 	}
 	return true;
+}
+
+std::vector<ModuleInfo> ModuleManager::snapshot(){
+	std::vector<ModuleInfo> ret;
+	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
+	for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
+		ret.push_back(ModuleInfo());
+		ModuleInfo &mi = ret.back();
+		mi.path = it->first;
+		mi.refCount = it->second.module.use_count();
+	}
+	return ret;
 }

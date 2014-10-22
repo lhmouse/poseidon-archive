@@ -110,6 +110,6 @@ int main(int argc, char **argv){
 		LOG_ERROR("Unknown exception thrown in main().");
 	}
 
-	LOG_ERROR("----------------- Server has exited abnormally -----------------");
+	LOG_WARNING("----------------- Server has exited abnormally -----------------");
 	return EXIT_FAILURE;
 }
