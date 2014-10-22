@@ -28,9 +28,9 @@ StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
 	}
 	StreamBuffer ret;
 	boost::uint16_t tmp;
-	storeLe(tmp, protocolId);
-	ret.put(&tmp, 2);
 	storeLe(tmp, size);
+	ret.put(&tmp, 2);
+	storeLe(tmp, protocolId);
 	ret.put(&tmp, 2);
 	ret.splice(contents);
 	return ret;
@@ -111,10 +111,10 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 				}
 				boost::uint16_t tmp;
 				m_payload.get(&tmp, 2);
-				m_protocolId = loadLe(tmp);
-				m_payload.get(&tmp, 2);
 				m_payloadLen = loadLe(tmp);
-				LOG_DEBUG("Protocol id = ", m_protocolId, ", len = ", m_payloadLen);
+				m_payload.get(&tmp, 2);
+				m_protocolId = loadLe(tmp);
+				LOG_DEBUG("Protocol len = ", m_payloadLen, ", id = ", m_protocolId);
 
 				const std::size_t maxRequestLength = PlayerServletManager::getMaxRequestLength();
 				if((unsigned)m_payloadLen >= maxRequestLength){
