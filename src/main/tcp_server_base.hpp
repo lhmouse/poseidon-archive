@@ -9,6 +9,8 @@
 
 namespace Poseidon {
 
+class TcpSessionBase;
+
 // 抽象工厂模式
 class TcpServerBase : boost::noncopyable {
 private:
@@ -16,7 +18,9 @@ private:
 	class SslImplClient;
 
 private:
-	std::string m_bindAddr;
+	const std::string m_bindAddr;
+	const unsigned m_bindPort;
+
 	ScopedFile m_listen;
 	boost::scoped_ptr<SslImplServer> m_sslImplServer;
 
@@ -27,10 +31,16 @@ public:
 
 protected:
 	// 工厂函数。返回空指针导致抛出一个异常。
-	virtual boost::shared_ptr<class TcpSessionBase>
-		onClientConnect(Move<ScopedFile> client) const = 0;
+	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(Move<ScopedFile> client) const = 0;
 
 public:
+	const std::string &getLocalIp() const {
+		return m_bindAddr;
+	}
+	unsigned getLocalPort() const {
+		return m_bindPort;
+	}
+
 	boost::shared_ptr<TcpSessionBase> tryAccept() const;
 };
 

@@ -78,15 +78,8 @@ protected:
 
 TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort,
 	const std::string &cert, const std::string &privateKey)
+	: m_bindAddr(bindAddr), m_bindPort(bindPort)
 {
-	char port[16];
-	const unsigned len = std::sprintf(port, ":%hu", bindPort);
-	m_bindAddr.reserve(bindAddr.size() + len);
-	m_bindAddr.assign(bindAddr);
-	m_bindAddr.append(port, len);
-
-	LOG_INFO("Creating ", (cert.empty() ? "" : "SSL "), "socket server on ", m_bindAddr, "...");
-
 	union {
 		::sockaddr sa;
 		::sockaddr_in sin;
@@ -134,9 +127,11 @@ TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort,
 	if(!cert.empty()){
 		m_sslImplServer.reset(new SslImplServer(cert, privateKey));
 	}
+
+	LOG_INFO("Created ", (m_sslImplServer ? "" : "SSL "), "socket server on ", m_bindAddr, ':', m_bindPort);
 }
 TcpServerBase::~TcpServerBase(){
-	LOG_INFO("Destroyed socket server on ", m_bindAddr);
+	LOG_INFO("Destroyed ", (m_sslImplServer ? "" : "SSL "), "socket server on ", m_bindAddr, ':', m_bindPort);
 }
 
 boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
