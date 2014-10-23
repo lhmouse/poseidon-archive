@@ -107,7 +107,7 @@ void onModules(boost::shared_ptr<HttpSession> session, OptionalMap){
 		escapeCsvField(str, it->path.get());
 		contents.put(str);
 		char temp[64];
-		const unsigned len = std::sprintf(temp, ",%llu\r\n", (unsigned long long)it->refCount);
+		unsigned len = std::sprintf(temp, ",%llu\r\n", (unsigned long long)it->refCount);
 		contents.put(temp, len);
 	}
 
