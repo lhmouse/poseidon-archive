@@ -172,8 +172,8 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 void daemonLoop(){
 	const boost::scoped_array<unsigned char> data(new unsigned char[g_dataBufferSize]);
 	const boost::scoped_array< ::epoll_event> events(new ::epoll_event[g_eventBufferSize]);
-	std::size_t epollTimeout = 0;
 
+	std::size_t epollTimeout = 0;
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
 	std::vector<boost::shared_ptr<const TcpServerBase> > servers;
 
@@ -359,6 +359,38 @@ void daemonLoop(){
 		}
 		if(epollTimeout > g_maxTimeout){
 			epollTimeout = g_maxTimeout;
+		}
+	}
+
+	SessionMap remaining;
+	{
+		const boost::mutex::scoped_lock lock(g_sessionMutex);
+		remaining.swap(g_sessions);
+	}
+	if(!remaining.empty()){
+		LOG_DEBUG("Flushing data on ", remaining.size(), " socket(s).");
+
+		for(AUTO(it, remaining.begin()); it != remaining.end(); ++it){
+			const AUTO_REF(session, it->session);
+			try {
+				::ssize_t bytesWritten;
+				for(;;){
+					{
+						boost::mutex::scoped_lock sessionLock;
+						bytesWritten = TcpSessionImpl::doWrite(*session,
+							sessionLock, data.get(), g_dataBufferSize);
+					}
+					if(bytesWritten <= 0){
+						break;
+					}
+					LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp(),
+						": ", HexEncoder(data.get(), bytesWritten));
+				}
+			} catch(std::exception &e){
+				LOG_ERROR("std::exception thrown while flush data: what = ", e.what());
+			} catch(...){
+				LOG_ERROR("Unknown exception thrown while flush data.");
+			}
 		}
 	}
 }
