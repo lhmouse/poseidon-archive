@@ -75,17 +75,8 @@ lib_LTLIBRARIES=	\
 lib_libposeidon_player_server_la_SOURCES=	\
 	src/player_server/module_main.cpp
 
-lib_libposeidon_player_server_la_LIBADD=	\
-	lib/libposeidon-main.la
-
 lib_libposeidon_http_server_la_SOURCES=	\
 	src/http_server/module_main.cpp
 
-lib_libposeidon_http_server_la_LIBADD=	\
-	lib/libposeidon-main.la
-
 lib_libposeidon_template_la_SOURCES=	\
 	src/template/module_main.cpp
-
-lib_libposeidon_template_la_LIBADD=	\
-	lib/libposeidon-main.la
