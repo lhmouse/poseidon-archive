@@ -67,10 +67,10 @@ void run(){
 	START(PlayerServletManager);
 	START(HttpServletManager);
 	START(WebSocketServletManager);
-	START(ModuleManager);
 	START(EventListenerManager);
-
 	START(SystemHttpServer);
+
+	START(ModuleManager);
 
 	LOG_INFO("Waiting for all MySQL operations to complete...");
 	MySqlDaemon::waitForAllAsyncOperations();
