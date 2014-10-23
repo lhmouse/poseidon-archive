@@ -4,6 +4,7 @@ ACLOCAL_AMFLAGS=-I m4
 AUTOMAKE_OPTIONS=foreign subdir-objects
 AM_CPPFLAGS=-Wall -Wextra -Werror -Wno-error=unused-parameter -include $(PRECOMPILED_HEADER)
 AM_CXXFLAGS=
+AM_LIBADD=lib/libposeidon-main.la
 
 BUILT_SOURCES=	\
 	$(PRECOMPILED_HEADER).gch
@@ -66,6 +67,8 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/http/websocket/session.cpp	\
 	src/main/mysql/object_base.cpp
 
+lib_libposeidon_main_la_LIBADD=
+
 lib_LTLIBRARIES=	\
 	lib/libposeidon-main.la	\
 	lib/libposeidon-player-server.la	\
@@ -75,17 +78,8 @@ lib_LTLIBRARIES=	\
 lib_libposeidon_player_server_la_SOURCES=	\
 	src/player_server/module_main.cpp
 
-lib_libposeidon_player_server_la_LIBADD=	\
-	lib/libposeidon-main.la
-
 lib_libposeidon_http_server_la_SOURCES=	\
 	src/http_server/module_main.cpp
 
-lib_libposeidon_http_server_la_LIBADD=	\
-	lib/libposeidon-main.la
-
 lib_libposeidon_template_la_SOURCES=	\
 	src/template/module_main.cpp
-
-lib_libposeidon_template_la_LIBADD=	\
-	lib/libposeidon-main.la

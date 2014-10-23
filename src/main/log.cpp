@@ -10,8 +10,18 @@ using namespace Poseidon;
 
 namespace {
 
+bool g_mutexInited = false;
+
+struct MutexDelegator : public boost::mutex {
+	MutexDelegator(){
+		g_mutexInited = true;
+	}
+	~MutexDelegator(){
+		g_mutexInited = false;
+	}
+} g_mutex;
+
 volatile unsigned g_logLevel = 100;
-boost::mutex g_mutex;
 
 __thread unsigned t_tag;
 
@@ -97,8 +107,13 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += '\n';
 
-		const boost::mutex::scoped_lock lock(g_mutex);
-		std::fwrite(line.data(), line.size(), sizeof(char), stdout);
+		{
+			boost::mutex::scoped_lock lock;
+			if(g_mutexInited){
+				boost::mutex::scoped_lock(g_mutex).swap(lock);
+			}
+			std::fwrite(line.data(), line.size(), sizeof(char), stdout);
+		}
 	} catch(...){
 	}
 }
