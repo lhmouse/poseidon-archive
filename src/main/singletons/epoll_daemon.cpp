@@ -1,6 +1,6 @@
 #include "../../precompiled.hpp"
 #include "epoll_daemon.hpp"
-#include "config_file.hpp"
+#include "main_config.hpp"
 #include <boost/thread.hpp>
 #include <sys/epoll.h>
 #include <sys/types.h>
@@ -414,13 +414,13 @@ void EpollDaemon::start(){
 	}
 	LOG_INFO("Starting epoll daemon...");
 
-	ConfigFile::get(g_dataBufferSize, "epoll_data_buffer_size");
+	MainConfig::get(g_dataBufferSize, "epoll_data_buffer_size");
 	LOG_DEBUG("Data buffer size = ", g_dataBufferSize);
 
-	ConfigFile::get(g_eventBufferSize, "epoll_event_buffer_size");
+	MainConfig::get(g_eventBufferSize, "epoll_event_buffer_size");
 	LOG_DEBUG("Event buffer size = ", g_eventBufferSize);
 
-	ConfigFile::get(g_maxTimeout, "epoll_max_timeout");
+	MainConfig::get(g_maxTimeout, "epoll_max_timeout");
 	LOG_DEBUG("Max timeout = ", g_maxTimeout);
 
 	g_epoll.reset(::epoll_create(4096));

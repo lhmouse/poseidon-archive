@@ -3,7 +3,7 @@
 #include <signal.h>
 #include "log.hpp"
 #include "exception.hpp"
-#include "singletons/config_file.hpp"
+#include "singletons/main_config.hpp"
 #include "singletons/timer_daemon.hpp"
 #include "singletons/mysql_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
@@ -92,11 +92,11 @@ int main(int argc, char **argv){
 	::signal(SIGTERM, sigTermProc);
 
 	try {
-		ConfigFile::setRunPath((1 < argc) ? argv[1] : "/var/poseidon");
-		ConfigFile::reload();
+		MainConfig::setRunPath((1 < argc) ? argv[1] : "/var/poseidon");
+		MainConfig::reload();
 
 		unsigned logLevel = Logger::LV_INFO;
-		ConfigFile::get(logLevel, "log_level");
+		MainConfig::get(logLevel, "log_level");
 		LOG_INFO("Setting log level to ", logLevel, "...");
 		Logger::setLevel(logLevel);
 

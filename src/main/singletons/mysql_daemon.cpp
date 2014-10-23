@@ -6,7 +6,7 @@
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include <mysql/mysql.h>
-#include "config_file.hpp"
+#include "main_config.hpp"
 #include "../mysql/object_base.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
@@ -233,22 +233,22 @@ void MySqlDaemon::start(){
 	}
 	LOG_INFO("Starting MySQL daemon...");
 
-	ConfigFile::get(g_databaseServer, "database_server");
+	MainConfig::get(g_databaseServer, "database_server");
 	LOG_DEBUG("MySQL server = ", g_databaseServer);
 
-	ConfigFile::get(g_databaseUsername, "database_username");
+	MainConfig::get(g_databaseUsername, "database_username");
 	LOG_DEBUG("MySQL username = ", g_databaseUsername);
 
-	ConfigFile::get(g_databasePassword, "database_password");
+	MainConfig::get(g_databasePassword, "database_password");
 	LOG_DEBUG("MySQL password = ", g_databasePassword);
 
-	ConfigFile::get(g_databaseName, "database_name");
+	MainConfig::get(g_databaseName, "database_name");
 	LOG_DEBUG("MySQL database name = ", g_databaseName);
 
-	ConfigFile::get(g_databaseSaveDelay, "database_save_delay");
+	MainConfig::get(g_databaseSaveDelay, "database_save_delay");
 	LOG_DEBUG("MySQL save delay = ", g_databaseSaveDelay);
 
-	ConfigFile::get(g_databaseMaxReconnDelay, "database_max_reconn_delay");
+	MainConfig::get(g_databaseMaxReconnDelay, "database_max_reconn_delay");
 	LOG_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
 
 	boost::thread(threadProc).swap(g_thread);

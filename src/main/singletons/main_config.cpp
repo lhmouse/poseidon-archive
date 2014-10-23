@@ -1,5 +1,5 @@
 #include "../../precompiled.hpp"
-#include "config_file.hpp"
+#include "main_config.hpp"
 #include "../config_file.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
@@ -7,7 +7,7 @@ using namespace Poseidon;
 
 namespace {
 
-OptionalMap g_config;
+ConfigFile g_config;
 
 std::string getRealPath(const char *path){
 	std::string ret;
@@ -29,36 +29,19 @@ std::string getRealPath(const char *path){
 
 }
 
-void ConfigFile::setRunPath(const char *path){
+void MainConfig::setRunPath(const char *path){
 	const AUTO(realPath, getRealPath(path));
 	LOG_INFO("Setting working directory: ", realPath);
-
 	if(::chdir(realPath.c_str()) != 0){
 		DEBUG_THROW(SystemError, errno);
 	}
 }
-
-void ConfigFile::reload(){
+void MainConfig::reload(){
 	const AUTO(realPath, getRealPath("main.conf"));
 	LOG_INFO("Loading config file: ", realPath);
-
-	OptionalMap config;
-	if(!loadConfigFile(config, realPath)){
-		LOG_ERROR("Error loading main config file: ", realPath);
-		DEBUG_THROW(Exception, "Error loading main config file");
-	}
-	g_config.swap(config);
+	ConfigFile(realPath).swap(g_config);
 }
 
-const std::string &ConfigFile::get(const char *key){
-	return g_config.get(key);
-}
-std::vector<std::string> ConfigFile::getAll(const char *key){
-	std::vector<std::string> ret;
-	const AUTO(range, g_config.range(key));
-	ret.reserve(std::distance(range.first, range.second));
-	for(AUTO(it, range.first); it != range.second; ++it){
-		ret.push_back(it->second);
-	}
-	return ret;
+const ConfigFile &MainConfig::getConfigFile(){
+	return g_config;
 }

@@ -5,7 +5,7 @@
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
-#include "config_file.hpp"
+#include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
 using namespace Poseidon;
@@ -64,7 +64,7 @@ std::map<unsigned, std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet
 }
 
 void PlayerServletManager::start(){
-	ConfigFile::get(g_maxRequestLength, "player_max_request_length");
+	MainConfig::get(g_maxRequestLength, "player_max_request_length");
 	LOG_DEBUG("Max request length = ", g_maxRequestLength);
 }
 void PlayerServletManager::stop(){

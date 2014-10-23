@@ -5,7 +5,7 @@
 #include "http_servlet_manager.hpp"
 #include "module_manager.hpp"
 #include "profile_manager.hpp"
-#include "config_file.hpp"
+#include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
 #include "../profiler.hpp"
@@ -207,12 +207,12 @@ void SystemHttpServer::start(){
 	std::vector<std::string> authUserPasses;
 	std::string path("/~sys");
 
-	ConfigFile::get(bind, "system_http_bind");
-	ConfigFile::get(port, "system_http_port");
-	ConfigFile::get(certificate, "system_http_certificate");
-	ConfigFile::get(privateKey, "system_http_private_key");
-	ConfigFile::getAll(authUserPasses, "system_http_auth_user_pass");
-	ConfigFile::get(path, "system_http_path");
+	MainConfig::get(bind, "system_http_bind");
+	MainConfig::get(port, "system_http_port");
+	MainConfig::get(certificate, "system_http_certificate");
+	MainConfig::get(privateKey, "system_http_private_key");
+	MainConfig::getAll(authUserPasses, "system_http_auth_user_pass");
+	MainConfig::get(path, "system_http_path");
 
 	g_systemServer = EpollDaemon::registerHttpServer(bind, port, certificate, privateKey, authUserPasses);
 

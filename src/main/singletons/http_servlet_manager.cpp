@@ -5,7 +5,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
-#include "config_file.hpp"
+#include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
 using namespace Poseidon;
@@ -93,13 +93,13 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 }
 
 void HttpServletManager::start(){
-	ConfigFile::get(g_maxRequestLength, "http_max_request_length");
+	MainConfig::get(g_maxRequestLength, "http_max_request_length");
 	LOG_DEBUG("Max request length = ", g_maxRequestLength);
 
-	ConfigFile::get(g_requestTimeout, "http_request_timeout");
+	MainConfig::get(g_requestTimeout, "http_request_timeout");
 	LOG_DEBUG("Request timeout = ", g_requestTimeout);
 
-	ConfigFile::get(g_keepAliveTimeout, "http_keep_alive_timeout");
+	MainConfig::get(g_keepAliveTimeout, "http_keep_alive_timeout");
 	LOG_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
 }
 void HttpServletManager::stop(){

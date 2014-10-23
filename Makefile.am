@@ -44,7 +44,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/hash.cpp	\
 	src/main/uuid.cpp	\
 	src/main/config_file.cpp	\
-	src/main/singletons/config_file.cpp	\
+	src/main/singletons/main_config.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
 	src/main/singletons/mysql_daemon.cpp	\
 	src/main/singletons/epoll_daemon.cpp	\

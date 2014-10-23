@@ -5,7 +5,7 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/type_traits/decay.hpp>
 #include <dlfcn.h>
-#include "config_file.hpp"
+#include "main_config.hpp"
 #include "../log.hpp"
 #include "../raii.hpp"
 #include "../exception.hpp"
@@ -96,8 +96,9 @@ struct ModuleItem {
 void ModuleManager::start(){
 	LOG_INFO("Loading init modules...");
 
-	const AUTO(modules, ConfigFile::getAll("init_module"));
-	for(AUTO(it, modules.begin()); it != modules.end(); ++it){
+	std::vector<std::string> initModules;
+	MainConfig::getAll(initModules, "init_module");
+	for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
 		load(*it);
 	}
 }

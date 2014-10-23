@@ -2,16 +2,34 @@
 #include "config_file.hpp"
 #include <fstream>
 #include "log.hpp"
+#include "exception.hpp"
 using namespace Poseidon;
 
-namespace Poseidon {
+ConfigFile::ConfigFile(){
+}
+ConfigFile::ConfigFile(const char *path){
+	if(!load(path)){
+		DEBUG_THROW(Exception, "Failed to load config file");
+	}
+}
+ConfigFile::ConfigFile(const SharedNtmbs &path){
+	if(!load(path)){
+		DEBUG_THROW(Exception, "Failed to load config file");
+	}
+}
+ConfigFile::ConfigFile(const std::string &path){
+	if(!load(path)){
+		DEBUG_THROW(Exception, "Failed to load config file");
+	}
+}
 
-bool loadConfigFile(OptionalMap &ret, const char *path){
+bool ConfigFile::load(const char *path){
 	std::ifstream ifs(path);
 	if(!ifs){
 		LOG_ERROR("Could not open config file: ", path);
 		return false;
 	}
+	OptionalMap contents;
 	std::string line;
 	std::size_t count = 0;
 	while(std::getline(ifs, line)){
@@ -45,14 +63,15 @@ bool loadConfigFile(OptionalMap &ret, const char *path){
 			line.erase(line.begin() + pos + 1, line.end());
 
 			LOG_DEBUG("Config: ", key, " = ", line);
-			ret.append(STD_MOVE(key), STD_MOVE(line));
+			contents.append(STD_MOVE(key), STD_MOVE(line));
 		}
 	}
+	m_contents.swap(contents);
 	return true;
 }
-bool loadConfigFile(OptionalMap &ret, const std::string &path){
-	return loadConfigFile(ret, path.c_str());
+bool ConfigFile::load(const SharedNtmbs &path){
+	return load(path.get());
 }
-
+bool ConfigFile::load(const std::string &path){
+	return load(path.c_str());
 }
-

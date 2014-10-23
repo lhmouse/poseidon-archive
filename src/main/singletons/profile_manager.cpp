@@ -3,7 +3,7 @@
 #include <map>
 #include <cstring>
 #include <boost/thread/shared_mutex.hpp>
-#include "config_file.hpp"
+#include "main_config.hpp"
 #include "../atomic.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
@@ -50,7 +50,7 @@ std::map<ProfileKey, ProfileCounters> g_profile;
 }
 
 void ProfileManager::start(){
-	ConfigFile::get(g_enabled, "enable_profiler");
+	MainConfig::get(g_enabled, "enable_profiler");
 	LOG_DEBUG("Enable profiler = ", g_enabled);
 }
 void ProfileManager::stop(){
