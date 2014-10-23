@@ -50,7 +50,7 @@ public:
 			LOG_ERROR("Error loading dynamic library: ", error);
 			DEBUG_THROW(Exception, error);
 		}
-		LOG_DEBUG("Handle = ", m_handle);
+		LOG_DEBUG("Handle = ", m_handle.get());
 	}
 	~Module(){
 		LOG_INFO("Unloading module: ", m_path);
