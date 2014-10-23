@@ -11,7 +11,7 @@ using namespace Poseidon;
 namespace {
 
 boost::mutex g_mutex;
-boost::random::mt19937 g_rng(getMonoClock());
+boost::mt19937 g_rng(getMonoClock());
 boost::uuids::random_generator g_generator(g_rng);
 
 }
