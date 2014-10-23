@@ -102,8 +102,8 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += '\n';
 
-   		{
-	    	boost::call_once(&initMutex, g_mutexInitFlag);
+		{
+			boost::call_once(&initMutex, g_mutexInitFlag);
 			boost::mutex::scoped_lock lock;
 	    	if(g_mutex){
 				boost::mutex::scoped_lock(*g_mutex).swap(lock);
