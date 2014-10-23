@@ -49,11 +49,14 @@ void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
 void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
 	AUTO_REF(name, getParams.get("module"));
 	if(name.empty()){
-		LOG_WARNING("Missing parameter module=");
-		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+		LOG_WARNING("Missing parameter 'module'.");
+		session->sendDefault(HTTP_BAD_REQUEST);
+		return;
 	}
 	if(!ModuleManager::loadNoThrow(name)){
-		DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
+		LOG_WARNING("Failed to load module: ", name);
+		session->sendDefault(HTTP_NOT_FOUND);
+		return;
 	}
 	session->sendDefault(HTTP_OK);
 }
@@ -61,11 +64,14 @@ void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
 	AUTO_REF(name, getParams.get("module"));
 	if(name.empty()){
-		LOG_WARNING("Missing parameter module=");
-		DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+		LOG_WARNING("Missing parameter 'module'.");
+		session->sendDefault(HTTP_BAD_REQUEST);
+		return;
 	}
 	if(!ModuleManager::unload(name)){
-		DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
+		LOG_WARNING("Failed to load module: ", name);
+		session->sendDefault(HTTP_NOT_FOUND);
+		return;
 	}
 	session->sendDefault(HTTP_OK);
 }
