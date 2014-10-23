@@ -18,6 +18,7 @@
 #include "../main/player/protocol_base.hpp"
 #include "../main/singletons/player_servlet_manager.hpp"
 #include "../main/mysql/object_base.hpp"
+#include "../main/uuid.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -354,4 +355,10 @@ extern "C" void poseidonModuleInit(boost::weak_ptr<Module> module, boost::shared
 	obj->set_str("meow");
 	obj->set_bi(456789);
 	obj->asyncSave();
+
+	Uuid uuid = Uuid::createRandom();
+	std::string str = uuid.toHex();
+	LOG_DEBUG("UUID = ", str);
+	Uuid uuid2 = Uuid::createFromString(str);
+	LOG_DEBUG("UUID = ", uuid2.toHex());
 }

@@ -42,6 +42,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/tcp_client_base.cpp	\
 	src/main/event_base.cpp	\
 	src/main/hash.cpp	\
+	src/main/uuid.cpp	\
 	src/main/singletons/config_file.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
 	src/main/singletons/mysql_daemon.cpp	\
