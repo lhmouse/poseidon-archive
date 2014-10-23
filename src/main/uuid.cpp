@@ -1,21 +1,12 @@
 #include "../precompiled.hpp"
 #include "uuid.hpp"
-#include <boost/thread/mutex.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/lexical_cast.hpp>
 using namespace Poseidon;
 
-namespace {
-
-boost::mutex g_mutex;
-boost::uuids::random_generator g_generator;
-
-}
-
 Uuid Uuid::createRandom(){
-	const boost::mutex::scoped_lock(g_mutex);
-	return Uuid(g_generator());
+	return Uuid(boost::uuids::random_generator()());
 }
 Uuid Uuid::createFromString(const std::string &str){
 	return Uuid(boost::lexical_cast<boost::uuids::uuid>(str));

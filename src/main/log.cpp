@@ -2,7 +2,7 @@
 #include "log.hpp"
 #include "atomic.hpp"
 #include "utilities.hpp"
-#include <cstdio>
+#include <boost/thread/once.hpp>
 #include <boost/thread/mutex.hpp>
 #include <unistd.h>
 #include <time.h>
@@ -10,20 +10,15 @@ using namespace Poseidon;
 
 namespace {
 
-bool g_mutexInited = false;
-
-struct MutexDelegator : public boost::mutex {
-	MutexDelegator(){
-		g_mutexInited = true;
-	}
-	~MutexDelegator(){
-		g_mutexInited = false;
-	}
-} g_mutex;
-
 volatile unsigned g_logLevel = 100;
+boost::once_flag g_mutexInitFlag;
+boost::scoped_ptr<boost::mutex> g_mutex;
 
 __thread unsigned t_tag;
+
+void initMutex(){
+	g_mutex.reset(new boost::mutex);
+}
 
 }
 
@@ -107,10 +102,11 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += '\n';
 
-		{
+   		{
+	    	boost::call_once(&initMutex, g_mutexInitFlag);
 			boost::mutex::scoped_lock lock;
-			if(g_mutexInited){
-				boost::mutex::scoped_lock(g_mutex).swap(lock);
+	    	if(g_mutex){
+				boost::mutex::scoped_lock(*g_mutex).swap(lock);
 			}
 			std::fwrite(line.data(), line.size(), sizeof(char), stdout);
 		}
