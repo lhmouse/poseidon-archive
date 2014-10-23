@@ -22,7 +22,7 @@ using namespace Poseidon;
 
 namespace {
 
-std::size_t g_tcpBufferSize		= 1024;
+std::size_t g_dataBufferSize	= 1024;
 std::size_t g_eventBufferSize	= 256;
 std::size_t g_maxTimeout		= 100;
 
@@ -54,6 +54,26 @@ enum {
 	IDX_READ,
 	IDX_WRITE,
 };
+
+struct HexEncoder {
+	const void *const read;
+	const std::size_t size;
+
+	HexEncoder(const void *read_, std::size_t size_)
+		: read(read_), size(size_)
+	{
+	}
+};
+
+std::ostream &operator<<(std::ostream &os, const HexEncoder &rhs){
+	const AUTO(data, reinterpret_cast<const unsigned char *>(rhs.read));
+	for(std::size_t i = 0; i < rhs.size; ++i){
+		char temp[16];
+		unsigned len = std::sprintf(temp, "%02X ", data[i]);
+		os.write(temp, len);
+	}
+	return os;
+}
 
 boost::mutex g_sessionMutex;
 SessionMap g_sessions;
@@ -150,7 +170,7 @@ void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
 }
 
 void daemonLoop(){
-	const boost::scoped_array<unsigned char> data(new unsigned char[g_tcpBufferSize]);
+	const boost::scoped_array<unsigned char> data(new unsigned char[g_dataBufferSize]);
 	const boost::scoped_array< ::epoll_event> events(new ::epoll_event[g_eventBufferSize]);
 	std::size_t epollTimeout = 0;
 
@@ -174,7 +194,7 @@ void daemonLoop(){
 					continue;
 				}
 				const ::ssize_t bytesRead = TcpSessionImpl::doRead(*session,
-					data.get(), g_tcpBufferSize);
+					data.get(), g_dataBufferSize);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -185,11 +205,12 @@ void daemonLoop(){
 					}
 					DEBUG_THROW(SystemError, errno);
 				} else if(bytesRead == 0){
-					LOG_INFO("Connection closed by remote host: ip = ", session->getRemoteIp());
+					LOG_INFO("Connection closed by remote host: ", session->getRemoteIp());
 					session->send(StreamBuffer(), true);
 					continue;
 				}
-				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp());
+				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp(),
+					": ", HexEncoder(data.get(), bytesRead));
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while dispatching data: what = ", e.what());
 				session->send(StreamBuffer(), true);
@@ -218,7 +239,7 @@ void daemonLoop(){
 				{
 					boost::mutex::scoped_lock sessionLock;
 					bytesWritten = TcpSessionImpl::doWrite(*session,
-						sessionLock, data.get(), g_tcpBufferSize);
+						sessionLock, data.get(), g_dataBufferSize);
 					shutdown = session->hasBeenShutdown();
 					if(bytesWritten == 0){
 						if(!shutdown){
@@ -242,7 +263,8 @@ void daemonLoop(){
 					}
 					continue;
 				}
-				LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp());
+				LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp(),
+					": ", HexEncoder(data.get(), bytesWritten));
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while writing socket: what = ", e.what());
 				remove(session);
@@ -360,8 +382,8 @@ void EpollDaemon::start(){
 	}
 	LOG_INFO("Starting epoll daemon...");
 
-	ConfigFile::get(g_tcpBufferSize, "epoll_tcp_buffer_size");
-	LOG_DEBUG("TCP buffer size = ", g_tcpBufferSize);
+	ConfigFile::get(g_dataBufferSize, "epoll_data_buffer_size");
+	LOG_DEBUG("Data buffer size = ", g_dataBufferSize);
 
 	ConfigFile::get(g_eventBufferSize, "epoll_event_buffer_size");
 	LOG_DEBUG("Event buffer size = ", g_eventBufferSize);
