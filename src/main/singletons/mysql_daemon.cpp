@@ -94,6 +94,7 @@ void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 			", state = ", e.getSQLState(), ", what = ", e.what());
 		throw;
 	}
+	LOG_INFO("Successfully connected to MySQL server.");
 }
 
 void daemonLoop(){
