@@ -450,7 +450,7 @@ std::vector<EpollSnapshotItem> EpollDaemon::snapshot(){
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	ret.reserve(g_sessions.size());
 	for(AUTO(it, g_sessions.begin()); it != g_sessions.end(); ++it){
-		ret.push_back(VAL_INIT);
+		ret.push_back(EpollSnapshotItem());
 		AUTO_REF(item, ret.back());
 		item.remoteIp = it->session->getRemoteIp();
 		item.remotePort = it->session->getRemotePort();
