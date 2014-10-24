@@ -20,10 +20,53 @@ struct ModuleManager {
 	static void start();
 	static void stop();
 
-	static boost::shared_ptr<Module> get(const std::string &path);
-	static boost::shared_ptr<Module> load(const std::string &path);
-	static boost::shared_ptr<Module> loadNoThrow(const std::string &path);
-	static bool unload(const std::string &path);
+	static boost::shared_ptr<Module> get(const char *path);
+	static boost::shared_ptr<Module> get(const SharedNtmbs &path){
+		return get(path.get());
+	}
+	static boost::shared_ptr<Module> get(const std::string &path){
+		return get(path.c_str());
+	}
+
+	static boost::shared_ptr<Module> load(const char *path);
+	static boost::shared_ptr<Module> load(const SharedNtmbs &path){
+		return load(path.get());
+	}
+	static boost::shared_ptr<Module> load(const std::string &path){
+		return load(path.c_str());
+	}
+
+	static boost::shared_ptr<Module> loadNoThrow(const char *path);
+	static boost::shared_ptr<Module> loadNoThrow(const SharedNtmbs &path){
+		return loadNoThrow(path.get());
+	}
+	static boost::shared_ptr<Module> loadNoThrow(const std::string &path){
+		return loadNoThrow(path.c_str());
+	}
+
+	static bool unload(const boost::shared_ptr<Module> &module);
+
+	static bool unload(const char *path){
+		boost::shared_ptr<Module> module = get(path);
+		if(!module){
+			return false;
+		}
+		return unload(module);
+	}
+	static bool unload(const SharedNtmbs &path){
+		boost::shared_ptr<Module> module = get(path);
+		if(!module){
+			return false;
+		}
+		return unload(module);
+	}
+	static bool unload(const std::string &path){
+		boost::shared_ptr<Module> module = get(path);
+		if(!module){
+			return false;
+		}
+		return unload(module);
+	}
 
 	static std::vector<ModuleSnapshotItem> snapshot();
 

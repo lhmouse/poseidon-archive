@@ -9,13 +9,27 @@
 #include "../log.hpp"
 #include "../raii.hpp"
 #include "../exception.hpp"
+#include "../multi_index_map.hpp"
 using namespace Poseidon;
 
 namespace {
 
+struct ModuleMapElement {
+	SharedNtmbs path;
+	boost::shared_ptr<struct Module> module;
+
+	ModuleContexts contexts;
+};
+
+MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,
+	UNIQUE_MEMBER_INDEX(path),
+	MULTI_MEMBER_INDEX(module)
+);
+
 boost::mutex g_dlMutex;
+
 boost::shared_mutex g_mutex;
-std::map<SharedNtmbs, struct ModuleItem> g_modules;
+ModuleMap g_modules;
 
 struct DynamicLibraryCloser {
 	CONSTEXPR void *operator()() NOEXCEPT {
@@ -38,8 +52,8 @@ private:
 	ScopedHandle<DynamicLibraryCloser> m_handle;
 
 public:
-	explicit Module(const SharedNtmbs &path)
-		: m_path(path.forkOwning())
+	explicit Module(SharedNtmbs path)
+		: m_path(STD_MOVE(path))
 	{
 		LOG_INFO("Loading module: ", m_path);
 
@@ -80,19 +94,6 @@ public:
 	}
 };
 
-namespace {
-
-struct ModuleItem {
-	boost::shared_ptr<Module> module;
-	ModuleContexts contexts;
-
-	bool operator<(const ModuleItem &rhs) const {
-		return module->getPath() < rhs.module->getPath();
-	}
-};
-
-}
-
 void ModuleManager::start(){
 	LOG_INFO("Loading init modules...");
 
@@ -108,63 +109,60 @@ void ModuleManager::stop(){
 	g_modules.clear();
 }
 
-boost::shared_ptr<Module> ModuleManager::get(const std::string &path){
-	const AUTO(key, SharedNtmbs::createNonOwning(path));
-
+boost::shared_ptr<Module> ModuleManager::get(const char *path){
 	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
-	const AUTO(it, g_modules.find(key));
+	const AUTO(it, g_modules.find<0>(SharedNtmbs::createNonOwning(path)));
 	if(it == g_modules.end()){
 		return VAL_INIT;
 	}
-	return it->second.module;
+	return it->module;
 }
-boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
+boost::shared_ptr<Module> ModuleManager::load(const char *path){
 	AUTO(module, get(path));
-	if(module){
-		return module;
-	}
-
-	const AUTO(key, SharedNtmbs::createOwning(path));
-
-	const AUTO(newModule, boost::make_shared<Module>(key));
-	ModuleContexts contexts;
-	newModule->init(contexts);
-	module = newModule;
-	{
-		const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
-		AUTO_REF(item, g_modules[key]);
-		item.module = newModule;
-		item.contexts.swap(contexts);
+	if(!module){
+		ModuleMapElement element;
+		element.path = SharedNtmbs::createOwning(path);
+		element.module = boost::make_shared<Module>(element.path);
+		element.module->init(element.contexts);
+		module = element.module;
+		{
+			const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
+			g_modules.insert(STD_MOVE(element));
+		}
 	}
 	return module;
 }
-boost::shared_ptr<Module> ModuleManager::loadNoThrow(const std::string &path){
+boost::shared_ptr<Module> ModuleManager::loadNoThrow(const char *path){
 	try {
 		return load(path);
 	} catch(std::exception &e){
-		LOG_ERROR("std::exception thrown while loading module: ", path, ", what = ", e.what());
+		LOG_ERROR("std::exception thrown while loading module: ", path,
+			", what = ", e.what());
 	} catch(...){
 		LOG_ERROR("Unknown exception thrown while loading module: ", path);
 	}
 	return VAL_INIT;
 }
-bool ModuleManager::unload(const std::string &path){
-	const AUTO(key, SharedNtmbs::createNonOwning(path));
-
-	const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
-	const AUTO(it, g_modules.find(key));
-	if(it == g_modules.end()){
-		return false;
+bool ModuleManager::unload(const boost::shared_ptr<Module> &module){
+	ModuleContexts contexts;
+	{
+		const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
+		const AUTO(it, g_modules.find<1>(module));
+		if(it == g_modules.end<1>()){
+			return false;
+		}
+		contexts.swap(const_cast<ModuleContexts &>(it->contexts));
+		g_modules.erase<1>(it);
 	}
-
 	try {
-		LOG_INFO("Destroying context of module: ", path);
-		g_modules.erase(it);
-		LOG_INFO("Done destroying context of module: ", path);
+		LOG_INFO("Destroying context of module: ", module->getPath());
+		contexts.clear();
+		LOG_INFO("Done destroying context of module: ", module->getPath());
 	} catch(std::exception &e){
-		LOG_ERROR("std::exception thrown while unloading module: ", path, ", what = ", e.what());
+		LOG_ERROR("std::exception thrown while unloading module: ", module->getPath(),
+			", what = ", e.what());
 	} catch(...){
-		LOG_ERROR("Unknown exception thrown while unloading module: ", path);
+		LOG_ERROR("Unknown exception thrown while unloading module: ", module->getPath());
 	}
 	return true;
 }
@@ -176,8 +174,8 @@ std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
 			ret.push_back(ModuleSnapshotItem());
 			ModuleSnapshotItem &mi = ret.back();
-			mi.path = it->first;
-			mi.refCount = it->second.module.use_count();
+			mi.path = it->path;
+			mi.refCount = it->module.use_count();
 		}
 	}
 	return ret;
