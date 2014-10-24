@@ -82,7 +82,7 @@ void run(){
 }
 
 int main(int argc, char **argv){
-	Logger::setThreadTag("Primary");
+	Logger::setThreadTag("P   "); // Primary
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
 	START(ProfileManager);

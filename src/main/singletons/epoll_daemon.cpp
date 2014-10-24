@@ -397,7 +397,7 @@ void daemonLoop(){
 
 void threadProc(){
 	PROFILE_ME;
-	Logger::setThreadTag("Epoll");
+	Logger::setThreadTag("   N"); // Network
 	LOG_INFO("Epoll daemon started.");
 
 	daemonLoop();

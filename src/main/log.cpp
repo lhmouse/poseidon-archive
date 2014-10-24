@@ -30,7 +30,7 @@ volatile unsigned g_logLevel = 100;
 boost::once_flag g_mutexInitFlag;
 boost::scoped_ptr<boost::mutex> g_mutex;
 
-__thread char t_tag[8] = "Unknown";
+__thread char t_tag[8] = "----";
 
 void initMutex(){
 	g_mutex.reset(new boost::mutex);
@@ -93,7 +93,9 @@ Logger::~Logger() NOEXCEPT {
 		if(useAsciiColors){
 			line += "\x1B[0m";
 		}
+		line += '[';
 		line.append(t_tag, sizeof(t_tag) - 1);
+		line += ']';
 		line += ' ';
 
 		if(useAsciiColors){
