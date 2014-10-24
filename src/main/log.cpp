@@ -30,7 +30,7 @@ volatile unsigned g_logLevel = 100;
 boost::once_flag g_mutexInitFlag;
 boost::scoped_ptr<boost::mutex> g_mutex;
 
-__thread char t_tag[8] = "----";
+__thread char t_tag[5] = "----";
 
 void initMutex(){
 	g_mutex.reset(new boost::mutex);
