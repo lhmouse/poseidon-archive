@@ -143,7 +143,7 @@ struct ValueInitializer {
 #	define AUTO(id_, init_)			auto id_ = init_
 #	define AUTO_REF(id_, init_)		auto &id_ = init_
 #	define STD_MOVE(expr_)			(::std::move(expr_))
-#	define DECLREF(t_)				(::std::declval<typename ::std::remove_reference<t_>::type>())
+#	define DECLREF(t_)				(::std::declval<typename ::std::add_lvalue_reference<t_>::type>())
 #	define VAL_INIT					{ }
 #else
 #	define VALUE_TYPE(expr_)		__typeof__(::Poseidon::valueOfHelper(expr_))
