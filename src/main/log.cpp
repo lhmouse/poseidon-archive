@@ -1,6 +1,5 @@
 #include "precompiled.hpp"
 #include "log.hpp"
-#include <boost/thread/once.hpp>
 #include <boost/thread/mutex.hpp>
 #include <unistd.h>
 #include <time.h>
@@ -27,14 +26,20 @@ const LevelItem LEVEL_ITEMS[] = {
 };
 
 volatile unsigned g_logLevel = 100;
-boost::once_flag g_mutexInitFlag;
-boost::scoped_ptr<boost::mutex> g_mutex;
+
+volatile bool g_mutexInited = false; // 得对付下静态对象的构造顺序问题。
+boost::mutex g_mutex;
 
 __thread char t_tag[5] = "----";
 
-void initMutex(){
-	g_mutex.reset(new boost::mutex);
-}
+struct MutexGuard : boost::noncopyable {
+	MutexGuard(){
+		atomicStore(g_mutexInited, true);
+	}
+	~MutexGuard(){
+		atomicStore(g_mutexInited, false);
+	}
+} g_mutexGuard;
 
 }
 
@@ -137,14 +142,11 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += '\n';
 
-		{
-			boost::call_once(&initMutex, g_mutexInitFlag);
-			boost::mutex::scoped_lock lock;
-	    	if(g_mutex){
-				boost::mutex::scoped_lock(*g_mutex).swap(lock);
-			}
-			std::fwrite(line.data(), line.size(), sizeof(char), stdout);
+		boost::mutex::scoped_lock lock;
+    	if(atomicLoad(g_mutexInited)){ // 如果为 false，则静态的 mutex 还没有被构造或者已被析构。
+			boost::mutex::scoped_lock(g_mutex).swap(lock);
 		}
+		std::fwrite(line.data(), line.size(), sizeof(char), stdout);
 	} catch(...){
 	}
 }
