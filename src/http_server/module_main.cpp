@@ -22,7 +22,7 @@ extern "C" void poseidonModuleInit(WeakModule, ModuleContexts &contexts){
 	config.get(port, "http_server_port", 8860);
 	config.get(certificate, "http_server_certificate", "");
 	config.get(privateKey, "http_server_private_key", "");
-	config.getAll(authUserPasses, "http_server_auth_user_pass");
+	config.getAll(authUserPasses, "http_server_auth_user_pass", true);
 
 	contexts.push_back(EpollDaemon::registerHttpServer(
 		bind, port, certificate, privateKey, authUserPasses));

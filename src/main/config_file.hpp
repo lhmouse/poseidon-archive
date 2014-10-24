@@ -73,7 +73,10 @@ public:
 	}
 
 	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const char *key) const {
+	std::size_t getAll(std::vector<T> &vals, const char *key, bool truncates = false) const {
+		if(truncates){
+			vals.clear();
+		}
 		std::pair<OptionalMap::const_iterator,
 			OptionalMap::const_iterator> range = m_contents.range(key);
 		std::size_t ret = 0;
@@ -85,12 +88,12 @@ public:
 		return ret;
 	}
 	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key) const {
-		return getAll<T>(vals, key.get());
+	std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key, bool truncates = false) const {
+		return getAll<T>(vals, key.get(), truncates);
 	}
 	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const std::string &key) const {
-		return getAll<T>(vals, key.c_str());
+	std::size_t getAll(std::vector<T> &vals, const std::string &key, bool truncates = false) const {
+		return getAll<T>(vals, key.c_str(), truncates);
 	}
 };
 
