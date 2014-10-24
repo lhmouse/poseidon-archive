@@ -84,10 +84,14 @@ Logger::~Logger() NOEXCEPT {
 
 		std::string line;
 		line.reserve(255);
-		line.assign(temp, len);
 
 		if(useAsciiColors){
 			line += "\x1B[0;32m";
+		}
+		line.append(temp, len);
+
+		if(useAsciiColors){
+			line += "\x1B[0m";
 		}
 		line.append(t_tag, sizeof(t_tag) - 1);
 		line += ' ';
