@@ -34,11 +34,11 @@ std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
 		ret = ::inet_ntop(AF_INET6, &sa.sin6.sin6_addr, ip, sizeof(ip));
 		port = loadBe(sa.sin6.sin6_port);
 	} else {
-		LOG_WARNING("Unknown IP protocol ", sa.sa.sa_family);
+		LOG_WARN("Unknown IP protocol ", sa.sa.sa_family);
 		DEBUG_THROW(Exception, "Unknown IP protocol");
 	}
 	if(!ret){
-		LOG_WARNING("Failed to format IP address to string.");
+		LOG_WARN("Failed to format IP address to string.");
 		DEBUG_THROW(SystemError, errno);
 	}
 	return std::make_pair(SharedNtmbs::createOwning(ip), port);

@@ -90,7 +90,7 @@ protected:
 			boost::shared_ptr<const void> lockedDep;
 			const AUTO(servlet, WebSocketServletManager::getServlet(lockedDep, m_uri));
 			if(!servlet){
-				LOG_WARNING("No servlet for URI ", m_uri);
+				LOG_WARN("No servlet for URI ", m_uri);
 				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE);
 				return;
 			}
@@ -134,7 +134,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					goto exit_for;
 				}
 				if(ch & (WS_FL_RSV1 | WS_FL_RSV2 | WS_FL_RSV3)){
-					LOG_WARNING("Aborting because some reserved bits are set, opcode = ", ch);
+					LOG_WARN("Aborting because some reserved bits are set, opcode = ", ch);
 					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Reserved bits set");
 				}
 				m_final = ch & WS_FL_FIN;

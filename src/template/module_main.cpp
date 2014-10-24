@@ -266,60 +266,60 @@ namespace {
 
 void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestInt req(incoming);
-	LOG_WARNING("sint = ", req.i);
+	LOG_WARN("sint = ", req.i);
 	req.i /= 10;
 	ps->send(1000, req);
 }
 void TestUIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestUInt req(incoming);
-	LOG_WARNING("int = ", req.u);
+	LOG_WARN("int = ", req.u);
 	req.u /= 10;
 	ps->send(1001, req);
 }
 void TestStringProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestString req(incoming);
-	LOG_WARNING("string = ", req.s);
+	LOG_WARN("string = ", req.s);
 	req.s += "_0123456789";
 	ps->send(1002, req);
 }
 
 void TestIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestIntArray req(incoming);
-	LOG_WARNING("sint array: size = ", req.a.size());
+	LOG_WARN("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_WARNING("  ", i, " = ", req.a.at(i).i);
+		LOG_WARN("  ", i, " = ", req.a.at(i).i);
 		req.a.at(i).i /= 10;
 	}
 	ps->send(1003, req);
 }
 void TestUIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestUIntArray req(incoming);
-	LOG_WARNING("sint array: size = ", req.a.size());
+	LOG_WARN("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_WARNING("  ", i, " = ", req.a.at(i).u);
+		LOG_WARN("  ", i, " = ", req.a.at(i).u);
 		req.a.at(i).u /= 10;
 	}
 	ps->send(1004, req);
 }
 void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestStringArray req(incoming);
-	LOG_WARNING("sint array: size = ", req.a.size());
+	LOG_WARN("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_WARNING("  ", i, " = ", req.a.at(i).s);
+		LOG_WARN("  ", i, " = ", req.a.at(i).s);
 		req.a.at(i).s += "_0123456789";
 	}
 	ps->send(1005, req);
 }
 
 void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	LOG_WARNING("Received: ", HexDumper(incoming));
+	LOG_WARN("Received: ", HexDumper(incoming));
 	TestNs::TestProtocol req(incoming);
-	LOG_WARNING("req.i = ", req.i);
-	LOG_WARNING("req.j = ", req.j);
-	LOG_WARNING("req.a.size() = ", req.a.size());
+	LOG_WARN("req.i = ", req.i);
+	LOG_WARN("req.j = ", req.j);
+	LOG_WARN("req.a.size() = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_WARNING("req.a[", i, "].s = ", req.a.at(i).s);
-		LOG_WARNING("req.a[", i, "].k = ", req.a.at(i).k);
+		LOG_WARN("req.a[", i, "].s = ", req.a.at(i).s);
+		LOG_WARN("req.a[", i, "].k = ", req.a.at(i).k);
 	}
 	ps->send(1006, req);
 }

@@ -41,7 +41,7 @@ void escapeCsvField(std::string &dst, const char *src){
 }
 
 void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
-	LOG_WARNING("Received shutdown HTTP request. The server will be shutdown now.");
+	LOG_WARN("Received shutdown HTTP request. The server will be shutdown now.");
 	session->sendDefault(HTTP_OK);
 	::raise(SIGTERM);
 }
@@ -49,12 +49,12 @@ void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
 void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
 	AUTO_REF(name, getParams.get("module"));
 	if(name.empty()){
-		LOG_WARNING("Missing parameter 'module'.");
+		LOG_WARN("Missing parameter 'module'.");
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
 	if(!ModuleManager::loadNoThrow(name)){
-		LOG_WARNING("Failed to load module: ", name);
+		LOG_WARN("Failed to load module: ", name);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
 	}
@@ -64,12 +64,12 @@ void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
 	AUTO_REF(name, getParams.get("module"));
 	if(name.empty()){
-		LOG_WARNING("Missing parameter 'module'.");
+		LOG_WARN("Missing parameter 'module'.");
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
 	if(!ModuleManager::unload(name)){
-		LOG_WARNING("Failed to load module: ", name);
+		LOG_WARN("Failed to load module: ", name);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
 	}
@@ -188,7 +188,7 @@ void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request, st
 	} while(lower != upper);
 
 	if(!found){
-		LOG_WARNING("No system HTTP handler: ", request.uri);
+		LOG_WARN("No system HTTP handler: ", request.uri);
 		DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 	}
 

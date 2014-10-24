@@ -91,7 +91,7 @@ void normalizeUri(std::string &uri){
 void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer){
 	const AUTO(session, observer.lock());
 	if(session){
-		LOG_WARNING("HTTP request times out, remote IP = ", session->getRemoteIp());
+		LOG_WARN("HTTP request times out, remote IP = ", session->getRemoteIp());
 		session->sendDefault(HTTP_REQUEST_TIMEOUT, true);
 	}
 }
@@ -136,7 +136,7 @@ protected:
 			const AUTO(servlet,
 				HttpServletManager::getServlet(m_session->getLocalPort(), lockedDep, m_uri));
 			if(!servlet){
-				LOG_WARNING("No handler matches URI ", m_uri);
+				LOG_WARN("No handler matches URI ", m_uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 			}
 
@@ -172,7 +172,7 @@ HttpSession::HttpSession(Move<ScopedFile> socket)
 }
 HttpSession::~HttpSession(){
 	if(m_state != ST_FIRST_HEADER){
-		LOG_WARNING("Now that this session is to be destroyed, a premature request has to be discarded.");
+		LOG_WARN("Now that this session is to be destroyed, a premature request has to be discarded.");
 	}
 }
 
@@ -189,7 +189,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	try {
 		const std::size_t maxRequestLength = HttpServletManager::getMaxRequestLength();
 		if(m_totalLength + size >= maxRequestLength){
-			LOG_WARNING("Request size is ", m_totalLength + size, ", max = ", maxRequestLength);
+			LOG_WARN("Request size is ", m_totalLength + size, ", max = ", maxRequestLength);
 			DEBUG_THROW(HttpException, HTTP_REQUEST_TOO_LARGE);
 		}
 		m_totalLength += size;
@@ -212,18 +212,18 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					}
 					AUTO(parts, explode<std::string>(' ', m_line, 3));
 					if(parts.size() != 3){
-						LOG_WARNING("Bad HTTP header: ", m_line);
+						LOG_WARN("Bad HTTP header: ", m_line);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 
 					m_verb = httpVerbFromString(parts[0].c_str());
 					if(m_verb == HTTP_INVALID_VERB){
-						LOG_WARNING("Bad HTTP verb: ", parts[0]);
+						LOG_WARN("Bad HTTP verb: ", parts[0]);
 						DEBUG_THROW(HttpException, HTTP_BAD_METHOD);
 					}
 
 					if(parts[1].empty() || (parts[1][0] != '/')){
-						LOG_WARNING("Bad HTTP request URI: ", parts[1]);
+						LOG_WARN("Bad HTTP request URI: ", parts[1]);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					m_uri = STD_MOVE(parts[1]);
@@ -245,12 +245,12 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					const int result = std::sscanf(parts[2].c_str(),
 						"HTTP/%15[0-9].%15[0-9]%*c", versionMajor, versionMinor);
 					if(result != 2){
-						LOG_WARNING("Bad protocol string: ", parts[2]);
+						LOG_WARN("Bad protocol string: ", parts[2]);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					m_version = std::atoi(versionMajor) * 10000 + std::atoi(versionMinor);
 					if((m_version != 10000) && (m_version != 10001)){
-						LOG_WARNING("Bad HTTP version: ", parts[2]);
+						LOG_WARN("Bad HTTP version: ", parts[2]);
 						DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUP);
 					}
 
@@ -258,7 +258,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				} else if(!m_line.empty()){
 					const std::size_t delimPos = m_line.find(':');
 					if(delimPos == std::string::npos){
-						LOG_WARNING("Bad HTTP header: ", m_line);
+						LOG_WARN("Bad HTTP header: ", m_line);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					AUTO(valueBegin, m_line.begin() + delimPos + 1);
@@ -359,7 +359,7 @@ void HttpSession::onAllHeadersRead(){
 	struct Dispatcher {
 		static void onExpect(HttpSession *session, const std::string &val){
 			if(val != "100-continue"){
-				LOG_WARNING("Unknown HTTP header Expect: ", val);
+				LOG_WARN("Unknown HTTP header Expect: ", val);
 				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 			}
 			session->sendDefault(HTTP_CONTINUE);
@@ -370,22 +370,22 @@ void HttpSession::onAllHeadersRead(){
 		}
 		static void onUpgrade(HttpSession *session, const std::string &val){
 			if(session->m_version < 10001){
-				LOG_WARNING("HTTP 1.1 is required to use WebSocket");
+				LOG_WARN("HTTP 1.1 is required to use WebSocket");
 				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 			}
 			if(::strcasecmp(val.c_str(), "websocket") != 0){
-				LOG_WARNING("Unknown HTTP header Upgrade: ", val);
+				LOG_WARN("Unknown HTTP header Upgrade: ", val);
 				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 			}
 			AUTO_REF(version, session->m_headers.get("Sec-WebSocket-Version"));
 			if(version != "13"){
-				LOG_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
+				LOG_WARN("Unknown HTTP header Sec-WebSocket-Version: ", version);
 				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
 			}
 
 			std::string key = session->m_headers.get("Sec-WebSocket-Key");
 			if(key.empty()){
-				LOG_WARNING("No Sec-WebSocket-Key specified.");
+				LOG_WARN("No Sec-WebSocket-Key specified.");
 				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 			}
 			key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -410,18 +410,18 @@ void HttpSession::onAllHeadersRead(){
 
 			const std::size_t pos = val.find(' ');
 			if(pos == std::string::npos){
-				LOG_WARNING("Bad Authorization: ", val);
+				LOG_WARN("Bad Authorization: ", val);
 				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 			}
 			std::string temp(val);
 			temp.at(pos) = 0;
 			if(::strcasecmp(temp.c_str(), "basic") != 0){
-				LOG_WARNING("Unknown auth method: ", temp.c_str());
+				LOG_WARN("Unknown auth method: ", temp.c_str());
 				DEBUG_THROW(HttpException, HTTP_NONE_ACCEPTABLE);
 			}
 			temp.erase(temp.begin(), temp.begin() + pos + 1);
 			if(session->m_authInfo->find(temp) == session->m_authInfo->end()){
-				LOG_WARNING("Invalid username or password");
+				LOG_WARN("Invalid username or password");
 				OptionalMap authHeader;
 				authHeader.set("WWW-Authenticate", "Basic realm=\"Invalid username or password\"");
 				DEBUG_THROW(HttpException, HTTP_DENIED, STD_MOVE(authHeader));

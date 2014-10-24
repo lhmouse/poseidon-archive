@@ -118,7 +118,7 @@ void daemonLoop(){
 
 		try {
 			if(!connection){
-				LOG_WARNING("Lost connection to MySQL server. Reconnecting...");
+				LOG_WARN("Lost connection to MySQL server. Reconnecting...");
 
 				if(!atomicLoad(g_running)){
 					DEBUG_THROW(Exception, "Shutting down");
@@ -215,7 +215,7 @@ void daemonLoop(){
 
 void threadProc(){
 	PROFILE_ME;
-	Logger::setThreadTag(Logger::TAG_MYSQL);
+	Logger::setThreadTag("MySQL");
 	LOG_INFO("MySQL daemon started.");
 
 	daemonLoop();

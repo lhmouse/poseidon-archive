@@ -156,7 +156,7 @@ void daemonLoop(){
 
 void threadProc(){
 	PROFILE_ME;
-	Logger::setThreadTag(Logger::TAG_TIMER);
+	Logger::setThreadTag("Timer");
 	LOG_INFO("Timer daemon started.");
 
 	daemonLoop();

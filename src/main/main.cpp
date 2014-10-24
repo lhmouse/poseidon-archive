@@ -21,7 +21,7 @@ using namespace Poseidon;
 namespace {
 
 void sigTermProc(int){
-	LOG_WARNING("Received SIGTERM, will now exit...");
+	LOG_WARN("Received SIGTERM, will now exit...");
 	JobDispatcher::quitModal();
 }
 
@@ -36,7 +36,7 @@ void sigIntProc(int){
 		s_safetyTimer = now + 5 * 1000000;
 	}
 	if(now < s_safetyTimer){
-		LOG_WARNING("Received SIGINT, trying to exit gracefully... "
+		LOG_WARN("Received SIGINT, trying to exit gracefully... "
 			"If I don't terminate in 5 seconds, press ^C again.");
 		::raise(SIGTERM);
 	} else {
@@ -82,7 +82,7 @@ void run(){
 }
 
 int main(int argc, char **argv){
-	Logger::setThreadTag(Logger::TAG_PRIMARY);
+	Logger::setThreadTag("Primary");
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
 	START(ProfileManager);
@@ -110,6 +110,6 @@ int main(int argc, char **argv){
 		LOG_ERROR("Unknown exception thrown in main().");
 	}
 
-	LOG_WARNING("----------------- Server has exited abnormally -----------------");
+	LOG_WARN("----------------- Server has exited abnormally -----------------");
 	return EXIT_FAILURE;
 }

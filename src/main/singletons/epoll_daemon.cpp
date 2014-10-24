@@ -88,7 +88,7 @@ void add(const boost::shared_ptr<TcpSessionBase> &session){
 		const boost::mutex::scoped_lock lock(g_sessionMutex);
 		result = g_sessions.insert(SessionMapElement(session, now, now));
 		if(!result.second){
-			LOG_WARNING("Socket already in epoll?");
+			LOG_WARN("Socket already in epoll?");
 			return;
 		}
 	}
@@ -108,7 +108,7 @@ void touch(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	const AUTO(it, g_sessions.find<0>(session));
 	if(it == g_sessions.end<0>()){
-		LOG_WARNING("Socket not in epoll?");
+		LOG_WARN("Socket not in epoll?");
 		return;
 	}
 	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
@@ -118,12 +118,12 @@ void remove(const boost::shared_ptr<TcpSessionBase> &session){
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL,
 		TcpSessionImpl::doGetFd(*session), VAL_INIT) != 0)
 	{
-		LOG_WARNING("Error deleting from epoll. We can do nothing but ignore it.");
+		LOG_WARN("Error deleting from epoll. We can do nothing but ignore it.");
 	}
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
 	if(it == g_sessions.end<IDX_SESSION>()){
-		LOG_WARNING("Socket not in epoll?");
+		LOG_WARN("Socket not in epoll?");
 		return;
 	}
 	g_sessions.erase<IDX_SESSION>(it);
@@ -209,7 +209,7 @@ void daemonLoop(){
 					session->send(StreamBuffer(), true);
 					continue;
 				}
-				LOG_DEBUG("Read ", bytesRead, " byte(s) from ", session->getRemoteIp(),
+				LOG_TRACE("Read ", bytesRead, " byte(s) from ", session->getRemoteIp(),
 					": ", HexEncoder(data.get(), bytesRead));
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while dispatching data: what = ", e.what());
@@ -263,7 +263,7 @@ void daemonLoop(){
 					}
 					continue;
 				}
-				LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp(),
+				LOG_TRACE("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp(),
 					": ", HexEncoder(data.get(), bytesWritten));
 			} catch(std::exception &e){
 				LOG_ERROR("std::exception thrown while writing socket: what = ", e.what());
@@ -331,7 +331,7 @@ void daemonLoop(){
 						err = errno;
 					}
 					const AUTO(desc, getErrorDesc());
-					LOG_WARNING("Socket error: ", desc);
+					LOG_WARN("Socket error: ", desc);
 					remove(session);
 					continue;
 				}
@@ -383,7 +383,7 @@ void daemonLoop(){
 					if(bytesWritten <= 0){
 						break;
 					}
-					LOG_DEBUG("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp(),
+					LOG_TRACE("Flushed ", bytesWritten, " byte(s) to ", session->getRemoteIp(),
 						": ", HexEncoder(data.get(), bytesWritten));
 				}
 			} catch(std::exception &e){
@@ -397,7 +397,7 @@ void daemonLoop(){
 
 void threadProc(){
 	PROFILE_ME;
-	Logger::setThreadTag(Logger::TAG_EPOLL);
+	Logger::setThreadTag("Epoll");
 	LOG_INFO("Epoll daemon started.");
 
 	daemonLoop();

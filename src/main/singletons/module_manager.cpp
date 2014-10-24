@@ -24,7 +24,7 @@ struct DynamicLibraryCloser {
 	void operator()(void *handle) NOEXCEPT {
 		const boost::mutex::scoped_lock lock(g_dlMutex);
 		if(::dlclose(handle) != 0){
-			LOG_WARNING("Error unloading dynamic library: ", ::dlerror());
+			LOG_WARN("Error unloading dynamic library: ", ::dlerror());
 		}
 	}
 };

@@ -1,20 +1,36 @@
 #include "../precompiled.hpp"
 #include "log.hpp"
-#include "atomic.hpp"
-#include "utilities.hpp"
 #include <boost/thread/once.hpp>
 #include <boost/thread/mutex.hpp>
 #include <unistd.h>
 #include <time.h>
+#include "atomic.hpp"
+#include "utilities.hpp"
 using namespace Poseidon;
 
 namespace {
+
+struct LevelItem {
+	char text[16];
+	char color;
+	bool highlighted;
+};
+
+const LevelItem LEVEL_ITEMS[] = {
+	{ "     ", '9', 0 },	// 默认
+	{ "FATAL", '5', 1 },	// 粉色
+	{ "ERROR", '1', 1 },	// 红色
+	{ " WARN", '3', 1 },	// 黄色
+	{ " INFO", '2', 0 },	// 绿色
+	{ "DEBUG", '6', 0 },	// 青色
+	{ "TRACE", '4', 0 },	// 蓝色
+};
 
 volatile unsigned g_logLevel = 100;
 boost::once_flag g_mutexInitFlag;
 boost::scoped_ptr<boost::mutex> g_mutex;
 
-__thread unsigned t_tag;
+__thread char t_tag[8] = "Unknown";
 
 void initMutex(){
 	g_mutex.reset(new boost::mutex);
@@ -22,33 +38,39 @@ void initMutex(){
 
 }
 
-unsigned int Logger::getLevel(){
+unsigned Logger::getLevel(){
 	return atomicLoad(g_logLevel);
 }
-void Logger::setLevel(unsigned int newLevel){
-	atomicStore(g_logLevel, newLevel);
+unsigned Logger::setLevel(unsigned newLevel){
+	return atomicExchange(g_logLevel, newLevel);
 }
 
-unsigned Logger::getThreadTag(){
+const char *Logger::getThreadTag(){
 	return t_tag;
 }
-void Logger::setThreadTag(unsigned newTag){
-	t_tag = newTag;
+void Logger::setThreadTag(const char *newTag){
+	unsigned i = 0;
+	while(i < sizeof(t_tag)){
+		const char ch = newTag[i];
+		if(ch == 0){
+			break;
+		}
+		t_tag[i++] = ch;
+	}
+	while(i < sizeof(t_tag)){
+		t_tag[i++] = ' ';
+	}
 }
 
-Logger::Logger(unsigned level, const char *comment, const char *file, std::size_t line) NOEXCEPT
-	: m_level(level), m_comment(comment), m_file(file), m_line(line)
+Logger::Logger(unsigned level, const char *file, std::size_t line) NOEXCEPT
+	: m_level(level), m_file(file), m_line(line)
 {
 }
 Logger::~Logger() NOEXCEPT {
-	static const char COLORS[] = { '5', '1', '3', '2', '6' };
-	static const char TAGS[][8] = { "P   ", " M  ", "  T ", "   E" };
-
-	static const bool withColors = ::isatty(STDOUT_FILENO);
+	static const bool useAsciiColors = ::isatty(STDOUT_FILENO);
 
 	try {
-		const AUTO(color, (m_level >= COUNT_OF(COLORS)) ? '9' : COLORS[m_level]);
-		const AUTO(tag, (t_tag >= COUNT_OF(TAGS)) ? "" : TAGS[t_tag]);
+		AUTO_REF(levelItem, (m_level < COUNT_OF(LEVEL_ITEMS)) ? LEVEL_ITEMS[m_level] : LEVEL_ITEMS[0]);
 
 		char temp[256];
 		const AUTO(now, getLocalTime());
@@ -64,32 +86,29 @@ Logger::~Logger() NOEXCEPT {
 		line.reserve(255);
 		line.assign(temp, len);
 
-		line += '[';
-		line += tag;
-		line += ']';
+		if(useAsciiColors){
+			line += "\x1B[0;32m";
+		}
+		line.append(t_tag, sizeof(t_tag) - 1);
 		line += ' ';
 
-		if(withColors){
-			line +="\x1B[30;4";
-			line += color;
+		if(useAsciiColors){
+			line +="\x1B[0;30;4";
+			line += levelItem.color;
 			line += 'm';
 		}
-		len = std::strlen(m_comment);
-		assert(len <= MAX_COMMENT_WIDTH);
-		const unsigned right = (MAX_COMMENT_WIDTH - len) / 2;
-		const unsigned left = MAX_COMMENT_WIDTH - len - right;
-		line.append(left, ' ');
-		line.append(m_comment, len);
-		line.append(right, ' ');
-		if(withColors){
-			line +="\x1B[40;3";
-			line += color;
+		line += levelItem.text;
+		if(useAsciiColors){
+			line +="\x1B[0;40;3";
+			line += levelItem.color;
+			if(levelItem.highlighted){
+				line += ';';
+				line += '1';
+			}
 			line += 'm';
 		}
 		line += ' ';
-		line += m_file;
-		len = std::sprintf(temp, ":%lu ", (unsigned long)m_line);
-		line.append(temp, len);
+
 		char ch;
 		while(m_stream.get(ch)){
 			if(((unsigned char)ch + 1 <= 0x20) || (ch == 0x7F)){
@@ -97,7 +116,17 @@ Logger::~Logger() NOEXCEPT {
 			}
 			line.push_back(ch);
 		}
-		if(withColors){
+		line += ' ';
+
+		if(useAsciiColors){
+			line += "\x1B[0;34m";
+		}
+		line += '#';
+		line += m_file;
+		len = std::sprintf(temp, ":%lu", (unsigned long)m_line);
+		line.append(temp, len);
+
+		if(useAsciiColors){
 			line += "\x1B[0m";
 		}
 		line += '\n';

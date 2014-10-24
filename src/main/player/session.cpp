@@ -23,7 +23,7 @@ namespace {
 StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
 	const std::size_t size = contents.size();
 	if(size > 0xFFFF){
-		LOG_WARNING("Respond packet too large, size = ", size);
+		LOG_WARN("Respond packet too large, size = ", size);
 		DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE);
 	}
 	StreamBuffer ret;
@@ -68,7 +68,7 @@ protected:
 			const AUTO(servlet,
 				PlayerServletManager::getServlet(m_session->getLocalPort(), lockedDep, m_protocolId));
 			if(!servlet){
-				LOG_WARNING("No servlet for protocol ", m_protocolId);
+				LOG_WARN("No servlet for protocol ", m_protocolId);
 				DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND);
 			}
 
@@ -96,7 +96,7 @@ PlayerSession::PlayerSession(Move<ScopedFile> socket)
 }
 PlayerSession::~PlayerSession(){
 	if(m_payloadLen != -1){
-		LOG_WARNING("Now that this session is to be destroyed, a premature request has to be discarded.");
+		LOG_WARN("Now that this session is to be destroyed, a premature request has to be discarded.");
 	}
 }
 
@@ -119,7 +119,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 
 				const std::size_t maxRequestLength = PlayerServletManager::getMaxRequestLength();
 				if((unsigned)m_payloadLen >= maxRequestLength){
-					LOG_WARNING("Request size = ", m_payloadLen, ", max = ", maxRequestLength);
+					LOG_WARN("Request size = ", m_payloadLen, ", max = ", maxRequestLength);
 					DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE);
 				}
 			}
