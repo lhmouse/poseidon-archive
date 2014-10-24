@@ -6,6 +6,12 @@ AM_CXXFLAGS=
 %.hpp.gch: %.hpp
 	$(CXX) -x c++-header $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
 
+BUILT_SOURCES=	\
+	src/main/precompiled.hpp.gch
+
+CLEANFILES=	\
+	src/main/precompiled.hpp.gch
+
 sbin_PROGRAMS=	\
 	sbin/poseidon
 
@@ -16,7 +22,6 @@ sbin_poseidon_LDADD=	\
 	lib/libposeidon-main.la
 
 lib_libposeidon_main_la_SOURCES=	\
-	src/main/precompiled.hpp	\
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
 	src/main/exception.cpp	\
