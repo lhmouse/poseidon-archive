@@ -62,7 +62,7 @@ public:
 	void splice(StreamBuffer &src) NOEXCEPT;
 #ifdef POSEIDON_CXX11
 	void splice(StreamBuffer &&src) noexcept {
-		splice(std::move(src));
+		splice(src);
 	}
 #endif
 	std::size_t transferFrom(StreamBuffer &src, std::size_t size){
