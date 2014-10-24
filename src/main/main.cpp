@@ -85,8 +85,6 @@ int main(int argc, char **argv){
 	Logger::setThreadTag("P   "); // Primary
 	LOG_INFO("-------------------------- Starting up -------------------------");
 
-	START(ProfileManager);
-
 	LOG_INFO("Setting up signal handlers...");
 	::signal(SIGINT, sigIntProc);
 	::signal(SIGTERM, sigTermProc);
@@ -94,6 +92,8 @@ int main(int argc, char **argv){
 	try {
 		MainConfig::setRunPath((1 < argc) ? argv[1] : "/var/poseidon");
 		MainConfig::reload();
+
+		START(ProfileManager);
 
 		unsigned logLevel = Logger::LV_INFO;
 		MainConfig::get(logLevel, "log_level");
