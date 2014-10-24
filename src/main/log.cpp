@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "log.hpp"
 #include <boost/thread/once.hpp>
 #include <boost/thread/mutex.hpp>

@@ -10,8 +10,8 @@
 #	error Please #include "object_base.hpp" first.
 #endif
 
-#include "../../cxx_ver.hpp"
-#include "../../cxx_util.hpp"
+#include "../cxx_ver.hpp"
+#include "../cxx_util.hpp"
 #include <sstream>
 #include <cstdio>
 #include <boost/shared_ptr.hpp>

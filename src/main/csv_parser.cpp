@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "csv_parser.hpp"
 #include <fstream>
 #include "exception.hpp"

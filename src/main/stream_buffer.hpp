@@ -1,7 +1,7 @@
 #ifndef POSEIDON_STREAM_BUFFER_HPP_
 #define POSEIDON_STREAM_BUFFER_HPP_
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include <list>
 #include <string>
 #include <iosfwd>

@@ -1,4 +1,4 @@
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include "shared_ntmbs.hpp"
 #include <boost/weak_ptr.hpp>
 using namespace Poseidon;

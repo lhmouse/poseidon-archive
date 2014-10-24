@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "config_file.hpp"
 #include <fstream>
 #include "log.hpp"

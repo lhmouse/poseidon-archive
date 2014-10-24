@@ -1,7 +1,7 @@
 #ifndef POSEIDON_PROFILE_MANAGER_HPP_
 #define POSEIDON_PROFILE_MANAGER_HPP_
 
-#include "../../cxx_ver.hpp"
+#include "../cxx_ver.hpp"
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include "../shared_ntmbs.hpp"

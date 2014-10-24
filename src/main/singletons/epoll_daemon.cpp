@@ -1,4 +1,4 @@
-#include "../../precompiled.hpp"
+#include "../precompiled.hpp"
 #include "epoll_daemon.hpp"
 #include "main_config.hpp"
 #include <boost/thread.hpp>

@@ -24,7 +24,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 
 */
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>

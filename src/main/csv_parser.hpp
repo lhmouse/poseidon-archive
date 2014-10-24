@@ -1,7 +1,7 @@
 #ifndef POSEIDON_CSV_PARSER_HPP_
 #define POSEIDON_CSV_PARSER_HPP_
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include <vector>
 #include <cstddef>
 #include <boost/lexical_cast.hpp>

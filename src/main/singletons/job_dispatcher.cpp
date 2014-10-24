@@ -1,4 +1,4 @@
-#include "../../precompiled.hpp"
+#include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>

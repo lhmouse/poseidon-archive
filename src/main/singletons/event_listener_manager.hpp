@@ -1,7 +1,7 @@
 #ifndef POSEIDON_SINGLETONS_EVENT_LISTENER_MANAGER_HPP_
 #define POSEIDON_SINGLETONS_EVENT_LISTENER_MANAGER_HPP_
 
-#include "../../cxx_ver.hpp"
+#include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_base_of.hpp>

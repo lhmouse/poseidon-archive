@@ -1,8 +1,8 @@
 #ifndef POSEIDON_UTILITIES_HPP_
 #define POSEIDON_UTILITIES_HPP_
 
-#include "../cxx_ver.hpp"
-#include "../cxx_util.hpp"
+#include "cxx_ver.hpp"
+#include "cxx_util.hpp"
 #include <vector>
 #include <string>
 #include <cstddef>

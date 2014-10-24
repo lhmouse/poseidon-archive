@@ -1,16 +1,8 @@
-PRECOMPILED_HEADER=src/precompiled.hpp
-
 ACLOCAL_AMFLAGS=-I m4
 AUTOMAKE_OPTIONS=foreign subdir-objects
-AM_CPPFLAGS=-Wall -Wextra -Werror -Wno-error=unused-parameter -include $(PRECOMPILED_HEADER)
+AM_CPPFLAGS=-Wall -Wextra -Werror -Wno-error=unused-parameter
 AM_CXXFLAGS=
 
-BUILT_SOURCES=	\
-	$(PRECOMPILED_HEADER).gch
-	
-CLEANFILES=	\
-	$(PRECOMPILED_HEADER).gch
-		
 %.hpp.gch: %.hpp
 	$(CXX) -x c++-header $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
 
@@ -24,6 +16,7 @@ sbin_poseidon_LDADD=	\
 	lib/libposeidon-main.la
 
 lib_libposeidon_main_la_SOURCES=	\
+	src/main/precompiled.hpp	\
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
 	src/main/exception.cpp	\

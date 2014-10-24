@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "uuid.hpp"
 #include <boost/thread/mutex.hpp>
 #include <boost/random/mersenne_twister.hpp>

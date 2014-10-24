@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "utilities.hpp"

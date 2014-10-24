@@ -1,4 +1,4 @@
-#include "../../precompiled.hpp"
+#include "../precompiled.hpp"
 #include "module_manager.hpp"
 #include <map>
 #include <boost/thread/mutex.hpp>

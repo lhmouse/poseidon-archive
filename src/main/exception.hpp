@@ -1,7 +1,7 @@
 #ifndef POSEIDON_EXCEPTION_HPP_
 #define POSEIDON_EXCEPTION_HPP_
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include <string>
 #include <stdexcept>
 #include <cerrno>

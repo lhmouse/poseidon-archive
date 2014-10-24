@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "hash.hpp"
 #include <cstring>
 #include "endian.hpp"

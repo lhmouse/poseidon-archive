@@ -1,7 +1,7 @@
 #ifndef POSEIDON_PROFILER_HPP_
 #define POSEIDON_PROFILER_HPP_
 
-#include "../cxx_util.hpp"
+#include "cxx_util.hpp"
 #include <boost/noncopyable.hpp>
 
 namespace Poseidon {

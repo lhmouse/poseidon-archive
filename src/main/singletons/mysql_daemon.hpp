@@ -1,7 +1,7 @@
 #ifndef POSEIDON_SINGLETONS_MYSQL_DAEMON_HPP_
 #define POSEIDON_SINGLETONS_MYSQL_DAEMON_HPP_
 
-#include "../../cxx_ver.hpp"
+#include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
 
 #ifdef POSEIDON_CXX11

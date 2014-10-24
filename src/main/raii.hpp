@@ -1,7 +1,7 @@
 #ifndef POSEIDON_RAII_HPP_
 #define POSEIDON_RAII_HPP_
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include <utility>
 
 namespace Poseidon {

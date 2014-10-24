@@ -1,4 +1,4 @@
-#include "../../precompiled.hpp"
+#include "../precompiled.hpp"
 #include "verb.hpp"
 using namespace Poseidon;
 

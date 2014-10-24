@@ -1,4 +1,4 @@
-#include "../../precompiled.hpp"
+#include "../precompiled.hpp"
 #include "server.hpp"
 #include "session.hpp"
 #include "utilities.hpp"

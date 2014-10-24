@@ -1,4 +1,4 @@
-#include "../../precompiled.hpp"
+#include "../precompiled.hpp"
 #include "object_base.hpp"
 #include "../singletons/mysql_daemon.hpp"
 using namespace Poseidon;

@@ -1,7 +1,7 @@
 #ifndef POSEIDON_LOG_HPP_
 #define POSEIDON_LOG_HPP_
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include <sstream>
 #include <cstddef>
 #include <boost/noncopyable.hpp>

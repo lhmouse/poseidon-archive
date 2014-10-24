@@ -1,7 +1,7 @@
 #ifndef POSEIDON_CONFIG_FILE_HPP_
 #define POSEIDON_CONFIG_FILE_HPP_
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include "optional_map.hpp"
 #include <algorithm>
 #include <boost/lexical_cast.hpp>

@@ -1,7 +1,7 @@
 #ifndef POSEIDON_OPTIONAL_MAP_HPP_
 #define POSEIDON_OPTIONAL_MAP_HPP_
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include <map>
 #include "shared_ntmbs.hpp"
 

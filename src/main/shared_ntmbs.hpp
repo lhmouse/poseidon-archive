@@ -1,7 +1,7 @@
 #ifndef POSEIDON_SHARED_NTMBS_HPP_
 #define POSEIDON_SHARED_NTMBS_HPP_
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include <iosfwd>
 #include <cstddef>
 #include <cstring>

@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "stream_buffer.hpp"
 #include <iostream>
 #include <iomanip>

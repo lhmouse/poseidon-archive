@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "transaction.hpp"
 using namespace Poseidon;
 

@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "profiler.hpp"
 #include "singletons/profile_manager.hpp"
 #include "utilities.hpp"

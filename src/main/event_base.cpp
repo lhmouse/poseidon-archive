@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "event_base.hpp"
 #include "singletons/event_listener_manager.hpp"
 using namespace Poseidon;

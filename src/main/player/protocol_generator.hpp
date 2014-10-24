@@ -10,7 +10,7 @@
 #   error Please #include "protocol_base.hpp" first.
 #endif
 
-#include "../../cxx_util.hpp"
+#include "../cxx_util.hpp"
 
 #ifdef PROTOCOL_NAMESPACE
 namespace PROTOCOL_NAMESPACE {

@@ -1,4 +1,4 @@
-#include "../precompiled.hpp"
+#include "precompiled.hpp"
 #include "../main/singletons/module_manager.hpp"
 #include "../main/log.hpp"
 #include "../main/exception.hpp"

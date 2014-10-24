@@ -1,4 +1,4 @@
-#include "../../precompiled.hpp"
+#include "../precompiled.hpp"
 #include "mysql_daemon.hpp"
 #include <list>
 #include <boost/thread.hpp>

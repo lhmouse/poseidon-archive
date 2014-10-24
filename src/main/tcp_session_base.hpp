@@ -1,7 +1,7 @@
 #ifndef POSEIDON_TCP_SESSION_BASE_HPP_
 #define POSEIDON_TCP_SESSION_BASE_HPP_
 
-#include "../cxx_ver.hpp"
+#include "cxx_ver.hpp"
 #include "session_base.hpp"
 #include <string>
 #include <cstddef>

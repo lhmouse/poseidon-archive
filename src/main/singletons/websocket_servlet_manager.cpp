@@ -1,4 +1,4 @@
-#include "../../precompiled.hpp"
+#include "../precompiled.hpp"
 #include "websocket_servlet_manager.hpp"
 #include <map>
 #include <boost/noncopyable.hpp>

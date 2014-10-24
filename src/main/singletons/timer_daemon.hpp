@@ -1,7 +1,7 @@
 #ifndef POSEIDON_SINGLETONS_TIMER_DAEMON_HPP_
 #define POSEIDON_SINGLETONS_TIMER_DAEMON_HPP_
 
-#include "../../cxx_ver.hpp"
+#include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 

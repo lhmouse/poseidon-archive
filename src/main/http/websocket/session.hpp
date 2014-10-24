@@ -1,7 +1,7 @@
 #ifndef POSEIDON_HTTP_WEBSOCKET_SESSION_HPP_
 #define POSEIDON_HTTP_WEBSOCKET_SESSION_HPP_
 
-#include "../../../cxx_ver.hpp"
+#include "../../cxx_ver.hpp"
 #include "../upgraded_session_base.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
