@@ -20,10 +20,10 @@ const LevelItem LEVEL_ITEMS[] = {
 	{ "     ", '9', 0 },	// 默认
 	{ "FATAL", '5', 1 },	// 粉色
 	{ "ERROR", '1', 1 },	// 红色
-	{ " WARN", '3', 1 },	// 黄色
-	{ " INFO", '2', 0 },	// 绿色
+	{ "WARN ", '3', 1 },	// 黄色
+	{ "INFO ", '2', 0 },	// 绿色
 	{ "DEBUG", '6', 0 },	// 青色
-	{ "TRACE", '4', 0 },	// 蓝色
+	{ "TRACE", '4', 1 },	// 亮蓝
 };
 
 volatile unsigned g_logLevel = 100;
