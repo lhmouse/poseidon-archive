@@ -21,4 +21,13 @@
 
 #define UNIQUE_ID					MAGIC_LN_1_(__LINE__)
 
+namespace Poseidon {
+
+template<typename T>
+struct Identity {
+	typedef T type;
+};
+
+}
+
 #endif
