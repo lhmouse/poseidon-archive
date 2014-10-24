@@ -13,9 +13,13 @@ struct MainConfig {
 	static bool get(T &val, const char *key){
 		return getConfigFile().get<T>(val, key);
 	}
+	template<typename T, typename DefaultT>
+	static bool get(T &val, const char *key, const DefaultT &defVal){
+		return getConfigFile().get<T, DefaultT>(val, key, defVal);
+	}
 	template<typename T>
-	static std::size_t getAll(std::vector<T> &vals, const char *key){
-		return getConfigFile().getAll<T>(vals, key);
+	static std::size_t getAll(std::vector<T> &vals, const char *key, bool truncates = false){
+		return getConfigFile().getAll<T>(vals, key, truncates);
 	}
 
 private:

@@ -198,27 +198,26 @@ void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request, st
 }
 
 void SystemHttpServer::start(){
-	LOG_INFO("Initializing system HTTP server...");
-
-	std::string bind("127.0.0.1");
-	boost::uint16_t port = 0;
+	std::string bind;
+	boost::uint16_t port;
 	std::string certificate;
 	std::string privateKey;
 	std::vector<std::string> authUserPasses;
 	std::string path("/~sys");
 
-	MainConfig::get(bind, "system_http_bind");
-	MainConfig::get(port, "system_http_port");
+	MainConfig::get(bind, "system_http_bind", "0.0.0.0");
+	MainConfig::get(port, "system_http_port", 8900);
 	MainConfig::get(certificate, "system_http_certificate");
 	MainConfig::get(privateKey, "system_http_private_key");
 	MainConfig::getAll(authUserPasses, "system_http_auth_user_pass");
 	MainConfig::get(path, "system_http_path");
-
+	LOG_INFO("Initializing system HTTP server on ", bind, ':', port);
 	g_systemServer = EpollDaemon::registerHttpServer(bind, port, certificate, privateKey, authUserPasses);
 
 	if(path.empty() || (*path.rbegin() != '/')){
 		path.push_back('/');
 	}
+	LOG_INFO("Created system HTTP sevlet on ", path);
 	g_systemServlet = HttpServletManager::registerServlet(port, path, VAL_INIT,
 		TR1::bind(&servletProc, TR1::placeholders::_1, TR1::placeholders::_2, path.size()));
 
