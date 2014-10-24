@@ -18,6 +18,26 @@ private:
 
 public:
 	std::string toHex() const;
+
+public:
+	bool operator==(const Uuid &rhs) const {
+		return m_val == rhs.m_val;
+	}
+	bool operator!=(const Uuid &rhs) const {
+		return m_val != rhs.m_val;
+	}
+	bool operator<(const Uuid &rhs) const {
+		return m_val < rhs.m_val;
+	}
+	bool operator>(const Uuid &rhs) const {
+		return m_val > rhs.m_val;
+	}
+	bool operator<=(const Uuid &rhs) const {
+		return m_val <= rhs.m_val;
+	}
+	bool operator>=(const Uuid &rhs) const {
+		return m_val >= rhs.m_val;
+	}
 };
 
 }
