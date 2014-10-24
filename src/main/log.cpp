@@ -143,7 +143,7 @@ Logger::~Logger() NOEXCEPT {
 		line += '\n';
 
 		boost::mutex::scoped_lock lock;
-    	if(atomicLoad(g_mutexInited)){ // 如果为 false，则静态的 mutex 还没有被构造或者已被析构。
+		if(atomicLoad(g_mutexInited)){ // 如果为 false，则静态的 mutex 还没有被构造或者已被析构。
 			boost::mutex::scoped_lock(g_mutex).swap(lock);
 		}
 		std::fwrite(line.data(), line.size(), sizeof(char), stdout);
