@@ -24,6 +24,8 @@ ConfigFile::ConfigFile(const std::string &path){
 }
 
 bool ConfigFile::load(const char *path){
+	LOG_INFO("Loading config file: ", path);
+
 	std::ifstream ifs(path);
 	if(!ifs){
 		LOG_ERROR("Could not open config file: ", path);
