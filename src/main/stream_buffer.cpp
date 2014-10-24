@@ -330,8 +330,7 @@ void StreamBuffer::dumpHex(std::ostream &os) const {
 	os <<std::hex;
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
 		for(std::size_t i = it->readPos; i < it->writePos; ++i){
-			os <<std::setfill('0') <<std::setw(2)
-				<<(unsigned)(unsigned char)it->data[i] <<' ';
+			os <<std::setfill('0') <<std::setw(2) <<(unsigned)(unsigned char)it->data[i] <<' ';
 		}
 	}
 }
