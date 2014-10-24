@@ -37,9 +37,7 @@ void MainConfig::setRunPath(const char *path){
 	}
 }
 void MainConfig::reload(){
-	const AUTO(realPath, getRealPath("main.conf"));
-	LOG_INFO("Loading main config file: ", realPath);
-	ConfigFile(realPath).swap(g_config);
+	ConfigFile("main.conf").swap(g_config);
 }
 
 const ConfigFile &MainConfig::getConfigFile(){
