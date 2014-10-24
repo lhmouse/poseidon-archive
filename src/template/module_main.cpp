@@ -326,10 +326,10 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 
 }
 
-extern "C" void poseidonModuleInit(boost::weak_ptr<Module> module, boost::shared_ptr<const void> &context){
-	context = boost::make_shared<Tracked>();
-
+extern "C" void poseidonModuleInit(WeakModule module, ModuleContexts &contexts){
 	LOG_FATAL("poseidonModuleInit()");
+
+	contexts.push_back(boost::make_shared<Tracked>());
 
 	g_profile = HttpServletManager::registerServlet(8860, "/profile", module, &profileProc);
 

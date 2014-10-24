@@ -6,7 +6,7 @@
 #include "../main/exception.hpp"
 using namespace Poseidon;
 
-extern "C" void poseidonModuleInit(boost::weak_ptr<Module>, boost::shared_ptr<const void> &context){
+extern "C" void poseidonModuleInit(WeakModule, ModuleContexts &contexts){
 	LOG_INFO("Initializing player server...");
 
 	ConfigFile config("config/player_server.conf");
@@ -21,5 +21,6 @@ extern "C" void poseidonModuleInit(boost::weak_ptr<Module>, boost::shared_ptr<co
 	config.get(certificate, "player_server_certificate");
 	config.get(privateKey, "player_server_private_key");
 
-	context = EpollDaemon::registerPlayerServer(bind, port, certificate, privateKey);
+	contexts.push_back(EpollDaemon::registerPlayerServer(
+		bind, port, certificate, privateKey));
 }

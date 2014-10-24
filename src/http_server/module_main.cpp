@@ -7,7 +7,7 @@
 #include <vector>
 using namespace Poseidon;
 
-extern "C" void poseidonModuleInit(boost::weak_ptr<Module>, boost::shared_ptr<const void> &context){
+extern "C" void poseidonModuleInit(WeakModule, ModuleContexts &contexts){
 	LOG_INFO("Initializing HTTP server...");
 
 	ConfigFile config("config/http_server.conf");
@@ -24,5 +24,6 @@ extern "C" void poseidonModuleInit(boost::weak_ptr<Module>, boost::shared_ptr<co
 	config.get(privateKey, "http_server_private_key");
 	config.getAll(authUserPasses, "http_server_auth_user_pass");
 
-	context = EpollDaemon::registerHttpServer(bind, port, certificate, privateKey, authUserPasses);
+	contexts.push_back(EpollDaemon::registerHttpServer(
+		bind, port, certificate, privateKey, authUserPasses));
 }

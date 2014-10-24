@@ -11,9 +11,6 @@ namespace Poseidon {
 
 class Module;
 
-extern "C" void poseidonModuleInit(
-	boost::weak_ptr<Module> module, boost::shared_ptr<const void> &context);
-
 struct ModuleSnapshotItem {
 	SharedNtmbs path;
 	std::size_t refCount;
@@ -33,6 +30,11 @@ struct ModuleManager {
 private:
 	ModuleManager();
 };
+
+typedef boost::weak_ptr<Module> WeakModule;
+typedef std::vector<boost::shared_ptr<const void> > ModuleContexts;
+
+extern "C" void poseidonModuleInit(WeakModule module, ModuleContexts &contexts);
 
 }
 

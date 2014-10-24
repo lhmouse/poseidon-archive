@@ -61,7 +61,7 @@ public:
 		return m_path;
 	}
 
-	void init(boost::shared_ptr<const void> &context){
+	void init(ModuleContexts &contexts){
 		void *procSymAddr;
 		{
 			const boost::mutex::scoped_lock lock(g_dlMutex);
@@ -75,7 +75,7 @@ public:
 
 		LOG_INFO("Initializing module: ", m_path);
 		const AUTO(initProc, reinterpret_cast<VALUE_TYPE(poseidonModuleInit)>(procSymAddr));
-		(*initProc)(shared_from_this(), context);
+		(*initProc)(shared_from_this(), contexts);
 		LOG_INFO("Done initializing module: ", m_path);
 	}
 };
@@ -84,7 +84,7 @@ namespace {
 
 struct ModuleItem {
 	boost::shared_ptr<Module> module;
-	boost::shared_ptr<const void> context;
+	ModuleContexts contexts;
 
 	bool operator<(const ModuleItem &rhs) const {
 		return module->getPath() < rhs.module->getPath();
@@ -127,14 +127,14 @@ boost::shared_ptr<Module> ModuleManager::load(const std::string &path){
 	const AUTO(key, SharedNtmbs::createOwning(path));
 
 	const AUTO(newModule, boost::make_shared<Module>(key));
-	boost::shared_ptr<const void> context;
-	newModule->init(context);
+	ModuleContexts contexts;
+	newModule->init(contexts);
 	module = newModule;
 	{
 		const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
 		AUTO_REF(item, g_modules[key]);
 		item.module = newModule;
-		item.context.swap(context);
+		item.contexts.swap(contexts);
 	}
 	return module;
 }
