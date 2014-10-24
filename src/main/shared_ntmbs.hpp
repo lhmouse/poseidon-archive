@@ -2,6 +2,7 @@
 #define POSEIDON_SHARED_NTMBS_HPP_
 
 #include "cxx_ver.hpp"
+#include <string>
 #include <iosfwd>
 #include <cstddef>
 #include <cstring>
@@ -171,9 +172,7 @@ static inline void swap(SharedNtmbs &lhs, SharedNtmbs &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-static inline std::ostream &operator<<(std::ostream &os, const SharedNtmbs &rhs){
-	return os <<rhs.get();
-}
+extern std::ostream &operator<<(std::ostream &os, const SharedNtmbs &rhs);
 
 }
 

@@ -1,4 +1,4 @@
-#include "precompiled.hpp"
+#include "../main/precompiled.hpp"
 #include "../main/singletons/module_manager.hpp"
 #include "../main/singletons/epoll_daemon.hpp"
 #include "../main/config_file.hpp"
