@@ -105,7 +105,7 @@ bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 		AUTO_REF(row, rows.at(i));
 		AUTO_REF(map, data.at(i));
 		for(std::size_t j = 0; j < columnCount; ++j){
-			map.create(keys.at(j)).swap(row.at(j));
+			map.create(keys.at(j))->second.swap(row.at(j));
 		}
 	}
 

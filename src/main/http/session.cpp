@@ -33,7 +33,7 @@ StreamBuffer makeResponse(HttpStatus status, OptionalMap headers, StreamBuffer c
 	ret.put("\r\n");
 
 	if(!contents.empty()){
-		AUTO_REF(contentType, headers.create("Content-Type"));
+		AUTO_REF(contentType, headers.create("Content-Type")->second);
 		if(contentType.empty()){
 			contentType.assign("text/plain; charset=utf-8");
 		}
