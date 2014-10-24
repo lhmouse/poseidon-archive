@@ -87,16 +87,16 @@ TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort,
 	} u;
 	::socklen_t salen = sizeof(u);
 
-	if(::inet_pton(AF_INET, bindAddr.c_str(), &u.sin.sin_addr) == 1){
+	if(::inet_pton(AF_INET, m_bindAddr.c_str(), &u.sin.sin_addr) == 1){
 		u.sin.sin_family = AF_INET;
-		storeBe(u.sin.sin_port, bindPort);
+		storeBe(u.sin.sin_port, m_bindPort);
 		salen = sizeof(::sockaddr_in);
-	} else if(::inet_pton(AF_INET6, bindAddr.c_str(), &u.sin6.sin6_addr) == 1){
+	} else if(::inet_pton(AF_INET6, m_bindAddr.c_str(), &u.sin6.sin6_addr) == 1){
 		u.sin6.sin6_family = AF_INET6;
-		storeBe(u.sin6.sin6_port, bindPort);
+		storeBe(u.sin6.sin6_port, m_bindPort);
 		salen = sizeof(::sockaddr_in6);
 	} else {
-		LOG_ERROR("Unknown address format: ", bindAddr);
+		LOG_ERROR("Unknown address format: ", m_bindAddr);
 		DEBUG_THROW(Exception, "Unknown address format");
 	}
 
