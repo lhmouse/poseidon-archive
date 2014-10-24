@@ -1,22 +1,19 @@
 #include "precompiled.hpp"
 #include "utilities.hpp"
 #include "log.hpp"
+#include <boost/thread/once.hpp>
 #include <time.h>
 #include <errno.h>
 #include <string.h>
 using namespace Poseidon;
 
-namespace Poseidon {
-
 namespace {
 
-struct TzSetHelper {
-	TzSetHelper(){
-		::tzset();
-	}
-} const g_tzSetHelper;
+boost::once_flag g_tzsetFlag;
 
 }
+
+namespace Poseidon {
 
 boost::uint64_t getUtcTime(){
 	::timespec ts;
@@ -30,9 +27,11 @@ boost::uint64_t getLocalTime(){
 	return getLocalTimeFromUtc(getUtcTime());
 }
 boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local){
+	boost::call_once(&::tzset, g_tzsetFlag);
 	return local + ::timezone * 1000;
 }
 boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
+	boost::call_once(&::tzset, g_tzsetFlag);
 	return utc - ::timezone * 1000;
 }
 
