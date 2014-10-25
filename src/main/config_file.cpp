@@ -45,7 +45,9 @@ void ConfigFile::load(const SharedNtmbs &path){
 		SharedNtmbs key(&line[pos], true);
 
 		pos = line.find_first_not_of(" \t", equ + 1);
-		if(pos != std::string::npos){
+		if(pos == std::string::npos){
+			line.clear();
+		} else {
 			line.erase(line.begin(), line.begin() + pos);
 			pos = line.find_last_not_of(" \t");
 			line.erase(line.begin() + pos + 1, line.end());
