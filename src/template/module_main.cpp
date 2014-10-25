@@ -19,6 +19,7 @@
 #include "../main/singletons/player_servlet_manager.hpp"
 #include "../main/mysql/object_base.hpp"
 #include "../main/uuid.hpp"
+#include <dlfcn.h>
 using namespace Poseidon;
 
 namespace {
@@ -361,4 +362,11 @@ extern "C" void poseidonModuleInit(WeakModule module, ModuleContexts &contexts){
 	LOG_DEBUG("UUID = ", str);
 	Uuid uuid2 = Uuid::createFromString(str);
 	LOG_DEBUG("UUID = ", uuid2.toHex());
+
+	::Dl_info info;
+	if(::dladdr(reinterpret_cast<void *>(::poseidonModuleInit), &info)){
+		LOG_WARN("In module = ", info.dli_fname);
+	} else {
+		LOG_WARN("dladdr() failed");
+	}
 }

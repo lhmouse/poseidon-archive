@@ -53,7 +53,9 @@ public:
 	}
 
 	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key, bool truncates = false) const {
+	std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key,
+		bool includingEmpty = false, bool truncates = false) const
+	{
 		if(truncates){
 			vals.clear();
 		}
@@ -61,9 +63,11 @@ public:
 			OptionalMap::const_iterator> range = m_contents.range(key);
 		std::size_t ret = 0;
 		while(range.first != range.second){
-			vals.push_back(boost::lexical_cast<T>(range.first->second));
+			if(includingEmpty || !range.first->second.empty()){
+				vals.push_back(boost::lexical_cast<T>(range.first->second));
+				++ret;
+			}
 			++range.first;
-			++ret;
 		}
 		return ret;
 	}

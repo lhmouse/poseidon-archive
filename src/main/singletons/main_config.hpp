@@ -18,8 +18,10 @@ struct MainConfig {
 		return getConfigFile().get<T, DefaultT>(val, key, defVal);
 	}
 	template<typename T>
-	static std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key, bool truncates = false){
-		return getConfigFile().getAll<T>(vals, key, truncates);
+	static std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key,
+		bool includingEmpty = false, bool truncates = false)
+	{
+		return getConfigFile().getAll<T>(vals, key, includingEmpty, truncates);
 	}
 
 private:
