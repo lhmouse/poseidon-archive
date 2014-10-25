@@ -85,10 +85,10 @@ void TcpClientBase::connect(ScopedFile &client, const std::string &ip, unsigned 
 
 	client.reset(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
 	if(!client){
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 	if(::connect(client.get(), &u.sa, salen) != 0){
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 }
 

@@ -39,7 +39,7 @@ std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
 	}
 	if(!ret){
 		LOG_WARN("Failed to format IP address to string.");
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 	return std::make_pair(SharedNtmbs::createOwning(ip), port);
 }
@@ -49,7 +49,7 @@ std::pair<SharedNtmbs, unsigned> getRemoteAddrFromFd(int fd){
 	::socklen_t salen = sizeof(sa);
 	if(::getpeername(fd, &sa.sa, &salen) != 0){
 		LOG_ERROR("Failed to get remote socket addr.");
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 	return getAddrPortFromSockAddr(sa);
 }
@@ -58,7 +58,7 @@ std::pair<SharedNtmbs, unsigned> getLocalAddrFromFd(int fd){
 	::socklen_t salen = sizeof(sa);
 	if(::getsockname(fd, &sa.sa, &salen) != 0){
 		LOG_ERROR("Failed to get local socket addr.");
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 	return getAddrPortFromSockAddr(sa);
 }

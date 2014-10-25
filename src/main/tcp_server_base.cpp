@@ -102,26 +102,26 @@ TcpServerBase::TcpServerBase(const std::string &bindAddr, unsigned bindPort,
 
 	m_listen.reset(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
 	if(!m_listen){
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 	const int TRUE_VALUE = true;
 	if(::setsockopt(m_listen.get(),
 		SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0)
 	{
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 	const int flags = ::fcntl(m_listen.get(), F_GETFL);
 	if(flags == -1){
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 	if(::fcntl(m_listen.get(), F_SETFL, flags | O_NONBLOCK) != 0){
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 	if(::bind(m_listen.get(), &u.sa, salen)){
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 	if(::listen(m_listen.get(), SOMAXCONN)){
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 
 	if(!cert.empty()){
@@ -138,7 +138,7 @@ boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 	ScopedFile client(::accept(m_listen.get(), VAL_INIT, VAL_INIT));
 	if(!client){
 		if(errno != EAGAIN){
-			DEBUG_THROW(SystemError, errno);
+			DEBUG_THROW(SystemError);
 		}
 		return VAL_INIT;
 	}

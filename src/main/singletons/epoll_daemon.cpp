@@ -100,7 +100,7 @@ void add(const boost::shared_ptr<TcpSessionBase> &session){
 	{
 		const boost::mutex::scoped_lock lock(g_sessionMutex);
 		g_sessions.erase(result.first);
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 }
 void touch(const boost::shared_ptr<TcpSessionBase> &session){
@@ -203,7 +203,7 @@ void daemonLoop(){
 						reepollReadable(session);
 						continue;
 					}
-					DEBUG_THROW(SystemError, errno);
+					DEBUG_THROW(SystemError);
 				} else if(bytesRead == 0){
 					LOG_INFO("Connection closed by remote host: ", session->getRemoteIp());
 					session->send(StreamBuffer(), true);
@@ -255,7 +255,7 @@ void daemonLoop(){
 						reepollWriteable(session);
 						continue;
 					}
-					DEBUG_THROW(SystemError, errno);
+					DEBUG_THROW(SystemError);
 				}
 				if(bytesWritten == 0){
 					if(shutdown){

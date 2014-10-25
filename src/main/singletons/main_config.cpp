@@ -16,7 +16,7 @@ std::string getRealPath(const char *path){
 		realPath = ::realpath(path, VAL_INIT);
 		if(!realPath){
 			LOG_ERROR("Could not resolve path: ", path);
-			DEBUG_THROW(SystemError, errno);
+			DEBUG_THROW(SystemError);
 		}
 		ret = realPath;
 		::free(realPath);
@@ -33,7 +33,7 @@ void MainConfig::setRunPath(const char *path){
 	const AUTO(realPath, getRealPath(path));
 	LOG_INFO("Setting working directory: ", realPath);
 	if(::chdir(realPath.c_str()) != 0){
-		DEBUG_THROW(SystemError, errno);
+		DEBUG_THROW(SystemError);
 	}
 }
 void MainConfig::reload(){
