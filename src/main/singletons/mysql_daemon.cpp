@@ -8,6 +8,8 @@
 #include <mysql/mysql.h>
 #include "main_config.hpp"
 #include "../mysql/object_base.hpp"
+#define POSEIDON_MYSQL_OBJECT_IMPL_
+#include "../mysql/object_impl.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -116,6 +118,7 @@ void daemonLoop(){
 	std::size_t reconnectDelay = 0;
 	for(;;){
 		bool discardConnection = false;
+		boost::shared_ptr<Module> module;
 
 		try {
 			if(!connection){
@@ -151,7 +154,7 @@ void daemonLoop(){
 						if((atomicLoad(g_waiting) == 0) && (head.timeStamp > getMonoClock())){
 							goto skip;
 						}
-						if(head.object->getContext() != &head){
+						if(MySqlObjectImpl::getContext(*head.object) != &head){
 							AsyncSaveItem().swap(head);
 						} else {
 							asi.swap(head);
@@ -180,9 +183,13 @@ void daemonLoop(){
 				break;
 			}
 			if(asi.object){
+				MySqlObjectImpl::getModule(*asi.object).swap(module);
+
 				asi.object->syncSave(connection.get());
 			}
 			if(ali.object){
+				MySqlObjectImpl::getModule(*ali.object).swap(module);
+
 				ali.object->syncLoad(connection.get(), ali.filter.c_str());
 				ali.object->enableAutoSaving();
 
@@ -290,7 +297,7 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object)
 	AUTO_REF(asi, g_saveQueue.back());
 	asi.object.swap(object);
 	asi.timeStamp = getMonoClock() + g_databaseSaveDelay * 1000;
-	asi.object->setContext(&asi);
+	MySqlObjectImpl::setContext(*asi.object, &asi);
 
 	g_newObjectAvail.notify_all();
 }

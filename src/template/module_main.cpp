@@ -19,14 +19,22 @@
 #include "../main/singletons/player_servlet_manager.hpp"
 #include "../main/mysql/object_base.hpp"
 #include "../main/uuid.hpp"
-#include <dlfcn.h>
 using namespace Poseidon;
+
+#define MYSQL_OBJECT_NAMESPACE	TestNs
+
+#define MYSQL_OBJECT_NAME	MySqlObj
+#define MYSQL_OBJECT_FIELDS	\
+	FIELD_SMALLINT(si)	\
+	FIELD_STRING(str)	\
+	FIELD_BIGINT(bi)
+#include "../main/mysql/object_generator.hpp"
 
 namespace {
 
 struct Tracked {
 	Tracked(){
-		LOG_FATAL("Tracked::Tracked()");
+ 		LOG_FATAL("Tracked::Tracked()");
 	}
 	~Tracked(){
 		LOG_FATAL("Tracked::~Tracked()");
@@ -86,6 +94,12 @@ void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 
 void meowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
+
+	AUTO(obj, boost::make_shared<TestNs::MySqlObj>());
+	obj->set_si(123);
+	obj->set_str("meow");
+	obj->set_bi(456789);
+	obj->asyncSave();
 
 	OptionalMap headers;
 	StreamBuffer contents;
@@ -254,15 +268,6 @@ private:
 	)
 #include "../main/player/protocol_generator.hpp"
 
-#define MYSQL_OBJECT_NAMESPACE	TestNs
-
-#define MYSQL_OBJECT_NAME	MySqlObj
-#define MYSQL_OBJECT_FIELDS	\
-	FIELD_SMALLINT(si)	\
-	FIELD_STRING(str)	\
-	FIELD_BIGINT(bi)
-#include "../main/mysql/object_generator.hpp"
-
 namespace {
 
 void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
@@ -351,22 +356,9 @@ extern "C" void poseidonModuleInit(WeakModule module, ModuleContexts &contexts){
 	g_player.push_back(PlayerServletManager::registerServlet(8850, 105, module, &TestStringArrayProc));
 	g_player.push_back(PlayerServletManager::registerServlet(8850, 106, module, &TestProc));
 
-	AUTO(obj, boost::make_shared<TestNs::MySqlObj>());
-	obj->set_si(123);
-	obj->set_str("meow");
-	obj->set_bi(456789);
-	obj->asyncSave();
-
 	Uuid uuid = Uuid::createRandom();
 	std::string str = uuid.toHex();
 	LOG_DEBUG("UUID = ", str);
 	Uuid uuid2 = Uuid::createFromString(str);
 	LOG_DEBUG("UUID = ", uuid2.toHex());
-
-	::Dl_info info;
-	if(::dladdr(reinterpret_cast<void *>(::poseidonModuleInit), &info)){
-		LOG_WARN("In module = ", info.dli_fname);
-	} else {
-		LOG_WARN("dladdr() failed");
-	}
 }

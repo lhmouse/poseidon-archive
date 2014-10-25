@@ -54,7 +54,7 @@ public:
 
 	template<typename T>
 	std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key,
-		bool includingEmpty = false, bool truncates = false) const
+		bool includingEmpty = false, bool truncates = true) const
 	{
 		if(truncates){
 			vals.clear();

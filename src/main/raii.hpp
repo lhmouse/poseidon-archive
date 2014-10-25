@@ -3,6 +3,7 @@
 
 #include "cxx_ver.hpp"
 #include <utility>
+#include <ostream>
 
 namespace Poseidon {
 
@@ -105,7 +106,10 @@ DEFINE_RATIONAL_OPERATOR_(ScopedHandle, >)
 DEFINE_RATIONAL_OPERATOR_(ScopedHandle, <=)
 DEFINE_RATIONAL_OPERATOR_(ScopedHandle, >=)
 
-#undef DEFINE_RATIONAL_OPERATOR_
+template<typename CloserT>
+std::ostream &operator<<(std::ostream &os, const ScopedHandle<CloserT> &handle){
+	return os <<handle.get();
+}
 
 extern void closeFile(int fd) NOEXCEPT;
 

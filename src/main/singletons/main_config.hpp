@@ -19,7 +19,7 @@ struct MainConfig {
 	}
 	template<typename T>
 	static std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key,
-		bool includingEmpty = false, bool truncates = false)
+		bool includingEmpty = false, bool truncates = true)
 	{
 		return getConfigFile().getAll<T>(vals, key, includingEmpty, truncates);
 	}

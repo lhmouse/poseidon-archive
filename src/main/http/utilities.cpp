@@ -97,7 +97,7 @@ std::string urlDecode(const void *data, std::size_t size){
 			ret.push_back(ch);
 			continue;
 		}
-		const int high = getHexLiteral(ch);
+		const int high = getHexLiteral(((const char *)data)[i]);
 		const int low = getHexLiteral(((const char *)data)[i + 1]);
 		if((high == -1) || (low == -1)){
 			ret.push_back(ch);

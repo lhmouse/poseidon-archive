@@ -226,7 +226,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						LOG_WARN("Bad HTTP request URI: ", parts[1]);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
-					m_uri = STD_MOVE(parts[1]);
+					parts[1].swap(m_uri);
 					std::size_t pos = m_uri.find('#');
 					if(pos != std::string::npos){
 						m_uri.erase(m_uri.begin() + pos, m_uri.end());
@@ -239,6 +239,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						m_uri.erase(m_uri.begin() + pos, m_uri.end());
 					}
 					normalizeUri(m_uri);
+					urlDecode(m_uri).swap(m_uri);
 
 					char versionMajor[16];
 					char versionMinor[16];

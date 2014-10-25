@@ -21,6 +21,7 @@
 #include <cppconn/resultset.h>
 #include "../atomic.hpp"
 #include "../log.hpp"
+#include "../singletons/module_manager.hpp"
 
 #ifdef MYSQL_OBJECT_NAMESPACE
 namespace MYSQL_OBJECT_NAMESPACE {
@@ -78,7 +79,7 @@ public:
 #define FIELD_STRING(name_)					, ::std::string name_ ## _ = ::std::string()
 
 	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
-		: MySqlObjectBase()
+		: MySqlObjectBase(::Poseidon::ModuleManager::assertCurrent())
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT

@@ -15,16 +15,31 @@ using namespace Poseidon;
 namespace {
 
 struct ModuleMapElement {
-	SharedNtmbs path;
-	boost::shared_ptr<struct Module> module;
+	const boost::shared_ptr<Module> module;
+	const SharedNtmbs realPath;
+	void *const baseAddr;
 
-	ModuleContexts contexts;
+	mutable ModuleContexts contexts;
+
+	ModuleMapElement(boost::shared_ptr<Module> module_,
+		SharedNtmbs realPath_, void *baseAddr_)
+		: module(STD_MOVE(module_))
+		, realPath(STD_MOVE(realPath_)), baseAddr(baseAddr_)
+	{
+	}
 };
 
 MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,
-	UNIQUE_MEMBER_INDEX(path),
-	MULTI_MEMBER_INDEX(module)
+	UNIQUE_MEMBER_INDEX(module),
+	MULTI_MEMBER_INDEX(realPath),
+	MULTI_MEMBER_INDEX(baseAddr)
 );
+
+enum {
+	IDX_MODULE,
+	IDX_REAL_PATH,
+	IDX_BASE_ADDR,
+};
 
 boost::mutex g_dlMutex;
 
@@ -48,49 +63,70 @@ struct DynamicLibraryCloser {
 class Poseidon::Module : boost::noncopyable
 	, public boost::enable_shared_from_this<Module> {
 private:
-	const SharedNtmbs m_path;
 	ScopedHandle<DynamicLibraryCloser> m_handle;
+	SharedNtmbs m_realPath;
+	void *m_baseAddr;
 
 public:
-	explicit Module(SharedNtmbs path)
-		: m_path(STD_MOVE(path))
-	{
-		LOG_INFO("Loading module: ", m_path);
-
-		const boost::mutex::scoped_lock lock(g_dlMutex);
-		m_handle.reset(::dlopen(m_path.get(), RTLD_NOW));
-		if(!m_handle){
-			const char *const error = ::dlerror();
-			LOG_ERROR("Error loading dynamic library: ", error);
-			DEBUG_THROW(Exception, error);
-		}
-		LOG_DEBUG("Handle = ", m_handle.get());
-	}
 	~Module(){
-		LOG_INFO("Unloading module: ", m_path);
+		if(m_handle){
+			LOG_INFO("Unloading module: ", m_realPath);
+
+			LOG_DEBUG("Handle: ", m_handle);
+			LOG_DEBUG("Real path: ", m_realPath);
+			LOG_DEBUG("Base addr: ", m_baseAddr);
+		}
 	}
 
 public:
-	const SharedNtmbs &getPath() const {
-		return m_path;
+	const SharedNtmbs &realPath() const {
+		return m_realPath;
+	}
+	void *baseAddr() const {
+		return m_baseAddr;
 	}
 
-	void init(ModuleContexts &contexts){
-		void *procSymAddr;
+	void load(ModuleContexts &contexts, const SharedNtmbs &path){
+		assert(!m_handle);
+
+		LOG_INFO("Loading module: ", path);
+
+		VALUE_TYPE(::poseidonModuleInit) initProc;
 		{
 			const boost::mutex::scoped_lock lock(g_dlMutex);
-			procSymAddr = ::dlsym(m_handle.get(), "poseidonModuleInit");
-			if(!procSymAddr){
+
+			m_handle.reset(::dlopen(path.get(), RTLD_NOW));
+			if(!m_handle){
 				const char *const error = ::dlerror();
-				LOG_ERROR("Error getting init function: ", error);
+				LOG_ERROR("Error loading dynamic library: ", error);
 				DEBUG_THROW(Exception, error);
 			}
+
+			void *const initSym = ::dlsym(m_handle.get(), "poseidonModuleInit");
+			if(!initSym){
+				const char *const error = ::dlerror();
+				LOG_ERROR("Error getting address of poseidonModuleInit(): ", error);
+				DEBUG_THROW(Exception, error);
+			}
+			initProc = reinterpret_cast<VALUE_TYPE(::poseidonModuleInit)>(initSym);
+
+			::Dl_info info;
+			if(::dladdr(initSym, &info) == 0){
+				const char *const error = ::dlerror();
+				LOG_ERROR("Error getting real path: ", error);
+				DEBUG_THROW(Exception, error);
+			}
+			SharedNtmbs(info.dli_fname, true).swap(m_realPath);
+			m_baseAddr = info.dli_fbase;
 		}
 
-		LOG_INFO("Initializing module: ", m_path);
-		const AUTO(initProc, reinterpret_cast<VALUE_TYPE(poseidonModuleInit)>(procSymAddr));
+		LOG_DEBUG("Handle: ", m_handle);
+		LOG_DEBUG("Real path: ", m_realPath);
+		LOG_DEBUG("Base addr: ", m_baseAddr);
+
+		LOG_INFO("Initializing module: ", m_realPath);
 		(*initProc)(shared_from_this(), contexts);
-		LOG_INFO("Done initializing module: ", m_path);
+		LOG_INFO("Done initializing module: ", m_realPath);
 	}
 };
 
@@ -106,29 +142,55 @@ void ModuleManager::start(){
 void ModuleManager::stop(){
 	LOG_INFO("Unloading all modules...");
 
-	g_modules.clear();
+	ModuleMap modules;
+	{
+		const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
+		modules.swap(g_modules);
+	}
 }
 
-boost::shared_ptr<Module> ModuleManager::get(const SharedNtmbs &path){
-	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
-	const AUTO(it, g_modules.find<0>(path));
-	if(it == g_modules.end()){
+boost::shared_ptr<Module> ModuleManager::get(const SharedNtmbs &realPath){
+	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
+	const AUTO(it, g_modules.find<IDX_REAL_PATH>(realPath));
+	if(it == g_modules.end<IDX_REAL_PATH>()){
 		return VAL_INIT;
 	}
 	return it->module;
 }
+boost::shared_ptr<Module> ModuleManager::assertCurrent(){
+	const char *realPath;
+	void *baseAddr;
+	{
+		const boost::mutex::scoped_lock lock(g_dlMutex);
+		::Dl_info info;
+		if(::dladdr(__builtin_return_address(0), &info) == 0){
+			const char *const error = ::dlerror();
+			LOG_ERROR("Error getting base addr: ", error);
+			DEBUG_THROW(Exception, error);
+		}
+		realPath = info.dli_fname;
+		baseAddr = info.dli_fbase;
+	}
+	LOG_DEBUG("Base addr: ", baseAddr);
+
+	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
+	const AUTO(it, g_modules.find<IDX_BASE_ADDR>(baseAddr));
+	if(it == g_modules.end<IDX_BASE_ADDR>()){
+		LOG_ERROR("Module was not loaded via ModuleManager: ", realPath);
+		DEBUG_THROW(Exception, "Module was not loaded via ModuleManager");
+	}
+	return it->module;
+}
 boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
-	AUTO(module, get(path));
-	if(!module){
-		ModuleMapElement element;
-		element.path = path;
-		element.path.forkOwning();
-		element.module = boost::make_shared<Module>(element.path);
-		element.module->init(element.contexts);
-		module = element.module;
-		{
-			const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
-			g_modules.insert(STD_MOVE(element));
+	AUTO(module, boost::make_shared<Module>());
+	ModuleContexts contexts;
+	module->load(contexts, path);
+	{
+		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		const AUTO(result, g_modules.insert(
+			ModuleMapElement(module, module->realPath(), module->baseAddr())));
+		if(result.second){
+			contexts.swap(result.first->contexts);
 		}
 	}
 	return module;
@@ -136,38 +198,65 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
 	try {
 		return load(path);
-	} catch(std::exception &e){
-		LOG_ERROR("std::exception thrown while loading module: ", path,
-			", what = ", e.what());
-	} catch(...){
-		LOG_ERROR("Unknown exception thrown while loading module: ", path);
+	} catch(Exception &){
+		return VAL_INIT;
 	}
-	return VAL_INIT;
 }
 bool ModuleManager::unload(const boost::shared_ptr<Module> &module){
+	SharedNtmbs realPath;
 	ModuleContexts contexts;
 	{
-		const boost::unique_lock<boost::shared_mutex> lock(g_mutex);
-		const AUTO(it, g_modules.find<1>(module));
-		if(it == g_modules.end<1>()){
+		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		const AUTO(it, g_modules.find<IDX_MODULE>(module));
+		if(it == g_modules.end<IDX_MODULE>()){
 			return false;
 		}
-		contexts.swap(const_cast<ModuleContexts &>(it->contexts));
-		g_modules.erase<1>(it);
+		realPath = it->realPath;
+		contexts.swap(it->contexts);
+		g_modules.erase<IDX_MODULE>(it);
 	}
 	try {
-		LOG_INFO("Destroying context of module: ", module->getPath());
+		LOG_INFO("Destroying context of module: ", realPath);
 		contexts.clear();
-		LOG_INFO("Done destroying context of module: ", module->getPath());
+		LOG_INFO("Done destroying context of module: ", realPath);
 	} catch(std::exception &e){
-		LOG_ERROR("std::exception thrown while unloading module: ", module->getPath(),
-			", what = ", e.what());
+		LOG_ERROR("std::exception thrown while unloading module: ", realPath);
 	} catch(...){
-		LOG_ERROR("Unknown exception thrown while unloading module: ", module->getPath());
+		LOG_ERROR("Unknown exception thrown while unloading module: ", realPath);
+	}
+	return true;
+}
+bool ModuleManager::unload(const SharedNtmbs &path){
+	SharedNtmbs realPath;
+	ModuleContexts contexts;
+	{
+		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		const AUTO(it, g_modules.find<IDX_REAL_PATH>(path));
+		if(it == g_modules.end<IDX_REAL_PATH>()){
+			return false;
+		}
+		realPath = it->realPath;
+		contexts.swap(it->contexts);
+		g_modules.erase<IDX_REAL_PATH>(it);
+	}
+	try {
+		LOG_INFO("Destroying context of module: ", realPath);
+		contexts.clear();
+		LOG_INFO("Done destroying context of module: ", realPath);
+	} catch(std::exception &e){
+		LOG_ERROR("std::exception thrown while unloading module: ", realPath);
+	} catch(...){
+		LOG_ERROR("Unknown exception thrown while unloading module: ", realPath);
 	}
 	return true;
 }
 
+ModuleSnapshotItem ModuleManager::snapshot(const boost::shared_ptr<Module> &module){
+	ModuleSnapshotItem ret;
+	ret.realPath = module->realPath();
+	ret.refCount = module.use_count();
+	return ret;
+}
 std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 	std::vector<ModuleSnapshotItem> ret;
 	{
@@ -175,7 +264,7 @@ std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
 			ret.push_back(ModuleSnapshotItem());
 			ModuleSnapshotItem &mi = ret.back();
-			mi.path = it->path;
+			mi.realPath = it->module->realPath();
 			mi.refCount = it->module.use_count();
 		}
 	}

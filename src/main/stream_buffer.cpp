@@ -6,23 +6,23 @@
 #include <boost/thread/mutex.hpp>
 using namespace Poseidon;
 
-struct Poseidon::ImplDisposableBuffer {
+struct Poseidon::DisposableBufferImpl {
 	std::size_t readPos;
 	std::size_t writePos;
 	char data[256];
 
 	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
 	// 因此在 list 中会被 value-initialize 即填零，然而这是没有任何意义的。
-	ImplDisposableBuffer(){
+	DisposableBufferImpl(){
 	}
 };
 
 namespace {
 
 boost::mutex g_poolMutex;
-std::list<ImplDisposableBuffer> g_pool;
+std::list<DisposableBufferImpl> g_pool;
 
-ImplDisposableBuffer &pushBackPooled(std::list<ImplDisposableBuffer> &dst){
+DisposableBufferImpl &pushBackPooled(std::list<DisposableBufferImpl> &dst){
 	do {
 		{
 			const boost::mutex::scoped_lock lock(g_poolMutex);
@@ -31,7 +31,7 @@ ImplDisposableBuffer &pushBackPooled(std::list<ImplDisposableBuffer> &dst){
 				break;
 			}
 		}
-		std::list<ImplDisposableBuffer> temp(1);
+		std::list<DisposableBufferImpl> temp(1);
 		dst.splice(dst.end(), temp, temp.begin());
 	} while(false);
 
@@ -40,13 +40,13 @@ ImplDisposableBuffer &pushBackPooled(std::list<ImplDisposableBuffer> &dst){
 	ret.writePos = 0;
 	return ret;
 }
-void popFrontPooled(std::list<ImplDisposableBuffer> &src){
+void popFrontPooled(std::list<DisposableBufferImpl> &src){
 	assert(!src.empty());
 
 	const boost::mutex::scoped_lock lock(g_poolMutex);
 	g_pool.splice(g_pool.begin(), src, src.begin());
 }
-void clearPooled(std::list<ImplDisposableBuffer> &src){
+void clearPooled(std::list<DisposableBufferImpl> &src){
 	if(src.empty()){
 		return;
 	}

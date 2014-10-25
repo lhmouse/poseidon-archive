@@ -18,7 +18,11 @@ namespace Poseidon {
 class MySqlObjectBase
 	: public virtual VirtualSharedFromThis
 {
+	friend class MySqlObjectImpl;
+
 private:
+	const boost::shared_ptr<class Module> m_module;
+
 	mutable volatile bool m_autoSaves;
 	mutable void *m_context;
 
@@ -26,22 +30,12 @@ protected:
 	mutable boost::shared_mutex m_mutex;
 
 public:
-	MySqlObjectBase()
-		: m_autoSaves(false), m_context(0)
-	{
-	}
+	explicit MySqlObjectBase(boost::shared_ptr<Module> module);
 
 protected:
 	void invalidate() const;
 
 public:
-	void *getContext() const {
-		return m_context;
-	}
-	void setContext(void *context) const {
-		m_context = context;
-	}
-
 	bool isAutoSavingEnabled() const {
 		return atomicLoad(m_autoSaves);
 	}

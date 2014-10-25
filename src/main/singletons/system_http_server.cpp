@@ -69,7 +69,7 @@ void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParam
 		return;
 	}
 	if(!ModuleManager::unload(name)){
-		LOG_WARN("Failed to load module: ", name);
+		LOG_WARN("Failed to unload module: ", name);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
 	}
@@ -106,11 +106,11 @@ void onModules(boost::shared_ptr<HttpSession> session, OptionalMap){
 	headers.set("Content-Disposition", "attachment; name=\"modules.csv\"");
 
 	StreamBuffer contents;
-	contents.put("path,ref_count\r\n");
+	contents.put("real_path,ref_count\r\n");
 	AUTO(snapshot, ModuleManager::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-		escapeCsvField(str, it->path.get());
+		escapeCsvField(str, it->realPath.get());
 		contents.put(str);
 		char temp[64];
 		unsigned len = std::sprintf(temp, ",%llu\r\n", (unsigned long long)it->refCount);
