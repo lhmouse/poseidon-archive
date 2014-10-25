@@ -29,8 +29,8 @@ std::string getRealPath(const char *path){
 
 }
 
-void MainConfig::setRunPath(const char *path){
-	const AUTO(realPath, getRealPath(path));
+void MainConfig::setRunPath(const SharedNtmbs &path){
+	const AUTO(realPath, getRealPath(path.get()));
 	LOG_INFO("Setting working directory: ", realPath);
 	if(::chdir(realPath.c_str()) != 0){
 		DEBUG_THROW(SystemError);

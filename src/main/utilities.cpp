@@ -96,13 +96,13 @@ SharedNtmbs getErrorDesc(int errCode) NOEXCEPT {
 	const char *desc = ::strerror_r(errCode, temp, sizeof(temp));
 	if(desc == temp){
 		try {
-			return SharedNtmbs::createOwning(desc);
+			return SharedNtmbs(desc, true);
 		} catch(...){
 			desc = "Insufficient memory.";
 		}
 	}
 	// desc 指向一个静态的字符串。
-	return SharedNtmbs::createNonOwning(desc);
+	return SharedNtmbs(desc);
 }
 std::string getErrorDescAsString(int errCode){
 	std::string ret;

@@ -12,19 +12,21 @@ struct CharArrayDeleter {
 	}
 };
 
-}
+const boost::weak_ptr<const char> NULL_WEAK_PTR;
 
-SharedNtmbs SharedNtmbs::createOwning(const char *str, std::size_t len){
-	boost::shared_ptr<char> sp(new char[len + 1], CharArrayDeleter());
-	std::memcpy(sp.get(), str, len);
-	sp.get()[len] = 0;
-	return SharedNtmbs(sp);
 }
 
 bool SharedNtmbs::isOwning() const {
-	const boost::weak_ptr<const char> tmp(m_ptr);
-	const boost::weak_ptr<const char> null;
-	return (tmp < null) || (null < tmp);
+	const boost::weak_ptr<const char> ownerTest(m_ptr);
+	return (ownerTest < NULL_WEAK_PTR) || (NULL_WEAK_PTR < ownerTest);
+}
+void SharedNtmbs::forkOwning(){
+	if(!isOwning()){
+		const std::size_t size = std::strlen(m_ptr.get()) + 1;
+		boost::shared_ptr<char> sp(new char[size], CharArrayDeleter());
+		std::memcpy(sp.get(), m_ptr.get(), size);
+		m_ptr = sp;
+	}
 }
 
 namespace Poseidon {

@@ -55,6 +55,6 @@ public:
 
 }
 
-#define DEBUG_THROW(etype_, ...)	throw etype_(__FILE__, __LINE__, __VA_ARGS__)
+#define DEBUG_THROW(etype_, ...)	throw etype_(__FILE__, __LINE__, ## __VA_ARGS__)
 
 #endif

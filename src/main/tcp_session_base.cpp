@@ -7,11 +7,11 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <errno.h>
-#include "exception.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include "atomic.hpp"
 #include "endian.hpp"
+#include "exception.hpp"
 #include "utilities.hpp"
 using namespace Poseidon;
 
@@ -41,7 +41,7 @@ std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
 		LOG_WARN("Failed to format IP address to string.");
 		DEBUG_THROW(SystemError);
 	}
-	return std::make_pair(SharedNtmbs::createOwning(ip), port);
+	return std::make_pair(SharedNtmbs(ip, true), port);
 }
 
 std::pair<SharedNtmbs, unsigned> getRemoteAddrFromFd(int fd){

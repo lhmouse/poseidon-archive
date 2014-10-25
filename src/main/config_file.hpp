@@ -15,14 +15,10 @@ private:
 
 public:
 	ConfigFile();
-	explicit ConfigFile(const char *path);
 	explicit ConfigFile(const SharedNtmbs &path);
-	explicit ConfigFile(const std::string &path);
 
 public:
-	bool load(const char *path);
 	bool load(const SharedNtmbs &path);
-	bool load(const std::string &path);
 
 	bool empty() const {
 		return m_contents.empty();
@@ -36,7 +32,7 @@ public:
 	}
 
 	template<typename T>
-	bool get(T &val, const char *key) const {
+	bool get(T &val, const SharedNtmbs &key) const {
 		const std::string &str = m_contents.get(key);
 		if(str.empty()){
 			return false;
@@ -44,17 +40,8 @@ public:
 		val = boost::lexical_cast<T>(str);
 		return true;
 	}
-	template<typename T>
-	bool get(T &val, const SharedNtmbs &key) const {
-		return get<T>(val, key.get());
-	}
-	template<typename T>
-	bool get(T &val, const std::string &key) const {
-		return get<T>(val, key.c_str());
-	}
-
 	template<typename T, typename DefaultT>
-	bool get(T &val, const char *key, const DefaultT &defVal) const {
+	bool get(T &val, const SharedNtmbs &key, const DefaultT &defVal) const {
 		const std::string &str = m_contents.get(key);
 		if(str.empty()){
 			val = defVal;
@@ -63,17 +50,9 @@ public:
 		val = boost::lexical_cast<T>(str);
 		return true;
 	}
-	template<typename T, typename DefaultT>
-	bool get(T &val, const SharedNtmbs &key, const DefaultT &defVal) const {
-		return get<T, DefaultT>(val, key.get(), defVal);
-	}
-	template<typename T, typename DefaultT>
-	bool get(T &val, const std::string &key, const DefaultT &defVal) const {
-		return get<T, DefaultT>(val, key.c_str(), defVal);
-	}
 
 	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const char *key, bool truncates = false) const {
+	std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key, bool truncates = false) const {
 		if(truncates){
 			vals.clear();
 		}
@@ -86,14 +65,6 @@ public:
 			++ret;
 		}
 		return ret;
-	}
-	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key, bool truncates = false) const {
-		return getAll<T>(vals, key.get(), truncates);
-	}
-	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const std::string &key, bool truncates = false) const {
-		return getAll<T>(vals, key.c_str(), truncates);
 	}
 };
 

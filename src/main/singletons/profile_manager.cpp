@@ -65,8 +65,7 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 {
 	try {
 		std::map<ProfileKey, ProfileCounters>::iterator it;
-		ProfileKey key(SharedNtmbs::createNonOwning(file), line,
-			SharedNtmbs::createNonOwning(func));
+		ProfileKey key(file, line, func);
 		{
 			const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 			it = g_profile.find(key);
@@ -75,8 +74,8 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 			}
 		}
 		{
-			key.file = SharedNtmbs::createOwning(file);
-			key.func = SharedNtmbs::createOwning(func);
+			key.file.forkOwning();
+			key.func.forkOwning();
 
 			const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 			it = g_profile.insert(std::make_pair(key, ProfileCounters())).first;

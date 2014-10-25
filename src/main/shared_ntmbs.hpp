@@ -14,37 +14,44 @@ class SharedNtmbs {
 private:
 	typedef boost::shared_ptr<const char> NtmbsPtr;
 
-public:
-	static SharedNtmbs createOwning(const char *str, std::size_t len);
-
-	static SharedNtmbs createOwning(const char *str){
-		return createOwning(str, std::strlen(str));
-	}
-	static SharedNtmbs createOwning(const std::string &str){
-		return createOwning(str.data(), str.size());
-	}
-
-	static SharedNtmbs createNonOwning(const char *str){
-		return SharedNtmbs(NtmbsPtr(boost::shared_ptr<void>(), str));
-	}
-	static SharedNtmbs createNonOwning(const std::string &str){
-		return createNonOwning(str.c_str());
-	}
-
 private:
 	NtmbsPtr m_ptr;
 
-private:
-	explicit SharedNtmbs(NtmbsPtr ptr) NOEXCEPT
-		: m_ptr(STD_MOVE(ptr))
-	{
-	}
-
 public:
-	SharedNtmbs() NOEXCEPT
+	SharedNtmbs()
 		: m_ptr(boost::shared_ptr<void>(), "")
 	{
 	}
+	SharedNtmbs(const char *str, bool owning = false)
+		: m_ptr(boost::shared_ptr<void>(), str)
+	{
+		if(owning){
+			forkOwning();
+		}
+	}
+	SharedNtmbs(const std::string &str, bool owning = false)
+		: m_ptr(boost::shared_ptr<void>(), str.c_str())
+	{
+		if(owning){
+			forkOwning();
+		}
+	}
+	SharedNtmbs(const SharedNtmbs &rhs, bool owning = false)
+		: m_ptr(rhs.m_ptr)
+	{
+		if(owning){
+			forkOwning();
+		}
+	}
+#ifdef POSEIDON_CXX11
+	SharedNtmbs(SharedNtmbs &&rhs, bool owning = false) noexcept
+		: m_ptr(std::move(rhs.m_ptr))
+	{
+		if(owning){
+			forkOwning();
+		}
+	}
+#endif
 
 public:
 	const char *get() const {
@@ -52,12 +59,7 @@ public:
 	}
 
 	bool isOwning() const;
-	SharedNtmbs forkOwning() const {
-		if(isOwning()){
-			return *this;
-		}
-		return createOwning(get());
-	}
+	void forkOwning();
 
 	void swap(SharedNtmbs &rhs) NOEXCEPT {
 		m_ptr.swap(rhs.m_ptr);

@@ -109,19 +109,20 @@ void ModuleManager::stop(){
 	g_modules.clear();
 }
 
-boost::shared_ptr<Module> ModuleManager::get(const char *path){
+boost::shared_ptr<Module> ModuleManager::get(const SharedNtmbs &path){
 	const boost::shared_lock<boost::shared_mutex> lock(g_mutex);
-	const AUTO(it, g_modules.find<0>(SharedNtmbs::createNonOwning(path)));
+	const AUTO(it, g_modules.find<0>(path));
 	if(it == g_modules.end()){
 		return VAL_INIT;
 	}
 	return it->module;
 }
-boost::shared_ptr<Module> ModuleManager::load(const char *path){
+boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 	AUTO(module, get(path));
 	if(!module){
 		ModuleMapElement element;
-		element.path = SharedNtmbs::createOwning(path);
+		element.path = path;
+		element.path.forkOwning();
 		element.module = boost::make_shared<Module>(element.path);
 		element.module->init(element.contexts);
 		module = element.module;
@@ -132,7 +133,7 @@ boost::shared_ptr<Module> ModuleManager::load(const char *path){
 	}
 	return module;
 }
-boost::shared_ptr<Module> ModuleManager::loadNoThrow(const char *path){
+boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
 	try {
 		return load(path);
 	} catch(std::exception &e){

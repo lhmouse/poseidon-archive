@@ -70,7 +70,7 @@ bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 				return false;
 			}
 		}
-		SharedNtmbs::createOwning(key).swap(keys.at(i));
+		SharedNtmbs(key, true).swap(keys.at(i));
 	}
 	for(std::size_t i = 1; i < rows.size(); ++i){
 		rows.at(i - 1).swap(rows.at(i));

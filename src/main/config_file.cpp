@@ -7,23 +7,13 @@ using namespace Poseidon;
 
 ConfigFile::ConfigFile(){
 }
-ConfigFile::ConfigFile(const char *path){
-	if(!load(path)){
-		DEBUG_THROW(Exception, "Failed to load config file");
-	}
-}
 ConfigFile::ConfigFile(const SharedNtmbs &path){
 	if(!load(path)){
 		DEBUG_THROW(Exception, "Failed to load config file");
 	}
 }
-ConfigFile::ConfigFile(const std::string &path){
-	if(!load(path)){
-		DEBUG_THROW(Exception, "Failed to load config file");
-	}
-}
 
-bool ConfigFile::load(const char *path){
+bool ConfigFile::load(const SharedNtmbs &path){
 	LOG_INFO("Loading config file: ", path);
 
 	std::ifstream ifs(path);
@@ -50,30 +40,24 @@ bool ConfigFile::load(const char *path){
 			return false;
 		}
 
-		std::string key = line.substr(pos, equ);
-		pos = key.find_last_not_of(" \t");
-		if(pos == std::string::npos){
+		std::size_t keyEnd = line.find_last_not_of(" \t", equ - 1);
+		if((keyEnd == std::string::npos) || (pos >= keyEnd)){
 			LOG_ERROR("Error in config file on line ", count, ": Name expected.");
 			return false;
 		}
-		key.erase(key.begin() + pos + 1, key.end());
+		line[keyEnd + 1] = 0;
+		SharedNtmbs key(&line[pos], true);
 
 		pos = line.find_first_not_of(" \t", equ + 1);
 		if(pos != std::string::npos){
 			line.erase(line.begin(), line.begin() + pos);
 			pos = line.find_last_not_of(" \t");
 			line.erase(line.begin() + pos + 1, line.end());
-
-			LOG_DEBUG("Config: ", key, " = ", line);
-			contents.append(STD_MOVE(key), STD_MOVE(line));
 		}
+
+		LOG_DEBUG("Config: ", key, " = ", line);
+		contents.append(STD_MOVE(key), STD_MOVE(line));
 	}
 	m_contents.swap(contents);
 	return true;
-}
-bool ConfigFile::load(const SharedNtmbs &path){
-	return load(path.get());
-}
-bool ConfigFile::load(const std::string &path){
-	return load(path.c_str());
 }
