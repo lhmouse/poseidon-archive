@@ -1,6 +1,6 @@
 #include "precompiled.hpp"
 #include "config_file.hpp"
-#include <fstream>
+#include "file.hpp"
 #include "log.hpp"
 #include "exception.hpp"
 using namespace Poseidon;
@@ -8,23 +8,19 @@ using namespace Poseidon;
 ConfigFile::ConfigFile(){
 }
 ConfigFile::ConfigFile(const SharedNtmbs &path){
-	if(!load(path)){
-		DEBUG_THROW(Exception, "Failed to load config file");
-	}
+	load(path);
 }
 
-bool ConfigFile::load(const SharedNtmbs &path){
+void ConfigFile::load(const SharedNtmbs &path){
 	LOG_INFO("Loading config file: ", path);
 
-	std::ifstream ifs(path);
-	if(!ifs){
-		LOG_ERROR("Could not open config file: ", path);
-		return false;
-	}
+	StreamBuffer buffer;
+	fileGetContents(buffer, path);
+
 	OptionalMap contents;
 	std::string line;
 	std::size_t count = 0;
-	while(std::getline(ifs, line)){
+	while(getLine(buffer, line)){
 		++count;
 		std::size_t pos = line.find('#');
 		if(pos != std::string::npos){
@@ -37,13 +33,13 @@ bool ConfigFile::load(const SharedNtmbs &path){
 		std::size_t equ = line.find('=', pos);
 		if(equ == std::string::npos){
 			LOG_ERROR("Error in config file on line ", count, ": '=' expected.");
-			return false;
+			DEBUG_THROW(Exception, "Bad config file");
 		}
 
 		std::size_t keyEnd = line.find_last_not_of(" \t", equ - 1);
 		if((keyEnd == std::string::npos) || (pos >= keyEnd)){
 			LOG_ERROR("Error in config file on line ", count, ": Name expected.");
-			return false;
+			DEBUG_THROW(Exception, "Bad config file");
 		}
 		line[keyEnd + 1] = 0;
 		SharedNtmbs key(&line[pos], true);
@@ -59,5 +55,13 @@ bool ConfigFile::load(const SharedNtmbs &path){
 		contents.append(STD_MOVE(key), STD_MOVE(line));
 	}
 	m_contents.swap(contents);
-	return true;
+}
+
+int ConfigFile::loadNoThrow(const SharedNtmbs &path){
+	try {
+		load(path);
+		return 0;
+	} catch(SystemError &e){
+		return e.code();
+	}
 }

@@ -1,7 +1,7 @@
 #include "precompiled.hpp"
 #include "csv_parser.hpp"
-#include <fstream>
 #include "exception.hpp"
+#include "file.hpp"
 #include "log.hpp"
 using namespace Poseidon;
 
@@ -10,8 +10,8 @@ namespace {
 bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 	LOG_DEBUG("Loading CSV file: ", file);
 
-	std::ifstream ifs(file);
-	if(!ifs){
+	StreamBuffer buffer;
+	if(!fileGetContentsNoThrow(buffer, file)){
 		LOG_ERROR("Error opening file: ", file);
 		return false;
 	}
@@ -23,17 +23,25 @@ bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 		bool inQuote = false;
 		char ch;
 		do {
-			if(!ifs.get(ch)){
+			if(buffer.empty()){
 				ch = '\n';
+			} else {
+				ch = buffer.get();
+				if(ch == '\r'){
+					if(buffer.peek() == '\n'){
+						buffer.get();
+					}
+					ch = '\n';
+				}
 			}
 
 			if(ch == '\"'){
 				if(!inQuote){
 					inQuote = true;
-				} else if(ifs.peek() != '\"'){
+				} else if(buffer.peek() != '\"'){
 					inQuote = false;
 				} else {
-					ifs.ignore();
+					buffer.get();
 					token.push_back('\"');
 				}
 			} else if(!inQuote && ((ch == ',') || (ch == '\n'))){
@@ -53,7 +61,7 @@ bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 			} else {
 				token.push_back(ch);
 			}
-		} while(ifs);
+		} while(!buffer.empty());
 	}
 	if(rows.empty() || rows.front().empty()){
 		LOG_ERROR("The first line of a CSV file may not be empty.");

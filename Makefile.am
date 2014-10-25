@@ -41,6 +41,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/event_base.cpp	\
 	src/main/hash.cpp	\
 	src/main/uuid.cpp	\
+	src/main/file.cpp	\
 	src/main/config_file.cpp	\
 	src/main/singletons/main_config.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\

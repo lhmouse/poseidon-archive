@@ -18,7 +18,8 @@ public:
 	explicit ConfigFile(const SharedNtmbs &path);
 
 public:
-	bool load(const SharedNtmbs &path);
+	void load(const SharedNtmbs &path);
+	int loadNoThrow(const SharedNtmbs &path);
 
 	bool empty() const {
 		return m_contents.empty();
