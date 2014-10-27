@@ -69,10 +69,10 @@ public:
 namespace {
 
 struct ModuleMapElement {
-	boost::shared_ptr<Module> module;
-	void *handle;
-	SharedNtmbs realPath;
-	void *baseAddr;
+	const boost::shared_ptr<Module> module;
+	void *const handle;
+	const SharedNtmbs realPath;
+	void *const baseAddr;
 
 	mutable ModuleContexts contexts;
 
@@ -81,9 +81,11 @@ struct ModuleMapElement {
 		, handle(module->handle()), realPath(module->realPath()), baseAddr(module->baseAddr())
 	{
 	}
-	ModuleMapElement(Move<ModuleMapElement> rhs) NOEXCEPT {
-		rhs.swap(*this);
-	}
+
+#ifndef POSEIDON_CXX11
+	// C++03 不提供转移构造函数，但是我们在这里不使用它，不需要定义。
+	ModuleMapElement(Move<ModuleMapElement> rhs);
+#endif
 };
 
 MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,

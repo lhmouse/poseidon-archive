@@ -31,7 +31,7 @@ ScopedFile g_epoll;
 boost::thread g_thread;
 
 struct SessionMapElement {
-	boost::shared_ptr<TcpSessionBase> session;
+	const boost::shared_ptr<TcpSessionBase> session;
 	// 时间戳，零表示无数据可读/写。
 	unsigned long long lastRead;
 	unsigned long long lastWritten;
@@ -41,9 +41,11 @@ struct SessionMapElement {
 		: session(STD_MOVE(session_)), lastRead(lastRead_), lastWritten(lastWritten_)
 	{
 	}
-	SessionMapElement(Move<SessionMapElement> rhs) NOEXCEPT {
-		rhs.swap(*this);
-	}
+
+#ifndef POSEIDON_CXX11
+	// C++03 不提供转移构造函数，但是我们在这里不使用它，不需要定义。
+	SessionMapElement(Move<SessionMapElement> rhs);
+#endif
 };
 
 MULTI_INDEX_MAP(SessionMap, SessionMapElement,
