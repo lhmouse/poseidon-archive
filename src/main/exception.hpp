@@ -15,7 +15,7 @@ protected:
 	const std::size_t m_line;
 
 public:
-	Exception(const char *file, std::size_t line, std::string what);
+	Exception(const char *file, std::size_t line, std::string reason);
 
 public:
 	const char *file() const NOEXCEPT {
