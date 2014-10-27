@@ -145,6 +145,17 @@ void onConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
 	session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 
+void onSetLogLevel(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
+	AUTO_REF(level, getParams.get("level"));
+	if(level.empty()){
+		LOG_WARN("Missing parameter: level");
+		session->sendDefault(HTTP_BAD_REQUEST);
+		return;
+	}
+	Logger::setLevel(boost::lexical_cast<unsigned>(level));
+	session->sendDefault(HTTP_OK);
+}
+
 const std::pair<
 	const char *, void (*)(boost::shared_ptr<HttpSession>, OptionalMap)
 	> JUMP_TABLE[] =
@@ -154,6 +165,7 @@ const std::pair<
 	std::make_pair("load_module", &onLoadModule),
 	std::make_pair("modules", &onModules),
 	std::make_pair("profile", &onProfile),
+	std::make_pair("set_log_level", &onSetLogLevel),
 	std::make_pair("shutdown", &onShutdown),
 	std::make_pair("unload_module", &onUnloadModule),
 };

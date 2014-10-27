@@ -156,7 +156,7 @@ protected:
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... request URI = ", m_uri);
-			m_session->sendDefault(HTTP_SERVER_ERROR, true);
+			m_session->sendDefault(HTTP_BAD_REQUEST, true);
 			throw;
 		}
 	}
@@ -340,7 +340,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		throw;
 	} catch(...){
 		LOG_ERROR("Forwarding exception... shutdown the session first.");
-		sendDefault(HTTP_SERVER_ERROR, true);
+		sendDefault(HTTP_BAD_REQUEST, true);
 		throw;
 	}
 }
