@@ -320,9 +320,6 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		lhs.swap(rhs);	\
 	}
 
-#define MULTI_INDEX_MAP_DECLTYPE_(struct_, member_)	\
-	__typeof__(((struct_ *)1)->member_)
-
 #define UNIQUE_INDEX_(ignored_, ...)	\
 	::boost::multi_index::ordered_unique<	\
 		::boost::multi_index::identity<value_type>,	\
@@ -342,7 +339,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 #define UNIQUE_MEMBER_INDEX(member_, ...)	\
 	::boost::multi_index::ordered_unique<	\
 		::boost::multi_index::member<value_type,	\
-			MULTI_INDEX_MAP_DECLTYPE_(value_type, member_),	\
+			CV_VALUE_TYPE(DECLREF(value_type).member_),	\
 			&value_type::member_	\
 		>,	\
 		## __VA_ARGS__>
@@ -350,7 +347,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 #define MULTI_MEMBER_INDEX(member_, ...)	\
 	::boost::multi_index::ordered_non_unique<	\
 		::boost::multi_index::member<value_type,	\
-			MULTI_INDEX_MAP_DECLTYPE_(value_type, member_),	\
+			CV_VALUE_TYPE(DECLREF(value_type).member_),	\
 			&value_type::member_	\
 		>,	\
 		## __VA_ARGS__>
