@@ -217,7 +217,7 @@ std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 	{
 		const boost::recursive_mutex::scoped_lock lock(g_mutex);
 		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
-			ret.push_back(VAL_INIT);
+			ret.push_back(ModuleSnapshotItem());
 			ModuleSnapshotItem &mi = ret.back();
 
 			mi.realPath = it->realPath;

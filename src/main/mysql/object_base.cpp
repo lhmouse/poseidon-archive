@@ -4,7 +4,7 @@
 using namespace Poseidon;
 
 MySqlObjectBase::MySqlObjectBase(boost::shared_ptr<Module> module)
-	: m_module(STD_MOVE(module)), m_autoSaves(false), m_context(VAL_INIT)
+	: m_module(STD_MOVE(module)), m_autoSaves(false), m_context()
 {
 }
 

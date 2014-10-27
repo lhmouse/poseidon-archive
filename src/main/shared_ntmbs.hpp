@@ -43,15 +43,20 @@ public:
 			forkOwning();
 		}
 	}
-#ifdef POSEIDON_CXX11
-	SharedNtmbs(SharedNtmbs &&rhs, bool owning = false) noexcept
-		: m_ptr(std::move(rhs.m_ptr))
-	{
+	SharedNtmbs(Move<SharedNtmbs> rhs, bool owning = false) NOEXCEPT {
+		rhs.swap(*this);
 		if(owning){
 			forkOwning();
 		}
 	}
-#endif
+	SharedNtmbs &operator=(const SharedNtmbs &rhs){
+		m_ptr = rhs.m_ptr;
+		return *this;
+	}
+	SharedNtmbs &operator=(Move<SharedNtmbs> rhs) NOEXCEPT {
+		rhs.swap(*this);
+		return *this;
+	}
 
 public:
 	const char *get() const {
