@@ -68,8 +68,8 @@ void run(){
 	START(HttpServletManager);
 	START(WebSocketServletManager);
 	START(EventListenerManager);
-	START(SystemHttpServer);
 
+	START(SystemHttpServer);
 	START(ModuleManager);
 
 	MySqlDaemon::waitForAllAsyncOperations();
