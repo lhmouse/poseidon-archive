@@ -13,6 +13,7 @@ class Module;
 
 struct ModuleSnapshotItem {
 	SharedNtmbs realPath;
+	void *baseAddr;
 	std::size_t refCount;
 };
 
@@ -20,14 +21,13 @@ struct ModuleManager {
 	static void start();
 	static void stop();
 
-	static boost::shared_ptr<Module> get(const SharedNtmbs &realPath);
-	static boost::shared_ptr<Module> assertCurrent() __attribute__((__noinline__));
 	static boost::shared_ptr<Module> load(const SharedNtmbs &path);
 	static boost::shared_ptr<Module> loadNoThrow(const SharedNtmbs &path);
 	static bool unload(const boost::shared_ptr<Module> &module);
-	static bool unload(const SharedNtmbs &path);
+	static bool unload(const SharedNtmbs &realPath);
+	static bool unload(void *baseAddr);
 
-	static ModuleSnapshotItem snapshot(const boost::shared_ptr<Module> &module);
+	static boost::shared_ptr<Module> assertCurrent() __attribute__((__noinline__));
 	static std::vector<ModuleSnapshotItem> snapshot();
 
 private:

@@ -72,10 +72,8 @@ void run(){
 
 	START(ModuleManager);
 
-	LOG_INFO("Waiting for all MySQL operations to complete...");
 	MySqlDaemon::waitForAllAsyncOperations();
 
-	LOG_INFO("Entering modal loop...");
 	JobDispatcher::doModal();
 }
 

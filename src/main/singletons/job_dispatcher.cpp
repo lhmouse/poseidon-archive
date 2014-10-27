@@ -22,6 +22,8 @@ boost::condition_variable g_newJobAvail;
 }
 
 void JobDispatcher::doModal(){
+	LOG_INFO("Entering modal loop...");
+
 	if(atomicExchange(g_running, true) != false){
 		LOG_FATAL("Only one modal loop is allowed at the same time.");
 		std::abort();

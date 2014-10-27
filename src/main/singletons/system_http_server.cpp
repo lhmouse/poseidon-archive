@@ -16,11 +16,12 @@ using namespace Poseidon;
 
 namespace {
 
-void escapeCsvField(std::string &dst, const char *src){
+void escapeCsvField(std::string &dst, const SharedNtmbs &src){
 	bool needsQuotes = false;
 	dst.clear();
+	const char *read = src.get();
 	for(;;){
-		const char ch = *(src++);
+		const char ch = *(read++);
 		if(ch == 0){
 			break;
 		}
@@ -47,9 +48,9 @@ void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
 }
 
 void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
-	AUTO_REF(name, getParams.get("module"));
+	AUTO_REF(name, getParams.get("name"));
 	if(name.empty()){
-		LOG_WARN("Missing parameter 'module'.");
+		LOG_WARN("Missing parameter: name");
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
@@ -62,14 +63,14 @@ void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 }
 
 void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
-	AUTO_REF(name, getParams.get("module"));
-	if(name.empty()){
-		LOG_WARN("Missing parameter 'module'.");
+	AUTO_REF(realPath, getParams.get("realpath"));
+	if(realPath.empty()){
+		LOG_WARN("Missing parameter: realpath");
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
-	if(!ModuleManager::unload(name)){
-		LOG_WARN("Failed to unload module: ", name);
+	if(!ModuleManager::unload(realPath)){
+		LOG_WARN("Module not loaded: ", realPath);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
 	}
@@ -86,12 +87,12 @@ void onProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
 	AUTO(snapshot, ProfileManager::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-		escapeCsvField(str, it->file.get());
+		escapeCsvField(str, it->file);
 		contents.put(str);
 		char temp[256];
 		unsigned len = std::sprintf(temp, ",%llu,", (unsigned long long)it->line);
 		contents.put(temp, len);
-		escapeCsvField(str, it->func.get());
+		escapeCsvField(str, it->func);
 		contents.put(str);
 		len = std::sprintf(temp, ",%llu,%llu,%llu\r\n", it->samples, it->usTotal, it->usExclusive);
 		contents.put(temp, len);
@@ -106,14 +107,14 @@ void onModules(boost::shared_ptr<HttpSession> session, OptionalMap){
 	headers.set("Content-Disposition", "attachment; name=\"modules.csv\"");
 
 	StreamBuffer contents;
-	contents.put("real_path,ref_count\r\n");
+	contents.put("real_path,base_addr,ref_count\r\n");
 	AUTO(snapshot, ModuleManager::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-		escapeCsvField(str, it->realPath.get());
+		escapeCsvField(str, it->realPath);
 		contents.put(str);
-		char temp[64];
-		unsigned len = std::sprintf(temp, ",%llu\r\n", (unsigned long long)it->refCount);
+		char temp[256];
+		unsigned len = std::sprintf(temp, ",%p,%llu\r\n", it->baseAddr, (unsigned long long)it->refCount);
 		contents.put(temp, len);
 	}
 
@@ -130,12 +131,12 @@ void onConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
 	AUTO(snapshot, EpollDaemon::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-		escapeCsvField(str, it->remoteIp.get());
+		escapeCsvField(str, it->remoteIp);
 		contents.put(str);
-		char temp[64];
+		char temp[256];
 		unsigned len = std::sprintf(temp, ",%u,", it->remotePort);
 		contents.put(temp, len);
-		escapeCsvField(str, it->localIp.get());
+		escapeCsvField(str, it->localIp);
 		contents.put(str);
 		len = std::sprintf(temp, ",%u,%llu\r\n", it->localPort, it->usOnline);
 		contents.put(temp, len);

@@ -30,41 +30,47 @@ std::size_t g_databaseMaxReconnDelay	= 60000;
 
 class AsyncLoadCallbackJob : public JobBase {
 private:
-	/*const*/ MySqlAsyncLoadCallback m_callback;
-	const boost::shared_ptr<MySqlObjectBase> m_object;
+	const boost::shared_ptr<Module> m_module;
+	MySqlAsyncLoadCallback m_callback;
+
+	boost::shared_ptr<MySqlObjectBase> m_object;
 
 public:
-	AsyncLoadCallbackJob(MySqlAsyncLoadCallback callback,
-		boost::shared_ptr<MySqlObjectBase> object)
-		: /*m_callback(STD_MOVE(callback)),*/ m_object(STD_MOVE(object))
+	explicit AsyncLoadCallbackJob(boost::shared_ptr<Module> module,
+		Move<MySqlAsyncLoadCallback> callback, boost::shared_ptr<MySqlObjectBase> object)
+		: m_module(STD_MOVE(module)), m_object(STD_MOVE(object))
 	{
-		m_callback.swap(callback);
+		callback.swap(m_callback);
 	}
 
 protected:
 	void perform(){
 		PROFILE_ME;
 
-		m_callback(m_object);
+		m_callback(STD_MOVE(m_object));
 	}
 };
 
 struct AsyncSaveItem {
+	boost::shared_ptr<Module> module;
 	boost::shared_ptr<const MySqlObjectBase> object;
 	unsigned long long timeStamp;
 
-	void swap(AsyncSaveItem &rhs) throw() {
+	void swap(AsyncSaveItem &rhs) NOEXCEPT {
+		module.swap(rhs.module);
 		object.swap(rhs.object);
 		std::swap(timeStamp, rhs.timeStamp);
 	}
 };
 
 struct AsyncLoadItem {
+	boost::shared_ptr<Module> module;
 	boost::shared_ptr<MySqlObjectBase> object;
 	std::string filter;
 	MySqlAsyncLoadCallback callback;
 
-	void swap(AsyncLoadItem &rhs) throw() {
+	void swap(AsyncLoadItem &rhs) NOEXCEPT {
+		module.swap(rhs.module);
 		object.swap(rhs.object);
 		filter.swap(rhs.filter);
 		callback.swap(rhs.callback);
@@ -118,7 +124,6 @@ void daemonLoop(){
 	std::size_t reconnectDelay = 0;
 	for(;;){
 		bool discardConnection = false;
-		boost::shared_ptr<Module> module;
 
 		try {
 			if(!connection){
@@ -133,8 +138,7 @@ void daemonLoop(){
 					LOG_INFO("Will retry after ", reconnectDelay, " milliseconds.");
 
 					boost::mutex::scoped_lock lock(g_mutex);
-					g_newObjectAvail.timed_wait(lock,
-						boost::posix_time::milliseconds(reconnectDelay));
+					g_newObjectAvail.timed_wait(lock, boost::posix_time::milliseconds(reconnectDelay));
 
 					reconnectDelay <<= 1;
 					if(reconnectDelay > g_databaseMaxReconnDelay){
@@ -143,6 +147,7 @@ void daemonLoop(){
 				}
 				getMySqlConnection(connection);
 			}
+			reconnectDelay = 0;
 
 			AsyncSaveItem asi;
 			AsyncLoadItem ali;
@@ -183,20 +188,16 @@ void daemonLoop(){
 				break;
 			}
 			if(asi.object){
-				MySqlObjectImpl::getModule(*asi.object).swap(module);
-
 				asi.object->syncSave(connection.get());
+				asi.object->enableAutoSaving();
 			}
 			if(ali.object){
-				MySqlObjectImpl::getModule(*ali.object).swap(module);
-
 				ali.object->syncLoad(connection.get(), ali.filter.c_str());
 				ali.object->enableAutoSaving();
 
-				if(ali.callback){
-					boost::make_shared<AsyncLoadCallbackJob>(
-						boost::ref(ali.callback), boost::ref(ali.object))->pend();
-				}
+				boost::make_shared<AsyncLoadCallbackJob>(
+					MySqlObjectImpl::getModule(*ali.object), STD_MOVE(ali.callback), STD_MOVE(ali.object)
+					)->pend();
 			}
 		} catch(sql::SQLException &e){
 			LOG_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
@@ -210,6 +211,9 @@ void daemonLoop(){
 			discardConnection = true;
 		}
 
+		if(!atomicLoad(g_running)){
+			break;
+		}
 		if(discardConnection && connection){
 			LOG_INFO("The connection was left in an indeterminate state. Discard it.");
 			connection.reset();
@@ -277,12 +281,15 @@ void MySqlDaemon::stop(){
 void MySqlDaemon::waitForAllAsyncOperations(){
 	atomicAdd(g_waiting, 1);
 	try {
+		LOG_INFO("Waiting for all MySQL operations to complete...");
+
 		boost::mutex::scoped_lock lock(g_mutex);
 		g_newObjectAvail.notify_all();
 		while(!g_connected || !(g_saveQueue.empty() && g_loadQueue.empty())){
 			g_queueEmpty.wait(lock);
 		}
 	} catch(...){
+		LOG_ERROR("Interrupted by exception.");
 	}
 	atomicSub(g_waiting, 1);
 }
@@ -295,6 +302,7 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object)
 	g_saveQueue.splice(g_saveQueue.end(), g_savePool, g_savePool.begin());
 
 	AUTO_REF(asi, g_saveQueue.back());
+	asi.module = MySqlObjectImpl::getModule(*object);
 	asi.object.swap(object);
 	asi.timeStamp = getMonoClock() + g_databaseSaveDelay * 1000;
 	MySqlObjectImpl::setContext(*asi.object, &asi);
@@ -311,6 +319,7 @@ void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	g_loadQueue.splice(g_loadQueue.end(), g_loadPool, g_loadPool.begin());
 
 	AUTO_REF(ali, g_loadQueue.back());
+	ali.module = MySqlObjectImpl::getModule(*object);
 	ali.object.swap(object);
 	ali.filter.swap(filter);
 	ali.callback.swap(callback);

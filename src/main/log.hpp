@@ -14,8 +14,8 @@ public:
 		LV_DISABLED,	// 0
 		LV_FATAL,		// 1
 		LV_ERROR,		// 2
-		LV_WARN,		// 3
-		LV_INFO,		// 4
+		LV_INFO,		// 3
+		LV_WARN,		// 4
 		LV_DEBUG,		// 5
 		LV_TRACE,		// 6
 	};
@@ -90,8 +90,8 @@ public:
 
 #define LOG_FATAL(...)		LOG_LEVEL(::Poseidon::Logger::LV_FATAL, __VA_ARGS__)
 #define LOG_ERROR(...)		LOG_LEVEL(::Poseidon::Logger::LV_ERROR, __VA_ARGS__)
-#define LOG_WARN(...)		LOG_LEVEL(::Poseidon::Logger::LV_WARN, __VA_ARGS__)
 #define LOG_INFO(...)		LOG_LEVEL(::Poseidon::Logger::LV_INFO, __VA_ARGS__)
+#define LOG_WARN(...)		LOG_LEVEL(::Poseidon::Logger::LV_WARN, __VA_ARGS__)
 #define LOG_DEBUG(...)		LOG_LEVEL(::Poseidon::Logger::LV_DEBUG, __VA_ARGS__)
 #define LOG_TRACE(...)		LOG_LEVEL(::Poseidon::Logger::LV_TRACE, __VA_ARGS__)
 

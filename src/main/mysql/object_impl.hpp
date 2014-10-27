@@ -8,9 +8,10 @@
 namespace Poseidon {
 
 struct MySqlObjectImpl {
-	static boost::shared_ptr<Module> getModule(const MySqlObjectBase &obj){
+	static const boost::shared_ptr<Module> &getModule(const MySqlObjectBase &obj){
 		return obj.m_module;
 	}
+
 	static void *getContext(const MySqlObjectBase &obj){
 		return obj.m_context;
 	}

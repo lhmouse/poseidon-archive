@@ -69,9 +69,16 @@ public:
 		using std::swap;
 		swap(m_handle, rhs.m_handle);
 	}
-	ENABLE_IF_CXX11(explicit) operator bool() const NOEXCEPT {
+#ifdef POSEIDON_CXX11
+	explicit operator bool() const noexcept {
 		return get() != CloserT()();
 	}
+#else
+	typedef Handle (ScopedHandle::*DummyBool_)() const;
+	operator DummyBool_() const NOEXCEPT {
+		return (get() != CloserT()()) ? &ScopedHandle::get : 0;
+	}
+#endif
 };
 
 template<typename CloserT>

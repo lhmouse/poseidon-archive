@@ -31,7 +31,7 @@ ScopedFile g_epoll;
 boost::thread g_thread;
 
 struct SessionMapElement {
-	const boost::shared_ptr<TcpSessionBase> session;
+	boost::shared_ptr<TcpSessionBase> session;
 	// 时间戳，零表示无数据可读/写。
 	unsigned long long lastRead;
 	unsigned long long lastWritten;
@@ -40,6 +40,9 @@ struct SessionMapElement {
 		unsigned long long lastRead_, unsigned long long lastWritten_)
 		: session(STD_MOVE(session_)), lastRead(lastRead_), lastWritten(lastWritten_)
 	{
+	}
+	SessionMapElement(Move<SessionMapElement> rhs) NOEXCEPT {
+		rhs.swap(*this);
 	}
 };
 

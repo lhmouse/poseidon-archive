@@ -128,7 +128,7 @@ void meowMeowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	contents.put("<h1>Meow! Meow!</h1>");
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
-void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest, boost::weak_ptr<const Module> module){
+void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest, boost::weak_ptr<Module> module){
 	PROFILE_ME;
 
 	OptionalMap headers;
@@ -149,7 +149,7 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest, boost::weak_ptr<co
 	}
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
-void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest request){
+void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
 
 	OptionalMap headers;
@@ -159,10 +159,7 @@ void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest request){
 	event->d = 67.89;
 	event->raise();
 
-	if(request.getParams.get("unload_module") == "1"){
-		ModuleManager::unload("libposeidon-template.so");
-		contents.put("Module unloaded");
-	} else if(!g_meow){
+	if(!g_meow){
 		contents.put("Already unloaded");
 	} else {
 		g_meow.reset();

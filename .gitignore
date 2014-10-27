@@ -5,6 +5,7 @@
 *.a
 *.log
 *.gch
+*.save*
 
 .dirstamp
 .libs
