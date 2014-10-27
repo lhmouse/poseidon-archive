@@ -91,31 +91,27 @@ bool g_connected = false;
 volatile std::size_t g_waiting = 0;
 boost::condition_variable g_queueEmpty;
 
-void getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
+bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 	LOG_INFO("Connecting to MySQL server...");
 	try {
 		connection.reset(::get_driver_instance()->connect(
 			g_databaseServer, g_databaseUsername, g_databasePassword));
 		connection->setSchema(g_databaseName);
+		LOG_INFO("Successfully connected to MySQL server.");
+		return true;
 	} catch(sql::SQLException &e){
 		LOG_ERROR("Error connecting to MySQL server: code = ", e.getErrorCode(),
 			", state = ", e.getSQLState(), ", what = ", e.what());
-		throw;
+		return false;
 	}
-	LOG_INFO("Successfully connected to MySQL server.");
 }
 
 void daemonLoop(){
 	boost::scoped_ptr<sql::Connection> connection;
-	try {
-		LOG_INFO("Intializing MySQL connection...");
-		getMySqlConnection(connection);
-	} catch(...){
+	if(!getMySqlConnection(connection)){
 		LOG_FATAL("Failed to connect MySQL server. Bail out.");
 		std::abort();
-	}
-
-	{
+	} else {
 		const boost::mutex::scoped_lock lock(g_mutex);
 		g_connected = true;
 		g_queueEmpty.notify_all();
@@ -129,9 +125,6 @@ void daemonLoop(){
 			if(!connection){
 				LOG_WARN("Lost connection to MySQL server. Reconnecting...");
 
-				if(!atomicLoad(g_running)){
-					DEBUG_THROW(Exception, "Shutting down");
-				}
 				if(reconnectDelay == 0){
 					reconnectDelay = 1;
 				} else {
@@ -145,16 +138,24 @@ void daemonLoop(){
 						reconnectDelay = g_databaseMaxReconnDelay;
 					}
 				}
-				getMySqlConnection(connection);
+				if(!getMySqlConnection(connection)){
+					if(!atomicLoad(g_running)){
+						LOG_WARN("Shutting down...");
+						break;
+					}
+					continue;
+				}
+				reconnectDelay = 0;
 			}
-			reconnectDelay = 0;
 
 			AsyncSaveItem asi;
 			AsyncLoadItem ali;
 			{
 				boost::mutex::scoped_lock lock(g_mutex);
 				for(;;){
+					bool empty = true;
 					if(!g_saveQueue.empty()){
+						empty = false;
 						AUTO_REF(head, g_saveQueue.front());
 						if((atomicLoad(g_waiting) == 0) && (head.timeStamp > getMonoClock())){
 							goto skip;
@@ -172,14 +173,16 @@ void daemonLoop(){
 					}
 				skip:
 					if(!g_loadQueue.empty()){
+						empty = false;
 						ali.swap(g_loadQueue.front());
 						g_loadPool.splice(g_loadPool.begin(), g_loadQueue, g_loadQueue.begin());
 						break;
 					}
-					g_queueEmpty.notify_all();
-
-					if(!atomicLoad(g_running)){
-						break;
+					if(empty){
+						g_queueEmpty.notify_all();
+						if(!atomicLoad(g_running)){
+							break;
+						}
 					}
 					g_newObjectAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
@@ -211,9 +214,6 @@ void daemonLoop(){
 			discardConnection = true;
 		}
 
-		if(!atomicLoad(g_running)){
-			break;
-		}
 		if(discardConnection && connection){
 			LOG_INFO("The connection was left in an indeterminate state. Discard it.");
 			connection.reset();
@@ -222,7 +222,9 @@ void daemonLoop(){
 
 	if(!g_saveQueue.empty()){
 		LOG_FATAL("There are still ", g_saveQueue.size(), " object(s) in MySQL save queue");
+		g_saveQueue.clear();
 	}
+	g_loadQueue.clear();
 }
 
 void threadProc(){
@@ -273,6 +275,7 @@ void MySqlDaemon::stop(){
 		const boost::mutex::scoped_lock lock(g_mutex);
 		g_newObjectAvail.notify_all();
 	}
+	waitForAllAsyncOperations();
 	if(g_thread.joinable()){
 		g_thread.join();
 	}

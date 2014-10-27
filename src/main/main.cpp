@@ -60,6 +60,8 @@ struct RaiiSingletonRunner : boost::noncopyable {
 void run(){
 	PROFILE_ME;
 
+	START(ModuleManager);
+
 	START(MySqlDaemon);
 	START(TimerDaemon);
 	START(EpollDaemon);
@@ -70,8 +72,13 @@ void run(){
 	START(EventListenerManager);
 
 	START(SystemHttpServer);
-	START(ModuleManager);
 
+	std::vector<std::string> initModules;
+	MainConfig::getAll(initModules, "init_module");
+	for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
+		LOG_INFO("Loading init module: ", *it);
+		ModuleManager::load(*it);
+	}
 	MySqlDaemon::waitForAllAsyncOperations();
 
 	JobDispatcher::doModal();

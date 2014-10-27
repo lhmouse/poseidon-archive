@@ -107,17 +107,28 @@ ModuleMap g_modules;
 }
 
 void ModuleManager::start(){
-	std::vector<std::string> initModules;
-	MainConfig::getAll(initModules, "init_module");
-	for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
-		LOG_INFO("Loading init module: ", *it);
-		load(*it);
-	}
 }
 void ModuleManager::stop(){
 	LOG_INFO("Unloading all modules...");
 
-	g_modules.clear();
+	std::vector<boost::weak_ptr<Module> > modules;
+	{
+		const boost::recursive_mutex::scoped_lock lock(g_mutex);
+		modules.reserve(g_modules.size());
+		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
+			modules.push_back(it->module);
+		}
+		g_modules.clear();
+	}
+	while(!modules.empty()){
+		const AUTO(module, modules.back().lock());
+		if(!module){
+			modules.pop_back();
+			continue;
+		}
+		LOG_INFO("Waiting for module to unload: ", module->realPath());
+		::sleep(1);
+	}
 }
 
 boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
