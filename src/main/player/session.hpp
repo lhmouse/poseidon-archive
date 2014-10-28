@@ -40,10 +40,9 @@ public:
 		return send(protocolId, StreamBuffer(contents), final);
 	}
 
-	bool sendError(boost::uint16_t protocolId, PlayerStatus status, StreamBuffer additional,
-		bool final = false);
+	bool sendError(boost::uint16_t protocolId, PlayerStatus status, std::string reason, bool final = false);
 	bool sendError(boost::uint16_t protocolId, PlayerStatus status, bool final = false){
-		return sendError(protocolId, status, StreamBuffer(), final);
+		return sendError(protocolId, status, std::string(), final);
 	}
 };
 

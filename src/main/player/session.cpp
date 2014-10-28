@@ -36,11 +36,9 @@ StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
 	return ret;
 }
 
-StreamBuffer makeErrorResponse(boost::uint16_t protocolId, PlayerStatus status, StreamBuffer contents){
-	ErrorProtocol error(protocolId, static_cast<unsigned>(status));
+StreamBuffer makeErrorResponse(boost::uint16_t protocolId, PlayerStatus status, std::string reason){
 	StreamBuffer temp;
-	error >> temp;
-	temp.splice(contents);
+	ErrorProtocol(protocolId, static_cast<unsigned>(status), STD_MOVE(reason)) >>temp;
 	return makeResponse(PLAYER_ERROR_PROTOCOL_ID, STD_MOVE(temp));
 }
 
@@ -77,7 +75,7 @@ protected:
 		} catch(PlayerProtocolException &e){
 			LOG_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ", m_protocolId,
 				", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
-			m_session->sendError(m_protocolId, e.status(), StreamBuffer(e.what()), true);
+			m_session->sendError(m_protocolId, e.status(), e.what(), true);
 			throw;
 		} catch(...){
 			LOG_ERROR("Forwarding exception... protocol id = ", m_protocolId);
@@ -134,7 +132,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 	} catch(PlayerProtocolException &e){
 		LOG_ERROR("PlayerProtocolException thrown while parsing data, protocol id = ", m_protocolId,
 			", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
-		sendError(m_protocolId, e.status(), StreamBuffer(e.what()), true);
+		sendError(m_protocolId, e.status(), e.what(), true);
 		throw;
 	} catch(...){
 		LOG_ERROR("Forwarding exception... protocol id = ", m_protocolId);
@@ -148,7 +146,7 @@ bool PlayerSession::send(boost::uint16_t protocolId, StreamBuffer contents, bool
 }
 
 bool PlayerSession::sendError(boost::uint16_t protocolId, PlayerStatus status,
-	StreamBuffer additional, bool final)
+	std::string reason, bool final)
 {
-	return TcpSessionBase::send(makeErrorResponse(protocolId, status, STD_MOVE(additional)), final);
+	return TcpSessionBase::send(makeErrorResponse(protocolId, status, STD_MOVE(reason)), final);
 }
