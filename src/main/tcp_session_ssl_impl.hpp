@@ -40,7 +40,7 @@ protected:
 	bool m_established;
 
 public:
-	SslImpl(Move<SslPtr> ssl, int fd);
+	SslImpl(SslPtr ssl, int fd);
 	virtual ~SslImpl();
 
 protected:

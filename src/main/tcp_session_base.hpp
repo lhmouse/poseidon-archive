@@ -23,10 +23,16 @@ private:
 	class SslImpl;
 
 private:
+	const boost::shared_ptr<class Module> m_module;
 	const ScopedFile m_socket;
 	const unsigned long long m_createdTime;
-	const std::pair<SharedNtmbs, unsigned> m_remoteAddr;
-	const std::pair<SharedNtmbs, unsigned> m_localAddr;
+
+	mutable struct {
+		volatile bool fetched;
+		boost::mutex mutex;
+		std::pair<SharedNtmbs, unsigned> remote;
+		std::pair<SharedNtmbs, unsigned> local;
+	} m_peerInfo;
 
 	boost::scoped_ptr<SslImpl> m_ssl;
 
@@ -35,11 +41,13 @@ private:
 	StreamBuffer m_sendBuffer;
 
 protected:
-	explicit TcpSessionBase(Move<ScopedFile> socket);
+	explicit TcpSessionBase(ScopedFile socket);
 	virtual ~TcpSessionBase();
 
 private:
 	void initSsl(Move<boost::scoped_ptr<SslImpl> > ssl);
+
+	void fetchPeerInfo() const;
 
 	long doRead(void *date, unsigned long size);
 	long doWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
@@ -52,23 +60,18 @@ public:
 	bool hasBeenShutdown() const;
 	bool forceShutdown();
 
+	const boost::shared_ptr<Module> &getModule() const {
+		return m_module;
+	}
+
 	unsigned long long getCreatedTime() const {
 		return m_createdTime;
 	}
 
-	const SharedNtmbs &getRemoteIp() const {
-		return m_remoteAddr.first;
-	}
-	unsigned getRemotePort() const {
-		return m_remoteAddr.second;
-	}
-
-	const SharedNtmbs &getLocalIp() const {
-		return m_localAddr.first;
-	}
-	unsigned getLocalPort() const {
-		return m_localAddr.second;
-	}
+	const SharedNtmbs &getRemoteIp() const;
+	unsigned getRemotePort() const;
+	const SharedNtmbs &getLocalIp() const;
+	unsigned getLocalPort() const;
 };
 
 }

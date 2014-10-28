@@ -87,7 +87,7 @@ protected:
 
 }
 
-PlayerSession::PlayerSession(Move<ScopedFile> socket)
+PlayerSession::PlayerSession(ScopedFile socket)
 	: TcpSessionBase(STD_MOVE(socket))
 	, m_payloadLen(-1), m_protocolId(0)
 {

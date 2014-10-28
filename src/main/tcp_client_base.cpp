@@ -38,6 +38,40 @@ public:
 	}
 } g_clientSslCtx;
 
+ScopedFile parseAddrPort(void *sa, unsigned &salen,
+	unsigned maxSalen, const std::string &ip, unsigned port)
+{
+	union {
+		::sockaddr sa;
+		::sockaddr_in sin;
+		::sockaddr_in6 sin6;
+	} u;
+
+	if(::inet_pton(AF_INET, ip.c_str(), &u.sin.sin_addr) == 1){
+		u.sin.sin_family = AF_INET;
+		storeBe(u.sin.sin_port, port);
+		salen = sizeof(::sockaddr_in);
+	} else if(::inet_pton(AF_INET6, ip.c_str(), &u.sin6.sin6_addr) == 1){
+		u.sin6.sin6_family = AF_INET6;
+		storeBe(u.sin6.sin6_port, port);
+		salen = sizeof(::sockaddr_in6);
+	} else {
+		LOG_ERROR("Unknown address format: ", ip);
+		DEBUG_THROW(Exception, "Unknown address format");
+	}
+	if(maxSalen < salen){
+		LOG_ERROR("Buffer for sa is too small: ",
+			maxSalen, " is provided but ", salen, " is required.");
+	}
+	std::memcpy(sa, &u, salen);
+
+	ScopedFile client(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
+	if(!client){
+		DEBUG_THROW(SystemError);
+	}
+	return client;
+}
+
 }
 
 class TcpClientBase::SslImplClient : public TcpSessionBase::SslImpl {
@@ -62,39 +96,14 @@ protected:
 	}
 };
 
-void TcpClientBase::connect(ScopedFile &client, const std::string &ip, unsigned port){
-	union {
-		::sockaddr sa;
-		::sockaddr_in sin;
-		::sockaddr_in6 sin6;
-	} u;
-	::socklen_t salen = sizeof(u);
-
-	if(::inet_pton(AF_INET, ip.c_str(), &u.sin.sin_addr) == 1){
-		u.sin.sin_family = AF_INET;
-		storeBe(u.sin.sin_port, port);
-		salen = sizeof(::sockaddr_in);
-	} else if(::inet_pton(AF_INET6, ip.c_str(), &u.sin6.sin6_addr) == 1){
-		u.sin6.sin6_family = AF_INET6;
-		storeBe(u.sin6.sin6_port, port);
-		salen = sizeof(::sockaddr_in6);
-	} else {
-		LOG_ERROR("Unknown address format: ", ip);
-		DEBUG_THROW(Exception, "Unknown address format");
-	}
-
-	client.reset(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
-	if(!client){
-		DEBUG_THROW(SystemError);
-	}
-	if(::connect(client.get(), &u.sa, salen) != 0){
-		DEBUG_THROW(SystemError);
-	}
-}
-
-TcpClientBase::TcpClientBase(Move<ScopedFile> socket)
-	: TcpSessionBase(STD_MOVE(socket))
+TcpClientBase::TcpClientBase(const std::string &ip, unsigned port)
+	: TcpSessionBase(parseAddrPort(m_sa, m_salen, sizeof(m_sa), ip, port))
 {
+	if(::connect(m_socket.get(), reinterpret_cast<const ::sockaddr *>(m_sa), m_salen) != 0){
+		if(errno != EINPROGRESS){
+			DEBUG_THROW(SystemError);
+		}
+	}
 }
 
 void TcpClientBase::sslConnect(){
@@ -102,8 +111,8 @@ void TcpClientBase::sslConnect(){
 
 	SslPtr ssl;
 	g_clientSslCtx.createSsl(ssl);
-	boost::scoped_ptr<TcpSessionBase::SslImpl>
-		sslImpl(new SslImplClient(STD_MOVE(ssl), m_socket.get()));
+	boost::scoped_ptr<TcpSessionBase::SslImpl> sslImpl(
+		new SslImplClient(STD_MOVE(ssl), m_socket.get()));
 	initSsl(STD_MOVE(sslImpl));
 }
 void TcpClientBase::goResident(){

@@ -25,19 +25,6 @@ public:
 	{
 		reset(handle);
 	}
-	ScopedHandle(Move<ScopedHandle> rhs) NOEXCEPT
-		: m_handle(CloserT()())
-	{
-		reset(STD_MOVE(rhs));
-	}
-	ScopedHandle &operator=(Handle handle) NOEXCEPT {
-		reset(handle);
-		return *this;
-	}
-	ScopedHandle &operator=(Move<ScopedHandle> rhs) NOEXCEPT {
-		reset(STD_MOVE(rhs));
-		return *this;
-	}
 	~ScopedHandle() NOEXCEPT {
 		reset();
 	}
@@ -45,6 +32,16 @@ public:
 #ifdef POSEIDON_CXX11
 	ScopedHandle(const ScopedHandle &) = delete;
 	void operator=(const ScopedHandle &) = delete;
+
+	ScopedHandle(ScopedHandle &&rhs) noexcept
+		: m_handle(CloserT()())
+	{
+		swap(rhs);
+	}
+	ScopedHandle &operator=(ScopedHandle &&rhs) noexcept {
+		swap(rhs);
+		return *this;
+	}
 #else
 	// public 但是没有定义。仅作为 RVO 转移使用，如果拷贝构造会导致错误。
 	ScopedHandle(const ScopedHandle &)

@@ -152,8 +152,8 @@ boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 
 		SslPtr ssl;
 		m_sslImplServer->createSsl(ssl);
-		boost::scoped_ptr<TcpSessionBase::SslImpl>
-			sslImpl(new SslImplClient(STD_MOVE(ssl), session->m_socket.get()));
+		boost::scoped_ptr<TcpSessionBase::SslImpl> sslImpl(
+			new SslImplClient(STD_MOVE(ssl), session->m_socket.get()));
 		session->initSsl(STD_MOVE(sslImpl));
 	}
 	LOG_INFO("Client ", session->getRemoteIp(), " has connected.");

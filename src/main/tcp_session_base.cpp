@@ -23,22 +23,6 @@ union SockAddr {
 	::sockaddr_in6 sin6;
 };
 
-ScopedFile setNonBlock(Move<ScopedFile> peer){
-	ScopedFile socket(STD_MOVE(peer));
-	const int flags = ::fcntl(socket.get(), F_GETFL);
-	if(flags == -1){
-		const int code = errno;
-		LOG_ERROR("Could not get fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
-	}
-	if(::fcntl(socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
-		const int code = errno;
-		LOG_ERROR("Could not set fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
-	}
-	return socket;
-}
-
 std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
 	char ip[64];
 	unsigned port;
@@ -54,44 +38,38 @@ std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
 		DEBUG_THROW(Exception, "Unknown IP protocol");
 	}
 	if(!ret){
+		const int code = errno;
 		LOG_WARN("Failed to format IP address to string.");
-		DEBUG_THROW(SystemError);
+		DEBUG_THROW(SystemError, code);
 	}
 	return std::make_pair(SharedNtmbs(ip, true), port);
 }
 
-std::pair<SharedNtmbs, unsigned> getRemoteAddrFromFd(int fd){
-	SockAddr sa;
-	::socklen_t salen = sizeof(sa);
-	if(::getpeername(fd, &sa.sa, &salen) != 0){
-		LOG_ERROR("Failed to get remote socket addr.");
-		DEBUG_THROW(SystemError);
-	}
-	return getAddrPortFromSockAddr(sa);
-}
-std::pair<SharedNtmbs, unsigned> getLocalAddrFromFd(int fd){
-	SockAddr sa;
-	::socklen_t salen = sizeof(sa);
-	if(::getsockname(fd, &sa.sa, &salen) != 0){
-		LOG_ERROR("Failed to get local socket addr.");
-		DEBUG_THROW(SystemError);
-	}
-	return getAddrPortFromSockAddr(sa);
 }
 
-}
-
-TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
-	: m_socket(setNonBlock(STD_MOVE(socket)))
-	, m_createdTime(getMonoClock())
-	, m_remoteAddr(getRemoteAddrFromFd(m_socket.get()))
-	, m_localAddr(getLocalAddrFromFd(m_socket.get()))
-	, m_shutdown(false)
+TcpSessionBase::TcpSessionBase(ScopedFile socket)
+	: m_socket(STD_MOVE(socket)), m_createdTime(getMonoClock())
+	, m_peerInfo(), m_shutdown(false)
 {
-	LOG_INFO("Created TCP peer to ", m_remoteAddr.first, ':', m_remoteAddr.second);
+	const int flags = ::fcntl(m_socket.get(), F_GETFL);
+	if(flags == -1){
+		const int code = errno;
+		LOG_ERROR("Could not get fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
+		const int code = errno;
+		LOG_ERROR("Could not set fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
 }
 TcpSessionBase::~TcpSessionBase(){
-	LOG_INFO("Destroyed TCP peer to ", m_remoteAddr.first, ':', m_remoteAddr.second);
+	if(atomicLoad(m_peerInfo.fetched)){
+		LOG_INFO("Destroyed TCP session, remote address is ",
+			m_peerInfo.remote.first, ':', m_peerInfo.remote.second);
+	} else {
+		LOG_INFO("A TCP session that wasn't fully established has been closed.");
+	}
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer, bool final){
@@ -102,7 +80,7 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool final){
 		closed = atomicLoad(m_shutdown);
 	}
 	if(closed){
-		LOG_DEBUG("Socket to ", m_remoteAddr.first, ':', m_remoteAddr.second, " has been closed.");
+		LOG_DEBUG("Socket has been closed.");
 		return false;
 	}
 	if(!buffer.empty()){
@@ -129,7 +107,44 @@ void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslImpl> > ssl){
 	swap(m_ssl, ssl);
 }
 
+void TcpSessionBase::fetchPeerInfo() const {
+	if(atomicLoad(m_peerInfo.fetched)){
+		return;
+	}
+
+	const boost::mutex::scoped_lock lock(m_peerInfo.mutex);
+	if(atomicLoad(m_peerInfo.fetched)){
+		return;
+	}
+
+	SockAddr sa;
+	::socklen_t salen;
+
+	salen = sizeof(sa);
+	if(::getpeername(m_socket.get(), &sa.sa, &salen) != 0){
+		const int code = errno;
+		LOG_ERROR("Failed to get remote socket addr.");
+		DEBUG_THROW(SystemError, code);
+	}
+	m_peerInfo.remote = getAddrPortFromSockAddr(sa);
+
+	salen = sizeof(sa);
+	if(::getsockname(m_socket.get(), &sa.sa, &salen) != 0){
+		const int code = errno;
+		LOG_ERROR("Failed to get local socket addr.");
+		DEBUG_THROW(SystemError, code);
+	}
+	m_peerInfo.local = getAddrPortFromSockAddr(sa);
+
+	LOG_INFO("Established TCP session, remote address is ",
+		m_peerInfo.remote.first, ':', m_peerInfo.remote.second);
+
+	atomicStore(m_peerInfo.fetched, true);
+}
+
 long TcpSessionBase::doRead(void *data, unsigned long size){
+	fetchPeerInfo();
+
 	::ssize_t ret;
 	if(m_ssl){
 		ret = m_ssl->doRead(data, size);
@@ -141,9 +156,9 @@ long TcpSessionBase::doRead(void *data, unsigned long size){
 	}
 	return ret;
 }
-long TcpSessionBase::doWrite(boost::mutex::scoped_lock &lock,
-	void *hint, unsigned long hintSize)
-{
+long TcpSessionBase::doWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize){
+	fetchPeerInfo();
+
 	boost::mutex::scoped_lock(m_bufferMutex).swap(lock);
 	const std::size_t size = m_sendBuffer.peek(hint, hintSize);
 	lock.unlock();
@@ -163,4 +178,21 @@ long TcpSessionBase::doWrite(boost::mutex::scoped_lock &lock,
 		m_sendBuffer.discard(ret);
 	}
 	return ret;
+}
+
+const SharedNtmbs &TcpSessionBase::getRemoteIp() const {
+	fetchPeerInfo();
+	return m_peerInfo.remote.first;
+}
+unsigned TcpSessionBase::getRemotePort() const {
+	fetchPeerInfo();
+	return m_peerInfo.remote.second;
+}
+const SharedNtmbs &TcpSessionBase::getLocalIp() const {
+	fetchPeerInfo();
+	return m_peerInfo.local.first;
+}
+unsigned TcpSessionBase::getLocalPort() const {
+	fetchPeerInfo();
+	return m_peerInfo.local.second;
 }

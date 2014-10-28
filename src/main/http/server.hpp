@@ -16,7 +16,7 @@ public:
 		const std::vector<std::string> &authInfo);
 
 protected:
-	boost::shared_ptr<class TcpSessionBase> onClientConnect(Move<ScopedFile> client) const;
+	boost::shared_ptr<class TcpSessionBase> onClientConnect(ScopedFile client) const;
 };
 
 }

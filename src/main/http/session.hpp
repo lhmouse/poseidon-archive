@@ -44,7 +44,7 @@ private:
 	OptionalMap m_headers;
 
 public:
-	explicit HttpSession(Move<ScopedFile> socket);
+	explicit HttpSession(ScopedFile socket);
 	~HttpSession();
 
 private:

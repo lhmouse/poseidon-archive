@@ -18,7 +18,7 @@ HttpServer::HttpServer(const std::string &bindAddr, unsigned bindPort,
 	}
 }
 
-boost::shared_ptr<TcpSessionBase> HttpServer::onClientConnect(Move<ScopedFile> client) const {
+boost::shared_ptr<TcpSessionBase> HttpServer::onClientConnect(ScopedFile client) const {
 	AUTO(session, boost::make_shared<HttpSession>(STD_MOVE(client)));
 	session->setRequestTimeout(HttpServletManager::getRequestTimeout());
 	session->setAuthInfo(m_authInfo);

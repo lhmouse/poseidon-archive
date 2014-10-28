@@ -9,6 +9,6 @@ PlayerServer::PlayerServer(const std::string &bindAddr, unsigned bindPort,
 {
 }
 
-boost::shared_ptr<TcpSessionBase> PlayerServer::onClientConnect(Move<ScopedFile> client) const {
+boost::shared_ptr<TcpSessionBase> PlayerServer::onClientConnect(ScopedFile client) const {
 	return boost::make_shared<PlayerSession>(STD_MOVE(client));
 }

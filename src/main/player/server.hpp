@@ -11,7 +11,7 @@ public:
 		const std::string &cert, const std::string &privateKey);
 
 protected:
-	boost::shared_ptr<class TcpSessionBase> onClientConnect(Move<ScopedFile> client) const;
+	boost::shared_ptr<class TcpSessionBase> onClientConnect(ScopedFile client) const;
 };
 
 }

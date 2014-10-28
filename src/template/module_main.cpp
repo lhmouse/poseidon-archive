@@ -200,21 +200,19 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	out.put('\n');
 	wss->send(STD_MOVE(out), false);
 }
-
+/*
 class TestClient : public TcpClientBase {
 public:
-	static boost::shared_ptr<TestClient> create(){
-		ScopedFile socket;
-		TestClient::connect(socket, "127.0.0.1", 443);
-		AUTO(ret, boost::make_shared<TestClient>(STD_MOVE(socket)));
+	static boost::shared_ptr<TestClient> create(boost::weak_ptr<Module> module){
+		AUTO(ret, boost::make_shared<TestClient>(module));
 		ret->sslConnect();
 		ret->goResident();
-		return STD_MOVE(ret);
+		return ret;
 	}
 
 public:
-	explicit TestClient(Move<ScopedFile> socket)
-		: TcpClientBase(STD_MOVE(socket))
+	explicit TestClient(boost::weak_ptr<Module> module)
+		: TcpClientBase(boost::shared_ptr<Module>(module), "127.0.0.1", 443)
 	{
 	}
 
@@ -226,7 +224,7 @@ private:
 		}
 	}
 };
-
+*/
 }
 
 #define PROTOCOL_NAMESPACE TestNs
@@ -358,4 +356,6 @@ extern "C" void poseidonModuleInit(WeakModule module, ModuleContexts &contexts){
 	LOG_DEBUG("UUID = ", str);
 	Uuid uuid2 = Uuid::createFromString(str);
 	LOG_DEBUG("UUID = ", uuid2.toHex());
+
+//	TestClient::create(module);
 }

@@ -59,7 +59,7 @@ void requireSsl(){
 
 }
 
-TcpSessionBase::SslImpl::SslImpl(Move<SslPtr> ssl, int fd)
+TcpSessionBase::SslImpl::SslImpl(SslPtr ssl, int fd)
 	: m_ssl(STD_MOVE(ssl)), m_established(false)
 {
 	if(!::SSL_set_fd(m_ssl.get(), fd)){

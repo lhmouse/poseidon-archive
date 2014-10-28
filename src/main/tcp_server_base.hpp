@@ -31,7 +31,7 @@ public:
 
 protected:
 	// 工厂函数。返回空指针导致抛出一个异常。
-	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(Move<ScopedFile> client) const = 0;
+	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(ScopedFile client) const = 0;
 
 public:
 	const std::string &getLocalIp() const {

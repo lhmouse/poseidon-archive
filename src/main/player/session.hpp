@@ -24,7 +24,7 @@ private:
 	StreamBuffer m_payload;
 
 public:
-	explicit PlayerSession(Move<ScopedFile> socket);
+	explicit PlayerSession(ScopedFile socket);
 	~PlayerSession();
 
 private:

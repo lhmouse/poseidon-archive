@@ -11,11 +11,12 @@ class TcpClientBase : public TcpSessionBase {
 private:
 	class SslImplClient;
 
-protected:
-	static void connect(ScopedFile &socket, const std::string &ip, unsigned port);
+private:
+	unsigned char m_sa[28];
+	unsigned m_salen;
 
 protected:
-	explicit TcpClientBase(Move<ScopedFile> socket);
+	TcpClientBase(const std::string &ip, unsigned port);
 
 protected:
 	void onReadAvail(const void *data, std::size_t size) = 0;
