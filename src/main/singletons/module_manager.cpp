@@ -1,6 +1,7 @@
 #include "../precompiled.hpp"
 #include "module_manager.hpp"
 #include <map>
+#include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/type_traits/decay.hpp>
 #include <dlfcn.h>
@@ -28,6 +29,9 @@ struct DynamicLibraryCloser {
 	}
 };
 
+boost::mutex g_modulesbyAddrMutex;
+std::map<void *, boost::weak_ptr<Module> > g_modulesbyAddr;
+
 }
 
 class Poseidon::Module : boost::noncopyable {
@@ -52,6 +56,9 @@ public:
 		LOG_DEBUG("Handle: ", m_handle);
 		LOG_DEBUG("Real path: ", m_realPath);
 		LOG_DEBUG("Base addr: ", m_baseAddr);
+
+		const boost::mutex::scoped_lock lock(g_modulesbyAddrMutex);
+		g_modulesbyAddr.erase(m_baseAddr);
 	}
 
 public:
@@ -77,8 +84,8 @@ struct ModuleMapElement {
 	mutable ModuleContexts contexts;
 
 	explicit ModuleMapElement(boost::shared_ptr<Module> module_)
-		: module(STD_MOVE(module_))
-		, handle(module->handle()), realPath(module->realPath()), baseAddr(module->baseAddr())
+		: module(STD_MOVE(module_)), handle(module->handle())
+		, realPath(module->realPath()), baseAddr(module->baseAddr())
 	{
 	}
 
@@ -183,6 +190,10 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 		DEBUG_THROW(Exception, "Duplicate module");
 	}
 	result.first->contexts.swap(contexts);
+	{
+		const boost::mutex::scoped_lock lock(g_modulesbyAddrMutex);
+		g_modulesbyAddr[baseAddr] = module;
+	}
 	return module;
 }
 boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
@@ -206,22 +217,27 @@ bool ModuleManager::unload(void *baseAddr){
 }
 
 boost::shared_ptr<Module> ModuleManager::assertCurrent(){
-	const boost::recursive_mutex::scoped_lock lock(g_mutex);
+	void *baseAddr;
+	{
+		const boost::recursive_mutex::scoped_lock lock(g_mutex);
 
-	::Dl_info info;
-	if(::dladdr(__builtin_return_address(0), &info) == 0){
-		const char *const error = ::dlerror();
-		LOG_ERROR("Error getting base address: ", error);
-		DEBUG_THROW(Exception, error);
+		::Dl_info info;
+		if(::dladdr(__builtin_return_address(0), &info) == 0){
+			const char *const error = ::dlerror();
+			LOG_ERROR("Error getting base address: ", error);
+			DEBUG_THROW(Exception, error);
+		}
+		LOG_DEBUG("Current module = ", info.dli_fname, ", base address = ", info.dli_fbase);
+
+		baseAddr = info.dli_fbase;
 	}
-	LOG_DEBUG("Current module = ", info.dli_fname, ", base address = ", info.dli_fbase);
-
-	const AUTO(it, g_modules.find<IDX_BASE_ADDR>(info.dli_fbase));
-	if(it == g_modules.end<IDX_BASE_ADDR>()){
-		LOG_ERROR("Module was not loaded via ModuleManager: ", info.dli_fname);
+	const boost::mutex::scoped_lock lock(g_modulesbyAddrMutex);
+	const AUTO(it, g_modulesbyAddr.find(baseAddr));
+	if(it == g_modulesbyAddr.end()){
+		LOG_ERROR("Module was not loaded via ModuleManager: base address = ", baseAddr);
 		DEBUG_THROW(Exception, "Module was not loaded via ModuleManager");
 	}
-	return it->module;
+	return boost::shared_ptr<Module>(it->second);
 }
 std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 	std::vector<ModuleSnapshotItem> ret;
