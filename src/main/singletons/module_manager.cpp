@@ -204,7 +204,11 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
 	try {
 		return load(path);
+	} catch(std::exception &e){
+		LOG_ERROR("std::exception thrown while loading module: path = ", path, ", what = ", e.what());
+		return VAL_INIT;
 	} catch(...){
+		LOG_ERROR("Unknown exception thrown while loading module: path = ", path);
 		return VAL_INIT;
 	}
 }
