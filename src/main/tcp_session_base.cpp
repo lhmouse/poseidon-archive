@@ -23,6 +23,22 @@ union SockAddr {
 	::sockaddr_in6 sin6;
 };
 
+ScopedFile setNonBlock(Move<ScopedFile> peer){
+	ScopedFile socket(STD_MOVE(peer));
+	const int flags = ::fcntl(socket.get(), F_GETFL);
+	if(flags == -1){
+		const int code = errno;
+		LOG_ERROR("Could not get fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+	if(::fcntl(socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
+		const int code = errno;
+		LOG_ERROR("Could not set fcntl flags on socket.");
+		DEBUG_THROW(SystemError, code);
+	}
+	return socket;
+}
+
 std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
 	char ip[64];
 	unsigned port;
@@ -66,23 +82,12 @@ std::pair<SharedNtmbs, unsigned> getLocalAddrFromFd(int fd){
 }
 
 TcpSessionBase::TcpSessionBase(Move<ScopedFile> socket)
-	: m_socket(STD_MOVE(socket)), m_createdTime(getMonoClock())
+	: m_socket(setNonBlock(STD_MOVE(socket)))
+	, m_createdTime(getMonoClock())
 	, m_remoteAddr(getRemoteAddrFromFd(m_socket.get()))
 	, m_localAddr(getLocalAddrFromFd(m_socket.get()))
 	, m_shutdown(false)
 {
-	const int flags = ::fcntl(m_socket.get(), F_GETFL);
-	if(flags == -1){
-		const int code = errno;
-		LOG_ERROR("Could not get fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
-	}
-	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
-		const int code = errno;
-		LOG_ERROR("Could not set fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
-	}
-
 	LOG_INFO("Created TCP peer to ", m_remoteAddr.first, ':', m_remoteAddr.second);
 }
 TcpSessionBase::~TcpSessionBase(){

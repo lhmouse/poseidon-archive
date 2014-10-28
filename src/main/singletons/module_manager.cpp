@@ -229,7 +229,6 @@ boost::weak_ptr<Module> ModuleManager::assertCurrent(){
 	void *baseAddr;
 	{
 		const boost::recursive_mutex::scoped_lock lock(g_mutex);
-
 		::Dl_info info;
 		if(::dladdr(__builtin_return_address(0), &info) == 0){
 			const char *const error = ::dlerror();
@@ -237,7 +236,6 @@ boost::weak_ptr<Module> ModuleManager::assertCurrent(){
 			DEBUG_THROW(Exception, error);
 		}
 		LOG_DEBUG("Current module = ", info.dli_fname, ", base address = ", info.dli_fbase);
-
 		baseAddr = info.dli_fbase;
 	}
 	const boost::mutex::scoped_lock lock(g_modulesbyAddrMutex);
