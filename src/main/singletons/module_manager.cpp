@@ -177,6 +177,15 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 	void *const baseAddr = info.dli_fbase;
 
 	AUTO(module, boost::make_shared<Module>(STD_MOVE(handle), realPath, baseAddr));
+	{
+		const boost::mutex::scoped_lock lock(g_modulesbyAddrMutex);
+		AUTO_REF(weakModule, g_modulesbyAddr[baseAddr]);
+		if(!weakModule.expired()){
+			LOG_ERROR("Duplicate module at base address ", baseAddr);
+			DEBUG_THROW(Exception, "Duplicate module");
+		}
+		weakModule = module;
+	}
 
 	LOG_INFO("Initializing module: ", realPath);
 	ModuleContexts contexts;
@@ -186,14 +195,10 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 	const AUTO(result, g_modules.insert(ModuleMapElement(module)));
 	if(!result.second){
 		LOG_ERROR("Duplicate module: module = ", module, ", handle = ", module->handle(),
-			", real path = ", module->realPath(), ", base address = ", module->baseAddr());
+			", real path = ", realPath, ", base address = ", baseAddr);
 		DEBUG_THROW(Exception, "Duplicate module");
 	}
 	result.first->contexts.swap(contexts);
-	{
-		const boost::mutex::scoped_lock lock(g_modulesbyAddrMutex);
-		g_modulesbyAddr[baseAddr] = module;
-	}
 	return module;
 }
 boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
