@@ -24,7 +24,8 @@ public:
 
 public:
 	static unsigned long long getMask() NOEXCEPT;
-	static unsigned long long setMask(unsigned long long newMask) NOEXCEPT;
+	static unsigned long long setMask(
+		unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT;
 
 	static const char *getThreadTag() NOEXCEPT;
 	static void setThreadTag(const char *newTag) NOEXCEPT;

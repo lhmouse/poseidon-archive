@@ -45,8 +45,19 @@ struct MutexGuard : boost::noncopyable {
 unsigned long long Logger::getMask() NOEXCEPT {
 	return atomicLoad(g_mask);
 }
-unsigned long long Logger::setMask(unsigned long long newMask) NOEXCEPT {
-	return atomicExchange(g_mask, newMask);
+unsigned long long Logger::setMask(
+	unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT
+{
+	AUTO(oldMask, atomicLoad(g_mask));
+	for(;;){
+		const AUTO(result, atomicCompareExchange(
+			g_mask, oldMask, (oldMask & ~toDisable) | toEnable));
+		if(result == oldMask){
+			break;
+		}
+		oldMask = result;
+	}
+	return oldMask;
 }
 
 const char *Logger::getThreadTag() NOEXCEPT {

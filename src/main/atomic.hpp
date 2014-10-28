@@ -56,7 +56,7 @@ inline T atomicSub(volatile T &mem, typename Identity<T>::type val) throw() {
 }
 
 template<typename T>
-inline T atomicCmpExchange(volatile T &mem, typename Identity<T>::type cmp,
+inline T atomicCompareExchange(volatile T &mem, typename Identity<T>::type cmp,
 	typename Identity<T>::type xchg) throw()
 {
 #ifdef GCC_HAS_ATOMIC_

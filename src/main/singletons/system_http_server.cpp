@@ -63,9 +63,9 @@ void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 }
 
 void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
-	AUTO_REF(realPath, getParams.get("realpath"));
+	AUTO_REF(realPath, getParams.get("real_path"));
 	if(realPath.empty()){
-		LOG_WARN("Missing parameter: realpath");
+		LOG_WARN("Missing parameter: real_path");
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
@@ -146,13 +146,20 @@ void onConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
 }
 
 void onSetLogMask(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
-	AUTO_REF(mask, getParams.get("mask"));
-	if(mask.empty()){
-		LOG_WARN("Missing parameter: mask");
-		session->sendDefault(HTTP_BAD_REQUEST);
-		return;
+	unsigned long long toEnable = 0, toDisable = 0;
+	{
+		AUTO_REF(val, getParams.get("to_disable"));
+		if(!val.empty()){
+			toDisable = boost::lexical_cast<unsigned long long>(val);
+		}
 	}
-	Logger::setMask(boost::lexical_cast<unsigned long long>(mask));
+	{
+		AUTO_REF(val, getParams.get("to_enable"));
+		if(!val.empty()){
+			toEnable = boost::lexical_cast<unsigned long long>(val);
+		}
+	}
+	Logger::setMask(toDisable, toEnable);
 	session->sendDefault(HTTP_OK);
 }
 

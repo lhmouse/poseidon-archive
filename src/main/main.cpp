@@ -103,7 +103,7 @@ int main(int argc, char **argv){
 		unsigned long long logMask = -1;
 		if(MainConfig::get(logMask, "log_mask")){
 			LOG_INFO("Setting new log mask: 0x", std::hex, std::uppercase, logMask);
-			Logger::setMask(logMask);
+			Logger::setMask(-1, logMask);
 		}
 
 		run();
