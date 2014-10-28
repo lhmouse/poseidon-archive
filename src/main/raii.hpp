@@ -42,9 +42,16 @@ public:
 		reset();
 	}
 
-private:
-	ScopedHandle(const ScopedHandle &);
-	void operator=(const ScopedHandle &);
+#ifdef POSEIDON_CXX11
+	ScopedHandle(const ScopedHandle &) = delete;
+	void operator=(const ScopedHandle &) = delete;
+#else
+	// public 但是没有定义。仅作为 RVO 转移使用，如果拷贝构造会导致错误。
+	ScopedHandle(const ScopedHandle &)
+		__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership.")));
+	void operator=(const ScopedHandle &)
+		__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership.")));
+#endif
 
 public:
 	Handle get() const NOEXCEPT {
@@ -65,10 +72,12 @@ public:
 	void reset(Move<ScopedHandle> rhs) NOEXCEPT {
 		rhs.swap(*this);
 	}
+
 	void swap(ScopedHandle &rhs) NOEXCEPT {
 		using std::swap;
 		swap(m_handle, rhs.m_handle);
 	}
+
 #ifdef POSEIDON_CXX11
 	explicit operator bool() const noexcept {
 		return get() != CloserT()();
