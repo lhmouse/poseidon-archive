@@ -225,7 +225,7 @@ bool ModuleManager::unload(void *baseAddr){
 	return g_modules.erase<IDX_BASE_ADDR>(baseAddr) > 0;
 }
 
-boost::shared_ptr<Module> ModuleManager::assertCurrent(){
+boost::weak_ptr<Module> ModuleManager::assertCurrent(){
 	void *baseAddr;
 	{
 		const boost::recursive_mutex::scoped_lock lock(g_mutex);
@@ -246,7 +246,7 @@ boost::shared_ptr<Module> ModuleManager::assertCurrent(){
 		LOG_ERROR("Module was not loaded via ModuleManager: base address = ", baseAddr);
 		DEBUG_THROW(Exception, "Module was not loaded via ModuleManager");
 	}
-	return boost::shared_ptr<Module>(it->second);
+	return it->second;
 }
 std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 	std::vector<ModuleSnapshotItem> ret;

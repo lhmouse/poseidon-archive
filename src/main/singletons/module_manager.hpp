@@ -27,7 +27,7 @@ struct ModuleManager {
 	static bool unload(const SharedNtmbs &realPath);
 	static bool unload(void *baseAddr);
 
-	static boost::shared_ptr<Module> assertCurrent() __attribute__((__noinline__));
+	static boost::weak_ptr<Module> assertCurrent() __attribute__((__noinline__));
 	static std::vector<ModuleSnapshotItem> snapshot();
 
 private:

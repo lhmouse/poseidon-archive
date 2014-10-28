@@ -79,7 +79,7 @@ public:
 #define FIELD_STRING(name_)					, ::std::string name_ ## _ = ::std::string()
 
 	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
-		: MySqlObjectBase(::Poseidon::ModuleManager::assertCurrent())
+		: MySqlObjectBase(boost::shared_ptr<Module>(::Poseidon::ModuleManager::assertCurrent()))
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
