@@ -18,6 +18,9 @@ protected:
 	explicit TcpClientBase(Move<ScopedFile> socket);
 
 protected:
+	void onReadAvail(const void *data, std::size_t size) = 0;
+
+protected:
 	void sslConnect();
 	void goResident();
 };
