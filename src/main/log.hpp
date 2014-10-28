@@ -11,31 +11,33 @@ namespace Poseidon {
 class Logger : boost::noncopyable {
 public:
 	enum {
-		LV_DISABLED,	// 0
-		LV_FATAL,		// 1
-		LV_ERROR,		// 2
-		LV_INFO,		// 3
-		LV_WARN,		// 4
-		LV_DEBUG,		// 5
-		LV_TRACE,		// 6
+		LV_FATAL		= 0x0001,
+		LV_ERROR		= 0x0002,
+		LV_WARN			= 0x0004,
+		LV_INFO			= 0x0008,
+		LV_DEBUG		= 0x0010,
+		LV_TRACE		= 0x0020,
+
+		SRC_RESERVED	= 0x0040,
+		SRC_POSEIDON	= 0x0080,
 	};
 
 public:
-	static unsigned getLevel();
-	static unsigned setLevel(unsigned newLevel);
+	static unsigned long long getMask() NOEXCEPT;
+	static unsigned long long setMask(unsigned long long newMask) NOEXCEPT;
 
-	static const char *getThreadTag();
-	static void setThreadTag(const char *newTag);
+	static const char *getThreadTag() NOEXCEPT;
+	static void setThreadTag(const char *newTag) NOEXCEPT;
 
 private:
-	const unsigned m_level;
+	const unsigned long long m_mask;
 	const char *const m_file;
 	const std::size_t m_line;
 
 	std::stringstream m_stream;
 
 public:
-	Logger(unsigned level, const char *file, std::size_t line) NOEXCEPT;
+	Logger(unsigned long long mask, const char *file, std::size_t line) NOEXCEPT;
 	~Logger() NOEXCEPT;
 
 public:
@@ -81,18 +83,21 @@ public:
 
 }
 
-#define LOG_LEVEL(level_, ...)	\
+#define LOG_MASK(mask_, ...)	\
 	do {	\
-		if(level_ <= ::Poseidon::Logger::getLevel()){	\
-			static_cast<void>(::Poseidon::Logger(level_, __FILE__, __LINE__), __VA_ARGS__);	\
+		if(((mask_) & ~::Poseidon::Logger::getMask()) == 0){	\
+			static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__);	\
 		}	\
 	} while(false)
 
-#define LOG_FATAL(...)		LOG_LEVEL(::Poseidon::Logger::LV_FATAL, __VA_ARGS__)
-#define LOG_ERROR(...)		LOG_LEVEL(::Poseidon::Logger::LV_ERROR, __VA_ARGS__)
-#define LOG_INFO(...)		LOG_LEVEL(::Poseidon::Logger::LV_INFO, __VA_ARGS__)
-#define LOG_WARN(...)		LOG_LEVEL(::Poseidon::Logger::LV_WARN, __VA_ARGS__)
-#define LOG_DEBUG(...)		LOG_LEVEL(::Poseidon::Logger::LV_DEBUG, __VA_ARGS__)
-#define LOG_TRACE(...)		LOG_LEVEL(::Poseidon::Logger::LV_TRACE, __VA_ARGS__)
+#define LOG_POSEIDON(level_, ...)	\
+	LOG_MASK(::Poseidon::Logger::SRC_POSEIDON | (level_), __VA_ARGS__)
+
+#define LOG_FATAL(...)		LOG_POSEIDON(::Poseidon::Logger::LV_FATAL,	__VA_ARGS__)
+#define LOG_ERROR(...)		LOG_POSEIDON(::Poseidon::Logger::LV_ERROR,	__VA_ARGS__)
+#define LOG_WARN(...)		LOG_POSEIDON(::Poseidon::Logger::LV_WARN,	__VA_ARGS__)
+#define LOG_INFO(...)		LOG_POSEIDON(::Poseidon::Logger::LV_INFO,	__VA_ARGS__)
+#define LOG_DEBUG(...)		LOG_POSEIDON(::Poseidon::Logger::LV_DEBUG,	__VA_ARGS__)
+#define LOG_TRACE(...)		LOG_POSEIDON(::Poseidon::Logger::LV_TRACE,	__VA_ARGS__)
 
 #endif

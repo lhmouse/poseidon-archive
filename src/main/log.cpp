@@ -16,16 +16,15 @@ struct LevelItem {
 };
 
 const LevelItem LEVEL_ITEMS[] = {
-	{ "     ", '9', 0 },	// 默认
 	{ "FATAL", '5', 1 },	// 粉色
 	{ "ERROR", '1', 1 },	// 红色
-	{ "INFO ", '2', 0 },	// 绿色
 	{ "WARN ", '3', 1 },	// 黄色
+	{ "INFO ", '2', 0 },	// 绿色
 	{ "DEBUG", '6', 0 },	// 青色
 	{ "TRACE", '4', 1 },	// 亮蓝
 };
 
-volatile unsigned g_logLevel = 100;
+volatile unsigned long long g_mask = -1ull;
 
 volatile bool g_mutexInited = false; // 得对付下静态对象的构造顺序问题。
 boost::mutex g_mutex;
@@ -43,17 +42,17 @@ struct MutexGuard : boost::noncopyable {
 
 }
 
-unsigned Logger::getLevel(){
-	return atomicLoad(g_logLevel);
+unsigned long long Logger::getMask() NOEXCEPT {
+	return atomicLoad(g_mask);
 }
-unsigned Logger::setLevel(unsigned newLevel){
-	return atomicExchange(g_logLevel, newLevel);
+unsigned long long Logger::setMask(unsigned long long newMask) NOEXCEPT {
+	return atomicExchange(g_mask, newMask);
 }
 
-const char *Logger::getThreadTag(){
+const char *Logger::getThreadTag() NOEXCEPT {
 	return t_tag;
 }
-void Logger::setThreadTag(const char *newTag){
+void Logger::setThreadTag(const char *newTag) NOEXCEPT {
 	unsigned i = 0;
 	while(i < sizeof(t_tag)){
 		const char ch = newTag[i];
@@ -67,15 +66,15 @@ void Logger::setThreadTag(const char *newTag){
 	}
 }
 
-Logger::Logger(unsigned level, const char *file, std::size_t line) NOEXCEPT
-	: m_level(level), m_file(file), m_line(line)
+Logger::Logger(unsigned long long mask, const char *file, std::size_t line) NOEXCEPT
+	: m_mask(mask), m_file(file), m_line(line)
 {
 }
 Logger::~Logger() NOEXCEPT {
 	static const bool useAsciiColors = ::isatty(STDOUT_FILENO);
 
 	try {
-		AUTO_REF(levelItem, (m_level < COUNT_OF(LEVEL_ITEMS)) ? LEVEL_ITEMS[m_level] : LEVEL_ITEMS[0]);
+		AUTO_REF(levelItem, LEVEL_ITEMS[__builtin_ctz(m_mask | LV_TRACE)]);
 
 		char temp[256];
 		const AUTO(now, getLocalTime());

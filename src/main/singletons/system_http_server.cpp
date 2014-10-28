@@ -145,14 +145,14 @@ void onConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
 	session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 
-void onSetLogLevel(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
-	AUTO_REF(level, getParams.get("level"));
-	if(level.empty()){
-		LOG_WARN("Missing parameter: level");
+void onSetLogMask(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
+	AUTO_REF(mask, getParams.get("mask"));
+	if(mask.empty()){
+		LOG_WARN("Missing parameter: mask");
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
-	Logger::setLevel(boost::lexical_cast<unsigned>(level));
+	Logger::setMask(boost::lexical_cast<unsigned long long>(mask));
 	session->sendDefault(HTTP_OK);
 }
 
@@ -165,7 +165,7 @@ const std::pair<
 	std::make_pair("load_module", &onLoadModule),
 	std::make_pair("modules", &onModules),
 	std::make_pair("profile", &onProfile),
-	std::make_pair("set_log_level", &onSetLogLevel),
+	std::make_pair("set_log_mask", &onSetLogMask),
 	std::make_pair("shutdown", &onShutdown),
 	std::make_pair("unload_module", &onUnloadModule),
 };

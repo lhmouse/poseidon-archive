@@ -100,10 +100,11 @@ int main(int argc, char **argv){
 
 		START(ProfileManager);
 
-		unsigned logLevel = Logger::LV_INFO;
-		MainConfig::get(logLevel, "log_level");
-		LOG_INFO("Setting log level to ", logLevel, "...");
-		Logger::setLevel(logLevel);
+		unsigned long long logMask = -1;
+		if(MainConfig::get(logMask, "log_mask")){
+			LOG_INFO("Setting new log mask: 0x", std::hex, std::uppercase, logMask);
+			Logger::setMask(logMask);
+		}
 
 		run();
 
