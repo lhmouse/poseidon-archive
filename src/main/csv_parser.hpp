@@ -16,23 +16,13 @@ private:
 public:
 	CsvParser(){
 	}
-	explicit CsvParser(const char *file){
-		load(file);
-	}
-	explicit CsvParser(const std::string &file){
+	explicit CsvParser(const SharedNtmbs &file){
 		load(file);
 	}
 
 public:
-	void load(const char *file);
-	void load(const std::string &file){
-		load(file.c_str());
-	}
-
-	bool loadNoThrow(const char *file);
-	bool loadNoThrow(const std::string &file){
-		return loadNoThrow(file.c_str());
-	}
+	void load(const SharedNtmbs &file);
+	bool loadNoThrow(const SharedNtmbs &file);
 
 	bool empty() const {
 		return m_data.size();
@@ -44,27 +34,11 @@ public:
 	std::size_t rows() const {
 		return m_data.size();
 	}
-
-	const std::string &get(std::size_t row, const SharedNtmbs &key){
+	const std::string &get(std::size_t row, const SharedNtmbs &key) const {
 		return m_data.at(row).get(key);
 	}
-	const std::string &get(std::size_t row, const char *key){
-		return m_data.at(row).get(key);
-	}
-	const std::string &get(std::size_t row, const std::string &key){
-		return m_data.at(row).get(key);
-	}
-
 	template<typename T>
-	T get(std::size_t row, const SharedNtmbs &key){
-		return boost::lexical_cast<T>(get(row, key));
-	}
-	template<typename T>
-	T get(std::size_t row, const char *key){
-		return boost::lexical_cast<T>(get(row, key));
-	}
-	template<typename T>
-	T get(std::size_t row, const std::string &key){
+	T get(std::size_t row, const SharedNtmbs &key) const {
 		return boost::lexical_cast<T>(get(row, key));
 	}
 };

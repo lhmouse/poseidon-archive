@@ -5,16 +5,13 @@
 #include "log.hpp"
 using namespace Poseidon;
 
-namespace {
-
-bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
+void CsvParser::load(const SharedNtmbs &file){
 	LOG_DEBUG("Loading CSV file: ", file);
 
 	StreamBuffer buffer;
-	if(!fileGetContentsNoThrow(buffer, file)){
-		LOG_ERROR("Error opening file: ", file);
-		return false;
-	}
+	fileGetContents(buffer, file);
+
+	std::vector<OptionalMap> data;
 
 	std::vector<std::vector<std::string> > rows;
 	{
@@ -65,7 +62,7 @@ bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 	}
 	if(rows.empty() || rows.front().empty()){
 		LOG_ERROR("The first line of a CSV file may not be empty.");
-		return false;
+		DEBUG_THROW(Exception, "Bad CSV header");
 	}
 
 	const std::size_t columnCount = rows.front().size();
@@ -75,7 +72,7 @@ bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 		for(std::size_t j = 0; j < i; ++j){
 			if(keys.at(j) == key){
 				LOG_ERROR("Duplicate key: ", key);
-				return false;
+				DEBUG_THROW(Exception, "Duplicate key");
 			}
 		}
 		SharedNtmbs(key, true).swap(keys.at(i));
@@ -101,7 +98,7 @@ bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 			if(row.size() != columnCount){
 				LOG_ERROR("There are ", row.size(), " column(s) on line ", line,
 					" but there are ", columnCount, " in the header");
-				return false;
+				DEBUG_THROW(Exception, "Inconsistent CSV column numbers");
 			}
 			++i;
 		}
@@ -118,28 +115,15 @@ bool loadFromFile(std::vector<OptionalMap> &data, const char *file){
 	}
 
 	LOG_DEBUG("Done loading CSV file: ", file);
-	return true;
-}
-
-}
-
-void CsvParser::load(const char *file){
-	m_data.clear();
-
-	std::vector<OptionalMap> data;
-	if(!loadFromFile(data, file)){
-		DEBUG_THROW(Exception, "Error loading CSV file");
-	}
 	m_data.swap(data);
 }
 
-bool CsvParser::loadNoThrow(const char *file){
-	m_data.clear();
-
-	std::vector<OptionalMap> data;
-	if(!loadFromFile(data, file)){
+bool CsvParser::loadNoThrow(const SharedNtmbs &file){
+	try {
+		load(file);
+		return true;
+	} catch(std::exception &e){
+		LOG_ERROR("Error loading CSV file: ", e.what());
 		return false;
 	}
-	m_data.swap(data);
-	return true;
 }
