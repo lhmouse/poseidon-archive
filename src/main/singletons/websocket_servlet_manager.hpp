@@ -5,21 +5,17 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/function.hpp>
+#include "../shared_ntmbs.hpp"
 #include "../stream_buffer.hpp"
 #include "../http/websocket/opcode.hpp"
-
-#ifdef POSEIDON_CXX11
-#   include <functional>
-#else
-#   include <tr1/functional>
-#endif
 
 namespace Poseidon {
 
 class WebSocketServlet;
 class WebSocketSession;
 
-typedef TR1::function<
+typedef boost::function<
 	void (boost::shared_ptr<WebSocketSession> wss, WebSocketOpCode opcode, StreamBuffer incoming)
 	> WebSocketServletCallback;
 
@@ -28,12 +24,11 @@ struct WebSocketServletManager {
 	static void stop();
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
-	// callback 禁止 move，否则可能出现主模块中引用子模块内存的情况。
-	static boost::shared_ptr<WebSocketServlet> registerServlet(const std::string &uri,
-		const boost::weak_ptr<const void> &dependency, const WebSocketServletCallback &callback);
+	static boost::shared_ptr<WebSocketServlet> registerServlet(
+		unsigned port, SharedNtmbs uri, WebSocketServletCallback callback);
 
 	static boost::shared_ptr<const WebSocketServletCallback> getServlet(
-		boost::shared_ptr<const void> &lockedDep, const std::string &uri);
+		unsigned port, const SharedNtmbs &uri);
 
 private:
 	WebSocketServletManager();

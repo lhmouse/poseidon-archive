@@ -30,14 +30,6 @@
 #	define NOEXCEPT					throw()
 #endif
 
-#ifdef POSEIDON_CXX11
-#	define TR1						::std
-#	define TR2						::std
-#else
-#	define TR1						::std::tr1
-#	define TR2						::std::tr2
-#endif
-
 namespace Poseidon {
 
 #ifdef POSEIDON_CXX11

@@ -3,18 +3,13 @@
 
 #include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
-
-#ifdef POSEIDON_CXX11
-#   include <functional>
-#else
-#   include <tr1/functional>
-#endif
+#include <boost/function.hpp>
 
 namespace Poseidon {
 
 class MySqlObjectBase;
 
-typedef TR1::function<
+typedef boost::function<
 	void (boost::shared_ptr<MySqlObjectBase> obj)
 	> MySqlAsyncLoadCallback;
 

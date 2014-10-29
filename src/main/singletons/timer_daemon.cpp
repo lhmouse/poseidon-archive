@@ -3,7 +3,6 @@
 #include <vector>
 #include <algorithm>
 #include <boost/thread.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <unistd.h>
@@ -15,50 +14,17 @@
 #include "../profiler.hpp"
 using namespace Poseidon;
 
-namespace {
-
-class RealTimerItem : boost::noncopyable,
-	public boost::enable_shared_from_this<RealTimerItem>
-{
-private:
-	const unsigned long long m_period;
-	const boost::weak_ptr<const void> m_dependency;
-	const TimerCallback m_callback;
-
-public:
-	RealTimerItem(unsigned long long period,
-		const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
-		: m_period(period), m_dependency(dependency), m_callback(callback)
-	{
-	}
-	~RealTimerItem(){
-		LOG_INFO("Destroyed a timer item");
-	}
-
-public:
-	boost::shared_ptr<const TimerCallback> lock(boost::shared_ptr<const void> &lockedDep) const {
-		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
-			lockedDep = m_dependency.lock();
-			if(!lockedDep){
-				return VAL_INIT;
-			}
-		}
-		return boost::shared_ptr<const TimerCallback>(shared_from_this(), &m_callback);
-	}
-
-	unsigned long long getPeriod() const {
-		return m_period;
-	}
-};
-
-}
-
 struct Poseidon::TimerItem : boost::noncopyable {
-	const boost::shared_ptr<RealTimerItem> realTimerItem;
+	const unsigned long long period;
+	const boost::shared_ptr<const TimerCallback> callback;
 
-	explicit TimerItem(boost::shared_ptr<RealTimerItem> realTimerItem_)
-		: realTimerItem(STD_MOVE(realTimerItem_))
+	TimerItem(unsigned long long period_, boost::shared_ptr<const TimerCallback> callback_)
+		: period(period_), callback(STD_MOVE(callback_))
 	{
+		LOG_INFO("Created timer, period = ", period);
+	}
+	~TimerItem(){
+		LOG_INFO("Destroyed ed timer, period = ", period);
 	}
 };
 
@@ -70,18 +36,14 @@ const unsigned long long MILLISECS_PER_WEEK	= 7 * MILLISECS_PER_DAY;
 
 class TimerJob : public JobBase {
 private:
-	const boost::shared_ptr<const void> m_dependency;
 	const boost::shared_ptr<const TimerCallback> m_callback;
 	const unsigned long long m_now;
 	const unsigned long long m_period;
 
 public:
-	TimerJob(boost::shared_ptr<const void> dependency,
-		boost::shared_ptr<const TimerCallback> callback,
+	TimerJob(boost::shared_ptr<const TimerCallback> callback,
 		unsigned long long now, unsigned long long period)
-		: m_dependency(STD_MOVE(dependency))
-		, m_callback(STD_MOVE(callback))
-		, m_now(now), m_period(period)
+		: m_callback(STD_MOVE(callback)), m_now(now), m_period(period)
 	{
 	}
 
@@ -112,7 +74,6 @@ void daemonLoop(){
 	while(atomicLoad(g_running)){
 		const unsigned long long now = getMonoClock();
 
-		boost::shared_ptr<const void> lockedDep;
 		boost::shared_ptr<const TimerCallback> callback;
 		unsigned long long period = 0;
 		{
@@ -121,31 +82,27 @@ void daemonLoop(){
 				const AUTO(item, g_timers.front().item.lock());
 				std::pop_heap(g_timers.begin(), g_timers.end());
 				if(item){
-					callback = item->realTimerItem->lock(lockedDep);
-					if(callback){
-						period = item->realTimerItem->getPeriod();
-						if(period == 0){
-							g_timers.pop_back();
-						} else {
-							g_timers.back().next += period;
-							std::push_heap(g_timers.begin(), g_timers.end());
-						}
-						break;
+					callback = item->callback;
+					period = item->period;
+					if(period == 0){
+						g_timers.pop_back();
+					} else {
+						g_timers.back().next += period;
+						std::push_heap(g_timers.begin(), g_timers.end());
 					}
+					break;
 				}
 				g_timers.pop_back();
 			}
 		}
 		if(!callback){
-			lockedDep.reset();
 			::usleep(100000);
 			continue;
 		}
 
 		try {
 			LOG_INFO("Preparing a timer job for dispatching.");
-			boost::make_shared<TimerJob>(
-				STD_MOVE(lockedDep), STD_MOVE(callback), now, period)->pend();
+			boost::make_shared<TimerJob>(STD_MOVE(callback), now, period)->pend();
 		} catch(std::exception &e){
 			LOG_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
 		} catch(...){
@@ -166,66 +123,6 @@ void threadProc(){
 
 }
 
-boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
-	unsigned long long timePoint, unsigned long long period,
-	const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
-{
-	AUTO(item, boost::make_shared<TimerItem>(boost::make_shared<RealTimerItem>(
-		period * 1000, boost::ref(dependency), boost::ref(callback))));
-	TimerQueueElement tqe;
-	tqe.next = timePoint;
-	tqe.item = item;
-	{
-		const boost::mutex::scoped_lock lock(g_mutex);
-		g_timers.push_back(tqe);
-		std::push_heap(g_timers.begin(), g_timers.end());
-	}
-	LOG_INFO("Created a timer item which will be triggered ",
-		std::max<long long>(0, timePoint - getMonoClock()),
-		" microsecond(s) later and has a period of ",
-		item->realTimerItem->getPeriod(), " microsecond(s).");
-	return item;
-}
-boost::shared_ptr<TimerItem> TimerDaemon::registerTimer(
-	unsigned long long first, unsigned long long period,
-	const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
-{
-	return registerAbsoluteTimer(
-		getMonoClock() + first * 1000, period, dependency, callback);
-}
-
-boost::shared_ptr<TimerItem> TimerDaemon::registerHourlyTimer(
-	unsigned minute, unsigned second,
-	const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
-{
-	const unsigned long long delta = getLocalTime() -
-		(minute * 60ull + second) * 1000;
-	return registerTimer(
-		MILLISECS_PER_HOUR - delta % MILLISECS_PER_HOUR, MILLISECS_PER_HOUR,
-		dependency, callback);
-}
-boost::shared_ptr<TimerItem> TimerDaemon::registerDailyTimer(
-	unsigned hour, unsigned minute, unsigned second,
-	const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
-{
-	const unsigned long long delta = getLocalTime() -
-		(hour * 3600ull + minute * 60ull + second) * 1000;
-	return registerTimer(
-		MILLISECS_PER_DAY - delta % MILLISECS_PER_DAY, MILLISECS_PER_DAY,
-		dependency, callback);
-}
-boost::shared_ptr<TimerItem> TimerDaemon::registerWeeklyTimer(
-	unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second,
-	const boost::weak_ptr<const void> &dependency, const TimerCallback &callback)
-{
-	// 注意 1970-01-01 是星期四。
-	const unsigned long long delta = getLocalTime() -
-		((dayOfWeek + 3) * 86400ull + hour * 3600ull + minute * 60ull + second) * 1000;
-	return registerTimer(
-		MILLISECS_PER_WEEK - delta % MILLISECS_PER_WEEK, MILLISECS_PER_WEEK,
-		dependency, callback);
-}
-
 void TimerDaemon::start(){
 	if(atomicExchange(g_running, true) != false){
 		LOG_FATAL("Only one daemon is allowed at the same time.");
@@ -243,4 +140,55 @@ void TimerDaemon::stop(){
 		g_thread.join();
 	}
 	g_timers.clear();
+}
+
+boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
+	unsigned long long timePoint, unsigned long long period, TimerCallback callback)
+{
+	AUTO(sharedCallback, boost::make_shared<TimerCallback>());
+	sharedCallback->swap(callback);
+	AUTO(item, boost::make_shared<TimerItem>(period * 1000, sharedCallback));
+
+	TimerQueueElement tqe;
+	tqe.next = timePoint;
+	tqe.item = item;
+	{
+		const boost::mutex::scoped_lock lock(g_mutex);
+		g_timers.push_back(tqe);
+		std::push_heap(g_timers.begin(), g_timers.end());
+	}
+	LOG_INFO("Created a timer item which will be triggered ", std::max(0ull, timePoint - getMonoClock()),
+		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
+	return item;
+}
+boost::shared_ptr<TimerItem> TimerDaemon::registerTimer(
+	unsigned long long first, unsigned long long period, TimerCallback callback)
+{
+	return registerAbsoluteTimer(getMonoClock() + first * 1000, period, STD_MOVE(callback));
+}
+
+boost::shared_ptr<TimerItem> TimerDaemon::registerHourlyTimer(
+	unsigned minute, unsigned second, TimerCallback callback)
+{
+	const unsigned long long delta = getLocalTime() -
+		(minute * 60ull + second) * 1000;
+	return registerTimer(MILLISECS_PER_HOUR - delta % MILLISECS_PER_HOUR, MILLISECS_PER_HOUR,
+		STD_MOVE(callback));
+}
+boost::shared_ptr<TimerItem> TimerDaemon::registerDailyTimer(
+	unsigned hour, unsigned minute, unsigned second, TimerCallback callback)
+{
+	const unsigned long long delta = getLocalTime() -
+		(hour * 3600ull + minute * 60ull + second) * 1000;
+	return registerTimer(MILLISECS_PER_DAY - delta % MILLISECS_PER_DAY, MILLISECS_PER_DAY,
+		STD_MOVE(callback));
+}
+boost::shared_ptr<TimerItem> TimerDaemon::registerWeeklyTimer(
+	unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback)
+{
+	// 注意 1970-01-01 是星期四。
+	const unsigned long long delta = getLocalTime() -
+		((dayOfWeek + 3) * 86400ull + hour * 3600ull + minute * 60ull + second) * 1000;
+	return registerTimer(MILLISECS_PER_WEEK - delta % MILLISECS_PER_WEEK, MILLISECS_PER_WEEK,
+		STD_MOVE(callback));
 }

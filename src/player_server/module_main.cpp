@@ -6,7 +6,7 @@
 #include "../main/exception.hpp"
 using namespace Poseidon;
 
-extern "C" void poseidonModuleInit(WeakModule, ModuleContexts &contexts){
+extern "C" void poseidonModuleInit(std::vector<boost::shared_ptr<const void> > &contexts){
 	LOG_INFO("Initializing player server...");
 
 	ConfigFile config("config/player_server.conf");

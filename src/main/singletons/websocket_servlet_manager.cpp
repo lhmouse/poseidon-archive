@@ -1,7 +1,6 @@
 #include "../precompiled.hpp"
 #include "websocket_servlet_manager.hpp"
 #include <map>
-#include <boost/noncopyable.hpp>
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
@@ -9,54 +8,28 @@
 #include "../exception.hpp"
 using namespace Poseidon;
 
-namespace {
-
-class RealWebSocketServlet : boost::noncopyable,
-	public boost::enable_shared_from_this<RealWebSocketServlet>
-{
-private:
-	const std::string m_uri;
-	const boost::weak_ptr<const void> m_dependency;
-	const WebSocketServletCallback m_callback;
-
-public:
-	RealWebSocketServlet(const std::string &uri,
-		const boost::weak_ptr<const void> &dependency, const WebSocketServletCallback &callback)
-		: m_uri(uri), m_dependency(dependency), m_callback(callback)
-	{
-		LOG_INFO("Created WebSocket servlet for URI ", m_uri);
-	}
-	~RealWebSocketServlet(){
-		LOG_INFO("Destroyed WebSocket servlet for URI ", m_uri);
-	}
-
-public:
-	boost::shared_ptr<const WebSocketServletCallback> lock(boost::shared_ptr<const void> &lockedDep) const {
-		if((m_dependency < boost::weak_ptr<void>()) || (boost::weak_ptr<void>() < m_dependency)){
-			lockedDep = m_dependency.lock();
-			if(!lockedDep){
-				return VAL_INIT;
-			}
-		}
-		return boost::shared_ptr<const WebSocketServletCallback>(shared_from_this(), &m_callback);
-	}
-};
-
-}
-
 struct Poseidon::WebSocketServlet : boost::noncopyable {
-	const boost::shared_ptr<RealWebSocketServlet> realWebSocketServlet;
+	const SharedNtmbs uri;
+	const boost::shared_ptr<WebSocketServletCallback> callback;
 
-	explicit WebSocketServlet(boost::shared_ptr<RealWebSocketServlet> realWebSocketServlet_)
-		: realWebSocketServlet(STD_MOVE(realWebSocketServlet_))
+	WebSocketServlet(SharedNtmbs uri_, boost::shared_ptr<WebSocketServletCallback> callback_)
+		: uri(STD_MOVE(uri_), true), callback(STD_MOVE(callback_))
 	{
+		LOG_INFO("Created WebSocket servlet for URI ", uri);
+	}
+	~WebSocketServlet(){
+		LOG_INFO("Destroyed WebSocket servlet for URI ", uri);
 	}
 };
 
 namespace {
+
+typedef std::map<unsigned,
+	std::map<SharedNtmbs, boost::weak_ptr<WebSocketServlet> >
+	> ServletMap;
 
 boost::shared_mutex g_mutex;
-std::map<std::string, boost::weak_ptr<const WebSocketServlet> > g_servlets;
+ServletMap g_servlets;
 
 }
 
@@ -65,36 +38,50 @@ void WebSocketServletManager::start(){
 void WebSocketServletManager::stop(){
 	LOG_INFO("Unloading all WebSocket servlets...");
 
-	g_servlets.clear();
-}
-
-boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(const std::string &uri,
-	const boost::weak_ptr<const void> &dependency, const WebSocketServletCallback &callback)
-{
-	AUTO(newServlet, boost::make_shared<WebSocketServlet>(boost::make_shared<RealWebSocketServlet>(
-		boost::ref(uri), boost::ref(dependency), boost::ref(callback))));
+	ServletMap servlets;
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
-		AUTO_REF(servlet, g_servlets[uri]);
-		if(!servlet.expired()){
-			DEBUG_THROW(Exception, "Duplicate protocol servlet.");
-		}
-		servlet = newServlet;
+		servlets.swap(g_servlets);
 	}
-	return newServlet;
+}
+
+boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(
+	unsigned port, SharedNtmbs uri, WebSocketServletCallback callback)
+{
+	AUTO(sharedCallback, boost::make_shared<WebSocketServletCallback>());
+	sharedCallback->swap(callback);
+	uri.forkOwning();
+	AUTO(servlet, boost::make_shared<WebSocketServlet>(uri, sharedCallback));
+	{
+		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		AUTO_REF(old, g_servlets[port][uri]);
+		if(!old.expired()){
+			LOG_ERROR("Duplicate WebSocket servlet: ", uri, " on port ", port);
+			DEBUG_THROW(Exception, "Duplicate WebSocket servlet");
+		}
+		old = servlet;
+	}
+	return servlet;
 }
 
 boost::shared_ptr<const WebSocketServletCallback> WebSocketServletManager::getServlet(
-	boost::shared_ptr<const void> &lockedDep, const std::string &uri)
+	unsigned port, const SharedNtmbs &uri)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
-	const AUTO(it, g_servlets.find(uri));
+	const AUTO(it, g_servlets.find(port));
 	if(it == g_servlets.end()){
+		LOG_DEBUG("No servlet on port ", port);
 		return VAL_INIT;
 	}
-	const AUTO(servlet, it->second.lock());
+	const AUTO(it2, it->second.find(uri));
+	if(it2 == it->second.end()){
+		LOG_DEBUG("No servlet for URI ", uri, " on port ", port);
+		return VAL_INIT;
+	}
+	const AUTO(servlet, it2->second.lock());
 	if(!servlet){
+		LOG_DEBUG("Servlet for URI ", uri, " on port ", port, " has expired");
 		return VAL_INIT;
 	}
-	return servlet->realWebSocketServlet->lock(lockedDep);
+	return servlet->callback;
 }

@@ -7,7 +7,7 @@
 #include <vector>
 using namespace Poseidon;
 
-extern "C" void poseidonModuleInit(WeakModule, ModuleContexts &contexts){
+extern "C" void poseidonModuleInit(std::vector<boost::shared_ptr<const void> > &contexts){
 	LOG_INFO("Initializing HTTP server...");
 
 	ConfigFile config("config/http_server.conf");

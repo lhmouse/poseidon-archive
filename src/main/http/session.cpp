@@ -1,5 +1,6 @@
 #include "../precompiled.hpp"
 #include "session.hpp"
+#include <boost/bind.hpp>
 #include <string.h>
 #include "request.hpp"
 #include "exception.hpp"
@@ -132,9 +133,7 @@ protected:
 		assert(!m_uri.empty());
 
 		try {
-			boost::shared_ptr<const void> lockedDep;
-			const AUTO(servlet,
-				HttpServletManager::getServlet(m_session->getLocalPort(), lockedDep, m_uri));
+			const AUTO(servlet, HttpServletManager::getServlet(m_session->getLocalPort(), m_uri));
 			if(!servlet){
 				LOG_WARN("No handler matches URI ", m_uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
@@ -314,9 +313,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				break;
 			}
 
-			m_shutdownTimer = TimerDaemon::registerTimer(
-				HttpServletManager::getKeepAliveTimeout(), 0, VAL_INIT,
-				TR1::bind(&onKeepAliveTimeout, virtualWeakFromThis<HttpSession>()));
+			m_shutdownTimer = TimerDaemon::registerTimer(HttpServletManager::getKeepAliveTimeout(), 0,
+				boost::bind(&onKeepAliveTimeout, virtualWeakFromThis<HttpSession>()));
 
 			boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
 				m_verb, STD_MOVE(m_uri), m_version,
@@ -351,8 +349,8 @@ void HttpSession::setRequestTimeout(unsigned long long timeout){
 	if(timeout == 0){
 		m_shutdownTimer.reset();
 	} else {
-		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0, VAL_INIT,
-			TR1::bind(&onRequestTimeout, virtualWeakFromThis<HttpSession>()));
+		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
+			boost::bind(&onRequestTimeout, virtualWeakFromThis<HttpSession>()));
 	}
 }
 

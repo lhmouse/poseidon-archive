@@ -87,8 +87,8 @@ protected:
 		PROFILE_ME;
 
 		try {
-			boost::shared_ptr<const void> lockedDep;
-			const AUTO(servlet, WebSocketServletManager::getServlet(lockedDep, m_uri));
+			const AUTO(servlet, WebSocketServletManager::getServlet(
+				m_session->getSafeParent()->getLocalPort(), m_uri));
 			if(!servlet){
 				LOG_WARN("No servlet for URI ", m_uri);
 				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE);
@@ -213,8 +213,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					if((m_opcode & WS_FL_CONTROL) == 0){
 						boost::make_shared<WebSocketRequestJob>(
 							virtualSharedFromThis<WebSocketSession>(),
-							getUri(), m_opcode, STD_MOVE(m_whole)
-							)->pend();
+							getUri(), m_opcode, STD_MOVE(m_whole))->pend();
 					} else {
 						onControlFrame();
 					}

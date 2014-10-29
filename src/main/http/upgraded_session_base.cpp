@@ -1,7 +1,6 @@
 #include "../precompiled.hpp"
 #include "upgraded_session_base.hpp"
 #include "session.hpp"
-#include "../optional_map.hpp"
 using namespace Poseidon;
 
 HttpUpgradedSessionBase::HttpUpgradedSessionBase(const boost::shared_ptr<HttpSession> &parent)

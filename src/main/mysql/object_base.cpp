@@ -3,8 +3,8 @@
 #include "../singletons/mysql_daemon.hpp"
 using namespace Poseidon;
 
-MySqlObjectBase::MySqlObjectBase(boost::shared_ptr<Module> module)
-	: m_module(STD_MOVE(module)), m_autoSaves(false), m_context()
+MySqlObjectBase::MySqlObjectBase()
+	: m_autoSaves(false), m_context()
 {
 }
 

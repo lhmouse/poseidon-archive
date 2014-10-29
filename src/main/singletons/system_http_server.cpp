@@ -1,5 +1,6 @@
 #include "../precompiled.hpp"
 #include "system_http_server.hpp"
+#include <boost/bind.hpp>
 #include <signal.h>
 #include "epoll_daemon.hpp"
 #include "http_servlet_manager.hpp"
@@ -238,8 +239,8 @@ void SystemHttpServer::start(){
 		path.push_back('/');
 	}
 	LOG_INFO("Created system HTTP sevlet on ", path);
-	g_systemServlet = HttpServletManager::registerServlet(port, path, VAL_INIT,
-		TR1::bind(&servletProc, TR1::placeholders::_1, TR1::placeholders::_2, path.size()));
+	g_systemServlet = HttpServletManager::registerServlet(port, path,
+		boost::bind(&servletProc, _1, _2, path.size()));
 
 	LOG_INFO("Done initializing system HTTP server.");
 }

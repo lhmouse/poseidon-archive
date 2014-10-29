@@ -27,18 +27,16 @@ struct ModuleManager {
 	static bool unload(const SharedNtmbs &realPath);
 	static bool unload(void *baseAddr);
 
-	static boost::weak_ptr<Module> assertCurrent() __attribute__((__noinline__));
 	static std::vector<ModuleSnapshotItem> snapshot();
 
 private:
 	ModuleManager();
 };
 
-typedef boost::weak_ptr<Module> WeakModule;
 typedef std::vector<boost::shared_ptr<const void> > ModuleContexts;
 
 }
 
-extern "C" void poseidonModuleInit(Poseidon::WeakModule module, Poseidon::ModuleContexts &contexts);
+extern "C" void poseidonModuleInit(Poseidon::ModuleContexts &contexts);
 
 #endif

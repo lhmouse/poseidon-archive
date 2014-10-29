@@ -29,9 +29,6 @@ struct DynamicLibraryCloser {
 	}
 };
 
-boost::mutex g_modulesbyAddrMutex;
-std::map<void *, boost::weak_ptr<Module> > g_modulesbyAddr;
-
 }
 
 class Poseidon::Module : boost::noncopyable {
@@ -41,7 +38,7 @@ private:
 	void *const m_baseAddr;
 
 public:
-	Module(Move<ScopedHandle<DynamicLibraryCloser> > handle, SharedNtmbs realPath, void *baseAddr)
+	Module(ScopedHandle<DynamicLibraryCloser> handle, SharedNtmbs realPath, void *baseAddr)
 		: m_handle(STD_MOVE(handle)), m_realPath(STD_MOVE(realPath)), m_baseAddr(baseAddr)
 	{
 		LOG_INFO("Constructor of module: ", m_realPath);
@@ -56,9 +53,6 @@ public:
 		LOG_DEBUG("Handle: ", m_handle);
 		LOG_DEBUG("Real path: ", m_realPath);
 		LOG_DEBUG("Base addr: ", m_baseAddr);
-
-		const boost::mutex::scoped_lock lock(g_modulesbyAddrMutex);
-		g_modulesbyAddr.erase(m_baseAddr);
 	}
 
 public:
@@ -154,7 +148,7 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 	}
 
 	LOG_INFO("Loading new module: ", path);
-	handle.reset(::dlopen(path.get(), RTLD_NOW | RTLD_DEEPBIND));
+	handle.reset(::dlopen(path.get(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND));
 	if(!handle){
 		const char *const error = ::dlerror();
 		LOG_ERROR("Error loading dynamic library: ", error);
@@ -177,19 +171,10 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 	void *const baseAddr = info.dli_fbase;
 
 	AUTO(module, boost::make_shared<Module>(STD_MOVE(handle), realPath, baseAddr));
-	{
-		const boost::mutex::scoped_lock lock(g_modulesbyAddrMutex);
-		AUTO_REF(weakModule, g_modulesbyAddr[baseAddr]);
-		if(!weakModule.expired()){
-			LOG_ERROR("Duplicate module at base address ", baseAddr);
-			DEBUG_THROW(Exception, "Duplicate module");
-		}
-		weakModule = module;
-	}
 
 	LOG_INFO("Initializing module: ", realPath);
 	ModuleContexts contexts;
-	(*reinterpret_cast<VALUE_TYPE(::poseidonModuleInit)>(initSym))(module, contexts);
+	(*reinterpret_cast<VALUE_TYPE(::poseidonModuleInit)>(initSym))(contexts);
 	LOG_INFO("Done initializing module: ", realPath);
 
 	const AUTO(result, g_modules.insert(ModuleMapElement(module)));
@@ -199,6 +184,7 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 		DEBUG_THROW(Exception, "Duplicate module");
 	}
 	result.first->contexts.swap(contexts);
+
 	return module;
 }
 boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
@@ -225,27 +211,6 @@ bool ModuleManager::unload(void *baseAddr){
 	return g_modules.erase<IDX_BASE_ADDR>(baseAddr) > 0;
 }
 
-boost::weak_ptr<Module> ModuleManager::assertCurrent(){
-	void *baseAddr;
-	{
-		const boost::recursive_mutex::scoped_lock lock(g_mutex);
-		::Dl_info info;
-		if(::dladdr(__builtin_return_address(0), &info) == 0){
-			const char *const error = ::dlerror();
-			LOG_ERROR("Error getting base address: ", error);
-			DEBUG_THROW(Exception, error);
-		}
-		LOG_DEBUG("Current module = ", info.dli_fname, ", base address = ", info.dli_fbase);
-		baseAddr = info.dli_fbase;
-	}
-	const boost::mutex::scoped_lock lock(g_modulesbyAddrMutex);
-	const AUTO(it, g_modulesbyAddr.find(baseAddr));
-	if(it == g_modulesbyAddr.end()){
-		LOG_ERROR("Module was not loaded via ModuleManager: base address = ", baseAddr);
-		DEBUG_THROW(Exception, "Module was not loaded via ModuleManager");
-	}
-	return it->second;
-}
 std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 	std::vector<ModuleSnapshotItem> ret;
 	{

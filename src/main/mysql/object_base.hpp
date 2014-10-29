@@ -21,8 +21,6 @@ class MySqlObjectBase
 	friend class MySqlObjectImpl;
 
 private:
-	const boost::shared_ptr<class Module> m_module;
-
 	mutable volatile bool m_autoSaves;
 	mutable void *m_context;
 
@@ -30,7 +28,7 @@ protected:
 	mutable boost::shared_mutex m_mutex;
 
 public:
-	explicit MySqlObjectBase(boost::shared_ptr<Module> module);
+	MySqlObjectBase();
 
 protected:
 	void invalidate() const;

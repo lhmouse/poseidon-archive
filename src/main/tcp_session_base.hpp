@@ -23,7 +23,6 @@ private:
 	class SslImpl;
 
 private:
-	const boost::shared_ptr<class Module> m_module;
 	const ScopedFile m_socket;
 	const unsigned long long m_createdTime;
 
@@ -59,10 +58,6 @@ public:
 	bool send(StreamBuffer buffer, bool final = false); // final 置 true 则发送完毕后挂断连接。
 	bool hasBeenShutdown() const;
 	bool forceShutdown();
-
-	const boost::shared_ptr<Module> &getModule() const {
-		return m_module;
-	}
 
 	unsigned long long getCreatedTime() const {
 		return m_createdTime;

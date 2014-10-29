@@ -30,17 +30,15 @@ std::size_t g_databaseMaxReconnDelay	= 60000;
 
 class AsyncLoadCallbackJob : public JobBase {
 private:
-	const boost::shared_ptr<Module> m_module;
 	MySqlAsyncLoadCallback m_callback;
-
 	boost::shared_ptr<MySqlObjectBase> m_object;
 
 public:
-	explicit AsyncLoadCallbackJob(boost::shared_ptr<Module> module,
-		Move<MySqlAsyncLoadCallback> callback, boost::shared_ptr<MySqlObjectBase> object)
-		: m_module(STD_MOVE(module)), m_object(STD_MOVE(object))
+	explicit AsyncLoadCallbackJob(Move<MySqlAsyncLoadCallback> callback,
+		boost::shared_ptr<MySqlObjectBase> object)
 	{
 		callback.swap(m_callback);
+		object.swap(m_object);
 	}
 
 protected:
@@ -52,25 +50,21 @@ protected:
 };
 
 struct AsyncSaveItem {
-	boost::shared_ptr<Module> module;
 	boost::shared_ptr<const MySqlObjectBase> object;
 	unsigned long long timeStamp;
 
 	void swap(AsyncSaveItem &rhs) NOEXCEPT {
-		module.swap(rhs.module);
 		object.swap(rhs.object);
 		std::swap(timeStamp, rhs.timeStamp);
 	}
 };
 
 struct AsyncLoadItem {
-	boost::shared_ptr<Module> module;
 	boost::shared_ptr<MySqlObjectBase> object;
 	std::string filter;
 	MySqlAsyncLoadCallback callback;
 
 	void swap(AsyncLoadItem &rhs) NOEXCEPT {
-		module.swap(rhs.module);
 		object.swap(rhs.object);
 		filter.swap(rhs.filter);
 		callback.swap(rhs.callback);
@@ -199,7 +193,7 @@ void daemonLoop(){
 				ali.object->enableAutoSaving();
 
 				boost::make_shared<AsyncLoadCallbackJob>(
-					MySqlObjectImpl::getModule(*ali.object), STD_MOVE(ali.callback), STD_MOVE(ali.object)
+					STD_MOVE(ali.callback), STD_MOVE(ali.object)
 					)->pend();
 			}
 		} catch(sql::SQLException &e){
@@ -305,7 +299,6 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object)
 	g_saveQueue.splice(g_saveQueue.end(), g_savePool, g_savePool.begin());
 
 	AUTO_REF(asi, g_saveQueue.back());
-	asi.module = MySqlObjectImpl::getModule(*object);
 	asi.object.swap(object);
 	asi.timeStamp = getMonoClock() + g_databaseSaveDelay * 1000;
 	MySqlObjectImpl::setContext(*asi.object, &asi);
@@ -322,7 +315,6 @@ void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	g_loadQueue.splice(g_loadQueue.end(), g_loadPool, g_loadPool.begin());
 
 	AUTO_REF(ali, g_loadQueue.back());
-	ali.module = MySqlObjectImpl::getModule(*object);
 	ali.object.swap(object);
 	ali.filter.swap(filter);
 	ali.callback.swap(callback);
