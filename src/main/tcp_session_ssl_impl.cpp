@@ -25,7 +25,7 @@ void initSsl(){
 void setErrnoBySslRet(::SSL *ssl, int ret){
 	if(ret <= 0){
 		const int err = ::SSL_get_error(ssl, ret);
-		LOG_ERROR("SSL ret = ", ret, ", error= ", err);
+		LOG_ERROR("SSL ret = ", ret, ", error = ", err);
 		switch(err){
 		case SSL_ERROR_NONE:
 		case SSL_ERROR_ZERO_RETURN:

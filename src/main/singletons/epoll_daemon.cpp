@@ -100,9 +100,7 @@ void add(const boost::shared_ptr<TcpSessionBase> &session){
 	::epoll_event event;
 	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	event.data.ptr = session.get();
-	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD,
-		TcpSessionImpl::doGetFd(*session), &event) != 0)
-	{
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, TcpSessionImpl::doGetFd(*session), &event) != 0){
 		const boost::mutex::scoped_lock lock(g_sessionMutex);
 		g_sessions.erase(result.first);
 		DEBUG_THROW(SystemError);
@@ -120,9 +118,7 @@ void touch(const boost::shared_ptr<TcpSessionBase> &session){
 	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
 void remove(const boost::shared_ptr<TcpSessionBase> &session){
-	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL,
-		TcpSessionImpl::doGetFd(*session), VAL_INIT) != 0)
-	{
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, TcpSessionImpl::doGetFd(*session), VAL_INIT) != 0){
 		LOG_WARN("Error deleting from epoll. We can do nothing but ignore it.");
 	}
 	const boost::mutex::scoped_lock lock(g_sessionMutex);

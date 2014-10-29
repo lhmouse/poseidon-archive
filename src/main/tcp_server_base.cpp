@@ -64,15 +64,15 @@ public:
 protected:
 	bool establishConnection(){
 		const int ret = ::SSL_accept(m_ssl.get());
-		if(ret == 1){
-			return true;
+		if(ret != 1){
+			const int err = ::SSL_get_error(m_ssl.get(), ret);
+			if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
+				return false;
+			}
+			LOG_ERROR("::SSL_accept() = ", ret, ", ::SSL_get_error() = ", err);
+			DEBUG_THROW(Exception, "::SSL_accept() failed");
 		}
-		const int err = ::SSL_get_error(m_ssl.get(), ret);
-		if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
-			return false;
-		}
-		LOG_ERROR("::SSL_accept() = ", ret, ", ::SSL_get_error() = ", err);
-		DEBUG_THROW(Exception, "::SSL_accept() failed");
+		return true;
 	}
 };
 

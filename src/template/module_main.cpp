@@ -363,5 +363,5 @@ extern "C" void poseidonModuleInit(std::vector<boost::shared_ptr<const void> > &
 	Uuid uuid2 = Uuid::createFromString(str);
 	LOG_DEBUG("UUID = ", uuid2.toHex());
 
-	TestClient::create();
+	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"));
 }
