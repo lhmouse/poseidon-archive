@@ -22,12 +22,12 @@ template<unsigned EVENT_ID_T>
 class EventBase : public EventBaseWithoutId {
 public:
 	enum {
-		EVENT_ID = EVENT_ID_T
+		ID = EVENT_ID_T
 	};
 
 public:
 	virtual unsigned id() const {
-		return EVENT_ID;
+		return ID;
 	}
 };
 

@@ -200,19 +200,19 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	out.put('\n');
 	wss->send(STD_MOVE(out), false);
 }
-/*
+
 class TestClient : public TcpClientBase {
 public:
-	static boost::shared_ptr<TestClient> create(boost::weak_ptr<Module> module){
-		AUTO(ret, boost::make_shared<TestClient>(module));
+	static boost::shared_ptr<TestClient> create(){
+		AUTO(ret, boost::make_shared<TestClient>());
 		ret->sslConnect();
 		ret->goResident();
 		return ret;
 	}
 
 public:
-	explicit TestClient(boost::weak_ptr<Module> module)
-		: TcpClientBase(boost::shared_ptr<Module>(module), "127.0.0.1", 443)
+	TestClient()
+		: TcpClientBase("127.0.0.1", 443)
 	{
 	}
 
@@ -224,36 +224,43 @@ private:
 		}
 	}
 };
-*/
+
 }
 
 #define PROTOCOL_NAMESPACE TestNs
 
 #define PROTOCOL_NAME		TestInt
+#define PROTOCOL_ID			100
 #define PROTOCOL_FIELDS		FIELD_VINT(i)
 #include "../main/player/protocol_generator.hpp"
 
 #define PROTOCOL_NAME		TestUInt
+#define PROTOCOL_ID			101
 #define PROTOCOL_FIELDS 	FIELD_VUINT(u)
 #include "../main/player/protocol_generator.hpp"
 
 #define PROTOCOL_NAME		TestString
+#define PROTOCOL_ID			102
 #define PROTOCOL_FIELDS		FIELD_STRING(s)
 #include "../main/player/protocol_generator.hpp"
 
 #define PROTOCOL_NAME		TestIntArray
+#define PROTOCOL_ID			103
 #define PROTOCOL_FIELDS		FIELD_ARRAY(a, FIELD_VINT(i))
 #include "../main/player/protocol_generator.hpp"
 
 #define PROTOCOL_NAME		TestUIntArray
+#define PROTOCOL_ID			104
 #define PROTOCOL_FIELDS		FIELD_ARRAY(a, FIELD_VUINT(u))
 #include "../main/player/protocol_generator.hpp"
 
 #define PROTOCOL_NAME		TestStringArray
+#define PROTOCOL_ID			105
 #define PROTOCOL_FIELDS		FIELD_ARRAY(a, FIELD_STRING(s))
 #include "../main/player/protocol_generator.hpp"
 
 #define PROTOCOL_NAME   	TestProtocol
+#define PROTOCOL_ID			106
 #define PROTOCOL_FIELDS \
 	FIELD_VINT(i)   \
 	FIELD_VUINT(j)  \
@@ -356,5 +363,5 @@ extern "C" void poseidonModuleInit(std::vector<boost::shared_ptr<const void> > &
 	Uuid uuid2 = Uuid::createFromString(str);
 	LOG_DEBUG("UUID = ", uuid2.toHex());
 
-//	TestClient::create(module);
+	TestClient::create();
 }

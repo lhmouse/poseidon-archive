@@ -2,6 +2,10 @@
 #	error PROTOCOL_NAME is undefined.
 #endif
 
+#ifndef PROTOCOL_ID
+#	error PROTOCOL_ID is undefined.
+#endif
+
 #ifndef PROTOCOL_FIELDS
 #	error PROTOCOL_FIELDS is undefined.
 #endif
@@ -17,6 +21,9 @@ namespace PROTOCOL_NAMESPACE {
 #endif
 
 struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
+	enum {
+		ID = PROTOCOL_ID
+	};
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -170,4 +177,5 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #endif
 
 #undef PROTOCOL_NAME
+#undef PROTOCOL_ID
 #undef PROTOCOL_FIELDS

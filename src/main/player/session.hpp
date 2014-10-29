@@ -11,8 +11,6 @@
 
 namespace Poseidon {
 
-const boost::uint16_t PLAYER_ERROR_PROTOCOL_ID = 0;
-
 class ProtocolBase;
 
 class PlayerSession : public TcpSessionBase {
@@ -35,9 +33,9 @@ public:
 
 	template<class ProtocolT>
 	typename boost::enable_if<boost::is_base_of<ProtocolBase, ProtocolT>, bool>::type
-		send(boost::uint16_t protocolId, const ProtocolT &contents, bool final = false)
+		send(const ProtocolT &contents, bool final = false)
 	{
-		return send(protocolId, StreamBuffer(contents), final);
+		return send(ProtocolT::ID, StreamBuffer(contents), final);
 	}
 
 	bool sendError(boost::uint16_t protocolId, PlayerStatus status, std::string reason, bool final = false);

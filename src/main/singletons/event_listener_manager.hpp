@@ -23,9 +23,11 @@ struct EventListenerManager {
 	static void start();
 	static void stop();
 
+	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	static boost::shared_ptr<EventListener> registerListener(
 		unsigned id, EventListenerCallback callback);
 
+	// void (boost::shared_ptr<EventT> event)
 	template<typename EventT, typename CallbackT>
 	static
 		typename boost::enable_if_c<boost::is_base_of<EventBaseWithoutId, EventT>::value,
@@ -36,10 +38,10 @@ struct EventListenerManager {
 #else
 			const CallbackT &
 #endif
-			callback)
+				callback)
 	{
 		struct Helper {
-			static void checkForward(
+			static void checkAndForward(
 				boost::shared_ptr<EventBaseWithoutId> event, const CallbackT &callback)
 			{
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
@@ -50,7 +52,7 @@ struct EventListenerManager {
 				callback(STD_MOVE(derived));
 			}
 		};
-		return registerListener(EventT::EVENT_ID, boost::bind(&Helper::checkForward, _1,
+		return registerListener(EventT::ID, boost::bind(&Helper::checkAndForward, _1,
 #ifdef POSEIDON_CXX11
 			std::forward<CallbackT>(callback)
 #else

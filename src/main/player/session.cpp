@@ -14,6 +14,7 @@ using namespace Poseidon;
 namespace {
 
 #define PROTOCOL_NAME	ErrorProtocol
+#define PROTOCOL_ID		0
 #define PROTOCOL_FIELDS	\
 	FIELD_VUINT(protocolId)	\
 	FIELD_VUINT(status)	\
@@ -39,7 +40,7 @@ StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
 StreamBuffer makeErrorResponse(boost::uint16_t protocolId, PlayerStatus status, std::string reason){
 	StreamBuffer temp;
 	ErrorProtocol(protocolId, static_cast<unsigned>(status), STD_MOVE(reason)) >>temp;
-	return makeResponse(PLAYER_ERROR_PROTOCOL_ID, STD_MOVE(temp));
+	return makeResponse(ErrorProtocol::ID, STD_MOVE(temp));
 }
 
 class PlayerRequestJob : public JobBase {
