@@ -33,8 +33,8 @@ public:
 	}
 
 public:
-	void createSsl(SslPtr &ssl){
-		ssl.reset(::SSL_new(m_sslCtx.get()));
+	SslPtr createSsl() const {
+		return SslPtr(::SSL_new(m_sslCtx.get()));
 	}
 } g_clientSslCtx;
 
@@ -76,7 +76,7 @@ ScopedFile parseAddrPort(void *sa, unsigned &salen,
 
 class TcpClientBase::SslImplClient : public TcpSessionBase::SslImpl {
 public:
-	SslImplClient(Move<SslPtr> ssl, int fd)
+	SslImplClient(SslPtr ssl, int fd)
 		: SslImpl(STD_MOVE(ssl), fd)
 	{
 	}
@@ -109,10 +109,8 @@ TcpClientBase::TcpClientBase(const std::string &ip, unsigned port)
 void TcpClientBase::sslConnect(){
 	LOG_INFO("Initiating SSL handshake...");
 
-	SslPtr ssl;
-	g_clientSslCtx.createSsl(ssl);
 	boost::scoped_ptr<TcpSessionBase::SslImpl> sslImpl(
-		new SslImplClient(STD_MOVE(ssl), m_socket.get()));
+		new SslImplClient(g_clientSslCtx.createSsl(), m_socket.get()));
 	initSsl(STD_MOVE(sslImpl));
 }
 void TcpClientBase::goResident(){

@@ -49,14 +49,14 @@ public:
 	}
 
 public:
-	void createSsl(SslPtr &ssl){
-		ssl.reset(::SSL_new(m_sslCtx.get()));
+	SslPtr createSsl() const {
+		return SslPtr(::SSL_new(m_sslCtx.get()));
 	}
 };
 
 class TcpServerBase::SslImplClient : public TcpSessionBase::SslImpl {
 public:
-	SslImplClient(Move<SslPtr> ssl, int fd)
+	SslImplClient(SslPtr ssl, int fd)
 		: SslImpl(STD_MOVE(ssl), fd)
 	{
 	}
@@ -150,10 +150,8 @@ boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 	if(m_sslImplServer){
 		LOG_INFO("Waiting for SSL handshake...");
 
-		SslPtr ssl;
-		m_sslImplServer->createSsl(ssl);
 		boost::scoped_ptr<TcpSessionBase::SslImpl> sslImpl(
-			new SslImplClient(STD_MOVE(ssl), session->m_socket.get()));
+			new SslImplClient(m_sslImplServer->createSsl(), session->m_socket.get()));
 		session->initSsl(STD_MOVE(sslImpl));
 	}
 	LOG_INFO("Client ", session->getRemoteIp(), " has connected.");
