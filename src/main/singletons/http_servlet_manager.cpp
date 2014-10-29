@@ -37,7 +37,7 @@ boost::shared_mutex g_mutex;
 ServletMap g_servlets;
 
 bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
-	unsigned port, const SharedNtmbs &uri, std::size_t uriLen)
+	unsigned port, const char *uri, std::size_t uriLen)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 
@@ -54,7 +54,7 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 		return false;
 	}
 	const std::size_t len = std::strlen(sit->first.get());
-	if((len < uriLen) || (std::memcmp(sit->first.get(), uri.get(), uriLen) != 0)){
+	if((len < uriLen) || (std::memcmp(sit->first.get(), uri, uriLen) != 0)){
 		LOG_DEBUG("No more handlers: ", uri);
 		return false;
 	}
@@ -128,7 +128,7 @@ boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(
 
 	boost::shared_ptr<const HttpServletCallback> ret;
 	const std::size_t uriLen = std::strlen(uri.get());
-	getExactServlet(ret, port, uri, uriLen);
+	getExactServlet(ret, port, uri.get(), uriLen);
 	if(!ret && (uri != "/")){
 		LOG_DEBUG("Searching for fallback handlers for URI ", uri);
 
@@ -140,7 +140,7 @@ boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(
 			LOG_DEBUG("Trying fallback URI handler ", fallback);
 
 			boost::shared_ptr<const HttpServletCallback> test;
-			if(!getExactServlet(test, port, fallback, fallback.size())){
+			if(!getExactServlet(test, port, fallback.c_str(), fallback.size())){
 				break;
 			}
 			if(test){
