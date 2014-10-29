@@ -24,7 +24,7 @@ struct Poseidon::TimerItem : boost::noncopyable {
 		LOG_INFO("Created timer, period = ", period);
 	}
 	~TimerItem(){
-		LOG_INFO("Destroyed ed timer, period = ", period);
+		LOG_INFO("Destroyed timer, period = ", period);
 	}
 };
 
