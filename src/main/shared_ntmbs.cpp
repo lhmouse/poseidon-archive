@@ -60,7 +60,7 @@ struct IncrementalAlloc {
 		::operator delete(p);
 	}
 	size_type max_size() const {
-		return static_cast<std::size_t>(-1) >> 1;
+		return static_cast<size_type>(-1) >> 1;
 	}
 
 	template<typename U>
