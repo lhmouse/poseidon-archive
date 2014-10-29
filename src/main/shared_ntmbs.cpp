@@ -53,7 +53,7 @@ struct IncrementalAlloc {
 			throw std::bad_alloc();
 		}
 		char *const ptr = reinterpret_cast<char *>(::operator new(k));
-		incPtr = ptr + n * sizeof(T);
+		incPtr = ptr + k - incSize;
 		return reinterpret_cast<pointer>(ptr);
 	}
 	void deallocate(pointer p, size_type){
