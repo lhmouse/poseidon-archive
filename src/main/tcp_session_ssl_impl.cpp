@@ -23,29 +23,27 @@ void initSsl(){
 }
 
 void setErrnoBySslRet(::SSL *ssl, int ret){
-	if(ret <= 0){
-		const int err = ::SSL_get_error(ssl, ret);
-		LOG_ERROR("SSL ret = ", ret, ", error = ", err);
-		switch(err){
-		case SSL_ERROR_NONE:
-		case SSL_ERROR_ZERO_RETURN:
-			errno = 0;
-			break;
+	const int err = ::SSL_get_error(ssl, ret);
+	LOG_DEBUG("SSL ret = ", ret, ", error = ", err);
+	switch(err){
+	case SSL_ERROR_NONE:
+	case SSL_ERROR_ZERO_RETURN:
+		errno = 0;
+		break;
 
-		case SSL_ERROR_WANT_READ:
-		case SSL_ERROR_WANT_WRITE:
-		case SSL_ERROR_WANT_CONNECT:
-		case SSL_ERROR_WANT_ACCEPT:
-			errno = EAGAIN;
-			break;
+	case SSL_ERROR_WANT_READ:
+	case SSL_ERROR_WANT_WRITE:
+	case SSL_ERROR_WANT_CONNECT:
+	case SSL_ERROR_WANT_ACCEPT:
+		errno = EAGAIN;
+		break;
 
-		case SSL_ERROR_SYSCALL:
-			break;
+	case SSL_ERROR_SYSCALL:
+		break;
 
-		default:
-			errno = EPERM;
-			break;
-		}
+	default:
+		errno = EPERM;
+		break;
 	}
 }
 
