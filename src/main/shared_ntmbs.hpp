@@ -36,7 +36,7 @@ public:
 			forkOwning();
 		}
 	}
-	SharedNtmbs(const SharedNtmbs &rhs, bool owning = false)
+	SharedNtmbs(const SharedNtmbs &rhs, bool owning)
 		: m_ptr(rhs.m_ptr)
 	{
 		if(owning){
@@ -48,19 +48,6 @@ public:
 		if(owning){
 			forkOwning();
 		}
-	}
-#ifdef POSEIDON_CXX11
-	SharedNtmbs(SharedNtmbs &&rhs) noexcept {
-		rhs.swap(*this);
-	}
-#endif
-	SharedNtmbs &operator=(const SharedNtmbs &rhs){
-		m_ptr = rhs.m_ptr;
-		return *this;
-	}
-	SharedNtmbs &operator=(Move<SharedNtmbs> rhs) NOEXCEPT {
-		rhs.swap(*this);
-		return *this;
 	}
 
 public:
