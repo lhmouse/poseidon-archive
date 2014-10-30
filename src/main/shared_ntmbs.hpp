@@ -55,7 +55,7 @@ public:
 		return m_ptr.get();
 	}
 	bool empty() const {
-		return get()[0] != 0;
+		return get()[0] == 0;
 	}
 
 	bool isOwning() const;
@@ -71,7 +71,7 @@ public:
 	}
 #ifdef POSEIDON_CXX11
 	explicit operator bool() const {
-		return empty();
+		return !empty();
 	}
 #else
 	typedef const char *(SharedNtmbs::*DummyBool_)() const;
