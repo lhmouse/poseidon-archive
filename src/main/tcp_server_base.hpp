@@ -6,6 +6,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "raii.hpp"
+#include "shared_ntmbs.hpp"
 
 namespace Poseidon {
 
@@ -25,8 +26,8 @@ private:
 	boost::scoped_ptr<SslImplServer> m_sslImplServer;
 
 public:
-	TcpServerBase(const std::string &bindAddr, unsigned bindPort,
-		const std::string &cert, const std::string &privateKey);
+	TcpServerBase(std::string bindAddr, unsigned bindPort,
+		const SharedNtmbs &cert, const SharedNtmbs &privateKey);
 	virtual ~TcpServerBase();
 
 protected:

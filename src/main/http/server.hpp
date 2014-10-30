@@ -12,9 +12,8 @@ private:
 	boost::shared_ptr<std::set<std::string> > m_authInfo;
 
 public:
-	HttpServer(std::size_t category, const std::string &bindAddr, unsigned bindPort,
-		const std::string &cert, const std::string &privateKey,
-		const std::vector<std::string> &authInfo);
+	HttpServer(std::size_t category, std::string bindAddr, unsigned bindPort,
+		const SharedNtmbs &cert, const SharedNtmbs &privateKey, const std::vector<std::string> &authInfo);
 
 protected:
 	boost::shared_ptr<class TcpSessionBase> onClientConnect(ScopedFile client) const;

@@ -23,7 +23,7 @@ public:
 	{
 	}
 	SharedNtmbs(const char *str, bool owning = false)
-		: m_ptr(boost::shared_ptr<void>(), str)
+		: m_ptr(boost::shared_ptr<void>(), str ? str : "")
 	{
 		if(owning){
 			forkOwning();
@@ -54,6 +54,9 @@ public:
 	const char *get() const {
 		return m_ptr.get();
 	}
+	bool empty() const {
+		return get()[0] != 0;
+	}
 
 	bool isOwning() const;
 	void forkOwning();
@@ -63,9 +66,19 @@ public:
 	}
 
 public:
-	operator const char *() const {
-		return get();
+	const char &operator[](std::size_t index) const {
+		return get()[index];
 	}
+#ifdef POSEIDON_CXX11
+	explicit operator bool() const {
+		return empty();
+	}
+#else
+	typedef const char *(SharedNtmbs::*DummyBool_)() const;
+	operator DummyBool_() const {
+		return !empty() ? &SharedNtmbs::get : 0;
+	}
+#endif
 	operator std::string() const {
 		return std::string(get());
 	}

@@ -10,8 +10,8 @@ private:
 	const std::size_t m_category;
 
 public:
-	PlayerServer(std::size_t category, const std::string &bindAddr, unsigned bindPort,
-		const std::string &cert, const std::string &privateKey);
+	PlayerServer(std::size_t category, std::string bindAddr, unsigned bindPort,
+		const SharedNtmbs &cert, const SharedNtmbs &privateKey);
 
 protected:
 	boost::shared_ptr<class TcpSessionBase> onClientConnect(ScopedFile client) const;

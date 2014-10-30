@@ -5,9 +5,9 @@
 #include "../singletons/http_servlet_manager.hpp"
 using namespace Poseidon;
 
-HttpServer::HttpServer(std::size_t category, const std::string &bindAddr, unsigned bindPort,
-	const std::string &cert, const std::string &privateKey, const std::vector<std::string> &authInfo)
-	: TcpServerBase(bindAddr, bindPort, cert, privateKey)
+HttpServer::HttpServer(std::size_t category, std::string bindAddr, unsigned bindPort,
+	const SharedNtmbs &cert, const SharedNtmbs &privateKey, const std::vector<std::string> &authInfo)
+	: TcpServerBase(STD_MOVE(bindAddr), bindPort, cert, privateKey)
 	, m_category(category)
 {
 	if(!authInfo.empty()){

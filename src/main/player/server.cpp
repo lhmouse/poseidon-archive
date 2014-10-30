@@ -3,9 +3,9 @@
 #include "session.hpp"
 using namespace Poseidon;
 
-PlayerServer::PlayerServer(std::size_t category, const std::string &bindAddr, unsigned bindPort,
-	const std::string &cert, const std::string &privateKey)
-	: TcpServerBase(bindAddr, bindPort, cert, privateKey)
+PlayerServer::PlayerServer(std::size_t category, std::string bindAddr, unsigned bindPort,
+	const SharedNtmbs &cert, const SharedNtmbs &privateKey)
+	: TcpServerBase(STD_MOVE(bindAddr), bindPort, cert, privateKey)
 	, m_category(category)
 {
 }
