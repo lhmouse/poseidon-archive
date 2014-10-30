@@ -103,7 +103,7 @@ bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 void daemonLoop(){
 	boost::scoped_ptr<sql::Connection> connection;
 	if(!getMySqlConnection(connection)){
-		LOG_FATAL("Failed to connect MySQL server. Bail out.");
+		LOG_FATAL("Failed to connect MySQL server. Bailing out.");
 		std::abort();
 	} else {
 		const boost::mutex::scoped_lock lock(g_mutex);
