@@ -49,8 +49,8 @@ struct SessionMapElement {
 };
 
 MULTI_INDEX_MAP(SessionMap, SessionMapElement,
-	UNIQUE_MEMBER_INDEX(session),
-	MULTI_MEMBER_INDEX(lastRead),
+	UNIQUE_MEMBER_INDEX(session)
+	MULTI_MEMBER_INDEX(lastRead)
 	MULTI_MEMBER_INDEX(lastWritten)
 );
 

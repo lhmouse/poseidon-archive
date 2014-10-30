@@ -1,12 +1,12 @@
 #include "../main/precompiled.hpp"
-#include "../main/singletons/module_manager.hpp"
 #include "../main/singletons/epoll_daemon.hpp"
 #include "../main/config_file.hpp"
 #include "../main/log.hpp"
 #include "../main/exception.hpp"
+#include "../main/module_raii.hpp"
 using namespace Poseidon;
 
-extern "C" void poseidonModuleInit(std::vector<boost::shared_ptr<const void> > &contexts){
+MODULE_RAII(
 	LOG_INFO("Initializing player server...");
 
 	ConfigFile config("config/player_server.conf");
@@ -21,6 +21,5 @@ extern "C" void poseidonModuleInit(std::vector<boost::shared_ptr<const void> > &
 	config.get(certificate, "player_server_certificate", "");
 	config.get(privateKey, "player_server_private_key", "");
 
-	contexts.push_back(EpollDaemon::registerPlayerServer(
-		bind, port, certificate, privateKey));
-}
+	return EpollDaemon::registerPlayerServer(bind, port, certificate, privateKey);
+)

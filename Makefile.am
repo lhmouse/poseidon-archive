@@ -43,6 +43,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/uuid.cpp	\
 	src/main/file.cpp	\
 	src/main/config_file.cpp	\
+	src/main/module_raii.cpp	\
 	src/main/singletons/main_config.cpp	\
 	src/main/singletons/job_dispatcher.cpp	\
 	src/main/singletons/mysql_daemon.cpp	\
@@ -73,10 +74,10 @@ lib_LTLIBRARIES=	\
 	lib/libposeidon-template.la
 
 lib_libposeidon_player_server_la_SOURCES=	\
-	src/player_server/module_main.cpp
+	src/player_server/mmain.cpp
 
 lib_libposeidon_http_server_la_SOURCES=	\
-	src/http_server/module_main.cpp
+	src/http_server/mmain.cpp
 
 lib_libposeidon_template_la_SOURCES=	\
-	src/template/module_main.cpp
+	src/template/mmain.cpp

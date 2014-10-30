@@ -1,24 +1,23 @@
 #include "../main/precompiled.hpp"
-#include "../main/singletons/module_manager.hpp"
 #include "../main/log.hpp"
 #include "../main/exception.hpp"
+#include "../main/profiler.hpp"
+#include "../main/hash.hpp"
+#include "../main/module_raii.hpp"
 #include "../main/singletons/http_servlet_manager.hpp"
 #include "../main/singletons/module_manager.hpp"
 #include "../main/singletons/event_listener_manager.hpp"
 #include "../main/singletons/timer_daemon.hpp"
 #include "../main/singletons/websocket_servlet_manager.hpp"
+#include "../main/singletons/profile_manager.hpp"
 #include "../main/http/websocket/session.hpp"
 #include "../main/http/utilities.hpp"
-#include "../main/hash.hpp"
-#include "../main/profiler.hpp"
-#include "../main/singletons/profile_manager.hpp"
 #include "../main/tcp_client_base.hpp"
 #include "../main/player/session.hpp"
 #include "../main/http/session.hpp"
 #include "../main/player/protocol_base.hpp"
 #include "../main/singletons/player_servlet_manager.hpp"
 #include "../main/mysql/object_base.hpp"
-#include "../main/uuid.hpp"
 using namespace Poseidon;
 
 #define MYSQL_OBJECT_NAMESPACE	TestNs
@@ -31,15 +30,6 @@ using namespace Poseidon;
 #include "../main/mysql/object_generator.hpp"
 
 namespace {
-
-struct Tracked {
-	Tracked(){
- 		LOG_FATAL("Tracked::Tracked()");
-	}
-	~Tracked(){
-		LOG_FATAL("Tracked::~Tracked()");
-	}
-};
 
 struct TestEvent1 : public EventBase<1> {
 	int i;
@@ -330,37 +320,50 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 
 }
 
-extern "C" void poseidonModuleInit(std::vector<boost::shared_ptr<const void> > &contexts){
-	LOG_FATAL("poseidonModuleInit()");
-	contexts.reserve(32);
-
-	contexts.push_back(boost::make_shared<Tracked>());
-
-	contexts.push_back(HttpServletManager::registerServlet(8860, "/profile", &profileProc));
-	contexts.push_back(HttpServletManager::registerServlet(8860, "/load", &loadProc));
-	contexts.push_back(HttpServletManager::registerServlet(8860, "/unload", &unloadProc));
-	const AUTO(sv, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
-	contexts.push_back(sv);
-	g_servlets = sv;
-
-	contexts.push_back(EventListenerManager::registerListener<TestEvent1>(&event1Proc));
-	contexts.push_back(EventListenerManager::registerListener<TestEvent2>(&event2Proc));
-
-	contexts.push_back(WebSocketServletManager::registerServlet(8860, "/wstest", &webSocketProc));
-
-	contexts.push_back(PlayerServletManager::registerServlet(8850, 100, &TestIntProc));
-	contexts.push_back(PlayerServletManager::registerServlet(8850, 101, &TestUIntProc));
-	contexts.push_back(PlayerServletManager::registerServlet(8850, 102, &TestStringProc));
-	contexts.push_back(PlayerServletManager::registerServlet(8850, 103, &TestIntArrayProc));
-	contexts.push_back(PlayerServletManager::registerServlet(8850, 104, &TestUIntArrayProc));
-	contexts.push_back(PlayerServletManager::registerServlet(8850, 105, &TestStringArrayProc));
-	contexts.push_back(PlayerServletManager::registerServlet(8850, 106, &TestProc));
-
-	Uuid uuid = Uuid::createRandom();
-	std::string str = uuid.toHex();
-	LOG_DEBUG("UUID = ", str);
-	Uuid uuid2 = Uuid::createFromString(str);
-	LOG_DEBUG("UUID = ", uuid2.toHex());
-
+MODULE_RAII(
+	return HttpServletManager::registerServlet(8860, "/profile", &profileProc);
+)
+MODULE_RAII(
+	return HttpServletManager::registerServlet(8860, "/load", &loadProc);
+)
+MODULE_RAII(
+	return HttpServletManager::registerServlet(8860, "/unload", &unloadProc);
+)
+MODULE_RAII(
+	AUTO(v, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
+	g_servlets = v;
+	return v;
+)
+MODULE_RAII(
+	return EventListenerManager::registerListener<TestEvent1>(&event1Proc);
+)
+MODULE_RAII(
+	return EventListenerManager::registerListener<TestEvent2>(&event2Proc);
+)
+MODULE_RAII(
+	return WebSocketServletManager::registerServlet(8860, "/wstest", &webSocketProc);
+)
+MODULE_RAII(
+	return PlayerServletManager::registerServlet(8850, 100, &TestIntProc);
+)
+MODULE_RAII(
+	return PlayerServletManager::registerServlet(8850, 101, &TestUIntProc);
+)
+MODULE_RAII(
+	return PlayerServletManager::registerServlet(8850, 102, &TestStringProc);
+)
+MODULE_RAII(
+	return PlayerServletManager::registerServlet(8850, 103, &TestIntArrayProc);
+)
+MODULE_RAII(
+	return PlayerServletManager::registerServlet(8850, 104, &TestUIntArrayProc);
+)
+MODULE_RAII(
+	return PlayerServletManager::registerServlet(8850, 105, &TestStringArrayProc);
+)
+MODULE_RAII(
+	return PlayerServletManager::registerServlet(8850, 106, &TestProc);
+)
+MODULE_RAII(
 	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"));
-}
+)

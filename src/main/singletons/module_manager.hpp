@@ -2,7 +2,6 @@
 #define POSEIDON_SINGLETONS_MODULE_MANAGER_HPP_
 
 #include <string>
-#include <vector>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include "../shared_ntmbs.hpp"
@@ -10,6 +9,7 @@
 namespace Poseidon {
 
 class Module;
+class ModuleRaiiBase;
 
 struct ModuleSnapshotItem {
 	SharedNtmbs realPath;
@@ -30,13 +30,14 @@ struct ModuleManager {
 	static std::vector<ModuleSnapshotItem> snapshot();
 
 private:
+	friend class ModuleRaiiBase;
+
+	static void registerModuleRaii(ModuleRaiiBase *raii);
+	static void unregisterModuleRaii(ModuleRaiiBase *raii);
+
 	ModuleManager();
 };
 
-typedef std::vector<boost::shared_ptr<const void> > ModuleContexts;
-
 }
-
-extern "C" void poseidonModuleInit(Poseidon::ModuleContexts &contexts);
 
 #endif

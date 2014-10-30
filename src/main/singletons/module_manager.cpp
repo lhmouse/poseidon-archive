@@ -1,6 +1,5 @@
 #include "../precompiled.hpp"
 #include "module_manager.hpp"
-#include <map>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/type_traits/decay.hpp>
@@ -10,6 +9,7 @@
 #include "../raii.hpp"
 #include "../exception.hpp"
 #include "../multi_index_map.hpp"
+#include "../module_raii.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -75,7 +75,7 @@ struct ModuleMapElement {
 	const SharedNtmbs realPath;
 	void *const baseAddr;
 
-	mutable ModuleContexts contexts;
+	mutable std::vector<boost::shared_ptr<void> > handles;
 
 	explicit ModuleMapElement(boost::shared_ptr<Module> module_)
 		: module(STD_MOVE(module_)), handle(module->handle())
@@ -90,20 +90,46 @@ struct ModuleMapElement {
 };
 
 MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,
-	UNIQUE_MEMBER_INDEX(module),
-	UNIQUE_MEMBER_INDEX(handle),
-	MULTI_MEMBER_INDEX(realPath),
+	UNIQUE_MEMBER_INDEX(module)
+	UNIQUE_MEMBER_INDEX(handle)
+	MULTI_MEMBER_INDEX(realPath)
 	UNIQUE_MEMBER_INDEX(baseAddr)
 );
 
 enum {
-	IDX_MODULE,
-	IDX_HANDLE,
-	IDX_REAL_PATH,
-	IDX_BASE_ADDR,
+	MIDX_MODULE,
+	MIDX_HANDLE,
+	MIDX_REAL_PATH,
+	MIDX_BASE_ADDR,
+};
+
+struct ModuleRaiiMapElement {
+	void *const baseAddr;
+	ModuleRaiiBase *const raii;
+
+	ModuleRaiiMapElement(void *baseAddr_, ModuleRaiiBase *raii_)
+		: baseAddr(baseAddr_), raii(raii_)
+	{
+	}
+
+#ifndef POSEIDON_CXX11
+	// C++03 不提供转移构造函数，但是我们在这里不使用它，不需要定义。
+	ModuleRaiiMapElement(Move<ModuleRaiiMapElement> rhs);
+#endif
+};
+
+MULTI_INDEX_MAP(ModuleRaiiMap, ModuleRaiiMapElement,
+	MULTI_MEMBER_INDEX(baseAddr)
+	UNIQUE_MEMBER_INDEX(raii)
+);
+
+enum {
+	MRIDX_BASE_ADDR,
+	MRIDX_RAII,
 };
 
 ModuleMap g_modules;
+ModuleRaiiMap g_moduleRaiis;
 
 }
 
@@ -139,8 +165,8 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 	ScopedHandle<DynamicLibraryCloser> handle(::dlopen(path.get(), RTLD_NOW | RTLD_NOLOAD));
 	if(handle){
 		LOG_DEBUG("Module already loaded, trying retrieving a shared_ptr from static map...");
-		const AUTO(it, g_modules.find<IDX_HANDLE>(handle.get()));
-		if(it != g_modules.end<IDX_HANDLE>()){
+		const AUTO(it, g_modules.find<MIDX_HANDLE>(handle.get()));
+		if(it != g_modules.end<MIDX_HANDLE>()){
 			LOG_DEBUG("Got shared_ptr from loaded module: ", it->realPath);
 			return it->module;
 		}
@@ -154,17 +180,17 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 		LOG_ERROR("Error loading dynamic library: ", error);
 		DEBUG_THROW(Exception, error);
 	}
-	void *const initSym = ::dlsym(handle.get(), "poseidonModuleInit");
+
+	void *const initSym = ::dlsym(handle.get(), "_init");
 	if(!initSym){
 		const char *const error = ::dlerror();
-		LOG_ERROR("Error locating poseidonModuleInit(): ", error);
+		LOG_ERROR("Error locating _init(): ", error);
 		DEBUG_THROW(Exception, error);
 	}
-
 	::Dl_info info;
 	if(::dladdr(initSym, &info) == 0){
 		const char *const error = ::dlerror();
-		LOG_ERROR("Error getting real path: ", error);
+		LOG_ERROR("Error getting real path and base address: ", error);
 		DEBUG_THROW(Exception, error);
 	}
 	SharedNtmbs realPath(info.dli_fname, true);
@@ -172,10 +198,22 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 
 	AUTO(module, boost::make_shared<Module>(STD_MOVE(handle), realPath, baseAddr));
 
-	LOG_INFO("Initializing module: ", realPath);
-	ModuleContexts contexts;
-	(*reinterpret_cast<VALUE_TYPE(::poseidonModuleInit)>(initSym))(contexts);
-	LOG_INFO("Done initializing module: ", realPath);
+	const AUTO(raiiRange, g_moduleRaiis.equalRange<MRIDX_BASE_ADDR>(baseAddr));
+	std::vector<boost::shared_ptr<void> > handles;
+	if(raiiRange.first == raiiRange.second){
+		LOG_INFO("No initialization is required: ", realPath);
+	} else {
+		LOG_INFO("Initializing module: ", realPath);
+		for(AUTO(it, raiiRange.first); it != raiiRange.second; ++it){
+			boost::shared_ptr<void> handle(it->raii->init());
+			if(!handle){
+				continue;
+			}
+			handles.push_back(VAL_INIT);
+			handles.back().swap(handle);
+		}
+		LOG_INFO("Done initializing module: ", realPath);
+	}
 
 	const AUTO(result, g_modules.insert(ModuleMapElement(module)));
 	if(!result.second){
@@ -183,7 +221,7 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 			", real path = ", realPath, ", base address = ", baseAddr);
 		DEBUG_THROW(Exception, "Duplicate module");
 	}
-	result.first->contexts.swap(contexts);
+	result.first->handles.swap(handles);
 
 	return module;
 }
@@ -200,15 +238,15 @@ boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
 }
 bool ModuleManager::unload(const boost::shared_ptr<Module> &module){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
-	return g_modules.erase<IDX_MODULE>(module) > 0;
+	return g_modules.erase<MIDX_MODULE>(module) > 0;
 }
 bool ModuleManager::unload(const SharedNtmbs &realPath){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
-	return g_modules.erase<IDX_REAL_PATH>(realPath) > 0;
+	return g_modules.erase<MIDX_REAL_PATH>(realPath) > 0;
 }
 bool ModuleManager::unload(void *baseAddr){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
-	return g_modules.erase<IDX_BASE_ADDR>(baseAddr) > 0;
+	return g_modules.erase<MIDX_BASE_ADDR>(baseAddr) > 0;
 }
 
 std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
@@ -225,4 +263,22 @@ std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 		}
 	}
 	return ret;
+}
+
+void ModuleManager::registerModuleRaii(ModuleRaiiBase *raii){
+	const boost::recursive_mutex::scoped_lock lock(g_mutex);
+	::Dl_info info;
+	if(::dladdr(raii, &info) == 0){
+		const char *const error = ::dlerror();
+		LOG_ERROR("Error getting base address: ", error);
+		DEBUG_THROW(Exception, error);
+	}
+	if(!g_moduleRaiis.insert(ModuleRaiiMapElement(info.dli_fbase, raii)).second){
+		LOG_ERROR("Duplicate ModuleRaii? fbase = ", info.dli_fbase, ", raii = ", raii);
+		DEBUG_THROW(Exception, "Duplicate ModuleRaii");
+	}
+}
+void ModuleManager::unregisterModuleRaii(ModuleRaiiBase *raii){
+	const boost::recursive_mutex::scoped_lock lock(g_mutex);
+	g_moduleRaiis.erase<MRIDX_RAII>(raii);
 }
