@@ -39,7 +39,7 @@ public:
 } g_clientSslCtx;
 
 ScopedFile parseAddrPort(void *sa, unsigned &salen,
-	unsigned maxSalen, const std::string &ip, unsigned port)
+	unsigned maxSalen, const SharedNtmbs &ip, unsigned port)
 {
 	union {
 		::sockaddr sa;
@@ -47,11 +47,11 @@ ScopedFile parseAddrPort(void *sa, unsigned &salen,
 		::sockaddr_in6 sin6;
 	} u;
 
-	if(::inet_pton(AF_INET, ip.c_str(), &u.sin.sin_addr) == 1){
+	if(::inet_pton(AF_INET, ip.get(), &u.sin.sin_addr) == 1){
 		u.sin.sin_family = AF_INET;
 		storeBe(u.sin.sin_port, port);
 		salen = sizeof(::sockaddr_in);
-	} else if(::inet_pton(AF_INET6, ip.c_str(), &u.sin6.sin6_addr) == 1){
+	} else if(::inet_pton(AF_INET6, ip.get(), &u.sin6.sin6_addr) == 1){
 		u.sin6.sin6_family = AF_INET6;
 		storeBe(u.sin6.sin6_port, port);
 		salen = sizeof(::sockaddr_in6);
@@ -96,7 +96,7 @@ protected:
 	}
 };
 
-TcpClientBase::TcpClientBase(const std::string &ip, unsigned port)
+TcpClientBase::TcpClientBase(const SharedNtmbs &ip, unsigned port)
 	: TcpSessionBase(parseAddrPort(m_sa, m_salen, sizeof(m_sa), ip, port))
 {
 	if(::connect(m_socket.get(), reinterpret_cast<const ::sockaddr *>(m_sa), m_salen) != 0){

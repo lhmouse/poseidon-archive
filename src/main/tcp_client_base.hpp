@@ -4,6 +4,7 @@
 #include "tcp_session_base.hpp"
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include "shared_ntmbs.hpp"
 
 namespace Poseidon {
 
@@ -16,7 +17,7 @@ private:
 	unsigned m_salen;
 
 protected:
-	TcpClientBase(const std::string &ip, unsigned port);
+	TcpClientBase(const SharedNtmbs &ip, unsigned port);
 
 protected:
 	void onReadAvail(const void *data, std::size_t size) = 0;
