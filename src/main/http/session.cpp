@@ -133,7 +133,7 @@ protected:
 		assert(!m_uri.empty());
 
 		try {
-			const AUTO(servlet, HttpServletManager::getServlet(m_session->getLocalPort(), m_uri));
+			const AUTO(servlet, HttpServletManager::getServlet(m_session->getCategory(), m_uri));
 			if(!servlet){
 				LOG_WARN("No handler matches URI ", m_uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
@@ -163,8 +163,9 @@ protected:
 
 }
 
-HttpSession::HttpSession(ScopedFile socket)
+HttpSession::HttpSession(std::size_t category, ScopedFile socket)
 	: TcpSessionBase(STD_MOVE(socket))
+	, m_category(category)
 	, m_state(ST_FIRST_HEADER), m_totalLength(0), m_contentLength(0)
 	, m_verb(HTTP_GET), m_version(10000)
 {

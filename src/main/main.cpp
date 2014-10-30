@@ -72,8 +72,7 @@ void run(){
 	START(SystemHttpServer);
 	START(ModuleManager);
 
-	std::vector<std::string> initModules;
-	MainConfig::getAll(initModules, "init_module");
+	const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
 	for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
 		LOG_INFO("Loading init module: ", *it);
 		ModuleManager::load(*it);
@@ -99,8 +98,8 @@ int main(int argc, char **argv){
 
 		START(ProfileManager);
 
-		unsigned long long logMask = -1;
-		if(MainConfig::get(logMask, "log_mask")){
+		unsigned long long logMask;
+		if(MainConfig::getConfigFile().get(logMask, "log_mask")){
 			LOG_INFO("Setting new log mask: 0x", std::hex, std::uppercase, logMask);
 			Logger::setMask(-1, logMask);
 		}

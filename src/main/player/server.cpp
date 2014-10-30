@@ -3,12 +3,13 @@
 #include "session.hpp"
 using namespace Poseidon;
 
-PlayerServer::PlayerServer(const std::string &bindAddr, unsigned bindPort,
+PlayerServer::PlayerServer(std::size_t category, const std::string &bindAddr, unsigned bindPort,
 	const std::string &cert, const std::string &privateKey)
 	: TcpServerBase(bindAddr, bindPort, cert, privateKey)
+	, m_category(category)
 {
 }
 
 boost::shared_ptr<TcpSessionBase> PlayerServer::onClientConnect(ScopedFile client) const {
-	return boost::make_shared<PlayerSession>(STD_MOVE(client));
+	return boost::make_shared<PlayerSession>(m_category, STD_MOVE(client));
 }

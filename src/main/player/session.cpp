@@ -63,7 +63,7 @@ protected:
 		PROFILE_ME;
 
 		try {
-			const AUTO(servlet, PlayerServletManager::getServlet(m_session->getLocalPort(), m_protocolId));
+			const AUTO(servlet, PlayerServletManager::getServlet(m_session->getCategory(), m_protocolId));
 			if(!servlet){
 				LOG_WARN("No servlet for protocol ", m_protocolId);
 				DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND);
@@ -86,8 +86,9 @@ protected:
 
 }
 
-PlayerSession::PlayerSession(ScopedFile socket)
+PlayerSession::PlayerSession(std::size_t category, ScopedFile socket)
 	: TcpSessionBase(STD_MOVE(socket))
+	, m_category(category)
 	, m_payloadLen(-1), m_protocolId(0)
 {
 }

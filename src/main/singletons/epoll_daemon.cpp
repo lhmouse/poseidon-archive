@@ -415,13 +415,15 @@ void EpollDaemon::start(){
 	}
 	LOG_INFO("Starting epoll daemon...");
 
-	MainConfig::get(g_dataBufferSize, "epoll_data_buffer_size");
+	AUTO_REF(conf, MainConfig::getConfigFile());
+
+	conf.get(g_dataBufferSize, "epoll_data_buffer_size");
 	LOG_DEBUG("Data buffer size = ", g_dataBufferSize);
 
-	MainConfig::get(g_eventBufferSize, "epoll_event_buffer_size");
+	conf.get(g_eventBufferSize, "epoll_event_buffer_size");
 	LOG_DEBUG("Event buffer size = ", g_eventBufferSize);
 
-	MainConfig::get(g_maxTimeout, "epoll_max_timeout");
+	conf.get(g_maxTimeout, "epoll_max_timeout");
 	LOG_DEBUG("Max timeout = ", g_maxTimeout);
 
 	g_epoll.reset(::epoll_create(4096));
@@ -476,10 +478,10 @@ void EpollDaemon::touchSession(const boost::shared_ptr<TcpSessionBase> &session)
 }
 
 boost::shared_ptr<PlayerServer> EpollDaemon::registerPlayerServer(
-	const std::string &bindAddr, unsigned bindPort,
+	std::size_t category, const std::string &bindAddr, unsigned bindPort,
 	const std::string &cert, const std::string &privateKey)
 {
-	AUTO(newServer, boost::make_shared<PlayerServer>(bindAddr, bindPort, cert, privateKey));
+	AUTO(newServer, boost::make_shared<PlayerServer>(category, bindAddr, bindPort, cert, privateKey));
 	{
 		const boost::mutex::scoped_lock lock(g_serverMutex);
 		g_servers.push_back(newServer);
@@ -487,10 +489,10 @@ boost::shared_ptr<PlayerServer> EpollDaemon::registerPlayerServer(
 	return newServer;
 }
 boost::shared_ptr<HttpServer> EpollDaemon::registerHttpServer(
-	const std::string &bindAddr, unsigned bindPort,
+	std::size_t category, const std::string &bindAddr, unsigned bindPort,
 	const std::string &cert, const std::string &privateKey, const std::vector<std::string> &auth)
 {
-	AUTO(newServer, boost::make_shared<HttpServer>(bindAddr, bindPort, cert, privateKey, auth));
+	AUTO(newServer, boost::make_shared<HttpServer>(category, bindAddr, bindPort, cert, privateKey, auth));
 	{
 		const boost::mutex::scoped_lock lock(g_serverMutex);
 		g_servers.push_back(newServer);

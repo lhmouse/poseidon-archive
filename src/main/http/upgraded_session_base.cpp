@@ -35,6 +35,9 @@ bool HttpUpgradedSessionBase::forceShutdown(){
 	return static_cast<TcpSessionBase *>(parent.get())->forceShutdown();
 }
 
+std::size_t HttpUpgradedSessionBase::getCategory() const {
+	return getSafeParent()->m_category;
+}
 const std::string &HttpUpgradedSessionBase::getUri() const {
 	return getSafeParent()->m_uri;
 }

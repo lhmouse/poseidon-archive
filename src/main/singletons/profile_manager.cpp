@@ -50,7 +50,9 @@ std::map<ProfileKey, ProfileCounters> g_profile;
 }
 
 void ProfileManager::start(){
-	MainConfig::get(g_enabled, "enable_profiler");
+	AUTO_REF(conf, MainConfig::getConfigFile());
+
+	conf.get(g_enabled, "enable_profiler");
 	LOG_DEBUG("Enable profiler = ", g_enabled);
 }
 void ProfileManager::stop(){

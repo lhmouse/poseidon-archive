@@ -241,22 +241,24 @@ void MySqlDaemon::start(){
 	}
 	LOG_INFO("Starting MySQL daemon...");
 
-	MainConfig::get(g_databaseServer, "database_server");
+	AUTO_REF(conf, MainConfig::getConfigFile());
+
+	conf.get(g_databaseServer, "database_server");
 	LOG_DEBUG("MySQL server = ", g_databaseServer);
 
-	MainConfig::get(g_databaseUsername, "database_username");
+	conf.get(g_databaseUsername, "database_username");
 	LOG_DEBUG("MySQL username = ", g_databaseUsername);
 
-	MainConfig::get(g_databasePassword, "database_password");
+	conf.get(g_databasePassword, "database_password");
 	LOG_DEBUG("MySQL password = ", g_databasePassword);
 
-	MainConfig::get(g_databaseName, "database_name");
+	conf.get(g_databaseName, "database_name");
 	LOG_DEBUG("MySQL database name = ", g_databaseName);
 
-	MainConfig::get(g_databaseSaveDelay, "database_save_delay");
+	conf.get(g_databaseSaveDelay, "database_save_delay");
 	LOG_DEBUG("MySQL save delay = ", g_databaseSaveDelay);
 
-	MainConfig::get(g_databaseMaxReconnDelay, "database_max_reconn_delay");
+	conf.get(g_databaseMaxReconnDelay, "database_max_reconn_delay");
 	LOG_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
 
 	boost::thread(threadProc).swap(g_thread);

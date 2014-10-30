@@ -25,10 +25,10 @@ struct WebSocketServletManager {
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	static boost::shared_ptr<WebSocketServlet> registerServlet(
-		unsigned port, SharedNtmbs uri, WebSocketServletCallback callback);
+		std::size_t category, SharedNtmbs uri, WebSocketServletCallback callback);
 
 	static boost::shared_ptr<const WebSocketServletCallback> getServlet(
-		unsigned port, const SharedNtmbs &uri);
+		std::size_t category, const SharedNtmbs &uri);
 
 private:
 	WebSocketServletManager();

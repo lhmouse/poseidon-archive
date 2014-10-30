@@ -6,8 +6,11 @@
 namespace Poseidon {
 
 class PlayerServer : public TcpServerBase {
+private:
+	const std::size_t m_category;
+
 public:
-	PlayerServer(const std::string &bindAddr, unsigned bindPort,
+	PlayerServer(std::size_t category, const std::string &bindAddr, unsigned bindPort,
 		const std::string &cert, const std::string &privateKey);
 
 protected:

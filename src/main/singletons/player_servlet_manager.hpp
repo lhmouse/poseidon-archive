@@ -29,14 +29,14 @@ struct PlayerServletManager {
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	static boost::shared_ptr<PlayerServlet> registerServlet(
-		unsigned port, boost::uint16_t protocolId, PlayerServletCallback callback);
+		std::size_t category, boost::uint16_t protocolId, PlayerServletCallback callback);
 
 	// void (boost::shared_ptr<PlayerSession> ps, ProtocolT request)
 	template<typename ProtocolT, typename CallbackT>
 	static
 		typename boost::enable_if_c<boost::is_base_of<ProtocolBase, ProtocolT>::value,
 			boost::shared_ptr<PlayerServlet> >::type
-		registerServlet(unsigned port,
+		registerServlet(std::size_t category,
 #ifdef POSEIDON_CXX11
 			CallbackT &&
 #else
@@ -51,7 +51,7 @@ struct PlayerServletManager {
 				return callback(STD_MOVE(ps), ProtocolT(incoming));
 			}
 		};
-		return registerListener(port, ProtocolT::ID, boost::bind(&Helper::checkAndForward, _1, _2,
+		return registerListener(category, ProtocolT::ID, boost::bind(&Helper::checkAndForward, _1, _2,
 #ifdef POSEIDON_CXX11
 			std::forward<CallbackT>(callback)
 #else
@@ -61,7 +61,7 @@ struct PlayerServletManager {
 	}
 
 	static boost::shared_ptr<const PlayerServletCallback> getServlet(
-		unsigned port, boost::uint16_t protocolId);
+		std::size_t category, boost::uint16_t protocolId);
 
 private:
 	PlayerServletManager();

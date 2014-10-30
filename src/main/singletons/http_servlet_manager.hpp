@@ -30,10 +30,10 @@ struct HttpServletManager {
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	static boost::shared_ptr<HttpServlet> registerServlet(
-		unsigned port, SharedNtmbs uri, HttpServletCallback callback);
+		std::size_t category, SharedNtmbs uri, HttpServletCallback callback);
 
 	static boost::shared_ptr<const HttpServletCallback> getServlet(
-		unsigned port, const SharedNtmbs &uri);
+		std::size_t category, const SharedNtmbs &uri);
 
 private:
 	HttpServletManager();

@@ -24,7 +24,7 @@ namespace {
 
 std::size_t g_maxRequestLength = 16 * 0x400;
 
-typedef std::map<unsigned,
+typedef std::map<std::size_t,
 	std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> >
 	> ServletMap;
 
@@ -34,7 +34,11 @@ ServletMap g_servlets;
 }
 
 void PlayerServletManager::start(){
-	MainConfig::get(g_maxRequestLength, "player_max_request_length");
+	LOG_INFO("Starting player servlet manager...");
+
+	AUTO_REF(conf, MainConfig::getConfigFile());
+
+	conf.get(g_maxRequestLength, "player_max_request_length");
 	LOG_DEBUG("Max request length = ", g_maxRequestLength);
 }
 void PlayerServletManager::stop(){
@@ -52,16 +56,16 @@ std::size_t PlayerServletManager::getMaxRequestLength(){
 }
 
 boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(
-	unsigned port, boost::uint16_t protocolId, PlayerServletCallback callback)
+	std::size_t category, boost::uint16_t protocolId, PlayerServletCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<PlayerServletCallback>());
 	sharedCallback->swap(callback);
 	AUTO(servlet, boost::make_shared<PlayerServlet>(protocolId, sharedCallback));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
-		AUTO_REF(old, g_servlets[port][protocolId]);
+		AUTO_REF(old, g_servlets[category][protocolId]);
 		if(!old.expired()){
-			LOG_ERROR("Duplicate player protocol servlet for id ", protocolId, " on port ", port);
+			LOG_ERROR("Duplicate player protocol servlet for id ", protocolId, " in category ", category);
 			DEBUG_THROW(Exception, "Duplicate player protocol servlet");
 		}
 		old = servlet;
@@ -70,22 +74,22 @@ boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(
 }
 
 boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(
-	unsigned port, boost::uint16_t protocolId)
+	std::size_t category, boost::uint16_t protocolId)
 {
     const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
-    const AUTO(it, g_servlets.find(port));
+    const AUTO(it, g_servlets.find(category));
     if(it == g_servlets.end()){
-        LOG_DEBUG("No servlet on port ", port);
+        LOG_DEBUG("No servlet in category ", category);
         return VAL_INIT;
     }
     const AUTO(it2, it->second.find(protocolId));
     if(it2 == it->second.end()){
-    	LOG_DEBUG("No servlet for protocol ", protocolId, " on port ", port);
+    	LOG_DEBUG("No servlet for protocol ", protocolId, " in category ", category);
     	return VAL_INIT;
     }
     const AUTO(servlet, it2->second.lock());
     if(!servlet){
-    	LOG_DEBUG("Servlet for protocol ", protocolId, " on port ", port, " has expired");
+    	LOG_DEBUG("Servlet for protocol ", protocolId, " in category ", category, " has expired");
     	return VAL_INIT;
     }
     return servlet->callback;

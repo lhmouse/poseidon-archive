@@ -8,10 +8,11 @@ namespace Poseidon {
 
 class HttpServer : public TcpServerBase {
 private:
+	const std::size_t m_category;
 	boost::shared_ptr<std::set<std::string> > m_authInfo;
 
 public:
-	HttpServer(const std::string &bindAddr, unsigned bindPort,
+	HttpServer(std::size_t category, const std::string &bindAddr, unsigned bindPort,
 		const std::string &cert, const std::string &privateKey,
 		const std::vector<std::string> &authInfo);
 

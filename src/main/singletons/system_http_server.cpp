@@ -219,28 +219,27 @@ void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request, st
 }
 
 void SystemHttpServer::start(){
-	std::string bind;
-	boost::uint16_t port;
-	std::string certificate;
-	std::string privateKey;
-	std::vector<std::string> authUserPasses;
-	std::string path("/~sys");
+	AUTO_REF(conf, MainConfig::getConfigFile());
 
-	MainConfig::get(bind, "system_http_bind", "0.0.0.0");
-	MainConfig::get(port, "system_http_port", 8900);
-	MainConfig::get(certificate, "system_http_certificate");
-	MainConfig::get(privateKey, "system_http_private_key");
-	MainConfig::getAll(authUserPasses, "system_http_auth_user_pass");
-	MainConfig::get(path, "system_http_path");
-	LOG_INFO("Initializing system HTTP server on ", bind, ':', port);
-	g_systemServer = EpollDaemon::registerHttpServer(bind, port, certificate, privateKey, authUserPasses);
+	AUTO(category, conf.get<std::size_t>("system_http_category", 0));
+	AUTO(bind, conf.get<std::string>("system_http_bind", "0.0.0.0"));
+	AUTO(port, conf.get<boost::uint16_t>("system_http_port", 8900));
+	AUTO(certificate, conf.get<std::string>("system_http_certificate", ""));
+	AUTO(privateKey, conf.get<std::string>("system_http_private_key", ""));
+	AUTO(authUserPasses, conf.getAll<std::string>("system_http_auth_user_pass"));
+	AUTO(path, conf.get<std::string>("system_http_path", "~/sys"));
 
 	if(path.empty() || (*path.rbegin() != '/')){
 		path.push_back('/');
 	}
+
+	LOG_INFO("Initializing system HTTP server on ", bind, ':', port);
+	g_systemServer = EpollDaemon::registerHttpServer(
+		category, bind, port, certificate, privateKey, authUserPasses);
+
 	LOG_INFO("Created system HTTP sevlet on ", path);
-	g_systemServlet = HttpServletManager::registerServlet(port, path,
-		boost::bind(&servletProc, _1, _2, path.size()));
+	g_systemServlet = HttpServletManager::registerServlet(
+		category, path, boost::bind(&servletProc, _1, _2, path.size()));
 
 	LOG_INFO("Done initializing system HTTP server.");
 }

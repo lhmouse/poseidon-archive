@@ -27,6 +27,8 @@ private:
 	};
 
 private:
+	const std::size_t m_category;
+
 	boost::shared_ptr<const class TimerItem> m_shutdownTimer;
 
 	State m_state;
@@ -44,7 +46,7 @@ private:
 	OptionalMap m_headers;
 
 public:
-	explicit HttpSession(ScopedFile socket);
+	HttpSession(std::size_t category, ScopedFile socket);
 	~HttpSession();
 
 private:
@@ -55,6 +57,10 @@ private:
 	void onAllHeadersRead();
 
 public:
+	std::size_t getCategory() const {
+		return m_category;
+	}
+
 	void setAuthInfo(boost::shared_ptr<std::set<std::string> > authInfo){
 		m_authInfo.swap(authInfo);
 	}

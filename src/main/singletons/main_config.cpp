@@ -36,10 +36,10 @@ void MainConfig::setRunPath(const SharedNtmbs &path){
 		DEBUG_THROW(SystemError);
 	}
 }
+
 void MainConfig::reload(){
 	ConfigFile("main.conf").swap(g_config);
 }
-
 const ConfigFile &MainConfig::getConfigFile(){
 	return g_config;
 }

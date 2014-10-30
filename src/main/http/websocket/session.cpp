@@ -87,8 +87,7 @@ protected:
 		PROFILE_ME;
 
 		try {
-			const AUTO(servlet, WebSocketServletManager::getServlet(
-				m_session->getSafeParent()->getLocalPort(), m_uri));
+			const AUTO(servlet, WebSocketServletManager::getServlet(m_session->getCategory(), m_uri));
 			if(!servlet){
 				LOG_WARN("No servlet for URI ", m_uri);
 				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE);

@@ -29,7 +29,7 @@ std::size_t g_maxRequestLength = 16 * 0x400;
 unsigned long long g_requestTimeout = 30000;
 unsigned long long g_keepAliveTimeout = 5000;
 
-typedef std::map<unsigned,
+typedef std::map<std::size_t,
 	std::map<SharedNtmbs, boost::weak_ptr<HttpServlet> >
 	> ServletMap;
 
@@ -37,19 +37,19 @@ boost::shared_mutex g_mutex;
 ServletMap g_servlets;
 
 bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
-	unsigned port, const char *uri, std::size_t uriLen)
+	std::size_t category, const char *uri, std::size_t uriLen)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 
-	const AUTO(it, g_servlets.find(port));
+	const AUTO(it, g_servlets.find(category));
 	if(it == g_servlets.end()){
-		LOG_DEBUG("No servlet on port ", port);
+		LOG_DEBUG("No servlet in category ", category);
 		return false;
 	}
 
-	AUTO_REF(servletsOnPort, it->second);
-	const AUTO(sit, servletsOnPort.lower_bound(uri));
-	if(sit == servletsOnPort.end()){
+	AUTO_REF(servletsInCategory, it->second);
+	const AUTO(sit, servletsInCategory.lower_bound(uri));
+	if(sit == servletsInCategory.end()){
 		LOG_DEBUG("No more handlers: ", uri);
 		return false;
 	}
@@ -70,13 +70,17 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 }
 
 void HttpServletManager::start(){
-	MainConfig::get(g_maxRequestLength, "http_max_request_length");
+	LOG_INFO("Starting HTTP servlet manager...");
+
+	AUTO_REF(conf, MainConfig::getConfigFile());
+
+	conf.get(g_maxRequestLength, "http_max_request_length");
 	LOG_DEBUG("Max request length = ", g_maxRequestLength);
 
-	MainConfig::get(g_requestTimeout, "http_request_timeout");
+	conf.get(g_requestTimeout, "http_request_timeout");
 	LOG_DEBUG("Request timeout = ", g_requestTimeout);
 
-	MainConfig::get(g_keepAliveTimeout, "http_keep_alive_timeout");
+	conf.get(g_keepAliveTimeout, "http_keep_alive_timeout");
 	LOG_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
 }
 void HttpServletManager::stop(){
@@ -100,7 +104,7 @@ unsigned long long HttpServletManager::getKeepAliveTimeout(){
 }
 
 boost::shared_ptr<HttpServlet> HttpServletManager::registerServlet(
-	unsigned port, SharedNtmbs uri, HttpServletCallback callback)
+	std::size_t category, SharedNtmbs uri, HttpServletCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<HttpServletCallback>());
 	sharedCallback->swap(callback);
@@ -108,9 +112,9 @@ boost::shared_ptr<HttpServlet> HttpServletManager::registerServlet(
 	AUTO(servlet, boost::make_shared<HttpServlet>(uri, sharedCallback));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
-		AUTO_REF(old, g_servlets[port][uri]);
+		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
-			LOG_ERROR("Duplicate HTTP servlet for URI ", uri, " on port ", port);
+			LOG_ERROR("Duplicate HTTP servlet for URI ", uri, " in category ", category);
 			DEBUG_THROW(Exception, "Duplicate HTTP servlet");
 		}
 		old = servlet;
@@ -119,7 +123,7 @@ boost::shared_ptr<HttpServlet> HttpServletManager::registerServlet(
 }
 
 boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(
-	unsigned port, const SharedNtmbs &uri)
+	std::size_t category, const SharedNtmbs &uri)
 {
 	if(uri[0] != '/'){
 		LOG_ERROR("URI must begin with a slash: ", uri);
@@ -128,7 +132,7 @@ boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(
 
 	boost::shared_ptr<const HttpServletCallback> ret;
 	const std::size_t uriLen = std::strlen(uri.get());
-	getExactServlet(ret, port, uri.get(), uriLen);
+	getExactServlet(ret, category, uri.get(), uriLen);
 	if(!ret && (uri != "/")){
 		LOG_DEBUG("Searching for fallback handlers for URI ", uri);
 
@@ -140,7 +144,7 @@ boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(
 			LOG_DEBUG("Trying fallback URI handler ", fallback);
 
 			boost::shared_ptr<const HttpServletCallback> test;
-			if(!getExactServlet(test, port, fallback.c_str(), fallback.size())){
+			if(!getExactServlet(test, category, fallback.c_str(), fallback.size())){
 				break;
 			}
 			if(test){

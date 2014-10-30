@@ -24,7 +24,7 @@ struct Poseidon::WebSocketServlet : boost::noncopyable {
 
 namespace {
 
-typedef std::map<unsigned,
+typedef std::map<std::size_t,
 	std::map<SharedNtmbs, boost::weak_ptr<WebSocketServlet> >
 	> ServletMap;
 
@@ -46,7 +46,7 @@ void WebSocketServletManager::stop(){
 }
 
 boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(
-	unsigned port, SharedNtmbs uri, WebSocketServletCallback callback)
+	std::size_t category, SharedNtmbs uri, WebSocketServletCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<WebSocketServletCallback>());
 	sharedCallback->swap(callback);
@@ -54,9 +54,9 @@ boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(
 	AUTO(servlet, boost::make_shared<WebSocketServlet>(uri, sharedCallback));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
-		AUTO_REF(old, g_servlets[port][uri]);
+		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
-			LOG_ERROR("Duplicate WebSocket servlet: ", uri, " on port ", port);
+			LOG_ERROR("Duplicate WebSocket servlet: ", uri, " in category ", category);
 			DEBUG_THROW(Exception, "Duplicate WebSocket servlet");
 		}
 		old = servlet;
@@ -65,22 +65,22 @@ boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(
 }
 
 boost::shared_ptr<const WebSocketServletCallback> WebSocketServletManager::getServlet(
-	unsigned port, const SharedNtmbs &uri)
+	std::size_t category, const SharedNtmbs &uri)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
-	const AUTO(it, g_servlets.find(port));
+	const AUTO(it, g_servlets.find(category));
 	if(it == g_servlets.end()){
-		LOG_DEBUG("No servlet on port ", port);
+		LOG_DEBUG("No servlet in category ", category);
 		return VAL_INIT;
 	}
 	const AUTO(it2, it->second.find(uri));
 	if(it2 == it->second.end()){
-		LOG_DEBUG("No servlet for URI ", uri, " on port ", port);
+		LOG_DEBUG("No servlet for URI ", uri, " in category ", category);
 		return VAL_INIT;
 	}
 	const AUTO(servlet, it2->second.lock());
 	if(!servlet){
-		LOG_DEBUG("Servlet for URI ", uri, " on port ", port, " has expired");
+		LOG_DEBUG("Servlet for URI ", uri, " in category ", category, " has expired");
 		return VAL_INIT;
 	}
 	return servlet->callback;

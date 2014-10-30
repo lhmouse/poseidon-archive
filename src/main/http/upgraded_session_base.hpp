@@ -44,6 +44,7 @@ public:
 		return boost::shared_ptr<HttpSession>(m_parent);
 	}
 
+	std::size_t getCategory() const;
 	const std::string &getUri() const;
 	const OptionalMap &getGetParams() const;
 	const OptionalMap &getHeaders() const;

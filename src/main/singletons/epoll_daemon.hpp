@@ -27,10 +27,10 @@ struct EpollDaemon {
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	static boost::shared_ptr<class PlayerServer> registerPlayerServer(
-		const std::string &bindAddr, unsigned bindPort,
+		std::size_t category, const std::string &bindAddr, unsigned bindPort,
 		const std::string &cert, const std::string &privateKey);
 	static boost::shared_ptr<class HttpServer> registerHttpServer(
-		const std::string &bindAddr, unsigned bindPort,
+		std::size_t category, const std::string &bindAddr, unsigned bindPort,
 		const std::string &cert, const std::string &privateKey, const std::vector<std::string> &auth);
 
 private:
