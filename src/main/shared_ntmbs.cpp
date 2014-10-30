@@ -44,10 +44,7 @@ struct IncrementalAlloc {
 		return reinterpret_cast<const_pointer>(&reinterpret_cast<const char &>(r));
 	}
 
-	pointer allocate(size_type n){
-		return allocate(n, 0);
-	}
-	pointer allocate(size_type n, const void *){
+	pointer allocate(size_type n, const void * = 0){
 		const size_type k = n * sizeof(T) + incSize;
 		if(k / sizeof(T) != n + incSize / sizeof(T)){
 			throw std::bad_alloc();
