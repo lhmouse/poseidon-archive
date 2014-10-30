@@ -60,12 +60,6 @@ void event2Proc(boost::shared_ptr<TestEvent2> event){
 	LOG_FATAL("event2Proc: d = ", event->d);
 }
 
-boost::shared_ptr<const HttpServlet> g_profile, g_load, g_unload, g_meow, g_meowMeow;
-boost::shared_ptr<const EventListener> g_event1, g_event2;
-boost::shared_ptr<const TimerItem> g_tick;
-boost::shared_ptr<const WebSocketServlet> g_ws;
-std::vector<boost::shared_ptr<const PlayerServlet> > g_player;
-
 void tickProc(unsigned long long now, unsigned long long period){
 	PROFILE_ME;
 	LOG_FATAL("Tick, now = ", now, ", period = ", period);
@@ -128,6 +122,9 @@ void meowMeowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	contents.put("<h1>Meow! Meow!</h1>");
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
+
+boost::weak_ptr<std::vector<boost::shared_ptr<void> > > g_servlets;
+
 void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
 
@@ -138,13 +135,13 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	event->d = 123.45;
 	event->raise();
 
-	if(g_meow){
+	AUTO_REF(v, *boost::shared_ptr<std::vector<boost::shared_ptr<void> > >(g_servlets));
+	if(!v.empty()){
 		contents.put("Already loaded");
 	} else {
-		// 通配路径 /meow/ *
-		g_meow = HttpServletManager::registerServlet(8860, "/meow/", &meowProc);
-		g_meowMeow = HttpServletManager::registerServlet(8860, "/meow/meow/", &meowMeowProc);
-		g_tick = TimerDaemon::registerTimer(5000, 10000, &tickProc);
+		v.push_back(HttpServletManager::registerServlet(8860, "/meow/", &meowProc));
+		v.push_back(HttpServletManager::registerServlet(8860, "/meow/meow/", &meowMeowProc));
+		v.push_back(TimerDaemon::registerTimer(5000, 10000, &tickProc));
 		contents.put("OK");
 	}
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
@@ -159,12 +156,11 @@ void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	event->d = 67.89;
 	event->raise();
 
-	if(!g_meow){
+	AUTO_REF(v, *boost::shared_ptr<std::vector<boost::shared_ptr<void> > >(g_servlets));
+	if(v.empty()){
 		contents.put("Already unloaded");
 	} else {
-		g_meow.reset();
-		g_meowMeow.reset();
-		g_tick.reset();
+		v.clear();
 		contents.put("OK");
 	}
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
@@ -336,26 +332,29 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 
 extern "C" void poseidonModuleInit(std::vector<boost::shared_ptr<const void> > &contexts){
 	LOG_FATAL("poseidonModuleInit()");
+	contexts.reserve(32);
 
 	contexts.push_back(boost::make_shared<Tracked>());
 
-	g_profile = HttpServletManager::registerServlet(8860, "/profile", &profileProc);
+	contexts.push_back(HttpServletManager::registerServlet(8860, "/profile", &profileProc));
+	contexts.push_back(HttpServletManager::registerServlet(8860, "/load", &loadProc));
+	contexts.push_back(HttpServletManager::registerServlet(8860, "/unload", &unloadProc));
+	const AUTO(sv, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
+	contexts.push_back(sv);
+	g_servlets = sv;
 
-	g_load = HttpServletManager::registerServlet(8860, "/load", &loadProc);
-	g_unload = HttpServletManager::registerServlet(8860, "/unload", &unloadProc);
+	contexts.push_back(EventListenerManager::registerListener<TestEvent1>(&event1Proc));
+	contexts.push_back(EventListenerManager::registerListener<TestEvent2>(&event2Proc));
 
-	g_event1 = EventListenerManager::registerListener<TestEvent1>(&event1Proc);
-	g_event2 = EventListenerManager::registerListener<TestEvent2>(&event2Proc);
+	contexts.push_back(WebSocketServletManager::registerServlet(8860, "/wstest", &webSocketProc));
 
-	g_ws = WebSocketServletManager::registerServlet(8860, "/wstest", &webSocketProc);
-
-	g_player.push_back(PlayerServletManager::registerServlet(8850, 100, &TestIntProc));
-	g_player.push_back(PlayerServletManager::registerServlet(8850, 101, &TestUIntProc));
-	g_player.push_back(PlayerServletManager::registerServlet(8850, 102, &TestStringProc));
-	g_player.push_back(PlayerServletManager::registerServlet(8850, 103, &TestIntArrayProc));
-	g_player.push_back(PlayerServletManager::registerServlet(8850, 104, &TestUIntArrayProc));
-	g_player.push_back(PlayerServletManager::registerServlet(8850, 105, &TestStringArrayProc));
-	g_player.push_back(PlayerServletManager::registerServlet(8850, 106, &TestProc));
+	contexts.push_back(PlayerServletManager::registerServlet(8850, 100, &TestIntProc));
+	contexts.push_back(PlayerServletManager::registerServlet(8850, 101, &TestUIntProc));
+	contexts.push_back(PlayerServletManager::registerServlet(8850, 102, &TestStringProc));
+	contexts.push_back(PlayerServletManager::registerServlet(8850, 103, &TestIntArrayProc));
+	contexts.push_back(PlayerServletManager::registerServlet(8850, 104, &TestUIntArrayProc));
+	contexts.push_back(PlayerServletManager::registerServlet(8850, 105, &TestStringArrayProc));
+	contexts.push_back(PlayerServletManager::registerServlet(8850, 106, &TestProc));
 
 	Uuid uuid = Uuid::createRandom();
 	std::string str = uuid.toHex();
