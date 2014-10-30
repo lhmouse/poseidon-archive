@@ -123,6 +123,10 @@ template<typename CloserT>
 std::ostream &operator<<(std::ostream &os, const ScopedHandle<CloserT> &handle){
 	return os <<handle.get();
 }
+template<typename CloserT>
+std::wostream &operator<<(std::wostream &os, const ScopedHandle<CloserT> &handle){
+	return os <<handle.get();
+}
 
 extern void closeFile(int fd) NOEXCEPT;
 

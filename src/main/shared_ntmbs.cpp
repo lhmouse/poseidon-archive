@@ -82,14 +82,11 @@ struct IncrementalAlloc {
 	}
 };
 
-const boost::weak_ptr<const char> NULL_WEAK_PTR;
-
 }
 
 bool SharedNtmbs::isOwning() const {
 	// FIXME: 低版本 boost 没有 owner_less。
-	const boost::weak_ptr<const char> ownerTest(m_ptr);
-	return (ownerTest < NULL_WEAK_PTR) || (NULL_WEAK_PTR < ownerTest);
+	return !boost::weak_ptr<const char>(m_ptr).expired();
 }
 void SharedNtmbs::forkOwning(){
 	if(!isOwning()){
@@ -104,6 +101,9 @@ void SharedNtmbs::forkOwning(){
 namespace Poseidon {
 
 std::ostream &operator<<(std::ostream &os, const SharedNtmbs &rhs){
+	return os <<rhs.get();
+}
+std::wostream &operator<<(std::wostream &os, const SharedNtmbs &rhs){
 	return os <<rhs.get();
 }
 

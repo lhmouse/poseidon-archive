@@ -185,6 +185,7 @@ static inline void swap(SharedNtmbs &lhs, SharedNtmbs &rhs) NOEXCEPT {
 }
 
 extern std::ostream &operator<<(std::ostream &os, const SharedNtmbs &rhs);
+extern std::wostream &operator<<(std::wostream &os, const SharedNtmbs &rhs);
 
 }
 
