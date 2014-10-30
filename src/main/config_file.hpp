@@ -51,6 +51,14 @@ public:
 		val = boost::lexical_cast<T>(str);
 		return true;
 	}
+	template<typename T, typename DefaultT>
+	T get(const SharedNtmbs &key, const DefaultT &defVal) const {
+		const std::string &str = m_contents.get(key);
+		if(str.empty()){
+			return T(defVal);
+		}
+		return boost::lexical_cast<T>(str);
+	}
 
 	template<typename T>
 	std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key,
@@ -70,6 +78,12 @@ public:
 			++range.first;
 		}
 		return ret;
+	}
+	template<typename T>
+	std::vector<T> getAll(const SharedNtmbs &key, bool includingEmpty = false) const {
+		std::vector<T> vals;
+		getAll(vals, key, includingEmpty, false);
+		return vals;
 	}
 };
 
