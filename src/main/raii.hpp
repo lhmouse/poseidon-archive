@@ -131,7 +131,7 @@ std::wostream &operator<<(std::wostream &os, const ScopedHandle<CloserT> &handle
 extern void closeFile(int fd) NOEXCEPT;
 
 struct FileCloser {
-	int operator()() const NOEXCEPT {
+	CONSTEXPR int operator()() const NOEXCEPT {
 		return -1;
 	}
 	void operator()(int fd) const NOEXCEPT {
