@@ -92,6 +92,7 @@ void EventListenerManager::raise(const boost::shared_ptr<EventBaseWithoutId> &ev
 			for(AUTO(it2, it->second.begin()); it2 != it->second.end(); ++it2){
 				const AUTO(listener, it2->lock());
 				if(listener){
+					LOG_POSEIDON_TRACE("Preparing an event job for dispatching: id = ", eventId);
 					callbacks.push_back(listener->callback);
 				} else {
 					needsCleanup = true;
