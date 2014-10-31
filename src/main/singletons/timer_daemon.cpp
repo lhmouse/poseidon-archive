@@ -157,7 +157,8 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
 		g_timers.push_back(tqe);
 		std::push_heap(g_timers.begin(), g_timers.end());
 	}
-	LOG_POSEIDON_INFO("Created a timer item which will be triggered ", std::max(0ull, timePoint - getMonoClock()),
+	LOG_POSEIDON_INFO("Created a timer item which will be triggered ",
+		std::max<long long>(0, timePoint - getMonoClock()),
 		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
 	return item;
 }
