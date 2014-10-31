@@ -15,8 +15,8 @@ struct IpPort {
 		: ip(), port()
 	{
 	}
-	IpPort(SharedNtmbs ip_, unsigned port_)
-		: ip(STD_MOVE(ip_)), port(port_)
+	IpPort(SharedNtmbs ip_, unsigned port_, bool owning = false)
+		: ip(STD_MOVE(ip_), owning), port(port_)
 	{
 	}
 };
