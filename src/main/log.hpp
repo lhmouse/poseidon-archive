@@ -94,11 +94,11 @@ public:
 #define LOG_POSEIDON(level_, ...)	\
 	LOG_MASK(::Poseidon::Logger::SRC_POSEIDON | (level_), __VA_ARGS__)
 
-#define LOG_FATAL(...)		LOG_POSEIDON(::Poseidon::Logger::LV_FATAL,	__VA_ARGS__)
-#define LOG_ERROR(...)		LOG_POSEIDON(::Poseidon::Logger::LV_ERROR,	__VA_ARGS__)
-#define LOG_WARN(...)		LOG_POSEIDON(::Poseidon::Logger::LV_WARN,	__VA_ARGS__)
-#define LOG_INFO(...)		LOG_POSEIDON(::Poseidon::Logger::LV_INFO,	__VA_ARGS__)
-#define LOG_DEBUG(...)		LOG_POSEIDON(::Poseidon::Logger::LV_DEBUG,	__VA_ARGS__)
-#define LOG_TRACE(...)		LOG_POSEIDON(::Poseidon::Logger::LV_TRACE,	__VA_ARGS__)
+#define LOG_POSEIDON_FATAL(...)		LOG_POSEIDON(::Poseidon::Logger::LV_FATAL,	__VA_ARGS__)
+#define LOG_POSEIDON_ERROR(...)		LOG_POSEIDON(::Poseidon::Logger::LV_ERROR,	__VA_ARGS__)
+#define LOG_POSEIDON_WARN(...)		LOG_POSEIDON(::Poseidon::Logger::LV_WARN,	__VA_ARGS__)
+#define LOG_POSEIDON_INFO(...)		LOG_POSEIDON(::Poseidon::Logger::LV_INFO,	__VA_ARGS__)
+#define LOG_POSEIDON_DEBUG(...)		LOG_POSEIDON(::Poseidon::Logger::LV_DEBUG,	__VA_ARGS__)
+#define LOG_POSEIDON_TRACE(...)		LOG_POSEIDON(::Poseidon::Logger::LV_TRACE,	__VA_ARGS__)
 
 #endif

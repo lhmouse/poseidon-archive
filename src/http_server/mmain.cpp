@@ -7,7 +7,7 @@
 using namespace Poseidon;
 
 MODULE_RAII(
-	LOG_INFO("Initializing HTTP server...");
+	LOG_POSEIDON_INFO("Initializing HTTP server...");
 
 	ConfigFile config("config/http_server.conf");
 	return EpollDaemon::registerHttpServer(

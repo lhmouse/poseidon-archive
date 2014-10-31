@@ -15,10 +15,10 @@ struct Poseidon::WebSocketServlet : boost::noncopyable {
 	WebSocketServlet(SharedNtmbs uri_, boost::shared_ptr<WebSocketServletCallback> callback_)
 		: uri(STD_MOVE(uri_), true), callback(STD_MOVE(callback_))
 	{
-		LOG_INFO("Created WebSocket servlet for URI ", uri);
+		LOG_POSEIDON_INFO("Created WebSocket servlet for URI ", uri);
 	}
 	~WebSocketServlet(){
-		LOG_INFO("Destroyed WebSocket servlet for URI ", uri);
+		LOG_POSEIDON_INFO("Destroyed WebSocket servlet for URI ", uri);
 	}
 };
 
@@ -36,7 +36,7 @@ ServletMap g_servlets;
 void WebSocketServletManager::start(){
 }
 void WebSocketServletManager::stop(){
-	LOG_INFO("Unloading all WebSocket servlets...");
+	LOG_POSEIDON_INFO("Unloading all WebSocket servlets...");
 
 	ServletMap servlets;
 	{
@@ -56,7 +56,7 @@ boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
-			LOG_ERROR("Duplicate WebSocket servlet: ", uri, " in category ", category);
+			LOG_POSEIDON_ERROR("Duplicate WebSocket servlet: ", uri, " in category ", category);
 			DEBUG_THROW(Exception, "Duplicate WebSocket servlet");
 		}
 		old = servlet;
@@ -70,17 +70,17 @@ boost::shared_ptr<const WebSocketServletCallback> WebSocketServletManager::getSe
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(category));
 	if(it == g_servlets.end()){
-		LOG_DEBUG("No servlet in category ", category);
+		LOG_POSEIDON_DEBUG("No servlet in category ", category);
 		return VAL_INIT;
 	}
 	const AUTO(it2, it->second.find(uri));
 	if(it2 == it->second.end()){
-		LOG_DEBUG("No servlet for URI ", uri, " in category ", category);
+		LOG_POSEIDON_DEBUG("No servlet for URI ", uri, " in category ", category);
 		return VAL_INIT;
 	}
 	const AUTO(servlet, it2->second.lock());
 	if(!servlet){
-		LOG_DEBUG("Servlet for URI ", uri, " in category ", category, " has expired");
+		LOG_POSEIDON_DEBUG("Servlet for URI ", uri, " in category ", category, " has expired");
 		return VAL_INIT;
 	}
 	return servlet->callback;

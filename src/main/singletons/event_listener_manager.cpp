@@ -18,10 +18,10 @@ struct Poseidon::EventListener : boost::noncopyable {
 	EventListener(unsigned id_, boost::shared_ptr<const EventListenerCallback> callback_)
 		: id(id_), callback(STD_MOVE(callback_))
 	{
-		LOG_INFO("Created event listener for event ", id);
+		LOG_POSEIDON_INFO("Created event listener for event ", id);
 	}
 	~EventListener(){
-		LOG_INFO("Destroyed event listener for event ", id);
+		LOG_POSEIDON_INFO("Destroyed event listener for event ", id);
 	}
 };
 
@@ -59,7 +59,7 @@ protected:
 void EventListenerManager::start(){
 }
 void EventListenerManager::stop(){
-	LOG_INFO("Removing all event listeners...");
+	LOG_POSEIDON_INFO("Removing all event listeners...");
 
 	ListenerMap listeners;
 	{
@@ -103,7 +103,7 @@ void EventListenerManager::raise(const boost::shared_ptr<EventBaseWithoutId> &ev
 		boost::make_shared<EventJob>(*it, boost::ref(event))->pend();
 	}
 	if(needsCleanup){
-		LOG_DEBUG("Cleaning up event listener list for event ", eventId);
+		LOG_POSEIDON_DEBUG("Cleaning up event listener list for event ", eventId);
 
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(listenerList, g_listeners[eventId]);

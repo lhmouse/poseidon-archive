@@ -43,7 +43,7 @@ void escapeCsvField(std::string &dst, const SharedNtmbs &src){
 }
 
 void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
-	LOG_WARN("Received shutdown HTTP request. The server will be shutdown now.");
+	LOG_POSEIDON_WARN("Received shutdown HTTP request. The server will be shutdown now.");
 	session->sendDefault(HTTP_OK);
 	::raise(SIGTERM);
 }
@@ -51,12 +51,12 @@ void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
 void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
 	AUTO_REF(name, getParams.get("name"));
 	if(name.empty()){
-		LOG_WARN("Missing parameter: name");
+		LOG_POSEIDON_WARN("Missing parameter: name");
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
 	if(!ModuleManager::loadNoThrow(name)){
-		LOG_WARN("Failed to load module: ", name);
+		LOG_POSEIDON_WARN("Failed to load module: ", name);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
 	}
@@ -66,12 +66,12 @@ void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
 	AUTO_REF(realPath, getParams.get("real_path"));
 	if(realPath.empty()){
-		LOG_WARN("Missing parameter: real_path");
+		LOG_POSEIDON_WARN("Missing parameter: real_path");
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
 	if(!ModuleManager::unload(realPath)){
-		LOG_WARN("Module not loaded: ", realPath);
+		LOG_POSEIDON_WARN("Module not loaded: ", realPath);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
 	}
@@ -182,7 +182,7 @@ boost::shared_ptr<HttpServer> g_systemServer;
 boost::shared_ptr<HttpServlet> g_systemServlet;
 
 void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request, std::size_t cut){
-	LOG_INFO("Accepted system HTTP request from ", session->getRemoteIp());
+	LOG_POSEIDON_INFO("Accepted system HTTP request from ", session->getRemoteIp());
 
 	if(request.verb != HTTP_GET){
 		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
@@ -209,7 +209,7 @@ void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request, st
 	} while(lower != upper);
 
 	if(!found){
-		LOG_WARN("No system HTTP handler: ", request.uri);
+		LOG_POSEIDON_WARN("No system HTTP handler: ", request.uri);
 		DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 	}
 
@@ -233,21 +233,21 @@ void SystemHttpServer::start(){
 		path.push_back('/');
 	}
 
-	LOG_INFO("Initializing system HTTP server on ", bind, ':', port);
+	LOG_POSEIDON_INFO("Initializing system HTTP server on ", bind, ':', port);
 	g_systemServer = EpollDaemon::registerHttpServer(
 		category, bind, port, certificate, privateKey, authUserPasses);
 
-	LOG_INFO("Created system HTTP sevlet on ", path);
+	LOG_POSEIDON_INFO("Created system HTTP sevlet on ", path);
 	g_systemServlet = HttpServletManager::registerServlet(
 		category, path, boost::bind(&servletProc, _1, _2, path.size()));
 
-	LOG_INFO("Done initializing system HTTP server.");
+	LOG_POSEIDON_INFO("Done initializing system HTTP server.");
 }
 void SystemHttpServer::stop(){
-	LOG_INFO("Shutting down system HTTP server...");
+	LOG_POSEIDON_INFO("Shutting down system HTTP server...");
 
 	g_systemServlet.reset();
 	g_systemServer.reset();
 
-	LOG_INFO("Done shutting down system HTTP server.");
+	LOG_POSEIDON_INFO("Done shutting down system HTTP server.");
 }

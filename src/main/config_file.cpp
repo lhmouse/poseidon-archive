@@ -12,7 +12,7 @@ ConfigFile::ConfigFile(const SharedNtmbs &path){
 }
 
 void ConfigFile::load(const SharedNtmbs &path){
-	LOG_INFO("Loading config file: ", path);
+	LOG_POSEIDON_INFO("Loading config file: ", path);
 
 	StreamBuffer buffer;
 	fileGetContents(buffer, path);
@@ -32,13 +32,13 @@ void ConfigFile::load(const SharedNtmbs &path){
 		}
 		std::size_t equ = line.find('=', pos);
 		if(equ == std::string::npos){
-			LOG_ERROR("Error in config file on line ", count, ": '=' expected.");
+			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": '=' expected.");
 			DEBUG_THROW(Exception, "Bad config file");
 		}
 
 		std::size_t keyEnd = line.find_last_not_of(" \t", equ - 1);
 		if((keyEnd == std::string::npos) || (pos >= keyEnd)){
-			LOG_ERROR("Error in config file on line ", count, ": Name expected.");
+			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": Name expected.");
 			DEBUG_THROW(Exception, "Bad config file");
 		}
 		line[keyEnd + 1] = 0;
@@ -53,7 +53,7 @@ void ConfigFile::load(const SharedNtmbs &path){
 			line.erase(line.begin() + pos + 1, line.end());
 		}
 
-		LOG_DEBUG("Config: ", key, " = ", line);
+		LOG_POSEIDON_DEBUG("Config: ", key, " = ", line);
 		contents.append(STD_MOVE(key), STD_MOVE(line));
 	}
 	m_contents.swap(contents);

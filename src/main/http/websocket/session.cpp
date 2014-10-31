@@ -89,20 +89,20 @@ protected:
 		try {
 			const AUTO(servlet, WebSocketServletManager::getServlet(m_session->getCategory(), m_uri));
 			if(!servlet){
-				LOG_WARN("No servlet for URI ", m_uri);
+				LOG_POSEIDON_WARN("No servlet for URI ", m_uri);
 				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE);
 				return;
 			}
 
-			LOG_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_payload.size());
+			LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_payload.size());
 			(*servlet)(m_session, m_opcode, STD_MOVE(m_payload));
 		} catch(WebSocketException &e){
-			LOG_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(),
+			LOG_POSEIDON_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(),
 				", what = ", e.what());
 			m_session->shutdown(e.status(), StreamBuffer(e.what()));
 			throw;
 		} catch(...){
-			LOG_ERROR("Forwarding exception... shutdown the session first.");
+			LOG_POSEIDON_ERROR("Forwarding exception... shutdown the session first.");
 			m_session->shutdown(WS_INTERNAL_ERROR);
 			throw;
 		}
@@ -133,7 +133,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					goto exit_for;
 				}
 				if(ch & (WS_FL_RSV1 | WS_FL_RSV2 | WS_FL_RSV3)){
-					LOG_WARN("Aborting because some reserved bits are set, opcode = ", ch);
+					LOG_POSEIDON_WARN("Aborting because some reserved bits are set, opcode = ", ch);
 					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Reserved bits set");
 				}
 				m_final = ch & WS_FL_FIN;
@@ -183,7 +183,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				break;
 
 			case ST_MASK:
-				LOG_DEBUG("Payload length = ", m_payloadLen);
+				LOG_POSEIDON_DEBUG("Payload length = ", m_payloadLen);
 
 				if(m_payload.size() < 4){
 					goto exit_for;
@@ -225,36 +225,36 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 	exit_for:
 		;
 	} catch(WebSocketException &e){
-		LOG_ERROR("WebSocketException thrown while parseing data, status = ", e.status(),
+		LOG_POSEIDON_ERROR("WebSocketException thrown while parseing data, status = ", e.status(),
 			", what = ", e.what());
 		shutdown(e.status(), StreamBuffer(e.what()));
 		throw;
 	} catch(...){
-		LOG_ERROR("Forwarding exception... shutdown the session first.");
+		LOG_POSEIDON_ERROR("Forwarding exception... shutdown the session first.");
 		shutdown(WS_INTERNAL_ERROR);
 		throw;
 	}
 }
 
 void WebSocketSession::onControlFrame(){
-	LOG_DEBUG("Control frame, opcode = ", m_opcode);
+	LOG_POSEIDON_DEBUG("Control frame, opcode = ", m_opcode);
 
 	const AUTO(parent, getSafeParent());
 
 	switch(m_opcode){
 	case WS_CLOSE:
-		LOG_INFO("Received close frame from ", parent->getRemoteIp(), ':', parent->getRemotePort(),
+		LOG_POSEIDON_INFO("Received close frame from ", parent->getRemoteIp(), ':', parent->getRemotePort(),
 			", the connection will be shut down.");
 		HttpUpgradedSessionBase::send(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false), true);
 		break;
 
 	case WS_PING:
-		LOG_INFO("Received ping frame from ", parent->getRemoteIp(), ':', parent->getRemotePort());
+		LOG_POSEIDON_INFO("Received ping frame from ", parent->getRemoteIp(), ':', parent->getRemotePort());
 		HttpUpgradedSessionBase::send(makeFrame(WS_PONG, STD_MOVE(m_whole), false), false);
 		break;
 
 	case WS_PONG:
-		LOG_INFO("Received pong frame from ", parent->getRemoteIp(), ':', parent->getRemotePort());
+		LOG_POSEIDON_INFO("Received pong frame from ", parent->getRemoteIp(), ':', parent->getRemotePort());
 		break;
 
 	default:

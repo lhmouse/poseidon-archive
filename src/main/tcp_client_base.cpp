@@ -26,7 +26,7 @@ public:
 
 		m_sslCtx.reset(::SSL_CTX_new(::TLSv1_client_method()));
 		if(!m_sslCtx){
-			LOG_FATAL("Could not create client SSL context");
+			LOG_POSEIDON_FATAL("Could not create client SSL context");
 			std::abort();
 		}
 		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, VAL_INIT);
@@ -56,11 +56,11 @@ ScopedFile parseAddrPort(void *sa, unsigned &salen,
 		storeBe(u.sin6.sin6_port, port);
 		salen = sizeof(::sockaddr_in6);
 	} else {
-		LOG_ERROR("Unknown address format: ", ip);
+		LOG_POSEIDON_ERROR("Unknown address format: ", ip);
 		DEBUG_THROW(Exception, "Unknown address format");
 	}
 	if(maxSalen < salen){
-		LOG_ERROR("Buffer for sa is too small: ",
+		LOG_POSEIDON_ERROR("Buffer for sa is too small: ",
 			maxSalen, " is provided but ", salen, " is required.");
 	}
 	std::memcpy(sa, &u, salen);
@@ -89,7 +89,7 @@ protected:
 			if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
 				return false;
 			}
-			LOG_ERROR("::SSL_connect() = ", ret, ", ::SSL_get_error() = ", err);
+			LOG_POSEIDON_ERROR("::SSL_connect() = ", ret, ", ::SSL_get_error() = ", err);
 			DEBUG_THROW(Exception, "::SSL_connect() failed");
 		}
 		return true;
@@ -107,7 +107,7 @@ TcpClientBase::TcpClientBase(const SharedNtmbs &ip, unsigned port)
 }
 
 void TcpClientBase::sslConnect(){
-	LOG_INFO("Initiating SSL handshake...");
+	LOG_POSEIDON_INFO("Initiating SSL handshake...");
 
 	boost::scoped_ptr<TcpSessionBase::SslImpl> sslImpl(
 		new SslImplClient(g_clientSslCtx.createSsl(), m_socket.get()));

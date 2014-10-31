@@ -6,7 +6,7 @@
 using namespace Poseidon;
 
 void CsvParser::load(const SharedNtmbs &file){
-	LOG_DEBUG("Loading CSV file: ", file);
+	LOG_POSEIDON_DEBUG("Loading CSV file: ", file);
 
 	StreamBuffer buffer;
 	fileGetContents(buffer, file);
@@ -61,7 +61,7 @@ void CsvParser::load(const SharedNtmbs &file){
 		} while(!buffer.empty());
 	}
 	if(rows.empty() || rows.front().empty()){
-		LOG_ERROR("The first line of a CSV file may not be empty.");
+		LOG_POSEIDON_ERROR("The first line of a CSV file may not be empty.");
 		DEBUG_THROW(Exception, "Bad CSV header");
 	}
 
@@ -71,7 +71,7 @@ void CsvParser::load(const SharedNtmbs &file){
 		AUTO_REF(key, rows.front().at(i));
 		for(std::size_t j = 0; j < i; ++j){
 			if(keys.at(j) == key){
-				LOG_ERROR("Duplicate key: ", key);
+				LOG_POSEIDON_ERROR("Duplicate key: ", key);
 				DEBUG_THROW(Exception, "Duplicate key");
 			}
 		}
@@ -96,7 +96,7 @@ void CsvParser::load(const SharedNtmbs &file){
 				continue;
 			}
 			if(row.size() != columnCount){
-				LOG_ERROR("There are ", row.size(), " column(s) on line ", line,
+				LOG_POSEIDON_ERROR("There are ", row.size(), " column(s) on line ", line,
 					" but there are ", columnCount, " in the header");
 				DEBUG_THROW(Exception, "Inconsistent CSV column numbers");
 			}
@@ -114,7 +114,7 @@ void CsvParser::load(const SharedNtmbs &file){
 		}
 	}
 
-	LOG_DEBUG("Done loading CSV file: ", file);
+	LOG_POSEIDON_DEBUG("Done loading CSV file: ", file);
 	m_data.swap(data);
 }
 
@@ -123,7 +123,7 @@ bool CsvParser::loadNoThrow(const SharedNtmbs &file){
 		load(file);
 		return true;
 	} catch(std::exception &e){
-		LOG_ERROR("Error loading CSV file: ", e.what());
+		LOG_POSEIDON_ERROR("Error loading CSV file: ", e.what());
 		return false;
 	}
 }

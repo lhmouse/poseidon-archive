@@ -34,12 +34,12 @@ std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
 		ret = ::inet_ntop(AF_INET6, &sa.sin6.sin6_addr, ip, sizeof(ip));
 		port = loadBe(sa.sin6.sin6_port);
 	} else {
-		LOG_WARN("Unknown IP protocol ", sa.sa.sa_family);
+		LOG_POSEIDON_WARN("Unknown IP protocol ", sa.sa.sa_family);
 		DEBUG_THROW(Exception, "Unknown IP protocol");
 	}
 	if(!ret){
 		const int code = errno;
-		LOG_WARN("Failed to format IP address to string.");
+		LOG_POSEIDON_WARN("Failed to format IP address to string.");
 		DEBUG_THROW(SystemError, code);
 	}
 	return std::make_pair(SharedNtmbs(ip, true), port);
@@ -54,21 +54,21 @@ TcpSessionBase::TcpSessionBase(ScopedFile socket)
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
 		const int code = errno;
-		LOG_ERROR("Could not get fcntl flags on socket.");
+		LOG_POSEIDON_ERROR("Could not get fcntl flags on socket.");
 		DEBUG_THROW(SystemError, code);
 	}
 	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
 		const int code = errno;
-		LOG_ERROR("Could not set fcntl flags on socket.");
+		LOG_POSEIDON_ERROR("Could not set fcntl flags on socket.");
 		DEBUG_THROW(SystemError, code);
 	}
 }
 TcpSessionBase::~TcpSessionBase(){
 	if(atomicLoad(m_peerInfo.fetched)){
-		LOG_INFO("Destroyed TCP session, remote address is ",
+		LOG_POSEIDON_INFO("Destroyed TCP session, remote address is ",
 			m_peerInfo.remote.first, ':', m_peerInfo.remote.second);
 	} else {
-		LOG_INFO("A TCP session that wasn't fully established has been closed.");
+		LOG_POSEIDON_INFO("A TCP session that wasn't fully established has been closed.");
 	}
 }
 
@@ -80,7 +80,7 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool final){
 		closed = atomicLoad(m_shutdown);
 	}
 	if(closed){
-		LOG_DEBUG("Socket has been closed.");
+		LOG_POSEIDON_DEBUG("Socket has been closed.");
 		return false;
 	}
 	if(!buffer.empty()){
@@ -123,7 +123,7 @@ void TcpSessionBase::fetchPeerInfo() const {
 	salen = sizeof(sa);
 	if(::getpeername(m_socket.get(), &sa.sa, &salen) != 0){
 		const int code = errno;
-		LOG_ERROR("Failed to get remote socket addr.");
+		LOG_POSEIDON_ERROR("Failed to get remote socket addr.");
 		DEBUG_THROW(SystemError, code);
 	}
 	m_peerInfo.remote = getAddrPortFromSockAddr(sa);
@@ -131,12 +131,12 @@ void TcpSessionBase::fetchPeerInfo() const {
 	salen = sizeof(sa);
 	if(::getsockname(m_socket.get(), &sa.sa, &salen) != 0){
 		const int code = errno;
-		LOG_ERROR("Failed to get local socket addr.");
+		LOG_POSEIDON_ERROR("Failed to get local socket addr.");
 		DEBUG_THROW(SystemError, code);
 	}
 	m_peerInfo.local = getAddrPortFromSockAddr(sa);
 
-	LOG_INFO("Established TCP session, remote address is ",
+	LOG_POSEIDON_INFO("Established TCP session, remote address is ",
 		m_peerInfo.remote.first, ':', m_peerInfo.remote.second);
 
 	atomicStore(m_peerInfo.fetched, true);

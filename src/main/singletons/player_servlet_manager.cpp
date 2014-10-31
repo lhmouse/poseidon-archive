@@ -34,15 +34,15 @@ ServletMap g_servlets;
 }
 
 void PlayerServletManager::start(){
-	LOG_INFO("Starting player servlet manager...");
+	LOG_POSEIDON_INFO("Starting player servlet manager...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
 	conf.get(g_maxRequestLength, "player_max_request_length");
-	LOG_DEBUG("Max request length = ", g_maxRequestLength);
+	LOG_POSEIDON_DEBUG("Max request length = ", g_maxRequestLength);
 }
 void PlayerServletManager::stop(){
-	LOG_INFO("Unloading all player servlets...");
+	LOG_POSEIDON_INFO("Unloading all player servlets...");
 
 	ServletMap servlets;
 	{
@@ -65,7 +65,7 @@ boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(old, g_servlets[category][protocolId]);
 		if(!old.expired()){
-			LOG_ERROR("Duplicate player protocol servlet for id ", protocolId, " in category ", category);
+			LOG_POSEIDON_ERROR("Duplicate player protocol servlet for id ", protocolId, " in category ", category);
 			DEBUG_THROW(Exception, "Duplicate player protocol servlet");
 		}
 		old = servlet;
@@ -79,17 +79,17 @@ boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(
     const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
     const AUTO(it, g_servlets.find(category));
     if(it == g_servlets.end()){
-        LOG_DEBUG("No servlet in category ", category);
+        LOG_POSEIDON_DEBUG("No servlet in category ", category);
         return VAL_INIT;
     }
     const AUTO(it2, it->second.find(protocolId));
     if(it2 == it->second.end()){
-    	LOG_DEBUG("No servlet for protocol ", protocolId, " in category ", category);
+    	LOG_POSEIDON_DEBUG("No servlet for protocol ", protocolId, " in category ", category);
     	return VAL_INIT;
     }
     const AUTO(servlet, it2->second.lock());
     if(!servlet){
-    	LOG_DEBUG("Servlet for protocol ", protocolId, " in category ", category, " has expired");
+    	LOG_POSEIDON_DEBUG("Servlet for protocol ", protocolId, " in category ", category, " has expired");
     	return VAL_INIT;
     }
     return servlet->callback;

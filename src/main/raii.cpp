@@ -12,7 +12,7 @@ namespace Poseidon {
 void closeFile(int fd) NOEXCEPT {
 	if(::close(fd) != 0){
 		const AUTO(desc, getErrorDesc());
-		LOG_WARN("::close() has failed: ", desc.get());
+		LOG_POSEIDON_WARN("::close() has failed: ", desc.get());
 	}
 }
 

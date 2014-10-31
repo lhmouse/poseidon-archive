@@ -15,7 +15,7 @@ std::string getRealPath(const char *path){
 	try {
 		realPath = ::realpath(path, VAL_INIT);
 		if(!realPath){
-			LOG_ERROR("Could not resolve path: ", path);
+			LOG_POSEIDON_ERROR("Could not resolve path: ", path);
 			DEBUG_THROW(SystemError);
 		}
 		ret = realPath;
@@ -31,7 +31,7 @@ std::string getRealPath(const char *path){
 
 void MainConfig::setRunPath(const SharedNtmbs &path){
 	const AUTO(realPath, getRealPath(path.get()));
-	LOG_INFO("Setting working directory: ", realPath);
+	LOG_POSEIDON_INFO("Setting working directory: ", realPath);
 	if(::chdir(realPath.c_str()) != 0){
 		DEBUG_THROW(SystemError);
 	}

@@ -86,15 +86,15 @@ volatile std::size_t g_waiting = 0;
 boost::condition_variable g_queueEmpty;
 
 bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
-	LOG_INFO("Connecting to MySQL server...");
+	LOG_POSEIDON_INFO("Connecting to MySQL server...");
 	try {
 		connection.reset(::get_driver_instance()->connect(
 			g_databaseServer, g_databaseUsername, g_databasePassword));
 		connection->setSchema(g_databaseName);
-		LOG_INFO("Successfully connected to MySQL server.");
+		LOG_POSEIDON_INFO("Successfully connected to MySQL server.");
 		return true;
 	} catch(sql::SQLException &e){
-		LOG_ERROR("Error connecting to MySQL server: code = ", e.getErrorCode(),
+		LOG_POSEIDON_ERROR("Error connecting to MySQL server: code = ", e.getErrorCode(),
 			", state = ", e.getSQLState(), ", what = ", e.what());
 		return false;
 	}
@@ -103,7 +103,7 @@ bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 void daemonLoop(){
 	boost::scoped_ptr<sql::Connection> connection;
 	if(!getMySqlConnection(connection)){
-		LOG_FATAL("Failed to connect MySQL server. Bailing out.");
+		LOG_POSEIDON_FATAL("Failed to connect MySQL server. Bailing out.");
 		std::abort();
 	} else {
 		const boost::mutex::scoped_lock lock(g_mutex);
@@ -117,12 +117,12 @@ void daemonLoop(){
 
 		try {
 			if(!connection){
-				LOG_WARN("Lost connection to MySQL server. Reconnecting...");
+				LOG_POSEIDON_WARN("Lost connection to MySQL server. Reconnecting...");
 
 				if(reconnectDelay == 0){
 					reconnectDelay = 1;
 				} else {
-					LOG_INFO("Will retry after ", reconnectDelay, " milliseconds.");
+					LOG_POSEIDON_INFO("Will retry after ", reconnectDelay, " milliseconds.");
 
 					boost::mutex::scoped_lock lock(g_mutex);
 					g_newObjectAvail.timed_wait(lock, boost::posix_time::milliseconds(reconnectDelay));
@@ -134,7 +134,7 @@ void daemonLoop(){
 				}
 				if(!getMySqlConnection(connection)){
 					if(!atomicLoad(g_running)){
-						LOG_WARN("Shutting down...");
+						LOG_POSEIDON_WARN("Shutting down...");
 						break;
 					}
 					continue;
@@ -197,25 +197,25 @@ void daemonLoop(){
 					)->pend();
 			}
 		} catch(sql::SQLException &e){
-			LOG_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
+			LOG_POSEIDON_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
 				", state = ", e.getSQLState(), ", what = ", e.what());
 			discardConnection = true;
 		} catch(std::exception &e){
-			LOG_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());
+			LOG_POSEIDON_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());
 			discardConnection = true;
 		} catch(...){
-			LOG_ERROR("Unknown exception thrown in MySQL daemon.");
+			LOG_POSEIDON_ERROR("Unknown exception thrown in MySQL daemon.");
 			discardConnection = true;
 		}
 
 		if(discardConnection && connection){
-			LOG_INFO("The connection was left in an indeterminate state. Discard it.");
+			LOG_POSEIDON_INFO("The connection was left in an indeterminate state. Discard it.");
 			connection.reset();
 		}
 	}
 
 	if(!g_saveQueue.empty()){
-		LOG_FATAL("There are still ", g_saveQueue.size(), " object(s) in MySQL save queue");
+		LOG_POSEIDON_FATAL("There are still ", g_saveQueue.size(), " object(s) in MySQL save queue");
 		g_saveQueue.clear();
 	}
 	g_loadQueue.clear();
@@ -224,47 +224,47 @@ void daemonLoop(){
 void threadProc(){
 	PROFILE_ME;
 	Logger::setThreadTag(" D  "); // Database
-	LOG_INFO("MySQL daemon started.");
+	LOG_POSEIDON_INFO("MySQL daemon started.");
 
 	daemonLoop();
 	::mysql_thread_end();
 
-	LOG_INFO("MySQL daemon stopped.");
+	LOG_POSEIDON_INFO("MySQL daemon stopped.");
 }
 
 }
 
 void MySqlDaemon::start(){
 	if(atomicExchange(g_running, true) != false){
-		LOG_FATAL("Only one daemon is allowed at the same time.");
+		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_INFO("Starting MySQL daemon...");
+	LOG_POSEIDON_INFO("Starting MySQL daemon...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
 	conf.get(g_databaseServer, "database_server");
-	LOG_DEBUG("MySQL server = ", g_databaseServer);
+	LOG_POSEIDON_DEBUG("MySQL server = ", g_databaseServer);
 
 	conf.get(g_databaseUsername, "database_username");
-	LOG_DEBUG("MySQL username = ", g_databaseUsername);
+	LOG_POSEIDON_DEBUG("MySQL username = ", g_databaseUsername);
 
 	conf.get(g_databasePassword, "database_password");
-	LOG_DEBUG("MySQL password = ", g_databasePassword);
+	LOG_POSEIDON_DEBUG("MySQL password = ", g_databasePassword);
 
 	conf.get(g_databaseName, "database_name");
-	LOG_DEBUG("MySQL database name = ", g_databaseName);
+	LOG_POSEIDON_DEBUG("MySQL database name = ", g_databaseName);
 
 	conf.get(g_databaseSaveDelay, "database_save_delay");
-	LOG_DEBUG("MySQL save delay = ", g_databaseSaveDelay);
+	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_databaseSaveDelay);
 
 	conf.get(g_databaseMaxReconnDelay, "database_max_reconn_delay");
-	LOG_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
+	LOG_POSEIDON_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
 
 	boost::thread(threadProc).swap(g_thread);
 }
 void MySqlDaemon::stop(){
-	LOG_INFO("Stopping MySQL daemon...");
+	LOG_POSEIDON_INFO("Stopping MySQL daemon...");
 
 	atomicStore(g_running, false);
 	{
@@ -280,7 +280,7 @@ void MySqlDaemon::stop(){
 void MySqlDaemon::waitForAllAsyncOperations(){
 	atomicAdd(g_waiting, 1);
 	try {
-		LOG_INFO("Waiting for all MySQL operations to complete...");
+		LOG_POSEIDON_INFO("Waiting for all MySQL operations to complete...");
 
 		boost::mutex::scoped_lock lock(g_mutex);
 		g_newObjectAvail.notify_all();
@@ -288,7 +288,7 @@ void MySqlDaemon::waitForAllAsyncOperations(){
 			g_queueEmpty.wait(lock);
 		}
 	} catch(...){
-		LOG_ERROR("Interrupted by exception.");
+		LOG_POSEIDON_ERROR("Interrupted by exception.");
 	}
 	atomicSub(g_waiting, 1);
 }

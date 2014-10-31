@@ -18,7 +18,7 @@ namespace Poseidon {
 boost::uint64_t getUtcTime(){
 	::timespec ts;
 	if(::clock_gettime(CLOCK_REALTIME, &ts) != 0){
-		LOG_FATAL("Realtime clock is not supported.");
+		LOG_POSEIDON_FATAL("Realtime clock is not supported.");
 		std::abort();
 	}
 	return (boost::uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
@@ -38,7 +38,7 @@ boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
 boost::uint64_t getMonoClock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
-		LOG_FATAL("Monotonic clock is not supported.");
+		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
 		std::abort();
 	}
 	return (boost::uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;

@@ -14,7 +14,7 @@ namespace {
 boost::once_flag g_sslInitFlag;
 
 void initSsl(){
-	LOG_INFO("Initializing SSL library...");
+	LOG_POSEIDON_INFO("Initializing SSL library...");
 
 	::OpenSSL_add_all_algorithms();
 	::SSL_library_init();
@@ -24,7 +24,7 @@ void initSsl(){
 
 void setErrnoBySslRet(::SSL *ssl, int ret){
 	const int err = ::SSL_get_error(ssl, ret);
-	LOG_DEBUG("SSL ret = ", ret, ", error = ", err);
+	LOG_POSEIDON_DEBUG("SSL ret = ", ret, ", error = ", err);
 	switch(err){
 	case SSL_ERROR_NONE:
 	case SSL_ERROR_ZERO_RETURN:
@@ -66,14 +66,14 @@ TcpSessionBase::SslImpl::SslImpl(SslPtr ssl, int fd)
 }
 TcpSessionBase::SslImpl::~SslImpl(){
 	if(m_established){
-		LOG_DEBUG("Shutting down SSL...");
+		LOG_POSEIDON_DEBUG("Shutting down SSL...");
 		::SSL_shutdown(m_ssl.get());
 	}
 }
 
 long TcpSessionBase::SslImpl::doRead(void *data, unsigned long size){
 	if(!m_established && !(m_established = establishConnection())){
-		LOG_DEBUG("Waiting for SSL handshake...");
+		LOG_POSEIDON_DEBUG("Waiting for SSL handshake...");
 		errno = EAGAIN;
 		return -1;
 	}
@@ -83,7 +83,7 @@ long TcpSessionBase::SslImpl::doRead(void *data, unsigned long size){
 }
 long TcpSessionBase::SslImpl::doWrite(const void *data, unsigned long size){
 	if(!m_established && !(m_established = establishConnection())){
-		LOG_DEBUG("Waiting for SSL handshake...");
+		LOG_POSEIDON_DEBUG("Waiting for SSL handshake...");
 		errno = EAGAIN;
 		return -1;
 	}

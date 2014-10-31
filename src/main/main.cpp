@@ -21,7 +21,7 @@ using namespace Poseidon;
 namespace {
 
 void sigTermProc(int){
-	LOG_WARN("Received SIGTERM, will now exit...");
+	LOG_POSEIDON_WARN("Received SIGTERM, will now exit...");
 	JobDispatcher::quitModal();
 }
 
@@ -36,11 +36,11 @@ void sigIntProc(int){
 		s_safetyTimer = now + 5 * 1000000;
 	}
 	if(now < s_safetyTimer){
-		LOG_WARN("Received SIGINT, trying to exit gracefully... "
+		LOG_POSEIDON_WARN("Received SIGINT, trying to exit gracefully... "
 			"If I don't terminate in 5 seconds, press ^C again.");
 		::raise(SIGTERM);
 	} else {
-		LOG_FATAL("Received SIGINT, will now terminate abnormally...");
+		LOG_POSEIDON_FATAL("Received SIGINT, will now terminate abnormally...");
 		::raise(SIGKILL);
 	}
 }
@@ -74,7 +74,7 @@ void run(){
 
 	const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
 	for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
-		LOG_INFO("Loading init module: ", *it);
+		LOG_POSEIDON_INFO("Loading init module: ", *it);
 		ModuleManager::load(*it);
 	}
 	MySqlDaemon::waitForAllAsyncOperations();
@@ -86,9 +86,9 @@ void run(){
 
 int main(int argc, char **argv){
 	Logger::setThreadTag("P   "); // Primary
-	LOG_INFO("-------------------------- Starting up -------------------------");
+	LOG_POSEIDON_INFO("-------------------------- Starting up -------------------------");
 
-	LOG_INFO("Setting up signal handlers...");
+	LOG_POSEIDON_INFO("Setting up signal handlers...");
 	::signal(SIGINT, sigIntProc);
 	::signal(SIGTERM, sigTermProc);
 
@@ -100,20 +100,20 @@ int main(int argc, char **argv){
 
 		unsigned long long logMask;
 		if(MainConfig::getConfigFile().get(logMask, "log_mask")){
-			LOG_INFO("Setting new log mask: 0x", std::hex, std::uppercase, logMask);
+			LOG_POSEIDON_INFO("Setting new log mask: 0x", std::hex, std::uppercase, logMask);
 			Logger::setMask(-1, logMask);
 		}
 
 		run();
 
-		LOG_INFO("------------- Server has been shut down gracefully -------------");
+		LOG_POSEIDON_INFO("------------- Server has been shut down gracefully -------------");
 		return EXIT_SUCCESS;
 	} catch(std::exception &e){
-		LOG_ERROR("std::exception thrown in main(): what = ", e.what());
+		LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());
 	} catch(...){
-		LOG_ERROR("Unknown exception thrown in main().");
+		LOG_POSEIDON_ERROR("Unknown exception thrown in main().");
 	}
 
-	LOG_WARN("----------------- Server has exited abnormally -----------------");
+	LOG_POSEIDON_WARN("----------------- Server has exited abnormally -----------------");
 	return EXIT_FAILURE;
 }

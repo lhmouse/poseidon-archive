@@ -42,17 +42,17 @@ struct TestEvent2 : public EventBase<1> {
 
 void event1Proc(boost::shared_ptr<TestEvent1> event){
 	PROFILE_ME;
-	LOG_FATAL("event1Proc: i = ", event->i, ", s = ", event->s);
+	LOG_POSEIDON_FATAL("event1Proc: i = ", event->i, ", s = ", event->s);
 }
 
 void event2Proc(boost::shared_ptr<TestEvent2> event){
 	PROFILE_ME;
-	LOG_FATAL("event2Proc: d = ", event->d);
+	LOG_POSEIDON_FATAL("event2Proc: d = ", event->d);
 }
 
 void tickProc(unsigned long long now, unsigned long long period){
 	PROFILE_ME;
-	LOG_FATAL("Tick, now = ", now, ", period = ", period);
+	LOG_POSEIDON_FATAL("Tick, now = ", now, ", period = ", period);
 }
 
 void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
@@ -160,7 +160,7 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	WebSocketOpCode opcode, StreamBuffer incoming)
 {
 	PROFILE_ME;
-	LOG_FATAL("Received packet: opcode = ", opcode, ", payload = ", HexDumper(incoming));
+	LOG_POSEIDON_FATAL("Received packet: opcode = ", opcode, ", payload = ", HexDumper(incoming));
 
 	std::string s;
 	incoming.dump(s);
@@ -260,60 +260,60 @@ namespace {
 
 void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestInt req(incoming);
-	LOG_WARN("sint = ", req.i);
+	LOG_POSEIDON_WARN("sint = ", req.i);
 	req.i /= 10;
 	ps->send(1000, req);
 }
 void TestUIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestUInt req(incoming);
-	LOG_WARN("int = ", req.u);
+	LOG_POSEIDON_WARN("int = ", req.u);
 	req.u /= 10;
 	ps->send(1001, req);
 }
 void TestStringProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestString req(incoming);
-	LOG_WARN("string = ", req.s);
+	LOG_POSEIDON_WARN("string = ", req.s);
 	req.s += "_0123456789";
 	ps->send(1002, req);
 }
 
 void TestIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestIntArray req(incoming);
-	LOG_WARN("sint array: size = ", req.a.size());
+	LOG_POSEIDON_WARN("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_WARN("  ", i, " = ", req.a.at(i).i);
+		LOG_POSEIDON_WARN("  ", i, " = ", req.a.at(i).i);
 		req.a.at(i).i /= 10;
 	}
 	ps->send(1003, req);
 }
 void TestUIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestUIntArray req(incoming);
-	LOG_WARN("sint array: size = ", req.a.size());
+	LOG_POSEIDON_WARN("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_WARN("  ", i, " = ", req.a.at(i).u);
+		LOG_POSEIDON_WARN("  ", i, " = ", req.a.at(i).u);
 		req.a.at(i).u /= 10;
 	}
 	ps->send(1004, req);
 }
 void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestNs::TestStringArray req(incoming);
-	LOG_WARN("sint array: size = ", req.a.size());
+	LOG_POSEIDON_WARN("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_WARN("  ", i, " = ", req.a.at(i).s);
+		LOG_POSEIDON_WARN("  ", i, " = ", req.a.at(i).s);
 		req.a.at(i).s += "_0123456789";
 	}
 	ps->send(1005, req);
 }
 
 void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	LOG_WARN("Received: ", HexDumper(incoming));
+	LOG_POSEIDON_WARN("Received: ", HexDumper(incoming));
 	TestNs::TestProtocol req(incoming);
-	LOG_WARN("req.i = ", req.i);
-	LOG_WARN("req.j = ", req.j);
-	LOG_WARN("req.a.size() = ", req.a.size());
+	LOG_POSEIDON_WARN("req.i = ", req.i);
+	LOG_POSEIDON_WARN("req.j = ", req.j);
+	LOG_POSEIDON_WARN("req.a.size() = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_WARN("req.a[", i, "].s = ", req.a.at(i).s);
-		LOG_WARN("req.a[", i, "].k = ", req.a.at(i).k);
+		LOG_POSEIDON_WARN("req.a[", i, "].s = ", req.a.at(i).s);
+		LOG_POSEIDON_WARN("req.a[", i, "].k = ", req.a.at(i).k);
 	}
 	ps->send(1006, req);
 }

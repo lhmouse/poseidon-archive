@@ -24,7 +24,7 @@ struct DynamicLibraryCloser {
 	void operator()(void *handle) NOEXCEPT {
 		const boost::recursive_mutex::scoped_lock lock(g_mutex);
 		if(::dlclose(handle) != 0){
-			LOG_WARN("Error unloading dynamic library: ", ::dlerror());
+			LOG_POSEIDON_WARN("Error unloading dynamic library: ", ::dlerror());
 		}
 	}
 };
@@ -41,18 +41,18 @@ public:
 	Module(ScopedHandle<DynamicLibraryCloser> handle, SharedNtmbs realPath, void *baseAddr)
 		: m_handle(STD_MOVE(handle)), m_realPath(STD_MOVE(realPath)), m_baseAddr(baseAddr)
 	{
-		LOG_INFO("Constructor of module: ", m_realPath);
+		LOG_POSEIDON_INFO("Constructor of module: ", m_realPath);
 
-		LOG_DEBUG("Handle: ", m_handle);
-		LOG_DEBUG("Real path: ", m_realPath);
-		LOG_DEBUG("Base addr: ", m_baseAddr);
+		LOG_POSEIDON_DEBUG("Handle: ", m_handle);
+		LOG_POSEIDON_DEBUG("Real path: ", m_realPath);
+		LOG_POSEIDON_DEBUG("Base addr: ", m_baseAddr);
 	}
 	~Module(){
-		LOG_INFO("Destructor of module: ", m_realPath);
+		LOG_POSEIDON_INFO("Destructor of module: ", m_realPath);
 
-		LOG_DEBUG("Handle: ", m_handle);
-		LOG_DEBUG("Real path: ", m_realPath);
-		LOG_DEBUG("Base addr: ", m_baseAddr);
+		LOG_POSEIDON_DEBUG("Handle: ", m_handle);
+		LOG_POSEIDON_DEBUG("Real path: ", m_realPath);
+		LOG_POSEIDON_DEBUG("Base addr: ", m_baseAddr);
 	}
 
 public:
@@ -136,7 +136,7 @@ ModuleRaiiMap g_moduleRaiis;
 void ModuleManager::start(){
 }
 void ModuleManager::stop(){
-	LOG_INFO("Unloading all modules...");
+	LOG_POSEIDON_INFO("Unloading all modules...");
 
 	std::vector<boost::weak_ptr<Module> > modules;
 	{
@@ -153,7 +153,7 @@ void ModuleManager::stop(){
 			modules.pop_back();
 			continue;
 		}
-		LOG_INFO("Waiting for module to unload: ", module->realPath());
+		LOG_POSEIDON_INFO("Waiting for module to unload: ", module->realPath());
 		::sleep(1);
 	}
 }
@@ -161,36 +161,36 @@ void ModuleManager::stop(){
 boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 
-	LOG_INFO("Checking whether module has already been loaded: ", path);
+	LOG_POSEIDON_INFO("Checking whether module has already been loaded: ", path);
 	ScopedHandle<DynamicLibraryCloser> handle(::dlopen(path.get(), RTLD_NOW | RTLD_NOLOAD));
 	if(handle){
-		LOG_DEBUG("Module already loaded, trying retrieving a shared_ptr from static map...");
+		LOG_POSEIDON_DEBUG("Module already loaded, trying retrieving a shared_ptr from static map...");
 		const AUTO(it, g_modules.find<MIDX_HANDLE>(handle.get()));
 		if(it != g_modules.end<MIDX_HANDLE>()){
-			LOG_DEBUG("Got shared_ptr from loaded module: ", it->realPath);
+			LOG_POSEIDON_DEBUG("Got shared_ptr from loaded module: ", it->realPath);
 			return it->module;
 		}
-		LOG_DEBUG("Not found. Let's load as a new module.");
+		LOG_POSEIDON_DEBUG("Not found. Let's load as a new module.");
 	}
 
-	LOG_INFO("Loading new module: ", path);
+	LOG_POSEIDON_INFO("Loading new module: ", path);
 	handle.reset(::dlopen(path.get(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND));
 	if(!handle){
 		const char *const error = ::dlerror();
-		LOG_ERROR("Error loading dynamic library: ", error);
+		LOG_POSEIDON_ERROR("Error loading dynamic library: ", error);
 		DEBUG_THROW(Exception, error);
 	}
 
 	void *const initSym = ::dlsym(handle.get(), "_init");
 	if(!initSym){
 		const char *const error = ::dlerror();
-		LOG_ERROR("Error locating _init(): ", error);
+		LOG_POSEIDON_ERROR("Error locating _init(): ", error);
 		DEBUG_THROW(Exception, error);
 	}
 	::Dl_info info;
 	if(::dladdr(initSym, &info) == 0){
 		const char *const error = ::dlerror();
-		LOG_ERROR("Error getting real path and base address: ", error);
+		LOG_POSEIDON_ERROR("Error getting real path and base address: ", error);
 		DEBUG_THROW(Exception, error);
 	}
 	SharedNtmbs realPath(info.dli_fname, true);
@@ -201,9 +201,9 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 	const AUTO(raiiRange, g_moduleRaiis.equalRange<MRIDX_BASE_ADDR>(baseAddr));
 	std::vector<boost::shared_ptr<void> > handles;
 	if(raiiRange.first == raiiRange.second){
-		LOG_INFO("No initialization is required: ", realPath);
+		LOG_POSEIDON_INFO("No initialization is required: ", realPath);
 	} else {
-		LOG_INFO("Initializing module: ", realPath);
+		LOG_POSEIDON_INFO("Initializing module: ", realPath);
 		for(AUTO(it, raiiRange.first); it != raiiRange.second; ++it){
 			boost::shared_ptr<void> handle(it->raii->init());
 			if(!handle){
@@ -212,12 +212,12 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 			handles.push_back(VAL_INIT);
 			handles.back().swap(handle);
 		}
-		LOG_INFO("Done initializing module: ", realPath);
+		LOG_POSEIDON_INFO("Done initializing module: ", realPath);
 	}
 
 	const AUTO(result, g_modules.insert(ModuleMapElement(module)));
 	if(!result.second){
-		LOG_ERROR("Duplicate module: module = ", module, ", handle = ", module->handle(),
+		LOG_POSEIDON_ERROR("Duplicate module: module = ", module, ", handle = ", module->handle(),
 			", real path = ", realPath, ", base address = ", baseAddr);
 		DEBUG_THROW(Exception, "Duplicate module");
 	}
@@ -229,10 +229,10 @@ boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
 	try {
 		return load(path);
 	} catch(std::exception &e){
-		LOG_ERROR("std::exception thrown while loading module: path = ", path, ", what = ", e.what());
+		LOG_POSEIDON_ERROR("std::exception thrown while loading module: path = ", path, ", what = ", e.what());
 		return VAL_INIT;
 	} catch(...){
-		LOG_ERROR("Unknown exception thrown while loading module: path = ", path);
+		LOG_POSEIDON_ERROR("Unknown exception thrown while loading module: path = ", path);
 		return VAL_INIT;
 	}
 }
@@ -270,11 +270,11 @@ void ModuleManager::registerModuleRaii(ModuleRaiiBase *raii){
 	::Dl_info info;
 	if(::dladdr(raii, &info) == 0){
 		const char *const error = ::dlerror();
-		LOG_ERROR("Error getting base address: ", error);
+		LOG_POSEIDON_ERROR("Error getting base address: ", error);
 		DEBUG_THROW(Exception, error);
 	}
 	if(!g_moduleRaiis.insert(ModuleRaiiMapElement(info.dli_fbase, raii)).second){
-		LOG_ERROR("Duplicate ModuleRaii? fbase = ", info.dli_fbase, ", raii = ", raii);
+		LOG_POSEIDON_ERROR("Duplicate ModuleRaii? fbase = ", info.dli_fbase, ", raii = ", raii);
 		DEBUG_THROW(Exception, "Duplicate ModuleRaii");
 	}
 }

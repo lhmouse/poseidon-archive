@@ -252,7 +252,7 @@ private:
 		str_->append(filter_);
 		str_->append(limit_);
 
-		LOG_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) "::"
+		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) "::"
 			TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
 
 		rs_.reset(conn_->prepareStatement(str_)->executeQuery());
@@ -321,7 +321,7 @@ private:
 			"SET " MYSQL_OBJECT_FIELDS);
 		str_->erase(str_->end() - 2, str_->end());
 
-		LOG_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) "::"
+		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) "::"
 			TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
 
 		const boost::scoped_ptr<sql::PreparedStatement> ps_(conn_->prepareStatement(str_));

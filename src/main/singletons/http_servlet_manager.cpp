@@ -16,10 +16,10 @@ struct Poseidon::HttpServlet : boost::noncopyable {
 	HttpServlet(SharedNtmbs uri_, boost::shared_ptr<const HttpServletCallback> callback_)
 		: uri(STD_MOVE(uri_)), callback(STD_MOVE(callback_))
 	{
-		LOG_INFO("Created HTTP servlet for URI ", uri);
+		LOG_POSEIDON_INFO("Created HTTP servlet for URI ", uri);
 	}
 	~HttpServlet(){
-		LOG_INFO("Destroyed HTTP servlet for URI ", uri);
+		LOG_POSEIDON_INFO("Destroyed HTTP servlet for URI ", uri);
 	}
 };
 
@@ -43,19 +43,19 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 
 	const AUTO(it, g_servlets.find(category));
 	if(it == g_servlets.end()){
-		LOG_DEBUG("No servlet in category ", category);
+		LOG_POSEIDON_DEBUG("No servlet in category ", category);
 		return false;
 	}
 
 	AUTO_REF(servletsInCategory, it->second);
 	const AUTO(sit, servletsInCategory.lower_bound(uri));
 	if(sit == servletsInCategory.end()){
-		LOG_DEBUG("No more handlers: ", uri);
+		LOG_POSEIDON_DEBUG("No more handlers: ", uri);
 		return false;
 	}
 	const std::size_t len = std::strlen(sit->first.get());
 	if((len < uriLen) || (std::memcmp(sit->first.get(), uri, uriLen) != 0)){
-		LOG_DEBUG("No more handlers: ", uri);
+		LOG_POSEIDON_DEBUG("No more handlers: ", uri);
 		return false;
 	}
 	if(len == uriLen){
@@ -70,21 +70,21 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 }
 
 void HttpServletManager::start(){
-	LOG_INFO("Starting HTTP servlet manager...");
+	LOG_POSEIDON_INFO("Starting HTTP servlet manager...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
 	conf.get(g_maxRequestLength, "http_max_request_length");
-	LOG_DEBUG("Max request length = ", g_maxRequestLength);
+	LOG_POSEIDON_DEBUG("Max request length = ", g_maxRequestLength);
 
 	conf.get(g_requestTimeout, "http_request_timeout");
-	LOG_DEBUG("Request timeout = ", g_requestTimeout);
+	LOG_POSEIDON_DEBUG("Request timeout = ", g_requestTimeout);
 
 	conf.get(g_keepAliveTimeout, "http_keep_alive_timeout");
-	LOG_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
+	LOG_POSEIDON_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
 }
 void HttpServletManager::stop(){
-	LOG_INFO("Unloading all HTTP servlets...");
+	LOG_POSEIDON_INFO("Unloading all HTTP servlets...");
 
 	ServletMap servlets;
 	{
@@ -114,7 +114,7 @@ boost::shared_ptr<HttpServlet> HttpServletManager::registerServlet(
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
-			LOG_ERROR("Duplicate HTTP servlet for URI ", uri, " in category ", category);
+			LOG_POSEIDON_ERROR("Duplicate HTTP servlet for URI ", uri, " in category ", category);
 			DEBUG_THROW(Exception, "Duplicate HTTP servlet");
 		}
 		old = servlet;
@@ -126,7 +126,7 @@ boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(
 	std::size_t category, const SharedNtmbs &uri)
 {
 	if(uri[0] != '/'){
-		LOG_ERROR("URI must begin with a slash: ", uri);
+		LOG_POSEIDON_ERROR("URI must begin with a slash: ", uri);
 		DEBUG_THROW(Exception, "Bad URI format");
 	}
 
@@ -134,21 +134,21 @@ boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(
 	const std::size_t uriLen = std::strlen(uri.get());
 	getExactServlet(ret, category, uri.get(), uriLen);
 	if(!ret && (uri != "/")){
-		LOG_DEBUG("Searching for fallback handlers for URI ", uri);
+		LOG_POSEIDON_DEBUG("Searching for fallback handlers for URI ", uri);
 
 		std::string fallback;
 		fallback.reserve(uriLen + 1);
 		fallback.push_back('/');
 		std::size_t slash = 0;
 		for(;;){
-			LOG_DEBUG("Trying fallback URI handler ", fallback);
+			LOG_POSEIDON_DEBUG("Trying fallback URI handler ", fallback);
 
 			boost::shared_ptr<const HttpServletCallback> test;
 			if(!getExactServlet(test, category, fallback.c_str(), fallback.size())){
 				break;
 			}
 			if(test){
-				LOG_DEBUG("Fallback handler matches: ", fallback);
+				LOG_POSEIDON_DEBUG("Fallback handler matches: ", fallback);
 				ret.swap(test);
 			}
 

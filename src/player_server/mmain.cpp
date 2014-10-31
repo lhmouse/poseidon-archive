@@ -7,7 +7,7 @@
 using namespace Poseidon;
 
 MODULE_RAII(
-	LOG_INFO("Initializing player server...");
+	LOG_POSEIDON_INFO("Initializing player server...");
 
 	ConfigFile config("config/player_server.conf");
 	return EpollDaemon::registerPlayerServer(

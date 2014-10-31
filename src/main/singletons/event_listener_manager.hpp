@@ -46,7 +46,7 @@ struct EventListenerManager {
 			{
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
-					LOG_ERROR("Invalid dynamic event: id = ", event->id());
+					LOG_POSEIDON_ERROR("Invalid dynamic event: id = ", event->id());
 					DEBUG_THROW(Exception, "Invalid dynamic event");
 				}
 				callback(STD_MOVE(derived));

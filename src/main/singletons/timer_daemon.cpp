@@ -21,10 +21,10 @@ struct Poseidon::TimerItem : boost::noncopyable {
 	TimerItem(unsigned long long period_, boost::shared_ptr<const TimerCallback> callback_)
 		: period(period_), callback(STD_MOVE(callback_))
 	{
-		LOG_INFO("Created timer, period = ", period);
+		LOG_POSEIDON_INFO("Created timer, period = ", period);
 	}
 	~TimerItem(){
-		LOG_INFO("Destroyed timer, period = ", period);
+		LOG_POSEIDON_INFO("Destroyed timer, period = ", period);
 	}
 };
 
@@ -101,12 +101,12 @@ void daemonLoop(){
 		}
 
 		try {
-			LOG_INFO("Preparing a timer job for dispatching.");
+			LOG_POSEIDON_INFO("Preparing a timer job for dispatching.");
 			boost::make_shared<TimerJob>(STD_MOVE(callback), now, period)->pend();
 		} catch(std::exception &e){
-			LOG_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
+			LOG_POSEIDON_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
 		} catch(...){
-			LOG_ERROR("Unknown exception thrown while dispatching timer job.");
+			LOG_POSEIDON_ERROR("Unknown exception thrown while dispatching timer job.");
 		}
 	}
 }
@@ -114,26 +114,26 @@ void daemonLoop(){
 void threadProc(){
 	PROFILE_ME;
 	Logger::setThreadTag("  T "); // Timer
-	LOG_INFO("Timer daemon started.");
+	LOG_POSEIDON_INFO("Timer daemon started.");
 
 	daemonLoop();
 
-	LOG_INFO("Timer daemon stopped.");
+	LOG_POSEIDON_INFO("Timer daemon stopped.");
 }
 
 }
 
 void TimerDaemon::start(){
 	if(atomicExchange(g_running, true) != false){
-		LOG_FATAL("Only one daemon is allowed at the same time.");
+		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_INFO("Starting timer daemon...");
+	LOG_POSEIDON_INFO("Starting timer daemon...");
 
 	boost::thread(threadProc).swap(g_thread);
 }
 void TimerDaemon::stop(){
-	LOG_INFO("Stopping timer daemon...");
+	LOG_POSEIDON_INFO("Stopping timer daemon...");
 
 	atomicStore(g_running, false);
 	if(g_thread.joinable()){
@@ -157,7 +157,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
 		g_timers.push_back(tqe);
 		std::push_heap(g_timers.begin(), g_timers.end());
 	}
-	LOG_INFO("Created a timer item which will be triggered ", std::max(0ull, timePoint - getMonoClock()),
+	LOG_POSEIDON_INFO("Created a timer item which will be triggered ", std::max(0ull, timePoint - getMonoClock()),
 		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
 	return item;
 }

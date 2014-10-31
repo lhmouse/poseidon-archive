@@ -23,22 +23,22 @@ public:
 
 		m_sslCtx.reset(::SSL_CTX_new(::TLSv1_server_method()));
 		if(!m_sslCtx){
-			LOG_FATAL("Could not create server SSL context");
+			LOG_POSEIDON_FATAL("Could not create server SSL context");
 			std::abort();
 		}
 		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, VAL_INIT);
 
-		LOG_INFO("Loading server certificate: ", cert);
+		LOG_POSEIDON_INFO("Loading server certificate: ", cert);
 		if(::SSL_CTX_use_certificate_file(m_sslCtx.get(), cert.get(), SSL_FILETYPE_PEM) != 1){
 			DEBUG_THROW(Exception, "::SSL_CTX_use_certificate_file() failed");
 		}
 
-		LOG_INFO("Loading server private key: ", privateKey);
+		LOG_POSEIDON_INFO("Loading server private key: ", privateKey);
 		if(::SSL_CTX_use_PrivateKey_file(m_sslCtx.get(), privateKey.get(), SSL_FILETYPE_PEM) != 1){
 			DEBUG_THROW(Exception, "::SSL_CTX_use_PrivateKey_file() failed");
 		}
 
-		LOG_INFO("Verifying private key...");
+		LOG_POSEIDON_INFO("Verifying private key...");
 		if(::SSL_CTX_check_private_key(m_sslCtx.get()) != 1){
 			DEBUG_THROW(Exception, "::SSL_CTX_check_private_key() failed");
 		}
@@ -65,7 +65,7 @@ protected:
 			if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
 				return false;
 			}
-			LOG_ERROR("::SSL_accept() = ", ret, ", ::SSL_get_error() = ", err);
+			LOG_POSEIDON_ERROR("::SSL_accept() = ", ret, ", ::SSL_get_error() = ", err);
 			DEBUG_THROW(Exception, "::SSL_accept() failed");
 		}
 		return true;
@@ -92,7 +92,7 @@ TcpServerBase::TcpServerBase(std::string bindAddr, unsigned bindPort,
 		storeBe(u.sin6.sin6_port, m_bindPort);
 		salen = sizeof(::sockaddr_in6);
 	} else {
-		LOG_ERROR("Unknown address format: ", m_bindAddr);
+		LOG_POSEIDON_ERROR("Unknown address format: ", m_bindAddr);
 		DEBUG_THROW(Exception, "Unknown address format");
 	}
 
@@ -124,10 +124,10 @@ TcpServerBase::TcpServerBase(std::string bindAddr, unsigned bindPort,
 		m_sslImplServer.reset(new SslImplServer(cert, privateKey));
 	}
 
-	LOG_INFO("Created ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_bindAddr, ':', m_bindPort);
+	LOG_POSEIDON_INFO("Created ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_bindAddr, ':', m_bindPort);
 }
 TcpServerBase::~TcpServerBase(){
-	LOG_INFO("Destroyed ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_bindAddr, ':', m_bindPort);
+	LOG_POSEIDON_INFO("Destroyed ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_bindAddr, ':', m_bindPort);
 }
 
 boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
@@ -140,16 +140,16 @@ boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 	}
 	AUTO(session, onClientConnect(STD_MOVE(client)));
 	if(!session){
-		LOG_WARN("onClientConnect() returns a null pointer.");
+		LOG_POSEIDON_WARN("onClientConnect() returns a null pointer.");
 		DEBUG_THROW(Exception, "Null client pointer");
 	}
 	if(m_sslImplServer){
-		LOG_INFO("Waiting for SSL handshake...");
+		LOG_POSEIDON_INFO("Waiting for SSL handshake...");
 
 		boost::scoped_ptr<TcpSessionBase::SslImpl> sslImpl(
 			new SslImplClient(m_sslImplServer->createSsl(), session->m_socket.get()));
 		session->initSsl(STD_MOVE(sslImpl));
 	}
-	LOG_INFO("Client ", session->getRemoteIp(), " has connected.");
+	LOG_POSEIDON_INFO("Client ", session->getRemoteIp(), " has connected.");
 	return session;
 }

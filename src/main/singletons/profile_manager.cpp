@@ -53,7 +53,7 @@ void ProfileManager::start(){
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
 	conf.get(g_enabled, "enable_profiler");
-	LOG_DEBUG("Enable profiler = ", g_enabled);
+	LOG_POSEIDON_DEBUG("Enable profiler = ", g_enabled);
 }
 void ProfileManager::stop(){
 }
@@ -88,7 +88,7 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 		atomicAdd(it->second.usTotal, total);
 		atomicAdd(it->second.usExclusive, exclusive);
 
-		LOG_DEBUG("Accumulated profile info: file = ", file, ", line = ", line,
+		LOG_POSEIDON_DEBUG("Accumulated profile info: file = ", file, ", line = ", line,
 			", func = ", func, ", total = ", total, " us, exclusive = ", exclusive, " us");
 	} catch(...){
 	}
