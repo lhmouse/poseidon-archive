@@ -22,10 +22,6 @@
 #include "../atomic.hpp"
 #include "../log.hpp"
 
-#ifdef MYSQL_OBJECT_NAMESPACE
-namespace MYSQL_OBJECT_NAMESPACE {
-#endif
-
 class MYSQL_OBJECT_NAME : public ::Poseidon::MySqlObjectBase {
 private:
 
@@ -252,8 +248,7 @@ private:
 		str_->append(filter_);
 		str_->append(limit_);
 
-		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) "::"
-			TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
+		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
 
 		rs_.reset(conn_->prepareStatement(str_)->executeQuery());
 	}
@@ -321,8 +316,7 @@ private:
 			"SET " MYSQL_OBJECT_FIELDS);
 		str_->erase(str_->end() - 2, str_->end());
 
-		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAMESPACE) "::"
-			TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
+		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
 
 		const boost::scoped_ptr<sql::PreparedStatement> ps_(conn_->prepareStatement(str_));
 		std::vector<boost::shared_ptr<void> > contexts_;
@@ -387,10 +381,6 @@ public:
 		return ret_;
 	}
 };
-
-#ifdef MYSQL_OBJECT_NAMESPACE
-}
-#endif
 
 #undef MYSQL_OBJECT_NAME
 #undef MYSQL_OBJECT_FIELDS

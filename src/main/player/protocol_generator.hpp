@@ -16,10 +16,6 @@
 
 #include "../cxx_util.hpp"
 
-#ifdef PROTOCOL_NAMESPACE
-namespace PROTOCOL_NAMESPACE {
-#endif
-
 struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 	enum {
 		ID = PROTOCOL_ID
@@ -171,10 +167,6 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 		return buffer_;
 	}
 };
-
-#ifdef PROTOCOL_NAMESPACE
-}
-#endif
 
 #undef PROTOCOL_NAME
 #undef PROTOCOL_ID

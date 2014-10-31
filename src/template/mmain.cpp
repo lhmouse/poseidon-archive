@@ -20,8 +20,6 @@
 #include "../main/mysql/object_base.hpp"
 using namespace Poseidon;
 
-#define MYSQL_OBJECT_NAMESPACE	TestNs
-
 #define MYSQL_OBJECT_NAME	MySqlObj
 #define MYSQL_OBJECT_FIELDS	\
 	FIELD_SMALLINT(si)	\
@@ -79,7 +77,7 @@ void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 void meowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
 
-	AUTO(obj, boost::make_shared<TestNs::MySqlObj>());
+	AUTO(obj, boost::make_shared<MySqlObj>());
 	obj->set_si(123);
 	obj->set_str("meow");
 	obj->set_bi(456789);
@@ -213,8 +211,6 @@ private:
 
 }
 
-#define PROTOCOL_NAMESPACE TestNs
-
 #define PROTOCOL_NAME		TestInt
 #define PROTOCOL_ID			100
 #define PROTOCOL_FIELDS		FIELD_VINT(i)
@@ -259,26 +255,26 @@ private:
 namespace {
 
 void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	TestNs::TestInt req(incoming);
+	TestInt req(incoming);
 	LOG_POSEIDON_WARN("sint = ", req.i);
 	req.i /= 10;
 	ps->send(1000, req);
 }
 void TestUIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	TestNs::TestUInt req(incoming);
+	TestUInt req(incoming);
 	LOG_POSEIDON_WARN("int = ", req.u);
 	req.u /= 10;
 	ps->send(1001, req);
 }
 void TestStringProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	TestNs::TestString req(incoming);
+	TestString req(incoming);
 	LOG_POSEIDON_WARN("string = ", req.s);
 	req.s += "_0123456789";
 	ps->send(1002, req);
 }
 
 void TestIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	TestNs::TestIntArray req(incoming);
+	TestIntArray req(incoming);
 	LOG_POSEIDON_WARN("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
 		LOG_POSEIDON_WARN("  ", i, " = ", req.a.at(i).i);
@@ -287,7 +283,7 @@ void TestIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming
 	ps->send(1003, req);
 }
 void TestUIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	TestNs::TestUIntArray req(incoming);
+	TestUIntArray req(incoming);
 	LOG_POSEIDON_WARN("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
 		LOG_POSEIDON_WARN("  ", i, " = ", req.a.at(i).u);
@@ -296,7 +292,7 @@ void TestUIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incomin
 	ps->send(1004, req);
 }
 void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	TestNs::TestStringArray req(incoming);
+	TestStringArray req(incoming);
 	LOG_POSEIDON_WARN("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
 		LOG_POSEIDON_WARN("  ", i, " = ", req.a.at(i).s);
@@ -307,7 +303,7 @@ void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incom
 
 void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	LOG_POSEIDON_WARN("Received: ", HexDumper(incoming));
-	TestNs::TestProtocol req(incoming);
+	TestProtocol req(incoming);
 	LOG_POSEIDON_WARN("req.i = ", req.i);
 	LOG_POSEIDON_WARN("req.j = ", req.j);
 	LOG_POSEIDON_WARN("req.a.size() = ", req.a.size());
