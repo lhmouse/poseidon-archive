@@ -19,6 +19,16 @@ struct IpPort {
 		: ip(STD_MOVE(ip_), owning), port(port_)
 	{
 	}
+	IpPort(const IpPort &rhs, bool owning)
+		: ip(rhs.ip, owning), port(rhs.port)
+	{
+	}
+	IpPort(Move<IpPort> rhs, bool owning){
+		rhs.swap(*this);
+		if(owning){
+			ip.forkOwning();
+		}
+	}
 };
 
 extern std::ostream &operator<<(std::ostream &os, const IpPort &rhs);
