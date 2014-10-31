@@ -92,8 +92,7 @@ void normalizeUri(std::string &uri){
 void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer){
 	const AUTO(session, observer.lock());
 	if(session){
-		LOG_POSEIDON_WARN("HTTP request times out, remote = ",
-			session->getRemoteIp(), ':', session->getRemotePort());
+		LOG_POSEIDON_WARN("HTTP request times out, remote = ", session->getRemoteInfo());
 		session->sendDefault(HTTP_REQUEST_TIMEOUT, true);
 	}
 }
@@ -402,8 +401,7 @@ void HttpSession::onAllHeadersRead(){
 
 			session->m_upgradedSession = boost::make_shared<WebSocketSession>(
 				session->virtualSharedFromThis<HttpSession>());
-			LOG_POSEIDON_INFO("Upgraded to WebSocketSession, remote = ",
-				session->getRemoteIp(), ':', session->getRemotePort());
+			LOG_POSEIDON_INFO("Upgraded to WebSocketSession, remote = ", session->getRemoteInfo());
 		}
 		static void onAuthorization(HttpSession *session, const std::string &val){
 			if(!session->m_authInfo){

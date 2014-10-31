@@ -38,25 +38,23 @@ public:
 	}
 } g_clientSslCtx;
 
-ScopedFile parseAddrPort(void *sa, unsigned &salen,
-	unsigned maxSalen, const SharedNtmbs &ip, unsigned port)
-{
+ScopedFile parseAddrPort(void *sa, unsigned &salen, unsigned maxSalen, const IpPort &addr){
 	union {
 		::sockaddr sa;
 		::sockaddr_in sin;
 		::sockaddr_in6 sin6;
 	} u;
 
-	if(::inet_pton(AF_INET, ip.get(), &u.sin.sin_addr) == 1){
+	if(::inet_pton(AF_INET, addr.ip.get(), &u.sin.sin_addr) == 1){
 		u.sin.sin_family = AF_INET;
-		storeBe(u.sin.sin_port, port);
+		storeBe(u.sin.sin_port, addr.port);
 		salen = sizeof(::sockaddr_in);
-	} else if(::inet_pton(AF_INET6, ip.get(), &u.sin6.sin6_addr) == 1){
+	} else if(::inet_pton(AF_INET6, addr.ip.get(), &u.sin6.sin6_addr) == 1){
 		u.sin6.sin6_family = AF_INET6;
-		storeBe(u.sin6.sin6_port, port);
+		storeBe(u.sin6.sin6_port, addr.port);
 		salen = sizeof(::sockaddr_in6);
 	} else {
-		LOG_POSEIDON_ERROR("Unknown address format: ", ip);
+		LOG_POSEIDON_ERROR("Unknown address format: ", addr.ip);
 		DEBUG_THROW(Exception, "Unknown address format");
 	}
 	if(maxSalen < salen){
@@ -96,8 +94,8 @@ protected:
 	}
 };
 
-TcpClientBase::TcpClientBase(const SharedNtmbs &ip, unsigned port)
-	: TcpSessionBase(parseAddrPort(m_sa, m_salen, sizeof(m_sa), ip, port))
+TcpClientBase::TcpClientBase(const IpPort &addr)
+	: TcpSessionBase(parseAddrPort(m_sa, m_salen, sizeof(m_sa), addr))
 {
 	if(::connect(m_socket.get(), reinterpret_cast<const ::sockaddr *>(m_sa), m_salen) != 0){
 		if(errno != EINPROGRESS){

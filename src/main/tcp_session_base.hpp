@@ -9,6 +9,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include "raii.hpp"
+#include "ip_port.hpp"
 #include "stream_buffer.hpp"
 #include "shared_ntmbs.hpp"
 
@@ -29,8 +30,8 @@ private:
 	mutable struct {
 		volatile bool fetched;
 		boost::mutex mutex;
-		std::pair<SharedNtmbs, unsigned> remote;
-		std::pair<SharedNtmbs, unsigned> local;
+		IpPort remote;
+		IpPort local;
 	} m_peerInfo;
 
 	boost::scoped_ptr<SslImpl> m_ssl;
@@ -63,10 +64,8 @@ public:
 		return m_createdTime;
 	}
 
-	const SharedNtmbs &getRemoteIp() const;
-	unsigned getRemotePort() const;
-	const SharedNtmbs &getLocalIp() const;
-	unsigned getLocalPort() const;
+	const IpPort &getRemoteInfo() const;
+	const IpPort &getLocalInfo() const;
 };
 
 }

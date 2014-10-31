@@ -243,20 +243,17 @@ void WebSocketSession::onControlFrame(){
 
 	switch(m_opcode){
 	case WS_CLOSE:
-		LOG_POSEIDON_INFO("Received close frame from ",
-			parent->getRemoteIp(), ':', parent->getRemotePort());
+		LOG_POSEIDON_INFO("Received close frame from ", parent->getRemoteInfo());
 		HttpUpgradedSessionBase::send(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false), true);
 		break;
 
 	case WS_PING:
-		LOG_POSEIDON_INFO("Received ping frame from ",
-			parent->getRemoteIp(), ':', parent->getRemotePort());
+		LOG_POSEIDON_INFO("Received ping frame from ", parent->getRemoteInfo());
 		HttpUpgradedSessionBase::send(makeFrame(WS_PONG, STD_MOVE(m_whole), false), false);
 		break;
 
 	case WS_PONG:
-		LOG_POSEIDON_INFO("Received pong frame from ",
-			parent->getRemoteIp(), ':', parent->getRemotePort());
+		LOG_POSEIDON_INFO("Received pong frame from ", parent->getRemoteInfo());
 		break;
 
 	default:

@@ -206,13 +206,11 @@ void daemonLoop(){
 					}
 					DEBUG_THROW(SystemError);
 				} else if(bytesRead == 0){
-					LOG_POSEIDON_INFO("Connection closed by ",
-						session->getRemoteIp(), ':',  session->getRemotePort());
+					LOG_POSEIDON_INFO("Connection closed by ", session->getRemoteInfo());
 					session->send(StreamBuffer(), true);
 					continue;
 				}
-				LOG_POSEIDON_TRACE("Read ", bytesRead, " byte(s) from ",
-					session->getRemoteIp(), ':',  session->getRemotePort(),
+				LOG_POSEIDON_TRACE("Read ", bytesRead, " byte(s) from ", session->getRemoteInfo(),
 					", hex = ", HexEncoder(data.get(), bytesRead));
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while dispatching data: what = ", e.what());
@@ -266,8 +264,7 @@ void daemonLoop(){
 					}
 					continue;
 				}
-				LOG_POSEIDON_TRACE("Wrote ", bytesWritten, " byte(s) to ",
-					session->getRemoteIp(), ':',  session->getRemotePort(),
+				LOG_POSEIDON_TRACE("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteInfo(),
 					", hex = ", HexEncoder(data.get(), bytesWritten));
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while writing socket: what = ", e.what());
@@ -300,8 +297,7 @@ void daemonLoop(){
 				if(!session){
 					continue;
 				}
-				LOG_POSEIDON_DEBUG("Accepted TCP connection from ",
-					session->getRemoteIp(), ':', session->getRemotePort());
+				LOG_POSEIDON_DEBUG("Accepted TCP connection from ", session->getRemoteInfo());
 				add(session);
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while accepting connection: what = ", e.what());
@@ -323,8 +319,7 @@ void daemonLoop(){
 				virtualSharedFromThis<TcpSessionBase>());
 			try {
 				if(event.events & EPOLLHUP){
-					LOG_POSEIDON_INFO("Socket hung up, remote is ",
-						session->getRemoteIp(), ':',  session->getRemotePort());
+					LOG_POSEIDON_INFO("Socket hung up, remote is ", session->getRemoteInfo());
 					remove(session);
 					continue;
 				}
@@ -389,8 +384,7 @@ void daemonLoop(){
 					if(bytesWritten <= 0){
 						break;
 					}
-					LOG_POSEIDON_TRACE("Flushed ", bytesWritten, " byte(s) to ",
-						session->getRemoteIp(), ':',  session->getRemotePort(),
+					LOG_POSEIDON_TRACE("Flushed ", bytesWritten, " byte(s) to ", session->getRemoteInfo(),
 						", hex = ", HexEncoder(data.get(), bytesWritten));
 				}
 			} catch(std::exception &e){
@@ -461,10 +455,15 @@ std::vector<EpollSnapshotItem> EpollDaemon::snapshot(){
 	for(AUTO(it, g_sessions.begin()); it != g_sessions.end(); ++it){
 		ret.push_back(EpollSnapshotItem());
 		AUTO_REF(item, ret.back());
-		item.remoteIp = it->session->getRemoteIp();
-		item.remotePort = it->session->getRemotePort();
-		item.localIp = it->session->getLocalIp();
-		item.localPort  = it->session->getLocalPort();
+
+		AUTO_REF(remote, it->session->getRemoteInfo());
+		item.remoteIp = remote.ip;
+		item.remotePort = remote.port;
+
+		AUTO_REF(local, it->session->getLocalInfo());
+		item.localIp = local.ip;
+		item.localPort = local.port;
+
 		item.usOnline = now - it->session->getCreatedTime();
 	}
 	return ret;

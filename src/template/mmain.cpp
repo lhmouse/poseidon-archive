@@ -198,7 +198,7 @@ public:
 
 public:
 	TestClient()
-		: TcpClientBase("127.0.0.1", 443)
+		: TcpClientBase(IpPort("127.0.0.1", 443))
 	{
 	}
 

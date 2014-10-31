@@ -23,7 +23,7 @@ union SockAddr {
 	::sockaddr_in6 sin6;
 };
 
-std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
+IpPort getAddrPortFromSockAddr(const SockAddr &sa){
 	char ip[64];
 	unsigned port;
 	const char *ret;
@@ -42,7 +42,7 @@ std::pair<SharedNtmbs, unsigned> getAddrPortFromSockAddr(const SockAddr &sa){
 		LOG_POSEIDON_WARN("Failed to format IP address to string.");
 		DEBUG_THROW(SystemError, code);
 	}
-	return std::make_pair(SharedNtmbs(ip, true), port);
+	return IpPort(SharedNtmbs(ip, true), port);
 }
 
 }
@@ -65,8 +65,8 @@ TcpSessionBase::TcpSessionBase(ScopedFile socket)
 }
 TcpSessionBase::~TcpSessionBase(){
 	if(atomicLoad(m_peerInfo.fetched)){
-		LOG_POSEIDON_INFO("Destroyed TCP session, remote address is ",
-			m_peerInfo.remote.first, ':', m_peerInfo.remote.second);
+		LOG_POSEIDON_INFO("Destroyed TCP session, remote = ",
+			m_peerInfo.remote, ", local = ", m_peerInfo.local);
 	} else {
 		LOG_POSEIDON_INFO("A TCP session that wasn't fully established has been closed.");
 	}
@@ -136,8 +136,8 @@ void TcpSessionBase::fetchPeerInfo() const {
 	}
 	m_peerInfo.local = getAddrPortFromSockAddr(sa);
 
-	LOG_POSEIDON_INFO("Established TCP session, remote address is ",
-		m_peerInfo.remote.first, ':', m_peerInfo.remote.second);
+	LOG_POSEIDON_INFO("Established TCP session, remote = ",
+	    m_peerInfo.remote, ", local = ", m_peerInfo.local);
 
 	atomicStore(m_peerInfo.fetched, true);
 }
@@ -180,19 +180,11 @@ long TcpSessionBase::doWrite(boost::mutex::scoped_lock &lock, void *hint, unsign
 	return ret;
 }
 
-const SharedNtmbs &TcpSessionBase::getRemoteIp() const {
+const IpPort &TcpSessionBase::getRemoteInfo() const {
 	fetchPeerInfo();
-	return m_peerInfo.remote.first;
+	return m_peerInfo.remote;
 }
-unsigned TcpSessionBase::getRemotePort() const {
+const IpPort &TcpSessionBase::getLocalInfo() const {
 	fetchPeerInfo();
-	return m_peerInfo.remote.second;
-}
-const SharedNtmbs &TcpSessionBase::getLocalIp() const {
-	fetchPeerInfo();
-	return m_peerInfo.local.first;
-}
-unsigned TcpSessionBase::getLocalPort() const {
-	fetchPeerInfo();
-	return m_peerInfo.local.second;
+	return m_peerInfo.local;
 }
