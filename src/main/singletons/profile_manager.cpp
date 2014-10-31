@@ -88,7 +88,7 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 		atomicAdd(it->second.usTotal, total);
 		atomicAdd(it->second.usExclusive, exclusive);
 
-		LOG_POSEIDON_DEBUG("Accumulated profile info: file = ", file, ", line = ", line,
+		LOG_POSEIDON_TRACE("Accumulated profile info: file = ", file, ", line = ", line,
 			", func = ", func, ", total = ", total, " us, exclusive = ", exclusive, " us");
 	} catch(...){
 	}

@@ -101,7 +101,7 @@ void daemonLoop(){
 		}
 
 		try {
-			LOG_POSEIDON_INFO("Preparing a timer job for dispatching.");
+			LOG_POSEIDON_DEBUG("Preparing a timer job for dispatching: period = ", period);
 			boost::make_shared<TimerJob>(STD_MOVE(callback), now, period)->pend();
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
