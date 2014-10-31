@@ -206,12 +206,14 @@ void daemonLoop(){
 					}
 					DEBUG_THROW(SystemError);
 				} else if(bytesRead == 0){
-					LOG_POSEIDON_INFO("Connection closed by remote host: ", session->getRemoteIp());
+					LOG_POSEIDON_INFO("Connection closed by ",
+						session->getRemoteIp(), ':',  session->getRemotePort());
 					session->send(StreamBuffer(), true);
 					continue;
 				}
-				LOG_POSEIDON_TRACE("Read ", bytesRead, " byte(s) from ", session->getRemoteIp(),
-					": ", HexEncoder(data.get(), bytesRead));
+				LOG_POSEIDON_TRACE("Read ", bytesRead, " byte(s) from ",
+					session->getRemoteIp(), ':',  session->getRemotePort(),
+					", hex = ", HexEncoder(data.get(), bytesRead));
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while dispatching data: what = ", e.what());
 				session->send(StreamBuffer(), true);
@@ -264,8 +266,9 @@ void daemonLoop(){
 					}
 					continue;
 				}
-				LOG_POSEIDON_TRACE("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteIp(),
-					": ", HexEncoder(data.get(), bytesWritten));
+				LOG_POSEIDON_TRACE("Wrote ", bytesWritten, " byte(s) to ",
+					session->getRemoteIp(), ':',  session->getRemotePort(),
+					", hex = ", HexEncoder(data.get(), bytesWritten));
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while writing socket: what = ", e.what());
 				remove(session);
@@ -297,13 +300,13 @@ void daemonLoop(){
 				if(!session){
 					continue;
 				}
-				LOG_POSEIDON_DEBUG("Accepted socket connection from ",
+				LOG_POSEIDON_DEBUG("Accepted TCP connection from ",
 					session->getRemoteIp(), ':', session->getRemotePort());
 				add(session);
 			} catch(std::exception &e){
-				LOG_POSEIDON_ERROR("std::exception thrown while accepting client: what = ", e.what());
+				LOG_POSEIDON_ERROR("std::exception thrown while accepting connection: what = ", e.what());
 			} catch(...){
-				LOG_POSEIDON_ERROR("Unknown exception thrown while accepting client.");
+				LOG_POSEIDON_ERROR("Unknown exception thrown while accepting connection.");
 			}
 			epollTimeout = 0;
 		}
@@ -320,7 +323,8 @@ void daemonLoop(){
 				virtualSharedFromThis<TcpSessionBase>());
 			try {
 				if(event.events & EPOLLHUP){
-					LOG_POSEIDON_INFO("Socket hung up, ip = ", session->getRemoteIp());
+					LOG_POSEIDON_INFO("Socket hung up, remote is ",
+						session->getRemoteIp(), ':',  session->getRemotePort());
 					remove(session);
 					continue;
 				}
@@ -385,8 +389,9 @@ void daemonLoop(){
 					if(bytesWritten <= 0){
 						break;
 					}
-					LOG_POSEIDON_TRACE("Flushed ", bytesWritten, " byte(s) to ", session->getRemoteIp(),
-						": ", HexEncoder(data.get(), bytesWritten));
+					LOG_POSEIDON_TRACE("Flushed ", bytesWritten, " byte(s) to ",
+						session->getRemoteIp(), ':',  session->getRemotePort(),
+						", hex = ", HexEncoder(data.get(), bytesWritten));
 				}
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while flush data: what = ", e.what());

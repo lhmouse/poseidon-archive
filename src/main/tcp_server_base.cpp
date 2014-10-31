@@ -150,6 +150,7 @@ boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 			new SslImplClient(m_sslImplServer->createSsl(), session->m_socket.get()));
 		session->initSsl(STD_MOVE(sslImpl));
 	}
-	LOG_POSEIDON_INFO("Client ", session->getRemoteIp(), " has connected.");
+	LOG_POSEIDON_INFO("Client connected from ",
+		session->getRemoteIp(), ':', session->getRemotePort());
 	return session;
 }
