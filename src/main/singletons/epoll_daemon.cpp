@@ -297,7 +297,8 @@ void daemonLoop(){
 				if(!session){
 					continue;
 				}
-				LOG_POSEIDON_DEBUG("Accepted socket connection from ", session->getRemoteIp());
+				LOG_POSEIDON_DEBUG("Accepted socket connection from ",
+					session->getRemoteIp(), ':', session->getRemotePort());
 				add(session);
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while accepting client: what = ", e.what());
