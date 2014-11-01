@@ -4,7 +4,7 @@
 using namespace Poseidon;
 
 PlayerServer::PlayerServer(std::size_t category, std::string bindAddr, unsigned bindPort,
-	const SharedNtmbs &cert, const SharedNtmbs &privateKey)
+	const char *cert, const char *privateKey)
 	: TcpServerBase(STD_MOVE(bindAddr), bindPort, cert, privateKey)
 	, m_category(category)
 {

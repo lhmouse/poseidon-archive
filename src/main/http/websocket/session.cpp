@@ -87,14 +87,16 @@ protected:
 		PROFILE_ME;
 
 		try {
-			const AUTO(servlet, WebSocketServletManager::getServlet(m_session->getCategory(), m_uri));
+			const AUTO(servlet, WebSocketServletManager::getServlet(
+				m_session->getCategory(), m_uri.c_str()));
 			if(!servlet){
 				LOG_POSEIDON_WARN("No servlet for URI ", m_uri);
 				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE);
 				return;
 			}
 
-			LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_payload.size());
+			LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", m_uri,
+				", payload size = ", m_payload.size());
 			(*servlet)(m_session, m_opcode, STD_MOVE(m_payload));
 		} catch(WebSocketException &e){
 			LOG_POSEIDON_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(),

@@ -6,7 +6,7 @@
 using namespace Poseidon;
 
 HttpServer::HttpServer(std::size_t category, std::string bindAddr, unsigned bindPort,
-	const SharedNtmbs &cert, const SharedNtmbs &privateKey, const std::vector<std::string> &authInfo)
+	const char *cert, const char *privateKey, const std::vector<std::string> &authInfo)
 	: TcpServerBase(STD_MOVE(bindAddr), bindPort, cert, privateKey)
 	, m_category(category)
 {

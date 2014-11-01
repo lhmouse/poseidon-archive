@@ -55,7 +55,7 @@ void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
-	if(!ModuleManager::loadNoThrow(name)){
+	if(!ModuleManager::loadNoThrow(name.c_str())){
 		LOG_POSEIDON_WARN("Failed to load module: ", name);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
@@ -70,7 +70,7 @@ void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParam
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
-	if(!ModuleManager::unload(realPath)){
+	if(!ModuleManager::unload(realPath.c_str())){
 		LOG_POSEIDON_WARN("Module not loaded: ", realPath);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
@@ -235,11 +235,11 @@ void SystemHttpServer::start(){
 
 	LOG_POSEIDON_INFO("Initializing system HTTP server on ", bind, ':', port);
 	g_systemServer = EpollDaemon::registerHttpServer(
-		category, bind, port, certificate, privateKey, authUserPasses);
+		category, bind, port, certificate.c_str(), privateKey.c_str(), authUserPasses);
 
 	LOG_POSEIDON_INFO("Created system HTTP sevlet on ", path);
 	g_systemServlet = HttpServletManager::registerServlet(
-		category, path, boost::bind(&servletProc, _1, _2, path.size()));
+		category, path.c_str(), boost::bind(&servletProc, _1, _2, path.size()));
 
 	LOG_POSEIDON_INFO("Done initializing system HTTP server.");
 }

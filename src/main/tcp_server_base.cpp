@@ -18,7 +18,7 @@ private:
 	SslCtxPtr m_sslCtx;
 
 public:
-	SslImplServer(const SharedNtmbs &cert, const SharedNtmbs &privateKey){
+	SslImplServer(const char *cert, const char *privateKey){
 		requireSsl();
 
 		m_sslCtx.reset(::SSL_CTX_new(::TLSv1_server_method()));
@@ -29,12 +29,12 @@ public:
 		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, VAL_INIT);
 
 		LOG_POSEIDON_INFO("Loading server certificate: ", cert);
-		if(::SSL_CTX_use_certificate_file(m_sslCtx.get(), cert.get(), SSL_FILETYPE_PEM) != 1){
+		if(::SSL_CTX_use_certificate_file(m_sslCtx.get(), cert, SSL_FILETYPE_PEM) != 1){
 			DEBUG_THROW(Exception, "::SSL_CTX_use_certificate_file() failed");
 		}
 
 		LOG_POSEIDON_INFO("Loading server private key: ", privateKey);
-		if(::SSL_CTX_use_PrivateKey_file(m_sslCtx.get(), privateKey.get(), SSL_FILETYPE_PEM) != 1){
+		if(::SSL_CTX_use_PrivateKey_file(m_sslCtx.get(), privateKey, SSL_FILETYPE_PEM) != 1){
 			DEBUG_THROW(Exception, "::SSL_CTX_use_PrivateKey_file() failed");
 		}
 
@@ -73,7 +73,7 @@ protected:
 };
 
 TcpServerBase::TcpServerBase(std::string bindAddr, unsigned bindPort,
-	const SharedNtmbs &cert, const SharedNtmbs &privateKey)
+	const char *cert, const char *privateKey)
 	: m_bindAddr(STD_MOVE(bindAddr)), m_bindPort(bindPort)
 {
 	union {
@@ -120,7 +120,7 @@ TcpServerBase::TcpServerBase(std::string bindAddr, unsigned bindPort,
 		DEBUG_THROW(SystemError);
 	}
 
-	if(cert){
+	if(cert && (cert[0] != 0)){
 		m_sslImplServer.reset(new SslImplServer(cert, privateKey));
 	}
 

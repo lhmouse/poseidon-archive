@@ -29,7 +29,16 @@ struct IpPort {
 			ip.forkOwning();
 		}
 	}
+
+	void swap(IpPort &rhs) NOEXCEPT {
+		ip.swap(rhs.ip);
+		std::swap(port, rhs.port);
+	}
 };
+
+static inline void swap(IpPort &lhs, IpPort &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
 
 extern std::ostream &operator<<(std::ostream &os, const IpPort &rhs);
 extern std::wostream &operator<<(std::wostream &os, const IpPort &rhs);

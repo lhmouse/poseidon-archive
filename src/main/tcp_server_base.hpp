@@ -26,8 +26,7 @@ private:
 	boost::scoped_ptr<SslImplServer> m_sslImplServer;
 
 public:
-	TcpServerBase(std::string bindAddr, unsigned bindPort,
-		const SharedNtmbs &cert, const SharedNtmbs &privateKey);
+	TcpServerBase(std::string bindAddr, unsigned bindPort, const char *cert, const char *privateKey);
 	virtual ~TcpServerBase();
 
 protected:

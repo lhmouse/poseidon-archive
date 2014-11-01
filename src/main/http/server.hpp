@@ -13,7 +13,7 @@ private:
 
 public:
 	HttpServer(std::size_t category, std::string bindAddr, unsigned bindPort,
-		const SharedNtmbs &cert, const SharedNtmbs &privateKey, const std::vector<std::string> &authInfo);
+		const char *cert, const char *privateKey, const std::vector<std::string> &authInfo);
 
 protected:
 	boost::shared_ptr<class TcpSessionBase> onClientConnect(ScopedFile client) const;

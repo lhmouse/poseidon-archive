@@ -29,16 +29,13 @@ public:
 			forkOwning();
 		}
 	}
-	SharedNtmbs(const std::string &str, bool owning = false)
+	explicit SharedNtmbs(const std::string &str, bool owning = false)
 		: m_ptr(boost::shared_ptr<void>(), str.c_str())
 	{
 		if(owning){
 			forkOwning();
 		}
 	}
-#ifdef POSEIDON_CXX11
-	SharedNtmbs(std::string &&, bool owning = false) = delete;
-#endif
 	SharedNtmbs(const SharedNtmbs &rhs, bool owning)
 		: m_ptr(rhs.m_ptr)
 	{

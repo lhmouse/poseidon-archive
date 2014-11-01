@@ -483,10 +483,11 @@ void EpollDaemon::touchSession(const boost::shared_ptr<TcpSessionBase> &session)
 }
 
 boost::shared_ptr<PlayerServer> EpollDaemon::registerPlayerServer(
-	std::size_t category, const std::string &bindAddr, unsigned bindPort,
-	const std::string &cert, const std::string &privateKey)
+	std::size_t category, std::string bindAddr, unsigned bindPort,
+	const char *cert, const char *privateKey)
 {
-	AUTO(newServer, boost::make_shared<PlayerServer>(category, bindAddr, bindPort, cert, privateKey));
+	AUTO(newServer, boost::make_shared<PlayerServer>(
+		category, STD_MOVE(bindAddr), bindPort, cert, privateKey));
 	{
 		const boost::mutex::scoped_lock lock(g_serverMutex);
 		g_servers.push_back(newServer);
@@ -494,10 +495,11 @@ boost::shared_ptr<PlayerServer> EpollDaemon::registerPlayerServer(
 	return newServer;
 }
 boost::shared_ptr<HttpServer> EpollDaemon::registerHttpServer(
-	std::size_t category, const std::string &bindAddr, unsigned bindPort,
-	const std::string &cert, const std::string &privateKey, const std::vector<std::string> &auth)
+	std::size_t category, std::string bindAddr, unsigned bindPort,
+	const char *cert, const char *privateKey, const std::vector<std::string> &auth)
 {
-	AUTO(newServer, boost::make_shared<HttpServer>(category, bindAddr, bindPort, cert, privateKey, auth));
+	AUTO(newServer, boost::make_shared<HttpServer>(
+		category, STD_MOVE(bindAddr), bindPort, cert, privateKey, auth));
 	{
 		const boost::mutex::scoped_lock lock(g_serverMutex);
 		g_servers.push_back(newServer);

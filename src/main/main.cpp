@@ -75,7 +75,7 @@ void run(){
 	const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
 	for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
 		LOG_POSEIDON_INFO("Loading init module: ", *it);
-		ModuleManager::load(*it);
+		ModuleManager::load(it->c_str());
 	}
 	MySqlDaemon::waitForAllAsyncOperations();
 

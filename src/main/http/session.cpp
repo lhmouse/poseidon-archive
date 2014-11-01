@@ -133,7 +133,7 @@ protected:
 		assert(!m_uri.empty());
 
 		try {
-			const AUTO(servlet, HttpServletManager::getServlet(m_session->getCategory(), m_uri));
+			const AUTO(servlet, HttpServletManager::getServlet(m_session->getCategory(), m_uri.c_str()));
 			if(!servlet){
 				LOG_POSEIDON_WARN("No handler matches URI ", m_uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
@@ -268,7 +268,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					}
 					std::string value(valueBegin, m_line.end());
 					m_line.erase(m_line.begin() + delimPos, m_line.end());
-					m_headers.append(m_line, STD_MOVE(value));
+					m_headers.append(m_line.c_str(), STD_MOVE(value));
 				} else {
 					m_state = ST_CONTENTS;
 
