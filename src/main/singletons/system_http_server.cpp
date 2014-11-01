@@ -132,14 +132,14 @@ void onConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
 	AUTO(snapshot, EpollDaemon::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-		escapeCsvField(str, it->remoteIp);
+		escapeCsvField(str, it->remote.ip);
 		contents.put(str);
 		char temp[256];
-		unsigned len = std::sprintf(temp, ",%u,", it->remotePort);
+		unsigned len = std::sprintf(temp, ",%u,", it->remote.port);
 		contents.put(temp, len);
-		escapeCsvField(str, it->localIp);
+		escapeCsvField(str, it->local.ip);
 		contents.put(str);
-		len = std::sprintf(temp, ",%u,%llu\r\n", it->localPort, it->usOnline);
+		len = std::sprintf(temp, ",%u,%llu\r\n", it->local.port, it->usOnline);
 		contents.put(temp, len);
 	}
 
@@ -233,9 +233,10 @@ void SystemHttpServer::start(){
 		path.push_back('/');
 	}
 
-	LOG_POSEIDON_INFO("Initializing system HTTP server on ", bind, ':', port);
-	g_systemServer = EpollDaemon::registerHttpServer(
-		category, bind, port, certificate.c_str(), privateKey.c_str(), authUserPasses);
+	const IpPort bindAddr(bind.c_str(), port);
+	LOG_POSEIDON_INFO("Initializing system HTTP server on ", bindAddr);
+	g_systemServer = EpollDaemon::registerHttpServer(category, bindAddr,
+		certificate.c_str(), privateKey.c_str(), authUserPasses);
 
 	LOG_POSEIDON_INFO("Created system HTTP sevlet on ", path);
 	g_systemServlet = HttpServletManager::registerServlet(

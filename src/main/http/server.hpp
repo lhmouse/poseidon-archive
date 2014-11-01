@@ -12,7 +12,7 @@ private:
 	boost::shared_ptr<std::set<std::string> > m_authInfo;
 
 public:
-	HttpServer(std::size_t category, std::string bindAddr, unsigned bindPort,
+	HttpServer(std::size_t category, const IpPort &bindAddr,
 		const char *cert, const char *privateKey, const std::vector<std::string> &authInfo);
 
 protected:

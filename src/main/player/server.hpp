@@ -10,7 +10,7 @@ private:
 	const std::size_t m_category;
 
 public:
-	PlayerServer(std::size_t category, std::string bindAddr, unsigned bindPort,
+	PlayerServer(std::size_t category, const IpPort &bindAddr,
 		const char *cert, const char *privateKey);
 
 protected:

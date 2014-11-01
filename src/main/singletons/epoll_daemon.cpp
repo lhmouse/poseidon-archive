@@ -455,15 +455,8 @@ std::vector<EpollSnapshotItem> EpollDaemon::snapshot(){
 	for(AUTO(it, g_sessions.begin()); it != g_sessions.end(); ++it){
 		ret.push_back(EpollSnapshotItem());
 		AUTO_REF(item, ret.back());
-
-		AUTO_REF(remote, it->session->getRemoteInfo());
-		item.remoteIp = remote.ip;
-		item.remotePort = remote.port;
-
-		AUTO_REF(local, it->session->getLocalInfo());
-		item.localIp = local.ip;
-		item.localPort = local.port;
-
+		item.remote = it->session->getRemoteInfo();
+		item.local = it->session->getLocalInfo();
 		item.usOnline = now - it->session->getCreatedTime();
 	}
 	return ret;
@@ -482,24 +475,21 @@ void EpollDaemon::touchSession(const boost::shared_ptr<TcpSessionBase> &session)
 	touch(session);
 }
 
-boost::shared_ptr<PlayerServer> EpollDaemon::registerPlayerServer(
-	std::size_t category, std::string bindAddr, unsigned bindPort,
-	const char *cert, const char *privateKey)
+boost::shared_ptr<PlayerServer> EpollDaemon::registerPlayerServer(std::size_t category,
+	const IpPort &bindAddr, const char *cert, const char *privateKey)
 {
-	AUTO(newServer, boost::make_shared<PlayerServer>(
-		category, STD_MOVE(bindAddr), bindPort, cert, privateKey));
+	AUTO(newServer, boost::make_shared<PlayerServer>(category, bindAddr, cert, privateKey));
 	{
 		const boost::mutex::scoped_lock lock(g_serverMutex);
 		g_servers.push_back(newServer);
 	}
 	return newServer;
 }
-boost::shared_ptr<HttpServer> EpollDaemon::registerHttpServer(
-	std::size_t category, std::string bindAddr, unsigned bindPort,
-	const char *cert, const char *privateKey, const std::vector<std::string> &auth)
+boost::shared_ptr<HttpServer> EpollDaemon::registerHttpServer(std::size_t category,
+	const IpPort &bindAddr, const char *cert, const char *privateKey,
+	const std::vector<std::string> &auth)
 {
-	AUTO(newServer, boost::make_shared<HttpServer>(
-		category, STD_MOVE(bindAddr), bindPort, cert, privateKey, auth));
+	AUTO(newServer, boost::make_shared<HttpServer>(category, bindAddr, cert, privateKey, auth));
 	{
 		const boost::mutex::scoped_lock lock(g_serverMutex);
 		g_servers.push_back(newServer);

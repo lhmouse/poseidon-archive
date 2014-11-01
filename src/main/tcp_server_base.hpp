@@ -7,6 +7,7 @@
 #include <boost/shared_ptr.hpp>
 #include "raii.hpp"
 #include "shared_ntmbs.hpp"
+#include "ip_port.hpp"
 
 namespace Poseidon {
 
@@ -19,14 +20,13 @@ private:
 	class SslImplClient;
 
 private:
-	const std::string m_bindAddr;
-	const unsigned m_bindPort;
+	const IpPort m_localInfo;
+	const ScopedFile m_listen;
 
-	ScopedFile m_listen;
 	boost::scoped_ptr<SslImplServer> m_sslImplServer;
 
 public:
-	TcpServerBase(std::string bindAddr, unsigned bindPort, const char *cert, const char *privateKey);
+	TcpServerBase(const IpPort &bindAddr, const char *cert, const char *privateKey);
 	virtual ~TcpServerBase();
 
 protected:
@@ -34,11 +34,8 @@ protected:
 	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(ScopedFile client) const = 0;
 
 public:
-	const std::string &getLocalIp() const {
-		return m_bindAddr;
-	}
-	unsigned getLocalPort() const {
-		return m_bindPort;
+	const IpPort &getLocalInfo() const {
+		return m_localInfo;
 	}
 
 	boost::shared_ptr<TcpSessionBase> tryAccept() const;

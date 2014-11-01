@@ -72,10 +72,7 @@ protected:
 	}
 };
 
-TcpServerBase::TcpServerBase(std::string bindAddr, unsigned bindPort,
-	const char *cert, const char *privateKey)
-	: m_bindAddr(STD_MOVE(bindAddr)), m_bindPort(bindPort)
-{
+ScopedFile createListenSocket(const IpPort &addr){
 	union {
 		::sockaddr sa;
 		::sockaddr_in sin;
@@ -83,51 +80,56 @@ TcpServerBase::TcpServerBase(std::string bindAddr, unsigned bindPort,
 	} u;
 	::socklen_t salen = sizeof(u);
 
-	if(::inet_pton(AF_INET, m_bindAddr.c_str(), &u.sin.sin_addr) == 1){
+	if(::inet_pton(AF_INET, addr.ip.get(), &u.sin.sin_addr) == 1){
 		u.sin.sin_family = AF_INET;
-		storeBe(u.sin.sin_port, m_bindPort);
+		storeBe(u.sin.sin_port, addr.port);
 		salen = sizeof(::sockaddr_in);
-	} else if(::inet_pton(AF_INET6, m_bindAddr.c_str(), &u.sin6.sin6_addr) == 1){
+	} else if(::inet_pton(AF_INET6, addr.ip.get(), &u.sin6.sin6_addr) == 1){
 		u.sin6.sin6_family = AF_INET6;
-		storeBe(u.sin6.sin6_port, m_bindPort);
+		storeBe(u.sin6.sin6_port, addr.port);
 		salen = sizeof(::sockaddr_in6);
 	} else {
-		LOG_POSEIDON_ERROR("Unknown address format: ", m_bindAddr);
+		LOG_POSEIDON_ERROR("Unknown address format: ", addr.ip);
 		DEBUG_THROW(Exception, "Unknown address format");
 	}
 
-	m_listen.reset(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
-	if(!m_listen){
+	ScopedFile listen(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
+	if(!listen){
 		DEBUG_THROW(SystemError);
 	}
 	const int TRUE_VALUE = true;
-	if(::setsockopt(m_listen.get(),
+	if(::setsockopt(listen.get(),
 		SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0)
 	{
 		DEBUG_THROW(SystemError);
 	}
-	const int flags = ::fcntl(m_listen.get(), F_GETFL);
+	const int flags = ::fcntl(listen.get(), F_GETFL);
 	if(flags == -1){
 		DEBUG_THROW(SystemError);
 	}
-	if(::fcntl(m_listen.get(), F_SETFL, flags | O_NONBLOCK) != 0){
+	if(::fcntl(listen.get(), F_SETFL, flags | O_NONBLOCK) != 0){
 		DEBUG_THROW(SystemError);
 	}
-	if(::bind(m_listen.get(), &u.sa, salen)){
+	if(::bind(listen.get(), &u.sa, salen)){
 		DEBUG_THROW(SystemError);
 	}
-	if(::listen(m_listen.get(), SOMAXCONN)){
+	if(::listen(listen.get(), SOMAXCONN)){
 		DEBUG_THROW(SystemError);
 	}
+	return listen;
+}
 
+TcpServerBase::TcpServerBase(const IpPort &bindAddr, const char *cert, const char *privateKey)
+	: m_localInfo(bindAddr, true), m_listen(createListenSocket(m_localInfo))
+{
 	if(cert && (cert[0] != 0)){
 		m_sslImplServer.reset(new SslImplServer(cert, privateKey));
 	}
 
-	LOG_POSEIDON_INFO("Created ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_bindAddr, ':', m_bindPort);
+	LOG_POSEIDON_INFO("Created ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_localInfo);
 }
 TcpServerBase::~TcpServerBase(){
-	LOG_POSEIDON_INFO("Destroyed ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_bindAddr, ':', m_bindPort);
+	LOG_POSEIDON_INFO("Destroyed ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_localInfo);
 }
 
 boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
