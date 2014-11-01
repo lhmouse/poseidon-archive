@@ -49,9 +49,9 @@ struct IncrementalAlloc {
 		if(k / sizeof(T) != n + incSize / sizeof(T)){
 			throw std::bad_alloc();
 		}
-		char *const ptr = reinterpret_cast<char *>(::operator new(k));
-		incPtr = ptr + k - incSize;
-		return reinterpret_cast<pointer>(ptr);
+		char *const p = reinterpret_cast<char *>(::operator new(k));
+		incPtr = p + k - incSize;
+		return reinterpret_cast<pointer>(p);
 	}
 	void deallocate(pointer p, size_type){
 		::operator delete(p);
