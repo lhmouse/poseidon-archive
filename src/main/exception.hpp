@@ -44,8 +44,7 @@ private:
 	const unsigned m_code;
 
 public:
-	ProtocolException(const char *file, std::size_t line,
-		std::string what, unsigned code);
+	ProtocolException(const char *file, std::size_t line, std::string what, unsigned code);
 
 public:
 	unsigned code() const NOEXCEPT {

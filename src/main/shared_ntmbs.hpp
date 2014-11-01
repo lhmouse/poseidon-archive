@@ -36,6 +36,9 @@ public:
 			forkOwning();
 		}
 	}
+#ifdef POSEIDON_CXX11
+	SharedNtmbs(std::string &&, bool owning = false) = delete;
+#endif
 	SharedNtmbs(const SharedNtmbs &rhs, bool owning)
 		: m_ptr(rhs.m_ptr)
 	{
