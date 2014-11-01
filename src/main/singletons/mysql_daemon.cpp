@@ -86,7 +86,7 @@ volatile std::size_t g_waiting = 0;
 boost::condition_variable g_queueEmpty;
 
 bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
-	LOG_POSEIDON_INFO("Connecting to MySQL server...");
+	LOG_POSEIDON_INFO("Connecting to MySQL server: ", g_databaseServer);
 	try {
 		connection.reset(::get_driver_instance()->connect(
 			g_databaseServer, g_databaseUsername, g_databasePassword));
