@@ -16,6 +16,6 @@ MODULE_RAII_BEGIN
 			config.get<boost::uint16_t>("http_server_port", 8860)),
 		config.get<std::string>("http_server_certificate", "").c_str(),
 		config.get<std::string>("http_server_private_key", "").c_str(),
-		config.getAll<std::string>("http_server_auth_user_pass", "")
+		config.getAll<std::string>("http_server_auth_user_pass")
 	);
 MODULE_RAII_END
