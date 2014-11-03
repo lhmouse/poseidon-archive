@@ -3,9 +3,8 @@
 #include "tcp_session_base.hpp"
 #define POSEIDON_TCP_SESSION_SSL_IMPL_
 #include "tcp_session_ssl_impl.hpp"
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <errno.h>
+#define POSEIDON_SOCK_ADDR_
+#include "sock_addr.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include "exception.hpp"
@@ -73,44 +72,18 @@ protected:
 };
 
 ScopedFile createListenSocket(const IpPort &addr){
-	union {
-		::sockaddr sa;
-		::sockaddr_in sin;
-		::sockaddr_in6 sin6;
-	} u;
-	::socklen_t salen = sizeof(u);
+	unsigned salen;
+	SockAddr sa = getSockAddrFromIpPort(salen, addr);
 
-	if(::inet_pton(AF_INET, addr.ip.get(), &u.sin.sin_addr) == 1){
-		u.sin.sin_family = AF_INET;
-		storeBe(u.sin.sin_port, addr.port);
-		salen = sizeof(::sockaddr_in);
-	} else if(::inet_pton(AF_INET6, addr.ip.get(), &u.sin6.sin6_addr) == 1){
-		u.sin6.sin6_family = AF_INET6;
-		storeBe(u.sin6.sin6_port, addr.port);
-		salen = sizeof(::sockaddr_in6);
-	} else {
-		LOG_POSEIDON_ERROR("Unknown address format: ", addr.ip);
-		DEBUG_THROW(Exception, "Unknown address format");
-	}
-
-	ScopedFile listen(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
+	ScopedFile listen(::socket(sa.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
 	if(!listen){
 		DEBUG_THROW(SystemError);
 	}
 	const int TRUE_VALUE = true;
-	if(::setsockopt(listen.get(),
-		SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0)
-	{
+	if(::setsockopt(listen.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 		DEBUG_THROW(SystemError);
 	}
-	const int flags = ::fcntl(listen.get(), F_GETFL);
-	if(flags == -1){
-		DEBUG_THROW(SystemError);
-	}
-	if(::fcntl(listen.get(), F_SETFL, flags | O_NONBLOCK) != 0){
-		DEBUG_THROW(SystemError);
-	}
-	if(::bind(listen.get(), &u.sa, salen)){
+	if(::bind(listen.get(), &sa.sa, salen)){
 		DEBUG_THROW(SystemError);
 	}
 	if(::listen(listen.get(), SOMAXCONN)){
@@ -120,25 +93,25 @@ ScopedFile createListenSocket(const IpPort &addr){
 }
 
 TcpServerBase::TcpServerBase(const IpPort &bindAddr, const char *cert, const char *privateKey)
-	: m_localInfo(bindAddr, true), m_listen(createListenSocket(m_localInfo))
+	: SocketServerBase(createListenSocket(bindAddr))
 {
 	if(cert && (cert[0] != 0)){
 		m_sslImplServer.reset(new SslImplServer(cert, privateKey));
 	}
 
-	LOG_POSEIDON_INFO("Created ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_localInfo);
+	LOG_POSEIDON_INFO("Created ", (m_sslImplServer ? "SSL " : ""), "TCP server on ", getLocalInfo());
 }
 TcpServerBase::~TcpServerBase(){
-	LOG_POSEIDON_INFO("Destroyed ", (m_sslImplServer ? "SSL " : ""), "socket server on ", m_localInfo);
+	LOG_POSEIDON_INFO("Destroyed ", (m_sslImplServer ? "SSL " : ""), "TCP server on ", getLocalInfo());
 }
 
-boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
-	ScopedFile client(::accept(m_listen.get(), VAL_INIT, VAL_INIT));
+bool TcpServerBase::poll() const {
+	ScopedFile client(::accept(getFd(), VAL_INIT, VAL_INIT));
 	if(!client){
 		if(errno != EAGAIN){
 			DEBUG_THROW(SystemError);
 		}
-		return VAL_INIT;
+		return false;
 	}
 	AUTO(session, onClientConnect(STD_MOVE(client)));
 	if(!session){
@@ -152,6 +125,7 @@ boost::shared_ptr<TcpSessionBase> TcpServerBase::tryAccept() const {
 			new SslImplClient(m_sslImplServer->createSsl(), session->m_socket.get()));
 		session->initSsl(STD_MOVE(sslImpl));
 	}
-	LOG_POSEIDON_INFO("Client connected from ", session->getRemoteInfo());
-	return session;
+	EpollDaemon::addSession(session);
+	LOG_POSEIDON_INFO("Accepted TCP connection from ", session->getRemoteInfo());
+	return true;
 }

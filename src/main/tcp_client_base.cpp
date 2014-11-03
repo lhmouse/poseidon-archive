@@ -3,7 +3,9 @@
 #include "tcp_session_base.hpp"
 #define POSEIDON_TCP_SESSION_SSL_IMPL_
 #include "tcp_session_ssl_impl.hpp"
-#include <arpa/inet.h>
+#define POSEIDON_SOCK_ADDR_
+#include "sock_addr.hpp"
+#include <boost/static_assert.hpp>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
@@ -38,32 +40,10 @@ public:
 	}
 } g_clientSslCtx;
 
-ScopedFile parseAddrPort(void *sa, unsigned &salen, unsigned maxSalen, const IpPort &addr){
-	union {
-		::sockaddr sa;
-		::sockaddr_in sin;
-		::sockaddr_in6 sin6;
-	} u;
+ScopedFile createSocket(SockAddr &sa, unsigned &salen, const IpPort &addr){
+	sa = getSockAddrFromIpPort(salen, addr);
 
-	if(::inet_pton(AF_INET, addr.ip.get(), &u.sin.sin_addr) == 1){
-		u.sin.sin_family = AF_INET;
-		storeBe(u.sin.sin_port, addr.port);
-		salen = sizeof(::sockaddr_in);
-	} else if(::inet_pton(AF_INET6, addr.ip.get(), &u.sin6.sin6_addr) == 1){
-		u.sin6.sin6_family = AF_INET6;
-		storeBe(u.sin6.sin6_port, addr.port);
-		salen = sizeof(::sockaddr_in6);
-	} else {
-		LOG_POSEIDON_ERROR("Unknown address format: ", addr.ip);
-		DEBUG_THROW(Exception, "Unknown address format");
-	}
-	if(maxSalen < salen){
-		LOG_POSEIDON_ERROR("Buffer for sa is too small: ",
-			maxSalen, " is provided but ", salen, " is required.");
-	}
-	std::memcpy(sa, &u, salen);
-
-	ScopedFile client(::socket(u.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
+	ScopedFile client(::socket(sa.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
 	if(!client){
 		DEBUG_THROW(SystemError);
 	}
@@ -95,8 +75,10 @@ protected:
 };
 
 TcpClientBase::TcpClientBase(const IpPort &addr)
-	: TcpSessionBase(parseAddrPort(m_sa, m_salen, sizeof(m_sa), addr))
+	: TcpSessionBase(createSocket(reinterpret_cast<SockAddr &>(m_sa), m_salen, addr))
 {
+	BOOST_STATIC_ASSERT(sizeof(m_sa) >= sizeof(SockAddr));
+
 	if(::connect(m_socket.get(), reinterpret_cast<const ::sockaddr *>(m_sa), m_salen) != 0){
 		if(errno != EINPROGRESS){
 			DEBUG_THROW(SystemError);

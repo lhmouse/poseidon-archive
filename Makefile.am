@@ -36,8 +36,10 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/job_base.cpp	\
 	src/main/tcp_session_base.cpp	\
 	src/main/tcp_session_ssl_impl.cpp	\
+	src/main/socket_server_base.cpp	\
 	src/main/tcp_server_base.cpp	\
 	src/main/tcp_client_base.cpp	\
+	src/main/udp_server_base.cpp	\
 	src/main/event_base.cpp	\
 	src/main/ip_port.cpp	\
 	src/main/hash.cpp	\

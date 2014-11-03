@@ -2,7 +2,8 @@
 #include "tcp_session_base.hpp"
 #define POSEIDON_TCP_SESSION_SSL_IMPL_
 #include "tcp_session_ssl_impl.hpp"
-#include <arpa/inet.h>
+#define POSEIDON_SOCK_ADDR_
+#include "sock_addr.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -14,38 +15,6 @@
 #include "exception.hpp"
 #include "utilities.hpp"
 using namespace Poseidon;
-
-namespace {
-
-union SockAddr {
-	::sockaddr sa;
-	::sockaddr_in sin;
-	::sockaddr_in6 sin6;
-};
-
-IpPort getAddrPortFromSockAddr(const SockAddr &sa){
-	char ip[64];
-	unsigned port;
-	const char *ret;
-	if(sa.sa.sa_family == AF_INET){
-		ret = ::inet_ntop(AF_INET, &sa.sin.sin_addr, ip, sizeof(ip));
-		port = loadBe(sa.sin.sin_port);
-	} else if(sa.sa.sa_family == AF_INET6){
-		ret = ::inet_ntop(AF_INET6, &sa.sin6.sin6_addr, ip, sizeof(ip));
-		port = loadBe(sa.sin6.sin6_port);
-	} else {
-		LOG_POSEIDON_WARN("Unknown IP protocol ", sa.sa.sa_family);
-		DEBUG_THROW(Exception, "Unknown IP protocol");
-	}
-	if(!ret){
-		const int code = errno;
-		LOG_POSEIDON_WARN("Failed to format IP address to string.");
-		DEBUG_THROW(SystemError, code);
-	}
-	return IpPort(SharedNtmbs(ip, true), port);
-}
-
-}
 
 TcpSessionBase::TcpSessionBase(ScopedFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getMonoClock())
@@ -65,8 +34,8 @@ TcpSessionBase::TcpSessionBase(ScopedFile socket)
 }
 TcpSessionBase::~TcpSessionBase(){
 	if(atomicLoad(m_peerInfo.fetched)){
-		LOG_POSEIDON_INFO("Destroyed TCP session, remote = ",
-			m_peerInfo.remote, ", local = ", m_peerInfo.local);
+		LOG_POSEIDON_INFO("Destroyed TCP session, remote = ", m_peerInfo.remote,
+			", local = ", m_peerInfo.local);
 	} else {
 		LOG_POSEIDON_INFO("A TCP session that wasn't fully established has been closed.");
 	}
@@ -111,7 +80,6 @@ void TcpSessionBase::fetchPeerInfo() const {
 	if(atomicLoad(m_peerInfo.fetched)){
 		return;
 	}
-
 	const boost::mutex::scoped_lock lock(m_peerInfo.mutex);
 	if(atomicLoad(m_peerInfo.fetched)){
 		return;
@@ -126,7 +94,7 @@ void TcpSessionBase::fetchPeerInfo() const {
 		LOG_POSEIDON_ERROR("Failed to get remote socket addr.");
 		DEBUG_THROW(SystemError, code);
 	}
-	m_peerInfo.remote = getAddrPortFromSockAddr(sa);
+	m_peerInfo.remote = getIpPortFromSockAddr(sa);
 
 	salen = sizeof(sa);
 	if(::getsockname(m_socket.get(), &sa.sa, &salen) != 0){
@@ -134,10 +102,10 @@ void TcpSessionBase::fetchPeerInfo() const {
 		LOG_POSEIDON_ERROR("Failed to get local socket addr.");
 		DEBUG_THROW(SystemError, code);
 	}
-	m_peerInfo.local = getAddrPortFromSockAddr(sa);
+	m_peerInfo.local = getIpPortFromSockAddr(sa);
 
-	LOG_POSEIDON_INFO("Established TCP session, remote = ",
-	    m_peerInfo.remote, ", local = ", m_peerInfo.local);
+	LOG_POSEIDON_INFO("Established TCP session, remote = ", m_peerInfo.remote,
+		", local = ", m_peerInfo.local);
 
 	atomicStore(m_peerInfo.fetched, true);
 }

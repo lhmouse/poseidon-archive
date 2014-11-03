@@ -14,6 +14,7 @@
 #define POSEIDON_TCP_SESSION_IMPL_
 #include "../tcp_session_base.hpp"
 #include "../tcp_session_impl.hpp"
+#include "../socket_server_base.hpp"
 #include "../multi_index_map.hpp"
 #include "../profiler.hpp"
 #include "../player/server.hpp"
@@ -84,7 +85,7 @@ boost::mutex g_sessionMutex;
 SessionMap g_sessions;
 
 boost::mutex g_serverMutex;
-std::list<boost::weak_ptr<const TcpServerBase> > g_servers;
+std::list<boost::weak_ptr<const SocketServerBase> > g_servers;
 
 void add(const boost::shared_ptr<TcpSessionBase> &session){
 	const AUTO(now, getMonoClock());
@@ -176,7 +177,7 @@ void daemonLoop(){
 
 	std::size_t epollTimeout = 0;
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
-	std::vector<boost::shared_ptr<const TcpServerBase> > servers;
+	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 
 	while(atomicLoad(g_running)){
 		// 第一部分，处理可接收的数据。
@@ -293,12 +294,9 @@ void daemonLoop(){
 		}
 		for(AUTO(it, servers.begin()); it != servers.end(); ++it){
 			try {
-				AUTO(session, (*it)->tryAccept());
-				if(!session){
+				if(!(*it)->poll()){
 					continue;
 				}
-				LOG_POSEIDON_DEBUG("Accepted TCP connection from ", session->getRemoteInfo());
-				add(session);
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while accepting connection: what = ", e.what());
 			} catch(...){
