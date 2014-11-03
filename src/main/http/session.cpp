@@ -38,11 +38,13 @@ StreamBuffer makeResponse(HttpStatus status, OptionalMap headers, StreamBuffer c
 		if(contentType.empty()){
 			contentType.assign("text/plain; charset=utf-8");
 		}
-		headers.set("Content-Length", boost::lexical_cast<std::string>(contents.size()));
 	}
+	AUTO_REF(contentLength, headers.create("Content-Length")->second);
+	boost::lexical_cast<std::string>(contents.size()).swap(contentLength);
+
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 		if(!it->second.empty()){
-			ret.put(it->first.get(), std::strlen(it->first.get()));
+			ret.put(it->first.get());
 			ret.put(": ");
 			ret.put(it->second.data(), it->second.size());
 			ret.put("\r\n");
