@@ -61,6 +61,7 @@ void run(){
 	PROFILE_ME;
 
 	START(MySqlDaemon);
+	START(JobDispatcher);
 	START(TimerDaemon);
 	START(EpollDaemon);
 

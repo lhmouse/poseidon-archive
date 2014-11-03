@@ -8,6 +8,9 @@ namespace Poseidon {
 class JobBase;
 
 struct JobDispatcher {
+	static void start();
+	static void stop();
+
 	// 调用 doModal() 之后会阻塞直到任意线程调用 quitModal() 为止。
 	static void doModal();
 	static void quitModal();
