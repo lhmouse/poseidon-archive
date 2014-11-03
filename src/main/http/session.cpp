@@ -58,7 +58,7 @@ StreamBuffer makeDefaultResponse(HttpStatus status, OptionalMap headers){
 	LOG_POSEIDON_DEBUG("Making default HTTP response: status = ", static_cast<unsigned>(status));
 
 	StreamBuffer contents;
-	if((static_cast<unsigned>(status) / 100 != 1) && (status != HTTP_NO_CONTENT)){
+	if(static_cast<unsigned>(status) / 100 >= 4){
 		headers.set("Content-Type", "text/html; charset=utf-8");
 
 		contents.put("<html><head><title>");
@@ -190,7 +190,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		const std::size_t maxRequestLength = HttpServletManager::getMaxRequestLength();
 		if(m_totalLength + size >= maxRequestLength){
 			LOG_POSEIDON_WARN("Request size is ", m_totalLength + size, ", max = ", maxRequestLength);
-			DEBUG_THROW(HttpException, HTTP_REQUEST_TOO_LARGE);
+			DEBUG_THROW(HttpException, HTTP_REQUEST_ENTITY_TOO_LARGE);
 		}
 		m_totalLength += size;
 
@@ -219,7 +219,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					m_verb = httpVerbFromString(parts[0].c_str());
 					if(m_verb == HTTP_INVALID_VERB){
 						LOG_POSEIDON_WARN("Bad HTTP verb: ", parts[0]);
-						DEBUG_THROW(HttpException, HTTP_BAD_METHOD);
+						DEBUG_THROW(HttpException, HTTP_METHOD_NOT_ALLOWED);
 					}
 
 					if(parts[1].empty() || (parts[1][0] != '/')){
@@ -252,7 +252,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					m_version = std::atoi(versionMajor) * 10000 + std::atoi(versionMinor);
 					if((m_version != 10000) && (m_version != 10001)){
 						LOG_POSEIDON_WARN("Bad HTTP version: ", parts[2]);
-						DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUP);
+						DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUPPORTED);
 					}
 
 					m_state = ST_HEADERS;
@@ -295,7 +295,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			if(m_authInfo){
 				OptionalMap authHeader;
 				authHeader.set("WWW-Authenticate", "Basic realm=\"Authentication required\"");
-				DEBUG_THROW(HttpException, HTTP_DENIED, STD_MOVE(authHeader));
+				DEBUG_THROW(HttpException, HTTP_UNAUTHORIZED, STD_MOVE(authHeader));
 			}
 
 			if(m_upgradedSession){
@@ -360,7 +360,7 @@ void HttpSession::onAllHeadersRead(){
 		static void onExpect(HttpSession *session, const std::string &val){
 			if(val != "100-continue"){
 				LOG_POSEIDON_WARN("Unknown HTTP header Expect: ", val);
-				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 			}
 			session->sendDefault(HTTP_CONTINUE);
 		}
@@ -371,16 +371,16 @@ void HttpSession::onAllHeadersRead(){
 		static void onUpgrade(HttpSession *session, const std::string &val){
 			if(session->m_version < 10001){
 				LOG_POSEIDON_WARN("HTTP 1.1 is required to use WebSocket");
-				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+				DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUPPORTED);
 			}
 			if(::strcasecmp(val.c_str(), "websocket") != 0){
 				LOG_POSEIDON_WARN("Unknown HTTP header Upgrade: ", val);
-				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 			}
 			AUTO_REF(version, session->m_headers.get("Sec-WebSocket-Version"));
 			if(version != "13"){
 				LOG_POSEIDON_WARN("Unknown HTTP header Sec-WebSocket-Version: ", version);
-				DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 			}
 
 			std::string key = session->m_headers.get("Sec-WebSocket-Key");
@@ -397,7 +397,7 @@ void HttpSession::onAllHeadersRead(){
 			headers.set("Upgrade", "websocket");
 			headers.set("Connection", "Upgrade");
 			headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
-			session->sendDefault(HTTP_SWITCH_PROTOCOLS, STD_MOVE(headers));
+			session->sendDefault(HTTP_SWITCHING_PROTOCOLS, STD_MOVE(headers));
 
 			session->m_upgradedSession = boost::make_shared<WebSocketSession>(
 				session->virtualSharedFromThis<HttpSession>());
@@ -417,14 +417,14 @@ void HttpSession::onAllHeadersRead(){
 			temp.at(pos) = 0;
 			if(::strcasecmp(temp.c_str(), "basic") != 0){
 				LOG_POSEIDON_WARN("Unknown auth method: ", temp.c_str());
-				DEBUG_THROW(HttpException, HTTP_NONE_ACCEPTABLE);
+				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 			}
 			temp.erase(temp.begin(), temp.begin() + pos + 1);
 			if(session->m_authInfo->find(temp) == session->m_authInfo->end()){
 				LOG_POSEIDON_WARN("Invalid username or password");
 				OptionalMap authHeader;
 				authHeader.set("WWW-Authenticate", "Basic realm=\"Invalid username or password\"");
-				DEBUG_THROW(HttpException, HTTP_DENIED, STD_MOVE(authHeader));
+				DEBUG_THROW(HttpException, HTTP_UNAUTHORIZED, STD_MOVE(authHeader));
 			}
 			session->m_authInfo.reset();
 		}

@@ -185,7 +185,7 @@ void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request, st
 	LOG_POSEIDON_INFO("Accepted system HTTP request from ", session->getRemoteInfo());
 
 	if(request.verb != HTTP_GET){
-		DEBUG_THROW(HttpException, HTTP_NOT_SUPPORTED);
+		DEBUG_THROW(HttpException, HTTP_METHOD_NOT_ALLOWED);
 	}
 
 	if(request.uri.size() < cut){
