@@ -127,8 +127,8 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	if(!v.empty()){
 		contents.put("Already loaded");
 	} else {
-		v.push_back(HttpServletManager::registerServlet(8860, "/meow/", &meowProc));
-		v.push_back(HttpServletManager::registerServlet(8860, "/meow/meow/", &meowMeowProc));
+		v.push_back(HttpServletManager::registerServlet(1, "/meow/", &meowProc));
+		v.push_back(HttpServletManager::registerServlet(1, "/meow/meow/", &meowMeowProc));
 		v.push_back(TimerDaemon::registerTimer(5000, 10000, &tickProc));
 		contents.put("OK");
 	}
@@ -317,13 +317,13 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 }
 
 MODULE_RAII(
-	return HttpServletManager::registerServlet(8860, "/profile", &profileProc);
+	return HttpServletManager::registerServlet(1, "/profile", &profileProc);
 )
 MODULE_RAII(
-	return HttpServletManager::registerServlet(8860, "/load", &loadProc);
+	return HttpServletManager::registerServlet(1, "/load", &loadProc);
 )
 MODULE_RAII(
-	return HttpServletManager::registerServlet(8860, "/unload", &unloadProc);
+	return HttpServletManager::registerServlet(1, "/unload", &unloadProc);
 )
 MODULE_RAII(
 	AUTO(v, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
@@ -337,28 +337,28 @@ MODULE_RAII(
 	return EventListenerManager::registerListener<TestEvent2>(&event2Proc);
 )
 MODULE_RAII(
-	return WebSocketServletManager::registerServlet(8860, "/wstest", &webSocketProc);
+	return WebSocketServletManager::registerServlet(1, "/wstest", &webSocketProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(8850, 100, &TestIntProc);
+	return PlayerServletManager::registerServlet(2, 100, &TestIntProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(8850, 101, &TestUIntProc);
+	return PlayerServletManager::registerServlet(2, 101, &TestUIntProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(8850, 102, &TestStringProc);
+	return PlayerServletManager::registerServlet(2, 102, &TestStringProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(8850, 103, &TestIntArrayProc);
+	return PlayerServletManager::registerServlet(2, 103, &TestIntArrayProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(8850, 104, &TestUIntArrayProc);
+	return PlayerServletManager::registerServlet(2, 104, &TestUIntArrayProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(8850, 105, &TestStringArrayProc);
+	return PlayerServletManager::registerServlet(2, 105, &TestStringArrayProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(8850, 106, &TestProc);
+	return PlayerServletManager::registerServlet(2, 106, &TestProc);
 )
 MODULE_RAII(
 	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"));
