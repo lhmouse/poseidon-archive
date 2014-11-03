@@ -12,10 +12,7 @@ namespace Poseidon {
 
 class SharedNtmbs {
 private:
-	typedef boost::shared_ptr<const char> NtmbsPtr;
-
-private:
-	NtmbsPtr m_ptr;
+	boost::shared_ptr<const char> m_ptr;
 
 public:
 	SharedNtmbs()
