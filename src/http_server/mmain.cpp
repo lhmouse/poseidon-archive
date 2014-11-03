@@ -6,7 +6,7 @@
 #include "../main/module_raii.hpp"
 using namespace Poseidon;
 
-MODULE_RAII(
+MODULE_RAII_BEGIN
 	LOG_POSEIDON_INFO("Initializing HTTP server...");
 
 	ConfigFile config("config/http_server.conf");
@@ -18,4 +18,4 @@ MODULE_RAII(
 		config.get<std::string>("http_server_private_key", "").c_str(),
 		config.getAll<std::string>("http_server_auth_user_pass", "")
 	);
-)
+MODULE_RAII_END

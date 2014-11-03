@@ -6,7 +6,7 @@
 #include "../main/module_raii.hpp"
 using namespace Poseidon;
 
-MODULE_RAII(
+MODULE_RAII_BEGIN
 	LOG_POSEIDON_INFO("Initializing player server...");
 
 	ConfigFile config("config/player_server.conf");
@@ -17,4 +17,4 @@ MODULE_RAII(
 		config.get<std::string>("player_server_certificate", "").c_str(),
 		config.get<std::string>("player_server_private_key", "").c_str()
 	);
-)
+MODULE_RAII_END
