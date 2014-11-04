@@ -20,13 +20,13 @@ using namespace Poseidon;
 
 namespace {
 
-std::string g_databaseServer			= "tcp://localhost:3306";
-std::string g_databaseUsername			= "root";
-std::string g_databasePassword			= "root";
-std::string g_databaseName				= "test";
+std::string g_mySqlServer			= "tcp://localhost:3306";
+std::string g_mySqlUsername			= "root";
+std::string g_mySqlPassword			= "root";
+std::string g_mySqlName				= "test";
 
-std::size_t g_databaseSaveDelay			= 5000;
-std::size_t g_databaseMaxReconnDelay	= 60000;
+std::size_t g_mySqlSaveDelay			= 5000;
+std::size_t g_mySqlMaxReconnDelay	= 60000;
 
 class AsyncLoadCallbackJob : public JobBase {
 private:
@@ -86,11 +86,11 @@ volatile std::size_t g_waiting = 0;
 boost::condition_variable g_queueEmpty;
 
 bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
-	LOG_POSEIDON_INFO("Connecting to MySQL server: ", g_databaseServer);
+	LOG_POSEIDON_INFO("Connecting to MySQL server: ", g_mySqlServer);
 	try {
 		connection.reset(::get_driver_instance()->connect(
-			g_databaseServer, g_databaseUsername, g_databasePassword));
-		connection->setSchema(g_databaseName);
+			g_mySqlServer, g_mySqlUsername, g_mySqlPassword));
+		connection->setSchema(g_mySqlName);
 		LOG_POSEIDON_INFO("Successfully connected to MySQL server.");
 		return true;
 	} catch(sql::SQLException &e){
@@ -128,8 +128,8 @@ void daemonLoop(){
 					g_newObjectAvail.timed_wait(lock, boost::posix_time::milliseconds(reconnectDelay));
 
 					reconnectDelay <<= 1;
-					if(reconnectDelay > g_databaseMaxReconnDelay){
-						reconnectDelay = g_databaseMaxReconnDelay;
+					if(reconnectDelay > g_mySqlMaxReconnDelay){
+						reconnectDelay = g_mySqlMaxReconnDelay;
 					}
 				}
 				if(!getMySqlConnection(connection)){
@@ -243,23 +243,23 @@ void MySqlDaemon::start(){
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
-	conf.get(g_databaseServer, "database_server");
-	LOG_POSEIDON_DEBUG("MySQL server = ", g_databaseServer);
+	conf.get(g_mySqlServer, "mysql_server");
+	LOG_POSEIDON_DEBUG("MySQL server = ", g_mySqlServer);
 
-	conf.get(g_databaseUsername, "database_username");
-	LOG_POSEIDON_DEBUG("MySQL username = ", g_databaseUsername);
+	conf.get(g_mySqlUsername, "mysql_username");
+	LOG_POSEIDON_DEBUG("MySQL username = ", g_mySqlUsername);
 
-	conf.get(g_databasePassword, "database_password");
-	LOG_POSEIDON_DEBUG("MySQL password = ", g_databasePassword);
+	conf.get(g_mySqlPassword, "mysql_password");
+	LOG_POSEIDON_DEBUG("MySQL password = ", g_mySqlPassword);
 
-	conf.get(g_databaseName, "database_name");
-	LOG_POSEIDON_DEBUG("MySQL database name = ", g_databaseName);
+	conf.get(g_mySqlName, "mysql_name");
+	LOG_POSEIDON_DEBUG("MySQL mySql name = ", g_mySqlName);
 
-	conf.get(g_databaseSaveDelay, "database_save_delay");
-	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_databaseSaveDelay);
+	conf.get(g_mySqlSaveDelay, "mysql_save_delay");
+	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_mySqlSaveDelay);
 
-	conf.get(g_databaseMaxReconnDelay, "database_max_reconn_delay");
-	LOG_POSEIDON_DEBUG("MySQL max reconnect delay = ", g_databaseMaxReconnDelay);
+	conf.get(g_mySqlMaxReconnDelay, "mysql_max_reconn_delay");
+	LOG_POSEIDON_DEBUG("MySQL max reconnect delay = ", g_mySqlMaxReconnDelay);
 
 	boost::thread(threadProc).swap(g_thread);
 }
@@ -302,7 +302,7 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object)
 
 	AUTO_REF(asi, g_saveQueue.back());
 	asi.object.swap(object);
-	asi.timeStamp = getMonoClock() + g_databaseSaveDelay * 1000;
+	asi.timeStamp = getMonoClock() + g_mySqlSaveDelay * 1000;
 	MySqlObjectImpl::setContext(*asi.object, &asi);
 
 	g_newObjectAvail.notify_all();
