@@ -62,6 +62,10 @@ public:
 		m_ptr.swap(rhs.m_ptr);
 	}
 
+	std::string getString() const {
+		return std::string(get());
+	}
+
 public:
 	const char &operator[](std::size_t index) const {
 		return get()[index];
@@ -76,9 +80,6 @@ public:
 		return !empty() ? &SharedNtmbs::get : 0;
 	}
 #endif
-	operator std::string() const {
-		return std::string(get());
-	}
 };
 
 static inline bool operator==(const SharedNtmbs &lhs, const SharedNtmbs &rhs){
