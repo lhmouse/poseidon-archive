@@ -183,9 +183,7 @@ void daemonLoop(){
 		// 第一部分，处理可接收的数据。
 		{
 			const boost::mutex::scoped_lock lock(g_sessionMutex);
-			for(AUTO(it, g_sessions.upperBound<IDX_READ>(0));
-				it != g_sessions.end<IDX_READ>(); ++it)
-			{
+			for(AUTO(it, g_sessions.upperBound<IDX_READ>(0)); it != g_sessions.end<IDX_READ>(); ++it){
 				sessions.push_back(it->session);
 			}
 		}
@@ -195,8 +193,8 @@ void daemonLoop(){
 				if(session->hasBeenShutdown()){
 					continue;
 				}
-				const ::ssize_t bytesRead = TcpSessionImpl::doRead(*session,
-					data.get(), g_dataBufferSize);
+				const ::ssize_t bytesRead =
+					TcpSessionImpl::doRead(*session, data.get(), g_dataBufferSize);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -227,9 +225,7 @@ void daemonLoop(){
 		// 第二部分，处理可发送的数据。
 		{
 			const boost::mutex::scoped_lock lock(g_sessionMutex);
-			for(AUTO(it, g_sessions.upperBound<IDX_WRITE>(0));
-				it != g_sessions.end<IDX_WRITE>(); ++it)
-			{
+			for(AUTO(it, g_sessions.upperBound<IDX_WRITE>(0)); it != g_sessions.end<IDX_WRITE>(); ++it){
 				sessions.push_back(it->session);
 			}
 		}
@@ -240,8 +236,8 @@ void daemonLoop(){
 				bool shutdown;
 				{
 					boost::mutex::scoped_lock sessionLock;
-					bytesWritten = TcpSessionImpl::doWrite(*session,
-						sessionLock, data.get(), g_dataBufferSize);
+					bytesWritten =
+						TcpSessionImpl::doWrite(*session, sessionLock, data.get(), g_dataBufferSize);
 					shutdown = session->hasBeenShutdown();
 					if(bytesWritten == 0){
 						if(!shutdown){
@@ -313,8 +309,8 @@ void daemonLoop(){
 			LOG_POSEIDON_ERROR("::epoll_wait() failed: ", desc);
 		} else for(unsigned i = 0; i < (unsigned)ready; ++i){
 			::epoll_event &event = events[i];
-			const AUTO(session, static_cast<TcpSessionBase *>(event.data.ptr)->
-				virtualSharedFromThis<TcpSessionBase>());
+			const AUTO(session,
+				static_cast<TcpSessionBase *>(event.data.ptr)->virtualSharedFromThis<TcpSessionBase>());
 			try {
 				if(event.events & EPOLLHUP){
 					LOG_POSEIDON_INFO("Socket hung up, remote is ", session->getRemoteInfo());
