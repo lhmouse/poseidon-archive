@@ -205,7 +205,7 @@ void daemonLoop(){
 					}
 					DEBUG_THROW(SystemError);
 				} else if(bytesRead == 0){
-					LOG_POSEIDON_INFO("Connection closed by ", session->getRemoteInfo());
+					LOG_POSEIDON_INFO("Connection closed: remote = ", session->getRemoteInfo());
 					session->send(StreamBuffer(), true);
 					continue;
 				}
