@@ -22,9 +22,9 @@
 #include <boost/range/end.hpp>
 #include <boost/range/size.hpp>
 
-#define BEGIN(ar)					(::boost::begin(ar))
-#define END(ar)						(::boost::end(ar))
-#define COUNT_OF(ar)				(::boost::size(ar))
+#define BEGIN(ar_)					(::boost::begin(ar_))
+#define END(ar_)					(::boost::end(ar_))
+#define COUNT_OF(ar_)				(::boost::size(ar_))
 
 namespace Poseidon {
 
