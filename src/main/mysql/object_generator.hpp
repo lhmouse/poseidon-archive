@@ -10,18 +10,6 @@
 #	error Please #include "object_base.hpp" first.
 #endif
 
-#include "../cxx_ver.hpp"
-#include "../cxx_util.hpp"
-#include <sstream>
-#include <cstdio>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <cppconn/connection.h>
-#include <cppconn/prepared_statement.h>
-#include <cppconn/resultset.h>
-#include "../atomic.hpp"
-#include "../log.hpp"
-
 class MYSQL_OBJECT_NAME : public ::Poseidon::MySqlObjectBase {
 private:
 

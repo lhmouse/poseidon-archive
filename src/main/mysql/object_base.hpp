@@ -1,10 +1,20 @@
 #ifndef POSEIDON_MYSQL_OBJECT_BASE_HPP_
 #define POSEIDON_MYSQL_OBJECT_BASE_HPP_
 
-#include "../virtual_shared_from_this.hpp"
+#include "../cxx_ver.hpp"
+#include "../cxx_util.hpp"
 #include <string>
+#include <sstream>
+#include <cstdio>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/thread/shared_mutex.hpp>
+#include <cppconn/connection.h>
+#include <cppconn/prepared_statement.h>
+#include <cppconn/resultset.h>
 #include "../atomic.hpp"
+#include "../log.hpp"
+#include "../virtual_shared_from_this.hpp"
 #include "../singletons/mysql_daemon.hpp"	// MySqlAsyncLoadCallback
 
 namespace sql {
