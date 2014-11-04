@@ -105,82 +105,82 @@ public:
 
 #define FIELD_BOOLEAN(name_)	\
 	bool get_ ## name_() const {	\
-		return atomicLoad(name_);	\
+		return ::Poseidon::atomicLoad(name_);	\
 	}	\
 	void set_ ## name_(bool val_){	\
-		atomicStore(name_, val_);	\
+		::Poseidon::atomicStore(name_, val_);	\
 		invalidate();	\
 	}
 
 #define FIELD_TINYINT(name_)	\
 	signed char get_ ## name_() const {	\
-		return atomicLoad(name_);	\
+		return ::Poseidon::atomicLoad(name_);	\
 	}	\
 	void set_ ## name_(signed char val_){	\
-		atomicStore(name_, val_);	\
+		::Poseidon::atomicStore(name_, val_);	\
 		invalidate();	\
 	}
 
 #define FIELD_TINYINT_UNSIGNED(name_)	\
 	unsigned char get_ ## name_() const {	\
-		return atomicLoad(name_);	\
+		return ::Poseidon::atomicLoad(name_);	\
 	}	\
 	void set_ ## name_(unsigned char val_){	\
-		atomicStore(name_, val_);	\
+		::Poseidon::atomicStore(name_, val_);	\
 		invalidate();	\
 	}
 
 #define FIELD_SMALLINT(name_)	\
 	short get_ ## name_() const {	\
-		return atomicLoad(name_);	\
+		return ::Poseidon::atomicLoad(name_);	\
 	}	\
 	void set_ ## name_(short val_){	\
-		atomicStore(name_, val_);	\
+		::Poseidon::atomicStore(name_, val_);	\
 		invalidate();	\
 	}
 
 #define FIELD_SMALLINT_UNSIGNED(name_)	\
 	unsigned short get_ ## name_() const {	\
-		return atomicLoad(name_);	\
+		return ::Poseidon::atomicLoad(name_);	\
 	}	\
 	void set_ ## name_(unsigned short val_){	\
-		atomicStore(name_, val_);	\
+		::Poseidon::atomicStore(name_, val_);	\
 		invalidate();	\
 	}
 
 #define FIELD_INTEGER(name_)	\
 	int get_ ## name_() const {	\
-		return atomicLoad(name_);	\
+		return ::Poseidon::atomicLoad(name_);	\
 	}	\
 	void set_ ## name_(int val_){	\
-		atomicStore(name_, val_);	\
+		::Poseidon::atomicStore(name_, val_);	\
 		invalidate();	\
 	}
 
 #define FIELD_INTEGER_UNSIGNED(name_)	\
 	unsigned get_ ## name_() const {	\
-		return atomicLoad(name_);	\
+		return ::Poseidon::atomicLoad(name_);	\
 	}	\
 	void set_ ## name_(unsigned val_){	\
-		atomicStore(name_, val_);	\
+		::Poseidon::atomicStore(name_, val_);	\
 		invalidate();	\
 	}
 
 #define FIELD_BIGINT(name_)	\
 	long long get_ ## name_() const {	\
-		return atomicLoad(name_);	\
+		return ::Poseidon::atomicLoad(name_);	\
 	}	\
 	void set_ ## name_(long long val_){	\
-		atomicStore(name_, val_);	\
+		::Poseidon::atomicStore(name_, val_);	\
 		invalidate();	\
 	}
 
 #define FIELD_BIGINT_UNSIGNED(name_)	\
 	unsigned long long get_ ## name_() const {	\
-		return atomicLoad(name_);	\
+		return ::Poseidon::atomicLoad(name_);	\
 	}	\
 	void set_ ## name_(unsigned long long val_){	\
-		atomicStore(name_, val_);	\
+		::Poseidon::atomicStore(name_, val_);	\
 		invalidate();	\
 	}
 
@@ -267,7 +267,7 @@ private:
 
 		MYSQL_OBJECT_FIELDS
 
-		atomicSynchronize();
+		::Poseidon::atomicSynchronize();
 	}
 
 private:
