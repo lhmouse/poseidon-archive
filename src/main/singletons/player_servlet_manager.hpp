@@ -51,7 +51,7 @@ struct PlayerServletManager {
 				return callback(STD_MOVE(ps), ProtocolT(incoming));
 			}
 		};
-		return registerListener(category, ProtocolT::ID, boost::bind(&Helper::checkAndForward, _1, _2,
+		return registerServlet(category, ProtocolT::ID, boost::bind(&Helper::checkAndForward, _1, _2,
 #ifdef POSEIDON_CXX11
 			std::forward<CallbackT>(callback)
 #else
