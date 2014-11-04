@@ -5,23 +5,8 @@
 #include <fcntl.h>
 using namespace Poseidon;
 
-namespace {
-
-IpPort getAddrPortFromFd(int fd){
-	SockAddr sa;
-	::socklen_t salen = sizeof(sa);
-	if(::getsockname(fd, &sa.sa, &salen) != 0){
-		const int code = errno;
-		LOG_POSEIDON_ERROR("Failed to get local socket addr.");
-		DEBUG_THROW(SystemError, code);
-	}
-	return getIpPortFromSockAddr(sa);
-}
-
-}
-
 SocketServerBase::SocketServerBase(ScopedFile socket)
-	: m_socket(STD_MOVE(socket)), m_localInfo(getAddrPortFromFd(m_socket.get()))
+	: m_socket(STD_MOVE(socket)), m_localInfo(getLocalIpPortFromFd(m_socket.get()))
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){

@@ -42,6 +42,26 @@ inline IpPort getIpPortFromSockAddr(const SockAddr &sa){
 	}
 	return IpPort(SharedNtmbs(ip, true), port);
 }
+inline IpPort getRemoteIpPortFromFd(int fd){
+	SockAddr sa;
+	::socklen_t salen = sizeof(sa);
+	if(::getpeername(fd, &sa.sa, &salen) != 0){
+		const int code = errno;
+		LOG_POSEIDON_ERROR("Failed to get remote socket addr.");
+		DEBUG_THROW(SystemError, code);
+	}
+	return getIpPortFromSockAddr(sa);
+}
+inline IpPort getLocalIpPortFromFd(int fd){
+	SockAddr sa;
+	::socklen_t salen = sizeof(sa);
+	if(::getsockname(fd, &sa.sa, &salen) != 0){
+		const int code = errno;
+		LOG_POSEIDON_ERROR("Failed to get remote socket addr.");
+		DEBUG_THROW(SystemError, code);
+	}
+	return getIpPortFromSockAddr(sa);
+}
 
 inline SockAddr getSockAddrFromIpPort(unsigned &salen, const IpPort &addr){
 	SockAddr sa;

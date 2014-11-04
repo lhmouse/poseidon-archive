@@ -34,7 +34,7 @@ TcpSessionBase::TcpSessionBase(ScopedFile socket)
 }
 TcpSessionBase::~TcpSessionBase(){
 	if(atomicLoad(m_peerInfo.fetched)){
-		LOG_POSEIDON_INFO("Destroyed TCP session, remote = ", m_peerInfo.remote,
+		LOG_POSEIDON_INFO("Destroyed TCP session: remote = ", m_peerInfo.remote,
 			", local = ", m_peerInfo.local);
 	} else {
 		LOG_POSEIDON_INFO("A TCP session that wasn't fully established has been closed.");
@@ -85,28 +85,9 @@ void TcpSessionBase::fetchPeerInfo() const {
 		return;
 	}
 
-	SockAddr sa;
-	::socklen_t salen;
-
-	salen = sizeof(sa);
-	if(::getpeername(m_socket.get(), &sa.sa, &salen) != 0){
-		const int code = errno;
-		LOG_POSEIDON_ERROR("Failed to get remote socket addr.");
-		DEBUG_THROW(SystemError, code);
-	}
-	m_peerInfo.remote = getIpPortFromSockAddr(sa);
-
-	salen = sizeof(sa);
-	if(::getsockname(m_socket.get(), &sa.sa, &salen) != 0){
-		const int code = errno;
-		LOG_POSEIDON_ERROR("Failed to get local socket addr.");
-		DEBUG_THROW(SystemError, code);
-	}
-	m_peerInfo.local = getIpPortFromSockAddr(sa);
-
-	LOG_POSEIDON_INFO("Established TCP session, remote = ", m_peerInfo.remote,
-		", local = ", m_peerInfo.local);
-
+	m_peerInfo.remote = getRemoteIpPortFromFd(m_socket.get());
+	m_peerInfo.local = getLocalIpPortFromFd(m_socket.get());
+	LOG_POSEIDON_INFO("TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
 	atomicStore(m_peerInfo.fetched, true);
 }
 
