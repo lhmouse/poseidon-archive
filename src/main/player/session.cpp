@@ -94,7 +94,8 @@ PlayerSession::PlayerSession(std::size_t category, ScopedFile socket)
 }
 PlayerSession::~PlayerSession(){
 	if(m_payloadLen != -1){
-		LOG_POSEIDON_WARN("Now that this session is to be destroyed, a premature request has to be discarded.");
+		LOG_POSEIDON_WARN(
+			"Now that this session is to be destroyed, a premature request has to be discarded.");
 	}
 }
 
@@ -117,7 +118,8 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 
 				const std::size_t maxRequestLength = PlayerServletManager::getMaxRequestLength();
 				if((unsigned)m_payloadLen >= maxRequestLength){
-					LOG_POSEIDON_WARN("Request size = ", m_payloadLen, ", max = ", maxRequestLength);
+					LOG_POSEIDON_WARN(
+						"Request too large: size = ", m_payloadLen, ", max = ", maxRequestLength);
 					DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE);
 				}
 			}
@@ -130,7 +132,8 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			m_protocolId = 0;
 		}
 	} catch(PlayerProtocolException &e){
-		LOG_POSEIDON_ERROR("PlayerProtocolException thrown while parsing data, protocol id = ", m_protocolId,
+		LOG_POSEIDON_ERROR(
+			"PlayerProtocolException thrown while parsing data, protocol id = ", m_protocolId,
 			", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
 		sendError(m_protocolId, e.status(), e.what(), true);
 		throw;

@@ -174,7 +174,8 @@ HttpSession::HttpSession(std::size_t category, ScopedFile socket)
 }
 HttpSession::~HttpSession(){
 	if(m_state != ST_FIRST_HEADER){
-		LOG_POSEIDON_WARN("Now that this session is to be destroyed, a premature request has to be discarded.");
+		LOG_POSEIDON_WARN(
+			"Now that this session is to be destroyed, a premature request has to be discarded.");
 	}
 }
 
