@@ -7,6 +7,7 @@
 #include "../vint50.hpp"
 #include "../stream_buffer.hpp"
 #include "exception.hpp"
+#include "status.hpp"
 
 #define THROW_EOS_	\
 	DEBUG_THROW(::Poseidon::PlayerProtocolException, PLAYER_END_OF_STREAM)
