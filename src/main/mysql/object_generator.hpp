@@ -39,7 +39,7 @@ private:
 
 public:
 	MYSQL_OBJECT_NAME()
-		: MySqlObjectBase()
+		: ::Poseidon::MySqlObjectBase()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -78,18 +78,18 @@ public:
 #undef FIELD_STRING
 
 #define FIELD_BOOLEAN(name_)				, bool name_
-#define FIELD_TINYINT(name_)				, signed char name_ ## _
-#define FIELD_TINYINT_UNSIGNED(name_)		, unsigned char name_ ## _
-#define FIELD_SMALLINT(name_)				, short name_ ## _
-#define FIELD_SMALLINT_UNSIGNED(name_)		, unsigned short name_ ## _
-#define FIELD_INTEGER(name_)				, int name_ ## _
-#define FIELD_INTEGER_UNSIGNED(name_)		, unsigned name_ ## _
-#define FIELD_BIGINT(name_)					, long long name_ ## _
-#define FIELD_BIGINT_UNSIGNED(name_)		, unsigned long long name_ ## _
-#define FIELD_STRING(name_)					, ::std::string name_ ## _
+#define FIELD_TINYINT(name_)				, signed char name_ ## X_
+#define FIELD_TINYINT_UNSIGNED(name_)		, unsigned char name_ ## X_
+#define FIELD_SMALLINT(name_)				, short name_ ## X_
+#define FIELD_SMALLINT_UNSIGNED(name_)		, unsigned short name_ ## X_
+#define FIELD_INTEGER(name_)				, int name_ ## X_
+#define FIELD_INTEGER_UNSIGNED(name_)		, unsigned name_ ## X_
+#define FIELD_BIGINT(name_)					, long long name_ ## X_
+#define FIELD_BIGINT_UNSIGNED(name_)		, unsigned long long name_ ## X_
+#define FIELD_STRING(name_)					, ::std::string name_ ## X_
 
 	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
-		: MySqlObjectBase()
+		: ::Poseidon::MySqlObjectBase()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -102,16 +102,16 @@ public:
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
 
-#define FIELD_BOOLEAN(name_)				, name_(name_ ## _)
-#define FIELD_TINYINT(name_)				, name_(name_ ## _)
-#define FIELD_TINYINT_UNSIGNED(name_)		, name_(name_ ## _)
-#define FIELD_SMALLINT(name_)				, name_(name_ ## _)
-#define FIELD_SMALLINT_UNSIGNED(name_)		, name_(name_ ## _)
-#define FIELD_INTEGER(name_)				, name_(name_ ## _)
-#define FIELD_INTEGER_UNSIGNED(name_)		, name_(name_ ## _)
-#define FIELD_BIGINT(name_)					, name_(name_ ## _)
-#define FIELD_BIGINT_UNSIGNED(name_)		, name_(name_ ## _)
-#define FIELD_STRING(name_)					, name_(STD_MOVE(name_ ## _))
+#define FIELD_BOOLEAN(name_)				, name_(name_ ## X_)
+#define FIELD_TINYINT(name_)				, name_(name_ ## X_)
+#define FIELD_TINYINT_UNSIGNED(name_)		, name_(name_ ## X_)
+#define FIELD_SMALLINT(name_)				, name_(name_ ## X_)
+#define FIELD_SMALLINT_UNSIGNED(name_)		, name_(name_ ## X_)
+#define FIELD_INTEGER(name_)				, name_(name_ ## X_)
+#define FIELD_INTEGER_UNSIGNED(name_)		, name_(name_ ## X_)
+#define FIELD_BIGINT(name_)					, name_(name_ ## X_)
+#define FIELD_BIGINT_UNSIGNED(name_)		, name_(name_ ## X_)
+#define FIELD_STRING(name_)					, name_(STD_MOVE(name_ ## X_))
 
 		MYSQL_OBJECT_FIELDS
 	{

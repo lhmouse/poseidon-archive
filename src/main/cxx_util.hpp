@@ -13,7 +13,7 @@
 #define TOKEN_CAT3_(x_, y_, z_)		x_ ## y_ ## z_
 #define TOKEN_CAT3(x_, y_, z_)		TOKEN_CAT3_(x_, y_, z_)
 
-#define MAGIC_LN_2_(ln_)			Poseidon_magic_ ## ln_ ## _
+#define MAGIC_LN_2_(ln_)			Poseidon_magic_ ## ln_ ## X_
 #define MAGIC_LN_1_(ln_)			MAGIC_LN_2_(ln_)
 
 #define UNIQUE_ID					MAGIC_LN_1_(__LINE__)

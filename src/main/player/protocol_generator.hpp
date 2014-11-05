@@ -31,10 +31,10 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #define FIELD_VUINT(name_)				unsigned long long name_;
 #define FIELD_BYTES(name_, size_)		unsigned char name_[size_];
 #define FIELD_STRING(name_)				::std::string name_;
-#define FIELD_ARRAY(name_, fields_)		struct ElementOf ## name_ ## _ {	\
+#define FIELD_ARRAY(name_, fields_)		struct ElementOf ## name_ ## X_ {	\
 											fields_	\
 										};	\
-										::std::vector<ElementOf ## name_ ## _> name_;
+										::std::vector<ElementOf ## name_ ## X_> name_;
 
 	PROTOCOL_FIELDS
 
@@ -44,10 +44,10 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT(name_)				, long long name_ ## _
-#define FIELD_VUINT(name_)				, unsigned long long name_ ## _
+#define FIELD_VINT(name_)				, long long name_ ## X_
+#define FIELD_VUINT(name_)				, unsigned long long name_ ## X_
 #define FIELD_BYTES(name_, size_)
-#define FIELD_STRING(name_)				, ::std::string name_ ## _
+#define FIELD_STRING(name_)				, ::std::string name_ ## X_
 #define FIELD_ARRAY(name_, fields_)
 
 	explicit PROTOCOL_NAME(STRIP_FIRST(void PROTOCOL_FIELDS))
@@ -59,10 +59,10 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT(name_)				, name_(name_ ## _)
-#define FIELD_VUINT(name_)				, name_(name_ ## _)
+#define FIELD_VINT(name_)				, name_(name_ ## X_)
+#define FIELD_VUINT(name_)				, name_(name_ ## X_)
 #define FIELD_BYTES(name_, size_)		, name_()
-#define FIELD_STRING(name_)				, name_(STD_MOVE(name_ ## _))
+#define FIELD_STRING(name_)				, name_(STD_MOVE(name_ ## X_))
 #define FIELD_ARRAY(name_, fields_)		, name_()
 
 		PROTOCOL_FIELDS
@@ -95,7 +95,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 											const unsigned long long count_ = cur_.name_.size();	\
 											::Poseidon::vuint50ToBinary(count_, write_);	\
 											for(unsigned long long i = 0; i < count_; ++i){	\
-												typedef Cur_::ElementOf ## name_ ## _ Element_;	\
+												typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
 												const Element_ &element_ = cur_.name_[i];	\
 												typedef Element_ Cur_;	\
 												const Cur_ &cur_ = element_;	\
@@ -148,7 +148,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 											}	\
 											cur_.name_.clear();	\
 											for(unsigned long long i = 0; i < count_; ++i){	\
-												typedef Cur_::ElementOf ## name_ ## _ Element_;	\
+												typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
 												cur_.name_.push_back(Element_());	\
 												Element_ &element_ = cur_.name_.back();	\
 												typedef Element_ Cur_;	\
