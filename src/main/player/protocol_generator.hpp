@@ -44,10 +44,10 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT(name_)				, long long name_ ## _ = 0
-#define FIELD_VUINT(name_)				, unsigned long long name_ ## _ = 0
+#define FIELD_VINT(name_)				, long long name_ ## _
+#define FIELD_VUINT(name_)				, unsigned long long name_ ## _
 #define FIELD_BYTES(name_, size_)
-#define FIELD_STRING(name_)				, ::std::string name_ ## _ = ::std::string()
+#define FIELD_STRING(name_)				, ::std::string name_ ## _
 #define FIELD_ARRAY(name_, fields_)
 
 	explicit PROTOCOL_NAME(STRIP_FIRST(void PROTOCOL_FIELDS))

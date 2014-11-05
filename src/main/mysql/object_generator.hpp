@@ -38,6 +38,8 @@ private:
 	MYSQL_OBJECT_FIELDS
 
 public:
+	MYSQL_OBJECT_NAME()
+		: MySqlObjectBase()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -50,16 +52,41 @@ public:
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
 
-#define FIELD_BOOLEAN(name_)				, bool name_ = false
-#define FIELD_TINYINT(name_)				, signed char name_ ## _ = 0
-#define FIELD_TINYINT_UNSIGNED(name_)		, unsigned char name_ ## _ = 0
-#define FIELD_SMALLINT(name_)				, short name_ ## _ = 0
-#define FIELD_SMALLINT_UNSIGNED(name_)		, unsigned short name_ ## _ = 0
-#define FIELD_INTEGER(name_)				, int name_ ## _ = 0
-#define FIELD_INTEGER_UNSIGNED(name_)		, unsigned name_ ## _ = 0
-#define FIELD_BIGINT(name_)					, long long name_ ## _ = 0
-#define FIELD_BIGINT_UNSIGNED(name_)		, unsigned long long name_ ## _ = 0
-#define FIELD_STRING(name_)					, ::std::string name_ ## _ = ::std::string()
+#define FIELD_BOOLEAN(name_)				, name_()
+#define FIELD_TINYINT(name_)				, name_()
+#define FIELD_TINYINT_UNSIGNED(name_)		, name_()
+#define FIELD_SMALLINT(name_)				, name_()
+#define FIELD_SMALLINT_UNSIGNED(name_)		, name_()
+#define FIELD_INTEGER(name_)				, name_()
+#define FIELD_INTEGER_UNSIGNED(name_)		, name_()
+#define FIELD_BIGINT(name_)					, name_()
+#define FIELD_BIGINT_UNSIGNED(name_)		, name_()
+#define FIELD_STRING(name_)					, name_()
+
+	{
+	}
+
+#undef FIELD_BOOLEAN
+#undef FIELD_TINYINT
+#undef FIELD_TINYINT_UNSIGNED
+#undef FIELD_SMALLINT
+#undef FIELD_SMALLINT_UNSIGNED
+#undef FIELD_INTEGER
+#undef FIELD_INTEGER_UNSIGNED
+#undef FIELD_BIGINT
+#undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_STRING
+
+#define FIELD_BOOLEAN(name_)				, bool name_
+#define FIELD_TINYINT(name_)				, signed char name_ ## _
+#define FIELD_TINYINT_UNSIGNED(name_)		, unsigned char name_ ## _
+#define FIELD_SMALLINT(name_)				, short name_ ## _
+#define FIELD_SMALLINT_UNSIGNED(name_)		, unsigned short name_ ## _
+#define FIELD_INTEGER(name_)				, int name_ ## _
+#define FIELD_INTEGER_UNSIGNED(name_)		, unsigned name_ ## _
+#define FIELD_BIGINT(name_)					, long long name_ ## _
+#define FIELD_BIGINT_UNSIGNED(name_)		, unsigned long long name_ ## _
+#define FIELD_STRING(name_)					, ::std::string name_ ## _
 
 	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
 		: MySqlObjectBase()
