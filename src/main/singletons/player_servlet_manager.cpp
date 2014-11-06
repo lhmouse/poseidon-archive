@@ -65,11 +65,12 @@ boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(old, g_servlets[category][protocolId]);
 		if(!old.expired()){
-			LOG_POSEIDON_ERROR("Duplicate player protocol servlet for id ", protocolId, " in category ", category);
+			LOG_POSEIDON_ERROR("Duplicate servlet for id ", protocolId, " in category ", category);
 			DEBUG_THROW(Exception, "Duplicate player protocol servlet");
 		}
 		old = servlet;
 	}
+	LOG_POSEIDON_DEBUG("Craeted servlet for protocol ", protocolId, " in category ", category);
 	return servlet;
 }
 
@@ -89,7 +90,7 @@ boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(
     }
     const AUTO(servlet, it2->second.lock());
     if(!servlet){
-    	LOG_POSEIDON_DEBUG("Servlet for protocol ", protocolId, " in category ", category, " has expired");
+    	LOG_POSEIDON_DEBUG("Expired servlet for protocol ", protocolId, " in category ", category);
     	return VAL_INIT;
     }
     return servlet->callback;

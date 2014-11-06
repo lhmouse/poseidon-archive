@@ -56,11 +56,12 @@ boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
-			LOG_POSEIDON_ERROR("Duplicate WebSocket servlet: ", uri, " in category ", category);
+			LOG_POSEIDON_ERROR("Duplicate servlet for URI ", uri, " in category ", category);
 			DEBUG_THROW(Exception, "Duplicate WebSocket servlet");
 		}
 		old = servlet;
 	}
+	LOG_POSEIDON_DEBUG("Craeted servlet for for URI ", uri, " in category ", category);
 	return servlet;
 }
 
@@ -80,7 +81,7 @@ boost::shared_ptr<const WebSocketServletCallback> WebSocketServletManager::getSe
 	}
 	const AUTO(servlet, it2->second.lock());
 	if(!servlet){
-		LOG_POSEIDON_DEBUG("Servlet for URI ", uri, " in category ", category, " has expired");
+		LOG_POSEIDON_DEBUG("Expired servlet for URI ", uri, " in category ", category);
 		return VAL_INIT;
 	}
 	return servlet->callback;

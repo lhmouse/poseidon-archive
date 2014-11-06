@@ -114,11 +114,12 @@ boost::shared_ptr<HttpServlet> HttpServletManager::registerServlet(
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
-			LOG_POSEIDON_ERROR("Duplicate HTTP servlet for URI ", uri, " in category ", category);
+			LOG_POSEIDON_ERROR("Duplicate servlet for URI ", uri, " in category ", category);
 			DEBUG_THROW(Exception, "Duplicate HTTP servlet");
 		}
 		old = servlet;
 	}
+	LOG_POSEIDON_DEBUG("Craeted servlet for for URI ", uri, " in category ", category);
 	return servlet;
 }
 
