@@ -39,6 +39,8 @@ protected:
 
 public:
 	MySqlObjectBase();
+	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
+	~MySqlObjectBase();
 
 protected:
 	void invalidate() const;

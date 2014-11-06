@@ -7,6 +7,8 @@ MySqlObjectBase::MySqlObjectBase()
 	: m_autoSaves(false), m_context()
 {
 }
+MySqlObjectBase::~MySqlObjectBase(){
+}
 
 void MySqlObjectBase::invalidate() const {
 	if(!isAutoSavingEnabled()){
