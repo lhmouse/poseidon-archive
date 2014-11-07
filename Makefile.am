@@ -61,13 +61,16 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/system_http_server.cpp	\
 	src/main/player/session.cpp	\
 	src/main/player/server.cpp	\
+	src/main/player/exception.cpp	\
 	src/main/http/session.cpp	\
 	src/main/http/server.cpp	\
 	src/main/http/status.cpp	\
 	src/main/http/verb.cpp	\
 	src/main/http/utilities.cpp	\
 	src/main/http/upgraded_session_base.cpp	\
+	src/main/http/exception.cpp	\
 	src/main/http/websocket/session.cpp	\
+	src/main/http/websocket/exception.cpp	\
 	src/main/mysql/object_base.cpp
 
 lib_LTLIBRARIES=	\

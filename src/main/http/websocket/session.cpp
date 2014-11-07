@@ -91,7 +91,7 @@ protected:
 				m_session->getCategory(), m_uri.c_str()));
 			if(!servlet){
 				LOG_POSEIDON_WARN("No servlet for URI ", m_uri);
-				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE);
+				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE, "Unknown URI");
 				return;
 			}
 
