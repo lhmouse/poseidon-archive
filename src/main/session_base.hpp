@@ -12,6 +12,10 @@ class StreamBuffer;
 class SessionBase : boost::noncopyable,
 	public virtual VirtualSharedFromThis
 {
+public:
+	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
+	~SessionBase();
+
 private:
 	// 有数据可读触发回调，size 始终不为零。
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
