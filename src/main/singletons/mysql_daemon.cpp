@@ -226,8 +226,9 @@ void threadProc(){
 	Logger::setThreadTag(" D  "); // Database
 	LOG_POSEIDON_INFO("MySQL daemon started.");
 
+	::get_driver_instance()->threadInit();
 	daemonLoop();
-	::mysql_thread_end();
+	::get_driver_instance()->threadEnd();
 
 	LOG_POSEIDON_INFO("MySQL daemon stopped.");
 }
