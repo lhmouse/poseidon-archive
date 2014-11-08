@@ -25,8 +25,9 @@ std::string g_mySqlUsername			= "root";
 std::string g_mySqlPassword			= "root";
 std::string g_mySqlName				= "test";
 
-std::size_t g_mySqlSaveDelay			= 5000;
+std::size_t g_mySqlSaveDelay		= 5000;
 std::size_t g_mySqlMaxReconnDelay	= 60000;
+std::size_t g_mySqlRetryCount		= 3;
 
 class AsyncLoadCallbackJob : public JobBase {
 private:
@@ -112,8 +113,15 @@ void daemonLoop(){
 	}
 
 	std::size_t reconnectDelay = 0;
+
+	AsyncSaveItem retryAsi;
+	AsyncLoadItem retryAli;
+	std::size_t retryCount = 0;
+
 	for(;;){
 		bool discardConnection = false;
+		AsyncSaveItem asi;
+		AsyncLoadItem ali;
 
 		try {
 			if(!connection){
@@ -142,9 +150,7 @@ void daemonLoop(){
 				reconnectDelay = 0;
 			}
 
-			AsyncSaveItem asi;
-			AsyncLoadItem ali;
-			{
+			if(retryCount == 0){
 				boost::mutex::scoped_lock lock(g_mutex);
 				for(;;){
 					bool empty = true;
@@ -180,9 +186,15 @@ void daemonLoop(){
 					}
 					g_newObjectAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
-			}
-			if(!asi.object && !ali.object){
-				break;
+				if(!asi.object && !ali.object){
+					break;
+				}
+			} else {
+				LOG_POSEIDON_INFO("Retrying last failed operation, retryCount = ", retryCount);
+
+				--retryCount;
+				retryAsi.swap(asi);
+				retryAli.swap(ali);
 			}
 			if(asi.object){
 				asi.object->syncSave(connection.get());
@@ -200,6 +212,9 @@ void daemonLoop(){
 			LOG_POSEIDON_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
 				", state = ", e.getSQLState(), ", what = ", e.what());
 			discardConnection = true;
+			retryAsi.swap(asi);
+			retryAli.swap(ali);
+			retryCount = g_mySqlRetryCount;
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());
 			discardConnection = true;
@@ -215,7 +230,7 @@ void daemonLoop(){
 	}
 
 	if(!g_saveQueue.empty()){
-		LOG_POSEIDON_FATAL("There are still ", g_saveQueue.size(), " object(s) in MySQL save queue");
+		LOG_POSEIDON_ERROR("There are still ", g_saveQueue.size(), " object(s) in MySQL save queue");
 		g_saveQueue.clear();
 	}
 	g_loadQueue.clear();
@@ -261,6 +276,9 @@ void MySqlDaemon::start(){
 
 	conf.get(g_mySqlMaxReconnDelay, "mysql_max_reconn_delay");
 	LOG_POSEIDON_DEBUG("MySQL max reconnect delay = ", g_mySqlMaxReconnDelay);
+
+	conf.get(g_mySqlRetryCount, "mysql_retry_count");
+	LOG_POSEIDON_DEBUG("MySQL retry count = ", g_mySqlRetryCount);
 
 	boost::thread(threadProc).swap(g_thread);
 }
