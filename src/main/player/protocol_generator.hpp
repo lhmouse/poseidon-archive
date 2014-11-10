@@ -44,10 +44,43 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #undef FIELD_STRING
 #undef FIELD_ARRAY
 
-#define FIELD_VINT(name_)				, long long name_ ## X_ = 0
-#define FIELD_VUINT(name_)				, unsigned long long name_ ## X_ = 0
+#define FIELD_VINT(name_)				+ 1
+#define FIELD_VUINT(name_)				+ 1
 #define FIELD_BYTES(name_, size_)
-#define FIELD_STRING(name_)				, ::std::string name_ ## X_ = ::std::string()
+#define FIELD_STRING(name_)				+ 1
+#define FIELD_ARRAY(name_, fields_)
+
+#if 0 PROTOCOL_FIELDS != 0
+	PROTOCOL_NAME()
+		: ProtocolBase()
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_BYTES
+#undef FIELD_STRING
+#undef FIELD_ARRAY
+
+#define FIELD_VINT(name_)				, name_()
+#define FIELD_VUINT(name_)				, name_()
+#define FIELD_BYTES(name_, size_)		, name_()
+#define FIELD_STRING(name_)				, name_()
+#define FIELD_ARRAY(name_, fields_)		, name_()
+
+		PROTOCOL_FIELDS
+	{
+	}
+#endif
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_BYTES
+#undef FIELD_STRING
+#undef FIELD_ARRAY
+
+#define FIELD_VINT(name_)				, long long name_ ## X_
+#define FIELD_VUINT(name_)				, unsigned long long name_ ## X_
+#define FIELD_BYTES(name_, size_)
+#define FIELD_STRING(name_)				, ::std::string name_ ## X_
 #define FIELD_ARRAY(name_, fields_)
 
 	explicit PROTOCOL_NAME(STRIP_FIRST(void PROTOCOL_FIELDS))
