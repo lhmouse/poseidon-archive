@@ -192,7 +192,6 @@ void daemonLoop(){
 			} else {
 				LOG_POSEIDON_INFO("Retrying last failed operation, retryCount = ", retryCount);
 
-				--retryCount;
 				retryAsi.swap(asi);
 				retryAli.swap(ali);
 			}
@@ -212,9 +211,24 @@ void daemonLoop(){
 			LOG_POSEIDON_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
 				", state = ", e.getSQLState(), ", what = ", e.what());
 			discardConnection = true;
-			retryAsi.swap(asi);
-			retryAli.swap(ali);
-			retryCount = g_mySqlRetryCount;
+
+			bool retry = false;
+			if(retryCount == 0){
+				if(g_mySqlRetryCount != 0){
+					retryCount = g_mySqlRetryCount;
+					retry = true;
+				}
+			} else {
+				if(--retryCount != 0){
+					retry = true;
+				}
+			}
+			if(retry){
+				retryAsi.swap(asi);
+				retryAli.swap(ali);
+			} else {
+				LOG_POSEIDON_WARN("Retry count drops to zero. Give up.");
+			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());
 			discardConnection = true;
