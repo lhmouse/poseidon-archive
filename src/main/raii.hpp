@@ -92,32 +92,80 @@ void swap(ScopedHandle<CloserT> &lhs, ScopedHandle<CloserT> &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-#define DEFINE_RATIONAL_OPERATOR_(temp_, op_)	\
-	template<typename CloserT>	\
-	bool operator op_(const temp_<CloserT> &lhs,	\
-		const temp_<CloserT> &rhs) NOEXCEPT	\
-	{	\
-		return lhs.get() op_ rhs.get();	\
-	}	\
-	template<typename CloserT>	\
-	bool operator op_(typename temp_<CloserT>::Handle lhs,	\
-		const temp_<CloserT> &rhs) NOEXCEPT	\
-	{	\
-		return lhs op_ rhs.get();	\
-	}	\
-	template<typename CloserT>	\
-	bool operator op_(const temp_<CloserT> &lhs,	\
-		typename temp_<CloserT>::Handle rhs) NOEXCEPT	\
-	{	\
-		return lhs.get() op_ rhs;	\
-	}
+template<typename CloserT>
+bool operator==(const ScopedHandle<CloserT> &lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs.get() == rhs.get();
+}
+template<typename CloserT>
+bool operator==(const ScopedHandle<CloserT> &lhs, typename ScopedHandle<CloserT>::Handle rhs){
+	return lhs.get() == rhs;
+}
+template<typename CloserT>
+bool operator==(typename ScopedHandle<CloserT>::Handle lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs == rhs.get();
+}
+template<typename CloserT>
+bool operator!=(const ScopedHandle<CloserT> &lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs.get() != rhs.get();
+}
+template<typename CloserT>
+bool operator!=(const ScopedHandle<CloserT> &lhs, typename ScopedHandle<CloserT>::Handle rhs){
+	return lhs.get() != rhs;
+}
+template<typename CloserT>
+bool operator!=(typename ScopedHandle<CloserT>::Handle lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs != rhs.get();
+}
 
-DEFINE_RATIONAL_OPERATOR_(ScopedHandle, ==)
-DEFINE_RATIONAL_OPERATOR_(ScopedHandle, !=)
-DEFINE_RATIONAL_OPERATOR_(ScopedHandle, <)
-DEFINE_RATIONAL_OPERATOR_(ScopedHandle, >)
-DEFINE_RATIONAL_OPERATOR_(ScopedHandle, <=)
-DEFINE_RATIONAL_OPERATOR_(ScopedHandle, >=)
+template<typename CloserT>
+bool operator<(const ScopedHandle<CloserT> &lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs.get() < rhs.get();
+}
+template<typename CloserT>
+bool operator<(const ScopedHandle<CloserT> &lhs, typename ScopedHandle<CloserT>::Handle rhs){
+	return lhs.get() < rhs;
+}
+template<typename CloserT>
+bool operator<(typename ScopedHandle<CloserT>::Handle lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs < rhs.get();
+}
+template<typename CloserT>
+bool operator>(const ScopedHandle<CloserT> &lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs.get() > rhs.get();
+}
+template<typename CloserT>
+bool operator>(const ScopedHandle<CloserT> &lhs, typename ScopedHandle<CloserT>::Handle rhs){
+	return lhs.get() > rhs;
+}
+template<typename CloserT>
+bool operator>(typename ScopedHandle<CloserT>::Handle lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs > rhs.get();
+}
+
+template<typename CloserT>
+bool operator<=(const ScopedHandle<CloserT> &lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs.get() <= rhs.get();
+}
+template<typename CloserT>
+bool operator<=(const ScopedHandle<CloserT> &lhs, typename ScopedHandle<CloserT>::Handle rhs){
+	return lhs.get() <= rhs;
+}
+template<typename CloserT>
+bool operator<=(typename ScopedHandle<CloserT>::Handle lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs <= rhs.get();
+}
+template<typename CloserT>
+bool operator>=(const ScopedHandle<CloserT> &lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs.get() >= rhs.get();
+}
+template<typename CloserT>
+bool operator>=(const ScopedHandle<CloserT> &lhs, typename ScopedHandle<CloserT>::Handle rhs){
+	return lhs.get() >= rhs;
+}
+template<typename CloserT>
+bool operator>=(typename ScopedHandle<CloserT>::Handle lhs, const ScopedHandle<CloserT> &rhs){
+	return lhs >= rhs.get();
+}
 
 template<typename CloserT>
 std::ostream &operator<<(std::ostream &os, const ScopedHandle<CloserT> &handle){
