@@ -3,8 +3,8 @@
 using namespace Poseidon;
 
 PlayerProtocolException::PlayerProtocolException(const char *file, std::size_t line,
-	PlayerStatus status, std::string reason)
-	: ProtocolException(file, line, STD_MOVE(reason), static_cast<unsigned>(status))
+	PlayerStatus status, SharedNtmbs message) NOEXCEPT
+	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
 {
 }
 PlayerProtocolException::~PlayerProtocolException() NOEXCEPT {

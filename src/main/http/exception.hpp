@@ -9,20 +9,18 @@ namespace Poseidon {
 
 class HttpException : public ProtocolException {
 private:
-	const OptionalMap m_headers;
+	boost::shared_ptr<OptionalMap> m_headers;
 
 public:
 	HttpException(const char *file, std::size_t line,
-		HttpStatus status, OptionalMap headers = OptionalMap());
+		HttpStatus status, OptionalMap headers = OptionalMap()) NOEXCEPT;
 	~HttpException() NOEXCEPT;
 
 public:
 	HttpStatus status() const NOEXCEPT {
 		return static_cast<HttpStatus>(ProtocolException::code());
 	}
-	const OptionalMap &headers() const NOEXCEPT {
-		return m_headers;
-	}
+	const OptionalMap &headers() const NOEXCEPT;
 };
 
 }

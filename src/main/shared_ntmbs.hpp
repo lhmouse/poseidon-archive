@@ -15,7 +15,7 @@ private:
 	boost::shared_ptr<const char> m_ptr;
 
 public:
-	SharedNtmbs()
+	SharedNtmbs() NOEXCEPT
 		: m_ptr(boost::shared_ptr<void>(), "")
 	{
 	}
