@@ -1,3 +1,4 @@
+#include "precompiled.hpp"
 #include "cxx_ver.hpp"
 #include "ip_port.hpp"
 #include <ostream>

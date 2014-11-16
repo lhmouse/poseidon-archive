@@ -1,3 +1,4 @@
+#include "precompiled.hpp"
 #include "cxx_ver.hpp"
 #include "shared_ntmbs.hpp"
 #include "log.hpp"
@@ -74,7 +75,7 @@ struct IncrementalAlloc {
 	}
 #ifdef POSEIDON_CXX11
 	void construct(pointer p, T &&t){
-		new(static_cast<void *>(p)) T(static_cast<T &&>(t));
+		new(static_cast<void *>(p)) T(std::move(t));
 	}
 #endif
 	void destroy(pointer p){
