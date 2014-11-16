@@ -83,11 +83,12 @@ struct IncrementalAlloc {
 	}
 };
 
+const boost::weak_ptr<const char> NULL_WEAK_PTR;
+
 }
 
 bool SharedNtmbs::isOwning() const {
-	// FIXME: 低版本 boost 没有 owner_less。
-	return !boost::weak_ptr<const char>(m_ptr).expired();
+	return m_ptr.owner_before(NULL_WEAK_PTR) || NULL_WEAK_PTR.owner_before(m_ptr);
 }
 void SharedNtmbs::forkOwning(){
 	if(!isOwning()){
