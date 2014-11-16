@@ -50,7 +50,7 @@ struct IncrementalAlloc {
 		if(k / sizeof(T) != n + incSize / sizeof(T)){
 			throw std::bad_alloc();
 		}
-		char *const p = reinterpret_cast<char *>(::operator new(k));
+		char *const p = static_cast<char *>(::operator new(k));
 		incPtr = p + k - incSize;
 		return reinterpret_cast<pointer>(p);
 	}
