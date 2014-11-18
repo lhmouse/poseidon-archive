@@ -1,3 +1,6 @@
+// 这个文件是 Poseidon 服务器应用程序框架的一部分。
+// Copyleft 2014, LH_Mouse. All wrongs reserved.
+
 #include "precompiled.hpp"
 #include "udp_server_base.hpp"
 #define POSEIDON_SOCK_ADDR_
