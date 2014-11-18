@@ -123,8 +123,7 @@ private:
 public:
 	HttpRequestJob(boost::shared_ptr<HttpSession> session,
 		HttpVerb verb, std::string uri, unsigned version,
-		OptionalMap getParams, OptionalMap headers,
-		std::string contents)
+		OptionalMap getParams, OptionalMap headers, std::string contents)
 		: m_session(STD_MOVE(session))
 		, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
 		, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers))
@@ -147,6 +146,7 @@ protected:
 			HttpRequest request;
 			request.verb = m_verb;
 			request.uri = m_uri;
+			request.version = m_version;
 			request.getParams.swap(m_getParams);
 			request.headers.swap(m_headers);
 			request.contents.swap(m_contents);
@@ -228,7 +228,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						DEBUG_THROW(HttpException, HTTP_METHOD_NOT_ALLOWED);
 					}
 
-					if(parts[1].empty() || (parts[1][0] != '/')){
+					if(parts[1][0] != '/'){
 						LOG_POSEIDON_WARN("Bad HTTP request URI: ", parts[1]);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
@@ -238,9 +238,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						m_uri.erase(m_uri.begin() + pos, m_uri.end());
 					}
 					pos = m_uri.find('?');
-					if(pos == std::string::npos){
-						m_getParams.clear();
-					} else {
+					if(pos != std::string::npos){
 						m_getParams = optionalMapFromUrlEncoded(m_uri.substr(pos + 1));
 						m_uri.erase(m_uri.begin() + pos, m_uri.end());
 					}
