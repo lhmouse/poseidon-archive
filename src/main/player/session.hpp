@@ -38,18 +38,18 @@ public:
 		return m_category;
 	}
 
-	bool send(boost::uint16_t protocolId, StreamBuffer contents, bool final = false);
+	bool send(boost::uint16_t protocolId, StreamBuffer contents, bool fin = false);
 
 	template<class ProtocolT>
 	typename boost::enable_if<boost::is_base_of<ProtocolBase, ProtocolT>, bool>::type
-		send(const ProtocolT &contents, bool final = false)
+		send(const ProtocolT &contents, bool fin = false)
 	{
-		return send(ProtocolT::ID, StreamBuffer(contents), final);
+		return send(ProtocolT::ID, StreamBuffer(contents), fin);
 	}
 
-	bool sendError(boost::uint16_t protocolId, PlayerStatus status, std::string reason, bool final = false);
-	bool sendError(boost::uint16_t protocolId, PlayerStatus status, bool final = false){
-		return sendError(protocolId, status, std::string(), final);
+	bool sendError(boost::uint16_t protocolId, PlayerStatus status, std::string reason, bool fin = false);
+	bool sendError(boost::uint16_t protocolId, PlayerStatus status, bool fin = false){
+		return sendError(protocolId, status, std::string(), fin);
 	}
 };
 

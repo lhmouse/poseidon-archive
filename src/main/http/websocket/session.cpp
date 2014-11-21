@@ -141,9 +141,9 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					LOG_POSEIDON_WARN("Aborting because some reserved bits are set, opcode = ", ch);
 					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Reserved bits set");
 				}
-				m_final = ch & WS_FL_FIN;
+				m_fin = ch & WS_FL_FIN;
 				m_opcode = static_cast<WebSocketOpCode>(ch & WS_FL_OPCODE);
-				if((m_opcode & WS_FL_CONTROL) && !m_final){
+				if((m_opcode & WS_FL_CONTROL) && !m_fin){
 					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Control frame fragemented");
 				}
 				m_state = ST_PAYLOAD_LEN;
@@ -213,7 +213,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					m_payloadMask = (m_payloadMask << 24) | (m_payloadMask >> 8);
 					m_whole.put(ch);
 				}
-				if(m_final){
+				if(m_fin){
 					if((m_opcode & WS_FL_CONTROL) == 0){
 						boost::make_shared<WebSocketRequestJob>(
 							virtualSharedFromThis<WebSocketSession>(),
@@ -267,13 +267,13 @@ void WebSocketSession::onControlFrame(){
 	}
 }
 
-bool WebSocketSession::send(StreamBuffer contents, bool binary, bool final, bool masked){
+bool WebSocketSession::send(StreamBuffer contents, bool binary, bool fin, bool masked){
 	if(!HttpUpgradedSessionBase::send(
 		makeFrame(binary ? WS_DATA_BIN : WS_DATA_TEXT, STD_MOVE(contents), masked), false))
 	{
 		return false;
 	}
-	if(final){
+	if(fin){
 		return HttpUpgradedSessionBase::send(makeCloseFrame(WS_NORMAL_CLOSURE, StreamBuffer()), true);
 	}
 	return true;

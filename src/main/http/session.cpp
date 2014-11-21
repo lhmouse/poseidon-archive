@@ -470,9 +470,9 @@ void HttpSession::onAllHeadersRead(){
 	}
 }
 
-bool HttpSession::send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool final){
-	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), STD_MOVE(contents)), final);
+bool HttpSession::send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool fin){
+	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), STD_MOVE(contents)), fin);
 }
-bool HttpSession::sendDefault(HttpStatus status, OptionalMap headers, bool final){
-	return TcpSessionBase::send(makeDefaultResponse(status, STD_MOVE(headers)), final);
+bool HttpSession::sendDefault(HttpStatus status, OptionalMap headers, bool fin){
+	return TcpSessionBase::send(makeDefaultResponse(status, STD_MOVE(headers)), fin);
 }

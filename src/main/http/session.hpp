@@ -68,14 +68,14 @@ public:
 		m_authInfo.swap(authInfo);
 	}
 
-	bool send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool final = false);
-	bool send(HttpStatus status, StreamBuffer contents = StreamBuffer(), bool final = false){
-		return send(status, OptionalMap(), STD_MOVE(contents), final);
+	bool send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool fin = false);
+	bool send(HttpStatus status, StreamBuffer contents = StreamBuffer(), bool fin = false){
+		return send(status, OptionalMap(), STD_MOVE(contents), fin);
 	}
 
-	bool sendDefault(HttpStatus status, OptionalMap headers, bool final = false);
-	bool sendDefault(HttpStatus status, bool final = false){
-		return sendDefault(status, OptionalMap(), final);
+	bool sendDefault(HttpStatus status, OptionalMap headers, bool fin = false);
+	bool sendDefault(HttpStatus status, bool fin = false){
+		return sendDefault(status, OptionalMap(), fin);
 	}
 };
 

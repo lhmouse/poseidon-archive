@@ -44,9 +44,9 @@ TcpSessionBase::~TcpSessionBase(){
 	}
 }
 
-bool TcpSessionBase::send(StreamBuffer buffer, bool final){
+bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 	bool closed;
-	if(final){
+	if(fin){
 		closed = atomicExchange(m_shutdown, true);
 	} else {
 		closed = atomicLoad(m_shutdown);
@@ -59,7 +59,7 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool final){
 		const boost::mutex::scoped_lock lock(m_bufferMutex);
 		m_sendBuffer.splice(buffer);
 	}
-	if(final){
+	if(fin){
 		::shutdown(m_socket.get(), SHUT_RD);
 	}
 	EpollDaemon::touchSession(virtualSharedFromThis<TcpSessionBase>());

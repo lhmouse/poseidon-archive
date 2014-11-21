@@ -23,12 +23,12 @@ bool HttpUpgradedSessionBase::hasBeenShutdown() const {
 	}
 	return static_cast<const TcpSessionBase *>(parent.get())->hasBeenShutdown();
 }
-bool HttpUpgradedSessionBase::send(StreamBuffer buffer, bool final){
+bool HttpUpgradedSessionBase::send(StreamBuffer buffer, bool fin){
 	const AUTO(parent, getParent());
 	if(!parent){
 		return false;
 	}
-	return static_cast<TcpSessionBase *>(parent.get())->send(STD_MOVE(buffer), final);
+	return static_cast<TcpSessionBase *>(parent.get())->send(STD_MOVE(buffer), fin);
 }
 bool HttpUpgradedSessionBase::forceShutdown(){
 	const AUTO(parent, getParent());

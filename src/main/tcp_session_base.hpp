@@ -59,7 +59,7 @@ protected:
 	void onReadAvail(const void *data, std::size_t size) = 0;
 
 public:
-	bool send(StreamBuffer buffer, bool final = false); // final 置 true 则发送完毕后挂断连接。
+	bool send(StreamBuffer buffer, bool fin = false); // final 置 true 则发送完毕后挂断连接。
 	bool hasBeenShutdown() const;
 	bool forceShutdown();
 

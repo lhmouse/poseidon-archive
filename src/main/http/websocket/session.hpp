@@ -30,7 +30,7 @@ private:
 
 private:
 	State m_state;
-	bool m_final;
+	bool m_fin;
 	WebSocketOpCode m_opcode;
 	boost::uint64_t m_payloadLen;
 	boost::uint32_t m_payloadMask;
@@ -46,7 +46,7 @@ private:
 	void onControlFrame();
 
 public:
-	bool send(StreamBuffer contents, bool binary = true, bool final = false, bool masked = false);
+	bool send(StreamBuffer contents, bool binary = true, bool fin = false, bool masked = false);
 
 	bool shutdown(WebSocketStatus status, StreamBuffer additional = StreamBuffer());
 };

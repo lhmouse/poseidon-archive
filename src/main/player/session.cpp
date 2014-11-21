@@ -147,12 +147,12 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 	}
 }
 
-bool PlayerSession::send(boost::uint16_t protocolId, StreamBuffer contents, bool final){
-	return TcpSessionBase::send(makeResponse(protocolId, STD_MOVE(contents)), final);
+bool PlayerSession::send(boost::uint16_t protocolId, StreamBuffer contents, bool fin){
+	return TcpSessionBase::send(makeResponse(protocolId, STD_MOVE(contents)), fin);
 }
 
 bool PlayerSession::sendError(boost::uint16_t protocolId, PlayerStatus status,
-	std::string reason, bool final)
+	std::string reason, bool fin)
 {
-	return TcpSessionBase::send(makeErrorResponse(protocolId, status, STD_MOVE(reason)), final);
+	return TcpSessionBase::send(makeErrorResponse(protocolId, status, STD_MOVE(reason)), fin);
 }
