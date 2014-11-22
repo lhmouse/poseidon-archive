@@ -37,7 +37,7 @@ ServletMap g_servlets;
 }
 
 void PlayerServletDepository::start(){
-	LOG_POSEIDON_INFO("Starting player servlet manager...");
+	LOG_POSEIDON_INFO("Starting player servlet depository...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 

@@ -73,7 +73,7 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 }
 
 void HttpServletDepository::start(){
-	LOG_POSEIDON_INFO("Starting HTTP servlet manager...");
+	LOG_POSEIDON_INFO("Starting HTTP servlet depository...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
