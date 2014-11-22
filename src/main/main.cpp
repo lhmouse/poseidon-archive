@@ -10,14 +10,14 @@
 #include "singletons/timer_daemon.hpp"
 #include "singletons/mysql_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
-#include "singletons/player_servlet_manager.hpp"
-#include "singletons/http_servlet_manager.hpp"
-#include "singletons/websocket_servlet_manager.hpp"
+#include "singletons/player_servlet_depository.hpp"
+#include "singletons/http_servlet_depository.hpp"
+#include "singletons/websocket_servlet_depository.hpp"
 #include "singletons/system_http_server.hpp"
 #include "singletons/job_dispatcher.hpp"
-#include "singletons/module_manager.hpp"
-#include "singletons/event_listener_manager.hpp"
-#include "singletons/profile_manager.hpp"
+#include "singletons/module_depository.hpp"
+#include "singletons/event_dispatcher.hpp"
+#include "singletons/profile_depository.hpp"
 #include "profiler.hpp"
 using namespace Poseidon;
 
@@ -68,18 +68,18 @@ void run(){
 	START(TimerDaemon);
 	START(EpollDaemon);
 
-	START(PlayerServletManager);
-	START(HttpServletManager);
-	START(WebSocketServletManager);
-	START(EventListenerManager);
+	START(PlayerServletDepository);
+	START(HttpServletDepository);
+	START(WebSocketServletDepository);
+	START(EventDispatcher);
 
 	START(SystemHttpServer);
-	START(ModuleManager);
+	START(ModuleDepository);
 
 	const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
 	for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
 		LOG_POSEIDON_INFO("Loading init module: ", *it);
-		ModuleManager::load(it->c_str());
+		ModuleDepository::load(it->c_str());
 	}
 	MySqlDaemon::waitForAllAsyncOperations();
 
@@ -100,7 +100,7 @@ int main(int argc, char **argv){
 		MainConfig::setRunPath((1 < argc) ? argv[1] : "/var/poseidon");
 		MainConfig::reload();
 
-		START(ProfileManager);
+		START(ProfileDepository);
 
 		unsigned long long logMask;
 		if(MainConfig::getConfigFile().get(logMask, "log_mask")){

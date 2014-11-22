@@ -2,7 +2,7 @@
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "profile_manager.hpp"
+#include "profile_depository.hpp"
 #include <map>
 #include <cstring>
 #include <boost/thread/shared_mutex.hpp>
@@ -52,20 +52,20 @@ std::map<ProfileKey, ProfileCounters> g_profile;
 
 }
 
-void ProfileManager::start(){
+void ProfileDepository::start(){
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
 	conf.get(g_enabled, "enable_profiler");
 	LOG_POSEIDON_DEBUG("Enable profiler = ", g_enabled);
 }
-void ProfileManager::stop(){
+void ProfileDepository::stop(){
 }
 
-bool ProfileManager::isEnabled(){
+bool ProfileDepository::isEnabled(){
 	return g_enabled;
 }
 
-void ProfileManager::accumulate(const char *file, unsigned long line, const char *func,
+void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func,
 	unsigned long long total, unsigned long long exclusive) NOEXCEPT
 {
 	try {
@@ -97,7 +97,7 @@ void ProfileManager::accumulate(const char *file, unsigned long line, const char
 	}
 }
 
-std::vector<ProfileSnapshotItem> ProfileManager::snapshot(){
+std::vector<ProfileSnapshotItem> ProfileDepository::snapshot(){
 	Profiler::flushProfilersInThread();
 
 	std::vector<ProfileSnapshotItem> ret;

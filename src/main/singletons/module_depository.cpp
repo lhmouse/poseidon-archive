@@ -2,7 +2,7 @@
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "module_manager.hpp"
+#include "module_depository.hpp"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/type_traits/decay.hpp>
@@ -136,9 +136,9 @@ ModuleRaiiMap g_moduleRaiis;
 
 }
 
-void ModuleManager::start(){
+void ModuleDepository::start(){
 }
-void ModuleManager::stop(){
+void ModuleDepository::stop(){
 	LOG_POSEIDON_INFO("Unloading all modules...");
 
 	std::vector<boost::weak_ptr<Module> > modules;
@@ -161,7 +161,7 @@ void ModuleManager::stop(){
 	}
 }
 
-boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
+boost::shared_ptr<Module> ModuleDepository::load(const SharedNtmbs &path){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 
 	LOG_POSEIDON_INFO("Checking whether module has already been loaded: ", path);
@@ -228,7 +228,7 @@ boost::shared_ptr<Module> ModuleManager::load(const SharedNtmbs &path){
 
 	return module;
 }
-boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
+boost::shared_ptr<Module> ModuleDepository::loadNoThrow(const SharedNtmbs &path){
 	try {
 		return load(path);
 	} catch(std::exception &e){
@@ -239,20 +239,20 @@ boost::shared_ptr<Module> ModuleManager::loadNoThrow(const SharedNtmbs &path){
 		return VAL_INIT;
 	}
 }
-bool ModuleManager::unload(const boost::shared_ptr<Module> &module){
+bool ModuleDepository::unload(const boost::shared_ptr<Module> &module){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	return g_modules.erase<MIDX_MODULE>(module) > 0;
 }
-bool ModuleManager::unload(const SharedNtmbs &realPath){
+bool ModuleDepository::unload(const SharedNtmbs &realPath){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	return g_modules.erase<MIDX_REAL_PATH>(realPath) > 0;
 }
-bool ModuleManager::unload(void *baseAddr){
+bool ModuleDepository::unload(void *baseAddr){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	return g_modules.erase<MIDX_BASE_ADDR>(baseAddr) > 0;
 }
 
-std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
+std::vector<ModuleSnapshotItem> ModuleDepository::snapshot(){
 	std::vector<ModuleSnapshotItem> ret;
 	{
 		const boost::recursive_mutex::scoped_lock lock(g_mutex);
@@ -268,7 +268,7 @@ std::vector<ModuleSnapshotItem> ModuleManager::snapshot(){
 	return ret;
 }
 
-void ModuleManager::registerModuleRaii(ModuleRaiiBase *raii){
+void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	::Dl_info info;
 	if(::dladdr(raii, &info) == 0){
@@ -281,7 +281,7 @@ void ModuleManager::registerModuleRaii(ModuleRaiiBase *raii){
 		DEBUG_THROW(Exception, "Duplicate ModuleRaii");
 	}
 }
-void ModuleManager::unregisterModuleRaii(ModuleRaiiBase *raii){
+void ModuleDepository::unregisterModuleRaii(ModuleRaiiBase *raii){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	g_moduleRaiis.erase<MRIDX_RAII>(raii);
 }

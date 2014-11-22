@@ -5,7 +5,7 @@
 #include "server.hpp"
 #include "session.hpp"
 #include "utilities.hpp"
-#include "../singletons/http_servlet_manager.hpp"
+#include "../singletons/http_servlet_depository.hpp"
 using namespace Poseidon;
 
 HttpServer::HttpServer(std::size_t category, const IpPort &bindAddr,
@@ -23,7 +23,7 @@ HttpServer::HttpServer(std::size_t category, const IpPort &bindAddr,
 
 boost::shared_ptr<TcpSessionBase> HttpServer::onClientConnect(ScopedFile client) const {
 	AUTO(session, boost::make_shared<HttpSession>(m_category, STD_MOVE(client)));
-	session->setRequestTimeout(HttpServletManager::getRequestTimeout());
+	session->setRequestTimeout(HttpServletDepository::getRequestTimeout());
 	session->setAuthInfo(m_authInfo);
 	return session;
 }

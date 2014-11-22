@@ -3,7 +3,7 @@
 
 #include "precompiled.hpp"
 #include "profiler.hpp"
-#include "singletons/profile_manager.hpp"
+#include "singletons/profile_depository.hpp"
 #include "utilities.hpp"
 using namespace Poseidon;
 
@@ -23,7 +23,7 @@ void Profiler::flushProfilersInThread(){
 Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT
 	: m_prev(t_topProfiler), m_file(file), m_line(line), m_func(func)
 {
-	if(ProfileManager::isEnabled()){
+	if(ProfileDepository::isEnabled()){
 		const AUTO(now, getMonoClock());
 
 		m_start = now;
@@ -58,7 +58,7 @@ void Profiler::flush(unsigned long long hint) NOEXCEPT {
 			m_prev->m_exclusiveStart = hint;
 		}
 
-		ProfileManager::accumulate(m_file, m_line, m_func, hint - m_start, m_exclusiveTotal);
+		ProfileDepository::accumulate(m_file, m_line, m_func, hint - m_start, m_exclusiveTotal);
 
 		m_start = hint;
 		m_exclusiveTotal = 0;

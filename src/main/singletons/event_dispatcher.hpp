@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_SINGLETONS_EVENT_LISTENER_MANAGER_HPP_
-#define POSEIDON_SINGLETONS_EVENT_LISTENER_MANAGER_HPP_
+#ifndef POSEIDON_SINGLETONS_EVENT_DISPATCHER_HPP_
+#define POSEIDON_SINGLETONS_EVENT_DISPATCHER_HPP_
 
 #include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
@@ -22,7 +22,7 @@ typedef boost::function<
 	void (boost::shared_ptr<EventBaseWithoutId> event)
 	> EventListenerCallback;
 
-struct EventListenerManager {
+struct EventDispatcher {
 	static void start();
 	static void stop();
 
@@ -67,7 +67,7 @@ struct EventListenerManager {
 	static void raise(const boost::shared_ptr<EventBaseWithoutId> &event);
 
 private:
-	EventListenerManager();
+	EventDispatcher();
 };
 
 }

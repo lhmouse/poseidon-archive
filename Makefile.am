@@ -53,12 +53,12 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/mysql_daemon.cpp	\
 	src/main/singletons/epoll_daemon.cpp	\
 	src/main/singletons/timer_daemon.cpp	\
-	src/main/singletons/player_servlet_manager.cpp	\
-	src/main/singletons/http_servlet_manager.cpp	\
-	src/main/singletons/websocket_servlet_manager.cpp	\
-	src/main/singletons/module_manager.cpp	\
-	src/main/singletons/event_listener_manager.cpp	\
-	src/main/singletons/profile_manager.cpp	\
+	src/main/singletons/player_servlet_depository.cpp	\
+	src/main/singletons/http_servlet_depository.cpp	\
+	src/main/singletons/websocket_servlet_depository.cpp	\
+	src/main/singletons/module_depository.cpp	\
+	src/main/singletons/event_dispatcher.cpp	\
+	src/main/singletons/profile_depository.cpp	\
 	src/main/singletons/system_http_server.cpp	\
 	src/main/player/session.cpp	\
 	src/main/player/server.cpp	\

@@ -8,7 +8,7 @@
 #include "protocol_base.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
-#include "../singletons/player_servlet_manager.hpp"
+#include "../singletons/player_servlet_depository.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 #include "../endian.hpp"
@@ -66,7 +66,7 @@ protected:
 		PROFILE_ME;
 
 		try {
-			const AUTO(servlet, PlayerServletManager::getServlet(m_session->getCategory(), m_protocolId));
+			const AUTO(servlet, PlayerServletDepository::getServlet(m_session->getCategory(), m_protocolId));
 			if(!servlet){
 				LOG_POSEIDON_WARN("No servlet for protocol ", m_protocolId);
 				DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND, "Unknown protocol");
@@ -119,7 +119,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 				m_protocolId = loadLe(tmp);
 				LOG_POSEIDON_DEBUG("Protocol len = ", m_payloadLen, ", id = ", m_protocolId);
 
-				const std::size_t maxRequestLength = PlayerServletManager::getMaxRequestLength();
+				const std::size_t maxRequestLength = PlayerServletDepository::getMaxRequestLength();
 				if((unsigned)m_payloadLen >= maxRequestLength){
 					LOG_POSEIDON_WARN(
 						"Request too large: size = ", m_payloadLen, ", max = ", maxRequestLength);

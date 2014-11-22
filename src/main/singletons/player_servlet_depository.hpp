@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_SINGLETONS_PLAYER_SERVLET_MANAGER_HPP_
-#define POSEIDON_SINGLETONS_PLAYER_SERVLET_MANAGER_HPP_
+#ifndef POSEIDON_SINGLETONS_PLAYER_SERVLET_DEPOSITORY_HPP_
+#define POSEIDON_SINGLETONS_PLAYER_SERVLET_DEPOSITORY_HPP_
 
 #include "../cxx_ver.hpp"
 #include <boost/cstdint.hpp>
@@ -24,7 +24,7 @@ typedef boost::function<
 	void (boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming)
 	> PlayerServletCallback;
 
-struct PlayerServletManager {
+struct PlayerServletDepository {
 	static void start();
 	static void stop();
 
@@ -67,7 +67,7 @@ struct PlayerServletManager {
 		std::size_t category, boost::uint16_t protocolId);
 
 private:
-	PlayerServletManager();
+	PlayerServletDepository();
 };
 
 }

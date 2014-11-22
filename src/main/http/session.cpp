@@ -11,8 +11,8 @@
 #include "upgraded_session_base.hpp"
 #include "websocket/session.hpp"
 #include "../log.hpp"
-#include "../singletons/http_servlet_manager.hpp"
-#include "../singletons/websocket_servlet_manager.hpp"
+#include "../singletons/http_servlet_depository.hpp"
+#include "../singletons/websocket_servlet_depository.hpp"
 #include "../singletons/timer_daemon.hpp"
 #include "../stream_buffer.hpp"
 #include "../utilities.hpp"
@@ -137,7 +137,7 @@ protected:
 		assert(!m_uri.empty());
 
 		try {
-			const AUTO(servlet, HttpServletManager::getServlet(m_session->getCategory(), m_uri.c_str()));
+			const AUTO(servlet, HttpServletDepository::getServlet(m_session->getCategory(), m_uri.c_str()));
 			if(!servlet){
 				LOG_POSEIDON_WARN("No handler matches URI ", m_uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
@@ -193,7 +193,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	AUTO(read, (const char *)data);
 	const AUTO(end, read + size);
 	try {
-		const std::size_t maxRequestLength = HttpServletManager::getMaxRequestLength();
+		const std::size_t maxRequestLength = HttpServletDepository::getMaxRequestLength();
 		if(m_totalLength + size >= maxRequestLength){
 			LOG_POSEIDON_WARN("Request size is ", m_totalLength + size, ", max = ", maxRequestLength);
 			DEBUG_THROW(HttpException, HTTP_REQUEST_ENTITY_TOO_LARGE);
@@ -318,7 +318,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				break;
 			}
 
-			m_shutdownTimer = TimerDaemon::registerTimer(HttpServletManager::getKeepAliveTimeout(), 0,
+			m_shutdownTimer = TimerDaemon::registerTimer(HttpServletDepository::getKeepAliveTimeout(), 0,
 				boost::bind(&onKeepAliveTimeout, virtualWeakFromThis<HttpSession>()));
 
 			boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),

@@ -6,9 +6,9 @@
 #include <boost/bind.hpp>
 #include <signal.h>
 #include "epoll_daemon.hpp"
-#include "http_servlet_manager.hpp"
-#include "module_manager.hpp"
-#include "profile_manager.hpp"
+#include "http_servlet_depository.hpp"
+#include "module_depository.hpp"
+#include "profile_depository.hpp"
 #include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
@@ -58,7 +58,7 @@ void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
-	if(!ModuleManager::loadNoThrow(name.c_str())){
+	if(!ModuleDepository::loadNoThrow(name.c_str())){
 		LOG_POSEIDON_WARN("Failed to load module: ", name);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
@@ -73,7 +73,7 @@ void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParam
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
-	if(!ModuleManager::unload(realPath.c_str())){
+	if(!ModuleDepository::unload(realPath.c_str())){
 		LOG_POSEIDON_WARN("Module not loaded: ", realPath);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
@@ -88,7 +88,7 @@ void onProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
 
 	StreamBuffer contents;
 	contents.put("file,line,func,samples,us_total,us_exclusive\r\n");
-	AUTO(snapshot, ProfileManager::snapshot());
+	AUTO(snapshot, ProfileDepository::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 		escapeCsvField(str, it->file);
@@ -112,7 +112,7 @@ void onModules(boost::shared_ptr<HttpSession> session, OptionalMap){
 
 	StreamBuffer contents;
 	contents.put("real_path,base_addr,ref_count\r\n");
-	AUTO(snapshot, ModuleManager::snapshot());
+	AUTO(snapshot, ModuleDepository::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 		escapeCsvField(str, it->realPath);
@@ -242,7 +242,7 @@ void SystemHttpServer::start(){
 		certificate.c_str(), privateKey.c_str(), authUserPasses);
 
 	LOG_POSEIDON_INFO("Created system HTTP sevlet on ", path);
-	g_systemServlet = HttpServletManager::registerServlet(
+	g_systemServlet = HttpServletDepository::registerServlet(
 		category, path.c_str(), boost::bind(&servletProc, _1, _2, path.size()));
 
 	LOG_POSEIDON_INFO("Done initializing system HTTP server.");

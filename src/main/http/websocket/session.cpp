@@ -7,7 +7,7 @@
 #include "../session.hpp"
 #include "../../optional_map.hpp"
 #include "../../singletons/job_dispatcher.hpp"
-#include "../../singletons/websocket_servlet_manager.hpp"
+#include "../../singletons/websocket_servlet_depository.hpp"
 #include "../../log.hpp"
 #include "../../utilities.hpp"
 #include "../../endian.hpp"
@@ -90,7 +90,7 @@ protected:
 		PROFILE_ME;
 
 		try {
-			const AUTO(servlet, WebSocketServletManager::getServlet(
+			const AUTO(servlet, WebSocketServletDepository::getServlet(
 				m_session->getCategory(), m_uri.c_str()));
 			if(!servlet){
 				LOG_POSEIDON_WARN("No servlet for URI ", m_uri);

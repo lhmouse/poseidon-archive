@@ -2,7 +2,7 @@
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "websocket_servlet_manager.hpp"
+#include "websocket_servlet_depository.hpp"
 #include <map>
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
@@ -36,9 +36,9 @@ ServletMap g_servlets;
 
 }
 
-void WebSocketServletManager::start(){
+void WebSocketServletDepository::start(){
 }
-void WebSocketServletManager::stop(){
+void WebSocketServletDepository::stop(){
 	LOG_POSEIDON_INFO("Unloading all WebSocket servlets...");
 
 	ServletMap servlets;
@@ -48,7 +48,7 @@ void WebSocketServletManager::stop(){
 	}
 }
 
-boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(
+boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::registerServlet(
 	std::size_t category, SharedNtmbs uri, WebSocketServletCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<WebSocketServletCallback>());
@@ -68,7 +68,7 @@ boost::shared_ptr<WebSocketServlet> WebSocketServletManager::registerServlet(
 	return servlet;
 }
 
-boost::shared_ptr<const WebSocketServletCallback> WebSocketServletManager::getServlet(
+boost::shared_ptr<const WebSocketServletCallback> WebSocketServletDepository::getServlet(
 	std::size_t category, const SharedNtmbs &uri)
 {
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);

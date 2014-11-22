@@ -3,12 +3,12 @@
 
 #include "precompiled.hpp"
 #include "event_base.hpp"
-#include "singletons/event_listener_manager.hpp"
+#include "singletons/event_dispatcher.hpp"
 using namespace Poseidon;
 
 EventBaseWithoutId::~EventBaseWithoutId(){
 }
 
 void EventBaseWithoutId::raise(){
-	EventListenerManager::raise(shared_from_this());
+	EventDispatcher::raise(shared_from_this());
 }

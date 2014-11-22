@@ -2,7 +2,7 @@
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "player_servlet_manager.hpp"
+#include "player_servlet_depository.hpp"
 #include <map>
 #include <boost/noncopyable.hpp>
 #include <boost/ref.hpp>
@@ -36,7 +36,7 @@ ServletMap g_servlets;
 
 }
 
-void PlayerServletManager::start(){
+void PlayerServletDepository::start(){
 	LOG_POSEIDON_INFO("Starting player servlet manager...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
@@ -44,7 +44,7 @@ void PlayerServletManager::start(){
 	conf.get(g_maxRequestLength, "player_max_request_length");
 	LOG_POSEIDON_DEBUG("Max request length = ", g_maxRequestLength);
 }
-void PlayerServletManager::stop(){
+void PlayerServletDepository::stop(){
 	LOG_POSEIDON_INFO("Unloading all player servlets...");
 
 	ServletMap servlets;
@@ -54,11 +54,11 @@ void PlayerServletManager::stop(){
 	}
 }
 
-std::size_t PlayerServletManager::getMaxRequestLength(){
+std::size_t PlayerServletDepository::getMaxRequestLength(){
 	return g_maxRequestLength;
 }
 
-boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(
+boost::shared_ptr<PlayerServlet> PlayerServletDepository::registerServlet(
 	std::size_t category, boost::uint16_t protocolId, PlayerServletCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<PlayerServletCallback>());
@@ -77,7 +77,7 @@ boost::shared_ptr<PlayerServlet> PlayerServletManager::registerServlet(
 	return servlet;
 }
 
-boost::shared_ptr<const PlayerServletCallback> PlayerServletManager::getServlet(
+boost::shared_ptr<const PlayerServletCallback> PlayerServletDepository::getServlet(
 	std::size_t category, boost::uint16_t protocolId)
 {
     const boost::shared_lock<boost::shared_mutex> slock(g_mutex);

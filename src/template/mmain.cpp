@@ -9,19 +9,19 @@
 #include "../main/profiler.hpp"
 #include "../main/hash.hpp"
 #include "../main/module_raii.hpp"
-#include "../main/singletons/http_servlet_manager.hpp"
-#include "../main/singletons/module_manager.hpp"
-#include "../main/singletons/event_listener_manager.hpp"
+#include "../main/singletons/http_servlet_depository.hpp"
+#include "../main/singletons/module_depository.hpp"
+#include "../main/singletons/event_dispatcher.hpp"
 #include "../main/singletons/timer_daemon.hpp"
-#include "../main/singletons/websocket_servlet_manager.hpp"
-#include "../main/singletons/profile_manager.hpp"
+#include "../main/singletons/websocket_servlet_depository.hpp"
+#include "../main/singletons/profile_depository.hpp"
 #include "../main/http/websocket/session.hpp"
 #include "../main/http/utilities.hpp"
 #include "../main/tcp_client_base.hpp"
 #include "../main/player/session.hpp"
 #include "../main/http/session.hpp"
 #include "../main/player/protocol_base.hpp"
-#include "../main/singletons/player_servlet_manager.hpp"
+#include "../main/singletons/player_servlet_depository.hpp"
 #include "../main/mysql/object_base.hpp"
 using namespace Poseidon;
 
@@ -66,7 +66,7 @@ void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 
 	headers.set("Content-Type", "text/plain");
 	contents.put("   Samples      Total time(us)  Exclusive time(us)    File:Line\n");
-	const AUTO(profile, ProfileManager::snapshot());
+	const AUTO(profile, ProfileDepository::snapshot());
 	for(AUTO(it, profile.begin()); it != profile.end(); ++it){
 		char temp[128];
 		int len = std::sprintf(temp, "%10llu%20llu%20llu    ",
@@ -132,8 +132,8 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	if(!v.empty()){
 		contents.put("Already loaded");
 	} else {
-		v.push_back(HttpServletManager::registerServlet(1, "/meow/", &meowProc));
-		v.push_back(HttpServletManager::registerServlet(1, "/meow/meow/", &meowMeowProc));
+		v.push_back(HttpServletDepository::registerServlet(1, "/meow/", &meowProc));
+		v.push_back(HttpServletDepository::registerServlet(1, "/meow/meow/", &meowMeowProc));
 		v.push_back(TimerDaemon::registerTimer(5000, 10000, &tickProc));
 		contents.put("OK");
 	}
@@ -322,13 +322,13 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 }
 
 MODULE_RAII(
-	return HttpServletManager::registerServlet(1, "/profile", &profileProc);
+	return HttpServletDepository::registerServlet(1, "/profile", &profileProc);
 )
 MODULE_RAII(
-	return HttpServletManager::registerServlet(1, "/load", &loadProc);
+	return HttpServletDepository::registerServlet(1, "/load", &loadProc);
 )
 MODULE_RAII(
-	return HttpServletManager::registerServlet(1, "/unload", &unloadProc);
+	return HttpServletDepository::registerServlet(1, "/unload", &unloadProc);
 )
 MODULE_RAII(
 	AUTO(v, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
@@ -336,34 +336,34 @@ MODULE_RAII(
 	return v;
 )
 MODULE_RAII(
-	return EventListenerManager::registerListener<TestEvent1>(&event1Proc);
+	return EventDispatcher::registerListener<TestEvent1>(&event1Proc);
 )
 MODULE_RAII(
-	return EventListenerManager::registerListener<TestEvent2>(&event2Proc);
+	return EventDispatcher::registerListener<TestEvent2>(&event2Proc);
 )
 MODULE_RAII(
-	return WebSocketServletManager::registerServlet(1, "/wstest", &webSocketProc);
+	return WebSocketServletDepository::registerServlet(1, "/wstest", &webSocketProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(2, 100, &TestIntProc);
+	return PlayerServletDepository::registerServlet(2, 100, &TestIntProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(2, 101, &TestUIntProc);
+	return PlayerServletDepository::registerServlet(2, 101, &TestUIntProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(2, 102, &TestStringProc);
+	return PlayerServletDepository::registerServlet(2, 102, &TestStringProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(2, 103, &TestIntArrayProc);
+	return PlayerServletDepository::registerServlet(2, 103, &TestIntArrayProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(2, 104, &TestUIntArrayProc);
+	return PlayerServletDepository::registerServlet(2, 104, &TestUIntArrayProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(2, 105, &TestStringArrayProc);
+	return PlayerServletDepository::registerServlet(2, 105, &TestStringArrayProc);
 )
 MODULE_RAII(
-	return PlayerServletManager::registerServlet(2, 106, &TestProc);
+	return PlayerServletDepository::registerServlet(2, 106, &TestProc);
 )
 MODULE_RAII(
 	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"));

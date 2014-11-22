@@ -3,13 +3,13 @@
 
 #include "precompiled.hpp"
 #include "module_raii.hpp"
-#include "singletons/module_manager.hpp"
+#include "singletons/module_depository.hpp"
 #include "exception.hpp"
 using namespace Poseidon;
 
 ModuleRaiiBase::ModuleRaiiBase(){
-	ModuleManager::registerModuleRaii(this);
+	ModuleDepository::registerModuleRaii(this);
 }
 ModuleRaiiBase::~ModuleRaiiBase(){
-	ModuleManager::unregisterModuleRaii(this);
+	ModuleDepository::unregisterModuleRaii(this);
 }

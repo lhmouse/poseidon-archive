@@ -2,7 +2,7 @@
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "http_servlet_manager.hpp"
+#include "http_servlet_depository.hpp"
 #include <string>
 #include <map>
 #include <boost/ref.hpp>
@@ -72,7 +72,7 @@ bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 
 }
 
-void HttpServletManager::start(){
+void HttpServletDepository::start(){
 	LOG_POSEIDON_INFO("Starting HTTP servlet manager...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
@@ -86,7 +86,7 @@ void HttpServletManager::start(){
 	conf.get(g_keepAliveTimeout, "http_keep_alive_timeout");
 	LOG_POSEIDON_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
 }
-void HttpServletManager::stop(){
+void HttpServletDepository::stop(){
 	LOG_POSEIDON_INFO("Unloading all HTTP servlets...");
 
 	ServletMap servlets;
@@ -96,17 +96,17 @@ void HttpServletManager::stop(){
 	}
 }
 
-std::size_t HttpServletManager::getMaxRequestLength(){
+std::size_t HttpServletDepository::getMaxRequestLength(){
 	return g_maxRequestLength;
 }
-unsigned long long HttpServletManager::getRequestTimeout(){
+unsigned long long HttpServletDepository::getRequestTimeout(){
 	return g_requestTimeout;
 }
-unsigned long long HttpServletManager::getKeepAliveTimeout(){
+unsigned long long HttpServletDepository::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;
 }
 
-boost::shared_ptr<HttpServlet> HttpServletManager::registerServlet(
+boost::shared_ptr<HttpServlet> HttpServletDepository::registerServlet(
 	std::size_t category, SharedNtmbs uri, HttpServletCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<HttpServletCallback>());
@@ -126,7 +126,7 @@ boost::shared_ptr<HttpServlet> HttpServletManager::registerServlet(
 	return servlet;
 }
 
-boost::shared_ptr<const HttpServletCallback> HttpServletManager::getServlet(
+boost::shared_ptr<const HttpServletCallback> HttpServletDepository::getServlet(
 	std::size_t category, const SharedNtmbs &uri)
 {
 	if(uri[0] != '/'){

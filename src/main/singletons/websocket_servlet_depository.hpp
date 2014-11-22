@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_SINGLETONS_WEBSOCKET_SERVLET_MANAGER_HPP_
-#define POSEIDON_SINGLETONS_WEBSOCKET_SERVLET_MANAGER_HPP_
+#ifndef POSEIDON_SINGLETONS_WEBSOCKET_SERVLET_DEPOSITORY_HPP_
+#define POSEIDON_SINGLETONS_WEBSOCKET_SERVLET_DEPOSITORY_HPP_
 
 #include "../cxx_ver.hpp"
 #include <string>
@@ -22,7 +22,7 @@ typedef boost::function<
 	void (boost::shared_ptr<WebSocketSession> wss, WebSocketOpCode opcode, StreamBuffer incoming)
 	> WebSocketServletCallback;
 
-struct WebSocketServletManager {
+struct WebSocketServletDepository {
 	static void start();
 	static void stop();
 
@@ -34,7 +34,7 @@ struct WebSocketServletManager {
 		std::size_t category, const SharedNtmbs &uri);
 
 private:
-	WebSocketServletManager();
+	WebSocketServletDepository();
 };
 
 }

@@ -2,7 +2,7 @@
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "event_listener_manager.hpp"
+#include "event_dispatcher.hpp"
 #include <map>
 #include <vector>
 #include <vector>
@@ -59,9 +59,9 @@ protected:
 
 }
 
-void EventListenerManager::start(){
+void EventDispatcher::start(){
 }
-void EventListenerManager::stop(){
+void EventDispatcher::stop(){
 	LOG_POSEIDON_INFO("Removing all event listeners...");
 
 	ListenerMap listeners;
@@ -71,7 +71,7 @@ void EventListenerManager::stop(){
 	}
 }
 
-boost::shared_ptr<EventListener> EventListenerManager::registerListener(
+boost::shared_ptr<EventListener> EventDispatcher::registerListener(
 	unsigned id, EventListenerCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<EventListenerCallback>());
@@ -84,7 +84,7 @@ boost::shared_ptr<EventListener> EventListenerManager::registerListener(
 	return listener;
 }
 
-void EventListenerManager::raise(const boost::shared_ptr<EventBaseWithoutId> &event){
+void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event){
 	const unsigned eventId = event->id();
 	std::vector<boost::shared_ptr<const EventListenerCallback> > callbacks;
 	bool needsCleanup = false;

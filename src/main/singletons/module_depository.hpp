@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_SINGLETONS_MODULE_MANAGER_HPP_
-#define POSEIDON_SINGLETONS_MODULE_MANAGER_HPP_
+#ifndef POSEIDON_SINGLETONS_MODULE_DEPOSITORY_HPP_
+#define POSEIDON_SINGLETONS_MODULE_DEPOSITORY_HPP_
 
 #include <string>
 #include <cstddef>
@@ -20,7 +20,7 @@ struct ModuleSnapshotItem {
 	std::size_t refCount;
 };
 
-struct ModuleManager {
+struct ModuleDepository {
 	static void start();
 	static void stop();
 
@@ -38,7 +38,7 @@ private:
 	static void registerModuleRaii(ModuleRaiiBase *raii);
 	static void unregisterModuleRaii(ModuleRaiiBase *raii);
 
-	ModuleManager();
+	ModuleDepository();
 };
 
 }
