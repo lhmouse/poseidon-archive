@@ -168,14 +168,10 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 		\
 		iterator erase(iterator pos){	\
-			iterator ret = pos;	\
-			++ret;	\
-			m_delegate.erase(pos);	\
-			return ret;	\
+			return m_delegate.erase(pos);	\
 		}	\
 		iterator erase(iterator begin, iterator end){	\
-			m_delegate.erase(begin, end);	\
-			return end;	\
+			return m_delegate.erase(begin, end);	\
 		}	\
 		\
 		template<unsigned IndexIdT>	\
@@ -209,18 +205,14 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
 			erase(typename delegate_container::nth_index<IndexIdT>::type::iterator pos)	\
 		{	\
-			typename delegate_container::nth_index<IndexIdT>::type::iterator ret = pos;	\
-			++ret;	\
-			getIndex<IndexIdT>().erase(pos);	\
-			return ret;	\
+			return getIndex<IndexIdT>().erase(pos);	\
 		}	\
 		template<unsigned IndexIdT>  \
 		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
 			erase(typename delegate_container::nth_index<IndexIdT>::type::iterator begin,	\
 				typename delegate_container::nth_index<IndexIdT>::type::iterator end)	\
 		{	\
-			getIndex<IndexIdT>().erase(begin, end);	\
-			return end;	\
+			return getIndex<IndexIdT>().erase(begin, end);	\
 		}	\
 		template<unsigned IndexIdT>  \
 		std::size_t erase(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key){	\
