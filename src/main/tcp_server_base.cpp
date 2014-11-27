@@ -28,7 +28,7 @@ public:
 			LOG_POSEIDON_FATAL("Could not create server SSL context");
 			std::abort();
 		}
-		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, VAL_INIT);
+		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULLPTR);
 
 		LOG_POSEIDON_INFO("Loading server certificate: ", cert);
 		if(::SSL_CTX_use_certificate_file(m_sslCtx.get(), cert, SSL_FILETYPE_PEM) != 1){
@@ -109,7 +109,7 @@ TcpServerBase::~TcpServerBase(){
 }
 
 bool TcpServerBase::poll() const {
-	ScopedFile client(::accept(getFd(), VAL_INIT, VAL_INIT));
+	ScopedFile client(::accept(getFd(), NULLPTR, NULLPTR));
 	if(!client){
 		if(errno != EAGAIN){
 			DEBUG_THROW(SystemError);

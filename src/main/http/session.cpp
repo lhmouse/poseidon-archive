@@ -450,7 +450,7 @@ void HttpSession::onAllHeadersRead(){
 
 		AUTO(lower, BEGIN(JUMP_TABLE));
 		AUTO(upper, END(JUMP_TABLE));
-		VALUE_TYPE(JUMP_TABLE[0].second) found = VAL_INIT;
+		VALUE_TYPE(JUMP_TABLE[0].second) found = NULLPTR;
 		do {
 			const AUTO(middle, lower + (upper - lower) / 2);
 			const int result = std::strcmp(it->first.get(), middle->first);

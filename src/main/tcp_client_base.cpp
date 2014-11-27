@@ -34,7 +34,7 @@ public:
 			LOG_POSEIDON_FATAL("Could not create client SSL context");
 			std::abort();
 		}
-		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, VAL_INIT);
+		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, NULLPTR);
 	}
 
 public:

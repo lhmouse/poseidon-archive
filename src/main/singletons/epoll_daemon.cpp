@@ -122,7 +122,7 @@ void touch(const boost::shared_ptr<TcpSessionBase> &session){
 	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
 void remove(const boost::shared_ptr<TcpSessionBase> &session){
-	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, TcpSessionImpl::doGetFd(*session), VAL_INIT) != 0){
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, TcpSessionImpl::doGetFd(*session), NULLPTR) != 0){
 		LOG_POSEIDON_WARN("Error deleting from epoll. We can do nothing but ignore it.");
 	}
 	const boost::mutex::scoped_lock lock(g_sessionMutex);

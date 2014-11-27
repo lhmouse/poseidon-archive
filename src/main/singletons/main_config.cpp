@@ -14,9 +14,9 @@ ConfigFile g_config;
 
 std::string getRealPath(const char *path){
 	std::string ret;
-	char *realPath = VAL_INIT;
+	char *realPath = NULLPTR;
 	try {
-		realPath = ::realpath(path, VAL_INIT);
+		realPath = ::realpath(path, NULLPTR);
 		if(!realPath){
 			LOG_POSEIDON_ERROR("Could not resolve path: ", path);
 			DEBUG_THROW(SystemError);

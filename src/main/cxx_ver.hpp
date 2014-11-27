@@ -133,6 +133,7 @@ struct ValueInitializer {
 #	define STD_MOVE(expr_)			(::std::move(expr_))
 #	define DECLREF(t_)				(::std::declval<typename ::std::add_lvalue_reference<t_>::type>())
 #	define VAL_INIT					{ }
+#	define NULLPTR					nullptr
 #else
 #	define CV_VALUE_TYPE(expr_)		__typeof__(expr_)
 #	define VALUE_TYPE(expr_)		__typeof__(::Poseidon::valueOfHelper(expr_))
@@ -141,6 +142,7 @@ struct ValueInitializer {
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
 #	define DECLREF(t_)				(::Poseidon::declRef<t_>())
 #	define VAL_INIT					(::Poseidon::ValueInitializer())
+#	define NULLPTR					VAL_INIT
 #endif
 
 #endif
