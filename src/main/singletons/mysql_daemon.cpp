@@ -355,7 +355,7 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object)
 	asi.timeStamp = getMonoClock() + g_mySqlSaveDelay * 1000;
 	MySqlObjectImpl::setContext(*asi.object, &asi);
 
-	g_newObjectAvail.notify_all();
+	g_newObjectAvail.notify_one();
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	std::string filter, MySqlAsyncLoadCallback callback)
@@ -371,5 +371,5 @@ void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	ali.filter.swap(filter);
 	ali.callback.swap(callback);
 
-	g_newObjectAvail.notify_all();
+	g_newObjectAvail.notify_one();
 }
