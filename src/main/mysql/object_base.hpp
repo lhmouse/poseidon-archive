@@ -12,6 +12,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/shared_mutex.hpp>
+#include <boost/cstdint.hpp>
 #include <cppconn/connection.h>
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
@@ -59,6 +60,7 @@ public:
 		atomicStore(m_autoSaves, false);
 	}
 
+	virtual const char *getTableName() const = 0;
 	virtual void syncSave(sql::Connection *conn) const = 0;
 	virtual bool syncLoad(sql::Connection *conn, const char *filter) = 0;
 

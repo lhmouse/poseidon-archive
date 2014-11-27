@@ -3,12 +3,11 @@
 
 #include "../precompiled.hpp"
 #include "mysql_daemon.hpp"
-#include <list>
 #include <boost/thread.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
-#include <mysql/mysql.h>
 #include "main_config.hpp"
 #include "../mysql/object_base.hpp"
 #define POSEIDON_MYSQL_OBJECT_IMPL_
@@ -26,8 +25,9 @@ namespace {
 std::string g_mySqlServer			= "tcp://localhost:3306";
 std::string g_mySqlUsername			= "root";
 std::string g_mySqlPassword			= "root";
-std::string g_mySqlName				= "test";
+std::string g_mySqlSchema			= "test";
 
+std::size_t g_mySqlMaxThreads		= 3;
 std::size_t g_mySqlSaveDelay		= 5000;
 std::size_t g_mySqlMaxReconnDelay	= 60000;
 std::size_t g_mySqlRetryCount		= 3;
@@ -76,7 +76,9 @@ struct AsyncLoadItem {
 };
 
 volatile bool g_running = false;
-boost::thread g_thread;
+
+std::size_t g_threadCount;
+boost::scoped_array<boost::thread> g_threads;
 
 boost::mutex g_mutex;
 std::list<AsyncSaveItem> g_saveQueue;
@@ -94,7 +96,7 @@ bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 	try {
 		connection.reset(::get_driver_instance()->connect(
 			g_mySqlServer, g_mySqlUsername, g_mySqlPassword));
-		connection->setSchema(g_mySqlName);
+		connection->setSchema(g_mySqlSchema);
 		LOG_POSEIDON_INFO("Successfully connected to MySQL server.");
 		return true;
 	} catch(sql::SQLException &e){
@@ -285,8 +287,11 @@ void MySqlDaemon::start(){
 	conf.get(g_mySqlPassword, "mysql_password");
 	LOG_POSEIDON_DEBUG("MySQL password = ", g_mySqlPassword);
 
-	conf.get(g_mySqlName, "mysql_name");
-	LOG_POSEIDON_DEBUG("MySQL mySql name = ", g_mySqlName);
+	conf.get(g_mySqlSchema, "mysql_schema");
+	LOG_POSEIDON_DEBUG("MySQL schema = ", g_mySqlSchema);
+
+	conf.get(g_mySqlMaxThreads, "mysql_max_threads");
+	LOG_POSEIDON_DEBUG("MySQL max threads = ", g_mySqlMaxThreads);
 
 	conf.get(g_mySqlSaveDelay, "mysql_save_delay");
 	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_mySqlSaveDelay);
@@ -297,7 +302,12 @@ void MySqlDaemon::start(){
 	conf.get(g_mySqlRetryCount, "mysql_retry_count");
 	LOG_POSEIDON_DEBUG("MySQL retry count = ", g_mySqlRetryCount);
 
-	boost::thread(threadProc).swap(g_thread);
+	g_threadCount = std::max<std::size_t>(g_mySqlMaxThreads, 1);
+	g_threads.reset(new boost::thread[g_threadCount]);
+	for(std::size_t i = 0; i < g_threadCount; ++i){
+		LOG_POSEIDON_INFO("MySQL thread ", i, " has been created.");
+		boost::thread(threadProc).swap(g_threads[i]);
+	}
 }
 void MySqlDaemon::stop(){
 	LOG_POSEIDON_INFO("Stopping MySQL daemon...");
@@ -308,8 +318,12 @@ void MySqlDaemon::stop(){
 		g_newObjectAvail.notify_all();
 	}
 	waitForAllAsyncOperations();
-	if(g_thread.joinable()){
-		g_thread.join();
+
+	for(std::size_t i = 0; i < g_threadCount; ++i){
+		if(g_threads[i].joinable()){
+			g_threads[i].join();
+		}
+		LOG_POSEIDON_INFO("MySQL thread ", i, " has terminated.");
 	}
 }
 
