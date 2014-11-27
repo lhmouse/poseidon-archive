@@ -6,6 +6,7 @@
 #include <boost/thread.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/bind.hpp>
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include "main_config.hpp"
@@ -75,21 +76,34 @@ struct AsyncLoadItem {
 	}
 };
 
+struct MySqlThreadContext {
+	boost::thread thread;
+
+	boost::mutex mutex;
+	std::list<AsyncSaveItem> saveQueue;
+	std::list<AsyncLoadItem> loadQueue;
+
+	volatile std::size_t waiting;
+	boost::condition_variable newObjectAvail;
+	boost::condition_variable queueEmpty;
+
+	volatile bool connected;
+
+	MySqlThreadContext()
+		: waiting(0), connected(false)
+	{
+	}
+};
+
 volatile bool g_running = false;
+std::vector<boost::shared_ptr<MySqlThreadContext> > g_threads;
 
-std::size_t g_threadCount;
-boost::scoped_array<boost::thread> g_threads;
-
-boost::mutex g_mutex;
-std::list<AsyncSaveItem> g_saveQueue;
+boost::mutex g_dispatcherMutex;
 std::list<AsyncSaveItem> g_savePool;
-std::list<AsyncLoadItem> g_loadQueue;
 std::list<AsyncLoadItem> g_loadPool;
-boost::condition_variable g_newObjectAvail;
-
-bool g_connected = false;
-volatile std::size_t g_waiting = 0;
-boost::condition_variable g_queueEmpty;
+// 根据表名分给不同的线程，轮转调度。
+std::size_t g_counter;
+std::map<const char *, boost::weak_ptr<MySqlThreadContext> > g_dispatcher;
 
 bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 	LOG_POSEIDON_INFO("Connecting to MySQL server: ", g_mySqlServer);
@@ -106,15 +120,15 @@ bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 	}
 }
 
-void daemonLoop(){
+void daemonLoop(const boost::shared_ptr<MySqlThreadContext> &context){
 	boost::scoped_ptr<sql::Connection> connection;
 	if(!getMySqlConnection(connection)){
 		LOG_POSEIDON_FATAL("Failed to connect MySQL server. Bailing out.");
 		std::abort();
 	} else {
-		const boost::mutex::scoped_lock lock(g_mutex);
-		g_connected = true;
-		g_queueEmpty.notify_all();
+		const boost::mutex::scoped_lock lock(context->mutex);
+		atomicStore(context->connected, true);
+		context->queueEmpty.notify_all();
 	}
 
 	std::size_t reconnectDelay = 0;
@@ -137,8 +151,8 @@ void daemonLoop(){
 				} else {
 					LOG_POSEIDON_INFO("Will retry after ", reconnectDelay, " milliseconds.");
 
-					boost::mutex::scoped_lock lock(g_mutex);
-					g_newObjectAvail.timed_wait(lock, boost::posix_time::milliseconds(reconnectDelay));
+					boost::mutex::scoped_lock lock(context->mutex);
+					context->newObjectAvail.timed_wait(lock, boost::posix_time::milliseconds(reconnectDelay));
 
 					reconnectDelay <<= 1;
 					if(reconnectDelay > g_mySqlMaxReconnDelay){
@@ -156,13 +170,13 @@ void daemonLoop(){
 			}
 
 			if(retryCount == 0){
-				boost::mutex::scoped_lock lock(g_mutex);
+				boost::mutex::scoped_lock lock(context->mutex);
 				for(;;){
 					bool empty = true;
-					if(!g_saveQueue.empty()){
+					if(!context->saveQueue.empty()){
 						empty = false;
-						AUTO_REF(head, g_saveQueue.front());
-						if((atomicLoad(g_waiting) == 0) && (head.timeStamp > getMonoClock())){
+						AUTO_REF(head, context->saveQueue.front());
+						if((atomicLoad(context->waiting) == 0) && (head.timeStamp > getMonoClock())){
 							goto skip;
 						}
 						if(MySqlObjectImpl::getContext(*head.object) != &head){
@@ -170,26 +184,35 @@ void daemonLoop(){
 						} else {
 							asi.swap(head);
 						}
-						g_savePool.splice(g_savePool.begin(), g_saveQueue, g_saveQueue.begin());
+						{
+							const boost::mutex::scoped_lock poolLock(g_dispatcherMutex);
+							g_savePool.splice(g_savePool.begin(),
+								context->saveQueue, context->saveQueue.begin());
+						}
 						if(!asi.object){
 							goto skip;
 						}
 						break;
 					}
 				skip:
-					if(!g_loadQueue.empty()){
+					if(!context->loadQueue.empty()){
 						empty = false;
-						ali.swap(g_loadQueue.front());
-						g_loadPool.splice(g_loadPool.begin(), g_loadQueue, g_loadQueue.begin());
+						ali.swap(context->loadQueue.front());
+						{
+							const boost::mutex::scoped_lock poolLock(g_dispatcherMutex);
+							g_loadPool.splice(g_loadPool.begin(),
+								context->loadQueue, context->loadQueue.begin());
+						}
 						break;
 					}
+
 					if(empty){
-						g_queueEmpty.notify_all();
+						context->queueEmpty.notify_all();
 						if(!atomicLoad(g_running)){
 							break;
 						}
 					}
-					g_newObjectAvail.timed_wait(lock, boost::posix_time::seconds(1));
+					context->newObjectAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
 				if(!asi.object && !ali.object){
 					break;
@@ -248,20 +271,22 @@ void daemonLoop(){
 		}
 	}
 
-	if(!g_saveQueue.empty()){
-		LOG_POSEIDON_ERROR("There are still ", g_saveQueue.size(), " object(s) in MySQL save queue");
-		g_saveQueue.clear();
+	if(!context->saveQueue.empty()){
+		LOG_POSEIDON_ERROR("There are still ", context->saveQueue.size(), " object(s) in MySQL save queue");
+		context->saveQueue.clear();
 	}
-	g_loadQueue.clear();
+	context->loadQueue.clear();
 }
 
-void threadProc(){
+void threadProc(boost::weak_ptr<MySqlThreadContext> weakContext){
+	const boost::shared_ptr<MySqlThreadContext> context(weakContext);
+
 	PROFILE_ME;
 	Logger::setThreadTag(" D  "); // Database
 	LOG_POSEIDON_INFO("MySQL daemon started.");
 
 	::get_driver_instance()->threadInit();
-	daemonLoop();
+	daemonLoop(context);
 	::get_driver_instance()->threadEnd();
 
 	LOG_POSEIDON_INFO("MySQL daemon stopped.");
@@ -302,74 +327,119 @@ void MySqlDaemon::start(){
 	conf.get(g_mySqlRetryCount, "mysql_retry_count");
 	LOG_POSEIDON_DEBUG("MySQL retry count = ", g_mySqlRetryCount);
 
-	g_threadCount = std::max<std::size_t>(g_mySqlMaxThreads, 1);
-	g_threads.reset(new boost::thread[g_threadCount]);
-	for(std::size_t i = 0; i < g_threadCount; ++i){
-		LOG_POSEIDON_INFO("MySQL thread ", i, " has been created.");
-		boost::thread(threadProc).swap(g_threads[i]);
+	g_threads.resize(std::max<std::size_t>(g_mySqlMaxThreads, 1));
+	for(std::size_t i = 0; i < g_threads.size(); ++i){
+		AUTO(context, boost::make_shared<MySqlThreadContext>());
+		boost::thread thread(boost::bind(&threadProc, boost::weak_ptr<MySqlThreadContext>(context)));
+		context->thread.swap(thread);
+		g_threads.at(i).swap(context);
+
+		LOG_POSEIDON_INFO("Created MySQL thread ", i);
 	}
 }
 void MySqlDaemon::stop(){
 	LOG_POSEIDON_INFO("Stopping MySQL daemon...");
 
 	atomicStore(g_running, false);
-	{
-		const boost::mutex::scoped_lock lock(g_mutex);
-		g_newObjectAvail.notify_all();
-	}
 	waitForAllAsyncOperations();
 
-	for(std::size_t i = 0; i < g_threadCount; ++i){
-		if(g_threads[i].joinable()){
-			g_threads[i].join();
+	for(std::size_t i = 0; i < g_threads.size(); ++i){
+		if(g_threads[i]->thread.joinable()){
+			g_threads[i]->thread.join();
 		}
+
 		LOG_POSEIDON_INFO("MySQL thread ", i, " has terminated.");
 	}
+	g_threads.clear();
 }
 
 void MySqlDaemon::waitForAllAsyncOperations(){
-	atomicAdd(g_waiting, 1);
-	try {
-		LOG_POSEIDON_INFO("Waiting for all MySQL operations to complete...");
+	for(std::size_t i = 0; i < g_threads.size(); ++i){
+		atomicAdd(g_threads[i]->waiting, 1);
+		try {
+			LOG_POSEIDON_INFO("Waiting for all MySQL operations to complete on thread ", i);
 
-		boost::mutex::scoped_lock lock(g_mutex);
-		g_newObjectAvail.notify_all();
-		while(!g_connected || !(g_saveQueue.empty() && g_loadQueue.empty())){
-			g_queueEmpty.wait(lock);
+			boost::mutex::scoped_lock lock(g_threads[i]->mutex);
+			g_threads[i]->newObjectAvail.notify_all();
+			while(!atomicLoad(g_threads[i]->connected) ||
+				!(g_threads[i]->saveQueue.empty() && g_threads[i]->loadQueue.empty()))
+			{
+				g_threads[i]->queueEmpty.wait(lock);
+			}
+		} catch(...){
+			LOG_POSEIDON_ERROR("Interrupted by exception.");
 		}
-	} catch(...){
-		LOG_POSEIDON_ERROR("Interrupted by exception.");
+		atomicSub(g_threads[i]->waiting, 1);
 	}
-	atomicSub(g_waiting, 1);
 }
 
 void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object){
-	const boost::mutex::scoped_lock lock(g_mutex);
-	if(g_savePool.empty()){
-		g_savePool.push_front(AsyncSaveItem());
-	}
-	g_saveQueue.splice(g_saveQueue.end(), g_savePool, g_savePool.begin());
+	std::list<AsyncSaveItem> saveItem;
+	boost::shared_ptr<MySqlThreadContext> context;
+	{
+		const boost::mutex::scoped_lock lock(g_dispatcherMutex);
+		if(g_savePool.empty()){
+			saveItem.push_front(AsyncSaveItem());
+		} else {
+			saveItem.splice(saveItem.end(), g_savePool, g_savePool.begin());
+		}
 
-	AUTO_REF(asi, g_saveQueue.back());
+		AUTO_REF(weakContext, g_dispatcher[object->getTableName()]);
+		context = weakContext.lock();
+		if(!context){
+			const std::size_t index = ++g_counter % g_threads.size();
+			context = g_threads[index];
+			weakContext = context;
+
+			LOG_POSEIDON_TRACE("Dispatching MySQL table `", object->getTableName(),
+				"` to thread ", index);
+		}
+	}
+
+	AUTO_REF(asi, saveItem.back());
 	asi.object.swap(object);
 	asi.timeStamp = getMonoClock() + g_mySqlSaveDelay * 1000;
 	MySqlObjectImpl::setContext(*asi.object, &asi);
 
-	g_newObjectAvail.notify_one();
+	{
+		const boost::mutex::scoped_lock lock(context->mutex);
+		context->saveQueue.splice(context->saveQueue.end(), saveItem);
+		context->newObjectAvail.notify_all();
+	}
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	std::string filter, MySqlAsyncLoadCallback callback)
 {
-	const boost::mutex::scoped_lock lock(g_mutex);
-	if(g_loadPool.empty()){
-		g_loadPool.push_front(AsyncLoadItem());
-	}
-	g_loadQueue.splice(g_loadQueue.end(), g_loadPool, g_loadPool.begin());
+	std::list<AsyncLoadItem> loadItem;
+	boost::shared_ptr<MySqlThreadContext> context;
+	{
+		const boost::mutex::scoped_lock lock(g_dispatcherMutex);
+		if(g_loadPool.empty()){
+			loadItem.push_front(AsyncLoadItem());
+		} else {
+			loadItem.splice(loadItem.end(), g_loadPool, g_loadPool.begin());
+		}
 
-	AUTO_REF(ali, g_loadQueue.back());
+		AUTO_REF(weakContext, g_dispatcher[object->getTableName()]);
+		context = weakContext.lock();
+		if(!context){
+			const std::size_t index = ++g_counter % g_threads.size();
+			context = g_threads[index];
+			weakContext = context;
+
+			LOG_POSEIDON_TRACE("Dispatching MySQL table `", object->getTableName(),
+				"` to thread ", index);
+		}
+	}
+
+	AUTO_REF(ali, loadItem.back());
 	ali.object.swap(object);
 	ali.filter.swap(filter);
 	ali.callback.swap(callback);
 
-	g_newObjectAvail.notify_one();
+	{
+		const boost::mutex::scoped_lock lock(context->mutex);
+		context->loadQueue.splice(context->loadQueue.end(), loadItem);
+		context->newObjectAvail.notify_all();
+	}
 }
