@@ -432,13 +432,14 @@ void EpollDaemon::start(){
 	boost::thread(threadProc).swap(g_thread);
 }
 void EpollDaemon::stop(){
+	if(atomicExchange(g_running, false) == false){
+		return;
+	}
 	LOG_POSEIDON_INFO("Stopping epoll daemon...");
 
-	atomicStore(g_running, false);
 	if(g_thread.joinable()){
 		g_thread.join();
 	}
-
 	g_sessions.clear();
 	g_servers.clear();
 }

@@ -84,9 +84,13 @@ void JobDispatcher::doModal(){
 	}
 }
 void JobDispatcher::quitModal(){
-	atomicStore(g_running, false);
-	const boost::mutex::scoped_lock lock(g_mutex);
-	g_newJobAvail.notify_all();
+	if(atomicExchange(g_running, false) == false){
+		return;
+	}
+	{
+		const boost::mutex::scoped_lock lock(g_mutex);
+		g_newJobAvail.notify_all();
+	}
 }
 
 void JobDispatcher::pend(boost::shared_ptr<JobBase> job){

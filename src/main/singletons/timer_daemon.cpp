@@ -136,9 +136,11 @@ void TimerDaemon::start(){
 	boost::thread(threadProc).swap(g_thread);
 }
 void TimerDaemon::stop(){
+	if(atomicExchange(g_running, false) == false){
+		return;
+	}
 	LOG_POSEIDON_INFO("Stopping timer daemon...");
 
-	atomicStore(g_running, false);
 	if(g_thread.joinable()){
 		g_thread.join();
 	}

@@ -426,6 +426,9 @@ void MySqlDaemon::start(){
 	}
 	LOG_POSEIDON_INFO("Starting MySQL daemon...");
 
+	// 全局初始化。
+	::get_driver_instance()->threadInit();
+
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
 	conf.get(g_mySqlServer, "mysql_server");
@@ -480,9 +483,10 @@ void MySqlDaemon::start(){
 	}
 }
 void MySqlDaemon::stop(){
+	if(atomicExchange(g_running, false) == false){
+		return;
+	}
 	LOG_POSEIDON_INFO("Stopping MySQL daemon...");
-
-	atomicStore(g_running, false);
 
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		g_threads[i]->join();
@@ -490,6 +494,8 @@ void MySqlDaemon::stop(){
 		LOG_POSEIDON_INFO("Shutdown MySQL thread ", i);
 	}
 	g_threads.clear();
+
+	::get_driver_instance()->threadEnd();
 }
 
 void MySqlDaemon::waitForAllAsyncOperations(){
