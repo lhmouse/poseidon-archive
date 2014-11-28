@@ -290,83 +290,84 @@ void MySqlThread::operationLoop(){
 				m_queueEmpty.notify_all();
 			}
 
-			if(queue.front()->shouldExecuteNow() || atomicLoad(m_urgentMode)){
-				std::string sqlStatement;
-
-				struct Closure {
-					MySqlThread &thread;
-					std::deque<boost::shared_ptr<OperationBase> > &queue;
-					std::size_t &retryCount;
-					std::string &sqlStatement;
-
-					Closure(MySqlThread &thread_,
-						std::deque<boost::shared_ptr<OperationBase> > &queue_,
-						std::size_t &retryCount_, std::string &sqlStatement_)
-						: thread(thread_), queue(queue_)
-						, retryCount(retryCount_), sqlStatement(sqlStatement_)
-					{
-					}
-
-					void operator()(unsigned code, const char *what){
-						bool retry = true;
-						if(retryCount == 0){
-							if(g_mySqlRetryCount != 0){
-								retryCount = g_mySqlRetryCount;
-							}
-						} else {
-							if(--retryCount == 0){
-								retry = false;
-							}
-						}
-						if(!retry){
-							LOG_POSEIDON_WARN("Retry count drops to zero. Give up.");
-							queue.pop_front();
-
-							char temp[32];
-							unsigned len = std::sprintf(temp, "%05u", code);
-							std::string dump;
-							dump.reserve(1024);
-							dump.assign("-- Error code = ");
-							dump.append(temp, len);
-							dump.append(", Description = ");
-							dump.append(what);
-							dump.append("\n");
-							dump.append(sqlStatement);
-							dump.append(";\n\n");
-
-							{
-								const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
-								std::size_t total = 0;
-								do {
-									::ssize_t written = ::write(g_dumpFile.get(),
-										dump.data() + total, dump.size() - total);
-									if(written <= 0){
-										break;
-									}
-									total += written;
-								} while(total < dump.size());
-							}
-						}
-					}
-				} retry(*this, queue, retryCount, sqlStatement);
-
-				try {
-					const Stopwatch watch(*this);
-					queue.front()->execute(sqlStatement, connection.get());
-				} catch(sql::SQLException &e){
-					retry(e.getErrorCode(), e.what());
-					throw;
-				} catch(std::exception &e){
-					retry(99999, e.what());
-					throw;
-				} catch(...){
-					retry(99999, "Unknown exception");
-					throw;
-				}
-				queue.pop_front();
-			} else {
+			if(!queue.front()->shouldExecuteNow() && !atomicLoad(m_urgentMode)){
 				::sleep(1);
+				continue;
 			}
+
+			std::string sqlStatement;
+
+			struct Closure {
+				MySqlThread &thread;
+				std::deque<boost::shared_ptr<OperationBase> > &queue;
+				std::size_t &retryCount;
+				std::string &sqlStatement;
+
+				Closure(MySqlThread &thread_,
+					std::deque<boost::shared_ptr<OperationBase> > &queue_,
+					std::size_t &retryCount_, std::string &sqlStatement_)
+					: thread(thread_), queue(queue_)
+					, retryCount(retryCount_), sqlStatement(sqlStatement_)
+				{
+				}
+
+				void operator()(unsigned code, const char *what){
+					bool retry = true;
+					if(retryCount == 0){
+						if(g_mySqlRetryCount != 0){
+							retryCount = g_mySqlRetryCount;
+						}
+					} else {
+						if(--retryCount == 0){
+							retry = false;
+						}
+					}
+					if(!retry){
+						LOG_POSEIDON_WARN("Retry count drops to zero. Give up.");
+						queue.pop_front();
+
+						char temp[32];
+						unsigned len = std::sprintf(temp, "%05u", code);
+						std::string dump;
+						dump.reserve(1024);
+						dump.assign("-- Error code = ");
+						dump.append(temp, len);
+						dump.append(", Description = ");
+						dump.append(what);
+						dump.append("\n");
+						dump.append(sqlStatement);
+						dump.append(";\n\n");
+
+						{
+							const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
+							std::size_t total = 0;
+							do {
+								::ssize_t written = ::write(g_dumpFile.get(),
+									dump.data() + total, dump.size() - total);
+								if(written <= 0){
+									break;
+								}
+								total += written;
+							} while(total < dump.size());
+						}
+					}
+				}
+			} retry(*this, queue, retryCount, sqlStatement);
+
+			try {
+				const Stopwatch watch(*this);
+				queue.front()->execute(sqlStatement, connection.get());
+			} catch(sql::SQLException &e){
+				retry(e.getErrorCode(), e.what());
+				throw;
+			} catch(std::exception &e){
+				retry(99999, e.what());
+				throw;
+			} catch(...){
+				retry(99999, "Unknown exception");
+				throw;
+			}
+			queue.pop_front();
 		} catch(sql::SQLException &e){
 			LOG_POSEIDON_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
 				", state = ", e.getSQLState(), ", what = ", e.what());
