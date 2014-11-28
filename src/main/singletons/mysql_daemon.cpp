@@ -190,10 +190,11 @@ public:
 	}
 
 	void waitTillIdle() const {
-		boost::mutex::scoped_lock lock(m_mutex);
 		atomicStore(m_urgentMode, true);
-		m_newAvail.notify_all();
+		boost::mutex::scoped_lock lock(m_mutex);
 		while(!m_queue.empty()){
+			atomicStore(m_urgentMode, true);
+			m_newAvail.notify_all();
 			m_queueEmpty.wait(lock);
 		}
 	}
