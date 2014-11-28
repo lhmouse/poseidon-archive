@@ -14,7 +14,7 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/cstdint.hpp>
 #include <cppconn/connection.h>
-#include <cppconn/prepared_statement.h>
+#include <cppconn/statement.h>
 #include <cppconn/resultset.h>
 #include "../atomic.hpp"
 #include "../log.hpp"
@@ -33,6 +33,20 @@ class MySqlObjectBase
 	: public virtual VirtualSharedFromThis
 {
 	friend class MySqlObjectImpl;
+
+protected:
+	class EscapedString {
+	private:
+		std::string m_escaped;
+
+	public:
+		explicit EscapedString(const std::string &plain);
+
+	public:
+		const std::string get() const {
+			return m_escaped;
+		}
+	};
 
 private:
 	mutable volatile bool m_autoSaves;
@@ -65,8 +79,7 @@ public:
 	virtual bool syncLoad(sql::Connection *conn, const char *filter) = 0;
 
 	void asyncSave() const;
-	void asyncLoad(std::string filter,
-		MySqlAsyncLoadCallback callback = MySqlAsyncLoadCallback());
+	void asyncLoad(std::string filter, MySqlAsyncLoadCallback callback = MySqlAsyncLoadCallback());
 };
 
 }

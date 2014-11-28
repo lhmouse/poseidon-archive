@@ -233,6 +233,7 @@ private:
 	static void doQuery(boost::scoped_ptr<sql::ResultSet> &rs_,
 		sql::Connection *conn_, const char *filter_, const char *limit_)
 	{
+		std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -245,30 +246,40 @@ private:
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
 
-#undef MYSQL_OBJECT_NAME_COMMA_
-#define MYSQL_OBJECT_NAME_COMMA_(name_)	\
-	"`" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "`.`" TOKEN_TO_STR(name_) "`, "
+#define FIELD_BOOLEAN(name_)				(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
+#define FIELD_TINYINT(name_)				(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
+#define FIELD_TINYINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
+#define FIELD_SMALLINT(name_)				(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
+#define FIELD_SMALLINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
+#define FIELD_INTEGER(name_)				(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
+#define FIELD_INTEGER_UNSIGNED(name_)		(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
+#define FIELD_BIGINT(name_)					(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
+#define FIELD_BIGINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
+#define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
 
-#define FIELD_BOOLEAN(name_)				MYSQL_OBJECT_NAME_COMMA_(name_)
-#define FIELD_TINYINT(name_)				MYSQL_OBJECT_NAME_COMMA_(name_)
-#define FIELD_TINYINT_UNSIGNED(name_)		MYSQL_OBJECT_NAME_COMMA_(name_)
-#define FIELD_SMALLINT(name_)				MYSQL_OBJECT_NAME_COMMA_(name_)
-#define FIELD_SMALLINT_UNSIGNED(name_)		MYSQL_OBJECT_NAME_COMMA_(name_)
-#define FIELD_INTEGER(name_)				MYSQL_OBJECT_NAME_COMMA_(name_)
-#define FIELD_INTEGER_UNSIGNED(name_)		MYSQL_OBJECT_NAME_COMMA_(name_)
-#define FIELD_BIGINT(name_)					MYSQL_OBJECT_NAME_COMMA_(name_)
-#define FIELD_BIGINT_UNSIGNED(name_)		MYSQL_OBJECT_NAME_COMMA_(name_)
-#define FIELD_STRING(name_)					MYSQL_OBJECT_NAME_COMMA_(name_)
+		oss_ <<"SELECT ";
+		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
+		oss_ <<" FROM `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` ";
+		oss_ <<filter_ << ' ';
+		oss_ <<limit_ << ' ';
+		std::string str_ = oss_.str();
 
-		sql::SQLString str_("SELECT " MYSQL_OBJECT_FIELDS);
-		str_->erase(str_->end() - 2, str_->end());
-		str_->append(" FROM `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` ");
-		str_->append(filter_);
-		str_->append(limit_);
+		sql::SQLString sql_;
+		sql_->swap(str_);
+		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
 
-		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
-
-		rs_.reset(conn_->prepareStatement(str_)->executeQuery());
+		const boost::scoped_ptr<sql::Statement> stmt_(conn_->createStatement());
+		rs_.reset(stmt_->executeQuery(sql_));
 	}
 	void doFetch(sql::ResultSet *rs_){
 		unsigned index_ = 0;
@@ -284,20 +295,18 @@ private:
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
 
-#define FIELD_BOOLEAN(name_)				name_ = rs_->getBoolean(++index_);
-#define FIELD_TINYINT(name_)				name_ = rs_->getInt(++index_);
-#define FIELD_TINYINT_UNSIGNED(name_)		name_ = rs_->getUInt(++index_);
-#define FIELD_SMALLINT(name_)				name_ = rs_->getInt(++index_);
-#define FIELD_SMALLINT_UNSIGNED(name_)		name_ = rs_->getUInt(++index_);
-#define FIELD_INTEGER(name_)				name_ = rs_->getInt(++index_);
-#define FIELD_INTEGER_UNSIGNED(name_)		name_ = rs_->getUInt(++index_);
-#define FIELD_BIGINT(name_)					name_ = rs_->getInt64(++index_);
-#define FIELD_BIGINT_UNSIGNED(name_)		name_ = rs_->getUInt64(++index_);
-#define FIELD_STRING(name_)					rs_->getString(++index_)->swap(name_);
+#define FIELD_BOOLEAN(name_)				set_ ## name_(rs_->getBoolean(++index_));
+#define FIELD_TINYINT(name_)				set_ ## name_(rs_->getInt(++index_));
+#define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(rs_->getUInt(++index_));
+#define FIELD_SMALLINT(name_)				set_ ## name_(rs_->getInt(++index_));
+#define FIELD_SMALLINT_UNSIGNED(name_)		set_ ## name_(rs_->getUInt(++index_));
+#define FIELD_INTEGER(name_)				set_ ## name_(rs_->getInt(++index_));
+#define FIELD_INTEGER_UNSIGNED(name_)		set_ ## name_(rs_->getUInt(++index_));
+#define FIELD_BIGINT(name_)					set_ ## name_(rs_->getInt64(++index_));
+#define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(rs_->getUInt64(++index_));
+#define FIELD_STRING(name_)					set_ ## name_(rs_->getString(++index_).asStdString());
 
 		MYSQL_OBJECT_FIELDS
-
-		::Poseidon::atomicSynchronize();
 	}
 
 public:
@@ -305,6 +314,7 @@ public:
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
 	void syncSave(sql::Connection *conn_) const {
+		std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -317,64 +327,47 @@ public:
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
 
-#undef MYSQL_OBJECT_NAME_ASSIGN_COMMA_
-#define MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)	\
-	"`" TOKEN_TO_STR(name_) "` = ?, "
+#define FIELD_BOOLEAN(name_)				(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<static_cast<long>(get_ ## name_())),
+#define FIELD_TINYINT(name_)				(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<static_cast<long>(get_ ## name_())),
+#define FIELD_TINYINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<static_cast<unsigned long>(get_ ## name_())),
+#define FIELD_SMALLINT(name_)				(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<static_cast<long>(get_ ## name_())),
+#define FIELD_SMALLINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<static_cast<unsigned long>(get_ ## name_())),
+#define FIELD_INTEGER(name_)				(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<static_cast<long>(get_ ## name_())),
+#define FIELD_INTEGER_UNSIGNED(name_)		(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<static_cast<unsigned long>(get_ ## name_())),
+#define FIELD_BIGINT(name_)					(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<static_cast<long long>(get_ ## name_())),
+#define FIELD_BIGINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<static_cast<unsigned long long>(get_ ## name_())),
+#define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<<EscapedString(get_ ## name_()).get()),
 
-#define FIELD_BOOLEAN(name_)				MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
-#define FIELD_TINYINT(name_)				MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
-#define FIELD_TINYINT_UNSIGNED(name_)		MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
-#define FIELD_SMALLINT(name_)				MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
-#define FIELD_SMALLINT_UNSIGNED(name_)		MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
-#define FIELD_INTEGER(name_)				MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
-#define FIELD_INTEGER_UNSIGNED(name_)		MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
-#define FIELD_BIGINT(name_)					MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
-#define FIELD_BIGINT_UNSIGNED(name_)		MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
-#define FIELD_STRING(name_)					MYSQL_OBJECT_NAME_ASSIGN_COMMA_(name_)
+		oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
+		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
+		std::string str_ = oss_.str();
 
-		sql::SQLString str_(
-			"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` "
-			"SET " MYSQL_OBJECT_FIELDS);
-		str_->erase(str_->end() - 2, str_->end());
+		sql::SQLString sql_;
+		sql_->swap(str_);
+		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
 
-		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", str_);
-
-		const boost::scoped_ptr<sql::PreparedStatement> ps_(conn_->prepareStatement(str_));
-		std::vector<boost::shared_ptr<void> > contexts_;
-		unsigned index_ = 0;
-
-#undef FIELD_BOOLEAN
-#undef FIELD_TINYINT
-#undef FIELD_TINYINT_UNSIGNED
-#undef FIELD_SMALLINT
-#undef FIELD_SMALLINT_UNSIGNED
-#undef FIELD_INTEGER
-#undef FIELD_INTEGER_UNSIGNED
-#undef FIELD_BIGINT
-#undef FIELD_BIGINT_UNSIGNED
-#undef FIELD_STRING
-
-#define FIELD_BOOLEAN(name_)				ps_->setBoolean(++index_, get_ ## name_());
-#define FIELD_TINYINT(name_)				ps_->setInt(++index_, get_ ## name_());
-#define FIELD_TINYINT_UNSIGNED(name_)		ps_->setUInt(++index_, get_ ## name_());
-#define FIELD_SMALLINT(name_)				ps_->setInt(++index_, get_ ## name_());
-#define FIELD_SMALLINT_UNSIGNED(name_)		ps_->setUInt(++index_, get_ ## name_());
-#define FIELD_INTEGER(name_)				ps_->setInt(++index_, get_ ## name_());
-#define FIELD_INTEGER_UNSIGNED(name_)		ps_->setUInt(++index_, get_ ## name_());
-#define FIELD_BIGINT(name_)					ps_->setInt64(++index_, get_ ## name_());
-#define FIELD_BIGINT_UNSIGNED(name_)		ps_->setUInt64(++index_, get_ ## name_());
-#define FIELD_STRING(name_)					if(get_ ## name_().size() <= 255){	\
-												ps_->setString(++index_, get_ ## name_());	\
-											} else {	\
-												AUTO(ss_, ::boost::make_shared<	\
-													::std::stringstream>(get_ ## name_()));	\
-												contexts_.push_back(ss_);	\
-												ps_->setBlob(++index_, ss_.get());	\
-											}
-
-		MYSQL_OBJECT_FIELDS
-
-		ps_->executeUpdate();
+		const boost::scoped_ptr<sql::Statement> stmt_(conn_->createStatement());
+		stmt_->executeUpdate(sql_);
 	}
 	bool syncLoad(sql::Connection *conn_, const char *filter_){
 		boost::scoped_ptr<sql::ResultSet> rs_;
