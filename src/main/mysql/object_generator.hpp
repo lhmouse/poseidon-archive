@@ -355,8 +355,8 @@ public:
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
 													<<static_cast<unsigned long long>(get_ ## name_())),
 #define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
-													<<EscapedString(get_ ## name_()).get()),
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = '"	\
+													<<EscapedString(get_ ## name_()).get() <<'\''),
 
 		oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
