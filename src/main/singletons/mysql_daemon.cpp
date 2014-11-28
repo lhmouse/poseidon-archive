@@ -321,7 +321,7 @@ void MySqlThread::operationLoop(){
 							dump.append(what);
 							dump.append("\n");
 							dump.append(sqlStatement);
-							dump.append("\n\n");
+							dump.append(";\n\n");
 
 							{
 								const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
