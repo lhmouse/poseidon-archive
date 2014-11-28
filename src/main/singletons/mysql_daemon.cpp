@@ -191,9 +191,9 @@ public:
 
 	void waitTillIdle() const {
 		boost::mutex::scoped_lock lock(m_mutex);
+		atomicStore(m_urgentMode, true);
+		m_newAvail.notify_all();
 		while(!m_queue.empty()){
-			atomicStore(m_urgentMode, true);
-			m_newAvail.notify_all();
 			m_queueEmpty.wait(lock);
 		}
 	}
@@ -291,7 +291,8 @@ void MySqlThread::operationLoop(){
 			}
 
 			if(!queue.front()->shouldExecuteNow() && !atomicLoad(m_urgentMode)){
-				::sleep(1);
+				boost::mutex::scoped_lock lock(m_mutex);
+				m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				continue;
 			}
 
