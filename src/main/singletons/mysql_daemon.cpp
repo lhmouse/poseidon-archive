@@ -39,8 +39,8 @@ public:
 	}
 
 public:
-	// 返回 true 表示该操作已被执行，返回 false 说明应当睡眠。
-	virtual bool execute(sql::Connection *connection, bool urgent) = 0;
+	virtual bool shouldExecuteNow() const = 0;
+	virtual void execute(sql::Connection *connection) = 0;
 };
 
 class LoadOperation
@@ -61,7 +61,10 @@ public:
 	}
 
 public:
-	bool execute(sql::Connection *connection, bool /* urgent */){
+	bool shouldExecuteNow() const {
+		return true;
+	}
+	void execute(sql::Connection *connection){
 		PROFILE_ME;
 
 		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", filter = ", m_filter);
@@ -69,7 +72,6 @@ public:
 		m_object->enableAutoSaving();
 
 		JobBase::pend();
-		return true;
 	}
 
 	void perform(){
@@ -91,19 +93,18 @@ public:
 	}
 
 public:
-	bool execute(sql::Connection *connection, bool urgent){
+	bool shouldExecuteNow() const {
+		return m_dueTime <= getMonoClock();
+	}
+	void execute(sql::Connection *connection){
 		PROFILE_ME;
 
-		if(!urgent && (getMonoClock() < m_dueTime)){
-			return false;
-		}
 		if(MySqlObjectImpl::getContext(*m_object) != this){
 			// 使用写入合并策略，丢弃当前的写入操作（认为已成功）。
-			return true;
+			return;
 		}
 		LOG_POSEIDON_INFO("MySQL save: table = ", m_object->getTableName());
 		m_object->syncSave(connection);
-		return true;
 	}
 };
 
@@ -267,28 +268,27 @@ void MySqlThread::operationLoop(){
 				m_queueEmpty.notify_all();
 			}
 
-			bool dealt = false;
-			try {
-				const Stopwatch watch(*this);
-				dealt = queue.front()->execute(connection.get(), atomicLoad(m_urgentMode));
-			} catch(...){
-				bool retry = true;
-				if(retryCount == 0){
-					if(g_mySqlRetryCount != 0){
-						retryCount = g_mySqlRetryCount;
+			if(queue.front()->shouldExecuteNow() || atomicLoad(m_urgentMode)){
+				try {
+					const Stopwatch watch(*this);
+					queue.front()->execute(connection.get());
+				} catch(...){
+					bool retry = true;
+					if(retryCount == 0){
+						if(g_mySqlRetryCount != 0){
+							retryCount = g_mySqlRetryCount;
+						}
+					} else {
+						if(--retryCount == 0){
+							retry = false;
+						}
 					}
-				} else {
-					if(--retryCount == 0){
-						retry = false;
+					if(!retry){
+						queue.pop_front();
+						LOG_POSEIDON_WARN("Retry count drops to zero. Give up.");
 					}
+					throw;
 				}
-				if(!retry){
-					queue.pop_front();
-					LOG_POSEIDON_WARN("Retry count drops to zero. Give up.");
-				}
-				throw;
-			}
-			if(dealt){
 				queue.pop_front();
 			} else {
 				::sleep(1);
@@ -417,17 +417,14 @@ void MySqlDaemon::waitForAllAsyncOperations(){
 }
 
 void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object){
-	const AUTO_REF(ref, *object);
-	AUTO(operation, boost::make_shared<SaveOperation>(STD_MOVE(object)));
-	MySqlObjectImpl::setContext(ref, operation.get());
-	pickThreadForTable(ref.getTableName())->addOperation(operation, false);
+	const AUTO(table, object->getTableName());
+	pickThreadForTable(table)->addOperation(
+		boost::make_shared<SaveOperation>(STD_MOVE(object)), false);
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	std::string filter, MySqlAsyncLoadCallback callback)
 {
-	const AUTO_REF(ref, *object);
-	AUTO(operation, boost::make_shared<LoadOperation>(
-		STD_MOVE(object), STD_MOVE(filter), STD_MOVE(callback)));
-	MySqlObjectImpl::setContext(ref, operation.get());
-	pickThreadForTable(ref.getTableName())->addOperation(operation, true);
+	const AUTO(table, object->getTableName());
+	pickThreadForTable(table)->addOperation(
+		boost::make_shared<LoadOperation>(STD_MOVE(object), STD_MOVE(filter), STD_MOVE(callback)), true);
 }
