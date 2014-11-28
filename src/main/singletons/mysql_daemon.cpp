@@ -467,7 +467,7 @@ void MySqlDaemon::start(){
 	std::string dumpPath = g_mySqlDumpDir;
 	dumpPath.append(temp, len);
 	LOG_POSEIDON_INFO("Creating SQL dump file: ", dumpPath);
-	if(!g_dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT | O_EXCL))){
+	if(!g_dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT | O_EXCL, 0644))){
 		const int errCode = errno;
 		LOG_POSEIDON_FATAL("Error creating SQL dump file: errno = ", errCode,
 			", description = ", getErrorDesc(errCode));
