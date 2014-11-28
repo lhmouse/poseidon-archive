@@ -455,9 +455,12 @@ void MySqlDaemon::start(){
 	conf.get(g_mySqlRetryCount, "mysql_retry_count");
 	LOG_POSEIDON_DEBUG("MySQL retry count = ", g_mySqlRetryCount);
 
-	std::string dumpPath = g_mySqlDumpDir;
 	char temp[256];
 	unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
+
+	std::string dumpPath;
+	dumpPath.assign(g_mySqlDumpDir);
+	dumpPath.push_back('/');
 	dumpPath.append(temp, len);
 	dumpPath.append(".log");
 
