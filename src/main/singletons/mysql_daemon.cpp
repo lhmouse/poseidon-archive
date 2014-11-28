@@ -415,7 +415,7 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object)
 	const AUTO_REF(ref, *object);
 	AUTO(operation, boost::make_shared<SaveOperation>(STD_MOVE(object)));
 	MySqlObjectImpl::setContext(ref, operation.get());
-	pickThreadForTable(ref.getTableName())->addOperation(STD_MOVE(operation), false);
+	pickThreadForTable(ref.getTableName())->addOperation(operation, false);
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	std::string filter, MySqlAsyncLoadCallback callback)
@@ -424,5 +424,5 @@ void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	AUTO(operation, boost::make_shared<LoadOperation>(
 		STD_MOVE(object), STD_MOVE(filter), STD_MOVE(callback)));
 	MySqlObjectImpl::setContext(ref, operation.get());
-	pickThreadForTable(ref.getTableName())->addOperation(STD_MOVE(operation), true);
+	pickThreadForTable(ref.getTableName())->addOperation(operation, true);
 }
