@@ -450,22 +450,20 @@ void HttpSession::onAllHeadersRead(){
 
 		AUTO(lower, BEGIN(JUMP_TABLE));
 		AUTO(upper, END(JUMP_TABLE));
-		VALUE_TYPE(JUMP_TABLE[0].second) found = NULLPTR;
-		do {
+		for(;;){
 			const AUTO(middle, lower + (upper - lower) / 2);
 			const int result = std::strcmp(it->first.get(), middle->first);
 			if(result == 0){
-				found = middle->second;
+				(*middle->second)(this, it->second);
 				break;
 			} else if(result < 0){
 				upper = middle;
 			} else {
 				lower = middle + 1;
 			}
-		} while(lower != upper);
-
-		if(found){
-			(*found)(this, it->second);
+			if(lower == upper){
+				break;
+			}
 		}
 	}
 }
