@@ -203,19 +203,12 @@ public:
 boost::mutex g_dumpMutex;
 ScopedFile g_dumpFile;
 
+volatile bool g_running = false;
 std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 
 // 根据表名分给不同的线程。
-struct NtmbsComparator {
-	bool operator()(const char *lhs, const char *rhs) const {
-		return std::strcmp(lhs, rhs) < 0;
-	}
-};
-
-volatile bool g_running = false;
-
 boost::mutex g_assignmentMutex;
-std::map<const char *, boost::shared_ptr<MySqlThread>, NtmbsComparator> g_assignments;
+std::vector<std::pair<const char *, boost::shared_ptr<MySqlThread> > > g_assignments;
 
 bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
 	LOG_POSEIDON_INFO("Connecting to MySQL server: ", g_mySqlServer);
@@ -412,24 +405,37 @@ void MySqlThread::threadProc(){
 
 boost::shared_ptr<MySqlThread> pickThreadForTable(const char *table){
 	const boost::mutex::scoped_lock lock(g_assignmentMutex);
-	AUTO_REF(mapped, g_assignments[table]);
-	if(!mapped){
-		if(g_threads.empty()){
-			DEBUG_THROW(Exception, "No threads available");
-		}
-		std::size_t index = 0;
-		boost::uint64_t busyTime = g_threads.front()->getBusyTime();
-		for(std::size_t i = 1; i < g_threads.size(); ++i){
-			const AUTO(current, g_threads[i]->getBusyTime());
-			if(current < busyTime){
-				index = i;
-			}
-		}
-		mapped = g_threads.at(index);
-
-		LOG_POSEIDON_DEBUG("Assigned MySQL table `", table, "` to thread ", index);
+	if(g_threads.empty()){
+		DEBUG_THROW(Exception, "No threads available");
 	}
-	return mapped;
+	AUTO(lower, g_assignments.begin());
+	AUTO(upper, g_assignments.end());
+	boost::shared_ptr<MySqlThread> thread;
+	for(;;){
+		const AUTO(middle, lower + (upper - lower) / 2);
+		const int result = std::strcmp(table, middle->first);
+		if(result == 0){
+			thread = middle->second;
+			LOG_POSEIDON_DEBUG("MySQL table `", table, "` has bee assigned to thread ",
+				middle - g_assignments.begin());
+			break;
+		} else if(result < 0){
+			upper = middle;
+		} else {
+			lower = middle + 1;
+		}
+		if(lower == upper){
+			thread = g_threads.front();
+			for(AUTO(it, g_threads.begin() + 1); it != g_threads.end(); ++it){
+				if((*it)->getBusyTime() < thread->getBusyTime()){
+					thread = *it;
+				}
+			}
+			g_assignments.insert(lower, std::make_pair(table, thread));
+			break;
+		}
+	}
+	return thread;
 }
 
 }

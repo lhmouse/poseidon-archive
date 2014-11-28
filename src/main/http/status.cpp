@@ -154,10 +154,8 @@ namespace Poseidon {
 
 HttpStatusDesc getHttpStatusDesc(HttpStatus status){
 	HttpStatusDesc ret;
-	const AUTO(element,
-		std::lower_bound(BEGIN(DESC_TABLE), END(DESC_TABLE),
-			static_cast<unsigned>(status), DescElementComparator())
-	);
+	const AUTO(element, std::lower_bound(BEGIN(DESC_TABLE), END(DESC_TABLE),
+		static_cast<unsigned>(status), DescElementComparator()));
 	if((element != END(DESC_TABLE)) && (element->status == (unsigned)status)){
 		ret.descShort = element->descShort;
 		ret.descLong = element->descLong;
