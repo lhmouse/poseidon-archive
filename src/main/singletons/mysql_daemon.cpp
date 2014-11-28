@@ -137,6 +137,7 @@ public:
 
 private:
 	boost::thread m_thread;
+	volatile bool m_running;
 
 	mutable boost::mutex m_mutex;
 	std::deque<boost::shared_ptr<OperationBase> > m_queue;
@@ -147,9 +148,8 @@ private:
 
 public:
 	MySqlThread()
-		: m_busyTime(0), m_urgentMode(false)
+		: m_running(false), m_busyTime(0), m_urgentMode(false)
 	{
-		boost::thread(boost::bind(&MySqlThread::threadProc, this)).swap(m_thread);
 	}
 
 private:
@@ -161,10 +161,22 @@ public:
 		return atomicLoad(m_busyTime);
 	}
 
-	void join(){
+	void start(){
+		if(atomicExchange(m_running, true) != false){
+			return;
+		}
+		boost::thread(boost::bind(&MySqlThread::threadProc, this)).swap(m_thread);
+	}
+	void stop(){
+		if(atomicExchange(m_running, false) == false){
+			return;
+		}
+
+		waitTillIdle();
 		if(m_thread.joinable()){
 			m_thread.join();
 		}
+		boost::thread().swap(m_thread);
 	}
 
 	void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
@@ -254,7 +266,7 @@ void MySqlThread::operationLoop(){
 					}
 				}
 				if(!getMySqlConnection(connection)){
-					if(!atomicLoad(g_running)){
+					if(!atomicLoad(m_running)){
 						LOG_POSEIDON_WARN("Shutting down...");
 						break;
 					}
@@ -268,7 +280,7 @@ void MySqlThread::operationLoop(){
 				if(m_queue.empty()){
 					atomicStore(m_urgentMode, false);
 					do {
-						if(!atomicLoad(g_running)){
+						if(!atomicLoad(m_running)){
 							goto exit_loop;
 						}
 						m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
@@ -478,6 +490,7 @@ void MySqlDaemon::start(){
 	g_threads.resize(std::max<std::size_t>(g_mySqlMaxThreads, 1));
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		boost::make_shared<MySqlThread>().swap(g_threads[i]);
+		g_threads[i]->start();
 
 		LOG_POSEIDON_INFO("Created MySQL thread ", i);
 	}
@@ -489,7 +502,7 @@ void MySqlDaemon::stop(){
 	LOG_POSEIDON_INFO("Stopping MySQL daemon...");
 
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		g_threads[i]->join();
+		g_threads[i]->stop();
 
 		LOG_POSEIDON_INFO("Shutdown MySQL thread ", i);
 	}
