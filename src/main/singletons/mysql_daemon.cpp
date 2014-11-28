@@ -108,19 +108,36 @@ public:
 };
 
 class MySqlThread : boost::noncopyable {
+public:
+	class Stopwatch : boost::noncopyable {
+	private:
+		MySqlThread &m_owner;
+		const boost::uint64_t m_begin;
+
+	public:
+		explicit Stopwatch(MySqlThread &owner)
+			: m_owner(owner), m_begin(getMonoClock())
+		{
+		}
+		~Stopwatch(){
+			const boost::uint64_t delta = getMonoClock() - m_begin;
+			atomicAdd(m_owner.m_busyTime, delta);
+		}
+	};
+
 private:
 	boost::thread m_thread;
 
 	mutable boost::mutex m_mutex;
 	std::deque<boost::shared_ptr<OperationBase> > m_queue;
-	volatile boost::uint64_t m_operationCounter; // 调度提示。
+	volatile boost::uint64_t m_busyTime; // 调度提示。
 	mutable volatile bool m_urgentMode; // 无视写入合并策略，一次性处理队列中所有操作。
 	mutable boost::condition_variable m_newAvail;
 	mutable boost::condition_variable m_queueEmpty;
 
 public:
 	MySqlThread()
-		: m_operationCounter(0), m_urgentMode(false)
+		: m_busyTime(0), m_urgentMode(false)
 	{
 		boost::thread(boost::bind(&MySqlThread::threadProc, this)).swap(m_thread);
 	}
@@ -130,8 +147,8 @@ private:
 	void threadProc();
 
 public:
-	boost::uint64_t getOperationCounter() const {
-		return atomicLoad(m_operationCounter);
+	boost::uint64_t getBusyTime() const {
+		return atomicLoad(m_busyTime);
 	}
 
 	void join(){
@@ -144,7 +161,6 @@ public:
 		const boost::mutex::scoped_lock lock(m_mutex);
 		m_queue.push_back(VAL_INIT);
 		m_queue.back().swap(operation);
-		atomicAdd(m_operationCounter, 1);
 		if(urgent){
 			atomicStore(m_urgentMode, true);
 		}
@@ -251,6 +267,7 @@ void MySqlThread::operationLoop(){
 
 			bool dealt = false;
 			try {
+				const Stopwatch watch(*this);
 				dealt = queue.front()->execute(connection.get(), atomicLoad(m_urgentMode));
 			} catch(...){
 				bool retry = true;
@@ -319,10 +336,10 @@ boost::shared_ptr<MySqlThread> pickThreadForTable(const char *table){
 			DEBUG_THROW(Exception, "No threads available");
 		}
 		std::size_t index = 0;
-		boost::uint64_t operationCounter = g_threads.front()->getOperationCounter();
+		boost::uint64_t busyTime = g_threads.front()->getBusyTime();
 		for(std::size_t i = 1; i < g_threads.size(); ++i){
-			const AUTO(current, g_threads[i]->getOperationCounter());
-			if(current < operationCounter){
+			const AUTO(current, g_threads[i]->getBusyTime());
+			if(current < busyTime){
 				index = i;
 			}
 		}
