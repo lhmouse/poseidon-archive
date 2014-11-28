@@ -305,9 +305,12 @@ void MySqlThread::operationLoop(){
 			discardConnection = true;
 		}
 
-		if(discardConnection && connection){
-			LOG_POSEIDON_INFO("The connection was left in an indeterminate state. Discard it.");
-			connection.reset();
+		if(discardConnection){
+			discardConnection = false;
+			if(connection){
+				LOG_POSEIDON_INFO("The connection was left in an indeterminate state. Discard it.");
+				connection.reset();
+			}
 		}
 	}
 exit_loop:
