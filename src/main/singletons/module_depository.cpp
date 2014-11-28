@@ -177,8 +177,7 @@ boost::shared_ptr<Module> ModuleDepository::load(const SharedNtmbs &path){
 	}
 
 	LOG_POSEIDON_INFO("Loading new module: ", path);
-	handle.reset(::dlopen(path.get(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND));
-	if(!handle){
+	if(!handle.reset(::dlopen(path.get(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND))){
 		const char *const error = ::dlerror();
 		LOG_POSEIDON_ERROR("Error loading dynamic library: ", error);
 		DEBUG_THROW(Exception, error);

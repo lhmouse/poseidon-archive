@@ -423,8 +423,7 @@ void EpollDaemon::start(){
 	conf.get(g_maxTimeout, "epoll_max_timeout");
 	LOG_POSEIDON_DEBUG("Max timeout = ", g_maxTimeout);
 
-	g_epoll.reset(::epoll_create(4096));
-	if(!g_epoll){
+	if(!g_epoll.reset(::epoll_create(4096))){
 		AUTO(desc, getErrorDesc());
 		LOG_POSEIDON_FATAL("Error creating epoll: ", desc);
 		std::abort();

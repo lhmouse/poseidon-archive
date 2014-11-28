@@ -29,8 +29,7 @@ public:
 	ClientSslCtx(){
 		requireSsl();
 
-		m_sslCtx.reset(::SSL_CTX_new(::TLSv1_client_method()));
-		if(!m_sslCtx){
+		if(!m_sslCtx.reset(::SSL_CTX_new(::TLSv1_client_method()))){
 			LOG_POSEIDON_FATAL("Could not create client SSL context");
 			std::abort();
 		}

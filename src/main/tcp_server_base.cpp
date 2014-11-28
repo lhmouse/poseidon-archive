@@ -23,8 +23,7 @@ public:
 	SslImplServer(const char *cert, const char *privateKey){
 		requireSsl();
 
-		m_sslCtx.reset(::SSL_CTX_new(::TLSv1_server_method()));
-		if(!m_sslCtx){
+		if(!m_sslCtx.reset(::SSL_CTX_new(::TLSv1_server_method()))){
 			LOG_POSEIDON_FATAL("Could not create server SSL context");
 			std::abort();
 		}

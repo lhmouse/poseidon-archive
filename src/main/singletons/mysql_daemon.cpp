@@ -9,6 +9,11 @@
 #include <boost/bind.hpp>
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
 #include "main_config.hpp"
 #include "../mysql/object_base.hpp"
 #define POSEIDON_MYSQL_OBJECT_IMPL_
@@ -16,6 +21,7 @@
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
+#include "../raii.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 #include "../utilities.hpp"
@@ -28,6 +34,7 @@ std::string g_mySqlUsername			= "root";
 std::string g_mySqlPassword			= "root";
 std::string g_mySqlSchema			= "poseidon";
 
+std::string g_mySqlDumpDir			= "sql_dump";
 std::size_t g_mySqlMaxThreads		= 3;
 std::size_t g_mySqlSaveDelay		= 5000;
 std::size_t g_mySqlMaxReconnDelay	= 60000;
@@ -40,7 +47,7 @@ public:
 
 public:
 	virtual bool shouldExecuteNow() const = 0;
-	virtual void execute(sql::Connection *connection) = 0;
+	virtual void execute(std::string &sqlStatement, sql::Connection *connection) = 0;
 };
 
 class LoadOperation
@@ -64,11 +71,11 @@ public:
 	bool shouldExecuteNow() const {
 		return true;
 	}
-	void execute(sql::Connection *connection){
+	void execute(std::string &sqlStatement, sql::Connection *connection){
 		PROFILE_ME;
 
 		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", filter = ", m_filter);
-		m_object->syncLoad(connection, m_filter.c_str());
+		m_object->syncLoad(sqlStatement, connection, m_filter.c_str());
 		m_object->enableAutoSaving();
 
 		JobBase::pend();
@@ -97,7 +104,7 @@ public:
 	bool shouldExecuteNow() const {
 		return m_dueTime <= getMonoClock();
 	}
-	void execute(sql::Connection *connection){
+	void execute(std::string &sqlStatement, sql::Connection *connection){
 		PROFILE_ME;
 
 		if(MySqlObjectImpl::getContext(*m_object) != this){
@@ -105,7 +112,7 @@ public:
 			return;
 		}
 		LOG_POSEIDON_INFO("MySQL save: table = ", m_object->getTableName());
-		m_object->syncSave(connection);
+		m_object->syncSave(sqlStatement, connection);
 	}
 };
 
@@ -180,6 +187,9 @@ public:
 		}
 	}
 };
+
+boost::mutex g_dumpMutex;
+ScopedFile g_dumpFile;
 
 std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 
@@ -270,24 +280,76 @@ void MySqlThread::operationLoop(){
 			}
 
 			if(queue.front()->shouldExecuteNow() || atomicLoad(m_urgentMode)){
+				std::string sqlStatement;
+
+				struct Closure {
+					MySqlThread &thread;
+					std::deque<boost::shared_ptr<OperationBase> > &queue;
+					std::size_t &retryCount;
+					std::string &sqlStatement;
+
+					Closure(MySqlThread &thread_,
+						std::deque<boost::shared_ptr<OperationBase> > &queue_,
+						std::size_t &retryCount_, std::string &sqlStatement_)
+						: thread(thread_), queue(queue_)
+						, retryCount(retryCount_), sqlStatement(sqlStatement_)
+					{
+					}
+
+					void operator()(unsigned code, const char *what){
+						bool retry = true;
+						if(retryCount == 0){
+							if(g_mySqlRetryCount != 0){
+								retryCount = g_mySqlRetryCount;
+							}
+						} else {
+							if(--retryCount == 0){
+								retry = false;
+							}
+						}
+						if(!retry){
+							LOG_POSEIDON_WARN("Retry count drops to zero. Give up.");
+							queue.pop_front();
+
+							char temp[32];
+							unsigned len = std::sprintf(temp, "%05u", code);
+							std::string dump;
+							dump.reserve(1024);
+							dump.assign("-- Error code = ");
+							dump.append(temp, len);
+							dump.append(", Description = ");
+							dump.append(what);
+							dump.append("\n");
+							dump.append(sqlStatement);
+							dump.append("\n\n");
+
+							{
+								const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
+								std::size_t total = 0;
+								do {
+									::ssize_t written = ::write(g_dumpFile.get(),
+										dump.data() + total, dump.size() - total);
+									if(written <= 0){
+										break;
+									}
+									total += written;
+								} while(total < dump.size());
+							}
+						}
+					}
+				} retry(*this, queue, retryCount, sqlStatement);
+
 				try {
 					const Stopwatch watch(*this);
-					queue.front()->execute(connection.get());
+					queue.front()->execute(sqlStatement, connection.get());
+				} catch(sql::SQLException &e){
+					retry(e.getErrorCode(), e.what());
+					throw;
+				} catch(std::exception &e){
+					retry(99999, e.what());
+					throw;
 				} catch(...){
-					bool retry = true;
-					if(retryCount == 0){
-						if(g_mySqlRetryCount != 0){
-							retryCount = g_mySqlRetryCount;
-						}
-					} else {
-						if(--retryCount == 0){
-							retry = false;
-						}
-					}
-					if(!retry){
-						queue.pop_front();
-						LOG_POSEIDON_WARN("Retry count drops to zero. Give up.");
-					}
+					retry(99999, "Unknown exception");
 					throw;
 				}
 				queue.pop_front();
@@ -379,6 +441,9 @@ void MySqlDaemon::start(){
 	conf.get(g_mySqlSchema, "mysql_schema");
 	LOG_POSEIDON_DEBUG("MySQL schema = ", g_mySqlSchema);
 
+	conf.get(g_mySqlDumpDir, "mysql_dump_dir");
+	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_mySqlDumpDir);
+
 	conf.get(g_mySqlMaxThreads, "mysql_max_threads");
 	LOG_POSEIDON_DEBUG("MySQL max threads = ", g_mySqlMaxThreads);
 
@@ -390,6 +455,24 @@ void MySqlDaemon::start(){
 
 	conf.get(g_mySqlRetryCount, "mysql_retry_count");
 	LOG_POSEIDON_DEBUG("MySQL retry count = ", g_mySqlRetryCount);
+
+	char temp[256];
+	const AUTO(now, getLocalTime());
+	::tm desc;
+	const ::time_t seconds = now / 1000;
+	::gmtime_r(&seconds, &desc);
+	unsigned len = std::sprintf(temp, "/%04u-%02u-%02u %02u-%02u-%02u.log",
+		1900 + desc.tm_year, 1 + desc.tm_mon, desc.tm_mday,
+		desc.tm_hour, desc.tm_min, desc.tm_sec);
+	std::string dumpPath = g_mySqlDumpDir;
+	dumpPath.append(temp, len);
+	LOG_POSEIDON_INFO("Creating SQL dump file: ", dumpPath);
+	if(!g_dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT | O_EXCL))){
+		const int errCode = errno;
+		LOG_POSEIDON_FATAL("Error creating SQL dump file: errno = ", errCode,
+			", description = ", getErrorDesc(errCode));
+		std::abort();
+	}
 
 	g_threads.resize(std::max<std::size_t>(g_mySqlMaxThreads, 1));
 	for(std::size_t i = 0; i < g_threads.size(); ++i){

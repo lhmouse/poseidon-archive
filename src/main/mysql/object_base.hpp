@@ -75,8 +75,8 @@ public:
 	}
 
 	virtual const char *getTableName() const = 0;
-	virtual void syncSave(sql::Connection *conn) const = 0;
-	virtual bool syncLoad(sql::Connection *conn, const char *filter) = 0;
+	virtual void syncSave(std::string &sql, sql::Connection *conn) const = 0;
+	virtual bool syncLoad(std::string &sql, sql::Connection *conn, const char *filter) = 0;
 
 	void asyncSave() const;
 	void asyncLoad(std::string filter, MySqlAsyncLoadCallback callback = MySqlAsyncLoadCallback());

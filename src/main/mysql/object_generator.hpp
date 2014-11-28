@@ -230,7 +230,7 @@ public:
 	MYSQL_OBJECT_FIELDS
 
 private:
-	static void doQuery(boost::scoped_ptr<sql::ResultSet> &rs_,
+	static void doQuery(boost::scoped_ptr<sql::ResultSet> &rs_, std::string &sql_,
 		sql::Connection *conn_, const char *filter_, const char *limit_)
 	{
 		std::ostringstream oss_;
@@ -272,12 +272,9 @@ private:
 		oss_ <<" FROM `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` ";
 		oss_ <<filter_ << ' ';
 		oss_ <<limit_ << ' ';
-		std::string str_ = oss_.str();
+		sql_ = oss_.str();
 
-		sql::SQLString sql_;
-		sql_->swap(str_);
 		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
-
 		const boost::scoped_ptr<sql::Statement> stmt_(conn_->createStatement());
 		rs_.reset(stmt_->executeQuery(sql_));
 	}
@@ -313,7 +310,7 @@ public:
 	const char *getTableName() const {
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
-	void syncSave(sql::Connection *conn_) const {
+	void syncSave(std::string &sql_, sql::Connection *conn_) const {
 		std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
@@ -360,18 +357,15 @@ public:
 
 		oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
-		std::string str_ = oss_.str();
+		sql_ = oss_.str();
 
-		sql::SQLString sql_;
-		sql_->swap(str_);
 		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
-
 		const boost::scoped_ptr<sql::Statement> stmt_(conn_->createStatement());
 		stmt_->executeUpdate(sql_);
 	}
-	bool syncLoad(sql::Connection *conn_, const char *filter_){
+	bool syncLoad(std::string &sql_, sql::Connection *conn_, const char *filter_){
 		boost::scoped_ptr<sql::ResultSet> rs_;
-		doQuery(rs_, conn_, filter_, " LIMIT 1");
+		doQuery(rs_, sql_, conn_, filter_, " LIMIT 1");
 		if(!rs_->first()){
 			return false;
 		}
@@ -380,11 +374,11 @@ public:
 	}
 
 	static std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> >
-		batchQuery(sql::Connection *conn_, const char *filter_)
+		batchQuery(std::string &sql_, sql::Connection *conn_, const char *filter_)
 	{
 		std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> > ret_;
 		boost::scoped_ptr<sql::ResultSet> rs_;
-		doQuery(rs_, conn_, filter_, "");
+		doQuery(rs_, sql_, conn_, filter_, "");
 		rs_->beforeFirst();
 		while(rs_->next()){
 			AUTO(obj_, boost::make_shared<MYSQL_OBJECT_NAME>());

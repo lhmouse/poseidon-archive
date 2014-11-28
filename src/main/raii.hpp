@@ -62,15 +62,17 @@ public:
 		m_handle = CloserT()();
 		return ret;
 	}
-	void reset(Handle handle = CloserT()()) NOEXCEPT {
+	ScopedHandle &reset(Handle handle = CloserT()()) NOEXCEPT {
 		const Handle old = m_handle;
 		m_handle = handle;
 		if(old != CloserT()()){
 			CloserT()(old);
 		}
+		return *this;
 	}
-	void reset(Move<ScopedHandle> rhs) NOEXCEPT {
+	ScopedHandle &reset(Move<ScopedHandle> rhs) NOEXCEPT {
 		rhs.swap(*this);
+		return *this;
 	}
 
 	void swap(ScopedHandle &rhs) NOEXCEPT {
