@@ -122,6 +122,8 @@ public:
 		~Stopwatch(){
 			const boost::uint64_t delta = getMonoClock() - m_begin;
 			atomicAdd(m_owner.m_busyTime, delta);
+
+			LOG_POSEIDON_TRACE("MySQL operation executed in ", delta, " us.");
 		}
 	};
 
