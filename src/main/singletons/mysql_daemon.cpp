@@ -507,7 +507,7 @@ void MySqlDaemon::stop(){
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		g_threads[i]->stop();
 
-		LOG_POSEIDON_INFO("Shutdown MySQL thread ", i);
+		LOG_POSEIDON_INFO("Shut down MySQL thread ", i);
 	}
 	g_threads.clear();
 
