@@ -90,6 +90,7 @@ public:
 	explicit SaveOperation(boost::shared_ptr<const MySqlObjectBase> object)
 		: m_dueTime(getMonoClock() + g_mySqlSaveDelay * 1000), m_object(STD_MOVE(object))
 	{
+		MySqlObjectImpl::setContext(*m_object, this);
 	}
 
 public:
