@@ -99,6 +99,21 @@ boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc);
 
 boost::uint64_t getMonoClock() NOEXCEPT;	// 单位微秒。
 
+struct DateTime {
+	unsigned yr;
+	unsigned mon;
+	unsigned day;
+
+	unsigned hr;
+	unsigned min;
+	unsigned sec;
+
+	unsigned ms;
+};
+
+DateTime breakDownTime(boost::uint64_t ms);
+std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs);
+
 // 在区间 [lower, upper) 范围内生成伪随机数。
 // 前置条件：lower < upper
 boost::uint32_t rand32();

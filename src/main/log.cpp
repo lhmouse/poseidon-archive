@@ -5,7 +5,6 @@
 #include "log.hpp"
 #include <boost/thread/mutex.hpp>
 #include <unistd.h>
-#include <time.h>
 #include "atomic.hpp"
 #include "utilities.hpp"
 using namespace Poseidon;
@@ -91,14 +90,7 @@ Logger::~Logger() NOEXCEPT {
 		AUTO_REF(levelItem, LEVEL_ITEMS[__builtin_ctz(m_mask | LV_TRACE)]);
 
 		char temp[256];
-		const AUTO(now, getLocalTime());
-		::tm desc;
-		const ::time_t seconds = now / 1000;
-		const unsigned milliseconds = now % 1000;
-		::gmtime_r(&seconds, &desc);
-		unsigned len = std::sprintf(temp, "%04u-%02u-%02u %02u:%02u:%02u.%03u ",
-			1900 + desc.tm_year, 1 + desc.tm_mon, desc.tm_mday,
-			desc.tm_hour, desc.tm_min, desc.tm_sec, milliseconds);
+		unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), true);
 
 		std::string line;
 		line.reserve(255);
@@ -107,6 +99,7 @@ Logger::~Logger() NOEXCEPT {
 			line += "\x1B[0;32m";
 		}
 		line.append(temp, len);
+		line += ' ';
 
 		if(useAsciiColors){
 			line += "\x1B[0m";

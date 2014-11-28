@@ -8,6 +8,7 @@
 #include <time.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 using namespace Poseidon;
 
 namespace {
@@ -117,6 +118,29 @@ std::string getErrorDescAsString(int errCode){
 		ret.assign(desc);
 	}
 	return ret;
+}
+
+DateTime breakDownTime(boost::uint64_t ms){
+	const ::time_t seconds = ms / 1000;
+	const unsigned milliseconds = ms % 1000;
+	::tm desc;
+	::gmtime_r(&seconds, &desc);
+
+	DateTime ret;
+	ret.yr = 1900 + desc.tm_year;
+	ret.mon = 1 + desc.tm_mon;
+	ret.day = desc.tm_mday;
+	ret.hr = desc.tm_hour;
+	ret.min = desc.tm_min;
+	ret.sec = desc.tm_sec;
+	ret.ms = milliseconds;
+	return ret;
+}
+std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs){
+	DateTime dt = breakDownTime(ms);
+	return (std::size_t)::snprintf(buffer, max,
+		showMs ? "%04u-%02u-%02u %02u:%02u:%02u.%03u" : "%04u-%02u-%02u %02u:%02u:%02u",
+		dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec, dt.ms);
 }
 
 }

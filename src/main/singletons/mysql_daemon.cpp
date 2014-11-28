@@ -13,7 +13,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <time.h>
 #include "main_config.hpp"
 #include "../mysql/object_base.hpp"
 #define POSEIDON_MYSQL_OBJECT_IMPL_
@@ -456,16 +455,12 @@ void MySqlDaemon::start(){
 	conf.get(g_mySqlRetryCount, "mysql_retry_count");
 	LOG_POSEIDON_DEBUG("MySQL retry count = ", g_mySqlRetryCount);
 
-	char temp[256];
-	const AUTO(now, getLocalTime());
-	::tm desc;
-	const ::time_t seconds = now / 1000;
-	::gmtime_r(&seconds, &desc);
-	unsigned len = std::sprintf(temp, "/%04u-%02u-%02u %02u-%02u-%02u.log",
-		1900 + desc.tm_year, 1 + desc.tm_mon, desc.tm_mday,
-		desc.tm_hour, desc.tm_min, desc.tm_sec);
 	std::string dumpPath = g_mySqlDumpDir;
+	char temp[256];
+	unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
 	dumpPath.append(temp, len);
+	dumpPath.append(".log");
+
 	LOG_POSEIDON_INFO("Creating SQL dump file: ", dumpPath);
 	if(!g_dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT | O_EXCL, 0644))){
 		const int errCode = errno;
