@@ -79,7 +79,7 @@ public:
 	virtual bool syncLoad(std::string &sql, sql::Connection *conn, const char *filter) = 0;
 
 	void asyncSave() const;
-	void asyncLoad(std::string filter, MySqlAsyncLoadCallback callback = MySqlAsyncLoadCallback());
+	void asyncLoad(std::string filter, MySqlAsyncLoadCallback callback);
 };
 
 }
