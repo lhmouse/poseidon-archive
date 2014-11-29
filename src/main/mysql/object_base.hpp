@@ -25,15 +25,13 @@ namespace Poseidon {
 class MySqlObjectBase
 	: public virtual VirtualSharedFromThis
 {
-	friend class MySqlObjectImpl;
-
 protected:
 	static void batchAsyncLoad(const char *tableHint, std::string query,
 		MySqlObjectFactoryCallback factory, MySqlBatchAsyncLoadCallback callback);
 
 private:
 	mutable volatile bool m_autoSaves;
-	mutable void *m_context;
+	mutable const void *m_context;
 
 protected:
 	mutable boost::shared_mutex m_mutex;
@@ -55,6 +53,14 @@ public:
 	}
 	void disableAutoSaving() const {
 		atomicStore(m_autoSaves, false);
+	}
+
+	// 用于写入合并时标记最后一次队列节点的地址。
+	const void *getContext() const {
+		return atomicLoad(m_context);
+	}
+	void setContext(const void *context) const {
+		atomicStore(m_context, context);
 	}
 
 	virtual const char *getTableName() const = 0;

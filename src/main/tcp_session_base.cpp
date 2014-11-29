@@ -94,7 +94,7 @@ void TcpSessionBase::fetchPeerInfo() const {
 	atomicStore(m_peerInfo.fetched, true);
 }
 
-long TcpSessionBase::doRead(void *data, unsigned long size){
+long TcpSessionBase::syncRead(void *data, unsigned long size){
 	fetchPeerInfo();
 
 	::ssize_t ret;
@@ -108,7 +108,7 @@ long TcpSessionBase::doRead(void *data, unsigned long size){
 	}
 	return ret;
 }
-long TcpSessionBase::doWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize){
+long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize){
 	fetchPeerInfo();
 
 	boost::mutex::scoped_lock(m_bufferMutex).swap(lock);

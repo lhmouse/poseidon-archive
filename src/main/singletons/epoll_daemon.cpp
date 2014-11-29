@@ -14,9 +14,7 @@
 #include "../atomic.hpp"
 #include "../utilities.hpp"
 #include "../exception.hpp"
-#define POSEIDON_TCP_SESSION_IMPL_
 #include "../tcp_session_base.hpp"
-#include "../tcp_session_impl.hpp"
 #include "../socket_server_base.hpp"
 #include "../multi_index_map.hpp"
 #include "../profiler.hpp"
@@ -104,7 +102,7 @@ void add(const boost::shared_ptr<TcpSessionBase> &session){
 	::epoll_event event;
 	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	event.data.ptr = session.get();
-	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, TcpSessionImpl::doGetFd(*session), &event) != 0){
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const boost::mutex::scoped_lock lock(g_sessionMutex);
 		g_sessions.erase(result.first);
 		DEBUG_THROW(SystemError);
@@ -122,7 +120,7 @@ void touch(const boost::shared_ptr<TcpSessionBase> &session){
 	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
 void remove(const boost::shared_ptr<TcpSessionBase> &session){
-	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, TcpSessionImpl::doGetFd(*session), NULLPTR) != 0){
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
 		LOG_POSEIDON_WARN("Error deleting from epoll. We can do nothing but ignore it.");
 	}
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
@@ -196,8 +194,7 @@ void daemonLoop(){
 				if(session->hasBeenShutdown()){
 					continue;
 				}
-				const ::ssize_t bytesRead =
-					TcpSessionImpl::doRead(*session, data.get(), g_dataBufferSize);
+				const ::ssize_t bytesRead = session->syncRead(data.get(), g_dataBufferSize);
 				if(bytesRead < 0){
 					if(errno == EINTR){
 						continue;
@@ -239,8 +236,7 @@ void daemonLoop(){
 				bool shutdown;
 				{
 					boost::mutex::scoped_lock sessionLock;
-					bytesWritten =
-						TcpSessionImpl::doWrite(*session, sessionLock, data.get(), g_dataBufferSize);
+					bytesWritten = session->syncWrite(sessionLock, data.get(), g_dataBufferSize);
 					shutdown = session->hasBeenShutdown();
 					if(bytesWritten == 0){
 						if(!shutdown){
@@ -323,9 +319,7 @@ void daemonLoop(){
 				if(event.events & EPOLLERR){
 					int err;
 					::socklen_t errLen = sizeof(err);
-					if(::getsockopt(TcpSessionImpl::doGetFd(*session),
-						SOL_SOCKET, SO_ERROR, &err, &errLen) != 0)
-					{
+					if(::getsockopt(session->getFd(), SOL_SOCKET, SO_ERROR, &err, &errLen) != 0){
 						err = errno;
 					}
 					const AUTO(desc, getErrorDesc());
@@ -375,8 +369,7 @@ void daemonLoop(){
 				for(;;){
 					{
 						boost::mutex::scoped_lock sessionLock;
-						bytesWritten = TcpSessionImpl::doWrite(*session,
-							sessionLock, data.get(), g_dataBufferSize);
+						bytesWritten = session->syncWrite(sessionLock, data.get(), g_dataBufferSize);
 					}
 					if(bytesWritten <= 0){
 						break;

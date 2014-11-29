@@ -19,7 +19,6 @@
 namespace Poseidon {
 
 class TcpSessionBase : public SessionBase {
-	friend class TcpSessionImpl;
 	friend class TcpServerBase;
 	friend class TcpClientBase;
 
@@ -52,13 +51,16 @@ private:
 
 	void fetchPeerInfo() const;
 
-	long doRead(void *date, unsigned long size);
-	long doWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
-
 protected:
 	void onReadAvail(const void *data, std::size_t size) = 0;
 
 public:
+	int getFd() const {
+		return m_socket.get();
+	}
+	long syncRead(void *date, unsigned long size);
+	long syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
+
 	bool send(StreamBuffer buffer, bool fin = false); // final 置 true 则发送完毕后挂断连接。
 	bool hasBeenShutdown() const;
 	bool forceShutdown();

@@ -13,8 +13,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "../mysql/object_base.hpp"
-#define POSEIDON_MYSQL_OBJECT_IMPL_
-#include "../mysql/object_impl.hpp"
 #include "../mysql/exception.hpp"
 #include "../mysql/thread_context.hpp"
 #include "../mysql/connection.hpp"
@@ -62,7 +60,7 @@ public:
 	explicit SaveOperation(boost::shared_ptr<const MySqlObjectBase> object)
 		: m_dueTime(getMonoClock() + g_mySqlSaveDelay * 1000), m_object(STD_MOVE(object))
 	{
-		MySqlObjectImpl::setContext(*m_object, this);
+		m_object->setContext(this);
 	}
 
 public:
@@ -72,7 +70,7 @@ public:
 	void execute(std::string &query, MySqlConnection &conn){
 		PROFILE_ME;
 
-		if(MySqlObjectImpl::getContext(*m_object) != this){
+		if(m_object->getContext() != this){
 			// 使用写入合并策略，丢弃当前的写入操作（认为已成功）。
 			return;
 		}
