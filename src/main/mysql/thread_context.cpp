@@ -5,8 +5,6 @@
 #include "thread_context.hpp"
 #include "exception.hpp"
 #include "connection.hpp"
-#define POSEIDON_MYSQL_CONNECTION_IMPL_
-#include "connection_impl.hpp"
 #include <boost/thread/once.hpp>
 #include <mysql/mysql.h>
 #include <mysql/mysql.h>
@@ -48,13 +46,4 @@ MySqlThreadContext::~MySqlThreadContext(){
 	if(--g_initCount == 0){
 		::mysql_thread_end();
 	}
-}
-
-boost::shared_ptr<MySqlConnection> MySqlThreadContext::createConnection(
-	const std::string &serverAddr, unsigned serverPort,
-	const std::string &userName, const std::string &password, const std::string &schema,
-	bool useSsl, const std::string &charset)
-{
-	return boost::make_shared<MySqlConnectionImpl>(
-		serverAddr, serverPort, userName, password, schema, useSsl, charset);
 }

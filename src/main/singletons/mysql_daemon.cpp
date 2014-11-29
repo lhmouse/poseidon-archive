@@ -277,7 +277,7 @@ std::vector<std::pair<const char *, boost::shared_ptr<MySqlThread> > > g_assignm
 void MySqlThread::operationLoop(){
 	MySqlThreadContext context;
 
-	boost::shared_ptr<MySqlConnection> conn;
+	boost::scoped_ptr<MySqlConnection> conn;
 	std::size_t reconnectDelay = 0;
 	bool discardConnection = false;
 
@@ -302,7 +302,7 @@ void MySqlThread::operationLoop(){
 					}
 				}
 				try {
-					conn = context.createConnection(g_mySqlServerAddr, g_mySqlServerPort,
+					MySqlConnection::create(conn, context, g_mySqlServerAddr, g_mySqlServerPort,
 						g_mySqlUsername, g_mySqlPassword, g_mySqlSchema, g_mySqlUseSsl, g_mySqlCharset);
 				} catch(...){
 					if(!atomicLoad(m_running)){

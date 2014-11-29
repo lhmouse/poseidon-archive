@@ -7,11 +7,9 @@
 #include "../cxx_ver.hpp"
 #include <cstddef>
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 
 namespace Poseidon {
-
-class MySqlConnection;
 
 class MySqlThreadContext : boost::noncopyable {
 private:
@@ -23,12 +21,6 @@ private:
 public:
 	MySqlThreadContext();
 	~MySqlThreadContext();
-
-public:
-	boost::shared_ptr<MySqlConnection> createConnection(
-		const std::string &serverAddr, unsigned serverPort,
-		const std::string &userName, const std::string &password, const std::string &schema,
-		bool useSsl, const std::string &charset);
 };
 
 }

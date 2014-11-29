@@ -7,23 +7,31 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 #include <boost/cstdint.hpp>
-#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 
 namespace Poseidon {
 
+class MySqlThreadContext;
+
 class MySqlConnection : boost::noncopyable {
-protected:
+public:
+	static void create(boost::scoped_ptr<MySqlConnection> &conn,
+		MySqlThreadContext &context, const std::string &serverAddr, unsigned serverPort,
+		const std::string &userName, const std::string &password, const std::string &schema,
+		bool useSsl, const std::string &charset);
+
+public:
 	virtual ~MySqlConnection() = 0;
 
 public:
-	virtual void executeSql(const std::string &sql) = 0;
-	virtual void waitForResult() = 0;
+	void executeSql(const std::string &sql);
+	void waitForResult();
 
-	virtual bool fetchRow() = 0;
-	virtual boost::int64_t getSigned(const char *column) const = 0;
-	virtual boost::uint64_t getUnsigned(const char *column) const = 0;
-	virtual double getDouble(const char *column) const = 0;
-	virtual std::string getString(const char *column) const = 0;
+	bool fetchRow();
+	boost::int64_t getSigned(const char *column) const;
+	boost::uint64_t getUnsigned(const char *column) const;
+	double getDouble(const char *column) const;
+	std::string getString(const char *column) const;
 };
 
 }
