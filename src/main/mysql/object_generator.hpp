@@ -230,8 +230,8 @@ public:
 	MYSQL_OBJECT_FIELDS
 
 private:
-	static void doQuery(
-		std::string &sql_, MySqlConnection &conn_, const char *filter_, const char *limit_)
+	static void doQuery(std::string &sql_, ::Poseidon::MySqlConnection &conn_,
+		const char *filter_, const char *limit_)
 	{
 		std::ostringstream oss_;
 
@@ -278,7 +278,7 @@ private:
 		conn_.executeSql(sql_);
 		conn_.waitForResult();
 	}
-	void doFetch(const MySqlConnection &conn_){
+	void doFetch(const ::Poseidon::MySqlConnection &conn_){
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -309,7 +309,7 @@ public:
 	const char *getTableName() const {
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
-	void syncSave(std::string &sql_, MySqlConnection &conn_) const {
+	void syncSave(std::string &sql_, ::Poseidon::MySqlConnection &conn_) const {
 		std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
@@ -361,7 +361,7 @@ public:
 		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
 		conn_.executeSql(sql_);
 	}
-	bool syncLoad(std::string &sql_, MySqlConnection &conn_, const char *filter_){
+	bool syncLoad(std::string &sql_, ::Poseidon::MySqlConnection &conn_, const char *filter_){
 		doQuery(sql_, conn_, filter_, "LIMIT 1");
 		if(!conn_.fetchRow()){
 			return false;
@@ -371,7 +371,7 @@ public:
 	}
 
 	static std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> >
-		batchQuery(std::string &sql_, MySqlConnection &conn_, const char *filter_)
+		batchQuery(std::string &sql_, ::Poseidon::MySqlConnection &conn_, const char *filter_)
 	{
 		std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> > ret_;
 		doQuery(sql_, conn_, filter_, "");
