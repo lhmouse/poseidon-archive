@@ -360,7 +360,9 @@ void MySqlThread::operationLoop(){
 			} catch(...){
 				bool retry = true;
 				if(retryCount == 0){
-					if(g_mySqlRetryCount != 0){
+					if(g_mySqlRetryCount == 0){
+						retry = false;
+					} else {
 						retryCount = g_mySqlRetryCount;
 					}
 				} else {
