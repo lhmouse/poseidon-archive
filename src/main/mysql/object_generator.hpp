@@ -278,7 +278,7 @@ public:
 													<<static_cast<unsigned long long>(get_ ## name_())),
 #define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = '"	\
-													<<escapeStringForSql(get_ ## name_()) <<'\''),
+													<< ::Poseidon::escapeStringForSql(get_ ## name_()) <<'\''),
 
 		oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
@@ -314,7 +314,7 @@ public:
 		MYSQL_OBJECT_FIELDS
 	}
 
-	static void batchAsyncLoad(std::string query, MySqlBatchAsyncLoadCallback callback){
+	static void batchAsyncLoad(std::string query, ::Poseidon::MySqlBatchAsyncLoadCallback callback){
 		::Poseidon::MySqlObjectBase::batchAsyncLoad(TOKEN_TO_STR(MYSQL_OBJECT_NAME),
 			STD_MOVE(query), &::boost::make_shared<MYSQL_OBJECT_NAME>, STD_MOVE(callback));
 	}
