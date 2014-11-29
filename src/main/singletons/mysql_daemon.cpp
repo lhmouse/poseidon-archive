@@ -153,9 +153,10 @@ public:
 	void execute(std::string &query, MySqlConnection &conn){
 		PROFILE_ME;
 
-		query.swap(m_query);
-		LOG_POSEIDON_INFO("MySQL batch load: query = ", query);
-		conn.executeSql(query);
+		query = m_query;
+
+		LOG_POSEIDON_INFO("MySQL batch load: query = ", m_query);
+		conn.executeSql(m_query);
 		conn.waitForResult();
 		while(conn.fetchRow()){
 			AUTO(object, m_factory());
