@@ -408,12 +408,19 @@ boost::shared_ptr<MySqlThread> pickThreadForTable(const char *table){
 				}
 			}
 			const std::size_t index = lower - g_assignments.begin();
+
 			// g_assignments.insert(lower, std::make_pair(table, thread));
 			g_assignments.push_back(VAL_INIT);
-			for(std::size_t i = g_assignments.size() - 1; i > index; --i){
-				g_assignments[i].swap(g_assignments[i - 1]);
+			for(std::size_t i = g_assignments.size() - 1; index < i; --i){
+				AUTO_REF(cur, g_assignments[i]);
+				AUTO_REF(prev, g_assignments[i - 1]);
+				cur.first = prev.first;
+				cur.second.swap(prev.second);
 			}
-			g_assignments.at(index) = std::make_pair(table, thread);
+			AUTO_REF(cur, g_assignments[index]);
+			cur.first = table;
+			cur.second = thread;
+
 			LOG_POSEIDON_DEBUG("Assigning MySQL table `", table, "` to thread ", index);
 			break;
 		}
