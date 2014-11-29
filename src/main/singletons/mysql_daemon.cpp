@@ -400,6 +400,16 @@ boost::shared_ptr<MySqlThread> pickThreadForTable(const char *table){
 	AUTO(upper, g_assignments.end());
 	boost::shared_ptr<MySqlThread> thread;
 	for(;;){
+		if(lower == upper){
+			thread = g_threads.front();
+			for(AUTO(it, g_threads.begin() + 1); it != g_threads.end(); ++it){
+				if((*it)->getBusyTime() < thread->getBusyTime()){
+					thread = *it;
+				}
+			}
+			g_assignments.insert(lower, std::make_pair(table, thread));
+			break;
+		}
 		const AUTO(middle, lower + (upper - lower) / 2);
 		const int result = std::strcmp(table, middle->first);
 		if(result == 0){
@@ -411,16 +421,6 @@ boost::shared_ptr<MySqlThread> pickThreadForTable(const char *table){
 			upper = middle;
 		} else {
 			lower = middle + 1;
-		}
-		if(lower == upper){
-			thread = g_threads.front();
-			for(AUTO(it, g_threads.begin() + 1); it != g_threads.end(); ++it){
-				if((*it)->getBusyTime() < thread->getBusyTime()){
-					thread = *it;
-				}
-			}
-			g_assignments.insert(lower, std::make_pair(table, thread));
-			break;
 		}
 	}
 	return thread;
