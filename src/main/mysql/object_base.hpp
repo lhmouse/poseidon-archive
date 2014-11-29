@@ -13,19 +13,11 @@
 #include <boost/make_shared.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/cstdint.hpp>
-#include <cppconn/connection.h>
-#include <cppconn/statement.h>
-#include <cppconn/resultset.h>
+#include "connection.hpp"
 #include "../atomic.hpp"
 #include "../log.hpp"
 #include "../virtual_shared_from_this.hpp"
 #include "../singletons/mysql_daemon.hpp"	// MySqlAsyncLoadCallback
-
-namespace sql {
-
-class Connection;
-
-}
 
 namespace Poseidon {
 
@@ -75,8 +67,8 @@ public:
 	}
 
 	virtual const char *getTableName() const = 0;
-	virtual void syncSave(std::string &sql, sql::Connection *conn) const = 0;
-	virtual bool syncLoad(std::string &sql, sql::Connection *conn, const char *filter) = 0;
+	virtual void syncSave(std::string &sql, MySqlConnection &conn) const = 0;
+	virtual bool syncLoad(std::string &sql,  MySqlConnection &conn, const char *filter) = 0;
 
 	void asyncSave() const;
 	void asyncLoad(std::string filter, MySqlAsyncLoadCallback callback);

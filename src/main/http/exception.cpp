@@ -12,7 +12,7 @@ const OptionalMap EMPTY_HEADERS;
 }
 
 HttpException::HttpException(const char *file, std::size_t line,
-	HttpStatus status, OptionalMap headers) NOEXCEPT
+	HttpStatus status, OptionalMap headers)
 	: ProtocolException(file, line,
 		getHttpStatusDesc(status).descShort, static_cast<unsigned>(status))
 {

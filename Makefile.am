@@ -72,7 +72,11 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/http/exception.cpp	\
 	src/main/http/websocket/session.cpp	\
 	src/main/http/websocket/exception.cpp	\
-	src/main/mysql/object_base.cpp
+	src/main/mysql/object_base.cpp	\
+	src/main/mysql/exception.cpp	\
+	src/main/mysql/thread_context.cpp	\
+	src/main/mysql/connection.cpp	\
+	src/main/mysql/connection_impl.cpp
 
 lib_LTLIBRARIES=	\
 	lib/libposeidon-main.la	\

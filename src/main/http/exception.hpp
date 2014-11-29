@@ -16,7 +16,7 @@ private:
 
 public:
 	HttpException(const char *file, std::size_t line,
-		HttpStatus status, OptionalMap headers = OptionalMap()) NOEXCEPT;
+		HttpStatus status, OptionalMap headers = OptionalMap());
 	~HttpException() NOEXCEPT;
 
 public:

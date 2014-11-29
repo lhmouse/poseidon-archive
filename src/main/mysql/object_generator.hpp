@@ -230,8 +230,8 @@ public:
 	MYSQL_OBJECT_FIELDS
 
 private:
-	static void doQuery(boost::scoped_ptr<sql::ResultSet> &rs_, std::string &sql_,
-		sql::Connection *conn_, const char *filter_, const char *limit_)
+	static void doQuery(
+		std::string &sql_, MySqlConnection &conn_, const char *filter_, const char *limit_)
 	{
 		std::ostringstream oss_;
 
@@ -272,14 +272,13 @@ private:
 		oss_ <<" FROM `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` ";
 		oss_ <<filter_ << ' ';
 		oss_ <<limit_ << ' ';
-		sql_ = oss_.str();
+		oss_.str().swap(sql_);
 
 		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
-		const boost::scoped_ptr<sql::Statement> stmt_(conn_->createStatement());
-		rs_.reset(stmt_->executeQuery(sql_));
+		conn_.executeSql(sql_);
+		conn_.waitForResult();
 	}
-	void doFetch(sql::ResultSet *rs_){
-		unsigned index_ = 0;
+	void doFetch(const MySqlConnection &conn_){
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -292,16 +291,16 @@ private:
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
 
-#define FIELD_BOOLEAN(name_)				set_ ## name_(rs_->getBoolean(++index_));
-#define FIELD_TINYINT(name_)				set_ ## name_(rs_->getInt(++index_));
-#define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(rs_->getUInt(++index_));
-#define FIELD_SMALLINT(name_)				set_ ## name_(rs_->getInt(++index_));
-#define FIELD_SMALLINT_UNSIGNED(name_)		set_ ## name_(rs_->getUInt(++index_));
-#define FIELD_INTEGER(name_)				set_ ## name_(rs_->getInt(++index_));
-#define FIELD_INTEGER_UNSIGNED(name_)		set_ ## name_(rs_->getUInt(++index_));
-#define FIELD_BIGINT(name_)					set_ ## name_(rs_->getInt64(++index_));
-#define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(rs_->getUInt64(++index_));
-#define FIELD_STRING(name_)					set_ ## name_(rs_->getString(++index_).asStdString());
+#define FIELD_BOOLEAN(name_)				set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_TINYINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_SMALLINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_SMALLINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_INTEGER(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_INTEGER_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_BIGINT(name_)					set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_STRING(name_)					set_ ## name_(conn_.getString( TOKEN_TO_STR(name_) ));
 
 		MYSQL_OBJECT_FIELDS
 	}
@@ -310,7 +309,7 @@ public:
 	const char *getTableName() const {
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
-	void syncSave(std::string &sql_, sql::Connection *conn_) const {
+	void syncSave(std::string &sql_, MySqlConnection &conn_) const {
 		std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
@@ -326,7 +325,7 @@ public:
 
 #define FIELD_BOOLEAN(name_)				(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
-													<<static_cast<long>(get_ ## name_())),
+													<<static_cast<unsigned long>(get_ ## name_())),
 #define FIELD_TINYINT(name_)				(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
 													<<static_cast<long>(get_ ## name_())),
@@ -357,32 +356,28 @@ public:
 
 		oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
-		sql_ = oss_.str();
+		oss_.str().swap(sql_);
 
 		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
-		const boost::scoped_ptr<sql::Statement> stmt_(conn_->createStatement());
-		stmt_->executeUpdate(sql_);
+		conn_.executeSql(sql_);
 	}
-	bool syncLoad(std::string &sql_, sql::Connection *conn_, const char *filter_){
-		boost::scoped_ptr<sql::ResultSet> rs_;
-		doQuery(rs_, sql_, conn_, filter_, " LIMIT 1");
-		if(!rs_->first()){
+	bool syncLoad(std::string &sql_, MySqlConnection &conn_, const char *filter_){
+		doQuery(sql_, conn_, filter_, "LIMIT 1");
+		if(!conn_.fetchRow()){
 			return false;
 		}
-		doFetch(rs_.get());
+		doFetch(conn_);
 		return true;
 	}
 
 	static std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> >
-		batchQuery(std::string &sql_, sql::Connection *conn_, const char *filter_)
+		batchQuery(std::string &sql_, MySqlConnection &conn_, const char *filter_)
 	{
 		std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> > ret_;
-		boost::scoped_ptr<sql::ResultSet> rs_;
-		doQuery(rs_, sql_, conn_, filter_, "");
-		rs_->beforeFirst();
-		while(rs_->next()){
+		doQuery(sql_, conn_, filter_, "");
+		while(conn_.fetchRow()){
 			AUTO(obj_, boost::make_shared<MYSQL_OBJECT_NAME>());
-			obj_->doFetch(rs_.get());
+			obj_->doFetch(conn_);
 			ret_.push_back(STD_MOVE(obj_));
 		}
 		return ret_;

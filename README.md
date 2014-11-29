@@ -25,9 +25,9 @@ timer_daemon.hpp | 计时器线程，负责调度计时器，在计时器触发�
 - pkg-config
 - gettext
 - make
-- g++-4.4
-- libboost1.42-dev
-- libmysqlcppconn-dev
+- g++
+- libboost-dev
+- libmysqlclient-dev 
 - libssl-dev
 
 ## 运行环境

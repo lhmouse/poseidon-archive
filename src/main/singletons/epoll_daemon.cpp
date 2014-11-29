@@ -26,9 +26,9 @@ using namespace Poseidon;
 
 namespace {
 
-std::size_t g_dataBufferSize	= 1024;
-std::size_t g_eventBufferSize	= 256;
-std::size_t g_maxTimeout		= 100;
+std::size_t	g_dataBufferSize	= 1024;
+std::size_t	g_eventBufferSize	= 256;
+std::size_t	g_maxTimeout		= 100;
 
 volatile bool g_running = false;
 ScopedFile g_epoll;

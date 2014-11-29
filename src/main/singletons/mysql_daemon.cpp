@@ -3,20 +3,21 @@
 
 #include "../precompiled.hpp"
 #include "mysql_daemon.hpp"
+#include "main_config.hpp"
 #include <boost/thread.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/bind.hpp>
-#include <cppconn/driver.h>
-#include <cppconn/exception.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "main_config.hpp"
 #include "../mysql/object_base.hpp"
 #define POSEIDON_MYSQL_OBJECT_IMPL_
 #include "../mysql/object_impl.hpp"
+#include "../mysql/exception.hpp"
+#include "../mysql/thread_context.hpp"
+#include "../mysql/connection.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -28,16 +29,19 @@ using namespace Poseidon;
 
 namespace {
 
-std::string g_mySqlServer			= "tcp://localhost:3306";
-std::string g_mySqlUsername			= "root";
-std::string g_mySqlPassword			= "root";
-std::string g_mySqlSchema			= "poseidon";
+std::string	g_mySqlServerAddr		= "localhost";
+unsigned	g_mySqlServerPort		= 3306;
+std::string	g_mySqlUsername			= "root";
+std::string	g_mySqlPassword			= "root";
+std::string	g_mySqlSchema			= "poseidon";
+bool		g_mySqlUseSsl			= false;
+std::string	g_mySqlCharset			= "utf8";
 
-std::string g_mySqlDumpDir			= "sql_dump";
-std::size_t g_mySqlMaxThreads		= 3;
-std::size_t g_mySqlSaveDelay		= 5000;
-std::size_t g_mySqlMaxReconnDelay	= 60000;
-std::size_t g_mySqlRetryCount		= 3;
+std::string	g_mySqlDumpDir			= "sql_dump";
+std::size_t	g_mySqlMaxThreads		= 3;
+std::size_t	g_mySqlSaveDelay		= 5000;
+std::size_t	g_mySqlMaxReconnDelay	= 60000;
+std::size_t	g_mySqlRetryCount		= 3;
 
 class OperationBase : boost::noncopyable {
 public:
@@ -46,7 +50,7 @@ public:
 
 public:
 	virtual bool shouldExecuteNow() const = 0;
-	virtual void execute(std::string &sqlStatement, sql::Connection *connection) = 0;
+	virtual void execute(std::string &sqlStatement, MySqlConnection &conn) = 0;
 };
 
 class LoadOperation
@@ -70,11 +74,11 @@ public:
 	bool shouldExecuteNow() const {
 		return true;
 	}
-	void execute(std::string &sqlStatement, sql::Connection *connection){
+	void execute(std::string &sqlStatement, MySqlConnection &conn){
 		PROFILE_ME;
 
 		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", filter = ", m_filter);
-		m_object->syncLoad(sqlStatement, connection, m_filter.c_str());
+		m_object->syncLoad(sqlStatement, conn, m_filter.c_str());
 		m_object->enableAutoSaving();
 
 		JobBase::pend();
@@ -103,7 +107,7 @@ public:
 	bool shouldExecuteNow() const {
 		return m_dueTime <= getMonoClock();
 	}
-	void execute(std::string &sqlStatement, sql::Connection *connection){
+	void execute(std::string &sqlStatement, MySqlConnection &conn){
 		PROFILE_ME;
 
 		if(MySqlObjectImpl::getContext(*m_object) != this){
@@ -111,7 +115,7 @@ public:
 			return;
 		}
 		LOG_POSEIDON_INFO("MySQL save: table = ", m_object->getTableName());
-		m_object->syncSave(sqlStatement, connection);
+		m_object->syncSave(sqlStatement, conn);
 	}
 };
 
@@ -171,7 +175,13 @@ public:
 		if(atomicExchange(m_running, false) == false){
 			return;
 		}
-
+		{
+			const boost::mutex::scoped_lock lock(m_mutex);
+			atomicStore(m_urgentMode, true);
+			m_newAvail.notify_all();
+		}
+	}
+	void join(){
 		waitTillIdle();
 		if(m_thread.joinable()){
 			m_thread.join();
@@ -210,41 +220,19 @@ std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 boost::mutex g_assignmentMutex;
 std::vector<std::pair<const char *, boost::shared_ptr<MySqlThread> > > g_assignments;
 
-bool getMySqlConnection(boost::scoped_ptr<sql::Connection> &connection){
-	LOG_POSEIDON_INFO("Connecting to MySQL server: ", g_mySqlServer);
-	try {
-		connection.reset(::get_driver_instance()->connect(
-			g_mySqlServer, g_mySqlUsername, g_mySqlPassword));
-		connection->setSchema(g_mySqlSchema);
-		LOG_POSEIDON_INFO("Successfully connected to MySQL server.");
-		return true;
-	} catch(sql::SQLException &e){
-		LOG_POSEIDON_ERROR("Error connecting to MySQL server: code = ", e.getErrorCode(),
-			", state = ", e.getSQLState(), ", what = ", e.what());
-		return false;
-	}
-}
-
 void MySqlThread::operationLoop(){
-	boost::scoped_ptr<sql::Connection> connection;
+	MySqlThreadContext context;
+
+	boost::shared_ptr<MySqlConnection> conn;
 	std::size_t reconnectDelay = 0;
 	bool discardConnection = false;
 
-	if(!getMySqlConnection(connection)){
-		LOG_POSEIDON_FATAL("Failed to connect MySQL server. Bailing out.");
-		std::abort();
-	} else {
-		const boost::mutex::scoped_lock lock(m_mutex);
-		m_queueEmpty.notify_all();
-	}
-
 	std::deque<boost::shared_ptr<OperationBase> > queue;
 	std::size_t retryCount = 0;
-
 	for(;;){
 		try {
-			if(!connection){
-				LOG_POSEIDON_WARN("Lost connection to MySQL server. Reconnecting...");
+			if(!conn){
+				LOG_POSEIDON_INFO("Connecting to MySQL server...");
 
 				if(reconnectDelay == 0){
 					reconnectDelay = 1;
@@ -259,12 +247,15 @@ void MySqlThread::operationLoop(){
 						reconnectDelay = g_mySqlMaxReconnDelay;
 					}
 				}
-				if(!getMySqlConnection(connection)){
+				try {
+					conn = context.createConnection(g_mySqlServerAddr, g_mySqlServerPort,
+						g_mySqlUsername, g_mySqlPassword, g_mySqlSchema, g_mySqlUseSsl, g_mySqlCharset);
+				} catch(...){
 					if(!atomicLoad(m_running)){
 						LOG_POSEIDON_WARN("Shutting down...");
-						break;
+						goto exit_loop;
 					}
-					continue;
+					throw;
 				}
 				reconnectDelay = 0;
 			}
@@ -290,22 +281,22 @@ void MySqlThread::operationLoop(){
 				continue;
 			}
 
-			unsigned mySqlErrno = 99999;
-			std::string mySqlError;
+			unsigned mySqlErrCode = 99999;
+			std::string mySqlErrMsg;
 			std::string sqlStatement;
 			try {
 				try {
 					const Stopwatch watch(*this);
-					queue.front()->execute(sqlStatement, connection.get());
-				} catch(sql::SQLException &e){
-					mySqlErrno = e.getErrorCode();
-					mySqlError = e.what();
+					queue.front()->execute(sqlStatement, *conn);
+				} catch(MySqlException &e){
+					mySqlErrCode = e.code();
+					mySqlErrMsg = e.what();
 					throw;
 				} catch(std::exception &e){
-					mySqlError = e.what();
+					mySqlErrMsg = e.what();
 					throw;
 				} catch(...){
-					mySqlError = "Unknown exception";
+					mySqlErrMsg = "Unknown exception";
 					throw;
 				}
 			} catch(...){
@@ -324,13 +315,13 @@ void MySqlThread::operationLoop(){
 					queue.pop_front();
 
 					char temp[32];
-					unsigned len = std::sprintf(temp, "%05u", mySqlErrno);
+					unsigned len = std::sprintf(temp, "%05u", mySqlErrCode);
 					std::string dump;
 					dump.reserve(1024);
 					dump.assign("-- Error code = ");
 					dump.append(temp, len);
 					dump.append(", Description = ");
-					dump.append(mySqlError);
+					dump.append(mySqlErrMsg);
 					dump.append("\n");
 					dump.append(sqlStatement);
 					dump.append(";\n\n");
@@ -351,9 +342,9 @@ void MySqlThread::operationLoop(){
 				throw;
 			}
 			queue.pop_front();
-		} catch(sql::SQLException &e){
-			LOG_POSEIDON_ERROR("SQLException thrown in MySQL daemon: code = ", e.getErrorCode(),
-				", state = ", e.getSQLState(), ", what = ", e.what());
+		} catch(MySqlException &e){
+			LOG_POSEIDON_ERROR("MySqlException thrown in MySQL daemon: code = ", e.code(),
+				", what = ", e.what());
 			discardConnection = true;
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());
@@ -365,9 +356,9 @@ void MySqlThread::operationLoop(){
 
 		if(discardConnection){
 			discardConnection = false;
-			if(connection){
+			if(conn){
 				LOG_POSEIDON_INFO("The connection was left in an indeterminate state. Discard it.");
-				connection.reset();
+				conn.reset();
 			}
 		}
 	}
@@ -384,9 +375,7 @@ void MySqlThread::threadProc(){
 	Logger::setThreadTag(" D  "); // Database
 	LOG_POSEIDON_INFO("MySQL daemon started.");
 
-	::get_driver_instance()->threadInit();
 	operationLoop();
-	::get_driver_instance()->threadEnd();
 
 	LOG_POSEIDON_INFO("MySQL daemon stopped.");
 }
@@ -444,13 +433,13 @@ void MySqlDaemon::start(){
 	}
 	LOG_POSEIDON_INFO("Starting MySQL daemon...");
 
-	// 全局初始化。
-	::get_driver_instance()->threadInit();
-
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
-	conf.get(g_mySqlServer, "mysql_server");
-	LOG_POSEIDON_DEBUG("MySQL server = ", g_mySqlServer);
+	conf.get(g_mySqlServerAddr, "mysql_server_addr");
+	LOG_POSEIDON_DEBUG("MySQL server addr = ", g_mySqlServerAddr);
+
+	conf.get(g_mySqlServerPort, "mysql_server_port");
+	LOG_POSEIDON_DEBUG("MySQL server port = ", g_mySqlServerPort);
 
 	conf.get(g_mySqlUsername, "mysql_username");
 	LOG_POSEIDON_DEBUG("MySQL username = ", g_mySqlUsername);
@@ -460,6 +449,12 @@ void MySqlDaemon::start(){
 
 	conf.get(g_mySqlSchema, "mysql_schema");
 	LOG_POSEIDON_DEBUG("MySQL schema = ", g_mySqlSchema);
+
+	conf.get(g_mySqlUseSsl, "mysql_use_ssl");
+	LOG_POSEIDON_DEBUG("MySQL use ssl = ", g_mySqlUseSsl);
+
+	conf.get(g_mySqlCharset, "mysql_charset");
+	LOG_POSEIDON_DEBUG("MySQL charset = ", g_mySqlCharset);
 
 	conf.get(g_mySqlDumpDir, "mysql_dump_dir");
 	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_mySqlDumpDir);
@@ -509,12 +504,13 @@ void MySqlDaemon::stop(){
 
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		g_threads[i]->stop();
+	}
+	for(std::size_t i = 0; i < g_threads.size(); ++i){
+		g_threads[i]->join();
 
 		LOG_POSEIDON_INFO("Shut down MySQL thread ", i);
 	}
 	g_threads.clear();
-
-	::get_driver_instance()->threadEnd();
 }
 
 void MySqlDaemon::waitForAllAsyncOperations(){

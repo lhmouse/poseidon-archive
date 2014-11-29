@@ -19,7 +19,7 @@ protected:
 	const SharedNtmbs m_message; // 拷贝构造函数不抛出异常。
 
 public:
-	Exception(const char *file, std::size_t line, SharedNtmbs message) NOEXCEPT;
+	Exception(const char *file, std::size_t line, SharedNtmbs message);
 	~Exception() NOEXCEPT;
 
 public:
@@ -40,7 +40,7 @@ private:
 	const int m_code;
 
 public:
-	SystemError(const char *file, std::size_t line, int code = errno) NOEXCEPT;
+	SystemError(const char *file, std::size_t line, int code = errno);
 	~SystemError() NOEXCEPT;
 
 public:
@@ -54,8 +54,7 @@ private:
 	const unsigned m_code;
 
 public:
-	ProtocolException(
-		const char *file, std::size_t line, SharedNtmbs message, unsigned code) NOEXCEPT;
+	ProtocolException(const char *file, std::size_t line, SharedNtmbs message, unsigned code);
 	~ProtocolException() NOEXCEPT;
 
 public:
