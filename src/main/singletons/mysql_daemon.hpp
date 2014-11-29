@@ -6,15 +6,11 @@
 
 #include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
+#include "../mysql/callbacks.hpp"
 
 namespace Poseidon {
 
 class MySqlObjectBase;
-
-typedef boost::function<
-	void (boost::shared_ptr<MySqlObjectBase> obj)
-	> MySqlAsyncLoadCallback;
 
 struct MySqlDaemon {
 	static void start();
@@ -24,7 +20,9 @@ struct MySqlDaemon {
 
 	static void pendForSaving(boost::shared_ptr<const MySqlObjectBase> object);
 	static void pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
-		std::string filter, MySqlAsyncLoadCallback callback);
+		std::string query, MySqlAsyncLoadCallback callback);
+	static void pendForBatchLoading(const char *tableHint,
+		std::string query, MySqlObjectFactoryCallback factory, MySqlBatchAsyncLoadCallback callback);
 
 private:
 	MySqlDaemon();

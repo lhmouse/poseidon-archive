@@ -3,12 +3,14 @@
 
 #include "../precompiled.hpp"
 #include "exception.hpp"
+#include "../log.hpp"
 using namespace Poseidon;
 
 MySqlException::MySqlException(const char *file, std::size_t line,
 	unsigned code, const char *message)
 	: ProtocolException(file, line, SharedNtmbs(message, true), code)
 {
+	LOG_POSEIDON_ERROR("MySqlException: code = ", code, ", message = ", message);
 }
 MySqlException::~MySqlException() NOEXCEPT {
 }

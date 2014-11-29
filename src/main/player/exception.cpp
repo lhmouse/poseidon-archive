@@ -3,12 +3,15 @@
 
 #include "../precompiled.hpp"
 #include "exception.hpp"
+#include "../log.hpp"
 using namespace Poseidon;
 
 PlayerProtocolException::PlayerProtocolException(const char *file, std::size_t line,
 	PlayerStatus status, SharedNtmbs message)
 	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
 {
+	LOG_POSEIDON_ERROR("PlayerProtocolException: status = ", static_cast<unsigned>(status),
+		", message = ", message);
 }
 PlayerProtocolException::~PlayerProtocolException() NOEXCEPT {
 }

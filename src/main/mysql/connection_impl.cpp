@@ -101,8 +101,15 @@ void MySqlConnectionImpl::waitForResult(){
 }
 
 bool MySqlConnectionImpl::fetchRow(){
+	if(m_columns.empty()){
+		LOG_POSEIDON_DEBUG("Empty set returned form MySQL server.");
+		return false;
+	}
 	m_row = ::mysql_fetch_row(m_result.get());
-	if(m_row){
+	if(!m_row){
+		if(::mysql_errno(m_mySql.get()) != 0){
+			THROW_MYSQL_EXCEPTION;
+		}
 		return false;
 	}
 	m_lengths = ::mysql_fetch_lengths(m_result.get());

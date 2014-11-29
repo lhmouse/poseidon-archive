@@ -6,6 +6,7 @@
 
 #include "../cxx_ver.hpp"
 #include "../cxx_util.hpp"
+#include "callbacks.hpp"
 #include <string>
 #include <sstream>
 #include <cstdio>
@@ -14,10 +15,10 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/cstdint.hpp>
 #include "connection.hpp"
+#include "utilities.hpp"
 #include "../atomic.hpp"
 #include "../log.hpp"
 #include "../virtual_shared_from_this.hpp"
-#include "../singletons/mysql_daemon.hpp"	// MySqlAsyncLoadCallback
 
 namespace Poseidon {
 
@@ -27,18 +28,8 @@ class MySqlObjectBase
 	friend class MySqlObjectImpl;
 
 protected:
-	class EscapedString {
-	private:
-		std::string m_escaped;
-
-	public:
-		explicit EscapedString(const std::string &plain);
-
-	public:
-		const std::string get() const {
-			return m_escaped;
-		}
-	};
+	static void batchAsyncLoad(const char *tableHint, std::string query,
+		MySqlObjectFactoryCallback factory, MySqlBatchAsyncLoadCallback callback);
 
 private:
 	mutable volatile bool m_autoSaves;
@@ -47,7 +38,7 @@ private:
 protected:
 	mutable boost::shared_mutex m_mutex;
 
-public:
+protected:
 	MySqlObjectBase();
 	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
 	~MySqlObjectBase();
@@ -67,11 +58,12 @@ public:
 	}
 
 	virtual const char *getTableName() const = 0;
+
 	virtual void syncSave(std::string &sql, MySqlConnection &conn) const = 0;
-	virtual bool syncLoad(std::string &sql,  MySqlConnection &conn, const char *filter) = 0;
+	virtual void syncFetch(const MySqlConnection &conn) = 0;
 
 	void asyncSave() const;
-	void asyncLoad(std::string filter, MySqlAsyncLoadCallback callback);
+	void asyncLoad(std::string query, MySqlAsyncLoadCallback callback);
 };
 
 }

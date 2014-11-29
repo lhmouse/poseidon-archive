@@ -66,6 +66,7 @@ public:
 #define FIELD_BIGINT_UNSIGNED(name_)		, name_()
 #define FIELD_STRING(name_)					, name_()
 
+		MYSQL_OBJECT_FIELDS
 	{
 	}
 
@@ -229,88 +230,13 @@ public:
 
 	MYSQL_OBJECT_FIELDS
 
-private:
-	static void doQuery(std::string &sql_, ::Poseidon::MySqlConnection &conn_,
-		const char *filter_, const char *limit_)
-	{
-		std::ostringstream oss_;
-
-#undef FIELD_BOOLEAN
-#undef FIELD_TINYINT
-#undef FIELD_TINYINT_UNSIGNED
-#undef FIELD_SMALLINT
-#undef FIELD_SMALLINT_UNSIGNED
-#undef FIELD_INTEGER
-#undef FIELD_INTEGER_UNSIGNED
-#undef FIELD_BIGINT
-#undef FIELD_BIGINT_UNSIGNED
-#undef FIELD_STRING
-
-#define FIELD_BOOLEAN(name_)				(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-#define FIELD_TINYINT(name_)				(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-#define FIELD_TINYINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-#define FIELD_SMALLINT(name_)				(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-#define FIELD_SMALLINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-#define FIELD_INTEGER(name_)				(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-#define FIELD_INTEGER_UNSIGNED(name_)		(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-#define FIELD_BIGINT(name_)					(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-#define FIELD_BIGINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-#define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "`"),
-
-		oss_ <<"SELECT ";
-		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
-		oss_ <<" FROM `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` ";
-		oss_ <<filter_ << ' ';
-		oss_ <<limit_ << ' ';
-		oss_.str().swap(sql_);
-
-		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
-		conn_.executeSql(sql_);
-		conn_.waitForResult();
-	}
-	void doFetch(const ::Poseidon::MySqlConnection &conn_){
-
-#undef FIELD_BOOLEAN
-#undef FIELD_TINYINT
-#undef FIELD_TINYINT_UNSIGNED
-#undef FIELD_SMALLINT
-#undef FIELD_SMALLINT_UNSIGNED
-#undef FIELD_INTEGER
-#undef FIELD_INTEGER_UNSIGNED
-#undef FIELD_BIGINT
-#undef FIELD_BIGINT_UNSIGNED
-#undef FIELD_STRING
-
-#define FIELD_BOOLEAN(name_)				set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_TINYINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_SMALLINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_SMALLINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_INTEGER(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_INTEGER_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_BIGINT(name_)					set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_STRING(name_)					set_ ## name_(conn_.getString( TOKEN_TO_STR(name_) ));
-
-		MYSQL_OBJECT_FIELDS
-	}
-
 public:
 	const char *getTableName() const {
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
-	void syncSave(std::string &sql_, ::Poseidon::MySqlConnection &conn_) const {
-		std::ostringstream oss_;
+
+	void syncSave(::std::string &sql_, ::Poseidon::MySqlConnection &conn_) const {
+		::std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -352,7 +278,7 @@ public:
 													<<static_cast<unsigned long long>(get_ ## name_())),
 #define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = '"	\
-													<<EscapedString(get_ ## name_()).get() <<'\''),
+													<<escapeStringForSql(get_ ## name_()) <<'\''),
 
 		oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
@@ -361,26 +287,36 @@ public:
 		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
 		conn_.executeSql(sql_);
 	}
-	bool syncLoad(std::string &sql_, ::Poseidon::MySqlConnection &conn_, const char *filter_){
-		doQuery(sql_, conn_, filter_, "LIMIT 1");
-		if(!conn_.fetchRow()){
-			return false;
-		}
-		doFetch(conn_);
-		return true;
+	void syncFetch(const ::Poseidon::MySqlConnection &conn_){
+
+#undef FIELD_BOOLEAN
+#undef FIELD_TINYINT
+#undef FIELD_TINYINT_UNSIGNED
+#undef FIELD_SMALLINT
+#undef FIELD_SMALLINT_UNSIGNED
+#undef FIELD_INTEGER
+#undef FIELD_INTEGER_UNSIGNED
+#undef FIELD_BIGINT
+#undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_STRING
+
+#define FIELD_BOOLEAN(name_)				set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_TINYINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_SMALLINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_SMALLINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_INTEGER(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_INTEGER_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_BIGINT(name_)					set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_STRING(name_)					set_ ## name_(conn_.getString( TOKEN_TO_STR(name_) ));
+
+		MYSQL_OBJECT_FIELDS
 	}
 
-	static std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> >
-		batchQuery(std::string &sql_, ::Poseidon::MySqlConnection &conn_, const char *filter_)
-	{
-		std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> > ret_;
-		doQuery(sql_, conn_, filter_, "");
-		while(conn_.fetchRow()){
-			AUTO(obj_, boost::make_shared<MYSQL_OBJECT_NAME>());
-			obj_->doFetch(conn_);
-			ret_.push_back(STD_MOVE(obj_));
-		}
-		return ret_;
+	static void batchAsyncLoad(std::string query, MySqlBatchAsyncLoadCallback callback){
+		::Poseidon::MySqlObjectBase::batchAsyncLoad(TOKEN_TO_STR(MYSQL_OBJECT_NAME),
+			STD_MOVE(query), &::boost::make_shared<MYSQL_OBJECT_NAME>, STD_MOVE(callback));
 	}
 };
 

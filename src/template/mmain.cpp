@@ -53,9 +53,19 @@ void event2Proc(boost::shared_ptr<TestEvent2> event){
 	LOG_POSEIDON_FATAL("event2Proc: d = ", event->d);
 }
 
+void printObjs(std::vector<boost::shared_ptr<MySqlObjectBase> > v){
+	LOG_POSEIDON_FATAL("--------- v.size() = ", v.size());
+	for(AUTO(it, v.begin()); it != v.end(); ++it){
+		AUTO(p, static_cast<MySqlObj *>(it->get()));
+		LOG_POSEIDON_FATAL("-- si = ", p->get_si(), ", str = ", p->get_str(), ", bi = ", p->get_bi());
+	}
+}
+
 void tickProc(unsigned long long now, unsigned long long period){
 	PROFILE_ME;
 	LOG_POSEIDON_FATAL("Tick, now = ", now, ", period = ", period);
+
+	MySqlObj::batchAsyncLoad("SELECT * FROM `MySqlObj`", &printObjs);
 }
 
 void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){

@@ -3,12 +3,15 @@
 
 #include "../../precompiled.hpp"
 #include "exception.hpp"
+#include "../../log.hpp"
 using namespace Poseidon;
 
 WebSocketException::WebSocketException(const char *file, std::size_t line,
 	WebSocketStatus status, SharedNtmbs message)
 	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
 {
+	LOG_POSEIDON_ERROR("WebSocketException: status = ", static_cast<unsigned>(status),
+		", message = ", message);
 }
 WebSocketException::~WebSocketException() NOEXCEPT {
 }

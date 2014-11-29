@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "exception.hpp"
+#include "../log.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -20,6 +21,7 @@ HttpException::HttpException(const char *file, std::size_t line,
 		boost::make_shared<OptionalMap>().swap(m_headers);
 		m_headers->swap(headers);
 	}
+	LOG_POSEIDON_ERROR("HttpException: status = ", static_cast<unsigned>(status));
 }
 HttpException::~HttpException() NOEXCEPT {
 }

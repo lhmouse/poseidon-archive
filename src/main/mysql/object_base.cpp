@@ -6,20 +6,11 @@
 #include "../singletons/mysql_daemon.hpp"
 using namespace Poseidon;
 
-MySqlObjectBase::EscapedString::EscapedString(const std::string &plain){
-	m_escaped.reserve(plain.size() + 16);
-	for(std::string::const_iterator it = plain.begin(); it != plain.end(); ++it){
-		switch(*it){
-		case 0:		m_escaped.append("\\0"); break;
-		case '\r':	m_escaped.append("\\r"); break;
-		case '\n':	m_escaped.append("\\n"); break;
-		case 0x1A:	m_escaped.append("\\Z"); break;
-		case '\'':	m_escaped.append("\\'"); break;
-		case '\"':	m_escaped.append("\\\""); break;
-		case '\\':	m_escaped.append("\\\\"); break;
-		default:	m_escaped.push_back(*it); break;
-		}
-	}
+void MySqlObjectBase::batchAsyncLoad(const char *tableHint, std::string query,
+	MySqlObjectFactoryCallback factory, MySqlBatchAsyncLoadCallback callback)
+{
+	MySqlDaemon::pendForBatchLoading(
+		tableHint, STD_MOVE(query), STD_MOVE(factory), STD_MOVE(callback));
 }
 
 MySqlObjectBase::MySqlObjectBase()
@@ -40,8 +31,8 @@ void MySqlObjectBase::asyncSave() const {
 	enableAutoSaving();
 	MySqlDaemon::pendForSaving(virtualSharedFromThis<MySqlObjectBase>());
 }
-void MySqlObjectBase::asyncLoad(std::string filter, MySqlAsyncLoadCallback callback){
+void MySqlObjectBase::asyncLoad(std::string query, MySqlAsyncLoadCallback callback){
 	disableAutoSaving();
-	MySqlDaemon::pendForLoading(
-		virtualSharedFromThis<MySqlObjectBase>(), STD_MOVE(filter), STD_MOVE(callback));
+	MySqlDaemon::pendForLoading(virtualSharedFromThis<MySqlObjectBase>(),
+		STD_MOVE(query), STD_MOVE(callback));
 }

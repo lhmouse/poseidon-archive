@@ -50,45 +50,7 @@ public:
 
 public:
 	virtual bool shouldExecuteNow() const = 0;
-	virtual void execute(std::string &sqlStatement, MySqlConnection &conn) = 0;
-};
-
-class LoadOperation
-	// 作为两步使用，塞到了同一个类里面。基类是按照这两个用途的先后顺序排列的，不要弄混。
-	: public OperationBase, public JobBase
-{
-private:
-	boost::shared_ptr<MySqlObjectBase> m_object;
-	std::string m_filter;
-	MySqlAsyncLoadCallback m_callback;
-
-public:
-	LoadOperation(boost::shared_ptr<MySqlObjectBase> object,
-		std::string filter, Move<MySqlAsyncLoadCallback> callback)
-		: m_object(STD_MOVE(object)), m_filter(STD_MOVE(filter))
-	{
-		callback.swap(m_callback);
-	}
-
-public:
-	bool shouldExecuteNow() const {
-		return true;
-	}
-	void execute(std::string &sqlStatement, MySqlConnection &conn){
-		PROFILE_ME;
-
-		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", filter = ", m_filter);
-		m_object->syncLoad(sqlStatement, conn, m_filter.c_str());
-		m_object->enableAutoSaving();
-
-		JobBase::pend();
-	}
-
-	void perform(){
-		PROFILE_ME;
-
-		m_callback(STD_MOVE(m_object));
-	}
+	virtual void execute(std::string &query, MySqlConnection &conn) = 0;
 };
 
 class SaveOperation : public OperationBase {
@@ -107,7 +69,7 @@ public:
 	bool shouldExecuteNow() const {
 		return m_dueTime <= getMonoClock();
 	}
-	void execute(std::string &sqlStatement, MySqlConnection &conn){
+	void execute(std::string &query, MySqlConnection &conn){
 		PROFILE_ME;
 
 		if(MySqlObjectImpl::getContext(*m_object) != this){
@@ -115,7 +77,100 @@ public:
 			return;
 		}
 		LOG_POSEIDON_INFO("MySQL save: table = ", m_object->getTableName());
-		m_object->syncSave(sqlStatement, conn);
+		m_object->syncSave(query, conn);
+	}
+};
+
+class LoadOperation
+	// 作为两步使用，塞到了同一个类里面。基类是按照这两个用途的先后顺序排列的，不要弄混。
+	: public OperationBase, public JobBase
+{
+private:
+	boost::shared_ptr<MySqlObjectBase> m_object;
+	std::string m_query;
+
+	MySqlAsyncLoadCallback m_callback;
+	bool m_result;
+
+public:
+	LoadOperation(boost::shared_ptr<MySqlObjectBase> object,
+		std::string query, Move<MySqlAsyncLoadCallback> callback)
+		: m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
+	{
+		callback.swap(m_callback);
+	}
+
+public:
+	bool shouldExecuteNow() const {
+		return true;
+	}
+	void execute(std::string &query, MySqlConnection &conn){
+		PROFILE_ME;
+
+		query.swap(m_query);
+		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", query = ", query);
+		conn.executeSql(query);
+		conn.waitForResult();
+		m_result = conn.fetchRow();
+		if(m_result){
+			m_object->syncFetch(conn);
+			m_object->enableAutoSaving();
+		}
+
+		JobBase::pend();
+	}
+
+	void perform(){
+		PROFILE_ME;
+
+		m_callback(STD_MOVE(m_object), m_result);
+	}
+};
+
+class BatchLoadOperation
+	: public OperationBase, public JobBase
+{
+private:
+	std::string m_query;
+
+	MySqlObjectFactoryCallback m_factory;
+	std::vector<boost::shared_ptr<MySqlObjectBase> > m_objects;
+	MySqlBatchAsyncLoadCallback m_callback;
+
+public:
+	BatchLoadOperation(std::string query, Move<MySqlObjectFactoryCallback> factory,
+		Move<MySqlBatchAsyncLoadCallback> callback)
+		: m_query(STD_MOVE(query))
+	{
+		factory.swap(m_factory);
+		callback.swap(m_callback);
+	}
+
+public:
+	bool shouldExecuteNow() const {
+		return true;
+	}
+	void execute(std::string &query, MySqlConnection &conn){
+		PROFILE_ME;
+
+		query.swap(m_query);
+		LOG_POSEIDON_INFO("MySQL batch load: query = ", query);
+		conn.executeSql(query);
+		conn.waitForResult();
+		while(conn.fetchRow()){
+			AUTO(object, m_factory());
+			object->syncFetch(conn);
+			object->enableAutoSaving();
+			m_objects.push_back(STD_MOVE(object));
+		}
+
+		JobBase::pend();
+	}
+
+	void perform(){
+		PROFILE_ME;
+
+		m_callback(STD_MOVE(m_objects));
 	}
 };
 
@@ -257,6 +312,8 @@ void MySqlThread::operationLoop(){
 					}
 					throw;
 				}
+
+				LOG_POSEIDON_INFO("Successfully connected to MySQL server.");
 				reconnectDelay = 0;
 			}
 
@@ -283,11 +340,11 @@ void MySqlThread::operationLoop(){
 
 			unsigned mySqlErrCode = 99999;
 			std::string mySqlErrMsg;
-			std::string sqlStatement;
+			std::string query;
 			try {
 				try {
 					const Stopwatch watch(*this);
-					queue.front()->execute(sqlStatement, *conn);
+					queue.front()->execute(query, *conn);
 				} catch(MySqlException &e){
 					mySqlErrCode = e.code();
 					mySqlErrMsg = e.what();
@@ -323,7 +380,7 @@ void MySqlThread::operationLoop(){
 					dump.append(", Description = ");
 					dump.append(mySqlErrMsg);
 					dump.append("\n");
-					dump.append(sqlStatement);
+					dump.append(query);
 					dump.append(";\n\n");
 
 					{
@@ -525,9 +582,17 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object)
 		boost::make_shared<SaveOperation>(STD_MOVE(object)), false);
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
-	std::string filter, MySqlAsyncLoadCallback callback)
+	std::string query, MySqlAsyncLoadCallback callback)
 {
 	const AUTO(table, object->getTableName());
 	pickThreadForTable(table)->addOperation(
-		boost::make_shared<LoadOperation>(STD_MOVE(object), STD_MOVE(filter), STD_MOVE(callback)), true);
+		boost::make_shared<LoadOperation>(
+			STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
+}
+void MySqlDaemon::pendForBatchLoading(const char *tableHint,
+	std::string query, MySqlObjectFactoryCallback factory, MySqlBatchAsyncLoadCallback callback)
+{
+	pickThreadForTable(tableHint)->addOperation(
+		boost::make_shared<BatchLoadOperation>(
+			STD_MOVE(query),  STD_MOVE(factory), STD_MOVE(callback)), true);
 }
