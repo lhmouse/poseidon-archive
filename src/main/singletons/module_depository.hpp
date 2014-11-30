@@ -27,7 +27,6 @@ struct ModuleDepository {
 	static boost::shared_ptr<Module> load(const SharedNtmbs &path);
 	static boost::shared_ptr<Module> loadNoThrow(const SharedNtmbs &path);
 	static bool unload(const boost::shared_ptr<Module> &module);
-	static bool unload(const SharedNtmbs &realPath);
 	static bool unload(void *baseAddr);
 
 	static std::vector<ModuleSnapshotItem> snapshot();

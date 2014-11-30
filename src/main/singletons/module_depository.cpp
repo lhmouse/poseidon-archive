@@ -242,10 +242,6 @@ bool ModuleDepository::unload(const boost::shared_ptr<Module> &module){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	return g_modules.erase<MIDX_MODULE>(module) > 0;
 }
-bool ModuleDepository::unload(const SharedNtmbs &realPath){
-	const boost::recursive_mutex::scoped_lock lock(g_mutex);
-	return g_modules.erase<MIDX_REAL_PATH>(realPath) > 0;
-}
 bool ModuleDepository::unload(void *baseAddr){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	return g_modules.erase<MIDX_BASE_ADDR>(baseAddr) > 0;

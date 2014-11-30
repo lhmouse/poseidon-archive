@@ -52,12 +52,7 @@ void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
 }
 
 void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
-	AUTO_REF(name, getParams.get("name"));
-	if(name.empty()){
-		LOG_POSEIDON_WARN("Missing parameter: name");
-		session->sendDefault(HTTP_BAD_REQUEST);
-		return;
-	}
+	AUTO_REF(name, getParams.at("name"));
 	if(!ModuleDepository::loadNoThrow(name.c_str())){
 		LOG_POSEIDON_WARN("Failed to load module: ", name);
 		session->sendDefault(HTTP_NOT_FOUND);
@@ -67,14 +62,16 @@ void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 }
 
 void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
-	AUTO_REF(realPath, getParams.get("real_path"));
-	if(realPath.empty()){
-		LOG_POSEIDON_WARN("Missing parameter: real_path");
+	AUTO_REF(baseAddrStr, getParams.at("base_addr"));
+	std::istringstream iss(baseAddrStr);
+	void *baseAddr;
+	if(!((iss >>baseAddr) && iss.eof())){
+		LOG_POSEIDON_WARN("Bad base_addr string: ", baseAddrStr);
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
-	if(!ModuleDepository::unload(realPath.c_str())){
-		LOG_POSEIDON_WARN("Module not loaded: ", realPath);
+	if(!ModuleDepository::unload(baseAddr)){
+		LOG_POSEIDON_WARN("Module not loaded: base address = ", baseAddr);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
 	}

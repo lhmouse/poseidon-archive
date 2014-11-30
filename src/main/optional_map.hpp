@@ -74,7 +74,8 @@ public:
 		return ret;
 	}
 
-	const std::string &get(const SharedNtmbs &key) const;
+	const std::string &get(const SharedNtmbs &key) const; // 若指定的键不存在，则返回空字符串。
+	const std::string &at(const SharedNtmbs &key) const; // 若指定的键不存在，则抛出 std::out_of_range。
 	std::string &set(const SharedNtmbs &key, std::string val);
 
 	// 一对多的接口。
