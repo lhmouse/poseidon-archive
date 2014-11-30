@@ -25,11 +25,12 @@ SockAddr::SockAddr(const void *data, unsigned size){
 }
 
 int SockAddr::getFamily() const {
-	if(m_size < sizeof(DECLREF(::sockaddr).sa_family)){
+	const AUTO(p, reinterpret_cast<const ::sockaddr *>(m_data));
+	if(m_size < sizeof(p->sa_family)){
 		LOG_POSEIDON_ERROR("Invalid SockAddr: size = ", m_size);
 		DEBUG_THROW(Exception, "Invalid SockAddr");
 	}
-	return reinterpret_cast<const ::sockaddr &>(m_data).sa_family;
+	return p->sa_family;
 }
 
 namespace Poseidon {
