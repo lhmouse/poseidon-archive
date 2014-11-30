@@ -14,10 +14,7 @@ namespace Poseidon {
 
 class IpPort;
 
-class TcpClientBase : public TcpSessionBase {
-private:
-	SockAddr m_sockAddr;
-
+class TcpClientBase : private SockAddr, public TcpSessionBase {
 protected:
 	explicit TcpClientBase(const IpPort &addr);
 

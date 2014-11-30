@@ -44,9 +44,8 @@ private:
 
 const ClientSslFactory g_clientSslFactory;
 
-UniqueFile createSocket(SockAddr &sa, const IpPort &addr){
-	sa = getSockAddrFromIpPort(addr);
-	UniqueFile client(::socket(sa.getFamily(), SOCK_STREAM, IPPROTO_TCP));
+UniqueFile createSocket(int family){
+	UniqueFile client(::socket(family, SOCK_STREAM, IPPROTO_TCP));
 	if(!client){
 		DEBUG_THROW(SystemError);
 	}
@@ -56,10 +55,10 @@ UniqueFile createSocket(SockAddr &sa, const IpPort &addr){
 }
 
 TcpClientBase::TcpClientBase(const IpPort &addr)
-	: TcpSessionBase(createSocket(m_sockAddr, addr))
+	: SockAddr(getSockAddrFromIpPort(addr)), TcpSessionBase(createSocket(SockAddr::getFamily()))
 {
 	if(::connect(m_socket.get(),
-		static_cast<const ::sockaddr *>(m_sockAddr.getData()), m_sockAddr.getSize()) != 0)
+		static_cast<const ::sockaddr *>(SockAddr::getData()), SockAddr::getSize()) != 0)
 	{
 		if(errno != EINPROGRESS){
 			DEBUG_THROW(SystemError);
