@@ -313,7 +313,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 	};	\
 	\
-	static inline void swap(class_name_ &lhs, class_name_ &rhs) throw() {	\
+	inline void swap(class_name_ &lhs, class_name_ &rhs) throw() {	\
 		lhs.swap(rhs);	\
 	}
 

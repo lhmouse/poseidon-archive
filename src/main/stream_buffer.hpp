@@ -140,7 +140,7 @@ public:
 	}
 };
 
-static inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
+inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
@@ -153,7 +153,7 @@ struct HexDumper {
 	}
 };
 
-static inline std::ostream &operator<<(std::ostream &os, const HexDumper &rhs){
+inline std::ostream &operator<<(std::ostream &os, const HexDumper &rhs){
 	rhs.buffer.dumpHex(os);
 	return os;
 }

@@ -90,7 +90,7 @@ public:
 	}
 };
 
-static inline void swap(ConfigFile &lhs, ConfigFile &rhs) NOEXCEPT {
+inline void swap(ConfigFile &lhs, ConfigFile &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 

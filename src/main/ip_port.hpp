@@ -39,7 +39,7 @@ struct IpPort {
 	}
 };
 
-static inline void swap(IpPort &lhs, IpPort &rhs) NOEXCEPT {
+inline void swap(IpPort &lhs, IpPort &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
