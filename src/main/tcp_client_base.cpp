@@ -6,17 +6,16 @@
 #include "tcp_session_base.hpp"
 #define POSEIDON_TCP_SESSION_SSL_IMPL_
 #include "tcp_session_ssl_impl.hpp"
-#define POSEIDON_SOCK_ADDR_
-#include "sock_addr.hpp"
-#include <boost/static_assert.hpp>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <errno.h>
 #include <openssl/ssl.h>
+#include "sock_addr.hpp"
+#include "ip_port.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-#include "endian.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -42,10 +41,9 @@ public:
 	}
 } g_clientSslCtx;
 
-ScopedFile createSocket(SockAddr &sa, unsigned &salen, const IpPort &addr){
-	sa = getSockAddrFromIpPort(salen, addr);
-
-	ScopedFile client(::socket(sa.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
+ScopedFile createSocket(SockAddr &sa, const IpPort &addr){
+	sa = getSockAddrFromIpPort(addr);
+	ScopedFile client(::socket(sa.getFamily(), SOCK_STREAM, IPPROTO_TCP));
 	if(!client){
 		DEBUG_THROW(SystemError);
 	}
@@ -77,11 +75,11 @@ protected:
 };
 
 TcpClientBase::TcpClientBase(const IpPort &addr)
-	: TcpSessionBase(createSocket(reinterpret_cast<SockAddr &>(m_sa), m_salen, addr))
+	: TcpSessionBase(createSocket(m_sockAddr, addr))
 {
-	BOOST_STATIC_ASSERT(sizeof(m_sa) >= sizeof(SockAddr));
-
-	if(::connect(m_socket.get(), reinterpret_cast<const ::sockaddr *>(m_sa), m_salen) != 0){
+	if(::connect(m_socket.get(),
+		static_cast<const ::sockaddr *>(m_sockAddr.getData()), m_sockAddr.getSize()) != 0)
+	{
 		if(errno != EINPROGRESS){
 			DEBUG_THROW(SystemError);
 		}

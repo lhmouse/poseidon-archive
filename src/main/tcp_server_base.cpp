@@ -3,10 +3,12 @@
 
 #include "precompiled.hpp"
 #include "tcp_server_base.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "tcp_session_base.hpp"
 #define POSEIDON_TCP_SESSION_SSL_IMPL_
 #include "tcp_session_ssl_impl.hpp"
-#define POSEIDON_SOCK_ADDR_
 #include "sock_addr.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
@@ -74,10 +76,8 @@ protected:
 };
 
 ScopedFile createListenSocket(const IpPort &addr){
-	unsigned salen;
-	SockAddr sa = getSockAddrFromIpPort(salen, addr);
-
-	ScopedFile listen(::socket(sa.sa.sa_family, SOCK_STREAM, IPPROTO_TCP));
+	SockAddr sa = getSockAddrFromIpPort(addr);
+	ScopedFile listen(::socket(sa.getFamily(), SOCK_STREAM, IPPROTO_TCP));
 	if(!listen){
 		DEBUG_THROW(SystemError);
 	}
@@ -85,7 +85,7 @@ ScopedFile createListenSocket(const IpPort &addr){
 	if(::setsockopt(listen.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 		DEBUG_THROW(SystemError);
 	}
-	if(::bind(listen.get(), &sa.sa, salen)){
+	if(::bind(listen.get(), static_cast<const ::sockaddr *>(sa.getData()), sa.getSize())){
 		DEBUG_THROW(SystemError);
 	}
 	if(::listen(listen.get(), SOMAXCONN)){

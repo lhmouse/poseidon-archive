@@ -7,18 +7,19 @@
 #include "tcp_session_base.hpp"
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include "ip_port.hpp"
+#include "sock_addr.hpp"
 #include "shared_ntmbs.hpp"
 
 namespace Poseidon {
+
+class IpPort;
 
 class TcpClientBase : public TcpSessionBase {
 private:
 	class SslImplClient;
 
 private:
-	unsigned char m_sa[28];
-	unsigned m_salen;
+	SockAddr m_sockAddr;
 
 protected:
 	explicit TcpClientBase(const IpPort &addr);

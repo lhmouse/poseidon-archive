@@ -43,6 +43,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/session_base.cpp	\
 	src/main/event_base.cpp	\
 	src/main/ip_port.cpp	\
+	src/main/sock_addr.cpp	\
 	src/main/hash.cpp	\
 	src/main/uuid.cpp	\
 	src/main/file.cpp	\

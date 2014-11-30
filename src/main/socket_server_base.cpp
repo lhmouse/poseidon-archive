@@ -3,9 +3,10 @@
 
 #include "precompiled.hpp"
 #include "socket_server_base.hpp"
-#define POSEIDON_SOCK_ADDR_
-#include "sock_addr.hpp"
 #include <fcntl.h>
+#include "ip_port.hpp"
+#include "log.hpp"
+#include "exception.hpp"
 using namespace Poseidon;
 
 SocketServerBase::SocketServerBase(ScopedFile socket)

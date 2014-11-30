@@ -5,8 +5,7 @@
 #include "tcp_session_base.hpp"
 #define POSEIDON_TCP_SESSION_SSL_IMPL_
 #include "tcp_session_ssl_impl.hpp"
-#define POSEIDON_SOCK_ADDR_
-#include "sock_addr.hpp"
+#include "ip_port.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>

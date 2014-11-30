@@ -3,17 +3,20 @@
 
 #include "precompiled.hpp"
 #include "udp_server_base.hpp"
-#define POSEIDON_SOCK_ADDR_
+#include "ip_port.hpp"
 #include "sock_addr.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include "exception.hpp"
+#include "log.hpp"
 using namespace Poseidon;
 
 namespace {
 
 ScopedFile createUdpSocket(const IpPort &addr){
-	unsigned salen;
-    SockAddr sa = getSockAddrFromIpPort(salen, addr);
-
-    ScopedFile udp(::socket(sa.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP));
+    SockAddr sa = getSockAddrFromIpPort(addr);
+    ScopedFile udp(::socket(sa.getFamily(), SOCK_DGRAM, IPPROTO_UDP));
     if(!udp){
         DEBUG_THROW(SystemError);
     }
@@ -21,7 +24,7 @@ ScopedFile createUdpSocket(const IpPort &addr){
     if(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
         DEBUG_THROW(SystemError);
     }
-    if(::bind(udp.get(), &sa.sa, salen)){
+    if(::bind(udp.get(), static_cast<const ::sockaddr *>(sa.getData()), sa.getSize())){
         DEBUG_THROW(SystemError);
     }
     return udp;
