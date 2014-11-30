@@ -14,7 +14,7 @@ using namespace Poseidon;
 namespace Poseidon {
 
 void fileGetContents(StreamBuffer &contents, const SharedNtmbs &path){
-	const ScopedFile file(::open(path.get(), O_RDONLY));
+	const UniqueFile file(::open(path.get(), O_RDONLY));
 	if(!file){
 		DEBUG_THROW(SystemError);
 	}
@@ -41,7 +41,7 @@ int fileGetContentsNoThrow(StreamBuffer &contents, const SharedNtmbs &path){
 }
 
 void filePutContents(const SharedNtmbs &path, StreamBuffer contents, bool append){
-	const ScopedFile file(::open(path.get(), O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC)));
+	const UniqueFile file(::open(path.get(), O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC)));
 	if(!file){
 		DEBUG_THROW(SystemError);
 	}

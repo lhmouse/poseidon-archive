@@ -18,15 +18,14 @@
 
 namespace Poseidon {
 
+class SslFilterBase;
+
 class TcpSessionBase : public SessionBase {
 	friend class TcpServerBase;
 	friend class TcpClientBase;
 
 private:
-	class SslImpl;
-
-private:
-	const ScopedFile m_socket;
+	const UniqueFile m_socket;
 	const unsigned long long m_createdTime;
 
 	mutable struct {
@@ -36,18 +35,18 @@ private:
 		IpPort local;
 	} m_peerInfo;
 
-	boost::scoped_ptr<SslImpl> m_ssl;
+	boost::scoped_ptr<SslFilterBase> m_sslFilter;
 
 	volatile bool m_shutdown;
 	mutable boost::mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
 
 protected:
-	explicit TcpSessionBase(ScopedFile socket);
+	explicit TcpSessionBase(UniqueFile socket);
 	virtual ~TcpSessionBase();
 
 private:
-	void initSsl(Move<boost::scoped_ptr<SslImpl> > ssl);
+	void initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter);
 
 	void fetchPeerInfo() const;
 

@@ -14,9 +14,9 @@ using namespace Poseidon;
 
 namespace {
 
-ScopedFile createUdpSocket(const IpPort &addr){
+UniqueFile createUdpSocket(const IpPort &addr){
     SockAddr sa = getSockAddrFromIpPort(addr);
-    ScopedFile udp(::socket(sa.getFamily(), SOCK_DGRAM, IPPROTO_UDP));
+    UniqueFile udp(::socket(sa.getFamily(), SOCK_DGRAM, IPPROTO_UDP));
     if(!udp){
         DEBUG_THROW(SystemError);
     }

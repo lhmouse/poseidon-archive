@@ -16,9 +16,6 @@ class IpPort;
 
 class TcpClientBase : public TcpSessionBase {
 private:
-	class SslImplClient;
-
-private:
 	SockAddr m_sockAddr;
 
 protected:

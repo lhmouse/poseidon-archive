@@ -13,11 +13,11 @@
 
 namespace Poseidon {
 
-struct DisposableBufferImpl;
+struct DisposableBuffer;
 
 class StreamBuffer {
 private:
-	std::list<DisposableBufferImpl> m_chunks;
+	std::list<DisposableBuffer> m_chunks;
 	std::size_t m_size;
 
 public:

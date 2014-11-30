@@ -17,7 +17,7 @@ public:
 		const char *cert, const char *privateKey);
 
 protected:
-	boost::shared_ptr<class TcpSessionBase> onClientConnect(ScopedFile client) const;
+	boost::shared_ptr<class TcpSessionBase> onClientConnect(UniqueFile client) const;
 };
 
 }

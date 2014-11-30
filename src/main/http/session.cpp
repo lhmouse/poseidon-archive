@@ -168,7 +168,7 @@ protected:
 
 }
 
-HttpSession::HttpSession(std::size_t category, ScopedFile socket)
+HttpSession::HttpSession(std::size_t category, UniqueFile socket)
 	: TcpSessionBase(STD_MOVE(socket))
 	, m_category(category)
 	, m_state(ST_FIRST_HEADER), m_totalLength(0), m_contentLength(0)

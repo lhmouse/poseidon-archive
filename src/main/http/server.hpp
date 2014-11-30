@@ -19,7 +19,7 @@ public:
 		const char *cert, const char *privateKey, const std::vector<std::string> &authInfo);
 
 protected:
-	boost::shared_ptr<class TcpSessionBase> onClientConnect(ScopedFile client) const;
+	boost::shared_ptr<class TcpSessionBase> onClientConnect(UniqueFile client) const;
 };
 
 }

@@ -10,16 +10,13 @@
 
 namespace Poseidon {
 
+class ServerSslFactory;
 class TcpSessionBase;
 
 // 抽象工厂模式
 class TcpServerBase : public SocketServerBase {
 private:
-	class SslImplServer;
-	class SslImplClient;
-
-private:
-	boost::scoped_ptr<SslImplServer> m_sslImplServer;
+	boost::scoped_ptr<ServerSslFactory> m_sslFactory;
 
 public:
 	TcpServerBase(const IpPort &bindAddr, const char *cert, const char *privateKey);
@@ -27,7 +24,7 @@ public:
 
 protected:
 	// 工厂函数。返回空指针导致抛出一个异常。
-	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(ScopedFile client) const = 0;
+	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const = 0;
 
 public:
 	bool poll() const;

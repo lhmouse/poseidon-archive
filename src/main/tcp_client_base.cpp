@@ -4,15 +4,15 @@
 #include "precompiled.hpp"
 #include "tcp_client_base.hpp"
 #include "tcp_session_base.hpp"
-#define POSEIDON_TCP_SESSION_SSL_IMPL_
-#include "tcp_session_ssl_impl.hpp"
+#include "ssl_factories.hpp"
+#include "ssl_filter_base.hpp"
+#include "sock_addr.hpp"
+#include "ip_port.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <errno.h>
 #include <openssl/ssl.h>
-#include "sock_addr.hpp"
-#include "ip_port.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "exception.hpp"
 #include "log.hpp"
@@ -20,50 +20,18 @@ using namespace Poseidon;
 
 namespace {
 
-class ClientSslCtx : boost::noncopyable {
-private:
-	SslCtxPtr m_sslCtx;
-
+class SslFilter : public SslFilterBase {
 public:
-	ClientSslCtx(){
-		requireSsl();
-
-		if(!m_sslCtx.reset(::SSL_CTX_new(::TLSv1_client_method()))){
-			LOG_POSEIDON_FATAL("Could not create client SSL context");
-			std::abort();
-		}
-		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_NONE, NULLPTR);
-	}
-
-public:
-	SslPtr createSsl() const {
-		return SslPtr(::SSL_new(m_sslCtx.get()));
-	}
-} g_clientSslCtx;
-
-ScopedFile createSocket(SockAddr &sa, const IpPort &addr){
-	sa = getSockAddrFromIpPort(addr);
-	ScopedFile client(::socket(sa.getFamily(), SOCK_STREAM, IPPROTO_TCP));
-	if(!client){
-		DEBUG_THROW(SystemError);
-	}
-	return client;
-}
-
-}
-
-class TcpClientBase::SslImplClient : public TcpSessionBase::SslImpl {
-public:
-	SslImplClient(SslPtr ssl, int fd)
-		: SslImpl(STD_MOVE(ssl), fd)
+	SslFilter(Move<UniqueSsl> ssl, int fd)
+		: SslFilterBase(STD_MOVE(ssl), fd)
 	{
 	}
 
-protected:
-	bool establishConnection(){
-		const int ret = ::SSL_connect(m_ssl.get());
+private:
+	bool establish(){
+		const int ret = ::SSL_connect(getSsl());
 		if(ret != 1){
-			const int err = ::SSL_get_error(m_ssl.get(), ret);
+			const int err = ::SSL_get_error(getSsl(), ret);
 			if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
 				return false;
 			}
@@ -73,6 +41,19 @@ protected:
 		return true;
 	}
 };
+
+const ClientSslFactory g_clientSslFactory;
+
+UniqueFile createSocket(SockAddr &sa, const IpPort &addr){
+	sa = getSockAddrFromIpPort(addr);
+	UniqueFile client(::socket(sa.getFamily(), SOCK_STREAM, IPPROTO_TCP));
+	if(!client){
+		DEBUG_THROW(SystemError);
+	}
+	return client;
+}
+
+}
 
 TcpClientBase::TcpClientBase(const IpPort &addr)
 	: TcpSessionBase(createSocket(m_sockAddr, addr))
@@ -89,9 +70,9 @@ TcpClientBase::TcpClientBase(const IpPort &addr)
 void TcpClientBase::sslConnect(){
 	LOG_POSEIDON_INFO("Initiating SSL handshake...");
 
-	boost::scoped_ptr<TcpSessionBase::SslImpl> sslImpl(
-		new SslImplClient(g_clientSslCtx.createSsl(), m_socket.get()));
-	initSsl(STD_MOVE(sslImpl));
+	AUTO(ssl, g_clientSslFactory.createSsl());
+	boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), getFd()));
+	initSsl(STD_MOVE(filter));
 }
 void TcpClientBase::goResident(){
 	EpollDaemon::addSession(virtualSharedFromThis<TcpSessionBase>());

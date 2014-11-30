@@ -64,9 +64,9 @@ private:
 
 private:
 	::MYSQL m_mySqlObject;
-	ScopedHandle<MySqlCloser> m_mySql;
+	UniqueHandle<MySqlCloser> m_mySql;
 
-	ScopedHandle<MySqlResultDeleter> m_result;
+	UniqueHandle<MySqlResultDeleter> m_result;
 	MySqlColumns m_columns;
 
 	::MYSQL_ROW m_row;

@@ -25,6 +25,10 @@ SockAddr::SockAddr(const void *data, unsigned size){
 }
 
 int SockAddr::getFamily() const {
+	if(m_size < sizeof(DECLREF(::sockaddr).sa_family)){
+		LOG_POSEIDON_ERROR("Invalid SockAddr: size = ", m_size);
+		DEBUG_THROW(Exception, "Invalid SockAddr");
+	}
 	return reinterpret_cast<const ::sockaddr &>(m_data).sa_family;
 }
 
@@ -33,24 +37,26 @@ namespace Poseidon {
 IpPort getIpPortFromSockAddr(const SockAddr &sa){
 	const int family = sa.getFamily();
 	if(family == AF_INET){
-		if(sa.getSize() < sizeof(::in_addr)){
+		if(sa.getSize() < sizeof(::sockaddr_in)){
 			LOG_POSEIDON_WARN("Invalid IPv4 SockAddr: size = ", sa.getSize());
 			DEBUG_THROW(Exception, "Invalid IPv4 SockAddr");
 		}
 		char ip[INET_ADDRSTRLEN];
-		const char *const str = ::inet_ntop(AF_INET, sa.getData(), ip, sizeof(ip));
+		const char *const str = ::inet_ntop(AF_INET,
+			&static_cast<const ::sockaddr_in *>(sa.getData())->sin_addr, ip, sizeof(ip));
 		if(!str){
 			DEBUG_THROW(SystemError);
 		}
 		return IpPort(SharedNtmbs(str, true),
 			loadBe(static_cast<const ::sockaddr_in *>(sa.getData())->sin_port));
 	} else if(family == AF_INET6){
-		if(sa.getSize() < sizeof(::in6_addr)){
+		if(sa.getSize() < sizeof(::sockaddr_in6)){
 			LOG_POSEIDON_WARN("Invalid IPv6 SockAddr: size = ", sa.getSize());
 			DEBUG_THROW(Exception, "Invalid IPv6 SockAddr");
 		}
 		char ip[INET6_ADDRSTRLEN];
-		const char *const str = ::inet_ntop(AF_INET6, sa.getData(), ip, sizeof(ip));
+		const char *const str = ::inet_ntop(AF_INET6,
+			&static_cast<const ::sockaddr_in6 *>(sa.getData())->sin6_addr, ip, sizeof(ip));
 		if(!str){
 			DEBUG_THROW(SystemError);
 		}

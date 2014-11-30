@@ -2,10 +2,7 @@
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "tcp_session_base.hpp"
-#define POSEIDON_TCP_SESSION_SSL_IMPL_
-#include "tcp_session_ssl_impl.hpp"
-#include <boost/thread/once.hpp>
+#include "ssl_filter_base.hpp"
 #include <errno.h>
 #include <openssl/ssl.h>
 #include "exception.hpp"
@@ -13,17 +10,6 @@
 using namespace Poseidon;
 
 namespace {
-
-boost::once_flag g_sslInitFlag;
-
-void initSsl(){
-	LOG_POSEIDON_INFO("Initializing SSL library...");
-
-	::OpenSSL_add_all_algorithms();
-	::SSL_library_init();
-
-	std::atexit(&::EVP_cleanup);
-}
 
 void setErrnoBySslRet(::SSL *ssl, int ret){
 	const int err = ::SSL_get_error(ssl, ret);
@@ -52,43 +38,42 @@ void setErrnoBySslRet(::SSL *ssl, int ret){
 
 }
 
-namespace Poseidon {
-
-void requireSsl(){
-	boost::call_once(&initSsl, g_sslInitFlag);
-}
-
-}
-
-TcpSessionBase::SslImpl::SslImpl(SslPtr ssl, int fd)
-	: m_ssl(STD_MOVE(ssl)), m_established(false)
+SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
+	: m_ssl(STD_MOVE(ssl)), m_fd(fd)
+	, m_established(false)
 {
 	if(!::SSL_set_fd(m_ssl.get(), fd)){
 		DEBUG_THROW(Exception, "::SSL_set_fd() failed");
 	}
 }
-TcpSessionBase::SslImpl::~SslImpl(){
+SslFilterBase::~SslFilterBase(){
 	if(m_established){
 		LOG_POSEIDON_DEBUG("Shutting down SSL...");
 		::SSL_shutdown(m_ssl.get());
 	}
 }
 
-long TcpSessionBase::SslImpl::doRead(void *data, unsigned long size){
-	if(!m_established && !(m_established = establishConnection())){
-		LOG_POSEIDON_DEBUG("Waiting for SSL handshake...");
-		errno = EAGAIN;
-		return -1;
+long SslFilterBase::read(void *data, unsigned long size){
+	if(!m_established){
+		if(!establish()){
+			LOG_POSEIDON_DEBUG("Waiting for SSL handshake...");
+			errno = EAGAIN;
+			return -1;
+		}
+		m_established = true;
 	}
 	const long ret = ::SSL_read(m_ssl.get(), data, size);
 	setErrnoBySslRet(m_ssl.get(), ret);
 	return ret;
 }
-long TcpSessionBase::SslImpl::doWrite(const void *data, unsigned long size){
-	if(!m_established && !(m_established = establishConnection())){
-		LOG_POSEIDON_DEBUG("Waiting for SSL handshake...");
-		errno = EAGAIN;
-		return -1;
+long SslFilterBase::write(const void *data, unsigned long size){
+	if(!m_established){
+		if(!establish()){
+			LOG_POSEIDON_DEBUG("Waiting for SSL handshake...");
+			errno = EAGAIN;
+			return -1;
+		}
+		m_established = true;
 	}
 	const long ret = ::SSL_write(m_ssl.get(), data, size);
 	setErrnoBySslRet(m_ssl.get(), ret);

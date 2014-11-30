@@ -27,7 +27,7 @@ private:
 	StreamBuffer m_payload;
 
 public:
-	PlayerSession(std::size_t category, ScopedFile socket);
+	PlayerSession(std::size_t category, UniqueFile socket);
 	~PlayerSession();
 
 private:

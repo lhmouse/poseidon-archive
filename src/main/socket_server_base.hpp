@@ -12,11 +12,11 @@ namespace Poseidon {
 
 class SocketServerBase : boost::noncopyable {
 private:
-	const ScopedFile m_socket;
+	const UniqueFile m_socket;
 	const IpPort m_localInfo;
 
 public:
-	explicit SocketServerBase(ScopedFile socket);
+	explicit SocketServerBase(UniqueFile socket);
 	virtual ~SocketServerBase();
 
 protected:

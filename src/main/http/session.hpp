@@ -49,7 +49,7 @@ private:
 	OptionalMap m_headers;
 
 public:
-	HttpSession(std::size_t category, ScopedFile socket);
+	HttpSession(std::size_t category, UniqueFile socket);
 	~HttpSession();
 
 private:

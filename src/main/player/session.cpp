@@ -89,7 +89,7 @@ protected:
 
 }
 
-PlayerSession::PlayerSession(std::size_t category, ScopedFile socket)
+PlayerSession::PlayerSession(std::size_t category, UniqueFile socket)
 	: TcpSessionBase(STD_MOVE(socket))
 	, m_category(category)
 	, m_payloadLen(-1), m_protocolId(0)

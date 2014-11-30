@@ -29,7 +29,7 @@ std::size_t	g_eventBufferSize	= 256;
 std::size_t	g_maxTimeout		= 100;
 
 volatile bool g_running = false;
-ScopedFile g_epoll;
+UniqueFile g_epoll;
 boost::thread g_thread;
 
 struct SessionMapElement {

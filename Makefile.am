@@ -34,8 +34,10 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/optional_map.cpp	\
 	src/main/csv_parser.cpp	\
 	src/main/job_base.cpp	\
+	src/main/ssl_raii.cpp	\
+	src/main/ssl_filter_base.cpp	\
+	src/main/ssl_factories.cpp	\
 	src/main/tcp_session_base.cpp	\
-	src/main/tcp_session_ssl_impl.cpp	\
 	src/main/socket_server_base.cpp	\
 	src/main/tcp_server_base.cpp	\
 	src/main/tcp_client_base.cpp	\

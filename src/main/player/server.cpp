@@ -13,6 +13,6 @@ PlayerServer::PlayerServer(std::size_t category, const IpPort &bindAddr,
 {
 }
 
-boost::shared_ptr<TcpSessionBase> PlayerServer::onClientConnect(ScopedFile client) const {
+boost::shared_ptr<TcpSessionBase> PlayerServer::onClientConnect(UniqueFile client) const {
 	return boost::make_shared<PlayerSession>(m_category, STD_MOVE(client));
 }

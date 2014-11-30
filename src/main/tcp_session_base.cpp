@@ -3,8 +3,7 @@
 
 #include "precompiled.hpp"
 #include "tcp_session_base.hpp"
-#define POSEIDON_TCP_SESSION_SSL_IMPL_
-#include "tcp_session_ssl_impl.hpp"
+#include "ssl_filter_base.hpp"
 #include "ip_port.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -18,7 +17,7 @@
 #include "utilities.hpp"
 using namespace Poseidon;
 
-TcpSessionBase::TcpSessionBase(ScopedFile socket)
+TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getMonoClock())
 	, m_peerInfo(), m_shutdown(false)
 {
@@ -74,8 +73,8 @@ bool TcpSessionBase::forceShutdown(){
 	return ret;
 }
 
-void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslImpl> > ssl){
-	swap(m_ssl, ssl);
+void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
+	swap(m_sslFilter, sslFilter);
 }
 
 void TcpSessionBase::fetchPeerInfo() const {
@@ -97,8 +96,8 @@ long TcpSessionBase::syncRead(void *data, unsigned long size){
 	fetchPeerInfo();
 
 	::ssize_t ret;
-	if(m_ssl){
-		ret = m_ssl->doRead(data, size);
+	if(m_sslFilter){
+		ret = m_sslFilter->read(data, size);
 	} else {
 		ret = ::recv(m_socket.get(), data, size, MSG_NOSIGNAL);
 	}
@@ -118,8 +117,8 @@ long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsi
 		return 0;
 	}
 	::ssize_t ret;
-	if(m_ssl){
-		ret = m_ssl->doWrite(hint, size);
+	if(m_sslFilter){
+		ret = m_sslFilter->write(hint, size);
 	} else {
 		ret = ::send(m_socket.get(), hint, size, MSG_NOSIGNAL);
 	}

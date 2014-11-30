@@ -3,68 +3,35 @@
 
 #include "precompiled.hpp"
 #include "tcp_server_base.hpp"
+#include "tcp_session_base.hpp"
+#include "ssl_factories.hpp"
+#include "ssl_filter_base.hpp"
+#include "sock_addr.hpp"
+#include "ip_port.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "tcp_session_base.hpp"
-#define POSEIDON_TCP_SESSION_SSL_IMPL_
-#include "tcp_session_ssl_impl.hpp"
-#include "sock_addr.hpp"
+#include <openssl/ssl.h>
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include "exception.hpp"
 #include "endian.hpp"
-#include "tcp_session_base.hpp"
 using namespace Poseidon;
 
-class TcpServerBase::SslImplServer : boost::noncopyable {
-private:
-	SslCtxPtr m_sslCtx;
+namespace {
 
+class SslFilter : public SslFilterBase {
 public:
-	SslImplServer(const char *cert, const char *privateKey){
-		requireSsl();
-
-		if(!m_sslCtx.reset(::SSL_CTX_new(::TLSv1_server_method()))){
-			LOG_POSEIDON_FATAL("Could not create server SSL context");
-			std::abort();
-		}
-		::SSL_CTX_set_verify(m_sslCtx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULLPTR);
-
-		LOG_POSEIDON_INFO("Loading server certificate: ", cert);
-		if(::SSL_CTX_use_certificate_file(m_sslCtx.get(), cert, SSL_FILETYPE_PEM) != 1){
-			DEBUG_THROW(Exception, "::SSL_CTX_use_certificate_file() failed");
-		}
-
-		LOG_POSEIDON_INFO("Loading server private key: ", privateKey);
-		if(::SSL_CTX_use_PrivateKey_file(m_sslCtx.get(), privateKey, SSL_FILETYPE_PEM) != 1){
-			DEBUG_THROW(Exception, "::SSL_CTX_use_PrivateKey_file() failed");
-		}
-
-		LOG_POSEIDON_INFO("Verifying private key...");
-		if(::SSL_CTX_check_private_key(m_sslCtx.get()) != 1){
-			DEBUG_THROW(Exception, "::SSL_CTX_check_private_key() failed");
-		}
-	}
-
-public:
-	SslPtr createSsl() const {
-		return SslPtr(::SSL_new(m_sslCtx.get()));
-	}
-};
-
-class TcpServerBase::SslImplClient : public TcpSessionBase::SslImpl {
-public:
-	SslImplClient(SslPtr ssl, int fd)
-		: SslImpl(STD_MOVE(ssl), fd)
+	SslFilter(Move<UniqueSsl> ssl, int fd)
+		: SslFilterBase(STD_MOVE(ssl), fd)
 	{
 	}
 
-protected:
-	bool establishConnection(){
-		const int ret = ::SSL_accept(m_ssl.get());
+private:
+	bool establish(){
+		const int ret = ::SSL_accept(getSsl());
 		if(ret != 1){
-			const int err = ::SSL_get_error(m_ssl.get(), ret);
+			const int err = ::SSL_get_error(getSsl(), ret);
 			if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
 				return false;
 			}
@@ -75,9 +42,9 @@ protected:
 	}
 };
 
-ScopedFile createListenSocket(const IpPort &addr){
+UniqueFile createListenSocket(const IpPort &addr){
 	SockAddr sa = getSockAddrFromIpPort(addr);
-	ScopedFile listen(::socket(sa.getFamily(), SOCK_STREAM, IPPROTO_TCP));
+	UniqueFile listen(::socket(sa.getFamily(), SOCK_STREAM, IPPROTO_TCP));
 	if(!listen){
 		DEBUG_THROW(SystemError);
 	}
@@ -94,21 +61,23 @@ ScopedFile createListenSocket(const IpPort &addr){
 	return listen;
 }
 
+}
+
 TcpServerBase::TcpServerBase(const IpPort &bindAddr, const char *cert, const char *privateKey)
 	: SocketServerBase(createListenSocket(bindAddr))
 {
 	if(cert && (cert[0] != 0)){
-		m_sslImplServer.reset(new SslImplServer(cert, privateKey));
+		m_sslFactory.reset(new ServerSslFactory(cert, privateKey));
 	}
 
-	LOG_POSEIDON_INFO("Created ", (m_sslImplServer ? "SSL " : ""), "TCP server on ", getLocalInfo());
+	LOG_POSEIDON_INFO("Created ", (m_sslFactory ? "SSL " : ""), "TCP server on ", getLocalInfo());
 }
 TcpServerBase::~TcpServerBase(){
-	LOG_POSEIDON_INFO("Destroyed ", (m_sslImplServer ? "SSL " : ""), "TCP server on ", getLocalInfo());
+	LOG_POSEIDON_INFO("Destroyed ", (m_sslFactory ? "SSL " : ""), "TCP server on ", getLocalInfo());
 }
 
 bool TcpServerBase::poll() const {
-	ScopedFile client(::accept(getFd(), NULLPTR, NULLPTR));
+	UniqueFile client(::accept(getFd(), NULLPTR, NULLPTR));
 	if(!client){
 		if(errno != EAGAIN){
 			DEBUG_THROW(SystemError);
@@ -120,12 +89,10 @@ bool TcpServerBase::poll() const {
 		LOG_POSEIDON_WARN("onClientConnect() returns a null pointer.");
 		DEBUG_THROW(Exception, "Null client pointer");
 	}
-	if(m_sslImplServer){
-		LOG_POSEIDON_INFO("Waiting for SSL handshake...");
-
-		boost::scoped_ptr<TcpSessionBase::SslImpl> sslImpl(
-			new SslImplClient(m_sslImplServer->createSsl(), session->m_socket.get()));
-		session->initSsl(STD_MOVE(sslImpl));
+	if(m_sslFactory){
+		AUTO(ssl, m_sslFactory->createSsl());
+		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), session->getFd()));
+		session->initSsl(STD_MOVE(filter));
 	}
 	EpollDaemon::addSession(session);
 	LOG_POSEIDON_INFO("Accepted TCP connection from ", session->getRemoteInfo());

@@ -36,12 +36,12 @@ struct DynamicLibraryCloser {
 
 class Poseidon::Module : boost::noncopyable {
 private:
-	const ScopedHandle<DynamicLibraryCloser> m_handle;
+	const UniqueHandle<DynamicLibraryCloser> m_handle;
 	const SharedNtmbs m_realPath;
 	void *const m_baseAddr;
 
 public:
-	Module(ScopedHandle<DynamicLibraryCloser> handle, SharedNtmbs realPath, void *baseAddr)
+	Module(UniqueHandle<DynamicLibraryCloser> handle, SharedNtmbs realPath, void *baseAddr)
 		: m_handle(STD_MOVE(handle)), m_realPath(STD_MOVE(realPath)), m_baseAddr(baseAddr)
 	{
 		LOG_POSEIDON_INFO("Constructor of module: ", m_realPath);
@@ -165,7 +165,7 @@ boost::shared_ptr<Module> ModuleDepository::load(const SharedNtmbs &path){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 
 	LOG_POSEIDON_INFO("Checking whether module has already been loaded: ", path);
-	ScopedHandle<DynamicLibraryCloser> handle(::dlopen(path.get(), RTLD_NOW | RTLD_NOLOAD));
+	UniqueHandle<DynamicLibraryCloser> handle(::dlopen(path.get(), RTLD_NOW | RTLD_NOLOAD));
 	if(handle){
 		LOG_POSEIDON_DEBUG("Module already loaded, trying retrieving a shared_ptr from static map...");
 		const AUTO(it, g_modules.find<MIDX_HANDLE>(handle.get()));

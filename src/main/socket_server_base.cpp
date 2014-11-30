@@ -9,7 +9,7 @@
 #include "exception.hpp"
 using namespace Poseidon;
 
-SocketServerBase::SocketServerBase(ScopedFile socket)
+SocketServerBase::SocketServerBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_localInfo(getLocalIpPortFromFd(m_socket.get()))
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);

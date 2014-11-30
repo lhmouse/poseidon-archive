@@ -95,7 +95,7 @@ public:
 		std::string query, Move<MySqlAsyncLoadCallback> callback)
 		: m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
 	{
-		callback.swap(m_callback);
+		swap(m_callback, callback);
 	}
 
 public:
@@ -264,7 +264,7 @@ public:
 };
 
 boost::mutex g_dumpMutex;
-ScopedFile g_dumpFile;
+UniqueFile g_dumpFile;
 
 volatile bool g_running = false;
 std::vector<boost::shared_ptr<MySqlThread> > g_threads;
