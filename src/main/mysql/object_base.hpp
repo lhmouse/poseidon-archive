@@ -27,7 +27,7 @@ class MySqlObjectBase
 {
 protected:
 	static void batchAsyncLoad(const char *tableHint, std::string query,
-		MySqlObjectFactoryCallback factory, MySqlBatchAsyncLoadCallback callback);
+		MySqlObjectFactoryProc factory, MySqlBatchAsyncLoadCallback callback);
 
 private:
 	mutable volatile bool m_autoSaves;

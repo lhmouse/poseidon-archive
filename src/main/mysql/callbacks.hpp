@@ -12,13 +12,11 @@ namespace Poseidon {
 
 class MySqlObjectBase;
 
+typedef boost::shared_ptr<MySqlObjectBase> (*MySqlObjectFactoryProc)();
+
 typedef boost::function<
 	void (boost::shared_ptr<MySqlObjectBase> object, bool found)
 	> MySqlAsyncLoadCallback;
-
-typedef boost::function<
-	boost::shared_ptr<MySqlObjectBase> ()
-	> MySqlObjectFactoryCallback;
 
 typedef boost::function<
 	void (std::vector<boost::shared_ptr<MySqlObjectBase> > objects)

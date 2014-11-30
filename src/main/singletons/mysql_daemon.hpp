@@ -22,7 +22,7 @@ struct MySqlDaemon {
 	static void pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 		std::string query, MySqlAsyncLoadCallback callback);
 	static void pendForBatchLoading(const char *tableHint,
-		std::string query, MySqlObjectFactoryCallback factory, MySqlBatchAsyncLoadCallback callback);
+		std::string query, MySqlObjectFactoryProc factory, MySqlBatchAsyncLoadCallback callback);
 
 private:
 	MySqlDaemon();
