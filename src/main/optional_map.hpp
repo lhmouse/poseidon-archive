@@ -18,9 +18,6 @@ public:
 	typedef delegate_container::iterator iterator;
 
 private:
-	static const std::string EMPTY_STRING;
-
-private:
 	delegate_container m_delegate;
 
 public:
@@ -77,15 +74,8 @@ public:
 		return ret;
 	}
 
-	const std::string &get(const SharedNtmbs &key) const {
-		const const_iterator it = find(key);
-		return (it != end()) ? it->second : EMPTY_STRING;
-	}
-	std::string &set(const SharedNtmbs &key, std::string val){
-		iterator it = create(key);
-		it->second.swap(val);
-		return it->second;
-	}
+	const std::string &get(const SharedNtmbs &key) const;
+	std::string &set(const SharedNtmbs &key, std::string val);
 
 	// 一对多的接口。
 	std::pair<const_iterator, const_iterator> range(const SharedNtmbs &key) const {

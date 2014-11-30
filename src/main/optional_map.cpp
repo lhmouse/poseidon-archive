@@ -5,4 +5,18 @@
 #include "optional_map.hpp"
 using namespace Poseidon;
 
-const std::string OptionalMap::EMPTY_STRING;
+namespace {
+
+const std::string EMPTY_STRING;
+
+}
+
+const std::string &OptionalMap::get(const SharedNtmbs &key) const {
+	const const_iterator it = find(key);
+	return (it != end()) ? it->second : EMPTY_STRING;
+}
+std::string &OptionalMap::set(const SharedNtmbs &key, std::string val){
+	iterator it = create(key);
+	it->second.swap(val);
+	return it->second;
+}
