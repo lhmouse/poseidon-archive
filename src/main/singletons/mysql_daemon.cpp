@@ -317,14 +317,12 @@ void MySqlThread::operationLoop(){
 
 			if(queue.empty()){
 				boost::mutex::scoped_lock lock(m_mutex);
-				if(m_queue.empty()){
+				while(m_queue.empty()){
+					if(!atomicLoad(m_running)){
+						goto exit_loop;
+					}
 					atomicStore(m_urgentMode, false);
-					do {
-						if(!atomicLoad(m_running)){
-							goto exit_loop;
-						}
-						m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
-					} while(m_queue.empty());
+					m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
 				queue.swap(m_queue);
 				m_queueEmpty.notify_all();
