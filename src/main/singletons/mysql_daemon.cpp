@@ -43,18 +43,24 @@ std::size_t	g_mySqlRetryCount		= 3;
 
 class OperationBase : boost::noncopyable {
 private:
-	boost::function<void ()> m_onDestruct;
+	void (*m_onDestruct)(void *);
+	void *m_onDestructParam;
 
 public:
+	OperationBase()
+		: m_onDestruct(NULLPTR)
+	{
+	}
 	virtual ~OperationBase(){
 		if(m_onDestruct){
-			m_onDestruct();
+			(*m_onDestruct)(m_onDestructParam);
 		}
 	}
 
 public:
-	void atDestruct(boost::function<void ()> onDestruct){
-		m_onDestruct.swap(onDestruct);
+	void atDestruct(void (*onDestruct)(void *), void *onDestructParam) NOEXCEPT {
+		m_onDestruct = onDestruct;
+		m_onDestructParam = onDestructParam;
 	}
 
 	virtual bool shouldExecuteNow() const = 0;
@@ -284,6 +290,15 @@ class AssignmentItem : boost::noncopyable
 	, public boost::enable_shared_from_this<AssignmentItem>
 {
 private:
+	static void onOperationDestruct(void *param){
+		const AUTO(assignment, static_cast<AssignmentItem *>(param));
+		if(--assignment->m_count == 0){
+			assignment->m_thread.reset();
+			LOG_POSEIDON_DEBUG("No more pending operations: ", assignment->m_table);
+		}
+	}
+
+private:
 	const char *const m_table;
 
 	boost::shared_ptr<MySqlThread> m_thread;
@@ -295,22 +310,13 @@ public:
 	{
 	}
 
-private:
-	void onOperationDestruct(){
-		if(--m_count == 0){
-			m_thread.reset();
-			LOG_POSEIDON_DEBUG("No more pending operations: ", m_table);
-		}
-	}
-
 public:
 	const char *getTable() const {
 		return m_table;
 	}
 
 	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
-		operation->atDestruct(
-			boost::bind(&AssignmentItem::onOperationDestruct, shared_from_this()));
+		operation->atDestruct(&onOperationDestruct, this); // noexcept
 		++m_count;
 
 		if(!m_thread){
