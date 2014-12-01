@@ -41,26 +41,28 @@ std::size_t	g_mySqlSaveDelay		= 5000;
 std::size_t	g_mySqlMaxReconnDelay	= 60000;
 std::size_t	g_mySqlRetryCount		= 3;
 
+class AssignmentItem;
+
+struct AssignmentDecrementer {
+	CONSTEXPR AssignmentItem *operator()() const NOEXCEPT {
+		return NULLPTR;
+	}
+	void operator()(AssignmentItem *assignment) const NOEXCEPT;
+};
+
+typedef UniqueHandle<AssignmentDecrementer> IncrementedAssignment;
+
 class OperationBase : boost::noncopyable {
 private:
-	void (*m_onDestruct)(void *);
-	void *m_onDestructParam;
+	IncrementedAssignment m_assignment;
 
 public:
-	OperationBase()
-		: m_onDestruct(NULLPTR)
-	{
-	}
 	virtual ~OperationBase(){
-		if(m_onDestruct){
-			(*m_onDestruct)(m_onDestructParam);
-		}
 	}
 
 public:
-	void atDestruct(void (*onDestruct)(void *), void *onDestructParam) NOEXCEPT {
-		m_onDestruct = onDestruct;
-		m_onDestructParam = onDestructParam;
+	void setAssignment(IncrementedAssignment assignment) NOEXCEPT {
+		swap(m_assignment, assignment);
 	}
 
 	virtual bool shouldExecuteNow() const = 0;
@@ -289,6 +291,8 @@ std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 class AssignmentItem : boost::noncopyable
 	, public boost::enable_shared_from_this<AssignmentItem>
 {
+	friend AssignmentDecrementer;
+
 private:
 	static void onOperationDestruct(void *param){
 		const AUTO(assignment, static_cast<AssignmentItem *>(param));
@@ -310,16 +314,9 @@ public:
 	{
 	}
 
-public:
-	const char *getTable() const {
-		return m_table;
-	}
-
-	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
-		operation->atDestruct(&onOperationDestruct, this); // noexcept
-		++m_count;
-
-		if(!m_thread){
+private:
+	AssignmentItem *increment(){
+		if(++m_count == 1){
 			if(g_threads.empty()){
 				DEBUG_THROW(Exception, "No threads available");
 			}
@@ -333,9 +330,30 @@ public:
 			m_thread = g_threads[idle];
 			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", idle);
 		}
+		return this;
+	};
+	void decrement(){
+		if(--m_count == 0){
+			m_thread.reset();
+		}
+	}
+
+public:
+	const char *getTable() const {
+		return m_table;
+	}
+
+	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
+		IncrementedAssignment inc(increment());
+		operation->setAssignment(STD_MOVE(inc)); // noexcept
+
 		m_thread->addOperation(STD_MOVE(operation), urgent);
 	}
 };
+
+void AssignmentDecrementer::operator()(AssignmentItem *assignment) const NOEXCEPT {
+	assignment->decrement();
+}
 
 boost::mutex g_assignmentMutex;
 std::vector<boost::shared_ptr<AssignmentItem> > g_assignments;
