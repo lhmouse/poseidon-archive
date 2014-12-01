@@ -81,7 +81,7 @@ public:
 		m_object->setContext(this);
 	}
 
-public:
+private:
 	bool shouldExecuteNow() const {
 		return m_dueTime <= getMonoClock();
 	}
@@ -93,10 +93,9 @@ public:
 			return;
 		}
 
-		std::string sql;
-		m_object->syncGenerateSql(sql);
-		LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": ", sql);
-		conn.executeSql(sql);
+		m_object->syncGenerateSql(query);
+		LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": ", query);
+		conn.executeSql(query);
 	}
 };
 
@@ -119,14 +118,15 @@ public:
 		swap(m_callback, callback);
 	}
 
-public:
+private:
 	bool shouldExecuteNow() const {
 		return true;
 	}
 	void execute(std::string &query, MySqlConnection &conn){
 		PROFILE_ME;
 
-		query.swap(m_query);
+		query = m_query;
+
 		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", query = ", query);
 		conn.executeSql(query);
 		conn.waitForResult();
@@ -164,7 +164,7 @@ public:
 		callback.swap(m_callback);
 	}
 
-public:
+private:
 	bool shouldExecuteNow() const {
 		return true;
 	}
@@ -173,8 +173,8 @@ public:
 
 		query = m_query;
 
-		LOG_POSEIDON_INFO("MySQL batch load: query = ", m_query);
-		conn.executeSql(m_query);
+		LOG_POSEIDON_INFO("MySQL batch load: query = ", query);
+		conn.executeSql(query);
 		conn.waitForResult();
 		while(conn.fetchRow()){
 			AUTO(object, (*m_factory)());
