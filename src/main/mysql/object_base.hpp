@@ -65,7 +65,7 @@ public:
 
 	virtual const char *getTableName() const = 0;
 
-	virtual void syncSave(std::string &sql, MySqlConnection &conn) const = 0;
+	virtual void syncGenerateSql(std::string &sql) const = 0;
 	virtual void syncFetch(const MySqlConnection &conn) = 0;
 
 	void asyncSave() const;

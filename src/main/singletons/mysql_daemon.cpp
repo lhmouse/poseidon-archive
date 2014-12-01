@@ -92,8 +92,11 @@ public:
 			// 使用写入合并策略，丢弃当前的写入操作（认为已成功）。
 			return;
 		}
-		LOG_POSEIDON_INFO("MySQL save: table = ", m_object->getTableName());
-		m_object->syncSave(query, conn);
+
+		std::string sql;
+		m_object->syncGenerateSql(sql);
+		LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": ", sql);
+		conn.executeSql(sql);
 	}
 };
 
@@ -211,7 +214,8 @@ public:
 
 			// 仅估算。这里需要使用带符号的整数。
 			const boost::int64_t averageDelta = delta - atomicLoad(g_averageOperationDuration);
-			atomicAdd(g_averageOperationDuration, averageDelta / 16);
+			const boost::uint64_t newAverage = atomicAdd(g_averageOperationDuration, averageDelta / 16);
+			LOG_POSEIDON_TRACE("Averase operation duration = ", newAverage);
 		}
 	};
 
@@ -272,9 +276,7 @@ public:
 		if(urgent){
 			atomicStore(m_urgentMode, true);
 		}
-		const AUTO(averageOperationDuration, atomicLoad(g_averageOperationDuration));
-		LOG_POSEIDON_TRACE("Averase operation duration = ", averageOperationDuration);
-		atomicAdd(m_busyTime, averageOperationDuration);
+		atomicAdd(m_busyTime, atomicLoad(g_averageOperationDuration));
 		m_newAvail.notify_all();
 	}
 

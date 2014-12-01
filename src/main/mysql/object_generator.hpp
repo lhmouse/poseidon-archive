@@ -235,7 +235,7 @@ public:
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
 
-	void syncSave(::std::string &sql_, ::Poseidon::MySqlConnection &conn_) const {
+	void syncGenerateSql(::std::string &sql_) const {
 		::std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
@@ -283,9 +283,6 @@ public:
 		oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
 		oss_.str().swap(sql_);
-
-		LOG_POSEIDON_DEBUG("Executing SQL in " TOKEN_TO_STR(MYSQL_OBJECT_NAME) ": ", sql_);
-		conn_.executeSql(sql_);
 	}
 	void syncFetch(const ::Poseidon::MySqlConnection &conn_){
 
