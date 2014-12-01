@@ -318,14 +318,14 @@ public:
 				DEBUG_THROW(Exception, "No threads available");
 			}
 			// 指派给最空闲的线程。
-			AUTO(it, g_threads.begin());
-			m_thread = *it;
-			while(++it != g_threads.end()){
-				if((*it)->getBusyTime() < m_thread->getBusyTime()){
-					m_thread = *it;
+			std::size_t idle = 0;
+			for(std::size_t i = 1; i < g_threads.size(); ++i){
+				if(g_threads[idle]->getBusyTime() > g_threads[i]->getBusyTime()){
+					idle = i;
 				}
 			}
-			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", it - g_threads.begin());
+			m_thread = g_threads[idle];
+			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", idle);
 		}
 		m_thread->addOperation(STD_MOVE(operation), urgent);
 	}
