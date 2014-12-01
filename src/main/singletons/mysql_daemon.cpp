@@ -267,6 +267,7 @@ public:
 		if(urgent){
 			atomicStore(m_urgentMode, true);
 		}
+		atomicAdd(m_busyTime, 1000000); // 1000 毫秒轮转。
 		m_newAvail.notify_all();
 	}
 
@@ -314,7 +315,11 @@ private:
 			// 指派给最空闲的线程。
 			std::size_t idle = 0;
 			for(std::size_t i = 1; i < g_threads.size(); ++i){
-				if(g_threads[idle]->getBusyTime() > g_threads[i]->getBusyTime()){
+				// 即使是无符号 64 位整数发生了进位，这个结果也是对的。
+				// 参考 TCP 中对于报文流水号的处理。
+				if(static_cast<boost::int64_t>(
+					g_threads[idle]->getBusyTime() - g_threads[i]->getBusyTime()) > 0)
+				{
 					idle = i;
 				}
 			}
