@@ -63,7 +63,6 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 	EpollDaemon::touchSession(virtualSharedFromThis<TcpSessionBase>());
 	return true;
 }
-
 bool TcpSessionBase::hasBeenShutdown() const {
 	return atomicLoad(m_shutdown);
 }
