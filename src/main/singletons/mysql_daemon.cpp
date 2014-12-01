@@ -190,6 +190,8 @@ public:
 	}
 };
 
+volatile std::size_t g_averageOperationDuration = 0; // 仅用于估算。
+
 class MySqlThread : boost::noncopyable {
 public:
 	class Stopwatch : boost::noncopyable {
@@ -204,9 +206,12 @@ public:
 		}
 		~Stopwatch(){
 			const boost::uint64_t delta = getMonoClock() - m_begin;
+			LOG_POSEIDON_TRACE("MySQL operation executed in ", delta, " us.");
 			atomicAdd(m_owner.m_busyTime, delta);
 
-			LOG_POSEIDON_TRACE("MySQL operation executed in ", delta, " us.");
+			// 仅估算。这里需要使用带符号的整数。
+			const boost::int64_t averageDelta = delta - atomicLoad(g_averageOperationDuration);
+			atomicAdd(g_averageOperationDuration, averageDelta / 32);
 		}
 	};
 
@@ -267,7 +272,9 @@ public:
 		if(urgent){
 			atomicStore(m_urgentMode, true);
 		}
-		atomicAdd(m_busyTime, 100000); // 100 毫秒轮转。
+		const AUTO(averageOperationDuration, atomicLoad(g_averageOperationDuration));
+		LOG_POSEIDON_TRACE("Averase operation duration = ", averageOperationDuration);
+		atomicAdd(m_busyTime, averageOperationDuration);
 		m_newAvail.notify_all();
 	}
 
