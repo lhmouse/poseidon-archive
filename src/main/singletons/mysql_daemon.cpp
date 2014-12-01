@@ -294,15 +294,6 @@ class AssignmentItem : boost::noncopyable
 	friend AssignmentDecrementer;
 
 private:
-	static void onOperationDestruct(void *param){
-		const AUTO(assignment, static_cast<AssignmentItem *>(param));
-		if(--assignment->m_count == 0){
-			assignment->m_thread.reset();
-			LOG_POSEIDON_DEBUG("No more pending operations: ", assignment->m_table);
-		}
-	}
-
-private:
 	const char *const m_table;
 
 	boost::shared_ptr<MySqlThread> m_thread;
@@ -315,7 +306,7 @@ public:
 	}
 
 private:
-	AssignmentItem *increment(){
+	void increment(){
 		if(++m_count == 1){
 			if(g_threads.empty()){
 				DEBUG_THROW(Exception, "No threads available");
@@ -330,11 +321,11 @@ private:
 			m_thread = g_threads[idle];
 			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", idle);
 		}
-		return this;
 	};
 	void decrement(){
 		if(--m_count == 0){
 			m_thread.reset();
+			LOG_POSEIDON_DEBUG("No more pending operations: ", m_table);
 		}
 	}
 
@@ -344,8 +335,9 @@ public:
 	}
 
 	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
-		IncrementedAssignment inc(increment());
-		operation->setAssignment(STD_MOVE(inc)); // noexcept
+		increment();
+		IncrementedAssignment inc(this); // noexcept
+		operation->setAssignment(STD_MOVE(inc));
 
 		m_thread->addOperation(STD_MOVE(operation), urgent);
 	}
