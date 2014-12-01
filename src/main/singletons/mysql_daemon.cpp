@@ -314,17 +314,18 @@ public:
 		++m_count;
 
 		if(!m_thread){
-			LOG_POSEIDON_DEBUG("Scheduling MySQL threads: ", m_table);
 			if(g_threads.empty()){
 				DEBUG_THROW(Exception, "No threads available");
 			}
 			// 指派给最空闲的线程。
-			m_thread = g_threads.front();
-			for(AUTO(it, g_threads.begin() + 1); it != g_threads.end(); ++it){
+			AUTO(it, g_threads.begin());
+			m_thread = *it;
+			while(++it != g_threads.end()){
 				if((*it)->getBusyTime() < m_thread->getBusyTime()){
 					m_thread = *it;
 				}
 			}
+			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", it - g_threads.begin());
 		}
 		m_thread->addOperation(STD_MOVE(operation), urgent);
 	}
