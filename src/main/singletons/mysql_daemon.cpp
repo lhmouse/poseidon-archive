@@ -50,19 +50,19 @@ struct AssignmentDecrementer {
 	void operator()(AssignmentItem *assignment) const NOEXCEPT;
 };
 
-typedef UniqueHandle<AssignmentDecrementer> IncrementedAssignment;
+typedef UniqueHandle<AssignmentDecrementer> AssignmentLock;
 
 class OperationBase : boost::noncopyable {
 private:
-	IncrementedAssignment m_assignment;
+	AssignmentLock m_assignmentLock;
 
 public:
 	virtual ~OperationBase(){
 	}
 
 public:
-	void setAssignment(IncrementedAssignment assignment) NOEXCEPT {
-		swap(m_assignment, assignment);
+	void setAssignmentLock(AssignmentLock assignmentLock) NOEXCEPT {
+		swap(m_assignmentLock, assignmentLock);
 	}
 
 	virtual bool shouldExecuteNow() const = 0;
@@ -297,8 +297,9 @@ class AssignmentItem : boost::noncopyable
 private:
 	const char *const m_table;
 
-	boost::shared_ptr<MySqlThread> m_thread;
+	mutable boost::mutex m_mutex;
 	std::size_t m_count;
+	boost::shared_ptr<MySqlThread> m_thread;
 
 public:
 	explicit AssignmentItem(const char *table)
@@ -307,8 +308,9 @@ public:
 	}
 
 private:
-	void increment(){
-		if(++m_count == 1){
+	AssignmentLock increment(){
+		const boost::mutex::scoped_lock lock(m_mutex);
+		if(m_count == 0){
 			if(g_threads.empty()){
 				DEBUG_THROW(Exception, "No threads available");
 			}
@@ -326,9 +328,13 @@ private:
 			m_thread = g_threads[idle];
 			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", idle);
 		}
+		++m_count;
+		return AssignmentLock(this);
 	};
 	void decrement(){
-		if(--m_count == 0){
+		const boost::mutex::scoped_lock lock(m_mutex);
+		--m_count;
+		if(m_count == 0){
 			m_thread.reset();
 			LOG_POSEIDON_DEBUG("No more pending operations: ", m_table);
 		}
@@ -340,10 +346,11 @@ public:
 	}
 
 	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
-		increment();
-		IncrementedAssignment inc(this); // noexcept
-		operation->setAssignment(STD_MOVE(inc));
+		// 锁定 m_thread。
+		AUTO(lock, increment());
+		operation->setAssignmentLock(STD_MOVE(lock));
 
+		// 现在访问 m_thread 是安全的。
 		m_thread->addOperation(STD_MOVE(operation), urgent);
 	}
 };
