@@ -211,7 +211,7 @@ public:
 
 			// 仅估算。这里需要使用带符号的整数。
 			const boost::int64_t averageDelta = delta - atomicLoad(g_averageOperationDuration);
-			atomicAdd(g_averageOperationDuration, averageDelta / 32);
+			atomicAdd(g_averageOperationDuration, averageDelta / 16);
 		}
 	};
 
