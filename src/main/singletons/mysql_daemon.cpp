@@ -42,11 +42,21 @@ std::size_t	g_mySqlMaxReconnDelay	= 60000;
 std::size_t	g_mySqlRetryCount		= 3;
 
 class OperationBase : boost::noncopyable {
+private:
+	boost::function<void ()> m_onDestruct;
+
 public:
 	virtual ~OperationBase(){
+		if(m_onDestruct){
+			m_onDestruct();
+		}
 	}
 
 public:
+	void atDestruct(boost::function<void ()> onDestruct){
+		m_onDestruct.swap(onDestruct);
+	}
+
 	virtual bool shouldExecuteNow() const = 0;
 	virtual void execute(std::string &query, MySqlConnection &conn) = 0;
 };
@@ -270,8 +280,81 @@ volatile bool g_running = false;
 std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 
 // 根据表名分给不同的线程。
+class AssignmentItem : boost::noncopyable
+	, public boost::enable_shared_from_this<AssignmentItem>
+{
+private:
+	const char *const m_table;
+
+	boost::shared_ptr<MySqlThread> m_thread;
+	std::size_t m_count;
+
+public:
+	explicit AssignmentItem(const char *table)
+		: m_table(table), m_count(0)
+	{
+	}
+
+private:
+	void onOperationDestruct(){
+		if(--m_count == 0){
+			m_thread.reset();
+			LOG_POSEIDON_DEBUG("No more pending operations: ", m_table);
+		}
+	}
+
+public:
+	const char *getTable() const {
+		return m_table;
+	}
+
+	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
+		operation->atDestruct(
+			boost::bind(&AssignmentItem::onOperationDestruct, shared_from_this()));
+		++m_count;
+
+		if(!m_thread){
+			LOG_POSEIDON_DEBUG("Scheduling MySQL threads: ", m_table);
+			if(g_threads.empty()){
+				DEBUG_THROW(Exception, "No threads available");
+			}
+			// 指派给最空闲的线程。
+			m_thread = g_threads.front();
+			for(AUTO(it, g_threads.begin() + 1); it != g_threads.end(); ++it){
+				if((*it)->getBusyTime() < m_thread->getBusyTime()){
+					m_thread = *it;
+				}
+			}
+		}
+		m_thread->addOperation(STD_MOVE(operation), urgent);
+	}
+};
+
 boost::mutex g_assignmentMutex;
-std::vector<std::pair<const char *, boost::shared_ptr<MySqlThread> > > g_assignments;
+std::vector<boost::shared_ptr<AssignmentItem> > g_assignments;
+
+AssignmentItem &getAssignmentForTable(const char *table){
+	const boost::mutex::scoped_lock lock(g_assignmentMutex);
+	AUTO(lower, g_assignments.begin());
+	AUTO(upper, g_assignments.end());
+	for(;;){
+		if(lower == upper){
+			lower = g_assignments.insert(lower, boost::make_shared<AssignmentItem>(table));
+			break;
+		}
+		const AUTO(middle, lower + (upper - lower) / 2);
+		const int result = std::strcmp(table, (*middle)->getTable());
+		if(result == 0){
+			lower = middle;
+			break;
+		} else if(result < 0){
+			upper = middle;
+		} else {
+			lower = middle + 1;
+		}
+	}
+	return **lower;
+}
 
 void MySqlThread::operationLoop(){
 	MySqlThreadContext context;
@@ -435,50 +518,6 @@ void MySqlThread::threadProc(){
 	LOG_POSEIDON_INFO("MySQL daemon stopped.");
 }
 
-boost::shared_ptr<MySqlThread> pickThreadForTable(const char *table){
-	const boost::mutex::scoped_lock lock(g_assignmentMutex);
-	if(g_threads.empty()){
-		DEBUG_THROW(Exception, "No threads available");
-	}
-	AUTO(lower, g_assignments.begin());
-	AUTO(upper, g_assignments.end());
-	boost::shared_ptr<MySqlThread> thread;
-	for(;;){
-		if(lower == upper){
-			thread = g_threads.front();
-			for(AUTO(it, g_threads.begin() + 1); it != g_threads.end(); ++it){
-				if((*it)->getBusyTime() < thread->getBusyTime()){
-					thread = *it;
-				}
-			}
-			// g_assignments.insert(lower, std::make_pair(table, thread));
-			const std::size_t index = lower - g_assignments.begin();
-			g_assignments.push_back(VAL_INIT);
-			for(std::size_t i = g_assignments.size() - 1; index < i; --i){
-				AUTO_REF(cur, g_assignments[i]);
-				AUTO_REF(prev, g_assignments[i - 1]);
-				cur.first = prev.first;
-				cur.second.swap(prev.second);
-			}
-			AUTO_REF(cur, g_assignments[index]);
-			cur.first = table;
-			cur.second = thread;
-			break;
-		}
-		const AUTO(middle, lower + (upper - lower) / 2);
-		const int result = std::strcmp(table, middle->first);
-		if(result == 0){
-			thread = middle->second;
-			break;
-		} else if(result < 0){
-			upper = middle;
-		} else {
-			lower = middle + 1;
-		}
-	}
-	return thread;
-}
-
 }
 
 void MySqlDaemon::start(){
@@ -575,22 +614,21 @@ void MySqlDaemon::waitForAllAsyncOperations(){
 }
 
 void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object){
-	const AUTO(table, object->getTableName());
-	pickThreadForTable(table)->addOperation(
-		boost::make_shared<SaveOperation>(STD_MOVE(object)), false);
+	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
+	assignment.commit(boost::make_shared<SaveOperation>(
+		STD_MOVE(object)), false);
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
 	std::string query, MySqlAsyncLoadCallback callback)
 {
-	const AUTO(table, object->getTableName());
-	pickThreadForTable(table)->addOperation(
-		boost::make_shared<LoadOperation>(
-			STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
+	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
+	assignment.commit(boost::make_shared<LoadOperation>(
+		STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
 }
 void MySqlDaemon::pendForBatchLoading(const char *tableHint,
 	std::string query, MySqlObjectFactoryProc factory, MySqlBatchAsyncLoadCallback callback)
 {
-	pickThreadForTable(tableHint)->addOperation(
-		boost::make_shared<BatchLoadOperation>(
-			STD_MOVE(query),  factory, STD_MOVE(callback)), true);
+	AUTO_REF(assignment, getAssignmentForTable(tableHint));
+	assignment.commit(boost::make_shared<BatchLoadOperation>(
+		STD_MOVE(query), factory, STD_MOVE(callback)), true);
 }
