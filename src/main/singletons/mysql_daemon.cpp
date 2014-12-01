@@ -267,7 +267,7 @@ public:
 		if(urgent){
 			atomicStore(m_urgentMode, true);
 		}
-		atomicAdd(m_busyTime, 1000000); // 1000 毫秒轮转。
+		atomicAdd(m_busyTime, 100000); // 100 毫秒轮转。
 		m_newAvail.notify_all();
 	}
 
