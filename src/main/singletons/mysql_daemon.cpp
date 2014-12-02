@@ -206,13 +206,12 @@ public:
 	{
 	}
 	~OperationStopwatch(){
-		const boost::uint64_t delta = getMonoClock() - m_begin;
-		LOG_POSEIDON_TRACE("MySQL operation executed in ", delta, " us.");
+		const boost::uint64_t total = getMonoClock() - m_begin;
+		LOG_POSEIDON_TRACE("MySQL operation executed in ", total, " us.");
 		// 仅估算。这里需要使用带符号的整数。
-		const boost::int64_t deltaAverage = delta - atomicLoad(g_averageOperationDuration) / 16;
-		const boost::uint64_t newAverage = atomicAdd(g_averageOperationDuration, deltaAverage);
-		LOG_POSEIDON_TRACE(
-			"Average operation duration = ", newAverage, " (", std::showpos, deltaAverage, ")");
+		const boost::int64_t delta = (total - atomicLoad(g_averageOperationDuration)) / 16;
+		const boost::uint64_t current = atomicAdd(g_averageOperationDuration, delta);
+		LOG_POSEIDON_TRACE("Average operation duration = ", current, " (", std::showpos, delta, ")");
 	}
 };
 
