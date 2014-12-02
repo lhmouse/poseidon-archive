@@ -196,44 +196,40 @@ private:
 
 volatile std::size_t g_averageOperationDuration = 0; // 仅用于估算。
 
-class MySqlThread : boost::noncopyable {
+class OperationStopwatch : boost::noncopyable {
+private:
+	const boost::uint64_t m_begin;
+
 public:
-	class Stopwatch : boost::noncopyable {
-	private:
-		MySqlThread &m_owner;
-		const boost::uint64_t m_begin;
+	OperationStopwatch()
+		: m_begin(getMonoClock())
+	{
+	}
+	~OperationStopwatch(){
+		const boost::uint64_t delta = getMonoClock() - m_begin;
+		LOG_POSEIDON_TRACE("MySQL operation executed in ", delta, " us.");
+		// 仅估算。这里需要使用带符号的整数。
+		const boost::int64_t averageDelta = delta - atomicLoad(g_averageOperationDuration);
+		const boost::uint64_t newAverage = atomicAdd(g_averageOperationDuration, averageDelta / 16);
+		LOG_POSEIDON_TRACE("Average operation duration = ", newAverage);
+	}
+};
 
-	public:
-		explicit Stopwatch(MySqlThread &owner)
-			: m_owner(owner), m_begin(getMonoClock())
-		{
-		}
-		~Stopwatch(){
-			const boost::uint64_t delta = getMonoClock() - m_begin;
-			LOG_POSEIDON_TRACE("MySQL operation executed in ", delta, " us.");
-			atomicAdd(m_owner.m_busyTime, delta);
-
-			// 仅估算。这里需要使用带符号的整数。
-			const boost::int64_t averageDelta = delta - atomicLoad(g_averageOperationDuration);
-			const boost::uint64_t newAverage = atomicAdd(g_averageOperationDuration, averageDelta / 16);
-			LOG_POSEIDON_TRACE("Averase operation duration = ", newAverage);
-		}
-	};
-
+class MySqlThread : boost::noncopyable {
 private:
 	boost::thread m_thread;
 	volatile bool m_running;
 
 	mutable boost::mutex m_mutex;
 	std::deque<boost::shared_ptr<OperationBase> > m_queue;
-	volatile boost::uint64_t m_busyTime; // 调度提示。
+	volatile boost::uint64_t m_estimatedBusyTime; // 调度提示。
 	mutable volatile bool m_urgentMode; // 无视写入合并策略，一次性处理队列中所有操作。
 	mutable boost::condition_variable m_newAvail;
 	mutable boost::condition_variable m_queueEmpty;
 
 public:
 	MySqlThread()
-		: m_running(false), m_busyTime(0), m_urgentMode(false)
+		: m_running(false), m_estimatedBusyTime(0), m_urgentMode(false)
 	{
 	}
 
@@ -242,8 +238,8 @@ private:
 	void threadProc();
 
 public:
-	boost::uint64_t getBusyTime() const {
-		return atomicLoad(m_busyTime);
+	boost::uint64_t getEstimatedBusyTime() const {
+		return atomicLoad(m_estimatedBusyTime);
 	}
 
 	void start(){
@@ -277,7 +273,7 @@ public:
 		if(urgent){
 			atomicStore(m_urgentMode, true);
 		}
-		atomicAdd(m_busyTime, atomicLoad(g_averageOperationDuration));
+		atomicAdd(m_estimatedBusyTime, atomicLoad(g_averageOperationDuration));
 		m_newAvail.notify_all();
 	}
 
@@ -326,10 +322,10 @@ private:
 			}
 			// 指派给最空闲的线程。
 			std::size_t picked = 0;
-			AUTO(minBusyTime, g_threads.front()->getBusyTime());
+			AUTO(minBusyTime, g_threads.front()->getEstimatedBusyTime());
 			LOG_POSEIDON_TRACE("Busy time of MySQL thread 0: ", minBusyTime);
 			for(std::size_t i = 1; i < g_threads.size(); ++i){
-				const AUTO(myBusyTime, g_threads[i]->getBusyTime());
+				const AUTO(myBusyTime, g_threads[i]->getEstimatedBusyTime());
 				LOG_POSEIDON_TRACE("Busy time of MySQL thread ", i, ": ", myBusyTime);
 				// 即使是无符号 64 位整数发生了进位，这个结果也是对的。
 				// 参考 TCP 中对于报文流水号的处理。
@@ -464,7 +460,7 @@ void MySqlThread::operationLoop(){
 			std::string query;
 			try {
 				try {
-					const Stopwatch watch(*this);
+					const OperationStopwatch watch;
 					queue.front()->execute(query, *conn);
 				} catch(MySqlException &e){
 					mySqlErrCode = e.code();
