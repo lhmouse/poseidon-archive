@@ -194,7 +194,7 @@ private:
 	}
 };
 
-volatile std::size_t g_averageOperationDuration = 0; // 仅用于估算。
+volatile std::size_t g_averageOperationDuration = 10; // 仅用于估算。
 
 class OperationStopwatch : boost::noncopyable {
 private:
