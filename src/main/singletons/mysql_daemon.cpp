@@ -209,9 +209,12 @@ public:
 		const boost::uint64_t delta = getMonoClock() - m_begin;
 		LOG_POSEIDON_TRACE("MySQL operation executed in ", delta, " us.");
 		// 仅估算。这里需要使用带符号的整数。
-		const boost::int64_t averageDelta = delta - atomicLoad(g_averageOperationDuration);
-		const boost::uint64_t newAverage = atomicAdd(g_averageOperationDuration, averageDelta / 16);
-		LOG_POSEIDON_TRACE("Average operation duration = ", newAverage);
+		const boost::int64_t deltaAverage =
+			delta - atomicLoad(g_averageOperationDuration);
+		const boost::uint64_t newAverage =
+			atomicAdd(g_averageOperationDuration, deltaAverage / 16);
+		LOG_POSEIDON_TRACE("Average operation duration = ", newAverage,
+			" (", std::showpos, deltaAverage, ")");
 	}
 };
 
