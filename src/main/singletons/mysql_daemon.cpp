@@ -43,26 +43,29 @@ std::size_t	g_mySqlRetryCount		= 3;
 
 class AssignmentItem;
 
-struct AssignmentDecrementer {
-	CONSTEXPR AssignmentItem *operator()() const NOEXCEPT {
-		return NULLPTR;
-	}
-	void operator()(AssignmentItem *assignment) const NOEXCEPT;
-};
-
-typedef UniqueHandle<AssignmentDecrementer> AssignmentLock;
+void onOperationDestruct(AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT;
 
 class OperationBase : boost::noncopyable {
 private:
-	AssignmentLock m_assignmentLock;
+	AssignmentItem *m_assignment;
+	boost::uint64_t m_estimatedTime;
 
 public:
+	OperationBase()
+		: m_assignment(NULLPTR)
+	{
+	}
 	virtual ~OperationBase(){
+		setEstimatedTime(NULLPTR, 0);
 	}
 
 public:
-	void setAssignmentLock(AssignmentLock assignmentLock) NOEXCEPT {
-		swap(m_assignmentLock, assignmentLock);
+	void setEstimatedTime(AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT {
+		if(m_assignment){
+			onOperationDestruct(m_assignment, m_estimatedTime);
+		}
+		m_assignment = assignment;
+		m_estimatedTime = estimatedTime;
 	}
 
 	virtual bool shouldExecuteNow() const = 0;
@@ -200,24 +203,24 @@ class OperationStopwatch : boost::noncopyable {
 private:
 	const boost::uint64_t m_begin;
 
-	boost::uint64_t &m_output;
-
 public:
-	explicit OperationStopwatch(boost::uint64_t &output)
-		: m_begin(getMonoClock()), m_output(output)
+	OperationStopwatch()
+		: m_begin(getMonoClock())
 	{
 	}
 	~OperationStopwatch(){
-		m_output = getMonoClock() - m_begin;
-		LOG_POSEIDON_TRACE("MySQL operation executed in ", m_output, " us.");
+		const AUTO(duration, getMonoClock() - m_begin);
+		LOG_POSEIDON_TRACE("MySQL operation executed in ", duration, " us.");
 		// 仅估算。这里需要使用带符号的整数。
-		const AUTO(delta, (boost::int64_t)(m_output - atomicLoad(g_averageOperationDuration)) / 16);
+		const AUTO(delta, (boost::int64_t)(duration - atomicLoad(g_averageOperationDuration)) / 16);
 		const AUTO(current, atomicAdd(g_averageOperationDuration, delta));
 		LOG_POSEIDON_TRACE("Average operation duration = ", current, " (", std::showpos, delta, ").");
 	}
 };
 
 class MySqlThread : boost::noncopyable {
+	friend class AssignmentItem;
+
 private:
 	boost::thread m_thread;
 	volatile bool m_running;
@@ -275,7 +278,6 @@ public:
 		if(urgent){
 			atomicStore(m_urgentMode, true);
 		}
-		atomicAdd(m_estimatedBusyTime, atomicLoad(g_averageOperationDuration));
 		m_newAvail.notify_all();
 	}
 
@@ -300,7 +302,8 @@ std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 class AssignmentItem : boost::noncopyable
 	, public boost::enable_shared_from_this<AssignmentItem>
 {
-	friend AssignmentDecrementer;
+	friend void onOperationDestruct(
+		AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT;
 
 private:
 	const char *const m_table;
@@ -316,7 +319,7 @@ public:
 	}
 
 private:
-	AssignmentLock increment(){
+	void increment(boost::uint64_t estimatedTime){
 		const boost::mutex::scoped_lock lock(m_mutex);
 		if(m_count == 0){
 			if(g_threads.empty()){
@@ -338,10 +341,15 @@ private:
 			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", picked);
 		}
 		++m_count;
-		return AssignmentLock(this);
+		const AUTO(estimatedBusyTime, atomicAdd(m_thread->m_estimatedBusyTime, estimatedTime));
+		LOG_POSEIDON_TRACE("Incremented thread estimated busy time to ", estimatedBusyTime,
+			" (+", estimatedTime, ").");
 	};
-	void decrement(){
+	void decrement(boost::uint64_t estimatedTime){
 		const boost::mutex::scoped_lock lock(m_mutex);
+		const AUTO(estimatedBusyTime, atomicSub(m_thread->m_estimatedBusyTime, estimatedTime));
+		LOG_POSEIDON_TRACE("Decremented thread estimated busy time to ", estimatedBusyTime,
+			" (-", estimatedTime, ").");
 		--m_count;
 		if(m_count == 0){
 			m_thread.reset();
@@ -356,16 +364,17 @@ public:
 
 	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
 		// 锁定 m_thread。
-		AUTO(lock, increment());
-		operation->setAssignmentLock(STD_MOVE(lock));
+		const AUTO(estimatedTime, atomicLoad(g_averageOperationDuration));
+		increment(estimatedTime);
+		operation->setEstimatedTime(this, estimatedTime); // noexcept
 
 		// 现在访问 m_thread 是安全的。
 		m_thread->addOperation(STD_MOVE(operation), urgent);
 	}
 };
 
-void AssignmentDecrementer::operator()(AssignmentItem *assignment) const NOEXCEPT {
-	assignment->decrement();
+void onOperationDestruct(AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT {
+	assignment->decrement(estimatedTime);
 }
 
 boost::mutex g_assignmentMutex;
@@ -442,7 +451,6 @@ void MySqlThread::operationLoop(){
 					if(!atomicLoad(m_running)){
 						goto exit_loop;
 					}
-					atomicStore(m_estimatedBusyTime, 0);
 					atomicStore(m_urgentMode, false);
 					m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
@@ -460,9 +468,8 @@ void MySqlThread::operationLoop(){
 			std::string mySqlErrMsg;
 			std::string query;
 			try {
-				boost::uint64_t elapsed;
 				try {
-					const OperationStopwatch watch(elapsed);
+					const OperationStopwatch watch;
 					queue.front()->execute(query, *conn);
 				} catch(MySqlException &e){
 					mySqlErrCode = e.code();
@@ -475,19 +482,6 @@ void MySqlThread::operationLoop(){
 					mySqlErrMsg = "Unknown exception";
 					throw;
 				}
-
-				AUTO(oldTime, atomicLoad(m_estimatedBusyTime));
-				boost::uint64_t newTime;
-				do {
-					if(oldTime > elapsed){
-						newTime = oldTime - elapsed;
-					} else {
-						newTime = 0;
-					}
-				} while(atomicCompareExchange(m_estimatedBusyTime, oldTime, newTime) != oldTime);
-
-				LOG_POSEIDON_TRACE("Estimated busy time = ", newTime,
-					" (", std::showpos, (boost::int64_t)(newTime - oldTime), ").");
 			} catch(...){
 				bool retry = true;
 				if(retryCount == 0){
