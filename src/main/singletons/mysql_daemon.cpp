@@ -211,7 +211,7 @@ public:
 		// 仅估算。这里需要使用带符号的整数。
 		const AUTO(delta, (boost::int64_t)(total - atomicLoad(g_averageOperationDuration)) / 16);
 		const AUTO(current, atomicAdd(g_averageOperationDuration, delta));
-		LOG_POSEIDON_TRACE("Average operation duration = ", current, " (", std::showpos, delta, ")");
+		LOG_POSEIDON_TRACE("Average operation duration = ", current, " (", std::showpos, delta, ").");
 	}
 };
 
@@ -223,7 +223,7 @@ private:
 	mutable boost::mutex m_mutex;
 	std::deque<boost::shared_ptr<OperationBase> > m_queue;
 	volatile boost::uint64_t m_estimatedBusyTime; // 调度提示。
-	mutable volatile bool m_urgentMode; // 无视写入合并策略，一次性处理队列中所有操作。
+	mutable volatile bool m_urgentMode; // 无视延迟写入，一次性处理队列中所有操作。
 	mutable boost::condition_variable m_newAvail;
 	mutable boost::condition_variable m_queueEmpty;
 
