@@ -475,20 +475,19 @@ void MySqlThread::operationLoop(){
 					mySqlErrMsg = "Unknown exception";
 					throw;
 				}
-				for(;;){
-					AUTO(oldTime, atomicLoad(m_estimatedBusyTime));
-					AUTO(newTime, oldTime);
-					if(newTime > elapsed){
-						newTime -= elapsed;
+
+				AUTO(oldTime, atomicLoad(m_estimatedBusyTime));
+				boost::uint64_t newTime;
+				do {
+					if(oldTime > elapsed){
+						newTime = oldTime - elapsed;
 					} else {
 						newTime = 0;
 					}
-					if(atomicCompareExchange(m_estimatedBusyTime, oldTime, newTime)){
-						LOG_POSEIDON_TRACE("Estimated busy time = ", newTime,
-							" (", std::showpos, (boost::int64_t)(newTime - oldTime), ").");
-						break;
-					}
-				}
+				} while(atomicCompareExchange(m_estimatedBusyTime, oldTime, newTime) != oldTime);
+
+				LOG_POSEIDON_TRACE("Estimated busy time = ", newTime,
+					" (", std::showpos, (boost::int64_t)(newTime - oldTime), ").");
 			} catch(...){
 				bool retry = true;
 				if(retryCount == 0){
