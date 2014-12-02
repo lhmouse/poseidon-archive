@@ -200,16 +200,18 @@ class OperationStopwatch : boost::noncopyable {
 private:
 	const boost::uint64_t m_begin;
 
+	boost::uint64_t &m_output;
+
 public:
-	OperationStopwatch()
-		: m_begin(getMonoClock())
+	explicit OperationStopwatch(boost::uint64_t &output)
+		: m_begin(getMonoClock()), m_output(output)
 	{
 	}
 	~OperationStopwatch(){
-		const boost::uint64_t total = getMonoClock() - m_begin;
-		LOG_POSEIDON_TRACE("MySQL operation executed in ", total, " us.");
+		m_output = getMonoClock() - m_begin;
+		LOG_POSEIDON_TRACE("MySQL operation executed in ", m_output, " us.");
 		// 仅估算。这里需要使用带符号的整数。
-		const AUTO(delta, (boost::int64_t)(total - atomicLoad(g_averageOperationDuration)) / 16);
+		const AUTO(delta, (boost::int64_t)(m_output - atomicLoad(g_averageOperationDuration)) / 16);
 		const AUTO(current, atomicAdd(g_averageOperationDuration, delta));
 		LOG_POSEIDON_TRACE("Average operation duration = ", current, " (", std::showpos, delta, ").");
 	}
@@ -327,9 +329,7 @@ private:
 			for(std::size_t i = 1; i < g_threads.size(); ++i){
 				const AUTO(myBusyTime, g_threads[i]->getEstimatedBusyTime());
 				LOG_POSEIDON_TRACE("Busy time of MySQL thread ", i, ": ", myBusyTime);
-				// 即使是无符号 64 位整数发生了进位，这个结果也是对的。
-				// 参考 TCP 中对于报文流水号的处理。
-				if(static_cast<boost::int64_t>(minBusyTime - myBusyTime) > 0){
+				if(minBusyTime > myBusyTime){
 					picked = i;
 					minBusyTime = myBusyTime;
 				}
@@ -437,6 +437,8 @@ void MySqlThread::operationLoop(){
 			}
 
 			if(queue.empty()){
+				atomicStore(m_estimatedBusyTime, 0);
+
 				boost::mutex::scoped_lock lock(m_mutex);
 				while(m_queue.empty()){
 					if(!atomicLoad(m_running)){
@@ -459,8 +461,9 @@ void MySqlThread::operationLoop(){
 			std::string mySqlErrMsg;
 			std::string query;
 			try {
+				boost::uint64_t elapsed;
 				try {
-					const OperationStopwatch watch;
+					const OperationStopwatch watch(elapsed);
 					queue.front()->execute(query, *conn);
 				} catch(MySqlException &e){
 					mySqlErrCode = e.code();
@@ -472,6 +475,20 @@ void MySqlThread::operationLoop(){
 				} catch(...){
 					mySqlErrMsg = "Unknown exception";
 					throw;
+				}
+				for(;;){
+					AUTO(oldTime, atomicLoad(m_estimatedBusyTime));
+					AUTO(newTime, oldTime);
+					if(newTime > elapsed){
+						newTime -= elapsed;
+					} else {
+						newTime = 0;
+					}
+					if(atomicCompareExchange(m_estimatedBusyTime, oldTime, newTime)){
+						LOG_POSEIDON_TRACE("Estimated busy time = ", newTime,
+							" (", std::showpos, (boost::int64_t)(newTime - oldTime), ").");
+						break;
+					}
 				}
 			} catch(...){
 				bool retry = true;
