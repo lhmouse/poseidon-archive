@@ -43,7 +43,8 @@ std::size_t	g_mySqlRetryCount		= 3;
 
 class AssignmentItem;
 
-void onOperationDestruct(AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT;
+void onOperationDestruct(
+	AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT;
 
 class OperationBase : boost::noncopyable {
 private:
@@ -60,7 +61,9 @@ public:
 	}
 
 public:
-	void setEstimatedTime(AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT {
+	void setEstimatedTime(
+		AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT
+	{
 		if(m_assignment){
 			onOperationDestruct(m_assignment, m_estimatedTime);
 		}
@@ -373,7 +376,9 @@ public:
 	}
 };
 
-void onOperationDestruct(AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT {
+void onOperationDestruct(
+	AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT
+{
 	assignment->decrement(estimatedTime);
 }
 
