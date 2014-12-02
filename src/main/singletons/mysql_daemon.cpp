@@ -209,8 +209,8 @@ public:
 		const boost::uint64_t total = getMonoClock() - m_begin;
 		LOG_POSEIDON_TRACE("MySQL operation executed in ", total, " us.");
 		// 仅估算。这里需要使用带符号的整数。
-		const boost::int64_t delta = (total - atomicLoad(g_averageOperationDuration)) / 16;
-		const boost::uint64_t current = atomicAdd(g_averageOperationDuration, delta);
+		const AUTO(delta, (boost::int64_t)(total - atomicLoad(g_averageOperationDuration)) / 16);
+		const AUTO(current, atomicAdd(g_averageOperationDuration, delta));
 		LOG_POSEIDON_TRACE("Average operation duration = ", current, " (", std::showpos, delta, ")");
 	}
 };
