@@ -104,11 +104,11 @@ class LoadOperation
 	: public OperationBase, public JobBase
 {
 private:
-	boost::shared_ptr<MySqlObjectBase> m_object;
-	std::string m_query;
+	const boost::shared_ptr<MySqlObjectBase> m_object;
+	const std::string m_query;
 
 	MySqlAsyncLoadCallback m_callback;
-	bool m_result;
+	bool m_found;
 
 public:
 	LoadOperation(boost::shared_ptr<MySqlObjectBase> object,
@@ -116,6 +116,7 @@ public:
 		: m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
 	{
 		swap(m_callback, callback);
+		m_found = false;
 	}
 
 private:
@@ -130,8 +131,8 @@ private:
 		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", query = ", query);
 		conn.executeSql(query);
 		conn.waitForResult();
-		m_result = conn.fetchRow();
-		if(m_result){
+		m_found = conn.fetchRow();
+		if(m_found){
 			m_object->syncFetch(conn);
 			m_object->enableAutoSaving();
 		}
@@ -142,7 +143,7 @@ private:
 	void perform(){
 		PROFILE_ME;
 
-		m_callback(STD_MOVE(m_object), m_result);
+		m_callback(m_found);
 	}
 };
 
@@ -150,8 +151,8 @@ class BatchLoadOperation
 	: public OperationBase, public JobBase
 {
 private:
-	std::string m_query;
-	MySqlObjectFactoryProc m_factory;
+	const std::string m_query;
+	const MySqlObjectFactoryProc m_factory;
 
 	std::vector<boost::shared_ptr<MySqlObjectBase> > m_objects;
 	MySqlBatchAsyncLoadCallback m_callback;

@@ -15,7 +15,7 @@ class MySqlObjectBase;
 typedef boost::shared_ptr<MySqlObjectBase> (*MySqlObjectFactoryProc)();
 
 typedef boost::function<
-	void (boost::shared_ptr<MySqlObjectBase> object, bool found)
+	void (bool found)
 	> MySqlAsyncLoadCallback;
 
 typedef boost::function<
