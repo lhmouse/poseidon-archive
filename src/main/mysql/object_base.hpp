@@ -27,7 +27,7 @@ class MySqlObjectBase
 {
 protected:
 	static void batchAsyncLoad(const char *tableHint, std::string query,
-		MySqlObjectFactoryProc factory, MySqlBatchAsyncLoadCallback callback);
+		boost::shared_ptr<MySqlObjectBase> (*factory)(), MySqlBatchAsyncLoadCallback callback);
 
 private:
 	mutable volatile bool m_autoSaves;

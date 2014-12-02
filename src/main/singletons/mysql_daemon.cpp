@@ -152,13 +152,13 @@ class BatchLoadOperation
 {
 private:
 	const std::string m_query;
-	const MySqlObjectFactoryProc m_factory;
+	boost::shared_ptr<MySqlObjectBase> (*const m_factory)();
 
 	std::vector<boost::shared_ptr<MySqlObjectBase> > m_objects;
 	MySqlBatchAsyncLoadCallback m_callback;
 
 public:
-	BatchLoadOperation(std::string query, MySqlObjectFactoryProc factory,
+	BatchLoadOperation(std::string query, boost::shared_ptr<MySqlObjectBase> (*factory)(),
 		Move<MySqlBatchAsyncLoadCallback> callback)
 		: m_query(STD_MOVE(query)), m_factory(factory)
 	{
@@ -656,15 +656,15 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object)
 	assignment.commit(boost::make_shared<SaveOperation>(
 		STD_MOVE(object)), false);
 }
-void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object,
-	std::string query, MySqlAsyncLoadCallback callback)
+void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std::string query,
+	MySqlAsyncLoadCallback callback)
 {
 	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
 	assignment.commit(boost::make_shared<LoadOperation>(
 		STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
 }
-void MySqlDaemon::pendForBatchLoading(const char *tableHint,
-	std::string query, MySqlObjectFactoryProc factory, MySqlBatchAsyncLoadCallback callback)
+void MySqlDaemon::pendForBatchLoading(const char *tableHint, std::string query,
+	boost::shared_ptr<MySqlObjectBase> (*factory)(), MySqlBatchAsyncLoadCallback callback)
 {
 	AUTO_REF(assignment, getAssignmentForTable(tableHint));
 	assignment.commit(boost::make_shared<BatchLoadOperation>(

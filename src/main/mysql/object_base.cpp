@@ -7,7 +7,7 @@
 using namespace Poseidon;
 
 void MySqlObjectBase::batchAsyncLoad(const char *tableHint, std::string query,
-	MySqlObjectFactoryProc factory, MySqlBatchAsyncLoadCallback callback)
+	boost::shared_ptr<MySqlObjectBase> (*factory)(), MySqlBatchAsyncLoadCallback callback)
 {
 	MySqlDaemon::pendForBatchLoading(tableHint, STD_MOVE(query), factory, STD_MOVE(callback));
 }
