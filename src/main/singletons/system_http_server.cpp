@@ -165,18 +165,19 @@ void onSetLogMask(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 	session->sendDefault(HTTP_OK);
 }
 
-void onMySqlThreads(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
+void onMySqlThreads(boost::shared_ptr<HttpSession> session, OptionalMap){
 	OptionalMap headers;
 	headers.set("Content-Type", "text/csv; charset=utf-8");
 	headers.set("Content-Disposition", "attachment; name=\"mysql_threads.csv\"");
 
 	StreamBuffer contents;
-	contents.put("index,pending_operations\r\n");
+	contents.put("index,pending_operations,us_idle,us_working\r\n");
 	AUTO(snapshot, MySqlDaemon::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 		char temp[256];
-		unsigned len = std::sprintf(temp, "%u,%lu\r\n", it->index, it->pendingOperations);
+		unsigned len = std::sprintf(temp, "%u,%lu,%llu,%llu\r\n",
+			it->index, it->pendingOperations, it->usIdle, it->usWorking);
 		contents.put(temp, len);
 	}
 

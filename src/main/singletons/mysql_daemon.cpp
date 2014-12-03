@@ -209,6 +209,24 @@ private:
 class MySqlThread : boost::noncopyable {
 	friend MySqlThreadDecrementer;
 
+public:
+	class Profiler : boost::noncopyable {
+	private:
+		MySqlThread &m_owner;
+
+	public:
+		explicit Profiler(MySqlThread &owner)
+			: m_owner(owner)
+		{
+			m_owner.flushProfile();
+			++m_owner.m_workingCount;
+		}
+		~Profiler(){
+			m_owner.flushProfile();
+			--m_owner.m_workingCount;
+		}
+	};
+
 private:
 	boost::thread m_thread;
 	volatile bool m_running;
@@ -220,10 +238,21 @@ private:
 	mutable boost::condition_variable m_newAvail;
 	mutable boost::condition_variable m_queueEmpty;
 
+	// 性能统计。
+	mutable boost::uint64_t m_timeFlushed;
+	std::size_t m_workingCount;
+	mutable volatile boost::uint64_t m_timeIdle;
+	mutable volatile boost::uint64_t m_timeWorking;
+
 public:
 	MySqlThread()
-		: m_running(false), m_pendingOperations(0), m_urgentMode(false)
+		: m_running(false)
+		, m_pendingOperations(0), m_urgentMode(false)
+		, m_timeFlushed(getMonoClock()), m_workingCount(0), m_timeIdle(0), m_timeWorking(0)
 	{
+	}
+	~MySqlThread(){
+		flushProfile();
 	}
 
 private:
@@ -235,12 +264,30 @@ private:
 		atomicSub(m_pendingOperations, 1);
 	}
 
+	void flushProfile() const {
+		const AUTO(now, getMonoClock());
+		const AUTO(delta, now - m_timeFlushed);
+		m_timeFlushed = now;
+		if(m_workingCount == 0){
+			atomicAdd(m_timeIdle, delta);
+		} else {
+			atomicAdd(m_timeWorking, delta);
+		}
+	}
+
 	void operationLoop();
 	void threadProc();
 
 public:
 	boost::uint64_t getPendingOperations() const {
 		return atomicLoad(m_pendingOperations);
+	}
+
+	boost::uint64_t getTimeIdle() const {
+		return atomicLoad(m_timeIdle);
+	}
+	boost::uint64_t getTimeWorking() const {
+		return atomicLoad(m_timeWorking);
 	}
 
 	void start(){
@@ -458,6 +505,7 @@ void MySqlThread::operationLoop(){
 			std::string query;
 			try {
 				try {
+					const Profiler profiler(*this);
 					queue.front()->execute(query, *conn);
 				} catch(MySqlException &e){
 					mysqlErrCode = e.code();
@@ -650,6 +698,8 @@ std::vector<MySqlSnapshotItem> MySqlDaemon::snapshot(){
 		AUTO_REF(item, ret.back());
 		item.index = i;
 		item.pendingOperations = g_threads[i]->getPendingOperations();
+		item.usIdle = g_threads[i]->getTimeIdle();
+		item.usWorking = g_threads[i]->getTimeWorking();
 	}
 	return ret;
 }
