@@ -41,34 +41,40 @@ std::size_t	g_mySqlSaveDelay		= 5000;
 std::size_t	g_mySqlMaxReconnDelay	= 60000;
 std::size_t	g_mySqlRetryCount		= 3;
 
+class MySqlThread;
 class AssignmentItem;
 
-void onOperationDestruct(
-	AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT;
+struct MySqlThreadDecrementer {
+	CONSTEXPR MySqlThread *operator()() const NOEXCEPT {
+		return NULLPTR;
+	}
+	void operator()(MySqlThread *thread) const NOEXCEPT;
+};
+typedef UniqueHandle<MySqlThreadDecrementer> AssignedThread;
+
+struct AssignmentItemDecrementer {
+	CONSTEXPR AssignmentItem *operator()() const NOEXCEPT {
+		return NULLPTR;
+	}
+	void operator()(AssignmentItem *assignment) const NOEXCEPT;
+};
+typedef UniqueHandle<AssignmentItemDecrementer> LockingAssignment;
 
 class OperationBase : boost::noncopyable {
 private:
-	AssignmentItem *m_assignment;
-	boost::uint64_t m_estimatedTime;
+	AssignedThread m_assignedThread;
+	LockingAssignment m_lockingAssignment;
 
 public:
-	OperationBase()
-		: m_assignment(NULLPTR)
-	{
-	}
 	virtual ~OperationBase(){
-		setEstimatedTime(NULLPTR, 0);
 	}
 
 public:
-	void setEstimatedTime(
-		AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT
-	{
-		if(m_assignment){
-			onOperationDestruct(m_assignment, m_estimatedTime);
-		}
-		m_assignment = assignment;
-		m_estimatedTime = estimatedTime;
+	void setAssignedThread(AssignedThread thread) NOEXCEPT {
+		m_assignedThread.swap(thread);
+	}
+	void setLockingAssignment(LockingAssignment lockingAssignment) NOEXCEPT {
+		m_lockingAssignment.swap(lockingAssignment);
 	}
 
 	virtual bool shouldExecuteNow() const = 0;
@@ -222,7 +228,7 @@ public:
 };
 
 class MySqlThread : boost::noncopyable {
-	friend class AssignmentItem;
+	friend MySqlThreadDecrementer;
 
 private:
 	boost::thread m_thread;
@@ -230,24 +236,31 @@ private:
 
 	mutable boost::mutex m_mutex;
 	std::deque<boost::shared_ptr<OperationBase> > m_queue;
-	volatile boost::uint64_t m_estimatedBusyTime; // 调度提示。
+	volatile std::size_t m_pendingOperations; // 调度提示。
 	mutable volatile bool m_urgentMode; // 无视延迟写入，一次性处理队列中所有操作。
 	mutable boost::condition_variable m_newAvail;
 	mutable boost::condition_variable m_queueEmpty;
 
 public:
 	MySqlThread()
-		: m_running(false), m_estimatedBusyTime(0), m_urgentMode(false)
+		: m_running(false), m_pendingOperations(0), m_urgentMode(false)
 	{
 	}
 
 private:
+	void increment(){
+		atomicAdd(m_pendingOperations, 1);
+	}
+	void decrement() NOEXCEPT {
+		atomicSub(m_pendingOperations, 1);
+	}
+
 	void operationLoop();
 	void threadProc();
 
 public:
-	boost::uint64_t getEstimatedBusyTime() const {
-		return atomicLoad(m_estimatedBusyTime);
+	boost::uint64_t getPendingOperations() const {
+		return atomicLoad(m_pendingOperations);
 	}
 
 	void start(){
@@ -276,8 +289,11 @@ public:
 
 	void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
 		const boost::mutex::scoped_lock lock(m_mutex);
-		m_queue.push_back(VAL_INIT);
-		m_queue.back().swap(operation);
+		m_queue.push_back(operation);
+		{ // noexcept
+			increment();
+			operation->setAssignedThread(AssignedThread(this));
+		} // noexcept
 		if(urgent){
 			atomicStore(m_urgentMode, true);
 		}
@@ -305,56 +321,49 @@ std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 class AssignmentItem : boost::noncopyable
 	, public boost::enable_shared_from_this<AssignmentItem>
 {
-	friend void onOperationDestruct(
-		AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT;
+	friend AssignmentItemDecrementer;
 
 private:
 	const char *const m_table;
 
 	mutable boost::mutex m_mutex;
-	std::size_t m_count;
+	std::size_t m_pendingOperations;
 	boost::shared_ptr<MySqlThread> m_thread;
 
 public:
 	explicit AssignmentItem(const char *table)
-		: m_table(table), m_count(0)
+		: m_table(table), m_pendingOperations(0)
 	{
 	}
 
 private:
-	void increment(boost::uint64_t estimatedTime){
+	void increment(){
 		const boost::mutex::scoped_lock lock(m_mutex);
-		if(m_count == 0){
+		if(m_pendingOperations == 0){
 			if(g_threads.empty()){
 				DEBUG_THROW(Exception, "No threads available");
 			}
 			// 指派给最空闲的线程。
 			std::size_t picked = 0;
-			AUTO(minBusyTime, g_threads.front()->getEstimatedBusyTime());
-			LOG_POSEIDON_TRACE("Busy time of MySQL thread 0: ", minBusyTime);
+			AUTO(minPendingOperations, g_threads.front()->getPendingOperations());
+			LOG_POSEIDON_TRACE("MySQL thread 0 pending operations: ", minPendingOperations);
 			for(std::size_t i = 1; i < g_threads.size(); ++i){
-				const AUTO(myBusyTime, g_threads[i]->getEstimatedBusyTime());
-				LOG_POSEIDON_TRACE("Busy time of MySQL thread ", i, ": ", myBusyTime);
-				if(minBusyTime > myBusyTime){
+				const AUTO(myPendingOperations, g_threads[i]->getPendingOperations());
+				LOG_POSEIDON_TRACE("MySQL thread ", i, " pending operations: ", myPendingOperations);
+				if(minPendingOperations > myPendingOperations){
 					picked = i;
-					minBusyTime = myBusyTime;
+					minPendingOperations = myPendingOperations;
 				}
 			}
 			m_thread = g_threads[picked];
 			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", picked);
 		}
-		++m_count;
-		const AUTO(estimatedBusyTime, atomicAdd(m_thread->m_estimatedBusyTime, estimatedTime));
-		LOG_POSEIDON_TRACE("Incremented thread estimated busy time to ", estimatedBusyTime,
-			" (+", estimatedTime, ").");
+		++m_pendingOperations;
 	};
-	void decrement(boost::uint64_t estimatedTime){
+	void decrement() NOEXCEPT {
 		const boost::mutex::scoped_lock lock(m_mutex);
-		const AUTO(estimatedBusyTime, atomicSub(m_thread->m_estimatedBusyTime, estimatedTime));
-		LOG_POSEIDON_TRACE("Decremented thread estimated busy time to ", estimatedBusyTime,
-			" (-", estimatedTime, ").");
-		--m_count;
-		if(m_count == 0){
+		--m_pendingOperations;
+		if(m_pendingOperations == 0){
 			m_thread.reset();
 			LOG_POSEIDON_DEBUG("No more pending operations: ", m_table);
 		}
@@ -366,20 +375,20 @@ public:
 	}
 
 	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
-		// 锁定 m_thread。
-		const AUTO(estimatedTime, atomicLoad(g_averageOperationDuration));
-		increment(estimatedTime);
-		operation->setEstimatedTime(this, estimatedTime); // noexcept
-
-		// 现在访问 m_thread 是安全的。
+		{ // noexcept
+			increment();
+			operation->setLockingAssignment(LockingAssignment(this));
+		} // noexcept
 		m_thread->addOperation(STD_MOVE(operation), urgent);
 	}
 };
 
-void onOperationDestruct(
-	AssignmentItem *assignment, boost::uint64_t estimatedTime) NOEXCEPT
-{
-	assignment->decrement(estimatedTime);
+void MySqlThreadDecrementer::operator()(MySqlThread *thread) const NOEXCEPT {
+	thread->decrement();
+}
+
+void AssignmentItemDecrementer::operator()(AssignmentItem *assignment) const NOEXCEPT {
+	assignment->decrement();
 }
 
 boost::mutex g_assignmentMutex;
