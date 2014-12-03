@@ -248,8 +248,9 @@ public:
 	}
 
 private:
-	void increment(){
+	AssignedThread increment(){
 		atomicAdd(m_pendingOperations, 1);
+		return AssignedThread(this);
 	}
 	void decrement() NOEXCEPT {
 		atomicSub(m_pendingOperations, 1);
@@ -290,10 +291,7 @@ public:
 	void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
 		const boost::mutex::scoped_lock lock(m_mutex);
 		m_queue.push_back(operation);
-		{ // noexcept
-			increment();
-			operation->setAssignedThread(AssignedThread(this));
-		} // noexcept
+		operation->setAssignedThread(increment());
 		if(urgent){
 			atomicStore(m_urgentMode, true);
 		}
@@ -337,7 +335,7 @@ public:
 	}
 
 private:
-	void increment(){
+	LockingAssignment increment(){
 		const boost::mutex::scoped_lock lock(m_mutex);
 		if(m_pendingOperations == 0){
 			if(g_threads.empty()){
@@ -359,6 +357,7 @@ private:
 			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", picked);
 		}
 		++m_pendingOperations;
+		return LockingAssignment(this);
 	};
 	void decrement() NOEXCEPT {
 		const boost::mutex::scoped_lock lock(m_mutex);
@@ -375,10 +374,7 @@ public:
 	}
 
 	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
-		{ // noexcept
-			increment();
-			operation->setLockingAssignment(LockingAssignment(this));
-		} // noexcept
+		operation->setLockingAssignment(increment());
 		m_thread->addOperation(STD_MOVE(operation), urgent);
 	}
 };
