@@ -3,13 +3,14 @@
 
 #include "../precompiled.hpp"
 #include "system_http_server.hpp"
-#include <boost/bind.hpp>
-#include <signal.h>
+#include "main_config.hpp"
 #include "epoll_daemon.hpp"
 #include "http_servlet_depository.hpp"
 #include "module_depository.hpp"
 #include "profile_depository.hpp"
-#include "main_config.hpp"
+#include "mysql_daemon.hpp"
+#include <boost/bind.hpp>
+#include <signal.h>
 #include "../log.hpp"
 #include "../exception.hpp"
 #include "../profiler.hpp"
@@ -164,6 +165,24 @@ void onSetLogMask(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 	session->sendDefault(HTTP_OK);
 }
 
+void onMySqlThreads(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
+	OptionalMap headers;
+	headers.set("Content-Type", "text/csv; charset=utf-8");
+	headers.set("Content-Disposition", "attachment; name=\"mysql_threads.csv\"");
+
+	StreamBuffer contents;
+	contents.put("index,pending_operations\r\n");
+	AUTO(snapshot, MySqlDaemon::snapshot());
+	std::string str;
+	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
+		char temp[256];
+		unsigned len = std::sprintf(temp, "%u,%lu\r\n", it->index, it->pendingOperations);
+		contents.put(temp, len);
+	}
+
+	session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
+}
+
 const std::pair<
 	const char *, void (*)(boost::shared_ptr<HttpSession>, OptionalMap)
 	> JUMP_TABLE[] =
@@ -172,6 +191,7 @@ const std::pair<
 	std::make_pair("connections", &onConnections),
 	std::make_pair("load_module", &onLoadModule),
 	std::make_pair("modules", &onModules),
+	std::make_pair("mysql_threads", &onMySqlThreads),
 	std::make_pair("profile", &onProfile),
 	std::make_pair("set_log_mask", &onSetLogMask),
 	std::make_pair("shutdown", &onShutdown),

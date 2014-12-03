@@ -27,19 +27,19 @@ using namespace Poseidon;
 
 namespace {
 
-std::string	g_mySqlServerAddr		= "localhost";
-unsigned	g_mySqlServerPort		= 3306;
-std::string	g_mySqlUsername			= "root";
-std::string	g_mySqlPassword			= "root";
-std::string	g_mySqlSchema			= "poseidon";
-bool		g_mySqlUseSsl			= false;
-std::string	g_mySqlCharset			= "utf8";
+std::string	g_mysqlServerAddr		= "localhost";
+unsigned	g_mysqlServerPort		= 3306;
+std::string	g_mysqlUsername			= "root";
+std::string	g_mysqlPassword			= "root";
+std::string	g_mysqlSchema			= "poseidon";
+bool		g_mysqlUseSsl			= false;
+std::string	g_mysqlCharset			= "utf8";
 
-std::string	g_mySqlDumpDir			= "sql_dump";
-std::size_t	g_mySqlMaxThreads		= 3;
-std::size_t	g_mySqlSaveDelay		= 5000;
-std::size_t	g_mySqlMaxReconnDelay	= 60000;
-std::size_t	g_mySqlRetryCount		= 3;
+std::string	g_mysqlDumpDir			= "sql_dump";
+std::size_t	g_mysqlMaxThreads		= 3;
+std::size_t	g_mysqlSaveDelay		= 5000;
+std::size_t	g_mysqlMaxReconnDelay	= 60000;
+std::size_t	g_mysqlRetryCount		= 3;
 
 class MySqlThread;
 class AssignmentItem;
@@ -88,7 +88,7 @@ private:
 
 public:
 	explicit SaveOperation(boost::shared_ptr<const MySqlObjectBase> object)
-		: m_dueTime(getMonoClock() + g_mySqlSaveDelay * 1000), m_object(STD_MOVE(object))
+		: m_dueTime(getMonoClock() + g_mysqlSaveDelay * 1000), m_object(STD_MOVE(object))
 	{
 		m_object->setContext(this);
 	}
@@ -440,13 +440,13 @@ void MySqlThread::operationLoop(){
 					m_newAvail.timed_wait(lock, boost::posix_time::milliseconds(reconnectDelay));
 
 					reconnectDelay <<= 1;
-					if(reconnectDelay > g_mySqlMaxReconnDelay){
-						reconnectDelay = g_mySqlMaxReconnDelay;
+					if(reconnectDelay > g_mysqlMaxReconnDelay){
+						reconnectDelay = g_mysqlMaxReconnDelay;
 					}
 				}
 				try {
-					MySqlConnection::create(conn, context, g_mySqlServerAddr, g_mySqlServerPort,
-						g_mySqlUsername, g_mySqlPassword, g_mySqlSchema, g_mySqlUseSsl, g_mySqlCharset);
+					MySqlConnection::create(conn, context, g_mysqlServerAddr, g_mysqlServerPort,
+						g_mysqlUsername, g_mysqlPassword, g_mysqlSchema, g_mysqlUseSsl, g_mysqlCharset);
 				} catch(...){
 					if(!atomicLoad(m_running)){
 						LOG_POSEIDON_WARN("Shutting down...");
@@ -478,31 +478,31 @@ void MySqlThread::operationLoop(){
 				continue;
 			}
 
-			unsigned mySqlErrCode = 99999;
-			std::string mySqlErrMsg;
+			unsigned mysqlErrCode = 99999;
+			std::string mysqlErrMsg;
 			std::string query;
 			try {
 				try {
 					const OperationStopwatch watch;
 					queue.front()->execute(query, *conn);
 				} catch(MySqlException &e){
-					mySqlErrCode = e.code();
-					mySqlErrMsg = e.what();
+					mysqlErrCode = e.code();
+					mysqlErrMsg = e.what();
 					throw;
 				} catch(std::exception &e){
-					mySqlErrMsg = e.what();
+					mysqlErrMsg = e.what();
 					throw;
 				} catch(...){
-					mySqlErrMsg = "Unknown exception";
+					mysqlErrMsg = "Unknown exception";
 					throw;
 				}
 			} catch(...){
 				bool retry = true;
 				if(retryCount == 0){
-					if(g_mySqlRetryCount == 0){
+					if(g_mysqlRetryCount == 0){
 						retry = false;
 					} else {
-						retryCount = g_mySqlRetryCount;
+						retryCount = g_mysqlRetryCount;
 					}
 				} else {
 					if(--retryCount == 0){
@@ -514,13 +514,13 @@ void MySqlThread::operationLoop(){
 					queue.pop_front();
 
 					char temp[32];
-					unsigned len = std::sprintf(temp, "%05u", mySqlErrCode);
+					unsigned len = std::sprintf(temp, "%05u", mysqlErrCode);
 					std::string dump;
 					dump.reserve(1024);
 					dump.assign("-- Error code = ");
 					dump.append(temp, len);
 					dump.append(", Description = ");
-					dump.append(mySqlErrMsg);
+					dump.append(mysqlErrMsg);
 					dump.append("\n");
 					dump.append(query);
 					dump.append(";\n\n");
@@ -590,47 +590,47 @@ void MySqlDaemon::start(){
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
-	conf.get(g_mySqlServerAddr, "mysql_server_addr");
-	LOG_POSEIDON_DEBUG("MySQL server addr = ", g_mySqlServerAddr);
+	conf.get(g_mysqlServerAddr, "mysql_server_addr");
+	LOG_POSEIDON_DEBUG("MySQL server addr = ", g_mysqlServerAddr);
 
-	conf.get(g_mySqlServerPort, "mysql_server_port");
-	LOG_POSEIDON_DEBUG("MySQL server port = ", g_mySqlServerPort);
+	conf.get(g_mysqlServerPort, "mysql_server_port");
+	LOG_POSEIDON_DEBUG("MySQL server port = ", g_mysqlServerPort);
 
-	conf.get(g_mySqlUsername, "mysql_username");
-	LOG_POSEIDON_DEBUG("MySQL username = ", g_mySqlUsername);
+	conf.get(g_mysqlUsername, "mysql_username");
+	LOG_POSEIDON_DEBUG("MySQL username = ", g_mysqlUsername);
 
-	conf.get(g_mySqlPassword, "mysql_password");
-	LOG_POSEIDON_DEBUG("MySQL password = ", g_mySqlPassword);
+	conf.get(g_mysqlPassword, "mysql_password");
+	LOG_POSEIDON_DEBUG("MySQL password = ", g_mysqlPassword);
 
-	conf.get(g_mySqlSchema, "mysql_schema");
-	LOG_POSEIDON_DEBUG("MySQL schema = ", g_mySqlSchema);
+	conf.get(g_mysqlSchema, "mysql_schema");
+	LOG_POSEIDON_DEBUG("MySQL schema = ", g_mysqlSchema);
 
-	conf.get(g_mySqlUseSsl, "mysql_use_ssl");
-	LOG_POSEIDON_DEBUG("MySQL use ssl = ", g_mySqlUseSsl);
+	conf.get(g_mysqlUseSsl, "mysql_use_ssl");
+	LOG_POSEIDON_DEBUG("MySQL use ssl = ", g_mysqlUseSsl);
 
-	conf.get(g_mySqlCharset, "mysql_charset");
-	LOG_POSEIDON_DEBUG("MySQL charset = ", g_mySqlCharset);
+	conf.get(g_mysqlCharset, "mysql_charset");
+	LOG_POSEIDON_DEBUG("MySQL charset = ", g_mysqlCharset);
 
-	conf.get(g_mySqlDumpDir, "mysql_dump_dir");
-	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_mySqlDumpDir);
+	conf.get(g_mysqlDumpDir, "mysql_dump_dir");
+	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_mysqlDumpDir);
 
-	conf.get(g_mySqlMaxThreads, "mysql_max_threads");
-	LOG_POSEIDON_DEBUG("MySQL max threads = ", g_mySqlMaxThreads);
+	conf.get(g_mysqlMaxThreads, "mysql_max_threads");
+	LOG_POSEIDON_DEBUG("MySQL max threads = ", g_mysqlMaxThreads);
 
-	conf.get(g_mySqlSaveDelay, "mysql_save_delay");
-	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_mySqlSaveDelay);
+	conf.get(g_mysqlSaveDelay, "mysql_save_delay");
+	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_mysqlSaveDelay);
 
-	conf.get(g_mySqlMaxReconnDelay, "mysql_max_reconn_delay");
-	LOG_POSEIDON_DEBUG("MySQL max reconnect delay = ", g_mySqlMaxReconnDelay);
+	conf.get(g_mysqlMaxReconnDelay, "mysql_max_reconn_delay");
+	LOG_POSEIDON_DEBUG("MySQL max reconnect delay = ", g_mysqlMaxReconnDelay);
 
-	conf.get(g_mySqlRetryCount, "mysql_retry_count");
-	LOG_POSEIDON_DEBUG("MySQL retry count = ", g_mySqlRetryCount);
+	conf.get(g_mysqlRetryCount, "mysql_retry_count");
+	LOG_POSEIDON_DEBUG("MySQL retry count = ", g_mysqlRetryCount);
 
 	char temp[256];
 	unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
 
 	std::string dumpPath;
-	dumpPath.assign(g_mySqlDumpDir);
+	dumpPath.assign(g_mysqlDumpDir);
 	dumpPath.push_back('/');
 	dumpPath.append(temp, len);
 	dumpPath.append(".log");
@@ -643,7 +643,7 @@ void MySqlDaemon::start(){
 		std::abort();
 	}
 
-	g_threads.resize(std::max<std::size_t>(g_mySqlMaxThreads, 1));
+	g_threads.resize(std::max<std::size_t>(g_mysqlMaxThreads, 1));
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		boost::make_shared<MySqlThread>().swap(g_threads[i]);
 		g_threads[i]->start();
@@ -666,6 +666,18 @@ void MySqlDaemon::stop(){
 		LOG_POSEIDON_INFO("Shut down MySQL thread ", i);
 	}
 	g_threads.clear();
+}
+
+std::vector<MySqlSnapshotItem> MySqlDaemon::snapshot(){
+	std::vector<MySqlSnapshotItem> ret;
+	ret.reserve(g_threads.size());
+	for(std::size_t i = 0; i < g_threads.size(); ++i){
+		ret.push_back(MySqlSnapshotItem());
+		AUTO_REF(item, ret.back());
+		item.index = i;
+		item.pendingOperations = g_threads[i]->getPendingOperations();
+	}
+	return ret;
 }
 
 void MySqlDaemon::waitForAllAsyncOperations(){

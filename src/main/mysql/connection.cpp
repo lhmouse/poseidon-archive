@@ -17,8 +17,8 @@ struct MySqlCloser {
 	CONSTEXPR ::MYSQL *operator()() const NOEXCEPT {
 		return NULLPTR;
 	}
-	void operator()(::MYSQL *mySql) const NOEXCEPT {
-		::mysql_close(mySql);
+	void operator()(::MYSQL *mysql) const NOEXCEPT {
+		::mysql_close(mysql);
 	}
 };
 
@@ -36,7 +36,7 @@ typedef std::vector<std::pair<const char *, std::size_t> > MySqlColumns;
 class MySqlConnectionDelegate : public MySqlConnection {
 
 #define THROW_MYSQL_EXCEPTION	\
-	DEBUG_THROW(MySqlException, ::mysql_errno(m_mySql.get()), ::mysql_error(m_mySql.get()))
+	DEBUG_THROW(MySqlException, ::mysql_errno(m_mysql.get()), ::mysql_error(m_mysql.get()))
 
 private:
 	// 若返回 true 则 pos 指向找到的列，否则 pos 指向下一个。
@@ -63,8 +63,8 @@ private:
 	}
 
 private:
-	::MYSQL m_mySqlObject;
-	UniqueHandle<MySqlCloser> m_mySql;
+	::MYSQL m_mysqlObject;
+	UniqueHandle<MySqlCloser> m_mysql;
 
 	UniqueHandle<MySqlResultDeleter> m_result;
 	MySqlColumns m_columns;
@@ -78,22 +78,22 @@ public:
 		bool useSsl, const std::string &charset)
 		: m_row(NULLPTR), m_lengths(NULLPTR)
 	{
-		if(!m_mySql.reset(::mysql_init(&m_mySqlObject))){
+		if(!m_mysql.reset(::mysql_init(&m_mysqlObject))){
 			DEBUG_THROW(SystemError, ENOMEM);
 		}
 
-		if(::mysql_options(m_mySql.get(), MYSQL_OPT_COMPRESS, NULLPTR) != 0){
+		if(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) != 0){
 			THROW_MYSQL_EXCEPTION;
 		}
 		const ::my_bool trueVal = true;
-		if(::mysql_options(m_mySql.get(), MYSQL_OPT_RECONNECT, &trueVal) != 0){
+		if(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &trueVal) != 0){
 			THROW_MYSQL_EXCEPTION;
 		}
-		if(::mysql_options(m_mySql.get(), MYSQL_SET_CHARSET_NAME, charset.c_str()) != 0){
+		if(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset.c_str()) != 0){
 			THROW_MYSQL_EXCEPTION;
 		}
 
-		if(!::mysql_real_connect(m_mySql.get(), serverAddr.c_str(), userName.c_str(),
+		if(!::mysql_real_connect(m_mysql.get(), serverAddr.c_str(), userName.c_str(),
 			password.c_str(), schema.c_str(), serverPort, NULLPTR, useSsl ? CLIENT_SSL : 0))
 		{
 			THROW_MYSQL_EXCEPTION;
@@ -106,12 +106,12 @@ public:
 		m_columns.clear();
 		m_row = NULLPTR;
 
-		if(::mysql_real_query(m_mySql.get(), sql.data(), sql.size()) != 0){
+		if(::mysql_real_query(m_mysql.get(), sql.data(), sql.size()) != 0){
 			THROW_MYSQL_EXCEPTION;
 		}
 	}
 	void waitForResult(){
-		if(!m_result.reset(::mysql_use_result(m_mySql.get()))){
+		if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
 			THROW_MYSQL_EXCEPTION;
 		}
 
@@ -138,7 +138,7 @@ public:
 		}
 		m_row = ::mysql_fetch_row(m_result.get());
 		if(!m_row){
-			if(::mysql_errno(m_mySql.get()) != 0){
+			if(::mysql_errno(m_mysql.get()) != 0){
 				THROW_MYSQL_EXCEPTION;
 			}
 			return false;

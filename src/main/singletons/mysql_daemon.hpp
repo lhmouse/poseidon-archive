@@ -5,16 +5,24 @@
 #define POSEIDON_SINGLETONS_MYSQL_DAEMON_HPP_
 
 #include "../cxx_ver.hpp"
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include "../mysql/callbacks.hpp"
 
 namespace Poseidon {
+
+struct MySqlSnapshotItem {
+	unsigned index;
+	unsigned long pendingOperations;
+};
 
 class MySqlObjectBase;
 
 struct MySqlDaemon {
 	static void start();
 	static void stop();
+
+	static std::vector<MySqlSnapshotItem> snapshot();
 
 	static void waitForAllAsyncOperations();
 
