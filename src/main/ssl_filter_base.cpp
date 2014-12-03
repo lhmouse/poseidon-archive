@@ -63,7 +63,9 @@ long SslFilterBase::read(void *data, unsigned long size){
 		m_established = true;
 	}
 	const long ret = ::SSL_read(m_ssl.get(), data, size);
-	setErrnoBySslRet(m_ssl.get(), ret);
+	if(ret < 0){
+		setErrnoBySslRet(m_ssl.get(), ret);
+	}
 	return ret;
 }
 long SslFilterBase::write(const void *data, unsigned long size){
@@ -76,6 +78,8 @@ long SslFilterBase::write(const void *data, unsigned long size){
 		m_established = true;
 	}
 	const long ret = ::SSL_write(m_ssl.get(), data, size);
-	setErrnoBySslRet(m_ssl.get(), ret);
+	if(ret < 0){
+		setErrnoBySslRet(m_ssl.get(), ret);
+	}
 	return ret;
 }
