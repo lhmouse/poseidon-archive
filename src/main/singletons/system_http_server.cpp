@@ -79,7 +79,7 @@ void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParam
 	session->sendDefault(HTTP_OK);
 }
 
-void onProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
+void onShowProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
 	OptionalMap headers;
 	headers.set("Content-Type", "text/csv; charset=utf-8");
 	headers.set("Content-Disposition", "attachment; name=\"profile.csv\"");
@@ -103,7 +103,7 @@ void onProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
 	session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 
-void onModules(boost::shared_ptr<HttpSession> session, OptionalMap){
+void onShowModules(boost::shared_ptr<HttpSession> session, OptionalMap){
 	OptionalMap headers;
 	headers.set("Content-Type", "text/csv; charset=utf-8");
 	headers.set("Content-Disposition", "attachment; name=\"modules.csv\"");
@@ -123,7 +123,7 @@ void onModules(boost::shared_ptr<HttpSession> session, OptionalMap){
 	session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 
-void onConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
+void onShowConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
 	OptionalMap headers;
 	headers.set("Content-Type", "text/csv; charset=utf-8");
 	headers.set("Content-Disposition", "attachment; name=\"connections.csv\"");
@@ -165,7 +165,7 @@ void onSetLogMask(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 	session->sendDefault(HTTP_OK);
 }
 
-void onMySqlThreads(boost::shared_ptr<HttpSession> session, OptionalMap){
+void onShowMySqlThreads(boost::shared_ptr<HttpSession> session, OptionalMap){
 	OptionalMap headers;
 	headers.set("Content-Type", "text/csv; charset=utf-8");
 	headers.set("Content-Disposition", "attachment; name=\"mysql_threads.csv\"");
@@ -189,12 +189,12 @@ const std::pair<
 	> JUMP_TABLE[] =
 {
 	// 确保字母顺序。
-	std::make_pair("connections", &onConnections),
 	std::make_pair("load_module", &onLoadModule),
-	std::make_pair("modules", &onModules),
-	std::make_pair("mysql_threads", &onMySqlThreads),
-	std::make_pair("profile", &onProfile),
 	std::make_pair("set_log_mask", &onSetLogMask),
+	std::make_pair("show_connections", &onShowConnections),
+	std::make_pair("show_modules", &onShowModules),
+	std::make_pair("show_mysql_threads", &onShowMySqlThreads),
+	std::make_pair("show_profile", &onShowProfile),
 	std::make_pair("shutdown", &onShutdown),
 	std::make_pair("unload_module", &onUnloadModule),
 };
