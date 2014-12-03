@@ -206,27 +206,6 @@ private:
 	}
 };
 
-volatile std::size_t g_averageOperationDuration = 10; // 仅用于估算。
-
-class OperationStopwatch : boost::noncopyable {
-private:
-	const boost::uint64_t m_begin;
-
-public:
-	OperationStopwatch()
-		: m_begin(getMonoClock())
-	{
-	}
-	~OperationStopwatch(){
-		const AUTO(duration, getMonoClock() - m_begin);
-		LOG_POSEIDON_TRACE("MySQL operation executed in ", duration, " us.");
-		// 仅估算。这里需要使用带符号的整数。
-		const AUTO(delta, (boost::int64_t)(duration - atomicLoad(g_averageOperationDuration)) / 16);
-		const AUTO(current, atomicAdd(g_averageOperationDuration, delta));
-		LOG_POSEIDON_TRACE("Average operation duration = ", current, " (", std::showpos, delta, ").");
-	}
-};
-
 class MySqlThread : boost::noncopyable {
 	friend MySqlThreadDecrementer;
 
@@ -479,7 +458,6 @@ void MySqlThread::operationLoop(){
 			std::string query;
 			try {
 				try {
-					const OperationStopwatch watch;
 					queue.front()->execute(query, *conn);
 				} catch(MySqlException &e){
 					mysqlErrCode = e.code();
