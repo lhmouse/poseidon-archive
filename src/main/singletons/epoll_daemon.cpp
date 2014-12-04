@@ -18,8 +18,6 @@
 #include "../socket_server_base.hpp"
 #include "../multi_index_map.hpp"
 #include "../profiler.hpp"
-#include "../player/server.hpp"
-#include "../http/server.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -465,24 +463,7 @@ void EpollDaemon::touchSession(const boost::shared_ptr<TcpSessionBase> &session)
 	touch(session);
 }
 
-boost::shared_ptr<PlayerServer> EpollDaemon::registerPlayerServer(std::size_t category,
-	const IpPort &bindAddr, const char *cert, const char *privateKey)
-{
-	AUTO(newServer, boost::make_shared<PlayerServer>(category, bindAddr, cert, privateKey));
-	{
-		const boost::mutex::scoped_lock lock(g_serverMutex);
-		g_servers.push_back(newServer);
-	}
-	return newServer;
-}
-boost::shared_ptr<HttpServer> EpollDaemon::registerHttpServer(std::size_t category,
-	const IpPort &bindAddr, const char *cert, const char *privateKey,
-	const std::vector<std::string> &auth)
-{
-	AUTO(newServer, boost::make_shared<HttpServer>(category, bindAddr, cert, privateKey, auth));
-	{
-		const boost::mutex::scoped_lock lock(g_serverMutex);
-		g_servers.push_back(newServer);
-	}
-	return newServer;
+void EpollDaemon::registerServer(boost::shared_ptr<SocketServerBase> server){
+	const boost::mutex::scoped_lock lock(g_serverMutex);
+	g_servers.push_back(STD_MOVE(server));
 }

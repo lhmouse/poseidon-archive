@@ -16,6 +16,7 @@
 #include "../profiler.hpp"
 #include "../http/session.hpp"
 #include "../http/exception.hpp"
+#include "../http/server.hpp"
 #include "../shared_ntmbs.hpp"
 using namespace Poseidon;
 
@@ -256,8 +257,9 @@ void SystemHttpServer::start(){
 
 	const IpPort bindAddr(bind.c_str(), port);
 	LOG_POSEIDON_INFO("Initializing system HTTP server on ", bindAddr);
-	g_systemServer = EpollDaemon::registerHttpServer(category, bindAddr,
-		certificate.c_str(), privateKey.c_str(), authUserPasses);
+	g_systemServer = boost::make_shared<HttpServer>(
+		category, bindAddr, certificate.c_str(), privateKey.c_str(), authUserPasses);
+	EpollDaemon::registerServer(g_systemServer);
 
 	LOG_POSEIDON_INFO("Created system HTTP sevlet on ", path);
 	g_systemServlet = HttpServletDepository::registerServlet(

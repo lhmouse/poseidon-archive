@@ -83,19 +83,7 @@ lib_libposeidon_main_la_SOURCES=	\
 
 lib_LTLIBRARIES=	\
 	lib/libposeidon-main.la	\
-	lib/libposeidon-player-server.la	\
-	lib/libposeidon-http-server.la	\
-	lib/libposeidon-template.la	\
-	lib/libposeidon-game-logs.la
-
-lib_libposeidon_player_server_la_SOURCES=	\
-	src/player_server/mmain.cpp
-
-lib_libposeidon_http_server_la_SOURCES=	\
-	src/http_server/mmain.cpp
+	lib/libposeidon-template.la
 
 lib_libposeidon_template_la_SOURCES=	\
 	src/template/mmain.cpp
-
-lib_libposeidon_game_logs_la_SOURCES=	\
-	src/game_logs/mmain.cpp

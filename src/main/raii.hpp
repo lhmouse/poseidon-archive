@@ -181,15 +181,11 @@ std::wostream &operator<<(std::wostream &os, const UniqueHandle<CloserT> &handle
 	return os <<handle.get();
 }
 
-extern void closeFile(int fd) NOEXCEPT;
-
 struct FileCloser {
 	CONSTEXPR int operator()() const NOEXCEPT {
 		return -1;
 	}
-	void operator()(int fd) const NOEXCEPT {
-		closeFile(fd);
-	}
+	void operator()(int fd) const NOEXCEPT;
 };
 
 typedef UniqueHandle<FileCloser> UniqueFile;

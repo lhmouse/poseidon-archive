@@ -10,13 +10,9 @@
 #include "utilities.hpp"
 using namespace Poseidon;
 
-namespace Poseidon {
-
-void closeFile(int fd) NOEXCEPT {
+void FileCloser::operator()(int fd) const NOEXCEPT {
 	if(::close(fd) != 0){
 		const AUTO(desc, getErrorDesc());
 		LOG_POSEIDON_WARN("::close() has failed: ", desc.get());
 	}
-}
-
 }
