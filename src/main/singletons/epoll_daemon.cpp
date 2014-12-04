@@ -463,7 +463,7 @@ void EpollDaemon::touchSession(const boost::shared_ptr<TcpSessionBase> &session)
 	touch(session);
 }
 
-void EpollDaemon::registerServer(boost::shared_ptr<SocketServerBase> server){
+void EpollDaemon::registerServer(boost::weak_ptr<const SocketServerBase> server){
 	const boost::mutex::scoped_lock lock(g_serverMutex);
 	g_servers.push_back(STD_MOVE(server));
 }

@@ -27,7 +27,7 @@ struct EpollDaemon {
 	static void addSession(const boost::shared_ptr<TcpSessionBase> &session);
 	static void touchSession(const boost::shared_ptr<TcpSessionBase> &session);
 
-	static void registerServer(boost::shared_ptr<SocketServerBase> server);
+	static void registerServer(boost::weak_ptr<const SocketServerBase> server);
 
 private:
 	EpollDaemon();
