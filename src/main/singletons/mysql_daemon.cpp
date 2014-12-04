@@ -450,6 +450,8 @@ void MySqlThread::operationLoop(){
 	std::size_t retryCount = 0;
 	for(;;){
 		try {
+			flushProfile();
+
 			if(!conn){
 				LOG_POSEIDON_INFO("Connecting to MySQL server...");
 
