@@ -77,11 +77,11 @@ protected:
 		} catch(PlayerProtocolException &e){
 			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ", m_protocolId,
 				", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
-			m_session->sendError(m_protocolId, e.status(), e.what(), true);
+			m_session->sendError(m_protocolId, e.status(), e.what(), false);
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception... protocol id = ", m_protocolId);
-			m_session->sendError(m_protocolId, PLAYER_INTERNAL_ERROR, true);
+			m_session->sendError(m_protocolId, PLAYER_INTERNAL_ERROR, false);
 			throw;
 		}
 	}

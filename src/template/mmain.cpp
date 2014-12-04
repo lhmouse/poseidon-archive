@@ -376,5 +376,6 @@ MODULE_RAII(
 	return PlayerServletDepository::registerServlet(2, 106, &TestProc);
 )
 MODULE_RAII(
+	LOG_POSEIDON_INFO("Connecting to github...");
 	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
 )

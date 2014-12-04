@@ -156,11 +156,11 @@ protected:
 		} catch(HttpException &e){
 			LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.status()));
-			m_session->sendDefault(e.status(), e.headers(), true);
+			m_session->sendDefault(e.status(), e.headers(), false);
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception... request URI = ", m_uri);
-			m_session->sendDefault(HTTP_BAD_REQUEST, true);
+			m_session->sendDefault(HTTP_BAD_REQUEST, false);
 			throw;
 		}
 	}

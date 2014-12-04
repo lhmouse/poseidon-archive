@@ -128,10 +128,9 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 	m_payload.put(data, size);
 	try {
 		for(;;){
-			int ch;
-			std::size_t remaining;
-
 			switch(m_state){
+				int ch;
+
 			case ST_OPCODE:
 				ch = m_payload.get();
 				if(ch == -1){
@@ -200,6 +199,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				break;
 
 			case ST_PAYLOAD:
+				std::size_t remaining;
 				remaining = m_payloadLen - m_whole.size();
 				if(m_whole.size() + remaining >= MAX_PACKET_SIZE){
 					DEBUG_THROW(WebSocketException, WS_MESSAGE_TOO_LARGE, "Packet too large");
@@ -213,14 +213,12 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					m_payloadMask = (m_payloadMask << 24) | (m_payloadMask >> 8);
 					m_whole.put(ch);
 				}
-				if(m_fin){
-					if((m_opcode & WS_FL_CONTROL) == 0){
-						boost::make_shared<WebSocketRequestJob>(
-							virtualSharedFromThis<WebSocketSession>(),
-							getUri(), m_opcode, STD_MOVE(m_whole))->pend();
-					} else {
-						onControlFrame();
-					}
+				if((m_opcode & WS_FL_CONTROL) != 0){
+					onControlFrame();
+				} else if(m_fin){
+					boost::make_shared<WebSocketRequestJob>(
+						virtualSharedFromThis<WebSocketSession>(),
+						getUri(), m_opcode, STD_MOVE(m_whole))->pend();
 					m_whole.clear();
 				}
 				m_state = ST_OPCODE;
