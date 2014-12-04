@@ -92,8 +92,6 @@ void TcpSessionBase::fetchPeerInfo() const {
 }
 
 long TcpSessionBase::syncRead(void *data, unsigned long size){
-	fetchPeerInfo();
-
 	::ssize_t ret;
 	if(m_sslFilter){
 		ret = m_sslFilter->read(data, size);
@@ -106,8 +104,6 @@ long TcpSessionBase::syncRead(void *data, unsigned long size){
 	return ret;
 }
 long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize){
-	fetchPeerInfo();
-
 	boost::mutex::scoped_lock(m_bufferMutex).swap(lock);
 	const std::size_t size = m_sendBuffer.peek(hint, hintSize);
 	lock.unlock();

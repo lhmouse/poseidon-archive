@@ -211,7 +211,7 @@ public:
 
 public:
 	TestClient()
-		: TcpClientBase(IpPort("127.0.0.1", 443))
+		: TcpClientBase(IpPort("192.30.252.128", 443))
 	{
 	}
 
@@ -376,5 +376,5 @@ MODULE_RAII(
 	return PlayerServletDepository::registerServlet(2, 106, &TestProc);
 )
 MODULE_RAII(
-	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"));
+	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
 )
