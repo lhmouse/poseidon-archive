@@ -490,6 +490,7 @@ void MySqlThread::operationLoop(){
 						goto exit_loop;
 					}
 					atomicStore(m_urgentMode, false);
+					flushProfile();
 					m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
 				queue.swap(m_queue);
