@@ -104,11 +104,11 @@ protected:
 		} catch(WebSocketException &e){
 			LOG_POSEIDON_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(),
 				", what = ", e.what());
-			m_session->shutdown(e.status(), StreamBuffer(e.what()));
+			// m_session->shutdown(e.status(), StreamBuffer(e.what()));
 			throw;
 		} catch(...){
-			LOG_POSEIDON_ERROR("Forwarding exception... shutdown the session first.");
-			m_session->shutdown(WS_INTERNAL_ERROR);
+			LOG_POSEIDON_ERROR("Forwarding exception...");
+			// m_session->shutdown(WS_INTERNAL_ERROR);
 			throw;
 		}
 	}
