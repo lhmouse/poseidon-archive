@@ -17,11 +17,13 @@
 #include "../main/singletons/profile_depository.hpp"
 #include "../main/http/websocket/session.hpp"
 #include "../main/http/utilities.hpp"
+#include "../main/http/server.hpp"
 #include "../main/tcp_client_base.hpp"
 #include "../main/player/session.hpp"
 #include "../main/http/session.hpp"
 #include "../main/player/protocol_base.hpp"
 #include "../main/singletons/player_servlet_depository.hpp"
+#include "../main/singletons/epoll_daemon.hpp"
 #include "../main/mysql/object_base.hpp"
 using namespace Poseidon;
 
@@ -378,4 +380,11 @@ MODULE_RAII(
 MODULE_RAII(
 	LOG_POSEIDON_INFO("Connecting to github...");
 	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
+)
+
+MODULE_RAII(
+	AUTO(server, (boost::make_shared<HttpServer>(1, IpPort("0.0.0.0", 8860),
+		NULLPTR, NULLPTR, std::vector<std::string>())));
+	EpollDaemon::registerServer(server);
+	return server;
 )
