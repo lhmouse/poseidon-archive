@@ -23,12 +23,14 @@ void MySqlObjectBase::invalidate() const {
 	if(!isAutoSavingEnabled()){
 		return;
 	}
-	MySqlDaemon::pendForSaving(virtualSharedFromThis<MySqlObjectBase>());
+	MySqlDaemon::pendForSaving(virtualSharedFromThis<MySqlObjectBase>(),
+		true, MySqlAsyncSaveCallback());
 }
 
-void MySqlObjectBase::asyncSave() const {
+void MySqlObjectBase::asyncSave(bool replaces, MySqlAsyncSaveCallback callback) const {
 	enableAutoSaving();
-	MySqlDaemon::pendForSaving(virtualSharedFromThis<MySqlObjectBase>());
+	MySqlDaemon::pendForSaving(virtualSharedFromThis<MySqlObjectBase>(),
+		replaces, STD_MOVE(callback));
 }
 void MySqlObjectBase::asyncLoad(std::string query, MySqlAsyncLoadCallback callback){
 	disableAutoSaving();

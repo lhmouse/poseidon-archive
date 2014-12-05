@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <mysql/mysqld_error.h>
 #include "../mysql/object_base.hpp"
 #include "../mysql/exception.hpp"
 #include "../mysql/thread_context.hpp"
@@ -81,15 +82,28 @@ public:
 	virtual void execute(std::string &query, MySqlConnection &conn) = 0;
 };
 
-class SaveOperation : public OperationBase {
+// 作为两步使用，塞到了同一个类里面。基类是按照这两个用途的先后顺序排列的，不要弄混。
+
+class SaveOperation
+	: public OperationBase, public JobBase
+{
 private:
 	const boost::uint64_t m_dueTime;
 	const boost::shared_ptr<const MySqlObjectBase> m_object;
+	const bool m_replaces;
+	MySqlAsyncSaveCallback m_callback;
+
+	bool m_succeeded;
+	unsigned long long m_autoIncrementId;
 
 public:
-	explicit SaveOperation(boost::shared_ptr<const MySqlObjectBase> object)
-		: m_dueTime(getMonoClock() + g_mysqlSaveDelay * 1000), m_object(STD_MOVE(object))
+	SaveOperation(boost::shared_ptr<const MySqlObjectBase> object,
+		bool replaces, Move<MySqlAsyncSaveCallback> callback)
+		: m_dueTime(getMonoClock() + g_mysqlSaveDelay * 1000)
+		, m_object(STD_MOVE(object)), m_replaces(replaces)
 	{
+		swap(m_callback, callback);
+
 		m_object->setContext(this);
 	}
 
@@ -105,21 +119,41 @@ private:
 			return;
 		}
 
-		m_object->syncGenerateSql(query);
+		m_object->syncGenerateSql(query, m_replaces);
 		LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": ", query);
-		conn.executeSql(query);
+		try {
+			conn.executeSql(query);
+			conn.waitForResult();
+			m_succeeded = true;
+		} catch(MySqlException &e){
+			LOG_POSEIDON_DEBUG("MySqlException: code = ", e.code(), ", message = ", e.what());
+			if(e.code() != ER_DUP_ENTRY){
+				throw;
+			}
+			m_succeeded = false;
+		}
+		m_autoIncrementId = conn.getInsertId();
+
+		if(m_callback){
+			JobBase::pend();
+		}
+	}
+
+	void perform(){
+		PROFILE_ME;
+
+		m_callback(m_succeeded, m_autoIncrementId);
 	}
 };
 
 class LoadOperation
-	// 作为两步使用，塞到了同一个类里面。基类是按照这两个用途的先后顺序排列的，不要弄混。
 	: public OperationBase, public JobBase
 {
 private:
 	const boost::shared_ptr<MySqlObjectBase> m_object;
 	const std::string m_query;
-
 	MySqlAsyncLoadCallback m_callback;
+
 	bool m_found;
 
 public:
@@ -143,13 +177,16 @@ private:
 		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", query = ", query);
 		conn.executeSql(query);
 		conn.waitForResult();
+
 		m_found = conn.fetchRow();
 		if(m_found){
 			m_object->syncFetch(conn);
 			m_object->enableAutoSaving();
 		}
 
-		JobBase::pend();
+		if(m_callback){
+			JobBase::pend();
+		}
 	}
 
 	void perform(){
@@ -196,7 +233,9 @@ private:
 			m_objects.push_back(STD_MOVE(object));
 		}
 
-		JobBase::pend();
+		if(m_callback){
+			JobBase::pend();
+		}
 	}
 
 	void perform(){
@@ -713,22 +752,24 @@ void MySqlDaemon::waitForAllAsyncOperations(){
 	}
 }
 
-void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object){
+void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object, bool replaces,
+	MySqlAsyncSaveCallback callback)
+{
 	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
-	assignment.commit(boost::make_shared<SaveOperation>(
-		STD_MOVE(object)), false);
+	assignment.commit(
+		boost::make_shared<SaveOperation>(STD_MOVE(object), replaces, STD_MOVE(callback)), !replaces);
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std::string query,
 	MySqlAsyncLoadCallback callback)
 {
 	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
-	assignment.commit(boost::make_shared<LoadOperation>(
-		STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
+	assignment.commit(
+		boost::make_shared<LoadOperation>(STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
 }
 void MySqlDaemon::pendForBatchLoading(const char *tableHint, std::string query,
 	boost::shared_ptr<MySqlObjectBase> (*factory)(), MySqlBatchAsyncLoadCallback callback)
 {
 	AUTO_REF(assignment, getAssignmentForTable(tableHint));
-	assignment.commit(boost::make_shared<BatchLoadOperation>(
-		STD_MOVE(query), factory, STD_MOVE(callback)), true);
+	assignment.commit(
+		boost::make_shared<BatchLoadOperation>(STD_MOVE(query), factory, STD_MOVE(callback)), true);
 }

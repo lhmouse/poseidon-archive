@@ -13,6 +13,10 @@ namespace Poseidon {
 class MySqlObjectBase;
 
 typedef boost::function<
+	void (bool succeeded, unsigned long long autoIncrementId)
+	> MySqlAsyncSaveCallback;
+
+typedef boost::function<
 	void (bool found)
 	> MySqlAsyncLoadCallback;
 

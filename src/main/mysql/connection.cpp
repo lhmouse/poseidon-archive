@@ -112,7 +112,10 @@ public:
 	}
 	void waitForResult(){
 		if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
-			THROW_MYSQL_EXCEPTION;
+			if(::mysql_errno(m_mysql.get()) != 0){
+				THROW_MYSQL_EXCEPTION;
+			}
+			return;
 		}
 
 		const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
@@ -129,6 +132,10 @@ public:
 			LOG_POSEIDON_TRACE("MySQL result column: name = ", name, ", index = ", i);
 			m_columns.insert(ins, std::make_pair(name, i));
 		}
+	}
+
+	boost::uint64_t getInsertId() const {
+		return ::mysql_insert_id(m_mysql.get());
 	}
 
 	bool fetchRow(){
@@ -234,6 +241,10 @@ void MySqlConnection::executeSql(const std::string &sql){
 }
 void MySqlConnection::waitForResult(){
 	static_cast<MySqlConnectionDelegate *>(this)->waitForResult();
+}
+
+boost::uint64_t MySqlConnection::getInsertId() const {
+	return static_cast<const MySqlConnectionDelegate *>(this)->getInsertId();
 }
 
 bool MySqlConnection::fetchRow(){

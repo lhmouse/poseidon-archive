@@ -65,10 +65,10 @@ public:
 
 	virtual const char *getTableName() const = 0;
 
-	virtual void syncGenerateSql(std::string &sql) const = 0;
+	virtual void syncGenerateSql(std::string &sql, bool replaces) const = 0;
 	virtual void syncFetch(const MySqlConnection &conn) = 0;
 
-	void asyncSave() const;
+	void asyncSave(bool replaces, MySqlAsyncSaveCallback callback = MySqlAsyncSaveCallback()) const;
 	void asyncLoad(std::string query, MySqlAsyncLoadCallback callback);
 };
 

@@ -27,6 +27,8 @@ public:
 	void executeSql(const std::string &sql);
 	void waitForResult();
 
+	boost::uint64_t getInsertId() const;
+
 	bool fetchRow();
 	boost::int64_t getSigned(const char *column) const;
 	boost::uint64_t getUnsigned(const char *column) const;

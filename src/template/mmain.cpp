@@ -98,7 +98,7 @@ void meowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	obj->set_si(123);
 	obj->set_str("meow");
 	obj->set_bi(456789);
-	obj->asyncSave();
+	obj->asyncSave(true);
 
 	OptionalMap headers;
 	StreamBuffer contents;
@@ -378,8 +378,14 @@ MODULE_RAII(
 	return PlayerServletDepository::registerServlet(2, 106, &TestProc);
 )
 MODULE_RAII(
-	LOG_POSEIDON_INFO("Connecting to github...");
-	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
+//	LOG_POSEIDON_INFO("Connecting to github...");
+//	TestClient::create()->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
+
+	AUTO(obj, boost::make_shared<MySqlObj>());
+	obj->set_si(999);
+	obj->set_str("meow");
+	obj->set_bi(456789);
+	obj->asyncSave(false);
 )
 
 MODULE_RAII(
