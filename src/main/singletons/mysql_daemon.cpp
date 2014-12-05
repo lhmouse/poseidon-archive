@@ -755,7 +755,7 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object,
 {
 	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
 	assignment.commit(
-		boost::make_shared<SaveOperation>(STD_MOVE(object), replaces, STD_MOVE(callback)), !replaces);
+		boost::make_shared<SaveOperation>(STD_MOVE(object), replaces, STD_MOVE(callback)), !!callback);
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std::string query,
 	MySqlAsyncLoadCallback callback)
