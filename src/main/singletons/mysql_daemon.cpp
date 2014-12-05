@@ -127,7 +127,7 @@ private:
 			m_succeeded = true;
 		} catch(MySqlException &e){
 			LOG_POSEIDON_DEBUG("MySqlException: code = ", e.code(), ", message = ", e.what());
-			if(e.code() != ER_DUP_ENTRY){
+			if(!m_callback || (e.code() != ER_DUP_ENTRY)){
 				throw;
 			}
 			m_succeeded = false;
