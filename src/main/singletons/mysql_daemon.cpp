@@ -123,7 +123,6 @@ private:
 		LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": ", query);
 		try {
 			conn.executeSql(query);
-			conn.waitForResult();
 			m_succeeded = true;
 		} catch(MySqlException &e){
 			LOG_POSEIDON_DEBUG("MySqlException: code = ", e.code(), ", message = ", e.what());
@@ -176,7 +175,6 @@ private:
 
 		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", query = ", query);
 		conn.executeSql(query);
-		conn.waitForResult();
 
 		m_found = conn.fetchRow();
 		if(m_found){
@@ -225,7 +223,7 @@ private:
 
 		LOG_POSEIDON_INFO("MySQL batch load: query = ", query);
 		conn.executeSql(query);
-		conn.waitForResult();
+
 		while(conn.fetchRow()){
 			AUTO(object, (*m_factory)());
 			object->syncFetch(conn);

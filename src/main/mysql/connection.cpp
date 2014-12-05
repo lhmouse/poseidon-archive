@@ -109,28 +109,27 @@ public:
 		if(::mysql_real_query(m_mysql.get(), sql.data(), sql.size()) != 0){
 			THROW_MYSQL_EXCEPTION;
 		}
-	}
-	void waitForResult(){
+
 		if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
 			if(::mysql_errno(m_mysql.get()) != 0){
 				THROW_MYSQL_EXCEPTION;
 			}
-			return;
-		}
-
-		const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
-		const AUTO(count, ::mysql_num_fields(m_result.get()));
-		m_columns.reserve(count);
-		m_columns.clear();
-		for(std::size_t i = 0; i < count; ++i){
-			MySqlColumns::iterator ins;
-			const char *const name = fields[i].name;
-			if(findColumn(ins, m_columns, name)){
-				LOG_POSEIDON_ERROR("Duplicate column in MySQL result set: ", name);
-				DEBUG_THROW(Exception, "Duplicate column");
+			// 没有返回结果。
+		} else {
+			const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
+			const AUTO(count, ::mysql_num_fields(m_result.get()));
+			m_columns.reserve(count);
+			m_columns.clear();
+			for(std::size_t i = 0; i < count; ++i){
+				MySqlColumns::iterator ins;
+				const char *const name = fields[i].name;
+				if(findColumn(ins, m_columns, name)){
+					LOG_POSEIDON_ERROR("Duplicate column in MySQL result set: ", name);
+					DEBUG_THROW(Exception, "Duplicate column");
+				}
+				LOG_POSEIDON_TRACE("MySQL result column: name = ", name, ", index = ", i);
+				m_columns.insert(ins, std::make_pair(name, i));
 			}
-			LOG_POSEIDON_TRACE("MySQL result column: name = ", name, ", index = ", i);
-			m_columns.insert(ins, std::make_pair(name, i));
 		}
 	}
 
@@ -238,9 +237,6 @@ MySqlConnection::~MySqlConnection(){
 
 void MySqlConnection::executeSql(const std::string &sql){
 	static_cast<MySqlConnectionDelegate *>(this)->executeSql(sql);
-}
-void MySqlConnection::waitForResult(){
-	static_cast<MySqlConnectionDelegate *>(this)->waitForResult();
 }
 
 boost::uint64_t MySqlConnection::getInsertId() const {

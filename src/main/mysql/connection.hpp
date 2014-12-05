@@ -25,7 +25,6 @@ public:
 
 public:
 	void executeSql(const std::string &sql);
-	void waitForResult();
 
 	boost::uint64_t getInsertId() const;
 
