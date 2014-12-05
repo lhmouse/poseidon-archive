@@ -754,20 +754,21 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object,
 	MySqlAsyncSaveCallback callback)
 {
 	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
-	assignment.commit(
-		boost::make_shared<SaveOperation>(STD_MOVE(object), replaces, STD_MOVE(callback)), !!callback);
+	const bool urgent = !!callback;
+	assignment.commit(boost::make_shared<SaveOperation>(
+		STD_MOVE(object), replaces, STD_MOVE(callback)), urgent);
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std::string query,
 	MySqlAsyncLoadCallback callback)
 {
 	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
-	assignment.commit(
-		boost::make_shared<LoadOperation>(STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
+	assignment.commit(boost::make_shared<LoadOperation>(
+		STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
 }
 void MySqlDaemon::pendForBatchLoading(const char *tableHint, std::string query,
 	boost::shared_ptr<MySqlObjectBase> (*factory)(), MySqlBatchAsyncLoadCallback callback)
 {
 	AUTO_REF(assignment, getAssignmentForTable(tableHint));
-	assignment.commit(
-		boost::make_shared<BatchLoadOperation>(STD_MOVE(query), factory, STD_MOVE(callback)), true);
+	assignment.commit(boost::make_shared<BatchLoadOperation>(
+		STD_MOVE(query), factory, STD_MOVE(callback)), true);
 }
