@@ -34,7 +34,7 @@ struct DynamicLibraryCloser {
 
 }
 
-class Poseidon::Module : boost::noncopyable {
+class Poseidon::Module : NONCOPYABLE {
 private:
 	const UniqueHandle<DynamicLibraryCloser> m_handle;
 	const SharedNtmbs m_realPath;

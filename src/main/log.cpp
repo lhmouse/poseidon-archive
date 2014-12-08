@@ -33,7 +33,7 @@ boost::mutex g_mutex;
 
 __thread char t_tag[5] = "----";
 
-struct MutexGuard : boost::noncopyable {
+struct MutexGuard : NONCOPYABLE {
 	MutexGuard(){
 		atomicStore(g_mutexInited, true);
 	}

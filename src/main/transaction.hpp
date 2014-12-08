@@ -4,14 +4,14 @@
 #ifndef POSEIDON_TRANSACTION_HPP_
 #define POSEIDON_TRANSACTION_HPP_
 
+#include "cxx_util.hpp"
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/noncopyable.hpp>
 
 namespace Poseidon {
 
-class TransactionItemBase : boost::noncopyable {
+class TransactionItemBase : NONCOPYABLE {
 	friend class Transaction;
 
 private:
@@ -51,7 +51,7 @@ private:
 	}
 };
 
-class Transaction : boost::noncopyable {
+class Transaction : NONCOPYABLE {
 private:
 	std::vector<boost::shared_ptr<TransactionItemBase> > m_items;
 

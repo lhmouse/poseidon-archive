@@ -11,7 +11,7 @@
 #include "../exception.hpp"
 using namespace Poseidon;
 
-struct Poseidon::WebSocketServlet : boost::noncopyable {
+struct Poseidon::WebSocketServlet : NONCOPYABLE {
 	const SharedNtmbs uri;
 	const boost::shared_ptr<WebSocketServletCallback> callback;
 

@@ -17,7 +17,7 @@
 #include "../profiler.hpp"
 using namespace Poseidon;
 
-struct Poseidon::TimerItem : boost::noncopyable {
+struct Poseidon::TimerItem : NONCOPYABLE {
 	const unsigned long long period;
 	const boost::shared_ptr<const TimerCallback> callback;
 
@@ -105,7 +105,7 @@ void daemonLoop(){
 
 		try {
 			LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
-			boost::make_shared<TimerJob>(STD_MOVE(callback), now, period)->pend();
+			pendJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
 		} catch(...){

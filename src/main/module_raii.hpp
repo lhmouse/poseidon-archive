@@ -5,12 +5,11 @@
 #define POSEIDON_MODULE_RAII_HPP_
 
 #include "cxx_util.hpp"
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace Poseidon {
 
-class ModuleRaiiBase : boost::noncopyable {
+class ModuleRaiiBase : NONCOPYABLE {
 public:
 	ModuleRaiiBase();
 	virtual ~ModuleRaiiBase();

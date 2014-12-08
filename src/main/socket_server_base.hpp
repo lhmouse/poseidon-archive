@@ -4,13 +4,13 @@
 #ifndef POSEIDON_SOCKET_SERVER_BASE_HPP_
 #define POSEIDON_SOCKET_SERVER_BASE_HPP_
 
-#include <boost/noncopyable.hpp>
+#include "cxx_util.hpp"
 #include "raii.hpp"
 #include "ip_port.hpp"
 
 namespace Poseidon {
 
-class SocketServerBase : boost::noncopyable {
+class SocketServerBase : NONCOPYABLE {
 private:
 	const UniqueFile m_socket;
 	const IpPort m_localInfo;

@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "player_servlet_depository.hpp"
 #include <map>
-#include <boost/noncopyable.hpp>
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
@@ -13,7 +12,7 @@
 #include "../exception.hpp"
 using namespace Poseidon;
 
-struct Poseidon::PlayerServlet : boost::noncopyable {
+struct Poseidon::PlayerServlet : NONCOPYABLE {
 	const boost::uint16_t protocolId;
 	const boost::shared_ptr<const PlayerServletCallback> callback;
 

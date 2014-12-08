@@ -5,12 +5,12 @@
 #define POSEIDON_SSL_FACTORIES_HPP_
 
 #include "cxx_ver.hpp"
-#include <boost/noncopyable.hpp>
+#include "cxx_util.hpp"
 #include "ssl_raii.hpp"
 
 namespace Poseidon {
 
-class SslFactoryBase : boost::noncopyable {
+class SslFactoryBase : NONCOPYABLE {
 private:
 	const UniqueSslCtx m_sslCtx;
 

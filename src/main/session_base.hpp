@@ -4,16 +4,16 @@
 #ifndef POSEIDON_SESSION_BASE_HPP_
 #define POSEIDON_SESSION_BASE_HPP_
 
+#include "cxx_util.hpp"
 #include <cstddef>
-#include <boost/noncopyable.hpp>
 #include "virtual_shared_from_this.hpp"
 
 namespace Poseidon {
 
 class StreamBuffer;
 
-class SessionBase : boost::noncopyable,
-	public virtual VirtualSharedFromThis
+class SessionBase : NONCOPYABLE
+	, public virtual VirtualSharedFromThis
 {
 public:
 	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。

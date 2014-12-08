@@ -6,7 +6,6 @@
 #include <map>
 #include <vector>
 #include <vector>
-#include <boost/noncopyable.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include "job_dispatcher.hpp"
 #include "../log.hpp"
@@ -14,7 +13,7 @@
 #include "../profiler.hpp"
 using namespace Poseidon;
 
-struct Poseidon::EventListener : boost::noncopyable {
+struct Poseidon::EventListener : NONCOPYABLE {
 	const unsigned id;
 	const boost::shared_ptr<const EventListenerCallback> callback;
 
@@ -104,7 +103,7 @@ void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event){
 		}
 	}
 	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
-		boost::make_shared<EventJob>(*it, boost::ref(event))->pend();
+		pendJob(boost::make_shared<EventJob>(*it, boost::ref(event)));
 	}
 	if(needsCleanup){
 		LOG_POSEIDON_DEBUG("Cleaning up event listener list for event ", eventId);

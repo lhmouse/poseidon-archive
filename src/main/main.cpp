@@ -49,7 +49,7 @@ void sigIntProc(int){
 }
 
 template<typename T>
-struct RaiiSingletonRunner : boost::noncopyable {
+struct RaiiSingletonRunner : NONCOPYABLE {
 	RaiiSingletonRunner(){
 		T::start();
 	}

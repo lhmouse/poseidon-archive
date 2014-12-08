@@ -9,6 +9,10 @@ using namespace Poseidon;
 JobBase::~JobBase(){
 }
 
-void JobBase::pend(){
-	JobDispatcher::pend(shared_from_this());
+namespace Poseidon {
+
+void pendJob(boost::shared_ptr<JobBase> job){
+	JobDispatcher::pend(STD_MOVE(job));
+}
+
 }

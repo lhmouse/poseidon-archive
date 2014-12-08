@@ -19,7 +19,7 @@
 #define MAGIC_LN_2_(ln_)			Poseidon_magic_ ## ln_ ## X_
 #define MAGIC_LN_1_(ln_)			MAGIC_LN_2_(ln_)
 
-#define UNIQUE_ID					MAGIC_LN_1_(__LINE__)
+#define UNIQUE_ID					MAGIC_LN_1_(__COUNTER__)
 
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
@@ -36,6 +36,19 @@ struct Identity {
 	typedef T type;
 };
 
+template<unsigned long UniqueT>
+class Noncopyable {
+public:
+	Noncopyable(){
+	}
+
+private:
+	Noncopyable(const Noncopyable &);
+	void operator=(const Noncopyable &);
+};
+
 }
+
+#define NONCOPYABLE					private ::Poseidon::Noncopyable<__COUNTER__>
 
 #endif

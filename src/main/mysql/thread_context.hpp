@@ -4,14 +4,14 @@
 #ifndef POSEIDON_MYSQL_THREAD_CONTEXT_HPP_
 #define POSEIDON_MYSQL_THREAD_CONTEXT_HPP_
 
+#include "../cxx_util.hpp"
 #include "../cxx_ver.hpp"
 #include <cstddef>
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace Poseidon {
 
-class MySqlThreadContext : boost::noncopyable {
+class MySqlThreadContext : NONCOPYABLE {
 private:
 	void *operator new(std::size_t);
 	void operator delete(void *) NOEXCEPT;

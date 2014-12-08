@@ -4,8 +4,8 @@
 #ifndef POSEIDON_MYSQL_CONNECTION_HPP_
 #define POSEIDON_MYSQL_CONNECTION_HPP_
 
+#include "../cxx_util.hpp"
 #include <string>
-#include <boost/noncopyable.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/scoped_ptr.hpp>
 
@@ -13,7 +13,7 @@ namespace Poseidon {
 
 class MySqlThreadContext;
 
-class MySqlConnection : boost::noncopyable {
+class MySqlConnection : NONCOPYABLE {
 public:
 	static void create(boost::scoped_ptr<MySqlConnection> &conn,
 		MySqlThreadContext &context, const std::string &serverAddr, unsigned serverPort,

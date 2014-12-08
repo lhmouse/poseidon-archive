@@ -61,7 +61,9 @@ struct AssignmentItemDecrementer {
 };
 typedef UniqueHandle<AssignmentItemDecrementer> LockingAssignment;
 
-class OperationBase : boost::noncopyable {
+class OperationBase : NONCOPYABLE
+	, public JobBase
+{
 private:
 	AssignedThread m_assignedThread;
 	LockingAssignment m_lockingAssignment;
@@ -82,11 +84,8 @@ public:
 	virtual void execute(std::string &query, MySqlConnection &conn) = 0;
 };
 
-// 作为两步使用，塞到了同一个类里面。基类是按照这两个用途的先后顺序排列的，不要弄混。
 
-class SaveOperation
-	: public OperationBase, public JobBase
-{
+class SaveOperation : public OperationBase {
 private:
 	const boost::uint64_t m_dueTime;
 	const boost::shared_ptr<const MySqlObjectBase> m_object;
@@ -132,22 +131,18 @@ private:
 			m_succeeded = false;
 		}
 		m_autoIncrementId = conn.getInsertId();
-
-		if(m_callback){
-			JobBase::pend();
-		}
 	}
 
 	void perform(){
 		PROFILE_ME;
 
-		m_callback(m_succeeded, m_autoIncrementId);
+		if(m_callback){
+			m_callback(m_succeeded, m_autoIncrementId);
+		}
 	}
 };
 
-class LoadOperation
-	: public OperationBase, public JobBase
-{
+class LoadOperation : public OperationBase {
 private:
 	const boost::shared_ptr<MySqlObjectBase> m_object;
 	const std::string m_query;
@@ -181,10 +176,6 @@ private:
 			m_object->syncFetch(conn);
 			m_object->enableAutoSaving();
 		}
-
-		if(m_callback){
-			JobBase::pend();
-		}
 	}
 
 	void perform(){
@@ -194,9 +185,7 @@ private:
 	}
 };
 
-class BatchLoadOperation
-	: public OperationBase, public JobBase
-{
+class BatchLoadOperation : public OperationBase {
 private:
 	const std::string m_query;
 	boost::shared_ptr<MySqlObjectBase> (*const m_factory)();
@@ -230,10 +219,6 @@ private:
 			object->enableAutoSaving();
 			m_objects.push_back(STD_MOVE(object));
 		}
-
-		if(m_callback){
-			JobBase::pend();
-		}
 	}
 
 	void perform(){
@@ -243,11 +228,11 @@ private:
 	}
 };
 
-class MySqlThread : boost::noncopyable {
+class MySqlThread : NONCOPYABLE {
 	friend MySqlThreadDecrementer;
 
 public:
-	class Profiler : boost::noncopyable {
+	class Profiler : NONCOPYABLE {
 	private:
 		MySqlThread &m_owner;
 
@@ -379,7 +364,7 @@ volatile bool g_running = false;
 std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 
 // 根据表名分给不同的线程。
-class AssignmentItem : boost::noncopyable
+class AssignmentItem : NONCOPYABLE
 	, public boost::enable_shared_from_this<AssignmentItem>
 {
 	friend AssignmentItemDecrementer;
@@ -602,6 +587,7 @@ void MySqlThread::operationLoop(){
 				}
 				throw;
 			}
+			pendJob(STD_MOVE(queue.front()));
 			queue.pop_front();
 		} catch(MySqlException &e){
 			LOG_POSEIDON_ERROR("MySqlException thrown in MySQL daemon: code = ", e.code(),

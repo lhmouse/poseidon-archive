@@ -5,11 +5,10 @@
 #define POSEIDON_PROFILER_HPP_
 
 #include "cxx_util.hpp"
-#include <boost/noncopyable.hpp>
 
 namespace Poseidon {
 
-class Profiler : boost::noncopyable {
+class Profiler : NONCOPYABLE {
 public:
 	static void flushProfilersInThread();
 

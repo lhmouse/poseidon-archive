@@ -5,10 +5,10 @@
 #define POSEIDON_TCP_SESSION_BASE_HPP_
 
 #include "cxx_ver.hpp"
+#include "cxx_util.hpp"
 #include "session_base.hpp"
 #include <string>
 #include <cstddef>
-#include <boost/noncopyable.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include "raii.hpp"

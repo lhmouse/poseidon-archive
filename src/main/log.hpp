@@ -5,13 +5,13 @@
 #define POSEIDON_LOG_HPP_
 
 #include "cxx_ver.hpp"
+#include "cxx_util.hpp"
 #include <sstream>
 #include <cstddef>
-#include <boost/noncopyable.hpp>
 
 namespace Poseidon {
 
-class Logger : boost::noncopyable {
+class Logger : NONCOPYABLE {
 public:
 	enum {
 		LV_FATAL		= 0x0001,

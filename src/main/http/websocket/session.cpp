@@ -216,9 +216,8 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				if((m_opcode & WS_FL_CONTROL) != 0){
 					onControlFrame();
 				} else if(m_fin){
-					boost::make_shared<WebSocketRequestJob>(
-						virtualSharedFromThis<WebSocketSession>(),
-						getUri(), m_opcode, STD_MOVE(m_whole))->pend();
+					pendJob(boost::make_shared<WebSocketRequestJob>(
+						virtualSharedFromThis<WebSocketSession>(), getUri(), m_opcode, STD_MOVE(m_whole)));
 					m_whole.clear();
 				}
 				m_state = ST_OPCODE;

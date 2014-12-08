@@ -5,12 +5,12 @@
 #define POSEIDON_SSL_FILTER_BASE_HPP_
 
 #include "cxx_ver.hpp"
-#include <boost/noncopyable.hpp>
+#include "cxx_util.hpp"
 #include "ssl_raii.hpp"
 
 namespace Poseidon {
 
-class SslFilterBase : boost::noncopyable {
+class SslFilterBase : NONCOPYABLE {
 private:
 	const UniqueSsl m_ssl;
 	const int m_fd;

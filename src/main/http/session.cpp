@@ -321,10 +321,9 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_shutdownTimer = TimerDaemon::registerTimer(HttpServletDepository::getKeepAliveTimeout(), 0,
 				boost::bind(&onKeepAliveTimeout, virtualWeakFromThis<HttpSession>()));
 
-			boost::make_shared<HttpRequestJob>(virtualSharedFromThis<HttpSession>(),
-				m_verb, STD_MOVE(m_uri), m_version,
-				STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)
-				)->pend();
+			pendJob(boost::make_shared<HttpRequestJob>(
+				virtualSharedFromThis<HttpSession>(), m_verb, STD_MOVE(m_uri), m_version,
+				STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
 
 			m_totalLength = 0;
 			m_contentLength = 0;

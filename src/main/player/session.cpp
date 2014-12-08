@@ -129,8 +129,8 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			if(m_payload.size() < (unsigned)m_payloadLen){
 				break;
 			}
-			boost::make_shared<PlayerRequestJob>(virtualSharedFromThis<PlayerSession>(),
-				m_protocolId, m_payload.cut(m_payloadLen))->pend();
+			pendJob(boost::make_shared<PlayerRequestJob>(virtualSharedFromThis<PlayerSession>(),
+				m_protocolId, m_payload.cut(m_payloadLen)));
 			m_payloadLen = -1;
 			m_protocolId = 0;
 		}

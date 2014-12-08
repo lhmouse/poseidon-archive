@@ -12,7 +12,7 @@
 #include "../exception.hpp"
 using namespace Poseidon;
 
-struct Poseidon::HttpServlet : boost::noncopyable {
+struct Poseidon::HttpServlet : NONCOPYABLE {
 	const SharedNtmbs uri;
 	const boost::shared_ptr<const HttpServletCallback> callback;
 
