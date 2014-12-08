@@ -587,7 +587,7 @@ void MySqlThread::operationLoop(){
 				}
 				throw;
 			}
-			pendJob(STD_MOVE(queue.front()));
+			pendJob(boost::shared_ptr<OperationBase>(STD_MOVE(queue.front()))); // FIXME: C++98
 			queue.pop_front();
 		} catch(MySqlException &e){
 			LOG_POSEIDON_ERROR("MySqlException thrown in MySQL daemon: code = ", e.code(),
