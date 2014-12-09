@@ -12,7 +12,7 @@
 #include "exception.hpp"
 #include "status.hpp"
 
-#define THROW_EOS_	\
+#define THROW_END_OF_STREAM_	\
 	DEBUG_THROW(::Poseidon::PlayerProtocolException,	\
 		::Poseidon::PLAYER_END_OF_STREAM, "End of stream encountered")
 
