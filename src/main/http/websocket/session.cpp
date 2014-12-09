@@ -130,6 +130,10 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 		for(;;){
 			switch(m_state){
 				int ch;
+				boost::uint16_t temp16;
+				boost::uint32_t temp32;
+				boost::uint64_t temp64;
+				std::size_t remaining;
 
 			case ST_OPCODE:
 				ch = m_payload.get();
@@ -172,16 +176,14 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					if(m_payload.size() < 2){
 						goto exit_for;
 					}
-					boost::uint16_t temp;
-					m_payload.get(&temp, 2);
-					m_payloadLen = loadBe(temp);
+					m_payload.get(&temp16, 2);
+					m_payloadLen = loadBe(temp16);
 				} else {
 					if(m_payload.size() < 8){
 						goto exit_for;
 					}
-					boost::uint64_t temp;
-					m_payload.get(&temp, 8);
-					m_payloadLen = loadBe(temp);
+					m_payload.get(&temp64, 8);
+					m_payloadLen = loadBe(temp64);
 				}
 				m_state = ST_MASK;
 				break;
@@ -192,14 +194,12 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				if(m_payload.size() < 4){
 					goto exit_for;
 				}
-				boost::uint32_t temp;
-				m_payload.get(&temp, 4);
-				m_payloadMask = loadLe(temp);
+				m_payload.get(&temp32, 4);
+				m_payloadMask = loadLe(temp32);
 				m_state = ST_PAYLOAD;
 				break;
 
 			case ST_PAYLOAD:
-				std::size_t remaining;
 				remaining = m_payloadLen - m_whole.size();
 				if(m_whole.size() + remaining >= MAX_PACKET_SIZE){
 					DEBUG_THROW(WebSocketException, WS_MESSAGE_TOO_LARGE, "Packet too large");
