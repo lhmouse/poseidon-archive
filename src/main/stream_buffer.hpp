@@ -42,11 +42,16 @@ public:
 	}
 	void clear();
 
-	// 返回头部的一个字节。如果为空返回 -1。
+	// 返回头部的一个字节。如果为空返回 -1，无异常抛出。
 	int peek() const;
+	// 返回头部的一个字节并删除之。如果为空返回 -1，无异常抛出。
 	int get();
 	// 向末尾追加一个字节。
 	void put(unsigned char by);
+	// put() 的逆操作。如果为空返回 -1，无异常抛出。
+	int unput();
+	// get() 的逆操作。
+	void unget(unsigned char by);
 
 	// 返回值是 data 中写入的字节数并且不大于 size。
 	std::size_t peek(void *data, std::size_t size) const;

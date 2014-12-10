@@ -30,21 +30,49 @@ boost::mutex g_poolMutex;
 std::list<DisposableBuffer> g_pool;
 
 DisposableBuffer &pushBackPooled(std::list<DisposableBuffer> &dst){
-	do {
-		{
-			const boost::mutex::scoped_lock lock(g_poolMutex);
-			if(!g_pool.empty()){
-				dst.splice(dst.end(), g_pool, g_pool.begin());
-				break;
-			}
+	{
+		const boost::mutex::scoped_lock lock(g_poolMutex);
+		if(!g_pool.empty()){
+			dst.splice(dst.end(), g_pool, g_pool.begin());
+			goto done;
 		}
+	}
+	{
 		std::list<DisposableBuffer> temp(1);
 		dst.splice(dst.end(), temp, temp.begin());
-	} while(false);
+	}
 
+done:
 	AUTO_REF(ret, dst.back());
 	ret.readPos = 0;
 	ret.writePos = 0;
+	return ret;
+}
+void popBackPooled(std::list<DisposableBuffer> &src){
+	assert(!src.empty());
+
+	AUTO(it, src.end());
+	--it;
+	const boost::mutex::scoped_lock lock(g_poolMutex);
+	g_pool.splice(g_pool.begin(), src, it);
+}
+DisposableBuffer &pushFrontPooled(std::list<DisposableBuffer> &dst){
+	{
+		const boost::mutex::scoped_lock lock(g_poolMutex);
+		if(!g_pool.empty()){
+			dst.splice(dst.begin(), g_pool, g_pool.begin());
+			goto done;
+		}
+	}
+	{
+		std::list<DisposableBuffer> temp(1);
+		dst.splice(dst.begin(), temp, temp.begin());
+	}
+
+done:
+	AUTO_REF(ret, dst.back());
+	ret.readPos = sizeof(ret.data);
+	ret.writePos = sizeof(ret.data);
 	return ret;
 }
 void popFrontPooled(std::list<DisposableBuffer> &src){
@@ -138,7 +166,7 @@ int StreamBuffer::get(){
 		AUTO_REF(front, m_chunks.front());
 		if(front.readPos < front.writePos){
 			const int ret = front.data[front.readPos];
-			++(front.readPos);
+			++front.readPos;
 			--m_size;
 			return ret;
 		}
@@ -146,17 +174,52 @@ int StreamBuffer::get(){
 	}
 }
 void StreamBuffer::put(unsigned char by){
-	AUTO(rit, m_chunks.rbegin());
-	if((rit != m_chunks.rend()) && (rit->writePos < sizeof(rit->data))){
-		rit->data[rit->writePos] = static_cast<char>(by);
-		++(rit->writePos);
-		++m_size;
-		return;
+	if(!m_chunks.empty()){
+		AUTO_REF(back, m_chunks.back());
+		if(back.writePos < sizeof(back.data)){
+			back.data[back.writePos] = static_cast<char>(by);
+			++back.writePos;
+			++m_size;
+			return;
+		}
 	}
 
 	AUTO_REF(back, pushBackPooled(m_chunks));
 	back.data[back.writePos] = by;
-	++(back.writePos);
+	++back.writePos;
+	++m_size;
+}
+int StreamBuffer::unput(){
+	if(m_size == 0){
+		return -1;
+	}
+	for(;;){
+		assert(!m_chunks.empty());
+
+		AUTO_REF(front, m_chunks.back());
+		if(front.readPos < front.writePos){
+			--front.writePos;
+			const int ret = front.data[front.writePos];
+			--m_size;
+			return ret;
+		}
+		popBackPooled(m_chunks);
+	}
+}
+void StreamBuffer::unget(unsigned char by){
+	if(!m_chunks.empty()){
+		AUTO_REF(front, m_chunks.front());
+		if(0 < front.readPos){
+			++front.readPos;
+			front.data[front.readPos] = static_cast<char>(by);
+			++m_size;
+			return;
+		}
+	}
+
+	AUTO_REF(front, pushFrontPooled(m_chunks));
+	++front.readPos;
+	front.data[front.readPos] = by;
 	++m_size;
 }
 
