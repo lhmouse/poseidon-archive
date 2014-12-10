@@ -12,9 +12,10 @@
 namespace Poseidon {
 
 class TransactionItemBase : NONCOPYABLE {
-	friend class Transaction;
+public:
+	virtual ~TransactionItemBase();
 
-private:
+public:
 	virtual bool lock() = 0;
 	virtual void unlock() = 0;
 	virtual void commit() = 0;
@@ -33,7 +34,7 @@ public:
 	{
 	}
 
-private:
+public:
 	virtual bool lock(){
 		return m_lock();
 	}

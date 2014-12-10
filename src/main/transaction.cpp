@@ -5,11 +5,14 @@
 #include "transaction.hpp"
 using namespace Poseidon;
 
+TransactionItemBase::~TransactionItemBase(){
+}
+
 bool Transaction::empty() const {
 	return m_items.empty();
 }
 void Transaction::add(boost::shared_ptr<TransactionItemBase> item){
-	m_items.push_back(item);
+	m_items.push_back(STD_MOVE(item));
 }
 void Transaction::clear(){
 	m_items.clear();
