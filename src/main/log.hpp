@@ -44,41 +44,30 @@ public:
 	Logger(unsigned long long mask, const char *file, std::size_t line) NOEXCEPT;
 	~Logger() NOEXCEPT;
 
+private:
+	template<typename T>
+	void put(const T &val){
+		m_stream <<val;
+	}
+
+	void put(signed char val){
+		m_stream <<(int)val;
+	}
+	void put(unsigned char val){
+		m_stream <<(unsigned)val;
+	}
+	void put(const volatile signed char *val){
+		m_stream <<(const void *)val;
+	}
+	void put(const volatile unsigned char *val){
+		m_stream <<(const void *)val;
+	}
+
 public:
 	template<typename T>
-	Logger &operator,(const T &info) NOEXCEPT {
+	Logger &operator,(const T &val) NOEXCEPT {
 		try {
-			m_stream <<info;
-		} catch(...){
-		}
-		return *this;
-	}
-
-	Logger &operator,(signed char ch) NOEXCEPT {
-		try {
-			m_stream <<(signed)ch;
-		} catch(...){
-		}
-		return *this;
-	}
-	Logger &operator,(unsigned char ch) NOEXCEPT {
-		try {
-			m_stream <<(unsigned)ch;
-		} catch(...){
-		}
-		return *this;
-	}
-
-	Logger &operator,(const signed char *p) NOEXCEPT {
-		try {
-			m_stream <<(const void *)p;
-		} catch(...){
-		}
-		return *this;
-	}
-	Logger &operator,(const unsigned char *p) NOEXCEPT {
-		try {
-			m_stream <<(const void *)p;
+			put(val);
 		} catch(...){
 		}
 		return *this;
