@@ -34,7 +34,7 @@ public:
 
 #ifdef POSEIDON_CXX11
 	UniqueHandle(const UniqueHandle &) = delete;
-	void operator=(const UniqueHandle &) = delete;
+	UniqueHandle &operator=(const UniqueHandle &) = delete;
 
 	UniqueHandle(UniqueHandle &&rhs) noexcept
 		: m_handle(CloserT()())
@@ -49,7 +49,7 @@ public:
 	// public 但是没有定义。仅作为 RVO 转移使用，如果拷贝构造会导致错误。
 	UniqueHandle(const UniqueHandle &)
 		__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership.")));
-	void operator=(const UniqueHandle &)
+	UniqueHandle &operator=(const UniqueHandle &)
 		__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership.")));
 #endif
 
