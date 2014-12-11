@@ -51,6 +51,7 @@ struct MySqlThreadDecrementer {
 	}
 	void operator()(MySqlThread *thread) const NOEXCEPT;
 };
+
 typedef UniqueHandle<MySqlThreadDecrementer> AssignedThread;
 
 struct AssignmentItemDecrementer {
@@ -59,11 +60,10 @@ struct AssignmentItemDecrementer {
 	}
 	void operator()(AssignmentItem *assignment) const NOEXCEPT;
 };
+
 typedef UniqueHandle<AssignmentItemDecrementer> LockingAssignment;
 
-class OperationBase : NONCOPYABLE
-	, public JobBase
-{
+class OperationBase : NONCOPYABLE, public JobBase {
 private:
 	AssignedThread m_assignedThread;
 	LockingAssignment m_lockingAssignment;
