@@ -41,7 +41,7 @@ class MySqlConnectionDelegate : public MySqlConnection {
 private:
 	// 若返回 true 则 pos 指向找到的列，否则 pos 指向下一个。
 	template<typename IteratorT, typename VectorT>
-	static bool findColumn(IteratorT &pos, VectorT &columns, const char *name){
+	static bool lowerBoundColumn(IteratorT &pos, VectorT &columns, const char *name){
 		AUTO(lower, columns.begin());
 		AUTO(upper, columns.end());
 		for(;;){
@@ -85,8 +85,8 @@ public:
 		if(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) != 0){
 			THROW_MYSQL_EXCEPTION;
 		}
-		const ::my_bool trueVal = true;
-		if(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &trueVal) != 0){
+		const ::my_bool TRUE_VALUE = true;
+		if(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &TRUE_VALUE) != 0){
 			THROW_MYSQL_EXCEPTION;
 		}
 		if(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset.c_str()) != 0){
@@ -123,7 +123,7 @@ public:
 			for(std::size_t i = 0; i < count; ++i){
 				MySqlColumns::iterator ins;
 				const char *const name = fields[i].name;
-				if(findColumn(ins, m_columns, name)){
+				if(lowerBoundColumn(ins, m_columns, name)){
 					LOG_POSEIDON_ERROR("Duplicate column in MySQL result set: ", name);
 					DEBUG_THROW(Exception, "Duplicate column");
 				}
@@ -154,7 +154,7 @@ public:
 	}
 	boost::int64_t getSigned(const char *column) const {
 		MySqlColumns::const_iterator it;
-		if(!findColumn(it, m_columns, column)){
+		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
 			DEBUG_THROW(Exception, "Column not found");
 		}
@@ -172,7 +172,7 @@ public:
 	}
 	boost::uint64_t getUnsigned(const char *column) const {
 		MySqlColumns::const_iterator it;
-		if(!findColumn(it, m_columns, column)){
+		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
 			DEBUG_THROW(Exception, "Column not found");
 		}
@@ -190,7 +190,7 @@ public:
 	}
 	double getDouble(const char *column) const {
 		MySqlColumns::const_iterator it;
-		if(!findColumn(it, m_columns, column)){
+		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
 			DEBUG_THROW(Exception, "Column not found");
 		}
@@ -208,7 +208,7 @@ public:
 	}
 	std::string getString(const char *column) const {
 		MySqlColumns::const_iterator it;
-		if(!findColumn(it, m_columns, column)){
+		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
 			DEBUG_THROW(Exception, "Column not found");
 		}
