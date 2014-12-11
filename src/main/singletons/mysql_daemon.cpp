@@ -250,6 +250,8 @@ public:
 	};
 
 private:
+	const unsigned m_id;
+
 	boost::thread m_thread;
 	volatile bool m_running;
 
@@ -267,9 +269,9 @@ private:
 	mutable volatile boost::uint64_t m_timeWorking;
 
 public:
-	MySqlThread()
-		: m_running(false)
-		, m_pendingOperations(0), m_urgentMode(false)
+	explicit MySqlThread(unsigned id)
+		: m_id(id)
+		, m_running(false), m_pendingOperations(0), m_urgentMode(false)
 		, m_timeFlushed(getMonoClock()), m_workingCount(0), m_timeIdle(0), m_timeWorking(0)
 	{
 	}
@@ -622,11 +624,11 @@ exit_loop:
 void MySqlThread::threadProc(){
 	PROFILE_ME;
 	Logger::setThreadTag(" D  "); // Database
-	LOG_POSEIDON_INFO("MySQL daemon started.");
+	LOG_POSEIDON_INFO("MySQL thread ", m_id, " started.");
 
 	operationLoop();
 
-	LOG_POSEIDON_INFO("MySQL daemon stopped.");
+	LOG_POSEIDON_INFO("MySQL thread ", m_id, " stopped.");
 }
 
 }
@@ -695,7 +697,7 @@ void MySqlDaemon::start(){
 
 	g_threads.resize(std::max<std::size_t>(g_mysqlMaxThreads, 1));
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		boost::make_shared<MySqlThread>().swap(g_threads[i]);
+		boost::make_shared<MySqlThread>(i).swap(g_threads[i]);
 		g_threads[i]->start();
 
 		LOG_POSEIDON_INFO("Created MySQL thread ", i);
