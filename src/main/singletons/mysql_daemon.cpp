@@ -587,6 +587,8 @@ void MySqlThread::operationLoop(){
 				}
 				throw;
 			}
+			queue.front()->setAssignedThread(VAL_INIT);
+			queue.front()->setLockingAssignment(VAL_INIT);
 			pendJob(boost::shared_ptr<OperationBase>(STD_MOVE(queue.front()))); // FIXME: C++98
 			queue.pop_front();
 		} catch(MySqlException &e){
