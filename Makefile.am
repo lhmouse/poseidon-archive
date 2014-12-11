@@ -1,10 +1,10 @@
 ACLOCAL_AMFLAGS=-I m4
 AUTOMAKE_OPTIONS=foreign subdir-objects
-AM_CPPFLAGS=-Wall -Wextra -Werror -Wno-error=unused-parameter
+AM_CPPFLAGS=-Wall -Wextra -Werror -Wno-error=unused-parameter -pipe -fPIC -DPIC
 AM_CXXFLAGS=
 
 %.hpp.gch: %.hpp
-	$(CXX) -x c++-header $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
+	$(CXX) -x c++-header $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
 
 BUILT_SOURCES=	\
 	src/main/precompiled.hpp.gch
