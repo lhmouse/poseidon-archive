@@ -60,20 +60,14 @@ void JobDispatcher::doModal(){
 			boost::shared_ptr<JobBase> job;
 			{
 				boost::mutex::scoped_lock lock(g_mutex);
-				for(;;){
-					if(!g_queue.empty()){
-						job.swap(g_queue.front());
-						g_pool.splice(g_pool.begin(), g_queue, g_queue.begin());
-						break;
-					}
+				while(g_queue.empty()){
 					if(!atomicLoad(g_running)){
-						break;
+						goto exit_loop;
 					}
 					g_newJobAvail.wait(lock);
 				}
-			}
-			if(!job){
-				break;
+				job.swap(g_queue.front());
+				g_pool.splice(g_pool.begin(), g_queue, g_queue.begin());
 			}
 			job->perform();
 		} catch(std::exception &e){
@@ -82,6 +76,9 @@ void JobDispatcher::doModal(){
 			LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
 		}
 	}
+exit_loop:
+
+	;
 }
 void JobDispatcher::quitModal(){
 	if(atomicExchange(g_running, false) == false){
