@@ -178,7 +178,7 @@ void daemonLoop(){
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
 	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 
-	while(atomicLoad(g_running)){
+	while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
 		// 第一部分，处理可接收的数据。
 		{
 			const boost::mutex::scoped_lock lock(g_sessionMutex);
@@ -397,7 +397,7 @@ void threadProc(){
 }
 
 void EpollDaemon::start(){
-	if(atomicExchange(g_running, true) != false){
+	if(atomicExchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
@@ -423,7 +423,7 @@ void EpollDaemon::start(){
 	boost::thread(threadProc).swap(g_thread);
 }
 void EpollDaemon::stop(){
-	if(atomicExchange(g_running, false) == false){
+	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
 	LOG_POSEIDON_INFO("Stopping epoll daemon...");

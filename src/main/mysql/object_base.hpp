@@ -46,21 +46,21 @@ protected:
 
 public:
 	bool isAutoSavingEnabled() const {
-		return atomicLoad(m_autoSaves);
+		return atomicLoad(m_autoSaves, ATOMIC_ACQUIRE);
 	}
 	void enableAutoSaving() const {
-		atomicStore(m_autoSaves, true);
+		atomicStore(m_autoSaves, true, ATOMIC_RELEASE);
 	}
 	void disableAutoSaving() const {
-		atomicStore(m_autoSaves, false);
+		atomicStore(m_autoSaves, false, ATOMIC_RELEASE);
 	}
 
 	// 用于写入合并时标记最后一次队列节点的地址。
 	const void *getContext() const {
-		return atomicLoad(m_context);
+		return atomicLoad(m_context, ATOMIC_ACQUIRE);
 	}
 	void setContext(const void *context) const {
-		atomicStore(m_context, context);
+		atomicStore(m_context, context, ATOMIC_RELEASE);
 	}
 
 	virtual const char *getTableName() const = 0;

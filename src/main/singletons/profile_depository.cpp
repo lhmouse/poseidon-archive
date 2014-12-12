@@ -87,9 +87,9 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 		}
 
 	write_profile:
-		atomicAdd(it->second.samples, 1);
-		atomicAdd(it->second.usTotal, total);
-		atomicAdd(it->second.usExclusive, exclusive);
+		atomicAdd(it->second.samples, 1, ATOMIC_RELAXED);
+		atomicAdd(it->second.usTotal, total, ATOMIC_RELAXED);
+		atomicAdd(it->second.usExclusive, exclusive, ATOMIC_RELAXED);
 
 		LOG_POSEIDON_TRACE("Accumulated profile info: file = ", file, ", line = ", line,
 			", func = ", func, ", total = ", total, " us, exclusive = ", exclusive, " us");
@@ -109,9 +109,9 @@ std::vector<ProfileSnapshotItem> ProfileDepository::snapshot(){
 			pi.file = it->first.file;
 			pi.line = it->first.line;
 			pi.func = it->first.func;
-			pi.samples = atomicLoad(it->second.samples);
-			pi.usTotal = atomicLoad(it->second.usTotal);
-			pi.usExclusive = atomicLoad(it->second.usExclusive);
+			pi.samples = atomicLoad(it->second.samples, ATOMIC_RELAXED);
+			pi.usTotal = atomicLoad(it->second.usTotal, ATOMIC_RELAXED);
+			pi.usExclusive = atomicLoad(it->second.usExclusive, ATOMIC_RELAXED);
 			ret.push_back(pi);
 		}
 	}

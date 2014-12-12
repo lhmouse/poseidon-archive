@@ -329,11 +329,11 @@ public:
 
 private:
 	AssignedThread increment(){
-		atomicAdd(m_pendingOperations, 1);
+		atomicAdd(m_pendingOperations, 1, ATOMIC_RELAXED);
 		return AssignedThread(this);
 	}
 	void decrement() NOEXCEPT {
-		atomicSub(m_pendingOperations, 1);
+		atomicSub(m_pendingOperations, 1, ATOMIC_RELAXED);
 	}
 
 	void flushProfile() const NOEXCEPT {
@@ -341,9 +341,9 @@ private:
 		const AUTO(delta, now - m_timeFlushed);
 		m_timeFlushed = now;
 		if(m_workingCount == 0){
-			atomicAdd(m_timeIdle, delta);
+			atomicAdd(m_timeIdle, delta, ATOMIC_RELAXED);
 		} else {
-			atomicAdd(m_timeWorking, delta);
+			atomicAdd(m_timeWorking, delta, ATOMIC_RELAXED);
 		}
 	}
 
@@ -352,29 +352,29 @@ private:
 
 public:
 	boost::uint64_t getPendingOperations() const {
-		return atomicLoad(m_pendingOperations);
+		return atomicLoad(m_pendingOperations, ATOMIC_RELAXED);
 	}
 
 	boost::uint64_t getTimeIdle() const {
-		return atomicLoad(m_timeIdle);
+		return atomicLoad(m_timeIdle, ATOMIC_RELAXED);
 	}
 	boost::uint64_t getTimeWorking() const {
-		return atomicLoad(m_timeWorking);
+		return atomicLoad(m_timeWorking, ATOMIC_RELAXED);
 	}
 
 	void start(){
-		if(atomicExchange(m_running, true) != false){
+		if(atomicExchange(m_running, true, ATOMIC_ACQ_REL) != false){
 			return;
 		}
 		boost::thread(boost::bind(&MySqlThread::threadProc, this)).swap(m_thread);
 	}
 	void stop(){
-		if(atomicExchange(m_running, false) == false){
+		if(atomicExchange(m_running, false, ATOMIC_ACQ_REL) == false){
 			return;
 		}
 		{
 			const boost::mutex::scoped_lock lock(m_mutex);
-			atomicStore(m_urgentMode, true);
+			atomicStore(m_urgentMode, true, ATOMIC_RELEASE);
 			m_newAvail.notify_all();
 		}
 	}
@@ -391,16 +391,16 @@ public:
 		m_queue.push_back(operation);
 		operation->setAssignedThread(increment());
 		if(urgent){
-			atomicStore(m_urgentMode, true);
+			atomicStore(m_urgentMode, true, ATOMIC_RELEASE);
 		}
 		m_newAvail.notify_all();
 	}
 
 	void waitTillIdle() const {
-		atomicStore(m_urgentMode, true);
+		atomicStore(m_urgentMode, true, ATOMIC_RELEASE);
 		boost::mutex::scoped_lock lock(m_mutex);
 		while(getPendingOperations() != 0){
-			atomicStore(m_urgentMode, true);
+			atomicStore(m_urgentMode, true, ATOMIC_RELEASE);
 			m_newAvail.notify_all();
 			m_queueEmpty.wait(lock);
 		}
@@ -544,7 +544,7 @@ void MySqlThread::operationLoop(){
 					MySqlConnection::create(conn, context, g_mysqlServerAddr, g_mysqlServerPort,
 						g_mysqlUsername, g_mysqlPassword, g_mysqlSchema, g_mysqlUseSsl, g_mysqlCharset);
 				} catch(...){
-					if(!atomicLoad(m_running)){
+					if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 						LOG_POSEIDON_WARN("Shutting down...");
 						goto exit_loop;
 					}
@@ -561,17 +561,17 @@ void MySqlThread::operationLoop(){
 					m_queueEmpty.notify_all();
 				}
 				while(m_queue.empty()){
-					if(!atomicLoad(m_running)){
+					if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 						goto exit_loop;
 					}
-					atomicStore(m_urgentMode, false);
+					atomicStore(m_urgentMode, false, ATOMIC_RELEASE);
 					flushProfile();
 					m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
 				queue.swap(m_queue);
 			}
 
-			if(!queue.front()->shouldExecuteNow() && !atomicLoad(m_urgentMode)){
+			if(!queue.front()->shouldExecuteNow() && !atomicLoad(m_urgentMode, ATOMIC_ACQUIRE)){
 				boost::mutex::scoped_lock lock(m_mutex);
 				m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				continue;
@@ -683,7 +683,7 @@ void MySqlThread::threadProc(){
 }
 
 void MySqlDaemon::start(){
-	if(atomicExchange(g_running, true) != false){
+	if(atomicExchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
@@ -753,7 +753,7 @@ void MySqlDaemon::start(){
 	}
 }
 void MySqlDaemon::stop(){
-	if(atomicExchange(g_running, false) == false){
+	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
 	LOG_POSEIDON_INFO("Stopping MySQL daemon...");

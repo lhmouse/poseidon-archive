@@ -35,25 +35,25 @@ __thread char t_tag[5] = "----";
 
 struct MutexGuard : NONCOPYABLE {
 	MutexGuard(){
-		atomicStore(g_mutexInited, true);
+		atomicStore(g_mutexInited, true, ATOMIC_RELEASE);
 	}
 	~MutexGuard(){
-		atomicStore(g_mutexInited, false);
+		atomicStore(g_mutexInited, false, ATOMIC_RELEASE);
 	}
 } g_mutexGuard;
 
 }
 
 unsigned long long Logger::getMask() NOEXCEPT {
-	return atomicLoad(g_mask);
+	return atomicLoad(g_mask, ATOMIC_ACQUIRE);
 }
 unsigned long long Logger::setMask(
 	unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT
 {
-	AUTO(oldMask, atomicLoad(g_mask));
+	AUTO(oldMask, atomicLoad(g_mask, ATOMIC_ACQUIRE));
 	for(;;){
-		const AUTO(result, atomicCompareExchange(
-			g_mask, oldMask, (oldMask & ~toDisable) | toEnable));
+		const AUTO(result, atomicCompareExchange(g_mask,
+			oldMask, (oldMask & ~toDisable) | toEnable, ATOMIC_ACQ_REL, ATOMIC_ACQUIRE));
 		if(result == oldMask){
 			break;
 		}
@@ -149,7 +149,8 @@ Logger::~Logger() NOEXCEPT {
 		line += '\n';
 
 		boost::mutex::scoped_lock lock;
-		if(atomicLoad(g_mutexInited)){ // 如果为 false，则静态的 mutex 还没有被构造或者已被析构。
+		// 如果为 false，则静态的 mutex 还没有被构造或者已被析构。
+		if(atomicLoad(g_mutexInited, ATOMIC_ACQUIRE)){
 			boost::mutex::scoped_lock(g_mutex).swap(lock);
 		}
 		std::fwrite(line.data(), line.size(), sizeof(char), stdout);

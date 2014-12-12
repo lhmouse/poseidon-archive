@@ -51,7 +51,7 @@ void JobDispatcher::stop(){
 void JobDispatcher::doModal(){
 	LOG_POSEIDON_INFO("Entering modal loop...");
 
-	if(atomicExchange(g_running, true) != false){
+	if(atomicExchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one modal loop is allowed at the same time.");
 		std::abort();
 	}
@@ -61,7 +61,7 @@ void JobDispatcher::doModal(){
 			{
 				boost::mutex::scoped_lock lock(g_mutex);
 				while(g_queue.empty()){
-					if(!atomicLoad(g_running)){
+					if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
 						goto exit_loop;
 					}
 					g_newJobAvail.wait(lock);
@@ -81,7 +81,7 @@ exit_loop:
 	;
 }
 void JobDispatcher::quitModal(){
-	if(atomicExchange(g_running, false) == false){
+	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
 	{

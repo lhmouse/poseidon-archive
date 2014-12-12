@@ -34,7 +34,7 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	}
 }
 TcpSessionBase::~TcpSessionBase(){
-	if(atomicLoad(m_peerInfo.fetched)){
+	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
 		LOG_POSEIDON_INFO("Destroyed TCP session: remote = ", m_peerInfo.remote,
 			", local = ", m_peerInfo.local);
 	} else {
@@ -45,9 +45,9 @@ TcpSessionBase::~TcpSessionBase(){
 bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 	bool closed;
 	if(fin){
-		closed = atomicExchange(m_shutdown, true);
+		closed = atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
 	} else {
-		closed = atomicLoad(m_shutdown);
+		closed = atomicLoad(m_shutdown, ATOMIC_ACQUIRE);
 	}
 	if(closed){
 		LOG_POSEIDON_DEBUG("Socket has been closed.");
@@ -64,10 +64,10 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 	return true;
 }
 bool TcpSessionBase::hasBeenShutdown() const {
-	return atomicLoad(m_shutdown);
+	return atomicLoad(m_shutdown, ATOMIC_ACQUIRE);
 }
 bool TcpSessionBase::forceShutdown(){
-	const bool ret = !atomicExchange(m_shutdown, true);
+	const bool ret = !atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
 	::shutdown(m_socket.get(), SHUT_RDWR);
 	return ret;
 }
@@ -77,18 +77,18 @@ void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
 }
 
 void TcpSessionBase::fetchPeerInfo() const {
-	if(atomicLoad(m_peerInfo.fetched)){
+	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
 		return;
 	}
 	const boost::mutex::scoped_lock lock(m_peerInfo.mutex);
-	if(atomicLoad(m_peerInfo.fetched)){
+	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
 		return;
 	}
 
 	m_peerInfo.remote = getRemoteIpPortFromFd(m_socket.get());
 	m_peerInfo.local = getLocalIpPortFromFd(m_socket.get());
 	LOG_POSEIDON_INFO("TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
-	atomicStore(m_peerInfo.fetched, true);
+	atomicStore(m_peerInfo.fetched, true, ATOMIC_RELEASE);
 }
 
 long TcpSessionBase::syncRead(void *data, unsigned long size){

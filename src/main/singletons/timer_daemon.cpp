@@ -74,7 +74,7 @@ boost::mutex g_mutex;
 std::vector<TimerQueueElement> g_timers;
 
 void daemonLoop(){
-	while(atomicLoad(g_running)){
+	while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
 		const unsigned long long now = getMonoClock();
 
 		boost::shared_ptr<const TimerCallback> callback;
@@ -127,7 +127,7 @@ void threadProc(){
 }
 
 void TimerDaemon::start(){
-	if(atomicExchange(g_running, true) != false){
+	if(atomicExchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
@@ -136,7 +136,7 @@ void TimerDaemon::start(){
 	boost::thread(threadProc).swap(g_thread);
 }
 void TimerDaemon::stop(){
-	if(atomicExchange(g_running, false) == false){
+	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
 	LOG_POSEIDON_INFO("Stopping timer daemon...");
