@@ -122,7 +122,7 @@ boost::shared_ptr<HttpServlet> HttpServletDepository::registerServlet(
 		}
 		old = servlet;
 	}
-	LOG_POSEIDON_DEBUG("Craeted servlet for for URI ", uri, " in category ", category);
+	LOG_POSEIDON_DEBUG("Created servlet for for URI ", uri, " in category ", category);
 	return servlet;
 }
 

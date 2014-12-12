@@ -72,7 +72,7 @@ boost::shared_ptr<PlayerServlet> PlayerServletDepository::registerServlet(
 		}
 		old = servlet;
 	}
-	LOG_POSEIDON_DEBUG("Craeted servlet for protocol ", protocolId, " in category ", category);
+	LOG_POSEIDON_DEBUG("Created servlet for protocol ", protocolId, " in category ", category);
 	return servlet;
 }
 

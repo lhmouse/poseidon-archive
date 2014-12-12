@@ -81,6 +81,7 @@ void run(){
 		LOG_POSEIDON_INFO("Loading init module: ", *it);
 		ModuleDepository::load(it->c_str());
 	}
+	LOG_POSEIDON_INFO("Waiting for all asynchronous MySQL operations to complete...");
 	MySqlDaemon::waitForAllAsyncOperations();
 
 	JobDispatcher::doModal();

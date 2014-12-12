@@ -351,7 +351,7 @@ public:
 	void waitTillIdle() const {
 		atomicStore(m_urgentMode, true);
 		boost::mutex::scoped_lock lock(m_mutex);
-		while(!m_queue.empty()){
+		while(getPendingOperations() != 0){
 			atomicStore(m_urgentMode, true);
 			m_newAvail.notify_all();
 			m_queueEmpty.wait(lock);
@@ -509,6 +509,9 @@ void MySqlThread::operationLoop(){
 
 			if(queue.empty()){
 				boost::mutex::scoped_lock lock(m_mutex);
+				if(m_queue.empty()){
+					m_queueEmpty.notify_all();
+				}
 				while(m_queue.empty()){
 					if(!atomicLoad(m_running)){
 						goto exit_loop;
@@ -518,7 +521,6 @@ void MySqlThread::operationLoop(){
 					m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
 				queue.swap(m_queue);
-				m_queueEmpty.notify_all();
 			}
 
 			if(!queue.front()->shouldExecuteNow() && !atomicLoad(m_urgentMode)){
@@ -560,6 +562,9 @@ void MySqlThread::operationLoop(){
 				}
 				if(!retry){
 					LOG_POSEIDON_WARN("Retry count drops to zero. Give up.");
+
+					queue.front()->setAssignedThread(VAL_INIT);
+					queue.front()->setLockingAssignment(VAL_INIT);
 					queue.pop_front();
 
 					char temp[32];
@@ -619,6 +624,7 @@ exit_loop:
 		LOG_POSEIDON_ERROR("There are still ", m_queue.size(), " object(s) in MySQL queue");
 		m_queue.clear();
 	}
+	m_queueEmpty.notify_all();
 }
 
 void MySqlThread::threadProc(){
