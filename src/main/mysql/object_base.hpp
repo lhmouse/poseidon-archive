@@ -22,8 +22,8 @@
 
 namespace Poseidon {
 
-class MySqlObjectBase
-	: public virtual VirtualSharedFromThis
+class MySqlObjectBase : NONCOPYABLE
+	, public virtual VirtualSharedFromThis
 {
 protected:
 	static void batchAsyncLoad(const char *tableHint, std::string query,

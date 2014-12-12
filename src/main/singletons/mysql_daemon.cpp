@@ -288,7 +288,7 @@ private:
 		atomicSub(m_pendingOperations, 1);
 	}
 
-	void flushProfile() const {
+	void flushProfile() const NOEXCEPT {
 		const AUTO(now, getMonoClock());
 		const AUTO(delta, now - m_timeFlushed);
 		m_timeFlushed = now;
