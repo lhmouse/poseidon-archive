@@ -609,7 +609,7 @@ void MySqlThread::operationLoop(){
 					}
 				}
 				if(!retry){
-					LOG_POSEIDON_WARN("Retry count drops to zero. Give up.");
+					LOG_POSEIDON_WARN("Retry count has dropped to zero. Give up.");
 
 					queue.pop_front();
 
