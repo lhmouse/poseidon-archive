@@ -15,7 +15,7 @@ namespace Poseidon {
 template<typename T>
 inline T atomicLoad(const volatile T &mem) throw() {
 #ifdef GCC_HAS_ATOMIC_
-	return __atomic_load_n(&mem, __ATOMIC_SEQ_CST);
+	return __atomic_load_n(&mem, __ATOMIC_ACQUIRE);
 #else
 	volatile int barrier;
 	__sync_lock_test_and_set(&barrier, 1);
@@ -25,7 +25,7 @@ inline T atomicLoad(const volatile T &mem) throw() {
 template<typename T>
 inline void atomicStore(volatile T &mem, typename Identity<T>::type val) throw() {
 #ifdef GCC_HAS_ATOMIC_
-	__atomic_store_n(&mem, val, __ATOMIC_SEQ_CST);
+	__atomic_store_n(&mem, val, __ATOMIC_RELEASE);
 #else
 	mem = val;
 	volatile int barrier;
@@ -44,7 +44,7 @@ inline void atomicSynchronize() throw() {
 template<typename T>
 inline T atomicAdd(volatile T &mem, typename Identity<T>::type val) throw() {
 #ifdef GCC_HAS_ATOMIC_
-	return __atomic_add_fetch(&mem, val, __ATOMIC_SEQ_CST);
+	return __atomic_add_fetch(&mem, val, __ATOMIC_ACQ_REL);
 #else
 	return __sync_add_and_fetch(&mem, val);
 #endif
@@ -52,7 +52,7 @@ inline T atomicAdd(volatile T &mem, typename Identity<T>::type val) throw() {
 template<typename T>
 inline T atomicSub(volatile T &mem, typename Identity<T>::type val) throw() {
 #ifdef GCC_HAS_ATOMIC_
-	return __atomic_sub_fetch(&mem, val, __ATOMIC_SEQ_CST);
+	return __atomic_sub_fetch(&mem, val, __ATOMIC_ACQ_REL);
 #else
 	return __sync_sub_and_fetch(&mem, val);
 #endif
