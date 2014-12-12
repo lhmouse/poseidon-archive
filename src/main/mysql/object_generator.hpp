@@ -136,82 +136,82 @@ public:
 
 #define FIELD_BOOLEAN(name_)	\
 	bool get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
 	void set_ ## name_(bool val_){	\
-		::Poseidon::atomicStore(name_, val_, ATOMIC_RELEASE);	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
 #define FIELD_TINYINT(name_)	\
 	signed char get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
 	void set_ ## name_(signed char val_){	\
-		::Poseidon::atomicStore(name_, val_, ATOMIC_RELEASE);	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
 #define FIELD_TINYINT_UNSIGNED(name_)	\
 	unsigned char get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
 	void set_ ## name_(unsigned char val_){	\
-		::Poseidon::atomicStore(name_, val_, ATOMIC_RELEASE);	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
 #define FIELD_SMALLINT(name_)	\
 	short get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
 	void set_ ## name_(short val_){	\
-		::Poseidon::atomicStore(name_, val_, ATOMIC_RELEASE);	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
 #define FIELD_SMALLINT_UNSIGNED(name_)	\
 	unsigned short get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
 	void set_ ## name_(unsigned short val_){	\
-		::Poseidon::atomicStore(name_, val_, ATOMIC_RELEASE);	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
 #define FIELD_INTEGER(name_)	\
 	int get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
 	void set_ ## name_(int val_){	\
-		::Poseidon::atomicStore(name_, val_, ATOMIC_RELEASE);	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
 #define FIELD_INTEGER_UNSIGNED(name_)	\
 	unsigned get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
 	void set_ ## name_(unsigned val_){	\
-		::Poseidon::atomicStore(name_, val_, ATOMIC_RELEASE);	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
 #define FIELD_BIGINT(name_)	\
 	long long get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
 	void set_ ## name_(long long val_){	\
-		::Poseidon::atomicStore(name_, val_, ATOMIC_RELEASE);	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
 #define FIELD_BIGINT_UNSIGNED(name_)	\
 	unsigned long long get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
 	void set_ ## name_(unsigned long long val_){	\
-		::Poseidon::atomicStore(name_, val_, ATOMIC_RELEASE);	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
