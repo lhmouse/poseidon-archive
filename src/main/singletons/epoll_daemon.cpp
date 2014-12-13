@@ -31,6 +31,7 @@ UniqueFile g_epoll;
 boost::thread g_thread;
 
 struct SessionMapElement {
+	const int fd;
 	const boost::shared_ptr<TcpSessionBase> session;
 	// 时间戳，零表示无数据可读/写。
 	unsigned long long lastRead;
@@ -38,7 +39,8 @@ struct SessionMapElement {
 
 	SessionMapElement(boost::shared_ptr<TcpSessionBase> session_,
 		unsigned long long lastRead_, unsigned long long lastWritten_)
-		: session(STD_MOVE(session_)), lastRead(lastRead_), lastWritten(lastWritten_)
+		: fd(session_->getFd()), session(STD_MOVE(session_))
+		, lastRead(lastRead_), lastWritten(lastWritten_)
 	{
 	}
 
@@ -49,13 +51,13 @@ struct SessionMapElement {
 };
 
 MULTI_INDEX_MAP(SessionMap, SessionMapElement,
-	UNIQUE_MEMBER_INDEX(session)
+	UNIQUE_MEMBER_INDEX(fd)
 	MULTI_MEMBER_INDEX(lastRead)
 	MULTI_MEMBER_INDEX(lastWritten)
 );
 
 enum {
-	IDX_SESSION,
+	IDX_FD,
 	IDX_READ,
 	IDX_WRITE,
 };
@@ -99,75 +101,75 @@ void add(const boost::shared_ptr<TcpSessionBase> &session){
 	}
 	::epoll_event event;
 	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-	event.data.ptr = session.get();
+	event.data.fd = session->getFd();
 	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const boost::mutex::scoped_lock lock(g_sessionMutex);
 		g_sessions.erase(result.first);
 		DEBUG_THROW(SystemError);
 	}
 }
-void touch(const boost::shared_ptr<TcpSessionBase> &session){
+void touch(int fd){
 	const AUTO(now, getMonoClock());
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(it, g_sessions.find<0>(session));
-	if(it == g_sessions.end<0>()){
+	const AUTO(it, g_sessions.find<IDX_FD>(fd));
+	if(it == g_sessions.end<IDX_FD>()){
 		LOG_POSEIDON_WARN("Socket not in epoll?");
 		return;
 	}
-	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
-	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
+	g_sessions.setKey<IDX_FD, IDX_READ>(it, now);
+	g_sessions.setKey<IDX_FD, IDX_WRITE>(it, now);
 }
-void remove(const boost::shared_ptr<TcpSessionBase> &session){
-	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+void remove(int fd){
+	if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_DEL, fd, NULLPTR) != 0){
 		LOG_POSEIDON_WARN("Error deleting from epoll. We can do nothing but ignore it.");
 	}
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
-	if(it == g_sessions.end<IDX_SESSION>()){
+	const AUTO(it, g_sessions.find<IDX_FD>(fd));
+	if(it == g_sessions.end<IDX_FD>()){
 		LOG_POSEIDON_WARN("Socket not in epoll?");
 		return;
 	}
-	g_sessions.erase<IDX_SESSION>(it);
+	g_sessions.erase<IDX_FD>(it);
 }
 
-void deepollReadable(const boost::shared_ptr<TcpSessionBase> &session){
+void deepollReadable(int fd){
 	const AUTO(now, getMonoClock());
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
-	if(it == g_sessions.end<IDX_SESSION>()){
+	const AUTO(it, g_sessions.find<IDX_FD>(fd));
+	if(it == g_sessions.end<IDX_FD>()){
 		LOG_POSEIDON_ERROR("Socket not in epoll?");
 		return;
 	}
-	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, now);
+	g_sessions.setKey<IDX_FD, IDX_READ>(it, now);
 }
-void reepollReadable(const boost::shared_ptr<TcpSessionBase> &session){
+void reepollReadable(int fd){
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
-	if(it == g_sessions.end<IDX_SESSION>()){
+	const AUTO(it, g_sessions.find<IDX_FD>(fd));
+	if(it == g_sessions.end<IDX_FD>()){
 		LOG_POSEIDON_ERROR("Socket not in epoll?");
 		return;
 	}
-	g_sessions.setKey<IDX_SESSION, IDX_READ>(it, 0);
+	g_sessions.setKey<IDX_FD, IDX_READ>(it, 0);
 }
 
-void deepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
+void deepollWriteable(int fd){
 	const AUTO(now, getMonoClock());
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
-	if(it == g_sessions.end<IDX_SESSION>()){
+	const AUTO(it, g_sessions.find<IDX_FD>(fd));
+	if(it == g_sessions.end<IDX_FD>()){
 		LOG_POSEIDON_ERROR("Socket not in epoll?");
 		return;
 	}
-	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, now);
+	g_sessions.setKey<IDX_FD, IDX_WRITE>(it, now);
 }
-void reepollWriteable(const boost::shared_ptr<TcpSessionBase> &session){
+void reepollWriteable(int fd){
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
-	const AUTO(it, g_sessions.find<IDX_SESSION>(session));
-	if(it == g_sessions.end<IDX_SESSION>()){
+	const AUTO(it, g_sessions.find<IDX_FD>(fd));
+	if(it == g_sessions.end<IDX_FD>()){
 		LOG_POSEIDON_ERROR("Socket not in epoll?");
 		return;
 	}
-	g_sessions.setKey<IDX_SESSION, IDX_WRITE>(it, 0);
+	g_sessions.setKey<IDX_FD, IDX_WRITE>(it, 0);
 }
 
 void daemonLoop(){
@@ -198,7 +200,7 @@ void daemonLoop(){
 						continue;
 					}
 					if(errno == EAGAIN){
-						reepollReadable(session);
+						reepollReadable(session->getFd());
 						continue;
 					}
 					DEBUG_THROW(SystemError);
@@ -238,7 +240,7 @@ void daemonLoop(){
 					shutdown = session->hasBeenShutdown();
 					if(bytesWritten == 0){
 						if(!shutdown){
-							reepollWriteable(session);
+							reepollWriteable(session->getFd());
 						}
 					}
 				}
@@ -247,14 +249,14 @@ void daemonLoop(){
 						continue;
 					}
 					if(errno == EAGAIN){
-						reepollWriteable(session);
+						reepollWriteable(session->getFd());
 						continue;
 					}
 					DEBUG_THROW(SystemError);
 				}
 				if(bytesWritten == 0){
 					if(shutdown){
-						remove(session);
+						remove(session->getFd());
 					}
 					continue;
 				}
@@ -262,10 +264,10 @@ void daemonLoop(){
 					", hex = ", HexEncoder(data.get(), bytesWritten));
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while writing socket: what = ", e.what());
-				remove(session);
+				remove(session->getFd());
 			} catch(...){
 				LOG_POSEIDON_ERROR("Unknown exception thrown while writing socket.");
-				remove(session);
+				remove(session->getFd());
 			}
 			epollTimeout = 0;
 		}
@@ -304,40 +306,55 @@ void daemonLoop(){
 		if(ready < 0){
 			const AUTO(desc, getErrorDesc());
 			LOG_POSEIDON_ERROR("::epoll_wait() failed: ", desc);
-		} else for(unsigned i = 0; i < (unsigned)ready; ++i){
-			::epoll_event &event = events[i];
-			const AUTO(session,
-				static_cast<TcpSessionBase *>(event.data.ptr)->virtualSharedFromThis<TcpSessionBase>());
-			try {
-				if(event.events & EPOLLHUP){
-					LOG_POSEIDON_INFO("Socket hung up, remote is ", session->getRemoteInfo());
-					remove(session);
-					continue;
-				}
-				if(event.events & EPOLLERR){
-					int err;
-					::socklen_t errLen = sizeof(err);
-					if(::getsockopt(session->getFd(), SOL_SOCKET, SO_ERROR, &err, &errLen) != 0){
-						err = errno;
+		} else {
+			for(unsigned i = 0; i < (unsigned)ready; ++i){
+				::epoll_event &event = events[i];
+				const int fd = event.data.fd;
+				try {
+					boost::shared_ptr<TcpSessionBase> session;
+					{
+						const boost::mutex::scoped_lock lock(g_sessionMutex);
+						const AUTO(it, g_sessions.find<IDX_FD>(fd));
+						if(it != g_sessions.end<IDX_FD>()){
+							session = it->session;
+						}
 					}
-					const AUTO(desc, getErrorDesc());
-					LOG_POSEIDON_WARN("Socket error: ", desc);
-					remove(session);
-					continue;
-				}
+					if(!session){
+						LOG_POSEIDON_DEBUG("Socket closed, fd = ", fd);
+						remove(fd);
+						continue;
+					}
 
-				if(event.events & EPOLLIN){
-					deepollReadable(session);
+					if(event.events & EPOLLHUP){
+						LOG_POSEIDON_INFO("Socket hung up, remote is ", session->getRemoteInfo());
+						remove(fd);
+						continue;
+					}
+					if(event.events & EPOLLERR){
+						int err;
+						::socklen_t errLen = sizeof(err);
+						if(::getsockopt(session->getFd(), SOL_SOCKET, SO_ERROR, &err, &errLen) != 0){
+							err = errno;
+						}
+						const AUTO(desc, getErrorDesc());
+						LOG_POSEIDON_WARN("Socket error: ", desc);
+						remove(fd);
+						continue;
+					}
+
+					if(event.events & EPOLLIN){
+						deepollReadable(session->getFd());
+					}
+					if(event.events & EPOLLOUT){
+						deepollWriteable(session->getFd());
+					}
+				} catch(std::exception &e){
+					LOG_POSEIDON_ERROR("std::exception thrown while epolling: what = ", e.what());
+					remove(fd);
+				} catch(...){
+					LOG_POSEIDON_ERROR("Unknown exception thrown while epolling.");
+					remove(fd);
 				}
-				if(event.events & EPOLLOUT){
-					deepollWriteable(session);
-				}
-			} catch(std::exception &e){
-				LOG_POSEIDON_ERROR("std::exception thrown while epolling: what = ", e.what());
-				remove(session);
-			} catch(...){
-				LOG_POSEIDON_ERROR("Unknown exception thrown while epolling.");
-				remove(session);
 			}
 		}
 
@@ -361,8 +378,8 @@ void daemonLoop(){
 		LOG_POSEIDON_DEBUG("Flushing data on ", remaining.size(), " socket(s).");
 
 		for(AUTO(it, remaining.begin()); it != remaining.end(); ++it){
-			const AUTO_REF(session, it->session);
 			try {
+				AUTO(session, it->session);
 				::ssize_t bytesWritten;
 				for(;;){
 					{
@@ -441,11 +458,12 @@ std::vector<EpollSnapshotItem> EpollDaemon::snapshot(){
 	const boost::mutex::scoped_lock lock(g_sessionMutex);
 	ret.reserve(g_sessions.size());
 	for(AUTO(it, g_sessions.begin()); it != g_sessions.end(); ++it){
+		const AUTO_REF(session, it->session);
 		ret.push_back(EpollSnapshotItem());
 		AUTO_REF(item, ret.back());
-		item.remote = it->session->getRemoteInfo();
-		item.local = it->session->getLocalInfo();
-		item.usOnline = now - it->session->getCreatedTime();
+		item.remote = session->getRemoteInfo();
+		item.local = session->getLocalInfo();
+		item.usOnline = now - session->getCreatedTime();
 	}
 	return ret;
 }
@@ -460,7 +478,7 @@ void EpollDaemon::touchSession(const boost::shared_ptr<TcpSessionBase> &session)
 	if(session->hasBeenShutdown()){
 		return;
 	}
-	touch(session);
+	touch(session->getFd());
 }
 
 void EpollDaemon::registerServer(boost::weak_ptr<const SocketServerBase> server){
