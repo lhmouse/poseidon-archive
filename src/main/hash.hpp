@@ -1,12 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
-// 这个文件是 MCF 的一部分。
-// 有关具体授权说明，请参阅 MCFLicense.txt。
-// Copyleft 2013 - 2014, LH_Mouse. All wrongs reserved.
-
-#ifndef POSEIDON_HTTP_HASH_HPP_
-#define POSEIDON_HTTP_HASH_HPP_
+#ifndef POSEIDON_HASH_HPP_
+#define POSEIDON_HASH_HPP_
 
 #include <cstddef>
 #include <boost/cstdint.hpp>
