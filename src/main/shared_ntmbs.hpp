@@ -58,7 +58,9 @@ public:
 		return get()[0] == 0;
 	}
 
-	bool isOwning() const;
+	bool isOwning() const {
+		return m_ptr.use_count() > 0;
+	}
 	void forkOwning();
 
 	void swap(SharedNtmbs &rhs) NOEXCEPT {

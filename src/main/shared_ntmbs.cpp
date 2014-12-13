@@ -7,7 +7,6 @@
 #include "log.hpp"
 #include <memory>
 #include <iostream>
-#include <boost/weak_ptr.hpp>
 #include <boost/make_shared.hpp>
 using namespace Poseidon;
 
@@ -86,13 +85,8 @@ struct IncrementalAlloc {
 	}
 };
 
-const boost::weak_ptr<const char> NULL_WEAK_PTR;
-
 }
 
-bool SharedNtmbs::isOwning() const {
-	return m_ptr.owner_before(NULL_WEAK_PTR) || NULL_WEAK_PTR.owner_before(m_ptr);
-}
 void SharedNtmbs::forkOwning(){
 	if(!isOwning()){
 		void *dst;

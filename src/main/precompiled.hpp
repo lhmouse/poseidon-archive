@@ -29,6 +29,7 @@
 #include <boost/ref.hpp>
 #include <boost/cstdlib.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/multi_index_container.hpp>
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
