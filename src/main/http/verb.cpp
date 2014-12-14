@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "verb.hpp"
+#include <string.h>
 using namespace Poseidon;
 
 namespace {
@@ -24,12 +25,13 @@ const char VERB_TABLE[][16] = {
 namespace Poseidon {
 
 HttpVerb httpVerbFromString(const char *str){
-	for(unsigned i = 0; i < COUNT_OF(VERB_TABLE); ++i){
-		if(std::strcmp(str, VERB_TABLE[i]) == 0){
-			return static_cast<HttpVerb>(i);
-		}
+	const unsigned len = ::strlen(str);
+	const char *const begin = VERB_TABLE[0];
+	const AUTO(pos, static_cast<const char *>(::memmem(begin, sizeof(VERB_TABLE), str, len + 1)));
+	if(!pos){
+		return HTTP_INVALID_VERB;
 	}
-	return HTTP_INVALID_VERB;
+	return static_cast<HttpVerb>((unsigned)(pos - begin) / sizeof(VERB_TABLE[0]));
 }
 const char *stringFromHttpVerb(HttpVerb verb){
 	unsigned i = static_cast<unsigned>(verb);
