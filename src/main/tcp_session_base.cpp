@@ -50,7 +50,7 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 		closed = atomicLoad(m_shutdown, ATOMIC_ACQUIRE);
 	}
 	if(closed){
-		LOG_POSEIDON_DEBUG("Socket has been closed.");
+		LOG_POSEIDON_DEBUG("Unable to send data because this socket has been closed.");
 		return false;
 	}
 	if(!buffer.empty()){
