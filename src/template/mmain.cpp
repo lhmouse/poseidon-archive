@@ -63,11 +63,15 @@ void printObjs(std::vector<boost::shared_ptr<MySqlObjectBase> > v){
 	}
 }
 
+void mysqlExceptProc(){
+	LOG_POSEIDON_FATAL("MySQL exception!");
+}
+
 void tickProc(unsigned long long now, unsigned long long period){
 	PROFILE_ME;
 	LOG_POSEIDON_FATAL("Tick, now = ", now, ", period = ", period);
 
-	MySqlObj::batchAsyncLoad("SELECT * FROM `MySqlObj`", &printObjs);
+	MySqlObj::batchAsyncLoad("SELECT * FROM `MySqlObj`", &printObjs, &mysqlExceptProc);
 }
 
 void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){

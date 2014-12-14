@@ -29,11 +29,12 @@ struct MySqlDaemon {
 	static void waitForAllAsyncOperations();
 
 	static void pendForSaving(boost::shared_ptr<const MySqlObjectBase> object, bool replaces,
-		MySqlAsyncSaveCallback callback);
+		MySqlAsyncSaveCallback callback, MySqlExceptionCallback except);
 	static void pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std::string query,
-		MySqlAsyncLoadCallback callback);
+		MySqlAsyncLoadCallback callback, MySqlExceptionCallback except);
 	static void pendForBatchAsyncLoading(const char *tableHint, std::string query,
-		boost::shared_ptr<MySqlObjectBase> (*factory)(), MySqlBatchAsyncLoadCallback callback);
+		boost::shared_ptr<MySqlObjectBase> (*factory)(),
+		MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except);
 
 private:
 	MySqlDaemon();
