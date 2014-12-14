@@ -26,12 +26,19 @@ namespace Poseidon {
 
 HttpVerb httpVerbFromString(const char *str){
 	const unsigned len = ::strlen(str);
+	if(len == 0){
+		return HTTP_INVALID_VERB;
+	}
 	const char *const begin = VERB_TABLE[0];
 	const AUTO(pos, static_cast<const char *>(::memmem(begin, sizeof(VERB_TABLE), str, len + 1)));
 	if(!pos){
 		return HTTP_INVALID_VERB;
 	}
-	return static_cast<HttpVerb>((unsigned)(pos - begin) / sizeof(VERB_TABLE[0]));
+	const unsigned i = (unsigned)(pos - begin) / sizeof(VERB_TABLE[0]);
+	if(pos != VERB_TABLE[i]){
+		return HTTP_INVALID_VERB;
+	}
+	return static_cast<HttpVerb>(i);
 }
 const char *stringFromHttpVerb(HttpVerb verb){
 	unsigned i = static_cast<unsigned>(verb);
