@@ -16,13 +16,13 @@ class IpPort;
 
 class TcpClientBase : private SockAddr, public TcpSessionBase {
 protected:
-	explicit TcpClientBase(const IpPort &addr);
+	explicit TcpClientBase(const IpPort &addr, bool useSsl);
+	~TcpClientBase();
 
 protected:
 	void onReadAvail(const void *data, std::size_t size) = 0;
 
 protected:
-	void sslConnect();
 	void goResident();
 };
 

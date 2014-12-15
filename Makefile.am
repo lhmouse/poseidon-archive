@@ -66,6 +66,7 @@ lib_libposeidon_main_la_SOURCES=	\
 	src/main/singletons/system_http_server.cpp	\
 	src/main/player/session.cpp	\
 	src/main/player/server.cpp	\
+	src/main/player/client.cpp	\
 	src/main/player/exception.cpp	\
 	src/main/http/session.cpp	\
 	src/main/http/server.cpp	\

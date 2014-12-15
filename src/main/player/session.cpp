@@ -3,9 +3,8 @@
 
 #include "../precompiled.hpp"
 #include "session.hpp"
-#include "status.hpp"
 #include "exception.hpp"
-#include "protocol_base.hpp"
+#include "error_protocol.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
 #include "../singletons/player_servlet_depository.hpp"
@@ -16,19 +15,11 @@ using namespace Poseidon;
 
 namespace {
 
-#define PROTOCOL_NAME	ErrorProtocol
-#define PROTOCOL_ID		0
-#define PROTOCOL_FIELDS	\
-	FIELD_VUINT(protocolId)	\
-	FIELD_VUINT(status)	\
-	FIELD_STRING(reason)
-#include "protocol_generator.hpp"
-
 StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
 	const std::size_t size = contents.size();
 	if(size > 0xFFFF){
-		LOG_POSEIDON_WARN("Respond packet too large, size = ", size);
-		DEBUG_THROW(PlayerProtocolException, PLAYER_RESPOND_TOO_LARGE, "Respond packet too large");
+		LOG_POSEIDON_WARN("Response packet too large, size = ", size);
+		DEBUG_THROW(PlayerProtocolException, PLAYER_RESPONSE_TOO_LARGE, "Response packet too large");
 	}
 	StreamBuffer ret;
 	boost::uint16_t tmp;
@@ -42,8 +33,8 @@ StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
 
 StreamBuffer makeErrorResponse(boost::uint16_t protocolId, PlayerStatus status, std::string reason){
 	StreamBuffer temp;
-	ErrorProtocol(protocolId, static_cast<unsigned>(status), STD_MOVE(reason)) >>temp;
-	return makeResponse(ErrorProtocol::ID, STD_MOVE(temp));
+	PlayerErrorProtocol(protocolId, static_cast<unsigned>(status), STD_MOVE(reason)) >>temp;
+	return makeResponse(PlayerErrorProtocol::ID, STD_MOVE(temp));
 }
 
 class PlayerRequestJob : public JobBase {

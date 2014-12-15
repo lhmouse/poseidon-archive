@@ -49,7 +49,7 @@ private:
 
 protected:
 	explicit TcpSessionBase(UniqueFile socket);
-	virtual ~TcpSessionBase();
+	~TcpSessionBase();
 
 private:
 	void setEpoll(Epoll *epoll) NOEXCEPT;

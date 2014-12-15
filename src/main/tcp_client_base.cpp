@@ -54,7 +54,7 @@ UniqueFile createSocket(int family){
 
 }
 
-TcpClientBase::TcpClientBase(const IpPort &addr)
+TcpClientBase::TcpClientBase(const IpPort &addr, bool useSsl)
 	: SockAddr(getSockAddrFromIpPort(addr)), TcpSessionBase(createSocket(SockAddr::getFamily()))
 {
 	if(::connect(m_socket.get(),
@@ -64,15 +64,17 @@ TcpClientBase::TcpClientBase(const IpPort &addr)
 			DEBUG_THROW(SystemError);
 		}
 	}
+	if(useSsl){
+		LOG_POSEIDON_INFO("Initiating SSL handshake...");
+
+		AUTO(ssl, g_clientSslFactory.createSsl());
+		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), getFd()));
+		initSsl(STD_MOVE(filter));
+	}
+}
+TcpClientBase::~TcpClientBase(){
 }
 
-void TcpClientBase::sslConnect(){
-	LOG_POSEIDON_INFO("Initiating SSL handshake...");
-
-	AUTO(ssl, g_clientSslFactory.createSsl());
-	boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), getFd()));
-	initSsl(STD_MOVE(filter));
-}
 void TcpClientBase::goResident(){
 	EpollDaemon::addSession(virtualSharedFromThis<TcpSessionBase>());
 }

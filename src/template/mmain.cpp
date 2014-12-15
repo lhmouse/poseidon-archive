@@ -210,14 +210,13 @@ class TestClient : public TcpClientBase {
 public:
 	static boost::shared_ptr<TestClient> create(){
 		AUTO(ret, boost::make_shared<TestClient>());
-		ret->sslConnect();
 		ret->goResident();
 		return ret;
 	}
 
 public:
 	TestClient()
-		: TcpClientBase(IpPort("192.30.252.128", 443))
+		: TcpClientBase(IpPort("192.30.252.128", 443), true)
 	{
 	}
 
