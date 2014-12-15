@@ -19,7 +19,7 @@ using namespace Poseidon;
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getMonoClock())
-	, m_epoll(NULLPTR), m_peerInfo(), m_shutdown(false)
+	, m_peerInfo(), m_shutdown(false), m_epoll(NULLPTR)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
@@ -34,25 +34,14 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	}
 }
 TcpSessionBase::~TcpSessionBase(){
-	setEpoll(NULLPTR);
-
 	LOG_POSEIDON_INFO(
 		"Destroyed TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
 }
 
-void TcpSessionBase::setEpoll(Epoll *epoll){
-	if(m_epoll == epoll){
-		return;
-	}
-
-	if(m_epoll){
-		m_epoll->internalRemoveSession(this);
-		m_epoll = NULLPTR; // 注意异常安全。
-	}
-	if(epoll){
-		epoll->internalAddSession(virtualSharedFromThis<TcpSessionBase>());
-		m_epoll = epoll;
-	}
+void TcpSessionBase::setEpoll(Epoll *epoll) NOEXCEPT {
+	const boost::mutex::scoped_lock lock(m_bufferMutex);
+	assert(!(m_epoll && epoll));
+	m_epoll = epoll;
 }
 
 void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
@@ -85,8 +74,9 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 		LOG_POSEIDON_DEBUG("Unable to send data because this socket has been closed.");
 		return false;
 	}
+
+	const boost::mutex::scoped_lock lock(m_bufferMutex);
 	if(!buffer.empty()){
-		const boost::mutex::scoped_lock lock(m_bufferMutex);
 		m_sendBuffer.splice(buffer);
 	}
 	if(fin){

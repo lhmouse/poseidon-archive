@@ -6,7 +6,7 @@
 
 #include "cxx_util.hpp"
 #include "raii.hpp"
-#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <vector>
@@ -26,7 +26,7 @@ private:
 	class SessionMapImpl;
 
 private:
-	mutable boost::recursive_mutex m_mutex;
+	mutable boost::mutex m_mutex;
 	UniqueFile m_epoll;
 	boost::scoped_ptr<SessionMapImpl> m_sessions;
 
@@ -35,10 +35,6 @@ public:
 	~Epoll();
 
 private:
-	// TcpSessionBase 注册回调。
-	void internalAddSession(const boost::shared_ptr<TcpSessionBase> &session);
-	void internalRemoveSession(TcpSessionBase *session);
-
 	void notifyWriteable(TcpSessionBase *session);
 
 public:
