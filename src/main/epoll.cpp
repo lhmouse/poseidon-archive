@@ -81,6 +81,9 @@ Epoll::Epoll(){
 	m_sessions.reset(new SessionMapImpl);
 }
 Epoll::~Epoll(){
+	for(AUTO(it, m_sessions->begin()); it != m_sessions->end(); ++it){
+		it->session->setEpoll(NULLPTR);
+	}
 }
 
 void Epoll::notifyWriteable(TcpSessionBase *session){
