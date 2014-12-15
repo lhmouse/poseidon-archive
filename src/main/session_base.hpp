@@ -12,9 +12,7 @@ namespace Poseidon {
 
 class StreamBuffer;
 
-class SessionBase : NONCOPYABLE
-	, public virtual VirtualSharedFromThis
-{
+class SessionBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
 public:
 	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
 	~SessionBase();

@@ -18,15 +18,19 @@
 
 namespace Poseidon {
 
+class Epoll;
 class SslFilterBase;
 
 class TcpSessionBase : public SessionBase {
+	friend class Epoll;
 	friend class TcpServerBase;
 	friend class TcpClientBase;
 
 private:
 	const UniqueFile m_socket;
 	const unsigned long long m_createdTime;
+
+	Epoll *m_epoll;
 
 	mutable struct {
 		volatile bool fetched;
@@ -46,6 +50,8 @@ protected:
 	virtual ~TcpSessionBase();
 
 private:
+	void setEpoll(Epoll *epoll);
+
 	void initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter);
 
 	void fetchPeerInfo() const;
