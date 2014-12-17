@@ -16,6 +16,10 @@
 	DEBUG_THROW(::Poseidon::PlayerProtocolException,	\
 		::Poseidon::PLAYER_END_OF_STREAM, "End of stream encountered")
 
+#define THROW_JUNK_AFTER_PACKET_	\
+	DEBUG_THROW(::Poseidon::PlayerProtocolException,	\
+		::Poseidon::PLAYER_JUNK_AFTER_PACKET, "Junk after packet body")
+
 namespace Poseidon {
 
 struct ProtocolBase {
