@@ -31,7 +31,8 @@ public:
 	~PlayerSession();
 
 private:
-	void onReadAvail(const void *data, std::size_t size);
+	void onReadAvail(const void *data, std::size_t size) FINAL;
+	using TcpSessionBase::send;
 
 public:
 	std::size_t getCategory() const {

@@ -22,7 +22,7 @@ public:
 };
 
 template<class LockT, class UnlockT, class CommitT>
-class TransactionItem : public TransactionItemBase {
+class TransactionItem FINAL : public TransactionItemBase {
 private:
 	const LockT m_lock;
 	const UnlockT m_unlock;
@@ -35,16 +35,16 @@ public:
 	}
 
 public:
-	virtual bool lock(){
+	virtual bool lock() OVERRIDE {
 		return m_lock();
 	}
-	virtual void unlock(){
+	virtual void unlock() OVERRIDE {
 		try {
 			m_unlock();
 		} catch(...){
 		}
 	}
-	virtual void commit(){
+	virtual void commit() OVERRIDE {
 		try {
 			m_commit();
 		} catch(...){

@@ -15,7 +15,7 @@ public:
 	virtual ~UdpServerBase();
 
 public:
-	bool poll() const;
+	bool poll() const FINAL;
 };
 
 }

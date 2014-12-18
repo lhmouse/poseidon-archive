@@ -68,9 +68,9 @@ public:
 	long syncRead(void *date, unsigned long size);
 	long syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
 
-	bool send(StreamBuffer buffer, bool fin = false); // final 置 true 则发送完毕后挂断连接。
-	bool hasBeenShutdown() const;
-	bool forceShutdown();
+	bool send(StreamBuffer buffer, bool fin = false) FINAL;
+	bool hasBeenShutdown() const FINAL;
+	bool forceShutdown() FINAL;
 
 	unsigned long long getCreatedTime() const {
 		return m_createdTime;

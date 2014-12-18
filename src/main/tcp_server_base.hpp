@@ -19,14 +19,14 @@ private:
 
 public:
 	TcpServerBase(const IpPort &bindAddr, const char *cert, const char *privateKey);
-	virtual ~TcpServerBase();
+	~TcpServerBase();
 
 protected:
 	// 工厂函数。返回空指针导致抛出一个异常。
 	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const = 0;
 
 public:
-	bool poll() const;
+	bool poll() const FINAL;
 };
 
 }

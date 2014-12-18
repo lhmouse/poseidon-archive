@@ -23,7 +23,8 @@ protected:
 	~PlayerClient();
 
 private:
-	void onReadAvail(const void *data, std::size_t size);
+	void onReadAvail(const void *data, std::size_t size) FINAL;
+	using TcpClientBase::send;
 
 public:
 	virtual void onResponse(boost::uint16_t protocolId, StreamBuffer contents) = 0;

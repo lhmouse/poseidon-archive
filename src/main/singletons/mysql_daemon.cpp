@@ -73,7 +73,7 @@ public:
 	}
 
 private:
-	void perform(){
+	void perform() FINAL {
 		try {
 			doPerform();
 		} catch(...){

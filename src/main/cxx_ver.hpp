@@ -28,9 +28,13 @@
 #ifdef POSEIDON_CXX11
 #	define CONSTEXPR				constexpr
 #	define NOEXCEPT					noexcept
+#	define OVERRIDE					override
+#	define FINAL					final
 #else
 #	define CONSTEXPR
 #	define NOEXCEPT					throw()
+#	define OVERRIDE
+#	define FINAL
 #endif
 
 namespace Poseidon {

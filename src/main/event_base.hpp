@@ -29,7 +29,7 @@ public:
 	};
 
 public:
-	virtual unsigned id() const {
+	virtual unsigned id() const OVERRIDE {
 		return ID;
 	}
 };
