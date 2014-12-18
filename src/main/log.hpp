@@ -50,6 +50,9 @@ private:
 		m_stream <<val;
 	}
 
+	void put(bool val){
+		m_stream <<std::boolalpha <<val;
+	}
 	void put(signed char val){
 		m_stream <<(int)val;
 	}
