@@ -29,9 +29,9 @@ private:
 	void onReadAvail(const void *data, std::size_t size) = 0;
 
 public:
-	bool send(StreamBuffer buffer, bool fin = false) FINAL;
-	bool hasBeenShutdown() const FINAL;
-	bool forceShutdown() FINAL;
+	bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
+	bool hasBeenShutdown() const OVERRIDE FINAL;
+	bool forceShutdown() OVERRIDE FINAL;
 
 	boost::shared_ptr<const HttpSession> getParent() const {
 		return m_parent.lock();

@@ -73,7 +73,7 @@ public:
 	}
 
 private:
-	void perform() FINAL {
+	void perform() OVERRIDE FINAL {
 		try {
 			doPerform();
 		} catch(...){

@@ -41,7 +41,7 @@ public:
 	explicit WebSocketSession(const boost::shared_ptr<HttpSession> &parent);
 
 private:
-	void onReadAvail(const void *data, std::size_t size) FINAL;
+	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 	void onControlFrame();
 

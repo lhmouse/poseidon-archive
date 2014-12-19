@@ -68,9 +68,9 @@ public:
 	long syncRead(void *date, unsigned long size);
 	long syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
 
-	bool send(StreamBuffer buffer, bool fin = false) FINAL;
-	bool hasBeenShutdown() const FINAL;
-	bool forceShutdown() FINAL;
+	bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
+	bool hasBeenShutdown() const OVERRIDE FINAL;
+	bool forceShutdown() OVERRIDE FINAL;
 
 	unsigned long long getCreatedTime() const {
 		return m_createdTime;

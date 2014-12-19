@@ -23,7 +23,7 @@ protected:
 	~PlayerClient();
 
 private:
-	void onReadAvail(const void *data, std::size_t size) FINAL;
+	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 	using TcpClientBase::send;
 
 public:

@@ -53,7 +53,7 @@ public:
 	~HttpSession();
 
 private:
-	void onReadAvail(const void *data, std::size_t size) FINAL;
+	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 	using TcpSessionBase::send;
 
 	void setRequestTimeout(unsigned long long timeout);
