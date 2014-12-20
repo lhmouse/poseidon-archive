@@ -16,11 +16,12 @@
 
 namespace Poseidon {
 
+class HttpServer;
 class HttpUpgradedSessionBase;
 
 class HttpSession : public TcpSessionBase {
-	friend class HttpServer;
-	friend class HttpUpgradedSessionBase;
+	friend HttpServer;
+	friend HttpUpgradedSessionBase;
 
 private:
 	enum State {
