@@ -32,7 +32,6 @@ public:
 
 private:
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
-	using TcpSessionBase::send;
 
 public:
 	std::size_t getCategory() const {
