@@ -36,10 +36,7 @@ DisposableBuffer &pushBackPooled(std::list<DisposableBuffer> &dst){
 			goto done;
 		}
 	}
-	{
-		std::list<DisposableBuffer> temp(1);
-		dst.splice(dst.end(), temp, temp.begin());
-	}
+	dst.push_back(VAL_INIT);
 
 done:
 	AUTO_REF(ret, dst.back());
@@ -63,10 +60,7 @@ DisposableBuffer &pushFrontPooled(std::list<DisposableBuffer> &dst){
 			goto done;
 		}
 	}
-	{
-		std::list<DisposableBuffer> temp(1);
-		dst.splice(dst.begin(), temp, temp.begin());
-	}
+	dst.push_front(VAL_INIT);
 
 done:
 	AUTO_REF(ret, dst.back());
