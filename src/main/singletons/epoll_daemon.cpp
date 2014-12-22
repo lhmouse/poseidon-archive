@@ -16,7 +16,8 @@ using namespace Poseidon;
 
 namespace {
 
-std::size_t	g_maxTimeout	= 100;
+std::size_t	g_maxTimeout				= 100;
+unsigned long long g_tcpRequestTimeout	= 30000;
 
 volatile bool g_running = false;
 boost::thread g_thread;
@@ -119,6 +120,9 @@ void EpollDaemon::start(){
 	conf.get(g_maxTimeout, "epoll_max_timeout");
 	LOG_POSEIDON_DEBUG("Max timeout = ", g_maxTimeout);
 
+	conf.get(g_tcpRequestTimeout, "epoll_tcp_request_timeout");
+	LOG_POSEIDON_DEBUG("Tcp request timeout = ", g_tcpRequestTimeout);
+
 	boost::thread(threadProc).swap(g_thread);
 }
 void EpollDaemon::stop(){
@@ -132,6 +136,10 @@ void EpollDaemon::stop(){
 	}
 	g_epoll.clear();
 	g_servers.clear();
+}
+
+unsigned long long EpollDaemon::getTcpRequestTimeout(){
+	return g_tcpRequestTimeout;
 }
 
 std::vector<EpollSnapshotItem> EpollDaemon::snapshot(){

@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "session.hpp"
-#include <boost/bind.hpp>
 #include <string.h>
 #include "request.hpp"
 #include "exception.hpp"
@@ -13,7 +12,6 @@
 #include "../log.hpp"
 #include "../singletons/http_servlet_depository.hpp"
 #include "../singletons/websocket_servlet_depository.hpp"
-#include "../singletons/timer_daemon.hpp"
 #include "../stream_buffer.hpp"
 #include "../utilities.hpp"
 #include "../exception.hpp"
@@ -303,27 +301,13 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			}
 
 			if(m_upgradedSession){
-				m_shutdownTimer.reset();
-
-				m_upgradedSession->onInitContents(m_line.data(), m_line.size());
-
-				m_totalLength = 0;
-				m_contentLength = 0;
-				m_line.clear();
-
-				if(read != end){
-					m_upgradedSession->onReadAvail(read, end - read);
-				}
-				read = end;
-				break;
+				goto session_upgraded;
 			}
-
-			m_shutdownTimer = TimerDaemon::registerTimer(HttpServletDepository::getKeepAliveTimeout(), 0,
-				boost::bind(&onKeepAliveTimeout, virtualWeakFromThis<HttpSession>()));
 
 			pendJob(boost::make_shared<HttpRequestJob>(
 				virtualSharedFromThis<HttpSession>(), m_verb, STD_MOVE(m_uri), m_version,
 				STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
+			setTimeout(HttpServletDepository::getKeepAliveTimeout());
 
 			m_totalLength = 0;
 			m_contentLength = 0;
@@ -335,6 +319,20 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			m_getParams.clear();
 			m_headers.clear();
 		}
+		return;
+
+	session_upgraded:
+		setTimeout(0);
+
+		m_upgradedSession->onInitContents(m_line.data(), m_line.size());
+
+		m_totalLength = 0;
+		m_contentLength = 0;
+		m_line.clear();
+
+		if(read != end){
+			m_upgradedSession->onReadAvail(read, end - read);
+		}
 	} catch(HttpException &e){
 		LOG_POSEIDON_ERROR("HttpException thrown while parsing data, URI = ", m_uri,
 			", status = ", static_cast<unsigned>(e.status()));
@@ -344,17 +342,6 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		LOG_POSEIDON_ERROR("Forwarding exception... shutdown the session first.");
 		sendDefault(HTTP_BAD_REQUEST, true);
 		throw;
-	}
-}
-
-void HttpSession::setRequestTimeout(unsigned long long timeout){
-	LOG_POSEIDON_DEBUG("Setting request timeout to ", timeout);
-
-	if(timeout == 0){
-		m_shutdownTimer.reset();
-	} else {
-		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
-			boost::bind(&onRequestTimeout, virtualWeakFromThis<HttpSession>()));
 	}
 }
 

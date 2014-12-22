@@ -24,9 +24,8 @@ protected:
 	explicit HttpUpgradedSessionBase(const boost::shared_ptr<HttpSession> &parent);
 
 private:
-	virtual void onInitContents(const void *data, std::size_t size);
-
-	void onReadAvail(const void *data, std::size_t size) = 0;
+	virtual void onInitContents(const void *data, std::size_t size) = 0;
+	virtual void onReadAvail(const void *data, std::size_t size) = 0;
 
 public:
 	bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
@@ -51,6 +50,8 @@ public:
 	const std::string &getUri() const;
 	const OptionalMap &getGetParams() const;
 	const OptionalMap &getHeaders() const;
+
+	void setTimeout(unsigned long long timeout);
 };
 
 }

@@ -22,6 +22,8 @@ struct EpollDaemon {
 	static void start();
 	static void stop();
 
+	static unsigned long long getTcpRequestTimeout();
+
 	static std::vector<EpollSnapshotItem> snapshot();
 
 	static void addSession(const boost::shared_ptr<TcpSessionBase> &session);

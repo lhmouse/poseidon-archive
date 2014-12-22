@@ -196,9 +196,9 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 
 		PROTOCOL_FIELDS
 
-		if(!buffer_.empty()){
-			THROW_JUNK_AFTER_PACKET_;
-		}
+//		if(!buffer_.empty()){
+//			THROW_JUNK_AFTER_PACKET_;
+//		}
 	}
 
 	operator ::Poseidon::StreamBuffer() const {

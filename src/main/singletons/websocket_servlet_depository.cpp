@@ -7,6 +7,7 @@
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
 using namespace Poseidon;
@@ -27,6 +28,8 @@ struct Poseidon::WebSocketServlet : NONCOPYABLE {
 
 namespace {
 
+unsigned long long g_keepAliveTimeout   = 30000;
+
 typedef std::map<std::size_t,
 	std::map<SharedNtmbs, boost::weak_ptr<WebSocketServlet> >
 	> ServletMap;
@@ -37,6 +40,12 @@ ServletMap g_servlets;
 }
 
 void WebSocketServletDepository::start(){
+	LOG_POSEIDON_INFO("Starting websocket servlet depository...");
+
+	AUTO_REF(conf, MainConfig::getConfigFile());
+
+	conf.get(g_keepAliveTimeout, "websocket_keep_alive_timeout");
+	LOG_POSEIDON_DEBUG("Keep alive timeout = ", g_keepAliveTimeout);
 }
 void WebSocketServletDepository::stop(){
 	LOG_POSEIDON_INFO("Unloading all WebSocket servlets...");
@@ -46,6 +55,10 @@ void WebSocketServletDepository::stop(){
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		servlets.swap(g_servlets);
 	}
+}
+
+unsigned long long WebSocketServletDepository::getKeepAliveTimeout(){
+	return g_keepAliveTimeout;
 }
 
 boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::registerServlet(

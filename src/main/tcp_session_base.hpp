@@ -20,6 +20,7 @@ namespace Poseidon {
 
 class Epoll;
 class SslFilterBase;
+class TimerItem;
 
 class TcpServerBase;
 class TcpClientBase;
@@ -41,6 +42,8 @@ private:
 	} m_peerInfo;
 
 	boost::scoped_ptr<SslFilterBase> m_sslFilter;
+
+	boost::shared_ptr<const TimerItem> m_shutdownTimer;
 
 	volatile bool m_shutdown;
 	mutable boost::mutex m_bufferMutex;
@@ -66,7 +69,10 @@ private:
 	long syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
 
 protected:
+	// 注意，只能在 epoll 线程中调用这些函数。
 	void onReadAvail(const void *data, std::size_t size) = 0;
+
+	void setTimeout(unsigned long long timeout);
 
 public:
 	int getFd() const {

@@ -11,11 +11,6 @@ HttpUpgradedSessionBase::HttpUpgradedSessionBase(const boost::shared_ptr<HttpSes
 {
 }
 
-void HttpUpgradedSessionBase::onInitContents(const void *data, std::size_t size){
-	(void)data;
-	(void)size;
-}
-
 bool HttpUpgradedSessionBase::hasBeenShutdown() const {
 	const AUTO(parent, getParent());
 	if(!parent){
@@ -49,4 +44,8 @@ const OptionalMap &HttpUpgradedSessionBase::getGetParams() const {
 }
 const OptionalMap &HttpUpgradedSessionBase::getHeaders() const {
 	return getSafeParent()->m_headers;
+}
+
+void HttpUpgradedSessionBase::setTimeout(unsigned long long timeout){
+	getSafeParent()->setTimeout(timeout);
 }

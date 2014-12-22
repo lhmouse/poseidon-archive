@@ -26,6 +26,8 @@ struct WebSocketServletDepository {
 	static void start();
 	static void stop();
 
+	static unsigned long long getKeepAliveTimeout();
+
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	static boost::shared_ptr<WebSocketServlet> registerServlet(
 		std::size_t category, SharedNtmbs uri, WebSocketServletCallback callback);

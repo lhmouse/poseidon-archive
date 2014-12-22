@@ -24,7 +24,8 @@ struct Poseidon::PlayerServlet : NONCOPYABLE {
 
 namespace {
 
-std::size_t g_maxRequestLength = 16 * 0x400;
+std::size_t g_maxRequestLength			= 16 * 0x400;
+unsigned long long g_keepAliveTimeout	= 30000;
 
 typedef std::map<std::size_t,
 	std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> >
@@ -42,6 +43,9 @@ void PlayerServletDepository::start(){
 
 	conf.get(g_maxRequestLength, "player_max_request_length");
 	LOG_POSEIDON_DEBUG("Max request length = ", g_maxRequestLength);
+
+	conf.get(g_keepAliveTimeout, "player_keep_alive_timeout");
+	LOG_POSEIDON_DEBUG("Keep alive timeout = ", g_keepAliveTimeout);
 }
 void PlayerServletDepository::stop(){
 	LOG_POSEIDON_INFO("Unloading all player servlets...");
@@ -55,6 +59,9 @@ void PlayerServletDepository::stop(){
 
 std::size_t PlayerServletDepository::getMaxRequestLength(){
 	return g_maxRequestLength;
+}
+unsigned long long PlayerServletDepository::getKeepAliveTimeout(){
+	return g_keepAliveTimeout;
 }
 
 boost::shared_ptr<PlayerServlet> PlayerServletDepository::registerServlet(

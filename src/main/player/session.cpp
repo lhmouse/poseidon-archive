@@ -32,9 +32,8 @@ StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
 }
 
 StreamBuffer makeErrorResponse(boost::uint16_t protocolId, PlayerStatus status, std::string reason){
-	StreamBuffer temp;
-	PlayerErrorProtocol(protocolId, static_cast<unsigned>(status), STD_MOVE(reason)) >>temp;
-	return makeResponse(PlayerErrorProtocol::ID, STD_MOVE(temp));
+	return makeResponse(PlayerErrorProtocol::ID,
+		StreamBuffer(PlayerErrorProtocol(protocolId, static_cast<unsigned>(status), STD_MOVE(reason))));
 }
 
 class PlayerRequestJob : public JobBase {
@@ -57,17 +56,30 @@ protected:
 		PROFILE_ME;
 
 		try {
-			const AUTO(servlet, PlayerServletDepository::getServlet(m_session->getCategory(), m_protocolId));
-			if(!servlet){
-				LOG_POSEIDON_WARN("No servlet for protocol ", m_protocolId);
-				DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND, "Unknown protocol");
-			}
+			if(m_protocolId == PlayerErrorProtocol::ID){
+				PlayerErrorProtocol packet(m_payload);
+				LOG_POSEIDON_DEBUG("Received error packet: status = ", packet.status,
+					", reason = ", packet.reason);
+				if(packet.status != PLAYER_OK){
+					LOG_POSEIDON_DEBUG("Shutting down session as requested...");
+					m_session->sendError(PlayerErrorProtocol::ID,
+						static_cast<PlayerStatus>(packet.status), STD_MOVE(packet.reason), true);
+				}
+			} else {
+				const AUTO(servlet,
+					PlayerServletDepository::getServlet(m_session->getCategory(), m_protocolId));
+				if(!servlet){
+					LOG_POSEIDON_WARN("No servlet for protocol ", m_protocolId);
+					DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND, "Unknown protocol");
+				}
 
-			LOG_POSEIDON_DEBUG("Dispatching: protocol = ", m_protocolId, ", payload size = ", m_payload.size());
-			(*servlet)(m_session, STD_MOVE(m_payload));
+				LOG_POSEIDON_DEBUG("Dispatching packet: protocol = ", m_protocolId,
+					", payload size = ", m_payload.size());
+				(*servlet)(m_session, STD_MOVE(m_payload));
+			}
 		} catch(PlayerProtocolException &e){
-			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ", m_protocolId,
-				", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
+			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ",
+				m_protocolId, ", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
 			m_session->sendError(m_protocolId, e.status(), e.what(), false);
 			throw;
 		} catch(...){
@@ -122,6 +134,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			}
 			pendJob(boost::make_shared<PlayerRequestJob>(virtualSharedFromThis<PlayerSession>(),
 				m_protocolId, m_payload.cut(m_payloadLen)));
+			setTimeout(PlayerServletDepository::getKeepAliveTimeout());
 			m_payloadLen = -1;
 			m_protocolId = 0;
 		}

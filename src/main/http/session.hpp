@@ -33,8 +33,6 @@ private:
 private:
 	const std::size_t m_category;
 
-	boost::shared_ptr<const class TimerItem> m_shutdownTimer;
-
 	State m_state;
 	std::size_t m_totalLength;
 	std::size_t m_contentLength;
@@ -55,9 +53,6 @@ public:
 
 private:
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
-
-	void setRequestTimeout(unsigned long long timeout);
-
 	void onAllHeadersRead();
 
 public:

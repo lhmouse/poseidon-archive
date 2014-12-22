@@ -5,10 +5,12 @@
 #include "tcp_session_base.hpp"
 #include "ssl_filter_base.hpp"
 #include "ip_port.hpp"
+#include <boost/bind.hpp>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <errno.h>
+#include "singletons/timer_daemon.hpp"
 #include "log.hpp"
 #include "atomic.hpp"
 #include "endian.hpp"
@@ -16,6 +18,19 @@
 #include "utilities.hpp"
 #include "epoll.hpp"
 using namespace Poseidon;
+
+namespace {
+
+void shutdownIfTimeout(boost::weak_ptr<TcpSessionBase> weak){
+	const AUTO(session, weak.lock());
+	if(!session){
+		return;
+	}
+	LOG_POSEIDON_DEBUG("Connection timed out.");
+	session->forceShutdown();
+}
+
+}
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getMonoClock())
@@ -128,6 +143,15 @@ long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsi
 		m_sendBuffer.discard(ret);
 	}
 	return ret;
+}
+
+void TcpSessionBase::setTimeout(unsigned long long timeout){
+	if(timeout == 0){
+		m_shutdownTimer.reset();
+	} else {
+		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
+			boost::bind(&shutdownIfTimeout, virtualWeakFromThis<TcpSessionBase>()));
+	}
 }
 
 const IpPort &TcpSessionBase::getRemoteInfo() const {

@@ -29,7 +29,6 @@ struct Poseidon::HttpServlet : NONCOPYABLE {
 namespace {
 
 std::size_t g_maxRequestLength = 16 * 0x400;
-unsigned long long g_requestTimeout = 30000;
 unsigned long long g_keepAliveTimeout = 5000;
 
 typedef std::map<std::size_t,
@@ -80,9 +79,6 @@ void HttpServletDepository::start(){
 	conf.get(g_maxRequestLength, "http_max_request_length");
 	LOG_POSEIDON_DEBUG("Max request length = ", g_maxRequestLength);
 
-	conf.get(g_requestTimeout, "http_request_timeout");
-	LOG_POSEIDON_DEBUG("Request timeout = ", g_requestTimeout);
-
 	conf.get(g_keepAliveTimeout, "http_keep_alive_timeout");
 	LOG_POSEIDON_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
 }
@@ -98,9 +94,6 @@ void HttpServletDepository::stop(){
 
 std::size_t HttpServletDepository::getMaxRequestLength(){
 	return g_maxRequestLength;
-}
-unsigned long long HttpServletDepository::getRequestTimeout(){
-	return g_requestTimeout;
 }
 unsigned long long HttpServletDepository::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;

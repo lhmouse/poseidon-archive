@@ -94,6 +94,7 @@ bool TcpServerBase::poll() const {
 		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), session->getFd()));
 		session->initSsl(STD_MOVE(filter));
 	}
+	session->setTimeout(EpollDaemon::getTcpRequestTimeout());
 	EpollDaemon::addSession(session);
 	LOG_POSEIDON_INFO("Accepted TCP connection from ", session->getRemoteInfo());
 	return true;
