@@ -218,7 +218,7 @@ std::size_t Epoll::pumpReadable(){
 
 		try {
 			unsigned char temp[1024];
-			long bytesRead = session->syncRead(temp, sizeof(temp));
+			long bytesRead = session->syncReadAndProcess(temp, sizeof(temp));
 			if(bytesRead < 0){
 				if(errno == EINTR){
 					continue;

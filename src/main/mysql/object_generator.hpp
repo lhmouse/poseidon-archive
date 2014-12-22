@@ -14,6 +14,20 @@
 #endif
 
 class MYSQL_OBJECT_NAME : public ::Poseidon::MySqlObjectBase {
+public:
+	static void batchAsyncLoad(std::string query, ::Poseidon::MySqlBatchAsyncLoadCallback callback,
+		::Poseidon::MySqlExceptionCallback except)
+	{
+		struct FactoryHelper {
+			static boost::shared_ptr< ::Poseidon::MySqlObjectBase> create(){
+				return boost::make_shared<MYSQL_OBJECT_NAME>();
+			}
+		};
+
+		::Poseidon::MySqlObjectBase::batchAsyncLoad(TOKEN_TO_STR(MYSQL_OBJECT_NAME),
+			STD_MOVE(query), &FactoryHelper::create, STD_MOVE(callback), STD_MOVE(except));
+	}
+
 private:
 
 #undef FIELD_BOOLEAN
@@ -230,11 +244,7 @@ public:
 
 	MYSQL_OBJECT_FIELDS
 
-public:
-	const char *getTableName() const {
-		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
-	}
-
+private:
 	void syncGenerateSql(::std::string &sql_, bool replaces_) const {
 		::std::ostringstream oss_;
 
@@ -315,17 +325,9 @@ public:
 		MYSQL_OBJECT_FIELDS
 	}
 
-	static void batchAsyncLoad(std::string query, ::Poseidon::MySqlBatchAsyncLoadCallback callback,
-		::Poseidon::MySqlExceptionCallback except)
-	{
-		struct FactoryHelper {
-			static boost::shared_ptr< ::Poseidon::MySqlObjectBase> create(){
-				return boost::make_shared<MYSQL_OBJECT_NAME>();
-			}
-		};
-
-		::Poseidon::MySqlObjectBase::batchAsyncLoad(TOKEN_TO_STR(MYSQL_OBJECT_NAME),
-			STD_MOVE(query), &FactoryHelper::create, STD_MOVE(callback), STD_MOVE(except));
+public:
+	const char *getTableName() const {
+		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
 };
 

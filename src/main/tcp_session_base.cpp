@@ -96,15 +96,15 @@ bool TcpSessionBase::forceShutdown(){
 	return ret;
 }
 
-long TcpSessionBase::syncRead(void *data, unsigned long size){
+long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
 	::ssize_t ret;
 	if(m_sslFilter){
-		ret = m_sslFilter->read(data, size);
+		ret = m_sslFilter->read(hint, hintSize);
 	} else {
-		ret = ::recv(m_socket.get(), data, size, MSG_NOSIGNAL);
+		ret = ::recv(m_socket.get(), hint, hintSize, MSG_NOSIGNAL);
 	}
 	if(ret > 0){
-		onReadAvail(data, ret);
+		onReadAvail(hint, ret);
 	}
 	return ret;
 }

@@ -52,11 +52,18 @@ protected:
 	~TcpSessionBase();
 
 private:
+	// 注意，同一个 session 只能同时分配给一个 epoll！
 	void setEpoll(Epoll *epoll) NOEXCEPT;
 
 	void initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter);
 
+	// 同步，线程安全。
 	void fetchPeerInfo() const;
+	// 和 Windows 的 IsDialogMessage() 类似，这个函数读取并在内部调用 onReadAvail() 处理数据。
+	// 这里的出参返回读取的数据，一次性读取的字节数不大于 hintSize。如果开启了 SSL，返回明文。
+	long syncReadAndProcess(void *hint, unsigned long hintSize);
+	// 这里的出参返回写入的数据，一次性写入的字节数不大于 hintSize。如果开启了 SSL，返回明文。
+	long syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
 
 protected:
 	void onReadAvail(const void *data, std::size_t size) = 0;
@@ -65,8 +72,6 @@ public:
 	int getFd() const {
 		return m_socket.get();
 	}
-	long syncRead(void *date, unsigned long size);
-	long syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
 
 	bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
 	bool hasBeenShutdown() const OVERRIDE FINAL;
