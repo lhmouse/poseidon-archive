@@ -12,6 +12,7 @@
 #include <iterator>
 #include <algorithm>
 #include <utility>
+#include <functional>
 #include <sstream>
 
 #include <cassert>
@@ -27,6 +28,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/ref.hpp>
+#include <boost/function.hpp>
 #include <boost/cstdlib.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/multi_index_container.hpp>
