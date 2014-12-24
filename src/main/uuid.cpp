@@ -87,8 +87,8 @@ volatile boost::uint32_t g_autoInc = 0;
 Uuid Uuid::generate(){
 	const AUTO(now, getUtcTime());
 	BrokenDownUuid temp;
-	temp.first = now >> 26;
-	temp.second = now >> 10;
+	temp.first = now >> 28;
+	temp.second = now >> 12;
 	temp.third = now & 0x0FFF; // version = 0
 	temp.bytes = 0xC0000000 + atomicAdd(g_autoInc, 1, ATOMIC_RELAXED); // veriant = 3
 	temp.bytes <<= 32;
