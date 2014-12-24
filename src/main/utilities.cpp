@@ -65,7 +65,7 @@ boost::uint32_t rand32(){
 	return seed >> 32;
 }
 boost::uint64_t rand64(){
-	return (boost::uint64_t)rand32() | rand32();
+	return ((boost::uint64_t)rand32() << 32) | rand32();
 }
 boost::uint32_t rand32(boost::uint32_t lower, boost::uint32_t upper){
 	if(lower > upper){

@@ -4,44 +4,70 @@
 #ifndef POSEIDON_UUID_HPP_
 #define POSEIDON_UUID_HPP_
 
-#include <boost/uuid/uuid.hpp>
+#include <string>
+#include <iosfwd>
+#include <cstring>
 
 namespace Poseidon {
 
 class Uuid {
 public:
-	static Uuid createRandom();
-	static Uuid createFromString(const std::string &str);
+	static Uuid generate();
 
 private:
-	boost::uuids::uuid m_val;
-
-private:
-	explicit Uuid(const boost::uuids::uuid &val);
+	unsigned char m_bytes[16];
 
 public:
-	std::string toHex() const;
+	Uuid(){
+		std::memset(m_bytes, 0, 16);
+	}
+	explicit Uuid(const unsigned char (&bytes)[16]){
+		std::memcpy(m_bytes, bytes, 16);
+	}
+	explicit Uuid(const std::string &str){
+		fromString(str);
+	}
 
 public:
-	bool operator==(const Uuid &rhs) const {
-		return m_val == rhs.m_val;
+	std::string toString() const;
+	bool fromString(const std::string &str);
+
+	const unsigned char (&getBytes() const)[16] {
+		return m_bytes;
 	}
-	bool operator!=(const Uuid &rhs) const {
-		return m_val != rhs.m_val;
+	unsigned char (&getBytes())[16] {
+		return m_bytes;
 	}
-	bool operator<(const Uuid &rhs) const {
-		return m_val < rhs.m_val;
+
+public:
+	const unsigned char &operator[](unsigned index) const {
+		return m_bytes[index];
 	}
-	bool operator>(const Uuid &rhs) const {
-		return m_val > rhs.m_val;
-	}
-	bool operator<=(const Uuid &rhs) const {
-		return m_val <= rhs.m_val;
-	}
-	bool operator>=(const Uuid &rhs) const {
-		return m_val >= rhs.m_val;
+	unsigned char &operator[](unsigned index){
+		return m_bytes[index];
 	}
 };
+
+inline bool operator==(const Uuid &lhs, const Uuid &rhs){
+	return std::memcmp(lhs.getBytes(), rhs.getBytes(), 16) == 0;
+}
+inline bool operator!=(const Uuid &lhs, const Uuid &rhs){
+	return std::memcmp(lhs.getBytes(), rhs.getBytes(), 16) != 0;
+}
+inline bool operator<(const Uuid &lhs, const Uuid &rhs){
+	return std::memcmp(lhs.getBytes(), rhs.getBytes(), 16) < 0;
+}
+inline bool operator>(const Uuid &lhs, const Uuid &rhs){
+	return std::memcmp(lhs.getBytes(), rhs.getBytes(), 16) > 0;
+}
+inline bool operator<=(const Uuid &lhs, const Uuid &rhs){
+	return std::memcmp(lhs.getBytes(), rhs.getBytes(), 16) <= 0;
+}
+inline bool operator>=(const Uuid &lhs, const Uuid &rhs){
+	return std::memcmp(lhs.getBytes(), rhs.getBytes(), 16) >= 0;
+}
+
+extern std::ostream &operator<<(std::ostream &os, const Uuid &rhs);
 
 }
 

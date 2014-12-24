@@ -25,6 +25,7 @@
 #include "../main/singletons/player_servlet_depository.hpp"
 #include "../main/singletons/epoll_daemon.hpp"
 #include "../main/mysql/object_base.hpp"
+#include "../main/uuid.hpp"
 using namespace Poseidon;
 
 #define MYSQL_OBJECT_NAME	MySqlObj
@@ -396,4 +397,13 @@ MODULE_RAII(
 		NULLPTR, NULLPTR, std::vector<std::string>())));
 	EpollDaemon::registerServer(server);
 	return server;
+)
+
+MODULE_RAII(
+	std::set<Uuid> s;
+	for(unsigned i = 0; i < 10000000; ++i){
+		s.insert(Uuid::generate());
+	}
+	LOG_POSEIDON_FATAL("number of uuid generated: ", s.size());
+//	LOG_POSEIDON_FATAL("first: ", *s.begin());
 )
