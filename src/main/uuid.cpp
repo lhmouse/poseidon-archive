@@ -90,7 +90,7 @@ Uuid Uuid::generate(){
 	temp.first = now >> 28;
 	temp.second = now >> 12;
 	temp.third = now & 0x0FFF; // version = 0
-	temp.bytes = 0xC0000000 + atomicAdd(g_autoInc, 1, ATOMIC_RELAXED); // veriant = 3
+	temp.bytes = 0xC0000000 | atomicAdd(g_autoInc, 1, ATOMIC_RELAXED); // veriant = 3
 	temp.bytes <<= 32;
 	temp.bytes |= rand32();
 	Uuid ret;
