@@ -401,7 +401,7 @@ MODULE_RAII(
 
 MODULE_RAII(
 	std::set<Uuid> s;
-	for(unsigned i = 0; i < 10000000; ++i){
+	for(unsigned i = 0; i < 1000000; ++i){
 		s.insert(Uuid::generate());
 	}
 	LOG_POSEIDON_FATAL("number of uuid generated: ", s.size());
