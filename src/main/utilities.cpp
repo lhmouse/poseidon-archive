@@ -57,7 +57,7 @@ __thread boost::uint64_t t_randSeed = 0;
 boost::uint32_t rand32(){
 	boost::uint64_t seed = t_randSeed;
 	if(seed == 0){
-		seed = getMonoClock();
+		seed = getMonoClock() | 1;
 	}
 	// MMIX by Donald Knuth
 	seed = seed * 6364136223846793005ull + 1442695040888963407ull;
