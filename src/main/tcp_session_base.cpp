@@ -5,7 +5,6 @@
 #include "tcp_session_base.hpp"
 #include "ssl_filter_base.hpp"
 #include "ip_port.hpp"
-#include <boost/bind.hpp>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>

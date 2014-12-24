@@ -22,60 +22,6 @@ using namespace Poseidon;
 
 namespace {
 
-StreamBuffer makeResponse(HttpStatus status, OptionalMap headers, StreamBuffer contents){
-	LOG_POSEIDON_DEBUG("Making HTTP response: status = ", static_cast<unsigned>(status));
-
-	StreamBuffer ret;
-
-	char first[64];
-	const unsigned firstLen = std::sprintf(first, "HTTP/1.1 %u ", static_cast<unsigned>(status));
-	ret.put(first, firstLen);
-	const AUTO(desc, getHttpStatusDesc(status));
-	ret.put(desc.descShort);
-	ret.put("\r\n");
-
-	if(!contents.empty()){
-		AUTO_REF(contentType, headers.create("Content-Type")->second);
-		if(contentType.empty()){
-			contentType.assign("text/plain; charset=utf-8");
-		}
-	}
-	AUTO_REF(contentLength, headers.create("Content-Length")->second);
-	boost::lexical_cast<std::string>(contents.size()).swap(contentLength);
-
-	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-		if(!it->second.empty()){
-			ret.put(it->first.get());
-			ret.put(": ");
-			ret.put(it->second.data(), it->second.size());
-			ret.put("\r\n");
-		}
-	}
-	ret.put("\r\n");
-
-	ret.splice(contents);
-
-	return ret;
-}
-StreamBuffer makeDefaultResponse(HttpStatus status, OptionalMap headers){
-	LOG_POSEIDON_DEBUG("Making default HTTP response: status = ", static_cast<unsigned>(status));
-
-	StreamBuffer contents;
-	if(static_cast<unsigned>(status) / 100 >= 4){
-		headers.set("Content-Type", "text/html; charset=utf-8");
-
-		contents.put("<html><head><title>");
-		const AUTO(desc, getHttpStatusDesc(status));
-		contents.put(desc.descShort);
-		contents.put("</title></head><body><h1>");
-		contents.put(desc.descShort);
-		contents.put("</h1><hr /><p>");
-		contents.put(desc.descLong);
-		contents.put("</p></body></html>");
-	}
-	return makeResponse(status, STD_MOVE(headers), STD_MOVE(contents));
-}
-
 void normalizeUri(std::string &uri){
 	if(uri[0] != '/'){
 		uri.insert(uri.begin(), '/');
@@ -455,8 +401,55 @@ void HttpSession::onAllHeadersRead(){
 }
 
 bool HttpSession::send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool fin){
-	return TcpSessionBase::send(makeResponse(status, STD_MOVE(headers), STD_MOVE(contents)), fin);
+	LOG_POSEIDON_DEBUG("Making HTTP response: status = ", static_cast<unsigned>(status));
+
+	StreamBuffer packet;
+
+	char first[64];
+	const unsigned firstLen = std::sprintf(first, "HTTP/1.1 %u ", static_cast<unsigned>(status));
+	packet.put(first, firstLen);
+	const AUTO(desc, getHttpStatusDesc(status));
+	packet.put(desc.descShort);
+	packet.put("\r\n");
+
+	if(!contents.empty()){
+		AUTO_REF(contentType, headers.create("Content-Type")->second);
+		if(contentType.empty()){
+			contentType.assign("text/plain; charset=utf-8");
+		}
+	}
+	AUTO_REF(contentLength, headers.create("Content-Length")->second);
+	boost::lexical_cast<std::string>(contents.size()).swap(contentLength);
+
+	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
+		if(!it->second.empty()){
+			packet.put(it->first.get());
+			packet.put(": ");
+			packet.put(it->second.data(), it->second.size());
+			packet.put("\r\n");
+		}
+	}
+	packet.put("\r\n");
+
+	packet.splice(contents);
+
+	return TcpSessionBase::send(STD_MOVE(packet), fin);
 }
 bool HttpSession::sendDefault(HttpStatus status, OptionalMap headers, bool fin){
-	return TcpSessionBase::send(makeDefaultResponse(status, STD_MOVE(headers)), fin);
+	LOG_POSEIDON_DEBUG("Making default HTTP response: status = ", static_cast<unsigned>(status));
+
+	StreamBuffer contents;
+	if(static_cast<unsigned>(status) / 100 >= 4){
+		headers.set("Content-Type", "text/html; charset=utf-8");
+
+		contents.put("<html><head><title>");
+		const AUTO(desc, getHttpStatusDesc(status));
+		contents.put(desc.descShort);
+		contents.put("</title></head><body><h1>");
+		contents.put(desc.descShort);
+		contents.put("</h1><hr /><p>");
+		contents.put(desc.descLong);
+		contents.put("</p></body></html>");
+	}
+	return send(status, STD_MOVE(headers), STD_MOVE(contents), fin);
 }

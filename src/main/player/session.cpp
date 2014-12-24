@@ -15,27 +15,6 @@ using namespace Poseidon;
 
 namespace {
 
-StreamBuffer makeResponse(boost::uint16_t protocolId, StreamBuffer contents){
-	const std::size_t size = contents.size();
-	if(size > 0xFFFF){
-		LOG_POSEIDON_WARN("Response packet too large, size = ", size);
-		DEBUG_THROW(PlayerProtocolException, PLAYER_RESPONSE_TOO_LARGE, "Response packet too large");
-	}
-	StreamBuffer ret;
-	boost::uint16_t tmp;
-	storeLe(tmp, size);
-	ret.put(&tmp, 2);
-	storeLe(tmp, protocolId);
-	ret.put(&tmp, 2);
-	ret.splice(contents);
-	return ret;
-}
-
-StreamBuffer makeErrorResponse(boost::uint16_t protocolId, PlayerStatus status, std::string reason){
-	return makeResponse(PlayerErrorProtocol::ID,
-		StreamBuffer(PlayerErrorProtocol(protocolId, static_cast<unsigned>(status), STD_MOVE(reason))));
-}
-
 class PlayerRequestJob : public JobBase {
 private:
 	const boost::shared_ptr<PlayerSession> m_session;
@@ -152,11 +131,24 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 }
 
 bool PlayerSession::send(boost::uint16_t protocolId, StreamBuffer contents, bool fin){
-	return TcpSessionBase::send(makeResponse(protocolId, STD_MOVE(contents)), fin);
+	const std::size_t size = contents.size();
+	if(size > 0xFFFF){
+		LOG_POSEIDON_WARN("Response packet too large, size = ", size);
+		DEBUG_THROW(PlayerProtocolException, PLAYER_RESPONSE_TOO_LARGE, "Response packet too large");
+	}
+	StreamBuffer packet;
+	boost::uint16_t tmp;
+	storeLe(tmp, size);
+	packet.put(&tmp, 2);
+	storeLe(tmp, protocolId);
+	packet.put(&tmp, 2);
+	packet.splice(contents);
+	return TcpSessionBase::send(STD_MOVE(packet), fin);
 }
 
 bool PlayerSession::sendError(boost::uint16_t protocolId, PlayerStatus status,
 	std::string reason, bool fin)
 {
-	return TcpSessionBase::send(makeErrorResponse(protocolId, status, STD_MOVE(reason)), fin);
+	return send(PlayerErrorProtocol::ID, StreamBuffer(PlayerErrorProtocol(
+		protocolId, static_cast<unsigned>(status), STD_MOVE(reason))), fin);
 }

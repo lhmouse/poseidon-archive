@@ -9,7 +9,6 @@
 #include "module_depository.hpp"
 #include "profile_depository.hpp"
 #include "mysql_daemon.hpp"
-#include <boost/bind.hpp>
 #include <signal.h>
 #include "../log.hpp"
 #include "../exception.hpp"

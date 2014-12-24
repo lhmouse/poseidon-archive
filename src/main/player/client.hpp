@@ -12,14 +12,18 @@
 
 namespace Poseidon {
 
+class TimerItem;
+
 class PlayerClient : public TcpClientBase {
 private:
+	boost::shared_ptr<const TimerItem> m_keepAliveTimer;
+
 	int m_payloadLen;
 	unsigned m_protocolId;
 	StreamBuffer m_payload;
 
 protected:
-	explicit PlayerClient(const IpPort &addr, bool useSsl);
+	explicit PlayerClient(const IpPort &addr, unsigned long long keepAliveTimeout, bool useSsl);
 	~PlayerClient();
 
 private:

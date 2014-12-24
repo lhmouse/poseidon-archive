@@ -5,6 +5,7 @@
 #include "client.hpp"
 #include "exception.hpp"
 #include "error_protocol.hpp"
+#include "../singletons/timer_daemon.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
 #include "../job_base.hpp"
@@ -54,12 +55,26 @@ protected:
 	}
 };
 
+void keepAliveTimerProc(boost::weak_ptr<PlayerClient> weak){
+    const AUTO(client, weak.lock());
+    if(!client){
+    	return;
+    }
+    LOG_POSEIDON_TRACE("Sending heartbeat packet...");
+    client->send(PlayerErrorProtocol::ID,
+    	StreamBuffer(PlayerErrorProtocol(PlayerErrorProtocol::ID, 0, VAL_INIT)), false);
 }
 
-PlayerClient::PlayerClient(const IpPort &addr, bool useSsl)
+}
+
+PlayerClient::PlayerClient(const IpPort &addr, unsigned long long keepAliveTimeout, bool useSsl)
 	: TcpClientBase(addr, useSsl)
 	, m_payloadLen(-1), m_protocolId(0)
 {
+	if(keepAliveTimeout != 0){
+		m_keepAliveTimer = TimerDaemon::registerTimer(keepAliveTimeout, keepAliveTimeout,
+			boost::bind(&keepAliveTimerProc, virtualWeakFromThis<PlayerClient>()));
+	}
 }
 PlayerClient::~PlayerClient(){
 }

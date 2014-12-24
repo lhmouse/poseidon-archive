@@ -8,6 +8,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <deque>
 #include <string>
 #include <iterator>
 #include <algorithm>
@@ -29,6 +30,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/ref.hpp>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <boost/cstdlib.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/multi_index_container.hpp>
