@@ -43,7 +43,7 @@ void Uuid::toString(char (&str)[37], bool upperCase) const {
 	char *write = str;
 
 #define PRINT(count_)	\
-	for(std::size_t i_ = 0; i_ < count_; ++i_){	\
+	for(std::size_t i = 0; i < count_; ++i){	\
 		const unsigned byte = *(read++);	\
 		unsigned ch = byte >> 4;	\
 		if(ch <= 9){	\
@@ -76,7 +76,7 @@ bool Uuid::fromString(const char (&str)[37]){
 	AUTO(write, begin());
 
 #define SCAN(count_)	\
-	for(std::size_t i_ = 0; i_ < count_; ++i_){	\
+	for(std::size_t i = 0; i < count_; ++i){	\
 		unsigned byte;	\
 		unsigned ch = (unsigned char)*(read++);	\
 		if(('0' <= ch) && (ch <= '9')){	\
