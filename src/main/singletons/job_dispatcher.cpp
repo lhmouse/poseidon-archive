@@ -66,13 +66,13 @@ void JobDispatcher::doModal(){
 	for(;;){
 		{
 			boost::mutex::scoped_lock lock(g_mutex);
+			g_pool.splice(g_pool.end(), queue);
 			while(g_queue.empty()){
 				if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
 					break;
 				}
 				g_newJobAvail.wait(lock);
 			}
-			g_pool.splice(g_pool.end(), queue);
 			queue.swap(g_queue);
 		}
 		if(queue.empty()){
