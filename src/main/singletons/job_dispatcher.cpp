@@ -72,6 +72,7 @@ void JobDispatcher::doModal(){
 				}
 				g_newJobAvail.wait(lock);
 			}
+			g_pool.splice(g_pool.end(), queue);
 			queue.swap(g_queue);
 		}
 		if(queue.empty()){
