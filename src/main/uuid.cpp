@@ -65,11 +65,11 @@ void Uuid::toString(char (&str)[37], bool upperCase) const {
 		*(write++) = ch;	\
 	}
 
-	PRINT(4)	*(write++) = '-';
-	PRINT(2)	*(write++) = '-';
-	PRINT(2)	*(write++) = '-';
-	PRINT(2)	*(write++) = '-';
-	PRINT(6)	*(write++) = 0;
+	PRINT(4) *(write++) = '-';
+	PRINT(2) *(write++) = '-';
+	PRINT(2) *(write++) = '-';
+	PRINT(2) *(write++) = '-';
+	PRINT(6) *(write++) = 0;
 }
 bool Uuid::fromString(const char (&str)[37]){
 	const char *read = str;
@@ -103,11 +103,11 @@ bool Uuid::fromString(const char (&str)[37]){
 		*(write++) = byte;	\
 	}
 
-	SCAN(4)	if(*(read++) != '-'){ return false; }
-	SCAN(2)	if(*(read++) != '-'){ return false; }
-	SCAN(2)	if(*(read++) != '-'){ return false; }
-	SCAN(2)	if(*(read++) != '-'){ return false; }
-	SCAN(6)	if(*(read++) != 0){ return false; }
+	SCAN(4) if(*(read++) != '-'){ return false; }
+	SCAN(2) if(*(read++) != '-'){ return false; }
+	SCAN(2) if(*(read++) != '-'){ return false; }
+	SCAN(2) if(*(read++) != '-'){ return false; }
+	SCAN(6) if(*(read++) != 0){ return false; }
 
 	return true;
 }
