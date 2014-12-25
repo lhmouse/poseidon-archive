@@ -398,12 +398,13 @@ MODULE_RAII(
 	EpollDaemon::registerServer(server);
 	return server;
 )
-
+/*
 MODULE_RAII(
 	std::set<Uuid> s;
 	for(unsigned i = 0; i < 1000000; ++i){
 		s.insert(Uuid::generate());
 	}
 	LOG_POSEIDON_FATAL("number of uuid generated: ", s.size());
-//	LOG_POSEIDON_FATAL("first: ", *s.begin());
+	LOG_POSEIDON_FATAL("first: ", *s.begin());
 )
+*/
