@@ -28,23 +28,29 @@ void JobDispatcher::start(){
 }
 void JobDispatcher::stop(){
 	LOG_POSEIDON_INFO("Flushing all pending jobs...");
+
+	std::list<boost::shared_ptr<JobBase> > queue;
 	for(;;){
-		try {
-			boost::shared_ptr<JobBase> job;
-			{
-				boost::mutex::scoped_lock lock(g_mutex);
-				if(g_queue.empty()){
-					break;
-				}
-				job.swap(g_queue.front());
-				g_pool.splice(g_pool.begin(), g_queue, g_queue.begin());
-			}
-				job->perform();
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
+		{
+			const boost::mutex::scoped_lock lock(g_mutex);
+			g_pool.splice(g_pool.end(), queue);
+			queue.swap(g_queue);
 		}
+		if(queue.empty()){
+			break;
+		}
+
+		AUTO(it, queue.begin());
+		do {
+			try {
+				(*it)->perform();
+			} catch(std::exception &e){
+				LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
+			} catch(...){
+				LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
+				}
+			it->reset();
+		} while(++it != queue.end());
 	}
 }
 
@@ -55,30 +61,35 @@ void JobDispatcher::doModal(){
 		LOG_POSEIDON_FATAL("Only one modal loop is allowed at the same time.");
 		std::abort();
 	}
-	for(;;){
-		try {
-			boost::shared_ptr<JobBase> job;
-			{
-				boost::mutex::scoped_lock lock(g_mutex);
-				while(g_queue.empty()){
-					if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
-						goto exit_loop;
-					}
-					g_newJobAvail.wait(lock);
-				}
-				job.swap(g_queue.front());
-				g_pool.splice(g_pool.begin(), g_queue, g_queue.begin());
-			}
-			job->perform();
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
-		}
-	}
-exit_loop:
 
-	;
+	std::list<boost::shared_ptr<JobBase> > queue;
+	for(;;){
+		{
+			boost::mutex::scoped_lock lock(g_mutex);
+			while(g_queue.empty()){
+				if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
+					break;
+				}
+				g_newJobAvail.wait(lock);
+			}
+			queue.swap(g_queue);
+		}
+		if(queue.empty()){
+			break;
+		}
+
+		AUTO(it, queue.begin());
+		do {
+			try {
+				(*it)->perform();
+			} catch(std::exception &e){
+				LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
+			} catch(...){
+				LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
+			}
+			it->reset();
+		} while(++it != queue.end());
+	}
 }
 void JobDispatcher::quitModal(){
 	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
