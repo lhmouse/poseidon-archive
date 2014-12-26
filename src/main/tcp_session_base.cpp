@@ -145,6 +145,7 @@ long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsi
 }
 
 void TcpSessionBase::setTimeout(unsigned long long timeout){
+	const boost::mutex::scoped_lock lock(m_timerMutex);
 	if(timeout == 0){
 		m_shutdownTimer.reset();
 	} else {

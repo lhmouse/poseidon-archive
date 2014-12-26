@@ -43,12 +43,13 @@ private:
 
 	boost::scoped_ptr<SslFilterBase> m_sslFilter;
 
-	boost::shared_ptr<const TimerItem> m_shutdownTimer;
-
 	volatile bool m_shutdown;
 	mutable boost::mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
 	Epoll *m_epoll;
+
+	mutable boost::mutex m_timerMutex;
+	boost::shared_ptr<const TimerItem> m_shutdownTimer;
 
 protected:
 	explicit TcpSessionBase(UniqueFile socket);
@@ -72,8 +73,6 @@ protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	void onReadAvail(const void *data, std::size_t size) = 0;
 
-	void setTimeout(unsigned long long timeout);
-
 public:
 	int getFd() const {
 		return m_socket.get();
@@ -89,6 +88,8 @@ public:
 
 	const IpPort &getRemoteInfo() const;
 	const IpPort &getLocalInfo() const;
+
+	void setTimeout(unsigned long long timeout);
 };
 
 }
