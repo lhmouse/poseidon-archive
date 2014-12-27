@@ -2,4 +2,4 @@
 
 var=`pwd`'/var'
 
-rm $var/sql_dump/*.log
+rm $var/sql_dump/*.log -v
