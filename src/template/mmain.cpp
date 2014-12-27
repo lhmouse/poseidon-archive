@@ -390,6 +390,8 @@ MODULE_RAII(
 	obj->set_str("meow");
 	obj->set_bi(456789);
 	obj->asyncSave(false);
+
+	return VAL_INIT;
 )
 
 MODULE_RAII(

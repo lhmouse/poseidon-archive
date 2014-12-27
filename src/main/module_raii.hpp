@@ -26,7 +26,6 @@ public:
 			::boost::shared_ptr<void> init() const {
 
 #define MODULE_RAII_END	\
-				return ::boost::shared_ptr<void>();	\
 			}	\
 		} const TOKEN_CAT2(UNIQUE_ID, mraii_);	\
 	}
