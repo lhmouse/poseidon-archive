@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sudo checkinstall --backup=no --nodoc -y --pkgname='libposeidon-main' --maintainer='lh_mouse@126.com'
+sudo checkinstall --backup=no --nodoc -y --pkgname='poseidon' --maintainer='lh_mouse@126.com'
