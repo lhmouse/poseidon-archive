@@ -2,4 +2,4 @@
 
 var=`pwd`'/var'
 
-rm $var/poseidon/sql_dump/*.log -vf
+rm $var/poseidon/sqldump/*.log -vf
