@@ -178,22 +178,22 @@ boost::shared_ptr<Module> ModuleDepository::load(const SharedNtmbs &path){
 
 	LOG_POSEIDON_INFO("Loading new module: ", path);
 	if(!handle.reset(::dlopen(path.get(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND))){
-		const char *const error = ::dlerror();
+		SharedNtmbs error(::dlerror(), true);
 		LOG_POSEIDON_ERROR("Error loading dynamic library: ", error);
-		DEBUG_THROW(Exception, error);
+		DEBUG_THROW(Exception, STD_MOVE(error));
 	}
 
 	void *const initSym = ::dlsym(handle.get(), "_init");
 	if(!initSym){
-		const char *const error = ::dlerror();
+		SharedNtmbs error(::dlerror(), true);
 		LOG_POSEIDON_ERROR("Error locating _init(): ", error);
-		DEBUG_THROW(Exception, error);
+		DEBUG_THROW(Exception, STD_MOVE(error));
 	}
 	::Dl_info info;
 	if(::dladdr(initSym, &info) == 0){
-		const char *const error = ::dlerror();
+		SharedNtmbs error(::dlerror(), true);
 		LOG_POSEIDON_ERROR("Error getting real path and base address: ", error);
-		DEBUG_THROW(Exception, error);
+		DEBUG_THROW(Exception, STD_MOVE(error));
 	}
 	SharedNtmbs realPath(info.dli_fname, true);
 	void *const baseAddr = info.dli_fbase;
@@ -267,9 +267,9 @@ void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	::Dl_info info;
 	if(::dladdr(raii, &info) == 0){
-		const char *const error = ::dlerror();
+		SharedNtmbs error(::dlerror(), true);
 		LOG_POSEIDON_ERROR("Error getting base address: ", error);
-		DEBUG_THROW(Exception, error);
+		DEBUG_THROW(Exception, STD_MOVE(error));
 	}
 	if(!g_moduleRaiis.insert(ModuleRaiiMapElement(info.dli_fbase, raii)).second){
 		LOG_POSEIDON_ERROR("Duplicate ModuleRaii? fbase = ", info.dli_fbase, ", raii = ", raii);
