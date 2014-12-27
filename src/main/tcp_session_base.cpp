@@ -164,7 +164,7 @@ long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsi
 
 void TcpSessionBase::setOnClose(boost::function<void ()> callback){
 	const boost::mutex::scoped_lock lock(m_onCloseMutex);
-	m_onCloseQueue.push_back(VAL_INIT);
+	m_onCloseQueue.push_back(boost::function<void ()>());
 	m_onCloseQueue.back().swap(callback);
 }
 void TcpSessionBase::setTimeout(unsigned long long timeout){
