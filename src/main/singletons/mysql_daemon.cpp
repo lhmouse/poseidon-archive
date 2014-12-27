@@ -33,7 +33,7 @@ std::string	g_mysqlSchema			= "poseidon";
 bool		g_mysqlUseSsl			= false;
 std::string	g_mysqlCharset			= "utf8";
 
-std::string	g_mysqlDumpDir			= "sql_dump";
+std::string	g_mysqlDumpDir			= "/usr/var/poseidon/sqldump";
 std::size_t	g_mysqlMaxThreads		= 3;
 std::size_t	g_mysqlSaveDelay		= 5000;
 std::size_t	g_mysqlMaxReconnDelay	= 60000;
