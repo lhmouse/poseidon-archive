@@ -29,7 +29,7 @@ public:
 			forkOwning();
 		}
 	}
-	explicit SharedNtmbs(const std::string &str, bool owning)
+	SharedNtmbs(const std::string &str, bool owning = false)
 		: m_ptr(boost::shared_ptr<void>(), str.c_str())
 	{
 		if(owning){
