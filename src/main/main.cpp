@@ -98,7 +98,7 @@ int main(int argc, char **argv){
 	::signal(SIGTERM, sigTermProc);
 
 	try {
-		MainConfig::setRunPath((1 < argc) ? argv[1] : "/var/poseidon");
+		MainConfig::setRunPath((1 < argc) ? argv[1] : "/usr/etc/poseidon");
 		MainConfig::reload();
 
 		START(ProfileDepository);

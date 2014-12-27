@@ -1,18 +1,18 @@
-ACLOCAL_AMFLAGS= -I m4
-AUTOMAKE_OPTIONS= foreign subdir-objects
-AM_CPPFLAGS= -Wall -Wextra -Werror -Wno-error=unused-parameter -pipe -fPIC -DPIC
-AM_CXXFLAGS=
+ACLOCAL_AMFLAGS = -I m4
+AUTOMAKE_OPTIONS = foreign subdir-objects
+AM_CPPFLAGS = -Wall -Wextra -Werror -Wno-error=unused-parameter -pipe -fPIC -DPIC
+AM_CXXFLAGS =
 
 %.hpp.gch: %.hpp
 	$(CXX) -x c++-header $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
 
-BUILT_SOURCES= \
+BUILT_SOURCES =	\
 	src/main/precompiled.hpp.gch
 
-CLEANFILES= \
+CLEANFILES =	\
 	src/main/precompiled.hpp.gch
 
-pkginclude_HEADERS= \
+pkginclude_HEADERS =	\
 	src/main/tcp_session_base.hpp	\
 	src/main/optional_map.hpp	\
 	src/main/ssl_raii.hpp	\
@@ -51,8 +51,8 @@ pkginclude_HEADERS= \
 	src/main/sock_addr.hpp	\
 	src/main/virtual_shared_from_this.hpp
 
-pkginclude_singletonsdir= $(pkgincludedir)/singletons
-pkginclude_singletons_HEADERS= \
+pkginclude_singletonsdir = $(pkgincludedir)/singletons
+pkginclude_singletons_HEADERS =	\
 	src/main/singletons/http_servlet_depository.hpp	\
 	src/main/singletons/job_dispatcher.hpp	\
 	src/main/singletons/timer_daemon.hpp	\
@@ -66,8 +66,8 @@ pkginclude_singletons_HEADERS= \
 	src/main/singletons/profile_depository.hpp	\
 	src/main/singletons/websocket_servlet_depository.hpp
 
-pkginclude_httpdir= $(pkgincludedir)/http
-pkginclude_http_HEADERS= \
+pkginclude_httpdir = $(pkgincludedir)/http
+pkginclude_http_HEADERS =	\
 	src/main/http/session.hpp	\
 	src/main/http/verb.hpp	\
 	src/main/http/status.hpp	\
@@ -77,15 +77,15 @@ pkginclude_http_HEADERS= \
 	src/main/http/upgraded_session_base.hpp	\
 	src/main/http/request.hpp
 
-pkginclude_http_websocketdir= $(pkgincludedir)/http/websocket
-pkginclude_http_websocket_HEADERS= \
+pkginclude_http_websocketdir = $(pkgincludedir)/http/websocket
+pkginclude_http_websocket_HEADERS =	\
 	src/main/http/websocket/session.hpp	\
 	src/main/http/websocket/status.hpp	\
 	src/main/http/websocket/exception.hpp	\
 	src/main/http/websocket/opcode.hpp
 
-pkginclude_playerdir= $(pkgincludedir)/player
-pkginclude_player_HEADERS= \
+pkginclude_playerdir = $(pkgincludedir)/player
+pkginclude_player_HEADERS =	\
 	src/main/player/client.hpp	\
 	src/main/player/protocol_base.hpp	\
 	src/main/player/session.hpp	\
@@ -95,8 +95,8 @@ pkginclude_player_HEADERS= \
 	src/main/player/exception.hpp	\
 	src/main/player/server.hpp
 
-pkginclude_mysqldir= $(pkgincludedir)/mysql
-pkginclude_mysql_HEADERS= \
+pkginclude_mysqldir = $(pkgincludedir)/mysql
+pkginclude_mysql_HEADERS =	\
 	src/main/mysql/object_generator.hpp	\
 	src/main/mysql/thread_context.hpp	\
 	src/main/mysql/connection.hpp	\
@@ -105,16 +105,16 @@ pkginclude_mysql_HEADERS= \
 	src/main/mysql/exception.hpp	\
 	src/main/mysql/utilities.hpp
 
-sbin_PROGRAMS= \
+sbin_PROGRAMS =	\
 	sbin/poseidon
 
-sbin_poseidon_SOURCES= \
+sbin_poseidon_SOURCES =	\
 	src/main/main.cpp
 
-sbin_poseidon_LDADD= \
+sbin_poseidon_LDADD =	\
 	lib/libposeidon-main.la
 
-lib_libposeidon_main_la_SOURCES= \
+lib_libposeidon_main_la_SOURCES =	\
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
 	src/main/exception.cpp	\
@@ -176,9 +176,13 @@ lib_libposeidon_main_la_SOURCES= \
 	src/main/mysql/thread_context.cpp	\
 	src/main/mysql/connection.cpp
 
-lib_LTLIBRARIES= \
+pkgsysconfdir = $(sysconfdir)/poseidon
+pkgsysconf_DATA =	\
+	etc/main.conf
+
+lib_LTLIBRARIES =	\
 	lib/libposeidon-main.la	\
 	lib/libposeidon-template.la
 
-lib_libposeidon_template_la_SOURCES= \
+lib_libposeidon_template_la_SOURCES =	\
 	src/template/mmain.cpp
