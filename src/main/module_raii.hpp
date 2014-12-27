@@ -23,7 +23,7 @@ public:
 #define MODULE_RAII_BEGIN	\
 	namespace {	\
 		class UNIQUE_ID : public ::Poseidon::ModuleRaiiBase {	\
-			::boost::shared_ptr<void> init() const {
+			::boost::shared_ptr<void> init() const OVERRIDE FINAL {
 
 #define MODULE_RAII_END	\
 			}	\
