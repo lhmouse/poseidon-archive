@@ -81,9 +81,10 @@ protected:
 		assert(!m_uri.empty());
 
 		try {
-			const AUTO(servlet, HttpServletDepository::getServlet(m_session->getCategory(), m_uri.c_str()));
+			const AUTO(category, m_session->getCategory());
+			const AUTO(servlet, HttpServletDepository::getServlet(category, m_uri.c_str()));
 			if(!servlet){
-				LOG_POSEIDON_WARN("No handler matches URI ", m_uri);
+				LOG_POSEIDON_WARN("No handler in category ", category, " matches URI ", m_uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 			}
 

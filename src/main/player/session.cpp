@@ -45,10 +45,11 @@ protected:
 						static_cast<PlayerStatus>(packet.status), STD_MOVE(packet.reason), true);
 				}
 			} else {
-				const AUTO(servlet,
-					PlayerServletDepository::getServlet(m_session->getCategory(), m_protocolId));
+				const AUTO(category, m_session->getCategory());
+				const AUTO(servlet, PlayerServletDepository::getServlet(category, m_protocolId));
 				if(!servlet){
-					LOG_POSEIDON_WARN("No servlet for protocol ", m_protocolId);
+					LOG_POSEIDON_WARN(
+						"No servlet in category ", category, " matches protocol ", m_protocolId);
 					DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND, "Unknown protocol");
 				}
 
