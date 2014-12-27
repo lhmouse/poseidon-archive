@@ -17,58 +17,6 @@ using namespace Poseidon;
 
 namespace {
 
-const std::size_t MAX_PACKET_SIZE = 0x3FFF;
-
-StreamBuffer makeFrame(WebSocketOpCode opcode, StreamBuffer contents, bool masked){
-	StreamBuffer ret;
-	unsigned char ch = opcode | WS_FL_FIN;
-	ret.put(ch);
-	const std::size_t size = contents.size();
-	ch = masked ? 0x80 : 0;
-	if(size < 0x7E){
-		ch |= size;
-		ret.put(ch);
-	} else if(size < 0x10000){
-		ch |= 0x7E;
-		ret.put(ch);
-		boost::uint16_t temp;
-		storeBe(temp, size);
-		ret.put(&temp, 2);
-	} else {
-		ch |= 0x7F;
-		ret.put(ch);
-		boost::uint64_t temp;
-		storeBe(temp, size);
-		ret.put(&temp, 8);
-	}
-	if(masked){
-		boost::uint32_t mask;
-		storeLe(mask, rand32());
-		ret.put(&mask, 4);
-		int ch;
-		for(;;){
-			ch = contents.get();
-			if(ch == -1){
-				break;
-			}
-			ch ^= mask;
-			ret.put(ch);
-			mask = (mask << 24) | (mask >> 8);
-		}
-	} else {
-		ret.splice(contents);
-	}
-	return ret;
-}
-
-StreamBuffer makeCloseFrame(WebSocketStatus status, StreamBuffer contents){
-	StreamBuffer temp;
-	const boost::uint16_t codeBe = htobe16(static_cast<unsigned>(status));
-	temp.put(&codeBe, 2);
-	temp.splice(contents);
-	return makeFrame(WS_CLOSE, STD_MOVE(temp), false);
-}
-
 class WebSocketRequestJob : public JobBase {
 private:
 	const boost::shared_ptr<WebSocketSession> m_session;
@@ -209,7 +157,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 
 			case ST_PAYLOAD:
 				remaining = m_payloadLen - m_whole.size();
-				if(m_whole.size() + remaining >= MAX_PACKET_SIZE){
+				if(m_whole.size() + remaining >= WebSocketServletDepository::getMaxRequestLength()){
 					DEBUG_THROW(WebSocketException, WS_MESSAGE_TOO_LARGE, "Packet too large");
 				}
 				if(m_payload.size() < remaining){
@@ -255,12 +203,12 @@ void WebSocketSession::onControlFrame(){
 	switch(m_opcode){
 	case WS_CLOSE:
 		LOG_POSEIDON_INFO("Received close frame from ", parent->getRemoteInfo());
-		HttpUpgradedSessionBase::send(makeFrame(WS_CLOSE, STD_MOVE(m_whole), false), true);
+		sendFrame(STD_MOVE(m_whole), WS_CLOSE, true, false);
 		break;
 
 	case WS_PING:
 		LOG_POSEIDON_INFO("Received ping frame from ", parent->getRemoteInfo());
-		HttpUpgradedSessionBase::send(makeFrame(WS_PONG, STD_MOVE(m_whole), false), false);
+		sendFrame(STD_MOVE(m_whole), WS_PONG, false, false);
 		break;
 
 	case WS_PONG:
@@ -273,18 +221,62 @@ void WebSocketSession::onControlFrame(){
 	}
 }
 
+bool WebSocketSession::sendFrame(StreamBuffer contents, WebSocketOpCode opcode, bool fin, bool masked){
+	StreamBuffer packet;
+	unsigned char ch = opcode | WS_FL_FIN;
+	packet.put(ch);
+	const std::size_t size = contents.size();
+	ch = masked ? 0x80 : 0;
+	if(size < 0x7E){
+		ch |= size;
+		packet.put(ch);
+	} else if(size < 0x10000){
+		ch |= 0x7E;
+		packet.put(ch);
+		boost::uint16_t temp;
+		storeBe(temp, size);
+		packet.put(&temp, 2);
+	} else {
+		ch |= 0x7F;
+		packet.put(ch);
+		boost::uint64_t temp;
+		storeBe(temp, size);
+		packet.put(&temp, 8);
+	}
+	if(masked){
+		boost::uint32_t mask;
+		storeLe(mask, rand32());
+		packet.put(&mask, 4);
+		int ch;
+		for(;;){
+			ch = contents.get();
+			if(ch == -1){
+				break;
+			}
+			ch ^= mask;
+			packet.put(ch);
+			mask = (mask << 24) | (mask >> 8);
+		}
+	} else {
+		packet.splice(contents);
+	}
+	return HttpUpgradedSessionBase::send(STD_MOVE(contents), fin);
+}
+
 bool WebSocketSession::send(StreamBuffer contents, bool binary, bool fin, bool masked){
-	if(!HttpUpgradedSessionBase::send(
-		makeFrame(binary ? WS_DATA_BIN : WS_DATA_TEXT, STD_MOVE(contents), masked), false))
-	{
+	if(!sendFrame(STD_MOVE(contents), binary ? WS_DATA_BIN : WS_DATA_TEXT, false, masked)){
 		return false;
 	}
-	if(fin){
-		return HttpUpgradedSessionBase::send(makeCloseFrame(WS_NORMAL_CLOSURE, StreamBuffer()), true);
+	if(fin && !shutdown(WS_NORMAL_CLOSURE)){
+		return false;
 	}
 	return true;
 }
-
 bool WebSocketSession::shutdown(WebSocketStatus status, StreamBuffer additional){
-	return HttpUpgradedSessionBase::send(makeCloseFrame(status, STD_MOVE(additional)), true);
+	StreamBuffer temp;
+	boost::uint16_t codeBe;
+	storeBe(codeBe, static_cast<unsigned>(status));
+	temp.put(&codeBe, 2);
+	temp.splice(additional);
+	return sendFrame(STD_MOVE(temp), WS_CLOSE, true, false);
 }

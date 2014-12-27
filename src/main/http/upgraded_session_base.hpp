@@ -8,6 +8,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/function.hpp>
 
 namespace Poseidon {
 
@@ -26,6 +27,7 @@ protected:
 private:
 	virtual void onInitContents(const void *data, std::size_t size) = 0;
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
+	virtual void onClose() NOEXCEPT OVERRIDE FINAL;
 
 public:
 	bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
@@ -52,6 +54,7 @@ public:
 	const OptionalMap &getHeaders() const;
 
 	void setTimeout(unsigned long long timeout);
+	void setOnClose(boost::function<void ()> callback);
 };
 
 }

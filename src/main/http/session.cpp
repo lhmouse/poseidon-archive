@@ -335,8 +335,8 @@ void HttpSession::onAllHeadersRead(){
 			headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
 			session->sendDefault(HTTP_SWITCHING_PROTOCOLS, STD_MOVE(headers));
 
-			session->m_upgradedSession = boost::make_shared<WebSocketSession>(
-				session->virtualSharedFromThis<HttpSession>());
+			session->m_upgradedSession =
+				boost::make_shared<WebSocketSession>(session->virtualSharedFromThis<HttpSession>());
 			LOG_POSEIDON_INFO("Upgraded to WebSocketSession, remote = ", session->getRemoteInfo());
 		}
 		static void onAuthorization(HttpSession *session, const std::string &val){

@@ -28,6 +28,7 @@ struct Poseidon::WebSocketServlet : NONCOPYABLE {
 
 namespace {
 
+std::size_t g_maxRequestLength			= 16 * 0x400;
 unsigned long long g_keepAliveTimeout   = 30000;
 
 typedef std::map<std::size_t,
@@ -44,6 +45,9 @@ void WebSocketServletDepository::start(){
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
+	conf.get(g_maxRequestLength, "websocket_max_request_length");
+	LOG_POSEIDON_DEBUG("Max request length = ", g_maxRequestLength);
+
 	conf.get(g_keepAliveTimeout, "websocket_keep_alive_timeout");
 	LOG_POSEIDON_DEBUG("Keep alive timeout = ", g_keepAliveTimeout);
 }
@@ -57,6 +61,9 @@ void WebSocketServletDepository::stop(){
 	}
 }
 
+std::size_t WebSocketServletDepository::getMaxRequestLength(){
+	return g_maxRequestLength;
+}
 unsigned long long WebSocketServletDepository::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;
 }

@@ -173,6 +173,7 @@ std::size_t Epoll::wait(unsigned timeout){
 
 		if(event.events & EPOLLHUP){
 			LOG_POSEIDON_INFO("Socket hung up, remote is ", session->getRemoteInfo());
+			session->onClose();
 			removeSession(session);
 			continue;
 		}

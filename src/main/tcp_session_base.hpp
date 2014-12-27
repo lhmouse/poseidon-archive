@@ -8,9 +8,11 @@
 #include "cxx_util.hpp"
 #include "session_base.hpp"
 #include <string>
+#include <deque>
 #include <cstddef>
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/function.hpp>
 #include "raii.hpp"
 #include "ip_port.hpp"
 #include "stream_buffer.hpp"
@@ -48,6 +50,9 @@ private:
 	StreamBuffer m_sendBuffer;
 	Epoll *m_epoll;
 
+	mutable boost::mutex m_onCloseMutex;
+	std::deque<boost::function<void ()> > m_onCloseQueue;
+
 	mutable boost::mutex m_timerMutex;
 	boost::shared_ptr<const TimerItem> m_shutdownTimer;
 
@@ -71,7 +76,8 @@ private:
 
 protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
-	void onReadAvail(const void *data, std::size_t size) = 0;
+	void onReadAvail(const void *data, std::size_t size) OVERRIDE = 0;
+	void onClose() NOEXCEPT OVERRIDE FINAL;
 
 public:
 	int getFd() const {
@@ -89,6 +95,7 @@ public:
 	const IpPort &getRemoteInfo() const;
 	const IpPort &getLocalInfo() const;
 
+	void setOnClose(boost::function<void ()> callback);
 	void setTimeout(unsigned long long timeout);
 };
 

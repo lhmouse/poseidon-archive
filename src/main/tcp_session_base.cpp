@@ -52,6 +52,24 @@ TcpSessionBase::~TcpSessionBase(){
 		"Destroyed TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
 }
 
+void TcpSessionBase::onClose() NOEXCEPT {
+	std::deque<boost::function<void ()> > onCloseQueue;
+	{
+		const boost::mutex::scoped_lock lock(m_onCloseMutex);
+		onCloseQueue.swap(m_onCloseQueue);
+	}
+	while(!onCloseQueue.empty()){
+		try {
+			onCloseQueue.back()();
+		} catch(std::exception &e){
+			LOG_POSEIDON_ERROR("std::exception thrown while in close callback: what = ", e.what());
+		} catch(...){
+			LOG_POSEIDON_ERROR("Unknown exception thrown while in close callback.");
+		}
+		onCloseQueue.pop_back();
+	}
+}
+
 void TcpSessionBase::setEpoll(Epoll *epoll) NOEXCEPT {
 	const boost::mutex::scoped_lock lock(m_bufferMutex);
 	assert(!(m_epoll && epoll));
@@ -144,13 +162,20 @@ long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsi
 	return ret;
 }
 
+void TcpSessionBase::setOnClose(boost::function<void ()> callback){
+	const boost::mutex::scoped_lock lock(m_onCloseMutex);
+	m_onCloseQueue.push_back(VAL_INIT);
+	m_onCloseQueue.back().swap(callback);
+}
 void TcpSessionBase::setTimeout(unsigned long long timeout){
-	const boost::mutex::scoped_lock lock(m_timerMutex);
-	if(timeout == 0){
-		m_shutdownTimer.reset();
-	} else {
-		m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
+	boost::shared_ptr<const TimerItem> shutdownTimer;
+	if(timeout != 0){
+		shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
 			boost::bind(&shutdownIfTimeout, virtualWeakFromThis<TcpSessionBase>()));
+	}
+	{
+		const boost::mutex::scoped_lock lock(m_timerMutex);
+		m_shutdownTimer.swap(shutdownTimer);
 	}
 }
 

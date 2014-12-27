@@ -7,7 +7,6 @@
 #include "../../cxx_ver.hpp"
 #include "../upgraded_session_base.hpp"
 #include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include "../../stream_buffer.hpp"
 #include "opcode.hpp"
@@ -46,9 +45,11 @@ private:
 
 	void onControlFrame();
 
+private:
+	bool sendFrame(StreamBuffer contents, WebSocketOpCode opcode, bool fin, bool masked);
+
 public:
 	bool send(StreamBuffer contents, bool binary = true, bool fin = false, bool masked = false);
-
 	bool shutdown(WebSocketStatus status, StreamBuffer additional = StreamBuffer());
 };
 

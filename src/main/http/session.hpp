@@ -53,6 +53,7 @@ public:
 
 private:
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
+
 	void onAllHeadersRead();
 
 public:

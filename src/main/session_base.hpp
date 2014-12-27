@@ -20,6 +20,8 @@ public:
 private:
 	// 有数据可读触发回调，size 始终不为零。
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
+	// 连接断开（主动或被动），一旦连接断开将不会再收到 onReadAvail()。
+	virtual void onClose() NOEXCEPT = 0;
 
 public:
 	// 在使用 fin = true 调用 send() 或调用 forceShutdown() 之后返回 true。

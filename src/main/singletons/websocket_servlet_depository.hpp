@@ -26,6 +26,7 @@ struct WebSocketServletDepository {
 	static void start();
 	static void stop();
 
+	static std::size_t getMaxRequestLength();
 	static unsigned long long getKeepAliveTimeout();
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
