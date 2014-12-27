@@ -107,6 +107,9 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	}
 	::epoll_event event;
 	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+#ifndef NDEBUG
+	std::memset(&event.data, 0xCC, sizeof(event.data)); // valgrind 误报。
+#endif
 	event.data.fd = session->getFd();
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const int errCode = errno;
