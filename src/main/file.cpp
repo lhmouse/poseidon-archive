@@ -13,8 +13,8 @@ using namespace Poseidon;
 
 namespace Poseidon {
 
-void fileGetContents(StreamBuffer &contents, const SharedNtmbs &path){
-	const UniqueFile file(::open(path.get(), O_RDONLY));
+void fileGetContents(StreamBuffer &contents, const char *path){
+	const UniqueFile file(::open(path, O_RDONLY));
 	if(!file){
 		DEBUG_THROW(SystemError);
 	}
@@ -31,7 +31,7 @@ void fileGetContents(StreamBuffer &contents, const SharedNtmbs &path){
 	}
 	contents.swap(temp);
 }
-int fileGetContentsNoThrow(StreamBuffer &contents, const SharedNtmbs &path){
+int fileGetContentsNoThrow(StreamBuffer &contents, const char *path){
 	try {
 		fileGetContents(contents, path);
 		return 0;
@@ -40,8 +40,8 @@ int fileGetContentsNoThrow(StreamBuffer &contents, const SharedNtmbs &path){
 	}
 }
 
-void filePutContents(const SharedNtmbs &path, StreamBuffer contents, bool append){
-	const UniqueFile file(::open(path.get(), O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC)));
+void filePutContents(const char *path, StreamBuffer contents, bool append){
+	const UniqueFile file(::open(path, O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC)));
 	if(!file){
 		DEBUG_THROW(SystemError);
 	}
@@ -56,7 +56,7 @@ void filePutContents(const SharedNtmbs &path, StreamBuffer contents, bool append
 		}
 	}
 }
-int filePutContentsNoThrow(const SharedNtmbs &path, StreamBuffer contents, bool append){
+int filePutContentsNoThrow(const char *path, StreamBuffer contents, bool append){
 	try {
 		filePutContents(path, contents, append);
 		return 0;

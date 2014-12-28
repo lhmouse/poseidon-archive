@@ -6,15 +6,13 @@
 
 #include "../cxx_ver.hpp"
 #include <vector>
-#include <boost/shared_ptr.hpp>
-#include "../shared_ntmbs.hpp"
 
 namespace Poseidon {
 
 struct ProfileSnapshotItem {
-	SharedNtmbs file;
+	const char *file;
 	unsigned long line;
-	SharedNtmbs func;
+	const char *func;
 
 	// 采样数。
 	unsigned long long samples;

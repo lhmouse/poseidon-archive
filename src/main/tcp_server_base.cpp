@@ -36,7 +36,7 @@ private:
 				return false;
 			}
 			LOG_POSEIDON_ERROR("::SSL_accept() = ", ret, ", ::SSL_get_error() = ", err);
-			DEBUG_THROW(Exception, "::SSL_accept() failed");
+			DEBUG_THROW(Exception, SharedNts::observe("::SSL_accept() failed"));
 		}
 		return true;
 	}
@@ -87,7 +87,7 @@ bool TcpServerBase::poll() const {
 	AUTO(session, onClientConnect(STD_MOVE(client)));
 	if(!session){
 		LOG_POSEIDON_WARN("onClientConnect() returns a null pointer.");
-		DEBUG_THROW(Exception, "Null client pointer");
+		DEBUG_THROW(Exception, SharedNts::observe("Null client pointer"));
 	}
 	if(m_sslFactory){
 		AUTO(ssl, m_sslFactory->createSsl());

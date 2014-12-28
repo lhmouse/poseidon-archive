@@ -2,7 +2,7 @@
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "shared_ntmbs.hpp"
+#include "shared_nts.hpp"
 #include <memory>
 #include <iostream>
 #include <boost/make_shared.hpp>
@@ -85,22 +85,30 @@ struct IncrementalAlloc {
 
 }
 
-void SharedNtmbs::forkOwning(){
-	if(!isOwning()){
+SharedNts SharedNts::observe(const char *str){
+	SharedNts ret;
+	ret.m_ptr.reset(boost::shared_ptr<void>(), str);
+	return ret;
+}
+
+void SharedNts::assign(const char *str, std::size_t len){
+	if(len == 0){
+		m_ptr.reset(boost::shared_ptr<void>(), "");
+	} else {
 		void *dst;
-		const std::size_t size = std::strlen(m_ptr.get()) + 1;
-		const AUTO(sp, boost::allocate_shared<char>(IncrementalAlloc<char>(dst, size)));
-		std::memcpy(dst, m_ptr.get(), size);
+		const AUTO(sp, boost::allocate_shared<char>(IncrementalAlloc<char>(dst, len + 1)));
+		std::memcpy(dst, str, len);
+		static_cast<char *>(dst)[len] = 0;
 		m_ptr.reset(sp, static_cast<const char *>(dst));
 	}
 }
 
 namespace Poseidon {
 
-std::ostream &operator<<(std::ostream &os, const SharedNtmbs &rhs){
+std::ostream &operator<<(std::ostream &os, const SharedNts &rhs){
 	return os <<rhs.get();
 }
-std::wostream &operator<<(std::wostream &os, const SharedNtmbs &rhs){
+std::wostream &operator<<(std::wostream &os, const SharedNts &rhs){
 	return os <<rhs.get();
 }
 

@@ -43,7 +43,7 @@ SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
 	, m_established(false)
 {
 	if(!::SSL_set_fd(m_ssl.get(), fd)){
-		DEBUG_THROW(Exception, "::SSL_set_fd() failed");
+		DEBUG_THROW(Exception, SharedNts::observe("::SSL_set_fd() failed"));
 	}
 }
 SslFilterBase::~SslFilterBase(){

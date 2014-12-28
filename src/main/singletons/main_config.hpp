@@ -9,7 +9,7 @@
 namespace Poseidon {
 
 struct MainConfig {
-	static void setRunPath(const SharedNtmbs &path);
+	static void setRunPath(const char *path);
 
 	static void reload();
 	static const ConfigFile &getConfigFile();

@@ -18,7 +18,7 @@ SockAddr::SockAddr(){
 SockAddr::SockAddr(const void *data, unsigned size){
 	if(size > sizeof(m_data)){
 		LOG_POSEIDON_ERROR("SockAddr size too large: ", size);
-		DEBUG_THROW(Exception, "SockAddr size too large");
+		DEBUG_THROW(Exception, SharedNts::observe("SockAddr size too large"));
 	}
 	m_size = size;
 	std::memcpy(m_data, data, size);
@@ -28,7 +28,7 @@ int SockAddr::getFamily() const {
 	const AUTO(p, reinterpret_cast<const ::sockaddr *>(m_data));
 	if(m_size < sizeof(p->sa_family)){
 		LOG_POSEIDON_ERROR("Invalid SockAddr: size = ", m_size);
-		DEBUG_THROW(Exception, "Invalid SockAddr");
+		DEBUG_THROW(Exception, SharedNts::observe("Invalid SockAddr"));
 	}
 	return p->sa_family;
 }
@@ -40,7 +40,7 @@ IpPort getIpPortFromSockAddr(const SockAddr &sa){
 	if(family == AF_INET){
 		if(sa.getSize() < sizeof(::sockaddr_in)){
 			LOG_POSEIDON_WARN("Invalid IPv4 SockAddr: size = ", sa.getSize());
-			DEBUG_THROW(Exception, "Invalid IPv4 SockAddr");
+			DEBUG_THROW(Exception, SharedNts::observe("Invalid IPv4 SockAddr"));
 		}
 		char ip[INET_ADDRSTRLEN];
 		const char *const str = ::inet_ntop(AF_INET,
@@ -48,12 +48,12 @@ IpPort getIpPortFromSockAddr(const SockAddr &sa){
 		if(!str){
 			DEBUG_THROW(SystemError);
 		}
-		return IpPort(SharedNtmbs(str, true),
+		return IpPort(SharedNts(str),
 			loadBe(static_cast<const ::sockaddr_in *>(sa.getData())->sin_port));
 	} else if(family == AF_INET6){
 		if(sa.getSize() < sizeof(::sockaddr_in6)){
 			LOG_POSEIDON_WARN("Invalid IPv6 SockAddr: size = ", sa.getSize());
-			DEBUG_THROW(Exception, "Invalid IPv6 SockAddr");
+			DEBUG_THROW(Exception, SharedNts::observe("Invalid IPv6 SockAddr"));
 		}
 		char ip[INET6_ADDRSTRLEN];
 		const char *const str = ::inet_ntop(AF_INET6,
@@ -61,12 +61,12 @@ IpPort getIpPortFromSockAddr(const SockAddr &sa){
 		if(!str){
 			DEBUG_THROW(SystemError);
 		}
-		return IpPort(SharedNtmbs(str, true),
+		return IpPort(SharedNts(str),
 			loadBe(static_cast<const ::sockaddr_in6 *>(sa.getData())->sin6_port));
 	}
 
 	LOG_POSEIDON_WARN("Unknown IP protocol ", family);
-	DEBUG_THROW(Exception, "Unknown IP protocol");
+	DEBUG_THROW(Exception, SharedNts::observe("Unknown IP protocol"));
 }
 SockAddr getSockAddrFromIpPort(const IpPort &addr){
 	::sockaddr_in sin;
@@ -84,7 +84,7 @@ SockAddr getSockAddrFromIpPort(const IpPort &addr){
 	}
 
 	LOG_POSEIDON_ERROR("Unknown address format: ", addr.ip);
-	DEBUG_THROW(Exception, "Unknown address format");
+	DEBUG_THROW(Exception, SharedNts::observe("Unknown address format"));
 }
 
 }

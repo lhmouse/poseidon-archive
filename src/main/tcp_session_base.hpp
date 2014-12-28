@@ -16,7 +16,6 @@
 #include "raii.hpp"
 #include "ip_port.hpp"
 #include "stream_buffer.hpp"
-#include "shared_ntmbs.hpp"
 
 namespace Poseidon {
 

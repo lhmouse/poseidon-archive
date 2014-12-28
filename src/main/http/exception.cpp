@@ -15,10 +15,10 @@ const OptionalMap EMPTY_HEADERS;
 HttpException::HttpException(const char *file, std::size_t line,
 	HttpStatus status, OptionalMap headers)
 	: ProtocolException(file, line,
-		getHttpStatusDesc(status).descShort, static_cast<unsigned>(status))
+		SharedNts::observe(getHttpStatusDesc(status).descShort), static_cast<unsigned>(status))
 {
 	if(!headers.empty()){
-		boost::make_shared<OptionalMap>().swap(m_headers);
+		m_headers = boost::make_shared<OptionalMap>();
 		m_headers->swap(headers);
 	}
 	LOG_POSEIDON_ERROR("HttpException: status = ", static_cast<unsigned>(status));

@@ -6,31 +6,21 @@
 
 #include "cxx_ver.hpp"
 #include <iosfwd>
-#include "shared_ntmbs.hpp"
+#include "shared_nts.hpp"
 
 namespace Poseidon {
 
 struct IpPort {
-	SharedNtmbs ip;
+	SharedNts ip;
 	unsigned port;
 
 	IpPort()
 		: ip(), port()
 	{
 	}
-	IpPort(SharedNtmbs ip_, unsigned port_, bool owning = false)
-		: ip(STD_MOVE(ip_), owning), port(port_)
+	IpPort(SharedNts ip_, unsigned port_)
+		: ip(STD_MOVE(ip_)), port(port_)
 	{
-	}
-	IpPort(const IpPort &rhs, bool owning)
-		: ip(rhs.ip, owning), port(rhs.port)
-	{
-	}
-	IpPort(Move<IpPort> rhs, bool owning){
-		rhs.swap(*this);
-		if(owning){
-			ip.forkOwning();
-		}
 	}
 
 	void swap(IpPort &rhs) NOEXCEPT {

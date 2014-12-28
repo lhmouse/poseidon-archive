@@ -12,7 +12,7 @@ namespace Poseidon {
 class WebSocketException : public ProtocolException {
 public:
 	WebSocketException(const char *file, std::size_t line,
-		WebSocketStatus status, SharedNtmbs message);
+		WebSocketStatus status, SharedNts message);
 	~WebSocketException() NOEXCEPT;
 
 public:

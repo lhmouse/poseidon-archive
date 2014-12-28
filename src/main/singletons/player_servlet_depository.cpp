@@ -75,7 +75,7 @@ boost::shared_ptr<PlayerServlet> PlayerServletDepository::registerServlet(
 		AUTO_REF(old, g_servlets[category][protocolId]);
 		if(!old.expired()){
 			LOG_POSEIDON_ERROR("Duplicate servlet for id ", protocolId, " in category ", category);
-			DEBUG_THROW(Exception, "Duplicate player protocol servlet");
+			DEBUG_THROW(Exception, SharedNts::observe("Duplicate player protocol servlet"));
 		}
 		old = servlet;
 	}

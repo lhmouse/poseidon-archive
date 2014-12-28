@@ -7,7 +7,7 @@
 using namespace Poseidon;
 
 PlayerProtocolException::PlayerProtocolException(const char *file, std::size_t line,
-	PlayerStatus status, SharedNtmbs message)
+	PlayerStatus status, SharedNts message)
 	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
 {
 	LOG_POSEIDON_ERROR("PlayerProtocolException: status = ", static_cast<unsigned>(status),

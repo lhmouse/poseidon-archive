@@ -8,7 +8,6 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include "sock_addr.hpp"
-#include "shared_ntmbs.hpp"
 
 namespace Poseidon {
 

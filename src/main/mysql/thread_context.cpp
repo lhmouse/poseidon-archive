@@ -38,7 +38,7 @@ MySqlThreadContext::MySqlThreadContext(){
 
 		if(::mysql_thread_init() != 0){
 			LOG_POSEIDON_FATAL("Could not initialize MySQL thread.");
-			DEBUG_THROW(MySqlException, 99999, "::mysql_thread_init() failed");
+			DEBUG_THROW(MySqlException, 99999, SharedNts::observe("::mysql_thread_init() failed"));
 		}
 	}
 }

@@ -16,15 +16,15 @@
 #include "../http/session.hpp"
 #include "../http/exception.hpp"
 #include "../http/server.hpp"
-#include "../shared_ntmbs.hpp"
+#include "../shared_nts.hpp"
 using namespace Poseidon;
 
 namespace {
 
-void escapeCsvField(std::string &dst, const SharedNtmbs &src){
+void escapeCsvField(std::string &dst, const char *src){
 	bool needsQuotes = false;
 	dst.clear();
-	const char *read = src.get();
+	const char *read = src;
 	for(;;){
 		const char ch = *(read++);
 		if(ch == 0){
@@ -254,7 +254,7 @@ void SystemHttpServer::start(){
 		path.push_back('/');
 	}
 
-	const IpPort bindAddr(bind.c_str(), port);
+	const IpPort bindAddr(SharedNts(bind.c_str()), port);
 	LOG_POSEIDON_INFO("Initializing system HTTP server on ", bindAddr);
 	g_systemServer = boost::make_shared<HttpServer>(
 		category, bindAddr, certificate.c_str(), privateKey.c_str(), authUserPasses);
@@ -262,7 +262,7 @@ void SystemHttpServer::start(){
 
 	LOG_POSEIDON_INFO("Created system HTTP sevlet on ", path);
 	g_systemServlet = HttpServletDepository::registerServlet(
-		category, path.c_str(), boost::bind(&servletProc, _1, _2, path.size()));
+		category, SharedNts(path.c_str()), boost::bind(&servletProc, _1, _2, path.size()));
 
 	LOG_POSEIDON_INFO("Done initializing system HTTP server.");
 }

@@ -7,7 +7,7 @@
 #include <string>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
-#include "../shared_ntmbs.hpp"
+#include "../shared_nts.hpp"
 
 namespace Poseidon {
 
@@ -15,7 +15,7 @@ class Module;
 class ModuleRaiiBase;
 
 struct ModuleSnapshotItem {
-	SharedNtmbs realPath;
+	SharedNts realPath;
 	void *baseAddr;
 	std::size_t refCount;
 };
@@ -24,8 +24,8 @@ struct ModuleDepository {
 	static void start();
 	static void stop();
 
-	static boost::shared_ptr<Module> load(const SharedNtmbs &path);
-	static boost::shared_ptr<Module> loadNoThrow(const SharedNtmbs &path);
+	static boost::shared_ptr<Module> load(const char *path);
+	static boost::shared_ptr<Module> loadNoThrow(const char *path);
 	static bool unload(const boost::shared_ptr<Module> &module);
 	static bool unload(void *baseAddr);
 

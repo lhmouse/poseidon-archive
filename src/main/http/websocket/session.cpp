@@ -42,7 +42,7 @@ protected:
 			const AUTO(servlet, WebSocketServletDepository::getServlet(category, m_uri.c_str()));
 			if(!servlet){
 				LOG_POSEIDON_WARN("No servlet in category ", category, " matches URI ", m_uri);
-				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE, "Unknown URI");
+				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE, SharedNts::observe("Unknown URI"));
 				return;
 			}
 
@@ -98,12 +98,14 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				}
 				if(ch & (WS_FL_RSV1 | WS_FL_RSV2 | WS_FL_RSV3)){
 					LOG_POSEIDON_WARN("Aborting because some reserved bits are set, opcode = ", ch);
-					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Reserved bits set");
+					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR,
+						SharedNts::observe("Reserved bits set"));
 				}
 				m_fin = ch & WS_FL_FIN;
 				m_opcode = static_cast<WebSocketOpCode>(ch & WS_FL_OPCODE);
 				if((m_opcode & WS_FL_CONTROL) && !m_fin){
-					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Control frame fragemented");
+					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR,
+						SharedNts::observe("Control frame fragemented"));
 				}
 				m_state = ST_PAYLOAD_LEN;
 				break;
@@ -114,12 +116,14 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					goto exit_for;
 				}
 				if((ch & 0x80) == 0){
-					DEBUG_THROW(WebSocketException, WS_ACCESS_DENIED, "Non-masked frames not allowed");
+					DEBUG_THROW(WebSocketException, WS_ACCESS_DENIED,
+						SharedNts::observe("Non-masked frames not allowed"));
 				}
 				m_payloadLen = (unsigned char)(ch & 0x7F);
 				if(m_payloadLen >= 0x7E){
 					if(m_opcode & WS_FL_CONTROL){
-						DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Control frame too large");
+						DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR,
+							SharedNts::observe("Control frame too large"));
 					}
 					m_state = ST_EX_PAYLOAD_LEN;
 				} else {
@@ -158,7 +162,8 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 			case ST_PAYLOAD:
 				remaining = m_payloadLen - m_whole.size();
 				if(m_whole.size() + remaining >= WebSocketServletDepository::getMaxRequestLength()){
-					DEBUG_THROW(WebSocketException, WS_MESSAGE_TOO_LARGE, "Packet too large");
+					DEBUG_THROW(WebSocketException, WS_MESSAGE_TOO_LARGE,
+						SharedNts::observe("Packet too large"));
 				}
 				if(m_payload.size() < remaining){
 					goto exit_for;
@@ -216,7 +221,7 @@ void WebSocketSession::onControlFrame(){
 		break;
 
 	default:
-		DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, "Invalid opcode");
+		DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR, SharedNts::observe("Invalid opcode"));
 		break;
 	}
 }

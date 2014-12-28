@@ -13,10 +13,10 @@
 using namespace Poseidon;
 
 struct Poseidon::WebSocketServlet : NONCOPYABLE {
-	const SharedNtmbs uri;
+	const SharedNts uri;
 	const boost::shared_ptr<WebSocketServletCallback> callback;
 
-	WebSocketServlet(SharedNtmbs uri_, boost::shared_ptr<WebSocketServletCallback> callback_)
+	WebSocketServlet(SharedNts uri_, boost::shared_ptr<WebSocketServletCallback> callback_)
 		: uri(STD_MOVE(uri_), true), callback(STD_MOVE(callback_))
 	{
 		LOG_POSEIDON_INFO("Created WebSocket servlet for URI ", uri);
@@ -32,7 +32,7 @@ std::size_t g_maxRequestLength			= 16 * 0x400;
 unsigned long long g_keepAliveTimeout   = 30000;
 
 typedef std::map<std::size_t,
-	std::map<SharedNtmbs, boost::weak_ptr<WebSocketServlet> >
+	std::map<SharedNts, boost::weak_ptr<WebSocketServlet> >
 	> ServletMap;
 
 boost::shared_mutex g_mutex;
@@ -69,18 +69,17 @@ unsigned long long WebSocketServletDepository::getKeepAliveTimeout(){
 }
 
 boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::registerServlet(
-	std::size_t category, SharedNtmbs uri, WebSocketServletCallback callback)
+	std::size_t category, SharedNts uri, WebSocketServletCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<WebSocketServletCallback>());
 	sharedCallback->swap(callback);
-	uri.forkOwning();
 	AUTO(servlet, boost::make_shared<WebSocketServlet>(uri, sharedCallback));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
 			LOG_POSEIDON_ERROR("Duplicate servlet for URI ", uri, " in category ", category);
-			DEBUG_THROW(Exception, "Duplicate WebSocket servlet");
+			DEBUG_THROW(Exception, SharedNts::observe("Duplicate WebSocket servlet"));
 		}
 		old = servlet;
 	}
@@ -89,15 +88,19 @@ boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::registerServlet(
 }
 
 boost::shared_ptr<const WebSocketServletCallback> WebSocketServletDepository::getServlet(
-	std::size_t category, const SharedNtmbs &uri)
+	std::size_t category, const char *uri)
 {
+	if(!uri){
+		LOG_POSEIDON_ERROR("uri is null");
+		DEBUG_THROW(Exception, SharedNts::observe("uri is null"));
+	}
 	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 	const AUTO(it, g_servlets.find(category));
 	if(it == g_servlets.end()){
 		LOG_POSEIDON_DEBUG("No servlet in category ", category);
 		return VAL_INIT;
 	}
-	const AUTO(it2, it->second.find(uri));
+	const AUTO(it2, it->second.find(SharedNts::observe(uri)));
 	if(it2 == it->second.end()){
 		LOG_POSEIDON_DEBUG("No servlet for URI ", uri, " in category ", category);
 		return VAL_INIT;

@@ -10,23 +10,22 @@
 #include "../atomic.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
-#include "../shared_ntmbs.hpp"
 using namespace Poseidon;
 
 namespace {
 
 struct ProfileKey {
-	SharedNtmbs file;
+	const char *file;
 	unsigned long line;
-	SharedNtmbs func;
+	const char *func;
 
-	ProfileKey(SharedNtmbs file_, unsigned long line_, SharedNtmbs func_)
-		: file(STD_MOVE(file_)), line(line_), func(STD_MOVE(func_))
+	ProfileKey(const char *file_, unsigned long line_, const char *func_)
+		: file(file_), line(line_), func(func_)
 	{
 	}
 
 	bool operator<(const ProfileKey &rhs) const {
-		const int fileCmp = std::strcmp(file.get(), rhs.file.get());
+		const int fileCmp = std::strcmp(file, rhs.file);
 		if(fileCmp != 0){
 			return fileCmp < 0;
 		}
@@ -79,9 +78,6 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 			}
 		}
 		{
-			key.file.forkOwning();
-			key.func.forkOwning();
-
 			const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 			it = g_profile.insert(std::make_pair(key, ProfileCounters())).first;
 		}

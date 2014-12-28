@@ -37,11 +37,11 @@ struct DynamicLibraryCloser {
 class Poseidon::Module : NONCOPYABLE {
 private:
 	const UniqueHandle<DynamicLibraryCloser> m_handle;
-	const SharedNtmbs m_realPath;
+	const SharedNts m_realPath;
 	void *const m_baseAddr;
 
 public:
-	Module(UniqueHandle<DynamicLibraryCloser> handle, SharedNtmbs realPath, void *baseAddr)
+	Module(UniqueHandle<DynamicLibraryCloser> handle, SharedNts realPath, void *baseAddr)
 		: m_handle(STD_MOVE(handle)), m_realPath(STD_MOVE(realPath)), m_baseAddr(baseAddr)
 	{
 		LOG_POSEIDON_INFO("Constructor of module: ", m_realPath);
@@ -62,7 +62,7 @@ public:
 	void *handle() const {
 		return m_handle.get();
 	}
-	const SharedNtmbs &realPath() const {
+	const SharedNts &realPath() const {
 		return m_realPath;
 	}
 	void *baseAddr() const {
@@ -75,7 +75,7 @@ namespace {
 struct ModuleMapElement {
 	const boost::shared_ptr<Module> module;
 	void *const handle;
-	const SharedNtmbs realPath;
+	const SharedNts realPath;
 	void *const baseAddr;
 
 	mutable std::vector<boost::shared_ptr<void> > handles;
@@ -161,11 +161,11 @@ void ModuleDepository::stop(){
 	}
 }
 
-boost::shared_ptr<Module> ModuleDepository::load(const SharedNtmbs &path){
+boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 
 	LOG_POSEIDON_INFO("Checking whether module has already been loaded: ", path);
-	UniqueHandle<DynamicLibraryCloser> handle(::dlopen(path.get(), RTLD_NOW | RTLD_NOLOAD));
+	UniqueHandle<DynamicLibraryCloser> handle(::dlopen(path, RTLD_NOW | RTLD_NOLOAD));
 	if(handle){
 		LOG_POSEIDON_DEBUG("Module already loaded, trying retrieving a shared_ptr from static map...");
 		const AUTO(it, g_modules.find<MIDX_HANDLE>(handle.get()));
@@ -177,25 +177,25 @@ boost::shared_ptr<Module> ModuleDepository::load(const SharedNtmbs &path){
 	}
 
 	LOG_POSEIDON_INFO("Loading new module: ", path);
-	if(!handle.reset(::dlopen(path.get(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND))){
-		SharedNtmbs error(::dlerror(), true);
+	if(!handle.reset(::dlopen(path, RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND))){
+		SharedNts error(::dlerror());
 		LOG_POSEIDON_ERROR("Error loading dynamic library: ", error);
 		DEBUG_THROW(Exception, STD_MOVE(error));
 	}
 
 	void *const initSym = ::dlsym(handle.get(), "_init");
 	if(!initSym){
-		SharedNtmbs error(::dlerror(), true);
+		SharedNts error(::dlerror());
 		LOG_POSEIDON_ERROR("Error locating _init(): ", error);
 		DEBUG_THROW(Exception, STD_MOVE(error));
 	}
 	::Dl_info info;
 	if(::dladdr(initSym, &info) == 0){
-		SharedNtmbs error(::dlerror(), true);
+		SharedNts error(::dlerror());
 		LOG_POSEIDON_ERROR("Error getting real path and base address: ", error);
 		DEBUG_THROW(Exception, STD_MOVE(error));
 	}
-	SharedNtmbs realPath(info.dli_fname, true);
+	SharedNts realPath(info.dli_fname);
 	void *const baseAddr = info.dli_fbase;
 
 	AUTO(module, boost::make_shared<Module>(STD_MOVE(handle), realPath, baseAddr));
@@ -221,13 +221,13 @@ boost::shared_ptr<Module> ModuleDepository::load(const SharedNtmbs &path){
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Duplicate module: module = ", module, ", handle = ", module->handle(),
 			", real path = ", realPath, ", base address = ", baseAddr);
-		DEBUG_THROW(Exception, "Duplicate module");
+		DEBUG_THROW(Exception, SharedNts::observe("Duplicate module"));
 	}
 	result.first->handles.swap(handles);
 
 	return module;
 }
-boost::shared_ptr<Module> ModuleDepository::loadNoThrow(const SharedNtmbs &path){
+boost::shared_ptr<Module> ModuleDepository::loadNoThrow(const char *path){
 	try {
 		return load(path);
 	} catch(std::exception &e){
@@ -267,13 +267,13 @@ void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	::Dl_info info;
 	if(::dladdr(raii, &info) == 0){
-		SharedNtmbs error(::dlerror(), true);
+		SharedNts error(::dlerror());
 		LOG_POSEIDON_ERROR("Error getting base address: ", error);
 		DEBUG_THROW(Exception, STD_MOVE(error));
 	}
 	if(!g_moduleRaiis.insert(ModuleRaiiMapElement(info.dli_fbase, raii)).second){
 		LOG_POSEIDON_ERROR("Duplicate ModuleRaii? fbase = ", info.dli_fbase, ", raii = ", raii);
-		DEBUG_THROW(Exception, "Duplicate ModuleRaii");
+		DEBUG_THROW(Exception, SharedNts::observe("Duplicate ModuleRaii"));
 	}
 }
 void ModuleDepository::unregisterModuleRaii(ModuleRaiiBase *raii){

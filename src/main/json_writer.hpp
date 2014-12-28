@@ -13,13 +13,13 @@
 #include <boost/variant.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/utility/enable_if.hpp>
-#include "shared_ntmbs.hpp"
+#include "shared_nts.hpp"
 
 namespace Poseidon {
 
 class JsonElement;
 
-class JsonObject : public std::map<SharedNtmbs, JsonElement> {
+class JsonObject : public std::map<SharedNts, JsonElement> {
 public:
 	void dump(std::ostream &os) const;
 	std::string dump() const;

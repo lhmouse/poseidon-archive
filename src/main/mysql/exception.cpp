@@ -7,10 +7,10 @@
 using namespace Poseidon;
 
 MySqlException::MySqlException(const char *file, std::size_t line,
-	unsigned code, const char *message)
-	: ProtocolException(file, line, SharedNtmbs(message, true), code)
+	unsigned code, SharedNts message)
+	: ProtocolException(file, line, STD_MOVE(message), code)
 {
-	LOG_POSEIDON_ERROR("MySqlException: code = ", code, ", message = ", message);
+	LOG_POSEIDON_ERROR("MySqlException: code = ", code, ", what = ", what());
 }
 MySqlException::~MySqlException() NOEXCEPT {
 }

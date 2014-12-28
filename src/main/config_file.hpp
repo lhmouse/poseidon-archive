@@ -18,11 +18,11 @@ private:
 
 public:
 	ConfigFile();
-	explicit ConfigFile(const SharedNtmbs &path);
+	explicit ConfigFile(const char *path);
 
 public:
-	void load(const SharedNtmbs &path);
-	int loadNoThrow(const SharedNtmbs &path);
+	void load(const char *path);
+	int loadNoThrow(const char *path);
 
 	bool empty() const {
 		return m_contents.empty();
@@ -36,7 +36,7 @@ public:
 	}
 
 	template<typename T>
-	bool get(T &val, const SharedNtmbs &key) const {
+	bool get(T &val, const char *key) const {
 		const std::string &str = m_contents.get(key);
 		if(str.empty()){
 			return false;
@@ -45,7 +45,7 @@ public:
 		return true;
 	}
 	template<typename T, typename DefaultT>
-	bool get(T &val, const SharedNtmbs &key, const DefaultT &defVal) const {
+	bool get(T &val, const char *key, const DefaultT &defVal) const {
 		const std::string &str = m_contents.get(key);
 		if(str.empty()){
 			val = defVal;
@@ -55,7 +55,7 @@ public:
 		return true;
 	}
 	template<typename T, typename DefaultT>
-	T get(const SharedNtmbs &key, const DefaultT &defVal) const {
+	T get(const char *key, const DefaultT &defVal) const {
 		const std::string &str = m_contents.get(key);
 		if(str.empty()){
 			return T(defVal);
@@ -64,7 +64,7 @@ public:
 	}
 
 	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const SharedNtmbs &key,
+	std::size_t getAll(std::vector<T> &vals, const char *key,
 		bool includingEmpty = false, bool truncates = true) const
 	{
 		if(truncates){
@@ -83,7 +83,7 @@ public:
 		return ret;
 	}
 	template<typename T>
-	std::vector<T> getAll(const SharedNtmbs &key, bool includingEmpty = false) const {
+	std::vector<T> getAll(const char *key, bool includingEmpty = false) const {
 		std::vector<T> vals;
 		getAll(vals, key, includingEmpty, false);
 		return vals;

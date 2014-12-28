@@ -8,7 +8,7 @@
 #include <exception>
 #include <cerrno>
 #include <cstddef>
-#include "shared_ntmbs.hpp"
+#include "shared_nts.hpp"
 
 namespace Poseidon {
 
@@ -16,10 +16,10 @@ class Exception : public std::exception {
 protected:
 	const char *const m_file;
 	const std::size_t m_line;
-	const SharedNtmbs m_message; // 拷贝构造函数不抛出异常。
+	const SharedNts m_message; // 拷贝构造函数不抛出异常。
 
 public:
-	Exception(const char *file, std::size_t line, SharedNtmbs message);
+	Exception(const char *file, std::size_t line, SharedNts message);
 	~Exception() NOEXCEPT;
 
 public:
@@ -54,7 +54,7 @@ private:
 	const unsigned m_code;
 
 public:
-	ProtocolException(const char *file, std::size_t line, SharedNtmbs message, unsigned code);
+	ProtocolException(const char *file, std::size_t line, SharedNts message, unsigned code);
 	~ProtocolException() NOEXCEPT;
 
 public:

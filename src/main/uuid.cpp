@@ -34,7 +34,7 @@ Uuid Uuid::generate(){
 
 Uuid::Uuid(const char (&str)[37]){
 	if(!fromString(str)){
-		DEBUG_THROW(Exception, "Invalid UUID string");
+		DEBUG_THROW(Exception, SharedNts::observe("Invalid UUID string"));
 	}
 }
 

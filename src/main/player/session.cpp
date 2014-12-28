@@ -50,7 +50,8 @@ protected:
 				if(!servlet){
 					LOG_POSEIDON_WARN(
 						"No servlet in category ", category, " matches protocol ", m_protocolId);
-					DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND, "Unknown protocol");
+					DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND,
+						SharedNts::observe("Unknown protocol"));
 				}
 
 				LOG_POSEIDON_DEBUG("Dispatching packet: protocol = ", m_protocolId,
@@ -106,7 +107,8 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 				if((unsigned)m_payloadLen >= maxRequestLength){
 					LOG_POSEIDON_WARN(
 						"Request too large: size = ", m_payloadLen, ", max = ", maxRequestLength);
-					DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE, "Request too large");
+					DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE,
+						SharedNts::observe("Request too large"));
 				}
 			}
 			if(m_payload.size() < (unsigned)m_payloadLen){
@@ -135,7 +137,8 @@ bool PlayerSession::send(boost::uint16_t protocolId, StreamBuffer contents, bool
 	const std::size_t size = contents.size();
 	if(size > 0xFFFF){
 		LOG_POSEIDON_WARN("Response packet too large, size = ", size);
-		DEBUG_THROW(PlayerProtocolException, PLAYER_RESPONSE_TOO_LARGE, "Response packet too large");
+		DEBUG_THROW(PlayerProtocolException, PLAYER_RESPONSE_TOO_LARGE,
+			SharedNts::observe("Response packet too large"));
 	}
 	StreamBuffer packet;
 	boost::uint16_t tmp;

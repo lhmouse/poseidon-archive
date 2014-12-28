@@ -89,7 +89,7 @@ void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 		int len = std::sprintf(temp, "%10llu%20llu%20llu    ",
 			it->samples, it->usTotal, it->usExclusive);
 		contents.put(temp, len);
-		contents.put(it->file.get());
+		contents.put(it->file);
 		len = std::sprintf(temp, ":%lu\n", it->line);
 		contents.put(temp, len);
 	}
@@ -149,8 +149,8 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	if(!v.empty()){
 		contents.put("Already loaded");
 	} else {
-		v.push_back(HttpServletDepository::registerServlet(1, "/meow/", &meowProc));
-		v.push_back(HttpServletDepository::registerServlet(1, "/meow/meow/", &meowMeowProc));
+		v.push_back(HttpServletDepository::registerServlet(1, SharedNts::observe("/meow/"), &meowProc));
+		v.push_back(HttpServletDepository::registerServlet(1, SharedNts::observe("/meow/meow/"), &meowMeowProc));
 		v.push_back(TimerDaemon::registerTimer(5000, 10000, &tickProc));
 		contents.put("OK");
 	}
@@ -217,7 +217,7 @@ public:
 
 public:
 	TestClient()
-		: TcpClientBase(IpPort("192.30.252.128", 443), true)
+		: TcpClientBase(IpPort(SharedNts::observe("192.30.252.128"), 443), true)
 	{
 	}
 
@@ -338,13 +338,13 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 }
 
 MODULE_RAII(
-	return HttpServletDepository::registerServlet(1, "/profile", &profileProc);
+	return HttpServletDepository::registerServlet(1, SharedNts::observe("/profile"), &profileProc);
 )
 MODULE_RAII(
-	return HttpServletDepository::registerServlet(1, "/load", &loadProc);
+	return HttpServletDepository::registerServlet(1, SharedNts::observe("/load"), &loadProc);
 )
 MODULE_RAII(
-	return HttpServletDepository::registerServlet(1, "/unload", &unloadProc);
+	return HttpServletDepository::registerServlet(1, SharedNts::observe("/unload"), &unloadProc);
 )
 MODULE_RAII(
 	AUTO(v, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
@@ -358,7 +358,7 @@ MODULE_RAII(
 	return EventDispatcher::registerListener<TestEvent2>(&event2Proc);
 )
 MODULE_RAII(
-	return WebSocketServletDepository::registerServlet(1, "/wstest", &webSocketProc);
+	return WebSocketServletDepository::registerServlet(1, SharedNts::observe("/wstest"), &webSocketProc);
 )
 MODULE_RAII(
 	return PlayerServletDepository::registerServlet(2, 100, &TestIntProc);
@@ -395,8 +395,8 @@ MODULE_RAII(
 )
 
 MODULE_RAII(
-	AUTO(server, (boost::make_shared<HttpServer>(1, IpPort("0.0.0.0", 8860),
-		NULLPTR, NULLPTR, std::vector<std::string>())));
+	AUTO(server, (boost::make_shared<HttpServer>(1,
+		IpPort(SharedNts("0.0.0.0"), 8860), NULLPTR, NULLPTR, std::vector<std::string>())));
 	EpollDaemon::registerServer(server);
 	return server;
 )

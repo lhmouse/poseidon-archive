@@ -5,16 +5,16 @@
 #define POSEIDON_FILE_HPP_
 
 #include <string>
-#include "shared_ntmbs.hpp"
+#include "shared_nts.hpp"
 #include "stream_buffer.hpp"
 
 namespace Poseidon {
 
-extern void fileGetContents(StreamBuffer &contents, const SharedNtmbs &path);
-extern int fileGetContentsNoThrow(StreamBuffer &contents, const SharedNtmbs &path);
+extern void fileGetContents(StreamBuffer &contents, const char *path);
+extern int fileGetContentsNoThrow(StreamBuffer &contents, const char *path);
 
-extern void filePutContents(const SharedNtmbs &path, StreamBuffer contents, bool append);
-extern int filePutContentsNoThrow(const SharedNtmbs &path, StreamBuffer contents, bool append);
+extern void filePutContents(const char *path, StreamBuffer contents, bool append);
+extern int filePutContentsNoThrow(const char *path, StreamBuffer contents, bool append);
 
 extern bool getLine(StreamBuffer &buffer, std::string &line);
 

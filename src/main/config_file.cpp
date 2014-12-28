@@ -10,11 +10,11 @@ using namespace Poseidon;
 
 ConfigFile::ConfigFile(){
 }
-ConfigFile::ConfigFile(const SharedNtmbs &path){
+ConfigFile::ConfigFile(const char *path){
 	load(path);
 }
 
-void ConfigFile::load(const SharedNtmbs &path){
+void ConfigFile::load(const char *path){
 	LOG_POSEIDON_INFO("Loading config file: ", path);
 
 	StreamBuffer buffer;
@@ -36,16 +36,15 @@ void ConfigFile::load(const SharedNtmbs &path){
 		std::size_t equ = line.find('=', pos);
 		if(equ == std::string::npos){
 			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": '=' expected.");
-			DEBUG_THROW(Exception, "Bad config file");
+			DEBUG_THROW(Exception, SharedNts::observe("Bad config file"));
 		}
 
 		std::size_t keyEnd = line.find_last_not_of(" \t", equ - 1);
 		if((keyEnd == std::string::npos) || (pos >= keyEnd)){
 			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": Name expected.");
-			DEBUG_THROW(Exception, "Bad config file");
+			DEBUG_THROW(Exception, SharedNts::observe("Bad config file"));
 		}
-		line[keyEnd + 1] = 0;
-		SharedNtmbs key(&line[pos], true);
+		SharedNts key(&line[pos], keyEnd + 1 - pos);
 
 		pos = line.find_first_not_of(" \t", equ + 1);
 		if(pos == std::string::npos){
@@ -62,7 +61,7 @@ void ConfigFile::load(const SharedNtmbs &path){
 	m_contents.swap(contents);
 }
 
-int ConfigFile::loadNoThrow(const SharedNtmbs &path){
+int ConfigFile::loadNoThrow(const char *path){
 	try {
 		load(path);
 		return 0;

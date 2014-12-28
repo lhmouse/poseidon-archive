@@ -95,18 +95,18 @@ double randDouble(double lower, double upper){
 	return lower + rand64() / 0x1p64 * delta;
 }
 
-SharedNtmbs getErrorDesc(int errCode) NOEXCEPT {
+SharedNts getErrorDesc(int errCode) NOEXCEPT {
 	char temp[1024];
 	const char *desc = ::strerror_r(errCode, temp, sizeof(temp));
 	if(desc == temp){
 		try {
-			return SharedNtmbs(desc, true);
+			return SharedNts(desc);
 		} catch(...){
 			desc = "Insufficient memory.";
 		}
 	}
 	// desc 指向一个静态的字符串。
-	return SharedNtmbs(desc);
+	return SharedNts::observe(desc);
 }
 std::string getErrorDescAsString(int errCode){
 	std::string ret;

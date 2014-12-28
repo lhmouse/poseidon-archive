@@ -132,9 +132,9 @@ OptionalMap optionalMapFromUrlEncoded(const std::string &encoded){
 	for(AUTO(it, parts.begin()); it != parts.end(); ++it){
 		const std::size_t pos = it->find('=');
 		if(pos == std::string::npos){
-			ret.set(SharedNtmbs(urlDecode(*it), true), VAL_INIT);
+			ret.set(SharedNts(urlDecode(*it)), VAL_INIT);
 		} else {
-			ret.set(SharedNtmbs(urlDecode(it->substr(0, pos)), true), urlDecode(it->substr(pos + 1)));
+			ret.set(SharedNts(urlDecode(it->substr(0, pos))), urlDecode(it->substr(pos + 1)));
 		}
 	}
 	return ret;

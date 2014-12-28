@@ -50,7 +50,7 @@ struct EventDispatcher {
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
 					LOG_POSEIDON_ERROR("Invalid dynamic event: id = ", event->id());
-					DEBUG_THROW(Exception, "Invalid dynamic event");
+					DEBUG_THROW(Exception, SharedNts::observe("Invalid dynamic event"));
 				}
 				callback(STD_MOVE(derived));
 			}

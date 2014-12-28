@@ -19,7 +19,7 @@ pkginclude_HEADERS = \
 	src/main/socket_server_base.hpp	\
 	src/main/log.hpp	\
 	src/main/precompiled.hpp	\
-	src/main/shared_ntmbs.hpp	\
+	src/main/shared_nts.hpp	\
 	src/main/module_raii.hpp	\
 	src/main/uuid.hpp	\
 	src/main/tcp_server_base.hpp	\
@@ -124,7 +124,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/virtual_shared_from_this.cpp	\
 	src/main/transaction.cpp	\
 	src/main/stream_buffer.cpp	\
-	src/main/shared_ntmbs.cpp	\
+	src/main/shared_nts.cpp	\
 	src/main/optional_map.cpp	\
 	src/main/csv_parser.cpp	\
 	src/main/job_base.cpp	\

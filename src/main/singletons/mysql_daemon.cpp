@@ -496,7 +496,7 @@ private:
 		const boost::mutex::scoped_lock lock(m_mutex);
 		if(m_pendingOperations == 0){
 			if(g_threads.empty()){
-				DEBUG_THROW(Exception, "No threads available");
+				DEBUG_THROW(Exception, SharedNts::observe("No threads available"));
 			}
 			// 指派给最空闲的线程。
 			std::size_t picked = 0;

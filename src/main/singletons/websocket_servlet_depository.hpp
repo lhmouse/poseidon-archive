@@ -9,7 +9,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/function.hpp>
-#include "../shared_ntmbs.hpp"
+#include "../shared_nts.hpp"
 #include "../stream_buffer.hpp"
 #include "../http/websocket/opcode.hpp"
 
@@ -31,10 +31,10 @@ struct WebSocketServletDepository {
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	static boost::shared_ptr<WebSocketServlet> registerServlet(
-		std::size_t category, SharedNtmbs uri, WebSocketServletCallback callback);
+		std::size_t category, SharedNts uri, WebSocketServletCallback callback);
 
 	static boost::shared_ptr<const WebSocketServletCallback> getServlet(
-		std::size_t category, const SharedNtmbs &uri);
+		std::size_t category, const char *uri);
 
 private:
 	WebSocketServletDepository();

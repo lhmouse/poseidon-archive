@@ -119,7 +119,8 @@ bool PlayerClient::send(boost::uint16_t protocolId, StreamBuffer contents, bool 
 	const std::size_t size = contents.size();
 	if(size > 0xFFFF){
 		LOG_POSEIDON_WARN("Request packet too large, size = ", size);
-		DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE, "Request packet too large");
+		DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE,
+			SharedNts::observe("Request packet too large"));
 	}
 	StreamBuffer data;
 	boost::uint16_t tmp;

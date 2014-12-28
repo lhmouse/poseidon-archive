@@ -7,11 +7,11 @@
 using namespace Poseidon;
 
 WebSocketException::WebSocketException(const char *file, std::size_t line,
-	WebSocketStatus status, SharedNtmbs message)
+	WebSocketStatus status, SharedNts message)
 	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
 {
 	LOG_POSEIDON_ERROR("WebSocketException: status = ", static_cast<unsigned>(status),
-		", message = ", message);
+		", what = ", what());
 }
 WebSocketException::~WebSocketException() NOEXCEPT {
 }
