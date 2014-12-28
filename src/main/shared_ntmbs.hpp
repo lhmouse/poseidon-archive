@@ -36,15 +36,16 @@ public:
 			forkOwning();
 		}
 	}
-	SharedNtmbs(const SharedNtmbs &rhs, bool owning)
-		: m_ptr(rhs.m_ptr)
-	{
+	SharedNtmbs(const SharedNtmbs &rhs, bool owning){
+		m_ptr = rhs.m_ptr;
+
 		if(owning){
 			forkOwning();
 		}
 	}
 	SharedNtmbs(Move<SharedNtmbs> rhs, bool owning){
-		rhs.swap(*this);
+		m_ptr.swap(rhs.m_ptr);
+
 		if(owning){
 			forkOwning();
 		}
@@ -67,24 +68,10 @@ public:
 		m_ptr.swap(rhs.m_ptr);
 	}
 
-	std::string getString() const {
-		return std::string(get());
-	}
-
 public:
-	const char &operator[](std::size_t index) const {
-		return get()[index];
+	operator const char *() const {
+		return get();
 	}
-#ifdef POSEIDON_CXX11
-	explicit operator bool() const {
-		return !empty();
-	}
-#else
-	typedef const char *(SharedNtmbs::*DummyBool_)() const;
-	operator DummyBool_() const {
-		return !empty() ? &SharedNtmbs::get : 0;
-	}
-#endif
 };
 
 inline bool operator==(const SharedNtmbs &lhs, const SharedNtmbs &rhs){

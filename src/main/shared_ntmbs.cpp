@@ -2,9 +2,7 @@
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "cxx_ver.hpp"
 #include "shared_ntmbs.hpp"
-#include "log.hpp"
 #include <memory>
 #include <iostream>
 #include <boost/make_shared.hpp>
