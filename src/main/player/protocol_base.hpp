@@ -12,13 +12,15 @@
 #include "exception.hpp"
 #include "status.hpp"
 
-#define THROW_END_OF_STREAM_	\
+#define THROW_END_OF_STREAM_(protocol_, field_)	\
 	DEBUG_THROW(::Poseidon::PlayerProtocolException,	\
-		::Poseidon::PLAYER_END_OF_STREAM, ::Poseidon::SharedNts::observe("End of stream encountered"))
+		::Poseidon::PLAYER_END_OF_STREAM, ::Poseidon::SharedNts::observe(	\
+			"End of stream encountered, expecting " protocol_ "::" field_ ))
 
-#define THROW_JUNK_AFTER_PACKET_	\
+#define THROW_JUNK_AFTER_PACKET_(protocol_)	\
 	DEBUG_THROW(::Poseidon::PlayerProtocolException,	\
-		::Poseidon::PLAYER_JUNK_AFTER_PACKET, ::Poseidon::SharedNts::observe("Junk after packet body"))
+		::Poseidon::PLAYER_JUNK_AFTER_PACKET, ::Poseidon::SharedNts::observe(	\
+			"Junk after packet body, protocol " protocol_ ))
 
 namespace Poseidon {
 
