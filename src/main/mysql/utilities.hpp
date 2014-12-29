@@ -10,7 +10,7 @@
 
 namespace Poseidon {
 
-extern void quoteStringForSql(std::ostream &os, const std::string &str);
+extern void escapeStringForSql(std::ostream &os, const std::string &str);
 
 inline double datetimeFromTime(boost::uint64_t ms){
 	return static_cast<double>(ms) / (24 * 3600 * 1000);

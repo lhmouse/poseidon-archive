@@ -8,7 +8,7 @@ using namespace Poseidon;
 
 namespace Poseidon {
 
-void quoteStringForSql(std::ostream &os, const std::string &str){
+void escapeStringForSql(std::ostream &os, const std::string &str){
 	for(AUTO(it, str.begin()); it != str.end(); ++it){
 		switch(*it){
 		case 0:

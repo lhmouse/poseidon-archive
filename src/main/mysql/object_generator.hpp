@@ -319,7 +319,7 @@ private:
 #define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "),	\
 												(void)(oss_ <<'\''),	\
-												(void)(::Poseidon::quoteStringForSql(oss_, get_ ## name_())),	\
+												(void)(::Poseidon::escapeStringForSql(oss_, get_ ## name_())),	\
 												(void)(oss_ <<'\''),
 #define FIELD_DATETIME(name_)				(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "),	\
