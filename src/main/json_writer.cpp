@@ -78,7 +78,8 @@ void JsonElement::dump(std::ostream &os) const {
 			assert(p);
 			os <<'\"';
 			for(AUTO(it, p->begin()); it != p->end(); ++it){
-				switch(*it){
+				const unsigned ch = (unsigned char)*it;
+				switch(ch){
 				case '\"':
 				case '\\':
 				case '/':
@@ -106,7 +107,11 @@ void JsonElement::dump(std::ostream &os) const {
 					break;
 
 				default:
-					os <<*it;
+					if((ch < 0x20) || (ch == 0x7F) || (ch == 0xFF)){
+						os <<'\\' <<'u' <<std::setfill('0') <<std::setw(4) <<ch;
+					} else {
+						os <<(char)ch;
+					}
 					break;
 				}
 			}
