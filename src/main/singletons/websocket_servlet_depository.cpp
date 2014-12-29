@@ -17,7 +17,7 @@ struct Poseidon::WebSocketServlet : NONCOPYABLE {
 	const boost::shared_ptr<WebSocketServletCallback> callback;
 
 	WebSocketServlet(SharedNts uri_, boost::shared_ptr<WebSocketServletCallback> callback_)
-		: uri(STD_MOVE(uri_), true), callback(STD_MOVE(callback_))
+		: uri(STD_MOVE(uri_)), callback(STD_MOVE(callback_))
 	{
 		LOG_POSEIDON_INFO("Created WebSocket servlet for URI ", uri);
 	}
