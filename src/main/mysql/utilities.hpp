@@ -10,20 +10,27 @@
 
 namespace Poseidon {
 
-extern void escapeStringForSql(std::ostream &os, const std::string &str);
+struct MySqlStringEscaper {
+	const std::string &str;
 
-inline double datetimeFromTime(boost::uint64_t ms){
-	return static_cast<double>(ms) / (24 * 3600 * 1000);
-}
-inline boost::uint64_t timeFromDateTime(double datetime){
-	return static_cast<boost::uint64_t>(datetime * (24 * 3600 * 1000));
-}
+	explicit MySqlStringEscaper(const std::string &str_)
+		: str(str_)
+	{
+	}
+};
 
-extern double getUtcDateTime();
-extern double getLocalDateTime();
+extern std::ostream &operator<<(std::ostream &os, const MySqlStringEscaper &rhs);
 
-extern void formatDateTime(std::ostream &os, double datetime);
-extern double scanDateTime(const char *str);
+struct MySqlDateFormatter {
+	const boost::uint64_t &time;
+
+	explicit MySqlDateFormatter(const boost::uint64_t &time_)
+		: time(time_)
+	{
+	}
+};
+
+extern std::ostream &operator<<(std::ostream &os, const MySqlDateFormatter &rhs);
 
 }
 

@@ -8,8 +8,8 @@ using namespace Poseidon;
 
 namespace Poseidon {
 
-void escapeStringForSql(std::ostream &os, const std::string &str){
-	for(AUTO(it, str.begin()); it != str.end(); ++it){
+std::ostream &operator<<(std::ostream &os, const MySqlStringEscaper &rhs){
+	for(AUTO(it, rhs.str.begin()); it != rhs.str.end(); ++it){
 		switch(*it){
 		case 0:
 			os <<'\\' <<'0';
@@ -40,22 +40,13 @@ void escapeStringForSql(std::ostream &os, const std::string &str){
 			break;
 		}
 	}
+	return os;
 }
 
-double getUtcDateTime(){
-	return datetimeFromTime(getUtcTime());
-}
-double getLocalDateTime(){
-	return datetimeFromTime(getLocalTime());
-}
-
-void formatDateTime(std::ostream &os, double datetime){
+std::ostream &operator<<(std::ostream &os, const MySqlDateFormatter &rhs){
 	char temp[256];
-	const AUTO(len, formatTime(temp, sizeof(temp), datetime * (24 * 3600 * 1000), true));
-	os.write(temp, len);
-}
-double scanDateTime(const char *str){
-	return static_cast<double>(scanTime(str)) / (24 * 3600 * 1000);
+	const std::size_t len = formatTime(temp, sizeof(temp), rhs.time, true);
+	return os.write(temp, len);
 }
 
 }

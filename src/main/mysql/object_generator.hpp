@@ -52,7 +52,7 @@ private:
 #define FIELD_BIGINT(name_)					volatile long long name_;
 #define FIELD_BIGINT_UNSIGNED(name_)		volatile unsigned long long name_;
 #define FIELD_STRING(name_)					::std::string name_;
-#define FIELD_DATETIME(name_)				volatile ::boost::uint64_t name_; // 实际是 double。
+#define FIELD_DATETIME(name_)				volatile ::boost::uint64_t name_;
 
 	MYSQL_OBJECT_FIELDS
 
@@ -110,7 +110,7 @@ public:
 #define FIELD_BIGINT(name_)					, ::boost::int64_t name_ ## X_
 #define FIELD_BIGINT_UNSIGNED(name_)		, ::boost::uint64_t name_ ## X_
 #define FIELD_STRING(name_)					, ::std::string name_ ## X_
-#define FIELD_DATETIME(name_)				, double name_ ## X_
+#define FIELD_DATETIME(name_)				, ::boost::uint64_t name_ ## X_
 
 	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
 		: ::Poseidon::MySqlObjectBase()
@@ -253,21 +253,11 @@ public:
 	}
 
 #define FIELD_DATETIME(name_)	\
-	double get_ ## name_() const {	\
-		union {	\
-			::boost::uint64_t u64_;	\
-			double d_;	\
-		} un_;	\
-		un_.u64_ = ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
-		return un_.d_;	\
+	unsigned long long get_ ## name_() const {	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(double val_){	\
-		union {	\
-			::boost::uint64_t u64_;	\
-			double d_;	\
-		} un_;	\
-		un_.d_ = val_;	\
-		::Poseidon::atomicStore(name_, un_.u64_, ::Poseidon::ATOMIC_RELEASE);	\
+	void set_ ## name_(unsigned long long val_){	\
+		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
@@ -317,15 +307,15 @@ private:
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
 													<<static_cast<unsigned long long>(get_ ## name_())),
 #define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "),	\
-												(void)(oss_ <<'\''),	\
-												(void)(::Poseidon::escapeStringForSql(oss_, get_ ## name_())),	\
-												(void)(oss_ <<'\''),
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<< '\''	\
+													<< ::Poseidon::MySqlStringEscaper(get_ ## name_())	\
+													<< '\''),
 #define FIELD_DATETIME(name_)				(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "),	\
-												(void)(oss_ <<'\''),	\
-												(void)(::Poseidon::formatDateTime(oss_, get_ ## name_())),	\
-												(void)(oss_ <<'\''),
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+													<< '\''	\
+													<< ::Poseidon::MySqlDateFormatter(get_ ## name_())	\
+													<< '\''),
 
 		if(replaces_){
 			oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";

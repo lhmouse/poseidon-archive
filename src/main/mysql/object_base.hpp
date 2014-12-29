@@ -7,6 +7,8 @@
 #include "../cxx_ver.hpp"
 #include "../cxx_util.hpp"
 #include "callbacks.hpp"
+#include "connection.hpp"
+#include "utilities.hpp"
 #include <string>
 #include <sstream>
 #include <cstdio>
@@ -14,11 +16,10 @@
 #include <boost/make_shared.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/cstdint.hpp>
-#include "connection.hpp"
-#include "utilities.hpp"
 #include "../atomic.hpp"
 #include "../log.hpp"
 #include "../virtual_shared_from_this.hpp"
+#include "../utilities.hpp"
 
 namespace Poseidon {
 

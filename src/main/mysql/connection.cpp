@@ -10,6 +10,7 @@
 #include <mysql/mysql.h>
 #include "../raii.hpp"
 #include "../log.hpp"
+#include "../utilities.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -222,7 +223,7 @@ public:
 		}
 		return val;
 	}
-	double getDateTime(const char *column) const OVERRIDE {
+	boost::uint64_t getDateTime(const char *column) const OVERRIDE {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -232,7 +233,7 @@ public:
 		if(!data || (data[0] == 0)){
 			return 0;
 		}
-		return scanDateTime(data);
+		return scanTime(data);
 	}
 };
 

@@ -43,7 +43,7 @@ public:
 	virtual boost::uint64_t getUnsigned(const char *column) const = 0;
 	virtual double getDouble(const char *column) const = 0;
 	virtual std::string getString(const char *column) const = 0;
-	virtual double getDateTime(const char *column) const = 0;
+	virtual boost::uint64_t getDateTime(const char *column) const = 0;
 };
 
 }
