@@ -32,7 +32,8 @@ using namespace Poseidon;
 #define MYSQL_OBJECT_FIELDS	\
 	FIELD_SMALLINT(si)	\
 	FIELD_STRING(str)	\
-	FIELD_BIGINT(bi)
+	FIELD_BIGINT(bi)	\
+	FIELD_DATETIME(dt)
 #include "../main/mysql/object_generator.hpp"
 
 namespace {

@@ -3,49 +3,52 @@
 
 #include "../precompiled.hpp"
 #include "utilities.hpp"
+#include "../utilities.hpp"
 using namespace Poseidon;
 
 namespace Poseidon {
 
-std::string escapeStringForSql(std::string str){
-	std::string ret;
-	ret.swap(str);
-	std::size_t i = 0;
-	while(i < str.size()){
-		switch(str[i]){
+void quoteStringForSql(std::ostream &os, const std::string &str){
+	for(AUTO(it, str.begin()); it != str.end(); ++it){
+		switch(*it){
 		case 0:
-			str.replace(i, 1, "\\0");
-			++i;
+			os <<'\\' <<'0';
 			break;
 
 		case 0x1A:
-			str.replace(i, 1, "\\Z");
-			++i;
+			os <<'\\' <<'Z';
 			break;
 
 		case '\r':
-			str.replace(i, 1, "\\r");
-			++i;
+			os <<'\\' <<'r';
 			break;
 
 		case '\n':
-			str.replace(i, 1, "\\n");
-			++i;
+			os <<'\\' <<'n';
 			break;
 
 		case '\'':
-			str.replace(i, 1, "\\\'");
-			++i;
+			os <<'\\' <<'\'';
 			break;
 
 		case '\"':
-			str.replace(i, 1, "\\\"");
-			++i;
+			os <<'\\' <<'\"';
+			break;
+
+		default:
+			os <<*it;
 			break;
 		}
-		++i;
 	}
-	return ret;
+}
+
+void formatDateTime(std::ostream &os, double datetime){
+	char temp[256];
+	const AUTO(len, formatTime(temp, sizeof(temp), datetime * (24 * 3600 * 1000), true));
+	os.write(temp, len);
+}
+double scanDateTime(const char *str){
+	return static_cast<double>(scanTime(str)) / (24 * 3600 * 1000);
 }
 
 }

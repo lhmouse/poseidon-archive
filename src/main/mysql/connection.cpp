@@ -4,6 +4,7 @@
 #include "../precompiled.hpp"
 #include "connection.hpp"
 #include "exception.hpp"
+#include "utilities.hpp"
 #include <string.h>
 #include <stdlib.h>
 #include <mysql/mysql.h>
@@ -74,9 +75,9 @@ private:
 	unsigned long *m_lengths;
 
 public:
-	MySqlConnectionDelegate(const std::string &serverAddr, unsigned serverPort,
-		const std::string &userName, const std::string &password, const std::string &schema,
-		bool useSsl, const std::string &charset)
+	MySqlConnectionDelegate(const char *serverAddr, unsigned serverPort,
+		const char *userName, const char *password, const char *schema,
+		bool useSsl, const char *charset)
 		: m_row(NULLPTR), m_lengths(NULLPTR)
 	{
 		if(!m_mysql.reset(::mysql_init(&m_mysqlObject))){
@@ -90,19 +91,19 @@ public:
 		if(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &TRUE_VALUE) != 0){
 			THROW_MYSQL_EXCEPTION;
 		}
-		if(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset.c_str()) != 0){
+		if(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) != 0){
 			THROW_MYSQL_EXCEPTION;
 		}
 
-		if(!::mysql_real_connect(m_mysql.get(), serverAddr.c_str(), userName.c_str(),
-			password.c_str(), schema.c_str(), serverPort, NULLPTR, useSsl ? CLIENT_SSL : 0))
+		if(!::mysql_real_connect(m_mysql.get(), serverAddr, userName,
+			password, schema, serverPort, NULLPTR, useSsl ? CLIENT_SSL : 0))
 		{
 			THROW_MYSQL_EXCEPTION;
 		}
 	}
 
 public:
-	void executeSql(const std::string &sql){
+	void executeSql(const std::string &sql) OVERRIDE {
 		m_result.reset();
 		m_columns.clear();
 		m_row = NULLPTR;
@@ -134,11 +135,11 @@ public:
 		}
 	}
 
-	boost::uint64_t getInsertId() const {
+	boost::uint64_t getInsertId() const OVERRIDE {
 		return ::mysql_insert_id(m_mysql.get());
 	}
 
-	bool fetchRow(){
+	bool fetchRow() OVERRIDE {
 		if(m_columns.empty()){
 			LOG_POSEIDON_DEBUG("Empty set returned form MySQL server.");
 			return false;
@@ -153,7 +154,7 @@ public:
 		m_lengths = ::mysql_fetch_lengths(m_result.get());
 		return true;
 	}
-	boost::int64_t getSigned(const char *column) const {
+	boost::int64_t getSigned(const char *column) const OVERRIDE {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -171,7 +172,7 @@ public:
 		}
 		return val;
 	}
-	boost::uint64_t getUnsigned(const char *column) const {
+	boost::uint64_t getUnsigned(const char *column) const OVERRIDE {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -189,7 +190,7 @@ public:
 		}
 		return val;
 	}
-	double getDouble(const char *column) const {
+	double getDouble(const char *column) const OVERRIDE {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -207,7 +208,7 @@ public:
 		}
 		return val;
 	}
-	std::string getString(const char *column) const {
+	std::string getString(const char *column) const OVERRIDE {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -220,42 +221,30 @@ public:
 		}
 		return val;
 	}
+	double getDateTime(const char *column) const OVERRIDE {
+		MySqlColumns::const_iterator it;
+		if(!lowerBoundColumn(it, m_columns, column)){
+			LOG_POSEIDON_ERROR("Column not found: ", column);
+			DEBUG_THROW(Exception, SharedNts::observe("Column not found"));
+		}
+		const AUTO(data, m_row[it->second]);
+		if(!data || (data[0] == 0)){
+			return 0;
+		}
+		return scanDateTime(data);
+	}
 };
 
 }
 
 void MySqlConnection::create(boost::scoped_ptr<MySqlConnection> &conn,
-	MySqlThreadContext & /* context */, const std::string &serverAddr, unsigned serverPort,
-	const std::string &userName, const std::string &password, const std::string &schema,
-	bool useSsl, const std::string &charset)
+	MySqlThreadContext & /* context */, const char *serverAddr, unsigned serverPort,
+	const char *userName, const char *password, const char *schema,
+	bool useSsl, const char *charset)
 {
 	conn.reset(new MySqlConnectionDelegate(
 		serverAddr, serverPort, userName, password, schema, useSsl, charset));
 }
 
 MySqlConnection::~MySqlConnection(){
-}
-
-void MySqlConnection::executeSql(const std::string &sql){
-	static_cast<MySqlConnectionDelegate *>(this)->executeSql(sql);
-}
-
-boost::uint64_t MySqlConnection::getInsertId() const {
-	return static_cast<const MySqlConnectionDelegate *>(this)->getInsertId();
-}
-
-bool MySqlConnection::fetchRow(){
-	return static_cast<MySqlConnectionDelegate *>(this)->fetchRow();
-}
-boost::int64_t MySqlConnection::getSigned(const char *column) const {
-	return static_cast<const MySqlConnectionDelegate *>(this)->getSigned(column);
-}
-boost::uint64_t MySqlConnection::getUnsigned(const char *column) const {
-	return static_cast<const MySqlConnectionDelegate *>(this)->getUnsigned(column);
-}
-double MySqlConnection::getDouble(const char *column) const {
-	return static_cast<const MySqlConnectionDelegate *>(this)->getDouble(column);
-}
-std::string MySqlConnection::getString(const char *column) const {
-	return static_cast<const MySqlConnectionDelegate *>(this)->getString(column);
 }

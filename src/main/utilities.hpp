@@ -112,7 +112,10 @@ struct DateTime {
 };
 
 DateTime breakDownTime(boost::uint64_t ms);
+boost::uint64_t assembleTime(const DateTime &dt);
+
 std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs);
+boost::uint64_t scanTime(const char *str);
 
 // 在区间 [lower, upper) 范围内生成伪随机数。
 // 前置条件：lower < upper

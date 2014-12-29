@@ -16,23 +16,33 @@ class MySqlThreadContext;
 class MySqlConnection : NONCOPYABLE {
 public:
 	static void create(boost::scoped_ptr<MySqlConnection> &conn,
+		MySqlThreadContext &context, const char *serverAddr, unsigned serverPort,
+		const char *userName, const char *password, const char *schema,
+		bool useSsl, const char *charset);
+
+	static void create(boost::scoped_ptr<MySqlConnection> &conn,
 		MySqlThreadContext &context, const std::string &serverAddr, unsigned serverPort,
 		const std::string &userName, const std::string &password, const std::string &schema,
-		bool useSsl, const std::string &charset);
+		bool useSsl, const std::string &charset)
+	{
+		create(conn, context, serverAddr.c_str(), serverPort,
+			userName.c_str(), password.c_str(), schema.c_str(), useSsl, charset.c_str());
+	}
 
 public:
 	virtual ~MySqlConnection() = 0;
 
 public:
-	void executeSql(const std::string &sql);
+	virtual void executeSql(const std::string &sql) = 0;
 
-	boost::uint64_t getInsertId() const;
+	virtual boost::uint64_t getInsertId() const = 0;
 
-	bool fetchRow();
-	boost::int64_t getSigned(const char *column) const;
-	boost::uint64_t getUnsigned(const char *column) const;
-	double getDouble(const char *column) const;
-	std::string getString(const char *column) const;
+	virtual bool fetchRow() = 0;
+	virtual boost::int64_t getSigned(const char *column) const = 0;
+	virtual boost::uint64_t getUnsigned(const char *column) const = 0;
+	virtual double getDouble(const char *column) const = 0;
+	virtual std::string getString(const char *column) const = 0;
+	virtual double getDateTime(const char *column) const = 0;
 };
 
 }

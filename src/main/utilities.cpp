@@ -126,21 +126,41 @@ DateTime breakDownTime(boost::uint64_t ms){
 	::tm desc;
 	::gmtime_r(&seconds, &desc);
 
-	DateTime ret;
-	ret.yr = 1900 + desc.tm_year;
-	ret.mon = 1 + desc.tm_mon;
-	ret.day = desc.tm_mday;
-	ret.hr = desc.tm_hour;
-	ret.min = desc.tm_min;
-	ret.sec = desc.tm_sec;
-	ret.ms = milliseconds;
-	return ret;
+	DateTime dt;
+	dt.yr = 1900 + desc.tm_year;
+	dt.mon = 1 + desc.tm_mon;
+	dt.day = desc.tm_mday;
+	dt.hr = desc.tm_hour;
+	dt.min = desc.tm_min;
+	dt.sec = desc.tm_sec;
+	dt.ms = milliseconds;
+	return dt;
 }
+boost::uint64_t assembleTime(const DateTime &dt){
+	::tm desc;
+	desc.tm_year = dt.yr - 1900;
+	desc.tm_mon = dt.mon - 1;
+	desc.tm_mday = dt.day;
+	desc.tm_hour = dt.hr;
+	desc.tm_min = dt.min;
+	desc.tm_sec = dt.sec;
+	const boost::uint64_t seconds = ::mktime(&desc);
+
+	return seconds * 1000 + dt.ms;
+}
+
 std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs){
 	DateTime dt = breakDownTime(ms);
 	return (std::size_t)::snprintf(buffer, max,
 		showMs ? "%04u-%02u-%02u %02u:%02u:%02u.%03u" : "%04u-%02u-%02u %02u:%02u:%02u",
 		dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec, dt.ms);
+}
+boost::uint64_t scanTime(const char *str){
+	DateTime dt;
+	std::memset(&dt, 0, sizeof(dt));
+	std::sscanf(str, "%u-%u-%u %u:%u:%u.%u",
+		&dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms);
+	return assembleTime(dt);
 }
 
 }

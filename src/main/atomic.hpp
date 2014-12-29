@@ -52,7 +52,7 @@ inline void atomicStore(volatile T &mem, typename Identity<T>::type val, MemMode
 #endif
 }
 
-inline void atomicSynchronize(MemModel model) NOEXCEPT {
+inline void atomicFence(MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	__atomic_thread_fence(model);
 #else

@@ -4,11 +4,15 @@
 #ifndef POSEIDON_MYSQL_UTILITIES_HPP_
 #define POSEIDON_MYSQL_UTILITIES_HPP_
 
+#include <iosfwd>
 #include <string>
 
 namespace Poseidon {
 
-extern std::string escapeStringForSql(std::string str);
+extern void quoteStringForSql(std::ostream &os, const std::string &str);
+
+extern void formatDateTime(std::ostream &os, double datetime);
+extern double scanDateTime(const char *str);
 
 }
 

@@ -40,6 +40,7 @@ private:
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
+#undef FIELD_DATETIME
 
 #define FIELD_BOOLEAN(name_)				volatile bool name_;
 #define FIELD_TINYINT(name_)				volatile signed char name_;
@@ -51,6 +52,7 @@ private:
 #define FIELD_BIGINT(name_)					volatile long long name_;
 #define FIELD_BIGINT_UNSIGNED(name_)		volatile unsigned long long name_;
 #define FIELD_STRING(name_)					::std::string name_;
+#define FIELD_DATETIME(name_)				volatile double name_;
 
 	MYSQL_OBJECT_FIELDS
 
@@ -68,6 +70,7 @@ public:
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
+#undef FIELD_DATETIME
 
 #define FIELD_BOOLEAN(name_)				, name_()
 #define FIELD_TINYINT(name_)				, name_()
@@ -79,6 +82,7 @@ public:
 #define FIELD_BIGINT(name_)					, name_()
 #define FIELD_BIGINT_UNSIGNED(name_)		, name_()
 #define FIELD_STRING(name_)					, name_()
+#define FIELD_DATETIME(name_)				, name_()
 
 		MYSQL_OBJECT_FIELDS
 	{
@@ -94,8 +98,9 @@ public:
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
+#undef FIELD_DATETIME
 
-#define FIELD_BOOLEAN(name_)				, bool name_
+#define FIELD_BOOLEAN(name_)				, bool name_ ## X_
 #define FIELD_TINYINT(name_)				, ::boost::int8_t name_ ## X_
 #define FIELD_TINYINT_UNSIGNED(name_)		, ::boost::uint8_t name_ ## X_
 #define FIELD_SMALLINT(name_)				, ::boost::int16_t name_ ## X_
@@ -105,6 +110,7 @@ public:
 #define FIELD_BIGINT(name_)					, ::boost::int64_t name_ ## X_
 #define FIELD_BIGINT_UNSIGNED(name_)		, ::boost::uint64_t name_ ## X_
 #define FIELD_STRING(name_)					, ::std::string name_ ## X_
+#define FIELD_DATETIME(name_)				, double name_ ## X_
 
 	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
 		: ::Poseidon::MySqlObjectBase()
@@ -119,6 +125,7 @@ public:
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
+#undef FIELD_DATETIME
 
 #define FIELD_BOOLEAN(name_)				, name_(name_ ## X_)
 #define FIELD_TINYINT(name_)				, name_(name_ ## X_)
@@ -130,9 +137,11 @@ public:
 #define FIELD_BIGINT(name_)					, name_(name_ ## X_)
 #define FIELD_BIGINT_UNSIGNED(name_)		, name_(name_ ## X_)
 #define FIELD_STRING(name_)					, name_(STD_MOVE(name_ ## X_))
+#define FIELD_DATETIME(name_)				, name_(name_ ## X_)
 
 		MYSQL_OBJECT_FIELDS
 	{
+		::Poseidon::atomicFence(::Poseidon::ATOMIC_RELEASE);
 	}
 
 public:
@@ -147,6 +156,7 @@ public:
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
+#undef FIELD_DATETIME
 
 #define FIELD_BOOLEAN(name_)	\
 	bool get_ ## name_() const {	\
@@ -242,6 +252,19 @@ public:
 		invalidate();	\
 	}
 
+#define FIELD_DATETIME(name_)	\
+	double get_ ## name_() const {	\
+		return ::Poseidon::atomicLoad(	\
+			reinterpret_cast<const volatile ::boost::uint64_t &>(name_),	\
+			::Poseidon::ATOMIC_ACQUIRE);	\
+	}	\
+	void set_ ## name_(double val_){	\
+		::Poseidon::atomicStore(	\
+			reinterpret_cast<volatile ::boost::uint64_t &>(name_),	\
+			val_, ::Poseidon::ATOMIC_RELEASE);	\
+		invalidate();	\
+	}
+
 	MYSQL_OBJECT_FIELDS
 
 private:
@@ -258,6 +281,7 @@ private:
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
+#undef FIELD_DATETIME
 
 #define FIELD_BOOLEAN(name_)				(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
@@ -287,8 +311,10 @@ private:
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
 													<<static_cast<unsigned long long>(get_ ## name_())),
 #define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = '"	\
-													<< ::Poseidon::escapeStringForSql(get_ ## name_()) <<'\''),
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "),	\
+												(void)(::Poseidon::quoteStringForSql(oss_, get_ ## name_())),
+#define FIELD_DATETIME(name_)				(void)(oss_ <<", "),	\
+												(void)(::Poseidon::formatDateTime(oss_, get_ ## name_())),
 
 		if(replaces_){
 			oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
@@ -310,6 +336,7 @@ private:
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
 #undef FIELD_STRING
+#undef FIELD_DATETIME
 
 #define FIELD_BOOLEAN(name_)				set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
 #define FIELD_TINYINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
@@ -321,6 +348,7 @@ private:
 #define FIELD_BIGINT(name_)					set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
 #define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
 #define FIELD_STRING(name_)					set_ ## name_(conn_.getString( TOKEN_TO_STR(name_) ));
+#define FIELD_DATETIME(name_)				set_ ## name_(conn_.getDateTime( TOKEN_TO_STR(name_) ));
 
 		MYSQL_OBJECT_FIELDS
 	}
