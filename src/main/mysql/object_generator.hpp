@@ -318,9 +318,14 @@ private:
 													<<static_cast<unsigned long long>(get_ ## name_())),
 #define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "),	\
-												(void)(::Poseidon::quoteStringForSql(oss_, get_ ## name_())),
+												(void)(oss_ <<'\''),	\
+												(void)(::Poseidon::quoteStringForSql(oss_, get_ ## name_())),	\
+												(void)(oss_ <<'\''),
 #define FIELD_DATETIME(name_)				(void)(oss_ <<", "),	\
-												(void)(::Poseidon::formatDateTime(oss_, get_ ## name_())),
+												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "),	\
+												(void)(oss_ <<'\''),	\
+												(void)(::Poseidon::formatDateTime(oss_, get_ ## name_())),	\
+												(void)(oss_ <<'\''),
 
 		if(replaces_){
 			oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
