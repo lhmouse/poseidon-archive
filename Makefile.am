@@ -76,14 +76,16 @@ pkginclude_http_HEADERS = \
 	src/main/http/server.hpp	\
 	src/main/http/utilities.hpp	\
 	src/main/http/upgraded_session_base.hpp	\
-	src/main/http/request.hpp
+	src/main/http/request.hpp	\
+	src/main/http/callbacks.hpp
 
 pkginclude_http_websocketdir = $(pkgincludedir)/http/websocket
 pkginclude_http_websocket_HEADERS = \
 	src/main/http/websocket/session.hpp	\
 	src/main/http/websocket/status.hpp	\
 	src/main/http/websocket/exception.hpp	\
-	src/main/http/websocket/opcode.hpp
+	src/main/http/websocket/opcode.hpp	\
+	src/main/http/websocket/callbacks.hpp
 
 pkginclude_playerdir = $(pkgincludedir)/player
 pkginclude_player_HEADERS = \
@@ -94,7 +96,8 @@ pkginclude_player_HEADERS = \
 	src/main/player/protocol_generator.hpp	\
 	src/main/player/status.hpp	\
 	src/main/player/exception.hpp	\
-	src/main/player/server.hpp
+	src/main/player/server.hpp	\
+	src/main/player/callbacks.hpp
 
 pkginclude_mysqldir = $(pkgincludedir)/mysql
 pkginclude_mysql_HEADERS = \

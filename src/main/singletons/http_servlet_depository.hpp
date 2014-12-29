@@ -9,19 +9,13 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/function.hpp>
 #include "../shared_nts.hpp"
-#include "../http/status.hpp"
-#include "../http/request.hpp"
+#include "../http/callbacks.hpp"
 #include "../optional_map.hpp"
 #include "../stream_buffer.hpp"
 
 namespace Poseidon {
 
 class HttpServlet;
-class HttpSession;
-
-typedef boost::function<
-	void (boost::shared_ptr<HttpSession> hs, HttpRequest request)
-	> HttpServletCallback;
 
 struct HttpServletDepository {
 	static void start();

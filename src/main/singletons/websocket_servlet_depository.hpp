@@ -11,16 +11,12 @@
 #include <boost/function.hpp>
 #include "../shared_nts.hpp"
 #include "../stream_buffer.hpp"
-#include "../http/websocket/opcode.hpp"
+#include "../http/websocket/callbacks.hpp"
 
 namespace Poseidon {
 
 class WebSocketServlet;
 class WebSocketSession;
-
-typedef boost::function<
-	void (boost::shared_ptr<WebSocketSession> wss, WebSocketOpCode opcode, StreamBuffer incoming)
-	> WebSocketServletCallback;
 
 struct WebSocketServletDepository {
 	static void start();

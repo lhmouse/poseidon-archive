@@ -14,15 +14,12 @@
 #include <boost/utility/enable_if.hpp>
 #include "../stream_buffer.hpp"
 #include "../player/protocol_base.hpp"
+#include "../player/callbacks.hpp"
 
 namespace Poseidon {
 
 class PlayerServlet;
 class PlayerSession;
-
-typedef boost::function<
-	void (boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming)
-	> PlayerServletCallback;
 
 struct PlayerServletDepository {
 	static void start();
