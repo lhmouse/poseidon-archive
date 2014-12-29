@@ -130,6 +130,12 @@ void JsonElement::dump(std::ostream &os) const {
 		}
 		break;
 
+	case 5: // JsonNull
+		{
+			os <<"null";
+		}
+		break;
+
 	default:
 		assert(false);
 	}

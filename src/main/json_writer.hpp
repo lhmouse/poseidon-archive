@@ -17,6 +17,13 @@
 
 namespace Poseidon {
 
+#ifdef POSEIDON_CXX11
+using JsonNull = std::nullptr_t;
+#else
+struct JsonNull {
+};
+#endif
+
 class JsonElement;
 
 class JsonObject : public std::map<SharedNts, JsonElement> {
@@ -38,7 +45,8 @@ private:
 		long double,	// 1
 		std::string,	// 2
 		JsonObject,		// 3
-		JsonArray		// 4
+		JsonArray,		// 4
+		JsonNull		// 5
 		> m_data;
 
 public:
@@ -52,6 +60,9 @@ public:
 	}
 
 public:
+	void set(JsonNull){
+		m_data = JsonNull();
+	}
 	void set(bool rhs){
 		m_data = rhs;
 	}
