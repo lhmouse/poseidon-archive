@@ -44,19 +44,19 @@ void ConfigFile::load(const char *path){
 			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": Name expected.");
 			DEBUG_THROW(Exception, SharedNts::observe("Bad config file"));
 		}
-		SharedNts key(&line[pos], keyEnd + 1 - pos);
+		line[keyEnd + 1] = 0;
+		const char *const key = &line[pos];
 
+		std::string val;
 		pos = line.find_first_not_of(" \t", equ + 1);
-		if(pos == std::string::npos){
-			line.clear();
-		} else {
-			line.erase(line.begin(), line.begin() + pos);
-			pos = line.find_last_not_of(" \t");
-			line.erase(line.begin() + pos + 1, line.end());
+		if(pos != std::string::npos){
+			val.assign(line.begin() + pos, line.end());
+			pos = val.find_last_not_of(" \t");
+			val.erase(val.begin() + pos + 1, val.end());
 		}
 
-		LOG_POSEIDON_DEBUG("Config: ", key, " = ", line);
-		contents.append(STD_MOVE(key), STD_MOVE(line));
+		LOG_POSEIDON_DEBUG("Config: ", key, " = ", val);
+		contents.append(key, STD_MOVE(val));
 	}
 	m_contents.swap(contents);
 }
