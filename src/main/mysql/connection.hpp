@@ -38,6 +38,7 @@ public:
 	virtual boost::uint64_t getInsertId() const = 0;
 
 	virtual bool fetchRow() = 0;
+
 	virtual boost::int64_t getSigned(const char *column) const = 0;
 	virtual boost::uint64_t getUnsigned(const char *column) const = 0;
 	virtual double getDouble(const char *column) const = 0;

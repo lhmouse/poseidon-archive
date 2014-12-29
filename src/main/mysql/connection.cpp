@@ -154,6 +154,7 @@ public:
 		m_lengths = ::mysql_fetch_lengths(m_result.get());
 		return true;
 	}
+
 	boost::int64_t getSigned(const char *column) const OVERRIDE {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
