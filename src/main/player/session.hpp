@@ -5,9 +5,9 @@
 #define POSEIDON_PLAYER_SESSION_HPP_
 
 #include <cstddef>
-#include <boost/cstdint.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/cstdint.hpp>
 #include "../tcp_session_base.hpp"
 #include "../stream_buffer.hpp"
 #include "status.hpp"
@@ -22,7 +22,7 @@ class PlayerSession : public TcpSessionBase {
 private:
 	const std::size_t m_category;
 
-	int m_payloadLen;
+	boost::uint64_t m_payloadLen;
 	unsigned m_protocolId;
 	StreamBuffer m_payload;
 

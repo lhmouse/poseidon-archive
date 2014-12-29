@@ -69,7 +69,7 @@ void keepAliveTimerProc(boost::weak_ptr<PlayerClient> weak){
 
 PlayerClient::PlayerClient(const IpPort &addr, unsigned long long keepAliveTimeout, bool useSsl)
 	: TcpClientBase(addr, useSsl)
-	, m_payloadLen(-1), m_protocolId(0)
+	, m_payloadLen((boost::uint64_t)-1), m_protocolId(0)
 {
 	if(keepAliveTimeout != 0){
 		m_keepAliveTimer = TimerDaemon::registerTimer(keepAliveTimeout, keepAliveTimeout,
@@ -77,6 +77,10 @@ PlayerClient::PlayerClient(const IpPort &addr, unsigned long long keepAliveTimeo
 	}
 }
 PlayerClient::~PlayerClient(){
+	if(m_payloadLen != (boost::uint64_t)-1){
+		LOG_POSEIDON_WARN(
+			"Now that this session is to be destroyed, a premature response has to be discarded.");
+	}
 }
 
 void PlayerClient::onReadAvail(const void *data, std::size_t size){
@@ -85,23 +89,33 @@ void PlayerClient::onReadAvail(const void *data, std::size_t size){
 	try {
 		m_payload.put(data, size);
 		for(;;){
-			if(m_payloadLen == -1){
+			if(m_payloadLen == (boost::uint64_t)-1){
 				if(m_payload.size() < 4){
 					break;
 				}
-				boost::uint16_t tmp;
-				m_payload.get(&tmp, 2);
-				m_payloadLen = loadLe(tmp);
-				m_payload.get(&tmp, 2);
-				m_protocolId = loadLe(tmp);
+				boost::uint16_t temp16;
+				m_payload.peek(&temp16, 2);
+				if((temp16 & 0x8000) != 0){
+					if(m_payload.size() < 10){
+						break;
+					}
+					boost::uint64_t temp64;
+					m_payload.get(&temp64, 8);
+					m_payloadLen = loadBe(temp64) & 0x7FFFFFFFFFFFFFFFull;
+				} else {
+					m_payload.discard(2);
+					m_payloadLen = temp16;
+				}
+				m_payload.get(&temp16, 2);
+				m_protocolId = loadBe(temp16);
 				LOG_POSEIDON_DEBUG("Protocol len = ", m_payloadLen, ", id = ", m_protocolId);
 			}
-			if(m_payload.size() < (unsigned)m_payloadLen){
+			if(m_payload.size() < m_payloadLen){
 				break;
 			}
 			pendJob(boost::make_shared<ServerResponseJob>(virtualSharedFromThis<PlayerClient>(),
 				m_protocolId, m_payload.cut(m_payloadLen)));
-			m_payloadLen = -1;
+			m_payloadLen = (boost::uint64_t)-1;
 			m_protocolId = 0;
 		}
 	} catch(PlayerProtocolException &e){
@@ -116,18 +130,20 @@ void PlayerClient::onReadAvail(const void *data, std::size_t size){
 }
 
 bool PlayerClient::send(boost::uint16_t protocolId, StreamBuffer contents, bool fin){
-	const std::size_t size = contents.size();
-	if(size > 0xFFFF){
-		LOG_POSEIDON_WARN("Request packet too large, size = ", size);
-		DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE,
-			SharedNts::observe("Request packet too large"));
-	}
 	StreamBuffer data;
-	boost::uint16_t tmp;
-	storeLe(tmp, size);
-	data.put(&tmp, 2);
-	storeLe(tmp, protocolId);
-	data.put(&tmp, 2);
+	const std::size_t size = contents.size();
+	if(size < 0x8000){
+		boost::uint16_t temp16;
+		storeBe(temp16, size);
+		data.put(&temp16, 2);
+	} else {
+		boost::uint64_t temp64;
+		storeBe(temp64, size | 0x8000000000000000ull);
+		data.put(&temp64, 8);
+	}
+	boost::uint16_t temp16;
+	storeBe(temp16, protocolId);
+	data.put(&temp16, 2);
 	data.splice(contents);
 	return TcpSessionBase::send(STD_MOVE(data), fin);
 }

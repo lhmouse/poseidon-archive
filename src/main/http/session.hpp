@@ -9,6 +9,7 @@
 #include <set>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
+#include <boost/cstdint.hpp>
 #include "../tcp_session_base.hpp"
 #include "../optional_map.hpp"
 #include "verb.hpp"
@@ -34,8 +35,8 @@ private:
 	const std::size_t m_category;
 
 	State m_state;
-	std::size_t m_totalLength;
-	std::size_t m_contentLength;
+	boost::uint64_t m_totalLength;
+	boost::uint64_t m_contentLength;
 	std::string m_line;
 
 	boost::shared_ptr<HttpUpgradedSessionBase> m_upgradedSession;

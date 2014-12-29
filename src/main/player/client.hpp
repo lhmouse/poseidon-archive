@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
 #include "protocol_base.hpp"
 #include "status.hpp"
@@ -18,7 +19,7 @@ class PlayerClient : public TcpClientBase {
 private:
 	boost::shared_ptr<const TimerItem> m_keepAliveTimer;
 
-	int m_payloadLen;
+	boost::uint64_t m_payloadLen;
 	unsigned m_protocolId;
 	StreamBuffer m_payload;
 

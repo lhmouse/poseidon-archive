@@ -230,7 +230,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			}
 
 			const std::size_t bytesAvail = (std::size_t)(end - read);
-			const std::size_t bytesRemaining = m_contentLength - m_line.size();
+			const boost::uint64_t bytesRemaining = m_contentLength - m_line.size();
 			if(bytesAvail < bytesRemaining){
 				m_line.append(read, bytesAvail);
 				read += bytesAvail;
@@ -404,14 +404,14 @@ void HttpSession::onAllHeadersRead(){
 bool HttpSession::send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool fin){
 	LOG_POSEIDON_DEBUG("Making HTTP response: status = ", static_cast<unsigned>(status));
 
-	StreamBuffer packet;
+	StreamBuffer data;
 
 	char first[64];
 	const unsigned firstLen = std::sprintf(first, "HTTP/1.1 %u ", static_cast<unsigned>(status));
-	packet.put(first, firstLen);
+	data.put(first, firstLen);
 	const AUTO(desc, getHttpStatusDesc(status));
-	packet.put(desc.descShort);
-	packet.put("\r\n");
+	data.put(desc.descShort);
+	data.put("\r\n");
 
 	if(!contents.empty()){
 		AUTO_REF(contentType, headers.create("Content-Type")->second);
@@ -424,17 +424,17 @@ bool HttpSession::send(HttpStatus status, OptionalMap headers, StreamBuffer cont
 
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 		if(!it->second.empty()){
-			packet.put(it->first.get());
-			packet.put(": ");
-			packet.put(it->second.data(), it->second.size());
-			packet.put("\r\n");
+			data.put(it->first.get());
+			data.put(": ");
+			data.put(it->second.data(), it->second.size());
+			data.put("\r\n");
 		}
 	}
-	packet.put("\r\n");
+	data.put("\r\n");
 
-	packet.splice(contents);
+	data.splice(contents);
 
-	return TcpSessionBase::send(STD_MOVE(packet), fin);
+	return TcpSessionBase::send(STD_MOVE(data), fin);
 }
 bool HttpSession::sendDefault(HttpStatus status, OptionalMap headers, bool fin){
 	LOG_POSEIDON_DEBUG("Making default HTTP response: status = ", static_cast<unsigned>(status));
