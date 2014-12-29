@@ -107,7 +107,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 					m_payloadLen = loadBe(temp64) & 0x7FFFFFFFFFFFFFFFull;
 				} else {
 					m_payload.discard(2);
-					m_payloadLen = temp16;
+					m_payloadLen = loadBe(temp16);
 				}
 				m_payload.get(&temp16, 2);
 				m_protocolId = loadBe(temp16);
