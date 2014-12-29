@@ -156,27 +156,22 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #undef FIELD_ARRAY
 
 #define FIELD_VINT(name_)				if(!::Poseidon::vint50FromBinary(cur_.name_, read_, buffer_.size())){	\
-											THROW_END_OF_STREAM_(	\
-												TOKEN_TO_STR(PROTOCOL_NAME), TOKEN_TO_STR(name_));	\
+											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
 										}
 #define FIELD_VUINT(name_)				if(!::Poseidon::vuint50FromBinary(cur_.name_, read_, buffer_.size())){	\
-											THROW_END_OF_STREAM_(	\
-												TOKEN_TO_STR(PROTOCOL_NAME), TOKEN_TO_STR(name_));	\
+											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
 										}
 #define FIELD_BYTES(name_, size_)		if(buffer_.size() < size_){	\
-											THROW_END_OF_STREAM_(	\
-												TOKEN_TO_STR(PROTOCOL_NAME), TOKEN_TO_STR(name_));	\
+											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
 										}	\
 										buffer_.get(cur_.name_, size_);
 #define FIELD_STRING(name_)				{	\
 											unsigned long long count_;	\
 											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
-												THROW_END_OF_STREAM_(	\
-													TOKEN_TO_STR(PROTOCOL_NAME), TOKEN_TO_STR(name_));	\
+												THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
 											}	\
 											if(buffer_.size() < count_){	\
-												THROW_END_OF_STREAM_(	\
-													TOKEN_TO_STR(PROTOCOL_NAME), TOKEN_TO_STR(name_));	\
+												THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
 											}	\
 											for(unsigned long long i = 0; i < count_; ++i){	\
 												cur_.name_.push_back(buffer_.get());	\
@@ -185,8 +180,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #define FIELD_ARRAY(name_, fields_)		{	\
 											unsigned long long count_;	\
 											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
-												THROW_END_OF_STREAM_(	\
-													TOKEN_TO_STR(PROTOCOL_NAME), TOKEN_TO_STR(name_));	\
+												THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
 											}	\
 											cur_.name_.clear();	\
 											for(unsigned long long i = 0; i < count_; ++i){	\
@@ -203,7 +197,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 		PROTOCOL_FIELDS
 
 		if(!buffer_.empty()){
-			THROW_JUNK_AFTER_PACKET_(TOKEN_TO_STR(PROTOCOL_NAME));
+			THROW_JUNK_AFTER_PACKET_(PROTOCOL_NAME);
 		}
 	}
 
