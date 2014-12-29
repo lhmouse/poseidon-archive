@@ -19,6 +19,9 @@ inline boost::uint64_t timeFromDateTime(double datetime){
 	return static_cast<boost::uint64_t>(datetime * (24 * 3600 * 1000));
 }
 
+extern double getUtcDateTime();
+extern double getLocalDateTime();
+
 extern void formatDateTime(std::ostream &os, double datetime);
 extern double scanDateTime(const char *str);
 

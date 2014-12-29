@@ -42,6 +42,13 @@ void quoteStringForSql(std::ostream &os, const std::string &str){
 	}
 }
 
+double getUtcDateTime(){
+	return datetimeFromTime(getUtcTime());
+}
+double getLocalDateTime(){
+	return datetimeFromTime(getLocalTime());
+}
+
 void formatDateTime(std::ostream &os, double datetime){
 	char temp[256];
 	const AUTO(len, formatTime(temp, sizeof(temp), datetime * (24 * 3600 * 1000), true));
