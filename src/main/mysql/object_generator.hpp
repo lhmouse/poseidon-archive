@@ -52,7 +52,7 @@ private:
 #define FIELD_BIGINT(name_)					volatile long long name_;
 #define FIELD_BIGINT_UNSIGNED(name_)		volatile unsigned long long name_;
 #define FIELD_STRING(name_)					::std::string name_;
-#define FIELD_DATETIME(name_)				volatile double name_;
+#define FIELD_DATETIME(name_)				volatile ::boost::uint64_t name_; // 实际是 double。
 
 	MYSQL_OBJECT_FIELDS
 
@@ -241,12 +241,12 @@ public:
 
 #define FIELD_STRING(name_)	\
 	::std::string get_ ## name_() const {	\
-		const ::boost::shared_lock< ::boost::shared_mutex> slock(m_mutex);	\
+		const ::boost::shared_lock< ::boost::shared_mutex> slock_(m_mutex);	\
 		return name_;	\
 	}	\
 	void set_ ## name_(std::string val_){	\
 		{	\
-			const ::boost::unique_lock< ::boost::shared_mutex> ulock(m_mutex);	\
+			const ::boost::unique_lock< ::boost::shared_mutex> ulock_(m_mutex);	\
 			name_.swap(val_);	\
 		}	\
 		invalidate();	\
@@ -254,14 +254,20 @@ public:
 
 #define FIELD_DATETIME(name_)	\
 	double get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(	\
-			reinterpret_cast<const volatile ::boost::uint64_t &>(name_),	\
-			::Poseidon::ATOMIC_ACQUIRE);	\
+		union {	\
+			::boost::uint64_t u64_;	\
+			double d_;	\
+		} un_;	\
+		un_.u64_ = ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return un_.d_;	\
 	}	\
 	void set_ ## name_(double val_){	\
-		::Poseidon::atomicStore(	\
-			reinterpret_cast<volatile ::boost::uint64_t &>(name_),	\
-			val_, ::Poseidon::ATOMIC_RELEASE);	\
+		union {	\
+			::boost::uint64_t u64_;	\
+			double d_;	\
+		} un_;	\
+		un_.d_ = val_;	\
+		::Poseidon::atomicStore(name_, un_.u64_, ::Poseidon::ATOMIC_RELEASE);	\
 		invalidate();	\
 	}
 
