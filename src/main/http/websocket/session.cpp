@@ -73,12 +73,8 @@ WebSocketSession::WebSocketSession(const boost::shared_ptr<HttpSession> &parent)
 }
 
 void WebSocketSession::onInitContents(const void *data, std::size_t size){
-	PROFILE_ME;
-
 	(void)data;
 	(void)size;
-
-	setTimeout(WebSocketServletDepository::getKeepAliveTimeout());
 }
 void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 	PROFILE_ME;
