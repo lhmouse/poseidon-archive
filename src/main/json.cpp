@@ -176,13 +176,40 @@ std::string JsonParser::acceptString(std::istream &is){
 		++read;
 
 		switch(ch){
-		case '\"':	*write = '\"'; ++write; break;
-		case '\\':	*write = '\\'; ++write; break;
-		case '/':	*write = '/';  ++write; break;
-		case 'b':	*write = '\b'; ++write; break;
-		case 'f':	*write = '\f'; ++write; break;
-		case 'n':	*write = '\n'; ++write; break;
-		case 'r':	*write = '\r'; ++write; break;
+		case '\"':
+			*write = '\"';
+			++write;
+			break;
+
+		case '\\':
+			*write = '\\';
+			++write;
+			break;
+
+		case '/':
+			*write = '/';
+			++write;
+			break;
+
+		case 'b':
+			*write = '\b';
+			++write;
+			break;
+
+		case 'f':
+			*write = '\f';
+			++write;
+			break;
+
+		case 'n':
+			*write = '\n';
+			++write;
+			break;
+
+		case 'r':
+			*write = '\r';
+			++write;
+			break;
 
 		case 'u':
 			if(ret.end() - read < 4){
