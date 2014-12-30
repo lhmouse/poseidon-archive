@@ -32,7 +32,7 @@ private:
 public:
 	bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
 	bool hasBeenShutdown() const OVERRIDE FINAL;
-	bool forceShutdown() OVERRIDE FINAL;
+	bool forceShutdown() NOEXCEPT OVERRIDE FINAL;
 
 	boost::shared_ptr<const HttpSession> getParent() const {
 		return m_parent.lock();

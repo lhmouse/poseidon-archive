@@ -82,16 +82,17 @@ inline T atomicSub(volatile T &mem, typename Identity<T>::type val, MemModel mod
 }
 
 template<typename T>
-inline T atomicCompareExchange(volatile T &mem, typename Identity<T>::type cmp,
+inline bool atomicCompareExchange(volatile T &mem, typename Identity<T>::type &cmp,
 	typename Identity<T>::type xchg, MemModel modelSuccess, MemModel modelFailure) NOEXCEPT
 {
 #ifdef GCC_HAS_ATOMIC_
-	__atomic_compare_exchange_n(&mem, &cmp, xchg, false, modelSuccess, modelFailure);
-	return cmp;
+	return __atomic_compare_exchange_n(&mem, &cmp, xchg, false, modelSuccess, modelFailure);
 #else
 	(void)modelSuccess;
 	(void)modelFailure;
-	return __sync_val_compare_and_swap(&mem, cmp, xchg);
+	const T old = cmp;
+	cmp = __sync_val_compare_and_swap(&mem, old, xchg);
+	return cmp == old;
 #endif
 }
 template<typename T>

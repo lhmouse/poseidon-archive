@@ -54,7 +54,7 @@ void onKeepAliveTimeout(const boost::weak_ptr<HttpSession> &observer){
 
 class HttpRequestJob : public JobBase {
 private:
-	const boost::shared_ptr<HttpSession> m_session;
+	const boost::weak_ptr<HttpSession> m_session;
 
 	const HttpVerb m_verb;
 	const std::string m_uri;
@@ -65,7 +65,7 @@ private:
 	std::string m_contents;
 
 public:
-	HttpRequestJob(boost::shared_ptr<HttpSession> session,
+	HttpRequestJob(boost::weak_ptr<HttpSession> session,
 		HttpVerb verb, std::string uri, unsigned version,
 		OptionalMap getParams, OptionalMap headers, std::string contents)
 		: m_session(STD_MOVE(session))
@@ -80,8 +80,9 @@ protected:
 		PROFILE_ME;
 		assert(!m_uri.empty());
 
+		const boost::shared_ptr<HttpSession> session(m_session);
 		try {
-			const AUTO(category, m_session->getCategory());
+			const AUTO(category, session->getCategory());
 			const AUTO(servlet, HttpServletDepository::getServlet(category, m_uri.c_str()));
 			if(!servlet){
 				LOG_POSEIDON_WARN("No handler in category ", category, " matches URI ", m_uri);
@@ -97,15 +98,15 @@ protected:
 			request.contents.swap(m_contents);
 
 			LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", stringFromHttpVerb(m_verb));
-			(*servlet)(m_session, STD_MOVE(request));
+			(*servlet)(session, STD_MOVE(request));
 		} catch(HttpException &e){
 			LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.status()));
-			m_session->sendDefault(e.status(), e.headers(), false);
+			session->sendDefault(e.status(), e.headers(), false);
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception... request URI = ", m_uri);
-			m_session->sendDefault(HTTP_BAD_REQUEST, false);
+			session->sendDefault(HTTP_BAD_REQUEST, false);
 			throw;
 		}
 	}
@@ -252,7 +253,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			}
 
 			pendJob(boost::make_shared<HttpRequestJob>(
-				virtualSharedFromThis<HttpSession>(), m_verb, STD_MOVE(m_uri), m_version,
+				virtualWeakFromThis<HttpSession>(), m_verb, STD_MOVE(m_uri), m_version,
 				STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
 			setTimeout(HttpServletDepository::getKeepAliveTimeout());
 

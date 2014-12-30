@@ -17,13 +17,13 @@ namespace {
 
 class PlayerRequestJob : public JobBase {
 private:
-	const boost::shared_ptr<PlayerSession> m_session;
+	const boost::weak_ptr<PlayerSession> m_session;
 	const unsigned m_protocolId;
 
 	StreamBuffer m_payload;
 
 public:
-	PlayerRequestJob(boost::shared_ptr<PlayerSession> session,
+	PlayerRequestJob(boost::weak_ptr<PlayerSession> session,
 		unsigned protocolId, StreamBuffer payload)
 		: m_session(STD_MOVE(session)), m_protocolId(protocolId)
 		, m_payload(STD_MOVE(payload))
@@ -34,6 +34,7 @@ protected:
 	void perform(){
 		PROFILE_ME;
 
+		const boost::shared_ptr<PlayerSession> session(m_session);
 		try {
 			if(m_protocolId == PlayerErrorProtocol::ID){
 				PlayerErrorProtocol packet(m_payload);
@@ -41,11 +42,11 @@ protected:
 					", reason = ", packet.reason);
 				if(packet.status != PLAYER_OK){
 					LOG_POSEIDON_DEBUG("Shutting down session as requested...");
-					m_session->sendError(PlayerErrorProtocol::ID,
+					session->sendError(PlayerErrorProtocol::ID,
 						static_cast<PlayerStatus>(packet.status), STD_MOVE(packet.reason), true);
 				}
 			} else {
-				const AUTO(category, m_session->getCategory());
+				const AUTO(category, session->getCategory());
 				const AUTO(servlet, PlayerServletDepository::getServlet(category, m_protocolId));
 				if(!servlet){
 					LOG_POSEIDON_WARN(
@@ -56,16 +57,16 @@ protected:
 
 				LOG_POSEIDON_DEBUG("Dispatching packet: protocol = ", m_protocolId,
 					", payload size = ", m_payload.size());
-				(*servlet)(m_session, STD_MOVE(m_payload));
+				(*servlet)(session, STD_MOVE(m_payload));
 			}
 		} catch(PlayerProtocolException &e){
 			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ",
 				m_protocolId, ", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
-			m_session->sendError(m_protocolId, e.status(), e.what(), false);
+			session->sendError(m_protocolId, e.status(), e.what(), false);
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception... protocol id = ", m_protocolId);
-			m_session->sendError(m_protocolId, PLAYER_INTERNAL_ERROR, false);
+			session->sendError(m_protocolId, PLAYER_INTERNAL_ERROR, false);
 			throw;
 		}
 	}
@@ -124,7 +125,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			if(m_payload.size() < (unsigned)m_payloadLen){
 				break;
 			}
-			pendJob(boost::make_shared<PlayerRequestJob>(virtualSharedFromThis<PlayerSession>(),
+			pendJob(boost::make_shared<PlayerRequestJob>(virtualWeakFromThis<PlayerSession>(),
 				m_protocolId, m_payload.cut(m_payloadLen)));
 			setTimeout(PlayerServletDepository::getKeepAliveTimeout());
 			m_payloadLen = (boost::uint64_t)-1;

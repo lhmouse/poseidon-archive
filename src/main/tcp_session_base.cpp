@@ -70,6 +70,19 @@ void TcpSessionBase::onClose() NOEXCEPT {
 	}
 }
 
+void TcpSessionBase::addMonitor() NOEXCEPT {
+	atomicAdd(m_monitorCount, 1, ATOMIC_RELEASE);
+}
+void TcpSessionBase::removeMonitor() NOEXCEPT {
+	if(atomicSub(m_monitorCount, 1, ATOMIC_ACQUIRE) == 0){
+		try {
+			send(StreamBuffer(), true);
+		} catch(...){
+			forceShutdown();
+		}
+	}
+}
+
 void TcpSessionBase::setEpoll(Epoll *epoll) NOEXCEPT {
 	const boost::mutex::scoped_lock lock(m_bufferMutex);
 	assert(!(m_epoll && epoll));
@@ -122,7 +135,7 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 bool TcpSessionBase::hasBeenShutdown() const {
 	return atomicLoad(m_shutdown, ATOMIC_ACQUIRE);
 }
-bool TcpSessionBase::forceShutdown(){
+bool TcpSessionBase::forceShutdown() NOEXCEPT {
 	const bool ret = !atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
 	::shutdown(m_socket.get(), SHUT_RDWR);
 	return ret;

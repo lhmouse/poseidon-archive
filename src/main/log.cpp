@@ -51,13 +51,10 @@ unsigned long long Logger::setMask(
 	unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT
 {
 	AUTO(oldMask, atomicLoad(g_mask, ATOMIC_ACQUIRE));
-	for(;;){
-		const AUTO(result, atomicCompareExchange(g_mask,
-			oldMask, (oldMask & ~toDisable) | toEnable, ATOMIC_ACQ_REL, ATOMIC_ACQUIRE));
-		if(result == oldMask){
-			break;
-		}
-		oldMask = result;
+	while(!atomicCompareExchange(g_mask, oldMask,
+		(oldMask & ~toDisable) | toEnable, ATOMIC_ACQ_REL, ATOMIC_ACQUIRE))
+	{
+		// noop
 	}
 	return oldMask;
 }

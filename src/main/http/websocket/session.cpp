@@ -19,14 +19,14 @@ namespace {
 
 class WebSocketRequestJob : public JobBase {
 private:
-	const boost::shared_ptr<WebSocketSession> m_session;
+	const boost::weak_ptr<WebSocketSession> m_session;
 	const std::string m_uri;
 	const WebSocketOpCode m_opcode;
 
 	StreamBuffer m_payload;
 
 public:
-	WebSocketRequestJob(boost::shared_ptr<WebSocketSession> session,
+	WebSocketRequestJob(boost::weak_ptr<WebSocketSession> session,
 		std::string uri, WebSocketOpCode opcode, StreamBuffer payload)
 		: m_session(STD_MOVE(session)), m_uri(STD_MOVE(uri)), m_opcode(opcode)
 		, m_payload(STD_MOVE(payload))
@@ -37,8 +37,9 @@ protected:
 	void perform(){
 		PROFILE_ME;
 
+		const boost::shared_ptr<WebSocketSession> session(m_session);
 		try {
-			const AUTO(category, m_session->getCategory());
+			const AUTO(category, session->getCategory());
 			const AUTO(servlet, WebSocketServletDepository::getServlet(category, m_uri.c_str()));
 			if(!servlet){
 				LOG_POSEIDON_WARN("No servlet in category ", category, " matches URI ", m_uri);
@@ -48,15 +49,15 @@ protected:
 
 			LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", m_uri,
 				", payload size = ", m_payload.size());
-			(*servlet)(m_session, m_opcode, STD_MOVE(m_payload));
+			(*servlet)(session, m_opcode, STD_MOVE(m_payload));
 		} catch(WebSocketException &e){
 			LOG_POSEIDON_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(),
 				", what = ", e.what());
-			// m_session->shutdown(e.status(), StreamBuffer(e.what()));
+			// session->shutdown(e.status(), StreamBuffer(e.what()));
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception...");
-			// m_session->shutdown(WS_INTERNAL_ERROR);
+			// session->shutdown(WS_INTERNAL_ERROR);
 			throw;
 		}
 	}
@@ -178,7 +179,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					onControlFrame();
 				} else if(m_fin){
 					pendJob(boost::make_shared<WebSocketRequestJob>(
-						virtualSharedFromThis<WebSocketSession>(), getUri(), m_opcode, STD_MOVE(m_whole)));
+						virtualWeakFromThis<WebSocketSession>(), getUri(), m_opcode, STD_MOVE(m_whole)));
 					m_whole.clear();
 				}
 				setTimeout(WebSocketServletDepository::getKeepAliveTimeout());

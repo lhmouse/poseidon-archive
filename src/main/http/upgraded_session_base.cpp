@@ -28,7 +28,7 @@ bool HttpUpgradedSessionBase::send(StreamBuffer buffer, bool fin){
 	}
 	return static_cast<TcpSessionBase *>(parent.get())->send(STD_MOVE(buffer), fin);
 }
-bool HttpUpgradedSessionBase::forceShutdown(){
+bool HttpUpgradedSessionBase::forceShutdown() NOEXCEPT {
 	const AUTO(parent, getParent());
 	if(!parent){
 		return false;

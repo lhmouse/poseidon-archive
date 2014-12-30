@@ -17,13 +17,13 @@ namespace {
 
 class ServerResponseJob : public JobBase {
 private:
-	const boost::shared_ptr<PlayerClient> m_client;
+	const boost::weak_ptr<PlayerClient> m_client;
 	const unsigned m_protocolId;
 
 	StreamBuffer m_payload;
 
 public:
-	ServerResponseJob(boost::shared_ptr<PlayerClient> client,
+	ServerResponseJob(boost::weak_ptr<PlayerClient> client,
 		unsigned protocolId, StreamBuffer payload)
 		: m_client(STD_MOVE(client)), m_protocolId(protocolId)
 		, m_payload(STD_MOVE(payload))
@@ -34,15 +34,16 @@ protected:
 	void perform(){
 		PROFILE_ME;
 
+		const boost::shared_ptr<PlayerClient> client(m_client);
 		try {
 			if(m_protocolId != PlayerErrorProtocol::ID){
 				LOG_POSEIDON_DEBUG("Dispatching: protocol = ", m_protocolId, ", payload size = ", m_payload.size());
-				m_client->onResponse(m_protocolId, STD_MOVE(m_payload));
+				client->onResponse(m_protocolId, STD_MOVE(m_payload));
 			} else {
 				PlayerErrorProtocol error(m_payload);
 				LOG_POSEIDON_DEBUG("Dispatching error protocol: protocol id = ", error.protocolId,
 					", status = ", error.status, ", reason = ", error.reason);
-				m_client->onError(error.protocolId, static_cast<PlayerStatus>(error.status), STD_MOVE(error.reason));
+				client->onError(error.protocolId, static_cast<PlayerStatus>(error.status), STD_MOVE(error.reason));
 			}
 		} catch(PlayerProtocolException &e){
 			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ", m_protocolId,
@@ -113,7 +114,7 @@ void PlayerClient::onReadAvail(const void *data, std::size_t size){
 			if(m_payload.size() < m_payloadLen){
 				break;
 			}
-			pendJob(boost::make_shared<ServerResponseJob>(virtualSharedFromThis<PlayerClient>(),
+			pendJob(boost::make_shared<ServerResponseJob>(virtualWeakFromThis<PlayerClient>(),
 				m_protocolId, m_payload.cut(m_payloadLen)));
 			m_payloadLen = (boost::uint64_t)-1;
 			m_protocolId = 0;

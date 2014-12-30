@@ -31,7 +31,7 @@ public:
 	// 套接字将会在未发送的数据被全部发送之后被正常关闭。
 	virtual bool send(StreamBuffer buffer, bool fin = false) = 0;
 	// 强行关闭会话以及套接字，未发送数据丢失。
-	virtual bool forceShutdown() = 0;
+	virtual bool forceShutdown() NOEXCEPT = 0;
 };
 
 }
