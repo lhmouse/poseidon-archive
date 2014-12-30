@@ -94,19 +94,23 @@ void PlayerClient::onReadAvail(const void *data, std::size_t size){
 				if(m_payload.size() < 4){
 					break;
 				}
+
+				boost::uint64_t payloadLen;
 				boost::uint16_t temp16;
 				m_payload.peek(&temp16, 2);
-				if((temp16 & 0x8000) != 0){
+				payloadLen = loadBe(temp16);
+				if((payloadLen & 0x8000) == 0){
+					m_payload.discard(2);
+				} else {
 					if(m_payload.size() < 10){
 						break;
 					}
 					boost::uint64_t temp64;
 					m_payload.get(&temp64, 8);
-					m_payloadLen = loadBe(temp64) & 0x7FFFFFFFFFFFFFFFull;
-				} else {
-					m_payload.discard(2);
-					m_payloadLen = loadBe(temp16);
+					payloadLen = loadBe(temp64) & 0x7FFFFFFFFFFFFFFFu;
 				}
+				m_payloadLen = payloadLen;
+
 				m_payload.get(&temp16, 2);
 				m_protocolId = loadBe(temp16);
 				LOG_POSEIDON_DEBUG("Protocol len = ", m_payloadLen, ", id = ", m_protocolId);
@@ -132,14 +136,14 @@ void PlayerClient::onReadAvail(const void *data, std::size_t size){
 
 bool PlayerClient::send(boost::uint16_t protocolId, StreamBuffer contents, bool fin){
 	StreamBuffer data;
-	const std::size_t size = contents.size();
+	const boost::uint64_t size = contents.size();
 	if(size < 0x8000){
 		boost::uint16_t temp16;
 		storeBe(temp16, size);
 		data.put(&temp16, 2);
 	} else {
 		boost::uint64_t temp64;
-		storeBe(temp64, size | 0x8000000000000000ull);
+		storeBe(temp64, size | 0x8000000000000000u);
 		data.put(&temp64, 8);
 	}
 	boost::uint16_t temp16;
