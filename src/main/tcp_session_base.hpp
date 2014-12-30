@@ -23,9 +23,6 @@ class Epoll;
 class SslFilterBase;
 class TimerItem;
 
-template<class SessionT>
-class TcpMonitoredSession;
-
 class TcpServerBase;
 class TcpClientBase;
 
@@ -51,8 +48,6 @@ private:
 
 	boost::scoped_ptr<SslFilterBase> m_sslFilter;
 
-	mutable volatile std::size_t m_monitorCount;
-
 	volatile bool m_shutdown;
 	mutable boost::mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
@@ -69,9 +64,6 @@ protected:
 	~TcpSessionBase();
 
 private:
-	void addMonitor() NOEXCEPT;
-	void removeMonitor() NOEXCEPT;
-
 	// 注意，同一个 session 只能同时分配给一个 epoll！
 	void setEpoll(Epoll *epoll) NOEXCEPT;
 
