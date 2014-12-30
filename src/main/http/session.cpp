@@ -12,6 +12,7 @@
 #include "../log.hpp"
 #include "../singletons/http_servlet_depository.hpp"
 #include "../singletons/websocket_servlet_depository.hpp"
+#include "../singletons/epoll_daemon.hpp"
 #include "../stream_buffer.hpp"
 #include "../utilities.hpp"
 #include "../exception.hpp"
@@ -99,6 +100,7 @@ protected:
 
 			LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", stringFromHttpVerb(m_verb));
 			(*servlet)(session, STD_MOVE(request));
+			session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
 		} catch(HttpException &e){
 			LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.status()));
@@ -255,7 +257,6 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			pendJob(boost::make_shared<HttpRequestJob>(
 				virtualWeakFromThis<HttpSession>(), m_verb, STD_MOVE(m_uri), m_version,
 				STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
-			setTimeout(HttpServletDepository::getKeepAliveTimeout());
 
 			m_totalLength = 0;
 			m_contentLength = 0;
@@ -270,7 +271,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		return;
 
 	session_upgraded:
-		setTimeout(0);
+		setTimeout(EpollDaemon::getTcpRequestTimeout());
 
 		m_upgradedSession->onInitContents(m_line.data(), m_line.size());
 

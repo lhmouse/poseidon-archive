@@ -59,6 +59,7 @@ protected:
 					", payload size = ", m_payload.size());
 				(*servlet)(session, STD_MOVE(m_payload));
 			}
+			session->setTimeout(PlayerServletDepository::getKeepAliveTimeout());
 		} catch(PlayerProtocolException &e){
 			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ",
 				m_protocolId, ", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
@@ -127,7 +128,6 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 			}
 			pendJob(boost::make_shared<PlayerRequestJob>(virtualWeakFromThis<PlayerSession>(),
 				m_protocolId, m_payload.cut(m_payloadLen)));
-			setTimeout(PlayerServletDepository::getKeepAliveTimeout());
 			m_payloadLen = (boost::uint64_t)-1;
 			m_protocolId = 0;
 		}

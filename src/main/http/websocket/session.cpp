@@ -50,6 +50,7 @@ protected:
 			LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", m_uri,
 				", payload size = ", m_payload.size());
 			(*servlet)(session, m_opcode, STD_MOVE(m_payload));
+			session->setTimeout(WebSocketServletDepository::getKeepAliveTimeout());
 		} catch(WebSocketException &e){
 			LOG_POSEIDON_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(),
 				", what = ", e.what());
@@ -182,7 +183,6 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 						virtualWeakFromThis<WebSocketSession>(), getUri(), m_opcode, STD_MOVE(m_whole)));
 					m_whole.clear();
 				}
-				setTimeout(WebSocketServletDepository::getKeepAliveTimeout());
 				m_state = ST_OPCODE;
 				break;
 			}
