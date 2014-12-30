@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_JSON_WRITER_HPP_
-#define POSEIDON_JSON_WRITER_HPP_
+#ifndef POSEIDON_JSON_HPP_
+#define POSEIDON_JSON_HPP_
 
 #include "cxx_ver.hpp"
 #include <deque>
@@ -21,6 +21,7 @@ namespace Poseidon {
 using JsonNull = std::nullptr_t;
 #else
 struct JsonNull {
+	void *unused;
 };
 #endif
 
@@ -39,14 +40,14 @@ public:
 };
 
 class JsonElement {
+public:
+	enum Type {
+		T_BOOL, T_NUMBER, T_STRING, T_OBJECT, T_ARRAY, T_NULL
+	};
+
 private:
 	boost::variant<
-		bool,			// 0
-		long double,	// 1
-		std::string,	// 2
-		JsonObject,		// 3
-		JsonArray,		// 4
-		JsonNull		// 5
+		bool, long double, std::string, JsonObject, JsonArray, JsonNull
 		> m_data;
 
 public:
@@ -60,6 +61,19 @@ public:
 	}
 
 public:
+	Type type() const {
+		return static_cast<Type>(m_data.which());
+	}
+
+	template<typename T>
+	const T &get() const {
+		return boost::get<const T &>(m_data);
+	}
+	template<typename T>
+	T &get(){
+		return boost::get<T &>(m_data);
+	}
+
 	void set(JsonNull){
 		m_data = JsonNull();
 	}
@@ -123,6 +137,22 @@ inline std::ostream &operator<<(std::ostream &os, const JsonElement &rhs){
 	rhs.dump(os);
 	return os;
 }
+
+class JsonParser {
+private:
+	static std::string acceptString(std::istream &is);
+	static double acceptNumber(std::istream &is);
+	static JsonObject acceptObject(std::istream &is);
+	static JsonArray acceptArray(std::istream &is);
+	static bool acceptBoolean(std::istream &is);
+	static JsonNull acceptNull(std::istream &is);
+
+	static JsonElement acceptValue(std::istream &is);
+
+public:
+	static JsonObject parseObject(std::istream &is);
+	static JsonArray parseArray(std::istream &is);
+};
 
 }
 
