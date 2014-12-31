@@ -32,6 +32,9 @@ private:
 	};
 
 private:
+	class HeaderParser;
+
+private:
 	const std::size_t m_category;
 
 	State m_state;
@@ -54,8 +57,6 @@ public:
 
 private:
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
-
-	void onAllHeadersRead();
 
 public:
 	std::size_t getCategory() const {

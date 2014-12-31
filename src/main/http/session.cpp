@@ -116,6 +116,117 @@ protected:
 
 }
 
+class HttpSession::HeaderParser {
+private:
+	static void onExpect(HttpSession *session, const std::string &val){
+		if(val != "100-continue"){
+			LOG_POSEIDON_WARN("Unknown HTTP header Expect: ", val);
+			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+		}
+		session->sendDefault(HTTP_CONTINUE);
+	}
+	static void onContentLength(HttpSession *session, const std::string &val){
+		session->m_contentLength = boost::lexical_cast<std::size_t>(val);
+		LOG_POSEIDON_DEBUG("Content-Length: ", session->m_contentLength);
+	}
+	static void onUpgrade(HttpSession *session, const std::string &val){
+		if(session->m_version < 10001){
+			LOG_POSEIDON_WARN("HTTP 1.1 is required to use WebSocket");
+			DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUPPORTED);
+		}
+		if(::strcasecmp(val.c_str(), "websocket") != 0){
+			LOG_POSEIDON_WARN("Unknown HTTP header Upgrade: ", val);
+			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+		}
+		AUTO_REF(version, session->m_headers.get("Sec-WebSocket-Version"));
+		if(version != "13"){
+			LOG_POSEIDON_WARN("Unknown HTTP header Sec-WebSocket-Version: ", version);
+			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+		}
+
+		std::string key = session->m_headers.get("Sec-WebSocket-Key");
+		if(key.empty()){
+			LOG_POSEIDON_WARN("No Sec-WebSocket-Key specified.");
+			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+		}
+		key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+		unsigned char sha1[20];
+		sha1Sum(sha1, key.data(), key.size());
+		key = base64Encode(sha1, sizeof(sha1));
+
+		OptionalMap headers;
+		headers.set("Upgrade", "websocket");
+		headers.set("Connection", "Upgrade");
+		headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
+		session->sendDefault(HTTP_SWITCHING_PROTOCOLS, STD_MOVE(headers));
+
+		session->m_upgradedSession =
+			boost::make_shared<WebSocketSession>(session->virtualSharedFromThis<HttpSession>());
+		LOG_POSEIDON_INFO("Upgraded to WebSocketSession, remote = ", session->getRemoteInfo());
+	}
+	static void onAuthorization(HttpSession *session, const std::string &val){
+		if(!session->m_authInfo){
+			return;
+		}
+
+		const std::size_t pos = val.find(' ');
+		if(pos == std::string::npos){
+			LOG_POSEIDON_WARN("Bad Authorization: ", val);
+			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+		}
+		std::string temp(val);
+		temp.at(pos) = 0;
+		if(::strcasecmp(temp.c_str(), "basic") != 0){
+			LOG_POSEIDON_WARN("Unknown auth method: ", temp.c_str());
+			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
+		}
+		temp.erase(temp.begin(), temp.begin() + pos + 1);
+		if(session->m_authInfo->find(temp) == session->m_authInfo->end()){
+			LOG_POSEIDON_WARN("Invalid username or password");
+			OptionalMap authHeader;
+			authHeader.set("WWW-Authenticate", "Basic realm=\"Invalid username or password\"");
+			DEBUG_THROW(HttpException, HTTP_UNAUTHORIZED, STD_MOVE(authHeader));
+		}
+		session->m_authInfo.reset();
+	}
+
+public:
+	static void commit(HttpSession *session){
+		static const std::pair<
+			const char *, void (*)(HttpSession *, const std::string &)
+			> JUMP_TABLE[] =
+		{
+			// 确保字母顺序。
+			std::make_pair("Authorization", &onAuthorization),
+			std::make_pair("Content-Length", &onContentLength),
+			std::make_pair("Expect", &onExpect),
+			std::make_pair("Upgrade", &onUpgrade),
+		};
+
+		for(AUTO(it, session->m_headers.begin()); it != session->m_headers.end(); ++it){
+			LOG_POSEIDON_DEBUG("HTTP header: ", it->first.get(), " = ", it->second);
+
+			AUTO(lower, BEGIN(JUMP_TABLE));
+			AUTO(upper, END(JUMP_TABLE));
+			for(;;){
+				const AUTO(middle, lower + (upper - lower) / 2);
+				const int result = std::strcmp(it->first.get(), middle->first);
+				if(result == 0){
+					(*middle->second)(session, it->second);
+					break;
+				} else if(result < 0){
+					upper = middle;
+				} else {
+					lower = middle + 1;
+				}
+				if(lower == upper){
+					break;
+				}
+			}
+		}
+	}
+};
+
 HttpSession::HttpSession(std::size_t category, UniqueFile socket)
 	: TcpSessionBase(STD_MOVE(socket))
 	, m_category(category)
@@ -224,7 +335,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				} else {
 					m_state = ST_CONTENTS;
 
-					onAllHeadersRead();
+					HeaderParser::commit(this);
 				}
 			}
 			if(m_state != ST_CONTENTS){
@@ -291,115 +402,6 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		LOG_POSEIDON_ERROR("Forwarding exception... shutdown the session first.");
 		sendDefault(HTTP_BAD_REQUEST, true);
 		throw;
-	}
-}
-
-void HttpSession::onAllHeadersRead(){
-	struct Dispatcher {
-		static void onExpect(HttpSession *session, const std::string &val){
-			if(val != "100-continue"){
-				LOG_POSEIDON_WARN("Unknown HTTP header Expect: ", val);
-				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
-			}
-			session->sendDefault(HTTP_CONTINUE);
-		}
-		static void onContentLength(HttpSession *session, const std::string &val){
-			session->m_contentLength = boost::lexical_cast<std::size_t>(val);
-			LOG_POSEIDON_DEBUG("Content-Length: ", session->m_contentLength);
-		}
-		static void onUpgrade(HttpSession *session, const std::string &val){
-			if(session->m_version < 10001){
-				LOG_POSEIDON_WARN("HTTP 1.1 is required to use WebSocket");
-				DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUPPORTED);
-			}
-			if(::strcasecmp(val.c_str(), "websocket") != 0){
-				LOG_POSEIDON_WARN("Unknown HTTP header Upgrade: ", val);
-				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
-			}
-			AUTO_REF(version, session->m_headers.get("Sec-WebSocket-Version"));
-			if(version != "13"){
-				LOG_POSEIDON_WARN("Unknown HTTP header Sec-WebSocket-Version: ", version);
-				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
-			}
-
-			std::string key = session->m_headers.get("Sec-WebSocket-Key");
-			if(key.empty()){
-				LOG_POSEIDON_WARN("No Sec-WebSocket-Key specified.");
-				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
-			}
-			key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-			unsigned char sha1[20];
-			sha1Sum(sha1, key.data(), key.size());
-			key = base64Encode(sha1, sizeof(sha1));
-
-			OptionalMap headers;
-			headers.set("Upgrade", "websocket");
-			headers.set("Connection", "Upgrade");
-			headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
-			session->sendDefault(HTTP_SWITCHING_PROTOCOLS, STD_MOVE(headers));
-
-			session->m_upgradedSession =
-				boost::make_shared<WebSocketSession>(session->virtualSharedFromThis<HttpSession>());
-			LOG_POSEIDON_INFO("Upgraded to WebSocketSession, remote = ", session->getRemoteInfo());
-		}
-		static void onAuthorization(HttpSession *session, const std::string &val){
-			if(!session->m_authInfo){
-				return;
-			}
-
-			const std::size_t pos = val.find(' ');
-			if(pos == std::string::npos){
-				LOG_POSEIDON_WARN("Bad Authorization: ", val);
-				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
-			}
-			std::string temp(val);
-			temp.at(pos) = 0;
-			if(::strcasecmp(temp.c_str(), "basic") != 0){
-				LOG_POSEIDON_WARN("Unknown auth method: ", temp.c_str());
-				DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
-			}
-			temp.erase(temp.begin(), temp.begin() + pos + 1);
-			if(session->m_authInfo->find(temp) == session->m_authInfo->end()){
-				LOG_POSEIDON_WARN("Invalid username or password");
-				OptionalMap authHeader;
-				authHeader.set("WWW-Authenticate", "Basic realm=\"Invalid username or password\"");
-				DEBUG_THROW(HttpException, HTTP_UNAUTHORIZED, STD_MOVE(authHeader));
-			}
-			session->m_authInfo.reset();
-		}
-	};
-
-	static const std::pair<
-		const char *, void (*)(HttpSession *, const std::string &)
-		> JUMP_TABLE[] =
-	{
-		// 确保字母顺序。
-		std::make_pair("Authorization", &Dispatcher::onAuthorization),
-		std::make_pair("Content-Length", &Dispatcher::onContentLength),
-		std::make_pair("Expect", &Dispatcher::onExpect),
-		std::make_pair("Upgrade", &Dispatcher::onUpgrade),
-	};
-
-	for(AUTO(it, m_headers.begin()); it != m_headers.end(); ++it){
-		LOG_POSEIDON_DEBUG("HTTP header: ", it->first.get(), " = ", it->second);
-
-		AUTO(lower, BEGIN(JUMP_TABLE));
-		AUTO(upper, END(JUMP_TABLE));
-		for(;;){
-			const AUTO(middle, lower + (upper - lower) / 2);
-			const int result = std::strcmp(it->first.get(), middle->first);
-			if(result == 0){
-				(*middle->second)(this, it->second);
-				break;
-			} else if(result < 0){
-				upper = middle;
-			} else {
-				lower = middle + 1;
-			}
-			if(lower == upper){
-				break;
-			}
-		}
 	}
 }
 
