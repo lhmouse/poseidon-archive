@@ -31,7 +31,7 @@ namespace Poseidon {
 struct PlayerProtocolBase {
 	static void encodeHeader(
 		StreamBuffer &dst, boost::uint16_t protocolId, boost::uint64_t protocolLen);
-	static bool decodeHeader( // 如果返回 false，无事发生。
+	static bool decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
 		boost::uint16_t &protocolId, boost::uint64_t &protocolLen, StreamBuffer &src) NOEXCEPT;
 };
 

@@ -63,7 +63,7 @@ void PlayerProtocolBase::encodeHeader(
 		dst.put(&temp64, 8);
 	}
 }
-bool PlayerProtocolBase::decodeHeader( // 如果返回 false，无事发生。
+bool PlayerProtocolBase::decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
 	boost::uint16_t &protocolId, boost::uint64_t &protocolLen, StreamBuffer &src) NOEXCEPT
 {
 	boost::uint16_t temp16;
