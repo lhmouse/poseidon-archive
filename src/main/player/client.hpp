@@ -38,7 +38,7 @@ public:
 	bool send(boost::uint16_t protocolId, StreamBuffer contents, bool fin = false);
 
 	template<class ProtocolT>
-	typename boost::enable_if<boost::is_base_of<ProtocolBase, ProtocolT>, bool>::type
+	typename boost::enable_if<boost::is_base_of<PlayerProtocolBase, ProtocolT>, bool>::type
 		send(const ProtocolT &contents, bool fin = false)
 	{
 		return send(ProtocolT::ID, StreamBuffer(contents), fin);

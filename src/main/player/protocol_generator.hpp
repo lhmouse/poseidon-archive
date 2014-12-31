@@ -19,7 +19,7 @@
 
 #include "../cxx_util.hpp"
 
-struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
+struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 	enum {
 		ID = PROTOCOL_ID
 	};
@@ -55,7 +55,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 
 #if 0 PROTOCOL_FIELDS != 0
 	PROTOCOL_NAME()
-		: ProtocolBase()
+		: ::Poseidon::PlayerProtocolBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -87,7 +87,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 #define FIELD_ARRAY(name_, fields_)
 
 	explicit PROTOCOL_NAME(STRIP_FIRST(void PROTOCOL_FIELDS))
-		: ProtocolBase()
+		: ::Poseidon::PlayerProtocolBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -105,7 +105,7 @@ struct PROTOCOL_NAME : public ::Poseidon::ProtocolBase {
 	{
 	}
 	explicit PROTOCOL_NAME(::Poseidon::StreamBuffer &buffer_)
-		: ProtocolBase()
+		: ::Poseidon::PlayerProtocolBase()
 	{
 		*this << buffer_;
 	}

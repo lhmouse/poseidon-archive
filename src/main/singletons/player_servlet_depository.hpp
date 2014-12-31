@@ -35,7 +35,7 @@ struct PlayerServletDepository {
 	// void (boost::shared_ptr<PlayerSession> ps, ProtocolT request)
 	template<typename ProtocolT, typename CallbackT>
 	static
-		typename boost::enable_if_c<boost::is_base_of<ProtocolBase, ProtocolT>::value,
+		typename boost::enable_if_c<boost::is_base_of<PlayerProtocolBase, ProtocolT>::value,
 			boost::shared_ptr<PlayerServlet> >::type
 		registerServlet(std::size_t category,
 #ifdef POSEIDON_CXX11

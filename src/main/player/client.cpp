@@ -10,7 +10,6 @@
 #include "../exception.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
-#include "../endian.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -91,29 +90,14 @@ void PlayerClient::onReadAvail(const void *data, std::size_t size){
 		m_payload.put(data, size);
 		for(;;){
 			if(m_payloadLen == (boost::uint64_t)-1){
-				if(m_payload.size() < 4){
+				boost::uint16_t protocolId;
+				boost::uint64_t payloadLen;
+				if(!PlayerProtocolBase::decodeHeader(protocolId, payloadLen, m_payload)){
 					break;
 				}
-
-				boost::uint64_t payloadLen;
-				boost::uint16_t temp16;
-				m_payload.peek(&temp16, 2);
-				payloadLen = loadBe(temp16);
-				if((payloadLen & 0x8000) == 0){
-					m_payload.discard(2);
-				} else {
-					if(m_payload.size() < 10){
-						break;
-					}
-					boost::uint64_t temp64;
-					m_payload.get(&temp64, 8);
-					payloadLen = loadBe(temp64) & 0x7FFFFFFFFFFFFFFFu;
-				}
+				m_protocolId = protocolId;
 				m_payloadLen = payloadLen;
-
-				m_payload.get(&temp16, 2);
-				m_protocolId = loadBe(temp16);
-				LOG_POSEIDON_DEBUG("Protocol len = ", m_payloadLen, ", id = ", m_protocolId);
+				LOG_POSEIDON_DEBUG("Protocol id = ", m_protocolId, ", len = ", m_payloadLen);
 			}
 			if(m_payload.size() < m_payloadLen){
 				break;
@@ -136,19 +120,7 @@ void PlayerClient::onReadAvail(const void *data, std::size_t size){
 
 bool PlayerClient::send(boost::uint16_t protocolId, StreamBuffer contents, bool fin){
 	StreamBuffer data;
-	const boost::uint64_t size = contents.size();
-	if(size < 0x8000){
-		boost::uint16_t temp16;
-		storeBe(temp16, size);
-		data.put(&temp16, 2);
-	} else {
-		boost::uint64_t temp64;
-		storeBe(temp64, size | 0x8000000000000000u);
-		data.put(&temp64, 8);
-	}
-	boost::uint16_t temp16;
-	storeBe(temp16, protocolId);
-	data.put(&temp16, 2);
+	PlayerProtocolBase::encodeHeader(data, protocolId, contents.size());
 	data.splice(contents);
 	return TcpSessionBase::send(STD_MOVE(data), fin);
 }

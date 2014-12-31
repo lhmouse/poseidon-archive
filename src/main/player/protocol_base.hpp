@@ -4,9 +4,11 @@
 #ifndef POSEIDON_PLAYER_PROTOCOL_BASE_HPP_
 #define POSEIDON_PLAYER_PROTOCOL_BASE_HPP_
 
+#include "../cxx_ver.hpp"
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <boost/cstdint.hpp>
 #include "../vint50.hpp"
 #include "../stream_buffer.hpp"
 #include "exception.hpp"
@@ -26,7 +28,11 @@
 
 namespace Poseidon {
 
-struct ProtocolBase {
+struct PlayerProtocolBase {
+	static void encodeHeader(
+		StreamBuffer &dst, boost::uint16_t protocolId, boost::uint64_t protocolLen);
+	static bool decodeHeader( // 如果返回 false，无事发生。
+		boost::uint16_t &protocolId, boost::uint64_t &protocolLen, StreamBuffer &src) NOEXCEPT;
 };
 
 }

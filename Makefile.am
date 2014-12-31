@@ -95,6 +95,7 @@ pkginclude_player_HEADERS = \
 	src/main/player/error_protocol.hpp	\
 	src/main/player/protocol_generator.hpp	\
 	src/main/player/status.hpp	\
+	src/main/player/control_code.hpp	\
 	src/main/player/exception.hpp	\
 	src/main/player/server.hpp	\
 	src/main/player/callbacks.hpp
@@ -166,6 +167,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/player/server.cpp	\
 	src/main/player/client.cpp	\
 	src/main/player/exception.cpp	\
+	src/main/player/protocol_base.cpp	\
 	src/main/http/session.cpp	\
 	src/main/http/server.cpp	\
 	src/main/http/status.cpp	\
