@@ -21,7 +21,7 @@ const std::string &OptionalMap::get(const char *key) const {
 const std::string &OptionalMap::at(const char *key) const {
 	const const_iterator it = find(key);
 	if(it == end()){
-		throw std::out_of_range("OptionalMap::at");
+		throw std::out_of_range("Poseidon::OptionalMap::at");
 	}
 	return it->second;
 }
