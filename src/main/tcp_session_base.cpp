@@ -162,6 +162,15 @@ long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsi
 	return ret;
 }
 
+const IpPort &TcpSessionBase::getRemoteInfo() const {
+	fetchPeerInfo();
+	return m_peerInfo.remote;
+}
+const IpPort &TcpSessionBase::getLocalInfo() const {
+	fetchPeerInfo();
+	return m_peerInfo.local;
+}
+
 void TcpSessionBase::setOnClose(boost::function<void ()> callback){
 	const boost::mutex::scoped_lock lock(m_onCloseMutex);
 	m_onCloseQueue.push_back(boost::function<void ()>());
@@ -177,13 +186,4 @@ void TcpSessionBase::setTimeout(unsigned long long timeout){
 		const boost::mutex::scoped_lock lock(m_timerMutex);
 		m_shutdownTimer.swap(shutdownTimer);
 	}
-}
-
-const IpPort &TcpSessionBase::getRemoteInfo() const {
-	fetchPeerInfo();
-	return m_peerInfo.remote;
-}
-const IpPort &TcpSessionBase::getLocalInfo() const {
-	fetchPeerInfo();
-	return m_peerInfo.local;
 }
