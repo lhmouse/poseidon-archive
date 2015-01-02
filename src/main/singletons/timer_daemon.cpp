@@ -155,7 +155,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
 	AUTO(item, boost::make_shared<TimerItem>(period * 1000, sharedCallback));
 
 	TimerQueueElement tqe;
-	tqe.next = timePoint;
+	tqe.next = timePoint * 1000;
 	tqe.item = item;
 	{
 		const boost::mutex::scoped_lock lock(g_mutex);
@@ -170,7 +170,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
 boost::shared_ptr<TimerItem> TimerDaemon::registerTimer(
 	unsigned long long first, unsigned long long period, TimerCallback callback)
 {
-	return registerAbsoluteTimer(getMonoClock() + first * 1000, period, STD_MOVE(callback));
+	return registerAbsoluteTimer(getMonoClock() / 1000 + first, period, STD_MOVE(callback));
 }
 
 boost::shared_ptr<TimerItem> TimerDaemon::registerHourlyTimer(

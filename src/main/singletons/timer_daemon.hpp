@@ -25,7 +25,7 @@ struct TimerDaemon {
 
 	// period 填零表示只触发一次。
 	static boost::shared_ptr<TimerItem> registerAbsoluteTimer(
-		unsigned long long timePoint, // 用 getMonoClock() 作参考，单位微秒。
+		unsigned long long timePoint, // 用 getMonoClock() / 1000 作参考。
 		unsigned long long period, TimerCallback callback);
 	static boost::shared_ptr<TimerItem> registerTimer(
 		unsigned long long first, unsigned long long period, TimerCallback callback);
