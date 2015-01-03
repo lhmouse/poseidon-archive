@@ -16,6 +16,61 @@ namespace Poseidon {
 struct DisposableBuffer;
 
 class StreamBuffer {
+public:
+	class ReadIterator
+		: public std::iterator<std::input_iterator_tag, int>
+	{
+	private:
+		StreamBuffer *m_owner;
+
+	public:
+		explicit ReadIterator(StreamBuffer &owner)
+			: m_owner(&owner)
+		{
+		}
+
+	public:
+		int operator*() const {
+			return m_owner->peek();
+		}
+		ReadIterator &operator++(){
+			m_owner->get();
+			return *this;
+		}
+		ReadIterator operator++(int){
+			m_owner->get();
+			return *this;
+		}
+	};
+
+	class WriteIterator
+		: public std::iterator<std::output_iterator_tag, unsigned char>
+	{
+	private:
+		StreamBuffer *m_owner;
+
+	public:
+		explicit WriteIterator(StreamBuffer &owner)
+			: m_owner(&owner)
+		{
+		}
+
+	public:
+		WriteIterator &operator=(unsigned char byte){
+			m_owner->put(byte);
+			return *this;
+		}
+		WriteIterator &operator*(){
+			return *this;
+		}
+		WriteIterator &operator++(){
+			return *this;
+		}
+		WriteIterator &operator++(int){
+			return *this;
+		}
+	};
+
 private:
 	std::list<DisposableBuffer> m_chunks;
 	std::size_t m_size;
@@ -91,59 +146,6 @@ public:
 	void dumpHex(std::ostream &os) const;
 };
 
-class StreamBufferReadIterator
-	: public std::iterator<std::input_iterator_tag, int>
-{
-private:
-	StreamBuffer *m_owner;
-
-public:
-	explicit StreamBufferReadIterator(StreamBuffer &owner)
-		: m_owner(&owner)
-	{
-	}
-
-public:
-	int operator*() const {
-		return m_owner->peek();
-	}
-	StreamBufferReadIterator &operator++(){
-		m_owner->get();
-		return *this;
-	}
-	StreamBufferReadIterator operator++(int){
-		m_owner->get();
-		return *this;
-	}
-};
-
-class StreamBufferWriteIterator
-	: public std::iterator<std::output_iterator_tag, unsigned char>
-{
-private:
-	StreamBuffer *m_owner;
-
-public:
-	explicit StreamBufferWriteIterator(StreamBuffer &owner)
-		: m_owner(&owner)
-	{
-	}
-
-public:
-	StreamBufferWriteIterator &operator=(unsigned char byte){
-		m_owner->put(byte);
-		return *this;
-	}
-	StreamBufferWriteIterator &operator*(){
-		return *this;
-	}
-	StreamBufferWriteIterator &operator++(){
-		return *this;
-	}
-	StreamBufferWriteIterator &operator++(int){
-		return *this;
-	}
-};
 
 inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
 	lhs.swap(rhs);

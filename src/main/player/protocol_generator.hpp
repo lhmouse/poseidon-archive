@@ -111,7 +111,7 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 	}
 
 	void operator>>(::Poseidon::StreamBuffer &buffer_) const {
-		::Poseidon::StreamBufferWriteIterator write_(buffer_);
+		::Poseidon::StreamBuffer::WriteIterator write_(buffer_);
 
 		typedef PROTOCOL_NAME Cur_;
 		const Cur_ &cur_ = *this;
@@ -130,9 +130,9 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 #define FIELD_ARRAY(name_, fields_)		{	\
 											const unsigned long long count_ = cur_.name_.size();	\
 											::Poseidon::vuint50ToBinary(count_, write_);	\
-											for(unsigned long long i = 0; i < count_; ++i){	\
+											for(unsigned long long i_ = 0; i_ < count_; ++i_){	\
 												typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-												const Element_ &element_ = cur_.name_[i];	\
+												const Element_ &element_ = cur_.name_[i_];	\
 												typedef Element_ Cur_;	\
 												const Cur_ &cur_ = element_;	\
 												\
@@ -144,7 +144,7 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 	}
 
 	void operator<<(::Poseidon::StreamBuffer &buffer_){
-		::Poseidon::StreamBufferReadIterator read_(buffer_);
+		::Poseidon::StreamBuffer::ReadIterator read_(buffer_);
 
 		typedef PROTOCOL_NAME Cur_;
 		Cur_ &cur_ = *this;
@@ -164,7 +164,10 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 #define FIELD_BYTES(name_, size_)		if(buffer_.size() < size_){	\
 											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
 										}	\
-										buffer_.get(cur_.name_, size_);
+										for(::std::size_t i_ = 0; i_ < size_; ++i_){	\
+											name_[i_] = *read_;	\
+											++read_;	\
+										}
 #define FIELD_STRING(name_)				{	\
 											unsigned long long count_;	\
 											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
@@ -173,8 +176,9 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 											if(buffer_.size() < count_){	\
 												THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
 											}	\
-											for(unsigned long long i = 0; i < count_; ++i){	\
-												cur_.name_.push_back(buffer_.get());	\
+											for(unsigned long long i_ = 0; i_ < count_; ++i_){	\
+												cur_.name_.push_back(*read_);	\
+												++read_;	\
 											}	\
 										}
 #define FIELD_ARRAY(name_, fields_)		{	\
@@ -183,7 +187,7 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 												THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
 											}	\
 											cur_.name_.clear();	\
-											for(unsigned long long i = 0; i < count_; ++i){	\
+											for(unsigned long long i_ = 0; i_ < count_; ++i_){	\
 												typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
 												cur_.name_.push_back(Element_());	\
 												Element_ &element_ = cur_.name_.back();	\
