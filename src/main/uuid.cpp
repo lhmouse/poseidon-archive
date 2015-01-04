@@ -11,7 +11,13 @@ using namespace Poseidon;
 
 namespace {
 
-volatile boost::uint32_t g_autoInc = 0;
+boost::uint32_t rdtscLow(){
+	boost::uint32_t ret;
+	__asm__ __volatile__("rdtsc \n" : "=a"(ret) : : "edx");
+	return ret;
+}
+
+volatile boost::uint32_t g_autoInc = rdtscLow();
 
 }
 
