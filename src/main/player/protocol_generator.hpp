@@ -26,14 +26,14 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
-#undef FIELD_BYTES
 #undef FIELD_STRING
+#undef FIELD_BYTES
 #undef FIELD_ARRAY
 
 #define FIELD_VINT(name_)				long long name_;
 #define FIELD_VUINT(name_)				unsigned long long name_;
-#define FIELD_BYTES(name_, size_)		unsigned char name_[size_];
 #define FIELD_STRING(name_)				::std::string name_;
+#define FIELD_BYTES(name_, size_)		unsigned char name_[size_];
 #define FIELD_ARRAY(name_, fields_)		struct ElementOf ## name_ ## X_ {	\
 											fields_	\
 										};	\
@@ -43,30 +43,30 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
-#undef FIELD_BYTES
 #undef FIELD_STRING
+#undef FIELD_BYTES
 #undef FIELD_ARRAY
 
 #define FIELD_VINT(name_)				+ 1
 #define FIELD_VUINT(name_)				+ 1
-#define FIELD_BYTES(name_, size_)
 #define FIELD_STRING(name_)				+ 1
+#define FIELD_BYTES(name_, size_)
 #define FIELD_ARRAY(name_, fields_)
 
-#if 0 PROTOCOL_FIELDS != 0
+#if (0 PROTOCOL_FIELDS) != 0
 	PROTOCOL_NAME()
 		: ::Poseidon::PlayerProtocolBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
-#undef FIELD_BYTES
 #undef FIELD_STRING
+#undef FIELD_BYTES
 #undef FIELD_ARRAY
 
 #define FIELD_VINT(name_)				, name_()
 #define FIELD_VUINT(name_)				, name_()
-#define FIELD_BYTES(name_, size_)		, name_()
 #define FIELD_STRING(name_)				, name_()
+#define FIELD_BYTES(name_, size_)		, name_()
 #define FIELD_ARRAY(name_, fields_)		, name_()
 
 		PROTOCOL_FIELDS
@@ -76,14 +76,14 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
-#undef FIELD_BYTES
 #undef FIELD_STRING
+#undef FIELD_BYTES
 #undef FIELD_ARRAY
 
 #define FIELD_VINT(name_)				, long long name_ ## X_
 #define FIELD_VUINT(name_)				, unsigned long long name_ ## X_
-#define FIELD_BYTES(name_, size_)
 #define FIELD_STRING(name_)				, ::std::string name_ ## X_
+#define FIELD_BYTES(name_, size_)
 #define FIELD_ARRAY(name_, fields_)
 
 	explicit PROTOCOL_NAME(STRIP_FIRST(void PROTOCOL_FIELDS))
@@ -91,14 +91,14 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
-#undef FIELD_BYTES
 #undef FIELD_STRING
+#undef FIELD_BYTES
 #undef FIELD_ARRAY
 
 #define FIELD_VINT(name_)				, name_(name_ ## X_)
 #define FIELD_VUINT(name_)				, name_(name_ ## X_)
-#define FIELD_BYTES(name_, size_)		, name_()
 #define FIELD_STRING(name_)				, name_(STD_MOVE(name_ ## X_))
+#define FIELD_BYTES(name_, size_)		, name_()
 #define FIELD_ARRAY(name_, fields_)		, name_()
 
 		PROTOCOL_FIELDS
@@ -118,15 +118,18 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
-#undef FIELD_BYTES
 #undef FIELD_STRING
+#undef FIELD_BYTES
 #undef FIELD_ARRAY
 
 #define FIELD_VINT(name_)				::Poseidon::vint50ToBinary(cur_.name_, write_);
 #define FIELD_VUINT(name_)				::Poseidon::vuint50ToBinary(cur_.name_, write_);
+#define FIELD_STRING(name_)				{	\
+											::Poseidon::vuint50ToBinary(cur_.name_.size(), write_);	\
+											write_ = ::std::copy(	\
+												cur_.name_.begin(), cur_.name_.end(), write_);	\
+										}
 #define FIELD_BYTES(name_, size_)		write_ = ::std::copy(cur_.name_, cur_name_ + size_, write_);
-#define FIELD_STRING(name_)				::Poseidon::vuint50ToBinary(cur_.name_.size(), write_);	\
-										write_ = ::std::copy(cur_.name_.begin(), cur_.name_.end(), write_);
 #define FIELD_ARRAY(name_, fields_)		{	\
 											const unsigned long long count_ = cur_.name_.size();	\
 											::Poseidon::vuint50ToBinary(count_, write_);	\
@@ -151,8 +154,8 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
-#undef FIELD_BYTES
 #undef FIELD_STRING
+#undef FIELD_BYTES
 #undef FIELD_ARRAY
 
 #define FIELD_VINT(name_)				if(!::Poseidon::vint50FromBinary(cur_.name_, read_, buffer_.size())){	\
@@ -160,13 +163,6 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 										}
 #define FIELD_VUINT(name_)				if(!::Poseidon::vuint50FromBinary(cur_.name_, read_, buffer_.size())){	\
 											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
-										}
-#define FIELD_BYTES(name_, size_)		if(buffer_.size() < size_){	\
-											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
-										}	\
-										for(::std::size_t i_ = 0; i_ < size_; ++i_){	\
-											name_[i_] = *read_;	\
-											++read_;	\
 										}
 #define FIELD_STRING(name_)				{	\
 											unsigned long long count_;	\
@@ -180,6 +176,13 @@ struct PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
 												cur_.name_.push_back(*read_);	\
 												++read_;	\
 											}	\
+										}
+#define FIELD_BYTES(name_, size_)		if(buffer_.size() < size_){	\
+											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
+										}	\
+										for(::std::size_t i_ = 0; i_ < size_; ++i_){	\
+											name_[i_] = *read_;	\
+											++read_;	\
 										}
 #define FIELD_ARRAY(name_, fields_)		{	\
 											unsigned long long count_;	\
