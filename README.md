@@ -1,5 +1,8 @@
 # 简介
 
+## IRC channel:
+https://webchat.freenode.net/?channels=mcfproj
+
 波塞冬（Poseidon）是一个游戏服务端框架。
 
 ## 支持功能：
