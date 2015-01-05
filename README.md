@@ -1,9 +1,9 @@
 # 简介
 
+波塞冬（Poseidon）是一个游戏服务端框架。
+
 ## IRC channel:
 https://webchat.freenode.net/?channels=mcfproj
-
-波塞冬（Poseidon）是一个游戏服务端框架。
 
 ## 支持功能：
 - 传输层 TCP 套接字
@@ -11,7 +11,7 @@ https://webchat.freenode.net/?channels=mcfproj
 - WebSocket
 - MySQL 数据库
 
-## 服务器底层采用消息机制，一共有四个线程：
+## 服务器采用消息机制，一共有四个线程：
 - （目录 src/main/singletons/）
 
 文件名 | 功能
