@@ -52,7 +52,8 @@ void CsvParser::load(const char *file){
 					token.substr(begin, end - begin).swap(trimmed);
 				}
 				token.clear();
-				row.push_back(STD_MOVE(trimmed));
+				row.push_back(VAL_INIT);
+				row.back().swap(trimmed);
 
 				if(ch == '\n'){
 					rows.push_back(VAL_INIT);
