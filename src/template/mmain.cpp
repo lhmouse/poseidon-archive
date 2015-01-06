@@ -18,6 +18,7 @@
 #include "../main/http/websocket/session.hpp"
 #include "../main/http/utilities.hpp"
 #include "../main/http/server.hpp"
+#include "../main/player/server.hpp"
 #include "../main/tcp_client_base.hpp"
 #include "../main/player/session.hpp"
 #include "../main/http/session.hpp"
@@ -396,8 +397,8 @@ MODULE_RAII(
 )
 
 MODULE_RAII(
-	AUTO(server, (boost::make_shared<HttpServer>(1,
-		IpPort(SharedNts("0.0.0.0"), 8860), NULLPTR, NULLPTR, std::vector<std::string>())));
+	AUTO(server, (boost::make_shared<PlayerServer>(2,
+		IpPort(SharedNts("0.0.0.0"), 8850), NULLPTR, NULLPTR)));
 	EpollDaemon::registerServer(server);
 	return server;
 )

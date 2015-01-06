@@ -4,6 +4,8 @@
 #ifndef POSEIDON_VINT50_HPP_
 #define POSEIDON_VINT50_HPP_
 
+#include <cstddef>
+
 namespace Poseidon {
 
 // 最多输出七个字节，此函数返回后 write 指向最后一个写入的字节的后面。
