@@ -102,7 +102,7 @@ public:
 	const IpPort &getRemoteInfo() const;
 	const IpPort &getLocalInfo() const;
 
-	void setOnClose(boost::function<void ()> callback);
+	void registerOnClose(boost::function<void ()> callback);
 	void setTimeout(unsigned long long timeout);
 };
 

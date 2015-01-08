@@ -199,7 +199,7 @@ const IpPort &TcpSessionBase::getLocalInfo() const {
 	return m_peerInfo.local;
 }
 
-void TcpSessionBase::setOnClose(boost::function<void ()> callback){
+void TcpSessionBase::registerOnClose(boost::function<void ()> callback){
 	const boost::mutex::scoped_lock lock(m_onCloseMutex);
 	m_onCloseQueue.push_back(boost::function<void ()>());
 	m_onCloseQueue.back().swap(callback);

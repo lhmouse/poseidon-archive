@@ -52,6 +52,6 @@ const OptionalMap &HttpUpgradedSessionBase::getHeaders() const {
 void HttpUpgradedSessionBase::setTimeout(unsigned long long timeout){
 	getSafeParent()->setTimeout(timeout);
 }
-void HttpUpgradedSessionBase::setOnClose(boost::function<void ()> callback){
-	getSafeParent()->setOnClose(STD_MOVE(callback));
+void HttpUpgradedSessionBase::registerOnClose(boost::function<void ()> callback){
+	getSafeParent()->registerOnClose(STD_MOVE(callback));
 }

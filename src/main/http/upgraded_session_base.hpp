@@ -54,7 +54,7 @@ public:
 	const OptionalMap &getHeaders() const;
 
 	void setTimeout(unsigned long long timeout);
-	void setOnClose(boost::function<void ()> callback);
+	void registerOnClose(boost::function<void ()> callback);
 };
 
 }
