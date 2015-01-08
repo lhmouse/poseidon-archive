@@ -16,6 +16,7 @@
 #include "exception.hpp"
 #include "utilities.hpp"
 #include "epoll.hpp"
+#include "job_base.hpp"
 using namespace Poseidon;
 
 namespace {
@@ -30,6 +31,22 @@ void shutdownIfTimeout(boost::weak_ptr<TcpSessionBase> weak){
 }
 
 }
+
+class TcpSessionBase::OnCloseJob : public JobBase {
+private:
+	const boost::shared_ptr<TcpSessionBase> m_session; // 强引用。
+
+public:
+	explicit OnCloseJob(boost::shared_ptr<TcpSessionBase> session)
+		: m_session(STD_MOVE(session))
+	{
+	}
+
+private:
+	void perform() OVERRIDE {
+		m_session->pumpOnClose();
+	}
+};
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getMonoClock())
@@ -52,7 +69,16 @@ TcpSessionBase::~TcpSessionBase(){
 		"Destroyed TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
 }
 
-void TcpSessionBase::onClose() NOEXCEPT {
+void TcpSessionBase::setEpoll(Epoll *epoll) NOEXCEPT {
+	const boost::mutex::scoped_lock lock(m_bufferMutex);
+	assert(!(m_epoll && epoll));
+	m_epoll = epoll;
+}
+
+void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
+	swap(m_sslFilter, sslFilter);
+}
+void TcpSessionBase::pumpOnClose() NOEXCEPT {
 	std::deque<boost::function<void ()> > onCloseQueue;
 	{
 		const boost::mutex::scoped_lock lock(m_onCloseMutex);
@@ -70,16 +96,6 @@ void TcpSessionBase::onClose() NOEXCEPT {
 	}
 }
 
-void TcpSessionBase::setEpoll(Epoll *epoll) NOEXCEPT {
-	const boost::mutex::scoped_lock lock(m_bufferMutex);
-	assert(!(m_epoll && epoll));
-	m_epoll = epoll;
-}
-
-void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
-	swap(m_sslFilter, sslFilter);
-}
-
 void TcpSessionBase::fetchPeerInfo() const {
 	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
 		return;
@@ -93,6 +109,18 @@ void TcpSessionBase::fetchPeerInfo() const {
 	m_peerInfo.local = getLocalIpPortFromFd(m_socket.get());
 	LOG_POSEIDON_INFO("TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
 	atomicStore(m_peerInfo.fetched, true, ATOMIC_RELEASE);
+}
+
+void TcpSessionBase::onClose() NOEXCEPT {
+	try {
+		// 不要在这个地方检查队列是否为空，因为这里是 epoll 线程，
+		// 而主线程有可能在这个事件之后加入了一些回调，那样它们就不会被调用。
+		pendJob(boost::make_shared<OnCloseJob>(virtualSharedFromThis<TcpSessionBase>()));
+	} catch(std::exception &e){
+		LOG_POSEIDON_ERROR("std::exception thrown while pending onClose job: what = ", e.what());
+	} catch(...){
+		LOG_POSEIDON_ERROR("Unknown exception thrown while pending onClose job");
+	}
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer, bool fin){

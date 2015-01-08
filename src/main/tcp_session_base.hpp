@@ -36,6 +36,9 @@ class TcpSessionBase : public SessionBase {
 	friend TcpClientBase;
 
 private:
+	class OnCloseJob;
+
+private:
 	const UniqueFile m_socket;
 	const unsigned long long m_createdTime;
 
@@ -68,6 +71,7 @@ private:
 	void setEpoll(Epoll *epoll) NOEXCEPT;
 
 	void initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter);
+	void pumpOnClose() NOEXCEPT;
 
 	// 同步，线程安全。
 	void fetchPeerInfo() const;
