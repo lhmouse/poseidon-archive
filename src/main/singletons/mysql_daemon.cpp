@@ -267,14 +267,14 @@ private:
 	}
 };
 
-class BatchAsyncLoadCallbackJob : public CallbackJobBase {
+class BatchLoadCallbackJob : public CallbackJobBase {
 private:
 	const MySqlBatchAsyncLoadCallback m_callback;
 
 	std::vector<boost::shared_ptr<MySqlObjectBase> > m_objects;
 
 public:
-	BatchAsyncLoadCallbackJob(MySqlExceptionCallback except,
+	BatchLoadCallbackJob(MySqlExceptionCallback except,
 		MySqlBatchAsyncLoadCallback callback, std::vector<boost::shared_ptr<MySqlObjectBase> > objects)
 		: CallbackJobBase(STD_MOVE(except))
 		, m_callback(STD_MOVE_IDN(callback)), m_objects(STD_MOVE(objects))
@@ -289,7 +289,7 @@ private:
 	}
 };
 
-class BatchAsyncLoadOperation : public OperationBase {
+class BatchLoadOperation : public OperationBase {
 private:
 	const std::string m_query;
 	boost::shared_ptr<MySqlObjectBase> (*const m_factory)();
@@ -297,7 +297,7 @@ private:
 	MySqlBatchAsyncLoadCallback m_callback;
 
 public:
-	BatchAsyncLoadOperation(MySqlExceptionCallback except,
+	BatchLoadOperation(MySqlExceptionCallback except,
 		std::string query, boost::shared_ptr<MySqlObjectBase> (*factory)(),
 		MySqlBatchAsyncLoadCallback callback)
 		: OperationBase(STD_MOVE(except))
@@ -328,7 +328,7 @@ private:
 
 		if(m_callback){
 			AUTO(except, getExceptionCallback());
-			pendJob(boost::make_shared<BatchAsyncLoadCallbackJob>(
+			pendJob(boost::make_shared<BatchLoadCallbackJob>(
 				STD_MOVE(except), STD_MOVE(m_callback), STD_MOVE(objects)));
 		}
 	}
@@ -862,11 +862,11 @@ void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std:
 	assignment.commit(boost::make_shared<LoadOperation>(
 		STD_MOVE(except), STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
 }
-void MySqlDaemon::pendForBatchAsyncLoading(const char *tableHint, std::string query,
+void MySqlDaemon::pendForBatchLoading(const char *tableHint, std::string query,
 	boost::shared_ptr<MySqlObjectBase> (*factory)(),
 	MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except)
 {
 	AUTO_REF(assignment, getAssignmentForTable(tableHint));
-	assignment.commit(boost::make_shared<BatchAsyncLoadOperation>(
+	assignment.commit(boost::make_shared<BatchLoadOperation>(
 		STD_MOVE(except), STD_MOVE(query), factory, STD_MOVE(callback)), true);
 }

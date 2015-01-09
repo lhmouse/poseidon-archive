@@ -10,7 +10,7 @@ void MySqlObjectBase::batchAsyncLoad(const char *tableHint, std::string query,
 	boost::shared_ptr<MySqlObjectBase> (*factory)(),
 	MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except)
 {
-	MySqlDaemon::pendForBatchAsyncLoading(
+	MySqlDaemon::pendForBatchLoading(
 		tableHint, STD_MOVE(query), factory, STD_MOVE(callback), STD_MOVE(except));
 }
 
