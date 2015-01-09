@@ -62,11 +62,12 @@ typedef UniqueHandle<AssignmentItemDecrementer> LockingAssignment;
 
 class CallbackJobBase : public JobBase {
 private:
-	MySqlExceptionCallback m_except;
+	const MySqlExceptionCallback m_except;
 
 public:
-	explicit CallbackJobBase(Move<MySqlExceptionCallback> except){
-		swap(m_except, except);
+	explicit CallbackJobBase(MySqlExceptionCallback except)
+		: m_except(STD_MOVE_IDN(except))
+	{
 	}
 
 private:
@@ -86,13 +87,15 @@ private:
 
 class OperationBase : NONCOPYABLE {
 private:
-	MySqlExceptionCallback m_except;
+	const MySqlExceptionCallback m_except;
+
 	AssignedThread m_assignedThread;
 	LockingAssignment m_lockingAssignment;
 
 public:
-	explicit OperationBase(Move<MySqlExceptionCallback> except){
-		swap(m_except, except);
+	explicit OperationBase(MySqlExceptionCallback except)
+		: m_except(STD_MOVE_IDN(except))
+	{
 	}
 	virtual ~OperationBase(){
 	}
@@ -131,18 +134,16 @@ public:
 
 class SaveCallbackJob : public CallbackJobBase {
 private:
-	MySqlAsyncSaveCallback m_callback;
-	bool m_succeeded;
-	unsigned long long m_autoIncrementId;
+	const MySqlAsyncSaveCallback m_callback;
+	const bool m_succeeded;
+	const unsigned long long m_autoIncrementId;
 
 public:
-	SaveCallbackJob(Move<MySqlAsyncSaveCallback> callback,
-		bool succeeded, unsigned long long autoIncrementId,
-		Move<MySqlExceptionCallback> except)
+	SaveCallbackJob(MySqlExceptionCallback except,
+		MySqlAsyncSaveCallback callback, bool succeeded, unsigned long long autoIncrementId)
 		: CallbackJobBase(STD_MOVE(except))
-		, m_succeeded(succeeded), m_autoIncrementId(autoIncrementId)
+		, m_callback(STD_MOVE_IDN(callback)), m_succeeded(succeeded), m_autoIncrementId(autoIncrementId)
 	{
-		swap(m_callback, callback);
 	}
 
 private:
@@ -158,18 +159,16 @@ private:
 	const boost::uint64_t m_dueTime;
 	const boost::shared_ptr<const MySqlObjectBase> m_object;
 	const bool m_replaces;
+
 	MySqlAsyncSaveCallback m_callback;
 
 public:
-	SaveOperation(boost::shared_ptr<const MySqlObjectBase> object, bool replaces,
-		Move<MySqlAsyncSaveCallback> callback, Move<MySqlExceptionCallback> except)
+	SaveOperation(MySqlExceptionCallback except,
+		boost::shared_ptr<const MySqlObjectBase> object, bool replaces, MySqlAsyncSaveCallback callback)
 		: OperationBase(STD_MOVE(except))
-		, m_dueTime(getMonoClock() + g_mysqlSaveDelay * 1000)
-		, m_object(STD_MOVE(object)), m_replaces(replaces)
+		, m_dueTime(getMonoClock() + g_mysqlSaveDelay * 1000), m_object(STD_MOVE(object)), m_replaces(replaces)
+		, m_callback(STD_MOVE_IDN(callback))
 	{
-		swap(m_callback, callback);
-
-		m_object->setContext(this);
 	}
 
 private:
@@ -201,23 +200,22 @@ private:
 			const AUTO(autoId, conn.getInsertId());
 			AUTO(except, getExceptionCallback());
 			pendJob(boost::make_shared<SaveCallbackJob>(
-				STD_MOVE(m_callback), succeeded, autoId, STD_MOVE(except)));
+				STD_MOVE(except), STD_MOVE(m_callback), succeeded, autoId));
 		}
 	}
 };
 
 class LoadCallbackJob : public CallbackJobBase {
 private:
-	MySqlAsyncLoadCallback m_callback;
-	bool m_found;
+	const MySqlAsyncLoadCallback m_callback;
+	const bool m_found;
 
 public:
-	LoadCallbackJob(Move<MySqlAsyncLoadCallback> callback, bool found,
-		Move<MySqlExceptionCallback> except)
+	LoadCallbackJob(MySqlExceptionCallback except,
+		MySqlAsyncLoadCallback callback, bool found)
 		: CallbackJobBase(STD_MOVE(except))
-		, m_found(found)
+		, m_callback(STD_MOVE_IDN(callback)), m_found(found)
 	{
-		swap(m_callback, callback);
 	}
 
 private:
@@ -232,15 +230,16 @@ class LoadOperation : public OperationBase {
 private:
 	const boost::shared_ptr<MySqlObjectBase> m_object;
 	const std::string m_query;
+
 	MySqlAsyncLoadCallback m_callback;
 
 public:
-	LoadOperation(boost::shared_ptr<MySqlObjectBase> object, std::string query,
-		Move<MySqlAsyncLoadCallback> callback, Move<MySqlExceptionCallback> except)
+	LoadOperation(MySqlExceptionCallback except,
+		boost::shared_ptr<MySqlObjectBase> object, std::string query, MySqlAsyncLoadCallback callback)
 		: OperationBase(STD_MOVE(except))
 		, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
+		, m_callback(STD_MOVE_IDN(callback))
 	{
-		swap(m_callback, callback);
 	}
 
 private:
@@ -263,24 +262,23 @@ private:
 		if(m_callback){
 			AUTO(except, getExceptionCallback());
 			pendJob(boost::make_shared<LoadCallbackJob>(
-				STD_MOVE(m_callback), found, STD_MOVE(except)));
+				STD_MOVE(except), STD_MOVE(m_callback), found));
 		}
 	}
 };
 
 class BatchAsyncLoadCallbackJob : public CallbackJobBase {
 private:
-	MySqlBatchAsyncLoadCallback m_callback;
+	const MySqlBatchAsyncLoadCallback m_callback;
+
 	std::vector<boost::shared_ptr<MySqlObjectBase> > m_objects;
 
 public:
-	BatchAsyncLoadCallbackJob(Move<MySqlBatchAsyncLoadCallback> callback,
-		std::vector<boost::shared_ptr<MySqlObjectBase> > objects,
-		Move<MySqlExceptionCallback> except)
+	BatchAsyncLoadCallbackJob(MySqlExceptionCallback except,
+		MySqlBatchAsyncLoadCallback callback, std::vector<boost::shared_ptr<MySqlObjectBase> > objects)
 		: CallbackJobBase(STD_MOVE(except))
-		, m_objects(STD_MOVE(objects))
+		, m_callback(STD_MOVE_IDN(callback)), m_objects(STD_MOVE(objects))
 	{
-		swap(m_callback, callback);
 	}
 
 private:
@@ -299,12 +297,13 @@ private:
 	MySqlBatchAsyncLoadCallback m_callback;
 
 public:
-	BatchAsyncLoadOperation(std::string query, boost::shared_ptr<MySqlObjectBase> (*factory)(),
-		Move<MySqlBatchAsyncLoadCallback> callback, Move<MySqlExceptionCallback> except)
+	BatchAsyncLoadOperation(MySqlExceptionCallback except,
+		std::string query, boost::shared_ptr<MySqlObjectBase> (*factory)(),
+		MySqlBatchAsyncLoadCallback callback)
 		: OperationBase(STD_MOVE(except))
 		, m_query(STD_MOVE(query)), m_factory(factory)
+		, m_callback(STD_MOVE_IDN(callback))
 	{
-		swap(m_callback, callback);
 	}
 
 private:
@@ -330,7 +329,7 @@ private:
 		if(m_callback){
 			AUTO(except, getExceptionCallback());
 			pendJob(boost::make_shared<BatchAsyncLoadCallbackJob>(
-				STD_MOVE(m_callback), STD_MOVE(objects), STD_MOVE(except)));
+				STD_MOVE(except), STD_MOVE(m_callback), STD_MOVE(objects)));
 		}
 	}
 };
@@ -854,14 +853,14 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object,
 	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
 	const bool urgent = !!callback;
 	assignment.commit(boost::make_shared<SaveOperation>(
-		STD_MOVE(object), replaces, STD_MOVE(callback), STD_MOVE(except)), urgent);
+		STD_MOVE(except), STD_MOVE(object), replaces, STD_MOVE(callback)), urgent);
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std::string query,
 	MySqlAsyncLoadCallback callback, MySqlExceptionCallback except)
 {
 	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
 	assignment.commit(boost::make_shared<LoadOperation>(
-		STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except)), true);
+		STD_MOVE(except), STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
 }
 void MySqlDaemon::pendForBatchAsyncLoading(const char *tableHint, std::string query,
 	boost::shared_ptr<MySqlObjectBase> (*factory)(),
@@ -869,5 +868,5 @@ void MySqlDaemon::pendForBatchAsyncLoading(const char *tableHint, std::string qu
 {
 	AUTO_REF(assignment, getAssignmentForTable(tableHint));
 	assignment.commit(boost::make_shared<BatchAsyncLoadOperation>(
-		STD_MOVE(query), factory, STD_MOVE(callback), STD_MOVE(except)), true);
+		STD_MOVE(except), STD_MOVE(query), factory, STD_MOVE(callback)), true);
 }

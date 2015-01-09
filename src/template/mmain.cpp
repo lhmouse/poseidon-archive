@@ -386,8 +386,8 @@ MODULE_RAII(
 
 namespace {
 
-void onClientClose(){
-	LOG_POSEIDON_FATAL("Client closed!");
+void onClientClose(int id){
+	LOG_POSEIDON_FATAL("Client closed! ", id);
 }
 
 }
@@ -395,7 +395,10 @@ void onClientClose(){
 MODULE_RAII(
 	LOG_POSEIDON_INFO("Connecting to github...");
 	AUTO(p, TestClient::create());
-	p->registerOnClose(&onClientClose);
+	p->registerOnClose(boost::bind(&onClientClose, 0));
+	p->registerOnClose(boost::bind(&onClientClose, 1));
+	p->registerOnClose(boost::bind(&onClientClose, 2));
+	p->registerOnClose(boost::bind(&onClientClose, 3));
 	p->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
 /*
 	AUTO(obj, boost::make_shared<MySqlObj>());

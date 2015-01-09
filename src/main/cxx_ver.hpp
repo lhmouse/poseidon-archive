@@ -113,6 +113,17 @@ template<typename T>
 Move<T> move(Move<T> rhs) NOEXCEPT {
 	return rhs;
 }
+
+// 对 C++98 中无法移动构造 std::tr1::function / boost::function 的补偿。
+// 只能用于直接初始化对象。
+template<typename T>
+T moveAsIdentity(T &rhs) NOEXCEPT {
+	return Move<T>(rhs); // 隐式转换，无视构造函数。
+}
+template<typename T>
+T moveAsIdentity(Move<T> rhs) NOEXCEPT {
+	return rhs; // 隐式转换，无视构造函数。
+}
 #endif
 
 #ifndef POSEIDON_CXX11
@@ -135,6 +146,7 @@ struct ValueInitializer {
 #	define AUTO(id_, init_)			auto id_ = init_
 #	define AUTO_REF(id_, init_)		auto &id_ = init_
 #	define STD_MOVE(expr_)			(::std::move(expr_))
+#	define STD_MOVE_IDN(expr_)		(::std::move(expr_))
 #	define DECLREF(t_)				(::std::declval<typename ::std::add_lvalue_reference<t_>::type>())
 #	define VAL_INIT					{ }
 #	define NULLPTR					nullptr
@@ -144,6 +156,7 @@ struct ValueInitializer {
 #	define AUTO(id_, init_)			VALUE_TYPE(init_) id_(init_)
 #	define AUTO_REF(id_, init_)		CV_VALUE_TYPE(init_) &id_ = (init_)
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
+#	define STD_MOVE_IDN(expr_)		(::Poseidon::moveAsIdentity(expr_))
 #	define DECLREF(t_)				(::Poseidon::declRef<t_>())
 #	define VAL_INIT					(::Poseidon::ValueInitializer())
 #	define NULLPTR					VAL_INIT
