@@ -388,7 +388,7 @@ public:
 		m_newAvail.notify_all();
 	}
 	void waitTillIdle(){
-		atomicStore(m_urgent, true, ATOMIC_RELEASE);
+		atomicStore(m_urgent, true, ATOMIC_RELEASE); // 在获取互斥锁之前设置紧急状态。
 		boost::mutex::scoped_lock lock(m_mutex);
 		while(!m_queue.empty()){
 			atomicStore(m_urgent, true, ATOMIC_RELEASE);
