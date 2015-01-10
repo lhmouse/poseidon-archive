@@ -388,6 +388,7 @@ public:
 		m_newAvail.notify_all();
 	}
 	void waitTillIdle(){
+		atomicStore(m_urgent, true, ATOMIC_RELEASE);
 		boost::mutex::scoped_lock lock(m_mutex);
 		while(!m_queue.empty()){
 			atomicStore(m_urgent, true, ATOMIC_RELEASE);
