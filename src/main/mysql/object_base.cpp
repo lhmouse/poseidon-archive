@@ -6,12 +6,12 @@
 #include "../singletons/mysql_daemon.hpp"
 using namespace Poseidon;
 
-void MySqlObjectBase::batchAsyncLoad(const char *tableHint, std::string query,
-	boost::shared_ptr<MySqlObjectBase> (*factory)(),
+void MySqlObjectBase::batchAsyncLoad(boost::shared_ptr<MySqlObjectBase> (*factory)(),
+	const char *tableHint, std::string query,
 	MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except)
 {
 	MySqlDaemon::pendForBatchLoading(
-		tableHint, STD_MOVE(query), factory, STD_MOVE(callback), STD_MOVE(except));
+		factory, tableHint, STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except));
 }
 
 MySqlObjectBase::MySqlObjectBase()
@@ -29,12 +29,12 @@ void MySqlObjectBase::invalidate() const {
 		true, MySqlAsyncSaveCallback(), MySqlExceptionCallback());
 }
 
-void MySqlObjectBase::asyncSave(bool replaces,
+void MySqlObjectBase::asyncSave(bool toReplace,
 	MySqlAsyncSaveCallback callback, MySqlExceptionCallback except) const
 {
 	enableAutoSaving();
 	MySqlDaemon::pendForSaving(virtualSharedFromThis<MySqlObjectBase>(),
-		replaces, STD_MOVE(callback), STD_MOVE(except));
+		toReplace, STD_MOVE(callback), STD_MOVE(except));
 }
 void MySqlObjectBase::asyncLoad(std::string query,
 	MySqlAsyncLoadCallback callback, MySqlExceptionCallback except)

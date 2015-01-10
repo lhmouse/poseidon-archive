@@ -393,6 +393,7 @@ void onClientClose(int id){
 }
 
 MODULE_RAII(
+/*
 	LOG_POSEIDON_INFO("Connecting to github...");
 	AUTO(p, TestClient::create());
 	p->registerOnClose(boost::bind(&onClientClose, 0));
@@ -400,13 +401,13 @@ MODULE_RAII(
 	p->registerOnClose(boost::bind(&onClientClose, 2));
 	p->registerOnClose(boost::bind(&onClientClose, 3));
 	p->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
-/*
+*/
 	AUTO(obj, boost::make_shared<MySqlObj>());
 	obj->set_si(999);
 	obj->set_str("meow");
 	obj->set_bi(456789);
 	obj->asyncSave(false);
-*/
+
 	return VAL_INIT;
 )
 

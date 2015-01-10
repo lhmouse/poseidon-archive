@@ -15,8 +15,8 @@
 
 class MYSQL_OBJECT_NAME : public ::Poseidon::MySqlObjectBase {
 public:
-	static void batchAsyncLoad(std::string query, ::Poseidon::MySqlBatchAsyncLoadCallback callback,
-		::Poseidon::MySqlExceptionCallback except)
+	static void batchAsyncLoad(std::string query,
+		::Poseidon::MySqlBatchAsyncLoadCallback callback, ::Poseidon::MySqlExceptionCallback except)
 	{
 		struct FactoryHelper {
 			static boost::shared_ptr< ::Poseidon::MySqlObjectBase> create(){
@@ -24,8 +24,9 @@ public:
 			}
 		};
 
-		::Poseidon::MySqlObjectBase::batchAsyncLoad(TOKEN_TO_STR(MYSQL_OBJECT_NAME),
-			STD_MOVE(query), &FactoryHelper::create, STD_MOVE(callback), STD_MOVE(except));
+		::Poseidon::MySqlObjectBase::batchAsyncLoad(&FactoryHelper::create,
+			TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query),
+			STD_MOVE(callback), STD_MOVE(except));
 	}
 
 private:
@@ -264,7 +265,7 @@ public:
 	MYSQL_OBJECT_FIELDS
 
 private:
-	void syncGenerateSql(::std::string &sql_, bool replaces_) const {
+	void syncGenerateSql(::std::string &sql_, bool toReplace_) const {
 		::std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
@@ -317,7 +318,7 @@ private:
 													<< ::Poseidon::MySqlDateFormatter(get_ ## name_())	\
 													<< '\''),
 
-		if(replaces_){
+		if(toReplace_){
 			oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
 		} else {
 			oss_ <<"INSERT INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";

@@ -39,190 +39,168 @@ std::size_t	g_mysqlSaveDelay		= 5000;
 std::size_t	g_mysqlMaxReconnDelay	= 60000;
 std::size_t	g_mysqlRetryCount		= 3;
 
-class MySqlThread;
-class AssignmentItem;
+// 转储文件，写在最前面。
+boost::mutex g_dumpMutex;
+UniqueFile g_dumpFile;
 
-struct MySqlThreadDecrementer {
-	CONSTEXPR MySqlThread *operator()() const NOEXCEPT {
-		return NULLPTR;
-	}
-	void operator()(MySqlThread *thread) const NOEXCEPT;
-};
-
-typedef UniqueHandle<MySqlThreadDecrementer> AssignedThread;
-
-struct AssignmentItemDecrementer {
-	CONSTEXPR AssignmentItem *operator()() const NOEXCEPT {
-		return NULLPTR;
-	}
-	void operator()(AssignmentItem *assignment) const NOEXCEPT;
-};
-
-typedef UniqueHandle<AssignmentItemDecrementer> LockingAssignment;
-
-class CallbackJobBase : public JobBase {
-private:
-	const MySqlExceptionCallback m_except;
-
-public:
-	explicit CallbackJobBase(MySqlExceptionCallback except)
-		: m_except(STD_MOVE_IDN(except))
-	{
-	}
-
-private:
-	void perform() OVERRIDE FINAL {
-		try {
-			doPerform();
-		} catch(...){
-			if(m_except){
-				m_except();
-			}
-			throw;
-		}
-	}
-
-	virtual void doPerform() = 0;
-};
-
-class OperationBase : NONCOPYABLE {
-private:
-	const MySqlExceptionCallback m_except;
-
-	AssignedThread m_assignedThread;
-	LockingAssignment m_lockingAssignment;
-
-public:
-	explicit OperationBase(MySqlExceptionCallback except)
-		: m_except(STD_MOVE_IDN(except))
-	{
-	}
-	virtual ~OperationBase(){
-	}
-
-private:
-	virtual bool doCheck() const = 0;
-	virtual void doExecute(std::string &query, MySqlConnection &conn) = 0;
-
-protected:
-	const MySqlExceptionCallback &getExceptionCallback() const {
-		return m_except;
-	}
-
-public:
-	void setAssignedThread(AssignedThread thread) NOEXCEPT {
-		m_assignedThread.swap(thread);
-	}
-	void setLockingAssignment(LockingAssignment lockingAssignment) NOEXCEPT {
-		m_lockingAssignment.swap(lockingAssignment);
-	}
-
-	bool shouldExecuteNow() const {
-		return doCheck();
-	}
-	void execute(std::string &query, MySqlConnection &conn){
-		try {
-			doExecute(query, conn);
-		} catch(...){
-			if(m_except){
-				m_except();
-			}
-			throw;
-		}
-	};
-};
-
-class SaveCallbackJob : public CallbackJobBase {
+// 回调函数任务。
+class SaveCallbackJob : public JobBase {
 private:
 	const MySqlAsyncSaveCallback m_callback;
 	const bool m_succeeded;
-	const unsigned long long m_autoIncrementId;
+	const boost::uint64_t m_autoId;
+	const MySqlExceptionCallback m_except;
 
 public:
-	SaveCallbackJob(MySqlExceptionCallback except,
-		MySqlAsyncSaveCallback callback, bool succeeded, unsigned long long autoIncrementId)
-		: CallbackJobBase(STD_MOVE(except))
-		, m_callback(STD_MOVE_IDN(callback)), m_succeeded(succeeded), m_autoIncrementId(autoIncrementId)
+	SaveCallbackJob(MySqlAsyncSaveCallback callback, bool succeeded, boost::uint64_t autoId,
+		MySqlExceptionCallback except)
+		: m_callback(STD_MOVE_IDN(callback)), m_succeeded(succeeded), m_autoId(autoId)
+		, m_except(STD_MOVE_IDN(except))
 	{
 	}
 
 private:
-	void doPerform(){
+	void perform() OVERRIDE {
 		PROFILE_ME;
 
-		m_callback(m_succeeded, m_autoIncrementId);
+		try {
+			m_callback(m_succeeded, m_autoId);
+		} catch(...){
+			if(m_except){
+				m_except();
+			}
+			throw;
+		}
 	}
+};
+
+class LoadCallbackJob : public JobBase {
+private:
+	const MySqlAsyncLoadCallback m_callback;
+	const bool m_found;
+	const MySqlExceptionCallback m_except;
+
+public:
+	LoadCallbackJob(MySqlAsyncLoadCallback callback, bool found,
+		MySqlExceptionCallback except)
+		: m_callback(STD_MOVE_IDN(callback)), m_found(found)
+		, m_except(STD_MOVE_IDN(except))
+	{
+	}
+
+private:
+	void perform() OVERRIDE {
+		PROFILE_ME;
+
+		try {
+			m_callback(m_found);
+		} catch(...){
+			if(m_except){
+				m_except();
+			}
+			throw;
+		}
+	}
+};
+
+class BatchLoadCallbackJob : public JobBase {
+private:
+	const MySqlBatchAsyncLoadCallback m_callback;
+	std::vector<boost::shared_ptr<MySqlObjectBase> > m_objects;
+	const MySqlExceptionCallback m_except;
+
+public:
+	BatchLoadCallbackJob(MySqlBatchAsyncLoadCallback callback,
+		std::vector<boost::shared_ptr<MySqlObjectBase> > objects,
+		MySqlExceptionCallback except)
+		: m_callback(STD_MOVE_IDN(callback)), m_objects(STD_MOVE(objects))
+		, m_except(STD_MOVE_IDN(except))
+	{
+	}
+
+private:
+	void perform() OVERRIDE {
+		PROFILE_ME;
+
+		try {
+			m_callback(STD_MOVE(m_objects));
+		} catch(...){
+			if(m_except){
+				m_except();
+			}
+			throw;
+		}
+	}
+};
+
+// 数据库线程操作。
+class OperationBase : NONCOPYABLE {
+public:
+	virtual ~OperationBase(){
+	}
+
+public:
+	virtual bool check() const = 0;
+	virtual void execute(std::string &query, MySqlConnection &conn) = 0;
 };
 
 class SaveOperation : public OperationBase {
 private:
 	const boost::uint64_t m_dueTime;
+
 	const boost::shared_ptr<const MySqlObjectBase> m_object;
-	const bool m_replaces;
+	const bool m_toReplace;
 
 	MySqlAsyncSaveCallback m_callback;
+	const MySqlExceptionCallback m_except;
 
 public:
-	SaveOperation(MySqlExceptionCallback except,
-		boost::shared_ptr<const MySqlObjectBase> object, bool replaces, MySqlAsyncSaveCallback callback)
-		: OperationBase(STD_MOVE(except))
-		, m_dueTime(getMonoClock() + g_mysqlSaveDelay * 1000), m_object(STD_MOVE(object)), m_replaces(replaces)
-		, m_callback(STD_MOVE_IDN(callback))
+	SaveOperation(boost::uint64_t dueTime,
+		boost::shared_ptr<const MySqlObjectBase> object, bool toReplace,
+		MySqlAsyncSaveCallback callback, MySqlExceptionCallback except)
+		: m_dueTime(dueTime)
+		, m_object(STD_MOVE(object)), m_toReplace(toReplace)
+		, m_callback(STD_MOVE_IDN(callback)), m_except(STD_MOVE_IDN(except))
 	{
+		m_object->setContext(this);
 	}
 
-private:
-	bool doCheck() const {
+public:
+	bool check() const OVERRIDE {
 		return m_dueTime <= getMonoClock();
 	}
-	void doExecute(std::string &query, MySqlConnection &conn){
+	void execute(std::string &query, MySqlConnection &conn){
 		PROFILE_ME;
 
-		if(m_object->getContext() != this){
-			// 使用写入合并策略，丢弃当前的写入操作（认为已成功）。
-			return;
-		}
-
-		m_object->syncGenerateSql(query, m_replaces);
-		bool succeeded = false;
 		try {
-			LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": ", query);
-			conn.executeSql(query);
-			succeeded = true;
-		} catch(MySqlException &e){
-			LOG_POSEIDON_DEBUG("MySqlException: code = ", e.code(), ", message = ", e.what());
-			if(!m_callback || (e.code() != ER_DUP_ENTRY)){
-				throw;
+			if(m_object->getContext() != this){
+				// 写入合并。
+				return;
 			}
+
+			m_object->syncGenerateSql(query, m_toReplace);
+			bool succeeded = false;
+			try {
+				LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": ", query);
+				conn.executeSql(query);
+				succeeded = true;
+			} catch(MySqlException &e){
+				LOG_POSEIDON_DEBUG("MySqlException: code = ", e.code(), ", message = ", e.what());
+				if(!m_callback || (e.code() != ER_DUP_ENTRY)){
+					throw;
+				}
+			}
+
+			if(m_callback){
+				pendJob(boost::make_shared<SaveCallbackJob>(
+					STD_MOVE(m_callback), succeeded, conn.getInsertId(), boost::ref(m_except)));
+			}
+		} catch(...){
+			if(m_except){
+				m_except();
+			}
+			throw;
 		}
-
-		if(m_callback){
-			const AUTO(autoId, conn.getInsertId());
-			AUTO(except, getExceptionCallback());
-			pendJob(boost::make_shared<SaveCallbackJob>(
-				STD_MOVE(except), STD_MOVE(m_callback), succeeded, autoId));
-		}
-	}
-};
-
-class LoadCallbackJob : public CallbackJobBase {
-private:
-	const MySqlAsyncLoadCallback m_callback;
-	const bool m_found;
-
-public:
-	LoadCallbackJob(MySqlExceptionCallback except,
-		MySqlAsyncLoadCallback callback, bool found)
-		: CallbackJobBase(STD_MOVE(except))
-		, m_callback(STD_MOVE_IDN(callback)), m_found(found)
-	{
-	}
-
-private:
-	void doPerform(){
-		PROFILE_ME;
-
-		m_callback(m_found);
 	}
 };
 
@@ -232,185 +210,166 @@ private:
 	const std::string m_query;
 
 	MySqlAsyncLoadCallback m_callback;
+	const MySqlExceptionCallback m_except;
 
 public:
-	LoadOperation(MySqlExceptionCallback except,
-		boost::shared_ptr<MySqlObjectBase> object, std::string query, MySqlAsyncLoadCallback callback)
-		: OperationBase(STD_MOVE(except))
-		, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
-		, m_callback(STD_MOVE_IDN(callback))
+	LoadOperation(boost::shared_ptr<MySqlObjectBase> object, std::string query,
+		MySqlAsyncLoadCallback callback, MySqlExceptionCallback except)
+		: m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
+		, m_callback(STD_MOVE_IDN(callback)), m_except(STD_MOVE_IDN(except))
 	{
 	}
 
-private:
-	bool doCheck() const {
+public:
+	bool check() const OVERRIDE {
 		return true;
 	}
-	void doExecute(std::string &query, MySqlConnection &conn){
+	void execute(std::string &query, MySqlConnection &conn){
 		PROFILE_ME;
 
-		query = m_query;
+		try {
+			query = m_query;
 
-		LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", query = ", query);
-		conn.executeSql(query);
-		const bool found = conn.fetchRow();
-		if(found){
-			m_object->syncFetch(conn);
-			m_object->enableAutoSaving();
+			LOG_POSEIDON_INFO("MySQL load: table = ", m_object->getTableName(), ", query = ", query);
+			conn.executeSql(query);
+			const bool found = conn.fetchRow();
+			if(found){
+				m_object->syncFetch(conn);
+				m_object->enableAutoSaving();
+			}
+
+			if(m_callback){
+				pendJob(boost::make_shared<LoadCallbackJob>(
+					STD_MOVE(m_callback), found, boost::ref(m_except)));
+			}
+		} catch(...){
+			if(m_except){
+				m_except();
+			}
+			throw;
 		}
-
-		if(m_callback){
-			AUTO(except, getExceptionCallback());
-			pendJob(boost::make_shared<LoadCallbackJob>(
-				STD_MOVE(except), STD_MOVE(m_callback), found));
-		}
-	}
-};
-
-class BatchLoadCallbackJob : public CallbackJobBase {
-private:
-	const MySqlBatchAsyncLoadCallback m_callback;
-
-	std::vector<boost::shared_ptr<MySqlObjectBase> > m_objects;
-
-public:
-	BatchLoadCallbackJob(MySqlExceptionCallback except,
-		MySqlBatchAsyncLoadCallback callback, std::vector<boost::shared_ptr<MySqlObjectBase> > objects)
-		: CallbackJobBase(STD_MOVE(except))
-		, m_callback(STD_MOVE_IDN(callback)), m_objects(STD_MOVE(objects))
-	{
-	}
-
-private:
-	void doPerform(){
-		PROFILE_ME;
-
-		m_callback(STD_MOVE(m_objects));
 	}
 };
 
 class BatchLoadOperation : public OperationBase {
 private:
-	const std::string m_query;
 	boost::shared_ptr<MySqlObjectBase> (*const m_factory)();
+	const std::string m_query;
 
 	MySqlBatchAsyncLoadCallback m_callback;
+	const MySqlExceptionCallback m_except;
 
 public:
-	BatchLoadOperation(MySqlExceptionCallback except,
-		std::string query, boost::shared_ptr<MySqlObjectBase> (*factory)(),
-		MySqlBatchAsyncLoadCallback callback)
-		: OperationBase(STD_MOVE(except))
-		, m_query(STD_MOVE(query)), m_factory(factory)
-		, m_callback(STD_MOVE_IDN(callback))
+	BatchLoadOperation(boost::shared_ptr<MySqlObjectBase> (*factory)(), std::string query,
+		MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except)
+		: m_factory(factory), m_query(STD_MOVE(query))
+		, m_callback(STD_MOVE_IDN(callback)), m_except(STD_MOVE_IDN(except))
 	{
 	}
 
 private:
-	bool doCheck() const {
+	bool check() const OVERRIDE {
 		return true;
 	}
-	void doExecute(std::string &query, MySqlConnection &conn){
+	void execute(std::string &query, MySqlConnection &conn){
 		PROFILE_ME;
 
-		query = m_query;
+		try {
+			query = m_query;
 
-		LOG_POSEIDON_INFO("MySQL batch load: query = ", query);
-		conn.executeSql(query);
+			LOG_POSEIDON_INFO("MySQL batch load: query = ", query);
+			conn.executeSql(query);
 
-		std::vector<boost::shared_ptr<MySqlObjectBase> > objects;
-		while(conn.fetchRow()){
-			AUTO(object, (*m_factory)());
-			object->syncFetch(conn);
-			object->enableAutoSaving();
-			objects.push_back(STD_MOVE(object));
-		}
+			std::vector<boost::shared_ptr<MySqlObjectBase> > objects;
+			while(conn.fetchRow()){
+				AUTO(object, (*m_factory)());
+				object->syncFetch(conn);
+				object->enableAutoSaving();
+				objects.push_back(STD_MOVE(object));
+			}
 
-		if(m_callback){
-			AUTO(except, getExceptionCallback());
-			pendJob(boost::make_shared<BatchLoadCallbackJob>(
-				STD_MOVE(except), STD_MOVE(m_callback), STD_MOVE(objects)));
+			if(m_callback){
+				pendJob(boost::make_shared<BatchLoadCallbackJob>(
+					STD_MOVE(m_callback), STD_MOVE(objects), boost::ref(m_except)));
+			}
+		} catch(...){
+			if(m_except){
+				m_except();
+			}
+			throw;
 		}
 	}
 };
 
-class MySqlThread : NONCOPYABLE {
-	friend MySqlThreadDecrementer;
-
-public:
-	class Profiler : NONCOPYABLE {
+class MySqlThread : public boost::thread {
+private:
+	class WorkingTimeAccumulator : NONCOPYABLE {
 	private:
-		MySqlThread &m_owner;
+		MySqlThread *const m_owner;
 
 	public:
-		explicit Profiler(MySqlThread &owner)
+		explicit WorkingTimeAccumulator(MySqlThread *owner)
 			: m_owner(owner)
 		{
-			m_owner.flushProfile();
-			++m_owner.m_workingCount;
+			m_owner->accumulateTimeIdle();
 		}
-		~Profiler(){
-			m_owner.flushProfile();
-			--m_owner.m_workingCount;
+		~WorkingTimeAccumulator(){
+			m_owner->accumulateTimeWorking();
 		}
 	};
 
 private:
-	const unsigned m_id;
+	const std::size_t m_index;
 
-	boost::thread m_thread;
 	volatile bool m_running;
 
 	mutable boost::mutex m_mutex;
 	std::deque<boost::shared_ptr<OperationBase> > m_queue;
-	volatile std::size_t m_pendingOperations; // 调度提示。
-	mutable volatile bool m_urgentMode; // 无视延迟写入，一次性处理队列中所有操作。
-	mutable boost::condition_variable m_newAvail;
-	mutable boost::condition_variable m_queueEmpty;
+	volatile bool m_urgent; // 无视延迟写入，一次性处理队列中所有操作。
+	boost::condition_variable m_newAvail;
+	boost::condition_variable m_queueEmpty;
 
 	// 性能统计。
-	mutable boost::uint64_t m_timeFlushed;
-	std::size_t m_workingCount;
-	mutable volatile boost::uint64_t m_timeIdle;
-	mutable volatile boost::uint64_t m_timeWorking;
+	boost::uint64_t m_timeFlushed;
+	volatile boost::uint64_t m_timeIdle;
+	volatile boost::uint64_t m_timeWorking;
 
 public:
-	explicit MySqlThread(unsigned id)
-		: m_id(id)
-		, m_running(false), m_pendingOperations(0), m_urgentMode(false)
-		, m_timeFlushed(getMonoClock()), m_workingCount(0), m_timeIdle(0), m_timeWorking(0)
+	explicit MySqlThread(std::size_t index)
+		: m_index(index)
+		, m_running(true)
+		, m_urgent(false)
+		, m_timeFlushed(getMonoClock()), m_timeIdle(0), m_timeWorking(0)
 	{
-	}
-	~MySqlThread(){
-		flushProfile();
+		boost::thread(&MySqlThread::loop, this).swap(*this);
 	}
 
 private:
-	AssignedThread increment(){
-		atomicAdd(m_pendingOperations, 1, ATOMIC_RELAXED);
-		return AssignedThread(this);
-	}
-	void decrement() NOEXCEPT {
-		atomicSub(m_pendingOperations, 1, ATOMIC_RELAXED);
-	}
-
-	void flushProfile() const NOEXCEPT {
+	void accumulateTimeIdle() NOEXCEPT {
 		const AUTO(now, getMonoClock());
-		const AUTO(delta, now - m_timeFlushed);
+		atomicAdd(m_timeIdle, now - m_timeFlushed, ATOMIC_RELAXED);
 		m_timeFlushed = now;
-		if(m_workingCount == 0){
-			atomicAdd(m_timeIdle, delta, ATOMIC_RELAXED);
-		} else {
-			atomicAdd(m_timeWorking, delta, ATOMIC_RELAXED);
-		}
+	}
+	void accumulateTimeWorking() NOEXCEPT {
+		const AUTO(now, getMonoClock());
+		atomicAdd(m_timeWorking, now - m_timeFlushed, ATOMIC_RELAXED);
+		m_timeFlushed = now;
 	}
 
-	void operationLoop();
-	void threadProc();
+	void loop();
 
 public:
-	boost::uint64_t getPendingOperations() const {
-		return atomicLoad(m_pendingOperations, ATOMIC_RELAXED);
+	void shutdown(){
+		atomicStore(m_running, false, ATOMIC_RELEASE);
+	}
+	void join(){
+		waitTillIdle();
+		boost::thread::join();
+	}
+
+	std::size_t getPendingOperations() const {
+		const boost::mutex::scoped_lock lock(m_mutex);
+		return m_queue.size();
 	}
 
 	boost::uint64_t getTimeIdle() const {
@@ -420,167 +379,40 @@ public:
 		return atomicLoad(m_timeWorking, ATOMIC_RELAXED);
 	}
 
-	void start(){
-		if(atomicExchange(m_running, true, ATOMIC_ACQ_REL) != false){
-			return;
-		}
-		boost::thread(boost::bind(&MySqlThread::threadProc, this)).swap(m_thread);
-	}
-	void stop(){
-		if(atomicExchange(m_running, false, ATOMIC_ACQ_REL) == false){
-			return;
-		}
-		{
-			const boost::mutex::scoped_lock lock(m_mutex);
-			atomicStore(m_urgentMode, true, ATOMIC_RELEASE);
-			m_newAvail.notify_all();
-		}
-	}
-	void join(){
-		waitTillIdle();
-		if(m_thread.joinable()){
-			m_thread.join();
-		}
-		boost::thread().swap(m_thread);
-	}
-
 	void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
 		const boost::mutex::scoped_lock lock(m_mutex);
-		m_queue.push_back(operation);
-		operation->setAssignedThread(increment());
+		m_queue.push_back(STD_MOVE(operation));
 		if(urgent){
-			atomicStore(m_urgentMode, true, ATOMIC_RELEASE);
+			atomicStore(m_urgent, true, ATOMIC_RELEASE);
 		}
 		m_newAvail.notify_all();
 	}
-
-	void waitTillIdle() const {
-		atomicStore(m_urgentMode, true, ATOMIC_RELEASE);
+	void waitTillIdle(){
 		boost::mutex::scoped_lock lock(m_mutex);
-		while(getPendingOperations() != 0){
-			atomicStore(m_urgentMode, true, ATOMIC_RELEASE);
+		while(!m_queue.empty()){
+			atomicStore(m_urgent, true, ATOMIC_RELEASE);
 			m_newAvail.notify_all();
 			m_queueEmpty.wait(lock);
 		}
 	}
 };
 
-boost::mutex g_dumpMutex;
-UniqueFile g_dumpFile;
+void MySqlThread::loop(){
+	PROFILE_ME;
+	Logger::setThreadTag(" D  "); // Database
+	LOG_POSEIDON_INFO("MySQL thread ", m_index, " started.");
 
-volatile bool g_running = false;
-std::vector<boost::shared_ptr<MySqlThread> > g_threads;
-
-// 根据表名分给不同的线程。
-class AssignmentItem : NONCOPYABLE
-	, public boost::enable_shared_from_this<AssignmentItem>
-{
-	friend AssignmentItemDecrementer;
-
-private:
-	const char *const m_table;
-
-	mutable boost::mutex m_mutex;
-	std::size_t m_pendingOperations;
-	boost::shared_ptr<MySqlThread> m_thread;
-
-public:
-	explicit AssignmentItem(const char *table)
-		: m_table(table), m_pendingOperations(0)
-	{
-	}
-
-private:
-	LockingAssignment increment(){
-		const boost::mutex::scoped_lock lock(m_mutex);
-		if(m_pendingOperations == 0){
-			if(g_threads.empty()){
-				DEBUG_THROW(Exception, SharedNts::observe("No threads available"));
-			}
-			// 指派给最空闲的线程。
-			std::size_t picked = 0;
-			AUTO(minPendingOperations, g_threads.front()->getPendingOperations());
-			LOG_POSEIDON_TRACE("MySQL thread 0 pending operations: ", minPendingOperations);
-			for(std::size_t i = 1; i < g_threads.size(); ++i){
-				const AUTO(myPendingOperations, g_threads[i]->getPendingOperations());
-				LOG_POSEIDON_TRACE("MySQL thread ", i, " pending operations: ", myPendingOperations);
-				if(minPendingOperations > myPendingOperations){
-					picked = i;
-					minPendingOperations = myPendingOperations;
-				}
-			}
-			m_thread = g_threads[picked];
-			LOG_POSEIDON_DEBUG("Assigned table `", m_table, "` to thread ", picked);
-		}
-		++m_pendingOperations;
-		return LockingAssignment(this);
-	};
-	void decrement() NOEXCEPT {
-		const boost::mutex::scoped_lock lock(m_mutex);
-		--m_pendingOperations;
-		if(m_pendingOperations == 0){
-			m_thread.reset();
-			LOG_POSEIDON_DEBUG("No more pending operations: ", m_table);
-		}
-	}
-
-public:
-	const char *getTable() const {
-		return m_table;
-	}
-
-	void commit(boost::shared_ptr<OperationBase> operation, bool urgent){
-		operation->setLockingAssignment(increment());
-		m_thread->addOperation(STD_MOVE(operation), urgent);
-	}
-};
-
-void MySqlThreadDecrementer::operator()(MySqlThread *thread) const NOEXCEPT {
-	thread->decrement();
-}
-
-void AssignmentItemDecrementer::operator()(AssignmentItem *assignment) const NOEXCEPT {
-	assignment->decrement();
-}
-
-boost::mutex g_assignmentMutex;
-std::vector<boost::shared_ptr<AssignmentItem> > g_assignments;
-
-AssignmentItem &getAssignmentForTable(const char *table){
-	const boost::mutex::scoped_lock lock(g_assignmentMutex);
-	AUTO(lower, g_assignments.begin());
-	AUTO(upper, g_assignments.end());
-	for(;;){
-		if(lower == upper){
-			lower = g_assignments.insert(lower, boost::make_shared<AssignmentItem>(table));
-			break;
-		}
-		const AUTO(middle, lower + (upper - lower) / 2);
-		const int result = std::strcmp(table, (*middle)->getTable());
-		if(result == 0){
-			lower = middle;
-			break;
-		} else if(result < 0){
-			upper = middle;
-		} else {
-			lower = middle + 1;
-		}
-	}
-	return **lower;
-}
-
-void MySqlThread::operationLoop(){
 	MySqlThreadContext context;
 
 	boost::scoped_ptr<MySqlConnection> conn;
 	std::size_t reconnectDelay = 0;
-	bool discardConnection = false;
 
-	std::deque<boost::shared_ptr<OperationBase> > queue;
+	boost::shared_ptr<OperationBase> operation;
 	std::size_t retryCount = 0;
+
 	for(;;){
 		try {
-			flushProfile();
+			accumulateTimeIdle();
 
 			if(!conn){
 				LOG_POSEIDON_INFO("Connecting to MySQL server...");
@@ -613,23 +445,22 @@ void MySqlThread::operationLoop(){
 				reconnectDelay = 0;
 			}
 
-			if(queue.empty()){
+			if(!operation){
 				boost::mutex::scoped_lock lock(m_mutex);
-				if(m_queue.empty()){
-					m_queueEmpty.notify_all();
-				}
 				while(m_queue.empty()){
+					m_queueEmpty.notify_all();
+					atomicStore(m_urgent, false, ATOMIC_RELEASE);
+					accumulateTimeIdle();
+
 					if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 						goto exit_loop;
 					}
-					atomicStore(m_urgentMode, false, ATOMIC_RELEASE);
-					flushProfile();
 					m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
-				queue.swap(m_queue);
+				operation.swap(m_queue.front());
+				m_queue.pop_front();
 			}
-
-			if(!queue.front()->shouldExecuteNow() && !atomicLoad(m_urgentMode, ATOMIC_ACQUIRE)){
+			if(!atomicLoad(m_urgent, ATOMIC_ACQUIRE) && !operation->check()){
 				boost::mutex::scoped_lock lock(m_mutex);
 				m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				continue;
@@ -640,8 +471,8 @@ void MySqlThread::operationLoop(){
 			std::string query;
 			try {
 				try {
-					const Profiler profiler(*this);
-					queue.front()->execute(query, *conn);
+					const WorkingTimeAccumulator profiler(this);
+					operation->execute(query, *conn);
 				} catch(MySqlException &e){
 					mysqlErrCode = e.code();
 					mysqlErrMsg = e.what();
@@ -668,8 +499,7 @@ void MySqlThread::operationLoop(){
 				}
 				if(!retry){
 					LOG_POSEIDON_WARN("Retry count has dropped to zero. Give up.");
-
-					queue.pop_front();
+					operation.reset();
 
 					char temp[32];
 					unsigned len = std::sprintf(temp, "%05u", mysqlErrCode);
@@ -682,7 +512,6 @@ void MySqlThread::operationLoop(){
 					dump.append("\n");
 					dump.append(query);
 					dump.append(";\n\n");
-
 					{
 						const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
 						std::size_t total = 0;
@@ -698,44 +527,48 @@ void MySqlThread::operationLoop(){
 				}
 				throw;
 			}
-			queue.pop_front();
+			operation.reset();
 		} catch(MySqlException &e){
 			LOG_POSEIDON_ERROR("MySqlException thrown in MySQL daemon: code = ", e.code(),
 				", what = ", e.what());
-			discardConnection = true;
+			conn.reset();
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());
-			discardConnection = true;
+			conn.reset();
 		} catch(...){
 			LOG_POSEIDON_ERROR("Unknown exception thrown in MySQL daemon.");
-			discardConnection = true;
-		}
-
-		if(discardConnection){
-			discardConnection = false;
-			if(conn){
-				LOG_POSEIDON_INFO("The connection was left in an indeterminate state. Discard it.");
-				conn.reset();
-			}
+			conn.reset();
 		}
 	}
 exit_loop:
 
 	if(!m_queue.empty()){
-		LOG_POSEIDON_ERROR("There are still ", m_queue.size(), " object(s) in MySQL queue");
+		LOG_POSEIDON_WARN("There are still ", m_queue.size(), " object(s) in MySQL queue");
 		m_queue.clear();
 	}
 	m_queueEmpty.notify_all();
+
+	LOG_POSEIDON_INFO("MySQL thread ", m_index, " stopped.");
 }
 
-void MySqlThread::threadProc(){
-	PROFILE_ME;
-	Logger::setThreadTag(" D  "); // Database
-	LOG_POSEIDON_INFO("MySQL thread ", m_id, " started.");
+volatile bool g_running = false;
+std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 
-	operationLoop();
+void commitOperation(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
+	if(g_threads.empty()){
+		DEBUG_THROW(Exception, SharedNts::observe("No MySQL thread is running"));
+	}
 
-	LOG_POSEIDON_INFO("MySQL thread ", m_id, " stopped.");
+	std::size_t threadIndex = 0;
+	const char *p = table;
+	while(*p){
+		threadIndex += (unsigned char)*p;
+		++p;
+	}
+	threadIndex %= g_threads.size();
+
+	LOG_POSEIDON_DEBUG("Assigning MySQL table `", table, "` to thread ", threadIndex);
+	g_threads.at(threadIndex)->addOperation(STD_MOVE(operation), urgent);
 }
 
 }
@@ -804,10 +637,8 @@ void MySqlDaemon::start(){
 
 	g_threads.resize(std::max<std::size_t>(g_mysqlMaxThreads, 1));
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		boost::make_shared<MySqlThread>(i).swap(g_threads[i]);
-		g_threads[i]->start();
-
-		LOG_POSEIDON_INFO("Created MySQL thread ", i);
+		LOG_POSEIDON_INFO("Creating MySQL thread ", i);
+		g_threads[i] = boost::make_shared<MySqlThread>(i);
 	}
 }
 void MySqlDaemon::stop(){
@@ -817,22 +648,21 @@ void MySqlDaemon::stop(){
 	LOG_POSEIDON_INFO("Stopping MySQL daemon...");
 
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		g_threads[i]->stop();
+		g_threads[i]->shutdown();
 	}
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		g_threads[i]->join();
-
-		LOG_POSEIDON_INFO("Shut down MySQL thread ", i);
+		LOG_POSEIDON_INFO("Stopping MySQL thread ", i);
+		if(g_threads[i]->joinable()){
+			g_threads[i]->join();
+		}
 	}
 	g_threads.clear();
 }
 
 std::vector<MySqlSnapshotItem> MySqlDaemon::snapshot(){
-	std::vector<MySqlSnapshotItem> ret;
-	ret.reserve(g_threads.size());
+	std::vector<MySqlSnapshotItem> ret(g_threads.size());
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		ret.push_back(MySqlSnapshotItem());
-		AUTO_REF(item, ret.back());
+		AUTO_REF(item, ret[i]);
 		item.index = i;
 		item.pendingOperations = g_threads[i]->getPendingOperations();
 		item.usIdle = g_threads[i]->getTimeIdle();
@@ -847,26 +677,32 @@ void MySqlDaemon::waitForAllAsyncOperations(){
 	}
 }
 
-void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object, bool replaces,
+void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object, bool toReplace,
 	MySqlAsyncSaveCallback callback, MySqlExceptionCallback except)
 {
-	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
-	const bool urgent = !!callback;
-	assignment.commit(boost::make_shared<SaveOperation>(
-		STD_MOVE(except), STD_MOVE(object), replaces, STD_MOVE(callback)), urgent);
+	const AUTO(tableName, object->getTableName());
+	const bool urgent = callback;
+	commitOperation(tableName,
+		boost::make_shared<SaveOperation>(
+			getMonoClock() + g_mysqlSaveDelay * 1000,
+			STD_MOVE(object), toReplace, STD_MOVE(callback), STD_MOVE(except)),
+		urgent);
 }
 void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std::string query,
 	MySqlAsyncLoadCallback callback, MySqlExceptionCallback except)
 {
-	AUTO_REF(assignment, getAssignmentForTable(object->getTableName()));
-	assignment.commit(boost::make_shared<LoadOperation>(
-		STD_MOVE(except), STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback)), true);
+	const AUTO(tableName, object->getTableName());
+	commitOperation(tableName,
+		boost::make_shared<LoadOperation>(
+			STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except)),
+		true);
 }
-void MySqlDaemon::pendForBatchLoading(const char *tableHint, std::string query,
-	boost::shared_ptr<MySqlObjectBase> (*factory)(),
+void MySqlDaemon::pendForBatchLoading(boost::shared_ptr<MySqlObjectBase> (*factory)(),
+	const char *tableHint, std::string query,
 	MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except)
 {
-	AUTO_REF(assignment, getAssignmentForTable(tableHint));
-	assignment.commit(boost::make_shared<BatchLoadOperation>(
-		STD_MOVE(except), STD_MOVE(query), factory, STD_MOVE(callback)), true);
+	commitOperation(tableHint,
+		boost::make_shared<BatchLoadOperation>(
+			factory, STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except)),
+		true);
 }
