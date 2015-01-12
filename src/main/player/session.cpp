@@ -68,7 +68,7 @@ protected:
 			session->setTimeout(PlayerServletDepository::getKeepAliveTimeout());
 		} catch(PlayerProtocolException &e){
 			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ",
-				m_protocolId, ", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
+				m_protocolId, ", status = ", static_cast<int>(e.status()), ", what = ", e.what());
 			session->sendError(m_protocolId, e.status(), e.what(), false);
 			throw;
 		} catch(...){
@@ -129,7 +129,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 	} catch(PlayerProtocolException &e){
 		LOG_POSEIDON_ERROR(
 			"PlayerProtocolException thrown while parsing data, protocol id = ", m_protocolId,
-			", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
+			", status = ", static_cast<int>(e.status()), ", what = ", e.what());
 		sendError(m_protocolId, e.status(), e.what(), true);
 		throw;
 	} catch(...){
@@ -150,5 +150,5 @@ bool PlayerSession::sendError(boost::uint16_t protocolId, PlayerStatus status,
 	std::string reason, bool fin)
 {
 	return send(PlayerErrorProtocol::ID, StreamBuffer(PlayerErrorProtocol(
-		protocolId, static_cast<unsigned>(status), STD_MOVE(reason))), fin);
+		protocolId, static_cast<int>(status), STD_MOVE(reason))), fin);
 }

@@ -12,7 +12,7 @@ namespace Poseidon {
 #define PROTOCOL_ID		0
 #define PROTOCOL_FIELDS	\
 	FIELD_VUINT(protocolId)	\
-	FIELD_VUINT(status)	\
+	FIELD_VINT(status)	\
 	FIELD_STRING(reason)
 #include "protocol_generator.hpp"
 

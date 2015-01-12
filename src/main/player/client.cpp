@@ -46,7 +46,7 @@ protected:
 			}
 		} catch(PlayerProtocolException &e){
 			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ", m_protocolId,
-				", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
+				", status = ", static_cast<int>(e.status()), ", what = ", e.what());
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception... protocol id = ", m_protocolId);
@@ -110,7 +110,7 @@ void PlayerClient::onReadAvail(const void *data, std::size_t size){
 	} catch(PlayerProtocolException &e){
 		LOG_POSEIDON_ERROR(
 			"PlayerProtocolException thrown while parsing data, protocol id = ", m_protocolId,
-			", status = ", static_cast<unsigned>(e.status()), ", what = ", e.what());
+			", status = ", static_cast<int>(e.status()), ", what = ", e.what());
 		throw;
 	} catch(...){
 		LOG_POSEIDON_ERROR("Forwarding exception... protocol id = ", m_protocolId);
