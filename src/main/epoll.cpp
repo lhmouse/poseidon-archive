@@ -156,7 +156,7 @@ void Epoll::clear(){
 }
 
 std::size_t Epoll::wait(unsigned timeout){
-	::epoll_event events[256];
+	::epoll_event events[MAX_PUMP_COUNT];
 	const int count = ::epoll_wait(m_epoll.get(), events, COUNT_OF(events), timeout);
 	if(count < 0){
 		const int errCode = errno;
