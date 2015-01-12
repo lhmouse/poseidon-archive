@@ -6,8 +6,8 @@
 #include "../singletons/mysql_daemon.hpp"
 using namespace Poseidon;
 
-void MySqlObjectBase::batchAsyncLoad(boost::shared_ptr<MySqlObjectBase> (*factory)(),
-	const char *tableHint, std::string query,
+void MySqlObjectBase::batchLoad(
+	boost::shared_ptr<MySqlObjectBase> (*factory)(), const char *tableHint, std::string query,
 	MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except)
 {
 	MySqlDaemon::pendForBatchLoading(

@@ -15,7 +15,7 @@
 
 class MYSQL_OBJECT_NAME : public ::Poseidon::MySqlObjectBase {
 public:
-	static void batchAsyncLoad(std::string query,
+	static void batchLoad(std::string query,
 		::Poseidon::MySqlBatchAsyncLoadCallback callback, ::Poseidon::MySqlExceptionCallback except)
 	{
 		struct FactoryHelper {
@@ -24,7 +24,7 @@ public:
 			}
 		};
 
-		::Poseidon::MySqlObjectBase::batchAsyncLoad(&FactoryHelper::create,
+		::Poseidon::MySqlObjectBase::batchLoad(&FactoryHelper::create,
 			TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query),
 			STD_MOVE(callback), STD_MOVE(except));
 	}

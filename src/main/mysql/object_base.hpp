@@ -27,8 +27,8 @@ class MySqlObjectBase : NONCOPYABLE
 	, public virtual VirtualSharedFromThis
 {
 protected:
-	static void batchAsyncLoad(boost::shared_ptr<MySqlObjectBase> (*factory)(),
-		const char *tableHint, std::string query,
+	static void batchLoad(
+		boost::shared_ptr<MySqlObjectBase> (*factory)(), const char *tableHint, std::string query,
 		MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except);
 
 private:
