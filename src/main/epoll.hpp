@@ -19,9 +19,6 @@ class TcpSessionBase;
 class Epoll : NONCOPYABLE {
 	friend TcpSessionBase;
 
-public:
-	static const unsigned MAX_PUMP_COUNT = 256;
-
 private:
 	class SessionMapImpl;
 

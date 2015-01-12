@@ -16,6 +16,10 @@ using namespace Poseidon;
 
 namespace {
 
+enum {
+	MAX_PUMP_COUNT = 256
+};
+
 struct SessionMapElement {
 	const int fd;
 	const boost::shared_ptr<TcpSessionBase> session;
