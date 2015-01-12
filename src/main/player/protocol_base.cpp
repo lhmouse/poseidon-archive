@@ -23,7 +23,7 @@ using namespace Poseidon;
 
 						唯一被保留的协议号是 0。0 号协议的格式为：
 							uvint	辅助协议号
-							uvint	状态码
+							vint	状态码
 							string	二进制消息
 
 						服务端到客户端的 0 号协议为通用错误码返回：
