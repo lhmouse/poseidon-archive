@@ -196,13 +196,20 @@ std::size_t Epoll::wait(unsigned timeout){
 			continue;
 		}
 
-		if(event.events & EPOLLIN){
-			const boost::mutex::scoped_lock lock(m_mutex);
-			m_sessions->setKey<IDX_FD, IDX_READ>(it, now);
-		}
-		if(event.events & EPOLLOUT){
-			const boost::mutex::scoped_lock lock(m_mutex);
-			m_sessions->setKey<IDX_FD, IDX_WRITE>(it, now);
+		{
+			boost::mutex::scoped_lock lock(m_mutex, boost::defer_lock);
+			if(event.events & EPOLLIN){
+//				if(!lock.owns_lock()){
+					lock.lock();
+//				}
+				m_sessions->setKey<IDX_FD, IDX_READ>(it, now);
+			}
+			if(event.events & EPOLLOUT){
+				if(!lock.owns_lock()){
+					lock.lock();
+				}
+				m_sessions->setKey<IDX_FD, IDX_WRITE>(it, now);
+			}
 		}
 	}
 	return (unsigned)count;
