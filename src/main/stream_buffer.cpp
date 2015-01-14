@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cassert>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/once.hpp>
 using namespace Poseidon;
 
 namespace Poseidon {
@@ -25,14 +26,36 @@ struct DisposableBuffer {
 
 namespace {
 
-boost::mutex g_poolMutex;
-std::list<DisposableBuffer> g_pool;
+std::list<DisposableBuffer> &realRequirePool(boost::mutex::scoped_lock &lock){
+	static boost::mutex s_mutex;
+	static std::list<DisposableBuffer> s_pool;
+
+	boost::mutex::scoped_lock(s_mutex).swap(lock);
+	return s_pool;
+}
+
+#ifndef POSEIDON_CXX11
+boost::once_flag g_poolInitFlag;
+
+void realInitPool(){
+	boost::mutex::scoped_lock lock;
+	realRequirePool(lock);
+}
+#endif
+
+std::list<DisposableBuffer> &requirePool(boost::mutex::scoped_lock &lock){
+#ifndef POSEIDON_CXX11
+	boost::call_once(&realInitPool, g_poolInitFlag);
+#endif
+	return realRequirePool(lock);
+}
 
 DisposableBuffer &pushBackPooled(std::list<DisposableBuffer> &dst){
 	{
-		const boost::mutex::scoped_lock lock(g_poolMutex);
-		if(!g_pool.empty()){
-			dst.splice(dst.end(), g_pool, g_pool.begin());
+		boost::mutex::scoped_lock lock;
+		AUTO_REF(pool, requirePool(lock));
+		if(!pool.empty()){
+			dst.splice(dst.end(), pool, pool.begin());
 			goto done;
 		}
 	}
@@ -49,14 +72,16 @@ void popBackPooled(std::list<DisposableBuffer> &src){
 
 	AUTO(it, src.end());
 	--it;
-	const boost::mutex::scoped_lock lock(g_poolMutex);
-	g_pool.splice(g_pool.begin(), src, it);
+	boost::mutex::scoped_lock lock;
+	AUTO_REF(pool, requirePool(lock));
+	pool.splice(pool.begin(), src, it);
 }
 DisposableBuffer &pushFrontPooled(std::list<DisposableBuffer> &dst){
 	{
-		const boost::mutex::scoped_lock lock(g_poolMutex);
-		if(!g_pool.empty()){
-			dst.splice(dst.begin(), g_pool, g_pool.begin());
+		boost::mutex::scoped_lock lock;
+		AUTO_REF(pool, requirePool(lock));
+		if(!pool.empty()){
+			dst.splice(dst.begin(), pool, pool.begin());
 			goto done;
 		}
 	}
@@ -71,16 +96,17 @@ done:
 void popFrontPooled(std::list<DisposableBuffer> &src){
 	assert(!src.empty());
 
-	const boost::mutex::scoped_lock lock(g_poolMutex);
-	g_pool.splice(g_pool.begin(), src, src.begin());
+	boost::mutex::scoped_lock lock;
+	AUTO_REF(pool, requirePool(lock));
+	pool.splice(pool.begin(), src, src.begin());
 }
 void clearPooled(std::list<DisposableBuffer> &src){
 	if(src.empty()){
 		return;
 	}
-
-	const boost::mutex::scoped_lock lock(g_poolMutex);
-	g_pool.splice(g_pool.begin(), src);
+	boost::mutex::scoped_lock lock;
+	AUTO_REF(pool, requirePool(lock));
+	pool.splice(pool.begin(), src);
 }
 
 }
