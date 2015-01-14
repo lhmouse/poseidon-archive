@@ -15,16 +15,14 @@
 
 class MYSQL_OBJECT_NAME : public ::Poseidon::MySqlObjectBase {
 public:
+	static ::boost::shared_ptr< ::Poseidon::MySqlObjectBase> create(){
+		return ::boost::make_shared<MYSQL_OBJECT_NAME>();
+	}
+
 	static void batchLoad(std::string query,
 		::Poseidon::MySqlBatchAsyncLoadCallback callback, ::Poseidon::MySqlExceptionCallback except)
 	{
-		struct FactoryHelper {
-			static boost::shared_ptr< ::Poseidon::MySqlObjectBase> create(){
-				return boost::make_shared<MYSQL_OBJECT_NAME>();
-			}
-		};
-
-		::Poseidon::MySqlObjectBase::batchLoad(&FactoryHelper::create,
+		::Poseidon::MySqlObjectBase::batchLoad(&create,
 			TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query),
 			STD_MOVE(callback), STD_MOVE(except));
 	}
