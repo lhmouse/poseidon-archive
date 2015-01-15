@@ -13,9 +13,10 @@
 
 namespace Poseidon {
 
-struct DisposableBuffer;
-
 class StreamBuffer {
+private:
+	class Chunk;
+
 public:
 	class ReadIterator
 		: public std::iterator<std::input_iterator_tag, int>
@@ -72,7 +73,7 @@ public:
 	};
 
 private:
-	std::list<DisposableBuffer> m_chunks;
+	std::list<Chunk> m_chunks;
 	std::size_t m_size;
 
 public:

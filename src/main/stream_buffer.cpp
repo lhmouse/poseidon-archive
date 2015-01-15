@@ -9,107 +9,107 @@
 #include <boost/thread/once.hpp>
 using namespace Poseidon;
 
-namespace Poseidon {
-
-struct DisposableBuffer {
-	std::size_t readPos;
-	std::size_t writePos;
-	char data[256];
-
-	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
-	// 因此在 list 中会被 value-initialize 即填零，然而这是没有任何意义的。
-	DisposableBuffer(){
-	}
-};
-
-}
-
 namespace {
-
-std::list<DisposableBuffer> &realRequirePool(boost::mutex::scoped_lock &lock){
-	static boost::mutex s_mutex;
-	static std::list<DisposableBuffer> s_pool;
-
-	boost::mutex::scoped_lock(s_mutex).swap(lock);
-	return s_pool;
-}
 
 #ifndef POSEIDON_CXX11
 boost::once_flag g_poolInitFlag;
-
-void realInitPool(){
-	boost::mutex::scoped_lock lock;
-	realRequirePool(lock);
-}
 #endif
 
-std::list<DisposableBuffer> &requirePool(boost::mutex::scoped_lock &lock){
+}
+
+class StreamBuffer::Chunk {
+public:
+	std::size_t m_readPos;
+	std::size_t m_writePos;
+	char m_data[256];
+
+private:
+	static std::list<Chunk> &realRequirePool(boost::mutex::scoped_lock &lock){
+		static boost::mutex s_mutex;
+		static std::list<Chunk> s_pool;
+
+		boost::mutex::scoped_lock(s_mutex).swap(lock);
+		return s_pool;
+	}
 #ifndef POSEIDON_CXX11
-	boost::call_once(&realInitPool, g_poolInitFlag);
+	static void realInitPool(){
+		boost::mutex::scoped_lock lock;
+		realRequirePool(lock);
+	}
+	static std::list<Chunk> &requirePool(boost::mutex::scoped_lock &lock){
+		boost::call_once(&realInitPool, g_poolInitFlag);
+#else
+	static std::list<Chunk> &requirePool(boost::mutex::scoped_lock &lock){
 #endif
-	return realRequirePool(lock);
-}
+		return realRequirePool(lock);
+	}
 
-DisposableBuffer &pushBackPooled(std::list<DisposableBuffer> &dst){
-	{
+public:
+	static Chunk &pushBackPooled(std::list<Chunk> &dst){
+		{
+			boost::mutex::scoped_lock lock;
+			AUTO_REF(pool, requirePool(lock));
+			if(!pool.empty()){
+				dst.splice(dst.end(), pool, pool.begin());
+				goto done;
+			}
+		}
+		dst.push_back(VAL_INIT);
+
+	done:
+		AUTO_REF(ret, dst.back());
+		ret.m_readPos = 0;
+		ret.m_writePos = 0;
+		return ret;
+	}
+	static void popBackPooled(std::list<Chunk> &src){
+		assert(!src.empty());
+
+		AUTO(it, src.end());
+		--it;
 		boost::mutex::scoped_lock lock;
 		AUTO_REF(pool, requirePool(lock));
-		if(!pool.empty()){
-			dst.splice(dst.end(), pool, pool.begin());
-			goto done;
-		}
+		pool.splice(pool.begin(), src, it);
 	}
-	dst.push_back(VAL_INIT);
+	static Chunk &pushFrontPooled(std::list<Chunk> &dst){
+		{
+			boost::mutex::scoped_lock lock;
+			AUTO_REF(pool, requirePool(lock));
+			if(!pool.empty()){
+				dst.splice(dst.begin(), pool, pool.begin());
+				goto done;
+			}
+		}
+		dst.push_front(VAL_INIT);
 
-done:
-	AUTO_REF(ret, dst.back());
-	ret.readPos = 0;
-	ret.writePos = 0;
-	return ret;
-}
-void popBackPooled(std::list<DisposableBuffer> &src){
-	assert(!src.empty());
+	done:
+		AUTO_REF(ret, dst.back());
+		ret.m_readPos = sizeof(ret.m_data);
+		ret.m_writePos = sizeof(ret.m_data);
+		return ret;
+	}
+	static void popFrontPooled(std::list<Chunk> &src){
+		assert(!src.empty());
 
-	AUTO(it, src.end());
-	--it;
-	boost::mutex::scoped_lock lock;
-	AUTO_REF(pool, requirePool(lock));
-	pool.splice(pool.begin(), src, it);
-}
-DisposableBuffer &pushFrontPooled(std::list<DisposableBuffer> &dst){
-	{
 		boost::mutex::scoped_lock lock;
 		AUTO_REF(pool, requirePool(lock));
-		if(!pool.empty()){
-			dst.splice(dst.begin(), pool, pool.begin());
-			goto done;
+		pool.splice(pool.begin(), src, src.begin());
+	}
+	static void clearPooled(std::list<Chunk> &src){
+		if(src.empty()){
+			return;
 		}
+		boost::mutex::scoped_lock lock;
+		AUTO_REF(pool, requirePool(lock));
+		pool.splice(pool.begin(), src);
 	}
-	dst.push_front(VAL_INIT);
 
-done:
-	AUTO_REF(ret, dst.back());
-	ret.readPos = sizeof(ret.data);
-	ret.writePos = sizeof(ret.data);
-	return ret;
-}
-void popFrontPooled(std::list<DisposableBuffer> &src){
-	assert(!src.empty());
-
-	boost::mutex::scoped_lock lock;
-	AUTO_REF(pool, requirePool(lock));
-	pool.splice(pool.begin(), src, src.begin());
-}
-void clearPooled(std::list<DisposableBuffer> &src){
-	if(src.empty()){
-		return;
+public:
+	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
+	// 因此在 list 中会被 value-initialize 即填零，然而这是没有任何意义的。
+	Chunk(){
 	}
-	boost::mutex::scoped_lock lock;
-	AUTO_REF(pool, requirePool(lock));
-	pool.splice(pool.begin(), src);
-}
-
-}
+};
 
 StreamBuffer::StreamBuffer()
 	: m_size(0)
@@ -134,7 +134,7 @@ StreamBuffer::StreamBuffer(const StreamBuffer &rhs)
 	: m_size(0)
 {
 	for(AUTO(it, rhs.m_chunks.begin()); it != rhs.m_chunks.end(); ++it){
-		put(it->data + it->readPos, it->writePos - it->readPos);
+		put(it->m_data + it->m_readPos, it->m_writePos - it->m_readPos);
 	}
 }
 StreamBuffer &StreamBuffer::operator=(const StreamBuffer &rhs){
@@ -157,7 +157,7 @@ StreamBuffer::~StreamBuffer(){
 }
 
 void StreamBuffer::clear(){
-	clearPooled(m_chunks);
+	Chunk::clearPooled(m_chunks);
 	m_size = 0;
 }
 
@@ -169,8 +169,8 @@ int StreamBuffer::peek() const {
 	for(;;){
 		assert(it != m_chunks.end());
 
-		if(it->readPos < it->writePos){
-			return it->data[it->readPos];
+		if(it->m_readPos < it->m_writePos){
+			return it->m_data[it->m_readPos];
 		}
 		++it;
 	}
@@ -183,29 +183,29 @@ int StreamBuffer::get(){
 		assert(!m_chunks.empty());
 
 		AUTO_REF(front, m_chunks.front());
-		if(front.readPos < front.writePos){
-			const int ret = front.data[front.readPos];
-			++front.readPos;
+		if(front.m_readPos < front.m_writePos){
+			const int ret = front.m_data[front.m_readPos];
+			++front.m_readPos;
 			--m_size;
 			return ret;
 		}
-		popFrontPooled(m_chunks);
+		Chunk::popFrontPooled(m_chunks);
 	}
 }
 void StreamBuffer::put(unsigned char by){
 	if(!m_chunks.empty()){
 		AUTO_REF(back, m_chunks.back());
-		if(back.writePos < sizeof(back.data)){
-			back.data[back.writePos] = static_cast<char>(by);
-			++back.writePos;
+		if(back.m_writePos < sizeof(back.m_data)){
+			back.m_data[back.m_writePos] = static_cast<char>(by);
+			++back.m_writePos;
 			++m_size;
 			return;
 		}
 	}
 
-	AUTO_REF(back, pushBackPooled(m_chunks));
-	back.data[back.writePos] = by;
-	++back.writePos;
+	AUTO_REF(back, Chunk::pushBackPooled(m_chunks));
+	back.m_data[back.m_writePos] = by;
+	++back.m_writePos;
 	++m_size;
 }
 int StreamBuffer::unput(){
@@ -216,29 +216,29 @@ int StreamBuffer::unput(){
 		assert(!m_chunks.empty());
 
 		AUTO_REF(front, m_chunks.back());
-		if(front.readPos < front.writePos){
-			--front.writePos;
-			const int ret = front.data[front.writePos];
+		if(front.m_readPos < front.m_writePos){
+			--front.m_writePos;
+			const int ret = front.m_data[front.m_writePos];
 			--m_size;
 			return ret;
 		}
-		popBackPooled(m_chunks);
+		Chunk::popBackPooled(m_chunks);
 	}
 }
 void StreamBuffer::unget(unsigned char by){
 	if(!m_chunks.empty()){
 		AUTO_REF(front, m_chunks.front());
-		if(0 < front.readPos){
-			++front.readPos;
-			front.data[front.readPos] = static_cast<char>(by);
+		if(0 < front.m_readPos){
+			++front.m_readPos;
+			front.m_data[front.m_readPos] = static_cast<char>(by);
 			++m_size;
 			return;
 		}
 	}
 
-	AUTO_REF(front, pushFrontPooled(m_chunks));
-	++front.readPos;
-	front.data[front.readPos] = by;
+	AUTO_REF(front, Chunk::pushFrontPooled(m_chunks));
+	++front.m_readPos;
+	front.m_data[front.m_readPos] = by;
 	++m_size;
 }
 
@@ -254,8 +254,8 @@ std::size_t StreamBuffer::peek(void *data, std::size_t size) const {
 	for(;;){
 		assert(it != m_chunks.end());
 
-		const std::size_t toCopy = std::min(ret - copied, it->writePos - it->readPos);
-		std::memcpy(write, it->data + it->readPos, toCopy);
+		const std::size_t toCopy = std::min(ret - copied, it->m_writePos - it->m_readPos);
+		std::memcpy(write, it->m_data + it->m_readPos, toCopy);
 		write += toCopy;
 		copied += toCopy;
 		if(copied == ret){
@@ -277,16 +277,16 @@ std::size_t StreamBuffer::get(void *data, std::size_t size){
 		assert(!m_chunks.empty());
 
 		AUTO_REF(front, m_chunks.front());
-		const std::size_t toCopy = std::min(ret - copied, front.writePos - front.readPos);
-		std::memcpy(write, front.data + front.readPos, toCopy);
+		const std::size_t toCopy = std::min(ret - copied, front.m_writePos - front.m_readPos);
+		std::memcpy(write, front.m_data + front.m_readPos, toCopy);
 		write += toCopy;
-		front.readPos += toCopy;
+		front.m_readPos += toCopy;
 		m_size -= toCopy;
 		copied += toCopy;
 		if(copied == ret){
 			break;
 		}
-		popFrontPooled(m_chunks);
+		Chunk::popFrontPooled(m_chunks);
 	}
 	return ret;
 }
@@ -301,14 +301,14 @@ std::size_t StreamBuffer::discard(std::size_t size){
 		assert(!m_chunks.empty());
 
 		AUTO_REF(front, m_chunks.front());
-		const std::size_t toDrop = std::min(ret - dropped, front.writePos - front.readPos);
-		front.readPos += toDrop;
+		const std::size_t toDrop = std::min(ret - dropped, front.m_writePos - front.m_readPos);
+		front.m_readPos += toDrop;
 		m_size -= toDrop;
 		dropped += toDrop;
 		if(dropped == ret){
 			break;
 		}
-		popFrontPooled(m_chunks);
+		Chunk::popFrontPooled(m_chunks);
 	}
 	return ret;
 }
@@ -317,19 +317,19 @@ void StreamBuffer::put(const void *data, std::size_t size){
 	std::size_t copied = 0;
 
 	AUTO(rit, m_chunks.rbegin());
-	if((rit != m_chunks.rend()) && (rit->writePos < sizeof(rit->data))){
-		const std::size_t toCopy = std::min(size - copied, sizeof(rit->data) - rit->writePos);
-		std::memcpy(rit->data + rit->writePos, read, toCopy);
-		rit->writePos += toCopy;
+	if((rit != m_chunks.rend()) && (rit->m_writePos < sizeof(rit->m_data))){
+		const std::size_t toCopy = std::min(size - copied, sizeof(rit->m_data) - rit->m_writePos);
+		std::memcpy(rit->m_data + rit->m_writePos, read, toCopy);
+		rit->m_writePos += toCopy;
 		read += toCopy;
 		m_size += toCopy;
 		copied += toCopy;
 	}
 	while(copied < size){
-		AUTO_REF(back, pushBackPooled(m_chunks));
-		const std::size_t toCopy = std::min(size - copied, sizeof(back.data));
-		std::memcpy(back.data, read, toCopy);
-		back.writePos = toCopy;
+		AUTO_REF(back, Chunk::pushBackPooled(m_chunks));
+		const std::size_t toCopy = std::min(size - copied, sizeof(back.m_data));
+		std::memcpy(back.m_data, read, toCopy);
+		back.m_writePos = toCopy;
 		read += toCopy;
 		m_size += toCopy;
 		copied += toCopy;
@@ -361,12 +361,12 @@ StreamBuffer StreamBuffer::cut(std::size_t size){
 			assert(it != m_chunks.end());
 
 			const std::size_t remaining = size - total;
-			const std::size_t avail = it->writePos - it->readPos;
+			const std::size_t avail = it->m_writePos - it->m_readPos;
 			if(remaining < avail){
-				AUTO_REF(back, pushBackPooled(ret.m_chunks));
-				std::memcpy(back.data, it->data + it->readPos, remaining);
-				back.writePos = remaining;
-				it->readPos += remaining;
+				AUTO_REF(back, Chunk::pushBackPooled(ret.m_chunks));
+				std::memcpy(back.m_data, it->m_data + it->m_readPos, remaining);
+				back.m_writePos = remaining;
+				it->m_readPos += remaining;
 				ret.m_size += remaining;
 				m_size -= remaining;
 				break;
@@ -392,12 +392,12 @@ void StreamBuffer::splice(StreamBuffer &src) NOEXCEPT {
 void StreamBuffer::dump(std::string &str) const {
 	str.reserve(str.size() + size());
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
-		str.append(it->data + it->readPos, it->data + it->writePos);
+		str.append(it->m_data + it->m_readPos, it->m_data + it->m_writePos);
 	}
 }
 void StreamBuffer::dump(std::ostream &os) const {
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
-		os.write(it->data + it->readPos, it->writePos - it->readPos);
+		os.write(it->m_data + it->m_readPos, it->m_writePos - it->m_readPos);
 	}
 }
 void StreamBuffer::load(const std::string &str){
@@ -407,9 +407,9 @@ void StreamBuffer::load(const std::string &str){
 void StreamBuffer::load(std::istream &is){
 	clear();
 	for(;;){
-		AUTO_REF(back, pushBackPooled(m_chunks));
-		back.writePos = is.readsome(back.data, sizeof(back.data));
-		if(back.writePos == 0){
+		AUTO_REF(back, Chunk::pushBackPooled(m_chunks));
+		back.m_writePos = is.readsome(back.m_data, sizeof(back.m_data));
+		if(back.m_writePos == 0){
 			break;
 		}
 	}
@@ -419,8 +419,8 @@ void StreamBuffer::dumpHex(std::ostream &os) const {
 	static const char TABLE[] = "0123456789ABCDEF";
 	char temp[2];
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
-		for(std::size_t i = it->readPos; i < it->writePos; ++i){
-			const unsigned byte = (unsigned char)it->data[i];
+		for(std::size_t i = it->m_readPos; i < it->m_writePos; ++i){
+			const unsigned byte = (unsigned char)it->m_data[i];
 			temp[0] = TABLE[byte >> 4];
 			temp[1] = TABLE[byte & 0x0F];
 			os.write(temp, 2);
