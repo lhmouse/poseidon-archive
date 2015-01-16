@@ -6,51 +6,19 @@
 #include <iostream>
 #include <cassert>
 #include <boost/thread/mutex.hpp>
-#include <boost/thread/once.hpp>
 using namespace Poseidon;
 
-namespace {
-
-#ifndef POSEIDON_CXX11
-boost::once_flag g_poolInitFlag;
-#endif
-
-}
-
 class StreamBuffer::Chunk {
-public:
-	std::size_t m_readPos;
-	std::size_t m_writePos;
-	char m_data[256];
-
 private:
-	static std::list<Chunk> &realRequirePool(boost::mutex::scoped_lock &lock){
-		static boost::mutex s_mutex;
-		static std::list<Chunk> s_pool;
-
-		boost::mutex::scoped_lock(s_mutex).swap(lock);
-		return s_pool;
-	}
-#ifndef POSEIDON_CXX11
-	static void realInitPool(){
-		boost::mutex::scoped_lock lock;
-		realRequirePool(lock);
-	}
-	static std::list<Chunk> &requirePool(boost::mutex::scoped_lock &lock){
-		boost::call_once(&realInitPool, g_poolInitFlag);
-#else
-	static std::list<Chunk> &requirePool(boost::mutex::scoped_lock &lock){
-#endif
-		return realRequirePool(lock);
-	}
+	static boost::mutex s_mutex;
+	static std::list<Chunk> s_pool;
 
 public:
 	static Chunk &pushBackPooled(std::list<Chunk> &dst){
 		{
-			boost::mutex::scoped_lock lock;
-			AUTO_REF(pool, requirePool(lock));
-			if(!pool.empty()){
-				dst.splice(dst.end(), pool, pool.begin());
+			const boost::mutex::scoped_lock lock(s_mutex);
+			if(!s_pool.empty()){
+				dst.splice(dst.end(), s_pool, s_pool.begin());
 				goto done;
 			}
 		}
@@ -67,16 +35,14 @@ public:
 
 		AUTO(it, src.end());
 		--it;
-		boost::mutex::scoped_lock lock;
-		AUTO_REF(pool, requirePool(lock));
-		pool.splice(pool.begin(), src, it);
+		const boost::mutex::scoped_lock lock(s_mutex);
+		s_pool.splice(s_pool.begin(), src, it);
 	}
 	static Chunk &pushFrontPooled(std::list<Chunk> &dst){
 		{
-			boost::mutex::scoped_lock lock;
-			AUTO_REF(pool, requirePool(lock));
-			if(!pool.empty()){
-				dst.splice(dst.begin(), pool, pool.begin());
+			const boost::mutex::scoped_lock lock(s_mutex);
+			if(!s_pool.empty()){
+				dst.splice(dst.begin(), s_pool, s_pool.begin());
 				goto done;
 			}
 		}
@@ -91,18 +57,21 @@ public:
 	static void popFrontPooled(std::list<Chunk> &src){
 		assert(!src.empty());
 
-		boost::mutex::scoped_lock lock;
-		AUTO_REF(pool, requirePool(lock));
-		pool.splice(pool.begin(), src, src.begin());
+		const boost::mutex::scoped_lock lock(s_mutex);
+		s_pool.splice(s_pool.begin(), src, src.begin());
 	}
 	static void clearPooled(std::list<Chunk> &src){
 		if(src.empty()){
 			return;
 		}
-		boost::mutex::scoped_lock lock;
-		AUTO_REF(pool, requirePool(lock));
-		pool.splice(pool.begin(), src);
+		const boost::mutex::scoped_lock lock(s_mutex);
+		s_pool.splice(s_pool.begin(), src);
 	}
+
+public:
+	std::size_t m_readPos;
+	std::size_t m_writePos;
+	char m_data[256];
 
 public:
 	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
@@ -110,6 +79,9 @@ public:
 	Chunk(){
 	}
 };
+
+boost::mutex					StreamBuffer::Chunk::s_mutex	__attribute__((__init_priority__(500)));
+std::list<StreamBuffer::Chunk>	StreamBuffer::Chunk::s_pool		__attribute__((__init_priority__(500)));
 
 StreamBuffer::StreamBuffer()
 	: m_size(0)
