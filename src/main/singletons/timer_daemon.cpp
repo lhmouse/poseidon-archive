@@ -24,10 +24,10 @@ struct Poseidon::TimerItem : NONCOPYABLE {
 	TimerItem(unsigned long long period_, boost::shared_ptr<const TimerCallback> callback_)
 		: period(period_), callback(STD_MOVE(callback_))
 	{
-		LOG_POSEIDON_INFO("Created timer, period = ", period);
+		LOG_POSEIDON_DEBUG("Created timer, period = ", period);
 	}
 	~TimerItem(){
-		LOG_POSEIDON_INFO("Destroyed timer, period = ", period);
+		LOG_POSEIDON_DEBUG("Destroyed timer, period = ", period);
 	}
 };
 

@@ -206,7 +206,7 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	out.put("\nSHA1: ");
 	out.put(sha1Str.data(), sha1Str.size());
 	out.put('\n');
-	wss->send(STD_MOVE(out), true);
+	wss->send(STD_MOVE(out), false);
 }
 
 class TestClient : public TcpClientBase {
