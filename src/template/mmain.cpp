@@ -206,7 +206,7 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	out.put("\nSHA1: ");
 	out.put(sha1Str.data(), sha1Str.size());
 	out.put('\n');
-	wss->send(STD_MOVE(out), false);
+	wss->send(STD_MOVE(out), true);
 }
 
 class TestClient : public TcpClientBase {
@@ -360,7 +360,7 @@ MODULE_RAII(
 	return EventDispatcher::registerListener<TestEvent2>(&event2Proc);
 )
 MODULE_RAII(
-	return WebSocketServletDepository::registerServlet(1, SharedNts::observe("/wstest"), &webSocketProc);
+	return WebSocketServletDepository::registerServlet(2, SharedNts::observe("/wstest"), &webSocketProc);
 )
 MODULE_RAII(
 	return PlayerServletDepository::registerServlet(2, 100, &TestIntProc);
@@ -414,6 +414,12 @@ MODULE_RAII(
 MODULE_RAII(
 	AUTO(server, (boost::make_shared<PlayerServer>(2,
 		IpPort(SharedNts("0.0.0.0"), 8850), NULLPTR, NULLPTR)));
+	EpollDaemon::registerServer(server);
+	return server;
+)
+MODULE_RAII(
+	AUTO(server, (boost::make_shared<HttpServer>(2,
+		IpPort(SharedNts("0.0.0.0"), 8860), NULLPTR, NULLPTR, std::vector<std::string>())));
 	EpollDaemon::registerServer(server);
 	return server;
 )

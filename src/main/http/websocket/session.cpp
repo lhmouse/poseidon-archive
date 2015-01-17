@@ -262,7 +262,7 @@ bool WebSocketSession::sendFrame(StreamBuffer contents, WebSocketOpCode opcode, 
 	} else {
 		packet.splice(contents);
 	}
-	return HttpUpgradedSessionBase::send(STD_MOVE(contents), fin);
+	return HttpUpgradedSessionBase::send(STD_MOVE(packet), fin);
 }
 
 bool WebSocketSession::send(StreamBuffer contents, bool binary, bool fin, bool masked){

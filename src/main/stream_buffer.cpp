@@ -318,7 +318,7 @@ void StreamBuffer::put(const std::string &str){
 }
 
 void StreamBuffer::swap(StreamBuffer &rhs) NOEXCEPT {
-	m_chunks.swap(rhs.m_chunks);
+	std::swap(m_chunks, rhs.m_chunks);
 	std::swap(m_size, rhs.m_size);
 }
 
