@@ -27,7 +27,7 @@ void shutdownIfTimeout(boost::weak_ptr<TcpSessionBase> weak){
 		return;
 	}
 	try {
-		LOG_POSEIDON_WARN("Connection timed out: ", session->getRemoteInfo());
+		LOG_POSEIDON_WARN("Connection timed out: remote = ", session->getRemoteInfo());
 	} catch(...){
 		LOG_POSEIDON_WARN("Connection timed out but the session has not been established.");
 	}
@@ -69,8 +69,11 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	}
 }
 TcpSessionBase::~TcpSessionBase(){
-	LOG_POSEIDON_INFO(
-		"Destroyed TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
+	try {
+		LOG_POSEIDON_INFO("Destroying TCP session:  remote = ", getRemoteInfo());
+	} catch(...){
+		LOG_POSEIDON_INFO("Destroying TCP session that has not been established.");
+	}
 }
 
 void TcpSessionBase::setEpoll(Epoll *epoll) NOEXCEPT {
