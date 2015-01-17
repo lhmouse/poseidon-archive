@@ -35,8 +35,7 @@ inline T atomicLoad(const volatile T &mem, MemModel model) NOEXCEPT {
 	return __atomic_load_n(&mem, model);
 #else
 	(void)model;
-	volatile int barrier;
-	__sync_lock_test_and_set(&barrier, 1);
+	__sync_synchronize();
 	return mem;
 #endif
 }
@@ -47,8 +46,7 @@ inline void atomicStore(volatile T &mem, typename Identity<T>::type val, MemMode
 #else
 	(void)model;
 	mem = val;
-	volatile int barrier;
-	__sync_lock_release(&barrier);
+	__sync_synchronize();
 #endif
 }
 
