@@ -1,6 +1,6 @@
 # 简介
 
-波塞冬（Poseidon）是一个游戏服务端框架。
+```波塞冬（Poseidon）```是一个游戏服务端框架。
 
 ## IRC channel:
 https://webchat.freenode.net/?channels=mcfproj
