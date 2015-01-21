@@ -41,6 +41,7 @@ public:
 		return m_parent.lock();
 	}
 
+	// 以下所有函数，如果原来的 HttpSession 被删除，抛出 bad_weak_ptr。
 	boost::shared_ptr<const HttpSession> getSafeParent() const {
 		return boost::shared_ptr<const HttpSession>(m_parent);
 	}
