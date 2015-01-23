@@ -44,24 +44,12 @@ struct EventDispatcher {
 				callback)
 	{
 #ifdef POSEIDON_CXX11
-		return registerListener(EventT::ID,
-			[callback
-#	ifdef POSEIDON_CXX14
-				= std::forward<CallbackT>(callback)
-#	endif
-				](boost::shared_ptr<EventBaseWithoutId> event)
-			{
-				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
-				if(!derived){
-					LOG_POSEIDON_ERROR("Invalid dynamic event: id = ", event->id());
-					DEBUG_THROW(Exception, SharedNts::observe("Invalid dynamic event"));
-				}
-				callback(STD_MOVE(derived));
-			});
+		const auto checkAndForward = [](
 #else
 		struct Helper {
 			static void checkAndForward(
-				boost::shared_ptr<EventBaseWithoutId> event, const CallbackT &callback)
+#endif
+				CallbackT &callback, boost::shared_ptr<EventBaseWithoutId> event)
 			{
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
@@ -70,9 +58,14 @@ struct EventDispatcher {
 				}
 				callback(STD_MOVE(derived));
 			}
+#ifdef POSEIDON_CXX11
+		;
+		return registerListener(EventT::ID,
+			std::bind(checkAndForward, std::forward<CallbackT>(callback), std::placeholders::_1));
+#else
 		};
 		return registerListener(EventT::ID,
-			boost::bind(&Helper::checkAndForward, _1, callback));
+			boost::bind(&Helper::checkAndForward, callback, _1));
 #endif
 	}
 

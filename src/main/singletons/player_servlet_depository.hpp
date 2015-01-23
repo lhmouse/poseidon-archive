@@ -46,22 +46,21 @@ struct PlayerServletDepository {
 				callback)
 	{
 #ifdef POSEIDON_CXX11
-		return registerServlet(category, ProtocolT::ID,
-			[callback
-#	ifdef POSEIDON_CXX14
-				= std::forward<CallbackT>(callback)
-#	endif
-				](boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming) mutable
-			{
-				callback(std::move(ps), ProtocolT(incoming));
-			});
+		const auto checkAndForward = [](
 #else
 		struct Helper {
 			static void checkAndForward(
-				boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming, const CallbackT &callback)
+#endif
+				CallbackT &callback, boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming)
 			{
-				return callback(STD_MOVE(ps), ProtocolT(incoming));
+				callback(STD_MOVE(ps), ProtocolT(incoming));
 			}
+#ifdef POSEIDON_CXX11
+		;
+		return registerServlet(category, ProtocolT::ID,
+			std::bind(checkAndForward, std::forward<CallbackT>(callback),
+				std::placeholders::_1, std::placeholders::_2));
+#else
 		};
 		return registerServlet(category, ProtocolT::ID,
 			boost::bind(&Helper::checkAndForward, _1, _2, callback));
