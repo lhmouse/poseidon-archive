@@ -104,7 +104,7 @@ public:
 	}
 
 public:
-	void executeSql(const std::string &sql) OVERRIDE {
+	void doExecuteSql(const std::string &sql){
 		m_result.reset();
 		m_columns.clear();
 		m_row = NULLPTR;
@@ -136,11 +136,11 @@ public:
 		}
 	}
 
-	boost::uint64_t getInsertId() const OVERRIDE {
+	boost::uint64_t doGetInsertId() const {
 		return ::mysql_insert_id(m_mysql.get());
 	}
 
-	bool fetchRow() OVERRIDE {
+	bool doFetchRow(){
 		if(m_columns.empty()){
 			LOG_POSEIDON_DEBUG("Empty set returned form MySQL server.");
 			return false;
@@ -156,7 +156,7 @@ public:
 		return true;
 	}
 
-	boost::int64_t getSigned(const char *column) const OVERRIDE {
+	boost::int64_t doGetSigned(const char *column) const {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -174,7 +174,7 @@ public:
 		}
 		return val;
 	}
-	boost::uint64_t getUnsigned(const char *column) const OVERRIDE {
+	boost::uint64_t doGetUnsigned(const char *column) const {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -192,7 +192,7 @@ public:
 		}
 		return val;
 	}
-	double getDouble(const char *column) const OVERRIDE {
+	double doGetDouble(const char *column) const {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -210,7 +210,7 @@ public:
 		}
 		return val;
 	}
-	std::string getString(const char *column) const OVERRIDE {
+	std::string doGetString(const char *column) const {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -223,7 +223,7 @@ public:
 		}
 		return val;
 	}
-	boost::uint64_t getDateTime(const char *column) const OVERRIDE {
+	boost::uint64_t doGetDateTime(const char *column) const {
 		MySqlColumns::const_iterator it;
 		if(!lowerBoundColumn(it, m_columns, column)){
 			LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -249,4 +249,31 @@ void MySqlConnection::create(boost::scoped_ptr<MySqlConnection> &conn,
 }
 
 MySqlConnection::~MySqlConnection(){
+}
+
+void MySqlConnection::executeSql(const std::string &sql){
+	static_cast<MySqlConnectionDelegate &>(*this).doExecuteSql(sql);
+}
+
+boost::uint64_t MySqlConnection::getInsertId() const {
+	return static_cast<const MySqlConnectionDelegate &>(*this).doGetInsertId();
+}
+bool MySqlConnection::fetchRow(){
+	return static_cast<MySqlConnectionDelegate &>(*this).doFetchRow();
+}
+
+boost::int64_t MySqlConnection::getSigned(const char *column) const {
+	return static_cast<const MySqlConnectionDelegate &>(*this).doGetSigned(column);
+}
+boost::uint64_t MySqlConnection::getUnsigned(const char *column) const {
+	return static_cast<const MySqlConnectionDelegate &>(*this).doGetUnsigned(column);
+}
+double MySqlConnection::getDouble(const char *column) const {
+	return static_cast<const MySqlConnectionDelegate &>(*this).doGetDouble(column);
+}
+std::string MySqlConnection::getString(const char *column) const {
+	return static_cast<const MySqlConnectionDelegate &>(*this).doGetString(column);
+}
+boost::uint64_t MySqlConnection::getDateTime(const char *column) const {
+	return static_cast<const MySqlConnectionDelegate &>(*this).doGetDateTime(column);
 }

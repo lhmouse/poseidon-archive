@@ -33,17 +33,16 @@ public:
 	virtual ~MySqlConnection() = 0;
 
 public:
-	virtual void executeSql(const std::string &sql) = 0;
+	void executeSql(const std::string &sql);
 
-	virtual boost::uint64_t getInsertId() const = 0;
+	boost::uint64_t getInsertId() const;
+	bool fetchRow();
 
-	virtual bool fetchRow() = 0;
-
-	virtual boost::int64_t getSigned(const char *column) const = 0;
-	virtual boost::uint64_t getUnsigned(const char *column) const = 0;
-	virtual double getDouble(const char *column) const = 0;
-	virtual std::string getString(const char *column) const = 0;
-	virtual boost::uint64_t getDateTime(const char *column) const = 0;
+	boost::int64_t getSigned(const char *column) const;
+	boost::uint64_t getUnsigned(const char *column) const;
+	double getDouble(const char *column) const;
+	std::string getString(const char *column) const;
+	boost::uint64_t getDateTime(const char *column) const;
 };
 
 }
