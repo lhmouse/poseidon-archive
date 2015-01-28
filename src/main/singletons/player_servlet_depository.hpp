@@ -63,7 +63,7 @@ struct PlayerServletDepository {
 #else
 		};
 		return registerServlet(category, ProtocolT::ID,
-			boost::bind(&Helper::checkAndForward, _1, _2, callback));
+			boost::bind(&Helper::checkAndForward, callback, _1, _2));
 #endif
 	}
 
