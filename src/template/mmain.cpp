@@ -233,7 +233,7 @@ private:
 };
 
 }
-
+/*
 #define PROTOCOL_NAME		TestInt
 #define PROTOCOL_ID			100
 #define PROTOCOL_FIELDS		FIELD_VINT(i)
@@ -338,7 +338,7 @@ void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 }
 
 }
-
+*/
 MODULE_RAII(
 	return HttpServletDepository::registerServlet(1, SharedNts::observe("/profile"), &profileProc);
 )
@@ -362,6 +362,7 @@ MODULE_RAII(
 MODULE_RAII(
 	return WebSocketServletDepository::registerServlet(2, SharedNts::observe("/wstest"), &webSocketProc);
 )
+/*
 MODULE_RAII(
 	return PlayerServletDepository::registerServlet(2, 100, &TestIntProc);
 )
@@ -383,7 +384,7 @@ MODULE_RAII(
 MODULE_RAII(
 	return PlayerServletDepository::registerServlet(2, 106, &TestProc);
 )
-
+*/
 namespace {
 
 void onClientClose(int id){

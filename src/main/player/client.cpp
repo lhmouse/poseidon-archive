@@ -40,9 +40,10 @@ protected:
 				client->onResponse(m_protocolId, STD_MOVE(m_payload));
 			} else {
 				PlayerErrorProtocol error(m_payload);
-				LOG_POSEIDON_DEBUG("Dispatching error protocol: protocol id = ", error.protocolId,
-					", status = ", error.status, ", reason = ", error.reason);
-				client->onError(error.protocolId, static_cast<PlayerStatus>(error.status), STD_MOVE(error.reason));
+				LOG_POSEIDON_DEBUG("Dispatching error protocol: protocol id = ", error.get_protocol_id(),
+					", status = ", error.get_status(), ", reason = ", error.get_reason());
+				client->onError(error.get_protocol_id(),
+					static_cast<PlayerStatus>(error.get_status()), STD_MOVE(error.get_reason()));
 			}
 		} catch(PlayerProtocolException &e){
 			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ", m_protocolId,

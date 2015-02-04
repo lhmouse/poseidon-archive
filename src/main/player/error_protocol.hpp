@@ -11,9 +11,9 @@ namespace Poseidon {
 #define PROTOCOL_NAME	PlayerErrorProtocol
 #define PROTOCOL_ID		0
 #define PROTOCOL_FIELDS	\
-	FIELD_VUINT(protocolId)	\
-	FIELD_VINT(status)	\
-	FIELD_STRING(reason)
+	FIELD_VUINT			(protocol_id)	\
+	FIELD_VINT			(status)	\
+	FIELD_STRING		(reason)
 #include "protocol_generator.hpp"
 
 }

@@ -38,16 +38,16 @@ protected:
 		try {
 			if(m_protocolId == PlayerErrorProtocol::ID){
 				PlayerErrorProtocol packet(m_payload);
-				LOG_POSEIDON_DEBUG("Received error packet: protocol id = ", packet.protocolId,
-					", status = ", packet.status, ", reason = ", packet.reason);
+				LOG_POSEIDON_DEBUG("Received error packet: protocol id = ", packet.get_protocol_id(),
+					", status = ", packet.get_status(), ", reason = ", packet.get_reason());
 
-				switch(static_cast<PlayerControlCode>(packet.protocolId)){
+				switch(static_cast<PlayerControlCode>(packet.get_protocol_id())){
 				case PLAYER_CTL_HEARTBEAT:
 					LOG_POSEIDON_TRACE("Received heartbeat from ", session->getRemoteInfo());
 					break;
 
 				default:
-					LOG_POSEIDON_WARN("Unknown control code: ", packet.protocolId);
+					LOG_POSEIDON_WARN("Unknown control code: ", packet.get_protocol_id());
 					session->send(PlayerErrorProtocol::ID, StreamBuffer(packet), true);
 					break;
 				}
