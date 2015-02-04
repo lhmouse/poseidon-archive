@@ -165,10 +165,10 @@ public:
 	}
 
 #define FIELD_ARRAY(name_, fields_)	\
-	const ElementOf ## name_ ## X_ & get_ ## name_() const {	\
+	const ::std::vector<ElementOf ## name_ ## X_> & get_ ## name_() const {	\
 		return name_;	\
 	}	\
-	ElementOf ## name_ ## X_ & get_ ## name_(){	\
+	::std::vector<ElementOf ## name_ ## X_> & get_ ## name_(){	\
 		return name_;	\
 	}
 
