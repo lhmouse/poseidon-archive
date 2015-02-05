@@ -157,13 +157,13 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		::std::pair<iterator, bool> insert(const value_type &val){	\
 			return m_delegate.insert(val);	\
 		}	\
-		::std::pair<iterator, bool> insert(Move<value_type> val){	\
+		::std::pair<iterator, bool> insert(::Poseidon::Move<value_type> val){	\
 			return m_delegate.insert(STD_MOVE(val));	\
 		}	\
 		iterator insert(iterator pos, const value_type &val){	\
 			return m_delegate.insert(pos, val);	\
 		}	\
-		iterator insert(iterator pos, Move<value_type> val){	\
+		iterator insert(iterator pos, ::Poseidon::Move<value_type> val){	\
 			return m_delegate.insert(pos, STD_MOVE(val));	\
 		}	\
 		\
@@ -182,7 +182,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 		template<unsigned IndexIdT>	\
 		::std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator, bool>	\
-			insert(Move<value_type> val)	\
+			insert(::Poseidon::Move<value_type> val)	\
 		{	\
 			return getIndex<IndexIdT>().insert(STD_MOVE(val));	\
 		}	\
@@ -196,7 +196,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		template<unsigned IndexIdT>	\
 		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
 			insert(typename delegate_container::nth_index<IndexIdT>::type::iterator hint,	\
-				Move<value_type> val)	\
+				::Poseidon::Move<value_type> val)	\
 		{	\
 			return getIndex<IndexIdT>().insert(hint, STD_MOVE(val));	\
 		}	\
@@ -227,7 +227,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 		template<unsigned IndexIdT> \
 		bool replace(typename delegate_container::nth_index<IndexIdT>::type::iterator pos,	\
-			Move<value_type> val)	\
+			::Poseidon::Move<value_type> val)	\
 		{	\
 			return getIndex<IndexIdT>().replace(pos, STD_MOVE(val));	\
 		}	\
