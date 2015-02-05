@@ -1,28 +1,28 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
-#ifndef PROTOCOL_NAME
-#	error PROTOCOL_NAME is undefined.
+#ifndef MESSAGE_NAME
+#	error MESSAGE_NAME is undefined.
 #endif
 
-#ifndef PROTOCOL_ID
-#	error PROTOCOL_ID is undefined.
+#ifndef MESSAGE_ID
+#	error MESSAGE_ID is undefined.
 #endif
 
-#ifndef PROTOCOL_FIELDS
-#	error PROTOCOL_FIELDS is undefined.
+#ifndef MESSAGE_FIELDS
+#	error MESSAGE_FIELDS is undefined.
 #endif
 
-#ifndef POSEIDON_PLAYER_PROTOCOL_BASE_HPP_
-#   error Please #include "protocol_base.hpp" first.
+#ifndef POSEIDON_PLAYER_MESSAGE_BASE_HPP_
+#   error Please #include "message_base.hpp" first.
 #endif
 
 #include "../cxx_util.hpp"
 
-class PROTOCOL_NAME : public ::Poseidon::PlayerProtocolBase {
+class MESSAGE_NAME : public ::Poseidon::PlayerMessageBase {
 public:
 	enum {
-		ID = PROTOCOL_ID
+		ID = MESSAGE_ID
 	};
 
 private:
@@ -42,7 +42,7 @@ private:
 										};	\
 										::std::vector<ElementOf ## name_ ## X_> name_;
 
-	PROTOCOL_FIELDS
+	MESSAGE_FIELDS
 
 public:
 
@@ -58,9 +58,9 @@ public:
 #define FIELD_BYTES(name_, size_)
 #define FIELD_ARRAY(name_, fields_)
 
-#if (0 PROTOCOL_FIELDS) != 0
-	PROTOCOL_NAME()
-		: ::Poseidon::PlayerProtocolBase()
+#if (0 MESSAGE_FIELDS) != 0
+	MESSAGE_NAME()
+		: ::Poseidon::PlayerMessageBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -74,7 +74,7 @@ public:
 #define FIELD_BYTES(name_, size_)		, name_()
 #define FIELD_ARRAY(name_, fields_)		, name_()
 
-		PROTOCOL_FIELDS
+		MESSAGE_FIELDS
 	{
 	}
 #endif
@@ -91,8 +91,8 @@ public:
 #define FIELD_BYTES(name_, size_)
 #define FIELD_ARRAY(name_, fields_)
 
-	explicit PROTOCOL_NAME(STRIP_FIRST(void PROTOCOL_FIELDS))
-		: ::Poseidon::PlayerProtocolBase()
+	explicit MESSAGE_NAME(STRIP_FIRST(void MESSAGE_FIELDS))
+		: ::Poseidon::PlayerMessageBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -106,11 +106,11 @@ public:
 #define FIELD_BYTES(name_, size_)		, name_()
 #define FIELD_ARRAY(name_, fields_)		, name_()
 
-		PROTOCOL_FIELDS
+		MESSAGE_FIELDS
 	{
 	}
-	explicit PROTOCOL_NAME(::Poseidon::StreamBuffer &buffer_)
-		: ::Poseidon::PlayerProtocolBase()
+	explicit MESSAGE_NAME(::Poseidon::StreamBuffer &buffer_)
+		: ::Poseidon::PlayerMessageBase()
 	{
 		*this << buffer_;
 	}
@@ -172,12 +172,12 @@ public:
 		return name_;	\
 	}
 
-	PROTOCOL_FIELDS
+	MESSAGE_FIELDS
 
 	void operator>>(::Poseidon::StreamBuffer &buffer_) const {
 		::Poseidon::StreamBuffer::WriteIterator write_(buffer_);
 
-		typedef PROTOCOL_NAME Cur_;
+		typedef MESSAGE_NAME Cur_;
 		const Cur_ &cur_ = *this;
 
 #undef FIELD_VINT
@@ -207,13 +207,13 @@ public:
 											}	\
 										}
 
-		PROTOCOL_FIELDS
+		MESSAGE_FIELDS
 	}
 
 	void operator<<(::Poseidon::StreamBuffer &buffer_){
 		::Poseidon::StreamBuffer::ReadIterator read_(buffer_);
 
-		typedef PROTOCOL_NAME Cur_;
+		typedef MESSAGE_NAME Cur_;
 		Cur_ &cur_ = *this;
 
 #undef FIELD_VINT
@@ -223,18 +223,18 @@ public:
 #undef FIELD_ARRAY
 
 #define FIELD_VINT(name_)				if(!::Poseidon::vint50FromBinary(cur_.name_, read_, buffer_.size())){	\
-											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
+											THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 										}
 #define FIELD_VUINT(name_)				if(!::Poseidon::vuint50FromBinary(cur_.name_, read_, buffer_.size())){	\
-											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
+											THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 										}
 #define FIELD_STRING(name_)				{	\
 											unsigned long long count_;	\
 											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
-												THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
+												THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 											}	\
 											if(buffer_.size() < count_){	\
-												THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
+												THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 											}	\
 											for(unsigned long long i_ = 0; i_ < count_; ++i_){	\
 												cur_.name_.push_back(*read_);	\
@@ -242,7 +242,7 @@ public:
 											}	\
 										}
 #define FIELD_BYTES(name_, size_)		if(buffer_.size() < size_){	\
-											THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
+											THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 										}	\
 										for(::std::size_t i_ = 0; i_ < size_; ++i_){	\
 											name_[i_] = *read_;	\
@@ -251,7 +251,7 @@ public:
 #define FIELD_ARRAY(name_, fields_)		{	\
 											unsigned long long count_;	\
 											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
-												THROW_END_OF_STREAM_(PROTOCOL_NAME, name_);	\
+												THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 											}	\
 											cur_.name_.clear();	\
 											for(unsigned long long i_ = 0; i_ < count_; ++i_){	\
@@ -265,10 +265,10 @@ public:
 											}	\
 										}
 
-		PROTOCOL_FIELDS
+		MESSAGE_FIELDS
 
 		if(!buffer_.empty()){
-			THROW_JUNK_AFTER_PACKET_(PROTOCOL_NAME);
+			THROW_JUNK_AFTER_PACKET_(MESSAGE_NAME);
 		}
 	}
 
@@ -279,6 +279,6 @@ public:
 	}
 };
 
-#undef PROTOCOL_NAME
-#undef PROTOCOL_ID
-#undef PROTOCOL_FIELDS
+#undef MESSAGE_NAME
+#undef MESSAGE_ID
+#undef MESSAGE_FIELDS

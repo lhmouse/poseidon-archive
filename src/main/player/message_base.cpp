@@ -2,7 +2,7 @@
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "protocol_base.hpp"
+#include "message_base.hpp"
 #include "exception.hpp"
 #include "status.hpp"
 #include "../endian.hpp"
@@ -43,28 +43,28 @@ using namespace Poseidon;
 
 */
 
-void PlayerProtocolBase::encodeHeader(
-	StreamBuffer &dst, boost::uint16_t protocolId, boost::uint64_t protocolLen)
+void PlayerMessageBase::encodeHeader(
+	StreamBuffer &dst, boost::uint16_t messageId, boost::uint64_t messageLen)
 {
 	boost::uint16_t temp16;
 
 	// 小长度，必需。
-	storeLe(temp16, (protocolLen < 0xFFFF) ? protocolLen : 0xFFFF);
+	storeLe(temp16, (messageLen < 0xFFFF) ? messageLen : 0xFFFF);
 	dst.put(&temp16, 2);
 
 	// 协议号，必需。
-	storeLe(temp16, protocolId);
+	storeLe(temp16, messageId);
 	dst.put(&temp16, 2);
 
-	if(protocolLen >= 0xFFFF){
+	if(messageLen >= 0xFFFF){
 		// 大长度，可选。
 		boost::uint64_t temp64;
-		storeLe(temp64, protocolLen);
+		storeLe(temp64, messageLen);
 		dst.put(&temp64, 8);
 	}
 }
-bool PlayerProtocolBase::decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
-	boost::uint16_t &protocolId, boost::uint64_t &protocolLen, StreamBuffer &src) NOEXCEPT
+bool PlayerMessageBase::decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
+	boost::uint16_t &messageId, boost::uint64_t &messageLen, StreamBuffer &src) NOEXCEPT
 {
 	boost::uint16_t temp16;
 	if(src.peek(&temp16, 2) < 2){
@@ -73,8 +73,8 @@ bool PlayerProtocolBase::decodeHeader( // 如果返回 false，不从 src 中消
 	// （小长度 + 协议号）一共 4 字节。
 	std::size_t totalLen = 4;
 	// 小长度，必需。
-	protocolLen = loadLe(temp16);
-	if(protocolLen == 0xFFFF){
+	messageLen = loadLe(temp16);
+	if(messageLen == 0xFFFF){
 		totalLen += 8;
 	}
 	if(src.size() < totalLen){
@@ -84,13 +84,13 @@ bool PlayerProtocolBase::decodeHeader( // 如果返回 false，不从 src 中消
 
 	// 协议号，必需。
 	src.get(&temp16, 2);
-	protocolId = loadLe(temp16);
+	messageId = loadLe(temp16);
 
-	if(protocolLen == 0xFFFF){
+	if(messageLen == 0xFFFF){
 		// 大长度，可选。
 		boost::uint64_t temp64;
 		src.get(&temp64, 8);
-		protocolLen = loadLe(temp64);
+		messageLen = loadLe(temp64);
 	}
 	return true;
 }

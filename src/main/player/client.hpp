@@ -8,7 +8,7 @@
 #include <boost/utility/enable_if.hpp>
 #include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
-#include "protocol_base.hpp"
+#include "message_base.hpp"
 #include "status.hpp"
 
 namespace Poseidon {
@@ -20,7 +20,7 @@ private:
 	boost::shared_ptr<const TimerItem> m_keepAliveTimer;
 
 	boost::uint64_t m_payloadLen;
-	unsigned m_protocolId;
+	unsigned m_messageId;
 	StreamBuffer m_payload;
 
 protected:
@@ -31,17 +31,17 @@ private:
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 public:
-	virtual void onResponse(boost::uint16_t protocolId, StreamBuffer contents) = 0;
-	virtual void onError(boost::uint16_t protocolId, PlayerStatus status, std::string reason) = 0;
+	virtual void onResponse(boost::uint16_t messageId, StreamBuffer contents) = 0;
+	virtual void onError(boost::uint16_t messageId, PlayerStatus status, std::string reason) = 0;
 
 public:
-	bool send(boost::uint16_t protocolId, StreamBuffer contents, bool fin = false);
+	bool send(boost::uint16_t messageId, StreamBuffer contents, bool fin = false);
 
-	template<class ProtocolT>
-	typename boost::enable_if<boost::is_base_of<PlayerProtocolBase, ProtocolT>, bool>::type
-		send(const ProtocolT &contents, bool fin = false)
+	template<class MessageT>
+	typename boost::enable_if<boost::is_base_of<PlayerMessageBase, MessageT>, bool>::type
+		send(const MessageT &contents, bool fin = false)
 	{
-		return send(ProtocolT::ID, StreamBuffer(contents), fin);
+		return send(MessageT::ID, StreamBuffer(contents), fin);
 	}
 };
 

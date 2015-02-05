@@ -22,7 +22,7 @@
 #include "../main/tcp_client_base.hpp"
 #include "../main/player/session.hpp"
 #include "../main/http/session.hpp"
-#include "../main/player/protocol_base.hpp"
+#include "../main/player/message_base.hpp"
 #include "../main/singletons/player_servlet_depository.hpp"
 #include "../main/singletons/epoll_daemon.hpp"
 #include "../main/mysql/object_base.hpp"
@@ -234,46 +234,46 @@ private:
 
 }
 /*
-#define PROTOCOL_NAME		TestInt
-#define PROTOCOL_ID			100
-#define PROTOCOL_FIELDS		FIELD_VINT(i)
-#include "../main/player/protocol_generator.hpp"
+#define MESSAGE_NAME		TestInt
+#define MESSAGE_ID			100
+#define MESSAGE_FIELDS		FIELD_VINT(i)
+#include "../main/player/message_generator.hpp"
 
-#define PROTOCOL_NAME		TestUInt
-#define PROTOCOL_ID			101
-#define PROTOCOL_FIELDS 	FIELD_VUINT(u)
-#include "../main/player/protocol_generator.hpp"
+#define MESSAGE_NAME		TestUInt
+#define MESSAGE_ID			101
+#define MESSAGE_FIELDS 	FIELD_VUINT(u)
+#include "../main/player/message_generator.hpp"
 
-#define PROTOCOL_NAME		TestString
-#define PROTOCOL_ID			102
-#define PROTOCOL_FIELDS		FIELD_STRING(s)
-#include "../main/player/protocol_generator.hpp"
+#define MESSAGE_NAME		TestString
+#define MESSAGE_ID			102
+#define MESSAGE_FIELDS		FIELD_STRING(s)
+#include "../main/player/message_generator.hpp"
 
-#define PROTOCOL_NAME		TestIntArray
-#define PROTOCOL_ID			103
-#define PROTOCOL_FIELDS		FIELD_ARRAY(a, FIELD_VINT(i))
-#include "../main/player/protocol_generator.hpp"
+#define MESSAGE_NAME		TestIntArray
+#define MESSAGE_ID			103
+#define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_VINT(i))
+#include "../main/player/message_generator.hpp"
 
-#define PROTOCOL_NAME		TestUIntArray
-#define PROTOCOL_ID			104
-#define PROTOCOL_FIELDS		FIELD_ARRAY(a, FIELD_VUINT(u))
-#include "../main/player/protocol_generator.hpp"
+#define MESSAGE_NAME		TestUIntArray
+#define MESSAGE_ID			104
+#define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_VUINT(u))
+#include "../main/player/message_generator.hpp"
 
-#define PROTOCOL_NAME		TestStringArray
-#define PROTOCOL_ID			105
-#define PROTOCOL_FIELDS		FIELD_ARRAY(a, FIELD_STRING(s))
-#include "../main/player/protocol_generator.hpp"
+#define MESSAGE_NAME		TestStringArray
+#define MESSAGE_ID			105
+#define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_STRING(s))
+#include "../main/player/message_generator.hpp"
 
-#define PROTOCOL_NAME   	TestProtocol
-#define PROTOCOL_ID			106
-#define PROTOCOL_FIELDS \
+#define MESSAGE_NAME	   	TestMessage
+#define MESSAGE_ID			106
+#define MESSAGE_FIELDS \
 	FIELD_VINT(i)   \
 	FIELD_VUINT(j)  \
 	FIELD_ARRAY(a,  \
 		FIELD_STRING(s) \
 		FIELD_VUINT(k)  \
 	)
-#include "../main/player/protocol_generator.hpp"
+#include "../main/player/message_generator.hpp"
 
 namespace {
 
@@ -326,7 +326,7 @@ void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incom
 
 void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	LOG_POSEIDON_WARN("Received: ", HexDumper(incoming));
-	TestProtocol req(incoming);
+	TestMessage req(incoming);
 	LOG_POSEIDON_WARN("req.i = ", req.i);
 	LOG_POSEIDON_WARN("req.j = ", req.j);
 	LOG_POSEIDON_WARN("req.a.size() = ", req.a.size());

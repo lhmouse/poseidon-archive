@@ -5,7 +5,7 @@
 #include "session.hpp"
 #include "exception.hpp"
 #include "control_code.hpp"
-#include "error_protocol.hpp"
+#include "error_message.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
 #include "../singletons/player_servlet_depository.hpp"
@@ -18,14 +18,14 @@ namespace {
 class PlayerRequestJob : public JobBase {
 private:
 	const boost::weak_ptr<PlayerSession> m_session;
-	const unsigned m_protocolId;
+	const unsigned m_messageId;
 
 	StreamBuffer m_payload;
 
 public:
 	PlayerRequestJob(boost::weak_ptr<PlayerSession> session,
-		unsigned protocolId, StreamBuffer payload)
-		: m_session(STD_MOVE(session)), m_protocolId(protocolId)
+		unsigned messageId, StreamBuffer payload)
+		: m_session(STD_MOVE(session)), m_messageId(messageId)
 		, m_payload(STD_MOVE(payload))
 	{
 	}
@@ -36,44 +36,44 @@ protected:
 
 		const boost::shared_ptr<PlayerSession> session(m_session);
 		try {
-			if(m_protocolId == PlayerErrorProtocol::ID){
-				PlayerErrorProtocol packet(m_payload);
-				LOG_POSEIDON_DEBUG("Received error packet: protocol id = ", packet.get_protocol_id(),
+			if(m_messageId == PlayerErrorMessage::ID){
+				PlayerErrorMessage packet(m_payload);
+				LOG_POSEIDON_DEBUG("Received error packet: message id = ", packet.get_message_id(),
 					", status = ", packet.get_status(), ", reason = ", packet.get_reason());
 
-				switch(static_cast<PlayerControlCode>(packet.get_protocol_id())){
+				switch(static_cast<PlayerControlCode>(packet.get_message_id())){
 				case PLAYER_CTL_HEARTBEAT:
 					LOG_POSEIDON_TRACE("Received heartbeat from ", session->getRemoteInfo());
 					break;
 
 				default:
-					LOG_POSEIDON_WARN("Unknown control code: ", packet.get_protocol_id());
-					session->send(PlayerErrorProtocol::ID, StreamBuffer(packet), true);
+					LOG_POSEIDON_WARN("Unknown control code: ", packet.get_message_id());
+					session->send(PlayerErrorMessage::ID, StreamBuffer(packet), true);
 					break;
 				}
 			} else {
 				const AUTO(category, session->getCategory());
-				const AUTO(servlet, PlayerServletDepository::getServlet(category, m_protocolId));
+				const AUTO(servlet, PlayerServletDepository::getServlet(category, m_messageId));
 				if(!servlet){
 					LOG_POSEIDON_WARN(
-						"No servlet in category ", category, " matches protocol ", m_protocolId);
-					DEBUG_THROW(PlayerProtocolException, PLAYER_NOT_FOUND,
-						SharedNts::observe("Unknown protocol"));
+						"No servlet in category ", category, " matches message ", m_messageId);
+					DEBUG_THROW(PlayerMessageException, PLAYER_NOT_FOUND,
+						SharedNts::observe("Unknown message"));
 				}
 
-				LOG_POSEIDON_DEBUG("Dispatching packet: protocol = ", m_protocolId,
+				LOG_POSEIDON_DEBUG("Dispatching packet: message = ", m_messageId,
 					", payload size = ", m_payload.size());
 				(*servlet)(session, STD_MOVE(m_payload));
 			}
 			session->setTimeout(PlayerServletDepository::getKeepAliveTimeout());
-		} catch(PlayerProtocolException &e){
-			LOG_POSEIDON_ERROR("PlayerProtocolException thrown in player servlet, protocol id = ",
-				m_protocolId, ", status = ", static_cast<int>(e.status()), ", what = ", e.what());
-			session->sendError(m_protocolId, e.status(), e.what(), false);
+		} catch(PlayerMessageException &e){
+			LOG_POSEIDON_ERROR("PlayerMessageException thrown in player servlet, message id = ",
+				m_messageId, ", status = ", static_cast<int>(e.status()), ", what = ", e.what());
+			session->sendError(m_messageId, e.status(), e.what(), false);
 			throw;
 		} catch(...){
-			LOG_POSEIDON_ERROR("Forwarding exception... protocol id = ", m_protocolId);
-			session->sendError(m_protocolId, PLAYER_INTERNAL_ERROR, false);
+			LOG_POSEIDON_ERROR("Forwarding exception... message id = ", m_messageId);
+			session->sendError(m_messageId, PLAYER_INTERNAL_ERROR, false);
 			throw;
 		}
 	}
@@ -84,7 +84,7 @@ protected:
 PlayerSession::PlayerSession(std::size_t category, UniqueFile socket)
 	: TcpSessionBase(STD_MOVE(socket))
 	, m_category(category)
-	, m_payloadLen((boost::uint64_t)-1), m_protocolId(0)
+	, m_payloadLen((boost::uint64_t)-1), m_messageId(0)
 {
 }
 PlayerSession::~PlayerSession(){
@@ -101,20 +101,20 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 		m_payload.put(data, size);
 		for(;;){
 			if(m_payloadLen == (boost::uint64_t)-1){
-				boost::uint16_t protocolId;
+				boost::uint16_t messageId;
 				boost::uint64_t payloadLen;
-				if(!PlayerProtocolBase::decodeHeader(protocolId, payloadLen, m_payload)){
+				if(!PlayerMessageBase::decodeHeader(messageId, payloadLen, m_payload)){
 					break;
 				}
-				m_protocolId = protocolId;
+				m_messageId = messageId;
 				m_payloadLen = payloadLen;
-				LOG_POSEIDON_DEBUG("Protocol id = ", m_protocolId, ", len = ", m_payloadLen);
+				LOG_POSEIDON_DEBUG("Message id = ", m_messageId, ", len = ", m_payloadLen);
 
 				const std::size_t maxRequestLength = PlayerServletDepository::getMaxRequestLength();
 				if((unsigned)m_payloadLen >= maxRequestLength){
 					LOG_POSEIDON_WARN(
 						"Request too large: size = ", m_payloadLen, ", max = ", maxRequestLength);
-					DEBUG_THROW(PlayerProtocolException, PLAYER_REQUEST_TOO_LARGE,
+					DEBUG_THROW(PlayerMessageException, PLAYER_REQUEST_TOO_LARGE,
 						SharedNts::observe("Request too large"));
 				}
 			}
@@ -122,33 +122,33 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 				break;
 			}
 			pendJob(boost::make_shared<PlayerRequestJob>(virtualWeakFromThis<PlayerSession>(),
-				m_protocolId, m_payload.cut(m_payloadLen)));
+				m_messageId, m_payload.cut(m_payloadLen)));
 			m_payloadLen = (boost::uint64_t)-1;
-			m_protocolId = 0;
+			m_messageId = 0;
 		}
-	} catch(PlayerProtocolException &e){
+	} catch(PlayerMessageException &e){
 		LOG_POSEIDON_ERROR(
-			"PlayerProtocolException thrown while parsing data, protocol id = ", m_protocolId,
+			"PlayerMessageException thrown while parsing data, message id = ", m_messageId,
 			", status = ", static_cast<int>(e.status()), ", what = ", e.what());
-		sendError(m_protocolId, e.status(), e.what(), true);
+		sendError(m_messageId, e.status(), e.what(), true);
 		throw;
 	} catch(...){
-		LOG_POSEIDON_ERROR("Forwarding exception... protocol id = ", m_protocolId);
-		sendError(m_protocolId, PLAYER_INTERNAL_ERROR, true);
+		LOG_POSEIDON_ERROR("Forwarding exception... message id = ", m_messageId);
+		sendError(m_messageId, PLAYER_INTERNAL_ERROR, true);
 		throw;
 	}
 }
 
-bool PlayerSession::send(boost::uint16_t protocolId, StreamBuffer contents, bool fin){
+bool PlayerSession::send(boost::uint16_t messageId, StreamBuffer contents, bool fin){
 	StreamBuffer data;
-	PlayerProtocolBase::encodeHeader(data, protocolId, contents.size());
+	PlayerMessageBase::encodeHeader(data, messageId, contents.size());
 	data.splice(contents);
 	return TcpSessionBase::send(STD_MOVE(data), fin);
 }
 
-bool PlayerSession::sendError(boost::uint16_t protocolId, PlayerStatus status,
+bool PlayerSession::sendError(boost::uint16_t messageId, PlayerStatus status,
 	std::string reason, bool fin)
 {
-	return send(PlayerErrorProtocol::ID, StreamBuffer(PlayerErrorProtocol(
-		protocolId, static_cast<int>(status), STD_MOVE(reason))), fin);
+	return send(PlayerErrorMessage::ID, StreamBuffer(PlayerErrorMessage(
+		messageId, static_cast<int>(status), STD_MOVE(reason))), fin);
 }

@@ -14,7 +14,7 @@
 
 namespace Poseidon {
 
-class PlayerProtocolBase;
+class PlayerMessageBase;
 
 class PlayerSession : public TcpSessionBase {
 	friend class PlayerServer;
@@ -23,7 +23,7 @@ private:
 	const std::size_t m_category;
 
 	boost::uint64_t m_payloadLen;
-	unsigned m_protocolId;
+	unsigned m_messageId;
 	StreamBuffer m_payload;
 
 public:
@@ -38,18 +38,18 @@ public:
 		return m_category;
 	}
 
-	bool send(boost::uint16_t protocolId, StreamBuffer contents, bool fin = false);
+	bool send(boost::uint16_t messageId, StreamBuffer contents, bool fin = false);
 
-	template<class ProtocolT>
-	typename boost::enable_if<boost::is_base_of<PlayerProtocolBase, ProtocolT>, bool>::type
-		send(const ProtocolT &contents, bool fin = false)
+	template<class MessageT>
+	typename boost::enable_if<boost::is_base_of<PlayerMessageBase, MessageT>, bool>::type
+		send(const MessageT &contents, bool fin = false)
 	{
-		return send(ProtocolT::ID, StreamBuffer(contents), fin);
+		return send(MessageT::ID, StreamBuffer(contents), fin);
 	}
 
-	bool sendError(boost::uint16_t protocolId, PlayerStatus status, std::string reason, bool fin = false);
-	bool sendError(boost::uint16_t protocolId, PlayerStatus status, bool fin = false){
-		return sendError(protocolId, status, std::string(), fin);
+	bool sendError(boost::uint16_t messageId, PlayerStatus status, std::string reason, bool fin = false);
+	bool sendError(boost::uint16_t messageId, PlayerStatus status, bool fin = false){
+		return sendError(messageId, status, std::string(), fin);
 	}
 };
 

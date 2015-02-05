@@ -6,12 +6,12 @@
 #include "../log.hpp"
 using namespace Poseidon;
 
-PlayerProtocolException::PlayerProtocolException(const char *file, std::size_t line,
+PlayerMessageException::PlayerMessageException(const char *file, std::size_t line,
 	PlayerStatus status, SharedNts message)
 	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
 {
-	LOG_POSEIDON_ERROR("PlayerProtocolException: status = ", static_cast<unsigned>(status),
+	LOG_POSEIDON_ERROR("PlayerMessageException: status = ", static_cast<unsigned>(status),
 		", message = ", message);
 }
-PlayerProtocolException::~PlayerProtocolException() NOEXCEPT {
+PlayerMessageException::~PlayerMessageException() NOEXCEPT {
 }
