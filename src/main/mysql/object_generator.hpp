@@ -161,81 +161,99 @@ public:
 	bool get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(bool val_){	\
+	void set_ ## name_(bool val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_TINYINT(name_)	\
 	signed char get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(signed char val_){	\
+	void set_ ## name_(signed char val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_TINYINT_UNSIGNED(name_)	\
 	unsigned char get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned char val_){	\
+	void set_ ## name_(unsigned char val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_SMALLINT(name_)	\
 	short get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(short val_){	\
+	void set_ ## name_(short val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_SMALLINT_UNSIGNED(name_)	\
 	unsigned short get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned short val_){	\
+	void set_ ## name_(unsigned short val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_INTEGER(name_)	\
 	int get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(int val_){	\
+	void set_ ## name_(int val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_INTEGER_UNSIGNED(name_)	\
 	unsigned get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned val_){	\
+	void set_ ## name_(unsigned val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_BIGINT(name_)	\
 	long long get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(long long val_){	\
+	void set_ ## name_(long long val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_BIGINT_UNSIGNED(name_)	\
 	unsigned long long get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned long long val_){	\
+	void set_ ## name_(unsigned long long val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_STRING(name_)	\
@@ -246,21 +264,25 @@ public:
 		const ::boost::mutex::scoped_lock lock_(m_mutex);	\
 		return name_;	\
 	}	\
-	void set_ ## name_(std::string val_){	\
+	void set_ ## name_(std::string val_, bool invalidates_ = true){	\
 		{	\
 			const ::boost::mutex::scoped_lock lock_(m_mutex);	\
 			name_.swap(val_);	\
 		}	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 #define FIELD_DATETIME(name_)	\
 	unsigned long long get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned long long val_){	\
+	void set_ ## name_(unsigned long long val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-		invalidate();	\
+		if(invalidates_){	\
+			invalidate();	\
+		}	\
 	}
 
 	MYSQL_OBJECT_FIELDS
