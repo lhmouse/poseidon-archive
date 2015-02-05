@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/mutex.hpp>
 #include <boost/cstdint.hpp>
 #include "../atomic.hpp"
 #include "../log.hpp"
@@ -36,7 +36,7 @@ private:
 	mutable const void *m_context;
 
 protected:
-	mutable boost::shared_mutex m_mutex;
+	mutable boost::mutex m_mutex;
 
 protected:
 	MySqlObjectBase();

@@ -239,13 +239,16 @@ public:
 	}
 
 #define FIELD_STRING(name_)	\
+	const ::std::string & unlocked_get_ ## name_() const {	\
+		return name_;	\
+	}	\
 	::std::string get_ ## name_() const {	\
-		const ::boost::shared_lock< ::boost::shared_mutex> slock_(m_mutex);	\
+		const ::boost::mutex::scoped_lock lock_(m_mutex);	\
 		return name_;	\
 	}	\
 	void set_ ## name_(std::string val_){	\
 		{	\
-			const ::boost::unique_lock< ::boost::shared_mutex> ulock_(m_mutex);	\
+			const ::boost::mutex::scoped_lock lock_(m_mutex);	\
 			name_.swap(val_);	\
 		}	\
 		invalidate();	\
