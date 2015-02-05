@@ -53,26 +53,6 @@ enum {
 	IDX_WRITE,
 };
 
-struct HexEncoder {
-	const void *const read;
-	const std::size_t size;
-
-	HexEncoder(const void *read_, std::size_t size_)
-		: read(read_), size(size_)
-	{
-	}
-};
-
-std::ostream &operator<<(std::ostream &os, const HexEncoder &rhs){
-	const AUTO(data, static_cast<const unsigned char *>(rhs.read));
-	for(std::size_t i = 0; i < rhs.size; ++i){
-		char temp[16];
-		unsigned len = std::sprintf(temp, "%02X ", data[i]);
-		os.write(temp, len);
-	}
-	return os;
-}
-
 }
 
 struct Epoll::SessionMapImpl : public SessionMap {
@@ -249,8 +229,6 @@ std::size_t Epoll::pumpReadable(){
 				session->send(StreamBuffer(), true);
 				continue;
 			}
-			LOG_POSEIDON_TRACE("Read ", bytesRead, " byte(s) from ", session->getRemoteInfo(),
-				", hex = ", HexEncoder(temp, bytesRead));
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown while dispatching data: what = ", e.what());
 			session->forceShutdown();
@@ -311,8 +289,6 @@ std::size_t Epoll::pumpWriteable(){
 				}
 				continue;
 			}
-			LOG_POSEIDON_TRACE("Wrote ", bytesWritten, " byte(s) to ", session->getRemoteInfo(),
-				", hex = ", HexEncoder(temp, bytesWritten));
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown while writing socket: what = ", e.what());
 			session->forceShutdown();

@@ -29,9 +29,6 @@ class TcpClientBase;
 class TcpSessionBase : public SessionBase {
 	friend Epoll;
 
-	template<class>
-	friend class TcpMonitoredSession;
-
 	friend TcpServerBase;
 	friend TcpClientBase;
 
