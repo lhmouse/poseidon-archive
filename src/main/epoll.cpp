@@ -231,10 +231,10 @@ std::size_t Epoll::pumpReadable(){
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown while dispatching data: what = ", e.what());
-			session->forceShutdown();
+			session->send(StreamBuffer(), true);
 		} catch(...){
 			LOG_POSEIDON_ERROR("Unknown exception thrown while dispatching data.");
-			session->forceShutdown();
+			session->send(StreamBuffer(), true);
 		}
 	}
 	return count;
