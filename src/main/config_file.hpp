@@ -35,9 +35,13 @@ public:
 		m_contents.swap(rhs.m_contents);
 	}
 
+	const std::string &getRaw(const char *key) const {
+		return m_contents.get(key);
+	}
+
 	template<typename T>
 	bool get(T &val, const char *key) const {
-		const std::string &str = m_contents.get(key);
+		const AUTO_REF(str, m_contents.get(key));
 		if(str.empty()){
 			return false;
 		}
@@ -46,7 +50,7 @@ public:
 	}
 	template<typename T, typename DefaultT>
 	bool get(T &val, const char *key, const DefaultT &defVal) const {
-		const std::string &str = m_contents.get(key);
+		const AUTO_REF(str, m_contents.get(key));
 		if(str.empty()){
 			val = defVal;
 			return false;
@@ -56,7 +60,7 @@ public:
 	}
 	template<typename T, typename DefaultT>
 	T get(const char *key, const DefaultT &defVal) const {
-		const std::string &str = m_contents.get(key);
+		const AUTO_REF(str, m_contents.get(key));
 		if(str.empty()){
 			return T(defVal);
 		}
@@ -64,28 +68,22 @@ public:
 	}
 
 	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const char *key,
-		bool includingEmpty = false, bool truncates = true) const
-	{
-		if(truncates){
-			vals.clear();
-		}
-		std::pair<OptionalMap::const_iterator,
-			OptionalMap::const_iterator> range = m_contents.range(key);
+	std::size_t getAll(std::vector<T> &vals, const char *key, bool includingEmpty = false) const {
+		const AUTO(range, m_contents.range(key));
+		vals.reserve(std::distance(range.first, range.second));
 		std::size_t ret = 0;
-		while(range.first != range.second){
-			if(includingEmpty || !range.first->second.empty()){
-				vals.push_back(boost::lexical_cast<T>(range.first->second));
+		for(AUTO(it, range.first); it != range.second; ++it){
+			if(includingEmpty || !it->second.empty()){
+				vals.push_back(boost::lexical_cast<T>(it->second));
 				++ret;
 			}
-			++range.first;
 		}
 		return ret;
 	}
 	template<typename T>
 	std::vector<T> getAll(const char *key, bool includingEmpty = false) const {
 		std::vector<T> vals;
-		getAll(vals, key, includingEmpty, false);
+		getAll(vals, key, includingEmpty);
 		return vals;
 	}
 };
