@@ -17,7 +17,7 @@ public:
 
 public:
 	PlayerStatus status() const NOEXCEPT {
-		return static_cast<PlayerStatus>(ProtocolException::code());
+		return PlayerStatus(ProtocolException::code());
 	}
 };
 

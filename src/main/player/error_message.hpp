@@ -11,7 +11,7 @@ namespace Poseidon {
 #define MESSAGE_NAME	PlayerErrorMessage
 #define MESSAGE_ID		0
 #define MESSAGE_FIELDS	\
-	FIELD_VUINT			(message_id)	\
+	FIELD_VUINT			(messageId)	\
 	FIELD_VINT			(status)	\
 	FIELD_STRING		(reason)
 #include "message_generator.hpp"

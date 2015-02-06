@@ -21,7 +21,7 @@ public:
 
 public:
 	HttpStatus status() const NOEXCEPT {
-		return static_cast<HttpStatus>(ProtocolException::code());
+		return HttpStatus(ProtocolException::code());
 	}
 	const OptionalMap &headers() const NOEXCEPT;
 };

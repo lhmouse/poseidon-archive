@@ -40,10 +40,9 @@ protected:
 				client->onResponse(m_messageId, STD_MOVE(m_payload));
 			} else {
 				PlayerErrorMessage error(m_payload);
-				LOG_POSEIDON_DEBUG("Dispatching error message: message id = ", error.message_id,
+				LOG_POSEIDON_DEBUG("Dispatching error message: message id = ", error.messageId,
 					", status = ", error.status, ", reason = ", error.reason);
-				client->onError(error.message_id,
-					static_cast<PlayerStatus>(error.status), STD_MOVE(error.reason));
+				client->onError(error.messageId, PlayerStatus(error.status), STD_MOVE(error.reason));
 			}
 		} catch(PlayerMessageException &e){
 			LOG_POSEIDON_ERROR("PlayerMessageException thrown in player servlet, message id = ", m_messageId,
