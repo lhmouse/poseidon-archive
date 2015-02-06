@@ -267,7 +267,7 @@ public:
 	{
 	}
 
-private:
+public:
 	bool check() const OVERRIDE {
 		return true;
 	}
