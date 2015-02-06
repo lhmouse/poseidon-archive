@@ -59,7 +59,7 @@ public:
 		return true;
 	}
 	template<typename T, typename DefaultT>
-	T get(const char *key, const DefaultT &defVal) const {
+	T get(const char *key, const DefaultT &defVal = T()) const {
 		const AUTO_REF(str, m_contents.get(key));
 		if(str.empty()){
 			return T(defVal);
