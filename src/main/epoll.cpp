@@ -45,7 +45,7 @@ MULTI_INDEX_MAP(SessionMap, SessionMapElement,
 	UNIQUE_MEMBER_INDEX(fd)
 	MULTI_MEMBER_INDEX(lastRead)
 	MULTI_MEMBER_INDEX(lastWritten)
-);
+)
 
 enum {
 	IDX_FD,

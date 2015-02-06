@@ -97,7 +97,7 @@ MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,
 	UNIQUE_MEMBER_INDEX(handle)
 	MULTI_MEMBER_INDEX(realPath)
 	UNIQUE_MEMBER_INDEX(baseAddr)
-);
+)
 
 enum {
 	MIDX_MODULE,
@@ -124,7 +124,7 @@ struct ModuleRaiiMapElement {
 MULTI_INDEX_MAP(ModuleRaiiMap, ModuleRaiiMapElement,
 	MULTI_MEMBER_INDEX(baseAddr)
 	UNIQUE_MEMBER_INDEX(raii)
-);
+)
 
 enum {
 	MRIDX_BASE_ADDR,
