@@ -12,7 +12,7 @@ namespace Poseidon {
 class PlayerMessageException : public ProtocolException {
 public:
 	PlayerMessageException(const char *file, std::size_t line,
-		PlayerStatus status, SharedNts message);
+		PlayerStatus status, SharedNts message = SharedNts());
 	~PlayerMessageException() NOEXCEPT;
 
 public:
