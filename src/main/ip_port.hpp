@@ -6,6 +6,8 @@
 
 #include "cxx_ver.hpp"
 #include <iosfwd>
+#include <string>
+#include <utility>
 #include "shared_nts.hpp"
 
 namespace Poseidon {
@@ -24,8 +26,9 @@ struct IpPort {
 	}
 
 	void swap(IpPort &rhs) NOEXCEPT {
-		ip.swap(rhs.ip);
-		std::swap(port, rhs.port);
+		using std::swap;
+		swap(ip, rhs.ip);
+		swap(port, rhs.port);
 	}
 };
 
