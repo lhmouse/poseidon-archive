@@ -7,7 +7,9 @@
 namespace Poseidon {
 
 namespace PlayerStatusCodes {
-	enum PlayerStatus {
+	typedef long long PlayerStatus;
+
+	enum {
 		PLAYER_OK					= 0,
 		PLAYER_INTERNAL_ERROR		= -1,
 		PLAYER_END_OF_STREAM		= -2,

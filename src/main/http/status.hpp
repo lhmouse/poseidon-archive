@@ -7,7 +7,9 @@
 namespace Poseidon {
 
 namespace HttpStatusCodes {
-	enum HttpStatus {
+	typedef unsigned HttpStatus;
+
+	enum {
 		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 		HTTP_CONTINUE					= 100,
 		HTTP_SWITCHING_PROTOCOLS		= 101,

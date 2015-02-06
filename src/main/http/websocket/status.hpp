@@ -7,7 +7,9 @@
 namespace Poseidon {
 
 namespace WebSocketStatusCodes {
-	enum WebSocketStatus {
+	typedef unsigned WebSocketStatus;
+
+	enum {
 		WS_NORMAL_CLOSURE		= 1000,
 		WS_GOING_AWAY			= 1001,
 		WS_PROTOCOL_ERROR		= 1002,
