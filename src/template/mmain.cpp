@@ -412,15 +412,15 @@ MODULE_RAII(
 	obj->asyncSave(false);
 */
 	TestMessage req;
-	req.set_i(12345);
-	req.set_j(54321);
-	req.get_a().resize(2);
-	req.get_a().at(0).s = "meow";
-	req.get_a().at(0).k = 56789;
-	std::memcpy(req.get_a().at(0).b, "ABC", 3);
-	req.get_a().at(1).s = "bark";
-	req.get_a().at(1).k = 98765;
-	std::memcpy(req.get_a().at(1).b, "DEF", 3);
+	req.i = 12345;
+	req.j = 54321;
+	req.a.resize(2);
+	req.a.at(0).s = "meow";
+	req.a.at(0).k = 56789;
+	std::memcpy(req.a.at(0).b, "ABC", 3);
+	req.a.at(1).s = "bark";
+	req.a.at(1).k = 98765;
+	std::memcpy(req.a.at(1).b, "DEF", 3);
 	LOG_POSEIDON_FATAL(req);
 	return VAL_INIT;
 )

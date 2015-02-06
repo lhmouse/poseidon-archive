@@ -23,7 +23,7 @@ public:
 		ID = MESSAGE_ID
 	};
 
-private:
+public:
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -114,64 +114,6 @@ public:
 	}
 
 public:
-
-#undef FIELD_VINT
-#undef FIELD_VUINT
-#undef FIELD_STRING
-#undef FIELD_BYTES
-#undef FIELD_ARRAY
-
-#define FIELD_VINT(name_)	\
-	const long long & get_ ## name_() const {	\
-		return name_;	\
-	}	\
-	long long & get_ ## name_(){	\
-		return name_;	\
-	}	\
-	void set_ ## name_(long long val_){	\
-		name_ = val_;	\
-	}
-
-#define FIELD_VUINT(name_)	\
-	const unsigned long long & get_ ## name_() const {	\
-		return name_;	\
-	}	\
-	unsigned long long & get_ ## name_(){	\
-		return name_;	\
-	}	\
-	void set_ ## name_(unsigned long long val_){	\
-		name_ = val_;	\
-	}
-
-#define FIELD_STRING(name_)	\
-	const std::string & get_ ## name_() const {	\
-		return name_;	\
-	}	\
-	std::string & get_ ## name_(){	\
-		return name_;	\
-	}	\
-	void set_ ## name_(std::string val_){	\
-		name_.swap(val_);	\
-	}
-
-#define FIELD_BYTES(name_, size_)	\
-	const unsigned char (& get_ ## name_())[size_] const {	\
-		return name_;	\
-	}	\
-	unsigned char (& get_ ## name_())[size_] {	\
-		return name_;	\
-	}
-
-#define FIELD_ARRAY(name_, fields_)	\
-	const ::std::vector<ElementOf ## name_ ## X_> & get_ ## name_() const {	\
-		return name_;	\
-	}	\
-	::std::vector<ElementOf ## name_ ## X_> & get_ ## name_(){	\
-		return name_;	\
-	}
-
-	MESSAGE_FIELDS
-
 	void operator>>(::Poseidon::StreamBuffer &buffer_) const {
 		::Poseidon::StreamBuffer::WriteIterator write_(buffer_);
 
