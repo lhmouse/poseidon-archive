@@ -5,9 +5,12 @@
 #define POSEIDON_PLAYER_MESSAGE_BASE_HPP_
 
 #include "../cxx_ver.hpp"
+#include "../cxx_util.hpp"
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
+#include <ostream>
 #include <boost/cstdint.hpp>
 #include "../vint50.hpp"
 #include "../stream_buffer.hpp"

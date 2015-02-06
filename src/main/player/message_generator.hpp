@@ -17,8 +17,6 @@
 #   error Please #include "message_base.hpp" first.
 #endif
 
-#include "../cxx_util.hpp"
-
 class MESSAGE_NAME : public ::Poseidon::PlayerMessageBase {
 public:
 	enum {
@@ -188,23 +186,17 @@ public:
 
 #define FIELD_VINT(name_)				::Poseidon::vint50ToBinary(cur_.name_, write_);
 #define FIELD_VUINT(name_)				::Poseidon::vuint50ToBinary(cur_.name_, write_);
-#define FIELD_STRING(name_)				{	\
-											::Poseidon::vuint50ToBinary(cur_.name_.size(), write_);	\
-											write_ = ::std::copy(	\
-												cur_.name_.begin(), cur_.name_.end(), write_);	\
-										}
-#define FIELD_BYTES(name_, size_)		write_ = ::std::copy(cur_.name_, cur_name_ + size_, write_);
-#define FIELD_ARRAY(name_, fields_)		{	\
-											const unsigned long long count_ = cur_.name_.size();	\
-											::Poseidon::vuint50ToBinary(count_, write_);	\
-											for(unsigned long long i_ = 0; i_ < count_; ++i_){	\
-												typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-												const Element_ &element_ = cur_.name_[i_];	\
-												typedef Element_ Cur_;	\
-												const Cur_ &cur_ = element_;	\
-												\
-												fields_	\
-											}	\
+#define FIELD_STRING(name_)				::Poseidon::vuint50ToBinary(cur_.name_.size(), write_);	\
+										write_ = ::std::copy(cur_.name_.begin(), cur_.name_.end(), write_);
+#define FIELD_BYTES(name_, size_)		write_ = ::std::copy(cur_.name_, cur_.name_ + size_, write_);
+#define FIELD_ARRAY(name_, fields_)		::Poseidon::vuint50ToBinary(cur_.name_.size(), write_);	\
+										for(unsigned long long i_ = 0; i_ < cur_.name_.size(); ++i_){	\
+											typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
+											const Element_ &element_ = cur_.name_[i_];	\
+											typedef Element_ Cur_;	\
+											const Cur_ &cur_ = element_;	\
+											\
+											fields_	\
 										}
 
 		MESSAGE_FIELDS
@@ -245,7 +237,7 @@ public:
 											THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 										}	\
 										for(::std::size_t i_ = 0; i_ < size_; ++i_){	\
-											name_[i_] = *read_;	\
+											cur_.name_[i_] = *read_;	\
 											++read_;	\
 										}
 #define FIELD_ARRAY(name_, fields_)		{	\
@@ -277,7 +269,51 @@ public:
 		*this >> buffer_;
 		return buffer_;
 	}
+
+	void dumpDebug(::std::ostream &os_) const {
+		typedef MESSAGE_NAME Cur_;
+		const Cur_ &cur_ = *this;
+
+		os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<ID <<") = { ";
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_STRING
+#undef FIELD_BYTES
+#undef FIELD_ARRAY
+
+#define FIELD_VINT(name_)				os_ << #name_ <<" = " <<cur_.name_ <<"; ";
+#define FIELD_VUINT(name_)				os_ << #name_ <<" = " <<cur_.name_ <<"; ";
+#define FIELD_STRING(name_)				os_ << #name_ <<" = (" <<cur_.name_.size() <<")\"" <<cur_.name_ <<"\"; ";
+#define FIELD_BYTES(name_, size_)		os_ << #name_ <<" = (" <<size_ <<")[" << ::std::hex;	\
+										for(unsigned long long i_ = 0; i_ < size_; ++i_){	\
+											os_ << ::std::setfill('0') << ::std::setw(2)	\
+												<< static_cast<unsigned>(cur_.name_[i_]) <<' ';	\
+										}	\
+										os_ << ::std::dec <<"]; ";
+#define FIELD_ARRAY(name_, fields_)		os_ << #name_ <<" = (" <<cur_.name_.size() <<")[ ";	\
+										for(unsigned long long i_ = 0; i_ < cur_.name_.size(); ++i_){	\
+											typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
+											const Element_ &element_ = cur_.name_[i_];	\
+											typedef Element_ Cur_;	\
+											const Cur_ &cur_ = element_;	\
+											\
+											os_ <<"{ ";	\
+											fields_	\
+											os_ <<"}; ";	\
+										}	\
+										os_ <<"]; ";
+
+		MESSAGE_FIELDS
+
+		os_ <<"}; ";
+	}
 };
+
+inline ::std::ostream &operator<<(::std::ostream &os_, const MESSAGE_NAME &msg_){
+	msg_.dumpDebug(os_);
+	return os_;
+}
 
 #undef MESSAGE_NAME
 #undef MESSAGE_ID

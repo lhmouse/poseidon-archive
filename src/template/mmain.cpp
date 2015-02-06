@@ -263,18 +263,19 @@ private:
 #define MESSAGE_ID			105
 #define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_STRING(s))
 #include "../main/player/message_generator.hpp"
-
+*/
 #define MESSAGE_NAME	   	TestMessage
 #define MESSAGE_ID			106
 #define MESSAGE_FIELDS \
 	FIELD_VINT(i)   \
 	FIELD_VUINT(j)  \
 	FIELD_ARRAY(a,  \
+		FIELD_BYTES(b, 3)	\
 		FIELD_STRING(s) \
 		FIELD_VUINT(k)  \
 	)
 #include "../main/player/message_generator.hpp"
-
+/*
 namespace {
 
 void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
@@ -403,12 +404,24 @@ MODULE_RAII(
 	p->registerOnClose(boost::bind(&onClientClose, 3));
 	p->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
 */
+/*
 	AUTO(obj, boost::make_shared<MySqlObj>());
 	obj->set_si(999);
 	obj->set_str("meow");
 	obj->set_bi(456789);
 	obj->asyncSave(false);
-
+*/
+	TestMessage req;
+	req.set_i(12345);
+	req.set_j(54321);
+	req.get_a().resize(2);
+	req.get_a().at(0).s = "meow";
+	req.get_a().at(0).k = 56789;
+	std::memcpy(req.get_a().at(0).b, "ABC", 3);
+	req.get_a().at(1).s = "bark";
+	req.get_a().at(1).k = 98765;
+	std::memcpy(req.get_a().at(1).b, "DEF", 3);
+	LOG_POSEIDON_FATAL(req);
 	return VAL_INIT;
 )
 
