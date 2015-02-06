@@ -38,6 +38,18 @@ public:
 	const std::string &getRaw(const char *key) const {
 		return m_contents.get(key);
 	}
+	std::size_t getRawAll(std::vector<std::string> &vals,const char *key, bool includingEmpty = false) const {
+		const AUTO(range, m_contents.range(key));
+		vals.reserve(std::distance(range.first, range.second));
+		std::size_t ret = 0;
+		for(AUTO(it, range.first); it != range.second; ++it){
+			if(includingEmpty || !it->second.empty()){
+				vals.push_back(it->second);
+				++ret;
+			}
+		}
+		return ret;
+	}
 
 	template<typename T>
 	bool get(T &val, const char *key) const {
