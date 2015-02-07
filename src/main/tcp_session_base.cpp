@@ -35,7 +35,7 @@ std::ostream &operator<<(std::ostream &os, const HexEncoder &rhs){
 	const AUTO(data, static_cast<const unsigned char *>(rhs.read));
 	for(std::size_t i = 0; i < rhs.size; ++i){
 		char temp[16];
-		unsigned len = std::sprintf(temp, "%02X ", data[i]);
+		unsigned len = (unsigned)std::sprintf(temp, "%02X ", data[i]);
 		os.write(temp, len);
 	}
 	return os;
@@ -191,9 +191,9 @@ long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
 		ret = ::recv(m_socket.get(), hint, hintSize, MSG_NOSIGNAL);
 	}
 	if(ret > 0){
-		LOG_POSEIDON_TRACE(
-			"Read ", ret, " byte(s) from ", getRemoteInfo(), ", hex = ", HexEncoder(hint, ret));
-		onReadAvail(hint, ret);
+		LOG_POSEIDON_TRACE("Read ", ret, " byte(s) from ", getRemoteInfo(), ", hex = ",
+			HexEncoder(hint, static_cast<std::size_t>(ret)));
+		onReadAvail(hint, static_cast<std::size_t>(ret));
 	}
 	return ret;
 }
@@ -212,13 +212,13 @@ long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsi
 		ret = ::send(m_socket.get(), hint, size, MSG_NOSIGNAL);
 	}
 	if(ret > 0){
-		LOG_POSEIDON_TRACE(
-			"Wrote ", ret, " byte(s) to ", getRemoteInfo(), ", hex = ", HexEncoder(hint, ret));
+		LOG_POSEIDON_TRACE("Wrote ", ret, " byte(s) to ", getRemoteInfo(), ", hex = ",
+			HexEncoder(hint, static_cast<std::size_t>(ret)));
 	}
 
 	lock.lock();
 	if(ret > 0){
-		m_sendBuffer.discard(ret);
+		m_sendBuffer.discard(static_cast<std::size_t>(ret));
 	}
 	return ret;
 }

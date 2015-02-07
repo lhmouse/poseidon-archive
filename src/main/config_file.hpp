@@ -40,7 +40,7 @@ public:
 	}
 	std::size_t getRawAll(std::vector<std::string> &vals,const char *key, bool includingEmpty = false) const {
 		const AUTO(range, m_contents.range(key));
-		vals.reserve(std::distance(range.first, range.second));
+		vals.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		std::size_t ret = 0;
 		for(AUTO(it, range.first); it != range.second; ++it){
 			if(includingEmpty || !it->second.empty()){
@@ -90,7 +90,7 @@ public:
 	template<typename T>
 	std::size_t getAll(std::vector<T> &vals, const char *key, bool includingEmpty = false) const {
 		const AUTO(range, m_contents.range(key));
-		vals.reserve(std::distance(range.first, range.second));
+		vals.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		std::size_t ret = 0;
 		for(AUTO(it, range.first); it != range.second; ++it){
 			if(includingEmpty || !it->second.empty()){

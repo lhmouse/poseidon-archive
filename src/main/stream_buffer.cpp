@@ -71,7 +71,7 @@ public:
 public:
 	std::size_t m_readPos;
 	std::size_t m_writePos;
-	char m_data[256];
+	unsigned char m_data[256];
 
 public:
 	// 不初始化。如果我们不写构造函数这个结构会当成聚合，
@@ -168,7 +168,7 @@ void StreamBuffer::put(unsigned char by){
 	if(!m_chunks.empty()){
 		AUTO_REF(back, m_chunks.back());
 		if(back.m_writePos < sizeof(back.m_data)){
-			back.m_data[back.m_writePos] = static_cast<char>(by);
+			back.m_data[back.m_writePos] = by;
 			++back.m_writePos;
 			++m_size;
 			return;
@@ -202,7 +202,7 @@ void StreamBuffer::unget(unsigned char by){
 		AUTO_REF(front, m_chunks.front());
 		if(0 < front.m_readPos){
 			++front.m_readPos;
-			front.m_data[front.m_readPos] = static_cast<char>(by);
+			front.m_data[front.m_readPos] = by;
 			++m_size;
 			return;
 		}
@@ -310,7 +310,7 @@ void StreamBuffer::put(const void *data, std::size_t size){
 void StreamBuffer::put(const char *str){
 	char ch;
 	while((ch = *(str++)) != 0){
-		put(ch);
+		put(static_cast<unsigned char>(ch));
 	}
 }
 void StreamBuffer::put(const std::string &str){
@@ -369,7 +369,8 @@ void StreamBuffer::dump(std::string &str) const {
 }
 void StreamBuffer::dump(std::ostream &os) const {
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
-		os.write(it->m_data + it->m_readPos, it->m_writePos - it->m_readPos);
+		os.write(reinterpret_cast<const char *>(it->m_data + it->m_readPos),
+			static_cast<std::streamsize>(it->m_writePos - it->m_readPos));
 	}
 }
 void StreamBuffer::load(const std::string &str){
@@ -380,7 +381,9 @@ void StreamBuffer::load(std::istream &is){
 	clear();
 	for(;;){
 		AUTO_REF(back, Chunk::pushBackPooled(m_chunks));
-		back.m_writePos = is.readsome(back.m_data, sizeof(back.m_data));
+		back.m_writePos = static_cast<std::size_t>(
+			is.readsome(reinterpret_cast<char *>(back.m_data),
+				static_cast<std::streamsize>(sizeof(back.m_data))));
 		if(back.m_writePos == 0){
 			break;
 		}

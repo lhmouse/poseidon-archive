@@ -54,11 +54,11 @@ private:
 	const unsigned m_code;
 
 public:
-	ProtocolException(const char *file, std::size_t line, SharedNts message, unsigned code);
+	ProtocolException(const char *file, std::size_t line, SharedNts message, long code);
 	~ProtocolException() NOEXCEPT;
 
 public:
-	unsigned code() const NOEXCEPT {
+	long code() const NOEXCEPT {
 		return m_code;
 	}
 };

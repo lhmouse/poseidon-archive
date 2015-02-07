@@ -137,7 +137,7 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += '#';
 		line += m_file;
-		len = std::sprintf(temp, ":%lu", (unsigned long)m_line);
+		len = (unsigned)std::sprintf(temp, ":%lu", (unsigned long)m_line);
 		line.append(temp, len);
 
 		if(useAsciiColors){

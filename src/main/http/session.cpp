@@ -36,7 +36,7 @@ void normalizeUri(std::string &uri){
 		uri[write] = ch;
 		++write;
 	}
-	uri.erase(uri.begin() + write, uri.end());
+	uri.erase(uri.begin() + static_cast<std::ptrdiff_t>(write), uri.end());
 }
 
 void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer){
@@ -180,7 +180,7 @@ private:
 			LOG_POSEIDON_WARN("Unknown auth method: ", temp.c_str());
 			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 		}
-		temp.erase(temp.begin(), temp.begin() + pos + 1);
+		temp.erase(temp.begin(), temp.begin() + static_cast<std::ptrdiff_t>(pos) + 1);
 		if(session->m_authInfo->find(temp) == session->m_authInfo->end()){
 			LOG_POSEIDON_WARN("Invalid username or password");
 			OptionalMap authHeader;
@@ -294,12 +294,12 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					parts[1].swap(m_uri);
 					std::size_t pos = m_uri.find('#');
 					if(pos != std::string::npos){
-						m_uri.erase(m_uri.begin() + pos, m_uri.end());
+						m_uri.erase(m_uri.begin() + static_cast<std::ptrdiff_t>(pos), m_uri.end());
 					}
 					pos = m_uri.find('?');
 					if(pos != std::string::npos){
 						m_getParams = optionalMapFromUrlEncoded(m_uri.substr(pos + 1));
-						m_uri.erase(m_uri.begin() + pos, m_uri.end());
+						m_uri.erase(m_uri.begin() + static_cast<std::ptrdiff_t>(pos), m_uri.end());
 					}
 					normalizeUri(m_uri);
 					urlDecode(m_uri).swap(m_uri);
@@ -312,7 +312,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						LOG_POSEIDON_WARN("Bad protocol string: ", parts[2]);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
-					m_version = std::atoi(versionMajor) * 10000 + std::atoi(versionMinor);
+					m_version = std::strtoul(versionMajor, NULLPTR, 10) * 10000
+						+ std::strtoul(versionMinor, NULLPTR, 10);
 					if((m_version != 10000) && (m_version != 10001)){
 						LOG_POSEIDON_WARN("Bad HTTP version: ", parts[2]);
 						DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUPPORTED);
@@ -325,12 +326,12 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 						LOG_POSEIDON_WARN("Bad HTTP header: ", m_line);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
-					AUTO(valueBegin, m_line.begin() + delimPos + 1);
+					AUTO(valueBegin, m_line.begin() + static_cast<std::ptrdiff_t>(delimPos) + 1);
 					while(*valueBegin == ' '){
 						++valueBegin;
 					}
 					std::string value(valueBegin, m_line.end());
-					m_line.erase(m_line.begin() + delimPos, m_line.end());
+					m_line.erase(m_line.begin() + static_cast<std::ptrdiff_t>(delimPos), m_line.end());
 					m_headers.append(m_line.c_str(), STD_MOVE(value));
 				} else {
 					m_state = ST_CONTENTS;
@@ -343,7 +344,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				continue;
 			}
 
-			const std::size_t bytesAvail = (std::size_t)(end - read);
+			const std::size_t bytesAvail = static_cast<std::size_t>(end - read);
 			const boost::uint64_t bytesRemaining = m_contentLength - m_line.size();
 			if(bytesAvail < bytesRemaining){
 				m_line.append(read, bytesAvail);
@@ -391,7 +392,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		m_line.clear();
 
 		if(read != end){
-			m_upgradedSession->onReadAvail(read, end - read);
+			m_upgradedSession->onReadAvail(read, static_cast<std::size_t>(end - read));
 		}
 	} catch(HttpException &e){
 		LOG_POSEIDON_ERROR("HttpException thrown while parsing data, URI = ", m_uri,
@@ -411,8 +412,8 @@ bool HttpSession::send(HttpStatus status, OptionalMap headers, StreamBuffer cont
 	StreamBuffer data;
 
 	char first[64];
-	const unsigned firstLen = std::sprintf(first, "HTTP/1.1 %u ", static_cast<unsigned>(status));
-	data.put(first, firstLen);
+	unsigned len = (unsigned)std::sprintf(first, "HTTP/1.1 %u ", static_cast<unsigned>(status));
+	data.put(first, len);
 	const AUTO(desc, getHttpStatusDesc(status));
 	data.put(desc.descShort);
 	data.put("\r\n");

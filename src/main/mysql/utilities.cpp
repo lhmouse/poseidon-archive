@@ -46,7 +46,7 @@ std::ostream &operator<<(std::ostream &os, const MySqlStringEscaper &rhs){
 std::ostream &operator<<(std::ostream &os, const MySqlDateFormatter &rhs){
 	char temp[256];
 	const std::size_t len = formatTime(temp, sizeof(temp), rhs.time, true);
-	return os.write(temp, len);
+	return os.write(temp, static_cast<std::streamsize>(len));
 }
 
 }

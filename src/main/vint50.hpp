@@ -29,7 +29,7 @@ void vuint50ToBinary(unsigned long long val, OutputIterT &write){
 }
 template<typename OutputIterT>
 void vint50ToBinary(long long val, OutputIterT &write){
-	unsigned long long encoded = val;
+	AUTO(encoded, static_cast<unsigned long long>(val));
 	encoded <<= 1;
 	if(val < 0){
 		encoded = ~encoded;
@@ -72,7 +72,7 @@ bool vint50FromBinary(long long &val, InputIterT &read, std::size_t count){
 		if(negative){
 			encoded = ~encoded;
 		}
-		val = (long long)encoded;
+		val = static_cast<long long>(encoded);
 	}
 	return ret;
 }

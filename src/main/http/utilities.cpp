@@ -144,7 +144,7 @@ std::string hexEncode(const void *data, std::size_t size, bool upperCase){
 	std::string ret;
 	ret.reserve(size * 2);
 	for(std::size_t i = 0; i < size; ++i){
-		const unsigned char by = ((const unsigned char *)data)[i];
+		const unsigned by = ((const unsigned char *)data)[i];
 		ret.push_back(getHex((by >> 4) & 0x0F, upperCase));
 		ret.push_back(getHex(by & 0x0F, upperCase));
 	}

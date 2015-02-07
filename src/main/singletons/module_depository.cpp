@@ -257,7 +257,7 @@ std::vector<ModuleSnapshotItem> ModuleDepository::snapshot(){
 
 			mi.realPath = it->realPath;
 			mi.baseAddr = it->baseAddr;
-			mi.refCount = it->module.use_count();
+			mi.refCount = static_cast<unsigned long>(it->module.use_count()); // fvck
 		}
 	}
 	return ret;

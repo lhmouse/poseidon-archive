@@ -88,11 +88,11 @@ void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	const AUTO(profile, ProfileDepository::snapshot());
 	for(AUTO(it, profile.begin()); it != profile.end(); ++it){
 		char temp[128];
-		int len = std::sprintf(temp, "%10llu%20llu%20llu    ",
+		unsigned len = (unsigned)std::sprintf(temp, "%10llu%20llu%20llu    ",
 			it->samples, it->usTotal, it->usExclusive);
 		contents.put(temp, len);
 		contents.put(it->file);
-		len = std::sprintf(temp, ":%lu\n", it->line);
+		len = (unsigned)std::sprintf(temp, ":%lu\n", it->line);
 		contents.put(temp, len);
 	}
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));

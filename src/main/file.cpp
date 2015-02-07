@@ -27,7 +27,7 @@ void fileGetContents(StreamBuffer &contents, const char *path){
 		} else if(bytesRead == 0){
 			break;
 		}
-		temp.put(readBuf, bytesRead);
+		temp.put(readBuf, static_cast<std::size_t>(bytesRead));
 	}
 	contents.swap(temp);
 }
@@ -47,11 +47,11 @@ void filePutContents(const char *path, StreamBuffer contents, bool append){
 	}
 	for(;;){
 		char writeBuf[4096];
-		const ::ssize_t bytesToWrite = contents.get(writeBuf, sizeof(writeBuf));
+		const std::size_t bytesToWrite = contents.get(writeBuf, sizeof(writeBuf));
 		if(bytesToWrite == 0){
 			break;
 		}
-		if(::write(file.get(), writeBuf, bytesToWrite) < bytesToWrite){
+		if(::write(file.get(), writeBuf, bytesToWrite) < static_cast< ::ssize_t>(bytesToWrite)){
 			DEBUG_THROW(SystemError);
 		}
 	}

@@ -27,7 +27,7 @@ void ConfigFile::load(const char *path){
 		++count;
 		std::size_t pos = line.find('#');
 		if(pos != std::string::npos){
-			line.erase(line.begin() + pos, line.end());
+			line.erase(line.begin() + static_cast<std::ptrdiff_t>(pos), line.end());
 		}
 		pos = line.find_first_not_of(" \t");
 		if(pos == std::string::npos){
@@ -50,9 +50,9 @@ void ConfigFile::load(const char *path){
 		std::string val;
 		pos = line.find_first_not_of(" \t", equ + 1);
 		if(pos != std::string::npos){
-			val.assign(line.begin() + pos, line.end());
+			val.assign(line.begin() + static_cast<std::ptrdiff_t>(pos), line.end());
 			pos = val.find_last_not_of(" \t");
-			val.erase(val.begin() + pos + 1, val.end());
+			val.erase(val.begin() + static_cast<std::ptrdiff_t>(pos) + 1, val.end());
 		}
 
 		LOG_POSEIDON_DEBUG("Config: ", key, " = ", val);

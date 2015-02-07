@@ -168,9 +168,9 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				}
 				for(std::size_t i = 0; i < remaining; ++i){
 					ch = m_payload.get();
-					ch ^= m_payloadMask;
+					ch ^= static_cast<unsigned char>(m_payloadMask);
 					m_payloadMask = (m_payloadMask << 24) | (m_payloadMask >> 8);
-					m_whole.put(ch);
+					m_whole.put(static_cast<unsigned char>(ch));
 				}
 				if((m_opcode & WS_FL_CONTROL) != 0){
 					onControlFrame();
@@ -254,7 +254,7 @@ bool WebSocketSession::sendFrame(StreamBuffer contents, WebSocketOpCode opcode, 
 			if(ch == -1){
 				break;
 			}
-			ch ^= mask;
+			ch ^= static_cast<unsigned char>(mask);
 			packet.put(ch);
 			mask = (mask << 24) | (mask >> 8);
 		}

@@ -106,7 +106,7 @@ int main(int argc, char **argv){
 		unsigned long long logMask;
 		if(MainConfig::getConfigFile().get(logMask, "log_mask")){
 			LOG_POSEIDON_INFO("Setting new log mask: 0x", std::hex, std::uppercase, logMask);
-			Logger::setMask(-1, logMask);
+			Logger::setMask(static_cast<boost::uint64_t>(-1), logMask);
 		}
 
 		run();

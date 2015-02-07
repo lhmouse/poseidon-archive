@@ -425,7 +425,8 @@ void MySqlThread::loop(){
 					LOG_POSEIDON_INFO("Will retry after ", reconnectDelay, " milliseconds.");
 
 					boost::mutex::scoped_lock lock(m_mutex);
-					m_newAvail.timed_wait(lock, boost::posix_time::milliseconds(reconnectDelay));
+					m_newAvail.timed_wait(lock,
+						boost::posix_time::milliseconds(static_cast<boost::int64_t>(reconnectDelay)));
 
 					reconnectDelay <<= 1;
 					if(reconnectDelay > g_mysqlMaxReconnDelay){
@@ -504,7 +505,7 @@ void MySqlThread::loop(){
 					operation.reset();
 
 					char temp[32];
-					unsigned len = std::sprintf(temp, "%05u", mysqlErrCode);
+					unsigned len = (unsigned)std::sprintf(temp, "%05u", mysqlErrCode);
 					std::string dump;
 					dump.reserve(1024);
 					dump.assign("-- Error code = ");
@@ -523,7 +524,7 @@ void MySqlThread::loop(){
 							if(written <= 0){
 								break;
 							}
-							total += written;
+							total += static_cast<std::size_t>(written);
 						} while(total < dump.size());
 					}
 				}

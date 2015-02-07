@@ -92,11 +92,11 @@ void onShowProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
 		escapeCsvField(str, it->file);
 		contents.put(str);
 		char temp[256];
-		unsigned len = std::sprintf(temp, ",%llu,", (unsigned long long)it->line);
+		unsigned len = (unsigned)std::sprintf(temp, ",%llu,", (unsigned long long)it->line);
 		contents.put(temp, len);
 		escapeCsvField(str, it->func);
 		contents.put(str);
-		len = std::sprintf(temp, ",%llu,%llu,%llu\r\n", it->samples, it->usTotal, it->usExclusive);
+		len = (unsigned)std::sprintf(temp, ",%llu,%llu,%llu\r\n", it->samples, it->usTotal, it->usExclusive);
 		contents.put(temp, len);
 	}
 
@@ -116,7 +116,7 @@ void onShowModules(boost::shared_ptr<HttpSession> session, OptionalMap){
 		escapeCsvField(str, it->realPath);
 		contents.put(str);
 		char temp[256];
-		unsigned len = std::sprintf(temp, ",%p,%llu\r\n", it->baseAddr, (unsigned long long)it->refCount);
+		unsigned len = (unsigned)std::sprintf(temp, ",%p,%llu\r\n", it->baseAddr, (unsigned long long)it->refCount);
 		contents.put(temp, len);
 	}
 
@@ -136,11 +136,11 @@ void onShowConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
 		escapeCsvField(str, it->remote.ip);
 		contents.put(str);
 		char temp[256];
-		unsigned len = std::sprintf(temp, ",%u,", it->remote.port);
+		unsigned len = (unsigned)std::sprintf(temp, ",%u,", it->remote.port);
 		contents.put(temp, len);
 		escapeCsvField(str, it->local.ip);
 		contents.put(str);
-		len = std::sprintf(temp, ",%u,%llu\r\n", it->local.port, it->usOnline);
+		len = (unsigned)std::sprintf(temp, ",%u,%llu\r\n", it->local.port, it->usOnline);
 		contents.put(temp, len);
 	}
 
@@ -176,7 +176,7 @@ void onShowMySqlThreads(boost::shared_ptr<HttpSession> session, OptionalMap){
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 		char temp[256];
-		unsigned len = std::sprintf(temp, "%u,%lu,%llu,%llu\r\n",
+		unsigned len = (unsigned)std::sprintf(temp, "%u,%lu,%llu,%llu\r\n",
 			it->index, it->pendingOperations, it->usIdle, it->usWorking);
 		contents.put(temp, len);
 	}

@@ -25,18 +25,18 @@ boost::uint64_t getUtcTime(){
 		LOG_POSEIDON_FATAL("Realtime clock is not supported.");
 		std::abort();
 	}
-	return (boost::uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+	return (boost::uint64_t)ts.tv_sec * 1000 + (unsigned long)ts.tv_nsec / 1000000;
 }
 boost::uint64_t getLocalTime(){
 	return getLocalTimeFromUtc(getUtcTime());
 }
 boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local){
 	boost::call_once(&::tzset, g_tzsetFlag);
-	return local + ::timezone * 1000;
+	return local + (unsigned long)::timezone * 1000;
 }
 boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
 	boost::call_once(&::tzset, g_tzsetFlag);
-	return utc - ::timezone * 1000;
+	return utc - (unsigned long)::timezone * 1000;
 }
 
 boost::uint64_t getMonoClock() NOEXCEPT {
@@ -45,7 +45,7 @@ boost::uint64_t getMonoClock() NOEXCEPT {
 		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
 		std::abort();
 	}
-	return (boost::uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+	return (boost::uint64_t)ts.tv_sec * 1000000 + (unsigned long)ts.tv_nsec / 1000;
 }
 
 namespace {
@@ -121,32 +121,29 @@ std::string getErrorDescAsString(int errCode){
 }
 
 DateTime breakDownTime(boost::uint64_t ms){
-	const ::time_t seconds = ms / 1000;
+	const ::time_t seconds = static_cast< ::time_t>(ms / 1000);
 	const unsigned milliseconds = ms % 1000;
 	::tm desc;
 	::gmtime_r(&seconds, &desc);
-
 	DateTime dt;
-	dt.yr = 1900 + desc.tm_year;
-	dt.mon = 1 + desc.tm_mon;
-	dt.day = desc.tm_mday;
-	dt.hr = desc.tm_hour;
-	dt.min = desc.tm_min;
-	dt.sec = desc.tm_sec;
-	dt.ms = milliseconds;
+	dt.yr  = static_cast<unsigned>(1900 + desc.tm_year);
+	dt.mon = static_cast<unsigned>(1 + desc.tm_mon);
+	dt.day = static_cast<unsigned>(desc.tm_mday);
+	dt.hr  = static_cast<unsigned>(desc.tm_hour);
+	dt.min = static_cast<unsigned>(desc.tm_min);
+	dt.sec = static_cast<unsigned>(desc.tm_sec);
+	dt.ms  = static_cast<unsigned>(milliseconds);
 	return dt;
 }
 boost::uint64_t assembleTime(const DateTime &dt){
 	::tm desc;
-	desc.tm_year = dt.yr - 1900;
-	desc.tm_mon = dt.mon - 1;
-	desc.tm_mday = dt.day;
-	desc.tm_hour = dt.hr;
-	desc.tm_min = dt.min;
-	desc.tm_sec = dt.sec;
-	const boost::uint64_t seconds = ::mktime(&desc);
-
-	return seconds * 1000 + dt.ms;
+	desc.tm_year = static_cast<int>(dt.yr - 1900);
+	desc.tm_mon  = static_cast<int>(dt.mon - 1);
+	desc.tm_mday = static_cast<int>(dt.day);
+	desc.tm_hour = static_cast<int>(dt.hr);
+	desc.tm_min  = static_cast<int>(dt.min);
+	desc.tm_sec  = static_cast<int>(dt.sec);
+	return static_cast<boost::uint64_t>(::mktime(&desc)) * 1000 + dt.ms;
 }
 
 std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs){

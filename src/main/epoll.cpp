@@ -90,7 +90,7 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 		return;
 	}
 	::epoll_event event;
-	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
 #ifndef NDEBUG
 	std::memset(&event.data, 0xCC, sizeof(event.data)); // valgrind 误报。
 #endif
@@ -137,7 +137,7 @@ void Epoll::clear(){
 
 std::size_t Epoll::wait(unsigned timeout){
 	::epoll_event events[MAX_PUMP_COUNT];
-	const int count = ::epoll_wait(m_epoll.get(), events, COUNT_OF(events), timeout);
+	const int count = ::epoll_wait(m_epoll.get(), events, (int)COUNT_OF(events), (int)timeout);
 	if(count < 0){
 		const int errCode = errno;
 		LOG_POSEIDON_ERROR("::epoll_wait() failed: errno = ", errCode);

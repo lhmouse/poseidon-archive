@@ -163,7 +163,7 @@ boost::shared_ptr<const HttpServletCallback> HttpServletDepository::getServlet(
 				fallback.append(uri + slash + 1);
 			}
 			fallback.push_back('/');
-			slash = nextSlash - uri;
+			slash = static_cast<std::size_t>(nextSlash - uri);
 		}
 	}
 	return ret;

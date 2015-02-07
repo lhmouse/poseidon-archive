@@ -23,8 +23,7 @@ SystemError::SystemError(const char *file, std::size_t line, int code)
 SystemError::~SystemError() NOEXCEPT {
 }
 
-ProtocolException::ProtocolException(const char *file, std::size_t line,
-	SharedNts message, unsigned code)
+ProtocolException::ProtocolException(const char *file, std::size_t line, SharedNts message, long code)
 	: Exception(file, line, STD_MOVE(message)), m_code(code)
 {
 }
