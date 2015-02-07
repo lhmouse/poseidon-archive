@@ -92,7 +92,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 			case ST_OPCODE:
 				ch = m_payload.get();
 				if(ch == -1){
-					goto exit_for;
+					goto _exitFor;
 				}
 				if(ch & (WS_FL_RSV1 | WS_FL_RSV2 | WS_FL_RSV3)){
 					LOG_POSEIDON_WARN("Aborting because some reserved bits are set, opcode = ", ch);
@@ -111,7 +111,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 			case ST_PAYLOAD_LEN:
 				ch = m_payload.get();
 				if(ch == -1){
-					goto exit_for;
+					goto _exitFor;
 				}
 				if((ch & 0x80) == 0){
 					DEBUG_THROW(WebSocketException, WS_ACCESS_DENIED,
@@ -132,13 +132,13 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 			case ST_EX_PAYLOAD_LEN:
 				if(m_payloadLen == 0x7E){
 					if(m_payload.size() < 2){
-						goto exit_for;
+						goto _exitFor;
 					}
 					m_payload.get(&temp16, 2);
 					m_payloadLen = loadBe(temp16);
 				} else {
 					if(m_payload.size() < 8){
-						goto exit_for;
+						goto _exitFor;
 					}
 					m_payload.get(&temp64, 8);
 					m_payloadLen = loadBe(temp64);
@@ -150,7 +150,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				LOG_POSEIDON_DEBUG("Payload length = ", m_payloadLen);
 
 				if(m_payload.size() < 4){
-					goto exit_for;
+					goto _exitFor;
 				}
 				m_payload.get(&temp32, 4);
 				m_payloadMask = loadLe(temp32);
@@ -164,7 +164,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 						SharedNts::observe("Packet too large"));
 				}
 				if(m_payload.size() < remaining){
-					goto exit_for;
+					goto _exitFor;
 				}
 				for(std::size_t i = 0; i < remaining; ++i){
 					ch = m_payload.get();
@@ -183,8 +183,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				break;
 			}
 		}
-	exit_for:
-		;
+	_exitFor: ;
 	} catch(WebSocketException &e){
 		LOG_POSEIDON_ERROR("WebSocketException thrown while parseing data, status = ", e.status(),
 			", what = ", e.what());

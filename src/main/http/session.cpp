@@ -362,7 +362,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 			}
 
 			if(m_upgradedSession){
-				goto session_upgraded;
+				goto _sessionUpgraded;
 			}
 
 			pendJob(boost::make_shared<HttpRequestJob>(
@@ -381,7 +381,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		}
 		return;
 
-	session_upgraded:
+	_sessionUpgraded:
 		setTimeout(EpollDaemon::getTcpRequestTimeout());
 
 		m_upgradedSession->onInitContents(m_line.data(), m_line.size());

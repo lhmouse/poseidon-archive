@@ -19,12 +19,12 @@ public:
 			const boost::mutex::scoped_lock lock(s_mutex);
 			if(!s_pool.empty()){
 				dst.splice(dst.end(), s_pool, s_pool.begin());
-				goto done;
+				goto _done;
 			}
 		}
 		dst.push_back(VAL_INIT);
 
-	done:
+	_done:
 		AUTO_REF(ret, dst.back());
 		ret.m_readPos = 0;
 		ret.m_writePos = 0;
@@ -43,12 +43,12 @@ public:
 			const boost::mutex::scoped_lock lock(s_mutex);
 			if(!s_pool.empty()){
 				dst.splice(dst.begin(), s_pool, s_pool.begin());
-				goto done;
+				goto _done;
 			}
 		}
 		dst.push_front(VAL_INIT);
 
-	done:
+	_done:
 		AUTO_REF(ret, dst.back());
 		ret.m_readPos = sizeof(ret.m_data);
 		ret.m_writePos = sizeof(ret.m_data);

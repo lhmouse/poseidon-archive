@@ -74,7 +74,7 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 			const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 			it = g_profile.find(key);
 			if(it != g_profile.end()){
-				goto write_profile;
+				goto _writeProfile;
 			}
 		}
 		{
@@ -82,7 +82,7 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 			it = g_profile.insert(std::make_pair(key, ProfileCounters())).first;
 		}
 
-	write_profile:
+	_writeProfile:
 		atomicAdd(it->second.samples, 1, ATOMIC_RELAXED);
 		atomicAdd(it->second.usTotal, total, ATOMIC_RELAXED);
 		atomicAdd(it->second.usExclusive, exclusive, ATOMIC_RELAXED);

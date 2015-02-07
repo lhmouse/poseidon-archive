@@ -438,7 +438,7 @@ void MySqlThread::loop(){
 				} catch(...){
 					if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 						LOG_POSEIDON_WARN("Shutting down...");
-						goto exit_loop;
+						goto _exitLoop;
 					}
 					throw;
 				}
@@ -455,7 +455,7 @@ void MySqlThread::loop(){
 					accumulateTimeIdle();
 
 					if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
-						goto exit_loop;
+						goto _exitLoop;
 					}
 					m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 				}
@@ -542,7 +542,7 @@ void MySqlThread::loop(){
 			conn.reset();
 		}
 	}
-exit_loop:
+_exitLoop: ;
 
 	if(!m_queue.empty()){
 		LOG_POSEIDON_WARN("There are still ", m_queue.size(), " object(s) in MySQL queue");
