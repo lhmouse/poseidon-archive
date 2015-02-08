@@ -153,8 +153,8 @@ struct ValueInitializer {
 #else
 #	define CV_VALUE_TYPE(expr_)		__typeof__(expr_)
 #	define VALUE_TYPE(expr_)		__typeof__(::Poseidon::valueOfHelper(expr_))
-#	define AUTO(id_, ...)			VALUE_TYPE(init_) id_(__VA_ARGS__)
-#	define AUTO_REF(id_, ...)		CV_VALUE_TYPE(init_) &id_ = (__VA_ARGS__)
+#	define AUTO(id_, ...)			VALUE_TYPE(__VA_ARGS__) id_(__VA_ARGS__)
+#	define AUTO_REF(id_, ...)		CV_VALUE_TYPE(__VA_ARGS__) &id_ = (__VA_ARGS__)
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
 #	define STD_MOVE_IDN(expr_)		(::Poseidon::moveAsIdentity(expr_))
 #	define DECLREF(t_)				(::Poseidon::declRef<t_>())
