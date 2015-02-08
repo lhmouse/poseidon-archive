@@ -99,7 +99,7 @@ void daemonLoop(){
 			}
 		}
 		if(!callback){
-			::usleep(100000);
+			::usleep(200000);
 			continue;
 		}
 
