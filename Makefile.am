@@ -110,13 +110,13 @@ pkginclude_mysql_HEADERS = \
 	src/main/mysql/exception.hpp	\
 	src/main/mysql/utilities.hpp
 
-sbin_PROGRAMS = \
-	sbin/poseidon
+bin_PROGRAMS = \
+	bin/poseidon
 
-sbin_poseidon_SOURCES = \
+bin_poseidon_SOURCES = \
 	src/main/main.cpp
 
-sbin_poseidon_LDADD = \
+bin_poseidon_LDADD = \
 	lib/libposeidon-main.la
 
 lib_libposeidon_main_la_SOURCES = \
