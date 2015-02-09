@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cassert>
 #include <boost/thread/mutex.hpp>
+#include "utilities.hpp"
 using namespace Poseidon;
 
 class StreamBuffer::Chunk {
@@ -391,14 +392,7 @@ void StreamBuffer::load(std::istream &is){
 }
 
 void StreamBuffer::dumpHex(std::ostream &os) const {
-	static const char TABLE[] = "0123456789ABCDEF";
-	char temp[2];
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
-		for(std::size_t i = it->m_readPos; i < it->m_writePos; ++i){
-			const unsigned byte = (unsigned char)it->m_data[i];
-			temp[0] = TABLE[byte >> 4];
-			temp[1] = TABLE[byte & 0x0F];
-			os.write(temp, 2);
-		}
+		os <<HexDumper(it->m_data + it->m_readPos, it->m_writePos - it->m_readPos);
 	}
 }

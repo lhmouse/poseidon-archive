@@ -141,7 +141,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 
 bool PlayerSession::send(boost::uint16_t messageId, StreamBuffer contents, bool fin){
 	LOG_POSEIDON_DEBUG("Sending data: messageId = ", messageId,
-		", contents = ", StreamBuffer::HexDumper(contents), ", fin = ", std::boolalpha, fin);
+		", contents = ", StreamBufferHexDumper(contents), ", fin = ", std::boolalpha, fin);
 	StreamBuffer data;
 	PlayerMessageBase::encodeHeader(data, messageId, contents.size());
 	data.splice(contents);
