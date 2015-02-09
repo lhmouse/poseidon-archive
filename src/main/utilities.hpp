@@ -8,6 +8,7 @@
 #include "cxx_util.hpp"
 #include <vector>
 #include <string>
+#include <iosfwd>
 #include <cstddef>
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
@@ -126,6 +127,18 @@ double randDouble(double lower = 0.0, double upper = 1.0);
 
 SharedNts getErrorDesc(int errCode = errno) NOEXCEPT;
 std::string getErrorDescAsString(int errCode = errno);
+
+struct HexDumper {
+	const void *const read;
+	const std::size_t size;
+
+	HexDumper(const void *read_, std::size_t size_)
+		: read(read_), size(size_)
+	{
+	}
+};
+
+extern std::ostream &operator<<(std::ostream &os, const HexDumper &dumper);
 
 }
 

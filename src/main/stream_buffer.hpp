@@ -72,6 +72,15 @@ public:
 		}
 	};
 
+	struct HexDumper {
+		const StreamBuffer &buffer;
+
+		explicit HexDumper(const StreamBuffer &buffer_)
+			: buffer(buffer_)
+		{
+		}
+	};
+
 private:
 	std::list<Chunk> m_chunks;
 	std::size_t m_size;
@@ -152,16 +161,7 @@ inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-struct HexDumper {
-	const StreamBuffer &buffer;
-
-	explicit HexDumper(const StreamBuffer &buffer_)
-		: buffer(buffer_)
-	{
-	}
-};
-
-inline std::ostream &operator<<(std::ostream &os, const HexDumper &rhs){
+inline std::ostream &operator<<(std::ostream &os, const StreamBuffer::HexDumper &rhs){
 	rhs.buffer.dumpHex(os);
 	return os;
 }

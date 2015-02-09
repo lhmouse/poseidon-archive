@@ -182,7 +182,7 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	WebSocketOpCode opcode, StreamBuffer incoming)
 {
 	PROFILE_ME;
-	LOG_POSEIDON_FATAL("Received packet: opcode = ", opcode, ", payload = ", HexDumper(incoming));
+	LOG_POSEIDON_FATAL("Received packet: opcode = ", opcode, ", payload = ", StreamBuffer::HexDumper(incoming));
 
 	std::string s;
 	incoming.dump(s);

@@ -21,26 +21,6 @@ using namespace Poseidon;
 
 namespace {
 
-struct HexEncoder {
-	const void *const read;
-	const std::size_t size;
-
-	HexEncoder(const void *read_, std::size_t size_)
-		: read(read_), size(size_)
-	{
-	}
-};
-
-std::ostream &operator<<(std::ostream &os, const HexEncoder &rhs){
-	const AUTO(data, static_cast<const unsigned char *>(rhs.read));
-	for(std::size_t i = 0; i < rhs.size; ++i){
-		char temp[16];
-		unsigned len = (unsigned)std::sprintf(temp, "%02X ", data[i]);
-		os.write(temp, len);
-	}
-	return os;
-}
-
 void shutdownIfTimeout(boost::weak_ptr<TcpSessionBase> weak){
 	const AUTO(session, weak.lock());
 	if(!session){
@@ -192,7 +172,7 @@ long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
 	}
 	if(ret > 0){
 		LOG_POSEIDON_TRACE("Read ", ret, " byte(s) from ", getRemoteInfo(), ", hex = ",
-			HexEncoder(hint, static_cast<std::size_t>(ret)));
+			HexDumper(hint, static_cast<std::size_t>(ret)));
 		onReadAvail(hint, static_cast<std::size_t>(ret));
 	}
 	return ret;
@@ -213,7 +193,7 @@ long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsi
 	}
 	if(ret > 0){
 		LOG_POSEIDON_TRACE("Wrote ", ret, " byte(s) to ", getRemoteInfo(), ", hex = ",
-			HexEncoder(hint, static_cast<std::size_t>(ret)));
+			HexDumper(hint, static_cast<std::size_t>(ret)));
 	}
 
 	lock.lock();

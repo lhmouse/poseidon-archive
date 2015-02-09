@@ -4,6 +4,7 @@
 #include "precompiled.hpp"
 #include "utilities.hpp"
 #include "log.hpp"
+#include <iomanip>
 #include <boost/thread/once.hpp>
 #include <time.h>
 #include <errno.h>
@@ -158,6 +159,17 @@ boost::uint64_t scanTime(const char *str){
 	std::sscanf(str, "%u-%u-%u %u:%u:%u.%u",
 		&dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms);
 	return assembleTime(dt);
+}
+
+std::ostream &operator<<(std::ostream &os, const HexDumper &dumper){
+	AUTO(read, static_cast<const unsigned char *>(dumper.read));
+	os <<std::hex;
+	for(std::size_t i = 0; i < dumper.size; ++i){
+		os <<std::setfill('0') <<std::setw(2) <<static_cast<unsigned>(*read) <<' ';
+		++read;
+	}
+	os << std::dec;
+	return os;
 }
 
 }

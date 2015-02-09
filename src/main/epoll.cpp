@@ -55,7 +55,9 @@ enum {
 
 }
 
-struct Epoll::SessionMapImpl : public SessionMap {
+struct Epoll::SessionMapImpl
+	: public SessionMap
+{
 };
 
 Epoll::Epoll(){
