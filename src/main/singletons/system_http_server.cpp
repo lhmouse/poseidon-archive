@@ -179,6 +179,7 @@ void onShowMySqlProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
 		unsigned len = (unsigned)std::sprintf(temp, "%u,", it->thread);
 		contents.put(temp, len);
 		escapeCsvField(str, it->table);
+		contents.put(str);
 		len = (unsigned)std::sprintf(temp, ",%llu\r\n", it->usTotal);
 		contents.put(temp, len);
 	}

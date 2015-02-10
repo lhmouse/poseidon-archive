@@ -404,13 +404,13 @@ MODULE_RAII(
 	p->registerOnClose(boost::bind(&onClientClose, 3));
 	p->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
 */
-/*
+
 	AUTO(obj, boost::make_shared<MySqlObj>());
 	obj->set_si(999);
 	obj->set_str("meow");
 	obj->set_bi(456789);
 	obj->asyncSave(false);
-*/
+
 	TestMessage req;
 	req.i = 12345;
 	req.j = 54321;
