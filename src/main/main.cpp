@@ -96,6 +96,7 @@ int main(int argc, char **argv){
 	LOG_POSEIDON_INFO("Setting up signal handlers...");
 	::signal(SIGINT, sigIntProc);
 	::signal(SIGTERM, sigTermProc);
+	::signal(SIGPIPE, SIG_IGN);
 
 	try {
 		MainConfig::setRunPath((1 < argc) ? argv[1] : "/usr/etc/poseidon");

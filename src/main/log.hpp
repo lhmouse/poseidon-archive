@@ -81,7 +81,9 @@ public:
 #define LOG_MASK(mask_, ...)	\
 	do {	\
 		unsigned long long test_ = (mask_);	\
-		if(test_ & ::Poseidon::Logger::SP_CRITICAL){	\
+		if(test_ & (::Poseidon::Logger::LV_FATAL | ::Poseidon::Logger::LV_ERROR |	\
+			::Poseidon::Logger::LV_WARN | ::Poseidon::Logger::SP_CRITICAL))	\
+		{	\
 			test_ &= 0x3F;	\
 		}	\
 		if(test_ & ~(::Poseidon::Logger::getMask())){	\
