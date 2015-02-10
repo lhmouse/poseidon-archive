@@ -15,7 +15,7 @@ ConfigFile::ConfigFile(const char *path){
 }
 
 void ConfigFile::load(const char *path){
-	LOG_POSEIDON_INFO("Loading config file: ", path);
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading config file: ", path);
 
 	StreamBuffer buffer;
 	fileGetContents(buffer, path);
@@ -55,7 +55,7 @@ void ConfigFile::load(const char *path){
 			val.erase(val.begin() + static_cast<std::ptrdiff_t>(pos) + 1, val.end());
 		}
 
-		LOG_POSEIDON_DEBUG("Config: ", key, " = ", val);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: ", key, " = ", val);
 		contents.append(key, STD_MOVE(val));
 	}
 	m_contents.swap(contents);

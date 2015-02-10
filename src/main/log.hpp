@@ -14,15 +14,15 @@ namespace Poseidon {
 class Logger : NONCOPYABLE {
 public:
 	enum {
-		LV_FATAL		= 0x0001,
-		LV_ERROR		= 0x0002,
-		LV_WARN			= 0x0004,
+		SP_POSEIDON		= 0x0080,
+		SP_MAJOR		= 0x0040,
+
+		LV_FATAL		= 0x0001 | SP_MAJOR,
+		LV_ERROR		= 0x0002 | SP_MAJOR,
+		LV_WARN			= 0x0004 | SP_MAJOR,
 		LV_INFO			= 0x0008,
 		LV_DEBUG		= 0x0010,
 		LV_TRACE		= 0x0020,
-
-		SP_CRITICAL		= 0x0040,
-		SP_POSEIDON		= 0x0080,
 	};
 
 public:
@@ -81,9 +81,7 @@ public:
 #define LOG_MASK(mask_, ...)	\
 	do {	\
 		unsigned long long test_ = (mask_);	\
-		if(test_ & (::Poseidon::Logger::LV_FATAL | ::Poseidon::Logger::LV_ERROR |	\
-			::Poseidon::Logger::LV_WARN | ::Poseidon::Logger::SP_CRITICAL))	\
-		{	\
+		if(test_ & ::Poseidon::Logger::SP_MAJOR){	\
 			test_ &= 0x3F;	\
 		}	\
 		if(test_ & ~(::Poseidon::Logger::getMask())){	\

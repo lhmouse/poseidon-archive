@@ -70,10 +70,10 @@ TcpServerBase::TcpServerBase(const IpPort &bindAddr, const char *cert, const cha
 		m_sslFactory.reset(new ServerSslFactory(cert, privateKey));
 	}
 
-	LOG_POSEIDON_INFO("Created ", (m_sslFactory ? "SSL " : ""), "TCP server on ", getLocalInfo());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created ", (m_sslFactory ? "SSL " : ""), "TCP server on ", getLocalInfo());
 }
 TcpServerBase::~TcpServerBase(){
-	LOG_POSEIDON_INFO("Destroyed ", (m_sslFactory ? "SSL " : ""), "TCP server on ", getLocalInfo());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed ", (m_sslFactory ? "SSL " : ""), "TCP server on ", getLocalInfo());
 }
 
 bool TcpServerBase::poll() const {

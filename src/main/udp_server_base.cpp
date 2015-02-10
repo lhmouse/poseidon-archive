@@ -35,10 +35,10 @@ UniqueFile createUdpSocket(const IpPort &addr){
 UdpServerBase::UdpServerBase(const IpPort &bindAddr)
 	: SocketServerBase(createUdpSocket(bindAddr))
 {
-	LOG_POSEIDON_INFO("Created UDP server on ", getLocalInfo());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created UDP server on ", getLocalInfo());
 }
 UdpServerBase::~UdpServerBase(){
-	LOG_POSEIDON_INFO("Destroyed UDP server on ", getLocalInfo());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed UDP server on ", getLocalInfo());
 }
 
 bool UdpServerBase::poll() const {
