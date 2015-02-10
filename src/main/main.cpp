@@ -39,8 +39,7 @@ void sigIntProc(int){
 		s_safetyTimer = now + 5 * 1000000;
 	}
 	if(now < s_safetyTimer){
-		LOG_POSEIDON_WARN("Received SIGINT, trying to exit gracefully... "
-			"If I don't terminate in 5 seconds, press ^C again.");
+		LOG_POSEIDON_WARN("Received SIGINT, trying to exit gracefully... If I don't terminate in 5 seconds, press ^C again.");
 		::raise(SIGTERM);
 	} else {
 		LOG_POSEIDON_FATAL("Received SIGINT, will now terminate abnormally...");
@@ -78,10 +77,10 @@ void run(){
 
 	const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
 	for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
-		LOG_POSEIDON_INFO("Loading init module: ", *it);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
 		ModuleDepository::load(it->c_str());
 	}
-	LOG_POSEIDON_INFO("Waiting for all asynchronous MySQL operations to complete...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
 	MySqlDaemon::waitForAllAsyncOperations();
 
 	JobDispatcher::doModal();
@@ -91,9 +90,9 @@ void run(){
 
 int main(int argc, char **argv){
 	Logger::setThreadTag("P   "); // Primary
-	LOG_POSEIDON_INFO("-------------------------- Starting up -------------------------");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "-------------------------- Starting up -------------------------");
 
-	LOG_POSEIDON_INFO("Setting up signal handlers...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up signal handlers...");
 	::signal(SIGINT, sigIntProc);
 	::signal(SIGTERM, sigTermProc);
 	::signal(SIGPIPE, SIG_IGN);
@@ -106,13 +105,13 @@ int main(int argc, char **argv){
 
 		unsigned long long logMask;
 		if(MainConfig::getConfigFile().get(logMask, "log_mask")){
-			LOG_POSEIDON_INFO("Setting new log mask: 0x", std::hex, std::uppercase, logMask);
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask: 0x", std::hex, std::uppercase, logMask);
 			Logger::setMask(static_cast<boost::uint64_t>(-1), logMask);
 		}
 
 		run();
 
-		LOG_POSEIDON_INFO("------------- Server has been shut down gracefully -------------");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "------------- Server has been shut down gracefully -------------");
 		return EXIT_SUCCESS;
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());
@@ -120,6 +119,6 @@ int main(int argc, char **argv){
 		LOG_POSEIDON_ERROR("Unknown exception thrown in main().");
 	}
 
-	LOG_POSEIDON_WARN("----------------- Server has exited abnormally -----------------");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_WARN, "----------------- Server has exited abnormally -----------------");
 	return EXIT_FAILURE;
 }

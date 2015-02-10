@@ -44,14 +44,14 @@ public:
 	Module(UniqueHandle<DynamicLibraryCloser> handle, SharedNts realPath, void *baseAddr)
 		: m_handle(STD_MOVE(handle)), m_realPath(STD_MOVE(realPath)), m_baseAddr(baseAddr)
 	{
-		LOG_POSEIDON_INFO("Constructor of module: ", m_realPath);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Constructor of module: ", m_realPath);
 
 		LOG_POSEIDON_DEBUG("Handle: ", m_handle);
 		LOG_POSEIDON_DEBUG("Real path: ", m_realPath);
 		LOG_POSEIDON_DEBUG("Base addr: ", m_baseAddr);
 	}
 	~Module(){
-		LOG_POSEIDON_INFO("Destructor of module: ", m_realPath);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destructor of module: ", m_realPath);
 
 		LOG_POSEIDON_DEBUG("Handle: ", m_handle);
 		LOG_POSEIDON_DEBUG("Real path: ", m_realPath);
