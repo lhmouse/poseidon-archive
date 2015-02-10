@@ -61,25 +61,20 @@ void keepAliveTimerProc(boost::weak_ptr<PlayerClient> weak){
     	return;
     }
     LOG_POSEIDON_TRACE("Sending heartbeat packet...");
-    client->send(PlayerErrorMessage::ID,
-    	StreamBuffer(PlayerErrorMessage(PlayerErrorMessage::ID, 0, VAL_INIT)), false);
+    client->send(PlayerErrorMessage::ID, StreamBuffer(PlayerErrorMessage(PlayerErrorMessage::ID, 0, VAL_INIT)), false);
 }
 
 }
 
-PlayerClient::PlayerClient(const IpPort &addr, unsigned long long keepAliveTimeout, bool useSsl)
+PlayerClient::PlayerClient(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl)
 	: TcpClientBase(addr, useSsl)
+	, m_keepAliveTimeout(keepAliveTimeout)
 	, m_payloadLen((boost::uint64_t)-1), m_messageId(0)
 {
-	if(keepAliveTimeout != 0){
-		m_keepAliveTimer = TimerDaemon::registerTimer(keepAliveTimeout, keepAliveTimeout,
-			boost::bind(&keepAliveTimerProc, virtualWeakFromThis<PlayerClient>()));
-	}
 }
 PlayerClient::~PlayerClient(){
 	if(m_payloadLen != (boost::uint64_t)-1){
-		LOG_POSEIDON_WARN(
-			"Now that this session is to be destroyed, a premature response has to be discarded.");
+		LOG_POSEIDON_WARN("Now that this session is to be destroyed, a premature response has to be discarded.");
 	}
 }
 
@@ -87,6 +82,11 @@ void PlayerClient::onReadAvail(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	try {
+		if((m_keepAliveTimeout != 0) && !m_keepAliveTimer){
+			m_keepAliveTimer = TimerDaemon::registerTimer(m_keepAliveTimeout, m_keepAliveTimeout,
+				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<PlayerClient>()));
+		}
+
 		m_payload.put(data, size);
 		for(;;){
 			if(m_payloadLen == (boost::uint64_t)-1){

@@ -17,6 +17,8 @@ class TimerItem;
 
 class PlayerClient : public TcpClientBase {
 private:
+	const boost::uint64_t m_keepAliveTimeout;
+
 	boost::shared_ptr<const TimerItem> m_keepAliveTimer;
 
 	boost::uint64_t m_payloadLen;
@@ -24,7 +26,7 @@ private:
 	StreamBuffer m_payload;
 
 protected:
-	explicit PlayerClient(const IpPort &addr, unsigned long long keepAliveTimeout, bool useSsl);
+	explicit PlayerClient(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
 	~PlayerClient();
 
 private:
