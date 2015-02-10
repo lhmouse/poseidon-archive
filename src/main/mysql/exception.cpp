@@ -10,8 +10,7 @@ MySqlException::MySqlException(const char *file, std::size_t line,
 	unsigned code, SharedNts message)
 	: ProtocolException(file, line, STD_MOVE(message), code)
 {
-	LOG_POSEIDON(Logger::SP_CRITICAL | Logger::LV_ERROR,
-		"MySqlException: code = ", code, ", what = ", what());
+	LOG_POSEIDON_ERROR("MySqlException: code = ", code, ", what = ", what());
 }
 MySqlException::~MySqlException() NOEXCEPT {
 }
