@@ -140,6 +140,7 @@ public:
 	}
 
 public:
+	virtual const char *getTableName() const = 0;
 	virtual bool check() const = 0;
 	virtual void execute(std::string &query, MySqlConnection &conn) = 0;
 };
@@ -166,6 +167,9 @@ public:
 	}
 
 public:
+	const char *getTableName() const OVERRIDE {
+		return m_object->getTableName();
+	}
 	bool check() const OVERRIDE {
 		return m_dueTime <= getMonoClock();
 	}
@@ -221,6 +225,9 @@ public:
 	}
 
 public:
+	const char *getTableName() const OVERRIDE {
+		return m_object->getTableName();
+	}
 	bool check() const OVERRIDE {
 		return true;
 	}
@@ -253,6 +260,7 @@ public:
 
 class BatchLoadOperation : public OperationBase {
 private:
+	const char *const m_tableHint;
 	boost::shared_ptr<MySqlObjectBase> (*const m_factory)();
 	const std::string m_query;
 
@@ -260,14 +268,17 @@ private:
 	const MySqlExceptionCallback m_except;
 
 public:
-	BatchLoadOperation(boost::shared_ptr<MySqlObjectBase> (*factory)(), std::string query,
+	BatchLoadOperation(const char *tableHint, boost::shared_ptr<MySqlObjectBase> (*factory)(), std::string query,
 		MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except)
-		: m_factory(factory), m_query(STD_MOVE(query))
+		: m_tableHint(tableHint), m_factory(factory), m_query(STD_MOVE(query))
 		, m_callback(STD_MOVE_IDN(callback)), m_except(STD_MOVE_IDN(except))
 	{
 	}
 
 public:
+	const char *getTableName() const OVERRIDE {
+		return m_tableHint;
+	}
 	bool check() const OVERRIDE {
 		return true;
 	}
@@ -277,7 +288,7 @@ public:
 		try {
 			query = m_query;
 
-			LOG_POSEIDON_INFO("MySQL batch load: query = ", query);
+			LOG_POSEIDON_INFO("MySQL batch load: tableHint = ", m_tableHint, "query = ", query);
 			conn.executeSql(query);
 
 			std::vector<boost::shared_ptr<MySqlObjectBase> > objects;
@@ -306,15 +317,22 @@ private:
 	class WorkingTimeAccumulator : NONCOPYABLE {
 	private:
 		MySqlThread *const m_owner;
+		const char *const m_table;
 
 	public:
-		explicit WorkingTimeAccumulator(MySqlThread *owner)
-			: m_owner(owner)
+		WorkingTimeAccumulator(MySqlThread *owner, const char *table)
+			: m_owner(owner), m_table(table)
 		{
-			m_owner->accumulateTimeIdle();
+			m_owner->accumulateTimeForTable("");
 		}
 		~WorkingTimeAccumulator(){
-			m_owner->accumulateTimeWorking();
+			m_owner->accumulateTimeForTable(m_table);
+		}
+	};
+
+	struct TableNameComparator {
+		bool operator()(const char *lhs, const char *rhs) const {
+			return std::strcmp(lhs, rhs) < 0;
 		}
 	};
 
@@ -330,29 +348,28 @@ private:
 	boost::condition_variable m_queueEmpty;
 
 	// 性能统计。
+	mutable boost::mutex m_profileMutex;
 	boost::uint64_t m_timeFlushed;
-	volatile boost::uint64_t m_timeIdle;
-	volatile boost::uint64_t m_timeWorking;
+	std::map<const char *, boost::uint64_t> m_profile;
 
 public:
 	explicit MySqlThread(std::size_t index)
 		: m_index(index)
 		, m_running(true)
 		, m_urgent(false)
-		, m_timeFlushed(getMonoClock()), m_timeIdle(0), m_timeWorking(0)
+		, m_timeFlushed(getMonoClock())
 	{
 		boost::thread(&MySqlThread::loop, this).swap(*this);
 	}
 
 private:
-	void accumulateTimeIdle() NOEXCEPT {
+	void accumulateTimeForTable(const char *table) NOEXCEPT {
 		const AUTO(now, getMonoClock());
-		atomicAdd(m_timeIdle, now - m_timeFlushed, ATOMIC_RELAXED);
-		m_timeFlushed = now;
-	}
-	void accumulateTimeWorking() NOEXCEPT {
-		const AUTO(now, getMonoClock());
-		atomicAdd(m_timeWorking, now - m_timeFlushed, ATOMIC_RELAXED);
+		try {
+			const boost::mutex::scoped_lock lock(m_profileMutex);
+			m_profile[table] += now - m_timeFlushed;
+		} catch(...){
+		}
 		m_timeFlushed = now;
 	}
 
@@ -372,11 +389,18 @@ public:
 		return m_queue.size();
 	}
 
-	boost::uint64_t getTimeIdle() const {
-		return atomicLoad(m_timeIdle, ATOMIC_RELAXED);
-	}
-	boost::uint64_t getTimeWorking() const {
-		return atomicLoad(m_timeWorking, ATOMIC_RELAXED);
+	std::size_t getProfile(std::vector<MySqlSnapshotItem> &ret, unsigned thread) const {
+		const boost::mutex::scoped_lock lock(m_profileMutex);
+		const std::size_t count = m_profile.size();
+		ret.reserve(ret.size() + count);
+		for(AUTO(it, m_profile.begin()); it != m_profile.end(); ++it){
+			MySqlSnapshotItem item;
+			item.thread = thread;
+			item.table = it->first;
+			item.usTotal = it->second;
+			ret.push_back(item);
+		}
+		return count;
 	}
 
 	void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
@@ -414,7 +438,7 @@ void MySqlThread::loop(){
 
 	for(;;){
 		try {
-			accumulateTimeIdle();
+			accumulateTimeForTable("");
 
 			if(!conn){
 				LOG_POSEIDON_INFO("Connecting to MySQL server...");
@@ -453,7 +477,7 @@ void MySqlThread::loop(){
 				while(m_queue.empty()){
 					m_queueEmpty.notify_all();
 					atomicStore(m_urgent, false, ATOMIC_RELEASE);
-					accumulateTimeIdle();
+					accumulateTimeForTable("");
 
 					if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 						goto _exitLoop;
@@ -474,7 +498,7 @@ void MySqlThread::loop(){
 			std::string query;
 			try {
 				try {
-					const WorkingTimeAccumulator profiler(this);
+					const WorkingTimeAccumulator profiler(this, operation->getTableName());
 					operation->execute(query, *conn);
 				} catch(MySqlException &e){
 					mysqlErrCode = e.code();
@@ -663,13 +687,9 @@ void MySqlDaemon::stop(){
 }
 
 std::vector<MySqlSnapshotItem> MySqlDaemon::snapshot(){
-	std::vector<MySqlSnapshotItem> ret(g_threads.size());
+	std::vector<MySqlSnapshotItem> ret;
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		AUTO_REF(item, ret[i]);
-		item.index = i;
-		item.pendingOperations = g_threads[i]->getPendingOperations();
-		item.usIdle = g_threads[i]->getTimeIdle();
-		item.usWorking = g_threads[i]->getTimeWorking();
+		g_threads[i]->getProfile(ret, i);
 	}
 	return ret;
 }
@@ -706,6 +726,6 @@ void MySqlDaemon::pendForBatchLoading(boost::shared_ptr<MySqlObjectBase> (*facto
 {
 	commitOperation(tableHint,
 		boost::make_shared<BatchLoadOperation>(
-			factory, STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except)),
+			tableHint, factory, STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except)),
 		true);
 }

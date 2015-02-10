@@ -165,19 +165,21 @@ void onSetLogMask(boost::shared_ptr<HttpSession> session, OptionalMap getParams)
 	session->sendDefault(HTTP_OK);
 }
 
-void onShowMySqlThreads(boost::shared_ptr<HttpSession> session, OptionalMap){
+void onShowMySqlProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
 	OptionalMap headers;
 	headers.set("Content-Type", "text/csv; charset=utf-8");
 	headers.set("Content-Disposition", "attachment; name=\"mysql_threads.csv\"");
 
 	StreamBuffer contents;
-	contents.put("index,pending_operations,us_idle,us_working\r\n");
+	contents.put("thread,table,us_total\r\n");
 	AUTO(snapshot, MySqlDaemon::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 		char temp[256];
-		unsigned len = (unsigned)std::sprintf(temp, "%u,%lu,%llu,%llu\r\n",
-			it->index, it->pendingOperations, it->usIdle, it->usWorking);
+		unsigned len = (unsigned)std::sprintf(temp, "%u,", it->thread);
+		contents.put(temp, len);
+		escapeCsvField(str, it->table);
+		len = (unsigned)std::sprintf(temp, ",%llu\r\n", it->usTotal);
 		contents.put(temp, len);
 	}
 
@@ -193,7 +195,7 @@ const std::pair<
 	std::make_pair("set_log_mask", &onSetLogMask),
 	std::make_pair("show_connections", &onShowConnections),
 	std::make_pair("show_modules", &onShowModules),
-	std::make_pair("show_mysql_threads", &onShowMySqlThreads),
+	std::make_pair("show_mysql_profile", &onShowMySqlProfile),
 	std::make_pair("show_profile", &onShowProfile),
 	std::make_pair("shutdown", &onShutdown),
 	std::make_pair("unload_module", &onUnloadModule),

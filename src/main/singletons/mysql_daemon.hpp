@@ -12,10 +12,9 @@
 namespace Poseidon {
 
 struct MySqlSnapshotItem {
-	unsigned index;
-	unsigned long pendingOperations;
-	unsigned long long usIdle;
-	unsigned long long usWorking;
+	unsigned thread;
+	const char *table;
+	unsigned long long usTotal;
 };
 
 class MySqlObjectBase;
