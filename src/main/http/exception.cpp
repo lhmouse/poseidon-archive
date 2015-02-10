@@ -21,7 +21,8 @@ HttpException::HttpException(const char *file, std::size_t line,
 		m_headers = boost::make_shared<OptionalMap>();
 		m_headers->swap(headers);
 	}
-	LOG_POSEIDON_ERROR("HttpException: status = ", static_cast<unsigned>(status));
+	LOG_POSEIDON(Logger::SP_CRITICAL | Logger::LV_ERROR,
+		"HttpException: status = ", static_cast<unsigned>(status));
 }
 HttpException::~HttpException() NOEXCEPT {
 }

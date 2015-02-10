@@ -10,8 +10,8 @@ PlayerMessageException::PlayerMessageException(const char *file, std::size_t lin
 	PlayerStatus status, SharedNts message)
 	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
 {
-	LOG_POSEIDON_ERROR("PlayerMessageException: status = ", static_cast<unsigned>(status),
-		", message = ", message);
+	LOG_POSEIDON(Logger::SP_CRITICAL | Logger::LV_ERROR,
+		"PlayerMessageException: status = ", static_cast<unsigned>(status), ", message = ", message);
 }
 PlayerMessageException::~PlayerMessageException() NOEXCEPT {
 }

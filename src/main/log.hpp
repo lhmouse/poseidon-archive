@@ -21,14 +21,13 @@ public:
 		LV_DEBUG		= 0x0010,
 		LV_TRACE		= 0x0020,
 
-		SRC_RESERVED	= 0x0040,
-		SRC_POSEIDON	= 0x0080,
+		SP_CRITICAL		= 0x0040,
+		SP_POSEIDON		= 0x0080,
 	};
 
 public:
 	static unsigned long long getMask() NOEXCEPT;
-	static unsigned long long setMask(
-		unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT;
+	static unsigned long long setMask(unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT;
 
 	static const char *getThreadTag() NOEXCEPT;
 	static void setThreadTag(const char *newTag) NOEXCEPT;
@@ -81,13 +80,18 @@ public:
 
 #define LOG_MASK(mask_, ...)	\
 	do {	\
-		if(((mask_) & ~::Poseidon::Logger::getMask()) == 0){	\
-			static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__);	\
+		unsigned long long test_ = (mask_);	\
+		if(test_ & ::Poseidon::Logger::SP_CRITICAL){	\
+			test_ &= 0x3F;	\
 		}	\
+		if(test_ & ~(::Poseidon::Logger::getMask())){	\
+			break;	\
+		}	\
+		static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__);	\
 	} while(false)
 
 #define LOG_POSEIDON(level_, ...)	\
-	LOG_MASK(::Poseidon::Logger::SRC_POSEIDON | (level_), __VA_ARGS__)
+	LOG_MASK(::Poseidon::Logger::SP_POSEIDON | (level_), __VA_ARGS__)
 
 #define LOG_POSEIDON_FATAL(...)		LOG_POSEIDON(::Poseidon::Logger::LV_FATAL,	__VA_ARGS__)
 #define LOG_POSEIDON_ERROR(...)		LOG_POSEIDON(::Poseidon::Logger::LV_ERROR,	__VA_ARGS__)

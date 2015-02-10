@@ -10,8 +10,8 @@ WebSocketException::WebSocketException(const char *file, std::size_t line,
 	WebSocketStatus status, SharedNts message)
 	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
 {
-	LOG_POSEIDON_ERROR("WebSocketException: status = ", static_cast<unsigned>(status),
-		", what = ", what());
+	LOG_POSEIDON(Logger::SP_CRITICAL | Logger::LV_ERROR,
+		"WebSocketException: status = ", static_cast<unsigned>(status), ", what = ", what());
 }
 WebSocketException::~WebSocketException() NOEXCEPT {
 }
