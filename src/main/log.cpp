@@ -87,7 +87,7 @@ Logger::~Logger() NOEXCEPT {
 		AUTO_REF(levelItem, LEVEL_ITEMS[__builtin_ctz(m_mask | LV_TRACE)]);
 
 		char temp[256];
-		unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), true);
+		unsigned len;
 
 		std::string line;
 		line.reserve(255);
@@ -95,11 +95,17 @@ Logger::~Logger() NOEXCEPT {
 		if(useAsciiColors){
 			line += "\x1B[0;32m";
 		}
+		len = formatTime(temp, sizeof(temp), getLocalTime(), true);
 		line.append(temp, len);
-		line += ' ';
 
 		if(useAsciiColors){
-			line += "\x1B[0m";
+			line += "\x1B[0;33m";
+		}
+		len = (unsigned)std::sprintf(temp, " %02X ", (unsigned)((m_mask >> 8) & 0xFF));
+		line.append(temp, len);
+
+		if(useAsciiColors){
+			line += "\x1B[0;39m";
 		}
 		line += '[';
 		line.append(t_tag, sizeof(t_tag) - 1);
