@@ -62,7 +62,6 @@ __thread boost::uint64_t t_randSeed = 0;
 boost::uint32_t rand32(){
 	boost::uint64_t seed = t_randSeed;
 	if(seed == 0){
-		boost::uint64_t seed;
 		__asm__ __volatile__(
 			"rdtsc \n"
 #ifdef __x86_64__
