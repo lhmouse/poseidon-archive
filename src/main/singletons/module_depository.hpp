@@ -32,7 +32,7 @@ struct ModuleDepository {
 	static std::vector<ModuleSnapshotItem> snapshot();
 
 private:
-	friend class ModuleRaiiBase;
+	friend ModuleRaiiBase;
 
 	static void registerModuleRaii(ModuleRaiiBase *raii);
 	static void unregisterModuleRaii(ModuleRaiiBase *raii);
