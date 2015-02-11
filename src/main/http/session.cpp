@@ -102,13 +102,12 @@ protected:
 			(*servlet)(session, STD_MOVE(request));
 			session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
 		} catch(HttpException &e){
-			LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
-				", status = ", static_cast<unsigned>(e.status()));
-			session->sendDefault(e.status(), e.headers(), false);
+			LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri, ", status = ", e.status());
+			session->sendDefault(e.status(), e.headers(), false); // 不关闭连接。
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception... request URI = ", m_uri);
-			session->sendDefault(HTTP_BAD_REQUEST, false);
+			session->sendDefault(HTTP_BAD_REQUEST, true); // 关闭连接。
 			throw;
 		}
 	}

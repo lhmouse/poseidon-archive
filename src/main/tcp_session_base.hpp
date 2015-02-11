@@ -92,6 +92,8 @@ public:
 	bool hasBeenShutdown() const OVERRIDE FINAL;
 	bool forceShutdown() NOEXCEPT OVERRIDE FINAL;
 
+	bool shutdown() NOEXCEPT;
+
 	unsigned long long getCreatedTime() const {
 		return m_createdTime;
 	}

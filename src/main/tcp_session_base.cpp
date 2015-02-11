@@ -163,6 +163,14 @@ bool TcpSessionBase::forceShutdown() NOEXCEPT {
 	return ret;
 }
 
+bool TcpSessionBase::shutdown() NOEXCEPT {
+	try {
+		return send(StreamBuffer(), true);
+	} catch(...){
+		return forceShutdown();
+	}
+}
+
 long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
 	::ssize_t ret;
 	if(m_sslFilter){

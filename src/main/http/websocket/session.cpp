@@ -52,13 +52,12 @@ protected:
 			(*servlet)(session, m_opcode, STD_MOVE(m_payload));
 			session->setTimeout(WebSocketServletDepository::getKeepAliveTimeout());
 		} catch(WebSocketException &e){
-			LOG_POSEIDON_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(),
-				", what = ", e.what());
-			// session->shutdown(e.status(), StreamBuffer(e.what()));
+			LOG_POSEIDON_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(), ", what = ", e.what());
+			session->shutdown(e.status(), StreamBuffer(e.what()));
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception...");
-			// session->shutdown(WS_INTERNAL_ERROR);
+			session->shutdown(WS_INTERNAL_ERROR);
 			throw;
 		}
 	}

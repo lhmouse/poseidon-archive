@@ -46,10 +46,11 @@ protected:
 			}
 		} catch(PlayerMessageException &e){
 			LOG_POSEIDON_ERROR("PlayerMessageException thrown in player servlet, message id = ", m_messageId,
-				", status = ", static_cast<int>(e.status()), ", what = ", e.what());
+				", status = ", e.status(), ", what = ", e.what());
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception... message id = ", m_messageId);
+			client->shutdown(); // 关闭连接。
 			throw;
 		}
 	}

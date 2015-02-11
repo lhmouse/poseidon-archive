@@ -68,12 +68,12 @@ protected:
 			session->setTimeout(PlayerServletDepository::getKeepAliveTimeout());
 		} catch(PlayerMessageException &e){
 			LOG_POSEIDON_ERROR("PlayerMessageException thrown in player servlet, message id = ",
-				m_messageId, ", status = ", static_cast<int>(e.status()), ", what = ", e.what());
-			session->sendError(m_messageId, e.status(), e.what(), false);
+				m_messageId, ", status = ", e.status(), ", what = ", e.what());
+			session->sendError(m_messageId, e.status(), e.what(), false); // 不关闭连接。
 			throw;
 		} catch(...){
 			LOG_POSEIDON_ERROR("Forwarding exception... message id = ", m_messageId);
-			session->sendError(m_messageId, PLAYER_INTERNAL_ERROR, false);
+			session->sendError(m_messageId, PLAYER_INTERNAL_ERROR, true); // 关闭连接。
 			throw;
 		}
 	}
