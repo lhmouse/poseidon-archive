@@ -447,3 +447,7 @@ MODULE_RAII(
 	LOG_POSEIDON_FATAL("first: ", *s.begin());
 )
 */
+MODULE_RAII(
+	LOG_POSEIDON_FATAL("----------- ", explode<std::string>(':', "0:1:2:3:").size());
+	return VAL_INIT;
+)

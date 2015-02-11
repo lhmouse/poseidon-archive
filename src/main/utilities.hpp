@@ -22,46 +22,50 @@ namespace Poseidon {
 template<typename T>
 inline std::vector<T> explode(char separator, const std::string &str, std::size_t limit = 0){
 	std::vector<T> ret;
-	std::size_t begin = 0;
-	std::string temp;
-	for(;;){
-		const std::size_t end = str.find(separator, begin);
-		if(end == std::string::npos){
-			if(begin < str.size()){
-				temp.assign(str.begin() + begin, str.end());
+	if(!str.empty()){
+		std::size_t begin = 0;
+		std::string temp;
+		for(;;){
+			const std::size_t end = str.find(separator, begin);
+			if(end == std::string::npos){
+				temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.end());
 				ret.push_back(boost::lexical_cast<T>(temp));
+				break;
 			}
-			break;
-		}
-		if(ret.size() == limit - 1){	// 如果 limit 为零则 limit - 1 会变成 SIZE_MAX。
-			temp.assign(str.begin() + begin, str.end());
+			if((limit != 0) && (ret.size() == limit - 1)){
+				temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.end());
+				ret.push_back(boost::lexical_cast<T>(temp));
+				break;
+			}
+			temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.begin() + static_cast<std::ptrdiff_t>(end));
 			ret.push_back(boost::lexical_cast<T>(temp));
-			break;
+			begin = end + 1;
 		}
-		temp.assign(str.begin() + begin, str.begin() + end);
-		ret.push_back(boost::lexical_cast<T>(temp));
-		begin = end + 1;
 	}
 	return ret;
 }
 template<>
 inline std::vector<std::string> explode(char separator, const std::string &str, std::size_t limit){
 	std::vector<std::string> ret;
-	std::size_t begin = 0;
-	for(;;){
-		const std::size_t end = str.find(separator, begin);
-		if(end == std::string::npos){
-			if(begin < str.size()){
-				ret.push_back(str.substr(begin));
+	if(!str.empty()){
+		std::size_t begin = 0;
+		std::string temp;
+		for(;;){
+			const std::size_t end = str.find(separator, begin);
+			if(end == std::string::npos){
+				temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.end());
+				ret.push_back(STD_MOVE(temp));
+				break;
 			}
-			break;
+			if((limit != 0) && (ret.size() == limit - 1)){
+				temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.end());
+				ret.push_back(STD_MOVE(temp));
+				break;
+			}
+			temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.begin() + static_cast<std::ptrdiff_t>(end));
+			ret.push_back(STD_MOVE(temp));
+			begin = end + 1;
 		}
-		if(ret.size() == limit - 1){	// 如果 limit 为零则 limit - 1 会变成 SIZE_MAX。
-			ret.push_back(str.substr(begin));
-			break;
-		}
-		ret.push_back(str.substr(begin, end - begin));
-		begin = end + 1;
 	}
 	return ret;
 }
