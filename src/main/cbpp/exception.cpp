@@ -6,11 +6,11 @@
 #include "../log.hpp"
 using namespace Poseidon;
 
-PlayerMessageException::PlayerMessageException(const char *file, std::size_t line,
-	PlayerStatus status, SharedNts message)
+CbppMessageException::CbppMessageException(const char *file, std::size_t line,
+	CbppStatus status, SharedNts message)
 	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
 {
-	LOG_POSEIDON_ERROR("PlayerMessageException: status = ", static_cast<unsigned>(status), ", message = ", message);
+	LOG_POSEIDON_ERROR("CbppMessageException: status = ", static_cast<unsigned>(status), ", message = ", message);
 }
-PlayerMessageException::~PlayerMessageException() NOEXCEPT {
+CbppMessageException::~CbppMessageException() NOEXCEPT {
 }

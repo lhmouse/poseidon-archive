@@ -2,7 +2,7 @@
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "player_servlet_depository.hpp"
+#include "cbpp_servlet_depository.hpp"
 #include <map>
 #include <boost/ref.hpp>
 #include <boost/thread/shared_mutex.hpp>
@@ -12,11 +12,11 @@
 #include "../exception.hpp"
 using namespace Poseidon;
 
-struct Poseidon::PlayerServlet : NONCOPYABLE {
+struct Poseidon::CbppServlet : NONCOPYABLE {
 	const boost::uint16_t protocolId;
-	const boost::shared_ptr<const PlayerServletCallback> callback;
+	const boost::shared_ptr<const CbppServletCallback> callback;
 
-	PlayerServlet(boost::uint16_t protocolId_, boost::shared_ptr<const PlayerServletCallback> callback_)
+	CbppServlet(boost::uint16_t protocolId_, boost::shared_ptr<const CbppServletCallback> callback_)
 		: protocolId(protocolId_), callback(STD_MOVE(callback_))
 	{
 	}
@@ -28,7 +28,7 @@ std::size_t g_maxRequestLength			= 16 * 0x400;
 unsigned long long g_keepAliveTimeout	= 30000;
 
 typedef std::map<std::size_t,
-	std::map<boost::uint16_t, boost::weak_ptr<const PlayerServlet> >
+	std::map<boost::uint16_t, boost::weak_ptr<const CbppServlet> >
 	> ServletMap;
 
 boost::shared_mutex g_mutex;
@@ -36,19 +36,19 @@ ServletMap g_servlets;
 
 }
 
-void PlayerServletDepository::start(){
-	LOG_POSEIDON_INFO("Starting player servlet depository...");
+void CbppServletDepository::start(){
+	LOG_POSEIDON_INFO("Starting CBPP servlet depository...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
-	conf.get(g_maxRequestLength, "player_max_request_length");
+	conf.get(g_maxRequestLength, "cbpp_max_request_length");
 	LOG_POSEIDON_DEBUG("Max request length = ", g_maxRequestLength);
 
-	conf.get(g_keepAliveTimeout, "player_keep_alive_timeout");
+	conf.get(g_keepAliveTimeout, "cbpp_keep_alive_timeout");
 	LOG_POSEIDON_DEBUG("Keep alive timeout = ", g_keepAliveTimeout);
 }
-void PlayerServletDepository::stop(){
-	LOG_POSEIDON_INFO("Unloading all player servlets...");
+void CbppServletDepository::stop(){
+	LOG_POSEIDON_INFO("Unloading all CBPP servlets...");
 
 	ServletMap servlets;
 	{
@@ -57,25 +57,25 @@ void PlayerServletDepository::stop(){
 	}
 }
 
-std::size_t PlayerServletDepository::getMaxRequestLength(){
+std::size_t CbppServletDepository::getMaxRequestLength(){
 	return g_maxRequestLength;
 }
-unsigned long long PlayerServletDepository::getKeepAliveTimeout(){
+unsigned long long CbppServletDepository::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;
 }
 
-boost::shared_ptr<PlayerServlet> PlayerServletDepository::registerServlet(
-	std::size_t category, boost::uint16_t protocolId, PlayerServletCallback callback)
+boost::shared_ptr<CbppServlet> CbppServletDepository::registerServlet(
+	std::size_t category, boost::uint16_t protocolId, CbppServletCallback callback)
 {
-	AUTO(sharedCallback, boost::make_shared<PlayerServletCallback>());
+	AUTO(sharedCallback, boost::make_shared<CbppServletCallback>());
 	sharedCallback->swap(callback);
-	AUTO(servlet, boost::make_shared<PlayerServlet>(protocolId, sharedCallback));
+	AUTO(servlet, boost::make_shared<CbppServlet>(protocolId, sharedCallback));
 	{
 		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
 		AUTO_REF(old, g_servlets[category][protocolId]);
 		if(!old.expired()){
 			LOG_POSEIDON_ERROR("Duplicate servlet for id ", protocolId, " in category ", category);
-			DEBUG_THROW(Exception, SharedNts::observe("Duplicate player protocol servlet"));
+			DEBUG_THROW(Exception, SharedNts::observe("Duplicate CBPP protocol servlet"));
 		}
 		old = servlet;
 	}
@@ -83,7 +83,7 @@ boost::shared_ptr<PlayerServlet> PlayerServletDepository::registerServlet(
 	return servlet;
 }
 
-boost::shared_ptr<const PlayerServletCallback> PlayerServletDepository::getServlet(
+boost::shared_ptr<const CbppServletCallback> CbppServletDepository::getServlet(
 	std::size_t category, boost::uint16_t protocolId)
 {
     const boost::shared_lock<boost::shared_mutex> slock(g_mutex);

@@ -18,12 +18,12 @@
 #include "../main/http/websocket/session.hpp"
 #include "../main/http/utilities.hpp"
 #include "../main/http/server.hpp"
-#include "../main/player/server.hpp"
+#include "../main/cbpp/server.hpp"
 #include "../main/tcp_client_base.hpp"
-#include "../main/player/session.hpp"
+#include "../main/cbpp/session.hpp"
 #include "../main/http/session.hpp"
-#include "../main/player/message_base.hpp"
-#include "../main/singletons/player_servlet_depository.hpp"
+#include "../main/cbpp/message_base.hpp"
+#include "../main/singletons/cbpp_servlet_depository.hpp"
 #include "../main/singletons/epoll_daemon.hpp"
 #include "../main/mysql/object_base.hpp"
 #include "../main/uuid.hpp"
@@ -237,32 +237,32 @@ private:
 #define MESSAGE_NAME		TestInt
 #define MESSAGE_ID			100
 #define MESSAGE_FIELDS		FIELD_VINT(i)
-#include "../main/player/message_generator.hpp"
+#include "../main/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestUInt
 #define MESSAGE_ID			101
 #define MESSAGE_FIELDS 	FIELD_VUINT(u)
-#include "../main/player/message_generator.hpp"
+#include "../main/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestString
 #define MESSAGE_ID			102
 #define MESSAGE_FIELDS		FIELD_STRING(s)
-#include "../main/player/message_generator.hpp"
+#include "../main/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestIntArray
 #define MESSAGE_ID			103
 #define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_VINT(i))
-#include "../main/player/message_generator.hpp"
+#include "../main/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestUIntArray
 #define MESSAGE_ID			104
 #define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_VUINT(u))
-#include "../main/player/message_generator.hpp"
+#include "../main/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestStringArray
 #define MESSAGE_ID			105
 #define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_STRING(s))
-#include "../main/player/message_generator.hpp"
+#include "../main/cbpp/message_generator.hpp"
 */
 #define MESSAGE_NAME	   	TestMessage
 #define MESSAGE_ID			106
@@ -274,30 +274,30 @@ private:
 		FIELD_STRING(s) \
 		FIELD_VUINT(k)  \
 	)
-#include "../main/player/message_generator.hpp"
+#include "../main/cbpp/message_generator.hpp"
 /*
 namespace {
 
-void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+void TestIntProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 	TestInt req(incoming);
 	LOG_POSEIDON_WARNING("sint = ", req.i);
 	req.i /= 10;
 	ps->send(1000, req);
 }
-void TestUIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+void TestUIntProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 	TestUInt req(incoming);
 	LOG_POSEIDON_WARNING("int = ", req.u);
 	req.u /= 10;
 	ps->send(1001, req);
 }
-void TestStringProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+void TestStringProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 	TestString req(incoming);
 	LOG_POSEIDON_WARNING("string = ", req.s);
 	req.s += "_0123456789";
 	ps->send(1002, req);
 }
 
-void TestIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+void TestIntArrayProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 	TestIntArray req(incoming);
 	LOG_POSEIDON_WARNING("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
@@ -306,7 +306,7 @@ void TestIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming
 	}
 	ps->send(1003, req);
 }
-void TestUIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+void TestUIntArrayProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 	TestUIntArray req(incoming);
 	LOG_POSEIDON_WARNING("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
@@ -315,7 +315,7 @@ void TestUIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incomin
 	}
 	ps->send(1004, req);
 }
-void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+void TestStringArrayProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 	TestStringArray req(incoming);
 	LOG_POSEIDON_WARNING("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
@@ -325,7 +325,7 @@ void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incom
 	ps->send(1005, req);
 }
 
-void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
+void TestProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 	LOG_POSEIDON_WARNING("Received: ", HexDumper(incoming));
 	TestMessage req(incoming);
 	LOG_POSEIDON_WARNING("req.i = ", req.i);
@@ -365,25 +365,25 @@ MODULE_RAII(
 )
 /*
 MODULE_RAII(
-	return PlayerServletDepository::registerServlet(2, 100, &TestIntProc);
+	return CbppServletDepository::registerServlet(2, 100, &TestIntProc);
 )
 MODULE_RAII(
-	return PlayerServletDepository::registerServlet(2, 101, &TestUIntProc);
+	return CbppServletDepository::registerServlet(2, 101, &TestUIntProc);
 )
 MODULE_RAII(
-	return PlayerServletDepository::registerServlet(2, 102, &TestStringProc);
+	return CbppServletDepository::registerServlet(2, 102, &TestStringProc);
 )
 MODULE_RAII(
-	return PlayerServletDepository::registerServlet(2, 103, &TestIntArrayProc);
+	return CbppServletDepository::registerServlet(2, 103, &TestIntArrayProc);
 )
 MODULE_RAII(
-	return PlayerServletDepository::registerServlet(2, 104, &TestUIntArrayProc);
+	return CbppServletDepository::registerServlet(2, 104, &TestUIntArrayProc);
 )
 MODULE_RAII(
-	return PlayerServletDepository::registerServlet(2, 105, &TestStringArrayProc);
+	return CbppServletDepository::registerServlet(2, 105, &TestStringArrayProc);
 )
 MODULE_RAII(
-	return PlayerServletDepository::registerServlet(2, 106, &TestProc);
+	return CbppServletDepository::registerServlet(2, 106, &TestProc);
 )
 */
 namespace {
@@ -426,7 +426,7 @@ MODULE_RAII(
 )
 
 MODULE_RAII(
-	AUTO(server, (boost::make_shared<PlayerServer>(2,
+	AUTO(server, (boost::make_shared<CbppServer>(2,
 		IpPort(SharedNts("0.0.0.0"), 8850), NULLPTR, NULLPTR)));
 	EpollDaemon::registerServer(server);
 	return server;

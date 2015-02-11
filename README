@@ -8,10 +8,13 @@ https://webchat.freenode.net/?channels=mcfproj
 
 支持功能：
 ===================
-传输层 TCP 套接字
-纯文本 HTTP
+CBPP *
+HTTP
 WebSocket
 MySQL 数据库
+
+* CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，
+  简介参见 src/main/cbpp/message_base.cpp 中的注释。
 
 编译所需工具
 ===================
@@ -21,10 +24,13 @@ libtool
 pkg-config
 gettext
 make
-g++
+g++ *
 libboost-dev
 libmysqlclient-dev
 libssl-dev
+
+* 建议 g++ 版本至少为 4.7 以支持 C++11 特性。
+  针对 C++98 的支持可能在未来的版本中被移除。
 
 运行环境
 ===================
@@ -33,4 +39,4 @@ mysql-server-5.1
 
 问题反馈
 ===================
-请联系 lh_mouse at 126 dot com。
+请联系 lh_mouse at 126 dot com（注明 Poseidon 相关）。

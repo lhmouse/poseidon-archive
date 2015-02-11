@@ -13,11 +13,11 @@
 #	error MESSAGE_FIELDS is undefined.
 #endif
 
-#ifndef POSEIDON_PLAYER_MESSAGE_BASE_HPP_
+#ifndef POSEIDON_CBPP_MESSAGE_BASE_HPP_
 #   error Please #include "message_base.hpp" first.
 #endif
 
-class MESSAGE_NAME : public ::Poseidon::PlayerMessageBase {
+class MESSAGE_NAME : public ::Poseidon::CbppMessageBase {
 public:
 	enum {
 		ID = MESSAGE_ID
@@ -58,7 +58,7 @@ public:
 
 #if (0 MESSAGE_FIELDS) != 0
 	MESSAGE_NAME()
-		: ::Poseidon::PlayerMessageBase()
+		: ::Poseidon::CbppMessageBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -90,7 +90,7 @@ public:
 #define FIELD_ARRAY(name_, fields_)
 
 	explicit MESSAGE_NAME(STRIP_FIRST(void MESSAGE_FIELDS))
-		: ::Poseidon::PlayerMessageBase()
+		: ::Poseidon::CbppMessageBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -108,7 +108,7 @@ public:
 	{
 	}
 	explicit MESSAGE_NAME(::Poseidon::StreamBuffer &buffer_)
-		: ::Poseidon::PlayerMessageBase()
+		: ::Poseidon::CbppMessageBase()
 	{
 		*this << buffer_;
 	}

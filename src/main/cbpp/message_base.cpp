@@ -43,7 +43,7 @@ using namespace Poseidon;
 
 */
 
-void PlayerMessageBase::encodeHeader(
+void CbppMessageBase::encodeHeader(
 	StreamBuffer &dst, boost::uint16_t messageId, boost::uint64_t messageLen)
 {
 	boost::uint16_t temp16;
@@ -63,7 +63,7 @@ void PlayerMessageBase::encodeHeader(
 		dst.put(&temp64, 8);
 	}
 }
-bool PlayerMessageBase::decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
+bool CbppMessageBase::decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
 	boost::uint16_t &messageId, boost::uint64_t &messageLen, StreamBuffer &src) NOEXCEPT
 {
 	boost::uint16_t temp16;

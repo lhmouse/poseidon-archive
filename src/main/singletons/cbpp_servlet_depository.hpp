@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_SINGLETONS_PLAYER_SERVLET_DEPOSITORY_HPP_
-#define POSEIDON_SINGLETONS_PLAYER_SERVLET_DEPOSITORY_HPP_
+#ifndef POSEIDON_SINGLETONS_CBPP_SERVLET_DEPOSITORY_HPP_
+#define POSEIDON_SINGLETONS_CBPP_SERVLET_DEPOSITORY_HPP_
 
 #include "../cxx_ver.hpp"
 #include <boost/cstdint.hpp>
@@ -13,15 +13,15 @@
 #include <boost/type_traits/is_base_of.hpp>
 #include <boost/utility/enable_if.hpp>
 #include "../stream_buffer.hpp"
-#include "../player/message_base.hpp"
-#include "../player/callbacks.hpp"
+#include "../cbpp/message_base.hpp"
+#include "../cbpp/callbacks.hpp"
 
 namespace Poseidon {
 
-class PlayerServlet;
-class PlayerSession;
+class CbppServlet;
+class CbppSession;
 
-struct PlayerServletDepository {
+struct CbppServletDepository {
 	static void start();
 	static void stop();
 
@@ -29,14 +29,14 @@ struct PlayerServletDepository {
 	static unsigned long long getKeepAliveTimeout();
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
-	static boost::shared_ptr<PlayerServlet> registerServlet(
-		std::size_t category, boost::uint16_t protocolId, PlayerServletCallback callback);
+	static boost::shared_ptr<CbppServlet> registerServlet(
+		std::size_t category, boost::uint16_t protocolId, CbppServletCallback callback);
 
-	// void (boost::shared_ptr<PlayerSession> ps, ProtocolT request)
+	// void (boost::shared_ptr<CbppSession> ps, ProtocolT request)
 	template<typename ProtocolT, typename CallbackT>
 	static
-		typename boost::enable_if_c<boost::is_base_of<PlayerMessageBase, ProtocolT>::value,
-			boost::shared_ptr<PlayerServlet> >::type
+		typename boost::enable_if_c<boost::is_base_of<CbppMessageBase, ProtocolT>::value,
+			boost::shared_ptr<CbppServlet> >::type
 		registerServlet(std::size_t category,
 #ifdef POSEIDON_CXX11
 			CallbackT &&
@@ -51,7 +51,7 @@ struct PlayerServletDepository {
 		struct Helper {
 			static void checkAndForward(
 #endif
-				CallbackT &callback, boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming)
+				CallbackT &callback, boost::shared_ptr<CbppSession> ps, StreamBuffer incoming)
 			{
 				callback(STD_MOVE(ps), ProtocolT(incoming));
 			}
@@ -67,11 +67,11 @@ struct PlayerServletDepository {
 #endif
 	}
 
-	static boost::shared_ptr<const PlayerServletCallback> getServlet(
+	static boost::shared_ptr<const CbppServletCallback> getServlet(
 		std::size_t category, boost::uint16_t protocolId);
 
 private:
-	PlayerServletDepository();
+	CbppServletDepository();
 };
 
 }

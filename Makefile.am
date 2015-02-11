@@ -62,7 +62,7 @@ pkginclude_singletons_HEADERS = \
 	src/main/singletons/system_http_server.hpp	\
 	src/main/singletons/module_depository.hpp	\
 	src/main/singletons/mysql_daemon.hpp	\
-	src/main/singletons/player_servlet_depository.hpp	\
+	src/main/singletons/cbpp_servlet_depository.hpp	\
 	src/main/singletons/event_dispatcher.hpp	\
 	src/main/singletons/profile_depository.hpp	\
 	src/main/singletons/websocket_servlet_depository.hpp
@@ -87,18 +87,18 @@ pkginclude_http_websocket_HEADERS = \
 	src/main/http/websocket/opcode.hpp	\
 	src/main/http/websocket/callbacks.hpp
 
-pkginclude_playerdir = $(pkgincludedir)/player
-pkginclude_player_HEADERS = \
-	src/main/player/client.hpp	\
-	src/main/player/message_base.hpp	\
-	src/main/player/session.hpp	\
-	src/main/player/error_message.hpp	\
-	src/main/player/message_generator.hpp	\
-	src/main/player/status.hpp	\
-	src/main/player/control_code.hpp	\
-	src/main/player/exception.hpp	\
-	src/main/player/server.hpp	\
-	src/main/player/callbacks.hpp
+pkginclude_cbppdir = $(pkgincludedir)/cbpp
+pkginclude_cbpp_HEADERS = \
+	src/main/cbpp/client.hpp	\
+	src/main/cbpp/message_base.hpp	\
+	src/main/cbpp/session.hpp	\
+	src/main/cbpp/error_message.hpp	\
+	src/main/cbpp/message_generator.hpp	\
+	src/main/cbpp/status.hpp	\
+	src/main/cbpp/control_code.hpp	\
+	src/main/cbpp/exception.hpp	\
+	src/main/cbpp/server.hpp	\
+	src/main/cbpp/callbacks.hpp
 
 pkginclude_mysqldir = $(pkgincludedir)/mysql
 pkginclude_mysql_HEADERS = \
@@ -156,18 +156,18 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/singletons/mysql_daemon.cpp	\
 	src/main/singletons/epoll_daemon.cpp	\
 	src/main/singletons/timer_daemon.cpp	\
-	src/main/singletons/player_servlet_depository.cpp	\
+	src/main/singletons/cbpp_servlet_depository.cpp	\
 	src/main/singletons/http_servlet_depository.cpp	\
 	src/main/singletons/websocket_servlet_depository.cpp	\
 	src/main/singletons/module_depository.cpp	\
 	src/main/singletons/event_dispatcher.cpp	\
 	src/main/singletons/profile_depository.cpp	\
 	src/main/singletons/system_http_server.cpp	\
-	src/main/player/session.cpp	\
-	src/main/player/server.cpp	\
-	src/main/player/client.cpp	\
-	src/main/player/exception.cpp	\
-	src/main/player/message_base.cpp	\
+	src/main/cbpp/session.cpp	\
+	src/main/cbpp/server.cpp	\
+	src/main/cbpp/client.cpp	\
+	src/main/cbpp/exception.cpp	\
+	src/main/cbpp/message_base.cpp	\
 	src/main/http/session.cpp	\
 	src/main/http/server.cpp	\
 	src/main/http/status.cpp	\

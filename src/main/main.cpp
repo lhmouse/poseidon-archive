@@ -10,7 +10,7 @@
 #include "singletons/timer_daemon.hpp"
 #include "singletons/mysql_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
-#include "singletons/player_servlet_depository.hpp"
+#include "singletons/cbpp_servlet_depository.hpp"
 #include "singletons/http_servlet_depository.hpp"
 #include "singletons/websocket_servlet_depository.hpp"
 #include "singletons/system_http_server.hpp"
@@ -68,7 +68,7 @@ void run(){
 	START(TimerDaemon);
 	START(EpollDaemon);
 
-	START(PlayerServletDepository);
+	START(CbppServletDepository);
 	START(HttpServletDepository);
 	START(WebSocketServletDepository);
 	START(EventDispatcher);

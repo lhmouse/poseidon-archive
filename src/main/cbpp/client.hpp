@@ -1,5 +1,5 @@
-#ifndef POSEIDON_PLAYER_CLIENT_HPP_
-#define POSEIDON_PLAYER_CLIENT_HPP_
+#ifndef POSEIDON_CBPP_CLIENT_HPP_
+#define POSEIDON_CBPP_CLIENT_HPP_
 
 #include "../tcp_client_base.hpp"
 #include <string>
@@ -15,7 +15,7 @@ namespace Poseidon {
 
 class TimerItem;
 
-class PlayerClient : public TcpClientBase {
+class CbppClient : public TcpClientBase {
 private:
 	const boost::uint64_t m_keepAliveTimeout;
 
@@ -26,21 +26,21 @@ private:
 	StreamBuffer m_payload;
 
 protected:
-	explicit PlayerClient(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
-	~PlayerClient();
+	explicit CbppClient(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
+	~CbppClient();
 
 private:
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 public:
 	virtual void onResponse(boost::uint16_t messageId, StreamBuffer contents) = 0;
-	virtual void onError(boost::uint16_t messageId, PlayerStatus status, std::string reason) = 0;
+	virtual void onError(boost::uint16_t messageId, CbppStatus status, std::string reason) = 0;
 
 public:
 	bool send(boost::uint16_t messageId, StreamBuffer contents, bool fin = false);
 
 	template<class MessageT>
-	typename boost::enable_if<boost::is_base_of<PlayerMessageBase, MessageT>, bool>::type
+	typename boost::enable_if<boost::is_base_of<CbppMessageBase, MessageT>, bool>::type
 		send(const MessageT &contents, bool fin = false)
 	{
 		return send(MessageT::ID, StreamBuffer(contents), fin);
