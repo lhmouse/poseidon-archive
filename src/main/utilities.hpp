@@ -93,12 +93,16 @@ inline std::string implode(char separator, const std::vector<std::string> &vec){
 	return ret;
 }
 
-boost::uint64_t getUtcTime();		// 单位毫秒。
-boost::uint64_t getLocalTime();		// 单位毫秒。
+// 单位毫秒。
+boost::uint64_t getUtcTime();
+boost::uint64_t getLocalTime();
 boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local);
 boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc);
 
-boost::uint64_t getMonoClock() NOEXCEPT;	// 单位微秒。
+// 单位毫秒。
+boost::uint64_t getFastMonoClock() NOEXCEPT;
+// 单位微秒。
+boost::uint64_t getHiResMonoClock() NOEXCEPT;
 
 struct DateTime {
 	unsigned yr;

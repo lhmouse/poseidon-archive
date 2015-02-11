@@ -171,7 +171,7 @@ public:
 		return m_object->getTableName();
 	}
 	bool check() const OVERRIDE {
-		return m_dueTime <= getMonoClock();
+		return m_dueTime <= getFastMonoClock();
 	}
 	void execute(std::string &query, MySqlConnection &conn){
 		PROFILE_ME;
@@ -349,7 +349,7 @@ private:
 
 	// 性能统计。
 	mutable boost::mutex m_profileMutex;
-	boost::uint64_t m_timeFlushed;
+	boost::uint64_t m_profileFlushedTime;
 	std::map<const char *, boost::uint64_t> m_profile;
 
 public:
@@ -357,20 +357,20 @@ public:
 		: m_index(index)
 		, m_running(true)
 		, m_urgent(false)
-		, m_timeFlushed(getMonoClock())
+		, m_profileFlushedTime(getHiResMonoClock())
 	{
 		boost::thread(&MySqlThread::loop, this).swap(*this);
 	}
 
 private:
 	void accumulateTimeForTable(const char *table) NOEXCEPT {
-		const AUTO(now, getMonoClock());
+		const AUTO(now, getHiResMonoClock());
 		try {
 			const boost::mutex::scoped_lock lock(m_profileMutex);
-			m_profile[table] += now - m_timeFlushed;
+			m_profile[table] += now - m_profileFlushedTime;
 		} catch(...){
 		}
-		m_timeFlushed = now;
+		m_profileFlushedTime = now;
 	}
 
 	void loop();
@@ -706,8 +706,7 @@ void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object,
 	const AUTO(tableName, object->getTableName());
 	const bool urgent = callback;
 	commitOperation(tableName,
-		boost::make_shared<SaveOperation>(
-			getMonoClock() + g_mysqlSaveDelay * 1000,
+		boost::make_shared<SaveOperation>(getFastMonoClock() + g_mysqlSaveDelay,
 			STD_MOVE(object), toReplace, STD_MOVE(callback), STD_MOVE(except)),
 		urgent);
 }

@@ -7,13 +7,14 @@
 #include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
+#include <boost/cstdint.hpp>
 
 namespace Poseidon {
 
 class TimerItem;
 
 typedef boost::function<
-	void (unsigned long long now, unsigned long long period)
+	void (boost::uint64_t now, boost::uint64_t period)
 	> TimerCallback;
 
 struct TimerDaemon {
@@ -25,10 +26,10 @@ struct TimerDaemon {
 
 	// period 填零表示只触发一次。
 	static boost::shared_ptr<TimerItem> registerAbsoluteTimer(
-		unsigned long long timePoint, // 用 getMonoClock() / 1000 作参考。
-		unsigned long long period, TimerCallback callback);
+		boost::uint64_t timePoint, // 用 getFastMonoClock() 作参考。
+		boost::uint64_t period, TimerCallback callback);
 	static boost::shared_ptr<TimerItem> registerTimer(
-		unsigned long long first, unsigned long long period, TimerCallback callback);
+		boost::uint64_t first, boost::uint64_t period, TimerCallback callback);
 
 	static boost::shared_ptr<TimerItem> registerHourlyTimer(
 		unsigned minute, unsigned second, TimerCallback callback);

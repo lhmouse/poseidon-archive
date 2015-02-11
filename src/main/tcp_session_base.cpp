@@ -53,7 +53,7 @@ private:
 };
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
-	: m_socket(STD_MOVE(socket)), m_createdTime(getMonoClock())
+	: m_socket(STD_MOVE(socket)), m_createdTime(getFastMonoClock())
 	, m_peerInfo(), m_shutdown(false), m_epoll(NULLPTR)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);

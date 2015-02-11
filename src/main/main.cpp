@@ -29,21 +29,22 @@ void sigTermProc(int){
 }
 
 void sigIntProc(int){
-	static const unsigned long long SAFETY_TIMER_EXPIRES = 300 * 1000000;
-	static unsigned long long s_safetyTimer = 0;
+	static const boost::uint64_t KILL_TIMER_EXPIRES = 5000;
+	static boost::uint64_t s_killTimer = 0;
 
 	// 系统启动的时候这个时间是从 0 开始的，如果这时候按下 Ctrl+C 就会立即终止。
 	// 因此将计时器的起点设为该区间以外。
-	const unsigned long long now = getMonoClock() + SAFETY_TIMER_EXPIRES + 1;
-	if(s_safetyTimer + SAFETY_TIMER_EXPIRES < now){
-		s_safetyTimer = now + 5 * 1000000;
+	const AUTO(now, getFastMonoClock() + KILL_TIMER_EXPIRES + 1);
+	if(s_killTimer + KILL_TIMER_EXPIRES < now){
+		s_killTimer = now + KILL_TIMER_EXPIRES;
 	}
-	if(now < s_safetyTimer){
-		LOG_POSEIDON_WARN("Received SIGINT, trying to exit gracefully... If I don't terminate in 5 seconds, press ^C again.");
-		::raise(SIGTERM);
-	} else {
+	if(s_killTimer <= now){
 		LOG_POSEIDON_FATAL("Received SIGINT, will now terminate abnormally...");
 		::raise(SIGKILL);
+	} else {
+		LOG_POSEIDON_WARN("Received SIGINT, trying to exit gracefully... If I don't terminate in ",
+			KILL_TIMER_EXPIRES, " milliseconds, press ^C again.");
+		::raise(SIGTERM);
 	}
 }
 

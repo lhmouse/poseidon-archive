@@ -18,10 +18,10 @@
 using namespace Poseidon;
 
 struct Poseidon::TimerItem : NONCOPYABLE {
-	const unsigned long long period;
+	const boost::uint64_t period;
 	const boost::shared_ptr<const TimerCallback> callback;
 
-	TimerItem(unsigned long long period_, boost::shared_ptr<const TimerCallback> callback_)
+	TimerItem(boost::uint64_t period_, boost::shared_ptr<const TimerCallback> callback_)
 		: period(period_), callback(STD_MOVE(callback_))
 	{
 		LOG_POSEIDON_DEBUG("Created timer, period = ", period);
@@ -33,19 +33,19 @@ struct Poseidon::TimerItem : NONCOPYABLE {
 
 namespace {
 
-const unsigned long long MILLISECS_PER_HOUR	= 3600 * 1000;
-const unsigned long long MILLISECS_PER_DAY	= 24 * MILLISECS_PER_HOUR;
-const unsigned long long MILLISECS_PER_WEEK	= 7 * MILLISECS_PER_DAY;
+const boost::uint64_t MILLISECS_PER_HOUR	= 3600 * 1000;
+const boost::uint64_t MILLISECS_PER_DAY		= 24 * MILLISECS_PER_HOUR;
+const boost::uint64_t MILLISECS_PER_WEEK	= 7 * MILLISECS_PER_DAY;
 
 class TimerJob : public JobBase {
 private:
 	const boost::shared_ptr<const TimerCallback> m_callback;
-	const unsigned long long m_now;
-	const unsigned long long m_period;
+	const boost::uint64_t m_now;
+	const boost::uint64_t m_period;
 
 public:
 	TimerJob(boost::shared_ptr<const TimerCallback> callback,
-		unsigned long long now, unsigned long long period)
+		boost::uint64_t now, boost::uint64_t period)
 		: m_callback(STD_MOVE(callback)), m_now(now), m_period(period)
 	{
 	}
@@ -59,7 +59,7 @@ public:
 };
 
 struct TimerQueueElement {
-	unsigned long long next;
+	boost::uint64_t next;
 	boost::weak_ptr<TimerItem> item;
 
 	bool operator<(const TimerQueueElement &rhs) const {
@@ -75,10 +75,10 @@ std::vector<TimerQueueElement> g_timers;
 
 void daemonLoop(){
 	while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
-		const unsigned long long now = getMonoClock();
+		const boost::uint64_t now = getFastMonoClock();
 
 		boost::shared_ptr<const TimerCallback> callback;
-		unsigned long long period = 0;
+		boost::uint64_t period = 0;
 		{
 			const boost::mutex::scoped_lock lock(g_mutex);
 			while(!g_timers.empty() && (now >= g_timers.front().next)){
@@ -148,14 +148,14 @@ void TimerDaemon::stop(){
 }
 
 boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
-	unsigned long long timePoint, unsigned long long period, TimerCallback callback)
+	boost::uint64_t timePoint, boost::uint64_t period, TimerCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<TimerCallback>());
 	sharedCallback->swap(callback);
-	AUTO(item, boost::make_shared<TimerItem>(period * 1000, sharedCallback));
+	AUTO(item, boost::make_shared<TimerItem>(period, sharedCallback));
 
 	TimerQueueElement tqe;
-	tqe.next = timePoint * 1000;
+	tqe.next = timePoint;
 	tqe.item = item;
 	{
 		const boost::mutex::scoped_lock lock(g_mutex);
@@ -163,29 +163,27 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
 		std::push_heap(g_timers.begin(), g_timers.end());
 	}
 	LOG_POSEIDON_DEBUG("Created a timer item which will be triggered ",
-		std::max(static_cast<long long>(timePoint - getMonoClock()), 0ll),
+		std::max<boost::int64_t>(static_cast<boost::int64_t>(timePoint - getFastMonoClock()), 0),
 		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
 	return item;
 }
 boost::shared_ptr<TimerItem> TimerDaemon::registerTimer(
-	unsigned long long first, unsigned long long period, TimerCallback callback)
+	boost::uint64_t first, boost::uint64_t period, TimerCallback callback)
 {
-	return registerAbsoluteTimer(getMonoClock() / 1000 + first, period, STD_MOVE(callback));
+	return registerAbsoluteTimer(getFastMonoClock() + first, period, STD_MOVE(callback));
 }
 
 boost::shared_ptr<TimerItem> TimerDaemon::registerHourlyTimer(
 	unsigned minute, unsigned second, TimerCallback callback)
 {
-	const unsigned long long delta = getLocalTime() -
-		(minute * 60ull + second) * 1000;
+	const AUTO(delta, getLocalTime() - (minute * 60ull + second));
 	return registerTimer(MILLISECS_PER_HOUR - delta % MILLISECS_PER_HOUR, MILLISECS_PER_HOUR,
 		STD_MOVE(callback));
 }
 boost::shared_ptr<TimerItem> TimerDaemon::registerDailyTimer(
 	unsigned hour, unsigned minute, unsigned second, TimerCallback callback)
 {
-	const unsigned long long delta = getLocalTime() -
-		(hour * 3600ull + minute * 60ull + second) * 1000;
+	const AUTO(delta, getLocalTime() - (hour * 3600ull + minute * 60ull + second));
 	return registerTimer(MILLISECS_PER_DAY - delta % MILLISECS_PER_DAY, MILLISECS_PER_DAY,
 		STD_MOVE(callback));
 }
@@ -193,8 +191,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerWeeklyTimer(
 	unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback)
 {
 	// 注意 1970-01-01 是星期四。
-	const unsigned long long delta = getLocalTime() -
-		((dayOfWeek + 3) * 86400ull + hour * 3600ull + minute * 60ull + second) * 1000;
+	const AUTO(delta, getLocalTime() - ((dayOfWeek + 3) * 86400ull + hour * 3600ull + minute * 60ull + second));
 	return registerTimer(MILLISECS_PER_WEEK - delta % MILLISECS_PER_WEEK, MILLISECS_PER_WEEK,
 		STD_MOVE(callback));
 }

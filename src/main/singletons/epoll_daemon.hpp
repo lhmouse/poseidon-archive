@@ -5,6 +5,7 @@
 #define POSEIDON_SINGLETONS_EPOLL_DAEMON_HPP_
 
 #include <boost/shared_ptr.hpp>
+#include <boost/cstdint.hpp>
 #include "../ip_port.hpp"
 
 namespace Poseidon {
@@ -12,7 +13,7 @@ namespace Poseidon {
 struct EpollSnapshotItem {
 	IpPort remote;
 	IpPort local;
-	unsigned long long usOnline;
+	boost::uint64_t msOnline;
 };
 
 class TcpSessionBase;
@@ -22,7 +23,7 @@ struct EpollDaemon {
 	static void start();
 	static void stop();
 
-	static unsigned long long getTcpRequestTimeout();
+	static boost::uint64_t getTcpRequestTimeout();
 
 	static std::vector<EpollSnapshotItem> snapshot();
 

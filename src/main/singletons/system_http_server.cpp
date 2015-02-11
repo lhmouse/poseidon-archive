@@ -129,7 +129,7 @@ void onShowConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
 	headers.set("Content-Disposition", "attachment; name=\"connections.csv\"");
 
 	StreamBuffer contents;
-	contents.put("remote_ip,remote_port,local_ip,local_port,us_online\r\n");
+	contents.put("remote_ip,remote_port,local_ip,local_port,ms_online\r\n");
 	AUTO(snapshot, EpollDaemon::snapshot());
 	std::string str;
 	for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
@@ -140,7 +140,7 @@ void onShowConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
 		contents.put(temp, len);
 		escapeCsvField(str, it->local.ip);
 		contents.put(str);
-		len = (unsigned)std::sprintf(temp, ",%u,%llu\r\n", it->local.port, it->usOnline);
+		len = (unsigned)std::sprintf(temp, ",%u,%llu\r\n", it->local.port, (unsigned long long)it->msOnline);
 		contents.put(temp, len);
 	}
 

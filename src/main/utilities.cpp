@@ -40,7 +40,11 @@ boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
 	return utc - (unsigned long)::timezone * 1000;
 }
 
-boost::uint64_t getMonoClock() NOEXCEPT {
+// 这里沿用了 MCF 的旧称。在 Windows 上 getFastMonoClock() 是 GetTickCount64() 实现的。
+boost::uint64_t getFastMonoClock() NOEXCEPT {
+	return getHiResMonoClock() / 1000;
+}
+boost::uint64_t getHiResMonoClock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
 		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
@@ -58,7 +62,18 @@ __thread boost::uint64_t t_randSeed = 0;
 boost::uint32_t rand32(){
 	boost::uint64_t seed = t_randSeed;
 	if(seed == 0){
-		seed = getMonoClock() | 1;
+		boost::uint64_t seed;
+		__asm__ __volatile__(
+			"rdtsc \n"
+#ifdef __x86_64__
+			"shlq $32, %%rdx \n"
+			"orq %%rdx, %%rax \n"
+			: "=a"(seed) : : "dx"
+#else
+			: "=A"(seed) : :
+#endif
+		);
+		seed |= 0x10001;
 	}
 	// MMIX by Donald Knuth
 	seed = seed * 6364136223846793005ull + 1442695040888963407ull;

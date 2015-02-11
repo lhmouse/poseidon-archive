@@ -17,7 +17,7 @@ using namespace Poseidon;
 namespace {
 
 std::size_t	g_maxTimeout				= 100;
-unsigned long long g_tcpRequestTimeout	= 30000;
+boost::uint64_t g_tcpRequestTimeout		= 30000;
 
 volatile bool g_running = false;
 boost::thread g_thread;
@@ -138,7 +138,7 @@ void EpollDaemon::stop(){
 	g_servers.clear();
 }
 
-unsigned long long EpollDaemon::getTcpRequestTimeout(){
+boost::uint64_t EpollDaemon::getTcpRequestTimeout(){
 	return g_tcpRequestTimeout;
 }
 
@@ -147,13 +147,13 @@ std::vector<EpollSnapshotItem> EpollDaemon::snapshot(){
 	g_epoll.snapshot(sessions);
 
 	std::vector<EpollSnapshotItem> ret;
-	const AUTO(now, getMonoClock());
+	const AUTO(now, getFastMonoClock());
 	for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
 		ret.push_back(EpollSnapshotItem());
 		AUTO_REF(item, ret.back());
 		item.remote = (*it)->getRemoteInfo();
 		item.local = (*it)->getLocalInfo();
-		item.usOnline = now - (*it)->getCreatedTime();
+		item.msOnline = now - (*it)->getCreatedTime();
 	}
 	return ret;
 }

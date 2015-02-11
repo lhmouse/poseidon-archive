@@ -73,7 +73,7 @@ Epoll::~Epoll(){
 }
 
 void Epoll::notifyWriteable(TcpSessionBase *session){
-	const AUTO(now, getMonoClock());
+	const AUTO(now, getFastMonoClock());
 	const boost::mutex::scoped_lock lock(m_mutex);
 
 	const AUTO(it, m_sessions->find<IDX_FD>(session->getFd()));
@@ -146,7 +146,7 @@ std::size_t Epoll::wait(unsigned timeout){
 		return 0;
 	}
 
-	const AUTO(now, getMonoClock());
+	const AUTO(now, getFastMonoClock());
 	for(unsigned i = 0; i < (unsigned)count; ++i){
 		const ::epoll_event &event = events[i];
 		SessionMap::delegate_container::nth_index<IDX_FD>::type::iterator it;
