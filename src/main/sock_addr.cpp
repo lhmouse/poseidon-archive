@@ -39,7 +39,7 @@ IpPort getIpPortFromSockAddr(const SockAddr &sa){
 	const int family = sa.getFamily();
 	if(family == AF_INET){
 		if(sa.getSize() < sizeof(::sockaddr_in)){
-			LOG_POSEIDON_WARN("Invalid IPv4 SockAddr: size = ", sa.getSize());
+			LOG_POSEIDON_WARNING("Invalid IPv4 SockAddr: size = ", sa.getSize());
 			DEBUG_THROW(Exception, SharedNts::observe("Invalid IPv4 SockAddr"));
 		}
 		char ip[INET_ADDRSTRLEN];
@@ -52,7 +52,7 @@ IpPort getIpPortFromSockAddr(const SockAddr &sa){
 			loadBe(static_cast<const ::sockaddr_in *>(sa.getData())->sin_port));
 	} else if(family == AF_INET6){
 		if(sa.getSize() < sizeof(::sockaddr_in6)){
-			LOG_POSEIDON_WARN("Invalid IPv6 SockAddr: size = ", sa.getSize());
+			LOG_POSEIDON_WARNING("Invalid IPv6 SockAddr: size = ", sa.getSize());
 			DEBUG_THROW(Exception, SharedNts::observe("Invalid IPv6 SockAddr"));
 		}
 		char ip[INET6_ADDRSTRLEN];
@@ -65,7 +65,7 @@ IpPort getIpPortFromSockAddr(const SockAddr &sa){
 			loadBe(static_cast<const ::sockaddr_in6 *>(sa.getData())->sin6_port));
 	}
 
-	LOG_POSEIDON_WARN("Unknown IP protocol ", family);
+	LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
 	DEBUG_THROW(Exception, SharedNts::observe("Unknown IP protocol"));
 }
 SockAddr getSockAddrFromIpPort(const IpPort &addr){

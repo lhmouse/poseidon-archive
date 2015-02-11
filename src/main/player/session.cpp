@@ -47,7 +47,7 @@ protected:
 					break;
 
 				default:
-					LOG_POSEIDON_WARN("Unknown control code: ", packet.messageId);
+					LOG_POSEIDON_WARNING("Unknown control code: ", packet.messageId);
 					session->send(PlayerErrorMessage::ID, StreamBuffer(packet), true);
 					break;
 				}
@@ -55,7 +55,7 @@ protected:
 				const AUTO(category, session->getCategory());
 				const AUTO(servlet, PlayerServletDepository::getServlet(category, m_messageId));
 				if(!servlet){
-					LOG_POSEIDON_WARN(
+					LOG_POSEIDON_WARNING(
 						"No servlet in category ", category, " matches message ", m_messageId);
 					DEBUG_THROW(PlayerMessageException, PLAYER_NOT_FOUND,
 						SharedNts::observe("Unknown message"));
@@ -89,7 +89,7 @@ PlayerSession::PlayerSession(std::size_t category, UniqueFile socket)
 }
 PlayerSession::~PlayerSession(){
 	if(m_payloadLen != (boost::uint64_t)-1){
-		LOG_POSEIDON_WARN(
+		LOG_POSEIDON_WARNING(
 			"Now that this session is to be destroyed, a premature request has to be discarded.");
 	}
 }
@@ -112,7 +112,7 @@ void PlayerSession::onReadAvail(const void *data, std::size_t size){
 
 				const std::size_t maxRequestLength = PlayerServletDepository::getMaxRequestLength();
 				if((unsigned)m_payloadLen >= maxRequestLength){
-					LOG_POSEIDON_WARN(
+					LOG_POSEIDON_WARNING(
 						"Request too large: size = ", m_payloadLen, ", max = ", maxRequestLength);
 					DEBUG_THROW(PlayerMessageException, PLAYER_REQUEST_TOO_LARGE,
 						SharedNts::observe("Request too large"));

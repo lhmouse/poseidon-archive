@@ -27,7 +27,7 @@ struct DynamicLibraryCloser {
 	void operator()(void *handle) NOEXCEPT {
 		const boost::recursive_mutex::scoped_lock lock(g_mutex);
 		if(::dlclose(handle) != 0){
-			LOG_POSEIDON_WARN("Error unloading dynamic library: ", ::dlerror());
+			LOG_POSEIDON_WARNING("Error unloading dynamic library: ", ::dlerror());
 		}
 	}
 };

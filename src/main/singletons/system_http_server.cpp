@@ -47,7 +47,7 @@ void escapeCsvField(std::string &dst, const char *src){
 }
 
 void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
-	LOG_POSEIDON_WARN("Received shutdown HTTP request. The server will be shutdown now.");
+	LOG_POSEIDON_WARNING("Received shutdown HTTP request. The server will be shutdown now.");
 	session->sendDefault(HTTP_OK);
 	::raise(SIGTERM);
 }
@@ -55,7 +55,7 @@ void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
 void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
 	AUTO_REF(name, getParams.at("name"));
 	if(!ModuleDepository::loadNoThrow(name.c_str())){
-		LOG_POSEIDON_WARN("Failed to load module: ", name);
+		LOG_POSEIDON_WARNING("Failed to load module: ", name);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
 	}
@@ -67,12 +67,12 @@ void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParam
 	std::istringstream iss(baseAddrStr);
 	void *baseAddr;
 	if(!((iss >>baseAddr) && iss.eof())){
-		LOG_POSEIDON_WARN("Bad base_addr string: ", baseAddrStr);
+		LOG_POSEIDON_WARNING("Bad base_addr string: ", baseAddrStr);
 		session->sendDefault(HTTP_BAD_REQUEST);
 		return;
 	}
 	if(!ModuleDepository::unload(baseAddr)){
-		LOG_POSEIDON_WARN("Module not loaded: base address = ", baseAddr);
+		LOG_POSEIDON_WARNING("Module not loaded: base address = ", baseAddr);
 		session->sendDefault(HTTP_NOT_FOUND);
 		return;
 	}
@@ -233,7 +233,7 @@ void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request, st
 	} while(lower != upper);
 
 	if(!found){
-		LOG_POSEIDON_WARN("No system HTTP handler: ", request.uri);
+		LOG_POSEIDON_WARNING("No system HTTP handler: ", request.uri);
 		DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 	}
 

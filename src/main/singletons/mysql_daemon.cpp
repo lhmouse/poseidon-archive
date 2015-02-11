@@ -462,7 +462,7 @@ void MySqlThread::loop(){
 						g_mysqlUsername, g_mysqlPassword, g_mysqlSchema, g_mysqlUseSsl, g_mysqlCharset);
 				} catch(...){
 					if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
-						LOG_POSEIDON_WARN("Shutting down...");
+						LOG_POSEIDON_WARNING("Shutting down...");
 						goto _exitLoop;
 					}
 					throw;
@@ -525,7 +525,7 @@ void MySqlThread::loop(){
 					}
 				}
 				if(!retry){
-					LOG_POSEIDON_WARN("Retry count has dropped to zero. Give up.");
+					LOG_POSEIDON_WARNING("Retry count has dropped to zero. Give up.");
 					operation.reset();
 
 					char temp[32];
@@ -570,7 +570,7 @@ void MySqlThread::loop(){
 _exitLoop: ;
 
 	if(!m_queue.empty()){
-		LOG_POSEIDON_WARN("There are still ", m_queue.size(), " object(s) in MySQL queue");
+		LOG_POSEIDON_WARNING("There are still ", m_queue.size(), " object(s) in MySQL queue");
 		m_queue.clear();
 	}
 	m_queueEmpty.notify_all();

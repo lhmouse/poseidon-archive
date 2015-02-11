@@ -78,7 +78,7 @@ void Epoll::notifyWriteable(TcpSessionBase *session){
 
 	const AUTO(it, m_sessions->find<IDX_FD>(session->getFd()));
 	if(it == m_sessions->end<IDX_FD>()){
-		LOG_POSEIDON_WARN("Session is not in epoll?");
+		LOG_POSEIDON_WARNING("Session is not in epoll?");
 		return;
 	}
 	m_sessions->setKey<IDX_FD, IDX_WRITE>(it, now);
@@ -88,7 +88,7 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(m_mutex);
 	const AUTO(result, m_sessions->insert(SessionMapElement(session, 0, 0)));
 	if(!result.second){
-		LOG_POSEIDON_WARN("Session is already in epoll.");
+		LOG_POSEIDON_WARNING("Session is already in epoll.");
 		return;
 	}
 	::epoll_event event;
@@ -108,13 +108,13 @@ void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_FD>(session->getFd()));
 	if(it == m_sessions->end<IDX_FD>()){
-		LOG_POSEIDON_WARN("Session is not in epoll.");
+		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
 	session->setEpoll(NULLPTR);
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
 		const int errCode = errno;
-		LOG_POSEIDON_WARN("Error deleting from epoll: errno = ", errCode);
+		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
 	}
 	m_sessions->erase<IDX_FD>(it);
 }
@@ -154,7 +154,7 @@ std::size_t Epoll::wait(unsigned timeout){
 			const boost::mutex::scoped_lock lock(m_mutex);
 			it = m_sessions->find<IDX_FD>(event.data.fd);
 			if(it == m_sessions->end<IDX_FD>()){
-				LOG_POSEIDON_WARN("Session is not in epoll?");
+				LOG_POSEIDON_WARNING("Session is not in epoll?");
 				continue;
 			}
 		}
@@ -173,7 +173,7 @@ std::size_t Epoll::wait(unsigned timeout){
 				errCode = errno;
 			}
 			const AUTO(desc, getErrorDesc(errCode));
-			LOG_POSEIDON_WARN("Socket error: ", desc);
+			LOG_POSEIDON_WARNING("Socket error: ", desc);
 			removeSession(session);
 			continue;
 		}

@@ -42,7 +42,7 @@ void normalizeUri(std::string &uri){
 void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer){
 	const AUTO(session, observer.lock());
 	if(session){
-		LOG_POSEIDON_WARN("HTTP request times out, remote = ", session->getRemoteInfo());
+		LOG_POSEIDON_WARNING("HTTP request times out, remote = ", session->getRemoteInfo());
 		session->sendDefault(HTTP_REQUEST_TIMEOUT, true);
 	}
 }
@@ -86,7 +86,7 @@ protected:
 			const AUTO(category, session->getCategory());
 			const AUTO(servlet, HttpServletDepository::getServlet(category, m_uri.c_str()));
 			if(!servlet){
-				LOG_POSEIDON_WARN("No handler in category ", category, " matches URI ", m_uri);
+				LOG_POSEIDON_WARNING("No handler in category ", category, " matches URI ", m_uri);
 				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
 			}
 
@@ -120,7 +120,7 @@ class HttpSession::HeaderParser {
 private:
 	static void onExpect(HttpSession *session, const std::string &val){
 		if(val != "100-continue"){
-			LOG_POSEIDON_WARN("Unknown HTTP header Expect: ", val);
+			LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", val);
 			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 		}
 		session->sendDefault(HTTP_CONTINUE);
@@ -131,22 +131,22 @@ private:
 	}
 	static void onUpgrade(HttpSession *session, const std::string &val){
 		if(session->m_version < 10001){
-			LOG_POSEIDON_WARN("HTTP 1.1 is required to use WebSocket");
+			LOG_POSEIDON_WARNING("HTTP 1.1 is required to use WebSocket");
 			DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUPPORTED);
 		}
 		if(::strcasecmp(val.c_str(), "websocket") != 0){
-			LOG_POSEIDON_WARN("Unknown HTTP header Upgrade: ", val);
+			LOG_POSEIDON_WARNING("Unknown HTTP header Upgrade: ", val);
 			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 		}
 		AUTO_REF(version, session->m_headers.get("Sec-WebSocket-Version"));
 		if(version != "13"){
-			LOG_POSEIDON_WARN("Unknown HTTP header Sec-WebSocket-Version: ", version);
+			LOG_POSEIDON_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
 			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 		}
 
 		std::string key = session->m_headers.get("Sec-WebSocket-Key");
 		if(key.empty()){
-			LOG_POSEIDON_WARN("No Sec-WebSocket-Key specified.");
+			LOG_POSEIDON_WARNING("No Sec-WebSocket-Key specified.");
 			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 		}
 		key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -171,18 +171,18 @@ private:
 
 		const std::size_t pos = val.find(' ');
 		if(pos == std::string::npos){
-			LOG_POSEIDON_WARN("Bad Authorization: ", val);
+			LOG_POSEIDON_WARNING("Bad Authorization: ", val);
 			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 		}
 		std::string temp(val);
 		temp.at(pos) = 0;
 		if(::strcasecmp(temp.c_str(), "basic") != 0){
-			LOG_POSEIDON_WARN("Unknown auth method: ", temp.c_str());
+			LOG_POSEIDON_WARNING("Unknown auth method: ", temp.c_str());
 			DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 		}
 		temp.erase(temp.begin(), temp.begin() + static_cast<std::ptrdiff_t>(pos) + 1);
 		if(session->m_authInfo->find(temp) == session->m_authInfo->end()){
-			LOG_POSEIDON_WARN("Invalid username or password");
+			LOG_POSEIDON_WARNING("Invalid username or password");
 			OptionalMap authHeader;
 			authHeader.set("WWW-Authenticate", "Basic realm=\"Invalid username or password\"");
 			DEBUG_THROW(HttpException, HTTP_UNAUTHORIZED, STD_MOVE(authHeader));
@@ -236,7 +236,7 @@ HttpSession::HttpSession(std::size_t category, UniqueFile socket)
 }
 HttpSession::~HttpSession(){
 	if(m_state != ST_FIRST_HEADER){
-		LOG_POSEIDON_WARN(
+		LOG_POSEIDON_WARNING(
 			"Now that this session is to be destroyed, a premature request has to be discarded.");
 	}
 }
@@ -254,7 +254,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 	try {
 		const std::size_t maxRequestLength = HttpServletDepository::getMaxRequestLength();
 		if(m_totalLength + size >= maxRequestLength){
-			LOG_POSEIDON_WARN("Request size is ", m_totalLength + size, ", max = ", maxRequestLength);
+			LOG_POSEIDON_WARNING("Request size is ", m_totalLength + size, ", max = ", maxRequestLength);
 			DEBUG_THROW(HttpException, HTTP_REQUEST_ENTITY_TOO_LARGE);
 		}
 		m_totalLength += size;
@@ -277,18 +277,18 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					}
 					AUTO(parts, explode<std::string>(' ', m_line, 3));
 					if(parts.size() != 3){
-						LOG_POSEIDON_WARN("Bad HTTP header: ", m_line);
+						LOG_POSEIDON_WARNING("Bad HTTP header: ", m_line);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 
 					m_verb = httpVerbFromString(parts[0].c_str());
 					if(m_verb == HTTP_INVALID_VERB){
-						LOG_POSEIDON_WARN("Bad HTTP verb: ", parts[0]);
+						LOG_POSEIDON_WARNING("Bad HTTP verb: ", parts[0]);
 						DEBUG_THROW(HttpException, HTTP_METHOD_NOT_ALLOWED);
 					}
 
 					if(parts[1][0] != '/'){
-						LOG_POSEIDON_WARN("Bad HTTP request URI: ", parts[1]);
+						LOG_POSEIDON_WARNING("Bad HTTP request URI: ", parts[1]);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					parts[1].swap(m_uri);
@@ -309,13 +309,13 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 					const int result = std::sscanf(parts[2].c_str(),
 						"HTTP/%15[0-9].%15[0-9]%*c", versionMajor, versionMinor);
 					if(result != 2){
-						LOG_POSEIDON_WARN("Bad protocol string: ", parts[2]);
+						LOG_POSEIDON_WARNING("Bad protocol string: ", parts[2]);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					m_version = std::strtoul(versionMajor, NULLPTR, 10) * 10000
 						+ std::strtoul(versionMinor, NULLPTR, 10);
 					if((m_version != 10000) && (m_version != 10001)){
-						LOG_POSEIDON_WARN("Bad HTTP version: ", parts[2]);
+						LOG_POSEIDON_WARNING("Bad HTTP version: ", parts[2]);
 						DEBUG_THROW(HttpException, HTTP_VERSION_NOT_SUPPORTED);
 					}
 
@@ -323,7 +323,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				} else if(!m_line.empty()){
 					const std::size_t delimPos = m_line.find(':');
 					if(delimPos == std::string::npos){
-						LOG_POSEIDON_WARN("Bad HTTP header: ", m_line);
+						LOG_POSEIDON_WARNING("Bad HTTP header: ", m_line);
 						DEBUG_THROW(HttpException, HTTP_BAD_REQUEST);
 					}
 					AUTO(valueBegin, m_line.begin() + static_cast<std::ptrdiff_t>(delimPos) + 1);

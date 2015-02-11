@@ -42,7 +42,7 @@ protected:
 			const AUTO(category, session->getCategory());
 			const AUTO(servlet, WebSocketServletDepository::getServlet(category, m_uri.c_str()));
 			if(!servlet){
-				LOG_POSEIDON_WARN("No servlet in category ", category, " matches URI ", m_uri);
+				LOG_POSEIDON_WARNING("No servlet in category ", category, " matches URI ", m_uri);
 				DEBUG_THROW(WebSocketException, WS_INACCEPTABLE, SharedNts::observe("Unknown URI"));
 				return;
 			}
@@ -95,7 +95,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 					goto _exitFor;
 				}
 				if(ch & (WS_FL_RSV1 | WS_FL_RSV2 | WS_FL_RSV3)){
-					LOG_POSEIDON_WARN("Aborting because some reserved bits are set, opcode = ", ch);
+					LOG_POSEIDON_WARNING("Aborting because some reserved bits are set, opcode = ", ch);
 					DEBUG_THROW(WebSocketException, WS_PROTOCOL_ERROR,
 						SharedNts::observe("Reserved bits set"));
 				}

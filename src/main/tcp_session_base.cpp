@@ -27,9 +27,9 @@ void shutdownIfTimeout(boost::weak_ptr<TcpSessionBase> weak){
 		return;
 	}
 	try {
-		LOG_POSEIDON_WARN("Connection timed out: remote = ", session->getRemoteInfo());
+		LOG_POSEIDON_WARNING("Connection timed out: remote = ", session->getRemoteInfo());
 	} catch(...){
-		LOG_POSEIDON_WARN("Connection timed out but the session has not been established.");
+		LOG_POSEIDON_WARNING("Connection timed out but the session has not been established.");
 	}
 	session->forceShutdown();
 }

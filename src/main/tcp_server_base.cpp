@@ -86,7 +86,7 @@ bool TcpServerBase::poll() const {
 	}
 	AUTO(session, onClientConnect(STD_MOVE(client)));
 	if(!session){
-		LOG_POSEIDON_WARN("onClientConnect() returns a null pointer.");
+		LOG_POSEIDON_WARNING("onClientConnect() returns a null pointer.");
 		DEBUG_THROW(Exception, SharedNts::observe("Null client pointer"));
 	}
 	if(m_sslFactory){

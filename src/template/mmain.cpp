@@ -280,60 +280,60 @@ namespace {
 
 void TestIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestInt req(incoming);
-	LOG_POSEIDON_WARN("sint = ", req.i);
+	LOG_POSEIDON_WARNING("sint = ", req.i);
 	req.i /= 10;
 	ps->send(1000, req);
 }
 void TestUIntProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestUInt req(incoming);
-	LOG_POSEIDON_WARN("int = ", req.u);
+	LOG_POSEIDON_WARNING("int = ", req.u);
 	req.u /= 10;
 	ps->send(1001, req);
 }
 void TestStringProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestString req(incoming);
-	LOG_POSEIDON_WARN("string = ", req.s);
+	LOG_POSEIDON_WARNING("string = ", req.s);
 	req.s += "_0123456789";
 	ps->send(1002, req);
 }
 
 void TestIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestIntArray req(incoming);
-	LOG_POSEIDON_WARN("sint array: size = ", req.a.size());
+	LOG_POSEIDON_WARNING("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_POSEIDON_WARN("  ", i, " = ", req.a.at(i).i);
+		LOG_POSEIDON_WARNING("  ", i, " = ", req.a.at(i).i);
 		req.a.at(i).i /= 10;
 	}
 	ps->send(1003, req);
 }
 void TestUIntArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestUIntArray req(incoming);
-	LOG_POSEIDON_WARN("sint array: size = ", req.a.size());
+	LOG_POSEIDON_WARNING("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_POSEIDON_WARN("  ", i, " = ", req.a.at(i).u);
+		LOG_POSEIDON_WARNING("  ", i, " = ", req.a.at(i).u);
 		req.a.at(i).u /= 10;
 	}
 	ps->send(1004, req);
 }
 void TestStringArrayProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
 	TestStringArray req(incoming);
-	LOG_POSEIDON_WARN("sint array: size = ", req.a.size());
+	LOG_POSEIDON_WARNING("sint array: size = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_POSEIDON_WARN("  ", i, " = ", req.a.at(i).s);
+		LOG_POSEIDON_WARNING("  ", i, " = ", req.a.at(i).s);
 		req.a.at(i).s += "_0123456789";
 	}
 	ps->send(1005, req);
 }
 
 void TestProc(boost::shared_ptr<PlayerSession> ps, StreamBuffer incoming){
-	LOG_POSEIDON_WARN("Received: ", HexDumper(incoming));
+	LOG_POSEIDON_WARNING("Received: ", HexDumper(incoming));
 	TestMessage req(incoming);
-	LOG_POSEIDON_WARN("req.i = ", req.i);
-	LOG_POSEIDON_WARN("req.j = ", req.j);
-	LOG_POSEIDON_WARN("req.a.size() = ", req.a.size());
+	LOG_POSEIDON_WARNING("req.i = ", req.i);
+	LOG_POSEIDON_WARNING("req.j = ", req.j);
+	LOG_POSEIDON_WARNING("req.a.size() = ", req.a.size());
 	for(std::size_t i = 0; i < req.a.size(); ++i){
-		LOG_POSEIDON_WARN("req.a[", i, "].s = ", req.a.at(i).s);
-		LOG_POSEIDON_WARN("req.a[", i, "].k = ", req.a.at(i).k);
+		LOG_POSEIDON_WARNING("req.a[", i, "].s = ", req.a.at(i).s);
+		LOG_POSEIDON_WARNING("req.a[", i, "].k = ", req.a.at(i).k);
 	}
 	ps->send(1006, req);
 }
