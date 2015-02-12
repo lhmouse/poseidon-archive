@@ -17,7 +17,7 @@ public:
 
 public:
 	WebSocketStatus status() const NOEXCEPT {
-		return WebSocketStatus(code());
+		return static_cast<WebSocketStatus>(code());
 	}
 };
 

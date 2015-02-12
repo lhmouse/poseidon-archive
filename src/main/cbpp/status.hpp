@@ -7,7 +7,7 @@
 namespace Poseidon {
 
 namespace CbppStatusCodes {
-	typedef long long CbppStatus;
+	typedef int CbppStatus;
 
 	enum {
 		CBPP_OK					= 0,

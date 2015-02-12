@@ -17,7 +17,7 @@ public:
 
 public:
 	CbppStatus status() const NOEXCEPT {
-		return CbppStatus(ProtocolException::code());
+		return static_cast<CbppStatus>(code());
 	}
 };
 
