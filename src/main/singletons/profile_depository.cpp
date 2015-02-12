@@ -35,11 +35,11 @@ struct ProfileKey {
 
 struct ProfileCounters {
 	volatile unsigned long long samples;
-	volatile unsigned long long usTotal;
-	volatile unsigned long long usExclusive;
+	volatile unsigned long long nsTotal;
+	volatile unsigned long long nsExclusive;
 
 	ProfileCounters()
-		: samples(0), usTotal(0), usExclusive(0)
+		: samples(0), nsTotal(0), nsExclusive(0)
 	{
 	}
 };
@@ -65,7 +65,7 @@ bool ProfileDepository::isEnabled(){
 }
 
 void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func,
-	unsigned long long total, unsigned long long exclusive) NOEXCEPT
+	double total, double exclusive) NOEXCEPT
 {
 	try {
 		std::map<ProfileKey, ProfileCounters>::iterator it;
@@ -84,11 +84,11 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 
 	_writeProfile:
 		atomicAdd(it->second.samples, 1, ATOMIC_RELAXED);
-		atomicAdd(it->second.usTotal, total, ATOMIC_RELAXED);
-		atomicAdd(it->second.usExclusive, exclusive, ATOMIC_RELAXED);
+		atomicAdd(it->second.nsTotal, total * 1e9, ATOMIC_RELAXED);
+		atomicAdd(it->second.nsExclusive, exclusive * 1e9, ATOMIC_RELAXED);
 
 		LOG_POSEIDON_TRACE("Accumulated profile info: file = ", file, ", line = ", line,
-			", func = ", func, ", total = ", total, " us, exclusive = ", exclusive, " us");
+			", func = ", func, ", total = ", total, " s, exclusive = ", exclusive, " s");
 	} catch(...){
 	}
 }
@@ -106,8 +106,8 @@ std::vector<ProfileSnapshotItem> ProfileDepository::snapshot(){
 			pi.line = it->first.line;
 			pi.func = it->first.func;
 			pi.samples = atomicLoad(it->second.samples, ATOMIC_RELAXED);
-			pi.usTotal = atomicLoad(it->second.usTotal, ATOMIC_RELAXED);
-			pi.usExclusive = atomicLoad(it->second.usExclusive, ATOMIC_RELAXED);
+			pi.usTotal = atomicLoad(it->second.nsTotal, ATOMIC_RELAXED) / 1000;
+			pi.usExclusive = atomicLoad(it->second.nsExclusive, ATOMIC_RELAXED) / 1000;
 			ret.push_back(pi);
 		}
 	}

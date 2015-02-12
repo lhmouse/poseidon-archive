@@ -28,7 +28,7 @@ struct ProfileDepository {
 
 	static bool isEnabled();
 	static void accumulate(const char *file, unsigned long line, const char *func,
-		unsigned long long total, unsigned long long exclusive) NOEXCEPT;
+		double total, double exclusive) NOEXCEPT;
 
 	static std::vector<ProfileSnapshotItem> snapshot();
 

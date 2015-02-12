@@ -349,8 +349,8 @@ private:
 
 	// 性能统计。
 	mutable boost::mutex m_profileMutex;
-	boost::uint64_t m_profileFlushedTime;
-	std::map<const char *, boost::uint64_t> m_profile;
+	double m_profileFlushedTime;
+	std::map<const char *, double> m_profile;
 
 public:
 	explicit MySqlThread(std::size_t index)
@@ -397,7 +397,7 @@ public:
 			MySqlSnapshotItem item;
 			item.thread = thread;
 			item.table = it->first;
-			item.usTotal = it->second;
+			item.usTotal = static_cast<boost::uint64_t>(it->second * 1.0e6);
 			ret.push_back(item);
 		}
 		return count;

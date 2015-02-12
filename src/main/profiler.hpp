@@ -18,16 +18,16 @@ private:
 	const unsigned long m_line;
 	const char *const m_func;
 
-	unsigned long long m_start;
-	unsigned long long m_exclusiveTotal;
-	unsigned long long m_exclusiveStart;
+	double m_start;
+	double m_exclusiveTotal;
+	double m_exclusiveStart;
 
 public:
 	Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT;
 	~Profiler() NOEXCEPT;
 
 private:
-	void flush(unsigned long long hint) NOEXCEPT;
+	void flush(double now) NOEXCEPT;
 };
 
 }

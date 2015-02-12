@@ -51,17 +51,17 @@ Profiler::~Profiler() NOEXCEPT {
 	}
 }
 
-void Profiler::flush(unsigned long long hint) NOEXCEPT {
+void Profiler::flush(double now) NOEXCEPT {
 	if(m_start != 0){
-		m_exclusiveTotal += hint - m_exclusiveStart;
+		m_exclusiveTotal += now - m_exclusiveStart;
 		if(m_prev){
-			m_prev->m_exclusiveStart = hint;
+			m_prev->m_exclusiveStart = now;
 		}
 
-		ProfileDepository::accumulate(m_file, m_line, m_func, hint - m_start, m_exclusiveTotal);
+		ProfileDepository::accumulate(m_file, m_line, m_func, now - m_start, m_exclusiveTotal);
 
-		m_start = hint;
+		m_start = now;
 		m_exclusiveTotal = 0;
-		m_exclusiveStart = hint;
+		m_exclusiveStart = now;
 	}
 }

@@ -42,15 +42,21 @@ boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
 
 // 这里沿用了 MCF 的旧称。在 Windows 上 getFastMonoClock() 是 GetTickCount64() 实现的。
 boost::uint64_t getFastMonoClock() NOEXCEPT {
-	return getHiResMonoClock() / 1000;
-}
-boost::uint64_t getHiResMonoClock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
 		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
 		std::abort();
 	}
-	return (boost::uint64_t)ts.tv_sec * 1000000 + (unsigned long)ts.tv_nsec / 1000;
+	return (boost::uint64_t)ts.tv_sec * 1000 + (unsigned long)ts.tv_nsec / 1000000;
+}
+// 在 Windows 上 getHiResMonoClock() 是 QueryPerformanceCounter() 实现的。
+double getHiResMonoClock() NOEXCEPT {
+	::timespec ts;
+	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
+		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
+		std::abort();
+	}
+	return (double)ts.tv_sec + (double)ts.tv_nsec / 1.0e9;
 }
 
 namespace {
