@@ -56,7 +56,7 @@ protected:
 	}
 };
 
-void keepAliveTimerProc(boost::weak_ptr<CbppClient> weak){
+void keepAliveTimerProc(const boost::weak_ptr<CbppClient> &weak){
     const AUTO(client, weak.lock());
     if(!client){
     	return;

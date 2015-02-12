@@ -205,7 +205,7 @@ const std::pair<
 boost::shared_ptr<HttpServer> g_systemServer;
 boost::shared_ptr<HttpServlet> g_systemServlet;
 
-void servletProc(boost::shared_ptr<HttpSession> session, HttpRequest request, std::size_t cut){
+void servletProc(boost::shared_ptr<HttpSession> &session, HttpRequest &request, std::size_t cut){
 	LOG_POSEIDON_INFO("Accepted system HTTP request from ", session->getRemoteInfo());
 
 	if(request.verb != HTTP_GET){

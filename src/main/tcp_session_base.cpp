@@ -21,7 +21,7 @@ using namespace Poseidon;
 
 namespace {
 
-void shutdownIfTimeout(boost::weak_ptr<TcpSessionBase> weak){
+void shutdownIfTimeout(const boost::weak_ptr<TcpSessionBase> &weak){
 	const AUTO(session, weak.lock());
 	if(!session){
 		return;
@@ -228,8 +228,8 @@ void TcpSessionBase::registerOnClose(boost::function<void ()> callback){
 void TcpSessionBase::setTimeout(unsigned long long timeout){
 	boost::shared_ptr<const TimerItem> shutdownTimer;
 	if(timeout != 0){
-		shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
-			boost::bind(&shutdownIfTimeout, virtualWeakFromThis<TcpSessionBase>()));
+		shutdownTimer = TimerDaemon::registerTimer(
+			timeout, 0, boost::bind(&shutdownIfTimeout, virtualWeakFromThis<TcpSessionBase>()));
 	}
 	{
 		const boost::mutex::scoped_lock lock(m_timerMutex);

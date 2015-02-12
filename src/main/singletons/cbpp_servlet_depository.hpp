@@ -51,15 +51,15 @@ struct CbppServletDepository {
 		struct Helper {
 			static void checkAndForward(
 #endif
-				CallbackT &callback, boost::shared_ptr<CbppSession> ps, StreamBuffer incoming)
+				CallbackT &callback, boost::shared_ptr<CbppSession> &ps, StreamBuffer &incoming)
 			{
 				callback(STD_MOVE(ps), ProtocolT(incoming));
 			}
 #ifdef POSEIDON_CXX11
 		;
 		return registerServlet(category, ProtocolT::ID,
-			std::bind(checkAndForward, std::forward<CallbackT>(callback),
-				std::placeholders::_1, std::placeholders::_2));
+			std::bind(checkAndForward,
+				std::forward<CallbackT>(callback), std::placeholders::_1, std::placeholders::_2));
 #else
 		};
 		return registerServlet(category, ProtocolT::ID,

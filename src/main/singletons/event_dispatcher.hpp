@@ -49,7 +49,7 @@ struct EventDispatcher {
 		struct Helper {
 			static void checkAndForward(
 #endif
-				CallbackT &callback, boost::shared_ptr<EventBaseWithoutId> event)
+				CallbackT &callback, boost::shared_ptr<EventBaseWithoutId> &event)
 			{
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
