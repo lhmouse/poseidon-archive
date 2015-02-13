@@ -206,7 +206,7 @@ boost::shared_ptr<HttpServer> g_systemServer;
 boost::shared_ptr<HttpServlet> g_systemServlet;
 
 void servletProc(boost::shared_ptr<HttpSession> &session, HttpRequest &request, std::size_t cut){
-	LOG_POSEIDON_INFO("Accepted system HTTP request from ", session->getRemoteInfo());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", session->getRemoteInfo());
 
 	if(request.verb != HTTP_GET){
 		DEBUG_THROW(HttpException, HTTP_METHOD_NOT_ALLOWED);
@@ -258,22 +258,22 @@ void SystemHttpServer::start(){
 	}
 
 	const IpPort bindAddr(SharedNts(bind.c_str()), port);
-	LOG_POSEIDON_INFO("Initializing system HTTP server on ", bindAddr);
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bindAddr);
 	g_systemServer = boost::make_shared<HttpServer>(
 		category, bindAddr, certificate.c_str(), privateKey.c_str(), authUserPasses);
 	EpollDaemon::registerServer(g_systemServer);
 
-	LOG_POSEIDON_INFO("Created system HTTP sevlet on ", path);
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created system HTTP sevlet on ", path);
 	g_systemServlet = HttpServletDepository::registerServlet(
 		category, SharedNts(path.c_str()), boost::bind(&servletProc, _1, _2, path.size()));
 
-	LOG_POSEIDON_INFO("Done initializing system HTTP server.");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing system HTTP server.");
 }
 void SystemHttpServer::stop(){
-	LOG_POSEIDON_INFO("Shutting down system HTTP server...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Shutting down system HTTP server...");
 
 	g_systemServlet.reset();
 	g_systemServer.reset();
 
-	LOG_POSEIDON_INFO("Done shutting down system HTTP server.");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done shutting down system HTTP server.");
 }
