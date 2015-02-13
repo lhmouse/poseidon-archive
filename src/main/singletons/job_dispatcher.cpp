@@ -11,17 +11,16 @@
 #include "../exception.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	volatile bool g_running = false;
 
-volatile bool g_running = false;
-
-boost::mutex g_mutex;
-std::list<boost::shared_ptr<JobBase> > g_queue;
-std::list<boost::shared_ptr<JobBase> > g_pool;
-boost::condition_variable g_newJobAvail;
-
+	boost::mutex g_mutex;
+	std::list<boost::shared_ptr<JobBase> > g_queue;
+	std::list<boost::shared_ptr<JobBase> > g_pool;
+	boost::condition_variable g_newJobAvail;
 }
 
 void JobDispatcher::start(){
@@ -110,4 +109,6 @@ void JobDispatcher::pend(boost::shared_ptr<JobBase> job){
 	g_queue.splice(g_queue.end(), g_pool, g_pool.begin());
 	g_queue.back().swap(job);
 	g_newJobAvail.notify_all();
+}
+
 }

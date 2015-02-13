@@ -5,11 +5,14 @@
 #include "module_raii.hpp"
 #include "singletons/module_depository.hpp"
 #include "exception.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 ModuleRaiiBase::ModuleRaiiBase(){
 	ModuleDepository::registerModuleRaii(this);
 }
 ModuleRaiiBase::~ModuleRaiiBase(){
 	ModuleDepository::unregisterModuleRaii(this);
+}
+
 }

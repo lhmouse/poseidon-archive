@@ -4,7 +4,8 @@
 #include "../precompiled.hpp"
 #include "object_base.hpp"
 #include "../singletons/mysql_daemon.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 void MySqlObjectBase::batchLoad(
 	boost::shared_ptr<MySqlObjectBase> (*factory)(), const char *tableHint, std::string query,
@@ -42,4 +43,6 @@ void MySqlObjectBase::asyncLoad(std::string query,
 	disableAutoSaving();
 	MySqlDaemon::pendForLoading(virtualSharedFromThis<MySqlObjectBase>(),
 		STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except));
+}
+
 }

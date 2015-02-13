@@ -8,61 +8,60 @@
 #include <openssl/ssl.h>
 #include "exception.hpp"
 #include "log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	boost::once_flag g_sslInitFlag;
 
-boost::once_flag g_sslInitFlag;
+	void initSsl(){
+		LOG_POSEIDON_INFO("Initializing SSL library...");
 
-void initSsl(){
-	LOG_POSEIDON_INFO("Initializing SSL library...");
+		::OpenSSL_add_all_algorithms();
+		::SSL_library_init();
 
-	::OpenSSL_add_all_algorithms();
-	::SSL_library_init();
-
-	std::atexit(&::EVP_cleanup);
-}
-
-UniqueSslCtx createServerSslCtx(const char *cert, const char *privateKey){
-	boost::call_once(&initSsl, g_sslInitFlag);
-
-	UniqueSslCtx ret;
-	if(!ret.reset(::SSL_CTX_new(::TLSv1_server_method()))){
-		LOG_POSEIDON_ERROR("Could not create server SSL context");
-		DEBUG_THROW(SystemError, ENOMEM);
-	}
-	::SSL_CTX_set_verify(ret.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULLPTR);
-
-	LOG_POSEIDON_INFO("Loading server certificate: ", cert);
-	if(::SSL_CTX_use_certificate_file(ret.get(), cert, SSL_FILETYPE_PEM) != 1){
-		DEBUG_THROW(Exception, SharedNts::observe("::SSL_CTX_use_certificate_file() failed"));
+		std::atexit(&::EVP_cleanup);
 	}
 
-	LOG_POSEIDON_INFO("Loading server private key: ", privateKey);
-	if(::SSL_CTX_use_PrivateKey_file(ret.get(), privateKey, SSL_FILETYPE_PEM) != 1){
-		DEBUG_THROW(Exception, SharedNts::observe("::SSL_CTX_use_PrivateKey_file() failed"));
+	UniqueSslCtx createServerSslCtx(const char *cert, const char *privateKey){
+		boost::call_once(&initSsl, g_sslInitFlag);
+
+		UniqueSslCtx ret;
+		if(!ret.reset(::SSL_CTX_new(::TLSv1_server_method()))){
+			LOG_POSEIDON_ERROR("Could not create server SSL context");
+			DEBUG_THROW(SystemError, ENOMEM);
+		}
+		::SSL_CTX_set_verify(ret.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULLPTR);
+
+		LOG_POSEIDON_INFO("Loading server certificate: ", cert);
+		if(::SSL_CTX_use_certificate_file(ret.get(), cert, SSL_FILETYPE_PEM) != 1){
+			DEBUG_THROW(Exception, SharedNts::observe("::SSL_CTX_use_certificate_file() failed"));
+		}
+
+		LOG_POSEIDON_INFO("Loading server private key: ", privateKey);
+		if(::SSL_CTX_use_PrivateKey_file(ret.get(), privateKey, SSL_FILETYPE_PEM) != 1){
+			DEBUG_THROW(Exception, SharedNts::observe("::SSL_CTX_use_PrivateKey_file() failed"));
+		}
+
+		LOG_POSEIDON_INFO("Verifying private key...");
+		if(::SSL_CTX_check_private_key(ret.get()) != 1){
+			DEBUG_THROW(Exception, SharedNts::observe("::SSL_CTX_check_private_key() failed"));
+		}
+
+		return ret;
 	}
+	UniqueSslCtx createClientSslCtx(){
+		boost::call_once(&initSsl, g_sslInitFlag);
 
-	LOG_POSEIDON_INFO("Verifying private key...");
-	if(::SSL_CTX_check_private_key(ret.get()) != 1){
-		DEBUG_THROW(Exception, SharedNts::observe("::SSL_CTX_check_private_key() failed"));
+		UniqueSslCtx ret;
+		if(!ret.reset(::SSL_CTX_new(::TLSv1_client_method()))){
+			LOG_POSEIDON_ERROR("Could not create client SSL context");
+			DEBUG_THROW(SystemError, ENOMEM);
+		}
+		::SSL_CTX_set_verify(ret.get(), SSL_VERIFY_NONE, NULLPTR);
+
+		return ret;
 	}
-
-	return ret;
-}
-UniqueSslCtx createClientSslCtx(){
-	boost::call_once(&initSsl, g_sslInitFlag);
-
-	UniqueSslCtx ret;
-	if(!ret.reset(::SSL_CTX_new(::TLSv1_client_method()))){
-		LOG_POSEIDON_ERROR("Could not create client SSL context");
-		DEBUG_THROW(SystemError, ENOMEM);
-	}
-	::SSL_CTX_set_verify(ret.get(), SSL_VERIFY_NONE, NULLPTR);
-
-	return ret;
-}
-
 }
 
 // SslFactoryBase
@@ -91,4 +90,6 @@ ClientSslFactory::ClientSslFactory()
 {
 }
 ClientSslFactory::~ClientSslFactory(){
+}
+
 }

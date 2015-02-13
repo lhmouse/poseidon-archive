@@ -4,7 +4,8 @@
 #include "../precompiled.hpp"
 #include "upgraded_session_base.hpp"
 #include "session.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 HttpUpgradedSessionBase::HttpUpgradedSessionBase(const boost::shared_ptr<HttpSession> &parent)
 	: m_parent(parent)
@@ -54,4 +55,6 @@ void HttpUpgradedSessionBase::setTimeout(unsigned long long timeout){
 }
 void HttpUpgradedSessionBase::registerOnClose(boost::function<void ()> callback){
 	getSafeParent()->registerOnClose(STD_MOVE(callback));
+}
+
 }

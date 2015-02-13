@@ -7,7 +7,8 @@
 #include <cassert>
 #include <boost/thread/mutex.hpp>
 #include "utilities.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 class StreamBuffer::Chunk {
 private:
@@ -395,4 +396,6 @@ void StreamBuffer::dumpHex(std::ostream &os) const {
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
 		os <<HexDumper(it->m_data + it->m_readPos, it->m_writePos - it->m_readPos);
 	}
+}
+
 }

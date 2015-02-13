@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "utilities.hpp"
 #include "../utilities.hpp"
-using namespace Poseidon;
 
 namespace Poseidon {
 

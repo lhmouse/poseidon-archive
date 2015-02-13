@@ -11,9 +11,10 @@
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
-using namespace Poseidon;
 
-struct Poseidon::EventListener : NONCOPYABLE {
+namespace Poseidon {
+
+struct EventListener : NONCOPYABLE {
 	const unsigned id;
 	const boost::shared_ptr<const EventListenerCallback> callback;
 
@@ -28,34 +29,32 @@ struct Poseidon::EventListener : NONCOPYABLE {
 };
 
 namespace {
+	typedef std::map<unsigned,
+		std::vector<boost::weak_ptr<EventListener> >
+		> ListenerMap;
 
-typedef std::map<unsigned,
-	std::vector<boost::weak_ptr<EventListener> >
-	> ListenerMap;
+	boost::shared_mutex g_mutex;
+	ListenerMap g_listeners;
 
-boost::shared_mutex g_mutex;
-ListenerMap g_listeners;
+	class EventJob : public JobBase {
+	private:
+		const boost::shared_ptr<const EventListenerCallback> m_callback;
+		boost::shared_ptr<EventBaseWithoutId> m_event;
 
-class EventJob : public JobBase {
-private:
-	const boost::shared_ptr<const EventListenerCallback> m_callback;
-	boost::shared_ptr<EventBaseWithoutId> m_event;
+	public:
+		EventJob(boost::shared_ptr<const EventListenerCallback> callback,
+			boost::shared_ptr<EventBaseWithoutId> event)
+			: m_callback(STD_MOVE(callback)), m_event(STD_MOVE(event))
+		{
+		}
 
-public:
-	EventJob(boost::shared_ptr<const EventListenerCallback> callback,
-		boost::shared_ptr<EventBaseWithoutId> event)
-		: m_callback(STD_MOVE(callback)), m_event(STD_MOVE(event))
-	{
-	}
+	protected:
+		void perform(){
+			PROFILE_ME;
 
-protected:
-	void perform(){
-		PROFILE_ME;
-
-		(*m_callback)(STD_MOVE(m_event));
-	}
-};
-
+			(*m_callback)(STD_MOVE(m_event));
+		}
+	};
 }
 
 void EventDispatcher::start(){
@@ -119,4 +118,6 @@ void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event){
 			}
 		}
 	}
+}
+
 }

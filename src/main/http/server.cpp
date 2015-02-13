@@ -5,7 +5,8 @@
 #include "server.hpp"
 #include "session.hpp"
 #include "utilities.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 HttpServer::HttpServer(std::size_t category, const IpPort &bindAddr,
 	const char *cert, const char *privateKey, const std::vector<std::string> &authInfo)
@@ -24,4 +25,6 @@ boost::shared_ptr<TcpSessionBase> HttpServer::onClientConnect(UniqueFile client)
 	AUTO(session, boost::make_shared<HttpSession>(m_category, STD_MOVE(client)));
 	session->setAuthInfo(m_authInfo);
 	return session;
+}
+
 }

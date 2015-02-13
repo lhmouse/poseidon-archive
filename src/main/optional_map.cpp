@@ -3,12 +3,11 @@
 
 #include "precompiled.hpp"
 #include "optional_map.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
-
-const std::string EMPTY_STRING;
-
+	const std::string EMPTY_STRING;
 }
 
 const std::string &OptionalMap::get(const char *key) const {
@@ -24,4 +23,6 @@ const std::string &OptionalMap::at(const char *key) const {
 		throw std::out_of_range("Poseidon::OptionalMap::at");
 	}
 	return it->second;
+}
+
 }

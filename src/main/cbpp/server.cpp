@@ -4,7 +4,8 @@
 #include "../precompiled.hpp"
 #include "server.hpp"
 #include "session.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 CbppServer::CbppServer(std::size_t category, const IpPort &bindAddr,
 	const char *cert, const char *privateKey)
@@ -15,4 +16,6 @@ CbppServer::CbppServer(std::size_t category, const IpPort &bindAddr,
 
 boost::shared_ptr<TcpSessionBase> CbppServer::onClientConnect(UniqueFile client) const {
 	return boost::make_shared<CbppSession>(m_category, STD_MOVE(client));
+}
+
 }

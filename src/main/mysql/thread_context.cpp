@@ -9,25 +9,24 @@
 #include <mysql/mysql.h>
 #include <mysql/mysql.h>
 #include "../log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	boost::once_flag g_mysqlInitFlag;
 
-boost::once_flag g_mysqlInitFlag;
+	__thread std::size_t g_initCount = 0;
 
-__thread std::size_t g_initCount = 0;
+	void initMySql(){
+		LOG_POSEIDON_INFO("Initializing MySQL library...");
 
-void initMySql(){
-	LOG_POSEIDON_INFO("Initializing MySQL library...");
+		if(::mysql_library_init(0, NULLPTR, NULLPTR) != 0){
+			LOG_POSEIDON_FATAL("Could not initialize MySQL library.");
+			std::abort();
+		}
 
-	if(::mysql_library_init(0, NULLPTR, NULLPTR) != 0){
-		LOG_POSEIDON_FATAL("Could not initialize MySQL library.");
-		std::abort();
+		std::atexit(&::mysql_library_end);
 	}
-
-	std::atexit(&::mysql_library_end);
-}
-
 }
 
 MySqlThreadContext::MySqlThreadContext(){
@@ -46,4 +45,6 @@ MySqlThreadContext::~MySqlThreadContext(){
 	if(--g_initCount == 0){
 		::mysql_thread_end();
 	}
+}
+
 }

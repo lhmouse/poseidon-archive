@@ -10,26 +10,25 @@
 #include <netinet/in.h>
 #include "exception.hpp"
 #include "log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
-
-UniqueFile createUdpSocket(const IpPort &addr){
-    SockAddr sa = getSockAddrFromIpPort(addr);
-    UniqueFile udp(::socket(sa.getFamily(), SOCK_DGRAM, IPPROTO_UDP));
-    if(!udp){
-        DEBUG_THROW(SystemError);
-    }
-    const int TRUE_VALUE = true;
-    if(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
-        DEBUG_THROW(SystemError);
-    }
-    if(::bind(udp.get(), static_cast<const ::sockaddr *>(sa.getData()), sa.getSize())){
-        DEBUG_THROW(SystemError);
-    }
-    return udp;
-}
-
+	UniqueFile createUdpSocket(const IpPort &addr){
+    	SockAddr sa = getSockAddrFromIpPort(addr);
+    	UniqueFile udp(::socket(sa.getFamily(), SOCK_DGRAM, IPPROTO_UDP));
+    	if(!udp){
+        	DEBUG_THROW(SystemError);
+    	}
+    	const int TRUE_VALUE = true;
+    	if(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
+        	DEBUG_THROW(SystemError);
+    	}
+    	if(::bind(udp.get(), static_cast<const ::sockaddr *>(sa.getData()), sa.getSize())){
+        	DEBUG_THROW(SystemError);
+    	}
+    	return udp;
+	}
 }
 
 UdpServerBase::UdpServerBase(const IpPort &bindAddr)
@@ -43,4 +42,6 @@ UdpServerBase::~UdpServerBase(){
 
 bool UdpServerBase::poll() const {
 	return false;
+}
+
 }

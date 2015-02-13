@@ -3,7 +3,8 @@
 
 #include "precompiled.hpp"
 #include "transaction.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 TransactionItemBase::~TransactionItemBase(){
 }
@@ -51,4 +52,6 @@ bool Transaction::commit() const {
 		(*it)->unlock();
 	}
 	return true;
+}
+
 }

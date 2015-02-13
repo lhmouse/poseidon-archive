@@ -12,100 +12,99 @@
 #include "../tcp_session_base.hpp"
 #include "../socket_server_base.hpp"
 #include "../profiler.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	std::size_t	g_maxTimeout				= 100;
+	boost::uint64_t g_tcpRequestTimeout		= 30000;
 
-std::size_t	g_maxTimeout				= 100;
-boost::uint64_t g_tcpRequestTimeout		= 30000;
+	volatile bool g_running = false;
+	boost::thread g_thread;
 
-volatile bool g_running = false;
-boost::thread g_thread;
+	Epoll g_epoll;
 
-Epoll g_epoll;
+	boost::mutex g_serverMutex;
+	std::list<boost::weak_ptr<const SocketServerBase> > g_servers;
 
-boost::mutex g_serverMutex;
-std::list<boost::weak_ptr<const SocketServerBase> > g_servers;
-
-std::size_t pollServers(){
-	std::vector<boost::shared_ptr<const SocketServerBase> > servers;
-	{
-		const boost::mutex::scoped_lock lock(g_serverMutex);
-		AUTO(it, g_servers.begin());
-		while(it != g_servers.end()){
-			AUTO(server, it->lock());
-			if(!server){
-				it = g_servers.erase(it);
-				continue;
-			}
-			servers.push_back(STD_MOVE(server));
-			++it;
-		}
-	}
-	std::size_t count = 0;
-	for(AUTO(it, servers.begin()); it != servers.end(); ++it){
-		try {
-			if(!(*it)->poll()){
-				continue;
-			}
-			++count;
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown while accepting connection: what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown while accepting connection.");
-		}
-	}
-	return count;
-}
-
-void daemonLoop(){
-	std::size_t epollTimeout = 0;
-	while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
-		try {
-			bool busy = false;
-			if(g_epoll.wait(epollTimeout) > 0){
-				++busy;
-			}
-			if(g_epoll.pumpReadable() > 0){
-				++busy;
-			}
-			if(g_epoll.pumpWriteable() > 0){
-				++busy;
-			}
-			if(pollServers() > 0){
-				++busy;
-			}
-			// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
-			if(busy){
-				epollTimeout = 0;
-			} else {
-				epollTimeout |= 1;
-				epollTimeout <<= 1;
-				if(epollTimeout > g_maxTimeout){
-					epollTimeout = g_maxTimeout;
+	std::size_t pollServers(){
+		std::vector<boost::shared_ptr<const SocketServerBase> > servers;
+		{
+			const boost::mutex::scoped_lock lock(g_serverMutex);
+			AUTO(it, g_servers.begin());
+			while(it != g_servers.end()){
+				AUTO(server, it->lock());
+				if(!server){
+					it = g_servers.erase(it);
+					continue;
 				}
+				servers.push_back(STD_MOVE(server));
+				++it;
 			}
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown while flush data: what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown while flush data.");
+		}
+		std::size_t count = 0;
+		for(AUTO(it, servers.begin()); it != servers.end(); ++it){
+			try {
+				if(!(*it)->poll()){
+					continue;
+				}
+				++count;
+			} catch(std::exception &e){
+				LOG_POSEIDON_ERROR("std::exception thrown while accepting connection: what = ", e.what());
+			} catch(...){
+				LOG_POSEIDON_ERROR("Unknown exception thrown while accepting connection.");
+			}
+		}
+		return count;
+	}
+
+	void daemonLoop(){
+		std::size_t epollTimeout = 0;
+		while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
+			try {
+				bool busy = false;
+				if(g_epoll.wait(epollTimeout) > 0){
+					++busy;
+				}
+				if(g_epoll.pumpReadable() > 0){
+					++busy;
+				}
+				if(g_epoll.pumpWriteable() > 0){
+					++busy;
+				}
+				if(pollServers() > 0){
+					++busy;
+				}
+				// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
+				if(busy){
+					epollTimeout = 0;
+				} else {
+					epollTimeout |= 1;
+					epollTimeout <<= 1;
+					if(epollTimeout > g_maxTimeout){
+						epollTimeout = g_maxTimeout;
+					}
+				}
+			} catch(std::exception &e){
+				LOG_POSEIDON_ERROR("std::exception thrown while flush data: what = ", e.what());
+			} catch(...){
+				LOG_POSEIDON_ERROR("Unknown exception thrown while flush data.");
+			}
+		}
+		while(g_epoll.pumpWriteable() > 0){
+			// noop
 		}
 	}
-	while(g_epoll.pumpWriteable() > 0){
-		// noop
+
+	void threadProc(){
+		PROFILE_ME;
+		Logger::setThreadTag("   N"); // Network
+		LOG_POSEIDON_INFO("Epoll daemon started.");
+
+		daemonLoop();
+
+		LOG_POSEIDON_INFO("Epoll daemon stopped.");
 	}
-}
-
-void threadProc(){
-	PROFILE_ME;
-	Logger::setThreadTag("   N"); // Network
-	LOG_POSEIDON_INFO("Epoll daemon started.");
-
-	daemonLoop();
-
-	LOG_POSEIDON_INFO("Epoll daemon stopped.");
-}
-
 }
 
 void EpollDaemon::start(){
@@ -168,4 +167,6 @@ void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 void EpollDaemon::registerServer(boost::weak_ptr<const SocketServerBase> server){
 	const boost::mutex::scoped_lock lock(g_serverMutex);
 	g_servers.push_back(STD_MOVE(server));
+}
+
 }

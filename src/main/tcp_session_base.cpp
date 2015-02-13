@@ -17,23 +17,22 @@
 #include "utilities.hpp"
 #include "epoll.hpp"
 #include "job_base.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
-
-void shutdownIfTimeout(const boost::weak_ptr<TcpSessionBase> &weak){
-	const AUTO(session, weak.lock());
-	if(!session){
-		return;
+	void shutdownIfTimeout(const boost::weak_ptr<TcpSessionBase> &weak){
+		const AUTO(session, weak.lock());
+		if(!session){
+			return;
+		}
+		try {
+			LOG_POSEIDON_WARNING("Connection timed out: remote = ", session->getRemoteInfo());
+		} catch(...){
+			LOG_POSEIDON_WARNING("Connection timed out but the session has not been established.");
+		}
+		session->forceShutdown();
 	}
-	try {
-		LOG_POSEIDON_WARNING("Connection timed out: remote = ", session->getRemoteInfo());
-	} catch(...){
-		LOG_POSEIDON_WARNING("Connection timed out but the session has not been established.");
-	}
-	session->forceShutdown();
-}
-
 }
 
 class TcpSessionBase::OnCloseJob : public JobBase {
@@ -235,4 +234,6 @@ void TcpSessionBase::setTimeout(unsigned long long timeout){
 		const boost::mutex::scoped_lock lock(m_timerMutex);
 		m_shutdownTimer.swap(shutdownTimer);
 	}
+}
+
 }

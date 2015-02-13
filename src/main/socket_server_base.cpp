@@ -7,7 +7,8 @@
 #include "ip_port.hpp"
 #include "log.hpp"
 #include "exception.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 SocketServerBase::SocketServerBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_localInfo(getLocalIpPortFromFd(m_socket.get()))
@@ -28,4 +29,6 @@ SocketServerBase::SocketServerBase(UniqueFile socket)
 }
 SocketServerBase::~SocketServerBase(){
 	LOG_POSEIDON_INFO("Destroyed socket server, local = ", m_localInfo);
+}
+
 }

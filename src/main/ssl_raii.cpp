@@ -4,7 +4,8 @@
 #include "precompiled.hpp"
 #include "ssl_raii.hpp"
 #include <openssl/ssl.h>
-using namespace Poseidon;
+
+namespace Poseidon {
 
 void SslDeleter::operator()(::SSL *ssl) NOEXCEPT {
 	::SSL_free(ssl);
@@ -12,4 +13,6 @@ void SslDeleter::operator()(::SSL *ssl) NOEXCEPT {
 
 void SslCtxDeleter::operator()(::SSL_CTX *sslCtx) NOEXCEPT {
 	::SSL_CTX_free(sslCtx);
+}
+
 }

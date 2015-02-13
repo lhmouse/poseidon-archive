@@ -16,42 +16,41 @@
 #include "singletons/epoll_daemon.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
-
-class SslFilter : public SslFilterBase {
-public:
-	SslFilter(Move<UniqueSsl> ssl, int fd)
-		: SslFilterBase(STD_MOVE(ssl), fd)
-	{
-	}
-
-private:
-	bool establish(){
-		const int ret = ::SSL_connect(getSsl());
-		if(ret != 1){
-			const int err = ::SSL_get_error(getSsl(), ret);
-			if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
-				return false;
-			}
-			LOG_POSEIDON_ERROR("::SSL_connect() = ", ret, ", ::SSL_get_error() = ", err);
-			DEBUG_THROW(Exception, SharedNts::observe("::SSL_connect() failed"));
+	class SslFilter : public SslFilterBase {
+	public:
+		SslFilter(Move<UniqueSsl> ssl, int fd)
+			: SslFilterBase(STD_MOVE(ssl), fd)
+		{
 		}
-		return true;
+
+	private:
+		bool establish(){
+			const int ret = ::SSL_connect(getSsl());
+			if(ret != 1){
+				const int err = ::SSL_get_error(getSsl(), ret);
+				if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
+					return false;
+				}
+				LOG_POSEIDON_ERROR("::SSL_connect() = ", ret, ", ::SSL_get_error() = ", err);
+				DEBUG_THROW(Exception, SharedNts::observe("::SSL_connect() failed"));
+			}
+			return true;
+		}
+	};
+
+	const ClientSslFactory g_clientSslFactory;
+
+	UniqueFile createSocket(int family){
+		UniqueFile client(::socket(family, SOCK_STREAM, IPPROTO_TCP));
+		if(!client){
+			DEBUG_THROW(SystemError);
+		}
+		return client;
 	}
-};
-
-const ClientSslFactory g_clientSslFactory;
-
-UniqueFile createSocket(int family){
-	UniqueFile client(::socket(family, SOCK_STREAM, IPPROTO_TCP));
-	if(!client){
-		DEBUG_THROW(SystemError);
-	}
-	return client;
-}
-
 }
 
 TcpClientBase::TcpClientBase(const IpPort &addr, bool useSsl)
@@ -77,4 +76,6 @@ TcpClientBase::~TcpClientBase(){
 
 void TcpClientBase::goResident(){
 	EpollDaemon::addSession(virtualSharedFromThis<TcpSessionBase>());
+}
+
 }

@@ -4,12 +4,11 @@
 #include "../precompiled.hpp"
 #include "exception.hpp"
 #include "../log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
-
-const OptionalMap EMPTY_HEADERS;
-
+	const OptionalMap EMPTY_HEADERS;
 }
 
 HttpException::HttpException(const char *file, std::size_t line,
@@ -28,4 +27,6 @@ HttpException::~HttpException() NOEXCEPT {
 
 const OptionalMap &HttpException::headers() const NOEXCEPT {
 	return m_headers ? *m_headers : EMPTY_HEADERS;
+}
+
 }

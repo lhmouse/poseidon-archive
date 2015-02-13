@@ -5,12 +5,11 @@
 #include "profiler.hpp"
 #include "singletons/profile_depository.hpp"
 #include "utilities.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
-
-__thread Profiler *t_topProfiler = 0;
-
+	__thread Profiler *t_topProfiler = 0;
 }
 
 void Profiler::flushProfilersInThread(){
@@ -64,4 +63,6 @@ void Profiler::flush(double now) NOEXCEPT {
 		m_exclusiveTotal = 0;
 		m_exclusiveStart = now;
 	}
+}
+
 }

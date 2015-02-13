@@ -15,9 +15,10 @@
 #include "../utilities.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
-using namespace Poseidon;
 
-struct Poseidon::TimerItem : NONCOPYABLE {
+namespace Poseidon {
+
+struct TimerItem : NONCOPYABLE {
 	const boost::uint64_t period;
 	const boost::shared_ptr<const TimerCallback> callback;
 
@@ -32,98 +33,96 @@ struct Poseidon::TimerItem : NONCOPYABLE {
 };
 
 namespace {
+	const boost::uint64_t MILLISECS_PER_HOUR	= 3600 * 1000;
+	const boost::uint64_t MILLISECS_PER_DAY		= 24 * MILLISECS_PER_HOUR;
+	const boost::uint64_t MILLISECS_PER_WEEK	= 7 * MILLISECS_PER_DAY;
 
-const boost::uint64_t MILLISECS_PER_HOUR	= 3600 * 1000;
-const boost::uint64_t MILLISECS_PER_DAY		= 24 * MILLISECS_PER_HOUR;
-const boost::uint64_t MILLISECS_PER_WEEK	= 7 * MILLISECS_PER_DAY;
+	class TimerJob : public JobBase {
+	private:
+		const boost::shared_ptr<const TimerCallback> m_callback;
+		const boost::uint64_t m_now;
+		const boost::uint64_t m_period;
 
-class TimerJob : public JobBase {
-private:
-	const boost::shared_ptr<const TimerCallback> m_callback;
-	const boost::uint64_t m_now;
-	const boost::uint64_t m_period;
-
-public:
-	TimerJob(boost::shared_ptr<const TimerCallback> callback,
-		boost::uint64_t now, boost::uint64_t period)
-		: m_callback(STD_MOVE(callback)), m_now(now), m_period(period)
-	{
-	}
-
-public:
-	void perform(){
-		PROFILE_ME;
-
-		(*m_callback)(m_now, m_period);
-	}
-};
-
-struct TimerQueueElement {
-	boost::uint64_t next;
-	boost::weak_ptr<TimerItem> item;
-
-	bool operator<(const TimerQueueElement &rhs) const {
-		return next > rhs.next;
-	}
-};
-
-volatile bool g_running = false;
-boost::thread g_thread;
-
-boost::mutex g_mutex;
-std::vector<TimerQueueElement> g_timers;
-
-void daemonLoop(){
-	while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
-		const boost::uint64_t now = getFastMonoClock();
-
-		boost::shared_ptr<const TimerCallback> callback;
-		boost::uint64_t period = 0;
+	public:
+		TimerJob(boost::shared_ptr<const TimerCallback> callback,
+			boost::uint64_t now, boost::uint64_t period)
+			: m_callback(STD_MOVE(callback)), m_now(now), m_period(period)
 		{
-			const boost::mutex::scoped_lock lock(g_mutex);
-			while(!g_timers.empty() && (now >= g_timers.front().next)){
-				const AUTO(item, g_timers.front().item.lock());
-				std::pop_heap(g_timers.begin(), g_timers.end());
-				if(item){
-					callback = item->callback;
-					period = item->period;
-					if(period == 0){
-						g_timers.pop_back();
-					} else {
-						g_timers.back().next += period;
-						std::push_heap(g_timers.begin(), g_timers.end());
+		}
+
+	public:
+		void perform(){
+			PROFILE_ME;
+
+			(*m_callback)(m_now, m_period);
+		}
+	};
+
+	struct TimerQueueElement {
+		boost::uint64_t next;
+		boost::weak_ptr<TimerItem> item;
+
+		bool operator<(const TimerQueueElement &rhs) const {
+			return next > rhs.next;
+		}
+	};
+
+	volatile bool g_running = false;
+	boost::thread g_thread;
+
+	boost::mutex g_mutex;
+	std::vector<TimerQueueElement> g_timers;
+
+	void daemonLoop(){
+		while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
+			const boost::uint64_t now = getFastMonoClock();
+
+			boost::shared_ptr<const TimerCallback> callback;
+			boost::uint64_t period = 0;
+			{
+				const boost::mutex::scoped_lock lock(g_mutex);
+				while(!g_timers.empty() && (now >= g_timers.front().next)){
+					const AUTO(item, g_timers.front().item.lock());
+					std::pop_heap(g_timers.begin(), g_timers.end());
+					if(item){
+						callback = item->callback;
+						period = item->period;
+						if(period == 0){
+							g_timers.pop_back();
+						} else {
+							g_timers.back().next += period;
+							std::push_heap(g_timers.begin(), g_timers.end());
+						}
+						break;
 					}
-					break;
+					g_timers.pop_back();
 				}
-				g_timers.pop_back();
+			}
+			if(!callback){
+				::usleep(200000);
+				continue;
+			}
+
+			try {
+				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
+				pendJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
+			} catch(std::exception &e){
+				LOG_POSEIDON_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
+			} catch(...){
+				LOG_POSEIDON_ERROR("Unknown exception thrown while dispatching timer job.");
 			}
 		}
-		if(!callback){
-			::usleep(200000);
-			continue;
-		}
-
-		try {
-			LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
-			pendJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown while dispatching timer job.");
-		}
 	}
-}
 
-void threadProc(){
-	PROFILE_ME;
-	Logger::setThreadTag("  T "); // Timer
-	LOG_POSEIDON_INFO("Timer daemon started.");
+	void threadProc(){
+		PROFILE_ME;
+		Logger::setThreadTag("  T "); // Timer
+		LOG_POSEIDON_INFO("Timer daemon started.");
 
-	daemonLoop();
+		daemonLoop();
 
-	LOG_POSEIDON_INFO("Timer daemon stopped.");
-}
-
+		LOG_POSEIDON_INFO("Timer daemon stopped.");
+	}
 }
 
 void TimerDaemon::start(){
@@ -194,4 +193,6 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerWeeklyTimer(
 	const AUTO(delta, getLocalTime() - ((dayOfWeek + 3) * 86400ull + hour * 3600ull + minute * 60ull + second));
 	return registerTimer(MILLISECS_PER_WEEK - delta % MILLISECS_PER_WEEK, MILLISECS_PER_WEEK,
 		STD_MOVE(callback));
+}
+
 }

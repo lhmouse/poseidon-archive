@@ -10,9 +10,10 @@
 #include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
-using namespace Poseidon;
 
-struct Poseidon::CbppServlet : NONCOPYABLE {
+namespace Poseidon {
+
+struct CbppServlet : NONCOPYABLE {
 	const boost::uint16_t protocolId;
 	const boost::shared_ptr<const CbppServletCallback> callback;
 
@@ -23,17 +24,15 @@ struct Poseidon::CbppServlet : NONCOPYABLE {
 };
 
 namespace {
+	std::size_t g_maxRequestLength			= 16 * 0x400;
+	unsigned long long g_keepAliveTimeout	= 30000;
 
-std::size_t g_maxRequestLength			= 16 * 0x400;
-unsigned long long g_keepAliveTimeout	= 30000;
+	typedef std::map<std::size_t,
+		std::map<boost::uint16_t, boost::weak_ptr<const CbppServlet> >
+		> ServletMap;
 
-typedef std::map<std::size_t,
-	std::map<boost::uint16_t, boost::weak_ptr<const CbppServlet> >
-	> ServletMap;
-
-boost::shared_mutex g_mutex;
-ServletMap g_servlets;
-
+	boost::shared_mutex g_mutex;
+	ServletMap g_servlets;
 }
 
 void CbppServletDepository::start(){
@@ -103,4 +102,6 @@ boost::shared_ptr<const CbppServletCallback> CbppServletDepository::getServlet(
     	return VAL_INIT;
     }
     return servlet->callback;
+}
+
 }

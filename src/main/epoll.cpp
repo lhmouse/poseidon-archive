@@ -12,47 +12,46 @@
 #include "exception.hpp"
 #include "log.hpp"
 #include "utilities.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	enum {
+		MAX_PUMP_COUNT = 256
+	};
 
-enum {
-	MAX_PUMP_COUNT = 256
-};
+	struct SessionMapElement {
+		const int fd;
+		const boost::shared_ptr<TcpSessionBase> session;
 
-struct SessionMapElement {
-	const int fd;
-	const boost::shared_ptr<TcpSessionBase> session;
+		// 时间戳，零表示无数据可读/写。
+		unsigned long long lastRead;
+		unsigned long long lastWritten;
 
-	// 时间戳，零表示无数据可读/写。
-	unsigned long long lastRead;
-	unsigned long long lastWritten;
-
-	SessionMapElement(boost::shared_ptr<TcpSessionBase> session_,
-		unsigned long long lastRead_, unsigned long long lastWritten_)
-		: fd(session_->getFd()), session(STD_MOVE(session_))
-		, lastRead(lastRead_), lastWritten(lastWritten_)
-	{
-	}
+		SessionMapElement(boost::shared_ptr<TcpSessionBase> session_,
+			unsigned long long lastRead_, unsigned long long lastWritten_)
+			: fd(session_->getFd()), session(STD_MOVE(session_))
+			, lastRead(lastRead_), lastWritten(lastWritten_)
+		{
+		}
 
 #ifndef POSEIDON_CXX11
-	// C++03 不提供转移构造函数，但是我们在这里不使用它，不需要定义。
-	SessionMapElement(Move<SessionMapElement> rhs);
+		// C++03 不提供转移构造函数，但是我们在这里不使用它，不需要定义。
+		SessionMapElement(Move<SessionMapElement> rhs);
 #endif
-};
+	};
 
-MULTI_INDEX_MAP(SessionMap, SessionMapElement,
-	UNIQUE_MEMBER_INDEX(fd)
-	MULTI_MEMBER_INDEX(lastRead)
-	MULTI_MEMBER_INDEX(lastWritten)
-)
+	MULTI_INDEX_MAP(SessionMap, SessionMapElement,
+		UNIQUE_MEMBER_INDEX(fd)
+		MULTI_MEMBER_INDEX(lastRead)
+		MULTI_MEMBER_INDEX(lastWritten)
+	)
 
-enum {
-	IDX_FD,
-	IDX_READ,
-	IDX_WRITE,
-};
-
+	enum {
+		IDX_FD,
+		IDX_READ,
+		IDX_WRITE,
+	};
 }
 
 struct Epoll::SessionMapImpl
@@ -298,4 +297,6 @@ std::size_t Epoll::pumpWriteable(){
 		}
 	}
 	return count;
+}
+
 }

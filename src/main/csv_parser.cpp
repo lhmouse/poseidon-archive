@@ -6,7 +6,8 @@
 #include "exception.hpp"
 #include "file.hpp"
 #include "log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 void CsvParser::load(const char *file){
 	LOG_POSEIDON_DEBUG("Loading CSV file: ", file);
@@ -130,4 +131,6 @@ bool CsvParser::loadNoThrow(const char *file){
 		LOG_POSEIDON_ERROR("Error loading CSV file: ", e.what());
 		return false;
 	}
+}
+
 }

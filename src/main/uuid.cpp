@@ -7,18 +7,17 @@
 #include "atomic.hpp"
 #include "endian.hpp"
 #include "exception.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	boost::uint32_t rdtscLow(){
+		boost::uint32_t ret;
+		__asm__ __volatile__("rdtsc \n" : "=a"(ret) : : "edx");
+		return ret;
+	}
 
-boost::uint32_t rdtscLow(){
-	boost::uint32_t ret;
-	__asm__ __volatile__("rdtsc \n" : "=a"(ret) : : "edx");
-	return ret;
-}
-
-volatile boost::uint32_t g_autoInc = rdtscLow();
-
+	volatile boost::uint32_t g_autoInc = rdtscLow();
 }
 
 Uuid Uuid::generate(){
@@ -117,8 +116,6 @@ bool Uuid::fromString(const char (&str)[37]){
 
 	return true;
 }
-
-namespace Poseidon {
 
 std::ostream &operator<<(std::ostream &os, const Uuid &rhs){
 	char temp[37];

@@ -10,61 +10,60 @@
 #include "../exception.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	class ServerResponseJob : public JobBase {
+	private:
+		const boost::weak_ptr<CbppClient> m_client;
+		const unsigned m_messageId;
 
-class ServerResponseJob : public JobBase {
-private:
-	const boost::weak_ptr<CbppClient> m_client;
-	const unsigned m_messageId;
+		StreamBuffer m_payload;
 
-	StreamBuffer m_payload;
-
-public:
-	ServerResponseJob(boost::weak_ptr<CbppClient> client,
-		unsigned messageId, StreamBuffer payload)
-		: m_client(STD_MOVE(client)), m_messageId(messageId)
-		, m_payload(STD_MOVE(payload))
-	{
-	}
-
-protected:
-	void perform(){
-		PROFILE_ME;
-
-		const boost::shared_ptr<CbppClient> client(m_client);
-		try {
-			if(m_messageId != CbppErrorMessage::ID){
-				LOG_POSEIDON_DEBUG("Dispatching: message = ", m_messageId, ", payload size = ", m_payload.size());
-				client->onResponse(m_messageId, STD_MOVE(m_payload));
-			} else {
-				CbppErrorMessage error(m_payload);
-				LOG_POSEIDON_DEBUG("Dispatching error message: message id = ", error.messageId,
-					", status = ", error.status, ", reason = ", error.reason);
-				client->onError(error.messageId, CbppStatus(error.status), STD_MOVE(error.reason));
-			}
-		} catch(CbppMessageException &e){
-			LOG_POSEIDON_ERROR("CbppMessageException thrown in CBPP servlet, message id = ", m_messageId,
-				", status = ", e.status(), ", what = ", e.what());
-			throw;
-		} catch(...){
-			LOG_POSEIDON_ERROR("Forwarding exception... message id = ", m_messageId);
-			client->shutdown(); // 关闭连接。
-			throw;
+	public:
+		ServerResponseJob(boost::weak_ptr<CbppClient> client,
+			unsigned messageId, StreamBuffer payload)
+			: m_client(STD_MOVE(client)), m_messageId(messageId)
+			, m_payload(STD_MOVE(payload))
+		{
 		}
+
+	protected:
+		void perform(){
+			PROFILE_ME;
+
+			const boost::shared_ptr<CbppClient> client(m_client);
+			try {
+				if(m_messageId != CbppErrorMessage::ID){
+					LOG_POSEIDON_DEBUG("Dispatching: message = ", m_messageId, ", payload size = ", m_payload.size());
+					client->onResponse(m_messageId, STD_MOVE(m_payload));
+				} else {
+					CbppErrorMessage error(m_payload);
+					LOG_POSEIDON_DEBUG("Dispatching error message: message id = ", error.messageId,
+						", status = ", error.status, ", reason = ", error.reason);
+					client->onError(error.messageId, CbppStatus(error.status), STD_MOVE(error.reason));
+				}
+			} catch(CbppMessageException &e){
+				LOG_POSEIDON_ERROR("CbppMessageException thrown in CBPP servlet, message id = ", m_messageId,
+					", status = ", e.status(), ", what = ", e.what());
+				throw;
+			} catch(...){
+				LOG_POSEIDON_ERROR("Forwarding exception... message id = ", m_messageId);
+				client->shutdown(); // 关闭连接。
+				throw;
+			}
+		}
+	};
+
+	void keepAliveTimerProc(const boost::weak_ptr<CbppClient> &weak){
+    	const AUTO(client, weak.lock());
+    	if(!client){
+    		return;
+    	}
+    	LOG_POSEIDON_TRACE("Sending heartbeat packet...");
+    	client->send(CbppErrorMessage::ID, StreamBuffer(CbppErrorMessage(CbppErrorMessage::ID, 0, VAL_INIT)), false);
 	}
-};
-
-void keepAliveTimerProc(const boost::weak_ptr<CbppClient> &weak){
-    const AUTO(client, weak.lock());
-    if(!client){
-    	return;
-    }
-    LOG_POSEIDON_TRACE("Sending heartbeat packet...");
-    client->send(CbppErrorMessage::ID, StreamBuffer(CbppErrorMessage(CbppErrorMessage::ID, 0, VAL_INIT)), false);
-}
-
 }
 
 CbppClient::CbppClient(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl)
@@ -124,4 +123,6 @@ bool CbppClient::send(boost::uint16_t messageId, StreamBuffer contents, bool fin
 	CbppMessageBase::encodeHeader(data, messageId, contents.size());
 	data.splice(contents);
 	return TcpSessionBase::send(STD_MOVE(data), fin);
+}
+
 }

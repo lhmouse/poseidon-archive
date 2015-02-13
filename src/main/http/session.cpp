@@ -19,100 +19,99 @@
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 #include "../hash.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
-
-void normalizeUri(std::string &uri){
-	if(uri[0] != '/'){
-		uri.insert(uri.begin(), '/');
-	}
-	std::size_t write = 1;
-	for(std::size_t i = 1; i < uri.size(); ++i){
-		const char ch = uri[i];
-		if((ch == '/') && (uri[write - 1] == '/')){
-			continue;
+	void normalizeUri(std::string &uri){
+		if(uri[0] != '/'){
+			uri.insert(uri.begin(), '/');
 		}
-		uri[write] = ch;
-		++write;
-	}
-	uri.erase(uri.begin() + static_cast<std::ptrdiff_t>(write), uri.end());
-}
-
-void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer){
-	const AUTO(session, observer.lock());
-	if(session){
-		LOG_POSEIDON_WARNING("HTTP request times out, remote = ", session->getRemoteInfo());
-		session->sendDefault(HTTP_REQUEST_TIMEOUT, true);
-	}
-}
-void onKeepAliveTimeout(const boost::weak_ptr<HttpSession> &observer){
-	const AUTO(session, observer.lock());
-	if(session){
-		static_cast<TcpSessionBase *>(session.get())->send(StreamBuffer(), true);
-	}
-}
-
-class HttpRequestJob : public JobBase {
-private:
-	const boost::weak_ptr<HttpSession> m_session;
-
-	const HttpVerb m_verb;
-	const std::string m_uri;
-	const unsigned m_version;
-
-	OptionalMap m_getParams;
-	OptionalMap m_headers;
-	std::string m_contents;
-
-public:
-	HttpRequestJob(boost::weak_ptr<HttpSession> session,
-		HttpVerb verb, std::string uri, unsigned version,
-		OptionalMap getParams, OptionalMap headers, std::string contents)
-		: m_session(STD_MOVE(session))
-		, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
-		, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers))
-		, m_contents(STD_MOVE(contents))
-	{
-	}
-
-protected:
-	void perform(){
-		PROFILE_ME;
-		assert(!m_uri.empty());
-
-		const boost::shared_ptr<HttpSession> session(m_session);
-		try {
-			const AUTO(category, session->getCategory());
-			const AUTO(servlet, HttpServletDepository::getServlet(category, m_uri.c_str()));
-			if(!servlet){
-				LOG_POSEIDON_WARNING("No handler in category ", category, " matches URI ", m_uri);
-				DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
+		std::size_t write = 1;
+		for(std::size_t i = 1; i < uri.size(); ++i){
+			const char ch = uri[i];
+			if((ch == '/') && (uri[write - 1] == '/')){
+				continue;
 			}
+			uri[write] = ch;
+			++write;
+		}
+		uri.erase(uri.begin() + static_cast<std::ptrdiff_t>(write), uri.end());
+	}
 
-			HttpRequest request;
-			request.verb = m_verb;
-			request.uri = m_uri;
-			request.version = m_version;
-			request.getParams.swap(m_getParams);
-			request.headers.swap(m_headers);
-			request.contents.swap(m_contents);
-
-			LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", stringFromHttpVerb(m_verb));
-			(*servlet)(session, STD_MOVE(request));
-			session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
-		} catch(HttpException &e){
-			LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri, ", status = ", e.status());
-			session->sendDefault(e.status(), e.headers(), false); // 不关闭连接。
-			throw;
-		} catch(...){
-			LOG_POSEIDON_ERROR("Forwarding exception... request URI = ", m_uri);
-			session->sendDefault(HTTP_BAD_REQUEST, true); // 关闭连接。
-			throw;
+	void onRequestTimeout(const boost::weak_ptr<HttpSession> &observer){
+		const AUTO(session, observer.lock());
+		if(session){
+			LOG_POSEIDON_WARNING("HTTP request times out, remote = ", session->getRemoteInfo());
+			session->sendDefault(HTTP_REQUEST_TIMEOUT, true);
 		}
 	}
-};
+	void onKeepAliveTimeout(const boost::weak_ptr<HttpSession> &observer){
+		const AUTO(session, observer.lock());
+		if(session){
+			static_cast<TcpSessionBase *>(session.get())->send(StreamBuffer(), true);
+		}
+	}
 
+	class HttpRequestJob : public JobBase {
+	private:
+		const boost::weak_ptr<HttpSession> m_session;
+
+		const HttpVerb m_verb;
+		const std::string m_uri;
+		const unsigned m_version;
+
+		OptionalMap m_getParams;
+		OptionalMap m_headers;
+		std::string m_contents;
+
+	public:
+		HttpRequestJob(boost::weak_ptr<HttpSession> session,
+			HttpVerb verb, std::string uri, unsigned version,
+			OptionalMap getParams, OptionalMap headers, std::string contents)
+			: m_session(STD_MOVE(session))
+			, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
+			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers))
+			, m_contents(STD_MOVE(contents))
+		{
+		}
+
+	protected:
+		void perform(){
+			PROFILE_ME;
+			assert(!m_uri.empty());
+
+			const boost::shared_ptr<HttpSession> session(m_session);
+			try {
+				const AUTO(category, session->getCategory());
+				const AUTO(servlet, HttpServletDepository::getServlet(category, m_uri.c_str()));
+				if(!servlet){
+					LOG_POSEIDON_WARNING("No handler in category ", category, " matches URI ", m_uri);
+					DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
+				}
+
+				HttpRequest request;
+				request.verb = m_verb;
+				request.uri = m_uri;
+				request.version = m_version;
+				request.getParams.swap(m_getParams);
+				request.headers.swap(m_headers);
+				request.contents.swap(m_contents);
+
+				LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", stringFromHttpVerb(m_verb));
+				(*servlet)(session, STD_MOVE(request));
+				session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
+			} catch(HttpException &e){
+				LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri, ", status = ", e.status());
+				session->sendDefault(e.status(), e.headers(), false); // 不关闭连接。
+				throw;
+			} catch(...){
+				LOG_POSEIDON_ERROR("Forwarding exception... request URI = ", m_uri);
+				session->sendDefault(HTTP_BAD_REQUEST, true); // 关闭连接。
+				throw;
+			}
+		}
+	};
 }
 
 class HttpSession::HeaderParser {
@@ -457,4 +456,6 @@ bool HttpSession::sendDefault(HttpStatus status, OptionalMap headers, bool fin){
 		contents.put("</p></body></html>");
 	}
 	return send(status, STD_MOVE(headers), STD_MOVE(contents), fin);
+}
+
 }

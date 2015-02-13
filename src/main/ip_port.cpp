@@ -8,7 +8,6 @@
 #include <sys/socket.h>
 #include "sock_addr.hpp"
 #include "exception.hpp"
-using namespace Poseidon;
 
 namespace Poseidon {
 

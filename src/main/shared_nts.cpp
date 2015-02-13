@@ -6,83 +6,82 @@
 #include <memory>
 #include <iostream>
 #include <boost/make_shared.hpp>
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	template<typename T>
+	struct IncrementalAlloc {
+		typedef T *				pointer;
+		typedef const T *		const_pointer;
+		typedef T &				reference;
+		typedef const T &		const_reference;
+		typedef T				value_type;
+		typedef std::size_t		size_type;
+		typedef std::ptrdiff_t	difference_type;
 
-template<typename T>
-struct IncrementalAlloc {
-	typedef T *				pointer;
-	typedef const T *		const_pointer;
-	typedef T &				reference;
-	typedef const T &		const_reference;
-	typedef T				value_type;
-	typedef std::size_t		size_type;
-	typedef std::ptrdiff_t	difference_type;
+		template<typename U>
+		struct rebind {
+			typedef IncrementalAlloc<U> other;
+		};
 
-	template<typename U>
-	struct rebind {
-		typedef IncrementalAlloc<U> other;
-	};
+		void *&incPtr;
+		const size_type incSize;
 
-	void *&incPtr;
-	const size_type incSize;
-
-	IncrementalAlloc(void *&incPtr_, size_type incSize_)
-		: incPtr(incPtr_), incSize(incSize_)
-	{
-	}
-	template<typename U>
-	IncrementalAlloc(const IncrementalAlloc<U> &rhs)
-		: incPtr(rhs.incPtr), incSize(rhs.incSize)
-	{
-	}
-
-	pointer address(reference r) const {
-		return reinterpret_cast<pointer>(&reinterpret_cast<char &>(r));
-	}
-	const_pointer address(const_reference r) const {
-		return reinterpret_cast<const_pointer>(&reinterpret_cast<const char &>(r));
-	}
-
-	pointer allocate(size_type n, const void * = 0){
-		const size_type k = n * sizeof(T) + incSize;
-		if(k / sizeof(T) != n + incSize / sizeof(T)){
-			throw std::bad_alloc();
+		IncrementalAlloc(void *&incPtr_, size_type incSize_)
+			: incPtr(incPtr_), incSize(incSize_)
+		{
 		}
-		char *const p = static_cast<char *>(::operator new(k));
-		incPtr = p + k - incSize;
-		return reinterpret_cast<pointer>(p);
-	}
-	void deallocate(pointer p, size_type){
-		::operator delete(p);
-	}
-	size_type max_size() const {
-		return static_cast<size_type>(-1) >> 1;
-	}
+		template<typename U>
+		IncrementalAlloc(const IncrementalAlloc<U> &rhs)
+			: incPtr(rhs.incPtr), incSize(rhs.incSize)
+		{
+		}
 
-	template<typename U>
-	bool operator==(const IncrementalAlloc<U> &) const {
-		return true;
-	}
-	template<typename U>
-	bool operator!=(const IncrementalAlloc<U> &) const {
-		return false;
-	}
+		pointer address(reference r) const {
+			return reinterpret_cast<pointer>(&reinterpret_cast<char &>(r));
+		}
+		const_pointer address(const_reference r) const {
+			return reinterpret_cast<const_pointer>(&reinterpret_cast<const char &>(r));
+		}
 
-	void construct(pointer p, const T &t){
-		new(static_cast<void *>(p)) T(t);
-	}
+		pointer allocate(size_type n, const void * = 0){
+			const size_type k = n * sizeof(T) + incSize;
+			if(k / sizeof(T) != n + incSize / sizeof(T)){
+				throw std::bad_alloc();
+			}
+			char *const p = static_cast<char *>(::operator new(k));
+			incPtr = p + k - incSize;
+			return reinterpret_cast<pointer>(p);
+		}
+		void deallocate(pointer p, size_type){
+			::operator delete(p);
+		}
+		size_type max_size() const {
+			return static_cast<size_type>(-1) >> 1;
+		}
+
+		template<typename U>
+		bool operator==(const IncrementalAlloc<U> &) const {
+			return true;
+		}
+		template<typename U>
+		bool operator!=(const IncrementalAlloc<U> &) const {
+			return false;
+		}
+
+		void construct(pointer p, const T &t){
+			new(static_cast<void *>(p)) T(t);
+		}
 #ifdef POSEIDON_CXX11
-	void construct(pointer p, T &&t){
-		new(static_cast<void *>(p)) T(std::move(t));
-	}
+		void construct(pointer p, T &&t){
+			new(static_cast<void *>(p)) T(std::move(t));
+		}
 #endif
-	void destroy(pointer p){
-		p->~T();
-	}
-};
-
+		void destroy(pointer p){
+			p->~T();
+		}
+	};
 }
 
 SharedNts SharedNts::observe(const char *str){
@@ -102,8 +101,6 @@ void SharedNts::assign(const char *str, std::size_t len){
 		m_ptr.reset(sp, static_cast<const char *>(dst));
 	}
 }
-
-namespace Poseidon {
 
 std::ostream &operator<<(std::ostream &os, const SharedNts &rhs){
 	return os <<rhs.get();

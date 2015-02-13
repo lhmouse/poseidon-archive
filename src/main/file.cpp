@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include "raii.hpp"
 #include "exception.hpp"
-using namespace Poseidon;
 
 namespace Poseidon {
 

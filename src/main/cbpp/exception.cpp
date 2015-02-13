@@ -4,7 +4,8 @@
 #include "../precompiled.hpp"
 #include "exception.hpp"
 #include "../log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 CbppMessageException::CbppMessageException(const char *file, std::size_t line,
 	CbppStatus status, SharedNts message)
@@ -13,4 +14,6 @@ CbppMessageException::CbppMessageException(const char *file, std::size_t line,
 	LOG_POSEIDON_ERROR("CbppMessageException: status = ", status, ", what = ", what());
 }
 CbppMessageException::~CbppMessageException() NOEXCEPT {
+}
+
 }

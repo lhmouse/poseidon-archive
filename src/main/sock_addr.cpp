@@ -10,7 +10,8 @@
 #include "endian.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 SockAddr::SockAddr(){
 	m_size = 0;
@@ -32,8 +33,6 @@ int SockAddr::getFamily() const {
 	}
 	return p->sa_family;
 }
-
-namespace Poseidon {
 
 IpPort getIpPortFromSockAddr(const SockAddr &sa){
 	const int family = sa.getFamily();

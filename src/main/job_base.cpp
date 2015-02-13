@@ -4,12 +4,11 @@
 #include "precompiled.hpp"
 #include "job_base.hpp"
 #include "singletons/job_dispatcher.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 JobBase::~JobBase(){
 }
-
-namespace Poseidon {
 
 void pendJob(boost::shared_ptr<JobBase> job){
 	JobDispatcher::pend(STD_MOVE(job));

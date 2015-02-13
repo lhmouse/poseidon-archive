@@ -13,28 +13,27 @@
 #include "../exception.hpp"
 #include "../multi_index_map.hpp"
 #include "../module_raii.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	// 注意 dl 系列的函数都不是线程安全的。
+	boost::recursive_mutex g_mutex;
 
-// 注意 dl 系列的函数都不是线程安全的。
-boost::recursive_mutex g_mutex;
-
-struct DynamicLibraryCloser {
-	CONSTEXPR void *operator()() NOEXCEPT {
-		return VAL_INIT;
-	}
-	void operator()(void *handle) NOEXCEPT {
-		const boost::recursive_mutex::scoped_lock lock(g_mutex);
-		if(::dlclose(handle) != 0){
-			LOG_POSEIDON_WARNING("Error unloading dynamic library: ", ::dlerror());
+	struct DynamicLibraryCloser {
+		CONSTEXPR void *operator()() NOEXCEPT {
+			return VAL_INIT;
 		}
-	}
-};
-
+		void operator()(void *handle) NOEXCEPT {
+			const boost::recursive_mutex::scoped_lock lock(g_mutex);
+			if(::dlclose(handle) != 0){
+				LOG_POSEIDON_WARNING("Error unloading dynamic library: ", ::dlerror());
+			}
+		}
+	};
 }
 
-class Poseidon::Module : NONCOPYABLE {
+class Module : NONCOPYABLE {
 private:
 	const UniqueHandle<DynamicLibraryCloser> m_handle;
 	const SharedNts m_realPath;
@@ -279,4 +278,6 @@ void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii){
 void ModuleDepository::unregisterModuleRaii(ModuleRaiiBase *raii){
 	const boost::recursive_mutex::scoped_lock lock(g_mutex);
 	g_moduleRaiis.erase<MRIDX_RAII>(raii);
+}
+
 }

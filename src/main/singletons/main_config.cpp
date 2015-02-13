@@ -6,30 +6,29 @@
 #include "../config_file.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	ConfigFile g_config;
 
-ConfigFile g_config;
-
-std::string getRealPath(const char *path){
-	std::string ret;
-	char *realPath = NULLPTR;
-	try {
-		realPath = ::realpath(path, NULLPTR);
-		if(!realPath){
-			LOG_POSEIDON_ERROR("Could not resolve path: ", path);
-			DEBUG_THROW(SystemError);
+	std::string getRealPath(const char *path){
+		std::string ret;
+		char *realPath = NULLPTR;
+		try {
+			realPath = ::realpath(path, NULLPTR);
+			if(!realPath){
+				LOG_POSEIDON_ERROR("Could not resolve path: ", path);
+				DEBUG_THROW(SystemError);
+			}
+			ret = realPath;
+			::free(realPath);
+		} catch(...){
+			::free(realPath);
+			throw;
 		}
-		ret = realPath;
-		::free(realPath);
-	} catch(...){
-		::free(realPath);
-		throw;
+		return ret;
 	}
-	return ret;
-}
-
 }
 
 void MainConfig::setRunPath(const char *path){
@@ -45,4 +44,6 @@ void MainConfig::reload(){
 }
 const ConfigFile &MainConfig::getConfigFile(){
 	return g_config;
+}
+
 }

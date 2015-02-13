@@ -6,7 +6,8 @@
 #include "file.hpp"
 #include "log.hpp"
 #include "exception.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 ConfigFile::ConfigFile(){
 }
@@ -68,4 +69,6 @@ int ConfigFile::loadNoThrow(const char *path){
 	} catch(SystemError &e){
 		return e.code();
 	}
+}
+
 }

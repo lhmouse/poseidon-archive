@@ -3,7 +3,10 @@
 
 #include "precompiled.hpp"
 #include "session_base.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 SessionBase::~SessionBase(){
+}
+
 }

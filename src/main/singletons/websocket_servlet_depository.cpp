@@ -10,9 +10,10 @@
 #include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
-using namespace Poseidon;
 
-struct Poseidon::WebSocketServlet : NONCOPYABLE {
+namespace Poseidon {
+
+struct WebSocketServlet : NONCOPYABLE {
 	const SharedNts uri;
 	const boost::shared_ptr<WebSocketServletCallback> callback;
 
@@ -27,17 +28,15 @@ struct Poseidon::WebSocketServlet : NONCOPYABLE {
 };
 
 namespace {
+	std::size_t g_maxRequestLength			= 16 * 0x400;
+	unsigned long long g_keepAliveTimeout   = 30000;
 
-std::size_t g_maxRequestLength			= 16 * 0x400;
-unsigned long long g_keepAliveTimeout   = 30000;
+	typedef std::map<std::size_t,
+		std::map<SharedNts, boost::weak_ptr<WebSocketServlet> >
+		> ServletMap;
 
-typedef std::map<std::size_t,
-	std::map<SharedNts, boost::weak_ptr<WebSocketServlet> >
-	> ServletMap;
-
-boost::shared_mutex g_mutex;
-ServletMap g_servlets;
-
+	boost::shared_mutex g_mutex;
+	ServletMap g_servlets;
 }
 
 void WebSocketServletDepository::start(){
@@ -111,4 +110,6 @@ boost::shared_ptr<const WebSocketServletCallback> WebSocketServletDepository::ge
 		return VAL_INIT;
 	}
 	return servlet->callback;
+}
+
 }

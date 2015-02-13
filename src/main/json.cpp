@@ -5,7 +5,8 @@
 #include "json.hpp"
 #include "exception.hpp"
 #include <iomanip>
-using namespace Poseidon;
+
+namespace Poseidon {
 
 void JsonObject::dump(std::ostream &os) const {
 	os <<'{';
@@ -393,4 +394,6 @@ JsonObject JsonParser::parseObject(std::istream &is){
 }
 JsonArray JsonParser::parseArray(std::istream &is){
 	return acceptArray(is >>std::skipws);
+}
+
 }

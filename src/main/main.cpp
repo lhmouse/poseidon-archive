@@ -19,77 +19,80 @@
 #include "singletons/event_dispatcher.hpp"
 #include "singletons/profile_depository.hpp"
 #include "profiler.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
-
-void sigTermProc(int){
-	LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");
-	JobDispatcher::quitModal();
-}
-
-void sigIntProc(int){
-	static const boost::uint64_t KILL_TIMER_EXPIRES = 5000;
-	static boost::uint64_t s_killTimer = 0;
-
-	// 系统启动的时候这个时间是从 0 开始的，如果这时候按下 Ctrl+C 就会立即终止。
-	// 因此将计时器的起点设为该区间以外。
-	const AUTO(now, getFastMonoClock() + KILL_TIMER_EXPIRES + 1);
-	if(s_killTimer + KILL_TIMER_EXPIRES < now){
-		s_killTimer = now + KILL_TIMER_EXPIRES;
+	void sigTermProc(int){
+		LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");
+		JobDispatcher::quitModal();
 	}
-	if(s_killTimer <= now){
-		LOG_POSEIDON_FATAL("Received SIGINT, will now terminate abnormally...");
-		::raise(SIGKILL);
-	} else {
-		LOG_POSEIDON_WARNING("Received SIGINT, trying to exit gracefully... If I don't terminate in ",
-			KILL_TIMER_EXPIRES, " milliseconds, press ^C again.");
-		::raise(SIGTERM);
-	}
-}
 
-template<typename T>
-struct RaiiSingletonRunner : NONCOPYABLE {
-	RaiiSingletonRunner(){
-		T::start();
+	void sigIntProc(int){
+		static const boost::uint64_t KILL_TIMER_EXPIRES = 5000;
+		static boost::uint64_t s_killTimer = 0;
+
+		// 系统启动的时候这个时间是从 0 开始的，如果这时候按下 Ctrl+C 就会立即终止。
+		// 因此将计时器的起点设为该区间以外。
+		const AUTO(now, getFastMonoClock() + KILL_TIMER_EXPIRES + 1);
+		if(s_killTimer + KILL_TIMER_EXPIRES < now){
+			s_killTimer = now + KILL_TIMER_EXPIRES;
+		}
+		if(s_killTimer <= now){
+			LOG_POSEIDON_FATAL("Received SIGINT, will now terminate abnormally...");
+			::raise(SIGKILL);
+		} else {
+			LOG_POSEIDON_WARNING("Received SIGINT, trying to exit gracefully... If I don't terminate in ",
+				KILL_TIMER_EXPIRES, " milliseconds, press ^C again.");
+			::raise(SIGTERM);
+		}
 	}
-	~RaiiSingletonRunner(){
-		T::stop();
-	}
-};
+
+	template<typename T>
+	struct RaiiSingletonRunner : NONCOPYABLE {
+		RaiiSingletonRunner(){
+			T::start();
+		}
+		~RaiiSingletonRunner(){
+			T::stop();
+		}
+	};
 
 #define START(x_)	const RaiiSingletonRunner<x_> UNIQUE_ID
 
-void run(){
-	PROFILE_ME;
+	void run(){
+		PROFILE_ME;
 
-	START(MySqlDaemon);
-	START(JobDispatcher);
-	START(TimerDaemon);
-	START(EpollDaemon);
+		START(MySqlDaemon);
+		START(JobDispatcher);
+		START(TimerDaemon);
+		START(EpollDaemon);
 
-	START(CbppServletDepository);
-	START(HttpServletDepository);
-	START(WebSocketServletDepository);
-	START(EventDispatcher);
+		START(CbppServletDepository);
+		START(HttpServletDepository);
+		START(WebSocketServletDepository);
+		START(EventDispatcher);
 
-	START(SystemHttpServer);
-	START(ModuleDepository);
+		START(SystemHttpServer);
+		START(ModuleDepository);
 
-	const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
-	for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
-		ModuleDepository::load(it->c_str());
+		const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
+		for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
+			ModuleDepository::load(it->c_str());
+		}
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
+		MySqlDaemon::waitForAllAsyncOperations();
+
+		JobDispatcher::doModal();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
-	MySqlDaemon::waitForAllAsyncOperations();
-
-	JobDispatcher::doModal();
 }
 
 }
 
 int main(int argc, char **argv){
+	using namespace Poseidon;
+
 	Logger::setThreadTag("P   "); // Primary
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "-------------------------- Starting up -------------------------");
 

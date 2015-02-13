@@ -7,41 +7,40 @@
 #include <unistd.h>
 #include "atomic.hpp"
 #include "utilities.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	struct LevelItem {
+		char text[16];
+		char color;
+		bool highlighted;
+	};
 
-struct LevelItem {
-	char text[16];
-	char color;
-	bool highlighted;
-};
+	const LevelItem LEVEL_ITEMS[] = {
+		{ "FATAL", '5', 1 },	// 粉色
+		{ "ERROR", '1', 1 },	// 红色
+		{ "WARN ", '3', 1 },	// 黄色
+		{ "INFO ", '2', 0 },	// 绿色
+		{ "DEBUG", '6', 0 },	// 青色
+		{ "TRACE", '4', 1 },	// 亮蓝
+	};
 
-const LevelItem LEVEL_ITEMS[] = {
-	{ "FATAL", '5', 1 },	// 粉色
-	{ "ERROR", '1', 1 },	// 红色
-	{ "WARN ", '3', 1 },	// 黄色
-	{ "INFO ", '2', 0 },	// 绿色
-	{ "DEBUG", '6', 0 },	// 青色
-	{ "TRACE", '4', 1 },	// 亮蓝
-};
+	volatile unsigned long long g_mask = -1ull;
 
-volatile unsigned long long g_mask = -1ull;
+	volatile bool g_mutexInited = false; // 得对付下静态对象的构造顺序问题。
+	boost::mutex g_mutex;
 
-volatile bool g_mutexInited = false; // 得对付下静态对象的构造顺序问题。
-boost::mutex g_mutex;
+	__thread char t_tag[5] = "----";
 
-__thread char t_tag[5] = "----";
-
-struct MutexGuard : NONCOPYABLE {
-	MutexGuard(){
-		atomicStore(g_mutexInited, true, ATOMIC_RELEASE);
-	}
-	~MutexGuard(){
-		atomicStore(g_mutexInited, false, ATOMIC_RELEASE);
-	}
-} g_mutexGuard;
-
+	struct MutexGuard : NONCOPYABLE {
+		MutexGuard(){
+			atomicStore(g_mutexInited, true, ATOMIC_RELEASE);
+		}
+		~MutexGuard(){
+			atomicStore(g_mutexInited, false, ATOMIC_RELEASE);
+		}
+	} g_mutexGuard;
 }
 
 unsigned long long Logger::getMask() NOEXCEPT {
@@ -159,4 +158,6 @@ Logger::~Logger() NOEXCEPT {
 		std::fwrite(line.data(), line.size(), sizeof(char), stdout);
 	} catch(...){
 	}
+}
+
 }

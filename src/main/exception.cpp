@@ -5,7 +5,8 @@
 #include "exception.hpp"
 #include "log.hpp"
 #include "utilities.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 Exception::Exception(const char *file, std::size_t line, SharedNts message)
 	: m_file(file), m_line(line), m_message(STD_MOVE(message))
@@ -27,4 +28,6 @@ ProtocolException::ProtocolException(const char *file, std::size_t line, SharedN
 {
 }
 ProtocolException::~ProtocolException() NOEXCEPT {
+}
+
 }

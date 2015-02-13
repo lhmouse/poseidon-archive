@@ -7,35 +7,34 @@
 #include <openssl/ssl.h>
 #include "exception.hpp"
 #include "log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	void setErrnoBySslRet(::SSL *ssl, int ret){
+		const int err = ::SSL_get_error(ssl, ret);
+		LOG_POSEIDON_DEBUG("SSL ret = ", ret, ", error = ", err);
+		switch(err){
+		case SSL_ERROR_NONE:
+		case SSL_ERROR_ZERO_RETURN:
+			errno = 0;
+			break;
 
-void setErrnoBySslRet(::SSL *ssl, int ret){
-	const int err = ::SSL_get_error(ssl, ret);
-	LOG_POSEIDON_DEBUG("SSL ret = ", ret, ", error = ", err);
-	switch(err){
-	case SSL_ERROR_NONE:
-	case SSL_ERROR_ZERO_RETURN:
-		errno = 0;
-		break;
+		case SSL_ERROR_WANT_READ:
+		case SSL_ERROR_WANT_WRITE:
+		case SSL_ERROR_WANT_CONNECT:
+		case SSL_ERROR_WANT_ACCEPT:
+			errno = EAGAIN;
+			break;
 
-	case SSL_ERROR_WANT_READ:
-	case SSL_ERROR_WANT_WRITE:
-	case SSL_ERROR_WANT_CONNECT:
-	case SSL_ERROR_WANT_ACCEPT:
-		errno = EAGAIN;
-		break;
+		case SSL_ERROR_SYSCALL:
+			break;
 
-	case SSL_ERROR_SYSCALL:
-		break;
-
-	default:
-		errno = EPERM;
-		break;
+		default:
+			errno = EPERM;
+			break;
+		}
 	}
-}
-
 }
 
 SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
@@ -82,4 +81,6 @@ long SslFilterBase::write(const void *data, unsigned long size){
 		setErrnoBySslRet(m_ssl.get(), ret);
 	}
 	return ret;
+}
+
 }

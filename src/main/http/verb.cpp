@@ -4,25 +4,22 @@
 #include "../precompiled.hpp"
 #include "verb.hpp"
 #include <string.h>
-using namespace Poseidon;
-
-namespace {
-
-const char VERB_TABLE[][16] = {
-	"INVALID_VERB",
-	"GET",
-	"POST",
-	"HEAD",
-	"PUT",
-	"DELETE",
-	"TRACE",
-	"CONNECT",
-	"OPTIONS",
-};
-
-}
 
 namespace Poseidon {
+
+namespace {
+	const char VERB_TABLE[][16] = {
+		"INVALID_VERB",
+		"GET",
+		"POST",
+		"HEAD",
+		"PUT",
+		"DELETE",
+		"TRACE",
+		"CONNECT",
+		"OPTIONS",
+	};
+}
 
 HttpVerb httpVerbFromString(const char *str){
 	const unsigned len = ::strlen(str);

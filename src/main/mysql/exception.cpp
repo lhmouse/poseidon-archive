@@ -4,7 +4,8 @@
 #include "../precompiled.hpp"
 #include "exception.hpp"
 #include "../log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 MySqlException::MySqlException(const char *file, std::size_t line,
 	unsigned code, SharedNts message)
@@ -13,4 +14,6 @@ MySqlException::MySqlException(const char *file, std::size_t line,
 	LOG_POSEIDON_ERROR("MySqlException: code = ", code, ", what = ", what());
 }
 MySqlException::~MySqlException() NOEXCEPT {
+}
+
 }

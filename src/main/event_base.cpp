@@ -4,11 +4,14 @@
 #include "precompiled.hpp"
 #include "event_base.hpp"
 #include "singletons/event_dispatcher.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 EventBaseWithoutId::~EventBaseWithoutId(){
 }
 
 void EventBaseWithoutId::raise(){
 	EventDispatcher::raise(shared_from_this());
+}
+
 }

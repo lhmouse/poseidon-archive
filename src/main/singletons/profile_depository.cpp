@@ -10,45 +10,44 @@
 #include "../atomic.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 namespace {
+	struct ProfileKey {
+		const char *file;
+		unsigned long line;
+		const char *func;
 
-struct ProfileKey {
-	const char *file;
-	unsigned long line;
-	const char *func;
-
-	ProfileKey(const char *file_, unsigned long line_, const char *func_)
-		: file(file_), line(line_), func(func_)
-	{
-	}
-
-	bool operator<(const ProfileKey &rhs) const {
-		const int fileCmp = std::strcmp(file, rhs.file);
-		if(fileCmp != 0){
-			return fileCmp < 0;
+		ProfileKey(const char *file_, unsigned long line_, const char *func_)
+			: file(file_), line(line_), func(func_)
+		{
 		}
-		return line < rhs.line;
-	}
-};
 
-struct ProfileCounters {
-	volatile unsigned long long samples;
-	volatile unsigned long long nsTotal;
-	volatile unsigned long long nsExclusive;
+		bool operator<(const ProfileKey &rhs) const {
+			const int fileCmp = std::strcmp(file, rhs.file);
+			if(fileCmp != 0){
+				return fileCmp < 0;
+			}
+			return line < rhs.line;
+		}
+	};
 
-	ProfileCounters()
-		: samples(0), nsTotal(0), nsExclusive(0)
-	{
-	}
-};
+	struct ProfileCounters {
+		volatile unsigned long long samples;
+		volatile unsigned long long nsTotal;
+		volatile unsigned long long nsExclusive;
 
-bool g_enabled = true;
+		ProfileCounters()
+			: samples(0), nsTotal(0), nsExclusive(0)
+		{
+		}
+	};
 
-boost::shared_mutex g_mutex;
-std::map<ProfileKey, ProfileCounters> g_profile;
+	bool g_enabled = true;
 
+	boost::shared_mutex g_mutex;
+	std::map<ProfileKey, ProfileCounters> g_profile;
 }
 
 void ProfileDepository::start(){
@@ -112,4 +111,6 @@ std::vector<ProfileSnapshotItem> ProfileDepository::snapshot(){
 		}
 	}
 	return ret;
+}
+
 }

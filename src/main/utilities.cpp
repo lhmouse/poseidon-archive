@@ -10,15 +10,12 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
-using namespace Poseidon;
-
-namespace {
-
-boost::once_flag g_tzsetFlag;
-
-}
 
 namespace Poseidon {
+
+namespace {
+	boost::once_flag g_tzsetFlag;
+}
 
 boost::uint64_t getUtcTime(){
 	::timespec ts;
@@ -60,9 +57,7 @@ double getHiResMonoClock() NOEXCEPT {
 }
 
 namespace {
-
-__thread boost::uint64_t t_randSeed = 0;
-
+	__thread boost::uint64_t t_randSeed = 0;
 }
 
 boost::uint32_t rand32(){

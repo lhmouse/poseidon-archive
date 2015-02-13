@@ -10,9 +10,10 @@
 #include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
-using namespace Poseidon;
 
-struct Poseidon::HttpServlet : NONCOPYABLE {
+namespace Poseidon {
+
+struct HttpServlet : NONCOPYABLE {
 	const SharedNts uri;
 	const boost::shared_ptr<const HttpServletCallback> callback;
 
@@ -27,49 +28,47 @@ struct Poseidon::HttpServlet : NONCOPYABLE {
 };
 
 namespace {
+	std::size_t g_maxRequestLength = 16 * 0x400;
+	unsigned long long g_keepAliveTimeout = 5000;
 
-std::size_t g_maxRequestLength = 16 * 0x400;
-unsigned long long g_keepAliveTimeout = 5000;
+	typedef std::map<std::size_t,
+		std::map<SharedNts, boost::weak_ptr<HttpServlet> >
+		> ServletMap;
 
-typedef std::map<std::size_t,
-	std::map<SharedNts, boost::weak_ptr<HttpServlet> >
-	> ServletMap;
+	boost::shared_mutex g_mutex;
+	ServletMap g_servlets;
 
-boost::shared_mutex g_mutex;
-ServletMap g_servlets;
+	bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
+		std::size_t category, const char *uri, std::size_t uriLen)
+	{
+		const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
 
-bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
-	std::size_t category, const char *uri, std::size_t uriLen)
-{
-	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
-
-	const AUTO(it, g_servlets.find(category));
-	if(it == g_servlets.end()){
-		LOG_POSEIDON_DEBUG("No servlet in category ", category);
-		return false;
-	}
-
-	AUTO_REF(servletsInCategory, it->second);
-	const AUTO(sit, servletsInCategory.lower_bound(SharedNts::observe(uri)));
-	if(sit == servletsInCategory.end()){
-		LOG_POSEIDON_DEBUG("No more handlers: ", uri);
-		return false;
-	}
-	const std::size_t len = std::strlen(sit->first.get());
-	if((len < uriLen) || (std::memcmp(sit->first.get(), uri, uriLen) != 0)){
-		LOG_POSEIDON_DEBUG("No more handlers: ", uri);
-		return false;
-	}
-	if(len == uriLen){
-		const AUTO(servlet, sit->second.lock());
-		if(servlet){
-			LOG_POSEIDON_DEBUG("Found handler: ", sit->first);
-			ret = servlet->callback;
+		const AUTO(it, g_servlets.find(category));
+		if(it == g_servlets.end()){
+			LOG_POSEIDON_DEBUG("No servlet in category ", category);
+			return false;
 		}
-	}
-	return true;
-}
 
+		AUTO_REF(servletsInCategory, it->second);
+		const AUTO(sit, servletsInCategory.lower_bound(SharedNts::observe(uri)));
+		if(sit == servletsInCategory.end()){
+			LOG_POSEIDON_DEBUG("No more handlers: ", uri);
+			return false;
+		}
+		const std::size_t len = std::strlen(sit->first.get());
+		if((len < uriLen) || (std::memcmp(sit->first.get(), uri, uriLen) != 0)){
+			LOG_POSEIDON_DEBUG("No more handlers: ", uri);
+			return false;
+		}
+		if(len == uriLen){
+			const AUTO(servlet, sit->second.lock());
+			if(servlet){
+				LOG_POSEIDON_DEBUG("Found handler: ", sit->first);
+				ret = servlet->callback;
+			}
+		}
+		return true;
+	}
 }
 
 void HttpServletDepository::start(){
@@ -167,4 +166,6 @@ boost::shared_ptr<const HttpServletCallback> HttpServletDepository::getServlet(
 		}
 	}
 	return ret;
+}
+
 }

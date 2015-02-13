@@ -4,7 +4,8 @@
 #include "../../precompiled.hpp"
 #include "exception.hpp"
 #include "../../log.hpp"
-using namespace Poseidon;
+
+namespace Poseidon {
 
 WebSocketException::WebSocketException(const char *file, std::size_t line,
 	WebSocketStatus status, SharedNts message)
@@ -13,4 +14,6 @@ WebSocketException::WebSocketException(const char *file, std::size_t line,
 	LOG_POSEIDON_ERROR("WebSocketException: status = ", status, ", what = ", what());
 }
 WebSocketException::~WebSocketException() NOEXCEPT {
+}
+
 }
