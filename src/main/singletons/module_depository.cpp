@@ -199,12 +199,21 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 
 	AUTO(module, boost::make_shared<Module>(STD_MOVE(handle), realPath, baseAddr));
 
+	void *const preInitSym = ::dlsym(handle.get(), "poseidonModulePreInit");
+	if(!preInitSym){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "poseidonModulePreInit() not found: ", realPath);
+	} else {
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Invoking poseidonModulePreInit(): ", realPath);
+		(*reinterpret_cast<void (*)()>(preInitSym))();
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done invoking poseidonModulePreInit(): ", realPath);
+	}
+
 	const AUTO(raiiRange, g_moduleRaiis.equalRange<MRIDX_BASE_ADDR>(baseAddr));
 	std::vector<boost::shared_ptr<void> > handles;
 	if(raiiRange.first == raiiRange.second){
-		LOG_POSEIDON_INFO("No initialization is required: ", realPath);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "No initialization is required: ", realPath);
 	} else {
-		LOG_POSEIDON_INFO("Initializing module: ", realPath);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing module: ", realPath);
 		for(AUTO(it, raiiRange.first); it != raiiRange.second; ++it){
 			boost::shared_ptr<void> handle(it->raii->init());
 			if(!handle){
@@ -213,7 +222,16 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 			handles.push_back(VAL_INIT);
 			handles.back().swap(handle);
 		}
-		LOG_POSEIDON_INFO("Done initializing module: ", realPath);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing module: ", realPath);
+	}
+
+	void *const postInitSym = ::dlsym(handle.get(), "poseidonModulePostInit");
+	if(!postInitSym){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "poseidonModulePostInit() not found: ", realPath);
+	} else {
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Invoking poseidonModulePostInit(): ", realPath);
+		(*reinterpret_cast<void (*)()>(postInitSym))();
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done invoking poseidonModulePostInit(): ", realPath);
 	}
 
 	const AUTO(result, g_modules.insert(ModuleMapElement(module)));
