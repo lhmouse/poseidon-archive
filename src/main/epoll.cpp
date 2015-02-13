@@ -119,7 +119,6 @@ void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 }
 void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) const {
 	const boost::mutex::scoped_lock lock(m_mutex);
-
 	sessions.reserve(m_sessions->size());
 	for(AUTO(it, m_sessions->begin()); it != m_sessions->end(); ++it){
 		sessions.push_back(it->session);
@@ -127,7 +126,6 @@ void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) 
 }
 void Epoll::clear(){
 	const boost::mutex::scoped_lock lock(m_mutex);
-
 	AUTO(it, m_sessions->begin());
 	while(it != m_sessions->end()){
 		::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, it->session->getFd(), NULLPTR);
@@ -148,6 +146,8 @@ std::size_t Epoll::wait(unsigned timeout){
 	const AUTO(now, getFastMonoClock());
 	for(unsigned i = 0; i < (unsigned)count; ++i){
 		const ::epoll_event &event = events[i];
+
+		boost::shared_ptr<TcpSessionBase> session;
 		SessionMap::delegate_container::nth_index<IDX_FD>::type::iterator it;
 		{
 			const boost::mutex::scoped_lock lock(m_mutex);
@@ -156,8 +156,8 @@ std::size_t Epoll::wait(unsigned timeout){
 				LOG_POSEIDON_WARNING("Session is not in epoll?");
 				continue;
 			}
+			session = it->session;
 		}
-		AUTO_REF(session, it->session);
 
 		if(event.events & EPOLLHUP){
 			LOG_POSEIDON_INFO("Socket hung up, remote is ", session->getRemoteInfo());
