@@ -77,7 +77,7 @@ struct ModuleMapElement {
 	const SharedNts realPath;
 	void *const baseAddr;
 
-	mutable std::vector<boost::shared_ptr<void> > handles;
+	mutable std::vector<boost::shared_ptr<const void> > handles;
 
 	explicit ModuleMapElement(boost::shared_ptr<Module> module_)
 		: module(STD_MOVE(module_)), handle(module->handle())
@@ -200,13 +200,13 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 	AUTO(module, boost::make_shared<Module>(STD_MOVE(handle), realPath, baseAddr));
 
 	const AUTO(raiiRange, g_moduleRaiis.equalRange<MRIDX_BASE_ADDR>(baseAddr));
-	std::vector<boost::shared_ptr<void> > handles;
+	std::vector<boost::shared_ptr<const void> > handles;
 	if(raiiRange.first == raiiRange.second){
 		LOG_POSEIDON_INFO("No initialization is required: ", realPath);
 	} else {
 		LOG_POSEIDON_INFO("Initializing module: ", realPath);
 		for(AUTO(it, raiiRange.first); it != raiiRange.second; ++it){
-			boost::shared_ptr<void> handle(it->raii->init());
+			boost::shared_ptr<const void> handle(it->raii->init());
 			if(!handle){
 				continue;
 			}

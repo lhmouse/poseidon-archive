@@ -15,7 +15,7 @@ public:
 	virtual ~ModuleRaiiBase();
 
 public:
-	virtual boost::shared_ptr<void> init() const = 0;
+	virtual boost::shared_ptr<const void> init() const = 0;
 };
 
 }
@@ -23,7 +23,7 @@ public:
 #define MODULE_RAII_BEGIN	\
 	namespace {	\
 		class UNIQUE_ID : public ::Poseidon::ModuleRaiiBase {	\
-			::boost::shared_ptr<void> init() const OVERRIDE FINAL {
+			::boost::shared_ptr<const void> init() const OVERRIDE FINAL {
 
 #define MODULE_RAII_END	\
 			}	\
