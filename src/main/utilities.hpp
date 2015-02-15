@@ -148,6 +148,23 @@ struct HexDumper {
 
 extern std::ostream &operator<<(std::ostream &os, const HexDumper &dumper);
 
+inline std::string toUpperCase(std::string src){
+	for(AUTO(it, src.begin()); it != src.end(); ++it){
+		if(('a' <= *it) && (*it <= 'z')){
+			*it -= 0x20;
+		}
+	}
+	return STD_MOVE(src);
+}
+inline std::string toLowerCase(std::string src){
+	for(AUTO(it, src.begin()); it != src.end(); ++it){
+		if(('A' <= *it) && (*it <= 'Z')){
+			*it += 0x20;
+		}
+	}
+	return STD_MOVE(src);
+}
+
 }
 
 #endif
