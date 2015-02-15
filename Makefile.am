@@ -50,7 +50,8 @@ pkginclude_HEADERS = \
 	src/main/ssl_filter_base.hpp	\
 	src/main/sock_addr.hpp	\
 	src/main/virtual_shared_from_this.hpp	\
-	src/main/json.hpp
+	src/main/json.hpp	\
+	src/main/module_config.hpp
 
 pkginclude_singletonsdir = $(pkgincludedir)/singletons
 pkginclude_singletons_HEADERS = \
