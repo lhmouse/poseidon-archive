@@ -3,6 +3,7 @@
 
 #include "cxx_ver.hpp"
 #include "config_file.hpp"
+#include "module_raii.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -14,12 +15,12 @@
 		extern ::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weakConfig_;	\
 		extern const char *getConfigFileName_();	\
 		MODULE_RAII(	\
-			AUTO(config_, g_weakConfig.lock());	\
+			AUTO(config_, g_weakConfig_.lock());	\
 			if(!config_){	\
 				AUTO(newConfig_, ::boost::make_shared< ::Poseidon::ConfigFile>());	\
 				newConfig_->load(getConfigFileName_());	\
-				g_weakConfig_ = config_;	\
-				config_.swap(newConfig_);	\
+				g_weakConfig_ = newConfig_;	\
+				config_ = newConfig_;	\
 			}	\
 			return config_;	\
 		)	\
@@ -32,7 +33,7 @@
 	namespace ModuleConfigImpl_ {	\
 		::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weakConfig_;	\
 		const char *getConfigFileName_(){	\
-			return fileName;	\
+			return fileName_;	\
 		}	\
 	}
 
