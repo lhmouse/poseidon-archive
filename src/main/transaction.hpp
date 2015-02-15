@@ -6,12 +6,17 @@
 
 #include "cxx_util.hpp"
 #include <vector>
+#include <exception>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
 namespace Poseidon {
 
 class TransactionItemBase : NONCOPYABLE {
+protected:
+	static void logIgnoredStdException(const char *what) NOEXCEPT;
+	static void logIgnoredUnknownException() NOEXCEPT;
+
 public:
 	virtual ~TransactionItemBase();
 
@@ -39,10 +44,22 @@ public:
 		return m_lock();
 	}
 	virtual void unlock() NOEXCEPT OVERRIDE {
-		m_unlock();
+		try {
+			m_unlock();
+		} catch(std::exception &e){
+			logIgnoredStdException(e.what());
+		} catch(...){
+			logIgnoredUnknownException();
+		}
 	}
 	virtual void commit() NOEXCEPT OVERRIDE {
-		m_commit();
+		try {
+			m_commit();
+		} catch(std::exception &e){
+			logIgnoredStdException(e.what());
+		} catch(...){
+			logIgnoredUnknownException();
+		}
 	}
 };
 

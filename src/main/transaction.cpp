@@ -3,8 +3,17 @@
 
 #include "precompiled.hpp"
 #include "transaction.hpp"
+#include "log.hpp"
+#include "profiler.hpp"
 
 namespace Poseidon {
+
+void TransactionItemBase::logIgnoredStdException(const char *what) NOEXCEPT {
+	LOG_POSEIDON_ERROR("Ignored an std::exception in a transaction operation: what = ", what);
+}
+void TransactionItemBase::logIgnoredUnknownException() NOEXCEPT {
+	LOG_POSEIDON_ERROR("Ignored an unknown exception in a transaction operation");
+}
 
 TransactionItemBase::~TransactionItemBase(){
 }
@@ -20,6 +29,8 @@ void Transaction::clear(){
 }
 
 bool Transaction::commit() const {
+	PROFILE_ME;
+
 	AUTO(it, m_items.begin());
 	try {
 		while(it != m_items.end()){
