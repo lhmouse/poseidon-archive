@@ -15,11 +15,16 @@ namespace Poseidon {
 class CsvParser {
 private:
 	std::vector<OptionalMap> m_data;
+	std::size_t m_row;
 
 public:
-	CsvParser(){
+	CsvParser()
+		: m_row(0)
+	{
 	}
-	explicit CsvParser(const char *file){
+	explicit CsvParser(const char *file)
+		: m_row(0)
+	{
 		load(file);
 	}
 
@@ -28,22 +33,35 @@ public:
 	bool loadNoThrow(const char *file);
 
 	bool empty() const {
-		return m_data.size();
+		return m_data.empty();
 	}
 	void clear(){
 		m_data.clear();
+		m_row = 0;
 	}
 
 	std::size_t rows() const {
 		return m_data.size();
 	}
-	const std::string &getRaw(std::size_t row, const char *key) const {
-		return m_data.at(row).get(key);
+	std::size_t tell() const {
+		return m_row;
+	}
+	std::size_t seek(std::size_t row){
+		if(row > m_data.size()){
+			throw std::out_of_range("Poseidon::CsvParser::seek");
+		}
+		const AUTO(old, m_row);
+		m_row = row;
+		return old;
+	}
+
+	const std::string &getRaw(const char *key) const {
+		return m_data.at(m_row).get(key);
 	}
 
 	template<typename T>
-	bool get(T &val, std::size_t row, const char *key) const {
-		const AUTO_REF(str, m_data.at(row).get(key));
+	bool get(T &val, const char *key) const {
+		const AUTO_REF(str, m_data.at(m_row).get(key));
 		if(str.empty()){
 			return false;
 		}
@@ -51,8 +69,8 @@ public:
 		return true;
 	}
 	template<typename T, typename DefaultT>
-	bool get(T &val, std::size_t row, const char *key, const DefaultT &defVal) const {
-		const AUTO_REF(str, m_data.at(row).get(key));
+	bool get(T &val, const char *key, const DefaultT &defVal) const {
+		const AUTO_REF(str, m_data.at(m_row).get(key));
 		if(str.empty()){
 			val = defVal;
 			return false;
@@ -61,16 +79,16 @@ public:
 		return true;
 	}
 	template<typename T, typename DefaultT>
-	T get(std::size_t row, const char *key, const DefaultT &defVal) const {
-		const AUTO_REF(str, m_data.at(row).get(key));
+	T get(const char *key, const DefaultT &defVal) const {
+		const AUTO_REF(str, m_data.at(m_row).get(key));
 		if(str.empty()){
 			return T(defVal);
 		}
 		return boost::lexical_cast<T>(str);
 	}
 	template<typename T>
-	T get(std::size_t row, const char *key) const {
-		const AUTO_REF(str, m_data.at(row).get(key));
+	T get(const char *key) const {
+		const AUTO_REF(str, m_data.at(m_row).get(key));
 		if(str.empty()){
 			return T();
 		}

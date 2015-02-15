@@ -104,12 +104,12 @@ namespace {
 		}
 
 	public:
-		void doExecuteSql(const std::string &sql){
+		void doExecuteSql(const char *sql, std::size_t len){
 			m_result.reset();
 			m_columns.clear();
 			m_row = NULLPTR;
 
-			if(::mysql_real_query(m_mysql.get(), sql.data(), sql.size()) != 0){
+			if(::mysql_real_query(m_mysql.get(), sql, len) != 0){
 				THROW_MYSQL_EXCEPTION;
 			}
 
@@ -250,8 +250,8 @@ void MySqlConnection::create(boost::scoped_ptr<MySqlConnection> &conn,
 MySqlConnection::~MySqlConnection(){
 }
 
-void MySqlConnection::executeSql(const std::string &sql){
-	static_cast<MySqlConnectionDelegate &>(*this).doExecuteSql(sql);
+void MySqlConnection::executeSql(const char *sql, std::size_t len){
+	static_cast<MySqlConnectionDelegate &>(*this).doExecuteSql(sql, len);
 }
 
 boost::uint64_t MySqlConnection::getInsertId() const {

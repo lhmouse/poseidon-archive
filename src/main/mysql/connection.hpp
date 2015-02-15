@@ -6,6 +6,7 @@
 
 #include "../cxx_util.hpp"
 #include <string>
+#include <cstring>
 #include <boost/cstdint.hpp>
 #include <boost/scoped_ptr.hpp>
 
@@ -33,7 +34,13 @@ public:
 	virtual ~MySqlConnection() = 0;
 
 public:
-	void executeSql(const std::string &sql);
+	void executeSql(const char *sql, std::size_t len);
+	void executeSql(const char *sql){
+		executeSql(sql, std::strlen(sql));
+	}
+	void executeSql(const std::string &sql){
+		executeSql(sql.data(), sql.size());
+	}
 
 	boost::uint64_t getInsertId() const;
 	bool fetchRow();

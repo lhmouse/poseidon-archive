@@ -121,6 +121,7 @@ void CsvParser::load(const char *file){
 
 	LOG_POSEIDON_DEBUG("Done loading CSV file: ", file);
 	m_data.swap(data);
+	m_row = 0;
 }
 
 bool CsvParser::loadNoThrow(const char *file){
