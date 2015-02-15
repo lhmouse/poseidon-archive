@@ -22,12 +22,19 @@ MySqlObjectBase::MySqlObjectBase()
 MySqlObjectBase::~MySqlObjectBase(){
 }
 
-void MySqlObjectBase::invalidate() const {
-	if(!isAutoSavingEnabled()){
-		return;
+bool MySqlObjectBase::invalidate() const NOEXCEPT {
+	try {
+		if(isAutoSavingEnabled()){
+			MySqlDaemon::pendForSaving(virtualSharedFromThis<MySqlObjectBase>(),
+				true, MySqlAsyncSaveCallback(), MySqlExceptionCallback());
+			return true;
+		}
+	} catch(std::exception &e){
+		LOG_POSEIDON_ERROR("std::exception thrown while queueing MySQL operation: what = ", e.what());
+	} catch(...){
+		LOG_POSEIDON_ERROR("Unknown exception thrown while queueing MySQL operation");
 	}
-	MySqlDaemon::pendForSaving(virtualSharedFromThis<MySqlObjectBase>(),
-		true, MySqlAsyncSaveCallback(), MySqlExceptionCallback());
+	return false;
 }
 
 void MySqlObjectBase::asyncSave(bool toReplace,

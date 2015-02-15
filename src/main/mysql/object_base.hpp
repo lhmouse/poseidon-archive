@@ -44,7 +44,7 @@ protected:
 	~MySqlObjectBase();
 
 protected:
-	void invalidate() const;
+	bool invalidate() const NOEXCEPT;
 
 public:
 	bool isAutoSavingEnabled() const {
