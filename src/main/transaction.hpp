@@ -17,8 +17,8 @@ public:
 
 public:
 	virtual bool lock() = 0;
-	virtual void unlock() = 0;
-	virtual void commit() = 0;
+	virtual void unlock() NOEXCEPT = 0;
+	virtual void commit() NOEXCEPT = 0;
 };
 
 template<class LockT, class UnlockT, class CommitT>
@@ -38,17 +38,11 @@ public:
 	virtual bool lock() OVERRIDE {
 		return m_lock();
 	}
-	virtual void unlock() OVERRIDE {
-		try {
-			m_unlock();
-		} catch(...){
-		}
+	virtual void unlock() NOEXCEPT OVERRIDE {
+		m_unlock();
 	}
-	virtual void commit() OVERRIDE {
-		try {
-			m_commit();
-		} catch(...){
-		}
+	virtual void commit() NOEXCEPT OVERRIDE {
+		m_commit();
 	}
 };
 
