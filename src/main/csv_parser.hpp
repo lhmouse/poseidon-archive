@@ -37,12 +37,44 @@ public:
 	std::size_t rows() const {
 		return m_data.size();
 	}
-	const std::string &get(std::size_t row, const char *key) const {
+	const std::string &getRaw(std::size_t row, const char *key) const {
 		return m_data.at(row).get(key);
+	}
+
+	template<typename T>
+	bool get(T &val, std::size_t row, const char *key) const {
+		const AUTO_REF(str, m_data.at(row).get(key));
+		if(str.empty()){
+			return false;
+		}
+		val = boost::lexical_cast<T>(str);
+		return true;
+	}
+	template<typename T, typename DefaultT>
+	bool get(T &val, std::size_t row, const char *key, const DefaultT &defVal) const {
+		const AUTO_REF(str, m_data.at(row).get(key));
+		if(str.empty()){
+			val = defVal;
+			return false;
+		}
+		val = boost::lexical_cast<T>(str);
+		return true;
+	}
+	template<typename T, typename DefaultT>
+	T get(std::size_t row, const char *key, const DefaultT &defVal) const {
+		const AUTO_REF(str, m_data.at(row).get(key));
+		if(str.empty()){
+			return T(defVal);
+		}
+		return boost::lexical_cast<T>(str);
 	}
 	template<typename T>
 	T get(std::size_t row, const char *key) const {
-		return boost::lexical_cast<T>(get(row, key));
+		const AUTO_REF(str, m_data.at(row).get(key));
+		if(str.empty()){
+			return T();
+		}
+		return boost::lexical_cast<T>(str);
 	}
 };
 
