@@ -18,15 +18,8 @@ private:
 	std::size_t m_row;
 
 public:
-	CsvParser()
-		: m_row(0)
-	{
-	}
-	explicit CsvParser(const char *file)
-		: m_row(0)
-	{
-		load(file);
-	}
+	CsvParser();
+	explicit CsvParser(const char *file);
 
 public:
 	void load(const char *file);
@@ -35,10 +28,7 @@ public:
 	bool empty() const {
 		return m_data.empty();
 	}
-	void clear(){
-		m_data.clear();
-		m_row = 0;
-	}
+	void clear();
 
 	std::size_t rows() const {
 		return m_data.size();
@@ -46,13 +36,15 @@ public:
 	std::size_t tell() const {
 		return m_row;
 	}
-	std::size_t seek(std::size_t row){
-		if(row > m_data.size()){
-			throw std::out_of_range("Poseidon::CsvParser::seek");
+	std::size_t seek(std::size_t row);
+
+	bool fetchRow(){
+		const AUTO(newRow, m_row + 1);
+		if(newRow >= m_data.size()){
+			return false;
 		}
-		const AUTO(old, m_row);
-		m_row = row;
-		return old;
+		m_row = newRow;
+		return true;
 	}
 
 	const std::string &getRaw(const char *key) const {

@@ -9,6 +9,16 @@
 
 namespace Poseidon {
 
+CsvParser::CsvParser()
+	: m_row(static_cast<std::size_t>(-1))
+{
+}
+CsvParser::CsvParser(const char *file)
+	: m_row(static_cast<std::size_t>(-1))
+{
+	load(file);
+}
+
 void CsvParser::load(const char *file){
 	LOG_POSEIDON_DEBUG("Loading CSV file: ", file);
 
@@ -121,9 +131,8 @@ void CsvParser::load(const char *file){
 
 	LOG_POSEIDON_DEBUG("Done loading CSV file: ", file);
 	m_data.swap(data);
-	m_row = 0;
+	m_row = static_cast<std::size_t>(-1);
 }
-
 bool CsvParser::loadNoThrow(const char *file){
 	try {
 		load(file);
@@ -132,6 +141,20 @@ bool CsvParser::loadNoThrow(const char *file){
 		LOG_POSEIDON_ERROR("Error loading CSV file: ", e.what());
 		return false;
 	}
+}
+
+void CsvParser::clear(){
+	m_data.clear();
+	m_row = static_cast<std::size_t>(-1);
+}
+
+std::size_t CsvParser::seek(std::size_t row){
+	if((row != static_cast<std::size_t>(-1)) && (row >= m_data.size())){
+		DEBUG_THROW(Poseidon::Exception, Poseidon::SharedNts::observe("Row index is out of range"));
+	}
+	const AUTO(oldRow, m_row);
+	m_row = row;
+	return oldRow;
 }
 
 }
