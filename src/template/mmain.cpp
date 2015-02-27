@@ -340,51 +340,51 @@ void TestProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 
 }
 */
-MODULE_RAII(
+MODULE_RAII {
 	return HttpServletDepository::registerServlet(1, SharedNts::observe("/profile"), &profileProc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return HttpServletDepository::registerServlet(1, SharedNts::observe("/load"), &loadProc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return HttpServletDepository::registerServlet(1, SharedNts::observe("/unload"), &unloadProc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	AUTO(v, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
 	g_servlets = v;
 	return v;
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return EventDispatcher::registerListener<TestEvent1>(&event1Proc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return EventDispatcher::registerListener<TestEvent2>(&event2Proc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return WebSocketServletDepository::registerServlet(2, SharedNts::observe("/wstest"), &webSocketProc);
-)
+}
 /*
-MODULE_RAII(
+MODULE_RAII {
 	return CbppServletDepository::registerServlet(2, 100, &TestIntProc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return CbppServletDepository::registerServlet(2, 101, &TestUIntProc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return CbppServletDepository::registerServlet(2, 102, &TestStringProc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return CbppServletDepository::registerServlet(2, 103, &TestIntArrayProc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return CbppServletDepository::registerServlet(2, 104, &TestUIntArrayProc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return CbppServletDepository::registerServlet(2, 105, &TestStringArrayProc);
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	return CbppServletDepository::registerServlet(2, 106, &TestProc);
-)
+}
 */
 namespace {
 
@@ -394,7 +394,7 @@ void onClientClose(int id){
 
 }
 
-MODULE_RAII(
+MODULE_RAII {
 /*
 	LOG_POSEIDON_INFO("Connecting to github...");
 	AUTO(p, TestClient::create());
@@ -423,31 +423,31 @@ MODULE_RAII(
 	std::memcpy(req.a.at(1).b, "DEF", 3);
 	LOG_POSEIDON_FATAL(req);
 	return VAL_INIT;
-)
+}
 
-MODULE_RAII(
+MODULE_RAII {
 	AUTO(server, (boost::make_shared<CbppServer>(2,
 		IpPort(SharedNts("0.0.0.0"), 8850), NULLPTR, NULLPTR)));
 	EpollDaemon::registerServer(server);
 	return server;
-)
-MODULE_RAII(
+}
+MODULE_RAII {
 	AUTO(server, (boost::make_shared<HttpServer>(2,
 		IpPort(SharedNts("0.0.0.0"), 8860), NULLPTR, NULLPTR, std::vector<std::string>())));
 	EpollDaemon::registerServer(server);
 	return server;
-)
+}
 /*
-MODULE_RAII(
+MODULE_RAII {
 	std::set<Uuid> s;
 	for(unsigned i = 0; i < 1000000; ++i){
 		s.insert(Uuid::generate());
 	}
 	LOG_POSEIDON_FATAL("number of uuid generated: ", s.size());
 	LOG_POSEIDON_FATAL("first: ", *s.begin());
-)
+}
 */
-MODULE_RAII(
+MODULE_RAII {
 	LOG_POSEIDON_FATAL("----------- ", explode<std::string>(':', "0:1:2:3:").size());
 	return VAL_INIT;
-)
+}

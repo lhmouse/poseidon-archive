@@ -20,17 +20,19 @@ public:
 
 }
 
-#define MODULE_RAII_BEGIN	\
-	namespace {	\
-		class UNIQUE_ID : public ::Poseidon::ModuleRaiiBase {	\
-			::boost::shared_ptr<const void> init() const OVERRIDE FINAL {
-
-#define MODULE_RAII_END	\
-			}	\
-		} const TOKEN_CAT2(UNIQUE_ID, mraii_);	\
+/*
+	MODULE_RAII {
+		// 写初始化代码。
 	}
-
-#define MODULE_RAII(...)	\
-	MODULE_RAII_BEGIN __VA_ARGS__ MODULE_RAII_END
+*/
+#define MODULE_RAII	\
+	namespace Impl_ {	\
+		namespace {	\
+			class TOKEN_CAT3(ModuleRaii_, __LINE__, _Z_) : public ::Poseidon::ModuleRaiiBase {	\
+				::boost::shared_ptr<const void> init() const OVERRIDE FINAL;	\
+			} const TOKEN_CAT3(ModuleRaii_, __LINE__, _z_);	\
+		}	\
+	}	\
+	::boost::shared_ptr<const void> Impl_:: TOKEN_CAT3(ModuleRaii_, __LINE__, _Z_) ::init() const
 
 #endif
