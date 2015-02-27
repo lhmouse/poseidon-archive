@@ -155,7 +155,14 @@ Logger::~Logger() NOEXCEPT {
 		if(atomicLoad(g_mutexInited, ATOMIC_ACQUIRE)){
 			boost::mutex::scoped_lock(g_mutex).swap(lock);
 		}
-		std::fwrite(line.data(), line.size(), sizeof(char), stdout);
+		std::size_t bytesTotal = 0;
+		while(bytesTotal < line.size()){
+			const AUTO(bytesWritten, ::write(STDOUT_FILENO, line.data() + bytesTotal, line.size() - bytesTotal));
+			if(bytesWritten <= 0){
+				break;
+			}
+			bytesTotal += static_cast<std::size_t>(bytesWritten);
+		}
 	} catch(...){
 	}
 }
