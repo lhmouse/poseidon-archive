@@ -257,7 +257,7 @@ public:
 	}
 
 #define FIELD_STRING(name_)	\
-	const ::std::string & unlocked_get_ ## name_() const {	\
+	const ::std::string & unlockedGet_ ## name_() const {	\
 		return name_;	\
 	}	\
 	::std::string get_ ## name_() const {	\
