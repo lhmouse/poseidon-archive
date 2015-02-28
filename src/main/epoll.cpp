@@ -34,11 +34,6 @@ namespace {
 			, lastRead(lastRead_), lastWritten(lastWritten_)
 		{
 		}
-
-#ifndef POSEIDON_CXX11
-		// C++03 不提供转移构造函数，但是我们在这里不使用它，不需要定义。
-		SessionMapElement(Move<SessionMapElement> rhs);
-#endif
 	};
 
 	MULTI_INDEX_MAP(SessionMap, SessionMapElement,

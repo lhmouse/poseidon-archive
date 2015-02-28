@@ -84,11 +84,6 @@ struct ModuleMapElement {
 		, realPath(module->realPath()), baseAddr(module->baseAddr())
 	{
 	}
-
-#ifndef POSEIDON_CXX11
-	// C++03 不提供转移构造函数，但是我们在这里不使用它，不需要定义。
-	ModuleMapElement(Move<ModuleMapElement> rhs);
-#endif
 };
 
 MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,
@@ -113,11 +108,6 @@ struct ModuleRaiiMapElement {
 		: baseAddr(baseAddr_), raii(raii_)
 	{
 	}
-
-#ifndef POSEIDON_CXX11
-	// C++03 不提供转移构造函数，但是我们在这里不使用它，不需要定义。
-	ModuleRaiiMapElement(Move<ModuleRaiiMapElement> rhs);
-#endif
 };
 
 MULTI_INDEX_MAP(ModuleRaiiMap, ModuleRaiiMapElement,
