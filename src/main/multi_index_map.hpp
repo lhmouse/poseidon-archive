@@ -43,16 +43,16 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		typedef ::boost::multi_index::multi_index_container<	\
 			value_type, ::boost::multi_index::indexed_by<	\
 				STRIP_FIRST(void indices_)>	\
-			> delegate_container;	\
+			> delegated_container;	\
 		\
-		typedef delegate_container::const_iterator const_iterator;	\
-		typedef delegate_container::iterator iterator;	\
-		typedef delegate_container::const_reverse_iterator const_reverse_iterator;	\
-		typedef delegate_container::reverse_iterator reverse_iterator;	\
+		typedef delegated_container::const_iterator const_iterator;	\
+		typedef delegated_container::iterator iterator;	\
+		typedef delegated_container::const_reverse_iterator const_reverse_iterator;	\
+		typedef delegated_container::reverse_iterator reverse_iterator;	\
 	private:	\
 		template<unsigned IndexIdT>	\
 		struct KeyModifier {	\
-			typedef typename delegate_container::nth_index<IndexIdT>::type::key_type key_type;	\
+			typedef typename delegated_container::nth_index<IndexIdT>::type::key_type key_type;	\
 			\
 			key_type &m_key;	\
 			\
@@ -68,15 +68,15 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		};	\
 		\
 	private:	\
-		delegate_container m_delegate;	\
+		delegated_container m_delegate;	\
 		\
 	public:	\
 		template<unsigned IndexIdT>  \
-		const typename delegate_container::nth_index<IndexIdT>::type &getIndex() const {	\
+		const typename delegated_container::nth_index<IndexIdT>::type &getIndex() const {	\
 			return m_delegate.get<IndexIdT>();	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type &getIndex(){	\
+		typename delegated_container::nth_index<IndexIdT>::type &getIndex(){	\
 			return m_delegate.get<IndexIdT>();	\
 		}	\
 		\
@@ -107,36 +107,36 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 		\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::const_iterator begin() const {	\
+		typename delegated_container::nth_index<IndexIdT>::type::const_iterator begin() const {	\
 			return getIndex<IndexIdT>().begin();	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::iterator begin(){	\
+		typename delegated_container::nth_index<IndexIdT>::type::iterator begin(){	\
 			return getIndex<IndexIdT>().begin();	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::const_iterator end() const {	\
+		typename delegated_container::nth_index<IndexIdT>::type::const_iterator end() const {	\
 			return getIndex<IndexIdT>().end();	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::iterator end(){	\
+		typename delegated_container::nth_index<IndexIdT>::type::iterator end(){	\
 			return getIndex<IndexIdT>().end();	\
 		}	\
 		\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::const_reverse_iterator rbegin() const {	\
+		typename delegated_container::nth_index<IndexIdT>::type::const_reverse_iterator rbegin() const {	\
 			return getIndex<IndexIdT>().rbegin();	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::reverse_iterator rbegin(){	\
+		typename delegated_container::nth_index<IndexIdT>::type::reverse_iterator rbegin(){	\
 			return getIndex<IndexIdT>().rbegin();	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::const_reverse_iterator rend() const {	\
+		typename delegated_container::nth_index<IndexIdT>::type::const_reverse_iterator rend() const {	\
 			return getIndex<IndexIdT>().rend();	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::reverse_iterator rend(){	\
+		typename delegated_container::nth_index<IndexIdT>::type::reverse_iterator rend(){	\
 			return getIndex<IndexIdT>().rend();	\
 		}	\
 		\
@@ -175,139 +175,139 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 		\
 		template<unsigned IndexIdT>	\
-		::std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator, bool>	\
+		::std::pair<typename delegated_container::nth_index<IndexIdT>::type::iterator, bool>	\
 			insert(const value_type &val)	\
 		{	\
 			return getIndex<IndexIdT>().insert(val);	\
 		}	\
 		template<unsigned IndexIdT>	\
-		::std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator, bool>	\
+		::std::pair<typename delegated_container::nth_index<IndexIdT>::type::iterator, bool>	\
 			insert(::Poseidon::Move<value_type> val)	\
 		{	\
 			return getIndex<IndexIdT>().insert(STD_MOVE(val));	\
 		}	\
 		template<unsigned IndexIdT>	\
-		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
-			insert(typename delegate_container::nth_index<IndexIdT>::type::iterator hint,	\
+		typename delegated_container::nth_index<IndexIdT>::type::iterator	\
+			insert(typename delegated_container::nth_index<IndexIdT>::type::iterator hint,	\
 				const value_type &val)	\
 		{	\
 			return getIndex<IndexIdT>().insert(hint, val);	\
 		}	\
 		template<unsigned IndexIdT>	\
-		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
-			insert(typename delegate_container::nth_index<IndexIdT>::type::iterator hint,	\
+		typename delegated_container::nth_index<IndexIdT>::type::iterator	\
+			insert(typename delegated_container::nth_index<IndexIdT>::type::iterator hint,	\
 				::Poseidon::Move<value_type> val)	\
 		{	\
 			return getIndex<IndexIdT>().insert(hint, STD_MOVE(val));	\
 		}	\
 		\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
-			erase(typename delegate_container::nth_index<IndexIdT>::type::iterator pos)	\
+		typename delegated_container::nth_index<IndexIdT>::type::iterator	\
+			erase(typename delegated_container::nth_index<IndexIdT>::type::iterator pos)	\
 		{	\
 			return getIndex<IndexIdT>().erase(pos);	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
-			erase(typename delegate_container::nth_index<IndexIdT>::type::iterator begin,	\
-				typename delegate_container::nth_index<IndexIdT>::type::iterator end)	\
+		typename delegated_container::nth_index<IndexIdT>::type::iterator	\
+			erase(typename delegated_container::nth_index<IndexIdT>::type::iterator begin,	\
+				typename delegated_container::nth_index<IndexIdT>::type::iterator end)	\
 		{	\
 			return getIndex<IndexIdT>().erase(begin, end);	\
 		}	\
 		template<unsigned IndexIdT>  \
-		std::size_t erase(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key){	\
+		std::size_t erase(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key){	\
 			return getIndex<IndexIdT>().erase(key);	\
 		}	\
 		\
 		template<unsigned IndexIdT> \
-		bool replace(typename delegate_container::nth_index<IndexIdT>::type::iterator pos,	\
+		bool replace(typename delegated_container::nth_index<IndexIdT>::type::iterator pos,	\
 			const value_type &val)	\
 		{	\
 			return getIndex<IndexIdT>().replace(pos, val);	\
 		}	\
 		template<unsigned IndexIdT> \
-		bool replace(typename delegate_container::nth_index<IndexIdT>::type::iterator pos,	\
+		bool replace(typename delegated_container::nth_index<IndexIdT>::type::iterator pos,	\
 			::Poseidon::Move<value_type> val)	\
 		{	\
 			return getIndex<IndexIdT>().replace(pos, STD_MOVE(val));	\
 		}	\
 		\
 		template<unsigned IndexIdToSetT> \
-		bool setKey(typename delegate_container::iterator pos,   \
-			typename delegate_container::nth_index<IndexIdToSetT>::type::key_type key)	\
+		bool setKey(typename delegated_container::iterator pos,   \
+			typename delegated_container::nth_index<IndexIdToSetT>::type::key_type key)	\
 		{	\
-			typename delegate_container::nth_index<IndexIdToSetT>::type::key_type old =	\
-				typename delegate_container::nth_index<IndexIdToSetT>::type::key_from_value()(*pos);	\
+			typename delegated_container::nth_index<IndexIdToSetT>::type::key_type old =	\
+				typename delegated_container::nth_index<IndexIdToSetT>::type::key_from_value()(*pos);	\
 			return getIndex<IndexIdToSetT>().modify_key(m_delegate.project<IndexIdToSetT>(pos),	\
 				KeyModifier<IndexIdToSetT>(key), KeyModifier<IndexIdToSetT>(old));	\
 		}	\
 		template<unsigned IndexIdT, unsigned IndexIdToSetT> \
-		bool setKey(typename delegate_container::nth_index<IndexIdT>::type::iterator pos,   \
-			typename delegate_container::nth_index<IndexIdToSetT>::type::key_type key)	\
+		bool setKey(typename delegated_container::nth_index<IndexIdT>::type::iterator pos,   \
+			typename delegated_container::nth_index<IndexIdToSetT>::type::key_type key)	\
 		{	\
-			typename delegate_container::nth_index<IndexIdToSetT>::type::key_type old =	\
-				typename delegate_container::nth_index<IndexIdToSetT>::type::key_from_value()(*pos);	\
+			typename delegated_container::nth_index<IndexIdToSetT>::type::key_type old =	\
+				typename delegated_container::nth_index<IndexIdToSetT>::type::key_from_value()(*pos);	\
 			return getIndex<IndexIdToSetT>().modify_key(m_delegate.project<IndexIdToSetT>(pos),	\
 				KeyModifier<IndexIdToSetT>(key), KeyModifier<IndexIdToSetT>(old));	\
 		}	\
 		\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::const_iterator	\
-			find(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key) const	\
+		typename delegated_container::nth_index<IndexIdT>::type::const_iterator	\
+			find(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key) const	\
 		{	\
 			return getIndex<IndexIdT>().find(key);	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
-			find(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key)	\
+		typename delegated_container::nth_index<IndexIdT>::type::iterator	\
+			find(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key)	\
 		{	\
 			return getIndex<IndexIdT>().find(key);	\
 		}	\
 		\
 		template<unsigned IndexIdT>  \
 		::std::size_t	\
-			count(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key) const	\
+			count(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key) const	\
 		{	\
 			return getIndex<IndexIdT>().count(key);	\
 		}	\
 		\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::const_iterator	\
-			lowerBound(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key) const	\
+		typename delegated_container::nth_index<IndexIdT>::type::const_iterator	\
+			lowerBound(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key) const	\
 		{	\
 			return getIndex<IndexIdT>().lower_bound(key);	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
-			lowerBound(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key)	\
+		typename delegated_container::nth_index<IndexIdT>::type::iterator	\
+			lowerBound(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key)	\
 		{	\
 			return getIndex<IndexIdT>().lower_bound(key);	\
 		}	\
 		\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::const_iterator	\
-			upperBound(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key) const	\
+		typename delegated_container::nth_index<IndexIdT>::type::const_iterator	\
+			upperBound(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key) const	\
 		{	\
 			return getIndex<IndexIdT>().upper_bound(key);	\
 		}	\
 		template<unsigned IndexIdT>  \
-		typename delegate_container::nth_index<IndexIdT>::type::iterator	\
-			upperBound(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key)	\
+		typename delegated_container::nth_index<IndexIdT>::type::iterator	\
+			upperBound(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key)	\
 		{	\
 			return getIndex<IndexIdT>().upper_bound(key);	\
 		}	\
 		\
 		template<unsigned IndexIdT>  \
-		::std::pair<typename delegate_container::nth_index<IndexIdT>::type::const_iterator,	\
-			typename delegate_container::nth_index<IndexIdT>::type::const_iterator>	\
-			equalRange(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key) const	\
+		::std::pair<typename delegated_container::nth_index<IndexIdT>::type::const_iterator,	\
+			typename delegated_container::nth_index<IndexIdT>::type::const_iterator>	\
+			equalRange(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key) const	\
 		{	\
 			return getIndex<IndexIdT>().equal_range(key);	\
 		}	\
 		template<unsigned IndexIdT>  \
-		::std::pair<typename delegate_container::nth_index<IndexIdT>::type::iterator,	\
-			typename delegate_container::nth_index<IndexIdT>::type::iterator>	\
-			equalRange(const typename delegate_container::nth_index<IndexIdT>::type::key_type &key)	\
+		::std::pair<typename delegated_container::nth_index<IndexIdT>::type::iterator,	\
+			typename delegated_container::nth_index<IndexIdT>::type::iterator>	\
+			equalRange(const typename delegated_container::nth_index<IndexIdT>::type::key_type &key)	\
 		{	\
 			return getIndex<IndexIdT>().equal_range(key);	\
 		}	\

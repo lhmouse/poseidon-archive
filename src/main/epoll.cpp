@@ -148,7 +148,7 @@ std::size_t Epoll::wait(unsigned timeout){
 		const ::epoll_event &event = events[i];
 
 		boost::shared_ptr<TcpSessionBase> session;
-		SessionMap::delegate_container::nth_index<IDX_FD>::type::iterator it;
+		SessionMap::delegated_container::nth_index<IDX_FD>::type::iterator it;
 		{
 			const boost::mutex::scoped_lock lock(m_mutex);
 			it = m_sessions->find<IDX_FD>(event.data.fd);
@@ -198,7 +198,7 @@ std::size_t Epoll::wait(unsigned timeout){
 }
 std::size_t Epoll::pumpReadable(){
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
-	SessionMap::delegate_container::nth_index<IDX_READ>::type::iterator iterators[MAX_PUMP_COUNT];
+	SessionMap::delegated_container::nth_index<IDX_READ>::type::iterator iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
 	{
 		const boost::mutex::scoped_lock lock(m_mutex);
@@ -243,7 +243,7 @@ std::size_t Epoll::pumpReadable(){
 }
 std::size_t Epoll::pumpWriteable(){
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
-	SessionMap::delegate_container::nth_index<IDX_WRITE>::type::iterator iterators[MAX_PUMP_COUNT];
+	SessionMap::delegated_container::nth_index<IDX_WRITE>::type::iterator iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
 	{
 		const boost::mutex::scoped_lock lock(m_mutex);

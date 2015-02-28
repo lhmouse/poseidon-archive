@@ -12,13 +12,13 @@ namespace Poseidon {
 
 class OptionalMap {
 public:
-	typedef std::multimap<SharedNts, std::string> delegate_container;
+	typedef std::multimap<SharedNts, std::string> delegated_container;
 
-	typedef delegate_container::const_iterator const_iterator;
-	typedef delegate_container::iterator iterator;
+	typedef delegated_container::const_iterator const_iterator;
+	typedef delegated_container::iterator iterator;
 
 private:
-	delegate_container m_delegate;
+	delegated_container m_delegate;
 
 public:
 	bool empty() const {
