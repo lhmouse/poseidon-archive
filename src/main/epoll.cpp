@@ -21,17 +21,17 @@ namespace {
 	};
 
 	struct SessionMapElement {
-		const int fd;
-		const boost::shared_ptr<TcpSessionBase> session;
-
+		int fd;
 		// 时间戳，零表示无数据可读/写。
 		unsigned long long lastRead;
 		unsigned long long lastWritten;
 
+		boost::shared_ptr<TcpSessionBase> session;
+
 		SessionMapElement(boost::shared_ptr<TcpSessionBase> session_,
 			unsigned long long lastRead_, unsigned long long lastWritten_)
-			: fd(session_->getFd()), session(STD_MOVE(session_))
-			, lastRead(lastRead_), lastWritten(lastWritten_)
+			: fd(session_->getFd()), lastRead(lastRead_), lastWritten(lastWritten_)
+			, session(STD_MOVE(session_))
 		{
 		}
 	};

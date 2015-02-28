@@ -72,10 +72,10 @@ public:
 namespace {
 
 struct ModuleMapElement {
-	const boost::shared_ptr<Module> module;
-	void *const handle;
-	const SharedNts realPath;
-	void *const baseAddr;
+	boost::shared_ptr<Module> module;
+	void *handle;
+	SharedNts realPath;
+	void *baseAddr;
 
 	mutable std::vector<boost::shared_ptr<const void> > handles;
 
@@ -101,8 +101,8 @@ enum {
 };
 
 struct ModuleRaiiMapElement {
-	void *const baseAddr;
-	ModuleRaiiBase *const raii;
+	void *baseAddr;
+	ModuleRaiiBase *raii;
 
 	ModuleRaiiMapElement(void *baseAddr_, ModuleRaiiBase *raii_)
 		: baseAddr(baseAddr_), raii(raii_)

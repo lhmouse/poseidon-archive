@@ -178,6 +178,15 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 			return m_delegate.erase(begin, end);	\
 		}	\
 		\
+		bool replace(iterator pos, const value_type &val){	\
+			return m_delegate.replace(pos, val);	\
+		}	\
+	ENABLE_IF_CXX11(	\
+		bool replace(iterator pos, value_type &&val){	\
+			return m_delegate.replace(pos, ::std::move(val));	\
+		}	\
+	)	\
+		\
 		template<unsigned IndexIdT>	\
 		::std::pair<typename delegated_container::nth_index<IndexIdT>::type::iterator, bool>	\
 			insert(const value_type &val)	\
