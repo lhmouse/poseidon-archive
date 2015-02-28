@@ -26,8 +26,8 @@ public:
 	}
 */
 #define MODULE_RAII	\
-	namespace Impl_ {	\
-		namespace {	\
+	namespace {	\
+		namespace Impl_ {	\
 			class TOKEN_CAT3(ModuleRaii_, __LINE__, _Z_) : public ::Poseidon::ModuleRaiiBase {	\
 				::boost::shared_ptr<const void> init() const OVERRIDE FINAL;	\
 			} const TOKEN_CAT3(ModuleRaii_, __LINE__, _z_);	\
