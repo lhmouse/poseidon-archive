@@ -14,7 +14,7 @@
 	namespace ModuleConfigImpl_ {	\
 		extern ::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weakConfig_;	\
 		extern const char *getConfigFileName_();	\
-		MODULE_RAII(	\
+		MODULE_RAII {	\
 			AUTO(config_, g_weakConfig_.lock());	\
 			if(!config_){	\
 				AUTO(newConfig_, ::boost::make_shared< ::Poseidon::ConfigFile>());	\
@@ -22,8 +22,8 @@
 				g_weakConfig_ = newConfig_;	\
 				config_ = newConfig_;	\
 			}	\
-			return config_;	\
-		)	\
+			return STD_MOVE(config_);	\
+		}	\
 	}	\
 	inline ::boost::shared_ptr<const ::Poseidon::ConfigFile> func_ (){	\
 		return ::boost::shared_ptr<const ::Poseidon::ConfigFile>(ModuleConfigImpl_::g_weakConfig_);	\
