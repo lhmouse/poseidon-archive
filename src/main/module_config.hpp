@@ -22,7 +22,7 @@
 				g_weakConfig_ = newConfig_;	\
 				config_ = newConfig_;	\
 			}	\
-			return STD_MOVE(config_);	\
+			return STD_MOVE_IDN(config_);	\
 		}	\
 	}	\
 	inline ::boost::shared_ptr<const ::Poseidon::ConfigFile> func_ (){	\
