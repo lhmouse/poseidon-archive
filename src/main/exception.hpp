@@ -14,9 +14,9 @@ namespace Poseidon {
 
 class Exception : public std::exception {
 protected:
-	const char *const m_file;
-	const std::size_t m_line;
-	const SharedNts m_message; // 拷贝构造函数不抛出异常。
+	const char *m_file;
+	std::size_t m_line;
+	SharedNts m_message; // 拷贝构造函数不抛出异常。
 
 public:
 	Exception(const char *file, std::size_t line, SharedNts message);
@@ -37,7 +37,7 @@ public:
 
 class SystemError : public Exception {
 private:
-	const int m_code;
+	int m_code;
 
 public:
 	SystemError(const char *file, std::size_t line, int code = errno);
@@ -51,7 +51,7 @@ public:
 
 class ProtocolException : public Exception {
 private:
-	const unsigned m_code;
+	unsigned m_code;
 
 public:
 	ProtocolException(const char *file, std::size_t line, SharedNts message, long code);
