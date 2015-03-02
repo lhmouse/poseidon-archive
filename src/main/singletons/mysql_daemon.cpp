@@ -25,19 +25,19 @@
 namespace Poseidon {
 
 namespace {
-	std::string	g_mysqlServerAddr		= "localhost";
-	unsigned	g_mysqlServerPort		= 3306;
-	std::string	g_mysqlUsername			= "root";
-	std::string	g_mysqlPassword			= "root";
-	std::string	g_mysqlSchema			= "poseidon";
-	bool		g_mysqlUseSsl			= false;
-	std::string	g_mysqlCharset			= "utf8";
+	std::string	g_serverAddr		= "localhost";
+	unsigned	g_serverPort		= 3306;
+	std::string	g_username			= "root";
+	std::string	g_password			= "root";
+	std::string	g_schema			= "poseidon";
+	bool		g_useSsl			= false;
+	std::string	g_charset			= "utf8";
 
-	std::string	g_mysqlDumpDir			= "/usr/var/poseidon/sqldump";
-	std::size_t	g_mysqlMaxThreads		= 3;
-	std::size_t	g_mysqlSaveDelay		= 5000;
-	std::size_t	g_mysqlMaxReconnDelay	= 60000;
-	std::size_t	g_mysqlRetryCount		= 3;
+	std::string	g_dumpDir			= "/usr/var/poseidon/sqldump";
+	std::size_t	g_maxThreads		= 3;
+	std::size_t	g_saveDelay			= 5000;
+	std::size_t	g_maxReconnDelay	= 60000;
+	std::size_t	g_maxRetryCount		= 3;
 
 	// 转储文件，写在最前面。
 	boost::mutex g_dumpMutex;
@@ -60,6 +60,9 @@ namespace {
 		}
 
 	private:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return VAL_INIT;
+		}
 		void perform() OVERRIDE {
 			PROFILE_ME;
 
@@ -89,6 +92,9 @@ namespace {
 		}
 
 	private:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return VAL_INIT;
+		}
 		void perform() OVERRIDE {
 			PROFILE_ME;
 
@@ -119,6 +125,9 @@ namespace {
 		}
 
 	private:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return VAL_INIT;
+		}
 		void perform() OVERRIDE {
 			PROFILE_ME;
 
@@ -196,7 +205,7 @@ namespace {
 				}
 
 				if(m_callback){
-					pendJob(boost::make_shared<SaveCallbackJob>(
+					enqueueJob(boost::make_shared<SaveCallbackJob>(
 						STD_MOVE(m_callback), succeeded, conn.getInsertId(), boost::ref(m_except)));
 				}
 			} catch(...){
@@ -246,7 +255,7 @@ namespace {
 				}
 
 				if(m_callback){
-					pendJob(boost::make_shared<LoadCallbackJob>(
+					enqueueJob(boost::make_shared<LoadCallbackJob>(
 						STD_MOVE(m_callback), found, boost::ref(m_except)));
 				}
 			} catch(...){
@@ -300,7 +309,7 @@ namespace {
 				}
 
 				if(m_callback){
-					pendJob(boost::make_shared<BatchLoadCallbackJob>(
+					enqueueJob(boost::make_shared<BatchLoadCallbackJob>(
 						STD_MOVE(m_callback), STD_MOVE(objects), boost::ref(m_except)));
 				}
 			} catch(...){
@@ -384,11 +393,6 @@ namespace {
 			boost::thread::join();
 		}
 
-		std::size_t getPendingOperations() const {
-			const boost::mutex::scoped_lock lock(m_mutex);
-			return m_queue.size();
-		}
-
 		std::size_t getProfile(std::vector<MySqlSnapshotItem> &ret, unsigned thread) const {
 			const boost::mutex::scoped_lock lock(m_profileMutex);
 			const std::size_t count = m_profile.size();
@@ -453,13 +457,13 @@ namespace {
 							boost::posix_time::milliseconds(static_cast<boost::int64_t>(reconnectDelay)));
 
 						reconnectDelay <<= 1;
-						if(reconnectDelay > g_mysqlMaxReconnDelay){
-							reconnectDelay = g_mysqlMaxReconnDelay;
+						if(reconnectDelay > g_maxReconnDelay){
+							reconnectDelay = g_maxReconnDelay;
 						}
 					}
 					try {
-						MySqlConnection::create(conn, context, g_mysqlServerAddr, g_mysqlServerPort,
-							g_mysqlUsername, g_mysqlPassword, g_mysqlSchema, g_mysqlUseSsl, g_mysqlCharset);
+						MySqlConnection::create(conn, context, g_serverAddr, g_serverPort,
+							g_username, g_password, g_schema, g_useSsl, g_charset);
 					} catch(...){
 						if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 							LOG_POSEIDON_WARNING("Shutting down...");
@@ -486,6 +490,7 @@ namespace {
 					}
 					operation.swap(m_queue.front());
 					m_queue.pop_front();
+					retryCount = 0;
 				}
 				if(!atomicLoad(m_urgent, ATOMIC_ACQUIRE) && !operation->check()){
 					boost::mutex::scoped_lock lock(m_mutex);
@@ -512,20 +517,10 @@ namespace {
 						throw;
 					}
 				} catch(...){
-					bool retry = true;
-					if(retryCount == 0){
-						if(g_mysqlRetryCount == 0){
-							retry = false;
-						} else {
-							retryCount = g_mysqlRetryCount;
-						}
+					if(retryCount < g_maxRetryCount){
+						++retryCount;
 					} else {
-						if(--retryCount == 0){
-							retry = false;
-						}
-					}
-					if(!retry){
-						LOG_POSEIDON_WARNING("Retry count has dropped to zero. Give up.");
+						LOG_POSEIDON_WARNING("Max retry count exceeded. Give up.");
 						operation.reset();
 
 						char temp[32];
@@ -567,7 +562,8 @@ namespace {
 				conn.reset();
 			}
 		}
-	_exitLoop: ;
+	_exitLoop:
+		;
 
 		if(!m_queue.empty()){
 			LOG_POSEIDON_WARNING("There are still ", m_queue.size(), " object(s) in MySQL queue");
@@ -608,47 +604,47 @@ void MySqlDaemon::start(){
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
-	conf.get(g_mysqlServerAddr, "mysql_server_addr");
-	LOG_POSEIDON_DEBUG("MySQL server addr = ", g_mysqlServerAddr);
+	conf.get(g_serverAddr, "mysql_server_addr");
+	LOG_POSEIDON_DEBUG("MySQL server addr = ", g_serverAddr);
 
-	conf.get(g_mysqlServerPort, "mysql_server_port");
-	LOG_POSEIDON_DEBUG("MySQL server port = ", g_mysqlServerPort);
+	conf.get(g_serverPort, "mysql_server_port");
+	LOG_POSEIDON_DEBUG("MySQL server port = ", g_serverPort);
 
-	conf.get(g_mysqlUsername, "mysql_username");
-	LOG_POSEIDON_DEBUG("MySQL username = ", g_mysqlUsername);
+	conf.get(g_username, "mysql_username");
+	LOG_POSEIDON_DEBUG("MySQL username = ", g_username);
 
-	conf.get(g_mysqlPassword, "mysql_password");
-	LOG_POSEIDON_DEBUG("MySQL password = ", g_mysqlPassword);
+	conf.get(g_password, "mysql_password");
+	LOG_POSEIDON_DEBUG("MySQL password = ", g_password);
 
-	conf.get(g_mysqlSchema, "mysql_schema");
-	LOG_POSEIDON_DEBUG("MySQL schema = ", g_mysqlSchema);
+	conf.get(g_schema, "mysql_schema");
+	LOG_POSEIDON_DEBUG("MySQL schema = ", g_schema);
 
-	conf.get(g_mysqlUseSsl, "mysql_use_ssl");
-	LOG_POSEIDON_DEBUG("MySQL use ssl = ", g_mysqlUseSsl);
+	conf.get(g_useSsl, "mysql_use_ssl");
+	LOG_POSEIDON_DEBUG("MySQL use ssl = ", g_useSsl);
 
-	conf.get(g_mysqlCharset, "mysql_charset");
-	LOG_POSEIDON_DEBUG("MySQL charset = ", g_mysqlCharset);
+	conf.get(g_charset, "mysql_charset");
+	LOG_POSEIDON_DEBUG("MySQL charset = ", g_charset);
 
-	conf.get(g_mysqlDumpDir, "mysql_dump_dir");
-	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_mysqlDumpDir);
+	conf.get(g_dumpDir, "mysql_dump_dir");
+	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_dumpDir);
 
-	conf.get(g_mysqlMaxThreads, "mysql_max_threads");
-	LOG_POSEIDON_DEBUG("MySQL max threads = ", g_mysqlMaxThreads);
+	conf.get(g_maxThreads, "mysql_max_threads");
+	LOG_POSEIDON_DEBUG("MySQL max threads = ", g_maxThreads);
 
-	conf.get(g_mysqlSaveDelay, "mysql_save_delay");
-	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_mysqlSaveDelay);
+	conf.get(g_saveDelay, "mysql_save_delay");
+	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_saveDelay);
 
-	conf.get(g_mysqlMaxReconnDelay, "mysql_max_reconn_delay");
-	LOG_POSEIDON_DEBUG("MySQL max reconnect delay = ", g_mysqlMaxReconnDelay);
+	conf.get(g_maxReconnDelay, "mysql_max_reconn_delay");
+	LOG_POSEIDON_DEBUG("MySQL max reconnect delay = ", g_maxReconnDelay);
 
-	conf.get(g_mysqlRetryCount, "mysql_retry_count");
-	LOG_POSEIDON_DEBUG("MySQL retry count = ", g_mysqlRetryCount);
+	conf.get(g_maxRetryCount, "mysql_max_retry_count");
+	LOG_POSEIDON_DEBUG("MySQL max retry count = ", g_maxRetryCount);
 
 	char temp[256];
 	unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
 
 	std::string dumpPath;
-	dumpPath.assign(g_mysqlDumpDir);
+	dumpPath.assign(g_dumpDir);
 	dumpPath.push_back('/');
 	dumpPath.append(temp, len);
 	dumpPath.append(".log");
@@ -661,7 +657,7 @@ void MySqlDaemon::start(){
 		std::abort();
 	}
 
-	g_threads.resize(std::max<std::size_t>(g_mysqlMaxThreads, 1));
+	g_threads.resize(std::max<std::size_t>(g_maxThreads, 1));
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		LOG_POSEIDON_INFO("Creating MySQL thread ", i);
 		g_threads[i] = boost::make_shared<MySqlThread>(i);
@@ -699,17 +695,17 @@ void MySqlDaemon::waitForAllAsyncOperations(){
 	}
 }
 
-void MySqlDaemon::pendForSaving(boost::shared_ptr<const MySqlObjectBase> object, bool toReplace,
+void MySqlDaemon::enqueueForSaving(boost::shared_ptr<const MySqlObjectBase> object, bool toReplace,
 	MySqlAsyncSaveCallback callback, MySqlExceptionCallback except)
 {
 	const AUTO(tableName, object->getTableName());
 	const bool urgent = callback;
 	commitOperation(tableName,
-		boost::make_shared<SaveOperation>(getFastMonoClock() + g_mysqlSaveDelay,
+		boost::make_shared<SaveOperation>(getFastMonoClock() + g_saveDelay,
 			STD_MOVE(object), toReplace, STD_MOVE(callback), STD_MOVE(except)),
 		urgent);
 }
-void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std::string query,
+void MySqlDaemon::enqueueForLoading(boost::shared_ptr<MySqlObjectBase> object, std::string query,
 	MySqlAsyncLoadCallback callback, MySqlExceptionCallback except)
 {
 	const AUTO(tableName, object->getTableName());
@@ -718,7 +714,7 @@ void MySqlDaemon::pendForLoading(boost::shared_ptr<MySqlObjectBase> object, std:
 			STD_MOVE(object), STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except)),
 		true);
 }
-void MySqlDaemon::pendForBatchLoading(boost::shared_ptr<MySqlObjectBase> (*factory)(),
+void MySqlDaemon::enqueueForBatchLoading(boost::shared_ptr<MySqlObjectBase> (*factory)(),
 	const char *tableHint, std::string query,
 	MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except)
 {

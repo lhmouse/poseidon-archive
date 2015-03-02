@@ -20,6 +20,7 @@ namespace {
 	class WebSocketRequestJob : public JobBase {
 	private:
 		const boost::weak_ptr<WebSocketSession> m_session;
+
 		const std::string m_uri;
 		const WebSocketOpCode m_opcode;
 
@@ -28,13 +29,17 @@ namespace {
 	public:
 		WebSocketRequestJob(boost::weak_ptr<WebSocketSession> session,
 			std::string uri, WebSocketOpCode opcode, StreamBuffer payload)
-			: m_session(STD_MOVE(session)), m_uri(STD_MOVE(uri)), m_opcode(opcode)
+			: m_session(STD_MOVE(session))
+			, m_uri(STD_MOVE(uri)), m_opcode(opcode)
 			, m_payload(STD_MOVE(payload))
 		{
 		}
 
 	protected:
-		void perform(){
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_session;
+		}
+		void perform() OVERRIDE {
 			PROFILE_ME;
 
 			const boost::shared_ptr<WebSocketSession> session(m_session);
@@ -51,6 +56,8 @@ namespace {
 					", payload size = ", m_payload.size());
 				(*servlet)(session, m_opcode, STD_MOVE(m_payload));
 				session->setTimeout(WebSocketServletDepository::getKeepAliveTimeout());
+			} catch(TryAgainLater &){
+				throw;
 			} catch(WebSocketException &e){
 				LOG_POSEIDON_ERROR("WebSocketException thrown in websocket servlet, status = ", e.status(), ", what = ", e.what());
 				session->shutdown(e.status(), StreamBuffer(e.what()));
@@ -173,7 +180,7 @@ void WebSocketSession::onReadAvail(const void *data, std::size_t size){
 				if((m_opcode & WS_FL_CONTROL) != 0){
 					onControlFrame();
 				} else if(m_fin){
-					pendJob(boost::make_shared<WebSocketRequestJob>(
+					enqueueJob(boost::make_shared<WebSocketRequestJob>(
 						virtualWeakFromThis<WebSocketSession>(), getUri(), m_opcode, STD_MOVE(m_whole)));
 					m_whole.clear();
 				}

@@ -66,8 +66,7 @@ namespace {
 		std::string m_contents;
 
 	public:
-		HttpRequestJob(boost::weak_ptr<HttpSession> session,
-			HttpVerb verb, std::string uri, unsigned version,
+		HttpRequestJob(boost::weak_ptr<HttpSession> session, HttpVerb verb, std::string uri, unsigned version,
 			OptionalMap getParams, OptionalMap headers, std::string contents)
 			: m_session(STD_MOVE(session))
 			, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
@@ -77,7 +76,10 @@ namespace {
 		}
 
 	protected:
-		void perform(){
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_session;
+		}
+		void perform() OVERRIDE {
 			PROFILE_ME;
 			assert(!m_uri.empty());
 
@@ -101,6 +103,8 @@ namespace {
 				LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", stringFromHttpVerb(m_verb));
 				(*servlet)(session, STD_MOVE(request));
 				session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
+			} catch(TryAgainLater &){
+				throw;
 			} catch(HttpException &e){
 				LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri, ", status = ", e.status());
 				session->sendDefault(e.status(), e.headers(), false); // 不关闭连接。
@@ -364,7 +368,7 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 				goto _sessionUpgraded;
 			}
 
-			pendJob(boost::make_shared<HttpRequestJob>(
+			enqueueJob(boost::make_shared<HttpRequestJob>(
 				virtualWeakFromThis<HttpSession>(), m_verb, STD_MOVE(m_uri), m_version,
 				STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
 

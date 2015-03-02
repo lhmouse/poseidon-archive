@@ -18,20 +18,24 @@ namespace {
 	class CbppRequestJob : public JobBase {
 	private:
 		const boost::weak_ptr<CbppSession> m_session;
+
 		const unsigned m_messageId;
 
 		StreamBuffer m_payload;
 
 	public:
-		CbppRequestJob(boost::weak_ptr<CbppSession> session,
-			unsigned messageId, StreamBuffer payload)
-			: m_session(STD_MOVE(session)), m_messageId(messageId)
+		CbppRequestJob(boost::weak_ptr<CbppSession> session, unsigned messageId, StreamBuffer payload)
+			: m_session(STD_MOVE(session))
+			, m_messageId(messageId)
 			, m_payload(STD_MOVE(payload))
 		{
 		}
 
 	protected:
-		void perform(){
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_session;
+		}
+		void perform() OVERRIDE {
 			PROFILE_ME;
 
 			const boost::shared_ptr<CbppSession> session(m_session);
@@ -66,6 +70,8 @@ namespace {
 					(*servlet)(session, STD_MOVE(m_payload));
 				}
 				session->setTimeout(CbppServletDepository::getKeepAliveTimeout());
+			} catch(TryAgainLater &){
+				throw;
 			} catch(CbppMessageException &e){
 				LOG_POSEIDON_ERROR("CbppMessageException thrown in CBPP servlet, message id = ",
 					m_messageId, ", status = ", e.status(), ", what = ", e.what());
@@ -120,8 +126,8 @@ void CbppSession::onReadAvail(const void *data, std::size_t size){
 			if(m_payload.size() < (unsigned)m_payloadLen){
 				break;
 			}
-			pendJob(boost::make_shared<CbppRequestJob>(virtualWeakFromThis<CbppSession>(),
-				m_messageId, m_payload.cut(m_payloadLen)));
+			enqueueJob(boost::make_shared<CbppRequestJob>(
+				virtualWeakFromThis<CbppSession>(), m_messageId, m_payload.cut(m_payloadLen)));
 			m_payloadLen = (boost::uint64_t)-1;
 			m_messageId = 0;
 		}

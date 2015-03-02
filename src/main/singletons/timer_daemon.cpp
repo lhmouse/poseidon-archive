@@ -51,7 +51,10 @@ namespace {
 		}
 
 	public:
-		void perform(){
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return VAL_INIT;
+		}
+		void perform() OVERRIDE {
 			PROFILE_ME;
 
 			(*m_callback)(m_now, m_period);
@@ -105,7 +108,7 @@ namespace {
 
 			try {
 				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
-				pendJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
+				enqueueJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
 			} catch(...){

@@ -26,9 +26,10 @@
 #include "../main/singletons/cbpp_servlet_depository.hpp"
 #include "../main/singletons/epoll_daemon.hpp"
 #include "../main/mysql/object_base.hpp"
+#include "../main/job_base.hpp"
 #include "../main/uuid.hpp"
 using namespace Poseidon;
-
+/*
 #define MYSQL_OBJECT_NAME	MySqlObj
 #define MYSQL_OBJECT_FIELDS	\
 	FIELD_SMALLINT(si)	\
@@ -233,7 +234,7 @@ private:
 };
 
 }
-/*
+
 #define MESSAGE_NAME		TestInt
 #define MESSAGE_ID			100
 #define MESSAGE_FIELDS		FIELD_VINT(i)
@@ -263,7 +264,7 @@ private:
 #define MESSAGE_ID			105
 #define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_STRING(s))
 #include "../main/cbpp/message_generator.hpp"
-*/
+
 #define MESSAGE_NAME	   	TestMessage
 #define MESSAGE_ID			106
 #define MESSAGE_FIELDS \
@@ -275,7 +276,7 @@ private:
 		FIELD_VUINT(k)  \
 	)
 #include "../main/cbpp/message_generator.hpp"
-/*
+
 namespace {
 
 void TestIntProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
@@ -339,7 +340,7 @@ void TestProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 }
 
 }
-*/
+
 MODULE_RAII {
 	return HttpServletDepository::registerServlet(1, SharedNts::observe("/profile"), &profileProc);
 }
@@ -363,7 +364,7 @@ MODULE_RAII {
 MODULE_RAII {
 	return WebSocketServletDepository::registerServlet(2, SharedNts::observe("/wstest"), &webSocketProc);
 }
-/*
+
 MODULE_RAII {
 	return CbppServletDepository::registerServlet(2, 100, &TestIntProc);
 }
@@ -385,7 +386,7 @@ MODULE_RAII {
 MODULE_RAII {
 	return CbppServletDepository::registerServlet(2, 106, &TestProc);
 }
-*/
+
 namespace {
 
 void onClientClose(int id){
@@ -395,7 +396,7 @@ void onClientClose(int id){
 }
 
 MODULE_RAII {
-/*
+
 	LOG_POSEIDON_INFO("Connecting to github...");
 	AUTO(p, TestClient::create());
 	p->registerOnClose(boost::bind(&onClientClose, 0));
@@ -403,7 +404,6 @@ MODULE_RAII {
 	p->registerOnClose(boost::bind(&onClientClose, 2));
 	p->registerOnClose(boost::bind(&onClientClose, 3));
 	p->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
-*/
 
 	AUTO(obj, boost::make_shared<MySqlObj>());
 	obj->set_si(999);
@@ -437,7 +437,7 @@ MODULE_RAII {
 	EpollDaemon::registerServer(server);
 	return server;
 }
-/*
+
 MODULE_RAII {
 	std::set<Uuid> s;
 	for(unsigned i = 0; i < 1000000; ++i){
@@ -446,8 +446,53 @@ MODULE_RAII {
 	LOG_POSEIDON_FATAL("number of uuid generated: ", s.size());
 	LOG_POSEIDON_FATAL("first: ", *s.begin());
 }
-*/
+
 MODULE_RAII {
 	LOG_POSEIDON_FATAL("----------- ", explode<std::string>(':', "0:1:2:3:").size());
+	return VAL_INIT;
+}
+*/
+namespace {
+	const AUTO(sp, boost::make_shared<int>());
+
+	class MyJob : public JobBase {
+	private:
+		const char *const m_s;
+
+	public:
+		explicit MyJob(const char *s)
+			: m_s(s)
+		{
+		}
+
+	public:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return sp;
+		}
+		void perform() OVERRIDE {
+			LOG_POSEIDON_FATAL("!!!! MyJob::perform: ", m_s);
+			suspendCurrentJob();
+		}
+	};
+
+	class MeowJob : public JobBase {
+	public:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return VAL_INIT;
+		}
+		void perform() OVERRIDE {
+			LOG_POSEIDON_FATAL("!!!! MeowJob::perform");
+		}
+	};
+}
+
+MODULE_RAII {
+	enqueueJob(boost::make_shared<MyJob>("1  "));
+	enqueueJob(boost::make_shared<MyJob>(" 2 "));
+	enqueueJob(boost::make_shared<MyJob>("  3"));
+
+	enqueueJob(boost::make_shared<MeowJob>());
+
+	LOG_POSEIDON_FATAL("Job enqueued!");
 	return VAL_INIT;
 }

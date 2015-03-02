@@ -18,7 +18,7 @@ struct JobDispatcher {
 	static void doModal();
 	static void quitModal();
 
-	static void pend(boost::shared_ptr<JobBase> job);
+	static void enqueue(boost::shared_ptr<JobBase> job);
 
 private:
 	JobDispatcher();

@@ -49,7 +49,10 @@ namespace {
 		}
 
 	protected:
-		void perform(){
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_event;
+		}
+		void perform() OVERRIDE {
 			PROFILE_ME;
 
 			(*m_callback)(STD_MOVE(m_event));
@@ -102,7 +105,7 @@ void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event){
 		}
 	}
 	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
-		pendJob(boost::make_shared<EventJob>(*it, boost::ref(event)));
+		enqueueJob(boost::make_shared<EventJob>(*it, boost::ref(event)));
 	}
 	if(needsCleanup){
 		LOG_POSEIDON_DEBUG("Cleaning up event listener list for event ", eventId);

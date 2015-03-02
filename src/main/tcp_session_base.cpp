@@ -46,6 +46,9 @@ public:
 	}
 
 private:
+	boost::weak_ptr<const void> getCategory() const OVERRIDE {
+		return m_session;
+	}
 	void perform() OVERRIDE {
 		m_session->pumpOnClose();
 	}
@@ -121,11 +124,11 @@ void TcpSessionBase::onClose() NOEXCEPT {
 	try {
 		// 不要在这个地方检查队列是否为空，因为这里是 epoll 线程，
 		// 而主线程有可能在这个事件之后加入了一些回调，那样它们就不会被调用。
-		pendJob(boost::make_shared<OnCloseJob>(virtualSharedFromThis<TcpSessionBase>()));
+		enqueueJob(boost::make_shared<OnCloseJob>(virtualSharedFromThis<TcpSessionBase>()));
 	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown while pending onClose job: what = ", e.what());
+		LOG_POSEIDON_ERROR("std::exception thrown while enqueueing onClose job: what = ", e.what());
 	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown while pending onClose job");
+		LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing onClose job");
 	}
 }
 
