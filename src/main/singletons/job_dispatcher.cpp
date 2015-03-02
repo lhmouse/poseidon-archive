@@ -47,7 +47,7 @@ void JobDispatcher::stop(){
 				LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 			} catch(...){
 				LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
-				}
+			}
 			it->reset();
 		} while(++it != queue.end());
 	}
