@@ -15,7 +15,7 @@ namespace Poseidon {
 namespace {
 	boost::once_flag g_mysqlInitFlag;
 
-	__thread std::size_t g_initCount = 0;
+	__thread std::size_t t_initCount = 0;
 
 	void initMySql(){
 		LOG_POSEIDON_INFO("Initializing MySQL library...");
@@ -30,7 +30,7 @@ namespace {
 }
 
 MySqlThreadContext::MySqlThreadContext(){
-	if(++g_initCount == 1){
+	if(++t_initCount == 1){
 		boost::call_once(&initMySql, g_mysqlInitFlag);
 
 		LOG_POSEIDON_INFO("Initializing MySQL thread...");
@@ -42,7 +42,7 @@ MySqlThreadContext::MySqlThreadContext(){
 	}
 }
 MySqlThreadContext::~MySqlThreadContext(){
-	if(--g_initCount == 0){
+	if(--t_initCount == 0){
 		::mysql_thread_end();
 	}
 }

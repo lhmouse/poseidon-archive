@@ -18,11 +18,16 @@ struct MySqlSnapshotItem {
 };
 
 class MySqlObjectBase;
+class MySqlConnection;
 
 struct MySqlDaemon {
 	static void start();
 	static void stop();
 
+	// 同步接口。
+	static boost::shared_ptr<MySqlConnection> createConnection();
+
+	// 异步接口。
 	static std::vector<MySqlSnapshotItem> snapshot();
 
 	static void waitForAllAsyncOperations();

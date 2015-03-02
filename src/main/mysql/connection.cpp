@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "connection.hpp"
+#include "thread_context.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
 #include <string.h>
@@ -66,6 +67,8 @@ namespace {
 		}
 
 	private:
+		const MySqlThreadContext m_context;
+
 		::MYSQL m_mysqlObject;
 		UniqueHandle<MySqlCloser> m_mysql;
 
@@ -238,13 +241,11 @@ namespace {
 	};
 }
 
-void MySqlConnection::create(boost::scoped_ptr<MySqlConnection> &conn,
-	MySqlThreadContext & /* context */, const char *serverAddr, unsigned serverPort,
-	const char *userName, const char *password, const char *schema,
-	bool useSsl, const char *charset)
+boost::shared_ptr<MySqlConnection> MySqlConnection::create(const char *serverAddr, unsigned serverPort,
+	const char *userName, const char *password, const char *schema, bool useSsl, const char *charset)
 {
-	conn.reset(new MySqlConnectionDelegate(
-		serverAddr, serverPort, userName, password, schema, useSsl, charset));
+	return boost::make_shared<MySqlConnectionDelegate>(
+		serverAddr, serverPort, userName, password, schema, useSsl, charset);
 }
 
 MySqlConnection::~MySqlConnection(){

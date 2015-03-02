@@ -12,7 +12,6 @@
 #include <mysql/mysqld_error.h>
 #include "../mysql/object_base.hpp"
 #include "../mysql/exception.hpp"
-#include "../mysql/thread_context.hpp"
 #include "../mysql/connection.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
@@ -432,9 +431,7 @@ namespace {
 		Logger::setThreadTag(" D  "); // Database
 		LOG_POSEIDON_INFO("MySQL thread ", m_index, " started.");
 
-		MySqlThreadContext context;
-
-		boost::scoped_ptr<MySqlConnection> conn;
+		boost::shared_ptr<MySqlConnection> conn;
 		std::size_t reconnectDelay = 0;
 
 		boost::shared_ptr<OperationBase> operation;
@@ -462,8 +459,7 @@ namespace {
 						}
 					}
 					try {
-						MySqlConnection::create(conn, context, g_serverAddr, g_serverPort,
-							g_username, g_password, g_schema, g_useSsl, g_charset);
+						conn = MySqlDaemon::createConnection();
 					} catch(...){
 						if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 							LOG_POSEIDON_WARNING("Shutting down...");
@@ -679,6 +675,11 @@ void MySqlDaemon::stop(){
 		}
 	}
 	g_threads.clear();
+}
+
+boost::shared_ptr<MySqlConnection> MySqlDaemon::createConnection(){
+	return MySqlConnection::create(g_serverAddr, g_serverPort,
+		g_username, g_password, g_schema, g_useSsl, g_charset);
 }
 
 std::vector<MySqlSnapshotItem> MySqlDaemon::snapshot(){

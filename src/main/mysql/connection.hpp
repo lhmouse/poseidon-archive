@@ -8,25 +8,21 @@
 #include <string>
 #include <cstring>
 #include <boost/cstdint.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace Poseidon {
 
-class MySqlThreadContext;
-
 class MySqlConnection : NONCOPYABLE {
 public:
-	static void create(boost::scoped_ptr<MySqlConnection> &conn,
-		MySqlThreadContext &context, const char *serverAddr, unsigned serverPort,
+	static boost::shared_ptr<MySqlConnection> create(const char *serverAddr, unsigned serverPort,
 		const char *userName, const char *password, const char *schema,
 		bool useSsl, const char *charset);
 
-	static void create(boost::scoped_ptr<MySqlConnection> &conn,
-		MySqlThreadContext &context, const std::string &serverAddr, unsigned serverPort,
+	static boost::shared_ptr<MySqlConnection> create(const std::string &serverAddr, unsigned serverPort,
 		const std::string &userName, const std::string &password, const std::string &schema,
 		bool useSsl, const std::string &charset)
 	{
-		create(conn, context, serverAddr.c_str(), serverPort,
+		return create(serverAddr.c_str(), serverPort,
 			userName.c_str(), password.c_str(), schema.c_str(), useSsl, charset.c_str());
 	}
 
