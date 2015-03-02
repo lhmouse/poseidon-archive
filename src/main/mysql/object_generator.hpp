@@ -287,7 +287,10 @@ public:
 
 	MYSQL_OBJECT_FIELDS
 
-private:
+	const char *getTableName() const {
+		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
+	}
+
 	void syncGenerateSql(::std::string &sql_, bool toReplace_) const {
 		::std::ostringstream oss_;
 
@@ -376,11 +379,6 @@ private:
 #define FIELD_DATETIME(name_)				set_ ## name_(conn_.getDateTime( TOKEN_TO_STR(name_) ));
 
 		MYSQL_OBJECT_FIELDS
-	}
-
-public:
-	const char *getTableName() const {
-		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
 };
 
