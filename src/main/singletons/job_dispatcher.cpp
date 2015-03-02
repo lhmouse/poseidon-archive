@@ -5,7 +5,6 @@
 #include "job_dispatcher.hpp"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
-#include <list>
 #include "../job_base.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
@@ -18,8 +17,7 @@ namespace {
 	volatile bool g_running = false;
 
 	boost::mutex g_mutex;
-	std::list<boost::shared_ptr<JobBase> > g_queue;
-	std::list<boost::shared_ptr<JobBase> > g_pool;
+	std::deque<boost::shared_ptr<JobBase> > g_queue;
 	boost::condition_variable g_newJobAvail;
 }
 
@@ -28,11 +26,10 @@ void JobDispatcher::start(){
 void JobDispatcher::stop(){
 	LOG_POSEIDON_INFO("Flushing all pending jobs...");
 
-	std::list<boost::shared_ptr<JobBase> > queue;
 	for(;;){
+		std::deque<boost::shared_ptr<JobBase> > queue;
 		{
 			const boost::mutex::scoped_lock lock(g_mutex);
-			g_pool.splice(g_pool.end(), queue);
 			queue.swap(g_queue);
 		}
 		if(queue.empty()){
@@ -61,11 +58,10 @@ void JobDispatcher::doModal(){
 		std::abort();
 	}
 
-	std::list<boost::shared_ptr<JobBase> > queue;
 	for(;;){
+		std::deque<boost::shared_ptr<JobBase> > queue;
 		{
 			boost::mutex::scoped_lock lock(g_mutex);
-			g_pool.splice(g_pool.end(), queue);
 			while(g_queue.empty()){
 				if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
 					break;
@@ -103,11 +99,7 @@ void JobDispatcher::quitModal(){
 
 void JobDispatcher::pend(boost::shared_ptr<JobBase> job){
 	const boost::mutex::scoped_lock lock(g_mutex);
-	if(g_pool.empty()){
-		g_pool.push_front(VAL_INIT);
-	}
-	g_queue.splice(g_queue.end(), g_pool, g_pool.begin());
-	g_queue.back().swap(job);
+	g_queue.push_back(STD_MOVE(job));
 	g_newJobAvail.notify_all();
 }
 
