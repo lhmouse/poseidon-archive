@@ -16,6 +16,8 @@
 namespace Poseidon {
 
 namespace {
+	const boost::weak_ptr<const void> NULL_WEAK_PTR;
+
 	std::size_t g_maxRetryCount			= 5;
 	boost::uint64_t g_retryInitDelay	= 100;
 
@@ -57,7 +59,12 @@ namespace {
 				try {
 					const AUTO(job, queue.front());
 
-					AUTO(it, g_suspendedQueues.find(job->getCategory()));
+					AUTO(category, job->getCategory());
+					if(!(NULL_WEAK_PTR < category) && !(category < NULL_WEAK_PTR)){
+						category = job;
+					}
+
+					AUTO(it, g_suspendedQueues.find(category));
 					if(it == g_suspendedQueues.end()){
 						// 只有在之前不存在同一类别的任务被推迟的情况下才能执行。
 						try {
@@ -68,7 +75,7 @@ namespace {
 							if(g_maxRetryCount == 0){
 								DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
 							}
-							it = g_suspendedQueues.insert(std::make_pair(job->getCategory(), SuspendedQueue())).first;
+							it = g_suspendedQueues.insert(std::make_pair(category, SuspendedQueue())).first;
 						}
 					}
 					if(it != g_suspendedQueues.end()){

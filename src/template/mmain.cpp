@@ -467,7 +467,7 @@ namespace {
 
 	public:
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
-			return sp;
+			return VAL_INIT; // sp;
 		}
 		void perform() OVERRIDE {
 			LOG_POSEIDON_FATAL("!!!! MyJob::perform: ", m_s);
