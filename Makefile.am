@@ -33,6 +33,7 @@ pkginclude_HEADERS = \
 	src/main/transaction.hpp	\
 	src/main/ssl_factories.hpp	\
 	src/main/job_base.hpp	\
+	src/main/async_job.hpp	\
 	src/main/file.hpp	\
 	src/main/udp_server_base.hpp	\
 	src/main/stream_buffer.hpp	\
@@ -133,6 +134,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/optional_map.cpp	\
 	src/main/csv_parser.cpp	\
 	src/main/job_base.cpp	\
+	src/main/async_job.cpp	\
 	src/main/ssl_raii.cpp	\
 	src/main/ssl_filter_base.cpp	\
 	src/main/ssl_factories.cpp	\
