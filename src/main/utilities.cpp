@@ -159,7 +159,7 @@ boost::uint64_t assembleTime(const DateTime &dt){
 	desc.tm_hour = static_cast<int>(dt.hr);
 	desc.tm_min  = static_cast<int>(dt.min);
 	desc.tm_sec  = static_cast<int>(dt.sec);
-	return static_cast<boost::uint64_t>(::mktime(&desc)) * 1000 + dt.ms;
+	return static_cast<boost::uint64_t>(::timegm(&desc)) * 1000 + dt.ms;
 }
 
 std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs){
