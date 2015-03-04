@@ -1,22 +1,28 @@
 简介
+Introduction
 ===================
 波塞冬（Poseidon）是一个游戏服务端框架。
+Poseidon is a C++ framework for game server development.
 
 IRC channel:
 ===================
 https://webchat.freenode.net/?channels=mcfproj
 
-支持功能：
+支持功能
+Features
 ===================
 CBPP *
 HTTP
 WebSocket
-MySQL 数据库
+MySQL sync/async access
 
 * CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，
   简介参见 src/main/cbpp/message_base.cpp 中的注释。
+* CBPP is short for 'Compressed Binary Protocol for Poseidon'. Specification
+  of CBPP can be found in file 'src/main/cbpp/message_base.cpp'.
 
 编译所需工具
+Toolchains required to build
 ===================
 automake
 autoconf
@@ -31,12 +37,18 @@ libssl-dev
 
 * 建议 g++ 版本至少为 4.7 以支持 C++11 特性。
   针对 C++98 的支持可能在未来的版本中被移除。
+* It is highly recommended that you use at least g++ 4.7 for C++11 features.
+  Support for C++98 is deprecated and might be removed in future versions.
 
-运行环境
+运行环境要求
+Runtime requirements
 ===================
-至少 Debian Linux Squeeze
+Debian Linux Squeeze
 mysql-server-5.1
 
 问题反馈
+Report bugs
 ===================
 请联系 lh_mouse at 126 dot com（注明 Poseidon 相关）。
+Please email to lh_mouse at 126 dot com.
+(please state your email as Poseidon-related in the summary).
