@@ -41,7 +41,7 @@ libssl-dev
   Support for C++98 is deprecated and might be removed in future versions.
 
 运行环境要求
-Runtime requirements
+Rumtime environment requirements
 ===================
 Debian Linux Squeeze
 mysql-server-5.1
