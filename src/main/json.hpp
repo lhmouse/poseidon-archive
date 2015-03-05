@@ -152,6 +152,9 @@ private:
 public:
 	static JsonObject parseObject(std::istream &is);
 	static JsonArray parseArray(std::istream &is);
+
+private:
+	JsonParser();
 };
 
 }
