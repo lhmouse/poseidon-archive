@@ -8,13 +8,17 @@
 
 namespace Poseidon {
 
-#define MESSAGE_NAME	CbppErrorMessage
+namespace Cbpp {
+
+#define MESSAGE_NAME	ErrorMessage
 #define MESSAGE_ID		0
 #define MESSAGE_FIELDS	\
 	FIELD_VUINT			(messageId)	\
-	FIELD_VINT			(status)	\
+	FIELD_VINT			(statusCode)	\
 	FIELD_STRING		(reason)
 #include "message_generator.hpp"
+
+}
 
 }
 

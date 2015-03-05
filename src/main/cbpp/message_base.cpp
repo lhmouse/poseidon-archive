@@ -4,12 +4,13 @@
 #include "../precompiled.hpp"
 #include "message_base.hpp"
 #include "exception.hpp"
-#include "status.hpp"
+#include "status_codes.hpp"
 #include "../endian.hpp"
 #include "../log.hpp"
 
 namespace Poseidon {
 
+namespace Cbpp {
 /*
 	协议说明：
 	每个数据包由头部和正文两部分组成。
@@ -41,57 +42,57 @@ namespace Poseidon {
 
 	大长度	可选	uint64	仅在小长度为 0xFFFF 时使用。表示正文长度。
 */
+	void MessageBase::encodeHeader(
+		StreamBuffer &dst, boost::uint16_t messageId, boost::uint64_t messageLen)
+	{
+		boost::uint16_t temp16;
 
-void CbppMessageBase::encodeHeader(
-	StreamBuffer &dst, boost::uint16_t messageId, boost::uint64_t messageLen)
-{
-	boost::uint16_t temp16;
+		// 小长度，必需。
+		storeLe(temp16, (messageLen < 0xFFFF) ? messageLen : 0xFFFF);
+		dst.put(&temp16, 2);
 
-	// 小长度，必需。
-	storeLe(temp16, (messageLen < 0xFFFF) ? messageLen : 0xFFFF);
-	dst.put(&temp16, 2);
+		// 协议号，必需。
+		storeLe(temp16, messageId);
+		dst.put(&temp16, 2);
 
-	// 协议号，必需。
-	storeLe(temp16, messageId);
-	dst.put(&temp16, 2);
-
-	if(messageLen >= 0xFFFF){
-		// 大长度，可选。
-		boost::uint64_t temp64;
-		storeLe(temp64, messageLen);
-		dst.put(&temp64, 8);
+		if(messageLen >= 0xFFFF){
+			// 大长度，可选。
+			boost::uint64_t temp64;
+			storeLe(temp64, messageLen);
+			dst.put(&temp64, 8);
+		}
 	}
-}
-bool CbppMessageBase::decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
-	boost::uint16_t &messageId, boost::uint64_t &messageLen, StreamBuffer &src) NOEXCEPT
-{
-	boost::uint16_t temp16;
-	if(src.peek(&temp16, 2) < 2){
-		return false;
-	}
-	// （小长度 + 协议号）一共 4 字节。
-	std::size_t totalLen = 4;
-	// 小长度，必需。
-	messageLen = loadLe(temp16);
-	if(messageLen == 0xFFFF){
-		totalLen += 8;
-	}
-	if(src.size() < totalLen){
-		return false;
-	}
-	src.discard(2);
+	bool MessageBase::decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
+		boost::uint16_t &messageId, boost::uint64_t &messageLen, StreamBuffer &src) NOEXCEPT
+	{
+		boost::uint16_t temp16;
+		if(src.peek(&temp16, 2) < 2){
+			return false;
+		}
+		// （小长度 + 协议号）一共 4 字节。
+		std::size_t totalLen = 4;
+		// 小长度，必需。
+		messageLen = loadLe(temp16);
+		if(messageLen == 0xFFFF){
+			totalLen += 8;
+		}
+		if(src.size() < totalLen){
+			return false;
+		}
+		src.discard(2);
 
-	// 协议号，必需。
-	src.get(&temp16, 2);
-	messageId = loadLe(temp16);
+		// 协议号，必需。
+		src.get(&temp16, 2);
+		messageId = loadLe(temp16);
 
-	if(messageLen == 0xFFFF){
-		// 大长度，可选。
-		boost::uint64_t temp64;
-		src.get(&temp64, 8);
-		messageLen = loadLe(temp64);
+		if(messageLen == 0xFFFF){
+			// 大长度，可选。
+			boost::uint64_t temp64;
+			src.get(&temp64, 8);
+			messageLen = loadLe(temp64);
+		}
+		return true;
 	}
-	return true;
 }
 
 }

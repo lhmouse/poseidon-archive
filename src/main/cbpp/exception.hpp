@@ -5,21 +5,23 @@
 #define POSEIDON_CBPP_EXCEPTION_HPP_
 
 #include "../exception.hpp"
-#include "status.hpp"
+#include "status_codes.hpp"
 
 namespace Poseidon {
 
-class CbppMessageException : public ProtocolException {
-public:
-	CbppMessageException(const char *file, std::size_t line,
-		CbppStatus status, SharedNts message = SharedNts());
-	~CbppMessageException() NOEXCEPT;
+namespace Cbpp {
+	class MessageException : public ProtocolException {
+	public:
+		MessageException(const char *file, std::size_t line,
+			StatusCode statusCode, SharedNts message = SharedNts());
+		~MessageException() NOEXCEPT;
 
-public:
-	CbppStatus status() const NOEXCEPT {
-		return static_cast<CbppStatus>(code());
-	}
-};
+	public:
+		StatusCode statusCode() const NOEXCEPT {
+			return static_cast<StatusCode>(code());
+		}
+	};
+}
 
 }
 

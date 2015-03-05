@@ -7,15 +7,17 @@
 
 namespace Poseidon {
 
-CbppServer::CbppServer(std::size_t category, const IpPort &bindAddr,
-	const char *cert, const char *privateKey)
-	: TcpServerBase(bindAddr, cert, privateKey)
-	, m_category(category)
-{
-}
+namespace Cbpp {
+	Server::Server(std::size_t category, const IpPort &bindAddr,
+		const char *cert, const char *privateKey)
+		: TcpServerBase(bindAddr, cert, privateKey)
+		, m_category(category)
+	{
+	}
 
-boost::shared_ptr<TcpSessionBase> CbppServer::onClientConnect(UniqueFile client) const {
-	return boost::make_shared<CbppSession>(m_category, STD_MOVE(client));
+	boost::shared_ptr<TcpSessionBase> Server::onClientConnect(UniqueFile client) const {
+		return boost::make_shared<Session>(m_category, STD_MOVE(client));
+	}
 }
 
 }

@@ -18,61 +18,63 @@
 
 namespace Poseidon {
 
-class CbppServlet;
-class CbppSession;
+namespace Cbpp {
+	class Servlet;
+	class Session;
 
-struct CbppServletDepository {
-	static void start();
-	static void stop();
+	struct ServletDepository {
+		static void start();
+		static void stop();
 
-	static std::size_t getMaxRequestLength();
-	static unsigned long long getKeepAliveTimeout();
+		static std::size_t getMaxRequestLength();
+		static unsigned long long getKeepAliveTimeout();
 
-	// 返回的 shared_ptr 是该响应器的唯一持有者。
-	static boost::shared_ptr<CbppServlet> registerServlet(
-		std::size_t category, boost::uint16_t protocolId, CbppServletCallback callback);
+		// 返回的 shared_ptr 是该响应器的唯一持有者。
+		static boost::shared_ptr<Servlet> registerServlet(
+			std::size_t category, boost::uint16_t protocolId, ServletCallback callback);
 
-	// void (boost::shared_ptr<CbppSession> ps, ProtocolT request)
-	template<typename ProtocolT, typename CallbackT>
-	static
-		typename boost::enable_if_c<boost::is_base_of<CbppMessageBase, ProtocolT>::value,
-			boost::shared_ptr<CbppServlet> >::type
-		registerServlet(std::size_t category,
+		// void (boost::shared_ptr<Session> session, ProtocolT request)
+		template<typename ProtocolT, typename CallbackT>
+		static
+			typename boost::enable_if_c<boost::is_base_of<MessageBase, ProtocolT>::value,
+				boost::shared_ptr<Servlet> >::type
+			registerServlet(std::size_t category,
 #ifdef POSEIDON_CXX11
-			CallbackT &&
+				CallbackT &&
 #else
-			const CallbackT &
+				const CallbackT &
 #endif
-				callback)
-	{
+					callback)
+		{
 #ifdef POSEIDON_CXX11
-		const auto checkAndForward = [](
+			const auto checkAndForward = [](
 #else
-		struct Helper {
-			static void checkAndForward(
+			struct Helper {
+				static void checkAndForward(
 #endif
-				CallbackT &callback, boost::shared_ptr<CbppSession> &ps, StreamBuffer &incoming)
-			{
-				callback(STD_MOVE(ps), ProtocolT(incoming));
-			}
+					const CallbackT &callback,
+					const boost::shared_ptr<Session> &session, const StreamBuffer &incoming)
+				{
+					callback(session, ProtocolT(incoming));
+				}
 #ifdef POSEIDON_CXX11
-		;
-		return registerServlet(category, ProtocolT::ID,
-			std::bind(checkAndForward,
-				std::forward<CallbackT>(callback), std::placeholders::_1, std::placeholders::_2));
+			;
+			return registerServlet(category, ProtocolT::ID,
+				std::bind(checkAndForward,
+					std::forward<CallbackT>(callback), std::placeholders::_1, std::placeholders::_2));
 #else
-		};
-		return registerServlet(category, ProtocolT::ID,
-			boost::bind(&Helper::checkAndForward, callback, _1, _2));
+			};
+			return registerServlet(category, ProtocolT::ID,
+				boost::bind(&Helper::checkAndForward, callback, _1, _2));
 #endif
-	}
+		}
 
-	static boost::shared_ptr<const CbppServletCallback> getServlet(
-		std::size_t category, boost::uint16_t protocolId);
+		static boost::shared_ptr<const ServletCallback> getServlet(std::size_t category, boost::uint16_t protocolId);
 
-private:
-	CbppServletDepository();
-};
+	private:
+		ServletDepository();
+	};
+}
 
 }
 

@@ -8,17 +8,19 @@
 
 namespace Poseidon {
 
-class CbppServer : public TcpServerBase {
-private:
-	const std::size_t m_category;
+namespace Cbpp {
+	class Server : public TcpServerBase {
+	private:
+		const std::size_t m_category;
 
-public:
-	CbppServer(std::size_t category, const IpPort &bindAddr,
-		const char *cert, const char *privateKey);
+	public:
+		Server(std::size_t category, const IpPort &bindAddr,
+			const char *cert, const char *privateKey);
 
-protected:
-	boost::shared_ptr<class TcpSessionBase> onClientConnect(UniqueFile client) const;
-};
+	protected:
+		boost::shared_ptr<class TcpSessionBase> onClientConnect(UniqueFile client) const;
+	};
+}
 
 }
 

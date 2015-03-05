@@ -15,28 +15,30 @@
 #include "../vint50.hpp"
 #include "../stream_buffer.hpp"
 #include "exception.hpp"
-#include "status.hpp"
+#include "status_codes.hpp"
 
 #define THROW_END_OF_STREAM_(message_, field_)	\
-	DEBUG_THROW(::Poseidon::CbppMessageException,	\
-		::Poseidon::CBPP_END_OF_STREAM, ::Poseidon::SharedNts::observe(	\
+	DEBUG_THROW(::Poseidon::Cbpp::MessageException,	\
+		::Poseidon::Cbpp::ST_END_OF_STREAM, ::Poseidon::SharedNts::observe(	\
 			"End of stream encountered, expecting "	\
 				TOKEN_TO_STR(message_) "::" TOKEN_TO_STR(field_) ))
 
 #define THROW_JUNK_AFTER_PACKET_(message_)	\
-	DEBUG_THROW(::Poseidon::CbppMessageException,	\
-		::Poseidon::CBPP_JUNK_AFTER_PACKET, ::Poseidon::SharedNts::observe(	\
+	DEBUG_THROW(::Poseidon::Cbpp::MessageException,	\
+		::Poseidon::Cbpp::ST_JUNK_AFTER_PACKET, ::Poseidon::SharedNts::observe(	\
 			"Junk after packet body, message "	\
 				TOKEN_TO_STR(message_) ))
 
 namespace Poseidon {
 
-struct CbppMessageBase {
-	static void encodeHeader(
-		StreamBuffer &dst, boost::uint16_t messageId, boost::uint64_t messageLen);
-	static bool decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
-		boost::uint16_t &messageId, boost::uint64_t &messageLen, StreamBuffer &src) NOEXCEPT;
-};
+namespace Cbpp {
+	struct MessageBase {
+		static void encodeHeader(
+			StreamBuffer &dst, boost::uint16_t messageId, boost::uint64_t messageLen);
+		static bool decodeHeader( // 如果返回 false，不从 src 中消耗任何数据。
+			boost::uint16_t &messageId, boost::uint64_t &messageLen, StreamBuffer &src) NOEXCEPT;
+	};
+}
 
 }
 

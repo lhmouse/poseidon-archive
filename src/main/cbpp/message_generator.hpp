@@ -17,7 +17,7 @@
 #   error Please #include "message_base.hpp" first.
 #endif
 
-class MESSAGE_NAME : public ::Poseidon::CbppMessageBase {
+class MESSAGE_NAME : public ::Poseidon::Cbpp::MessageBase {
 public:
 	enum {
 		ID = MESSAGE_ID
@@ -58,7 +58,7 @@ public:
 
 #if (0 MESSAGE_FIELDS) != 0
 	MESSAGE_NAME()
-		: ::Poseidon::CbppMessageBase()
+		: ::Poseidon::Cbpp::MessageBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -90,7 +90,7 @@ public:
 #define FIELD_ARRAY(name_, fields_)
 
 	explicit MESSAGE_NAME(STRIP_FIRST(void MESSAGE_FIELDS))
-		: ::Poseidon::CbppMessageBase()
+		: ::Poseidon::Cbpp::MessageBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -108,7 +108,7 @@ public:
 	{
 	}
 	explicit MESSAGE_NAME(::Poseidon::StreamBuffer &buffer_)
-		: ::Poseidon::CbppMessageBase()
+		: ::Poseidon::Cbpp::MessageBase()
 	{
 		*this << buffer_;
 	}

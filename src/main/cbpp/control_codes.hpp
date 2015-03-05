@@ -6,8 +6,16 @@
 
 namespace Poseidon {
 
-enum CbppControlCode {
-	CBPP_CTL_HEARTBEAT	= 0,
+namespace Cbpp {
+	typedef unsigned ControlCode;
+
+	namespace ControlCodes {
+		enum {
+			CTL_HEARTBEAT	= 0,
+		};
+	}
+
+	using namespace ControlCodes;
 };
 
 }
