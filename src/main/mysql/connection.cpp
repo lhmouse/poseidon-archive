@@ -36,7 +36,7 @@ namespace {
 
 	typedef std::vector<std::pair<const char *, std::size_t> > MySqlColumns;
 
-	class MySqlConnectionDelegate : public MySqlConnection {
+	class MySqlConnectionDelegator : public MySqlConnection {
 
 #define THROW_MYSQL_EXCEPTION	\
 	DEBUG_THROW(MySqlException,	\
@@ -79,7 +79,7 @@ namespace {
 		unsigned long *m_lengths;
 
 	public:
-		MySqlConnectionDelegate(const char *serverAddr, unsigned serverPort,
+		MySqlConnectionDelegator(const char *serverAddr, unsigned serverPort,
 			const char *userName, const char *password, const char *schema,
 			bool useSsl, const char *charset)
 			: m_row(NULLPTR), m_lengths(NULLPTR)
@@ -244,7 +244,7 @@ namespace {
 boost::shared_ptr<MySqlConnection> MySqlConnection::create(const char *serverAddr, unsigned serverPort,
 	const char *userName, const char *password, const char *schema, bool useSsl, const char *charset)
 {
-	return boost::make_shared<MySqlConnectionDelegate>(
+	return boost::make_shared<MySqlConnectionDelegator>(
 		serverAddr, serverPort, userName, password, schema, useSsl, charset);
 }
 
@@ -252,30 +252,30 @@ MySqlConnection::~MySqlConnection(){
 }
 
 void MySqlConnection::executeSql(const char *sql, std::size_t len){
-	static_cast<MySqlConnectionDelegate &>(*this).doExecuteSql(sql, len);
+	static_cast<MySqlConnectionDelegator &>(*this).doExecuteSql(sql, len);
 }
 
 boost::uint64_t MySqlConnection::getInsertId() const {
-	return static_cast<const MySqlConnectionDelegate &>(*this).doGetInsertId();
+	return static_cast<const MySqlConnectionDelegator &>(*this).doGetInsertId();
 }
 bool MySqlConnection::fetchRow(){
-	return static_cast<MySqlConnectionDelegate &>(*this).doFetchRow();
+	return static_cast<MySqlConnectionDelegator &>(*this).doFetchRow();
 }
 
 boost::int64_t MySqlConnection::getSigned(const char *column) const {
-	return static_cast<const MySqlConnectionDelegate &>(*this).doGetSigned(column);
+	return static_cast<const MySqlConnectionDelegator &>(*this).doGetSigned(column);
 }
 boost::uint64_t MySqlConnection::getUnsigned(const char *column) const {
-	return static_cast<const MySqlConnectionDelegate &>(*this).doGetUnsigned(column);
+	return static_cast<const MySqlConnectionDelegator &>(*this).doGetUnsigned(column);
 }
 double MySqlConnection::getDouble(const char *column) const {
-	return static_cast<const MySqlConnectionDelegate &>(*this).doGetDouble(column);
+	return static_cast<const MySqlConnectionDelegator &>(*this).doGetDouble(column);
 }
 std::string MySqlConnection::getString(const char *column) const {
-	return static_cast<const MySqlConnectionDelegate &>(*this).doGetString(column);
+	return static_cast<const MySqlConnectionDelegator &>(*this).doGetString(column);
 }
 boost::uint64_t MySqlConnection::getDateTime(const char *column) const {
-	return static_cast<const MySqlConnectionDelegate &>(*this).doGetDateTime(column);
+	return static_cast<const MySqlConnectionDelegator &>(*this).doGetDateTime(column);
 }
 
 }
