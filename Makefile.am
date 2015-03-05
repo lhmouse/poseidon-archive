@@ -97,7 +97,7 @@ pkginclude_cbpp_HEADERS = \
 	src/main/cbpp/error_message.hpp	\
 	src/main/cbpp/message_generator.hpp	\
 	src/main/cbpp/status.hpp	\
-	src/main/cbpp/control_code.hpp	\
+	src/main/cbpp/control_codes.hpp	\
 	src/main/cbpp/exception.hpp	\
 	src/main/cbpp/server.hpp	\
 	src/main/cbpp/callbacks.hpp
