@@ -13,7 +13,7 @@ namespace Poseidon {
 class CbppSession;
 
 typedef boost::function<
-	void (boost::shared_ptr<CbppSession> ps, StreamBuffer incoming)
+	void (boost::shared_ptr<CbppSession> session, StreamBuffer incoming)
 	> CbppServletCallback;
 
 }
