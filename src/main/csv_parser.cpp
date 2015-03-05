@@ -44,6 +44,8 @@ void CsvParser::load(const char *file){
 			}
 
 			if(first){
+				first = false;
+
 				if(ch == '\"'){
 					inQuote = true;
 					continue;
@@ -68,22 +70,21 @@ void CsvParser::load(const char *file){
 					const std::size_t begin = token.find_first_not_of(" \t\r\n");
 					if(begin != std::string::npos){
 						const std::size_t end = token.find_last_not_of(" \t\r\n") + 1;
-						token.substr(begin, end - begin).swap(trimmed);
+						trimmed = token.substr(begin, end - begin);
 					}
-					token.clear();
 					row.push_back(STD_MOVE(trimmed));
+					token.clear();
 					first = true;
 
 					if(ch == '\n'){
 						rows.push_back(STD_MOVE(row));
 						row.clear();
 					}
+					continue;
 				}
-				continue;
 			}
 
 			token.push_back(ch);
-			first = false;
 		} while(!buffer.empty());
 	}
 	if(rows.empty() || rows.front().empty()){
