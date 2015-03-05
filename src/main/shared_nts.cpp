@@ -95,10 +95,10 @@ void SharedNts::assign(const char *str, std::size_t len){
 		m_ptr.reset(boost::shared_ptr<void>(), "");
 	} else {
 		void *dst;
-		const AUTO(sp, boost::allocate_shared<char>(IncrementalAlloc<char>(dst, len + 1)));
+		AUTO(sp, boost::allocate_shared<char>(IncrementalAlloc<char>(dst, len + 1)));
 		std::memcpy(dst, str, len);
 		static_cast<char *>(dst)[len] = 0;
-		m_ptr.reset(sp, static_cast<const char *>(dst));
+		m_ptr.reset(STD_MOVE_IDN(sp), static_cast<const char *>(dst));
 	}
 }
 
