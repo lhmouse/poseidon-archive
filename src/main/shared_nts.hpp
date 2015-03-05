@@ -33,6 +33,10 @@ public:
 	explicit SharedNts(const std::string &str){
 		assign(str);
 	}
+	template<typename T>
+	SharedNts(boost::shared_ptr<T> sp, const char *str){
+		assign(STD_MOVE(sp), str);
+	}
 
 public:
 	void assign(const char *str, std::size_t len);
@@ -41,6 +45,10 @@ public:
 	}
 	void assign(const std::string &str){
 		assign(str.data(), str.size());
+	}
+	template<typename T>
+	void assign(boost::shared_ptr<T> sp, const char *str){
+		m_ptr.reset(STD_MOVE(sp), str);
 	}
 
 	bool empty() const {
