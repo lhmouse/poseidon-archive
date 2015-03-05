@@ -13,16 +13,16 @@
 #	error Please #include "object_base.hpp" first.
 #endif
 
-class MYSQL_OBJECT_NAME : public ::Poseidon::MySqlObjectBase {
+class MYSQL_OBJECT_NAME : public ::Poseidon::MySql::ObjectBase {
 public:
-	static ::boost::shared_ptr< ::Poseidon::MySqlObjectBase> create(){
+	static ::boost::shared_ptr< ::Poseidon::MySql::ObjectBase> create(){
 		return ::boost::make_shared<MYSQL_OBJECT_NAME>();
 	}
 
-	static void batchLoad(std::string query, ::Poseidon::MySqlBatchAsyncLoadCallback callback,
-		::Poseidon::MySqlExceptionCallback except = ::Poseidon::MySqlExceptionCallback())
+	static void batchLoad(std::string query, ::Poseidon::MySql::BatchAsyncLoadCallback callback,
+		::Poseidon::MySql::ExceptionCallback except = ::Poseidon::MySql::ExceptionCallback())
 	{
-		::Poseidon::MySqlObjectBase::batchLoad(&create,
+		::Poseidon::MySql::ObjectBase::batchLoad(&create,
 			TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query),
 			STD_MOVE(callback), STD_MOVE(except));
 	}
@@ -57,7 +57,7 @@ private:
 
 public:
 	MYSQL_OBJECT_NAME()
-		: ::Poseidon::MySqlObjectBase()
+		: ::Poseidon::MySql::ObjectBase()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -112,7 +112,7 @@ public:
 #define FIELD_DATETIME(name_)				, ::boost::uint64_t name_ ## X_
 
 	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
-		: ::Poseidon::MySqlObjectBase()
+		: ::Poseidon::MySql::ObjectBase()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -336,12 +336,12 @@ public:
 #define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
 													<< '\''	\
-													<< ::Poseidon::MySqlStringEscaper(get_ ## name_())	\
+													<< ::Poseidon::MySql::StringEscaper(get_ ## name_())	\
 													<< '\''),
 #define FIELD_DATETIME(name_)				(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
 													<< '\''	\
-													<< ::Poseidon::MySqlDateFormatter(get_ ## name_())	\
+													<< ::Poseidon::MySql::DateFormatter(get_ ## name_())	\
 													<< '\''),
 
 		if(toReplace_){
@@ -352,7 +352,7 @@ public:
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
 		oss_.str().swap(sql_);
 	}
-	void syncFetch(const ::Poseidon::MySqlConnection &conn_){
+	void syncFetch(const ::Poseidon::MySql::Connection &conn_){
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT

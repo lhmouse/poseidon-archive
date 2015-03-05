@@ -3,47 +3,48 @@
 
 #include "../precompiled.hpp"
 #include "thread_context.hpp"
-#include "exception.hpp"
 #include "connection.hpp"
 #include <boost/thread/once.hpp>
 #include <mysql/mysql.h>
-#include <mysql/mysql.h>
+#include "../exception.hpp"
 #include "../log.hpp"
 
 namespace Poseidon {
 
-namespace {
-	boost::once_flag g_mysqlInitFlag;
+namespace MySql {
+	namespace {
+		boost::once_flag g_mysqlInitFlag;
 
-	__thread std::size_t t_initCount = 0;
+		__thread std::size_t t_initCount = 0;
 
-	void initMySql(){
-		LOG_POSEIDON_INFO("Initializing MySQL library...");
+		void initMySql(){
+			LOG_POSEIDON_INFO("Initializing MySQL library...");
 
-		if(::mysql_library_init(0, NULLPTR, NULLPTR) != 0){
-			LOG_POSEIDON_FATAL("Could not initialize MySQL library.");
-			std::abort();
-		}
+			if(::mysql_library_init(0, NULLPTR, NULLPTR) != 0){
+				LOG_POSEIDON_FATAL("Could not initialize MySQL library.");
+				std::abort();
+			}
 
-		std::atexit(&::mysql_library_end);
-	}
-}
-
-MySqlThreadContext::MySqlThreadContext(){
-	if(++t_initCount == 1){
-		boost::call_once(&initMySql, g_mysqlInitFlag);
-
-		LOG_POSEIDON_INFO("Initializing MySQL thread...");
-
-		if(::mysql_thread_init() != 0){
-			LOG_POSEIDON_FATAL("Could not initialize MySQL thread.");
-			DEBUG_THROW(MySqlException, 99999, SharedNts::observe("::mysql_thread_init() failed"));
+			std::atexit(&::mysql_library_end);
 		}
 	}
-}
-MySqlThreadContext::~MySqlThreadContext(){
-	if(--t_initCount == 0){
-		::mysql_thread_end();
+
+	ThreadContext::ThreadContext(){
+		if(++t_initCount == 1){
+			boost::call_once(&initMySql, g_mysqlInitFlag);
+
+			LOG_POSEIDON_INFO("Initializing MySQL thread...");
+
+			if(::mysql_thread_init() != 0){
+				LOG_POSEIDON_FATAL("Could not initialize MySQL thread.");
+				DEBUG_THROW(Exception, SharedNts::observe("::mysql_thread_init() failed"));
+			}
+		}
+	}
+	ThreadContext::~ThreadContext(){
+		if(--t_initCount == 0){
+			::mysql_thread_end();
+		}
 	}
 }
 

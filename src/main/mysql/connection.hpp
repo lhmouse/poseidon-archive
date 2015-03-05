@@ -12,41 +12,43 @@
 
 namespace Poseidon {
 
-class MySqlConnection : NONCOPYABLE {
-public:
-	static boost::shared_ptr<MySqlConnection> create(const char *serverAddr, unsigned serverPort,
-		const char *userName, const char *password, const char *schema,
-		bool useSsl, const char *charset);
+namespace MySql {
+	class Connection : NONCOPYABLE {
+	public:
+		static boost::shared_ptr<Connection> create(const char *serverAddr, unsigned serverPort,
+			const char *userName, const char *password, const char *schema,
+			bool useSsl, const char *charset);
 
-	static boost::shared_ptr<MySqlConnection> create(const std::string &serverAddr, unsigned serverPort,
-		const std::string &userName, const std::string &password, const std::string &schema,
-		bool useSsl, const std::string &charset)
-	{
-		return create(serverAddr.c_str(), serverPort,
-			userName.c_str(), password.c_str(), schema.c_str(), useSsl, charset.c_str());
-	}
+		static boost::shared_ptr<Connection> create(const std::string &serverAddr, unsigned serverPort,
+			const std::string &userName, const std::string &password, const std::string &schema,
+			bool useSsl, const std::string &charset)
+		{
+			return create(serverAddr.c_str(), serverPort,
+				userName.c_str(), password.c_str(), schema.c_str(), useSsl, charset.c_str());
+		}
 
-public:
-	virtual ~MySqlConnection() = 0;
+	public:
+		virtual ~Connection() = 0;
 
-public:
-	void executeSql(const char *sql, std::size_t len);
-	void executeSql(const char *sql){
-		executeSql(sql, std::strlen(sql));
-	}
-	void executeSql(const std::string &sql){
-		executeSql(sql.data(), sql.size());
-	}
+	public:
+		void executeSql(const char *sql, std::size_t len);
+		void executeSql(const char *sql){
+			executeSql(sql, std::strlen(sql));
+		}
+		void executeSql(const std::string &sql){
+			executeSql(sql.data(), sql.size());
+		}
 
-	boost::uint64_t getInsertId() const;
-	bool fetchRow();
+		boost::uint64_t getInsertId() const;
+		bool fetchRow();
 
-	boost::int64_t getSigned(const char *column) const;
-	boost::uint64_t getUnsigned(const char *column) const;
-	double getDouble(const char *column) const;
-	std::string getString(const char *column) const;
-	boost::uint64_t getDateTime(const char *column) const;
-};
+		boost::int64_t getSigned(const char *column) const;
+		boost::uint64_t getUnsigned(const char *column) const;
+		double getDouble(const char *column) const;
+		std::string getString(const char *column) const;
+		boost::uint64_t getDateTime(const char *column) const;
+	};
+}
 
 }
 

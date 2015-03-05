@@ -10,27 +10,29 @@
 
 namespace Poseidon {
 
-struct MySqlStringEscaper {
-	const std::string &str;
+namespace MySql {
+	struct StringEscaper {
+		const std::string &str;
 
-	explicit MySqlStringEscaper(const std::string &str_)
-		: str(str_)
-	{
-	}
-};
+		explicit StringEscaper(const std::string &str_)
+			: str(str_)
+		{
+		}
+	};
 
-extern std::ostream &operator<<(std::ostream &os, const MySqlStringEscaper &rhs);
+	extern std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs);
 
-struct MySqlDateFormatter {
-	const boost::uint64_t &time;
+	struct DateFormatter {
+		const boost::uint64_t &time;
 
-	explicit MySqlDateFormatter(const boost::uint64_t &time_)
-		: time(time_)
-	{
-	}
-};
+		explicit DateFormatter(const boost::uint64_t &time_)
+			: time(time_)
+		{
+		}
+	};
 
-extern std::ostream &operator<<(std::ostream &os, const MySqlDateFormatter &rhs);
+	extern std::ostream &operator<<(std::ostream &os, const DateFormatter &rhs);
+}
 
 }
 

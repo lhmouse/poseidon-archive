@@ -76,6 +76,8 @@ namespace Cbpp {
 	};
 }
 
+typedef Cbpp::ServletDepository CbppServletDepository;
+
 }
 
 #endif

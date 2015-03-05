@@ -8,12 +8,13 @@
 
 namespace Poseidon {
 
-class MySqlException : public ProtocolException {
-public:
-	MySqlException(const char *file, std::size_t line,
-		unsigned code, SharedNts message);
-	~MySqlException() NOEXCEPT;
-};
+namespace MySql {
+	class SqlException : public ProtocolException {
+	public:
+		SqlException(const char *file, std::size_t line, unsigned code, SharedNts message);
+		~SqlException() NOEXCEPT;
+	};
+}
 
 }
 

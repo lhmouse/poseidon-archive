@@ -23,58 +23,58 @@
 
 namespace Poseidon {
 
-class MySqlObjectBase : NONCOPYABLE
-	, public virtual VirtualSharedFromThis
-{
-protected:
-	static void batchLoad(
-		boost::shared_ptr<MySqlObjectBase> (*factory)(), const char *tableHint, std::string query,
-		MySqlBatchAsyncLoadCallback callback, MySqlExceptionCallback except);
+namespace MySql {
+	class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
+	protected:
+		static void batchLoad(boost::shared_ptr<ObjectBase> (*factory)(),
+			const char *tableHint, std::string query,
+			BatchAsyncLoadCallback callback, ExceptionCallback except);
 
-private:
-	mutable volatile bool m_autoSaves;
-	mutable const void *m_context;
+	private:
+		mutable volatile bool m_autoSaves;
+		mutable const void *m_context;
 
-protected:
-	mutable boost::mutex m_mutex;
+	protected:
+		mutable boost::mutex m_mutex;
 
-protected:
-	MySqlObjectBase();
-	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
-	~MySqlObjectBase();
+	protected:
+		ObjectBase();
+		// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
+		~ObjectBase();
 
-protected:
-	bool invalidate() const NOEXCEPT;
+	protected:
+		bool invalidate() const NOEXCEPT;
 
-public:
-	bool isAutoSavingEnabled() const {
-		return atomicLoad(m_autoSaves, ATOMIC_ACQUIRE);
-	}
-	void enableAutoSaving() const {
-		atomicStore(m_autoSaves, true, ATOMIC_RELEASE);
-	}
-	void disableAutoSaving() const {
-		atomicStore(m_autoSaves, false, ATOMIC_RELEASE);
-	}
+	public:
+		bool isAutoSavingEnabled() const {
+			return atomicLoad(m_autoSaves, ATOMIC_ACQUIRE);
+		}
+		void enableAutoSaving() const {
+			atomicStore(m_autoSaves, true, ATOMIC_RELEASE);
+		}
+		void disableAutoSaving() const {
+			atomicStore(m_autoSaves, false, ATOMIC_RELEASE);
+		}
 
-	// 用于写入合并时标记最后一次队列节点的地址。
-	const void *getContext() const {
-		return atomicLoad(m_context, ATOMIC_ACQUIRE);
-	}
-	void setContext(const void *context) const {
-		atomicStore(m_context, context, ATOMIC_RELEASE);
-	}
+		// 用于写入合并时标记最后一次队列节点的地址。
+		const void *getContext() const {
+			return atomicLoad(m_context, ATOMIC_ACQUIRE);
+		}
+		void setContext(const void *context) const {
+			atomicStore(m_context, context, ATOMIC_RELEASE);
+		}
 
-	virtual const char *getTableName() const = 0;
+		virtual const char *getTableName() const = 0;
 
-	virtual void syncGenerateSql(std::string &sql, bool toReplace) const = 0;
-	virtual void syncFetch(const MySqlConnection &conn) = 0;
+		virtual void syncGenerateSql(std::string &sql, bool toReplace) const = 0;
+		virtual void syncFetch(const Connection &conn) = 0;
 
-	void asyncSave(bool toReplace, MySqlAsyncSaveCallback callback = MySqlAsyncSaveCallback(),
-		MySqlExceptionCallback except = MySqlExceptionCallback()) const;
-	void asyncLoad(std::string query, MySqlAsyncLoadCallback callback,
-		MySqlExceptionCallback except = MySqlExceptionCallback());
-};
+		void asyncSave(bool toReplace, AsyncSaveCallback callback = AsyncSaveCallback(),
+			ExceptionCallback except = ExceptionCallback()) const;
+		void asyncLoad(std::string query, AsyncLoadCallback callback,
+			ExceptionCallback except = ExceptionCallback());
+	};
+}
 
 }
 

@@ -12,8 +12,7 @@ namespace Poseidon {
 namespace Cbpp {
 	class MessageException : public ProtocolException {
 	public:
-		MessageException(const char *file, std::size_t line,
-			StatusCode statusCode, SharedNts message = SharedNts());
+		MessageException(const char *file, std::size_t line, StatusCode statusCode, SharedNts message = SharedNts());
 		~MessageException() NOEXCEPT;
 
 	public:

@@ -7,45 +7,47 @@
 
 namespace Poseidon {
 
-std::ostream &operator<<(std::ostream &os, const MySqlStringEscaper &rhs){
-	for(AUTO(it, rhs.str.begin()); it != rhs.str.end(); ++it){
-		switch(*it){
-		case 0:
-			os <<'\\' <<'0';
-			break;
+namespace MySql {
+	std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs){
+		for(AUTO(it, rhs.str.begin()); it != rhs.str.end(); ++it){
+			switch(*it){
+			case 0:
+				os <<'\\' <<'0';
+				break;
 
-		case 0x1A:
-			os <<'\\' <<'Z';
-			break;
+			case 0x1A:
+				os <<'\\' <<'Z';
+				break;
 
-		case '\r':
-			os <<'\\' <<'r';
-			break;
+			case '\r':
+				os <<'\\' <<'r';
+				break;
 
-		case '\n':
-			os <<'\\' <<'n';
-			break;
+			case '\n':
+				os <<'\\' <<'n';
+				break;
 
-		case '\'':
-			os <<'\\' <<'\'';
-			break;
+			case '\'':
+				os <<'\\' <<'\'';
+				break;
 
-		case '\"':
-			os <<'\\' <<'\"';
-			break;
+			case '\"':
+				os <<'\\' <<'\"';
+				break;
 
-		default:
-			os <<*it;
-			break;
+			default:
+				os <<*it;
+				break;
+			}
 		}
+		return os;
 	}
-	return os;
-}
 
-std::ostream &operator<<(std::ostream &os, const MySqlDateFormatter &rhs){
-	char temp[256];
-	const std::size_t len = formatTime(temp, sizeof(temp), rhs.time, true);
-	return os.write(temp, static_cast<std::streamsize>(len));
+	std::ostream &operator<<(std::ostream &os, const DateFormatter &rhs){
+		char temp[256];
+		const std::size_t len = formatTime(temp, sizeof(temp), rhs.time, true);
+		return os.write(temp, static_cast<std::streamsize>(len));
+	}
 }
 
 }

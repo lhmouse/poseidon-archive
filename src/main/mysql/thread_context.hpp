@@ -11,17 +11,19 @@
 
 namespace Poseidon {
 
-class MySqlThreadContext : NONCOPYABLE {
-private:
-	void *operator new(std::size_t);
-	void operator delete(void *) NOEXCEPT;
-	void *operator new[](std::size_t);
-	void operator delete[](void *) NOEXCEPT;
+namespace MySql {
+	class ThreadContext : NONCOPYABLE {
+	private:
+		void *operator new(std::size_t);
+		void operator delete(void *) NOEXCEPT;
+		void *operator new[](std::size_t);
+		void operator delete[](void *) NOEXCEPT;
 
-public:
-	MySqlThreadContext();
-	~MySqlThreadContext();
-};
+	public:
+		ThreadContext();
+		~ThreadContext();
+	};
+}
 
 }
 

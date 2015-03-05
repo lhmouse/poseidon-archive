@@ -10,23 +10,25 @@
 
 namespace Poseidon {
 
-class MySqlObjectBase;
+namespace MySql {
+	class ObjectBase;
 
-typedef boost::function<
-	void ()
-	> MySqlExceptionCallback;
+	typedef boost::function<
+		void ()
+		> ExceptionCallback;
 
-typedef boost::function<
-	void (bool succeeded, unsigned long long autoIncrementId)
-	> MySqlAsyncSaveCallback;
+	typedef boost::function<
+		void (bool succeeded, unsigned long long autoIncrementId)
+		> AsyncSaveCallback;
 
-typedef boost::function<
-	void (bool found)
-	> MySqlAsyncLoadCallback;
+	typedef boost::function<
+		void (bool found)
+		> AsyncLoadCallback;
 
-typedef boost::function<
-	void (std::vector<boost::shared_ptr<MySqlObjectBase> > objects)
-	> MySqlBatchAsyncLoadCallback;
+	typedef boost::function<
+		void (std::vector<boost::shared_ptr<ObjectBase> > objects)
+		> BatchAsyncLoadCallback;
+}
 
 }
 

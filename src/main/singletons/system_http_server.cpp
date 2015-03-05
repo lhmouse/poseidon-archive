@@ -172,7 +172,7 @@ namespace {
 
 		StreamBuffer contents;
 		contents.put("thread,table,us_total\r\n");
-		AUTO(snapshot, MySqlDaemon::snapshot());
+		AUTO(snapshot, MySql::Daemon::snapshot());
 		std::string str;
 		for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 			char temp[256];
