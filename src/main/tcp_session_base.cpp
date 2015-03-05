@@ -227,7 +227,7 @@ void TcpSessionBase::registerOnClose(boost::function<void ()> callback){
 	m_onCloseQueue.push_back(boost::function<void ()>());
 	m_onCloseQueue.back().swap(callback);
 }
-void TcpSessionBase::setTimeout(unsigned long long timeout){
+void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 	boost::shared_ptr<const TimerItem> shutdownTimer;
 	if(timeout != 0){
 		shutdownTimer = TimerDaemon::registerTimer(

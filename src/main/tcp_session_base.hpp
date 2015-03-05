@@ -13,6 +13,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/function.hpp>
+#include <boost/cstdint.hpp>
 #include "raii.hpp"
 #include "ip_port.hpp"
 #include "stream_buffer.hpp"
@@ -37,7 +38,7 @@ private:
 
 private:
 	const UniqueFile m_socket;
-	const unsigned long long m_createdTime;
+	const boost::uint64_t m_createdTime;
 
 	mutable struct {
 		volatile bool fetched;
@@ -94,7 +95,7 @@ public:
 
 	bool shutdown() NOEXCEPT;
 
-	unsigned long long getCreatedTime() const {
+	boost::uint64_t getCreatedTime() const {
 		return m_createdTime;
 	}
 
@@ -102,7 +103,7 @@ public:
 	const IpPort &getLocalInfo() const;
 
 	void registerOnClose(boost::function<void ()> callback);
-	void setTimeout(unsigned long long timeout);
+	void setTimeout(boost::uint64_t timeout);
 };
 
 }
