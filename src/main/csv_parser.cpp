@@ -24,6 +24,7 @@ void CsvParser::load(const char *file){
 
 	StreamBuffer buffer;
 	fileGetContents(buffer, file);
+	buffer.put('\n');
 
 	std::vector<OptionalMap> data;
 
@@ -31,48 +32,58 @@ void CsvParser::load(const char *file){
 	{
 		std::vector<std::string> row;
 		std::string token;
+		bool first = true;
 		bool inQuote = false;
-		char ch;
 		do {
-			if(buffer.empty()){
+			char ch = buffer.get();
+			if(ch == '\r'){
+				if(buffer.peek() == '\n'){
+					buffer.get();
+				}
 				ch = '\n';
-			} else {
-				ch = buffer.get();
-				if(ch == '\r'){
-					if(buffer.peek() == '\n'){
-						buffer.get();
-					}
-					ch = '\n';
+			}
+
+			if(first){
+				if(ch == '\"'){
+					inQuote = true;
+					continue;
 				}
 			}
 
 			if(ch == '\"'){
-				if(!inQuote){
-					inQuote = true;
-				} else if(buffer.peek() != '\"'){
-					inQuote = false;
-				} else {
-					buffer.get();
-					token.push_back('\"');
+				if(inQuote){
+					if(buffer.peek() == '\"'){
+						buffer.get();
+						token.push_back('\"');
+					} else {
+						inQuote = false;
+					}
+					continue;
 				}
-			} else if(!inQuote && ((ch == ',') || (ch == '\n'))){
-				std::string trimmed;
-				const std::size_t begin = token.find_first_not_of(" \t\r\n");
-				if(begin != std::string::npos){
-					const std::size_t end = token.find_last_not_of(" \t\r\n") + 1;
-					token.substr(begin, end - begin).swap(trimmed);
-				}
-				token.clear();
-				row.push_back(VAL_INIT);
-				row.back().swap(trimmed);
-
-				if(ch == '\n'){
-					rows.push_back(VAL_INIT);
-					rows.back().swap(row);
-				}
-			} else {
-				token.push_back(ch);
 			}
+
+			if(!inQuote){
+				if((ch == ',') || (ch == '\n')){
+					std::string trimmed;
+					const std::size_t begin = token.find_first_not_of(" \t\r\n");
+					if(begin != std::string::npos){
+						const std::size_t end = token.find_last_not_of(" \t\r\n") + 1;
+						token.substr(begin, end - begin).swap(trimmed);
+					}
+					token.clear();
+					row.push_back(STD_MOVE(trimmed));
+					first = true;
+
+					if(ch == '\n'){
+						rows.push_back(STD_MOVE(row));
+						row.clear();
+					}
+				}
+				continue;
+			}
+
+			token.push_back(ch);
+			first = false;
 		} while(!buffer.empty());
 	}
 	if(rows.empty() || rows.front().empty()){
