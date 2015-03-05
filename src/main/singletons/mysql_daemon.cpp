@@ -62,7 +62,7 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return VAL_INIT;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			PROFILE_ME;
 
 			try {
@@ -94,7 +94,7 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return VAL_INIT;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			PROFILE_ME;
 
 			try {
@@ -111,7 +111,7 @@ namespace {
 	class BatchLoadCallbackJob : public JobBase {
 	private:
 		const MySqlBatchAsyncLoadCallback m_callback;
-		std::vector<boost::shared_ptr<MySqlObjectBase> > m_objects;
+		const std::vector<boost::shared_ptr<MySqlObjectBase> > m_objects;
 		const MySqlExceptionCallback m_except;
 
 	public:
@@ -127,11 +127,11 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return VAL_INIT;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			PROFILE_ME;
 
 			try {
-				m_callback(STD_MOVE(m_objects));
+				m_callback(m_objects);
 			} catch(...){
 				if(m_except){
 					m_except();

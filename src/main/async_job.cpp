@@ -19,10 +19,10 @@ namespace {
 		}
 
 	public:
-		boost::weak_ptr<const void> getCategory() const {
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return VAL_INIT;
 		}
-		void perform(){
+		void perform() const OVERRIDE {
 			m_proc();
 		}
 	};

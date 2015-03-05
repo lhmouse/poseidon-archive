@@ -49,7 +49,7 @@ private:
 	boost::weak_ptr<const void> getCategory() const OVERRIDE {
 		return m_session;
 	}
-	void perform() OVERRIDE {
+	void perform() const OVERRIDE {
 		m_session->pumpOnClose();
 	}
 };

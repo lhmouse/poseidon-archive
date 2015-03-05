@@ -20,18 +20,14 @@ namespace {
 	class WebSocketRequestJob : public JobBase {
 	private:
 		const boost::weak_ptr<WebSocketSession> m_session;
-
 		const std::string m_uri;
 		const WebSocketOpCode m_opcode;
-
-		StreamBuffer m_payload;
+		const StreamBuffer m_payload;
 
 	public:
 		WebSocketRequestJob(boost::weak_ptr<WebSocketSession> session,
 			std::string uri, WebSocketOpCode opcode, StreamBuffer payload)
-			: m_session(STD_MOVE(session))
-			, m_uri(STD_MOVE(uri)), m_opcode(opcode)
-			, m_payload(STD_MOVE(payload))
+			: m_session(STD_MOVE(session)), m_uri(STD_MOVE(uri)), m_opcode(opcode), m_payload(STD_MOVE(payload))
 		{
 		}
 
@@ -39,7 +35,7 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return m_session;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			PROFILE_ME;
 
 			const boost::shared_ptr<WebSocketSession> session(m_session);
@@ -52,9 +48,8 @@ namespace {
 					return;
 				}
 
-				LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", m_uri,
-					", payload size = ", m_payload.size());
-				(*servlet)(session, m_opcode, STD_MOVE(m_payload));
+				LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_payload.size());
+				(*servlet)(session, m_opcode, m_payload);
 				session->setTimeout(WebSocketServletDepository::getKeepAliveTimeout());
 			} catch(TryAgainLater &){
 				throw;

@@ -39,7 +39,7 @@ namespace {
 	class EventJob : public JobBase {
 	private:
 		const boost::shared_ptr<const EventListenerCallback> m_callback;
-		boost::shared_ptr<EventBaseWithoutId> m_event;
+		const boost::shared_ptr<EventBaseWithoutId> m_event;
 
 	public:
 		EventJob(boost::shared_ptr<const EventListenerCallback> callback,
@@ -52,10 +52,10 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return m_event;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			PROFILE_ME;
 
-			(*m_callback)(STD_MOVE(m_event));
+			(*m_callback)(m_event);
 		}
 	};
 }

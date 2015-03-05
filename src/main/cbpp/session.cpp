@@ -18,16 +18,12 @@ namespace {
 	class CbppRequestJob : public JobBase {
 	private:
 		const boost::weak_ptr<CbppSession> m_session;
-
 		const unsigned m_messageId;
-
-		StreamBuffer m_payload;
+		const StreamBuffer m_payload;
 
 	public:
 		CbppRequestJob(boost::weak_ptr<CbppSession> session, unsigned messageId, StreamBuffer payload)
-			: m_session(STD_MOVE(session))
-			, m_messageId(messageId)
-			, m_payload(STD_MOVE(payload))
+			: m_session(STD_MOVE(session)), m_messageId(messageId), m_payload(STD_MOVE(payload))
 		{
 		}
 
@@ -35,13 +31,14 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return m_session;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			PROFILE_ME;
 
 			const boost::shared_ptr<CbppSession> session(m_session);
 			try {
 				if(m_messageId == CbppErrorMessage::ID){
-					CbppErrorMessage packet(m_payload);
+					AUTO(payload, m_payload);
+					CbppErrorMessage packet(payload);
 					LOG_POSEIDON_DEBUG("Received error packet: message id = ", packet.messageId,
 						", status = ", packet.status, ", reason = ", packet.reason);
 
@@ -67,7 +64,7 @@ namespace {
 
 					LOG_POSEIDON_DEBUG("Dispatching packet: message = ", m_messageId,
 						", payload size = ", m_payload.size());
-					(*servlet)(session, STD_MOVE(m_payload));
+					(*servlet)(session, m_payload);
 				}
 				session->setTimeout(CbppServletDepository::getKeepAliveTimeout());
 			} catch(TryAgainLater &){

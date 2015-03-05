@@ -61,17 +61,16 @@ namespace {
 		const std::string m_uri;
 		const unsigned m_version;
 
-		OptionalMap m_getParams;
-		OptionalMap m_headers;
-		std::string m_contents;
+		const OptionalMap m_getParams;
+		const OptionalMap m_headers;
+		const std::string m_contents;
 
 	public:
 		HttpRequestJob(boost::weak_ptr<HttpSession> session, HttpVerb verb, std::string uri, unsigned version,
 			OptionalMap getParams, OptionalMap headers, std::string contents)
 			: m_session(STD_MOVE(session))
 			, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
-			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers))
-			, m_contents(STD_MOVE(contents))
+			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_contents(STD_MOVE(contents))
 		{
 		}
 
@@ -79,7 +78,7 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return m_session;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			PROFILE_ME;
 			assert(!m_uri.empty());
 
@@ -96,9 +95,9 @@ namespace {
 				request.verb = m_verb;
 				request.uri = m_uri;
 				request.version = m_version;
-				request.getParams.swap(m_getParams);
-				request.headers.swap(m_headers);
-				request.contents.swap(m_contents);
+				request.getParams = m_getParams;
+				request.headers = m_headers;
+				request.contents = m_contents;
 
 				LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", stringFromHttpVerb(m_verb));
 				(*servlet)(session, STD_MOVE(request));

@@ -29,11 +29,11 @@ public:
 	// 如果一个任务被推迟执行且 Category 非空，
 	// 则所有具有相同 Category 的后续任务都会被推迟，以维持其相对顺序。
 	virtual boost::weak_ptr<const void> getCategory() const = 0;
-	virtual void perform() = 0;
+	virtual void perform() const = 0;
 };
 
 // 加到全局队列中（外部不可见），线程安全的。
-extern void enqueueJob(boost::shared_ptr<JobBase> job);
+extern void enqueueJob(boost::shared_ptr<const JobBase> job);
 // 推迟当前任务执行，实际上会抛出一个异常。必须在任务函数中调用。
 extern void suspendCurrentJob() __attribute__((__noreturn__));
 

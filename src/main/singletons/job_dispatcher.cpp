@@ -24,11 +24,11 @@ namespace {
 	volatile bool g_running = false;
 
 	boost::mutex g_mutex;
-	std::deque<boost::shared_ptr<JobBase> > g_queue;
+	std::deque<boost::shared_ptr<const JobBase> > g_queue;
 	boost::condition_variable g_newJobAvail;
 
 	struct SuspendedQueue {
-		std::deque<boost::shared_ptr<JobBase> > queue;
+		std::deque<boost::shared_ptr<const JobBase> > queue;
 
 		// 只记录第一个。
 		boost::uint64_t until;
@@ -42,7 +42,7 @@ namespace {
 
 		bool ret = false;
 
-		std::deque<boost::shared_ptr<JobBase> > queue;
+		std::deque<boost::shared_ptr<const JobBase> > queue;
 		{
 			boost::mutex::scoped_lock lock(g_mutex);
 			queue.swap(g_queue);
@@ -195,7 +195,7 @@ void JobDispatcher::quitModal(){
 	}
 }
 
-void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job){
+void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job){
 	const boost::mutex::scoped_lock lock(g_mutex);
 	g_queue.push_back(STD_MOVE(job));
 	g_newJobAvail.notify_all();

@@ -469,7 +469,7 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return VAL_INIT; // sp;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			LOG_POSEIDON_FATAL("!!!! MyJob::perform: ", m_s);
 			suspendCurrentJob();
 		}
@@ -480,7 +480,7 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return VAL_INIT;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			LOG_POSEIDON_FATAL("!!!! MeowJob::perform");
 		}
 	};

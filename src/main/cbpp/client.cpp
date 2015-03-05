@@ -17,16 +17,12 @@ namespace {
 	class ServerResponseJob : public JobBase {
 	private:
 		const boost::weak_ptr<CbppClient> m_client;
-
 		const unsigned m_messageId;
-
-		StreamBuffer m_payload;
+		const StreamBuffer m_payload;
 
 	public:
 		ServerResponseJob(boost::weak_ptr<CbppClient> client, unsigned messageId, StreamBuffer payload)
-			: m_client(STD_MOVE(client))
-			, m_messageId(messageId)
-			, m_payload(STD_MOVE(payload))
+			: m_client(STD_MOVE(client)), m_messageId(messageId), m_payload(STD_MOVE(payload))
 		{
 		}
 
@@ -34,7 +30,7 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return m_client;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			PROFILE_ME;
 
 			const boost::shared_ptr<CbppClient> client(m_client);
@@ -43,7 +39,8 @@ namespace {
 					LOG_POSEIDON_DEBUG("Dispatching: message = ", m_messageId, ", payload size = ", m_payload.size());
 					client->onResponse(m_messageId, STD_MOVE(m_payload));
 				} else {
-					CbppErrorMessage error(m_payload);
+					AUTO(payload, m_payload);
+					CbppErrorMessage error(payload);
 					LOG_POSEIDON_DEBUG("Dispatching error message: message id = ", error.messageId,
 						", status = ", error.status, ", reason = ", error.reason);
 					client->onError(error.messageId, CbppStatus(error.status), STD_MOVE(error.reason));

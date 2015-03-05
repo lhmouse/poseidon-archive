@@ -54,7 +54,7 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return VAL_INIT;
 		}
-		void perform() OVERRIDE {
+		void perform() const OVERRIDE {
 			PROFILE_ME;
 
 			(*m_callback)(m_now, m_period);
