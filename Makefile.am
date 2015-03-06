@@ -83,13 +83,13 @@ pkginclude_http_HEADERS = \
 	src/main/http/request.hpp	\
 	src/main/http/callbacks.hpp
 
-pkginclude_http_websocketdir = $(pkgincludedir)/http/websocket
-pkginclude_http_websocket_HEADERS = \
-	src/main/http/websocket/session.hpp	\
-	src/main/http/websocket/status.hpp	\
-	src/main/http/websocket/exception.hpp	\
-	src/main/http/websocket/opcode.hpp	\
-	src/main/http/websocket/callbacks.hpp
+pkginclude_websocketdir = $(pkgincludedir)/websocket
+pkginclude_websocket_HEADERS = \
+	src/main/websocket/session.hpp	\
+	src/main/websocket/status.hpp	\
+	src/main/websocket/exception.hpp	\
+	src/main/websocket/opcode.hpp	\
+	src/main/websocket/callbacks.hpp
 
 pkginclude_cbppdir = $(pkgincludedir)/cbpp
 pkginclude_cbpp_HEADERS = \
@@ -182,8 +182,8 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/http/utilities.cpp	\
 	src/main/http/upgraded_session_base.cpp	\
 	src/main/http/exception.cpp	\
-	src/main/http/websocket/session.cpp	\
-	src/main/http/websocket/exception.cpp	\
+	src/main/websocket/session.cpp	\
+	src/main/websocket/exception.cpp	\
 	src/main/mysql/object_base.cpp	\
 	src/main/mysql/exception.cpp	\
 	src/main/mysql/utilities.cpp	\

@@ -11,7 +11,7 @@
 #include <boost/function.hpp>
 #include "../shared_nts.hpp"
 #include "../stream_buffer.hpp"
-#include "../http/websocket/callbacks.hpp"
+#include "../websocket/callbacks.hpp"
 
 namespace Poseidon {
 

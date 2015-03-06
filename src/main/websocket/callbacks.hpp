@@ -7,7 +7,7 @@
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include "opcode.hpp"
-#include "../../stream_buffer.hpp"
+#include "../stream_buffer.hpp"
 
 namespace Poseidon {
 

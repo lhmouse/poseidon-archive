@@ -1,18 +1,18 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
-#include "../../precompiled.hpp"
+#include "../precompiled.hpp"
 #include "session.hpp"
 #include "exception.hpp"
-#include "../session.hpp"
-#include "../../optional_map.hpp"
-#include "../../singletons/job_dispatcher.hpp"
-#include "../../singletons/websocket_servlet_depository.hpp"
-#include "../../log.hpp"
-#include "../../utilities.hpp"
-#include "../../endian.hpp"
-#include "../../job_base.hpp"
-#include "../../profiler.hpp"
+#include "../http/session.hpp"
+#include "../optional_map.hpp"
+#include "../singletons/job_dispatcher.hpp"
+#include "../singletons/websocket_servlet_depository.hpp"
+#include "../log.hpp"
+#include "../utilities.hpp"
+#include "../endian.hpp"
+#include "../job_base.hpp"
+#include "../profiler.hpp"
 
 namespace Poseidon {
 

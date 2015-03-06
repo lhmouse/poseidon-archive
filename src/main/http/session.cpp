@@ -8,7 +8,6 @@
 #include "exception.hpp"
 #include "utilities.hpp"
 #include "upgraded_session_base.hpp"
-#include "websocket/session.hpp"
 #include "../log.hpp"
 #include "../singletons/http_servlet_depository.hpp"
 #include "../singletons/websocket_servlet_depository.hpp"
@@ -19,6 +18,7 @@
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 #include "../hash.hpp"
+#include "../websocket/session.hpp"
 
 namespace Poseidon {
 

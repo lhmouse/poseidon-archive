@@ -4,11 +4,11 @@
 #ifndef POSEIDON_HTTP_WEBSOCKET_SESSION_HPP_
 #define POSEIDON_HTTP_WEBSOCKET_SESSION_HPP_
 
-#include "../../cxx_ver.hpp"
-#include "../upgraded_session_base.hpp"
+#include "../cxx_ver.hpp"
+#include "../http/upgraded_session_base.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
-#include "../../stream_buffer.hpp"
+#include "../stream_buffer.hpp"
 #include "opcode.hpp"
 #include "status.hpp"
 

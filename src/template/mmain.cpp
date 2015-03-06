@@ -15,7 +15,7 @@
 #include "../main/singletons/timer_daemon.hpp"
 #include "../main/singletons/websocket_servlet_depository.hpp"
 #include "../main/singletons/profile_depository.hpp"
-#include "../main/http/websocket/session.hpp"
+#include "../main/websocket/session.hpp"
 #include "../main/http/utilities.hpp"
 #include "../main/http/server.hpp"
 #include "../main/cbpp/server.hpp"
