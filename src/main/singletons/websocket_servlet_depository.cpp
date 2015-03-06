@@ -67,7 +67,7 @@ unsigned long long WebSocketServletDepository::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;
 }
 
-boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::registerServlet(
+boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::create(
 	std::size_t category, SharedNts uri, WebSocketServletCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<WebSocketServletCallback>());
@@ -86,7 +86,7 @@ boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::registerServlet(
 	return servlet;
 }
 
-boost::shared_ptr<const WebSocketServletCallback> WebSocketServletDepository::getServlet(
+boost::shared_ptr<const WebSocketServletCallback> WebSocketServletDepository::get(
 	std::size_t category, const char *uri)
 {
 	if(!uri){

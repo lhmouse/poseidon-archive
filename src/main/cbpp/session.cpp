@@ -55,7 +55,7 @@ namespace Cbpp {
 						}
 					} else {
 						const AUTO(category, session->getCategory());
-						const AUTO(servlet, ServletDepository::getServlet(category, m_messageId));
+						const AUTO(servlet, ServletDepository::get(category, m_messageId));
 						if(!servlet){
 							LOG_POSEIDON_WARNING("No servlet in category ", category, " matches message ", m_messageId);
 							DEBUG_THROW(Exception, ST_NOT_FOUND, SharedNts::observe("Unknown message"));

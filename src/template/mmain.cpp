@@ -152,8 +152,8 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	if(!v.empty()){
 		contents.put("Already loaded");
 	} else {
-		v.push_back(HttpServletDepository::registerServlet(1, SharedNts::observe("/meow/"), &meowProc));
-		v.push_back(HttpServletDepository::registerServlet(1, SharedNts::observe("/meow/meow/"), &meowMeowProc));
+		v.push_back(HttpServletDepository::create(1, SharedNts::observe("/meow/"), &meowProc));
+		v.push_back(HttpServletDepository::create(1, SharedNts::observe("/meow/meow/"), &meowMeowProc));
 		v.push_back(TimerDaemon::registerTimer(5000, 10000, &tickProc));
 		contents.put("OK");
 	}
@@ -342,13 +342,13 @@ void TestProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 }
 
 MODULE_RAII {
-	return HttpServletDepository::registerServlet(1, SharedNts::observe("/profile"), &profileProc);
+	return HttpServletDepository::create(1, SharedNts::observe("/profile"), &profileProc);
 }
 MODULE_RAII {
-	return HttpServletDepository::registerServlet(1, SharedNts::observe("/load"), &loadProc);
+	return HttpServletDepository::create(1, SharedNts::observe("/load"), &loadProc);
 }
 MODULE_RAII {
-	return HttpServletDepository::registerServlet(1, SharedNts::observe("/unload"), &unloadProc);
+	return HttpServletDepository::create(1, SharedNts::observe("/unload"), &unloadProc);
 }
 MODULE_RAII {
 	AUTO(v, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
@@ -362,29 +362,29 @@ MODULE_RAII {
 	return EventDispatcher::registerListener<TestEvent2>(&event2Proc);
 }
 MODULE_RAII {
-	return WebSocketServletDepository::registerServlet(2, SharedNts::observe("/wstest"), &webSocketProc);
+	return WebSocketServletDepository::create(2, SharedNts::observe("/wstest"), &webSocketProc);
 }
 
 MODULE_RAII {
-	return CbppServletDepository::registerServlet(2, 100, &TestIntProc);
+	return CbppServletDepository::create(2, 100, &TestIntProc);
 }
 MODULE_RAII {
-	return CbppServletDepository::registerServlet(2, 101, &TestUIntProc);
+	return CbppServletDepository::create(2, 101, &TestUIntProc);
 }
 MODULE_RAII {
-	return CbppServletDepository::registerServlet(2, 102, &TestStringProc);
+	return CbppServletDepository::create(2, 102, &TestStringProc);
 }
 MODULE_RAII {
-	return CbppServletDepository::registerServlet(2, 103, &TestIntArrayProc);
+	return CbppServletDepository::create(2, 103, &TestIntArrayProc);
 }
 MODULE_RAII {
-	return CbppServletDepository::registerServlet(2, 104, &TestUIntArrayProc);
+	return CbppServletDepository::create(2, 104, &TestUIntArrayProc);
 }
 MODULE_RAII {
-	return CbppServletDepository::registerServlet(2, 105, &TestStringArrayProc);
+	return CbppServletDepository::create(2, 105, &TestStringArrayProc);
 }
 MODULE_RAII {
-	return CbppServletDepository::registerServlet(2, 106, &TestProc);
+	return CbppServletDepository::create(2, 106, &TestProc);
 }
 
 namespace {

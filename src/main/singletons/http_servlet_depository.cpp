@@ -99,7 +99,7 @@ unsigned long long HttpServletDepository::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;
 }
 
-boost::shared_ptr<HttpServlet> HttpServletDepository::registerServlet(
+boost::shared_ptr<HttpServlet> HttpServletDepository::create(
 	std::size_t category, SharedNts uri, HttpServletCallback callback)
 {
 	AUTO(sharedCallback, boost::make_shared<HttpServletCallback>());
@@ -118,7 +118,7 @@ boost::shared_ptr<HttpServlet> HttpServletDepository::registerServlet(
 	return servlet;
 }
 
-boost::shared_ptr<const HttpServletCallback> HttpServletDepository::getServlet(
+boost::shared_ptr<const HttpServletCallback> HttpServletDepository::get(
 	std::size_t category, const char *uri)
 {
 	if(!uri){

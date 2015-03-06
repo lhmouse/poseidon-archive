@@ -263,7 +263,7 @@ void SystemHttpServer::start(){
 	EpollDaemon::registerServer(g_systemServer);
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created system HTTP sevlet on ", path);
-	g_systemServlet = HttpServletDepository::registerServlet(
+	g_systemServlet = HttpServletDepository::create(
 		category, SharedNts(path.c_str()), boost::bind(&servletProc, _1, _2, path.size()));
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing system HTTP server.");

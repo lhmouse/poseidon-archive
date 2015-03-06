@@ -85,7 +85,7 @@ namespace {
 			const boost::shared_ptr<HttpSession> session(m_session);
 			try {
 				const AUTO(category, session->getCategory());
-				const AUTO(servlet, HttpServletDepository::getServlet(category, m_uri.c_str()));
+				const AUTO(servlet, HttpServletDepository::get(category, m_uri.c_str()));
 				if(!servlet){
 					LOG_POSEIDON_WARNING("No handler in category ", category, " matches URI ", m_uri);
 					DEBUG_THROW(HttpException, HTTP_NOT_FOUND);

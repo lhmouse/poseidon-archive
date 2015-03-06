@@ -30,7 +30,7 @@ namespace Cbpp {
 		static unsigned long long getKeepAliveTimeout();
 
 		// 返回的 shared_ptr 是该响应器的唯一持有者。
-		static boost::shared_ptr<Servlet> registerServlet(
+		static boost::shared_ptr<Servlet> create(
 			std::size_t category, boost::uint16_t protocolId, ServletCallback callback);
 
 		// void (boost::shared_ptr<Session> session, ProtocolT request)
@@ -38,7 +38,7 @@ namespace Cbpp {
 		static
 			typename boost::enable_if_c<boost::is_base_of<MessageBase, ProtocolT>::value,
 				boost::shared_ptr<Servlet> >::type
-			registerServlet(std::size_t category,
+			create(std::size_t category,
 #ifdef POSEIDON_CXX11
 				CallbackT &&
 #else
@@ -59,17 +59,17 @@ namespace Cbpp {
 				}
 #ifdef POSEIDON_CXX11
 			;
-			return registerServlet(category, ProtocolT::ID,
+			return create(category, ProtocolT::ID,
 				std::bind(checkAndForward,
 					std::forward<CallbackT>(callback), std::placeholders::_1, std::placeholders::_2));
 #else
 			};
-			return registerServlet(category, ProtocolT::ID,
+			return create(category, ProtocolT::ID,
 				boost::bind(&Helper::checkAndForward, callback, _1, _2));
 #endif
 		}
 
-		static boost::shared_ptr<const ServletCallback> getServlet(std::size_t category, boost::uint16_t protocolId);
+		static boost::shared_ptr<const ServletCallback> get(std::size_t category, boost::uint16_t protocolId);
 
 	private:
 		ServletDepository();

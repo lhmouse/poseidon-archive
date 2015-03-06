@@ -41,7 +41,7 @@ namespace {
 			const boost::shared_ptr<WebSocketSession> session(m_session);
 			try {
 				const AUTO(category, session->getCategory());
-				const AUTO(servlet, WebSocketServletDepository::getServlet(category, m_uri.c_str()));
+				const AUTO(servlet, WebSocketServletDepository::get(category, m_uri.c_str()));
 				if(!servlet){
 					LOG_POSEIDON_WARNING("No servlet in category ", category, " matches URI ", m_uri);
 					DEBUG_THROW(WebSocketException, WS_INACCEPTABLE, SharedNts::observe("Unknown URI"));
