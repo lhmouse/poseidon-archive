@@ -1,16 +1,16 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_HTTP_WEBSOCKET_SESSION_HPP_
-#define POSEIDON_HTTP_WEBSOCKET_SESSION_HPP_
+#ifndef POSEIDON_WEBSOCKET_SESSION_HPP_
+#define POSEIDON_WEBSOCKET_SESSION_HPP_
 
 #include "../cxx_ver.hpp"
 #include "../http/upgraded_session_base.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
-#include "opcode.hpp"
-#include "status.hpp"
+#include "opcodes.hpp"
+#include "status_codes.hpp"
 
 namespace Poseidon {
 

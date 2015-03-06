@@ -198,7 +198,7 @@ namespace MySql {
 						conn.executeSql(query);
 						succeeded = true;
 					} catch(Exception &e){
-						LOG_POSEIDON_DEBUG("Exception: errorCode = ", e.errorCode(), ", message = ", e.what());
+						LOG_POSEIDON_DEBUG("MySql::Exception: errorCode = ", e.errorCode(), ", message = ", e.what());
 						if(!m_callback || (e.errorCode() != ER_DUP_ENTRY)){
 							throw;
 						}
@@ -535,8 +535,7 @@ namespace MySql {
 								const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
 								std::size_t total = 0;
 								do {
-									::ssize_t written = ::write(
-										g_dumpFile.get(), dump.data() + total, dump.size() - total);
+									::ssize_t written = ::write(g_dumpFile.get(), dump.data() + total, dump.size() - total);
 									if(written <= 0){
 										break;
 									}
@@ -548,7 +547,7 @@ namespace MySql {
 					}
 					operation.reset();
 				} catch(Exception &e){
-					LOG_POSEIDON_ERROR("Exception thrown in MySQL daemon: errorCode = ", e.errorCode(), ", what = ", e.what());
+					LOG_POSEIDON_ERROR("MySql::Exception thrown in MySQL daemon: errorCode = ", e.errorCode(), ", what = ", e.what());
 					conn.reset();
 				} catch(std::exception &e){
 					LOG_POSEIDON_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());

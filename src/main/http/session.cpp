@@ -105,8 +105,9 @@ namespace {
 			} catch(TryAgainLater &){
 				throw;
 			} catch(HttpException &e){
-				LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri, ", status = ", e.status());
-				session->sendDefault(e.status(), e.headers(), false); // 不关闭连接。
+				LOG_POSEIDON_ERROR("HttpException thrown in HTTP servlet, request URI = ", m_uri,
+					", statusCode = ", e.statusCode());
+				session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
 				throw;
 			} catch(...){
 				LOG_POSEIDON_ERROR("Forwarding exception... request URI = ", m_uri);
@@ -397,8 +398,8 @@ void HttpSession::onReadAvail(const void *data, std::size_t size){
 		}
 	} catch(HttpException &e){
 		LOG_POSEIDON_ERROR("HttpException thrown while parsing data, URI = ", m_uri,
-			", status = ", static_cast<unsigned>(e.status()));
-		sendDefault(e.status(), e.headers(), true);
+			", status = ", static_cast<unsigned>(e.statusCode()));
+		sendDefault(e.statusCode(), e.headers(), true);
 		throw;
 	} catch(...){
 		LOG_POSEIDON_ERROR("Forwarding exception... shutdown the session first.");

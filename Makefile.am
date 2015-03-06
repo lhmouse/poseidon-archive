@@ -74,8 +74,8 @@ pkginclude_singletons_HEADERS = \
 pkginclude_httpdir = $(pkgincludedir)/http
 pkginclude_http_HEADERS = \
 	src/main/http/session.hpp	\
-	src/main/http/verb.hpp	\
-	src/main/http/status.hpp	\
+	src/main/http/verbs.hpp	\
+	src/main/http/status_codes.hpp	\
 	src/main/http/exception.hpp	\
 	src/main/http/server.hpp	\
 	src/main/http/utilities.hpp	\
@@ -86,9 +86,9 @@ pkginclude_http_HEADERS = \
 pkginclude_websocketdir = $(pkgincludedir)/websocket
 pkginclude_websocket_HEADERS = \
 	src/main/websocket/session.hpp	\
-	src/main/websocket/status.hpp	\
+	src/main/websocket/opcodes.hpp	\
+	src/main/websocket/status_codes.hpp	\
 	src/main/websocket/exception.hpp	\
-	src/main/websocket/opcode.hpp	\
 	src/main/websocket/callbacks.hpp
 
 pkginclude_cbppdir = $(pkgincludedir)/cbpp
@@ -177,8 +177,8 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/cbpp/message_base.cpp	\
 	src/main/http/session.cpp	\
 	src/main/http/server.cpp	\
-	src/main/http/status.cpp	\
-	src/main/http/verb.cpp	\
+	src/main/http/status_codes.cpp	\
+	src/main/http/verbs.cpp	\
 	src/main/http/utilities.cpp	\
 	src/main/http/upgraded_session_base.cpp	\
 	src/main/http/exception.cpp	\

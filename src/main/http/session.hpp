@@ -12,8 +12,8 @@
 #include <boost/cstdint.hpp>
 #include "../tcp_session_base.hpp"
 #include "../optional_map.hpp"
-#include "verb.hpp"
-#include "status.hpp"
+#include "verbs.hpp"
+#include "status_codes.hpp"
 
 namespace Poseidon {
 

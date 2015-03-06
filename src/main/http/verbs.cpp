@@ -2,7 +2,7 @@
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "verb.hpp"
+#include "verbs.hpp"
 #include <string.h>
 
 namespace Poseidon {
