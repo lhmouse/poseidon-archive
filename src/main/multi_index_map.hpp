@@ -251,7 +251,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		\
 		template<unsigned ToIndexIdT>	\
 		typename delegated_container::nth_index<ToIndexIdT>::type::const_iterator	\
-			project(typename delegated_container::const_iterator pos)	\
+			project(typename delegated_container::const_iterator pos) const	\
 		{	\
 			return m_delegate.project<ToIndexIdT>(pos);	\
 		}	\
@@ -264,7 +264,7 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		\
 		template<unsigned ToIndexIdT, unsigned FromIndexIdT>	\
 		typename delegated_container::nth_index<ToIndexIdT>::type::const_iterator	\
-			project(typename delegated_container::nth_index<FromIndexIdT>::type::const_iterator pos)	\
+			project(typename delegated_container::nth_index<FromIndexIdT>::type::const_iterator pos) const	\
 		{	\
 			return m_delegate.project<ToIndexIdT>(pos);	\
 		}	\
