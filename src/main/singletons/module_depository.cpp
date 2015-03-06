@@ -236,13 +236,13 @@ bool ModuleDepository::unload(void *baseAddr){
 	return g_modules.erase<MIDX_BASE_ADDR>(baseAddr) > 0;
 }
 
-std::vector<ModuleSnapshotItem> ModuleDepository::snapshot(){
-	std::vector<ModuleSnapshotItem> ret;
+std::vector<ModuleDepository::SnapshotItem> ModuleDepository::snapshot(){
+	std::vector<SnapshotItem> ret;
 	{
 		const boost::recursive_mutex::scoped_lock lock(g_mutex);
 		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
-			ret.push_back(ModuleSnapshotItem());
-			ModuleSnapshotItem &mi = ret.back();
+			ret.push_back(SnapshotItem());
+			SnapshotItem &mi = ret.back();
 
 			mi.realPath = it->realPath;
 			mi.baseAddr = it->baseAddr;

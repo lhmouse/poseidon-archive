@@ -12,7 +12,7 @@ namespace MySql {
 		const char *tableHint, std::string query,
 		BatchAsyncLoadCallback callback, ExceptionCallback except)
 	{
-		Daemon::enqueueForBatchLoading(
+		MySqlDaemon::enqueueForBatchLoading(
 			factory, tableHint, STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except));
 	}
 
@@ -26,7 +26,7 @@ namespace MySql {
 	bool ObjectBase::invalidate() const NOEXCEPT {
 		try {
 			if(isAutoSavingEnabled()){
-				Daemon::enqueueForSaving(
+				MySqlDaemon::enqueueForSaving(
 					virtualSharedFromThis<ObjectBase>(), true, AsyncSaveCallback(), ExceptionCallback());
 				return true;
 			}
@@ -40,12 +40,12 @@ namespace MySql {
 
 	void ObjectBase::asyncSave(bool toReplace, AsyncSaveCallback callback, ExceptionCallback except) const {
 		enableAutoSaving();
-		Daemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(),
+		MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(),
 			toReplace, STD_MOVE(callback), STD_MOVE(except));
 	}
 	void ObjectBase::asyncLoad(std::string query, AsyncLoadCallback callback, ExceptionCallback except){
 		disableAutoSaving();
-		Daemon::enqueueForLoading(
+		MySqlDaemon::enqueueForLoading(
 			virtualSharedFromThis<ObjectBase>(), STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except));
 	}
 }

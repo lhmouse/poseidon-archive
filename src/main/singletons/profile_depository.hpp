@@ -9,20 +9,20 @@
 
 namespace Poseidon {
 
-struct ProfileSnapshotItem {
-	const char *file;
-	unsigned long line;
-	const char *func;
-
-	// 采样数。
-	unsigned long long samples;
-	// 控制流进入函数，直到退出函数（正常返回或异常被抛出），经历的总微秒数。
-	unsigned long long usTotal;
-	// usTotal 扣除执行点位于其他 profiler 之中的微秒数。
-	unsigned long long usExclusive;
-};
-
 struct ProfileDepository {
+	struct SnapshotItem {
+		const char *file;
+		unsigned long line;
+		const char *func;
+
+		// 采样数。
+		unsigned long long samples;
+		// 控制流进入函数，直到退出函数（正常返回或异常被抛出），经历的总微秒数。
+		unsigned long long usTotal;
+		// usTotal 扣除执行点位于其他 profiler 之中的微秒数。
+		unsigned long long usExclusive;
+	};
+
 	static void start();
 	static void stop();
 
@@ -30,7 +30,7 @@ struct ProfileDepository {
 	static void accumulate(const char *file, unsigned long line, const char *func,
 		double total, double exclusive) NOEXCEPT;
 
-	static std::vector<ProfileSnapshotItem> snapshot();
+	static std::vector<SnapshotItem> snapshot();
 
 private:
 	ProfileDepository();

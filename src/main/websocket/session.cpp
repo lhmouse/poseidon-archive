@@ -42,7 +42,7 @@ namespace WebSocket {
 				const boost::shared_ptr<Session> session(m_session);
 				try {
 					const AUTO(category, session->getCategory());
-					const AUTO(servlet, ServletDepository::get(category, m_uri.c_str()));
+					const AUTO(servlet, WebSocketServletDepository::get(category, m_uri.c_str()));
 					if(!servlet){
 						LOG_POSEIDON_WARNING("No servlet in category ", category, " matches URI ", m_uri);
 						DEBUG_THROW(Exception, ST_INACCEPTABLE, SharedNts::observe("Unknown URI"));
@@ -51,7 +51,7 @@ namespace WebSocket {
 
 					LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_payload.size());
 					(*servlet)(session, m_opcode, m_payload);
-					session->setTimeout(ServletDepository::getKeepAliveTimeout());
+					session->setTimeout(WebSocketServletDepository::getKeepAliveTimeout());
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
@@ -156,7 +156,7 @@ namespace WebSocket {
 
 				case S_PAYLOAD:
 					remaining = m_payloadLen - m_whole.size();
-					if(m_whole.size() + remaining >= ServletDepository::getMaxRequestLength()){
+					if(m_whole.size() + remaining >= WebSocketServletDepository::getMaxRequestLength()){
 						DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, SharedNts::observe("Packet too large"));
 					}
 					if(m_payload.size() < remaining){

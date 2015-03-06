@@ -16,27 +16,27 @@
 namespace Poseidon {
 
 namespace WebSocket {
-	class Servlet;
 	class Session;
-
-	struct ServletDepository {
-		static void start();
-		static void stop();
-
-		static std::size_t getMaxRequestLength();
-		static unsigned long long getKeepAliveTimeout();
-
-		// 返回的 shared_ptr 是该响应器的唯一持有者。
-		static boost::shared_ptr<Servlet> create(std::size_t category, SharedNts uri, ServletCallback callback);
-
-		static boost::shared_ptr<const ServletCallback> get(std::size_t category, const char *uri);
-
-	private:
-		ServletDepository();
-	};
 }
 
-typedef WebSocket::ServletDepository WebSocketServletDepository;
+struct WebSocketServletDepository {
+	class Servlet;
+
+	static void start();
+	static void stop();
+
+	static std::size_t getMaxRequestLength();
+	static boost::uint64_t getKeepAliveTimeout();
+
+	// 返回的 shared_ptr 是该响应器的唯一持有者。
+	static boost::shared_ptr<Servlet> create(
+		std::size_t category, SharedNts uri, WebSocket::ServletCallback callback);
+
+	static boost::shared_ptr<const WebSocket::ServletCallback> get(std::size_t category, const char *uri);
+
+private:
+	WebSocketServletDepository();
+};
 
 }
 

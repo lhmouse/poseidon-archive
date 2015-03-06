@@ -173,7 +173,7 @@ namespace {
 
 		StreamBuffer contents;
 		contents.put("thread,table,us_total\r\n");
-		AUTO(snapshot, MySql::Daemon::snapshot());
+		AUTO(snapshot, MySqlDaemon::snapshot());
 		std::string str;
 		for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 			char temp[256];
@@ -204,7 +204,7 @@ namespace {
 	};
 
 	boost::shared_ptr<Http::Server> g_systemServer;
-	boost::shared_ptr<Http::Servlet> g_systemServlet;
+	boost::shared_ptr<HttpServletDepository::Servlet> g_systemServlet;
 
 	void servletProc(boost::shared_ptr<Http::Session> &session, Http::Request &request, std::size_t cut){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", session->getRemoteInfo());
@@ -264,7 +264,7 @@ void SystemHttpServer::start(){
 	EpollDaemon::registerServer(g_systemServer);
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created system HTTP sevlet on ", path);
-	g_systemServlet = Http::ServletDepository::create(
+	g_systemServlet = HttpServletDepository::create(
 		category, SharedNts(path.c_str()), boost::bind(&servletProc, _1, _2, path.size()));
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing system HTTP server.");

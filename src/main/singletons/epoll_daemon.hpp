@@ -10,22 +10,22 @@
 
 namespace Poseidon {
 
-struct EpollSnapshotItem {
-	IpPort remote;
-	IpPort local;
-	boost::uint64_t msOnline;
-};
-
 class TcpSessionBase;
 class SocketServerBase;
 
 struct EpollDaemon {
+	struct SnapshotItem {
+		IpPort remote;
+		IpPort local;
+		boost::uint64_t msOnline;
+	};
+
 	static void start();
 	static void stop();
 
 	static boost::uint64_t getTcpRequestTimeout();
 
-	static std::vector<EpollSnapshotItem> snapshot();
+	static std::vector<SnapshotItem> snapshot();
 
 	static void addSession(const boost::shared_ptr<TcpSessionBase> &session);
 	static void registerServer(boost::weak_ptr<const SocketServerBase> server);

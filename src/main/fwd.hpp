@@ -39,6 +39,10 @@ class TcpClientBase;
 class TcpServerBase;
 class UdpServerBase;
 
+class TimerItem;
+class Module;
+class EventListener;
+
 }
 
 #endif

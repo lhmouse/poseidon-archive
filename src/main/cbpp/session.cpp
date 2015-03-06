@@ -55,7 +55,7 @@ namespace Cbpp {
 						}
 					} else {
 						const AUTO(category, session->getCategory());
-						const AUTO(servlet, ServletDepository::get(category, m_messageId));
+						const AUTO(servlet, CbppServletDepository::get(category, m_messageId));
 						if(!servlet){
 							LOG_POSEIDON_WARNING("No servlet in category ", category, " matches message ", m_messageId);
 							DEBUG_THROW(Exception, ST_NOT_FOUND, SharedNts::observe("Unknown message"));
@@ -65,7 +65,7 @@ namespace Cbpp {
 							", payload size = ", m_payload.size());
 						(*servlet)(session, m_payload);
 					}
-					session->setTimeout(ServletDepository::getKeepAliveTimeout());
+					session->setTimeout(CbppServletDepository::getKeepAliveTimeout());
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
@@ -110,7 +110,7 @@ namespace Cbpp {
 					m_payloadLen = payloadLen;
 					LOG_POSEIDON_DEBUG("Message id = ", m_messageId, ", len = ", m_payloadLen);
 
-					const std::size_t maxRequestLength = ServletDepository::getMaxRequestLength();
+					const std::size_t maxRequestLength = CbppServletDepository::getMaxRequestLength();
 					if((unsigned)m_payloadLen >= maxRequestLength){
 						LOG_POSEIDON_WARNING("Request too large: size = ", m_payloadLen, ", max = ", maxRequestLength);
 						DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE, SharedNts::observe("Request too large"));

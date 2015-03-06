@@ -14,13 +14,13 @@ namespace Poseidon {
 class Module;
 class ModuleRaiiBase;
 
-struct ModuleSnapshotItem {
-	SharedNts realPath;
-	void *baseAddr;
-	std::size_t refCount;
-};
-
 struct ModuleDepository {
+	struct SnapshotItem {
+		SharedNts realPath;
+		void *baseAddr;
+		std::size_t refCount;
+	};
+
 	static void start();
 	static void stop();
 
@@ -29,7 +29,7 @@ struct ModuleDepository {
 	static bool unload(const boost::shared_ptr<Module> &module);
 	static bool unload(void *baseAddr);
 
-	static std::vector<ModuleSnapshotItem> snapshot();
+	static std::vector<SnapshotItem> snapshot();
 
 private:
 	friend ModuleRaiiBase;

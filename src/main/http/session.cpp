@@ -86,7 +86,7 @@ namespace Http {
 				const boost::shared_ptr<Session> session(m_session);
 				try {
 					const AUTO(category, session->getCategory());
-					const AUTO(servlet, ServletDepository::get(category, m_uri.c_str()));
+					const AUTO(servlet, HttpServletDepository::get(category, m_uri.c_str()));
 					if(!servlet){
 						LOG_POSEIDON_WARNING("No handler in category ", category, " matches URI ", m_uri);
 						DEBUG_THROW(Exception, ST_NOT_FOUND);
@@ -102,7 +102,7 @@ namespace Http {
 
 					LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", getStringFromVerb(m_verb));
 					(*servlet)(session, STD_MOVE(request));
-					session->setTimeout(ServletDepository::getKeepAliveTimeout());
+					session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
@@ -253,7 +253,7 @@ namespace Http {
 		AUTO(read, (const char *)data);
 		const AUTO(end, read + size);
 		try {
-			const std::size_t maxRequestLength = ServletDepository::getMaxRequestLength();
+			const std::size_t maxRequestLength = HttpServletDepository::getMaxRequestLength();
 			if(m_totalLength + size >= maxRequestLength){
 				LOG_POSEIDON_WARNING("Request size is ", m_totalLength + size, ", max = ", maxRequestLength);
 				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);

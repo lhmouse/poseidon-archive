@@ -14,39 +14,37 @@ namespace Poseidon {
 namespace MySql {
 	class ObjectBase;
 	class Connection;
+}
 
+struct MySqlDaemon {
 	struct SnapshotItem {
 		unsigned thread;
 		const char *table;
 		unsigned long long usTotal;
 	};
 
-	struct Daemon {
-		static void start();
-		static void stop();
+	static void start();
+	static void stop();
 
-		// 同步接口。
-		static boost::shared_ptr<Connection> createConnection();
+	// 同步接口。
+	static boost::shared_ptr<MySql::Connection> createConnection();
 
-		// 异步接口。
-		static std::vector<SnapshotItem> snapshot();
+	// 异步接口。
+	static std::vector<SnapshotItem> snapshot();
 
-		static void waitForAllAsyncOperations();
+	static void waitForAllAsyncOperations();
 
-		static void enqueueForSaving(boost::shared_ptr<const ObjectBase> object, bool toReplace,
-			AsyncSaveCallback callback, ExceptionCallback except);
-		static void enqueueForLoading(boost::shared_ptr<ObjectBase> object, std::string query,
-			AsyncLoadCallback callback, ExceptionCallback except);
-		static void enqueueForBatchLoading(boost::shared_ptr<ObjectBase> (*factory)(),
-			const char *tableHint, std::string query,
-			BatchAsyncLoadCallback callback, ExceptionCallback except);
+	static void enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace,
+		MySql::AsyncSaveCallback callback, MySql::ExceptionCallback except);
+	static void enqueueForLoading(boost::shared_ptr<MySql::ObjectBase> object, std::string query,
+		MySql::AsyncLoadCallback callback, MySql::ExceptionCallback except);
+	static void enqueueForBatchLoading(boost::shared_ptr<MySql::ObjectBase> (*factory)(),
+		const char *tableHint, std::string query,
+		MySql::BatchAsyncLoadCallback callback, MySql::ExceptionCallback except);
 
-	private:
-		Daemon();
-	};
-}
-
-typedef MySql::Daemon MySqlDaemon;
+private:
+	MySqlDaemon();
+};
 
 }
 

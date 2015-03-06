@@ -141,14 +141,14 @@ boost::uint64_t EpollDaemon::getTcpRequestTimeout(){
 	return g_tcpRequestTimeout;
 }
 
-std::vector<EpollSnapshotItem> EpollDaemon::snapshot(){
+std::vector<EpollDaemon::SnapshotItem> EpollDaemon::snapshot(){
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
 	g_epoll.snapshot(sessions);
 
-	std::vector<EpollSnapshotItem> ret;
+	std::vector<SnapshotItem> ret;
 	const AUTO(now, getFastMonoClock());
 	for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
-		ret.push_back(EpollSnapshotItem());
+		ret.push_back(SnapshotItem());
 		AUTO_REF(item, ret.back());
 		item.remote = (*it)->getRemoteInfo();
 		item.local = (*it)->getLocalInfo();
