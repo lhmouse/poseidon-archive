@@ -418,7 +418,12 @@ namespace {
 			boost::mutex::scoped_lock lock(m_mutex);
 			atomicStore(m_urgent, true, ATOMIC_RELEASE); // 在获取互斥锁之前设置紧急状态。
 			m_newAvail.notify_all();
-			while(!m_queue.empty()){
+			for(;;){
+				const AUTO(queueSize, m_queue.size());
+				if(queueSize == 0){
+					break;
+				}
+				LOG_POSEIDON_INFO("There are ", queueSize, " objects in queue.");
 				atomicStore(m_urgent, true, ATOMIC_RELEASE);
 				m_newAvail.notify_all();
 				m_queueEmpty.wait(lock);
