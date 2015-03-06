@@ -30,8 +30,7 @@ namespace Cbpp {
 		static unsigned long long getKeepAliveTimeout();
 
 		// 返回的 shared_ptr 是该响应器的唯一持有者。
-		static boost::shared_ptr<Servlet> create(
-			std::size_t category, boost::uint16_t protocolId, ServletCallback callback);
+		static boost::shared_ptr<Servlet> create(std::size_t category, boost::uint16_t protocolId, ServletCallback callback);
 
 		// void (boost::shared_ptr<Session> session, ProtocolT request)
 		template<typename ProtocolT, typename CallbackT>

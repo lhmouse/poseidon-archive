@@ -25,11 +25,9 @@ struct HttpServletDepository {
 	static unsigned long long getKeepAliveTimeout();
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
-	static boost::shared_ptr<HttpServlet> create(
-		std::size_t category, SharedNts uri, HttpServletCallback callback);
+	static boost::shared_ptr<HttpServlet> create(std::size_t category, SharedNts uri, HttpServletCallback callback);
 
-	static boost::shared_ptr<const HttpServletCallback> get(
-		std::size_t category, const char *uri);
+	static boost::shared_ptr<const HttpServletCallback> get(std::size_t category, const char *uri);
 
 private:
 	HttpServletDepository();

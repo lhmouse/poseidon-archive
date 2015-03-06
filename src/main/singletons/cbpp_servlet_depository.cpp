@@ -64,9 +64,7 @@ namespace Cbpp {
 		return g_keepAliveTimeout;
 	}
 
-	boost::shared_ptr<Servlet> ServletDepository::create(
-		std::size_t category, boost::uint16_t protocolId, ServletCallback callback)
-	{
+	boost::shared_ptr<Servlet> ServletDepository::create(std::size_t category, boost::uint16_t protocolId, ServletCallback callback){
 		AUTO(sharedCallback, boost::make_shared<ServletCallback>());
 		sharedCallback->swap(callback);
 		AUTO(servlet, boost::make_shared<Servlet>(protocolId, sharedCallback));
@@ -83,9 +81,7 @@ namespace Cbpp {
 		return servlet;
 	}
 
-	boost::shared_ptr<const ServletCallback> ServletDepository::get(
-		std::size_t category, boost::uint16_t protocolId)
-	{
+	boost::shared_ptr<const ServletCallback> ServletDepository::get(std::size_t category, boost::uint16_t protocolId){
     	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
     	const AUTO(it, g_servlets.find(category));
     	if(it == g_servlets.end()){

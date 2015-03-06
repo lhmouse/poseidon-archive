@@ -99,9 +99,7 @@ unsigned long long HttpServletDepository::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;
 }
 
-boost::shared_ptr<HttpServlet> HttpServletDepository::create(
-	std::size_t category, SharedNts uri, HttpServletCallback callback)
-{
+boost::shared_ptr<HttpServlet> HttpServletDepository::create(std::size_t category, SharedNts uri, HttpServletCallback callback){
 	AUTO(sharedCallback, boost::make_shared<HttpServletCallback>());
 	sharedCallback->swap(callback);
 	AUTO(servlet, boost::make_shared<HttpServlet>(uri, sharedCallback));
@@ -118,9 +116,7 @@ boost::shared_ptr<HttpServlet> HttpServletDepository::create(
 	return servlet;
 }
 
-boost::shared_ptr<const HttpServletCallback> HttpServletDepository::get(
-	std::size_t category, const char *uri)
-{
+boost::shared_ptr<const HttpServletCallback> HttpServletDepository::get(std::size_t category, const char *uri){
 	if(!uri){
 		LOG_POSEIDON_ERROR("uri is null.");
 		DEBUG_THROW(Exception, SharedNts::observe("uri is null"));

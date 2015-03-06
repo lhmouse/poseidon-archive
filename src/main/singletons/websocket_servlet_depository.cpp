@@ -67,9 +67,7 @@ unsigned long long WebSocketServletDepository::getKeepAliveTimeout(){
 	return g_keepAliveTimeout;
 }
 
-boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::create(
-	std::size_t category, SharedNts uri, WebSocketServletCallback callback)
-{
+boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::create(std::size_t category, SharedNts uri, WebSocketServletCallback callback){
 	AUTO(sharedCallback, boost::make_shared<WebSocketServletCallback>());
 	sharedCallback->swap(callback);
 	AUTO(servlet, boost::make_shared<WebSocketServlet>(uri, sharedCallback));
@@ -86,9 +84,7 @@ boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::create(
 	return servlet;
 }
 
-boost::shared_ptr<const WebSocketServletCallback> WebSocketServletDepository::get(
-	std::size_t category, const char *uri)
-{
+boost::shared_ptr<const WebSocketServletCallback> WebSocketServletDepository::get(std::size_t category, const char *uri){
 	if(!uri){
 		LOG_POSEIDON_ERROR("uri is null");
 		DEBUG_THROW(Exception, SharedNts::observe("uri is null"));
