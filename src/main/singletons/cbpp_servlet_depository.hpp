@@ -57,7 +57,8 @@ struct CbppServletDepository {
 				const CallbackT &callback,
 				const boost::shared_ptr<Cbpp::Session> &session, const StreamBuffer &incoming)
 			{
-				callback(session, ProtocolT(incoming));
+				StreamBuffer temp(incoming);
+				callback(session, ProtocolT(temp));
 			}
 #ifdef POSEIDON_CXX11
 		;
