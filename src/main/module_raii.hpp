@@ -27,12 +27,12 @@ public:
 */
 #define MODULE_RAII	\
 	namespace {	\
-		namespace Impl_ {	\
-			class TOKEN_CAT3(ModuleRaii_, __LINE__, _Z_) : public ::Poseidon::ModuleRaiiBase {	\
+		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_) {	\
+			class Stub_ : public ::Poseidon::ModuleRaiiBase {	\
 				::boost::shared_ptr<const void> init() const OVERRIDE FINAL;	\
-			} const TOKEN_CAT3(ModuleRaii_, __LINE__, _z_);	\
+			} const stub_;	\
 		}	\
 	}	\
-	::boost::shared_ptr<const void> Impl_:: TOKEN_CAT3(ModuleRaii_, __LINE__, _Z_) ::init() const
+	::boost::shared_ptr<const void> TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_)::Stub_::init() const
 
 #endif
