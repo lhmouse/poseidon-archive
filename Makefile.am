@@ -13,6 +13,7 @@ CLEANFILES = \
 	src/main/precompiled.hpp.gch
 
 pkginclude_HEADERS = \
+	src/main/fwd.hpp	\
 	src/main/tcp_session_base.hpp	\
 	src/main/optional_map.hpp	\
 	src/main/ssl_raii.hpp	\
@@ -73,6 +74,7 @@ pkginclude_singletons_HEADERS = \
 
 pkginclude_httpdir = $(pkgincludedir)/http
 pkginclude_http_HEADERS = \
+	src/main/http/fwd.hpp	\
 	src/main/http/session.hpp	\
 	src/main/http/verbs.hpp	\
 	src/main/http/status_codes.hpp	\
@@ -85,6 +87,7 @@ pkginclude_http_HEADERS = \
 
 pkginclude_websocketdir = $(pkgincludedir)/websocket
 pkginclude_websocket_HEADERS = \
+	src/main/websocket/fwd.hpp	\
 	src/main/websocket/session.hpp	\
 	src/main/websocket/opcodes.hpp	\
 	src/main/websocket/status_codes.hpp	\
@@ -93,6 +96,7 @@ pkginclude_websocket_HEADERS = \
 
 pkginclude_cbppdir = $(pkgincludedir)/cbpp
 pkginclude_cbpp_HEADERS = \
+	src/main/cbpp/fwd.hpp	\
 	src/main/cbpp/client.hpp	\
 	src/main/cbpp/message_base.hpp	\
 	src/main/cbpp/session.hpp	\
@@ -106,6 +110,7 @@ pkginclude_cbpp_HEADERS = \
 
 pkginclude_mysqldir = $(pkgincludedir)/mysql
 pkginclude_mysql_HEADERS = \
+	src/main/mysql/fwd.hpp	\
 	src/main/mysql/object_generator.hpp	\
 	src/main/mysql/thread_context.hpp	\
 	src/main/mysql/connection.hpp	\
