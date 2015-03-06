@@ -120,8 +120,8 @@ boost::shared_ptr<HttpServletDepository::Servlet> HttpServletDepository::create(
 
 boost::shared_ptr<const Http::ServletCallback> HttpServletDepository::get(std::size_t category, const char *uri){
 	if(!uri){
-		LOG_POSEIDON_ERROR("uri is null.");
-		DEBUG_THROW(Exception, SharedNts::observe("uri is null"));
+		LOG_POSEIDON_ERROR("URI is null.");
+		DEBUG_THROW(Exception, SharedNts::observe("URI is null"));
 	}
 	if(uri[0] != '/'){
 		LOG_POSEIDON_ERROR("URI must begin with a slash: ", uri);
