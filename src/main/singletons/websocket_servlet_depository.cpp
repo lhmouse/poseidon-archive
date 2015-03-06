@@ -5,8 +5,7 @@
 #include "websocket_servlet_depository.hpp"
 #include <map>
 #include <boost/ref.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/locks.hpp>
+#include <boost/thread/mutex.hpp>
 #include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
@@ -35,7 +34,7 @@ namespace {
 		std::map<SharedNts, boost::weak_ptr<WebSocketServlet> >
 		> ServletMap;
 
-	boost::shared_mutex g_mutex;
+	boost::mutex g_mutex;
 	ServletMap g_servlets;
 }
 
@@ -55,7 +54,7 @@ void WebSocketServletDepository::stop(){
 
 	ServletMap servlets;
 	{
-		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		const boost::mutex::scoped_lock lock(g_mutex);
 		servlets.swap(g_servlets);
 	}
 }
@@ -72,7 +71,7 @@ boost::shared_ptr<WebSocketServlet> WebSocketServletDepository::create(std::size
 	sharedCallback->swap(callback);
 	AUTO(servlet, boost::make_shared<WebSocketServlet>(uri, sharedCallback));
 	{
-		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		const boost::mutex::scoped_lock lock(g_mutex);
 		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
 			LOG_POSEIDON_ERROR("Duplicate servlet for URI ", uri, " in category ", category);
@@ -89,7 +88,7 @@ boost::shared_ptr<const WebSocketServletCallback> WebSocketServletDepository::ge
 		LOG_POSEIDON_ERROR("uri is null");
 		DEBUG_THROW(Exception, SharedNts::observe("uri is null"));
 	}
-	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
+	const boost::mutex::scoped_lock lock(g_mutex);
 	const AUTO(it, g_servlets.find(category));
 	if(it == g_servlets.end()){
 		LOG_POSEIDON_DEBUG("No servlet in category ", category);

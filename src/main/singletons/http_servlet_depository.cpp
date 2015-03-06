@@ -6,7 +6,7 @@
 #include <string>
 #include <map>
 #include <boost/ref.hpp>
-#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/mutex.hpp>
 #include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
@@ -35,13 +35,13 @@ namespace {
 		std::map<SharedNts, boost::weak_ptr<HttpServlet> >
 		> ServletMap;
 
-	boost::shared_mutex g_mutex;
+	boost::mutex g_mutex;
 	ServletMap g_servlets;
 
 	bool getExactServlet(boost::shared_ptr<const HttpServletCallback> &ret,
 		std::size_t category, const char *uri, std::size_t uriLen)
 	{
-		const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
+		const boost::mutex::scoped_lock lock(g_mutex);
 
 		const AUTO(it, g_servlets.find(category));
 		if(it == g_servlets.end()){
@@ -87,7 +87,7 @@ void HttpServletDepository::stop(){
 
 	ServletMap servlets;
 	{
-		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		const boost::mutex::scoped_lock lock(g_mutex);
 		servlets.swap(g_servlets);
 	}
 }
@@ -104,7 +104,7 @@ boost::shared_ptr<HttpServlet> HttpServletDepository::create(std::size_t categor
 	sharedCallback->swap(callback);
 	AUTO(servlet, boost::make_shared<HttpServlet>(uri, sharedCallback));
 	{
-		const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+		const boost::mutex::scoped_lock lock(g_mutex);
 		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
 			LOG_POSEIDON_ERROR("Duplicate servlet for URI ", uri, " in category ", category);

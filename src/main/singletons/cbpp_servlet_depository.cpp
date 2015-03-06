@@ -5,8 +5,7 @@
 #include "cbpp_servlet_depository.hpp"
 #include <map>
 #include <boost/ref.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/locks.hpp>
+#include <boost/thread/mutex.hpp>
 #include "main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
@@ -32,7 +31,7 @@ namespace Cbpp {
 			std::map<boost::uint16_t, boost::weak_ptr<const Servlet> >
 			> ServletMap;
 
-		boost::shared_mutex g_mutex;
+		boost::mutex g_mutex;
 		ServletMap g_servlets;
 	}
 
@@ -52,7 +51,7 @@ namespace Cbpp {
 
 		ServletMap servlets;
 		{
-			const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+			const boost::mutex::scoped_lock lock(g_mutex);
 			servlets.swap(servlets);
 		}
 	}
@@ -69,7 +68,7 @@ namespace Cbpp {
 		sharedCallback->swap(callback);
 		AUTO(servlet, boost::make_shared<Servlet>(protocolId, sharedCallback));
 		{
-			const boost::unique_lock<boost::shared_mutex> ulock(g_mutex);
+			const boost::mutex::scoped_lock lock(g_mutex);
 			AUTO_REF(old, g_servlets[category][protocolId]);
 			if(!old.expired()){
 				LOG_POSEIDON_ERROR("Duplicate servlet for id ", protocolId, " in category ", category);
@@ -82,7 +81,7 @@ namespace Cbpp {
 	}
 
 	boost::shared_ptr<const ServletCallback> ServletDepository::get(std::size_t category, boost::uint16_t protocolId){
-    	const boost::shared_lock<boost::shared_mutex> slock(g_mutex);
+    	const boost::mutex::scoped_lock lock(g_mutex);
     	const AUTO(it, g_servlets.find(category));
     	if(it == g_servlets.end()){
         	LOG_POSEIDON_DEBUG("No servlet in category ", category);
