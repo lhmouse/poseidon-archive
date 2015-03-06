@@ -249,6 +249,32 @@ assert(c.upperBound<1>("zzz") == c.end<1>());	// 通过。
 		}	\
 	)	\
 		\
+		template<unsigned ToIndexIdT>	\
+		typename delegated_container::nth_index<ToIndexIdT>::type::const_iterator	\
+			project(typename delegated_container::const_iterator pos)	\
+		{	\
+			return m_delegate.project<ToIndexIdT>(pos);	\
+		}	\
+		template<unsigned ToIndexIdT>	\
+		typename delegated_container::nth_index<ToIndexIdT>::type::iterator	\
+			project(typename delegated_container::iterator pos)	\
+		{	\
+			return m_delegate.project<ToIndexIdT>(pos);	\
+		}	\
+		\
+		template<unsigned ToIndexIdT, unsigned FromIndexIdT>	\
+		typename delegated_container::nth_index<ToIndexIdT>::type::const_iterator	\
+			project(typename delegated_container::nth_index<FromIndexIdT>::type::const_iterator pos)	\
+		{	\
+			return m_delegate.project<ToIndexIdT>(pos);	\
+		}	\
+		template<unsigned ToIndexIdT, unsigned FromIndexIdT>	\
+		typename delegated_container::nth_index<ToIndexIdT>::type::iterator	\
+			project(typename delegated_container::nth_index<FromIndexIdT>::type::iterator pos)	\
+		{	\
+			return m_delegate.project<ToIndexIdT>(pos);	\
+		}	\
+		\
 		template<unsigned IndexIdToSetT> \
 		bool setKey(typename delegated_container::iterator pos,   \
 			typename delegated_container::nth_index<IndexIdToSetT>::type::key_type key)	\
