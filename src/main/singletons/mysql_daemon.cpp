@@ -415,9 +415,9 @@ namespace {
 			m_newAvail.notify_all();
 		}
 		void waitTillIdle(){
+			boost::mutex::scoped_lock lock(m_mutex);
 			atomicStore(m_urgent, true, ATOMIC_RELEASE); // 在获取互斥锁之前设置紧急状态。
 			m_newAvail.notify_all();
-			boost::mutex::scoped_lock lock(m_mutex);
 			while(!m_queue.empty()){
 				atomicStore(m_urgent, true, ATOMIC_RELEASE);
 				m_newAvail.notify_all();
