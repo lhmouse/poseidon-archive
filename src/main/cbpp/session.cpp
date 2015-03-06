@@ -90,8 +90,7 @@ namespace Cbpp {
 	}
 	Session::~Session(){
 		if(m_payloadLen != (boost::uint64_t)-1){
-			LOG_POSEIDON_WARNING(
-				"Now that this session is to be destroyed, a premature request has to be discarded.");
+			LOG_POSEIDON_WARNING("Now that this session is to be destroyed, a premature request has to be discarded.");
 		}
 	}
 

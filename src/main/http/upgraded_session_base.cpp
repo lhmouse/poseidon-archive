@@ -7,54 +7,56 @@
 
 namespace Poseidon {
 
-HttpUpgradedSessionBase::HttpUpgradedSessionBase(const boost::shared_ptr<HttpSession> &parent)
-	: m_parent(parent)
-{
-}
-
-void HttpUpgradedSessionBase::onClose() NOEXCEPT {
-}
-
-bool HttpUpgradedSessionBase::hasBeenShutdown() const {
-	const AUTO(parent, getParent());
-	if(!parent){
-		return false;
+namespace Http {
+	UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<Session> &parent)
+		: m_parent(parent)
+	{
 	}
-	return static_cast<const TcpSessionBase *>(parent.get())->hasBeenShutdown();
-}
-bool HttpUpgradedSessionBase::send(StreamBuffer buffer, bool fin){
-	const AUTO(parent, getParent());
-	if(!parent){
-		return false;
-	}
-	return static_cast<TcpSessionBase *>(parent.get())->send(STD_MOVE(buffer), fin);
-}
-bool HttpUpgradedSessionBase::forceShutdown() NOEXCEPT {
-	const AUTO(parent, getParent());
-	if(!parent){
-		return false;
-	}
-	return static_cast<TcpSessionBase *>(parent.get())->forceShutdown();
-}
 
-std::size_t HttpUpgradedSessionBase::getCategory() const {
-	return getSafeParent()->m_category;
-}
-const std::string &HttpUpgradedSessionBase::getUri() const {
-	return getSafeParent()->m_uri;
-}
-const OptionalMap &HttpUpgradedSessionBase::getGetParams() const {
-	return getSafeParent()->m_getParams;
-}
-const OptionalMap &HttpUpgradedSessionBase::getHeaders() const {
-	return getSafeParent()->m_headers;
-}
+	void UpgradedSessionBase::onClose() NOEXCEPT {
+	}
 
-void HttpUpgradedSessionBase::setTimeout(unsigned long long timeout){
-	getSafeParent()->setTimeout(timeout);
-}
-void HttpUpgradedSessionBase::registerOnClose(boost::function<void ()> callback){
-	getSafeParent()->registerOnClose(STD_MOVE(callback));
+	bool UpgradedSessionBase::hasBeenShutdown() const {
+		const AUTO(parent, getParent());
+		if(!parent){
+			return true;
+		}
+		return static_cast<const TcpSessionBase &>(*parent).hasBeenShutdown();
+	}
+	bool UpgradedSessionBase::send(StreamBuffer buffer, bool fin){
+		const AUTO(parent, getParent());
+		if(!parent){
+			return false;
+		}
+		return static_cast<TcpSessionBase &>(*parent).send(STD_MOVE(buffer), fin);
+	}
+	bool UpgradedSessionBase::forceShutdown() NOEXCEPT {
+		const AUTO(parent, getParent());
+		if(!parent){
+			return false;
+		}
+		return static_cast<TcpSessionBase &>(*parent).forceShutdown();
+	}
+
+	std::size_t UpgradedSessionBase::getCategory() const {
+		return getSafeParent()->m_category;
+	}
+	const std::string &UpgradedSessionBase::getUri() const {
+		return getSafeParent()->m_uri;
+	}
+	const OptionalMap &UpgradedSessionBase::getGetParams() const {
+		return getSafeParent()->m_getParams;
+	}
+	const OptionalMap &UpgradedSessionBase::getHeaders() const {
+		return getSafeParent()->m_headers;
+	}
+
+	void UpgradedSessionBase::setTimeout(unsigned long long timeout){
+		getSafeParent()->setTimeout(timeout);
+	}
+	void UpgradedSessionBase::registerOnClose(boost::function<void ()> callback){
+		getSafeParent()->registerOnClose(STD_MOVE(callback));
+	}
 }
 
 }

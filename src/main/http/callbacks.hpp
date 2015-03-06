@@ -6,15 +6,17 @@
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
-#include "request.hpp"
 
 namespace Poseidon {
 
-class HttpSession;
+namespace Http {
+	class Session;
+	class Request;
 
-typedef boost::function<
-	void (boost::shared_ptr<HttpSession> hs, HttpRequest request)
-	> HttpServletCallback;
+	typedef boost::function<
+		void (boost::shared_ptr<Session> session, Request request)
+		> ServletCallback;
+}
 
 }
 

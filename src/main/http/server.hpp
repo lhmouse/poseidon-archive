@@ -6,21 +6,27 @@
 
 #include "../tcp_server_base.hpp"
 #include <set>
+#include <vector>
+#include <string>
 
 namespace Poseidon {
 
-class HttpServer : public TcpServerBase {
-private:
-	const std::size_t m_category;
-	boost::shared_ptr<std::set<std::string> > m_authInfo;
+class TcpSessionBase;
 
-public:
-	HttpServer(std::size_t category, const IpPort &bindAddr,
-		const char *cert, const char *privateKey, const std::vector<std::string> &authInfo);
+namespace Http {
+	class Server : public TcpServerBase {
+	private:
+		const std::size_t m_category;
+		boost::shared_ptr<std::set<std::string> > m_authInfo;
 
-protected:
-	boost::shared_ptr<class TcpSessionBase> onClientConnect(UniqueFile client) const;
-};
+	public:
+		Server(std::size_t category, const IpPort &bindAddr, const char *cert, const char *privateKey,
+			const std::vector<std::string> &authInfo);
+
+	protected:
+		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const;
+	};
+}
 
 }
 

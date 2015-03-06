@@ -11,11 +11,13 @@
 
 namespace Poseidon {
 
-class WebSocketSession;
+namespace WebSocket {
+	class Session;
 
-typedef boost::function<
-	void (boost::shared_ptr<WebSocketSession> wss, WebSocketOpCode opcode, StreamBuffer incoming)
-	> WebSocketServletCallback;
+	typedef boost::function<
+		void (boost::shared_ptr<Session> session, OpCode opcode, StreamBuffer incoming)
+		> ServletCallback;
+}
 
 }
 

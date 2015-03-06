@@ -13,50 +13,53 @@
 namespace Poseidon {
 
 class OptionalMap;
-class HttpSession;
 
-class HttpUpgradedSessionBase : public SessionBase {
-	friend class HttpSession;
+namespace Http {
+	class Session;
 
-private:
-	const boost::weak_ptr<HttpSession> m_parent;
+	class UpgradedSessionBase : public SessionBase {
+		friend Session;
 
-protected:
-	explicit HttpUpgradedSessionBase(const boost::shared_ptr<HttpSession> &parent);
+	private:
+		const boost::weak_ptr<Session> m_parent;
 
-private:
-	virtual void onInitContents(const void *data, std::size_t size) = 0;
-	virtual void onReadAvail(const void *data, std::size_t size) = 0;
-	virtual void onClose() NOEXCEPT OVERRIDE FINAL;
+	protected:
+		explicit UpgradedSessionBase(const boost::shared_ptr<Session> &parent);
 
-public:
-	bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
-	bool hasBeenShutdown() const OVERRIDE FINAL;
-	bool forceShutdown() NOEXCEPT OVERRIDE FINAL;
+	private:
+		virtual void onInitContents(const void *data, std::size_t size) = 0;
+		virtual void onReadAvail(const void *data, std::size_t size) = 0;
+		virtual void onClose() NOEXCEPT OVERRIDE FINAL;
 
-	boost::shared_ptr<const HttpSession> getParent() const {
-		return m_parent.lock();
-	}
-	boost::shared_ptr<HttpSession> getParent(){
-		return m_parent.lock();
-	}
+	public:
+		bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
+		bool hasBeenShutdown() const OVERRIDE FINAL;
+		bool forceShutdown() NOEXCEPT OVERRIDE FINAL;
 
-	// 以下所有函数，如果原来的 HttpSession 被删除，抛出 bad_weak_ptr。
-	boost::shared_ptr<const HttpSession> getSafeParent() const {
-		return boost::shared_ptr<const HttpSession>(m_parent);
-	}
-	boost::shared_ptr<HttpSession> getSafeParent(){
-		return boost::shared_ptr<HttpSession>(m_parent);
-	}
+		boost::shared_ptr<const Session> getParent() const {
+			return m_parent.lock();
+		}
+		boost::shared_ptr<Session> getParent(){
+			return m_parent.lock();
+		}
 
-	std::size_t getCategory() const;
-	const std::string &getUri() const;
-	const OptionalMap &getGetParams() const;
-	const OptionalMap &getHeaders() const;
+		// 以下所有函数，如果原来的 Session 被删除，抛出 bad_weak_ptr。
+		boost::shared_ptr<const Session> getSafeParent() const {
+			return boost::shared_ptr<const Session>(m_parent);
+		}
+		boost::shared_ptr<Session> getSafeParent(){
+			return boost::shared_ptr<Session>(m_parent);
+		}
 
-	void setTimeout(unsigned long long timeout);
-	void registerOnClose(boost::function<void ()> callback);
-};
+		std::size_t getCategory() const;
+		const std::string &getUri() const;
+		const OptionalMap &getGetParams() const;
+		const OptionalMap &getHeaders() const;
+
+		void setTimeout(unsigned long long timeout);
+		void registerOnClose(boost::function<void ()> callback);
+	};
+}
 
 }
 

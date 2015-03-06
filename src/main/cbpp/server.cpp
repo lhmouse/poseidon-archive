@@ -8,10 +8,8 @@
 namespace Poseidon {
 
 namespace Cbpp {
-	Server::Server(std::size_t category, const IpPort &bindAddr,
-		const char *cert, const char *privateKey)
-		: TcpServerBase(bindAddr, cert, privateKey)
-		, m_category(category)
+	Server::Server(std::size_t category, const IpPort &bindAddr, const char *cert, const char *privateKey)
+		: TcpServerBase(bindAddr, cert, privateKey), m_category(category)
 	{
 	}
 

@@ -7,13 +7,14 @@
 
 namespace Poseidon {
 
-WebSocketException::WebSocketException(const char *file, std::size_t line,
-	WebSocketStatus status, SharedNts message)
-	: ProtocolException(file, line, STD_MOVE(message), static_cast<unsigned>(status))
-{
-	LOG_POSEIDON_ERROR("WebSocketException: status = ", status, ", what = ", what());
-}
-WebSocketException::~WebSocketException() NOEXCEPT {
+namespace WebSocket {
+	Exception::Exception(const char *file, std::size_t line, StatusCode statusCode, SharedNts message)
+		: ProtocolException(file, line, STD_MOVE(message), static_cast<long>(static_cast<unsigned>(statusCode)))
+	{
+		LOG_POSEIDON_ERROR("Exception: statusCode = ", statusCode, ", what = ", what());
+	}
+	Exception::~Exception() NOEXCEPT {
+	}
 }
 
 }

@@ -15,43 +15,48 @@
 namespace Poseidon {
 
 class OptionalMap;
-class HttpSession;
 
-class WebSocketSession : public HttpUpgradedSessionBase {
-private:
-	enum State {
-		ST_OPCODE,
-		ST_PAYLOAD_LEN,
-		ST_EX_PAYLOAD_LEN,
-		ST_MASK,
-		ST_PAYLOAD,
+namespace Http {
+	class Session;
+}
+
+namespace WebSocket {
+	class Session : public Http::UpgradedSessionBase {
+	private:
+		enum State {
+			S_OPCODE,
+			S_PAYLOAD_LEN,
+			S_EX_PAYLOAD_LEN,
+			S_MASK,
+			S_PAYLOAD,
+		};
+
+	private:
+		State m_state;
+		bool m_fin;
+		OpCode m_opcode;
+		boost::uint64_t m_payloadLen;
+		boost::uint32_t m_payloadMask;
+		StreamBuffer m_payload;
+		StreamBuffer m_whole;
+
+	public:
+		explicit Session(const boost::shared_ptr<Http::Session> &parent);
+
+	private:
+		void onInitContents(const void *data, std::size_t size) OVERRIDE FINAL;
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
+
+		void onControlFrame();
+
+	private:
+		bool sendFrame(StreamBuffer contents, OpCode opcode, bool fin, bool masked);
+
+	public:
+		bool send(StreamBuffer contents, bool binary = true, bool fin = false, bool masked = false);
+		bool shutdown(StatusCode statusCode, StreamBuffer additional = StreamBuffer());
 	};
-
-private:
-	State m_state;
-	bool m_fin;
-	WebSocketOpCode m_opcode;
-	boost::uint64_t m_payloadLen;
-	boost::uint32_t m_payloadMask;
-	StreamBuffer m_payload;
-	StreamBuffer m_whole;
-
-public:
-	explicit WebSocketSession(const boost::shared_ptr<HttpSession> &parent);
-
-private:
-	void onInitContents(const void *data, std::size_t size) OVERRIDE FINAL;
-	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
-
-	void onControlFrame();
-
-private:
-	bool sendFrame(StreamBuffer contents, WebSocketOpCode opcode, bool fin, bool masked);
-
-public:
-	bool send(StreamBuffer contents, bool binary = true, bool fin = false, bool masked = false);
-	bool shutdown(WebSocketStatus status, StreamBuffer additional = StreamBuffer());
-};
+}
 
 }
 

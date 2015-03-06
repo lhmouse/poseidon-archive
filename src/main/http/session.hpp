@@ -17,66 +17,68 @@
 
 namespace Poseidon {
 
-class HttpServer;
-class HttpUpgradedSessionBase;
+namespace Http {
+	class Server;
+	class UpgradedSessionBase;
 
-class HttpSession : public TcpSessionBase {
-	friend HttpServer;
-	friend HttpUpgradedSessionBase;
+	class Session : public TcpSessionBase {
+		friend Server;
+		friend UpgradedSessionBase;
 
-private:
-	enum State {
-		ST_FIRST_HEADER,
-		ST_HEADERS,
-		ST_CONTENTS,
+	private:
+		enum State {
+			S_FIRST_HEADER,
+			S_HEADERS,
+			S_CONTENTS,
+		};
+
+	private:
+		class HeaderParser;
+
+	private:
+		const std::size_t m_category;
+
+		State m_state;
+		boost::uint64_t m_totalLength;
+		boost::uint64_t m_contentLength;
+		std::string m_line;
+
+		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
+		boost::shared_ptr<std::set<std::string> > m_authInfo;
+
+		Verb m_verb;
+		unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
+		std::string m_uri;
+		OptionalMap m_getParams;
+		OptionalMap m_headers;
+
+	public:
+		Session(std::size_t category, UniqueFile socket);
+		~Session();
+
+	private:
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
+
+	public:
+		std::size_t getCategory() const {
+			return m_category;
+		}
+
+		void setAuthInfo(boost::shared_ptr<std::set<std::string> > authInfo){
+			m_authInfo.swap(authInfo);
+		}
+
+		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer contents, bool fin = false);
+		bool send(StatusCode statusCode, StreamBuffer contents = StreamBuffer(), bool fin = false){
+			return send(statusCode, OptionalMap(), STD_MOVE(contents), fin);
+		}
+
+		bool sendDefault(StatusCode statusCode, OptionalMap headers, bool fin = false);
+		bool sendDefault(StatusCode statusCode, bool fin = false){
+			return sendDefault(statusCode, OptionalMap(), fin);
+		}
 	};
-
-private:
-	class HeaderParser;
-
-private:
-	const std::size_t m_category;
-
-	State m_state;
-	boost::uint64_t m_totalLength;
-	boost::uint64_t m_contentLength;
-	std::string m_line;
-
-	boost::shared_ptr<HttpUpgradedSessionBase> m_upgradedSession;
-	boost::shared_ptr<std::set<std::string> > m_authInfo;
-
-	HttpVerb m_verb;
-	unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
-	std::string m_uri;
-	OptionalMap m_getParams;
-	OptionalMap m_headers;
-
-public:
-	HttpSession(std::size_t category, UniqueFile socket);
-	~HttpSession();
-
-private:
-	void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
-
-public:
-	std::size_t getCategory() const {
-		return m_category;
-	}
-
-	void setAuthInfo(boost::shared_ptr<std::set<std::string> > authInfo){
-		m_authInfo.swap(authInfo);
-	}
-
-	bool send(HttpStatus status, OptionalMap headers, StreamBuffer contents, bool fin = false);
-	bool send(HttpStatus status, StreamBuffer contents = StreamBuffer(), bool fin = false){
-		return send(status, OptionalMap(), STD_MOVE(contents), fin);
-	}
-
-	bool sendDefault(HttpStatus status, OptionalMap headers, bool fin = false);
-	bool sendDefault(HttpStatus status, bool fin = false){
-		return sendDefault(status, OptionalMap(), fin);
-	}
-};
+}
 
 }
 

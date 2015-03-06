@@ -1,29 +1,37 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_WEBSOCKET_OPCODE_HPP_
-#define POSEIDON_WEBSOCKET_OPCODE_HPP_
+#ifndef POSEIDON_WEBSOCKET_OPCODES_HPP_
+#define POSEIDON_WEBSOCKET_OPCODES_HPP_
 
 namespace Poseidon {
 
-enum WebSocketOpCode {
-	WS_INVALID_OPCODE	= -1,
-	WS_CONTINUATION		= 0x00,
-	WS_DATA_TEXT		= 0x01,
-	WS_DATA_BIN			= 0x02,
-	WS_CLOSE			= 0x08,
-	WS_PING				= 0x09,
-	WS_PONG				= 0x0A,
-};
+namespace WebSocket {
+	typedef int OpCode;
 
-enum {
-	WS_FL_FIN			= 0x80,
-	WS_FL_RSV1			= 0x40,
-	WS_FL_RSV2			= 0x20,
-	WS_FL_RSV3			= 0x10,
-	WS_FL_CONTROL		= 0x08,
-	WS_FL_OPCODE		= 0x0F,
-};
+	namespace OpCodes {
+		enum {
+			OP_INVALID_OPCODE	= -1,
+			OP_CONTINUATION		= 0x00,
+			OP_DATA_TEXT		= 0x01,
+			OP_DATA_BIN			= 0x02,
+			OP_CLOSE			= 0x08,
+			OP_PING				= 0x09,
+			OP_PONG				= 0x0A,
+		};
+
+		enum {
+			OP_FL_FIN			= 0x80,
+			OP_FL_RSV1			= 0x40,
+			OP_FL_RSV2			= 0x20,
+			OP_FL_RSV3			= 0x10,
+			OP_FL_CONTROL		= 0x08,
+			OP_FL_OPCODE		= 0x0F,
+		};
+	}
+
+	using namespace OpCodes;
+}
 
 }
 

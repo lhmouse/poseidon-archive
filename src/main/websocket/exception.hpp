@@ -9,16 +9,18 @@
 
 namespace Poseidon {
 
-class WebSocketException : public ProtocolException {
-public:
-	WebSocketException(const char *file, std::size_t line, WebSocketStatus status, SharedNts message);
-	~WebSocketException() NOEXCEPT;
+namespace WebSocket {
+	class Exception : public ProtocolException {
+	public:
+		Exception(const char *file, std::size_t line, StatusCode statusCode, SharedNts message);
+		~Exception() NOEXCEPT;
 
-public:
-	WebSocketStatus status() const NOEXCEPT {
-		return static_cast<WebSocketStatus>(code());
-	}
-};
+	public:
+		StatusCode statusCode() const NOEXCEPT {
+			return static_cast<StatusCode>(code());
+		}
+	};
+}
 
 }
 

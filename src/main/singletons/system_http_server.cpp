@@ -16,6 +16,7 @@
 #include "../http/session.hpp"
 #include "../http/exception.hpp"
 #include "../http/server.hpp"
+#include "../http/request.hpp"
 #include "../shared_nts.hpp"
 
 namespace Poseidon {
@@ -46,40 +47,40 @@ namespace {
 		}
 	}
 
-	void onShutdown(boost::shared_ptr<HttpSession> session, OptionalMap){
+	void onShutdown(boost::shared_ptr<Http::Session> session, OptionalMap){
 		LOG_POSEIDON_WARNING("Received shutdown HTTP request. The server will be shutdown now.");
-		session->sendDefault(HTTP_OK);
+		session->sendDefault(Http::ST_OK);
 		::raise(SIGTERM);
 	}
 
-	void onLoadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
+	void onLoadModule(boost::shared_ptr<Http::Session> session, OptionalMap getParams){
 		AUTO_REF(name, getParams.at("name"));
 		if(!ModuleDepository::loadNoThrow(name.c_str())){
 			LOG_POSEIDON_WARNING("Failed to load module: ", name);
-			session->sendDefault(HTTP_NOT_FOUND);
+			session->sendDefault(Http::ST_NOT_FOUND);
 			return;
 		}
-		session->sendDefault(HTTP_OK);
+		session->sendDefault(Http::ST_OK);
 	}
 
-	void onUnloadModule(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
+	void onUnloadModule(boost::shared_ptr<Http::Session> session, OptionalMap getParams){
 		AUTO_REF(baseAddrStr, getParams.at("base_addr"));
 		std::istringstream iss(baseAddrStr);
 		void *baseAddr;
 		if(!((iss >>baseAddr) && iss.eof())){
 			LOG_POSEIDON_WARNING("Bad base_addr string: ", baseAddrStr);
-			session->sendDefault(HTTP_BAD_REQUEST);
+			session->sendDefault(Http::ST_BAD_REQUEST);
 			return;
 		}
 		if(!ModuleDepository::unload(baseAddr)){
 			LOG_POSEIDON_WARNING("Module not loaded: base address = ", baseAddr);
-			session->sendDefault(HTTP_NOT_FOUND);
+			session->sendDefault(Http::ST_NOT_FOUND);
 			return;
 		}
-		session->sendDefault(HTTP_OK);
+		session->sendDefault(Http::ST_OK);
 	}
 
-	void onShowProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
+	void onShowProfile(boost::shared_ptr<Http::Session> session, OptionalMap){
 		OptionalMap headers;
 		headers.set("Content-Type", "text/csv; charset=utf-8");
 		headers.set("Content-Disposition", "attachment; name=\"profile.csv\"");
@@ -100,10 +101,10 @@ namespace {
 			contents.put(temp, len);
 		}
 
-		session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
+		session->send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 	}
 
-	void onShowModules(boost::shared_ptr<HttpSession> session, OptionalMap){
+	void onShowModules(boost::shared_ptr<Http::Session> session, OptionalMap){
 		OptionalMap headers;
 		headers.set("Content-Type", "text/csv; charset=utf-8");
 		headers.set("Content-Disposition", "attachment; name=\"modules.csv\"");
@@ -120,10 +121,10 @@ namespace {
 			contents.put(temp, len);
 		}
 
-		session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
+		session->send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 	}
 
-	void onShowConnections(boost::shared_ptr<HttpSession> session, OptionalMap){
+	void onShowConnections(boost::shared_ptr<Http::Session> session, OptionalMap){
 		OptionalMap headers;
 		headers.set("Content-Type", "text/csv; charset=utf-8");
 		headers.set("Content-Disposition", "attachment; name=\"connections.csv\"");
@@ -144,10 +145,10 @@ namespace {
 			contents.put(temp, len);
 		}
 
-		session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
+		session->send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 	}
 
-	void onSetLogMask(boost::shared_ptr<HttpSession> session, OptionalMap getParams){
+	void onSetLogMask(boost::shared_ptr<Http::Session> session, OptionalMap getParams){
 		unsigned long long toEnable = 0, toDisable = 0;
 		{
 			AUTO_REF(val, getParams.get("to_disable"));
@@ -162,10 +163,10 @@ namespace {
 			}
 		}
 		Logger::setMask(toDisable, toEnable);
-		session->sendDefault(HTTP_OK);
+		session->sendDefault(Http::ST_OK);
 	}
 
-	void onShowMySqlProfile(boost::shared_ptr<HttpSession> session, OptionalMap){
+	void onShowMySqlProfile(boost::shared_ptr<Http::Session> session, OptionalMap){
 		OptionalMap headers;
 		headers.set("Content-Type", "text/csv; charset=utf-8");
 		headers.set("Content-Disposition", "attachment; name=\"mysql_threads.csv\"");
@@ -184,11 +185,11 @@ namespace {
 			contents.put(temp, len);
 		}
 
-		session->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
+		session->send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 	}
 
 	const std::pair<
-		const char *, void (*)(boost::shared_ptr<HttpSession>, OptionalMap)
+		const char *, void (*)(boost::shared_ptr<Http::Session>, OptionalMap)
 		> JUMP_TABLE[] =
 	{
 		// 确保字母顺序。
@@ -202,18 +203,18 @@ namespace {
 		std::make_pair("unload_module", &onUnloadModule),
 	};
 
-	boost::shared_ptr<HttpServer> g_systemServer;
-	boost::shared_ptr<HttpServlet> g_systemServlet;
+	boost::shared_ptr<Http::Server> g_systemServer;
+	boost::shared_ptr<Http::Servlet> g_systemServlet;
 
-	void servletProc(boost::shared_ptr<HttpSession> &session, HttpRequest &request, std::size_t cut){
+	void servletProc(boost::shared_ptr<Http::Session> &session, Http::Request &request, std::size_t cut){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", session->getRemoteInfo());
 
-		if(request.verb != HTTP_GET){
-			DEBUG_THROW(HttpException, HTTP_METHOD_NOT_ALLOWED);
+		if(request.verb != Http::V_GET){
+			DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);
 		}
 
 		if(request.uri.size() < cut){
-			DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
+			DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 		}
 
 		AUTO(lower, BEGIN(JUMP_TABLE));
@@ -234,7 +235,7 @@ namespace {
 
 		if(!found){
 			LOG_POSEIDON_WARNING("No system HTTP handler: ", request.uri);
-			DEBUG_THROW(HttpException, HTTP_NOT_FOUND);
+			DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 		}
 
 		(*found)(STD_MOVE(session), STD_MOVE(request.getParams));
@@ -258,12 +259,12 @@ void SystemHttpServer::start(){
 
 	const IpPort bindAddr(SharedNts(bind.c_str()), port);
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bindAddr);
-	g_systemServer = boost::make_shared<HttpServer>(
+	g_systemServer = boost::make_shared<Http::Server>(
 		category, bindAddr, certificate.c_str(), privateKey.c_str(), authUserPasses);
 	EpollDaemon::registerServer(g_systemServer);
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created system HTTP sevlet on ", path);
-	g_systemServlet = HttpServletDepository::create(
+	g_systemServlet = Http::ServletDepository::create(
 		category, SharedNts(path.c_str()), boost::bind(&servletProc, _1, _2, path.size()));
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing system HTTP server.");
