@@ -4,7 +4,6 @@
 #include "precompiled.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-#include "utilities.hpp"
 
 namespace Poseidon {
 
@@ -14,20 +13,6 @@ Exception::Exception(const char *file, std::size_t line, SharedNts message)
 	LOG_POSEIDON_ERROR("Constructing Exception: file = ", m_file, ", line = ", m_line, ", what = ", m_message);
 }
 Exception::~Exception() NOEXCEPT {
-}
-
-SystemError::SystemError(const char *file, std::size_t line, int code)
-	: Exception(file, line, getErrorDesc(code)), m_code(code)
-{
-}
-SystemError::~SystemError() NOEXCEPT {
-}
-
-ProtocolException::ProtocolException(const char *file, std::size_t line, SharedNts message, long code)
-	: Exception(file, line, STD_MOVE(message)), m_code(code)
-{
-}
-ProtocolException::~ProtocolException() NOEXCEPT {
 }
 
 }

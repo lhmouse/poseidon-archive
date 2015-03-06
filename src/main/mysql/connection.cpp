@@ -12,6 +12,7 @@
 #include "../raii.hpp"
 #include "../log.hpp"
 #include "../utilities.hpp"
+#include "../system_exception.hpp"
 
 namespace Poseidon {
 
@@ -40,7 +41,7 @@ namespace MySql {
 		class ConnectionDelegator : public Connection {
 
 #define THROW_MYSQL_EXCEPTION	\
-	DEBUG_THROW(SqlException,	\
+	DEBUG_THROW(Exception,	\
 		::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())))
 
 		private:
@@ -86,7 +87,7 @@ namespace MySql {
 				: m_row(NULLPTR), m_lengths(NULLPTR)
 			{
 				if(!m_mysql.reset(::mysql_init(&m_mysqlObject))){
-					DEBUG_THROW(SystemError, ENOMEM);
+					DEBUG_THROW(SystemException, ENOMEM);
 				}
 
 				if(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) != 0){
@@ -132,7 +133,7 @@ namespace MySql {
 						const char *const name = fields[i].name;
 						if(lowerBoundColumn(ins, m_columns, name)){
 							LOG_POSEIDON_ERROR("Duplicate column in MySQL result set: ", name);
-							DEBUG_THROW(Exception, SharedNts::observe("Duplicate column"));
+							DEBUG_THROW(BasicException, SharedNts::observe("Duplicate column"));
 						}
 						LOG_POSEIDON_TRACE("MySQL result column: name = ", name, ", index = ", i);
 						m_columns.insert(ins, std::make_pair(name, i));
@@ -164,7 +165,7 @@ namespace MySql {
 				Columns::const_iterator it;
 				if(!lowerBoundColumn(it, m_columns, column)){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(Exception, SharedNts::observe("Column not found"));
+					DEBUG_THROW(BasicException, SharedNts::observe("Column not found"));
 				}
 				const AUTO(data, m_row[it->second]);
 				if(!data || (data[0] == 0)){
@@ -174,7 +175,7 @@ namespace MySql {
 				const AUTO(val, ::strtoll(data, &endptr, 10));
 				if(endptr[0] != 0){
 					LOG_POSEIDON_ERROR("Could not convert column data to long long: ", data);
-					DEBUG_THROW(Exception, SharedNts::observe("Invalid data format"));
+					DEBUG_THROW(BasicException, SharedNts::observe("Invalid data format"));
 				}
 				return val;
 			}
@@ -182,7 +183,7 @@ namespace MySql {
 				Columns::const_iterator it;
 				if(!lowerBoundColumn(it, m_columns, column)){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(Exception, SharedNts::observe("Column not found"));
+					DEBUG_THROW(BasicException, SharedNts::observe("Column not found"));
 				}
 				const AUTO(data, m_row[it->second]);
 				if(!data || (data[0] == 0)){
@@ -192,7 +193,7 @@ namespace MySql {
 				const AUTO(val, ::strtoull(data, &endptr, 10));
 				if(endptr[0] != 0){
 					LOG_POSEIDON_ERROR("Could not convert column data to unsigned long long: ", data);
-					DEBUG_THROW(Exception, SharedNts::observe("Invalid data format"));
+					DEBUG_THROW(BasicException, SharedNts::observe("Invalid data format"));
 				}
 				return val;
 			}
@@ -200,7 +201,7 @@ namespace MySql {
 				Columns::const_iterator it;
 				if(!lowerBoundColumn(it, m_columns, column)){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(Exception, SharedNts::observe("Column not found"));
+					DEBUG_THROW(BasicException, SharedNts::observe("Column not found"));
 				}
 				const AUTO(data, m_row[it->second]);
 				if(!data || (data[0] == 0)){
@@ -210,7 +211,7 @@ namespace MySql {
 				const AUTO(val, ::strtod(data, &endptr));
 				if(endptr[0] != 0){
 					LOG_POSEIDON_ERROR("Could not convert column data to double: ", data);
-					DEBUG_THROW(Exception, SharedNts::observe("Invalid data format"));
+					DEBUG_THROW(BasicException, SharedNts::observe("Invalid data format"));
 				}
 				return val;
 			}
@@ -218,7 +219,7 @@ namespace MySql {
 				Columns::const_iterator it;
 				if(!lowerBoundColumn(it, m_columns, column)){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(Exception, SharedNts::observe("Column not found"));
+					DEBUG_THROW(BasicException, SharedNts::observe("Column not found"));
 				}
 				std::string val;
 				const AUTO(data, m_row[it->second]);
@@ -231,7 +232,7 @@ namespace MySql {
 				Columns::const_iterator it;
 				if(!lowerBoundColumn(it, m_columns, column)){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(Exception, SharedNts::observe("Column not found"));
+					DEBUG_THROW(BasicException, SharedNts::observe("Column not found"));
 				}
 				const AUTO(data, m_row[it->second]);
 				if(!data || (data[0] == 0)){

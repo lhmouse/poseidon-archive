@@ -13,7 +13,7 @@
 #include "log.hpp"
 #include "atomic.hpp"
 #include "endian.hpp"
-#include "exception.hpp"
+#include "system_exception.hpp"
 #include "utilities.hpp"
 #include "epoll.hpp"
 #include "job_base.hpp"
@@ -62,12 +62,12 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	if(flags == -1){
 		const int code = errno;
 		LOG_POSEIDON_ERROR("Could not get fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemException, code);
 	}
 	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
 		const int code = errno;
 		LOG_POSEIDON_ERROR("Could not set fcntl flags on socket.");
-		DEBUG_THROW(SystemError, code);
+		DEBUG_THROW(SystemException, code);
 	}
 }
 TcpSessionBase::~TcpSessionBase(){

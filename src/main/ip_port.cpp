@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include "sock_addr.hpp"
-#include "exception.hpp"
+#include "system_exception.hpp"
 
 namespace Poseidon {
 
@@ -22,7 +22,7 @@ IpPort getRemoteIpPortFromFd(int fd){
 	::sockaddr sa;
 	::socklen_t salen = sizeof(sa);
 	if(::getpeername(fd, &sa, &salen) != 0){
-		DEBUG_THROW(SystemError);
+		DEBUG_THROW(SystemException);
 	}
 	return getIpPortFromSockAddr(SockAddr(&sa, salen));
 }
@@ -30,7 +30,7 @@ IpPort getLocalIpPortFromFd(int fd){
 	::sockaddr sa;
 	::socklen_t salen = sizeof(sa);
 	if(::getsockname(fd, &sa, &salen) != 0){
-		DEBUG_THROW(SystemError);
+		DEBUG_THROW(SystemException);
 	}
 	return getIpPortFromSockAddr(SockAddr(&sa, salen));
 }

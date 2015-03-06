@@ -48,8 +48,8 @@ namespace Cbpp {
 					}
 				} catch(TryAgainLater &){
 					throw;
-				} catch(MessageException &e){
-					LOG_POSEIDON_ERROR("MessageException thrown in  servlet, message id = ", m_messageId,
+				} catch(Exception &e){
+					LOG_POSEIDON_ERROR("Exception thrown in  servlet, message id = ", m_messageId,
 						", statusCode = ", e.statusCode(), ", what = ", e.what());
 					throw;
 				} catch(...){
@@ -111,9 +111,9 @@ namespace Cbpp {
 				m_payloadLen = (boost::uint64_t)-1;
 				m_messageId = 0;
 			}
-		} catch(MessageException &e){
+		} catch(Exception &e){
 			LOG_POSEIDON_ERROR(
-				"MessageException thrown while parsing data, message id = ", m_messageId,
+				"Exception thrown while parsing data, message id = ", m_messageId,
 				", statusCode = ", static_cast<int>(e.statusCode()), ", what = ", e.what());
 			throw;
 		} catch(...){

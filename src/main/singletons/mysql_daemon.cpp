@@ -197,9 +197,9 @@ namespace MySql {
 						LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": ", query);
 						conn.executeSql(query);
 						succeeded = true;
-					} catch(SqlException &e){
-						LOG_POSEIDON_DEBUG("Exception: code = ", e.code(), ", message = ", e.what());
-						if(!m_callback || (e.code() != ER_DUP_ENTRY)){
+					} catch(Exception &e){
+						LOG_POSEIDON_DEBUG("Exception: errorCode = ", e.errorCode(), ", message = ", e.what());
+						if(!m_callback || (e.errorCode() != ER_DUP_ENTRY)){
 							throw;
 						}
 					}
@@ -495,22 +495,22 @@ namespace MySql {
 						continue;
 					}
 
-					unsigned mysqlErrCode = 99999;
-					std::string mysqlErrMsg;
+					unsigned mysqlErrorCode = 99999;
+					std::string mysqlErrorMsg;
 					std::string query;
 					try {
 						try {
 							const WorkingTimeAccumulator profiler(this, operation->getTableName());
 							operation->execute(query, *conn);
-						} catch(SqlException &e){
-							mysqlErrCode = e.code();
-							mysqlErrMsg = e.what();
+						} catch(Exception &e){
+							mysqlErrorCode = e.errorCode();
+							mysqlErrorMsg = e.what();
 							throw;
 						} catch(std::exception &e){
-							mysqlErrMsg = e.what();
+							mysqlErrorMsg = e.what();
 							throw;
 						} catch(...){
-							mysqlErrMsg = "Unknown exception";
+							mysqlErrorMsg = "Unknown exception";
 							throw;
 						}
 					} catch(...){
@@ -521,13 +521,13 @@ namespace MySql {
 							operation.reset();
 
 							char temp[32];
-							unsigned len = (unsigned)std::sprintf(temp, "%05u", mysqlErrCode);
+							unsigned len = (unsigned)std::sprintf(temp, "%05u", mysqlErrorCode);
 							std::string dump;
 							dump.reserve(1024);
 							dump.assign("-- Error code = ");
 							dump.append(temp, len);
 							dump.append(", Description = ");
-							dump.append(mysqlErrMsg);
+							dump.append(mysqlErrorMsg);
 							dump.append("\n");
 							dump.append(query);
 							dump.append(";\n\n");
@@ -547,8 +547,8 @@ namespace MySql {
 						throw;
 					}
 					operation.reset();
-				} catch(SqlException &e){
-					LOG_POSEIDON_ERROR("Exception thrown in MySQL daemon: code = ", e.code(), ", what = ", e.what());
+				} catch(Exception &e){
+					LOG_POSEIDON_ERROR("Exception thrown in MySQL daemon: errorCode = ", e.errorCode(), ", what = ", e.what());
 					conn.reset();
 				} catch(std::exception &e){
 					LOG_POSEIDON_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());
@@ -575,7 +575,7 @@ namespace MySql {
 
 		void commitOperation(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
 			if(g_threads.empty()){
-				DEBUG_THROW(Exception, SharedNts::observe("No MySQL thread is running"));
+				DEBUG_THROW(BasicException, SharedNts::observe("No MySQL thread is running"));
 			}
 
 			std::size_t threadIndex = 0;

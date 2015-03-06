@@ -6,7 +6,6 @@
 
 #include "cxx_ver.hpp"
 #include <exception>
-#include <cerrno>
 #include <cstddef>
 #include "shared_nts.hpp"
 
@@ -35,33 +34,7 @@ public:
 	}
 };
 
-class SystemError : public Exception {
-private:
-	int m_code;
-
-public:
-	SystemError(const char *file, std::size_t line, int code = errno);
-	~SystemError() NOEXCEPT;
-
-public:
-	int code() const NOEXCEPT {
-		return m_code;
-	}
-};
-
-class ProtocolException : public Exception {
-private:
-	unsigned m_code;
-
-public:
-	ProtocolException(const char *file, std::size_t line, SharedNts message, long code);
-	~ProtocolException() NOEXCEPT;
-
-public:
-	long code() const NOEXCEPT {
-		return m_code;
-	}
-};
+typedef Exception BasicException;
 
 }
 

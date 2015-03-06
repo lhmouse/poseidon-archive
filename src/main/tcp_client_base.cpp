@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <openssl/ssl.h>
 #include "singletons/epoll_daemon.hpp"
-#include "exception.hpp"
+#include "system_exception.hpp"
 #include "log.hpp"
 
 namespace Poseidon {
@@ -47,7 +47,7 @@ namespace {
 	UniqueFile createSocket(int family){
 		UniqueFile client(::socket(family, SOCK_STREAM, IPPROTO_TCP));
 		if(!client){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 		return client;
 	}
@@ -60,7 +60,7 @@ TcpClientBase::TcpClientBase(const IpPort &addr, bool useSsl)
 		static_cast<const ::sockaddr *>(SockAddr::getData()), SockAddr::getSize()) != 0)
 	{
 		if(errno != EINPROGRESS){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 	}
 	if(useSsl){

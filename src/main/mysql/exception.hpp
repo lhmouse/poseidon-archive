@@ -4,15 +4,20 @@
 #ifndef POSEIDON_MYSQL_EXCEPTION_HPP_
 #define POSEIDON_MYSQL_EXCEPTION_HPP_
 
-#include "../exception.hpp"
+#include "../protocol_exception.hpp"
 
 namespace Poseidon {
 
 namespace MySql {
-	class SqlException : public ProtocolException {
+	class Exception : public ProtocolException {
 	public:
-		SqlException(const char *file, std::size_t line, unsigned code, SharedNts message);
-		~SqlException() NOEXCEPT;
+		Exception(const char *file, std::size_t line, unsigned errorCode, SharedNts message);
+		~Exception() NOEXCEPT;
+
+	public:
+		unsigned errorCode() const NOEXCEPT {
+			return static_cast<unsigned>(code());
+		}
 	};
 }
 

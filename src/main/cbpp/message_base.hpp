@@ -18,13 +18,13 @@
 #include "status_codes.hpp"
 
 #define THROW_END_OF_STREAM_(message_, field_)	\
-	DEBUG_THROW(::Poseidon::Cbpp::MessageException,	\
+	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
 		::Poseidon::Cbpp::ST_END_OF_STREAM, ::Poseidon::SharedNts::observe(	\
 			"End of stream encountered, expecting "	\
 				TOKEN_TO_STR(message_) "::" TOKEN_TO_STR(field_) ))
 
 #define THROW_JUNK_AFTER_PACKET_(message_)	\
-	DEBUG_THROW(::Poseidon::Cbpp::MessageException,	\
+	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
 		::Poseidon::Cbpp::ST_JUNK_AFTER_PACKET, ::Poseidon::SharedNts::observe(	\
 			"Junk after packet body, message "	\
 				TOKEN_TO_STR(message_) ))

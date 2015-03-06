@@ -8,21 +8,21 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "raii.hpp"
-#include "exception.hpp"
+#include "system_exception.hpp"
 
 namespace Poseidon {
 
 void fileGetContents(StreamBuffer &contents, const char *path){
 	const UniqueFile file(::open(path, O_RDONLY));
 	if(!file){
-		DEBUG_THROW(SystemError);
+		DEBUG_THROW(SystemException);
 	}
 	StreamBuffer temp;
 	for(;;){
 		char readBuf[4096];
 		const ::ssize_t bytesRead = ::read(file.get(), readBuf, sizeof(readBuf));
 		if(bytesRead < 0){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		} else if(bytesRead == 0){
 			break;
 		}
@@ -34,7 +34,7 @@ int fileGetContentsNoThrow(StreamBuffer &contents, const char *path){
 	try {
 		fileGetContents(contents, path);
 		return 0;
-	} catch(SystemError &e){
+	} catch(SystemException &e){
 		return e.code();
 	}
 }
@@ -42,7 +42,7 @@ int fileGetContentsNoThrow(StreamBuffer &contents, const char *path){
 void filePutContents(const char *path, StreamBuffer contents, bool append){
 	const UniqueFile file(::open(path, O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC)));
 	if(!file){
-		DEBUG_THROW(SystemError);
+		DEBUG_THROW(SystemException);
 	}
 	for(;;){
 		char writeBuf[4096];
@@ -51,7 +51,7 @@ void filePutContents(const char *path, StreamBuffer contents, bool append){
 			break;
 		}
 		if(::write(file.get(), writeBuf, bytesToWrite) < static_cast< ::ssize_t>(bytesToWrite)){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 	}
 }
@@ -59,7 +59,7 @@ int filePutContentsNoThrow(const char *path, StreamBuffer contents, bool append)
 	try {
 		filePutContents(path, contents, append);
 		return 0;
-	} catch(SystemError &e){
+	} catch(SystemException &e){
 		return e.code();
 	}
 }

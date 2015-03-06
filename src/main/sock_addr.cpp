@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include "ip_port.hpp"
 #include "endian.hpp"
-#include "exception.hpp"
+#include "system_exception.hpp"
 #include "log.hpp"
 
 namespace Poseidon {
@@ -45,7 +45,7 @@ IpPort getIpPortFromSockAddr(const SockAddr &sa){
 		const char *const str = ::inet_ntop(AF_INET,
 			&static_cast<const ::sockaddr_in *>(sa.getData())->sin_addr, ip, sizeof(ip));
 		if(!str){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 		return IpPort(SharedNts(str),
 			loadBe(static_cast<const ::sockaddr_in *>(sa.getData())->sin_port));
@@ -58,7 +58,7 @@ IpPort getIpPortFromSockAddr(const SockAddr &sa){
 		const char *const str = ::inet_ntop(AF_INET6,
 			&static_cast<const ::sockaddr_in6 *>(sa.getData())->sin6_addr, ip, sizeof(ip));
 		if(!str){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 		return IpPort(SharedNts(str),
 			loadBe(static_cast<const ::sockaddr_in6 *>(sa.getData())->sin6_port));

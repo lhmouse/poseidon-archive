@@ -14,7 +14,7 @@
 #include <openssl/ssl.h>
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
-#include "exception.hpp"
+#include "system_exception.hpp"
 #include "endian.hpp"
 
 namespace Poseidon {
@@ -46,17 +46,17 @@ namespace {
 		SockAddr sa = getSockAddrFromIpPort(addr);
 		UniqueFile listen(::socket(sa.getFamily(), SOCK_STREAM, IPPROTO_TCP));
 		if(!listen){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 		const int TRUE_VALUE = true;
 		if(::setsockopt(listen.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 		if(::bind(listen.get(), static_cast<const ::sockaddr *>(sa.getData()), sa.getSize())){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 		if(::listen(listen.get(), SOMAXCONN)){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 		return listen;
 	}
@@ -79,7 +79,7 @@ bool TcpServerBase::poll() const {
 	UniqueFile client(::accept(getFd(), NULLPTR, NULLPTR));
 	if(!client){
 		if(errno != EAGAIN){
-			DEBUG_THROW(SystemError);
+			DEBUG_THROW(SystemException);
 		}
 		return false;
 	}

@@ -4,7 +4,7 @@
 #ifndef POSEIDON_HTTP_EXCEPTION_HPP_
 #define POSEIDON_HTTP_EXCEPTION_HPP_
 
-#include "../exception.hpp"
+#include "../protocol_exception.hpp"
 #include "../optional_map.hpp"
 #include "status.hpp"
 

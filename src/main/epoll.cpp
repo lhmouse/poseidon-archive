@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include "multi_index_map.hpp"
-#include "exception.hpp"
+#include "system_exception.hpp"
 #include "log.hpp"
 #include "utilities.hpp"
 
@@ -56,7 +56,7 @@ struct Epoll::SessionMapImpl
 
 Epoll::Epoll(){
 	if(!m_epoll.reset(::epoll_create(4096))){
-		DEBUG_THROW(SystemError);
+		DEBUG_THROW(SystemException);
 	}
 	m_sessions.reset(new SessionMapImpl);
 }
@@ -94,7 +94,7 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const int errCode = errno;
 		m_sessions->erase(result.first);
-		DEBUG_THROW(SystemError, errCode);
+		DEBUG_THROW(SystemException, errCode);
 	}
 	session->setEpoll(this);
 }
@@ -220,7 +220,7 @@ std::size_t Epoll::pumpReadable(){
 					m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 					continue;
 				}
-				DEBUG_THROW(SystemError);
+				DEBUG_THROW(SystemException);
 			} else if(bytesRead == 0){
 				LOG_POSEIDON_INFO("Connection closed: remote = ", session->getRemoteInfo());
 				session->send(StreamBuffer(), true);
@@ -277,7 +277,7 @@ std::size_t Epoll::pumpWriteable(){
 					m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
 					continue;
 				}
-				DEBUG_THROW(SystemError);
+				DEBUG_THROW(SystemException);
 			} else if(bytesWritten == 0){
 				if(shutdown){
 					session->forceShutdown();

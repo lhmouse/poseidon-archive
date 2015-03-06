@@ -5,7 +5,7 @@
 #include "main_config.hpp"
 #include "../config_file.hpp"
 #include "../log.hpp"
-#include "../exception.hpp"
+#include "../system_exception.hpp"
 
 namespace Poseidon {
 
@@ -19,7 +19,7 @@ namespace {
 			realPath = ::realpath(path, NULLPTR);
 			if(!realPath){
 				LOG_POSEIDON_ERROR("Could not resolve path: ", path);
-				DEBUG_THROW(SystemError);
+				DEBUG_THROW(SystemException);
 			}
 			ret = realPath;
 			::free(realPath);
@@ -35,7 +35,7 @@ void MainConfig::setRunPath(const char *path){
 	const AUTO(realPath, getRealPath(path));
 	LOG_POSEIDON_INFO("Setting working directory: ", realPath);
 	if(::chdir(realPath.c_str()) != 0){
-		DEBUG_THROW(SystemError);
+		DEBUG_THROW(SystemException);
 	}
 }
 

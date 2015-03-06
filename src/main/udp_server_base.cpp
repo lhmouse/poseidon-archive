@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "exception.hpp"
+#include "system_exception.hpp"
 #include "log.hpp"
 
 namespace Poseidon {
@@ -18,14 +18,14 @@ namespace {
     	SockAddr sa = getSockAddrFromIpPort(addr);
     	UniqueFile udp(::socket(sa.getFamily(), SOCK_DGRAM, IPPROTO_UDP));
     	if(!udp){
-        	DEBUG_THROW(SystemError);
+        	DEBUG_THROW(SystemException);
     	}
     	const int TRUE_VALUE = true;
     	if(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
-        	DEBUG_THROW(SystemError);
+        	DEBUG_THROW(SystemException);
     	}
     	if(::bind(udp.get(), static_cast<const ::sockaddr *>(sa.getData()), sa.getSize())){
-        	DEBUG_THROW(SystemError);
+        	DEBUG_THROW(SystemException);
     	}
     	return udp;
 	}

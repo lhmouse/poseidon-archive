@@ -68,7 +68,7 @@ namespace {
 		START(TimerDaemon);
 		START(EpollDaemon);
 
-		START(Cbpp::ServletDepository);
+		START(CbppServletDepository);
 		START(HttpServletDepository);
 		START(WebSocketServletDepository);
 		START(EventDispatcher);

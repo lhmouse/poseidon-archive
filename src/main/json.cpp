@@ -3,7 +3,7 @@
 
 #include "precompiled.hpp"
 #include "json.hpp"
-#include "exception.hpp"
+#include "protocol_exception.hpp"
 #include <iomanip>
 
 namespace Poseidon {

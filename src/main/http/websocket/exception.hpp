@@ -4,7 +4,7 @@
 #ifndef POSEIDON_HTTP_WEBSOCKET_EXCEPTION_HPP_
 #define POSEIDON_HTTP_WEBSOCKET_EXCEPTION_HPP_
 
-#include "../../exception.hpp"
+#include "../../protocol_exception.hpp"
 #include "status.hpp"
 
 namespace Poseidon {

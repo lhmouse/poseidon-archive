@@ -39,6 +39,8 @@ pkginclude_HEADERS = \
 	src/main/stream_buffer.hpp	\
 	src/main/ip_port.hpp	\
 	src/main/exception.hpp	\
+	src/main/protocol_exception.hpp	\
+	src/main/system_exception.hpp	\
 	src/main/raii.hpp	\
 	src/main/cxx_util.hpp	\
 	src/main/endian.hpp	\
@@ -125,6 +127,8 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/utilities.cpp	\
 	src/main/log.cpp	\
 	src/main/exception.cpp	\
+	src/main/protocol_exception.cpp	\
+	src/main/system_exception.cpp	\
 	src/main/profiler.cpp	\
 	src/main/raii.cpp	\
 	src/main/virtual_shared_from_this.cpp	\

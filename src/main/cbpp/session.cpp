@@ -58,7 +58,7 @@ namespace Cbpp {
 						const AUTO(servlet, ServletDepository::getServlet(category, m_messageId));
 						if(!servlet){
 							LOG_POSEIDON_WARNING("No servlet in category ", category, " matches message ", m_messageId);
-							DEBUG_THROW(MessageException, ST_NOT_FOUND, SharedNts::observe("Unknown message"));
+							DEBUG_THROW(Exception, ST_NOT_FOUND, SharedNts::observe("Unknown message"));
 						}
 
 						LOG_POSEIDON_DEBUG("Dispatching packet: message = ", m_messageId,
@@ -68,8 +68,8 @@ namespace Cbpp {
 					session->setTimeout(ServletDepository::getKeepAliveTimeout());
 				} catch(TryAgainLater &){
 					throw;
-				} catch(MessageException &e){
-					LOG_POSEIDON_ERROR("MessageException thrown in  servlet, message id = ",
+				} catch(Exception &e){
+					LOG_POSEIDON_ERROR("Exception thrown in  servlet, message id = ",
 						m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
 					session->sendError(m_messageId, e.statusCode(), e.what(), false); // 不关闭连接。
 					throw;
@@ -114,7 +114,7 @@ namespace Cbpp {
 					const std::size_t maxRequestLength = ServletDepository::getMaxRequestLength();
 					if((unsigned)m_payloadLen >= maxRequestLength){
 						LOG_POSEIDON_WARNING("Request too large: size = ", m_payloadLen, ", max = ", maxRequestLength);
-						DEBUG_THROW(MessageException, ST_REQUEST_TOO_LARGE, SharedNts::observe("Request too large"));
+						DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE, SharedNts::observe("Request too large"));
 					}
 				}
 				if(m_payload.size() < (unsigned)m_payloadLen){
@@ -125,8 +125,8 @@ namespace Cbpp {
 				m_payloadLen = (boost::uint64_t)-1;
 				m_messageId = 0;
 			}
-		} catch(MessageException &e){
-			LOG_POSEIDON_ERROR("MessageException thrown while parsing data, message id = ", m_messageId,
+		} catch(Exception &e){
+			LOG_POSEIDON_ERROR("Exception thrown while parsing data, message id = ", m_messageId,
 				", statusCode = ", static_cast<int>(e.statusCode()), ", what = ", e.what());
 			sendError(m_messageId, e.statusCode(), e.what(), true);
 			throw;

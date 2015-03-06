@@ -75,7 +75,7 @@ namespace Cbpp {
 			AUTO_REF(old, g_servlets[category][protocolId]);
 			if(!old.expired()){
 				LOG_POSEIDON_ERROR("Duplicate servlet for id ", protocolId, " in category ", category);
-				DEBUG_THROW(Exception, SharedNts::observe("Duplicate CBPP protocol servlet"));
+				DEBUG_THROW(BasicException, SharedNts::observe("Duplicate CBPP protocol servlet"));
 			}
 			old = servlet;
 		}

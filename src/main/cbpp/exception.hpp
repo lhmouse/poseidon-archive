@@ -4,16 +4,16 @@
 #ifndef POSEIDON_CBPP_EXCEPTION_HPP_
 #define POSEIDON_CBPP_EXCEPTION_HPP_
 
-#include "../exception.hpp"
+#include "../protocol_exception.hpp"
 #include "status_codes.hpp"
 
 namespace Poseidon {
 
 namespace Cbpp {
-	class MessageException : public ProtocolException {
+	class Exception : public ProtocolException {
 	public:
-		MessageException(const char *file, std::size_t line, StatusCode statusCode, SharedNts message = SharedNts());
-		~MessageException() NOEXCEPT;
+		Exception(const char *file, std::size_t line, StatusCode statusCode, SharedNts message = SharedNts());
+		~Exception() NOEXCEPT;
 
 	public:
 		StatusCode statusCode() const NOEXCEPT {

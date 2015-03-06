@@ -6,7 +6,7 @@
 #include <boost/thread/once.hpp>
 #include <errno.h>
 #include <openssl/ssl.h>
-#include "exception.hpp"
+#include "system_exception.hpp"
 #include "log.hpp"
 
 namespace Poseidon {
@@ -29,7 +29,7 @@ namespace {
 		UniqueSslCtx ret;
 		if(!ret.reset(::SSL_CTX_new(::TLSv1_server_method()))){
 			LOG_POSEIDON_ERROR("Could not create server SSL context");
-			DEBUG_THROW(SystemError, ENOMEM);
+			DEBUG_THROW(SystemException, ENOMEM);
 		}
 		::SSL_CTX_set_verify(ret.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULLPTR);
 
@@ -56,7 +56,7 @@ namespace {
 		UniqueSslCtx ret;
 		if(!ret.reset(::SSL_CTX_new(::TLSv1_client_method()))){
 			LOG_POSEIDON_ERROR("Could not create client SSL context");
-			DEBUG_THROW(SystemError, ENOMEM);
+			DEBUG_THROW(SystemException, ENOMEM);
 		}
 		::SSL_CTX_set_verify(ret.get(), SSL_VERIFY_NONE, NULLPTR);
 

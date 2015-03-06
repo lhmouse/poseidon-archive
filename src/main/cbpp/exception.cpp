@@ -8,12 +8,12 @@
 namespace Poseidon {
 
 namespace Cbpp {
-	MessageException::MessageException(const char *file, std::size_t line, StatusCode statusCode, SharedNts message)
-		: ProtocolException(file, line, message, static_cast<unsigned>(statusCode))
+	Exception::Exception(const char *file, std::size_t line, StatusCode statusCode, SharedNts message)
+		: ProtocolException(file, line, message, static_cast<long>(statusCode))
 	{
-		LOG_POSEIDON_ERROR("MessageException: statusCode = ", statusCode, ", what = ", what());
+		LOG_POSEIDON_ERROR("Cbpp::Exception: statusCode = ", statusCode, ", what = ", what());
 	}
-	MessageException::~MessageException() NOEXCEPT {
+	Exception::~Exception() NOEXCEPT {
 	}
 }
 
