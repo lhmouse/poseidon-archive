@@ -508,7 +508,6 @@ namespace {
 						m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 					}
 					if(!atomicLoad(m_urgent, ATOMIC_ACQUIRE) && (getFastMonoClock() < m_queue.begin<0>()->dueTime)){
-						boost::mutex::scoped_lock lock(m_mutex);
 						m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 						continue;
 					}
