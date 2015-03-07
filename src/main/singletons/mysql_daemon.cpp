@@ -204,8 +204,7 @@ namespace {
 				}
 
 				if(m_callback){
-					enqueueJob(boost::make_shared<SaveCallbackJob>(
-						STD_MOVE(m_callback), succeeded, conn.getInsertId(), boost::ref(m_except)));
+					enqueueJob(boost::make_shared<SaveCallbackJob>(STD_MOVE(m_callback), succeeded, conn.getInsertId(), m_except));
 				}
 			} catch(...){
 				if(m_except){
@@ -254,8 +253,7 @@ namespace {
 				}
 
 				if(m_callback){
-					enqueueJob(boost::make_shared<LoadCallbackJob>(
-						STD_MOVE(m_callback), found, boost::ref(m_except)));
+					enqueueJob(boost::make_shared<LoadCallbackJob>(STD_MOVE(m_callback), found, m_except));
 				}
 			} catch(...){
 				if(m_except){
@@ -308,8 +306,7 @@ namespace {
 				}
 
 				if(m_callback){
-					enqueueJob(boost::make_shared<BatchLoadCallbackJob>(
-						STD_MOVE(m_callback), STD_MOVE(objects), boost::ref(m_except)));
+					enqueueJob(boost::make_shared<BatchLoadCallbackJob>(STD_MOVE(m_callback), STD_MOVE(objects), m_except));
 				}
 			} catch(...){
 				if(m_except){
@@ -702,7 +699,7 @@ void MySqlDaemon::enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> ob
 	MySql::AsyncSaveCallback callback, MySql::ExceptionCallback except)
 {
 	const AUTO(tableName, object->getTableName());
-	const bool urgent = callback;
+	const bool urgent = !!callback;
 	commitOperation(tableName,
 		boost::make_shared<SaveOperation>(getFastMonoClock() + g_saveDelay,
 			STD_MOVE(object), toReplace, STD_MOVE(callback), STD_MOVE(except)),
