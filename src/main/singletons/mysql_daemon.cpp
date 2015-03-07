@@ -149,7 +149,8 @@ namespace {
 		}
 
 	public:
-		virtual bool usesWriteCombining() const = 0;
+		// 写入合并。
+		virtual boost::shared_ptr<const MySql::ObjectBase> getCombinableObject() const = 0;
 		virtual const char *getTableName() const = 0;
 		virtual void execute(std::string &query, MySql::Connection &conn) = 0;
 	};
@@ -171,8 +172,8 @@ namespace {
 		}
 
 	public:
-		bool usesWriteCombining() const OVERRIDE {
-			return true;
+		boost::shared_ptr<const MySql::ObjectBase> getCombinableObject() const OVERRIDE {
+			return m_object;
 		}
 		const char *getTableName() const OVERRIDE {
 			return m_object->getTableName();
@@ -223,8 +224,8 @@ namespace {
 		}
 
 	public:
-		bool usesWriteCombining() const OVERRIDE {
-			return false;
+		boost::shared_ptr<const MySql::ObjectBase> getCombinableObject() const OVERRIDE {
+			return VAL_INIT; // 不能合并。
 		}
 		const char *getTableName() const OVERRIDE {
 			return m_object->getTableName();
@@ -273,8 +274,8 @@ namespace {
 		}
 
 	public:
-		bool usesWriteCombining() const OVERRIDE {
-			return false;
+		boost::shared_ptr<const MySql::ObjectBase> getCombinableObject() const OVERRIDE {
+			return VAL_INIT; // 不能合并。
 		}
 		const char *getTableName() const OVERRIDE {
 			return m_tableHint;
@@ -334,17 +335,20 @@ namespace {
 
 		struct OperationElement {
 			boost::uint64_t dueTime;
-			std::pair<boost::shared_ptr<OperationBase>, bool> operation;
+			boost::shared_ptr<const MySql::ObjectBase> combinableObject;
+
+			boost::shared_ptr<OperationBase> operation;
 
 			OperationElement(boost::uint64_t dueTime_, boost::shared_ptr<OperationBase> operation_)
-				: dueTime(dueTime_), operation(operation_, operation_->usesWriteCombining())
+				: dueTime(dueTime_), combinableObject(operation_->getCombinableObject())
+				, operation(STD_MOVE(operation_))
 			{
 			}
 		};
 
 		MULTI_INDEX_MAP(OperationMap, OperationElement,
 			MULTI_MEMBER_INDEX(dueTime)
-			MULTI_MEMBER_INDEX(operation)
+			MULTI_MEMBER_INDEX(combinableObject)
 		);
 
 	private:
@@ -410,27 +414,24 @@ namespace {
 		}
 
 		void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
-			const bool canCombine = operation->usesWriteCombining();
-
+			const AUTO(combinableObject, operation->getCombinableObject());
 			AUTO(dueTime, getFastMonoClock());
 			// 有紧急操作时无视写入延迟，这个逻辑不在这里处理。
-			// if(canCombine && !urgent){ // 这个看似合理但是实际是错的。
-			if(canCombine || urgent){ // 确保紧急操作排在其他所有操作之后。
+			// if(combinableObject && !urgent){ // 这个看似合理但是实际是错的。
+			if(combinableObject || urgent){ // 确保紧急操作排在其他所有操作之后。
 				dueTime += g_saveDelay;
 			}
 
 			const boost::mutex::scoped_lock lock(m_mutex);
-			bool combined = false;
-			if(canCombine){
-				AUTO(it, m_queue.find<1>(std::make_pair(operation, true)));
+			if(combinableObject){
+				AUTO(it, m_queue.find<1>(combinableObject));
 				if(it != m_queue.end<1>()){
 					m_queue.setKey<1, 0>(it, dueTime);
-					combined = true;
+					goto _inserted;
 				}
 			}
-			if(!combined){
-				m_queue.insert(OperationElement(dueTime, STD_MOVE(operation)));
-			}
+			m_queue.insert(OperationElement(dueTime, STD_MOVE(operation)));
+		_inserted:
 			if(urgent){
 				atomicStore(m_urgent, true, ATOMIC_RELEASE);
 			}
@@ -511,7 +512,7 @@ namespace {
 						m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 						continue;
 					}
-					operation = m_queue.begin<0>()->operation.first;
+					operation = m_queue.begin<0>()->operation;
 					m_queue.erase(m_queue.begin<0>());
 					retryCount = 0;
 				}
