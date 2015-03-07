@@ -32,7 +32,6 @@ namespace MySql {
 
 	private:
 		mutable volatile bool m_autoSaves;
-		mutable const void *m_context;
 
 	protected:
 		mutable boost::mutex m_mutex;
@@ -54,14 +53,6 @@ namespace MySql {
 		}
 		void disableAutoSaving() const {
 			atomicStore(m_autoSaves, false, ATOMIC_RELEASE);
-		}
-
-		// 用于写入合并时标记最后一次队列节点的地址。
-		const void *getContext() const {
-			return atomicLoad(m_context, ATOMIC_ACQUIRE);
-		}
-		void setContext(const void *context) const {
-			atomicStore(m_context, context, ATOMIC_RELEASE);
 		}
 
 		virtual const char *getTableName() const = 0;

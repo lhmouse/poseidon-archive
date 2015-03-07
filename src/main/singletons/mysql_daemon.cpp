@@ -17,6 +17,7 @@
 #include "../exception.hpp"
 #include "../log.hpp"
 #include "../raii.hpp"
+#include "../multi_index_map.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 #include "../utilities.hpp"
@@ -148,15 +149,13 @@ namespace {
 		}
 
 	public:
+		virtual bool usesWriteCombining() const = 0;
 		virtual const char *getTableName() const = 0;
-		virtual bool check() const = 0;
 		virtual void execute(std::string &query, MySql::Connection &conn) = 0;
 	};
 
 	class SaveOperation : public OperationBase {
 	private:
-		const boost::uint64_t m_dueTime;
-
 		const boost::shared_ptr<const MySql::ObjectBase> m_object;
 		const bool m_toReplace;
 
@@ -164,32 +163,24 @@ namespace {
 		const MySql::ExceptionCallback m_except;
 
 	public:
-		SaveOperation(boost::uint64_t dueTime,
-			boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace,
+		SaveOperation(boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace,
 			MySql::AsyncSaveCallback callback, MySql::ExceptionCallback except)
-			: m_dueTime(dueTime)
-			, m_object(STD_MOVE(object)), m_toReplace(toReplace)
+			: m_object(STD_MOVE(object)), m_toReplace(toReplace)
 			, m_callback(STD_MOVE_IDN(callback)), m_except(STD_MOVE_IDN(except))
 		{
-			m_object->setContext(this);
 		}
 
 	public:
+		bool usesWriteCombining() const OVERRIDE {
+			return true;
+		}
 		const char *getTableName() const OVERRIDE {
 			return m_object->getTableName();
-		}
-		bool check() const OVERRIDE {
-			return m_dueTime <= getFastMonoClock();
 		}
 		void execute(std::string &query, MySql::Connection &conn){
 			PROFILE_ME;
 
 			try {
-				if(m_object->getContext() != this){
-					// 写入合并。
-					return;
-				}
-
 				m_object->syncGenerateSql(query, m_toReplace);
 				bool succeeded = false;
 				try {
@@ -232,11 +223,11 @@ namespace {
 		}
 
 	public:
+		bool usesWriteCombining() const OVERRIDE {
+			return false;
+		}
 		const char *getTableName() const OVERRIDE {
 			return m_object->getTableName();
-		}
-		bool check() const OVERRIDE {
-			return true;
 		}
 		void execute(std::string &query, MySql::Connection &conn){
 			PROFILE_ME;
@@ -282,11 +273,11 @@ namespace {
 		}
 
 	public:
+		bool usesWriteCombining() const OVERRIDE {
+			return false;
+		}
 		const char *getTableName() const OVERRIDE {
 			return m_tableHint;
-		}
-		bool check() const OVERRIDE {
-			return true;
 		}
 		void execute(std::string &query, MySql::Connection &conn){
 			PROFILE_ME;
@@ -341,13 +332,28 @@ namespace {
 			}
 		};
 
+		struct OperationElement {
+			boost::uint64_t dueTime;
+			std::pair<boost::shared_ptr<OperationBase>, bool> operation;
+
+			OperationElement(boost::uint64_t dueTime_, boost::shared_ptr<OperationBase> operation_)
+				: dueTime(dueTime_), operation(operation_, operation_->usesWriteCombining())
+			{
+			}
+		};
+
+		MULTI_INDEX_MAP(OperationMap, OperationElement,
+			MULTI_MEMBER_INDEX(dueTime)
+			MULTI_MEMBER_INDEX(operation)
+		);
+
 	private:
 		const std::size_t m_index;
 
 		volatile bool m_running;
 
 		mutable boost::mutex m_mutex;
-		std::deque<boost::shared_ptr<OperationBase> > m_queue;
+		OperationMap m_queue;
 		volatile bool m_urgent; // 无视延迟写入，一次性处理队列中所有操作。
 		boost::condition_variable m_newAvail;
 		boost::condition_variable m_queueEmpty;
@@ -355,7 +361,7 @@ namespace {
 		// 性能统计。
 		mutable boost::mutex m_profileMutex;
 		double m_profileFlushedTime;
-		std::map<const char *, double> m_profile;
+		std::map<const char *, double, TableNameComparator> m_profile;
 
 	public:
 		explicit Thread(std::size_t index)
@@ -404,8 +410,27 @@ namespace {
 		}
 
 		void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
+			const bool canCombine = operation->usesWriteCombining();
+
+			AUTO(dueTime, getFastMonoClock());
+			// 有紧急操作时无视写入延迟，这个逻辑不在这里处理。
+			// if(canCombine && !urgent){ // 这个看似合理但是实际是错的。
+			if(canCombine || urgent){ // 确保紧急操作排在其他所有操作之后。
+				dueTime += g_saveDelay;
+			}
+
 			const boost::mutex::scoped_lock lock(m_mutex);
-			m_queue.push_back(STD_MOVE(operation));
+			bool combined = false;
+			if(canCombine){
+				AUTO(it, m_queue.find<1>(std::make_pair(operation, true)));
+				if(it != m_queue.end<1>()){
+					m_queue.setKey<1, 0>(it, dueTime);
+					combined = true;
+				}
+			}
+			if(!combined){
+				m_queue.insert(OperationElement(dueTime, STD_MOVE(operation)));
+			}
 			if(urgent){
 				atomicStore(m_urgent, true, ATOMIC_RELEASE);
 			}
@@ -415,12 +440,8 @@ namespace {
 			boost::mutex::scoped_lock lock(m_mutex);
 			atomicStore(m_urgent, true, ATOMIC_RELEASE); // 在获取互斥锁之前设置紧急状态。
 			m_newAvail.notify_all();
-			for(;;){
-				const AUTO(queueSize, m_queue.size());
-				if(queueSize == 0){
-					break;
-				}
-				LOG_POSEIDON_INFO("There are ", queueSize, " objects in queue.");
+			while(!m_queue.empty()){
+				LOG_POSEIDON_INFO("There are ", m_queue.size(), " object(s) in my queue.");
 				atomicStore(m_urgent, true, ATOMIC_RELEASE);
 				m_newAvail.notify_all();
 				m_queueEmpty.timed_wait(lock, boost::posix_time::seconds(1));
@@ -486,14 +507,14 @@ namespace {
 						}
 						m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
 					}
-					operation.swap(m_queue.front());
-					m_queue.pop_front();
+					if(!atomicLoad(m_urgent, ATOMIC_ACQUIRE) && (getFastMonoClock() < m_queue.begin<0>()->dueTime)){
+						boost::mutex::scoped_lock lock(m_mutex);
+						m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
+						continue;
+					}
+					operation = m_queue.begin<0>()->operation.first;
+					m_queue.erase(m_queue.begin<0>());
 					retryCount = 0;
-				}
-				if(!atomicLoad(m_urgent, ATOMIC_ACQUIRE) && !operation->check()){
-					boost::mutex::scoped_lock lock(m_mutex);
-					m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
-					continue;
 				}
 
 				unsigned mysqlErrorCode = 99999;
@@ -701,7 +722,7 @@ void MySqlDaemon::enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> ob
 	const AUTO(tableName, object->getTableName());
 	const bool urgent = !!callback;
 	commitOperation(tableName,
-		boost::make_shared<SaveOperation>(getFastMonoClock() + g_saveDelay,
+		boost::make_shared<SaveOperation>(
 			STD_MOVE(object), toReplace, STD_MOVE(callback), STD_MOVE(except)),
 		urgent);
 }

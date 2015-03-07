@@ -17,7 +17,7 @@ namespace MySql {
 	}
 
 	ObjectBase::ObjectBase()
-		: m_autoSaves(false), m_context()
+		: m_autoSaves(false)
 	{
 	}
 	ObjectBase::~ObjectBase(){
