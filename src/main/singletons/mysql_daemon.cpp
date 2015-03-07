@@ -426,7 +426,7 @@ namespace {
 				LOG_POSEIDON_INFO("There are ", queueSize, " objects in queue.");
 				atomicStore(m_urgent, true, ATOMIC_RELEASE);
 				m_newAvail.notify_all();
-				m_queueEmpty.wait(lock);
+				m_queueEmpty.timed_wait(lock, boost::posix_time::seconds(1));
 			}
 		}
 	};
