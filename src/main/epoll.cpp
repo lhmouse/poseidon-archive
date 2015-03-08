@@ -23,13 +23,13 @@ namespace {
 	struct SessionMapElement {
 		int fd;
 		// 时间戳，零表示无数据可读/写。
-		unsigned long long lastRead;
-		unsigned long long lastWritten;
+		boost::uint64_t lastRead;
+		boost::uint64_t lastWritten;
 
 		boost::shared_ptr<TcpSessionBase> session;
 
 		SessionMapElement(boost::shared_ptr<TcpSessionBase> session_,
-			unsigned long long lastRead_, unsigned long long lastWritten_)
+			boost::uint64_t lastRead_, boost::uint64_t lastWritten_)
 			: fd(session_->getFd()), lastRead(lastRead_), lastWritten(lastWritten_)
 			, session(STD_MOVE(session_))
 		{
@@ -49,9 +49,7 @@ namespace {
 	};
 }
 
-struct Epoll::SessionMapImpl
-	: public SessionMap
-{
+struct Epoll::SessionMapImpl : public SessionMap {
 };
 
 Epoll::Epoll(){
