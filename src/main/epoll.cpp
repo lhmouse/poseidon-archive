@@ -121,8 +121,11 @@ void Epoll::clear(){
 	const boost::mutex::scoped_lock lock(m_mutex);
 	AUTO(it, m_sessions->begin());
 	while(it != m_sessions->end()){
-		::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, it->session->getFd(), NULLPTR);
 		it->session->setEpoll(NULLPTR);
+		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, it->session->getFd(), NULLPTR) != 0){
+			const int errCode = errno;
+			LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+		}
 		it = m_sessions->erase(it);
 	}
 }
