@@ -25,12 +25,13 @@ namespace {
 	Epoll g_epoll;
 
 	boost::mutex g_serverMutex;
-	std::list<boost::weak_ptr<const SocketServerBase> > g_servers;
+	std::vector<boost::weak_ptr<const SocketServerBase> > g_servers;
 
 	std::size_t pollServers(){
 		std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 		{
 			const boost::mutex::scoped_lock lock(g_serverMutex);
+			servers.reserve(g_servers.size());
 			AUTO(it, g_servers.begin());
 			while(it != g_servers.end()){
 				AUTO(server, it->lock());
