@@ -34,7 +34,7 @@ struct MySqlDaemon {
 
 	static void waitForAllAsyncOperations();
 
-	static void enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace,
+	static void enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace, bool urgent,
 		MySql::AsyncSaveCallback callback, MySql::ExceptionCallback except);
 	static void enqueueForLoading(boost::shared_ptr<MySql::ObjectBase> object, std::string query,
 		MySql::AsyncLoadCallback callback, MySql::ExceptionCallback except);

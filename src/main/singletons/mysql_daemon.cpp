@@ -716,15 +716,15 @@ void MySqlDaemon::waitForAllAsyncOperations(){
 	}
 }
 
-void MySqlDaemon::enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace,
+void MySqlDaemon::enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace, bool urgent,
 	MySql::AsyncSaveCallback callback, MySql::ExceptionCallback except)
 {
 	const AUTO(tableName, object->getTableName());
-	const bool urgent = !!callback;
+	const bool reallyUrgent = urgent || callback;
 	commitOperation(tableName,
 		boost::make_shared<SaveOperation>(
 			STD_MOVE(object), toReplace, STD_MOVE(callback), STD_MOVE(except)),
-		urgent);
+		reallyUrgent);
 }
 void MySqlDaemon::enqueueForLoading(boost::shared_ptr<MySql::ObjectBase> object, std::string query,
 	MySql::AsyncLoadCallback callback, MySql::ExceptionCallback except)

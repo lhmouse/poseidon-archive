@@ -60,7 +60,7 @@ namespace MySql {
 		virtual void syncGenerateSql(std::string &sql, bool toReplace) const = 0;
 		virtual void syncFetch(const Connection &conn) = 0;
 
-		void asyncSave(bool toReplace, AsyncSaveCallback callback = AsyncSaveCallback(),
+		void asyncSave(bool toReplace, bool urgent = false, AsyncSaveCallback callback = AsyncSaveCallback(),
 			ExceptionCallback except = ExceptionCallback()) const;
 		void asyncLoad(std::string query, AsyncLoadCallback callback,
 			ExceptionCallback except = ExceptionCallback());

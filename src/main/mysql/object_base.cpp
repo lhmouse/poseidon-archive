@@ -26,8 +26,8 @@ namespace MySql {
 	bool ObjectBase::invalidate() const NOEXCEPT {
 		try {
 			if(isAutoSavingEnabled()){
-				MySqlDaemon::enqueueForSaving(
-					virtualSharedFromThis<ObjectBase>(), true, AsyncSaveCallback(), ExceptionCallback());
+				MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(),
+					true, false, AsyncSaveCallback(), ExceptionCallback());
 				return true;
 			}
 		} catch(std::exception &e){
@@ -38,10 +38,10 @@ namespace MySql {
 		return false;
 	}
 
-	void ObjectBase::asyncSave(bool toReplace, AsyncSaveCallback callback, ExceptionCallback except) const {
+	void ObjectBase::asyncSave(bool toReplace, bool urgent, AsyncSaveCallback callback, ExceptionCallback except) const {
 		enableAutoSaving();
 		MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(),
-			toReplace, STD_MOVE(callback), STD_MOVE(except));
+			urgent, toReplace, STD_MOVE(callback), STD_MOVE(except));
 	}
 	void ObjectBase::asyncLoad(std::string query, AsyncLoadCallback callback, ExceptionCallback except){
 		disableAutoSaving();
