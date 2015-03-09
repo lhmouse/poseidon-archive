@@ -47,9 +47,7 @@ public:
 		return true;
 	}
 
-	const std::string &getRaw(const char *key) const {
-		return m_data.at(m_row).get(key);
-	}
+	const std::string &getRaw(const char *key) const;
 
 	template<typename T>
 	bool get(T &val, const char *key) const {

@@ -9,6 +9,10 @@
 
 namespace Poseidon {
 
+namespace {
+	const std::string EMPTY_STRING;
+}
+
 CsvParser::CsvParser()
 	: m_row(static_cast<std::size_t>(-1))
 {
@@ -158,6 +162,16 @@ bool CsvParser::loadNoThrow(const char *file){
 void CsvParser::clear(){
 	m_data.clear();
 	m_row = static_cast<std::size_t>(-1);
+}
+
+const std::string &CsvParser::getRaw(const char *key) const {
+	const AUTO_REF(map, m_data.at(m_row));
+	const AUTO(it, map.find(key));
+	if(it == map.end()){
+		LOG_POSEIDON_WARNING("Column not found: ", key);
+		return EMPTY_STRING;
+	}
+	return it->second;
 }
 
 std::size_t CsvParser::seek(std::size_t row){
