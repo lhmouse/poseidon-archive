@@ -56,7 +56,7 @@ private:
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getFastMonoClock())
-	, m_peerInfo(), m_shutdown(false), m_epoll(NULLPTR)
+	, m_peerInfo(), m_shutdown(false)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
@@ -78,10 +78,16 @@ TcpSessionBase::~TcpSessionBase(){
 	}
 }
 
-void TcpSessionBase::setEpoll(Epoll *epoll) NOEXCEPT {
+void TcpSessionBase::setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT {
 	const boost::mutex::scoped_lock lock(m_bufferMutex);
-	assert(!(m_epoll && epoll));
-	m_epoll = epoll;
+	const AUTO(oldPtr, m_epoll.lock());
+	if(oldPtr){
+		const AUTO(old, oldPtr->lock());
+		if(old){
+			old->notifyUnlinked(this);
+		}
+	}
+	m_epoll = STD_MOVE(epoll);
 }
 
 void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
@@ -151,8 +157,12 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 	if(fin){
 		::shutdown(m_socket.get(), SHUT_RD);
 	}
-	if(m_epoll){
-		m_epoll->notifyWriteable(this);
+	const AUTO(ptr, m_epoll.lock());
+	if(ptr){
+		const AUTO(epoll, ptr->lock());
+		if(epoll){
+			epoll->notifyWriteable(this);
+		}
 	}
 	return true;
 }

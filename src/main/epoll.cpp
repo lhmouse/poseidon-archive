@@ -27,11 +27,13 @@ namespace {
 		boost::uint64_t lastWritten;
 
 		boost::shared_ptr<TcpSessionBase> session;
+		boost::shared_ptr<const boost::weak_ptr<Epoll> > epoll;
 
 		SessionMapElement(boost::shared_ptr<TcpSessionBase> session_,
-			boost::uint64_t lastRead_, boost::uint64_t lastWritten_)
+			boost::uint64_t lastRead_, boost::uint64_t lastWritten_,
+			boost::weak_ptr<Epoll> epoll_)
 			: fd(session_->getFd()), lastRead(lastRead_), lastWritten(lastWritten_)
-			, session(STD_MOVE(session_))
+			, session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
 		{
 		}
 	};
@@ -59,9 +61,6 @@ Epoll::Epoll(){
 	m_sessions.reset(new SessionMapImpl);
 }
 Epoll::~Epoll(){
-	for(AUTO(it, m_sessions->begin()); it != m_sessions->end(); ++it){
-		it->session->setEpoll(NULLPTR);
-	}
 }
 
 void Epoll::notifyWriteable(TcpSessionBase *session){
@@ -78,7 +77,7 @@ void Epoll::notifyWriteable(TcpSessionBase *session){
 
 void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(m_mutex);
-	const AUTO(result, m_sessions->insert(SessionMapElement(session, 0, 0)));
+	const AUTO(result, m_sessions->insert(SessionMapElement(session, 0, 0, shared_from_this())));
 	if(!result.second){
 		LOG_POSEIDON_WARNING("Session is already in epoll.");
 		return;
@@ -91,10 +90,10 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	event.data.fd = session->getFd();
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const int errCode = errno;
-		m_sessions->erase(result.first);
+		m_sessions->erase(result.first); // !!
 		DEBUG_THROW(SystemException, errCode);
 	}
-	session->setEpoll(this);
+	session->setEpoll(result.first->epoll);
 }
 void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(m_mutex);
@@ -103,7 +102,6 @@ void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
-	session->setEpoll(NULLPTR);
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
 		const int errCode = errno;
 		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
@@ -121,7 +119,6 @@ void Epoll::clear(){
 	const boost::mutex::scoped_lock lock(m_mutex);
 	AUTO(it, m_sessions->begin());
 	while(it != m_sessions->end()){
-		it->session->setEpoll(NULLPTR);
 		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, it->session->getFd(), NULLPTR) != 0){
 			const int errCode = errno;
 			LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);

@@ -9,6 +9,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <vector>
 #include <cstddef>
 
@@ -16,7 +17,7 @@ namespace Poseidon {
 
 class TcpSessionBase;
 
-class Epoll : NONCOPYABLE {
+class Epoll : NONCOPYABLE, public boost::enable_shared_from_this<Epoll> {
 	friend TcpSessionBase;
 
 private:
@@ -33,6 +34,7 @@ public:
 
 private:
 	void notifyWriteable(TcpSessionBase *session);
+	void notifyUnlinked(TcpSessionBase *session);
 
 public:
 	void addSession(const boost::shared_ptr<TcpSessionBase> &session);

@@ -52,7 +52,7 @@ private:
 	volatile bool m_shutdown;
 	mutable boost::mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
-	Epoll *m_epoll;
+	boost::weak_ptr<const boost::weak_ptr<Epoll> > m_epoll;
 
 	mutable boost::mutex m_onCloseMutex;
 	std::deque<boost::function<void ()> > m_onCloseQueue;
@@ -65,8 +65,7 @@ protected:
 	~TcpSessionBase();
 
 private:
-	// 注意，同一个 session 只能同时分配给一个 epoll！
-	void setEpoll(Epoll *epoll) NOEXCEPT;
+	void setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT;
 
 	void initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter);
 	void pumpOnClose() NOEXCEPT;
