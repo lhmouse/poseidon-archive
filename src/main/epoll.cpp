@@ -66,13 +66,25 @@ Epoll::~Epoll(){
 void Epoll::notifyWriteable(TcpSessionBase *session){
 	const AUTO(now, getFastMonoClock());
 	const boost::mutex::scoped_lock lock(m_mutex);
-
 	const AUTO(it, m_sessions->find<IDX_FD>(session->getFd()));
 	if(it == m_sessions->end<IDX_FD>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll?");
 		return;
 	}
 	m_sessions->setKey<IDX_FD, IDX_WRITE>(it, now);
+}
+void Epoll::notifyUnlinked(TcpSessionBase *session){
+	const boost::mutex::scoped_lock lock(m_mutex);
+	const AUTO(it, m_sessions->find<IDX_FD>(session->getFd()));
+	if(it == m_sessions->end<IDX_FD>()){
+		LOG_POSEIDON_WARNING("Session is not in epoll.");
+		return;
+	}
+	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+		const int errCode = errno;
+		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+	}
+	m_sessions->erase<IDX_FD>(it);
 }
 
 void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
