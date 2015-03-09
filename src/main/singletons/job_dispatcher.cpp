@@ -27,7 +27,7 @@ namespace {
 	std::deque<boost::shared_ptr<const JobBase> > g_queue;
 	boost::condition_variable g_newJobAvail;
 
-	struct SuspendedQueue {
+	struct SuspendedElement {
 		std::deque<boost::shared_ptr<const JobBase> > queue;
 
 		// 只记录第一个。
@@ -35,7 +35,7 @@ namespace {
 		std::size_t retryCount;
 	};
 
-	std::map<boost::weak_ptr<const void>, SuspendedQueue> g_suspendedQueues;
+	std::map<boost::weak_ptr<const void>, SuspendedElement> g_suspendedQueues;
 
 	bool flushAllJobs(){
 		PROFILE_ME;
@@ -75,7 +75,7 @@ namespace {
 							if(g_maxRetryCount == 0){
 								DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
 							}
-							it = g_suspendedQueues.insert(std::make_pair(category, SuspendedQueue())).first;
+							it = g_suspendedQueues.insert(std::make_pair(category, SuspendedElement())).first;
 						}
 					}
 					if(it != g_suspendedQueues.end()){
