@@ -51,7 +51,7 @@ public:
 
 	template<typename T>
 	bool get(T &val, const char *key) const {
-		const AUTO_REF(str, m_data.at(m_row).get(key));
+		const AUTO_REF(str, getRaw(key));
 		if(str.empty()){
 			return false;
 		}
@@ -60,7 +60,7 @@ public:
 	}
 	template<typename T, typename DefaultT>
 	bool get(T &val, const char *key, const DefaultT &defVal) const {
-		const AUTO_REF(str, m_data.at(m_row).get(key));
+		const AUTO_REF(str, getRaw(key));
 		if(str.empty()){
 			val = defVal;
 			return false;
@@ -70,7 +70,7 @@ public:
 	}
 	template<typename T, typename DefaultT>
 	T get(const char *key, const DefaultT &defVal) const {
-		const AUTO_REF(str, m_data.at(m_row).get(key));
+		const AUTO_REF(str, getRaw(key));
 		if(str.empty()){
 			return T(defVal);
 		}
@@ -78,7 +78,7 @@ public:
 	}
 	template<typename T>
 	T get(const char *key) const {
-		const AUTO_REF(str, m_data.at(m_row).get(key));
+		const AUTO_REF(str, getRaw(key));
 		if(str.empty()){
 			return T();
 		}
