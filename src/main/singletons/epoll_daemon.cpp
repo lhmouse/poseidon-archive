@@ -22,7 +22,7 @@ namespace {
 	volatile bool g_running = false;
 	boost::thread g_thread;
 
-	Epoll g_epoll;
+	boost::shared_ptr<Epoll> g_epoll = boost::make_shared<Epoll>();
 
 	boost::mutex g_serverMutex;
 	std::vector<boost::weak_ptr<const SocketServerBase> > g_servers;
@@ -64,13 +64,13 @@ namespace {
 		while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
 			try {
 				bool busy = false;
-				if(g_epoll.wait(epollTimeout) > 0){
+				if(g_epoll->wait(epollTimeout) > 0){
 					++busy;
 				}
-				if(g_epoll.pumpReadable() > 0){
+				if(g_epoll->pumpReadable() > 0){
 					++busy;
 				}
-				if(g_epoll.pumpWriteable() > 0){
+				if(g_epoll->pumpWriteable() > 0){
 					++busy;
 				}
 				if(pollServers() > 0){
@@ -92,7 +92,7 @@ namespace {
 				LOG_POSEIDON_ERROR("Unknown exception thrown while flush data.");
 			}
 		}
-		while(g_epoll.pumpWriteable() > 0){
+		while(g_epoll->pumpWriteable() > 0){
 			// noop
 		}
 	}
@@ -134,7 +134,7 @@ void EpollDaemon::stop(){
 	if(g_thread.joinable()){
 		g_thread.join();
 	}
-	g_epoll.clear();
+	g_epoll->clear();
 	g_servers.clear();
 }
 
@@ -144,7 +144,7 @@ boost::uint64_t EpollDaemon::getTcpRequestTimeout(){
 
 std::vector<EpollDaemon::SnapshotItem> EpollDaemon::snapshot(){
 	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
-	g_epoll.snapshot(sessions);
+	g_epoll->snapshot(sessions);
 
 	std::vector<SnapshotItem> ret;
 	const AUTO(now, getFastMonoClock());
@@ -162,7 +162,7 @@ void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	if(session->hasBeenShutdown()){
 		return;
 	}
-	g_epoll.addSession(session);
+	g_epoll->addSession(session);
 }
 
 void EpollDaemon::registerServer(boost::weak_ptr<const SocketServerBase> server){
