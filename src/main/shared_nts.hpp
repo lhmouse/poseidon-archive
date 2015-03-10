@@ -22,7 +22,7 @@ private:
 
 public:
 	SharedNts() NOEXCEPT {
-		assign("");
+		assign("", 0);
 	}
 	SharedNts(const char *str, std::size_t len){
 		assign(str, len);
@@ -37,6 +37,26 @@ public:
 	SharedNts(boost::shared_ptr<T> sp, const char *str){
 		assign(STD_MOVE(sp), str);
 	}
+
+	SharedNts(const SharedNts &rhs) NOEXCEPT
+		: m_ptr(rhs.m_ptr)
+	{
+	}
+	SharedNts &operator=(const SharedNts &rhs) NOEXCEPT {
+		m_ptr = rhs.m_ptr;
+		return *this;
+	}
+#ifdef POSEIDON_CXX11
+	SharedNts(SharedNts &&rhs) NOEXCEPT
+		: m_ptr(std::move(rhs.m_ptr))
+	{
+		rhs.assign("", 0);
+	}
+	SharedNts &operator=(SharedNts &&rhs) NOEXCEPT {
+		swap(rhs);
+		return *this;
+	}
+#endif
 
 public:
 	void assign(const char *str, std::size_t len);
