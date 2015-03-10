@@ -17,6 +17,7 @@
 #include "utilities.hpp"
 #include "epoll.hpp"
 #include "job_base.hpp"
+#include "async_job.hpp"
 
 namespace Poseidon {
 
@@ -76,6 +77,17 @@ TcpSessionBase::~TcpSessionBase(){
 	} catch(...){
 		LOG_POSEIDON_INFO("Destroying TCP session that has not been established.");
 	}
+
+	while(!m_onCloseQueue.empty()){
+		try {
+			enqueueAsyncJob(STD_MOVE(m_onCloseQueue.back()));
+		} catch(std::exception &e){
+			LOG_POSEIDON_ERROR("std::exception thrown while enqueueing close callback: what = ", e.what());
+		} catch(...){
+			LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing close callback.");
+		}
+		m_onCloseQueue.pop_back();
+	}
 }
 
 void TcpSessionBase::setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT {
@@ -94,20 +106,16 @@ void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
 	swap(m_sslFilter, sslFilter);
 }
 void TcpSessionBase::pumpOnClose() NOEXCEPT {
-	std::deque<boost::function<void ()> > onCloseQueue;
-	{
-		const boost::mutex::scoped_lock lock(m_onCloseMutex);
-		onCloseQueue.swap(m_onCloseQueue);
-	}
-	while(!onCloseQueue.empty()){
+	const boost::mutex::scoped_lock lock(m_onCloseMutex);
+	while(!m_onCloseQueue.empty()){
 		try {
-			onCloseQueue.back()();
+			enqueueAsyncJob(STD_MOVE(m_onCloseQueue.back()));
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown while in close callback: what = ", e.what());
+			LOG_POSEIDON_ERROR("std::exception thrown while enqueueing close callback: what = ", e.what());
 		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown while in close callback.");
+			LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing close callback.");
 		}
-		onCloseQueue.pop_back();
+		m_onCloseQueue.pop_back();
 	}
 }
 
