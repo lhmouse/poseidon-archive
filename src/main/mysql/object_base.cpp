@@ -41,7 +41,7 @@ namespace MySql {
 	void ObjectBase::asyncSave(bool toReplace, bool urgent, AsyncSaveCallback callback, ExceptionCallback except) const {
 		enableAutoSaving();
 		MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(),
-			urgent, toReplace, STD_MOVE(callback), STD_MOVE(except));
+			toReplace, urgent, STD_MOVE(callback), STD_MOVE(except));
 	}
 	void ObjectBase::asyncLoad(std::string query, AsyncLoadCallback callback, ExceptionCallback except){
 		disableAutoSaving();
