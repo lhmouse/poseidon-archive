@@ -51,14 +51,14 @@ namespace {
 	};
 }
 
-struct Epoll::SessionMapImpl : public SessionMap {
+struct Epoll::SessionMapDelegator : public SessionMap {
 };
 
 Epoll::Epoll(){
 	if(!m_epoll.reset(::epoll_create(4096))){
 		DEBUG_THROW(SystemException);
 	}
-	m_sessions.reset(new SessionMapImpl);
+	m_sessions.reset(new SessionMapDelegator);
 }
 Epoll::~Epoll(){
 }
@@ -144,7 +144,9 @@ std::size_t Epoll::wait(unsigned timeout){
 	const int count = ::epoll_wait(m_epoll.get(), events, (int)COUNT_OF(events), (int)timeout);
 	if(count < 0){
 		const int errCode = errno;
-		LOG_POSEIDON_ERROR("::epoll_wait() failed: errno = ", errCode);
+		if(errCode != EINTR){
+			LOG_POSEIDON_ERROR("::epoll_wait() failed: errno = ", errCode);
+		}
 		return 0;
 	}
 

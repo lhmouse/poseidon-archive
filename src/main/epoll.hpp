@@ -21,12 +21,12 @@ class Epoll : NONCOPYABLE, public boost::enable_shared_from_this<Epoll> {
 	friend TcpSessionBase;
 
 private:
-	class SessionMapImpl;
+	class SessionMapDelegator;
 
 private:
 	mutable boost::mutex m_mutex;
 	UniqueFile m_epoll;
-	boost::scoped_ptr<SessionMapImpl> m_sessions;
+	boost::scoped_ptr<SessionMapDelegator> m_sessions;
 
 public:
 	Epoll();
