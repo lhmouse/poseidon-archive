@@ -82,23 +82,23 @@ boost::shared_ptr<CbppServletDepository::Servlet> CbppServletDepository::create(
 }
 
 boost::shared_ptr<const Cbpp::ServletCallback> CbppServletDepository::get(std::size_t category, boost::uint16_t protocolId){
-    const boost::mutex::scoped_lock lock(g_mutex);
-    const AUTO(it, g_servlets.find(category));
-    if(it == g_servlets.end()){
-        LOG_POSEIDON_DEBUG("No servlet in category ", category);
-        return VAL_INIT;
-    }
-    const AUTO(it2, it->second.find(protocolId));
-    if(it2 == it->second.end()){
-    	LOG_POSEIDON_DEBUG("No servlet for protocol ", protocolId, " in category ", category);
-    	return VAL_INIT;
-    }
-    const AUTO(servlet, it2->second.lock());
-    if(!servlet){
-    	LOG_POSEIDON_DEBUG("Expired servlet for protocol ", protocolId, " in category ", category);
-    	return VAL_INIT;
-    }
-    return servlet->callback;
+	const boost::mutex::scoped_lock lock(g_mutex);
+	const AUTO(it, g_servlets.find(category));
+	if(it == g_servlets.end()){
+		LOG_POSEIDON_DEBUG("No servlet in category ", category);
+		return VAL_INIT;
+	}
+	const AUTO(it2, it->second.find(protocolId));
+	if(it2 == it->second.end()){
+		LOG_POSEIDON_DEBUG("No servlet for protocol ", protocolId, " in category ", category);
+		return VAL_INIT;
+	}
+	const AUTO(servlet, it2->second.lock());
+	if(!servlet){
+		LOG_POSEIDON_DEBUG("Expired servlet for protocol ", protocolId, " in category ", category);
+		return VAL_INIT;
+	}
+	return servlet->callback;
 }
 
 }

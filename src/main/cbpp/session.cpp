@@ -69,7 +69,7 @@ namespace Cbpp {
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
-					LOG_POSEIDON_ERROR("Cbpp::Exception thrown in  servlet, message id = ",
+					LOG_POSEIDON_ERROR("Cbpp::Exception thrown in servlet, message id = ",
 						m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
 					session->sendError(m_messageId, e.statusCode(), e.what(), false); // 不关闭连接。
 					throw;

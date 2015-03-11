@@ -19,16 +19,16 @@ struct WebSocketServletDepository::Servlet : NONCOPYABLE {
 	Servlet(SharedNts uri_, boost::shared_ptr<WebSocket::ServletCallback> callback_)
 		: uri(STD_MOVE(uri_)), callback(STD_MOVE(callback_))
 	{
-		LOG_POSEIDON_INFO("Created  servlet for URI ", uri);
+		LOG_POSEIDON_INFO("Created WebSocket servlet for URI ", uri);
 	}
 	~Servlet(){
-		LOG_POSEIDON_INFO("Destroyed  servlet for URI ", uri);
+		LOG_POSEIDON_INFO("Destroyed WebSocket servlet for URI ", uri);
 	}
 };
 
 namespace {
 	std::size_t g_maxRequestLength		= 16 * 0x400;
-	boost::uint64_t g_keepAliveTimeout   = 30000;
+	boost::uint64_t g_keepAliveTimeout	= 30000;
 
 	typedef std::map<std::size_t,
 		std::map<SharedNts, boost::weak_ptr<WebSocketServletDepository::Servlet> >
@@ -39,7 +39,7 @@ namespace {
 }
 
 void WebSocketServletDepository::start(){
-	LOG_POSEIDON_INFO("Starting  servlet depository...");
+	LOG_POSEIDON_INFO("Starting WebSocket servlet depository...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
@@ -50,7 +50,7 @@ void WebSocketServletDepository::start(){
 	LOG_POSEIDON_DEBUG("Keep alive timeout = ", g_keepAliveTimeout);
 }
 void WebSocketServletDepository::stop(){
-	LOG_POSEIDON_INFO("Unloading all  servlets...");
+	LOG_POSEIDON_INFO("Unloading all WebSocket servlets...");
 
 	ServletMap servlets;
 	{
@@ -77,7 +77,7 @@ boost::shared_ptr<WebSocketServletDepository::Servlet> WebSocketServletDepositor
 		AUTO_REF(old, g_servlets[category][uri]);
 		if(!old.expired()){
 			LOG_POSEIDON_ERROR("Duplicate servlet for URI ", uri, " in category ", category);
-			DEBUG_THROW(Exception, SharedNts::observe("Duplicate  servlet"));
+			DEBUG_THROW(Exception, SharedNts::observe("Duplicate WebSocket servlet"));
 		}
 		old = servlet;
 	}

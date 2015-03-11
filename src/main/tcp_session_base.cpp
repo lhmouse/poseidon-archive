@@ -73,7 +73,7 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 }
 TcpSessionBase::~TcpSessionBase(){
 	try {
-		LOG_POSEIDON_INFO("Destroying TCP session:  remote = ", getRemoteInfo());
+		LOG_POSEIDON_INFO("Destroying TCP session: remote = ", getRemoteInfo());
 	} catch(...){
 		LOG_POSEIDON_INFO("Destroying TCP session that has not been established.");
 	}

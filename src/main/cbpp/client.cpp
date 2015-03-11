@@ -49,7 +49,7 @@ namespace Cbpp {
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
-					LOG_POSEIDON_ERROR("Cbpp::Exception thrown in  servlet, message id = ", m_messageId,
+					LOG_POSEIDON_ERROR("Cbpp::Exception thrown in CBPP servlet, message id = ", m_messageId,
 						", statusCode = ", e.statusCode(), ", what = ", e.what());
 					throw;
 				} catch(...){
@@ -61,12 +61,12 @@ namespace Cbpp {
 		};
 
 		void keepAliveTimerProc(const boost::weak_ptr<Client> &weak){
-    		const AUTO(client, weak.lock());
-    		if(!client){
-    			return;
-    		}
-    		LOG_POSEIDON_TRACE("Sending heartbeat packet...");
-    		client->send(ErrorMessage::ID, StreamBuffer(ErrorMessage(ErrorMessage::ID, 0, VAL_INIT)), false);
+			const AUTO(client, weak.lock());
+			if(!client){
+				return;
+			}
+			LOG_POSEIDON_TRACE("Sending heartbeat packet...");
+			client->send(ErrorMessage::ID, StreamBuffer(ErrorMessage(ErrorMessage::ID, 0, VAL_INIT)), false);
 		}
 	}
 
