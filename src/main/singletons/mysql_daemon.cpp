@@ -13,6 +13,7 @@
 #include "../mysql/object_base.hpp"
 #include "../mysql/exception.hpp"
 #include "../mysql/connection.hpp"
+#include "../mysql/thread_context.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -353,6 +354,7 @@ namespace {
 
 	private:
 		const std::size_t m_index;
+		const MySql::ThreadContext m_mysqlThreadContext;
 
 		volatile bool m_running;
 
