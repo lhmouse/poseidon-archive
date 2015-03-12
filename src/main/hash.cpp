@@ -52,7 +52,7 @@ namespace {
 	}
 
 	void md5Chunk(boost::uint32_t (&result)[4], const unsigned char *chunk){
-		// https://en.wikipedia.org/wiki/Md5
+		// https://en.wikipedia.org/wiki/MD5
 		const AUTO(w, reinterpret_cast<const boost::uint32_t *>(chunk));
 
 		register boost::uint32_t a = result[0];
@@ -146,7 +146,7 @@ namespace {
 	}
 
 	void sha1Chunk(boost::uint32_t (&result)[5], const unsigned char *chunk){
-		// https://en.wikipedia.org/wiki/Sha1
+		// https://en.wikipedia.org/wiki/SHA-1
 		boost::uint32_t w[80];
 
 		for(std::size_t i = 0; i < 16; ++i){
