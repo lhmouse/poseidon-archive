@@ -538,9 +538,7 @@ namespace {
 						throw;
 					}
 				} catch(...){
-					if(retryCount < g_maxRetryCount){
-						++retryCount;
-					} else {
+					if(retryCount >= g_maxRetryCount){
 						LOG_POSEIDON_WARNING("Max retry count exceeded. Give up.");
 						operation.reset();
 
@@ -569,6 +567,7 @@ namespace {
 					}
 					throw;
 				}
+				++retryCount;
 				operation.reset();
 			} catch(MySql::Exception &e){
 				LOG_POSEIDON_ERROR("MySql::Exception thrown in MySQL daemon: errorCode = ", e.errorCode(), ", what = ", e.what());

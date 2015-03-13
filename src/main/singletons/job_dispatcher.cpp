@@ -28,14 +28,17 @@ namespace {
 	boost::condition_variable g_newJobAvail;
 
 	struct SuspendedElement {
-		std::deque<boost::shared_ptr<const JobBase> > queue;
-
-		// 只记录第一个。
+		boost::shared_ptr<const JobBase> job;
 		boost::uint64_t until;
 		std::size_t retryCount;
+
+		SuspendedElement(boost::shared_ptr<const JobBase> job_, boost::uint64_t until_)
+			: job(STD_MOVE(job_)), until(until_), retryCount(1)
+		{
+		}
 	};
 
-	std::map<boost::weak_ptr<const void>, SuspendedElement> g_suspendedQueues;
+	std::map<boost::weak_ptr<const void>, std::deque<SuspendedElement> > g_suspendedQueues;
 
 	bool flushAllJobs(){
 		PROFILE_ME;
@@ -69,29 +72,23 @@ namespace {
 						// 只有在之前不存在同一类别的任务被推迟的情况下才能执行。
 						try {
 							job->perform();
+							goto _done1;
 						} catch(JobBase::TryAgainLater &){
 							LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching job. Suspend it.");
 
 							if(g_maxRetryCount == 0){
-								DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
+								DEBUG_THROW(Exception, SharedNts::observe("Max retry count is zero"));
 							}
-							it = g_suspendedQueues.insert(std::make_pair(category, SuspendedElement())).first;
 						}
+						it = g_suspendedQueues.insert(std::make_pair(category, std::deque<SuspendedElement>())).first;
 					}
-					if(it != g_suspendedQueues.end()){
-						// 不相等说明我们需要将当前任务放进队列。
-						it->second.queue.push_back(job);
-						if(it->second.queue.size() == 1){
-							// 第一个被推迟的任务，设定初始时间。
-							it->second.until = now + g_retryInitDelay;
-							it->second.retryCount = 1;
-						}
-					}
+					it->second.push_back(SuspendedElement(job, now + g_retryInitDelay));
 				} catch(std::exception &e){
 					LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 				} catch(...){
 					LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
 				}
+			_done1:
 				queue.pop_front();
 
 				ret = true;
@@ -104,38 +101,36 @@ namespace {
 
 				const AUTO(it, next);
 				++next;
-				if(it->second.queue.empty()){
+				if(it->second.empty()){
 					g_suspendedQueues.erase(it);
 					continue;
 				}
-				if(now < it->second.until){
+				AUTO_REF(element, it->second.front());
+				if(now < element.until){
 					continue;
 				}
 				try {
-					const AUTO(job, it->second.queue.front());
+					const AUTO(job, element.job);
 
 					try {
 						job->perform();
+						goto _done2;
 					} catch(JobBase::TryAgainLater &){
 						LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching suspended job.");
 
-						if(it->second.retryCount >= g_maxRetryCount){
+						if(element.retryCount >= g_maxRetryCount){
 							DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
 						}
-						it->second.until = now + (g_retryInitDelay << it->second.retryCount);
-						++(it->second.retryCount);
-						goto _dontErase;
 					}
+					element.until = now + (g_retryInitDelay << element.retryCount);
+					++element.retryCount;
 				} catch(std::exception &e){
 					LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 				} catch(...){
 					LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
 				}
-				it->second.queue.pop_front();
-				it->second.until = 0;
-				it->second.retryCount = 0;
-			_dontErase:
-				;
+			_done2:
+				it->second.pop_front();
 
 				ret = true;
 				busy = true;
