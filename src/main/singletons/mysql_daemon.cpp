@@ -186,7 +186,7 @@ namespace {
 				m_object->syncGenerateSql(query, m_toReplace);
 				bool succeeded = false;
 				try {
-					LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": ", query);
+					LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->getTableName(), ": query = ", query);
 					conn.executeSql(query);
 					succeeded = true;
 				} catch(MySql::Exception &e){
@@ -287,7 +287,7 @@ namespace {
 			try {
 				query = m_query;
 
-				LOG_POSEIDON_INFO("MySQL batch load: tableHint = ", m_tableHint, "query = ", query);
+				LOG_POSEIDON_INFO("MySQL batch load: tableHint = ", m_tableHint, ", query = ", query);
 				conn.executeSql(query);
 
 				std::vector<boost::shared_ptr<MySql::ObjectBase> > objects;
