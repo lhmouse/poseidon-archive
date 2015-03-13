@@ -35,7 +35,11 @@ namespace Cbpp {
 			void perform() const OVERRIDE {
 				PROFILE_ME;
 
-				const boost::shared_ptr<Session> session(m_session);
+				const AUTO(session, m_session.lock());
+				if(!session){
+					return;
+				}
+
 				try {
 					if(m_messageId == ErrorMessage::ID){
 						AUTO(payload, m_payload);

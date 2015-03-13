@@ -39,7 +39,11 @@ namespace WebSocket {
 			void perform() const OVERRIDE {
 				PROFILE_ME;
 
-				const boost::shared_ptr<Session> session(m_session);
+				const AUTO(session, m_session.lock());
+				if(!session){
+					return;
+				}
+
 				try {
 					const AUTO(category, session->getCategory());
 					const AUTO(servlet, WebSocketServletDepository::get(category, m_uri.c_str()));

@@ -34,7 +34,11 @@ namespace Cbpp {
 			void perform() const OVERRIDE {
 				PROFILE_ME;
 
-				const boost::shared_ptr<Client> client(m_client);
+				const AUTO(client, m_client.lock());
+				if(!client){
+					return;
+				}
+
 				try {
 					if(m_messageId != ErrorMessage::ID){
 						LOG_POSEIDON_DEBUG("Dispatching: message = ", m_messageId, ", payload size = ", m_payload.size());
@@ -78,7 +82,7 @@ namespace Cbpp {
 	}
 	Client::~Client(){
 		if(m_payloadLen != (boost::uint64_t)-1){
-			LOG_POSEIDON_WARNING("Now that this session is to be destroyed, a premature response has to be discarded.");
+			LOG_POSEIDON_WARNING("Now that this client is to be destroyed, a premature response has to be discarded.");
 		}
 	}
 
