@@ -49,7 +49,7 @@ namespace {
 	boost::mutex g_mutex;
 	JobMap g_jobMap;
 
-	bool pumpOneJob(){
+	bool pumpOneJob() NOEXCEPT {
 		PROFILE_ME;
 
 		typedef JobMap::delegated_container::nth_index<0>::type::iterator JobIterator;
@@ -63,22 +63,24 @@ namespace {
 			if(jobIt == g_jobMap.end<0>()){
 				return false;
 			}
-			if(now < jobIt->dueTime){
+			if(atomicLoad(g_running, ATOMIC_ACQUIRE) && (now < jobIt->dueTime)){
 				return false;
 			}
 		}
 
 		boost::uint64_t newDueTime = 0;
 		try {
-			jobIt->job->perform();
-		} catch(JobBase::TryAgainLater &){
-			LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching job: retryCount = ", jobIt->retryCount);
+			try {
+				jobIt->job->perform();
+			} catch(JobBase::TryAgainLater &){
+				LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching job: retryCount = ", jobIt->retryCount);
 
-			if(jobIt->retryCount < g_maxRetryCount){
+				if(jobIt->retryCount >= g_maxRetryCount){
+					LOG_POSEIDON_ERROR("Max retry count exceeded.");
+					DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
+				}
 				newDueTime = now + (g_retryInitDelay << jobIt->retryCount);
 				++jobIt->retryCount;
-			} else {
-				LOG_POSEIDON_ERROR("Max retry count exceeded. Give up.");
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());

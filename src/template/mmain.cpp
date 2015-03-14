@@ -31,7 +31,7 @@
 #include "../main/async_job.hpp"
 using namespace Poseidon;
 
-#define MYSQL_OBJECT_NAME	MySqlObj
+#define MYSQL_OBJECT_NAME	MySqlObjF
 #define MYSQL_OBJECT_FIELDS	\
 	FIELD_SMALLINT(si)	\
 	FIELD_STRING(str)	\
@@ -41,7 +41,7 @@ using namespace Poseidon;
 
 namespace {
 	void write(){
-		AUTO(obj, boost::make_shared<MySqlObj>());
+		AUTO(obj, boost::make_shared<MySqlObjF>());
 		obj->enableAutoSaving();
 		obj->set_si(999);
 		obj->set_str("meow");
@@ -77,10 +77,10 @@ void event2Proc(boost::shared_ptr<TestEvent2> event){
 	LOG_POSEIDON_FATAL("event2Proc: d = ", event->d);
 }
 
-void printObjs(std::vector<boost::shared_ptr<MySqlObjectBase> > v){
+void printObjs(std::vector<boost::shared_ptr<MySqlObjFectBase> > v){
 	LOG_POSEIDON_FATAL("--------- v.size() = ", v.size());
 	for(AUTO(it, v.begin()); it != v.end(); ++it){
-		AUTO(p, static_cast<MySqlObj *>(it->get()));
+		AUTO(p, static_cast<MySqlObjF *>(it->get()));
 		LOG_POSEIDON_FATAL("-- si = ", p->get_si(), ", str = ", p->get_str(), ", bi = ", p->get_bi());
 	}
 }
@@ -93,7 +93,7 @@ void tickProc(unsigned long long now, unsigned long long period){
 	PROFILE_ME;
 	LOG_POSEIDON_FATAL("Tick, now = ", now, ", period = ", period);
 
-	MySqlObj::batchLoad("SELECT * FROM `MySqlObj`", &printObjs, &mysqlExceptProc);
+	MySqlObjF::batchLoad("SELECT * FROM `MySqlObjF`", &printObjs, &mysqlExceptProc);
 }
 
 void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
@@ -120,7 +120,7 @@ void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 void meowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
 
-	AUTO(obj, boost::make_shared<MySqlObj>());
+	AUTO(obj, boost::make_shared<MySqlObjF>());
 	obj->set_si(123);
 	obj->set_str("meow");
 	obj->set_bi(456789);
@@ -423,7 +423,7 @@ MODULE_RAII {
 	p->registerOnClose(boost::bind(&onClientClose, 3));
 	p->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
 
-	AUTO(obj, boost::make_shared<MySqlObj>());
+	AUTO(obj, boost::make_shared<MySqlObjF>());
 	obj->set_si(999);
 	obj->set_str("meow");
 	obj->set_bi(456789);

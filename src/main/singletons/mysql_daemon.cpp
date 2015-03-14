@@ -26,19 +26,20 @@
 namespace Poseidon {
 
 namespace {
-	std::string	g_serverAddr		= "localhost";
-	unsigned	g_serverPort		= 3306;
-	std::string	g_username			= "root";
-	std::string	g_password			= "root";
-	std::string	g_schema			= "poseidon";
-	bool		g_useSsl			= false;
-	std::string	g_charset			= "utf8";
+	std::string		g_serverAddr		= "localhost";
+	unsigned		g_serverPort		= 3306;
+	std::string		g_username			= "root";
+	std::string		g_password			= "root";
+	std::string		g_schema			= "poseidon";
+	bool			g_useSsl			= false;
+	std::string		g_charset			= "utf8";
 
-	std::string	g_dumpDir			= "/usr/var/poseidon/sqldump";
-	std::size_t	g_maxThreads		= 3;
-	std::size_t	g_saveDelay			= 5000;
-	std::size_t	g_maxReconnDelay	= 60000;
-	std::size_t	g_maxRetryCount		= 3;
+	std::string		g_dumpDir			= "/usr/var/poseidon/sqldump";
+	std::size_t		g_maxThreads		= 3;
+	boost::uint64_t	g_saveDelay			= 5000;
+	boost::uint64_t	g_reconnDelay		= 10000;
+	std::size_t		g_maxRetryCount		= 3;
+	boost::uint64_t	g_retryInitDelay	= 1000;
 
 	// 转储文件，写在最前面。
 	boost::mutex g_dumpMutex;
@@ -340,9 +341,12 @@ namespace {
 
 			boost::shared_ptr<OperationBase> operation;
 
+			mutable std::size_t retryCount;
+
 			OperationElement(boost::uint64_t dueTime_, boost::shared_ptr<OperationBase> operation_)
 				: dueTime(dueTime_), combinableObject(operation_->getCombinableObject())
 				, operation(STD_MOVE(operation_))
+				, retryCount(0)
 			{
 			}
 		};
@@ -354,15 +358,12 @@ namespace {
 
 	private:
 		const std::size_t m_index;
-		const MySql::ThreadContext m_mysqlThreadContext;
 
 		volatile bool m_running;
 
 		mutable boost::mutex m_mutex;
-		OperationMap m_queue;
 		volatile bool m_urgent; // 无视延迟写入，一次性处理队列中所有操作。
-		boost::condition_variable m_newAvail;
-		boost::condition_variable m_queueEmpty;
+		OperationMap m_operationMap;
 
 		// 性能统计。
 		mutable boost::mutex m_profileMutex;
@@ -390,7 +391,141 @@ namespace {
 			m_profileFlushedTime = now;
 		}
 
-		void loop();
+		bool pumpOneOperation(MySql::Connection &conn) NOEXCEPT {
+			PROFILE_ME;
+
+			typedef OperationMap::delegated_container::nth_index<0>::type::iterator OperationIterator;
+
+			const AUTO(now, getFastMonoClock());
+
+			OperationIterator operationIt;
+			{
+				const boost::mutex::scoped_lock lock(m_mutex);
+				operationIt = m_operationMap.begin<0>();
+				if(operationIt == m_operationMap.end<0>()){
+					return false;
+				}
+				if(atomicLoad(m_running, ATOMIC_ACQUIRE) && (now < operationIt->dueTime) && !atomicLoad(m_urgent, ATOMIC_ACQUIRE)){
+					return false;
+				}
+			}
+
+			boost::uint64_t newDueTime = 0;
+			try {
+				unsigned errorCode = 0;
+				std::string errorMsg;
+				std::string query;
+
+				try {
+					const WorkingTimeAccumulator profiler(this, operationIt->operation->getTableName());
+					operationIt->operation->execute(query, conn);
+				} catch(MySql::Exception &e){
+					LOG_POSEIDON_ERROR("MySql::Exception thrown in MySQL operation: errorCode = ", e.errorCode(), ", what = ", e.what());
+
+					errorCode = e.errorCode();
+					errorMsg = e.what();
+				} catch(std::exception &e){
+					LOG_POSEIDON_ERROR("std::exception thrown in MySQL operation: what = ", e.what());
+
+					errorCode = 99999;
+					errorMsg = e.what();
+				} catch(...){
+					LOG_POSEIDON_ERROR("Unknown exception thrown in MySQL operation.");
+
+					errorCode = 99999;
+					errorMsg = "Unknown exception";
+				}
+
+				if(errorCode != 0){
+					LOG_POSEIDON_ERROR("Retry MySQL operation: retryCount = ", operationIt->retryCount,
+						", errorCode = ", errorCode, ", errorMsg = ", errorMsg);
+
+					if(operationIt->retryCount >= g_maxRetryCount){
+						LOG_POSEIDON_ERROR("Max retry count exceeded.");
+
+						char temp[32];
+						unsigned len = (unsigned)std::sprintf(temp, "%5u", errorCode);
+						std::string dump;
+						dump.reserve(1024);
+						dump.assign("-- Error code = ");
+						dump.append(temp, len);
+						dump.append(", Description = ");
+						dump.append(errorMsg);
+						dump.append("\n");
+						dump.append(query);
+						dump.append(";\n\n");
+						{
+							const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
+							std::size_t total = 0;
+							do {
+								::ssize_t written = ::write(g_dumpFile.get(), dump.data() + total, dump.size() - total);
+								if(written <= 0){
+									break;
+								}
+								total += static_cast<std::size_t>(written);
+							} while(total < dump.size());
+						}
+
+						DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
+					}
+					newDueTime = now + (g_retryInitDelay << operationIt->retryCount);
+					++operationIt->retryCount;
+				}
+			} catch(std::exception &e){
+				LOG_POSEIDON_ERROR("std::exception thrown in MySQL operation: what = ", e.what());
+			} catch(...){
+				LOG_POSEIDON_ERROR("Unknown exception thrown in MySQL operation.");
+			}
+			if(newDueTime != 0){
+				const boost::mutex::scoped_lock lock(m_mutex);
+				const AUTO(range, m_operationMap.equalRange<1>(operationIt->combinableObject));
+				for(AUTO(it, range.first); it != range.second; ++it){
+					m_operationMap.setKey<1, 0>(it, newDueTime);
+					++newDueTime;
+				}
+			} else {
+				const boost::mutex::scoped_lock lock(m_mutex);
+				m_operationMap.erase<0>(operationIt);
+			}
+
+			return true;
+		}
+
+		void loop(){
+			PROFILE_ME;
+			Logger::setThreadTag(" D  "); // Database
+			LOG_POSEIDON_INFO("MySQL thread ", m_index, " started.");
+
+			const MySql::ThreadContext threadContext;
+			boost::shared_ptr<MySql::Connection> conn;
+
+			for(;;){
+				accumulateTimeForTable("");
+
+				while(!conn){
+					LOG_POSEIDON_INFO("Connecting to MySQL server...");
+
+					try {
+						conn = MySqlDaemon::createConnection();
+						LOG_POSEIDON_INFO("Successfully connected to MySQL server.");
+					} catch(std::exception &e){
+						LOG_POSEIDON_ERROR("std::exception thrown while connecting to MySQL server: what = ", e.what());
+						::usleep(g_reconnDelay * 1000);
+					}
+				}
+
+				while(pumpOneOperation(*conn)){
+					// noop
+				}
+
+				if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
+					break;
+				}
+				::usleep(100000);
+			}
+
+			LOG_POSEIDON_INFO("MySQL thread ", m_index, " stopped.");
+		}
 
 	public:
 		void shutdown(){
@@ -426,172 +561,33 @@ namespace {
 
 			const boost::mutex::scoped_lock lock(m_mutex);
 			if(combinableObject){
-				AUTO(it, m_queue.find<1>(combinableObject));
-				if(it != m_queue.end<1>()){
-					m_queue.setKey<1, 0>(it, dueTime);
+				AUTO(it, m_operationMap.find<1>(combinableObject));
+				if(it != m_operationMap.end<1>()){
+					m_operationMap.setKey<1, 0>(it, dueTime);
 					goto _inserted;
 				}
 			}
-			m_queue.insert(OperationElement(dueTime, STD_MOVE(operation)));
+			m_operationMap.insert(OperationElement(dueTime, STD_MOVE(operation)));
 		_inserted:
 			if(urgent){
 				atomicStore(m_urgent, true, ATOMIC_RELEASE);
 			}
-			m_newAvail.notify_all();
 		}
 		void waitTillIdle(){
-			boost::mutex::scoped_lock lock(m_mutex);
-			atomicStore(m_urgent, true, ATOMIC_RELEASE); // 在获取互斥锁之前设置紧急状态。
-			m_newAvail.notify_all();
-			while(!m_queue.empty()){
-				LOG_POSEIDON_INFO("There are ", m_queue.size(), " object(s) in my queue.");
-				atomicStore(m_urgent, true, ATOMIC_RELEASE);
-				m_newAvail.notify_all();
-				m_queueEmpty.timed_wait(lock, boost::posix_time::seconds(1));
+			for(;;){
+				std::size_t pendingObjects;
+				{
+					const boost::mutex::scoped_lock lock(m_mutex);
+					pendingObjects = m_operationMap.size();
+					if(pendingObjects == 0){
+						break;
+					}
+				}
+				LOG_POSEIDON_INFO("There are ", pendingObjects, " object(s) in my queue.");
+				::usleep(100000);
 			}
 		}
 	};
-
-	void Thread::loop(){
-		PROFILE_ME;
-		Logger::setThreadTag(" D  "); // Database
-		LOG_POSEIDON_INFO("MySQL thread ", m_index, " started.");
-
-		boost::shared_ptr<MySql::Connection> conn;
-		std::size_t reconnectDelay = 0;
-
-		boost::shared_ptr<OperationBase> operation;
-		std::size_t retryCount = 0;
-
-		for(;;){
-			try {
-				accumulateTimeForTable("");
-
-				if(!conn){
-					LOG_POSEIDON_INFO("Connecting to MySQL server...");
-
-					if(reconnectDelay == 0){
-						reconnectDelay = 1;
-					} else {
-						LOG_POSEIDON_INFO("Will retry after ", reconnectDelay, " milliseconds.");
-
-						boost::mutex::scoped_lock lock(m_mutex);
-						m_newAvail.timed_wait(lock,
-							boost::posix_time::milliseconds(static_cast<boost::int64_t>(reconnectDelay)));
-
-						reconnectDelay <<= 1;
-						if(reconnectDelay > g_maxReconnDelay){
-							reconnectDelay = g_maxReconnDelay;
-						}
-					}
-					try {
-						conn = MySqlDaemon::createConnection();
-					} catch(...){
-						if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
-							LOG_POSEIDON_WARNING("Shutting down...");
-							goto _exitLoop;
-						}
-						throw;
-					}
-
-					LOG_POSEIDON_INFO("Successfully connected to MySQL server.");
-					reconnectDelay = 0;
-				}
-
-				if(!operation){
-					boost::mutex::scoped_lock lock(m_mutex);
-					while(m_queue.empty()){
-						m_queueEmpty.notify_all();
-						atomicStore(m_urgent, false, ATOMIC_RELEASE);
-						accumulateTimeForTable("");
-
-						if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
-							goto _exitLoop;
-						}
-						m_newAvail.timed_wait(lock, boost::posix_time::milliseconds(100));
-					}
-					if(!atomicLoad(m_urgent, ATOMIC_ACQUIRE) && (getFastMonoClock() < m_queue.begin<0>()->dueTime)){
-						m_newAvail.timed_wait(lock, boost::posix_time::milliseconds(100));
-						continue;
-					}
-					operation = m_queue.begin<0>()->operation;
-					m_queue.erase(m_queue.begin<0>());
-					retryCount = 0;
-				}
-
-				unsigned mysqlErrorCode = 99999;
-				std::string mysqlErrorMsg;
-				std::string query;
-				try {
-					try {
-						const WorkingTimeAccumulator profiler(this, operation->getTableName());
-						operation->execute(query, *conn);
-					} catch(MySql::Exception &e){
-						mysqlErrorCode = e.errorCode();
-						mysqlErrorMsg = e.what();
-						throw;
-					} catch(std::exception &e){
-						mysqlErrorMsg = e.what();
-						throw;
-					} catch(...){
-						mysqlErrorMsg = "Unknown exception";
-						throw;
-					}
-				} catch(...){
-					if(retryCount >= g_maxRetryCount){
-						LOG_POSEIDON_WARNING("Max retry count exceeded. Give up.");
-						operation.reset();
-
-						char temp[32];
-						unsigned len = (unsigned)std::sprintf(temp, "%05u", mysqlErrorCode);
-						std::string dump;
-						dump.reserve(1024);
-						dump.assign("-- Error code = ");
-						dump.append(temp, len);
-						dump.append(", Description = ");
-						dump.append(mysqlErrorMsg);
-						dump.append("\n");
-						dump.append(query);
-						dump.append(";\n\n");
-						{
-							const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
-							std::size_t total = 0;
-							do {
-								::ssize_t written = ::write(g_dumpFile.get(), dump.data() + total, dump.size() - total);
-								if(written <= 0){
-									break;
-								}
-								total += static_cast<std::size_t>(written);
-							} while(total < dump.size());
-						}
-					} else {
-						++retryCount;
-					}
-					throw;
-				}
-				operation.reset();
-			} catch(MySql::Exception &e){
-				LOG_POSEIDON_ERROR("MySql::Exception thrown in MySQL daemon: errorCode = ", e.errorCode(), ", what = ", e.what());
-				conn.reset();
-			} catch(std::exception &e){
-				LOG_POSEIDON_ERROR("std::exception thrown in MySQL daemon: what = ", e.what());
-				conn.reset();
-			} catch(...){
-				LOG_POSEIDON_ERROR("Unknown exception thrown in MySQL daemon.");
-				conn.reset();
-			}
-		}
-	_exitLoop:
-		;
-
-		if(!m_queue.empty()){
-			LOG_POSEIDON_WARNING("There are still ", m_queue.size(), " object(s) in MySQL queue");
-			m_queue.clear();
-		}
-		m_queueEmpty.notify_all();
-
-		LOG_POSEIDON_INFO("MySQL thread ", m_index, " stopped.");
-	}
 
 	volatile bool g_running = false;
 	std::vector<boost::shared_ptr<Thread> > g_threads;
@@ -653,11 +649,14 @@ void MySqlDaemon::start(){
 	conf.get(g_saveDelay, "mysql_save_delay");
 	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_saveDelay);
 
-	conf.get(g_maxReconnDelay, "mysql_max_reconn_delay");
-	LOG_POSEIDON_DEBUG("MySQL max reconnect delay = ", g_maxReconnDelay);
+	conf.get(g_reconnDelay, "mysql_reconn_delay");
+	LOG_POSEIDON_DEBUG("MySQL reconnect delay = ", g_reconnDelay);
 
 	conf.get(g_maxRetryCount, "mysql_max_retry_count");
 	LOG_POSEIDON_DEBUG("MySQL max retry count = ", g_maxRetryCount);
+
+	conf.get(g_retryInitDelay, "mysql_retry_init_delay");
+	LOG_POSEIDON_DEBUG("MySQL retry init delay = ", g_retryInitDelay);
 
 	char temp[256];
 	unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
