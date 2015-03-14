@@ -73,7 +73,8 @@ namespace {
 			try {
 				jobIt->job->perform();
 			} catch(JobBase::TryAgainLater &){
-				LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching job: retryCount = ", jobIt->retryCount);
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"JobBase::TryAgainLater thrown while dispatching job: retryCount = ", jobIt->retryCount);
 
 				if(jobIt->retryCount >= g_maxRetryCount){
 					LOG_POSEIDON_ERROR("Max retry count exceeded.");
