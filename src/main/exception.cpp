@@ -10,7 +10,8 @@ namespace Poseidon {
 Exception::Exception(const char *file, std::size_t line, SharedNts message)
 	: m_file(file), m_line(line), m_message(STD_MOVE(message))
 {
-	LOG_POSEIDON_ERROR("Constructing Exception: file = ", m_file, ", line = ", m_line, ", what = ", m_message);
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+		"Constructing Exception: file = ", m_file, ", line = ", m_line, ", what = ", m_message);
 }
 Exception::~Exception() NOEXCEPT {
 }

@@ -53,11 +53,11 @@ namespace Cbpp {
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
-					LOG_POSEIDON_ERROR("Cbpp::Exception thrown in CBPP servlet, message id = ", m_messageId,
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown in CBPP servlet, message id = ", m_messageId,
 						", statusCode = ", e.statusCode(), ", what = ", e.what());
 					throw;
 				} catch(...){
-					LOG_POSEIDON_ERROR("Forwarding exception... message id = ", m_messageId);
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... message id = ", m_messageId);
 					client->shutdown(); // 关闭连接。
 					throw;
 				}
@@ -116,11 +116,11 @@ namespace Cbpp {
 				m_messageId = 0;
 			}
 		} catch(Exception &e){
-			LOG_POSEIDON_ERROR("Cbpp::Exception thrown while parsing data, message id = ", m_messageId,
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown while parsing data, message id = ", m_messageId,
 				", statusCode = ", static_cast<int>(e.statusCode()), ", what = ", e.what());
 			throw;
 		} catch(...){
-			LOG_POSEIDON_ERROR("Forwarding exception... message id = ", m_messageId);
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... message id = ", m_messageId);
 			throw;
 		}
 	}

@@ -20,7 +20,8 @@ namespace Http {
 			m_headers = boost::make_shared<OptionalMap>();
 			m_headers->swap(headers);
 		}
-		LOG_POSEIDON_ERROR("Exception: statusCode = ", statusCode, ", what = ", what());
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Exception: statusCode = ", statusCode, ", what = ", what());
 	}
 	Exception::~Exception() NOEXCEPT {
 	}

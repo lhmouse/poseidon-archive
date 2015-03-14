@@ -11,7 +11,8 @@ namespace WebSocket {
 	Exception::Exception(const char *file, std::size_t line, StatusCode statusCode, SharedNts message)
 		: ProtocolException(file, line, STD_MOVE(message), static_cast<long>(static_cast<unsigned>(statusCode)))
 	{
-		LOG_POSEIDON_ERROR("Exception: statusCode = ", statusCode, ", what = ", what());
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Exception: statusCode = ", statusCode, ", what = ", what());
 	}
 	Exception::~Exception() NOEXCEPT {
 	}

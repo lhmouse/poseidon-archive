@@ -239,10 +239,10 @@ std::size_t Epoll::pumpReadable(){
 				continue;
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown while dispatching data: what = ", e.what());
+			LOG_POSEIDON_WARNING("std::exception thrown while dispatching data: what = ", e.what());
 			session->send(StreamBuffer(), true);
 		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown while dispatching data.");
+			LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching data.");
 			session->send(StreamBuffer(), true);
 		}
 	}
@@ -297,10 +297,10 @@ std::size_t Epoll::pumpWriteable(){
 				continue;
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown while writing socket: what = ", e.what());
+			LOG_POSEIDON_WARNING("std::exception thrown while writing socket: what = ", e.what());
 			session->forceShutdown();
 		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown while writing socket.");
+			LOG_POSEIDON_WARNING("Unknown exception thrown while writing socket.");
 			session->forceShutdown();
 		}
 	}

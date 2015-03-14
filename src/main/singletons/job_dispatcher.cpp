@@ -83,9 +83,9 @@ namespace {
 				++jobIt->retryCount;
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
+			LOG_POSEIDON_WARNING("std::exception thrown in job dispatcher: what = ", e.what());
 		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
+			LOG_POSEIDON_WARNING("Unknown exception thrown in job dispatcher.");
 		}
 		if(newDueTime != 0){
 			const boost::mutex::scoped_lock lock(g_mutex);

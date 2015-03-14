@@ -87,8 +87,8 @@ boost::shared_ptr<WebSocketServletDepository::Servlet> WebSocketServletDepositor
 
 boost::shared_ptr<const WebSocket::ServletCallback> WebSocketServletDepository::get(std::size_t category, const char *uri){
 	if(!uri){
-		LOG_POSEIDON_ERROR("uri is null");
-		DEBUG_THROW(Exception, SharedNts::observe("uri is null"));
+		LOG_POSEIDON_ERROR("URI is null");
+		DEBUG_THROW(Exception, SharedNts::observe("URI is null"));
 	}
 	const boost::mutex::scoped_lock lock(g_mutex);
 	const AUTO(it, g_servlets.find(category));

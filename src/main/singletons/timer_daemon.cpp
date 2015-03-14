@@ -110,9 +110,9 @@ namespace {
 				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
 				enqueueJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
 			} catch(std::exception &e){
-				LOG_POSEIDON_ERROR("std::exception thrown while dispatching timer job, what = ", e.what());
+				LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());
 			} catch(...){
-				LOG_POSEIDON_ERROR("Unknown exception thrown while dispatching timer job.");
+				LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching timer job.");
 			}
 		}
 	}

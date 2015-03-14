@@ -437,7 +437,7 @@ namespace {
 				}
 
 				if(errorCode != 0){
-					LOG_POSEIDON_ERROR("Retry MySQL operation: retryCount = ", operationIt->retryCount,
+					LOG_POSEIDON_ERROR("Going to retry MySQL operation: retryCount = ", operationIt->retryCount,
 						", errorCode = ", errorCode, ", errorMsg = ", errorMsg);
 
 					if(operationIt->retryCount >= g_maxRetryCount){
