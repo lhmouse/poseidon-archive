@@ -33,7 +33,7 @@ public:
 };
 
 // 加到全局队列中（外部不可见），线程安全的。
-extern void enqueueJob(boost::shared_ptr<const JobBase> job);
+extern void enqueueJob(boost::shared_ptr<const JobBase> job, boost::uint64_t delay = 0);
 // 推迟当前任务执行，实际上会抛出一个异常。必须在任务函数中调用。
 extern void suspendCurrentJob() __attribute__((__noreturn__));
 

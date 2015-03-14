@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
 #include "main_config.hpp"
 #include "../job_base.hpp"
 #include "../atomic.hpp"
@@ -12,131 +11,93 @@
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../utilities.hpp"
+#include "../multi_index_map.hpp"
 
 namespace Poseidon {
 
 namespace {
-	const boost::weak_ptr<const void> NULL_WEAK_PTR;
+	struct JobElement {
+		boost::uint64_t dueTime;
+		boost::weak_ptr<const void> category;
+
+		boost::shared_ptr<const JobBase> job;
+
+		mutable std::size_t retryCount;
+
+		JobElement(boost::uint64_t dueTime_, boost::shared_ptr<const JobBase> job_)
+			: dueTime(dueTime_)
+			, job(STD_MOVE(job_))
+			, retryCount(0)
+		{
+			category = job->getCategory();
+			if(!(boost::weak_ptr<void>() < category) && !(category < boost::weak_ptr<void>())){
+				category = job;
+			}
+		}
+	};
+
+	MULTI_INDEX_MAP(JobMap, JobElement,
+		MULTI_MEMBER_INDEX(dueTime)
+		MULTI_MEMBER_INDEX(category)
+	);
 
 	std::size_t g_maxRetryCount			= 5;
-	boost::uint64_t g_retryInitDelay	= 100;
+	boost::uint64_t g_retryInitDelay	= 1000;
 
 	volatile bool g_running = false;
 
 	boost::mutex g_mutex;
-	std::deque<boost::shared_ptr<const JobBase> > g_queue;
-	boost::condition_variable g_newJobAvail;
+	JobMap g_jobMap;
 
-	struct SuspendedElement {
-		boost::shared_ptr<const JobBase> job;
-		boost::uint64_t until;
-		std::size_t retryCount;
-
-		SuspendedElement(boost::shared_ptr<const JobBase> job_, boost::uint64_t until_)
-			: job(STD_MOVE(job_)), until(until_), retryCount(1)
-		{
-		}
-	};
-
-	std::map<boost::weak_ptr<const void>, std::deque<SuspendedElement> > g_suspendedQueues;
-
-	bool flushAllJobs(){
+	bool pumpOneJob(){
 		PROFILE_ME;
 
-		bool ret = false;
+		typedef JobMap::delegated_container::nth_index<0>::type::iterator JobIterator;
 
-		std::deque<boost::shared_ptr<const JobBase> > queue;
+		const AUTO(now, getFastMonoClock());
+
+		JobIterator jobIt;
 		{
-			boost::mutex::scoped_lock lock(g_mutex);
-			queue.swap(g_queue);
+			const boost::mutex::scoped_lock lock(g_mutex);
+			jobIt = g_jobMap.begin<0>();
+			if(jobIt == g_jobMap.end<0>()){
+				return false;
+			}
+			if(now < jobIt->dueTime){
+				return false;
+			}
 		}
 
-		bool busy;
-		do {
-			const AUTO(now, getFastMonoClock());
-			busy = false;
+		boost::uint64_t newDueTime = 0;
+		try {
+			jobIt->job->perform();
+		} catch(JobBase::TryAgainLater &){
+			LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching job: retryCount = ", jobIt->retryCount);
 
-			if(!queue.empty()){
-				// 处理主队列中的任务。
-
-				try {
-					const AUTO(job, queue.front());
-
-					AUTO(category, job->getCategory());
-					if(!(NULL_WEAK_PTR < category) && !(category < NULL_WEAK_PTR)){
-						category = job;
-					}
-
-					const AUTO(it, g_suspendedQueues.find(category));
-					if(it != g_suspendedQueues.end()){
-						it->second.push_back(SuspendedElement(job, now + g_retryInitDelay));
-					} else {
-						// 只有在之前不存在同一类别的任务被推迟的情况下才能执行。
-						try {
-							job->perform();
-						} catch(JobBase::TryAgainLater &){
-							LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching job. Suspend it.");
-
-							if(g_maxRetryCount == 0){
-								DEBUG_THROW(Exception, SharedNts::observe("Max retry count is zero"));
-							}
-							g_suspendedQueues[category].push_back(SuspendedElement(job, now + g_retryInitDelay));
-						}
-					}
-				} catch(std::exception &e){
-					LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
-				} catch(...){
-					LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
-				}
-				queue.pop_front();
-
-				ret = true;
-				busy = true;
+			if(jobIt->retryCount < g_maxRetryCount){
+				newDueTime = now + (g_retryInitDelay << jobIt->retryCount);
+				++jobIt->retryCount;
+			} else {
+				LOG_POSEIDON_ERROR("Max retry count exceeded. Give up.");
 			}
-
-			AUTO(next, g_suspendedQueues.begin());
-			while(next != g_suspendedQueues.end()){
-				// 处理延迟队列中的任务。
-
-				const AUTO(it, next);
-				++next;
-				if(it->second.empty()){
-					g_suspendedQueues.erase(it);
-					continue;
-				}
-				AUTO_REF(element, it->second.front());
-				if(now < element.until){
-					continue;
-				}
-				try {
-					const AUTO(job, element.job);
-
-					try {
-						job->perform();
-					} catch(JobBase::TryAgainLater &){
-						LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching suspended job.");
-
-						if(element.retryCount >= g_maxRetryCount){
-							DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
-						}
-						element.until = now + (g_retryInitDelay << element.retryCount);
-						++element.retryCount;
-						goto _dontPop;
-					}
-				} catch(std::exception &e){
-					LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
-				} catch(...){
-					LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
-				}
-				it->second.pop_front();
-			_dontPop:
-
-				ret = true;
-				busy = true;
+		} catch(std::exception &e){
+			LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
+		} catch(...){
+			LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
+		}
+		if(newDueTime != 0){
+			const boost::mutex::scoped_lock lock(g_mutex);
+			const AUTO(range, g_jobMap.equalRange<1>(jobIt->category));
+			for(AUTO(it, range.first); it != range.second; ++it){
+				g_jobMap.setKey<1, 0>(it, newDueTime);
+				++newDueTime;
 			}
-		} while(busy);
+		} else {
+			const boost::mutex::scoped_lock lock(g_mutex);
+			g_jobMap.erase<0>(jobIt);
+		}
 
-		return ret;
+		return true;
 	}
 }
 
@@ -154,10 +115,8 @@ void JobDispatcher::start(){
 void JobDispatcher::stop(){
 	LOG_POSEIDON_INFO("Flushing all queued jobs...");
 
-	for(;;){
-		if(!flushAllJobs()){
-			break;
-		}
+	while(pumpOneJob()){
+		// noop
 	}
 }
 
@@ -170,29 +129,23 @@ void JobDispatcher::doModal(){
 	}
 
 	for(;;){
-		if(!flushAllJobs()){
-			boost::mutex::scoped_lock lock(g_mutex);
-			if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
-				break;
-			}
-			g_newJobAvail.timed_wait(lock, boost::posix_time::milliseconds(100));
+		while(pumpOneJob()){
+			// noop
 		}
+
+		if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
+			break;
+		}
+		::usleep(100000);
 	}
 }
 void JobDispatcher::quitModal(){
-	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
-		return;
-	}
-	{
-		const boost::mutex::scoped_lock lock(g_mutex);
-		g_newJobAvail.notify_all();
-	}
+	atomicStore(g_running, false, ATOMIC_RELEASE);
 }
 
-void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job){
+void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay){
 	const boost::mutex::scoped_lock lock(g_mutex);
-	g_queue.push_back(STD_MOVE(job));
-	g_newJobAvail.notify_all();
+	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job)));
 }
 
 }

@@ -6,10 +6,11 @@
 
 #include "cxx_util.hpp"
 #include <boost/function.hpp>
+#include <boost/cstdint.hpp>
 
 namespace Poseidon {
 
-extern void enqueueAsyncJob(boost::function<void ()> proc);
+extern void enqueueAsyncJob(boost::function<void ()> proc, boost::uint64_t delay = 0);
 
 }
 

@@ -471,7 +471,8 @@ MODULE_RAII {
 }
 */
 namespace {
-	const AUTO(sp, boost::make_shared<int>());
+	// const AUTO(sp, boost::make_shared<int>());
+	boost::shared_ptr<int> sp;
 
 	class MyJob : public JobBase {
 	private:
@@ -485,7 +486,7 @@ namespace {
 
 	public:
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
-			return VAL_INIT; // sp;
+			return sp;
 		}
 		void perform() const OVERRIDE {
 			LOG_POSEIDON_FATAL("!!!! MyJob::perform: ", m_s);
