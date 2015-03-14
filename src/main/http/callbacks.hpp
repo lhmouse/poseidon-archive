@@ -14,7 +14,7 @@ namespace Http {
 	class Request;
 
 	typedef boost::function<
-		void (boost::shared_ptr<Session> session, Request request)
+		void (const boost::shared_ptr<Session> &session, const Request &request)
 		> ServletCallback;
 }
 

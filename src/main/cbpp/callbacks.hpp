@@ -14,7 +14,7 @@ namespace Cbpp {
 	class Session;
 
 	typedef boost::function<
-		void (boost::shared_ptr<Session> session, StreamBuffer incoming)
+		void (const boost::shared_ptr<Session> &session, StreamBuffer incoming)
 		> ServletCallback;
 }
 

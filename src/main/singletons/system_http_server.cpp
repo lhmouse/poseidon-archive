@@ -47,13 +47,13 @@ namespace {
 		}
 	}
 
-	void onShutdown(boost::shared_ptr<Http::Session> session, OptionalMap){
+	void onShutdown(const boost::shared_ptr<Http::Session> &session, const OptionalMap &){
 		LOG_POSEIDON_WARNING("Received shutdown HTTP request. The server will be shutdown now.");
 		session->sendDefault(Http::ST_OK);
 		::raise(SIGTERM);
 	}
 
-	void onLoadModule(boost::shared_ptr<Http::Session> session, OptionalMap getParams){
+	void onLoadModule(const boost::shared_ptr<Http::Session> &session, const OptionalMap &getParams){
 		AUTO_REF(name, getParams.at("name"));
 		if(!ModuleDepository::loadNoThrow(name.c_str())){
 			LOG_POSEIDON_WARNING("Failed to load module: ", name);
@@ -63,7 +63,7 @@ namespace {
 		session->sendDefault(Http::ST_OK);
 	}
 
-	void onUnloadModule(boost::shared_ptr<Http::Session> session, OptionalMap getParams){
+	void onUnloadModule(const boost::shared_ptr<Http::Session> &session, const OptionalMap &getParams){
 		AUTO_REF(baseAddrStr, getParams.at("base_addr"));
 		std::istringstream iss(baseAddrStr);
 		void *baseAddr;
@@ -80,7 +80,7 @@ namespace {
 		session->sendDefault(Http::ST_OK);
 	}
 
-	void onShowProfile(boost::shared_ptr<Http::Session> session, OptionalMap){
+	void onShowProfile(const boost::shared_ptr<Http::Session> &session, const OptionalMap &){
 		OptionalMap headers;
 		headers.set("Content-Type", "text/csv; charset=utf-8");
 		headers.set("Content-Disposition", "attachment; name=\"profile.csv\"");
@@ -104,7 +104,7 @@ namespace {
 		session->send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 	}
 
-	void onShowModules(boost::shared_ptr<Http::Session> session, OptionalMap){
+	void onShowModules(const boost::shared_ptr<Http::Session> &session, const OptionalMap &){
 		OptionalMap headers;
 		headers.set("Content-Type", "text/csv; charset=utf-8");
 		headers.set("Content-Disposition", "attachment; name=\"modules.csv\"");
@@ -124,7 +124,7 @@ namespace {
 		session->send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 	}
 
-	void onShowConnections(boost::shared_ptr<Http::Session> session, OptionalMap){
+	void onShowConnections(const boost::shared_ptr<Http::Session> &session, const OptionalMap &){
 		OptionalMap headers;
 		headers.set("Content-Type", "text/csv; charset=utf-8");
 		headers.set("Content-Disposition", "attachment; name=\"connections.csv\"");
@@ -148,7 +148,7 @@ namespace {
 		session->send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 	}
 
-	void onSetLogMask(boost::shared_ptr<Http::Session> session, OptionalMap getParams){
+	void onSetLogMask(const boost::shared_ptr<Http::Session> &session, const OptionalMap &getParams){
 		unsigned long long toEnable = 0, toDisable = 0;
 		{
 			AUTO_REF(val, getParams.get("to_disable"));
@@ -166,7 +166,7 @@ namespace {
 		session->sendDefault(Http::ST_OK);
 	}
 
-	void onShowMySqlProfile(boost::shared_ptr<Http::Session> session, OptionalMap){
+	void onShowMySqlProfile(const boost::shared_ptr<Http::Session> &session, const OptionalMap &){
 		OptionalMap headers;
 		headers.set("Content-Type", "text/csv; charset=utf-8");
 		headers.set("Content-Disposition", "attachment; name=\"mysql_threads.csv\"");
@@ -189,7 +189,7 @@ namespace {
 	}
 
 	const std::pair<
-		const char *, void (*)(boost::shared_ptr<Http::Session>, OptionalMap)
+		const char *, void (*)(const boost::shared_ptr<Http::Session> &, const OptionalMap &)
 		> JUMP_TABLE[] =
 	{
 		// 确保字母顺序。
@@ -206,7 +206,7 @@ namespace {
 	boost::shared_ptr<Http::Server> g_systemServer;
 	boost::shared_ptr<HttpServletDepository::Servlet> g_systemServlet;
 
-	void servletProc(boost::shared_ptr<Http::Session> &session, Http::Request &request, std::size_t cut){
+	void servletProc(const boost::shared_ptr<Http::Session> &session, const Http::Request &request, std::size_t cut){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", session->getRemoteInfo());
 
 		if(request.verb != Http::V_GET){
@@ -238,7 +238,7 @@ namespace {
 			DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 		}
 
-		(*found)(STD_MOVE(session), STD_MOVE(request.getParams));
+		(*found)(session, request.getParams);
 	}
 }
 
