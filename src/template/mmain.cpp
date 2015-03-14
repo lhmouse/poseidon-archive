@@ -469,7 +469,7 @@ MODULE_RAII {
 	LOG_POSEIDON_FATAL("----------- ", explode<std::string>(':', "0:1:2:3:").size());
 	return VAL_INIT;
 }
-
+*/
 namespace {
 	const AUTO(sp, boost::make_shared<int>());
 
@@ -514,4 +514,4 @@ MODULE_RAII {
 	LOG_POSEIDON_FATAL("Job enqueued!");
 	return VAL_INIT;
 }
-*/
+

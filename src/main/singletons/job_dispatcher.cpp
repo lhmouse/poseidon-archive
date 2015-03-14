@@ -124,6 +124,7 @@ namespace {
 					}
 					element.until = now + (g_retryInitDelay << element.retryCount);
 					++element.retryCount;
+					goto _dontPop2;
 				} catch(std::exception &e){
 					LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 				} catch(...){
@@ -131,6 +132,7 @@ namespace {
 				}
 			_done2:
 				it->second.pop_front();
+			_dontPop2:
 
 				ret = true;
 				busy = true;
