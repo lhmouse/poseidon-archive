@@ -564,10 +564,11 @@ namespace {
 								total += static_cast<std::size_t>(written);
 							} while(total < dump.size());
 						}
+					} else {
+						++retryCount;
 					}
 					throw;
 				}
-				++retryCount;
 				operation.reset();
 			} catch(MySql::Exception &e){
 				LOG_POSEIDON_ERROR("MySql::Exception thrown in MySQL daemon: errorCode = ", e.errorCode(), ", what = ", e.what());

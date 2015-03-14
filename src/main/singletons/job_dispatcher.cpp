@@ -67,28 +67,27 @@ namespace {
 						category = job;
 					}
 
-					AUTO(it, g_suspendedQueues.find(category));
-					if(it == g_suspendedQueues.end()){
+					const AUTO(it, g_suspendedQueues.find(category));
+					if(it != g_suspendedQueues.end()){
+						it->second.push_back(SuspendedElement(job, now + g_retryInitDelay));
+					} else {
 						// 只有在之前不存在同一类别的任务被推迟的情况下才能执行。
 						try {
 							job->perform();
-							goto _done1;
 						} catch(JobBase::TryAgainLater &){
 							LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching job. Suspend it.");
 
 							if(g_maxRetryCount == 0){
 								DEBUG_THROW(Exception, SharedNts::observe("Max retry count is zero"));
 							}
+							g_suspendedQueues[category].push_back(SuspendedElement(job, now + g_retryInitDelay));
 						}
-						it = g_suspendedQueues.insert(std::make_pair(category, std::deque<SuspendedElement>())).first;
 					}
-					it->second.push_back(SuspendedElement(job, now + g_retryInitDelay));
 				} catch(std::exception &e){
 					LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 				} catch(...){
 					LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
 				}
-			_done1:
 				queue.pop_front();
 
 				ret = true;
@@ -114,25 +113,23 @@ namespace {
 
 					try {
 						job->perform();
-						goto _done2;
 					} catch(JobBase::TryAgainLater &){
 						LOG_POSEIDON_INFO("JobBase::TryAgainLater thrown while dispatching suspended job.");
 
 						if(element.retryCount >= g_maxRetryCount){
 							DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
 						}
+						element.until = now + (g_retryInitDelay << element.retryCount);
+						++element.retryCount;
+						goto _dontPop;
 					}
-					element.until = now + (g_retryInitDelay << element.retryCount);
-					++element.retryCount;
-					goto _dontPop2;
 				} catch(std::exception &e){
 					LOG_POSEIDON_ERROR("std::exception thrown in job dispatcher: what = ", e.what());
 				} catch(...){
 					LOG_POSEIDON_ERROR("Unknown exception thrown in job dispatcher.");
 				}
-			_done2:
 				it->second.pop_front();
-			_dontPop2:
+			_dontPop:
 
 				ret = true;
 				busy = true;
