@@ -508,10 +508,10 @@ namespace {
 						if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 							goto _exitLoop;
 						}
-						m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
+						m_newAvail.timed_wait(lock, boost::posix_time::milliseconds(100));
 					}
 					if(!atomicLoad(m_urgent, ATOMIC_ACQUIRE) && (getFastMonoClock() < m_queue.begin<0>()->dueTime)){
-						m_newAvail.timed_wait(lock, boost::posix_time::seconds(1));
+						m_newAvail.timed_wait(lock, boost::posix_time::milliseconds(100));
 						continue;
 					}
 					operation = m_queue.begin<0>()->operation;
