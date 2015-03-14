@@ -60,20 +60,25 @@ namespace {
 	}
 
 	void daemonLoop(){
-		std::size_t epollTimeout = 0;
-		while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
+		boost::uint64_t epollTimeout = 0;
+		bool running, busy;
+		do {
+			running = atomicLoad(g_running, ATOMIC_ACQUIRE);
+			busy = false;
+
 			try {
-				bool busy = false;
+				if(running){
+					if(pollServers() > 0){
+						++busy;
+					}
+					if(g_epoll->pumpReadable() > 0){
+						++busy;
+					}
+				}
 				if(g_epoll->wait(epollTimeout) > 0){
 					++busy;
 				}
-				if(g_epoll->pumpReadable() > 0){
-					++busy;
-				}
 				if(g_epoll->pumpWriteable() > 0){
-					++busy;
-				}
-				if(pollServers() > 0){
 					++busy;
 				}
 				// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
@@ -91,10 +96,7 @@ namespace {
 			} catch(...){
 				LOG_POSEIDON_ERROR("Unknown exception thrown while flush data.");
 			}
-		}
-		while(g_epoll->pumpWriteable() > 0){
-			// noop
-		}
+		} while(running || busy);
 	}
 
 	void threadProc(){

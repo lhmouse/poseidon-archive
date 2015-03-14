@@ -377,7 +377,7 @@ namespace {
 			, m_urgent(false)
 			, m_profileFlushedTime(getHiResMonoClock())
 		{
-			boost::thread(&Thread::loop, this).swap(*this);
+			boost::thread(&Thread::daemonLoop, this).swap(*this);
 		}
 
 	private:
@@ -491,7 +491,7 @@ namespace {
 			return true;
 		}
 
-		void loop(){
+		void daemonLoop(){
 			PROFILE_ME;
 			Logger::setThreadTag(" D  "); // Database
 			LOG_POSEIDON_INFO("MySQL thread ", m_index, " started.");

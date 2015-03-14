@@ -77,7 +77,7 @@ namespace {
 	std::vector<TimerQueueElement> g_timers;
 
 	void daemonLoop(){
-		while(atomicLoad(g_running, ATOMIC_ACQUIRE)){
+		do {
 			const boost::uint64_t now = getFastMonoClock();
 
 			boost::shared_ptr<const TimerCallback> callback;
@@ -114,7 +114,7 @@ namespace {
 			} catch(...){
 				LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching timer job.");
 			}
-		}
+		} while(atomicLoad(g_running, ATOMIC_ACQUIRE));
 	}
 
 	void threadProc(){
