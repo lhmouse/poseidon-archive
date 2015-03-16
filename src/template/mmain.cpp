@@ -490,7 +490,7 @@ namespace {
 		}
 		void perform() const OVERRIDE {
 			LOG_POSEIDON_FATAL("!!!! MyJob::perform: ", m_s);
-			suspendCurrentJob();
+			suspendCurrentJob(VAL_INIT);
 		}
 	};
 

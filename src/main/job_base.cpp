@@ -8,11 +8,11 @@
 
 namespace Poseidon {
 
-JobBase::TryAgainLater::~TryAgainLater() NOEXCEPT {
+JobBase::TryAgainLater::TryAgainLater(boost::shared_ptr<const void> context) NOEXCEPT
+	: m_context(STD_MOVE(context))
+{
 }
-
-const char *JobBase::TryAgainLater::what() const NOEXCEPT {
-	return "Poseidon::TryAgainLater";
+JobBase::TryAgainLater::~TryAgainLater() NOEXCEPT {
 }
 
 JobBase::~JobBase(){
@@ -21,8 +21,8 @@ JobBase::~JobBase(){
 void enqueueJob(boost::shared_ptr<const JobBase> job, boost::uint64_t delay){
 	JobDispatcher::enqueue(STD_MOVE(job), delay);
 }
-void suspendCurrentJob(){
-	throw JobBase::TryAgainLater();
+void suspendCurrentJob(boost::shared_ptr<const void> context){
+	throw JobBase::TryAgainLater(STD_MOVE(context));
 }
 
 }

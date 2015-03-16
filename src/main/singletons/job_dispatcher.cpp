@@ -22,12 +22,11 @@ namespace {
 
 		boost::shared_ptr<const JobBase> job;
 
-		mutable std::size_t retryCount;
+		mutable std::map<boost::shared_ptr<const void>, std::size_t> retryCounts;
 
 		JobElement(boost::uint64_t dueTime_, boost::shared_ptr<const JobBase> job_)
 			: dueTime(dueTime_)
 			, job(STD_MOVE(job_))
-			, retryCount(0)
 		{
 			category = job->getCategory();
 			if(!(boost::weak_ptr<void>() < category) && !(category < boost::weak_ptr<void>())){
@@ -72,16 +71,17 @@ namespace {
 		try {
 			try {
 				jobIt->job->perform();
-			} catch(JobBase::TryAgainLater &){
+			} catch(JobBase::TryAgainLater &e){
+				AUTO_REF(retryCount, jobIt->retryCounts[e.getContext()]);
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"JobBase::TryAgainLater thrown while dispatching job: retryCount = ", jobIt->retryCount);
+					"JobBase::TryAgainLater thrown while dispatching job: retryCount = ", retryCount);
 
-				if(jobIt->retryCount >= g_maxRetryCount){
+				if(retryCount >= g_maxRetryCount){
 					LOG_POSEIDON_ERROR("Max retry count exceeded.");
 					DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
 				}
-				newDueTime = now + (g_retryInitDelay << jobIt->retryCount);
-				++jobIt->retryCount;
+				newDueTime = now + (g_retryInitDelay << retryCount);
+				++retryCount;
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown in job dispatcher: what = ", e.what());
