@@ -139,7 +139,7 @@ void JobDispatcher::doModal(){
 		if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
 			break;
 		}
-		::usleep(100000);
+		::usleep(200000);
 	}
 }
 void JobDispatcher::quitModal(){

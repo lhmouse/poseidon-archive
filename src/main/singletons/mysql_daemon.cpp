@@ -521,7 +521,7 @@ namespace {
 				if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 					break;
 				}
-				::usleep(100000);
+				::usleep(200000);
 			}
 
 			LOG_POSEIDON_INFO("MySQL thread ", m_index, " stopped.");
@@ -584,7 +584,7 @@ namespace {
 					}
 				}
 				LOG_POSEIDON_INFO("There are ", pendingObjects, " object(s) in my queue.");
-				::usleep(100000);
+				::usleep(200000);
 			}
 		}
 	};
