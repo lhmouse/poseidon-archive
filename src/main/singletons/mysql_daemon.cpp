@@ -5,6 +5,8 @@
 #include "mysql_daemon.hpp"
 #include "main_config.hpp"
 #include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -362,6 +364,7 @@ namespace {
 		volatile bool m_running;
 
 		mutable boost::mutex m_mutex;
+		mutable boost::condition_variable m_newOperation;
 		volatile bool m_urgent; // 无视延迟写入，一次性处理队列中所有操作。
 		OperationMap m_operationMap;
 
@@ -521,7 +524,9 @@ namespace {
 				if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 					break;
 				}
-				::usleep(200000);
+
+				boost::mutex::scoped_lock lock(m_mutex);
+				m_newOperation.timed_wait(lock, boost::posix_time::milliseconds(100));
 			}
 
 			LOG_POSEIDON_INFO("MySQL thread ", m_index, " stopped.");
@@ -572,6 +577,7 @@ namespace {
 			if(urgent){
 				atomicStore(m_urgent, true, ATOMIC_RELEASE);
 			}
+			m_newOperation.notify_one();
 		}
 		void waitTillIdle(){
 			for(;;){
@@ -582,9 +588,10 @@ namespace {
 					if(pendingObjects == 0){
 						break;
 					}
+					m_newOperation.notify_one();
 				}
-				LOG_POSEIDON_INFO("There are ", pendingObjects, " object(s) in my queue.");
-				::usleep(200000);
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pendingObjects, " object(s) in my queue.");
+				::usleep(100000);
 			}
 		}
 	};

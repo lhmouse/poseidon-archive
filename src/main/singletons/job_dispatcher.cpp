@@ -4,6 +4,7 @@
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include "main_config.hpp"
 #include "../job_base.hpp"
 #include "../atomic.hpp"
@@ -46,6 +47,7 @@ namespace {
 	volatile bool g_running = false;
 
 	boost::mutex g_mutex;
+	boost::condition_variable g_newJob;
 	JobMap g_jobMap;
 
 	bool pumpOneJob() NOEXCEPT {
@@ -88,16 +90,18 @@ namespace {
 		} catch(...){
 			LOG_POSEIDON_WARNING("Unknown exception thrown in job dispatcher.");
 		}
-		if(newDueTime != 0){
+		{
 			const boost::mutex::scoped_lock lock(g_mutex);
-			const AUTO(range, g_jobMap.equalRange<1>(jobIt->category));
-			for(AUTO(it, range.first); it != range.second; ++it){
-				g_jobMap.setKey<1, 0>(it, newDueTime);
-				++newDueTime;
+			if(newDueTime != 0){
+				const AUTO(range, g_jobMap.equalRange<1>(jobIt->category));
+				for(AUTO(it, range.first); it != range.second; ++it){
+					g_jobMap.setKey<1, 0>(it, newDueTime);
+					++newDueTime;
+				}
+			} else {
+				g_jobMap.erase<0>(jobIt);
 			}
-		} else {
-			const boost::mutex::scoped_lock lock(g_mutex);
-			g_jobMap.erase<0>(jobIt);
+			g_newJob.notify_one();
 		}
 
 		return true;
@@ -139,7 +143,9 @@ void JobDispatcher::doModal(){
 		if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
 			break;
 		}
-		::usleep(200000);
+
+		boost::mutex::scoped_lock lock(g_mutex);
+		g_newJob.timed_wait(lock, boost::posix_time::milliseconds(100));
 	}
 }
 void JobDispatcher::quitModal(){
