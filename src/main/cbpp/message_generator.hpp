@@ -227,20 +227,20 @@ public:
 #define FIELD_VINT(name_)				os_ << #name_ <<" = " <<cur_.name_ <<"; ";
 #define FIELD_VUINT(name_)				os_ << #name_ <<" = " <<cur_.name_ <<"; ";
 #define FIELD_STRING(name_)				os_ << #name_ <<" = (" <<cur_.name_.size() <<")\"" <<cur_.name_ <<"\"; ";
-#define FIELD_BYTES(name_, size_)		os_ << #name_ <<" = (" <<size_ <<")[" << ::std::hex;	\
+#define FIELD_BYTES(name_, size_)		os_ << #name_ <<" = (" <<size_ <<")[ " << ::std::hex;	\
 										for(::boost::uint64_t i_ = 0; i_ < size_; ++i_){	\
 											os_ << ::std::setfill('0') << ::std::setw(2)	\
 												<< static_cast<unsigned>(cur_.name_[i_]) <<' ';	\
 										}	\
 										os_ << ::std::dec <<"]; ";
-#define FIELD_ARRAY(name_, fields_)		os_ << #name_ <<" = (" <<cur_.name_.size() <<")[ ";	\
+#define FIELD_ARRAY(name_, fields_)		os_ << #name_ <<" = (" <<cur_.name_.size() <<")[; ";	\
 										for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
 											typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
 											const Element_ &element_ = cur_.name_[i_];	\
 											typedef Element_ Cur_;	\
 											const Cur_ &cur_ = element_;	\
 											\
-											os_ <<"{ ";	\
+											os_ <<"{; ";	\
 											fields_	\
 											os_ <<"}; ";	\
 										}	\
