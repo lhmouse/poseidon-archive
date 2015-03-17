@@ -591,7 +591,7 @@ namespace {
 					m_newOperation.notify_one();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pendingObjects, " object(s) in my queue.");
-				::usleep(100000);
+				::usleep(500000);
 			}
 		}
 	};
