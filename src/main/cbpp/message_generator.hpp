@@ -216,7 +216,7 @@ public:
 		typedef MESSAGE_NAME Cur_;
 		const Cur_ &cur_ = *this;
 
-		os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<ID <<") = { ";
+		os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<ID <<") = {; ";
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
