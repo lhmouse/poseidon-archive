@@ -24,7 +24,7 @@ namespace Http {
 			const std::vector<std::string> &authInfo);
 
 	protected:
-		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const;
+		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const OVERRIDE;
 	};
 }
 

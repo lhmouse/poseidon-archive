@@ -19,7 +19,7 @@ namespace Cbpp {
 		Server(std::size_t category, const IpPort &bindAddr, const char *cert, const char *privateKey);
 
 	protected:
-		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const;
+		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const OVERRIDE;
 	};
 }
 
