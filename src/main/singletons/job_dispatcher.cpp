@@ -109,7 +109,7 @@ namespace {
 }
 
 void JobDispatcher::start(){
-	LOG_POSEIDON_INFO("Starting job dispatcher...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting job dispatcher...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
@@ -120,7 +120,7 @@ void JobDispatcher::start(){
 	LOG_POSEIDON_DEBUG("Retry init delay = ", g_retryInitDelay);
 }
 void JobDispatcher::stop(){
-	LOG_POSEIDON_INFO("Flushing all queued jobs...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
 
 	while(pumpOneJob()){
 		// noop

@@ -33,13 +33,14 @@ namespace {
 
 void MainConfig::setRunPath(const char *path){
 	const AUTO(realPath, getRealPath(path));
-	LOG_POSEIDON_INFO("Setting working directory: ", realPath);
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting working directory: realPath = ", realPath);
 	if(::chdir(realPath.c_str()) != 0){
 		DEBUG_THROW(SystemException);
 	}
 }
 
 void MainConfig::reload(){
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading main.conf...");
 	ConfigFile("main.conf").swap(g_config);
 }
 const ConfigFile &MainConfig::getConfigFile(){

@@ -39,7 +39,7 @@ namespace {
 }
 
 void WebSocketServletDepository::start(){
-	LOG_POSEIDON_INFO("Starting WebSocket servlet depository...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting WebSocket servlet depository...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
@@ -50,7 +50,7 @@ void WebSocketServletDepository::start(){
 	LOG_POSEIDON_DEBUG("Keep alive timeout = ", g_keepAliveTimeout);
 }
 void WebSocketServletDepository::stop(){
-	LOG_POSEIDON_INFO("Unloading all WebSocket servlets...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading all WebSocket servlets...");
 
 	ServletMap servlets;
 	{

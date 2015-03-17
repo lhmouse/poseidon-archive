@@ -133,7 +133,7 @@ void TimerDaemon::start(){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON_INFO("Starting timer daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting timer daemon...");
 
 	boost::thread(threadProc).swap(g_thread);
 }
@@ -141,7 +141,7 @@ void TimerDaemon::stop(){
 	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
-	LOG_POSEIDON_INFO("Stopping timer daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping timer daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();

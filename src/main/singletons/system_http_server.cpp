@@ -266,16 +266,12 @@ void SystemHttpServer::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created system HTTP sevlet on ", path);
 	g_systemServlet = HttpServletDepository::create(
 		category, SharedNts(path.c_str()), boost::bind(&servletProc, _1, _2, path.size()));
-
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing system HTTP server.");
 }
 void SystemHttpServer::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Shutting down system HTTP server...");
 
 	g_systemServlet.reset();
 	g_systemServer.reset();
-
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done shutting down system HTTP server.");
 }
 
 }

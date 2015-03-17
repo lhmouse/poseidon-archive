@@ -115,7 +115,7 @@ void EpollDaemon::start(){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON_INFO("Starting epoll daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting epoll daemon...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
@@ -131,7 +131,7 @@ void EpollDaemon::stop(){
 	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
-	LOG_POSEIDON_INFO("Stopping epoll daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping epoll daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();

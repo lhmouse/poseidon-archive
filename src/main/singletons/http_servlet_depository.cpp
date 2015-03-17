@@ -72,7 +72,7 @@ namespace {
 }
 
 void HttpServletDepository::start(){
-	LOG_POSEIDON_INFO("Starting HTTP servlet depository...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting HTTP servlet depository...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
@@ -83,7 +83,7 @@ void HttpServletDepository::start(){
 	LOG_POSEIDON_DEBUG("Keep-Alive timeout = ", g_keepAliveTimeout);
 }
 void HttpServletDepository::stop(){
-	LOG_POSEIDON_INFO("Unloading all HTTP servlets...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading all HTTP servlets...");
 
 	ServletMap servlets;
 	{

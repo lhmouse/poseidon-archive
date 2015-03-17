@@ -126,9 +126,10 @@ ModuleRaiiMap g_moduleRaiis;
 }
 
 void ModuleDepository::start(){
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting module depository...");
 }
 void ModuleDepository::stop(){
-	LOG_POSEIDON_INFO("Unloading all modules...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading all modules...");
 
 	std::vector<boost::weak_ptr<Module> > modules;
 	{

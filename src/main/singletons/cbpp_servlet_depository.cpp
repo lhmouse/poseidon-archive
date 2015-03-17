@@ -35,7 +35,7 @@ namespace {
 }
 
 void CbppServletDepository::start(){
-	LOG_POSEIDON_INFO("Starting CBPP servlet depository...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting CBPP servlet depository...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
@@ -46,7 +46,7 @@ void CbppServletDepository::start(){
 	LOG_POSEIDON_DEBUG("Keep alive timeout = ", g_keepAliveTimeout);
 }
 void CbppServletDepository::stop(){
-	LOG_POSEIDON_INFO("Unloading all CBPP servlets...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading all CBPP servlets...");
 
 	ServletMap servlets;
 	{

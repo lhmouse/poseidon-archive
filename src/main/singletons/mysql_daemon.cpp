@@ -622,7 +622,7 @@ void MySqlDaemon::start(){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON_INFO("Starting MySQL daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MySQL daemon...");
 
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
@@ -692,7 +692,7 @@ void MySqlDaemon::stop(){
 	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
-	LOG_POSEIDON_INFO("Stopping MySQL daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MySQL daemon...");
 
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		g_threads[i]->shutdown();
