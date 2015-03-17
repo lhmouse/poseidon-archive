@@ -12,6 +12,7 @@
 #include <string>
 #include <sstream>
 #include <cstdio>
+#include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>

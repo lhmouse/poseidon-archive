@@ -42,14 +42,14 @@ private:
 #undef FIELD_DATETIME
 
 #define FIELD_BOOLEAN(name_)				volatile bool name_;
-#define FIELD_TINYINT(name_)				volatile signed char name_;
-#define FIELD_TINYINT_UNSIGNED(name_)		volatile unsigned char name_;
-#define FIELD_SMALLINT(name_)				volatile short name_;
-#define FIELD_SMALLINT_UNSIGNED(name_)		volatile unsigned short name_;
-#define FIELD_INTEGER(name_)				volatile int name_;
-#define FIELD_INTEGER_UNSIGNED(name_)		volatile unsigned name_;
-#define FIELD_BIGINT(name_)					volatile long long name_;
-#define FIELD_BIGINT_UNSIGNED(name_)		volatile unsigned long long name_;
+#define FIELD_TINYINT(name_)				volatile ::boost::int8_t name_;
+#define FIELD_TINYINT_UNSIGNED(name_)		volatile ::boost::uint8_t name_;
+#define FIELD_SMALLINT(name_)				volatile ::boost::int16_t name_;
+#define FIELD_SMALLINT_UNSIGNED(name_)		volatile ::boost::uint16_t name_;
+#define FIELD_INTEGER(name_)				volatile ::boost::int32_t name_;
+#define FIELD_INTEGER_UNSIGNED(name_)		volatile ::boost::uint32_t name_;
+#define FIELD_BIGINT(name_)					volatile ::boost::int64_t name_;
+#define FIELD_BIGINT_UNSIGNED(name_)		volatile ::boost::uint64_t name_;
 #define FIELD_STRING(name_)					::std::string name_;
 #define FIELD_DATETIME(name_)				volatile ::boost::uint64_t name_;
 
@@ -169,10 +169,10 @@ public:
 	}
 
 #define FIELD_TINYINT(name_)	\
-	signed char get_ ## name_() const {	\
+	::boost::int8_t get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(signed char val_, bool invalidates_ = true){	\
+	void set_ ## name_(::boost::int8_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
@@ -180,10 +180,10 @@ public:
 	}
 
 #define FIELD_TINYINT_UNSIGNED(name_)	\
-	unsigned char get_ ## name_() const {	\
+	::boost::uint8_t get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned char val_, bool invalidates_ = true){	\
+	void set_ ## name_(::boost::uint8_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
@@ -191,10 +191,10 @@ public:
 	}
 
 #define FIELD_SMALLINT(name_)	\
-	short get_ ## name_() const {	\
+	::boost::int16_t get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(short val_, bool invalidates_ = true){	\
+	void set_ ## name_(::boost::int16_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
@@ -202,10 +202,10 @@ public:
 	}
 
 #define FIELD_SMALLINT_UNSIGNED(name_)	\
-	unsigned short get_ ## name_() const {	\
+	::boost::uint16_t get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned short val_, bool invalidates_ = true){	\
+	void set_ ## name_(::boost::uint16_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
@@ -213,10 +213,10 @@ public:
 	}
 
 #define FIELD_INTEGER(name_)	\
-	int get_ ## name_() const {	\
+	::boost::int32_t get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(int val_, bool invalidates_ = true){	\
+	void set_ ## name_(::boost::int32_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
@@ -224,10 +224,10 @@ public:
 	}
 
 #define FIELD_INTEGER_UNSIGNED(name_)	\
-	unsigned get_ ## name_() const {	\
+	::boost::uint32_t get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned val_, bool invalidates_ = true){	\
+	void set_ ## name_(::boost::uint32_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
@@ -235,10 +235,10 @@ public:
 	}
 
 #define FIELD_BIGINT(name_)	\
-	long long get_ ## name_() const {	\
+	::boost::int64_t get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(long long val_, bool invalidates_ = true){	\
+	void set_ ## name_(::boost::int64_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
@@ -246,10 +246,10 @@ public:
 	}
 
 #define FIELD_BIGINT_UNSIGNED(name_)	\
-	unsigned long long get_ ## name_() const {	\
+	::boost::uint64_t get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned long long val_, bool invalidates_ = true){	\
+	void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
@@ -275,10 +275,10 @@ public:
 	}
 
 #define FIELD_DATETIME(name_)	\
-	unsigned long long get_ ## name_() const {	\
+	::boost::uint64_t get_ ## name_() const {	\
 		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
 	}	\
-	void set_ ## name_(unsigned long long val_, bool invalidates_ = true){	\
+	void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
@@ -329,10 +329,10 @@ public:
 													<<static_cast<unsigned long>(get_ ## name_())),
 #define FIELD_BIGINT(name_)					(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
-													<<static_cast<long long>(get_ ## name_())),
+													<<static_cast< ::boost::int64_t>(get_ ## name_())),
 #define FIELD_BIGINT_UNSIGNED(name_)		(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
-													<<static_cast<unsigned long long>(get_ ## name_())),
+													<<static_cast< ::boost::uint64_t>(get_ ## name_())),
 #define FIELD_STRING(name_)					(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
 													<< '\''	\

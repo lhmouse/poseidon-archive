@@ -5,12 +5,13 @@
 #define POSEIDON_VINT50_HPP_
 
 #include <cstddef>
+#include <boost/cstdint.hpp>
 
 namespace Poseidon {
 
 // 最多输出七个字节，此函数返回后 write 指向最后一个写入的字节的后面。
 template<typename OutputIterT>
-void vuint50ToBinary(unsigned long long val, OutputIterT &write){
+void vuint50ToBinary(boost::uint64_t val, OutputIterT &write){
 	for(unsigned i = 0; i < 6; ++i){
 		const unsigned char by = val & 0x7F;
 		val >>= 7;
@@ -28,8 +29,8 @@ void vuint50ToBinary(unsigned long long val, OutputIterT &write){
 	}
 }
 template<typename OutputIterT>
-void vint50ToBinary(long long val, OutputIterT &write){
-	AUTO(encoded, static_cast<unsigned long long>(val));
+void vint50ToBinary(boost::int64_t val, OutputIterT &write){
+	AUTO(encoded, static_cast<boost::uint64_t>(val));
 	encoded <<= 1;
 	if(val < 0){
 		encoded = ~encoded;
@@ -40,7 +41,7 @@ void vint50ToBinary(long long val, OutputIterT &write){
 
 // 返回值指向编码数据的结尾。成功返回 true，出错返回 false。
 template<typename InputIterT>
-bool vuint50FromBinary(unsigned long long &val, InputIterT &read, std::size_t count){
+bool vuint50FromBinary(boost::uint64_t &val, InputIterT &read, std::size_t count){
 	val = 0;
 	for(unsigned i = 0; i < 6; ++i){
 		if(count == 0){
@@ -49,7 +50,7 @@ bool vuint50FromBinary(unsigned long long &val, InputIterT &read, std::size_t co
 		const unsigned char by = *read;
 		++read;
 		--count;
-		val |= (unsigned long long)(by & 0x7F) << (i * 7);
+		val |= (boost::uint64_t)(by & 0x7F) << (i * 7);
 		if(!(by & 0x80)){
 			return true;
 		}
@@ -59,12 +60,12 @@ bool vuint50FromBinary(unsigned long long &val, InputIterT &read, std::size_t co
 	}
 	const unsigned char by = *read;
 	++read;
-	val |= (unsigned long long)by << 42;
+	val |= (boost::uint64_t)by << 42;
 	return true;
 }
 template<typename InputIterT>
-bool vint50FromBinary(long long &val, InputIterT &read, std::size_t count){
-	unsigned long long encoded;
+bool vint50FromBinary(boost::int64_t &val, InputIterT &read, std::size_t count){
+	boost::uint64_t encoded;
 	const bool ret = vuint50FromBinary(encoded, read, count);
 	if(ret){
 		const bool negative = encoded & 1;
@@ -72,7 +73,7 @@ bool vint50FromBinary(long long &val, InputIterT &read, std::size_t count){
 		if(negative){
 			encoded = ~encoded;
 		}
-		val = static_cast<long long>(encoded);
+		val = static_cast<boost::int64_t>(encoded);
 	}
 	return ret;
 }
