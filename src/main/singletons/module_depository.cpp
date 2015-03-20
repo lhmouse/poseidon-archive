@@ -147,7 +147,7 @@ void ModuleDepository::stop(){
 			continue;
 		}
 		LOG_POSEIDON_INFO("Waiting for module to unload: ", module->realPath());
-		::usleep(100000);
+		::sleep(1);
 	}
 }
 
