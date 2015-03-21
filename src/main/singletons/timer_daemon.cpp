@@ -102,7 +102,7 @@ namespace {
 				}
 			}
 			if(!callback){
-				::sleep(1);
+				::usleep(100000);
 				continue;
 			}
 

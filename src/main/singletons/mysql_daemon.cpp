@@ -526,7 +526,7 @@ namespace {
 				}
 
 				boost::mutex::scoped_lock lock(m_mutex);
-				m_newOperation.timed_wait(lock, boost::posix_time::seconds(1));
+				m_newOperation.timed_wait(lock, boost::posix_time::milliseconds(100));
 			}
 
 			LOG_POSEIDON_INFO("MySQL thread ", m_index, " stopped.");
@@ -591,7 +591,7 @@ namespace {
 					m_newOperation.notify_one();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pendingObjects, " object(s) in my queue.");
-				::sleep(1);
+				::usleep(100000);
 			}
 		}
 	};
