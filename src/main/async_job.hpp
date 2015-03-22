@@ -4,7 +4,6 @@
 #ifndef POSEIDON_ASYNC_JOB_BASE_HPP_
 #define POSEIDON_ASYNC_JOB_BASE_HPP_
 
-#include "cxx_util.hpp"
 #include <boost/function.hpp>
 #include <boost/cstdint.hpp>
 
