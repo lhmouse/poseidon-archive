@@ -48,9 +48,9 @@ namespace Http {
 			}
 		}
 		void onKeepAliveTimeout(const boost::weak_ptr<Session> &observer){
-			const AUTO(session, observer.lock());
-			if(session){
-				static_cast<TcpSessionBase *>(session.get())->send(StreamBuffer(), true);
+			const AUTO(tcpSession, boost::static_pointer_cast<TcpSessionBase>(observer.lock()));
+			if(tcpSession){
+				tcpSession->send(StreamBuffer(), true);
 			}
 		}
 
