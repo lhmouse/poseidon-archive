@@ -57,21 +57,13 @@ namespace Http {
 		class RequestJob : public JobBase {
 		private:
 			const boost::weak_ptr<Session> m_session;
-
-			const Verb m_verb;
-			const std::string m_uri;
-			const unsigned m_version;
-
-			const OptionalMap m_getParams;
-			const OptionalMap m_headers;
-			const std::string m_contents;
+			const Request m_request;
 
 		public:
 			RequestJob(boost::weak_ptr<Session> session, Verb verb, std::string uri, unsigned version,
 				OptionalMap getParams, OptionalMap headers, std::string contents)
 				: m_session(STD_MOVE(session))
-				, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
-				, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_contents(STD_MOVE(contents))
+				, m_request(verb, STD_MOVE(uri), version, STD_MOVE(getParams), STD_MOVE(headers), STD_MOVE(contents))
 			{
 			}
 
@@ -81,7 +73,6 @@ namespace Http {
 			}
 			void perform() const OVERRIDE {
 				PROFILE_ME;
-				assert(!m_uri.empty());
 
 				const AUTO(session, m_session.lock());
 				if(!session){
@@ -90,32 +81,24 @@ namespace Http {
 
 				try {
 					const AUTO(category, session->getCategory());
-					const AUTO(servlet, HttpServletDepository::get(category, m_uri.c_str()));
+					const AUTO(servlet, HttpServletDepository::get(category, m_request.uri.c_str()));
 					if(!servlet){
-						LOG_POSEIDON_WARNING("No handler in category ", category, " matches URI ", m_uri);
+						LOG_POSEIDON_WARNING("No handler in category ", category, " matches URI ", m_request.uri);
 						DEBUG_THROW(Exception, ST_NOT_FOUND);
 					}
 
-					Request request;
-					request.verb = m_verb;
-					request.uri = m_uri;
-					request.version = m_version;
-					request.getParams = m_getParams;
-					request.headers = m_headers;
-					request.contents = m_contents;
-
-					LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", getStringFromVerb(m_verb));
-					(*servlet)(session, STD_MOVE(request));
+					LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_request.uri, ", verb = ", getStringFromVerb(m_request.verb));
+					(*servlet)(session, m_request);
 					session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet, request URI = ", m_uri,
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet, request URI = ", m_request.uri,
 						", statusCode = ", e.statusCode());
 					session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
 					throw;
 				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... request URI = ", m_uri);
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... request URI = ", m_request.uri);
 					session->sendDefault(ST_BAD_REQUEST, true); // 关闭连接。
 					throw;
 				}

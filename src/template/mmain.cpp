@@ -31,7 +31,7 @@
 #include "../main/async_job.hpp"
 using namespace Poseidon;
 
-#define MYSQL_OBJECT_NAME	MySqlObjF
+#define MYSQL_OBJECT_NAME	MySqlObj
 #define MYSQL_OBJECT_FIELDS	\
 	FIELD_SMALLINT(si)	\
 	FIELD_STRING(str)	\
@@ -40,18 +40,23 @@ using namespace Poseidon;
 #include "../main/mysql/object_generator.hpp"
 
 namespace {
+	void loadedProc(bool found){
+		LOG_POSEIDON_FATAL("-- loaded! found = ", found);
+	}
+
 	void write(){
-		AUTO(obj, boost::make_shared<MySqlObjF>());
+		AUTO(obj, boost::make_shared<MySqlObj>());
 		obj->enableAutoSaving();
 		obj->set_si(999);
 		obj->set_str("meow");
 		for(int i = 0; i < 10; ++i){
 			obj->set_bi(i);
 		}
+		obj->asyncLoad("SELECT * FROM `MySqlObj`", loadedProc);
 	}
 }
 MODULE_RAII {
-	enqueueAsyncJob(write);
+	enqueueAsyncJob(write, 3000);
 	return VAL_INIT;
 }
 
@@ -469,7 +474,7 @@ MODULE_RAII {
 	LOG_POSEIDON_FATAL("----------- ", explode<std::string>(':', "0:1:2:3:").size());
 	return VAL_INIT;
 }
-*/
+
 namespace {
 	// const AUTO(sp, boost::make_shared<int>());
 	boost::shared_ptr<int> sp;
@@ -515,4 +520,4 @@ MODULE_RAII {
 	LOG_POSEIDON_FATAL("Job enqueued!");
 	return VAL_INIT;
 }
-
+*/

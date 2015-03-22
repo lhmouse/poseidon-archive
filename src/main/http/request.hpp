@@ -19,6 +19,13 @@ namespace Http {
 		OptionalMap getParams;
 		OptionalMap headers;
 		std::string contents;
+
+		Request(Verb verb_, std::string uri_, unsigned version_,
+			OptionalMap getParams_, OptionalMap headers_, std::string contents_)
+			: verb(verb_), uri(STD_MOVE(uri_)), version(version_)
+			, getParams(STD_MOVE(getParams_)), headers(STD_MOVE(headers_)), contents(STD_MOVE(contents_))
+		{
+		}
 	};
 
 	inline void swap(Request &lhs, Request &rhs) NOEXCEPT {
