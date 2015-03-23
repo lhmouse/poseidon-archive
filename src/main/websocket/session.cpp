@@ -270,8 +270,8 @@ namespace WebSocket {
 		if(!sendFrame(STD_MOVE(contents), binary ? OP_DATA_BIN : OP_DATA_TEXT, false, masked)){
 			return false;
 		}
-		if(fin && !shutdown(ST_NORMAL_CLOSURE)){
-			return false;
+		if(fin){
+			return shutdown(ST_NORMAL_CLOSURE);
 		}
 		return true;
 	}
