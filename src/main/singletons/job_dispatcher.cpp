@@ -36,6 +36,14 @@ namespace {
 		}
 	};
 
+	void swap(JobElement &lhs, JobElement &rhs) NOEXCEPT {
+		using std::swap;
+		swap(lhs.dueTime, rhs.dueTime);
+		swap(lhs.category, rhs.category);
+		swap(lhs.job, rhs.job);
+		swap(lhs.retryCounts, rhs.retryCounts);
+	}
+
 	MULTI_INDEX_MAP(JobMap, JobElement,
 		MULTI_MEMBER_INDEX(dueTime)
 		MULTI_MEMBER_INDEX(category)
