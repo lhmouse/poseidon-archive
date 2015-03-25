@@ -95,11 +95,19 @@ namespace Http {
 				} catch(Exception &e){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet, request URI = ", m_request.uri,
 						", statusCode = ", e.statusCode());
-					session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
+					try {
+						session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
+					} catch(...){
+						session->forceShutdown();
+					}
 					throw;
 				} catch(...){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... request URI = ", m_request.uri);
-					session->sendDefault(ST_BAD_REQUEST, true); // 关闭连接。
+					try {
+						session->sendDefault(ST_BAD_REQUEST, true); // 关闭连接。
+					} catch(...){
+						session->forceShutdown();
+					}
 					throw;
 				}
 			}
@@ -385,11 +393,19 @@ namespace Http {
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown while parsing data, URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.statusCode()));
-			sendDefault(e.statusCode(), e.headers(), true);
+			try {
+				sendDefault(e.statusCode(), e.headers(), true);
+			} catch(...){
+				forceShutdown();
+			}
 			throw;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... shutdown the session first.");
-			sendDefault(ST_BAD_REQUEST, true);
+			try {
+				sendDefault(ST_BAD_REQUEST, true);
+			} catch(...){
+				forceShutdown();
+			}
 			throw;
 		}
 	}

@@ -61,11 +61,19 @@ namespace WebSocket {
 				} catch(Exception &e){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown in servlet, uri = ", m_uri,
 						", statusCode = ", e.statusCode(), ", what = ", e.what());
-					session->shutdown(e.statusCode(), StreamBuffer(e.what()));
+					try {
+						session->shutdown(e.statusCode(), StreamBuffer(e.what()));
+					} catch(...){
+						session->forceShutdown();
+					}
 					throw;
 				} catch(...){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... uri = ", m_uri);
-					session->shutdown(ST_INTERNAL_ERROR);
+					try {
+						session->shutdown(ST_INTERNAL_ERROR);
+					} catch(...){
+						session->forceShutdown();
+					}
 					throw;
 				}
 			}
@@ -189,11 +197,19 @@ namespace WebSocket {
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Websocket::Exception thrown while parsing data, uri = ", getUri(),
 				", statusCode = ", e.statusCode(), ", what = ", e.what());
-			shutdown(e.statusCode(), StreamBuffer(e.what()));
+			try {
+				shutdown(e.statusCode(), StreamBuffer(e.what()));
+			} catch(...){
+				forceShutdown();
+			}
 			throw;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... uri = ", getUri());
-			shutdown(ST_INTERNAL_ERROR);
+			try {
+				shutdown(ST_INTERNAL_ERROR);
+			} catch(...){
+				forceShutdown();
+			}
 			throw;
 		}
 	}

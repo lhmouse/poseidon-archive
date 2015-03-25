@@ -58,7 +58,11 @@ namespace Cbpp {
 					throw;
 				} catch(...){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... message id = ", m_messageId);
-					client->shutdown(); // 关闭连接。
+					try {
+						client->shutdown();
+					} catch(...){
+						client->forceShutdown();
+					}
 					throw;
 				}
 			}

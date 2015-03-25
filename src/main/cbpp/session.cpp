@@ -75,11 +75,19 @@ namespace Cbpp {
 				} catch(Exception &e){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown in servlet, message id = ",
 						m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
-					session->sendError(m_messageId, e.statusCode(), e.what(), false); // 不关闭连接。
+					try {
+						session->sendError(m_messageId, e.statusCode(), e.what(), false); // 不关闭连接。
+					} catch(...){
+						session->forceShutdown();
+					}
 					throw;
 				} catch(...){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... message id = ", m_messageId);
-					session->sendError(m_messageId, ST_INTERNAL_ERROR, true); // 关闭连接。
+					try {
+						session->sendError(m_messageId, ST_INTERNAL_ERROR, true); // 关闭连接。
+					} catch(...){
+						session->forceShutdown();
+					}
 					throw;
 				}
 			}
@@ -131,11 +139,19 @@ namespace Cbpp {
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown while parsing data, message id = ", m_messageId,
 				", statusCode = ", static_cast<int>(e.statusCode()), ", what = ", e.what());
-			sendError(m_messageId, e.statusCode(), e.what(), true);
+			try {
+				sendError(m_messageId, e.statusCode(), e.what(), true);
+			} catch(...){
+				forceShutdown();
+			}
 			throw;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... message id = ", m_messageId);
-			sendError(m_messageId, ST_INTERNAL_ERROR, true);
+			try {
+				sendError(m_messageId, ST_INTERNAL_ERROR, true);
+			} catch(...){
+				forceShutdown();
+			}
 			throw;
 		}
 	}
