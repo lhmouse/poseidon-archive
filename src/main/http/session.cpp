@@ -13,7 +13,7 @@
 #include "../singletons/websocket_servlet_depository.hpp"
 #include "../singletons/epoll_daemon.hpp"
 #include "../stream_buffer.hpp"
-#include "../utilities.hpp"
+#include "../string.hpp"
 #include "../exception.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"

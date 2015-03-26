@@ -46,7 +46,11 @@ pkginclude_HEADERS = \
 	src/main/cxx_util.hpp	\
 	src/main/endian.hpp	\
 	src/main/csv_parser.hpp	\
-	src/main/utilities.hpp	\
+	src/main/string.hpp	\
+	src/main/time.hpp	\
+	src/main/errno.hpp	\
+	src/main/random.hpp	\
+	src/main/flags.hpp	\
 	src/main/atomic.hpp	\
 	src/main/epoll.hpp	\
 	src/main/session_base.hpp	\
@@ -129,7 +133,10 @@ bin_poseidon_LDADD = \
 	lib/libposeidon-main.la
 
 lib_libposeidon_main_la_SOURCES = \
-	src/main/utilities.cpp	\
+	src/main/string.cpp	\
+	src/main/time.cpp	\
+	src/main/errno.cpp	\
+	src/main/random.cpp	\
 	src/main/log.cpp	\
 	src/main/exception.cpp	\
 	src/main/protocol_exception.cpp	\

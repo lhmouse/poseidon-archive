@@ -3,7 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "utilities.hpp"
-#include "../utilities.hpp"
+#include "../string.hpp"
 
 namespace Poseidon {
 

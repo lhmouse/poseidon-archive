@@ -11,7 +11,8 @@
 #include "multi_index_map.hpp"
 #include "system_exception.hpp"
 #include "log.hpp"
-#include "utilities.hpp"
+#include "time.hpp"
+#include "errno.hpp"
 
 namespace Poseidon {
 

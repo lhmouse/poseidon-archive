@@ -6,7 +6,8 @@
 #include <boost/thread/mutex.hpp>
 #include <unistd.h>
 #include "atomic.hpp"
-#include "utilities.hpp"
+#include "time.hpp"
+#include "flags.hpp"
 
 namespace Poseidon {
 

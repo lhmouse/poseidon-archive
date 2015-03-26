@@ -6,7 +6,7 @@
 #include <iostream>
 #include <cassert>
 #include <boost/thread/mutex.hpp>
-#include "utilities.hpp"
+#include "string.hpp"
 
 namespace Poseidon {
 

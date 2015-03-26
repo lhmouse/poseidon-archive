@@ -20,7 +20,6 @@
 #include "../atomic.hpp"
 #include "../log.hpp"
 #include "../virtual_shared_from_this.hpp"
-#include "../utilities.hpp"
 
 namespace Poseidon {
 

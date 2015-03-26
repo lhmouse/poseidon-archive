@@ -11,7 +11,7 @@
 #include <mysql/mysql.h>
 #include "../raii.hpp"
 #include "../log.hpp"
-#include "../utilities.hpp"
+#include "../time.hpp"
 #include "../system_exception.hpp"
 
 namespace Poseidon {

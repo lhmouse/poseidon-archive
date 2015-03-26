@@ -2,9 +2,9 @@
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "utilities.hpp"
 #include <signal.h>
 #include "log.hpp"
+#include "time.hpp"
 #include "exception.hpp"
 #include "singletons/main_config.hpp"
 #include "singletons/timer_daemon.hpp"

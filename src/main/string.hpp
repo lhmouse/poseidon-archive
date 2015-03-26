@@ -1,20 +1,15 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_UTILITIES_HPP_
-#define POSEIDON_UTILITIES_HPP_
+#ifndef POSEIDON_STRING_HPP_
+#define POSEIDON_STRING_HPP_
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include <vector>
 #include <string>
-#include <iosfwd>
 #include <cstddef>
 #include <boost/lexical_cast.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/cstdint.hpp>
-#include <errno.h>
-#include "shared_nts.hpp"
 
 namespace Poseidon {
 
@@ -97,45 +92,6 @@ inline std::string implode(char separator, const std::vector<std::string> &vec){
 	return ret;
 }
 
-// 单位毫秒。
-boost::uint64_t getUtcTime();
-boost::uint64_t getLocalTime();
-boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local);
-boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc);
-
-// 单位毫秒。
-boost::uint64_t getFastMonoClock() NOEXCEPT;
-// 单位秒。
-double getHiResMonoClock() NOEXCEPT;
-
-struct DateTime {
-	unsigned yr;
-	unsigned mon;
-	unsigned day;
-
-	unsigned hr;
-	unsigned min;
-	unsigned sec;
-
-	unsigned ms;
-};
-
-DateTime breakDownTime(boost::uint64_t ms);
-boost::uint64_t assembleTime(const DateTime &dt);
-
-std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs);
-boost::uint64_t scanTime(const char *str);
-
-// 在区间 [lower, upper) 范围内生成伪随机数。
-// 前置条件：lower < upper
-boost::uint32_t rand32();
-boost::uint64_t rand64();
-boost::uint32_t rand32(boost::uint32_t lower, boost::uint32_t upper);
-double randDouble(double lower = 0.0, double upper = 1.0);
-
-SharedNts getErrorDesc(int errCode = errno) NOEXCEPT;
-std::string getErrorDescAsString(int errCode = errno);
-
 struct HexDumper {
 	const void *const read;
 	const std::size_t size;
@@ -163,30 +119,6 @@ inline std::string toLowerCase(std::string src){
 		}
 	}
 	return STD_MOVE(src);
-}
-
-template<typename T>
-T &addFlags(T &val, typename Identity<T>::type flags){
-	val |= flags;
-	return val;
-}
-template<typename T>
-T &removeFlags(T &val, typename Identity<T>::type flags){
-	val &= ~flags;
-	return val;
-}
-
-template<typename T>
-bool hasAllFlagsOf(const T &val, typename Identity<T>::type flags){
-	return (val & flags) == flags;
-}
-template<typename T>
-bool hasAnyFlagsOf(const T &val, typename Identity<T>::type flags){
-	return (val & flags) != 0;
-}
-template<typename T>
-bool hasNoneFlagsOf(const T &val, typename Identity<T>::type flags){
-	return (val & flags) == 0;
 }
 
 }

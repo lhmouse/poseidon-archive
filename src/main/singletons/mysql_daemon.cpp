@@ -23,7 +23,8 @@
 #include "../multi_index_map.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
-#include "../utilities.hpp"
+#include "../time.hpp"
+#include "../errno.hpp"
 
 namespace Poseidon {
 

@@ -3,10 +3,11 @@
 
 #include "precompiled.hpp"
 #include "uuid.hpp"
-#include "utilities.hpp"
 #include "atomic.hpp"
 #include "endian.hpp"
 #include "exception.hpp"
+#include "time.hpp"
+#include "random.hpp"
 
 namespace Poseidon {
 
