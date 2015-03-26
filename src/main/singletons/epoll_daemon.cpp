@@ -75,10 +75,10 @@ namespace {
 						++busy;
 					}
 				}
-				if(g_epoll->wait(epollTimeout) > 0){
+				if(g_epoll->pumpWriteable() > 0){
 					++busy;
 				}
-				if(g_epoll->pumpWriteable() > 0){
+				if(g_epoll->wait(epollTimeout) > 0){
 					++busy;
 				}
 				// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
