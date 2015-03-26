@@ -407,6 +407,7 @@ namespace {
 				const boost::mutex::scoped_lock lock(m_mutex);
 				operationIt = m_operationMap.begin<0>();
 				if(operationIt == m_operationMap.end<0>()){
+					atomicStore(m_urgent, false, ATOMIC_RELEASE);
 					return false;
 				}
 				if(atomicLoad(m_running, ATOMIC_ACQUIRE) && (now < operationIt->dueTime) && !atomicLoad(m_urgent, ATOMIC_ACQUIRE)){
