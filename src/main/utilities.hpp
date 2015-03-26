@@ -176,6 +176,19 @@ T &removeFlags(T &val, typename Identity<T>::type flags){
 	return val;
 }
 
+template<typename T>
+bool hasAllFlagsOf(const T &val, typename Identity<T>::type flags){
+	return (val & flags) == flags;
+}
+template<typename T>
+bool hasAnyFlagsOf(const T &val, typename Identity<T>::type flags){
+	return (val & flags) != 0;
+}
+template<typename T>
+bool hasNoneFlagsOf(const T &val, typename Identity<T>::type flags){
+	return (val & flags) == 0;
+}
+
 }
 
 #endif
