@@ -165,6 +165,17 @@ inline std::string toLowerCase(std::string src){
 	return STD_MOVE(src);
 }
 
+template<typename T>
+T &addFlags(T &val, typename Identity<T>::type flags){
+	val |= flags;
+	return val;
+}
+template<typename T>
+T &removeFlags(T &val, typename Identity<T>::type flags){
+	val &= ~flags;
+	return val;
+}
+
 }
 
 #endif

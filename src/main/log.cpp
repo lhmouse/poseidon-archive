@@ -46,15 +46,13 @@ namespace {
 unsigned long long Logger::getMask() NOEXCEPT {
 	return atomicLoad(g_mask, ATOMIC_ACQUIRE);
 }
-unsigned long long Logger::setMask(
-	unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT
-{
-	AUTO(oldMask, atomicLoad(g_mask, ATOMIC_ACQUIRE));
-	while(!atomicCompareExchange(g_mask, oldMask,
-		(oldMask & ~toDisable) | toEnable, ATOMIC_ACQ_REL, ATOMIC_ACQUIRE))
-	{
-		// noop
-	}
+unsigned long long Logger::setMask(unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT {
+	unsigned long long oldMask = atomicLoad(g_mask, ATOMIC_ACQUIRE), newMask;
+	do {
+		newMask = oldMask;
+		removeFlags(newMask, toDisable);
+		addFlags(newMask, toEnable);
+	} while(!atomicCompareExchange(g_mask, oldMask, newMask, ATOMIC_ACQ_REL, ATOMIC_ACQUIRE));
 	return oldMask;
 }
 
