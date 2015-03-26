@@ -606,14 +606,26 @@ namespace {
 			DEBUG_THROW(Exception, SharedNts::observe("No MySQL thread is running"));
 		}
 
-		std::size_t threadIndex = 0;
-		const char *p = table;
-		while(*p){
-			threadIndex += (unsigned char)*p;
-			++p;
+		// http://www.isthe.com/chongo/tech/comp/fnv/
+		std::size_t hash;
+		if(sizeof(std::size_t) < 8){
+			hash = 2166136261u;
+			const char *p = table;
+			while(*p){
+				hash ^= static_cast<unsigned char>(*p);
+				hash *= 16777619u;
+				++p;
+			}
+		} else {
+			hash = 14695981039346656037u;
+			const char *p = table;
+			while(*p){
+				hash ^= static_cast<unsigned char>(*p);
+				hash *= 1099511628211u;
+				++p;
+			}
 		}
-		threadIndex %= g_threads.size();
-
+		const AUTO(threadIndex, hash % g_threads.size());
 		LOG_POSEIDON_DEBUG("Assigning MySQL table `", table, "` to thread ", threadIndex);
 		g_threads.at(threadIndex)->addOperation(STD_MOVE(operation), urgent);
 	}
