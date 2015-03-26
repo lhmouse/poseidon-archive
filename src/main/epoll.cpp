@@ -140,7 +140,7 @@ void Epoll::clear(){
 	}
 }
 
-std::size_t Epoll::wait(unsigned timeout){
+std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 	::epoll_event events[MAX_PUMP_COUNT];
 	const int count = ::epoll_wait(m_epoll.get(), events, (int)COUNT_OF(events), (int)timeout);
 	if(count < 0){
@@ -168,7 +168,11 @@ std::size_t Epoll::wait(unsigned timeout){
 		}
 
 		if(event.events & EPOLLHUP){
-			LOG_POSEIDON_INFO("Socket hung up, remote is ", session->getRemoteInfo());
+			try {
+				LOG_POSEIDON_INFO("Socket hung up, remote is ", session->getRemoteInfo());
+			} catch(...){
+				LOG_POSEIDON_INFO("Socket hung up, remote is not connected.");
+			}
 			session->onClose();
 			removeSession(session);
 			continue;

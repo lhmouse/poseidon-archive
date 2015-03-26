@@ -43,7 +43,7 @@ public:
 	void clear();
 
 	// 这三个函数必须位于同一个线程内调用。
-	std::size_t wait(unsigned timeout);
+	std::size_t wait(unsigned timeout) NOEXCEPT;
 	std::size_t pumpReadable();
 	std::size_t pumpWriteable();
 };
