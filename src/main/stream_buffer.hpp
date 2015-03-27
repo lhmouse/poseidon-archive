@@ -147,7 +147,6 @@ public:
 	void dumpHex(std::ostream &os) const;
 };
 
-
 inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
