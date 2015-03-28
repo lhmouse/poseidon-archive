@@ -97,8 +97,11 @@ int main(int argc, char **argv){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "-------------------------- Starting up -------------------------");
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up signal handlers...");
-	::signal(SIGINT, sigIntProc);
-	::signal(SIGTERM, sigTermProc);
+	::signal(SIGHUP, &sigTermProc);
+	::signal(SIGQUIT, &sigTermProc);
+	::signal(SIGABRT, &sigTermProc);
+	::signal(SIGTERM, &sigTermProc);
+	::signal(SIGINT, &sigIntProc);
 	::signal(SIGPIPE, SIG_IGN);
 
 	try {
