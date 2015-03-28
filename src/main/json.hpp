@@ -47,7 +47,7 @@ public:
 
 private:
 	boost::variant<
-		bool, long double, std::string, JsonObject, JsonArray, JsonNull
+		bool, double, std::string, JsonObject, JsonArray, JsonNull
 		> m_data;
 
 public:
@@ -82,7 +82,7 @@ public:
 	}
 	template<typename T>
 	void set(T rhs, typename boost::enable_if_c<boost::is_arithmetic<T>::value>::type * = NULLPTR){
-		m_data = static_cast<long double>(rhs);
+		m_data = static_cast<double>(rhs);
 	}
 	void set(const char *rhs){
 		m_data = std::string(rhs);

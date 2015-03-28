@@ -63,7 +63,7 @@ void JsonElement::dump(std::ostream &os) const {
 		break;
 
 	case T_NUMBER:
-		os <<std::setprecision(20) <<get<long double>();
+		os <<std::setprecision(20) <<get<double>();
 		break;
 
 	case T_STRING:
