@@ -37,7 +37,7 @@ namespace {
 	bool			g_useSsl			= false;
 	std::string		g_charset			= "utf8";
 
-	std::string		g_dumpDir			= "/usr/var/poseidon/sqldump";
+	std::string		g_dumpDir			= "";
 	std::size_t		g_maxThreads		= 3;
 	boost::uint64_t	g_saveDelay			= 5000;
 	boost::uint64_t	g_reconnDelay		= 10000;
@@ -448,27 +448,31 @@ namespace {
 					if(operationIt->retryCount >= g_maxRetryCount){
 						LOG_POSEIDON_ERROR("Max retry count exceeded.");
 
-						char temp[32];
-						unsigned len = (unsigned)std::sprintf(temp, "%5u", errorCode);
-						std::string dump;
-						dump.reserve(1024);
-						dump.assign("-- Error code = ");
-						dump.append(temp, len);
-						dump.append(", Description = ");
-						dump.append(errorMsg);
-						dump.append("\n");
-						dump.append(query);
-						dump.append(";\n\n");
-						{
-							const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
-							std::size_t total = 0;
-							do {
-								::ssize_t written = ::write(g_dumpFile.get(), dump.data() + total, dump.size() - total);
-								if(written <= 0){
-									break;
-								}
-								total += static_cast<std::size_t>(written);
-							} while(total < dump.size());
+						if(g_dumpFile){
+							LOG_POSEIDON_INFO("Writing MySQL dump...");
+
+							char temp[32];
+							unsigned len = (unsigned)std::sprintf(temp, "%5u", errorCode);
+							std::string dump;
+							dump.reserve(1024);
+							dump.assign("-- Error code = ");
+							dump.append(temp, len);
+							dump.append(", Description = ");
+							dump.append(errorMsg);
+							dump.append("\n");
+							dump.append(query);
+							dump.append(";\n\n");
+							{
+								const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
+								std::size_t total = 0;
+								do {
+									::ssize_t written = ::write(g_dumpFile.get(), dump.data() + total, dump.size() - total);
+									if(written <= 0){
+										break;
+									}
+									total += static_cast<std::size_t>(written);
+								} while(total < dump.size());
+							}
 						}
 
 						DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
@@ -679,21 +683,25 @@ void MySqlDaemon::start(){
 	conf.get(g_retryInitDelay, "mysql_retry_init_delay");
 	LOG_POSEIDON_DEBUG("MySQL retry init delay = ", g_retryInitDelay);
 
-	char temp[256];
-	unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
+	if(g_dumpDir.empty()){
+		g_dumpFile.reset();
+	} else {
+		char temp[256];
+		unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
 
-	std::string dumpPath;
-	dumpPath.assign(g_dumpDir);
-	dumpPath.push_back('/');
-	dumpPath.append(temp, len);
-	dumpPath.append(".log");
+		std::string dumpPath;
+		dumpPath.assign(g_dumpDir);
+		dumpPath.push_back('/');
+		dumpPath.append(temp, len);
+		dumpPath.append(".log");
 
-	LOG_POSEIDON_INFO("Creating SQL dump file: ", dumpPath);
-	if(!g_dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT | O_EXCL, 0644))){
-		const int errCode = errno;
-		LOG_POSEIDON_FATAL("Error creating SQL dump file: errno = ", errCode,
-			", description = ", getErrorDesc(errCode));
-		std::abort();
+		LOG_POSEIDON_INFO("Creating SQL dump file: ", dumpPath);
+		if(!g_dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT | O_EXCL, 0644))){
+			const int errCode = errno;
+			LOG_POSEIDON_FATAL("Error creating SQL dump file: errno = ", errCode,
+				", description = ", getErrorDesc(errCode));
+			std::abort();
+		}
 	}
 
 	g_threads.resize(std::max<std::size_t>(g_maxThreads, 1));
