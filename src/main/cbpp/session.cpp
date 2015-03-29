@@ -111,6 +111,7 @@ namespace Cbpp {
 
 		try {
 			m_payload.put(data, size);
+
 			for(;;){
 				if(m_payloadLen == (boost::uint64_t)-1){
 					boost::uint16_t messageId;

@@ -137,8 +137,9 @@ namespace WebSocket {
 	void Session::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
-		m_payload.put(data, size);
 		try {
+			m_payload.put(data, size);
+
 			for(;;){
 				switch(m_state){
 					int ch;

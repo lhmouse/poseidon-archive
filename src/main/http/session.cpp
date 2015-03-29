@@ -241,13 +241,13 @@ namespace Http {
 		PROFILE_ME;
 
 		if((m_state == S_FIRST_HEADER) && m_upgradedSession){
-			m_upgradedSession->onReadAvail(data, size);
-			return;
+			return m_upgradedSession->onReadAvail(data, size);
 		}
 
-		AUTO(read, (const char *)data);
-		const AUTO(end, read + size);
 		try {
+			AUTO(read, (const char *)data);
+			const AUTO(end, read + size);
+
 			const std::size_t maxRequestLength = HttpServletDepository::getMaxRequestLength();
 			if(m_totalLength + size >= maxRequestLength){
 				LOG_POSEIDON_WARNING("Request size is ", m_totalLength + size, ", max = ", maxRequestLength);
