@@ -153,7 +153,7 @@ void JobDispatcher::doModal(){
 		}
 
 		boost::mutex::scoped_lock lock(g_mutex);
-		g_newJob.timed_wait(lock, boost::posix_time::milliseconds(15));
+		g_newJob.timed_wait(lock, boost::posix_time::milliseconds(50));
 	}
 }
 void JobDispatcher::quitModal(){
