@@ -22,29 +22,30 @@ namespace {
 	};
 
 	struct SessionMapElement {
-		boost::shared_ptr<TcpSessionBase> session;
+		TcpSessionBase *addr;
 		// 时间戳，零表示无数据可读/写。
 		boost::uint64_t lastRead;
 		boost::uint64_t lastWritten;
 
+		boost::shared_ptr<TcpSessionBase> session;
 		boost::shared_ptr<const boost::weak_ptr<Epoll> > epoll;
 
 		SessionMapElement(boost::shared_ptr<TcpSessionBase> session_, boost::uint64_t lastRead_, boost::uint64_t lastWritten_,
 			boost::weak_ptr<Epoll> epoll_)
-			: session(STD_MOVE(session_)), lastRead(lastRead_), lastWritten(lastWritten_)
-			, epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
+			: addr(session_.get()), lastRead(lastRead_), lastWritten(lastWritten_)
+			, session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
 		{
 		}
 	};
 
 	MULTI_INDEX_MAP(SessionMap, SessionMapElement,
-		UNIQUE_MEMBER_INDEX(session)
+		UNIQUE_MEMBER_INDEX(addr)
 		MULTI_MEMBER_INDEX(lastRead)
 		MULTI_MEMBER_INDEX(lastWritten)
 	)
 
 	enum {
-		IDX_SESSION,
+		IDX_ADDR,
 		IDX_READ,
 		IDX_WRITE,
 	};
@@ -65,19 +66,17 @@ Epoll::~Epoll(){
 void Epoll::notifyWriteable(TcpSessionBase *session){
 	const AUTO(now, getFastMonoClock());
 	const boost::mutex::scoped_lock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_SESSION>(
-		boost::shared_ptr<TcpSessionBase>(boost::shared_ptr<void>(), session)));
-	if(it == m_sessions->end<IDX_SESSION>()){
+	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
+	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll?");
 		return;
 	}
-	m_sessions->setKey<IDX_SESSION, IDX_WRITE>(it, now);
+	m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
 }
 void Epoll::notifyUnlinked(TcpSessionBase *session){
 	const boost::mutex::scoped_lock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_SESSION>(
-		boost::shared_ptr<TcpSessionBase>(boost::shared_ptr<void>(), session)));
-	if(it == m_sessions->end<IDX_SESSION>()){
+	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
+	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
@@ -85,14 +84,13 @@ void Epoll::notifyUnlinked(TcpSessionBase *session){
 		const int errCode = errno;
 		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
 	}
-	m_sessions->erase<IDX_SESSION>(it);
+	m_sessions->erase<IDX_ADDR>(it);
 }
 
 boost::shared_ptr<TcpSessionBase> Epoll::getSession(void *addr) const {
 	const boost::mutex::scoped_lock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_SESSION>(
-		boost::shared_ptr<TcpSessionBase>(boost::shared_ptr<void>(), static_cast<TcpSessionBase *>(addr))));
-	if(it == m_sessions->end<IDX_SESSION>()){
+	const AUTO(it, m_sessions->find<IDX_ADDR>(static_cast<TcpSessionBase *>(addr)));
+	if(it == m_sessions->end<IDX_ADDR>()){
 		return VAL_INIT;
 	}
 	return it->session;
@@ -116,8 +114,8 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 }
 void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_SESSION>(session));
-	if(it == m_sessions->end<IDX_SESSION>()){
+	const AUTO(it, m_sessions->find<IDX_ADDR>(session.get()));
+	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
@@ -125,7 +123,7 @@ void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 		const int errCode = errno;
 		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
 	}
-	m_sessions->erase<IDX_SESSION>(it);
+	m_sessions->erase<IDX_ADDR>(it);
 }
 void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) const {
 	const boost::mutex::scoped_lock lock(m_mutex);
@@ -162,12 +160,11 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		const ::epoll_event &event = events[i];
 
 		boost::shared_ptr<TcpSessionBase> session;
-		SessionMap::delegated_container::nth_index<IDX_SESSION>::type::iterator it;
+		SessionMap::delegated_container::nth_index<IDX_ADDR>::type::iterator it;
 		{
 			const boost::mutex::scoped_lock lock(m_mutex);
-			it = m_sessions->find<IDX_SESSION>(
-				boost::shared_ptr<TcpSessionBase>(boost::shared_ptr<void>(), static_cast<TcpSessionBase *>(event.data.ptr)));
-			if(it == m_sessions->end<IDX_SESSION>()){
+			it = m_sessions->find<IDX_ADDR>(static_cast<TcpSessionBase *>(event.data.ptr));
+			if(it == m_sessions->end<IDX_ADDR>()){
 				LOG_POSEIDON_WARNING("Session is not in epoll?");
 				continue;
 			}
@@ -203,13 +200,13 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 //				if(!lock.owns_lock()){
 					lock.lock();
 //				}
-				m_sessions->setKey<IDX_SESSION, IDX_READ>(it, now);
+				m_sessions->setKey<IDX_ADDR, IDX_READ>(it, now);
 			}
 			if(event.events & EPOLLOUT){
 				if(!lock.owns_lock()){
 					lock.lock();
 				}
-				m_sessions->setKey<IDX_SESSION, IDX_WRITE>(it, now);
+				m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
 			}
 		}
 	}
