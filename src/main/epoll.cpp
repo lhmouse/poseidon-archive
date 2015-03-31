@@ -22,31 +22,29 @@ namespace {
 	};
 
 	struct SessionMapElement {
-		int fd;
+		boost::shared_ptr<TcpSessionBase> session;
 		// 时间戳，零表示无数据可读/写。
 		boost::uint64_t lastRead;
 		boost::uint64_t lastWritten;
 
-		boost::shared_ptr<TcpSessionBase> session;
 		boost::shared_ptr<const boost::weak_ptr<Epoll> > epoll;
 
-		SessionMapElement(boost::shared_ptr<TcpSessionBase> session_,
-			boost::uint64_t lastRead_, boost::uint64_t lastWritten_,
+		SessionMapElement(boost::shared_ptr<TcpSessionBase> session_, boost::uint64_t lastRead_, boost::uint64_t lastWritten_,
 			boost::weak_ptr<Epoll> epoll_)
-			: fd(session_->getFd()), lastRead(lastRead_), lastWritten(lastWritten_)
-			, session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
+			: session(STD_MOVE(session_)), lastRead(lastRead_), lastWritten(lastWritten_)
+			, epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
 		{
 		}
 	};
 
 	MULTI_INDEX_MAP(SessionMap, SessionMapElement,
-		UNIQUE_MEMBER_INDEX(fd)
+		UNIQUE_MEMBER_INDEX(session)
 		MULTI_MEMBER_INDEX(lastRead)
 		MULTI_MEMBER_INDEX(lastWritten)
 	)
 
 	enum {
-		IDX_FD,
+		IDX_SESSION,
 		IDX_READ,
 		IDX_WRITE,
 	};
@@ -67,17 +65,19 @@ Epoll::~Epoll(){
 void Epoll::notifyWriteable(TcpSessionBase *session){
 	const AUTO(now, getFastMonoClock());
 	const boost::mutex::scoped_lock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_FD>(session->getFd()));
-	if(it == m_sessions->end<IDX_FD>()){
+	const AUTO(it, m_sessions->find<IDX_SESSION>(
+		boost::shared_ptr<TcpSessionBase>(boost::shared_ptr<void>(), session)));
+	if(it == m_sessions->end<IDX_SESSION>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll?");
 		return;
 	}
-	m_sessions->setKey<IDX_FD, IDX_WRITE>(it, now);
+	m_sessions->setKey<IDX_SESSION, IDX_WRITE>(it, now);
 }
 void Epoll::notifyUnlinked(TcpSessionBase *session){
 	const boost::mutex::scoped_lock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_FD>(session->getFd()));
-	if(it == m_sessions->end<IDX_FD>()){
+	const AUTO(it, m_sessions->find<IDX_SESSION>(
+		boost::shared_ptr<TcpSessionBase>(boost::shared_ptr<void>(), session)));
+	if(it == m_sessions->end<IDX_SESSION>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
@@ -85,9 +85,18 @@ void Epoll::notifyUnlinked(TcpSessionBase *session){
 		const int errCode = errno;
 		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
 	}
-	m_sessions->erase<IDX_FD>(it);
+	m_sessions->erase<IDX_SESSION>(it);
 }
 
+boost::shared_ptr<TcpSessionBase> Epoll::getSession(void *addr) const {
+	const boost::mutex::scoped_lock lock(m_mutex);
+	const AUTO(it, m_sessions->find<IDX_SESSION>(
+		boost::shared_ptr<TcpSessionBase>(boost::shared_ptr<void>(), static_cast<TcpSessionBase *>(addr))));
+	if(it == m_sessions->end<IDX_SESSION>()){
+		return VAL_INIT;
+	}
+	return it->session;
+}
 void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(m_mutex);
 	const AUTO(result, m_sessions->insert(SessionMapElement(session, 0, 0, shared_from_this())));
@@ -97,10 +106,7 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	}
 	::epoll_event event;
 	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
-#ifndef NDEBUG
-	std::memset(&event.data, 0xCC, sizeof(event.data)); // valgrind 误报。
-#endif
-	event.data.fd = session->getFd();
+	event.data.ptr = session.get();
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const int errCode = errno;
 		m_sessions->erase(result.first); // !!
@@ -110,8 +116,8 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 }
 void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_FD>(session->getFd()));
-	if(it == m_sessions->end<IDX_FD>()){
+	const AUTO(it, m_sessions->find<IDX_SESSION>(session));
+	if(it == m_sessions->end<IDX_SESSION>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
@@ -119,7 +125,7 @@ void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 		const int errCode = errno;
 		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
 	}
-	m_sessions->erase<IDX_FD>(it);
+	m_sessions->erase<IDX_SESSION>(it);
 }
 void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) const {
 	const boost::mutex::scoped_lock lock(m_mutex);
@@ -156,11 +162,12 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		const ::epoll_event &event = events[i];
 
 		boost::shared_ptr<TcpSessionBase> session;
-		SessionMap::delegated_container::nth_index<IDX_FD>::type::iterator it;
+		SessionMap::delegated_container::nth_index<IDX_SESSION>::type::iterator it;
 		{
 			const boost::mutex::scoped_lock lock(m_mutex);
-			it = m_sessions->find<IDX_FD>(event.data.fd);
-			if(it == m_sessions->end<IDX_FD>()){
+			it = m_sessions->find<IDX_SESSION>(
+				boost::shared_ptr<TcpSessionBase>(boost::shared_ptr<void>(), static_cast<TcpSessionBase *>(event.data.ptr)));
+			if(it == m_sessions->end<IDX_SESSION>()){
 				LOG_POSEIDON_WARNING("Session is not in epoll?");
 				continue;
 			}
@@ -196,13 +203,13 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 //				if(!lock.owns_lock()){
 					lock.lock();
 //				}
-				m_sessions->setKey<IDX_FD, IDX_READ>(it, now);
+				m_sessions->setKey<IDX_SESSION, IDX_READ>(it, now);
 			}
 			if(event.events & EPOLLOUT){
 				if(!lock.owns_lock()){
 					lock.lock();
 				}
-				m_sessions->setKey<IDX_FD, IDX_WRITE>(it, now);
+				m_sessions->setKey<IDX_SESSION, IDX_WRITE>(it, now);
 			}
 		}
 	}

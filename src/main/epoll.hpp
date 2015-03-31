@@ -37,6 +37,7 @@ private:
 	void notifyUnlinked(TcpSessionBase *session);
 
 public:
+	boost::shared_ptr<TcpSessionBase> getSession(void *addr) const;
 	void addSession(const boost::shared_ptr<TcpSessionBase> &session);
 	void removeSession(const boost::shared_ptr<TcpSessionBase> &session);
 	void snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) const;

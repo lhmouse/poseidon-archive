@@ -28,6 +28,8 @@ struct EpollDaemon {
 	static std::vector<SnapshotItem> snapshot();
 
 	static void addSession(const boost::shared_ptr<TcpSessionBase> &session);
+	static boost::shared_ptr<TcpSessionBase> getSession(void *addr); // 根据裸指针搜索智能指针。
+
 	static void registerServer(boost::weak_ptr<const SocketServerBase> server);
 
 private:
