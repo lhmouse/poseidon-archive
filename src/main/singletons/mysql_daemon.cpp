@@ -562,6 +562,11 @@ namespace {
 		}
 
 		void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
+			if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
+				LOG_POSEIDON_ERROR("MySQL thread ", m_index, " is being shut down.");
+				DEBUG_THROW(Exception, SharedNts::observe("MySQL thread is being shut down"));
+			}
+
 			const AUTO(combinableObject, operation->getCombinableObject());
 			AUTO(dueTime, getFastMonoClock());
 			// 有紧急操作时无视写入延迟，这个逻辑不在这里处理。
