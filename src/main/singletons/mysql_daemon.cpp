@@ -543,6 +543,7 @@ namespace {
 			atomicStore(m_running, false, ATOMIC_RELEASE);
 		}
 		void join(){
+			shutdown();
 			waitTillIdle();
 			boost::thread::join();
 		}
