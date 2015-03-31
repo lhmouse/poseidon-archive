@@ -166,10 +166,6 @@ void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	}
 	g_epoll->addSession(session);
 }
-boost::shared_ptr<TcpSessionBase> EpollDaemon::getSession(void *addr){
-	return g_epoll->getSession(addr);
-}
-
 void EpollDaemon::registerServer(boost::weak_ptr<const SocketServerBase> server){
 	const boost::mutex::scoped_lock lock(g_serverMutex);
 	g_servers.push_back(STD_MOVE(server));

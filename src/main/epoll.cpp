@@ -87,14 +87,6 @@ void Epoll::notifyUnlinked(TcpSessionBase *session){
 	m_sessions->erase<IDX_ADDR>(it);
 }
 
-boost::shared_ptr<TcpSessionBase> Epoll::getSession(void *addr) const {
-	const boost::mutex::scoped_lock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_ADDR>(static_cast<TcpSessionBase *>(addr)));
-	if(it == m_sessions->end<IDX_ADDR>()){
-		return VAL_INIT;
-	}
-	return it->session;
-}
 void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const boost::mutex::scoped_lock lock(m_mutex);
 	const AUTO(result, m_sessions->insert(SessionMapElement(session, 0, 0, shared_from_this())));
