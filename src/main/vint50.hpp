@@ -20,11 +20,11 @@ void vuint50ToBinary(boost::uint64_t val, OutputIterT &write){
 			++write;
 			return;
 		}
-		*write = (unsigned char)(by | 0x80);
+		*write = static_cast<unsigned char>(by | 0x80);
 		++write;
 	}
 	if(val != 0){
-		*write = (unsigned char)val;
+		*write = static_cast<unsigned char>(val);
 		++write;
 	}
 }
@@ -50,7 +50,7 @@ bool vuint50FromBinary(boost::uint64_t &val, InputIterT &read, std::size_t count
 		const unsigned char by = *read;
 		++read;
 		--count;
-		val |= (boost::uint64_t)(by & 0x7F) << (i * 7);
+		val |= static_cast<boost::uint64_t>(by & 0x7F) << (i * 7);
 		if(!(by & 0x80)){
 			return true;
 		}
@@ -60,7 +60,7 @@ bool vuint50FromBinary(boost::uint64_t &val, InputIterT &read, std::size_t count
 	}
 	const unsigned char by = *read;
 	++read;
-	val |= (boost::uint64_t)by << 42;
+	val |= static_cast<boost::uint64_t>(by) << 42;
 	return true;
 }
 template<typename InputIterT>
