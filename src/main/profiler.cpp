@@ -5,6 +5,7 @@
 #include "profiler.hpp"
 #include "singletons/profile_depository.hpp"
 #include "time.hpp"
+#include "log.hpp"
 
 namespace Poseidon {
 
@@ -47,6 +48,11 @@ Profiler::~Profiler() NOEXCEPT {
 		if(m_prev){
 			m_prev->flush(now);
 		}
+	}
+
+	if(std::uncaught_exception()){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Exception backtrace: file = ", m_file, ", line = ", m_line, ", func = ", m_func);
 	}
 }
 
