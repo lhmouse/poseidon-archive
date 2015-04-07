@@ -79,9 +79,20 @@ Logger::Logger(unsigned long long mask, const char *file, std::size_t line) NOEX
 {
 }
 Logger::~Logger() NOEXCEPT {
-	static const bool useAsciiColors = ::isatty(STDOUT_FILENO);
+	static const bool stderrUsesAsciiColors = ::isatty(STDERR_FILENO);
+	static const bool stdoutUsesAsciiColors = ::isatty(STDOUT_FILENO);
 
 	try {
+		bool useAsciiColors;
+		int fd;
+		if(m_mask & SP_MAJOR){
+			useAsciiColors = stderrUsesAsciiColors;
+			fd = STDERR_FILENO;
+		} else {
+			useAsciiColors = stdoutUsesAsciiColors;
+			fd = STDOUT_FILENO;
+		}
+
 		AUTO_REF(levelItem, LEVEL_ITEMS[__builtin_ctz(m_mask | LV_TRACE)]);
 
 		char temp[256];
@@ -156,7 +167,7 @@ Logger::~Logger() NOEXCEPT {
 		}
 		std::size_t bytesTotal = 0;
 		while(bytesTotal < line.size()){
-			const AUTO(bytesWritten, ::write(STDOUT_FILENO, line.data() + bytesTotal, line.size() - bytesTotal));
+			const AUTO(bytesWritten, ::write(fd, line.data() + bytesTotal, line.size() - bytesTotal));
 			if(bytesWritten <= 0){
 				break;
 			}
