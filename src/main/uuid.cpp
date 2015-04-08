@@ -3,6 +3,8 @@
 
 #include "precompiled.hpp"
 #include "uuid.hpp"
+#include <sys/types.h>
+#include <unistd.h>
 #include "atomic.hpp"
 #include "endian.hpp"
 #include "exception.hpp"
@@ -18,12 +20,14 @@ namespace {
 		return ret;
 	}
 
-	volatile boost::uint32_t g_autoInc = rdtscLow();
+	const unsigned long g_pidHigh = static_cast<unsigned long>(::getpid()) << 16;
+
+	volatile unsigned g_autoInc = rdtscLow();
 }
 
 Uuid Uuid::generate(){
 	const AUTO(now, getUtcTime());
-	const AUTO(unique, atomicAdd(g_autoInc, 1, ATOMIC_RELAXED));
+	const AUTO(unique, g_pidHigh | (atomicAdd(g_autoInc, 1, ATOMIC_RELAXED) & 0xFFFFu));
 
 	Uuid ret
 #ifdef POSEIDON_CXX11
