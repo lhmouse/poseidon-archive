@@ -42,13 +42,13 @@ Uuid Uuid::generate(){
 	return ret;
 }
 
-Uuid::Uuid(const char (&str)[37]){
+Uuid::Uuid(const char (&str)[36]){
 	if(!fromString(str)){
 		DEBUG_THROW(Exception, SharedNts::observe("Invalid UUID string"));
 	}
 }
 
-void Uuid::toString(char (&str)[37], bool upperCase) const {
+void Uuid::toString(char (&str)[36], bool upperCase) const {
 	AUTO(read, begin());
 	char *write = str;
 
@@ -79,9 +79,9 @@ void Uuid::toString(char (&str)[37], bool upperCase) const {
 	PRINT(2) *(write++) = '-';
 	PRINT(2) *(write++) = '-';
 	PRINT(2) *(write++) = '-';
-	PRINT(6) *(write++) = 0;
+	PRINT(6)
 }
-bool Uuid::fromString(const char (&str)[37]){
+bool Uuid::fromString(const char (&str)[36]){
 	const char *read = str;
 	AUTO(write, begin());
 
@@ -117,13 +117,13 @@ bool Uuid::fromString(const char (&str)[37]){
 	SCAN(2) if(*(read++) != '-'){ return false; }
 	SCAN(2) if(*(read++) != '-'){ return false; }
 	SCAN(2) if(*(read++) != '-'){ return false; }
-	SCAN(6) if(*(read++) != 0){ return false; }
+	SCAN(6)
 
 	return true;
 }
 
 std::ostream &operator<<(std::ostream &os, const Uuid &rhs){
-	char temp[37];
+	char temp[36];
 	rhs.toString(temp);
 	return os.write(temp, 36);
 }

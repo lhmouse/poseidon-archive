@@ -35,7 +35,7 @@ public:
 	explicit Uuid(const unsigned char (&bytes)[16]){
 		std::memcpy(m_storage.bytes, bytes, 16);
 	}
-	explicit Uuid(const char (&str)[37]);
+	explicit Uuid(const char (&str)[36]);
 
 public:
 	const unsigned char *begin() const {
@@ -54,8 +54,8 @@ public:
 		return 16;
 	}
 
-	void toString(char (&str)[37], bool upperCase = true) const;
-	bool fromString(const char (&str)[37]);
+	void toString(char (&str)[36], bool upperCase = true) const;
+	bool fromString(const char (&str)[36]);
 
 public:
 	const unsigned char &operator[](unsigned index) const {
