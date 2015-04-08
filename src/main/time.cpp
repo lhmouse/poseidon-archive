@@ -81,7 +81,15 @@ boost::uint64_t assembleTime(const DateTime &dt){
 }
 
 std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs){
-	DateTime dt = breakDownTime(ms);
+	DateTime dt;
+	if(ms == 0){
+		std::memset(&dt, 0, sizeof(dt));
+	} else if(ms == UINT64_MAX){
+		std::memset(&dt, 0, sizeof(dt));
+		dt.yr = 9999;
+	} else {
+		dt = breakDownTime(ms);
+	}
 	return (std::size_t)::snprintf(buffer, max,
 		showMs ? "%04u-%02u-%02u %02u:%02u:%02u.%03u" : "%04u-%02u-%02u %02u:%02u:%02u",
 		dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec, dt.ms);
@@ -91,7 +99,13 @@ boost::uint64_t scanTime(const char *str){
 	std::memset(&dt, 0, sizeof(dt));
 	std::sscanf(str, "%u-%u-%u %u:%u:%u.%u",
 		&dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms);
-	return assembleTime(dt);
+	if(dt.yr == 0){
+		return 0;
+	} else if(dt.yr == 9999){
+		return UINT64_MAX;
+	} else {
+		return assembleTime(dt);
+	}
 }
 
 }
