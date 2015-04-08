@@ -600,6 +600,7 @@ namespace {
 					if(pendingObjects == 0){
 						break;
 					}
+					atomicStore(m_urgent, true, ATOMIC_RELEASE);
 					m_newOperation.notify_one();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pendingObjects, " object(s) in my queue.");
