@@ -133,11 +133,9 @@ void JobDispatcher::start(){
 	LOG_POSEIDON_DEBUG("Retry init delay = ", g_retryInitDelay);
 }
 void JobDispatcher::stop(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
 
-	while(pumpOneJob()){
-		// noop
-	}
+	pumpAll();
 }
 
 void JobDispatcher::doModal(){
@@ -174,6 +172,13 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_
 
 	const boost::mutex::scoped_lock lock(g_mutex);
 	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job), STD_MOVE_IDN(withdrawnFlag)));
+}
+void JobDispatcher::pumpAll(){
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
+
+	while(pumpOneJob()){
+		// noop
+	}
 }
 
 }

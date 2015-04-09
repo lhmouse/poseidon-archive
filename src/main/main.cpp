@@ -65,26 +65,31 @@ namespace {
 
 		START(MySqlDaemon);
 		START(JobDispatcher);
-		START(TimerDaemon);
-		START(EpollDaemon);
 
-		START(CbppServletDepository);
-		START(HttpServletDepository);
-		START(WebSocketServletDepository);
-		START(EventDispatcher);
+		{
+			START(SystemHttpServer);
+			START(ModuleDepository);
 
-		START(SystemHttpServer);
-		START(ModuleDepository);
+			START(TimerDaemon);
+			START(EpollDaemon);
 
-		const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
-		for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
-			ModuleDepository::load(it->c_str());
+			START(CbppServletDepository);
+			START(HttpServletDepository);
+			START(WebSocketServletDepository);
+			START(EventDispatcher);
+
+			const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
+			for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
+				ModuleDepository::load(it->c_str());
+			}
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
+			MySqlDaemon::waitForAllAsyncOperations();
+
+			JobDispatcher::doModal();
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
-		MySqlDaemon::waitForAllAsyncOperations();
 
-		JobDispatcher::doModal();
+		JobDispatcher::pumpAll();
 	}
 }
 
