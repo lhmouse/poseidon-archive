@@ -43,7 +43,9 @@ public:
 };
 
 // 加到全局队列中（外部不可见），线程安全的。
-extern void enqueueJob(boost::shared_ptr<const JobBase> job, boost::uint64_t delay = 0);
+// 如果任务已加入队列之后执行 **withdraw = true 则会撤销该任务。
+extern void enqueueJob(boost::shared_ptr<const JobBase> job, boost::uint64_t delay = 0,
+	boost::shared_ptr<bool> *withdrawn = NULLPTR);
 // 推迟当前任务执行，实际上会抛出一个异常。必须在任务函数中调用。
 extern void suspendCurrentJob(boost::shared_ptr<const void> context) __attribute__((__noreturn__));
 

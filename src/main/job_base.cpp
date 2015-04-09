@@ -18,8 +18,8 @@ JobBase::TryAgainLater::~TryAgainLater() NOEXCEPT {
 JobBase::~JobBase(){
 }
 
-void enqueueJob(boost::shared_ptr<const JobBase> job, boost::uint64_t delay){
-	JobDispatcher::enqueue(STD_MOVE(job), delay);
+void enqueueJob(boost::shared_ptr<const JobBase> job, boost::uint64_t delay, boost::shared_ptr<bool> *withdrawn){
+	JobDispatcher::enqueue(STD_MOVE(job), delay, withdrawn);
 }
 void suspendCurrentJob(boost::shared_ptr<const void> context){
 	throw JobBase::TryAgainLater(STD_MOVE(context));

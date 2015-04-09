@@ -22,14 +22,14 @@ namespace {
 		boost::weak_ptr<const void> category;
 
 		boost::shared_ptr<const JobBase> job;
+		boost::shared_ptr<const bool> withdrawn;
 
 		mutable std::map<boost::shared_ptr<const void>, std::size_t> retryCounts;
 
-		JobElement(boost::uint64_t dueTime_, boost::shared_ptr<const JobBase> job_)
-			: dueTime(dueTime_)
-			, job(STD_MOVE(job_))
+		JobElement(boost::uint64_t dueTime_, boost::shared_ptr<const JobBase> job_, boost::shared_ptr<const bool> withdrawn_)
+			: dueTime(dueTime_), category(job_->getCategory())
+			, job(STD_MOVE(job_)), withdrawn(STD_MOVE(withdrawn_))
 		{
-			category = job->getCategory();
 			if(!(boost::weak_ptr<void>() < category) && !(category < boost::weak_ptr<void>())){
 				category = job;
 			}
@@ -41,6 +41,7 @@ namespace {
 		swap(lhs.dueTime, rhs.dueTime);
 		swap(lhs.category, rhs.category);
 		swap(lhs.job, rhs.job);
+		swap(lhs.withdrawn, rhs.withdrawn);
 		swap(lhs.retryCounts, rhs.retryCounts);
 	}
 
@@ -78,25 +79,29 @@ namespace {
 		}
 
 		boost::uint64_t newDueTime = 0;
-		try {
+		if(jobIt->withdrawn && *jobIt->withdrawn){
+			LOG_POSEIDON_DEBUG("Job withdrawn");
+		} else {
 			try {
-				jobIt->job->perform();
-			} catch(JobBase::TryAgainLater &e){
-				AUTO_REF(retryCount, jobIt->retryCounts[e.getContext()]);
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"JobBase::TryAgainLater thrown while dispatching job: retryCount = ", retryCount);
+				try {
+					jobIt->job->perform();
+				} catch(JobBase::TryAgainLater &e){
+					AUTO_REF(retryCount, jobIt->retryCounts[e.getContext()]);
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+						"JobBase::TryAgainLater thrown while dispatching job: retryCount = ", retryCount);
 
-				if(retryCount >= g_maxRetryCount){
-					LOG_POSEIDON_ERROR("Max retry count exceeded.");
-					DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
+					if(retryCount >= g_maxRetryCount){
+						LOG_POSEIDON_ERROR("Max retry count exceeded.");
+						DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
+					}
+					newDueTime = now + (g_retryInitDelay << retryCount);
+					++retryCount;
 				}
-				newDueTime = now + (g_retryInitDelay << retryCount);
-				++retryCount;
+			} catch(std::exception &e){
+				LOG_POSEIDON_WARNING("std::exception thrown in job dispatcher: what = ", e.what());
+			} catch(...){
+				LOG_POSEIDON_WARNING("Unknown exception thrown in job dispatcher.");
 			}
-		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown in job dispatcher: what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_WARNING("Unknown exception thrown in job dispatcher.");
 		}
 		{
 			const boost::mutex::scoped_lock lock(g_mutex);
@@ -160,9 +165,15 @@ void JobDispatcher::quitModal(){
 	atomicStore(g_running, false, ATOMIC_RELEASE);
 }
 
-void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay){
+void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay, boost::shared_ptr<bool> *withdrawn){
+	boost::shared_ptr<bool> withdrawnFlag;
+	if(withdrawn){
+		withdrawnFlag = boost::make_shared<bool>(false);
+		*withdrawn = withdrawnFlag;
+	}
+
 	const boost::mutex::scoped_lock lock(g_mutex);
-	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job)));
+	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job), STD_MOVE_IDN(withdrawnFlag)));
 }
 
 }
