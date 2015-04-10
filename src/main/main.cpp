@@ -66,7 +66,7 @@ namespace {
 		START(MySqlDaemon);
 		START(JobDispatcher);
 
-		{
+		try {
 			START(SystemHttpServer);
 			START(ModuleDepository);
 
@@ -87,6 +87,9 @@ namespace {
 			MySqlDaemon::waitForAllAsyncOperations();
 
 			JobDispatcher::doModal();
+		} catch(...){
+			JobDispatcher::pumpAll();
+			throw;
 		}
 
 		JobDispatcher::pumpAll();
