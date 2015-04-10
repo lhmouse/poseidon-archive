@@ -474,7 +474,7 @@ MODULE_RAII {
 	LOG_POSEIDON_FATAL("----------- ", explode<std::string>(':', "0:1:2:3:").size());
 	return VAL_INIT;
 }
-
+*/
 namespace {
 	// const AUTO(sp, boost::make_shared<int>());
 	boost::shared_ptr<int> sp;
@@ -511,13 +511,13 @@ namespace {
 }
 
 MODULE_RAII {
-	enqueueJob(boost::make_shared<MyJob>("1  "));
-	enqueueJob(boost::make_shared<MyJob>(" 2 "));
-	enqueueJob(boost::make_shared<MyJob>("  3"));
+	AUTO(withdrawn, boost::make_shared<bool>(true));
+	enqueueJob(boost::make_shared<MyJob>("1  "), 0, withdrawn);
+	enqueueJob(boost::make_shared<MyJob>(" 2 "), 0, withdrawn);
+	enqueueJob(boost::make_shared<MyJob>("  3"), 0, withdrawn);
 
 	enqueueJob(boost::make_shared<MeowJob>());
 
 	LOG_POSEIDON_FATAL("Job enqueued!");
 	return VAL_INIT;
 }
-*/

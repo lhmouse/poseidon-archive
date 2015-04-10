@@ -85,7 +85,9 @@ boost::shared_ptr<EventListener> EventDispatcher::registerListener(
 	return listener;
 }
 
-void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event){
+void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event,
+	const boost::shared_ptr<const bool> &withdrawn)
+{
 	const unsigned eventId = event->id();
 	std::vector<boost::shared_ptr<const EventListenerCallback> > callbacks;
 	bool needsCleanup = false;
@@ -105,7 +107,7 @@ void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event){
 		}
 	}
 	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
-		enqueueJob(boost::make_shared<EventJob>(*it, boost::ref(event)));
+		enqueueJob(boost::make_shared<EventJob>(*it, boost::ref(event)), 0, withdrawn);
 	}
 	if(needsCleanup){
 		LOG_POSEIDON_DEBUG("Cleaning up event listener list for event ", eventId);

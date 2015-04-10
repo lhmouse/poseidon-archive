@@ -28,8 +28,10 @@ namespace {
 	};
 }
 
-void enqueueAsyncJob(boost::function<void ()> proc, boost::uint64_t delay, boost::shared_ptr<bool> *withdrawn){
-	enqueueJob(boost::make_shared<AsyncJob>(STD_MOVE(proc)), delay, withdrawn);
+void enqueueAsyncJob(boost::function<void ()> proc, boost::uint64_t delay,
+	boost::shared_ptr<const bool> withdrawn)
+{
+	enqueueJob(boost::make_shared<AsyncJob>(STD_MOVE(proc)), delay, STD_MOVE(withdrawn));
 }
 
 }

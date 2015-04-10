@@ -163,15 +163,11 @@ void JobDispatcher::quitModal(){
 	atomicStore(g_running, false, ATOMIC_RELEASE);
 }
 
-void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay, boost::shared_ptr<bool> *withdrawn){
-	boost::shared_ptr<bool> withdrawnFlag;
-	if(withdrawn){
-		withdrawnFlag = boost::make_shared<bool>(false);
-		*withdrawn = withdrawnFlag;
-	}
-
+void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay,
+	boost::shared_ptr<const bool> withdrawn)
+{
 	const boost::mutex::scoped_lock lock(g_mutex);
-	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job), STD_MOVE_IDN(withdrawnFlag)));
+	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job), STD_MOVE(withdrawn)));
 }
 void JobDispatcher::pumpAll(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");

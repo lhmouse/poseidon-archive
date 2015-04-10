@@ -4,13 +4,14 @@
 #ifndef POSEIDON_ASYNC_JOB_BASE_HPP_
 #define POSEIDON_ASYNC_JOB_BASE_HPP_
 
+#include "cxx_ver.hpp"
 #include <boost/function.hpp>
 #include <boost/cstdint.hpp>
 
 namespace Poseidon {
 
 extern void enqueueAsyncJob(boost::function<void ()> proc, boost::uint64_t delay = 0,
-	boost::shared_ptr<bool> *withdrawn = NULLPTR);
+	boost::shared_ptr<const bool> withdrawn = VAL_INIT);
 
 }
 
