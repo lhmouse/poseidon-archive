@@ -29,7 +29,8 @@ public:
 	}
 };
 
-extern void raiseEvent(const boost::shared_ptr<EventBaseWithoutId> &event);
+extern void raiseEvent(const boost::shared_ptr<EventBaseWithoutId> &event,
+	const boost::shared_ptr<const bool> &withdrawn = VAL_INIT);
 
 }
 
