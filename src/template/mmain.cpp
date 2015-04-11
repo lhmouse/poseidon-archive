@@ -22,6 +22,7 @@
 #include "../main/tcp_client_base.hpp"
 #include "../main/cbpp/session.hpp"
 #include "../main/http/session.hpp"
+#include "../main/http/request.hpp"
 #include "../main/cbpp/message_base.hpp"
 #include "../main/singletons/cbpp_servlet_depository.hpp"
 #include "../main/singletons/epoll_daemon.hpp"
@@ -30,7 +31,7 @@
 #include "../main/uuid.hpp"
 #include "../main/async_job.hpp"
 using namespace Poseidon;
-
+/*
 #define MYSQL_OBJECT_NAME	MySqlObj
 #define MYSQL_OBJECT_FIELDS	\
 	FIELD_SMALLINT(si)	\
@@ -60,7 +61,6 @@ MODULE_RAII {
 	return VAL_INIT;
 }
 
-/*
 namespace {
 
 struct TestEvent1 : public EventBase<1> {
@@ -474,7 +474,7 @@ MODULE_RAII {
 	LOG_POSEIDON_FATAL("----------- ", explode<std::string>(':', "0:1:2:3:").size());
 	return VAL_INIT;
 }
-*/
+
 namespace {
 	// const AUTO(sp, boost::make_shared<int>());
 	boost::shared_ptr<int> sp;
@@ -520,4 +520,31 @@ MODULE_RAII {
 
 	LOG_POSEIDON_FATAL("Job enqueued!");
 	return VAL_INIT;
+}
+*/
+
+namespace {
+
+void meowProc(boost::shared_ptr<Http::Session> session, Http::Request req){
+	PROFILE_ME;
+
+	LOG_POSEIDON_FATAL("Contents = ", req.contents);
+
+	OptionalMap headers;
+	headers.set("Content-Type", "text/html");
+	StreamBuffer contents;
+	contents.put("<h1>Meow!</h1>");
+	session->send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
+}
+
+}
+
+MODULE_RAII {
+	AUTO(server, boost::make_shared<Http::Server>(2,
+		IpPort(SharedNts("0.0.0.0"), 8860), NULLPTR, NULLPTR, std::vector<std::string>()));
+	EpollDaemon::registerServer(server);
+	return server;
+}
+MODULE_RAII {
+	return HttpServletDepository::create(2, SharedNts::observe("/meow"), &meowProc);
 }

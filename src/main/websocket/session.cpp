@@ -138,6 +138,8 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		try {
+			const AUTO(maxRequestLength, WebSocketServletDepository::getMaxRequestLength());
+
 			m_payload.put(data, size);
 
 			for(;;){
@@ -214,7 +216,7 @@ namespace WebSocket {
 
 				case S_PAYLOAD:
 					remaining = m_payloadLen - m_whole.size();
-					if(m_whole.size() + remaining >= WebSocketServletDepository::getMaxRequestLength()){
+					if(m_whole.size() + remaining > maxRequestLength){
 						DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, SharedNts::observe("Packet too large"));
 					}
 					if(m_payload.size() < remaining){

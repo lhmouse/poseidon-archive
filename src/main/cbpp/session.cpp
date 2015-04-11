@@ -110,6 +110,8 @@ namespace Cbpp {
 		PROFILE_ME;
 
 		try {
+			const AUTO(maxRequestLength, CbppServletDepository::getMaxRequestLength());
+
 			m_payload.put(data, size);
 
 			for(;;){
@@ -123,8 +125,7 @@ namespace Cbpp {
 					m_payloadLen = payloadLen;
 					LOG_POSEIDON_DEBUG("Message id = ", m_messageId, ", len = ", m_payloadLen);
 
-					const std::size_t maxRequestLength = CbppServletDepository::getMaxRequestLength();
-					if((unsigned)m_payloadLen >= maxRequestLength){
+					if((unsigned)m_payloadLen > maxRequestLength){
 						LOG_POSEIDON_WARNING("Request too large: size = ", m_payloadLen, ", max = ", maxRequestLength);
 						DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE, SharedNts::observe("Request too large"));
 					}

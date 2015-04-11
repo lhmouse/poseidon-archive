@@ -89,7 +89,12 @@ namespace Http {
 
 					LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_request.uri, ", verb = ", getStringFromVerb(m_request.verb));
 					(*servlet)(session, m_request);
-					session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
+
+					if(m_request.version < 10001){
+						session->shutdown();
+					} else {
+						session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
+					}
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
@@ -240,117 +245,126 @@ namespace Http {
 	void Session::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
-		if((m_state == S_FIRST_HEADER) && m_upgradedSession){
-			return m_upgradedSession->onReadAvail(data, size);
-		}
-
 		try {
-			AUTO(read, (const char *)data);
+			const AUTO(maxRequestLength, HttpServletDepository::getMaxRequestLength());
+
+			AUTO(read, static_cast<const char *>(data));
 			const AUTO(end, read + size);
+			for(;;){
+				if((m_state == S_FIRST_HEADER) && m_upgradedSession){
+					m_upgradedSession->onReadAvail(read, static_cast<std::size_t>(end - read));
+					read = end;
+					goto _exitFor;
+				}
 
-			const std::size_t maxRequestLength = HttpServletDepository::getMaxRequestLength();
-			if(m_totalLength + size >= maxRequestLength){
-				LOG_POSEIDON_WARNING("Request size is ", m_totalLength + size, ", max = ", maxRequestLength);
-				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
-			}
-			m_totalLength += size;
-
-			while(read != end){
-				if(m_state != S_CONTENTS){
+				while(m_state != S_CONTENTS){
+					if(read == end){
+						goto _exitFor;
+					}
 					const char ch = *read;
 					++read;
+
+					++m_totalLength;
+					if(m_totalLength >= maxRequestLength){
+						LOG_POSEIDON_WARNING("Request header too large: maxRequestLength = ", maxRequestLength);
+						DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
+					}
+
 					if(ch != '\n'){
 						m_line.push_back(ch);
 						continue;
 					}
-					const std::size_t lineLen = m_line.size();
-					if((lineLen > 0) && (m_line[lineLen - 1] == '\r')){
+
+					if(!m_line.empty() && (*m_line.rbegin() == '\r')){
 						m_line.erase(m_line.end() - 1, m_line.end());
 					}
-					if(m_state == S_FIRST_HEADER){
+
+					switch(m_state){
+					case S_FIRST_HEADER:
 						if(m_line.empty()){
-							continue;
-						}
-						AUTO(parts, explode<std::string>(' ', m_line, 3));
-						if(parts.size() != 3){
-							LOG_POSEIDON_WARNING("Bad HTTP header: ", m_line);
-							DEBUG_THROW(Exception, ST_BAD_REQUEST);
-						}
+							// m_state = S_FIRST_HEADER;
+						} else {
+							AUTO(parts, explode<std::string>(' ', m_line, 3));
+							if(parts.size() != 3){
+								LOG_POSEIDON_WARNING("Bad HTTP header: ", m_line);
+								DEBUG_THROW(Exception, ST_BAD_REQUEST);
+							}
 
-						m_verb = getVerbFromString(parts[0].c_str());
-						if(m_verb == V_INVALID_VERB){
-							LOG_POSEIDON_WARNING("Bad HTTP verb: ", parts[0]);
-							DEBUG_THROW(Exception, ST_METHOD_NOT_ALLOWED);
-						}
+							m_verb = getVerbFromString(parts[0].c_str());
+							if(m_verb == V_INVALID_VERB){
+								LOG_POSEIDON_WARNING("Bad HTTP verb: ", parts[0]);
+								DEBUG_THROW(Exception, ST_METHOD_NOT_ALLOWED);
+							}
 
-						if(parts[1][0] != '/'){
-							LOG_POSEIDON_WARNING("Bad HTTP request URI: ", parts[1]);
-							DEBUG_THROW(Exception, ST_BAD_REQUEST);
-						}
-						parts[1].swap(m_uri);
-						std::size_t pos = m_uri.find('#');
-						if(pos != std::string::npos){
-							m_uri.erase(m_uri.begin() + static_cast<std::ptrdiff_t>(pos), m_uri.end());
-						}
-						pos = m_uri.find('?');
-						if(pos != std::string::npos){
-							m_getParams = optionalMapFromUrlEncoded(m_uri.substr(pos + 1));
-							m_uri.erase(m_uri.begin() + static_cast<std::ptrdiff_t>(pos), m_uri.end());
-						}
-						normalizeUri(m_uri);
-						urlDecode(m_uri).swap(m_uri);
+							if(parts[1][0] != '/'){
+								LOG_POSEIDON_WARNING("Bad HTTP request URI: ", parts[1]);
+								DEBUG_THROW(Exception, ST_BAD_REQUEST);
+							}
+							parts[1] = STD_MOVE(m_uri);
+							std::size_t pos = m_uri.find('#');
+							if(pos != std::string::npos){
+								m_uri.erase(m_uri.begin() + static_cast<std::ptrdiff_t>(pos), m_uri.end());
+							}
+							pos = m_uri.find('?');
+							if(pos != std::string::npos){
+								m_getParams = optionalMapFromUrlEncoded(m_uri.substr(pos + 1));
+								m_uri.erase(m_uri.begin() + static_cast<std::ptrdiff_t>(pos), m_uri.end());
+							}
+							normalizeUri(m_uri);
+							m_uri = STD_MOVE(urlDecode(m_uri));
 
-						char versionMajor[16];
-						char versionMinor[16];
-						const int result = std::sscanf(parts[2].c_str(),
-							"HTTP/%15[0-9].%15[0-9]%*c", versionMajor, versionMinor);
-						if(result != 2){
-							LOG_POSEIDON_WARNING("Bad protocol string: ", parts[2]);
-							DEBUG_THROW(Exception, ST_BAD_REQUEST);
-						}
-						m_version = std::strtoul(versionMajor, NULLPTR, 10) * 10000
-							+ std::strtoul(versionMinor, NULLPTR, 10);
-						if((m_version != 10000) && (m_version != 10001)){
-							LOG_POSEIDON_WARNING("Bad HTTP version: ", parts[2]);
-							DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
-						}
+							char versionMajor[16];
+							char versionMinor[16];
+							const int result = std::sscanf(parts[2].c_str(), "HTTP/%15[0-9].%15[0-9]%*c", versionMajor, versionMinor);
+							if(result != 2){
+								LOG_POSEIDON_WARNING("Bad protocol string: ", parts[2]);
+								DEBUG_THROW(Exception, ST_BAD_REQUEST);
+							}
+							m_version = std::strtoul(versionMajor, NULLPTR, 10) * 10000 + std::strtoul(versionMinor, NULLPTR, 10);
+							if((m_version != 10000) && (m_version != 10001)){
+								LOG_POSEIDON_WARNING("Bad HTTP version: ", parts[2]);
+								DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
+							}
 
-						m_state = S_HEADERS;
-					} else if(!m_line.empty()){
-						const std::size_t delimPos = m_line.find(':');
-						if(delimPos == std::string::npos){
-							LOG_POSEIDON_WARNING("Bad HTTP header: ", m_line);
-							DEBUG_THROW(Exception, ST_BAD_REQUEST);
-						}
-						AUTO(valueBegin, m_line.begin() + static_cast<std::ptrdiff_t>(delimPos) + 1);
-						while(*valueBegin == ' '){
-							++valueBegin;
-						}
-						std::string value(valueBegin, m_line.end());
-						m_line.erase(m_line.begin() + static_cast<std::ptrdiff_t>(delimPos), m_line.end());
-						m_headers.append(m_line.c_str(), STD_MOVE(value));
-					} else {
-						m_state = S_CONTENTS;
+							m_line.clear();
 
-						HeaderParser::commit(this);
+							m_state = S_HEADERS;
+						}
+						break;
+
+					case S_HEADERS:
+						if(m_line.empty()){
+							HeaderParser::commit(this);
+
+							m_state = S_CONTENTS;
+						} else {
+							std::size_t pos = m_line.find(':');
+							if(pos == std::string::npos){
+								LOG_POSEIDON_WARNING("Bad HTTP header: ", m_line);
+								DEBUG_THROW(Exception, ST_BAD_REQUEST);
+							}
+							AUTO(valueBegin, m_line.begin() + static_cast<std::ptrdiff_t>(pos) + 1);
+							while(*valueBegin == ' '){
+								++valueBegin;
+							}
+							std::string value(valueBegin, m_line.end());
+							m_line.erase(m_line.begin() + static_cast<std::ptrdiff_t>(pos), m_line.end());
+							m_headers.append(m_line.c_str(), STD_MOVE(value));
+
+							 m_line.clear();
+
+							// m_state = S_HEADERS;
+						}
+						break;
+
+					case S_CONTENTS:
+						std::abort();
+
+					default:
+						LOG_POSEIDON_FATAL("Invalid state: ", static_cast<unsigned>(m_state));
+						std::abort();
 					}
 				}
-				if(m_state != S_CONTENTS){
-					m_line.clear();
-					continue;
-				}
-
-				const std::size_t bytesAvail = static_cast<std::size_t>(end - read);
-				const boost::uint64_t bytesRemaining = m_contentLength - m_line.size();
-				if(bytesAvail < bytesRemaining){
-					m_line.append(read, bytesAvail);
-					read += bytesAvail;
-					continue;
-				}
-
-				m_line.append(read, bytesRemaining);
-				read += bytesRemaining;
-				m_state = S_FIRST_HEADER;
 
 				if(m_authInfo){
 					OptionalMap authHeader;
@@ -358,38 +372,51 @@ namespace Http {
 					DEBUG_THROW(Exception, ST_UNAUTHORIZED, STD_MOVE(authHeader));
 				}
 
-				if(m_upgradedSession){
-					goto _sessionUpgraded;
-				}
+				assert(m_contentLength >= m_line.size());
 
-				enqueueJob(boost::make_shared<RequestJob>(
-					virtualWeakFromThis<Session>(), m_verb, STD_MOVE(m_uri), m_version,
-					STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
+				const AUTO(bytesAvail, static_cast<std::size_t>(end - read));
+				const AUTO(bytesRemaining, m_contentLength - m_line.size());
+				if(bytesAvail < bytesRemaining){
+					m_totalLength += bytesAvail;
+					if((m_totalLength < bytesAvail) || (m_totalLength > maxRequestLength)){
+						LOG_POSEIDON_WARNING("Request entity too large: maxRequestLength = ", maxRequestLength);
+						DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
+					}
+					m_line.append(read, bytesAvail);
+					read = end;
+					goto _exitFor;
+				}
+				m_totalLength += bytesRemaining;
+				if((m_totalLength < bytesRemaining) || (m_totalLength > maxRequestLength)){
+					LOG_POSEIDON_WARNING("Request entity too large: maxRequestLength = ", maxRequestLength);
+					DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
+				}
+				m_line.append(read, bytesRemaining);
+				read += bytesRemaining;
+
+				if(m_upgradedSession){
+					setTimeout(EpollDaemon::getTcpRequestTimeout());
+
+					m_upgradedSession->onInitContents(m_line.data(), m_line.size());
+				} else {
+					enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
+						m_verb, STD_MOVE(m_uri), m_version, STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
+
+					m_verb = V_GET;
+					m_uri.clear();
+					m_version = 10000;
+					m_getParams.clear();
+					m_headers.clear();
+				}
 
 				m_totalLength = 0;
 				m_contentLength = 0;
 				m_line.clear();
 
-				m_verb = V_GET;
-				m_uri.clear();
-				m_version = 10000;
-				m_getParams.clear();
-				m_headers.clear();
+				m_state = S_FIRST_HEADER;
 			}
-			return;
-
-		_sessionUpgraded:
-			setTimeout(EpollDaemon::getTcpRequestTimeout());
-
-			m_upgradedSession->onInitContents(m_line.data(), m_line.size());
-
-			m_totalLength = 0;
-			m_contentLength = 0;
-			m_line.clear();
-
-			if(read != end){
-				m_upgradedSession->onReadAvail(read, static_cast<std::size_t>(end - read));
-			}
+		_exitFor:
+			;
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown while parsing data, URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.statusCode()));
