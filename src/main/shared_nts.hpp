@@ -47,10 +47,9 @@ public:
 		return *this;
 	}
 #ifdef POSEIDON_CXX11
-	SharedNts(SharedNts &&rhs) NOEXCEPT
-		: m_ptr(std::move(rhs.m_ptr))
-	{
-		rhs.assign("", 0);
+	SharedNts(SharedNts &&rhs) NOEXCEPT {
+		assign("", 0);
+		swap(rhs);
 	}
 	SharedNts &operator=(SharedNts &&rhs) NOEXCEPT {
 		swap(rhs);
@@ -68,7 +67,7 @@ public:
 	}
 	template<typename T>
 	void assign(boost::shared_ptr<T> sp, const char *str){
-		m_ptr.reset(STD_MOVE(sp), str);
+		m_ptr.reset(STD_MOVE(sp), str ? str : "");
 	}
 
 	bool empty() const {
