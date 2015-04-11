@@ -14,7 +14,7 @@
 #endif
 
 #ifndef POSEIDON_CBPP_MESSAGE_BASE_HPP_
-#	error Please #include "message_base.hpp" first.
+#	error Please #include <poseidon/cbpp/message_base.hpp> first.
 #endif
 
 class MESSAGE_NAME : public ::Poseidon::Cbpp::MessageBase {

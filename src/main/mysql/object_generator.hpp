@@ -10,7 +10,7 @@
 #endif
 
 #ifndef POSEIDON_MYSQL_OBJECT_BASE_HPP_
-#	error Please #include "object_base.hpp" first.
+#	error Please #include <poseidon/mysql/object_base.hpp> first.
 #endif
 
 class MYSQL_OBJECT_NAME : public ::Poseidon::MySql::ObjectBase {
