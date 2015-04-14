@@ -8,7 +8,7 @@
 #include "../http/session.hpp"
 #include "../optional_map.hpp"
 #include "../singletons/job_dispatcher.hpp"
-#include "../singletons/websocket_servlet_depository.hpp"
+#include "../singletons/websocket_dispatcher_depository.hpp"
 #include "../log.hpp"
 #include "../random.hpp"
 #include "../endian.hpp"
@@ -21,15 +21,15 @@ namespace WebSocket {
 	namespace {
 		class RequestJob : public JobBase {
 		private:
-			const boost::weak_ptr<const ServletCallback> m_servlet;
+			const boost::weak_ptr<const DispatcherCallback> m_dispatcher;
 			const boost::weak_ptr<Session> m_session;
 			const OpCode m_opcode;
 			const StreamBuffer m_payload;
 
 		public:
-			RequestJob(boost::weak_ptr<const ServletCallback> m_servlet,
+			RequestJob(boost::weak_ptr<const DispatcherCallback> m_dispatcher,
 				boost::weak_ptr<Session> session, OpCode opcode, StreamBuffer payload)
-				: m_servlet(STD_MOVE(m_servlet))
+				: m_dispatcher(STD_MOVE(m_dispatcher))
 				, m_session(STD_MOVE(session)), m_opcode(opcode), m_payload(STD_MOVE(payload))
 			{
 			}
@@ -47,19 +47,19 @@ namespace WebSocket {
 				}
 
 				try {
-					const AUTO(servlet, m_servlet.lock());
-					if(!servlet){
-						LOG_POSEIDON_WARNING("Servlet expired: category = ", session->getCategory(), ", URI = ", session->getUri());
-						DEBUG_THROW(Exception, ST_GOING_AWAY, SharedNts::observe("Servlet expired"));
+					const AUTO(dispatcher, m_dispatcher.lock());
+					if(!dispatcher){
+						LOG_POSEIDON_WARNING("Dispatcher expired: category = ", session->getCategory(), ", URI = ", session->getUri());
+						DEBUG_THROW(Exception, ST_GOING_AWAY, SharedNts::observe("Dispatcher expired"));
 					}
 
 					LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", session->getUri(), ", payload size = ", m_payload.size());
-					(*servlet)(session, m_opcode, m_payload);
-					session->setTimeout(WebSocketServletDepository::getKeepAliveTimeout());
+					(*dispatcher)(session, m_opcode, m_payload);
+					session->setTimeout(WebSocketDispatcherDepository::getKeepAliveTimeout());
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown in servlet, URI = ", session->getUri(),
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown in dispatcher, URI = ", session->getUri(),
 						", statusCode = ", e.statusCode(), ", what = ", e.what());
 					try {
 						session->shutdown(e.statusCode(), StreamBuffer(e.what()));
@@ -123,9 +123,9 @@ namespace WebSocket {
 		}
 	}
 
-	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::weak_ptr<const ServletCallback> servlet)
+	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::weak_ptr<const DispatcherCallback> dispatcher)
 		: Http::UpgradedSessionBase(parent)
-		, m_servlet(STD_MOVE(servlet))
+		, m_dispatcher(STD_MOVE(dispatcher))
 		, m_state(S_OPCODE), m_fin(false), m_opcode(OP_INVALID_OPCODE), m_payloadLen(0), m_payloadMask(0)
 	{
 	}
@@ -136,7 +136,7 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		try {
-			const AUTO(maxRequestLength, WebSocketServletDepository::getMaxRequestLength());
+			const AUTO(maxRequestLength, WebSocketDispatcherDepository::getMaxRequestLength());
 
 			m_payload.put(data, size);
 
@@ -240,7 +240,7 @@ namespace WebSocket {
 						}
 
 						enqueueJob(boost::make_shared<RequestJob>(
-							m_servlet, virtualWeakFromThis<Session>(), m_opcode, STD_MOVE(m_whole)));
+							m_dispatcher, virtualWeakFromThis<Session>(), m_opcode, STD_MOVE(m_whole)));
 						m_whole.clear();
 					}
 					m_state = S_OPCODE;

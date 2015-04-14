@@ -12,7 +12,7 @@
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/cbpp_servlet_depository.hpp"
 #include "singletons/http_servlet_depository.hpp"
-#include "singletons/websocket_servlet_depository.hpp"
+#include "singletons/websocket_dispatcher_depository.hpp"
 #include "singletons/system_http_server.hpp"
 #include "singletons/job_dispatcher.hpp"
 #include "singletons/module_depository.hpp"
@@ -75,7 +75,7 @@ namespace {
 
 			START(CbppServletDepository);
 			START(HttpServletDepository);
-			START(WebSocketServletDepository);
+			START(WebSocketDispatcherDepository);
 			START(EventDispatcher);
 
 			const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));

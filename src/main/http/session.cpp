@@ -10,7 +10,7 @@
 #include "upgraded_session_base.hpp"
 #include "../log.hpp"
 #include "../singletons/http_servlet_depository.hpp"
-#include "../singletons/websocket_servlet_depository.hpp"
+#include "../singletons/websocket_dispatcher_depository.hpp"
 #include "../singletons/epoll_daemon.hpp"
 #include "../stream_buffer.hpp"
 #include "../string.hpp"
@@ -206,9 +206,9 @@ namespace Http {
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
 			}
 			const AUTO(category, session->getCategory());
-			const AUTO(servlet, WebSocketServletDepository::get(category, session->m_uri.c_str()));
-			if(!servlet){
-				LOG_POSEIDON_WARNING("No servlet in category ", category, " matches URI ", session->m_uri);
+			const AUTO(dispatcher, WebSocketDispatcherDepository::get(category, session->m_uri.c_str()));
+			if(!dispatcher){
+				LOG_POSEIDON_WARNING("No dispatcher in category ", category, " matches URI ", session->m_uri);
 				DEBUG_THROW(Exception, ST_NOT_FOUND);
 			}
 
@@ -222,7 +222,7 @@ namespace Http {
 			sha1Sum(sha1, key.data(), key.size());
 			key = base64Encode(sha1, sizeof(sha1));
 			enqueueJob(boost::make_shared<UpgradeToWebSocketJob>(session, STD_MOVE(key)));
-			session->m_upgradedSession = boost::make_shared<WebSocket::Session>(session, servlet);
+			session->m_upgradedSession = boost::make_shared<WebSocket::Session>(session, dispatcher);
 
 			LOG_POSEIDON_INFO("Upgraded to WebSocket::Session, remote = ", session->getRemoteInfo());
 		}

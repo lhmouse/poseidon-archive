@@ -16,7 +16,7 @@ namespace WebSocket {
 
 	typedef boost::function<
 		void (const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer incoming)
-		> ServletCallback;
+		> DispatcherCallback;
 }
 
 }

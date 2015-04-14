@@ -33,7 +33,7 @@ namespace WebSocket {
 		};
 
 	private:
-		const boost::weak_ptr<const ServletCallback> m_servlet;
+		const boost::weak_ptr<const DispatcherCallback> m_dispatcher;
 
 		State m_state;
 		bool m_fin;
@@ -44,7 +44,7 @@ namespace WebSocket {
 		StreamBuffer m_whole;
 
 	public:
-		Session(const boost::shared_ptr<Http::Session> &parent, boost::weak_ptr<const ServletCallback> servlet);
+		Session(const boost::shared_ptr<Http::Session> &parent, boost::weak_ptr<const DispatcherCallback> dispatcher);
 
 	private:
 		void onInitContents(const void *data, std::size_t size) OVERRIDE FINAL;
