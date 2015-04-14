@@ -24,36 +24,6 @@ namespace Poseidon {
 
 namespace Http {
 	namespace {
-		void normalizeUri(std::string &uri){
-			if(uri[0] != '/'){
-				uri.insert(uri.begin(), '/');
-			}
-			std::size_t write = 1;
-			for(std::size_t i = 1; i < uri.size(); ++i){
-				const char ch = uri[i];
-				if((ch == '/') && (uri[write - 1] == '/')){
-					continue;
-				}
-				uri[write] = ch;
-				++write;
-			}
-			uri.erase(uri.begin() + static_cast<std::ptrdiff_t>(write), uri.end());
-		}
-
-		void onRequestTimeout(const boost::weak_ptr<Session> &observer){
-			const AUTO(session, observer.lock());
-			if(session){
-				LOG_POSEIDON_WARNING("HTTP request times out, remote = ", session->getRemoteInfo());
-				session->sendDefault(ST_REQUEST_TIMEOUT, true);
-			}
-		}
-		void onKeepAliveTimeout(const boost::weak_ptr<Session> &observer){
-			const AUTO(tcpSession, boost::static_pointer_cast<TcpSessionBase>(observer.lock()));
-			if(tcpSession){
-				tcpSession->shutdown();
-			}
-		}
-
 		class RequestJob : public JobBase {
 		private:
 			const boost::weak_ptr<Session> m_session;
@@ -117,22 +87,111 @@ namespace Http {
 				}
 			}
 		};
+
+		class ContinueResponseJob : public JobBase {
+		private:
+			const boost::weak_ptr<Session> m_session;
+
+		public:
+			explicit ContinueResponseJob(boost::weak_ptr<Session> session)
+				: m_session(STD_MOVE(session))
+			{
+			}
+
+		protected:
+			boost::weak_ptr<const void> getCategory() const OVERRIDE {
+				return m_session;
+			}
+			void perform() const OVERRIDE {
+				PROFILE_ME;
+
+				const AUTO(session, m_session.lock());
+				if(!session){
+					return;
+				}
+
+				session->sendDefault(ST_CONTINUE);
+			}
+		};
+
+		class UpgradeToWebSocketJob : public JobBase {
+		private:
+			const boost::weak_ptr<Session> m_session;
+			const std::string m_key;
+
+		public:
+			UpgradeToWebSocketJob(boost::weak_ptr<Session> session, std::string key)
+				: m_session(STD_MOVE(session)), m_key(STD_MOVE(key))
+			{
+			}
+
+		public:
+			boost::weak_ptr<const void> getCategory() const OVERRIDE {
+				return m_session;
+			}
+			void perform() const OVERRIDE {
+				PROFILE_ME;
+
+				const AUTO(session, m_session.lock());
+				if(!session){
+					return;
+				}
+
+				OptionalMap headers;
+				headers.set("Upgrade", "websocket");
+				headers.set("Connection", "Upgrade");
+				headers.set("Sec-WebSocket-Accept", m_key);
+				session->sendDefault(ST_SWITCHING_PROTOCOLS, STD_MOVE(headers));
+			}
+		};
+
+		void normalizeUri(std::string &uri){
+			if(uri[0] != '/'){
+				uri.insert(uri.begin(), '/');
+			}
+			std::size_t write = 1;
+			for(std::size_t i = 1; i < uri.size(); ++i){
+				const char ch = uri[i];
+				if((ch == '/') && (uri[write - 1] == '/')){
+					continue;
+				}
+				uri[write] = ch;
+				++write;
+			}
+			uri.erase(uri.begin() + static_cast<std::ptrdiff_t>(write), uri.end());
+		}
+
+		void onRequestTimeout(const boost::weak_ptr<Session> &weak){
+			const AUTO(session, weak.lock());
+			if(!session){
+				return;
+			}
+			LOG_POSEIDON_WARNING("HTTP request times out, remote = ", session->getRemoteInfo());
+			session->sendDefault(ST_REQUEST_TIMEOUT, true);
+		}
+		void onKeepAliveTimeout(const boost::weak_ptr<Session> &weak){
+			const AUTO(tcpSession, boost::static_pointer_cast<TcpSessionBase>(weak.lock()));
+			if(!tcpSession){
+				return;
+			}
+			tcpSession->shutdown();
+		}
 	}
 
 	class Session::HeaderParser {
 	private:
-		static void onExpect(Session *session, const std::string &val){
+		static void onExpect(const boost::shared_ptr<Session> &session, const std::string &val){
 			if(val != "100-continue"){
 				LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", val);
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
 			}
-			session->sendDefault(ST_CONTINUE);
+			enqueueJob(boost::make_shared<ContinueResponseJob>(session));
 		}
-		static void onContentLength(Session *session, const std::string &val){
+		static void onContentLength(const boost::shared_ptr<Session> &session, const std::string &val){
 			session->m_contentLength = boost::lexical_cast<std::size_t>(val);
 			LOG_POSEIDON_DEBUG("Content-Length: ", session->m_contentLength);
 		}
-		static void onUpgrade(Session *session, const std::string &val){
+		static void onUpgrade(const boost::shared_ptr<Session> &session, const std::string &val){
 			if(session->m_version < 10001){
 				LOG_POSEIDON_WARNING("HTTP 1.1 is required to use WebSocket");
 				DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
@@ -146,6 +205,12 @@ namespace Http {
 				LOG_POSEIDON_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
 			}
+			const AUTO(category, session->getCategory());
+			const AUTO(servlet, WebSocketServletDepository::get(category, session->m_uri.c_str()));
+			if(!servlet){
+				LOG_POSEIDON_WARNING("No servlet in category ", category, " matches URI ", session->m_uri);
+				DEBUG_THROW(Exception, ST_NOT_FOUND);
+			}
 
 			std::string key = session->m_headers.get("Sec-WebSocket-Key");
 			if(key.empty()){
@@ -156,17 +221,12 @@ namespace Http {
 			unsigned char sha1[20];
 			sha1Sum(sha1, key.data(), key.size());
 			key = base64Encode(sha1, sizeof(sha1));
+			enqueueJob(boost::make_shared<UpgradeToWebSocketJob>(session, STD_MOVE(key)));
+			session->m_upgradedSession = boost::make_shared<WebSocket::Session>(session, servlet);
 
-			OptionalMap headers;
-			headers.set("Upgrade", "websocket");
-			headers.set("Connection", "Upgrade");
-			headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
-			session->sendDefault(ST_SWITCHING_PROTOCOLS, STD_MOVE(headers));
-
-			session->m_upgradedSession = boost::make_shared<WebSocket::Session>(session->virtualSharedFromThis<Session>());
 			LOG_POSEIDON_INFO("Upgraded to WebSocket::Session, remote = ", session->getRemoteInfo());
 		}
-		static void onAuthorization(Session *session, const std::string &val){
+		static void onAuthorization(const boost::shared_ptr<Session> &session, const std::string &val){
 			if(!session->m_authInfo){
 				return;
 			}
@@ -193,9 +253,9 @@ namespace Http {
 		}
 
 	public:
-		static void commit(Session *session){
+		static void commit(const boost::shared_ptr<Session> &session){
 			static const std::pair<
-				const char *, void (*)(Session *, const std::string &)
+				const char *, void (*)(const boost::shared_ptr<Session> &, const std::string &)
 				> JUMP_TABLE[] =
 			{
 				// 确保字母顺序。
@@ -334,7 +394,7 @@ namespace Http {
 
 					case S_HEADERS:
 						if(m_line.empty()){
-							HeaderParser::commit(this);
+							HeaderParser::commit(virtualSharedFromThis<Session>());
 
 							m_state = S_CONTENTS;
 						} else {

@@ -21,15 +21,16 @@ namespace WebSocket {
 	namespace {
 		class RequestJob : public JobBase {
 		private:
+			const boost::weak_ptr<const ServletCallback> m_servlet;
 			const boost::weak_ptr<Session> m_session;
-			const std::string m_uri;
 			const OpCode m_opcode;
 			const StreamBuffer m_payload;
 
 		public:
-			RequestJob(boost::weak_ptr<Session> session,
-				std::string uri, OpCode opcode, StreamBuffer payload)
-				: m_session(STD_MOVE(session)), m_uri(STD_MOVE(uri)), m_opcode(opcode), m_payload(STD_MOVE(payload))
+			RequestJob(boost::weak_ptr<const ServletCallback> m_servlet,
+				boost::weak_ptr<Session> session, OpCode opcode, StreamBuffer payload)
+				: m_servlet(STD_MOVE(m_servlet))
+				, m_session(STD_MOVE(session)), m_opcode(opcode), m_payload(STD_MOVE(payload))
 			{
 			}
 
@@ -46,21 +47,19 @@ namespace WebSocket {
 				}
 
 				try {
-					const AUTO(category, session->getCategory());
-					const AUTO(servlet, WebSocketServletDepository::get(category, m_uri.c_str()));
+					const AUTO(servlet, m_servlet.lock());
 					if(!servlet){
-						LOG_POSEIDON_WARNING("No servlet in category ", category, " matches URI ", m_uri);
-						DEBUG_THROW(Exception, ST_INACCEPTABLE, SharedNts::observe("Unknown URI"));
-						return;
+						LOG_POSEIDON_WARNING("Servlet expired: category = ", session->getCategory(), ", URI = ", session->getUri());
+						DEBUG_THROW(Exception, ST_GOING_AWAY, SharedNts::observe("Servlet expired"));
 					}
 
-					LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", m_uri, ", payload size = ", m_payload.size());
+					LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", session->getUri(), ", payload size = ", m_payload.size());
 					(*servlet)(session, m_opcode, m_payload);
 					session->setTimeout(WebSocketServletDepository::getKeepAliveTimeout());
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown in servlet, uri = ", m_uri,
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown in servlet, URI = ", session->getUri(),
 						", statusCode = ", e.statusCode(), ", what = ", e.what());
 					try {
 						session->shutdown(e.statusCode(), StreamBuffer(e.what()));
@@ -69,7 +68,7 @@ namespace WebSocket {
 					}
 					throw;
 				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... uri = ", m_uri);
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... URI = ", session->getUri());
 					try {
 						session->shutdown(ST_INTERNAL_ERROR);
 					} catch(...){
@@ -124,9 +123,10 @@ namespace WebSocket {
 		}
 	}
 
-	Session::Session(const boost::shared_ptr<Http::Session> &parent)
+	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::weak_ptr<const ServletCallback> servlet)
 		: Http::UpgradedSessionBase(parent)
-		, m_state(S_OPCODE)
+		, m_servlet(STD_MOVE(servlet))
+		, m_state(S_OPCODE), m_fin(false), m_opcode(OP_INVALID_OPCODE), m_payloadLen(0), m_payloadMask(0)
 	{
 	}
 
@@ -240,7 +240,7 @@ namespace WebSocket {
 						}
 
 						enqueueJob(boost::make_shared<RequestJob>(
-							virtualWeakFromThis<Session>(), getUri(), m_opcode, STD_MOVE(m_whole)));
+							m_servlet, virtualWeakFromThis<Session>(), m_opcode, STD_MOVE(m_whole)));
 						m_whole.clear();
 					}
 					m_state = S_OPCODE;
@@ -254,7 +254,7 @@ namespace WebSocket {
 		_exitFor:
 			;
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Websocket::Exception thrown while parsing data, uri = ", getUri(),
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Websocket::Exception thrown while parsing data: URI = ", getUri(),
 				", statusCode = ", e.statusCode(), ", what = ", e.what());
 			try {
 				shutdown(e.statusCode(), StreamBuffer(e.what()));
