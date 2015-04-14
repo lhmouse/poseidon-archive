@@ -130,9 +130,7 @@ namespace WebSocket {
 	{
 	}
 
-	void Session::onInitContents(const void *data, std::size_t size){
-		(void)data;
-		(void)size;
+	void Session::onInitContents(const void * /* data */ , std::size_t /* size */ ){
 	}
 	void Session::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;

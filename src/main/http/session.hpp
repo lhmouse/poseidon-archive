@@ -67,6 +67,10 @@ namespace Http {
 			m_authInfo = STD_MOVE(authInfo);
 		}
 
+		const boost::shared_ptr<UpgradedSessionBase> &getUpgradedSession() const {
+			return m_upgradedSession;
+		}
+
 		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer contents, bool fin = false);
 		bool send(StatusCode statusCode, StreamBuffer contents = StreamBuffer(), bool fin = false){
 			return send(statusCode, OptionalMap(), STD_MOVE(contents), fin);
