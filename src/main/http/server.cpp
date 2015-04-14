@@ -27,7 +27,7 @@ namespace Http {
 	}
 
 	boost::shared_ptr<TcpSessionBase> Server::onClientConnect(UniqueFile client) const {
-		AUTO(session, boost::make_shared<Session>(m_category, STD_MOVE(client)));
+		AUTO(session, boost::make_shared<Session>(getCategory(), STD_MOVE(client)));
 		session->setAuthInfo(getAuthInfo());
 		return session;
 	}

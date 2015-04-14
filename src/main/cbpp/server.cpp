@@ -14,7 +14,7 @@ namespace Cbpp {
 	}
 
 	boost::shared_ptr<TcpSessionBase> Server::onClientConnect(UniqueFile client) const {
-		return boost::make_shared<Session>(m_category, STD_MOVE(client));
+		return boost::make_shared<Session>(getCategory(), STD_MOVE(client));
 	}
 }
 
