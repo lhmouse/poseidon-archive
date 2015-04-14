@@ -325,7 +325,7 @@ namespace WebSocket {
 		}
 		if(masked){
 			boost::uint32_t mask;
-			storeLe(mask, rand32());
+			storeLe(mask, rand32() | 0x80808080u);
 			packet.put(&mask, 4);
 			int ch;
 			for(;;){
