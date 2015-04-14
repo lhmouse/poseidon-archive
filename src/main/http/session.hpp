@@ -6,7 +6,6 @@
 
 #include "../cxx_ver.hpp"
 #include <string>
-#include <set>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
@@ -44,7 +43,7 @@ namespace Http {
 		std::string m_line;
 
 		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
-		boost::shared_ptr<std::set<std::string> > m_authInfo;
+		boost::shared_ptr<const std::vector<std::string> > m_authInfo;
 
 		Verb m_verb;
 		unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
@@ -64,8 +63,8 @@ namespace Http {
 			return m_category;
 		}
 
-		void setAuthInfo(boost::shared_ptr<std::set<std::string> > authInfo){
-			m_authInfo.swap(authInfo);
+		void setAuthInfo(boost::shared_ptr<const std::vector<std::string> > authInfo){
+			m_authInfo = STD_MOVE(authInfo);
 		}
 
 		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer contents, bool fin = false);

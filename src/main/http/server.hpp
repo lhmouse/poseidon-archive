@@ -5,7 +5,6 @@
 #define POSEIDON_HTTP_SERVER_HPP_
 
 #include "../tcp_server_base.hpp"
-#include <set>
 #include <vector>
 #include <string>
 
@@ -17,14 +16,24 @@ namespace Http {
 	class Server : public TcpServerBase {
 	private:
 		const std::size_t m_category;
-		boost::shared_ptr<std::set<std::string> > m_authInfo;
+		const boost::shared_ptr<const std::vector<std::string> > m_authInfo;
 
 	public:
 		Server(std::size_t category, const IpPort &bindAddr, const char *cert, const char *privateKey,
-			const std::vector<std::string> &authInfo);
+			std::vector<std::string> authInfo);
+
+	protected:
+		const boost::shared_ptr<const std::vector<std::string> > &getAuthInfo() const {
+			return m_authInfo;
+		}
 
 	protected:
 		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const OVERRIDE;
+
+	public:
+		std::size_t getCategory() const {
+			return m_category;
+		}
 	};
 }
 

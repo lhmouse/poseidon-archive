@@ -183,7 +183,7 @@ namespace Http {
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
 			}
 			temp.erase(temp.begin(), temp.begin() + static_cast<std::ptrdiff_t>(pos) + 1);
-			if(session->m_authInfo->find(temp) == session->m_authInfo->end()){
+			if(!std::binary_search(session->m_authInfo->begin(), session->m_authInfo->end(), temp)){
 				LOG_POSEIDON_WARNING("Invalid username or password");
 				OptionalMap authHeader;
 				authHeader.set("WWW-Authenticate", "Basic realm=\"Invalid username or password\"");

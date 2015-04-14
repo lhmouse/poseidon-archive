@@ -20,6 +20,11 @@ namespace Cbpp {
 
 	protected:
 		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const OVERRIDE;
+
+	public:
+		std::size_t getCategory() const {
+			return m_category;
+		}
 	};
 }
 
