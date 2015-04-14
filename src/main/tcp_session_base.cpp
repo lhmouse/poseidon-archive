@@ -175,21 +175,21 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 	}
 	return true;
 }
+
 bool TcpSessionBase::hasBeenShutdown() const {
 	return atomicLoad(m_shutdown, ATOMIC_ACQUIRE);
 }
-bool TcpSessionBase::forceShutdown() NOEXCEPT {
-	const bool ret = !atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
-	::shutdown(m_socket.get(), SHUT_RDWR);
-	return ret;
-}
-
 bool TcpSessionBase::shutdown() NOEXCEPT {
 	try {
 		return send(StreamBuffer(), true);
 	} catch(...){
 		return forceShutdown();
 	}
+}
+bool TcpSessionBase::forceShutdown() NOEXCEPT {
+	const bool ret = !atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
+	::shutdown(m_socket.get(), SHUT_RDWR);
+	return ret;
 }
 
 long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){

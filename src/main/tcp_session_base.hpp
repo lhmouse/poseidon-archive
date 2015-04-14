@@ -89,10 +89,10 @@ public:
 	}
 
 	bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
-	bool hasBeenShutdown() const OVERRIDE FINAL;
-	bool forceShutdown() NOEXCEPT OVERRIDE FINAL;
 
+	bool hasBeenShutdown() const OVERRIDE FINAL;
 	bool shutdown() NOEXCEPT;
+	bool forceShutdown() NOEXCEPT OVERRIDE FINAL;
 
 	boost::uint64_t getCreatedTime() const {
 		return m_createdTime;
