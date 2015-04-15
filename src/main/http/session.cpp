@@ -123,112 +123,29 @@ namespace Http {
 
 	class Session::HeaderParser {
 	private:
-		class ContinueResponseJob : public JobBase {
-		private:
-			const boost::weak_ptr<Session> m_session;
-
-		public:
-			explicit ContinueResponseJob(boost::weak_ptr<Session> session)
-				: m_session(STD_MOVE(session))
-			{
-			}
-
-		protected:
-			boost::weak_ptr<const void> getCategory() const OVERRIDE {
-				return m_session;
-			}
-			void perform() const OVERRIDE {
-				PROFILE_ME;
-
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
-
-				session->sendDefault(ST_CONTINUE);
-			}
-		};
-
-		class UpgradeToWebSocketJob : public JobBase {
-		private:
-			const boost::weak_ptr<Session> m_session;
-			const std::string m_key;
-			const boost::shared_ptr<const WebSocket::AdaptorCallback> m_adaptor;
-
-		public:
-			UpgradeToWebSocketJob(boost::weak_ptr<Session> session, std::string key,
-				boost::shared_ptr<const WebSocket::AdaptorCallback> adaptor)
-				: m_session(STD_MOVE(session)), m_key(STD_MOVE(key))
-				, m_adaptor(STD_MOVE(adaptor))
-			{
-			}
-
-		public:
-			boost::weak_ptr<const void> getCategory() const OVERRIDE {
-				return m_session;
-			}
-			void perform() const OVERRIDE {
-				PROFILE_ME;
-
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
-
-				OptionalMap headers;
-				headers.set("Upgrade", "websocket");
-				headers.set("Connection", "Upgrade");
-				headers.set("Sec-WebSocket-Accept", m_key);
-				session->sendDefault(ST_SWITCHING_PROTOCOLS, STD_MOVE(headers));
-
-				session->m_upgradedSession = boost::make_shared<WebSocket::Session>(session, m_adaptor);
-			}
-		};
-
-	private:
 		static void onExpect(const boost::shared_ptr<Session> &session, const std::string &val){
 			if(val != "100-continue"){
 				LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", val);
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
 			}
-			enqueueJob(boost::make_shared<ContinueResponseJob>(session));
+			session->sendDefault(ST_CONTINUE);
 		}
 		static void onContentLength(const boost::shared_ptr<Session> &session, const std::string &val){
 			session->m_contentLength = boost::lexical_cast<std::size_t>(val);
 			LOG_POSEIDON_DEBUG("Content-Length: ", session->m_contentLength);
 		}
 		static void onUpgrade(const boost::shared_ptr<Session> &session, const std::string &val){
-			if(session->m_version < 10001){
-				LOG_POSEIDON_WARNING("HTTP 1.1 is required to use WebSocket");
-				DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
+			AUTO(upgradedSession, session->onUpgrade(val,
+				session->m_verb, session->m_uri, session->m_version, session->m_getParams, session->m_headers));
+			if(!upgradedSession){
+				LOG_POSEIDON_ERROR("Upgrade failed: ", val);
+				DEBUG_THROW(Exception, ST_INTERNAL_SERVER_ERROR);
 			}
-			if(::strcasecmp(val.c_str(), "websocket") != 0){
-				LOG_POSEIDON_WARNING("Unknown HTTP header Upgrade: ", val);
-				DEBUG_THROW(Exception, ST_BAD_REQUEST);
+			{
+				const boost::mutex::scoped_lock lock(session->m_upgreadedMutex);
+				session->m_upgradedSession = STD_MOVE(upgradedSession);
 			}
-			AUTO_REF(version, session->m_headers.get("Sec-WebSocket-Version"));
-			if(version != "13"){
-				LOG_POSEIDON_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
-				DEBUG_THROW(Exception, ST_BAD_REQUEST);
-			}
-			const AUTO(category, session->getCategory());
-			AUTO(adaptor, WebSocketAdaptorDepository::get(category, session->m_uri.c_str()));
-			if(!adaptor){
-				LOG_POSEIDON_WARNING("No adaptor in category ", category, " matches URI ", session->m_uri);
-				DEBUG_THROW(Exception, ST_NOT_FOUND);
-			}
-
-			std::string key = session->m_headers.get("Sec-WebSocket-Key");
-			if(key.empty()){
-				LOG_POSEIDON_WARNING("No Sec-WebSocket-Key specified.");
-				DEBUG_THROW(Exception, ST_BAD_REQUEST);
-			}
-			key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-			unsigned char sha1[20];
-			sha1Sum(sha1, key.data(), key.size());
-			key = base64Encode(sha1, sizeof(sha1));
-			enqueueJob(boost::make_shared<UpgradeToWebSocketJob>(session, STD_MOVE(key), STD_MOVE(adaptor)));
-			session->m_preparedToUpgrade = true;
+			LOG_POSEIDON_DEBUG("Upgraded to WebSocket: remote = ", session->getRemoteInfo());
 		}
 		static void onAuthorization(const boost::shared_ptr<Session> &session, const std::string &val){
 			if(!session->m_authInfo){
@@ -299,7 +216,6 @@ namespace Http {
 		, m_authInfo(STD_MOVE(authInfo))
 		, m_state(S_FIRST_HEADER), m_totalLength(0), m_contentLength(0)
 		, m_verb(V_INVALID_VERB), m_version(10000)
-		, m_preparedToUpgrade(false)
 	{
 		if(m_authInfo){
 			bool isSorted = true;
@@ -336,10 +252,13 @@ namespace Http {
 			AUTO(read, static_cast<const char *>(data));
 			const AUTO(end, read + size);
 			for(;;){
-				if((m_state == S_FIRST_HEADER) && m_upgradedSession){
-					m_upgradedSession->onReadAvail(read, static_cast<std::size_t>(end - read));
-					read = end;
-					goto _exitFor;
+				if(m_state == S_FIRST_HEADER){
+					// Epoll 线程中读取 m_upgradedSession 是不需要锁的。
+					if(m_upgradedSession){
+						m_upgradedSession->onReadAvail(read, static_cast<std::size_t>(end - read));
+						read = end;
+						goto _exitFor;
+					}
 				}
 
 				while(m_state != S_CONTENTS){
@@ -479,6 +398,7 @@ namespace Http {
 				m_line.append(read, bytesRemaining);
 				read += bytesRemaining;
 
+				// Epoll 线程中读取 m_upgradedSession 是不需要锁的。
 				if(m_upgradedSession){
 					setTimeout(EpollDaemon::getTcpRequestTimeout());
 					m_upgradedSession->onInitContents(m_line.data(), m_line.size());
@@ -520,11 +440,61 @@ namespace Http {
 		}
 	}
 
+	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const std::string &type,
+		Verb verb, const std::string &uri, unsigned version, const OptionalMap & /* params */, const OptionalMap &headers)
+	{
+		if(::strcasecmp(type.c_str(), "websocket") == 0){
+			if(verb != V_GET){
+				LOG_POSEIDON_WARNING("Must use GET verb to use WebSocket");
+				DEBUG_THROW(Exception, ST_METHOD_NOT_ALLOWED);
+			}
+			if(version < 10001){
+				LOG_POSEIDON_WARNING("HTTP 1.1 is required to use WebSocket");
+				DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
+			}
+			AUTO_REF(version, headers.get("Sec-WebSocket-Version"));
+			if(version != "13"){
+				LOG_POSEIDON_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
+				DEBUG_THROW(Exception, ST_BAD_REQUEST);
+			}
+			const AUTO(category, getCategory());
+			AUTO(adaptor, WebSocketAdaptorDepository::get(category, uri.c_str()));
+			if(!adaptor){
+				LOG_POSEIDON_WARNING("No adaptor in category ", category, " matches URI ", uri);
+				DEBUG_THROW(Exception, ST_NOT_FOUND);
+			}
+
+			std::string key = headers.get("Sec-WebSocket-Key");
+			if(key.empty()){
+				LOG_POSEIDON_WARNING("No Sec-WebSocket-Key specified.");
+				DEBUG_THROW(Exception, ST_BAD_REQUEST);
+			}
+			key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+			unsigned char sha1[20];
+			sha1Sum(sha1, key.data(), key.size());
+			key = base64Encode(sha1, sizeof(sha1));
+
+			OptionalMap headers;
+			headers.set("Upgrade", "websocket");
+			headers.set("Connection", "Upgrade");
+			headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
+			sendDefault(ST_SWITCHING_PROTOCOLS, STD_MOVE(headers));
+
+			return boost::make_shared<WebSocket::Session>(virtualSharedFromThis<Session>(), STD_MOVE(adaptor));
+		}
+		LOG_POSEIDON_WARNING("Unknown HTTP header Upgrade: ", type);
+		DEBUG_THROW(Exception, ST_BAD_REQUEST);
+	}
 	void Session::onRequest(Verb verb, std::string uri, unsigned version,
 		OptionalMap getParams, OptionalMap headers, std::string contents)
 	{
 		enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
 			verb, STD_MOVE(uri), version, STD_MOVE(getParams), STD_MOVE(headers), STD_MOVE(contents)));
+	}
+
+	boost::shared_ptr<UpgradedSessionBase> Session::getUpgradedSession() const {
+		const boost::mutex::scoped_lock lock(m_upgreadedMutex);
+		return m_upgradedSession;
 	}
 
 	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer contents, bool fin){

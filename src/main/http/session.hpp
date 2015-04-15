@@ -8,6 +8,7 @@
 #include <string>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 #include <boost/cstdint.hpp>
 #include "../tcp_session_base.hpp"
 #include "../optional_map.hpp"
@@ -50,7 +51,7 @@ namespace Http {
 		OptionalMap m_getParams;
 		OptionalMap m_headers;
 
-		bool m_preparedToUpgrade;
+		mutable boost::mutex m_upgreadedMutex;
 		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
 	public:
@@ -61,17 +62,18 @@ namespace Http {
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 	protected:
+		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const std::string &type,
+			Verb verb, const std::string &uri, unsigned version, const OptionalMap &params, const OptionalMap &headers);
+
 		virtual void onRequest(Verb verb, std::string uri, unsigned version,
-		    OptionalMap getParams, OptionalMap headers, std::string contents);
+			OptionalMap getParams, OptionalMap headers, std::string contents);
 
 	public:
 		std::size_t getCategory() const {
 			return m_category;
 		}
 
-		const boost::shared_ptr<UpgradedSessionBase> &getUpgradedSession() const {
-			return m_upgradedSession;
-		}
+		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
 
 		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer contents, bool fin = false);
 		bool send(StatusCode statusCode, StreamBuffer contents = StreamBuffer(), bool fin = false){
