@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "websocket_dispatcher_depository.hpp"
-#include <map>
 #include <boost/ref.hpp>
 #include <boost/thread/mutex.hpp>
 #include "main_config.hpp"
