@@ -375,13 +375,17 @@ namespace WebSocket {
 		}
 		return true;
 	}
-	bool Session::shutdown(StatusCode statusCode, StreamBuffer additional){
-		StreamBuffer temp;
-		boost::uint16_t codeBe;
-		storeBe(codeBe, static_cast<unsigned>(statusCode));
-		temp.put(&codeBe, 2);
-		temp.splice(additional);
-		return sendFrame(STD_MOVE(temp), OP_CLOSE, true, false);
+	bool Session::shutdown(StatusCode statusCode, StreamBuffer additional) NOEXCEPT {
+		try {
+			StreamBuffer temp;
+			boost::uint16_t codeBe;
+			storeBe(codeBe, static_cast<unsigned>(statusCode));
+			temp.put(&codeBe, 2);
+			temp.splice(additional);
+			return sendFrame(STD_MOVE(temp), OP_CLOSE, true, false);
+		} catch(...){
+			return UpgradedSessionBase::shutdown();
+		}
 	}
 }
 
