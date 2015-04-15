@@ -24,7 +24,7 @@ public:
 
 	public:
 		const char *what() const NOEXCEPT OVERRIDE {
-			return "Poseidon::TryAgainLater";
+			return "Poseidon::JobBase::TryAgainLater";
 		}
 
 		const boost::shared_ptr<const void> &getContext() const NOEXCEPT {
