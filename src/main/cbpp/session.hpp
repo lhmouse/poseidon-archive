@@ -36,6 +36,9 @@ namespace Cbpp {
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 	public:
+		virtual void onRequest(boost::uint16_t messageId, StreamBuffer contents);
+
+	public:
 		std::size_t getCategory() const {
 			return m_category;
 		}

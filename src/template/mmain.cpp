@@ -13,7 +13,7 @@
 #include "../main/singletons/module_depository.hpp"
 #include "../main/singletons/event_dispatcher.hpp"
 #include "../main/singletons/timer_daemon.hpp"
-#include "../main/singletons/websocket_dispatcher_depository.hpp"
+#include "../main/singletons/websocket_adaptor_depository.hpp"
 #include "../main/singletons/profile_depository.hpp"
 #include "../main/websocket/session.hpp"
 #include "../main/http/utilities.hpp"

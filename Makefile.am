@@ -74,7 +74,7 @@ pkginclude_singletons_HEADERS = \
 	src/main/singletons/cbpp_servlet_depository.hpp	\
 	src/main/singletons/event_dispatcher.hpp	\
 	src/main/singletons/profile_depository.hpp	\
-	src/main/singletons/websocket_dispatcher_depository.hpp
+	src/main/singletons/websocket_adaptor_depository.hpp
 
 pkginclude_httpdir = $(pkgincludedir)/http
 pkginclude_http_HEADERS = \
@@ -177,7 +177,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/singletons/timer_daemon.cpp	\
 	src/main/singletons/cbpp_servlet_depository.cpp	\
 	src/main/singletons/http_servlet_depository.cpp	\
-	src/main/singletons/websocket_dispatcher_depository.cpp	\
+	src/main/singletons/websocket_adaptor_depository.cpp	\
 	src/main/singletons/module_depository.cpp	\
 	src/main/singletons/event_dispatcher.cpp	\
 	src/main/singletons/profile_depository.cpp	\

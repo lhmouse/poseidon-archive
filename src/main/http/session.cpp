@@ -10,7 +10,7 @@
 #include "upgraded_session_base.hpp"
 #include "../log.hpp"
 #include "../singletons/http_servlet_depository.hpp"
-#include "../singletons/websocket_dispatcher_depository.hpp"
+#include "../singletons/websocket_adaptor_depository.hpp"
 #include "../singletons/epoll_daemon.hpp"
 #include "../stream_buffer.hpp"
 #include "../string.hpp"
@@ -153,13 +153,13 @@ namespace Http {
 		private:
 			const boost::weak_ptr<Session> m_session;
 			const std::string m_key;
-			const boost::shared_ptr<const WebSocket::DispatcherCallback> m_dispatcher;
+			const boost::shared_ptr<const WebSocket::AdaptorCallback> m_adaptor;
 
 		public:
 			UpgradeToWebSocketJob(boost::weak_ptr<Session> session, std::string key,
-				boost::shared_ptr<const WebSocket::DispatcherCallback> dispatcher)
+				boost::shared_ptr<const WebSocket::AdaptorCallback> adaptor)
 				: m_session(STD_MOVE(session)), m_key(STD_MOVE(key))
-				, m_dispatcher(STD_MOVE(dispatcher))
+				, m_adaptor(STD_MOVE(adaptor))
 			{
 			}
 
@@ -181,7 +181,7 @@ namespace Http {
 				headers.set("Sec-WebSocket-Accept", m_key);
 				session->sendDefault(ST_SWITCHING_PROTOCOLS, STD_MOVE(headers));
 
-				session->m_upgradedSession = boost::make_shared<WebSocket::Session>(session, m_dispatcher);
+				session->m_upgradedSession = boost::make_shared<WebSocket::Session>(session, m_adaptor);
 			}
 		};
 
@@ -212,9 +212,9 @@ namespace Http {
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
 			}
 			const AUTO(category, session->getCategory());
-			AUTO(dispatcher, WebSocketDispatcherDepository::get(category, session->m_uri.c_str()));
-			if(!dispatcher){
-				LOG_POSEIDON_WARNING("No dispatcher in category ", category, " matches URI ", session->m_uri);
+			AUTO(adaptor, WebSocketAdaptorDepository::get(category, session->m_uri.c_str()));
+			if(!adaptor){
+				LOG_POSEIDON_WARNING("No adaptor in category ", category, " matches URI ", session->m_uri);
 				DEBUG_THROW(Exception, ST_NOT_FOUND);
 			}
 
@@ -227,7 +227,7 @@ namespace Http {
 			unsigned char sha1[20];
 			sha1Sum(sha1, key.data(), key.size());
 			key = base64Encode(sha1, sizeof(sha1));
-			enqueueJob(boost::make_shared<UpgradeToWebSocketJob>(session, STD_MOVE(key), STD_MOVE(dispatcher)));
+			enqueueJob(boost::make_shared<UpgradeToWebSocketJob>(session, STD_MOVE(key), STD_MOVE(adaptor)));
 			session->m_preparedToUpgrade = true;
 		}
 		static void onAuthorization(const boost::shared_ptr<Session> &session, const std::string &val){
@@ -293,13 +293,33 @@ namespace Http {
 		}
 	};
 
-	Session::Session(std::size_t category, UniqueFile socket)
+	Session::Session(std::size_t category, UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo)
 		: TcpSessionBase(STD_MOVE(socket))
 		, m_category(category)
+		, m_authInfo(STD_MOVE(authInfo))
 		, m_state(S_FIRST_HEADER), m_totalLength(0), m_contentLength(0)
-		, m_verb(V_GET), m_version(10000)
+		, m_verb(V_INVALID_VERB), m_version(10000)
 		, m_preparedToUpgrade(false)
 	{
+		if(m_authInfo){
+			bool isSorted = true;
+#ifdef POSEIDON_CXX11
+			isSorted = std::is_sorted(m_authInfo->begin(), m_authInfo->end());
+#else
+			if(m_authInfo->size() >= 2){
+				for(AUTO(it, m_authInfo->begin() + 1); it != m_authInfo->end(); ++it){
+					if(!(it[-1] < it[0])){
+						isSorted = false;
+						break;
+					}
+				}
+			}
+#endif
+			if(!isSorted){
+				LOG_POSEIDON_ERROR("authInfo is not sorted.");
+				DEBUG_THROW(BasicException, SharedNts::observe("authInfo is not sorted"));
+			}
+		}
 	}
 	Session::~Session(){
 		if(m_state != S_FIRST_HEADER){
@@ -461,13 +481,11 @@ namespace Http {
 
 				if(m_upgradedSession){
 					setTimeout(EpollDaemon::getTcpRequestTimeout());
-
 					m_upgradedSession->onInitContents(m_line.data(), m_line.size());
 				} else {
-					enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
-						m_verb, STD_MOVE(m_uri), m_version, STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
-
-					m_verb = V_GET;
+					onRequest(m_verb, STD_MOVE(m_uri), m_version,
+						STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line));
+					m_verb = V_INVALID_VERB;
 					m_uri.clear();
 					m_version = 10000;
 					m_getParams.clear();
@@ -500,6 +518,13 @@ namespace Http {
 			}
 			throw;
 		}
+	}
+
+	void Session::onRequest(Verb verb, std::string uri, unsigned version,
+		OptionalMap getParams, OptionalMap headers, std::string contents)
+	{
+		enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
+			verb, STD_MOVE(uri), version, STD_MOVE(getParams), STD_MOVE(headers), STD_MOVE(contents)));
 	}
 
 	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer contents, bool fin){

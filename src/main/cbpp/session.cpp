@@ -133,8 +133,7 @@ namespace Cbpp {
 				if(m_payload.size() < (unsigned)m_payloadLen){
 					break;
 				}
-				enqueueJob(boost::make_shared<RequestJob>(
-					virtualWeakFromThis<Session>(), m_messageId, m_payload.cut(m_payloadLen)));
+				onRequest(m_messageId, m_payload.cut(m_payloadLen));
 				m_payloadLen = (boost::uint64_t)-1;
 				m_messageId = 0;
 			}
@@ -156,6 +155,11 @@ namespace Cbpp {
 			}
 			throw;
 		}
+	}
+
+	void Session::onRequest(boost::uint16_t messageId, StreamBuffer contents){
+		enqueueJob(boost::make_shared<RequestJob>(
+			virtualWeakFromThis<Session>(), messageId, STD_MOVE(contents)));
 	}
 
 	bool Session::send(boost::uint16_t messageId, StreamBuffer contents, bool fin){

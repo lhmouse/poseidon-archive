@@ -37,16 +37,16 @@ namespace Http {
 	private:
 		const std::size_t m_category;
 
+		boost::shared_ptr<const std::vector<std::string> > m_authInfo;
+
 		State m_state;
 		boost::uint64_t m_totalLength;
 		boost::uint64_t m_contentLength;
 		std::string m_line;
 
-		boost::shared_ptr<const std::vector<std::string> > m_authInfo;
-
 		Verb m_verb;
-		unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
 		std::string m_uri;
+		unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
 		OptionalMap m_getParams;
 		OptionalMap m_headers;
 
@@ -54,19 +54,19 @@ namespace Http {
 		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
 	public:
-		Session(std::size_t category, UniqueFile socket);
+		Session(std::size_t category, UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo);
 		~Session();
 
 	private:
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
+	protected:
+		virtual void onRequest(Verb verb, std::string uri, unsigned version,
+		    OptionalMap getParams, OptionalMap headers, std::string contents);
+
 	public:
 		std::size_t getCategory() const {
 			return m_category;
-		}
-
-		void setAuthInfo(boost::shared_ptr<const std::vector<std::string> > authInfo){
-			m_authInfo = STD_MOVE(authInfo);
 		}
 
 		const boost::shared_ptr<UpgradedSessionBase> &getUpgradedSession() const {

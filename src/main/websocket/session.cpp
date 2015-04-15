@@ -8,7 +8,7 @@
 #include "../http/session.hpp"
 #include "../optional_map.hpp"
 #include "../singletons/job_dispatcher.hpp"
-#include "../singletons/websocket_dispatcher_depository.hpp"
+#include "../singletons/websocket_adaptor_depository.hpp"
 #include "../log.hpp"
 #include "../random.hpp"
 #include "../endian.hpp"
@@ -21,15 +21,15 @@ namespace WebSocket {
 	namespace {
 		class RequestJob : public JobBase {
 		private:
-			const boost::weak_ptr<const DispatcherCallback> m_dispatcher;
+			const boost::weak_ptr<const AdaptorCallback> m_adaptor;
 			const boost::weak_ptr<Session> m_session;
 			const OpCode m_opcode;
 			const StreamBuffer m_payload;
 
 		public:
-			RequestJob(boost::weak_ptr<const DispatcherCallback> m_dispatcher,
+			RequestJob(boost::weak_ptr<const AdaptorCallback> m_adaptor,
 				boost::weak_ptr<Session> session, OpCode opcode, StreamBuffer payload)
-				: m_dispatcher(STD_MOVE(m_dispatcher))
+				: m_adaptor(STD_MOVE(m_adaptor))
 				, m_session(STD_MOVE(session)), m_opcode(opcode), m_payload(STD_MOVE(payload))
 			{
 			}
@@ -47,19 +47,19 @@ namespace WebSocket {
 				}
 
 				try {
-					const AUTO(dispatcher, m_dispatcher.lock());
-					if(!dispatcher){
-						LOG_POSEIDON_WARNING("Dispatcher expired: category = ", session->getCategory(), ", URI = ", session->getUri());
-						DEBUG_THROW(Exception, ST_GOING_AWAY, SharedNts::observe("Dispatcher expired"));
+					const AUTO(adaptor, m_adaptor.lock());
+					if(!adaptor){
+						LOG_POSEIDON_WARNING("Adaptor expired: category = ", session->getCategory(), ", URI = ", session->getUri());
+						DEBUG_THROW(Exception, ST_GOING_AWAY, SharedNts::observe("Adaptor expired"));
 					}
 
 					LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", session->getUri(), ", payload size = ", m_payload.size());
-					(*dispatcher)(session, m_opcode, m_payload);
-					session->setTimeout(WebSocketDispatcherDepository::getKeepAliveTimeout());
+					(*adaptor)(session, m_opcode, m_payload);
+					session->setTimeout(WebSocketAdaptorDepository::getKeepAliveTimeout());
 				} catch(TryAgainLater &){
 					throw;
 				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown in dispatcher, URI = ", session->getUri(),
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown in adaptor, URI = ", session->getUri(),
 						", statusCode = ", e.statusCode(), ", what = ", e.what());
 					try {
 						session->shutdown(e.statusCode(), StreamBuffer(e.what()));
@@ -123,9 +123,9 @@ namespace WebSocket {
 		}
 	}
 
-	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::weak_ptr<const DispatcherCallback> dispatcher)
+	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::weak_ptr<const AdaptorCallback> adaptor)
 		: Http::UpgradedSessionBase(parent)
-		, m_dispatcher(STD_MOVE(dispatcher))
+		, m_adaptor(STD_MOVE(adaptor))
 		, m_state(S_OPCODE), m_fin(false), m_opcode(OP_INVALID_OPCODE), m_payloadLen(0), m_payloadMask(0)
 	{
 	}
@@ -136,7 +136,7 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		try {
-			const AUTO(maxRequestLength, WebSocketDispatcherDepository::getMaxRequestLength());
+			const AUTO(maxRequestLength, WebSocketAdaptorDepository::getMaxRequestLength());
 
 			m_payload.put(data, size);
 
@@ -239,8 +239,7 @@ namespace WebSocket {
 							}
 						}
 
-						enqueueJob(boost::make_shared<RequestJob>(
-							m_dispatcher, virtualWeakFromThis<Session>(), m_opcode, STD_MOVE(m_whole)));
+						onRequest(m_opcode, STD_MOVE(m_whole));
 						m_whole.clear();
 					}
 					m_state = S_OPCODE;
@@ -339,6 +338,11 @@ namespace WebSocket {
 			packet.splice(contents);
 		}
 		return Http::UpgradedSessionBase::send(STD_MOVE(packet), fin);
+	}
+
+	void Session::onRequest(OpCode opcode, StreamBuffer contents){
+		enqueueJob(boost::make_shared<RequestJob>(
+			m_adaptor, virtualWeakFromThis<Session>(), opcode, STD_MOVE(contents)));
 	}
 
 	bool Session::send(StreamBuffer contents, bool binary, bool fin, bool masked){
