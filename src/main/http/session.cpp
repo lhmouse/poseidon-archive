@@ -88,63 +88,6 @@ namespace Http {
 			}
 		};
 
-		class ContinueResponseJob : public JobBase {
-		private:
-			const boost::weak_ptr<Session> m_session;
-
-		public:
-			explicit ContinueResponseJob(boost::weak_ptr<Session> session)
-				: m_session(STD_MOVE(session))
-			{
-			}
-
-		protected:
-			boost::weak_ptr<const void> getCategory() const OVERRIDE {
-				return m_session;
-			}
-			void perform() const OVERRIDE {
-				PROFILE_ME;
-
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
-
-				session->sendDefault(ST_CONTINUE);
-			}
-		};
-
-		class UpgradeToWebSocketJob : public JobBase {
-		private:
-			const boost::weak_ptr<Session> m_session;
-			const std::string m_key;
-
-		public:
-			UpgradeToWebSocketJob(boost::weak_ptr<Session> session, std::string key)
-				: m_session(STD_MOVE(session)), m_key(STD_MOVE(key))
-			{
-			}
-
-		public:
-			boost::weak_ptr<const void> getCategory() const OVERRIDE {
-				return m_session;
-			}
-			void perform() const OVERRIDE {
-				PROFILE_ME;
-
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
-
-				OptionalMap headers;
-				headers.set("Upgrade", "websocket");
-				headers.set("Connection", "Upgrade");
-				headers.set("Sec-WebSocket-Accept", m_key);
-				session->sendDefault(ST_SWITCHING_PROTOCOLS, STD_MOVE(headers));
-			}
-		};
-
 		void normalizeUri(std::string &uri){
 			if(uri[0] != '/'){
 				uri.insert(uri.begin(), '/');
@@ -180,6 +123,69 @@ namespace Http {
 
 	class Session::HeaderParser {
 	private:
+		class ContinueResponseJob : public JobBase {
+		private:
+			const boost::weak_ptr<Session> m_session;
+
+		public:
+			explicit ContinueResponseJob(boost::weak_ptr<Session> session)
+				: m_session(STD_MOVE(session))
+			{
+			}
+
+		protected:
+			boost::weak_ptr<const void> getCategory() const OVERRIDE {
+				return m_session;
+			}
+			void perform() const OVERRIDE {
+				PROFILE_ME;
+
+				const AUTO(session, m_session.lock());
+				if(!session){
+					return;
+				}
+
+				session->sendDefault(ST_CONTINUE);
+			}
+		};
+
+		class UpgradeToWebSocketJob : public JobBase {
+		private:
+			const boost::weak_ptr<Session> m_session;
+			const std::string m_key;
+			const boost::shared_ptr<const WebSocket::DispatcherCallback> m_dispatcher;
+
+		public:
+			UpgradeToWebSocketJob(boost::weak_ptr<Session> session, std::string key,
+				boost::shared_ptr<const WebSocket::DispatcherCallback> dispatcher)
+				: m_session(STD_MOVE(session)), m_key(STD_MOVE(key))
+				, m_dispatcher(STD_MOVE(dispatcher))
+			{
+			}
+
+		public:
+			boost::weak_ptr<const void> getCategory() const OVERRIDE {
+				return m_session;
+			}
+			void perform() const OVERRIDE {
+				PROFILE_ME;
+
+				const AUTO(session, m_session.lock());
+				if(!session){
+					return;
+				}
+
+				OptionalMap headers;
+				headers.set("Upgrade", "websocket");
+				headers.set("Connection", "Upgrade");
+				headers.set("Sec-WebSocket-Accept", m_key);
+				session->sendDefault(ST_SWITCHING_PROTOCOLS, STD_MOVE(headers));
+
+				session->m_upgradedSession = boost::make_shared<WebSocket::Session>(session, m_dispatcher);
+			}
+		};
+
+	private:
 		static void onExpect(const boost::shared_ptr<Session> &session, const std::string &val){
 			if(val != "100-continue"){
 				LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", val);
@@ -206,7 +212,7 @@ namespace Http {
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
 			}
 			const AUTO(category, session->getCategory());
-			const AUTO(dispatcher, WebSocketDispatcherDepository::get(category, session->m_uri.c_str()));
+			AUTO(dispatcher, WebSocketDispatcherDepository::get(category, session->m_uri.c_str()));
 			if(!dispatcher){
 				LOG_POSEIDON_WARNING("No dispatcher in category ", category, " matches URI ", session->m_uri);
 				DEBUG_THROW(Exception, ST_NOT_FOUND);
@@ -221,10 +227,8 @@ namespace Http {
 			unsigned char sha1[20];
 			sha1Sum(sha1, key.data(), key.size());
 			key = base64Encode(sha1, sizeof(sha1));
-			enqueueJob(boost::make_shared<UpgradeToWebSocketJob>(session, STD_MOVE(key)));
-			session->m_upgradedSession = boost::make_shared<WebSocket::Session>(session, dispatcher);
-
-			LOG_POSEIDON_INFO("Upgraded to WebSocket::Session, remote = ", session->getRemoteInfo());
+			enqueueJob(boost::make_shared<UpgradeToWebSocketJob>(session, STD_MOVE(key), STD_MOVE(dispatcher)));
+			session->m_preparedToUpgrade = true;
 		}
 		static void onAuthorization(const boost::shared_ptr<Session> &session, const std::string &val){
 			if(!session->m_authInfo){
@@ -294,6 +298,7 @@ namespace Http {
 		, m_category(category)
 		, m_state(S_FIRST_HEADER), m_totalLength(0), m_contentLength(0)
 		, m_verb(V_GET), m_version(10000)
+		, m_preparedToUpgrade(false)
 	{
 	}
 	Session::~Session(){

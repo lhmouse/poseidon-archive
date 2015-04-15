@@ -42,7 +42,6 @@ namespace Http {
 		boost::uint64_t m_contentLength;
 		std::string m_line;
 
-		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 		boost::shared_ptr<const std::vector<std::string> > m_authInfo;
 
 		Verb m_verb;
@@ -50,6 +49,9 @@ namespace Http {
 		std::string m_uri;
 		OptionalMap m_getParams;
 		OptionalMap m_headers;
+
+		bool m_preparedToUpgrade;
+		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
 	public:
 		Session(std::size_t category, UniqueFile socket);
