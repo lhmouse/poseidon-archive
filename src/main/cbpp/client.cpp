@@ -42,7 +42,7 @@ namespace Cbpp {
 				try {
 					if(m_messageId != ErrorMessage::ID){
 						LOG_POSEIDON_DEBUG("Dispatching: message = ", m_messageId, ", payload size = ", m_payload.size());
-						client->onResponse(m_messageId, STD_MOVE(m_payload));
+						client->onResponse(m_messageId, m_payload);
 					} else {
 						AUTO(payload, m_payload);
 						ErrorMessage error(payload);

@@ -15,8 +15,6 @@
 #include "../exception.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
-#include "../hash.hpp"
-#include "../websocket/session.hpp"
 
 namespace Poseidon {
 
@@ -312,7 +310,7 @@ namespace Http {
 								m_uri.erase(m_uri.begin() + static_cast<std::ptrdiff_t>(pos), m_uri.end());
 							}
 							normalizeUri(m_uri);
-							m_uri = STD_MOVE(urlDecode(m_uri));
+							m_uri = urlDecode(m_uri);
 
 							char versionMajor[16];
 							char versionMinor[16];
@@ -438,45 +436,11 @@ namespace Http {
 		}
 	}
 
-	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const std::string &type,
-		Verb verb, const std::string &uri, unsigned version, const OptionalMap & /* params */, const OptionalMap &headers)
+	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const std::string & /* type */,
+		Verb /* verb */, const std::string & /* uri */, unsigned /* version */,
+		const OptionalMap & /* params */, const OptionalMap & /* headers */)
 	{
-		if(::strcasecmp(type.c_str(), "websocket") == 0){
-		/*	if(verb != V_GET){
-				LOG_POSEIDON_WARNING("Must use GET verb to use WebSocket");
-				DEBUG_THROW(Exception, ST_METHOD_NOT_ALLOWED);
-			}
-			if(version < 10001){
-				LOG_POSEIDON_WARNING("HTTP 1.1 is required to use WebSocket");
-				DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
-			}
-			AUTO_REF(version, headers.get("Sec-WebSocket-Version"));
-			if(version != "13"){
-				LOG_POSEIDON_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
-				DEBUG_THROW(Exception, ST_BAD_REQUEST);
-			}
-
-			std::string key = headers.get("Sec-WebSocket-Key");
-			if(key.empty()){
-				LOG_POSEIDON_WARNING("No Sec-WebSocket-Key specified.");
-				DEBUG_THROW(Exception, ST_BAD_REQUEST);
-			}
-			key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-			unsigned char sha1[20];
-			sha1Sum(sha1, key.data(), key.size());
-			key = base64Encode(sha1, sizeof(sha1));
-
-			OptionalMap headers;
-			headers.set("Upgrade", "websocket");
-			headers.set("Connection", "Upgrade");
-			headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
-			sendDefault(ST_SWITCHING_PROTOCOLS, STD_MOVE(headers));
-
-			return boost::make_shared<WebSocket::Session>(virtualSharedFromThis<Session>(), STD_MOVE(adaptor));*/
-			return VAL_INIT;
-		}
-		LOG_POSEIDON_WARNING("Unknown HTTP header Upgrade: ", type);
-		DEBUG_THROW(Exception, ST_BAD_REQUEST);
+		return VAL_INIT;
 	}
 
 	boost::shared_ptr<UpgradedSessionBase> Session::getUpgradedSession() const {

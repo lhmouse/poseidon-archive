@@ -84,7 +84,7 @@ std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool s
 	DateTime dt;
 	if(ms == 0){
 		std::memset(&dt, 0, sizeof(dt));
-	} else if(ms == UINT64_MAX){
+	} else if(ms == (boost::uint64_t)-1){
 		std::memset(&dt, 0, sizeof(dt));
 		dt.yr = 9999;
 	} else {
@@ -102,7 +102,7 @@ boost::uint64_t scanTime(const char *str){
 	if(dt.yr == 0){
 		return 0;
 	} else if(dt.yr == 9999){
-		return UINT64_MAX;
+		return (boost::uint64_t)-1;
 	} else {
 		return assembleTime(dt);
 	}

@@ -6,6 +6,7 @@
 #include <iomanip>
 #include "exception.hpp"
 #include "../http/session.hpp"
+#include "../http/utilities.hpp"
 #include "../optional_map.hpp"
 #include "../singletons/main_config.hpp"
 #include "../log.hpp"
@@ -13,6 +14,7 @@
 #include "../endian.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
+#include "../hash.hpp"
 
 namespace Poseidon {
 
@@ -112,6 +114,39 @@ namespace WebSocket {
 			}
 		}
 	};
+
+	Http::StatusCode Session::makeHttpHandshakeResponse(OptionalMap &ret,
+		Http::Verb verb, unsigned version, const OptionalMap &headers)
+	{
+		if(verb != Http::V_GET){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Must use GET verb to use WebSocket");
+			return Http::ST_METHOD_NOT_ALLOWED;
+		}
+		if(version < 10001){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "HTTP 1.1 is required to use WebSocket");
+			return Http::ST_VERSION_NOT_SUPPORTED;
+		}
+		AUTO_REF(wsVersion, headers.get("Sec-WebSocket-Version"));
+		if(wsVersion != "13"){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown HTTP header Sec-WebSocket-Version: ", wsVersion);
+			return Http::ST_BAD_REQUEST;
+		}
+
+		std::string key = headers.get("Sec-WebSocket-Key");
+		if(key.empty()){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "No Sec-WebSocket-Key specified.");
+			return Http::ST_BAD_REQUEST;
+		}
+		key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+		unsigned char sha1[20];
+		sha1Sum(sha1, key.data(), key.size());
+		key = Http::base64Encode(sha1, sizeof(sha1));
+
+		ret.set("Upgrade", "websocket");
+		ret.set("Connection", "Upgrade");
+		ret.set("Sec-WebSocket-Accept", STD_MOVE(key));
+		return Http::ST_OK;
+	}
 
 	Session::Session(const boost::shared_ptr<Http::Session> &parent)
 		: Http::UpgradedSessionBase(parent)

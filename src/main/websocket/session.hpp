@@ -9,6 +9,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
+#include "../http/status_codes.hpp"
+#include "../http/verbs.hpp"
 #include "opcodes.hpp"
 #include "status_codes.hpp"
 
@@ -33,6 +35,10 @@ namespace WebSocket {
 
 	private:
 		class RequestJob;
+
+	public:
+		static Http::StatusCode makeHttpHandshakeResponse(OptionalMap &ret,
+			Http::Verb verb, unsigned version, const OptionalMap &headers);
 
 	private:
 		State m_state;
