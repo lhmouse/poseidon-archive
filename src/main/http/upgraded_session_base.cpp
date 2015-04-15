@@ -16,6 +16,14 @@ namespace Http {
 	void UpgradedSessionBase::onClose() NOEXCEPT {
 	}
 
+	bool UpgradedSessionBase::send(StreamBuffer buffer, bool fin){
+		const AUTO(parent, getParent());
+		if(!parent){
+			return false;
+		}
+		return static_cast<TcpSessionBase &>(*parent).send(STD_MOVE(buffer), fin);
+	}
+
 	bool UpgradedSessionBase::hasBeenShutdown() const {
 		const AUTO(parent, getParent());
 		if(!parent){
@@ -23,12 +31,12 @@ namespace Http {
 		}
 		return static_cast<const TcpSessionBase &>(*parent).hasBeenShutdown();
 	}
-	bool UpgradedSessionBase::send(StreamBuffer buffer, bool fin){
+	bool UpgradedSessionBase::shutdown() NOEXCEPT {
 		const AUTO(parent, getParent());
 		if(!parent){
 			return false;
 		}
-		return static_cast<TcpSessionBase &>(*parent).send(STD_MOVE(buffer), fin);
+		return static_cast<TcpSessionBase &>(*parent).shutdown();
 	}
 	bool UpgradedSessionBase::forceShutdown() NOEXCEPT {
 		const AUTO(parent, getParent());

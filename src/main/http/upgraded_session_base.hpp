@@ -33,8 +33,10 @@ namespace Http {
 
 	public:
 		bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
-		bool hasBeenShutdown() const OVERRIDE FINAL;
-		bool forceShutdown() NOEXCEPT OVERRIDE FINAL;
+
+		bool hasBeenShutdown() const OVERRIDE;
+		bool shutdown() NOEXCEPT;
+		bool forceShutdown() NOEXCEPT OVERRIDE;
 
 		boost::shared_ptr<const Session> getParent() const {
 			return m_parent.lock();
