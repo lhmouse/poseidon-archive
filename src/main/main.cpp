@@ -10,9 +10,6 @@
 #include "singletons/timer_daemon.hpp"
 #include "singletons/mysql_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
-#include "singletons/cbpp_servlet_depository.hpp"
-#include "singletons/http_servlet_depository.hpp"
-#include "singletons/websocket_adaptor_depository.hpp"
 #include "singletons/system_http_server.hpp"
 #include "singletons/job_dispatcher.hpp"
 #include "singletons/module_depository.hpp"
@@ -72,10 +69,6 @@ namespace {
 
 			START(TimerDaemon);
 			START(EpollDaemon);
-
-			START(CbppServletDepository);
-			START(HttpServletDepository);
-			START(WebSocketAdaptorDepository);
 			START(EventDispatcher);
 
 			const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));

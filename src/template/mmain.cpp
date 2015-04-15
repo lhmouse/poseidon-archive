@@ -9,22 +9,16 @@
 #include "../main/profiler.hpp"
 #include "../main/hash.hpp"
 #include "../main/module_raii.hpp"
-#include "../main/singletons/http_servlet_depository.hpp"
 #include "../main/singletons/module_depository.hpp"
 #include "../main/singletons/event_dispatcher.hpp"
 #include "../main/singletons/timer_daemon.hpp"
-#include "../main/singletons/websocket_adaptor_depository.hpp"
 #include "../main/singletons/profile_depository.hpp"
 #include "../main/websocket/session.hpp"
 #include "../main/http/utilities.hpp"
-#include "../main/http/server.hpp"
-#include "../main/cbpp/server.hpp"
 #include "../main/tcp_client_base.hpp"
 #include "../main/cbpp/session.hpp"
 #include "../main/http/session.hpp"
-#include "../main/http/request.hpp"
 #include "../main/cbpp/message_base.hpp"
-#include "../main/singletons/cbpp_servlet_depository.hpp"
 #include "../main/singletons/epoll_daemon.hpp"
 #include "../main/mysql/object_base.hpp"
 #include "../main/job_base.hpp"
@@ -521,7 +515,6 @@ MODULE_RAII {
 	LOG_POSEIDON_FATAL("Job enqueued!");
 	return VAL_INIT;
 }
-*/
 
 namespace {
 
@@ -548,3 +541,4 @@ MODULE_RAII {
 MODULE_RAII {
 	return HttpServletDepository::create(2, SharedNts::observe("/meow"), &meowProc);
 }
+*/

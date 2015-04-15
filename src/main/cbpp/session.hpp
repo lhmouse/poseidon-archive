@@ -22,27 +22,24 @@ namespace Cbpp {
 		friend Server;
 
 	private:
-		const std::size_t m_category;
+		class RequestJob;
 
+	private:
 		boost::uint64_t m_payloadLen;
 		unsigned m_messageId;
 		StreamBuffer m_payload;
 
 	public:
-		Session(std::size_t category, UniqueFile socket);
+		explicit Session(UniqueFile socket);
 		~Session();
 
 	private:
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 	protected:
-		virtual void onRequest(boost::uint16_t messageId, StreamBuffer contents);
+		virtual void onRequest(boost::uint16_t messageId, StreamBuffer contents) = 0;
 
 	public:
-		std::size_t getCategory() const {
-			return m_category;
-		}
-
 		bool send(boost::uint16_t messageId, StreamBuffer contents, bool fin = false);
 
 		template<class MessageT>

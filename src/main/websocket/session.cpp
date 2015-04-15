@@ -7,8 +7,7 @@
 #include "exception.hpp"
 #include "../http/session.hpp"
 #include "../optional_map.hpp"
-#include "../singletons/job_dispatcher.hpp"
-#include "../singletons/websocket_adaptor_depository.hpp"
+#include "../singletons/main_config.hpp"
 #include "../log.hpp"
 #include "../random.hpp"
 #include "../endian.hpp"
@@ -19,66 +18,6 @@ namespace Poseidon {
 
 namespace WebSocket {
 	namespace {
-		class RequestJob : public JobBase {
-		private:
-			const boost::weak_ptr<const AdaptorCallback> m_adaptor;
-			const boost::weak_ptr<Session> m_session;
-			const OpCode m_opcode;
-			const StreamBuffer m_payload;
-
-		public:
-			RequestJob(boost::weak_ptr<const AdaptorCallback> m_adaptor,
-				boost::weak_ptr<Session> session, OpCode opcode, StreamBuffer payload)
-				: m_adaptor(STD_MOVE(m_adaptor))
-				, m_session(STD_MOVE(session)), m_opcode(opcode), m_payload(STD_MOVE(payload))
-			{
-			}
-
-		protected:
-			boost::weak_ptr<const void> getCategory() const OVERRIDE {
-				return m_session;
-			}
-			void perform() const OVERRIDE {
-				PROFILE_ME;
-
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
-
-				try {
-					const AUTO(adaptor, m_adaptor.lock());
-					if(!adaptor){
-						LOG_POSEIDON_WARNING("Adaptor expired: category = ", session->getCategory(), ", URI = ", session->getUri());
-						DEBUG_THROW(Exception, ST_GOING_AWAY, SharedNts::observe("Adaptor expired"));
-					}
-
-					LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", session->getUri(), ", payload size = ", m_payload.size());
-					(*adaptor)(session, m_opcode, m_payload);
-					session->setTimeout(WebSocketAdaptorDepository::getKeepAliveTimeout());
-				} catch(TryAgainLater &){
-					throw;
-				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown in adaptor, URI = ", session->getUri(),
-						", statusCode = ", e.statusCode(), ", what = ", e.what());
-					try {
-						session->shutdown(e.statusCode(), StreamBuffer(e.what()));
-					} catch(...){
-						session->forceShutdown();
-					}
-					throw;
-				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... URI = ", session->getUri());
-					try {
-						session->shutdown(ST_INTERNAL_ERROR);
-					} catch(...){
-						session->forceShutdown();
-					}
-					throw;
-				}
-			}
-		};
-
 		bool isValidUtf8String(const std::string &str){
 			PROFILE_ME;
 
@@ -123,9 +62,59 @@ namespace WebSocket {
 		}
 	}
 
-	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::weak_ptr<const AdaptorCallback> adaptor)
+	class Session::RequestJob : public JobBase {
+	private:
+		const boost::weak_ptr<Session> m_session;
+		const OpCode m_opcode;
+		const StreamBuffer m_payload;
+
+	public:
+		RequestJob(boost::weak_ptr<Session> session, OpCode opcode, StreamBuffer payload)
+			: m_session(STD_MOVE(session)), m_opcode(opcode), m_payload(STD_MOVE(payload))
+		{
+		}
+
+	protected:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_session;
+		}
+		void perform() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(session, m_session.lock());
+			if(!session){
+				return;
+			}
+
+			try {
+				LOG_POSEIDON_DEBUG("Dispatching packet: URI = ", session->getUri(), ", payload size = ", m_payload.size());
+				session->onRequest(m_opcode, m_payload);
+				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("websocket_keep_alive_timeout", 0));
+			} catch(TryAgainLater &){
+				throw;
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown in adaptor, URI = ", session->getUri(),
+					", statusCode = ", e.statusCode(), ", what = ", e.what());
+				try {
+					session->shutdown(e.statusCode(), StreamBuffer(e.what()));
+				} catch(...){
+					session->forceShutdown();
+				}
+				throw;
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... URI = ", session->getUri());
+				try {
+					session->shutdown(ST_INTERNAL_ERROR);
+				} catch(...){
+					session->forceShutdown();
+				}
+				throw;
+			}
+		}
+	};
+
+	Session::Session(const boost::shared_ptr<Http::Session> &parent)
 		: Http::UpgradedSessionBase(parent)
-		, m_adaptor(STD_MOVE(adaptor))
 		, m_state(S_OPCODE), m_fin(false), m_opcode(OP_INVALID_OPCODE), m_payloadLen(0), m_payloadMask(0)
 	{
 	}
@@ -136,7 +125,7 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		try {
-			const AUTO(maxRequestLength, WebSocketAdaptorDepository::getMaxRequestLength());
+			const AUTO(maxRequestLength, MainConfig::getConfigFile().get<boost::uint64_t>("websocket_max_request_length", 16384));
 
 			m_payload.put(data, size);
 
@@ -239,7 +228,9 @@ namespace WebSocket {
 							}
 						}
 
-						onRequest(m_opcode, STD_MOVE(m_whole));
+						enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
+							m_opcode, STD_MOVE(m_whole)));
+
 						m_whole.clear();
 					}
 					m_state = S_OPCODE;
@@ -338,11 +329,6 @@ namespace WebSocket {
 			packet.splice(contents);
 		}
 		return Http::UpgradedSessionBase::send(STD_MOVE(packet), fin);
-	}
-
-	void Session::onRequest(OpCode opcode, StreamBuffer contents){
-		enqueueJob(boost::make_shared<RequestJob>(
-			m_adaptor, virtualWeakFromThis<Session>(), opcode, STD_MOVE(contents)));
 	}
 
 	bool Session::send(StreamBuffer contents, bool binary, bool fin, bool masked){

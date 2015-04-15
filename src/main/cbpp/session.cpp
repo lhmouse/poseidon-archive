@@ -6,97 +6,86 @@
 #include "exception.hpp"
 #include "control_codes.hpp"
 #include "error_message.hpp"
+#include "../singletons/main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
-#include "../singletons/cbpp_servlet_depository.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 
 namespace Poseidon {
 
 namespace Cbpp {
-	namespace {
-		class RequestJob : public JobBase {
-		private:
-			const boost::weak_ptr<Session> m_session;
-			const unsigned m_messageId;
-			const StreamBuffer m_payload;
+	class Session::RequestJob : public JobBase {
+	private:
+		const boost::weak_ptr<Session> m_session;
+		const unsigned m_messageId;
+		const StreamBuffer m_payload;
 
-		public:
-			RequestJob(boost::weak_ptr<Session> session, unsigned messageId, StreamBuffer payload)
-				: m_session(STD_MOVE(session)), m_messageId(messageId), m_payload(STD_MOVE(payload))
-			{
+	public:
+		RequestJob(boost::weak_ptr<Session> session, unsigned messageId, StreamBuffer payload)
+			: m_session(STD_MOVE(session)), m_messageId(messageId), m_payload(STD_MOVE(payload))
+		{
+		}
+
+	protected:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_session;
+		}
+		void perform() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(session, m_session.lock());
+			if(!session){
+				return;
 			}
 
-		protected:
-			boost::weak_ptr<const void> getCategory() const OVERRIDE {
-				return m_session;
-			}
-			void perform() const OVERRIDE {
-				PROFILE_ME;
+			try {
+				if(m_messageId == ErrorMessage::ID){
+					AUTO(payload, m_payload);
+					ErrorMessage packet(payload);
+					LOG_POSEIDON_DEBUG("Received error packet: message id = ", packet.messageId,
+						", statusCode = ", packet.statusCode, ", reason = ", packet.reason);
 
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
+					switch(static_cast<ControlCode>(packet.messageId)){
+					case CTL_HEARTBEAT:
+						LOG_POSEIDON_TRACE("Received heartbeat from ", session->getRemoteInfo());
+						break;
+
+					default:
+						LOG_POSEIDON_WARNING("Unknown control code: ", packet.messageId);
+						session->send(ErrorMessage::ID, StreamBuffer(packet), true);
+						break;
+					}
+				} else {
+					LOG_POSEIDON_DEBUG("Dispatching packet: message = ", m_messageId, ", payload size = ", m_payload.size());
+					session->onRequest(m_messageId, m_payload);
 				}
-
+				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("cbpp_keep_alive_timeout", 0));
+			} catch(TryAgainLater &){
+				throw;
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown in servlet, message id = ",
+					m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
 				try {
-					if(m_messageId == ErrorMessage::ID){
-						AUTO(payload, m_payload);
-						ErrorMessage packet(payload);
-						LOG_POSEIDON_DEBUG("Received error packet: message id = ", packet.messageId,
-							", statusCode = ", packet.statusCode, ", reason = ", packet.reason);
-
-						switch(static_cast<ControlCode>(packet.messageId)){
-						case CTL_HEARTBEAT:
-							LOG_POSEIDON_TRACE("Received heartbeat from ", session->getRemoteInfo());
-							break;
-
-						default:
-							LOG_POSEIDON_WARNING("Unknown control code: ", packet.messageId);
-							session->send(ErrorMessage::ID, StreamBuffer(packet), true);
-							break;
-						}
-					} else {
-						const AUTO(category, session->getCategory());
-						const AUTO(servlet, CbppServletDepository::get(category, m_messageId));
-						if(!servlet){
-							LOG_POSEIDON_WARNING("No servlet in category ", category, " matches message ", m_messageId);
-							DEBUG_THROW(Exception, ST_NOT_FOUND, SharedNts::observe("Unknown message"));
-						}
-
-						LOG_POSEIDON_DEBUG("Dispatching packet: message = ", m_messageId,
-							", payload size = ", m_payload.size());
-						(*servlet)(session, m_payload);
-					}
-					session->setTimeout(CbppServletDepository::getKeepAliveTimeout());
-				} catch(TryAgainLater &){
-					throw;
-				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown in servlet, message id = ",
-						m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
-					try {
-						session->sendError(m_messageId, e.statusCode(), e.what(), false); // 不关闭连接。
-					} catch(...){
-						session->forceShutdown();
-					}
-					throw;
+					session->sendError(m_messageId, e.statusCode(), e.what(), false); // 不关闭连接。
 				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... message id = ", m_messageId);
-					try {
-						session->sendError(m_messageId, ST_INTERNAL_ERROR, true); // 关闭连接。
-					} catch(...){
-						session->forceShutdown();
-					}
-					throw;
+					session->forceShutdown();
 				}
+				throw;
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... message id = ", m_messageId);
+				try {
+					session->sendError(m_messageId, ST_INTERNAL_ERROR, true); // 关闭连接。
+				} catch(...){
+					session->forceShutdown();
+				}
+				throw;
 			}
-		};
-	}
+		}
+	};
 
-	Session::Session(std::size_t category, UniqueFile socket)
+	Session::Session(UniqueFile socket)
 		: TcpSessionBase(STD_MOVE(socket))
-		, m_category(category)
 		, m_payloadLen((boost::uint64_t)-1), m_messageId(0)
 	{
 	}
@@ -110,7 +99,7 @@ namespace Cbpp {
 		PROFILE_ME;
 
 		try {
-			const AUTO(maxRequestLength, CbppServletDepository::getMaxRequestLength());
+			const AUTO(maxRequestLength, MainConfig::getConfigFile().get<boost::uint64_t>("cbpp_max_request_length", 16384));
 
 			m_payload.put(data, size);
 
@@ -133,7 +122,10 @@ namespace Cbpp {
 				if(m_payload.size() < (unsigned)m_payloadLen){
 					break;
 				}
-				onRequest(m_messageId, m_payload.cut(m_payloadLen));
+
+				enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
+					m_messageId, m_payload.cut(m_payloadLen)));
+
 				m_payloadLen = (boost::uint64_t)-1;
 				m_messageId = 0;
 			}
@@ -155,11 +147,6 @@ namespace Cbpp {
 			}
 			throw;
 		}
-	}
-
-	void Session::onRequest(boost::uint16_t messageId, StreamBuffer contents){
-		enqueueJob(boost::make_shared<RequestJob>(
-			virtualWeakFromThis<Session>(), messageId, STD_MOVE(contents)));
 	}
 
 	bool Session::send(boost::uint16_t messageId, StreamBuffer contents, bool fin){

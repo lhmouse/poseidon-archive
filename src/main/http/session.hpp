@@ -34,10 +34,9 @@ namespace Http {
 
 	private:
 		class HeaderParser;
+		class RequestJob;
 
 	private:
-		const std::size_t m_category;
-
 		boost::shared_ptr<const std::vector<std::string> > m_authInfo;
 
 		State m_state;
@@ -55,24 +54,20 @@ namespace Http {
 		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
 	public:
-		Session(std::size_t category, UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo);
+		Session(UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo);
 		~Session();
 
 	private:
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 	protected:
+		virtual void onRequest(Verb verb, std::string uri, unsigned version,
+			OptionalMap getParams, OptionalMap headers, std::string contents) = 0;
+
 		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const std::string &type,
 			Verb verb, const std::string &uri, unsigned version, const OptionalMap &params, const OptionalMap &headers);
 
-		virtual void onRequest(Verb verb, std::string uri, unsigned version,
-			OptionalMap getParams, OptionalMap headers, std::string contents);
-
 	public:
-		std::size_t getCategory() const {
-			return m_category;
-		}
-
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
 
 		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer contents, bool fin = false);

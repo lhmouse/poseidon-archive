@@ -38,9 +38,6 @@ namespace Http {
 		return static_cast<TcpSessionBase &>(*parent).forceShutdown();
 	}
 
-	std::size_t UpgradedSessionBase::getCategory() const {
-		return getSafeParent()->m_category;
-	}
 	const std::string &UpgradedSessionBase::getUri() const {
 		return getSafeParent()->m_uri;
 	}

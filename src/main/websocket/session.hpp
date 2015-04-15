@@ -11,7 +11,6 @@
 #include "../stream_buffer.hpp"
 #include "opcodes.hpp"
 #include "status_codes.hpp"
-#include "callbacks.hpp"
 
 namespace Poseidon {
 
@@ -33,8 +32,9 @@ namespace WebSocket {
 		};
 
 	private:
-		const boost::weak_ptr<const AdaptorCallback> m_adaptor;
+		class RequestJob;
 
+	private:
 		State m_state;
 		bool m_fin;
 		OpCode m_opcode;
@@ -44,7 +44,7 @@ namespace WebSocket {
 		StreamBuffer m_whole;
 
 	public:
-		Session(const boost::shared_ptr<Http::Session> &parent, boost::weak_ptr<const AdaptorCallback> adaptor);
+		explicit Session(const boost::shared_ptr<Http::Session> &parent);
 
 	private:
 		void onInitContents(const void *data, std::size_t size) OVERRIDE FINAL;
@@ -55,7 +55,7 @@ namespace WebSocket {
 		bool sendFrame(StreamBuffer contents, OpCode opcode, bool fin, bool masked);
 
 	protected:
-		virtual void onRequest(OpCode opcode, StreamBuffer contents);
+		virtual void onRequest(OpCode opcode, StreamBuffer contents) = 0;
 
 	public:
 		bool send(StreamBuffer contents, bool binary = true, bool fin = false, bool masked = false);

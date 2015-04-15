@@ -4,13 +4,11 @@
 #include "../precompiled.hpp"
 #include "session.hpp"
 #include <string.h>
-#include "request.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
 #include "upgraded_session_base.hpp"
 #include "../log.hpp"
-#include "../singletons/http_servlet_depository.hpp"
-#include "../singletons/websocket_adaptor_depository.hpp"
+#include "../singletons/main_config.hpp"
 #include "../singletons/epoll_daemon.hpp"
 #include "../stream_buffer.hpp"
 #include "../string.hpp"
@@ -24,70 +22,6 @@ namespace Poseidon {
 
 namespace Http {
 	namespace {
-		class RequestJob : public JobBase {
-		private:
-			const boost::weak_ptr<Session> m_session;
-			const Request m_request;
-
-		public:
-			RequestJob(boost::weak_ptr<Session> session, Verb verb, std::string uri, unsigned version,
-				OptionalMap getParams, OptionalMap headers, std::string contents)
-				: m_session(STD_MOVE(session))
-				, m_request(verb, STD_MOVE(uri), version, STD_MOVE(getParams), STD_MOVE(headers), STD_MOVE(contents))
-			{
-			}
-
-		protected:
-			boost::weak_ptr<const void> getCategory() const OVERRIDE {
-				return m_session;
-			}
-			void perform() const OVERRIDE {
-				PROFILE_ME;
-
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
-
-				try {
-					const AUTO(category, session->getCategory());
-					const AUTO(servlet, HttpServletDepository::get(category, m_request.uri.c_str()));
-					if(!servlet){
-						LOG_POSEIDON_WARNING("No handler in category ", category, " matches URI ", m_request.uri);
-						DEBUG_THROW(Exception, ST_NOT_FOUND);
-					}
-
-					LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_request.uri, ", verb = ", getStringFromVerb(m_request.verb));
-					(*servlet)(session, m_request);
-
-					if(m_request.version < 10001){
-						session->shutdown();
-					} else {
-						session->setTimeout(HttpServletDepository::getKeepAliveTimeout());
-					}
-				} catch(TryAgainLater &){
-					throw;
-				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet, request URI = ", m_request.uri,
-						", statusCode = ", e.statusCode());
-					try {
-						session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
-					} catch(...){
-						session->forceShutdown();
-					}
-					throw;
-				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... request URI = ", m_request.uri);
-					try {
-						session->sendDefault(ST_BAD_REQUEST, true); // 关闭连接。
-					} catch(...){
-						session->forceShutdown();
-					}
-					throw;
-				}
-			}
-		};
-
 		void normalizeUri(std::string &uri){
 			if(uri[0] != '/'){
 				uri.insert(uri.begin(), '/');
@@ -120,6 +54,69 @@ namespace Http {
 			tcpSession->shutdown();
 		}
 	}
+
+	class Session::RequestJob : public JobBase {
+	private:
+		const boost::weak_ptr<Session> m_session;
+		const Verb m_verb;
+		const std::string m_uri;
+		const unsigned m_version;
+		const OptionalMap m_getParams;
+		const OptionalMap m_headers;
+		const std::string m_contents;
+
+	public:
+		RequestJob(boost::weak_ptr<Session> session, Verb verb, std::string uri, unsigned version,
+			OptionalMap getParams, OptionalMap headers, std::string contents)
+			: m_session(STD_MOVE(session))
+			, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
+			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_contents(STD_MOVE(contents))
+		{
+		}
+
+	protected:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_session;
+		}
+		void perform() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(session, m_session.lock());
+			if(!session){
+				return;
+			}
+
+			try {
+				LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", getStringFromVerb(m_verb));
+				session->onRequest(m_verb, m_uri, m_version, m_getParams, m_headers, m_contents);
+
+				if(m_version < 10001){
+					session->shutdown();
+				} else {
+					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 0));
+				}
+			} catch(TryAgainLater &){
+				throw;
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet, request URI = ", m_uri,
+					", statusCode = ", e.statusCode());
+				try {
+					session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
+				} catch(...){
+					session->forceShutdown();
+				}
+				throw;
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... request URI = ", m_uri);
+				try {
+					session->sendDefault(ST_BAD_REQUEST, true); // 关闭连接。
+				} catch(...){
+					session->forceShutdown();
+				}
+				throw;
+			}
+		}
+	};
 
 	class Session::HeaderParser {
 	private:
@@ -164,6 +161,7 @@ namespace Http {
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
 			}
 			temp.erase(temp.begin(), temp.begin() + static_cast<std::ptrdiff_t>(pos) + 1);
+			temp = base64Decode(temp);
 			if(!std::binary_search(session->m_authInfo->begin(), session->m_authInfo->end(), temp)){
 				LOG_POSEIDON_WARNING("Invalid username or password");
 				OptionalMap authHeader;
@@ -210,9 +208,8 @@ namespace Http {
 		}
 	};
 
-	Session::Session(std::size_t category, UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo)
+	Session::Session(UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo)
 		: TcpSessionBase(STD_MOVE(socket))
-		, m_category(category)
 		, m_authInfo(STD_MOVE(authInfo))
 		, m_state(S_FIRST_HEADER), m_totalLength(0), m_contentLength(0)
 		, m_verb(V_INVALID_VERB), m_version(10000)
@@ -247,7 +244,7 @@ namespace Http {
 		PROFILE_ME;
 
 		try {
-			const AUTO(maxRequestLength, HttpServletDepository::getMaxRequestLength());
+			const AUTO(maxRequestLength, MainConfig::getConfigFile().get<boost::uint64_t>("http_max_request_length", 16384));
 
 			AUTO(read, static_cast<const char *>(data));
 			const AUTO(end, read + size);
@@ -400,11 +397,12 @@ namespace Http {
 
 				// Epoll 线程中读取 m_upgradedSession 是不需要锁的。
 				if(m_upgradedSession){
-					setTimeout(EpollDaemon::getTcpRequestTimeout());
 					m_upgradedSession->onInitContents(m_line.data(), m_line.size());
+					setTimeout(EpollDaemon::getTcpRequestTimeout());
 				} else {
-					onRequest(m_verb, STD_MOVE(m_uri), m_version,
-						STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line));
+					enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
+						m_verb, STD_MOVE(m_uri), m_version, STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
+
 					m_verb = V_INVALID_VERB;
 					m_uri.clear();
 					m_version = 10000;
@@ -444,7 +442,7 @@ namespace Http {
 		Verb verb, const std::string &uri, unsigned version, const OptionalMap & /* params */, const OptionalMap &headers)
 	{
 		if(::strcasecmp(type.c_str(), "websocket") == 0){
-			if(verb != V_GET){
+		/*	if(verb != V_GET){
 				LOG_POSEIDON_WARNING("Must use GET verb to use WebSocket");
 				DEBUG_THROW(Exception, ST_METHOD_NOT_ALLOWED);
 			}
@@ -456,12 +454,6 @@ namespace Http {
 			if(version != "13"){
 				LOG_POSEIDON_WARNING("Unknown HTTP header Sec-WebSocket-Version: ", version);
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
-			}
-			const AUTO(category, getCategory());
-			AUTO(adaptor, WebSocketAdaptorDepository::get(category, uri.c_str()));
-			if(!adaptor){
-				LOG_POSEIDON_WARNING("No adaptor in category ", category, " matches URI ", uri);
-				DEBUG_THROW(Exception, ST_NOT_FOUND);
 			}
 
 			std::string key = headers.get("Sec-WebSocket-Key");
@@ -480,16 +472,11 @@ namespace Http {
 			headers.set("Sec-WebSocket-Accept", STD_MOVE(key));
 			sendDefault(ST_SWITCHING_PROTOCOLS, STD_MOVE(headers));
 
-			return boost::make_shared<WebSocket::Session>(virtualSharedFromThis<Session>(), STD_MOVE(adaptor));
+			return boost::make_shared<WebSocket::Session>(virtualSharedFromThis<Session>(), STD_MOVE(adaptor));*/
+			return VAL_INIT;
 		}
 		LOG_POSEIDON_WARNING("Unknown HTTP header Upgrade: ", type);
 		DEBUG_THROW(Exception, ST_BAD_REQUEST);
-	}
-	void Session::onRequest(Verb verb, std::string uri, unsigned version,
-		OptionalMap getParams, OptionalMap headers, std::string contents)
-	{
-		enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
-			verb, STD_MOVE(uri), version, STD_MOVE(getParams), STD_MOVE(headers), STD_MOVE(contents)));
 	}
 
 	boost::shared_ptr<UpgradedSessionBase> Session::getUpgradedSession() const {
