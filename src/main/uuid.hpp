@@ -6,6 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include <iosfwd>
+#include <string>
 #include <cstring>
 #include <boost/cstdint.hpp>
 
@@ -35,7 +36,9 @@ public:
 	explicit Uuid(const unsigned char (&bytes)[16]){
 		std::memcpy(m_storage.bytes, bytes, 16);
 	}
+	// 字符串不合法则抛出异常。
 	explicit Uuid(const char (&str)[36]);
+	explicit Uuid(const std::string &str);
 
 public:
 	const unsigned char *begin() const {
@@ -55,7 +58,10 @@ public:
 	}
 
 	void toString(char (&str)[36], bool upperCase = true) const;
+	void toString(std::string &str, bool upperCase = true) const;
+	std::string toString(bool upperCase = true) const;
 	bool fromString(const char (&str)[36]);
+	bool fromString(const std::string &str);
 
 public:
 	const unsigned char &operator[](unsigned index) const {

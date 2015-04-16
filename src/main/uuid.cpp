@@ -47,6 +47,11 @@ Uuid::Uuid(const char (&str)[36]){
 		DEBUG_THROW(Exception, SharedNts::observe("Invalid UUID string"));
 	}
 }
+Uuid::Uuid(const std::string &str){
+	if(!fromString(str)){
+		DEBUG_THROW(Exception, SharedNts::observe("Invalid UUID string"));
+	}
+}
 
 void Uuid::toString(char (&str)[36], bool upperCase) const {
 	AUTO(read, begin());
@@ -80,6 +85,15 @@ void Uuid::toString(char (&str)[36], bool upperCase) const {
 	PRINT(2) *(write++) = '-';
 	PRINT(2) *(write++) = '-';
 	PRINT(6)
+}
+void Uuid::toString(std::string &str, bool upperCase) const {
+	str.resize(36);
+	toString(reinterpret_cast<char (&)[36]>(str[0]), upperCase);
+}
+std::string Uuid::toString(bool upperCase) const {
+	std::string str;
+	toString(str, upperCase);
+	return str;
 }
 bool Uuid::fromString(const char (&str)[36]){
 	const char *read = str;
@@ -120,6 +134,12 @@ bool Uuid::fromString(const char (&str)[36]){
 	SCAN(6)
 
 	return true;
+}
+bool Uuid::fromString(const std::string &str){
+	if(str.size() != 36){
+		return false;
+	}
+	return fromString(reinterpret_cast<const char (&)[36]>(str[0]));
 }
 
 std::ostream &operator<<(std::ostream &os, const Uuid &rhs){
