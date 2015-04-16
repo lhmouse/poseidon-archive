@@ -308,7 +308,7 @@ public:
 
 #define FIELD_BOOLEAN(name_)				(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
-													<<static_cast<unsigned long>(get_ ## name_())),
+													<<static_cast<long>(get_ ## name_())),
 #define FIELD_TINYINT(name_)				(void)(oss_ <<", "),	\
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
 													<<static_cast<long>(get_ ## name_())),
@@ -366,7 +366,7 @@ public:
 #undef FIELD_STRING
 #undef FIELD_DATETIME
 
-#define FIELD_BOOLEAN(name_)				set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_BOOLEAN(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
 #define FIELD_TINYINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
 #define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
 #define FIELD_SMALLINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
