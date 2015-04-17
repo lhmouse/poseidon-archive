@@ -197,10 +197,10 @@ namespace {
 				}
 
 				send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
+			} else {
+				LOG_POSEIDON_WARNING("No system HTTP handler: ", uri);
+				DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 			}
-
-			LOG_POSEIDON_WARNING("No system HTTP handler: ", uri);
-			DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 		}
 	};
 
