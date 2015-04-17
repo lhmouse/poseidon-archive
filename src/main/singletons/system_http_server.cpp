@@ -63,15 +63,20 @@ namespace {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", getRemoteInfo());
 
+			if((uri.size() < m_path.size()) || (uri.compare(0, m_path.size(), m_path) != 0)){
+				LOG_POSEIDON_WARNING("Inacceptable system HTTP request: ", uri);
+				DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
+			}
+
 			if(verb != Http::V_GET){
 				DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);
 			}
 
-			if(uri == "/shutdown"){
+			if(uri.compare(m_path.size(), std::string::npos, "shutdown") == 0){
 				LOG_POSEIDON_WARNING("Received shutdown HTTP request. The server will be shutdown now.");
 				sendDefault(Http::ST_OK);
 				::raise(SIGTERM);
-			} else if(uri == "/load_module"){
+			} else if(uri.compare(m_path.size(), std::string::npos, "load_module") == 0){
 				AUTO_REF(name, getParams.at("name"));
 				if(!ModuleDepository::loadNoThrow(name.c_str())){
 					LOG_POSEIDON_WARNING("Failed to load module: ", name);
@@ -79,7 +84,7 @@ namespace {
 					return;
 				}
 				sendDefault(Http::ST_OK);
-			} else if(uri == "/unload_module"){
+			} else if(uri.compare(m_path.size(), std::string::npos, "unload_module") == 0){
 				AUTO_REF(baseAddrStr, getParams.at("base_addr"));
 				std::istringstream iss(baseAddrStr);
 				void *baseAddr;
@@ -94,7 +99,7 @@ namespace {
 					return;
 				}
 				sendDefault(Http::ST_OK);
-			} else if(uri == "/show_profile"){
+			} else if(uri.compare(m_path.size(), std::string::npos, "show_profile") == 0){
 				OptionalMap headers;
 				headers.set("Content-Type", "text/csv; charset=utf-8");
 				headers.set("Content-Disposition", "attachment; name=\"profile.csv\"");
@@ -116,7 +121,7 @@ namespace {
 				}
 
 				send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-			} else if(uri == "/show_modules"){
+			} else if(uri.compare(m_path.size(), std::string::npos, "show_modules") == 0){
 				OptionalMap headers;
 				headers.set("Content-Type", "text/csv; charset=utf-8");
 				headers.set("Content-Disposition", "attachment; name=\"modules.csv\"");
@@ -134,7 +139,7 @@ namespace {
 				}
 
 				send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-			} else if(uri == "/show_connections"){
+			} else if(uri.compare(m_path.size(), std::string::npos, "show_connections") == 0){
 				OptionalMap headers;
 				headers.set("Content-Type", "text/csv; charset=utf-8");
 				headers.set("Content-Disposition", "attachment; name=\"connections.csv\"");
@@ -156,7 +161,7 @@ namespace {
 				}
 
 				send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-			} else if(uri == "/set_log_mask"){
+			} else if(uri.compare(m_path.size(), std::string::npos, "set_log_mask") == 0){
 				unsigned long long toEnable = 0, toDisable = 0;
 				{
 					AUTO_REF(val, getParams.get("to_disable"));
@@ -172,7 +177,7 @@ namespace {
 				}
 				Logger::setMask(toDisable, toEnable);
 				sendDefault(Http::ST_OK);
-			} else if(uri == "/show_mysql_profiles"){
+			} else if(uri.compare(m_path.size(), std::string::npos, "show_mysql_profile") == 0){
 				OptionalMap headers;
 				headers.set("Content-Type", "text/csv; charset=utf-8");
 				headers.set("Content-Disposition", "attachment; name=\"mysql_threads.csv\"");
