@@ -8,11 +8,17 @@
 #include <iosfwd>
 #include <string>
 #include <cstring>
+#include <boost/array.hpp>
 #include <boost/cstdint.hpp>
 
 namespace Poseidon {
 
 class Uuid {
+public:
+	static const Uuid UUID_NULL;
+	static const Uuid UUID_MIN;
+	static const Uuid UUID_MAX;
+
 public:
 	static Uuid generate();
 
@@ -25,7 +31,7 @@ private:
 	} m_storage;
 
 public:
-	CONSTEXPR Uuid()
+	CONSTEXPR Uuid() NOEXCEPT
 		: m_storage()
 	{
 	}
@@ -35,6 +41,9 @@ public:
 #endif
 	explicit Uuid(const unsigned char (&bytes)[16]){
 		std::memcpy(m_storage.bytes, bytes, 16);
+	}
+	explicit Uuid(const boost::array<unsigned char, 16> &bytes){
+		std::memcpy(m_storage.bytes, bytes.data(), 16);
 	}
 	// 字符串不合法则抛出异常。
 	explicit Uuid(const char (&str)[36]);

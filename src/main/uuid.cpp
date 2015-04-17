@@ -20,10 +20,19 @@ namespace {
 		return ret;
 	}
 
+	const unsigned char MIN_BYTES[16] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const unsigned char MAX_BYTES[16] = {
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+
 	const unsigned long g_pidHigh = static_cast<unsigned long>(::getpid()) << 16;
 
 	volatile unsigned g_autoInc = rdtscLow();
 }
+
+const Uuid Uuid::UUID_NULL	(MIN_BYTES);
+const Uuid Uuid::UUID_MIN	(MIN_BYTES);
+const Uuid Uuid::UUID_MAX	(MAX_BYTES);
 
 Uuid Uuid::generate(){
 	const AUTO(now, getUtcTime());
