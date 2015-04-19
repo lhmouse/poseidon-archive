@@ -111,6 +111,10 @@ public:
 		: ::Poseidon::Cbpp::MessageBase()
 	{
 		*this << buffer_;
+
+		if(!buffer_.empty()){
+			THROW_JUNK_AFTER_PACKET_(MESSAGE_NAME);
+		}
 	}
 
 public:
@@ -200,10 +204,6 @@ public:
 										}
 
 		MESSAGE_FIELDS
-
-		if(!buffer_.empty()){
-			THROW_JUNK_AFTER_PACKET_(MESSAGE_NAME);
-		}
 	}
 
 	operator ::Poseidon::StreamBuffer() const {
