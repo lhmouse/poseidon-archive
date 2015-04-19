@@ -8,6 +8,11 @@
 
 namespace Poseidon {
 
+void JsonObject::dump(std::string &str) const {
+	std::ostringstream oss;
+	dump(oss);
+	str = oss.str();
+}
 void JsonObject::dump(std::ostream &os) const {
 	os <<'{';
 	AUTO(it, begin());
@@ -30,12 +35,12 @@ void JsonObject::dump(std::ostream &os) const {
 	}
 	os <<'}';
 }
-std::string JsonObject::dump() const {
-	std::ostringstream os;
-	dump(os);
-	return os.str();
-}
 
+void JsonArray::dump(std::string &str) const {
+	std::ostringstream oss;
+	dump(oss);
+	str = oss.str();
+}
 void JsonArray::dump(std::ostream &os) const {
 	os <<'[';
 	AUTO(it, begin());
@@ -50,12 +55,12 @@ void JsonArray::dump(std::ostream &os) const {
 	}
 	os <<']';
 }
-std::string JsonArray::dump() const {
-	std::ostringstream os;
-	dump(os);
-	return os.str();
-}
 
+void JsonElement::dump(std::string &str) const {
+	std::ostringstream oss;
+	dump(oss);
+	str = oss.str();
+}
 void JsonElement::dump(std::ostream &os) const {
 	switch(type()){
 	case T_BOOL:
@@ -127,11 +132,6 @@ void JsonElement::dump(std::ostream &os) const {
 	default:
 		assert(false);
 	}
-}
-std::string JsonElement::dump() const {
-	std::ostringstream os;
-	dump(os);
-	return os.str();
 }
 
 std::string JsonParser::acceptString(std::istream &is){

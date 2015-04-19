@@ -29,14 +29,24 @@ class JsonElement;
 
 class JsonObject : public std::map<SharedNts, JsonElement> {
 public:
+	void dump(std::string &str) const;
+	std::string dump() const {
+		std::string str;
+		dump(str);
+		return str;
+	}
 	void dump(std::ostream &os) const;
-	std::string dump() const;
 };
 
 class JsonArray : public std::deque<JsonElement> {
 public:
+	void dump(std::string &str) const;
+	std::string dump() const {
+		std::string str;
+		dump(str);
+		return str;
+	}
 	void dump(std::ostream &os) const;
-	std::string dump() const;
 };
 
 class JsonElement {
@@ -110,8 +120,13 @@ public:
 		m_data.swap(rhs.m_data);
 	}
 
+	void dump(std::string &str) const;
+	std::string dump() const {
+		std::string str;
+		dump(str);
+		return str;
+	}
 	void dump(std::ostream &os) const;
-	std::string dump() const;
 };
 
 inline void swap(JsonObject &lhs, JsonObject &rhs) NOEXCEPT {
