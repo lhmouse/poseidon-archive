@@ -392,6 +392,11 @@ void StreamBuffer::load(std::istream &is){
 	}
 }
 
+void StreamBuffer::dumpHex(std::string &str) const {
+	std::ostringstream oss;
+	dumpHex(oss);
+	str = oss.str();
+}
 void StreamBuffer::dumpHex(std::ostream &os) const {
 	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
 		os <<HexDumper(it->m_data + it->m_readPos, it->m_writePos - it->m_readPos);

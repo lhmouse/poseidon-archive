@@ -140,10 +140,21 @@ public:
 	}
 
 	void dump(std::string &str) const;
+	std::string dump() const {
+		std::string str;
+		dump(str);
+		return str;
+	}
 	void dump(std::ostream &os) const;
 	void load(const std::string &str);
 	void load(std::istream &is);
 
+	void dumpHex(std::string &str) const;
+	std::string dumpHex() const {
+		std::string str;
+		dumpHex(str);
+		return str;
+	}
 	void dumpHex(std::ostream &os) const;
 };
 
