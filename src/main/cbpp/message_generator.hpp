@@ -107,7 +107,7 @@ public:
 		MESSAGE_FIELDS
 	{
 	}
-	explicit MESSAGE_NAME(::Poseidon::StreamBuffer &buffer_)
+	explicit MESSAGE_NAME(::Poseidon::StreamBuffer buffer_)
 		: ::Poseidon::Cbpp::MessageBase()
 	{
 		*this << buffer_;
