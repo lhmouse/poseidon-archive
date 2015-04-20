@@ -14,9 +14,6 @@ namespace Poseidon {
 std::ostream &operator<<(std::ostream &os, const IpPort &rhs){
 	return os <<rhs.ip <<':' <<rhs.port;
 }
-std::wostream &operator<<(std::wostream &os, const IpPort &rhs){
-	return os <<rhs.ip <<':' <<rhs.port;
-}
 
 IpPort getRemoteIpPortFromFd(int fd){
 	::sockaddr sa;

@@ -37,7 +37,6 @@ inline void swap(IpPort &lhs, IpPort &rhs) NOEXCEPT {
 }
 
 extern std::ostream &operator<<(std::ostream &os, const IpPort &rhs);
-extern std::wostream &operator<<(std::wostream &os, const IpPort &rhs);
 
 extern IpPort getRemoteIpPortFromFd(int fd);
 extern IpPort getLocalIpPortFromFd(int fd);

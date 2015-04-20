@@ -176,10 +176,6 @@ template<typename CloserT>
 std::ostream &operator<<(std::ostream &os, const UniqueHandle<CloserT> &handle){
 	return os <<handle.get();
 }
-template<typename CloserT>
-std::wostream &operator<<(std::wostream &os, const UniqueHandle<CloserT> &handle){
-	return os <<handle.get();
-}
 
 struct FileCloser {
 	CONSTEXPR int operator()() const NOEXCEPT {

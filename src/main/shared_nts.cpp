@@ -102,11 +102,17 @@ void SharedNts::assign(const char *str, std::size_t len){
 	}
 }
 
-std::ostream &operator<<(std::ostream &os, const SharedNts &rhs){
-	return os <<rhs.get();
+
+std::istream &operator>>(std::istream &is, SharedNts &rhs){
+	std::string str;
+	if(is >>str){
+		rhs.assign(str);
+	}
+	return is;
 }
-std::wostream &operator<<(std::wostream &os, const SharedNts &rhs){
-	return os <<rhs.get();
+std::ostream &operator<<(std::ostream &os, const SharedNts &rhs){
+	os <<rhs.get();
+	return os;
 }
 
 }

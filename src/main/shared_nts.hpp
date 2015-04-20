@@ -187,8 +187,8 @@ inline void swap(SharedNts &lhs, SharedNts &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
+extern std::istream &operator>>(std::istream &is, SharedNts &rhs);
 extern std::ostream &operator<<(std::ostream &os, const SharedNts &rhs);
-extern std::wostream &operator<<(std::wostream &os, const SharedNts &rhs);
 
 }
 
