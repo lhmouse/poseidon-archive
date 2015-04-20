@@ -292,8 +292,8 @@ JsonObject JsonParser::acceptObject(std::istream &is){
 			DEBUG_THROW(ProtocolException,
 				SharedNts::observe("Bad JSON: expecting colon"), -1);
 		}
-		JsonElement value = acceptValue(is);
-		ret[SharedNts(name)] = STD_MOVE(value);
+		JsonElement element = parseElement(is);
+		ret[SharedNts(name)] = STD_MOVE(element);
 	}
 	return ret;
 }
@@ -316,8 +316,8 @@ JsonArray JsonParser::acceptArray(std::istream &is){
 			continue;
 		}
 		is.unget();
-		JsonElement value = acceptValue(is);
-		ret.push_back(STD_MOVE(value));
+		JsonElement element = parseElement(is);
+		ret.push_back(STD_MOVE(element));
 	}
 	return ret;
 }
@@ -338,7 +338,7 @@ JsonNull JsonParser::acceptNull(std::istream &is){
 	return JsonNull();
 }
 
-JsonElement JsonParser::acceptValue(std::istream &is){
+JsonElement JsonParser::parseElement(std::istream &is){
 	JsonElement ret;
 	char temp;
 	if(!(is >>temp)){
@@ -388,7 +388,6 @@ JsonElement JsonParser::acceptValue(std::istream &is){
 	}
 	return ret;
 }
-
 JsonObject JsonParser::parseObject(std::istream &is){
 	return acceptObject(is >>std::skipws);
 }

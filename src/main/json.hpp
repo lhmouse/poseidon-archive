@@ -162,9 +162,8 @@ private:
 	static bool acceptBoolean(std::istream &is);
 	static JsonNull acceptNull(std::istream &is);
 
-	static JsonElement acceptValue(std::istream &is);
-
 public:
+	static JsonElement parseElement(std::istream &is);
 	static JsonObject parseObject(std::istream &is);
 	static JsonArray parseArray(std::istream &is);
 
