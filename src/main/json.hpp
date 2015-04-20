@@ -62,7 +62,7 @@ private:
 
 public:
 	JsonElement()
-		: m_data(false)
+		: m_data(JsonNull())
 	{
 	}
 	template<typename T>
