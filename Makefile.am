@@ -4,7 +4,7 @@ AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-paramete
 AM_CXXFLAGS =
 
 %.hpp.gch: %.hpp
-	$(CXX) -x c++-header $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
+	$(CXX) -x c++-header @DEFS@ $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
 
 BUILT_SOURCES = \
 	src/main/precompiled.hpp.gch
