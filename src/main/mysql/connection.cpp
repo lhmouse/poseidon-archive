@@ -41,8 +41,7 @@ namespace MySql {
 		class ConnectionDelegator : public Connection {
 
 #define THROW_MYSQL_EXCEPTION	\
-	DEBUG_THROW(Exception,	\
-		::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())))
+			DEBUG_THROW(Exception, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())))
 
 		private:
 			// 若返回 true 则 pos 指向找到的列，否则 pos 指向下一个。
@@ -240,6 +239,9 @@ namespace MySql {
 				}
 				return scanTime(data);
 			}
+
+#undef THROW_MYSQL_EXCEPTION
+
 		};
 	}
 
