@@ -240,8 +240,8 @@ void SystemHttpServer::start(){
 
 	AUTO(bind,			conf.get<std::string>("system_http_bind", "0.0.0.0"));
 	AUTO(port,			conf.get<boost::uint16_t>("system_http_port", 8900));
-	AUTO(certificate,	conf.get<std::string>("system_http_certificate", ""));
-	AUTO(privateKey,	conf.get<std::string>("system_http_private_key", ""));
+	AUTO(certificate,	conf.get<std::string>("system_http_certificate"));
+	AUTO(privateKey,	conf.get<std::string>("system_http_private_key"));
 	AUTO(authUserPass,	conf.getAll<std::string>("system_http_auth_user_pass"));
 	AUTO(path,			conf.get<std::string>("system_http_path", "~/sys"));
 
