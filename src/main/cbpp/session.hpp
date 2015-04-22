@@ -35,7 +35,7 @@ namespace Cbpp {
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 	protected:
-		virtual void onRequest(boost::uint16_t messageId, StreamBuffer contents) = 0;
+		virtual void onRequest(boost::uint16_t messageId, const StreamBuffer &contents) = 0;
 
 	public:
 		bool send(boost::uint16_t messageId, StreamBuffer contents, bool fin = false);

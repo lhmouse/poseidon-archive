@@ -45,11 +45,11 @@ namespace Http {
 		const unsigned m_version;
 		const OptionalMap m_getParams;
 		const OptionalMap m_headers;
-		const std::string m_contents;
+		const StreamBuffer m_contents;
 
 	public:
 		RequestJob(const boost::shared_ptr<Session> &session, Verb verb, std::string uri, unsigned version,
-			OptionalMap getParams, OptionalMap headers, std::string contents)
+			OptionalMap getParams, OptionalMap headers, StreamBuffer contents)
 			: m_session(session), m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
 			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_contents(STD_MOVE(contents))
 		{
@@ -70,7 +70,8 @@ namespace Http {
 			try {
 				const AUTO(upgrade, m_headers.get("Upgrade"));
 				if(!upgrade.empty()){
-					AUTO(upgradedSession, session->onUpgrade(upgrade, m_verb, m_uri, m_version, m_getParams, m_headers));
+					AUTO(upgradedSession, session->onUpgrade(
+						upgrade, m_verb, m_uri, m_version, m_getParams, m_headers, m_contents));
 					if(!upgradedSession){
 						LOG_POSEIDON_ERROR("Upgrade failed: upgrade = ", upgrade);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
@@ -201,10 +202,11 @@ namespace Http {
 			LOG_POSEIDON_DEBUG("Content-Length: ", session->m_contentLength);
 		}
 		static void onTransferEncoding(const boost::shared_ptr<Session> &session, const std::string &val){
+			(void)session;
+
 			if(::strcasecmp(val.c_str(), "identity") == 0){
 				return;
 			} else if(::strcasecmp(val.c_str(), "chunked") == 0){
-				session->m_chunked = true;
 				return;
 			}
 			LOG_POSEIDON_WARNING("Unknown HTTP header Transfer-Encoding: ", val);
@@ -277,7 +279,7 @@ namespace Http {
 	Session::Session(UniqueFile socket, boost::shared_ptr<Session::BasicAuthInfo> authInfo)
 		: TcpSessionBase(STD_MOVE(socket))
 		, m_authInfo(STD_MOVE(authInfo))
-		, m_state(S_FIRST_HEADER), m_totalLength(0), m_contentLength(0), m_chunked(false)
+		, m_state(S_FIRST_HEADER), m_totalLength(0), m_expectingBinary(false), m_expectingLength(0), m_contentLength(0)
 		, m_verb(V_INVALID_VERB), m_version(10000)
 	{
 		if(m_authInfo){
@@ -312,6 +314,10 @@ namespace Http {
 		try {
 			const AUTO(maxRequestLength, MainConfig::getConfigFile().get<boost::uint64_t>("http_max_request_length", 16384));
 
+			m_payload.put(data, size);
+
+
+/*
 			AUTO(read, static_cast<const char *>(data));
 			const AUTO(end, read + size);
 			for(;;){
@@ -480,7 +486,7 @@ namespace Http {
 			}
 		_exitFor:
 			;
-		} catch(Exception &e){
+	*/	} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown while parsing data, URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.statusCode()));
 			try {
@@ -502,10 +508,17 @@ namespace Http {
 		}
 	}
 
-	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const std::string & /* type */,
-		Verb /* verb */, const std::string & /* uri */, unsigned /* version */,
-		const OptionalMap & /* params */, const OptionalMap & /* headers */)
+	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const std::string &type, Verb verb, const std::string &uri,
+		unsigned version, const OptionalMap &params, const OptionalMap &headers, const StreamBuffer &contents)
 	{
+		(void)type;
+		(void)verb;
+		(void)uri;
+		(void)version;
+		(void)params;
+		(void)headers;
+		(void)contents;
+
 		return VAL_INIT;
 	}
 

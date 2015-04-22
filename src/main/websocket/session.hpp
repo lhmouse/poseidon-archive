@@ -61,7 +61,7 @@ namespace WebSocket {
 		bool sendFrame(StreamBuffer contents, OpCode opcode, bool fin, bool masked);
 
 	protected:
-		virtual void onRequest(OpCode opcode, StreamBuffer contents) = 0;
+		virtual void onRequest(OpCode opcode, const StreamBuffer &contents) = 0;
 
 	public:
 		bool send(StreamBuffer contents, bool binary = true, bool fin = false, bool masked = false);

@@ -42,21 +42,22 @@ namespace Http {
 	private:
 		boost::shared_ptr<BasicAuthInfo> m_authInfo;
 
+		mutable boost::mutex m_upgreadedMutex;
+		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
+
 		State m_state;
+		StreamBuffer m_payload;
 		boost::uint64_t m_totalLength;
+		bool m_expectingBinary;
+		boost::uint64_t m_expectingLength;
 		boost::uint64_t m_contentLength;
-		std::string m_line;
-		bool m_chunked;
-		std::string m_chunk;
 
 		Verb m_verb;
 		std::string m_uri;
 		unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
 		OptionalMap m_getParams;
 		OptionalMap m_headers;
-
-		mutable boost::mutex m_upgreadedMutex;
-		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
+		StreamBuffer m_contents;
 
 	public:
 		explicit Session(UniqueFile socket,
@@ -68,11 +69,11 @@ namespace Http {
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 	protected:
-		virtual void onRequest(Verb verb, std::string uri, unsigned version,
-			OptionalMap getParams, OptionalMap headers, std::string contents) = 0;
+		virtual void onRequest(Verb verb, const std::string &uri, unsigned version,
+			const OptionalMap &getParams, const OptionalMap &headers, const StreamBuffer &contents) = 0;
 
-		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const std::string &type,
-			Verb verb, const std::string &uri, unsigned version, const OptionalMap &params, const OptionalMap &headers);
+		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const std::string &type, Verb verb, const std::string &uri,
+			unsigned version, const OptionalMap &params, const OptionalMap &headers, const StreamBuffer &contents);
 
 	public:
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;

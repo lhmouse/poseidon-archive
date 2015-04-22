@@ -58,19 +58,20 @@ namespace {
 		}
 
 	protected:
-		void onRequest(Http::Verb verb, std::string uri, unsigned /* version */ ,
-			OptionalMap getParams, OptionalMap /* reqHeaders */, std::string /* reqContents */ ) OVERRIDE
+		void onRequest(Http::Verb reqVerb, const std::string &reqUri, unsigned /* reqVersion */, const OptionalMap &reqGetParams,
+			const OptionalMap & /* reqHeaders */, const StreamBuffer & /* reqContents */ ) OVERRIDE
 		{
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", getRemoteInfo());
 
+			AUTO(uri, reqUri);
 			if((uri.size() < m_path.size()) || (uri.compare(0, m_path.size(), m_path) != 0)){
 				LOG_POSEIDON_WARNING("Inacceptable system HTTP request: ", uri);
 				DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 			}
 			uri.erase(uri.begin(), uri.begin() + static_cast<std::ptrdiff_t>(m_path.size()));
 
-			if(verb != Http::V_GET){
+			if(reqVerb != Http::V_GET){
 				DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);
 			}
 
@@ -79,7 +80,7 @@ namespace {
 				sendDefault(Http::ST_OK);
 				::raise(SIGTERM);
 			} else if(uri == "load_module"){
-				AUTO_REF(name, getParams.at("name"));
+				AUTO_REF(name, reqGetParams.at("name"));
 				if(!ModuleDepository::loadNoThrow(name.c_str())){
 					LOG_POSEIDON_WARNING("Failed to load module: ", name);
 					sendDefault(Http::ST_NOT_FOUND);
@@ -87,7 +88,7 @@ namespace {
 				}
 				sendDefault(Http::ST_OK);
 			} else if(uri == "unload_module"){
-				AUTO_REF(baseAddrStr, getParams.at("base_addr"));
+				AUTO_REF(baseAddrStr, reqGetParams.at("base_addr"));
 				std::istringstream iss(baseAddrStr);
 				void *baseAddr;
 				if(!((iss >>baseAddr) && iss.eof())){
@@ -166,13 +167,13 @@ namespace {
 			} else if(uri == "set_log_mask"){
 				unsigned long long toEnable = 0, toDisable = 0;
 				{
-					AUTO_REF(val, getParams.get("to_disable"));
+					AUTO_REF(val, reqGetParams.get("to_disable"));
 					if(!val.empty()){
 						toDisable = boost::lexical_cast<unsigned long long>(val);
 					}
 				}
 				{
-					AUTO_REF(val, getParams.get("to_enable"));
+					AUTO_REF(val, reqGetParams.get("to_enable"));
 					if(!val.empty()){
 						toEnable = boost::lexical_cast<unsigned long long>(val);
 					}
