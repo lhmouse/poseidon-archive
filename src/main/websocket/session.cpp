@@ -66,19 +66,20 @@ namespace WebSocket {
 
 	class Session::RequestJob : public JobBase {
 	private:
+		const boost::weak_ptr<Http::Session> m_parent;
 		const boost::weak_ptr<Session> m_session;
 		const OpCode m_opcode;
 		const StreamBuffer m_payload;
 
 	public:
-		RequestJob(boost::weak_ptr<Session> session, OpCode opcode, StreamBuffer payload)
-			: m_session(STD_MOVE(session)), m_opcode(opcode), m_payload(STD_MOVE(payload))
+		RequestJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
+			: m_parent(session->getWeakParent()), m_session(session), m_opcode(opcode), m_payload(STD_MOVE(payload))
 		{
 		}
 
 	protected:
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
-			return m_session;
+			return m_parent;
 		}
 		void perform() const OVERRIDE {
 			PROFILE_ME;
@@ -110,6 +111,41 @@ namespace WebSocket {
 				} catch(...){
 					session->forceShutdown();
 				}
+				throw;
+			}
+		}
+	};
+
+	class Session::ErrorJob : public JobBase {
+	private:
+		const boost::weak_ptr<Http::Session> m_parent;
+		const boost::weak_ptr<Session> m_session;
+		const StatusCode m_statusCode;
+		const StreamBuffer m_additional;
+
+	public:
+		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, StreamBuffer additional)
+			: m_parent(session->getWeakParent()), m_session(session), m_statusCode(statusCode), m_additional(STD_MOVE(additional))
+		{
+		}
+
+	protected:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_parent;
+		}
+		void perform() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(session, m_session.lock());
+			if(!session){
+				return;
+			}
+
+			try {
+				session->shutdown(m_statusCode, m_additional);
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception...");
+				session->forceShutdown();
 				throw;
 			}
 		}
@@ -148,14 +184,12 @@ namespace WebSocket {
 		return Http::ST_OK;
 	}
 
-	Session::Session(const boost::shared_ptr<Http::Session> &parent)
-		: Http::UpgradedSessionBase(parent)
+	Session::Session(const boost::shared_ptr<Http::Session> &parent, std::string uri)
+		: Http::UpgradedSessionBase(parent, STD_MOVE(uri))
 		, m_state(S_OPCODE), m_fin(false), m_opcode(OP_INVALID_OPCODE), m_payloadLen(0), m_payloadMask(0)
 	{
 	}
 
-	void Session::onInitContents(const void * /* data */ , std::size_t /* size */ ){
-	}
 	void Session::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
@@ -263,8 +297,8 @@ namespace WebSocket {
 							}
 						}
 
-						enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
-							m_opcode, STD_MOVE(m_whole)));
+						enqueueJob(boost::make_shared<RequestJob>(
+							virtualSharedFromThis<Session>(), m_opcode, STD_MOVE(m_whole)));
 
 						m_whole.clear();
 					}
@@ -282,7 +316,8 @@ namespace WebSocket {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Websocket::Exception thrown while parsing data: URI = ", getUri(),
 				", statusCode = ", e.statusCode(), ", what = ", e.what());
 			try {
-				shutdown(e.statusCode(), StreamBuffer(e.what()));
+				enqueueJob(boost::make_shared<ErrorJob>(
+					virtualSharedFromThis<Session>(), e.statusCode(), StreamBuffer(e.what())));
 			} catch(...){
 				forceShutdown();
 			}
@@ -290,7 +325,8 @@ namespace WebSocket {
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... uri = ", getUri());
 			try {
-				shutdown(ST_INTERNAL_ERROR);
+				enqueueJob(boost::make_shared<ErrorJob>(
+					virtualSharedFromThis<Session>(), ST_INTERNAL_ERROR, StreamBuffer()));
 			} catch(...){
 				forceShutdown();
 			}

@@ -22,12 +22,12 @@ namespace Http {
 
 	private:
 		const boost::weak_ptr<Session> m_parent;
+		const std::string m_uri;
 
 	protected:
-		explicit UpgradedSessionBase(const boost::shared_ptr<Session> &parent);
+		UpgradedSessionBase(const boost::shared_ptr<Session> &parent, std::string uri);
 
 	private:
-		virtual void onInitContents(const void *data, std::size_t size) = 0;
 		virtual void onReadAvail(const void *data, std::size_t size) = 0;
 		virtual void onClose() NOEXCEPT OVERRIDE FINAL;
 
@@ -37,6 +37,13 @@ namespace Http {
 		bool hasBeenShutdown() const OVERRIDE;
 		bool shutdown() NOEXCEPT;
 		bool forceShutdown() NOEXCEPT OVERRIDE;
+
+		boost::weak_ptr<const Session> getWeakParent() const {
+			return m_parent;
+		}
+		boost::weak_ptr<Session> getWeakParent(){
+			return m_parent;
+		}
 
 		boost::shared_ptr<const Session> getParent() const {
 			return m_parent.lock();
@@ -53,12 +60,11 @@ namespace Http {
 			return boost::shared_ptr<Session>(m_parent);
 		}
 
-		std::size_t getCategory() const;
-		const std::string &getUri() const;
-		const OptionalMap &getGetParams() const;
-		const OptionalMap &getHeaders() const;
+		const std::string &getUri() const {
+			return m_uri;
+		}
 
-		void setTimeout(unsigned long long timeout);
+		void setTimeout(boost::uint64_t timeout);
 		void registerOnClose(boost::function<void ()> callback);
 	};
 }

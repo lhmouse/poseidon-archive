@@ -22,8 +22,8 @@ namespace Cbpp {
 		const StreamBuffer m_payload;
 
 	public:
-		RequestJob(boost::weak_ptr<Session> session, unsigned messageId, StreamBuffer payload)
-			: m_session(STD_MOVE(session)), m_messageId(messageId), m_payload(STD_MOVE(payload))
+		RequestJob(const boost::shared_ptr<Session> &session, unsigned messageId, StreamBuffer payload)
+			: m_session(session), m_messageId(messageId), m_payload(STD_MOVE(payload))
 		{
 		}
 
@@ -84,6 +84,42 @@ namespace Cbpp {
 		}
 	};
 
+	class Session::ErrorJob : public JobBase {
+	private:
+		const boost::weak_ptr<Session> m_session;
+		const unsigned m_messageId;
+		const StatusCode m_statusCode;
+		const std::string m_reason;
+		const bool m_fin;
+
+	public:
+		ErrorJob(const boost::shared_ptr<Session> &session, unsigned messageId, StatusCode statusCode, std::string reason, bool fin)
+			: m_session(session), m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason)), m_fin(fin)
+		{
+		}
+
+	protected:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_session;
+		}
+		void perform() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(session, m_session.lock());
+			if(!session){
+				return;
+			}
+
+			try {
+				session->sendError(m_messageId, m_statusCode, m_reason, m_fin);
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception...");
+				session->forceShutdown();
+				throw;
+			}
+		}
+	};
+
 	Session::Session(UniqueFile socket)
 		: TcpSessionBase(STD_MOVE(socket))
 		, m_payloadLen((boost::uint64_t)-1), m_messageId(0)
@@ -123,8 +159,8 @@ namespace Cbpp {
 					break;
 				}
 
-				enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
-					m_messageId, m_payload.cut(m_payloadLen)));
+				enqueueJob(boost::make_shared<RequestJob>(
+					virtualSharedFromThis<Session>(), m_messageId, m_payload.cut(m_payloadLen)));
 
 				m_payloadLen = (boost::uint64_t)-1;
 				m_messageId = 0;
@@ -133,7 +169,8 @@ namespace Cbpp {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown while parsing data, message id = ", m_messageId,
 				", statusCode = ", static_cast<int>(e.statusCode()), ", what = ", e.what());
 			try {
-				sendError(m_messageId, e.statusCode(), e.what(), true);
+				enqueueJob(boost::make_shared<ErrorJob>(
+					virtualSharedFromThis<Session>(), m_messageId, e.statusCode(), e.what(), true));
 			} catch(...){
 				forceShutdown();
 			}
@@ -141,7 +178,8 @@ namespace Cbpp {
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... message id = ", m_messageId);
 			try {
-				sendError(m_messageId, ST_INTERNAL_ERROR, true);
+				enqueueJob(boost::make_shared<ErrorJob>(
+					virtualSharedFromThis<Session>(), m_messageId, ST_INTERNAL_ERROR, std::string(), true));
 			} catch(...){
 				forceShutdown();
 			}

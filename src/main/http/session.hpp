@@ -31,8 +31,10 @@ namespace Http {
 		};
 
 	private:
-		class HeaderParser;
 		class RequestJob;
+		class ErrorJob;
+
+		class HeaderParser;
 
 	public:
 		typedef const std::vector<std::string> BasicAuthInfo;
@@ -44,6 +46,8 @@ namespace Http {
 		boost::uint64_t m_totalLength;
 		boost::uint64_t m_contentLength;
 		std::string m_line;
+		bool m_chunked;
+		std::string m_chunk;
 
 		Verb m_verb;
 		std::string m_uri;

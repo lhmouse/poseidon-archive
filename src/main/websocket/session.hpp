@@ -35,6 +35,7 @@ namespace WebSocket {
 
 	private:
 		class RequestJob;
+		class ErrorJob;
 
 	public:
 		static Http::StatusCode makeHttpHandshakeResponse(OptionalMap &ret,
@@ -50,10 +51,9 @@ namespace WebSocket {
 		StreamBuffer m_whole;
 
 	public:
-		explicit Session(const boost::shared_ptr<Http::Session> &parent);
+		Session(const boost::shared_ptr<Http::Session> &parent, std::string uri);
 
 	private:
-		void onInitContents(const void *data, std::size_t size) OVERRIDE FINAL;
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
 
 		void onControlFrame();

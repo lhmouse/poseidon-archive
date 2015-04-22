@@ -8,8 +8,8 @@
 namespace Poseidon {
 
 namespace Http {
-	UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<Session> &parent)
-		: m_parent(parent)
+	UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<Session> &parent, std::string uri)
+		: m_parent(parent), m_uri(STD_MOVE(uri))
 	{
 	}
 
@@ -46,17 +46,7 @@ namespace Http {
 		return static_cast<TcpSessionBase &>(*parent).forceShutdown();
 	}
 
-	const std::string &UpgradedSessionBase::getUri() const {
-		return getSafeParent()->m_uri;
-	}
-	const OptionalMap &UpgradedSessionBase::getGetParams() const {
-		return getSafeParent()->m_getParams;
-	}
-	const OptionalMap &UpgradedSessionBase::getHeaders() const {
-		return getSafeParent()->m_headers;
-	}
-
-	void UpgradedSessionBase::setTimeout(unsigned long long timeout){
+	void UpgradedSessionBase::setTimeout(boost::uint64_t timeout){
 		getSafeParent()->setTimeout(timeout);
 	}
 	void UpgradedSessionBase::registerOnClose(boost::function<void ()> callback){

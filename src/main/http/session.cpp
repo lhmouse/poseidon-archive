@@ -35,22 +35,6 @@ namespace Http {
 			}
 			uri.erase(uri.begin() + static_cast<std::ptrdiff_t>(write), uri.end());
 		}
-
-		void onRequestTimeout(const boost::weak_ptr<Session> &weak){
-			const AUTO(session, weak.lock());
-			if(!session){
-				return;
-			}
-			LOG_POSEIDON_WARNING("HTTP request times out, remote = ", session->getRemoteInfo());
-			session->sendDefault(ST_REQUEST_TIMEOUT, true);
-		}
-		void onKeepAliveTimeout(const boost::weak_ptr<Session> &weak){
-			const AUTO(tcpSession, boost::static_pointer_cast<TcpSessionBase>(weak.lock()));
-			if(!tcpSession){
-				return;
-			}
-			tcpSession->shutdown();
-		}
 	}
 
 	class Session::RequestJob : public JobBase {
@@ -64,10 +48,9 @@ namespace Http {
 		const std::string m_contents;
 
 	public:
-		RequestJob(boost::weak_ptr<Session> session, Verb verb, std::string uri, unsigned version,
+		RequestJob(const boost::shared_ptr<Session> &session, Verb verb, std::string uri, unsigned version,
 			OptionalMap getParams, OptionalMap headers, std::string contents)
-			: m_session(STD_MOVE(session))
-			, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
+			: m_session(session), m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
 			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_contents(STD_MOVE(contents))
 		{
 		}
@@ -85,13 +68,28 @@ namespace Http {
 			}
 
 			try {
-				LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", getStringFromVerb(m_verb));
-				session->onRequest(m_verb, m_uri, m_version, m_getParams, m_headers, m_contents);
-
-				if(m_version < 10001){
-					session->shutdown();
+				const AUTO(upgrade, m_headers.get("Upgrade"));
+				if(!upgrade.empty()){
+					AUTO(upgradedSession, session->onUpgrade(upgrade, m_verb, m_uri, m_version, m_getParams, m_headers));
+					if(!upgradedSession){
+						LOG_POSEIDON_ERROR("Upgrade failed: upgrade = ", upgrade);
+						DEBUG_THROW(Exception, ST_BAD_REQUEST);
+					}
+					{
+						const boost::mutex::scoped_lock lock(session->m_upgreadedMutex);
+						session->m_upgradedSession = STD_MOVE(upgradedSession);
+					}
+					LOG_POSEIDON_DEBUG("Upgraded succeeded: upgrade = ", upgrade, ", remote = ", session->getRemoteInfo());
+					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("epoll_tcp_request_timeout", 0));
 				} else {
-					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 0));
+					LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", getStringFromVerb(m_verb));
+					session->onRequest(m_verb, m_uri, m_version, m_getParams, m_headers, m_contents);
+
+					if(m_version < 10001){
+						session->shutdown();
+					} else {
+						session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 0));
+					}
 				}
 			} catch(TryAgainLater &){
 				throw;
@@ -116,31 +114,101 @@ namespace Http {
 		}
 	};
 
+	class Session::ErrorJob : public JobBase {
+	private:
+		const boost::weak_ptr<Session> m_session;
+		const StatusCode m_statusCode;
+		const OptionalMap m_headers;
+		const bool m_fin;
+
+	public:
+		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, OptionalMap headers, bool fin)
+			: m_session(session), m_statusCode(statusCode), m_headers(STD_MOVE(headers)), m_fin(fin)
+		{
+		}
+
+	protected:
+		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+			return m_session;
+		}
+		void perform() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(session, m_session.lock());
+			if(!session){
+				return;
+			}
+
+			try {
+				session->sendDefault(m_statusCode, m_headers, m_fin);
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception...");
+				session->forceShutdown();
+				throw;
+			}
+		}
+	};
+
 	class Session::HeaderParser {
 	private:
-		static void onExpect(const boost::shared_ptr<Session> &session, const std::string &val){
-			if(val != "100-continue"){
-				LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", val);
-				DEBUG_THROW(Exception, ST_BAD_REQUEST);
+		class ContinueJob : public JobBase {
+		private:
+			const boost::weak_ptr<Session> m_session;
+
+		public:
+			explicit ContinueJob(const boost::shared_ptr<Session> &session)
+				: m_session(session)
+			{
 			}
-			session->sendDefault(ST_CONTINUE);
+
+		protected:
+			boost::weak_ptr<const void> getCategory() const OVERRIDE {
+				return m_session;
+			}
+			void perform() const OVERRIDE {
+				PROFILE_ME;
+
+				const AUTO(session, m_session.lock());
+				if(!session){
+					return;
+				}
+
+				try {
+					session->sendDefault(ST_CONTINUE);
+				} catch(...){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception...");
+					session->forceShutdown();
+					throw;
+				}
+			}
+		};
+
+	private:
+		static void onExpect(const boost::shared_ptr<Session> &session, const std::string &val){
+			if(::strcasecmp(val.c_str(), "100-continue") == 0){
+				enqueueJob(boost::make_shared<ContinueJob>(session));
+				return;
+			}
+			LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", val);
+			DEBUG_THROW(Exception, ST_BAD_REQUEST);
 		}
 		static void onContentLength(const boost::shared_ptr<Session> &session, const std::string &val){
-			session->m_contentLength = boost::lexical_cast<std::size_t>(val);
+			try {
+				session->m_contentLength = boost::lexical_cast<std::size_t>(val);
+			} catch(boost::bad_lexical_cast &e){
+				DEBUG_THROW(Exception, ST_BAD_REQUEST);
+			}
 			LOG_POSEIDON_DEBUG("Content-Length: ", session->m_contentLength);
 		}
-		static void onUpgrade(const boost::shared_ptr<Session> &session, const std::string &val){
-			AUTO(upgradedSession, session->onUpgrade(val,
-				session->m_verb, session->m_uri, session->m_version, session->m_getParams, session->m_headers));
-			if(!upgradedSession){
-				LOG_POSEIDON_ERROR("Upgrade failed: ", val);
-				DEBUG_THROW(Exception, ST_INTERNAL_SERVER_ERROR);
+		static void onTransferEncoding(const boost::shared_ptr<Session> &session, const std::string &val){
+			if(::strcasecmp(val.c_str(), "identity") == 0){
+				return;
+			} else if(::strcasecmp(val.c_str(), "chunked") == 0){
+				session->m_chunked = true;
+				return;
 			}
-			{
-				const boost::mutex::scoped_lock lock(session->m_upgreadedMutex);
-				session->m_upgradedSession = STD_MOVE(upgradedSession);
-			}
-			LOG_POSEIDON_DEBUG("Upgraded to WebSocket: remote = ", session->getRemoteInfo());
+			LOG_POSEIDON_WARNING("Unknown HTTP header Transfer-Encoding: ", val);
+			DEBUG_THROW(Exception, ST_NOT_ACCEPTABLE);
 		}
 		static void onAuthorization(const boost::shared_ptr<Session> &session, const std::string &val){
 			if(!session->m_authInfo){
@@ -179,7 +247,7 @@ namespace Http {
 				std::make_pair("Authorization", &onAuthorization),
 				std::make_pair("Content-Length", &onContentLength),
 				std::make_pair("Expect", &onExpect),
-				std::make_pair("Upgrade", &onUpgrade),
+				std::make_pair("Transfer-Encoding", &onTransferEncoding),
 			};
 
 			for(AUTO(it, session->m_headers.begin()); it != session->m_headers.end(); ++it){
@@ -209,7 +277,7 @@ namespace Http {
 	Session::Session(UniqueFile socket, boost::shared_ptr<Session::BasicAuthInfo> authInfo)
 		: TcpSessionBase(STD_MOVE(socket))
 		, m_authInfo(STD_MOVE(authInfo))
-		, m_state(S_FIRST_HEADER), m_totalLength(0), m_contentLength(0)
+		, m_state(S_FIRST_HEADER), m_totalLength(0), m_contentLength(0), m_chunked(false)
 		, m_verb(V_INVALID_VERB), m_version(10000)
 	{
 		if(m_authInfo){
@@ -248,9 +316,9 @@ namespace Http {
 			const AUTO(end, read + size);
 			for(;;){
 				if(m_state == S_FIRST_HEADER){
-					// Epoll 线程中读取 m_upgradedSession 是不需要锁的。
-					if(m_upgradedSession){
-						m_upgradedSession->onReadAvail(read, static_cast<std::size_t>(end - read));
+					const AUTO(upgradedSession, getUpgradedSession());
+					if(upgradedSession){
+						upgradedSession->onReadAvail(read, static_cast<std::size_t>(end - read));
 						read = end;
 						goto _exitFor;
 					}
@@ -393,24 +461,20 @@ namespace Http {
 				m_line.append(read, bytesRemaining);
 				read += bytesRemaining;
 
-				// Epoll 线程中读取 m_upgradedSession 是不需要锁的。
-				if(m_upgradedSession){
-					m_upgradedSession->onInitContents(m_line.data(), m_line.size());
-					setTimeout(EpollDaemon::getTcpRequestTimeout());
-				} else {
-					enqueueJob(boost::make_shared<RequestJob>(virtualWeakFromThis<Session>(),
-						m_verb, STD_MOVE(m_uri), m_version, STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
+				enqueueJob(boost::make_shared<RequestJob>(virtualSharedFromThis<Session>(),
+					m_verb, STD_MOVE(m_uri), m_version, STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
 
-					m_verb = V_INVALID_VERB;
-					m_uri.clear();
-					m_version = 10000;
-					m_getParams.clear();
-					m_headers.clear();
-				}
+				m_verb = V_INVALID_VERB;
+				m_uri.clear();
+				m_version = 10000;
+				m_getParams.clear();
+				m_headers.clear();
 
 				m_totalLength = 0;
 				m_contentLength = 0;
 				m_line.clear();
+				m_chunked = false;
+				m_chunk.clear();
 
 				m_state = S_FIRST_HEADER;
 			}
@@ -420,7 +484,8 @@ namespace Http {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown while parsing data, URI = ", m_uri,
 				", status = ", static_cast<unsigned>(e.statusCode()));
 			try {
-				sendDefault(e.statusCode(), e.headers(), true);
+				enqueueJob(boost::make_shared<ErrorJob>(
+					virtualSharedFromThis<Session>(), e.statusCode(), e.headers(), true));
 			} catch(...){
 				forceShutdown();
 			}
@@ -428,7 +493,8 @@ namespace Http {
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... shutdown the session first.");
 			try {
-				sendDefault(ST_BAD_REQUEST, true);
+				enqueueJob(boost::make_shared<ErrorJob>(
+					virtualSharedFromThis<Session>(), ST_BAD_REQUEST, OptionalMap(), true));
 			} catch(...){
 				forceShutdown();
 			}

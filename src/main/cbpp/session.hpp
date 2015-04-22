@@ -20,6 +20,7 @@ namespace Cbpp {
 	class Session : public TcpSessionBase {
 	private:
 		class RequestJob;
+		class ErrorJob;
 
 	private:
 		boost::uint64_t m_payloadLen;
