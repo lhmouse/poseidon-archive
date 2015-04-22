@@ -213,6 +213,12 @@ namespace {
 			std::sort(userPass.begin(), userPass.end());
 			return boost::make_shared<std::vector<std::string> >(STD_MOVE(userPass));
 		}
+		static std::string createPath(std::string str){
+			if(str.empty() || (str.rbegin()[0] != '/')){
+				str.push_back('/');
+			}
+			return STD_MOVE(str);
+		}
 
 	private:
 		const boost::shared_ptr<const std::vector<std::string> > m_authInfo;
@@ -222,7 +228,7 @@ namespace {
 		SystemServer(const IpPort &bindAddr, const char *cert, const char *privateKey,
 			std::vector<std::string> userPass, std::string path)
 			: TcpServerBase(bindAddr, cert, privateKey)
-			, m_authInfo(createAuthInfo(STD_MOVE(userPass))), m_path(STD_MOVE(path))
+			, m_authInfo(createAuthInfo(STD_MOVE(userPass))), m_path(createPath(STD_MOVE(path)))
 		{
 		}
 
@@ -238,22 +244,18 @@ namespace {
 void SystemHttpServer::start(){
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
-	AUTO(bind,			conf.get<std::string>("system_http_bind", "0.0.0.0"));
-	AUTO(port,			conf.get<boost::uint16_t>("system_http_port", 8900));
-	AUTO(certificate,	conf.get<std::string>("system_http_certificate"));
-	AUTO(privateKey,	conf.get<std::string>("system_http_private_key"));
-	AUTO(authUserPass,	conf.getAll<std::string>("system_http_auth_user_pass"));
-	AUTO(path,			conf.get<std::string>("system_http_path", "~/sys"));
+	AUTO(bind, conf.get<std::string>("system_http_bind", "0.0.0.0"));
+	AUTO(port, conf.get<boost::uint16_t>("system_http_port", 8900));
+	AUTO(cert, conf.get<std::string>("system_http_certificate"));
+	AUTO(pkey, conf.get<std::string>("system_http_private_key"));
+	AUTO(auth, conf.getAll<std::string>("system_http_auth_user_pass"));
+	AUTO(path, conf.get<std::string>("system_http_path", "~/sys"));
 
-	if(path.empty() || (*path.rbegin() != '/')){
-		path.push_back('/');
-	}
-
-	const IpPort bindAddr(SharedNts(bind.c_str()), port);
+	const IpPort bindAddr(SharedNts(bind), port);
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bindAddr);
-	g_systemServer = boost::make_shared<SystemServer>(
-		bindAddr, certificate.c_str(), privateKey.c_str(), STD_MOVE(authUserPass), STD_MOVE(path));
-	EpollDaemon::registerServer(g_systemServer);
+	AUTO(server, boost::make_shared<SystemServer>(bindAddr, cert.c_str(), pkey.c_str(), STD_MOVE(auth), STD_MOVE(path)));
+	g_systemServer = server;
+	EpollDaemon::registerServer(STD_MOVE(server));
 }
 void SystemHttpServer::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Shutting down system HTTP server...");
