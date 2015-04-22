@@ -466,21 +466,19 @@ namespace Http {
 				contentType.assign("text/plain; charset=utf-8");
 			}
 		}
-		AUTO_REF(contentLength, headers.create("Content-Length")->second);
-		boost::lexical_cast<std::string>(contents.size()).swap(contentLength);
-
+		headers.set("Content-Length", boost::lexical_cast<std::string>(contents.size()));
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-			if(!it->second.empty()){
-				data.put(it->first.get());
-				data.put(": ");
-				data.put(it->second.data(), it->second.size());
-				data.put("\r\n");
+			if(it->second.empty()){
+				continue;
 			}
+			data.put(it->first.get());
+			data.put(": ");
+			data.put(it->second.data(), it->second.size());
+			data.put("\r\n");
 		}
 		data.put("\r\n");
 
 		data.splice(contents);
-
 		return TcpSessionBase::send(STD_MOVE(data), fin);
 	}
 	bool Session::sendDefault(StatusCode statusCode, OptionalMap headers, bool fin){

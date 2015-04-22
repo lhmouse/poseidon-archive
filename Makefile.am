@@ -82,6 +82,7 @@ pkginclude_http_HEADERS = \
 	src/main/http/status_codes.hpp	\
 	src/main/http/exception.hpp	\
 	src/main/http/utilities.hpp	\
+	src/main/http/chunked_writer.hpp	\
 	src/main/http/upgraded_session_base.hpp
 
 pkginclude_websocketdir = $(pkgincludedir)/websocket
@@ -180,6 +181,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/http/status_codes.cpp	\
 	src/main/http/verbs.cpp	\
 	src/main/http/utilities.cpp	\
+	src/main/http/chunked_writer.cpp	\
 	src/main/http/upgraded_session_base.cpp	\
 	src/main/http/exception.cpp	\
 	src/main/websocket/session.cpp	\
