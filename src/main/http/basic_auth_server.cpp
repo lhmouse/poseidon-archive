@@ -8,12 +8,12 @@ namespace Poseidon {
 
 namespace Http {
 	namespace {
-		boost::shared_ptr<std::vector<std::string> > createAuthInfo(std::vector<std::string> authInfo){
+		boost::shared_ptr<BasicAuthServer::BasicAuthInfo> createAuthInfo(std::vector<std::string> authInfo){
 			if(authInfo.empty()){
 				return VAL_INIT;
 			}
 			std::sort(authInfo.begin(), authInfo.end());
-			return boost::make_shared<std::vector<std::string> >(STD_MOVE(authInfo));
+			return boost::make_shared<BasicAuthServer::BasicAuthInfo>(STD_MOVE(authInfo));
 		}
 		std::string createPath(std::string str){
 			if(str.begin()[0] != '/'){

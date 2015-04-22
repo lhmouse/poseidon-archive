@@ -10,8 +10,11 @@ namespace Poseidon {
 
 namespace Http {
 	class BasicAuthServer : public TcpServerBase {
+	public:
+		typedef const std::vector<std::string> BasicAuthInfo;
+
 	private:
-		const boost::shared_ptr<const std::vector<std::string> > m_authInfo;
+		const boost::shared_ptr<BasicAuthInfo> m_authInfo;
 		const std::string m_path;
 
 	public:
@@ -23,7 +26,7 @@ namespace Http {
 		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const OVERRIDE  = 0;
 
 	public:
-		const boost::shared_ptr<const std::vector<std::string> > &getAuthInfo() const {
+		const boost::shared_ptr<BasicAuthInfo> &getAuthInfo() const {
 			return m_authInfo;
 		}
 		const std::string &getPath() const {

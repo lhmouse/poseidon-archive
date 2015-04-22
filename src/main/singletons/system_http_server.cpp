@@ -51,7 +51,7 @@ namespace {
 		const std::string m_path;
 
 	public:
-		SystemSession(UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo, std::string path)
+		SystemSession(UniqueFile socket, boost::shared_ptr<Http::Session::BasicAuthInfo> authInfo, std::string path)
 			: Http::Session(STD_MOVE(socket), STD_MOVE(authInfo))
 			, m_path(STD_MOVE(path += '/'))
 		{

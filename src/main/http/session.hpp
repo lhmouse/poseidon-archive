@@ -34,8 +34,11 @@ namespace Http {
 		class HeaderParser;
 		class RequestJob;
 
+	public:
+		typedef const std::vector<std::string> BasicAuthInfo;
+
 	private:
-		boost::shared_ptr<const std::vector<std::string> > m_authInfo;
+		boost::shared_ptr<BasicAuthInfo> m_authInfo;
 
 		State m_state;
 		boost::uint64_t m_totalLength;
@@ -53,7 +56,7 @@ namespace Http {
 
 	public:
 		explicit Session(UniqueFile socket,
-			boost::shared_ptr<const std::vector<std::string> > authInfo = VAL_INIT // 必须是排序的，否则会抛出异常。
+			boost::shared_ptr<BasicAuthInfo> authInfo = VAL_INIT // 必须是排序的，否则会抛出异常。
 			);
 		~Session();
 

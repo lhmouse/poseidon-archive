@@ -206,7 +206,7 @@ namespace Http {
 		}
 	};
 
-	Session::Session(UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo)
+	Session::Session(UniqueFile socket, boost::shared_ptr<Session::BasicAuthInfo> authInfo)
 		: TcpSessionBase(STD_MOVE(socket))
 		, m_authInfo(STD_MOVE(authInfo))
 		, m_state(S_FIRST_HEADER), m_totalLength(0), m_contentLength(0)
