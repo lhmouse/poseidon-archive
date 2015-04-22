@@ -159,18 +159,20 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 		return false;
 	}
 
-	const boost::mutex::scoped_lock lock(m_bufferMutex);
-	if(!buffer.empty()){
-		m_sendBuffer.splice(buffer);
-	}
-	if(fin){
-		::shutdown(m_socket.get(), SHUT_RD);
-	}
-	const AUTO(ptr, m_epoll.lock());
-	if(ptr){
-		const AUTO(epoll, ptr->lock());
-		if(epoll){
-			epoll->notifyWriteable(this);
+	{
+		const boost::mutex::scoped_lock lock(m_bufferMutex);
+		if(!buffer.empty()){
+			m_sendBuffer.splice(buffer);
+		}
+		if(fin){
+			::shutdown(m_socket.get(), SHUT_RD);
+		}
+		const AUTO(ptr, m_epoll.lock());
+		if(ptr){
+			const AUTO(epoll, ptr->lock());
+			if(epoll){
+				epoll->notifyWriteable(this);
+			}
 		}
 	}
 	return true;
