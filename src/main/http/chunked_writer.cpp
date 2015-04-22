@@ -4,43 +4,40 @@
 #include "exception.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
-#include "../optional_map.hpp"
-#include "../stream_buffer.hpp"
 
 namespace Poseidon {
 
 namespace Http {
-	ChunkedWriter::ChunkedWriter(boost::shared_ptr<Session> session)
-		: m_session(STD_MOVE(session)), m_inProgress(false)
-	{
+	ChunkedWriter::ChunkedWriter(){
+	}
+	ChunkedWriter::ChunkedWriter(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers){
+		reset(STD_MOVE(session), statusCode, STD_MOVE(headers));
 	}
 	ChunkedWriter::~ChunkedWriter(){
 		reset();
 	}
 
-	void ChunkedWriter::reset(boost::shared_ptr<Session> session) NOEXCEPT {
+	void ChunkedWriter::reset() NOEXCEPT {
 		PROFILE_ME;
 
-		if(m_session == session){
+		if(!m_session){
 			return;
 		}
 
-		if(m_inProgress){
-			LOG_POSEIDON_DEBUG("ChunkedWriter is not finalized, shutting down session...");
-			m_session->forceShutdown();
-		}
+		LOG_POSEIDON_DEBUG("ChunkedWriter is not finalized, shutting down session...");
+		m_session->forceShutdown();
 
-		m_session = STD_MOVE(session);
-		m_inProgress = false;
+		m_session.reset();
 	}
+	void ChunkedWriter::reset(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers){
+		PROFILE_ME;
 
-	void ChunkedWriter::initialize(StatusCode statusCode, OptionalMap headers){
-		if(!m_session){
-			LOG_POSEIDON_ERROR("No session specified.");
-			DEBUG_THROW(Exception, ST_INTERNAL_SERVER_ERROR);
+		if(m_session != session){
+			reset();
 		}
-		if(m_inProgress){
-			LOG_POSEIDON_ERROR("Chunked writer has already been initialized.");
+
+		if(!session){
+			LOG_POSEIDON_ERROR("No session specified.");
 			DEBUG_THROW(Exception, ST_INTERNAL_SERVER_ERROR);
 		}
 
@@ -66,24 +63,13 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		m_session->TcpSessionBase::send(STD_MOVE(data), false);
+		session->TcpSessionBase::send(STD_MOVE(data), false);
 
-		m_inProgress = true;
+		m_session = STD_MOVE(session); // noexcept
 	}
 
-	void ChunkedWriter::put(const void *data, std::size_t size){
-		put(StreamBuffer(data, size));
-	}
-	void ChunkedWriter::put(const char *str){
-		put(StreamBuffer(str));
-	}
 	void ChunkedWriter::put(StreamBuffer buffer){
 		PROFILE_ME;
-
-		if(!m_inProgress){
-			LOG_POSEIDON_ERROR("Chunked writer has not been initialized.");
-			DEBUG_THROW(Exception, ST_INTERNAL_SERVER_ERROR);
-		}
 
 		if(buffer.empty()){
 			return;
@@ -101,7 +87,7 @@ namespace Http {
 	}
 
 	void ChunkedWriter::finalize(OptionalMap headers, bool fin){
-		if(!m_inProgress){
+		if(!m_session){
 			return;
 		}
 
@@ -124,10 +110,7 @@ namespace Http {
 
 		m_session->TcpSessionBase::send(STD_MOVE(data), fin);
 
-		m_inProgress = false;
-	}
-	void ChunkedWriter::finalize(bool fin){
-		finalize(OptionalMap(), fin);
+		m_session.reset();
 	}
 }
 
