@@ -10,9 +10,9 @@ namespace Http {
 	class Request;
 	class Exception;
 
-	class Server;
 	class Session;
 	class UpgradedSessionBase;
+	class BasicAuthServer;
 }
 
 }

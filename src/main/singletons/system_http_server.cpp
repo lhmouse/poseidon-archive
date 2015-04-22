@@ -15,6 +15,7 @@
 #include "../tcp_server_base.hpp"
 #include "../http/session.hpp"
 #include "../http/exception.hpp"
+#include "../http/basic_auth_server.hpp"
 #include "../shared_nts.hpp"
 
 namespace Poseidon {
@@ -52,7 +53,7 @@ namespace {
 	public:
 		SystemSession(UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo, std::string path)
 			: Http::Session(STD_MOVE(socket), STD_MOVE(authInfo))
-			, m_path(STD_MOVE(path))
+			, m_path(STD_MOVE(path += '/'))
 		{
 		}
 
@@ -67,16 +68,17 @@ namespace {
 				LOG_POSEIDON_WARNING("Inacceptable system HTTP request: ", uri);
 				DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 			}
+			uri.erase(uri.begin(), uri.begin() + static_cast<std::ptrdiff_t>(m_path.size()));
 
 			if(verb != Http::V_GET){
 				DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);
 			}
 
-			if(uri.compare(m_path.size(), std::string::npos, "shutdown") == 0){
+			if(uri == "shutdown"){
 				LOG_POSEIDON_WARNING("Received shutdown HTTP request. The server will be shutdown now.");
 				sendDefault(Http::ST_OK);
 				::raise(SIGTERM);
-			} else if(uri.compare(m_path.size(), std::string::npos, "load_module") == 0){
+			} else if(uri == "load_module"){
 				AUTO_REF(name, getParams.at("name"));
 				if(!ModuleDepository::loadNoThrow(name.c_str())){
 					LOG_POSEIDON_WARNING("Failed to load module: ", name);
@@ -84,7 +86,7 @@ namespace {
 					return;
 				}
 				sendDefault(Http::ST_OK);
-			} else if(uri.compare(m_path.size(), std::string::npos, "unload_module") == 0){
+			} else if(uri == "unload_module"){
 				AUTO_REF(baseAddrStr, getParams.at("base_addr"));
 				std::istringstream iss(baseAddrStr);
 				void *baseAddr;
@@ -99,7 +101,7 @@ namespace {
 					return;
 				}
 				sendDefault(Http::ST_OK);
-			} else if(uri.compare(m_path.size(), std::string::npos, "show_profile") == 0){
+			} else if(uri == "show_profile"){
 				OptionalMap headers;
 				headers.set("Content-Type", "text/csv; charset=utf-8");
 				headers.set("Content-Disposition", "attachment; name=\"profile.csv\"");
@@ -121,7 +123,7 @@ namespace {
 				}
 
 				send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-			} else if(uri.compare(m_path.size(), std::string::npos, "show_modules") == 0){
+			} else if(uri == "show_modules"){
 				OptionalMap headers;
 				headers.set("Content-Type", "text/csv; charset=utf-8");
 				headers.set("Content-Disposition", "attachment; name=\"modules.csv\"");
@@ -139,7 +141,7 @@ namespace {
 				}
 
 				send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-			} else if(uri.compare(m_path.size(), std::string::npos, "show_connections") == 0){
+			} else if(uri == "show_connections"){
 				OptionalMap headers;
 				headers.set("Content-Type", "text/csv; charset=utf-8");
 				headers.set("Content-Disposition", "attachment; name=\"connections.csv\"");
@@ -161,7 +163,7 @@ namespace {
 				}
 
 				send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-			} else if(uri.compare(m_path.size(), std::string::npos, "set_log_mask") == 0){
+			} else if(uri == "set_log_mask"){
 				unsigned long long toEnable = 0, toDisable = 0;
 				{
 					AUTO_REF(val, getParams.get("to_disable"));
@@ -177,7 +179,7 @@ namespace {
 				}
 				Logger::setMask(toDisable, toEnable);
 				sendDefault(Http::ST_OK);
-			} else if(uri.compare(m_path.size(), std::string::npos, "show_mysql_profile") == 0){
+			} else if(uri == "show_mysql_profile"){
 				OptionalMap headers;
 				headers.set("Content-Type", "text/csv; charset=utf-8");
 				headers.set("Content-Disposition", "attachment; name=\"mysql_threads.csv\"");
@@ -204,37 +206,17 @@ namespace {
 		}
 	};
 
-	class SystemServer : public TcpServerBase {
-	private:
-		static boost::shared_ptr<std::vector<std::string> > createAuthInfo(std::vector<std::string> userPass){
-			if(userPass.empty()){
-				return VAL_INIT;
-			}
-			std::sort(userPass.begin(), userPass.end());
-			return boost::make_shared<std::vector<std::string> >(STD_MOVE(userPass));
-		}
-		static std::string createPath(std::string str){
-			if(str.empty() || (str.rbegin()[0] != '/')){
-				str.push_back('/');
-			}
-			return STD_MOVE(str);
-		}
-
-	private:
-		const boost::shared_ptr<const std::vector<std::string> > m_authInfo;
-		const std::string m_path;
-
+	class SystemServer : public Http::BasicAuthServer {
 	public:
 		SystemServer(const IpPort &bindAddr, const char *cert, const char *privateKey,
 			std::vector<std::string> userPass, std::string path)
-			: TcpServerBase(bindAddr, cert, privateKey)
-			, m_authInfo(createAuthInfo(STD_MOVE(userPass))), m_path(createPath(STD_MOVE(path)))
+			: Http::BasicAuthServer(bindAddr, cert, privateKey, STD_MOVE(userPass), STD_MOVE(path))
 		{
 		}
 
 	public:
 		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const OVERRIDE {
-			return boost::make_shared<SystemSession>(STD_MOVE(client), m_authInfo, m_path);
+			return boost::make_shared<SystemSession>(STD_MOVE(client), getAuthInfo(), getPath());
 		}
 	};
 
@@ -245,7 +227,7 @@ void SystemHttpServer::start(){
 	AUTO_REF(conf, MainConfig::getConfigFile());
 
 	AUTO(bind, conf.get<std::string>("system_http_bind", "0.0.0.0"));
-	AUTO(port, conf.get<boost::uint16_t>("system_http_port", 8900));
+	AUTO(port, conf.get<unsigned>("system_http_port", 8900));
 	AUTO(cert, conf.get<std::string>("system_http_certificate"));
 	AUTO(pkey, conf.get<std::string>("system_http_private_key"));
 	AUTO(auth, conf.getAll<std::string>("system_http_auth_user_pass"));

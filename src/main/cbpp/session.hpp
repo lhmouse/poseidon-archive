@@ -16,11 +16,8 @@ namespace Poseidon {
 
 namespace Cbpp {
 	class MessageBase;
-	class Server;
 
 	class Session : public TcpSessionBase {
-		friend Server;
-
 	private:
 		class RequestJob;
 

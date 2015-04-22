@@ -77,6 +77,7 @@ pkginclude_httpdir = $(pkgincludedir)/http
 pkginclude_http_HEADERS = \
 	src/main/http/fwd.hpp	\
 	src/main/http/session.hpp	\
+	src/main/http/basic_auth_server.hpp	\
 	src/main/http/verbs.hpp	\
 	src/main/http/status_codes.hpp	\
 	src/main/http/exception.hpp	\
@@ -175,6 +176,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/cbpp/exception.cpp	\
 	src/main/cbpp/message_base.cpp	\
 	src/main/http/session.cpp	\
+	src/main/http/basic_auth_server.cpp	\
 	src/main/http/status_codes.cpp	\
 	src/main/http/verbs.cpp	\
 	src/main/http/utilities.cpp	\

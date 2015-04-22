@@ -18,11 +18,9 @@
 namespace Poseidon {
 
 namespace Http {
-	class Server;
 	class UpgradedSessionBase;
 
 	class Session : public TcpSessionBase {
-		friend Server;
 		friend UpgradedSessionBase;
 
 	private:
@@ -54,7 +52,9 @@ namespace Http {
 		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
 	public:
-		Session(UniqueFile socket, boost::shared_ptr<const std::vector<std::string> > authInfo);
+		explicit Session(UniqueFile socket,
+			boost::shared_ptr<const std::vector<std::string> > authInfo = VAL_INIT // 必须是排序的，否则会抛出异常。
+			);
 		~Session();
 
 	private:

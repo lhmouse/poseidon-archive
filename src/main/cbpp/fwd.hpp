@@ -11,7 +11,6 @@ namespace Cbpp {
 	class Exception;
 
 	class Client;
-	class Server;
 	class Session;
 }
 
