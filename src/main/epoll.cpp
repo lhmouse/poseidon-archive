@@ -236,15 +236,15 @@ std::size_t Epoll::pumpReadable(){
 				DEBUG_THROW(SystemException);
 			} else if(bytesRead == 0){
 				LOG_POSEIDON_INFO("Connection closed: remote = ", session->getRemoteInfo());
-				session->send(StreamBuffer(), true);
+				session->shutdown();
 				continue;
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown while dispatching data: what = ", e.what());
-			session->send(StreamBuffer(), true);
+			session->shutdown();
 		} catch(...){
 			LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching data.");
-			session->send(StreamBuffer(), true);
+			session->shutdown();
 		}
 	}
 	return count;
