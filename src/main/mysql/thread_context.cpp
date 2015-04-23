@@ -37,7 +37,7 @@ namespace MySql {
 
 			if(::mysql_thread_init() != 0){
 				LOG_POSEIDON_FATAL("Could not initialize MySQL thread.");
-				DEBUG_THROW(Exception, SharedNts::observe("::mysql_thread_init() failed"));
+				DEBUG_THROW(Exception, SSLIT("::mysql_thread_init() failed"));
 			}
 		}
 	}

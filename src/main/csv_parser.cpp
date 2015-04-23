@@ -93,7 +93,7 @@ void CsvParser::load(const char *file){
 	}
 	if(rows.empty() || rows.front().empty()){
 		LOG_POSEIDON_ERROR("The first line of a CSV file may not be empty.");
-		DEBUG_THROW(Exception, SharedNts::observe("Bad CSV header"));
+		DEBUG_THROW(Exception, SSLIT("Bad CSV header"));
 	}
 
 	const std::size_t columnCount = rows.front().size();
@@ -103,7 +103,7 @@ void CsvParser::load(const char *file){
 		for(std::size_t j = 0; j < i; ++j){
 			if(keys.at(j) == key){
 				LOG_POSEIDON_ERROR("Duplicate key: ", key);
-				DEBUG_THROW(Exception, SharedNts::observe("Duplicate key"));
+				DEBUG_THROW(Exception, SSLIT("Duplicate key"));
 			}
 		}
 		keys.at(i).assign(key.c_str());
@@ -129,7 +129,7 @@ void CsvParser::load(const char *file){
 			if(row.size() != columnCount){
 				LOG_POSEIDON_ERROR("There are ", row.size(), " column(s) on line ", line,
 					" but there are ", columnCount, " in the header");
-				DEBUG_THROW(Exception, SharedNts::observe("Inconsistent CSV column numbers"));
+				DEBUG_THROW(Exception, SSLIT("Inconsistent CSV column numbers"));
 			}
 			++i;
 		}
@@ -176,7 +176,7 @@ const std::string &CsvParser::getRaw(const char *key) const {
 
 std::size_t CsvParser::seek(std::size_t row){
 	if((row != static_cast<std::size_t>(-1)) && (row >= m_data.size())){
-		DEBUG_THROW(Poseidon::Exception, Poseidon::SharedNts::observe("Row index is out of range"));
+		DEBUG_THROW(Poseidon::Exception, Poseidon::SSLIT("Row index is out of range"));
 	}
 	const AUTO(oldRow, m_row);
 	m_row = row;

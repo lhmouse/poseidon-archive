@@ -53,12 +53,12 @@ Uuid Uuid::generate(){
 
 Uuid::Uuid(const char (&str)[36]){
 	if(!fromString(str)){
-		DEBUG_THROW(Exception, SharedNts::observe("Invalid UUID string"));
+		DEBUG_THROW(Exception, SSLIT("Invalid UUID string"));
 	}
 }
 Uuid::Uuid(const std::string &str){
 	if(!fromString(str)){
-		DEBUG_THROW(Exception, SharedNts::observe("Invalid UUID string"));
+		DEBUG_THROW(Exception, SSLIT("Invalid UUID string"));
 	}
 }
 

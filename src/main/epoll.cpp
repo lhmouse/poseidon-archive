@@ -235,16 +235,18 @@ std::size_t Epoll::pumpReadable(){
 				}
 				DEBUG_THROW(SystemException);
 			} else if(bytesRead == 0){
-				LOG_POSEIDON_INFO("Connection closed: remote = ", session->getRemoteInfo());
-				session->shutdown();
+				if(session->shutdown()){
+					LOG_POSEIDON_INFO("Connection closed: remote = ", session->getRemoteInfo());
+					session->onReadHup();
+				}
 				continue;
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown while dispatching data: what = ", e.what());
-			session->shutdown();
+			LOG_POSEIDON_WARNING("std::exception thrown while dispatching data: what = ", e.what());\
+			session->forceShutdown();
 		} catch(...){
 			LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching data.");
-			session->shutdown();
+			session->forceShutdown();
 		}
 	}
 	return count;
@@ -269,13 +271,13 @@ std::size_t Epoll::pumpWriteable(){
 		try {
 			unsigned char temp[1024];
 			long bytesWritten;
-			bool shutdown;
+			bool readHup;
 			{
 				boost::mutex::scoped_lock sessionLock;
 				bytesWritten = session->syncWrite(sessionLock, temp, sizeof(temp));
-				shutdown = session->hasBeenShutdown();
+				readHup = session->hasBeenShutdown();
 				if(bytesWritten == 0){
-					if(!shutdown){
+					if(!readHup){
 						const boost::mutex::scoped_lock lock(m_mutex);
 						m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
 					}
@@ -292,7 +294,7 @@ std::size_t Epoll::pumpWriteable(){
 				}
 				DEBUG_THROW(SystemException);
 			} else if(bytesWritten == 0){
-				if(shutdown){
+				if(readHup && !session->isPreservedOnReadHup()){
 					session->forceShutdown();
 				}
 				continue;

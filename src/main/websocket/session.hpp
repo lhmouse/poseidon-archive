@@ -26,11 +26,12 @@ namespace WebSocket {
 	class Session : public Http::UpgradedSessionBase {
 	private:
 		enum State {
-			S_OPCODE,
-			S_PAYLOAD_LEN,
-			S_EX_PAYLOAD_LEN,
-			S_MASK,
-			S_PAYLOAD,
+			S_OPCODE			= 0,
+			S_PAYLOAD_LEN		= 1,
+			S_EX_PAYLOAD_LEN_16	= 2,
+			S_EX_PAYLOAD_LEN_64	= 3,
+			S_MASK				= 4,
+			S_PAYLOAD			= 5,
 		};
 
 	private:
@@ -42,21 +43,23 @@ namespace WebSocket {
 			Http::Verb verb, unsigned version, const OptionalMap &headers);
 
 	private:
+		StreamBuffer m_received;
+
+		boost::uint64_t m_sizeTotal;
+		boost::uint64_t m_sizeExpecting;
 		State m_state;
+
 		bool m_fin;
 		OpCode m_opcode;
 		boost::uint64_t m_payloadLen;
 		boost::uint32_t m_payloadMask;
-		StreamBuffer m_payload;
-		StreamBuffer m_whole;
 
 	public:
 		Session(const boost::shared_ptr<Http::Session> &parent, std::string uri);
+		~Session();
 
 	private:
-		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
-
-		void onControlFrame();
+		void onReadAvail(const void *data, std::size_t size) FINAL;
 
 		bool sendFrame(StreamBuffer contents, OpCode opcode, bool fin, bool masked);
 

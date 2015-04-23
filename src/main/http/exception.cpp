@@ -13,15 +13,12 @@ namespace Http {
 	}
 
 	Exception::Exception(const char *file, std::size_t line, StatusCode statusCode, OptionalMap headers)
-		: ProtocolException(file, line, SharedNts::observe(getStatusCodeDesc(statusCode).descShort),
-			static_cast<long>(static_cast<unsigned>(statusCode)))
+		: ProtocolException(file, line, SharedNts::view(getStatusCodeDesc(statusCode).descShort), static_cast<long>(statusCode))
 	{
 		if(!headers.empty()){
-			m_headers = boost::make_shared<OptionalMap>();
-			m_headers->swap(headers);
+			m_headers = boost::make_shared<OptionalMap>(STD_MOVE(headers));
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Exception: statusCode = ", statusCode, ", what = ", what());
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception: statusCode = ", statusCode, ", what = ", what());
 	}
 	Exception::~Exception() NOEXCEPT {
 	}

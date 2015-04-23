@@ -20,77 +20,126 @@ namespace Poseidon {
 
 namespace Http {
 	namespace {
-		void normalizeUri(std::string &uri){
-			if(uri[0] != '/'){
-				uri.insert(uri.begin(), '/');
+		class SessionJobBase : public JobBase {
+		private:
+			const boost::weak_ptr<Session> m_session;
+
+		protected:
+			explicit SessionJobBase(const boost::shared_ptr<Session> &session)
+				: m_session(session)
+			{
 			}
-			std::size_t write = 1;
-			for(std::size_t i = 1; i < uri.size(); ++i){
-				const char ch = uri[i];
-				if((ch == '/') && (uri[write - 1] == '/')){
-					continue;
+
+		protected:
+			virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
+
+		private:
+			boost::weak_ptr<const void> getCategory() const FINAL {
+				return m_session;
+			}
+			void perform() const FINAL {
+				PROFILE_ME;
+
+				const AUTO(session, m_session.lock());
+				if(!session){
+					return;
 				}
-				uri[write] = ch;
-				++write;
+
+				try {
+					perform(session);
+				} catch(TryAgainLater &){
+					throw;
+				} catch(std::exception &e){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
+					session->forceShutdown();
+					throw;
+				} catch(...){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+					session->forceShutdown();
+					throw;
+				}
 			}
-			uri.erase(uri.begin() + static_cast<std::ptrdiff_t>(write), uri.end());
-		}
+		};
 	}
 
-	class Session::RequestJob : public JobBase {
+	class ContinueJob : public SessionJobBase {
+	public:
+		explicit ContinueJob(const boost::shared_ptr<Session> &session)
+			: SessionJobBase(session)
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+			PROFILE_ME;
+
+			session->sendDefault(ST_CONTINUE);
+		}
+	};
+
+	class UnauthorizedJob : public SessionJobBase {
 	private:
-		const boost::weak_ptr<Session> m_session;
+		const char *const m_message;
+
+	public:
+		UnauthorizedJob(const boost::shared_ptr<Session> &session, const char *message)
+			: SessionJobBase(session), m_message(message)
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+			PROFILE_ME;
+
+			std::string str;
+			str.reserve(255);
+			str += "Basic realm=\"";
+			for(AUTO(p, m_message); *p != 0; ++p){
+				if(*p == '\"'){
+					str += '\'';
+				} else if((static_cast<unsigned char>(*p) < 0x20) || (*p == 0x7F)){
+					str += ' ';
+				} else {
+					str += *p;
+				}
+			}
+			str += "\"";
+
+			OptionalMap headers;
+			headers.set("WWW-Authenticate", STD_MOVE(str));
+			session->sendDefault(ST_UNAUTHORIZED, STD_MOVE(headers));
+		}
+	};
+
+	class Session::RequestJob : public SessionJobBase {
+	private:
 		const Verb m_verb;
 		const std::string m_uri;
 		const unsigned m_version;
 		const OptionalMap m_getParams;
 		const OptionalMap m_headers;
-		const StreamBuffer m_contents;
+		const StreamBuffer m_entity;
 
 	public:
 		RequestJob(const boost::shared_ptr<Session> &session, Verb verb, std::string uri, unsigned version,
-			OptionalMap getParams, OptionalMap headers, StreamBuffer contents)
-			: m_session(session), m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
-			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_contents(STD_MOVE(contents))
+			OptionalMap getParams, OptionalMap headers, StreamBuffer entity)
+			: SessionJobBase(session)
+			, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
+			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_entity(STD_MOVE(entity))
 		{
 		}
 
 	protected:
-		boost::weak_ptr<const void> getCategory() const OVERRIDE {
-			return m_session;
-		}
-		void perform() const OVERRIDE {
+		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			const AUTO(session, m_session.lock());
-			if(!session){
-				return;
-			}
-
 			try {
-				const AUTO(upgrade, m_headers.get("Upgrade"));
-				if(!upgrade.empty()){
-					AUTO(upgradedSession, session->onUpgrade(
-						upgrade, m_verb, m_uri, m_version, m_getParams, m_headers, m_contents));
-					if(!upgradedSession){
-						LOG_POSEIDON_ERROR("Upgrade failed: upgrade = ", upgrade);
-						DEBUG_THROW(Exception, ST_BAD_REQUEST);
-					}
-					{
-						const boost::mutex::scoped_lock lock(session->m_upgreadedMutex);
-						session->m_upgradedSession = STD_MOVE(upgradedSession);
-					}
-					LOG_POSEIDON_DEBUG("Upgraded succeeded: upgrade = ", upgrade, ", remote = ", session->getRemoteInfo());
-					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("epoll_tcp_request_timeout", 0));
+				LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", getStringFromVerb(m_verb));
+				session->onRequest(m_verb, m_uri, m_version, m_getParams, m_headers, m_entity);
+				if(m_version < 10001){
+					session->shutdown();
 				} else {
-					LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", getStringFromVerb(m_verb));
-					session->onRequest(m_verb, m_uri, m_version, m_getParams, m_headers, m_contents);
-
-					if(m_version < 10001){
-						session->shutdown();
-					} else {
-						session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 0));
-					}
+					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 0));
 				}
 			} catch(TryAgainLater &){
 				throw;
@@ -102,175 +151,72 @@ namespace Http {
 				} catch(...){
 					session->forceShutdown();
 				}
-				throw;
-			} catch(...){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... request URI = ", m_uri);
-				try {
-					session->sendDefault(ST_BAD_REQUEST, true); // 关闭连接。
-				} catch(...){
-					session->forceShutdown();
-				}
-				throw;
 			}
 		}
 	};
 
-	class Session::ErrorJob : public JobBase {
+	class Session::ErrorJob : public SessionJobBase {
 	private:
-		const boost::weak_ptr<Session> m_session;
 		const StatusCode m_statusCode;
 		const OptionalMap m_headers;
-		const bool m_fin;
 
 	public:
-		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, OptionalMap headers, bool fin)
-			: m_session(session), m_statusCode(statusCode), m_headers(STD_MOVE(headers)), m_fin(fin)
+		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, OptionalMap headers)
+			: SessionJobBase(session)
+			, m_statusCode(statusCode), m_headers(STD_MOVE(headers))
 		{
 		}
 
 	protected:
-		boost::weak_ptr<const void> getCategory() const OVERRIDE {
-			return m_session;
-		}
-		void perform() const OVERRIDE {
+		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			const AUTO(session, m_session.lock());
-			if(!session){
-				return;
-			}
-
-			try {
-				session->sendDefault(m_statusCode, m_headers, m_fin);
-			} catch(...){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception...");
-				session->forceShutdown();
-				throw;
-			}
+			session->sendDefault(m_statusCode, m_headers, true);
 		}
 	};
 
-	class Session::HeaderParser {
+	class Session::UpgradeJob : public SessionJobBase {
 	private:
-		class ContinueJob : public JobBase {
-		private:
-			const boost::weak_ptr<Session> m_session;
-
-		public:
-			explicit ContinueJob(const boost::shared_ptr<Session> &session)
-				: m_session(session)
-			{
-			}
-
-		protected:
-			boost::weak_ptr<const void> getCategory() const OVERRIDE {
-				return m_session;
-			}
-			void perform() const OVERRIDE {
-				PROFILE_ME;
-
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
-
-				try {
-					session->sendDefault(ST_CONTINUE);
-				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception...");
-					session->forceShutdown();
-					throw;
-				}
-			}
-		};
-
-	private:
-		static void onExpect(const boost::shared_ptr<Session> &session, const std::string &val){
-			if(::strcasecmp(val.c_str(), "100-continue") == 0){
-				enqueueJob(boost::make_shared<ContinueJob>(session));
-				return;
-			}
-			LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", val);
-			DEBUG_THROW(Exception, ST_BAD_REQUEST);
-		}
-		static void onContentLength(const boost::shared_ptr<Session> &session, const std::string &val){
-			try {
-				session->m_contentLength = boost::lexical_cast<std::size_t>(val);
-			} catch(boost::bad_lexical_cast &e){
-				DEBUG_THROW(Exception, ST_BAD_REQUEST);
-			}
-			LOG_POSEIDON_DEBUG("Content-Length: ", session->m_contentLength);
-		}
-		static void onTransferEncoding(const boost::shared_ptr<Session> &session, const std::string &val){
-			(void)session;
-
-			if(::strcasecmp(val.c_str(), "identity") == 0){
-				return;
-			} else if(::strcasecmp(val.c_str(), "chunked") == 0){
-				return;
-			}
-			LOG_POSEIDON_WARNING("Unknown HTTP header Transfer-Encoding: ", val);
-			DEBUG_THROW(Exception, ST_NOT_ACCEPTABLE);
-		}
-		static void onAuthorization(const boost::shared_ptr<Session> &session, const std::string &val){
-			if(!session->m_authInfo){
-				return;
-			}
-
-			const std::size_t pos = val.find(' ');
-			if(pos == std::string::npos){
-				LOG_POSEIDON_WARNING("Bad Authorization: ", val);
-				DEBUG_THROW(Exception, ST_BAD_REQUEST);
-			}
-			std::string temp(val);
-			temp.at(pos) = 0;
-			if(::strcasecmp(temp.c_str(), "basic") != 0){
-				LOG_POSEIDON_WARNING("Unknown auth method: ", temp.c_str());
-				DEBUG_THROW(Exception, ST_BAD_REQUEST);
-			}
-			temp.erase(temp.begin(), temp.begin() + static_cast<std::ptrdiff_t>(pos) + 1);
-			temp = base64Decode(temp);
-			if(!std::binary_search(session->m_authInfo->begin(), session->m_authInfo->end(), temp)){
-				LOG_POSEIDON_WARNING("Invalid username or password");
-				OptionalMap authHeader;
-				authHeader.set("WWW-Authenticate", "Basic realm=\"Invalid username or password\"");
-				DEBUG_THROW(Exception, ST_UNAUTHORIZED, STD_MOVE(authHeader));
-			}
-			session->m_authInfo.reset();
-		}
+		const Verb m_verb;
+		const std::string m_uri;
+		const unsigned m_version;
+		const OptionalMap m_getParams;
+		const OptionalMap m_headers;
+		const StreamBuffer m_entity;
 
 	public:
-		static void commit(const boost::shared_ptr<Session> &session){
-			static const std::pair<
-				const char *, void (*)(const boost::shared_ptr<Session> &, const std::string &)
-				> JUMP_TABLE[] =
-			{
-				// 确保字母顺序。
-				std::make_pair("Authorization", &onAuthorization),
-				std::make_pair("Content-Length", &onContentLength),
-				std::make_pair("Expect", &onExpect),
-				std::make_pair("Transfer-Encoding", &onTransferEncoding),
-			};
+		UpgradeJob(const boost::shared_ptr<Session> &session, Verb verb, std::string uri, unsigned version,
+			OptionalMap getParams, OptionalMap headers, StreamBuffer entity)
+			: SessionJobBase(session)
+			, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
+			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_entity(STD_MOVE(entity))
+		{
+		}
 
-			for(AUTO(it, session->m_headers.begin()); it != session->m_headers.end(); ++it){
-				LOG_POSEIDON_DEBUG("HTTP header: ", it->first.get(), " = ", it->second);
+	protected:
+		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+			PROFILE_ME;
 
-				AUTO(lower, BEGIN(JUMP_TABLE));
-				AUTO(upper, END(JUMP_TABLE));
-				for(;;){
-					const AUTO(middle, lower + (upper - lower) / 2);
-					const int result = std::strcmp(it->first.get(), middle->first);
-					if(result == 0){
-						(*middle->second)(session, it->second);
-						break;
-					} else if(result < 0){
-						upper = middle;
-					} else {
-						lower = middle + 1;
-					}
-					if(lower == upper){
-						break;
-					}
+			try {
+				const AUTO_REF(upgrade, m_headers.get("Upgrade"));
+				AUTO(upgradedSession, session->onUpgrade(upgrade, m_verb, m_uri, m_version, m_getParams, m_headers, m_entity));
+				if(!upgradedSession){
+					LOG_POSEIDON_ERROR("Upgrade failed: upgrade = ", upgrade);
+					DEBUG_THROW(Exception, ST_INTERNAL_SERVER_ERROR);
+				}
+				{
+					const boost::mutex::scoped_lock lock(session->m_upgreadedMutex);
+					session->m_upgradedSession = STD_MOVE(upgradedSession);
+				}
+				LOG_POSEIDON_DEBUG("Upgraded succeeded: upgrade = ", upgrade, ", remote = ", session->getRemoteInfo());
+				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("epoll_tcp_request_timeout", 0));
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet, request URI = ", m_uri,
+					", statusCode = ", e.statusCode());
+				try {
+					session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
+				} catch(...){
+					session->forceShutdown();
 				}
 			}
 		}
@@ -279,7 +225,7 @@ namespace Http {
 	Session::Session(UniqueFile socket, boost::shared_ptr<Session::BasicAuthInfo> authInfo)
 		: TcpSessionBase(STD_MOVE(socket))
 		, m_authInfo(STD_MOVE(authInfo))
-		, m_state(S_FIRST_HEADER), m_totalLength(0), m_expectingBinary(false), m_expectingLength(0), m_contentLength(0)
+		, m_sizeTotal(0), m_expectingNewLine(true), m_sizeExpecting(0), m_state(S_FIRST_HEADER)
 		, m_verb(V_INVALID_VERB), m_version(10000)
 	{
 		if(m_authInfo){
@@ -298,7 +244,7 @@ namespace Http {
 #endif
 			if(!isSorted){
 				LOG_POSEIDON_ERROR("authInfo is not sorted.");
-				DEBUG_THROW(BasicException, SharedNts::observe("authInfo is not sorted"));
+				DEBUG_THROW(BasicException, SSLIT("authInfo is not sorted"));
 			}
 		}
 	}
@@ -311,164 +257,368 @@ namespace Http {
 	void Session::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
+		if(m_state == S_UPGRADED){
+			const AUTO(upgradedSession, getUpgradedSession());
+			if(upgradedSession){
+				upgradedSession->onReadAvail(data, size);
+				return;
+			}
+			LOG_POSEIDON_WARNING("Session has not been fully upgraded. Abort.");
+			DEBUG_THROW(BasicException, SSLIT("Session has not been fully upgraded"));
+		}
+
 		try {
 			const AUTO(maxRequestLength, MainConfig::getConfigFile().get<boost::uint64_t>("http_max_request_length", 16384));
 
-			m_payload.put(data, size);
+			m_received.put(data, size);
 
-
-/*
-			AUTO(read, static_cast<const char *>(data));
-			const AUTO(end, read + size);
 			for(;;){
-				if(m_state == S_FIRST_HEADER){
-					const AUTO(upgradedSession, getUpgradedSession());
-					if(upgradedSession){
-						upgradedSession->onReadAvail(read, static_cast<std::size_t>(end - read));
-						read = end;
-						goto _exitFor;
-					}
-				}
-
-				while(m_state != S_CONTENTS){
-					if(read == end){
-						goto _exitFor;
-					}
-					const char ch = *read;
-					++read;
-
-					++m_totalLength;
-					if(m_totalLength >= maxRequestLength){
-						LOG_POSEIDON_WARNING("Request header too large: maxRequestLength = ", maxRequestLength);
-						DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
-					}
-
-					if(ch != '\n'){
-						m_line.push_back(ch);
-						continue;
-					}
-
-					if(!m_line.empty() && (*m_line.rbegin() == '\r')){
-						m_line.erase(m_line.end() - 1, m_line.end());
-					}
-
-					switch(m_state){
-					case S_FIRST_HEADER:
-						if(m_line.empty()){
-							// m_state = S_FIRST_HEADER;
-						} else {
-							AUTO(parts, explode<std::string>(' ', m_line, 3));
-							if(parts.size() != 3){
-								LOG_POSEIDON_WARNING("Bad HTTP header: ", m_line);
-								DEBUG_THROW(Exception, ST_BAD_REQUEST);
-							}
-
-							m_verb = getVerbFromString(parts[0].c_str());
-							if(m_verb == V_INVALID_VERB){
-								LOG_POSEIDON_WARNING("Bad HTTP verb: ", parts[0]);
-								DEBUG_THROW(Exception, ST_METHOD_NOT_ALLOWED);
-							}
-
-							if(parts[1][0] != '/'){
-								LOG_POSEIDON_WARNING("Bad HTTP request URI: ", parts[1]);
-								DEBUG_THROW(Exception, ST_BAD_REQUEST);
-							}
-							parts[1] = STD_MOVE(m_uri);
-							std::size_t pos = m_uri.find('#');
-							if(pos != std::string::npos){
-								m_uri.erase(m_uri.begin() + static_cast<std::ptrdiff_t>(pos), m_uri.end());
-							}
-							pos = m_uri.find('?');
-							if(pos != std::string::npos){
-								m_getParams = optionalMapFromUrlEncoded(m_uri.substr(pos + 1));
-								m_uri.erase(m_uri.begin() + static_cast<std::ptrdiff_t>(pos), m_uri.end());
-							}
-							normalizeUri(m_uri);
-							m_uri = urlDecode(m_uri);
-
-							char versionMajor[16];
-							char versionMinor[16];
-							const int result = std::sscanf(parts[2].c_str(), "HTTP/%15[0-9].%15[0-9]%*c", versionMajor, versionMinor);
-							if(result != 2){
-								LOG_POSEIDON_WARNING("Bad protocol string: ", parts[2]);
-								DEBUG_THROW(Exception, ST_BAD_REQUEST);
-							}
-							m_version = std::strtoul(versionMajor, NULLPTR, 10) * 10000 + std::strtoul(versionMinor, NULLPTR, 10);
-							if((m_version != 10000) && (m_version != 10001)){
-								LOG_POSEIDON_WARNING("Bad HTTP version: ", parts[2]);
-								DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
-							}
-
-							m_line.clear();
-
-							m_state = S_HEADERS;
-						}
+				if(m_state == S_UPGRADED){
+					if(m_received.empty()){
 						break;
+					}
+					LOG_POSEIDON_WARNING("Junk data received after upgrading.");
+					DEBUG_THROW(BasicException, SSLIT("Junk data received after upgrading"));
+				}
 
-					case S_HEADERS:
-						if(m_line.empty()){
-							HeaderParser::commit(virtualSharedFromThis<Session>());
+				boost::uint64_t sizeTotal;
+				bool gotExpected;
+				if(m_expectingNewLine){
+					struct Helper {
+						static bool traverseCallback(void *ctx, const void *data, std::size_t size){
+							AUTO_REF(lfOffset, *static_cast<std::size_t *>(ctx));
 
-							m_state = S_CONTENTS;
-						} else {
-							std::size_t pos = m_line.find(':');
-							if(pos == std::string::npos){
-								LOG_POSEIDON_WARNING("Bad HTTP header: ", m_line);
-								DEBUG_THROW(Exception, ST_BAD_REQUEST);
+							const AUTO(pos, std::memchr(data, '\n', size));
+							if(!pos){
+								lfOffset += size;
+								return true;
 							}
-							AUTO(valueBegin, m_line.begin() + static_cast<std::ptrdiff_t>(pos) + 1);
-							while(*valueBegin == ' '){
-								++valueBegin;
-							}
-							std::string value(valueBegin, m_line.end());
-							m_line.erase(m_line.begin() + static_cast<std::ptrdiff_t>(pos), m_line.end());
-							m_headers.append(m_line.c_str(), STD_MOVE(value));
-
-							 m_line.clear();
-
-							// m_state = S_HEADERS;
+							lfOffset += static_cast<std::size_t>(static_cast<const char *>(pos) - static_cast<const char *>(data));
+							return false;
 						}
-						break;
+					};
 
-					case S_CONTENTS:
-						std::abort();
-
-					default:
-						LOG_POSEIDON_FATAL("Invalid state: ", static_cast<unsigned>(m_state));
-						std::abort();
+					std::size_t lfOffset = 0;
+					if(m_received.traverse(&Helper::traverseCallback, &lfOffset)){
+						// 没找到换行符。
+						sizeTotal = m_sizeTotal + m_received.size();
+						gotExpected = false;
+					} else {
+						// 找到了。
+						m_sizeExpecting = lfOffset + 1;
+						sizeTotal = m_sizeTotal + m_sizeExpecting;
+						gotExpected = true;
+					}
+				} else {
+					if(m_received.size() < m_sizeExpecting){
+						if(m_sizeExpecting > maxRequestLength){
+							LOG_POSEIDON_WARNING("Request too large: sizeExpecting = ", m_sizeExpecting);
+							DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
+						}
+						sizeTotal = m_sizeTotal + m_received.size();
+						gotExpected = false;
+					} else {
+						sizeTotal = m_sizeTotal + m_sizeExpecting;
+						gotExpected = true;
 					}
 				}
-
-				if(m_authInfo){
-					OptionalMap authHeader;
-					authHeader.set("WWW-Authenticate", "Basic realm=\"Authentication required\"");
-					DEBUG_THROW(Exception, ST_UNAUTHORIZED, STD_MOVE(authHeader));
-				}
-
-				assert(m_contentLength >= m_line.size());
-
-				const AUTO(bytesAvail, static_cast<std::size_t>(end - read));
-				const AUTO(bytesRemaining, m_contentLength - m_line.size());
-				if(bytesAvail < bytesRemaining){
-					m_totalLength += bytesAvail;
-					if((m_totalLength < bytesAvail) || (m_totalLength > maxRequestLength)){
-						LOG_POSEIDON_WARNING("Request entity too large: maxRequestLength = ", maxRequestLength);
-						DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
-					}
-					m_line.append(read, bytesAvail);
-					read = end;
-					goto _exitFor;
-				}
-				m_totalLength += bytesRemaining;
-				if((m_totalLength < bytesRemaining) || (m_totalLength > maxRequestLength)){
-					LOG_POSEIDON_WARNING("Request entity too large: maxRequestLength = ", maxRequestLength);
+				if(sizeTotal > maxRequestLength){
+					LOG_POSEIDON_WARNING("Request too large: maxRequestLength = ", maxRequestLength);
 					DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
 				}
-				m_line.append(read, bytesRemaining);
-				read += bytesRemaining;
+				if(!gotExpected){
+					break;
+				}
+				m_sizeTotal = sizeTotal;
 
-				enqueueJob(boost::make_shared<RequestJob>(virtualSharedFromThis<Session>(),
-					m_verb, STD_MOVE(m_uri), m_version, STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_line)));
+				AUTO(expected, m_received.cut(m_sizeExpecting));
+				if(m_expectingNewLine){
+					expected.unput(); // '\n'
+					if(expected.back() == '\r'){
+						expected.unput();
+					}
+				}
+
+				switch(m_state){
+				case S_FIRST_HEADER:
+					if(!expected.empty()){
+						std::string line;
+						expected.dump(line);
+
+						std::size_t pos = line.find(' ');
+						if(pos == std::string::npos){
+							LOG_POSEIDON_WARNING("Bad HTTP header: expecting verb, line = ", line);
+							DEBUG_THROW(Exception, ST_BAD_REQUEST);
+						}
+						line[pos] = 0;
+						m_verb = getVerbFromString(line.c_str());
+						if(m_verb == V_INVALID_VERB){
+							LOG_POSEIDON_WARNING("Bad HTTP verb: ", line.c_str());
+							DEBUG_THROW(Exception, ST_NOT_IMPLEMENTED);
+						}
+						line.erase(0, pos + 1);
+
+						if(line[0] != '/'){
+							LOG_POSEIDON_WARNING("Bad HTTP header: URI must begin with a slash, line = ", line);
+							DEBUG_THROW(Exception, ST_BAD_REQUEST);
+						}
+						pos = line.find(' ');
+						if(pos == std::string::npos){
+							LOG_POSEIDON_WARNING("Bad HTTP header: expecting URI end, line = ", line);
+							DEBUG_THROW(Exception, ST_BAD_REQUEST);
+						}
+						m_uri.assign(line, 0, pos);
+						line.erase(0, pos + 1);
+
+						unsigned verEnd = 0;
+						char verMajorStr[16], verMinorStr[16];
+						if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%n", verMajorStr, verMinorStr, &verEnd) != 2){
+							LOG_POSEIDON_WARNING("Bad HTTP header: expecting HTTP version, line = ", line);
+							DEBUG_THROW(Exception, ST_BAD_REQUEST);
+						}
+						if(verEnd != line.size()){
+							LOG_POSEIDON_WARNING("Bad HTTP header: junk after HTTP version, line = ", line);
+							DEBUG_THROW(Exception, ST_BAD_REQUEST);
+						}
+						m_version = std::strtoul(verMajorStr, NULLPTR, 10) * 10000 + std::strtoul(verMinorStr, NULLPTR, 10);
+						if((m_version != 10000) && (m_version != 10001)){
+							LOG_POSEIDON_WARNING("Bad HTTP header: HTTP version not supported, verMajorStr = ", verMajorStr,
+								", verMinorStr = ", verMinorStr);
+							DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
+						}
+
+						pos = m_uri.find('?');
+						if(pos != std::string::npos){
+							m_getParams = optionalMapFromUrlEncoded(m_uri.substr(pos + 1));
+							m_uri.erase(pos);
+						}
+						m_uri = urlDecode(m_uri);
+
+						// m_expectingNewLine = true;
+						m_state = S_HEADERS;
+					} else {
+						// m_state = S_FIRST_HEADER;
+					}
+					break;
+
+				case S_HEADERS:
+					if(!expected.empty()){
+						std::string line;
+						expected.dump(line);
+
+						std::size_t pos = line.find(':');
+						if(pos == std::string::npos){
+							LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
+							DEBUG_THROW(Exception, ST_BAD_REQUEST);
+						}
+						m_headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
+
+						// m_expectingNewLine = true;
+						// m_state = S_HEADERS;
+					} else {
+						const AUTO_REF(expect, m_headers.get("Expect"));
+						if(!expect.empty()){
+							if(::strcasecmp(expect.c_str(), "100-continue") == 0){
+								enqueueJob(boost::make_shared<ContinueJob>(virtualSharedFromThis<Session>()));
+							} else {
+								LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", expect);
+								DEBUG_THROW(Exception, ST_BAD_REQUEST);
+							}
+						}
+
+						const AUTO_REF(transferEncoding, m_headers.get("Transfer-Encoding"));
+						if(transferEncoding.empty() || (::strcasecmp(transferEncoding.c_str(), "identity") == 0)){
+							boost::uint64_t sizeExpecting = 0;
+							const AUTO_REF(contentLength, m_headers.get("Content-Length"));
+							if(!contentLength.empty()){
+								char *endptr;
+								sizeExpecting = ::strtoull(contentLength.c_str(), &endptr, 10);
+								if(*endptr){
+									LOG_POSEIDON_WARNING("Bad HTTP header Content-Length: ", contentLength);
+									DEBUG_THROW(Exception, ST_BAD_REQUEST);
+								}
+							}
+							m_expectingNewLine = false;
+							m_sizeExpecting = sizeExpecting;
+							m_state = S_IDENTITY;
+						} else if(::strcasecmp(transferEncoding.c_str(), "chunked") == 0){
+							// m_expectingNewLine = true;
+							m_state = S_CHUNK_HEADER;
+						} else {
+							LOG_POSEIDON_WARNING("Unsupported Transfer-Encoding: ", transferEncoding);
+							DEBUG_THROW(Exception, ST_NOT_ACCEPTABLE);
+						}
+					}
+					break;
+
+				case S_UPGRADED:
+					std::abort();
+					break;
+
+				case S_END_OF_ENTITY:
+					{
+						const char *authorizationMessage = NULLPTR;
+						if(m_authInfo){
+							const AUTO_REF(authorization, m_headers.get("Authorization"));
+							if(authorization.empty()){
+								authorizationMessage = "Authentication required";
+								goto _checkAuthorization;
+							}
+							const std::size_t pos = authorization.find(' ');
+							if(pos == std::string::npos){
+								LOG_POSEIDON_WARNING("Invalid HTTP header Authorization: ", authorization);
+								authorizationMessage = "Invalid Authorization header";
+								goto _checkAuthorization;
+							}
+							AUTO(str, authorization.substr(0, pos));
+							if(::strcasecmp(str.c_str(), "basic") != 0){
+								LOG_POSEIDON_WARNING("Unknown HTTP authorization method: ", str);
+								authorizationMessage = "Unknown authorization method";
+								goto _checkAuthorization;
+							}
+							str = base64Decode(authorization.substr(pos + 1));
+							if(!std::binary_search(m_authInfo->begin(), m_authInfo->end(), str)){
+								LOG_POSEIDON_INFO("HTTP authorization failed: username:password = ", str);
+								authorizationMessage = "Invalid username or password";
+								goto _checkAuthorization;
+							}
+						}
+					_checkAuthorization:
+						if(authorizationMessage){
+							enqueueJob(boost::make_shared<UnauthorizedJob>(
+								virtualSharedFromThis<Session>(), authorizationMessage));
+						} else if(m_headers.has("Upgrade")){
+							enqueueJob(boost::make_shared<UpgradeJob>(
+								virtualSharedFromThis<Session>(), m_verb, STD_MOVE(m_uri), m_version,
+								STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_entity)));
+						} else {
+							enqueueJob(boost::make_shared<RequestJob>(
+								virtualSharedFromThis<Session>(), m_verb, STD_MOVE(m_uri), m_version,
+								STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_entity)));
+						}
+					}
+
+					m_verb = V_INVALID_VERB;
+					m_uri.clear();
+					m_version = 10000;
+					m_getParams.clear();
+					m_headers.clear();
+					m_entity.clear();
+
+					m_sizeTotal = 0;
+					m_expectingNewLine = true;
+					m_state = S_FIRST_HEADER;
+					break;
+
+				case S_IDENTITY:
+					m_entity = STD_MOVE(expected);
+
+					m_expectingNewLine = false;
+					m_sizeExpecting = 0;
+					m_state = S_END_OF_ENTITY;
+					break;
+
+				case S_CHUNK_HEADER:
+					if(!expected.empty()){
+						std::string line;
+						expected.dump(line);
+
+						char *endptr;
+						const boost::uint64_t chunkSize = ::strtoull(line.c_str(), &endptr, 16);
+						if(*endptr && (*endptr != ' ')){
+							LOG_POSEIDON_WARNING("Bad chunk header: ", line);
+							DEBUG_THROW(Exception, ST_BAD_REQUEST);
+						}
+						if(chunkSize == 0){
+							m_expectingNewLine = true;
+							m_state = S_CHUNKED_TRAILER;
+						} else {
+							m_expectingNewLine = false;
+							m_sizeExpecting = chunkSize;
+							m_state = S_CHUNK_DATA;
+						}
+					} else {
+						// chunk-data 后面应该有一对 CRLF。我们在这里处理这种情况。
+					}
+					break;
+
+				case S_CHUNK_DATA:
+					m_entity.splice(expected);
+
+					m_expectingNewLine = true;
+					m_state = S_CHUNK_HEADER;
+					break;
+
+				case S_CHUNKED_TRAILER:
+					if(!expected.empty()){
+						std::string line;
+						expected.dump(line);
+
+						std::size_t pos = line.find(':');
+						if(pos == std::string::npos){
+							LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
+							DEBUG_THROW(Exception, ST_BAD_REQUEST);
+						}
+						m_headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
+
+						// m_expectingNewLine = true;
+						// m_state = S_CHUNKED_TRAILER;
+					} else {
+						m_expectingNewLine = false;
+						m_sizeExpecting = 0;
+						m_state = S_END_OF_ENTITY;
+					}
+					break;
+
+				default:
+					LOG_POSEIDON_ERROR("Unknown state: ", static_cast<unsigned>(m_state));
+					std::abort();
+				}
+			}
+		} catch(Exception &e){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown while parsing data, URI = ", m_uri,
+				", status = ", static_cast<unsigned>(e.statusCode()));
+			try {
+				enqueueJob(boost::make_shared<ErrorJob>(
+					virtualSharedFromThis<Session>(), e.statusCode(), e.headers()));
+				setPreservedOnReadHup(true); // noexcept
+				shutdown();
+			} catch(...){
+				forceShutdown();
+			}
+		} catch(std::exception &e){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, URI = ", m_uri,
+				", what = ", e.what());
+			try {
+				enqueueJob(boost::make_shared<ErrorJob>(
+					virtualSharedFromThis<Session>(), ST_BAD_REQUEST, OptionalMap()));
+				setPreservedOnReadHup(true); // noexcept
+				shutdown();
+			} catch(...){
+				forceShutdown();
+			}
+		}
+	}
+	void Session::onReadHup() NOEXCEPT {
+		PROFILE_ME;
+
+		if(m_state == S_UPGRADED){
+			const AUTO(upgradedSession, getUpgradedSession());
+			if(upgradedSession){
+				upgradedSession->onReadHup();
+			}
+			return;
+		}
+
+		if((m_state == S_IDENTITY) && !m_expectingNewLine && (m_sizeExpecting == (boost::uint64_t)-1)){
+			try {
+				enqueueJob(boost::make_shared<RequestJob>(
+					virtualSharedFromThis<Session>(), m_verb, STD_MOVE(m_uri), m_version,
+					STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_received)));
+
+				m_received.clear();
+				m_expectingNewLine = true;
+				m_sizeExpecting = 0;
 
 				m_verb = V_INVALID_VERB;
 				m_uri.clear();
@@ -476,35 +626,30 @@ namespace Http {
 				m_getParams.clear();
 				m_headers.clear();
 
-				m_totalLength = 0;
-				m_contentLength = 0;
-				m_line.clear();
-				m_chunked = false;
-				m_chunk.clear();
-
 				m_state = S_FIRST_HEADER;
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown while parsing data, URI = ", m_uri,
+					", status = ", static_cast<unsigned>(e.statusCode()));
+				try {
+					enqueueJob(boost::make_shared<ErrorJob>(
+						virtualSharedFromThis<Session>(), e.statusCode(), e.headers()));
+					setPreservedOnReadHup(true); // noexcept
+					shutdown();
+				} catch(...){
+					forceShutdown();
+				}
+			} catch(std::exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, URI = ", m_uri,
+					", what = ", e.what());
+				try {
+					enqueueJob(boost::make_shared<ErrorJob>(
+						virtualSharedFromThis<Session>(), ST_BAD_REQUEST, OptionalMap()));
+					setPreservedOnReadHup(true); // noexcept
+					shutdown();
+				} catch(...){
+					forceShutdown();
+				}
 			}
-		_exitFor:
-			;
-	*/	} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown while parsing data, URI = ", m_uri,
-				", status = ", static_cast<unsigned>(e.statusCode()));
-			try {
-				enqueueJob(boost::make_shared<ErrorJob>(
-					virtualSharedFromThis<Session>(), e.statusCode(), e.headers(), true));
-			} catch(...){
-				forceShutdown();
-			}
-			throw;
-		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Forwarding exception... shutdown the session first.");
-			try {
-				enqueueJob(boost::make_shared<ErrorJob>(
-					virtualSharedFromThis<Session>(), ST_BAD_REQUEST, OptionalMap(), true));
-			} catch(...){
-				forceShutdown();
-			}
-			throw;
 		}
 	}
 
@@ -561,7 +706,7 @@ namespace Http {
 		return TcpSessionBase::send(STD_MOVE(data), fin);
 	}
 	bool Session::sendDefault(StatusCode statusCode, OptionalMap headers, bool fin){
-		LOG_POSEIDON_DEBUG("Making default HTTP response: statusCode = ", statusCode);
+		LOG_POSEIDON_DEBUG("Making default HTTP response: statusCode = ", statusCode, ", fin = ", fin);
 
 		StreamBuffer contents;
 		if(static_cast<unsigned>(statusCode) / 100 >= 4){

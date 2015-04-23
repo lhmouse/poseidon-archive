@@ -25,39 +25,44 @@ namespace Http {
 
 	private:
 		enum State {
-			S_FIRST_HEADER,
-			S_HEADERS,
-			S_CONTENTS,
+			S_FIRST_HEADER		= 0,
+			S_HEADERS			= 1,
+			S_UPGRADED			= 2,
+			S_END_OF_ENTITY		= 3,
+			S_IDENTITY			= 4,
+			S_CHUNK_HEADER		= 5,
+			S_CHUNK_DATA		= 6,
+			S_CHUNKED_TRAILER	= 7,
 		};
 
 	private:
 		class RequestJob;
 		class ErrorJob;
 
-		class HeaderParser;
+		class UpgradeJob;
 
 	public:
 		typedef const std::vector<std::string> BasicAuthInfo;
 
 	private:
-		boost::shared_ptr<BasicAuthInfo> m_authInfo;
+		const boost::shared_ptr<BasicAuthInfo> m_authInfo;
 
 		mutable boost::mutex m_upgreadedMutex;
 		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
+		StreamBuffer m_received;
+
+		boost::uint64_t m_sizeTotal;
+		bool m_expectingNewLine;
+		boost::uint64_t m_sizeExpecting;
 		State m_state;
-		StreamBuffer m_payload;
-		boost::uint64_t m_totalLength;
-		bool m_expectingBinary;
-		boost::uint64_t m_expectingLength;
-		boost::uint64_t m_contentLength;
 
 		Verb m_verb;
 		std::string m_uri;
 		unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
 		OptionalMap m_getParams;
 		OptionalMap m_headers;
-		StreamBuffer m_contents;
+		StreamBuffer m_entity;
 
 	public:
 		explicit Session(UniqueFile socket,
@@ -66,7 +71,8 @@ namespace Http {
 		~Session();
 
 	private:
-		void onReadAvail(const void *data, std::size_t size) OVERRIDE FINAL;
+		void onReadAvail(const void *data, std::size_t size) FINAL;
+		void onReadHup() NOEXCEPT OVERRIDE;
 
 	protected:
 		virtual void onRequest(Verb verb, const std::string &uri, unsigned version,

@@ -69,7 +69,7 @@ namespace {
 				LOG_POSEIDON_WARNING("Inacceptable system HTTP request: ", uri);
 				DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 			}
-			uri.erase(uri.begin(), uri.begin() + static_cast<std::ptrdiff_t>(m_path.size()));
+			uri.erase(0, m_path.size());
 
 			if(reqVerb != Http::V_GET){
 				DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);

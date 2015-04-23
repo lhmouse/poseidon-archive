@@ -50,6 +50,7 @@ private:
 	boost::scoped_ptr<SslFilterBase> m_sslFilter;
 
 	volatile bool m_shutdown;
+	volatile bool m_preservedOnReadHup;
 	mutable boost::mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
 	boost::weak_ptr<const boost::weak_ptr<Epoll> > m_epoll;
@@ -65,9 +66,13 @@ protected:
 	~TcpSessionBase();
 
 private:
-	void setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT;
+	void onClose() NOEXCEPT OVERRIDE;
+	virtual void onReadHup() NOEXCEPT;
 
 	void initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter);
+
+	void setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT;
+
 	void pumpOnClose() NOEXCEPT;
 
 	// 同步，线程安全。
@@ -81,18 +86,20 @@ private:
 protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE = 0;
-	void onClose() NOEXCEPT OVERRIDE FINAL;
 
 public:
 	int getFd() const {
 		return m_socket.get();
 	}
 
-	bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
+	bool send(StreamBuffer buffer, bool fin = false) FINAL;
 
 	bool hasBeenShutdown() const OVERRIDE;
 	bool shutdown() NOEXCEPT;
 	bool forceShutdown() NOEXCEPT OVERRIDE;
+
+	bool isPreservedOnReadHup() const NOEXCEPT;
+	bool setPreservedOnReadHup(bool value) NOEXCEPT;
 
 	boost::uint64_t getCreatedTime() const {
 		return m_createdTime;
@@ -102,6 +109,7 @@ public:
 	const IpPort &getLocalInfo() const;
 
 	void registerOnClose(boost::function<void ()> callback);
+	void registerOnReadHup(boost::function<void ()> callback);
 	void setTimeout(boost::uint64_t timeout);
 };
 

@@ -18,7 +18,7 @@ SharedNts getErrorDesc(int errCode) NOEXCEPT {
 		}
 	}
 	// desc 指向一个静态的字符串。
-	return SharedNts::observe(desc);
+	return SharedNts::view(desc);
 }
 std::string getErrorDescAsString(int errCode){
 	std::string ret;

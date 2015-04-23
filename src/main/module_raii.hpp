@@ -29,7 +29,7 @@ public:
 	namespace {	\
 		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_) {	\
 			class Stub_ : public ::Poseidon::ModuleRaiiBase {	\
-				::boost::shared_ptr<const void> init() const OVERRIDE FINAL;	\
+				::boost::shared_ptr<const void> init() const FINAL;	\
 			} const stub_;	\
 		}	\
 	}	\

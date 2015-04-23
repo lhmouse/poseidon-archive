@@ -10,8 +10,13 @@
 
 namespace Poseidon {
 
-extern void enqueueAsyncJob(boost::function<void ()> proc, boost::uint64_t delay = 0,
+extern void enqueueAsyncJob(boost::weak_ptr<const void> category, boost::function<void ()> proc, boost::uint64_t delay = 0,
 	boost::shared_ptr<const bool> withdrawn = VAL_INIT);
+inline void enqueueAsyncJob(boost::function<void ()> proc, boost::uint64_t delay = 0,
+	boost::shared_ptr<const bool> withdrawn = VAL_INIT)
+{
+	enqueueAsyncJob(boost::weak_ptr<const void>(), STD_MOVE_IDN(proc), delay, STD_MOVE(withdrawn));
+}
 
 }
 

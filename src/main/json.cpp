@@ -139,14 +139,14 @@ std::string JsonParser::acceptString(std::istream &is){
 	char temp;
 	if(!(is >>temp) || (temp != '\"')){
 		DEBUG_THROW(ProtocolException,
-			SharedNts::observe("Bad JSON: expecting string open"), -1);
+			SSLIT("Bad JSON: expecting string open"), -1);
 	}
 
 	is >>std::noskipws;
 	for(;;){
 		if(!(is >>temp)){
 			DEBUG_THROW(ProtocolException,
-				SharedNts::observe("Bad JSON: expecting string close"), -1);
+				SSLIT("Bad JSON: expecting string close"), -1);
 		}
 		if(temp == '\"'){
 			if(ret.empty() || (*ret.rbegin() != '\\')){
@@ -171,7 +171,7 @@ std::string JsonParser::acceptString(std::istream &is){
 
 		if(read == ret.end()){
 			DEBUG_THROW(ProtocolException,
-				SharedNts::observe("Bad JSON: escape character at end"), -1);
+				SSLIT("Bad JSON: escape character at end"), -1);
 		}
 		ch = *read;
 		++read;
@@ -215,7 +215,7 @@ std::string JsonParser::acceptString(std::istream &is){
 		case 'u':
 			if(ret.end() - read < 4){
 				DEBUG_THROW(ProtocolException,
-					SharedNts::observe("Bad JSON: too few hex digits for \\u"), -1);
+					SSLIT("Bad JSON: too few hex digits for \\u"), -1);
 			} else {
 				unsigned code = 0;
 				for(unsigned i = 12; i != (unsigned)-4; i -= 4){
@@ -229,7 +229,7 @@ std::string JsonParser::acceptString(std::istream &is){
 						ch -= 'a' - 0x0A;
 					} else {
 						DEBUG_THROW(ProtocolException,
-							SharedNts::observe("Bad JSON: invalid hex digit"), -1);
+							SSLIT("Bad JSON: invalid hex digit"), -1);
 					}
 					code |= ch << i;
 				}
@@ -254,7 +254,7 @@ std::string JsonParser::acceptString(std::istream &is){
 
 		default:
 			DEBUG_THROW(ProtocolException,
-				SharedNts::observe("Bad JSON: invalid escape character"), -1);
+				SSLIT("Bad JSON: invalid escape character"), -1);
 		}
 	}
 	ret.erase(write, ret.end());
@@ -266,19 +266,19 @@ double JsonParser::acceptNumber(std::istream &is){
 		return ret;
 	}
 	DEBUG_THROW(ProtocolException,
-		SharedNts::observe("Bad JSON: expecting number"), -1);
+		SSLIT("Bad JSON: expecting number"), -1);
 }
 JsonObject JsonParser::acceptObject(std::istream &is){
 	JsonObject ret;
 	char temp;
 	if(!(is >>temp) || (temp != '{')){
 		DEBUG_THROW(ProtocolException,
-			SharedNts::observe("Bad JSON: expecting object open"), -1);
+			SSLIT("Bad JSON: expecting object open"), -1);
 	}
 	for(;;){
 		if(!(is >>temp)){
 			DEBUG_THROW(ProtocolException,
-				SharedNts::observe("Bad JSON: end of stream"), -1);
+				SSLIT("Bad JSON: end of stream"), -1);
 		}
 		if(temp == '}'){
 			break;
@@ -290,7 +290,7 @@ JsonObject JsonParser::acceptObject(std::istream &is){
 		std::string name = acceptString(is);
 		if(!(is >>temp) || (temp != ':')){
 			DEBUG_THROW(ProtocolException,
-				SharedNts::observe("Bad JSON: expecting colon"), -1);
+				SSLIT("Bad JSON: expecting colon"), -1);
 		}
 		JsonElement element = parseElement(is);
 		ret[SharedNts(name)] = STD_MOVE(element);
@@ -302,12 +302,12 @@ JsonArray JsonParser::acceptArray(std::istream &is){
 	char temp;
 	if(!(is >>temp) || (temp != '[')){
 		DEBUG_THROW(ProtocolException,
-			SharedNts::observe("Bad JSON: expecting array open"), -1);
+			SSLIT("Bad JSON: expecting array open"), -1);
 	}
 	for(;;){
 		if(!(is >>temp)){
 			DEBUG_THROW(ProtocolException,
-				SharedNts::observe("Bad JSON: end of stream"), -1);
+				SSLIT("Bad JSON: end of stream"), -1);
 		}
 		if(temp == ']'){
 			break;
@@ -325,7 +325,7 @@ bool JsonParser::acceptBoolean(std::istream &is){
 	bool ret;
 	if(!(is >>std::boolalpha >>ret)){
 		DEBUG_THROW(ProtocolException,
-			SharedNts::observe("Bad JSON: expecting boolean"), -1);
+			SSLIT("Bad JSON: expecting boolean"), -1);
 	}
 	return ret;
 }
@@ -333,7 +333,7 @@ JsonNull JsonParser::acceptNull(std::istream &is){
 	char temp[5];
 	if(!(is >>std::setw(sizeof(temp)) >>temp) || (std::strcmp(temp, "null") != 0)){
 		DEBUG_THROW(ProtocolException,
-			SharedNts::observe("Bad JSON: expecting null"), -1);
+			SSLIT("Bad JSON: expecting null"), -1);
 	}
 	return JsonNull();
 }
@@ -343,7 +343,7 @@ JsonElement JsonParser::parseElement(std::istream &is){
 	char temp;
 	if(!(is >>temp)){
 		DEBUG_THROW(ProtocolException,
-			SharedNts::observe("Bad JSON: end of stream"), -1);
+			SSLIT("Bad JSON: end of stream"), -1);
 	}
 	is.unget();
 	switch(temp){
@@ -384,7 +384,7 @@ JsonElement JsonParser::parseElement(std::istream &is){
 
 	default:
 		DEBUG_THROW(ProtocolException,
-			SharedNts::observe("Bad JSON: unknown element type"), -1);
+			SSLIT("Bad JSON: unknown element type"), -1);
 	}
 	return ret;
 }

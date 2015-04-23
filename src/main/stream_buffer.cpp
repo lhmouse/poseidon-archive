@@ -135,7 +135,7 @@ void StreamBuffer::clear(){
 	m_size = 0;
 }
 
-int StreamBuffer::peek() const {
+int StreamBuffer::front() const {
 	if(m_size == 0){
 		return -1;
 	}
@@ -149,6 +149,21 @@ int StreamBuffer::peek() const {
 		++it;
 	}
 }
+int StreamBuffer::back() const {
+	if(m_size == 0){
+		return -1;
+	}
+	AUTO(it, m_chunks.end());
+	for(;;){
+		assert(it != m_chunks.begin());
+
+		--it;
+		if(it->m_readPos < it->m_writePos){
+			return it->m_data[it->m_writePos - 1];
+		}
+	}
+}
+
 int StreamBuffer::get(){
 	if(m_size == 0){
 		return -1;
@@ -361,6 +376,23 @@ void StreamBuffer::splice(StreamBuffer &src) NOEXCEPT {
 	m_chunks.splice(m_chunks.end(), src.m_chunks);
 	m_size += src.m_size;
 	src.m_size = 0;
+}
+
+bool StreamBuffer::traverse(bool (*callback)(void *ctx, const void *, std::size_t), void *ctx) const {
+	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
+		if(!(*callback)(ctx, it->m_data + it->m_readPos, it->m_writePos - it->m_readPos)){
+			return false;
+		}
+	}
+	return true;
+}
+bool StreamBuffer::traverse(bool (*callback)(void *ctx, void *, std::size_t), void *ctx){
+	for(AUTO(it, m_chunks.begin()); it != m_chunks.end(); ++it){
+		if(!(*callback)(ctx, it->m_data + it->m_readPos, it->m_writePos - it->m_readPos)){
+			return false;
+		}
+	}
+	return true;
 }
 
 void StreamBuffer::dump(std::string &str) const {

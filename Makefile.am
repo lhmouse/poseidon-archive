@@ -175,7 +175,6 @@ lib_libposeidon_main_la_SOURCES = \
 	src/main/cbpp/session.cpp	\
 	src/main/cbpp/client.cpp	\
 	src/main/cbpp/exception.cpp	\
-	src/main/cbpp/message_base.cpp	\
 	src/main/http/session.cpp	\
 	src/main/http/basic_auth_server.cpp	\
 	src/main/http/status_codes.cpp	\

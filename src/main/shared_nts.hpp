@@ -15,7 +15,7 @@ namespace Poseidon {
 
 class SharedNts {
 public:
-	static SharedNts observe(const char *str);
+	static SharedNts view(const char *str);
 
 private:
 	boost::shared_ptr<const char> m_ptr;
@@ -189,6 +189,12 @@ inline void swap(SharedNts &lhs, SharedNts &rhs) NOEXCEPT {
 
 extern std::istream &operator>>(std::istream &is, SharedNts &rhs);
 extern std::ostream &operator<<(std::ostream &os, const SharedNts &rhs);
+
+// Shared String LITeral
+template<std::size_t N>
+inline SharedNts SSLIT(const char (&str)[N]){
+	return SSLIT(str);
+}
 
 }
 

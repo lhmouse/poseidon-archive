@@ -475,7 +475,7 @@ namespace {
 							}
 						}
 
-						DEBUG_THROW(Exception, SharedNts::observe("Max retry count exceeded"));
+						DEBUG_THROW(Exception, SSLIT("Max retry count exceeded"));
 					}
 					newDueTime = now + (g_retryInitDelay << operationIt->retryCount);
 					++operationIt->retryCount;
@@ -565,7 +565,7 @@ namespace {
 		void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
 			if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
 				LOG_POSEIDON_ERROR("MySQL thread ", m_index, " is being shut down.");
-				DEBUG_THROW(Exception, SharedNts::observe("MySQL thread is being shut down"));
+				DEBUG_THROW(Exception, SSLIT("MySQL thread is being shut down"));
 			}
 
 			const AUTO(combinableObject, operation->getCombinableObject());
@@ -614,7 +614,7 @@ namespace {
 
 	void commitOperation(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
 		if(g_threads.empty()){
-			DEBUG_THROW(Exception, SharedNts::observe("No MySQL thread is running"));
+			DEBUG_THROW(Exception, SSLIT("No MySQL thread is running"));
 		}
 
 		// http://www.isthe.com/chongo/tech/comp/fnv/

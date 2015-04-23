@@ -9,6 +9,7 @@
 #include <string>
 #include <iosfwd>
 #include <iterator>
+#include <utility>
 #include <cstddef>
 
 namespace Poseidon {
@@ -18,9 +19,7 @@ private:
 	class Chunk;
 
 public:
-	class ReadIterator
-		: public std::iterator<std::input_iterator_tag, int>
-	{
+	class ReadIterator : public std::iterator<std::input_iterator_tag, int> {
 	private:
 		StreamBuffer *m_owner;
 
@@ -44,9 +43,7 @@ public:
 		}
 	};
 
-	class WriteIterator
-		: public std::iterator<std::output_iterator_tag, unsigned char>
-	{
+	class WriteIterator : public std::iterator<std::output_iterator_tag, unsigned char> {
 	private:
 		StreamBuffer *m_owner;
 
@@ -99,7 +96,13 @@ public:
 	void clear();
 
 	// 返回头部的一个字节。如果为空返回 -1，无异常抛出。
-	int peek() const;
+	int front() const;
+	// 返回尾部的一个字节。如果为空返回 -1，无异常抛出。
+	int back() const;
+
+	int peek() const {
+		return front();
+	}
 	// 返回头部的一个字节并删除之。如果为空返回 -1，无异常抛出。
 	int get();
 	// 向末尾追加一个字节。
@@ -138,6 +141,10 @@ public:
 	std::size_t transferTo(StreamBuffer &dst, std::size_t size){
 		return dst.transferFrom(*this, size);
 	}
+
+	// 若回调函数返回 false，则遍历终止并且 traverse() 返回 false；若所有数据遍历完毕 traverse() 返回 true。
+	bool traverse(bool (*callback)(void *ctx, const void *, std::size_t), void *ctx) const;
+	bool traverse(bool (*callback)(void *ctx, void *, std::size_t), void *ctx);
 
 	void dump(std::string &str) const;
 	std::string dump() const {

@@ -29,14 +29,18 @@ namespace Http {
 
 	private:
 		virtual void onReadAvail(const void *data, std::size_t size) = 0;
-		virtual void onClose() NOEXCEPT OVERRIDE FINAL;
+		virtual void onClose() NOEXCEPT;
+		virtual void onReadHup() NOEXCEPT;
 
 	public:
-		bool send(StreamBuffer buffer, bool fin = false) OVERRIDE FINAL;
+		bool send(StreamBuffer buffer, bool fin = false) FINAL;
 
 		bool hasBeenShutdown() const OVERRIDE;
 		bool shutdown() NOEXCEPT;
 		bool forceShutdown() NOEXCEPT OVERRIDE;
+
+		bool isPreservedOnReadHup() const NOEXCEPT;
+		bool setPreservedOnReadHup(bool value) NOEXCEPT;
 
 		boost::weak_ptr<const Session> getWeakParent() const {
 			return m_parent;

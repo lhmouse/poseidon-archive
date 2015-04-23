@@ -169,8 +169,8 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	if(!v.empty()){
 		contents.put("Already loaded");
 	} else {
-		v.push_back(HttpServletDepository::create(1, SharedNts::observe("/meow/"), &meowProc));
-		v.push_back(HttpServletDepository::create(1, SharedNts::observe("/meow/meow/"), &meowMeowProc));
+		v.push_back(HttpServletDepository::create(1, SSLIT("/meow/"), &meowProc));
+		v.push_back(HttpServletDepository::create(1, SSLIT("/meow/meow/"), &meowMeowProc));
 		v.push_back(TimerDaemon::registerTimer(5000, 10000, &tickProc));
 		contents.put("OK");
 	}
@@ -237,7 +237,7 @@ public:
 
 public:
 	TestClient()
-		: TcpClientBase(IpPort(SharedNts::observe("192.30.252.128"), 443), true)
+		: TcpClientBase(IpPort(SSLIT("192.30.252.128"), 443), true)
 	{
 	}
 
@@ -359,13 +359,13 @@ void TestProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 }
 
 MODULE_RAII {
-	return HttpServletDepository::create(1, SharedNts::observe("/profile"), &profileProc);
+	return HttpServletDepository::create(1, SSLIT("/profile"), &profileProc);
 }
 MODULE_RAII {
-	return HttpServletDepository::create(1, SharedNts::observe("/load"), &loadProc);
+	return HttpServletDepository::create(1, SSLIT("/load"), &loadProc);
 }
 MODULE_RAII {
-	return HttpServletDepository::create(1, SharedNts::observe("/unload"), &unloadProc);
+	return HttpServletDepository::create(1, SSLIT("/unload"), &unloadProc);
 }
 MODULE_RAII {
 	AUTO(v, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
@@ -379,7 +379,7 @@ MODULE_RAII {
 	return EventDispatcher::registerListener<TestEvent2>(&event2Proc);
 }
 MODULE_RAII {
-	return WebSocketServletDepository::create(2, SharedNts::observe("/wstest"), &webSocketProc);
+	return WebSocketServletDepository::create(2, SSLIT("/wstest"), &webSocketProc);
 }
 
 MODULE_RAII {
@@ -539,6 +539,6 @@ MODULE_RAII {
 	return server;
 }
 MODULE_RAII {
-	return HttpServletDepository::create(2, SharedNts::observe("/meow"), &meowProc);
+	return HttpServletDepository::create(2, SSLIT("/meow"), &meowProc);
 }
 */

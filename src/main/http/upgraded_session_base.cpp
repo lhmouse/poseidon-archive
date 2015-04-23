@@ -15,6 +15,8 @@ namespace Http {
 
 	void UpgradedSessionBase::onClose() NOEXCEPT {
 	}
+	void UpgradedSessionBase::onReadHup() NOEXCEPT {
+	}
 
 	bool UpgradedSessionBase::send(StreamBuffer buffer, bool fin){
 		const AUTO(parent, getParent());
@@ -44,6 +46,21 @@ namespace Http {
 			return false;
 		}
 		return static_cast<TcpSessionBase &>(*parent).forceShutdown();
+	}
+
+	bool UpgradedSessionBase::isPreservedOnReadHup() const NOEXCEPT {
+		const AUTO(parent, getParent());
+		if(!parent){
+			return false;
+		}
+		return parent->isPreservedOnReadHup();
+	}
+	bool UpgradedSessionBase::setPreservedOnReadHup(bool value) NOEXCEPT {
+		const AUTO(parent, getParent());
+		if(!parent){
+			return false;
+		}
+		return parent->setPreservedOnReadHup(value);
 	}
 
 	void UpgradedSessionBase::setTimeout(boost::uint64_t timeout){

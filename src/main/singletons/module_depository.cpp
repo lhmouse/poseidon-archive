@@ -211,7 +211,7 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Duplicate module: module = ", module, ", handle = ", module->handle(),
 			", real path = ", realPath, ", base address = ", baseAddr);
-		DEBUG_THROW(Exception, SharedNts::observe("Duplicate module"));
+		DEBUG_THROW(Exception, SSLIT("Duplicate module"));
 	}
 	result.first->handles.swap(handles);
 
@@ -263,7 +263,7 @@ void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii){
 	}
 	if(!g_moduleRaiis.insert(ModuleRaiiMapElement(info.dli_fbase, raii)).second){
 		LOG_POSEIDON_ERROR("Duplicate ModuleRaii? fbase = ", info.dli_fbase, ", raii = ", raii);
-		DEBUG_THROW(Exception, SharedNts::observe("Duplicate ModuleRaii"));
+		DEBUG_THROW(Exception, SSLIT("Duplicate ModuleRaii"));
 	}
 }
 void ModuleDepository::unregisterModuleRaii(ModuleRaiiBase *raii){

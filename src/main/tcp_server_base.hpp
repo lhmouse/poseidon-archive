@@ -26,7 +26,7 @@ protected:
 	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const = 0;
 
 public:
-	bool poll() const OVERRIDE FINAL;
+	bool poll() const FINAL;
 };
 
 }

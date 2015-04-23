@@ -28,7 +28,7 @@ void ConfigFile::load(const char *path){
 		++count;
 		std::size_t pos = line.find('#');
 		if(pos != std::string::npos){
-			line.erase(line.begin() + static_cast<std::ptrdiff_t>(pos), line.end());
+			line.erase(pos);
 		}
 		pos = line.find_first_not_of(" \t");
 		if(pos == std::string::npos){
@@ -37,13 +37,13 @@ void ConfigFile::load(const char *path){
 		std::size_t equ = line.find('=', pos);
 		if(equ == std::string::npos){
 			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": '=' expected.");
-			DEBUG_THROW(Exception, SharedNts::observe("Bad config file"));
+			DEBUG_THROW(Exception, SSLIT("Bad config file"));
 		}
 
 		std::size_t keyEnd = line.find_last_not_of(" \t", equ - 1);
 		if((keyEnd == std::string::npos) || (pos >= keyEnd)){
 			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": Name expected.");
-			DEBUG_THROW(Exception, SharedNts::observe("Bad config file"));
+			DEBUG_THROW(Exception, SSLIT("Bad config file"));
 		}
 		line[keyEnd + 1] = 0;
 		const char *const key = &line[pos];
@@ -51,9 +51,9 @@ void ConfigFile::load(const char *path){
 		std::string val;
 		pos = line.find_first_not_of(" \t", equ + 1);
 		if(pos != std::string::npos){
-			val.assign(line.begin() + static_cast<std::ptrdiff_t>(pos), line.end());
+			val.assign(line, pos, std::string::npos);
 			pos = val.find_last_not_of(" \t");
-			val.erase(val.begin() + static_cast<std::ptrdiff_t>(pos) + 1, val.end());
+			val.erase(pos + 1);
 		}
 
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: ", key, " = ", val);

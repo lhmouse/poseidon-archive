@@ -23,16 +23,16 @@ inline std::vector<T> explode(char separator, const std::string &str, std::size_
 		for(;;){
 			const std::size_t end = str.find(separator, begin);
 			if(end == std::string::npos){
-				temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.end());
+				temp.assign(str, begin, std::string::npos);
 				ret.push_back(boost::lexical_cast<T>(temp));
 				break;
 			}
 			if((limit != 0) && (ret.size() == limit - 1)){
-				temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.end());
+				temp.assign(str, begin, std::string::npos);
 				ret.push_back(boost::lexical_cast<T>(temp));
 				break;
 			}
-			temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.begin() + static_cast<std::ptrdiff_t>(end));
+			temp.assign(str, begin, end);
 			ret.push_back(boost::lexical_cast<T>(temp));
 			begin = end + 1;
 		}
@@ -48,16 +48,16 @@ inline std::vector<std::string> explode(char separator, const std::string &str, 
 		for(;;){
 			const std::size_t end = str.find(separator, begin);
 			if(end == std::string::npos){
-				temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.end());
+				temp.assign(str, begin, std::string::npos);
 				ret.push_back(STD_MOVE(temp));
 				break;
 			}
 			if((limit != 0) && (ret.size() == limit - 1)){
-				temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.end());
+				temp.assign(str, begin, std::string::npos);
 				ret.push_back(STD_MOVE(temp));
 				break;
 			}
-			temp.assign(str.begin() + static_cast<std::ptrdiff_t>(begin), str.begin() + static_cast<std::ptrdiff_t>(end));
+			temp.assign(str, begin, end);
 			ret.push_back(STD_MOVE(temp));
 			begin = end + 1;
 		}
@@ -76,7 +76,7 @@ inline std::string implode(char separator, const std::vector<T> &vec){
 	}
 	std::string ret = oss.str();
 	if(!ret.empty()){
-		ret.erase(ret.end() - 1, ret.end());
+		ret.erase(ret.end() - 1);
 	}
 	return ret;
 }

@@ -58,7 +58,8 @@ private:
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getFastMonoClock())
-	, m_peerInfo(), m_shutdown(false)
+	, m_peerInfo()
+	, m_shutdown(false), m_preservedOnReadHup(false)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
@@ -79,16 +80,11 @@ TcpSessionBase::~TcpSessionBase(){
 		LOG_POSEIDON_INFO("Destroying TCP session that has not been established.");
 	}
 
-	while(!m_onCloseQueue.empty()){
-		try {
-			enqueueAsyncJob(STD_MOVE(m_onCloseQueue.back()));
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown while enqueueing close callback: what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing close callback.");
-		}
-		m_onCloseQueue.pop_back();
-	}
+	pumpOnClose();
+}
+
+void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
+	swap(m_sslFilter, sslFilter);
 }
 
 void TcpSessionBase::setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT {
@@ -103,21 +99,31 @@ void TcpSessionBase::setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epo
 	m_epoll = STD_MOVE(epoll);
 }
 
-void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
-	swap(m_sslFilter, sslFilter);
-}
 void TcpSessionBase::pumpOnClose() NOEXCEPT {
 	const boost::mutex::scoped_lock lock(m_onCloseMutex);
 	while(!m_onCloseQueue.empty()){
 		try {
 			enqueueAsyncJob(STD_MOVE(m_onCloseQueue.back()));
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown while enqueueing close callback: what = ", e.what());
+			LOG_POSEIDON_ERROR("std::exception thrown while enqueueing onClose callback: what = ", e.what());
 		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing close callback.");
+			LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing onClose callback.");
 		}
 		m_onCloseQueue.pop_back();
 	}
+}
+void TcpSessionBase::onClose() NOEXCEPT {
+	try {
+		// 不要在这个地方检查队列是否为空，因为这里是 epoll 线程，
+		// 而主线程有可能在这个事件之后加入了一些回调，那样它们就不会被调用。
+		enqueueJob(boost::make_shared<OnCloseJob>(virtualSharedFromThis<TcpSessionBase>()));
+	} catch(std::exception &e){
+		LOG_POSEIDON_ERROR("std::exception thrown while enqueueing onClose job: what = ", e.what());
+	} catch(...){
+		LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing onClose job");
+	}
+}
+void TcpSessionBase::onReadHup() NOEXCEPT {
 }
 
 void TcpSessionBase::fetchPeerInfo() const {
@@ -135,45 +141,21 @@ void TcpSessionBase::fetchPeerInfo() const {
 	atomicStore(m_peerInfo.fetched, true, ATOMIC_RELEASE);
 }
 
-void TcpSessionBase::onClose() NOEXCEPT {
-	try {
-		// 不要在这个地方检查队列是否为空，因为这里是 epoll 线程，
-		// 而主线程有可能在这个事件之后加入了一些回调，那样它们就不会被调用。
-		enqueueJob(boost::make_shared<OnCloseJob>(virtualSharedFromThis<TcpSessionBase>()));
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown while enqueueing onClose job: what = ", e.what());
-	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing onClose job");
-	}
-}
-
 bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
-	bool closed;
+	const boost::mutex::scoped_lock lock(m_bufferMutex);
+	if(!buffer.empty()){
+		m_sendBuffer.splice(buffer);
+	}
+	const AUTO(ptr, m_epoll.lock());
+	if(ptr){
+		const AUTO(epoll, ptr->lock());
+		if(epoll){
+			epoll->notifyWriteable(this);
+		}
+	}
 	if(fin){
-		closed = atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
-	} else {
-		closed = atomicLoad(m_shutdown, ATOMIC_ACQUIRE);
-	}
-	if(closed){
-		LOG_POSEIDON_DEBUG("Unable to send data because this socket has been closed.");
-		return false;
-	}
-
-	{
-		const boost::mutex::scoped_lock lock(m_bufferMutex);
-		if(!buffer.empty()){
-			m_sendBuffer.splice(buffer);
-		}
-		if(fin){
-			::shutdown(m_socket.get(), SHUT_RD);
-		}
-		const AUTO(ptr, m_epoll.lock());
-		if(ptr){
-			const AUTO(epoll, ptr->lock());
-			if(epoll){
-				epoll->notifyWriteable(this);
-			}
-		}
+		atomicExchange(m_preservedOnReadHup, false, ATOMIC_ACQ_REL);
+		shutdown();
 	}
 	return true;
 }
@@ -182,16 +164,24 @@ bool TcpSessionBase::hasBeenShutdown() const {
 	return atomicLoad(m_shutdown, ATOMIC_ACQUIRE);
 }
 bool TcpSessionBase::shutdown() NOEXCEPT {
-	try {
-		return send(StreamBuffer(), true);
-	} catch(...){
-		return forceShutdown();
-	}
+	const bool ret = !atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
+	::shutdown(m_socket.get(), SHUT_RD);
+	return ret;
 }
 bool TcpSessionBase::forceShutdown() NOEXCEPT {
 	const bool ret = !atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
 	::shutdown(m_socket.get(), SHUT_RDWR);
 	return ret;
+}
+
+bool TcpSessionBase::isPreservedOnReadHup() const NOEXCEPT {
+	return atomicLoad(m_preservedOnReadHup, ATOMIC_ACQUIRE);
+}
+bool TcpSessionBase::setPreservedOnReadHup(bool value) NOEXCEPT {
+	if(!value && hasBeenShutdown()){
+		shutdown(); // noexcept
+	}
+	return atomicExchange(m_preservedOnReadHup, value, ATOMIC_ACQ_REL);
 }
 
 long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
@@ -202,8 +192,8 @@ long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
 		ret = ::recv(m_socket.get(), hint, hintSize, MSG_NOSIGNAL);
 	}
 	if(ret > 0){
-		LOG_POSEIDON_TRACE("Read ", ret, " byte(s) from ", getRemoteInfo(), ", hex = ",
-			HexDumper(hint, static_cast<std::size_t>(ret)));
+		LOG_POSEIDON_TRACE("Read ", ret, " byte(s) from ", getRemoteInfo(),
+			", hex = ", HexDumper(hint, static_cast<std::size_t>(ret)));
 		onReadAvail(hint, static_cast<std::size_t>(ret));
 	}
 	return ret;
