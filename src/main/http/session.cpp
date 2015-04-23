@@ -370,13 +370,13 @@ namespace Http {
 						m_uri.assign(line, 0, pos);
 						line.erase(0, pos + 1);
 
-						unsigned verEnd = 0;
+						long verEnd = 0;
 						char verMajorStr[16], verMinorStr[16];
-						if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%n", verMajorStr, verMinorStr, &verEnd) != 2){
+						if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", verMajorStr, verMinorStr, &verEnd) != 2){
 							LOG_POSEIDON_WARNING("Bad HTTP header: expecting HTTP version, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						if(verEnd != line.size()){
+						if(static_cast<unsigned long>(verEnd) != line.size()){
 							LOG_POSEIDON_WARNING("Bad HTTP header: junk after HTTP version, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
