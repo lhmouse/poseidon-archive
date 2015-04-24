@@ -76,17 +76,17 @@ namespace Http {
 
 	protected:
 		virtual void onRequest(Verb verb, const std::string &uri, unsigned version,
-			const OptionalMap &getParams, const OptionalMap &headers, const StreamBuffer &contents) = 0;
+			const OptionalMap &getParams, const OptionalMap &headers, const StreamBuffer &entity) = 0;
 
 		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const std::string &type, Verb verb, const std::string &uri,
-			unsigned version, const OptionalMap &params, const OptionalMap &headers, const StreamBuffer &contents);
+			unsigned version, const OptionalMap &params, const OptionalMap &headers, const StreamBuffer &entity);
 
 	public:
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
 
-		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer contents, bool fin = false);
-		bool send(StatusCode statusCode, StreamBuffer contents = StreamBuffer(), bool fin = false){
-			return send(statusCode, OptionalMap(), STD_MOVE(contents), fin);
+		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity, bool fin = false);
+		bool send(StatusCode statusCode, StreamBuffer entity = StreamBuffer(), bool fin = false){
+			return send(statusCode, OptionalMap(), STD_MOVE(entity), fin);
 		}
 
 		bool sendDefault(StatusCode statusCode, OptionalMap headers, bool fin = false);

@@ -398,11 +398,11 @@ namespace WebSocket {
 		}
 	}
 
-	bool Session::sendFrame(StreamBuffer contents, OpCode opcode, bool fin, bool masked){
+	bool Session::sendFrame(StreamBuffer payload, OpCode opcode, bool fin, bool masked){
 		StreamBuffer frame;
 		unsigned char ch = opcode | OP_FL_FIN;
 		frame.put(ch);
-		const std::size_t size = contents.size();
+		const std::size_t size = payload.size();
 		ch = masked ? 0x80 : 0;
 		if(size < 0x7E){
 			ch |= size;
@@ -426,7 +426,7 @@ namespace WebSocket {
 			frame.put(&mask, 4);
 			int ch;
 			for(;;){
-				ch = contents.get();
+				ch = payload.get();
 				if(ch == -1){
 					break;
 				}
@@ -435,13 +435,13 @@ namespace WebSocket {
 				mask = (mask << 24) | (mask >> 8);
 			}
 		} else {
-			frame.splice(contents);
+			frame.splice(payload);
 		}
 		return Http::UpgradedSessionBase::send(STD_MOVE(frame), fin);
 	}
 
-	bool Session::send(StreamBuffer contents, bool binary, bool fin, bool masked){
-		if(!sendFrame(STD_MOVE(contents), binary ? OP_DATA_BIN : OP_DATA_TEXT, false, masked)){
+	bool Session::send(StreamBuffer payload, bool binary, bool fin, bool masked){
+		if(!sendFrame(STD_MOVE(payload), binary ? OP_DATA_BIN : OP_DATA_TEXT, false, masked)){
 			return false;
 		}
 		if(fin){

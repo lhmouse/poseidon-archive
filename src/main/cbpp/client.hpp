@@ -50,17 +50,17 @@ namespace Cbpp {
 		void onReadAvail(const void *data, std::size_t size) FINAL;
 
 	public:
-		virtual void onResponse(boost::uint16_t messageId, StreamBuffer contents) = 0;
+		virtual void onResponse(boost::uint16_t messageId, StreamBuffer payload) = 0;
 		virtual void onError(boost::uint16_t messageId, StatusCode statusCode, std::string reason) = 0;
 
 	public:
-		bool send(boost::uint16_t messageId, StreamBuffer contents, bool fin = false);
+		bool send(boost::uint16_t messageId, StreamBuffer payload, bool fin = false);
 
 		template<class MessageT>
 		typename boost::enable_if<boost::is_base_of<MessageBase, MessageT>, bool>::type
-			send(const MessageT &contents, bool fin = false)
+			send(const MessageT &payload, bool fin = false)
 		{
-			return send(MessageT::ID, StreamBuffer(contents), fin);
+			return send(MessageT::ID, StreamBuffer(payload), fin);
 		}
 	};
 }

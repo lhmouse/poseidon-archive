@@ -191,25 +191,25 @@ namespace Cbpp {
 		}
 	}
 
-	bool Client::send(boost::uint16_t messageId, StreamBuffer contents, bool fin){
+	bool Client::send(boost::uint16_t messageId, StreamBuffer payload, bool fin){
 		PROFILE_ME;
 
-		LOG_POSEIDON_DEBUG("Sending frame: messageId = ", messageId, ", size = ", contents.size(), ", fin = ", fin);
+		LOG_POSEIDON_DEBUG("Sending frame: messageId = ", messageId, ", size = ", payload.size(), ", fin = ", fin);
 		StreamBuffer frame;
 		boost::uint16_t temp16;
 		boost::uint64_t temp64;
-		if(contents.size() < 0xFFFF){
-			storeLe(temp16, contents.size());
+		if(payload.size() < 0xFFFF){
+			storeLe(temp16, payload.size());
 			frame.put(&temp16, 2);
 		} else {
 			storeLe(temp16, 0xFFFF);
 			frame.put(&temp16, 2);
-			storeLe(temp64, contents.size());
+			storeLe(temp64, payload.size());
 			frame.put(&temp64, 8);
 		}
 		storeLe(temp16, messageId);
 		frame.put(&temp16, 2);
-		frame.splice(contents);
+		frame.splice(payload);
 		return TcpSessionBase::send(STD_MOVE(frame), fin);
 	}
 }

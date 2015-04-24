@@ -654,7 +654,7 @@ namespace Http {
 	}
 
 	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const std::string &type, Verb verb, const std::string &uri,
-		unsigned version, const OptionalMap &params, const OptionalMap &headers, const StreamBuffer &contents)
+		unsigned version, const OptionalMap &params, const OptionalMap &headers, const StreamBuffer &entity)
 	{
 		(void)type;
 		(void)verb;
@@ -662,7 +662,7 @@ namespace Http {
 		(void)version;
 		(void)params;
 		(void)headers;
-		(void)contents;
+		(void)entity;
 
 		return VAL_INIT;
 	}
@@ -672,7 +672,7 @@ namespace Http {
 		return m_upgradedSession;
 	}
 
-	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer contents, bool fin){
+	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity, bool fin){
 		LOG_POSEIDON_DEBUG("Making HTTP response: statusCode = ", statusCode);
 
 		StreamBuffer data;
@@ -684,13 +684,13 @@ namespace Http {
 		data.put(desc.descShort);
 		data.put("\r\n");
 
-		if(!contents.empty()){
+		if(!entity.empty()){
 			AUTO_REF(contentType, headers.create("Content-Type")->second);
 			if(contentType.empty()){
 				contentType.assign("text/plain; charset=utf-8");
 			}
 		}
-		headers.set("Content-Length", boost::lexical_cast<std::string>(contents.size()));
+		headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			if(it->second.empty()){
 				continue;
@@ -702,26 +702,26 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		data.splice(contents);
+		data.splice(entity);
 		return TcpSessionBase::send(STD_MOVE(data), fin);
 	}
 	bool Session::sendDefault(StatusCode statusCode, OptionalMap headers, bool fin){
 		LOG_POSEIDON_DEBUG("Making default HTTP response: statusCode = ", statusCode, ", fin = ", fin);
 
-		StreamBuffer contents;
+		StreamBuffer entity;
 		if(static_cast<unsigned>(statusCode) / 100 >= 4){
 			headers.set("Content-Type", "text/html; charset=utf-8");
 
-			contents.put("<html><head><title>");
+			entity.put("<html><head><title>");
 			const AUTO(desc, getStatusCodeDesc(statusCode));
-			contents.put(desc.descShort);
-			contents.put("</title></head><body><h1>");
-			contents.put(desc.descShort);
-			contents.put("</h1><hr /><p>");
-			contents.put(desc.descLong);
-			contents.put("</p></body></html>");
+			entity.put(desc.descShort);
+			entity.put("</title></head><body><h1>");
+			entity.put(desc.descShort);
+			entity.put("</h1><hr /><p>");
+			entity.put(desc.descLong);
+			entity.put("</p></body></html>");
 		}
-		return send(statusCode, STD_MOVE(headers), STD_MOVE(contents), fin);
+		return send(statusCode, STD_MOVE(headers), STD_MOVE(entity), fin);
 	}
 }
 
