@@ -32,7 +32,7 @@ inline std::vector<T> explode(char separator, const std::string &str, std::size_
 				ret.push_back(boost::lexical_cast<T>(temp));
 				break;
 			}
-			temp.assign(str, begin, end);
+			temp.assign(str, begin, end - begin);
 			ret.push_back(boost::lexical_cast<T>(temp));
 			begin = end + 1;
 		}
@@ -57,7 +57,7 @@ inline std::vector<std::string> explode(char separator, const std::string &str, 
 				ret.push_back(STD_MOVE(temp));
 				break;
 			}
-			temp.assign(str, begin, end);
+			temp.assign(str, begin, end - begin);
 			ret.push_back(STD_MOVE(temp));
 			begin = end + 1;
 		}
