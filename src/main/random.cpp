@@ -34,31 +34,32 @@ boost::uint64_t rand64(){
 	return ((boost::uint64_t)rand32() << 32) | rand32();
 }
 boost::uint32_t rand32(boost::uint32_t lower, boost::uint32_t upper){
-	if(lower > upper){
-		boost::uint32_t tmp = lower;
-		lower = upper + 1;
-		upper = tmp - 1;
-	}
-	const AUTO(delta, upper - lower);
-	if(delta == 0){
+	if(lower == upper){
 		return lower;
+	} else if(lower < upper){
+		const AUTO(delta, upper - lower);
+		if(delta < 0x10000){
+			return lower + rand32() % delta;
+		}
+		return lower + rand64() % delta;
+	} else {
+		const AUTO(delta, lower - upper);
+		if(delta < 0x10000){
+			return upper + 1 + rand32() % delta;
+		}
+		return upper + 1 + rand64() % delta;
 	}
-	if(delta < 0x10000){
-		return lower + rand32() % delta;
-	}
-	return lower + rand64() % delta;
 }
 double randDouble(double lower, double upper){
-	if(lower > upper){
-		double tmp = lower;
-		lower = upper;
-		upper = tmp;
-	}
-	const AUTO(delta, upper - lower);
-	if(delta == 0){
+	if(lower == upper){
 		return lower;
+	} else if(lower < upper){
+		const AUTO(delta, upper - lower);
+		return lower + rand64() / 0x1p64 * delta;
+	} else {
+		const AUTO(delta, lower - upper);
+		return upper + 0x1p-64 + rand64() / 0x1p64 * delta;
 	}
-	return lower + rand64() / 0x1p64 * delta;
 }
 
 }
