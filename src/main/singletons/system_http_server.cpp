@@ -48,12 +48,12 @@ namespace {
 
 	class SystemSession : public Http::Session {
 	private:
-		const std::string m_path;
+		const std::string m_prefix;
 
 	public:
 		SystemSession(UniqueFile socket, boost::shared_ptr<Http::Session::BasicAuthInfo> authInfo, std::string path)
 			: Http::Session(STD_MOVE(socket), STD_MOVE(authInfo))
-			, m_path(STD_MOVE(path += '/'))
+			, m_prefix(STD_MOVE(path += '/'))
 		{
 		}
 
@@ -64,11 +64,11 @@ namespace {
 
 			try {
 				AUTO(uri, header.uri);
-				if((uri.size() < m_path.size()) || (uri.compare(0, m_path.size(), m_path) != 0)){
+				if((uri.size() < m_prefix.size()) || (uri.compare(0, m_prefix.size(), m_prefix) != 0)){
 					LOG_POSEIDON_WARNING("Inacceptable system HTTP request: ", uri);
 					DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 				}
-				uri.erase(0, m_path.size());
+				uri.erase(0, m_prefix.size());
 
 				if(header.verb != Http::V_GET){
 					DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);
