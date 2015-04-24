@@ -19,6 +19,7 @@ namespace Poseidon {
 class OptionalMap;
 
 namespace Http {
+	class Header;
 	class Session;
 }
 
@@ -39,8 +40,7 @@ namespace WebSocket {
 		class ErrorJob;
 
 	public:
-		static Http::StatusCode makeHttpHandshakeResponse(OptionalMap &ret,
-			Http::Verb verb, unsigned version, const OptionalMap &headers);
+		static Http::StatusCode makeHttpHandshakeResponse(OptionalMap &ret, const Http::Header &header);
 
 	private:
 		StreamBuffer m_received;
