@@ -447,6 +447,8 @@ namespace Http {
 
 				case S_END_OF_ENTITY:
 					{
+						State nextState = S_FIRST_HEADER;
+
 						const char *authorizationMessage = NULLPTR;
 						if(m_authInfo){
 							const AUTO_REF(authorization, m_header.headers.get("Authorization"));
@@ -480,17 +482,19 @@ namespace Http {
 						} else if(m_header.headers.has("Upgrade")){
 							enqueueJob(boost::make_shared<UpgradeJob>(
 								virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
+
+							nextState = S_UPGRADED;
 						} else {
 							enqueueJob(boost::make_shared<RequestJob>(
 								virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
 						}
+
+						m_header = Header();
+
+						m_sizeTotal = 0;
+						m_expectingNewLine = true;
+						m_state = nextState;
 					}
-
-					m_header = Header();
-
-					m_sizeTotal = 0;
-					m_expectingNewLine = true;
-					m_state = S_FIRST_HEADER;
 					break;
 
 				case S_IDENTITY:
