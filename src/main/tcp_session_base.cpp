@@ -33,7 +33,7 @@ namespace {
 		} catch(...){
 			LOG_POSEIDON_WARNING("Connection timed out but the session has not been established.");
 		}
-		session->shutdown();
+		session->forceShutdown();
 	}
 }
 
