@@ -50,8 +50,8 @@ namespace Cbpp {
 		void onReadAvail(const void *data, std::size_t size) FINAL;
 
 	public:
-		virtual void onResponse(boost::uint16_t messageId, StreamBuffer payload) = 0;
-		virtual void onError(boost::uint16_t messageId, StatusCode statusCode, std::string reason) = 0;
+		virtual void onResponse(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
+		virtual void onError(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason) = 0;
 
 	public:
 		bool send(boost::uint16_t messageId, StreamBuffer payload, bool fin = false);
