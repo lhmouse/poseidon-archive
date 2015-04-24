@@ -239,7 +239,7 @@ namespace Http {
 		}
 	}
 	Session::~Session(){
-		if(m_state != S_FIRST_HEADER){
+		if((m_state != S_FIRST_HEADER) && (m_state != S_UPGRADED)){
 			LOG_POSEIDON_WARNING("Now that this session is to be destroyed, a premature request has to be discarded.");
 		}
 	}
