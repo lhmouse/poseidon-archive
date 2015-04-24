@@ -104,6 +104,7 @@ namespace Cbpp {
 	Client::Client(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl)
 		: TcpClientBase(addr, useSsl)
 		, m_keepAliveTimeout(keepAliveTimeout)
+		, m_sizeTotal(0), m_sizeExpecting(2), m_state(S_PAYLOAD_LEN)
 	{
 	}
 	Client::~Client(){
