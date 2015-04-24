@@ -219,10 +219,10 @@ namespace Http {
 		, m_header()
 	{
 		if(m_authInfo){
-			bool isSorted = true;
 #ifdef POSEIDON_CXX11
-			isSorted = std::is_sorted(m_authInfo->begin(), m_authInfo->end());
+			const bool isSorted = std::is_sorted(m_authInfo->begin(), m_authInfo->end());
 #else
+			bool isSorted = true;
 			if(m_authInfo->size() >= 2){
 				for(AUTO(it, m_authInfo->begin() + 1); it != m_authInfo->end(); ++it){
 					if(!(it[-1] < it[0])){
