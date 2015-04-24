@@ -132,10 +132,14 @@ namespace Http {
 
 				session->onRequest(m_header, m_entity);
 
-				if(m_header.version < 10001){
-					session->shutdown();
-				} else {
+				const AUTO_REF(keepAlive, m_header.headers.get("Connection"));
+				if((m_header.version < 10001)
+					? (::strcasecmp(keepAlive.c_str(), "Keep-Alive") == 0)	// HTTP 1.0
+					: (::strcasecmp(keepAlive.c_str(), "Close") != 0))		// HTTP 1.1
+				{
 					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 0));
+				} else {
+					session->shutdown();
 				}
 			} catch(TryAgainLater &){
 				throw;
