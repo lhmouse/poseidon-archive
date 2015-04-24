@@ -355,10 +355,6 @@ namespace Http {
 						}
 						line.erase(0, pos + 1);
 
-						if(line[0] != '/'){
-							LOG_POSEIDON_WARNING("Bad HTTP header: URI must begin with a slash, line = ", line);
-							DEBUG_THROW(Exception, ST_BAD_REQUEST);
-						}
 						pos = line.find(' ');
 						if(pos == std::string::npos){
 							LOG_POSEIDON_WARNING("Bad HTTP header: expecting URI end, line = ", line);
