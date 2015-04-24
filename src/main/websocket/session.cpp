@@ -386,7 +386,7 @@ namespace WebSocket {
 			if(parent){
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
-						virtualSharedFromThis<Session>(), ST_INTERNAL_ERROR, StreamBuffer()));
+						virtualSharedFromThis<Session>(), static_cast<StatusCode>(ST_INTERNAL_ERROR), StreamBuffer()));
 					parent->setPreservedOnReadHup(true); // noexcept
 					parent->shutdown();
 				} catch(...){

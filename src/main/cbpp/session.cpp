@@ -229,7 +229,7 @@ namespace Cbpp {
 				", what = ", e.what());
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
-					virtualSharedFromThis<Session>(), m_messageId, ST_INTERNAL_ERROR, std::string()));
+					virtualSharedFromThis<Session>(), m_messageId, static_cast<StatusCode>(ST_INTERNAL_ERROR), std::string()));
 				setPreservedOnReadHup(true); // noexcept
 				shutdown();
 			} catch(...){

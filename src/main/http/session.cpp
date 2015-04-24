@@ -578,7 +578,7 @@ namespace Http {
 				", what = ", e.what());
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
-					virtualSharedFromThis<Session>(), ST_BAD_REQUEST, OptionalMap()));
+					virtualSharedFromThis<Session>(), static_cast<StatusCode>(ST_BAD_REQUEST), OptionalMap()));
 				setPreservedOnReadHup(true); // noexcept
 				shutdown();
 			} catch(...){
@@ -624,7 +624,7 @@ namespace Http {
 					", what = ", e.what());
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
-						virtualSharedFromThis<Session>(), ST_BAD_REQUEST, OptionalMap()));
+						virtualSharedFromThis<Session>(), static_cast<StatusCode>(ST_BAD_REQUEST), OptionalMap()));
 					setPreservedOnReadHup(true); // noexcept
 					shutdown();
 				} catch(...){

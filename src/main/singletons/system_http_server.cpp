@@ -240,7 +240,7 @@ void SystemHttpServer::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bindAddr);
 	AUTO(server, boost::make_shared<SystemServer>(bindAddr, cert.c_str(), pkey.c_str(), STD_MOVE(auth), STD_MOVE(path)));
 	g_systemServer = server;
-	EpollDaemon::registerServer(STD_MOVE(server));
+	EpollDaemon::registerServer(STD_MOVE_IDN(server));
 }
 void SystemHttpServer::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Shutting down system HTTP server...");
