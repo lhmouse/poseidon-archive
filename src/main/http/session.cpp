@@ -113,19 +113,13 @@ namespace Http {
 
 	class Session::RequestJob : public SessionJobBase {
 	private:
-		const Verb m_verb;
-		const std::string m_uri;
-		const unsigned m_version;
-		const OptionalMap m_getParams;
-		const OptionalMap m_headers;
+		const Header m_header;
 		const StreamBuffer m_entity;
 
 	public:
-		RequestJob(const boost::shared_ptr<Session> &session, Verb verb, std::string uri, unsigned version,
-			OptionalMap getParams, OptionalMap headers, StreamBuffer entity)
+		RequestJob(const boost::shared_ptr<Session> &session, Header header, StreamBuffer entity)
 			: SessionJobBase(session)
-			, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
-			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_entity(STD_MOVE(entity))
+			, m_header(STD_MOVE(header)), m_entity(STD_MOVE(entity))
 		{
 		}
 
@@ -134,9 +128,11 @@ namespace Http {
 			PROFILE_ME;
 
 			try {
-				LOG_POSEIDON_DEBUG("Dispatching: URI = ", m_uri, ", verb = ", getStringFromVerb(m_verb));
-				session->onRequest(m_verb, m_uri, m_version, m_getParams, m_headers, m_entity);
-				if(m_version < 10001){
+				LOG_POSEIDON_DEBUG("Dispatching request: URI = ", m_header.uri);
+
+				session->onRequest(m_header, m_entity);
+
+				if(m_header.version < 10001){
 					session->shutdown();
 				} else {
 					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 0));
@@ -144,7 +140,7 @@ namespace Http {
 			} catch(TryAgainLater &){
 				throw;
 			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet, request URI = ", m_uri,
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet: URI = ", m_header.uri,
 					", statusCode = ", e.statusCode());
 				try {
 					session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
@@ -177,19 +173,13 @@ namespace Http {
 
 	class Session::UpgradeJob : public SessionJobBase {
 	private:
-		const Verb m_verb;
-		const std::string m_uri;
-		const unsigned m_version;
-		const OptionalMap m_getParams;
-		const OptionalMap m_headers;
+		const Header m_header;
 		const StreamBuffer m_entity;
 
 	public:
-		UpgradeJob(const boost::shared_ptr<Session> &session, Verb verb, std::string uri, unsigned version,
-			OptionalMap getParams, OptionalMap headers, StreamBuffer entity)
+		UpgradeJob(const boost::shared_ptr<Session> &session, Header header, StreamBuffer entity)
 			: SessionJobBase(session)
-			, m_verb(verb), m_uri(STD_MOVE(uri)), m_version(version)
-			, m_getParams(STD_MOVE(getParams)), m_headers(STD_MOVE(headers)), m_entity(STD_MOVE(entity))
+			, m_header(STD_MOVE(header)), m_entity(STD_MOVE(entity))
 		{
 		}
 
@@ -198,8 +188,8 @@ namespace Http {
 			PROFILE_ME;
 
 			try {
-				const AUTO_REF(upgrade, m_headers.get("Upgrade"));
-				AUTO(upgradedSession, session->onUpgrade(upgrade, m_verb, m_uri, m_version, m_getParams, m_headers, m_entity));
+				const AUTO_REF(upgrade, m_header.headers.get("Upgrade"));
+				AUTO(upgradedSession, session->onUpgrade(upgrade, m_header, m_entity));
 				if(!upgradedSession){
 					LOG_POSEIDON_ERROR("Upgrade failed: upgrade = ", upgrade);
 					DEBUG_THROW(Exception, ST_INTERNAL_SERVER_ERROR);
@@ -211,7 +201,7 @@ namespace Http {
 				LOG_POSEIDON_DEBUG("Upgraded succeeded: upgrade = ", upgrade, ", remote = ", session->getRemoteInfo());
 				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("epoll_tcp_request_timeout", 0));
 			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet, request URI = ", m_uri,
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet: URI = ", m_header.uri,
 					", statusCode = ", e.statusCode());
 				try {
 					session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
@@ -226,7 +216,7 @@ namespace Http {
 		: TcpSessionBase(STD_MOVE(socket))
 		, m_authInfo(STD_MOVE(authInfo))
 		, m_sizeTotal(0), m_expectingNewLine(true), m_sizeExpecting(0), m_state(S_FIRST_HEADER)
-		, m_verb(V_INVALID_VERB), m_version(10000)
+		, m_header()
 	{
 		if(m_authInfo){
 			bool isSorted = true;
@@ -351,8 +341,8 @@ namespace Http {
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
 						line[pos] = 0;
-						m_verb = getVerbFromString(line.c_str());
-						if(m_verb == V_INVALID_VERB){
+						m_header.verb = getVerbFromString(line.c_str());
+						if(m_header.verb == V_INVALID_VERB){
 							LOG_POSEIDON_WARNING("Bad HTTP verb: ", line.c_str());
 							DEBUG_THROW(Exception, ST_NOT_IMPLEMENTED);
 						}
@@ -367,7 +357,7 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Bad HTTP header: expecting URI end, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_uri.assign(line, 0, pos);
+						m_header.uri.assign(line, 0, pos);
 						line.erase(0, pos + 1);
 
 						long verEnd = 0;
@@ -380,19 +370,19 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Bad HTTP header: junk after HTTP version, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_version = std::strtoul(verMajorStr, NULLPTR, 10) * 10000 + std::strtoul(verMinorStr, NULLPTR, 10);
-						if((m_version != 10000) && (m_version != 10001)){
+						m_header.version = std::strtoul(verMajorStr, NULLPTR, 10) * 10000 + std::strtoul(verMinorStr, NULLPTR, 10);
+						if((m_header.version != 10000) && (m_header.version != 10001)){
 							LOG_POSEIDON_WARNING("Bad HTTP header: HTTP version not supported, verMajorStr = ", verMajorStr,
 								", verMinorStr = ", verMinorStr);
 							DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
 						}
 
-						pos = m_uri.find('?');
+						pos = m_header.uri.find('?');
 						if(pos != std::string::npos){
-							m_getParams = optionalMapFromUrlEncoded(m_uri.substr(pos + 1));
-							m_uri.erase(pos);
+							m_header.getParams = optionalMapFromUrlEncoded(m_header.uri.substr(pos + 1));
+							m_header.uri.erase(pos);
 						}
-						m_uri = urlDecode(m_uri);
+						m_header.uri = urlDecode(m_header.uri);
 
 						// m_expectingNewLine = true;
 						m_state = S_HEADERS;
@@ -411,12 +401,12 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
+						m_header.headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
 
 						// m_expectingNewLine = true;
 						// m_state = S_HEADERS;
 					} else {
-						const AUTO_REF(expect, m_headers.get("Expect"));
+						const AUTO_REF(expect, m_header.headers.get("Expect"));
 						if(!expect.empty()){
 							if(::strcasecmp(expect.c_str(), "100-continue") == 0){
 								enqueueJob(boost::make_shared<ContinueJob>(virtualSharedFromThis<Session>()));
@@ -426,10 +416,10 @@ namespace Http {
 							}
 						}
 
-						const AUTO_REF(transferEncoding, m_headers.get("Transfer-Encoding"));
+						const AUTO_REF(transferEncoding, m_header.headers.get("Transfer-Encoding"));
 						if(transferEncoding.empty() || (::strcasecmp(transferEncoding.c_str(), "identity") == 0)){
 							boost::uint64_t sizeExpecting = 0;
-							const AUTO_REF(contentLength, m_headers.get("Content-Length"));
+							const AUTO_REF(contentLength, m_header.headers.get("Content-Length"));
 							if(!contentLength.empty()){
 								char *endptr;
 								sizeExpecting = ::strtoull(contentLength.c_str(), &endptr, 10);
@@ -459,7 +449,7 @@ namespace Http {
 					{
 						const char *authorizationMessage = NULLPTR;
 						if(m_authInfo){
-							const AUTO_REF(authorization, m_headers.get("Authorization"));
+							const AUTO_REF(authorization, m_header.headers.get("Authorization"));
 							if(authorization.empty()){
 								authorizationMessage = "Authentication required";
 								goto _checkAuthorization;
@@ -487,23 +477,16 @@ namespace Http {
 						if(authorizationMessage){
 							enqueueJob(boost::make_shared<UnauthorizedJob>(
 								virtualSharedFromThis<Session>(), authorizationMessage));
-						} else if(m_headers.has("Upgrade")){
+						} else if(m_header.headers.has("Upgrade")){
 							enqueueJob(boost::make_shared<UpgradeJob>(
-								virtualSharedFromThis<Session>(), m_verb, STD_MOVE(m_uri), m_version,
-								STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_entity)));
+								virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
 						} else {
 							enqueueJob(boost::make_shared<RequestJob>(
-								virtualSharedFromThis<Session>(), m_verb, STD_MOVE(m_uri), m_version,
-								STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_entity)));
+								virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
 						}
 					}
 
-					m_verb = V_INVALID_VERB;
-					m_uri.clear();
-					m_version = 10000;
-					m_getParams.clear();
-					m_headers.clear();
-					m_entity.clear();
+					m_header = Header();
 
 					m_sizeTotal = 0;
 					m_expectingNewLine = true;
@@ -559,7 +542,7 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
+						m_header.headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
 
 						// m_expectingNewLine = true;
 						// m_state = S_CHUNKED_TRAILER;
@@ -576,7 +559,7 @@ namespace Http {
 				}
 			}
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown while parsing data, URI = ", m_uri,
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown while parsing data, URI = ", m_header.uri,
 				", status = ", static_cast<unsigned>(e.statusCode()));
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
@@ -587,7 +570,7 @@ namespace Http {
 				forceShutdown();
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, URI = ", m_uri,
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, URI = ", m_header.uri,
 				", what = ", e.what());
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
@@ -613,22 +596,16 @@ namespace Http {
 		if((m_state == S_IDENTITY) && !m_expectingNewLine && (m_sizeExpecting == (boost::uint64_t)-1)){
 			try {
 				enqueueJob(boost::make_shared<RequestJob>(
-					virtualSharedFromThis<Session>(), m_verb, STD_MOVE(m_uri), m_version,
-					STD_MOVE(m_getParams), STD_MOVE(m_headers), STD_MOVE(m_received)));
+					virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_received)));
+
+				m_header = Header();
 
 				m_received.clear();
 				m_expectingNewLine = true;
 				m_sizeExpecting = 0;
-
-				m_verb = V_INVALID_VERB;
-				m_uri.clear();
-				m_version = 10000;
-				m_getParams.clear();
-				m_headers.clear();
-
 				m_state = S_FIRST_HEADER;
 			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown while parsing data, URI = ", m_uri,
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown while parsing data: URI = ", m_header.uri,
 					", status = ", static_cast<unsigned>(e.statusCode()));
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
@@ -639,7 +616,7 @@ namespace Http {
 					forceShutdown();
 				}
 			} catch(std::exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, URI = ", m_uri,
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, URI = ", m_header.uri,
 					", what = ", e.what());
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
@@ -653,15 +630,11 @@ namespace Http {
 		}
 	}
 
-	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const std::string &type, Verb verb, const std::string &uri,
-		unsigned version, const OptionalMap &params, const OptionalMap &headers, const StreamBuffer &entity)
+	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const std::string &type,
+		const Header &header, const StreamBuffer &entity)
 	{
 		(void)type;
-		(void)verb;
-		(void)uri;
-		(void)version;
-		(void)params;
-		(void)headers;
+		(void)header;
 		(void)entity;
 
 		return VAL_INIT;

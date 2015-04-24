@@ -10,10 +10,10 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/cstdint.hpp>
-#include "../tcp_session_base.hpp"
-#include "../optional_map.hpp"
-#include "verbs.hpp"
+#include "header.hpp"
 #include "status_codes.hpp"
+#include "../tcp_session_base.hpp"
+#include "../stream_buffer.hpp"
 
 namespace Poseidon {
 
@@ -57,11 +57,7 @@ namespace Http {
 		boost::uint64_t m_sizeExpecting;
 		State m_state;
 
-		Verb m_verb;
-		std::string m_uri;
-		unsigned m_version;	// x * 10000 + y 表示 HTTP x.y
-		OptionalMap m_getParams;
-		OptionalMap m_headers;
+		Header m_header;
 		StreamBuffer m_entity;
 
 	public:
@@ -75,11 +71,10 @@ namespace Http {
 		void onReadHup() NOEXCEPT OVERRIDE;
 
 	protected:
-		virtual void onRequest(Verb verb, const std::string &uri, unsigned version,
-			const OptionalMap &getParams, const OptionalMap &headers, const StreamBuffer &entity) = 0;
+		virtual void onRequest(const Header &header, const StreamBuffer &entity) = 0;
 
-		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const std::string &type, Verb verb, const std::string &uri,
-			unsigned version, const OptionalMap &params, const OptionalMap &headers, const StreamBuffer &entity);
+		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const std::string &type,
+			const Header &header, const StreamBuffer &entity);
 
 	public:
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;

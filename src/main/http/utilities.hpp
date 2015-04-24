@@ -5,6 +5,7 @@
 #define POSEIDON_HTTP_UTILITIES_HPP_
 
 #include <string>
+#include <cstring>
 #include <cstddef>
 #include "../optional_map.hpp"
 
@@ -13,6 +14,13 @@ namespace Poseidon {
 namespace Http {
 	extern std::string urlEncode(const void *data, std::size_t size);
 	extern std::string urlDecode(const void *data, std::size_t size);
+
+	inline std::string urlEncode(const char *data){
+		return urlEncode(data, std::strlen(data));
+	}
+	inline std::string urlDecode(const char *data){
+		return urlDecode(data, std::strlen(data));
+	}
 
 	inline std::string urlEncode(const std::string &data){
 		return urlEncode(data.data(), data.size());
@@ -27,6 +35,13 @@ namespace Http {
 	extern std::string hexEncode(const void *data, std::size_t size, bool upperCase = false);
 	extern std::string hexDecode(const void *data, std::size_t size);
 
+	inline std::string hexEncode(const char *data){
+		return hexEncode(data, std::strlen(data));
+	}
+	inline std::string hexDecode(const char *data){
+		return hexDecode(data, std::strlen(data));
+	}
+
 	inline std::string hexEncode(const std::string &data, bool upperCase = false){
 		return hexEncode(data.data(), data.size(), upperCase);
 	}
@@ -36,6 +51,13 @@ namespace Http {
 
 	extern std::string base64Encode(const void *data, std::size_t size);
 	extern std::string base64Decode(const void *data, std::size_t size);
+
+	inline std::string base64Encode(const char *data){
+		return base64Encode(data, std::strlen(data));
+	}
+	inline std::string base64Decode(const char *data){
+		return base64Decode(data, std::strlen(data));
+	}
 
 	inline std::string base64Encode(const std::string &data){
 		return base64Encode(data.data(), data.size());

@@ -76,6 +76,7 @@ pkginclude_singletons_HEADERS = \
 pkginclude_httpdir = $(pkgincludedir)/http
 pkginclude_http_HEADERS = \
 	src/main/http/fwd.hpp	\
+	src/main/http/header.hpp	\
 	src/main/http/session.hpp	\
 	src/main/http/basic_auth_server.hpp	\
 	src/main/http/verbs.hpp	\
