@@ -50,7 +50,7 @@ namespace Cbpp {
 
 	protected:
 		virtual void onRequest(boost::uint16_t messageId, const StreamBuffer &contents) = 0;
-		virtual void onError(ControlCode controlCode, StatusCode statusCode, std::string reason);
+		virtual void onControl(ControlCode controlCode, StatusCode statusCode, std::string reason);
 
 	public:
 		bool send(boost::uint16_t messageId, StreamBuffer contents, bool fin = false);

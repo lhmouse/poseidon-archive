@@ -191,12 +191,6 @@ namespace Cbpp {
 		}
 	}
 
-	void Client::onError(ControlCode controlCode, StatusCode statusCode, std::string reason){
-		(void)controlCode;
-		(void)statusCode;
-		(void)reason;
-	}
-
 	bool Client::send(boost::uint16_t messageId, StreamBuffer contents, bool fin){
 		PROFILE_ME;
 

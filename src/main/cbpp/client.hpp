@@ -13,7 +13,6 @@
 #include "../stream_buffer.hpp"
 #include "message_base.hpp"
 #include "control_codes.hpp"
-#include "status_codes.hpp"
 
 namespace Poseidon {
 
@@ -52,7 +51,7 @@ namespace Cbpp {
 
 	public:
 		virtual void onResponse(boost::uint16_t messageId, StreamBuffer contents) = 0;
-		virtual void onError(ControlCode controlCode, StatusCode statusCode, std::string reason);
+		virtual void onError(boost::uint16_t messageId, StatusCode statusCode, std::string reason) = 0;
 
 	public:
 		bool send(boost::uint16_t messageId, StreamBuffer contents, bool fin = false);

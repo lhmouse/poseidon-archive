@@ -78,8 +78,8 @@ namespace Cbpp {
 				if(m_messageId == ErrorMessage::ID){
 					AUTO(payload, m_payload);
 					ErrorMessage req(payload);
-					LOG_POSEIDON_DEBUG("Dispatching error message: ", req);
-					session->onError(req.messageId, req.statusCode, STD_MOVE(req.reason));
+					LOG_POSEIDON_DEBUG("Dispatching control message: ", req);
+					session->onControl(static_cast<ControlCode>(req.messageId), req.statusCode, STD_MOVE(req.reason));
 				} else {
 					LOG_POSEIDON_DEBUG("Dispatching message: messageId = ", m_messageId, ", payload size = ", m_payload.size());
 					session->onRequest(m_messageId, m_payload);
@@ -238,7 +238,7 @@ namespace Cbpp {
 		}
 	}
 
-	void Session::onError(ControlCode controlCode, StatusCode statusCode, std::string reason){
+	void Session::onControl(ControlCode controlCode, StatusCode statusCode, std::string reason){
 		PROFILE_ME;
 
 		switch(controlCode){
