@@ -294,8 +294,8 @@ std::size_t Epoll::pumpWriteable(){
 				}
 				DEBUG_THROW(SystemException);
 			} else if(bytesWritten == 0){
-				if(readHup && !session->isPreservedOnReadHup()){
-					session->forceShutdown();
+				if(readHup){
+					const TcpSessionBase::DelayedShutdownGuard guard(session);
 				}
 				continue;
 			}

@@ -142,12 +142,15 @@ namespace WebSocket {
 
 	class Session::ErrorJob : public SessionJobBase {
 	private:
+		const TcpSessionBase::DelayedShutdownGuard m_guard;
+
 		const StatusCode m_statusCode;
 		const StreamBuffer m_additional;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, StreamBuffer additional)
 			: SessionJobBase(session)
+			, m_guard(session->getSafeParent())
 			, m_statusCode(statusCode), m_additional(STD_MOVE(additional))
 		{
 		}
@@ -373,7 +376,6 @@ namespace WebSocket {
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
 						virtualSharedFromThis<Session>(), e.statusCode(), StreamBuffer(e.what())));
-					parent->setPreservedOnReadHup(true); // noexcept
 					parent->shutdown();
 				} catch(...){
 					parent->forceShutdown();
@@ -387,7 +389,6 @@ namespace WebSocket {
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
 						virtualSharedFromThis<Session>(), static_cast<StatusCode>(ST_INTERNAL_ERROR), StreamBuffer()));
-					parent->setPreservedOnReadHup(true); // noexcept
 					parent->shutdown();
 				} catch(...){
 					forceShutdown();

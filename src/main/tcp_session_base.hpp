@@ -11,6 +11,8 @@
 #include <deque>
 #include <cstddef>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/cstdint.hpp>
@@ -36,6 +38,17 @@ class TcpSessionBase : public SessionBase {
 private:
 	class OnCloseJob;
 
+public:
+	// 至少一个此对象存活的条件下连接不会由于 RDHUP 而被关掉。
+	class DelayedShutdownGuard : NONCOPYABLE {
+	private:
+		const boost::shared_ptr<TcpSessionBase> m_session;
+
+	public:
+		explicit DelayedShutdownGuard(boost::shared_ptr<TcpSessionBase> session);
+		~DelayedShutdownGuard();
+	};
+
 private:
 	const UniqueFile m_socket;
 	const boost::uint64_t m_createdTime;
@@ -50,7 +63,7 @@ private:
 	boost::scoped_ptr<SslFilterBase> m_sslFilter;
 
 	volatile bool m_shutdown;
-	volatile bool m_preservedOnReadHup;
+	volatile std::size_t m_delayedShutdownGuardCount;
 	mutable boost::mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
 	boost::weak_ptr<const boost::weak_ptr<Epoll> > m_epoll;
@@ -97,9 +110,6 @@ public:
 	bool hasBeenShutdown() const OVERRIDE;
 	bool shutdown() NOEXCEPT;
 	bool forceShutdown() NOEXCEPT OVERRIDE;
-
-	bool isPreservedOnReadHup() const NOEXCEPT;
-	bool setPreservedOnReadHup(bool value) NOEXCEPT;
 
 	boost::uint64_t getCreatedTime() const {
 		return m_createdTime;

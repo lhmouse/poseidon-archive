@@ -101,6 +101,8 @@ namespace Cbpp {
 
 	class Session::ErrorJob : public SessionJobBase {
 	private:
+		const TcpSessionBase::DelayedShutdownGuard m_guard;
+
 		const unsigned m_messageId;
 		const StatusCode m_statusCode;
 		const std::string m_reason;
@@ -108,6 +110,7 @@ namespace Cbpp {
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, unsigned messageId, StatusCode statusCode, std::string reason)
 			: SessionJobBase(session)
+			, m_guard(session)
 			, m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
 		{
 		}
@@ -219,7 +222,6 @@ namespace Cbpp {
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
 					virtualSharedFromThis<Session>(), m_messageId, e.statusCode(), e.what()));
-				setPreservedOnReadHup(true); // noexcept
 				shutdown();
 			} catch(...){
 				forceShutdown();
@@ -230,7 +232,6 @@ namespace Cbpp {
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
 					virtualSharedFromThis<Session>(), m_messageId, static_cast<StatusCode>(ST_INTERNAL_ERROR), std::string()));
-				setPreservedOnReadHup(true); // noexcept
 				shutdown();
 			} catch(...){
 				forceShutdown();

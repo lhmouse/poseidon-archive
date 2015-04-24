@@ -56,10 +56,21 @@ private:
 	}
 };
 
+TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::shared_ptr<TcpSessionBase> session)
+	: m_session(STD_MOVE(session))
+{
+	atomicAdd(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED);
+}
+TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
+	if(atomicSub(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED) == 0){
+		m_session->forceShutdown();
+	}
+}
+
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getFastMonoClock())
 	, m_peerInfo()
-	, m_shutdown(false), m_preservedOnReadHup(false)
+	, m_shutdown(false), m_delayedShutdownGuardCount(0)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
@@ -154,7 +165,6 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 		}
 	}
 	if(fin){
-		atomicExchange(m_preservedOnReadHup, false, ATOMIC_ACQ_REL);
 		shutdown();
 	}
 	return true;
@@ -172,16 +182,6 @@ bool TcpSessionBase::forceShutdown() NOEXCEPT {
 	const bool ret = !atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
 	::shutdown(m_socket.get(), SHUT_RDWR);
 	return ret;
-}
-
-bool TcpSessionBase::isPreservedOnReadHup() const NOEXCEPT {
-	return atomicLoad(m_preservedOnReadHup, ATOMIC_ACQUIRE);
-}
-bool TcpSessionBase::setPreservedOnReadHup(bool value) NOEXCEPT {
-	if(!value && hasBeenShutdown()){
-		shutdown(); // noexcept
-	}
-	return atomicExchange(m_preservedOnReadHup, value, ATOMIC_ACQ_REL);
 }
 
 long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){

@@ -157,12 +157,15 @@ namespace Http {
 
 	class Session::ErrorJob : public SessionJobBase {
 	private:
+		const TcpSessionBase::DelayedShutdownGuard m_guard;
+
 		const StatusCode m_statusCode;
 		const OptionalMap m_headers;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, OptionalMap headers)
 			: SessionJobBase(session)
+			, m_guard(session)
 			, m_statusCode(statusCode), m_headers(STD_MOVE(headers))
 		{
 		}
@@ -572,7 +575,6 @@ namespace Http {
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
 					virtualSharedFromThis<Session>(), e.statusCode(), e.headers()));
-				setPreservedOnReadHup(true); // noexcept
 				shutdown();
 			} catch(...){
 				forceShutdown();
@@ -583,7 +585,6 @@ namespace Http {
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
 					virtualSharedFromThis<Session>(), static_cast<StatusCode>(ST_BAD_REQUEST), OptionalMap()));
-				setPreservedOnReadHup(true); // noexcept
 				shutdown();
 			} catch(...){
 				forceShutdown();
@@ -618,7 +619,6 @@ namespace Http {
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
 						virtualSharedFromThis<Session>(), e.statusCode(), e.headers()));
-					setPreservedOnReadHup(true); // noexcept
 					shutdown();
 				} catch(...){
 					forceShutdown();
@@ -629,7 +629,6 @@ namespace Http {
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
 						virtualSharedFromThis<Session>(), static_cast<StatusCode>(ST_BAD_REQUEST), OptionalMap()));
-					setPreservedOnReadHup(true); // noexcept
 					shutdown();
 				} catch(...){
 					forceShutdown();

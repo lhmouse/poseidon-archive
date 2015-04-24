@@ -39,9 +39,6 @@ namespace Http {
 		bool shutdown() NOEXCEPT;
 		bool forceShutdown() NOEXCEPT OVERRIDE;
 
-		bool isPreservedOnReadHup() const NOEXCEPT;
-		bool setPreservedOnReadHup(bool value) NOEXCEPT;
-
 		boost::weak_ptr<const Session> getWeakParent() const {
 			return m_parent;
 		}
