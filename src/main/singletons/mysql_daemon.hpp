@@ -34,6 +34,7 @@ struct MySqlDaemon {
 
 	static void waitForAllAsyncOperations();
 
+	// 注意 ExceptionCallback 不是线程安全的。
 	static void enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace, bool urgent,
 		MySql::AsyncSaveCallback callback, MySql::ExceptionCallback except);
 	static void enqueueForLoading(boost::shared_ptr<MySql::ObjectBase> object, std::string query,

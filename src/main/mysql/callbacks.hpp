@@ -13,10 +13,12 @@ namespace Poseidon {
 namespace MySql {
 	class ObjectBase;
 
+	// ExceptionCallback 可能在主线程或数据库线程中被调用。
 	typedef boost::function<
 		void ()
 		> ExceptionCallback;
 
+	// 这三个回调一定是在主线程中调用。
 	typedef boost::function<
 		void (bool succeeded, unsigned long long autoIncrementId)
 		> AsyncSaveCallback;

@@ -24,6 +24,8 @@
 namespace Poseidon {
 
 namespace MySql {
+	// 注意 ExceptionCallback 不是线程安全的。
+
 	class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
 	protected:
 		static void batchLoad(boost::shared_ptr<ObjectBase> (*factory)(),
