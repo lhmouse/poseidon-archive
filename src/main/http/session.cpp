@@ -101,6 +101,7 @@ namespace Http {
 			AUTH_INVALID_USER_PASS,
 			AUTH_INACCEPTABLE_NONCE,
 			AUTH_EXPIRED,
+			AUTH_INACCEPTABLE_ALGORITHM,
 			AUTH_INACCEPTABLE_QOP,
 		};
 
@@ -124,10 +125,8 @@ namespace Http {
 				}
 				LOG_POSEIDON_INFO("> Succeeded");
 				return AUTH_SUCCESSFUL;
-			}
-			if(::strcasecmp(str.c_str(), "Digest") == 0){
+			} else if(::strcasecmp(str.c_str(), "Digest") == 0){
 				str = authHeader.substr(pos + 1);
-				str += ',';
 
 				std::string username, realm, nonce, uri, qop, cnonce, nc, response, algorithm;
 				boost::uint64_t rawNonce[2] = { };
@@ -136,11 +135,44 @@ namespace Http {
 					PS_KEY_INDENT		= 0,
 					PS_KEY				= 1,
 					PS_VALUE_INDENT		= 2,
-					PS_VALUE			= 3,
-					PS_QUOTED_VALUE		= 4,
+					PS_QUOTED_VALUE		= 3,
+					PS_VALUE			= 4,
 				} ps = PS_KEY_INDENT;
 
 				std::string key, value;
+
+#define COMMIT_KEY_VALUE	\
+				if(::strcasecmp(key.c_str(), "username") == 0){	\
+					username = STD_MOVE(value);	\
+					for(AUTO(it, username.begin()); it != username.end(); ++it){	\
+						if(*it == ':'){	\
+							*it = ' ';	\
+						}	\
+					}	\
+				} else if(::strcasecmp(key.c_str(), "realm") == 0){	\
+					realm = STD_MOVE(value);	\
+				} else if(::strcasecmp(key.c_str(), "nonce") == 0){	\
+					nonce = STD_MOVE(value);	\
+					AUTO(nonceBytes, base64Decode(nonce));	\
+					if(nonceBytes.size() != sizeof(rawNonce)){	\
+						LOG_POSEIDON_WARNING("> Inacceptable nonce.");	\
+						return AUTH_INACCEPTABLE_NONCE;	\
+					}	\
+					std::memcpy(rawNonce, nonceBytes.data(), sizeof(rawNonce));	\
+				} else if(::strcasecmp(key.c_str(), "uri") == 0){	\
+					uri = STD_MOVE(value);	\
+				} else if(::strcasecmp(key.c_str(), "qop") == 0){	\
+					qop = STD_MOVE(value);	\
+				} else if(::strcasecmp(key.c_str(), "cnonce") == 0){	\
+					cnonce = STD_MOVE(value);	\
+				} else if(::strcasecmp(key.c_str(), "nc") == 0){	\
+					nc = STD_MOVE(value);	\
+				} else if(::strcasecmp(key.c_str(), "response") == 0){	\
+					response = STD_MOVE(value);	\
+				} else if(::strcasecmp(key.c_str(), "algorithm") == 0){	\
+					algorithm = STD_MOVE(value);	\
+				}
+
 				for(AUTO(it, str.begin()); it != str.end(); ++it){
 					switch(ps){
 					case PS_KEY_INDENT:
@@ -168,34 +200,14 @@ namespace Http {
 							ps = PS_QUOTED_VALUE;
 						} else {
 							value += *it;
+							ps = PS_VALUE;
 						}
 						break;
 
 					case PS_VALUE:
 						if(*it == ','){
-							if(::strcasecmp(key.c_str(), "username") == 0){
-								username = STD_MOVE(value);
-							} else if(::strcasecmp(key.c_str(), "realm") == 0){
-								realm = STD_MOVE(value);
-							} else if(::strcasecmp(key.c_str(), "nonce") == 0){
-								nonce = STD_MOVE(value);
-								AUTO(nonceBytes, base64Decode(nonce));
-								if(nonceBytes.size() != sizeof(rawNonce)){
-									LOG_POSEIDON_WARNING("> Inacceptable nonce.");
-									return AUTH_INACCEPTABLE_NONCE;
-								}
-								std::memcpy(rawNonce, nonceBytes.data(), sizeof(rawNonce));
-							} else if(::strcasecmp(key.c_str(), "uri") == 0){
-								uri = STD_MOVE(value);
-							} else if(::strcasecmp(key.c_str(), "qop") == 0){
-								qop = STD_MOVE(value);
-							} else if(::strcasecmp(key.c_str(), "cnonce") == 0){
-								cnonce = STD_MOVE(value);
-							} else if(::strcasecmp(key.c_str(), "nc") == 0){
-								nc = STD_MOVE(value);
-							} else if(::strcasecmp(key.c_str(), "response") == 0){
-								response = STD_MOVE(value);
-							}
+							COMMIT_KEY_VALUE;
+
 							key.clear();
 							value.clear();
 							ps = PS_KEY_INDENT;
@@ -215,15 +227,26 @@ namespace Http {
 						break;
 					}
 				}
-				if(ps != PS_KEY_INDENT){
+				if(ps == PS_VALUE){
+					COMMIT_KEY_VALUE;
+				} else if(ps != PS_KEY_INDENT){
 					LOG_POSEIDON_WARNING("> Error parsing HTTP authorizaiton header: ", authHeader, ", ps = ", ps);
 					return AUTH_INVALID_HEADER;
 				}
 
+				if(username.empty()){
+					LOG_POSEIDON_WARNING("> No username specified.");
+					return AUTH_INVALID_USER_PASS;
+				}
 				if(nonce.empty()){
 					LOG_POSEIDON_WARNING("> No nonce specified.");
 					return AUTH_INACCEPTABLE_NONCE;
 				}
+				if(!(algorithm.empty() || (::strcasecmp(algorithm.c_str(), "MD5") == 0))){
+					LOG_POSEIDON_WARNING("> Inacceptable algorithm: ", algorithm);
+					return AUTH_INACCEPTABLE_ALGORITHM;
+				}
+
 				xorNonce(&rawNonce, sizeof(rawNonce), remoteIp);
 				const AUTO(timestamp, loadBe(rawNonce[0]));
 				const AUTO(now, getFastMonoClock());
@@ -235,26 +258,12 @@ namespace Http {
 					return AUTH_EXPIRED;
 				}
 
-				if(username.empty()){
-					LOG_POSEIDON_WARNING("> Empty username.");
-					return AUTH_INVALID_USER_PASS;
-				}
-				for(AUTO(it, username.begin()); it != username.end(); ++it){
-					if(*it == ':'){
-						*it = ' ';
-					}
-				}
 				const AUTO(authIt, std::lower_bound(authInfo->begin(), authInfo->end(), username));
 				if((authIt == authInfo->end()) || (authIt->size() < username.size()) ||
 					(authIt->compare(0, username.size(), username) != 0) || ((*authIt)[username.size()] != ':'))
 				{
 					LOG_POSEIDON_WARNING("> Username not found: ", username);
 					return AUTH_INVALID_USER_PASS;
-				}
-
-				if(!(algorithm.empty() || (::strcasecmp(algorithm.c_str(), "MD5") == 0))){
-					LOG_POSEIDON_WARNING("> Inacceptable algorithm: ", algorithm);
-					return AUTH_INACCEPTABLE_QOP;
 				}
 
 				std::string a1, a2;
@@ -344,6 +353,10 @@ namespace Http {
 
 				case AUTH_EXPIRED:
 					realm = "Nonce has expired";
+					break;
+
+				case AUTH_INACCEPTABLE_ALGORITHM:
+					realm = "Algorithm is not acceptable";
 					break;
 
 				case AUTH_INACCEPTABLE_QOP:
