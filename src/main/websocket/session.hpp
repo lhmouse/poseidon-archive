@@ -10,7 +10,6 @@
 #include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
 #include "../http/status_codes.hpp"
-#include "../http/verbs.hpp"
 #include "opcodes.hpp"
 #include "status_codes.hpp"
 
