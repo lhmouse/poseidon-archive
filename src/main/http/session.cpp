@@ -102,7 +102,7 @@ namespace Http {
 		};
 
 		enum AuthResult {
-			AUTH_SUCCESSFUL,
+			AUTH_SUCCEEDED,
 			AUTH_REQUIRING,
 			AUTH_INVALID_HEADER,
 			AUTH_UNKNOWN_SCHEME,
@@ -132,7 +132,7 @@ namespace Http {
 					return AUTH_INVALID_USER_PASS;
 				}
 				LOG_POSEIDON_INFO("> Succeeded");
-				return AUTH_SUCCESSFUL;
+				return AUTH_SUCCEEDED;
 			} else if(::strcasecmp(str.c_str(), "Digest") == 0){
 				str = authHeader.substr(pos + 1);
 
@@ -322,7 +322,7 @@ namespace Http {
 					return AUTH_INVALID_USER_PASS;
 				}
 				LOG_POSEIDON_INFO("> Succeeded");
-				return AUTH_SUCCESSFUL;
+				return AUTH_SUCCEEDED;
 			}
 			LOG_POSEIDON_WARNING("> Unknown HTTP authorization scheme: ", str);
 			return AUTH_UNKNOWN_SCHEME;
@@ -761,9 +761,9 @@ namespace Http {
 							authResult = checkAuthorization(m_authInfo, getRemoteInfo().ip.get(), m_header.verb, authorization);
 						}
 					} else {
-						authResult = AUTH_SUCCESSFUL;
+						authResult = AUTH_SUCCEEDED;
 					}
-					if(authResult != AUTH_SUCCESSFUL){
+					if(authResult != AUTH_SUCCEEDED){
 						enqueueJob(boost::make_shared<UnauthorizedJob>(
 							virtualSharedFromThis<Session>(), isProxy, authResult));
 
@@ -783,7 +783,7 @@ namespace Http {
 						m_sizeTotal = 0;
 						m_expectingNewLine = false;
 						m_sizeExpecting = (boost::uint64_t)-1;
-						m_state = S_FIRST_HEADER;
+						m_state = S_UPGRADED;
 					} else {
 						enqueueJob(boost::make_shared<RequestJob>(
 							virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
