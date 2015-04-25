@@ -934,7 +934,7 @@ namespace Http {
 		(void)header;
 		(void)entity;
 
-		return VAL_INIT;
+		DEBUG_THROW(Exception, ST_NOT_IMPLEMENTED);
 	}
 
 	boost::shared_ptr<UpgradedSessionBase> Session::getUpgradedSession() const {
