@@ -351,7 +351,7 @@ namespace Http {
 					break;
 
 				case AUTH_INVALID_HEADER:
-					realm = "Invalid Authorization header";
+					realm = "Invalid HTTP authorization header";
 					break;
 
 				case AUTH_UNKNOWN_SCHEME:
