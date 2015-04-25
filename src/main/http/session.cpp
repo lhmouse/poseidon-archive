@@ -249,11 +249,13 @@ namespace Http {
 
 				xorNonce(&rawNonce, sizeof(rawNonce), remoteIp);
 				const AUTO(timestamp, loadBe(rawNonce[0]));
-				const AUTO(now, getFastMonoClock());
-				if(now < timestamp){
+				const AUTO(localNow, getLocalTime());
+				if(localNow < timestamp){
 					LOG_POSEIDON_WARNING("> Nonce timestamp is in the future.");
 					return AUTH_EXPIRED;
-				} else if(now - timestamp > MainConfig::getConfigFile().get<boost::uint64_t>("http_digest_auth_timeout", 60000)){
+				}
+				const auto nonceExpiryTime = MainConfig::getConfigFile().get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000);
+				if(localNow - timestamp > nonceExpiryTime){
 					LOG_POSEIDON_WARNING("> Nonce has expired.");
 					return AUTH_EXPIRED;
 				}
@@ -316,12 +318,13 @@ namespace Http {
 
 		class UnauthorizedJob : public SessionJobBase {
 		private:
+			const bool m_isProxy;
 			const AuthResult m_authResult;
 
 		public:
-			UnauthorizedJob(const boost::shared_ptr<Session> &session, AuthResult authResult)
+			UnauthorizedJob(const boost::shared_ptr<Session> &session, bool isProxy, AuthResult authResult)
 				: SessionJobBase(session)
-				, m_authResult(authResult)
+				, m_isProxy(isProxy), m_authResult(authResult)
 			{
 			}
 
@@ -370,7 +373,7 @@ namespace Http {
 				}
 
 				boost::uint64_t rawNonce[2];
-				storeBe(rawNonce[0], getFastMonoClock());
+				storeBe(rawNonce[0], getLocalTime());
 				storeBe(rawNonce[1], rand64());
 				xorNonce(rawNonce, sizeof(rawNonce), session->getRemoteInfo().ip.get());
 				const AUTO(nonce, base64Encode(&rawNonce, sizeof(rawNonce)));
@@ -383,9 +386,15 @@ namespace Http {
 				auth += nonce;
 				auth += "\",qop-value=\"auth\",algorithm=\"MD5\"";
 
-				OptionalMap headers;
-				headers.set("WWW-Authenticate", STD_MOVE(auth));
-				session->sendDefault(ST_UNAUTHORIZED, STD_MOVE(headers));
+				if(m_isProxy){
+					OptionalMap headers;
+					headers.set("Proxy-Authenticate", STD_MOVE(auth));
+					session->sendDefault(ST_PROXY_AUTH_REQUIRED, STD_MOVE(headers));
+				} else {
+					OptionalMap headers;
+					headers.set("WWW-Authenticate", STD_MOVE(auth));
+					session->sendDefault(ST_UNAUTHORIZED, STD_MOVE(headers));
+				}
 			}
 		};
 	}
@@ -727,9 +736,12 @@ namespace Http {
 					break;
 
 				case S_END_OF_ENTITY:
+					bool isProxy;
 					AuthResult authResult;
+
+					isProxy = (m_header.verb == V_CONNECT);
 					if(m_authInfo){
-						const AUTO_REF(authorization, m_header.headers.get("Authorization"));
+						const AUTO_REF(authorization, m_header.headers.get(isProxy  ? "Proxy-Authorization" : "Authorization"));
 						if(authorization.empty()){
 							authResult = AUTH_REQUIRING;
 						} else {
@@ -740,7 +752,7 @@ namespace Http {
 					}
 					if(authResult != AUTH_SUCCESSFUL){
 						enqueueJob(boost::make_shared<UnauthorizedJob>(
-							virtualSharedFromThis<Session>(), authResult));
+							virtualSharedFromThis<Session>(), isProxy, authResult));
 
 						m_header = Header();
 						m_entity.clear();

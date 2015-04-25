@@ -29,9 +29,9 @@ namespace {
 			return;
 		}
 		try {
-			LOG_POSEIDON_WARNING("Connection timed out: remote = ", session->getRemoteInfo());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Connection timed out: remote = ", session->getRemoteInfo());
 		} catch(...){
-			LOG_POSEIDON_WARNING("Connection timed out but the session has not been established.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Connection timed out but the session has not been established.");
 		}
 		session->forceShutdown();
 	}
