@@ -19,13 +19,15 @@
 #include "../exception.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
-#include "../endian.hpp"
 #include "../hash.hpp"
+#include "../uuid.hpp"
 
 namespace Poseidon {
 
 namespace Http {
 	namespace {
+		const AUTO(g_identifier, Uuid::generate());
+
 		class SessionJobBase : public JobBase {
 		private:
 			const boost::weak_ptr<Session> m_session;
@@ -84,14 +86,20 @@ namespace Http {
 
 		void xorNonce(void *nonce, std::size_t size, const char *remoteIp){
 			boost::uint32_t temp[2];
-			storeBe(temp[0], static_cast<boost::uint32_t>(::getpid()));
-			storeBe(temp[1], crc32Sum(remoteIp, std::strlen(remoteIp)));
+			temp[0] = static_cast<boost::uint32_t>(::getpid());
+			temp[1] = crc32Sum(remoteIp, std::strlen(remoteIp));
 			unsigned char hash[16];
 			md5Sum(hash, temp, 8);
 			for(std::size_t i = 0; i < size; ++i){
 				static_cast<unsigned char *>(nonce)[i] ^= hash[i % 16];
 			}
 		}
+
+		struct RawNonce {
+			boost::uint64_t timestamp;
+			boost::uint64_t random;
+			Uuid identifier;
+		};
 
 		enum AuthResult {
 			AUTH_SUCCESSFUL,
@@ -129,7 +137,7 @@ namespace Http {
 				str = authHeader.substr(pos + 1);
 
 				std::string username, realm, nonce, uri, qop, cnonce, nc, response, algorithm;
-				boost::uint64_t rawNonce[2] = { };
+				RawNonce rawNonce = { };
 
 				enum ParserState {
 					PS_KEY_INDENT		= 0,
@@ -158,7 +166,8 @@ namespace Http {
 						LOG_POSEIDON_WARNING("> Inacceptable nonce.");	\
 						return AUTH_INACCEPTABLE_NONCE;	\
 					}	\
-					std::memcpy(rawNonce, nonceBytes.data(), sizeof(rawNonce));	\
+					std::memcpy(&rawNonce, nonceBytes.data(), sizeof(rawNonce));	\
+					xorNonce(&rawNonce, sizeof(rawNonce), remoteIp);	\
 				} else if(::strcasecmp(key.c_str(), "uri") == 0){	\
 					uri = STD_MOVE(value);	\
 				} else if(::strcasecmp(key.c_str(), "qop") == 0){	\
@@ -247,15 +256,18 @@ namespace Http {
 					return AUTH_INACCEPTABLE_ALGORITHM;
 				}
 
-				xorNonce(&rawNonce, sizeof(rawNonce), remoteIp);
-				const AUTO(timestamp, loadBe(rawNonce[0]));
+				if(rawNonce.identifier != g_identifier){
+					LOG_POSEIDON_WARNING("> Unexpected identifier: ", rawNonce.identifier, ", expecting ", g_identifier);
+					return AUTH_INACCEPTABLE_NONCE;
+				}
 				const AUTO(localNow, getLocalTime());
-				if(localNow < timestamp){
+				if(localNow < rawNonce.timestamp){
 					LOG_POSEIDON_WARNING("> Nonce timestamp is in the future.");
 					return AUTH_EXPIRED;
 				}
-				const auto nonceExpiryTime = MainConfig::getConfigFile().get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000);
-				if(localNow - timestamp > nonceExpiryTime){
+				const auto nonceExpiryTime =
+					MainConfig::getConfigFile().get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000);
+				if(localNow - rawNonce.timestamp > nonceExpiryTime){
 					LOG_POSEIDON_WARNING("> Nonce has expired.");
 					return AUTH_EXPIRED;
 				}
@@ -372,10 +384,11 @@ namespace Http {
 					break;
 				}
 
-				boost::uint64_t rawNonce[2];
-				storeBe(rawNonce[0], getLocalTime());
-				storeBe(rawNonce[1], rand64());
-				xorNonce(rawNonce, sizeof(rawNonce), session->getRemoteInfo().ip.get());
+				RawNonce rawNonce;
+				rawNonce.timestamp = getLocalTime();
+				rawNonce.random = rand64();
+				rawNonce.identifier = g_identifier;
+				xorNonce(&rawNonce, sizeof(rawNonce), session->getRemoteInfo().ip.get());
 				const AUTO(nonce, base64Encode(&rawNonce, sizeof(rawNonce)));
 
 				std::string auth;
