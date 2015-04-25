@@ -4,6 +4,8 @@
 #include "../precompiled.hpp"
 #include "session.hpp"
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "exception.hpp"
 #include "utilities.hpp"
 #include "upgraded_session_base.hpp"
@@ -11,10 +13,14 @@
 #include "../singletons/main_config.hpp"
 #include "../singletons/epoll_daemon.hpp"
 #include "../stream_buffer.hpp"
+#include "../time.hpp"
+#include "../random.hpp"
 #include "../string.hpp"
 #include "../exception.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
+#include "../endian.hpp"
+#include "../hash.hpp"
 
 namespace Poseidon {
 
@@ -60,56 +66,316 @@ namespace Http {
 				}
 			}
 		};
-	}
 
-	class ContinueJob : public SessionJobBase {
-	public:
-		explicit ContinueJob(const boost::shared_ptr<Session> &session)
-			: SessionJobBase(session)
-		{
-		}
-
-	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
-			PROFILE_ME;
-
-			session->sendDefault(ST_CONTINUE);
-		}
-	};
-
-	class UnauthorizedJob : public SessionJobBase {
-	private:
-		const char *const m_message;
-
-	public:
-		UnauthorizedJob(const boost::shared_ptr<Session> &session, const char *message)
-			: SessionJobBase(session), m_message(message)
-		{
-		}
-
-	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
-			PROFILE_ME;
-
-			std::string str;
-			str.reserve(255);
-			str += "Basic realm=\"";
-			for(AUTO(p, m_message); *p != 0; ++p){
-				if(*p == '\"'){
-					str += '\'';
-				} else if((static_cast<unsigned char>(*p) < 0x20) || (*p == 0x7F)){
-					str += ' ';
-				} else {
-					str += *p;
-				}
+		class ContinueJob : public SessionJobBase {
+		public:
+			explicit ContinueJob(const boost::shared_ptr<Session> &session)
+				: SessionJobBase(session)
+			{
 			}
-			str += "\"";
 
-			OptionalMap headers;
-			headers.set("WWW-Authenticate", STD_MOVE(str));
-			session->sendDefault(ST_UNAUTHORIZED, STD_MOVE(headers));
+		protected:
+			void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+				PROFILE_ME;
+
+				session->sendDefault(ST_CONTINUE);
+			}
+		};
+
+		void xorNonce(void *nonce, std::size_t size, const char *remoteIp){
+			boost::uint32_t temp[2];
+			storeBe(temp[0], static_cast<boost::uint32_t>(::getpid()));
+			storeBe(temp[1], crc32Sum(remoteIp, std::strlen(remoteIp)));
+			unsigned char hash[16];
+			md5Sum(hash, temp, 8);
+			for(std::size_t i = 0; i < size; ++i){
+				static_cast<unsigned char *>(nonce)[i] ^= hash[i % 16];
+			}
 		}
-	};
+
+		enum AuthResult {
+			AUTH_SUCCESSFUL,
+			AUTH_REQUIRING,
+			AUTH_INVALID_HEADER,
+			AUTH_UNKNOWN_SCHEME,
+			AUTH_INVALID_USER_PASS,
+			AUTH_INACCEPTABLE_NONCE,
+			AUTH_EXPIRED,
+			AUTH_INACCEPTABLE_QOP,
+		};
+
+		AuthResult checkAuthorization(const boost::shared_ptr<Session::BasicAuthInfo> &authInfo,
+			const char *remoteIp, Verb verb, const std::string &authHeader)
+		{
+			PROFILE_ME;
+			LOG_POSEIDON_INFO("Checking HTTP authorization: ", authHeader);
+
+			const std::size_t pos = authHeader.find(' ');
+			if(pos == std::string::npos){
+				return AUTH_INVALID_HEADER;
+			}
+			AUTO(str, authHeader.substr(0, pos));
+			if(::strcasecmp(str.c_str(), "Basic") == 0){
+				str = base64Decode(authHeader.substr(pos + 1));
+
+				if(!std::binary_search(authInfo->begin(), authInfo->end(), str)){
+					LOG_POSEIDON_INFO("> Failed");
+					return AUTH_INVALID_USER_PASS;
+				}
+				LOG_POSEIDON_INFO("> Succeeded");
+				return AUTH_SUCCESSFUL;
+			}
+			if(::strcasecmp(str.c_str(), "Digest") == 0){
+				str = authHeader.substr(pos + 1);
+				str += ',';
+
+				std::string username, realm, nonce, uri, qop, cnonce, nc, response, algorithm;
+				boost::uint64_t rawNonce[2] = { };
+
+				enum ParserState {
+					PS_KEY_INDENT		= 0,
+					PS_KEY				= 1,
+					PS_VALUE_INDENT		= 2,
+					PS_VALUE			= 3,
+					PS_QUOTED_VALUE		= 4,
+				} ps = PS_KEY_INDENT;
+
+				std::string key, value;
+				for(AUTO(it, str.begin()); it != str.end(); ++it){
+					switch(ps){
+					case PS_KEY_INDENT:
+						if(*it == ' '){
+							// ps = PS_KEY_INDENT;
+						} else {
+							key += *it;
+							ps = PS_KEY;
+						}
+						break;
+
+					case PS_KEY:
+						if(*it == '='){
+							ps = PS_VALUE_INDENT;
+						} else {
+							key += *it;
+							// ps = PS_KEY;
+						}
+						break;
+
+					case PS_VALUE_INDENT:
+						if(*it == ' '){
+							// ps = PS_VALUE_INDENT;
+						} else if(*it == '\"'){
+							ps = PS_QUOTED_VALUE;
+						} else {
+							value += *it;
+						}
+						break;
+
+					case PS_VALUE:
+						if(*it == ','){
+							if(::strcasecmp(key.c_str(), "username") == 0){
+								username = STD_MOVE(value);
+							} else if(::strcasecmp(key.c_str(), "realm") == 0){
+								realm = STD_MOVE(value);
+							} else if(::strcasecmp(key.c_str(), "nonce") == 0){
+								nonce = STD_MOVE(value);
+								AUTO(nonceBytes, base64Decode(nonce));
+								if(nonceBytes.size() != sizeof(rawNonce)){
+									LOG_POSEIDON_WARNING("> Inacceptable nonce.");
+									return AUTH_INACCEPTABLE_NONCE;
+								}
+								std::memcpy(rawNonce, nonceBytes.data(), sizeof(rawNonce));
+							} else if(::strcasecmp(key.c_str(), "uri") == 0){
+								uri = STD_MOVE(value);
+							} else if(::strcasecmp(key.c_str(), "qop") == 0){
+								qop = STD_MOVE(value);
+							} else if(::strcasecmp(key.c_str(), "cnonce") == 0){
+								cnonce = STD_MOVE(value);
+							} else if(::strcasecmp(key.c_str(), "nc") == 0){
+								nc = STD_MOVE(value);
+							} else if(::strcasecmp(key.c_str(), "response") == 0){
+								response = STD_MOVE(value);
+							}
+							key.clear();
+							value.clear();
+							ps = PS_KEY_INDENT;
+						} else {
+							value += *it;
+							// ps = PS_VALUE;
+						}
+						break;
+
+					case PS_QUOTED_VALUE:
+						if(*it == '\"'){
+							ps = PS_VALUE;
+						} else {
+							value += *it;
+							// ps = PS_QUOTED_VALUE;
+						}
+						break;
+					}
+				}
+				if(ps != PS_KEY_INDENT){
+					LOG_POSEIDON_WARNING("> Error parsing HTTP authorizaiton header: ", authHeader, ", ps = ", ps);
+					return AUTH_INVALID_HEADER;
+				}
+
+				if(nonce.empty()){
+					LOG_POSEIDON_WARNING("> No nonce specified.");
+					return AUTH_INACCEPTABLE_NONCE;
+				}
+				xorNonce(&rawNonce, sizeof(rawNonce), remoteIp);
+				const AUTO(timestamp, loadBe(rawNonce[0]));
+				const AUTO(now, getFastMonoClock());
+				if(now < timestamp){
+					LOG_POSEIDON_WARNING("> Nonce timestamp is in the future.");
+					return AUTH_EXPIRED;
+				} else if(now - timestamp > MainConfig::getConfigFile().get<boost::uint64_t>("http_digest_auth_timeout", 60000)){
+					LOG_POSEIDON_WARNING("> Nonce has expired.");
+					return AUTH_EXPIRED;
+				}
+
+				if(username.empty()){
+					LOG_POSEIDON_WARNING("> Empty username.");
+					return AUTH_INVALID_USER_PASS;
+				}
+				for(AUTO(it, username.begin()); it != username.end(); ++it){
+					if(*it == ':'){
+						*it = ' ';
+					}
+				}
+				const AUTO(authIt, std::lower_bound(authInfo->begin(), authInfo->end(), username));
+				if((authIt == authInfo->end()) || (authIt->size() < username.size()) ||
+					(authIt->compare(0, username.size(), username) != 0) || ((*authIt)[username.size()] != ':'))
+				{
+					LOG_POSEIDON_WARNING("> Username not found: ", username);
+					return AUTH_INVALID_USER_PASS;
+				}
+
+				if(!(algorithm.empty() || (::strcasecmp(algorithm.c_str(), "MD5") == 0))){
+					LOG_POSEIDON_WARNING("> Inacceptable algorithm: ", algorithm);
+					return AUTH_INACCEPTABLE_QOP;
+				}
+
+				std::string a1, a2;
+
+				a1.reserve(255);
+				a1 += username;
+				a1 += ':';
+				a1 += realm;
+				a1 += ':';
+				a1.append(*authIt, username.size() + 1, std::string::npos);
+
+				a2.reserve(255);
+				a2 += getStringFromVerb(verb);
+				a2 += ':';
+				a2 += uri;
+
+				unsigned char digest[16];
+				std::string strToHash;
+				md5Sum(digest, a1.data(), a1.size());
+				strToHash += hexEncode(digest, sizeof(digest), false);
+				strToHash += ':';
+				strToHash += nonce;
+				strToHash += ':';
+				if(::strcasecmp(qop.c_str(), "auth") == 0){
+					strToHash += nc;
+					strToHash += ':';
+					strToHash += cnonce;
+					strToHash += ':';
+					strToHash += qop;
+					strToHash += ':';
+				} else if(!qop.empty()){
+					LOG_POSEIDON_WARNING("> Inacceptable qop: ", qop);
+					return AUTH_INACCEPTABLE_QOP;
+				}
+				md5Sum(digest, a2.data(), a2.size());
+				strToHash += hexEncode(digest, sizeof(digest), false);
+				md5Sum(digest, strToHash.data(), strToHash.size());
+				const AUTO(responseExpecting, hexEncode(digest, sizeof(digest)));
+				LOG_POSEIDON_DEBUG("> Response expecting: ", responseExpecting);
+				if(::strcasecmp(response.c_str(), responseExpecting.c_str()) != 0){
+					LOG_POSEIDON_WARNING("> Digest mismatch.");
+					return AUTH_INVALID_USER_PASS;
+				}
+				LOG_POSEIDON_INFO("> Succeeded");
+				return AUTH_SUCCESSFUL;
+			}
+			LOG_POSEIDON_WARNING("> Unknown HTTP authorization scheme: ", str);
+			return AUTH_UNKNOWN_SCHEME;
+		}
+
+		class UnauthorizedJob : public SessionJobBase {
+		private:
+			const AuthResult m_authResult;
+
+		public:
+			UnauthorizedJob(const boost::shared_ptr<Session> &session, AuthResult authResult)
+				: SessionJobBase(session)
+				, m_authResult(authResult)
+			{
+			}
+
+		protected:
+			void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+				PROFILE_ME;
+
+				const char *realm;
+				switch(m_authResult){
+				case AUTH_REQUIRING:
+					realm = "Authorization required";
+					break;
+
+				case AUTH_INVALID_HEADER:
+					realm = "Invalid Authorization header";
+					break;
+
+				case AUTH_UNKNOWN_SCHEME:
+					realm = "Unknown HTTP authorization scheme";
+					break;
+
+				case AUTH_INVALID_USER_PASS:
+					realm = "Invalid username or password";
+					break;
+
+				case AUTH_INACCEPTABLE_NONCE:
+					realm = "Nonce is not acceptable";
+					break;
+
+				case AUTH_EXPIRED:
+					realm = "Nonce has expired";
+					break;
+
+				case AUTH_INACCEPTABLE_QOP:
+					realm = "QoP is not acceptable";
+					break;
+
+				default:
+					LOG_POSEIDON_ERROR("HTTP authorization error: authResult = ", m_authResult);
+					realm = "Internal server error";
+					break;
+				}
+
+				boost::uint64_t rawNonce[2];
+				storeBe(rawNonce[0], getFastMonoClock());
+				storeBe(rawNonce[1], rand64());
+				xorNonce(rawNonce, sizeof(rawNonce), session->getRemoteInfo().ip.get());
+				const AUTO(nonce, base64Encode(&rawNonce, sizeof(rawNonce)));
+
+				std::string auth;
+				auth.reserve(255);
+				auth += "Digest realm=\"";
+				auth += realm;
+				auth += "\",nonce=\"";
+				auth += nonce;
+				auth += "\",qop-value=\"auth\",algorithm=\"MD5\"";
+
+				OptionalMap headers;
+				headers.set("WWW-Authenticate", STD_MOVE(auth));
+				session->sendDefault(ST_UNAUTHORIZED, STD_MOVE(headers));
+			}
+		};
+	}
 
 	class Session::RequestJob : public SessionJobBase {
 	private:
@@ -195,17 +461,16 @@ namespace Http {
 			PROFILE_ME;
 
 			try {
-				const AUTO_REF(upgrade, m_header.headers.get("Upgrade"));
-				AUTO(upgradedSession, session->onUpgrade(upgrade, m_header, m_entity));
+				AUTO(upgradedSession, session->onUpgrade(m_header, m_entity));
 				if(!upgradedSession){
-					LOG_POSEIDON_ERROR("Upgrade failed: upgrade = ", upgrade);
-					DEBUG_THROW(Exception, ST_INTERNAL_SERVER_ERROR);
+					LOG_POSEIDON_ERROR("Upgrade failed.");
+					DEBUG_THROW(Exception, ST_BAD_REQUEST);
 				}
 				{
 					const boost::mutex::scoped_lock lock(session->m_upgreadedMutex);
 					session->m_upgradedSession = STD_MOVE(upgradedSession);
 				}
-				LOG_POSEIDON_DEBUG("Upgraded succeeded: upgrade = ", upgrade, ", remote = ", session->getRemoteInfo());
+				LOG_POSEIDON_DEBUG("Upgraded succeeded: remote = ", session->getRemoteInfo());
 				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("epoll_tcp_request_timeout", 0));
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet: URI = ", m_header.uri,
@@ -449,54 +714,48 @@ namespace Http {
 					break;
 
 				case S_END_OF_ENTITY:
-					{
-						State nextState = S_FIRST_HEADER;
-
-						const char *authorizationMessage = NULLPTR;
-						if(m_authInfo){
-							const AUTO_REF(authorization, m_header.headers.get("Authorization"));
-							if(authorization.empty()){
-								authorizationMessage = "Authentication required";
-								goto _checkAuthorization;
-							}
-							const std::size_t pos = authorization.find(' ');
-							if(pos == std::string::npos){
-								LOG_POSEIDON_WARNING("Invalid HTTP header Authorization: ", authorization);
-								authorizationMessage = "Invalid Authorization header";
-								goto _checkAuthorization;
-							}
-							AUTO(str, authorization.substr(0, pos));
-							if(::strcasecmp(str.c_str(), "basic") != 0){
-								LOG_POSEIDON_WARNING("Unknown HTTP authorization method: ", str);
-								authorizationMessage = "Unknown authorization method";
-								goto _checkAuthorization;
-							}
-							str = base64Decode(authorization.substr(pos + 1));
-							if(!std::binary_search(m_authInfo->begin(), m_authInfo->end(), str)){
-								LOG_POSEIDON_INFO("HTTP authorization failed: username:password = ", str);
-								authorizationMessage = "Invalid username or password";
-								goto _checkAuthorization;
-							}
-						}
-					_checkAuthorization:
-						if(authorizationMessage){
-							enqueueJob(boost::make_shared<UnauthorizedJob>(
-								virtualSharedFromThis<Session>(), authorizationMessage));
-						} else if(m_header.headers.has("Upgrade")){
-							enqueueJob(boost::make_shared<UpgradeJob>(
-								virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
-
-							nextState = S_UPGRADED;
+					AuthResult authResult;
+					if(m_authInfo){
+						const AUTO_REF(authorization, m_header.headers.get("Authorization"));
+						if(authorization.empty()){
+							authResult = AUTH_REQUIRING;
 						} else {
-							enqueueJob(boost::make_shared<RequestJob>(
-								virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
+							authResult = checkAuthorization(m_authInfo, getRemoteInfo().ip.get(), m_header.verb, authorization);
 						}
+					} else {
+						authResult = AUTH_SUCCESSFUL;
+					}
+					if(authResult != AUTH_SUCCESSFUL){
+						enqueueJob(boost::make_shared<UnauthorizedJob>(
+							virtualSharedFromThis<Session>(), authResult));
 
 						m_header = Header();
+						m_entity.clear();
 
 						m_sizeTotal = 0;
 						m_expectingNewLine = true;
-						m_state = nextState;
+						m_state = S_FIRST_HEADER;
+					} else if((m_header.verb == V_CONNECT) || m_header.headers.has("Upgrade")){
+						enqueueJob(boost::make_shared<UpgradeJob>(
+							virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
+
+						m_header = Header();
+						m_entity.clear();
+
+						m_sizeTotal = 0;
+						m_expectingNewLine = false;
+						m_sizeExpecting = (boost::uint64_t)-1;
+						m_state = S_FIRST_HEADER;
+					} else {
+						enqueueJob(boost::make_shared<RequestJob>(
+							virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
+
+						m_header = Header();
+						m_entity.clear();
+
+						m_sizeTotal = 0;
+						m_expectingNewLine = true;
+						m_state = S_FIRST_HEADER;
 					}
 					break;
 
@@ -633,10 +892,7 @@ namespace Http {
 		}
 	}
 
-	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const std::string &type,
-		const Header &header, const StreamBuffer &entity)
-	{
-		(void)type;
+	boost::shared_ptr<UpgradedSessionBase> Session::onUpgrade(const Header &header, const StreamBuffer &entity){
 		(void)header;
 		(void)entity;
 

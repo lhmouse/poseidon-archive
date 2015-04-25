@@ -73,8 +73,7 @@ namespace Http {
 	protected:
 		virtual void onRequest(const Header &header, const StreamBuffer &entity) = 0;
 
-		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const std::string &type,
-			const Header &header, const StreamBuffer &entity);
+		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const Header &header, const StreamBuffer &entity);
 
 	public:
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
