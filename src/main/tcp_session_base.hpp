@@ -105,6 +105,10 @@ public:
 		return m_socket.get();
 	}
 
+	bool isUsingSsl() const {
+		return !!m_sslFilter;
+	}
+
 	bool send(StreamBuffer buffer, bool fin = false) FINAL;
 
 	bool hasBeenShutdown() const OVERRIDE;
@@ -119,7 +123,6 @@ public:
 	const IpPort &getLocalInfo() const;
 
 	void registerOnClose(boost::function<void ()> callback);
-	void registerOnReadHup(boost::function<void ()> callback);
 	void setTimeout(boost::uint64_t timeout);
 };
 
