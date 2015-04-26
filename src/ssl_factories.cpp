@@ -27,7 +27,7 @@ namespace {
 		boost::call_once(&initSsl, g_sslInitFlag);
 
 		UniqueSslCtx ret;
-		if(!ret.reset(::SSL_CTX_new(::TLSv1_server_method()))){
+		if(!ret.reset(::SSL_CTX_new(::SSLv23_server_method()))){
 			LOG_POSEIDON_ERROR("Could not create server SSL context");
 			DEBUG_THROW(SystemException, ENOMEM);
 		}
@@ -54,7 +54,7 @@ namespace {
 		boost::call_once(&initSsl, g_sslInitFlag);
 
 		UniqueSslCtx ret;
-		if(!ret.reset(::SSL_CTX_new(::TLSv1_client_method()))){
+		if(!ret.reset(::SSL_CTX_new(::SSLv23_client_method()))){
 			LOG_POSEIDON_ERROR("Could not create client SSL context");
 			DEBUG_THROW(SystemException, ENOMEM);
 		}
