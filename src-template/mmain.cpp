@@ -3,27 +3,27 @@
 
 // 这个文件被置于公有领域（public domain）。
 
-#include "../main/precompiled.hpp"
-#include "../main/log.hpp"
-#include "../main/exception.hpp"
-#include "../main/profiler.hpp"
-#include "../main/hash.hpp"
-#include "../main/module_raii.hpp"
-#include "../main/singletons/module_depository.hpp"
-#include "../main/singletons/event_dispatcher.hpp"
-#include "../main/singletons/timer_daemon.hpp"
-#include "../main/singletons/profile_depository.hpp"
-#include "../main/websocket/session.hpp"
-#include "../main/http/utilities.hpp"
-#include "../main/tcp_client_base.hpp"
-#include "../main/cbpp/session.hpp"
-#include "../main/http/session.hpp"
-#include "../main/cbpp/message_base.hpp"
-#include "../main/singletons/epoll_daemon.hpp"
-#include "../main/mysql/object_base.hpp"
-#include "../main/job_base.hpp"
-#include "../main/uuid.hpp"
-#include "../main/async_job.hpp"
+#include "../src/precompiled.hpp"
+#include "../src/log.hpp"
+#include "../src/exception.hpp"
+#include "../src/profiler.hpp"
+#include "../src/hash.hpp"
+#include "../src/module_raii.hpp"
+#include "../src/singletons/module_depository.hpp"
+#include "../src/singletons/event_dispatcher.hpp"
+#include "../src/singletons/timer_daemon.hpp"
+#include "../src/singletons/profile_depository.hpp"
+#include "../src/websocket/session.hpp"
+#include "../src/http/utilities.hpp"
+#include "../src/tcp_client_base.hpp"
+#include "../src/cbpp/session.hpp"
+#include "../src/http/session.hpp"
+#include "../src/cbpp/message_base.hpp"
+#include "../src/singletons/epoll_daemon.hpp"
+#include "../src/mysql/object_base.hpp"
+#include "../src/job_base.hpp"
+#include "../src/uuid.hpp"
+#include "../src/async_job.hpp"
 using namespace Poseidon;
 /*
 #define MYSQL_OBJECT_NAME	MySqlObj
@@ -32,7 +32,7 @@ using namespace Poseidon;
 	FIELD_STRING(str)	\
 	FIELD_BIGINT(bi)	\
 	FIELD_DATETIME(dt)
-#include "../main/mysql/object_generator.hpp"
+#include "../src/mysql/object_generator.hpp"
 
 namespace {
 	void loadedProc(bool found){
@@ -255,32 +255,32 @@ private:
 #define MESSAGE_NAME		TestInt
 #define MESSAGE_ID			100
 #define MESSAGE_FIELDS		FIELD_VINT(i)
-#include "../main/cbpp/message_generator.hpp"
+#include "../src/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestUInt
 #define MESSAGE_ID			101
 #define MESSAGE_FIELDS 	FIELD_VUINT(u)
-#include "../main/cbpp/message_generator.hpp"
+#include "../src/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestString
 #define MESSAGE_ID			102
 #define MESSAGE_FIELDS		FIELD_STRING(s)
-#include "../main/cbpp/message_generator.hpp"
+#include "../src/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestIntArray
 #define MESSAGE_ID			103
 #define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_VINT(i))
-#include "../main/cbpp/message_generator.hpp"
+#include "../src/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestUIntArray
 #define MESSAGE_ID			104
 #define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_VUINT(u))
-#include "../main/cbpp/message_generator.hpp"
+#include "../src/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME		TestStringArray
 #define MESSAGE_ID			105
 #define MESSAGE_FIELDS		FIELD_ARRAY(a, FIELD_STRING(s))
-#include "../main/cbpp/message_generator.hpp"
+#include "../src/cbpp/message_generator.hpp"
 
 #define MESSAGE_NAME	   	TestMessage
 #define MESSAGE_ID			106
@@ -292,7 +292,7 @@ private:
 		FIELD_STRING(s) \
 		FIELD_VUINT(k)  \
 	)
-#include "../main/cbpp/message_generator.hpp"
+#include "../src/cbpp/message_generator.hpp"
 
 namespace {
 
