@@ -207,4 +207,4 @@ lib_LTLIBRARIES = \
 	lib/libposeidon-template.la
 
 lib_libposeidon_template_la_SOURCES =	\
-	src-template/mmain.cpp
+	template-src/mmain.cpp
