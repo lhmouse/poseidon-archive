@@ -18,7 +18,7 @@ namespace Http {
 
 	enum AuthResult {
 		AUTH_SUCCEEDED				= 0,
-		AUTH_REQUIRING				= 1,
+		AUTH_REQUIRED				= 1,
 		AUTH_INVALID_HEADER			= 2,
 		AUTH_UNKNOWN_SCHEME			= 3,
 		AUTH_INVALID_USER_PASS		= 4,

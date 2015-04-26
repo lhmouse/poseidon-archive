@@ -57,7 +57,11 @@ namespace Http {
 		const IpPort &remoteAddr, Verb verb, const std::string &authHeader)
 	{
 		PROFILE_ME;
-		LOG_POSEIDON_INFO("Checking HTTP authorization: ", authHeader);
+		LOG_POSEIDON_INFO("Checking HTTP authorization header: ", authHeader);
+
+		if(authHeader.empty()){
+			return AUTH_REQUIRED;
+		}
 
 		const std::size_t pos = authHeader.find(' ');
 		if(pos == std::string::npos){
@@ -271,7 +275,7 @@ namespace Http {
 		auth.reserve(255);
 		auth += "Digest realm=\"";
 		switch(authResult){
-		case AUTH_REQUIRING:
+		case AUTH_REQUIRED:
 			auth += "Authorization required";
 			break;
 
