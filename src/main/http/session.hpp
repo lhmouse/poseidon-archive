@@ -35,19 +35,18 @@ namespace Http {
 			S_CHUNKED_TRAILER	= 7,
 		};
 
+	protected:
+		enum {
+			CONTENT_CHUNKED = (boost::uint64_t)-1,
+		};
+
 	private:
+		class ContinueJob;
 		class RequestJob;
 		class ErrorJob;
 
-		class UpgradeJob;
-
-	public:
-		typedef const std::vector<std::string> BasicAuthInfo;
-
 	private:
-		const boost::shared_ptr<BasicAuthInfo> m_authInfo;
-
-		mutable boost::mutex m_upgreadedMutex;
+		mutable boost::mutex m_upgradedSessionMutex;
 		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
 		StreamBuffer m_received;
@@ -61,19 +60,19 @@ namespace Http {
 		StreamBuffer m_entity;
 
 	public:
-		explicit Session(UniqueFile socket,
-			boost::shared_ptr<BasicAuthInfo> authInfo = VAL_INIT // 必须是排序的，否则会抛出异常。
-			);
+		explicit Session(UniqueFile socket);
 		~Session();
 
 	private:
 		void onReadAvail(const void *data, std::size_t size) FINAL;
-		void onReadHup() NOEXCEPT OVERRIDE;
 
 	protected:
-		virtual void onRequest(const Header &header, const StreamBuffer &entity) = 0;
+		// 这两个函数不是线程安全的。
+		void onReadHup() NOEXCEPT OVERRIDE;
+		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
+		virtual boost::shared_ptr<UpgradedSessionBase> onHeader(const Header &header, boost::uint64_t contentLength);
 
-		virtual boost::shared_ptr<UpgradedSessionBase> onUpgrade(const Header &header, const StreamBuffer &entity);
+		virtual void onRequest(const Header &header, const StreamBuffer &entity) = 0;
 
 	public:
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;

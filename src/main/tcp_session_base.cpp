@@ -63,7 +63,10 @@ TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::shared_ptr<Tcp
 }
 TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	if(atomicSub(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED) == 0){
-		m_session->forceShutdown();
+		const boost::mutex::scoped_lock lock(m_session->m_bufferMutex);
+		if(m_session->m_sendBuffer.empty()){
+			m_session->forceShutdown();
+		}
 	}
 }
 

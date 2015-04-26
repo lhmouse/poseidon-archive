@@ -15,7 +15,7 @@
 #include "../tcp_server_base.hpp"
 #include "../http/session.hpp"
 #include "../http/exception.hpp"
-#include "../http/basic_auth_server.hpp"
+#include "../http/authorization.hpp"
 #include "../shared_nts.hpp"
 
 namespace Poseidon {
@@ -48,16 +48,25 @@ namespace {
 
 	class SystemSession : public Http::Session {
 	private:
+		const boost::shared_ptr<const Http::AuthInfo> m_authInfo;
 		const std::string m_prefix;
 
 	public:
-		SystemSession(UniqueFile socket, boost::shared_ptr<Http::Session::BasicAuthInfo> authInfo, std::string path)
-			: Http::Session(STD_MOVE(socket), STD_MOVE(authInfo))
-			, m_prefix(STD_MOVE(path += '/'))
+		SystemSession(UniqueFile socket, boost::shared_ptr<const Http::AuthInfo> authInfo, std::string path)
+			: Http::Session(STD_MOVE(socket))
+			, m_authInfo(STD_MOVE(authInfo)), m_prefix(STD_MOVE(path += '/'))
 		{
 		}
 
 	protected:
+		boost::shared_ptr<Http::UpgradedSessionBase> onHeader(
+			const Http::Header &header, boost::uint64_t contentLength) OVERRIDE
+		{
+			checkAndThrowIfUnauthorized(m_authInfo, getRemoteInfo(), header);
+
+			return Http::Session::onHeader(header, contentLength);
+		}
+
 		void onRequest(const Http::Header &header, const StreamBuffer & /* entity */) OVERRIDE {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", getRemoteInfo());
@@ -209,17 +218,22 @@ namespace {
 		}
 	};
 
-	class SystemServer : public Http::BasicAuthServer {
+	class SystemServer : public TcpServerBase {
+	private:
+		const boost::shared_ptr<const Http::AuthInfo> m_authInfo;
+		const std::string m_path;
+
 	public:
 		SystemServer(const IpPort &bindAddr, const char *cert, const char *privateKey,
 			std::vector<std::string> userPass, std::string path)
-			: Http::BasicAuthServer(bindAddr, cert, privateKey, STD_MOVE(userPass), STD_MOVE(path))
+			: TcpServerBase(bindAddr, cert, privateKey)
+			, m_authInfo(Http::createAuthInfo(STD_MOVE(userPass))), m_path(STD_MOVE(path))
 		{
 		}
 
 	public:
 		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const OVERRIDE {
-			return boost::make_shared<SystemSession>(STD_MOVE(client), getAuthInfo(), getPath());
+			return boost::make_shared<SystemSession>(STD_MOVE(client), m_authInfo, m_path);
 		}
 	};
 
