@@ -39,14 +39,18 @@ namespace Http {
 		}
 	}
 
-	struct AuthInfo : public std::vector<std::string> {
+	struct AuthInfo {
+		std::vector<std::string> basicUserPass;
+
+		explicit AuthInfo(std::vector<std::string> basicUserPass_)
+			: basicUserPass(STD_MOVE(basicUserPass_))
+		{
+			std::sort(basicUserPass.begin(), basicUserPass.end());
+		}
 	};
 
 	boost::shared_ptr<const AuthInfo> createAuthInfo(std::vector<std::string> basicUserPass){
-		AUTO(ret, boost::make_shared<AuthInfo>());
-		ret->swap(basicUserPass);
-		std::sort(ret->begin(), ret->end());
-		return STD_MOVE_IDN(ret);
+		return boost::make_shared<AuthInfo>(STD_MOVE(basicUserPass));
 	}
 
 	AuthResult checkAuthorizationHeader(const boost::shared_ptr<const AuthInfo> &authInfo,
@@ -63,7 +67,7 @@ namespace Http {
 		if(::strcasecmp(str.c_str(), "Basic") == 0){
 			str = base64Decode(authHeader.substr(pos + 1));
 
-			if(!std::binary_search(authInfo->begin(), authInfo->end(), str)){
+			if(!std::binary_search(authInfo->basicUserPass.begin(), authInfo->basicUserPass.end(), str)){
 				LOG_POSEIDON_INFO("> Failed");
 				return AUTH_INVALID_USER_PASS;
 			}
@@ -202,8 +206,8 @@ namespace Http {
 				return AUTH_EXPIRED;
 			}
 
-			const AUTO(authIt, std::lower_bound(authInfo->begin(), authInfo->end(), username));
-			if((authIt == authInfo->end()) || (authIt->size() < username.size()) ||
+			const AUTO(authIt, std::lower_bound(authInfo->basicUserPass.begin(), authInfo->basicUserPass.end(), username));
+			if((authIt == authInfo->basicUserPass.end()) || (authIt->size() < username.size()) ||
 				(authIt->compare(0, username.size(), username) != 0) || ((*authIt)[username.size()] != ':'))
 			{
 				LOG_POSEIDON_WARNING("> Username not found: ", username);
