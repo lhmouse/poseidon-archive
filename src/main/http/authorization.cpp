@@ -50,6 +50,9 @@ namespace Http {
 	};
 
 	boost::shared_ptr<const AuthInfo> createAuthInfo(std::vector<std::string> basicUserPass){
+		if(basicUserPass.empty()){
+			DEBUG_THROW(BasicException, SSLIT("No username:password provided"));
+		}
 		return boost::make_shared<AuthInfo>(STD_MOVE(basicUserPass));
 	}
 
