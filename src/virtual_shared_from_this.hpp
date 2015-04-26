@@ -24,15 +24,13 @@ public:
 	boost::shared_ptr<const DerivedT> virtualSharedFromThis() const {
 		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value));
 
-		return boost::shared_ptr<const DerivedT>(shared_from_this(),
-			&dynamic_cast<const DerivedT &>(*this));
+		return boost::shared_ptr<const DerivedT>(shared_from_this(), &dynamic_cast<const DerivedT &>(*this));
 	}
 	template<typename DerivedT>
 	boost::shared_ptr<DerivedT> virtualSharedFromThis(){
 		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value));
 
-		return boost::shared_ptr<DerivedT>(shared_from_this(),
-			&dynamic_cast<DerivedT &>(*this));
+		return boost::shared_ptr<DerivedT>(shared_from_this(), &dynamic_cast<DerivedT &>(*this));
 	}
 
 	template<typename DerivedT>
