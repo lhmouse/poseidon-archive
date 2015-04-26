@@ -36,7 +36,7 @@ namespace {
 		}
 	};
 
-	void swap(JobElement &lhs, JobElement &rhs) NOEXCEPT {
+	inline void swap(JobElement &lhs, JobElement &rhs) NOEXCEPT {
 		using std::swap;
 		swap(lhs.dueTime, rhs.dueTime);
 		swap(lhs.category, rhs.category);
