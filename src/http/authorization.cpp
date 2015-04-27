@@ -56,30 +56,31 @@ namespace Http {
 		return boost::make_shared<AuthInfo>(STD_MOVE(basicUserPass));
 	}
 
-	AuthResult checkAuthorizationHeader(const boost::shared_ptr<const AuthInfo> &authInfo,
-		const IpPort &remoteAddr, Verb verb, const std::string &authHeader)
+	std::pair<AuthResult, const std::string *> checkAuthorizationHeader(
+		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, Verb verb, const std::string &authHeader)
 	{
 		PROFILE_ME;
 		LOG_POSEIDON_INFO("Checking HTTP authorization header: ", authHeader);
 
 		if(authHeader.empty()){
-			return AUTH_REQUIRED;
+			return std::make_pair(AUTH_REQUIRED, NULLPTR);
 		}
 
 		const std::size_t pos = authHeader.find(' ');
 		if(pos == std::string::npos){
-			return AUTH_INVALID_HEADER;
+			return std::make_pair(AUTH_INVALID_HEADER, NULLPTR);
 		}
 		AUTO(str, authHeader.substr(0, pos));
 		if(::strcasecmp(str.c_str(), "Basic") == 0){
 			str = base64Decode(authHeader.substr(pos + 1));
 
-			if(!std::binary_search(authInfo->basicUserPass.begin(), authInfo->basicUserPass.end(), str)){
+			const AUTO(authIt, std::lower_bound(authInfo->basicUserPass.begin(), authInfo->basicUserPass.end(), str));
+			if((authIt == authInfo->basicUserPass.end()) || (*authIt != str)){
 				LOG_POSEIDON_INFO("> Failed");
-				return AUTH_INVALID_USER_PASS;
+				return std::make_pair(AUTH_INVALID_USER_PASS, NULLPTR);
 			}
 			LOG_POSEIDON_INFO("> Succeeded");
-			return AUTH_SUCCEEDED;
+			return std::make_pair(AUTH_SUCCEEDED, &*authIt);
 		} else if(::strcasecmp(str.c_str(), "Digest") == 0){
 			str = authHeader.substr(pos + 1);
 
@@ -106,7 +107,7 @@ namespace Http {
 				AUTO(nonceBytes, base64Decode(nonce));	\
 				if(nonceBytes.size() != sizeof(rawNonce)){	\
 					LOG_POSEIDON_WARNING("> Inacceptable nonce.");	\
-					return AUTH_INACCEPTABLE_NONCE;	\
+					return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);	\
 				}	\
 				std::memcpy(&rawNonce, nonceBytes.data(), sizeof(rawNonce));	\
 				xorNonce(rawNonce, remoteAddr.ip.get());	\
@@ -182,35 +183,35 @@ namespace Http {
 				COMMIT_KEY_VALUE;
 			} else if(ps != PS_KEY_INDENT){
 				LOG_POSEIDON_WARNING("> Error parsing HTTP authorizaiton header: ", authHeader, ", ps = ", ps);
-				return AUTH_INVALID_HEADER;
+				return std::make_pair(AUTH_INVALID_HEADER, NULLPTR);
 			}
 
 			if(username.empty()){
 				LOG_POSEIDON_WARNING("> No username specified.");
-				return AUTH_INVALID_USER_PASS;
+				return std::make_pair(AUTH_INVALID_USER_PASS, NULLPTR);
 			}
 			if(nonce.empty()){
 				LOG_POSEIDON_WARNING("> No nonce specified.");
-				return AUTH_INACCEPTABLE_NONCE;
+				return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);
 			}
 			if(!(algorithm.empty() || (::strcasecmp(algorithm.c_str(), "MD5") == 0))){
 				LOG_POSEIDON_WARNING("> Inacceptable algorithm: ", algorithm);
-				return AUTH_INACCEPTABLE_ALGORITHM;
+				return std::make_pair(AUTH_INACCEPTABLE_ALGORITHM, NULLPTR);
 			}
 
 			if(rawNonce.identifier != g_identifier){
 				LOG_POSEIDON_WARNING("> Unexpected identifier: ", rawNonce.identifier, ", expecting ", g_identifier);
-				return AUTH_INACCEPTABLE_NONCE;
+				return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);
 			}
 			const AUTO(localNow, getLocalTime());
 			if(localNow < rawNonce.timestamp){
 				LOG_POSEIDON_WARNING("> Nonce timestamp is in the future.");
-				return AUTH_EXPIRED;
+				return std::make_pair(AUTH_EXPIRED, NULLPTR);
 			}
 			const auto nonceExpiryTime = MainConfig::getConfigFile().get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000);
 			if(localNow - rawNonce.timestamp > nonceExpiryTime){
 				LOG_POSEIDON_WARNING("> Nonce has expired.");
-				return AUTH_EXPIRED;
+				return std::make_pair(AUTH_EXPIRED, NULLPTR);
 			}
 
 			const AUTO(authIt, std::lower_bound(authInfo->basicUserPass.begin(), authInfo->basicUserPass.end(), username));
@@ -218,7 +219,7 @@ namespace Http {
 				(authIt->compare(0, username.size(), username) != 0) || ((*authIt)[username.size()] != ':'))
 			{
 				LOG_POSEIDON_WARNING("> Username not found: ", username);
-				return AUTH_INVALID_USER_PASS;
+				return std::make_pair(AUTH_INVALID_USER_PASS, NULLPTR);
 			}
 
 			std::string a1, a2;
@@ -251,7 +252,7 @@ namespace Http {
 				strToHash += ':';
 			} else if(!qop.empty()){
 				LOG_POSEIDON_WARNING("> Inacceptable qop: ", qop);
-				return AUTH_INACCEPTABLE_QOP;
+				return std::make_pair(AUTH_INACCEPTABLE_QOP, NULLPTR);
 			}
 			md5Sum(digest, a2.data(), a2.size());
 			strToHash += hexEncode(digest, sizeof(digest), false);
@@ -260,13 +261,13 @@ namespace Http {
 			LOG_POSEIDON_DEBUG("> Response expecting: ", responseExpecting);
 			if(::strcasecmp(response.c_str(), responseExpecting.c_str()) != 0){
 				LOG_POSEIDON_WARNING("> Digest mismatch.");
-				return AUTH_INVALID_USER_PASS;
+				return std::make_pair(AUTH_INVALID_USER_PASS, NULLPTR);
 			}
 			LOG_POSEIDON_INFO("> Succeeded");
-			return AUTH_SUCCEEDED;
+			return std::make_pair(AUTH_SUCCEEDED, &*authIt);
 		}
 		LOG_POSEIDON_WARNING("> Unknown HTTP authorization scheme: ", str);
-		return AUTH_UNKNOWN_SCHEME;
+		return std::make_pair(AUTH_UNKNOWN_SCHEME, NULLPTR);
 	}
 	void throwUnauthorized(AuthResult authResult, const IpPort &remoteAddr, bool isProxy, OptionalMap headers){
 		PROFILE_ME;
@@ -328,23 +329,22 @@ namespace Http {
 		DEBUG_THROW(Exception, statusCode, STD_MOVE(headers));
 	}
 
-	void checkAndThrowIfUnauthorized(const boost::shared_ptr<const AuthInfo> &authInfo,
-		const IpPort &remoteAddr, const Header &header,
+	const std::string *checkAndThrowIfUnauthorized(
+		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, const Header &header,
 		bool isProxy, OptionalMap responseHeaders)
 	{
 		PROFILE_ME;
 
 		if(!authInfo){
-			return;
+			return NULLPTR;
 		}
 
 		const AUTO_REF(authHeader, header.headers.get(isProxy ? "Proxy-Authorization" : "Authorization"));
-		const AUTO(authResult, checkAuthorizationHeader(authInfo, remoteAddr, header.verb, authHeader));
-		if(authResult == AUTH_SUCCEEDED){
-			return;
+		const AUTO(result, checkAuthorizationHeader(authInfo, remoteAddr, header.verb, authHeader));
+		if(result.first == AUTH_SUCCEEDED){
+			return result.second;
 		}
-
-		throwUnauthorized(authResult, remoteAddr, isProxy, STD_MOVE(responseHeaders));
+		throwUnauthorized(result.first, remoteAddr, isProxy, STD_MOVE(responseHeaders));
 	}
 }
 
