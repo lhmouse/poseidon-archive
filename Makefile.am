@@ -194,7 +194,7 @@ lib_libposeidon_main_la_SOURCES = \
 
 pkgsysconfdir = $(sysconfdir)/@PACKAGE@
 pkgsysconf_DATA = \
-	etc/poseidon/main.conf
+	etc/poseidon/main-template.conf
 
 pkglocalstatedir = $(localstatedir)/@PACKAGE@
 
