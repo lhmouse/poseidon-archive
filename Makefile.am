@@ -78,6 +78,7 @@ pkginclude_http_HEADERS = \
 	src/http/fwd.hpp	\
 	src/http/header.hpp	\
 	src/http/session.hpp	\
+	src/http/client.hpp	\
 	src/http/authorization.hpp	\
 	src/http/verbs.hpp	\
 	src/http/status_codes.hpp	\
@@ -100,7 +101,7 @@ pkginclude_cbpp_HEADERS = \
 	src/cbpp/client.hpp	\
 	src/cbpp/message_base.hpp	\
 	src/cbpp/session.hpp	\
-	src/cbpp/error_message.hpp	\
+	src/cbpp/control_message.hpp	\
 	src/cbpp/message_generator.hpp	\
 	src/cbpp/status_codes.hpp	\
 	src/cbpp/control_codes.hpp	\
@@ -177,6 +178,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/cbpp/client.cpp	\
 	src/cbpp/exception.cpp	\
 	src/http/session.cpp	\
+	src/http/client.cpp	\
 	src/http/authorization.cpp	\
 	src/http/status_codes.cpp	\
 	src/http/verbs.cpp	\

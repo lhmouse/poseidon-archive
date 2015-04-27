@@ -36,12 +36,12 @@ namespace Http {
 	extern std::pair<AuthResult, const std::string *> checkAuthorizationHeader(
 		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, Verb verb, const std::string &authHeader);
 	extern void throwUnauthorized(AuthResult authResult, const IpPort &remoteAddr,
-		bool isProxy = false, OptionalMap headers = OptionalMap()) __attribute__((__noreturn__));
+		bool isProxy = false, OptionalMap headers = VAL_INIT) __attribute__((__noreturn__));
 
 	// 如果 authInfo 为空指针，返回空指针；否则，返回指向认证成功的 username:password 的指针。
 	extern const std::string *checkAndThrowIfUnauthorized(
 		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, const Header &header,
-		bool isProxy = false, OptionalMap responseHeaders = OptionalMap());
+		bool isProxy = false, OptionalMap responseHeaders = VAL_INIT);
 }
 
 }

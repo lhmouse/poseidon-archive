@@ -29,18 +29,25 @@ namespace Cbpp {
 		};
 
 	private:
+		class KeepAliveJob;
+
+		class ResponseJob;
+		class PayloadJob;
+		class ControlJob;
+
+	private:
 		const boost::uint64_t m_keepAliveTimeout;
 
 		boost::shared_ptr<const TimerItem> m_keepAliveTimer;
 
 		StreamBuffer m_received;
 
-		boost::uint64_t m_sizeTotal;
 		boost::uint64_t m_sizeExpecting;
 		State m_state;
 
-		boost::uint16_t m_messageId;
 		boost::uint64_t m_payloadLen;
+		boost::uint16_t m_messageId;
+		boost::uint64_t m_payloadOffset;
 
 	protected:
 		explicit Client(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
@@ -49,9 +56,12 @@ namespace Cbpp {
 	private:
 		void onReadAvail(const void *data, std::size_t size) FINAL;
 
-	public:
-		virtual void onResponse(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
-		virtual void onError(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason) = 0;
+	protected:
+		virtual void onResponse(boost::uint16_t messageId, boost::uint64_t payloadLen) = 0;
+		// 报文可能分几次收到。
+		virtual void onPayload(boost::uint64_t payloadOffset, const StreamBuffer &payload) = 0;
+
+		virtual void onControl(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason) = 0;
 
 	public:
 		bool send(boost::uint16_t messageId, StreamBuffer payload, bool fin = false);

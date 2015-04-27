@@ -16,7 +16,7 @@ namespace Http {
 		boost::shared_ptr<OptionalMap> m_headers;
 
 	public:
-		Exception(const char *file, std::size_t line, StatusCode statusCode, OptionalMap headers = OptionalMap());
+		Exception(const char *file, std::size_t line, StatusCode statusCode, OptionalMap headers = VAL_INIT);
 		~Exception() NOEXCEPT;
 
 	public:

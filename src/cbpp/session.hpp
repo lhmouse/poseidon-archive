@@ -29,6 +29,8 @@ namespace Cbpp {
 
 	private:
 		class RequestJob;
+		class ControlJob;
+
 		class ErrorJob;
 
 	private:
@@ -50,7 +52,7 @@ namespace Cbpp {
 
 	protected:
 		virtual void onRequest(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
-		virtual void onControl(ControlCode controlCode, StatusCode statusCode, std::string reason);
+		virtual void onControl(ControlCode controlCode, StatusCode statusCode, const std::string &reason);
 
 	public:
 		bool send(boost::uint16_t messageId, StreamBuffer payload, bool fin = false);
@@ -62,9 +64,9 @@ namespace Cbpp {
 			return send(MessageT::ID, StreamBuffer(payload), fin);
 		}
 
-		bool sendError(boost::uint16_t messageId, StatusCode statusCode, std::string reason, bool fin = false);
-		bool sendError(boost::uint16_t messageId, StatusCode statusCode, bool fin = false){
-			return sendError(messageId, statusCode, std::string(), fin);
+		bool sendControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason, bool fin = false);
+		bool sendControl(boost::uint16_t messageId, StatusCode statusCode, bool fin = false){
+			return sendControl(messageId, statusCode, std::string(), fin);
 		}
 	};
 }

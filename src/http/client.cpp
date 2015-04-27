@@ -1,3 +1,60 @@
+#include "../precompiled.hpp"
+#include "client.hpp"
+#include "exception.hpp"
+#include "status_codes.hpp"
+#include "../log.hpp"
+#include "../job_base.hpp"
+#include "../profiler.hpp"
+
+namespace Poseidon {
+
+namespace Http {
+	namespace {
+		class ClientJobBase : public JobBase {
+		private:
+			const boost::weak_ptr<Client> m_client;
+
+		protected:
+			explicit ClientJobBase(const boost::shared_ptr<Client> &client)
+				: m_client(client)
+			{
+			}
+
+		protected:
+			virtual void perform(const boost::shared_ptr<Client> &client) const = 0;
+
+		private:
+			boost::weak_ptr<const void> getCategory() const FINAL {
+				return m_client;
+			}
+			void perform() const FINAL {
+				PROFILE_ME;
+
+				const AUTO(client, m_client.lock());
+				if(!client){
+					return;
+				}
+
+				try {
+					perform(client);
+				} catch(TryAgainLater &){
+					throw;
+				} catch(std::exception &e){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
+					client->forceShutdown();
+					throw;
+				} catch(...){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+					client->forceShutdown();
+					throw;
+				}
+			}
+		};
+	}
+}
+
+}
+#if 0
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
@@ -64,8 +121,9 @@ namespace Http {
 		};
 	}
 
-	class Session::ContinueJob : public SessionJobBase {
+	class Client::HeaderJob : public ClientJobBase {
 	public:
+		explicit 
 		explicit ContinueJob(const boost::shared_ptr<Session> &session)
 			: SessionJobBase(session)
 		{
@@ -551,3 +609,4 @@ namespace Http {
 }
 
 }
+#endif

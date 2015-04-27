@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "session.hpp"
 #include "exception.hpp"
-#include "error_message.hpp"
+#include "control_message.hpp"
 #include "../singletons/main_config.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
@@ -75,23 +75,50 @@ namespace Cbpp {
 			PROFILE_ME;
 
 			try {
-				if(m_messageId == ErrorMessage::ID){
-					AUTO(payload, m_payload);
-					ErrorMessage req(payload);
-					LOG_POSEIDON_DEBUG("Dispatching control message: ", req);
-					session->onControl(static_cast<ControlCode>(req.messageId), req.statusCode, STD_MOVE(req.reason));
-				} else {
-					LOG_POSEIDON_DEBUG("Dispatching message: messageId = ", m_messageId, ", payload size = ", m_payload.size());
-					session->onRequest(m_messageId, m_payload);
-				}
-				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("cbpp_keep_alive_timeout", 0));
+				LOG_POSEIDON_DEBUG("Dispatching message: messageId = ", m_messageId, ", payloadLen = ", m_payload.size());
+				session->onRequest(m_messageId, m_payload);
+
+				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
 			} catch(TryAgainLater &){
 				throw;
 			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown: message id = ",
-					m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Cbpp::Exception thrown: messageId = ", m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
 				try {
-					session->sendError(m_messageId, e.statusCode(), e.what(), false); // 不关闭连接。
+					session->sendControl(m_messageId, e.statusCode(), e.what(), false); // 不关闭连接。
+				} catch(...){
+					session->forceShutdown();
+				}
+			}
+		}
+	};
+
+	class Session::ControlJob : public SessionJobBase {
+	private:
+		const ControlMessage m_msg;
+
+	public:
+		ControlJob(const boost::shared_ptr<Session> &session, ControlMessage msg)
+			: SessionJobBase(session)
+			, m_msg(STD_MOVE(msg))
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+			PROFILE_ME;
+
+			try {
+				LOG_POSEIDON_DEBUG("Dispatching control message: ", m_msg);
+				session->onControl(static_cast<ControlCode>(m_msg.messageId),
+					static_cast<StatusCode>(m_msg.statusCode), m_msg.reason);
+
+				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
+				try {
+					session->sendControl(ControlMessage::ID, e.statusCode(), e.what(), false); // 不关闭连接。
 				} catch(...){
 					session->forceShutdown();
 				}
@@ -119,7 +146,7 @@ namespace Cbpp {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendError(m_messageId, m_statusCode, m_reason, true);
+			session->sendControl(m_messageId, m_statusCode, m_reason, true);
 		}
 	};
 
@@ -200,8 +227,13 @@ namespace Cbpp {
 					break;
 
 				case S_PAYLOAD:
-					enqueueJob(boost::make_shared<RequestJob>(
-						virtualSharedFromThis<Session>(), m_messageId, m_received.cut(m_payloadLen)));
+					if(m_messageId != ControlMessage::ID){
+						enqueueJob(boost::make_shared<RequestJob>(
+							virtualSharedFromThis<Session>(), m_messageId, m_received.cut(m_payloadLen)));
+					} else {
+						enqueueJob(boost::make_shared<ControlJob>(
+							virtualSharedFromThis<Session>(), ControlMessage(m_received.cut(m_payloadLen))));
+					}
 
 					m_messageId = 0;
 					m_payloadLen = 0;
@@ -217,7 +249,8 @@ namespace Cbpp {
 				}
 			}
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown while parsing data, message id = ", m_messageId,
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"Cbpp::Exception thrown while parsing data, message id = ", m_messageId,
 				", statusCode = ", static_cast<int>(e.statusCode()), ", what = ", e.what());
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
@@ -227,8 +260,8 @@ namespace Cbpp {
 				forceShutdown();
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, message id = ", m_messageId,
-				", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"std::exception thrown while parsing data, message id = ", m_messageId, ", what = ", e.what());
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
 					virtualSharedFromThis<Session>(), m_messageId, static_cast<StatusCode>(ST_INTERNAL_ERROR), std::string()));
@@ -239,7 +272,7 @@ namespace Cbpp {
 		}
 	}
 
-	void Session::onControl(ControlCode controlCode, StatusCode statusCode, std::string reason){
+	void Session::onControl(ControlCode controlCode, StatusCode statusCode, const std::string &reason){
 		PROFILE_ME;
 
 		switch(controlCode){
@@ -249,7 +282,7 @@ namespace Cbpp {
 
 		default:
 			LOG_POSEIDON_WARNING("Unknown control code: ", controlCode);
-			send(ErrorMessage(static_cast<boost::uint16_t>(controlCode), statusCode, STD_MOVE(reason)), true);
+			send(ControlMessage(static_cast<boost::uint16_t>(controlCode), statusCode, STD_MOVE(reason)), true);
 			break;
 		}
 	}
@@ -276,8 +309,8 @@ namespace Cbpp {
 		return TcpSessionBase::send(STD_MOVE(frame), fin);
 	}
 
-	bool Session::sendError(boost::uint16_t messageId, StatusCode statusCode, std::string reason, bool fin){
-		return send(ErrorMessage(messageId, static_cast<int>(statusCode), STD_MOVE(reason)), fin);
+	bool Session::sendControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason, bool fin){
+		return send(ControlMessage(messageId, static_cast<int>(statusCode), STD_MOVE(reason)), fin);
 	}
 }
 

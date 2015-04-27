@@ -67,7 +67,7 @@ namespace WebSocket {
 
 	public:
 		bool send(StreamBuffer payload, bool binary = true, bool fin = false, bool masked = false);
-		bool shutdown(StatusCode statusCode, StreamBuffer additional = StreamBuffer()) NOEXCEPT;
+		bool shutdown(StatusCode statusCode, StreamBuffer additional = VAL_INIT) NOEXCEPT;
 	};
 }
 

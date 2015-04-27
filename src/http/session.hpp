@@ -65,10 +65,10 @@ namespace Http {
 
 	private:
 		void onReadAvail(const void *data, std::size_t size) FINAL;
+		void onReadHup() NOEXCEPT OVERRIDE;
 
 	protected:
-		// 这两个函数不是线程安全的。
-		void onReadHup() NOEXCEPT OVERRIDE;
+		// 和 Http::Client 不同这个函数在 Epoll 线程中调用。
 		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
 		virtual boost::shared_ptr<UpgradedSessionBase> onHeader(const Header &header, boost::uint64_t contentLength);
 
@@ -77,8 +77,8 @@ namespace Http {
 	public:
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
 
-		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity, bool fin = false);
-		bool send(StatusCode statusCode, StreamBuffer entity = StreamBuffer(), bool fin = false){
+		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity = VAL_INIT, bool fin = false);
+		bool send(StatusCode statusCode, StreamBuffer entity, bool fin = false){
 			return send(statusCode, OptionalMap(), STD_MOVE(entity), fin);
 		}
 

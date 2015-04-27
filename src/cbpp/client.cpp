@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "client.hpp"
 #include "exception.hpp"
-#include "error_message.hpp"
+#include "control_message.hpp"
 #include "../singletons/timer_daemon.hpp"
 #include "../log.hpp"
 #include "../exception.hpp"
@@ -56,55 +56,89 @@ namespace Cbpp {
 				}
 			}
 		};
-
-		class ResponseJob : public ClientJobBase {
-		private:
-			const unsigned m_messageId;
-			const StreamBuffer m_payload;
-
-		public:
-			ResponseJob(const boost::shared_ptr<Client> &client, unsigned messageId, StreamBuffer payload)
-				: ClientJobBase(client)
-				, m_messageId(messageId), m_payload(STD_MOVE(payload))
-			{
-			}
-
-		protected:
-			void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
-				PROFILE_ME;
-
-				if(m_messageId == ErrorMessage::ID){
-					AUTO(payload, m_payload);
-					ErrorMessage req(payload);
-					LOG_POSEIDON_DEBUG("Dispatching error message: ", req);
-					client->onError(req.messageId, req.statusCode, STD_MOVE(req.reason));
-				} else {
-					LOG_POSEIDON_DEBUG("Dispatching message: messageId = ", m_messageId, ", payload size = ", m_payload.size());
-					client->onResponse(m_messageId, m_payload);
-				}
-			}
-		};
-
-		class KeepAliveJob : public ClientJobBase {
-		public:
-			explicit KeepAliveJob(const boost::shared_ptr<Client> &client)
-				: ClientJobBase(client)
-			{
-			}
-
-		protected:
-			void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
-				PROFILE_ME;
-
-				client->send(ErrorMessage(ErrorMessage::ID, 0, VAL_INIT));
-			}
-		};
 	}
+
+	class Client::KeepAliveJob : public ClientJobBase {
+	public:
+		explicit KeepAliveJob(const boost::shared_ptr<Client> &client)
+			: ClientJobBase(client)
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+			PROFILE_ME;
+
+			client->send(ControlMessage(ControlMessage::ID, 0, VAL_INIT));
+		}
+	};
+
+	class Client::ResponseJob : public ClientJobBase {
+	private:
+		const unsigned m_messageId;
+		const boost::uint64_t m_payloadLen;
+
+	public:
+		ResponseJob(const boost::shared_ptr<Client> &client, unsigned messageId, boost::uint64_t payloadLen)
+			: ClientJobBase(client)
+			, m_messageId(messageId), m_payloadLen(payloadLen)
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+			PROFILE_ME;
+
+			LOG_POSEIDON_DEBUG("Response: messageId = ", m_messageId, ", payloadLen = ", m_payloadLen);
+			client->onResponse(m_messageId, m_payloadLen);
+		}
+	};
+
+	class Client::PayloadJob : public ClientJobBase {
+	public:
+		const boost::uint64_t m_payloadOffset;
+		const StreamBuffer m_payload;
+
+	public:
+		PayloadJob(const boost::shared_ptr<Client> &client, boost::uint64_t payloadOffset, StreamBuffer payload)
+			: ClientJobBase(client)
+			, m_payloadOffset(payloadOffset), m_payload(STD_MOVE(payload))
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+			PROFILE_ME;
+
+			LOG_POSEIDON_DEBUG("Payload: payloadOffset = ", m_payloadOffset, ", segmentSize = ", m_payload.size());
+			client->onPayload(m_payloadOffset, m_payload);
+		}
+	};
+
+	class Client::ControlJob : public ClientJobBase {
+	private:
+		const ControlMessage m_msg;
+
+	public:
+		ControlJob(const boost::shared_ptr<Client> &client, ControlMessage msg)
+			: ClientJobBase(client)
+			, m_msg(STD_MOVE(msg))
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+			PROFILE_ME;
+
+			LOG_POSEIDON_DEBUG("Control: msg = ", m_msg);
+			client->onControl(m_msg.messageId, static_cast<StatusCode>(m_msg.statusCode), m_msg.reason);
+		}
+	};
 
 	Client::Client(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl)
 		: TcpClientBase(addr, useSsl)
 		, m_keepAliveTimeout(keepAliveTimeout)
-		, m_sizeTotal(0), m_sizeExpecting(2), m_state(S_PAYLOAD_LEN)
+		, m_sizeExpecting(2), m_state(S_PAYLOAD_LEN)
 	{
 	}
 	Client::~Client(){
@@ -120,19 +154,9 @@ namespace Cbpp {
 			m_received.put(data, size);
 
 			for(;;){
-				boost::uint64_t sizeTotal;
-				bool gotExpected;
 				if(m_received.size() < m_sizeExpecting){
-					sizeTotal = m_sizeTotal + m_received.size();
-					gotExpected = false;
-				} else {
-					sizeTotal = m_sizeTotal + m_sizeExpecting;
-					gotExpected = true;
-				}
-				if(!gotExpected){
 					break;
 				}
-				m_sizeTotal = sizeTotal;
 
 				switch(m_state){
 					boost::uint16_t temp16;
@@ -163,19 +187,39 @@ namespace Cbpp {
 
 					m_received.get(&temp16, 2);
 					m_messageId = loadLe(temp16);
+					m_payloadOffset = 0;
 
-					m_sizeExpecting = m_payloadLen;
+					enqueueJob(boost::make_shared<ResponseJob>(
+						virtualSharedFromThis<Client>(), m_messageId, m_payloadLen));
+
+					if(m_messageId != ControlMessage::ID){
+						m_sizeExpecting = std::min<boost::uint64_t>(m_payloadLen, 1024);
+					} else {
+						m_sizeExpecting = m_payloadLen;
+					}
 					m_state = S_PAYLOAD;
 					break;
 
 				case S_PAYLOAD:
-					enqueueJob(boost::make_shared<ResponseJob>(
-						virtualSharedFromThis<Client>(), m_messageId, m_received.cut(m_payloadLen)));
+					if(m_messageId != ControlMessage::ID){
+						const AUTO(bytesAvail, std::min<boost::uint64_t>(m_received.size(), m_payloadLen - m_payloadOffset));
+						enqueueJob(boost::make_shared<PayloadJob>(
+							virtualSharedFromThis<Client>(), m_payloadOffset, m_received.cut(bytesAvail)));
+						m_payloadOffset += bytesAvail;
+
+						if(m_payloadLen > m_payloadOffset){
+							m_sizeExpecting = std::min<boost::uint64_t>(m_payloadLen - m_payloadOffset, 1024);
+							// m_state = S_PAYLOAD;
+							break;
+						}
+					} else {
+						enqueueJob(boost::make_shared<ControlJob>(
+							virtualSharedFromThis<Client>(), ControlMessage(m_received.cut(m_payloadLen))));
+					}
 
 					m_messageId = 0;
 					m_payloadLen = 0;
 
-					m_sizeTotal = 0;
 					m_sizeExpecting = 2;
 					m_state = S_PAYLOAD_LEN;
 					break;
