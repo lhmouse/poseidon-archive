@@ -292,7 +292,6 @@ namespace Http {
 							m_requestHeaders.getParams = optionalMapFromUrlEncoded(m_requestHeaders.uri.substr(pos + 1));
 							m_requestHeaders.uri.erase(pos);
 						}
-						m_requestHeaders.uri = urlDecode(m_requestHeaders.uri);
 
 						m_expectingNewLine = true;
 						m_state = S_HEADERS;
@@ -322,18 +321,17 @@ namespace Http {
 						if(transferEncoding.empty() || (::strcasecmp(transferEncoding.c_str(), "identity") == 0)){
 							const AUTO_REF(contentLength, m_requestHeaders.headers.get("Content-Length"));
 							if(contentLength.empty()){
-								sizeExpecting = 0;
-							} else {
-								char *endptr;
-								sizeExpecting = ::strtoull(contentLength.c_str(), &endptr, 10);
-								if(*endptr){
-									LOG_POSEIDON_WARNING("Bad HTTP header Content-Length: ", contentLength);
-									DEBUG_THROW(Exception, ST_BAD_REQUEST);
-								}
-								if(sizeExpecting == CONTENT_CHUNKED){
-									LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", contentLength);
-									DEBUG_THROW(Exception, ST_BAD_REQUEST);
-								}
+								DEBUG_THROW(Exception, ST_LENGTH_REQUIRED);
+							}
+							char *endptr;
+							sizeExpecting = ::strtoull(contentLength.c_str(), &endptr, 10);
+							if(*endptr){
+								LOG_POSEIDON_WARNING("Bad HTTP header Content-Length: ", contentLength);
+								DEBUG_THROW(Exception, ST_BAD_REQUEST);
+							}
+							if(sizeExpecting == CONTENT_CHUNKED){
+								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", contentLength);
+								DEBUG_THROW(Exception, ST_BAD_REQUEST);
 							}
 						} else if(::strcasecmp(transferEncoding.c_str(), "chunked") == 0){
 							sizeExpecting = CONTENT_CHUNKED;
@@ -505,8 +503,10 @@ namespace Http {
 
 		StreamBuffer data;
 
+		const unsigned verMajor = responseHeaders.version / 10000, verMinor = responseHeaders.version % 10000;
+		const unsigned statusCode = static_cast<unsigned>(responseHeaders.statusCode);
 		char temp[64];
-		unsigned len = (unsigned)std::sprintf(temp, "HTTP/1.1 %u ", static_cast<unsigned>(responseHeaders.statusCode));
+		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor,verMinor, statusCode);
 		data.put(temp, len);
 		data.put(responseHeaders.reason);
 		data.put("\r\n");

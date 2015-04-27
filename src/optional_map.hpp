@@ -44,14 +44,15 @@ public:
 		return m_delegator.end();
 	}
 
-	void erase(iterator pos){
-		m_delegator.erase(pos);
+	iterator erase(iterator pos){
+		m_delegator.erase(pos++);
+		return pos;
 	}
-	void erase(const char *key){
-		erase(SharedNts::view(key));
+	std::size_t erase(const char *key){
+		return erase(SharedNts::view(key));
 	}
-	void erase(const SharedNts &key){
-		m_delegator.erase(key);
+	std::size_t erase(const SharedNts &key){
+		return m_delegator.erase(key);
 	}
 
 	void swap(OptionalMap &rhs) NOEXCEPT {

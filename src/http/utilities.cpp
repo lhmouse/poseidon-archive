@@ -111,7 +111,6 @@ namespace Http {
 	}
 
 	std::string urlEncodedFromOptionalMap(const OptionalMap &decoded){
-		std::string ret;
 		std::vector<std::string> parts;
 		parts.reserve(decoded.size());
 		for(AUTO(it, decoded.begin()); it != decoded.end(); ++it){
@@ -122,7 +121,7 @@ namespace Http {
 			parts.push_back(VAL_INIT);
 			parts.back().swap(tmp);
 		}
-		return ret;
+		return implode('&', parts);
 	}
 	OptionalMap optionalMapFromUrlEncoded(const std::string &encoded){
 		OptionalMap ret;

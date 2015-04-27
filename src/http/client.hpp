@@ -36,7 +36,8 @@ namespace Http {
 
 	protected:
 		enum {
-			CONTENT_CHUNKED = (boost::uint64_t)-1,
+			CONTENT_CHUNKED		= (boost::uint64_t)-1,
+			CONTENT_TILL_EOF	= (boost::uint64_t)-2,
 		};
 
 	private:
@@ -60,14 +61,19 @@ namespace Http {
 	protected:
 		// 和 Http::Session 不同，这个函数在主线程中调用。
 		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
+		// 如果没有指定 Content-Length 同时也不是 chunked，contentLength 的值为 CONTENT_TILL_EOF。
 		virtual void onHeader(const ResponseHeaders &responseHeaders, boost::uint64_t contentLength) = 0;
 		// 报文可能分几次收到。
 		virtual void onResponse(boost::uint64_t contentOffset, const StreamBuffer &entity) = 0;
 
 	public:
-		bool send(Verb verb, const std::string &uri, OptionalMap headers = VAL_INIT, StreamBuffer entity = VAL_INIT, bool fin = false);
-		bool send(Verb verb, const std::string &uri, StreamBuffer entity, bool fin = false){
-			return send(verb, uri, OptionalMap(), STD_MOVE(entity), fin);
+		bool send(RequestHeaders requestHeaders, StreamBuffer entity = VAL_INIT, bool fin = false);
+
+		// 需要预先对 URI 进行编码处理。
+		bool send(Verb verb, std::string uri, OptionalMap getParams = VAL_INIT, OptionalMap headers = VAL_INIT,
+			StreamBuffer entity = VAL_INIT, bool fin = false);
+		bool send(Verb verb, std::string uri, OptionalMap getParams, StreamBuffer entity, bool fin = false){
+			return send(verb, STD_MOVE(uri), STD_MOVE(getParams), OptionalMap(), STD_MOVE(entity), fin);
 		}
 	};
 }

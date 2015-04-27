@@ -38,7 +38,7 @@ namespace Http {
 
 	protected:
 		enum {
-			CONTENT_CHUNKED = (boost::uint64_t)-1,
+			CONTENT_CHUNKED		= (boost::uint64_t)-1,
 		};
 
 	private:
@@ -81,7 +81,8 @@ namespace Http {
 
 		bool send(ResponseHeaders responseHeaders, StreamBuffer entity = VAL_INIT, bool fin = false);
 
-		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity = VAL_INIT, bool fin = false);
+		bool send(StatusCode statusCode, OptionalMap headers = VAL_INIT,
+			StreamBuffer entity = VAL_INIT, bool fin = false);
 		bool send(StatusCode statusCode, StreamBuffer entity, bool fin = false){
 			return send(statusCode, OptionalMap(), STD_MOVE(entity), fin);
 		}

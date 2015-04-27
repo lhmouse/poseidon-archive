@@ -14,6 +14,7 @@
 #include "../profiler.hpp"
 #include "../tcp_server_base.hpp"
 #include "../http/session.hpp"
+#include "../http/utilities.hpp"
 #include "../http/exception.hpp"
 #include "../http/authorization.hpp"
 #include "../shared_nts.hpp"
@@ -72,7 +73,7 @@ namespace {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", getRemoteInfo());
 
 			try {
-				AUTO(uri, requestHeaders.uri);
+				AUTO(uri, Http::urlDecode(requestHeaders.uri));
 				if((uri.size() < m_prefix.size()) || (uri.compare(0, m_prefix.size(), m_prefix) != 0)){
 					LOG_POSEIDON_WARNING("Inacceptable system HTTP request: ", uri);
 					DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);

@@ -96,13 +96,61 @@ namespace Http {
 		}
 	};
 */
+
+	bool Client::send(RequestHeaders requestHeaders, StreamBuffer entity, bool fin){
+		PROFILE_ME;
+
+		StreamBuffer data;
+
+		data.put(getStringFromVerb(requestHeaders.verb));
+		data.put(' ');
+		data.put(requestHeaders.uri);
+		if(!requestHeaders.getParams.empty()){
+			data.put('?');
+			data.put(urlEncodedFromOptionalMap(requestHeaders.getParams));
+		}
+		char temp[64];
+		const unsigned verMajor = requestHeaders.version / 10000, verMinor = requestHeaders.version % 10000;
+		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", verMajor, verMinor);
+		data.put(temp, len);
+
+		if(!entity.empty() && !requestHeaders.headers.has("Content-Type")){
+			requestHeaders.headers.set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+		}
+		requestHeaders.headers.erase("Transfer-Encoding");
+		requestHeaders.headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
+		for(AUTO(it, requestHeaders.headers.begin()); it != requestHeaders.headers.end(); ++it){
+			data.put(it->first.get());
+			data.put(": ");
+			data.put(it->second.data(), it->second.size());
+			data.put("\r\n");
+		}
+		data.put("\r\n");
+
+		data.splice(entity);
+		return TcpClientBase::send(STD_MOVE(data), fin);
+	}
+
+	bool Client::send(Verb verb, std::string uri, OptionalMap getParams, OptionalMap headers,
+		StreamBuffer entity, bool fin)
+	{
+		PROFILE_ME;
+
+		RequestHeaders requestHeaders;
+		requestHeaders.verb = verb;
+		requestHeaders.uri = STD_MOVE(uri);
+		requestHeaders.version = 10001;
+		requestHeaders.getParams = STD_MOVE(getParams);
+		requestHeaders.headers = STD_MOVE(headers);
+		return send(STD_MOVE(requestHeaders), STD_MOVE(entity), fin);
+	}
 }
 
 }
 #if 0
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
-
+{{{
 #include "../precompiled.hpp"
 #include "session.hpp"
 #include <string.h>
