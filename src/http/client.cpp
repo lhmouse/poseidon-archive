@@ -2,6 +2,7 @@
 #include "client.hpp"
 #include "exception.hpp"
 #include "status_codes.hpp"
+#include "utilities.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
@@ -51,6 +52,50 @@ namespace Http {
 			}
 		};
 	}
+/*
+	class Client::HeaderJob : public ClientJobBase {
+	private:
+		const Header m_header;
+
+	public:
+		HeaderJob(const boost::shared_ptr<Session> &session, Header header)
+			: ClientJobBase(session)
+			, m_header(STD_MOVE(header))
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+			PROFILE_ME;
+
+			try {
+				LOG_POSEIDON_DEBUG("Dispatching request: URI = ", m_header.uri);
+
+				session->onRequest(m_header, m_entity);
+
+				const AUTO_REF(keepAlive, m_header.headers.get("Connection"));
+				if((m_header.version < 10001)
+					? (::strcasecmp(keepAlive.c_str(), "Keep-Alive") == 0)	// HTTP 1.0
+					: (::strcasecmp(keepAlive.c_str(), "Close") != 0))		// HTTP 1.1
+				{
+					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 5000));
+				} else {
+					session->shutdown();
+				}
+			} catch(TryAgainLater &){
+				throw;
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet: URI = ", m_header.uri,
+					", statusCode = ", e.statusCode());
+				try {
+					session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
+				} catch(...){
+					session->forceShutdown();
+				}
+			}
+		}
+	};
+*/
 }
 
 }
@@ -77,51 +122,10 @@ namespace Http {
 
 namespace Poseidon {
 
-namespace Http {
-	namespace {
-		class SessionJobBase : public JobBase {
-		private:
-			const boost::weak_ptr<Session> m_session;
-
-		protected:
-			explicit SessionJobBase(const boost::shared_ptr<Session> &session)
-				: m_session(session)
-			{
-			}
-
-		protected:
-			virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
-
-		private:
-			boost::weak_ptr<const void> getCategory() const FINAL {
-				return m_session;
-			}
-			void perform() const FINAL {
-				PROFILE_ME;
-
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
-
-				try {
-					perform(session);
-				} catch(TryAgainLater &){
-					throw;
-				} catch(std::exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-					session->forceShutdown();
-					throw;
-				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
-					session->forceShutdown();
-					throw;
-				}
 			}
 		};
 	}
 
-	class Client::HeaderJob : public ClientJobBase {
 	public:
 		explicit 
 		explicit ContinueJob(const boost::shared_ptr<Session> &session)

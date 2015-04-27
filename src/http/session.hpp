@@ -10,7 +10,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/cstdint.hpp>
-#include "header.hpp"
+#include "request_headers.hpp"
+#include "response_headers.hpp"
 #include "status_codes.hpp"
 #include "../tcp_session_base.hpp"
 #include "../stream_buffer.hpp"
@@ -56,7 +57,7 @@ namespace Http {
 		boost::uint64_t m_sizeExpecting;
 		State m_state;
 
-		Header m_header;
+		RequestHeaders m_requestHeaders;
 		StreamBuffer m_entity;
 
 	public:
@@ -68,14 +69,17 @@ namespace Http {
 		void onReadHup() NOEXCEPT OVERRIDE;
 
 	protected:
-		// 和 Http::Client 不同这个函数在 Epoll 线程中调用。
+		// 和 Http::Client 不同，这个函数在 Epoll 线程中调用。
 		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
-		virtual boost::shared_ptr<UpgradedSessionBase> onHeader(const Header &header, boost::uint64_t contentLength);
+		virtual boost::shared_ptr<UpgradedSessionBase> onRequestHeaders(
+			const RequestHeaders &requestHeaders, boost::uint64_t contentLength);
 
-		virtual void onRequest(const Header &header, const StreamBuffer &entity) = 0;
+		virtual void onRequest(const RequestHeaders &requestHeaders, const StreamBuffer &entity) = 0;
 
 	public:
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
+
+		bool send(ResponseHeaders responseHeaders, StreamBuffer entity = VAL_INIT, bool fin = false);
 
 		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity = VAL_INIT, bool fin = false);
 		bool send(StatusCode statusCode, StreamBuffer entity, bool fin = false){

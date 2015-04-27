@@ -59,27 +59,27 @@ namespace {
 		}
 
 	protected:
-		boost::shared_ptr<Http::UpgradedSessionBase> onHeader(
-			const Http::Header &header, boost::uint64_t contentLength) OVERRIDE
+		boost::shared_ptr<Http::UpgradedSessionBase> onRequestHeaders(
+			const Http::RequestHeaders &requestHeaders, boost::uint64_t contentLength) OVERRIDE
 		{
-			checkAndThrowIfUnauthorized(m_authInfo, getRemoteInfo(), header);
+			checkAndThrowIfUnauthorized(m_authInfo, getRemoteInfo(), requestHeaders);
 
-			return Http::Session::onHeader(header, contentLength);
+			return Http::Session::onRequestHeaders(requestHeaders, contentLength);
 		}
 
-		void onRequest(const Http::Header &header, const StreamBuffer & /* entity */) OVERRIDE {
+		void onRequest(const Http::RequestHeaders &requestHeaders, const StreamBuffer & /* entity */) OVERRIDE {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", getRemoteInfo());
 
 			try {
-				AUTO(uri, header.uri);
+				AUTO(uri, requestHeaders.uri);
 				if((uri.size() < m_prefix.size()) || (uri.compare(0, m_prefix.size(), m_prefix) != 0)){
 					LOG_POSEIDON_WARNING("Inacceptable system HTTP request: ", uri);
 					DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 				}
 				uri.erase(0, m_prefix.size());
 
-				if(header.verb != Http::V_GET){
+				if(requestHeaders.verb != Http::V_GET){
 					DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);
 				}
 
@@ -88,7 +88,7 @@ namespace {
 					sendDefault(Http::ST_OK);
 					::raise(SIGTERM);
 				} else if(uri == "load_module"){
-					AUTO_REF(name, header.getParams.at("name"));
+					AUTO_REF(name, requestHeaders.getParams.at("name"));
 					if(!ModuleDepository::loadNoThrow(name.c_str())){
 						LOG_POSEIDON_WARNING("Failed to load module: ", name);
 						sendDefault(Http::ST_NOT_FOUND);
@@ -96,7 +96,7 @@ namespace {
 					}
 					sendDefault(Http::ST_OK);
 				} else if(uri == "unload_module"){
-					AUTO_REF(baseAddrStr, header.getParams.at("base_addr"));
+					AUTO_REF(baseAddrStr, requestHeaders.getParams.at("base_addr"));
 					std::istringstream iss(baseAddrStr);
 					void *baseAddr;
 					if(!((iss >>baseAddr) && iss.eof())){
@@ -175,13 +175,13 @@ namespace {
 				} else if(uri == "set_log_mask"){
 					unsigned long long toEnable = 0, toDisable = 0;
 					{
-						AUTO_REF(val, header.getParams.get("to_disable"));
+						AUTO_REF(val, requestHeaders.getParams.get("to_disable"));
 						if(!val.empty()){
 							toDisable = boost::lexical_cast<unsigned long long>(val);
 						}
 					}
 					{
-						AUTO_REF(val, header.getParams.get("to_enable"));
+						AUTO_REF(val, requestHeaders.getParams.get("to_enable"));
 						if(!val.empty()){
 							toEnable = boost::lexical_cast<unsigned long long>(val);
 						}

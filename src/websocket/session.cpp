@@ -163,22 +163,22 @@ namespace WebSocket {
 		}
 	};
 
-	Http::StatusCode Session::makeHttpHandshakeResponse(OptionalMap &ret, const Http::Header &header){
-		if(header.verb != Http::V_GET){
+	Http::StatusCode Session::makeHttpHandshakeResponse(OptionalMap &ret, const Http::RequestHeaders &requestHeaders){
+		if(requestHeaders.verb != Http::V_GET){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Must use GET verb to use WebSocket");
 			return Http::ST_METHOD_NOT_ALLOWED;
 		}
-		if(header.version < 10001){
+		if(requestHeaders.version < 10001){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "HTTP 1.1 is required to use WebSocket");
 			return Http::ST_VERSION_NOT_SUPPORTED;
 		}
-		AUTO_REF(websocketVersion, header.headers.get("Sec-WebSocket-Version"));
+		AUTO_REF(websocketVersion, requestHeaders.headers.get("Sec-WebSocket-Version"));
 		if(websocketVersion != "13"){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown HTTP header Sec-WebSocket-Version: ", websocketVersion);
 			return Http::ST_BAD_REQUEST;
 		}
 
-		std::string key = header.headers.get("Sec-WebSocket-Key");
+		std::string key = requestHeaders.headers.get("Sec-WebSocket-Key");
 		if(key.empty()){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "No Sec-WebSocket-Key specified.");
 			return Http::ST_BAD_REQUEST;

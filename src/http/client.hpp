@@ -9,8 +9,9 @@
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
-#include "header.hpp"
-#include "verbs.hpp"
+#include "request_headers.hpp"
+#include "response_headers.hpp"
+#include "../optional_map.hpp"
 #include "../tcp_client_base.hpp"
 #include "../stream_buffer.hpp"
 
@@ -45,7 +46,7 @@ namespace Http {
 		boost::uint64_t m_sizeExpecting;
 		State m_state;
 
-		Header m_header;
+		ResponseHeaders m_responseHeaders;
 		StreamBuffer m_entity;
 
 	public:
@@ -59,10 +60,9 @@ namespace Http {
 	protected:
 		// 和 Http::Session 不同，这个函数在主线程中调用。
 		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
-		virtual void onHeader(const Header &header, boost::uint64_t contentLength);
-
+		virtual void onHeader(const ResponseHeaders &responseHeaders, boost::uint64_t contentLength) = 0;
 		// 报文可能分几次收到。
-		virtual void onResponse(boost::uint64_t contentLength, boost::uint64_t contentOffset, const StreamBuffer &entity) = 0;
+		virtual void onResponse(boost::uint64_t contentOffset, const StreamBuffer &entity) = 0;
 
 	public:
 		bool send(Verb verb, const std::string &uri, OptionalMap headers = VAL_INIT, StreamBuffer entity = VAL_INIT, bool fin = false);

@@ -81,13 +81,13 @@ namespace Http {
 
 	class Session::RequestJob : public SessionJobBase {
 	private:
-		const Header m_header;
+		const RequestHeaders m_requestHeaders;
 		const StreamBuffer m_entity;
 
 	public:
-		RequestJob(const boost::shared_ptr<Session> &session, Header header, StreamBuffer entity)
+		RequestJob(const boost::shared_ptr<Session> &session, RequestHeaders requestHeaders, StreamBuffer entity)
 			: SessionJobBase(session)
-			, m_header(STD_MOVE(header)), m_entity(STD_MOVE(entity))
+			, m_requestHeaders(STD_MOVE(requestHeaders)), m_entity(STD_MOVE(entity))
 		{
 		}
 
@@ -96,12 +96,12 @@ namespace Http {
 			PROFILE_ME;
 
 			try {
-				LOG_POSEIDON_DEBUG("Dispatching request: URI = ", m_header.uri);
+				LOG_POSEIDON_DEBUG("Dispatching request: URI = ", m_requestHeaders.uri);
 
-				session->onRequest(m_header, m_entity);
+				session->onRequest(m_requestHeaders, m_entity);
 
-				const AUTO_REF(keepAlive, m_header.headers.get("Connection"));
-				if((m_header.version < 10001)
+				const AUTO_REF(keepAlive, m_requestHeaders.headers.get("Connection"));
+				if((m_requestHeaders.version < 10001)
 					? (::strcasecmp(keepAlive.c_str(), "Keep-Alive") == 0)	// HTTP 1.0
 					: (::strcasecmp(keepAlive.c_str(), "Close") != 0))		// HTTP 1.1
 				{
@@ -112,7 +112,7 @@ namespace Http {
 			} catch(TryAgainLater &){
 				throw;
 			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet: URI = ", m_header.uri,
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet: URI = ", m_requestHeaders.uri,
 					", statusCode = ", e.statusCode());
 				try {
 					session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
@@ -128,13 +128,13 @@ namespace Http {
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 
 		const StatusCode m_statusCode;
-		const OptionalMap m_headers;
+		const OptionalMap m_requestHeaderss;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, OptionalMap headers)
 			: SessionJobBase(session)
 			, m_guard(session)
-			, m_statusCode(statusCode), m_headers(STD_MOVE(headers))
+			, m_statusCode(statusCode), m_requestHeaderss(STD_MOVE(headers))
 		{
 		}
 
@@ -142,14 +142,14 @@ namespace Http {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendDefault(m_statusCode, m_headers, true);
+			session->sendDefault(m_statusCode, m_requestHeaderss, true);
 		}
 	};
 
 	Session::Session(UniqueFile socket)
 		: TcpSessionBase(STD_MOVE(socket))
 		, m_sizeTotal(0), m_expectingNewLine(true), m_sizeExpecting(0), m_state(S_FIRST_HEADER)
-		, m_header()
+		, m_requestHeaders()
 	{
 	}
 	Session::~Session(){
@@ -255,8 +255,8 @@ namespace Http {
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
 						line[pos] = 0;
-						m_header.verb = getVerbFromString(line.c_str());
-						if(m_header.verb == V_INVALID_VERB){
+						m_requestHeaders.verb = getVerbFromString(line.c_str());
+						if(m_requestHeaders.verb == V_INVALID_VERB){
 							LOG_POSEIDON_WARNING("Bad HTTP verb: ", line.c_str());
 							DEBUG_THROW(Exception, ST_NOT_IMPLEMENTED);
 						}
@@ -267,7 +267,7 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Bad HTTP header: expecting URI end, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_header.uri.assign(line, 0, pos);
+						m_requestHeaders.uri.assign(line, 0, pos);
 						line.erase(0, pos + 1);
 
 						long verEnd = 0;
@@ -280,19 +280,19 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Bad HTTP header: junk after HTTP version, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_header.version = std::strtoul(verMajorStr, NULLPTR, 10) * 10000 + std::strtoul(verMinorStr, NULLPTR, 10);
-						if((m_header.version != 10000) && (m_header.version != 10001)){
+						m_requestHeaders.version = std::strtoul(verMajorStr, NULLPTR, 10) * 10000 + std::strtoul(verMinorStr, NULLPTR, 10);
+						if((m_requestHeaders.version != 10000) && (m_requestHeaders.version != 10001)){
 							LOG_POSEIDON_WARNING("Bad HTTP header: HTTP version not supported, verMajorStr = ", verMajorStr,
 								", verMinorStr = ", verMinorStr);
 							DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
 						}
 
-						pos = m_header.uri.find('?');
+						pos = m_requestHeaders.uri.find('?');
 						if(pos != std::string::npos){
-							m_header.getParams = optionalMapFromUrlEncoded(m_header.uri.substr(pos + 1));
-							m_header.uri.erase(pos);
+							m_requestHeaders.getParams = optionalMapFromUrlEncoded(m_requestHeaders.uri.substr(pos + 1));
+							m_requestHeaders.uri.erase(pos);
 						}
-						m_header.uri = urlDecode(m_header.uri);
+						m_requestHeaders.uri = urlDecode(m_requestHeaders.uri);
 
 						m_expectingNewLine = true;
 						m_state = S_HEADERS;
@@ -311,16 +311,16 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_header.headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
+						m_requestHeaders.headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
 
 						m_expectingNewLine = true;
 						// m_state = S_HEADERS;
 					} else {
 						boost::uint64_t sizeExpecting;
 
-						const AUTO_REF(transferEncoding, m_header.headers.get("Transfer-Encoding"));
+						const AUTO_REF(transferEncoding, m_requestHeaders.headers.get("Transfer-Encoding"));
 						if(transferEncoding.empty() || (::strcasecmp(transferEncoding.c_str(), "identity") == 0)){
-							const AUTO_REF(contentLength, m_header.headers.get("Content-Length"));
+							const AUTO_REF(contentLength, m_requestHeaders.headers.get("Content-Length"));
 							if(contentLength.empty()){
 								sizeExpecting = 0;
 							} else {
@@ -342,7 +342,7 @@ namespace Http {
 							DEBUG_THROW(Exception, ST_NOT_ACCEPTABLE);
 						}
 
-						AUTO(upgradedSession, onHeader(m_header, sizeExpecting));
+						AUTO(upgradedSession, onRequestHeaders(m_requestHeaders, sizeExpecting));
 						if(upgradedSession){
 							{
 								const boost::mutex::scoped_lock lock(m_upgradedSessionMutex);
@@ -368,9 +368,9 @@ namespace Http {
 
 				case S_END_OF_ENTITY:
 					enqueueJob(boost::make_shared<RequestJob>(
-						virtualSharedFromThis<Session>(), STD_MOVE(m_header), STD_MOVE(m_entity)));
+						virtualSharedFromThis<Session>(), STD_MOVE(m_requestHeaders), STD_MOVE(m_entity)));
 
-					m_header = Header();
+					m_requestHeaders = RequestHeaders();
 					m_entity.clear();
 
 					m_sizeTotal = 0;
@@ -427,7 +427,7 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_header.headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
+						m_requestHeaders.headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
 
 						m_expectingNewLine = true;
 						// m_state = S_CHUNKED_TRAILER;
@@ -444,7 +444,7 @@ namespace Http {
 				}
 			}
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown while parsing data, URI = ", m_header.uri,
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown while parsing data, URI = ", m_requestHeaders.uri,
 				", status = ", static_cast<unsigned>(e.statusCode()));
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
@@ -454,7 +454,7 @@ namespace Http {
 				forceShutdown();
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, URI = ", m_header.uri,
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, URI = ", m_requestHeaders.uri,
 				", what = ", e.what());
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
@@ -476,10 +476,12 @@ namespace Http {
 		}
 	}
 
-	boost::shared_ptr<UpgradedSessionBase> Session::onHeader(const Header &header, boost::uint64_t contentLength){
+	boost::shared_ptr<UpgradedSessionBase> Session::onRequestHeaders(
+		const RequestHeaders &requestHeaders, boost::uint64_t contentLength)
+	{
 		(void)contentLength;
 
-		const AUTO_REF(expect, header.headers.get("Expect"));
+		const AUTO_REF(expect, requestHeaders.headers.get("Expect"));
 		if(!expect.empty()){
 			if(::strcasecmp(expect.c_str(), "100-continue") == 0){
 				enqueueJob(boost::make_shared<ContinueJob>(virtualSharedFromThis<Session>()));
@@ -497,29 +499,23 @@ namespace Http {
 		return m_upgradedSession;
 	}
 
-	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity, bool fin){
-		LOG_POSEIDON_DEBUG("Making HTTP response: statusCode = ", statusCode);
+	bool Session::send(ResponseHeaders responseHeaders, StreamBuffer entity, bool fin){
+		PROFILE_ME;
+		LOG_POSEIDON_DEBUG("Making HTTP response: statusCode = ", responseHeaders.statusCode);
 
 		StreamBuffer data;
 
-		char first[64];
-		unsigned len = (unsigned)std::sprintf(first, "HTTP/1.1 %u ", static_cast<unsigned>(statusCode));
-		data.put(first, len);
-		const AUTO(desc, getStatusCodeDesc(statusCode));
-		data.put(desc.descShort);
+		char temp[64];
+		unsigned len = (unsigned)std::sprintf(temp, "HTTP/1.1 %u ", static_cast<unsigned>(responseHeaders.statusCode));
+		data.put(temp, len);
+		data.put(responseHeaders.reason);
 		data.put("\r\n");
 
-		if(!entity.empty()){
-			AUTO_REF(contentType, headers.create("Content-Type")->second);
-			if(contentType.empty()){
-				contentType.assign("text/plain; charset=utf-8");
-			}
+		if(!entity.empty() && !responseHeaders.headers.has("Content-Type")){
+			responseHeaders.headers.set("Content-Type", "text/plain; charset=utf-8");
 		}
-		headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
-		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-			if(it->second.empty()){
-				continue;
-			}
+		responseHeaders.headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
+		for(AUTO(it, responseHeaders.headers.begin()); it != responseHeaders.headers.end(); ++it){
 			data.put(it->first.get());
 			data.put(": ");
 			data.put(it->second.data(), it->second.size());
@@ -530,8 +526,22 @@ namespace Http {
 		data.splice(entity);
 		return TcpSessionBase::send(STD_MOVE(data), fin);
 	}
+
+	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity, bool fin){
+		PROFILE_ME;
+		LOG_POSEIDON_DEBUG("Making HTTP/1.1 response: statusCode = ", statusCode);
+
+		ResponseHeaders responseHeaders;
+		responseHeaders.version = 10001;
+		responseHeaders.statusCode = statusCode;
+		responseHeaders.reason = getStatusCodeDesc(statusCode).descShort;
+		responseHeaders.headers = STD_MOVE(headers);
+		return send(STD_MOVE(responseHeaders), STD_MOVE(entity), fin);
+	}
+
 	bool Session::sendDefault(StatusCode statusCode, OptionalMap headers, bool fin){
-		LOG_POSEIDON_DEBUG("Making default HTTP response: statusCode = ", statusCode, ", fin = ", fin);
+		PROFILE_ME;
+		LOG_POSEIDON_DEBUG("Making default HTTP/1.1 response: statusCode = ", statusCode, ", fin = ", fin);
 
 		StreamBuffer entity;
 		if(static_cast<unsigned>(statusCode) / 100 >= 4){

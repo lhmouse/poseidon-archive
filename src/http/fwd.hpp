@@ -7,7 +7,8 @@
 namespace Poseidon {
 
 namespace Http {
-	class Header;
+	class RequestHeaders;
+	class ResponseHeaders;
 	class Exception;
 
 	class Session;

@@ -5,7 +5,6 @@
 #include "authorization.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
-#include "header.hpp"
 #include "../singletons/main_config.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
@@ -330,8 +329,8 @@ namespace Http {
 	}
 
 	const std::string *checkAndThrowIfUnauthorized(
-		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, const Header &header,
-		bool isProxy, OptionalMap responseHeaders)
+		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, const RequestHeaders &requestHeaders,
+		bool isProxy, OptionalMap headers)
 	{
 		PROFILE_ME;
 
@@ -339,12 +338,12 @@ namespace Http {
 			return NULLPTR;
 		}
 
-		const AUTO_REF(authHeader, header.headers.get(isProxy ? "Proxy-Authorization" : "Authorization"));
-		const AUTO(result, checkAuthorizationHeader(authInfo, remoteAddr, header.verb, authHeader));
+		const AUTO_REF(authHeader, requestHeaders.headers.get(isProxy ? "Proxy-Authorization" : "Authorization"));
+		const AUTO(result, checkAuthorizationHeader(authInfo, remoteAddr, requestHeaders.verb, authHeader));
 		if(result.first == AUTH_SUCCEEDED){
 			return result.second;
 		}
-		throwUnauthorized(result.first, remoteAddr, isProxy, STD_MOVE(responseHeaders));
+		throwUnauthorized(result.first, remoteAddr, isProxy, STD_MOVE(headers));
 	}
 }
 

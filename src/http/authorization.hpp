@@ -7,15 +7,13 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include "verbs.hpp"
+#include "request_headers.hpp"
 #include "../ip_port.hpp"
 #include "../optional_map.hpp"
 
 namespace Poseidon {
 
 namespace Http {
-	class Header;
-
 	enum AuthResult {
 		AUTH_SUCCEEDED				= 0,
 		AUTH_REQUIRED				= 1,
@@ -40,8 +38,8 @@ namespace Http {
 
 	// 如果 authInfo 为空指针，返回空指针；否则，返回指向认证成功的 username:password 的指针。
 	extern const std::string *checkAndThrowIfUnauthorized(
-		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, const Header &header,
-		bool isProxy = false, OptionalMap responseHeaders = VAL_INIT);
+		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, const RequestHeaders &requestHeaders,
+		bool isProxy = false, OptionalMap headers = VAL_INIT);
 }
 
 }
