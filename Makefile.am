@@ -1,4 +1,4 @@
-uACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign subdir-objects
 AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Wno-missing-field-initializers -pipe -fPIC -DPIC
 AM_CXXFLAGS =
