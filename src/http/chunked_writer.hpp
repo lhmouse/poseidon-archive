@@ -21,7 +21,7 @@ namespace Http {
 
 	public:
 		ChunkedWriter();
-		ChunkedWriter(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers = VAL_INIT);
+		ChunkedWriter(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers = OptionalMap());
 		// 在析构之前必须手动调用 finalize() 或 reset()。
 		// 如果有异常抛出而导致析构，连接会被非正常关闭。
 		~ChunkedWriter();
@@ -32,7 +32,7 @@ namespace Http {
 		}
 
 		void reset() NOEXCEPT;
-		void reset(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers = VAL_INIT);
+		void reset(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers = OptionalMap());
 
 		void put(const void *data, std::size_t size){
 			put(StreamBuffer(data, size));

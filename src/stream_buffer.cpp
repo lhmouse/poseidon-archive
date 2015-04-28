@@ -82,8 +82,10 @@ public:
 	}
 };
 
-boost::mutex					StreamBuffer::Chunk::s_mutex	__attribute__((__init_priority__(500)));
-std::list<StreamBuffer::Chunk>	StreamBuffer::Chunk::s_pool		__attribute__((__init_priority__(500)));
+boost::mutex
+	StreamBuffer::Chunk::s_mutex __attribute__((__init_priority__(500)));
+std::list<StreamBuffer::Chunk>
+	StreamBuffer::Chunk::s_pool __attribute__((__init_priority__(500)));
 
 StreamBuffer::StreamBuffer()
 	: m_size(0)
@@ -122,7 +124,7 @@ StreamBuffer::StreamBuffer(StreamBuffer &&rhs) noexcept
 	swap(rhs);
 }
 StreamBuffer &StreamBuffer::operator=(StreamBuffer &&rhs) noexcept {
-	rhs.swap(*this);
+	swap(rhs);
 	return *this;
 }
 #endif

@@ -70,7 +70,7 @@ struct EventDispatcher {
 	}
 
 	static void raise(const boost::shared_ptr<EventBaseWithoutId> &event,
-		const boost::shared_ptr<const bool> &withdrawn = VAL_INIT);
+		const boost::shared_ptr<const bool> &withdrawn = boost::shared_ptr<const bool>());
 
 private:
 	EventDispatcher();

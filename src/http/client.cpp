@@ -192,8 +192,6 @@ namespace Http {
 				}
 
 				switch(m_state){
-					boost::uint64_t bytesAvail;
-
 				case S_FIRST_HEADER:
 					if(!expected.empty()){
 						m_responseHeaders = ResponseHeaders();
@@ -311,13 +309,14 @@ namespace Http {
 					break;
 
 				case S_IDENTITY:
+					boost::uint64_t bytesAvail;
 					if(m_contentLength == CONTENT_TILL_EOF){
-						bytesAvail = m_received.size();
+						bytesAvail = expected.size();
 					} else {
-						bytesAvail = std::min<boost::uint64_t>(m_received.size(), m_contentLength - m_contentOffset);
+						bytesAvail = std::min<boost::uint64_t>(expected.size(), m_contentLength - m_contentOffset);
 					}
 					enqueueJob(boost::make_shared<EntityJob>(
-						virtualSharedFromThis<Client>(), m_contentOffset, m_received.cut(bytesAvail)));
+						virtualSharedFromThis<Client>(), m_contentOffset, expected.cut(bytesAvail)));
 					m_contentOffset += bytesAvail;
 
 					if(m_contentLength == CONTENT_TILL_EOF){
@@ -364,18 +363,21 @@ namespace Http {
 					break;
 
 				case S_CHUNK_DATA:
-					bytesAvail = std::min<boost::uint64_t>(m_received.size(), m_chunkSize - m_chunkOffset);
-					enqueueJob(boost::make_shared<EntityJob>(
-						virtualSharedFromThis<Client>(), m_contentOffset, m_received.cut(bytesAvail)));
-					m_contentOffset += bytesAvail;
+					if(!expected.empty()){
+						const AUTO(bytesAvail, std::min<boost::uint64_t>(expected.size(), m_chunkSize - m_chunkOffset));
+						enqueueJob(boost::make_shared<EntityJob>(
+							virtualSharedFromThis<Client>(), m_chunkOffset, expected.cut(bytesAvail)));
+						m_contentOffset += bytesAvail;
+						m_chunkOffset += bytesAvail;
 
-					if(m_chunkOffset < m_chunkSize){
-						m_expectingNewLine = false;
-						m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize - m_chunkOffset, 1024);
-						// m_state = S_CHUNK_DATA;
-					} else {
-						m_expectingNewLine = true;
-						m_state = S_CHUNK_HEADER;
+						if(m_chunkOffset < m_chunkSize){
+							m_expectingNewLine = false;
+							m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize - m_chunkOffset, 1024);
+							// m_state = S_CHUNK_DATA;
+						} else {
+							m_expectingNewLine = true;
+							m_state = S_CHUNK_HEADER;
+						}
 					}
 					break;
 

@@ -78,11 +78,11 @@ namespace Http {
 		virtual void onContentEof(boost::uint64_t realContentLength) = 0;
 
 	public:
-		bool send(RequestHeaders requestHeaders, StreamBuffer entity = VAL_INIT, bool fin = false);
+		bool send(RequestHeaders requestHeaders, StreamBuffer entity = StreamBuffer(), bool fin = false);
 
 		// 需要预先对 URI 进行编码处理。
-		bool send(Verb verb, std::string uri, OptionalMap getParams = VAL_INIT, OptionalMap headers = VAL_INIT,
-			StreamBuffer entity = VAL_INIT, bool fin = false);
+		bool send(Verb verb, std::string uri, OptionalMap getParams = OptionalMap(), OptionalMap headers = OptionalMap(),
+			StreamBuffer entity = StreamBuffer(), bool fin = false);
 		bool send(Verb verb, std::string uri, OptionalMap getParams, StreamBuffer entity, bool fin = false){
 			return send(verb, STD_MOVE(uri), STD_MOVE(getParams), OptionalMap(), STD_MOVE(entity), fin);
 		}

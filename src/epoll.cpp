@@ -219,7 +219,7 @@ std::size_t Epoll::pumpReadable(){
 	}
 	for(std::size_t i = 0; i < count; ++i){
 		const AUTO_REF(it, iterators[i]);
-		const AUTO_REF(session, it->session);
+		const AUTO(session, it->session);
 
 		try {
 			unsigned char temp[1024];
@@ -266,7 +266,7 @@ std::size_t Epoll::pumpWriteable(){
 	}
 	for(std::size_t i = 0; i < count; ++i){
 		const AUTO_REF(it, iterators[i]);
-		const AUTO_REF(session, it->session);
+		const AUTO(session, it->session);
 
 		try {
 			unsigned char temp[1024];

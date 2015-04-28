@@ -78,10 +78,9 @@ namespace Http {
 	public:
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
 
-		bool send(ResponseHeaders responseHeaders, StreamBuffer entity = VAL_INIT, bool fin = false);
+		bool send(ResponseHeaders responseHeaders, StreamBuffer entity = StreamBuffer(), bool fin = false);
 
-		bool send(StatusCode statusCode, OptionalMap headers = VAL_INIT,
-			StreamBuffer entity = VAL_INIT, bool fin = false);
+		bool send(StatusCode statusCode, OptionalMap headers = OptionalMap(), StreamBuffer entity = StreamBuffer(), bool fin = false);
 		bool send(StatusCode statusCode, StreamBuffer entity, bool fin = false){
 			return send(statusCode, OptionalMap(), STD_MOVE(entity), fin);
 		}

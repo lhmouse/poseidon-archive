@@ -589,15 +589,16 @@ private:
 
 protected:
 	void onResponseHeaders(const Http::ResponseHeaders &responseHeaders, boost::uint64_t contentLength) OVERRIDE {
-		LOG_POSEIDON_FATAL("onResponseHeaders(): statusCode = ", static_cast<unsigned>(responseHeaders.statusCode));
+		LOG_POSEIDON_DEBUG("onResponseHeaders(): statusCode = ", static_cast<unsigned>(responseHeaders.statusCode),
+			", contentLength = ", static_cast<boost::int64_t>(contentLength));
 		for(AUTO(it, responseHeaders.headers.begin()); it != responseHeaders.headers.end(); ++it){
-			LOG_POSEIDON_FATAL("> ", it->first, " = ", Http::urlDecode(it->second));
+			LOG_POSEIDON_DEBUG("> ", it->first, " = ", Http::urlDecode(it->second));
 		}
 		m_contentLength = contentLength;
 		m_contents.clear();
 	}
 	void onEntity(boost::uint64_t contentOffset, const StreamBuffer &entity) OVERRIDE {
-		LOG_POSEIDON_FATAL("onEntity(): contentOffset = ", contentOffset, ", size = ", entity.size());
+		LOG_POSEIDON_DEBUG("onEntity(): contentOffset = ", contentOffset, ", size = ", entity.size());
 		AUTO(temp, entity);
 		m_contents.splice(temp);
 		if(m_contents.size() >= m_contentLength){
@@ -605,20 +606,20 @@ protected:
 		}
 	}
 	void onChunkedTrailer(boost::uint64_t realContentLength, const OptionalMap &headers) OVERRIDE {
-		LOG_POSEIDON_FATAL("onChunkedTrailer(): realContentLength = ", realContentLength);
+		LOG_POSEIDON_DEBUG("onChunkedTrailer(): realContentLength = ", realContentLength);
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-			LOG_POSEIDON_FATAL("> ", it->first, " = ", Http::urlDecode(it->second));
+			LOG_POSEIDON_DEBUG("> ", it->first, " = ", Http::urlDecode(it->second));
 		}
 		print();
 	}
 	void onContentEof(boost::uint64_t realContentLength) OVERRIDE {
-		LOG_POSEIDON_FATAL("onContentEof(): realContentLength = ", realContentLength);
+		LOG_POSEIDON_DEBUG("onContentEof(): realContentLength = ", realContentLength);
 		print();
 	}
 };
-/*
+
 MODULE_RAII {
 	return MyClient::create();
 }
-*/
+
 }
