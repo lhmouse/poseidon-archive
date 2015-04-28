@@ -73,7 +73,6 @@ namespace Http {
 		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
 		virtual boost::shared_ptr<UpgradedSessionBase> onRequestHeaders(
 			const RequestHeaders &requestHeaders, boost::uint64_t contentLength);
-
 		virtual void onRequest(const RequestHeaders &requestHeaders, const StreamBuffer &entity) = 0;
 
 	public:
