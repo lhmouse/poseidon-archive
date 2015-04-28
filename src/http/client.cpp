@@ -416,6 +416,7 @@ namespace Http {
 			forceShutdown();
 		}
 	}
+
 	void Client::onReadHup() NOEXCEPT {
 		PROFILE_ME;
 

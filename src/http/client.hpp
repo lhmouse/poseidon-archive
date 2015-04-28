@@ -62,9 +62,10 @@ namespace Http {
 
 	private:
 		void onReadAvail(const void *data, std::size_t size) FINAL;
-		void onReadHup() NOEXCEPT OVERRIDE;
 
 	protected:
+		void onReadHup() NOEXCEPT OVERRIDE;
+
 		// 和 Http::Session 不同，这个函数在主线程中调用。
 		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
 		// 如果没有指定 Content-Length 同时也不是 chunked，contentLength 的值为 CONTENT_TILL_EOF。

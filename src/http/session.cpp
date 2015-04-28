@@ -460,6 +460,7 @@ namespace Http {
 			}
 		}
 	}
+
 	void Session::onReadHup() NOEXCEPT {
 		PROFILE_ME;
 

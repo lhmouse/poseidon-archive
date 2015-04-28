@@ -65,9 +65,10 @@ namespace Http {
 
 	private:
 		void onReadAvail(const void *data, std::size_t size) FINAL;
-		void onReadHup() NOEXCEPT OVERRIDE;
 
 	protected:
+		void onReadHup() NOEXCEPT OVERRIDE;
+
 		// 和 Http::Client 不同，这个函数在 Epoll 线程中调用。
 		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
 		virtual boost::shared_ptr<UpgradedSessionBase> onRequestHeaders(
