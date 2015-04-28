@@ -282,7 +282,7 @@ namespace Cbpp {
 
 		default:
 			LOG_POSEIDON_WARNING("Unknown control code: ", controlCode);
-			send(ControlMessage(static_cast<boost::uint16_t>(controlCode), statusCode, STD_MOVE(reason)), true);
+			send(ControlMessage(static_cast<boost::uint16_t>(controlCode), statusCode, reason), true);
 			break;
 		}
 	}

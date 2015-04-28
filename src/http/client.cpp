@@ -92,7 +92,7 @@ namespace Http {
 			PROFILE_ME;
 			LOG_POSEIDON_DEBUG("Dispatching response entity: contentOffset = ", m_contentOffset, ", size = ", m_entity.size());
 
-			client->onEntity(m_contentOffset, STD_MOVE(m_entity));
+			client->onEntity(m_contentOffset, m_entity);
 		}
 	};
 
