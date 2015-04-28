@@ -2,7 +2,7 @@
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
 // 这个文件被置于公有领域（public domain）。
-
+/*
 #include "../src/precompiled.hpp"
 #include "../src/log.hpp"
 #include "../src/exception.hpp"
@@ -25,7 +25,7 @@
 #include "../src/uuid.hpp"
 #include "../src/async_job.hpp"
 using namespace Poseidon;
-/*
+
 #define MYSQL_OBJECT_NAME	MySqlObj
 #define MYSQL_OBJECT_FIELDS	\
 	FIELD_SMALLINT(si)	\
@@ -542,3 +542,83 @@ MODULE_RAII {
 	return HttpServletDepository::create(2, SSLIT("/meow"), &meowProc);
 }
 */
+
+#include "../src/precompiled.hpp"
+#include "../src/http/client.hpp"
+#include "../src/http/utilities.hpp"
+#include "../src/log.hpp"
+#include "../src/module_raii.hpp"
+
+namespace {
+
+using namespace Poseidon;
+
+class MyClient : public Http::Client {
+public:
+	static boost::shared_ptr<MyClient> create(){
+		boost::shared_ptr<MyClient> ret(new MyClient);
+		ret->goResident();
+
+		OptionalMap headers;
+		headers.set("Host", "github.com");
+		ret->send(Http::V_GET, "/", OptionalMap(), STD_MOVE(headers));
+
+		return ret;
+	}
+
+private:
+	boost::uint64_t m_contentLength;
+	StreamBuffer m_contents;
+
+private:
+	MyClient()
+		: Http::Client(IpPort(SSLIT("192.30.252.131"), 443), true)
+	{
+		LOG_POSEIDON_FATAL("MyClient::MyClient()");
+	}
+
+public:
+	~MyClient(){
+		LOG_POSEIDON_FATAL("MyClient::~MyClient()");
+	}
+
+private:
+	void print() const {
+		LOG_POSEIDON_INFO("Complete content:\n", m_contents.dump());
+	}
+
+protected:
+	void onResponseHeaders(const Http::ResponseHeaders &responseHeaders, boost::uint64_t contentLength) OVERRIDE {
+		LOG_POSEIDON_FATAL("onResponseHeaders(): statusCode = ", static_cast<unsigned>(responseHeaders.statusCode));
+		for(AUTO(it, responseHeaders.headers.begin()); it != responseHeaders.headers.end(); ++it){
+			LOG_POSEIDON_FATAL("> ", it->first, " = ", Http::urlDecode(it->second));
+		}
+		m_contentLength = contentLength;
+		m_contents.clear();
+	}
+	void onEntity(boost::uint64_t contentOffset, const StreamBuffer &entity) OVERRIDE {
+		LOG_POSEIDON_FATAL("onEntity(): contentOffset = ", contentOffset, ", size = ", entity.size());
+		AUTO(temp, entity);
+		m_contents.splice(temp);
+		if(m_contents.size() >= m_contentLength){
+			print();
+		}
+	}
+	void onChunkedTrailer(boost::uint64_t realContentLength, const OptionalMap &headers) OVERRIDE {
+		LOG_POSEIDON_FATAL("onChunkedTrailer(): realContentLength = ", realContentLength);
+		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
+			LOG_POSEIDON_FATAL("> ", it->first, " = ", Http::urlDecode(it->second));
+		}
+		print();
+	}
+	void onContentEof(boost::uint64_t realContentLength) OVERRIDE {
+		LOG_POSEIDON_FATAL("onContentEof(): realContentLength = ", realContentLength);
+		print();
+	}
+};
+/*
+MODULE_RAII {
+	return MyClient::create();
+}
+*/
+}

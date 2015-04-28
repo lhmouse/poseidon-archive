@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <mysql/mysqld_error.h>
+#include <mysql/errmsg.h>
 #include "../mysql/object_base.hpp"
 #include "../mysql/exception.hpp"
 #include "../mysql/connection.hpp"
@@ -445,7 +446,12 @@ namespace {
 					LOG_POSEIDON_ERROR("Going to retry MySQL operation: retryCount = ", operationIt->retryCount,
 						", errorCode = ", errorCode, ", errorMsg = ", errorMsg);
 
-					if(operationIt->retryCount >= g_maxRetryCount){
+					if(errorCode == CR_SERVER_LOST){
+						newDueTime = now + g_retryInitDelay;
+					} else if(operationIt->retryCount < g_maxRetryCount){
+						newDueTime = now + (g_retryInitDelay << operationIt->retryCount);
+						++operationIt->retryCount;
+					} else {
 						LOG_POSEIDON_ERROR("Max retry count exceeded.");
 
 						if(g_dumpFile){
@@ -477,8 +483,6 @@ namespace {
 
 						DEBUG_THROW(Exception, SSLIT("Max retry count exceeded"));
 					}
-					newDueTime = now + (g_retryInitDelay << operationIt->retryCount);
-					++operationIt->retryCount;
 				}
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown in MySQL operation: what = ", e.what());

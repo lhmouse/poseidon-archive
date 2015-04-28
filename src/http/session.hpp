@@ -29,11 +29,10 @@ namespace Http {
 			S_FIRST_HEADER		= 0,
 			S_HEADERS			= 1,
 			S_UPGRADED			= 2,
-			S_END_OF_ENTITY		= 3,
-			S_IDENTITY			= 4,
-			S_CHUNK_HEADER		= 5,
-			S_CHUNK_DATA		= 6,
-			S_CHUNKED_TRAILER	= 7,
+			S_IDENTITY			= 3,
+			S_CHUNK_HEADER		= 4,
+			S_CHUNK_DATA		= 5,
+			S_CHUNKED_TRAILER	= 6,
 		};
 
 	protected:
@@ -58,7 +57,7 @@ namespace Http {
 		State m_state;
 
 		RequestHeaders m_requestHeaders;
-		StreamBuffer m_entity;
+		StreamBuffer m_chunkedEntity;
 
 	public:
 		explicit Session(UniqueFile socket);

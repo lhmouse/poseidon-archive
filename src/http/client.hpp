@@ -20,18 +20,19 @@ namespace Poseidon {
 namespace Http {
 	class Client : public TcpClientBase {
 	private:
-		class HeaderJob;
-		class RequestJob;
+		class ResponseHeaderJob;
+		class EntityJob;
+		class ContentEofJob;
+		class ChunkedTrailerJob;
 
 	private:
 		enum State {
 			S_FIRST_HEADER		= 0,
 			S_HEADERS			= 1,
-			S_END_OF_ENTITY		= 2,
-			S_IDENTITY			= 3,
-			S_CHUNK_HEADER		= 4,
-			S_CHUNK_DATA		= 5,
-			S_CHUNKED_TRAILER	= 6,
+			S_IDENTITY			= 2,
+			S_CHUNK_HEADER		= 3,
+			S_CHUNK_DATA		= 4,
+			S_CHUNKED_TRAILER	= 5,
 		};
 
 	protected:
@@ -48,10 +49,15 @@ namespace Http {
 		State m_state;
 
 		ResponseHeaders m_responseHeaders;
-		StreamBuffer m_entity;
+		boost::uint64_t m_contentLength;
+		boost::uint64_t m_contentOffset;
+
+		boost::uint64_t m_chunkSize;
+		boost::uint64_t m_chunkOffset;
+		OptionalMap m_chunkTrailer;
 
 	public:
-		explicit Client(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
+		explicit Client(const IpPort &addr, bool useSsl);
 		~Client();
 
 	private:
@@ -62,9 +68,14 @@ namespace Http {
 		// 和 Http::Session 不同，这个函数在主线程中调用。
 		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
 		// 如果没有指定 Content-Length 同时也不是 chunked，contentLength 的值为 CONTENT_TILL_EOF。
-		virtual void onHeader(const ResponseHeaders &responseHeaders, boost::uint64_t contentLength) = 0;
+		virtual void onResponseHeaders(const ResponseHeaders &responseHeaders, boost::uint64_t contentLength) = 0;
 		// 报文可能分几次收到。
-		virtual void onResponse(boost::uint64_t contentOffset, const StreamBuffer &entity) = 0;
+		virtual void onEntity(boost::uint64_t contentOffset, const StreamBuffer &entity) = 0;
+		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
+		// chunked 允许追加报头。
+		virtual void onChunkedTrailer(boost::uint64_t realContentLength, const OptionalMap &headers) = 0;
+		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_TILL_EOF，使用这个函数标识结束。
+		virtual void onContentEof(boost::uint64_t realContentLength) = 0;
 
 	public:
 		bool send(RequestHeaders requestHeaders, StreamBuffer entity = VAL_INIT, bool fin = false);

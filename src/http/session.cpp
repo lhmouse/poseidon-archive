@@ -100,10 +100,10 @@ namespace Http {
 
 				session->onRequest(m_requestHeaders, m_entity);
 
-				const AUTO_REF(keepAlive, m_requestHeaders.headers.get("Connection"));
+				const AUTO_REF(keepAliveStr, m_requestHeaders.headers.get("Connection"));
 				if((m_requestHeaders.version < 10001)
-					? (::strcasecmp(keepAlive.c_str(), "Keep-Alive") == 0)	// HTTP 1.0
-					: (::strcasecmp(keepAlive.c_str(), "Close") != 0))		// HTTP 1.1
+					? (::strcasecmp(keepAliveStr.c_str(), "Keep-Alive") == 0)	// HTTP 1.0
+					: (::strcasecmp(keepAliveStr.c_str(), "Close") != 0))		// HTTP 1.1
 				{
 					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 5000));
 				} else {
@@ -128,13 +128,13 @@ namespace Http {
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 
 		const StatusCode m_statusCode;
-		const OptionalMap m_requestHeaderss;
+		const OptionalMap m_headers;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, OptionalMap headers)
 			: SessionJobBase(session)
 			, m_guard(session)
-			, m_statusCode(statusCode), m_requestHeaderss(STD_MOVE(headers))
+			, m_statusCode(statusCode), m_headers(STD_MOVE(headers))
 		{
 		}
 
@@ -142,7 +142,7 @@ namespace Http {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendDefault(m_statusCode, m_requestHeaderss, true);
+			session->sendDefault(m_statusCode, m_headers, true);
 		}
 	};
 
@@ -246,25 +246,28 @@ namespace Http {
 				switch(m_state){
 				case S_FIRST_HEADER:
 					if(!expected.empty()){
+						m_requestHeaders = RequestHeaders();
+						m_chunkedEntity.clear();
+
 						std::string line;
 						expected.dump(line);
 
 						std::size_t pos = line.find(' ');
 						if(pos == std::string::npos){
-							LOG_POSEIDON_WARNING("Bad HTTP header: expecting verb, line = ", line);
+							LOG_POSEIDON_WARNING("Bad request header: expecting verb, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
 						line[pos] = 0;
 						m_requestHeaders.verb = getVerbFromString(line.c_str());
 						if(m_requestHeaders.verb == V_INVALID_VERB){
-							LOG_POSEIDON_WARNING("Bad HTTP verb: ", line.c_str());
+							LOG_POSEIDON_WARNING("Bad verb: ", line.c_str());
 							DEBUG_THROW(Exception, ST_NOT_IMPLEMENTED);
 						}
 						line.erase(0, pos + 1);
 
 						pos = line.find(' ');
 						if(pos == std::string::npos){
-							LOG_POSEIDON_WARNING("Bad HTTP header: expecting URI end, line = ", line);
+							LOG_POSEIDON_WARNING("Bad request header: expecting URI end, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
 						m_requestHeaders.uri.assign(line, 0, pos);
@@ -273,16 +276,16 @@ namespace Http {
 						long verEnd = 0;
 						char verMajorStr[16], verMinorStr[16];
 						if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", verMajorStr, verMinorStr, &verEnd) != 2){
-							LOG_POSEIDON_WARNING("Bad HTTP header: expecting HTTP version, line = ", line);
+							LOG_POSEIDON_WARNING("Bad request header: expecting HTTP version, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
 						if(static_cast<unsigned long>(verEnd) != line.size()){
-							LOG_POSEIDON_WARNING("Bad HTTP header: junk after HTTP version, line = ", line);
+							LOG_POSEIDON_WARNING("Bad request header: junk after HTTP version, line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
 						m_requestHeaders.version = std::strtoul(verMajorStr, NULLPTR, 10) * 10000 + std::strtoul(verMinorStr, NULLPTR, 10);
 						if((m_requestHeaders.version != 10000) && (m_requestHeaders.version != 10001)){
-							LOG_POSEIDON_WARNING("Bad HTTP header: HTTP version not supported, verMajorStr = ", verMajorStr,
+							LOG_POSEIDON_WARNING("Bad request header: HTTP version not supported, verMajorStr = ", verMajorStr,
 								", verMinorStr = ", verMinorStr);
 							DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
 						}
@@ -310,33 +313,35 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_requestHeaders.headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
+						m_requestHeaders.headers.append(SharedNts(line.c_str(), pos),
+							line.substr(line.find_first_not_of(' ', pos + 1)));
 
 						m_expectingNewLine = true;
 						// m_state = S_HEADERS;
 					} else {
 						boost::uint64_t sizeExpecting;
 
-						const AUTO_REF(transferEncoding, m_requestHeaders.headers.get("Transfer-Encoding"));
-						if(transferEncoding.empty() || (::strcasecmp(transferEncoding.c_str(), "identity") == 0)){
-							const AUTO_REF(contentLength, m_requestHeaders.headers.get("Content-Length"));
-							if(contentLength.empty()){
-								DEBUG_THROW(Exception, ST_LENGTH_REQUIRED);
+						const AUTO_REF(transferEncodingStr, m_requestHeaders.headers.get("Transfer-Encoding"));
+						if(transferEncodingStr.empty() || (::strcasecmp(transferEncodingStr.c_str(), "identity") == 0)){
+							const AUTO_REF(contentLengthStr, m_requestHeaders.headers.get("Content-Length"));
+							if(contentLengthStr.empty()){
+								sizeExpecting = 0;
+							} else {
+								char *endptr;
+								sizeExpecting = ::strtoull(contentLengthStr.c_str(), &endptr, 10);
+								if(*endptr){
+									LOG_POSEIDON_WARNING("Bad request header Content-Length: ", contentLengthStr);
+									DEBUG_THROW(Exception, ST_BAD_REQUEST);
+								}
+								if(sizeExpecting == CONTENT_CHUNKED){
+									LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", contentLengthStr);
+									DEBUG_THROW(Exception, ST_BAD_REQUEST);
+								}
 							}
-							char *endptr;
-							sizeExpecting = ::strtoull(contentLength.c_str(), &endptr, 10);
-							if(*endptr){
-								LOG_POSEIDON_WARNING("Bad HTTP header Content-Length: ", contentLength);
-								DEBUG_THROW(Exception, ST_BAD_REQUEST);
-							}
-							if(sizeExpecting == CONTENT_CHUNKED){
-								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", contentLength);
-								DEBUG_THROW(Exception, ST_BAD_REQUEST);
-							}
-						} else if(::strcasecmp(transferEncoding.c_str(), "chunked") == 0){
+						} else if(::strcasecmp(transferEncodingStr.c_str(), "chunked") == 0){
 							sizeExpecting = CONTENT_CHUNKED;
 						} else {
-							LOG_POSEIDON_WARNING("Unsupported Transfer-Encoding: ", transferEncoding);
+							LOG_POSEIDON_WARNING("Unsupported Transfer-Encoding: ", transferEncodingStr);
 							DEBUG_THROW(Exception, ST_NOT_ACCEPTABLE);
 						}
 
@@ -364,24 +369,13 @@ namespace Http {
 					std::abort();
 					break;
 
-				case S_END_OF_ENTITY:
+				case S_IDENTITY:
 					enqueueJob(boost::make_shared<RequestJob>(
-						virtualSharedFromThis<Session>(), STD_MOVE(m_requestHeaders), STD_MOVE(m_entity)));
-
-					m_requestHeaders = RequestHeaders();
-					m_entity.clear();
+						virtualSharedFromThis<Session>(), STD_MOVE(m_requestHeaders), STD_MOVE(expected)));
 
 					m_sizeTotal = 0;
 					m_expectingNewLine = true;
 					m_state = S_FIRST_HEADER;
-					break;
-
-				case S_IDENTITY:
-					m_entity = STD_MOVE(expected);
-
-					m_expectingNewLine = false;
-					m_sizeExpecting = 0;
-					m_state = S_END_OF_ENTITY;
 					break;
 
 				case S_CHUNK_HEADER:
@@ -409,7 +403,7 @@ namespace Http {
 					break;
 
 				case S_CHUNK_DATA:
-					m_entity.splice(expected);
+					m_chunkedEntity.splice(expected);
 
 					m_expectingNewLine = true;
 					m_state = S_CHUNK_HEADER;
@@ -430,9 +424,12 @@ namespace Http {
 						m_expectingNewLine = true;
 						// m_state = S_CHUNKED_TRAILER;
 					} else {
-						m_expectingNewLine = false;
-						m_sizeExpecting = 0;
-						m_state = S_END_OF_ENTITY;
+						enqueueJob(boost::make_shared<RequestJob>(
+							virtualSharedFromThis<Session>(), STD_MOVE(m_requestHeaders), STD_MOVE(m_chunkedEntity)));
+
+						m_sizeTotal = 0;
+						m_expectingNewLine = true;
+						m_state = S_FIRST_HEADER;
 					}
 					break;
 
@@ -479,12 +476,12 @@ namespace Http {
 	{
 		(void)contentLength;
 
-		const AUTO_REF(expect, requestHeaders.headers.get("Expect"));
-		if(!expect.empty()){
-			if(::strcasecmp(expect.c_str(), "100-continue") == 0){
+		const AUTO_REF(expectStr, requestHeaders.headers.get("Expect"));
+		if(!expectStr.empty()){
+			if(::strcasecmp(expectStr.c_str(), "100-continue") == 0){
 				enqueueJob(boost::make_shared<ContinueJob>(virtualSharedFromThis<Session>()));
 			} else {
-				LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", expect);
+				LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", expectStr);
 				DEBUG_THROW(Exception, ST_BAD_REQUEST);
 			}
 		}

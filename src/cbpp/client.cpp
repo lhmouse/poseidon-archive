@@ -163,6 +163,10 @@ namespace Cbpp {
 					boost::uint64_t temp64;
 
 				case S_PAYLOAD_LEN:
+					// m_payloadLen = 0;
+					m_messageId = 0;
+					m_payloadOffset = 0;
+
 					m_received.get(&temp16, 2);
 					m_payloadLen = loadLe(temp16);
 					if(m_payloadLen == 0xFFFF){
@@ -187,7 +191,6 @@ namespace Cbpp {
 
 					m_received.get(&temp16, 2);
 					m_messageId = loadLe(temp16);
-					m_payloadOffset = 0;
 
 					enqueueJob(boost::make_shared<ResponseJob>(
 						virtualSharedFromThis<Client>(), m_messageId, m_payloadLen));
@@ -206,22 +209,19 @@ namespace Cbpp {
 						enqueueJob(boost::make_shared<PayloadJob>(
 							virtualSharedFromThis<Client>(), m_payloadOffset, m_received.cut(bytesAvail)));
 						m_payloadOffset += bytesAvail;
-
-						if(m_payloadLen > m_payloadOffset){
-							m_sizeExpecting = std::min<boost::uint64_t>(m_payloadLen - m_payloadOffset, 1024);
-							// m_state = S_PAYLOAD;
-							break;
-						}
 					} else {
 						enqueueJob(boost::make_shared<ControlJob>(
 							virtualSharedFromThis<Client>(), ControlMessage(m_received.cut(m_payloadLen))));
+						m_payloadOffset = m_payloadLen;
 					}
 
-					m_messageId = 0;
-					m_payloadLen = 0;
-
-					m_sizeExpecting = 2;
-					m_state = S_PAYLOAD_LEN;
+					if(m_payloadOffset < m_payloadLen){
+						m_sizeExpecting = std::min<boost::uint64_t>(m_payloadLen - m_payloadOffset, 1024);
+						// m_state = S_PAYLOAD;
+					} else {
+						m_sizeExpecting = 2;
+						m_state = S_PAYLOAD_LEN;
+					}
 					break;
 
 				default:
@@ -230,8 +230,8 @@ namespace Cbpp {
 				}
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown while parsing data, message id = ", m_messageId,
-				", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"std::exception thrown while parsing data, messageId = ", m_messageId, ", what = ", e.what());
 			forceShutdown();
 		}
 	}

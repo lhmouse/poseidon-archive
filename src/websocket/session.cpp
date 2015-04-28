@@ -172,25 +172,25 @@ namespace WebSocket {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "HTTP 1.1 is required to use WebSocket");
 			return Http::ST_VERSION_NOT_SUPPORTED;
 		}
-		AUTO_REF(websocketVersion, requestHeaders.headers.get("Sec-WebSocket-Version"));
-		if(websocketVersion != "13"){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown HTTP header Sec-WebSocket-Version: ", websocketVersion);
+		AUTO_REF(websocketVersionStr, requestHeaders.headers.get("Sec-WebSocket-Version"));
+		if(websocketVersionStr != "13"){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown HTTP header Sec-WebSocket-Version: ", websocketVersionStr);
 			return Http::ST_BAD_REQUEST;
 		}
 
-		std::string key = requestHeaders.headers.get("Sec-WebSocket-Key");
-		if(key.empty()){
+		std::string secWebSocketKeyStr = requestHeaders.headers.get("Sec-WebSocket-Key");
+		if(secWebSocketKeyStr.empty()){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "No Sec-WebSocket-Key specified.");
 			return Http::ST_BAD_REQUEST;
 		}
-		key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+		secWebSocketKeyStr += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 		unsigned char sha1[20];
-		sha1Sum(sha1, key.data(), key.size());
-		key = Http::base64Encode(sha1, sizeof(sha1));
+		sha1Sum(sha1, secWebSocketKeyStr.data(), secWebSocketKeyStr.size());
+		AUTO(secWebSocketAccept, Http::base64Encode(sha1, sizeof(sha1)));
 
 		ret.set("Upgrade", "websocket");
 		ret.set("Connection", "Upgrade");
-		ret.set("Sec-WebSocket-Accept", STD_MOVE(key));
+		ret.set("Sec-WebSocket-Accept", STD_MOVE(secWebSocketAccept));
 		return Http::ST_OK;
 	}
 
