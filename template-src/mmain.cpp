@@ -561,6 +561,7 @@ public:
 
 		OptionalMap headers;
 		headers.set("Host", "github.com");
+		headers.set("Connection", "Close");
 		ret->send(Http::V_GET, "/", OptionalMap(), STD_MOVE(headers));
 
 		return ret;
@@ -619,7 +620,8 @@ protected:
 };
 
 MODULE_RAII {
-	return MyClient::create();
+	MyClient::create();
+	return VAL_INIT;
 }
 
 }
