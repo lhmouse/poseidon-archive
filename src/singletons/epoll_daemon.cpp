@@ -30,7 +30,7 @@ namespace {
 	std::size_t pollServers(){
 		std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 		{
-			const Mutex::ScopedLock lock(g_serverMutex);
+			const Mutex::UniqueLock lock(g_serverMutex);
 			servers.reserve(g_servers.size());
 			AUTO(it, g_servers.begin());
 			while(it != g_servers.end()){
@@ -167,7 +167,7 @@ void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	g_epoll->addSession(session);
 }
 void EpollDaemon::registerServer(boost::weak_ptr<const SocketServerBase> server){
-	const Mutex::ScopedLock lock(g_serverMutex);
+	const Mutex::UniqueLock lock(g_serverMutex);
 	g_servers.push_back(STD_MOVE(server));
 }
 

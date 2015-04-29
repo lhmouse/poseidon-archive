@@ -65,7 +65,7 @@ Epoll::~Epoll(){
 
 void Epoll::notifyWriteable(TcpSessionBase *session){
 	const AUTO(now, getFastMonoClock());
-	const Mutex::ScopedLock lock(m_mutex);
+	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll?");
@@ -74,7 +74,7 @@ void Epoll::notifyWriteable(TcpSessionBase *session){
 	m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
 }
 void Epoll::notifyUnlinked(TcpSessionBase *session){
-	const Mutex::ScopedLock lock(m_mutex);
+	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
@@ -88,7 +88,7 @@ void Epoll::notifyUnlinked(TcpSessionBase *session){
 }
 
 void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
-	const Mutex::ScopedLock lock(m_mutex);
+	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(result, m_sessions->insert(SessionMapElement(session, 0, 0, shared_from_this())));
 	if(!result.second){
 		LOG_POSEIDON_WARNING("Session is already in epoll.");
@@ -105,7 +105,7 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	session->setEpoll(result.first->epoll);
 }
 void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
-	const Mutex::ScopedLock lock(m_mutex);
+	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session.get()));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
@@ -118,14 +118,14 @@ void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
 	m_sessions->erase<IDX_ADDR>(it);
 }
 void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) const {
-	const Mutex::ScopedLock lock(m_mutex);
+	const Mutex::UniqueLock lock(m_mutex);
 	sessions.reserve(m_sessions->size());
 	for(AUTO(it, m_sessions->begin()); it != m_sessions->end(); ++it){
 		sessions.push_back(it->session);
 	}
 }
 void Epoll::clear(){
-	const Mutex::ScopedLock lock(m_mutex);
+	const Mutex::UniqueLock lock(m_mutex);
 	AUTO(it, m_sessions->begin());
 	while(it != m_sessions->end()){
 		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, it->session->getFd(), NULLPTR) != 0){
@@ -154,7 +154,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		boost::shared_ptr<TcpSessionBase> session;
 		SessionMap::delegated_container::nth_index<IDX_ADDR>::type::iterator it;
 		{
-			const Mutex::ScopedLock lock(m_mutex);
+			const Mutex::UniqueLock lock(m_mutex);
 			it = m_sessions->find<IDX_ADDR>(static_cast<TcpSessionBase *>(event.data.ptr));
 			if(it == m_sessions->end<IDX_ADDR>()){
 				LOG_POSEIDON_WARNING("Session is not in epoll?");
@@ -187,11 +187,11 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		}
 
 		if(event.events & EPOLLIN){
-			const Mutex::ScopedLock lock(m_mutex);
+			const Mutex::UniqueLock lock(m_mutex);
 			m_sessions->setKey<IDX_ADDR, IDX_READ>(it, now);
 		}
 		if(event.events & EPOLLOUT){
-			const Mutex::ScopedLock lock(m_mutex);
+			const Mutex::UniqueLock lock(m_mutex);
 			m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
 		}
 	}
@@ -202,7 +202,7 @@ std::size_t Epoll::pumpReadable(){
 	SessionMap::delegated_container::nth_index<IDX_READ>::type::iterator iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
 	{
-		const Mutex::ScopedLock lock(m_mutex);
+		const Mutex::UniqueLock lock(m_mutex);
 		for(AUTO(it, m_sessions->upperBound<IDX_READ>(0)); it != m_sessions->end<IDX_READ>(); ++it){
 			iterators[count] = it;
 			if(++count >= MAX_PUMP_COUNT){
@@ -222,7 +222,7 @@ std::size_t Epoll::pumpReadable(){
 					continue;
 				}
 				if(errno == EAGAIN){
-					const Mutex::ScopedLock lock(m_mutex);
+					const Mutex::UniqueLock lock(m_mutex);
 					m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 					continue;
 				}
@@ -249,7 +249,7 @@ std::size_t Epoll::pumpWriteable(){
 	SessionMap::delegated_container::nth_index<IDX_WRITE>::type::iterator iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
 	{
-		const Mutex::ScopedLock lock(m_mutex);
+		const Mutex::UniqueLock lock(m_mutex);
 		for(AUTO(it, m_sessions->upperBound<IDX_WRITE>(0)); it != m_sessions->end<IDX_WRITE>(); ++it){
 			iterators[count] = it;
 			if(++count >= MAX_PUMP_COUNT){
@@ -266,12 +266,12 @@ std::size_t Epoll::pumpWriteable(){
 			long bytesWritten;
 			bool readHup;
 			{
-				Mutex::ScopedLock sessionLock;
+				Mutex::UniqueLock sessionLock;
 				bytesWritten = session->syncWrite(sessionLock, temp, sizeof(temp));
 				readHup = session->hasBeenShutdown();
 				if(bytesWritten == 0){
 					if(!readHup){
-						const Mutex::ScopedLock lock(m_mutex);
+						const Mutex::UniqueLock lock(m_mutex);
 						m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
 					}
 				}
@@ -281,7 +281,7 @@ std::size_t Epoll::pumpWriteable(){
 					continue;
 				}
 				if(errno == EAGAIN){
-					const Mutex::ScopedLock lock(m_mutex);
+					const Mutex::UniqueLock lock(m_mutex);
 					m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
 					continue;
 				}

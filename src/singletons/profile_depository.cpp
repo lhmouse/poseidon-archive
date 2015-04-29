@@ -73,14 +73,14 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 		std::map<ProfileKey, ProfileCounters>::iterator it;
 		ProfileKey key(file, line, func);
 		{
-			const Mutex::ScopedLock lock(g_mutex);
+			const Mutex::UniqueLock lock(g_mutex);
 			it = g_profile.find(key);
 			if(it != g_profile.end()){
 				goto _writeProfile;
 			}
 		}
 		{
-			const Mutex::ScopedLock lock(g_mutex);
+			const Mutex::UniqueLock lock(g_mutex);
 			it = g_profile.insert(std::make_pair(key, ProfileCounters())).first;
 		}
 
@@ -100,7 +100,7 @@ std::vector<ProfileDepository::SnapshotItem> ProfileDepository::snapshot(){
 
 	std::vector<SnapshotItem> ret;
 	{
-		const Mutex::ScopedLock lock(g_mutex);
+		const Mutex::UniqueLock lock(g_mutex);
 		ret.reserve(g_profile.size());
 		for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
 			SnapshotItem pi;

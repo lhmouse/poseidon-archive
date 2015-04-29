@@ -261,12 +261,12 @@ public:
 		return name_;	\
 	}	\
 	::std::string get_ ## name_() const {	\
-		const ::Poseidon::Mutex::ScopedLock lock_(m_mutex);	\
+		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
 		return name_;	\
 	}	\
 	void set_ ## name_(std::string val_, bool invalidates_ = true){	\
 		{	\
-			const ::Poseidon::Mutex::ScopedLock lock_(m_mutex);	\
+			const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
 			name_.swap(val_);	\
 		}	\
 		if(invalidates_){	\

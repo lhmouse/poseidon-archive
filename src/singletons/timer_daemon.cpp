@@ -84,7 +84,7 @@ namespace {
 			boost::shared_ptr<const TimerCallback> callback;
 			boost::uint64_t period = 0;
 			{
-				const Mutex::ScopedLock lock(g_mutex);
+				const Mutex::UniqueLock lock(g_mutex);
 				while(!g_timers.empty() && (now >= g_timers.front().next)){
 					const AUTO(item, g_timers.front().item.lock());
 					std::pop_heap(g_timers.begin(), g_timers.end());
@@ -161,7 +161,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
 	tqe.next = timePoint;
 	tqe.item = item;
 	{
-		const Mutex::ScopedLock lock(g_mutex);
+		const Mutex::UniqueLock lock(g_mutex);
 		g_timers.push_back(tqe);
 		std::push_heap(g_timers.begin(), g_timers.end());
 	}

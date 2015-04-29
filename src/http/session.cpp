@@ -348,7 +348,7 @@ namespace Http {
 						AUTO(upgradedSession, onRequestHeaders(m_requestHeaders, sizeExpecting));
 						if(upgradedSession){
 							{
-								const Mutex::ScopedLock lock(m_upgradedSessionMutex);
+								const Mutex::UniqueLock lock(m_upgradedSessionMutex);
 								m_upgradedSession = STD_MOVE(upgradedSession);
 							}
 
@@ -491,7 +491,7 @@ namespace Http {
 	}
 
 	boost::shared_ptr<UpgradedSessionBase> Session::getUpgradedSession() const {
-		const Mutex::ScopedLock lock(m_upgradedSessionMutex);
+		const Mutex::UniqueLock lock(m_upgradedSessionMutex);
 		return m_upgradedSession;
 	}
 

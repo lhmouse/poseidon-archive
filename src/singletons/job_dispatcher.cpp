@@ -68,7 +68,7 @@ namespace {
 
 		JobIterator jobIt;
 		{
-			const Mutex::ScopedLock lock(g_mutex);
+			const Mutex::UniqueLock lock(g_mutex);
 			jobIt = g_jobMap.begin<0>();
 			if(jobIt == g_jobMap.end<0>()){
 				return false;
@@ -104,7 +104,7 @@ namespace {
 			}
 		}
 		{
-			const Mutex::ScopedLock lock(g_mutex);
+			const Mutex::UniqueLock lock(g_mutex);
 			if(newDueTime != 0){
 				const AUTO(range, g_jobMap.equalRange<1>(jobIt->category));
 				for(AUTO(it, range.first); it != range.second; ++it){
@@ -155,7 +155,7 @@ void JobDispatcher::doModal(){
 			break;
 		}
 
-		Mutex::ScopedLock lock(g_mutex);
+		Mutex::UniqueLock lock(g_mutex);
 		g_newJob.timedWait(lock, 50);
 	}
 }
@@ -166,7 +166,7 @@ void JobDispatcher::quitModal(){
 void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay,
 	boost::shared_ptr<const bool> withdrawn)
 {
-	const Mutex::ScopedLock lock(g_mutex);
+	const Mutex::UniqueLock lock(g_mutex);
 	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job), STD_MOVE(withdrawn)));
 }
 void JobDispatcher::pumpAll(){

@@ -53,7 +53,7 @@ ConditionVariable::ConditionVariable()
 ConditionVariable::~ConditionVariable(){
 }
 
-void ConditionVariable::wait(Mutex::ScopedLock &lock){
+void ConditionVariable::wait(Mutex::UniqueLock &lock){
 	assert(lock.m_locked);
 
 	const int err = ::pthread_cond_wait(&(m_impl->cond),
@@ -63,7 +63,7 @@ void ConditionVariable::wait(Mutex::ScopedLock &lock){
 		DEBUG_THROW(SystemException, err);
 	}
 }
-bool ConditionVariable::timedWait(Mutex::ScopedLock &lock, unsigned long long ms){
+bool ConditionVariable::timedWait(Mutex::UniqueLock &lock, unsigned long long ms){
 	assert(lock.m_locked);
 
 	::timespec tp;

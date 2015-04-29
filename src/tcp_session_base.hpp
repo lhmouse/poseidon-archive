@@ -94,7 +94,7 @@ private:
 	// 这里的出参返回读取的数据，一次性读取的字节数不大于 hintSize。如果开启了 SSL，返回明文。
 	long syncReadAndProcess(void *hint, unsigned long hintSize);
 	// 这里的出参返回写入的数据，一次性写入的字节数不大于 hintSize。如果开启了 SSL，返回明文。
-	long syncWrite(Mutex::ScopedLock &lock, void *hint, unsigned long hintSize);
+	long syncWrite(Mutex::UniqueLock &lock, void *hint, unsigned long hintSize);
 
 protected:
 	// 注意，只能在 epoll 线程中调用这些函数。

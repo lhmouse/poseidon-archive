@@ -389,7 +389,7 @@ namespace {
 		void accumulateTimeForTable(const char *table) NOEXCEPT {
 			const AUTO(now, getHiResMonoClock());
 			try {
-				const Mutex::ScopedLock lock(m_profileMutex);
+				const Mutex::UniqueLock lock(m_profileMutex);
 				m_profile[table] += now - m_profileFlushedTime;
 			} catch(...){
 			}
@@ -405,7 +405,7 @@ namespace {
 
 			OperationIterator operationIt;
 			{
-				const Mutex::ScopedLock lock(m_mutex);
+				const Mutex::UniqueLock lock(m_mutex);
 				operationIt = m_operationMap.begin<0>();
 				if(operationIt == m_operationMap.end<0>()){
 					atomicStore(m_urgent, false, ATOMIC_RELEASE);
@@ -469,7 +469,7 @@ namespace {
 							dump.append(query);
 							dump.append(";\n\n");
 							{
-								const Mutex::ScopedLock dumpLock(g_dumpMutex);
+								const Mutex::UniqueLock dumpLock(g_dumpMutex);
 								std::size_t total = 0;
 								do {
 									::ssize_t written = ::write(g_dumpFile.get(), dump.data() + total, dump.size() - total);
@@ -490,14 +490,14 @@ namespace {
 				LOG_POSEIDON_ERROR("Unknown exception thrown in MySQL operation.");
 			}
 			if(newDueTime != 0){
-				const Mutex::ScopedLock lock(m_mutex);
+				const Mutex::UniqueLock lock(m_mutex);
 				const AUTO(range, m_operationMap.equalRange<1>(operationIt->combinableObject));
 				for(AUTO(it, range.first); it != range.second; ++it){
 					m_operationMap.setKey<1, 0>(it, newDueTime);
 					++newDueTime;
 				}
 			} else {
-				const Mutex::ScopedLock lock(m_mutex);
+				const Mutex::UniqueLock lock(m_mutex);
 				m_operationMap.erase<0>(operationIt);
 			}
 
@@ -535,7 +535,7 @@ namespace {
 					break;
 				}
 
-				Mutex::ScopedLock lock(m_mutex);
+				Mutex::UniqueLock lock(m_mutex);
 				m_newOperation.timedWait(lock, 100);
 			}
 
@@ -553,7 +553,7 @@ namespace {
 		}
 
 		std::size_t getProfile(std::vector<MySqlDaemon::SnapshotItem> &ret, unsigned thread) const {
-			const Mutex::ScopedLock lock(m_profileMutex);
+			const Mutex::UniqueLock lock(m_profileMutex);
 			const std::size_t count = m_profile.size();
 			ret.reserve(ret.size() + count);
 			for(AUTO(it, m_profile.begin()); it != m_profile.end(); ++it){
@@ -580,7 +580,7 @@ namespace {
 				dueTime += g_saveDelay;
 			}
 
-			const Mutex::ScopedLock lock(m_mutex);
+			const Mutex::UniqueLock lock(m_mutex);
 			if(combinableObject){
 				AUTO(it, m_operationMap.find<1>(combinableObject));
 				if(it != m_operationMap.end<1>()){
@@ -599,7 +599,7 @@ namespace {
 			for(;;){
 				std::size_t pendingObjects;
 				{
-					const Mutex::ScopedLock lock(m_mutex);
+					const Mutex::UniqueLock lock(m_mutex);
 					pendingObjects = m_operationMap.size();
 					if(pendingObjects == 0){
 						break;

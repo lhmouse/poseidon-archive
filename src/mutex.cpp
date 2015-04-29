@@ -44,27 +44,43 @@ struct Mutex::Impl {
 	}
 };
 
-Mutex::ScopedLock::ScopedLock()
+Mutex::UniqueLock::UniqueLock()
 	: m_owner(NULLPTR), m_locked(false)
 {
 }
-Mutex::ScopedLock::ScopedLock(Mutex &owner, bool locksOwner)
+Mutex::UniqueLock::UniqueLock(Mutex &owner, bool locksOwner)
 	: m_owner(&owner), m_locked(false)
 {
 	if(locksOwner){
 		lock();
 	}
 }
-Mutex::ScopedLock::~ScopedLock(){
+#ifdef POSEIDON_CXX11
+Mutex::UniqueLock::UniqueLock(UniqueLock &&rhs) noexcept
+	: m_owner(rhs.m_owner), m_locked(rhs.m_locked)
+{
+	rhs.m_locked = false;
+}
+Mutex::UniqueLock &Mutex::UniqueLock::operator=(UniqueLock &&rhs) noexcept {
+	if(isLocked()){
+		unlock();
+	}
+	m_owner = rhs.m_owner;
+	m_locked = rhs.m_locked;
+	rhs.m_locked = false;
+	return *this;
+}
+#endif
+Mutex::UniqueLock::~UniqueLock(){
 	if(m_locked){
 		unlock();
 	}
 }
 
-bool Mutex::ScopedLock::locked() const NOEXCEPT {
+bool Mutex::UniqueLock::isLocked() const NOEXCEPT {
 	return m_locked;
 }
-void Mutex::ScopedLock::lock() NOEXCEPT {
+void Mutex::UniqueLock::lock() NOEXCEPT {
 	assert(m_owner);
 	assert(!m_locked);
 
@@ -75,7 +91,7 @@ void Mutex::ScopedLock::lock() NOEXCEPT {
 	}
 	m_locked = true;
 }
-void Mutex::ScopedLock::unlock() NOEXCEPT {
+void Mutex::UniqueLock::unlock() NOEXCEPT {
 	assert(m_owner);
 	assert(m_locked);
 
@@ -87,7 +103,7 @@ void Mutex::ScopedLock::unlock() NOEXCEPT {
 	m_locked = false;
 }
 
-void Mutex::ScopedLock::swap(Mutex::ScopedLock &rhs) NOEXCEPT {
+void Mutex::UniqueLock::swap(Mutex::UniqueLock &rhs) NOEXCEPT {
 	std::swap(m_owner, rhs.m_owner);
 	std::swap(m_locked, rhs.m_locked);
 }

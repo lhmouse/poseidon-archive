@@ -22,9 +22,9 @@ public:
 	~ConditionVariable();
 
 public:
-	void wait(Mutex::ScopedLock &lock);
+	void wait(Mutex::UniqueLock &lock);
 	// 返回 true 若条件触发，返回 false 若超时。
-	bool timedWait(Mutex::ScopedLock &lock, unsigned long long ms);
+	bool timedWait(Mutex::UniqueLock &lock, unsigned long long ms);
 
 	void signal() NOEXCEPT;
 	void broadcast() NOEXCEPT;

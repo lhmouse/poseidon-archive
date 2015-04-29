@@ -17,7 +17,7 @@ private:
 public:
 	static Chunk &pushBackPooled(std::list<Chunk> &dst){
 		{
-			const Mutex::ScopedLock lock(s_mutex);
+			const Mutex::UniqueLock lock(s_mutex);
 			if(!s_pool.empty()){
 				dst.splice(dst.end(), s_pool, s_pool.begin());
 				goto _done;
@@ -36,12 +36,12 @@ public:
 
 		AUTO(it, src.end());
 		--it;
-		const Mutex::ScopedLock lock(s_mutex);
+		const Mutex::UniqueLock lock(s_mutex);
 		s_pool.splice(s_pool.begin(), src, it);
 	}
 	static Chunk &pushFrontPooled(std::list<Chunk> &dst){
 		{
-			const Mutex::ScopedLock lock(s_mutex);
+			const Mutex::UniqueLock lock(s_mutex);
 			if(!s_pool.empty()){
 				dst.splice(dst.begin(), s_pool, s_pool.begin());
 				goto _done;
@@ -58,14 +58,14 @@ public:
 	static void popFrontPooled(std::list<Chunk> &src){
 		assert(!src.empty());
 
-		const Mutex::ScopedLock lock(s_mutex);
+		const Mutex::UniqueLock lock(s_mutex);
 		s_pool.splice(s_pool.begin(), src, src.begin());
 	}
 	static void clearPooled(std::list<Chunk> &src){
 		if(src.empty()){
 			return;
 		}
-		const Mutex::ScopedLock lock(s_mutex);
+		const Mutex::UniqueLock lock(s_mutex);
 		s_pool.splice(s_pool.begin(), src);
 	}
 

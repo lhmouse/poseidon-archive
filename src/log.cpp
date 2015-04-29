@@ -160,10 +160,10 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += '\n';
 
-		Mutex::ScopedLock lock;
+		Mutex::UniqueLock lock;
 		// 如果为 false，则静态的 mutex 还没有被构造或者已被析构。
 		if(atomicLoad(g_mutexInited, ATOMIC_ACQUIRE)){
-			Mutex::ScopedLock(g_mutex).swap(lock);
+			Mutex::UniqueLock(g_mutex).swap(lock);
 		}
 		std::size_t bytesTotal = 0;
 		while(bytesTotal < line.size()){

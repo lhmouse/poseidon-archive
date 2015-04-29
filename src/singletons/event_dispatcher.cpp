@@ -67,7 +67,7 @@ void EventDispatcher::stop(){
 
 	ListenerMap listeners;
 	{
-		const Mutex::ScopedLock lock(g_mutex);
+		const Mutex::UniqueLock lock(g_mutex);
 		listeners.swap(g_listeners);
 	}
 }
@@ -79,7 +79,7 @@ boost::shared_ptr<EventListener> EventDispatcher::registerListener(
 	sharedCallback->swap(callback);
 	AUTO(listener, boost::make_shared<EventListener>(id, sharedCallback));
 	{
-		const Mutex::ScopedLock lock(g_mutex);
+		const Mutex::UniqueLock lock(g_mutex);
 		g_listeners[id].push_back(listener);
 	}
 	return listener;
@@ -92,7 +92,7 @@ void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event,
 	std::vector<boost::shared_ptr<const EventListenerCallback> > callbacks;
 	bool needsCleanup = false;
 	{
-		const Mutex::ScopedLock lock(g_mutex);
+		const Mutex::UniqueLock lock(g_mutex);
 		const AUTO(it, g_listeners.find(eventId));
 		if(it != g_listeners.end()){
 			for(AUTO(it2, it->second.begin()); it2 != it->second.end(); ++it2){
@@ -112,7 +112,7 @@ void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event,
 	if(needsCleanup){
 		LOG_POSEIDON_DEBUG("Cleaning up event listener list for event ", eventId);
 
-		const Mutex::ScopedLock lock(g_mutex);
+		const Mutex::UniqueLock lock(g_mutex);
 		AUTO_REF(listenerList, g_listeners[eventId]);
 		AUTO(it, listenerList.begin());
 		while(it != listenerList.end()){

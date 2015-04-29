@@ -4,6 +4,7 @@
 #ifndef POSEIDON_MUTEX_HPP_
 #define POSEIDON_MUTEX_HPP_
 
+#include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include <boost/scoped_ptr.hpp>
 
@@ -18,7 +19,7 @@ private:
 	class Impl; // pthread_mutex_t
 
 public:
-	class ScopedLock : NONCOPYABLE {
+	class UniqueLock : NONCOPYABLE {
 		friend ConditionVariable;
 
 	private:
@@ -26,16 +27,29 @@ public:
 		bool m_locked;
 
 	public:
-		ScopedLock();
-		explicit ScopedLock(Mutex &owner, bool locksOwner = true);
-		~ScopedLock();
+		UniqueLock();
+		explicit UniqueLock(Mutex &owner, bool locksOwner = true);
+		~UniqueLock();
+
+#ifdef POSEIDON_CXX11
+		UniqueLock(const UniqueLock &rhs) = delete;
+		UniqueLock &operator=(const UniqueLock &rhs) = delete;
+
+		UniqueLock(UniqueLock &&rhs) noexcept;
+		UniqueLock &operator=(UniqueLock &&rhs) noexcept;
+#else
+		UniqueLock(const UniqueLock &)
+			__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership of unique locks.")))
+		UniqueLock(const UniqueLock &)
+			__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership of unique locks.")))
+#endif
 
 	public:
-		bool locked() const NOEXCEPT;
+		bool isLocked() const NOEXCEPT;
 		void lock() NOEXCEPT;
 		void unlock() NOEXCEPT;
 
-		void swap(ScopedLock &rhs) NOEXCEPT;
+		void swap(UniqueLock &rhs) NOEXCEPT;
 	};
 
 private:
@@ -46,7 +60,7 @@ public:
 	~Mutex();
 };
 
-inline void swap(Mutex::ScopedLock &lhs, Mutex::ScopedLock &rhs) NOEXCEPT {
+inline void swap(Mutex::UniqueLock &lhs, Mutex::UniqueLock &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
