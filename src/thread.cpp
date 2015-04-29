@@ -33,12 +33,18 @@ Thread::Thread() NOEXCEPT {
 Thread::Thread(boost::function<void ()> proc){
 	m_impl = boost::make_shared<Impl>();
 	m_impl->proc.swap(proc);
-	const int err = ::pthread_create(&(m_impl->handle), NULLPTR, &Impl::threadProc, m_impl.get());
-	if(err != 0){
-		LOG_POSEIDON_ERROR("::pthread_create() failed with error code ", err);
-		DEBUG_THROW(SystemException, err);
+
+	m_impl->self = m_impl; // 制造循环引用。
+	try {
+		const int err = ::pthread_create(&(m_impl->handle), NULLPTR, &Impl::threadProc, m_impl.get());
+		if(err != 0){
+			LOG_POSEIDON_ERROR("::pthread_create() failed with error code ", err);
+			DEBUG_THROW(SystemException, err);
+		}
+	} catch(...){
+		m_impl->self.reset();
+		throw;
 	}
-	m_impl->self = m_impl;
 }
 Thread::~Thread(){
 	if(joinable()){
