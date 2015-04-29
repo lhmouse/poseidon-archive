@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "mysql_daemon.hpp"
 #include "main_config.hpp"
-#include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <sys/types.h>
@@ -17,6 +16,7 @@
 #include "../mysql/exception.hpp"
 #include "../mysql/connection.hpp"
 #include "../mysql/thread_context.hpp"
+#include "../thread.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -315,15 +315,15 @@ namespace {
 		}
 	};
 
-	class Thread : public boost::thread {
+	class MySqlThread : public Thread {
 	private:
 		class WorkingTimeAccumulator : NONCOPYABLE {
 		private:
-			Thread *const m_owner;
+			MySqlThread *const m_owner;
 			const char *const m_table;
 
 		public:
-			WorkingTimeAccumulator(Thread *owner, const char *table)
+			WorkingTimeAccumulator(MySqlThread *owner, const char *table)
 				: m_owner(owner), m_table(table)
 			{
 				m_owner->accumulateTimeForTable("");
@@ -376,13 +376,13 @@ namespace {
 		std::map<const char *, double, TableNameComparator> m_profile;
 
 	public:
-		explicit Thread(std::size_t index)
+		explicit MySqlThread(std::size_t index)
 			: m_index(index)
 			, m_running(true)
 			, m_urgent(false)
 			, m_profileFlushedTime(getHiResMonoClock())
 		{
-			boost::thread(&Thread::daemonLoop, this).swap(*this);
+			Thread(boost::bind(&MySqlThread::daemonLoop, this)).swap(*this);
 		}
 
 	private:
@@ -549,7 +549,7 @@ namespace {
 		void join(){
 			shutdown();
 			waitTillIdle();
-			boost::thread::join();
+			Thread::join();
 		}
 
 		std::size_t getProfile(std::vector<MySqlDaemon::SnapshotItem> &ret, unsigned thread) const {
@@ -614,7 +614,7 @@ namespace {
 	};
 
 	volatile bool g_running = false;
-	std::vector<boost::shared_ptr<Thread> > g_threads;
+	std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 
 	void commitOperation(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
 		if(g_threads.empty()){
@@ -718,7 +718,7 @@ void MySqlDaemon::start(){
 	g_threads.resize(std::max<std::size_t>(g_maxThreads, 1));
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		LOG_POSEIDON_INFO("Creating MySQL thread ", i);
-		g_threads[i] = boost::make_shared<Thread>(i);
+		g_threads[i] = boost::make_shared<MySqlThread>(i);
 	}
 }
 void MySqlDaemon::stop(){

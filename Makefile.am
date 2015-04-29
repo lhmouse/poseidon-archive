@@ -59,7 +59,8 @@ pkginclude_HEADERS = \
 	src/sock_addr.hpp	\
 	src/virtual_shared_from_this.hpp	\
 	src/json.hpp	\
-	src/module_config.hpp
+	src/module_config.hpp	\
+	src/thread.hpp
 
 pkginclude_singletonsdir = $(pkgincludedir)/singletons
 pkginclude_singletons_HEADERS = \
@@ -166,6 +167,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/config_file.cpp	\
 	src/module_raii.cpp	\
 	src/json.cpp	\
+	src/thread.cpp	\
 	src/singletons/main_config.cpp	\
 	src/singletons/job_dispatcher.cpp	\
 	src/singletons/mysql_daemon.cpp	\

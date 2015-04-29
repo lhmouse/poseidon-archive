@@ -6,6 +6,7 @@
 
 namespace Poseidon {
 
+class Thread;
 class Logger;
 class Profiler;
 class Exception;

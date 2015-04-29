@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "epoll_daemon.hpp"
 #include "main_config.hpp"
-#include <boost/thread.hpp>
+#include "../thread.hpp"
 #include "../epoll.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
@@ -20,7 +20,7 @@ namespace {
 	boost::uint64_t g_tcpRequestTimeout		= 30000;
 
 	volatile bool g_running = false;
-	boost::thread g_thread;
+	Thread g_thread;
 
 	boost::shared_ptr<Epoll> g_epoll = boost::make_shared<Epoll>();
 
@@ -125,7 +125,7 @@ void EpollDaemon::start(){
 	conf.get(g_tcpRequestTimeout, "epoll_tcp_request_timeout");
 	LOG_POSEIDON_DEBUG("Tcp request timeout = ", g_tcpRequestTimeout);
 
-	boost::thread(threadProc).swap(g_thread);
+	Thread(threadProc).swap(g_thread);
 }
 void EpollDaemon::stop(){
 	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){

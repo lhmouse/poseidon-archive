@@ -5,10 +5,10 @@
 #include "timer_daemon.hpp"
 #include <vector>
 #include <algorithm>
-#include <boost/thread.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <unistd.h>
+#include "../thread.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
@@ -71,7 +71,7 @@ namespace {
 	};
 
 	volatile bool g_running = false;
-	boost::thread g_thread;
+	Thread g_thread;
 
 	boost::mutex g_mutex;
 	std::vector<TimerQueueElement> g_timers;
@@ -135,7 +135,7 @@ void TimerDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting timer daemon...");
 
-	boost::thread(threadProc).swap(g_thread);
+	Thread(threadProc).swap(g_thread);
 }
 void TimerDaemon::stop(){
 	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
