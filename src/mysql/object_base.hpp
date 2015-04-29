@@ -15,10 +15,10 @@
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/cstdint.hpp>
 #include "../atomic.hpp"
 #include "../log.hpp"
+#include "../mutex.hpp"
 #include "../virtual_shared_from_this.hpp"
 
 namespace Poseidon {
@@ -36,7 +36,7 @@ namespace MySql {
 		mutable volatile bool m_autoSaves;
 
 	protected:
-		mutable boost::mutex m_mutex;
+		mutable Mutex m_mutex;
 
 	protected:
 		ObjectBase();

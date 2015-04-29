@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "thread_context.hpp"
 #include "connection.hpp"
-#include <boost/thread/once.hpp>
+#include <pthread.h>
 #include <mysql/mysql.h>
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -13,7 +13,7 @@ namespace Poseidon {
 
 namespace MySql {
 	namespace {
-		boost::once_flag g_mysqlInitFlag;
+		::pthread_once_t g_mysqlOnce = PTHREAD_ONCE_INIT;
 
 		__thread std::size_t t_initCount = 0;
 
@@ -31,12 +31,16 @@ namespace MySql {
 
 	ThreadContext::ThreadContext(){
 		if(++t_initCount == 1){
-			boost::call_once(&initMySql, g_mysqlInitFlag);
+			const int err = ::pthread_once(&g_mysqlOnce, &initMySql);
+			if(err != 0){
+				LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
+				std::abort();
+			}
 
 			LOG_POSEIDON_INFO("Initializing MySQL thread...");
 
 			if(::mysql_thread_init() != 0){
-				LOG_POSEIDON_FATAL("Could not initialize MySQL thread.");
+				LOG_POSEIDON_ERROR("Could not initialize MySQL thread.");
 				DEBUG_THROW(Exception, SSLIT("::mysql_thread_init() failed"));
 			}
 		}

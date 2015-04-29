@@ -4,7 +4,7 @@
 #include "precompiled.hpp"
 #include "time.hpp"
 #include "log.hpp"
-#include <boost/thread/once.hpp>
+#include <pthread.h>
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
@@ -12,7 +12,7 @@
 namespace Poseidon {
 
 namespace {
-	boost::once_flag g_tzsetFlag;
+	::pthread_once_t g_tzOnce = PTHREAD_ONCE_INIT;
 }
 
 boost::uint64_t getUtcTime(){
@@ -27,11 +27,19 @@ boost::uint64_t getLocalTime(){
 	return getLocalTimeFromUtc(getUtcTime());
 }
 boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local){
-	boost::call_once(&::tzset, g_tzsetFlag);
+	const int err = ::pthread_once(&g_tzOnce, &::tzset);
+	if(err != 0){
+		LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
+		std::abort();
+	}
 	return local + (unsigned long)::timezone * 1000;
 }
 boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
-	boost::call_once(&::tzset, g_tzsetFlag);
+	const int err = ::pthread_once(&g_tzOnce, &::tzset);
+	if(err != 0){
+		LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
+		std::abort();
+	}
 	return utc - (unsigned long)::timezone * 1000;
 }
 

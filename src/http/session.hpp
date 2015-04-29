@@ -8,12 +8,12 @@
 #include <string>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/cstdint.hpp>
 #include "request_headers.hpp"
 #include "response_headers.hpp"
 #include "status_codes.hpp"
 #include "../tcp_session_base.hpp"
+#include "../mutex.hpp"
 #include "../stream_buffer.hpp"
 
 namespace Poseidon {
@@ -46,7 +46,7 @@ namespace Http {
 		class ErrorJob;
 
 	private:
-		mutable boost::mutex m_upgradedSessionMutex;
+		mutable Mutex m_upgradedSessionMutex;
 		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
 		StreamBuffer m_received;

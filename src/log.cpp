@@ -3,8 +3,8 @@
 
 #include "precompiled.hpp"
 #include "log.hpp"
-#include <boost/thread/mutex.hpp>
 #include <unistd.h>
+#include "mutex.hpp"
 #include "atomic.hpp"
 #include "time.hpp"
 #include "flags.hpp"
@@ -30,7 +30,7 @@ namespace {
 	volatile unsigned long long g_mask = -1ull;
 
 	volatile bool g_mutexInited = false; // 得对付下静态对象的构造顺序问题。
-	boost::mutex g_mutex;
+	Mutex g_mutex;
 
 	__thread char t_tag[5] = "----";
 
@@ -160,10 +160,10 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += '\n';
 
-		boost::mutex::scoped_lock lock;
+		Mutex::ScopedLock lock;
 		// 如果为 false，则静态的 mutex 还没有被构造或者已被析构。
 		if(atomicLoad(g_mutexInited, ATOMIC_ACQUIRE)){
-			boost::mutex::scoped_lock(g_mutex).swap(lock);
+			Mutex::ScopedLock(g_mutex).swap(lock);
 		}
 		std::size_t bytesTotal = 0;
 		while(bytesTotal < line.size()){

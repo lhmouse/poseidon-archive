@@ -3,7 +3,7 @@
 
 #include "precompiled.hpp"
 #include "ssl_factories.hpp"
-#include <boost/thread/once.hpp>
+#include <pthread.h>
 #include <errno.h>
 #include <openssl/ssl.h>
 #include "system_exception.hpp"
@@ -12,7 +12,7 @@
 namespace Poseidon {
 
 namespace {
-	boost::once_flag g_sslInitFlag;
+	::pthread_once_t g_sslOnce = PTHREAD_ONCE_INIT;
 
 	void initSsl(){
 		LOG_POSEIDON_INFO("Initializing SSL library...");
@@ -24,7 +24,11 @@ namespace {
 	}
 
 	UniqueSslCtx createServerSslCtx(const char *cert, const char *privateKey){
-		boost::call_once(&initSsl, g_sslInitFlag);
+		const int err = ::pthread_once(&g_sslOnce, &initSsl);
+		if(err != 0){
+			LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
+			std::abort();
+		}
 
 		UniqueSslCtx ret;
 		if(!ret.reset(::SSL_CTX_new(::SSLv23_server_method()))){
@@ -51,7 +55,11 @@ namespace {
 		return ret;
 	}
 	UniqueSslCtx createClientSslCtx(){
-		boost::call_once(&initSsl, g_sslInitFlag);
+		const int err = ::pthread_once(&g_sslOnce, &initSsl);
+		if(err != 0){
+			LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
+			std::abort();
+		}
 
 		UniqueSslCtx ret;
 		if(!ret.reset(::SSL_CTX_new(::SSLv23_client_method()))){

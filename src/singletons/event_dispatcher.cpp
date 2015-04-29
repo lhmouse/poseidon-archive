@@ -5,9 +5,9 @@
 #include "event_dispatcher.hpp"
 #include <map>
 #include <vector>
-#include <boost/thread/mutex.hpp>
 #include "job_dispatcher.hpp"
 #include "../log.hpp"
+#include "../mutex.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 
@@ -32,7 +32,7 @@ namespace {
 		std::vector<boost::weak_ptr<EventListener> >
 		> ListenerMap;
 
-	boost::mutex g_mutex;
+	Mutex g_mutex;
 	ListenerMap g_listeners;
 
 	class EventJob : public JobBase {
@@ -67,7 +67,7 @@ void EventDispatcher::stop(){
 
 	ListenerMap listeners;
 	{
-		const boost::mutex::scoped_lock lock(g_mutex);
+		const Mutex::ScopedLock lock(g_mutex);
 		listeners.swap(g_listeners);
 	}
 }
@@ -79,7 +79,7 @@ boost::shared_ptr<EventListener> EventDispatcher::registerListener(
 	sharedCallback->swap(callback);
 	AUTO(listener, boost::make_shared<EventListener>(id, sharedCallback));
 	{
-		const boost::mutex::scoped_lock lock(g_mutex);
+		const Mutex::ScopedLock lock(g_mutex);
 		g_listeners[id].push_back(listener);
 	}
 	return listener;
@@ -92,7 +92,7 @@ void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event,
 	std::vector<boost::shared_ptr<const EventListenerCallback> > callbacks;
 	bool needsCleanup = false;
 	{
-		const boost::mutex::scoped_lock lock(g_mutex);
+		const Mutex::ScopedLock lock(g_mutex);
 		const AUTO(it, g_listeners.find(eventId));
 		if(it != g_listeners.end()){
 			for(AUTO(it2, it->second.begin()); it2 != it->second.end(); ++it2){
@@ -112,7 +112,7 @@ void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event,
 	if(needsCleanup){
 		LOG_POSEIDON_DEBUG("Cleaning up event listener list for event ", eventId);
 
-		const boost::mutex::scoped_lock lock(g_mutex);
+		const Mutex::ScopedLock lock(g_mutex);
 		AUTO_REF(listenerList, g_listeners[eventId]);
 		AUTO(it, listenerList.begin());
 		while(it != listenerList.end()){

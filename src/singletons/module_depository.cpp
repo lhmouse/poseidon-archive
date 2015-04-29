@@ -3,11 +3,10 @@
 
 #include "../precompiled.hpp"
 #include "module_depository.hpp"
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/recursive_mutex.hpp>
 #include <boost/type_traits/decay.hpp>
 #include <dlfcn.h>
 #include "main_config.hpp"
+#include "../mutex.hpp"
 #include "../log.hpp"
 #include "../raii.hpp"
 #include "../exception.hpp"
@@ -18,14 +17,14 @@ namespace Poseidon {
 
 namespace {
 	// 注意 dl 系列的函数都不是线程安全的。
-	boost::recursive_mutex g_mutex;
+	Mutex g_mutex(true);
 
 	struct DynamicLibraryCloser {
 		CONSTEXPR void *operator()() NOEXCEPT {
 			return VAL_INIT;
 		}
 		void operator()(void *handle) NOEXCEPT {
-			const boost::recursive_mutex::scoped_lock lock(g_mutex);
+			const Mutex::ScopedLock lock(g_mutex);
 			if(::dlclose(handle) != 0){
 				LOG_POSEIDON_WARNING("Error unloading dynamic library: ", ::dlerror());
 			}
@@ -133,7 +132,7 @@ void ModuleDepository::stop(){
 
 	std::vector<boost::weak_ptr<Module> > modules;
 	{
-		const boost::recursive_mutex::scoped_lock lock(g_mutex);
+		const Mutex::ScopedLock lock(g_mutex);
 		modules.reserve(g_modules.size());
 		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
 			modules.push_back(it->module);
@@ -152,7 +151,7 @@ void ModuleDepository::stop(){
 }
 
 boost::shared_ptr<Module> ModuleDepository::load(const char *path){
-	const boost::recursive_mutex::scoped_lock lock(g_mutex);
+	const Mutex::ScopedLock lock(g_mutex);
 
 	LOG_POSEIDON_INFO("Checking whether module has already been loaded: ", path);
 	UniqueHandle<DynamicLibraryCloser> handle(::dlopen(path, RTLD_NOW | RTLD_NOLOAD));
@@ -229,18 +228,18 @@ boost::shared_ptr<Module> ModuleDepository::loadNoThrow(const char *path){
 	}
 }
 bool ModuleDepository::unload(const boost::shared_ptr<Module> &module){
-	const boost::recursive_mutex::scoped_lock lock(g_mutex);
+	const Mutex::ScopedLock lock(g_mutex);
 	return g_modules.erase<MIDX_MODULE>(module) > 0;
 }
 bool ModuleDepository::unload(void *baseAddr){
-	const boost::recursive_mutex::scoped_lock lock(g_mutex);
+	const Mutex::ScopedLock lock(g_mutex);
 	return g_modules.erase<MIDX_BASE_ADDR>(baseAddr) > 0;
 }
 
 std::vector<ModuleDepository::SnapshotItem> ModuleDepository::snapshot(){
 	std::vector<SnapshotItem> ret;
 	{
-		const boost::recursive_mutex::scoped_lock lock(g_mutex);
+		const Mutex::ScopedLock lock(g_mutex);
 		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
 			ret.push_back(SnapshotItem());
 			SnapshotItem &mi = ret.back();
@@ -254,7 +253,7 @@ std::vector<ModuleDepository::SnapshotItem> ModuleDepository::snapshot(){
 }
 
 void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii){
-	const boost::recursive_mutex::scoped_lock lock(g_mutex);
+	const Mutex::ScopedLock lock(g_mutex);
 	::Dl_info info;
 	if(::dladdr(raii, &info) == 0){
 		SharedNts error(::dlerror());
@@ -267,7 +266,7 @@ void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii){
 	}
 }
 void ModuleDepository::unregisterModuleRaii(ModuleRaiiBase *raii){
-	const boost::recursive_mutex::scoped_lock lock(g_mutex);
+	const Mutex::ScopedLock lock(g_mutex);
 	g_moduleRaiis.erase<MRIDX_RAII>(raii);
 }
 

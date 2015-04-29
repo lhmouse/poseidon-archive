@@ -63,7 +63,7 @@ TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::shared_ptr<Tcp
 }
 TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	if(atomicSub(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED) == 0){
-		const boost::mutex::scoped_lock lock(m_session->m_bufferMutex);
+		const Mutex::ScopedLock lock(m_session->m_bufferMutex);
 		if(m_session->m_sendBuffer.empty()){
 			m_session->forceShutdown();
 		}
@@ -102,7 +102,7 @@ void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
 }
 
 void TcpSessionBase::setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT {
-	const boost::mutex::scoped_lock lock(m_bufferMutex);
+	const Mutex::ScopedLock lock(m_bufferMutex);
 	const AUTO(oldPtr, m_epoll.lock());
 	if(oldPtr){
 		const AUTO(old, oldPtr->lock());
@@ -114,7 +114,7 @@ void TcpSessionBase::setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epo
 }
 
 void TcpSessionBase::pumpOnClose() NOEXCEPT {
-	const boost::mutex::scoped_lock lock(m_onCloseMutex);
+	const Mutex::ScopedLock lock(m_onCloseMutex);
 	while(!m_onCloseQueue.empty()){
 		try {
 			enqueueAsyncJob(STD_MOVE(m_onCloseQueue.back()));
@@ -144,7 +144,7 @@ void TcpSessionBase::fetchPeerInfo() const {
 	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
 		return;
 	}
-	const boost::mutex::scoped_lock lock(m_peerInfo.mutex);
+	const Mutex::ScopedLock lock(m_peerInfo.mutex);
 	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
 		return;
 	}
@@ -156,7 +156,7 @@ void TcpSessionBase::fetchPeerInfo() const {
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
-	const boost::mutex::scoped_lock lock(m_bufferMutex);
+	const Mutex::ScopedLock lock(m_bufferMutex);
 	if(!buffer.empty()){
 		m_sendBuffer.splice(buffer);
 	}
@@ -201,8 +201,8 @@ long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
 	}
 	return ret;
 }
-long TcpSessionBase::syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize){
-	boost::mutex::scoped_lock(m_bufferMutex).swap(lock);
+long TcpSessionBase::syncWrite(Mutex::ScopedLock &lock, void *hint, unsigned long hintSize){
+	Mutex::ScopedLock(m_bufferMutex).swap(lock);
 	const std::size_t size = m_sendBuffer.peek(hint, hintSize);
 	lock.unlock();
 
@@ -237,7 +237,7 @@ const IpPort &TcpSessionBase::getLocalInfo() const {
 }
 
 void TcpSessionBase::registerOnClose(boost::function<void ()> callback){
-	const boost::mutex::scoped_lock lock(m_onCloseMutex);
+	const Mutex::ScopedLock lock(m_onCloseMutex);
 	m_onCloseQueue.push_back(boost::function<void ()>());
 	m_onCloseQueue.back().swap(callback);
 }
@@ -248,7 +248,7 @@ void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 			timeout, 0, boost::bind(&shutdownIfTimeout, virtualWeakFromThis<TcpSessionBase>()));
 	}
 	{
-		const boost::mutex::scoped_lock lock(m_timerMutex);
+		const Mutex::ScopedLock lock(m_timerMutex);
 		m_shutdownTimer.swap(shutdownTimer);
 	}
 }

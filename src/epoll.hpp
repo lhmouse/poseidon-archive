@@ -5,13 +5,13 @@
 #define POSEIDON_EPOLL_HPP_
 
 #include "cxx_util.hpp"
-#include "raii.hpp"
-#include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <vector>
 #include <cstddef>
+#include "raii.hpp"
+#include "mutex.hpp"
 
 namespace Poseidon {
 
@@ -24,7 +24,7 @@ private:
 	class SessionMapDelegator;
 
 private:
-	mutable boost::mutex m_mutex;
+	mutable Mutex m_mutex;
 	UniqueFile m_epoll;
 	boost::scoped_ptr<SessionMapDelegator> m_sessions;
 

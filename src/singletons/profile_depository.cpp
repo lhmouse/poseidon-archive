@@ -5,8 +5,8 @@
 #include "profile_depository.hpp"
 #include <map>
 #include <cstring>
-#include <boost/thread/mutex.hpp>
 #include "main_config.hpp"
+#include "../mutex.hpp"
 #include "../atomic.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
@@ -46,7 +46,7 @@ namespace {
 
 	bool g_enabled = true;
 
-	boost::mutex g_mutex;
+	Mutex g_mutex;
 	std::map<ProfileKey, ProfileCounters> g_profile;
 }
 
@@ -73,14 +73,14 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 		std::map<ProfileKey, ProfileCounters>::iterator it;
 		ProfileKey key(file, line, func);
 		{
-			const boost::mutex::scoped_lock lock(g_mutex);
+			const Mutex::ScopedLock lock(g_mutex);
 			it = g_profile.find(key);
 			if(it != g_profile.end()){
 				goto _writeProfile;
 			}
 		}
 		{
-			const boost::mutex::scoped_lock lock(g_mutex);
+			const Mutex::ScopedLock lock(g_mutex);
 			it = g_profile.insert(std::make_pair(key, ProfileCounters())).first;
 		}
 
@@ -100,7 +100,7 @@ std::vector<ProfileDepository::SnapshotItem> ProfileDepository::snapshot(){
 
 	std::vector<SnapshotItem> ret;
 	{
-		const boost::mutex::scoped_lock lock(g_mutex);
+		const Mutex::ScopedLock lock(g_mutex);
 		ret.reserve(g_profile.size());
 		for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
 			SnapshotItem pi;

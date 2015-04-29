@@ -4,21 +4,20 @@
 #include "precompiled.hpp"
 #include "stream_buffer.hpp"
 #include <iostream>
-#include <cassert>
-#include <boost/thread/mutex.hpp>
 #include "string.hpp"
+#include "mutex.hpp"
 
 namespace Poseidon {
 
 class StreamBuffer::Chunk {
 private:
-	static boost::mutex s_mutex;
+	static Mutex s_mutex;
 	static std::list<Chunk> s_pool;
 
 public:
 	static Chunk &pushBackPooled(std::list<Chunk> &dst){
 		{
-			const boost::mutex::scoped_lock lock(s_mutex);
+			const Mutex::ScopedLock lock(s_mutex);
 			if(!s_pool.empty()){
 				dst.splice(dst.end(), s_pool, s_pool.begin());
 				goto _done;
@@ -37,12 +36,12 @@ public:
 
 		AUTO(it, src.end());
 		--it;
-		const boost::mutex::scoped_lock lock(s_mutex);
+		const Mutex::ScopedLock lock(s_mutex);
 		s_pool.splice(s_pool.begin(), src, it);
 	}
 	static Chunk &pushFrontPooled(std::list<Chunk> &dst){
 		{
-			const boost::mutex::scoped_lock lock(s_mutex);
+			const Mutex::ScopedLock lock(s_mutex);
 			if(!s_pool.empty()){
 				dst.splice(dst.begin(), s_pool, s_pool.begin());
 				goto _done;
@@ -59,14 +58,14 @@ public:
 	static void popFrontPooled(std::list<Chunk> &src){
 		assert(!src.empty());
 
-		const boost::mutex::scoped_lock lock(s_mutex);
+		const Mutex::ScopedLock lock(s_mutex);
 		s_pool.splice(s_pool.begin(), src, src.begin());
 	}
 	static void clearPooled(std::list<Chunk> &src){
 		if(src.empty()){
 			return;
 		}
-		const boost::mutex::scoped_lock lock(s_mutex);
+		const Mutex::ScopedLock lock(s_mutex);
 		s_pool.splice(s_pool.begin(), src);
 	}
 
@@ -82,7 +81,7 @@ public:
 	}
 };
 
-boost::mutex
+Mutex
 	StreamBuffer::Chunk::s_mutex __attribute__((__init_priority__(500)));
 std::list<StreamBuffer::Chunk>
 	StreamBuffer::Chunk::s_pool __attribute__((__init_priority__(500)));

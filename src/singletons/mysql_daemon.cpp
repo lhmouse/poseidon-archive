@@ -4,8 +4,6 @@
 #include "../precompiled.hpp"
 #include "mysql_daemon.hpp"
 #include "main_config.hpp"
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -17,6 +15,8 @@
 #include "../mysql/connection.hpp"
 #include "../mysql/thread_context.hpp"
 #include "../thread.hpp"
+#include "../mutex.hpp"
+#include "../condition_variable.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -46,7 +46,7 @@ namespace {
 	boost::uint64_t	g_retryInitDelay	= 1000;
 
 	// 转储文件，写在最前面。
-	boost::mutex g_dumpMutex;
+	Mutex g_dumpMutex;
 	UniqueFile g_dumpFile;
 
 	// 回调函数任务。
@@ -365,13 +365,13 @@ namespace {
 
 		volatile bool m_running;
 
-		mutable boost::mutex m_mutex;
-		mutable boost::condition_variable m_newOperation;
+		mutable Mutex m_mutex;
+		mutable ConditionVariable m_newOperation;
 		volatile bool m_urgent; // 无视延迟写入，一次性处理队列中所有操作。
 		OperationMap m_operationMap;
 
 		// 性能统计。
-		mutable boost::mutex m_profileMutex;
+		mutable Mutex m_profileMutex;
 		double m_profileFlushedTime;
 		std::map<const char *, double, TableNameComparator> m_profile;
 
@@ -389,7 +389,7 @@ namespace {
 		void accumulateTimeForTable(const char *table) NOEXCEPT {
 			const AUTO(now, getHiResMonoClock());
 			try {
-				const boost::mutex::scoped_lock lock(m_profileMutex);
+				const Mutex::ScopedLock lock(m_profileMutex);
 				m_profile[table] += now - m_profileFlushedTime;
 			} catch(...){
 			}
@@ -405,7 +405,7 @@ namespace {
 
 			OperationIterator operationIt;
 			{
-				const boost::mutex::scoped_lock lock(m_mutex);
+				const Mutex::ScopedLock lock(m_mutex);
 				operationIt = m_operationMap.begin<0>();
 				if(operationIt == m_operationMap.end<0>()){
 					atomicStore(m_urgent, false, ATOMIC_RELEASE);
@@ -469,7 +469,7 @@ namespace {
 							dump.append(query);
 							dump.append(";\n\n");
 							{
-								const boost::mutex::scoped_lock dumpLock(g_dumpMutex);
+								const Mutex::ScopedLock dumpLock(g_dumpMutex);
 								std::size_t total = 0;
 								do {
 									::ssize_t written = ::write(g_dumpFile.get(), dump.data() + total, dump.size() - total);
@@ -490,14 +490,14 @@ namespace {
 				LOG_POSEIDON_ERROR("Unknown exception thrown in MySQL operation.");
 			}
 			if(newDueTime != 0){
-				const boost::mutex::scoped_lock lock(m_mutex);
+				const Mutex::ScopedLock lock(m_mutex);
 				const AUTO(range, m_operationMap.equalRange<1>(operationIt->combinableObject));
 				for(AUTO(it, range.first); it != range.second; ++it){
 					m_operationMap.setKey<1, 0>(it, newDueTime);
 					++newDueTime;
 				}
 			} else {
-				const boost::mutex::scoped_lock lock(m_mutex);
+				const Mutex::ScopedLock lock(m_mutex);
 				m_operationMap.erase<0>(operationIt);
 			}
 
@@ -535,8 +535,8 @@ namespace {
 					break;
 				}
 
-				boost::mutex::scoped_lock lock(m_mutex);
-				m_newOperation.timed_wait(lock, boost::posix_time::milliseconds(100));
+				Mutex::ScopedLock lock(m_mutex);
+				m_newOperation.timedWait(lock, 100);
 			}
 
 			LOG_POSEIDON_INFO("MySQL thread ", m_index, " stopped.");
@@ -553,7 +553,7 @@ namespace {
 		}
 
 		std::size_t getProfile(std::vector<MySqlDaemon::SnapshotItem> &ret, unsigned thread) const {
-			const boost::mutex::scoped_lock lock(m_profileMutex);
+			const Mutex::ScopedLock lock(m_profileMutex);
 			const std::size_t count = m_profile.size();
 			ret.reserve(ret.size() + count);
 			for(AUTO(it, m_profile.begin()); it != m_profile.end(); ++it){
@@ -580,7 +580,7 @@ namespace {
 				dueTime += g_saveDelay;
 			}
 
-			const boost::mutex::scoped_lock lock(m_mutex);
+			const Mutex::ScopedLock lock(m_mutex);
 			if(combinableObject){
 				AUTO(it, m_operationMap.find<1>(combinableObject));
 				if(it != m_operationMap.end<1>()){
@@ -593,19 +593,19 @@ namespace {
 			if(urgent){
 				atomicStore(m_urgent, true, ATOMIC_RELEASE);
 			}
-			m_newOperation.notify_one();
+			m_newOperation.signal();
 		}
 		void waitTillIdle(){
 			for(;;){
 				std::size_t pendingObjects;
 				{
-					const boost::mutex::scoped_lock lock(m_mutex);
+					const Mutex::ScopedLock lock(m_mutex);
 					pendingObjects = m_operationMap.size();
 					if(pendingObjects == 0){
 						break;
 					}
 					atomicStore(m_urgent, true, ATOMIC_RELEASE);
-					m_newOperation.notify_one();
+					m_newOperation.signal();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pendingObjects, " object(s) in my queue.");
 				::usleep(500000);

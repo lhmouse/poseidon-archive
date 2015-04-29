@@ -3,14 +3,14 @@
 
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
 #include "main_config.hpp"
 #include "../job_base.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
+#include "../mutex.hpp"
+#include "../condition_variable.hpp"
 #include "../time.hpp"
 #include "../multi_index_map.hpp"
 
@@ -55,8 +55,8 @@ namespace {
 
 	volatile bool g_running = false;
 
-	boost::mutex g_mutex;
-	boost::condition_variable g_newJob;
+	Mutex g_mutex;
+	ConditionVariable g_newJob;
 	JobMap g_jobMap;
 
 	bool pumpOneJob() NOEXCEPT {
@@ -68,7 +68,7 @@ namespace {
 
 		JobIterator jobIt;
 		{
-			const boost::mutex::scoped_lock lock(g_mutex);
+			const Mutex::ScopedLock lock(g_mutex);
 			jobIt = g_jobMap.begin<0>();
 			if(jobIt == g_jobMap.end<0>()){
 				return false;
@@ -104,7 +104,7 @@ namespace {
 			}
 		}
 		{
-			const boost::mutex::scoped_lock lock(g_mutex);
+			const Mutex::ScopedLock lock(g_mutex);
 			if(newDueTime != 0){
 				const AUTO(range, g_jobMap.equalRange<1>(jobIt->category));
 				for(AUTO(it, range.first); it != range.second; ++it){
@@ -114,7 +114,7 @@ namespace {
 			} else {
 				g_jobMap.erase<0>(jobIt);
 			}
-			g_newJob.notify_one();
+			g_newJob.signal();
 		}
 
 		return true;
@@ -155,8 +155,8 @@ void JobDispatcher::doModal(){
 			break;
 		}
 
-		boost::mutex::scoped_lock lock(g_mutex);
-		g_newJob.timed_wait(lock, boost::posix_time::milliseconds(50));
+		Mutex::ScopedLock lock(g_mutex);
+		g_newJob.timedWait(lock, 50);
 	}
 }
 void JobDispatcher::quitModal(){
@@ -166,7 +166,7 @@ void JobDispatcher::quitModal(){
 void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay,
 	boost::shared_ptr<const bool> withdrawn)
 {
-	const boost::mutex::scoped_lock lock(g_mutex);
+	const Mutex::ScopedLock lock(g_mutex);
 	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job), STD_MOVE(withdrawn)));
 }
 void JobDispatcher::pumpAll(){

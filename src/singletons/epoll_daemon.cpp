@@ -24,13 +24,13 @@ namespace {
 
 	boost::shared_ptr<Epoll> g_epoll = boost::make_shared<Epoll>();
 
-	boost::mutex g_serverMutex;
+	Mutex g_serverMutex;
 	std::vector<boost::weak_ptr<const SocketServerBase> > g_servers;
 
 	std::size_t pollServers(){
 		std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 		{
-			const boost::mutex::scoped_lock lock(g_serverMutex);
+			const Mutex::ScopedLock lock(g_serverMutex);
 			servers.reserve(g_servers.size());
 			AUTO(it, g_servers.begin());
 			while(it != g_servers.end()){
@@ -167,7 +167,7 @@ void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	g_epoll->addSession(session);
 }
 void EpollDaemon::registerServer(boost::weak_ptr<const SocketServerBase> server){
-	const boost::mutex::scoped_lock lock(g_serverMutex);
+	const Mutex::ScopedLock lock(g_serverMutex);
 	g_servers.push_back(STD_MOVE(server));
 }
 

@@ -10,12 +10,12 @@
 #include <string>
 #include <deque>
 #include <cstddef>
-#include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/cstdint.hpp>
+#include "mutex.hpp"
 #include "raii.hpp"
 #include "ip_port.hpp"
 #include "stream_buffer.hpp"
@@ -55,7 +55,7 @@ private:
 
 	mutable struct {
 		volatile bool fetched;
-		boost::mutex mutex;
+		Mutex mutex;
 		IpPort remote;
 		IpPort local;
 	} m_peerInfo;
@@ -64,14 +64,14 @@ private:
 
 	volatile bool m_shutdown;
 	volatile std::size_t m_delayedShutdownGuardCount;
-	mutable boost::mutex m_bufferMutex;
+	mutable Mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
 	boost::weak_ptr<const boost::weak_ptr<Epoll> > m_epoll;
 
-	mutable boost::mutex m_onCloseMutex;
+	mutable Mutex m_onCloseMutex;
 	std::deque<boost::function<void ()> > m_onCloseQueue;
 
-	mutable boost::mutex m_timerMutex;
+	mutable Mutex m_timerMutex;
 	boost::shared_ptr<const TimerItem> m_shutdownTimer;
 
 protected:
@@ -94,7 +94,7 @@ private:
 	// 这里的出参返回读取的数据，一次性读取的字节数不大于 hintSize。如果开启了 SSL，返回明文。
 	long syncReadAndProcess(void *hint, unsigned long hintSize);
 	// 这里的出参返回写入的数据，一次性写入的字节数不大于 hintSize。如果开启了 SSL，返回明文。
-	long syncWrite(boost::mutex::scoped_lock &lock, void *hint, unsigned long hintSize);
+	long syncWrite(Mutex::ScopedLock &lock, void *hint, unsigned long hintSize);
 
 protected:
 	// 注意，只能在 epoll 线程中调用这些函数。

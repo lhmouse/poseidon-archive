@@ -12,6 +12,7 @@
 #include "../log.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
+#include "../mutex.hpp"
 #include "../time.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
@@ -73,7 +74,7 @@ namespace {
 	volatile bool g_running = false;
 	Thread g_thread;
 
-	boost::mutex g_mutex;
+	Mutex g_mutex;
 	std::vector<TimerQueueElement> g_timers;
 
 	void daemonLoop(){
@@ -83,7 +84,7 @@ namespace {
 			boost::shared_ptr<const TimerCallback> callback;
 			boost::uint64_t period = 0;
 			{
-				const boost::mutex::scoped_lock lock(g_mutex);
+				const Mutex::ScopedLock lock(g_mutex);
 				while(!g_timers.empty() && (now >= g_timers.front().next)){
 					const AUTO(item, g_timers.front().item.lock());
 					std::pop_heap(g_timers.begin(), g_timers.end());
@@ -160,7 +161,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
 	tqe.next = timePoint;
 	tqe.item = item;
 	{
-		const boost::mutex::scoped_lock lock(g_mutex);
+		const Mutex::ScopedLock lock(g_mutex);
 		g_timers.push_back(tqe);
 		std::push_heap(g_timers.begin(), g_timers.end());
 	}

@@ -35,6 +35,7 @@ Thread::Thread(boost::function<void ()> proc){
 	m_impl->proc.swap(proc);
 	const int err = ::pthread_create(&(m_impl->handle), NULLPTR, &Impl::threadProc, m_impl.get());
 	if(err != 0){
+		LOG_POSEIDON_ERROR("::pthread_create() failed with error code ", err);
 		DEBUG_THROW(SystemException, err);
 	}
 	m_impl->self = m_impl;

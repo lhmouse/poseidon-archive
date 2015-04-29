@@ -32,8 +32,6 @@ gettext
 make
 g++ *
 libboost-dev
-libboost-thread-dev #
-libboost-system-dev #
 libmysqlclient-dev
 libssl-dev
 libgoogle-perftools-dev
@@ -42,9 +40,6 @@ libgoogle-perftools-dev
   针对 C++98 的支持可能在未来的版本中被移除。
 * It is highly recommended that you use at least g++ 4.7 for C++11 features.
   Support for C++98 is deprecated and might be removed in future versions.
-
-# 在 Debian 上需要（使用 apt）
-# Required on Debian (when using apt)
 
 运行环境要求
 Rumtime environment requirements
