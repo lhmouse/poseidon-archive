@@ -53,9 +53,9 @@ namespace {
 		const std::string m_prefix;
 
 	public:
-		SystemSession(UniqueFile socket, boost::shared_ptr<const Http::AuthInfo> authInfo, std::string path)
+		SystemSession(UniqueFile socket, boost::shared_ptr<const Http::AuthInfo> authInfo, std::string prefix)
 			: Http::Session(STD_MOVE(socket))
-			, m_authInfo(STD_MOVE(authInfo)), m_prefix(STD_MOVE(path += '/'))
+			, m_authInfo(STD_MOVE(authInfo)), m_prefix(STD_MOVE(prefix))
 		{
 		}
 
@@ -234,7 +234,7 @@ namespace {
 
 	public:
 		boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const OVERRIDE {
-			return boost::make_shared<SystemSession>(STD_MOVE(client), m_authInfo, m_path);
+			return boost::make_shared<SystemSession>(STD_MOVE(client), m_authInfo, m_path + '/');
 		}
 	};
 
