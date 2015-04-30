@@ -13,6 +13,8 @@
 
 namespace Poseidon {
 
+extern const std::string EMPTY_STRING;
+
 // 参考 PHP 的 explode() 函数。
 template<typename T>
 inline std::vector<T> explode(char separator, const std::string &str, std::size_t limit = 0){

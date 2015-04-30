@@ -7,6 +7,8 @@
 
 namespace Poseidon {
 
+const std::string EMPTY_STRING;
+
 std::ostream &operator<<(std::ostream &os, const HexDumper &dumper){
 	AUTO(read, static_cast<const unsigned char *>(dumper.read));
 	os <<std::hex;
