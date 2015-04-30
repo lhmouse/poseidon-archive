@@ -66,7 +66,7 @@ namespace WebSocket {
 		virtual void onRequest(OpCode opcode, const StreamBuffer &payload) = 0;
 
 	public:
-		bool send(StreamBuffer payload, bool binary = true, bool fin = false, bool masked = false);
+		bool send(StreamBuffer payload, bool binary, bool fin = false, bool masked = false);
 		bool shutdown(StatusCode statusCode, StreamBuffer additional = StreamBuffer()) NOEXCEPT;
 	};
 }
