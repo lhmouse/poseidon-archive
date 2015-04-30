@@ -6,10 +6,6 @@
 
 namespace Poseidon {
 
-namespace {
-	const std::string EMPTY_STRING;
-}
-
 const std::string &OptionalMap::get(const char *key) const {
 	const const_iterator it = find(key);
 	if(it == end()){

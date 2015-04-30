@@ -19,6 +19,8 @@
 
 namespace Poseidon {
 
+const std::string EMPTY_STRING;
+
 namespace {
 	void sigTermProc(int){
 		LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");

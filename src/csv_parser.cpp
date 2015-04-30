@@ -9,10 +9,6 @@
 
 namespace Poseidon {
 
-namespace {
-	const std::string EMPTY_STRING;
-}
-
 CsvParser::CsvParser()
 	: m_row(static_cast<std::size_t>(-1))
 {

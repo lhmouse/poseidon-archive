@@ -18,7 +18,7 @@
 
 #include <cassert>
 #include <cstring>
-//#include <cstdlib> // 使用 <boost/cstdlib.hpp>。
+#include <cstdlib>
 #include <cstddef>
 #include <cstdio>
 
@@ -38,5 +38,11 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
+
+namespace Poseidon {
+
+extern const std::string EMPTY_STRING;
+
+}
 
 #endif
