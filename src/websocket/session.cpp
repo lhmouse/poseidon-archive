@@ -129,13 +129,13 @@ namespace WebSocket {
 			} catch(TryAgainLater &){
 				throw;
 			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown: URI = ", session->getUri(),
-					", statusCode = ", e.statusCode(), ", what = ", e.what());
-				try {
-					session->shutdown(e.statusCode(), StreamBuffer(e.what()));
-				} catch(...){
-					session->forceShutdown();
-				}
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"WebSocket::Exception thrown: URI = ", session->getUri(), ", statusCode = ", e.statusCode(), ", what = ", e.what());
+				session->shutdown(e.statusCode(), StreamBuffer(e.what()));
+			} catch(std::exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"std::exception thrown: URI = ", session->getUri(), ", what = ", e.what());
+				session->shutdown(ST_INTERNAL_ERROR, StreamBuffer(e.what()));
 			}
 		}
 	};

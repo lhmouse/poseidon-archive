@@ -112,13 +112,13 @@ namespace Http {
 			} catch(TryAgainLater &){
 				throw;
 			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception thrown in HTTP servlet: URI = ", m_requestHeaders.uri,
-					", statusCode = ", e.statusCode());
-				try {
-					session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
-				} catch(...){
-					session->forceShutdown();
-				}
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Http::Exception thrown in HTTP servlet: URI = ", m_requestHeaders.uri, ", statusCode = ", e.statusCode());
+				session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
+			} catch(std::exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"std::exception thrown in HTTP servlet: URI = ", m_requestHeaders.uri);
+				session->sendDefault(ST_BAD_REQUEST, OptionalMap(), true); // 关闭连接。
 			}
 		}
 	};
