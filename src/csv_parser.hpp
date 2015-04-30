@@ -25,6 +25,10 @@ public:
 	void load(const char *file);
 	bool loadNoThrow(const char *file);
 
+	const std::vector<OptionalMap> &getRawData() const {
+		return m_data;
+	}
+
 	bool empty() const {
 		return m_data.empty();
 	}
