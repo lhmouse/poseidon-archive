@@ -69,6 +69,7 @@ void Thread::join(){
 void Thread::detach(){
 	assert(m_impl);
 
+	::pthread_detach(m_impl->handle);
 	m_impl.reset();
 }
 
