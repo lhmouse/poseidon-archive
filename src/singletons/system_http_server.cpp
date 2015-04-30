@@ -75,7 +75,7 @@ namespace {
 			try {
 				AUTO(uri, Http::urlDecode(requestHeaders.uri));
 				if((uri.size() < m_prefix.size()) || (uri.compare(0, m_prefix.size(), m_prefix) != 0)){
-					LOG_POSEIDON_WARNING("Inacceptable system HTTP request: ", uri);
+					LOG_POSEIDON_WARNING("Inacceptable system HTTP request: uri = ", uri, ", prefix = ", m_prefix);
 					DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 				}
 				uri.erase(0, m_prefix.size());
