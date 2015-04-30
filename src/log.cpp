@@ -4,7 +4,7 @@
 #include "precompiled.hpp"
 #include "log.hpp"
 #include <unistd.h>
-#include "mutex.hpp"
+#include <pthread.h>
 #include "atomic.hpp"
 #include "time.hpp"
 #include "flags.hpp"
@@ -29,19 +29,10 @@ namespace {
 
 	volatile unsigned long long g_mask = -1ull;
 
-	volatile bool g_mutexInited = false; // 得对付下静态对象的构造顺序问题。
-	Mutex g_mutex;
+	// 不要使用 Mutex 对象。如果在其他静态对象的构造函数中输出日志，这个对象可能还没构造。
+	::pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	__thread char t_tag[5] = "----";
-
-	struct MutexGuard : NONCOPYABLE {
-		MutexGuard(){
-			atomicStore(g_mutexInited, true, ATOMIC_RELEASE);
-		}
-		~MutexGuard(){
-			atomicStore(g_mutexInited, false, ATOMIC_RELEASE);
-		}
-	} g_mutexGuard;
 }
 
 unsigned long long Logger::getMask() NOEXCEPT {
@@ -141,7 +132,7 @@ Logger::~Logger() NOEXCEPT {
 		char ch;
 		while(m_stream.get(ch)){
 			if(((unsigned char)ch + 1 <= 0x20) || (ch == 0x7F)){
-				ch = '.';
+				ch = ' ';
 			}
 			line.push_back(ch);
 		}
@@ -160,18 +151,19 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += '\n';
 
-		Mutex::UniqueLock lock;
-		// 如果为 false，则静态的 mutex 还没有被构造或者已被析构。
-		if(atomicLoad(g_mutexInited, ATOMIC_ACQUIRE)){
-			Mutex::UniqueLock(g_mutex).swap(lock);
-		}
-		std::size_t bytesTotal = 0;
-		while(bytesTotal < line.size()){
-			const AUTO(bytesWritten, ::write(fd, line.data() + bytesTotal, line.size() - bytesTotal));
-			if(bytesWritten <= 0){
-				break;
+		{
+			::pthread_mutex_lock(&g_mutex);
+
+			std::size_t bytesTotal = 0;
+			while(bytesTotal < line.size()){
+				const AUTO(bytesWritten, ::write(fd, line.data() + bytesTotal, line.size() - bytesTotal)); // noexcept
+				if(bytesWritten <= 0){
+					break;
+				}
+				bytesTotal += static_cast<std::size_t>(bytesWritten);
 			}
-			bytesTotal += static_cast<std::size_t>(bytesWritten);
+
+			::pthread_mutex_unlock(&g_mutex);
 		}
 	} catch(...){
 	}
