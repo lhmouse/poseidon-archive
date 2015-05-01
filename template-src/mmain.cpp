@@ -620,8 +620,7 @@ protected:
 };
 
 MODULE_RAII {
-	MyClient::create();
-	return VAL_INIT;
+	return MyClient::create();
 }
 
 }

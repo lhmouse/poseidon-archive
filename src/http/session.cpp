@@ -107,18 +107,19 @@ namespace Http {
 				{
 					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 5000));
 				} else {
-					session->shutdown();
+					session->forceShutdown();
 				}
 			} catch(TryAgainLater &){
 				throw;
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Http::Exception thrown in HTTP servlet: URI = ", m_requestHeaders.uri, ", statusCode = ", e.statusCode());
-				session->sendDefault(e.statusCode(), e.headers(), false); // 不关闭连接。
+				session->sendDefault(e.statusCode(), e.headers());
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown in HTTP servlet: URI = ", m_requestHeaders.uri);
-				session->sendDefault(ST_BAD_REQUEST, OptionalMap(), true); // 关闭连接。
+				session->sendDefault(ST_BAD_REQUEST, OptionalMap());
+				session->shutdownWrite();
 			}
 		}
 	};
@@ -142,7 +143,8 @@ namespace Http {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendDefault(m_statusCode, m_headers, true);
+			session->sendDefault(m_statusCode, m_headers);
+			session->shutdownWrite();
 		}
 	};
 
@@ -446,7 +448,7 @@ namespace Http {
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
 					virtualSharedFromThis<Session>(), e.statusCode(), e.headers()));
-				shutdown();
+				shutdownRead();
 			} catch(...){
 				forceShutdown();
 			}
@@ -456,7 +458,7 @@ namespace Http {
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
 					virtualSharedFromThis<Session>(), static_cast<StatusCode>(ST_BAD_REQUEST), OptionalMap()));
-				shutdown();
+				shutdownRead();
 			} catch(...){
 				forceShutdown();
 			}
@@ -495,7 +497,7 @@ namespace Http {
 		return m_upgradedSession;
 	}
 
-	bool Session::send(ResponseHeaders responseHeaders, StreamBuffer entity, bool fin){
+	bool Session::send(ResponseHeaders responseHeaders, StreamBuffer entity){
 		PROFILE_ME;
 		LOG_POSEIDON_DEBUG("Making HTTP response: statusCode = ", responseHeaders.statusCode);
 
@@ -522,10 +524,10 @@ namespace Http {
 		data.put("\r\n");
 
 		data.splice(entity);
-		return TcpSessionBase::send(STD_MOVE(data), fin);
+		return TcpSessionBase::send(STD_MOVE(data));
 	}
 
-	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity, bool fin){
+	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity){
 		PROFILE_ME;
 		LOG_POSEIDON_DEBUG("Making HTTP/1.1 response: statusCode = ", statusCode);
 
@@ -534,12 +536,12 @@ namespace Http {
 		responseHeaders.statusCode = statusCode;
 		responseHeaders.reason = getStatusCodeDesc(statusCode).descShort;
 		responseHeaders.headers = STD_MOVE(headers);
-		return send(STD_MOVE(responseHeaders), STD_MOVE(entity), fin);
+		return send(STD_MOVE(responseHeaders), STD_MOVE(entity));
 	}
 
-	bool Session::sendDefault(StatusCode statusCode, OptionalMap headers, bool fin){
+	bool Session::sendDefault(StatusCode statusCode, OptionalMap headers){
 		PROFILE_ME;
-		LOG_POSEIDON_DEBUG("Making default HTTP/1.1 response: statusCode = ", statusCode, ", fin = ", fin);
+		LOG_POSEIDON_DEBUG("Making default HTTP/1.1 response: statusCode = ", statusCode);
 
 		StreamBuffer entity;
 		if(static_cast<unsigned>(statusCode) / 100 >= 4){
@@ -554,7 +556,7 @@ namespace Http {
 			entity.put(desc.descLong);
 			entity.put("</p></body></html>");
 		}
-		return send(statusCode, STD_MOVE(headers), STD_MOVE(entity), fin);
+		return send(statusCode, STD_MOVE(headers), STD_MOVE(entity));
 	}
 }
 

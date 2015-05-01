@@ -322,12 +322,13 @@ namespace WebSocket {
 							switch(m_opcode){
 							case OP_CLOSE:
 								LOG_POSEIDON_INFO("Received close frame from ", parent->getRemoteInfo());
-								sendFrame(STD_MOVE(payload), OP_CLOSE, true, false);
+								sendFrame(STD_MOVE(payload), OP_CLOSE, false);
+								shutdownWrite();
 								break;
 
 							case OP_PING:
 								LOG_POSEIDON_INFO("Received ping frame from ", parent->getRemoteInfo());
-								sendFrame(STD_MOVE(payload), OP_PONG, false, false);
+								sendFrame(STD_MOVE(payload), OP_PONG, false);
 								break;
 
 							case OP_PONG:
@@ -376,7 +377,7 @@ namespace WebSocket {
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
 						virtualSharedFromThis<Session>(), e.statusCode(), StreamBuffer(e.what())));
-					parent->shutdown();
+					parent->shutdownRead();
 				} catch(...){
 					parent->forceShutdown();
 				}
@@ -389,7 +390,7 @@ namespace WebSocket {
 				try {
 					enqueueJob(boost::make_shared<ErrorJob>(
 						virtualSharedFromThis<Session>(), static_cast<StatusCode>(ST_INTERNAL_ERROR), StreamBuffer()));
-					parent->shutdown();
+					parent->shutdownRead();
 				} catch(...){
 					forceShutdown();
 				}
@@ -397,7 +398,7 @@ namespace WebSocket {
 		}
 	}
 
-	bool Session::sendFrame(StreamBuffer payload, OpCode opcode, bool fin, bool masked){
+	bool Session::sendFrame(StreamBuffer payload, OpCode opcode, bool masked){
 		StreamBuffer frame;
 		unsigned char ch = opcode | OP_FL_FIN;
 		frame.put(ch);
@@ -436,15 +437,12 @@ namespace WebSocket {
 		} else {
 			frame.splice(payload);
 		}
-		return Http::UpgradedSessionBase::send(STD_MOVE(frame), fin);
+		return Http::UpgradedSessionBase::send(STD_MOVE(frame));
 	}
 
-	bool Session::send(StreamBuffer payload, bool binary, bool fin, bool masked){
-		if(!sendFrame(STD_MOVE(payload), binary ? OP_DATA_BIN : OP_DATA_TEXT, false, masked)){
+	bool Session::send(StreamBuffer payload, bool binary, bool masked){
+		if(!sendFrame(STD_MOVE(payload), binary ? OP_DATA_BIN : OP_DATA_TEXT, masked)){
 			return false;
-		}
-		if(fin){
-			return shutdown(ST_NORMAL_CLOSURE);
 		}
 		return true;
 	}
@@ -455,9 +453,10 @@ namespace WebSocket {
 			storeBe(codeBe, static_cast<unsigned>(statusCode));
 			temp.put(&codeBe, 2);
 			temp.splice(additional);
-			return sendFrame(STD_MOVE(temp), OP_CLOSE, true, false);
+			return sendFrame(STD_MOVE(temp), OP_CLOSE, false);
 		} catch(...){
-			return UpgradedSessionBase::shutdown();
+			UpgradedSessionBase::forceShutdown();
+			return false;
 		}
 	}
 }

@@ -13,44 +13,51 @@ namespace Http {
 	{
 	}
 
-	void UpgradedSessionBase::onInit(RequestHeaders requestHeaders, StreamBuffer entity){
-		(void)requestHeaders;
-		(void)entity;
-	}
-
 	void UpgradedSessionBase::onClose() NOEXCEPT {
 	}
 	void UpgradedSessionBase::onReadHup() NOEXCEPT {
 	}
 
-	bool UpgradedSessionBase::send(StreamBuffer buffer, bool fin){
+	void UpgradedSessionBase::onInit(RequestHeaders requestHeaders, StreamBuffer entity){
+		(void)requestHeaders;
+		(void)entity;
+	}
+
+	bool UpgradedSessionBase::send(StreamBuffer buffer){
 		const AUTO(parent, getParent());
 		if(!parent){
 			return false;
 		}
-		return static_cast<TcpSessionBase &>(*parent).send(STD_MOVE(buffer), fin);
+		return static_cast<TcpSessionBase &>(*parent).send(STD_MOVE(buffer));
 	}
 
-	bool UpgradedSessionBase::hasBeenShutdown() const {
+	bool UpgradedSessionBase::hasBeenShutdownRead() const NOEXCEPT {
 		const AUTO(parent, getParent());
 		if(!parent){
 			return true;
 		}
-		return static_cast<const TcpSessionBase &>(*parent).hasBeenShutdown();
+		return static_cast<const TcpSessionBase &>(*parent).hasBeenShutdownRead();
 	}
-	bool UpgradedSessionBase::shutdown() NOEXCEPT {
+	bool UpgradedSessionBase::shutdownRead() NOEXCEPT {
 		const AUTO(parent, getParent());
 		if(!parent){
 			return false;
 		}
-		return static_cast<TcpSessionBase &>(*parent).shutdown();
+		return static_cast<TcpSessionBase &>(*parent).shutdownRead();
 	}
-	bool UpgradedSessionBase::forceShutdown() NOEXCEPT {
+	bool UpgradedSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
+		const AUTO(parent, getParent());
+		if(!parent){
+			return true;
+		}
+		return static_cast<const TcpSessionBase &>(*parent).hasBeenShutdownWrite();
+	}
+	bool UpgradedSessionBase::shutdownWrite() NOEXCEPT {
 		const AUTO(parent, getParent());
 		if(!parent){
 			return false;
 		}
-		return static_cast<TcpSessionBase &>(*parent).forceShutdown();
+		return static_cast<TcpSessionBase &>(*parent).shutdownWrite();
 	}
 
 	void UpgradedSessionBase::setTimeout(boost::uint64_t timeout){

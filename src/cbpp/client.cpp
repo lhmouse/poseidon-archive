@@ -236,10 +236,10 @@ namespace Cbpp {
 		}
 	}
 
-	bool Client::send(boost::uint16_t messageId, StreamBuffer payload, bool fin){
+	bool Client::send(boost::uint16_t messageId, StreamBuffer payload){
 		PROFILE_ME;
 
-		LOG_POSEIDON_DEBUG("Sending frame: messageId = ", messageId, ", size = ", payload.size(), ", fin = ", fin);
+		LOG_POSEIDON_DEBUG("Sending frame: messageId = ", messageId, ", size = ", payload.size());
 		StreamBuffer frame;
 		boost::uint16_t temp16;
 		boost::uint64_t temp64;
@@ -255,7 +255,7 @@ namespace Cbpp {
 		storeLe(temp16, messageId);
 		frame.put(&temp16, 2);
 		frame.splice(payload);
-		return TcpSessionBase::send(STD_MOVE(frame), fin);
+		return TcpSessionBase::send(STD_MOVE(frame));
 	}
 }
 

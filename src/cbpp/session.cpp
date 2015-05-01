@@ -84,11 +84,12 @@ namespace Cbpp {
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Cbpp::Exception thrown: messageId = ", m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
-				session->sendControl(m_messageId, e.statusCode(), e.what(), false); // 不关闭连接。
+				session->sendControl(m_messageId, e.statusCode(), e.what());
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: messageId = ", m_messageId, ", what = ", e.what());
-				session->sendControl(m_messageId, ST_INTERNAL_ERROR, e.what(), true); // 关闭连接。
+				session->sendControl(m_messageId, ST_INTERNAL_ERROR, e.what());
+				session->shutdownWrite();
 			}
 		}
 	};
@@ -118,7 +119,7 @@ namespace Cbpp {
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
 				try {
-					session->sendControl(ControlMessage::ID, e.statusCode(), e.what(), false); // 不关闭连接。
+					session->sendControl(ControlMessage::ID, e.statusCode(), e.what());
 				} catch(...){
 					session->forceShutdown();
 				}
@@ -146,7 +147,8 @@ namespace Cbpp {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendControl(m_messageId, m_statusCode, m_reason, true);
+			session->sendControl(m_messageId, m_statusCode, m_reason);
+			session->shutdownWrite();
 		}
 	};
 
@@ -255,7 +257,7 @@ namespace Cbpp {
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
 					virtualSharedFromThis<Session>(), m_messageId, e.statusCode(), e.what()));
-				shutdown();
+				shutdownRead();
 			} catch(...){
 				forceShutdown();
 			}
@@ -265,7 +267,7 @@ namespace Cbpp {
 			try {
 				enqueueJob(boost::make_shared<ErrorJob>(
 					virtualSharedFromThis<Session>(), m_messageId, static_cast<StatusCode>(ST_INTERNAL_ERROR), std::string()));
-				shutdown();
+				shutdownRead();
 			} catch(...){
 				forceShutdown();
 			}
@@ -282,15 +284,16 @@ namespace Cbpp {
 
 		default:
 			LOG_POSEIDON_WARNING("Unknown control code: ", controlCode);
-			send(ControlMessage(static_cast<boost::uint16_t>(controlCode), statusCode, reason), true);
+			send(ControlMessage(static_cast<boost::uint16_t>(controlCode), statusCode, reason));
+			shutdownWrite();
 			break;
 		}
 	}
 
-	bool Session::send(boost::uint16_t messageId, StreamBuffer payload, bool fin){
+	bool Session::send(boost::uint16_t messageId, StreamBuffer payload){
 		PROFILE_ME;
 
-		LOG_POSEIDON_DEBUG("Sending frame: messageId = ", messageId, ", size = ", payload.size(), ", fin = ", fin);
+		LOG_POSEIDON_DEBUG("Sending frame: messageId = ", messageId, ", size = ", payload.size());
 		StreamBuffer frame;
 		boost::uint16_t temp16;
 		boost::uint64_t temp64;
@@ -306,11 +309,11 @@ namespace Cbpp {
 		storeLe(temp16, messageId);
 		frame.put(&temp16, 2);
 		frame.splice(payload);
-		return TcpSessionBase::send(STD_MOVE(frame), fin);
+		return TcpSessionBase::send(STD_MOVE(frame));
 	}
 
-	bool Session::sendControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason, bool fin){
-		return send(ControlMessage(messageId, static_cast<int>(statusCode), STD_MOVE(reason)), fin);
+	bool Session::sendControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
+		return send(ControlMessage(messageId, static_cast<int>(statusCode), STD_MOVE(reason)));
 	}
 }
 

@@ -161,9 +161,6 @@ std::vector<EpollDaemon::SnapshotItem> EpollDaemon::snapshot(){
 }
 
 void EpollDaemon::addSession(const boost::shared_ptr<TcpSessionBase> &session){
-	if(session->hasBeenShutdown()){
-		return;
-	}
 	g_epoll->addSession(session);
 }
 void EpollDaemon::registerServer(boost::weak_ptr<const SocketServerBase> server){

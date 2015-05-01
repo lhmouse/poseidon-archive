@@ -62,8 +62,11 @@ private:
 
 	boost::scoped_ptr<SslFilterBase> m_sslFilter;
 
-	volatile bool m_shutdown;
+	volatile bool m_shutdownRead;
+	volatile bool m_shutdownWrite;
 	volatile std::size_t m_delayedShutdownGuardCount;
+	volatile bool m_reallyShutdownWrite;
+
 	mutable Mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
 	boost::weak_ptr<const boost::weak_ptr<Epoll> > m_epoll;
@@ -92,9 +95,9 @@ private:
 	void fetchPeerInfo() const;
 	// 和 Windows 的 IsDialogMessage() 类似，这个函数读取并在内部调用 onReadAvail() 处理数据。
 	// 这里的出参返回读取的数据，一次性读取的字节数不大于 hintSize。如果开启了 SSL，返回明文。
-	long syncReadAndProcess(void *hint, unsigned long hintSize);
+	long syncReadAndProcess(int &errCode, void *hint, unsigned long hintSize);
 	// 这里的出参返回写入的数据，一次性写入的字节数不大于 hintSize。如果开启了 SSL，返回明文。
-	long syncWrite(Mutex::UniqueLock &lock, void *hint, unsigned long hintSize);
+	long syncWrite(int &errCode, void *hint, unsigned long hintSize);
 
 protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
@@ -109,11 +112,12 @@ public:
 		return !!m_sslFilter;
 	}
 
-	bool send(StreamBuffer buffer, bool fin = false) FINAL;
+	bool send(StreamBuffer buffer) FINAL;
 
-	bool hasBeenShutdown() const OVERRIDE;
-	bool shutdown() NOEXCEPT;
-	bool forceShutdown() NOEXCEPT OVERRIDE;
+	bool hasBeenShutdownRead() const NOEXCEPT OVERRIDE;
+	bool hasBeenShutdownWrite() const NOEXCEPT OVERRIDE;
+	bool shutdownRead() NOEXCEPT OVERRIDE;
+	bool shutdownWrite() NOEXCEPT OVERRIDE;
 
 	boost::uint64_t getCreatedTime() const {
 		return m_createdTime;

@@ -64,13 +64,11 @@ namespace Cbpp {
 		virtual void onControl(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason) = 0;
 
 	public:
-		bool send(boost::uint16_t messageId, StreamBuffer payload, bool fin = false);
+		bool send(boost::uint16_t messageId, StreamBuffer payload);
 
 		template<class MessageT>
-		typename boost::enable_if<boost::is_base_of<MessageBase, MessageT>, bool>::type
-			send(const MessageT &payload, bool fin = false)
-		{
-			return send(MessageT::ID, StreamBuffer(payload), fin);
+		typename boost::enable_if<boost::is_base_of<MessageBase, MessageT>, bool>::type send(const MessageT &payload){
+			return send(MessageT::ID, StreamBuffer(payload));
 		}
 	};
 }

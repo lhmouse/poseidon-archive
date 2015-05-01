@@ -24,14 +24,17 @@ private:
 	virtual void onClose() NOEXCEPT = 0;
 
 public:
-	// 在使用 fin = true 调用 send() 或调用 forceShutdown() 之后返回 true。
-	virtual bool hasBeenShutdown() const = 0;
-	// 若 fin = true，调用后 onReadAvail() 将不会被触发，
-	// 此后任何 send() 将不会进行任何操作。
-	// 套接字将会在未发送的数据被全部发送之后被正常关闭。
-	virtual bool send(StreamBuffer buffer, bool fin = false) = 0;
-	// 强行关闭会话以及套接字，未发送数据丢失。
-	virtual bool forceShutdown() NOEXCEPT = 0;
+	virtual bool send(StreamBuffer buffer) = 0;
+
+	virtual bool hasBeenShutdownRead() const NOEXCEPT = 0;
+	virtual bool hasBeenShutdownWrite() const NOEXCEPT = 0;
+	virtual bool shutdownRead() NOEXCEPT = 0;
+	virtual bool shutdownWrite() NOEXCEPT = 0;
+
+	void forceShutdown() NOEXCEPT {
+		shutdownRead();
+		shutdownWrite();
+	}
 };
 
 }

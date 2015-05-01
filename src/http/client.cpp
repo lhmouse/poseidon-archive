@@ -366,7 +366,7 @@ namespace Http {
 					if(!expected.empty()){
 						const AUTO(bytesAvail, std::min<boost::uint64_t>(expected.size(), m_chunkSize - m_chunkOffset));
 						enqueueJob(boost::make_shared<EntityJob>(
-							virtualSharedFromThis<Client>(), m_chunkOffset, expected.cut(bytesAvail)));
+							virtualSharedFromThis<Client>(), m_contentOffset, expected.cut(bytesAvail)));
 						m_contentOffset += bytesAvail;
 						m_chunkOffset += bytesAvail;
 
@@ -438,7 +438,7 @@ namespace Http {
 		(void)headers;
 	}
 
-	bool Client::send(RequestHeaders requestHeaders, StreamBuffer entity, bool fin){
+	bool Client::send(RequestHeaders requestHeaders, StreamBuffer entity){
 		PROFILE_ME;
 
 		StreamBuffer data;
@@ -469,11 +469,11 @@ namespace Http {
 		data.put("\r\n");
 
 		data.splice(entity);
-		return TcpClientBase::send(STD_MOVE(data), fin);
+		return TcpClientBase::send(STD_MOVE(data));
 	}
 
 	bool Client::send(Verb verb, std::string uri, OptionalMap getParams, OptionalMap headers,
-		StreamBuffer entity, bool fin)
+		StreamBuffer entity)
 	{
 		PROFILE_ME;
 
@@ -483,7 +483,7 @@ namespace Http {
 		requestHeaders.version = 10001;
 		requestHeaders.getParams = STD_MOVE(getParams);
 		requestHeaders.headers = STD_MOVE(headers);
-		return send(STD_MOVE(requestHeaders), STD_MOVE(entity), fin);
+		return send(STD_MOVE(requestHeaders), STD_MOVE(entity));
 	}
 }
 

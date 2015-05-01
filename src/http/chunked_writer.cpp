@@ -66,7 +66,7 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		session->TcpSessionBase::send(STD_MOVE(data), false);
+		session->TcpSessionBase::send(STD_MOVE(data));
 
 		m_session = STD_MOVE(session); // noexcept
 	}
@@ -86,10 +86,10 @@ namespace Http {
 		data.splice(buffer);
 		data.put("\r\n");
 
-		m_session->TcpSessionBase::send(STD_MOVE(data), false);
+		m_session->TcpSessionBase::send(STD_MOVE(data));
 	}
 
-	void ChunkedWriter::finalize(OptionalMap headers, bool fin){
+	void ChunkedWriter::finalize(OptionalMap headers){
 		if(!m_session){
 			return;
 		}
@@ -111,7 +111,7 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		m_session->TcpSessionBase::send(STD_MOVE(data), fin);
+		m_session->TcpSessionBase::send(STD_MOVE(data));
 
 		m_session.reset();
 	}

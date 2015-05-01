@@ -27,18 +27,19 @@ namespace Http {
 		UpgradedSessionBase(const boost::shared_ptr<Session> &parent, std::string uri);
 
 	private:
+		virtual void onClose() NOEXCEPT OVERRIDE;
+		virtual void onReadHup() NOEXCEPT;
+
 		virtual void onInit(RequestHeaders requestHeaders, StreamBuffer entity);
 		virtual void onReadAvail(const void *data, std::size_t size) = 0;
 
-		virtual void onClose() NOEXCEPT;
-		virtual void onReadHup() NOEXCEPT;
-
 	public:
-		bool send(StreamBuffer buffer, bool fin = false) FINAL;
+		bool send(StreamBuffer buffer) FINAL;
 
-		bool hasBeenShutdown() const OVERRIDE;
-		bool shutdown() NOEXCEPT;
-		bool forceShutdown() NOEXCEPT OVERRIDE;
+		bool hasBeenShutdownRead() const NOEXCEPT OVERRIDE;
+		bool shutdownRead() NOEXCEPT;
+		bool hasBeenShutdownWrite() const NOEXCEPT OVERRIDE;
+		bool shutdownWrite() NOEXCEPT;
 
 		boost::weak_ptr<const Session> getWeakParent() const {
 			return m_parent;

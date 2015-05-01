@@ -42,10 +42,7 @@ namespace Http {
 		}
 		void put(StreamBuffer buffer);
 
-		void finalize(OptionalMap headers, bool fin = false);
-		void finalize(bool fin = false){
-			finalize(OptionalMap(), fin);
-		}
+		void finalize(OptionalMap headers = OptionalMap());
 	};
 }
 

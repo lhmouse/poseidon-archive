@@ -215,23 +215,25 @@ std::size_t Epoll::pumpReadable(){
 		const AUTO(session, it->session);
 
 		try {
+			int errCode;
 			unsigned char temp[1024];
-			long bytesRead = session->syncReadAndProcess(temp, sizeof(temp));
+			const long bytesRead = session->syncReadAndProcess(errCode, temp, sizeof(temp));
 			if(bytesRead < 0){
-				if(errno == EINTR){
+				if(errCode == EINTR){
 					continue;
 				}
-				if(errno == EAGAIN){
+				if(errCode == EAGAIN){
 					const Mutex::UniqueLock lock(m_mutex);
 					m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 					continue;
 				}
 				DEBUG_THROW(SystemException);
 			} else if(bytesRead == 0){
-				if(session->shutdown()){
-					LOG_POSEIDON_INFO("Connection closed: remote = ", session->getRemoteInfo());
-					session->onReadHup();
-				}
+				LOG_POSEIDON_INFO("Connection closed: remote = ", session->getRemoteInfo());
+				session->onReadHup();
+
+				const Mutex::UniqueLock lock(m_mutex);
+				m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 				continue;
 			}
 		} catch(std::exception &e){
@@ -262,34 +264,20 @@ std::size_t Epoll::pumpWriteable(){
 		const AUTO(session, it->session);
 
 		try {
+			int errCode;
 			unsigned char temp[1024];
-			long bytesWritten;
-			bool readHup;
-			{
-				Mutex::UniqueLock sessionLock;
-				bytesWritten = session->syncWrite(sessionLock, temp, sizeof(temp));
-				readHup = session->hasBeenShutdown();
-				if(bytesWritten == 0){
-					if(!readHup){
-						const Mutex::UniqueLock lock(m_mutex);
-						m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
-					}
-				}
-			}
+			const long bytesWritten = session->syncWrite(errCode, temp, sizeof(temp));
 			if(bytesWritten < 0){
-				if(errno == EINTR){
+				if(errCode == EINTR){
 					continue;
 				}
-				if(errno == EAGAIN){
+				if(errCode == EAGAIN){
 					const Mutex::UniqueLock lock(m_mutex);
 					m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
 					continue;
 				}
 				DEBUG_THROW(SystemException);
 			} else if(bytesWritten == 0){
-				if(readHup){
-					const TcpSessionBase::DelayedShutdownGuard guard(session);
-				}
 				continue;
 			}
 		} catch(std::exception &e){

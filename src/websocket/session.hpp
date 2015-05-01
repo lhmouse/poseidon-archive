@@ -60,13 +60,13 @@ namespace WebSocket {
 	private:
 		void onReadAvail(const void *data, std::size_t size) FINAL;
 
-		bool sendFrame(StreamBuffer payload, OpCode opcode, bool fin, bool masked);
+		bool sendFrame(StreamBuffer payload, OpCode opcode, bool masked);
 
 	protected:
 		virtual void onRequest(OpCode opcode, const StreamBuffer &payload) = 0;
 
 	public:
-		bool send(StreamBuffer payload, bool binary, bool fin = false, bool masked = false);
+		bool send(StreamBuffer payload, bool binary, bool masked = false);
 		bool shutdown(StatusCode statusCode, StreamBuffer additional = StreamBuffer()) NOEXCEPT;
 	};
 }

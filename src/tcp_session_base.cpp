@@ -19,6 +19,7 @@
 #include "epoll.hpp"
 #include "job_base.hpp"
 #include "async_job.hpp"
+#include "profiler.hpp"
 
 namespace Poseidon {
 
@@ -28,6 +29,7 @@ namespace {
 		if(!session){
 			return;
 		}
+
 		try {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Connection timed out: remote = ", session->getRemoteInfo());
 		} catch(...){
@@ -63,17 +65,15 @@ TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::shared_ptr<Tcp
 }
 TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	if(atomicSub(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED) == 0){
-		const Mutex::UniqueLock lock(m_session->m_bufferMutex);
-		if(m_session->m_sendBuffer.empty()){
-			m_session->forceShutdown();
-		}
+		atomicStore(m_session->m_shutdownWrite, true, ATOMIC_RELEASE);
+		atomicStore(m_session->m_reallyShutdownWrite, true, ATOMIC_RELEASE);
 	}
 }
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getFastMonoClock())
 	, m_peerInfo()
-	, m_shutdown(false), m_delayedShutdownGuardCount(0)
+	, m_shutdownRead(false), m_shutdownWrite(false), m_delayedShutdownGuardCount(0), m_reallyShutdownWrite(false)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
@@ -155,7 +155,7 @@ void TcpSessionBase::fetchPeerInfo() const {
 	atomicStore(m_peerInfo.fetched, true, ATOMIC_RELEASE);
 }
 
-bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
+bool TcpSessionBase::send(StreamBuffer buffer){
 	const Mutex::UniqueLock lock(m_bufferMutex);
 	if(!buffer.empty()){
 		m_sendBuffer.splice(buffer);
@@ -167,62 +167,86 @@ bool TcpSessionBase::send(StreamBuffer buffer, bool fin){
 			epoll->notifyWriteable(this);
 		}
 	}
-	if(fin){
-		shutdown();
-	}
 	return true;
 }
 
-bool TcpSessionBase::hasBeenShutdown() const {
-	return atomicLoad(m_shutdown, ATOMIC_ACQUIRE);
+bool TcpSessionBase::hasBeenShutdownRead() const NOEXCEPT {
+	return atomicLoad(m_shutdownRead, ATOMIC_ACQUIRE);
 }
-bool TcpSessionBase::shutdown() NOEXCEPT {
-	const bool ret = !atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
+bool TcpSessionBase::shutdownRead() NOEXCEPT {
+	const bool ret = !atomicExchange(m_shutdownRead, true, ATOMIC_ACQ_REL);
 	::shutdown(m_socket.get(), SHUT_RD);
 	return ret;
 }
-bool TcpSessionBase::forceShutdown() NOEXCEPT {
-	const bool ret = !atomicExchange(m_shutdown, true, ATOMIC_ACQ_REL);
-	::shutdown(m_socket.get(), SHUT_RDWR);
+
+bool TcpSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
+	return atomicLoad(m_shutdownWrite, ATOMIC_ACQUIRE);
+}
+bool TcpSessionBase::shutdownWrite() NOEXCEPT {
+	const bool ret = !atomicExchange(m_shutdownWrite, true, ATOMIC_ACQ_REL);
+	if(atomicLoad(m_delayedShutdownGuardCount, ATOMIC_RELAXED) == 0){
+		// 异步关闭。
+		atomicStore(m_reallyShutdownWrite, true, ATOMIC_RELEASE);
+	}
 	return ret;
 }
 
-long TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
+long TcpSessionBase::syncReadAndProcess(int &errCode, void *hint, unsigned long hintSize){
+	PROFILE_ME;
+
 	::ssize_t ret;
+
 	if(m_sslFilter){
 		ret = m_sslFilter->read(hint, hintSize);
 	} else {
 		ret = ::recv(m_socket.get(), hint, hintSize, MSG_NOSIGNAL);
 	}
+	errCode = errno;
+
 	if(ret > 0){
-		LOG_POSEIDON_TRACE("Read ", ret, " byte(s) from ", getRemoteInfo(),
-			", hex = ", HexDumper(hint, static_cast<std::size_t>(ret)));
-		onReadAvail(hint, static_cast<std::size_t>(ret));
+		const AUTO(bytes, static_cast<std::size_t>(ret));
+		LOG_POSEIDON_TRACE("Read ", bytes, " byte(s) from ", getRemoteInfo(), ", hex = ", HexDumper(hint, bytes));
+
+		onReadAvail(hint, bytes);
 	}
 	return ret;
 }
-long TcpSessionBase::syncWrite(Mutex::UniqueLock &lock, void *hint, unsigned long hintSize){
-	Mutex::UniqueLock(m_bufferMutex).swap(lock);
-	const std::size_t size = m_sendBuffer.peek(hint, hintSize);
-	lock.unlock();
+long TcpSessionBase::syncWrite(int &errCode, void *hint, unsigned long hintSize){
+	PROFILE_ME;
 
-	if(size == 0){
-		return 0;
-	}
 	::ssize_t ret;
-	if(m_sslFilter){
-		ret = m_sslFilter->write(hint, size);
-	} else {
-		ret = ::send(m_socket.get(), hint, size, MSG_NOSIGNAL);
+
+	std::size_t bytesAvail;
+	{
+		const Mutex::UniqueLock lock(m_bufferMutex);
+		bytesAvail = m_sendBuffer.peek(hint, hintSize);
 	}
-	if(ret > 0){
-		LOG_POSEIDON_TRACE("Wrote ", ret, " byte(s) to ", getRemoteInfo(), ", hex = ",
-			HexDumper(hint, static_cast<std::size_t>(ret)));
+	if(bytesAvail == 0){
+		ret = -1;
+		errCode = EAGAIN;
+	} else {
+		if(m_sslFilter){
+			ret = m_sslFilter->write(hint, bytesAvail);
+		} else {
+			ret = ::send(m_socket.get(), hint, bytesAvail, MSG_NOSIGNAL);
+		}
+		errCode = errno;
+
+		if(ret > 0){
+			const AUTO(bytes, static_cast<std::size_t>(ret));
+			LOG_POSEIDON_TRACE("Wrote ", bytes, " byte(s) to ", getRemoteInfo(), ", hex = ", HexDumper(hint, bytes));
+		}
 	}
 
-	lock.lock();
-	if(ret > 0){
-		m_sendBuffer.discard(static_cast<std::size_t>(ret));
+	{
+		const Mutex::UniqueLock lock(m_bufferMutex);
+		if(ret > 0){
+			const AUTO(bytes, static_cast<std::size_t>(ret));
+			m_sendBuffer.discard(bytes);
+		}
+		if(m_sendBuffer.empty() && atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
+			::shutdown(m_socket.get(), SHUT_WR);
+		}
 	}
 	return ret;
 }
@@ -238,8 +262,7 @@ const IpPort &TcpSessionBase::getLocalInfo() const {
 
 void TcpSessionBase::registerOnClose(boost::function<void ()> callback){
 	const Mutex::UniqueLock lock(m_onCloseMutex);
-	m_onCloseQueue.push_back(boost::function<void ()>());
-	m_onCloseQueue.back().swap(callback);
+	m_onCloseQueue.push_back(STD_MOVE(callback));
 }
 void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 	boost::shared_ptr<const TimerItem> shutdownTimer;
@@ -249,7 +272,7 @@ void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 	}
 	{
 		const Mutex::UniqueLock lock(m_timerMutex);
-		m_shutdownTimer.swap(shutdownTimer);
+		m_shutdownTimer = STD_MOVE(shutdownTimer);
 	}
 }
 
