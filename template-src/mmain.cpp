@@ -561,8 +561,9 @@ public:
 
 		OptionalMap headers;
 		headers.set("Host", "github.com");
-		headers.set("Connection", "Close");
+//		headers.set("Connection", "Close");
 		ret->send(Http::V_GET, "/", OptionalMap(), STD_MOVE(headers));
+//		ret->shutdownWrite();
 
 		return ret;
 	}

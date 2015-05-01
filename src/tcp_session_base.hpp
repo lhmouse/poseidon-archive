@@ -88,6 +88,7 @@ private:
 	void initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter);
 
 	void setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT;
+	void notifyEpollWriteable() NOEXCEPT;
 
 	void pumpOnClose() NOEXCEPT;
 

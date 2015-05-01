@@ -50,6 +50,18 @@ public:
 		void unlock() NOEXCEPT;
 
 		void swap(UniqueLock &rhs) NOEXCEPT;
+
+	public:
+#ifdef POSEIDON_CXX11
+		explicit operator bool() const noexcept {
+			return isLocked();
+		}
+#else
+		typedef bool (UniqueLock::*DummyBool_)() const;
+		operator DummyBool_() const NOEXCEPT {
+			return isLocked() ? &UniqueLock::isLocked : 0;
+		}
+#endif
 	};
 
 private:

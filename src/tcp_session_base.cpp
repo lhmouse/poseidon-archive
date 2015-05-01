@@ -65,8 +65,7 @@ TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::shared_ptr<Tcp
 }
 TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	if(atomicSub(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED) == 0){
-		atomicStore(m_session->m_shutdownWrite, true, ATOMIC_RELEASE);
-		atomicStore(m_session->m_reallyShutdownWrite, true, ATOMIC_RELEASE);
+		m_session->shutdownWrite();
 	}
 }
 
@@ -111,6 +110,15 @@ void TcpSessionBase::setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epo
 		}
 	}
 	m_epoll = STD_MOVE(epoll);
+}
+void TcpSessionBase::notifyEpollWriteable() NOEXCEPT {
+	const AUTO(ptr, m_epoll.lock());
+	if(ptr){
+		const AUTO(epoll, ptr->lock());
+		if(epoll){
+			epoll->notifyWriteable(this);
+		}
+	}
 }
 
 void TcpSessionBase::pumpOnClose() NOEXCEPT {
@@ -160,13 +168,7 @@ bool TcpSessionBase::send(StreamBuffer buffer){
 	if(!buffer.empty()){
 		m_sendBuffer.splice(buffer);
 	}
-	const AUTO(ptr, m_epoll.lock());
-	if(ptr){
-		const AUTO(epoll, ptr->lock());
-		if(epoll){
-			epoll->notifyWriteable(this);
-		}
-	}
+	notifyEpollWriteable();
 	return true;
 }
 
@@ -185,8 +187,8 @@ bool TcpSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
 bool TcpSessionBase::shutdownWrite() NOEXCEPT {
 	const bool ret = !atomicExchange(m_shutdownWrite, true, ATOMIC_ACQ_REL);
 	if(atomicLoad(m_delayedShutdownGuardCount, ATOMIC_RELAXED) == 0){
-		// 异步关闭。
 		atomicStore(m_reallyShutdownWrite, true, ATOMIC_RELEASE);
+		notifyEpollWriteable();
 	}
 	return ret;
 }
@@ -217,9 +219,11 @@ long TcpSessionBase::syncWrite(int &errCode, void *hint, unsigned long hintSize)
 	::ssize_t ret;
 
 	std::size_t bytesAvail;
+	bool empty;
 	{
 		const Mutex::UniqueLock lock(m_bufferMutex);
 		bytesAvail = m_sendBuffer.peek(hint, hintSize);
+		empty = m_sendBuffer.empty();
 	}
 	if(bytesAvail == 0){
 		ret = 0;
@@ -235,18 +239,15 @@ long TcpSessionBase::syncWrite(int &errCode, void *hint, unsigned long hintSize)
 		if(ret > 0){
 			const AUTO(bytes, static_cast<std::size_t>(ret));
 			LOG_POSEIDON_TRACE("Wrote ", bytes, " byte(s) to ", getRemoteInfo(), ", hex = ", HexDumper(hint, bytes));
+
+			const Mutex::UniqueLock lock(m_bufferMutex);
+			m_sendBuffer.discard(bytes);
+			empty = m_sendBuffer.empty();
 		}
 	}
 
-	{
-		const Mutex::UniqueLock lock(m_bufferMutex);
-		if(ret > 0){
-			const AUTO(bytes, static_cast<std::size_t>(ret));
-			m_sendBuffer.discard(bytes);
-		}
-		if(m_sendBuffer.empty() && atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
-			::shutdown(m_socket.get(), SHUT_WR);
-		}
+	if(empty && atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
+		::shutdown(m_socket.get(), SHUT_WR);
 	}
 	return ret;
 }

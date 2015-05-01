@@ -30,12 +30,9 @@ namespace {
 		boost::uint64_t lastRead;
 		boost::uint64_t lastWritten;
 
-		mutable bool readHup;
-
 		SessionMapElement(boost::weak_ptr<Epoll> epoll_, boost::shared_ptr<TcpSessionBase> session_)
 			: session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
 			, addr(session.get()), lastRead(0), lastWritten(0)
-			, readHup(false)
 		{
 		}
 	};
@@ -65,7 +62,7 @@ Epoll::Epoll(){
 Epoll::~Epoll(){
 }
 
-void Epoll::notifyWriteable(TcpSessionBase *session){
+void Epoll::notifyWriteable(TcpSessionBase *session) NOEXCEPT {
 	const AUTO(now, getFastMonoClock());
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
@@ -75,14 +72,14 @@ void Epoll::notifyWriteable(TcpSessionBase *session){
 	}
 	m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
 }
-void Epoll::notifyUnlinked(TcpSessionBase *session){
+void Epoll::notifyUnlinked(TcpSessionBase *session) NOEXCEPT {
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
-	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), (::epoll_event *)-1) != 0){
 		const int errCode = errno;
 		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
 	}
@@ -97,7 +94,7 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 		return;
 	}
 	::epoll_event event;
-	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET);
+	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
 	event.data.ptr = session.get();
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const int errCode = errno;
@@ -140,7 +137,7 @@ void Epoll::clear(){
 
 std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 	::epoll_event events[MAX_PUMP_COUNT];
-	const int count = ::epoll_wait(m_epoll.get(), events, (int)COUNT_OF(events), (int)timeout);
+	const int count = ::epoll_wait(m_epoll.get(), events, MAX_PUMP_COUNT, (int)timeout);
 	if(count < 0){
 		const int errCode = errno;
 		if(errCode != EINTR){
@@ -151,7 +148,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 
 	const AUTO(now, getFastMonoClock());
 	for(unsigned i = 0; i < (unsigned)count; ++i){
-		const ::epoll_event &event = events[i];
+		const AUTO_REF(event, events[i]);
 
 		boost::shared_ptr<TcpSessionBase> session;
 		SessionMap::delegated_container::nth_index<IDX_ADDR>::type::iterator it;
@@ -188,22 +185,16 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			continue;
 		}
 
-		if(event.events & EPOLLRDHUP){
-			if(!it->readHup){
-				LOG_POSEIDON_INFO("Read hang up: remote = ", session->getRemoteInfo());
-				session->onReadHup();
-
-				it->readHup = true;
-			}
-		}
-
 		if(event.events & EPOLLIN){
 			const Mutex::UniqueLock lock(m_mutex);
 			m_sessions->setKey<IDX_ADDR, IDX_READ>(it, now);
 		}
 		if(event.events & EPOLLOUT){
-			const Mutex::UniqueLock lock(m_mutex);
-			m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
+			Mutex::UniqueLock sessionLock;
+			if(!session->isSendBufferEmpty(sessionLock)){
+				const Mutex::UniqueLock lock(m_mutex);
+				m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
+			}
 		}
 	}
 	return (unsigned)count;
@@ -240,6 +231,11 @@ std::size_t Epoll::pumpReadable(){
 				}
 				DEBUG_THROW(SystemException);
 			} else if(bytesRead == 0){
+				LOG_POSEIDON_INFO("Read hang up: remote = ", session->getRemoteInfo());
+				session->onReadHup();
+
+				session->shutdownWrite();
+
 				const Mutex::UniqueLock lock(m_mutex);
 				m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 				continue;

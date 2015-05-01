@@ -33,8 +33,8 @@ public:
 	~Epoll();
 
 private:
-	void notifyWriteable(TcpSessionBase *session);
-	void notifyUnlinked(TcpSessionBase *session);
+	void notifyWriteable(TcpSessionBase *session) NOEXCEPT;
+	void notifyUnlinked(TcpSessionBase *session) NOEXCEPT;
 
 public:
 	void addSession(const boost::shared_ptr<TcpSessionBase> &session);
