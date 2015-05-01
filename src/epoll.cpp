@@ -22,18 +22,20 @@ namespace {
 	};
 
 	struct SessionMapElement {
+		boost::shared_ptr<TcpSessionBase> session;
+		boost::shared_ptr<const boost::weak_ptr<Epoll> > epoll;
+
 		TcpSessionBase *addr;
 		// 时间戳，零表示无数据可读/写。
 		boost::uint64_t lastRead;
 		boost::uint64_t lastWritten;
 
-		boost::shared_ptr<TcpSessionBase> session;
-		boost::shared_ptr<const boost::weak_ptr<Epoll> > epoll;
+		mutable bool readHup;
 
-		SessionMapElement(boost::shared_ptr<TcpSessionBase> session_, boost::uint64_t lastRead_, boost::uint64_t lastWritten_,
-			boost::weak_ptr<Epoll> epoll_)
-			: addr(session_.get()), lastRead(lastRead_), lastWritten(lastWritten_)
-			, session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
+		SessionMapElement(boost::weak_ptr<Epoll> epoll_, boost::shared_ptr<TcpSessionBase> session_)
+			: session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
+			, addr(session.get()), lastRead(0), lastWritten(0)
+			, readHup(false)
 		{
 		}
 	};
@@ -89,13 +91,13 @@ void Epoll::notifyUnlinked(TcpSessionBase *session){
 
 void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	const Mutex::UniqueLock lock(m_mutex);
-	const AUTO(result, m_sessions->insert(SessionMapElement(session, 0, 0, shared_from_this())));
+	const AUTO(result, m_sessions->insert(SessionMapElement(shared_from_this(), session)));
 	if(!result.second){
 		LOG_POSEIDON_WARNING("Session is already in epoll.");
 		return;
 	}
 	::epoll_event event;
-	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
+	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET);
 	event.data.ptr = session.get();
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const int errCode = errno;
@@ -186,6 +188,15 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			continue;
 		}
 
+		if(event.events & EPOLLRDHUP){
+			if(!it->readHup){
+				LOG_POSEIDON_INFO("Read hang up: remote = ", session->getRemoteInfo());
+				session->onReadHup();
+
+				it->readHup = true;
+			}
+		}
+
 		if(event.events & EPOLLIN){
 			const Mutex::UniqueLock lock(m_mutex);
 			m_sessions->setKey<IDX_ADDR, IDX_READ>(it, now);
@@ -229,9 +240,6 @@ std::size_t Epoll::pumpReadable(){
 				}
 				DEBUG_THROW(SystemException);
 			} else if(bytesRead == 0){
-				LOG_POSEIDON_INFO("Connection closed: remote = ", session->getRemoteInfo());
-				session->onReadHup();
-
 				const Mutex::UniqueLock lock(m_mutex);
 				m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 				continue;
