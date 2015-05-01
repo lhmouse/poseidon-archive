@@ -278,6 +278,11 @@ std::size_t Epoll::pumpWriteable(){
 				}
 				DEBUG_THROW(SystemException);
 			} else if(bytesWritten == 0){
+				Mutex::UniqueLock sessionLock;
+				if(session->isSendBufferEmpty(sessionLock)){
+					const Mutex::UniqueLock lock(m_mutex);
+					m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
+				}
 				continue;
 			}
 		} catch(std::exception &e){

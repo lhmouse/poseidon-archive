@@ -222,8 +222,8 @@ long TcpSessionBase::syncWrite(int &errCode, void *hint, unsigned long hintSize)
 		bytesAvail = m_sendBuffer.peek(hint, hintSize);
 	}
 	if(bytesAvail == 0){
-		ret = -1;
-		errCode = EAGAIN;
+		ret = 0;
+		errCode = 0;
 	} else {
 		if(m_sslFilter){
 			ret = m_sslFilter->write(hint, bytesAvail);
@@ -249,6 +249,10 @@ long TcpSessionBase::syncWrite(int &errCode, void *hint, unsigned long hintSize)
 		}
 	}
 	return ret;
+}
+bool TcpSessionBase::isSendBufferEmpty(Mutex::UniqueLock &lock) const {
+	Mutex::UniqueLock(m_bufferMutex).swap(lock);
+	return m_sendBuffer.empty();
 }
 
 const IpPort &TcpSessionBase::getRemoteInfo() const {
