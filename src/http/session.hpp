@@ -28,11 +28,10 @@ namespace Http {
 		enum State {
 			S_FIRST_HEADER		= 0,
 			S_HEADERS			= 1,
-			S_UPGRADED			= 2,
-			S_IDENTITY			= 3,
-			S_CHUNK_HEADER		= 4,
-			S_CHUNK_DATA		= 5,
-			S_CHUNKED_TRAILER	= 6,
+			S_IDENTITY			= 2,
+			S_CHUNK_HEADER		= 3,
+			S_CHUNK_DATA		= 4,
+			S_CHUNKED_TRAILER	= 5,
 		};
 
 	protected:

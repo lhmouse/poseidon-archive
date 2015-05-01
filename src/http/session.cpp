@@ -153,7 +153,7 @@ namespace Http {
 	{
 	}
 	Session::~Session(){
-		if((m_state != S_FIRST_HEADER) && (m_state != S_UPGRADED)){
+		if(m_state != S_FIRST_HEADER){
 			LOG_POSEIDON_WARNING("Now that this session is to be destroyed, a premature request has to be discarded.");
 		}
 	}
@@ -161,14 +161,10 @@ namespace Http {
 	void Session::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
-		if(m_state == S_UPGRADED){
-			const AUTO(upgradedSession, getUpgradedSession());
-			if(upgradedSession){
-				upgradedSession->onReadAvail(data, size);
-				return;
-			}
-			LOG_POSEIDON_WARNING("Session has not been fully upgraded. Abort.");
-			DEBUG_THROW(BasicException, SSLIT("Session has not been fully upgraded"));
+		// epoll 线程读取 m_upgradedSession 不需要锁。
+		if((m_state == S_FIRST_HEADER) && m_upgradedSession){
+			m_upgradedSession->onReadAvail(data, size);
+			return;
 		}
 
 		try {
@@ -177,10 +173,13 @@ namespace Http {
 			m_received.put(data, size);
 
 			for(;;){
-				if(m_state == S_UPGRADED){
-					if(!m_received.empty()){
-						LOG_POSEIDON_WARNING("Junk data received after upgrading.");
-						DEBUG_THROW(BasicException, SSLIT("Junk data received after upgrading"));
+				// epoll 线程读取 m_upgradedSession 不需要锁。
+				if((m_state == S_FIRST_HEADER) && m_upgradedSession){
+					const AUTO(size, m_received.size());
+					if(size > 0){
+						boost::scoped_array<char> data(new char[size]);
+						m_received.get(data.get(), size);
+						m_upgradedSession->onReadAvail(data.get(), size);
 					}
 					break;
 				}
@@ -347,14 +346,11 @@ namespace Http {
 
 						AUTO(upgradedSession, onRequestHeaders(m_requestHeaders, sizeExpecting));
 						if(upgradedSession){
-							{
-								const Mutex::UniqueLock lock(m_upgradedSessionMutex);
-								m_upgradedSession = STD_MOVE(upgradedSession);
-							}
+							const Mutex::UniqueLock lock(m_upgradedSessionMutex);
+							m_upgradedSession = STD_MOVE(upgradedSession);
+						}
 
-							// m_expectingNewLine = true;
-							m_state = S_UPGRADED;
-						} else if(sizeExpecting == CONTENT_CHUNKED){
+						if(sizeExpecting == CONTENT_CHUNKED){
 							m_expectingNewLine = true;
 							m_state = S_CHUNK_HEADER;
 						} else {
@@ -365,13 +361,14 @@ namespace Http {
 					}
 					break;
 
-				case S_UPGRADED:
-					std::abort();
-					break;
-
 				case S_IDENTITY:
-					enqueueJob(boost::make_shared<RequestJob>(
-						virtualSharedFromThis<Session>(), STD_MOVE(m_requestHeaders), STD_MOVE(expected)));
+					// epoll 线程读取 m_upgradedSession 不需要锁。
+					if(m_upgradedSession){
+						m_upgradedSession->onInit(STD_MOVE(m_requestHeaders), STD_MOVE(expected));
+					} else {
+						enqueueJob(boost::make_shared<RequestJob>(
+							virtualSharedFromThis<Session>(), STD_MOVE(m_requestHeaders), STD_MOVE(expected)));
+					}
 
 					m_sizeTotal = 0;
 					m_expectingNewLine = true;
@@ -424,8 +421,13 @@ namespace Http {
 						m_expectingNewLine = true;
 						// m_state = S_CHUNKED_TRAILER;
 					} else {
-						enqueueJob(boost::make_shared<RequestJob>(
-							virtualSharedFromThis<Session>(), STD_MOVE(m_requestHeaders), STD_MOVE(m_chunkedEntity)));
+						// epoll 线程读取 m_upgradedSession 不需要锁。
+						if(m_upgradedSession){
+							m_upgradedSession->onInit(STD_MOVE(m_requestHeaders), STD_MOVE(m_chunkedEntity));
+						} else {
+							enqueueJob(boost::make_shared<RequestJob>(
+								virtualSharedFromThis<Session>(), STD_MOVE(m_requestHeaders), STD_MOVE(m_chunkedEntity)));
+						}
 
 						m_sizeTotal = 0;
 						m_expectingNewLine = true;
@@ -464,11 +466,9 @@ namespace Http {
 	void Session::onReadHup() NOEXCEPT {
 		PROFILE_ME;
 
-		if(m_state == S_UPGRADED){
-			const AUTO(upgradedSession, getUpgradedSession());
-			if(upgradedSession){
-				upgradedSession->onReadHup();
-			}
+		// epoll 线程读取 m_upgradedSession 不需要锁。
+		if(m_upgradedSession){
+			m_upgradedSession->onReadHup();
 		}
 	}
 

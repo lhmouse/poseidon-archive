@@ -13,6 +13,11 @@ namespace Http {
 	{
 	}
 
+	void UpgradedSessionBase::onInit(RequestHeaders requestHeaders, StreamBuffer entity){
+		(void)requestHeaders;
+		(void)entity;
+	}
+
 	void UpgradedSessionBase::onClose() NOEXCEPT {
 	}
 	void UpgradedSessionBase::onReadHup() NOEXCEPT {

@@ -12,9 +12,8 @@
 
 namespace Poseidon {
 
-class OptionalMap;
-
 namespace Http {
+	class RequestHeaders;
 	class Session;
 
 	class UpgradedSessionBase : public SessionBase {
@@ -28,7 +27,9 @@ namespace Http {
 		UpgradedSessionBase(const boost::shared_ptr<Session> &parent, std::string uri);
 
 	private:
+		virtual void onInit(RequestHeaders requestHeaders, StreamBuffer entity);
 		virtual void onReadAvail(const void *data, std::size_t size) = 0;
+
 		virtual void onClose() NOEXCEPT;
 		virtual void onReadHup() NOEXCEPT;
 
