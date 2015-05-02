@@ -421,7 +421,7 @@ namespace Http {
 		PROFILE_ME;
 
 		try {
-			LOG_POSEIDON_INFO("HTTP client read hang up: remote = ", getRemoteInfo());
+			LOG_POSEIDON_DEBUG("HTTP client read hang up");
 
 			if(m_contentLength == CONTENT_TILL_EOF){
 				enqueueJob(boost::make_shared<ContentEofJob>(
@@ -431,6 +431,8 @@ namespace Http {
 			LOG_POSEIDON_ERROR("std::exception thrown when processing read hang up event: what = ", e.what());
 			forceShutdown();
 		}
+
+		return TcpSessionBase::onReadHup();
 	}
 
 	void Client::onChunkedTrailer(boost::uint64_t realContentLength, const OptionalMap &headers){

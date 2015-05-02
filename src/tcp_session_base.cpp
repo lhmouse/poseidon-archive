@@ -134,19 +134,6 @@ void TcpSessionBase::pumpOnClose() NOEXCEPT {
 		m_onCloseQueue.pop_back();
 	}
 }
-void TcpSessionBase::onClose() NOEXCEPT {
-	try {
-		// 不要在这个地方检查队列是否为空，因为这里是 epoll 线程，
-		// 而主线程有可能在这个事件之后加入了一些回调，那样它们就不会被调用。
-		enqueueJob(boost::make_shared<OnCloseJob>(virtualSharedFromThis<TcpSessionBase>()));
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown while enqueueing onClose job: what = ", e.what());
-	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing onClose job");
-	}
-}
-void TcpSessionBase::onReadHup() NOEXCEPT {
-}
 
 void TcpSessionBase::fetchPeerInfo() const {
 	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
@@ -161,42 +148,6 @@ void TcpSessionBase::fetchPeerInfo() const {
 	m_peerInfo.local = getLocalIpPortFromFd(m_socket.get());
 	LOG_POSEIDON_INFO("TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
 	atomicStore(m_peerInfo.fetched, true, ATOMIC_RELEASE);
-}
-
-bool TcpSessionBase::send(StreamBuffer buffer){
-	if(atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-			"Connection has been shut down for writing: remote = ", getRemoteInfo());
-		return false;
-	}
-
-	const Mutex::UniqueLock lock(m_bufferMutex);
-	if(!buffer.empty()){
-		m_sendBuffer.splice(buffer);
-	}
-	notifyEpollWriteable();
-	return true;
-}
-
-bool TcpSessionBase::hasBeenShutdownRead() const NOEXCEPT {
-	return atomicLoad(m_shutdownRead, ATOMIC_ACQUIRE);
-}
-bool TcpSessionBase::shutdownRead() NOEXCEPT {
-	const bool ret = !atomicExchange(m_shutdownRead, true, ATOMIC_ACQ_REL);
-	::shutdown(m_socket.get(), SHUT_RD);
-	return ret;
-}
-
-bool TcpSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
-	return atomicLoad(m_shutdownWrite, ATOMIC_ACQUIRE);
-}
-bool TcpSessionBase::shutdownWrite() NOEXCEPT {
-	const bool ret = !atomicExchange(m_shutdownWrite, true, ATOMIC_ACQ_REL);
-	if(atomicLoad(m_delayedShutdownGuardCount, ATOMIC_RELAXED) == 0){
-		atomicStore(m_reallyShutdownWrite, true, ATOMIC_RELEASE);
-		notifyEpollWriteable();
-	}
-	return ret;
 }
 
 TcpSessionBase::SyncIoResult TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
@@ -259,6 +210,63 @@ TcpSessionBase::SyncIoResult TcpSessionBase::syncWrite(void *hint, unsigned long
 bool TcpSessionBase::isSendBufferEmpty(Mutex::UniqueLock &lock) const {
 	Mutex::UniqueLock(m_bufferMutex).swap(lock);
 	return m_sendBuffer.empty();
+}
+
+void TcpSessionBase::onReadHup() NOEXCEPT {
+	shutdownWrite();
+}
+void TcpSessionBase::onWriteHup() NOEXCEPT {
+}
+void TcpSessionBase::onClose() NOEXCEPT {
+	try {
+		// 不要在这个地方检查队列是否为空，因为这里是 epoll 线程，
+		// 而主线程有可能在这个事件之后加入了一些回调，那样它们就不会被调用。
+		enqueueJob(boost::make_shared<OnCloseJob>(virtualSharedFromThis<TcpSessionBase>()));
+	} catch(std::exception &e){
+		LOG_POSEIDON_ERROR("std::exception thrown while enqueueing onClose job: what = ", e.what());
+	} catch(...){
+		LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing onClose job");
+	}
+}
+
+bool TcpSessionBase::send(StreamBuffer buffer){
+	if(atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+			"Connection has been shut down for writing: remote = ", getRemoteInfo());
+		return false;
+	}
+
+	const Mutex::UniqueLock lock(m_bufferMutex);
+	if(!buffer.empty()){
+		m_sendBuffer.splice(buffer);
+	}
+	notifyEpollWriteable();
+	return true;
+}
+
+bool TcpSessionBase::hasBeenShutdownRead() const NOEXCEPT {
+	return atomicLoad(m_shutdownRead, ATOMIC_ACQUIRE);
+}
+bool TcpSessionBase::shutdownRead() NOEXCEPT {
+	const bool ret = !atomicExchange(m_shutdownRead, true, ATOMIC_ACQ_REL);
+	::shutdown(m_socket.get(), SHUT_RD);
+	return ret;
+}
+bool TcpSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
+	return atomicLoad(m_shutdownWrite, ATOMIC_ACQUIRE);
+}
+bool TcpSessionBase::shutdownWrite() NOEXCEPT {
+	const bool ret = !atomicExchange(m_shutdownWrite, true, ATOMIC_ACQ_REL);
+	if(atomicLoad(m_delayedShutdownGuardCount, ATOMIC_RELAXED) == 0){
+		atomicStore(m_reallyShutdownWrite, true, ATOMIC_RELEASE);
+		notifyEpollWriteable();
+	}
+	return ret;
+}
+void TcpSessionBase::forceShutdown() NOEXCEPT {
+	atomicStore(m_shutdownRead, true, ATOMIC_RELEASE);
+	atomicStore(m_shutdownWrite, true, ATOMIC_RELEASE);
+	::shutdown(m_socket.get(), SHUT_RDWR);
 }
 
 const IpPort &TcpSessionBase::getRemoteInfo() const {

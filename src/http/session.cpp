@@ -472,6 +472,28 @@ namespace Http {
 		if(m_upgradedSession){
 			m_upgradedSession->onReadHup();
 		}
+
+		TcpSessionBase::onReadHup();
+	}
+	void Session::onWriteHup() NOEXCEPT {
+		PROFILE_ME;
+
+		// epoll 线程读取 m_upgradedSession 不需要锁。
+		if(m_upgradedSession){
+			m_upgradedSession->onWriteHup();
+		}
+
+		TcpSessionBase::onWriteHup();
+	}
+	void Session::onClose() NOEXCEPT {
+		PROFILE_ME;
+
+		// epoll 线程读取 m_upgradedSession 不需要锁。
+		if(m_upgradedSession){
+			m_upgradedSession->onClose();
+		}
+
+		TcpSessionBase::onClose();
 	}
 
 	boost::shared_ptr<UpgradedSessionBase> Session::onRequestHeaders(

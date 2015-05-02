@@ -87,9 +87,6 @@ protected:
 	~TcpSessionBase();
 
 private:
-	void onClose() NOEXCEPT OVERRIDE;
-	virtual void onReadHup() NOEXCEPT;
-
 	void initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter);
 
 	void setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT;
@@ -111,7 +108,19 @@ protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE = 0;
 
+	void onReadHup() NOEXCEPT OVERRIDE;
+	void onWriteHup() NOEXCEPT OVERRIDE;
+	void onClose() NOEXCEPT OVERRIDE;
+
 public:
+	bool send(StreamBuffer buffer) FINAL;
+
+	bool hasBeenShutdownRead() const NOEXCEPT OVERRIDE;
+	bool hasBeenShutdownWrite() const NOEXCEPT OVERRIDE;
+	bool shutdownRead() NOEXCEPT OVERRIDE;
+	bool shutdownWrite() NOEXCEPT OVERRIDE;
+	void forceShutdown() NOEXCEPT OVERRIDE;
+
 	int getFd() const {
 		return m_socket.get();
 	}
@@ -119,13 +128,6 @@ public:
 	bool isUsingSsl() const {
 		return !!m_sslFilter;
 	}
-
-	bool send(StreamBuffer buffer) FINAL;
-
-	bool hasBeenShutdownRead() const NOEXCEPT OVERRIDE;
-	bool hasBeenShutdownWrite() const NOEXCEPT OVERRIDE;
-	bool shutdownRead() NOEXCEPT OVERRIDE;
-	bool shutdownWrite() NOEXCEPT OVERRIDE;
 
 	boost::uint64_t getCreatedTime() const {
 		return m_createdTime;

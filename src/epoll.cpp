@@ -30,9 +30,13 @@ namespace {
 		boost::uint64_t lastRead;
 		boost::uint64_t lastWritten;
 
+		mutable bool readHup;
+		mutable bool writeHup;
+
 		SessionMapElement(boost::weak_ptr<Epoll> epoll_, boost::shared_ptr<TcpSessionBase> session_)
 			: session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
 			, addr(session.get()), lastRead(0), lastWritten(0)
+			, readHup(false), writeHup(false)
 		{
 		}
 	};
@@ -94,7 +98,7 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 		return;
 	}
 	::epoll_event event;
-	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
+	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET);
 	event.data.ptr = session.get();
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const int errCode = errno;
@@ -162,16 +166,6 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			session = it->session;
 		}
 
-		if(event.events & EPOLLHUP){
-			try {
-				LOG_POSEIDON_INFO("Socket hung up, remote is ", session->getRemoteInfo());
-			} catch(...){
-				LOG_POSEIDON_INFO("Socket hung up, remote is not connected.");
-			}
-			session->onClose();
-			removeSession(session);
-			continue;
-		}
 		if(event.events & EPOLLERR){
 			int errCode;
 			::socklen_t errLen = sizeof(errCode);
@@ -180,6 +174,33 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			}
 			const AUTO(desc, getErrorDesc(errCode));
 			LOG_POSEIDON_WARNING("Socket error: ", desc);
+			session->onClose();
+			removeSession(session);
+			continue;
+		}
+
+		if(event.events & EPOLLRDHUP){
+			if(!it->readHup){
+				session->shutdownRead();
+				session->onReadHup();
+
+				it->readHup = true;
+			}
+		}
+		if(event.events & EPOLLHUP){
+			if(!it->writeHup){
+				session->shutdownWrite();
+				session->onWriteHup();
+
+				it->writeHup = true;
+			}
+		}
+		if(it->readHup && it->writeHup){
+			try {
+				LOG_POSEIDON_INFO("Socket closed, remote is ", session->getRemoteInfo());
+			} catch(...){
+				LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
+			}
 			session->onClose();
 			removeSession(session);
 			continue;
@@ -230,11 +251,6 @@ std::size_t Epoll::pumpReadable(){
 				}
 				DEBUG_THROW(SystemException);
 			} else if(result.bytesTransferred == 0){
-				LOG_POSEIDON_INFO("Read hang up: remote = ", session->getRemoteInfo());
-				session->onReadHup();
-
-				session->shutdownWrite();
-
 				const Mutex::UniqueLock lock(m_mutex);
 				m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 				continue;

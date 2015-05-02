@@ -17,10 +17,12 @@ public:
 	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
 	~SessionBase();
 
-private:
+protected:
 	// 有数据可读触发回调，size 始终不为零。
 	virtual void onReadAvail(const void *data, std::size_t size) = 0;
-	// 连接断开（主动或被动），一旦连接断开将不会再收到 onReadAvail()。
+
+	virtual void onReadHup() NOEXCEPT = 0;
+	virtual void onWriteHup() NOEXCEPT = 0;
 	virtual void onClose() NOEXCEPT = 0;
 
 public:
@@ -30,11 +32,7 @@ public:
 	virtual bool hasBeenShutdownWrite() const NOEXCEPT = 0;
 	virtual bool shutdownRead() NOEXCEPT = 0;
 	virtual bool shutdownWrite() NOEXCEPT = 0;
-
-	void forceShutdown() NOEXCEPT {
-		shutdownRead();
-		shutdownWrite();
-	}
+	virtual void forceShutdown() NOEXCEPT = 0;
 };
 
 }

@@ -13,9 +13,11 @@ namespace Http {
 	{
 	}
 
-	void UpgradedSessionBase::onClose() NOEXCEPT {
-	}
 	void UpgradedSessionBase::onReadHup() NOEXCEPT {
+	}
+	void UpgradedSessionBase::onWriteHup() NOEXCEPT {
+	}
+	void UpgradedSessionBase::onClose() NOEXCEPT {
 	}
 
 	void UpgradedSessionBase::onInit(RequestHeaders requestHeaders, StreamBuffer entity){
@@ -58,6 +60,13 @@ namespace Http {
 			return false;
 		}
 		return static_cast<TcpSessionBase &>(*parent).shutdownWrite();
+	}
+	void UpgradedSessionBase::forceShutdown() NOEXCEPT {
+		const AUTO(parent, getParent());
+		if(!parent){
+			return;
+		}
+		static_cast<TcpSessionBase &>(*parent).forceShutdown();
 	}
 
 	void UpgradedSessionBase::setTimeout(boost::uint64_t timeout){
