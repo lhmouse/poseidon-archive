@@ -36,6 +36,11 @@ class TcpSessionBase : public SessionBase {
 	friend TcpClientBase;
 
 private:
+	struct SyncIoResult {
+		long bytesTransferred;
+		int errCode;
+	};
+
 	class OnCloseJob;
 
 public:
@@ -96,9 +101,9 @@ private:
 	void fetchPeerInfo() const;
 	// 和 Windows 的 IsDialogMessage() 类似，这个函数读取并在内部调用 onReadAvail() 处理数据。
 	// 这里的出参返回读取的数据，一次性读取的字节数不大于 hintSize。如果开启了 SSL，返回明文。
-	long syncReadAndProcess(int &errCode, void *hint, unsigned long hintSize);
+	SyncIoResult syncReadAndProcess(void *hint, unsigned long hintSize);
 	// 这里的出参返回写入的数据，一次性写入的字节数不大于 hintSize。如果开启了 SSL，返回明文。
-	long syncWrite(int &errCode, void *hint, unsigned long hintSize);
+	SyncIoResult syncWrite(void *hint, unsigned long hintSize);
 	// 出参用于确保 epoll 和写入内部缓冲的顺序。
 	bool isSendBufferEmpty(Mutex::UniqueLock &lock) const;
 

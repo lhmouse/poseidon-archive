@@ -217,20 +217,19 @@ std::size_t Epoll::pumpReadable(){
 		const AUTO(session, it->session);
 
 		try {
-			int errCode;
 			unsigned char temp[1024];
-			const long bytesRead = session->syncReadAndProcess(errCode, temp, sizeof(temp));
-			if(bytesRead < 0){
-				if(errCode == EINTR){
+			const AUTO(result, session->syncReadAndProcess(temp, sizeof(temp)));
+			if(result.bytesTransferred < 0){
+				if(result.errCode == EINTR){
 					continue;
 				}
-				if(errCode == EAGAIN){
+				if(result.errCode == EAGAIN){
 					const Mutex::UniqueLock lock(m_mutex);
 					m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 					continue;
 				}
 				DEBUG_THROW(SystemException);
-			} else if(bytesRead == 0){
+			} else if(result.bytesTransferred == 0){
 				LOG_POSEIDON_INFO("Read hang up: remote = ", session->getRemoteInfo());
 				session->onReadHup();
 
@@ -268,20 +267,19 @@ std::size_t Epoll::pumpWriteable(){
 		const AUTO(session, it->session);
 
 		try {
-			int errCode;
 			unsigned char temp[1024];
-			const long bytesWritten = session->syncWrite(errCode, temp, sizeof(temp));
-			if(bytesWritten < 0){
-				if(errCode == EINTR){
+			const AUTO(result, session->syncWrite(temp, sizeof(temp)));
+			if(result.bytesTransferred < 0){
+				if(result.errCode == EINTR){
 					continue;
 				}
-				if(errCode == EAGAIN){
+				if(result.errCode == EAGAIN){
 					const Mutex::UniqueLock lock(m_mutex);
 					m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
 					continue;
 				}
 				DEBUG_THROW(SystemException);
-			} else if(bytesWritten == 0){
+			} else if(result.bytesTransferred == 0){
 				Mutex::UniqueLock sessionLock;
 				if(session->isSendBufferEmpty(sessionLock)){
 					const Mutex::UniqueLock lock(m_mutex);

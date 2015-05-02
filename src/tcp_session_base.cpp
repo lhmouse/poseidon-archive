@@ -164,6 +164,12 @@ void TcpSessionBase::fetchPeerInfo() const {
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer){
+	if(atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+			"Connection has been shut down for writing: remote = ", getRemoteInfo());
+		return false;
+	}
+
 	const Mutex::UniqueLock lock(m_bufferMutex);
 	if(!buffer.empty()){
 		m_sendBuffer.splice(buffer);
@@ -193,30 +199,28 @@ bool TcpSessionBase::shutdownWrite() NOEXCEPT {
 	return ret;
 }
 
-long TcpSessionBase::syncReadAndProcess(int &errCode, void *hint, unsigned long hintSize){
+TcpSessionBase::SyncIoResult TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
 	PROFILE_ME;
 
-	::ssize_t ret;
-
+	SyncIoResult ret;
 	if(m_sslFilter){
-		ret = m_sslFilter->read(hint, hintSize);
+		ret.bytesTransferred = m_sslFilter->read(hint, hintSize);
 	} else {
-		ret = ::recv(m_socket.get(), hint, hintSize, MSG_NOSIGNAL);
+		ret.bytesTransferred = ::recv(m_socket.get(), hint, hintSize, MSG_NOSIGNAL);
 	}
-	errCode = errno;
+	ret.errCode = errno;
 
-	if(ret > 0){
-		const AUTO(bytes, static_cast<std::size_t>(ret));
+	if(ret.bytesTransferred > 0){
+		const AUTO(bytes, static_cast<std::size_t>(ret.bytesTransferred));
 		LOG_POSEIDON_TRACE("Read ", bytes, " byte(s) from ", getRemoteInfo(), ", hex = ", HexDumper(hint, bytes));
 
 		onReadAvail(hint, bytes);
 	}
+
 	return ret;
 }
-long TcpSessionBase::syncWrite(int &errCode, void *hint, unsigned long hintSize){
+TcpSessionBase::SyncIoResult TcpSessionBase::syncWrite(void *hint, unsigned long hintSize){
 	PROFILE_ME;
-
-	::ssize_t ret;
 
 	std::size_t bytesAvail;
 	bool empty;
@@ -225,19 +229,20 @@ long TcpSessionBase::syncWrite(int &errCode, void *hint, unsigned long hintSize)
 		bytesAvail = m_sendBuffer.peek(hint, hintSize);
 		empty = m_sendBuffer.empty();
 	}
+
+	SyncIoResult ret;
 	if(bytesAvail == 0){
-		ret = 0;
-		errCode = 0;
+		ret.bytesTransferred = 0;
 	} else {
 		if(m_sslFilter){
-			ret = m_sslFilter->write(hint, bytesAvail);
+			ret.bytesTransferred = m_sslFilter->write(hint, bytesAvail);
 		} else {
-			ret = ::send(m_socket.get(), hint, bytesAvail, MSG_NOSIGNAL);
+			ret.bytesTransferred = ::send(m_socket.get(), hint, bytesAvail, MSG_NOSIGNAL);
 		}
-		errCode = errno;
+		ret.errCode = errno;
 
-		if(ret > 0){
-			const AUTO(bytes, static_cast<std::size_t>(ret));
+		if(ret.bytesTransferred > 0){
+			const AUTO(bytes, static_cast<std::size_t>(ret.bytesTransferred));
 			LOG_POSEIDON_TRACE("Wrote ", bytes, " byte(s) to ", getRemoteInfo(), ", hex = ", HexDumper(hint, bytes));
 
 			const Mutex::UniqueLock lock(m_bufferMutex);
