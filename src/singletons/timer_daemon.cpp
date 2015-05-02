@@ -153,9 +153,7 @@ void TimerDaemon::stop(){
 boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
 	boost::uint64_t timePoint, boost::uint64_t period, TimerCallback callback)
 {
-	AUTO(sharedCallback, boost::make_shared<TimerCallback>());
-	sharedCallback->swap(callback);
-	AUTO(item, boost::make_shared<TimerItem>(period, sharedCallback));
+	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE(callback))));
 
 	TimerQueueElement tqe;
 	tqe.next = timePoint;
