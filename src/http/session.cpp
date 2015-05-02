@@ -497,7 +497,7 @@ namespace Http {
 	}
 
 	boost::shared_ptr<UpgradedSessionBase> Session::onRequestHeaders(
-		const RequestHeaders &requestHeaders, boost::uint64_t contentLength)
+		RequestHeaders &requestHeaders, boost::uint64_t contentLength)
 	{
 		(void)contentLength;
 
