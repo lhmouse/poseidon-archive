@@ -34,7 +34,7 @@ namespace Http {
 		virtual void onReadAvail(const void *data, std::size_t size) = 0;
 
 	public:
-		bool send(StreamBuffer buffer) FINAL;
+		bool send(StreamBuffer buffer);
 
 		bool hasBeenShutdownRead() const NOEXCEPT OVERRIDE;
 		bool shutdownRead() NOEXCEPT;
