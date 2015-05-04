@@ -57,7 +57,7 @@ namespace Http {
 		OptionalMap m_chunkTrailer;
 
 	protected:
-		explicit Client(const IpPort &addr, bool useSsl);
+		Client(const IpPort &addr, bool useSsl);
 		~Client();
 
 	protected:

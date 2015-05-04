@@ -50,7 +50,7 @@ namespace Cbpp {
 		boost::uint64_t m_payloadOffset;
 
 	protected:
-		explicit Client(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
+		Client(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
 		~Client();
 
 	protected:
