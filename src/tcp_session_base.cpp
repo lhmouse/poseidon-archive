@@ -104,15 +104,16 @@ void TcpSessionBase::fetchPeerInfo() const {
 	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
 		return;
 	}
-	const Mutex::UniqueLock lock(m_peerInfo.mutex);
-	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
-		return;
+	{
+		const Mutex::UniqueLock lock(m_peerInfo.mutex);
+		if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
+			return;
+		}
+		m_peerInfo.remote = getRemoteIpPortFromFd(m_socket.get());
+		m_peerInfo.local = getLocalIpPortFromFd(m_socket.get());
+		atomicStore(m_peerInfo.fetched, true, ATOMIC_RELEASE);
 	}
-
-	m_peerInfo.remote = getRemoteIpPortFromFd(m_socket.get());
-	m_peerInfo.local = getLocalIpPortFromFd(m_socket.get());
 	LOG_POSEIDON_INFO("TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
-	atomicStore(m_peerInfo.fetched, true, ATOMIC_RELEASE);
 }
 
 TcpSessionBase::SyncIoResult TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
