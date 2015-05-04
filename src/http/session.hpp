@@ -62,10 +62,9 @@ namespace Http {
 		explicit Session(UniqueFile socket);
 		~Session();
 
-	private:
-		void onReadAvail(const void *data, std::size_t size) FINAL;
-
 	protected:
+		void onReadAvail(const void *data, std::size_t size);
+
 		void onReadHup() NOEXCEPT OVERRIDE;
 		void onWriteHup() NOEXCEPT OVERRIDE;
 		void onClose() NOEXCEPT OVERRIDE;

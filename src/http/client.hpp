@@ -60,10 +60,9 @@ namespace Http {
 		explicit Client(const IpPort &addr, bool useSsl);
 		~Client();
 
-	private:
-		void onReadAvail(const void *data, std::size_t size) FINAL;
-
 	protected:
+		void onReadAvail(const void *data, std::size_t size);
+
 		void onReadHup() NOEXCEPT OVERRIDE;
 
 		// 和 Http::Session 不同，这个函数在主线程中调用。
