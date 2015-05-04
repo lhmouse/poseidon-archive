@@ -105,7 +105,7 @@ protected:
 	void onClose() NOEXCEPT OVERRIDE;
 
 public:
-	bool send(StreamBuffer buffer) FINAL;
+	bool send(StreamBuffer buffer) OVERRIDE;
 
 	bool hasBeenShutdownRead() const NOEXCEPT OVERRIDE;
 	bool hasBeenShutdownWrite() const NOEXCEPT OVERRIDE;
