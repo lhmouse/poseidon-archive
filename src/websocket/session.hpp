@@ -58,11 +58,11 @@ namespace WebSocket {
 		~Session();
 
 	private:
-		void onReadAvail(const void *data, std::size_t size) FINAL;
-
 		bool sendFrame(StreamBuffer payload, OpCode opcode, bool masked);
 
 	protected:
+		void onReadAvail(const void *data, std::size_t size);
+
 		virtual void onRequest(OpCode opcode, const StreamBuffer &payload) = 0;
 
 	public:

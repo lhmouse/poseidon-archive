@@ -47,10 +47,9 @@ namespace Cbpp {
 		explicit Session(UniqueFile socket);
 		~Session();
 
-	private:
-		void onReadAvail(const void *data, std::size_t size) FINAL;
-
 	protected:
+		void onReadAvail(const void *data, std::size_t size);
+
 		virtual void onRequest(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
 		virtual void onControl(ControlCode controlCode, StatusCode statusCode, const std::string &reason);
 

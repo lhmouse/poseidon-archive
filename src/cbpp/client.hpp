@@ -53,10 +53,9 @@ namespace Cbpp {
 		explicit Client(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
 		~Client();
 
-	private:
-		void onReadAvail(const void *data, std::size_t size) FINAL;
-
 	protected:
+		void onReadAvail(const void *data, std::size_t size);
+
 		virtual void onResponse(boost::uint16_t messageId, boost::uint64_t payloadLen) = 0;
 		// 报文可能分几次收到。
 		virtual void onPayload(boost::uint64_t payloadOffset, const StreamBuffer &payload) = 0;

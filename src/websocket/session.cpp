@@ -206,6 +206,48 @@ namespace WebSocket {
 		}
 	}
 
+	bool Session::sendFrame(StreamBuffer payload, OpCode opcode, bool masked){
+		StreamBuffer frame;
+		unsigned char ch = opcode | OP_FL_FIN;
+		frame.put(ch);
+		const std::size_t size = payload.size();
+		ch = masked ? 0x80 : 0;
+		if(size < 0x7E){
+			ch |= size;
+			frame.put(ch);
+		} else if(size < 0x10000){
+			ch |= 0x7E;
+			frame.put(ch);
+			boost::uint16_t temp;
+			storeBe(temp, size);
+			frame.put(&temp, 2);
+		} else {
+			ch |= 0x7F;
+			frame.put(ch);
+			boost::uint64_t temp;
+			storeBe(temp, size);
+			frame.put(&temp, 8);
+		}
+		if(masked){
+			boost::uint32_t mask;
+			storeLe(mask, rand32() | 0x80808080u);
+			frame.put(&mask, 4);
+			int ch;
+			for(;;){
+				ch = payload.get();
+				if(ch == -1){
+					break;
+				}
+				ch ^= static_cast<unsigned char>(mask);
+				frame.put(ch);
+				mask = (mask << 24) | (mask >> 8);
+			}
+		} else {
+			frame.splice(payload);
+		}
+		return Http::UpgradedSessionBase::send(STD_MOVE(frame));
+	}
+
 	void Session::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
@@ -396,48 +438,6 @@ namespace WebSocket {
 				}
 			}
 		}
-	}
-
-	bool Session::sendFrame(StreamBuffer payload, OpCode opcode, bool masked){
-		StreamBuffer frame;
-		unsigned char ch = opcode | OP_FL_FIN;
-		frame.put(ch);
-		const std::size_t size = payload.size();
-		ch = masked ? 0x80 : 0;
-		if(size < 0x7E){
-			ch |= size;
-			frame.put(ch);
-		} else if(size < 0x10000){
-			ch |= 0x7E;
-			frame.put(ch);
-			boost::uint16_t temp;
-			storeBe(temp, size);
-			frame.put(&temp, 2);
-		} else {
-			ch |= 0x7F;
-			frame.put(ch);
-			boost::uint64_t temp;
-			storeBe(temp, size);
-			frame.put(&temp, 8);
-		}
-		if(masked){
-			boost::uint32_t mask;
-			storeLe(mask, rand32() | 0x80808080u);
-			frame.put(&mask, 4);
-			int ch;
-			for(;;){
-				ch = payload.get();
-				if(ch == -1){
-					break;
-				}
-				ch ^= static_cast<unsigned char>(mask);
-				frame.put(ch);
-				mask = (mask << 24) | (mask >> 8);
-			}
-		} else {
-			frame.splice(payload);
-		}
-		return Http::UpgradedSessionBase::send(STD_MOVE(frame));
 	}
 
 	bool Session::send(StreamBuffer payload, bool binary, bool masked){
