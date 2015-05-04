@@ -48,7 +48,7 @@ namespace Cbpp {
 		~Session();
 
 	protected:
-		void onReadAvail(const void *data, std::size_t size);
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
 		virtual void onRequest(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
 		virtual void onControl(ControlCode controlCode, StatusCode statusCode, const std::string &reason);

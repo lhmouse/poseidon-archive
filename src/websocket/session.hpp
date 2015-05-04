@@ -61,7 +61,7 @@ namespace WebSocket {
 		bool sendFrame(StreamBuffer payload, OpCode opcode, bool masked);
 
 	protected:
-		void onReadAvail(const void *data, std::size_t size);
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
 		virtual void onRequest(OpCode opcode, const StreamBuffer &payload) = 0;
 

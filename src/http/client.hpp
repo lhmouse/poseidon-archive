@@ -61,7 +61,7 @@ namespace Http {
 		~Client();
 
 	protected:
-		void onReadAvail(const void *data, std::size_t size);
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
 		void onReadHup() NOEXCEPT OVERRIDE;
 

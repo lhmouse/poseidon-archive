@@ -54,7 +54,7 @@ namespace Cbpp {
 		~Client();
 
 	protected:
-		void onReadAvail(const void *data, std::size_t size);
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
 		virtual void onResponse(boost::uint16_t messageId, boost::uint64_t payloadLen) = 0;
 		// 报文可能分几次收到。

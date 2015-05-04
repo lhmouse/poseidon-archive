@@ -63,7 +63,7 @@ namespace Http {
 		~Session();
 
 	protected:
-		void onReadAvail(const void *data, std::size_t size);
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
 		void onReadHup() NOEXCEPT OVERRIDE;
 		void onWriteHup() NOEXCEPT OVERRIDE;
