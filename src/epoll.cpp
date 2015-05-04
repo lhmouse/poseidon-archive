@@ -173,7 +173,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 				errCode = errno;
 			}
 			const AUTO(desc, getErrorDesc(errCode));
-			LOG_POSEIDON_WARNING("Socket error: ", desc);
+			LOG_POSEIDON_DEBUG("Socket error: ", desc);
 			session->onClose();
 			removeSession(session);
 			continue;
