@@ -8,7 +8,6 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include <boost/function.hpp>
 
 namespace Poseidon {
 
@@ -70,7 +69,6 @@ namespace Http {
 		}
 
 		void setTimeout(boost::uint64_t timeout);
-		void registerOnClose(boost::function<void ()> callback);
 	};
 }
 

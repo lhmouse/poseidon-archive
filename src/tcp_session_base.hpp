@@ -13,7 +13,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/function.hpp>
 #include <boost/cstdint.hpp>
 #include "mutex.hpp"
 #include "raii.hpp"
@@ -40,8 +39,6 @@ private:
 		long bytesTransferred;
 		int errCode;
 	};
-
-	class OnCloseJob;
 
 public:
 	// 至少一个此对象存活的条件下连接不会由于 RDHUP 而被关掉。
@@ -76,9 +73,6 @@ private:
 	StreamBuffer m_sendBuffer;
 	boost::weak_ptr<const boost::weak_ptr<Epoll> > m_epoll;
 
-	mutable Mutex m_onCloseMutex;
-	std::deque<boost::function<void ()> > m_onCloseQueue;
-
 	mutable Mutex m_timerMutex;
 	boost::shared_ptr<const TimerItem> m_shutdownTimer;
 
@@ -91,8 +85,6 @@ private:
 
 	void setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT;
 	void notifyEpollWriteable() NOEXCEPT;
-
-	void pumpOnClose() NOEXCEPT;
 
 	// 同步，线程安全。
 	void fetchPeerInfo() const;
@@ -136,7 +128,6 @@ public:
 	const IpPort &getRemoteInfo() const;
 	const IpPort &getLocalInfo() const;
 
-	void registerOnClose(boost::function<void ()> callback);
 	void setTimeout(boost::uint64_t timeout);
 };
 

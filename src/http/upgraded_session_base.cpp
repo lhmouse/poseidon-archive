@@ -72,9 +72,6 @@ namespace Http {
 	void UpgradedSessionBase::setTimeout(boost::uint64_t timeout){
 		getSafeParent()->setTimeout(timeout);
 	}
-	void UpgradedSessionBase::registerOnClose(boost::function<void ()> callback){
-		getSafeParent()->registerOnClose(STD_MOVE(callback));
-	}
 }
 
 }

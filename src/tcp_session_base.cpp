@@ -39,25 +39,6 @@ namespace {
 	}
 }
 
-class TcpSessionBase::OnCloseJob : public JobBase {
-private:
-	const boost::shared_ptr<TcpSessionBase> m_session; // 强引用。
-
-public:
-	explicit OnCloseJob(boost::shared_ptr<TcpSessionBase> session)
-		: m_session(STD_MOVE(session))
-	{
-	}
-
-private:
-	boost::weak_ptr<const void> getCategory() const OVERRIDE {
-		return m_session;
-	}
-	void perform() const OVERRIDE {
-		m_session->pumpOnClose();
-	}
-};
-
 TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::shared_ptr<TcpSessionBase> session)
 	: m_session(STD_MOVE(session))
 {
@@ -92,8 +73,6 @@ TcpSessionBase::~TcpSessionBase(){
 	} catch(...){
 		LOG_POSEIDON_INFO("Destroying TCP session that has not been established.");
 	}
-
-	pumpOnClose();
 }
 
 void TcpSessionBase::initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter){
@@ -118,20 +97,6 @@ void TcpSessionBase::notifyEpollWriteable() NOEXCEPT {
 		if(epoll){
 			epoll->notifyWriteable(this);
 		}
-	}
-}
-
-void TcpSessionBase::pumpOnClose() NOEXCEPT {
-	const Mutex::UniqueLock lock(m_onCloseMutex);
-	while(!m_onCloseQueue.empty()){
-		try {
-			enqueueAsyncJob(STD_MOVE(m_onCloseQueue.back()));
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown while enqueueing onClose callback: what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing onClose callback.");
-		}
-		m_onCloseQueue.pop_back();
 	}
 }
 
@@ -218,15 +183,6 @@ void TcpSessionBase::onReadHup() NOEXCEPT {
 void TcpSessionBase::onWriteHup() NOEXCEPT {
 }
 void TcpSessionBase::onClose() NOEXCEPT {
-	try {
-		// 不要在这个地方检查队列是否为空，因为这里是 epoll 线程，
-		// 而主线程有可能在这个事件之后加入了一些回调，那样它们就不会被调用。
-		enqueueJob(boost::make_shared<OnCloseJob>(virtualSharedFromThis<TcpSessionBase>()));
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown while enqueueing onClose job: what = ", e.what());
-	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown while enqueueing onClose job");
-	}
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer){
@@ -278,10 +234,6 @@ const IpPort &TcpSessionBase::getLocalInfo() const {
 	return m_peerInfo.local;
 }
 
-void TcpSessionBase::registerOnClose(boost::function<void ()> callback){
-	const Mutex::UniqueLock lock(m_onCloseMutex);
-	m_onCloseQueue.push_back(STD_MOVE(callback));
-}
 void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 	boost::shared_ptr<const TimerItem> shutdownTimer;
 	if(timeout != 0){
