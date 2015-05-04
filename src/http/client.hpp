@@ -56,7 +56,7 @@ namespace Http {
 		boost::uint64_t m_chunkOffset;
 		OptionalMap m_chunkTrailer;
 
-	public:
+	protected:
 		explicit Client(const IpPort &addr, bool useSsl);
 		~Client();
 
