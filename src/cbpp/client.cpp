@@ -7,10 +7,8 @@
 #include "control_message.hpp"
 #include "../singletons/timer_daemon.hpp"
 #include "../log.hpp"
-#include "../exception.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
-#include "../endian.hpp"
 
 namespace Poseidon {
 
