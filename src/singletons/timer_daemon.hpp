@@ -39,6 +39,13 @@ struct TimerDaemon {
 	static boost::shared_ptr<TimerItem> registerWeeklyTimer(
 		unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback);
 
+	// 直接在计时器线程中调用，不走消息队列。
+	static boost::shared_ptr<TimerItem> registerLowLevelAbsoluteTimer(
+		boost::uint64_t timePoint, // 用 getFastMonoClock() 作参考。
+		boost::uint64_t period, TimerCallback callback);
+	static boost::shared_ptr<TimerItem> registerLowLevelTimer(
+		boost::uint64_t first, boost::uint64_t period, TimerCallback callback);
+
 private:
 	TimerDaemon();
 };

@@ -58,21 +58,6 @@ namespace Cbpp {
 		};
 	}
 
-	class Client::KeepAliveJob : public ClientJobBase {
-	public:
-		explicit KeepAliveJob(const boost::shared_ptr<Client> &client)
-			: ClientJobBase(client)
-		{
-		}
-
-	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
-			PROFILE_ME;
-
-			client->send(ControlMessage(ControlMessage::ID, 0, VAL_INIT));
-		}
-	};
-
 	class Client::ResponseJob : public ClientJobBase {
 	private:
 		const unsigned m_messageId;
@@ -117,12 +102,15 @@ namespace Cbpp {
 
 	class Client::ControlJob : public ClientJobBase {
 	private:
-		const ControlMessage m_msg;
+		const boost::uint16_t m_messageId;
+		const StatusCode m_statusCode;
+		const std::string m_reason;
 
 	public:
-		ControlJob(const boost::shared_ptr<Client> &client, ControlMessage msg)
+		ControlJob(const boost::shared_ptr<Client> &client,
+			boost::uint16_t messageId, StatusCode statusCode, std::string reason)
 			: ClientJobBase(client)
-			, m_msg(STD_MOVE(msg))
+			, m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
 		{
 		}
 
@@ -130,132 +118,37 @@ namespace Cbpp {
 		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
 			PROFILE_ME;
 
-			LOG_POSEIDON_DEBUG("Control: msg = ", m_msg);
-			client->onControl(m_msg.messageId, static_cast<StatusCode>(m_msg.statusCode), m_msg.reason);
+			LOG_POSEIDON_DEBUG("Control message: messageId = ", m_messageId,
+				", statusCode = ", m_statusCode, ", reason = ", m_reason);
+			client->onControl(m_messageId, m_statusCode, m_reason);
 		}
 	};
 
 	Client::Client(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl)
-		: TcpClientBase(addr, useSsl)
-		, m_keepAliveTimeout(keepAliveTimeout)
-		, m_sizeExpecting(2), m_state(S_PAYLOAD_LEN)
+		: LowLevelClient(addr, keepAliveTimeout, useSsl)
 	{
 	}
 	Client::~Client(){
-		if(m_state != S_PAYLOAD_LEN){
-			LOG_POSEIDON_WARNING("Now that this client is to be destroyed, a premature response has to be discarded.");
-		}
 	}
 
-	void Client::onReadAvail(const void *data, std::size_t size){
+	void Client::onLowLevelResponse(boost::uint16_t messageId, boost::uint64_t payloadLen){
 		PROFILE_ME;
 
-		try {
-			m_received.put(data, size);
+		enqueueJob(boost::make_shared<ResponseJob>(
+			virtualSharedFromThis<Client>(), messageId, payloadLen));
+	}
+	void Client::onLowLevelPayload(boost::uint64_t payloadOffset, StreamBuffer payload){
+		PROFILE_ME;
 
-			for(;;){
-				if(m_received.size() < m_sizeExpecting){
-					break;
-				}
-
-				switch(m_state){
-					boost::uint16_t temp16;
-					boost::uint64_t temp64;
-
-				case S_PAYLOAD_LEN:
-					// m_payloadLen = 0;
-					m_messageId = 0;
-					m_payloadOffset = 0;
-
-					m_received.get(&temp16, 2);
-					m_payloadLen = loadLe(temp16);
-					if(m_payloadLen == 0xFFFF){
-						m_sizeExpecting = 8;
-						m_state = S_EX_PAYLOAD_LEN;
-					} else {
-						m_sizeExpecting = 2;
-						m_state = S_MESSAGE_ID;
-					}
-					break;
-
-				case S_EX_PAYLOAD_LEN:
-					m_received.get(&temp64, 8);
-					m_payloadLen = loadLe(temp64);
-
-					m_sizeExpecting = 2;
-					m_state = S_MESSAGE_ID;
-					break;
-
-				case S_MESSAGE_ID:
-					LOG_POSEIDON_DEBUG("Payload length = ", m_payloadLen);
-
-					m_received.get(&temp16, 2);
-					m_messageId = loadLe(temp16);
-
-					enqueueJob(boost::make_shared<ResponseJob>(
-						virtualSharedFromThis<Client>(), m_messageId, m_payloadLen));
-
-					if(m_messageId != ControlMessage::ID){
-						m_sizeExpecting = std::min<boost::uint64_t>(m_payloadLen, 1024);
-					} else {
-						m_sizeExpecting = m_payloadLen;
-					}
-					m_state = S_PAYLOAD;
-					break;
-
-				case S_PAYLOAD:
-					if(m_messageId != ControlMessage::ID){
-						const AUTO(bytesAvail, std::min<boost::uint64_t>(m_received.size(), m_payloadLen - m_payloadOffset));
-						enqueueJob(boost::make_shared<PayloadJob>(
-							virtualSharedFromThis<Client>(), m_payloadOffset, m_received.cut(bytesAvail)));
-						m_payloadOffset += bytesAvail;
-					} else {
-						enqueueJob(boost::make_shared<ControlJob>(
-							virtualSharedFromThis<Client>(), ControlMessage(m_received.cut(m_payloadLen))));
-						m_payloadOffset = m_payloadLen;
-					}
-
-					if(m_payloadOffset < m_payloadLen){
-						m_sizeExpecting = std::min<boost::uint64_t>(m_payloadLen - m_payloadOffset, 1024);
-						// m_state = S_PAYLOAD;
-					} else {
-						m_sizeExpecting = 2;
-						m_state = S_PAYLOAD_LEN;
-					}
-					break;
-
-				default:
-					LOG_POSEIDON_FATAL("Invalid state: ", static_cast<unsigned>(m_state));
-					std::abort();
-				}
-			}
-		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown while parsing data, messageId = ", m_messageId, ", what = ", e.what());
-			forceShutdown();
-		}
+		enqueueJob(boost::make_shared<PayloadJob>(
+			virtualSharedFromThis<Client>(), payloadOffset, STD_MOVE(payload)));
 	}
 
-	bool Client::send(boost::uint16_t messageId, StreamBuffer payload){
+	void Client::onLowLevelControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
 		PROFILE_ME;
 
-		LOG_POSEIDON_DEBUG("Sending frame: messageId = ", messageId, ", size = ", payload.size());
-		StreamBuffer frame;
-		boost::uint16_t temp16;
-		boost::uint64_t temp64;
-		if(payload.size() < 0xFFFF){
-			storeLe(temp16, payload.size());
-			frame.put(&temp16, 2);
-		} else {
-			storeLe(temp16, 0xFFFF);
-			frame.put(&temp16, 2);
-			storeLe(temp64, payload.size());
-			frame.put(&temp64, 8);
-		}
-		storeLe(temp16, messageId);
-		frame.put(&temp16, 2);
-		frame.splice(payload);
-		return TcpSessionBase::send(STD_MOVE(frame));
+		enqueueJob(boost::make_shared<ControlJob>(
+			virtualSharedFromThis<Client>(), messageId, statusCode, STD_MOVE(reason)));
 	}
 }
 
