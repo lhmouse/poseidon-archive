@@ -365,6 +365,7 @@ namespace WebSocket {
 							case OP_CLOSE:
 								LOG_POSEIDON_INFO("Received close frame from ", parent->getRemoteInfo());
 								sendFrame(STD_MOVE(payload), OP_CLOSE, false);
+								shutdownRead();
 								shutdownWrite();
 								break;
 
@@ -453,7 +454,9 @@ namespace WebSocket {
 			storeBe(codeBe, static_cast<unsigned>(statusCode));
 			temp.put(&codeBe, 2);
 			temp.splice(additional);
-			return sendFrame(STD_MOVE(temp), OP_CLOSE, false);
+			sendFrame(STD_MOVE(temp), OP_CLOSE, false);
+			UpgradedSessionBase::shutdownRead();
+			return UpgradedSessionBase::shutdownWrite();
 		} catch(...){
 			UpgradedSessionBase::forceShutdown();
 			return false;

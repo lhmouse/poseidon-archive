@@ -89,6 +89,7 @@ namespace Cbpp {
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: messageId = ", m_messageId, ", what = ", e.what());
 				session->sendControl(m_messageId, ST_INTERNAL_ERROR, e.what());
+				session->shutdownRead();
 				session->shutdownWrite();
 			}
 		}

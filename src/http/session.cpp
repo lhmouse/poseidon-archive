@@ -119,6 +119,7 @@ namespace Http {
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown in HTTP servlet: URI = ", m_requestHeaders.uri);
 				session->sendDefault(ST_BAD_REQUEST, OptionalMap());
+				session->shutdownRead();
 				session->shutdownWrite();
 			}
 		}
