@@ -102,7 +102,7 @@ protected:
 
 	void onReadHup() NOEXCEPT OVERRIDE;
 	void onWriteHup() NOEXCEPT OVERRIDE;
-	void onClose() NOEXCEPT OVERRIDE;
+	void onClose(int errCode) NOEXCEPT OVERRIDE; // 参数就是 errno。
 
 public:
 	bool send(StreamBuffer buffer) OVERRIDE;

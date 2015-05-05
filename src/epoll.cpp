@@ -174,7 +174,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			}
 			const AUTO(desc, getErrorDesc(errCode));
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket error: ", desc);
-			session->onClose();
+			session->onClose(errCode);
 			removeSession(session);
 			continue;
 		}
@@ -201,7 +201,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			} catch(...){
 				LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
 			}
-			session->onClose();
+			session->onClose(0);
 			removeSession(session);
 			continue;
 		}

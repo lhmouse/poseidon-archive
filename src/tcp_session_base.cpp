@@ -183,7 +183,8 @@ void TcpSessionBase::onReadHup() NOEXCEPT {
 }
 void TcpSessionBase::onWriteHup() NOEXCEPT {
 }
-void TcpSessionBase::onClose() NOEXCEPT {
+void TcpSessionBase::onClose(int errCode) NOEXCEPT {
+	(void)errCode;
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer){

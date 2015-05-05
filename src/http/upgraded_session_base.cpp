@@ -17,7 +17,8 @@ namespace Http {
 	}
 	void UpgradedSessionBase::onWriteHup() NOEXCEPT {
 	}
-	void UpgradedSessionBase::onClose() NOEXCEPT {
+	void UpgradedSessionBase::onClose(int errCode) NOEXCEPT {
+		(void)errCode;
 	}
 
 	void UpgradedSessionBase::onInit(RequestHeaders requestHeaders, StreamBuffer entity){

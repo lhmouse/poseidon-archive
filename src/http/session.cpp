@@ -485,15 +485,15 @@ namespace Http {
 
 		TcpSessionBase::onWriteHup();
 	}
-	void Session::onClose() NOEXCEPT {
+	void Session::onClose(int errCode) NOEXCEPT {
 		PROFILE_ME;
 
 		// epoll 线程读取 m_upgradedSession 不需要锁。
 		if(m_upgradedSession){
-			m_upgradedSession->onClose();
+			m_upgradedSession->onClose(errCode);
 		}
 
-		TcpSessionBase::onClose();
+		TcpSessionBase::onClose(errCode);
 	}
 
 	boost::shared_ptr<UpgradedSessionBase> Session::onRequestHeaders(

@@ -23,7 +23,7 @@ protected:
 
 	virtual void onReadHup() NOEXCEPT = 0;
 	virtual void onWriteHup() NOEXCEPT = 0;
-	virtual void onClose() NOEXCEPT = 0;
+	virtual void onClose(int errCode) NOEXCEPT = 0;
 
 public:
 	virtual bool send(StreamBuffer buffer) = 0;
