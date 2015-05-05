@@ -11,8 +11,11 @@ namespace Http {
 	class ResponseHeaders;
 	class Exception;
 
+	class LowLevelSession;
 	class Session;
-	class UpgradedSessionBase;
+	class LowLevelClient;
+	class Client;
+	class UpgradedLowLevelSessionBase;
 	class BasicAuthServer;
 }
 

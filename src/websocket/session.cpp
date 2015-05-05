@@ -195,7 +195,7 @@ namespace WebSocket {
 	}
 
 	Session::Session(const boost::shared_ptr<Http::Session> &parent, std::string uri)
-		: Http::UpgradedSessionBase(parent, STD_MOVE(uri))
+		: Http::UpgradedLowLevelSessionBase(parent, STD_MOVE(uri))
 		, m_sizeTotal(0), m_sizeExpecting(1), m_state(S_OPCODE)
 		, m_fin(false), m_opcode(OP_INVALID_OPCODE), m_payloadLen(0), m_payloadMask(0)
 	{
@@ -245,7 +245,7 @@ namespace WebSocket {
 		} else {
 			frame.splice(payload);
 		}
-		return Http::UpgradedSessionBase::send(STD_MOVE(frame));
+		return Http::UpgradedLowLevelSessionBase::send(STD_MOVE(frame));
 	}
 
 	void Session::onReadAvail(const void *data, std::size_t size){
@@ -455,10 +455,10 @@ namespace WebSocket {
 			temp.put(&codeBe, 2);
 			temp.splice(additional);
 			sendFrame(STD_MOVE(temp), OP_CLOSE, false);
-			UpgradedSessionBase::shutdownRead();
-			return UpgradedSessionBase::shutdownWrite();
+			UpgradedLowLevelSessionBase::shutdownRead();
+			return UpgradedLowLevelSessionBase::shutdownWrite();
 		} catch(...){
-			UpgradedSessionBase::forceShutdown();
+			UpgradedLowLevelSessionBase::forceShutdown();
 			return false;
 		}
 	}

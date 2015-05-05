@@ -19,10 +19,10 @@
 namespace Poseidon {
 
 namespace Http {
-	class UpgradedSessionBase;
+	class UpgradedLowLevelSessionBase;
 
 	class Session : public TcpSessionBase {
-		friend UpgradedSessionBase;
+		friend UpgradedLowLevelSessionBase;
 
 	private:
 		enum State {
@@ -46,7 +46,7 @@ namespace Http {
 
 	private:
 		mutable Mutex m_upgradedSessionMutex;
-		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
+		boost::shared_ptr<UpgradedLowLevelSessionBase> m_upgradedSession;
 
 		StreamBuffer m_received;
 
@@ -71,13 +71,13 @@ namespace Http {
 
 		// 和 Http::Client 不同，这个函数在 Epoll 线程中调用。
 		// 如果 Transfer-Encoding 是 chunked， contentLength 的值为 CONTENT_CHUNKED。
-		virtual boost::shared_ptr<UpgradedSessionBase> onRequestHeaders(
+		virtual boost::shared_ptr<UpgradedLowLevelSessionBase> onRequestHeaders(
 			RequestHeaders &requestHeaders, boost::uint64_t contentLength);
 		virtual void onRequest(
 			const RequestHeaders &requestHeaders, const StreamBuffer &entity) = 0;
 
 	public:
-		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
+		boost::shared_ptr<UpgradedLowLevelSessionBase> getUpgradedLowLevelSession() const;
 
 		bool send(ResponseHeaders responseHeaders, StreamBuffer entity = StreamBuffer());
 

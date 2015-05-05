@@ -5,7 +5,7 @@
 #define POSEIDON_WEBSOCKET_SESSION_HPP_
 
 #include "../cxx_ver.hpp"
-#include "../http/upgraded_session_base.hpp"
+#include "../http/upgraded_low_level_session_base.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
@@ -23,7 +23,7 @@ namespace Http {
 }
 
 namespace WebSocket {
-	class Session : public Http::UpgradedSessionBase {
+	class Session : public Http::UpgradedLowLevelSessionBase {
 	private:
 		enum State {
 			S_OPCODE			= 0,

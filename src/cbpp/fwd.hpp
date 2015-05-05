@@ -10,8 +10,10 @@ namespace Cbpp {
 	class MessageBase;
 	class Exception;
 
-	class Client;
+	class LowLevelSession;
 	class Session;
+	class LowLevelClient;
+	class Client;
 }
 
 }

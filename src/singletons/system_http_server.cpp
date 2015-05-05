@@ -60,7 +60,7 @@ namespace {
 		}
 
 	protected:
-		boost::shared_ptr<Http::UpgradedSessionBase> onRequestHeaders(
+		boost::shared_ptr<Http::UpgradedLowLevelSessionBase> onRequestHeaders(
 			Http::RequestHeaders &requestHeaders, boost::uint64_t contentLength) OVERRIDE
 		{
 			checkAndThrowIfUnauthorized(m_authInfo, getRemoteInfo(), requestHeaders);

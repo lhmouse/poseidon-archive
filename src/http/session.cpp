@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "exception.hpp"
 #include "utilities.hpp"
-#include "upgraded_session_base.hpp"
+#include "upgraded_low_level_session_base.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../singletons/main_config.hpp"
@@ -497,7 +497,7 @@ namespace Http {
 		TcpSessionBase::onClose(errCode);
 	}
 
-	boost::shared_ptr<UpgradedSessionBase> Session::onRequestHeaders(
+	boost::shared_ptr<UpgradedLowLevelSessionBase> Session::onRequestHeaders(
 		RequestHeaders &requestHeaders, boost::uint64_t contentLength)
 	{
 		(void)contentLength;
@@ -515,7 +515,7 @@ namespace Http {
 		return VAL_INIT;
 	}
 
-	boost::shared_ptr<UpgradedSessionBase> Session::getUpgradedSession() const {
+	boost::shared_ptr<UpgradedLowLevelSessionBase> Session::getUpgradedLowLevelSession() const {
 		const Mutex::UniqueLock lock(m_upgradedSessionMutex);
 		return m_upgradedSession;
 	}

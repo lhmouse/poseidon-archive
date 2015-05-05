@@ -4,67 +4,30 @@
 #ifndef POSEIDON_CBPP_SESSION_HPP_
 #define POSEIDON_CBPP_SESSION_HPP_
 
-#include <cstddef>
-#include <boost/type_traits/is_base_of.hpp>
-#include <boost/utility/enable_if.hpp>
-#include <boost/cstdint.hpp>
-#include "../tcp_session_base.hpp"
-#include "../stream_buffer.hpp"
-#include "control_codes.hpp"
-#include "status_codes.hpp"
+#include "low_level_session.hpp"
 
 namespace Poseidon {
 
 namespace Cbpp {
-	class MessageBase;
-
-	class Session : public TcpSessionBase {
-	private:
-		enum State {
-			S_PAYLOAD_LEN		= 0,
-			S_EX_PAYLOAD_LEN	= 1,
-			S_MESSAGE_ID		= 2,
-			S_PAYLOAD			= 3,
-		};
-
+	class Session : public LowLevelSession {
 	private:
 		class RequestJob;
 		class ControlJob;
 
 		class ErrorJob;
 
-	private:
-		StreamBuffer m_received;
-
-		boost::uint64_t m_sizeTotal;
-		boost::uint64_t m_sizeExpecting;
-		State m_state;
-
-		boost::uint16_t m_messageId;
-		boost::uint64_t m_payloadLen;
-
 	public:
 		explicit Session(UniqueFile socket);
 		~Session();
 
 	protected:
-		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
+		void onLowLevelRequest(boost::uint16_t messageId, StreamBuffer payload) OVERRIDE;
+		void onLowLevelControl(ControlCode controlCode, StatusCode statusCode, std::string reason) OVERRIDE;
+
+		void onLowLevelError(unsigned messageId, StatusCode statusCode, const char *reason) OVERRIDE;
 
 		virtual void onRequest(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
 		virtual void onControl(ControlCode controlCode, StatusCode statusCode, const std::string &reason);
-
-	public:
-		bool send(boost::uint16_t messageId, StreamBuffer payload);
-
-		template<class MessageT>
-		typename boost::enable_if<boost::is_base_of<MessageBase, MessageT>, bool>::type send(const MessageT &payload){
-			return send(MessageT::ID, StreamBuffer(payload));
-		}
-
-		bool sendControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason);
-		bool sendControl(boost::uint16_t messageId, StatusCode statusCode){
-			return sendControl(messageId, statusCode, std::string());
-		}
 	};
 }
 
