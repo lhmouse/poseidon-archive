@@ -126,7 +126,7 @@ namespace Cbpp {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown while parsing data, message id = ", m_messageId, ", what = ", e.what());
 			try {
-				onLowLevelError(m_messageId, ST_INTERNAL_ERROR, e.what());
+				onLowLevelError(m_messageId, ST_INTERNAL_ERROR, "");
 				shutdownRead();
 			} catch(...){
 				forceShutdown();

@@ -4,70 +4,25 @@
 #ifndef POSEIDON_WEBSOCKET_SESSION_HPP_
 #define POSEIDON_WEBSOCKET_SESSION_HPP_
 
-#include "../cxx_ver.hpp"
-#include "../http/upgraded_low_level_session_base.hpp"
-#include <boost/shared_ptr.hpp>
-#include <boost/cstdint.hpp>
-#include "../stream_buffer.hpp"
-#include "../http/status_codes.hpp"
-#include "opcodes.hpp"
-#include "status_codes.hpp"
+#include "low_level_session.hpp"
 
 namespace Poseidon {
 
-class OptionalMap;
-
-namespace Http {
-	class RequestHeaders;
-	class Session;
-}
-
 namespace WebSocket {
-	class Session : public Http::UpgradedLowLevelSessionBase {
-	private:
-		enum State {
-			S_OPCODE			= 0,
-			S_PAYLOAD_LEN		= 1,
-			S_EX_PAYLOAD_LEN_16	= 2,
-			S_EX_PAYLOAD_LEN_64	= 3,
-			S_MASK				= 4,
-			S_PAYLOAD			= 5,
-		};
-
+	class Session : public LowLevelSession {
 	private:
 		class RequestJob;
 		class ErrorJob;
 
 	public:
-		static Http::StatusCode makeHttpHandshakeResponse(OptionalMap &ret, const Http::RequestHeaders &requestHeaders);
-
-	private:
-		StreamBuffer m_received;
-
-		boost::uint64_t m_sizeTotal;
-		boost::uint64_t m_sizeExpecting;
-		State m_state;
-
-		bool m_fin;
-		OpCode m_opcode;
-		boost::uint64_t m_payloadLen;
-		boost::uint32_t m_payloadMask;
-
-	public:
-		Session(const boost::shared_ptr<Http::Session> &parent, std::string uri);
+		Session(const boost::shared_ptr<Http::LowLevelSession> &parent, std::string uri);
 		~Session();
 
-	private:
-		bool sendFrame(StreamBuffer payload, OpCode opcode, bool masked);
-
 	protected:
-		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
+		void onLowLevelRequest(OpCode opcode, StreamBuffer payload) OVERRIDE;
+		void onLowLevelError(StatusCode statusCode, const char *reason) OVERRIDE;
 
 		virtual void onRequest(OpCode opcode, const StreamBuffer &payload) = 0;
-
-	public:
-		bool send(StreamBuffer payload, bool binary, bool masked = false);
-		bool shutdown(StatusCode statusCode, StreamBuffer additional = StreamBuffer()) NOEXCEPT;
 	};
 }
 

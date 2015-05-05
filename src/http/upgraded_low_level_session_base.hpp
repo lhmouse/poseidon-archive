@@ -13,17 +13,17 @@ namespace Poseidon {
 
 namespace Http {
 	class RequestHeaders;
-	class Session;
+	class LowLevelSession;
 
 	class UpgradedLowLevelSessionBase : public SessionBase {
-		friend Session;
+		friend LowLevelSession;
 
 	private:
-		const boost::weak_ptr<Session> m_parent;
+		const boost::weak_ptr<LowLevelSession> m_parent;
 		const std::string m_uri;
 
 	protected:
-		UpgradedLowLevelSessionBase(const boost::shared_ptr<Session> &parent, std::string uri);
+		UpgradedLowLevelSessionBase(const boost::shared_ptr<LowLevelSession> &parent, std::string uri);
 
 	private:
 		void onReadHup() NOEXCEPT OVERRIDE;
@@ -42,26 +42,26 @@ namespace Http {
 		bool shutdownWrite() NOEXCEPT;
 		void forceShutdown() NOEXCEPT;
 
-		boost::weak_ptr<const Session> getWeakParent() const {
+		boost::weak_ptr<const LowLevelSession> getWeakParent() const {
 			return m_parent;
 		}
-		boost::weak_ptr<Session> getWeakParent(){
+		boost::weak_ptr<LowLevelSession> getWeakParent(){
 			return m_parent;
 		}
 
-		boost::shared_ptr<const Session> getParent() const {
+		boost::shared_ptr<const LowLevelSession> getParent() const {
 			return m_parent.lock();
 		}
-		boost::shared_ptr<Session> getParent(){
+		boost::shared_ptr<LowLevelSession> getParent(){
 			return m_parent.lock();
 		}
 
-		// 以下所有函数，如果原来的 Session 被删除，抛出 bad_weak_ptr。
-		boost::shared_ptr<const Session> getSafeParent() const {
-			return boost::shared_ptr<const Session>(m_parent);
+		// 以下所有函数，如果原来的 LowLevelSession 被删除，抛出 bad_weak_ptr。
+		boost::shared_ptr<const LowLevelSession> getSafeParent() const {
+			return boost::shared_ptr<const LowLevelSession>(m_parent);
 		}
-		boost::shared_ptr<Session> getSafeParent(){
-			return boost::shared_ptr<Session>(m_parent);
+		boost::shared_ptr<LowLevelSession> getSafeParent(){
+			return boost::shared_ptr<LowLevelSession>(m_parent);
 		}
 
 		const std::string &getUri() const {

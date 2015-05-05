@@ -8,7 +8,8 @@
 namespace Poseidon {
 
 namespace Http {
-	UpgradedLowLevelSessionBase::UpgradedLowLevelSessionBase(const boost::shared_ptr<Session> &parent, std::string uri)
+	UpgradedLowLevelSessionBase::UpgradedLowLevelSessionBase(
+		const boost::shared_ptr<LowLevelSession> &parent, std::string uri)
 		: m_parent(parent), m_uri(STD_MOVE(uri))
 	{
 	}
