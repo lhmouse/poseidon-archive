@@ -18,6 +18,8 @@ namespace Cbpp {
 			ST_REQUEST_TOO_LARGE	= -4,
 			ST_RESPONSE_TOO_LARGE	= -5,
 			ST_JUNK_AFTER_PACKET	= -6,
+			ST_FORBIDDEN			= -7,
+			ST_AUTH_REQUIRED		= -8,
 		};
 	}
 
