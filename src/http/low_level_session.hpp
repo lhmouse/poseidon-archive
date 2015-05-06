@@ -80,10 +80,7 @@ namespace Http {
 			return send(statusCode, OptionalMap(), STD_MOVE(entity));
 		}
 
-		bool sendDefault(StatusCode statusCode, OptionalMap headers);
-		bool sendDefault(StatusCode statusCode){
-			return sendDefault(statusCode, OptionalMap());
-		}
+		bool sendDefault(StatusCode statusCode, OptionalMap headers = OptionalMap());
 	};
 }
 

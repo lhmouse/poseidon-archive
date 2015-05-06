@@ -57,10 +57,7 @@ namespace Cbpp {
 			return send(MessageT::ID, StreamBuffer(payload));
 		}
 
-		bool sendControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason);
-		bool sendControl(boost::uint16_t messageId, StatusCode statusCode){
-			return sendControl(messageId, statusCode, std::string());
-		}
+		bool sendControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason = std::string());
 	};
 }
 
