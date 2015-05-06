@@ -6,6 +6,7 @@
 
 #include "cxx_util.hpp"
 #include <boost/shared_ptr.hpp>
+#include <stack>
 
 namespace Poseidon {
 
@@ -15,24 +16,26 @@ public:
 	virtual ~ModuleRaiiBase();
 
 public:
-	virtual boost::shared_ptr<const void> init() const = 0;
+	virtual void init(std::stack<boost::shared_ptr<const void> > &raiiHandles) const = 0;
 };
 
 }
 
 /*
-	MODULE_RAII {
-		// 写初始化代码。
+	MODULE_RAII(handles) {
+		AUTO(foo, boost::make_shared<Foo>());
+		handles.push(STD_MOVE_IDN(foo));
 	}
 */
-#define MODULE_RAII	\
+#define MODULE_RAII(handles_)	\
 	namespace {	\
 		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_) {	\
 			class Stub_ : public ::Poseidon::ModuleRaiiBase {	\
-				::boost::shared_ptr<const void> init() const FINAL;	\
+				void init(std::stack<boost::shared_ptr<const void> > &) const FINAL;	\
 			} const stub_;	\
 		}	\
 	}	\
-	::boost::shared_ptr<const void> TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_)::Stub_::init() const
+	void TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_)::Stub_::init(	\
+		std::stack<boost::shared_ptr<const void> > & (handles_) ) const
 
 #endif

@@ -620,8 +620,8 @@ protected:
 	}
 };
 
-MODULE_RAII {
-	return MyClient::create();
+MODULE_RAII(handles){
+	handles.push(MyClient::create());
 }
 
 }
