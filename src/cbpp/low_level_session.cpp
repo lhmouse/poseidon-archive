@@ -119,6 +119,7 @@ namespace Cbpp {
 			try {
 				onLowLevelError(m_messageId, e.statusCode(), e.what());
 				shutdownRead();
+				shutdownWrite();
 			} catch(...){
 				forceShutdown();
 			}
@@ -128,6 +129,7 @@ namespace Cbpp {
 			try {
 				onLowLevelError(m_messageId, ST_INTERNAL_ERROR, "");
 				shutdownRead();
+				shutdownWrite();
 			} catch(...){
 				forceShutdown();
 			}
