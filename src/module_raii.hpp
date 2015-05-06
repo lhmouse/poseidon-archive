@@ -22,7 +22,7 @@ public:
 }
 
 /*
-	MODULE_RAII(handles) {
+	MODULE_RAII(handles){
 		AUTO(foo, boost::make_shared<Foo>());
 		handles.push(STD_MOVE_IDN(foo));
 	}
