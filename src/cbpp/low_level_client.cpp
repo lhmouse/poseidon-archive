@@ -100,8 +100,7 @@ namespace Cbpp {
 						m_payloadOffset += bytesAvail;
 					} else {
 						ControlMessage req(m_received.cut(m_payloadLen));
-						onLowLevelControl(static_cast<ControlCode>(req.messageId),
-							static_cast<StatusCode>(req.statusCode), STD_MOVE(req.reason));
+						onLowLevelError(req.messageId, req.statusCode, STD_MOVE(req.reason));
 						m_payloadOffset = m_payloadLen;
 					}
 
@@ -151,6 +150,13 @@ namespace Cbpp {
 		frame.put(&temp16, 2);
 		frame.splice(payload);
 		return TcpSessionBase::send(STD_MOVE(frame));
+	}
+
+	bool LowLevelClient::sendControl(ControlCode controlCode, boost::int64_t intParam, std::string strParam){
+		PROFILE_ME;
+		LOG_POSEIDON_DEBUG("Sending control frame: controlCode = ", controlCode, ", intParam = ", intParam, ", strParam = ", strParam);
+
+		return send(ControlMessage(controlCode, intParam, STD_MOVE(strParam)));
 	}
 }
 

@@ -22,12 +22,12 @@ namespace Cbpp {
 
 	protected:
 		void onLowLevelRequest(boost::uint16_t messageId, StreamBuffer payload) OVERRIDE;
-		void onLowLevelControl(ControlCode controlCode, StatusCode statusCode, std::string reason) OVERRIDE;
+		void onLowLevelControl(ControlCode controlCode, boost::int64_t intParam, std::string strParam) OVERRIDE;
 
 		void onLowLevelError(unsigned messageId, StatusCode statusCode, const char *reason) OVERRIDE;
 
 		virtual void onRequest(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
-		virtual void onControl(ControlCode controlCode, StatusCode statusCode, const std::string &reason);
+		virtual void onControl(ControlCode controlCode, boost::int64_t intParam, const std::string &strParam);
 	};
 }
 

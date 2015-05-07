@@ -95,8 +95,7 @@ namespace Cbpp {
 						onLowLevelRequest(m_messageId, m_received.cut(m_payloadLen));
 					} else {
 						ControlMessage req(m_received.cut(m_payloadLen));
-						onLowLevelControl(static_cast<ControlCode>(req.messageId),
-							static_cast<StatusCode>(req.statusCode), STD_MOVE(req.reason));
+						onLowLevelControl(req.messageId, req.statusCode, STD_MOVE(req.reason));
 					}
 
 					m_messageId = 0;
@@ -138,8 +137,8 @@ namespace Cbpp {
 
 	bool LowLevelSession::send(boost::uint16_t messageId, StreamBuffer payload){
 		PROFILE_ME;
-
 		LOG_POSEIDON_DEBUG("Sending frame: messageId = ", messageId, ", size = ", payload.size());
+
 		StreamBuffer frame;
 		boost::uint16_t temp16;
 		boost::uint64_t temp64;
@@ -158,8 +157,11 @@ namespace Cbpp {
 		return TcpSessionBase::send(STD_MOVE(frame));
 	}
 
-	bool LowLevelSession::sendControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
-		return send(ControlMessage(messageId, static_cast<int>(statusCode), STD_MOVE(reason)));
+	bool LowLevelSession::sendError(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
+		PROFILE_ME;
+		LOG_POSEIDON_DEBUG("Sending error frame: messageId = ", messageId, ", statusCode = ", statusCode, ", statusCode = ", statusCode);
+
+		return send(ControlMessage(messageId, statusCode, STD_MOVE(reason)));
 	}
 }
 

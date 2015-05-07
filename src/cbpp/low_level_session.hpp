@@ -45,7 +45,7 @@ namespace Cbpp {
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
 		virtual void onLowLevelRequest(boost::uint16_t messageId, StreamBuffer payload) = 0;
-		virtual void onLowLevelControl(ControlCode controlCode, StatusCode statusCode, std::string reason) = 0;
+		virtual void onLowLevelControl(ControlCode controlCode, boost::int64_t intParam, std::string strParam) = 0;
 
 		virtual void onLowLevelError(unsigned messageId, StatusCode statusCode, const char *reason) = 0;
 
@@ -59,7 +59,7 @@ namespace Cbpp {
 			return send(MessageT::ID, StreamBuffer(payload));
 		}
 
-		bool sendControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason = std::string());
+		bool sendError(boost::uint16_t messageId, StatusCode statusCode, std::string reason);
 	};
 }
 

@@ -98,14 +98,14 @@ namespace Cbpp {
 		}
 	};
 
-	class Client::ControlJob : public ClientJobBase {
+	class Client::ErrorJob : public ClientJobBase {
 	private:
 		const boost::uint16_t m_messageId;
 		const StatusCode m_statusCode;
 		const std::string m_reason;
 
 	public:
-		ControlJob(const boost::shared_ptr<Client> &client,
+		ErrorJob(const boost::shared_ptr<Client> &client,
 			boost::uint16_t messageId, StatusCode statusCode, std::string reason)
 			: ClientJobBase(client)
 			, m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
@@ -116,9 +116,8 @@ namespace Cbpp {
 		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
 			PROFILE_ME;
 
-			LOG_POSEIDON_DEBUG("Control message: messageId = ", m_messageId,
-				", statusCode = ", m_statusCode, ", reason = ", m_reason);
-			client->onControl(m_messageId, m_statusCode, m_reason);
+			LOG_POSEIDON_DEBUG("Error message: messageId = ", m_messageId, ", statusCode = ", m_statusCode, ", reason = ", m_reason);
+			client->onError(m_messageId, m_statusCode, m_reason);
 		}
 	};
 
@@ -142,10 +141,10 @@ namespace Cbpp {
 			virtualSharedFromThis<Client>(), payloadOffset, STD_MOVE(payload)));
 	}
 
-	void Client::onLowLevelControl(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
+	void Client::onLowLevelError(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ControlJob>(
+		enqueueJob(boost::make_shared<ErrorJob>(
 			virtualSharedFromThis<Client>(), messageId, statusCode, STD_MOVE(reason)));
 	}
 }

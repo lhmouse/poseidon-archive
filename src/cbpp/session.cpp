@@ -82,13 +82,13 @@ namespace Cbpp {
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Cbpp::Exception thrown: messageId = ", m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
-				session->sendControl(m_messageId, e.statusCode(), e.what());
+				session->sendError(m_messageId, e.statusCode(), e.what());
 				session->shutdownRead();
 				session->shutdownWrite();
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: messageId = ", m_messageId, ", what = ", e.what());
-				session->sendControl(m_messageId, ST_INTERNAL_ERROR, e.what());
+				session->sendError(m_messageId, ST_INTERNAL_ERROR, e.what());
 				session->shutdownRead();
 				session->shutdownWrite();
 			}
@@ -98,14 +98,14 @@ namespace Cbpp {
 	class Session::ControlJob : public SessionJobBase {
 	private:
 		const ControlCode m_controlCode;
-		const StatusCode m_statusCode;
-		const std::string m_reason;
+		const boost::int64_t m_intParam;
+		const std::string m_strParam;
 
 	public:
 		ControlJob(const boost::shared_ptr<Session> &session,
-			ControlCode controlCode, StatusCode statusCode, std::string reason)
+			ControlCode controlCode, boost::int64_t intParam, std::string strParam)
 			: SessionJobBase(session)
-			, m_controlCode(controlCode), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
+			, m_controlCode(controlCode), m_intParam(intParam), m_strParam(strParam)
 		{
 		}
 
@@ -115,14 +115,14 @@ namespace Cbpp {
 
 			try {
 				LOG_POSEIDON_DEBUG("Dispatching control message: controlCode = ", m_controlCode,
-					", statusCode = ", m_statusCode, ", reason = ", m_reason);
-				session->onControl(m_controlCode, m_statusCode, m_reason);
+					", intParam = ", m_intParam, ", strParam = ", m_strParam);
+				session->onControl(m_controlCode, m_intParam, m_strParam);
 
 				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
-				session->sendControl(ControlMessage::ID, e.statusCode(), e.what());
+				session->sendError(ControlMessage::ID, e.statusCode(), e.what());
 				session->shutdownRead();
 				session->shutdownWrite();
 			}
@@ -149,7 +149,7 @@ namespace Cbpp {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendControl(m_messageId, m_statusCode, m_reason);
+			session->sendError(m_messageId, m_statusCode, m_reason);
 		}
 	};
 
@@ -166,11 +166,11 @@ namespace Cbpp {
 		enqueueJob(boost::make_shared<RequestJob>(
 			virtualSharedFromThis<Session>(), messageId, STD_MOVE(payload)));
 	}
-	void Session::onLowLevelControl(ControlCode controlCode, StatusCode statusCode, std::string reason){
+	void Session::onLowLevelControl(ControlCode controlCode, boost::int64_t intParam, std::string strParam){
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<ControlJob>(
-			virtualSharedFromThis<Session>(), controlCode, statusCode, STD_MOVE(reason)));
+			virtualSharedFromThis<Session>(), controlCode, intParam, STD_MOVE(strParam)));
 	}
 
 	void Session::onLowLevelError(unsigned messageId, StatusCode statusCode, const char *reason){
@@ -183,7 +183,7 @@ namespace Cbpp {
 		shutdownWrite();
 	}
 
-	void Session::onControl(ControlCode controlCode, StatusCode statusCode, const std::string &reason){
+	void Session::onControl(ControlCode controlCode, boost::int64_t intParam, const std::string &strParam){
 		PROFILE_ME;
 
 		switch(controlCode){
@@ -193,7 +193,7 @@ namespace Cbpp {
 
 		default:
 			LOG_POSEIDON_WARNING("Unknown control code: ", controlCode);
-			send(ControlMessage(static_cast<boost::uint16_t>(controlCode), statusCode, reason));
+			send(ControlMessage(controlCode, intParam, strParam));
 			shutdownRead();
 			shutdownWrite();
 			break;
