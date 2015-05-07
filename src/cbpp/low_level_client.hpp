@@ -59,7 +59,9 @@ namespace Cbpp {
 		bool send(boost::uint16_t messageId, StreamBuffer payload);
 
 		template<class MessageT>
-		typename boost::enable_if<boost::is_base_of<MessageBase, MessageT>, bool>::type send(const MessageT &payload){
+		typename boost::enable_if<boost::is_base_of<MessageBase, MessageT>, bool>::type
+			send(const MessageT &payload)
+		{
 			return send(MessageT::ID, StreamBuffer(payload));
 		}
 	};

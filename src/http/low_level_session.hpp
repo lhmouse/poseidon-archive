@@ -64,8 +64,8 @@ namespace Http {
 		void onWriteHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
-		virtual boost::shared_ptr<UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(
-			RequestHeaders &requestHeaders, boost::uint64_t contentLength) = 0;
+		virtual boost::shared_ptr<UpgradedLowLevelSessionBase>
+			onLowLevelRequestHeaders(RequestHeaders &requestHeaders, boost::uint64_t contentLength) = 0;
 
 		virtual void onLowLevelRequest(RequestHeaders requestHeaders, StreamBuffer entity) = 0;
 		virtual void onLowLevelError(StatusCode statusCode, OptionalMap headers) = 0;
