@@ -19,7 +19,7 @@ private:
 
 public:
 	Thread() NOEXCEPT;
-	explicit Thread(boost::function<void ()> proc);
+	Thread(boost::function<void ()> proc, const char *tag); // tag 用于在日志中显示。最多四个字符。
 	~Thread(); // if(joinable()){ std::terminate(); }
 
 public:

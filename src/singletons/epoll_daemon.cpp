@@ -101,7 +101,6 @@ namespace {
 
 	void threadProc(){
 		PROFILE_ME;
-		Logger::setThreadTag("   N"); // Network
 		LOG_POSEIDON_INFO("Epoll daemon started.");
 
 		daemonLoop();
@@ -125,7 +124,7 @@ void EpollDaemon::start(){
 	conf.get(g_tcpRequestTimeout, "epoll_tcp_request_timeout");
 	LOG_POSEIDON_DEBUG("Tcp request timeout = ", g_tcpRequestTimeout);
 
-	Thread(threadProc).swap(g_thread);
+	Thread(&threadProc, "   N").swap(g_thread);
 }
 void EpollDaemon::stop(){
 	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){

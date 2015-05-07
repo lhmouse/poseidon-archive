@@ -14,6 +14,8 @@ struct Thread::Impl {
 		boost::shared_ptr<Impl> self;
 		self.swap(static_cast<Impl *>(impl)->self);
 
+		Logger::setThreadTag(self->tag);
+
 		try {
 			self->proc();
 		} catch(...){
@@ -22,6 +24,7 @@ struct Thread::Impl {
 		return NULLPTR;
 	}
 
+	char tag[8];
 	boost::function<void ()> proc;
 	pthread_t handle;
 
@@ -30,8 +33,9 @@ struct Thread::Impl {
 
 Thread::Thread() NOEXCEPT {
 }
-Thread::Thread(boost::function<void ()> proc){
+Thread::Thread(boost::function<void ()> proc, const char *tag){
 	m_impl = boost::make_shared<Impl>();
+	std::strncpy(m_impl->tag, tag, sizeof(m_impl->tag));
 	m_impl->proc.swap(proc);
 
 	m_impl->self = m_impl; // 制造循环引用。

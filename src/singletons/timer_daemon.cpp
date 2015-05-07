@@ -128,7 +128,6 @@ namespace {
 
 	void threadProc(){
 		PROFILE_ME;
-		Logger::setThreadTag("  T "); // Timer
 		LOG_POSEIDON_INFO("Timer daemon started.");
 
 		daemonLoop();
@@ -164,7 +163,7 @@ void TimerDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting timer daemon...");
 
-	Thread(threadProc).swap(g_thread);
+	Thread(threadProc, "  T ").swap(g_thread);
 }
 void TimerDaemon::stop(){
 	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
