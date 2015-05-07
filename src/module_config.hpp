@@ -17,7 +17,7 @@
 	namespace ModuleConfigImpl_ {	\
 		extern ::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weakConfig_;	\
 		extern const char *getConfigFileName_();	\
-		MODULE_RAII(handles_){	\
+		MODULE_RAII_PRIORITY(handles_, LONG_MIN){	\
 			AUTO(config_, g_weakConfig_.lock());	\
 			if(!config_){	\
 				AUTO(newConfig_, ::boost::make_shared< ::Poseidon::ConfigFile>());	\
