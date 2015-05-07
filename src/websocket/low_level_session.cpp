@@ -85,7 +85,7 @@ namespace WebSocket {
 		}
 		secWebSocketKeyStr += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 		unsigned char sha1[20];
-		sha1Sum(sha1, secWebSocketKeyStr.data(), secWebSocketKeyStr.size());
+		sha1Sum(sha1, secWebSocketKeyStr);
 		AUTO(secWebSocketAccept, Http::base64Encode(sha1, sizeof(sha1)));
 
 		ret.set("Upgrade", "websocket");

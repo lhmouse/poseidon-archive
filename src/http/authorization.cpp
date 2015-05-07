@@ -29,7 +29,7 @@ namespace Http {
 		void xorNonce(RawNonce &rawNonce, const char *remoteIp){
 			boost::uint32_t temp[2];
 			temp[0] = static_cast<boost::uint32_t>(::getpid());
-			temp[1] = crc32Sum(remoteIp, std::strlen(remoteIp));
+			temp[1] = crc32Sum(remoteIp);
 			unsigned char hash[16];
 			md5Sum(hash, temp, 8);
 			for(std::size_t i = 0; i < sizeof(rawNonce); ++i){
@@ -237,7 +237,7 @@ namespace Http {
 
 			unsigned char digest[16];
 			std::string strToHash;
-			md5Sum(digest, a1.data(), a1.size());
+			md5Sum(digest, a1);
 			strToHash += hexEncode(digest, sizeof(digest), false);
 			strToHash += ':';
 			strToHash += nonce;
@@ -253,9 +253,9 @@ namespace Http {
 				LOG_POSEIDON_WARNING("> Inacceptable qop: ", qop);
 				return std::make_pair(AUTH_INACCEPTABLE_QOP, NULLPTR);
 			}
-			md5Sum(digest, a2.data(), a2.size());
+			md5Sum(digest, a2);
 			strToHash += hexEncode(digest, sizeof(digest), false);
-			md5Sum(digest, strToHash.data(), strToHash.size());
+			md5Sum(digest, strToHash);
 			const AUTO(responseExpecting, hexEncode(digest, sizeof(digest)));
 			LOG_POSEIDON_DEBUG("> Response expecting: ", responseExpecting);
 			if(::strcasecmp(response.c_str(), responseExpecting.c_str()) != 0){
