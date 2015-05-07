@@ -34,7 +34,7 @@ struct ModuleDepository {
 private:
 	friend ModuleRaiiBase;
 
-	static void registerModuleRaii(ModuleRaiiBase *raii);
+	static void registerModuleRaii(ModuleRaiiBase *raii, long priority);
 	static void unregisterModuleRaii(ModuleRaiiBase *raii);
 
 	ModuleDepository();

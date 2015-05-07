@@ -8,8 +8,32 @@
 
 namespace Poseidon {
 
-ModuleRaiiBase::ModuleRaiiBase(){
-	ModuleDepository::registerModuleRaii(this);
+HandleStack::~HandleStack(){
+	clear();
+}
+
+void HandleStack::push(boost::shared_ptr<const void> handle){
+	m_queue.push_back(STD_MOVE(handle));
+}
+boost::shared_ptr<const void> HandleStack::pop(){
+	assert(!m_queue.empty());
+
+	AUTO(ret, m_queue.back());
+	m_queue.pop_back();
+	return ret;
+}
+void HandleStack::clear() NOEXCEPT {
+	while(!m_queue.empty()){
+		m_queue.pop_back();
+	}
+}
+
+void HandleStack::swap(HandleStack &rhs) NOEXCEPT {
+	m_queue.swap(rhs.m_queue);
+}
+
+ModuleRaiiBase::ModuleRaiiBase(long priority){
+	ModuleDepository::registerModuleRaii(this, priority);
 }
 ModuleRaiiBase::~ModuleRaiiBase(){
 	ModuleDepository::unregisterModuleRaii(this);

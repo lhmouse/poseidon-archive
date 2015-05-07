@@ -6,17 +6,37 @@
 
 #include "cxx_util.hpp"
 #include <boost/shared_ptr.hpp>
-#include <stack>
+#include <deque>
 
 namespace Poseidon {
 
+class HandleStack {
+private:
+	std::deque<boost::shared_ptr<const void> > m_queue;
+
+public:
+	~HandleStack();
+
+public:
+	void push(boost::shared_ptr<const void> handle);
+	boost::shared_ptr<const void> pop();
+
+	void clear() NOEXCEPT; // 确保逆序析构。
+
+	void swap(HandleStack &rhs) NOEXCEPT;
+};
+
+inline void swap(HandleStack &lhs, HandleStack &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
+
 class ModuleRaiiBase : NONCOPYABLE {
 public:
-	ModuleRaiiBase();
+	explicit ModuleRaiiBase(long priority);
 	virtual ~ModuleRaiiBase();
 
 public:
-	virtual void init(std::stack<boost::shared_ptr<const void> > &raiiHandles) const = 0;
+	virtual void init(HandleStack &handles) const = 0;
 };
 
 }
@@ -27,15 +47,20 @@ public:
 		handles.push(STD_MOVE_IDN(foo));
 	}
 */
-#define MODULE_RAII(handles_)	\
+#define MODULE_RAII_PRIORITY(handles_, priority_)	\
 	namespace {	\
 		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_) {	\
-			class Stub_ : public ::Poseidon::ModuleRaiiBase {	\
-				void init(std::stack<boost::shared_ptr<const void> > &) const FINAL;	\
+			struct Stub_ : public ::Poseidon::ModuleRaiiBase {	\
+				Stub_()	\
+					: ::Poseidon::ModuleRaiiBase(priority_)	\
+				{	\
+				}	\
+				void init(HandleStack &) const FINAL;	\
 			} const stub_;	\
 		}	\
 	}	\
-	void TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_)::Stub_::init(	\
-		std::stack<boost::shared_ptr<const void> > & (handles_) ) const
+	void TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_)::Stub_::init(HandleStack & (handles_) ) const
+
+#define MODULE_RAII(handles_)	MODULE_RAII_PRIORITY(handles_, 65535)
 
 #endif

@@ -76,17 +76,13 @@ struct ModuleMapElement {
 	SharedNts realPath;
 	void *baseAddr;
 
-	mutable std::stack<boost::shared_ptr<const void> > handles;
+	HandleStack handles;
 
-	explicit ModuleMapElement(boost::shared_ptr<Module> module_)
+	ModuleMapElement(boost::shared_ptr<Module> module_, HandleStack handles_)
 		: module(STD_MOVE(module_)), handle(module->handle())
 		, realPath(module->realPath()), baseAddr(module->baseAddr())
+		, handles(STD_MOVE(handles_))
 	{
-	}
-	~ModuleMapElement(){
-		while(!handles.empty()){
-			handles.pop();
-		}
 	}
 };
 
@@ -104,28 +100,31 @@ enum {
 	MIDX_BASE_ADDR,
 };
 
-struct ModuleRaiiMapElement {
-	void *baseAddr;
-	ModuleRaiiBase *raii;
+ModuleMap g_moduleMap;
 
-	ModuleRaiiMapElement(void *baseAddr_, ModuleRaiiBase *raii_)
-		: baseAddr(baseAddr_), raii(raii_)
+struct ModuleRaiiMapElement {
+	ModuleRaiiBase *raii;
+	long priority;
+
+	void *baseAddr;
+
+	ModuleRaiiMapElement(ModuleRaiiBase *raii_, long priority_, void *baseAddr_)
+		: raii(raii_), priority(priority_), baseAddr(baseAddr_)
 	{
 	}
 };
 
 MULTI_INDEX_MAP(ModuleRaiiMap, ModuleRaiiMapElement,
-	MULTI_MEMBER_INDEX(baseAddr)
 	UNIQUE_MEMBER_INDEX(raii)
+	MULTI_MEMBER_INDEX(priority)
 )
 
 enum {
-	MRIDX_BASE_ADDR,
 	MRIDX_RAII,
+	MRIDX_PRIORITY,
 };
 
-ModuleMap g_modules;
-ModuleRaiiMap g_moduleRaiis;
+ModuleRaiiMap g_moduleRaiiMap;
 
 }
 
@@ -138,11 +137,11 @@ void ModuleDepository::stop(){
 	std::vector<boost::weak_ptr<Module> > modules;
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		modules.reserve(g_modules.size());
-		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
+		modules.reserve(g_moduleMap.size());
+		for(AUTO(it, g_moduleMap.begin()); it != g_moduleMap.end(); ++it){
 			modules.push_back(it->module);
 		}
-		g_modules.clear();
+		g_moduleMap.clear();
 	}
 	while(!modules.empty()){
 		const AUTO(module, modules.back().lock());
@@ -162,8 +161,8 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 	UniqueHandle<DynamicLibraryCloser> handle(::dlopen(path, RTLD_NOW | RTLD_NOLOAD));
 	if(handle){
 		LOG_POSEIDON_DEBUG("Module already loaded, trying retrieving a shared_ptr from static map...");
-		const AUTO(it, g_modules.find<MIDX_HANDLE>(handle.get()));
-		if(it != g_modules.end<MIDX_HANDLE>()){
+		const AUTO(it, g_moduleMap.find<MIDX_HANDLE>(handle.get()));
+		if(it != g_moduleMap.end<MIDX_HANDLE>()){
 			LOG_POSEIDON_DEBUG("Got shared_ptr from loaded module: ", it->realPath);
 			return it->module;
 		}
@@ -194,25 +193,22 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 
 	AUTO(module, boost::make_shared<Module>(STD_MOVE(handle), realPath, baseAddr));
 
-	const AUTO(raiiRange, g_moduleRaiis.equalRange<MRIDX_BASE_ADDR>(baseAddr));
-	std::stack<boost::shared_ptr<const void> > handles;
-	if(raiiRange.first == raiiRange.second){
-		LOG_POSEIDON_INFO("No initialization is required: ", realPath);
-	} else {
-		LOG_POSEIDON_INFO("Initializing module: ", realPath);
-		for(AUTO(it, raiiRange.first); it != raiiRange.second; ++it){
-			it->raii->init(handles);
+	HandleStack handles;
+	LOG_POSEIDON_INFO("Initializing module: ", realPath);
+	for(AUTO(it, g_moduleRaiiMap.begin<MRIDX_PRIORITY>()); it != g_moduleRaiiMap.end<MRIDX_PRIORITY>(); ++it){
+		if(it->baseAddr != baseAddr){
+			continue;
 		}
-		LOG_POSEIDON_INFO("Done initializing module: ", realPath);
+		it->raii->init(handles);
 	}
+	LOG_POSEIDON_INFO("Done initializing module: ", realPath);
 
-	const AUTO(result, g_modules.insert(ModuleMapElement(module)));
+	const AUTO(result, g_moduleMap.insert(ModuleMapElement(module, STD_MOVE(handles))));
 	if(!result.second){
-		LOG_POSEIDON_ERROR("Duplicate module: module = ", module, ", handle = ", module->handle(),
-			", real path = ", realPath, ", base address = ", baseAddr);
+		LOG_POSEIDON_ERROR("Duplicate module: module = ", static_cast<void *>(module.get()),
+			", handle = ", module->handle(),", realPath = ", realPath, ", baseAddr = ", baseAddr);
 		DEBUG_THROW(Exception, SSLIT("Duplicate module"));
 	}
-	result.first->handles.swap(handles);
 
 	return module;
 }
@@ -229,18 +225,18 @@ boost::shared_ptr<Module> ModuleDepository::loadNoThrow(const char *path){
 }
 bool ModuleDepository::unload(const boost::shared_ptr<Module> &module){
 	const Mutex::UniqueLock lock(g_mutex);
-	return g_modules.erase<MIDX_MODULE>(module) > 0;
+	return g_moduleMap.erase<MIDX_MODULE>(module) > 0;
 }
 bool ModuleDepository::unload(void *baseAddr){
 	const Mutex::UniqueLock lock(g_mutex);
-	return g_modules.erase<MIDX_BASE_ADDR>(baseAddr) > 0;
+	return g_moduleMap.erase<MIDX_BASE_ADDR>(baseAddr) > 0;
 }
 
 std::vector<ModuleDepository::SnapshotItem> ModuleDepository::snapshot(){
 	std::vector<SnapshotItem> ret;
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		for(AUTO(it, g_modules.begin()); it != g_modules.end(); ++it){
+		for(AUTO(it, g_moduleMap.begin()); it != g_moduleMap.end(); ++it){
 			ret.push_back(SnapshotItem());
 			SnapshotItem &mi = ret.back();
 
@@ -252,7 +248,7 @@ std::vector<ModuleDepository::SnapshotItem> ModuleDepository::snapshot(){
 	return ret;
 }
 
-void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii){
+void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii, long priority){
 	const Mutex::UniqueLock lock(g_mutex);
 	::Dl_info info;
 	if(::dladdr(raii, &info) == 0){
@@ -260,14 +256,14 @@ void ModuleDepository::registerModuleRaii(ModuleRaiiBase *raii){
 		LOG_POSEIDON_ERROR("Error getting base address: ", error);
 		DEBUG_THROW(Exception, STD_MOVE(error));
 	}
-	if(!g_moduleRaiis.insert(ModuleRaiiMapElement(info.dli_fbase, raii)).second){
-		LOG_POSEIDON_ERROR("Duplicate ModuleRaii? fbase = ", info.dli_fbase, ", raii = ", raii);
+	if(!g_moduleRaiiMap.insert(ModuleRaiiMapElement(raii, priority, info.dli_fbase)).second){
+		LOG_POSEIDON_ERROR("Duplicate ModuleRaii? fbase = ", info.dli_fbase, ", raii = ", static_cast<void *>(raii));
 		DEBUG_THROW(Exception, SSLIT("Duplicate ModuleRaii"));
 	}
 }
 void ModuleDepository::unregisterModuleRaii(ModuleRaiiBase *raii){
 	const Mutex::UniqueLock lock(g_mutex);
-	g_moduleRaiis.erase<MRIDX_RAII>(raii);
+	g_moduleRaiiMap.erase<MRIDX_RAII>(raii);
 }
 
 }
