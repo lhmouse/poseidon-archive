@@ -58,11 +58,11 @@ namespace Cbpp {
 
 	class Session::RequestJob : public SessionJobBase {
 	private:
-		const unsigned m_messageId;
+		const boost::uint16_t m_messageId;
 		const StreamBuffer m_payload;
 
 	public:
-		RequestJob(const boost::shared_ptr<Session> &session, unsigned messageId, StreamBuffer payload)
+		RequestJob(const boost::shared_ptr<Session> &session, boost::uint16_t messageId, StreamBuffer payload)
 			: SessionJobBase(session)
 			, m_messageId(messageId), m_payload(STD_MOVE(payload))
 		{
@@ -133,12 +133,12 @@ namespace Cbpp {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 
-		const unsigned m_messageId;
+		const boost::uint16_t m_messageId;
 		const StatusCode m_statusCode;
 		const std::string m_reason;
 
 	public:
-		ErrorJob(const boost::shared_ptr<Session> &session, unsigned messageId, StatusCode statusCode, std::string reason)
+		ErrorJob(const boost::shared_ptr<Session> &session, boost::uint16_t messageId, StatusCode statusCode, std::string reason)
 			: SessionJobBase(session)
 			, m_guard(session)
 			, m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
@@ -173,7 +173,7 @@ namespace Cbpp {
 			virtualSharedFromThis<Session>(), controlCode, intParam, STD_MOVE(strParam)));
 	}
 
-	void Session::onLowLevelError(unsigned messageId, StatusCode statusCode, const char *reason){
+	void Session::onLowLevelError(boost::uint16_t messageId, StatusCode statusCode, const char *reason){
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<ErrorJob>(

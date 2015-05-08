@@ -47,7 +47,7 @@ namespace Cbpp {
 		virtual void onLowLevelRequest(boost::uint16_t messageId, StreamBuffer payload) = 0;
 		virtual void onLowLevelControl(ControlCode controlCode, boost::int64_t intParam, std::string strParam) = 0;
 
-		virtual void onLowLevelError(unsigned messageId, StatusCode statusCode, const char *reason) = 0;
+		virtual void onLowLevelError(boost::uint16_t messageId, StatusCode statusCode, const char *reason) = 0;
 
 	public:
 		bool send(boost::uint16_t messageId, StreamBuffer payload);
