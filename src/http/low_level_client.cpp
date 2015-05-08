@@ -315,12 +315,28 @@ namespace Http {
 		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", verMajor, verMinor);
 		data.put(temp, len);
 
-		if(!entity.empty() && !requestHeaders.headers.has("Content-Type")){
-			requestHeaders.headers.set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+		AUTO_REF(headers, requestHeaders.headers);
+		if(!entity.empty()){
+			if(!headers.has("Content-Type")){
+				headers.set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+			}
+
+			const AUTO_REF(transferEncodingStr, headers.get("Transfer-Encoding"));
+			if(transferEncodingStr.empty()){
+				headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
+			} else {
+				// 只有一个 chunk。
+				char str[256];
+				unsigned len = (unsigned)std::sprintf(str, "%llx\r\n", (unsigned long long)entity.size());
+
+				StreamBuffer temp;
+				temp.swap(entity);
+				entity.put(str, len);
+				entity.splice(temp);
+				entity.put("\r\n0\r\n\r\n");
+			}
 		}
-		requestHeaders.headers.erase("Transfer-Encoding");
-		requestHeaders.headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
-		for(AUTO(it, requestHeaders.headers.begin()); it != requestHeaders.headers.end(); ++it){
+		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			data.put(it->first.get());
 			data.put(": ");
 			data.put(it->second.data(), it->second.size());
