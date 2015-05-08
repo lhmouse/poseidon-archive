@@ -53,12 +53,21 @@ namespace {
 	}
 }
 
+TcpClientBase::TcpClientBase(const SockAddr &addr, bool useSsl)
+	: SockAddr(addr), TcpSessionBase(createSocket(SockAddr::getFamily()))
+{
+	realConnect(useSsl);
+}
 TcpClientBase::TcpClientBase(const IpPort &addr, bool useSsl)
 	: SockAddr(getSockAddrFromIpPort(addr)), TcpSessionBase(createSocket(SockAddr::getFamily()))
 {
-	if(::connect(m_socket.get(),
-		static_cast<const ::sockaddr *>(SockAddr::getData()), SockAddr::getSize()) != 0)
-	{
+	realConnect(useSsl);
+}
+TcpClientBase::~TcpClientBase(){
+}
+
+void TcpClientBase::realConnect(bool useSsl){
+	if(::connect(m_socket.get(), static_cast<const ::sockaddr *>(SockAddr::getData()), SockAddr::getSize()) != 0){
 		if(errno != EINPROGRESS){
 			DEBUG_THROW(SystemException);
 		}
@@ -70,8 +79,6 @@ TcpClientBase::TcpClientBase(const IpPort &addr, bool useSsl)
 		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), getFd()));
 		initSsl(STD_MOVE(filter));
 	}
-}
-TcpClientBase::~TcpClientBase(){
 }
 
 void TcpClientBase::goResident(){

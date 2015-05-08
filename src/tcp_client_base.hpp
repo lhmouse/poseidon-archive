@@ -15,8 +15,12 @@ class IpPort;
 
 class TcpClientBase : private SockAddr, public TcpSessionBase {
 protected:
+	TcpClientBase(const SockAddr &addr, bool useSsl);
 	TcpClientBase(const IpPort &addr, bool useSsl);
 	~TcpClientBase();
+
+private:
+	void realConnect(bool useSsl);
 
 protected:
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE = 0;
