@@ -252,6 +252,15 @@ public:
 	}
 };
 
+inline ::Poseidon::StreamBuffer &operator<<(::Poseidon::StreamBuffer &buffer_, const MESSAGE_NAME &msg_){
+	msg_ >>buffer_;
+	return buffer_;
+}
+inline ::Poseidon::StreamBuffer &operator>>(::Poseidon::StreamBuffer &buffer_, MESSAGE_NAME &msg_){
+	msg_ <<buffer_;
+	return buffer_;
+}
+
 inline ::std::ostream &operator<<(::std::ostream &os_, const MESSAGE_NAME &msg_){
 	msg_.dumpDebug(os_);
 	return os_;
