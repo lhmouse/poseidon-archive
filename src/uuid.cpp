@@ -34,7 +34,7 @@ const Uuid Uuid::UUID_NULL	(MIN_BYTES);
 const Uuid Uuid::UUID_MIN	(MIN_BYTES);
 const Uuid Uuid::UUID_MAX	(MAX_BYTES);
 
-Uuid Uuid::generate(){
+Uuid Uuid::random(){
 	const AUTO(now, getUtcTime());
 	const AUTO(unique, g_pidHigh | (atomicAdd(g_autoInc, 1, ATOMIC_RELAXED) & 0xFFFFu));
 

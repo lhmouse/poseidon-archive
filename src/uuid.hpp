@@ -20,7 +20,7 @@ public:
 	static const Uuid UUID_MAX;
 
 public:
-	static Uuid generate();
+	static Uuid random();
 
 private:
 	union {

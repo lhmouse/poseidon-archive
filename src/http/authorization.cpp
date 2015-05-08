@@ -24,7 +24,7 @@ namespace Http {
 			Uuid identifier;
 		};
 
-		const AUTO(g_identifier, Uuid::generate());
+		const AUTO(g_identifier, Uuid::random());
 
 		void xorNonce(RawNonce &rawNonce, const char *remoteIp){
 			boost::uint32_t temp[2];
