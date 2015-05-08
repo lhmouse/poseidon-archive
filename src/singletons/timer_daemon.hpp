@@ -21,7 +21,7 @@ struct TimerDaemon {
 	static void start();
 	static void stop();
 
-	// 如无特殊说明，时间单位一律用毫秒。
+	// 时间单位一律用毫秒。
 	// 返回的 shared_ptr 是该计时器的唯一持有者。
 
 	// period 填零表示只触发一次。
@@ -45,6 +45,11 @@ struct TimerDaemon {
 		boost::uint64_t period, TimerCallback callback);
 	static boost::shared_ptr<TimerItem> registerLowLevelTimer(
 		boost::uint64_t first, boost::uint64_t period, TimerCallback callback);
+
+	static void setAbsoluteTime(const boost::shared_ptr<TimerItem> &item,
+		boost::uint64_t timePoint, boost::uint64_t period);
+	static void setTime(const boost::shared_ptr<TimerItem> &item,
+		boost::uint64_t first, boost::uint64_t period);
 
 private:
 	TimerDaemon();

@@ -74,7 +74,7 @@ private:
 	boost::weak_ptr<const boost::weak_ptr<Epoll> > m_epoll;
 
 	mutable Mutex m_timerMutex;
-	boost::shared_ptr<const TimerItem> m_shutdownTimer;
+	boost::shared_ptr<TimerItem> m_shutdownTimer;
 
 protected:
 	explicit TcpSessionBase(UniqueFile socket);

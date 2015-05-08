@@ -541,7 +541,7 @@ MODULE_RAII {
 MODULE_RAII {
 	return HttpServletDepository::create(2, SSLIT("/meow"), &meowProc);
 }
-*/
+
 
 #include "../src/precompiled.hpp"
 #include "../src/http/client.hpp"
@@ -625,4 +625,28 @@ MODULE_RAII(handles){
 	handles.push(MyClient::create());
 }
 
+}
+*/
+
+
+#include "../src/precompiled.hpp"
+#include "../src/singletons/timer_daemon.hpp"
+#include "../src/log.hpp"
+#include "../src/module_raii.hpp"
+
+MODULE_RAII(handles){
+	using namespace Poseidon;
+
+	auto timer = TimerDaemon::registerTimer(5000, 1000,
+		[](unsigned, unsigned){
+			static int count = 0;
+			LOG_POSEIDON_FATAL("timer! count = ", ++count);
+		});
+	handles.push(timer);
+
+	auto timer2 = TimerDaemon::registerTimer(10000, 0,
+		[=](unsigned, unsigned){
+			TimerDaemon::setTime(timer, 5000, 2000);
+		});
+	handles.push(timer2);
 }
