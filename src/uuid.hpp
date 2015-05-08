@@ -50,17 +50,23 @@ public:
 	explicit Uuid(const std::string &str);
 
 public:
-	const unsigned char *begin() const {
+	CONSTEXPR const unsigned char *begin() const {
 		return m_storage.bytes;
 	}
 	unsigned char *begin(){
 		return m_storage.bytes;
 	}
-	const unsigned char *end() const {
+	CONSTEXPR const unsigned char *end() const {
 		return m_storage.bytes + 16;
 	}
 	unsigned char *end(){
 		return m_storage.bytes + 16;
+	}
+	CONSTEXPR const unsigned char *data() const {
+		return m_storage.bytes;
+	}
+	unsigned char *data(){
+		return m_storage.bytes;
 	}
 	CONSTEXPR std::size_t size() const {
 		return 16;
