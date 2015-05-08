@@ -561,7 +561,7 @@ public:
 
 		OptionalMap headers;
 		headers.set("Host", "github.com");
-		headers.set("Transfer-Encoding", "chunked");
+//		headers.set("Transfer-Encoding", "chunked");
 //		headers.set("Connection", "Close");
 		ret->send(Http::V_GET, "/", OptionalMap(), STD_MOVE(headers), StreamBuffer("test"));
 //		ret->shutdownWrite();
