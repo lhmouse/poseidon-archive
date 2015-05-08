@@ -13,6 +13,8 @@ namespace Http {
 		: m_parent(parent), m_uri(STD_MOVE(uri))
 	{
 	}
+	UpgradedLowLevelSessionBase::~UpgradedLowLevelSessionBase(){
+	}
 
 	void UpgradedLowLevelSessionBase::onReadHup() NOEXCEPT {
 	}

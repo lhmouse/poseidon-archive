@@ -24,6 +24,7 @@ namespace Http {
 
 	protected:
 		UpgradedLowLevelSessionBase(const boost::shared_ptr<LowLevelSession> &parent, std::string uri);
+		~UpgradedLowLevelSessionBase();
 
 	private:
 		void onReadHup() NOEXCEPT OVERRIDE;
