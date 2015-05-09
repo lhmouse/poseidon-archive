@@ -4,6 +4,7 @@
 #include "precompiled.hpp"
 #include "epoll.hpp"
 #include "tcp_session_base.hpp"
+#include <typeinfo>
 #include <sys/epoll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -256,10 +257,10 @@ std::size_t Epoll::pumpReadable(){
 				continue;
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown while dispatching data: what = ", e.what());
+			LOG_POSEIDON_WARNING("std::exception thrown while reading socket: what = ", e.what(), ", typeid = ", typeid(*session).name());
 			session->forceShutdown();
 		} catch(...){
-			LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching data.");
+			LOG_POSEIDON_WARNING("Unknown exception thrown while reading socket: typeid = ", typeid(*session).name());
 			session->forceShutdown();
 		}
 	}
@@ -304,10 +305,10 @@ std::size_t Epoll::pumpWriteable(){
 				continue;
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown while writing socket: what = ", e.what());
+			LOG_POSEIDON_WARNING("std::exception thrown while writing socket: what = ", e.what(), ", typeid = ", typeid(*session).name());
 			session->forceShutdown();
 		} catch(...){
-			LOG_POSEIDON_WARNING("Unknown exception thrown while writing socket.");
+			LOG_POSEIDON_WARNING("Unknown exception thrown while writing socket: typeid = ", typeid(*session).name());
 			session->forceShutdown();
 		}
 	}
