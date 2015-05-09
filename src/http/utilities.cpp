@@ -78,8 +78,8 @@ namespace Http {
 				continue;
 			}
 			ret.push_back('%');
-			ret.push_back(getHex(ch & 0x0F));
 			ret.push_back(getHex((ch >> 4) & 0x0F));
+			ret.push_back(getHex(ch & 0x0F));
 		}
 		return ret;
 	}

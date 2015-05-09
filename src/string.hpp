@@ -91,6 +91,9 @@ inline std::string implode(char separator, const std::vector<std::string> &vec){
 			ret.push_back(separator);
 		}
 	}
+	if(!ret.empty()){
+		ret.erase(ret.end() - 1);
+	}
 	return ret;
 }
 
