@@ -25,7 +25,7 @@ private:
 protected:
 	void onReadAvail(const void *data, std::size_t size) OVERRIDE = 0;
 
-protected:
+public:
 	void goResident();
 };
 
