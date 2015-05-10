@@ -3,16 +3,12 @@
 
 #include "../precompiled.hpp"
 #include "timer_daemon.hpp"
-#include <vector>
-#include <algorithm>
-#include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
-#include <unistd.h>
 #include "../thread.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../mutex.hpp"
+#include "../condition_variable.hpp"
 #include "../time.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
@@ -83,10 +79,11 @@ namespace {
 	Thread g_thread;
 
 	Mutex g_mutex;
+	ConditionVariable g_newTimer;
 	std::vector<TimerQueueElement> g_timers;
 
 	void daemonLoop(){
-		do {
+		for(;;){
 			const boost::uint64_t now = getFastMonoClock();
 
 			boost::shared_ptr<const TimerCallback> callback;
@@ -111,29 +108,31 @@ namespace {
 						}
 						break;
 					}
-
 					g_timers.pop_back();
 				}
 			}
-			if(!callback){
-				::usleep(100000);
-				continue;
+			if(callback){
+				try {
+					if(isLowLevel){
+						LOG_POSEIDON_TRACE("Dispatching low level timer: period = ", period);
+						(*callback)(now, period);
+					} else {
+						LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
+						enqueueJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
+					}
+				} catch(std::exception &e){
+					LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());
+				} catch(...){
+					LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching timer job.");
+				}
+			}
+			if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
+				break;
 			}
 
-			try {
-				if(isLowLevel){
-					LOG_POSEIDON_TRACE("Dispatching low level timer: period = ", period);
-					(*callback)(now, period);
-				} else {
-					LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
-					enqueueJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
-				}
-			} catch(std::exception &e){
-				LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());
-			} catch(...){
-				LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching timer job.");
-			}
-		} while(atomicLoad(g_running, ATOMIC_ACQUIRE));
+			Mutex::UniqueLock lock(g_mutex);
+			g_newTimer.timedWait(lock, 100);
+		}
 	}
 
 	void threadProc(){
@@ -155,6 +154,7 @@ namespace {
 			const Mutex::UniqueLock lock(g_mutex);
 			g_timers.push_back(TimerQueueElement(timePoint, item, item->stamp));
 			std::push_heap(g_timers.begin(), g_timers.end());
+			g_newTimer.signal();
 		}
 		LOG_POSEIDON_DEBUG("Created a ", isLowLevel ? "low level " : "", "timer item which will be triggered ",
 			std::max<boost::int64_t>(static_cast<boost::int64_t>(timePoint - getFastMonoClock()), 0),
@@ -168,6 +168,7 @@ namespace {
 		item->period = period;
 		g_timers.push_back(TimerQueueElement(timePoint, item, ++item->stamp));
 		std::push_heap(g_timers.begin(), g_timers.end());
+		g_newTimer.signal();
 	}
 }
 

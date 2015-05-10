@@ -114,7 +114,6 @@ namespace {
 			} else {
 				g_jobMap.erase<0>(jobIt);
 			}
-			g_newJob.signal();
 		}
 
 		return true;
@@ -168,6 +167,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_
 {
 	const Mutex::UniqueLock lock(g_mutex);
 	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job), STD_MOVE(withdrawn)));
+	g_newJob.signal();
 }
 void JobDispatcher::pumpAll(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
