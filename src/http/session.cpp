@@ -10,6 +10,7 @@
 #include "../singletons/main_config.hpp"
 #include "../stream_buffer.hpp"
 #include "../job_base.hpp"
+#include "../string.hpp"
 
 namespace Poseidon {
 
@@ -93,11 +94,24 @@ namespace Http {
 
 				session->onRequest(m_requestHeaders, m_entity);
 
-				const AUTO_REF(keepAliveStr, m_requestHeaders.headers.get("Connection"));
-				if((m_requestHeaders.version < 10001)
-					? (::strcasecmp(keepAliveStr.c_str(), "Keep-Alive") == 0)	// HTTP 1.0
-					: (::strcasecmp(keepAliveStr.c_str(), "Close") != 0))		// HTTP 1.1
-				{
+				AUTO(connectionVec, Poseidon::explode<std::string>(',', m_requestHeaders.headers.get("Connection")));
+				bool keepAlive;
+				if(m_requestHeaders.version < 10001){
+					keepAlive = false;
+					for(AUTO(it, connectionVec.begin()); it != connectionVec.end(); ++it){
+						if(::strcasecmp(it->c_str(), "Keep-Alive") == 0){
+							keepAlive = true;
+						}
+					}
+				} else {
+					keepAlive = true;
+					for(AUTO(it, connectionVec.begin()); it != connectionVec.end(); ++it){
+						if(::strcasecmp(it->c_str(), "Close") == 0){
+							keepAlive = false;
+						}
+					}
+				}
+				if(keepAlive){
 					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 5000));
 				} else {
 					session->forceShutdown();
