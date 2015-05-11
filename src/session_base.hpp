@@ -18,12 +18,12 @@ public:
 	~SessionBase();
 
 protected:
-	// 有数据可读触发回调，size 始终不为零。
-	virtual void onReadAvail(const void *data, std::size_t size) = 0;
-
 	virtual void onReadHup() NOEXCEPT = 0;
 	virtual void onWriteHup() NOEXCEPT = 0;
 	virtual void onClose(int errCode) NOEXCEPT = 0;
+
+	// 有数据可读触发回调，size 始终不为零。
+	virtual void onReadAvail(const void *data, std::size_t size) = 0;
 
 public:
 	virtual bool send(StreamBuffer buffer) = 0;
