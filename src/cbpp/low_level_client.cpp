@@ -130,8 +130,8 @@ namespace Cbpp {
 		LOG_POSEIDON_DEBUG("Sending frame: messageId = ", messageId, ", size = ", payload.size());
 
 		if(!m_keepAliveTimer){
-			m_keepAliveTimer = TimerDaemon::registerLowLevelTimer(m_keepAliveTimeout, m_keepAliveTimeout,
-				boost::bind(&keepAliveTimer, virtualWeakFromThis<LowLevelClient>()));
+			m_keepAliveTimer = TimerDaemon::registerTimer(m_keepAliveTimeout, m_keepAliveTimeout,
+				boost::bind(&keepAliveTimer, virtualWeakFromThis<LowLevelClient>()), true);
 		}
 
 		StreamBuffer frame;

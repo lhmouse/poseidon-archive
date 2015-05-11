@@ -18,6 +18,10 @@ typedef boost::function<
 	> TimerCallback;
 
 struct TimerDaemon {
+	enum {
+		PERIOD_NOT_MODIFIED =	(boost::uint64_t)-1,
+	};
+
 	static void start();
 	static void stop();
 
@@ -27,29 +31,22 @@ struct TimerDaemon {
 	// period 填零表示只触发一次。
 	static boost::shared_ptr<TimerItem> registerAbsoluteTimer(
 		boost::uint64_t timePoint, // 用 getFastMonoClock() 作参考。
-		boost::uint64_t period, TimerCallback callback);
+		boost::uint64_t period, TimerCallback callback, bool isLowLevel = false);
 	static boost::shared_ptr<TimerItem> registerTimer(
-		boost::uint64_t first, boost::uint64_t period, TimerCallback callback);
+		boost::uint64_t first, boost::uint64_t period, TimerCallback callback, bool isLowLevel = false);
 
 	static boost::shared_ptr<TimerItem> registerHourlyTimer(
-		unsigned minute, unsigned second, TimerCallback callback);
+		unsigned minute, unsigned second, TimerCallback callback, bool isLowLevel = false);
 	static boost::shared_ptr<TimerItem> registerDailyTimer(
-		unsigned hour, unsigned minute, unsigned second, TimerCallback callback);
+		unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isLowLevel = false);
 	// 0 = 星期日
 	static boost::shared_ptr<TimerItem> registerWeeklyTimer(
-		unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback);
-
-	// 直接在计时器线程中调用，不走消息队列。
-	static boost::shared_ptr<TimerItem> registerLowLevelAbsoluteTimer(
-		boost::uint64_t timePoint, // 用 getFastMonoClock() 作参考。
-		boost::uint64_t period, TimerCallback callback);
-	static boost::shared_ptr<TimerItem> registerLowLevelTimer(
-		boost::uint64_t first, boost::uint64_t period, TimerCallback callback);
+		unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isLowLevel = false);
 
 	static void setAbsoluteTime(const boost::shared_ptr<TimerItem> &item,
-		boost::uint64_t timePoint, boost::uint64_t period);
+		boost::uint64_t timePoint, boost::uint64_t period = PERIOD_NOT_MODIFIED);
 	static void setTime(const boost::shared_ptr<TimerItem> &item,
-		boost::uint64_t first, boost::uint64_t period);
+		boost::uint64_t first, boost::uint64_t period = PERIOD_NOT_MODIFIED);
 
 private:
 	TimerDaemon();

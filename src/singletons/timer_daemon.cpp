@@ -143,33 +143,6 @@ namespace {
 
 		LOG_POSEIDON_INFO("Timer daemon stopped.");
 	}
-
-	boost::shared_ptr<TimerItem> reallyRegisterAbsoluteTimer(
-		boost::uint64_t timePoint, boost::uint64_t period, TimerCallback callback, bool isLowLevel)
-	{
-		PROFILE_ME;
-
-		AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE(callback)), isLowLevel));
-		{
-			const Mutex::UniqueLock lock(g_mutex);
-			g_timers.push_back(TimerQueueElement(timePoint, item, item->stamp));
-			std::push_heap(g_timers.begin(), g_timers.end());
-			g_newTimer.signal();
-		}
-		LOG_POSEIDON_DEBUG("Created a ", isLowLevel ? "low level " : "", "timer item which will be triggered ",
-			std::max<boost::int64_t>(static_cast<boost::int64_t>(timePoint - getFastMonoClock()), 0),
-			" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
-		return item;
-	}
-	void reallySetAbsoluteTime(const boost::shared_ptr<TimerItem> &item,
-		boost::uint64_t timePoint, boost::uint64_t period)
-	{
-		const Mutex::UniqueLock lock(g_mutex);
-		item->period = period;
-		g_timers.push_back(TimerQueueElement(timePoint, item, ++item->stamp));
-		std::push_heap(g_timers.begin(), g_timers.end());
-		g_newTimer.signal();
-	}
 }
 
 void TimerDaemon::start(){
@@ -194,59 +167,68 @@ void TimerDaemon::stop(){
 }
 
 boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
-	boost::uint64_t timePoint, boost::uint64_t period, TimerCallback callback)
+	boost::uint64_t timePoint, boost::uint64_t period, TimerCallback callback, bool isLowLevel)
 {
-	return reallyRegisterAbsoluteTimer(timePoint, period, STD_MOVE(callback), false);
+	PROFILE_ME;
+
+	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE(callback)), isLowLevel));
+	{
+		const Mutex::UniqueLock lock(g_mutex);
+		g_timers.push_back(TimerQueueElement(timePoint, item, item->stamp));
+		std::push_heap(g_timers.begin(), g_timers.end());
+		g_newTimer.signal();
+	}
+	LOG_POSEIDON_DEBUG("Created a ", isLowLevel ? "low level " : "", "timer item which will be triggered ",
+		std::max<boost::int64_t>(static_cast<boost::int64_t>(timePoint - getFastMonoClock()), 0),
+		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
+	return item;
 }
 boost::shared_ptr<TimerItem> TimerDaemon::registerTimer(
-	boost::uint64_t first, boost::uint64_t period, TimerCallback callback)
+	boost::uint64_t first, boost::uint64_t period, TimerCallback callback, bool isLowLevel)
 {
-	return reallyRegisterAbsoluteTimer(getFastMonoClock() + first, period, STD_MOVE(callback), false);
+	return registerAbsoluteTimer(getFastMonoClock() + first, period, STD_MOVE(callback), isLowLevel);
 }
 
 boost::shared_ptr<TimerItem> TimerDaemon::registerHourlyTimer(
-	unsigned minute, unsigned second, TimerCallback callback)
+	unsigned minute, unsigned second, TimerCallback callback, bool isLowLevel)
 {
 	const AUTO(delta, getLocalTime() - (minute * 60ull + second));
 	return registerTimer(MILLISECS_PER_HOUR - delta % MILLISECS_PER_HOUR, MILLISECS_PER_HOUR,
-		STD_MOVE(callback));
+		STD_MOVE(callback), isLowLevel);
 }
 boost::shared_ptr<TimerItem> TimerDaemon::registerDailyTimer(
-	unsigned hour, unsigned minute, unsigned second, TimerCallback callback)
+	unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isLowLevel)
 {
 	const AUTO(delta, getLocalTime() - (hour * 3600ull + minute * 60ull + second));
 	return registerTimer(MILLISECS_PER_DAY - delta % MILLISECS_PER_DAY, MILLISECS_PER_DAY,
-		STD_MOVE(callback));
+		STD_MOVE(callback), isLowLevel);
 }
 boost::shared_ptr<TimerItem> TimerDaemon::registerWeeklyTimer(
-	unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback)
+	unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isLowLevel)
 {
 	// 注意 1970-01-01 是星期四。
 	const AUTO(delta, getLocalTime() - ((dayOfWeek + 3) * 86400ull + hour * 3600ull + minute * 60ull + second));
 	return registerTimer(MILLISECS_PER_WEEK - delta % MILLISECS_PER_WEEK, MILLISECS_PER_WEEK,
-		STD_MOVE(callback));
+		STD_MOVE(callback), isLowLevel);
 }
 
-boost::shared_ptr<TimerItem> TimerDaemon::registerLowLevelAbsoluteTimer(
-	boost::uint64_t timePoint, boost::uint64_t period, TimerCallback callback)
+void TimerDaemon::setAbsoluteTime(
+	const boost::shared_ptr<TimerItem> &item, boost::uint64_t timePoint, boost::uint64_t period)
 {
-	return reallyRegisterAbsoluteTimer(timePoint, period, STD_MOVE(callback), true);
-}
-boost::shared_ptr<TimerItem> TimerDaemon::registerLowLevelTimer(
-	boost::uint64_t first, boost::uint64_t period, TimerCallback callback)
-{
-	return reallyRegisterAbsoluteTimer(getFastMonoClock() + first, period, STD_MOVE(callback), true);
-}
+	PROFILE_ME;
 
-void TimerDaemon::setAbsoluteTime(const boost::shared_ptr<TimerItem> &item,
-	boost::uint64_t timePoint, boost::uint64_t period)
-{
-	return reallySetAbsoluteTime(item, timePoint, period);
+	const Mutex::UniqueLock lock(g_mutex);
+	if(period != TimerDaemon::PERIOD_NOT_MODIFIED){
+		item->period = period;
+	}
+	g_timers.push_back(TimerQueueElement(timePoint, item, ++item->stamp));
+	std::push_heap(g_timers.begin(), g_timers.end());
+	g_newTimer.signal();
 }
-void TimerDaemon::setTime(const boost::shared_ptr<TimerItem> &item,
-	boost::uint64_t first, boost::uint64_t period)
+void TimerDaemon::setTime(
+	const boost::shared_ptr<TimerItem> &item, boost::uint64_t first, boost::uint64_t period)
 {
-	return reallySetAbsoluteTime(item, getFastMonoClock() + first, period);
+	return setAbsoluteTime(item, getFastMonoClock() + first, period);
 }
 
 }
