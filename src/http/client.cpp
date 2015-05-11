@@ -136,6 +136,10 @@ namespace Http {
 		}
 	};
 
+	Client::Client(const SockAddr &addr, bool useSsl)
+		: LowLevelClient(addr, useSsl)
+	{
+	}
 	Client::Client(const IpPort &addr, bool useSsl)
 		: LowLevelClient(addr, useSsl)
 	{

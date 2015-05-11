@@ -17,6 +17,7 @@ namespace Http {
 		class ChunkedTrailerJob;
 
 	protected:
+		Client(const SockAddr &addr, bool useSsl);
 		Client(const IpPort &addr, bool useSsl);
 		~Client();
 

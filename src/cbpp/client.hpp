@@ -16,7 +16,8 @@ namespace Cbpp {
 		class ErrorJob;
 
 	protected:
-		Client(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
+		Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveTimeout);
+		Client(const IpPort &addr, bool useSsl, boost::uint64_t keepAliveTimeout);
 		~Client();
 
 	protected:

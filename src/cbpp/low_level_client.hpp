@@ -43,7 +43,8 @@ namespace Cbpp {
 		boost::uint64_t m_payloadOffset;
 
 	protected:
-		LowLevelClient(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl);
+		LowLevelClient(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveTimeout);
+		LowLevelClient(const IpPort &addr, bool useSsl, boost::uint64_t keepAliveTimeout);
 		~LowLevelClient();
 
 	protected:

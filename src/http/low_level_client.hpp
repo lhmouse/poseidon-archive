@@ -57,6 +57,7 @@ namespace Http {
 		OptionalMap m_chunkTrailer;
 
 	protected:
+		LowLevelClient(const SockAddr &addr, bool useSsl);
 		LowLevelClient(const IpPort &addr, bool useSsl);
 		~LowLevelClient();
 

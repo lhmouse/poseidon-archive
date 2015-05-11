@@ -26,7 +26,13 @@ namespace Cbpp {
 		}
 	}
 
-	LowLevelClient::LowLevelClient(const IpPort &addr, boost::uint64_t keepAliveTimeout, bool useSsl)
+	LowLevelClient::LowLevelClient(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveTimeout)
+		: TcpClientBase(addr, useSsl)
+		, m_keepAliveTimeout(keepAliveTimeout)
+		, m_sizeExpecting(2), m_state(S_PAYLOAD_LEN)
+	{
+	}
+	LowLevelClient::LowLevelClient(const IpPort &addr, bool useSsl, boost::uint64_t keepAliveTimeout)
 		: TcpClientBase(addr, useSsl)
 		, m_keepAliveTimeout(keepAliveTimeout)
 		, m_sizeExpecting(2), m_state(S_PAYLOAD_LEN)

@@ -13,7 +13,7 @@ namespace Poseidon {
 
 class IpPort;
 
-class TcpClientBase : private SockAddr, public TcpSessionBase {
+class TcpClientBase : protected SockAddr, public TcpSessionBase {
 protected:
 	TcpClientBase(const SockAddr &addr, bool useSsl);
 	TcpClientBase(const IpPort &addr, bool useSsl);

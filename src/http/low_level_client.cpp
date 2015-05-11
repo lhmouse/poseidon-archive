@@ -9,6 +9,11 @@
 namespace Poseidon {
 
 namespace Http {
+	LowLevelClient::LowLevelClient(const SockAddr &addr, bool useSsl)
+		: TcpClientBase(addr, useSsl)
+		, m_expectingNewLine(true), m_sizeExpecting(0), m_state(S_FIRST_HEADER)
+	{
+	}
 	LowLevelClient::LowLevelClient(const IpPort &addr, bool useSsl)
 		: TcpClientBase(addr, useSsl)
 		, m_expectingNewLine(true), m_sizeExpecting(0), m_state(S_FIRST_HEADER)
