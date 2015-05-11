@@ -99,6 +99,7 @@ namespace Http {
 				if(m_requestHeaders.version < 10001){
 					keepAlive = false;
 					for(AUTO(it, connectionVec.begin()); it != connectionVec.end(); ++it){
+						*it = trim(STD_MOVE(*it));
 						if(::strcasecmp(it->c_str(), "Keep-Alive") == 0){
 							keepAlive = true;
 						}
@@ -106,6 +107,7 @@ namespace Http {
 				} else {
 					keepAlive = true;
 					for(AUTO(it, connectionVec.begin()); it != connectionVec.end(); ++it){
+						*it = trim(STD_MOVE(*it));
 						if(::strcasecmp(it->c_str(), "Close") == 0){
 							keepAlive = false;
 						}

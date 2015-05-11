@@ -126,6 +126,24 @@ inline std::string toLowerCase(std::string src){
 	return STD_MOVE(src);
 }
 
+inline std::string ltrim(std::string src){
+	const AUTO(pos, src.find_first_not_of(" \t"));
+	if(pos != std::string::npos){
+		src.erase(0, pos);
+	}
+	return STD_MOVE(src);
+}
+inline std::string rtrim(std::string src){
+	const AUTO(pos, src.find_last_not_of(" \t"));
+	if(pos != std::string::npos){
+		src.erase(pos + 1);
+	}
+	return STD_MOVE(src);
+}
+inline std::string trim(std::string src){
+	return ltrim(rtrim(STD_MOVE(src)));
+}
+
 }
 
 #endif
