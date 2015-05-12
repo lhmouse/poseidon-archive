@@ -20,8 +20,9 @@ namespace Http {
 		~Session();
 
 	protected:
-		boost::shared_ptr<UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(
-			RequestHeaders &requestHeaders, boost::uint64_t contentLength) OVERRIDE;
+		// transferEncoding 确保已被转换为小写、已排序，并且 identity 被移除（如果有的话）。
+		boost::shared_ptr<UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(RequestHeaders &requestHeaders,
+			const std::vector<std::string> &transferEncoding, boost::uint64_t contentLength) OVERRIDE;
 
 		void onLowLevelRequest(RequestHeaders requestHeaders, StreamBuffer entity) OVERRIDE;
 		void onLowLevelError(StatusCode statusCode, OptionalMap headers) OVERRIDE;

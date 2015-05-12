@@ -60,12 +60,12 @@ namespace {
 		}
 
 	protected:
-		boost::shared_ptr<Http::UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(
-			Http::RequestHeaders &requestHeaders, boost::uint64_t contentLength) OVERRIDE
+		boost::shared_ptr<Http::UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(Http::RequestHeaders &requestHeaders,
+			const std::vector<std::string> &transferEncoding, boost::uint64_t contentLength) OVERRIDE
 		{
 			checkAndThrowIfUnauthorized(m_authInfo, getRemoteInfo(), requestHeaders);
 
-			return Http::Session::onLowLevelRequestHeaders(requestHeaders, contentLength);
+			return Http::Session::onLowLevelRequestHeaders(requestHeaders, transferEncoding, contentLength);
 		}
 
 		void onRequest(const Http::RequestHeaders &requestHeaders, const StreamBuffer & /* entity */) OVERRIDE {

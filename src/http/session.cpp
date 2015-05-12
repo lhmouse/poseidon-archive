@@ -164,11 +164,12 @@ namespace Http {
 	Session::~Session(){
 	}
 
-	boost::shared_ptr<UpgradedLowLevelSessionBase> Session::onLowLevelRequestHeaders(
-		RequestHeaders &requestHeaders, boost::uint64_t contentLength)
+	boost::shared_ptr<UpgradedLowLevelSessionBase> Session::onLowLevelRequestHeaders(RequestHeaders &requestHeaders,
+		const std::vector<std::string> &transferEncoding, boost::uint64_t contentLength)
 	{
 		PROFILE_ME;
 
+		(void)transferEncoding;
 		(void)contentLength;
 
 		const AUTO_REF(expectStr, requestHeaders.headers.get("Expect"));

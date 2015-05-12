@@ -6,6 +6,7 @@
 
 #include "../cxx_ver.hpp"
 #include <string>
+#include <vector>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
@@ -64,8 +65,9 @@ namespace Http {
 		void onWriteHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
-		virtual boost::shared_ptr<UpgradedLowLevelSessionBase>
-			onLowLevelRequestHeaders(RequestHeaders &requestHeaders, boost::uint64_t contentLength) = 0;
+		// transferEncoding 确保已被转换为小写、已排序，并且 chunked 和 identity 被移除（如果有的话）。
+		virtual boost::shared_ptr<UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(RequestHeaders &requestHeaders,
+			const std::vector<std::string> &transferEncoding, boost::uint64_t contentLength) = 0;
 
 		virtual void onLowLevelRequest(RequestHeaders requestHeaders, StreamBuffer entity) = 0;
 		virtual void onLowLevelError(StatusCode statusCode, OptionalMap headers) = 0;

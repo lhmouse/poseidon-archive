@@ -55,13 +55,15 @@ namespace Http {
 	class Client::ResponseHeaderJob : public ClientJobBase {
 	private:
 		const ResponseHeaders m_responseHeaders;
+		const std::vector<std::string> m_transferEncoding;
 		const boost::uint64_t m_contentLength;
 
 	public:
-		ResponseHeaderJob(const boost::shared_ptr<Client> &client,
-			ResponseHeaders responseHeaders, boost::uint64_t contentLength)
+		ResponseHeaderJob(const boost::shared_ptr<Client> &client, ResponseHeaders responseHeaders,
+			std::vector<std::string> m_transferEncoding, boost::uint64_t contentLength)
 			: ClientJobBase(client)
-			, m_responseHeaders(STD_MOVE(responseHeaders)), m_contentLength(contentLength)
+			, m_responseHeaders(STD_MOVE(responseHeaders))
+			, m_transferEncoding(STD_MOVE(m_transferEncoding)), m_contentLength(contentLength)
 		{
 		}
 
@@ -70,7 +72,7 @@ namespace Http {
 			PROFILE_ME;
 			LOG_POSEIDON_DEBUG("Dispatching response header: statusCode = ", m_responseHeaders.statusCode);
 
-			client->onResponseHeaders(m_responseHeaders, m_contentLength);
+			client->onResponseHeaders(m_responseHeaders, m_transferEncoding, m_contentLength);
 		}
 	};
 
@@ -147,11 +149,13 @@ namespace Http {
 	Client::~Client(){
 	}
 
-	void Client::onLowLevelResponseHeaders(ResponseHeaders responseHeaders, boost::uint64_t contentLength){
+	void Client::onLowLevelResponseHeaders(ResponseHeaders responseHeaders,
+		std::vector<std::string> transferEncoding, boost::uint64_t contentLength)
+	{
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<ResponseHeaderJob>(
-			virtualSharedFromThis<Client>(), STD_MOVE(responseHeaders), contentLength));
+			virtualSharedFromThis<Client>(), STD_MOVE(responseHeaders), STD_MOVE(transferEncoding), contentLength));
 	}
 	void Client::onLowLevelEntity(boost::uint64_t contentOffset, StreamBuffer entity){
 		PROFILE_ME;

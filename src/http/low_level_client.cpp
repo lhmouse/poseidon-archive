@@ -5,10 +5,16 @@
 #include "utilities.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
+#include "../string.hpp"
 
 namespace Poseidon {
 
 namespace Http {
+	namespace {
+		const std::string IDENTITY_STRING	= "identity";
+		const std::string CHUNKED_STRING	= "chunked";
+	}
+
 	LowLevelClient::LowLevelClient(const SockAddr &addr, bool useSsl)
 		: TcpClientBase(addr, useSsl)
 		, m_expectingNewLine(true), m_sizeExpecting(0), m_state(S_FIRST_HEADER)
@@ -141,8 +147,19 @@ namespace Http {
 						m_expectingNewLine = true;
 						// m_state = S_HEADERS;
 					} else {
-						const AUTO_REF(transferEncodingStr, m_responseHeaders.headers.get("Transfer-Encoding"));
-						if(transferEncodingStr.empty() || (::strcasecmp(transferEncodingStr.c_str(), "identity") == 0)){
+						AUTO(transferEncoding, explode<std::string>(',', m_responseHeaders.headers.get("Transfer-Encoding")));
+						for(AUTO(it, transferEncoding.begin()); it != transferEncoding.end(); ++it){
+							*it = toLowerCase(trim(STD_MOVE(*it)));
+						}
+						std::sort(transferEncoding.begin(), transferEncoding.end());
+						AUTO(range, std::equal_range(transferEncoding.begin(), transferEncoding.end(), IDENTITY_STRING));
+						transferEncoding.erase(range.first, range.second);
+
+						if(!transferEncoding.empty()){
+							range = std::equal_range(transferEncoding.begin(), transferEncoding.end(), CHUNKED_STRING);
+							transferEncoding.erase(range.first, range.second);
+							m_contentLength = CONTENT_CHUNKED;
+						} else {
 							const AUTO_REF(contentLengthStr, m_responseHeaders.headers.get("Content-Length"));
 							if(contentLengthStr.empty()){
 								m_contentLength = CONTENT_TILL_EOF;
@@ -150,7 +167,7 @@ namespace Http {
 								char *endptr;
 								m_contentLength = ::strtoull(contentLengthStr.c_str(), &endptr, 10);
 								if(*endptr){
-									LOG_POSEIDON_WARNING("Bad response header Content-Length: ", contentLengthStr);
+									LOG_POSEIDON_WARNING("Bad request header Content-Length: ", contentLengthStr);
 									DEBUG_THROW(BasicException, SSLIT("Malformed Content-Length"));
 								}
 								if((m_contentLength == CONTENT_CHUNKED) || (m_contentLength == CONTENT_TILL_EOF)){
@@ -158,13 +175,9 @@ namespace Http {
 									DEBUG_THROW(BasicException, SSLIT("Inacceptable Content-Length"));
 								}
 							}
-						} else if(::strcasecmp(transferEncodingStr.c_str(), "chunked") == 0){
-							m_contentLength = CONTENT_CHUNKED;
-						} else {
-							LOG_POSEIDON_WARNING("Unsupported Transfer-Encoding: ", transferEncodingStr);
-							DEBUG_THROW(BasicException, SSLIT("Unsupported Transfer-Encoding"));
 						}
-						onLowLevelResponseHeaders(STD_MOVE(m_responseHeaders), m_contentLength);
+
+						onLowLevelResponseHeaders(STD_MOVE(m_responseHeaders), STD_MOVE(transferEncoding), m_contentLength);
 
 						if(m_contentLength == CONTENT_CHUNKED){
 							m_expectingNewLine = true;

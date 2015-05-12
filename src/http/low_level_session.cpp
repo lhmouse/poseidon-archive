@@ -15,11 +15,16 @@
 #include "../singletons/epoll_daemon.hpp"
 #include "../stream_buffer.hpp"
 #include "../time.hpp"
-#include "../exception.hpp"
+#include "../string.hpp"
 
 namespace Poseidon {
 
 namespace Http {
+	namespace {
+		const std::string IDENTITY_STRING	= "identity";
+		const std::string CHUNKED_STRING	= "chunked";
+	}
+
 	LowLevelSession::LowLevelSession(UniqueFile socket)
 		: TcpSessionBase(STD_MOVE(socket))
 		, m_sizeTotal(0), m_expectingNewLine(true), m_sizeExpecting(0), m_state(S_FIRST_HEADER)
@@ -192,10 +197,20 @@ namespace Http {
 						m_expectingNewLine = true;
 						// m_state = S_HEADERS;
 					} else {
-						boost::uint64_t sizeExpecting;
+						AUTO(transferEncoding, explode<std::string>(',', m_requestHeaders.headers.get("Transfer-Encoding")));
+						for(AUTO(it, transferEncoding.begin()); it != transferEncoding.end(); ++it){
+							*it = toLowerCase(trim(STD_MOVE(*it)));
+						}
+						std::sort(transferEncoding.begin(), transferEncoding.end());
+						AUTO(range, std::equal_range(transferEncoding.begin(), transferEncoding.end(), IDENTITY_STRING));
+						transferEncoding.erase(range.first, range.second);
 
-						const AUTO_REF(transferEncodingStr, m_requestHeaders.headers.get("Transfer-Encoding"));
-						if(transferEncodingStr.empty() || (::strcasecmp(transferEncodingStr.c_str(), "identity") == 0)){
+						boost::uint64_t sizeExpecting;
+						if(!transferEncoding.empty()){
+							range = std::equal_range(transferEncoding.begin(), transferEncoding.end(), CHUNKED_STRING);
+							transferEncoding.erase(range.first, range.second);
+							sizeExpecting = CONTENT_CHUNKED;
+						} else {
 							const AUTO_REF(contentLengthStr, m_requestHeaders.headers.get("Content-Length"));
 							if(contentLengthStr.empty()){
 								sizeExpecting = 0;
@@ -211,14 +226,9 @@ namespace Http {
 									DEBUG_THROW(Exception, ST_BAD_REQUEST);
 								}
 							}
-						} else if(::strcasecmp(transferEncodingStr.c_str(), "chunked") == 0){
-							sizeExpecting = CONTENT_CHUNKED;
-						} else {
-							LOG_POSEIDON_WARNING("Unsupported Transfer-Encoding: ", transferEncodingStr);
-							DEBUG_THROW(Exception, ST_NOT_ACCEPTABLE);
 						}
 
-						AUTO(upgradedSession, onLowLevelRequestHeaders(m_requestHeaders, sizeExpecting));
+						AUTO(upgradedSession, onLowLevelRequestHeaders(m_requestHeaders, transferEncoding, sizeExpecting));
 						if(upgradedSession){
 							const Mutex::UniqueLock lock(m_upgradedSessionMutex);
 							m_upgradedSession = STD_MOVE(upgradedSession);
