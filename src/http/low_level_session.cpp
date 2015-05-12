@@ -205,30 +205,30 @@ namespace Http {
 						AUTO(range, std::equal_range(transferEncoding.begin(), transferEncoding.end(), IDENTITY_STRING));
 						transferEncoding.erase(range.first, range.second);
 
-						boost::uint64_t sizeExpecting;
+						boost::uint64_t contentLength;
 						if(!transferEncoding.empty()){
 							range = std::equal_range(transferEncoding.begin(), transferEncoding.end(), CHUNKED_STRING);
 							transferEncoding.erase(range.first, range.second);
-							sizeExpecting = CONTENT_CHUNKED;
+							contentLength = CONTENT_CHUNKED;
 						} else {
 							const AUTO_REF(contentLengthStr, m_requestHeaders.headers.get("Content-Length"));
 							if(contentLengthStr.empty()){
-								sizeExpecting = 0;
+								contentLength = 0;
 							} else {
 								char *endptr;
-								sizeExpecting = ::strtoull(contentLengthStr.c_str(), &endptr, 10);
+								contentLength = ::strtoull(contentLengthStr.c_str(), &endptr, 10);
 								if(*endptr){
 									LOG_POSEIDON_WARNING("Bad request header Content-Length: ", contentLengthStr);
 									DEBUG_THROW(Exception, ST_BAD_REQUEST);
 								}
-								if(sizeExpecting == CONTENT_CHUNKED){
+								if(contentLength > CONTENT_LENGTH_MAX){
 									LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", contentLengthStr);
 									DEBUG_THROW(Exception, ST_BAD_REQUEST);
 								}
 							}
 						}
 
-						AUTO(upgradedSession, onLowLevelRequestHeaders(m_requestHeaders, transferEncoding, sizeExpecting));
+						AUTO(upgradedSession, onLowLevelRequestHeaders(m_requestHeaders, transferEncoding, contentLength));
 						if(upgradedSession){
 							const Mutex::UniqueLock lock(m_upgradedSessionMutex);
 							m_upgradedSession = STD_MOVE(upgradedSession);
@@ -236,12 +236,12 @@ namespace Http {
 
 						m_transferEncoding = STD_MOVE(transferEncoding);
 
-						if(sizeExpecting == CONTENT_CHUNKED){
+						if(contentLength == CONTENT_CHUNKED){
 							m_expectingNewLine = true;
 							m_state = S_CHUNK_HEADER;
 						} else {
 							m_expectingNewLine = false;
-							m_sizeExpecting = sizeExpecting;
+							m_sizeExpecting = contentLength;
 							m_state = S_IDENTITY;
 						}
 					}

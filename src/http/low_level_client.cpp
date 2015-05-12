@@ -155,40 +155,43 @@ namespace Http {
 						AUTO(range, std::equal_range(transferEncoding.begin(), transferEncoding.end(), IDENTITY_STRING));
 						transferEncoding.erase(range.first, range.second);
 
+						boost::uint64_t contentLength;
 						if(!transferEncoding.empty()){
 							range = std::equal_range(transferEncoding.begin(), transferEncoding.end(), CHUNKED_STRING);
 							transferEncoding.erase(range.first, range.second);
-							m_contentLength = CONTENT_CHUNKED;
+							contentLength = CONTENT_CHUNKED;
 						} else {
 							const AUTO_REF(contentLengthStr, m_responseHeaders.headers.get("Content-Length"));
 							if(contentLengthStr.empty()){
-								m_contentLength = CONTENT_TILL_EOF;
+								contentLength = CONTENT_TILL_EOF;
 							} else {
 								char *endptr;
-								m_contentLength = ::strtoull(contentLengthStr.c_str(), &endptr, 10);
+								contentLength = ::strtoull(contentLengthStr.c_str(), &endptr, 10);
 								if(*endptr){
 									LOG_POSEIDON_WARNING("Bad request header Content-Length: ", contentLengthStr);
 									DEBUG_THROW(BasicException, SSLIT("Malformed Content-Length"));
 								}
-								if((m_contentLength == CONTENT_CHUNKED) || (m_contentLength == CONTENT_TILL_EOF)){
+								if(contentLength > CONTENT_LENGTH_MAX){
 									LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", contentLengthStr);
 									DEBUG_THROW(BasicException, SSLIT("Inacceptable Content-Length"));
 								}
 							}
 						}
 
-						onLowLevelResponseHeaders(STD_MOVE(m_responseHeaders), STD_MOVE(transferEncoding), m_contentLength);
+						onLowLevelResponseHeaders(STD_MOVE(m_responseHeaders), STD_MOVE(transferEncoding), contentLength);
 
-						if(m_contentLength == CONTENT_CHUNKED){
+						m_contentLength = contentLength;
+
+						if(contentLength == CONTENT_CHUNKED){
 							m_expectingNewLine = true;
 							m_state = S_CHUNK_HEADER;
-						} else if(m_contentLength == CONTENT_TILL_EOF){
+						} else if(contentLength == CONTENT_TILL_EOF){
 							m_expectingNewLine = false;
 							m_sizeExpecting = 1024;
 							m_state = S_IDENTITY;
 						} else {
 							m_expectingNewLine = false;
-							m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength, 1024);
+							m_sizeExpecting = std::min<boost::uint64_t>(contentLength, 1024);
 							m_state = S_IDENTITY;
 						}
 					}

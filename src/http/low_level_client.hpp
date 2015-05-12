@@ -39,6 +39,8 @@ namespace Http {
 		enum {
 			CONTENT_CHUNKED		= (boost::uint64_t)-1,
 			CONTENT_TILL_EOF	= (boost::uint64_t)-2,
+
+			CONTENT_LENGTH_MAX	= (boost::uint64_t)-256,
 		};
 
 	private:

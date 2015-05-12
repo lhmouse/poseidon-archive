@@ -38,6 +38,8 @@ namespace Http {
 	protected:
 		enum {
 			CONTENT_CHUNKED		= (boost::uint64_t)-1,
+
+			CONTENT_LENGTH_MAX	= (boost::uint64_t)-256,
 		};
 
 	private:
