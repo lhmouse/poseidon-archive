@@ -182,7 +182,12 @@ namespace Http {
 
 						m_contentLength = contentLength;
 
-						if(contentLength == CONTENT_CHUNKED){
+						if(contentLength == 0){
+							onLowLevelResponseEof(0, VAL_INIT);
+
+							m_expectingNewLine = true;
+							m_state = S_FIRST_HEADER;
+						} else if(contentLength == CONTENT_CHUNKED){
 							m_expectingNewLine = true;
 							m_state = S_CHUNK_HEADER;
 						} else if(contentLength == CONTENT_TILL_EOF){
