@@ -97,6 +97,26 @@ namespace Http {
 		}
 	};
 
+	class Client::ContentEofJob : public ClientJobBase {
+	private:
+		const boost::uint64_t m_realContentLength;
+
+	public:
+		ContentEofJob(const boost::shared_ptr<Client> &client, boost::uint64_t realContentLength)
+			: ClientJobBase(client)
+			, m_realContentLength(realContentLength)
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+			PROFILE_ME;
+			LOG_POSEIDON_DEBUG("Dispatching content EOF");
+
+			client->onContentEof(m_realContentLength);
+		}
+	};
+
 	class Client::ChunkedTrailerJob : public ClientJobBase {
 	private:
 		const boost::uint64_t m_realContentLength;
@@ -115,26 +135,6 @@ namespace Http {
 			LOG_POSEIDON_DEBUG("Dispatching chunked trailer");
 
 			client->onChunkedTrailer(m_realContentLength, m_headers);
-		}
-	};
-
-	class Client::ContentEofJob : public ClientJobBase {
-	private:
-		const boost::uint64_t m_realContentLength;
-
-	public:
-		ContentEofJob(const boost::shared_ptr<Client> &client, boost::uint64_t realContentLength)
-			: ClientJobBase(client)
-			, m_realContentLength(realContentLength)
-		{
-		}
-
-	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
-			PROFILE_ME;
-			LOG_POSEIDON_DEBUG("Dispatching content EOF");
-
-			client->onContentEof(m_realContentLength);
 		}
 	};
 
@@ -163,17 +163,17 @@ namespace Http {
 		enqueueJob(boost::make_shared<EntityJob>(
 			virtualSharedFromThis<Client>(), contentOffset, STD_MOVE(entity)));
 	}
-	void Client::onLowLevelChunkedTrailer(boost::uint64_t realContentLength, OptionalMap headers){
-		PROFILE_ME;
-
-		enqueueJob(boost::make_shared<ChunkedTrailerJob>(
-			virtualSharedFromThis<Client>(), realContentLength, STD_MOVE(headers)));
-	}
 	void Client::onLowLevelContentEof(boost::uint64_t realContentLength){
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<ContentEofJob>(
 			virtualSharedFromThis<Client>(), realContentLength));
+	}
+	void Client::onLowLevelChunkedTrailer(boost::uint64_t realContentLength, OptionalMap headers){
+		PROFILE_ME;
+
+		enqueueJob(boost::make_shared<ChunkedTrailerJob>(
+			virtualSharedFromThis<Client>(), realContentLength, STD_MOVE(headers)));
 	}
 }
 

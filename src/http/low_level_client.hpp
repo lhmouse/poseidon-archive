@@ -75,12 +75,12 @@ namespace Http {
 			std::vector<std::string> transferEncoding, boost::uint64_t contentLength) = 0;
 		// 报文可能分几次收到。
 		virtual void onLowLevelEntity(boost::uint64_t contentOffset, StreamBuffer entity) = 0;
-		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
-		// chunked 允许追加报头。
-		virtual void onLowLevelChunkedTrailer(boost::uint64_t realContentLength, OptionalMap headers) = 0;
 		// 报文接收完毕。
 		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_TILL_EOF，此处 realContentLength 即为实际接收大小。
 		virtual void onLowLevelContentEof(boost::uint64_t realContentLength) = 0;
+		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
+		// chunked 允许追加报头。
+		virtual void onLowLevelChunkedTrailer(boost::uint64_t realContentLength, OptionalMap headers) = 0;
 
 	public:
 		bool send(RequestHeaders requestHeaders, StreamBuffer entity = StreamBuffer());
