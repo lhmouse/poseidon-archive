@@ -217,6 +217,8 @@ namespace Http {
 							m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength - m_contentOffset, 1024);
 							// m_state = S_IDENTITY;
 						} else {
+							onLowLevelContentEof(m_contentLength);
+
 							m_expectingNewLine = true;
 							m_state = S_FIRST_HEADER;
 						}
@@ -235,6 +237,8 @@ namespace Http {
 							DEBUG_THROW(BasicException, SSLIT("Bad chunk header"));
 						}
 						if(chunkSize == 0){
+							onLowLevelContentEof(m_contentOffset);
+
 							m_expectingNewLine = true;
 							m_state = S_CHUNKED_TRAILER;
 						} else {
@@ -308,8 +312,11 @@ namespace Http {
 		try {
 			LOG_POSEIDON_DEBUG("HTTP client read hang up");
 
-			if(m_contentLength == CONTENT_TILL_EOF){
+			if((m_state == S_IDENTITY) && (m_contentLength == CONTENT_TILL_EOF)){
 				onLowLevelContentEof(m_contentOffset);
+
+				m_expectingNewLine = true;
+				m_state = S_FIRST_HEADER;
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown when processing read hang up event: what = ", e.what());
