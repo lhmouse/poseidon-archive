@@ -52,6 +52,7 @@ namespace Http {
 		State m_state;
 
 		RequestHeaders m_requestHeaders;
+		std::vector<std::string> m_transferEncoding;
 		StreamBuffer m_chunkedEntity;
 
 	public:
@@ -69,7 +70,8 @@ namespace Http {
 		virtual boost::shared_ptr<UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(RequestHeaders &requestHeaders,
 			const std::vector<std::string> &transferEncoding, boost::uint64_t contentLength) = 0;
 
-		virtual void onLowLevelRequest(RequestHeaders requestHeaders, StreamBuffer entity) = 0;
+		virtual void onLowLevelRequest(RequestHeaders requestHeaders,
+			std::vector<std::string> transferEncoding, StreamBuffer entity) = 0;
 		virtual void onLowLevelError(StatusCode statusCode, OptionalMap headers) = 0;
 
 	public:

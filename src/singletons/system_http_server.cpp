@@ -68,7 +68,9 @@ namespace {
 			return Http::Session::onLowLevelRequestHeaders(requestHeaders, transferEncoding, contentLength);
 		}
 
-		void onRequest(const Http::RequestHeaders &requestHeaders, const StreamBuffer & /* entity */) OVERRIDE {
+		void onRequest(const Http::RequestHeaders &requestHeaders,
+			const std::vector<std::string> & /* transferEncoding */, const StreamBuffer & /* entity */) OVERRIDE
+		{
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", getRemoteInfo());
 

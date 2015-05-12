@@ -24,10 +24,12 @@ namespace Http {
 		boost::shared_ptr<UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(RequestHeaders &requestHeaders,
 			const std::vector<std::string> &transferEncoding, boost::uint64_t contentLength) OVERRIDE;
 
-		void onLowLevelRequest(RequestHeaders requestHeaders, StreamBuffer entity) OVERRIDE;
+		void onLowLevelRequest(RequestHeaders requestHeaders,
+			std::vector<std::string> transferEncoding, StreamBuffer entity) OVERRIDE;
 		void onLowLevelError(StatusCode statusCode, OptionalMap headers) OVERRIDE;
 
-		virtual void onRequest(const RequestHeaders &requestHeaders, const StreamBuffer &entity) = 0;
+		virtual void onRequest(const RequestHeaders &requestHeaders,
+			const std::vector<std::string> &transferEncoding, const StreamBuffer &entity) = 0;
 	};
 }
 

@@ -76,12 +76,15 @@ namespace Http {
 	class Session::RequestJob : public SessionJobBase {
 	private:
 		const RequestHeaders m_requestHeaders;
+		const std::vector<std::string> m_transferEncoding;
 		const StreamBuffer m_entity;
 
 	public:
-		RequestJob(const boost::shared_ptr<Session> &session, RequestHeaders requestHeaders, StreamBuffer entity)
+		RequestJob(const boost::shared_ptr<Session> &session,
+			RequestHeaders requestHeaders, std::vector<std::string> transferEncoding, StreamBuffer entity)
 			: SessionJobBase(session)
-			, m_requestHeaders(STD_MOVE(requestHeaders)), m_entity(STD_MOVE(entity))
+			, m_requestHeaders(STD_MOVE(requestHeaders))
+			, m_transferEncoding(STD_MOVE(transferEncoding)), m_entity(STD_MOVE(entity))
 		{
 		}
 
@@ -92,7 +95,7 @@ namespace Http {
 			try {
 				LOG_POSEIDON_DEBUG("Dispatching request: URI = ", m_requestHeaders.uri);
 
-				session->onRequest(m_requestHeaders, m_entity);
+				session->onRequest(m_requestHeaders, m_transferEncoding, m_entity);
 
 				AUTO(connectionVec, Poseidon::explode<std::string>(',', m_requestHeaders.headers.get("Connection")));
 				bool keepAlive;
@@ -185,11 +188,13 @@ namespace Http {
 		return VAL_INIT;
 	}
 
-	void Session::onLowLevelRequest(RequestHeaders requestHeaders, StreamBuffer entity){
+	void Session::onLowLevelRequest(RequestHeaders requestHeaders,
+		std::vector<std::string> transferEncoding, StreamBuffer entity)
+	{
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<RequestJob>(
-			virtualSharedFromThis<Session>(), STD_MOVE(requestHeaders), STD_MOVE(entity)));
+			virtualSharedFromThis<Session>(), STD_MOVE(requestHeaders), STD_MOVE(transferEncoding), STD_MOVE(entity)));
 	}
 	void Session::onLowLevelError(StatusCode statusCode, OptionalMap headers){
 		PROFILE_ME;

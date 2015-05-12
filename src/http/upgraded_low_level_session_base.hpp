@@ -31,7 +31,8 @@ namespace Http {
 		void onWriteHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
-		virtual void onInit(RequestHeaders requestHeaders, StreamBuffer entity);
+		virtual void onInit(RequestHeaders requestHeaders,
+			std::vector<std::string> transferEncoding, StreamBuffer entity);
 		virtual void onReadAvail(const void *data, std::size_t size) = 0;
 
 	public:

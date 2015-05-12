@@ -234,6 +234,8 @@ namespace Http {
 							m_upgradedSession = STD_MOVE(upgradedSession);
 						}
 
+						m_transferEncoding = STD_MOVE(transferEncoding);
+
 						if(sizeExpecting == CONTENT_CHUNKED){
 							m_expectingNewLine = true;
 							m_state = S_CHUNK_HEADER;
@@ -248,9 +250,11 @@ namespace Http {
 				case S_IDENTITY:
 					// epoll 线程读取 m_upgradedSession 不需要锁。
 					if(m_upgradedSession){
-						m_upgradedSession->onInit(STD_MOVE(m_requestHeaders), STD_MOVE(expected));
+						m_upgradedSession->onInit(STD_MOVE(m_requestHeaders),
+							STD_MOVE(m_transferEncoding), STD_MOVE(expected));
 					} else {
-						onLowLevelRequest(STD_MOVE(m_requestHeaders), STD_MOVE(expected));
+						onLowLevelRequest(STD_MOVE(m_requestHeaders),
+							STD_MOVE(m_transferEncoding), STD_MOVE(expected));
 					}
 
 					m_sizeTotal = 0;
@@ -299,16 +303,19 @@ namespace Http {
 							LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
 							DEBUG_THROW(Exception, ST_BAD_REQUEST);
 						}
-						m_requestHeaders.headers.append(SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
+						m_requestHeaders.headers.append(
+							SharedNts(line.c_str(), pos), line.substr(line.find_first_not_of(' ', pos + 1)));
 
 						m_expectingNewLine = true;
 						// m_state = S_CHUNKED_TRAILER;
 					} else {
 						// epoll 线程读取 m_upgradedSession 不需要锁。
 						if(m_upgradedSession){
-							m_upgradedSession->onInit(STD_MOVE(m_requestHeaders), STD_MOVE(m_chunkedEntity));
+							m_upgradedSession->onInit(STD_MOVE(m_requestHeaders),
+								STD_MOVE(m_transferEncoding), STD_MOVE(m_chunkedEntity));
 						} else {
-							onLowLevelRequest(STD_MOVE(m_requestHeaders), STD_MOVE(m_chunkedEntity));
+							onLowLevelRequest(STD_MOVE(m_requestHeaders),
+								STD_MOVE(m_transferEncoding), STD_MOVE(m_chunkedEntity));
 						}
 
 						m_sizeTotal = 0;

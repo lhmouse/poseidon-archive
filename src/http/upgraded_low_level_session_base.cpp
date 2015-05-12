@@ -24,8 +24,11 @@ namespace Http {
 		(void)errCode;
 	}
 
-	void UpgradedLowLevelSessionBase::onInit(RequestHeaders requestHeaders, StreamBuffer entity){
+	void UpgradedLowLevelSessionBase::onInit(RequestHeaders requestHeaders,
+		std::vector<std::string> transferEncoding, StreamBuffer entity)
+	{
 		(void)requestHeaders;
+		(void)transferEncoding;
 		(void)entity;
 	}
 
