@@ -7,14 +7,22 @@
 #include "../tcp_session_base.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
+#include "../string.hpp"
 
 namespace Poseidon {
 
 namespace Http {
 	ChunkedWriter::ChunkedWriter(){
 	}
-	ChunkedWriter::ChunkedWriter(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode, OptionalMap headers){
-		reset(STD_MOVE(session), statusCode, STD_MOVE(headers));
+	ChunkedWriter::ChunkedWriter(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode,
+		OptionalMap headers, const std::vector<std::string> &transferEncoding)
+	{
+		reset(STD_MOVE(session), statusCode, STD_MOVE(headers), transferEncoding);
+	}
+	ChunkedWriter::ChunkedWriter(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode,
+		const std::vector<std::string> &transferEncoding)
+	{
+		reset(STD_MOVE(session), statusCode, transferEncoding);
 	}
 	ChunkedWriter::~ChunkedWriter(){
 		reset();
@@ -32,7 +40,9 @@ namespace Http {
 
 		m_session.reset();
 	}
-	void ChunkedWriter::reset(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode, OptionalMap headers){
+	void ChunkedWriter::reset(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode,
+		OptionalMap headers, const std::vector<std::string> &transferEncoding)
+	{
 		PROFILE_ME;
 
 		if(m_session != session){
@@ -52,7 +62,11 @@ namespace Http {
 		data.put("\r\n");
 
 		headers.erase("Content-Length");
-		headers.set("Transfer-Encoding", "chunked");
+		if(transferEncoding.empty()){
+			headers.set("Transfer-Encoding", "chunked");
+		} else {
+			headers.set("Transfer-Encoding", implode(',', transferEncoding));
+		}
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			if(it->second.empty()){
 				continue;
@@ -67,6 +81,13 @@ namespace Http {
 		session->send(STD_MOVE(data));
 
 		m_session = STD_MOVE(session); // noexcept
+	}
+	void ChunkedWriter::reset(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode,
+		const std::vector<std::string> &transferEncoding)
+	{
+		PROFILE_ME;
+
+		reset(STD_MOVE(session), statusCode, OptionalMap(), transferEncoding);
 	}
 
 	void ChunkedWriter::put(StreamBuffer buffer){
