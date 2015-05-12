@@ -237,8 +237,6 @@ namespace Http {
 							DEBUG_THROW(BasicException, SSLIT("Bad chunk header"));
 						}
 						if(chunkSize == 0){
-							onLowLevelResponseEof(m_contentOffset, VAL_INIT);
-
 							m_expectingNewLine = true;
 							m_state = S_CHUNKED_TRAILER;
 						} else {
