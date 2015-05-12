@@ -3,8 +3,8 @@
 
 #include "../precompiled.hpp"
 #include "chunked_writer.hpp"
-#include "session.hpp"
 #include "exception.hpp"
+#include "../tcp_session_base.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 
@@ -13,7 +13,7 @@ namespace Poseidon {
 namespace Http {
 	ChunkedWriter::ChunkedWriter(){
 	}
-	ChunkedWriter::ChunkedWriter(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers){
+	ChunkedWriter::ChunkedWriter(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode, OptionalMap headers){
 		reset(STD_MOVE(session), statusCode, STD_MOVE(headers));
 	}
 	ChunkedWriter::~ChunkedWriter(){
@@ -32,16 +32,14 @@ namespace Http {
 
 		m_session.reset();
 	}
-	void ChunkedWriter::reset(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers){
+	void ChunkedWriter::reset(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode, OptionalMap headers){
 		PROFILE_ME;
 
 		if(m_session != session){
 			reset();
 		}
-
 		if(!session){
-			LOG_POSEIDON_ERROR("No session specified.");
-			DEBUG_THROW(Exception, ST_INTERNAL_SERVER_ERROR);
+			return;
 		}
 
 		StreamBuffer data;
@@ -66,7 +64,7 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		session->TcpSessionBase::send(STD_MOVE(data));
+		session->send(STD_MOVE(data));
 
 		m_session = STD_MOVE(session); // noexcept
 	}
@@ -86,7 +84,7 @@ namespace Http {
 		data.splice(buffer);
 		data.put("\r\n");
 
-		m_session->TcpSessionBase::send(STD_MOVE(data));
+		m_session->send(STD_MOVE(data));
 	}
 
 	void ChunkedWriter::finalize(OptionalMap headers){
@@ -111,7 +109,7 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		m_session->TcpSessionBase::send(STD_MOVE(data));
+		m_session->send(STD_MOVE(data));
 
 		m_session.reset();
 	}

@@ -12,27 +12,27 @@
 
 namespace Poseidon {
 
-namespace Http {
-	class Session;
+class TcpSessionBase;
 
+namespace Http {
 	class ChunkedWriter : NONCOPYABLE {
 	private:
-		boost::shared_ptr<Session> m_session;
+		boost::shared_ptr<TcpSessionBase> m_session;
 
 	public:
 		ChunkedWriter();
-		ChunkedWriter(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers = OptionalMap());
+		ChunkedWriter(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode, OptionalMap headers = OptionalMap());
 		// 在析构之前必须手动调用 finalize() 或 reset()。
 		// 如果有异常抛出而导致析构，连接会被非正常关闭。
 		~ChunkedWriter();
 
 	public:
-		const boost::shared_ptr<Session> &getSession() const {
+		const boost::shared_ptr<TcpSessionBase> &getSession() const {
 			return m_session;
 		}
 
 		void reset() NOEXCEPT;
-		void reset(boost::shared_ptr<Session> session, StatusCode statusCode, OptionalMap headers = OptionalMap());
+		void reset(boost::shared_ptr<TcpSessionBase> session, StatusCode statusCode, OptionalMap headers = OptionalMap());
 
 		void put(const void *data, std::size_t size){
 			put(StreamBuffer(data, size));
