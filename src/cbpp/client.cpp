@@ -98,6 +98,26 @@ namespace Cbpp {
 		}
 	};
 
+	class Client::PayloadEofJob : public ClientJobBase {
+	public:
+		const boost::uint64_t m_realPayloadLen;
+
+	public:
+		PayloadEofJob(const boost::shared_ptr<Client> &client, boost::uint64_t realPayloadLen)
+			: ClientJobBase(client)
+			, m_realPayloadLen(realPayloadLen)
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+			PROFILE_ME;
+
+			LOG_POSEIDON_DEBUG("Payload EOF: realPayloadLen = ", m_realPayloadLen);
+			client->onPayloadEof(m_realPayloadLen);
+		}
+	};
+
 	class Client::ErrorJob : public ClientJobBase {
 	private:
 		const boost::uint16_t m_messageId;
@@ -143,6 +163,12 @@ namespace Cbpp {
 
 		enqueueJob(boost::make_shared<PayloadJob>(
 			virtualSharedFromThis<Client>(), payloadOffset, STD_MOVE(payload)));
+	}
+	void Client::onLowLevelPayloadEof(boost::uint64_t realPayloadLen){
+		PROFILE_ME;
+
+		enqueueJob(boost::make_shared<PayloadEofJob>(
+			virtualSharedFromThis<Client>(), realPayloadLen));
 	}
 
 	void Client::onLowLevelError(boost::uint16_t messageId, StatusCode statusCode, std::string reason){

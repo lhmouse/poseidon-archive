@@ -217,7 +217,7 @@ namespace Http {
 							m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength - m_contentOffset, 1024);
 							// m_state = S_IDENTITY;
 						} else {
-							onLowLevelContentEof(m_contentLength);
+							onLowLevelResponseEof(m_contentOffset, VAL_INIT);
 
 							m_expectingNewLine = true;
 							m_state = S_FIRST_HEADER;
@@ -237,7 +237,7 @@ namespace Http {
 							DEBUG_THROW(BasicException, SSLIT("Bad chunk header"));
 						}
 						if(chunkSize == 0){
-							onLowLevelContentEof(m_contentOffset);
+							onLowLevelResponseEof(m_contentOffset, VAL_INIT);
 
 							m_expectingNewLine = true;
 							m_state = S_CHUNKED_TRAILER;
@@ -287,7 +287,7 @@ namespace Http {
 						m_expectingNewLine = true;
 						// m_state = S_CHUNKED_TRAILER;
 					} else {
-						onLowLevelChunkedTrailer(m_contentOffset, STD_MOVE(m_chunkTrailer));
+						onLowLevelResponseEof(m_contentOffset, STD_MOVE(m_chunkTrailer));
 
 						m_expectingNewLine = true;
 						m_state = S_FIRST_HEADER;
@@ -313,7 +313,7 @@ namespace Http {
 			LOG_POSEIDON_DEBUG("HTTP client read hang up");
 
 			if((m_state == S_IDENTITY) && (m_contentLength == CONTENT_TILL_EOF)){
-				onLowLevelContentEof(m_contentOffset);
+				onLowLevelResponseEof(m_contentOffset, VAL_INIT);
 
 				m_expectingNewLine = true;
 				m_state = S_FIRST_HEADER;

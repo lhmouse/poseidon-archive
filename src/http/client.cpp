@@ -97,33 +97,13 @@ namespace Http {
 		}
 	};
 
-	class Client::ContentEofJob : public ClientJobBase {
-	private:
-		const boost::uint64_t m_realContentLength;
-
-	public:
-		ContentEofJob(const boost::shared_ptr<Client> &client, boost::uint64_t realContentLength)
-			: ClientJobBase(client)
-			, m_realContentLength(realContentLength)
-		{
-		}
-
-	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
-			PROFILE_ME;
-			LOG_POSEIDON_DEBUG("Dispatching content EOF");
-
-			client->onContentEof(m_realContentLength);
-		}
-	};
-
-	class Client::ChunkedTrailerJob : public ClientJobBase {
+	class Client::ResponseEofJob : public ClientJobBase {
 	private:
 		const boost::uint64_t m_realContentLength;
 		const OptionalMap m_headers;
 
 	public:
-		ChunkedTrailerJob(const boost::shared_ptr<Client> &client, boost::uint64_t realContentLength, OptionalMap headers)
+		ResponseEofJob(const boost::shared_ptr<Client> &client, boost::uint64_t realContentLength, OptionalMap headers)
 			: ClientJobBase(client)
 			, m_realContentLength(realContentLength), m_headers(STD_MOVE(headers))
 		{
@@ -134,7 +114,7 @@ namespace Http {
 			PROFILE_ME;
 			LOG_POSEIDON_DEBUG("Dispatching chunked trailer");
 
-			client->onChunkedTrailer(m_realContentLength, m_headers);
+			client->onResponseEof(m_realContentLength, m_headers);
 		}
 	};
 
@@ -163,16 +143,10 @@ namespace Http {
 		enqueueJob(boost::make_shared<EntityJob>(
 			virtualSharedFromThis<Client>(), contentOffset, STD_MOVE(entity)));
 	}
-	void Client::onLowLevelContentEof(boost::uint64_t realContentLength){
+	void Client::onLowLevelResponseEof(boost::uint64_t realContentLength, OptionalMap headers){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ContentEofJob>(
-			virtualSharedFromThis<Client>(), realContentLength));
-	}
-	void Client::onLowLevelChunkedTrailer(boost::uint64_t realContentLength, OptionalMap headers){
-		PROFILE_ME;
-
-		enqueueJob(boost::make_shared<ChunkedTrailerJob>(
+		enqueueJob(boost::make_shared<ResponseEofJob>(
 			virtualSharedFromThis<Client>(), realContentLength, STD_MOVE(headers)));
 	}
 }

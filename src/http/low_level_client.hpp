@@ -20,12 +20,6 @@ namespace Poseidon {
 namespace Http {
 	class LowLevelClient : public TcpClientBase {
 	private:
-		class ResponseHeaderJob;
-		class EntityJob;
-		class ContentEofJob;
-		class ChunkedTrailerJob;
-
-	private:
 		enum State {
 			S_FIRST_HEADER		= 0,
 			S_HEADERS			= 1,
@@ -77,10 +71,9 @@ namespace Http {
 		virtual void onLowLevelEntity(boost::uint64_t contentOffset, StreamBuffer entity) = 0;
 		// 报文接收完毕。
 		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_TILL_EOF，此处 realContentLength 即为实际接收大小。
-		virtual void onLowLevelContentEof(boost::uint64_t realContentLength) = 0;
 		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
 		// chunked 允许追加报头。
-		virtual void onLowLevelChunkedTrailer(boost::uint64_t realContentLength, OptionalMap headers) = 0;
+		virtual void onLowLevelResponseEof(boost::uint64_t realContentLength, OptionalMap headers) = 0;
 
 	public:
 		bool send(RequestHeaders requestHeaders, StreamBuffer entity = StreamBuffer());

@@ -53,6 +53,7 @@ namespace Cbpp {
 		virtual void onLowLevelResponse(boost::uint16_t messageId, boost::uint64_t payloadLen) = 0;
 		// 报文可能分几次收到。
 		virtual void onLowLevelPayload(boost::uint64_t payloadOffset, StreamBuffer payload) = 0;
+		virtual void onLowLevelPayloadEof(boost::uint64_t realPayloadSize) = 0;
 
 		virtual void onLowLevelError(boost::uint16_t messageId, StatusCode statusCode, std::string reason) = 0;
 

@@ -114,6 +114,8 @@ namespace Cbpp {
 						m_sizeExpecting = std::min<boost::uint64_t>(m_payloadLen - m_payloadOffset, 1024);
 						// m_state = S_PAYLOAD;
 					} else {
+						onLowLevelPayloadEof(m_payloadOffset);
+
 						m_sizeExpecting = 2;
 						m_state = S_PAYLOAD_LEN;
 					}
