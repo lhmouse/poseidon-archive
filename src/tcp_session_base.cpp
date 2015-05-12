@@ -224,6 +224,12 @@ bool TcpSessionBase::shutdownWrite() NOEXCEPT {
 void TcpSessionBase::forceShutdown() NOEXCEPT {
 	atomicStore(m_shutdownRead, true, ATOMIC_RELEASE);
 	atomicStore(m_shutdownWrite, true, ATOMIC_RELEASE);
+
+	::linger lng;
+	lng.l_onoff = 1;
+	lng.l_linger = 0;
+	::setsockopt(m_socket.get(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
+
 	::shutdown(m_socket.get(), SHUT_RDWR);
 }
 
