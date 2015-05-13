@@ -244,7 +244,7 @@ namespace {
 }
 
 void SystemHttpServer::start(){
-	AUTO_REF(conf, MainConfig::getConfigFile());
+	AUTO_REF(conf, MainConfig::get());
 
 	AUTO(bind, conf.get<std::string>("system_http_bind", "0.0.0.0"));
 	AUTO(port, conf.get<unsigned>("system_http_port", 8900));

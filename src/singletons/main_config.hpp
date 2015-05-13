@@ -12,7 +12,7 @@ struct MainConfig {
 	static void setRunPath(const char *path);
 
 	static void reload();
-	static const ConfigFile &getConfigFile();
+	static const ConfigFile &get();
 
 private:
 	MainConfig();

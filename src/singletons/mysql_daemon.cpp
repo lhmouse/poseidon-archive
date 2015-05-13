@@ -652,7 +652,7 @@ void MySqlDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MySQL daemon...");
 
-	AUTO_REF(conf, MainConfig::getConfigFile());
+	AUTO_REF(conf, MainConfig::get());
 
 	conf.get(g_serverAddr, "mysql_server_addr");
 	LOG_POSEIDON_DEBUG("MySQL server addr = ", g_serverAddr);

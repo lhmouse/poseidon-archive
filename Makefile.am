@@ -105,10 +105,10 @@ pkginclude_websocket_HEADERS = \
 pkginclude_cbppdir = $(pkgincludedir)/cbpp
 pkginclude_cbpp_HEADERS = \
 	src/cbpp/fwd.hpp	\
-	src/cbpp/low_level_client.hpp	\
+	src/cbpp/reader.hpp	\
 	src/cbpp/client.hpp	\
+	src/cbpp/writer.hpp	\
 	src/cbpp/message_base.hpp	\
-	src/cbpp/low_level_session.hpp	\
 	src/cbpp/session.hpp	\
 	src/cbpp/control_message.hpp	\
 	src/cbpp/message_generator.hpp	\
@@ -186,9 +186,9 @@ lib_libposeidon_main_la_SOURCES = \
 	src/singletons/event_dispatcher.cpp	\
 	src/singletons/profile_depository.cpp	\
 	src/singletons/system_http_server.cpp	\
-	src/cbpp/low_level_session.cpp	\
+	src/cbpp/reader.cpp	\
+	src/cbpp/writer.cpp	\
 	src/cbpp/session.cpp	\
-	src/cbpp/low_level_client.cpp	\
 	src/cbpp/client.cpp	\
 	src/cbpp/exception.cpp	\
 	src/http/low_level_session.cpp	\

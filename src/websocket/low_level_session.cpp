@@ -152,7 +152,7 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		try {
-			const AUTO(maxRequestLength, MainConfig::getConfigFile().get<boost::uint64_t>("websocket_max_request_length", 16384));
+			const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("websocket_max_request_length", 16384));
 
 			m_received.put(data, size);
 

@@ -4,30 +4,54 @@
 #ifndef POSEIDON_CBPP_SESSION_HPP_
 #define POSEIDON_CBPP_SESSION_HPP_
 
-#include "low_level_session.hpp"
+#include "../tcp_session_base.hpp"
+#include "reader.hpp"
+#include "control_codes.hpp"
+#include "status_codes.hpp"
 
 namespace Poseidon {
 
 namespace Cbpp {
-	class Session : public LowLevelSession {
+	class Session : public TcpSessionBase, private Reader {
 	private:
-		class RequestJob;
-		class ControlJob;
+		class DataMessageJob;
+
+		class ControlMessageJob;
 
 		class ErrorJob;
+
+	private:
+		unsigned m_messageId;
+		StreamBuffer m_payload;
 
 	public:
 		explicit Session(UniqueFile socket);
 		~Session();
 
 	protected:
-		void onLowLevelRequest(boost::uint16_t messageId, StreamBuffer payload) OVERRIDE;
-		void onLowLevelControl(ControlCode controlCode, boost::int64_t intParam, std::string strParam) OVERRIDE;
+		// TcpSessionBase
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
-		void onLowLevelError(boost::uint16_t messageId, StatusCode statusCode, const char *reason) OVERRIDE;
+		// Reader
+		void onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) OVERRIDE;
+		void onDataMessagePayload(boost::uint64_t payloadOffset, StreamBuffer payload) OVERRIDE;
+		void onDataMessageEnd(boost::uint64_t payloadSize) OVERRIDE;
 
-		virtual void onRequest(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
-		virtual void onControl(ControlCode controlCode, boost::int64_t intParam, const std::string &strParam);
+		void onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) OVERRIDE;
+
+		// 可覆写。
+		virtual void onSyncDataMessage(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
+
+		virtual void onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, const std::string &stringParam);
+
+	public:
+		bool send(boost::uint16_t messageId, StreamBuffer payload);
+		bool sendError(boost::uint16_t messageId, StatusCode statusCode, std::string reason);
+
+		template<typename MsgT>
+		bool send(const MsgT &msg){
+			return send(MsgT::ID, StreamBuffer(msg));
+		}
 	};
 }
 

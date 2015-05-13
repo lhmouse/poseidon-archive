@@ -13,9 +13,9 @@ namespace Cbpp {
 #define MESSAGE_NAME	ControlMessage
 #define MESSAGE_ID		0
 #define MESSAGE_FIELDS	\
-	FIELD_VUINT			(messageId)	\
-	FIELD_VINT			(statusCode)	\
-	FIELD_STRING		(reason)
+	FIELD_VUINT			(controlCode)	\
+	FIELD_VINT			(vintParam)	\
+	FIELD_STRING		(stringParam)
 #include "message_generator.hpp"
 
 }

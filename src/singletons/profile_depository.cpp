@@ -53,7 +53,7 @@ namespace {
 void ProfileDepository::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting profile depository...");
 
-	AUTO_REF(conf, MainConfig::getConfigFile());
+	AUTO_REF(conf, MainConfig::get());
 
 	conf.get(g_enabled, "enable_profiler");
 	LOG_POSEIDON_DEBUG("Enable profiler = ", g_enabled);

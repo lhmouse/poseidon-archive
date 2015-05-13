@@ -47,7 +47,7 @@ namespace Http {
 		}
 
 		try {
-			const AUTO(maxRequestLength, MainConfig::getConfigFile().get<boost::uint64_t>("http_max_request_length", 16384));
+			const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("http_max_request_length", 16384));
 
 			m_received.put(data, size);
 

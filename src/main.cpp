@@ -71,7 +71,7 @@ namespace {
 			START(EpollDaemon);
 			START(EventDispatcher);
 
-			const AUTO(initModules, MainConfig::getConfigFile().getAll<std::string>("init_module"));
+			const AUTO(initModules, MainConfig::get().getAll<std::string>("init_module"));
 			for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
 				ModuleDepository::load(it->c_str());
@@ -113,7 +113,7 @@ int main(int argc, char **argv){
 		START(ProfileDepository);
 
 		unsigned long long logMask;
-		if(MainConfig::getConfigFile().get(logMask, "log_mask")){
+		if(MainConfig::get().get(logMask, "log_mask")){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask: 0x", std::hex, std::uppercase, logMask);
 			Logger::setMask(static_cast<boost::uint64_t>(-1), logMask);
 		}

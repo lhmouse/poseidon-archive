@@ -123,7 +123,7 @@ namespace {
 void JobDispatcher::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting job dispatcher...");
 
-	AUTO_REF(conf, MainConfig::getConfigFile());
+	AUTO_REF(conf, MainConfig::get());
 
 	conf.get(g_maxRetryCount, "job_max_retry_count");
 	LOG_POSEIDON_DEBUG("Max retry count = ", g_maxRetryCount);

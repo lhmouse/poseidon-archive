@@ -4,17 +4,26 @@
 #ifndef POSEIDON_CBPP_CLIENT_HPP_
 #define POSEIDON_CBPP_CLIENT_HPP_
 
-#include "low_level_client.hpp"
+#include "../tcp_client_base.hpp"
+#include "reader.hpp"
+#include "control_codes.hpp"
+#include "status_codes.hpp"
 
 namespace Poseidon {
 
 namespace Cbpp {
-	class Client : public LowLevelClient {
+	class Client : public TcpClientBase, private Reader {
 	private:
-		class ResponseJob;
-		class PayloadJob;
-		class PayloadEofJob;
-		class ErrorJob;
+		class KeepAliveJob;
+
+		class DataMessageHeaderJob;
+		class DataMessagePayloadJob;
+		class DataMessageEndJob;
+
+		class ErrorMessageJob;
+
+	private:
+		const boost::uint64_t m_keepAliveTimeout;
 
 	protected:
 		Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveTimeout);
@@ -22,18 +31,31 @@ namespace Cbpp {
 		~Client();
 
 	protected:
-		void onLowLevelResponse(boost::uint16_t messageId, boost::uint64_t payloadLen) OVERRIDE;
-		void onLowLevelPayload(boost::uint64_t payloadOffset, StreamBuffer payload) OVERRIDE;
-		void onLowLevelPayloadEof(boost::uint64_t realPayloadLen) OVERRIDE;
+		// TcpSessionBase
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
-		void onLowLevelError(boost::uint16_t messageId, StatusCode statusCode, std::string reason) OVERRIDE;
+		// Reader
+		void onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) OVERRIDE;
+		void onDataMessagePayload(boost::uint64_t payloadOffset, StreamBuffer payload) OVERRIDE;
+		void onDataMessageEnd(boost::uint64_t payloadSize) OVERRIDE;
 
-		virtual void onResponse(boost::uint16_t messageId, boost::uint64_t payloadLen) = 0;
-		// 报文可能分几次收到。
-		virtual void onPayload(boost::uint64_t payloadOffset, const StreamBuffer &payload) = 0;
-		virtual void onPayloadEof(boost::uint64_t realPayloadLen) = 0;
+		void onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) OVERRIDE;
 
-		virtual void onError(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason) = 0;
+		// 可覆写。
+		virtual void onSyncDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) = 0;
+		virtual void onSyncDataMessagePayload(boost::uint64_t payloadOffset, const StreamBuffer &payload) = 0;
+		virtual void onSyncDataMessageEnd(boost::uint64_t payloadSize) = 0;
+
+		virtual void onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason);
+
+	public:
+		bool send(boost::uint16_t messageId, StreamBuffer payload);
+		bool sendControl(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam);
+
+		template<typename MsgT>
+		bool send(const MsgT &msg){
+			return send(MsgT::ID, StreamBuffer(msg));
+		}
 	};
 }
 

@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "session.hpp"
+#include "writer.hpp"
 #include "exception.hpp"
 #include "control_message.hpp"
 #include "../singletons/main_config.hpp"
@@ -43,6 +44,12 @@ namespace Cbpp {
 					perform(session);
 				} catch(TryAgainLater &){
 					throw;
+				} catch(Exception &e){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+						"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
+					session->sendError(ControlMessage::ID, e.statusCode(), e.what());
+					session->shutdownRead();
+					session->shutdownWrite();
 				} catch(std::exception &e){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 					session->forceShutdown();
@@ -54,15 +61,34 @@ namespace Cbpp {
 				}
 			}
 		};
+
+		class SessionWriter : public Writer {
+		private:
+			TcpSessionBase *m_session;
+
+		public:
+			explicit SessionWriter(TcpSessionBase &session)
+				: m_session(&session)
+			{
+			}
+
+		protected:
+			long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE {
+				PROFILE_ME;
+
+				return m_session->send(STD_MOVE(encoded));
+			}
+		};
 	}
 
-	class Session::RequestJob : public SessionJobBase {
+	class Session::DataMessageJob : public SessionJobBase {
 	private:
 		const boost::uint16_t m_messageId;
 		const StreamBuffer m_payload;
 
 	public:
-		RequestJob(const boost::shared_ptr<Session> &session, boost::uint16_t messageId, StreamBuffer payload)
+		DataMessageJob(const boost::shared_ptr<Session> &session,
+			boost::uint16_t messageId, StreamBuffer payload)
 			: SessionJobBase(session)
 			, m_messageId(messageId), m_payload(STD_MOVE(payload))
 		{
@@ -72,40 +98,25 @@ namespace Cbpp {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			try {
-				LOG_POSEIDON_DEBUG("Dispatching message: messageId = ", m_messageId, ", payloadLen = ", m_payload.size());
-				session->onRequest(m_messageId, m_payload);
+			LOG_POSEIDON_DEBUG("Dispatching message: messageId = ", m_messageId, ", payloadLen = ", m_payload.size());
+			session->onSyncDataMessage(m_messageId, m_payload);
 
-				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
-			} catch(TryAgainLater &){
-				throw;
-			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Cbpp::Exception thrown: messageId = ", m_messageId, ", statusCode = ", e.statusCode(), ", what = ", e.what());
-				session->sendError(m_messageId, e.statusCode(), e.what());
-				session->shutdownRead();
-				session->shutdownWrite();
-			} catch(std::exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"std::exception thrown: messageId = ", m_messageId, ", what = ", e.what());
-				session->sendError(m_messageId, ST_INTERNAL_ERROR, e.what());
-				session->shutdownRead();
-				session->shutdownWrite();
-			}
+			const AUTO(keepAliveTimeout, MainConfig::get().get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+			session->setTimeout(keepAliveTimeout);
 		}
 	};
 
-	class Session::ControlJob : public SessionJobBase {
+	class Session::ControlMessageJob : public SessionJobBase {
 	private:
 		const ControlCode m_controlCode;
-		const boost::int64_t m_intParam;
-		const std::string m_strParam;
+		const boost::int64_t m_vintParam;
+		const std::string m_stringParam;
 
 	public:
-		ControlJob(const boost::shared_ptr<Session> &session,
-			ControlCode controlCode, boost::int64_t intParam, std::string strParam)
+		ControlMessageJob(const boost::shared_ptr<Session> &session,
+			ControlCode controlCode, boost::int64_t vintParam, std::string stringParam)
 			: SessionJobBase(session)
-			, m_controlCode(controlCode), m_intParam(intParam), m_strParam(strParam)
+			, m_controlCode(controlCode), m_vintParam(vintParam), m_stringParam(stringParam)
 		{
 		}
 
@@ -113,19 +124,12 @@ namespace Cbpp {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			try {
-				LOG_POSEIDON_DEBUG("Dispatching control message: controlCode = ", m_controlCode,
-					", intParam = ", m_intParam, ", strParam = ", m_strParam);
-				session->onControl(m_controlCode, m_intParam, m_strParam);
+			LOG_POSEIDON_DEBUG("Dispatching control message: controlCode = ", m_controlCode,
+				", vintParam = ", m_vintParam, ", stringParam = ", m_stringParam);
+			session->onSyncControlMessage(m_controlCode, m_vintParam, m_stringParam);
 
-				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
-			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
-				session->sendError(ControlMessage::ID, e.statusCode(), e.what());
-				session->shutdownRead();
-				session->shutdownWrite();
-			}
+			const AUTO(keepAliveTimeout, MainConfig::get().get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+			session->setTimeout(keepAliveTimeout);
 		}
 	};
 
@@ -138,7 +142,8 @@ namespace Cbpp {
 		const std::string m_reason;
 
 	public:
-		ErrorJob(const boost::shared_ptr<Session> &session, boost::uint16_t messageId, StatusCode statusCode, std::string reason)
+		ErrorJob(const boost::shared_ptr<Session> &session,
+			boost::uint16_t messageId, StatusCode statusCode, std::string reason)
 			: SessionJobBase(session)
 			, m_guard(session)
 			, m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
@@ -154,36 +159,54 @@ namespace Cbpp {
 	};
 
 	Session::Session(UniqueFile socket)
-		: LowLevelSession(STD_MOVE(socket))
+		: TcpSessionBase(STD_MOVE(socket))
+		, m_messageId(0)
 	{
 	}
 	Session::~Session(){
 	}
 
-	void Session::onLowLevelRequest(boost::uint16_t messageId, StreamBuffer payload){
+	void Session::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<RequestJob>(
-			virtualSharedFromThis<Session>(), messageId, STD_MOVE(payload)));
+		Reader::putEncodedData(StreamBuffer(data, size));
 	}
-	void Session::onLowLevelControl(ControlCode controlCode, boost::int64_t intParam, std::string strParam){
+	void Session::onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ControlJob>(
-			virtualSharedFromThis<Session>(), controlCode, intParam, STD_MOVE(strParam)));
-	}
+		const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("cbpp_max_request_length", 16384));
+		if(payloadSize > maxRequestLength){
+			DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
+		}
 
-	void Session::onLowLevelError(boost::uint16_t messageId, StatusCode statusCode, const char *reason){
+		m_messageId = messageId;
+		m_payload.clear();
+	}
+	void Session::onDataMessagePayload(boost::uint64_t /* payloadOffset */, StreamBuffer payload){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ErrorJob>(
-			virtualSharedFromThis<Session>(), messageId, statusCode, std::string(reason)));
+		const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("cbpp_max_request_length", 16384));
+		if(m_payload.size() + payload.size() > maxRequestLength){
+			DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
+		}
 
-		shutdownRead();
-		shutdownWrite();
+		m_payload.splice(payload);
+	}
+	void Session::onDataMessageEnd(boost::uint64_t /* payloadSize */){
+		PROFILE_ME;
+
+		enqueueJob(boost::make_shared<DataMessageJob>(
+			virtualSharedFromThis<Session>(), m_messageId, STD_MOVE(m_payload)));
 	}
 
-	void Session::onControl(ControlCode controlCode, boost::int64_t intParam, const std::string &strParam){
+	void Session::onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
+		PROFILE_ME;
+
+		enqueueJob(boost::make_shared<ControlMessageJob>(
+			virtualSharedFromThis<Session>(), controlCode, vintParam, STD_MOVE(stringParam)));
+	}
+
+	void Session::onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, const std::string &stringParam){
 		PROFILE_ME;
 
 		switch(controlCode){
@@ -193,11 +216,24 @@ namespace Cbpp {
 
 		default:
 			LOG_POSEIDON_WARNING("Unknown control code: ", controlCode);
-			send(ControlMessage(controlCode, intParam, strParam));
+			send(ControlMessage(controlCode, vintParam, stringParam));
 			shutdownRead();
 			shutdownWrite();
 			break;
 		}
+	}
+
+	bool Session::send(boost::uint16_t messageId, StreamBuffer payload){
+		PROFILE_ME;
+
+		SessionWriter writer(*this);
+		return writer.putDataMessage(messageId, STD_MOVE(payload));
+	}
+	bool Session::sendError(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
+		PROFILE_ME;
+
+		SessionWriter writer(*this);
+		return writer.putControlMessage(messageId, statusCode, STD_MOVE(reason));
 	}
 }
 

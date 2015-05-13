@@ -43,7 +43,7 @@ void MainConfig::reload(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading main.conf...");
 	ConfigFile("main.conf").swap(g_config);
 }
-const ConfigFile &MainConfig::getConfigFile(){
+const ConfigFile &MainConfig::get(){
 	return g_config;
 }
 

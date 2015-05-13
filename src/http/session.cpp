@@ -117,7 +117,7 @@ namespace Http {
 					}
 				}
 				if(keepAlive){
-					session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("http_keep_alive_timeout", 5000));
+					session->setTimeout(MainConfig::get().get<boost::uint64_t>("http_keep_alive_timeout", 5000));
 				} else {
 					session->forceShutdown();
 				}

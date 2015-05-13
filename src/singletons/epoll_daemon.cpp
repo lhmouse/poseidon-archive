@@ -116,7 +116,7 @@ void EpollDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting epoll daemon...");
 
-	AUTO_REF(conf, MainConfig::getConfigFile());
+	AUTO_REF(conf, MainConfig::get());
 
 	conf.get(g_maxTimeout, "epoll_max_timeout");
 	LOG_POSEIDON_DEBUG("Max timeout = ", g_maxTimeout);

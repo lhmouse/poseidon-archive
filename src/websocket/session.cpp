@@ -77,7 +77,7 @@ namespace WebSocket {
 			try {
 				LOG_POSEIDON_DEBUG("Dispatching request: URI = ", session->getUri(), ", payload size = ", m_payload.size());
 				session->onRequest(m_opcode, m_payload);
-				session->setTimeout(MainConfig::getConfigFile().get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+				session->setTimeout(MainConfig::get().get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 			} catch(TryAgainLater &){
 				throw;
 			} catch(Exception &e){
