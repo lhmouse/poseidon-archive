@@ -551,12 +551,12 @@ namespace {
 			Thread::join();
 		}
 
-		std::size_t getProfile(std::vector<MySqlDaemon::SnapshotItem> &ret, unsigned thread) const {
+		std::size_t getProfile(std::vector<MySqlDaemon::SnapshotElement> &ret, unsigned thread) const {
 			const Mutex::UniqueLock lock(m_profileMutex);
 			const std::size_t count = m_profile.size();
 			ret.reserve(ret.size() + count);
 			for(AUTO(it, m_profile.begin()); it != m_profile.end(); ++it){
-				MySqlDaemon::SnapshotItem item;
+				MySqlDaemon::SnapshotElement item;
 				item.thread = thread;
 				item.table = it->first;
 				item.usTotal = static_cast<boost::uint64_t>(it->second * 1.0e6);
@@ -742,8 +742,8 @@ boost::shared_ptr<MySql::Connection> MySqlDaemon::createConnection(){
 	return MySql::Connection::create(g_serverAddr, g_serverPort, g_username, g_password, g_schema, g_useSsl, g_charset);
 }
 
-std::vector<MySqlDaemon::SnapshotItem> MySqlDaemon::snapshot(){
-	std::vector<SnapshotItem> ret;
+std::vector<MySqlDaemon::SnapshotElement> MySqlDaemon::snapshot(){
+	std::vector<SnapshotElement> ret;
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		g_threads[i]->getProfile(ret, i);
 	}

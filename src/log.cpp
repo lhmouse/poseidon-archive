@@ -12,13 +12,13 @@
 namespace Poseidon {
 
 namespace {
-	struct LevelItem {
+	struct LevelElement {
 		char text[16];
 		char color;
 		bool highlighted;
 	};
 
-	const LevelItem LEVEL_ITEMS[] = {
+	const LevelElement LEVEL_ELEMENTS[] = {
 		{ "FATAL", '5', 1 },	// 粉色
 		{ "ERROR", '1', 1 },	// 红色
 		{ "WARN ", '3', 1 },	// 黄色
@@ -84,7 +84,7 @@ Logger::~Logger() NOEXCEPT {
 			fd = STDOUT_FILENO;
 		}
 
-		AUTO_REF(levelItem, LEVEL_ITEMS[__builtin_ctz(m_mask | LV_TRACE)]);
+		AUTO_REF(levelElem, LEVEL_ELEMENTS[__builtin_ctz(m_mask | LV_TRACE)]);
 
 		char temp[256];
 		unsigned len;
@@ -114,14 +114,14 @@ Logger::~Logger() NOEXCEPT {
 
 		if(useAsciiColors){
 			line +="\x1B[0;30;4";
-			line += levelItem.color;
+			line += levelElem.color;
 			line += 'm';
 		}
-		line += levelItem.text;
+		line += levelElem.text;
 		if(useAsciiColors){
 			line +="\x1B[0;40;3";
-			line += levelItem.color;
-			if(levelItem.highlighted){
+			line += levelElem.color;
+			if(levelElem.highlighted){
 				line += ';';
 				line += '1';
 			}

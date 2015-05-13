@@ -95,15 +95,15 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 	}
 }
 
-std::vector<ProfileDepository::SnapshotItem> ProfileDepository::snapshot(){
+std::vector<ProfileDepository::SnapshotElement> ProfileDepository::snapshot(){
 	Profiler::flushProfilersInThread();
 
-	std::vector<SnapshotItem> ret;
+	std::vector<SnapshotElement> ret;
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		ret.reserve(g_profile.size());
 		for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
-			SnapshotItem pi;
+			SnapshotElement pi;
 			pi.file = it->first.file;
 			pi.line = it->first.line;
 			pi.func = it->first.func;

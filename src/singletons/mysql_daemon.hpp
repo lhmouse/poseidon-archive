@@ -17,7 +17,7 @@ namespace MySql {
 }
 
 struct MySqlDaemon {
-	struct SnapshotItem {
+	struct SnapshotElement {
 		unsigned thread;
 		const char *table;
 		unsigned long long usTotal;
@@ -30,7 +30,7 @@ struct MySqlDaemon {
 	static boost::shared_ptr<MySql::Connection> createConnection();
 
 	// 异步接口。
-	static std::vector<SnapshotItem> snapshot();
+	static std::vector<SnapshotElement> snapshot();
 
 	static void waitForAllAsyncOperations();
 

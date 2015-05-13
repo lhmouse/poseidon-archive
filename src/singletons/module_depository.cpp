@@ -232,13 +232,13 @@ bool ModuleDepository::unload(void *baseAddr){
 	return g_moduleMap.erase<MIDX_BASE_ADDR>(baseAddr) > 0;
 }
 
-std::vector<ModuleDepository::SnapshotItem> ModuleDepository::snapshot(){
-	std::vector<SnapshotItem> ret;
+std::vector<ModuleDepository::SnapshotElement> ModuleDepository::snapshot(){
+	std::vector<SnapshotElement> ret;
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		for(AUTO(it, g_moduleMap.begin()); it != g_moduleMap.end(); ++it){
-			ret.push_back(SnapshotItem());
-			SnapshotItem &mi = ret.back();
+			ret.push_back(SnapshotElement());
+			SnapshotElement &mi = ret.back();
 
 			mi.realPath = it->realPath;
 			mi.baseAddr = it->baseAddr;

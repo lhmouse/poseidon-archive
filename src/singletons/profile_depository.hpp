@@ -10,7 +10,7 @@
 namespace Poseidon {
 
 struct ProfileDepository {
-	struct SnapshotItem {
+	struct SnapshotElement {
 		const char *file;
 		unsigned long line;
 		const char *func;
@@ -30,7 +30,7 @@ struct ProfileDepository {
 	static void accumulate(const char *file, unsigned long line, const char *func,
 		double total, double exclusive) NOEXCEPT;
 
-	static std::vector<SnapshotItem> snapshot();
+	static std::vector<SnapshotElement> snapshot();
 
 private:
 	ProfileDepository();

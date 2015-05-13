@@ -14,7 +14,7 @@ class TcpSessionBase;
 class SocketServerBase;
 
 struct EpollDaemon {
-	struct SnapshotItem {
+	struct SnapshotElement {
 		IpPort remote;
 		IpPort local;
 		boost::uint64_t msOnline;
@@ -25,7 +25,7 @@ struct EpollDaemon {
 
 	static boost::uint64_t getTcpRequestTimeout();
 
-	static std::vector<SnapshotItem> snapshot();
+	static std::vector<SnapshotElement> snapshot();
 
 	static void addSession(const boost::shared_ptr<TcpSessionBase> &session);
 	static void registerServer(boost::weak_ptr<const SocketServerBase> server);

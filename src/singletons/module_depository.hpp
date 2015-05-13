@@ -15,7 +15,7 @@ class Module;
 class ModuleRaiiBase;
 
 struct ModuleDepository {
-	struct SnapshotItem {
+	struct SnapshotElement {
 		SharedNts realPath;
 		void *baseAddr;
 		std::size_t refCount;
@@ -29,7 +29,7 @@ struct ModuleDepository {
 	static bool unload(const boost::shared_ptr<Module> &module);
 	static bool unload(void *baseAddr);
 
-	static std::vector<SnapshotItem> snapshot();
+	static std::vector<SnapshotElement> snapshot();
 
 private:
 	friend ModuleRaiiBase;
