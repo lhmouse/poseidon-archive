@@ -94,10 +94,10 @@ namespace WebSocket {
 		return Http::ST_OK;
 	}
 
-	LowLevelSession::LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent, std::string uri)
-		: Http::UpgradedLowLevelSessionBase(parent, STD_MOVE(uri))
+	LowLevelSession::LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent)
+		: Http::UpgradedLowLevelSessionBase(parent)
 		, m_sizeTotal(0), m_sizeExpecting(1), m_state(S_OPCODE)
-		, m_fin(false), m_opcode(OP_INVALID_OPCODE), m_payloadLen(0), m_payloadMask(0)
+		, m_fin(false), m_opcode(OP_INVALID_OPCODE), m_payloadSize(0), m_payloadMask(0)
 	{
 	}
 	LowLevelSession::~LowLevelSession(){
@@ -198,25 +198,25 @@ namespace WebSocket {
 					}
 
 					m_sizeExpecting = 1;
-					m_state = S_PAYLOAD_LEN;
+					m_state = S_PAYLOAD_SIZE;
 					break;
 
-				case S_PAYLOAD_LEN:
+				case S_PAYLOAD_SIZE:
 					ch = m_received.get();
 					if((ch & 0x80) == 0){
 						DEBUG_THROW(Exception, ST_ACCESS_DENIED, SSLIT("Non-masked frames not allowed"));
 					}
-					m_payloadLen = static_cast<unsigned char>(ch & 0x7F);
-					if(m_payloadLen >= 0x7E){
+					m_payloadSize = static_cast<unsigned char>(ch & 0x7F);
+					if(m_payloadSize >= 0x7E){
 						if(m_opcode & OP_FL_CONTROL){
 							DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Control frame too large"));
 						}
-						if(m_payloadLen == 0x7E){
+						if(m_payloadSize == 0x7E){
 							m_sizeExpecting = 2;
-							m_state = S_EX_PAYLOAD_LEN_16;
+							m_state = S_PAYLOAD_SIZE_16;
 						} else {
 							m_sizeExpecting = 8;
-							m_state = S_EX_PAYLOAD_LEN_64;
+							m_state = S_PAYLOAD_SIZE_64;
 						}
 					} else {
 						m_sizeExpecting = 4;
@@ -224,36 +224,36 @@ namespace WebSocket {
 					}
 					break;
 
-				case S_EX_PAYLOAD_LEN_16:
+				case S_PAYLOAD_SIZE_16:
 					m_received.get(&temp16, 2);
-					m_payloadLen = loadBe(temp16);
+					m_payloadSize = loadBe(temp16);
 
 					m_sizeExpecting = 4;
 					m_state = S_MASK;
 					break;
 
-				case S_EX_PAYLOAD_LEN_64:
+				case S_PAYLOAD_SIZE_64:
 					m_received.get(&temp64, 8);
-					m_payloadLen = loadBe(temp64);
+					m_payloadSize = loadBe(temp64);
 
 					m_sizeExpecting = 4;
 					m_state = S_MASK;
 					break;
 
 				case S_MASK:
-					LOG_POSEIDON_DEBUG("Payload length = ", m_payloadLen);
+					LOG_POSEIDON_DEBUG("Payload length = ", m_payloadSize);
 
 					m_received.get(&temp32, 4);
 					m_payloadMask = loadLe(temp32);
 
-					m_sizeExpecting = m_payloadLen;
+					m_sizeExpecting = m_payloadSize;
 					m_state = S_PAYLOAD;
 					break;
 
 				case S_PAYLOAD:
 					{
 						StreamBuffer payload;
-						for(boost::uint64_t i = 0; i < m_payloadLen; ++i){
+						for(boost::uint64_t i = 0; i < m_payloadSize; ++i){
 							payload.put(static_cast<unsigned char>(m_received.get()) ^ m_payloadMask);
 							m_payloadMask = (m_payloadMask << 24) | (m_payloadMask >> 8);
 						}
@@ -299,7 +299,7 @@ namespace WebSocket {
 
 					m_fin = false;
 					m_opcode = OP_INVALID_OPCODE;
-					m_payloadLen = 0;
+					m_payloadSize = 0;
 
 					m_sizeTotal = 0;
 					m_sizeExpecting = 1;
@@ -312,14 +312,12 @@ namespace WebSocket {
 				}
 			}
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"WebSocket::Exception thrown: URI = ", getUri(), ", statusCode = ", e.statusCode(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
 			onLowLevelError(e.statusCode(), e.what());
 			shutdownRead();
 			shutdownWrite();
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: URI = ", getUri(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 			onLowLevelError(ST_INTERNAL_ERROR, "");
 			shutdownRead();
 			shutdownWrite();

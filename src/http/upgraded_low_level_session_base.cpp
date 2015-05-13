@@ -8,9 +8,8 @@
 namespace Poseidon {
 
 namespace Http {
-	UpgradedLowLevelSessionBase::UpgradedLowLevelSessionBase(
-		const boost::shared_ptr<LowLevelSession> &parent, std::string uri)
-		: m_parent(parent), m_uri(STD_MOVE(uri))
+	UpgradedLowLevelSessionBase::UpgradedLowLevelSessionBase(const boost::shared_ptr<LowLevelSession> &parent)
+		: m_parent(parent)
 	{
 	}
 	UpgradedLowLevelSessionBase::~UpgradedLowLevelSessionBase(){
@@ -24,9 +23,7 @@ namespace Http {
 		(void)errCode;
 	}
 
-	void UpgradedLowLevelSessionBase::onInit(RequestHeaders requestHeaders,
-		std::vector<std::string> transferEncoding, StreamBuffer entity)
-	{
+	void UpgradedLowLevelSessionBase::onInit(RequestHeaders requestHeaders, std::vector<std::string> transferEncoding, StreamBuffer entity){
 		(void)requestHeaders;
 		(void)transferEncoding;
 		(void)entity;

@@ -27,9 +27,9 @@ namespace WebSocket {
 	private:
 		enum State {
 			S_OPCODE			= 0,
-			S_PAYLOAD_LEN		= 1,
-			S_EX_PAYLOAD_LEN_16	= 2,
-			S_EX_PAYLOAD_LEN_64	= 3,
+			S_PAYLOAD_SIZE		= 1,
+			S_PAYLOAD_SIZE_16	= 2,
+			S_PAYLOAD_SIZE_64	= 3,
 			S_MASK				= 4,
 			S_PAYLOAD			= 5,
 		};
@@ -46,11 +46,11 @@ namespace WebSocket {
 
 		bool m_fin;
 		OpCode m_opcode;
-		boost::uint64_t m_payloadLen;
+		boost::uint64_t m_payloadSize;
 		boost::uint32_t m_payloadMask;
 
 	public:
-		LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent, std::string uri);
+		explicit LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent);
 		~LowLevelSession();
 
 	private:

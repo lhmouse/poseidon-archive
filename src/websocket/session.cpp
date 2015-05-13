@@ -75,18 +75,16 @@ namespace WebSocket {
 			PROFILE_ME;
 
 			try {
-				LOG_POSEIDON_DEBUG("Dispatching request: URI = ", session->getUri(), ", payload size = ", m_payload.size());
+				LOG_POSEIDON_DEBUG("Dispatching request: payload size = ", m_payload.size());
 				session->onRequest(m_opcode, m_payload);
 				session->setTimeout(MainConfig::get().get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 			} catch(TryAgainLater &){
 				throw;
 			} catch(Exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"WebSocket::Exception thrown: URI = ", session->getUri(), ", statusCode = ", e.statusCode(), ", what = ", e.what());
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
 				session->shutdown(e.statusCode(), StreamBuffer(e.what()));
 			} catch(std::exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"std::exception thrown: URI = ", session->getUri(), ", what = ", e.what());
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 				session->shutdown(ST_INTERNAL_ERROR, StreamBuffer(e.what()));
 			}
 		}
@@ -115,8 +113,8 @@ namespace WebSocket {
 		}
 	};
 
-	Session::Session(const boost::shared_ptr<Http::LowLevelSession> &parent, std::string uri)
-		: LowLevelSession(parent, STD_MOVE(uri))
+	Session::Session(const boost::shared_ptr<Http::LowLevelSession> &parent)
+		: LowLevelSession(parent)
 	{
 	}
 	Session::~Session(){

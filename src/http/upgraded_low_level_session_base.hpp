@@ -20,10 +20,9 @@ namespace Http {
 
 	private:
 		const boost::weak_ptr<LowLevelSession> m_parent;
-		const std::string m_uri;
 
 	protected:
-		UpgradedLowLevelSessionBase(const boost::shared_ptr<LowLevelSession> &parent, std::string uri);
+		UpgradedLowLevelSessionBase(const boost::shared_ptr<LowLevelSession> &parent);
 		~UpgradedLowLevelSessionBase();
 
 	private:
@@ -31,8 +30,7 @@ namespace Http {
 		void onWriteHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
-		virtual void onInit(RequestHeaders requestHeaders,
-			std::vector<std::string> transferEncoding, StreamBuffer entity);
+		virtual void onInit(RequestHeaders requestHeaders, std::vector<std::string> transferEncoding, StreamBuffer entity);
 		virtual void onReadAvail(const void *data, std::size_t size) = 0;
 
 	public:
@@ -64,10 +62,6 @@ namespace Http {
 		}
 		boost::shared_ptr<LowLevelSession> getSafeParent(){
 			return boost::shared_ptr<LowLevelSession>(m_parent);
-		}
-
-		const std::string &getUri() const {
-			return m_uri;
 		}
 
 		void setTimeout(boost::uint64_t timeout);

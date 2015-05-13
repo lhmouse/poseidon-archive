@@ -15,7 +15,7 @@ namespace WebSocket {
 		class ErrorJob;
 
 	public:
-		Session(const boost::shared_ptr<Http::LowLevelSession> &parent, std::string uri);
+		explicit Session(const boost::shared_ptr<Http::LowLevelSession> &parent);
 		~Session();
 
 	protected:
