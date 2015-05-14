@@ -156,7 +156,7 @@ namespace WebSocket {
 
 	Session::Session(const boost::shared_ptr<Http::Session> &parent)
 		: Http::UpgradedSessionBase(parent)
-		, m_opcode(OP_INVALID_OPCODE)
+		, m_sizeTotal(0)
 	{
 	}
 	Session::~Session(){
