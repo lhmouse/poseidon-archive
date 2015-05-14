@@ -33,7 +33,7 @@ namespace WebSocket {
 		bool m_fin;
 		OpCode m_opcode;
 		boost::uint64_t m_frameSize;
-		boost::uint32_t m_frameMask;
+		boost::uint32_t m_mask;
 		boost::uint64_t m_frameOffset;
 
 	public:

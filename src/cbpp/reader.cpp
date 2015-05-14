@@ -94,6 +94,7 @@ namespace Cbpp {
 				} else {
 					ControlMessage req(m_queue.cut(m_payloadSize));
 					hasNextRequest = onControlMessage(req.controlCode, req.vintParam, STD_MOVE(req.stringParam));
+					m_payloadOffset = m_payloadSize;
 
 					m_sizeExpecting = 2;
 					m_state = S_PAYLOAD_SIZE;

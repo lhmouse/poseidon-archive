@@ -33,8 +33,6 @@ namespace WebSocket {
 				break;
 			}
 
-			StreamBuffer unmasked;
-
 			switch(m_state){
 				int ch;
 				boost::uint16_t temp16;
@@ -46,7 +44,7 @@ namespace WebSocket {
 				m_fin = false;
 				m_opcode = OP_INVALID_OPCODE;
 				m_frameSize = 0;
-				m_frameMask = 0;
+				m_mask = 0;
 				m_frameOffset = 0;
 
 				ch = m_queue.get();
@@ -104,10 +102,10 @@ namespace WebSocket {
 				break;
 
 			case S_MASK:
-				LOG_POSEIDON_DEBUG("FRAME size = ", m_frameSize);
+				LOG_POSEIDON_DEBUG("Frame size = ", m_frameSize);
 
 				m_queue.get(&temp32, 4);
-				m_frameMask = loadLe(temp32);
+				m_mask = loadLe(temp32);
 
 				onDataMessageHeader(m_opcode);
 
@@ -120,14 +118,14 @@ namespace WebSocket {
 				break;
 
 			case S_FRAME:
-				for(boost::uint64_t i = 0; i < m_frameSize; ++i){
-					unmasked.put(static_cast<unsigned char>(m_queue.get()) ^ m_frameMask);
-					m_frameMask = (m_frameMask << 24) | (m_frameMask >> 8);
-				}
-
 				if((m_opcode & OP_FL_CONTROL) == 0){
 					temp64 = std::min<boost::uint64_t>(m_queue.size(), m_frameSize - m_frameOffset);
-					onDataMessagePayload(m_wholeOffset, STD_MOVE(unmasked));
+					StreamBuffer payload;
+					for(std::size_t i = 0; i < temp64; ++i){
+						payload.put(static_cast<unsigned char>(m_queue.get()) ^ m_mask);
+						m_mask = (m_mask << 24) | (m_mask >> 8);
+					}
+					onDataMessagePayload(m_wholeOffset, STD_MOVE(payload));
 					m_wholeOffset += temp64;
 					m_frameOffset += temp64;
 
@@ -141,7 +139,14 @@ namespace WebSocket {
 						m_state = S_OPCODE;
 					}
 				} else {
-					hasNextRequest = onControlMessage(m_opcode, STD_MOVE(unmasked));
+					StreamBuffer payload;
+					for(std::size_t i = 0; i < m_frameSize; ++i){
+						payload.put(static_cast<unsigned char>(m_queue.get()) ^ m_mask);
+						m_mask = (m_mask << 24) | (m_mask >> 8);
+					}
+					hasNextRequest = onControlMessage(m_opcode, STD_MOVE(payload));
+					m_wholeOffset = m_frameSize;
+					m_frameOffset = m_frameSize;
 
 					m_sizeExpecting = 1;
 					m_state = S_OPCODE;
