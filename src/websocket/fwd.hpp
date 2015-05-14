@@ -9,7 +9,8 @@ namespace Poseidon {
 namespace WebSocket {
 	class Exception;
 
-	class LowLevelSession;
+	class Reader;
+	class Writer;
 	class Session;
 }
 

@@ -98,6 +98,7 @@ pkginclude_http_HEADERS = \
 pkginclude_websocketdir = $(pkgincludedir)/websocket
 pkginclude_websocket_HEADERS = \
 	src/websocket/fwd.hpp	\
+	src/websocket/handshake.hpp	\
 	src/websocket/reader.hpp	\
 	src/websocket/writer.hpp	\
 	src/websocket/session.hpp	\
@@ -207,6 +208,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/http/utilities.cpp	\
 	src/http/upgraded_session_base.cpp	\
 	src/http/exception.cpp	\
+	src/websocket/handshake.cpp	\
 	src/websocket/reader.cpp	\
 	src/websocket/writer.cpp	\
 	src/websocket/session.cpp	\
