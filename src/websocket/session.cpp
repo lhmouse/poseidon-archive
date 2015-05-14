@@ -216,7 +216,10 @@ namespace WebSocket {
 		PROFILE_ME;
 		LOG_POSEIDON_DEBUG("Control frame, opcode = ", m_opcode);
 
-		const AUTO(parent, getSafeParent());
+		const AUTO(parent, getParent());
+		if(!parent){
+			return;
+		}
 
 		SessionWriter writer(*this);
 
