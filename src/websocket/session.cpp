@@ -175,10 +175,13 @@ namespace WebSocket {
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"WebSocket::Exception thrown in WebSocket parser: statusCode = ", e.statusCode(), ", what = ", e.what());
-			enqueueJob(boost::make_shared<ErrorJob>(
-				virtualSharedFromThis<Session>(), e.statusCode(), StreamBuffer(e.what())));
-			shutdownRead();
-			shutdownWrite();
+			const AUTO(parent, getParent());
+			if(parent){
+				enqueueJob(boost::make_shared<ErrorJob>(
+					virtualSharedFromThis<Session>(), e.statusCode(), StreamBuffer(e.what())));
+				parent->shutdownRead();
+				parent->shutdownWrite();
+			}
 		}
 	}
 
