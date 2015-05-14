@@ -22,7 +22,7 @@ namespace WebSocket {
 		}
 	}
 
-	void Reader::putEncodedData(StreamBuffer encoded){
+	bool Reader::putEncodedData(StreamBuffer encoded){
 		PROFILE_ME;
 
 		m_queue.splice(encoded);
@@ -158,6 +158,8 @@ namespace WebSocket {
 				std::abort();
 			}
 		} while(hasNextRequest);
+
+		return hasNextRequest;
 	}
 }
 

@@ -207,7 +207,7 @@ namespace Http {
 		PROFILE_ME;
 
 		// epoll 线程访问不需要锁。
-		const AUTO(upgradedSession, m_upgradedSession);
+		AUTO(upgradedSession, m_upgradedSession);
 		if(upgradedSession){
 			upgradedSession->onReadAvail(data, size);
 			return;
@@ -227,6 +227,17 @@ namespace Http {
 				virtualSharedFromThis<Session>(), e.statusCode(), e.headers()));
 			shutdownRead();
 			shutdownWrite();
+		}
+
+		upgradedSession = m_upgradedSession;
+		if(upgradedSession){
+			AUTO_REF(queue, ServerReader::getQueue());
+			const AUTO(queueSize, queue.size());
+			if(queueSize != 0){
+				boost::scoped_array<char> temp(new char[queueSize]);
+				queue.get(temp.get(), queueSize);
+				upgradedSession->onReadAvail(temp.get(), queueSize);
+			}
 		}
 	}
 
@@ -262,15 +273,6 @@ namespace Http {
 		if(upgradedSession){
 			// epoll 线程访问不需要锁。
 			m_upgradedSession = STD_MOVE(upgradedSession);
-
-			AUTO_REF(queue, getQueue());
-			const AUTO(queueSize, queue.size());
-			if(queueSize != 0){
-				boost::scoped_array<char> temp(new char[queueSize]);
-				queue.get(temp.get(), queueSize);
-				m_upgradedSession->onReadAvail(temp.get(), queueSize);
-			}
-			assert(queue.empty());
 			return false;
 		}
 

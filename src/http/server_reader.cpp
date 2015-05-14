@@ -26,7 +26,7 @@ namespace Http {
 		}
 	}
 
-	void ServerReader::putEncodedData(StreamBuffer encoded){
+	bool ServerReader::putEncodedData(StreamBuffer encoded){
 		PROFILE_ME;
 
 		m_queue.splice(encoded);
@@ -282,6 +282,8 @@ namespace Http {
 				std::abort();
 			}
 		} while(hasNextRequest);
+
+		return hasNextRequest;
 	}
 }
 

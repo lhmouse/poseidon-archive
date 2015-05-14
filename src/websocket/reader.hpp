@@ -49,7 +49,7 @@ namespace WebSocket {
 		virtual bool onControlMessage(OpCode opcode, StreamBuffer payload) = 0;
 
 	public:
-		void putEncodedData(StreamBuffer encoded);
+		bool putEncodedData(StreamBuffer encoded);
 	};
 }
 

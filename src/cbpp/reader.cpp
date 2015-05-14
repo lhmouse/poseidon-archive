@@ -21,7 +21,7 @@ namespace Cbpp {
 		}
 	}
 
-	void Reader::putEncodedData(StreamBuffer encoded){
+	bool Reader::putEncodedData(StreamBuffer encoded){
 		PROFILE_ME;
 
 		m_queue.splice(encoded);
@@ -106,6 +106,8 @@ namespace Cbpp {
 				std::abort();
 			}
 		} while(hasNextRequest);
+
+		return hasNextRequest;
 	}
 }
 

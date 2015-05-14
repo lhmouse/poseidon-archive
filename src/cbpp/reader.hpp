@@ -55,7 +55,7 @@ namespace Cbpp {
 			return m_messageId;
 		}
 
-		void putEncodedData(StreamBuffer encoded);
+		bool putEncodedData(StreamBuffer encoded);
 	};
 }
 
