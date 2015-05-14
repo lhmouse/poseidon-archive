@@ -47,7 +47,7 @@ namespace WebSocket {
 		ret.headers.set("Upgrade", "websocket");
 		ret.headers.set("Connection", "Upgrade");
 		ret.headers.set("Sec-WebSocket-Accept", STD_MOVE(secWebSocketAccept));
-		ret.statusCode = Http::ST_OK;
+		ret.statusCode = Http::ST_SWITCHING_PROTOCOLS;
 		return ret;
 	}
 }
