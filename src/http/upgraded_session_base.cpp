@@ -68,7 +68,10 @@ namespace Http {
 	}
 
 	void UpgradedSessionBase::setTimeout(boost::uint64_t timeout){
-		const AUTO(parent, getSafeParent());
+		const AUTO(parent, getParent());
+		if(!parent){
+			return;
+		}
 		parent->TcpSessionBase::setTimeout(timeout);
 	}
 }
