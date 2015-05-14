@@ -21,6 +21,7 @@ namespace Cbpp {
 		class ErrorJob;
 
 	private:
+		boost::uint64_t m_sizeTotal;
 		unsigned m_messageId;
 		StreamBuffer m_payload;
 
@@ -35,9 +36,9 @@ namespace Cbpp {
 		// Reader
 		void onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) OVERRIDE;
 		void onDataMessagePayload(boost::uint64_t payloadOffset, StreamBuffer payload) OVERRIDE;
-		void onDataMessageEnd(boost::uint64_t payloadSize) OVERRIDE;
+		bool onDataMessageEnd(boost::uint64_t payloadSize) OVERRIDE;
 
-		void onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) OVERRIDE;
+		bool onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) OVERRIDE;
 
 		// 可覆写。
 		virtual void onSyncDataMessage(boost::uint16_t messageId, const StreamBuffer &payload) = 0;

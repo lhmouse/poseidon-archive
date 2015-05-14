@@ -47,9 +47,14 @@ namespace Cbpp {
 				} catch(Exception &e){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 						"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
-					session->sendError(ControlMessage::ID, e.statusCode(), e.what());
-					session->shutdownRead();
-					session->shutdownWrite();
+					try {
+						session->sendError(ControlMessage::ID, e.statusCode(), e.what());
+						session->shutdownRead();
+						session->shutdownWrite();
+					} catch(...){
+						session->forceShutdown();
+					}
+					throw;
 				} catch(std::exception &e){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 					session->forceShutdown();
@@ -160,7 +165,7 @@ namespace Cbpp {
 
 	Session::Session(UniqueFile socket)
 		: TcpSessionBase(STD_MOVE(socket))
-		, m_messageId(0)
+		, m_sizeTotal(0), m_messageId(0), m_payload()
 	{
 	}
 	Session::~Session(){
@@ -169,15 +174,22 @@ namespace Cbpp {
 	void Session::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
-		Reader::putEncodedData(StreamBuffer(data, size));
-	}
-	void Session::onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize){
-		PROFILE_ME;
+		try {
+			const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("cbpp_max_request_length", 16384));
+			if(m_sizeTotal > maxRequestLength){
+				DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
+			}
 
-		const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("cbpp_max_request_length", 16384));
-		if(payloadSize > maxRequestLength){
-			DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
+			Reader::putEncodedData(StreamBuffer(data, size));
+		} catch(Exception &e){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
+			enqueueJob(boost::make_shared<ErrorJob>(
+				virtualSharedFromThis<Session>(), Reader::getMessageId(), e.statusCode(), e.what()));
 		}
+	}
+	void Session::onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t /* payloadSize */){
+		PROFILE_ME;
 
 		m_messageId = messageId;
 		m_payload.clear();
@@ -185,25 +197,28 @@ namespace Cbpp {
 	void Session::onDataMessagePayload(boost::uint64_t /* payloadOffset */, StreamBuffer payload){
 		PROFILE_ME;
 
-		const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("cbpp_max_request_length", 16384));
-		if(m_payload.size() + payload.size() > maxRequestLength){
-			DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
-		}
-
 		m_payload.splice(payload);
 	}
-	void Session::onDataMessageEnd(boost::uint64_t /* payloadSize */){
+	bool Session::onDataMessageEnd(boost::uint64_t /* payloadSize */){
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<DataMessageJob>(
 			virtualSharedFromThis<Session>(), m_messageId, STD_MOVE(m_payload)));
+		m_sizeTotal = 0;
+
+		return true;
 	}
 
-	void Session::onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
+	bool Session::onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<ControlMessageJob>(
 			virtualSharedFromThis<Session>(), controlCode, vintParam, STD_MOVE(stringParam)));
+		m_sizeTotal = 0;
+		m_messageId = 0;
+		m_payload.clear();
+
+		return true;
 	}
 
 	void Session::onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, const std::string &stringParam){

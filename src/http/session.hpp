@@ -4,32 +4,67 @@
 #ifndef POSEIDON_HTTP_SESSION_HPP_
 #define POSEIDON_HTTP_SESSION_HPP_
 
-#include "low_level_session.hpp"
+#include <poseidon/mutex.hpp>
+#include "../tcp_session_base.hpp"
+#include "server_reader.hpp"
+#include "request_headers.hpp"
+#include "response_headers.hpp"
+#include "status_codes.hpp"
 
 namespace Poseidon {
 
 namespace Http {
-	class Session : public LowLevelSession {
+	class UpgradedSessionBase;
+
+	class Session : public TcpSessionBase, private ServerReader {
 	private:
 		class ContinueJob;
+
 		class RequestJob;
+
 		class ErrorJob;
+
+	private:
+		boost::uint64_t m_sizeTotal;
+		RequestHeaders m_requestHeaders;
+		std::string m_transferEncoding;
+		StreamBuffer m_entity;
+
+		mutable Mutex m_upgradedSessionMutex;
+		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
 	public:
 		explicit Session(UniqueFile socket);
 		~Session();
 
 	protected:
-		// transferEncoding 确保已被转换为小写、已排序，并且 identity 被移除（如果有的话）。
-		boost::shared_ptr<UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(RequestHeaders &requestHeaders,
-			const std::vector<std::string> &transferEncoding, boost::uint64_t contentLength) OVERRIDE;
+		void onReadHup() NOEXCEPT OVERRIDE;
+		void onWriteHup() NOEXCEPT OVERRIDE;
+		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
-		void onLowLevelRequest(RequestHeaders requestHeaders,
-			std::vector<std::string> transferEncoding, StreamBuffer entity) OVERRIDE;
-		void onLowLevelError(StatusCode statusCode, OptionalMap headers) OVERRIDE;
+		// TcpSessionBase
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
-		virtual void onRequest(const RequestHeaders &requestHeaders,
-			const std::vector<std::string> &transferEncoding, const StreamBuffer &entity) = 0;
+		// ServerReader
+		void onRequestHeaders(RequestHeaders requestHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;
+		void onRequestEntity(boost::uint64_t entityOffset, StreamBuffer entity) OVERRIDE;
+		bool onRequestEnd(boost::uint64_t contentLength, OptionalMap headers) OVERRIDE;
+
+		// 可覆写。
+		virtual boost::shared_ptr<UpgradedSessionBase> predispatchRequest(RequestHeaders &requestHeaders, StreamBuffer &entity);
+
+		virtual void onSyncRequest(const RequestHeaders &requestHeaders, const StreamBuffer &entity) = 0;
+
+	public:
+		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
+
+		bool send(ResponseHeaders responseHeaders, StreamBuffer entity = StreamBuffer());
+		bool send(StatusCode statusCode, OptionalMap headers = OptionalMap(), StreamBuffer entity = StreamBuffer());
+		bool sendDefault(StatusCode statusCode, OptionalMap headers = OptionalMap());
+
+		bool send(StatusCode statusCode, StreamBuffer entity){
+			return send(statusCode, OptionalMap(), STD_MOVE(entity));
+		}
 	};
 }
 

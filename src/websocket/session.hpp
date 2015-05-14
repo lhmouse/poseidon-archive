@@ -4,25 +4,58 @@
 #ifndef POSEIDON_WEBSOCKET_SESSION_HPP_
 #define POSEIDON_WEBSOCKET_SESSION_HPP_
 
-#include "low_level_session.hpp"
+#include "../http/upgraded_session_base.hpp"
+#include "opcodes.hpp"
+#include "status_codes.hpp"
+#include "reader.hpp"
 
 namespace Poseidon {
 
 namespace WebSocket {
-	class Session : public LowLevelSession {
+	class Session : public Http::UpgradedSessionBase, private Reader {
 	private:
-		class RequestJob;
+		class DataMessageJob;
+
+		class ControlMessageJob;
+
 		class ErrorJob;
 
+	private:
+		boost::uint64_t m_sizeTotal;
+		OpCode m_opcode;
+		StreamBuffer m_payload;
+
 	public:
-		explicit Session(const boost::shared_ptr<Http::LowLevelSession> &parent);
+		explicit Session(const boost::shared_ptr<Http::Session> &parent);
 		~Session();
 
 	protected:
-		void onLowLevelRequest(OpCode opcode, StreamBuffer payload) OVERRIDE;
-		void onLowLevelError(StatusCode statusCode, const char *reason) OVERRIDE;
+		// UpgradedSessionBase
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
-		virtual void onRequest(OpCode opcode, const StreamBuffer &payload) = 0;
+		// Reader
+		void onDataMessageHeader(OpCode opcode) OVERRIDE;
+		void onDataMessagePayload(boost::uint64_t wholeOffset, StreamBuffer payload) OVERRIDE;
+		bool onDataMessageEnd(boost::uint64_t wholeSize) OVERRIDE;
+
+		bool onControlMessage(OpCode opcode, StreamBuffer payload) OVERRIDE;
+
+		// 可覆写。
+		virtual void onSyncDataMessage(OpCode opcode, const StreamBuffer &payload) = 0;
+
+		virtual void onSyncControlMessage(OpCode opcode, const StreamBuffer &payload);
+
+	public:
+		bool shutdownRead() NOEXCEPT OVERRIDE {
+			return shutdown(ST_NORMAL_CLOSURE);
+		}
+		bool shutdownWrite() NOEXCEPT OVERRIDE {
+			return shutdown(ST_NORMAL_CLOSURE);
+		}
+
+		bool send(StreamBuffer payload, bool binary, bool masked = false);
+
+		bool shutdown(StatusCode statusCode, StreamBuffer additional = StreamBuffer()) NOEXCEPT;
 	};
 }
 

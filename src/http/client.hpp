@@ -4,16 +4,20 @@
 #ifndef POSEIDON_HTTP_CLIENT_HPP_
 #define POSEIDON_HTTP_CLIENT_HPP_
 
-#include "low_level_client.hpp"
+#include "../tcp_client_base.hpp"
+#include "client_reader.hpp"
+#include "request_headers.hpp"
+#include "response_headers.hpp"
+#include "status_codes.hpp"
 
 namespace Poseidon {
 
 namespace Http {
-	class Client : public LowLevelClient {
+	class Client : public TcpClientBase, private ClientReader {
 	private:
-		class ResponseHeaderJob;
-		class EntityJob;
-		class ResponseEofJob;
+		class ResponseHeadersJob;
+		class ResponseEntityJob;
+		class ResponseEndJob;
 
 	protected:
 		Client(const SockAddr &addr, bool useSsl);
@@ -21,23 +25,18 @@ namespace Http {
 		~Client();
 
 	protected:
-		void onLowLevelResponseHeaders(ResponseHeaders responseHeaders,
-			std::vector<std::string> transferEncoding, boost::uint64_t contentLength) OVERRIDE;
-		void onLowLevelEntity(boost::uint64_t contentOffset, StreamBuffer entity) OVERRIDE;
-		void onLowLevelResponseEof(boost::uint64_t realContentLength, OptionalMap headers) OVERRIDE;
+		// TcpClientBase
+		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
-		// transferEncoding 确保已被转换为小写、已排序，并且 identity 被移除（如果有的话）。
-		// 如果 Transfer-Encoding 为空或者不是 identity， contentLength 的值为 CONTENT_CHUNKED。
-		// 如果没有指定 Content-Length 同时也不是 chunked，contentLength 的值为 CONTENT_TILL_EOF。
-		virtual void onResponseHeaders(const ResponseHeaders &responseHeaders,
-			const std::vector<std::string> &transferEncoding, boost::uint64_t contentLength) = 0;
-		// 报文可能分几次收到。
-		virtual void onEntity(boost::uint64_t contentOffset, const StreamBuffer &entity) = 0;
-		// 报文接收完毕。
-		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_TILL_EOF，此处 realContentLength 即为实际接收大小。
-		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
-		// chunked 允许追加报头。
-		virtual void onResponseEof(boost::uint64_t realContentLength, const OptionalMap &headers) = 0;
+		// ClientReader
+		void onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;
+		void onResponseEntity(boost::uint64_t entityOffset, StreamBuffer entity) OVERRIDE;
+		bool onResponseEnd(boost::uint64_t contentLength, OptionalMap headers) OVERRIDE;
+
+		// 可覆写。
+		virtual void onSyncResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) = 0;
+		virtual void onSyncResponseEntity(boost::uint64_t entityOffset, StreamBuffer entity) = 0;
+		virtual void onSyncResponseEnd(boost::uint64_t contentLength, OptionalMap headers) = 0;
 	};
 }
 

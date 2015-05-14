@@ -44,12 +44,19 @@ namespace Cbpp {
 					perform(client);
 				} catch(TryAgainLater &){
 					throw;
+				} catch(Exception &e){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+						"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
+					client->forceShutdown();
+					throw;
 				} catch(std::exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+						"std::exception thrown: what = ", e.what());
 					client->forceShutdown();
 					throw;
 				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+						"Unknown exception thrown.");
 					client->forceShutdown();
 					throw;
 				}
@@ -201,18 +208,22 @@ namespace Cbpp {
 		enqueueJob(boost::make_shared<DataMessagePayloadJob>(
 			virtualSharedFromThis<Client>(), payloadOffset, STD_MOVE(payload)));
 	}
-	void Client::onDataMessageEnd(boost::uint64_t payloadSize){
+	bool Client::onDataMessageEnd(boost::uint64_t payloadSize){
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<DataMessageEndJob>(
 			virtualSharedFromThis<Client>(), payloadSize));
+
+		return true;
 	}
 
-	void Client::onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
+	bool Client::onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<ErrorMessageJob>(
 			virtualSharedFromThis<Client>(), controlCode, vintParam, STD_MOVE(stringParam)));
+
+		return true;
 	}
 
 	void Client::onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason){

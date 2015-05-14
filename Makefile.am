@@ -79,24 +79,27 @@ pkginclude_singletons_HEADERS = \
 pkginclude_httpdir = $(pkgincludedir)/http
 pkginclude_http_HEADERS = \
 	src/http/fwd.hpp	\
+	src/http/const_strings.hpp	\
 	src/http/request_headers.hpp	\
 	src/http/response_headers.hpp	\
-	src/http/low_level_session.hpp	\
+	src/http/server_reader.hpp	\
+	src/http/server_writer.hpp	\
+	src/http/client_reader.hpp	\
+	src/http/client_writer.hpp	\
 	src/http/session.hpp	\
-	src/http/low_level_client.hpp	\
 	src/http/client.hpp	\
 	src/http/authorization.hpp	\
 	src/http/verbs.hpp	\
 	src/http/status_codes.hpp	\
 	src/http/exception.hpp	\
 	src/http/utilities.hpp	\
-	src/http/chunked_writer.hpp	\
-	src/http/upgraded_low_level_session_base.hpp
+	src/http/upgraded_session_base.hpp
 
 pkginclude_websocketdir = $(pkgincludedir)/websocket
 pkginclude_websocket_HEADERS = \
 	src/websocket/fwd.hpp	\
-	src/websocket/low_level_session.hpp	\
+	src/websocket/reader.hpp	\
+	src/websocket/writer.hpp	\
 	src/websocket/session.hpp	\
 	src/websocket/opcodes.hpp	\
 	src/websocket/status_codes.hpp	\
@@ -191,18 +194,21 @@ lib_libposeidon_main_la_SOURCES = \
 	src/cbpp/session.cpp	\
 	src/cbpp/client.cpp	\
 	src/cbpp/exception.cpp	\
-	src/http/low_level_session.cpp	\
+	src/http/const_strings.cpp	\
+	src/http/server_reader.cpp	\
+	src/http/server_writer.cpp	\
+	src/http/client_reader.cpp	\
+	src/http/client_writer.cpp	\
 	src/http/session.cpp	\
-	src/http/low_level_client.cpp	\
 	src/http/client.cpp	\
 	src/http/authorization.cpp	\
 	src/http/status_codes.cpp	\
 	src/http/verbs.cpp	\
 	src/http/utilities.cpp	\
-	src/http/chunked_writer.cpp	\
-	src/http/upgraded_low_level_session_base.cpp	\
+	src/http/upgraded_session_base.cpp	\
 	src/http/exception.cpp	\
-	src/websocket/low_level_session.cpp	\
+	src/websocket/reader.cpp	\
+	src/websocket/writer.cpp	\
 	src/websocket/session.cpp	\
 	src/websocket/exception.cpp	\
 	src/mysql/object_base.cpp	\

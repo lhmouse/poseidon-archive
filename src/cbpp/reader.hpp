@@ -1,3 +1,6 @@
+// 这个文件是 Poseidon 服务器应用程序框架的一部分。
+// Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
+
 #ifndef POSEIDON_CBPP_READER_HPP_
 #define POSEIDON_CBPP_READER_HPP_
 
@@ -19,7 +22,7 @@ namespace Cbpp {
 		};
 
 	private:
-		StreamBuffer m_internal;
+		StreamBuffer m_queue;
 
 		boost::uint64_t m_sizeExpecting;
 		State m_state;
@@ -35,11 +38,23 @@ namespace Cbpp {
 	protected:
 		virtual void onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) = 0;
 		virtual void onDataMessagePayload(boost::uint64_t payloadOffset, StreamBuffer payload) = 0;
-		virtual void onDataMessageEnd(boost::uint64_t payloadSize) = 0;
+		// 以下两个回调返回 false 导致于当前消息终止后退出循环。
+		virtual bool onDataMessageEnd(boost::uint64_t payloadSize) = 0;
 
-		virtual void onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) = 0;
+		virtual bool onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) = 0;
 
 	public:
+		const StreamBuffer &getQueue() const {
+			return m_queue;
+		}
+		StreamBuffer &getQueue(){
+			return m_queue;
+		}
+
+		unsigned getMessageId() const {
+			return m_messageId;
+		}
+
 		void putEncodedData(StreamBuffer encoded);
 	};
 }

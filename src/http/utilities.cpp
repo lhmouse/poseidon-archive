@@ -127,7 +127,7 @@ namespace Http {
 		OptionalMap ret;
 		const AUTO(parts, explode<std::string>('&', encoded));
 		for(AUTO(it, parts.begin()); it != parts.end(); ++it){
-			const std::size_t pos = it->find('=');
+			const AUTO(pos, it->find('='));
 			if(pos == std::string::npos){
 				ret.set(SharedNts(urlDecode(*it)), VAL_INIT);
 			} else {

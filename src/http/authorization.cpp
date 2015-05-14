@@ -65,7 +65,7 @@ namespace Http {
 			return std::make_pair(AUTH_REQUIRED, NULLPTR);
 		}
 
-		const std::size_t pos = authHeader.find(' ');
+		const AUTO(pos, authHeader.find(' '));
 		if(pos == std::string::npos){
 			return std::make_pair(AUTH_INVALID_HEADER, NULLPTR);
 		}

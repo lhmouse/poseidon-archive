@@ -37,9 +37,9 @@ namespace Cbpp {
 		// Reader
 		void onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) OVERRIDE;
 		void onDataMessagePayload(boost::uint64_t payloadOffset, StreamBuffer payload) OVERRIDE;
-		void onDataMessageEnd(boost::uint64_t payloadSize) OVERRIDE;
+		bool onDataMessageEnd(boost::uint64_t payloadSize) OVERRIDE;
 
-		void onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) OVERRIDE;
+		bool onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) OVERRIDE;
 
 		// 可覆写。
 		virtual void onSyncDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) = 0;

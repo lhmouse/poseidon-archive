@@ -60,20 +60,16 @@ namespace {
 		}
 
 	protected:
-		boost::shared_ptr<Http::UpgradedLowLevelSessionBase> onLowLevelRequestHeaders(Http::RequestHeaders &requestHeaders,
-			const std::vector<std::string> &transferEncoding, boost::uint64_t contentLength) OVERRIDE
-		{
+		void onRequestHeaders(Http::RequestHeaders requestHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE {
 			checkAndThrowIfUnauthorized(m_authInfo, getRemoteInfo(), requestHeaders);
 
-			return Http::Session::onLowLevelRequestHeaders(requestHeaders, transferEncoding, contentLength);
+			Http::Session::onRequestHeaders(STD_MOVE(requestHeaders), STD_MOVE(transferEncoding), contentLength);
 		}
 
-		void onRequest(const Http::RequestHeaders &requestHeaders,
-			const std::vector<std::string> & /* transferEncoding */, const StreamBuffer & /* entity */) OVERRIDE
-		{
+		void onSyncRequest(const Http::RequestHeaders &requestHeaders, const StreamBuffer &  entity ) OVERRIDE {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", getRemoteInfo());
-
+LOG_POSEIDON_FATAL("entity = ", entity.dump());
 			try {
 				AUTO(uri, Http::urlDecode(requestHeaders.uri));
 				if((uri.size() < m_prefix.size()) || (uri.compare(0, m_prefix.size(), m_prefix) != 0)){

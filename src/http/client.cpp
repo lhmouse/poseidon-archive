@@ -1,5 +1,6 @@
 #include "../precompiled.hpp"
 #include "client.hpp"
+#include "client_writer.hpp"
 #include "exception.hpp"
 #include "status_codes.hpp"
 #include "../log.hpp"
@@ -50,39 +51,55 @@ namespace Http {
 				}
 			}
 		};
+
+		class SessionWriter : public ClientWriter {
+		private:
+			TcpSessionBase *m_session;
+
+		public:
+			explicit SessionWriter(TcpSessionBase &session)
+				: m_session(&session)
+			{
+			}
+
+		protected:
+			long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE {
+				PROFILE_ME;
+
+				return m_session->send(STD_MOVE(encoded));
+			}
+		};
 	}
 
-	class Client::ResponseHeaderJob : public ClientJobBase {
+	class Client::ResponseHeadersJob : public ClientJobBase {
 	private:
 		const ResponseHeaders m_responseHeaders;
-		const std::vector<std::string> m_transferEncoding;
+		const std::string m_transferEncoding;
 		const boost::uint64_t m_contentLength;
 
 	public:
-		ResponseHeaderJob(const boost::shared_ptr<Client> &client, ResponseHeaders responseHeaders,
-			std::vector<std::string> m_transferEncoding, boost::uint64_t contentLength)
+		ResponseHeadersJob(const boost::shared_ptr<Client> &client,
+			ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength)
 			: ClientJobBase(client)
-			, m_responseHeaders(STD_MOVE(responseHeaders))
-			, m_transferEncoding(STD_MOVE(m_transferEncoding)), m_contentLength(contentLength)
+			, m_responseHeaders(STD_MOVE(responseHeaders)), m_transferEncoding(STD_MOVE(transferEncoding)), m_contentLength(contentLength)
 		{
 		}
 
 	protected:
 		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
 			PROFILE_ME;
-			LOG_POSEIDON_DEBUG("Dispatching response header: statusCode = ", m_responseHeaders.statusCode);
 
-			client->onResponseHeaders(m_responseHeaders, m_transferEncoding, m_contentLength);
+			client->onSyncResponseHeaders(m_responseHeaders, m_transferEncoding, m_contentLength);
 		}
 	};
 
-	class Client::EntityJob : public ClientJobBase {
+	class Client::ResponseEntityJob : public ClientJobBase {
 	private:
 		const boost::uint64_t m_contentOffset;
 		const StreamBuffer m_entity;
 
 	public:
-		EntityJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentOffset, StreamBuffer entity)
+		ResponseEntityJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentOffset, StreamBuffer entity)
 			: ClientJobBase(client)
 			, m_contentOffset(contentOffset), m_entity(STD_MOVE(entity))
 		{
@@ -91,63 +108,66 @@ namespace Http {
 	protected:
 		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
 			PROFILE_ME;
-			LOG_POSEIDON_DEBUG("Dispatching response entity: contentOffset = ", m_contentOffset, ", size = ", m_entity.size());
 
-			client->onEntity(m_contentOffset, m_entity);
+			client->onSyncResponseEntity(m_contentOffset, m_entity);
 		}
 	};
 
-	class Client::ResponseEofJob : public ClientJobBase {
+	class Client::ResponseEndJob : public ClientJobBase {
 	private:
-		const boost::uint64_t m_realContentLength;
+		const boost::uint64_t m_contentLength;
 		const OptionalMap m_headers;
 
 	public:
-		ResponseEofJob(const boost::shared_ptr<Client> &client, boost::uint64_t realContentLength, OptionalMap headers)
+		ResponseEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentLength, OptionalMap headers)
 			: ClientJobBase(client)
-			, m_realContentLength(realContentLength), m_headers(STD_MOVE(headers))
+			, m_contentLength(contentLength), m_headers(STD_MOVE(headers))
 		{
 		}
 
 	protected:
 		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
 			PROFILE_ME;
-			LOG_POSEIDON_DEBUG("Dispatching chunked trailer");
 
-			client->onResponseEof(m_realContentLength, m_headers);
+			client->onSyncResponseEnd(m_contentLength, m_headers);
 		}
 	};
 
 	Client::Client(const SockAddr &addr, bool useSsl)
-		: LowLevelClient(addr, useSsl)
+		: TcpClientBase(addr, useSsl)
 	{
 	}
 	Client::Client(const IpPort &addr, bool useSsl)
-		: LowLevelClient(addr, useSsl)
+		: TcpClientBase(addr, useSsl)
 	{
 	}
 	Client::~Client(){
 	}
 
-	void Client::onLowLevelResponseHeaders(ResponseHeaders responseHeaders,
-		std::vector<std::string> transferEncoding, boost::uint64_t contentLength)
-	{
+	void Client::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ResponseHeaderJob>(
+		ClientReader::putEncodedData(StreamBuffer(data, size));
+	}
+	void Client::onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength){
+		PROFILE_ME;
+
+		enqueueJob(boost::make_shared<ResponseHeadersJob>(
 			virtualSharedFromThis<Client>(), STD_MOVE(responseHeaders), STD_MOVE(transferEncoding), contentLength));
 	}
-	void Client::onLowLevelEntity(boost::uint64_t contentOffset, StreamBuffer entity){
+	void Client::onResponseEntity(boost::uint64_t entityOffset, StreamBuffer entity){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<EntityJob>(
-			virtualSharedFromThis<Client>(), contentOffset, STD_MOVE(entity)));
+		enqueueJob(boost::make_shared<ResponseEntityJob>(
+			virtualSharedFromThis<Client>(), entityOffset, STD_MOVE(entity)));
 	}
-	void Client::onLowLevelResponseEof(boost::uint64_t realContentLength, OptionalMap headers){
+	bool Client::onResponseEnd(boost::uint64_t contentLength, OptionalMap headers){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ResponseEofJob>(
-			virtualSharedFromThis<Client>(), realContentLength, STD_MOVE(headers)));
+		enqueueJob(boost::make_shared<ResponseEndJob>(
+			virtualSharedFromThis<Client>(), contentLength, STD_MOVE(headers)));
+
+		return true;
 	}
 }
 
