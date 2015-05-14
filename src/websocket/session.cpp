@@ -253,14 +253,19 @@ namespace WebSocket {
 	bool Session::shutdown(StatusCode statusCode, StreamBuffer additional) NOEXCEPT {
 		PROFILE_ME;
 
+		const AUTO(parent, getParent());
+		if(!parent){
+			return false;
+		}
+
 		try {
 			SessionWriter writer(*this);
 			writer.putCloseMessage(statusCode, STD_MOVE(additional));
-			shutdownRead();
-			return shutdownWrite();
+			parent->shutdownRead();
+			return parent->shutdownWrite();
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-			forceShutdown();
+			parent->forceShutdown();
 			return false;
 		}
 	}
