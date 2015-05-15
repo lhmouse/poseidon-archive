@@ -177,12 +177,17 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_
 	AUTO(category, job->getCategory());
 
 	const Mutex::UniqueLock lock(g_mutex);
-	const AUTO(range, g_jobMap.equalRange<1>(category));
-	for(AUTO(it, range.first); it != range.second; ++it){
-		if(dueTime > it->dueTime){
-			continue;
+	{
+		const AUTO(range, g_jobMap.equalRange<1>(category));
+		for(AUTO(it, range.first); it != range.second; ++it){
+			if(dueTime > it->dueTime){
+				continue;
+			}
+			dueTime = it->dueTime + 1;
 		}
-		dueTime = it->dueTime + 1;
+		if(isWeakPtrEmpty(category)){
+			category = job;
+		}
 	}
 	g_jobMap.insert(JobElement(STD_MOVE(job), STD_MOVE(withdrawn), dueTime, STD_MOVE(category)));
 	g_newJob.signal();
