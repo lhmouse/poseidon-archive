@@ -4,7 +4,7 @@
 #ifndef POSEIDON_HTTP_SESSION_HPP_
 #define POSEIDON_HTTP_SESSION_HPP_
 
-#include <poseidon/mutex.hpp>
+#include "../mutex.hpp"
 #include "../tcp_session_base.hpp"
 #include "server_reader.hpp"
 #include "request_headers.hpp"
