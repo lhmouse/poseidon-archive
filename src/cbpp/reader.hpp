@@ -18,7 +18,8 @@ namespace Cbpp {
 			S_PAYLOAD_SIZE		= 0,
 			S_EX_PAYLOAD_SIZE	= 1,
 			S_MESSAGE_ID		= 2,
-			S_PAYLOAD			= 3,
+			S_DATA_PAYLOAD		= 3,
+			S_CONTROL_PAYLOAD	= 4,
 		};
 
 	private:

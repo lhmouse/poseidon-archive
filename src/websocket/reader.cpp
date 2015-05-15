@@ -111,14 +111,15 @@ namespace WebSocket {
 
 				if((m_opcode & OP_FL_CONTROL) == 0){
 					m_sizeExpecting = std::min<boost::uint64_t>(m_frameSize, 1024);
+					m_state = S_DATA_FRAME;
 				} else {
 					m_sizeExpecting = m_frameSize;
+					m_state = S_CONTROL_FRAME;
 				}
-				m_state = S_FRAME;
 				break;
 
-			case S_FRAME:
-				if((m_opcode & OP_FL_CONTROL) == 0){
+			case S_DATA_FRAME:
+				{
 					temp64 = std::min<boost::uint64_t>(m_queue.size(), m_frameSize - m_frameOffset);
 					StreamBuffer payload;
 					for(std::size_t i = 0; i < temp64; ++i){
@@ -138,7 +139,11 @@ namespace WebSocket {
 						m_sizeExpecting = 1;
 						m_state = S_OPCODE;
 					}
-				} else {
+				}
+				break;
+
+			case S_CONTROL_FRAME:
+				{
 					StreamBuffer payload;
 					for(std::size_t i = 0; i < m_frameSize; ++i){
 						payload.put(static_cast<unsigned char>(m_queue.get()) ^ m_mask);

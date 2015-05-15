@@ -20,7 +20,8 @@ namespace WebSocket {
 			S_FRAME_SIZE_16		= 2,
 			S_FRAME_SIZE_64		= 3,
 			S_MASK				= 4,
-			S_FRAME				= 5,
+			S_DATA_FRAME		= 5,
+			S_CONTROL_FRAME		= 6,
 		};
 
 	private:

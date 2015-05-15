@@ -70,28 +70,31 @@ namespace Cbpp {
 
 				if(m_messageId != ControlMessage::ID){
 					m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize, 1024);
+					m_state = S_DATA_PAYLOAD;
 				} else {
 					m_sizeExpecting = m_payloadSize;
+					m_state = S_CONTROL_PAYLOAD;
 				}
-				m_state = S_PAYLOAD;
 				break;
 
-			case S_PAYLOAD:
-				if(m_messageId != ControlMessage::ID){
-					temp64 = std::min<boost::uint64_t>(m_queue.size(), m_payloadSize - m_payloadOffset);
-					onDataMessagePayload(m_payloadOffset, m_queue.cut(temp64));
-					m_payloadOffset += temp64;
+			case S_DATA_PAYLOAD:
+				temp64 = std::min<boost::uint64_t>(m_queue.size(), m_payloadSize - m_payloadOffset);
+				onDataMessagePayload(m_payloadOffset, m_queue.cut(temp64));
+				m_payloadOffset += temp64;
 
-					if(m_payloadOffset < m_payloadSize){
-						m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize - m_payloadOffset, 1024);
-						// m_state = S_PAYLOAD;
-					} else {
-						hasNextRequest = onDataMessageEnd(m_payloadOffset);
-
-						m_sizeExpecting = 2;
-						m_state = S_PAYLOAD_SIZE;
-					}
+				if(m_payloadOffset < m_payloadSize){
+					m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize - m_payloadOffset, 1024);
+					// m_state = S_DATA_PAYLOAD;
 				} else {
+					hasNextRequest = onDataMessageEnd(m_payloadOffset);
+
+					m_sizeExpecting = 2;
+					m_state = S_PAYLOAD_SIZE;
+				}
+				break;
+
+			case S_CONTROL_PAYLOAD:
+				{
 					ControlMessage req(m_queue.cut(m_payloadSize));
 					hasNextRequest = onControlMessage(req.controlCode, req.vintParam, STD_MOVE(req.stringParam));
 					m_payloadOffset = m_payloadSize;
