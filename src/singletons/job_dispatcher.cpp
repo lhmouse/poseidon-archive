@@ -17,31 +17,37 @@
 namespace Poseidon {
 
 namespace {
-	struct JobElement {
-		boost::uint64_t dueTime;
-		boost::weak_ptr<const void> category;
+	const boost::weak_ptr<void> NULL_WEAK_PTR;
 
+	template<typename T>
+	bool isWeakPtrEmpty(const boost::weak_ptr<T> &ptr){
+		return !(NULL_WEAK_PTR < ptr) && !(ptr < NULL_WEAK_PTR);
+	}
+
+	struct JobElement {
 		boost::shared_ptr<const JobBase> job;
 		boost::shared_ptr<const bool> withdrawn;
 
+		boost::uint64_t dueTime;
+		boost::weak_ptr<const void> category;
+
 		mutable std::map<boost::shared_ptr<const void>, std::size_t> retryCounts;
 
-		JobElement(boost::uint64_t dueTime_, boost::shared_ptr<const JobBase> job_, boost::shared_ptr<const bool> withdrawn_)
-			: dueTime(dueTime_), category(job_->getCategory())
-			, job(STD_MOVE(job_)), withdrawn(STD_MOVE(withdrawn_))
+		JobElement(boost::shared_ptr<const JobBase> job_, boost::shared_ptr<const bool> withdrawn_,
+			boost::uint64_t dueTime_, boost::weak_ptr<const void> category_)
+			: job(STD_MOVE(job_)), withdrawn(STD_MOVE(withdrawn_))
+			, dueTime(dueTime_), category(STD_MOVE(category_))
 		{
-			if(!(boost::weak_ptr<void>() < category) && !(category < boost::weak_ptr<void>())){
-				category = job;
-			}
+			assert(!isWeakPtrEmpty(category));
 		}
 	};
 
 	inline void swap(JobElement &lhs, JobElement &rhs) NOEXCEPT {
 		using std::swap;
-		swap(lhs.dueTime, rhs.dueTime);
-		swap(lhs.category, rhs.category);
 		swap(lhs.job, rhs.job);
 		swap(lhs.withdrawn, rhs.withdrawn);
+		swap(lhs.dueTime, rhs.dueTime);
+		swap(lhs.category, rhs.category);
 		swap(lhs.retryCounts, rhs.retryCounts);
 	}
 
@@ -50,8 +56,8 @@ namespace {
 		MULTI_MEMBER_INDEX(category)
 	);
 
-	std::size_t g_maxRetryCount			= 5;
-	boost::uint64_t g_retryInitDelay	= 1000;
+	std::size_t g_maxRetryCount			= 6;
+	boost::uint64_t g_retryInitDelay	= 100;
 
 	volatile bool g_running = false;
 
@@ -106,10 +112,10 @@ namespace {
 		{
 			const Mutex::UniqueLock lock(g_mutex);
 			if(newDueTime != 0){
+				const AUTO(deltaTime, newDueTime - jobIt->dueTime);
 				const AUTO(range, g_jobMap.equalRange<1>(jobIt->category));
 				for(AUTO(it, range.first); it != range.second; ++it){
-					g_jobMap.setKey<1, 0>(it, newDueTime);
-					++newDueTime;
+					g_jobMap.setKey<1, 0>(it, it->dueTime + deltaTime);
 				}
 			} else {
 				g_jobMap.erase<0>(jobIt);
@@ -165,8 +171,20 @@ void JobDispatcher::quitModal(){
 void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay,
 	boost::shared_ptr<const bool> withdrawn)
 {
+	PROFILE_ME;
+
+	AUTO(dueTime, getFastMonoClock() + delay);
+	AUTO(category, job->getCategory());
+
 	const Mutex::UniqueLock lock(g_mutex);
-	g_jobMap.insert(JobElement(getFastMonoClock() + delay, STD_MOVE(job), STD_MOVE(withdrawn)));
+	const AUTO(range, g_jobMap.equalRange<1>(category));
+	for(AUTO(it, range.first); it != range.second; ++it){
+		if(dueTime > it->dueTime){
+			continue;
+		}
+		dueTime = it->dueTime + 1;
+	}
+	g_jobMap.insert(JobElement(STD_MOVE(job), STD_MOVE(withdrawn), dueTime, STD_MOVE(category)));
 	g_newJob.signal();
 }
 void JobDispatcher::pumpAll(){
