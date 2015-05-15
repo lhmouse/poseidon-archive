@@ -49,7 +49,9 @@ namespace Http {
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 						"Http::Exception thrown in HTTP servlet: statusCode = ", e.statusCode());
 					try {
-						session->sendDefault(e.statusCode(), e.headers());
+						AUTO(headers, e.headers());
+						headers.set("Connection", "Close");
+						session->sendDefault(e.statusCode(), STD_MOVE(headers));
 						session->shutdownRead();
 						session->shutdownWrite();
 					} catch(...){
