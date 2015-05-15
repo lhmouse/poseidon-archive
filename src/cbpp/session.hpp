@@ -6,13 +6,14 @@
 
 #include "../tcp_session_base.hpp"
 #include "reader.hpp"
+#include "writer.hpp"
 #include "control_codes.hpp"
 #include "status_codes.hpp"
 
 namespace Poseidon {
 
 namespace Cbpp {
-	class Session : public TcpSessionBase, private Reader {
+	class Session : public TcpSessionBase, private Reader, private Writer {
 	private:
 		class DataMessageJob;
 
@@ -39,6 +40,9 @@ namespace Cbpp {
 		bool onDataMessageEnd(boost::uint64_t payloadSize) OVERRIDE;
 
 		bool onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) OVERRIDE;
+
+		// Writer
+		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
 		virtual void onSyncDataMessage(boost::uint16_t messageId, const StreamBuffer &payload) = 0;

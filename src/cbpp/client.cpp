@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "client.hpp"
-#include "writer.hpp"
 #include "exception.hpp"
 #include "control_message.hpp"
 #include "../singletons/timer_daemon.hpp"
@@ -60,24 +59,6 @@ namespace Cbpp {
 					client->forceShutdown();
 					throw;
 				}
-			}
-		};
-
-		class SessionWriter : public Writer {
-		private:
-			TcpSessionBase *m_session;
-
-		public:
-			explicit SessionWriter(TcpSessionBase &session)
-				: m_session(&session)
-			{
-			}
-
-		protected:
-			long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE {
-				PROFILE_ME;
-
-				return m_session->send(STD_MOVE(encoded));
 			}
 		};
 	}
@@ -226,6 +207,12 @@ namespace Cbpp {
 		return true;
 	}
 
+	long Client::onEncodedDataAvail(StreamBuffer encoded){
+		PROFILE_ME;
+
+		return TcpSessionBase::send(STD_MOVE(encoded));
+	}
+
 	void Client::onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason){
 		PROFILE_ME;
 
@@ -236,14 +223,12 @@ namespace Cbpp {
 	bool Client::send(boost::uint16_t messageId, StreamBuffer payload){
 		PROFILE_ME;
 
-		SessionWriter writer(*this);
-		return writer.putDataMessage(messageId, STD_MOVE(payload));
+		return Writer::putDataMessage(messageId, STD_MOVE(payload));
 	}
 	bool Client::sendControl(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
 		PROFILE_ME;
 
-		SessionWriter writer(*this);
-		return writer.putControlMessage(controlCode, vintParam, STD_MOVE(stringParam));
+		return Writer::putControlMessage(controlCode, vintParam, STD_MOVE(stringParam));
 	}
 }
 

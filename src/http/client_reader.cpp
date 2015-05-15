@@ -282,6 +282,24 @@ namespace Http {
 
 		return hasNextResponse;
 	}
+
+	bool ClientReader::isContentTillEof() const {
+		return m_contentLength == CONTENT_TILL_EOF;
+	}
+	bool ClientReader::terminateContent(){
+		PROFILE_ME;
+
+		if(!isContentTillEof()){
+			DEBUG_THROW(BasicException, SSLIT("Terminating a non-until-EOF HTTP response"));
+		}
+
+		const bool ret = onResponseEnd(m_contentOffset, STD_MOVE(m_chunkedTrailer));
+
+		m_sizeExpecting = EXPECTING_NEW_LINE;
+		m_state = S_FIRST_HEADER;
+
+		return ret;
+	}
 }
 
 }

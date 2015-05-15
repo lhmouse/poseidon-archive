@@ -1,6 +1,5 @@
 #include "../precompiled.hpp"
 #include "client.hpp"
-#include "client_writer.hpp"
 #include "exception.hpp"
 #include "status_codes.hpp"
 #include "../log.hpp"
@@ -49,24 +48,6 @@ namespace Http {
 					client->forceShutdown();
 					throw;
 				}
-			}
-		};
-
-		class SessionWriter : public ClientWriter {
-		private:
-			TcpSessionBase *m_session;
-
-		public:
-			explicit SessionWriter(TcpSessionBase &session)
-				: m_session(&session)
-			{
-			}
-
-		protected:
-			long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE {
-				PROFILE_ME;
-
-				return m_session->send(STD_MOVE(encoded));
 			}
 		};
 	}
@@ -144,6 +125,24 @@ namespace Http {
 	Client::~Client(){
 	}
 
+	void Client::onReadHup() NOEXCEPT {
+		PROFILE_ME;
+
+		try {
+			if(ClientReader::isContentTillEof()){
+				terminateContent();
+			}
+		} catch(std::exception &e){
+			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+			forceShutdown();
+		} catch(...){
+			LOG_POSEIDON_WARNING("Unknown exception thrown");
+			forceShutdown();
+		}
+
+		TcpSessionBase::onReadHup();
+	}
+
 	void Client::onReadAvail(const void *data, std::size_t size){
 		PROFILE_ME;
 
@@ -168,6 +167,12 @@ namespace Http {
 			virtualSharedFromThis<Client>(), contentLength, STD_MOVE(headers)));
 
 		return true;
+	}
+
+	long Client::onEncodedDataAvail(StreamBuffer encoded){
+		PROFILE_ME;
+
+		return TcpSessionBase::send(STD_MOVE(encoded));
 	}
 }
 

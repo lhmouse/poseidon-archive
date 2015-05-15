@@ -6,6 +6,7 @@
 
 #include "../tcp_client_base.hpp"
 #include "client_reader.hpp"
+#include "client_writer.hpp"
 #include "request_headers.hpp"
 #include "response_headers.hpp"
 #include "status_codes.hpp"
@@ -13,7 +14,7 @@
 namespace Poseidon {
 
 namespace Http {
-	class Client : public TcpClientBase, private ClientReader {
+	class Client : public TcpClientBase, private ClientReader, private ClientWriter {
 	private:
 		class ResponseHeadersJob;
 		class ResponseEntityJob;
@@ -26,12 +27,17 @@ namespace Http {
 
 	protected:
 		// TcpClientBase
+		void onReadHup() NOEXCEPT OVERRIDE;
+
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
 		// ClientReader
 		void onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;
 		void onResponseEntity(boost::uint64_t entityOffset, StreamBuffer entity) OVERRIDE;
 		bool onResponseEnd(boost::uint64_t contentLength, OptionalMap headers) OVERRIDE;
+
+		// ClientWriter
+		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
 		virtual void onSyncResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) = 0;

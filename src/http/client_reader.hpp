@@ -78,6 +78,10 @@ namespace Http {
 		}
 
 		bool putEncodedData(StreamBuffer encoded);
+
+		bool isContentTillEof() const;
+		// 要求 isContentTillEof() 为 true，否则抛异常。
+		bool terminateContent();
 	};
 }
 

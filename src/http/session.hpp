@@ -7,6 +7,7 @@
 #include "../mutex.hpp"
 #include "../tcp_session_base.hpp"
 #include "server_reader.hpp"
+#include "server_writer.hpp"
 #include "request_headers.hpp"
 #include "response_headers.hpp"
 #include "status_codes.hpp"
@@ -16,7 +17,7 @@ namespace Poseidon {
 namespace Http {
 	class UpgradedSessionBase;
 
-	class Session : public TcpSessionBase, private ServerReader {
+	class Session : public TcpSessionBase, private ServerReader, private ServerWriter {
 	private:
 		class ContinueJob;
 
@@ -49,6 +50,9 @@ namespace Http {
 		void onRequestHeaders(RequestHeaders requestHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;
 		void onRequestEntity(boost::uint64_t entityOffset, StreamBuffer entity) OVERRIDE;
 		bool onRequestEnd(boost::uint64_t contentLength, OptionalMap headers) OVERRIDE;
+
+		// ServerWriter
+		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
 		virtual boost::shared_ptr<UpgradedSessionBase> predispatchRequest(RequestHeaders &requestHeaders, StreamBuffer &entity);

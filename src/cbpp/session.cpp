@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "session.hpp"
-#include "writer.hpp"
 #include "exception.hpp"
 #include "control_message.hpp"
 #include "../singletons/main_config.hpp"
@@ -64,24 +63,6 @@ namespace Cbpp {
 					session->forceShutdown();
 					throw;
 				}
-			}
-		};
-
-		class SessionWriter : public Writer {
-		private:
-			TcpSessionBase *m_session;
-
-		public:
-			explicit SessionWriter(TcpSessionBase &session)
-				: m_session(&session)
-			{
-			}
-
-		protected:
-			long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE {
-				PROFILE_ME;
-
-				return m_session->send(STD_MOVE(encoded));
 			}
 		};
 	}
@@ -221,6 +202,12 @@ namespace Cbpp {
 		return true;
 	}
 
+	long Session::onEncodedDataAvail(StreamBuffer encoded){
+		PROFILE_ME;
+
+		return TcpSessionBase::send(STD_MOVE(encoded));
+	}
+
 	void Session::onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, const std::string &stringParam){
 		PROFILE_ME;
 
@@ -241,14 +228,12 @@ namespace Cbpp {
 	bool Session::send(boost::uint16_t messageId, StreamBuffer payload){
 		PROFILE_ME;
 
-		SessionWriter writer(*this);
-		return writer.putDataMessage(messageId, STD_MOVE(payload));
+		return Writer::putDataMessage(messageId, STD_MOVE(payload));
 	}
 	bool Session::sendError(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
 		PROFILE_ME;
 
-		SessionWriter writer(*this);
-		return writer.putControlMessage(messageId, statusCode, STD_MOVE(reason));
+		return Writer::putControlMessage(messageId, statusCode, STD_MOVE(reason));
 	}
 }
 

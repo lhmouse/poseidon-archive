@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "session.hpp"
 #include "exception.hpp"
-#include "writer.hpp"
 #include "../http/session.hpp"
 #include "../optional_map.hpp"
 #include "../singletons/main_config.hpp"
@@ -61,24 +60,6 @@ namespace WebSocket {
 					session->forceShutdown();
 					throw;
 				}
-			}
-		};
-
-		class SessionWriter : public Writer {
-		private:
-			Http::UpgradedSessionBase *m_session;
-
-		public:
-			explicit SessionWriter(Http::UpgradedSessionBase &session)
-				: m_session(&session)
-			{
-			}
-
-		protected:
-			long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE {
-				PROFILE_ME;
-
-				return m_session->send(STD_MOVE(encoded));
 			}
 		};
 	}
@@ -215,6 +196,12 @@ namespace WebSocket {
 		return true;
 	}
 
+	long Session::onEncodedDataAvail(StreamBuffer encoded){
+		PROFILE_ME;
+
+		return UpgradedSessionBase::send(STD_MOVE(encoded));
+	}
+
 	void Session::onSyncControlMessage(OpCode opcode, const StreamBuffer &payload){
 		PROFILE_ME;
 		LOG_POSEIDON_DEBUG("Control frame, opcode = ", m_opcode);
@@ -224,19 +211,17 @@ namespace WebSocket {
 			return;
 		}
 
-		SessionWriter writer(*this);
-
 		switch(opcode){
 		case OP_CLOSE:
 			LOG_POSEIDON_INFO("Received close frame from ", parent->getRemoteInfo());
-			writer.putCloseMessage(ST_NORMAL_CLOSURE, VAL_INIT);
+			Writer::putCloseMessage(ST_NORMAL_CLOSURE, VAL_INIT);
 			shutdownRead();
 			shutdownWrite();
 			break;
 
 		case OP_PING:
 			LOG_POSEIDON_INFO("Received ping frame from ", parent->getRemoteInfo());
-			writer.putMessage(OP_PONG, false, payload);
+			Writer::putMessage(OP_PONG, false, payload);
 			break;
 
 		case OP_PONG:
@@ -252,8 +237,7 @@ namespace WebSocket {
 	bool Session::send(StreamBuffer payload, bool binary, bool masked){
 		PROFILE_ME;
 
-		SessionWriter writer(*this);
-		return writer.putMessage(binary ? OP_DATA_BIN : OP_DATA_TEXT, masked, STD_MOVE(payload));
+		return Writer::putMessage(binary ? OP_DATA_BIN : OP_DATA_TEXT, masked, STD_MOVE(payload));
 	}
 
 	bool Session::shutdown(StatusCode statusCode, StreamBuffer additional) NOEXCEPT {
@@ -265,8 +249,7 @@ namespace WebSocket {
 		}
 
 		try {
-			SessionWriter writer(*this);
-			writer.putCloseMessage(statusCode, STD_MOVE(additional));
+			Writer::putCloseMessage(statusCode, STD_MOVE(additional));
 			parent->shutdownRead();
 			return parent->shutdownWrite();
 		} catch(std::exception &e){

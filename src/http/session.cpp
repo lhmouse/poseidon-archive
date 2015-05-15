@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "session.hpp"
-#include "server_writer.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
 #include "upgraded_session_base.hpp"
@@ -68,24 +67,6 @@ namespace Http {
 					session->forceShutdown();
 					throw;
 				}
-			}
-		};
-
-		class SessionWriter : public ServerWriter {
-		private:
-			TcpSessionBase *m_session;
-
-		public:
-			explicit SessionWriter(TcpSessionBase &session)
-				: m_session(&session)
-			{
-			}
-
-		protected:
-			long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE {
-				PROFILE_ME;
-
-				return m_session->send(STD_MOVE(encoded));
 			}
 		};
 	}
@@ -283,6 +264,12 @@ namespace Http {
 		return true;
 	}
 
+	long Session::onEncodedDataAvail(StreamBuffer encoded){
+		PROFILE_ME;
+
+		return TcpSessionBase::send(STD_MOVE(encoded));
+	}
+
 	boost::shared_ptr<UpgradedSessionBase> Session::predispatchRequest(
 		RequestHeaders & /* requestHeaders */, StreamBuffer & /* entity */)
 	{
@@ -299,8 +286,7 @@ namespace Http {
 	bool Session::send(ResponseHeaders responseHeaders, StreamBuffer entity){
 		PROFILE_ME;
 
-		SessionWriter writer(*this);
-		return writer.putResponse(STD_MOVE(responseHeaders), STD_MOVE(entity));
+		return ServerWriter::putResponse(STD_MOVE(responseHeaders), STD_MOVE(entity));
 	}
 	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity){
 		PROFILE_ME;
@@ -315,13 +301,12 @@ namespace Http {
 	bool Session::sendDefault(StatusCode statusCode, OptionalMap headers){
 		PROFILE_ME;
 
-		SessionWriter writer(*this);
 		ResponseHeaders responseHeaders;
 		responseHeaders.version = 10001;
 		responseHeaders.statusCode = statusCode;
 		responseHeaders.reason = getStatusCodeDesc(statusCode).descShort;
 		responseHeaders.headers = STD_MOVE(headers);
-		return writer.putDefaultResponse(STD_MOVE(responseHeaders));
+		return ServerWriter::putDefaultResponse(STD_MOVE(responseHeaders));
 	}
 }
 

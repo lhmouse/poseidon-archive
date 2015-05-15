@@ -8,11 +8,12 @@
 #include "opcodes.hpp"
 #include "status_codes.hpp"
 #include "reader.hpp"
+#include "writer.hpp"
 
 namespace Poseidon {
 
 namespace WebSocket {
-	class Session : public Http::UpgradedSessionBase, private Reader {
+	class Session : public Http::UpgradedSessionBase, private Reader, private Writer {
 	private:
 		class DataMessageJob;
 
@@ -39,6 +40,9 @@ namespace WebSocket {
 		bool onDataMessageEnd(boost::uint64_t wholeSize) OVERRIDE;
 
 		bool onControlMessage(OpCode opcode, StreamBuffer payload) OVERRIDE;
+
+		// Writer
+		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
 		virtual void onSyncDataMessage(OpCode opcode, const StreamBuffer &payload) = 0;
