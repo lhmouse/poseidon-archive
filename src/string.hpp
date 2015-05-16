@@ -144,7 +144,7 @@ inline std::string trim(std::string src){
 	return ltrim(rtrim(STD_MOVE(src)));
 }
 
-extern bool isValidUtf8String();
+extern bool isValidUtf8String(const std::string &str);
 
 }
 
