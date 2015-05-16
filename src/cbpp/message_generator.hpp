@@ -174,15 +174,19 @@ public:
 											if(buffer_.size() < count_){	\
 												THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 											}	\
+											if(count_ > cur_.name_.max_size()){	\
+												THROW_LENGTH_ERROR_(MESSAGE_NAME, name_);	\
+											}	\
+											cur_.name_.resize(count_);	\
 											for(::boost::uint64_t i_ = 0; i_ < count_; ++i_){	\
-												cur_.name_.push_back(*read_);	\
+												cur_.name_[i_] = *read_;	\
 												++read_;	\
 											}	\
 										}
 #define FIELD_BYTES(name_, size_)		if(buffer_.size() < size_){	\
 											THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 										}	\
-										for(::std::size_t i_ = 0; i_ < size_; ++i_){	\
+										for(::boost::uint64_t i_ = 0; i_ < size_; ++i_){	\
 											cur_.name_[i_] = *read_;	\
 											++read_;	\
 										}
@@ -191,11 +195,10 @@ public:
 											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
 												THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 											}	\
-											cur_.name_.clear();	\
+											cur_.name_.resize(count_);	\
 											for(::boost::uint64_t i_ = 0; i_ < count_; ++i_){	\
 												typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-												cur_.name_.push_back(Element_());	\
-												Element_ &element_ = cur_.name_.back();	\
+												Element_ &element_ = cur_.name_[i_];	\
 												typedef Element_ Cur_;	\
 												Cur_ &cur_ = element_;	\
 												\

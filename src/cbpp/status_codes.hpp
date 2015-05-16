@@ -20,6 +20,7 @@ namespace Cbpp {
 			ST_JUNK_AFTER_PACKET	= -6,
 			ST_FORBIDDEN			= -7,
 			ST_AUTH_REQUIRED		= -8,
+			ST_LENGTH_ERROR			= -9,
 		};
 	}
 
