@@ -14,6 +14,7 @@ namespace Poseidon {
 namespace WebSocket {
 	Reader::Reader()
 		: m_sizeExpecting(1), m_state(S_OPCODE)
+		, m_wholeOffset(0)
 	{
 	}
 	Reader::~Reader(){
@@ -40,7 +41,6 @@ namespace WebSocket {
 				boost::uint64_t temp64;
 
 			case S_OPCODE:
-				m_wholeOffset = 0;
 				m_fin = false;
 				m_opcode = OP_INVALID_OPCODE;
 				m_frameSize = 0;
@@ -134,7 +134,10 @@ namespace WebSocket {
 						m_sizeExpecting = std::min<boost::uint64_t>(m_frameSize - m_frameOffset, 1024);
 						// m_state = S_DATA_FRAME;
 					} else {
-						hasNextRequest = onDataMessageEnd(m_frameOffset);
+						if(m_fin){
+							hasNextRequest = onDataMessageEnd(m_wholeOffset);
+							m_wholeOffset = 0;
+						}
 
 						m_sizeExpecting = 1;
 						m_state = S_OPCODE;
