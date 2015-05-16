@@ -132,7 +132,7 @@ namespace WebSocket {
 
 					if(m_frameOffset < m_frameSize){
 						m_sizeExpecting = std::min<boost::uint64_t>(m_frameSize - m_frameOffset, 1024);
-						// m_state = S_FRAME;
+						// m_state = S_DATA_FRAME;
 					} else {
 						hasNextRequest = onDataMessageEnd(m_frameOffset);
 
