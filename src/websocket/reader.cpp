@@ -14,7 +14,7 @@ namespace Poseidon {
 namespace WebSocket {
 	Reader::Reader()
 		: m_sizeExpecting(1), m_state(S_OPCODE)
-		, m_wholeOffset(0)
+		, m_wholeOffset(0), m_prevFin(true)
 	{
 	}
 	Reader::~Reader(){
@@ -52,10 +52,16 @@ namespace WebSocket {
 					LOG_POSEIDON_WARNING("Aborting because some reserved bits are set, opcode = ", ch);
 					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Reserved bits set"));
 				}
-				m_fin = ch & OP_FL_FIN;
 				m_opcode = static_cast<OpCode>(ch & OP_FL_OPCODE);
+				m_fin = ch & OP_FL_FIN;
 				if((m_opcode & OP_FL_CONTROL) && !m_fin){
 					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Control frame fragemented"));
+				}
+				if((m_opcode == OP_CONTINUATION) && m_prevFin){
+					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Dangling frame continuation"));
+				}
+				if((m_opcode != OP_CONTINUATION) && !m_prevFin){
+					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Final frame following a frame that needs continuation"));
 				}
 
 				m_sizeExpecting = 1;
@@ -107,7 +113,9 @@ namespace WebSocket {
 				m_queue.get(&temp32, 4);
 				m_mask = loadLe(temp32);
 
-				onDataMessageHeader(m_opcode);
+				if(m_opcode != OP_CONTINUATION){
+					onDataMessageHeader(m_opcode);
+				}
 
 				if((m_opcode & OP_FL_CONTROL) == 0){
 					m_sizeExpecting = std::min<boost::uint64_t>(m_frameSize, 1024);
@@ -127,8 +135,8 @@ namespace WebSocket {
 						m_mask = (m_mask << 24) | (m_mask >> 8);
 					}
 					onDataMessagePayload(m_wholeOffset, STD_MOVE(payload));
-					m_wholeOffset += temp64;
 					m_frameOffset += temp64;
+					m_wholeOffset += temp64;
 
 					if(m_frameOffset < m_frameSize){
 						m_sizeExpecting = std::min<boost::uint64_t>(m_frameSize - m_frameOffset, 1024);
@@ -137,6 +145,9 @@ namespace WebSocket {
 						if(m_fin){
 							hasNextRequest = onDataMessageEnd(m_wholeOffset);
 							m_wholeOffset = 0;
+							m_prevFin = true;
+						} else {
+							m_prevFin = false;
 						}
 
 						m_sizeExpecting = 1;
@@ -153,8 +164,9 @@ namespace WebSocket {
 						m_mask = (m_mask << 24) | (m_mask >> 8);
 					}
 					hasNextRequest = onControlMessage(m_opcode, STD_MOVE(payload));
-					m_wholeOffset = m_frameSize;
 					m_frameOffset = m_frameSize;
+					m_wholeOffset = 0;
+					m_prevFin = true;
 
 					m_sizeExpecting = 1;
 					m_state = S_OPCODE;

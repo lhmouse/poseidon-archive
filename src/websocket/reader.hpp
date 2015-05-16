@@ -31,6 +31,7 @@ namespace WebSocket {
 		State m_state;
 
 		boost::uint64_t m_wholeOffset;
+		bool m_prevFin;
 
 		bool m_fin;
 		OpCode m_opcode;

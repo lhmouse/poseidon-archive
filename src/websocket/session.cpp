@@ -215,8 +215,8 @@ namespace WebSocket {
 		case OP_CLOSE:
 			LOG_POSEIDON_INFO("Received close frame from ", parent->getRemoteInfo());
 			Writer::putCloseMessage(ST_NORMAL_CLOSURE, VAL_INIT);
-			shutdownRead();
-			shutdownWrite();
+			parent->shutdownRead();
+			parent->shutdownWrite();
 			break;
 
 		case OP_PING:
