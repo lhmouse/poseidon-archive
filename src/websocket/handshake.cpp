@@ -41,9 +41,8 @@ namespace WebSocket {
 			return ret;
 		}
 		secWebSocketKey += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-		unsigned char sha1[20];
-		sha1Sum(sha1, secWebSocketKey);
-		AUTO(secWebSocketAccept, Http::base64Encode(sha1, sizeof(sha1)));
+		const AUTO(sha1, sha1Hash(secWebSocketKey));
+		AUTO(secWebSocketAccept, Http::base64Encode(sha1.data(), sha1.size()));
 		ret.headers.set("Upgrade", "websocket");
 		ret.headers.set("Connection", "Upgrade");
 		ret.headers.set("Sec-WebSocket-Accept", STD_MOVE(secWebSocketAccept));

@@ -8,39 +8,48 @@
 #include <cstring>
 #include <cstddef>
 #include <boost/cstdint.hpp>
+#include <boost/array.hpp>
 
 namespace Poseidon {
 
-extern boost::uint32_t crc32Sum(const void *data, std::size_t size);
-inline boost::uint32_t crc32Sum(const char *str){
-	return crc32Sum(str, std::strlen(str));
+typedef boost::uint32_t Crc32;
+
+extern Crc32 crc32Hash(const void *data, std::size_t size);
+inline Crc32 crc32Hash(const char *str){
+	return crc32Hash(str, std::strlen(str));
 }
-inline boost::uint32_t crc32Sum(const std::string &str){
-	return crc32Sum(str.data(), str.size());
+inline Crc32 crc32Hash(const std::string &str){
+	return crc32Hash(str.data(), str.size());
 }
 
-extern void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size);
-inline void md5Sum(unsigned char (&hash)[16], const char *str){
-	md5Sum(hash, str, std::strlen(str));
+typedef boost::array<boost::uint8_t, 16> Md5;
+
+extern Md5 md5Hash(const void *data, std::size_t size);
+inline Md5 md5Hash(const char *str){
+	return md5Hash(str, std::strlen(str));
 }
-inline void md5Sum(unsigned char (&hash)[16], const std::string &str){
-	md5Sum(hash, str.data(), str.size());
+inline Md5 md5Hash(const std::string &str){
+	return md5Hash(str.data(), str.size());
 }
 
-extern void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size);
-inline void sha1Sum(unsigned char (&hash)[20], const char *str){
-	sha1Sum(hash, str, std::strlen(str));
+typedef boost::array<boost::uint8_t, 20> Sha1;
+
+extern Sha1 sha1Hash(const void *data, std::size_t size);
+inline Sha1 sha1Hash(const char *str){
+	return sha1Hash(str, std::strlen(str));
 }
-inline void sha1Sum(unsigned char (&hash)[20], const std::string &str){
-	sha1Sum(hash, str.data(), str.size());
+inline Sha1 sha1Hash(const std::string &str){
+	return sha1Hash(str.data(), str.size());
 }
 
-extern void sha256Sum(unsigned char (&hash)[32], const void *data, std::size_t size);
-inline void sha256Sum(unsigned char (&hash)[32], const char *str){
-	sha256Sum(hash, str, std::strlen(str));
+typedef boost::array<boost::uint8_t, 32> Sha256;
+
+extern Sha256 sha256Hash(const void *data, std::size_t size);
+inline Sha256 sha256Hash(const char *str){
+	return sha256Hash(str, std::strlen(str));
 }
-inline void sha256Sum(unsigned char (&hash)[32], const std::string &str){
-	sha256Sum(hash, str.data(), str.size());
+inline Sha256 sha256Hash(const std::string &str){
+	return sha256Hash(str.data(), str.size());
 }
 
 }

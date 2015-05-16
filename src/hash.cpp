@@ -385,17 +385,17 @@ namespace {
 	}
 }
 
-boost::uint32_t crc32Sum(const void *data, std::size_t size){
-	register boost::uint32_t reg = 0xFFFFFFFF;
+Crc32 crc32Hash(const void *data, std::size_t size){
+	register boost::uint32_t crc32 = 0xFFFFFFFF;
 	AUTO(read, (const unsigned char *)data);
 	for(std::size_t i = 0; i < size; ++i){
-		reg = CRC32_TABLE[(reg ^ *read) & 0xFF] ^ (reg >> 8);
+		crc32 = CRC32_TABLE[(crc32 ^ *read) & 0xFF] ^ (crc32 >> 8);
 		++read;
 	}
-	return ~reg;
+	return ~crc32;
 }
 
-void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size){
+Md5 md5Hash(const void *data, std::size_t size){
 	boost::uint32_t result[] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u
 	};
@@ -418,12 +418,15 @@ void md5Sum(unsigned char (&hash)[16], const void *data, std::size_t size){
 	}
 	storeLe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
 	md5Chunk(result, chunk);
-	for(unsigned i = 0; i < sizeof(hash) / 4; ++i){
-		storeLe(reinterpret_cast<boost::uint32_t *>(hash)[i], result[i]);
+
+	Md5 md5;
+	for(unsigned i = 0; i < sizeof(md5) / 4; ++i){
+		storeLe(reinterpret_cast<boost::uint32_t *>(md5.data())[i], result[i]);
 	}
+	return md5;
 }
 
-void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size){
+Sha1 sha1Hash(const void *data, std::size_t size){
 	boost::uint32_t result[] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u
 	};
@@ -446,12 +449,15 @@ void sha1Sum(unsigned char (&hash)[20], const void *data, std::size_t size){
 	}
 	storeBe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
 	sha1Chunk(result, chunk);
-	for(unsigned i = 0; i < sizeof(hash) / 4; ++i){
-		storeBe(reinterpret_cast<boost::uint32_t *>(hash)[i], result[i]);
+
+	Sha1 sha1;
+	for(unsigned i = 0; i < sizeof(sha1) / 4; ++i){
+		storeBe(reinterpret_cast<boost::uint32_t *>(sha1.data())[i], result[i]);
 	}
+	return sha1;
 }
 
-void sha256Sum(unsigned char (&hash)[32], const void *data, std::size_t size){
+Sha256 sha256Hash(const void *data, std::size_t size){
 	boost::uint32_t result[] = {
 		0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au,
 		0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u
@@ -475,9 +481,12 @@ void sha256Sum(unsigned char (&hash)[32], const void *data, std::size_t size){
 	}
 	storeBe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
 	sha256Chunk(result, chunk);
-	for(unsigned i = 0; i < sizeof(hash) / 4; ++i){
-		storeBe(reinterpret_cast<boost::uint32_t *>(hash)[i], result[i]);
+
+	Sha256 sha256;
+	for(unsigned i = 0; i < sizeof(sha256) / 4; ++i){
+		storeBe(reinterpret_cast<boost::uint32_t *>(sha256.data())[i], result[i]);
 	}
+	return sha256;
 }
 
 }

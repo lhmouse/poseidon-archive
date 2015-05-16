@@ -29,11 +29,10 @@ namespace Http {
 		void xorNonce(RawNonce &rawNonce, const char *remoteIp){
 			boost::uint32_t temp[2];
 			temp[0] = static_cast<boost::uint32_t>(::getpid());
-			temp[1] = crc32Sum(remoteIp);
-			unsigned char hash[16];
-			md5Sum(hash, temp, 8);
+			temp[1] = crc32Hash(remoteIp);
+			const AUTO(md5, md5Hash(temp, sizeof(temp)));
 			for(std::size_t i = 0; i < sizeof(rawNonce); ++i){
-				reinterpret_cast<unsigned char (&)[sizeof(rawNonce)]>(rawNonce)[i] ^= hash[i % 16];
+				reinterpret_cast<unsigned char (&)[sizeof(rawNonce)]>(rawNonce)[i] ^= md5.at(i % 16);
 			}
 		}
 	}
@@ -235,10 +234,9 @@ namespace Http {
 			a2 += ':';
 			a2 += uri;
 
-			unsigned char digest[16];
 			std::string strToHash;
-			md5Sum(digest, a1);
-			strToHash += hexEncode(digest, sizeof(digest), false);
+			AUTO(md5, md5Hash(a1));
+			strToHash += hexEncode(md5.data(), md5.size(), false);
 			strToHash += ':';
 			strToHash += nonce;
 			strToHash += ':';
@@ -253,10 +251,10 @@ namespace Http {
 				LOG_POSEIDON_WARNING("> Inacceptable qop: ", qop);
 				return std::make_pair(AUTH_INACCEPTABLE_QOP, NULLPTR);
 			}
-			md5Sum(digest, a2);
-			strToHash += hexEncode(digest, sizeof(digest), false);
-			md5Sum(digest, strToHash);
-			const AUTO(responseExpecting, hexEncode(digest, sizeof(digest)));
+			md5 = md5Hash(a2);
+			strToHash += hexEncode(md5.data(), md5.size(), false);
+			md5 = md5Hash(strToHash);
+			const AUTO(responseExpecting, hexEncode(md5.data(), md5.size()));
 			LOG_POSEIDON_DEBUG("> Response expecting: ", responseExpecting);
 			if(::strcasecmp(response.c_str(), responseExpecting.c_str()) != 0){
 				LOG_POSEIDON_WARNING("> Digest mismatch.");
