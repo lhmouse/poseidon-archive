@@ -11,20 +11,18 @@ namespace {
 }
 
 boost::uint32_t rand32(){
-	boost::uint64_t seed = t_randSeed;
-	if(seed == 0){
-		__asm__ __volatile__(
-			"rdtsc \n"
+	boost::uint64_t seed = t_randSeed, tsc;
+	__asm__ __volatile__(
+		"rdtsc \n"
 #ifdef __x86_64__
-			"shlq $32, %%rdx \n"
-			"orq %%rdx, %%rax \n"
-			: "=a"(seed) : : "dx"
+		"shlq $32, %%rdx \n"
+		"orq %%rdx, %%rax \n"
+		: "=a"(tsc) : : "dx"
 #else
-			: "=A"(seed) : :
+		: "=A"(tsc) : :
 #endif
-		);
-		seed |= 0x10001;
-	}
+	);
+	seed ^= tsc;
 	// MMIX by Donald Knuth
 	seed = seed * 6364136223846793005ull + 1442695040888963407ull;
 	t_randSeed = seed;
