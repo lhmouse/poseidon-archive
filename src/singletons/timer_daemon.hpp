@@ -31,17 +31,17 @@ struct TimerDaemon {
 	// period 填零表示只触发一次。
 	static boost::shared_ptr<TimerItem> registerAbsoluteTimer(
 		boost::uint64_t timePoint, // 用 getFastMonoClock() 作参考。
-		boost::uint64_t period, TimerCallback callback, bool isLowLevel = false);
+		boost::uint64_t period, TimerCallback callback, bool isAsync = false);
 	static boost::shared_ptr<TimerItem> registerTimer(
-		boost::uint64_t first, boost::uint64_t period, TimerCallback callback, bool isLowLevel = false);
+		boost::uint64_t first, boost::uint64_t period, TimerCallback callback, bool isAsync = false);
 
 	static boost::shared_ptr<TimerItem> registerHourlyTimer(
-		unsigned minute, unsigned second, TimerCallback callback, bool isLowLevel = false);
+		unsigned minute, unsigned second, TimerCallback callback, bool isAsync = false);
 	static boost::shared_ptr<TimerItem> registerDailyTimer(
-		unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isLowLevel = false);
+		unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isAsync = false);
 	// 0 = 星期日
 	static boost::shared_ptr<TimerItem> registerWeeklyTimer(
-		unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isLowLevel = false);
+		unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isAsync = false);
 
 	static void setAbsoluteTime(const boost::shared_ptr<TimerItem> &item,
 		boost::uint64_t timePoint, boost::uint64_t period = PERIOD_NOT_MODIFIED);
