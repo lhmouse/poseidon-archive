@@ -14,64 +14,62 @@
 namespace Poseidon {
 
 namespace WebSocket {
-	namespace {
-		class SessionJobBase : public JobBase {
-		private:
-			const boost::weak_ptr<Http::Session> m_parent;
-			const boost::weak_ptr<Session> m_session;
+	class Session::SyncJobBase : public JobBase {
+	private:
+		const boost::weak_ptr<Http::Session> m_parent;
+		const boost::weak_ptr<Session> m_session;
 
-		protected:
-			explicit SessionJobBase(const boost::shared_ptr<Session> &session)
-				: m_parent(session->getWeakParent()), m_session(session)
-			{
+	protected:
+		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
+			: m_parent(session->getWeakParent()), m_session(session)
+		{
+		}
+
+	private:
+		boost::weak_ptr<const void> getCategory() const FINAL {
+			return m_parent;
+		}
+		void perform() const FINAL {
+			PROFILE_ME;
+
+			const AUTO(session, m_session.lock());
+			if(!session){
+				return;
 			}
 
-		private:
-			boost::weak_ptr<const void> getCategory() const FINAL {
-				return m_parent;
+			try {
+				perform(session);
+			} catch(TryAgainLater &){
+				throw;
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"WebSocket::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
+				session->shutdown(e.statusCode(), StreamBuffer(e.what()));
+			} catch(std::exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"std::exception thrown: what = ", e.what());
+				session->forceShutdown();
+				throw;
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Unknown exception thrown.");
+				session->forceShutdown();
+				throw;
 			}
-			void perform() const FINAL {
-				PROFILE_ME;
+		}
 
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
+	protected:
+		virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
+	};
 
-				try {
-					perform(session);
-				} catch(TryAgainLater &){
-					throw;
-				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-						"WebSocket::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
-					session->shutdown(e.statusCode(), StreamBuffer(e.what()));
-				} catch(std::exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-						"std::exception thrown: what = ", e.what());
-					session->forceShutdown();
-					throw;
-				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-						"Unknown exception thrown.");
-					session->forceShutdown();
-					throw;
-				}
-			}
-
-		protected:
-			virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
-		};
-	}
-
-	class Session::DataMessageJob : public SessionJobBase {
+	class Session::DataMessageJob : public SyncJobBase {
 	private:
 		const OpCode m_opcode;
 		const StreamBuffer m_payload;
 
 	public:
 		DataMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
-			: SessionJobBase(session)
+			: SyncJobBase(session)
 			, m_opcode(opcode), m_payload(STD_MOVE(payload))
 		{
 		}
@@ -88,14 +86,14 @@ namespace WebSocket {
 		}
 	};
 
-	class Session::ControlMessageJob : public SessionJobBase {
+	class Session::ControlMessageJob : public SyncJobBase {
 	private:
 		const OpCode m_opcode;
 		const StreamBuffer m_payload;
 
 	public:
 		ControlMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
-			: SessionJobBase(session)
+			: SyncJobBase(session)
 			, m_opcode(opcode), m_payload(STD_MOVE(payload))
 		{
 		}
@@ -112,7 +110,7 @@ namespace WebSocket {
 		}
 	};
 
-	class Session::ErrorJob : public SessionJobBase {
+	class Session::ErrorJob : public SyncJobBase {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 
@@ -121,7 +119,7 @@ namespace WebSocket {
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, StreamBuffer additional)
-			: SessionJobBase(session)
+			: SyncJobBase(session)
 			, m_guard(session->getSafeParent())
 			, m_statusCode(statusCode), m_additional(STD_MOVE(additional))
 		{

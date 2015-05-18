@@ -13,61 +13,59 @@
 namespace Poseidon {
 
 namespace Cbpp {
-	namespace {
-		class SessionJobBase : public JobBase {
-		private:
-			const boost::weak_ptr<Session> m_session;
+	class Session::SyncJobBase : public JobBase {
+	private:
+		const boost::weak_ptr<Session> m_session;
 
-		protected:
-			explicit SessionJobBase(const boost::shared_ptr<Session> &session)
-				: m_session(session)
-			{
+	protected:
+		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
+			: m_session(session)
+		{
+		}
+
+	private:
+		boost::weak_ptr<const void> getCategory() const FINAL {
+			return m_session;
+		}
+		void perform() const FINAL {
+			PROFILE_ME;
+
+			const AUTO(session, m_session.lock());
+			if(!session){
+				return;
 			}
 
-		private:
-			boost::weak_ptr<const void> getCategory() const FINAL {
-				return m_session;
-			}
-			void perform() const FINAL {
-				PROFILE_ME;
-
-				const AUTO(session, m_session.lock());
-				if(!session){
-					return;
-				}
-
+			try {
+				perform(session);
+			} catch(TryAgainLater &){
+				throw;
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
 				try {
-					perform(session);
-				} catch(TryAgainLater &){
-					throw;
-				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-						"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
-					try {
-						session->sendError(ControlMessage::ID, e.statusCode(), e.what());
-						session->shutdownRead();
-						session->shutdownWrite();
-					} catch(...){
-						session->forceShutdown();
-					}
-					throw;
-				} catch(std::exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-					session->forceShutdown();
-					throw;
+					session->sendError(ControlMessage::ID, e.statusCode(), e.what());
+					session->shutdownRead();
+					session->shutdownWrite();
 				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
 					session->forceShutdown();
-					throw;
 				}
+				throw;
+			} catch(std::exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
+				session->forceShutdown();
+				throw;
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+				session->forceShutdown();
+				throw;
 			}
+		}
 
-		protected:
-			virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
-		};
-	}
+	protected:
+		virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
+	};
 
-	class Session::DataMessageJob : public SessionJobBase {
+	class Session::DataMessageJob : public SyncJobBase {
 	private:
 		const boost::uint16_t m_messageId;
 		const StreamBuffer m_payload;
@@ -75,7 +73,7 @@ namespace Cbpp {
 	public:
 		DataMessageJob(const boost::shared_ptr<Session> &session,
 			boost::uint16_t messageId, StreamBuffer payload)
-			: SessionJobBase(session)
+			: SyncJobBase(session)
 			, m_messageId(messageId), m_payload(STD_MOVE(payload))
 		{
 		}
@@ -92,7 +90,7 @@ namespace Cbpp {
 		}
 	};
 
-	class Session::ControlMessageJob : public SessionJobBase {
+	class Session::ControlMessageJob : public SyncJobBase {
 	private:
 		const ControlCode m_controlCode;
 		const boost::int64_t m_vintParam;
@@ -101,7 +99,7 @@ namespace Cbpp {
 	public:
 		ControlMessageJob(const boost::shared_ptr<Session> &session,
 			ControlCode controlCode, boost::int64_t vintParam, std::string stringParam)
-			: SessionJobBase(session)
+			: SyncJobBase(session)
 			, m_controlCode(controlCode), m_vintParam(vintParam), m_stringParam(stringParam)
 		{
 		}
@@ -119,7 +117,7 @@ namespace Cbpp {
 		}
 	};
 
-	class Session::ErrorJob : public SessionJobBase {
+	class Session::ErrorJob : public SyncJobBase {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 
@@ -130,7 +128,7 @@ namespace Cbpp {
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session,
 			boost::uint16_t messageId, StatusCode statusCode, std::string reason)
-			: SessionJobBase(session)
+			: SyncJobBase(session)
 			, m_guard(session)
 			, m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
 		{

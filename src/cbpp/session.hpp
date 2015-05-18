@@ -15,10 +15,9 @@ namespace Poseidon {
 namespace Cbpp {
 	class Session : public TcpSessionBase, private Reader, private Writer {
 	private:
+		class SyncJobBase;
 		class DataMessageJob;
-
 		class ControlMessageJob;
-
 		class ErrorJob;
 
 	private:

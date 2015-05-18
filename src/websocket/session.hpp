@@ -15,10 +15,9 @@ namespace Poseidon {
 namespace WebSocket {
 	class Session : public Http::UpgradedSessionBase, private Reader, private Writer {
 	private:
+		class SyncJobBase;
 		class DataMessageJob;
-
 		class ControlMessageJob;
-
 		class ErrorJob;
 
 	private:

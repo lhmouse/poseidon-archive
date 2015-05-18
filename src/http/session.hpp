@@ -19,10 +19,9 @@ namespace Http {
 
 	class Session : public TcpSessionBase, private ServerReader, private ServerWriter {
 	private:
+		class SyncJobBase;
 		class ContinueJob;
-
 		class RequestJob;
-
 		class ErrorJob;
 
 	private:
