@@ -315,6 +315,27 @@ namespace {
 		}
 	};
 
+	struct OperationElement {
+		boost::uint64_t dueTime;
+		boost::shared_ptr<const MySql::ObjectBase> combinableObject;
+
+		boost::shared_ptr<OperationBase> operation;
+
+		mutable std::size_t retryCount;
+
+		OperationElement(boost::uint64_t dueTime_, boost::shared_ptr<OperationBase> operation_)
+			: dueTime(dueTime_), combinableObject(operation_->getCombinableObject())
+			, operation(STD_MOVE(operation_))
+			, retryCount(0)
+		{
+		}
+	};
+
+	MULTI_INDEX_MAP(OperationMap, OperationElement,
+		MULTI_MEMBER_INDEX(dueTime)
+		MULTI_MEMBER_INDEX(combinableObject)
+	)
+
 	class MySqlThread : public Thread {
 	private:
 		class WorkingTimeAccumulator : NONCOPYABLE {
@@ -338,27 +359,6 @@ namespace {
 				return std::strcmp(lhs, rhs) < 0;
 			}
 		};
-
-		struct OperationElement {
-			boost::uint64_t dueTime;
-			boost::shared_ptr<const MySql::ObjectBase> combinableObject;
-
-			boost::shared_ptr<OperationBase> operation;
-
-			mutable std::size_t retryCount;
-
-			OperationElement(boost::uint64_t dueTime_, boost::shared_ptr<OperationBase> operation_)
-				: dueTime(dueTime_), combinableObject(operation_->getCombinableObject())
-				, operation(STD_MOVE(operation_))
-				, retryCount(0)
-			{
-			}
-		};
-
-		MULTI_INDEX_MAP(OperationMap, OperationElement,
-			MULTI_MEMBER_INDEX(dueTime)
-			MULTI_MEMBER_INDEX(combinableObject)
-		);
 
 	private:
 		const std::size_t m_index;

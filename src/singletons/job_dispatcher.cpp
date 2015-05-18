@@ -17,12 +17,41 @@
 namespace Poseidon {
 
 namespace {
-	const boost::weak_ptr<void> NULL_WEAK_PTR;
-
-	template<typename T>
-	bool isWeakPtrEmpty(const boost::weak_ptr<T> &ptr){
-		return !(NULL_WEAK_PTR < ptr) && !(ptr < NULL_WEAK_PTR);
+	template<typename Tx, typename Ty>
+	bool ownerEqual(const boost::shared_ptr<Tx> &lhs, const boost::shared_ptr<Ty> &rhs){
+		return !lhs.owner_before(rhs) && !rhs.owner_before(lhs);
 	}
+	template<typename Tx, typename Ty>
+	bool ownerEqual(const boost::weak_ptr<Tx> &lhs, const boost::shared_ptr<Ty> &rhs){
+		return !lhs.owner_before(rhs) && !rhs.owner_before(lhs);
+	}
+	template<typename Tx, typename Ty>
+	bool ownerEqual(const boost::shared_ptr<Tx> &lhs, const boost::weak_ptr<Ty> &rhs){
+		return !lhs.owner_before(rhs) && !rhs.owner_before(lhs);
+	}
+	template<typename Tx, typename Ty>
+	bool ownerEqual(const boost::weak_ptr<Tx> &lhs, const boost::weak_ptr<Ty> &rhs){
+		return !lhs.owner_before(rhs) && !rhs.owner_before(lhs);
+	}
+
+	struct RetryCountElement {
+		boost::shared_ptr<const void> ptr;
+		std::size_t count;
+
+		RetryCountElement(boost::shared_ptr<const void> ptr_, std::size_t count_)
+			: ptr(STD_MOVE(ptr_)), count(count_)
+		{
+		}
+	};
+
+	struct RetryCountComparator {
+		bool operator()(const RetryCountElement &lhs, const boost::shared_ptr<const void> &rhs) const {
+			return lhs.ptr.owner_before(rhs);
+		}
+		bool operator()(const boost::shared_ptr<const void> &lhs, const RetryCountElement &rhs) const {
+			return lhs.owner_before(rhs.ptr);
+		}
+	};
 
 	struct JobElement {
 		boost::shared_ptr<const JobBase> job;
@@ -31,14 +60,14 @@ namespace {
 		boost::uint64_t dueTime;
 		boost::weak_ptr<const void> category;
 
-		mutable std::map<boost::shared_ptr<const void>, std::size_t> retryCounts;
+		mutable std::vector<RetryCountElement> retryCounts;
 
 		JobElement(boost::shared_ptr<const JobBase> job_, boost::shared_ptr<const bool> withdrawn_,
 			boost::uint64_t dueTime_, boost::weak_ptr<const void> category_)
 			: job(STD_MOVE(job_)), withdrawn(STD_MOVE(withdrawn_))
 			, dueTime(dueTime_), category(STD_MOVE(category_))
 		{
-			assert(!isWeakPtrEmpty(category));
+			assert(!ownerEqual(category, boost::weak_ptr<void>()));
 		}
 	};
 
@@ -54,7 +83,7 @@ namespace {
 	MULTI_INDEX_MAP(JobMap, JobElement,
 		MULTI_MEMBER_INDEX(dueTime)
 		MULTI_MEMBER_INDEX(category)
-	);
+	)
 
 	std::size_t g_maxRetryCount			= 6;
 	boost::uint64_t g_retryInitDelay	= 100;
@@ -92,16 +121,22 @@ namespace {
 				try {
 					jobIt->job->perform();
 				} catch(JobBase::TryAgainLater &e){
-					AUTO_REF(retryCount, jobIt->retryCounts[e.getContext()]);
+					const AUTO(context, e.getContext());
+					AUTO(it, std::upper_bound(jobIt->retryCounts.begin(), jobIt->retryCounts.end(), context, RetryCountComparator()));
+					if((it != jobIt->retryCounts.begin()) && ownerEqual(it[-1].ptr, context)){
+						--it;
+					} else {
+						it = jobIt->retryCounts.insert(it, RetryCountElement(context, 0));
+					}
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-						"JobBase::TryAgainLater thrown while dispatching job: retryCount = ", retryCount);
+						"JobBase::TryAgainLater thrown while dispatching job: retryCount = ", it->count);
 
-					if(retryCount >= g_maxRetryCount){
+					if(it->count >= g_maxRetryCount){
 						LOG_POSEIDON_ERROR("Max retry count exceeded.");
 						DEBUG_THROW(Exception, sslit("Max retry count exceeded"));
 					}
-					newDueTime = now + (g_retryInitDelay << retryCount);
-					++retryCount;
+					newDueTime = now + (g_retryInitDelay << it->count);
+					++(it->count);
 				}
 			} catch(std::exception &e){
 				LOG_POSEIDON_WARNING("std::exception thrown in job dispatcher: what = ", e.what());
@@ -185,7 +220,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_
 			}
 			dueTime = it->dueTime + 1;
 		}
-		if(isWeakPtrEmpty(category)){
+		if(ownerEqual(category, boost::weak_ptr<void>())){
 			category = job;
 		}
 	}
