@@ -53,12 +53,12 @@ Uuid Uuid::random(){
 
 Uuid::Uuid(const char (&str)[36]){
 	if(!fromString(str)){
-		DEBUG_THROW(Exception, SSLIT("Invalid UUID string"));
+		DEBUG_THROW(Exception, sslit("Invalid UUID string"));
 	}
 }
 Uuid::Uuid(const std::string &str){
 	if(!fromString(str)){
-		DEBUG_THROW(Exception, SSLIT("Invalid UUID string"));
+		DEBUG_THROW(Exception, sslit("Invalid UUID string"));
 	}
 }
 

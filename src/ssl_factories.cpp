@@ -39,17 +39,17 @@ namespace {
 
 		LOG_POSEIDON_INFO("Loading server certificate: ", cert);
 		if(::SSL_CTX_use_certificate_file(ret.get(), cert, SSL_FILETYPE_PEM) != 1){
-			DEBUG_THROW(Exception, SSLIT("::SSL_CTX_use_certificate_file() failed"));
+			DEBUG_THROW(Exception, sslit("::SSL_CTX_use_certificate_file() failed"));
 		}
 
 		LOG_POSEIDON_INFO("Loading server private key: ", privateKey);
 		if(::SSL_CTX_use_PrivateKey_file(ret.get(), privateKey, SSL_FILETYPE_PEM) != 1){
-			DEBUG_THROW(Exception, SSLIT("::SSL_CTX_use_PrivateKey_file() failed"));
+			DEBUG_THROW(Exception, sslit("::SSL_CTX_use_PrivateKey_file() failed"));
 		}
 
 		LOG_POSEIDON_INFO("Verifying private key...");
 		if(::SSL_CTX_check_private_key(ret.get()) != 1){
-			DEBUG_THROW(Exception, SSLIT("::SSL_CTX_check_private_key() failed"));
+			DEBUG_THROW(Exception, sslit("::SSL_CTX_check_private_key() failed"));
 		}
 
 		return ret;

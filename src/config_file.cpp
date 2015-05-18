@@ -37,13 +37,13 @@ void ConfigFile::load(const char *path){
 		std::size_t equ = line.find('=', pos);
 		if(equ == std::string::npos){
 			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": '=' expected.");
-			DEBUG_THROW(Exception, SSLIT("Bad config file"));
+			DEBUG_THROW(Exception, sslit("Bad config file"));
 		}
 
 		std::size_t keyEnd = line.find_last_not_of(" \t", equ - 1);
 		if((keyEnd == std::string::npos) || (pos >= keyEnd)){
 			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": Name expected.");
-			DEBUG_THROW(Exception, SSLIT("Bad config file"));
+			DEBUG_THROW(Exception, sslit("Bad config file"));
 		}
 		line[keyEnd + 1] = 0;
 		const char *const key = &line[pos];

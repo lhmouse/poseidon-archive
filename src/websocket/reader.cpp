@@ -50,18 +50,18 @@ namespace WebSocket {
 				ch = m_queue.get();
 				if(ch & (OP_FL_RSV1 | OP_FL_RSV2 | OP_FL_RSV3)){
 					LOG_POSEIDON_WARNING("Aborting because some reserved bits are set, opcode = ", ch);
-					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Reserved bits set"));
+					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Reserved bits set"));
 				}
 				m_opcode = static_cast<OpCode>(ch & OP_FL_OPCODE);
 				m_fin = ch & OP_FL_FIN;
 				if((m_opcode & OP_FL_CONTROL) && !m_fin){
-					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Control frame fragemented"));
+					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Control frame fragemented"));
 				}
 				if((m_opcode == OP_CONTINUATION) && m_prevFin){
-					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Dangling frame continuation"));
+					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Dangling frame continuation"));
 				}
 				if((m_opcode != OP_CONTINUATION) && !m_prevFin){
-					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Final frame following a frame that needs continuation"));
+					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Final frame following a frame that needs continuation"));
 				}
 
 				m_sizeExpecting = 1;
@@ -71,12 +71,12 @@ namespace WebSocket {
 			case S_FRAME_SIZE:
 				ch = m_queue.get();
 				if((ch & 0x80) == 0){
-					DEBUG_THROW(Exception, ST_ACCESS_DENIED, SSLIT("Non-masked frames not allowed"));
+					DEBUG_THROW(Exception, ST_ACCESS_DENIED, sslit("Non-masked frames not allowed"));
 				}
 				m_frameSize = static_cast<unsigned char>(ch & 0x7F);
 				if(m_frameSize >= 0x7E){
 					if(m_opcode & OP_FL_CONTROL){
-						DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Control frame too large"));
+						DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Control frame too large"));
 					}
 					if(m_frameSize == 0x7E){
 						m_sizeExpecting = 2;

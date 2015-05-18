@@ -98,7 +98,7 @@ namespace {
 
 					if(retryCount >= g_maxRetryCount){
 						LOG_POSEIDON_ERROR("Max retry count exceeded.");
-						DEBUG_THROW(Exception, SSLIT("Max retry count exceeded"));
+						DEBUG_THROW(Exception, sslit("Max retry count exceeded"));
 					}
 					newDueTime = now + (g_retryInitDelay << retryCount);
 					++retryCount;

@@ -149,7 +149,7 @@ namespace WebSocket {
 		try {
 			const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("websocket_max_request_length", 16384));
 			if(m_sizeTotal > maxRequestLength){
-				DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, SSLIT("Message too large"));
+				DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
 			}
 
 			Reader::putEncodedData(StreamBuffer(data, size));
@@ -229,7 +229,7 @@ namespace WebSocket {
 			break;
 
 		default:
-			DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, SSLIT("Invalid opcode"));
+			DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Invalid opcode"));
 			break;
 		}
 	}

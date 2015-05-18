@@ -192,7 +192,7 @@ extern std::ostream &operator<<(std::ostream &os, const SharedNts &rhs);
 
 // Shared String LITeral
 template<std::size_t N>
-inline SharedNts SSLIT(const char (&str)[N]){
+inline SharedNts sslit(const char (&str)[N]){
 	return SharedNts::view(str);
 }
 

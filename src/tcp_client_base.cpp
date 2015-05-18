@@ -36,7 +36,7 @@ namespace {
 					return false;
 				}
 				LOG_POSEIDON_ERROR("::SSL_connect() = ", ret, ", ::SSL_get_error() = ", err);
-				DEBUG_THROW(Exception, SSLIT("::SSL_connect() failed"));
+				DEBUG_THROW(Exception, sslit("::SSL_connect() failed"));
 			}
 			return true;
 		}

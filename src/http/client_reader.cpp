@@ -87,18 +87,18 @@ namespace Http {
 					AUTO(pos, line.find(' '));
 					if(pos == std::string::npos){
 						LOG_POSEIDON_WARNING("Bad request header: expecting verb, line = ", line);
-						DEBUG_THROW(BasicException, SSLIT("No HTTP version in response headers"));
+						DEBUG_THROW(BasicException, sslit("No HTTP version in response headers"));
 					}
 					line[pos] = 0;
 					long verEnd = 0;
 					char verMajorStr[16], verMinorStr[16];
 					if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", verMajorStr, verMinorStr, &verEnd) != 2){
 						LOG_POSEIDON_WARNING("Bad response header: expecting HTTP version: line = ", line.c_str());
-						DEBUG_THROW(BasicException, SSLIT("Malformed HTTP version in response headers"));
+						DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
 					}
 					if(static_cast<unsigned long>(verEnd) != pos){
 						LOG_POSEIDON_WARNING("Bad response header: junk after HTTP version: line = ", line.c_str());
-						DEBUG_THROW(BasicException, SSLIT("Malformed HTTP version in response headers"));
+						DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
 					}
 					m_responseHeaders.version = std::strtoul(verMajorStr, NULLPTR, 10) * 10000 + std::strtoul(verMinorStr, NULLPTR, 10);
 					line.erase(0, pos + 1);
@@ -106,14 +106,14 @@ namespace Http {
 					pos = line.find(' ');
 					if(pos == std::string::npos){
 						LOG_POSEIDON_WARNING("Bad response header: expecting status code: line = ", line.c_str());
-						DEBUG_THROW(BasicException, SSLIT("No status code in response headers"));
+						DEBUG_THROW(BasicException, sslit("No status code in response headers"));
 					}
 					line[pos] = 0;
 					char *endptr;
 					const AUTO(statusCode, std::strtoul(line.c_str(), &endptr, 10));
 					if(*endptr){
 						LOG_POSEIDON_WARNING("Bad response header: expecting status code: line = ", line.c_str());
-						DEBUG_THROW(BasicException, SSLIT("Malformed status code in response headers"));
+						DEBUG_THROW(BasicException, sslit("Malformed status code in response headers"));
 					}
 					m_responseHeaders.statusCode = statusCode;
 					line.erase(0, pos + 1);
@@ -136,7 +136,7 @@ namespace Http {
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
 						LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
-						DEBUG_THROW(BasicException, SSLIT("Malformed HTTP header in response headers"));
+						DEBUG_THROW(BasicException, sslit("Malformed HTTP header in response headers"));
 					}
 					m_responseHeaders.headers.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
 
@@ -159,11 +159,11 @@ namespace Http {
 							m_contentLength = ::strtoull(ontentLength.c_str(), &endptr, 10);
 							if(*endptr){
 								LOG_POSEIDON_WARNING("Bad request header Content-Length: ", ontentLength);
-								DEBUG_THROW(BasicException, SSLIT("Malformed Content-Length header"));
+								DEBUG_THROW(BasicException, sslit("Malformed Content-Length header"));
 							}
 							if(m_contentLength > CONTENT_LENGTH_MAX){
 								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", ontentLength);
-								DEBUG_THROW(BasicException, SSLIT("Inacceptable Content-Length"));
+								DEBUG_THROW(BasicException, sslit("Inacceptable Content-Length"));
 							}
 						}
 					} else {
@@ -217,11 +217,11 @@ namespace Http {
 					m_chunkSize = ::strtoull(line.c_str(), &endptr, 16);
 					if(*endptr && (*endptr != ' ')){
 						LOG_POSEIDON_WARNING("Bad chunk header: ", line);
-						DEBUG_THROW(BasicException, SSLIT("Malformed chunk header"));
+						DEBUG_THROW(BasicException, sslit("Malformed chunk header"));
 					}
 					if(m_chunkSize > CONTENT_LENGTH_MAX){
 						LOG_POSEIDON_WARNING("Inacceptable chunk size in header: ", line);
-						DEBUG_THROW(BasicException, SSLIT("Inacceptable chunk length"));
+						DEBUG_THROW(BasicException, sslit("Inacceptable chunk length"));
 					}
 					if(m_chunkSize == 0){
 						m_sizeExpecting = EXPECTING_NEW_LINE;
@@ -260,7 +260,7 @@ namespace Http {
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
 						LOG_POSEIDON_WARNING("Invalid chunk trailer: line = ", line);
-						DEBUG_THROW(BasicException, SSLIT("Invalid HTTP header in chunk trailer"));
+						DEBUG_THROW(BasicException, sslit("Invalid HTTP header in chunk trailer"));
 					}
 					m_chunkedTrailer.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
 
@@ -290,7 +290,7 @@ namespace Http {
 		PROFILE_ME;
 
 		if(!isContentTillEof()){
-			DEBUG_THROW(BasicException, SSLIT("Terminating a non-until-EOF HTTP response"));
+			DEBUG_THROW(BasicException, sslit("Terminating a non-until-EOF HTTP response"));
 		}
 
 		const bool ret = onResponseEnd(m_contentOffset, STD_MOVE(m_chunkedTrailer));
