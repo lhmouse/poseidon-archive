@@ -26,9 +26,6 @@ namespace Http {
 			{
 			}
 
-		protected:
-			virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
-
 		private:
 			boost::weak_ptr<const void> getCategory() const FINAL {
 				return m_session;
@@ -70,6 +67,9 @@ namespace Http {
 					throw;
 				}
 			}
+
+		protected:
+			virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
 		};
 	}
 

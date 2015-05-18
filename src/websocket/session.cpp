@@ -26,9 +26,6 @@ namespace WebSocket {
 			{
 			}
 
-		protected:
-			virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
-
 		private:
 			boost::weak_ptr<const void> getCategory() const FINAL {
 				return m_parent;
@@ -61,6 +58,9 @@ namespace WebSocket {
 					throw;
 				}
 			}
+
+		protected:
+			virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
 		};
 	}
 
