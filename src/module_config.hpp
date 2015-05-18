@@ -38,27 +38,27 @@
 	}	\
 	template<typename T_>	\
 	bool getConfig_(T_ &val_, const char *key_){	\
-		return ModuleConfigImpl_::requireConfig_()->get(val_, key_);	\
+		return ModuleConfigImpl_::requireConfig_()->get<T_>(val_, key_);	\
 	}	\
 	template<typename T_, typename DefaultT_>	\
 	bool getConfig_(T_ &val_, const char *key_, const DefaultT_ &defVal_){	\
-		return ModuleConfigImpl_::requireConfig_()->get(val_, key_, defVal_);	\
+		return ModuleConfigImpl_::requireConfig_()->get<T_, DefaultT_>(val_, key_, defVal_);	\
 	}	\
 	template<typename T_>	\
 	T_ getConfig_(const char *key_){	\
-		return ModuleConfigImpl_::requireConfig_()->get(key_);	\
+		return ModuleConfigImpl_::requireConfig_()->get<T_>(key_);	\
 	}	\
 	template<typename T_, typename DefaultT_>	\
 	T_ getConfig_(const char *key_, const DefaultT_ &defVal_){	\
-		return ModuleConfigImpl_::requireConfig_()->get(key_, defVal_);	\
+		return ModuleConfigImpl_::requireConfig_()->get<T_, DefaultT_>(key_, defVal_);	\
 	}	\
 	template<typename T_>	\
 	std::size_t getConfigV_(std::vector<T_> &vals_, const char *key_, bool includingEmpty_ = false){	\
-		return ModuleConfigImpl_::requireConfig_()->getAll(vals_, key_, includingEmpty_);	\
+		return ModuleConfigImpl_::requireConfig_()->getAll<T_>(vals_, key_, includingEmpty_);	\
 	}	\
 	template<typename T_>	\
 	std::vector<T_> getConfigV_(const char *key_, bool includingEmpty_ = false){	\
-		return ModuleConfigImpl_::requireConfig_()->getAll(key_, includingEmpty_);	\
+		return ModuleConfigImpl_::requireConfig_()->getAll<T_>(key_, includingEmpty_);	\
 	}
 
 #define DEFINE_MODULE_CONFIG(fileName_)	\
