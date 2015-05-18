@@ -243,23 +243,15 @@ const IpPort &TcpSessionBase::getLocalInfo() const {
 }
 
 void TcpSessionBase::setTimeout(boost::uint64_t timeout){
+	const Mutex::UniqueLock lock(m_timerMutex);
 	if(timeout == 0){
-		const Mutex::UniqueLock lock(m_timerMutex);
 		m_shutdownTimer.reset();
 	} else {
-		boost::shared_ptr<TimerItem> timer;
-		{
-			const Mutex::UniqueLock lock(m_timerMutex);
-			timer = m_shutdownTimer;
-		}
-		if(timer){
-			TimerDaemon::setTime(timer, timeout, 0);
+		if(m_shutdownTimer){
+			TimerDaemon::setTime(m_shutdownTimer, timeout, 0);
 		} else {
-			timer = TimerDaemon::registerTimer(timeout, 0,
+			m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
 				boost::bind(&shutdownIfTimeout, virtualWeakFromThis<TcpSessionBase>()));
-
-			const Mutex::UniqueLock lock(m_timerMutex);
-			m_shutdownTimer = STD_MOVE(timer);
 		}
 	}
 }
