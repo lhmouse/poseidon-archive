@@ -31,7 +31,7 @@
 		inline ::boost::shared_ptr<const ::Poseidon::ConfigFile> requireConfig_(){	\
 			const AUTO(config_, g_weakConfig_.lock());	\
 			if(!config_){	\
-				DEBUG_THROW(::Poseidon::Exception, SSLIT("Module config is not loaded"));	\
+				DEBUG_THROW(::Poseidon::Exception, ::Poseidon::SSLIT("Module config is not loaded"));	\
 			}	\
 			return config_;	\
 		}	\
