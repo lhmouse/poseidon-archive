@@ -24,11 +24,11 @@ namespace Cbpp {
 		class ErrorMessageJob;
 
 	private:
-		const boost::uint64_t m_keepAliveTimeout;
+		const boost::uint64_t m_keepAliveInterval;
 
 	protected:
-		Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveTimeout);
-		Client(const IpPort &addr, bool useSsl, boost::uint64_t keepAliveTimeout);
+		Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveInterval);
+		Client(const IpPort &addr, bool useSsl, boost::uint64_t keepAliveInterval);
 		~Client();
 
 	protected:

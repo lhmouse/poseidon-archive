@@ -158,14 +158,14 @@ namespace Cbpp {
 		}
 	};
 
-	Client::Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveTimeout)
+	Client::Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveInterval)
 		: TcpClientBase(addr, useSsl)
-		, m_keepAliveTimeout(keepAliveTimeout)
+		, m_keepAliveInterval(keepAliveInterval)
 	{
 	}
-	Client::Client(const IpPort &addr, bool useSsl, boost::uint64_t keepAliveTimeout)
+	Client::Client(const IpPort &addr, bool useSsl, boost::uint64_t keepAliveInterval)
 		: TcpClientBase(addr, useSsl)
-		, m_keepAliveTimeout(keepAliveTimeout)
+		, m_keepAliveInterval(keepAliveInterval)
 	{
 	}
 	Client::~Client(){
