@@ -206,7 +206,7 @@ namespace Http {
 				LOG_POSEIDON_WARNING("> Nonce timestamp is in the future.");
 				return std::make_pair(AUTH_EXPIRED, NULLPTR);
 			}
-			const AUTO(nonceExpiryTime, MainConfig::get().get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000));
+			const AUTO(nonceExpiryTime, MainConfig::get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000));
 			if(localNow - rawNonce.timestamp > nonceExpiryTime){
 				LOG_POSEIDON_WARNING("> Nonce has expired.");
 				return std::make_pair(AUTH_EXPIRED, NULLPTR);

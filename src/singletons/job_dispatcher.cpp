@@ -164,12 +164,10 @@ namespace {
 void JobDispatcher::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting job dispatcher...");
 
-	AUTO_REF(conf, MainConfig::get());
-
-	conf.get(g_maxRetryCount, "job_max_retry_count");
+	MainConfig::get(g_maxRetryCount, "job_max_retry_count");
 	LOG_POSEIDON_DEBUG("Max retry count = ", g_maxRetryCount);
 
-	conf.get(g_retryInitDelay, "job_retry_init_delay");
+	MainConfig::get(g_retryInitDelay, "job_retry_init_delay");
 	LOG_POSEIDON_DEBUG("Retry init delay = ", g_retryInitDelay);
 }
 void JobDispatcher::stop(){

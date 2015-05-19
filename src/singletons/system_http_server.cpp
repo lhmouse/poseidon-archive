@@ -240,14 +240,12 @@ namespace {
 }
 
 void SystemHttpServer::start(){
-	AUTO_REF(conf, MainConfig::get());
-
-	AUTO(bind, conf.get<std::string>("system_http_bind", "0.0.0.0"));
-	AUTO(port, conf.get<unsigned>("system_http_port", 8900));
-	AUTO(cert, conf.get<std::string>("system_http_certificate"));
-	AUTO(pkey, conf.get<std::string>("system_http_private_key"));
-	AUTO(auth, conf.getAll<std::string>("system_http_auth_user_pass"));
-	AUTO(path, conf.get<std::string>("system_http_path", "~/sys"));
+	AUTO(bind, MainConfig::get<std::string>("system_http_bind", "0.0.0.0"));
+	AUTO(port, MainConfig::get<unsigned>("system_http_port", 8900));
+	AUTO(cert, MainConfig::get<std::string>("system_http_certificate"));
+	AUTO(pkey, MainConfig::get<std::string>("system_http_private_key"));
+	AUTO(auth, MainConfig::getAll<std::string>("system_http_auth_user_pass"));
+	AUTO(path, MainConfig::get<std::string>("system_http_path", "~/sys"));
 
 	const IpPort bindAddr(SharedNts(bind), port);
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bindAddr);

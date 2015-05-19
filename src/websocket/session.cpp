@@ -81,7 +81,7 @@ namespace WebSocket {
 			LOG_POSEIDON_DEBUG("Dispatching data message: opcode = ", m_opcode, ", payloadSize = ", m_payload.size());
 			session->onSyncDataMessage(m_opcode, m_payload);
 
-			const AUTO(keepAliveTimeout, MainConfig::get().get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 			session->setTimeout(keepAliveTimeout);
 		}
 	};
@@ -105,7 +105,7 @@ namespace WebSocket {
 			LOG_POSEIDON_DEBUG("Dispatching control message: opcode = ", m_opcode, ", payloadSize = ", m_payload.size());
 			session->onSyncControlMessage(m_opcode, m_payload);
 
-			const AUTO(keepAliveTimeout, MainConfig::get().get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 			session->setTimeout(keepAliveTimeout);
 		}
 	};
@@ -145,7 +145,7 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		try {
-			const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("websocket_max_request_length", 16384));
+			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384));
 			if(m_sizeTotal > maxRequestLength){
 				DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
 			}

@@ -85,7 +85,7 @@ namespace Cbpp {
 			LOG_POSEIDON_DEBUG("Dispatching message: messageId = ", m_messageId, ", payloadLen = ", m_payload.size());
 			session->onSyncDataMessage(m_messageId, m_payload);
 
-			const AUTO(keepAliveTimeout, MainConfig::get().get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
 			session->setTimeout(keepAliveTimeout);
 		}
 	};
@@ -112,7 +112,7 @@ namespace Cbpp {
 				", vintParam = ", m_vintParam, ", stringParam = ", m_stringParam);
 			session->onSyncControlMessage(m_controlCode, m_vintParam, m_stringParam);
 
-			const AUTO(keepAliveTimeout, MainConfig::get().get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
 			session->setTimeout(keepAliveTimeout);
 		}
 	};
@@ -154,7 +154,7 @@ namespace Cbpp {
 		PROFILE_ME;
 
 		try {
-			const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("cbpp_max_request_length", 16384));
+			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("cbpp_max_request_length", 16384));
 			if(m_sizeTotal > maxRequestLength){
 				DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
 			}

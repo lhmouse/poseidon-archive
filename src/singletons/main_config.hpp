@@ -12,7 +12,33 @@ struct MainConfig {
 	static void setRunPath(const char *path);
 
 	static void reload();
-	static const ConfigFile &get();
+	static const ConfigFile &getConfig();
+
+	template<typename T>
+	static bool get(T &val, const char *key){
+		return getConfig().get<T>(val, key);
+	}
+	template<typename T, typename DefaultT>
+	static bool get(T &val, const char *key, const DefaultT &defVal){
+		return getConfig().get<T, DefaultT>(val, key, defVal);
+	}
+	template<typename T>
+	static T get(const char *key){
+		return getConfig().get<T>(key);
+	}
+	template<typename T, typename DefaultT>
+	static T get(const char *key, const DefaultT &defVal){
+		return getConfig().get<T, DefaultT>(key, defVal);
+	}
+
+	template<typename T>
+	static std::size_t getAll(std::vector<T> &vals, const char *key, bool includingEmpty = false){
+		return getConfig().getAll<T>(vals, key, includingEmpty);
+	}
+	template<typename T>
+	static std::vector<T> getAll(const char *key, bool includingEmpty = false){
+		return getConfig().getAll<T>(key, includingEmpty);
+	}
 
 private:
 	MainConfig();

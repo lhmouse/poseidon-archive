@@ -115,7 +115,7 @@ namespace Http {
 				keepAlive = (::strcasecmp(connection.c_str(), "Close") != 0);
 			}
 			if(keepAlive){
-				session->setTimeout(MainConfig::get().get<boost::uint64_t>("http_keep_alive_timeout", 5000));
+				session->setTimeout(MainConfig::get<boost::uint64_t>("http_keep_alive_timeout", 5000));
 			} else {
 				session->forceShutdown();
 			}
@@ -195,7 +195,7 @@ namespace Http {
 		}
 
 		try {
-			const AUTO(maxRequestLength, MainConfig::get().get<boost::uint64_t>("http_max_request_length", 16384));
+			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("http_max_request_length", 16384));
 			if(m_sizeTotal > maxRequestLength){
 				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
 			}

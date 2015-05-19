@@ -652,45 +652,43 @@ void MySqlDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MySQL daemon...");
 
-	AUTO_REF(conf, MainConfig::get());
-
-	conf.get(g_serverAddr, "mysql_server_addr");
+	MainConfig::get(g_serverAddr, "mysql_server_addr");
 	LOG_POSEIDON_DEBUG("MySQL server addr = ", g_serverAddr);
 
-	conf.get(g_serverPort, "mysql_server_port");
+	MainConfig::get(g_serverPort, "mysql_server_port");
 	LOG_POSEIDON_DEBUG("MySQL server port = ", g_serverPort);
 
-	conf.get(g_username, "mysql_username");
+	MainConfig::get(g_username, "mysql_username");
 	LOG_POSEIDON_DEBUG("MySQL username = ", g_username);
 
-	conf.get(g_password, "mysql_password");
+	MainConfig::get(g_password, "mysql_password");
 	LOG_POSEIDON_DEBUG("MySQL password = ", g_password);
 
-	conf.get(g_schema, "mysql_schema");
+	MainConfig::get(g_schema, "mysql_schema");
 	LOG_POSEIDON_DEBUG("MySQL schema = ", g_schema);
 
-	conf.get(g_useSsl, "mysql_use_ssl");
+	MainConfig::get(g_useSsl, "mysql_use_ssl");
 	LOG_POSEIDON_DEBUG("MySQL use ssl = ", g_useSsl);
 
-	conf.get(g_charset, "mysql_charset");
+	MainConfig::get(g_charset, "mysql_charset");
 	LOG_POSEIDON_DEBUG("MySQL charset = ", g_charset);
 
-	conf.get(g_dumpDir, "mysql_dump_dir");
+	MainConfig::get(g_dumpDir, "mysql_dump_dir");
 	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_dumpDir);
 
-	conf.get(g_maxThreads, "mysql_max_threads");
+	MainConfig::get(g_maxThreads, "mysql_max_threads");
 	LOG_POSEIDON_DEBUG("MySQL max threads = ", g_maxThreads);
 
-	conf.get(g_saveDelay, "mysql_save_delay");
+	MainConfig::get(g_saveDelay, "mysql_save_delay");
 	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_saveDelay);
 
-	conf.get(g_reconnDelay, "mysql_reconn_delay");
+	MainConfig::get(g_reconnDelay, "mysql_reconn_delay");
 	LOG_POSEIDON_DEBUG("MySQL reconnect delay = ", g_reconnDelay);
 
-	conf.get(g_maxRetryCount, "mysql_max_retry_count");
+	MainConfig::get(g_maxRetryCount, "mysql_max_retry_count");
 	LOG_POSEIDON_DEBUG("MySQL max retry count = ", g_maxRetryCount);
 
-	conf.get(g_retryInitDelay, "mysql_retry_init_delay");
+	MainConfig::get(g_retryInitDelay, "mysql_retry_init_delay");
 	LOG_POSEIDON_DEBUG("MySQL retry init delay = ", g_retryInitDelay);
 
 	if(g_dumpDir.empty()){

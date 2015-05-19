@@ -116,12 +116,10 @@ void EpollDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting epoll daemon...");
 
-	AUTO_REF(conf, MainConfig::get());
-
-	conf.get(g_maxTimeout, "epoll_max_timeout");
+	MainConfig::get(g_maxTimeout, "epoll_max_timeout");
 	LOG_POSEIDON_DEBUG("Max timeout = ", g_maxTimeout);
 
-	conf.get(g_tcpRequestTimeout, "epoll_tcp_request_timeout");
+	MainConfig::get(g_tcpRequestTimeout, "epoll_tcp_request_timeout");
 	LOG_POSEIDON_DEBUG("Tcp request timeout = ", g_tcpRequestTimeout);
 
 	Thread(&threadProc, "   N").swap(g_thread);
