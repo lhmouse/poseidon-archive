@@ -244,7 +244,7 @@ namespace Http {
 
 		m_entity.splice(entity);
 	}
-	bool Session::onRequestEnd(boost::uint64_t /* contentLength */, OptionalMap headers){
+	bool Session::onRequestEnd(boost::uint64_t /* contentLength */, bool /* isChunked */, OptionalMap headers){
 		PROFILE_ME;
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){

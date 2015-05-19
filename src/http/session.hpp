@@ -48,7 +48,7 @@ namespace Http {
 		// ServerReader
 		void onRequestHeaders(RequestHeaders requestHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;
 		void onRequestEntity(boost::uint64_t entityOffset, StreamBuffer entity) OVERRIDE;
-		bool onRequestEnd(boost::uint64_t contentLength, OptionalMap headers) OVERRIDE;
+		bool onRequestEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) OVERRIDE;
 
 		// ServerWriter
 		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;

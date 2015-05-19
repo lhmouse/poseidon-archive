@@ -97,12 +97,13 @@ namespace Http {
 	class Client::ResponseEndJob : public ClientJobBase {
 	private:
 		const boost::uint64_t m_contentLength;
+		const bool m_isChunked;
 		const OptionalMap m_headers;
 
 	public:
-		ResponseEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentLength, OptionalMap headers)
+		ResponseEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentLength, bool isChunked, OptionalMap headers)
 			: ClientJobBase(client)
-			, m_contentLength(contentLength), m_headers(STD_MOVE(headers))
+			, m_contentLength(contentLength), m_isChunked(isChunked), m_headers(STD_MOVE(headers))
 		{
 		}
 
@@ -110,7 +111,7 @@ namespace Http {
 		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncResponseEnd(m_contentLength, m_headers);
+			client->onSyncResponseEnd(m_contentLength, m_isChunked, m_headers);
 		}
 	};
 
@@ -160,11 +161,11 @@ namespace Http {
 		enqueueJob(boost::make_shared<ResponseEntityJob>(
 			virtualSharedFromThis<Client>(), entityOffset, STD_MOVE(entity)));
 	}
-	bool Client::onResponseEnd(boost::uint64_t contentLength, OptionalMap headers){
+	bool Client::onResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers){
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<ResponseEndJob>(
-			virtualSharedFromThis<Client>(), contentLength, STD_MOVE(headers)));
+			virtualSharedFromThis<Client>(), contentLength, isChunked, STD_MOVE(headers)));
 
 		return true;
 	}

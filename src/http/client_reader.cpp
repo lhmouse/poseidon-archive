@@ -197,7 +197,7 @@ namespace Http {
 					m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength - m_contentOffset, 1024);
 					// m_state = S_IDENTITY;
 				} else {
-					hasNextResponse = onResponseEnd(m_contentOffset, VAL_INIT);
+					hasNextResponse = onResponseEnd(m_contentOffset, false, VAL_INIT);
 
 					m_sizeExpecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
@@ -267,7 +267,7 @@ namespace Http {
 					m_sizeExpecting = EXPECTING_NEW_LINE;
 					// m_state = S_CHUNKED_TRAILER;
 				} else {
-					hasNextResponse = onResponseEnd(m_contentOffset, STD_MOVE(m_chunkedTrailer));
+					hasNextResponse = onResponseEnd(m_contentOffset, true, STD_MOVE(m_chunkedTrailer));
 
 					m_sizeExpecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
@@ -293,7 +293,7 @@ namespace Http {
 			DEBUG_THROW(BasicException, sslit("Terminating a non-until-EOF HTTP response"));
 		}
 
-		const bool ret = onResponseEnd(m_contentOffset, STD_MOVE(m_chunkedTrailer));
+		const bool ret = onResponseEnd(m_contentOffset, false, STD_MOVE(m_chunkedTrailer));
 
 		m_sizeExpecting = EXPECTING_NEW_LINE;
 		m_state = S_FIRST_HEADER;

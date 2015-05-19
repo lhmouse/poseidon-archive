@@ -67,7 +67,7 @@ namespace Http {
 		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_TILL_EOF，此处 realContentLength 即为实际接收大小。
 		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
 		// chunked 允许追加报头。
-		virtual bool onResponseEnd(boost::uint64_t contentLength, OptionalMap headers) = 0;
+		virtual bool onResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) = 0;
 
 	public:
 		const StreamBuffer &getQueue() const {

@@ -200,7 +200,7 @@ namespace Http {
 					m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength - m_contentOffset, 1024);
 					// m_state = S_IDENTITY;
 				} else {
-					hasNextRequest = onRequestEnd(m_contentOffset, VAL_INIT);
+					hasNextRequest = onRequestEnd(m_contentOffset, false, VAL_INIT);
 
 					m_sizeExpecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
@@ -270,7 +270,7 @@ namespace Http {
 					m_sizeExpecting = EXPECTING_NEW_LINE;
 					// m_state = S_CHUNKED_TRAILER;
 				} else {
-					hasNextRequest = onRequestEnd(m_contentOffset, STD_MOVE(m_chunkedTrailer));
+					hasNextRequest = onRequestEnd(m_contentOffset, true, STD_MOVE(m_chunkedTrailer));
 
 					m_sizeExpecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
