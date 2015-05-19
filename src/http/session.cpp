@@ -208,6 +208,7 @@ namespace Http {
 				virtualSharedFromThis<Session>(), e.statusCode(), e.headers()));
 			shutdownRead();
 			shutdownWrite();
+			return;
 		}
 
 		upgradedSession = m_upgradedSession;
