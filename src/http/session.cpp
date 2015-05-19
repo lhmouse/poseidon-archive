@@ -195,6 +195,7 @@ namespace Http {
 		}
 
 		try {
+			m_sizeTotal += size;
 			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("http_max_request_length", 16384));
 			if(m_sizeTotal > maxRequestLength){
 				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);

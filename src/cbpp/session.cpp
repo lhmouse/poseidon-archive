@@ -154,6 +154,7 @@ namespace Cbpp {
 		PROFILE_ME;
 
 		try {
+			m_sizeTotal += size;
 			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("cbpp_max_request_length", 16384));
 			if(m_sizeTotal > maxRequestLength){
 				DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);

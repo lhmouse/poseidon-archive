@@ -145,6 +145,7 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		try {
+			m_sizeTotal += size;
 			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384));
 			if(m_sizeTotal > maxRequestLength){
 				DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
