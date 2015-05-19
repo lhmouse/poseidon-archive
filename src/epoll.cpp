@@ -99,7 +99,7 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 		return;
 	}
 	::epoll_event event;
-	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET);
+	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
 	event.data.ptr = session.get();
 	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
 		const int errCode = errno;
@@ -180,14 +180,6 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			continue;
 		}
 
-		if(event.events & EPOLLRDHUP){
-			if(!it->readHup){
-				session->shutdownRead();
-				session->onReadHup();
-
-				it->readHup = true;
-			}
-		}
 		if(event.events & EPOLLHUP){
 			if(!it->writeHup){
 				session->shutdownWrite();
@@ -252,6 +244,13 @@ std::size_t Epoll::pumpReadable(){
 				}
 				DEBUG_THROW(SystemException);
 			} else if(result.bytesTransferred == 0){
+				if(!it->readHup){
+					session->shutdownRead();
+					session->onReadHup();
+
+					it->readHup = true;
+				}
+
 				const Mutex::UniqueLock lock(m_mutex);
 				m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 				continue;
