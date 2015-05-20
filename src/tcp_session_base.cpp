@@ -101,19 +101,15 @@ void TcpSessionBase::notifyEpollWriteable() NOEXCEPT {
 }
 
 void TcpSessionBase::fetchPeerInfo() const {
-	if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
-		return;
-	}
-	{
-		const Mutex::UniqueLock lock(m_peerInfo.mutex);
-		if(atomicLoad(m_peerInfo.fetched, ATOMIC_ACQUIRE)){
-			return;
-		}
+	const Mutex::UniqueLock lock(m_peerInfo.mutex);
+	if(m_peerInfo.remote.port == 0){
 		m_peerInfo.remote = getRemoteIpPortFromFd(m_socket.get());
-		m_peerInfo.local = getLocalIpPortFromFd(m_socket.get());
-		atomicStore(m_peerInfo.fetched, true, ATOMIC_RELEASE);
+		LOG_POSEIDON_DEBUG("TCP session remote info = ", m_peerInfo.remote);
 	}
-	LOG_POSEIDON_INFO("TCP session: remote = ", m_peerInfo.remote, ", local = ", m_peerInfo.local);
+	if(m_peerInfo.local.port == 0){
+		m_peerInfo.local = getLocalIpPortFromFd(m_socket.get());
+		LOG_POSEIDON_DEBUG("TCP session local info = ", m_peerInfo.local);
+	}
 }
 
 TcpSessionBase::SyncIoResult TcpSessionBase::syncReadAndProcess(void *hint, unsigned long hintSize){
@@ -128,6 +124,8 @@ TcpSessionBase::SyncIoResult TcpSessionBase::syncReadAndProcess(void *hint, unsi
 	ret.errCode = errno;
 
 	if(ret.bytesTransferred > 0){
+		fetchPeerInfo();
+
 		const AUTO(bytes, static_cast<std::size_t>(ret.bytesTransferred));
 		LOG_POSEIDON_TRACE("Read ", bytes, " byte(s) from ", getRemoteInfo(), ", hex = ", HexDumper(hint, bytes));
 
@@ -159,6 +157,8 @@ TcpSessionBase::SyncIoResult TcpSessionBase::syncWrite(void *hint, unsigned long
 		ret.errCode = errno;
 
 		if(ret.bytesTransferred > 0){
+			fetchPeerInfo();
+
 			const AUTO(bytes, static_cast<std::size_t>(ret.bytesTransferred));
 			LOG_POSEIDON_TRACE("Wrote ", bytes, " byte(s) to ", getRemoteInfo(), ", hex = ", HexDumper(hint, bytes));
 

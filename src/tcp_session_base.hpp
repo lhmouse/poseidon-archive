@@ -56,7 +56,6 @@ private:
 	const boost::uint64_t m_createdTime;
 
 	mutable struct {
-		volatile bool fetched;
 		Mutex mutex;
 		IpPort remote;
 		IpPort local;
