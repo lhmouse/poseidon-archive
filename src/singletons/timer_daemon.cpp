@@ -193,23 +193,20 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerHourlyTimer(
 	unsigned minute, unsigned second, TimerCallback callback, bool isAsync)
 {
 	const AUTO(delta, getLocalTime() - (minute * 60ull + second));
-	return registerTimer(MILLISECS_PER_HOUR - delta % MILLISECS_PER_HOUR, MILLISECS_PER_HOUR,
-		STD_MOVE(callback), isAsync);
+	return registerTimer(MILLISECS_PER_HOUR - delta % MILLISECS_PER_HOUR, MILLISECS_PER_HOUR, STD_MOVE(callback), isAsync);
 }
 boost::shared_ptr<TimerItem> TimerDaemon::registerDailyTimer(
 	unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isAsync)
 {
 	const AUTO(delta, getLocalTime() - (hour * 3600ull + minute * 60ull + second));
-	return registerTimer(MILLISECS_PER_DAY - delta % MILLISECS_PER_DAY, MILLISECS_PER_DAY,
-		STD_MOVE(callback), isAsync);
+	return registerTimer(MILLISECS_PER_DAY - delta % MILLISECS_PER_DAY, MILLISECS_PER_DAY, STD_MOVE(callback), isAsync);
 }
 boost::shared_ptr<TimerItem> TimerDaemon::registerWeeklyTimer(
 	unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isAsync)
 {
 	// 注意 1970-01-01 是星期四。
 	const AUTO(delta, getLocalTime() - ((dayOfWeek + 3) * 86400ull + hour * 3600ull + minute * 60ull + second));
-	return registerTimer(MILLISECS_PER_WEEK - delta % MILLISECS_PER_WEEK, MILLISECS_PER_WEEK,
-		STD_MOVE(callback), isAsync);
+	return registerTimer(MILLISECS_PER_WEEK - delta % MILLISECS_PER_WEEK, MILLISECS_PER_WEEK, STD_MOVE(callback), isAsync);
 }
 
 void TimerDaemon::setAbsoluteTime(
