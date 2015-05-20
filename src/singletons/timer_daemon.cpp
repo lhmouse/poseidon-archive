@@ -82,50 +82,61 @@ namespace {
 	ConditionVariable g_newTimer;
 	std::vector<TimerQueueElement> g_timers;
 
+	bool pumpOneElement() NOEXCEPT {
+		const boost::uint64_t now = getFastMonoClock();
+
+		boost::shared_ptr<const TimerCallback> callback;
+		boost::uint64_t period = 0;
+		bool isAsync = false;
+		{
+			const Mutex::UniqueLock lock(g_mutex);
+			while(!g_timers.empty() && (now >= g_timers.front().next)){
+				const AUTO(item, g_timers.front().item.lock());
+				const AUTO(stamp, g_timers.front().stamp);
+				std::pop_heap(g_timers.begin(), g_timers.end());
+
+				if(item && (stamp == item->stamp)){
+					callback = item->callback;
+					period = item->period;
+					isAsync = item->isAsync;
+					if(period == 0){
+						g_timers.pop_back();
+					} else {
+						g_timers.back().next += period;
+						std::push_heap(g_timers.begin(), g_timers.end());
+					}
+					break;
+				}
+				g_timers.pop_back();
+			}
+		}
+		if(!callback){
+			return false;
+		}
+
+		try {
+			if(isAsync){
+				LOG_POSEIDON_TRACE("Dispatching low level timer: period = ", period);
+				(*callback)(now, period);
+			} else {
+				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
+				enqueueJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
+			}
+		} catch(std::exception &e){
+			LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());
+		} catch(...){
+			LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching timer job.");
+		}
+
+		return true;
+	}
+
 	void daemonLoop(){
 		for(;;){
-			const boost::uint64_t now = getFastMonoClock();
-
-			boost::shared_ptr<const TimerCallback> callback;
-			boost::uint64_t period = 0;
-			bool isAsync = false;
-			{
-				const Mutex::UniqueLock lock(g_mutex);
-				while(!g_timers.empty() && (now >= g_timers.front().next)){
-					const AUTO(item, g_timers.front().item.lock());
-					const AUTO(stamp, g_timers.front().stamp);
-					std::pop_heap(g_timers.begin(), g_timers.end());
-
-					if(item && (stamp == item->stamp)){
-						callback = item->callback;
-						period = item->period;
-						isAsync = item->isAsync;
-						if(period == 0){
-							g_timers.pop_back();
-						} else {
-							g_timers.back().next += period;
-							std::push_heap(g_timers.begin(), g_timers.end());
-						}
-						break;
-					}
-					g_timers.pop_back();
-				}
+			while(pumpOneElement()){
+				// noop
 			}
-			if(callback){
-				try {
-					if(isAsync){
-						LOG_POSEIDON_TRACE("Dispatching low level timer: period = ", period);
-						(*callback)(now, period);
-					} else {
-						LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
-						enqueueJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
-					}
-				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());
-				} catch(...){
-					LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching timer job.");
-				}
-			}
+
 			if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
 				break;
 			}
