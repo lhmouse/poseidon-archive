@@ -53,10 +53,8 @@ namespace Http {
 			transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
 
 			if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
-				headers.erase("Transfer-Encoding");
 				headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
 			} else {
-				headers.set("Transfer-Encoding", STD_MOVE(transferEncoding));
 				headers.erase("Content-Length");
 
 				// 只有一个 chunk。
