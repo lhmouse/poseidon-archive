@@ -176,7 +176,13 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			const AUTO(desc, getErrorDesc(errCode));
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket error: errCode = ", errCode, ", desc = ", desc);
 			session->onClose(errCode);
-			removeSession(session);
+
+			const Mutex::UniqueLock lock(m_mutex);
+			if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+				const int errCode = errno;
+				LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+			}
+			m_sessions->erase<IDX_ADDR>(it);
 			continue;
 		}
 
@@ -187,15 +193,22 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 
 				it->writeHup = true;
 			}
-		}
-		if(it->readHup && it->writeHup){
-			try {
-				LOG_POSEIDON_INFO("Socket closed, remote is ", session->getRemoteInfo());
-			} catch(...){
-				LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
+
+			if(it->readHup){
+				try {
+					LOG_POSEIDON_INFO("Socket closed, remote is ", session->getRemoteInfo());
+				} catch(...){
+					LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
+				}
+				session->onClose(0);
+
+				const Mutex::UniqueLock lock(m_mutex);
+				if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+					const int errCode = errno;
+					LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+				}
+				m_sessions->erase<IDX_ADDR>(it);
 			}
-			session->onClose(0);
-			removeSession(session);
 			continue;
 		}
 
@@ -251,8 +264,24 @@ std::size_t Epoll::pumpReadable(){
 					it->readHup = true;
 				}
 
-				const Mutex::UniqueLock lock(m_mutex);
-				m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
+				if(it->writeHup){
+					try {
+						LOG_POSEIDON_INFO("Socket closed, remote is ", session->getRemoteInfo());
+					} catch(...){
+						LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
+					}
+					session->onClose(0);
+
+					const Mutex::UniqueLock lock(m_mutex);
+					if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+						const int errCode = errno;
+						LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+					}
+					m_sessions->erase<IDX_READ>(it);
+				} else {
+					const Mutex::UniqueLock lock(m_mutex);
+					m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
+				}
 				continue;
 			}
 		} catch(std::exception &e){
