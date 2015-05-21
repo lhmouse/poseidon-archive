@@ -181,8 +181,6 @@ bool TcpSessionBase::isSendBufferEmpty(Mutex::UniqueLock &lock) const {
 void TcpSessionBase::onReadHup() NOEXCEPT {
 	shutdownWrite();
 }
-void TcpSessionBase::onWriteHup() NOEXCEPT {
-}
 void TcpSessionBase::onClose(int errCode) NOEXCEPT {
 	(void)errCode;
 }

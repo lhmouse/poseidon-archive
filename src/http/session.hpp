@@ -39,7 +39,6 @@ namespace Http {
 
 	protected:
 		void onReadHup() NOEXCEPT OVERRIDE;
-		void onWriteHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
 		// TcpSessionBase

@@ -163,16 +163,6 @@ namespace Http {
 
 		TcpSessionBase::onReadHup();
 	}
-	void Session::onWriteHup() NOEXCEPT {
-		PROFILE_ME;
-
-		const AUTO(upgradedSession, m_upgradedSession);
-		if(upgradedSession){
-			upgradedSession->onWriteHup();
-		}
-
-		TcpSessionBase::onWriteHup();
-	}
 	void Session::onClose(int errCode) NOEXCEPT {
 		PROFILE_ME;
 

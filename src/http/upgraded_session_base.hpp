@@ -25,7 +25,6 @@ namespace Http {
 
 	protected:
 		void onReadHup() NOEXCEPT OVERRIDE;
-		void onWriteHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
 		virtual void onReadAvail(const void *data, std::size_t size) = 0;

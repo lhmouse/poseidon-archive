@@ -17,8 +17,6 @@ namespace Http {
 
 	void UpgradedSessionBase::onReadHup() NOEXCEPT {
 	}
-	void UpgradedSessionBase::onWriteHup() NOEXCEPT {
-	}
 	void UpgradedSessionBase::onClose(int errCode) NOEXCEPT {
 		(void)errCode;
 	}

@@ -31,13 +31,9 @@ namespace {
 		boost::uint64_t lastRead;
 		boost::uint64_t lastWritten;
 
-		mutable bool readHup;
-		mutable bool writeHup;
-
 		SessionMapElement(boost::weak_ptr<Epoll> epoll_, boost::shared_ptr<TcpSessionBase> session_)
 			: session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
 			, addr(session.get()), lastRead(0), lastWritten(0)
-			, readHup(false), writeHup(false)
 		{
 		}
 	};
@@ -176,40 +172,17 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			const AUTO(desc, getErrorDesc(errCode));
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket error: errCode = ", errCode, ", desc = ", desc);
 			session->onClose(errCode);
-
-			const Mutex::UniqueLock lock(m_mutex);
-			if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
-				const int errCode = errno;
-				LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
-			}
-			m_sessions->erase<IDX_ADDR>(it);
-			continue;
+			goto _eraseSession;
 		}
-
 		if(event.events & EPOLLHUP){
-			if(!it->writeHup){
-				session->shutdownWrite();
-				session->onWriteHup();
-
-				it->writeHup = true;
+			try {
+				LOG_POSEIDON_INFO("Socket closed, remote is ", session->getRemoteInfo());
+			} catch(...){
+				LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
 			}
-
-			if(it->readHup){
-				try {
-					LOG_POSEIDON_INFO("Socket closed, remote is ", session->getRemoteInfo());
-				} catch(...){
-					LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
-				}
-				session->onClose(0);
-
-				const Mutex::UniqueLock lock(m_mutex);
-				if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
-					const int errCode = errno;
-					LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
-				}
-				m_sessions->erase<IDX_ADDR>(it);
-			}
-			continue;
+			session->forceShutdown();
+			session->onClose(0);
+			goto _eraseSession;
 		}
 
 		if(event.events & EPOLLIN){
@@ -223,6 +196,15 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 				m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
 			}
 		}
+		continue;
+
+	_eraseSession:
+		const Mutex::UniqueLock lock(m_mutex);
+		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
+			const int errCode = errno;
+			LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+		}
+		m_sessions->erase<IDX_ADDR>(it);
 	}
 	return (unsigned)count;
 }
@@ -257,31 +239,11 @@ std::size_t Epoll::pumpReadable(){
 				}
 				DEBUG_THROW(SystemException);
 			} else if(result.bytesTransferred == 0){
-				if(!it->readHup){
-					session->shutdownRead();
-					session->onReadHup();
+				session->shutdownRead();
+				session->onReadHup();
 
-					it->readHup = true;
-				}
-
-				if(it->writeHup){
-					try {
-						LOG_POSEIDON_INFO("Socket closed, remote is ", session->getRemoteInfo());
-					} catch(...){
-						LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
-					}
-					session->onClose(0);
-
-					const Mutex::UniqueLock lock(m_mutex);
-					if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
-						const int errCode = errno;
-						LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
-					}
-					m_sessions->erase<IDX_READ>(it);
-				} else {
-					const Mutex::UniqueLock lock(m_mutex);
-					m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
-				}
+				const Mutex::UniqueLock lock(m_mutex);
+				m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
 				continue;
 			}
 		} catch(std::exception &e){
