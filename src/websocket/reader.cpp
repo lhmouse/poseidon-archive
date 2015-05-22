@@ -19,7 +19,7 @@ namespace WebSocket {
 	}
 	Reader::~Reader(){
 		if(m_state != S_OPCODE){
-			LOG_POSEIDON_WARNING("Now that this reader is to be destroyed, a premature request has to be discarded.");
+			LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature request has to be discarded.");
 		}
 	}
 
