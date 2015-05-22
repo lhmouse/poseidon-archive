@@ -12,18 +12,24 @@
 
 namespace Poseidon {
 
+class TimerItem;
+
 namespace Cbpp {
 	class Client : public TcpClientBase, private Reader, private Writer {
 	private:
 		class SyncJobBase;
-		class KeepAliveJob;
 		class DataMessageHeaderJob;
 		class DataMessagePayloadJob;
 		class DataMessageEndJob;
 		class ErrorMessageJob;
 
 	private:
+		static void keepAliveTimerProc(const boost::weak_ptr<Client> &weakClient);
+
+	private:
 		const boost::uint64_t m_keepAliveInterval;
+
+		boost::shared_ptr<TimerItem> m_keepAliveTimer;
 
 	protected:
 		Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveInterval);

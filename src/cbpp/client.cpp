@@ -61,21 +61,6 @@ namespace Cbpp {
 		}
 	};
 
-	class Client::KeepAliveJob : public Client::SyncJobBase {
-	public:
-		explicit KeepAliveJob(const boost::shared_ptr<Client> &client)
-			: SyncJobBase(client)
-		{
-		}
-
-	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
-			PROFILE_ME;
-
-			client->sendControl(CTL_HEARTBEAT, 0, VAL_INIT);
-		}
-	};
-
 	class Client::DataMessageHeaderJob : public Client::SyncJobBase {
 	private:
 		const unsigned m_messageId;
@@ -156,6 +141,16 @@ namespace Cbpp {
 		}
 	};
 
+	void Client::keepAliveTimerProc(const boost::weak_ptr<Client> &weakClient){
+		PROFILE_ME;
+
+		const AUTO(client, weakClient.lock());
+		if(!client){
+			return;
+		}
+		client->sendControl(CTL_HEARTBEAT, 0, VAL_INIT);
+	}
+
 	Client::Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveInterval)
 		: TcpClientBase(addr, useSsl)
 		, m_keepAliveInterval(keepAliveInterval)
@@ -221,10 +216,20 @@ namespace Cbpp {
 	bool Client::send(boost::uint16_t messageId, StreamBuffer payload){
 		PROFILE_ME;
 
+		if(!m_keepAliveTimer){
+			m_keepAliveTimer = TimerDaemon::registerTimer(m_keepAliveInterval, m_keepAliveInterval,
+				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<Client>()));
+		}
+
 		return Writer::putDataMessage(messageId, STD_MOVE(payload));
 	}
 	bool Client::sendControl(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
 		PROFILE_ME;
+
+		if(!m_keepAliveTimer){
+			m_keepAliveTimer = TimerDaemon::registerTimer(m_keepAliveInterval, m_keepAliveInterval,
+				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<Client>()));
+		}
 
 		return Writer::putControlMessage(controlCode, vintParam, STD_MOVE(stringParam));
 	}
