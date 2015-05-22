@@ -126,8 +126,8 @@ namespace Http {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 
-		const StatusCode m_statusCode;
-		const OptionalMap m_headers;
+		mutable StatusCode m_statusCode;
+		mutable OptionalMap m_headers;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, OptionalMap headers)
@@ -141,7 +141,7 @@ namespace Http {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendDefault(m_statusCode, m_headers);
+			session->sendDefault(m_statusCode, STD_MOVE(m_headers));
 		}
 	};
 

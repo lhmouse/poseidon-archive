@@ -121,9 +121,9 @@ namespace Cbpp {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 
-		const boost::uint16_t m_messageId;
-		const StatusCode m_statusCode;
-		const std::string m_reason;
+		mutable boost::uint16_t m_messageId;
+		mutable StatusCode m_statusCode;
+		mutable std::string m_reason;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session,
@@ -138,7 +138,7 @@ namespace Cbpp {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendError(m_messageId, m_statusCode, m_reason);
+			session->sendError(m_messageId, m_statusCode, STD_MOVE(m_reason));
 		}
 	};
 

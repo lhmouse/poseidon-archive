@@ -114,8 +114,8 @@ namespace WebSocket {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 
-		const StatusCode m_statusCode;
-		const StreamBuffer m_additional;
+		mutable StatusCode m_statusCode;
+		mutable StreamBuffer m_additional;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, StreamBuffer additional)
@@ -129,7 +129,7 @@ namespace WebSocket {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->shutdown(m_statusCode, m_additional);
+			session->shutdown(m_statusCode, STD_MOVE(m_additional));
 		}
 	};
 
