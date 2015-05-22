@@ -244,7 +244,7 @@ namespace Http {
 		m_transferEncoding = STD_MOVE(transferEncoding);
 		m_entity.clear();
 	}
-	void Session::onRequestEntity(boost::uint64_t /* entityOffset */, StreamBuffer entity){
+	void Session::onRequestEntity(boost::uint64_t /* entityOffset */, bool /* isChunked */, StreamBuffer entity){
 		PROFILE_ME;
 
 		m_entity.splice(entity);

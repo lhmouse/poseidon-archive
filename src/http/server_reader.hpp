@@ -60,7 +60,7 @@ namespace Http {
 		// 如果 Transfer-Encoding 为空或者不是 identity， contentLength 的值为 CONTENT_CHUNKED。
 		virtual void onRequestHeaders(RequestHeaders requestHeaders, std::string transferEncoding, boost::uint64_t contentLength) = 0;
 		// 报文可能分几次收到。
-		virtual void onRequestEntity(boost::uint64_t entityOffset, StreamBuffer entity) = 0;
+		virtual void onRequestEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) = 0;
 		// 报文接收完毕。
 		// 如果 onRequestHeaders() 的 contentLength 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
 		// chunked 允许追加报头。
