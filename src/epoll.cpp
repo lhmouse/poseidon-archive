@@ -19,7 +19,8 @@ namespace Poseidon {
 
 namespace {
 	enum {
-		MAX_PUMP_COUNT = 256
+		MAX_PUMP_COUNT		= 256,
+		IO_BUFFER_SIZE		= 4096,
 	};
 
 	struct SessionMapElement {
@@ -226,7 +227,7 @@ std::size_t Epoll::pumpReadable(){
 		const AUTO(session, it->session);
 
 		try {
-			unsigned char temp[1024];
+			unsigned char temp[IO_BUFFER_SIZE];
 			const AUTO(result, session->syncReadAndProcess(temp, sizeof(temp)));
 			if(result.bytesTransferred < 0){
 				if(result.errCode == EINTR){
@@ -274,7 +275,7 @@ std::size_t Epoll::pumpWriteable(){
 		const AUTO(session, it->session);
 
 		try {
-			unsigned char temp[1024];
+			unsigned char temp[IO_BUFFER_SIZE];
 			const AUTO(result, session->syncWrite(temp, sizeof(temp)));
 			if(result.bytesTransferred < 0){
 				if(result.errCode == EINTR){
