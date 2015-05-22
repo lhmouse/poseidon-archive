@@ -16,7 +16,10 @@ namespace Http {
 		boost::shared_ptr<OptionalMap> m_headers;
 
 	public:
-		Exception(const char *file, std::size_t line, StatusCode statusCode, OptionalMap headers = OptionalMap());
+		// message 设定为首字节为 0xFF 则发送默认页面。
+		Exception(const char *file, std::size_t line, StatusCode statusCode,
+			OptionalMap headers = OptionalMap(), SharedNts message = SharedNts::view("\xFF"));
+		Exception(const char *file, std::size_t line, StatusCode statusCode, SharedNts message);
 		~Exception() NOEXCEPT;
 
 	public:

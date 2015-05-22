@@ -43,11 +43,15 @@ namespace Http {
 				throw;
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Http::Exception thrown in HTTP servlet: statusCode = ", e.statusCode());
+					"Http::Exception thrown in HTTP servlet: statusCode = ", e.statusCode(), ", what = ", e.what());
 				try {
 					AUTO(headers, e.headers());
 					headers.set("Connection", "Close");
-					session->sendDefault(e.statusCode(), STD_MOVE(headers));
+					if(e.what()[0] == (char)0xFF){
+						session->sendDefault(e.statusCode(), STD_MOVE(headers));
+					} else {
+						session->send(e.statusCode(), STD_MOVE(headers), Poseidon::StreamBuffer(e.what()));
+					}
 					session->shutdownRead();
 					session->shutdownWrite();
 				} catch(...){
@@ -128,12 +132,14 @@ namespace Http {
 
 		mutable StatusCode m_statusCode;
 		mutable OptionalMap m_headers;
+		mutable SharedNts m_message;
 
 	public:
-		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, OptionalMap headers)
+		ErrorJob(const boost::shared_ptr<Session> &session,
+			StatusCode statusCode, OptionalMap headers, SharedNts message)
 			: SyncJobBase(session)
 			, m_guard(session)
-			, m_statusCode(statusCode), m_headers(STD_MOVE(headers))
+			, m_statusCode(statusCode), m_headers(STD_MOVE(headers)), m_message(STD_MOVE(message))
 		{
 		}
 
@@ -142,7 +148,11 @@ namespace Http {
 			PROFILE_ME;
 
 			try {
-				session->sendDefault(m_statusCode, STD_MOVE(m_headers));
+				if(m_message[0] == (char)0xFF){
+					session->sendDefault(m_statusCode, STD_MOVE(m_headers));
+				} else {
+					session->send(m_statusCode, STD_MOVE(m_headers), Poseidon::StreamBuffer(m_message.get()));
+				}
 			} catch(...){
 				session->forceShutdown();
 			}
@@ -198,9 +208,9 @@ namespace Http {
 			ServerReader::putEncodedData(StreamBuffer(data, size));
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Http::Exception thrown in HTTP parser: statusCode = ", e.statusCode());
+				"Http::Exception thrown in HTTP parser: statusCode = ", e.statusCode(), ", what = ", e.what());
 			enqueueJob(boost::make_shared<ErrorJob>(
-				virtualSharedFromThis<Session>(), e.statusCode(), e.headers()));
+				virtualSharedFromThis<Session>(), e.statusCode(), e.headers(), SharedNts(e.what())));
 			shutdownRead();
 			shutdownWrite();
 			return;

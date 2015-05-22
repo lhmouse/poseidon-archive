@@ -11,7 +11,8 @@ namespace Cbpp {
 	Exception::Exception(const char *file, std::size_t line, StatusCode statusCode, SharedNts message)
 		: ProtocolException(file, line, message, static_cast<long>(statusCode))
 	{
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception: statusCode = ", statusCode, ", what = ", what());
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Cbpp::Exception: statusCode = ", statusCode, ", what = ", what());
 	}
 	Exception::~Exception() NOEXCEPT {
 	}
