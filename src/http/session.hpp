@@ -38,10 +38,10 @@ namespace Http {
 		~Session();
 
 	protected:
+		// TcpSessionBase
 		void onReadHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
-		// TcpSessionBase
 		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
 
 		// ServerReader
