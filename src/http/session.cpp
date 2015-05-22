@@ -141,7 +141,11 @@ namespace Http {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendDefault(m_statusCode, STD_MOVE(m_headers));
+			try {
+				session->sendDefault(m_statusCode, STD_MOVE(m_headers));
+			} catch(...){
+				session->forceShutdown();
+			}
 		}
 	};
 

@@ -129,7 +129,11 @@ namespace WebSocket {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->shutdown(m_statusCode, STD_MOVE(m_additional));
+			try {
+				session->shutdown(m_statusCode, STD_MOVE(m_additional));
+			} catch(...){
+				session->forceShutdown();
+			}
 		}
 	};
 

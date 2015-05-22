@@ -138,7 +138,11 @@ namespace Cbpp {
 		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
 			PROFILE_ME;
 
-			session->sendError(m_messageId, m_statusCode, STD_MOVE(m_reason));
+			try {
+				session->sendError(m_messageId, m_statusCode, STD_MOVE(m_reason));
+			} catch(...){
+				session->forceShutdown();
+			}
 		}
 	};
 
