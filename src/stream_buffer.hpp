@@ -121,6 +121,10 @@ public:
 	void put(const char *str);
 	void put(const std::string &str);
 
+	void put(StreamBuffer rhs) NOEXCEPT {
+		splice(rhs);
+	}
+
 	void swap(StreamBuffer &rhs) NOEXCEPT;
 
 	// 拆分成两部分，返回 [0, size) 部分，[size, -) 部分仍保存于当前对象中。
