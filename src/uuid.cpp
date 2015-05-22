@@ -14,7 +14,7 @@
 namespace Poseidon {
 
 namespace {
-	boost::uint32_t rdtscLow(){
+	inline boost::uint32_t rdtscLow(){
 		boost::uint32_t ret;
 		__asm__ __volatile__("rdtsc \n" : "=a"(ret) : : "edx");
 		return ret;
@@ -25,9 +25,9 @@ namespace {
 	const unsigned char MAX_BYTES[16] = {
 		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
-	const unsigned long g_pidHigh = static_cast<unsigned long>(::getpid()) << 16;
+	const unsigned g_pid = static_cast<boost::uint16_t>(::getpid());
 
-	volatile unsigned g_autoInc = rdtscLow();
+	volatile boost::uint32_t g_autoInc = 0;
 }
 
 const Uuid Uuid::UUID_NULL	(MIN_BYTES);
@@ -35,18 +35,19 @@ const Uuid Uuid::UUID_MIN	(MIN_BYTES);
 const Uuid Uuid::UUID_MAX	(MAX_BYTES);
 
 Uuid Uuid::random(){
-	const AUTO(now, getUtcTime());
-	const AUTO(unique, g_pidHigh | (atomicAdd(g_autoInc, 1, ATOMIC_RELAXED) & 0xFFFFu));
+	const AUTO(utcNow, getUtcTime());
+	const AUTO(autoInc, atomicAdd(g_autoInc, 1, ATOMIC_RELAXED));
 
 	Uuid ret
 #ifdef POSEIDON_CXX11
 		(nullptr)	// 不初始化。
 #endif
 		;
-	storeBe(ret.m_storage.u32[0], now >> 28);
-	storeBe(ret.m_storage.u16[2], now >> 12);
-	storeBe(ret.m_storage.u16[3], now & 0x0FFFu); // 版本 = 0
-	storeBe(ret.m_storage.u32[2], 0xC0000000u | unique); // 变种 = 3
+	storeBe(ret.m_storage.u32[0], utcNow >> 12);
+	storeBe(ret.m_storage.u16[2], (utcNow << 4) | (g_pid >> 12));
+	storeBe(ret.m_storage.u16[3], g_pid & 0x0FFFu); // 版本 = 0
+	storeBe(ret.m_storage.u16[4], 0xC000u | (autoInc & 0x3FFFu)); // 变种 = 3
+	storeBe(ret.m_storage.u16[5], rand32());
 	storeBe(ret.m_storage.u32[3], rand32());
 	return ret;
 }
