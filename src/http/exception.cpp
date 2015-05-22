@@ -12,7 +12,7 @@ namespace {
 
 	SharedNts replaceWithDefault(SharedNts message){
 		if(message[0] == (char)0xFF){
-			message = SharedNts::view("\xFF     <Use default HTML page>");
+			message = sslit("\xFF     <Use default HTML page>");
 		}
 		return STD_MOVE(message);
 	}
