@@ -28,7 +28,7 @@ namespace Http {
 
 		long putChunkedHeader(ResponseHeaders responseHeaders);
 		long putChunk(StreamBuffer entity);
-		long putChunkEnd(OptionalMap headers);
+		long putChunkedTrailer(OptionalMap headers);
 	};
 }
 

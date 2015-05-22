@@ -152,7 +152,7 @@ namespace Http {
 
 		return onEncodedDataAvail(STD_MOVE(chunk));
 	}
-	long ServerWriter::putChunkEnd(OptionalMap headers){
+	long ServerWriter::putChunkedTrailer(OptionalMap headers){
 		PROFILE_ME;
 
 		StreamBuffer data;
