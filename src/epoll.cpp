@@ -69,7 +69,7 @@ void Epoll::notifyWriteable(TcpSessionBase *session) NOEXCEPT {
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
 	if(it == m_sessions->end<IDX_ADDR>()){
-		LOG_POSEIDON_WARNING("Session is not in epoll?");
+		LOG_POSEIDON_DEBUG("Session is no longer in epoll.");
 		return;
 	}
 	m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
