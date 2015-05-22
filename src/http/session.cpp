@@ -71,7 +71,7 @@ namespace Http {
 		virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
 	};
 
-	class Session::ContinueJob : public SyncJobBase {
+	class Session::ContinueJob : public Session::SyncJobBase {
 	public:
 		explicit ContinueJob(const boost::shared_ptr<Session> &session)
 			: SyncJobBase(session)
@@ -86,7 +86,7 @@ namespace Http {
 		}
 	};
 
-	class Session::RequestJob : public SyncJobBase {
+	class Session::RequestJob : public Session::SyncJobBase {
 	private:
 		const RequestHeaders m_requestHeaders;
 		const std::string m_transferEncoding;
@@ -122,7 +122,7 @@ namespace Http {
 		}
 	};
 
-	class Session::ErrorJob : public SyncJobBase {
+	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 

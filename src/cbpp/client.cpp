@@ -13,60 +13,58 @@
 namespace Poseidon {
 
 namespace Cbpp {
-	namespace {
-		class ClientJobBase : public JobBase {
-		private:
-			const boost::weak_ptr<Client> m_client;
+	class Client::SyncJobBase : public JobBase {
+	private:
+		const boost::weak_ptr<Client> m_client;
 
-		protected:
-			explicit ClientJobBase(const boost::shared_ptr<Client> &client)
-				: m_client(client)
-			{
+	protected:
+		explicit SyncJobBase(const boost::shared_ptr<Client> &client)
+			: m_client(client)
+		{
+		}
+
+	protected:
+		virtual void perform(const boost::shared_ptr<Client> &client) const = 0;
+
+	private:
+		boost::weak_ptr<const void> getCategory() const FINAL {
+			return m_client;
+		}
+		void perform() const FINAL {
+			PROFILE_ME;
+
+			const AUTO(client, m_client.lock());
+			if(!client){
+				return;
 			}
 
-		protected:
-			virtual void perform(const boost::shared_ptr<Client> &client) const = 0;
-
-		private:
-			boost::weak_ptr<const void> getCategory() const FINAL {
-				return m_client;
+			try {
+				perform(client);
+			} catch(TryAgainLater &){
+				throw;
+			} catch(Exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
+				client->forceShutdown();
+				throw;
+			} catch(std::exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"std::exception thrown: what = ", e.what());
+				client->forceShutdown();
+				throw;
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Unknown exception thrown.");
+				client->forceShutdown();
+				throw;
 			}
-			void perform() const FINAL {
-				PROFILE_ME;
+		}
+	};
 
-				const AUTO(client, m_client.lock());
-				if(!client){
-					return;
-				}
-
-				try {
-					perform(client);
-				} catch(TryAgainLater &){
-					throw;
-				} catch(Exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-						"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
-					client->forceShutdown();
-					throw;
-				} catch(std::exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-						"std::exception thrown: what = ", e.what());
-					client->forceShutdown();
-					throw;
-				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-						"Unknown exception thrown.");
-					client->forceShutdown();
-					throw;
-				}
-			}
-		};
-	}
-
-	class Client::KeepAliveJob : public ClientJobBase {
+	class Client::KeepAliveJob : public Client::SyncJobBase {
 	public:
 		explicit KeepAliveJob(const boost::shared_ptr<Client> &client)
-			: ClientJobBase(client)
+			: SyncJobBase(client)
 		{
 		}
 
@@ -78,14 +76,14 @@ namespace Cbpp {
 		}
 	};
 
-	class Client::DataMessageHeaderJob : public ClientJobBase {
+	class Client::DataMessageHeaderJob : public Client::SyncJobBase {
 	private:
 		const unsigned m_messageId;
 		const boost::uint64_t m_payloadSize;
 
 	public:
 		DataMessageHeaderJob(const boost::shared_ptr<Client> &client, unsigned messageId, boost::uint64_t payloadSize)
-			: ClientJobBase(client)
+			: SyncJobBase(client)
 			, m_messageId(messageId), m_payloadSize(payloadSize)
 		{
 		}
@@ -98,14 +96,14 @@ namespace Cbpp {
 		}
 	};
 
-	class Client::DataMessagePayloadJob : public ClientJobBase {
+	class Client::DataMessagePayloadJob : public Client::SyncJobBase {
 	public:
 		const boost::uint64_t m_payloadOffset;
 		const StreamBuffer m_payload;
 
 	public:
 		DataMessagePayloadJob(const boost::shared_ptr<Client> &client, boost::uint64_t payloadOffset, StreamBuffer payload)
-			: ClientJobBase(client)
+			: SyncJobBase(client)
 			, m_payloadOffset(payloadOffset), m_payload(STD_MOVE(payload))
 		{
 		}
@@ -118,13 +116,13 @@ namespace Cbpp {
 		}
 	};
 
-	class Client::DataMessageEndJob : public ClientJobBase {
+	class Client::DataMessageEndJob : public Client::SyncJobBase {
 	public:
 		const boost::uint64_t m_payloadSize;
 
 	public:
 		DataMessageEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t payloadSize)
-			: ClientJobBase(client)
+			: SyncJobBase(client)
 			, m_payloadSize(payloadSize)
 		{
 		}
@@ -137,7 +135,7 @@ namespace Cbpp {
 		}
 	};
 
-	class Client::ErrorMessageJob : public ClientJobBase {
+	class Client::ErrorMessageJob : public Client::SyncJobBase {
 	private:
 		const boost::uint16_t m_messageId;
 		const StatusCode m_statusCode;
@@ -145,7 +143,7 @@ namespace Cbpp {
 
 	public:
 		ErrorMessageJob(const boost::shared_ptr<Client> &client, boost::uint16_t messageId, StatusCode statusCode, std::string reason)
-			: ClientJobBase(client)
+			: SyncJobBase(client)
 			, m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
 		{
 		}

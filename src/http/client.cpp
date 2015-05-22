@@ -9,50 +9,48 @@
 namespace Poseidon {
 
 namespace Http {
-	namespace {
-		class ClientJobBase : public JobBase {
-		private:
-			const boost::weak_ptr<Client> m_client;
+	class Client::SyncJobBase : public JobBase {
+	private:
+		const boost::weak_ptr<Client> m_client;
 
-		protected:
-			explicit ClientJobBase(const boost::shared_ptr<Client> &client)
-				: m_client(client)
-			{
+	protected:
+		explicit SyncJobBase(const boost::shared_ptr<Client> &client)
+			: m_client(client)
+		{
+		}
+
+	protected:
+		virtual void perform(const boost::shared_ptr<Client> &client) const = 0;
+
+	private:
+		boost::weak_ptr<const void> getCategory() const FINAL {
+			return m_client;
+		}
+		void perform() const FINAL {
+			PROFILE_ME;
+
+			const AUTO(client, m_client.lock());
+			if(!client){
+				return;
 			}
 
-		protected:
-			virtual void perform(const boost::shared_ptr<Client> &client) const = 0;
-
-		private:
-			boost::weak_ptr<const void> getCategory() const FINAL {
-				return m_client;
+			try {
+				perform(client);
+			} catch(TryAgainLater &){
+				throw;
+			} catch(std::exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
+				client->forceShutdown();
+				throw;
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+				client->forceShutdown();
+				throw;
 			}
-			void perform() const FINAL {
-				PROFILE_ME;
+		}
+	};
 
-				const AUTO(client, m_client.lock());
-				if(!client){
-					return;
-				}
-
-				try {
-					perform(client);
-				} catch(TryAgainLater &){
-					throw;
-				} catch(std::exception &e){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-					client->forceShutdown();
-					throw;
-				} catch(...){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
-					client->forceShutdown();
-					throw;
-				}
-			}
-		};
-	}
-
-	class Client::ResponseHeadersJob : public ClientJobBase {
+	class Client::ResponseHeadersJob : public Client::SyncJobBase {
 	private:
 		const ResponseHeaders m_responseHeaders;
 		const std::string m_transferEncoding;
@@ -61,7 +59,7 @@ namespace Http {
 	public:
 		ResponseHeadersJob(const boost::shared_ptr<Client> &client,
 			ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength)
-			: ClientJobBase(client)
+			: SyncJobBase(client)
 			, m_responseHeaders(STD_MOVE(responseHeaders)), m_transferEncoding(STD_MOVE(transferEncoding)), m_contentLength(contentLength)
 		{
 		}
@@ -74,14 +72,14 @@ namespace Http {
 		}
 	};
 
-	class Client::ResponseEntityJob : public ClientJobBase {
+	class Client::ResponseEntityJob : public Client::SyncJobBase {
 	private:
 		const boost::uint64_t m_contentOffset;
 		const StreamBuffer m_entity;
 
 	public:
 		ResponseEntityJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentOffset, StreamBuffer entity)
-			: ClientJobBase(client)
+			: SyncJobBase(client)
 			, m_contentOffset(contentOffset), m_entity(STD_MOVE(entity))
 		{
 		}
@@ -94,7 +92,7 @@ namespace Http {
 		}
 	};
 
-	class Client::ResponseEndJob : public ClientJobBase {
+	class Client::ResponseEndJob : public Client::SyncJobBase {
 	private:
 		const boost::uint64_t m_contentLength;
 		const bool m_isChunked;
@@ -102,7 +100,7 @@ namespace Http {
 
 	public:
 		ResponseEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentLength, bool isChunked, OptionalMap headers)
-			: ClientJobBase(client)
+			: SyncJobBase(client)
 			, m_contentLength(contentLength), m_isChunked(isChunked), m_headers(STD_MOVE(headers))
 		{
 		}

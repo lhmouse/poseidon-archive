@@ -15,12 +15,11 @@ namespace Poseidon {
 namespace Cbpp {
 	class Client : public TcpClientBase, private Reader, private Writer {
 	private:
+		class SyncJobBase;
 		class KeepAliveJob;
-
 		class DataMessageHeaderJob;
 		class DataMessagePayloadJob;
 		class DataMessageEndJob;
-
 		class ErrorMessageJob;
 
 	private:

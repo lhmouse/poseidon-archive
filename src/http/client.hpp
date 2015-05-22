@@ -16,6 +16,7 @@ namespace Poseidon {
 namespace Http {
 	class Client : public TcpClientBase, private ClientReader, private ClientWriter {
 	private:
+		class SyncJobBase;
 		class ResponseHeadersJob;
 		class ResponseEntityJob;
 		class ResponseEndJob;

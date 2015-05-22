@@ -65,7 +65,7 @@ namespace Cbpp {
 		virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
 	};
 
-	class Session::DataMessageJob : public SyncJobBase {
+	class Session::DataMessageJob : public Session::SyncJobBase {
 	private:
 		const boost::uint16_t m_messageId;
 		const StreamBuffer m_payload;
@@ -90,7 +90,7 @@ namespace Cbpp {
 		}
 	};
 
-	class Session::ControlMessageJob : public SyncJobBase {
+	class Session::ControlMessageJob : public Session::SyncJobBase {
 	private:
 		const ControlCode m_controlCode;
 		const boost::int64_t m_vintParam;
@@ -117,7 +117,7 @@ namespace Cbpp {
 		}
 	};
 
-	class Session::ErrorJob : public SyncJobBase {
+	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 

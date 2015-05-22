@@ -62,7 +62,7 @@ namespace WebSocket {
 		virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
 	};
 
-	class Session::DataMessageJob : public SyncJobBase {
+	class Session::DataMessageJob : public Session::SyncJobBase {
 	private:
 		const OpCode m_opcode;
 		const StreamBuffer m_payload;
@@ -86,7 +86,7 @@ namespace WebSocket {
 		}
 	};
 
-	class Session::ControlMessageJob : public SyncJobBase {
+	class Session::ControlMessageJob : public Session::SyncJobBase {
 	private:
 		const OpCode m_opcode;
 		const StreamBuffer m_payload;
@@ -110,7 +110,7 @@ namespace WebSocket {
 		}
 	};
 
-	class Session::ErrorJob : public SyncJobBase {
+	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
 
