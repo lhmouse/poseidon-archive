@@ -69,7 +69,7 @@ namespace Cbpp {
 				onDataMessageHeader(m_messageId, m_payloadSize);
 
 				if(m_messageId != ControlMessage::ID){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize, 1024);
+					m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize, 4096);
 					m_state = S_DATA_PAYLOAD;
 				} else {
 					m_sizeExpecting = m_payloadSize;
@@ -83,7 +83,7 @@ namespace Cbpp {
 				m_payloadOffset += temp64;
 
 				if(m_payloadOffset < m_payloadSize){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize - m_payloadOffset, 1024);
+					m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize - m_payloadOffset, 4096);
 					// m_state = S_DATA_PAYLOAD;
 				} else {
 					hasNextRequest = onDataMessageEnd(m_payloadOffset);

@@ -185,7 +185,7 @@ namespace Http {
 						m_sizeExpecting = EXPECTING_NEW_LINE;
 						m_state = S_CHUNK_HEADER;
 					} else {
-						m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength, 1024);
+						m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength, 4096);
 						m_state = S_IDENTITY;
 					}
 				}
@@ -197,7 +197,7 @@ namespace Http {
 				m_contentOffset += temp64;
 
 				if(m_contentOffset < m_contentLength){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength - m_contentOffset, 1024);
+					m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength - m_contentOffset, 4096);
 					// m_state = S_IDENTITY;
 				} else {
 					hasNextRequest = onRequestEnd(m_contentOffset, false, VAL_INIT);
@@ -230,7 +230,7 @@ namespace Http {
 						m_sizeExpecting = EXPECTING_NEW_LINE;
 						m_state = S_CHUNKED_TRAILER;
 					} else {
-						m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize, 1024);
+						m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize, 4096);
 						m_state = S_CHUNK_DATA;
 					}
 				} else {
@@ -247,7 +247,7 @@ namespace Http {
 				m_chunkOffset += temp64;
 
 				if(m_chunkOffset < m_chunkSize){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize - m_chunkOffset, 1024);
+					m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize - m_chunkOffset, 4096);
 					// m_state = S_CHUNK_DATA;
 				} else {
 					m_sizeExpecting = EXPECTING_NEW_LINE;

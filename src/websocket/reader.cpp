@@ -118,7 +118,7 @@ namespace WebSocket {
 				}
 
 				if((m_opcode & OP_FL_CONTROL) == 0){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_frameSize, 1024);
+					m_sizeExpecting = std::min<boost::uint64_t>(m_frameSize, 4096);
 					m_state = S_DATA_FRAME;
 				} else {
 					m_sizeExpecting = m_frameSize;
@@ -139,7 +139,7 @@ namespace WebSocket {
 					m_wholeOffset += temp64;
 
 					if(m_frameOffset < m_frameSize){
-						m_sizeExpecting = std::min<boost::uint64_t>(m_frameSize - m_frameOffset, 1024);
+						m_sizeExpecting = std::min<boost::uint64_t>(m_frameSize - m_frameOffset, 4096);
 						// m_state = S_DATA_FRAME;
 					} else {
 						if(m_fin){
