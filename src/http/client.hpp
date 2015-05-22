@@ -34,7 +34,7 @@ namespace Http {
 
 		// ClientReader
 		void onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;
-		void onResponseEntity(boost::uint64_t entityOffset, StreamBuffer entity) OVERRIDE;
+		void onResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) OVERRIDE;
 		bool onResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) OVERRIDE;
 
 		// ClientWriter
@@ -42,7 +42,7 @@ namespace Http {
 
 		// 可覆写。
 		virtual void onSyncResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) = 0;
-		virtual void onSyncResponseEntity(boost::uint64_t entityOffset, StreamBuffer entity) = 0;
+		virtual void onSyncResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) = 0;
 		virtual void onSyncResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) = 0;
 	};
 }

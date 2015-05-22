@@ -62,7 +62,7 @@ namespace Http {
 		// 如果 Transfer-Encoding 为空或者不是 identity， contentLength 的值为 CONTENT_CHUNKED。
 		virtual void onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) = 0;
 		// 报文可能分几次收到。
-		virtual void onResponseEntity(boost::uint64_t entityOffset, StreamBuffer entity) = 0;
+		virtual void onResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) = 0;
 		// 报文接收完毕。
 		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_TILL_EOF，此处 realContentLength 即为实际接收大小。
 		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_CHUNKED，使用这个函数标识结束。

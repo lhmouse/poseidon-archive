@@ -75,12 +75,13 @@ namespace Http {
 	class Client::ResponseEntityJob : public Client::SyncJobBase {
 	private:
 		const boost::uint64_t m_contentOffset;
+		const bool m_isChunked;
 		const StreamBuffer m_entity;
 
 	public:
-		ResponseEntityJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentOffset, StreamBuffer entity)
+		ResponseEntityJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentOffset, bool isChunked, StreamBuffer entity)
 			: SyncJobBase(client)
-			, m_contentOffset(contentOffset), m_entity(STD_MOVE(entity))
+			, m_contentOffset(contentOffset), m_isChunked(isChunked), m_entity(STD_MOVE(entity))
 		{
 		}
 
@@ -88,7 +89,7 @@ namespace Http {
 		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncResponseEntity(m_contentOffset, m_entity);
+			client->onSyncResponseEntity(m_contentOffset, m_isChunked, m_entity);
 		}
 	};
 
@@ -153,11 +154,11 @@ namespace Http {
 		enqueueJob(boost::make_shared<ResponseHeadersJob>(
 			virtualSharedFromThis<Client>(), STD_MOVE(responseHeaders), STD_MOVE(transferEncoding), contentLength));
 	}
-	void Client::onResponseEntity(boost::uint64_t entityOffset, StreamBuffer entity){
+	void Client::onResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity){
 		PROFILE_ME;
 
 		enqueueJob(boost::make_shared<ResponseEntityJob>(
-			virtualSharedFromThis<Client>(), entityOffset, STD_MOVE(entity)));
+			virtualSharedFromThis<Client>(), entityOffset, isChunked, STD_MOVE(entity)));
 	}
 	bool Client::onResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers){
 		PROFILE_ME;

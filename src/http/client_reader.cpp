@@ -187,7 +187,7 @@ namespace Http {
 
 			case S_IDENTITY:
 				temp64 = std::min<boost::uint64_t>(expected.size(), m_contentLength - m_contentOffset);
-				onResponseEntity(m_contentOffset, expected.cut(temp64));
+				onResponseEntity(m_contentOffset, false, expected.cut(temp64));
 				m_contentOffset += temp64;
 
 				if(m_contentLength == CONTENT_TILL_EOF){
@@ -239,7 +239,7 @@ namespace Http {
 
 			case S_CHUNK_DATA:
 				temp64 = std::min<boost::uint64_t>(expected.size(), m_chunkSize - m_chunkOffset);
-				onResponseEntity(m_contentOffset, expected.cut(temp64));
+				onResponseEntity(m_contentOffset, true, expected.cut(temp64));
 				m_contentOffset += temp64;
 				m_chunkOffset += temp64;
 
