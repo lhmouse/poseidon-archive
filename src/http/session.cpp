@@ -221,7 +221,7 @@ namespace Http {
 			AUTO_REF(queue, ServerReader::getQueue());
 			const AUTO(queueSize, queue.size());
 			if(queueSize != 0){
-				boost::scoped_array<char> temp(new char[queueSize]);
+				const boost::scoped_array<char> temp(new char[queueSize]);
 				queue.get(temp.get(), queueSize);
 				upgradedSession->onReadAvail(temp.get(), queueSize);
 			}
