@@ -6,6 +6,7 @@
 
 #include "cxx_util.hpp"
 #include <cstddef>
+#include "stream_buffer.hpp"
 #include "virtual_shared_from_this.hpp"
 
 namespace Poseidon {
@@ -22,7 +23,7 @@ protected:
 	virtual void onClose(int errCode) NOEXCEPT = 0;
 
 	// 有数据可读触发回调，size 始终不为零。
-	virtual void onReadAvail(const void *data, std::size_t size) = 0;
+	virtual void onReadAvail(StreamBuffer data) = 0;
 
 public:
 	virtual bool send(StreamBuffer buffer) = 0;

@@ -27,7 +27,7 @@ namespace Http {
 		void onReadHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
-		virtual void onReadAvail(const void *data, std::size_t size) = 0;
+		virtual void onReadAvail(StreamBuffer data) = 0;
 
 	public:
 		bool send(StreamBuffer buffer) OVERRIDE;

@@ -23,7 +23,7 @@ private:
 	void realConnect(bool useSsl);
 
 protected:
-	void onReadAvail(const void *data, std::size_t size) OVERRIDE = 0;
+	void onReadAvail(StreamBuffer data) OVERRIDE = 0;
 
 public:
 	void goResident();

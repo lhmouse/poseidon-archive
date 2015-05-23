@@ -145,17 +145,17 @@ namespace WebSocket {
 	Session::~Session(){
 	}
 
-	void Session::onReadAvail(const void *data, std::size_t size){
+	void Session::onReadAvail(StreamBuffer data){
 		PROFILE_ME;
 
 		try {
-			m_sizeTotal += size;
+			m_sizeTotal += data.size();
 			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384));
 			if(m_sizeTotal > maxRequestLength){
 				DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
 			}
 
-			Reader::putEncodedData(StreamBuffer(data, size));
+			Reader::putEncodedData(STD_MOVE(data));
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"WebSocket::Exception thrown in WebSocket parser: statusCode = ", e.statusCode(), ", what = ", e.what());

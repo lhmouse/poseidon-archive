@@ -100,7 +100,7 @@ protected:
 	void onClose(int errCode) NOEXCEPT OVERRIDE; // 参数就是 errno。
 
 	// 注意，只能在 epoll 线程中调用这些函数。
-	void onReadAvail(const void *data, std::size_t size) OVERRIDE = 0;
+	void onReadAvail(StreamBuffer data) OVERRIDE = 0;
 
 public:
 	bool send(StreamBuffer buffer) OVERRIDE;

@@ -38,7 +38,7 @@ namespace Cbpp {
 
 	protected:
 		// TcpSessionBase
-		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
+		void onReadAvail(StreamBuffer data) OVERRIDE;
 
 		// Reader
 		void onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) OVERRIDE;

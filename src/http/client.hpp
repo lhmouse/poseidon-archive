@@ -30,7 +30,7 @@ namespace Http {
 		// TcpClientBase
 		void onReadHup() NOEXCEPT OVERRIDE;
 
-		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
+		void onReadAvail(StreamBuffer data) OVERRIDE;
 
 		// ClientReader
 		void onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;

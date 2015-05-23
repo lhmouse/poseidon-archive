@@ -42,7 +42,7 @@ namespace Http {
 		void onReadHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 
-		void onReadAvail(const void *data, std::size_t size) OVERRIDE;
+		void onReadAvail(StreamBuffer data) OVERRIDE;
 
 		// ServerReader
 		void onRequestHeaders(RequestHeaders requestHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;

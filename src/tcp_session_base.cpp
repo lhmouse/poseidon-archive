@@ -129,7 +129,7 @@ TcpSessionBase::SyncIoResult TcpSessionBase::syncReadAndProcess(void *hint, unsi
 		const AUTO(bytes, static_cast<std::size_t>(ret.bytesTransferred));
 		LOG_POSEIDON_TRACE("Read ", bytes, " byte(s) from ", getRemoteInfo(), ", hex = ", HexDumper(hint, bytes));
 
-		onReadAvail(hint, bytes);
+		onReadAvail(StreamBuffer(hint, bytes));
 	}
 
 	return ret;

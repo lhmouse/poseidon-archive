@@ -143,10 +143,10 @@ namespace Http {
 		TcpSessionBase::onReadHup();
 	}
 
-	void Client::onReadAvail(const void *data, std::size_t size){
+	void Client::onReadAvail(StreamBuffer data){
 		PROFILE_ME;
 
-		ClientReader::putEncodedData(StreamBuffer(data, size));
+		ClientReader::putEncodedData(STD_MOVE(data));
 	}
 	void Client::onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength){
 		PROFILE_ME;

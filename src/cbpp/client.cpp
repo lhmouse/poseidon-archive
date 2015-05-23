@@ -164,10 +164,10 @@ namespace Cbpp {
 	Client::~Client(){
 	}
 
-	void Client::onReadAvail(const void *data, std::size_t size){
+	void Client::onReadAvail(StreamBuffer data){
 		PROFILE_ME;
 
-		Reader::putEncodedData(StreamBuffer(data, size));
+		Reader::putEncodedData(STD_MOVE(data));
 	}
 
 	void Client::onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize){

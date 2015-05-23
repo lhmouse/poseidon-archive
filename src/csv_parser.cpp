@@ -172,7 +172,7 @@ const std::string &CsvParser::getRaw(const char *key) const {
 
 std::size_t CsvParser::seek(std::size_t row){
 	if((row != static_cast<std::size_t>(-1)) && (row >= m_data.size())){
-		DEBUG_THROW(Poseidon::Exception, Poseidon::sslit("Row index is out of range"));
+		DEBUG_THROW(Exception, sslit("Row index is out of range"));
 	}
 	const AUTO(oldRow, m_row);
 	m_row = row;

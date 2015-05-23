@@ -50,7 +50,7 @@ namespace Http {
 					if(e.what()[0] == (char)0xFF){
 						session->sendDefault(e.statusCode(), STD_MOVE(headers));
 					} else {
-						session->send(e.statusCode(), STD_MOVE(headers), Poseidon::StreamBuffer(e.what()));
+						session->send(e.statusCode(), STD_MOVE(headers), StreamBuffer(e.what()));
 					}
 					session->shutdownRead();
 					session->shutdownWrite();
@@ -151,7 +151,7 @@ namespace Http {
 				if(m_message[0] == (char)0xFF){
 					session->sendDefault(m_statusCode, STD_MOVE(m_headers));
 				} else {
-					session->send(m_statusCode, STD_MOVE(m_headers), Poseidon::StreamBuffer(m_message.get()));
+					session->send(m_statusCode, STD_MOVE(m_headers), StreamBuffer(m_message.get()));
 				}
 			} catch(...){
 				session->forceShutdown();
@@ -188,24 +188,24 @@ namespace Http {
 		TcpSessionBase::onClose(errCode);
 	}
 
-	void Session::onReadAvail(const void *data, std::size_t size){
+	void Session::onReadAvail(StreamBuffer data){
 		PROFILE_ME;
 
 		// epoll 线程访问不需要锁。
 		AUTO(upgradedSession, m_upgradedSession);
 		if(upgradedSession){
-			upgradedSession->onReadAvail(data, size);
+			upgradedSession->onReadAvail(STD_MOVE(data));
 			return;
 		}
 
 		try {
-			m_sizeTotal += size;
+			m_sizeTotal += data.size();
 			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("http_max_request_length", 16384));
 			if(m_sizeTotal > maxRequestLength){
 				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
 			}
 
-			ServerReader::putEncodedData(StreamBuffer(data, size));
+			ServerReader::putEncodedData(STD_MOVE(data));
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Http::Exception thrown in HTTP parser: statusCode = ", e.statusCode(), ", what = ", e.what());
@@ -218,12 +218,10 @@ namespace Http {
 
 		upgradedSession = m_upgradedSession;
 		if(upgradedSession){
-			AUTO_REF(queue, ServerReader::getQueue());
-			const AUTO(queueSize, queue.size());
-			if(queueSize != 0){
-				const boost::scoped_array<char> temp(new char[queueSize]);
-				queue.get(temp.get(), queueSize);
-				upgradedSession->onReadAvail(temp.get(), queueSize);
+			StreamBuffer queue;
+			queue.swap(ServerReader::getQueue());
+			if(!queue.empty()){
+				upgradedSession->onReadAvail(STD_MOVE(queue));
 			}
 		}
 	}
@@ -285,7 +283,7 @@ namespace Http {
 	}
 
 	boost::shared_ptr<UpgradedSessionBase> Session::getUpgradedSession() const {
-		const Poseidon::Mutex::UniqueLock lock(m_upgradedSessionMutex);
+		const Mutex::UniqueLock lock(m_upgradedSessionMutex);
 		return m_upgradedSession;
 	}
 
