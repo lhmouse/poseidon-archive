@@ -39,7 +39,7 @@ namespace Http {
 		if(entity.empty()){
 			headers.erase("Content-Type");
 			headers.erase("Transfer-Encoding");
-			headers.set("Content-Length", STR_0);
+			headers.erase("Content-Length");
 		} else {
 			if(!headers.has("Content-Type")){
 				headers.set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
