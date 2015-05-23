@@ -142,6 +142,11 @@ namespace Http {
 	long ServerWriter::putChunk(StreamBuffer entity){
 		PROFILE_ME;
 
+		if(entity.empty()){
+			LOG_POSEIDON_ERROR("You are not allowed to send an empty chunk");
+			DEBUG_THROW(BasicException, sslit("You are not allowed to send an empty chunk"));
+		}
+
 		StreamBuffer chunk;
 
 		char temp[64];
