@@ -74,7 +74,7 @@ namespace Http {
 			return m_queue;
 		}
 
-		bool putEncodedData(StreamBuffer encoded);
+		bool putEncodedData(StreamBuffer encoded, bool dontParseGetParams = false);
 	};
 }
 

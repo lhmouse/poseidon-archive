@@ -26,7 +26,7 @@ namespace Http {
 		}
 	}
 
-	bool ServerReader::putEncodedData(StreamBuffer encoded){
+	bool ServerReader::putEncodedData(StreamBuffer encoded, bool dontParseGetParams){
 		PROFILE_ME;
 
 		m_queue.splice(encoded);
@@ -122,10 +122,12 @@ namespace Http {
 						DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
 					}
 
-					pos = m_requestHeaders.uri.find('?');
-					if(pos != std::string::npos){
-						m_requestHeaders.getParams = optionalMapFromUrlEncoded(m_requestHeaders.uri.substr(pos + 1));
-						m_requestHeaders.uri.erase(pos);
+					if(!dontParseGetParams){
+						pos = m_requestHeaders.uri.find('?');
+						if(pos != std::string::npos){
+							m_requestHeaders.getParams = optionalMapFromUrlEncoded(m_requestHeaders.uri.substr(pos + 1));
+							m_requestHeaders.uri.erase(pos);
+						}
 					}
 
 					m_sizeExpecting = EXPECTING_NEW_LINE;
