@@ -181,7 +181,8 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			} catch(...){
 				LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
 			}
-			session->forceShutdown();
+			session->shutdownRead();
+			session->shutdownWrite();
 			session->onClose(0);
 			goto _eraseSession;
 		}
