@@ -138,11 +138,9 @@ TcpSessionBase::SyncIoResult TcpSessionBase::syncWrite(void *hint, unsigned long
 	PROFILE_ME;
 
 	std::size_t bytesAvail;
-	bool empty;
 	{
 		const Mutex::UniqueLock lock(m_bufferMutex);
 		bytesAvail = m_sendBuffer.peek(hint, hintSize);
-		empty = m_sendBuffer.empty();
 	}
 
 	SyncIoResult ret;
@@ -164,11 +162,11 @@ TcpSessionBase::SyncIoResult TcpSessionBase::syncWrite(void *hint, unsigned long
 
 			const Mutex::UniqueLock lock(m_bufferMutex);
 			m_sendBuffer.discard(bytes);
-			empty = m_sendBuffer.empty();
+			bytesAvail = m_sendBuffer.size();
 		}
 	}
 
-	if(empty && atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
+	if((bytesAvail == 0) && atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
 		::shutdown(m_socket.get(), SHUT_WR);
 	}
 	return ret;
