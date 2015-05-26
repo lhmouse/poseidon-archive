@@ -116,7 +116,7 @@ namespace {
 
 		try {
 			if(isAsync){
-				LOG_POSEIDON_TRACE("Dispatching low level timer: period = ", period);
+				LOG_POSEIDON_TRACE("Dispatching async timer: period = ", period);
 				(*callback)(now, period);
 			} else {
 				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
@@ -189,7 +189,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
 		std::push_heap(g_timers.begin(), g_timers.end());
 		g_newTimer.signal();
 	}
-	LOG_POSEIDON_DEBUG("Created a ", isAsync ? "low level " : "", "timer item which will be triggered ",
+	LOG_POSEIDON_DEBUG("Created a ", isAsync ? "async " : "", "timer item which will be triggered ",
 		std::max<boost::int64_t>(static_cast<boost::int64_t>(timePoint - getFastMonoClock()), 0),
 		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
 	return item;
