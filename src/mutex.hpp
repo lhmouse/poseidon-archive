@@ -39,9 +39,9 @@ public:
 		UniqueLock &operator=(UniqueLock &&rhs) noexcept;
 #else
 		UniqueLock(const UniqueLock &)
-			__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership of unique locks.")))
-		UniqueLock(const UniqueLock &)
-			__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership of unique locks.")))
+			__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership of unique locks.")));
+		UniqueLock &operator=(const UniqueLock &)
+			__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership of unique locks.")));
 #endif
 
 	public:
