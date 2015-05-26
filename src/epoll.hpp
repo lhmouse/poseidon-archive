@@ -24,7 +24,7 @@ private:
 	class SessionMapDelegator;
 
 private:
-	mutable Mutex m_mutex;
+	mutable Mutex m_mutex; // 可重入。
 	UniqueFile m_epoll;
 	boost::scoped_ptr<SessionMapDelegator> m_sessions;
 

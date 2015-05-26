@@ -55,7 +55,9 @@ namespace {
 struct Epoll::SessionMapDelegator : public SessionMap {
 };
 
-Epoll::Epoll(){
+Epoll::Epoll()
+	: m_mutex(true)
+{
 	if(!m_epoll.reset(::epoll_create(4096))){
 		DEBUG_THROW(SystemException);
 	}
