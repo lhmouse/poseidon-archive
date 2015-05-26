@@ -51,9 +51,9 @@ namespace {
 				}
 				++count;
 			} catch(std::exception &e){
-				LOG_POSEIDON_ERROR("std::exception thrown while accepting connection: what = ", e.what());
+				LOG_POSEIDON_WARNING("std::exception thrown while accepting connection: what = ", e.what());
 			} catch(...){
-				LOG_POSEIDON_ERROR("Unknown exception thrown while accepting connection.");
+				LOG_POSEIDON_WARNING("Unknown exception thrown while accepting connection.");
 			}
 		}
 		return count;
