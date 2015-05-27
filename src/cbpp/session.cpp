@@ -213,19 +213,23 @@ namespace Cbpp {
 
 	void Session::onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, const std::string &stringParam){
 		PROFILE_ME;
+		LOG_POSEIDON_DEBUG("Recevied control message from ", getRemoteInfo(),
+			", controlCode = ", controlCode, ", vintParam = ", vintParam, ", stringParam = ", stringParam);
 
-		switch(controlCode){
-		case CTL_HEARTBEAT:
-			LOG_POSEIDON_TRACE("Received heartbeat from ", getRemoteInfo());
-			break;
-
-		default:
-			LOG_POSEIDON_WARNING("Unknown control code: ", controlCode);
-			send(ControlMessage(controlCode, vintParam, stringParam));
+		if(controlCode == CTL_PING){
+			LOG_POSEIDON_TRACE("Received ping from ", getRemoteInfo());
+			send(ControlMessage(ControlMessage::ID, ST_PONG, stringParam));
+			return;
+		}
+		if(controlCode == CTL_SHUTDOWN){
+			send(ControlMessage(ControlMessage::ID, ST_SHUTDOWN_REQUEST, stringParam));
 			shutdownRead();
 			shutdownWrite();
-			break;
+			return;
 		}
+
+		LOG_POSEIDON_WARNING("Unknown control code: ", controlCode);
+		DEBUG_THROW(Exception, ST_UNKNOWN_CTL_CODE, SharedNts(stringParam));
 	}
 
 	bool Session::send(boost::uint16_t messageId, StreamBuffer payload){

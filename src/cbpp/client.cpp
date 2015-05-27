@@ -9,6 +9,7 @@
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
+#include "../time.hpp"
 
 namespace Poseidon {
 
@@ -117,6 +118,8 @@ namespace Cbpp {
 			PROFILE_ME;
 
 			client->onSyncDataMessageEnd(m_payloadSize);
+
+			client->m_lastPongTime = getFastMonoClock();
 		}
 	};
 
@@ -141,24 +144,34 @@ namespace Cbpp {
 		}
 	};
 
-	void Client::keepAliveTimerProc(const boost::weak_ptr<Client> &weakClient){
+	void Client::keepAliveTimerProc(const boost::weak_ptr<Client> &weakClient, boost::uint64_t now, boost::uint64_t period){
 		PROFILE_ME;
 
 		const AUTO(client, weakClient.lock());
 		if(!client){
 			return;
 		}
-		client->sendControl(CTL_HEARTBEAT, 0, VAL_INIT);
+
+		if(client->m_lastPongTime < now - period * 2){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"No pong received since the last two keep alive intervals. Shut down the connection.");
+			client->forceShutdown();
+			return;
+		}
+
+		client->sendControl(CTL_PING, 0, boost::lexical_cast<std::string>(getUtcTime()));
 	}
 
 	Client::Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveInterval)
 		: TcpClientBase(addr, useSsl)
 		, m_keepAliveInterval(keepAliveInterval)
+		, m_lastPongTime((boost::uint64_t)-1)
 	{
 	}
 	Client::Client(const IpPort &addr, bool useSsl, boost::uint64_t keepAliveInterval)
 		: TcpClientBase(addr, useSsl)
 		, m_keepAliveInterval(keepAliveInterval)
+		, m_lastPongTime((boost::uint64_t)-1)
 	{
 	}
 	Client::~Client(){
@@ -203,12 +216,16 @@ namespace Cbpp {
 	long Client::onEncodedDataAvail(StreamBuffer encoded){
 		PROFILE_ME;
 
+		if(!m_keepAliveTimer){
+			m_keepAliveTimer = TimerDaemon::registerTimer(m_keepAliveInterval, m_keepAliveInterval,
+				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<Client>(), _1, _2));
+		}
+
 		return TcpSessionBase::send(STD_MOVE(encoded));
 	}
 
 	void Client::onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason){
 		PROFILE_ME;
-
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"Received CBPP error message from server: messageId = ", messageId, ", statusCode = ", statusCode, ", reason = ", reason);
 	}
@@ -216,20 +233,10 @@ namespace Cbpp {
 	bool Client::send(boost::uint16_t messageId, StreamBuffer payload){
 		PROFILE_ME;
 
-		if(!m_keepAliveTimer){
-			m_keepAliveTimer = TimerDaemon::registerTimer(m_keepAliveInterval, m_keepAliveInterval,
-				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<Client>()));
-		}
-
 		return Writer::putDataMessage(messageId, STD_MOVE(payload));
 	}
 	bool Client::sendControl(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
 		PROFILE_ME;
-
-		if(!m_keepAliveTimer){
-			m_keepAliveTimer = TimerDaemon::registerTimer(m_keepAliveInterval, m_keepAliveInterval,
-				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<Client>()));
-		}
 
 		return Writer::putControlMessage(controlCode, vintParam, STD_MOVE(stringParam));
 	}

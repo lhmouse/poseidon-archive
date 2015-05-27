@@ -24,12 +24,13 @@ namespace Cbpp {
 		class ErrorMessageJob;
 
 	private:
-		static void keepAliveTimerProc(const boost::weak_ptr<Client> &weakClient);
+		static void keepAliveTimerProc(const boost::weak_ptr<Client> &weakClient, boost::uint64_t now, boost::uint64_t period);
 
 	private:
 		const boost::uint64_t m_keepAliveInterval;
 
 		boost::shared_ptr<TimerItem> m_keepAliveTimer;
+		boost::uint64_t m_lastPongTime;
 
 	protected:
 		Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveInterval);
