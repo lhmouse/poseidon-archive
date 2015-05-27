@@ -228,6 +228,12 @@ namespace Cbpp {
 		PROFILE_ME;
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"Received CBPP error message from server: messageId = ", messageId, ", statusCode = ", statusCode, ", reason = ", reason);
+
+		if(statusCode < 0){
+			LOG_POSEIDON_WARNING("Fatal CBPP error: statusCode = ", statusCode);
+
+			forceShutdown();
+		}
 	}
 
 	bool Client::send(boost::uint16_t messageId, StreamBuffer payload){
