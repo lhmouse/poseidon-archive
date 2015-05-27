@@ -141,6 +141,8 @@ namespace Cbpp {
 			PROFILE_ME;
 
 			client->onSyncErrorMessage(m_messageId, m_statusCode, m_reason);
+
+			client->m_lastPongTime = getFastMonoClock();
 		}
 	};
 
@@ -226,8 +228,8 @@ namespace Cbpp {
 
 	void Client::onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason){
 		PROFILE_ME;
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Received CBPP error message from server: messageId = ", messageId, ", statusCode = ", statusCode, ", reason = ", reason);
+		LOG_POSEIDON_INFO("Received CBPP error message from server: messageId = ", messageId,
+			", statusCode = ", statusCode, ", reason = ", reason);
 
 		if(statusCode < 0){
 			LOG_POSEIDON_WARNING("Fatal CBPP error: statusCode = ", statusCode);
