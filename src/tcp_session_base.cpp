@@ -24,16 +24,16 @@
 namespace Poseidon {
 
 namespace {
-	void shutdownIfTimeout(const boost::weak_ptr<TcpSessionBase> &weak){
+	void timedShutdown(const boost::weak_ptr<TcpSessionBase> &weak){
 		const AUTO(session, weak.lock());
 		if(!session){
 			return;
 		}
 
 		try {
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Connection timed out: remote = ", session->getRemoteInfo());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote = ", session->getRemoteInfo());
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Connection timed out but the session has not been established.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote is not connected");
 		}
 		session->forceShutdown();
 	}
@@ -247,7 +247,7 @@ void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 			TimerDaemon::setTime(m_shutdownTimer, timeout, 0);
 		} else {
 			m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
-				boost::bind(&shutdownIfTimeout, virtualWeakFromThis<TcpSessionBase>()));
+				boost::bind(&timedShutdown, virtualWeakFromThis<TcpSessionBase>()));
 		}
 	}
 }
