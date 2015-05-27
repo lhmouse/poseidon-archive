@@ -177,9 +177,9 @@ public:
 											if(count_ > cur_.name_.max_size()){	\
 												THROW_LENGTH_ERROR_(MESSAGE_NAME, name_);	\
 											}	\
-											cur_.name_.resize(count_);	\
+											/* cur_.name_.reserve(count_); */	\
 											for(::boost::uint64_t i_ = 0; i_ < count_; ++i_){	\
-												cur_.name_[i_] = *read_;	\
+												cur_.name_.push_back(*read_);	\
 												++read_;	\
 											}	\
 										}
@@ -195,10 +195,11 @@ public:
 											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
 												THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 											}	\
-											cur_.name_.resize(count_);	\
+											/* cur_.name_.reserve(count_); */	\
 											for(::boost::uint64_t i_ = 0; i_ < count_; ++i_){	\
 												typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-												Element_ &element_ = cur_.name_[i_];	\
+												cur_.name_.push_back(Element_());	\
+												Element_ &element_ = cur_.name_.back();	\
 												typedef Element_ Cur_;	\
 												Cur_ &cur_ = element_;	\
 												\
