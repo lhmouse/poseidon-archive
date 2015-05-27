@@ -66,9 +66,9 @@ namespace Cbpp {
 				m_queue.get(&temp16, 2);
 				m_messageId = loadLe(temp16);
 
-				onDataMessageHeader(m_messageId, m_payloadSize);
-
 				if(m_messageId != ControlMessage::ID){
+					onDataMessageHeader(m_messageId, m_payloadSize);
+
 					m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize, 4096);
 					m_state = S_DATA_PAYLOAD;
 				} else {
