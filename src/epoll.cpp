@@ -14,6 +14,7 @@
 #include "log.hpp"
 #include "time.hpp"
 #include "errno.hpp"
+#include "atomic.hpp"
 
 namespace Poseidon {
 
@@ -183,9 +184,10 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			} catch(...){
 				LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
 			}
+			const int errCode = atomicLoad(session->m_timedOut, ATOMIC_ACQUIRE) ? ETIMEDOUT : 0;
 			session->shutdownRead();
 			session->shutdownWrite();
-			session->onClose(0);
+			session->onClose(errCode);
 			goto _eraseSession;
 		}
 

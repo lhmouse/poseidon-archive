@@ -45,13 +45,15 @@ void TcpSessionBase::shutdownTimerProc(const boost::weak_ptr<TcpSessionBase> &we
 	} catch(...){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote is not connected");
 	}
+	atomicStore(session->m_timedOut, true, ATOMIC_RELEASE);
 	session->forceShutdown();
 }
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getFastMonoClock())
 	, m_peerInfo()
-	, m_shutdownRead(false), m_shutdownWrite(false), m_delayedShutdownGuardCount(0), m_reallyShutdownWrite(false)
+	, m_shutdownRead(false), m_shutdownWrite(false), m_reallyShutdownWrite(false), m_timedOut(false)
+	, m_delayedShutdownGuardCount(0)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){

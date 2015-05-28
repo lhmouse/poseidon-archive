@@ -68,8 +68,9 @@ private:
 
 	volatile bool m_shutdownRead;
 	volatile bool m_shutdownWrite;
-	volatile std::size_t m_delayedShutdownGuardCount;
 	volatile bool m_reallyShutdownWrite;
+	volatile bool m_timedOut;
+	volatile std::size_t m_delayedShutdownGuardCount;
 
 	mutable Mutex m_bufferMutex;
 	StreamBuffer m_sendBuffer;
