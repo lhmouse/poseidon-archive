@@ -131,6 +131,8 @@ public:
 	const IpPort &getLocalInfo() const;
 
 	void setTimeout(boost::uint64_t timeout);
+
+	void setNoDelay(bool enabled);
 };
 
 }

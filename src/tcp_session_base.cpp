@@ -9,6 +9,8 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include "singletons/timer_daemon.hpp"
 #include "log.hpp"
 #include "atomic.hpp"
@@ -184,6 +186,8 @@ void TcpSessionBase::onClose(int errCode) NOEXCEPT {
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer){
+	PROFILE_ME;
+
 	if(atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 			"Connection has been shut down for writing: remote = ", getRemoteInfo());
@@ -202,6 +206,8 @@ bool TcpSessionBase::hasBeenShutdownRead() const NOEXCEPT {
 	return atomicLoad(m_shutdownRead, ATOMIC_ACQUIRE);
 }
 bool TcpSessionBase::shutdownRead() NOEXCEPT {
+	PROFILE_ME;
+
 	const bool ret = !atomicExchange(m_shutdownRead, true, ATOMIC_ACQ_REL);
 	::shutdown(m_socket.get(), SHUT_RD);
 	return ret;
@@ -210,6 +216,8 @@ bool TcpSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
 	return atomicLoad(m_shutdownWrite, ATOMIC_ACQUIRE);
 }
 bool TcpSessionBase::shutdownWrite() NOEXCEPT {
+	PROFILE_ME;
+
 	const bool ret = !atomicExchange(m_shutdownWrite, true, ATOMIC_ACQ_REL);
 	if(atomicLoad(m_delayedShutdownGuardCount, ATOMIC_RELAXED) == 0){
 		atomicStore(m_reallyShutdownWrite, true, ATOMIC_RELEASE);
@@ -218,6 +226,8 @@ bool TcpSessionBase::shutdownWrite() NOEXCEPT {
 	return ret;
 }
 void TcpSessionBase::forceShutdown() NOEXCEPT {
+	PROFILE_ME;
+
 	atomicStore(m_shutdownRead, true, ATOMIC_RELEASE);
 	atomicStore(m_shutdownWrite, true, ATOMIC_RELEASE);
 
@@ -230,15 +240,21 @@ void TcpSessionBase::forceShutdown() NOEXCEPT {
 }
 
 const IpPort &TcpSessionBase::getRemoteInfo() const {
+	PROFILE_ME;
+
 	fetchPeerInfo();
 	return m_peerInfo.remote;
 }
 const IpPort &TcpSessionBase::getLocalInfo() const {
+	PROFILE_ME;
+
 	fetchPeerInfo();
 	return m_peerInfo.local;
 }
 
 void TcpSessionBase::setTimeout(boost::uint64_t timeout){
+	PROFILE_ME;
+
 	const Mutex::UniqueLock lock(m_timerMutex);
 	if(timeout == 0){
 		m_shutdownTimer.reset();
@@ -249,6 +265,17 @@ void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 			m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
 				boost::bind(&shutdownTimerProc, virtualWeakFromThis<TcpSessionBase>()), true);
 		}
+	}
+}
+
+void TcpSessionBase::setNoDelay(bool enabled){
+	PROFILE_ME;
+
+	const int val = enabled;
+	if(::setsockopt(m_socket.get(), IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) != 0){
+		const int errCode = errno;
+		LOG_POSEIDON_WARNING("Error setting TCP socket option: errCode = ", errCode);
+		DEBUG_THROW(SystemException, errCode);
 	}
 }
 
