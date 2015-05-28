@@ -169,25 +169,32 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 
 		if(event.events & EPOLLERR){
 			int errCode;
-			::socklen_t errLen = sizeof(errCode);
-			if(::getsockopt(session->getFd(), SOL_SOCKET, SO_ERROR, &errCode, &errLen) != 0){
-				errCode = errno;
+			if(atomicLoad(session->m_timedOut, ATOMIC_ACQUIRE)){
+				errCode = ETIMEDOUT;
+			} else {
+				::socklen_t errLen = sizeof(errCode);
+				if(::getsockopt(session->getFd(), SOL_SOCKET, SO_ERROR, &errCode, &errLen) != 0){
+					errCode = errno;
+				}
 			}
 			const AUTO(desc, getErrorDesc(errCode));
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket error: errCode = ", errCode, ", desc = ", desc);
+			try {
+				LOG_POSEIDON_INFO("Socket error: errCode = ", errCode, ", desc = ", desc, " remote is ", session->getRemoteInfo());
+			} catch(...){
+				LOG_POSEIDON_INFO("Socket error: errCode = ", errCode, ", desc = ", desc, " remote is not connected.");
+			}
 			session->onClose(errCode);
 			goto _eraseSession;
 		}
 		if(event.events & EPOLLHUP){
 			try {
-				LOG_POSEIDON_INFO("Socket closed, remote is ", session->getRemoteInfo());
+				LOG_POSEIDON_INFO("Socket closed: remote is ", session->getRemoteInfo());
 			} catch(...){
-				LOG_POSEIDON_INFO("Socket closed, remote is not connected.");
+				LOG_POSEIDON_INFO("Socket closed: remote is not connected.");
 			}
-			const int errCode = atomicLoad(session->m_timedOut, ATOMIC_ACQUIRE) ? ETIMEDOUT : 0;
 			session->shutdownRead();
 			session->shutdownWrite();
-			session->onClose(errCode);
+			session->onClose(0);
 			goto _eraseSession;
 		}
 
