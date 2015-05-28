@@ -45,7 +45,6 @@ void TcpSessionBase::shutdownTimerProc(const boost::weak_ptr<TcpSessionBase> &we
 	} catch(...){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote is not connected");
 	}
-	session->onSyncTimeOut();
 	session->forceShutdown();
 }
 
@@ -182,9 +181,6 @@ void TcpSessionBase::onClose(int errCode) NOEXCEPT {
 	(void)errCode;
 }
 
-void TcpSessionBase::onSyncTimeOut() NOEXCEPT {
-}
-
 bool TcpSessionBase::send(StreamBuffer buffer){
 	if(atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
@@ -249,7 +245,7 @@ void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 			TimerDaemon::setTime(m_shutdownTimer, timeout, 0);
 		} else {
 			m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
-				boost::bind(&shutdownTimerProc, virtualWeakFromThis<TcpSessionBase>()));
+				boost::bind(&shutdownTimerProc, virtualWeakFromThis<TcpSessionBase>()), true);
 		}
 	}
 }

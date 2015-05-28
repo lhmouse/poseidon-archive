@@ -105,8 +105,6 @@ protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	void onReadAvail(StreamBuffer data) OVERRIDE = 0;
 
-	virtual void onSyncTimeOut() NOEXCEPT;
-
 public:
 	bool send(StreamBuffer buffer) OVERRIDE;
 
