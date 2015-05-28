@@ -52,6 +52,9 @@ public:
 	};
 
 private:
+	static void shutdownTimerProc(const boost::weak_ptr<TcpSessionBase> &weak);
+
+private:
 	const UniqueFile m_socket;
 	const boost::uint64_t m_createdTime;
 
@@ -101,6 +104,8 @@ protected:
 
 	// 注意，只能在 epoll 线程中调用这些函数。
 	void onReadAvail(StreamBuffer data) OVERRIDE = 0;
+
+	virtual void onSyncTimeOut() NOEXCEPT;
 
 public:
 	bool send(StreamBuffer buffer) OVERRIDE;

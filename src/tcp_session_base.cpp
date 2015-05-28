@@ -23,22 +23,6 @@
 
 namespace Poseidon {
 
-namespace {
-	void timedShutdown(const boost::weak_ptr<TcpSessionBase> &weak){
-		const AUTO(session, weak.lock());
-		if(!session){
-			return;
-		}
-
-		try {
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote = ", session->getRemoteInfo());
-		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote is not connected");
-		}
-		session->forceShutdown();
-	}
-}
-
 TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::shared_ptr<TcpSessionBase> session)
 	: m_session(STD_MOVE(session))
 {
@@ -48,6 +32,21 @@ TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	if(atomicSub(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED) == 0){
 		m_session->shutdownWrite();
 	}
+}
+
+void TcpSessionBase::shutdownTimerProc(const boost::weak_ptr<TcpSessionBase> &weak){
+	const AUTO(session, weak.lock());
+	if(!session){
+		return;
+	}
+
+	try {
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote = ", session->getRemoteInfo());
+	} catch(...){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote is not connected");
+	}
+	session->onSyncTimeOut();
+	session->forceShutdown();
 }
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
@@ -183,6 +182,9 @@ void TcpSessionBase::onClose(int errCode) NOEXCEPT {
 	(void)errCode;
 }
 
+void TcpSessionBase::onSyncTimeOut() NOEXCEPT {
+}
+
 bool TcpSessionBase::send(StreamBuffer buffer){
 	if(atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
@@ -247,7 +249,7 @@ void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 			TimerDaemon::setTime(m_shutdownTimer, timeout, 0);
 		} else {
 			m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
-				boost::bind(&timedShutdown, virtualWeakFromThis<TcpSessionBase>()));
+				boost::bind(&shutdownTimerProc, virtualWeakFromThis<TcpSessionBase>()));
 		}
 	}
 }
