@@ -55,8 +55,6 @@ namespace Http {
 			if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
 				headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
 			} else {
-				headers.erase("Content-Length");
-
 				// 只有一个 chunk。
 				StreamBuffer chunk;
 				len = (unsigned)std::sprintf(temp, "%llx\r\n", (unsigned long long)entity.size());
@@ -113,7 +111,6 @@ namespace Http {
 		} else {
 			headers.set("Transfer-Encoding", STD_MOVE(transferEncoding));
 		}
-		headers.erase("Content-Length");
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			data.put(it->first.get());
