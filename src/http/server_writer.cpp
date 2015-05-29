@@ -18,6 +18,36 @@ namespace Http {
 	ServerWriter::~ServerWriter(){
 	}
 
+	long ServerWriter::putResponseHeaders(ResponseHeaders responseHeaders){
+		PROFILE_ME;
+
+		StreamBuffer data;
+
+		const unsigned verMajor = responseHeaders.version / 10000, verMinor = responseHeaders.version % 10000;
+		const unsigned statusCode = static_cast<unsigned>(responseHeaders.statusCode);
+		char temp[64];
+		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor,verMinor, statusCode);
+		data.put(temp, len);
+		data.put(responseHeaders.reason);
+		data.put("\r\n");
+
+		AUTO_REF(headers, responseHeaders.headers);
+		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
+			data.put(it->first.get());
+			data.put(": ");
+			data.put(it->second);
+			data.put("\r\n");
+		}
+		data.put("\r\n");
+
+		return onEncodedDataAvail(STD_MOVE(data));
+	}
+	long ServerWriter::putEntity(StreamBuffer data){
+		PROFILE_ME;
+
+		return onEncodedDataAvail(STD_MOVE(data));
+	}
+
 	long ServerWriter::putResponse(ResponseHeaders responseHeaders, StreamBuffer entity){
 		PROFILE_ME;
 

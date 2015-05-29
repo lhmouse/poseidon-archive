@@ -18,6 +18,35 @@ namespace Http {
 	ClientWriter::~ClientWriter(){
 	}
 
+	long ClientWriter::putRequestHeaders(RequestHeaders requestHeaders){
+		PROFILE_ME;
+
+		StreamBuffer data;
+
+		data.put(getStringFromVerb(requestHeaders.verb));
+		data.put(' ');
+		data.put(requestHeaders.uri);
+		if(!requestHeaders.getParams.empty()){
+			data.put('?');
+			data.put(urlEncodedFromOptionalMap(requestHeaders.getParams));
+		}
+		char temp[64];
+		const unsigned verMajor = requestHeaders.version / 10000, verMinor = requestHeaders.version % 10000;
+		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", verMajor, verMinor);
+		data.put(temp, len);
+
+		AUTO_REF(headers, requestHeaders.headers);
+		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
+			data.put(it->first.get());
+			data.put(": ");
+			data.put(it->second);
+			data.put("\r\n");
+		}
+		data.put("\r\n");
+
+		return onEncodedDataAvail(STD_MOVE(data));
+	}
+
 	long ClientWriter::putRequest(RequestHeaders requestHeaders, StreamBuffer entity){
 		PROFILE_ME;
 
@@ -73,6 +102,11 @@ namespace Http {
 		data.put("\r\n");
 
 		data.splice(entity);
+
+		return onEncodedDataAvail(STD_MOVE(data));
+	}
+	long ClientWriter::putEntity(StreamBuffer data){
+		PROFILE_ME;
 
 		return onEncodedDataAvail(STD_MOVE(data));
 	}

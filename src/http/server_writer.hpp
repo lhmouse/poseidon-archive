@@ -23,6 +23,9 @@ namespace Http {
 		virtual long onEncodedDataAvail(StreamBuffer encoded) = 0;
 
 	public:
+		long putResponseHeaders(ResponseHeaders responseHeaders);
+		long putEntity(StreamBuffer data);
+
 		long putResponse(ResponseHeaders responseHeaders, StreamBuffer entity);
 		long putDefaultResponse(ResponseHeaders responseHeaders);
 
