@@ -326,10 +326,7 @@ void StreamBuffer::put(const void *data, std::size_t size){
 	}
 }
 void StreamBuffer::put(const char *str){
-	char ch;
-	while((ch = *(str++)) != 0){
-		put(static_cast<unsigned char>(ch));
-	}
+	put(str, std::strlen(str));
 }
 void StreamBuffer::put(const std::string &str){
 	put(str.data(), str.size());
