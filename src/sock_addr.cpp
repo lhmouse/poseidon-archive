@@ -34,6 +34,67 @@ int SockAddr::getFamily() const {
 	return p->sa_family;
 }
 
+bool SockAddr::isPrivate() const {
+	const int family = getFamily();
+	if(family == AF_INET){
+		const AUTO_REF(ip, reinterpret_cast<const unsigned char (&)[4]>(
+			static_cast<const ::sockaddr_in *>(getData())->sin_addr));
+		if(ip[0] == 0){ // 0.0.0.0/8: 当前网络地址
+			return true;
+		} else if(ip[0] == 10){ // 10.0.0.0/8: A 类私有地址
+			return true;
+		} else if(ip[0] == 127){ // 127.0.0.0/8: 回环地址
+			return true;
+		} else if((ip[0] == 172) && ((ip[1] & 0xF0) == 16)){ // 172.16.0.0/12: B 类私有地址
+			return true;
+		} else if((ip[0] == 169) && (ip[1] == 254)){ // 169.254.0.0/16: 链路本地地址
+			return true;
+		} else if((ip[0] == 192) && (ip[1] == 168)){ // 192.168.0.0/16: C 类私有地址
+			return true;
+		} else if(ip[0] >= 224){ // D 类、E 类地址和广播地址
+			return true;
+		}
+		return false;
+	} else if(family == AF_INET6){
+		static const unsigned char ZEROES[16] = { };
+
+		const AUTO_REF(ip, reinterpret_cast<const unsigned char (&)[16]>(
+			static_cast<const ::sockaddr_in6 *>(getData())->sin6_addr));
+		if(std::memcmp(ip, ZEROES, 15) == 0){
+			if(ip[15] == 0){ // ::/128: 未指定的地址
+				return true;
+			}
+			if(ip[15] == 1){ // ::1/128: 回环地址
+				return true;
+			}
+		} else if((std::memcmp(ip, ZEROES, 10) == 0) && (ip[10] == 0xFF) && (ip[11] == 0xFF)){ // IPv4 翻译地址
+			if(ip[12] == 0){ // 0.0.0.0/8: 当前网络地址
+				return true;
+			} else if(ip[12] == 10){ // 10.0.0.0/8: A 类私有地址
+				return true;
+			} else if(ip[12] == 127){ // 127.0.0.0/8: 回环地址
+				return true;
+			} else if((ip[12] == 172) && ((ip[13] & 0xF0) == 16)){ // 172.16.0.0/12: B 类私有地址
+				return true;
+			} else if((ip[12] == 169) && (ip[13] == 254)){ // 169.254.0.0/16: 链路本地地址
+				return true;
+			} else if((ip[12] == 192) && (ip[13] == 168)){ // 192.168.0.0/16: C 类私有地址
+				return true;
+			} else if(ip[12] >= 224){ // D 类、E 类地址和广播地址
+				return true;
+			}
+		} else if((ip[0] == 0x01) && (std::memcmp(ip + 1, ZEROES, 7) == 0)){ // 100::/64 黑洞地址
+			return true;
+		} else if(ip[0] >= 0xFC){ // 私有地址、链路本地地址和广播地址
+			return true;
+		}
+		return false;
+	}
+
+	LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
+	DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
+}
+
 IpPort getIpPortFromSockAddr(const SockAddr &sa){
 	const int family = sa.getFamily();
 	if(family == AF_INET){

@@ -28,6 +28,8 @@ public:
 	}
 
 	int getFamily() const;
+
+	bool isPrivate() const;
 };
 
 extern IpPort getIpPortFromSockAddr(const SockAddr &sa);
