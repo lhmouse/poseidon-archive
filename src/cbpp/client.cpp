@@ -199,6 +199,8 @@ namespace Cbpp {
 
 		enqueueJob(boost::make_shared<ConnectJob>(
 			virtualSharedFromThis<Client>()));
+
+		TcpClientBase::onConnect();
 	}
 	void Client::onReadAvail(StreamBuffer data){
 		PROFILE_ME;
@@ -244,7 +246,7 @@ namespace Cbpp {
 				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<Client>(), _1, _2));
 		}
 
-		return TcpSessionBase::send(STD_MOVE(encoded));
+		return TcpClientBase::send(STD_MOVE(encoded));
 	}
 
 	void Client::onSyncConnect(){

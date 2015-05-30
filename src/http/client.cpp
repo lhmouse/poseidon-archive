@@ -145,6 +145,8 @@ namespace Http {
 
 		enqueueJob(boost::make_shared<ConnectJob>(
 			virtualSharedFromThis<Client>()));
+
+		TcpClientBase::onConnect();
 	}
 	void Client::onReadHup() NOEXCEPT {
 		PROFILE_ME;
@@ -161,7 +163,7 @@ namespace Http {
 			forceShutdown();
 		}
 
-		TcpSessionBase::onReadHup();
+		TcpClientBase::onReadHup();
 	}
 
 	void Client::onReadAvail(StreamBuffer data){
@@ -194,7 +196,7 @@ namespace Http {
 	long Client::onEncodedDataAvail(StreamBuffer encoded){
 		PROFILE_ME;
 
-		return TcpSessionBase::send(STD_MOVE(encoded));
+		return TcpClientBase::send(STD_MOVE(encoded));
 	}
 
 	void Client::onSyncConnect(){
