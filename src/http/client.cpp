@@ -50,6 +50,21 @@ namespace Http {
 		}
 	};
 
+	class Client::ConnectJob : public Client::SyncJobBase {
+	public:
+		explicit ConnectJob(const boost::shared_ptr<Client> &client)
+			: SyncJobBase(client)
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+			PROFILE_ME;
+
+			client->onSyncConnect();
+		}
+	};
+
 	class Client::ResponseHeadersJob : public Client::SyncJobBase {
 	private:
 		const ResponseHeaders m_responseHeaders;
@@ -125,6 +140,12 @@ namespace Http {
 	Client::~Client(){
 	}
 
+	void Client::onConnect(){
+		PROFILE_ME;
+
+		enqueueJob(boost::make_shared<ConnectJob>(
+			virtualSharedFromThis<Client>()));
+	}
 	void Client::onReadHup() NOEXCEPT {
 		PROFILE_ME;
 
@@ -148,6 +169,7 @@ namespace Http {
 
 		ClientReader::putEncodedData(STD_MOVE(data));
 	}
+
 	void Client::onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength){
 		PROFILE_ME;
 
@@ -173,6 +195,9 @@ namespace Http {
 		PROFILE_ME;
 
 		return TcpSessionBase::send(STD_MOVE(encoded));
+	}
+
+	void Client::onSyncConnect(){
 	}
 }
 

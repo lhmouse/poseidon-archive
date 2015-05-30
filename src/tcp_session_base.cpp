@@ -54,6 +54,7 @@ void TcpSessionBase::shutdownTimerProc(const boost::weak_ptr<TcpSessionBase> &we
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_createdTime(getFastMonoClock())
 	, m_peerInfo()
+	, m_connected(false)
 	, m_shutdownRead(false), m_shutdownWrite(false), m_reallyShutdownWrite(false), m_timedOut(false)
 	, m_delayedShutdownGuardCount(0)
 {
@@ -74,6 +75,13 @@ TcpSessionBase::~TcpSessionBase(){
 		LOG_POSEIDON_INFO("Destroying TCP session: remote = ", getRemoteInfo());
 	} catch(...){
 		LOG_POSEIDON_INFO("Destroying TCP session that has not been established.");
+	}
+}
+
+void TcpSessionBase::setConnected(){
+	const bool old = atomicExchange(m_connected, true, ATOMIC_ACQ_REL);
+	if(!old){
+		onConnect();
 	}
 }
 
@@ -178,11 +186,15 @@ bool TcpSessionBase::isSendBufferEmpty(Mutex::UniqueLock &lock) const {
 	return m_sendBuffer.empty();
 }
 
+void TcpSessionBase::onConnect(){
+}
 void TcpSessionBase::onReadHup() NOEXCEPT {
 	shutdownWrite();
 }
 void TcpSessionBase::onClose(int errCode) NOEXCEPT {
 	(void)errCode;
+
+	m_connected = false;
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer){

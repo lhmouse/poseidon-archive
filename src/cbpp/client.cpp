@@ -62,6 +62,21 @@ namespace Cbpp {
 		}
 	};
 
+	class Client::ConnectJob : public Client::SyncJobBase {
+	public:
+		explicit ConnectJob(const boost::shared_ptr<Client> &client)
+			: SyncJobBase(client)
+		{
+		}
+
+	protected:
+		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+			PROFILE_ME;
+
+			client->onSyncConnect();
+		}
+	};
+
 	class Client::DataMessageHeaderJob : public Client::SyncJobBase {
 	private:
 		const unsigned m_messageId;
@@ -179,6 +194,12 @@ namespace Cbpp {
 	Client::~Client(){
 	}
 
+	void Client::onConnect(){
+		PROFILE_ME;
+
+		enqueueJob(boost::make_shared<ConnectJob>(
+			virtualSharedFromThis<Client>()));
+	}
 	void Client::onReadAvail(StreamBuffer data){
 		PROFILE_ME;
 
@@ -224,6 +245,11 @@ namespace Cbpp {
 		}
 
 		return TcpSessionBase::send(STD_MOVE(encoded));
+	}
+
+	void Client::onSyncConnect(){
+		PROFILE_ME;
+		LOG_POSEIDON_INFO("CBPP client connected: remote = ", getRemoteInfo());
 	}
 
 	void Client::onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason){

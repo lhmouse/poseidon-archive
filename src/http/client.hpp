@@ -17,6 +17,7 @@ namespace Http {
 	class Client : public TcpClientBase, private ClientReader, private ClientWriter {
 	private:
 		class SyncJobBase;
+		class ConnectJob;
 		class ResponseHeadersJob;
 		class ResponseEntityJob;
 		class ResponseEndJob;
@@ -28,6 +29,7 @@ namespace Http {
 
 	protected:
 		// TcpClientBase
+		void onConnect() OVERRIDE;
 		void onReadHup() NOEXCEPT OVERRIDE;
 
 		void onReadAvail(StreamBuffer data) OVERRIDE;
@@ -41,6 +43,8 @@ namespace Http {
 		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
+		virtual void onSyncConnect();
+
 		virtual void onSyncResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) = 0;
 		virtual void onSyncResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) = 0;
 		virtual void onSyncResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) = 0;

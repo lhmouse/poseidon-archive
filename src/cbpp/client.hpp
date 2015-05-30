@@ -18,6 +18,7 @@ namespace Cbpp {
 	class Client : public TcpClientBase, private Reader, private Writer {
 	private:
 		class SyncJobBase;
+		class ConnectJob;
 		class DataMessageHeaderJob;
 		class DataMessagePayloadJob;
 		class DataMessageEndJob;
@@ -39,6 +40,8 @@ namespace Cbpp {
 
 	protected:
 		// TcpSessionBase
+		void onConnect() OVERRIDE;
+
 		void onReadAvail(StreamBuffer data) OVERRIDE;
 
 		// Reader
@@ -52,6 +55,8 @@ namespace Cbpp {
 		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
+		virtual void onSyncConnect();
+
 		virtual void onSyncDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) = 0;
 		virtual void onSyncDataMessagePayload(boost::uint64_t payloadOffset, const StreamBuffer &payload) = 0;
 		virtual void onSyncDataMessageEnd(boost::uint64_t payloadSize) = 0;

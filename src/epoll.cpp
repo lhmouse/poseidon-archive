@@ -203,6 +203,8 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			m_sessions->setKey<IDX_ADDR, IDX_READ>(it, now);
 		}
 		if(event.events & EPOLLOUT){
+			session->setConnected();
+
 			Mutex::UniqueLock sessionLock;
 			if(!session->isSendBufferEmpty(sessionLock)){
 				const Mutex::UniqueLock lock(m_mutex);

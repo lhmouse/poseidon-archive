@@ -24,6 +24,7 @@ namespace Http {
 		~UpgradedSessionBase();
 
 	protected:
+		void onConnect() OVERRIDE;
 		void onReadHup() NOEXCEPT OVERRIDE;
 		void onClose(int errCode) NOEXCEPT OVERRIDE;
 

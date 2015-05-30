@@ -64,6 +64,7 @@ private:
 		IpPort local;
 	} m_peerInfo;
 
+	volatile bool m_connected;
 	boost::scoped_ptr<SslFilterBase> m_sslFilter;
 
 	volatile bool m_shutdownRead;
@@ -84,6 +85,8 @@ protected:
 	~TcpSessionBase();
 
 private:
+	void setConnected();
+
 	void initSsl(Move<boost::scoped_ptr<SslFilterBase> > sslFilter);
 
 	void setEpoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT;
@@ -100,6 +103,7 @@ private:
 	bool isSendBufferEmpty(Mutex::UniqueLock &lock) const;
 
 protected:
+	void onConnect() OVERRIDE;
 	void onReadHup() NOEXCEPT OVERRIDE;
 	void onClose(int errCode) NOEXCEPT OVERRIDE; // 参数就是 errno。
 

@@ -19,6 +19,7 @@ public:
 	~SessionBase();
 
 protected:
+	virtual void onConnect() = 0;
 	virtual void onReadHup() NOEXCEPT = 0;
 	virtual void onClose(int errCode) NOEXCEPT = 0;
 
