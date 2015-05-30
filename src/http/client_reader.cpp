@@ -151,18 +151,18 @@ namespace Http {
 					transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
 
 					if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
-						const AUTO_REF(ontentLength, m_responseHeaders.headers.get("Content-Length"));
-						if(ontentLength.empty()){
+						const AUTO_REF(contentLength, m_responseHeaders.headers.get("Content-Length"));
+						if(contentLength.empty()){
 							m_contentLength = CONTENT_TILL_EOF;
 						} else {
 							char *endptr;
-							m_contentLength = ::strtoull(ontentLength.c_str(), &endptr, 10);
+							m_contentLength = ::strtoull(contentLength.c_str(), &endptr, 10);
 							if(*endptr){
-								LOG_POSEIDON_WARNING("Bad request header Content-Length: ", ontentLength);
+								LOG_POSEIDON_WARNING("Bad request header Content-Length: ", contentLength);
 								DEBUG_THROW(BasicException, sslit("Malformed Content-Length header"));
 							}
 							if(m_contentLength > CONTENT_LENGTH_MAX){
-								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", ontentLength);
+								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", contentLength);
 								DEBUG_THROW(BasicException, sslit("Inacceptable Content-Length"));
 							}
 						}
