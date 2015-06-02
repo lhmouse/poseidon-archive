@@ -9,6 +9,7 @@
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../job_base.hpp"
+#include "../time.hpp"
 
 namespace Poseidon {
 
@@ -216,20 +217,26 @@ namespace Cbpp {
 		LOG_POSEIDON_DEBUG("Recevied control message from ", getRemoteInfo(),
 			", controlCode = ", controlCode, ", vintParam = ", vintParam, ", stringParam = ", stringParam);
 
-		if(controlCode == CTL_PING){
+		switch(controlCode){
+		case CTL_PING:
 			LOG_POSEIDON_TRACE("Received ping from ", getRemoteInfo());
 			send(ControlMessage(ControlMessage::ID, ST_PONG, stringParam));
-			return;
-		}
-		if(controlCode == CTL_SHUTDOWN){
+			break;
+
+		case CTL_SHUTDOWN:
 			send(ControlMessage(ControlMessage::ID, ST_SHUTDOWN_REQUEST, stringParam));
 			shutdownRead();
 			shutdownWrite();
-			return;
-		}
+			break;
 
-		LOG_POSEIDON_WARNING("Unknown control code: ", controlCode);
-		DEBUG_THROW(Exception, ST_UNKNOWN_CTL_CODE, SharedNts(stringParam));
+		case CTL_QUERY_MONO_CLOCK:
+			send(ControlMessage(ControlMessage::ID, ST_MONOTONIC_CLOCK, boost::lexical_cast<std::string>(getFastMonoClock())));
+			break;
+
+		default:
+			LOG_POSEIDON_WARNING("Unknown control code: ", controlCode);
+			DEBUG_THROW(Exception, ST_UNKNOWN_CTL_CODE, SharedNts(stringParam));
+		}
 	}
 
 	bool Session::send(boost::uint16_t messageId, StreamBuffer payload){

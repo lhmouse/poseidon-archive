@@ -10,10 +10,11 @@ namespace Cbpp {
 	typedef unsigned ControlCode;
 
 	namespace ControlCodes {
-		enum {						// vintParam		stringParam
-			CTL_PING		=  0,	// 原样返回			原样返回
-			CTL_SHUTDOWN	=  1,	// 0 	正常关闭	原样返回
-									// 其它	暴力关闭	原样返回
+		enum {								// vintParam		stringParam
+			CTL_PING				= 0,	// （忽略）			原样返回
+			CTL_SHUTDOWN			= 1,	// 0 	正常关闭	原样返回
+											// 其它	暴力关闭	原样返回
+			CTL_QUERY_MONO_CLOCK	= 2,	// （忽略）			（忽略）
 		};
 	}
 
