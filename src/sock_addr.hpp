@@ -28,6 +28,8 @@ public:
 	}
 
 	int getFamily() const;
+	// 如果是 IPv4 地址返回 false，如果是 IPv6 地址返回 true，否则抛出一个异常。
+	bool isIpv6() const;
 
 	bool isPrivate() const;
 };

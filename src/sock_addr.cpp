@@ -33,6 +33,17 @@ int SockAddr::getFamily() const {
 	}
 	return p->sa_family;
 }
+bool SockAddr::isIpv6() const {
+	const int family = getFamily();
+	if(family == AF_INET){
+		return false;
+	} else if(family == AF_INET6){
+		return true;
+	}
+
+	LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
+	DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
+}
 
 bool SockAddr::isPrivate() const {
 	const int family = getFamily();
