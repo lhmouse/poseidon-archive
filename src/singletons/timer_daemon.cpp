@@ -137,7 +137,7 @@ namespace {
 				// noop
 			}
 
-			if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
+			if(!atomicLoad(g_running, ATOMIC_CONSUME)){
 				break;
 			}
 

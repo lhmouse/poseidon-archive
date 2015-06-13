@@ -411,7 +411,7 @@ namespace {
 					atomicStore(m_urgent, false, ATOMIC_RELEASE);
 					return false;
 				}
-				if(atomicLoad(m_running, ATOMIC_ACQUIRE) && (now < operationIt->dueTime) && !atomicLoad(m_urgent, ATOMIC_ACQUIRE)){
+				if(atomicLoad(m_running, ATOMIC_CONSUME) && (now < operationIt->dueTime) && !atomicLoad(m_urgent, ATOMIC_CONSUME)){
 					return false;
 				}
 			}
@@ -530,7 +530,7 @@ namespace {
 					// noop
 				}
 
-				if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
+				if(!atomicLoad(m_running, ATOMIC_CONSUME)){
 					break;
 				}
 
@@ -566,7 +566,7 @@ namespace {
 		}
 
 		void addOperation(boost::shared_ptr<OperationBase> operation, bool urgent){
-			if(!atomicLoad(m_running, ATOMIC_ACQUIRE)){
+			if(!atomicLoad(m_running, ATOMIC_CONSUME)){
 				LOG_POSEIDON_ERROR("MySQL thread ", m_index, " is being shut down.");
 				DEBUG_THROW(Exception, sslit("MySQL thread is being shut down"));
 			}

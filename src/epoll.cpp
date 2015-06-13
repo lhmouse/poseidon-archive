@@ -169,7 +169,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 
 		if(event.events & EPOLLERR){
 			int errCode;
-			if(atomicLoad(session->m_timedOut, ATOMIC_ACQUIRE)){
+			if(atomicLoad(session->m_timedOut, ATOMIC_CONSUME)){
 				errCode = ETIMEDOUT;
 			} else {
 				::socklen_t errLen = sizeof(errCode);

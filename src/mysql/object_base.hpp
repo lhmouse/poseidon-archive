@@ -48,7 +48,7 @@ namespace MySql {
 
 	public:
 		bool isAutoSavingEnabled() const {
-			return atomicLoad(m_autoSaves, ATOMIC_ACQUIRE);
+			return atomicLoad(m_autoSaves, ATOMIC_CONSUME);
 		}
 		void enableAutoSaving() const {
 			atomicStore(m_autoSaves, true, ATOMIC_RELEASE);

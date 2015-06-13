@@ -176,7 +176,7 @@ TcpSessionBase::SyncIoResult TcpSessionBase::syncWrite(void *hint, unsigned long
 		}
 	}
 
-	if((bytesAvail == 0) && atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
+	if((bytesAvail == 0) && atomicLoad(m_reallyShutdownWrite, ATOMIC_CONSUME)){
 		::shutdown(m_socket.get(), SHUT_WR);
 	}
 	return ret;
@@ -200,7 +200,7 @@ void TcpSessionBase::onClose(int errCode) NOEXCEPT {
 bool TcpSessionBase::send(StreamBuffer buffer){
 	PROFILE_ME;
 
-	if(atomicLoad(m_reallyShutdownWrite, ATOMIC_ACQUIRE)){
+	if(atomicLoad(m_reallyShutdownWrite, ATOMIC_CONSUME)){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 			"Connection has been shut down for writing: remote = ", getRemoteInfo());
 		return false;
@@ -215,7 +215,7 @@ bool TcpSessionBase::send(StreamBuffer buffer){
 }
 
 bool TcpSessionBase::hasBeenShutdownRead() const NOEXCEPT {
-	return atomicLoad(m_shutdownRead, ATOMIC_ACQUIRE);
+	return atomicLoad(m_shutdownRead, ATOMIC_CONSUME);
 }
 bool TcpSessionBase::shutdownRead() NOEXCEPT {
 	PROFILE_ME;
@@ -225,7 +225,7 @@ bool TcpSessionBase::shutdownRead() NOEXCEPT {
 	return ret;
 }
 bool TcpSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
-	return atomicLoad(m_shutdownWrite, ATOMIC_ACQUIRE);
+	return atomicLoad(m_shutdownWrite, ATOMIC_CONSUME);
 }
 bool TcpSessionBase::shutdownWrite() NOEXCEPT {
 	PROFILE_ME;

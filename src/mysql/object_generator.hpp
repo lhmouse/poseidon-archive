@@ -159,7 +159,7 @@ public:
 
 #define FIELD_BOOLEAN(name_)	\
 	bool get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(bool val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
@@ -170,7 +170,7 @@ public:
 
 #define FIELD_TINYINT(name_)	\
 	::boost::int8_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::int8_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
@@ -181,7 +181,7 @@ public:
 
 #define FIELD_TINYINT_UNSIGNED(name_)	\
 	::boost::uint8_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint8_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
@@ -192,7 +192,7 @@ public:
 
 #define FIELD_SMALLINT(name_)	\
 	::boost::int16_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::int16_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
@@ -203,7 +203,7 @@ public:
 
 #define FIELD_SMALLINT_UNSIGNED(name_)	\
 	::boost::uint16_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint16_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
@@ -214,7 +214,7 @@ public:
 
 #define FIELD_INTEGER(name_)	\
 	::boost::int32_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::int32_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
@@ -225,7 +225,7 @@ public:
 
 #define FIELD_INTEGER_UNSIGNED(name_)	\
 	::boost::uint32_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint32_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
@@ -236,7 +236,7 @@ public:
 
 #define FIELD_BIGINT(name_)	\
 	::boost::int64_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::int64_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
@@ -247,7 +247,7 @@ public:
 
 #define FIELD_BIGINT_UNSIGNED(name_)	\
 	::boost::uint64_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
@@ -276,7 +276,7 @@ public:
 
 #define FIELD_DATETIME(name_)	\
 	::boost::uint64_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_ACQUIRE);	\
+		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
 		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\

@@ -108,7 +108,7 @@ namespace {
 			if(jobIt == g_jobMap.end<0>()){
 				return false;
 			}
-			if(atomicLoad(g_running, ATOMIC_ACQUIRE) && (now < jobIt->dueTime)){
+			if(atomicLoad(g_running, ATOMIC_CONSUME) && (now < jobIt->dueTime)){
 				return false;
 			}
 		}
@@ -189,7 +189,7 @@ void JobDispatcher::doModal(){
 			// noop
 		}
 
-		if(!atomicLoad(g_running, ATOMIC_ACQUIRE)){
+		if(!atomicLoad(g_running, ATOMIC_CONSUME)){
 			break;
 		}
 

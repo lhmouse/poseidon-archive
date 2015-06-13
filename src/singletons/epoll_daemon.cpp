@@ -63,7 +63,7 @@ namespace {
 		boost::uint64_t epollTimeout = 0;
 		bool running, busy;
 		do {
-			running = atomicLoad(g_running, ATOMIC_ACQUIRE);
+			running = atomicLoad(g_running, ATOMIC_CONSUME);
 			busy = false;
 
 			try {
