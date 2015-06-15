@@ -26,7 +26,7 @@ struct Thread::Impl {
 
 	char tag[8];
 	boost::function<void ()> proc;
-	pthread_t handle;
+	::pthread_t handle;
 
 	boost::shared_ptr<Impl> self;
 };
