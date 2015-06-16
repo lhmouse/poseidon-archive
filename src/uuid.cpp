@@ -25,7 +25,7 @@ namespace {
 	const unsigned char MAX_BYTES[16] = {
 		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
-	const unsigned g_pid = static_cast<boost::uint16_t>(::getpid());
+	const boost::uint32_t g_pid = static_cast<boost::uint16_t>(::getpid());
 
 	volatile boost::uint32_t g_autoInc = 0;
 }
@@ -36,7 +36,7 @@ const Uuid Uuid::UUID_MAX	(MAX_BYTES);
 
 Uuid Uuid::random(){
 	const AUTO(utcNow, getUtcTime());
-	const AUTO(autoInc, atomicAdd(g_autoInc, 1, ATOMIC_RELAXED));
+	const AUTO(unique, ((atomicAdd(g_autoInc, 1, ATOMIC_RELAXED) << 16) & 0x3FFFFFFFu) | g_pid);
 
 	Uuid ret
 #ifdef POSEIDON_CXX11
@@ -44,9 +44,9 @@ Uuid Uuid::random(){
 #endif
 		;
 	storeBe(ret.m_storage.u32[0], utcNow >> 12);
-	storeBe(ret.m_storage.u16[2], (utcNow << 4) | (g_pid >> 12));
-	storeBe(ret.m_storage.u16[3], g_pid & 0x0FFFu); // 版本 = 0
-	storeBe(ret.m_storage.u16[4], 0xC000u | (autoInc & 0x3FFFu)); // 变种 = 3
+	storeBe(ret.m_storage.u16[2], (utcNow << 4) | (unique >> 26));
+	storeBe(ret.m_storage.u16[3], (unique >> 14) & 0x0FFFu); // 版本 = 0
+	storeBe(ret.m_storage.u16[4], 0xC000u | (unique & 0x3FFFu)); // 变种 = 3
 	storeBe(ret.m_storage.u16[5], rand32());
 	storeBe(ret.m_storage.u32[3], rand32());
 	return ret;
