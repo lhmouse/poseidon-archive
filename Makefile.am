@@ -62,7 +62,8 @@ pkginclude_HEADERS = \
 	src/module_config.hpp	\
 	src/thread.hpp	\
 	src/mutex.hpp	\
-	src/condition_variable.hpp
+	src/condition_variable.hpp	\
+	src/dyn_array.hpp
 
 pkginclude_singletonsdir = $(pkgincludedir)/singletons
 pkginclude_singletons_HEADERS = \
