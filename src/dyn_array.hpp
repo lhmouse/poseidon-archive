@@ -46,7 +46,7 @@ public:
 		} else {
 			const std::size_t sizeToAlloc = sizeof(value_type) * size;
 			if(sizeToAlloc / sizeof(value_type) != size){
-				throw std::bad_array_new_length();
+				throw std::bad_alloc();
 			}
 			m_begin = static_cast<pointer>(::operator new[](sizeToAlloc));
 			m_end = m_begin;
