@@ -235,6 +235,12 @@ public:
 	size_type size() const NOEXCEPT {
 		return static_cast<size_type>(m_end - m_begin);
 	}
+	const_pointer data() const NOEXCEPT {
+		return m_begin;
+	}
+	pointer data() NOEXCEPT {
+		return m_begin;
+	}
 };
 
 }
