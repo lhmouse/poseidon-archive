@@ -59,7 +59,7 @@ double getHiResMonoClock() NOEXCEPT {
 		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
 		std::abort();
 	}
-	return (double)ts.tv_sec + (double)ts.tv_nsec / 1.0e9;
+	return (double)ts.tv_sec * 1e3 + (double)ts.tv_nsec / 1e6;
 }
 
 DateTime breakDownTime(boost::uint64_t ms){

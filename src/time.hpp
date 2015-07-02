@@ -9,15 +9,14 @@
 
 namespace Poseidon {
 
-// 单位毫秒。
+// 时间单位是毫秒。
+
 boost::uint64_t getUtcTime();
 boost::uint64_t getLocalTime();
 boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local);
 boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc);
 
-// 单位毫秒。
 boost::uint64_t getFastMonoClock() NOEXCEPT;
-// 单位秒。
 double getHiResMonoClock() NOEXCEPT;
 
 struct DateTime {

@@ -559,7 +559,7 @@ namespace {
 				MySqlDaemon::SnapshotElement item;
 				item.thread = thread;
 				item.table = it->first;
-				item.usTotal = static_cast<boost::uint64_t>(it->second * 1.0e6);
+				item.usTotal = static_cast<boost::uint64_t>(it->second * 1.0e3);
 				ret.push_back(item);
 			}
 			return count;
