@@ -53,10 +53,10 @@ double randDouble(double lower, double upper){
 		return lower;
 	} else if(lower < upper){
 		const AUTO(delta, upper - lower);
-		return lower + rand64() / 0x1p64 * delta;
+		return lower + ((boost::int64_t)rand64() & 0x7FFFFFFFFFFFFFFFll) / 0x1p63 * delta;
 	} else {
 		const AUTO(delta, lower - upper);
-		return upper + 0x1p-64 + rand64() / 0x1p64 * delta;
+		return upper + 0x1p-64 + ((boost::int64_t)rand64() & 0x7FFFFFFFFFFFFFFFll) / 0x1p63 * delta;
 	}
 }
 
