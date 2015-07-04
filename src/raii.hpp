@@ -23,13 +23,15 @@ public:
 		: m_handle(CloserT()())
 	{
 	}
-	explicit UniqueHandle(Handle handle) NOEXCEPT
-		: m_handle(CloserT()())
+	explicit UniqueHandle(Handle rhs) NOEXCEPT
+		: m_handle(rhs)
 	{
-		reset(handle);
 	}
 	~UniqueHandle() NOEXCEPT {
-		reset();
+		const Handle old = m_handle;
+		if(old != CloserT()()){
+			CloserT()(old);
+		}
 	}
 
 #ifdef POSEIDON_CXX11
@@ -37,12 +39,12 @@ public:
 	UniqueHandle &operator=(const UniqueHandle &) = delete;
 
 	UniqueHandle(UniqueHandle &&rhs) noexcept
-		: m_handle(CloserT()())
+		: m_handle(rhs.m_handle)
 	{
-		swap(rhs);
+		rhs.m_handle = CloserT()();
 	}
 	UniqueHandle &operator=(UniqueHandle &&rhs) noexcept {
-		swap(rhs);
+		reset(std::move(rhs));
 		return *this;
 	}
 #else
@@ -51,6 +53,11 @@ public:
 		__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership.")));
 	UniqueHandle &operator=(const UniqueHandle &)
 		__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership.")));
+
+	UniqueHandle &operator=(Move<UniqueHandle> rhs) noexcept {
+		reset(STD_MOVE(rhs));
+		return *this;
+	}
 #endif
 
 public:
@@ -62,16 +69,12 @@ public:
 		m_handle = CloserT()();
 		return ret;
 	}
-	UniqueHandle &reset(Handle handle = CloserT()()) NOEXCEPT {
-		const Handle old = m_handle;
-		m_handle = handle;
-		if(old != CloserT()()){
-			CloserT()(old);
-		}
+	UniqueHandle &reset(Handle rhs = CloserT()()) NOEXCEPT {
+		UniqueHandle(rhs).swap(*this);
 		return *this;
 	}
 	UniqueHandle &reset(Move<UniqueHandle> rhs) NOEXCEPT {
-		rhs.swap(*this);
+		UniqueHandle(STD_MOVE(rhs)).swap(*this);
 		return *this;
 	}
 
