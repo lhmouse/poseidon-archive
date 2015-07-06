@@ -150,7 +150,11 @@ void ModuleDepository::stop(){
 			continue;
 		}
 		LOG_POSEIDON_INFO("Waiting for module to unload: ", module->realPath());
-		::usleep(100000);
+
+		::timespec req;
+		req.tv_sec = 0;
+		req.tv_nsec = 100 * 1000 * 1000;
+		::nanosleep(&req, NULLPTR);
 	}
 }
 

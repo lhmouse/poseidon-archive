@@ -522,7 +522,12 @@ namespace {
 						LOG_POSEIDON_INFO("Successfully connected to MySQL server.");
 					} catch(std::exception &e){
 						LOG_POSEIDON_ERROR("std::exception thrown while connecting to MySQL server: what = ", e.what());
-						::usleep(g_reconnDelay * 1000);
+
+						const AUTO(ns, g_reconnDelay * 1000 * 1000);
+						::timespec req;
+						req.tv_sec = (::time_t)(ns / (1000 * 1000 * 1000));
+						req.tv_nsec = (long)(ns % (1000 * 1000 * 1000));
+						::nanosleep(&req, NULLPTR);
 					}
 				}
 
@@ -607,7 +612,11 @@ namespace {
 					m_newOperation.signal();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pendingObjects, " object(s) in my queue.");
-				::usleep(500000);
+
+				::timespec req;
+				req.tv_sec = 0;
+				req.tv_nsec = 500 * 1000 * 1000;
+				::nanosleep(&req, NULLPTR);
 			}
 		}
 	};
