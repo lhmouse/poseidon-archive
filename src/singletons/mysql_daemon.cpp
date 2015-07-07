@@ -45,9 +45,8 @@ namespace {
 	std::size_t		g_maxRetryCount		= 3;
 	boost::uint64_t	g_retryInitDelay	= 1000;
 
-	// 转储文件，写在最前面。
+	// 对于日志文件的写操作应当互斥。
 	Mutex g_dumpMutex;
-	UniqueFile g_dumpFile;
 
 	// 回调函数任务。
 	class SaveCallbackJob : public JobBase {
@@ -454,11 +453,27 @@ namespace {
 					} else {
 						LOG_POSEIDON_ERROR("Max retry count exceeded.");
 
-						if(g_dumpFile){
-							LOG_POSEIDON_INFO("Writing MySQL dump...");
+						if(g_dumpDir.empty()){
+							LOG_POSEIDON_WARNING("MySQL dump is disabled.");
+						} else {
+							char temp[256];
+							unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
+							std::string dumpPath;
+							dumpPath.assign(g_dumpDir);
+							dumpPath.push_back('/');
+							dumpPath.append(temp, len);
+							dumpPath.append(".log");
 
-							char temp[32];
-							unsigned len = (unsigned)std::sprintf(temp, "%5u", errorCode);
+							LOG_POSEIDON_INFO("Creating SQL dump file: ", dumpPath);
+							UniqueFile dumpFile;
+							if(!dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
+								const int errCode = errno;
+								LOG_POSEIDON_FATAL("Error creating SQL dump file: errno = ", errCode, ", desc = ", getErrorDesc(errCode));
+								std::abort();
+							}
+
+							LOG_POSEIDON_INFO("Writing MySQL dump...");
+							len = (unsigned)std::sprintf(temp, "%5u", errorCode);
 							std::string dump;
 							dump.reserve(1024);
 							dump.assign("-- Error code = ");
@@ -468,11 +483,13 @@ namespace {
 							dump.append("\n");
 							dump.append(query);
 							dump.append(";\n\n");
+
 							{
-								const Mutex::UniqueLock dumpLock(g_dumpMutex);
+								const Mutex::UniqueLock lock(g_dumpMutex);
+
 								std::size_t total = 0;
 								do {
-									::ssize_t written = ::write(g_dumpFile.get(), dump.data() + total, dump.size() - total);
+									::ssize_t written = ::write(dumpFile.get(), dump.data() + total, dump.size() - total);
 									if(written <= 0){
 										break;
 									}
@@ -699,27 +716,6 @@ void MySqlDaemon::start(){
 
 	MainConfig::get(g_retryInitDelay, "mysql_retry_init_delay");
 	LOG_POSEIDON_DEBUG("MySQL retry init delay = ", g_retryInitDelay);
-
-	if(g_dumpDir.empty()){
-		g_dumpFile.reset();
-	} else {
-		char temp[256];
-		unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
-
-		std::string dumpPath;
-		dumpPath.assign(g_dumpDir);
-		dumpPath.push_back('/');
-		dumpPath.append(temp, len);
-		dumpPath.append(".log");
-
-		LOG_POSEIDON_INFO("Creating SQL dump file: ", dumpPath);
-		if(!g_dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT | O_EXCL, 0644))){
-			const int errCode = errno;
-			LOG_POSEIDON_FATAL("Error creating SQL dump file: errno = ", errCode,
-				", description = ", getErrorDesc(errCode));
-			std::abort();
-		}
-	}
 
 	g_threads.resize(std::max<std::size_t>(g_maxThreads, 1));
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
