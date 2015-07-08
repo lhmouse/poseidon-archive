@@ -456,8 +456,9 @@ namespace {
 						if(g_dumpDir.empty()){
 							LOG_POSEIDON_WARNING("MySQL dump is disabled.");
 						} else {
+							const AUTO(dt, breakDownTime(getLocalTime()));
 							char temp[256];
-							unsigned len = formatTime(temp, sizeof(temp), getLocalTime(), false);
+							unsigned len = (unsigned)std::sprintf(temp, "%04u-%02u-%02u %05u", dt.yr, dt.mon, dt.day, (unsigned)::getpid());
 							std::string dumpPath;
 							dumpPath.assign(g_dumpDir);
 							dumpPath.push_back('/');
