@@ -469,7 +469,8 @@ namespace {
 							UniqueFile dumpFile;
 							if(!dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 								const int errCode = errno;
-								LOG_POSEIDON_FATAL("Error creating SQL dump file: errno = ", errCode, ", desc = ", getErrorDesc(errCode));
+								LOG_POSEIDON_FATAL("Error creating SQL dump file: dumpPath = ", dumpPath,
+									", errno = ", errCode, ", desc = ", getErrorDesc(errCode));
 								std::abort();
 							}
 
