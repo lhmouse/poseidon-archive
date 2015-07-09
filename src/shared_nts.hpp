@@ -67,7 +67,7 @@ public:
 	}
 	template<typename T>
 	void assign(boost::shared_ptr<T> sp, const char *str){
-		m_ptr.reset(STD_MOVE(sp), str ? str : "");
+		m_ptr.reset(STD_MOVE_IDN(sp), str ? str : "");
 	}
 
 	bool empty() const {
