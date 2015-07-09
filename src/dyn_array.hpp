@@ -67,12 +67,12 @@ public:
 #else
 	explicit DynArray(size_type size){
 		if(size == 0){
-			m_begin = nullptr;
-			m_end = nullptr;
+			m_begin = NULLPTR;
+			m_end = NULLPTR;
 		} else {
 			const std::size_t sizeToAlloc = sizeof(value_type) * size;
 			if(sizeToAlloc / sizeof(value_type) != size){
-				throw std::bad_array_new_length();
+				throw std::bad_alloc();
 			}
 			m_begin = ::operator new[](sizeToAlloc);
 			m_end = m_begin;
@@ -93,12 +93,12 @@ public:
 	template<typename Arg0T>
 	DynArray(size_type size, const Arg0T &arg0){
 		if(size == 0){
-			m_begin = nullptr;
-			m_end = nullptr;
+			m_begin = NULLPTR;
+			m_end = NULLPTR;
 		} else {
 			const std::size_t sizeToAlloc = sizeof(value_type) * size;
 			if(sizeToAlloc / sizeof(value_type) != size){
-				throw std::bad_array_new_length();
+				throw std::bad_alloc();
 			}
 			m_begin = ::operator new[](sizeToAlloc);
 			m_end = m_begin;
@@ -119,12 +119,12 @@ public:
 	template<typename Arg0T, typename Arg1T>
 	DynArray(size_type size, const Arg0T &arg1, const Arg0T &arg1){
 		if(size == 0){
-			m_begin = nullptr;
-			m_end = nullptr;
+			m_begin = NULLPTR;
+			m_end = NULLPTR;
 		} else {
 			const std::size_t sizeToAlloc = sizeof(value_type) * size;
 			if(sizeToAlloc / sizeof(value_type) != size){
-				throw std::bad_array_new_length();
+				throw std::bad_alloc();
 			}
 			m_begin = ::operator new[](sizeToAlloc);
 			m_end = m_begin;
