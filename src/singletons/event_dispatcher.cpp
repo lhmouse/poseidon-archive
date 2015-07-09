@@ -3,8 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "event_dispatcher.hpp"
-#include <map>
-#include <vector>
 #include "job_dispatcher.hpp"
 #include "../log.hpp"
 #include "../mutex.hpp"
