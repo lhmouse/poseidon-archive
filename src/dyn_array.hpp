@@ -74,7 +74,7 @@ public:
 			if(sizeToAlloc / sizeof(value_type) != size){
 				throw std::bad_alloc();
 			}
-			m_begin = ::operator new[](sizeToAlloc);
+			m_begin = static_cast<pointer>(::operator new[](sizeToAlloc));
 			m_end = m_begin;
 			try {
 				for(size_type i = 0; i < size; ++i){
@@ -100,7 +100,7 @@ public:
 			if(sizeToAlloc / sizeof(value_type) != size){
 				throw std::bad_alloc();
 			}
-			m_begin = ::operator new[](sizeToAlloc);
+			m_begin = static_cast<pointer>(::operator new[](sizeToAlloc));
 			m_end = m_begin;
 			try {
 				for(size_type i = 0; i < size; ++i){
@@ -126,7 +126,7 @@ public:
 			if(sizeToAlloc / sizeof(value_type) != size){
 				throw std::bad_alloc();
 			}
-			m_begin = ::operator new[](sizeToAlloc);
+			m_begin = static_cast<pointer>(::operator new[](sizeToAlloc));
 			m_end = m_begin;
 			try {
 				for(size_type i = 0; i < size; ++i){
