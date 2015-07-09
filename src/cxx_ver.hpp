@@ -32,7 +32,6 @@
 #	include <type_traits>
 #else
 #	include <boost/type_traits/add_reference.hpp>
-#	include <boost/type_traits/remove_cv.hpp>
 #	include <boost/type_traits/remove_reference.hpp>
 #	include <boost/type_traits/decay.hpp>
 #endif
