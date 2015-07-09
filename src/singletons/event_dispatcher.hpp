@@ -56,7 +56,7 @@ struct EventDispatcher {
 					LOG_POSEIDON_ERROR("Invalid dynamic event: id = ", event->id());
 					DEBUG_THROW(Exception, sslit("Invalid dynamic event"));
 				}
-				callback(STD_MOVE(derived));
+				callback(STD_MOVE_IDN(derived));
 			}
 #ifdef POSEIDON_CXX11
 		;
