@@ -35,7 +35,7 @@ public:
 	}
 	template<typename T>
 	SharedNts(boost::shared_ptr<T> sp, const char *str){
-		assign(STD_MOVE(sp), str);
+		assign(STD_MOVE_IDN(sp), str);
 	}
 
 	SharedNts(const SharedNts &rhs) NOEXCEPT
