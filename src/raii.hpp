@@ -54,7 +54,7 @@ public:
 	UniqueHandle &operator=(const UniqueHandle &)
 		__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership.")));
 
-	UniqueHandle &operator=(Move<UniqueHandle> rhs) noexcept {
+	UniqueHandle &operator=(Move<UniqueHandle> rhs) NOEXCEPT {
 		reset(STD_MOVE(rhs));
 		return *this;
 	}
