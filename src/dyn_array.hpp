@@ -117,7 +117,7 @@ public:
 		}
 	}
 	template<typename Arg0T, typename Arg1T>
-	DynArray(size_type size, const Arg0T &arg1, const Arg0T &arg1){
+	DynArray(size_type size, const Arg0T &arg0, const Arg1T &arg1){
 		if(size == 0){
 			m_begin = NULLPTR;
 			m_end = NULLPTR;
