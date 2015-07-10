@@ -32,6 +32,7 @@
 #	include <type_traits>
 #else
 #	include <boost/type_traits/add_reference.hpp>
+#	include <boost/type_traits/remove_cv.hpp>
 #	include <boost/type_traits/remove_reference.hpp>
 #	include <boost/type_traits/decay.hpp>
 #endif
@@ -49,6 +50,22 @@
 #endif
 
 namespace Poseidon {
+
+#ifdef POSEIDON_CXX11
+template<typename T>
+typename std::remove_cv<
+	typename std::remove_reference<
+		typename std::decay<T>::type
+		>::type
+	>::type valueOfHelper(const T &);
+#else
+template<typename T>
+typename boost::remove_cv<
+	typename boost::remove_reference<
+		typename boost::decay<T>::type
+		>::type
+	>::type valueOfHelper(const T &);
+#endif
 
 #ifdef POSEIDON_CXX11
 template<typename T>
@@ -137,7 +154,7 @@ struct ValueInitializer {
 
 #ifdef POSEIDON_CXX11
 #	define CV_VALUE_TYPE(expr_)		typename ::std::remove_reference<decltype(expr_)>::type
-#	define VALUE_TYPE(expr_)		typename ::std::decay<decltype(expr_)>::type
+#	define VALUE_TYPE(expr_)		decltype(::Poseidon::valueOfHelper(expr_))
 #	define AUTO(id_, ...)			auto id_ = __VA_ARGS__
 #	define AUTO_REF(id_, ...)		auto &id_ = __VA_ARGS__
 #	define STD_MOVE(expr_)			(::std::move(expr_))
@@ -147,7 +164,7 @@ struct ValueInitializer {
 #	define NULLPTR					nullptr
 #else
 #	define CV_VALUE_TYPE(expr_)		__typeof__(expr_)
-#	define VALUE_TYPE(expr_)		typename ::boost::decay<__typeof__(expr_)>::type
+#	define VALUE_TYPE(expr_)		__typeof__(::Poseidon::valueOfHelper(expr_))
 #	define AUTO(id_, ...)			VALUE_TYPE(__VA_ARGS__) id_(__VA_ARGS__)
 #	define AUTO_REF(id_, ...)		CV_VALUE_TYPE(__VA_ARGS__) &id_ = (__VA_ARGS__)
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
