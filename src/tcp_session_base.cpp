@@ -42,6 +42,16 @@ void TcpSessionBase::shutdownTimerProc(const boost::weak_ptr<TcpSessionBase> &we
 		return;
 	}
 
+	bool shouldShutdownNow;
+	{
+		Mutex::UniqueLock lock;
+		shouldShutdownNow = session->isSendBufferEmpty(lock);
+	}
+	if(!shouldShutdownNow){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Send buffer is not empty. Retry later...");
+		return;
+	}
+
 	try {
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote = ", session->getRemoteInfo());
 	} catch(...){
@@ -272,9 +282,9 @@ void TcpSessionBase::setTimeout(boost::uint64_t timeout){
 		m_shutdownTimer.reset();
 	} else {
 		if(m_shutdownTimer){
-			TimerDaemon::setTime(m_shutdownTimer, timeout, 0);
+			TimerDaemon::setTime(m_shutdownTimer, timeout, 10000);
 		} else {
-			m_shutdownTimer = TimerDaemon::registerTimer(timeout, 0,
+			m_shutdownTimer = TimerDaemon::registerTimer(timeout, 10000,
 				boost::bind(&shutdownTimerProc, virtualWeakFromThis<TcpSessionBase>()), true);
 		}
 	}
