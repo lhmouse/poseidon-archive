@@ -250,6 +250,9 @@ std::size_t Epoll::pumpReadable(){
 				sendBufferSize = session->getSendBufferSize(lock);
 			}
 			if(sendBufferSize > MAX_SEND_BUFFER_SIZE){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+					"Max send buffer size exceeded: typeid = ", typeid(*session).name());
+
 				if(now == 0){
 					now = getFastMonoClock();
 				}
