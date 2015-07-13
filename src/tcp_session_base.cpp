@@ -42,12 +42,12 @@ void TcpSessionBase::shutdownTimerProc(const boost::weak_ptr<TcpSessionBase> &we
 		return;
 	}
 
-	bool shouldShutdownNow;
+	std::size_t sendBufferSize;
 	{
 		Mutex::UniqueLock lock;
-		shouldShutdownNow = session->isSendBufferEmpty(lock);
+		sendBufferSize = session->getSendBufferSize(lock);
 	}
-	if(!shouldShutdownNow){
+	if(sendBufferSize != 0){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Send buffer is not empty. Retry later...");
 		return;
 	}
@@ -191,9 +191,9 @@ TcpSessionBase::SyncIoResult TcpSessionBase::syncWrite(void *hint, unsigned long
 	}
 	return ret;
 }
-bool TcpSessionBase::isSendBufferEmpty(Mutex::UniqueLock &lock) const {
+std::size_t TcpSessionBase::getSendBufferSize(Mutex::UniqueLock &lock) const {
 	Mutex::UniqueLock(m_bufferMutex).swap(lock);
-	return m_sendBuffer.empty();
+	return m_sendBuffer.size();
 }
 
 void TcpSessionBase::onConnect(){

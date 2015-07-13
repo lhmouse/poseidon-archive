@@ -20,8 +20,9 @@ namespace Poseidon {
 
 namespace {
 	enum {
-		MAX_PUMP_COUNT		= 256,
-		IO_BUFFER_SIZE		= 4096,
+		MAX_PUMP_COUNT			= 256,
+		IO_BUFFER_SIZE			= 4096,
+		MAX_SEND_BUFFER_SIZE	= 65536,
 	};
 
 	struct SessionMapElement {
@@ -206,7 +207,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			session->setConnected();
 
 			Mutex::UniqueLock sessionLock;
-			if(!session->isSendBufferEmpty(sessionLock)){
+			if(session->getSendBufferSize(sessionLock) != 0){
 				const Mutex::UniqueLock lock(m_mutex);
 				m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
 			}
@@ -224,6 +225,8 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 	return (unsigned)count;
 }
 std::size_t Epoll::pumpReadable(){
+	boost::uint64_t now = 0;
+
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
 	SessionMap::delegated_container::nth_index<IDX_READ>::type::iterator iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
@@ -241,6 +244,20 @@ std::size_t Epoll::pumpReadable(){
 		const AUTO(session, it->session);
 
 		try {
+			std::size_t sendBufferSize;
+			{
+				Mutex::UniqueLock lock;
+				sendBufferSize = session->getSendBufferSize(lock);
+			}
+			if(sendBufferSize > MAX_SEND_BUFFER_SIZE){
+				if(now == 0){
+					now = getFastMonoClock();
+				}
+				const Mutex::UniqueLock lock(m_mutex);
+				m_sessions->setKey<IDX_READ, IDX_READ>(it, now + 1000);
+				continue;
+			}
+
 			unsigned char temp[IO_BUFFER_SIZE];
 			const AUTO(result, session->syncReadAndProcess(temp, sizeof(temp)));
 			if(result.bytesTransferred < 0){
@@ -305,7 +322,7 @@ std::size_t Epoll::pumpWriteable(){
 				DEBUG_THROW(SystemException);
 			} else if(result.bytesTransferred == 0){
 				Mutex::UniqueLock sessionLock;
-				if(session->isSendBufferEmpty(sessionLock)){
+				if(session->getSendBufferSize(sessionLock) == 0){
 					const Mutex::UniqueLock lock(m_mutex);
 					m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
 				}
