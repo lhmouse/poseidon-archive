@@ -20,6 +20,7 @@
 #include "../log.hpp"
 #include "../mutex.hpp"
 #include "../virtual_shared_from_this.hpp"
+#include "../uuid.hpp"
 
 namespace Poseidon {
 
