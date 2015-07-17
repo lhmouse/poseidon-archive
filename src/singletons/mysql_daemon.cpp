@@ -465,7 +465,7 @@ namespace {
 							dumpPath.append(temp, len);
 							dumpPath.append(".log");
 
-							LOG_POSEIDON_INFO("Creating SQL dump file: ", dumpPath);
+							LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating SQL dump file: ", dumpPath);
 							UniqueFile dumpFile;
 							if(!dumpFile.reset(::open(dumpPath.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 								const int errCode = errno;
@@ -723,6 +723,15 @@ void MySqlDaemon::start(){
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		LOG_POSEIDON_INFO("Creating MySQL thread ", i);
 		g_threads[i] = boost::make_shared<MySqlThread>(i);
+	}
+
+	const AUTO(placeholderPath, g_dumpDir + "/placeholder");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+		"Checking whether MySQL dump directory is writeable: testPath = ", placeholderPath);
+	UniqueFile dumpFile;
+	if(!dumpFile.reset(::open(placeholderPath.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644))){
+		const int errCode = errno;
+		LOG_POSEIDON_FATAL("Could not create placeholder file: placeholderPath = ", placeholderPath, ", errno = ", errCode);
 	}
 }
 void MySqlDaemon::stop(){
