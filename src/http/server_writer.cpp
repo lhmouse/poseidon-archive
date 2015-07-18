@@ -65,12 +65,8 @@ namespace Http {
 		if(entity.empty()){
 			headers.erase("Content-Type");
 			headers.erase("Transfer-Encoding");
-			headers.set("Content-Length", STR_0);
+			headers.set(sslit("Content-Length"), STR_0);
 		} else {
-			if(!headers.has("Content-Type")){
-				headers.set("Content-Type", "text/plain; charset=utf-8");
-			}
-
 			AUTO(transferEncoding, headers.get("Transfer-Encoding"));
 			AUTO(pos, transferEncoding.find(';'));
 			if(pos != std::string::npos){
@@ -79,7 +75,7 @@ namespace Http {
 			transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
 
 			if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
-				headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
+				headers.set(sslit("Content-Length"), boost::lexical_cast<std::string>(entity.size()));
 			} else {
 				// 只有一个 chunk。
 				StreamBuffer chunk;
@@ -111,7 +107,7 @@ namespace Http {
 		if(statusCode / 100 >= 4){
 			AUTO_REF(headers, responseHeaders.headers);
 
-			headers.set("Content-Type", "text/html; charset=utf-8");
+			headers.set(sslit("Content-Type"), "text/html; charset=utf-8");
 			entity.put("<html><head><title>");
 			const AUTO(desc, getStatusCodeDesc(statusCode));
 			entity.put(desc.descShort);
@@ -139,9 +135,6 @@ namespace Http {
 		data.put("\r\n");
 
 		AUTO_REF(headers, responseHeaders.headers);
-		if(!headers.has("Content-Type")){
-			headers.set("Content-Type", "text/plain; charset=utf-8");
-		}
 
 		AUTO(transferEncoding, headers.get("Transfer-Encoding"));
 		AUTO(pos, transferEncoding.find(';'));
@@ -151,9 +144,9 @@ namespace Http {
 		transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
 
 		if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
-			headers.set("Transfer-Encoding", STR_CHUNKED);
+			headers.set(sslit("Transfer-Encoding"), STR_CHUNKED);
 		} else {
-			headers.set("Transfer-Encoding", STD_MOVE(transferEncoding));
+			headers.set(sslit("Transfer-Encoding"), STD_MOVE(transferEncoding));
 		}
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){

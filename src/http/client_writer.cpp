@@ -71,7 +71,7 @@ namespace Http {
 			headers.erase("Content-Length");
 		} else {
 			if(!headers.has("Content-Type")){
-				headers.set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+				headers.set(sslit("Content-Type"), "application/x-www-form-urlencoded; charset=utf-8");
 			}
 
 			AUTO(transferEncoding, headers.get("Transfer-Encoding"));
@@ -82,7 +82,7 @@ namespace Http {
 			transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
 
 			if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
-				headers.set("Content-Length", boost::lexical_cast<std::string>(entity.size()));
+				headers.set(sslit("Content-Length"), boost::lexical_cast<std::string>(entity.size()));
 			} else {
 				// 只有一个 chunk。
 				StreamBuffer chunk;
@@ -130,7 +130,7 @@ namespace Http {
 
 		AUTO_REF(headers, requestHeaders.headers);
 		if(!headers.has("Content-Type")){
-			headers.set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+			headers.set(sslit("Content-Type"), "application/x-www-form-urlencoded; charset=utf-8");
 		}
 
 		AUTO(transferEncoding, headers.get("Transfer-Encoding"));
@@ -141,9 +141,9 @@ namespace Http {
 		transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
 
 		if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
-			headers.set("Transfer-Encoding", STR_CHUNKED);
+			headers.set(sslit("Transfer-Encoding"), STR_CHUNKED);
 		} else {
-			headers.set("Transfer-Encoding", STD_MOVE(transferEncoding));
+			headers.set(sslit("Transfer-Encoding"), STD_MOVE(transferEncoding));
 		}
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){

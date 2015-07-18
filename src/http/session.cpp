@@ -46,7 +46,7 @@ namespace Http {
 					"Http::Exception thrown in HTTP servlet: statusCode = ", e.statusCode(), ", what = ", e.what());
 				try {
 					AUTO(headers, e.headers());
-					headers.set("Connection", "Close");
+					headers.set(sslit("Connection"), "Close");
 					if(e.what()[0] == (char)0xFF){
 						session->sendDefault(e.statusCode(), STD_MOVE(headers));
 					} else {
@@ -291,6 +291,15 @@ namespace Http {
 		PROFILE_ME;
 
 		return ServerWriter::putResponse(STD_MOVE(responseHeaders), STD_MOVE(entity));
+	}
+	bool Session::send(StatusCode statusCode, StreamBuffer entity, std::string contentType){
+		PROFILE_ME;
+
+		OptionalMap headers;
+		if(!entity.empty()){
+			headers.set(sslit("Content-Type"), STD_MOVE(contentType));
+		}
+		return send(statusCode, STD_MOVE(headers), STD_MOVE(entity));
 	}
 	bool Session::send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity){
 		PROFILE_ME;

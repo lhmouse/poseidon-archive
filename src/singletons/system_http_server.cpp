@@ -111,8 +111,8 @@ namespace {
 					sendDefault(Http::ST_OK);
 				} else if(uri == "show_profile"){
 					OptionalMap headers;
-					headers.set("Content-Type", "text/csv; charset=utf-8");
-					headers.set("Content-Disposition", "attachment; name=\"profile.csv\"");
+					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
+					headers.set(sslit("Content-Disposition"), "attachment; name=\"profile.csv\"");
 
 					StreamBuffer contents;
 					contents.put("file,line,func,samples,us_total,us_exclusive\r\n");
@@ -133,8 +133,8 @@ namespace {
 					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 				} else if(uri == "show_modules"){
 					OptionalMap headers;
-					headers.set("Content-Type", "text/csv; charset=utf-8");
-					headers.set("Content-Disposition", "attachment; name=\"modules.csv\"");
+					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
+					headers.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
 
 					StreamBuffer contents;
 					contents.put("real_path,base_addr,ref_count\r\n");
@@ -151,8 +151,8 @@ namespace {
 					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 				} else if(uri == "show_connections"){
 					OptionalMap headers;
-					headers.set("Content-Type", "text/csv; charset=utf-8");
-					headers.set("Content-Disposition", "attachment; name=\"connections.csv\"");
+					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
+					headers.set(sslit("Content-Disposition"), "attachment; name=\"connections.csv\"");
 
 					StreamBuffer contents;
 					contents.put("remote_ip,remote_port,local_ip,local_port,ms_online\r\n");
@@ -189,8 +189,8 @@ namespace {
 					sendDefault(Http::ST_OK);
 				} else if(uri == "show_mysql_profile"){
 					OptionalMap headers;
-					headers.set("Content-Type", "text/csv; charset=utf-8");
-					headers.set("Content-Disposition", "attachment; name=\"mysql_threads.csv\"");
+					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
+					headers.set(sslit("Content-Disposition"), "attachment; name=\"mysql_threads.csv\"");
 
 					StreamBuffer contents;
 					contents.put("thread,table,us_total\r\n");
