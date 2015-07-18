@@ -725,13 +725,16 @@ void MySqlDaemon::start(){
 		g_threads[i] = boost::make_shared<MySqlThread>(i);
 	}
 
-	const AUTO(placeholderPath, g_dumpDir + "/placeholder");
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Checking whether MySQL dump directory is writeable: testPath = ", placeholderPath);
-	UniqueFile dumpFile;
-	if(!dumpFile.reset(::open(placeholderPath.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644))){
-		const int errCode = errno;
-		LOG_POSEIDON_FATAL("Could not create placeholder file: placeholderPath = ", placeholderPath, ", errno = ", errCode);
+	if(!g_dumpDir.empty()){
+		const AUTO(placeholderPath, g_dumpDir + "/placeholder");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Checking whether MySQL dump directory is writeable: testPath = ", placeholderPath);
+		UniqueFile dumpFile;
+		if(!dumpFile.reset(::open(placeholderPath.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644))){
+			const int errCode = errno;
+			LOG_POSEIDON_FATAL("Could not create placeholder file: placeholderPath = ", placeholderPath, ", errno = ", errCode);
+			std::abort();
+		}
 	}
 }
 void MySqlDaemon::stop(){
