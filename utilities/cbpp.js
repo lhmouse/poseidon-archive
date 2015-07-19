@@ -3,7 +3,7 @@
 function pushVuint(buffer, val){
 	for(var i = 0; i < 6; ++i){
 		var by = val & 0x7F;
-		val >>>= 7;
+		val = Math.floor(val / 128);
 		if(val == 0){
 			buffer.push(by);
 			return;
@@ -60,13 +60,12 @@ function shiftVuint(buffer){
 	var val = 0;
 	for(var i = 0; i < 6; ++i){
 		var by = buffer.shift();
-		val |= (by & 0x7F) << (7 * i);
+		val += (by & 0x7F) * Math.pow(128, i);
 		if(!(by & 0x80)){
 			return val;
 		}
 	}
-	val <<= 8;
-	val |= buffer.shift() & 0xFF;
+	val += (by & 0xFF) * Math.pow(128, 6);
 	return val;
 }
 function shiftVint(buffer){
