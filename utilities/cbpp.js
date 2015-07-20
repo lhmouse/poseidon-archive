@@ -65,6 +65,7 @@ function shiftVuint(buffer){
 			return val;
 		}
 	}
+	var by = buffer.shift();
 	val += (by & 0xFF) * Math.pow(128, 6);
 	return val;
 }
@@ -79,6 +80,10 @@ function shiftVint(buffer){
 function shiftRaw(buffer, length){
 	var val = new Array;
 	for(var i = 0; i < length; ++i){
+		if(buffer.length == 0){
+			// TODO
+			throw "End of stream encountered";
+		}
 		val.push(buffer.shift() & 0xFF);
 	}
 	return val;
@@ -120,6 +125,32 @@ function shiftString(buffer){
 		}
 	}
 	return val;
+}
+
+function sendBytes(socket, buffer){
+	var arrayBuffer = new ArrayBuffer(buffer.length);
+	var view = new Uint8Array(arrayBuffer);
+	for(var i = 0; i < buffer.length; ++i){
+		view[i] = buffer[i];
+	}
+	socket.send(arrayBuffer);
+}
+function recvBytes(blob, callback){
+	var reader = new FileReader();
+	reader.onloadend = function(){
+		if(!reader.result){
+			// TODO
+			throw "Error receiving bytes";
+		}
+
+		var view = new Uint8Array(reader.result);
+		var buffer = new Array;
+		for(var i = 0; i < view.length; ++i){
+			buffer.push(view[i]);
+		}
+		callback(buffer);
+	};
+	reader.readAsArrayBuffer(blob);
 }
 
 // socket 是一个 WebSocket 对象。

@@ -475,10 +475,13 @@ namespace {
 							}
 
 							LOG_POSEIDON_INFO("Writing MySQL dump...");
-							len = (unsigned)std::sprintf(temp, "%5u", errorCode);
 							std::string dump;
 							dump.reserve(1024);
-							dump.assign("-- Error code = ");
+							dump.append("-- Time = ");
+							len = formatTime(temp, sizeof(temp), getLocalTime(), false);
+							dump.append(temp, len);
+							dump.append(", Error code = ");
+							len = (unsigned)std::sprintf(temp, "%5u", errorCode);
 							dump.append(temp, len);
 							dump.append(", Description = ");
 							dump.append(errorMsg);
