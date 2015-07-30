@@ -93,7 +93,7 @@ function shiftBytes(buffer){
 	return shiftRaw(buffer, length);
 }
 function shiftString(buffer){
-	var val = new String();
+	var val = "";
 	var bytes = shiftBytes(buffer);
 	while(bytes.length > 0){
 		var codePoint = bytes.shift();
