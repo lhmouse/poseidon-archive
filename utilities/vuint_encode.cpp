@@ -3,7 +3,7 @@
 
 // 这个文件被置于公有领域（public domain）。
 
-#include "../src/main/vint50.hpp"
+#include "../src/vint50.hpp"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -17,7 +17,7 @@ int main(){
 			break;
 		}
 		char *eptr;
-		const unsigned long long val = std::strtoull(line.c_str(), &eptr, 0);
+		const boost::uint64_t val = std::strtoull(line.c_str(), &eptr, 0);
 		if(*eptr != 0){
 			std::cout <<"  Invalid number: " <<line <<std::endl;
 			continue;

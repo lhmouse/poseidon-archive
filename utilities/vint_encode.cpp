@@ -3,7 +3,7 @@
 
 // 这个文件被置于公有领域（public domain）。
 
-#include "../src/main/vint50.hpp"
+#include "../src/vint50.hpp"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -11,38 +11,27 @@
 
 int main(){
 	for(;;){
-		std::cout <<"Enter a series of bytes: ";
+		std::cout <<"Enter an unsigned number: ";
 		std::string line;
 		if(!std::getline(std::cin, line)){
 			break;
 		}
-		std::basic_string<unsigned char> bytes;
-		const char *rdby = line.c_str();
-		while(*rdby != 0){
-			if((*rdby == ' ') || (*rdby == '\t')){
-				++rdby;
-				continue;
-			}
-			char *eptr;
-			const unsigned long byte = std::strtoul(rdby, &eptr, 0);
-			if(byte > 0xFF){
-				std::cout <<"  Invalid byte: " <<rdby <<std::endl;
-				break;
-			}
-			bytes.push_back(byte);
-			rdby = eptr;
-		}
-		if(*rdby != 0){
+		char *eptr;
+		const boost::int64_t val = std::strtoull(line.c_str(), &eptr, 0);
+		if(*eptr != 0){
+			std::cout <<"  Invalid number: " <<line <<std::endl;
 			continue;
 		}
 
-		unsigned long long val;
-		const unsigned char *read = bytes.c_str();
-		if(!Poseidon::vuint50FromBinary(val, read, bytes.size())){
-			std::cout <<"  Data truncated" <<std::endl;
-			continue;
+		unsigned char bytes[32];
+		unsigned char *write = bytes;
+		Poseidon::vint50ToBinary(val, write);
+		std::cout <<"  Written: " <<std::hex <<std::uppercase;
+		for(const unsigned char *read = bytes; read != write; ++read){
+			std::cout <<std::setfill('0') <<std::setw(2)
+				<<static_cast<unsigned>(*read) <<' ';
 		}
-		std::cout <<"  Read: " <<val <<std::endl;
-		std::cout <<"    " <<(read - bytes.c_str()) <<" byte(s) consumed." <<std::endl;
+		std::cout <<std::endl;
+		std::cout <<"    " <<(write - bytes) <<" byte(s) produced." <<std::endl;
 	}
 }

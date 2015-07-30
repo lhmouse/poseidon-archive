@@ -3,7 +3,7 @@
 
 // 这个文件被置于公有领域（public domain）。
 
-#include "../src/main/vint50.hpp"
+#include "../src/vint50.hpp"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -32,7 +32,7 @@ int main(){
 			continue;
 		}
 
-		long long val;
+		boost::int64_t val;
 		const unsigned char *read = bytes.c_str();
 		if(!Poseidon::vint50FromBinary(val, read, bytes.size())){
 			std::cout <<"  Data truncated" <<std::endl;

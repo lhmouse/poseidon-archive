@@ -4,6 +4,7 @@
 #ifndef POSEIDON_VINT50_HPP_
 #define POSEIDON_VINT50_HPP_
 
+#include "cxx_ver.hpp"
 #include <cstddef>
 #include <boost/cstdint.hpp>
 
