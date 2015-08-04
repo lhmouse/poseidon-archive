@@ -12,31 +12,28 @@ namespace MySql {
 		for(AUTO(it, rhs.str.begin()); it != rhs.str.end(); ++it){
 			switch(*it){
 			case 0:
-				os <<'\\' <<'0';
+				os.put('\\').put('0');
 				break;
-
 			case 0x1A:
-				os <<'\\' <<'Z';
+				os.put('\\').put('Z');
 				break;
-
 			case '\r':
-				os <<'\\' <<'r';
+				os.put('\\').put('r');
 				break;
-
 			case '\n':
-				os <<'\\' <<'n';
+				os.put('\\').put('n');
 				break;
-
+			case '\\':
+				os.put('\\').put('\\');
+				break;
 			case '\'':
-				os <<'\\' <<'\'';
+				os.put('\\').put('\'');
 				break;
-
 			case '\"':
-				os <<'\\' <<'\"';
+				os.put('\\').put('\"');
 				break;
-
 			default:
-				os <<*it;
+				os.put(*it);
 				break;
 			}
 		}
