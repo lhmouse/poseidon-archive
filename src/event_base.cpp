@@ -10,8 +10,11 @@ namespace Poseidon {
 EventBaseWithoutId::~EventBaseWithoutId(){
 }
 
-void raiseEvent(const boost::shared_ptr<EventBaseWithoutId> &event, const boost::shared_ptr<const bool> &withdrawn){
-	EventDispatcher::raise(event, withdrawn);
+void syncRaiseEvent(const boost::shared_ptr<EventBaseWithoutId> &event){
+	EventDispatcher::syncRaise(event);
+}
+void asyncRaiseEvent(const boost::shared_ptr<EventBaseWithoutId> &event, const boost::shared_ptr<const bool> &withdrawn){
+	EventDispatcher::asyncRaise(event, withdrawn);
 }
 
 }

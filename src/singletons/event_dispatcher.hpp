@@ -52,7 +52,8 @@ struct EventDispatcher {
 		return registerListener(EventT::ID, boost::bind(&Helper::checkAndForward, STD_MOVE_IDN(callback), _1));
 	}
 
-	static void raise(const boost::shared_ptr<EventBaseWithoutId> &event,
+	static void syncRaise(const boost::shared_ptr<EventBaseWithoutId> &event);
+	static void asyncRaise(const boost::shared_ptr<EventBaseWithoutId> &event,
 		const boost::shared_ptr<const bool> &withdrawn = boost::shared_ptr<const bool>());
 
 private:

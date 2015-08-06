@@ -55,6 +55,28 @@ namespace {
 			(*m_callback)(m_event);
 		}
 	};
+
+	std::vector<boost::shared_ptr<const EventListenerCallback> > getCallbacks(const boost::shared_ptr<EventBaseWithoutId> &event){
+		PROFILE_ME;
+
+		std::vector<boost::shared_ptr<const EventListenerCallback> > callbacks;
+
+		const Mutex::UniqueLock lock(g_mutex);
+		const AUTO(it, g_listeners.find(event->id()));
+		if(it != g_listeners.end()){
+			AUTO(listenerIt, it->second.begin());
+			while(listenerIt != it->second.end()){
+				const AUTO(listener, listenerIt->lock());
+				if(!listener){
+					listenerIt = it->second.erase(listenerIt);
+					continue;
+				}
+				callbacks.push_back(listener->callback);
+				++listenerIt;
+			}
+		}
+		return callbacks;
+	}
 }
 
 void EventDispatcher::start(){
@@ -83,43 +105,22 @@ boost::shared_ptr<EventListener> EventDispatcher::registerListener(
 	return listener;
 }
 
-void EventDispatcher::raise(const boost::shared_ptr<EventBaseWithoutId> &event,
+void EventDispatcher::syncRaise(const boost::shared_ptr<EventBaseWithoutId> &event){
+	PROFILE_ME;
+
+	const AUTO(callbacks, getCallbacks(event));
+	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
+		(**it)(event);
+	}
+}
+void EventDispatcher::asyncRaise(const boost::shared_ptr<EventBaseWithoutId> &event,
 	const boost::shared_ptr<const bool> &withdrawn)
 {
-	const unsigned eventId = event->id();
-	std::vector<boost::shared_ptr<const EventListenerCallback> > callbacks;
-	bool needsCleanup = false;
-	{
-		const Mutex::UniqueLock lock(g_mutex);
-		const AUTO(it, g_listeners.find(eventId));
-		if(it != g_listeners.end()){
-			for(AUTO(it2, it->second.begin()); it2 != it->second.end(); ++it2){
-				const AUTO(listener, it2->lock());
-				if(listener){
-					LOG_POSEIDON_TRACE("Preparing an event job for dispatching: id = ", eventId);
-					callbacks.push_back(listener->callback);
-				} else {
-					needsCleanup = true;
-				}
-			}
-		}
-	}
-	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
-		enqueueJob(boost::make_shared<EventJob>(*it, boost::ref(event)), 0, withdrawn);
-	}
-	if(needsCleanup){
-		LOG_POSEIDON_DEBUG("Cleaning up event listener list for event ", eventId);
+	PROFILE_ME;
 
-		const Mutex::UniqueLock lock(g_mutex);
-		AUTO_REF(listenerList, g_listeners[eventId]);
-		AUTO(it, listenerList.begin());
-		while(it != listenerList.end()){
-			if(it->expired()){
-				it = listenerList.erase(it);
-			} else {
-				++it;
-			}
-		}
+	const AUTO(callbacks, getCallbacks(event));
+	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
+		enqueueJob(boost::make_shared<EventJob>(*it, event), 0, withdrawn);
 	}
 }
 
