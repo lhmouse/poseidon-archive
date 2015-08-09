@@ -86,7 +86,7 @@ namespace {
 					LOG_POSEIDON_WARNING("Received shutdown HTTP request. The server will be shutdown now.");
 					sendDefault(Http::ST_OK);
 					::raise(SIGTERM);
-				} else if(uri == "load_module"){
+				} else if(uri == "loadModule"){
 					AUTO_REF(name, requestHeaders.getParams.at("name"));
 					if(!ModuleDepository::loadNoThrow(name.c_str())){
 						LOG_POSEIDON_WARNING("Failed to load module: ", name);
@@ -94,12 +94,12 @@ namespace {
 						return;
 					}
 					sendDefault(Http::ST_OK);
-				} else if(uri == "unload_module"){
-					AUTO_REF(baseAddrStr, requestHeaders.getParams.at("base_addr"));
+				} else if(uri == "unloadModule"){
+					AUTO_REF(baseAddrStr, requestHeaders.getParams.at("baseAddr"));
 					std::istringstream iss(baseAddrStr);
 					void *baseAddr;
 					if(!((iss >>baseAddr) && iss.eof())){
-						LOG_POSEIDON_WARNING("Bad base_addr string: ", baseAddrStr);
+						LOG_POSEIDON_WARNING("Bad baseAddr string: ", baseAddrStr);
 						sendDefault(Http::ST_BAD_REQUEST);
 						return;
 					}
@@ -109,13 +109,13 @@ namespace {
 						return;
 					}
 					sendDefault(Http::ST_OK);
-				} else if(uri == "show_profile"){
+				} else if(uri == "showProfile"){
 					OptionalMap headers;
 					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
 					headers.set(sslit("Content-Disposition"), "attachment; name=\"profile.csv\"");
 
 					StreamBuffer contents;
-					contents.put("file,line,func,samples,us_total,us_exclusive\r\n");
+					contents.put("file,line,func,samples,usTotal,usExclusive\r\n");
 					AUTO(snapshot, ProfileDepository::snapshot());
 					std::string str;
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
@@ -131,13 +131,13 @@ namespace {
 					}
 
 					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-				} else if(uri == "show_modules"){
+				} else if(uri == "showModules"){
 					OptionalMap headers;
 					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
 					headers.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
 
 					StreamBuffer contents;
-					contents.put("real_path,base_addr,ref_count\r\n");
+					contents.put("realPath,baseAddr,refCount\r\n");
 					AUTO(snapshot, ModuleDepository::snapshot());
 					std::string str;
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
@@ -149,13 +149,13 @@ namespace {
 					}
 
 					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-				} else if(uri == "show_connections"){
+				} else if(uri == "showConnections"){
 					OptionalMap headers;
 					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
 					headers.set(sslit("Content-Disposition"), "attachment; name=\"connections.csv\"");
 
 					StreamBuffer contents;
-					contents.put("remote_ip,remote_port,local_ip,local_port,ms_online\r\n");
+					contents.put("remoteIp,remotePort,localIp,localPort,msOnline\r\n");
 					AUTO(snapshot, EpollDaemon::snapshot());
 					std::string str;
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
@@ -171,29 +171,25 @@ namespace {
 					}
 
 					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-				} else if(uri == "set_log_mask"){
+				} else if(uri == "setLogMask"){
 					unsigned long long toEnable = 0, toDisable = 0;
-					{
-						AUTO_REF(val, requestHeaders.getParams.get("to_disable"));
-						if(!val.empty()){
-							toDisable = boost::lexical_cast<unsigned long long>(val);
-						}
+					const AUTO_REF(toDisableStr, requestHeaders.getParams.get("toDisable"));
+					if(!toDisableStr.empty()){
+						toDisable = boost::lexical_cast<unsigned long long>(toDisableStr);
 					}
-					{
-						AUTO_REF(val, requestHeaders.getParams.get("to_enable"));
-						if(!val.empty()){
-							toEnable = boost::lexical_cast<unsigned long long>(val);
-						}
+					const AUTO_REF(toEnableStr, requestHeaders.getParams.get("toEnable"));
+					if(!toEnableStr.empty()){
+						toEnable = boost::lexical_cast<unsigned long long>(toEnableStr);
 					}
 					Logger::setMask(toDisable, toEnable);
 					sendDefault(Http::ST_OK);
-				} else if(uri == "show_mysql_profile"){
+				} else if(uri == "showMySqlProfile"){
 					OptionalMap headers;
 					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
 					headers.set(sslit("Content-Disposition"), "attachment; name=\"mysql_threads.csv\"");
 
 					StreamBuffer contents;
-					contents.put("thread,table,us_total\r\n");
+					contents.put("thread,table,usTotal\r\n");
 					AUTO(snapshot, MySqlDaemon::snapshot());
 					std::string str;
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
