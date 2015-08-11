@@ -633,7 +633,6 @@ MODULE_RAII(handles){
 #include "../src/async_job.hpp"
 #include "../src/log.hpp"
 #include "../src/module_raii.hpp"
-#include "../src/dyn_array.hpp"
 
 class foo {
 	foo(const foo &);
@@ -653,6 +652,4 @@ MODULE_RAII(/* handles */){
 	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 5000"); }, 5000);
 	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 1000"); }, 1000);
 	LOG_POSEIDON_FATAL("enqueued!");
-
-	DynArray<foo> a(5, 3);
 }
