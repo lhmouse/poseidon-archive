@@ -6,6 +6,7 @@
 #include "thread_context.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
+#include <boost/container/flat_map.hpp>
 #include <string.h>
 #include <stdlib.h>
 #include <mysql/mysql.h>
@@ -36,36 +37,16 @@ namespace MySql {
 			}
 		};
 
-		typedef std::vector<std::pair<const char *, std::size_t> > Columns;
+		struct ColumnComparator {
+			bool operator()(const char *lhs, const char *rhs) const NOEXCEPT {
+				return std::strcmp(lhs, rhs) < 0;
+			}
+		};
 
 		class ConnectionDelegator : public Connection {
 
 #define THROW_MYSQL_EXCEPTION	\
 			DEBUG_THROW(Exception, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())))
-
-		private:
-			// 若返回 true 则 pos 指向找到的列，否则 pos 指向下一个。
-			template<typename IteratorT, typename VectorT>
-			static bool lowerBoundColumn(IteratorT &pos, VectorT &columns, const char *name){
-				AUTO(lower, columns.begin());
-				AUTO(upper, columns.end());
-				for(;;){
-					if(lower == upper){
-						pos = lower;
-						return false;
-					}
-					const AUTO(middle, lower + (upper - lower) / 2);
-					const int result = ::strcasecmp(middle->first, name);
-					if(result == 0){
-						pos = middle;
-						return true;
-					} else if(result < 0){
-						upper = middle;
-					} else {
-						lower = middle + 1;
-					}
-				}
-			}
 
 		private:
 			const ThreadContext m_context;
@@ -74,7 +55,7 @@ namespace MySql {
 			UniqueHandle<Closer> m_mysql;
 
 			UniqueHandle<ResultDeleter> m_result;
-			Columns m_columns;
+			boost::container::flat_map<const char *, std::size_t, ColumnComparator> m_columns;
 
 			::MYSQL_ROW m_row;
 			unsigned long *m_lengths;
@@ -117,6 +98,7 @@ namespace MySql {
 					THROW_MYSQL_EXCEPTION;
 				}
 
+				m_columns.clear();
 				if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
 					if(::mysql_errno(m_mysql.get()) != 0){
 						THROW_MYSQL_EXCEPTION;
@@ -126,16 +108,13 @@ namespace MySql {
 					const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
 					const AUTO(count, ::mysql_num_fields(m_result.get()));
 					m_columns.reserve(count);
-					m_columns.clear();
 					for(std::size_t i = 0; i < count; ++i){
-						Columns::iterator ins;
 						const char *const name = fields[i].name;
-						if(lowerBoundColumn(ins, m_columns, name)){
+						if(!m_columns.insert(std::make_pair(name, i)).second){
 							LOG_POSEIDON_ERROR("Duplicate column in MySQL result set: ", name);
 							DEBUG_THROW(BasicException, sslit("Duplicate column"));
 						}
 						LOG_POSEIDON_TRACE("MySQL result column: name = ", name, ", index = ", i);
-						m_columns.insert(ins, std::make_pair(name, i));
 					}
 				}
 			}
@@ -161,8 +140,8 @@ namespace MySql {
 			}
 
 			boost::int64_t doGetSigned(const char *column) const {
-				Columns::const_iterator it;
-				if(!lowerBoundColumn(it, m_columns, column)){
+				const AUTO(it, m_columns.find(column));
+				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
 					DEBUG_THROW(BasicException, sslit("Column not found"));
 				}
@@ -179,8 +158,8 @@ namespace MySql {
 				return val;
 			}
 			boost::uint64_t doGetUnsigned(const char *column) const {
-				Columns::const_iterator it;
-				if(!lowerBoundColumn(it, m_columns, column)){
+				const AUTO(it, m_columns.find(column));
+				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
 					DEBUG_THROW(BasicException, sslit("Column not found"));
 				}
@@ -197,8 +176,8 @@ namespace MySql {
 				return val;
 			}
 			double doGetDouble(const char *column) const {
-				Columns::const_iterator it;
-				if(!lowerBoundColumn(it, m_columns, column)){
+				const AUTO(it, m_columns.find(column));
+				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
 					DEBUG_THROW(BasicException, sslit("Column not found"));
 				}
@@ -215,8 +194,8 @@ namespace MySql {
 				return val;
 			}
 			std::string doGetString(const char *column) const {
-				Columns::const_iterator it;
-				if(!lowerBoundColumn(it, m_columns, column)){
+				const AUTO(it, m_columns.find(column));
+				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
 					DEBUG_THROW(BasicException, sslit("Column not found"));
 				}
@@ -228,8 +207,8 @@ namespace MySql {
 				return val;
 			}
 			boost::uint64_t doGetDateTime(const char *column) const {
-				Columns::const_iterator it;
-				if(!lowerBoundColumn(it, m_columns, column)){
+				const AUTO(it, m_columns.find(column));
+				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
 					DEBUG_THROW(BasicException, sslit("Column not found"));
 				}
