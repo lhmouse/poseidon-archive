@@ -8,14 +8,19 @@
 #include "../cxx_util.hpp"
 #include "connection.hpp"
 #include "utilities.hpp"
+#include "exception.hpp"
 #include <string>
 #include <sstream>
+#include <vector>
+#include <exception>
 #include <cstdio>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/function.hpp>
 #include <boost/cstdint.hpp>
 #include "../atomic.hpp"
+#include "../shared_nts.hpp"
 #include "../log.hpp"
 #include "../mutex.hpp"
 #include "../virtual_shared_from_this.hpp"
@@ -26,10 +31,12 @@ namespace Poseidon {
 namespace MySql {
 	class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
 	protected:
-		static void batchLoad(boost::shared_ptr<ObjectBase> (*factory)(), const char *tableHint, std::string query);
+		static void batchLoad(std::vector<boost::shared_ptr<ObjectBase> > &ret,
+			boost::shared_ptr<ObjectBase> (*factory)(), const char *tableHint, std::string query);
 
 	private:
 		mutable volatile bool m_autoSaves;
+		mutable void *volatile m_combinedWriteStamp;
 
 	protected:
 		mutable Mutex m_mutex;
@@ -43,20 +50,17 @@ namespace MySql {
 		bool invalidate() const NOEXCEPT;
 
 	public:
-		bool isAutoSavingEnabled() const {
-			return atomicLoad(m_autoSaves, ATOMIC_CONSUME);
-		}
-		void enableAutoSaving() const {
-			atomicStore(m_autoSaves, true, ATOMIC_RELEASE);
-		}
-		void disableAutoSaving() const {
-			atomicStore(m_autoSaves, false, ATOMIC_RELEASE);
-		}
+		bool isAutoSavingEnabled() const;
+		void enableAutoSaving() const;
+		void disableAutoSaving() const;
+
+		void *getCombinedWriteStamp() const;
+		void setCombinedWriteStamp(void *stamp) const;
 
 		virtual const char *getTableName() const = 0;
 
 		virtual void syncGenerateSql(std::string &sql, bool toReplace) const = 0;
-		virtual void syncFetch(const Connection &conn) = 0;
+		virtual void syncFetch(const boost::shared_ptr<const Connection> &conn) = 0;
 
 		void asyncSave(bool toReplace, bool urgent = false) const;
 		void asyncLoad(std::string query);

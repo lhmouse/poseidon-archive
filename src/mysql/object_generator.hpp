@@ -18,9 +18,19 @@ public:
 	static ::boost::shared_ptr< ::Poseidon::MySql::ObjectBase> create(){
 		return ::boost::make_shared<MYSQL_OBJECT_NAME>();
 	}
+	static void batchLoad(std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> > &ret_, ::std::string query_){
+		::std::vector<boost::shared_ptr< ::Poseidon::MySql::ObjectBase> > temp_;
+		::Poseidon::MySql::ObjectBase::batchLoad(temp_, &create, TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query_));
 
-	static void batchLoad(std::string query){
-		::Poseidon::MySql::ObjectBase::batchLoad(&create, TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query));
+		ret_.reserve(ret_.size() + temp_.size());
+		for(AUTO(it_, temp_.begin()); it_ != temp_.end(); ++it_){
+			AUTO(obj_, boost::dynamic_pointer_cast<MYSQL_OBJECT_NAME>(*it_));
+			if(!obj_){
+				DEBUG_THROW(::Poseidon::Exception,
+					::Poseidon::SharedNts::view("Bad dynamic_pointer_cast to " TOKEN_TO_STR(MYSQL_OBJECT_NAME)));
+			}
+			ret_.push_back(STD_MOVE(obj_));
+		}
 	}
 
 private:
@@ -382,7 +392,7 @@ public:
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
 		oss_.str().swap(sql_);
 	}
-	void syncFetch(const ::Poseidon::MySql::Connection &conn_){
+	void syncFetch(const boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_){
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -397,18 +407,18 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 
-#define FIELD_BOOLEAN(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_TINYINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_SMALLINT(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_SMALLINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_INTEGER(name_)				set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_INTEGER_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_BIGINT(name_)					set_ ## name_(conn_.getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(conn_.getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_STRING(name_)					set_ ## name_(conn_.getString( TOKEN_TO_STR(name_) ));
-#define FIELD_DATETIME(name_)				set_ ## name_(conn_.getDateTime( TOKEN_TO_STR(name_) ));
-#define FIELD_UUID(name_)					set_ ## name_(::Poseidon::Uuid(conn_.getString( TOKEN_TO_STR(name_) )));
+#define FIELD_BOOLEAN(name_)				set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_TINYINT(name_)				set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(conn_->getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_SMALLINT(name_)				set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_SMALLINT_UNSIGNED(name_)		set_ ## name_(conn_->getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_INTEGER(name_)				set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_INTEGER_UNSIGNED(name_)		set_ ## name_(conn_->getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_BIGINT(name_)					set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
+#define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(conn_->getUnsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_STRING(name_)					set_ ## name_(conn_->getString( TOKEN_TO_STR(name_) ));
+#define FIELD_DATETIME(name_)				set_ ## name_(conn_->getDateTime( TOKEN_TO_STR(name_) ));
+#define FIELD_UUID(name_)					set_ ## name_(::Poseidon::Uuid(conn_->getString( TOKEN_TO_STR(name_) )));
 
 		MYSQL_OBJECT_FIELDS
 	}

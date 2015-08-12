@@ -43,11 +43,10 @@ namespace MySql {
 			}
 		};
 
+#define DEBUG_THROW_MYSQL_EXCEPTION(mysql_)	\
+	DEBUG_THROW(::Poseidon::MySql::Exception, ::mysql_errno(mysql_), ::Poseidon::SharedNts(::mysql_error(mysql_)))
+
 		class ConnectionDelegator : public Connection {
-
-#define THROW_MYSQL_EXCEPTION	\
-			DEBUG_THROW(Exception, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())))
-
 		private:
 			const ThreadContext m_context;
 
@@ -71,20 +70,20 @@ namespace MySql {
 				}
 
 				if(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) != 0){
-					THROW_MYSQL_EXCEPTION;
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 				}
 				const ::my_bool TRUE_VALUE = true;
 				if(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &TRUE_VALUE) != 0){
-					THROW_MYSQL_EXCEPTION;
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 				}
 				if(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) != 0){
-					THROW_MYSQL_EXCEPTION;
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 				}
 
 				if(!::mysql_real_connect(m_mysql.get(), serverAddr, userName,
 					password, schema, serverPort, NULLPTR, useSsl ? CLIENT_SSL : 0))
 				{
-					THROW_MYSQL_EXCEPTION;
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 				}
 			}
 
@@ -95,13 +94,13 @@ namespace MySql {
 				m_row = NULLPTR;
 
 				if(::mysql_real_query(m_mysql.get(), sql, len) != 0){
-					THROW_MYSQL_EXCEPTION;
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 				}
 
 				m_columns.clear();
 				if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
 					if(::mysql_errno(m_mysql.get()) != 0){
-						THROW_MYSQL_EXCEPTION;
+						DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 					}
 					// 没有返回结果。
 				} else {
@@ -131,7 +130,7 @@ namespace MySql {
 				m_row = ::mysql_fetch_row(m_result.get());
 				if(!m_row){
 					if(::mysql_errno(m_mysql.get()) != 0){
-						THROW_MYSQL_EXCEPTION;
+						DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 					}
 					return false;
 				}
@@ -218,9 +217,6 @@ namespace MySql {
 				}
 				return scanTime(data);
 			}
-
-#undef THROW_MYSQL_EXCEPTION
-
 		};
 	}
 

@@ -12,11 +12,65 @@
 #include "../mutex.hpp"
 #include "../condition_variable.hpp"
 #include "../time.hpp"
+#include "../raii.hpp"
 #include "../multi_index_map.hpp"
+#include <sys/mman.h>
 
 namespace Poseidon {
 
 namespace {
+	union CoroutineStackStorage {
+		CoroutineStackStorage *next;
+		unsigned char bytes[0x400 * 0x400];
+	};
+
+	Mutex g_stackPoolMutex;
+	CoroutineStackStorage *g_stackPoolHead = NULLPTR;
+
+	__attribute__((__used__, __destructor__))
+	void stackPoolCleanup(){
+		AUTO(stack, g_stackPoolHead);
+		while(stack){
+			g_stackPoolHead = stack->next;
+			if(::munmap(stack, sizeof(CoroutineStackStorage)) != 0){
+				const int errCode = errno;
+				LOG_POSEIDON_FATAL("Error unmapping stack, errno was ", errCode);
+				std::abort();
+			}
+			stack = g_stackPoolHead;
+		}
+	}
+
+	CoroutineStackStorage *allocateStack(){
+		PROFILE_ME;
+
+		{
+			const Mutex::UniqueLock lock(g_stackPoolMutex);
+			const AUTO(stack, g_stackPoolHead);
+			if(stack){
+				g_stackPoolHead = stack->next;
+				return stack;
+			}
+		}
+		const AUTO(raw, ::mmap(NULLPTR, sizeof(CoroutineStackStorage),
+			PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0));
+		if(raw == MAP_FAILED){
+			throw std::bad_alloc();
+		}
+		return static_cast<CoroutineStackStorage *>(raw);
+	}
+	void freeStack(CoroutineStackStorage *stack) NOEXCEPT {
+		PROFILE_ME;
+
+		if(!stack){
+			return;
+		}
+
+		const Mutex::UniqueLock lock(g_stackPoolMutex);
+		stack->next = g_stackPoolHead;
+		g_stackPoolHead = stack;
+	}
+
 /*	template<typename Tx, typename Ty>
 	bool ownerEqual(const boost::shared_ptr<Tx> &lhs, const boost::shared_ptr<Ty> &rhs){
 		return !lhs.owner_before(rhs) && !rhs.owner_before(lhs);
@@ -92,6 +146,7 @@ namespace {
 
 	Mutex g_mutex;
 	ConditionVariable g_newJob;
+	std::vector<int> g_queueMap;
 //	JobMap g_jobMap;
 /*
 	bool pumpOneJob() NOEXCEPT {
@@ -160,7 +215,7 @@ namespace {
 		return true;
 	}
 */
-	void reallyPumpJobs(bool toWait){
+	void reallyPumpJobs(){
 	}
 }
 
@@ -173,7 +228,16 @@ void JobDispatcher::start(){
 void JobDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
 
-	reallyPumpJobs(true);
+	boost::array<CoroutineStackStorage *, 20> a;
+	for(auto &p : a){
+		p = allocateStack();
+	}
+	for(auto &p : a){
+		freeStack(p);
+	}
+	LOG_POSEIDON_FATAL("Done");
+
+	reallyPumpJobs();
 }
 
 void JobDispatcher::doModal(){
@@ -185,14 +249,13 @@ void JobDispatcher::doModal(){
 	}
 
 	for(;;){
-		reallyPumpJobs(false);
-
-		if(!atomicLoad(g_running, ATOMIC_CONSUME)){
-			break;
-		}
+		reallyPumpJobs();
 
 		Mutex::UniqueLock lock(g_mutex);
-		g_newJob.timedWait(lock, 50);
+		if(!atomicLoad(g_running, ATOMIC_CONSUME) && g_queueMap.empty()){
+			break;
+		}
+		g_newJob.timedWait(lock, 100);
 	}
 }
 void JobDispatcher::quitModal(){
@@ -232,7 +295,7 @@ void JobDispatcher::yield(boost::function<bool ()> pred){
 void JobDispatcher::pumpAll(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
 
-	reallyPumpJobs(true);
+	reallyPumpJobs();
 }
 
 }

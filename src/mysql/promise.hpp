@@ -4,7 +4,8 @@
 #ifndef POSEIDON_MYSQL_PROMISE_HPP_
 #define POSEIDON_MYSQL_PROMISE_HPP_
 
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/exception_ptr.hpp>
 #include "../mutex.hpp"
 
 namespace Poseidon {
@@ -16,7 +17,7 @@ namespace MySql {
 	private:
 		mutable Mutex m_mutex;
 		bool m_satisfied;
-		boost::scoped_ptr<const Exception> m_except;
+		boost::exception_ptr m_except;
 
 	public:
 		Promise();
@@ -27,7 +28,7 @@ namespace MySql {
 		void checkAndRethrow() const;
 
 		void setSuccess();
-		void setException(const Exception &e);
+		void setException(const boost::exception_ptr &except);
 	};
 }
 

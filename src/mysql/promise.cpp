@@ -30,7 +30,7 @@ namespace MySql {
 			DEBUG_THROW(BasicException, sslit("MySQL promise is not satisfied"));
 		}
 		if(m_except){
-			throw *m_except;
+			boost::rethrow_exception(m_except);
 		}
 	}
 
@@ -40,17 +40,17 @@ namespace MySql {
 			DEBUG_THROW(BasicException, sslit("MySQL promise is already satisfied"));
 		}
 		m_satisfied = true;
-		m_except.reset();
+		m_except = boost::exception_ptr();
 	}
-	void Promise::setException(const Exception &e){
-		boost::scoped_ptr<const Exception> except(new Exception(e));
+	void Promise::setException(const boost::exception_ptr &except){
+		assert(except);
 
 		const Mutex::UniqueLock lock(m_mutex);
 		if(m_satisfied){
 			DEBUG_THROW(BasicException, sslit("MySQL promise is already satisfied"));
 		}
 		m_satisfied = true;
-		m_except.swap(except);
+		m_except = except;
 	}
 }
 

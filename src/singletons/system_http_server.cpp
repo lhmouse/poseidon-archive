@@ -115,7 +115,7 @@ namespace {
 					headers.set(sslit("Content-Disposition"), "attachment; name=\"profile.csv\"");
 
 					StreamBuffer contents;
-					contents.put("file,line,func,samples,usTotal,usExclusive\r\n");
+					contents.put("file,line,func,samples,nsTotal,nsExclusive\r\n");
 					AUTO(snapshot, ProfileDepository::snapshot());
 					std::string str;
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
@@ -126,7 +126,7 @@ namespace {
 						contents.put(temp, len);
 						escapeCsvField(str, it->func);
 						contents.put(str);
-						len = (unsigned)std::sprintf(temp, ",%llu,%llu,%llu\r\n", it->samples, it->usTotal, it->usExclusive);
+						len = (unsigned)std::sprintf(temp, ",%llu,%llu,%llu\r\n", it->samples, it->nsTotal, it->nsExclusive);
 						contents.put(temp, len);
 					}
 
@@ -189,7 +189,7 @@ namespace {
 					headers.set(sslit("Content-Disposition"), "attachment; name=\"mysql_threads.csv\"");
 
 					StreamBuffer contents;
-					contents.put("thread,table,usTotal\r\n");
+					contents.put("thread,table,nsTotal\r\n");
 					AUTO(snapshot, MySqlDaemon::snapshot());
 					std::string str;
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
@@ -198,7 +198,7 @@ namespace {
 						contents.put(temp, len);
 						escapeCsvField(str, it->table);
 						contents.put(str);
-						len = (unsigned)std::sprintf(temp, ",%llu\r\n", it->usTotal);
+						len = (unsigned)std::sprintf(temp, ",%llu\r\n", it->nsTotal);
 						contents.put(temp, len);
 					}
 

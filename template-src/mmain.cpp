@@ -635,11 +635,30 @@ MODULE_RAII(handles){
 #include "../src/time.hpp"
 #include "../src/module_raii.hpp"
 
+#include "../src/mysql/object_base.hpp"
+#include "../src/singletons/mysql_daemon.hpp"
+
+#define MYSQL_OBJECT_NAME	MySqlObj
+#define MYSQL_OBJECT_FIELDS	\
+	FIELD_SMALLINT(si)	\
+	FIELD_STRING(str)	\
+	FIELD_BIGINT(bi)	\
+	FIELD_DATETIME(dt)
+#include "../src/mysql/object_generator.hpp"
+
 MODULE_RAII(/* handles */){
 	using namespace Poseidon;
 
-	const auto now = getFastMonoClock();
+	AUTO(obj, boost::make_shared<MySqlObj>());
+	obj->enableAutoSaving();
+	obj->set_si(999);
+	obj->set_str(std::string("\r\n\'\"\x00\x1A\\", 7));
+	for(int i = 0; i < 10; ++i){
+		obj->set_bi(i);
+	}
+//	obj->asyncLoad("SELECT * FROM `MySqlObj`");
 
+	const auto now = getFastMonoClock();
 	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 5000"); }, [=]{ return now + 5000 < getFastMonoClock(); });
 	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 1000"); }, [=]{ return now + 1000 < getFastMonoClock(); });
 	LOG_POSEIDON_FATAL("enqueued!");

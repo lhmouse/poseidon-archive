@@ -106,8 +106,8 @@ std::vector<ProfileDepository::SnapshotElement> ProfileDepository::snapshot(){
 			pi.line = it->first.line;
 			pi.func = it->first.func;
 			pi.samples = atomicLoad(it->second.samples, ATOMIC_RELAXED);
-			pi.usTotal = atomicLoad(it->second.nsTotal, ATOMIC_RELAXED) / 1000;
-			pi.usExclusive = atomicLoad(it->second.nsExclusive, ATOMIC_RELAXED) / 1000;
+			pi.nsTotal = atomicLoad(it->second.nsTotal, ATOMIC_RELAXED);
+			pi.nsExclusive = atomicLoad(it->second.nsExclusive, ATOMIC_RELAXED);
 			ret.push_back(pi);
 		}
 	}
