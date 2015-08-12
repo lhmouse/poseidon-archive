@@ -17,7 +17,7 @@
 namespace Poseidon {
 
 namespace {
-	template<typename Tx, typename Ty>
+/*	template<typename Tx, typename Ty>
 	bool ownerEqual(const boost::shared_ptr<Tx> &lhs, const boost::shared_ptr<Ty> &rhs){
 		return !lhs.owner_before(rhs) && !rhs.owner_before(lhs);
 	}
@@ -87,13 +87,13 @@ namespace {
 
 	std::size_t g_maxRetryCount			= 6;
 	boost::uint64_t g_retryInitDelay	= 100;
-
+*/
 	volatile bool g_running = false;
 
 	Mutex g_mutex;
 	ConditionVariable g_newJob;
-	JobMap g_jobMap;
-
+//	JobMap g_jobMap;
+/*
 	bool pumpOneJob() NOEXCEPT {
 		PROFILE_ME;
 
@@ -159,21 +159,21 @@ namespace {
 
 		return true;
 	}
+*/
+	void reallyPumpJobs(bool toWait){
+	}
 }
 
 void JobDispatcher::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting job dispatcher...");
 
-	MainConfig::get(g_maxRetryCount, "job_max_retry_count");
-	LOG_POSEIDON_DEBUG("Max retry count = ", g_maxRetryCount);
-
-	MainConfig::get(g_retryInitDelay, "job_retry_init_delay");
-	LOG_POSEIDON_DEBUG("Retry init delay = ", g_retryInitDelay);
+//	MainConfig::get(g_maxRetryCount, "job_max_retry_count");
+//	LOG_POSEIDON_DEBUG("Max retry count = ", g_maxRetryCount);
 }
 void JobDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
 
-	pumpAll();
+	reallyPumpJobs(true);
 }
 
 void JobDispatcher::doModal(){
@@ -185,9 +185,7 @@ void JobDispatcher::doModal(){
 	}
 
 	for(;;){
-		while(pumpOneJob()){
-			// noop
-		}
+		reallyPumpJobs(false);
 
 		if(!atomicLoad(g_running, ATOMIC_CONSUME)){
 			break;
@@ -201,11 +199,11 @@ void JobDispatcher::quitModal(){
 	atomicStore(g_running, false, ATOMIC_RELEASE);
 }
 
-void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay,
-	boost::shared_ptr<const bool> withdrawn)
+void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
+	boost::function<bool ()> pred, boost::shared_ptr<const bool> withdrawn)
 {
 	PROFILE_ME;
-
+/*
 	AUTO(dueTime, getFastMonoClock() + delay);
 	AUTO(category, job->getCategory());
 
@@ -223,14 +221,18 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_
 		}
 	}
 	g_jobMap.insert(JobElement(STD_MOVE(job), STD_MOVE(withdrawn), dueTime, STD_MOVE(category)));
-	g_newJob.signal();
+	g_newJob.signal();*/
 }
+void JobDispatcher::yield(boost::function<bool ()> pred){
+	PROFILE_ME;
+
+	
+}
+
 void JobDispatcher::pumpAll(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
 
-	while(pumpOneJob()){
-		// noop
-	}
+	reallyPumpJobs(true);
 }
 
 }

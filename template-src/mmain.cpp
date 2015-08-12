@@ -632,24 +632,15 @@ MODULE_RAII(handles){
 #include "../src/precompiled.hpp"
 #include "../src/async_job.hpp"
 #include "../src/log.hpp"
+#include "../src/time.hpp"
 #include "../src/module_raii.hpp"
-
-class foo {
-	foo(const foo &);
-	foo& operator=(const foo &);
-public:
-	explicit foo(int i){
-		LOG_POSEIDON_FATAL("foo::foo(int i), i = ", i);
-	}
-	~foo(){
-		LOG_POSEIDON_FATAL("foo::~foo()");
-	}
-};
 
 MODULE_RAII(/* handles */){
 	using namespace Poseidon;
 
-	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 5000"); }, 5000);
-	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 1000"); }, 1000);
+	const auto now = getFastMonoClock();
+
+	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 5000"); }, [=]{ return now + 5000 < getFastMonoClock(); });
+	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 1000"); }, [=]{ return now + 1000 < getFastMonoClock(); });
 	LOG_POSEIDON_FATAL("enqueued!");
 }

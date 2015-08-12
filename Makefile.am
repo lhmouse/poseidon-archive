@@ -127,8 +127,8 @@ pkginclude_mysql_HEADERS = \
 	src/mysql/thread_context.hpp	\
 	src/mysql/connection.hpp	\
 	src/mysql/object_base.hpp	\
-	src/mysql/callbacks.hpp	\
 	src/mysql/exception.hpp	\
+	src/mysql/promise.hpp	\
 	src/mysql/utilities.hpp
 
 bin_PROGRAMS = \
@@ -215,6 +215,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/websocket/exception.cpp	\
 	src/mysql/object_base.cpp	\
 	src/mysql/exception.cpp	\
+	src/mysql/promise.cpp	\
 	src/mysql/utilities.cpp	\
 	src/mysql/thread_context.cpp	\
 	src/mysql/connection.cpp

@@ -3,17 +3,17 @@
 
 #include "../precompiled.hpp"
 #include "object_base.hpp"
+#include "exception.hpp"
 #include "../singletons/mysql_daemon.hpp"
+#include "../singletons/job_dispatcher.hpp"
 
 namespace Poseidon {
 
 namespace MySql {
-	void ObjectBase::batchLoad(boost::shared_ptr<ObjectBase> (*factory)(),
-		const char *tableHint, std::string query,
-		BatchAsyncLoadCallback callback, ExceptionCallback except)
-	{
-		MySqlDaemon::enqueueForBatchLoading(
-			factory, tableHint, STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except));
+	void ObjectBase::batchLoad(boost::shared_ptr<ObjectBase> (*factory)(), const char *tableHint, std::string query){
+		const AUTO(promise, MySqlDaemon::enqueueForBatchLoading(factory, tableHint, STD_MOVE(query)));
+		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
+		promise->checkAndRethrow();
 	}
 
 	ObjectBase::ObjectBase()
@@ -26,8 +26,7 @@ namespace MySql {
 	bool ObjectBase::invalidate() const NOEXCEPT {
 		try {
 			if(isAutoSavingEnabled()){
-				MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(),
-					true, false, AsyncSaveCallback(), ExceptionCallback());
+				MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), true, false);
 				return true;
 			}
 		} catch(std::exception &e){
@@ -38,15 +37,19 @@ namespace MySql {
 		return false;
 	}
 
-	void ObjectBase::asyncSave(bool toReplace, bool urgent, AsyncSaveCallback callback, ExceptionCallback except) const {
+	void ObjectBase::asyncSave(bool toReplace, bool urgent) const {
+		const AUTO(promise, MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), toReplace, urgent));
+		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
+		promise->checkAndRethrow();
 		enableAutoSaving();
-		MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(),
-			toReplace, urgent, STD_MOVE(callback), STD_MOVE(except));
 	}
-	void ObjectBase::asyncLoad(std::string query, AsyncLoadCallback callback, ExceptionCallback except){
+	void ObjectBase::asyncLoad(std::string query){
 		disableAutoSaving();
-		MySqlDaemon::enqueueForLoading(
-			virtualSharedFromThis<ObjectBase>(), STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except));
+
+		const AUTO(promise, MySqlDaemon::enqueueForLoading(virtualSharedFromThis<ObjectBase>(), STD_MOVE(query)));
+		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
+		promise->checkAndRethrow();
+		enableAutoSaving();
 	}
 }
 

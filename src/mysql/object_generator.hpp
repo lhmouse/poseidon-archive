@@ -19,12 +19,8 @@ public:
 		return ::boost::make_shared<MYSQL_OBJECT_NAME>();
 	}
 
-	static void batchLoad(std::string query, ::Poseidon::MySql::BatchAsyncLoadCallback callback,
-		::Poseidon::MySql::ExceptionCallback except = ::Poseidon::MySql::ExceptionCallback())
-	{
-		::Poseidon::MySql::ObjectBase::batchLoad(&create,
-			TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query),
-			STD_MOVE(callback), STD_MOVE(except));
+	static void batchLoad(std::string query){
+		::Poseidon::MySql::ObjectBase::batchLoad(&create, TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query));
 	}
 
 private:

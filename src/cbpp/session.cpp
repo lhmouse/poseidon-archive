@@ -38,8 +38,6 @@ namespace Cbpp {
 
 			try {
 				perform(session);
-			} catch(TryAgainLater &){
-				throw;
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());

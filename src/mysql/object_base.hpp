@@ -6,7 +6,6 @@
 
 #include "../cxx_ver.hpp"
 #include "../cxx_util.hpp"
-#include "callbacks.hpp"
 #include "connection.hpp"
 #include "utilities.hpp"
 #include <string>
@@ -25,13 +24,9 @@
 namespace Poseidon {
 
 namespace MySql {
-	// 注意 ExceptionCallback 不是线程安全的。
-
 	class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
 	protected:
-		static void batchLoad(boost::shared_ptr<ObjectBase> (*factory)(),
-			const char *tableHint, std::string query,
-			BatchAsyncLoadCallback callback, ExceptionCallback except);
+		static void batchLoad(boost::shared_ptr<ObjectBase> (*factory)(), const char *tableHint, std::string query);
 
 	private:
 		mutable volatile bool m_autoSaves;
@@ -63,10 +58,8 @@ namespace MySql {
 		virtual void syncGenerateSql(std::string &sql, bool toReplace) const = 0;
 		virtual void syncFetch(const Connection &conn) = 0;
 
-		void asyncSave(bool toReplace, bool urgent = false, AsyncSaveCallback callback = AsyncSaveCallback(),
-			ExceptionCallback except = ExceptionCallback()) const;
-		void asyncLoad(std::string query, AsyncLoadCallback callback,
-			ExceptionCallback except = ExceptionCallback());
+		void asyncSave(bool toReplace, bool urgent = false) const;
+		void asyncLoad(std::string query);
 	};
 }
 

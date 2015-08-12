@@ -36,8 +36,6 @@ namespace Http {
 
 			try {
 				perform(client);
-			} catch(TryAgainLater &){
-				throw;
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 				client->forceShutdown();

@@ -5,6 +5,7 @@
 #define POSEIDON_SINGLETONS_JOB_DISPATCHER_HPP_
 
 #include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
 
 namespace Poseidon {
 
@@ -18,8 +19,10 @@ struct JobDispatcher {
 	static void doModal();
 	static void quitModal();
 
-	static void enqueue(boost::shared_ptr<const JobBase> job, boost::uint64_t delay,
-		boost::shared_ptr<const bool> withdrawn);
+	static void enqueue(boost::shared_ptr<const JobBase> job,
+		boost::function<bool ()> pred, boost::shared_ptr<const bool> withdrawn);
+	static void yield(boost::function<bool ()> pred);
+
 	static void pumpAll();
 
 private:

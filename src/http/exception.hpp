@@ -24,7 +24,7 @@ namespace Http {
 
 	public:
 		StatusCode statusCode() const NOEXCEPT {
-			return static_cast<StatusCode>(static_cast<unsigned>(code()));
+			return static_cast<StatusCode>(code());
 		}
 		const OptionalMap &headers() const NOEXCEPT;
 	};

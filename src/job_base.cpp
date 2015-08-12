@@ -4,27 +4,19 @@
 #include "precompiled.hpp"
 #include "job_base.hpp"
 #include "singletons/job_dispatcher.hpp"
-#include "exception.hpp"
 
 namespace Poseidon {
-
-JobBase::TryAgainLater::TryAgainLater(boost::shared_ptr<const void> context) NOEXCEPT
-	: m_context(STD_MOVE(context))
-{
-}
-JobBase::TryAgainLater::~TryAgainLater() NOEXCEPT {
-}
 
 JobBase::~JobBase(){
 }
 
-void enqueueJob(boost::shared_ptr<const JobBase> job, boost::uint64_t delay,
-	boost::shared_ptr<const bool> withdrawn)
+void enqueueJob(boost::shared_ptr<const JobBase> job,
+	boost::function<bool ()> pred, boost::shared_ptr<const bool> withdrawn)
 {
-	JobDispatcher::enqueue(STD_MOVE(job), delay, STD_MOVE(withdrawn));
+	JobDispatcher::enqueue(STD_MOVE(job), STD_MOVE(pred), STD_MOVE(withdrawn));
 }
-void suspendCurrentJob(boost::shared_ptr<const void> context){
-	throw JobBase::TryAgainLater(STD_MOVE(context));
+void yieldJob(boost::function<bool ()> pred){
+	JobDispatcher::yield(STD_MOVE(pred));
 }
 
 }

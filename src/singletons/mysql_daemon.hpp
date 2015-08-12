@@ -7,7 +7,7 @@
 #include "../cxx_ver.hpp"
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include "../mysql/callbacks.hpp"
+#include "../mysql/promise.hpp"
 
 namespace Poseidon {
 
@@ -34,14 +34,13 @@ struct MySqlDaemon {
 
 	static void waitForAllAsyncOperations();
 
-	// 注意 ExceptionCallback 不是线程安全的。
-	static void enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace, bool urgent,
-		MySql::AsyncSaveCallback callback, MySql::ExceptionCallback except);
-	static void enqueueForLoading(boost::shared_ptr<MySql::ObjectBase> object, std::string query,
-		MySql::AsyncLoadCallback callback, MySql::ExceptionCallback except);
-	static void enqueueForBatchLoading(boost::shared_ptr<MySql::ObjectBase> (*factory)(),
-		const char *tableHint, std::string query,
-		MySql::BatchAsyncLoadCallback callback, MySql::ExceptionCallback except);
+	// 如果返回的 exception 非空，就应当重新抛出之。
+	static boost::shared_ptr<const MySql::Promise> enqueueForSaving(
+		boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace, bool urgent);
+	static boost::shared_ptr<const MySql::Promise> enqueueForLoading(
+		boost::shared_ptr<MySql::ObjectBase> object, std::string query);
+	static boost::shared_ptr<const MySql::Promise> enqueueForBatchLoading(
+		boost::shared_ptr<MySql::ObjectBase> (*factory)(), const char *tableHint, std::string query);
 
 private:
 	MySqlDaemon();

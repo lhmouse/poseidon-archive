@@ -18,7 +18,7 @@ protected:
 	SharedNts m_message; // 拷贝构造函数不抛出异常。
 
 public:
-	Exception(const char *file, std::size_t line, SharedNts message);
+	Exception(const char *fi, std::size_t ln, SharedNts msg);
 	~Exception() NOEXCEPT;
 
 public:
@@ -31,6 +31,9 @@ public:
 	}
 	std::size_t line() const NOEXCEPT {
 		return m_line;
+	}
+	const char *message() const NOEXCEPT {
+		return m_message.get();
 	}
 };
 

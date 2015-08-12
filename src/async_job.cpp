@@ -29,10 +29,17 @@ namespace {
 	};
 }
 
-void enqueueAsyncJob(boost::weak_ptr<const void> category, boost::function<void ()> proc, boost::uint64_t delay,
-	boost::shared_ptr<const bool> withdrawn)
+void enqueueAsyncJob(boost::function<void ()> proc,
+	boost::function<bool ()> pred, boost::shared_ptr<const bool> withdrawn)
 {
-	enqueueJob(boost::make_shared<AsyncJob>(STD_MOVE(category), STD_MOVE(proc)), delay, STD_MOVE(withdrawn));
+	enqueueJob(boost::make_shared<AsyncJob>(boost::weak_ptr<const void>(), STD_MOVE(proc)),
+		STD_MOVE(pred), STD_MOVE(withdrawn));
+}
+void enqueueAsyncJob(boost::weak_ptr<const void> category, boost::function<void ()> proc,
+	boost::function<bool ()> pred, boost::shared_ptr<const bool> withdrawn)
+{
+	enqueueJob(boost::make_shared<AsyncJob>(STD_MOVE(category), STD_MOVE(proc)),
+		STD_MOVE(pred), STD_MOVE(withdrawn));
 }
 
 }

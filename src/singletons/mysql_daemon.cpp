@@ -47,7 +47,7 @@ namespace {
 
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dumpMutex;
-
+/*
 	// 回调函数任务。
 	class SaveCallbackJob : public JobBase {
 	private:
@@ -601,7 +601,7 @@ namespace {
 			const AUTO(combinableObject, operation->getCombinableObject());
 			AUTO(dueTime, getFastMonoClock());
 			// 有紧急操作时无视写入延迟，这个逻辑不在这里处理。
-			// if(combinableObject && !urgent){ // 这个看似合理但是实际是错的。
+			// if(combinableObject && !urgent) // 这个看似合理但是实际是错的。
 			if(combinableObject || urgent){ // 确保紧急操作排在其他所有操作之后。
 				dueTime += g_saveDelay;
 			}
@@ -642,10 +642,10 @@ namespace {
 			}
 		}
 	};
-
+*/
 	volatile bool g_running = false;
-	std::vector<boost::shared_ptr<MySqlThread> > g_threads;
-
+//	std::vector<boost::shared_ptr<MySqlThread> > g_threads;
+/*
 	void commitOperation(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
 		if(g_threads.empty()){
 			DEBUG_THROW(Exception, sslit("No MySQL thread is running"));
@@ -674,6 +674,7 @@ namespace {
 		LOG_POSEIDON_DEBUG("Assigning MySQL table `", table, "` to thread ", threadIndex);
 		g_threads.at(threadIndex)->addOperation(STD_MOVE(operation), urgent);
 	}
+*/
 }
 
 void MySqlDaemon::start(){
@@ -721,13 +722,13 @@ void MySqlDaemon::start(){
 
 	MainConfig::get(g_retryInitDelay, "mysql_retry_init_delay");
 	LOG_POSEIDON_DEBUG("MySQL retry init delay = ", g_retryInitDelay);
-
+/*
 	g_threads.resize(std::max<std::size_t>(g_maxThreads, 1));
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		LOG_POSEIDON_INFO("Creating MySQL thread ", i);
 		g_threads[i] = boost::make_shared<MySqlThread>(i);
 	}
-
+*/
 	if(!g_dumpDir.empty()){
 		const AUTO(placeholderPath, g_dumpDir + "/placeholder");
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
@@ -745,7 +746,7 @@ void MySqlDaemon::stop(){
 		return;
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MySQL daemon...");
-
+/*
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		g_threads[i]->shutdown();
 	}
@@ -756,6 +757,7 @@ void MySqlDaemon::stop(){
 		}
 	}
 	g_threads.clear();
+*/
 }
 
 boost::shared_ptr<MySql::Connection> MySqlDaemon::createConnection(){
@@ -764,18 +766,37 @@ boost::shared_ptr<MySql::Connection> MySqlDaemon::createConnection(){
 
 std::vector<MySqlDaemon::SnapshotElement> MySqlDaemon::snapshot(){
 	std::vector<SnapshotElement> ret;
-	for(std::size_t i = 0; i < g_threads.size(); ++i){
+/*	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		g_threads[i]->getProfile(ret, i);
 	}
-	return ret;
+*/	return ret;
 }
 
 void MySqlDaemon::waitForAllAsyncOperations(){
-	for(std::size_t i = 0; i < g_threads.size(); ++i){
+/*	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		g_threads[i]->waitTillIdle();
-	}
+	}*/
 }
 
+boost::shared_ptr<const MySql::Promise> MySqlDaemon::enqueueForSaving(
+	boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace, bool urgent)
+{
+	AUTO(promise, boost::make_shared<MySql::Promise>());
+	return STD_MOVE_IDN(promise);
+}
+boost::shared_ptr<const MySql::Promise> MySqlDaemon::enqueueForLoading(
+	boost::shared_ptr<MySql::ObjectBase> object, std::string query)
+{
+	AUTO(promise, boost::make_shared<MySql::Promise>());
+	return STD_MOVE_IDN(promise);
+}
+boost::shared_ptr<const MySql::Promise> MySqlDaemon::enqueueForBatchLoading(
+	boost::shared_ptr<MySql::ObjectBase> (*factory)(), const char *tableHint, std::string query)
+{
+	AUTO(promise, boost::make_shared<MySql::Promise>());
+	return STD_MOVE_IDN(promise);
+}
+/*
 void MySqlDaemon::enqueueForSaving(boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace, bool urgent,
 	MySql::AsyncSaveCallback callback, MySql::ExceptionCallback except)
 {
@@ -804,5 +825,5 @@ void MySqlDaemon::enqueueForBatchLoading(boost::shared_ptr<MySql::ObjectBase> (*
 			tableHint, factory, STD_MOVE(query), STD_MOVE(callback), STD_MOVE(except)),
 		true);
 }
-
+*/
 }
