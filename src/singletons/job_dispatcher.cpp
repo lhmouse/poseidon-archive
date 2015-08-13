@@ -44,6 +44,9 @@ namespace {
 		std::jmp_buf outer;
 		std::jmp_buf inner;
 		char stack[0x100000]; // 1MiB
+
+		FiberControl(){
+		}
 	};
 
 	FiberControl *g_currentFiber = NULLPTR;
@@ -52,15 +55,15 @@ namespace {
 	void scheduleFiber(FiberControl *param) NOEXCEPT {
 		PROFILE_ME;
 
-		register FiberControl *const fiber = param;
-		assert(!fiber->queue.empty());
+		assert(!param->queue.empty());
 
-		if((fiber->state != FS_READY) && (fiber->state != FS_YIELDED)){
-			LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(fiber->state));
+		if((param->state != FS_READY) && (param->state != FS_YIELDED)){
+			LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(param->state));
 			std::abort();
 		}
 
-		g_currentFiber = fiber;
+		AUTO_REF(fiber, g_currentFiber);
+		fiber = param;
 
 		if(setjmp(fiber->outer) == 0){
 			if(fiber->state == FS_READY){
@@ -74,6 +77,7 @@ namespace {
 				);
 
 				fiber->state = FS_RUNNING;
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Entering fiber ", static_cast<void *>(fiber));
 				try {
 					fiber->queue.front().job->perform();
 				} catch(std::exception &e){
@@ -228,7 +232,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
 void JobDispatcher::yield(boost::function<bool ()> pred){
 	PROFILE_ME;
 
-	const AUTO(fiber, g_currentFiber);
+	AUTO_REF(fiber, g_currentFiber);
 	if(!fiber){
 		DEBUG_THROW(Exception, sslit("No current fiber"));
 	}
