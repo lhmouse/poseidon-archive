@@ -637,6 +637,9 @@ MODULE_RAII(handles){
 
 #include "../src/mysql/object_base.hpp"
 #include "../src/singletons/mysql_daemon.hpp"
+#include "../src/singletons/job_dispatcher.hpp"
+
+using namespace Poseidon;
 
 #define MYSQL_OBJECT_NAME	MySqlObj
 #define MYSQL_OBJECT_FIELDS	\
@@ -647,8 +650,6 @@ MODULE_RAII(handles){
 #include "../src/mysql/object_generator.hpp"
 
 MODULE_RAII(/* handles */){
-	using namespace Poseidon;
-
 	AUTO(obj, boost::make_shared<MySqlObj>());
 	obj->enableAutoSaving();
 	obj->set_si(999);
@@ -658,8 +659,25 @@ MODULE_RAII(/* handles */){
 	}
 //	obj->asyncLoad("SELECT * FROM `MySqlObj`");
 
-	const auto now = getFastMonoClock();
-	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 5000"); }, [=]{ return now + 5000 < getFastMonoClock(); });
-	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 1000"); }, [=]{ return now + 1000 < getFastMonoClock(); });
+//	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 5000"); }, [=]{ return now + 5000 < getFastMonoClock(); });
+//	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 1000"); }, [=]{ return now + 1000 < getFastMonoClock(); });
+	enqueueAsyncJob([]{
+		const auto now = getFastMonoClock();
+
+		LOG_POSEIDON_FATAL("--- 1");
+		JobDispatcher::yield([=]{ return now + 1000 < getFastMonoClock(); });
+
+		LOG_POSEIDON_FATAL("--- 2");
+		JobDispatcher::yield([=]{ return now + 2000 < getFastMonoClock(); });
+
+		LOG_POSEIDON_FATAL("--- 3");
+		JobDispatcher::yield([=]{ return now + 3000 < getFastMonoClock(); });
+
+		LOG_POSEIDON_FATAL("--- 4");
+		DEBUG_THROW(Exception, sslit("meow"));
+
+		LOG_POSEIDON_FATAL("--- 5");
+		JobDispatcher::yield([=]{ return now + 5000 < getFastMonoClock(); });
+	});
 	LOG_POSEIDON_FATAL("enqueued!");
 }

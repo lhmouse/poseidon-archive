@@ -50,6 +50,13 @@ Thread::Thread(boost::function<void ()> proc, const char *tag){
 		throw;
 	}
 }
+Thread::Thread(Move<Thread> rhs) NOEXCEPT {
+	rhs.swap(*this);
+}
+Thread &Thread::operator=(Move<Thread> rhs) NOEXCEPT {
+	rhs.swap(*this);
+	return *this;
+}
 Thread::~Thread(){
 	if(joinable()){
 		LOG_POSEIDON_FATAL("Destructing a joinable thread.");
@@ -58,7 +65,7 @@ Thread::~Thread(){
 }
 
 void Thread::swap(Thread &rhs) NOEXCEPT {
-	std::swap(m_impl, rhs.m_impl);
+	boost::swap(m_impl, rhs.m_impl);
 }
 
 bool Thread::joinable() const NOEXCEPT {

@@ -113,6 +113,10 @@ inline T atomicExchange(volatile T &mem, typename Identity<T>::type xchg, MemMod
 #endif
 }
 
+inline void atomicPause() NOEXCEPT {
+	__builtin_ia32_pause();
+}
+
 }
 
 #endif

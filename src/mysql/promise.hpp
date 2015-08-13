@@ -6,7 +6,6 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/exception_ptr.hpp>
-#include "../mutex.hpp"
 
 namespace Poseidon {
 
@@ -15,20 +14,26 @@ namespace MySql {
 
 	class Promise : NONCOPYABLE {
 	private:
-		mutable Mutex m_mutex;
-		bool m_satisfied;
+		// mutable Mutex m_mutex;
+		// bool m_satisfied;
+		mutable volatile int m_state;
 		boost::exception_ptr m_except;
 
 	public:
-		Promise();
+		Promise() NOEXCEPT;
 		~Promise();
 
+	private:
+		bool check(int cmp) const NOEXCEPT;
+		int lock() const NOEXCEPT;
+		void unlock(int state) const NOEXCEPT;
+
 	public:
-		bool isSatisfied() const;
+		bool isSatisfied() const NOEXCEPT;
 		void checkAndRethrow() const;
 
-		void setSuccess();
-		void setException(const boost::exception_ptr &except);
+		void setSuccess() NOEXCEPT;
+		void setException(const boost::exception_ptr &except) NOEXCEPT;
 	};
 }
 
