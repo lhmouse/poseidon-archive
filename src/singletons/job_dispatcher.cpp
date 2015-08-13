@@ -77,7 +77,7 @@ namespace {
 				);
 
 				fiber->state = FS_RUNNING;
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Entering fiber ", static_cast<void *>(fiber));
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Entering fiber ", static_cast<void *>(fiber));
 				try {
 					fiber->queue.front().job->perform();
 				} catch(std::exception &e){
@@ -85,7 +85,7 @@ namespace {
 				} catch(...){
 					LOG_POSEIDON_WARNING("Unknown exception thrown");
 				}
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Exited from fiber ", static_cast<void *>(fiber));
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Exited from fiber ", static_cast<void *>(fiber));
 
 				fiber->state = FS_READY;
 				std::longjmp(fiber->outer, 1);
@@ -243,12 +243,12 @@ void JobDispatcher::yield(boost::function<bool ()> pred){
 	}
 	fiber->queue.front().pred.swap(pred);
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Yielding from fiber ", static_cast<void *>(fiber));
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Yielding from fiber ", static_cast<void *>(fiber));
 	if(setjmp(fiber->inner) == 0){
 		fiber->state = FS_YIELDED;
 		std::longjmp(fiber->outer, 1);
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Resumed to fiber ", static_cast<void *>(fiber));
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Resumed to fiber ", static_cast<void *>(fiber));
 }
 
 void JobDispatcher::pumpAll(){
