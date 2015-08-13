@@ -221,10 +221,9 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
 	AUTO_REF(list, g_fiberMap[category]);
 	if(list.empty()){
 		if(g_fiberPool.empty()){
-			list.push_back(VAL_INIT);
-		} else {
-			list.splice(list.end(), g_fiberPool, g_fiberPool.begin());
+			g_fiberPool.resize(10);
 		}
+		list.splice(list.end(), g_fiberPool, g_fiberPool.begin());
 		list.back().state = FS_READY;
 	}
 	list.back().queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(pred), STD_MOVE(withdrawn)));
