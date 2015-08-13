@@ -211,6 +211,10 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
 {
 	PROFILE_ME;
 
+	if(!atomicLoad(g_running, ATOMIC_CONSUME)){
+		DEBUG_THROW(Exception, sslit("Job dispatcher is shutting down"));
+	}
+
 	const boost::weak_ptr<const void> nullWeakPtr;
 	AUTO(category, job->getCategory());
 	if(!(category < nullWeakPtr) && !(nullWeakPtr < category)){
