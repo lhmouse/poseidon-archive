@@ -19,10 +19,9 @@ namespace Poseidon {
 
 namespace {
 	enum FiberState {
-		FS_UNUSED		= 0,
-		FS_READY		= 1,
-		FS_RUNNING		= 2,
-		FS_YIELDED		= 3,
+		FS_READY,
+		FS_RUNNING,
+		FS_YIELDED,
 	};
 
 	struct JobElement {
@@ -45,7 +44,9 @@ namespace {
 		std::jmp_buf inner;
 		char stack[0x100000]; // 1MiB
 
-		FiberControl(){
+		FiberControl()
+			: state(FS_READY)
+		{
 		}
 	};
 
@@ -104,8 +105,7 @@ namespace {
 	Mutex g_mutex;
 	ConditionVariable g_newJob;
 
-	std::list<FiberControl> g_fiberPool;
-	std::map<boost::weak_ptr<const void>, std::list<FiberControl> > g_fiberMap;
+	std::map<boost::weak_ptr<const void>, FiberControl> g_fiberMap;
 
 	void reallyPumpJobs() NOEXCEPT {
 		PROFILE_ME;
@@ -117,18 +117,13 @@ namespace {
 			Mutex::UniqueLock lock(g_mutex);
 			AUTO(it, g_fiberMap.begin());
 			while(it != g_fiberMap.end()){
-				if(it->second.empty()){
-					g_fiberMap.erase(it++);
-					continue;
-				}
-				if(it->second.front().queue.empty()){
-					g_fiberPool.splice(g_fiberPool.end(), it->second);
+				if(it->second.queue.empty()){
 					g_fiberMap.erase(it++);
 					continue;
 				}
 				lock.unlock();
 
-				AUTO_REF(elem, it->second.front().queue.front());
+				AUTO_REF(elem, it->second.queue.front());
 				bool done;
 
 				if(elem.withdrawn && *elem.withdrawn){
@@ -140,13 +135,13 @@ namespace {
 				} else {
 					boost::function<bool ()>().swap(elem.pred);
 
-					scheduleFiber(&it->second.front());
-					done = (it->second.front().state == FS_READY);
+					scheduleFiber(&it->second);
+					done = (it->second.state == FS_READY);
 				}
 
 				lock.lock();
 				if(done){
-					it->second.front().queue.pop_front();
+					it->second.queue.pop_front();
 				}
 				++it;
 			}
@@ -202,6 +197,9 @@ void JobDispatcher::doModal(){
 		g_newJob.timedWait(lock, 100);
 	}
 }
+bool JobDispatcher::isRunning(){
+	return atomicLoad(g_running, ATOMIC_CONSUME);
+}
 void JobDispatcher::quitModal(){
 	atomicStore(g_running, false, ATOMIC_RELEASE);
 }
@@ -211,10 +209,6 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
 {
 	PROFILE_ME;
 
-	if(!atomicLoad(g_running, ATOMIC_CONSUME)){
-		DEBUG_THROW(Exception, sslit("Job dispatcher is shutting down"));
-	}
-
 	const boost::weak_ptr<const void> nullWeakPtr;
 	AUTO(category, job->getCategory());
 	if(!(category < nullWeakPtr) && !(nullWeakPtr < category)){
@@ -222,15 +216,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
 	}
 
 	const Mutex::UniqueLock lock(g_mutex);
-	AUTO_REF(list, g_fiberMap[category]);
-	if(list.empty()){
-		if(g_fiberPool.empty()){
-			g_fiberPool.resize(10);
-		}
-		list.splice(list.end(), g_fiberPool, g_fiberPool.begin());
-		list.back().state = FS_READY;
-	}
-	list.back().queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(pred), STD_MOVE(withdrawn)));
+	g_fiberMap[category].queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(pred), STD_MOVE(withdrawn)));
 }
 void JobDispatcher::yield(boost::function<bool ()> pred){
 	PROFILE_ME;

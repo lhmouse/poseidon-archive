@@ -17,6 +17,7 @@ struct JobDispatcher {
 
 	// 调用 doModal() 之后会阻塞直到任意线程调用 quitModal() 为止。
 	static void doModal();
+	static bool isRunning();
 	static void quitModal();
 
 	static void enqueue(boost::shared_ptr<const JobBase> job,
