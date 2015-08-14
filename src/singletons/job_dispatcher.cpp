@@ -36,17 +36,44 @@ namespace {
 		}
 	};
 
+	typedef boost::array<char, 0x100000> StackStorage;
+
+	Mutex g_stackPoolMutex;
+	std::list<StackStorage> g_stackPool;
+
 	struct FiberControl {
 		std::deque<JobElement> queue;
 
 		FiberState state;
+		std::list<StackStorage> stack;
 		std::jmp_buf outer;
 		std::jmp_buf inner;
-		char stack[0x100000]; // 1MiB
 
 		FiberControl()
 			: state(FS_READY)
 		{
+			const Mutex::UniqueLock lock(g_stackPoolMutex);
+			if(g_stackPool.empty()){
+				g_stackPool.resize(10);
+			}
+			stack.splice(stack.end(), g_stackPool, g_stackPool.begin());
+		}
+		FiberControl(const FiberControl &rhs) NOEXCEPT
+			: state(FS_READY)
+		{
+			if((rhs.state != FS_READY) || !rhs.queue.empty()){
+				std::abort();
+			}
+
+			const Mutex::UniqueLock lock(g_stackPoolMutex);
+			if(g_stackPool.empty()){
+				g_stackPool.resize(10);
+			}
+			stack.splice(stack.end(), g_stackPool, g_stackPool.begin());
+		}
+		~FiberControl(){
+			const Mutex::UniqueLock lock(g_stackPoolMutex);
+			g_stackPool.splice(g_stackPool.end(), stack);
 		}
 	};
 
@@ -67,18 +94,23 @@ namespace {
 		fiber = param;
 
 		if(setjmp(fiber->outer) == 0){
-			if(fiber->state == FS_READY){
-				__asm__(
-#ifdef __x86_64__
-					"movq %%rax, %%rsp \n"
-#else
-					"movl %%eax, %%esp \n"
-#endif
-					: : "a"(END(fiber->stack)) :
-				);
-
+			if(fiber->state == FS_YIELDED){
+				fiber->state = FS_RUNNING;
+				std::longjmp(fiber->inner, 1);
+			} else {
 				fiber->state = FS_RUNNING;
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Entering fiber ", static_cast<void *>(fiber));
+				{
+					register void *const sp = fiber->stack.front().end();
+					__asm__(
+#ifdef __x86_64__
+						"movq %%rax, %%rsp \n"
+#else
+						"movl %%eax, %%esp \n"
+#endif
+						: : "a"(sp) :
+					);
+				}
 				try {
 					fiber->queue.front().job->perform();
 				} catch(std::exception &e){
@@ -90,11 +122,7 @@ namespace {
 
 				fiber->state = FS_READY;
 				std::longjmp(fiber->outer, 1);
-			} else {
-				fiber->state = FS_RUNNING;
-				std::longjmp(fiber->inner, 1);
 			}
-			std::abort();
 		}
 
 		g_currentFiber = NULLPTR;
@@ -102,9 +130,8 @@ namespace {
 
 	volatile bool g_running = false;
 
-	Mutex g_mutex;
+	Mutex g_fiberMutex;
 	ConditionVariable g_newJob;
-
 	std::map<boost::weak_ptr<const void>, FiberControl> g_fiberMap;
 
 	void reallyPumpJobs() NOEXCEPT {
@@ -114,10 +141,10 @@ namespace {
 		do {
 			busy = false;
 
-			Mutex::UniqueLock lock(g_mutex);
+			Mutex::UniqueLock lock(g_fiberMutex);
 			AUTO(it, g_fiberMap.begin());
 			while(it != g_fiberMap.end()){
-				if(it->second.queue.empty()){
+				if((it->second.state == FS_READY) && (it->second.queue.empty())){
 					g_fiberMap.erase(it++);
 					continue;
 				}
@@ -133,8 +160,6 @@ namespace {
 					LOG_POSEIDON_TRACE("Job is not ready to be scheduled");
 					done = false;
 				} else {
-					boost::function<bool ()>().swap(elem.pred);
-
 					scheduleFiber(&it->second);
 					done = (it->second.state == FS_READY);
 				}
@@ -162,7 +187,7 @@ void JobDispatcher::stop(){
 	for(;;){
 		std::size_t pendingJobs;
 		{
-			const Mutex::UniqueLock lock(g_mutex);
+			const Mutex::UniqueLock lock(g_fiberMutex);
 			pendingJobs = g_fiberMap.size();
 		}
 		if(pendingJobs == 0){
@@ -190,7 +215,7 @@ void JobDispatcher::doModal(){
 	for(;;){
 		reallyPumpJobs();
 
-		Mutex::UniqueLock lock(g_mutex);
+		Mutex::UniqueLock lock(g_fiberMutex);
 		if(!atomicLoad(g_running, ATOMIC_CONSUME) && g_fiberMap.empty()){
 			break;
 		}
@@ -215,8 +240,10 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
 		category = job;
 	}
 
-	const Mutex::UniqueLock lock(g_mutex);
-	g_fiberMap[category].queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(pred), STD_MOVE(withdrawn)));
+	const Mutex::UniqueLock lock(g_fiberMutex);
+	AUTO_REF(queue, g_fiberMap[category].queue);
+	queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(pred), STD_MOVE(withdrawn)));
+	g_newJob.signal();
 }
 void JobDispatcher::yield(boost::function<bool ()> pred){
 	PROFILE_ME;

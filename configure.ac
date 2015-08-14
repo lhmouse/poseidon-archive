@@ -6,7 +6,6 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 
-AC_CHECK_LIB([tcmalloc], [main], [], [exit -2;])
 AC_CHECK_LIB([dl], [main], [], [exit -2;])
 AC_CHECK_LIB([ssl], [main], [], [exit -2;])
 AC_CHECK_LIB([mysqlclient], [main], [], [exit -2;])
