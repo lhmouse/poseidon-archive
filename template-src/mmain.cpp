@@ -637,6 +637,7 @@ MODULE_RAII(handles){
 #include "../src/mysql/object_base.hpp"
 #include "../src/singletons/mysql_daemon.hpp"
 #include "../src/singletons/timer_daemon.hpp"
+#include "../src/singletons/job_dispatcher.hpp"
 
 using namespace Poseidon;
 
@@ -662,7 +663,7 @@ MODULE_RAII(handles){
 			}
 		})
 	));
-/*
+
 	enqueueAsyncJob([]{
 		const auto now = getFastMonoClock();
 
@@ -700,5 +701,4 @@ MODULE_RAII(handles){
 		JobDispatcher::yield([=]{ return now + 5000 < getFastMonoClock(); });
 	});
 	LOG_POSEIDON_FATAL("enqueued!");
-*/
 }
