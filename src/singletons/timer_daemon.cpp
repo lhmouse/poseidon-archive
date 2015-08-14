@@ -105,6 +105,7 @@ namespace {
 					}
 					break;
 				}
+				item.reset();
 				g_timers.pop_back();
 			}
 		}
