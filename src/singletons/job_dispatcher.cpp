@@ -52,11 +52,6 @@ namespace {
 		FiberControl()
 			: state(FS_READY)
 		{
-			const Mutex::UniqueLock lock(g_stackPoolMutex);
-			if(g_stackPool.empty()){
-				g_stackPool.resize(10);
-			}
-			stack.splice(stack.end(), g_stackPool, g_stackPool.begin());
 		}
 		FiberControl(const FiberControl &rhs) NOEXCEPT
 			: state(FS_READY)
@@ -64,12 +59,6 @@ namespace {
 			if((rhs.state != FS_READY) || !rhs.queue.empty()){
 				std::abort();
 			}
-
-			const Mutex::UniqueLock lock(g_stackPoolMutex);
-			if(g_stackPool.empty()){
-				g_stackPool.resize(10);
-			}
-			stack.splice(stack.end(), g_stackPool, g_stackPool.begin());
 		}
 		~FiberControl(){
 			const Mutex::UniqueLock lock(g_stackPoolMutex);
@@ -77,55 +66,64 @@ namespace {
 		}
 	};
 
-	FiberControl *g_currentFiber = NULLPTR;
+	__attribute__((__noinline__, __nothrow__))
+	void fiberStackBarrier(FiberControl *fiber) NOEXCEPT {
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Entering fiber ", static_cast<void *>(fiber));
+		try {
+			fiber->queue.front().job->perform();
+		} catch(std::exception &e){
+			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+		} catch(...){
+			LOG_POSEIDON_WARNING("Unknown exception thrown");
+		}
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Exited from fiber ", static_cast<void *>(fiber));
+	}
 
-	__attribute__((__noinline__))
-	void scheduleFiber(FiberControl *param) NOEXCEPT {
+	__thread FiberControl *t_currentFiber = NULLPTR;
+
+	void scheduleFiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;
 
-		assert(!param->queue.empty());
+		assert(!fiber->queue.empty());
 
-		if((param->state != FS_READY) && (param->state != FS_YIELDED)){
-			LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(param->state));
+		if((fiber->state != FS_READY) && (fiber->state != FS_YIELDED)){
+			LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(fiber->state));
 			std::abort();
 		}
 
-		AUTO_REF(fiber, g_currentFiber);
-		fiber = param;
-
+		t_currentFiber = fiber;
 		if(setjmp(fiber->outer) == 0){
 			if(fiber->state == FS_YIELDED){
 				fiber->state = FS_RUNNING;
 				std::longjmp(fiber->inner, 1);
 			} else {
 				fiber->state = FS_RUNNING;
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Entering fiber ", static_cast<void *>(fiber));
-				{
-					register void *const sp = fiber->stack.front().end();
-					__asm__(
-#ifdef __x86_64__
-						"movq %%rax, %%rsp \n"
-#else
-						"movl %%eax, %%esp \n"
-#endif
-						: : "a"(sp) :
-					);
+				if(fiber->stack.empty()){
+					const Mutex::UniqueLock lock(g_stackPoolMutex);
+					if(g_stackPool.empty()){
+						g_stackPool.resize(10);
+					}
+					fiber->stack.splice(fiber->stack.end(), g_stackPool, g_stackPool.begin());
 				}
-				try {
-					fiber->queue.front().job->perform();
-				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-				} catch(...){
-					LOG_POSEIDON_WARNING("Unknown exception thrown");
-				}
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Exited from fiber ", static_cast<void *>(fiber));
 
-				fiber->state = FS_READY;
-				std::longjmp(fiber->outer, 1);
+				register FiberControl *reg __asm__("bx");
+				reg = fiber;
+				__asm__(
+#ifdef __x86_64__
+					"movq %%rax, %%rsp \n"
+#else
+					"movl %%eax, %%esp \n"
+#endif
+					: : "a"(reg->stack.front().end())
+					: "memory"
+				);
+				fiberStackBarrier(reg);
+
+				reg->state = FS_READY;
+				std::longjmp(reg->outer, 1);
 			}
 		}
-
-		g_currentFiber = NULLPTR;
+		t_currentFiber = NULLPTR;
 	}
 
 	volatile bool g_running = false;
@@ -185,18 +183,18 @@ void JobDispatcher::stop(){
 
 	AUTO(lastInfoTime, getFastMonoClock());
 	for(;;){
-		std::size_t pendingJobs;
+		std::size_t pendingFibers;
 		{
 			const Mutex::UniqueLock lock(g_fiberMutex);
-			pendingJobs = g_fiberMap.size();
+			pendingFibers = g_fiberMap.size();
 		}
-		if(pendingJobs == 0){
+		if(pendingFibers == 0){
 			break;
 		}
 
 		const AUTO(now, getFastMonoClock());
 		if(lastInfoTime + 500 < now){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pendingJobs, " job queue(s) remaining.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pendingFibers, " fiber(s) remaining.");
 			lastInfoTime = now;
 		}
 
@@ -248,7 +246,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
 void JobDispatcher::yield(boost::function<bool ()> pred){
 	PROFILE_ME;
 
-	AUTO_REF(fiber, g_currentFiber);
+	const AUTO(fiber, t_currentFiber);
 	if(!fiber){
 		DEBUG_THROW(Exception, sslit("No current fiber"));
 	}

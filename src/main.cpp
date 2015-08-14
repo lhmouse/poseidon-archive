@@ -23,6 +23,7 @@ namespace {
 	void sigTermProc(int){
 		LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");
 		EpollDaemon::stop();
+		TimerDaemon::stop();
 		JobDispatcher::quitModal();
 	}
 
