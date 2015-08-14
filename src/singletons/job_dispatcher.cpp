@@ -38,14 +38,11 @@ namespace {
 
 	typedef boost::array<char, 0x100000> StackStorage;
 
-	Mutex g_stackPoolMutex;
-	std::list<StackStorage> g_stackPool;
-
 	struct FiberControl {
 		std::deque<JobElement> queue;
 
 		FiberState state;
-		std::list<StackStorage> stack;
+		boost::scoped_ptr<StackStorage> stack;
 		std::jmp_buf outer;
 		std::jmp_buf inner;
 
@@ -59,10 +56,6 @@ namespace {
 			if((rhs.state != FS_READY) || !rhs.queue.empty()){
 				std::abort();
 			}
-		}
-		~FiberControl(){
-			const Mutex::UniqueLock lock(g_stackPoolMutex);
-			g_stackPool.splice(g_stackPool.end(), stack);
 		}
 	};
 
@@ -98,12 +91,8 @@ namespace {
 				std::longjmp(fiber->inner, 1);
 			} else {
 				fiber->state = FS_RUNNING;
-				if(fiber->stack.empty()){
-					const Mutex::UniqueLock lock(g_stackPoolMutex);
-					if(g_stackPool.empty()){
-						g_stackPool.resize(10);
-					}
-					fiber->stack.splice(fiber->stack.end(), g_stackPool, g_stackPool.begin());
+				if(!fiber->stack){
+					fiber->stack.reset(new StackStorage);
 				}
 
 				register FiberControl *reg __asm__("bx");
@@ -114,7 +103,7 @@ namespace {
 #else
 					"movl %%eax, %%esp \n"
 #endif
-					: : "a"(reg->stack.front().end())
+					: : "a"(reg->stack->end())
 					: "memory"
 				);
 				fiberStackBarrier(reg);
@@ -154,12 +143,17 @@ namespace {
 				if(elem.withdrawn && *elem.withdrawn){
 					LOG_POSEIDON_DEBUG("Job is withdrawn");
 					done = true;
-				} else if(elem.pred && !elem.pred()){
-					LOG_POSEIDON_TRACE("Job is not ready to be scheduled");
-					done = false;
 				} else {
-					scheduleFiber(&it->second);
-					done = (it->second.state == FS_READY);
+					busy = true;
+
+					if(!elem.pred || elem.pred()){
+						boost::function<bool ()>().swap(elem.pred);
+
+						scheduleFiber(&it->second);
+						done = (it->second.state == FS_READY);
+					} else {
+						done = false;
+					}
 				}
 
 				lock.lock();
