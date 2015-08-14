@@ -4,6 +4,7 @@
 #include "../precompiled.hpp"
 #include "epoll_daemon.hpp"
 #include "main_config.hpp"
+#include "job_dispatcher.hpp"
 #include "../thread.hpp"
 #include "../epoll.hpp"
 #include "../log.hpp"
@@ -61,13 +62,11 @@ namespace {
 
 	void daemonLoop(){
 		boost::uint64_t epollTimeout = 0;
-		bool running, busy;
-		do {
-			running = atomicLoad(g_running, ATOMIC_CONSUME);
-			busy = false;
+		for(;;){
+			bool busy = false;
 
 			try {
-				if(running){
+				if(JobDispatcher::isRunning()){
 					if(pollServers() > 0){
 						++busy;
 					}
@@ -96,7 +95,11 @@ namespace {
 			} catch(...){
 				LOG_POSEIDON_ERROR("Unknown exception thrown while flush data.");
 			}
-		} while(running || busy);
+
+			if(!busy && !atomicLoad(g_running, ATOMIC_CONSUME)){
+				break;
+			}
+		}
 	}
 
 	void threadProc(){
