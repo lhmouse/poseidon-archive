@@ -95,17 +95,17 @@ namespace {
 					fiber->stack.reset(new StackStorage);
 				}
 
-				register FiberControl *reg;
+				register FiberControl *reg __asm__("bx");
 				__asm__ __volatile__(
 #ifdef __x86_64__
-					"movq %1, %0 \n"
-					"movq %2, %%rsp \n"
+					"movq %%rcx, %%rbx \n"
+					"movq %%rax, %%rsp \n"
 #else
-					"movl %1, %0 \n"
-					"movl %2, %%esp \n"
+					"movl %%ecx, %%ebx \n"
+					"movl %%eax, %%esp \n"
 #endif
-					: "=r"(reg)
-					: "r"(fiber), "r"(fiber->stack->end())
+					: "=b"(reg)
+					: "c"(fiber), "a"(fiber->stack->end())
 					: "sp", "memory"
 				);
 				fiberStackBarrier(reg);
