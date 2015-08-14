@@ -38,25 +38,28 @@ namespace {
 
 	class TimerJob : public JobBase {
 	private:
-		const boost::shared_ptr<const TimerCallback> m_callback;
+		const boost::weak_ptr<TimerItem> m_item;
 		const boost::uint64_t m_now;
-		const boost::uint64_t m_period;
 
 	public:
-		TimerJob(boost::shared_ptr<const TimerCallback> callback,
-			boost::uint64_t now, boost::uint64_t period)
-			: m_callback(STD_MOVE(callback)), m_now(now), m_period(period)
+		TimerJob(boost::weak_ptr<TimerItem> item, boost::uint64_t now)
+			: m_item(STD_MOVE(item)), m_now(now)
 		{
 		}
 
 	public:
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
-			return VAL_INIT;
+			return m_item;
 		}
 		void perform() const OVERRIDE {
 			PROFILE_ME;
 
-			(*m_callback)(m_now, m_period);
+			const AUTO(item, m_item.lock());
+			if(!item){
+				return;
+			}
+
+			(*item->callback)(item, m_now, item->period);
 		}
 	};
 
@@ -85,24 +88,19 @@ namespace {
 	bool pumpOneElement() NOEXCEPT {
 		const boost::uint64_t now = getFastMonoClock();
 
-		boost::shared_ptr<const TimerCallback> callback;
-		boost::uint64_t period = 0;
-		bool isAsync = false;
+		boost::shared_ptr<TimerItem> item;
 		{
 			const Mutex::UniqueLock lock(g_mutex);
 			while(!g_timers.empty() && (now >= g_timers.front().next)){
-				const AUTO(item, g_timers.front().item.lock());
+				item = g_timers.front().item.lock();
 				const AUTO(stamp, g_timers.front().stamp);
 				std::pop_heap(g_timers.begin(), g_timers.end());
 
 				if(item && (stamp == item->stamp)){
-					callback = item->callback;
-					period = item->period;
-					isAsync = item->isAsync;
-					if(period == 0){
+					if(item->period == 0){
 						g_timers.pop_back();
 					} else {
-						g_timers.back().next += period;
+						g_timers.back().next += item->period;
 						std::push_heap(g_timers.begin(), g_timers.end());
 					}
 					break;
@@ -110,17 +108,17 @@ namespace {
 				g_timers.pop_back();
 			}
 		}
-		if(!callback){
+		if(!item){
 			return false;
 		}
 
 		try {
-			if(isAsync){
-				LOG_POSEIDON_TRACE("Dispatching async timer: period = ", period);
-				(*callback)(now, period);
+			if(item->isAsync){
+				LOG_POSEIDON_TRACE("Dispatching async timer");
+				(*item->callback)(item, now, item->period);
 			} else {
-				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: period = ", period);
-				enqueueJob(boost::make_shared<TimerJob>(STD_MOVE(callback), now, period));
+				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching");
+				enqueueJob(boost::make_shared<TimerJob>(item, now));
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());

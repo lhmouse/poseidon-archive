@@ -241,7 +241,7 @@ namespace Cbpp {
 
 		if(!m_keepAliveTimer){
 			m_keepAliveTimer = TimerDaemon::registerTimer(m_keepAliveInterval, m_keepAliveInterval,
-				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<Client>(), _1, _2));
+				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<Client>(), _2, _3));
 		}
 
 		return TcpClientBase::send(STD_MOVE(encoded));

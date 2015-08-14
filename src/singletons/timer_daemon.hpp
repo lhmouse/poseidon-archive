@@ -14,7 +14,7 @@ namespace Poseidon {
 class TimerItem;
 
 typedef boost::function<
-	void (boost::uint64_t now, boost::uint64_t period)
+	void (const boost::shared_ptr<TimerItem> &item, boost::uint64_t now, boost::uint64_t period)
 	> TimerCallback;
 
 struct TimerDaemon {

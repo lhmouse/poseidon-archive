@@ -650,7 +650,7 @@ using namespace Poseidon;
 
 MODULE_RAII(handles){
 	handles.push(TimerDaemon::registerTimer(1000, 0,
-		[](boost::uint64_t, boost::uint64_t){
+		std::bind([]{
 			try {
 				AUTO(obj, boost::make_shared<MySqlObj>());
 				obj->enableAutoSaving();
@@ -660,7 +660,8 @@ MODULE_RAII(handles){
 			} catch(std::exception &e){
 				LOG_POSEIDON_FATAL("Exception: what = ", e.what());
 			}
-		}));
+		})
+	));
 /*
 	enqueueAsyncJob([]{
 		const auto now = getFastMonoClock();
