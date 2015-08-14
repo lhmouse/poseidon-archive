@@ -126,45 +126,34 @@ namespace {
 	void reallyPumpJobs() NOEXCEPT {
 		PROFILE_ME;
 
-		bool busy;
-		do {
-			busy = false;
-
-			Mutex::UniqueLock lock(g_fiberMutex);
-			AUTO(it, g_fiberMap.begin());
-			while(it != g_fiberMap.end()){
-				if((it->second.state == FS_READY) && (it->second.queue.empty())){
-					g_fiberMap.erase(it++);
-					continue;
-				}
-				lock.unlock();
-
-				AUTO_REF(elem, it->second.queue.front());
-				bool done;
-
-				if(elem.withdrawn && *elem.withdrawn){
-					LOG_POSEIDON_DEBUG("Job is withdrawn");
-					done = true;
-				} else {
-					busy = true;
-
-					if(!elem.pred || elem.pred()){
-						boost::function<bool ()>().swap(elem.pred);
-
-						scheduleFiber(&it->second);
-						done = (it->second.state == FS_READY);
-					} else {
-						done = false;
-					}
-				}
-
-				lock.lock();
-				if(done){
-					it->second.queue.pop_front();
-				}
-				++it;
+		Mutex::UniqueLock lock(g_fiberMutex);
+		AUTO(it, g_fiberMap.begin());
+		while(it != g_fiberMap.end()){
+			if((it->second.state == FS_READY) && (it->second.queue.empty())){
+				g_fiberMap.erase(it++);
+				continue;
 			}
-		} while(busy);
+			lock.unlock();
+
+			bool done;
+			AUTO_REF(elem, it->second.queue.front());
+			if((it->second.state == FS_READY) && elem.withdrawn && *elem.withdrawn){
+				LOG_POSEIDON_DEBUG("Job is withdrawn");
+				done = true;
+			} else if(elem.pred && !elem.pred()){
+				done = false;
+			} else {
+				boost::function<bool ()>().swap(elem.pred);
+				scheduleFiber(&it->second);
+				done = (it->second.state == FS_READY);
+			}
+
+			lock.lock();
+			if(done){
+				it->second.queue.pop_front();
+			}
+			++it;
+		}
 	}
 }
 

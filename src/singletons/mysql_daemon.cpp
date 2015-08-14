@@ -61,41 +61,14 @@ namespace {
 		virtual ~OperationBase(){
 		}
 
-	protected:
-		// 写入合并。
-		virtual boost::shared_ptr<const MySql::ObjectBase> reallyGetCombinableObject() const = 0;
-		virtual const char *reallyGetTableName() const = 0;
-		virtual void reallyExecute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) = 0;
-
 	public:
-		boost::shared_ptr<const MySql::ObjectBase> getCombinableObject() const {
-			return reallyGetCombinableObject();
+		const boost::shared_ptr<MySql::Promise> &getPromise() const {
+			return m_promise;
 		}
-		const char *getTableName() const {
-			return reallyGetTableName();
-		}
-		void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn){
-			boost::exception_ptr except;
-			try {
-				reallyExecute(query, conn);
-			} catch(MySql::Exception &e){
-				LOG_POSEIDON_WARNING("MySql::Exception thrown: code = ", e.code(), ", what = ", e.what());
-				// except = boost::current_exception();
-				except = boost::copy_exception(e);
-			} catch(std::exception &e){
-				LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-				// except = boost::current_exception();
-				except = boost::copy_exception(e);
-			} catch(...){
-				LOG_POSEIDON_WARNING("Unknown exception thrown");
-				except = boost::current_exception();
-			}
-			if(!except){
-				m_promise->setSuccess();
-			} else {
-				m_promise->setException(except);
-			}
-		}
+
+		virtual boost::shared_ptr<const MySql::ObjectBase> getCombinableObject() const = 0;
+		virtual const char *getTableName() const = 0;
+		virtual void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const = 0;
 	};
 
 	class SaveOperation : public OperationBase {
@@ -112,13 +85,13 @@ namespace {
 		}
 
 	protected:
-		boost::shared_ptr<const MySql::ObjectBase> reallyGetCombinableObject() const OVERRIDE {
+		boost::shared_ptr<const MySql::ObjectBase> getCombinableObject() const OVERRIDE {
 			return m_object;
 		}
-		const char *reallyGetTableName() const OVERRIDE {
+		const char *getTableName() const OVERRIDE {
 			return m_object->getTableName();
 		}
-		void reallyExecute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) OVERRIDE {
+		void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
 			PROFILE_ME;
 
 			m_object->syncGenerateSql(query, m_toReplace);
@@ -141,13 +114,13 @@ namespace {
 		}
 
 	protected:
-		boost::shared_ptr<const MySql::ObjectBase> reallyGetCombinableObject() const OVERRIDE {
+		boost::shared_ptr<const MySql::ObjectBase> getCombinableObject() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *reallyGetTableName() const OVERRIDE {
+		const char *getTableName() const OVERRIDE {
 			return m_object->getTableName();
 		}
-		void reallyExecute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) OVERRIDE {
+		void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
 			PROFILE_ME;
 
 			query = m_query;
@@ -180,13 +153,13 @@ namespace {
 		}
 
 	protected:
-		boost::shared_ptr<const MySql::ObjectBase> reallyGetCombinableObject() const OVERRIDE {
+		boost::shared_ptr<const MySql::ObjectBase> getCombinableObject() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *reallyGetTableName() const OVERRIDE {
+		const char *getTableName() const OVERRIDE {
 			return m_tableHint;
 		}
-		void reallyExecute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) OVERRIDE {
+		void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
 			PROFILE_ME;
 
 			query = m_query;
@@ -201,6 +174,8 @@ namespace {
 			}
 		}
 	};
+
+	const char UNKNOWN_EXCEPTION[] = "Unknown exception";
 
 	class MySqlThread : NONCOPYABLE {
 	private:
@@ -344,6 +319,8 @@ namespace {
 
 				const AUTO(combinableObject, elem->operation->getCombinableObject());
 				if(!combinableObject || (combinableObject->getCombinedWriteStamp() == elem)){
+					boost::exception_ptr except;
+
 					long errCode = 0;
 					char message[4096];
 					std::size_t messageLen = 0;
@@ -355,38 +332,44 @@ namespace {
 						elem->operation->execute(query, conn);
 					} catch(MySql::Exception &e){
 						LOG_POSEIDON_WARNING("MySql::Exception thrown: code = ", e.code(), ", what = ", e.what());
+						// except = boost::current_exception();
+						except = boost::copy_exception(e);
+
 						errCode = e.code();
 						messageLen = std::min(std::strlen(e.what()), sizeof(message));
 						std::memcpy(message, e.what(), messageLen);
 					} catch(std::exception &e){
 						LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+						// except = boost::current_exception();
+						except = boost::copy_exception(e);
+
 						errCode = 99999;
 						messageLen = std::min(std::strlen(e.what()), sizeof(message));
 						std::memcpy(message, e.what(), messageLen);
 					} catch(...){
 						LOG_POSEIDON_WARNING("Unknown exception thrown");
+						except = boost::current_exception();
+
 						errCode = 99999;
-						messageLen = 0;
-						message[0] = 0;
+						messageLen = sizeof(UNKNOWN_EXCEPTION) - 1;
+						std::memcpy(message, UNKNOWN_EXCEPTION, sizeof(UNKNOWN_EXCEPTION));
 					}
 
-					if(errCode != 0){
-						const AUTO(retryCount, elem->retryCount);
+					const AUTO(promise, elem->operation->getPromise());
+					if(except){
+						const AUTO(retryCount, ++elem->retryCount);
 						if(retryCount < g_maxRetryCount){
 							LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 								"Going to retry MySQL operation: retryCount = ", retryCount);
 							elem->dueTime = now + (g_retryInitDelay << retryCount);
-							elem->retryCount += 1;
-							DEBUG_THROW(MySql::Exception, errCode, SharedNts(message, messageLen));
+							boost::rethrow_exception(except);
 						}
 
 						LOG_POSEIDON_ERROR("Max retry count exceeded.");
 						dumpSql(query, errCode, message, messageLen);
-						{
-							const Mutex::UniqueLock lock(m_mutex);
-							m_queue.pop_front();
-						}
-						DEBUG_THROW(Exception, sslit("Max retry count exceeded"));
+						promise->setException(except);
+					} else {
+						promise->setSuccess();
 					}
 				}
 
