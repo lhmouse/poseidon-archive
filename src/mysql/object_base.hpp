@@ -62,8 +62,9 @@ namespace MySql {
 		virtual void syncGenerateSql(std::string &sql, bool toReplace) const = 0;
 		virtual void syncFetch(const boost::shared_ptr<const Connection> &conn) = 0;
 
+		void syncSave(bool toReplace) const;
+		void syncLoad(std::string query);
 		void asyncSave(bool toReplace, bool urgent = false) const;
-		void asyncLoad(std::string query);
 	};
 }
 

@@ -634,10 +634,9 @@ MODULE_RAII(handles){
 #include "../src/log.hpp"
 #include "../src/time.hpp"
 #include "../src/module_raii.hpp"
-
 #include "../src/mysql/object_base.hpp"
 #include "../src/singletons/mysql_daemon.hpp"
-#include "../src/singletons/job_dispatcher.hpp"
+#include "../src/singletons/timer_daemon.hpp"
 
 using namespace Poseidon;
 
@@ -649,18 +648,20 @@ using namespace Poseidon;
 	FIELD_DATETIME(dt)
 #include "../src/mysql/object_generator.hpp"
 
-MODULE_RAII(/* handles */){
-	AUTO(obj, boost::make_shared<MySqlObj>());
-	obj->enableAutoSaving();
-	obj->set_si(999);
-	obj->set_str(std::string("\r\n\'\"\x00\x1A\\", 7));
-	for(int i = 0; i < 10; ++i){
-		obj->set_bi(i);
-	}
-//	obj->asyncLoad("SELECT * FROM `MySqlObj`");
-
-//	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 5000"); }, [=]{ return now + 5000 < getFastMonoClock(); });
-//	enqueueAsyncJob([]{ LOG_POSEIDON_FATAL("delayed 1000"); }, [=]{ return now + 1000 < getFastMonoClock(); });
+MODULE_RAII(handles){
+	handles.push(TimerDaemon::registerTimer(1000, 0,
+		[](boost::uint64_t, boost::uint64_t){
+			try {
+				AUTO(obj, boost::make_shared<MySqlObj>());
+				obj->enableAutoSaving();
+				obj->syncLoad("aaa SELECT * FROM `MySqlObj` LIMIT 1");
+				LOG_POSEIDON_FATAL("Loaded: si = ", obj->get_si(),
+					", str = ", obj->unlockedGet_str(), ", bi = ", obj->get_bi(), ", dt = ", obj->get_dt());
+			} catch(std::exception &e){
+				LOG_POSEIDON_FATAL("Exception: what = ", e.what());
+			}
+		}));
+/*
 	enqueueAsyncJob([]{
 		const auto now = getFastMonoClock();
 
@@ -679,5 +680,24 @@ MODULE_RAII(/* handles */){
 		LOG_POSEIDON_FATAL("--- 5");
 		JobDispatcher::yield([=]{ return now + 5000 < getFastMonoClock(); });
 	});
+	enqueueAsyncJob([]{
+		const auto now = getFastMonoClock();
+
+		LOG_POSEIDON_FATAL("+++ 1");
+		JobDispatcher::yield([=]{ return now + 1000 < getFastMonoClock(); });
+
+		LOG_POSEIDON_FATAL("+++ 2");
+		JobDispatcher::yield([=]{ return now + 2000 < getFastMonoClock(); });
+
+		LOG_POSEIDON_FATAL("+++ 3");
+		JobDispatcher::yield([=]{ return now + 3000 < getFastMonoClock(); });
+
+		LOG_POSEIDON_FATAL("+++ 4");
+		DEBUG_THROW(Exception, sslit("meow"));
+
+		LOG_POSEIDON_FATAL("+++ 5");
+		JobDispatcher::yield([=]{ return now + 5000 < getFastMonoClock(); });
+	});
 	LOG_POSEIDON_FATAL("enqueued!");
+*/
 }

@@ -33,7 +33,7 @@ namespace MySql {
 	bool ObjectBase::invalidate() const NOEXCEPT {
 		try {
 			if(isAutoSavingEnabled()){
-				MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), true, false);
+				asyncSave(true, false);
 				return true;
 			}
 		} catch(std::exception &e){
@@ -59,15 +59,18 @@ namespace MySql {
 		atomicStore(m_combinedWriteStamp, stamp, ATOMIC_RELEASE);
 	}
 
-	void ObjectBase::asyncSave(bool toReplace, bool urgent) const {
-		const AUTO(promise, MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), toReplace, urgent));
+	void ObjectBase::syncSave(bool toReplace) const {
+		const AUTO(promise, MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), toReplace, true));
 		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
 		promise->checkAndRethrow();
 	}
-	void ObjectBase::asyncLoad(std::string query){
+	void ObjectBase::syncLoad(std::string query){
 		const AUTO(promise, MySqlDaemon::enqueueForLoading(virtualSharedFromThis<ObjectBase>(), STD_MOVE(query)));
 		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
 		promise->checkAndRethrow();
+	}
+	void ObjectBase::asyncSave(bool toReplace, bool urgent) const {
+		MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), toReplace, urgent);
 	}
 }
 
