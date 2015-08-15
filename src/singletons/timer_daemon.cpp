@@ -87,6 +87,12 @@ namespace {
 	std::vector<TimerQueueElement> g_timers;
 
 	bool pumpOneElement() NOEXCEPT {
+		PROFILE_ME;
+
+		if(!JobDispatcher::isRunning()){
+			return false;
+		}
+
 		const boost::uint64_t now = getFastMonoClock();
 
 		boost::shared_ptr<TimerItem> item;
@@ -137,7 +143,7 @@ namespace {
 				// noop
 			}
 
-			if(!atomicLoad(g_running, ATOMIC_CONSUME) || !JobDispatcher::isRunning()){
+			if(!atomicLoad(g_running, ATOMIC_CONSUME)){
 				break;
 			}
 
