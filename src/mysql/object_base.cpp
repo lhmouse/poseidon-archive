@@ -63,13 +63,16 @@ namespace MySql {
 		const AUTO(promise, MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), toReplace, true));
 		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
 		promise->checkAndRethrow();
+		enableAutoSaving();
 	}
 	void ObjectBase::syncLoad(std::string query){
 		const AUTO(promise, MySqlDaemon::enqueueForLoading(virtualSharedFromThis<ObjectBase>(), STD_MOVE(query)));
 		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
 		promise->checkAndRethrow();
+		enableAutoSaving();
 	}
 	void ObjectBase::asyncSave(bool toReplace, bool urgent) const {
+		enableAutoSaving();
 		MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), toReplace, urgent);
 	}
 }
