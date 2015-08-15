@@ -1,13 +1,10 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
-#undef _FORTIFY_SOURCE
-#define _FORTIFY_SOURCE	0
-
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include "main_config.hpp"
-#include <csetjmp>
+#include <setjmp.h>
 #include "../job_base.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
@@ -17,6 +14,11 @@
 #include "../condition_variable.hpp"
 #include "../time.hpp"
 #include "../raii.hpp"
+
+extern "C"
+__attribute__((__noreturn__, __nothrow__))
+void unchecked_siglongjmp(::sigjmp_buf, int)
+	__asm__("siglongjmp");
 
 namespace Poseidon {
 
@@ -46,8 +48,8 @@ namespace {
 
 		FiberState state;
 		boost::scoped_ptr<StackStorage> stack;
-		std::jmp_buf outer;
-		std::jmp_buf inner;
+		::sigjmp_buf outer;
+		::sigjmp_buf inner;
 
 		FiberControl()
 			: state(FS_READY)
@@ -88,10 +90,10 @@ namespace {
 		}
 
 		t_currentFiber = fiber;
-		if(setjmp(fiber->outer) == 0){
+		if(sigsetjmp(fiber->outer, true) == 0){
 			if(fiber->state == FS_YIELDED){
 				fiber->state = FS_RUNNING;
-				std::longjmp(fiber->inner, 1);
+				::unchecked_siglongjmp(fiber->inner, 1);
 			} else {
 				fiber->state = FS_RUNNING;
 				if(!fiber->stack){
@@ -114,7 +116,7 @@ namespace {
 				fiberStackBarrier(reg);
 
 				reg->state = FS_READY;
-				std::longjmp(reg->outer, 1);
+				::unchecked_siglongjmp(reg->outer, 1);
 			}
 		}
 		t_currentFiber = NULLPTR;
@@ -254,9 +256,9 @@ void JobDispatcher::yield(boost::function<bool ()> pred){
 	fiber->queue.front().pred.swap(pred);
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Yielding from fiber ", static_cast<void *>(fiber));
-	if(setjmp(fiber->inner) == 0){
+	if(sigsetjmp(fiber->inner, true) == 0){
 		fiber->state = FS_YIELDED;
-		std::longjmp(fiber->outer, 1);
+		::unchecked_siglongjmp(fiber->outer, 1);
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Resumed to fiber ", static_cast<void *>(fiber));
 }
