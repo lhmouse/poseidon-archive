@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "timer_daemon.hpp"
+#include "job_dispatcher.hpp"
 #include "../thread.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
@@ -136,7 +137,7 @@ namespace {
 				// noop
 			}
 
-			if(!atomicLoad(g_running, ATOMIC_CONSUME)){
+			if(!atomicLoad(g_running, ATOMIC_CONSUME) || !JobDispatcher::isRunning()){
 				break;
 			}
 
