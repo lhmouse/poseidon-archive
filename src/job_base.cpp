@@ -18,5 +18,8 @@ void enqueueJob(boost::shared_ptr<const JobBase> job,
 void yieldJob(boost::function<bool ()> pred){
 	JobDispatcher::yield(STD_MOVE(pred));
 }
+void detachYieldableJob() NOEXCEPT {
+	JobDispatcher::detachYieldable();
+}
 
 }

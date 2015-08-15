@@ -23,6 +23,7 @@ struct JobDispatcher {
 	static void enqueue(boost::shared_ptr<const JobBase> job,
 		boost::function<bool ()> pred, boost::shared_ptr<const bool> withdrawn);
 	static void yield(boost::function<bool ()> pred);
+	static void detachYieldable() NOEXCEPT;
 
 	static void pumpAll();
 

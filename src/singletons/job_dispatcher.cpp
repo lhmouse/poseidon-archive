@@ -257,6 +257,11 @@ void JobDispatcher::yield(boost::function<bool ()> pred){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Resumed to fiber ", static_cast<void *>(fiber));
 }
+void JobDispatcher::detachYieldable() NOEXCEPT {
+	PROFILE_ME;
+
+	t_currentFiber = NULLPTR;
+}
 
 void JobDispatcher::pumpAll(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
