@@ -65,6 +65,9 @@ namespace {
 	};
 
 	__attribute__((__noinline__, __nothrow__))
+#ifndef __x86_64__
+	__attribute__((__force_align_arg_pointer__))
+#endif
 	void fiberStackBarrier(FiberControl *fiber) NOEXCEPT {
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Entering fiber ", static_cast<void *>(fiber));
 		try {
