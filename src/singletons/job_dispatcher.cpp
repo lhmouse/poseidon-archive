@@ -1,6 +1,9 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
 
+#undef _FORTIFY_SOURCE
+#define _FORTIFY_SOURCE	0
+
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include "main_config.hpp"
