@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include "main_config.hpp"
-#include <sys/mman.h>
+#include <stdlib.h>
 #include <setjmp.h>
 #include "../job_base.hpp"
 #include "../atomic.hpp"
@@ -52,22 +52,16 @@ namespace {
 		static void *operator new(std::size_t cb){
 			assert(cb == sizeof(StackStorage));
 
-			const AUTO(ptr, ::mmap(NULLPTR, sizeof(StackStorage), PROT_READ | PROT_WRITE,
-				MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN | MAP_STACK, -1, 0));
-			if(ptr == MAP_FAILED){
+			void *ptr;
+			const int errCode = ::posix_memalign(&ptr, 0x1000, cb);
+			if(errCode != 0){
+				LOG_POSEIDON_WARNING("Failed to allocate stack: errCode = ", errCode);
 				throw std::bad_alloc();
 			}
 			return ptr;
 		}
 		static void operator delete(void *ptr) NOEXCEPT {
-			if(!ptr){
-				return;
-			}
-			if(::munmap(ptr, sizeof(StackStorage)) != 0){
-				const int errCode = errno;
-				LOG_POSEIDON_FATAL("Failed to unmap stack, errno was ", errCode);
-				std::abort();
-			}
+			::free(ptr);
 		}
 
 		char bytes[0x100000];
