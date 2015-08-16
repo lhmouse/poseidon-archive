@@ -20,6 +20,13 @@ __attribute__((__noreturn__, __nothrow__))
 void unchecked_siglongjmp(::sigjmp_buf, int)
 	__asm__("siglongjmp");
 
+namespace {
+
+__attribute__((__noinline__))
+void dont_optimize_try_catch_away();
+
+}
+
 namespace Poseidon {
 
 namespace {
@@ -259,9 +266,17 @@ void JobDispatcher::yield(boost::function<bool ()> pred){
 	fiber->queue.front().pred.swap(pred);
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Yielding from fiber ", static_cast<void *>(fiber));
-	if(sigsetjmp(fiber->inner, true) == 0){
-		fiber->state = FS_YIELDED;
-		::unchecked_siglongjmp(fiber->outer, 1);
+	try {
+		::dont_optimize_try_catch_away();
+
+		if(sigsetjmp(fiber->inner, true) == 0){
+			fiber->state = FS_YIELDED;
+			::unchecked_siglongjmp(fiber->outer, 1);
+		}
+
+		::dont_optimize_try_catch_away();
+	} catch(...){
+		std::abort();
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Resumed to fiber ", static_cast<void *>(fiber));
 }
@@ -275,6 +290,14 @@ void JobDispatcher::pumpAll(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
 
 	reallyPumpJobs();
+}
+
+}
+
+namespace {
+
+__attribute__((__noinline__))
+void dont_optimize_try_catch_away(){
 }
 
 }
