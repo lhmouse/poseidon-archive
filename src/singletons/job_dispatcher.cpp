@@ -4,6 +4,7 @@
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include "main_config.hpp"
+#include <sys/mman.h>
 #include <setjmp.h>
 #include "../job_base.hpp"
 #include "../atomic.hpp"
@@ -13,7 +14,6 @@
 #include "../mutex.hpp"
 #include "../condition_variable.hpp"
 #include "../time.hpp"
-#include "../raii.hpp"
 
 extern "C"
 __attribute__((__noreturn__, __nothrow__))
@@ -48,7 +48,33 @@ namespace {
 		}
 	};
 
-	typedef boost::array<char, 0x100000> StackStorage;
+	struct StackStorage FINAL {
+		static void *operator new(std::size_t cb){
+			assert(cb == sizeof(StackStorage));
+
+			const AUTO(ptr, ::mmap(NULLPTR, sizeof(StackStorage), PROT_READ | PROT_WRITE,
+				MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN | MAP_STACK, -1, 0));
+			if(ptr == MAP_FAILED){
+				throw std::bad_alloc();
+			}
+			return ptr;
+		}
+		static void operator delete(void *ptr) NOEXCEPT {
+			if(!ptr){
+				return;
+			}
+			if(::munmap(ptr, sizeof(StackStorage)) != 0){
+				const int errCode = errno;
+				LOG_POSEIDON_FATAL("Failed to unmap stack, errno was ", errCode);
+				std::abort();
+			}
+		}
+
+		char bytes[0x100000];
+	};
+
+	Mutex g_stackPoolMutex;
+	boost::array<boost::scoped_ptr<StackStorage>, 16> g_stackPool;
 
 	struct FiberControl {
 		std::deque<JobElement> queue;
@@ -67,6 +93,17 @@ namespace {
 		{
 			if((rhs.state != FS_READY) || !rhs.queue.empty()){
 				std::abort();
+			}
+		}
+		~FiberControl(){
+			if(stack){
+				const Mutex::UniqueLock lock(g_stackPoolMutex);
+				for(AUTO(it, g_stackPool.begin()); it != g_stackPool.end(); ++it){
+					if(!*it){
+						stack.swap(*it);
+						break;
+					}
+				}
 			}
 		}
 	};
@@ -107,7 +144,16 @@ namespace {
 			} else {
 				fiber->state = FS_RUNNING;
 				if(!fiber->stack){
+					const Mutex::UniqueLock lock(g_stackPoolMutex);
+					for(AUTO(it, g_stackPool.begin()); it != g_stackPool.end(); ++it){
+						if(*it){
+							fiber->stack.swap(*it);
+							goto _allocated;
+						}
+					}
 					fiber->stack.reset(new StackStorage);
+				_allocated:
+					;
 				}
 
 				register FiberControl *reg __asm__("bx");
@@ -120,7 +166,7 @@ namespace {
 					"movl %%eax, %%esp \n"
 #endif
 					: "=b"(reg)
-					: "c"(fiber), "a"(fiber->stack->end())
+					: "c"(fiber), "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
 					: "sp", "memory"
 				);
 				fiberStackBarrier(reg);
