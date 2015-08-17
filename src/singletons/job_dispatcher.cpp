@@ -229,7 +229,7 @@ void JobDispatcher::start(){
 void JobDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
 
-	AUTO(lastInfoTime, getFastMonoClock());
+	boost::uint64_t lastInfoTime = 0;
 	for(;;){
 		std::size_t pendingFibers;
 		{
@@ -273,6 +273,7 @@ bool JobDispatcher::isRunning(){
 }
 void JobDispatcher::quitModal(){
 	atomicStore(g_running, false, ATOMIC_RELEASE);
+	g_newJob.signal();
 }
 
 void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
