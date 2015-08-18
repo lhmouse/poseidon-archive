@@ -131,43 +131,51 @@ namespace {
 		}
 
 		t_currentFiber = fiber;
-		if(sigsetjmp(fiber->outer, true) == 0){
-			if(fiber->state == FS_YIELDED){
-				fiber->state = FS_RUNNING;
-				::unchecked_siglongjmp(fiber->inner, 1);
-			} else {
-				fiber->state = FS_RUNNING;
-				if(!fiber->stack){
-					const Mutex::UniqueLock lock(g_stackPoolMutex);
-					for(AUTO(it, g_stackPool.begin()); it != g_stackPool.end(); ++it){
-						if(*it){
-							fiber->stack.swap(*it);
-							goto _allocated;
+		try {
+			::dont_optimize_try_catch_away();
+
+			if(sigsetjmp(fiber->outer, true) == 0){
+				if(fiber->state == FS_YIELDED){
+					fiber->state = FS_RUNNING;
+					::unchecked_siglongjmp(fiber->inner, 1);
+				} else {
+					fiber->state = FS_RUNNING;
+					if(!fiber->stack){
+						const Mutex::UniqueLock lock(g_stackPoolMutex);
+						for(AUTO(it, g_stackPool.begin()); it != g_stackPool.end(); ++it){
+							if(*it){
+								fiber->stack.swap(*it);
+								goto _allocated;
+							}
 						}
+						fiber->stack.reset(new StackStorage);
+					_allocated:
+						;
 					}
-					fiber->stack.reset(new StackStorage);
-				_allocated:
-					;
-				}
 
-				register FiberControl *reg __asm__("bx");
-				__asm__ __volatile__(
+					register FiberControl *reg __asm__("bx");
+					__asm__ __volatile__(
 #ifdef __x86_64__
-					"movq %%rcx, %%rbx \n"
-					"movq %%rax, %%rsp \n"
+						"movq %%rcx, %%rbx \n"
+						"movq %%rax, %%rsp \n"
 #else
-					"movl %%ecx, %%ebx \n"
-					"movl %%eax, %%esp \n"
+						"movl %%ecx, %%ebx \n"
+						"movl %%eax, %%esp \n"
 #endif
-					: "=b"(reg)
-					: "c"(fiber), "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
-					: "sp", "memory"
-				);
-				fiberStackBarrier(reg);
+						: "=b"(reg)
+						: "c"(fiber), "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
+						: "sp", "memory"
+					);
+					fiberStackBarrier(reg);
 
-				reg->state = FS_READY;
-				::unchecked_siglongjmp(reg->outer, 1);
+					reg->state = FS_READY;
+					::unchecked_siglongjmp(reg->outer, 1);
+				}
 			}
+
+			::dont_optimize_try_catch_away();
+		} catch(...){
+			std::abort();
 		}
 		t_currentFiber = NULLPTR;
 	}
