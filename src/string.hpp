@@ -146,6 +146,10 @@ inline std::string trim(std::string src){
 
 extern bool isValidUtf8String(const std::string &str);
 
+class StreamBuffer;
+
+extern bool getLine(StreamBuffer &buffer, std::string &line);
+
 }
 
 #endif

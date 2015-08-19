@@ -16,8 +16,6 @@ extern int fileGetContentsNoThrow(StreamBuffer &contents, const char *path);
 extern void filePutContents(const char *path, StreamBuffer contents, bool append);
 extern int filePutContentsNoThrow(const char *path, StreamBuffer contents, bool append);
 
-extern bool getLine(StreamBuffer &buffer, std::string &line);
-
 }
 
 #endif

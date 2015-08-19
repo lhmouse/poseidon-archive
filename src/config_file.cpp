@@ -4,6 +4,7 @@
 #include "precompiled.hpp"
 #include "config_file.hpp"
 #include "file.hpp"
+#include "string.hpp"
 #include "log.hpp"
 #include "system_exception.hpp"
 

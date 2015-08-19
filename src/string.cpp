@@ -5,6 +5,7 @@
 #include "string.hpp"
 #include "profiler.hpp"
 #include "log.hpp"
+#include "stream_buffer.hpp"
 #include <iomanip>
 
 namespace Poseidon {
@@ -62,6 +63,26 @@ bool isValidUtf8String(const std::string &str){
 			return false;
 		}
 	}
+	return true;
+}
+
+bool getLine(StreamBuffer &buffer, std::string &line){
+	line.clear();
+	if(buffer.empty()){
+		return false;
+	}
+	do {
+		const int ch = buffer.get();
+		if(ch == '\n'){
+			break;
+		} else if(ch == '\r'){
+			if(buffer.peek() == '\n'){
+				continue;
+			}
+			break;
+		}
+		line.push_back(ch);
+	} while(!buffer.empty());
 	return true;
 }
 

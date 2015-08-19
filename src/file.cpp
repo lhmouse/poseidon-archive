@@ -57,31 +57,11 @@ void filePutContents(const char *path, StreamBuffer contents, bool append){
 }
 int filePutContentsNoThrow(const char *path, StreamBuffer contents, bool append){
 	try {
-		filePutContents(path, contents, append);
+		filePutContents(path, STD_MOVE(contents), append);
 		return 0;
 	} catch(SystemException &e){
 		return e.code();
 	}
-}
-
-bool getLine(StreamBuffer &buffer, std::string &line){
-	line.clear();
-	if(buffer.empty()){
-		return false;
-	}
-	do {
-		const int ch = buffer.get();
-		if(ch == '\n'){
-			break;
-		} else if(ch == '\r'){
-			if(buffer.peek() == '\n'){
-				continue;
-			}
-			break;
-		}
-		line.push_back(ch);
-	} while(!buffer.empty());
-	return true;
 }
 
 }
