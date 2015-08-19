@@ -30,7 +30,7 @@ namespace {
 	volatile unsigned long long g_mask = -1ull;
 
 	// 不要使用 Mutex 对象。如果在其他静态对象的构造函数中输出日志，这个对象可能还没构造。
-	::pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+	::pthread_mutex_t g_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 	__thread char t_tag[5] = "----";
 }
