@@ -48,6 +48,16 @@ namespace Http {
 		virtual void onSyncResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) = 0;
 		virtual void onSyncResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) = 0;
 		virtual void onSyncResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) = 0;
+
+	public:
+		bool sendHeaders(RequestHeaders requestHeaders);
+		bool sendEntity(StreamBuffer data);
+
+		bool send(RequestHeaders requestHeaders, StreamBuffer entity = StreamBuffer());
+
+		bool sendChunkedHeader(RequestHeaders requestHeaders);
+		bool sendChunk(StreamBuffer entity);
+		bool sendChunkedTrailer(OptionalMap headers);
 	};
 }
 

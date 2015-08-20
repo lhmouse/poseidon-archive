@@ -199,6 +199,27 @@ namespace Http {
 
 	void Client::onSyncConnect(){
 	}
+
+	bool Client::sendHeaders(RequestHeaders requestHeaders){
+		return ClientWriter::putRequestHeaders(STD_MOVE(requestHeaders));
+	}
+	bool Client::sendEntity(StreamBuffer data){
+		return ClientWriter::putEntity(STD_MOVE(data));
+	}
+
+	bool Client::send(RequestHeaders requestHeaders, StreamBuffer entity){
+		return ClientWriter::putRequest(STD_MOVE(requestHeaders), STD_MOVE(entity));
+	}
+
+	bool Client::sendChunkedHeader(RequestHeaders requestHeaders){
+		return ClientWriter::putChunkedHeader(STD_MOVE(requestHeaders));
+	}
+	bool Client::sendChunk(StreamBuffer entity){
+		return ClientWriter::putChunk(STD_MOVE(entity));
+	}
+	bool Client::sendChunkedTrailer(OptionalMap headers){
+		return ClientWriter::putChunkedTrailer(STD_MOVE(headers));
+	}
 }
 
 }
