@@ -32,8 +32,7 @@ bool isValidUtf8String(const std::string &str){
 		if((codePoint & 0x80) == 0){
 			continue;
 		}
-		const AUTO(bytes, static_cast<unsigned>(
-			__builtin_clz((~codePoint | 1) & 0xFF)) - (sizeof(unsigned) - sizeof(unsigned char)) * CHAR_BIT);
+		const AUTO(bytes, (unsigned)__builtin_clz((~codePoint | 1) & 0xFF) - (sizeof(unsigned) - 1) * CHAR_BIT);
 		if(bytes - 2 > 2){ // 2, 3, 4
 			LOG_POSEIDON_WARNING("Invalid UTF-8 leading byte: bytes = ", bytes);
 			return false;
