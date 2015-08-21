@@ -49,7 +49,7 @@ public:
 */
 #define MODULE_RAII_PRIORITY(handles_, priority_)	\
 	namespace {	\
-		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_) {	\
+		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_) {	\
 			struct Stub_ : public ::Poseidon::ModuleRaiiBase {	\
 				Stub_()	\
 					: ::Poseidon::ModuleRaiiBase(priority_)	\
@@ -59,7 +59,7 @@ public:
 			} const stub_;	\
 		}	\
 	}	\
-	void TOKEN_CAT3(ModuleRaii_, __LINE__, _Impl_)::Stub_::init(::Poseidon::HandleStack & handles_) const
+	void TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_)::Stub_::init(::Poseidon::HandleStack & handles_) const
 
 #define MODULE_RAII(handles_)	MODULE_RAII_PRIORITY(handles_, 65535)
 
