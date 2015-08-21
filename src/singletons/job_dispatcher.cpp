@@ -273,7 +273,7 @@ void JobDispatcher::doModal(){
 		if(!atomicLoad(g_running, ATOMIC_CONSUME) && g_fiberMap.empty()){
 			break;
 		}
-		g_newJob.timedWait(lock, 100);
+		g_newJob.timedWait(lock, 15);
 	}
 }
 bool JobDispatcher::isRunning(){
