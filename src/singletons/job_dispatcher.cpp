@@ -72,6 +72,7 @@ namespace {
 
 	struct FiberControl {
 		std::deque<JobElement> queue;
+		bool skippedThisRound;
 
 		FiberState state;
 		boost::scoped_ptr<StackStorage> stack;
@@ -79,11 +80,11 @@ namespace {
 		::sigjmp_buf inner;
 
 		FiberControl()
-			: state(FS_READY)
+			: skippedThisRound(false), state(FS_READY)
 		{
 		}
 		FiberControl(const FiberControl &rhs) NOEXCEPT
-			: state(FS_READY)
+			: skippedThisRound(false), state(FS_READY)
 		{
 			if((rhs.state != FS_READY) || !rhs.queue.empty()){
 				std::abort();
@@ -190,41 +191,52 @@ namespace {
 		PROFILE_ME;
 
 		Mutex::UniqueLock lock(g_fiberMutex);
-		for(AUTO(next, g_fiberMap.begin()), it = next; (next != g_fiberMap.end()) && (++next, true); it = next){
-			bool done = true;
-			unsigned count = 0;
-			for(;;){
-				if(it->second.queue.empty()){
-					g_fiberMap.erase(it);
-					break;
-				}
-				if(!done){
-					break;
-				}
-				if(count >= 10){
-					break;
-				}
-				lock.unlock();
 
-				AUTO_REF(elem, it->second.queue.front());
-				if((it->second.state == FS_READY) && elem.withdrawn && *elem.withdrawn){
-					LOG_POSEIDON_DEBUG("Job is withdrawn");
-					done = true;
-				} else if(elem.pred && !elem.pred()){
-					done = false;
-				} else {
-					boost::function<bool ()>().swap(elem.pred);
-					scheduleFiber(&it->second);
-					done = (it->second.state == FS_READY);
-				}
-
-				lock.lock();
-				if(done){
-					it->second.queue.pop_front();
-				}
-				++count;
-			}
+		for(AUTO(it, g_fiberMap.begin()); it != g_fiberMap.end(); ++it){
+			it->second.skippedThisRound = false;
 		}
+
+		bool busy;
+		do {
+			busy = false;
+
+			for(AUTO(next, g_fiberMap.begin()), it = next; (next != g_fiberMap.end()) && (++next, true); it = next){
+				if(it->second.skippedThisRound){
+					continue;
+				}
+				busy = true;
+
+				bool done = true;
+				for(;;){
+					if(it->second.queue.empty()){
+						g_fiberMap.erase(it);
+						break;
+					}
+					if(!done){
+						it->second.skippedThisRound = true;
+						break;
+					}
+					lock.unlock();
+
+					AUTO_REF(elem, it->second.queue.front());
+					if((it->second.state == FS_READY) && elem.withdrawn && *elem.withdrawn){
+						LOG_POSEIDON_DEBUG("Job is withdrawn");
+						done = true;
+					} else if(elem.pred && !elem.pred()){
+						done = false;
+					} else {
+						boost::function<bool ()>().swap(elem.pred);
+						scheduleFiber(&it->second);
+						done = (it->second.state == FS_READY);
+					}
+
+					lock.lock();
+					if(done){
+						it->second.queue.pop_front();
+					}
+				}
+			}
+		} while(busy);
 	}
 }
 
@@ -273,7 +285,7 @@ void JobDispatcher::doModal(){
 		if(!atomicLoad(g_running, ATOMIC_CONSUME) && g_fiberMap.empty()){
 			break;
 		}
-		g_newJob.timedWait(lock, 15);
+		g_newJob.timedWait(lock, 100);
 	}
 }
 bool JobDispatcher::isRunning(){
