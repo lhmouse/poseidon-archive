@@ -153,8 +153,8 @@ struct ValueInitializer {
 }
 
 #ifdef POSEIDON_CXX11
-#	define CV_VALUE_TYPE(expr_)		typename ::std::remove_reference<decltype(expr_)>::type
-#	define VALUE_TYPE(expr_)		decltype(::Poseidon::valueOfHelper(expr_))
+#	define CV_VALUE_TYPE(...)		typename ::std::remove_reference<decltype(__VA_ARGS__)>::type
+#	define VALUE_TYPE(...)			decltype(::Poseidon::valueOfHelper(__VA_ARGS__))
 #	define AUTO(id_, ...)			auto id_ = __VA_ARGS__
 #	define AUTO_REF(id_, ...)		auto &id_ = __VA_ARGS__
 #	define STD_MOVE(expr_)			(::std::move(expr_))
@@ -163,8 +163,8 @@ struct ValueInitializer {
 #	define VAL_INIT					{ }
 #	define NULLPTR					nullptr
 #else
-#	define CV_VALUE_TYPE(expr_)		__typeof__(expr_)
-#	define VALUE_TYPE(expr_)		__typeof__(::Poseidon::valueOfHelper(expr_))
+#	define CV_VALUE_TYPE(...)		__typeof__(__VA_ARGS__)
+#	define VALUE_TYPE(...)			__typeof__(::Poseidon::valueOfHelper(__VA_ARGS__))
 #	define AUTO(id_, ...)			VALUE_TYPE(__VA_ARGS__) id_(__VA_ARGS__)
 #	define AUTO_REF(id_, ...)		CV_VALUE_TYPE(__VA_ARGS__) &id_ = (__VA_ARGS__)
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
