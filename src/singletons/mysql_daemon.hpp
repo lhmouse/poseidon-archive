@@ -8,7 +8,6 @@
 #include <vector>
 #include <deque>
 #include <boost/shared_ptr.hpp>
-#include "../mysql/promise.hpp"
 
 namespace Poseidon {
 
@@ -16,6 +15,8 @@ namespace MySql {
 	class ObjectBase;
 	class Connection;
 }
+
+class JobPromise;
 
 struct MySqlDaemon {
 	struct SnapshotElement {
@@ -35,11 +36,11 @@ struct MySqlDaemon {
 
 	static void waitForAllAsyncOperations();
 
-	static boost::shared_ptr<const MySql::Promise> enqueueForSaving(
+	static boost::shared_ptr<const JobPromise> enqueueForSaving(
 		boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace, bool urgent);
-	static boost::shared_ptr<const MySql::Promise> enqueueForLoading(
+	static boost::shared_ptr<const JobPromise> enqueueForLoading(
 		boost::shared_ptr<MySql::ObjectBase> object, std::string query);
-	static boost::shared_ptr<const MySql::Promise> enqueueForBatchLoading(
+	static boost::shared_ptr<const JobPromise> enqueueForBatchLoading(
 		boost::shared_ptr<std::deque<boost::shared_ptr<MySql::ObjectBase> > > sink,
 		boost::shared_ptr<MySql::ObjectBase> (*factory)(), const char *tableHint, std::string query);
 

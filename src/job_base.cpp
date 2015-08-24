@@ -11,12 +11,12 @@ JobBase::~JobBase(){
 }
 
 void enqueueJob(boost::shared_ptr<const JobBase> job,
-	boost::function<bool ()> pred, boost::shared_ptr<const bool> withdrawn)
+	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
 {
-	JobDispatcher::enqueue(STD_MOVE(job), STD_MOVE(pred), STD_MOVE(withdrawn));
+	JobDispatcher::enqueue(STD_MOVE(job), STD_MOVE(promise), STD_MOVE(withdrawn));
 }
-void yieldJob(boost::function<bool ()> pred){
-	JobDispatcher::yield(STD_MOVE(pred));
+void yieldJob(boost::shared_ptr<const JobPromise> promise){
+	JobDispatcher::yield(STD_MOVE(promise));
 }
 void detachYieldableJob() NOEXCEPT {
 	JobDispatcher::detachYieldable();

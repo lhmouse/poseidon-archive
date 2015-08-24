@@ -62,7 +62,8 @@ pkginclude_HEADERS = \
 	src/module_config.hpp	\
 	src/thread.hpp	\
 	src/mutex.hpp	\
-	src/condition_variable.hpp
+	src/condition_variable.hpp	\
+	src/job_promise.hpp
 
 pkginclude_singletonsdir = $(pkgincludedir)/singletons
 pkginclude_singletons_HEADERS = \
@@ -128,7 +129,6 @@ pkginclude_mysql_HEADERS = \
 	src/mysql/connection.hpp	\
 	src/mysql/object_base.hpp	\
 	src/mysql/exception.hpp	\
-	src/mysql/promise.hpp	\
 	src/mysql/utilities.hpp
 
 bin_PROGRAMS = \
@@ -181,6 +181,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/thread.cpp	\
 	src/mutex.cpp	\
 	src/condition_variable.cpp	\
+	src/job_promise.cpp	\
 	src/singletons/main_config.cpp	\
 	src/singletons/job_dispatcher.cpp	\
 	src/singletons/mysql_daemon.cpp	\
@@ -215,7 +216,6 @@ lib_libposeidon_main_la_SOURCES = \
 	src/websocket/exception.cpp	\
 	src/mysql/object_base.cpp	\
 	src/mysql/exception.cpp	\
-	src/mysql/promise.cpp	\
 	src/mysql/utilities.cpp	\
 	src/mysql/thread_context.cpp	\
 	src/mysql/connection.cpp

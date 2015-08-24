@@ -6,6 +6,7 @@
 #include "exception.hpp"
 #include "../singletons/mysql_daemon.hpp"
 #include "../singletons/job_dispatcher.hpp"
+#include "../job_promise.hpp"
 #include "../atomic.hpp"
 
 namespace Poseidon {
@@ -16,7 +17,7 @@ namespace MySql {
 	{
 		const AUTO(queue, boost::make_shared<std::deque<boost::shared_ptr<ObjectBase> > >());
 		const AUTO(promise, MySqlDaemon::enqueueForBatchLoading(queue, factory, tableHint, STD_MOVE(query)));
-		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
+		JobDispatcher::yield(promise);
 		promise->checkAndRethrow();
 
 		ret.reserve(ret.size() + queue->size());
@@ -61,13 +62,13 @@ namespace MySql {
 
 	void ObjectBase::syncSave(bool toReplace) const {
 		const AUTO(promise, MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), toReplace, true));
-		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
+		JobDispatcher::yield(promise);
 		promise->checkAndRethrow();
 		enableAutoSaving();
 	}
 	void ObjectBase::syncLoad(std::string query){
 		const AUTO(promise, MySqlDaemon::enqueueForLoading(virtualSharedFromThis<ObjectBase>(), STD_MOVE(query)));
-		JobDispatcher::yield(boost::bind(&Promise::isSatisfied, promise));
+		JobDispatcher::yield(promise);
 		promise->checkAndRethrow();
 		enableAutoSaving();
 	}

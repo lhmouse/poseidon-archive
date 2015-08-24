@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 #include "../job_base.hpp"
+#include "../job_promise.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -38,12 +39,12 @@ namespace {
 
 	struct JobElement {
 		boost::shared_ptr<const JobBase> job;
-		boost::function<bool ()> pred;
+		boost::shared_ptr<const JobPromise> promise;
 		boost::shared_ptr<const bool> withdrawn;
 
 		JobElement(boost::shared_ptr<const JobBase> job_,
-			boost::function<bool ()> pred_, boost::shared_ptr<const bool> withdrawn_)
-			: job(STD_MOVE(job_)), pred(STD_MOVE_IDN(pred_)), withdrawn(STD_MOVE(withdrawn_))
+			boost::shared_ptr<const JobPromise> promise_, boost::shared_ptr<const bool> withdrawn_)
+			: job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), withdrawn(STD_MOVE(withdrawn_))
 		{
 		}
 	};
@@ -72,7 +73,6 @@ namespace {
 
 	struct FiberControl {
 		std::deque<JobElement> queue;
-		bool skippedThisRound;
 
 		FiberState state;
 		boost::scoped_ptr<StackStorage> stack;
@@ -80,11 +80,11 @@ namespace {
 		::sigjmp_buf inner;
 
 		FiberControl()
-			: skippedThisRound(false), state(FS_READY)
+			: state(FS_READY)
 		{
 		}
 		FiberControl(const FiberControl &rhs) NOEXCEPT
-			: skippedThisRound(false), state(FS_READY)
+			: state(FS_READY)
 		{
 			if((rhs.state != FS_READY) || !rhs.queue.empty()){
 				std::abort();
@@ -191,41 +191,30 @@ namespace {
 		PROFILE_ME;
 
 		Mutex::UniqueLock lock(g_fiberMutex);
-
-		for(AUTO(it, g_fiberMap.begin()); it != g_fiberMap.end(); ++it){
-			it->second.skippedThisRound = false;
-		}
-
 		bool busy;
 		do {
 			busy = false;
 
 			for(AUTO(next, g_fiberMap.begin()), it = next; (next != g_fiberMap.end()) && (++next, true); it = next){
-				if(it->second.skippedThisRound){
-					continue;
-				}
-				busy = true;
-
-				bool done = true;
 				for(;;){
 					if(it->second.queue.empty()){
 						g_fiberMap.erase(it);
 						break;
 					}
-					if(!done){
-						it->second.skippedThisRound = true;
+					AUTO_REF(elem, it->second.queue.front());
+					if(elem.promise && !elem.promise->isSatisfied()){
 						break;
 					}
 					lock.unlock();
 
-					AUTO_REF(elem, it->second.queue.front());
+					elem.promise.reset();
+					busy = true;
+
+					bool done;
 					if((it->second.state == FS_READY) && elem.withdrawn && *elem.withdrawn){
 						LOG_POSEIDON_DEBUG("Job is withdrawn");
 						done = true;
-					} else if(elem.pred && !elem.pred()){
-						done = false;
 					} else {
-						boost::function<bool ()>().swap(elem.pred);
 						scheduleFiber(&it->second);
 						done = (it->second.state == FS_READY);
 					}
@@ -297,7 +286,7 @@ void JobDispatcher::quitModal(){
 }
 
 void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
-	boost::function<bool ()> pred, boost::shared_ptr<const bool> withdrawn)
+	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
 {
 	PROFILE_ME;
 
@@ -309,10 +298,10 @@ void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
 
 	const Mutex::UniqueLock lock(g_fiberMutex);
 	AUTO_REF(queue, g_fiberMap[category].queue);
-	queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(pred), STD_MOVE(withdrawn)));
+	queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(promise), STD_MOVE(withdrawn)));
 	g_newJob.signal();
 }
-void JobDispatcher::yield(boost::function<bool ()> pred){
+void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 	PROFILE_ME;
 
 	const AUTO(fiber, t_currentFiber);
@@ -324,7 +313,7 @@ void JobDispatcher::yield(boost::function<bool ()> pred){
 		LOG_POSEIDON_FATAL("Not in current fiber?!");
 		std::abort();
 	}
-	fiber->queue.front().pred.swap(pred);
+	fiber->queue.front().promise = STD_MOVE(promise);
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Yielding from fiber ", static_cast<void *>(fiber));
 	try {

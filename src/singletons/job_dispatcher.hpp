@@ -10,6 +10,7 @@
 namespace Poseidon {
 
 class JobBase;
+class JobPromise;
 
 struct JobDispatcher {
 	static void start();
@@ -21,8 +22,8 @@ struct JobDispatcher {
 	static void quitModal();
 
 	static void enqueue(boost::shared_ptr<const JobBase> job,
-		boost::function<bool ()> pred, boost::shared_ptr<const bool> withdrawn);
-	static void yield(boost::function<bool ()> pred);
+		boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn);
+	static void yield(boost::shared_ptr<const JobPromise> promise);
 	static void detachYieldable() NOEXCEPT;
 
 	static void pumpAll();

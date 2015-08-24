@@ -631,6 +631,7 @@ MODULE_RAII(handles){
 
 #include "../src/precompiled.hpp"
 #include "../src/async_job.hpp"
+#include "../src/job_promise.hpp"
 #include "../src/log.hpp"
 #include "../src/time.hpp"
 #include "../src/module_raii.hpp"
@@ -649,6 +650,30 @@ using namespace Poseidon;
 	FIELD_DATETIME(dt)
 #include "../src/mysql/object_generator.hpp"
 
+namespace {
+	class DelayedPromise : public JobPromise {
+	public:
+		static boost::shared_ptr<const DelayedPromise> create(boost::uint64_t delay){
+			// auto ptr = boost::make_shared<DelayedPromise>();
+			boost::shared_ptr<DelayedPromise> ptr(new DelayedPromise);
+			ptr->m_timer = TimerDaemon::registerTimer(delay, 0,
+				std::bind([](boost::weak_ptr<DelayedPromise> weak){
+					auto ptr = weak.lock();
+					if(ptr){
+						ptr->setSuccess();
+					}
+				}, boost::weak_ptr<DelayedPromise>(ptr)));
+			return ptr;
+		}
+
+	private:
+		boost::shared_ptr<const TimerItem> m_timer;
+
+	private:
+		DelayedPromise() = default;
+	};
+}
+
 MODULE_RAII(handles){
 	handles.push(TimerDaemon::registerTimer(1000, 0,
 		std::bind([]{
@@ -665,40 +690,36 @@ MODULE_RAII(handles){
 	));
 
 	enqueueAsyncJob([]{
-		const auto now = getFastMonoClock();
-
 		LOG_POSEIDON_FATAL("--- 1");
-		JobDispatcher::yield([=]{ return now + 1000 < getFastMonoClock(); });
+		JobDispatcher::yield(DelayedPromise::create(1000));
 
 		LOG_POSEIDON_FATAL("--- 2");
-		JobDispatcher::yield([=]{ return now + 2000 < getFastMonoClock(); });
+		JobDispatcher::yield(DelayedPromise::create(2000));
 
 		LOG_POSEIDON_FATAL("--- 3");
-		JobDispatcher::yield([=]{ return now + 3000 < getFastMonoClock(); });
+		JobDispatcher::yield(DelayedPromise::create(3000));
 
 		LOG_POSEIDON_FATAL("--- 4");
 		DEBUG_THROW(Exception, sslit("meow"));
 
 		LOG_POSEIDON_FATAL("--- 5");
-		JobDispatcher::yield([=]{ return now + 5000 < getFastMonoClock(); });
+		JobDispatcher::yield(DelayedPromise::create(5000));
 	});
 	enqueueAsyncJob([]{
-		const auto now = getFastMonoClock();
-
 		LOG_POSEIDON_FATAL("+++ 1");
-		JobDispatcher::yield([=]{ return now + 1000 < getFastMonoClock(); });
+		JobDispatcher::yield(DelayedPromise::create(1000));
 
 		LOG_POSEIDON_FATAL("+++ 2");
-		JobDispatcher::yield([=]{ return now + 2000 < getFastMonoClock(); });
+		JobDispatcher::yield(DelayedPromise::create(2000));
 
 		LOG_POSEIDON_FATAL("+++ 3");
-		JobDispatcher::yield([=]{ return now + 3000 < getFastMonoClock(); });
+		JobDispatcher::yield(DelayedPromise::create(3000));
 
 		LOG_POSEIDON_FATAL("+++ 4");
 		DEBUG_THROW(Exception, sslit("meow"));
 
 		LOG_POSEIDON_FATAL("+++ 5");
-		JobDispatcher::yield([=]{ return now + 5000 < getFastMonoClock(); });
+		JobDispatcher::yield(DelayedPromise::create(5000));
 	});
 	LOG_POSEIDON_FATAL("enqueued!");
 }
