@@ -175,8 +175,6 @@ namespace {
 		}
 	};
 
-	const char UNKNOWN_EXCEPTION[] = "Unknown exception";
-
 	class MySqlThread : NONCOPYABLE {
 	private:
 		struct OperationQueueElement {
@@ -353,8 +351,8 @@ namespace {
 						except = boost::current_exception();
 
 						errCode = 99999;
-						messageLen = sizeof(UNKNOWN_EXCEPTION) - 1;
-						std::memcpy(message, UNKNOWN_EXCEPTION, sizeof(UNKNOWN_EXCEPTION));
+						messageLen = 17;
+						std::memcpy(message, "Unknown exception", 17);
 					}
 
 					const AUTO(promise, elem->operation->getPromise());
