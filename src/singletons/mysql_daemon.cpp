@@ -230,7 +230,7 @@ namespace {
 		MySqlThread()
 			: m_running(false)
 			, m_urgent(false)
-			, m_profileFlushedTime(getHiResMonoClock())
+			, m_profileFlushedTime(0)
 		{
 		}
 
@@ -249,6 +249,8 @@ namespace {
 		void threadProc(){
 			PROFILE_ME;
 			LOG_POSEIDON_INFO("MySQL thread started.");
+
+			m_profileFlushedTime = getHiResMonoClock();
 
 			const MySql::ThreadContext threadContext;
 			boost::shared_ptr<MySql::Connection> conn;
