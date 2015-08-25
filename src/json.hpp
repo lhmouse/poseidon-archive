@@ -67,7 +67,7 @@ public:
 	}
 	template<typename T>
 	JsonElement(T t){
-		set(STD_MOVE(t));
+		set(STD_MOVE_IDN(t));
 	}
 
 public:
@@ -98,13 +98,13 @@ public:
 		m_data = std::string(rhs);
 	}
 	void set(std::string rhs){
-		m_data = std::string(STD_MOVE(rhs));
+		m_data = STD_MOVE_IDN(rhs);
 	}
 	void set(JsonObject rhs){
-		m_data = JsonObject(STD_MOVE(rhs));
+		m_data = STD_MOVE_IDN(rhs);
 	}
 	void set(JsonArray rhs){
-		m_data = JsonArray(STD_MOVE(rhs));
+		m_data = STD_MOVE_IDN(rhs);
 	}
 	void set(JsonElement rhs){
 		m_data.swap(rhs.m_data);
