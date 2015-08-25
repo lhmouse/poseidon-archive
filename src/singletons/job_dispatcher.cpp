@@ -68,7 +68,6 @@ namespace {
 		char bytes[0x100000];
 	};
 
-	Mutex g_stackPoolMutex;
 	boost::array<boost::scoped_ptr<StackStorage>, 16> g_stackPool;
 
 	struct FiberControl {
@@ -88,17 +87,6 @@ namespace {
 		{
 			if((rhs.state != FS_READY) || !rhs.queue.empty()){
 				std::abort();
-			}
-		}
-		~FiberControl(){
-			if(stack){
-				const Mutex::UniqueLock lock(g_stackPoolMutex);
-				for(AUTO(it, g_stackPool.begin()); it != g_stackPool.end(); ++it){
-					if(!*it){
-						stack.swap(*it);
-						break;
-					}
-				}
 			}
 		}
 	};
@@ -142,7 +130,6 @@ namespace {
 				} else {
 					fiber->state = FS_RUNNING;
 					if(!fiber->stack){
-						const Mutex::UniqueLock lock(g_stackPoolMutex);
 						for(AUTO(it, g_stackPool.begin()); it != g_stackPool.end(); ++it){
 							if(*it){
 								fiber->stack.swap(*it);
@@ -198,6 +185,12 @@ namespace {
 			for(AUTO(next, g_fiberMap.begin()), it = next; (next != g_fiberMap.end()) && (++next, true); it = next){
 				for(;;){
 					if(it->second.queue.empty()){
+						for(AUTO(pit, g_stackPool.begin()); pit != g_stackPool.end(); ++pit){
+							if(!*pit){
+								pit->swap(it->second.stack);
+								break;
+							}
+						}
 						g_fiberMap.erase(it);
 						break;
 					}
