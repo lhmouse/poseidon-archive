@@ -31,6 +31,7 @@ class JsonObject;
 class JsonArray;
 
 class JobBase;
+class JobPromise;
 class EventBaseWithoutId;
 
 class Epoll;
