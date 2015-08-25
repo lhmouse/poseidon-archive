@@ -341,7 +341,7 @@ namespace {
 					} catch(std::exception &e){
 						LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 						// except = boost::current_exception();
-						except = boost::copy_exception(e);
+						except = boost::copy_exception(std::runtime_error(e.what()));
 
 						errCode = 99999;
 						messageLen = std::min(std::strlen(e.what()), sizeof(message));
