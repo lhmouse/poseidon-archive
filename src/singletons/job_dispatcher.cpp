@@ -206,7 +206,7 @@ namespace {
 						if(now < elem.enqueuedTime + g_jobTimeout){
 							break;
 						}
-						LOG_POSEIDON_WARNING("Job timed out");
+						LOG_POSEIDON_ERROR("Job timed out");
 					}
 					lock.unlock();
 
