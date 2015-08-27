@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "timer_daemon.hpp"
-#include "job_dispatcher.hpp"
 #include "../thread.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
@@ -88,10 +87,6 @@ namespace {
 
 	bool pumpOneElement() NOEXCEPT {
 		PROFILE_ME;
-
-		if(!JobDispatcher::isRunning()){
-			return false;
-		}
 
 		const boost::uint64_t now = getFastMonoClock();
 

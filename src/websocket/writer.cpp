@@ -67,7 +67,9 @@ namespace WebSocket {
 		boost::uint16_t temp16;
 		storeBe(temp16, statusCode);
 		payload.put(&temp16, 2);
-		payload.transferFrom(additional, 0x7B);
+		char msg[0x7B];
+		unsigned len = additional.get(msg, sizeof(msg));
+		payload.put(msg, len);
 		return putMessage(OP_CLOSE, false, STD_MOVE(payload));
 	}
 }

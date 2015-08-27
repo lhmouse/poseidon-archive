@@ -5,20 +5,108 @@
 #define POSEIDON_STREAM_BUFFER_HPP_
 
 #include "cxx_ver.hpp"
-#include <list>
 #include <string>
-#include <iosfwd>
-#include <iterator>
 #include <utility>
+#include <iterator>
 #include <cstddef>
 
 namespace Poseidon {
 
 class StreamBuffer {
 private:
-	class Chunk;
+	struct Chunk;
 
 public:
+	class ConstChunkEnumerator;
+
+	class ChunkEnumerator {
+		friend ConstChunkEnumerator;
+
+	private:
+		Chunk *m_chunk;
+
+	public:
+		explicit ChunkEnumerator(StreamBuffer &rhs) NOEXCEPT
+			: m_chunk(rhs.m_first)
+		{
+		}
+
+	public:
+		unsigned char *begin() const NOEXCEPT;
+		unsigned char *end() const NOEXCEPT;
+
+		unsigned char *data() const NOEXCEPT {
+			return begin();
+		}
+		unsigned size() const NOEXCEPT {
+			return static_cast<unsigned>(end() - begin());
+		}
+
+	public:
+#ifdef POSEIDON_CXX11
+		explicit operator bool() const NOEXCEPT {
+			return !!m_chunk;
+		}
+#else
+		typedef bool (StreamBuffer::*DummyBool_)() const;
+		operator DummyBool_() const NOEXCEPT {
+			return !!m_chunk ? &StreamBuffer::empty : 0;
+		}
+#endif
+
+		ChunkEnumerator &operator++() NOEXCEPT;
+		ChunkEnumerator operator++(int) NOEXCEPT {
+			AUTO(ret, *this);
+			++*this;
+			return ret;
+		}
+	};
+
+	class ConstChunkEnumerator {
+	private:
+		const Chunk *m_chunk;
+
+	public:
+		explicit ConstChunkEnumerator(const StreamBuffer &rhs) NOEXCEPT
+			: m_chunk(rhs.m_first)
+		{
+		}
+		ConstChunkEnumerator(ChunkEnumerator &rhs) NOEXCEPT
+			: m_chunk(rhs.m_chunk)
+		{
+		}
+
+	public:
+		const unsigned char *begin() const NOEXCEPT;
+		const unsigned char *end() const NOEXCEPT;
+
+		const unsigned char *data() const NOEXCEPT {
+			return begin();
+		}
+		std::size_t size() const NOEXCEPT {
+			return static_cast<std::size_t>(end() - begin());
+		}
+
+	public:
+#ifdef POSEIDON_CXX11
+		explicit operator bool() const NOEXCEPT {
+			return !!m_chunk;
+		}
+#else
+		typedef bool (StreamBuffer::*DummyBool_)() const;
+		operator DummyBool_() const NOEXCEPT {
+			return !!m_chunk ? &StreamBuffer::empty : 0;
+		}
+#endif
+
+		ConstChunkEnumerator &operator++() NOEXCEPT;
+		ConstChunkEnumerator operator++(int) NOEXCEPT {
+			AUTO(ret, *this);
+			++*this;
+			return ret;
+		}
+	};
+
 	class ReadIterator : public std::iterator<std::input_iterator_tag, int> {
 	private:
 		StreamBuffer *m_owner;
@@ -70,121 +158,108 @@ public:
 	};
 
 private:
-	std::list<Chunk> m_chunks;
+	Chunk *m_first;
+	Chunk *m_last;
 	std::size_t m_size;
 
 public:
-	StreamBuffer();
-	StreamBuffer(const void *data, std::size_t size);
-	explicit StreamBuffer(const char *str);
-	explicit StreamBuffer(const std::string &str);
+	CONSTEXPR StreamBuffer() NOEXCEPT
+		: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
+	{
+	}
+
+	StreamBuffer(const void *data, std::size_t bytes);
+	StreamBuffer(const char *str);
+	StreamBuffer(const std::string &str);
 	StreamBuffer(const StreamBuffer &rhs);
 	StreamBuffer &operator=(const StreamBuffer &rhs);
 #ifdef POSEIDON_CXX11
-	StreamBuffer(StreamBuffer &&rhs) noexcept;
-	StreamBuffer &operator=(StreamBuffer &&rhs) noexcept;
+	StreamBuffer(StreamBuffer &&rhs) NOEXCEPT;
+	StreamBuffer &operator=(StreamBuffer &&rhs) NOEXCEPT;
 #endif
 	~StreamBuffer();
 
 public:
-	bool empty() const {
+	bool empty() const NOEXCEPT {
 		return m_size == 0;
 	}
-	std::size_t size() const {
+	std::size_t size() const NOEXCEPT {
 		return m_size;
 	}
-	void clear();
 
-	// 返回头部的一个字节。如果为空返回 -1，无异常抛出。
-	int front() const;
-	// 返回尾部的一个字节。如果为空返回 -1，无异常抛出。
-	int back() const;
+	// 如果为空返回 -1。
+	int front() const NOEXCEPT;
+	int back() const NOEXCEPT;
 
-	int peek() const {
+	void clear() NOEXCEPT;
+
+	int peek() const NOEXCEPT {
 		return front();
 	}
-	// 返回头部的一个字节并删除之。如果为空返回 -1，无异常抛出。
-	int get();
-	// 向末尾追加一个字节。
+	int get() NOEXCEPT;
 	void put(unsigned char by);
-	// put() 的逆操作。如果为空返回 -1，无异常抛出。
-	int unput();
-	// get() 的逆操作。
+	int unput() NOEXCEPT;
 	void unget(unsigned char by);
 
-	// 返回值是 data 中写入的字节数并且不大于 size。
-	std::size_t peek(void *data, std::size_t size) const;
-	std::size_t get(void *data, std::size_t size);
-	std::size_t discard(std::size_t size);
-	// 向末尾追加指定的字节数。
-	void put(const void *data, std::size_t size);
+	std::size_t peek(void *data, std::size_t bytes) const NOEXCEPT;
+	std::size_t get(void *data, std::size_t bytes) NOEXCEPT;
+	std::size_t discard(std::size_t bytes) NOEXCEPT;
+	void put(const void *data, std::size_t bytes);
 	void put(const char *str);
 	void put(const std::string &str);
 
-	void put(StreamBuffer rhs) NOEXCEPT {
+	ConstChunkEnumerator getChunkEnumerator() const NOEXCEPT {
+		return ConstChunkEnumerator(*this);
+	}
+	ChunkEnumerator getChunkEnumerator() NOEXCEPT {
+		return ChunkEnumerator(*this);
+	}
+	ConstChunkEnumerator getConstChunkEnumerator() const NOEXCEPT {
+		return ConstChunkEnumerator(*this);
+	}
+
+	// 拆分成两部分，返回 [0, bytes) 部分，[bytes, -) 部分仍保存于当前对象中。
+	StreamBuffer cutOff(std::size_t bytes);
+	// cutOff() 的逆操作。该函数返回后 src 为空。
+	void splice(StreamBuffer &rhs) NOEXCEPT;
+#ifdef POSEIDON_CXX11
+	void splice(StreamBuffer &&rhs) NOEXCEPT {
 		splice(rhs);
 	}
-
-	void swap(StreamBuffer &rhs) NOEXCEPT;
-
-	// 拆分成两部分，返回 [0, size) 部分，[size, -) 部分仍保存于当前对象中。
-	StreamBuffer cut(std::size_t size);
-	// cut() 的逆操作。该函数返回后 src 为空。
-	void splice(StreamBuffer &src) NOEXCEPT;
-#ifdef POSEIDON_CXX11
-	void splice(StreamBuffer &&src) noexcept {
-		splice(src);
-	}
 #endif
-	std::size_t transferFrom(StreamBuffer &src, std::size_t size){
-		StreamBuffer tmp(src.cut(size));
-		const std::size_t ret = tmp.size();
-		splice(tmp);
-		return ret;
-	}
-	std::size_t transferTo(StreamBuffer &dst, std::size_t size){
-		return dst.transferFrom(*this, size);
+
+	void swap(StreamBuffer &rhs) NOEXCEPT {
+		std::swap(m_first, rhs.m_first);
+		std::swap(m_last, rhs.m_last);
+		std::swap(m_size, rhs.m_size);
 	}
 
-	// 若回调函数返回 false，则遍历终止并且 traverse() 返回 false；若所有数据遍历完毕 traverse() 返回 true。
-	bool traverse(bool (*callback)(void *ctx, const void *, std::size_t), void *ctx) const;
-	bool traverse(bool (*callback)(void *ctx, void *, std::size_t), void *ctx);
-
-	void dump(std::string &str) const;
+	void dump(std::string &str) const {
+		str.resize(size());
+		peek(&str[0], str.size());
+	}
 	std::string dump() const {
 		std::string str;
 		dump(str);
 		return str;
 	}
-	void dump(std::ostream &os) const;
-	void load(const std::string &str);
-	void load(std::istream &is);
 
-	void dumpHex(std::string &str) const;
-	std::string dumpHex() const {
-		std::string str;
-		dumpHex(str);
-		return str;
+public:
+	typedef unsigned char value_type;
+
+	// std::front_insert_iterator
+	void push_front(unsigned char by){
+		unget(by);
 	}
-	void dumpHex(std::ostream &os) const;
+
+	// std::back_insert_iterator
+	void push_back(unsigned char by){
+		put(by);
+	}
 };
 
 inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
 	lhs.swap(rhs);
-}
-
-struct StreamBufferHexDumper {
-	const StreamBuffer &buffer;
-
-	explicit StreamBufferHexDumper(const StreamBuffer &buffer_)
-		: buffer(buffer_)
-	{
-	}
-};
-
-inline std::ostream &operator<<(std::ostream &os, const StreamBufferHexDumper &rhs){
-	rhs.buffer.dumpHex(os);
-	return os;
 }
 
 }

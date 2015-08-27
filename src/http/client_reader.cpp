@@ -36,27 +36,20 @@ namespace Http {
 			const bool expectingNewLine = (m_sizeExpecting == EXPECTING_NEW_LINE);
 
 			if(expectingNewLine){
-				struct Helper {
-					static bool traverseCallback(void *ctx, const void *data, std::size_t size){
-						AUTO_REF(lfOffset, *static_cast<std::size_t *>(ctx));
-
-						const AUTO(begin, static_cast<const char *>(data));
-						const AUTO(pos, static_cast<const char *>(std::memchr(begin, '\n', size)));
-						if(!pos){
-							lfOffset += size;
-							return true;
-						}
-						lfOffset += static_cast<std::size_t>(pos - begin);
-						return false;
-					}
-				};
-
 				std::size_t lfOffset = 0;
-				if(m_queue.traverse(&Helper::traverseCallback, &lfOffset)){
-					// 没找到换行符。
-					break;
+				AUTO(ce, m_queue.getConstChunkEnumerator());
+				while(ce){
+					const AUTO(pos, std::find(ce.begin(), ce.end(), '\n'));
+					if(pos != ce.end()){
+						lfOffset += static_cast<std::size_t>(pos - ce.begin());
+						goto _found;
+					}
+					lfOffset += ce.size();
+					++ce;
 				}
-				// 找到了。
+				// 没找到换行符。
+				break;
+			_found:
 				m_sizeExpecting = lfOffset + 1;
 			} else {
 				if(m_queue.size() < m_sizeExpecting){
@@ -64,7 +57,7 @@ namespace Http {
 				}
 			}
 
-			AUTO(expected, m_queue.cut(m_sizeExpecting));
+			AUTO(expected, m_queue.cutOff(m_sizeExpecting));
 			if(expectingNewLine){
 				expected.unput(); // '\n'
 				if(expected.back() == '\r'){
@@ -187,7 +180,7 @@ namespace Http {
 
 			case S_IDENTITY:
 				temp64 = std::min<boost::uint64_t>(expected.size(), m_contentLength - m_contentOffset);
-				onResponseEntity(m_contentOffset, false, expected.cut(temp64));
+				onResponseEntity(m_contentOffset, false, expected.cutOff(temp64));
 				m_contentOffset += temp64;
 
 				if(m_contentLength == CONTENT_TILL_EOF){
@@ -239,7 +232,7 @@ namespace Http {
 
 			case S_CHUNK_DATA:
 				temp64 = std::min<boost::uint64_t>(expected.size(), m_chunkSize - m_chunkOffset);
-				onResponseEntity(m_contentOffset, true, expected.cut(temp64));
+				onResponseEntity(m_contentOffset, true, expected.cutOff(temp64));
 				m_contentOffset += temp64;
 				m_chunkOffset += temp64;
 

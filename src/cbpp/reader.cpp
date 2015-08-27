@@ -79,7 +79,7 @@ namespace Cbpp {
 
 			case S_DATA_PAYLOAD:
 				temp64 = std::min<boost::uint64_t>(m_queue.size(), m_payloadSize - m_payloadOffset);
-				onDataMessagePayload(m_payloadOffset, m_queue.cut(temp64));
+				onDataMessagePayload(m_payloadOffset, m_queue.cutOff(temp64));
 				m_payloadOffset += temp64;
 
 				if(m_payloadOffset < m_payloadSize){
@@ -95,7 +95,7 @@ namespace Cbpp {
 
 			case S_CONTROL_PAYLOAD:
 				{
-					ControlMessage req(m_queue.cut(m_payloadSize));
+					ControlMessage req(m_queue.cutOff(m_payloadSize));
 					hasNextRequest = onControlMessage(req.controlCode, req.vintParam, STD_MOVE(req.stringParam));
 					m_payloadOffset = m_payloadSize;
 
