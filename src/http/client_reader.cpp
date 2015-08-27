@@ -286,6 +286,13 @@ namespace Http {
 			DEBUG_THROW(BasicException, sslit("Terminating a non-until-EOF HTTP response"));
 		}
 
+		const AUTO(bytesRemaining, m_queue.size());
+		if(bytesRemaining != 0){
+			onResponseEntity(m_contentOffset, false, STD_MOVE(m_queue));
+			m_contentOffset += bytesRemaining;
+			m_queue.clear();
+		}
+
 		const bool ret = onResponseEnd(m_contentOffset, false, STD_MOVE(m_chunkedTrailer));
 
 		m_sizeExpecting = EXPECTING_NEW_LINE;
