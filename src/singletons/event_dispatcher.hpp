@@ -43,7 +43,8 @@ struct EventDispatcher {
 			{
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
-					LOG_POSEIDON_ERROR("Incorrect dynamic event type: id = ", event->id(), ", typeid = ", typeid(*event.get()).name());
+					LOG_POSEIDON_ERROR("Incorrect dynamic event type: id = ", event->id(),
+						", expecting = ", typeid(EventT).name(), ", typeid = ", typeid(*event.get()).name());
 					DEBUG_THROW(Exception, sslit("Incorrect dynamic event type"));
 				}
 				callback(STD_MOVE(derived));
