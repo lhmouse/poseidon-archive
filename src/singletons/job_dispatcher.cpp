@@ -31,6 +31,8 @@ void dont_optimize_try_catch_away();
 namespace Poseidon {
 
 namespace {
+	boost::uint64_t g_jobTimeout	= 60000;
+
 	enum FiberState {
 		FS_READY,
 		FS_RUNNING,
@@ -38,13 +40,16 @@ namespace {
 	};
 
 	struct JobElement {
+		const boost::uint64_t enqueuedTime;
+
 		boost::shared_ptr<const JobBase> job;
 		boost::shared_ptr<const JobPromise> promise;
 		boost::shared_ptr<const bool> withdrawn;
 
 		JobElement(boost::shared_ptr<const JobBase> job_,
 			boost::shared_ptr<const JobPromise> promise_, boost::shared_ptr<const bool> withdrawn_)
-			: job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), withdrawn(STD_MOVE(withdrawn_))
+			: enqueuedTime(getFastMonoClock())
+			, job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), withdrawn(STD_MOVE(withdrawn_))
 		{
 		}
 	};
@@ -177,6 +182,8 @@ namespace {
 	void reallyPumpJobs() NOEXCEPT {
 		PROFILE_ME;
 
+		AUTO(now, getFastMonoClock());
+
 		Mutex::UniqueLock lock(g_fiberMutex);
 		bool busy;
 		do {
@@ -196,7 +203,10 @@ namespace {
 					}
 					AUTO_REF(elem, it->second.queue.front());
 					if(elem.promise && !elem.promise->isSatisfied()){
-						break;
+						if(now < elem.enqueuedTime + g_jobTimeout){
+							break;
+						}
+						LOG_POSEIDON_WARNING("Job timed out");
 					}
 					lock.unlock();
 
@@ -212,6 +222,8 @@ namespace {
 						done = (it->second.state == FS_READY);
 					}
 
+					now = getFastMonoClock();
+
 					lock.lock();
 					if(done){
 						it->second.queue.pop_front();
@@ -225,8 +237,8 @@ namespace {
 void JobDispatcher::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting job dispatcher...");
 
-//	MainConfig::get(g_maxRetryCount, "job_max_retry_count");
-//	LOG_POSEIDON_DEBUG("Max retry count = ", g_maxRetryCount);
+	MainConfig::get(g_jobTimeout, "job_timeout");
+	LOG_POSEIDON_DEBUG("Job timeout = ", g_jobTimeout);
 }
 void JobDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
@@ -306,7 +318,7 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 		LOG_POSEIDON_FATAL("Not in current fiber?!");
 		std::abort();
 	}
-	fiber->queue.front().promise = STD_MOVE(promise);
+	fiber->queue.front().promise = promise;
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Yielding from fiber ", static_cast<void *>(fiber));
 	try {
@@ -322,6 +334,10 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 		std::abort();
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Resumed to fiber ", static_cast<void *>(fiber));
+
+	if(promise){
+		promise->checkAndRethrow();
+	}
 }
 void JobDispatcher::detachYieldable() NOEXCEPT {
 	PROFILE_ME;
