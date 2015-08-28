@@ -15,7 +15,7 @@ struct StreamBuffer::Chunk FINAL {
 		assert(bytes == sizeof(Chunk));
 
 		while(atomicExchange(s_poolLock, true, ATOMIC_ACQ_REL) == true){
-			// 无操作。
+			atomicPause();
 		}
 		const AUTO(head, s_poolHead);
 		if(!head){
@@ -33,7 +33,7 @@ struct StreamBuffer::Chunk FINAL {
 		const AUTO(head, static_cast<Chunk *>(p));
 
 		while(atomicExchange(s_poolLock, true, ATOMIC_ACQ_REL) == true){
-			// 无操作。
+			atomicPause();
 		}
 		head->prev = s_poolHead;
 		s_poolHead = head;
