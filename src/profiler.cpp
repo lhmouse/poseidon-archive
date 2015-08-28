@@ -10,14 +10,27 @@
 namespace Poseidon {
 
 namespace {
-	__thread Profiler *t_topProfiler = 0;
+	__thread Profiler *t_topProfiler = NULLPTR;
 }
 
-void Profiler::flushProfilersInThread(){
+void Profiler::flushProfilersInThread() NOEXCEPT {
 	const AUTO(now, getHiResMonoClock());
 	for(AUTO(cur, t_topProfiler); cur; cur = cur->m_prev){
 		cur->flush(now);
 	}
+}
+
+void *Profiler::beginStackSwitch() NOEXCEPT {
+	const AUTO(top, t_topProfiler);
+	if(top){
+		const AUTO(now, getHiResMonoClock());
+		top->flush(now);
+	}
+	t_topProfiler = NULLPTR;
+	return top;
+}
+void Profiler::endStackSwitch(void *opaque) NOEXCEPT {
+	t_topProfiler = static_cast<Profiler *>(opaque);
 }
 
 Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT

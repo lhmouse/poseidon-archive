@@ -125,6 +125,7 @@ namespace {
 		}
 
 		t_currentFiber = fiber;
+		const AUTO(opaque, Profiler::beginStackSwitch());
 		try {
 			::dont_optimize_try_catch_away();
 
@@ -170,6 +171,7 @@ namespace {
 		} catch(...){
 			std::abort();
 		}
+		Profiler::endStackSwitch(opaque);
 		t_currentFiber = NULLPTR;
 	}
 
@@ -321,6 +323,7 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 	fiber->queue.front().promise = promise;
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Yielding from fiber ", static_cast<void *>(fiber));
+	const AUTO(opaque, Profiler::beginStackSwitch());
 	try {
 		::dont_optimize_try_catch_away();
 
@@ -333,6 +336,7 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 	} catch(...){
 		std::abort();
 	}
+	Profiler::endStackSwitch(opaque);
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Resumed to fiber ", static_cast<void *>(fiber));
 
 	if(promise){
