@@ -40,7 +40,7 @@ struct StreamBuffer::Chunk FINAL {
 		atomicStore(s_poolLock, false, ATOMIC_RELEASE);
 	}
 
-	__attribute__((__destructor__))
+	__attribute__((__destructor__(101)))
 	static void poolDestructor() NOEXCEPT {
 		while(s_poolHead){
 			const AUTO(head, s_poolHead);
