@@ -35,8 +35,8 @@ namespace Http {
 	extern std::string hexEncode(const void *data, std::size_t size, bool upperCase = false);
 	extern std::string hexDecode(const void *data, std::size_t size);
 
-	inline std::string hexEncode(const char *data){
-		return hexEncode(data, std::strlen(data));
+	inline std::string hexEncode(const char *data, bool upperCase = false){
+		return hexEncode(data, std::strlen(data), upperCase);
 	}
 	inline std::string hexDecode(const char *data){
 		return hexDecode(data, std::strlen(data));
