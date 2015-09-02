@@ -18,7 +18,7 @@ public:
 	static ::boost::shared_ptr< ::Poseidon::MySql::ObjectBase> create(){
 		return ::boost::make_shared<MYSQL_OBJECT_NAME>();
 	}
-	static void batchLoad(std::vector<boost::shared_ptr<MYSQL_OBJECT_NAME> > &ret_, ::std::string query_){
+	static void batchLoad(::std::vector< ::boost::shared_ptr<MYSQL_OBJECT_NAME> > &ret_, ::std::string query_){
 		::std::vector<boost::shared_ptr< ::Poseidon::MySql::ObjectBase> > temp_;
 		::Poseidon::MySql::ObjectBase::batchLoad(temp_, &create, TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query_));
 
