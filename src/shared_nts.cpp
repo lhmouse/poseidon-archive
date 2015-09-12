@@ -102,7 +102,6 @@ void SharedNts::assign(const char *str, std::size_t len){
 	}
 }
 
-
 std::istream &operator>>(std::istream &is, SharedNts &rhs){
 	std::string str;
 	if(is >>str){
