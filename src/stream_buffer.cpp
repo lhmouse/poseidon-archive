@@ -123,13 +123,13 @@ StreamBuffer &StreamBuffer::operator=(const StreamBuffer &rhs){
 	return *this;
 }
 #ifdef POSEIDON_CXX11
-StreamBuffer::StreamBuffer(StreamBuffer &&rhs) NOEXCEPT
+StreamBuffer::StreamBuffer(StreamBuffer &&rhs) noexcept
 	: StreamBuffer()
 {
 	swap(rhs);
 }
-StreamBuffer &StreamBuffer::operator=(StreamBuffer &&rhs) NOEXCEPT {
-	StreamBuffer(std::move(rhs)).swap(*this);
+StreamBuffer &StreamBuffer::operator=(StreamBuffer &&rhs) noexcept {
+	rhs.swap(*this);
 	return *this;
 }
 #endif

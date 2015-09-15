@@ -44,7 +44,7 @@ public:
 
 	public:
 #ifdef POSEIDON_CXX11
-		explicit operator bool() const NOEXCEPT {
+		explicit operator bool() const noexcept {
 			return !!m_chunk;
 		}
 #else
@@ -89,7 +89,7 @@ public:
 
 	public:
 #ifdef POSEIDON_CXX11
-		explicit operator bool() const NOEXCEPT {
+		explicit operator bool() const noexcept {
 			return !!m_chunk;
 		}
 #else
@@ -174,8 +174,8 @@ public:
 	StreamBuffer(const StreamBuffer &rhs);
 	StreamBuffer &operator=(const StreamBuffer &rhs);
 #ifdef POSEIDON_CXX11
-	StreamBuffer(StreamBuffer &&rhs) NOEXCEPT;
-	StreamBuffer &operator=(StreamBuffer &&rhs) NOEXCEPT;
+	StreamBuffer(StreamBuffer &&rhs) noexcept;
+	StreamBuffer &operator=(StreamBuffer &&rhs) noexcept;
 #endif
 	~StreamBuffer();
 
@@ -223,7 +223,7 @@ public:
 	// cutOff() 的逆操作。该函数返回后 src 为空。
 	void splice(StreamBuffer &rhs) NOEXCEPT;
 #ifdef POSEIDON_CXX11
-	void splice(StreamBuffer &&rhs) NOEXCEPT {
+	void splice(StreamBuffer &&rhs) noexcept {
 		splice(rhs);
 	}
 #endif
