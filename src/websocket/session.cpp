@@ -135,8 +135,9 @@ namespace WebSocket {
 		}
 	};
 
-	Session::Session(const boost::shared_ptr<Http::Session> &parent)
+	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::uint64_t maxRequestLength)
 		: Http::UpgradedSessionBase(parent)
+		, m_maxRequestLength(maxRequestLength ? maxRequestLength : MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
 		, m_sizeTotal(0)
 	{
 	}
@@ -148,8 +149,7 @@ namespace WebSocket {
 
 		try {
 			m_sizeTotal += data.size();
-			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384));
-			if(m_sizeTotal > maxRequestLength){
+			if(m_sizeTotal > m_maxRequestLength){
 				DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
 			}
 

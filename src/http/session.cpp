@@ -157,8 +157,9 @@ namespace Http {
 		}
 	};
 
-	Session::Session(UniqueFile socket)
+	Session::Session(UniqueFile socket, boost::uint64_t maxRequestLength)
 		: TcpSessionBase(STD_MOVE(socket))
+		, m_maxRequestLength(maxRequestLength ? maxRequestLength : MainConfig::get<boost::uint64_t>("http_max_request_length", 16384))
 		, m_sizeTotal(0), m_requestHeaders()
 	{
 	}
@@ -198,8 +199,7 @@ namespace Http {
 
 		try {
 			m_sizeTotal += data.size();
-			const AUTO(maxRequestLength, MainConfig::get<boost::uint64_t>("http_max_request_length", 16384));
-			if(m_sizeTotal > maxRequestLength){
+			if(m_sizeTotal > m_maxRequestLength){
 				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
 			}
 

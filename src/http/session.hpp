@@ -25,6 +25,8 @@ namespace Http {
 		class ErrorJob;
 
 	private:
+		const boost::uint64_t m_maxRequestLength;
+
 		boost::uint64_t m_sizeTotal;
 		RequestHeaders m_requestHeaders;
 		std::string m_transferEncoding;
@@ -34,7 +36,7 @@ namespace Http {
 		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
 
 	public:
-		explicit Session(UniqueFile socket);
+		explicit Session(UniqueFile socket, boost::uint64_t maxRequestLength = 0);
 		~Session();
 
 	protected:

@@ -21,12 +21,14 @@ namespace WebSocket {
 		class ErrorJob;
 
 	private:
+		const boost::uint64_t m_maxRequestLength;
+
 		boost::uint64_t m_sizeTotal;
 		OpCode m_opcode;
 		StreamBuffer m_payload;
 
 	public:
-		explicit Session(const boost::shared_ptr<Http::Session> &parent);
+		explicit Session(const boost::shared_ptr<Http::Session> &parent, boost::uint64_t maxRequestLength = 0);
 		~Session();
 
 	protected:

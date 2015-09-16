@@ -21,12 +21,14 @@ namespace Cbpp {
 		class ErrorJob;
 
 	private:
+		const boost::uint64_t m_maxRequestLength;
+
 		boost::uint64_t m_sizeTotal;
 		unsigned m_messageId;
 		StreamBuffer m_payload;
 
 	public:
-		explicit Session(UniqueFile socket);
+		explicit Session(UniqueFile socket, boost::uint64_t maxRequestLength = 0);
 		~Session();
 
 	protected:
