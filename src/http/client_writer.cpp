@@ -68,7 +68,12 @@ namespace Http {
 		if(entity.empty()){
 			headers.erase("Content-Type");
 			headers.erase("Transfer-Encoding");
-			headers.erase("Content-Length");
+
+			if((requestHeaders.verb == V_POST) || (requestHeaders.verb == V_PUT)){
+				headers.set(sslit("Content-Length"), STR_0);
+			} else {
+				headers.erase("Content-Length");
+			}
 		} else {
 			if(!headers.has("Content-Type")){
 				headers.set(sslit("Content-Type"), "application/x-www-form-urlencoded; charset=utf-8");
