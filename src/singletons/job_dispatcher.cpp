@@ -267,7 +267,7 @@ void JobDispatcher::stop(){
 }
 
 void JobDispatcher::doModal(){
-	LOG_POSEIDON_INFO("Entering modal loop...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
 
 	if(atomicExchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one modal loop is allowed at the same time.");
