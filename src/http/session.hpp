@@ -66,10 +66,6 @@ namespace Http {
 		bool send(StatusCode statusCode, StreamBuffer entity = StreamBuffer(), std::string contentType = "text/plain");
 		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity = StreamBuffer());
 		bool sendDefault(StatusCode statusCode, OptionalMap headers = OptionalMap());
-
-		bool send(StatusCode statusCode, StreamBuffer entity){
-			return send(statusCode, OptionalMap(), STD_MOVE(entity));
-		}
 	};
 }
 
