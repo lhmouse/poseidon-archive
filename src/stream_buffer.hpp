@@ -236,7 +236,9 @@ public:
 
 	void dump(std::string &str) const {
 		str.resize(size());
-		peek(&str[0], str.size());
+		if(!str.empty()){
+			peek(&str[0], str.size());
+		}
 	}
 	std::string dump() const {
 		std::string str;
