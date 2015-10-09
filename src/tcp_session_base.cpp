@@ -31,8 +31,12 @@ TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::shared_ptr<Tcp
 	atomicAdd(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED);
 }
 TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
-	if(atomicSub(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED) == 0){
-		m_session->shutdownWrite();
+	if(atomicSub(m_session->m_delayedShutdownGuardCount, 1, ATOMIC_RELAXED) != 0){
+		return;
+	}
+	if(atomicLoad(m_session->m_shutdownWrite, ATOMIC_CONSUME)){
+	    atomicStore(m_session->m_reallyShutdownWrite, true, ATOMIC_RELEASE);
+	    m_session->notifyEpollWriteable();
 	}
 }
 
@@ -241,10 +245,7 @@ bool TcpSessionBase::shutdownWrite() NOEXCEPT {
 	PROFILE_ME;
 
 	const bool ret = !atomicExchange(m_shutdownWrite, true, ATOMIC_ACQ_REL);
-	if(atomicLoad(m_delayedShutdownGuardCount, ATOMIC_RELAXED) == 0){
-		atomicStore(m_reallyShutdownWrite, true, ATOMIC_RELEASE);
-		notifyEpollWriteable();
-	}
+	const DelayedShutdownGuard guard(virtualSharedFromThis<TcpSessionBase>());
 	return ret;
 }
 void TcpSessionBase::forceShutdown() NOEXCEPT {

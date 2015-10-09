@@ -15,13 +15,27 @@
 namespace Poseidon {
 
 namespace Http {
+	namespace {
+		bool isKeepAliveEnabled(const RequestHeaders &requestHeaders){
+			PROFILE_ME;
+
+			const AUTO_REF(connection, requestHeaders.headers.get("Connection"));
+			if(requestHeaders.version < 10001){
+				return ::strcasecmp(connection.c_str(), "Keep-Alive") == 0;
+			} else {
+				return ::strcasecmp(connection.c_str(), "Close") != 0;
+			}
+		}
+	}
+
 	class Session::SyncJobBase : public JobBase {
 	private:
+		const TcpSessionBase::DelayedShutdownGuard m_guard;
 		const boost::weak_ptr<Session> m_session;
 
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
-			: m_session(session)
+			: m_guard(session), m_session(session)
 		{
 		}
 
@@ -109,25 +123,17 @@ namespace Http {
 
 			session->onSyncRequest(m_requestHeaders, m_entity);
 
-			const AUTO_REF(connection, m_requestHeaders.headers.get("Connection"));
-			bool keepAlive;
-			if(m_requestHeaders.version < 10001){
-				keepAlive = (::strcasecmp(connection.c_str(), "Keep-Alive") == 0);
-			} else {
-				keepAlive = (::strcasecmp(connection.c_str(), "Close") != 0);
-			}
-			if(keepAlive){
+			if(isKeepAliveEnabled(m_requestHeaders)){
 				session->setTimeout(MainConfig::get<boost::uint64_t>("http_keep_alive_timeout", 5000));
 			} else {
-				session->forceShutdown();
+				session->shutdownRead();
+				session->shutdownWrite();
 			}
 		}
 	};
 
 	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
-		const TcpSessionBase::DelayedShutdownGuard m_guard;
-
 		mutable StatusCode m_statusCode;
 		mutable OptionalMap m_headers;
 		mutable SharedNts m_message;
@@ -136,7 +142,6 @@ namespace Http {
 		ErrorJob(const boost::shared_ptr<Session> &session,
 			StatusCode statusCode, OptionalMap headers, SharedNts message)
 			: SyncJobBase(session)
-			, m_guard(session)
 			, m_statusCode(statusCode), m_headers(STD_MOVE(headers)), m_message(STD_MOVE(message))
 		{
 		}
@@ -151,6 +156,7 @@ namespace Http {
 				} else {
 					session->send(m_statusCode, STD_MOVE(m_headers), StreamBuffer(m_message.get()));
 				}
+				session->shutdownWrite();
 			} catch(...){
 				session->forceShutdown();
 			}
@@ -257,6 +263,10 @@ namespace Http {
 			// epoll 线程访问不需要锁。
 			m_upgradedSession = STD_MOVE(upgradedSession);
 			return false;
+		}
+
+		if(!isKeepAliveEnabled(m_requestHeaders)){
+			shutdownRead();
 		}
 
 		enqueueJob(boost::make_shared<RequestJob>(

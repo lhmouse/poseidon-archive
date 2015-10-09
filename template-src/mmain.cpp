@@ -680,7 +680,7 @@ MODULE_RAII(handles){
 			try {
 				AUTO(obj, boost::make_shared<MySqlObj>());
 				obj->enableAutoSaving();
-				obj->syncLoad("aaa SELECT * FROM `MySqlObj` LIMIT 1");
+				obj->syncLoad("SELECT * FROM `MySqlObj` LIMIT 1");
 				LOG_POSEIDON_FATAL("Loaded: si = ", obj->get_si(),
 					", str = ", obj->unlockedGet_str(), ", bi = ", obj->get_bi(), ", dt = ", obj->get_dt());
 			} catch(std::exception &e){
@@ -688,7 +688,7 @@ MODULE_RAII(handles){
 			}
 		})
 	));
-
+/*
 	enqueueAsyncJob([]{
 		LOG_POSEIDON_FATAL("--- 1");
 		JobDispatcher::yield(DelayedPromise::create(1000));
@@ -722,4 +722,5 @@ MODULE_RAII(handles){
 		JobDispatcher::yield(DelayedPromise::create(5000));
 	});
 	LOG_POSEIDON_FATAL("enqueued!");
+*/
 }

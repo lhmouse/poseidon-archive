@@ -16,12 +16,13 @@ namespace Poseidon {
 namespace WebSocket {
 	class Session::SyncJobBase : public JobBase {
 	private:
+		const TcpSessionBase::DelayedShutdownGuard m_guard;
 		const boost::weak_ptr<Http::Session> m_parent;
 		const boost::weak_ptr<Session> m_session;
 
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
-			: m_parent(session->getWeakParent()), m_session(session)
+			: m_guard(session->getSafeParent()), m_parent(session->getWeakParent()), m_session(session)
 		{
 		}
 
@@ -110,15 +111,12 @@ namespace WebSocket {
 
 	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
-		const TcpSessionBase::DelayedShutdownGuard m_guard;
-
 		mutable StatusCode m_statusCode;
 		mutable StreamBuffer m_additional;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, StreamBuffer additional)
 			: SyncJobBase(session)
-			, m_guard(session->getSafeParent())
 			, m_statusCode(statusCode), m_additional(STD_MOVE(additional))
 		{
 		}

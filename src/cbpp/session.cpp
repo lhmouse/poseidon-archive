@@ -16,11 +16,12 @@ namespace Poseidon {
 namespace Cbpp {
 	class Session::SyncJobBase : public JobBase {
 	private:
+		const TcpSessionBase::DelayedShutdownGuard m_guard;
 		const boost::weak_ptr<Session> m_session;
 
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
-			: m_session(session)
+			: m_guard(session), m_session(session)
 		{
 		}
 
@@ -118,8 +119,6 @@ namespace Cbpp {
 
 	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
-		const TcpSessionBase::DelayedShutdownGuard m_guard;
-
 		mutable boost::uint16_t m_messageId;
 		mutable StatusCode m_statusCode;
 		mutable std::string m_reason;
@@ -128,7 +127,6 @@ namespace Cbpp {
 		ErrorJob(const boost::shared_ptr<Session> &session,
 			boost::uint16_t messageId, StatusCode statusCode, std::string reason)
 			: SyncJobBase(session)
-			, m_guard(session)
 			, m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
 		{
 		}
@@ -139,6 +137,7 @@ namespace Cbpp {
 
 			try {
 				session->sendError(m_messageId, m_statusCode, STD_MOVE(m_reason));
+				session->shutdownWrite();
 			} catch(...){
 				session->forceShutdown();
 			}
