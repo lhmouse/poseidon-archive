@@ -58,10 +58,10 @@ namespace Cbpp {
 		virtual void onSyncConnect();
 
 		virtual void onSyncDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) = 0;
-		virtual void onSyncDataMessagePayload(boost::uint64_t payloadOffset, const StreamBuffer &payload) = 0;
+		virtual void onSyncDataMessagePayload(boost::uint64_t payloadOffset, StreamBuffer payload) = 0;
 		virtual void onSyncDataMessageEnd(boost::uint64_t payloadSize) = 0;
 
-		virtual void onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason);
+		virtual void onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, std::string reason);
 
 	public:
 		bool send(boost::uint16_t messageId, StreamBuffer payload);

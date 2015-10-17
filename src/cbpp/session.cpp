@@ -29,7 +29,7 @@ namespace Cbpp {
 		boost::weak_ptr<const void> getCategory() const FINAL {
 			return m_session;
 		}
-		void perform() const FINAL {
+		void perform() FINAL {
 			PROFILE_ME;
 
 			const AUTO(session, m_session.lock());
@@ -38,7 +38,7 @@ namespace Cbpp {
 			}
 
 			try {
-				perform(session);
+				reallyPerform(session);
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
@@ -62,13 +62,13 @@ namespace Cbpp {
 		}
 
 	protected:
-		virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
+		virtual void reallyPerform(const boost::shared_ptr<Session> &session) = 0;
 	};
 
 	class Session::DataMessageJob : public Session::SyncJobBase {
 	private:
-		const boost::uint16_t m_messageId;
-		const StreamBuffer m_payload;
+		boost::uint16_t m_messageId;
+		StreamBuffer m_payload;
 
 	public:
 		DataMessageJob(const boost::shared_ptr<Session> &session,
@@ -79,11 +79,11 @@ namespace Cbpp {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
 			LOG_POSEIDON_DEBUG("Dispatching message: messageId = ", m_messageId, ", payloadLen = ", m_payload.size());
-			session->onSyncDataMessage(m_messageId, m_payload);
+			session->onSyncDataMessage(m_messageId, STD_MOVE(m_payload));
 
 			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
 			session->setTimeout(keepAliveTimeout);
@@ -92,25 +92,25 @@ namespace Cbpp {
 
 	class Session::ControlMessageJob : public Session::SyncJobBase {
 	private:
-		const ControlCode m_controlCode;
-		const boost::int64_t m_vintParam;
-		const std::string m_stringParam;
+		ControlCode m_controlCode;
+		boost::int64_t m_vintParam;
+		std::string m_stringParam;
 
 	public:
 		ControlMessageJob(const boost::shared_ptr<Session> &session,
 			ControlCode controlCode, boost::int64_t vintParam, std::string stringParam)
 			: SyncJobBase(session)
-			, m_controlCode(controlCode), m_vintParam(vintParam), m_stringParam(stringParam)
+			, m_controlCode(controlCode), m_vintParam(vintParam), m_stringParam(STD_MOVE(stringParam))
 		{
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
 			LOG_POSEIDON_DEBUG("Dispatching control message: controlCode = ", m_controlCode,
 				", vintParam = ", m_vintParam, ", stringParam = ", m_stringParam);
-			session->onSyncControlMessage(m_controlCode, m_vintParam, m_stringParam);
+			session->onSyncControlMessage(m_controlCode, m_vintParam, STD_MOVE(m_stringParam));
 
 			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
 			session->setTimeout(keepAliveTimeout);
@@ -119,9 +119,9 @@ namespace Cbpp {
 
 	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
-		mutable boost::uint16_t m_messageId;
-		mutable StatusCode m_statusCode;
-		mutable std::string m_reason;
+		boost::uint16_t m_messageId;
+		StatusCode m_statusCode;
+		std::string m_reason;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session,
@@ -132,7 +132,7 @@ namespace Cbpp {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
 			try {
@@ -209,7 +209,7 @@ namespace Cbpp {
 		return TcpSessionBase::send(STD_MOVE(encoded));
 	}
 
-	void Session::onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, const std::string &stringParam){
+	void Session::onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
 		PROFILE_ME;
 		LOG_POSEIDON_DEBUG("Recevied control message from ", getRemoteInfo(),
 			", controlCode = ", controlCode, ", vintParam = ", vintParam, ", stringParam = ", stringParam);

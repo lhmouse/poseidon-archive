@@ -30,7 +30,7 @@ namespace WebSocket {
 		boost::weak_ptr<const void> getCategory() const FINAL {
 			return m_parent;
 		}
-		void perform() const FINAL {
+		void perform() FINAL {
 			PROFILE_ME;
 
 			const AUTO(session, m_session.lock());
@@ -39,7 +39,7 @@ namespace WebSocket {
 			}
 
 			try {
-				perform(session);
+				reallyPerform(session);
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"WebSocket::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
@@ -58,13 +58,13 @@ namespace WebSocket {
 		}
 
 	protected:
-		virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
+		virtual void reallyPerform(const boost::shared_ptr<Session> &session) = 0;
 	};
 
 	class Session::DataMessageJob : public Session::SyncJobBase {
 	private:
-		const OpCode m_opcode;
-		const StreamBuffer m_payload;
+		OpCode m_opcode;
+		StreamBuffer m_payload;
 
 	public:
 		DataMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
@@ -74,11 +74,11 @@ namespace WebSocket {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
 			LOG_POSEIDON_DEBUG("Dispatching data message: opcode = ", m_opcode, ", payloadSize = ", m_payload.size());
-			session->onSyncDataMessage(m_opcode, m_payload);
+			session->onSyncDataMessage(m_opcode, STD_MOVE(m_payload));
 
 			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 			session->setTimeout(keepAliveTimeout);
@@ -87,8 +87,8 @@ namespace WebSocket {
 
 	class Session::ControlMessageJob : public Session::SyncJobBase {
 	private:
-		const OpCode m_opcode;
-		const StreamBuffer m_payload;
+		OpCode m_opcode;
+		StreamBuffer m_payload;
 
 	public:
 		ControlMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
@@ -98,11 +98,11 @@ namespace WebSocket {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
 			LOG_POSEIDON_DEBUG("Dispatching control message: opcode = ", m_opcode, ", payloadSize = ", m_payload.size());
-			session->onSyncControlMessage(m_opcode, m_payload);
+			session->onSyncControlMessage(m_opcode, STD_MOVE(m_payload));
 
 			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 			session->setTimeout(keepAliveTimeout);
@@ -111,8 +111,8 @@ namespace WebSocket {
 
 	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
-		mutable StatusCode m_statusCode;
-		mutable StreamBuffer m_additional;
+		StatusCode m_statusCode;
+		StreamBuffer m_additional;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, StreamBuffer additional)
@@ -122,7 +122,7 @@ namespace WebSocket {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
 			try {
@@ -201,7 +201,7 @@ namespace WebSocket {
 		return UpgradedSessionBase::send(STD_MOVE(encoded));
 	}
 
-	void Session::onSyncControlMessage(OpCode opcode, const StreamBuffer &payload){
+	void Session::onSyncControlMessage(OpCode opcode, StreamBuffer payload){
 		PROFILE_ME;
 		LOG_POSEIDON_DEBUG("Control frame, opcode = ", m_opcode);
 
@@ -220,7 +220,7 @@ namespace WebSocket {
 
 		case OP_PING:
 			LOG_POSEIDON_INFO("Received ping frame from ", parent->getRemoteInfo());
-			Writer::putMessage(OP_PONG, false, payload);
+			Writer::putMessage(OP_PONG, false, STD_MOVE(payload));
 			break;
 
 		case OP_PONG:

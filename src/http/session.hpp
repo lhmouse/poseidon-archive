@@ -57,7 +57,7 @@ namespace Http {
 		// 可覆写。
 		virtual boost::shared_ptr<UpgradedSessionBase> predispatchRequest(RequestHeaders &requestHeaders, StreamBuffer &entity);
 
-		virtual void onSyncRequest(const RequestHeaders &requestHeaders, const StreamBuffer &entity) = 0;
+		virtual void onSyncRequest(RequestHeaders requestHeaders, StreamBuffer entity) = 0;
 
 	public:
 		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;

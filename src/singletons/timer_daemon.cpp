@@ -51,7 +51,7 @@ namespace {
 		boost::weak_ptr<const void> getCategory() const OVERRIDE {
 			return m_item;
 		}
-		void perform() const OVERRIDE {
+		void perform() OVERRIDE {
 			PROFILE_ME;
 
 			const AUTO(item, m_item.lock());

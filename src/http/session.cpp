@@ -43,7 +43,7 @@ namespace Http {
 		boost::weak_ptr<const void> getCategory() const FINAL {
 			return m_session;
 		}
-		void perform() const FINAL {
+		void perform() FINAL {
 			PROFILE_ME;
 
 			const AUTO(session, m_session.lock());
@@ -52,7 +52,7 @@ namespace Http {
 			}
 
 			try {
-				perform(session);
+				reallyPerform(session);
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Http::Exception thrown in HTTP servlet: statusCode = ", e.statusCode(), ", what = ", e.what());
@@ -84,7 +84,7 @@ namespace Http {
 		}
 
 	protected:
-		virtual void perform(const boost::shared_ptr<Session> &session) const = 0;
+		virtual void reallyPerform(const boost::shared_ptr<Session> &session) = 0;
 	};
 
 	class Session::ContinueJob : public Session::SyncJobBase {
@@ -95,7 +95,7 @@ namespace Http {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
 			session->sendDefault(ST_CONTINUE);
@@ -104,9 +104,9 @@ namespace Http {
 
 	class Session::RequestJob : public Session::SyncJobBase {
 	private:
-		const RequestHeaders m_requestHeaders;
-		const std::string m_transferEncoding;
-		const StreamBuffer m_entity;
+		RequestHeaders m_requestHeaders;
+		std::string m_transferEncoding;
+		StreamBuffer m_entity;
 
 	public:
 		RequestJob(const boost::shared_ptr<Session> &session,
@@ -118,12 +118,14 @@ namespace Http {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
-			session->onSyncRequest(m_requestHeaders, m_entity);
+			const AUTO(keepAlive, isKeepAliveEnabled(m_requestHeaders));
 
-			if(isKeepAliveEnabled(m_requestHeaders)){
+			session->onSyncRequest(STD_MOVE(m_requestHeaders), STD_MOVE(m_entity));
+
+			if(keepAlive){
 				session->setTimeout(MainConfig::get<boost::uint64_t>("http_keep_alive_timeout", 5000));
 			} else {
 				session->shutdownRead();
@@ -134,9 +136,9 @@ namespace Http {
 
 	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
-		mutable StatusCode m_statusCode;
-		mutable OptionalMap m_headers;
-		mutable SharedNts m_message;
+		StatusCode m_statusCode;
+		OptionalMap m_headers;
+		SharedNts m_message;
 
 	public:
 		ErrorJob(const boost::shared_ptr<Session> &session,
@@ -147,7 +149,7 @@ namespace Http {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Session> &session) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
 			try {

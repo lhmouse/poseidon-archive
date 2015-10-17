@@ -24,14 +24,11 @@ namespace Cbpp {
 		{
 		}
 
-	protected:
-		virtual void perform(const boost::shared_ptr<Client> &client) const = 0;
-
 	private:
 		boost::weak_ptr<const void> getCategory() const FINAL {
 			return m_client;
 		}
-		void perform() const FINAL {
+		void perform() FINAL {
 			PROFILE_ME;
 
 			const AUTO(client, m_client.lock());
@@ -40,7 +37,7 @@ namespace Cbpp {
 			}
 
 			try {
-				perform(client);
+				reallyPerform(client);
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
@@ -58,6 +55,9 @@ namespace Cbpp {
 				throw;
 			}
 		}
+
+	protected:
+		virtual void reallyPerform(const boost::shared_ptr<Client> &client) = 0;
 	};
 
 	class Client::ConnectJob : public Client::SyncJobBase {
@@ -68,7 +68,7 @@ namespace Cbpp {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
 			client->onSyncConnect();
@@ -77,8 +77,8 @@ namespace Cbpp {
 
 	class Client::DataMessageHeaderJob : public Client::SyncJobBase {
 	private:
-		const unsigned m_messageId;
-		const boost::uint64_t m_payloadSize;
+		unsigned m_messageId;
+		boost::uint64_t m_payloadSize;
 
 	public:
 		DataMessageHeaderJob(const boost::shared_ptr<Client> &client, unsigned messageId, boost::uint64_t payloadSize)
@@ -88,7 +88,7 @@ namespace Cbpp {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
 			client->onSyncDataMessageHeader(m_messageId, m_payloadSize);
@@ -97,8 +97,8 @@ namespace Cbpp {
 
 	class Client::DataMessagePayloadJob : public Client::SyncJobBase {
 	public:
-		const boost::uint64_t m_payloadOffset;
-		const StreamBuffer m_payload;
+		boost::uint64_t m_payloadOffset;
+		StreamBuffer m_payload;
 
 	public:
 		DataMessagePayloadJob(const boost::shared_ptr<Client> &client, boost::uint64_t payloadOffset, StreamBuffer payload)
@@ -108,16 +108,16 @@ namespace Cbpp {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncDataMessagePayload(m_payloadOffset, m_payload);
+			client->onSyncDataMessagePayload(m_payloadOffset, STD_MOVE(m_payload));
 		}
 	};
 
 	class Client::DataMessageEndJob : public Client::SyncJobBase {
 	public:
-		const boost::uint64_t m_payloadSize;
+		boost::uint64_t m_payloadSize;
 
 	public:
 		DataMessageEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t payloadSize)
@@ -127,7 +127,7 @@ namespace Cbpp {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
 			client->onSyncDataMessageEnd(m_payloadSize);
@@ -138,9 +138,9 @@ namespace Cbpp {
 
 	class Client::ErrorMessageJob : public Client::SyncJobBase {
 	private:
-		const boost::uint16_t m_messageId;
-		const StatusCode m_statusCode;
-		const std::string m_reason;
+		boost::uint16_t m_messageId;
+		StatusCode m_statusCode;
+		std::string m_reason;
 
 	public:
 		ErrorMessageJob(const boost::shared_ptr<Client> &client, boost::uint16_t messageId, StatusCode statusCode, std::string reason)
@@ -150,10 +150,10 @@ namespace Cbpp {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncErrorMessage(m_messageId, m_statusCode, m_reason);
+			client->onSyncErrorMessage(m_messageId, m_statusCode, STD_MOVE(m_reason));
 
 			client->m_lastPongTime = getFastMonoClock();
 		}
@@ -252,7 +252,7 @@ namespace Cbpp {
 		LOG_POSEIDON_INFO("CBPP client connected: remote = ", getRemoteInfo());
 	}
 
-	void Client::onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, const std::string &reason){
+	void Client::onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
 		PROFILE_ME;
 		LOG_POSEIDON_INFO("Received CBPP error message from server: messageId = ", messageId,
 			", statusCode = ", statusCode, ", reason = ", reason);

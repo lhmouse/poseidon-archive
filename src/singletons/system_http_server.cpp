@@ -66,7 +66,7 @@ namespace {
 			Http::Session::onRequestHeaders(STD_MOVE(requestHeaders), STD_MOVE(transferEncoding), contentLength);
 		}
 
-		void onSyncRequest(const Http::RequestHeaders &requestHeaders, const StreamBuffer & /* entity */) OVERRIDE {
+		void onSyncRequest(Http::RequestHeaders requestHeaders, StreamBuffer /* entity */) OVERRIDE {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", getRemoteInfo());
 

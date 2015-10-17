@@ -21,7 +21,7 @@ struct JobDispatcher {
 	static bool isRunning();
 	static void quitModal();
 
-	static void enqueue(boost::shared_ptr<const JobBase> job,
+	static void enqueue(boost::shared_ptr<JobBase> job,
 		boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn);
 	static void yield(boost::shared_ptr<const JobPromise> promise);
 	static void detachYieldable() NOEXCEPT;

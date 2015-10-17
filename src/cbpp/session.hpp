@@ -46,9 +46,9 @@ namespace Cbpp {
 		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual void onSyncDataMessage(boost::uint16_t messageId, const StreamBuffer &payload) = 0;
+		virtual void onSyncDataMessage(boost::uint16_t messageId, StreamBuffer payload) = 0;
 
-		virtual void onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, const std::string &stringParam);
+		virtual void onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam);
 
 	public:
 		bool send(boost::uint16_t messageId, StreamBuffer payload);

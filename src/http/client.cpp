@@ -19,14 +19,11 @@ namespace Http {
 		{
 		}
 
-	protected:
-		virtual void perform(const boost::shared_ptr<Client> &client) const = 0;
-
 	private:
 		boost::weak_ptr<const void> getCategory() const FINAL {
 			return m_client;
 		}
-		void perform() const FINAL {
+		void perform() FINAL {
 			PROFILE_ME;
 
 			const AUTO(client, m_client.lock());
@@ -35,7 +32,7 @@ namespace Http {
 			}
 
 			try {
-				perform(client);
+				reallyPerform(client);
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 				client->forceShutdown();
@@ -46,6 +43,9 @@ namespace Http {
 				throw;
 			}
 		}
+
+	protected:
+		virtual void reallyPerform(const boost::shared_ptr<Client> &client) = 0;
 	};
 
 	class Client::ConnectJob : public Client::SyncJobBase {
@@ -56,7 +56,7 @@ namespace Http {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
 			client->onSyncConnect();
@@ -65,9 +65,9 @@ namespace Http {
 
 	class Client::ResponseHeadersJob : public Client::SyncJobBase {
 	private:
-		const ResponseHeaders m_responseHeaders;
-		const std::string m_transferEncoding;
-		const boost::uint64_t m_contentLength;
+		ResponseHeaders m_responseHeaders;
+		std::string m_transferEncoding;
+		boost::uint64_t m_contentLength;
 
 	public:
 		ResponseHeadersJob(const boost::shared_ptr<Client> &client,
@@ -78,18 +78,18 @@ namespace Http {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncResponseHeaders(m_responseHeaders, m_transferEncoding, m_contentLength);
+			client->onSyncResponseHeaders(STD_MOVE(m_responseHeaders), STD_MOVE(m_transferEncoding), m_contentLength);
 		}
 	};
 
 	class Client::ResponseEntityJob : public Client::SyncJobBase {
 	private:
-		const boost::uint64_t m_contentOffset;
-		const bool m_isChunked;
-		const StreamBuffer m_entity;
+		boost::uint64_t m_contentOffset;
+		bool m_isChunked;
+		StreamBuffer m_entity;
 
 	public:
 		ResponseEntityJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentOffset, bool isChunked, StreamBuffer entity)
@@ -99,18 +99,18 @@ namespace Http {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncResponseEntity(m_contentOffset, m_isChunked, m_entity);
+			client->onSyncResponseEntity(m_contentOffset, m_isChunked, STD_MOVE(m_entity));
 		}
 	};
 
 	class Client::ResponseEndJob : public Client::SyncJobBase {
 	private:
-		const boost::uint64_t m_contentLength;
-		const bool m_isChunked;
-		const OptionalMap m_headers;
+		boost::uint64_t m_contentLength;
+		bool m_isChunked;
+		OptionalMap m_headers;
 
 	public:
 		ResponseEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentLength, bool isChunked, OptionalMap headers)
@@ -120,10 +120,10 @@ namespace Http {
 		}
 
 	protected:
-		void perform(const boost::shared_ptr<Client> &client) const OVERRIDE {
+		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncResponseEnd(m_contentLength, m_isChunked, m_headers);
+			client->onSyncResponseEnd(m_contentLength, m_isChunked, STD_MOVE(m_headers));
 		}
 	};
 

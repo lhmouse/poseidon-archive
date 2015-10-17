@@ -46,9 +46,9 @@ namespace WebSocket {
 		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual void onSyncDataMessage(OpCode opcode, const StreamBuffer &payload) = 0;
+		virtual void onSyncDataMessage(OpCode opcode, StreamBuffer payload) = 0;
 
-		virtual void onSyncControlMessage(OpCode opcode, const StreamBuffer &payload);
+		virtual void onSyncControlMessage(OpCode opcode, StreamBuffer payload);
 
 	public:
 		bool shutdownRead() NOEXCEPT OVERRIDE {

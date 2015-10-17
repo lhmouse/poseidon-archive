@@ -42,14 +42,12 @@ namespace {
 	struct JobElement {
 		const boost::uint64_t enqueuedTime;
 
-		boost::shared_ptr<const JobBase> job;
+		boost::shared_ptr<JobBase> job;
 		boost::shared_ptr<const JobPromise> promise;
 		boost::shared_ptr<const bool> withdrawn;
 
-		JobElement(boost::shared_ptr<const JobBase> job_,
-			boost::shared_ptr<const JobPromise> promise_, boost::shared_ptr<const bool> withdrawn_)
-			: enqueuedTime(getFastMonoClock())
-			, job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), withdrawn(STD_MOVE(withdrawn_))
+		JobElement(boost::shared_ptr<JobBase> job_, boost::shared_ptr<const JobPromise> promise_, boost::shared_ptr<const bool> withdrawn_)
+			: enqueuedTime(getFastMonoClock()), job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), withdrawn(STD_MOVE(withdrawn_))
 		{
 		}
 	};
@@ -98,7 +96,7 @@ namespace {
 
 	__attribute__((__noinline__, __nothrow__))
 #ifndef __x86_64__
-	__attribute__((__force_align_arg_pointer__))
+		__attribute__((__force_align_arg_pointer__))
 #endif
 	void fiberStackBarrier(FiberControl *fiber) NOEXCEPT {
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Entering fiber ", static_cast<void *>(fiber));
@@ -292,7 +290,7 @@ void JobDispatcher::quitModal(){
 	g_newJob.signal();
 }
 
-void JobDispatcher::enqueue(boost::shared_ptr<const JobBase> job,
+void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job,
 	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
 {
 	PROFILE_ME;
