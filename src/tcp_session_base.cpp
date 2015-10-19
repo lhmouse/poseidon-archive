@@ -244,8 +244,11 @@ bool TcpSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
 bool TcpSessionBase::shutdownWrite() NOEXCEPT {
 	PROFILE_ME;
 
-	const bool ret = !atomicExchange(m_shutdownWrite, true, ATOMIC_ACQ_REL);
-	const DelayedShutdownGuard guard(virtualSharedFromThis<TcpSessionBase>());
+	bool ret = !atomicLoad(m_shutdownWrite, ATOMIC_CONSUME);
+	if(ret){
+		ret = !atomicExchange(m_shutdownWrite, true, ATOMIC_ACQ_REL);
+		const DelayedShutdownGuard guard(virtualSharedFromThis<TcpSessionBase>());
+	}
 	return ret;
 }
 void TcpSessionBase::forceShutdown() NOEXCEPT {
