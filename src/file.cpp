@@ -28,7 +28,7 @@ void fileGetContents(StreamBuffer &contents, const char *path){
 		}
 		temp.put(readBuf, static_cast<std::size_t>(bytesRead));
 	}
-	contents.swap(temp);
+	contents.splice(temp);
 }
 int fileGetContentsNoThrow(StreamBuffer &contents, const char *path){
 	try {
