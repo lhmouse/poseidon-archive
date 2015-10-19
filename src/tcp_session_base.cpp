@@ -234,8 +234,11 @@ bool TcpSessionBase::hasBeenShutdownRead() const NOEXCEPT {
 bool TcpSessionBase::shutdownRead() NOEXCEPT {
 	PROFILE_ME;
 
-	const bool ret = !atomicExchange(m_shutdownRead, true, ATOMIC_ACQ_REL);
-	::shutdown(m_socket.get(), SHUT_RD);
+	bool ret = !atomicLoad(m_shutdownRead, ATOMIC_CONSUME);
+	if(ret){
+		ret = !atomicExchange(m_shutdownRead, true, ATOMIC_ACQ_REL);
+		::shutdown(m_socket.get(), SHUT_RD);
+	}
 	return ret;
 }
 bool TcpSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
