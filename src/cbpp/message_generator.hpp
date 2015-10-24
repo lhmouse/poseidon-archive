@@ -34,7 +34,7 @@ public:
 #define FIELD_VINT(name_)				::boost::int64_t name_;
 #define FIELD_VUINT(name_)				::boost::uint64_t name_;
 #define FIELD_STRING(name_)				::std::string name_;
-#define FIELD_BYTES(name_, size_)		unsigned char name_[size_];
+#define FIELD_BYTES(name_, size_)		::boost::array<unsigned char, size_> name_;
 #define FIELD_ARRAY(name_, fields_)		struct ElementOf ## name_ ## X_ {	\
 											fields_	\
 										};	\
@@ -53,7 +53,7 @@ public:
 #define FIELD_VINT(name_)				+ 1
 #define FIELD_VUINT(name_)				+ 1
 #define FIELD_STRING(name_)				+ 1
-#define FIELD_BYTES(name_, size_)
+#define FIELD_BYTES(name_, size_)		+ 1
 #define FIELD_ARRAY(name_, fields_)
 
 #if (0 MESSAGE_FIELDS) != 0
@@ -86,7 +86,7 @@ public:
 #define FIELD_VINT(name_)				, ::boost::int64_t name_ ## X_
 #define FIELD_VUINT(name_)				, ::boost::uint64_t name_ ## X_
 #define FIELD_STRING(name_)				, ::std::string name_ ## X_
-#define FIELD_BYTES(name_, size_)
+#define FIELD_BYTES(name_, size_),		, const ::boost::array<unsigned char, size_> &name_ ## X_
 #define FIELD_ARRAY(name_, fields_)
 
 	explicit MESSAGE_NAME(STRIP_FIRST(void MESSAGE_FIELDS))
@@ -101,7 +101,7 @@ public:
 #define FIELD_VINT(name_)				, name_(name_ ## X_)
 #define FIELD_VUINT(name_)				, name_(name_ ## X_)
 #define FIELD_STRING(name_)				, name_(STD_MOVE(name_ ## X_))
-#define FIELD_BYTES(name_, size_)		, name_()
+#define FIELD_BYTES(name_, size_)		, name_(name_ ## X_)
 #define FIELD_ARRAY(name_, fields_)		, name_()
 
 		MESSAGE_FIELDS

@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <ostream>
 #include <cstddef>
+#include <boost/array.hpp>
 #include <boost/cstdint.hpp>
 #include "../vint50.hpp"
 #include "../stream_buffer.hpp"
