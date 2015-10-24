@@ -153,6 +153,7 @@ namespace Http {
 			PROFILE_ME;
 
 			try {
+				m_headers.set(sslit("Connection"), "Close");
 				if(m_message[0] == (char)0xFF){
 					session->sendDefault(m_statusCode, STD_MOVE(m_headers));
 				} else {
