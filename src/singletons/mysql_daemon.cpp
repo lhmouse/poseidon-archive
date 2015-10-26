@@ -166,11 +166,15 @@ namespace {
 			LOG_POSEIDON_INFO("MySQL batch load: tableHint = ", m_tableHint, ", query = ", query);
 			conn->executeSql(query);
 
-			while(conn->fetchRow()){
-				AUTO(object, (*m_factory)());
-				object->syncFetch(conn);
-				object->enableAutoSaving();
-				m_container->push_back(STD_MOVE(object));
+			if(m_factory && m_container){
+				while(conn->fetchRow()){
+					AUTO(object, (*m_factory)());
+					object->syncFetch(conn);
+					object->enableAutoSaving();
+					m_container->push_back(STD_MOVE(object));
+				}
+			} else {
+				LOG_POSEIDON_DEBUG("Result discarded.");
 			}
 		}
 	};
@@ -354,6 +358,7 @@ namespace {
 						messageLen = 17;
 						std::memcpy(message, "Unknown exception", 17);
 					}
+					conn->discardResult();
 
 					const AUTO(promise, elem->operation->getPromise());
 					if(except){

@@ -89,15 +89,12 @@ namespace MySql {
 
 		public:
 			void doExecuteSql(const char *sql, std::size_t len){
-				m_result.reset();
-				m_columns.clear();
-				m_row = NULLPTR;
+				doDiscardResult();
 
 				if(::mysql_real_query(m_mysql.get(), sql, len) != 0){
 					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 				}
 
-				m_columns.clear();
 				if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
 					if(::mysql_errno(m_mysql.get()) != 0){
 						DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
@@ -116,6 +113,11 @@ namespace MySql {
 						LOG_POSEIDON_TRACE("MySQL result column: name = ", name, ", index = ", i);
 					}
 				}
+			}
+			void doDiscardResult() NOEXCEPT {
+				m_result.reset();
+				m_columns.clear();
+				m_row = NULLPTR;
 			}
 
 			boost::uint64_t doGetInsertId() const {
@@ -232,6 +234,9 @@ namespace MySql {
 
 	void Connection::executeSql(const char *sql, std::size_t len){
 		static_cast<ConnectionDelegator &>(*this).doExecuteSql(sql, len);
+	}
+	void Connection::discardResult() NOEXCEPT {
+		static_cast<ConnectionDelegator &>(*this).doDiscardResult();
 	}
 
 	boost::uint64_t Connection::getInsertId() const {

@@ -38,6 +38,7 @@ namespace MySql {
 		void executeSql(const std::string &sql){
 			executeSql(sql.data(), sql.size());
 		}
+		void discardResult() NOEXCEPT;
 
 		boost::uint64_t getInsertId() const;
 		bool fetchRow();
