@@ -63,7 +63,7 @@ void JobPromise::checkAndRethrow() const {
 	}
 }
 
-void JobPromise::setSuccess() NOEXCEPT {
+void JobPromise::setSuccess(){
 	const int state = lock();
 	if(state != S_UNSATISFIED){
 		unlock(state);
@@ -72,7 +72,7 @@ void JobPromise::setSuccess() NOEXCEPT {
 	m_except = boost::exception_ptr();
 	unlock(S_SATISFIED);
 }
-void JobPromise::setException(const boost::exception_ptr &except) NOEXCEPT {
+void JobPromise::setException(const boost::exception_ptr &except){
 	assert(except);
 
 	const int state = lock();

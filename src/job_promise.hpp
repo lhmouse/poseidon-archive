@@ -29,8 +29,8 @@ public:
 	bool isSatisfied() const NOEXCEPT;
 	void checkAndRethrow() const;
 
-	void setSuccess() NOEXCEPT;
-	void setException(const boost::exception_ptr &except) NOEXCEPT;
+	void setSuccess();
+	void setException(const boost::exception_ptr &except);
 };
 
 }
