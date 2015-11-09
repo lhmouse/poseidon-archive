@@ -322,7 +322,7 @@ namespace Http {
 		auth += base64Encode(&rawNonce, sizeof(rawNonce));
 		auth += "\",qop-value=\"auth\",algorithm=\"MD5\"";
 
-		headers.set(authName, STD_MOVE(auth));
+		headers.set(SharedNts(authName), STD_MOVE(auth));
 		DEBUG_THROW(Exception, statusCode, STD_MOVE(headers));
 	}
 

@@ -79,18 +79,12 @@ public:
 	bool has(const SharedNts &key){
 		return find(key) != end();
 	}
-	iterator create(const char *key){
-		return create(SharedNts(key));
-	}
 	iterator create(SharedNts key){
 		iterator ret = find(key);
 		if(ret == m_delegator.end()){
 			ret = m_delegator.insert(std::make_pair(STD_MOVE(key), std::string()));
 		}
 		return ret;
-	}
-	std::string &set(const char *key, std::string val){
-		return set(SharedNts(key), STD_MOVE(val));
 	}
 	std::string &set(SharedNts key, std::string val){
 		AUTO_REF(ret, create(STD_MOVE(key))->second);
@@ -127,9 +121,6 @@ public:
 		return m_delegator.count(key);
 	}
 
-	iterator append(const char *key, std::string val){
-		return append(SharedNts(key), STD_MOVE(val));
-	}
 	iterator append(SharedNts key, std::string val){
 		return m_delegator.insert(std::make_pair(STD_MOVE(key), STD_MOVE(val)));
 	}

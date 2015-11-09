@@ -46,8 +46,7 @@ void ConfigFile::load(const char *path){
 			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": Name expected.");
 			DEBUG_THROW(Exception, sslit("Bad config file"));
 		}
-		line[keyEnd + 1] = 0;
-		const char *const key = &line[pos];
+		SharedNts key(line.data() + pos, static_cast<std::size_t>(keyEnd + 1 - pos));
 
 		std::string val;
 		pos = line.find_first_not_of(" \t", equ + 1);
@@ -58,7 +57,7 @@ void ConfigFile::load(const char *path){
 		}
 
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: ", key, " = ", val);
-		contents.append(key, STD_MOVE(val));
+		contents.append(STD_MOVE(key), STD_MOVE(val));
 	}
 	m_contents.swap(contents);
 }
