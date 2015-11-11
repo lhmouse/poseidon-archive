@@ -26,7 +26,7 @@ namespace Http {
 		const unsigned verMajor = responseHeaders.version / 10000, verMinor = responseHeaders.version % 10000;
 		const unsigned statusCode = static_cast<unsigned>(responseHeaders.statusCode);
 		char temp[64];
-		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor,verMinor, statusCode);
+		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor, verMinor, statusCode);
 		data.put(temp, len);
 		data.put(responseHeaders.reason);
 		data.put("\r\n");
@@ -56,7 +56,7 @@ namespace Http {
 		const unsigned verMajor = responseHeaders.version / 10000, verMinor = responseHeaders.version % 10000;
 		const unsigned statusCode = static_cast<unsigned>(responseHeaders.statusCode);
 		char temp[64];
-		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor,verMinor, statusCode);
+		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor, verMinor, statusCode);
 		data.put(temp, len);
 		data.put(responseHeaders.reason);
 		data.put("\r\n");
@@ -129,7 +129,7 @@ namespace Http {
 		const unsigned verMajor = responseHeaders.version / 10000, verMinor = responseHeaders.version % 10000;
 		const unsigned statusCode = static_cast<unsigned>(responseHeaders.statusCode);
 		char temp[64];
-		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor,verMinor, statusCode);
+		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor, verMinor, statusCode);
 		data.put(temp, len);
 		data.put(responseHeaders.reason);
 		data.put("\r\n");

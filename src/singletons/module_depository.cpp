@@ -210,7 +210,7 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 	const AUTO(result, g_moduleMap.insert(ModuleMapElement(module, STD_MOVE(handles))));
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Duplicate module: module = ", static_cast<void *>(module.get()),
-			", handle = ", module->handle(),", realPath = ", realPath, ", baseAddr = ", baseAddr);
+			", handle = ", module->handle(), ", realPath = ", realPath, ", baseAddr = ", baseAddr);
 		DEBUG_THROW(Exception, sslit("Duplicate module"));
 	}
 
