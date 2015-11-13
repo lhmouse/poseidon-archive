@@ -23,7 +23,7 @@ public:
 
 public:
 	void load(const char *file);
-	bool load_no_throw(const char *file);
+	bool load_nothrow(const char *file);
 
 	const std::vector<OptionalMap> &get_raw_data() const {
 		return m_data;

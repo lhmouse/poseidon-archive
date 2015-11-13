@@ -22,7 +22,7 @@ public:
 
 public:
 	void load(const char *path);
-	int load_no_throw(const char *path);
+	int load_nothrow(const char *path);
 
 	bool empty() const {
 		return m_contents.empty();

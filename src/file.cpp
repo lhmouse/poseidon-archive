@@ -30,7 +30,7 @@ void file_get_contents(StreamBuffer &contents, const char *path){
 	}
 	contents.splice(temp);
 }
-int file_get_contents_no_throw(StreamBuffer &contents, const char *path){
+int file_get_contents_nothrow(StreamBuffer &contents, const char *path){
 	try {
 		file_get_contents(contents, path);
 		return 0;
@@ -55,7 +55,7 @@ void file_put_contents(const char *path, StreamBuffer contents, bool append){
 		}
 	}
 }
-int file_put_contents_no_throw(const char *path, StreamBuffer contents, bool append){
+int file_put_contents_nothrow(const char *path, StreamBuffer contents, bool append){
 	try {
 		file_put_contents(path, STD_MOVE(contents), append);
 		return 0;

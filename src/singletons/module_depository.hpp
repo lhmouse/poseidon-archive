@@ -25,7 +25,7 @@ struct ModuleDepository {
 	static void stop();
 
 	static boost::shared_ptr<Module> load(const char *path);
-	static boost::shared_ptr<Module> load_no_throw(const char *path);
+	static boost::shared_ptr<Module> load_nothrow(const char *path);
 	static bool unload(const boost::shared_ptr<Module> &module);
 	static bool unload(void *base_addr);
 

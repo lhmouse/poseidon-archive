@@ -88,7 +88,7 @@ namespace {
 					::raise(SIGTERM);
 				} else if(uri == "load_module"){
 					AUTO_REF(name, request_headers.get_params.at("name"));
-					if(!ModuleDepository::load_no_throw(name.c_str())){
+					if(!ModuleDepository::load_nothrow(name.c_str())){
 						LOG_POSEIDON_WARNING("Failed to load module: ", name);
 						send_default(Http::ST_NOT_FOUND);
 						return;

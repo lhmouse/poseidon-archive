@@ -62,7 +62,7 @@ void ConfigFile::load(const char *path){
 	m_contents.swap(contents);
 }
 
-int ConfigFile::load_no_throw(const char *path){
+int ConfigFile::load_nothrow(const char *path){
 	try {
 		load(path);
 		return 0;

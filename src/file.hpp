@@ -11,10 +11,10 @@
 namespace Poseidon {
 
 extern void file_get_contents(StreamBuffer &contents, const char *path);
-extern int file_get_contents_no_throw(StreamBuffer &contents, const char *path);
+extern int file_get_contents_nothrow(StreamBuffer &contents, const char *path);
 
 extern void file_put_contents(const char *path, StreamBuffer contents, bool append);
-extern int file_put_contents_no_throw(const char *path, StreamBuffer contents, bool append);
+extern int file_put_contents_nothrow(const char *path, StreamBuffer contents, bool append);
 
 }
 

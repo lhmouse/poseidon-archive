@@ -145,7 +145,7 @@ void CsvParser::load(const char *file){
 	m_data.swap(data);
 	m_row = static_cast<std::size_t>(-1);
 }
-bool CsvParser::load_no_throw(const char *file){
+bool CsvParser::load_nothrow(const char *file){
 	try {
 		load(file);
 		return true;

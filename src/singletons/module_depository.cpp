@@ -216,7 +216,7 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 
 	return module;
 }
-boost::shared_ptr<Module> ModuleDepository::load_no_throw(const char *path){
+boost::shared_ptr<Module> ModuleDepository::load_nothrow(const char *path){
 	try {
 		return load(path);
 	} catch(std::exception &e){
