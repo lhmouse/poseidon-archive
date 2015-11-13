@@ -38,7 +38,7 @@ public:
 	const std::string &get_raw(const char *key) const {
 		return m_contents.get(key);
 	}
-	std::size_t get_raw_all(std::vector<std::string> &vals, const char *key, bool including_empty = false) const {
+	std::size_t get_all_raw(std::vector<std::string> &vals, const char *key, bool including_empty = false) const {
 		const AUTO(range, m_contents.range(key));
 		vals.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		std::size_t ret = 0;
