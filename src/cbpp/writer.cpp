@@ -16,31 +16,31 @@ namespace Cbpp {
 	Writer::~Writer(){
 	}
 
-	long Writer::putDataMessage(boost::uint16_t messageId, StreamBuffer payload){
+	long Writer::put_data_message(boost::uint16_t message_id, StreamBuffer payload){
 		PROFILE_ME;
 
 		StreamBuffer frame;
 		boost::uint16_t temp16;
 		boost::uint64_t temp64;
 		if(payload.size() < 0xFFFF){
-			storeLe(temp16, payload.size());
+			store_le(temp16, payload.size());
 			frame.put(&temp16, 2);
 		} else {
-			storeLe(temp16, 0xFFFF);
+			store_le(temp16, 0xFFFF);
 			frame.put(&temp16, 2);
-			storeLe(temp64, payload.size());
+			store_le(temp64, payload.size());
 			frame.put(&temp64, 8);
 		}
-		storeLe(temp16, messageId);
+		store_le(temp16, message_id);
 		frame.put(&temp16, 2);
 		frame.splice(payload);
-		return onEncodedDataAvail(STD_MOVE(frame));
+		return on_encoded_data_avail(STD_MOVE(frame));
 	}
 
-	long Writer::putControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
+	long Writer::put_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
 		PROFILE_ME;
 
-		return putDataMessage(ControlMessage::ID, ControlMessage(controlCode, vintParam, stringParam));
+		return put_data_message(ControlMessage::ID, ControlMessage(control_code, vint_param, string_param));
 	}
 }
 

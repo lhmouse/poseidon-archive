@@ -14,7 +14,7 @@ namespace Poseidon {
 namespace Http {
 	struct ResponseHeaders {
 		unsigned version; // x * 10000 + y 表示 HTTP x.y
-		StatusCode statusCode;
+		StatusCode status_code;
 		std::string reason;
 		OptionalMap headers;
 	};
@@ -22,7 +22,7 @@ namespace Http {
 	inline void swap(ResponseHeaders &lhs, ResponseHeaders &rhs) NOEXCEPT {
 		using std::swap;
 		swap(lhs.version, rhs.version);
-		swap(lhs.statusCode, rhs.statusCode);
+		swap(lhs.status_code, rhs.status_code);
 		swap(lhs.reason, rhs.reason);
 		swap(lhs.headers, rhs.headers);
 	}

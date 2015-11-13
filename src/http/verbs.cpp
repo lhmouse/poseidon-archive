@@ -22,7 +22,7 @@ namespace Http {
 		};
 	}
 
-	Verb getVerbFromString(const char *str){
+	Verb get_verb_from_string(const char *str){
 		const unsigned len = ::strlen(str);
 		if(len == 0){
 			return V_INVALID_VERB;
@@ -38,7 +38,7 @@ namespace Http {
 		}
 		return static_cast<Verb>(i);
 	}
-	const char *getStringFromVerb(Verb verb){
+	const char *get_string_from_verb(Verb verb){
 		unsigned i = static_cast<unsigned>(verb);
 		if(i >= COUNT_OF(VERB_TABLE)){
 			i = static_cast<unsigned>(V_INVALID_VERB);

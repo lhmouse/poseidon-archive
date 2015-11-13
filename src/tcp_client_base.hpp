@@ -15,18 +15,18 @@ class IpPort;
 
 class TcpClientBase : protected SockAddr, public TcpSessionBase {
 protected:
-	TcpClientBase(const SockAddr &addr, bool useSsl);
-	TcpClientBase(const IpPort &addr, bool useSsl);
+	TcpClientBase(const SockAddr &addr, bool use_ssl);
+	TcpClientBase(const IpPort &addr, bool use_ssl);
 	~TcpClientBase();
 
 private:
-	void realConnect(bool useSsl);
+	void real_connect(bool use_ssl);
 
 protected:
-	void onReadAvail(StreamBuffer data) OVERRIDE = 0;
+	void on_read_avail(StreamBuffer data) OVERRIDE = 0;
 
 public:
-	void goResident();
+	void go_resident();
 };
 
 }

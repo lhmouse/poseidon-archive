@@ -42,7 +42,7 @@ namespace MySql {
 
 	std::ostream &operator<<(std::ostream &os, const DateFormatter &rhs){
 		char temp[256];
-		const std::size_t len = formatTime(temp, sizeof(temp), rhs.time, true);
+		const std::size_t len = format_time(temp, sizeof(temp), rhs.time, true);
 		return os.write(temp, static_cast<std::streamsize>(len));
 	}
 }

@@ -57,11 +57,11 @@ namespace Http {
 	using namespace StatusCodes;
 
 	struct StatusCodeDesc {
-		const char *descShort;
-		const char *descLong;
+		const char *desc_short;
+		const char *desc_long;
 	};
 
-	extern StatusCodeDesc getStatusCodeDesc(StatusCode statusCode);
+	extern StatusCodeDesc get_status_code_desc(StatusCode status_code);
 }
 
 }

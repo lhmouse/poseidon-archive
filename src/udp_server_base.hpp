@@ -11,7 +11,7 @@ namespace Poseidon {
 
 class UdpServerBase : public SocketServerBase {
 public:
-	explicit UdpServerBase(const IpPort &bindAddr);
+	explicit UdpServerBase(const IpPort &bind_addr);
 	virtual ~UdpServerBase();
 
 public:

@@ -23,7 +23,7 @@ void CsvParser::load(const char *file){
 	LOG_POSEIDON_DEBUG("Loading CSV file: ", file);
 
 	StreamBuffer buffer;
-	fileGetContents(buffer, file);
+	file_get_contents(buffer, file);
 	buffer.put('\n');
 
 	std::vector<OptionalMap> data;
@@ -33,7 +33,7 @@ void CsvParser::load(const char *file){
 		std::vector<std::string> row;
 		std::string token;
 		bool first = true;
-		bool inQuote = false;
+		bool in_quote = false;
 		do {
 			char ch = buffer.get();
 			if(ch == '\r'){
@@ -47,24 +47,24 @@ void CsvParser::load(const char *file){
 				first = false;
 
 				if(ch == '\"'){
-					inQuote = true;
+					in_quote = true;
 					continue;
 				}
 			}
 
 			if(ch == '\"'){
-				if(inQuote){
+				if(in_quote){
 					if(buffer.peek() == '\"'){
 						buffer.get();
 						token.push_back('\"');
 					} else {
-						inQuote = false;
+						in_quote = false;
 					}
 					continue;
 				}
 			}
 
-			if(!inQuote){
+			if(!in_quote){
 				if((ch == ',') || (ch == '\n')){
 					std::string trimmed;
 					const std::size_t begin = token.find_first_not_of(" \t\r\n");
@@ -92,9 +92,9 @@ void CsvParser::load(const char *file){
 		DEBUG_THROW(Exception, sslit("Bad CSV header"));
 	}
 
-	const std::size_t columnCount = rows.front().size();
-	std::vector<SharedNts> keys(columnCount);
-	for(std::size_t i = 0; i < columnCount; ++i){
+	const std::size_t column_count = rows.front().size();
+	std::vector<SharedNts> keys(column_count);
+	for(std::size_t i = 0; i < column_count; ++i){
 		AUTO_REF(key, rows.front().at(i));
 		for(std::size_t j = 0; j < i; ++j){
 			if(keys.at(j) == key){
@@ -122,21 +122,21 @@ void CsvParser::load(const char *file){
 				rows.pop_back();
 				continue;
 			}
-			if(row.size() != columnCount){
+			if(row.size() != column_count){
 				LOG_POSEIDON_ERROR("There are ", row.size(), " column(s) on line ", line,
-					" but there are ", columnCount, " in the header");
+					" but there are ", column_count, " in the header");
 				DEBUG_THROW(Exception, sslit("Inconsistent CSV column numbers"));
 			}
 			++i;
 		}
 	}
 
-	const std::size_t rowCount = rows.size();
-	data.resize(rowCount);
-	for(std::size_t i = 0; i < rowCount; ++i){
+	const std::size_t row_count = rows.size();
+	data.resize(row_count);
+	for(std::size_t i = 0; i < row_count; ++i){
 		AUTO_REF(row, rows.at(i));
 		AUTO_REF(map, data.at(i));
-		for(std::size_t j = 0; j < columnCount; ++j){
+		for(std::size_t j = 0; j < column_count; ++j){
 			map.create(keys.at(j))->second.swap(row.at(j));
 		}
 	}
@@ -145,7 +145,7 @@ void CsvParser::load(const char *file){
 	m_data.swap(data);
 	m_row = static_cast<std::size_t>(-1);
 }
-bool CsvParser::loadNoThrow(const char *file){
+bool CsvParser::load_no_throw(const char *file){
 	try {
 		load(file);
 		return true;
@@ -160,7 +160,7 @@ void CsvParser::clear(){
 	m_row = static_cast<std::size_t>(-1);
 }
 
-const std::string &CsvParser::getRaw(const char *key) const {
+const std::string &CsvParser::get_raw(const char *key) const {
 	const AUTO_REF(map, m_data.at(m_row));
 	const AUTO(it, map.find(key));
 	if(it == map.end()){
@@ -174,9 +174,9 @@ std::size_t CsvParser::seek(std::size_t row){
 	if((row != static_cast<std::size_t>(-1)) && (row >= m_data.size())){
 		DEBUG_THROW(Exception, sslit("Row index is out of range"));
 	}
-	const AUTO(oldRow, m_row);
+	const AUTO(old_row, m_row);
 	m_row = row;
-	return oldRow;
+	return old_row;
 }
 
 }

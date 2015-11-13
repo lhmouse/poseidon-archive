@@ -18,11 +18,11 @@ namespace WebSocket {
 		virtual ~Writer();
 
 	protected:
-		virtual long onEncodedDataAvail(StreamBuffer encoded) = 0;
+		virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
 
 	public:
-		long putMessage(int opcode, bool masked, StreamBuffer payload);
-		long putCloseMessage(StatusCode statusCode, StreamBuffer additional);
+		long put_message(int opcode, bool masked, StreamBuffer payload);
+		long put_close_message(StatusCode status_code, StreamBuffer additional);
 	};
 }
 

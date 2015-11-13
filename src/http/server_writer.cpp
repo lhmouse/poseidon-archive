@@ -18,20 +18,20 @@ namespace Http {
 	ServerWriter::~ServerWriter(){
 	}
 
-	long ServerWriter::putResponseHeaders(ResponseHeaders responseHeaders){
+	long ServerWriter::put_response_headers(ResponseHeaders response_headers){
 		PROFILE_ME;
 
 		StreamBuffer data;
 
-		const unsigned verMajor = responseHeaders.version / 10000, verMinor = responseHeaders.version % 10000;
-		const unsigned statusCode = static_cast<unsigned>(responseHeaders.statusCode);
+		const unsigned ver_major = response_headers.version / 10000, ver_minor = response_headers.version % 10000;
+		const unsigned status_code = static_cast<unsigned>(response_headers.status_code);
 		char temp[64];
-		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor, verMinor, statusCode);
+		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", ver_major, ver_minor, status_code);
 		data.put(temp, len);
-		data.put(responseHeaders.reason);
+		data.put(response_headers.reason);
 		data.put("\r\n");
 
-		AUTO_REF(headers, responseHeaders.headers);
+		AUTO_REF(headers, response_headers.headers);
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			data.put(it->first.get());
 			data.put(": ");
@@ -40,41 +40,41 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
-	long ServerWriter::putEntity(StreamBuffer data){
+	long ServerWriter::put_entity(StreamBuffer data){
 		PROFILE_ME;
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
 
-	long ServerWriter::putResponse(ResponseHeaders responseHeaders, StreamBuffer entity){
+	long ServerWriter::put_response(ResponseHeaders response_headers, StreamBuffer entity){
 		PROFILE_ME;
 
 		StreamBuffer data;
 
-		const unsigned verMajor = responseHeaders.version / 10000, verMinor = responseHeaders.version % 10000;
-		const unsigned statusCode = static_cast<unsigned>(responseHeaders.statusCode);
+		const unsigned ver_major = response_headers.version / 10000, ver_minor = response_headers.version % 10000;
+		const unsigned status_code = static_cast<unsigned>(response_headers.status_code);
 		char temp[64];
-		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor, verMinor, statusCode);
+		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", ver_major, ver_minor, status_code);
 		data.put(temp, len);
-		data.put(responseHeaders.reason);
+		data.put(response_headers.reason);
 		data.put("\r\n");
 
-		AUTO_REF(headers, responseHeaders.headers);
+		AUTO_REF(headers, response_headers.headers);
 		if(entity.empty()){
 			headers.erase("Content-Type");
 			headers.erase("Transfer-Encoding");
 			headers.set(sslit("Content-Length"), STR_0);
 		} else {
-			AUTO(transferEncoding, headers.get("Transfer-Encoding"));
-			AUTO(pos, transferEncoding.find(';'));
+			AUTO(transfer_encoding, headers.get("Transfer-Encoding"));
+			AUTO(pos, transfer_encoding.find(';'));
 			if(pos != std::string::npos){
-				transferEncoding.erase(pos);
+				transfer_encoding.erase(pos);
 			}
-			transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
+			transfer_encoding = to_lower_case(trim(STD_MOVE(transfer_encoding)));
 
-			if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
+			if(transfer_encoding.empty() || (transfer_encoding == STR_IDENTITY)){
 				headers.set(sslit("Content-Length"), boost::lexical_cast<std::string>(entity.size()));
 			} else {
 				// 只有一个 chunk。
@@ -96,57 +96,57 @@ namespace Http {
 
 		data.splice(entity);
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
-	long ServerWriter::putDefaultResponse(ResponseHeaders responseHeaders){
+	long ServerWriter::put_default_response(ResponseHeaders response_headers){
 		PROFILE_ME;
 
 		StreamBuffer entity;
 
-		const AUTO(statusCode, responseHeaders.statusCode);
-		if(statusCode / 100 >= 4){
-			AUTO_REF(headers, responseHeaders.headers);
+		const AUTO(status_code, response_headers.status_code);
+		if(status_code / 100 >= 4){
+			AUTO_REF(headers, response_headers.headers);
 
 			headers.set(sslit("Content-Type"), "text/html; charset=utf-8");
 			entity.put("<html><head><title>");
-			const AUTO(desc, getStatusCodeDesc(statusCode));
-			entity.put(desc.descShort);
+			const AUTO(desc, get_status_code_desc(status_code));
+			entity.put(desc.desc_short);
 			entity.put("</title></head><body><h1>");
-			entity.put(desc.descShort);
+			entity.put(desc.desc_short);
 			entity.put("</h1><hr /><p>");
-			entity.put(desc.descLong);
+			entity.put(desc.desc_long);
 			entity.put("</p></body></html>");
 		}
 
-		return putResponse(STD_MOVE(responseHeaders), STD_MOVE(entity));
+		return put_response(STD_MOVE(response_headers), STD_MOVE(entity));
 	}
 
-	long ServerWriter::putChunkedHeader(ResponseHeaders responseHeaders){
+	long ServerWriter::put_chunked_header(ResponseHeaders response_headers){
 		PROFILE_ME;
 
 		StreamBuffer data;
 
-		const unsigned verMajor = responseHeaders.version / 10000, verMinor = responseHeaders.version % 10000;
-		const unsigned statusCode = static_cast<unsigned>(responseHeaders.statusCode);
+		const unsigned ver_major = response_headers.version / 10000, ver_minor = response_headers.version % 10000;
+		const unsigned status_code = static_cast<unsigned>(response_headers.status_code);
 		char temp[64];
-		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", verMajor, verMinor, statusCode);
+		unsigned len = (unsigned)std::sprintf(temp, "HTTP/%u.%u %u ", ver_major, ver_minor, status_code);
 		data.put(temp, len);
-		data.put(responseHeaders.reason);
+		data.put(response_headers.reason);
 		data.put("\r\n");
 
-		AUTO_REF(headers, responseHeaders.headers);
+		AUTO_REF(headers, response_headers.headers);
 
-		AUTO(transferEncoding, headers.get("Transfer-Encoding"));
-		AUTO(pos, transferEncoding.find(';'));
+		AUTO(transfer_encoding, headers.get("Transfer-Encoding"));
+		AUTO(pos, transfer_encoding.find(';'));
 		if(pos != std::string::npos){
-			transferEncoding.erase(pos);
+			transfer_encoding.erase(pos);
 		}
-		transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
+		transfer_encoding = to_lower_case(trim(STD_MOVE(transfer_encoding)));
 
-		if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
+		if(transfer_encoding.empty() || (transfer_encoding == STR_IDENTITY)){
 			headers.set(sslit("Transfer-Encoding"), STR_CHUNKED);
 		} else {
-			headers.set(sslit("Transfer-Encoding"), STD_MOVE(transferEncoding));
+			headers.set(sslit("Transfer-Encoding"), STD_MOVE(transfer_encoding));
 		}
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
@@ -157,9 +157,9 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
-	long ServerWriter::putChunk(StreamBuffer entity){
+	long ServerWriter::put_chunk(StreamBuffer entity){
 		PROFILE_ME;
 
 		if(entity.empty()){
@@ -175,9 +175,9 @@ namespace Http {
 		chunk.splice(entity);
 		chunk.put("\r\n");
 
-		return onEncodedDataAvail(STD_MOVE(chunk));
+		return on_encoded_data_avail(STD_MOVE(chunk));
 	}
-	long ServerWriter::putChunkedTrailer(OptionalMap headers){
+	long ServerWriter::put_chunked_trailer(OptionalMap headers){
 		PROFILE_ME;
 
 		StreamBuffer data;
@@ -191,7 +191,7 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
 }
 

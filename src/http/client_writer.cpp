@@ -18,24 +18,24 @@ namespace Http {
 	ClientWriter::~ClientWriter(){
 	}
 
-	long ClientWriter::putRequestHeaders(RequestHeaders requestHeaders){
+	long ClientWriter::put_request_headers(RequestHeaders request_headers){
 		PROFILE_ME;
 
 		StreamBuffer data;
 
-		data.put(getStringFromVerb(requestHeaders.verb));
+		data.put(get_string_from_verb(request_headers.verb));
 		data.put(' ');
-		data.put(requestHeaders.uri);
-		if(!requestHeaders.getParams.empty()){
+		data.put(request_headers.uri);
+		if(!request_headers.get_params.empty()){
 			data.put('?');
-			data.put(urlEncodedFromOptionalMap(requestHeaders.getParams));
+			data.put(url_encoded_from_optional_map(request_headers.get_params));
 		}
 		char temp[64];
-		const unsigned verMajor = requestHeaders.version / 10000, verMinor = requestHeaders.version % 10000;
-		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", verMajor, verMinor);
+		const unsigned ver_major = request_headers.version / 10000, ver_minor = request_headers.version % 10000;
+		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", ver_major, ver_minor);
 		data.put(temp, len);
 
-		AUTO_REF(headers, requestHeaders.headers);
+		AUTO_REF(headers, request_headers.headers);
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			data.put(it->first.get());
 			data.put(": ");
@@ -44,32 +44,32 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
 
-	long ClientWriter::putRequest(RequestHeaders requestHeaders, StreamBuffer entity){
+	long ClientWriter::put_request(RequestHeaders request_headers, StreamBuffer entity){
 		PROFILE_ME;
 
 		StreamBuffer data;
 
-		data.put(getStringFromVerb(requestHeaders.verb));
+		data.put(get_string_from_verb(request_headers.verb));
 		data.put(' ');
-		data.put(requestHeaders.uri);
-		if(!requestHeaders.getParams.empty()){
+		data.put(request_headers.uri);
+		if(!request_headers.get_params.empty()){
 			data.put('?');
-			data.put(urlEncodedFromOptionalMap(requestHeaders.getParams));
+			data.put(url_encoded_from_optional_map(request_headers.get_params));
 		}
 		char temp[64];
-		const unsigned verMajor = requestHeaders.version / 10000, verMinor = requestHeaders.version % 10000;
-		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", verMajor, verMinor);
+		const unsigned ver_major = request_headers.version / 10000, ver_minor = request_headers.version % 10000;
+		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", ver_major, ver_minor);
 		data.put(temp, len);
 
-		AUTO_REF(headers, requestHeaders.headers);
+		AUTO_REF(headers, request_headers.headers);
 		if(entity.empty()){
 			headers.erase("Content-Type");
 			headers.erase("Transfer-Encoding");
 
-			if((requestHeaders.verb == V_POST) || (requestHeaders.verb == V_PUT)){
+			if((request_headers.verb == V_POST) || (request_headers.verb == V_PUT)){
 				headers.set(sslit("Content-Length"), STR_0);
 			} else {
 				headers.erase("Content-Length");
@@ -79,14 +79,14 @@ namespace Http {
 				headers.set(sslit("Content-Type"), "application/x-www-form-urlencoded; charset=utf-8");
 			}
 
-			AUTO(transferEncoding, headers.get("Transfer-Encoding"));
-			AUTO(pos, transferEncoding.find(';'));
+			AUTO(transfer_encoding, headers.get("Transfer-Encoding"));
+			AUTO(pos, transfer_encoding.find(';'));
 			if(pos != std::string::npos){
-				transferEncoding.erase(pos);
+				transfer_encoding.erase(pos);
 			}
-			transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
+			transfer_encoding = to_lower_case(trim(STD_MOVE(transfer_encoding)));
 
-			if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
+			if(transfer_encoding.empty() || (transfer_encoding == STR_IDENTITY)){
 				headers.set(sslit("Content-Length"), boost::lexical_cast<std::string>(entity.size()));
 			} else {
 				// 只有一个 chunk。
@@ -108,47 +108,47 @@ namespace Http {
 
 		data.splice(entity);
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
-	long ClientWriter::putEntity(StreamBuffer data){
+	long ClientWriter::put_entity(StreamBuffer data){
 		PROFILE_ME;
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
 
-	long ClientWriter::putChunkedHeader(RequestHeaders requestHeaders){
+	long ClientWriter::put_chunked_header(RequestHeaders request_headers){
 		PROFILE_ME;
 
 		StreamBuffer data;
 
-		data.put(getStringFromVerb(requestHeaders.verb));
+		data.put(get_string_from_verb(request_headers.verb));
 		data.put(' ');
-		data.put(requestHeaders.uri);
-		if(!requestHeaders.getParams.empty()){
+		data.put(request_headers.uri);
+		if(!request_headers.get_params.empty()){
 			data.put('?');
-			data.put(urlEncodedFromOptionalMap(requestHeaders.getParams));
+			data.put(url_encoded_from_optional_map(request_headers.get_params));
 		}
 		char temp[64];
-		const unsigned verMajor = requestHeaders.version / 10000, verMinor = requestHeaders.version % 10000;
-		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", verMajor, verMinor);
+		const unsigned ver_major = request_headers.version / 10000, ver_minor = request_headers.version % 10000;
+		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", ver_major, ver_minor);
 		data.put(temp, len);
 
-		AUTO_REF(headers, requestHeaders.headers);
+		AUTO_REF(headers, request_headers.headers);
 		if(!headers.has("Content-Type")){
 			headers.set(sslit("Content-Type"), "application/x-www-form-urlencoded; charset=utf-8");
 		}
 
-		AUTO(transferEncoding, headers.get("Transfer-Encoding"));
-		AUTO(pos, transferEncoding.find(';'));
+		AUTO(transfer_encoding, headers.get("Transfer-Encoding"));
+		AUTO(pos, transfer_encoding.find(';'));
 		if(pos != std::string::npos){
-			transferEncoding.erase(pos);
+			transfer_encoding.erase(pos);
 		}
-		transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
+		transfer_encoding = to_lower_case(trim(STD_MOVE(transfer_encoding)));
 
-		if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
+		if(transfer_encoding.empty() || (transfer_encoding == STR_IDENTITY)){
 			headers.set(sslit("Transfer-Encoding"), STR_CHUNKED);
 		} else {
-			headers.set(sslit("Transfer-Encoding"), STD_MOVE(transferEncoding));
+			headers.set(sslit("Transfer-Encoding"), STD_MOVE(transfer_encoding));
 		}
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
@@ -159,9 +159,9 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
-	long ClientWriter::putChunk(StreamBuffer entity){
+	long ClientWriter::put_chunk(StreamBuffer entity){
 		PROFILE_ME;
 
 		if(entity.empty()){
@@ -177,9 +177,9 @@ namespace Http {
 		chunk.splice(entity);
 		chunk.put("\r\n");
 
-		return onEncodedDataAvail(STD_MOVE(chunk));
+		return on_encoded_data_avail(STD_MOVE(chunk));
 	}
-	long ClientWriter::putChunkedTrailer(OptionalMap headers){
+	long ClientWriter::put_chunked_trailer(OptionalMap headers){
 		PROFILE_ME;
 
 		StreamBuffer data;
@@ -193,7 +193,7 @@ namespace Http {
 		}
 		data.put("\r\n");
 
-		return onEncodedDataAvail(STD_MOVE(data));
+		return on_encoded_data_avail(STD_MOVE(data));
 	}
 }
 

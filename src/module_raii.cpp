@@ -33,10 +33,10 @@ void HandleStack::swap(HandleStack &rhs) NOEXCEPT {
 }
 
 ModuleRaiiBase::ModuleRaiiBase(long priority){
-	ModuleDepository::registerModuleRaii(this, priority);
+	ModuleDepository::register_module_raii(this, priority);
 }
 ModuleRaiiBase::~ModuleRaiiBase(){
-	ModuleDepository::unregisterModuleRaii(this);
+	ModuleDepository::unregister_module_raii(this);
 }
 
 }

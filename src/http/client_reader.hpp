@@ -42,46 +42,46 @@ namespace Http {
 	private:
 		StreamBuffer m_queue;
 
-		boost::uint64_t m_sizeExpecting;
+		boost::uint64_t m_size_expecting;
 		State m_state;
 
-		ResponseHeaders m_responseHeaders;
-		boost::uint64_t m_contentLength;
-		boost::uint64_t m_contentOffset;
+		ResponseHeaders m_response_headers;
+		boost::uint64_t m_content_length;
+		boost::uint64_t m_content_offset;
 
-		boost::uint64_t m_chunkSize;
-		boost::uint64_t m_chunkOffset;
-		OptionalMap m_chunkedTrailer;
+		boost::uint64_t m_chunk_size;
+		boost::uint64_t m_chunk_offset;
+		OptionalMap m_chunked_trailer;
 
 	protected:
 		ClientReader();
 		virtual ~ClientReader();
 
 	protected:
-		// transferEncoding 确保已被转换为小写并已排序。
-		// 如果 Transfer-Encoding 为空或者不是 identity， contentLength 的值为 CONTENT_CHUNKED。
-		virtual void onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) = 0;
+		// transfer_encoding 确保已被转换为小写并已排序。
+		// 如果 Transfer-Encoding 为空或者不是 identity， content_length 的值为 CONTENT_CHUNKED。
+		virtual void on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length) = 0;
 		// 报文可能分几次收到。
-		virtual void onResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) = 0;
+		virtual void on_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) = 0;
 		// 报文接收完毕。
-		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_TILL_EOF，此处 realContentLength 即为实际接收大小。
-		// 如果 onResponseHeaders() 的 contentLength 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
+		// 如果 on_response_headers() 的 content_length 参数为 CONTENT_TILL_EOF，此处 real_content_length 即为实际接收大小。
+		// 如果 on_response_headers() 的 content_length 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
 		// chunked 允许追加报头。
-		virtual bool onResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) = 0;
+		virtual bool on_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) = 0;
 
 	public:
-		const StreamBuffer &getQueue() const {
+		const StreamBuffer &get_queue() const {
 			return m_queue;
 		}
-		StreamBuffer &getQueue(){
+		StreamBuffer &get_queue(){
 			return m_queue;
 		}
 
-		bool putEncodedData(StreamBuffer encoded);
+		bool put_encoded_data(StreamBuffer encoded);
 
-		bool isContentTillEof() const;
-		// 要求 isContentTillEof() 为 true，否则抛异常。
-		bool terminateContent();
+		bool is_content_till_eof() const;
+		// 要求 is_content_till_eof() 为 true，否则抛异常。
+		bool terminate_content();
 	};
 }
 

@@ -10,53 +10,53 @@
 namespace Poseidon {
 
 namespace {
-	__thread Profiler *t_topProfiler = NULLPTR;
+	__thread Profiler *t_top_profiler = NULLPTR;
 }
 
-void Profiler::flushProfilersInThread() NOEXCEPT {
-	const AUTO(now, getHiResMonoClock());
-	for(AUTO(cur, t_topProfiler); cur; cur = cur->m_prev){
+void Profiler::flush_profilers_in_thread() NOEXCEPT {
+	const AUTO(now, get_hi_res_mono_clock());
+	for(AUTO(cur, t_top_profiler); cur; cur = cur->m_prev){
 		cur->flush(now);
 	}
 }
 
-void *Profiler::beginStackSwitch() NOEXCEPT {
-	const AUTO(top, t_topProfiler);
+void *Profiler::begin_stack_switch() NOEXCEPT {
+	const AUTO(top, t_top_profiler);
 	if(top){
-		const AUTO(now, getHiResMonoClock());
+		const AUTO(now, get_hi_res_mono_clock());
 		top->flush(now);
 	}
-	t_topProfiler = NULLPTR;
+	t_top_profiler = NULLPTR;
 	return top;
 }
-void Profiler::endStackSwitch(void *opaque) NOEXCEPT {
-	t_topProfiler = static_cast<Profiler *>(opaque);
+void Profiler::end_stack_switch(void *opaque) NOEXCEPT {
+	t_top_profiler = static_cast<Profiler *>(opaque);
 }
 
 Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT
-	: m_prev(t_topProfiler), m_file(file), m_line(line), m_func(func)
+	: m_prev(t_top_profiler), m_file(file), m_line(line), m_func(func)
 {
-	if(ProfileDepository::isEnabled()){
-		const AUTO(now, getHiResMonoClock());
+	if(ProfileDepository::is_enabled()){
+		const AUTO(now, get_hi_res_mono_clock());
 
 		m_start = now;
-		m_exclusiveTotal = 0;
-		m_exclusiveStart = now;
+		m_exclusive_total = 0;
+		m_exclusive_start = now;
 
 		if(m_prev){
-			m_prev->m_exclusiveTotal += now - m_prev->m_exclusiveStart;
+			m_prev->m_exclusive_total += now - m_prev->m_exclusive_start;
 		}
 	} else {
 		m_start = 0;
 	}
 
-	t_topProfiler = this;
+	t_top_profiler = this;
 }
 Profiler::~Profiler() NOEXCEPT {
-	t_topProfiler = m_prev;
+	t_top_profiler = m_prev;
 
 	if(m_start != 0){
-		const AUTO(now, getHiResMonoClock());
+		const AUTO(now, get_hi_res_mono_clock());
 		flush(now);
 		if(m_prev){
 			m_prev->flush(now);
@@ -71,16 +71,16 @@ Profiler::~Profiler() NOEXCEPT {
 
 void Profiler::flush(double now) NOEXCEPT {
 	if(m_start != 0){
-		m_exclusiveTotal += now - m_exclusiveStart;
+		m_exclusive_total += now - m_exclusive_start;
 		if(m_prev){
-			m_prev->m_exclusiveStart = now;
+			m_prev->m_exclusive_start = now;
 		}
 
-		ProfileDepository::accumulate(m_file, m_line, m_func, now - m_start, m_exclusiveTotal);
+		ProfileDepository::accumulate(m_file, m_line, m_func, now - m_start, m_exclusive_total);
 
 		m_start = now;
-		m_exclusiveTotal = 0;
-		m_exclusiveStart = now;
+		m_exclusive_total = 0;
+		m_exclusive_start = now;
 	}
 }
 

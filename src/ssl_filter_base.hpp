@@ -25,7 +25,7 @@ protected:
 	virtual bool establish() = 0;
 
 public:
-	::SSL *getSsl() const {
+	::SSL *get_ssl() const {
 		return m_ssl.get();
 	}
 

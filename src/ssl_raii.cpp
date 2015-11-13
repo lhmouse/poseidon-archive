@@ -11,8 +11,8 @@ void SslDeleter::operator()(::SSL *ssl) NOEXCEPT {
 	::SSL_free(ssl);
 }
 
-void SslCtxDeleter::operator()(::SSL_CTX *sslCtx) NOEXCEPT {
-	::SSL_CTX_free(sslCtx);
+void SslCtxDeleter::operator()(::SSL_CTX *ssl_ctx) NOEXCEPT {
+	::SSL_CTX_free(ssl_ctx);
 }
 
 }

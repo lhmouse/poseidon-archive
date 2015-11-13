@@ -17,18 +17,18 @@ struct EpollDaemon {
 	struct SnapshotElement {
 		IpPort remote;
 		IpPort local;
-		boost::uint64_t msOnline;
+		boost::uint64_t ms_online;
 	};
 
 	static void start();
 	static void stop();
 
-	static boost::uint64_t getTcpRequestTimeout();
+	static boost::uint64_t get_tcp_request_timeout();
 
 	static std::vector<SnapshotElement> snapshot();
 
-	static void addSession(const boost::shared_ptr<TcpSessionBase> &session);
-	static void registerServer(boost::weak_ptr<const SocketServerBase> server);
+	static void add_session(const boost::shared_ptr<TcpSessionBase> &session);
+	static void register_server(boost::weak_ptr<const SocketServerBase> server);
 
 private:
 	EpollDaemon();

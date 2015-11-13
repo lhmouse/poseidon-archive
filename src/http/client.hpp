@@ -23,41 +23,41 @@ namespace Http {
 		class ResponseEndJob;
 
 	protected:
-		Client(const SockAddr &addr, bool useSsl);
-		Client(const IpPort &addr, bool useSsl);
+		Client(const SockAddr &addr, bool use_ssl);
+		Client(const IpPort &addr, bool use_ssl);
 		~Client();
 
 	protected:
 		// TcpClientBase
-		void onConnect() OVERRIDE;
-		void onReadHup() NOEXCEPT OVERRIDE;
+		void on_connect() OVERRIDE;
+		void on_read_hup() NOEXCEPT OVERRIDE;
 
-		void onReadAvail(StreamBuffer data) OVERRIDE;
+		void on_read_avail(StreamBuffer data) OVERRIDE;
 
 		// ClientReader
-		void onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;
-		void onResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) OVERRIDE;
-		bool onResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) OVERRIDE;
+		void on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
+		void on_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) OVERRIDE;
+		bool on_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) OVERRIDE;
 
 		// ClientWriter
-		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
+		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual void onSyncConnect();
+		virtual void on_sync_connect();
 
-		virtual void onSyncResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength) = 0;
-		virtual void onSyncResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) = 0;
-		virtual void onSyncResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) = 0;
+		virtual void on_sync_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length) = 0;
+		virtual void on_sync_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) = 0;
+		virtual void on_sync_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) = 0;
 
 	public:
-		bool sendHeaders(RequestHeaders requestHeaders);
-		bool sendEntity(StreamBuffer data);
+		bool send_headers(RequestHeaders request_headers);
+		bool send_entity(StreamBuffer data);
 
-		bool send(RequestHeaders requestHeaders, StreamBuffer entity = StreamBuffer());
+		bool send(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
 
-		bool sendChunkedHeader(RequestHeaders requestHeaders);
-		bool sendChunk(StreamBuffer entity);
-		bool sendChunkedTrailer(OptionalMap headers);
+		bool send_chunked_header(RequestHeaders request_headers);
+		bool send_chunk(StreamBuffer entity);
+		bool send_chunked_trailer(OptionalMap headers);
 	};
 }
 

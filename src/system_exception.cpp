@@ -9,7 +9,7 @@
 namespace Poseidon {
 
 SystemException::SystemException(const char *file, std::size_t line, int code)
-	: Exception(file, line, getErrorDesc(code)), m_code(code)
+	: Exception(file, line, get_error_desc(code)), m_code(code)
 {
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 		"Constructing SystemException: code = ", code, ", what = ", what());

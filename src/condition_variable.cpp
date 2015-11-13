@@ -63,7 +63,7 @@ void ConditionVariable::wait(Mutex::UniqueLock &lock){
 		DEBUG_THROW(SystemException, err);
 	}
 }
-bool ConditionVariable::timedWait(Mutex::UniqueLock &lock, unsigned long long ms){
+bool ConditionVariable::timed_wait(Mutex::UniqueLock &lock, unsigned long long ms){
 	assert(lock.m_locked);
 
 	::timespec tp;

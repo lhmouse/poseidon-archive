@@ -16,7 +16,7 @@ namespace Http {
 		Verb verb;
 		std::string uri;
 		unsigned version; // x * 10000 + y 表示 HTTP x.y
-		OptionalMap getParams;
+		OptionalMap get_params;
 		OptionalMap headers;
 	};
 
@@ -25,7 +25,7 @@ namespace Http {
 		swap(lhs.verb, rhs.verb);
 		swap(lhs.uri, rhs.uri);
 		swap(lhs.version, rhs.version);
-		swap(lhs.getParams, rhs.getParams);
+		swap(lhs.get_params, rhs.get_params);
 		swap(lhs.headers, rhs.headers);
 	}
 }

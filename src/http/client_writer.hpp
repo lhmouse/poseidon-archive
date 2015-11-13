@@ -20,17 +20,17 @@ namespace Http {
 		virtual ~ClientWriter();
 
 	protected:
-		virtual long onEncodedDataAvail(StreamBuffer encoded) = 0;
+		virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
 
 	public:
-		long putRequestHeaders(RequestHeaders requestHeaders);
-		long putEntity(StreamBuffer data);
+		long put_request_headers(RequestHeaders request_headers);
+		long put_entity(StreamBuffer data);
 
-		long putRequest(RequestHeaders requestHeaders, StreamBuffer entity = StreamBuffer());
+		long put_request(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
 
-		long putChunkedHeader(RequestHeaders requestHeaders);
-		long putChunk(StreamBuffer entity);
-		long putChunkedTrailer(OptionalMap headers);
+		long put_chunked_header(RequestHeaders request_headers);
+		long put_chunk(StreamBuffer entity);
+		long put_chunked_trailer(OptionalMap headers);
 	};
 }
 

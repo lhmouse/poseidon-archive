@@ -20,22 +20,22 @@ public:
 	SockAddr(const void *data, unsigned size);
 
 public:
-	const void *getData() const {
+	const void *get_data() const {
 		return m_data;
 	}
-	unsigned getSize() const {
+	unsigned get_size() const {
 		return m_size;
 	}
 
-	int getFamily() const;
+	int get_family() const;
 	// 如果是 IPv4 地址返回 false，如果是 IPv6 地址返回 true，否则抛出一个异常。
-	bool isIpv6() const;
+	bool is_ipv6() const;
 
-	bool isPrivate() const;
+	bool is_private() const;
 };
 
-extern IpPort getIpPortFromSockAddr(const SockAddr &sa);
-extern SockAddr getSockAddrFromIpPort(const IpPort &addr);
+extern IpPort get_ip_port_from_sock_addr(const SockAddr &sa);
+extern SockAddr get_sock_addr_from_ip_port(const IpPort &addr);
 
 }
 

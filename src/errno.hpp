@@ -11,8 +11,8 @@
 
 namespace Poseidon {
 
-SharedNts getErrorDesc(int errCode = errno) NOEXCEPT;
-std::string getErrorDescAsString(int errCode = errno);
+SharedNts get_error_desc(int err_code = errno) NOEXCEPT;
+std::string get_error_desc_as_string(int err_code = errno);
 
 }
 

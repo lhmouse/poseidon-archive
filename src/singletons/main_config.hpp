@@ -9,35 +9,35 @@
 namespace Poseidon {
 
 struct MainConfig {
-	static void setRunPath(const char *path);
+	static void set_run_path(const char *path);
 
 	static void reload();
-	static const ConfigFile &getConfig();
+	static const ConfigFile &get_config();
 
 	template<typename T>
 	static bool get(T &val, const char *key){
-		return getConfig().get<T>(val, key);
+		return get_config().get<T>(val, key);
 	}
 	template<typename T, typename DefaultT>
-	static bool get(T &val, const char *key, const DefaultT &defVal){
-		return getConfig().get<T, DefaultT>(val, key, defVal);
+	static bool get(T &val, const char *key, const DefaultT &def_val){
+		return get_config().get<T, DefaultT>(val, key, def_val);
 	}
 	template<typename T>
 	static T get(const char *key){
-		return getConfig().get<T>(key);
+		return get_config().get<T>(key);
 	}
 	template<typename T, typename DefaultT>
-	static T get(const char *key, const DefaultT &defVal){
-		return getConfig().get<T, DefaultT>(key, defVal);
+	static T get(const char *key, const DefaultT &def_val){
+		return get_config().get<T, DefaultT>(key, def_val);
 	}
 
 	template<typename T>
-	static std::size_t getAll(std::vector<T> &vals, const char *key, bool includingEmpty = false){
-		return getConfig().getAll<T>(vals, key, includingEmpty);
+	static std::size_t get_all(std::vector<T> &vals, const char *key, bool including_empty = false){
+		return get_config().get_all<T>(vals, key, including_empty);
 	}
 	template<typename T>
-	static std::vector<T> getAll(const char *key, bool includingEmpty = false){
-		return getConfig().getAll<T>(key, includingEmpty);
+	static std::vector<T> get_all(const char *key, bool including_empty = false){
+		return get_config().get_all<T>(key, including_empty);
 	}
 
 private:

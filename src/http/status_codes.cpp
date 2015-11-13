@@ -10,20 +10,20 @@ namespace Poseidon {
 namespace Http {
 	namespace {
 		struct DescElement {
-			unsigned statusCode;
-			const char *descShort;
-			const char *descLong;
+			unsigned status_code;
+			const char *desc_short;
+			const char *desc_long;
 		};
 
 		struct DescElementComparator {
 			bool operator()(const DescElement &lhs, const DescElement &rhs) const {
-				return lhs.statusCode < rhs.statusCode;
+				return lhs.status_code < rhs.status_code;
 			}
 			bool operator()(StatusCode lhs, const DescElement &rhs) const {
-				return lhs < rhs.statusCode;
+				return lhs < rhs.status_code;
 			}
 			bool operator()(const DescElement &lhs, StatusCode rhs) const {
-				return lhs.statusCode < rhs;
+				return lhs.status_code < rhs;
 			}
 		};
 
@@ -150,16 +150,16 @@ namespace Http {
 		};
 	}
 
-	StatusCodeDesc getStatusCodeDesc(StatusCode statusCode){
+	StatusCodeDesc get_status_code_desc(StatusCode status_code){
 		StatusCodeDesc ret;
 		const AUTO(p, std::lower_bound(
-			BEGIN(DESC_TABLE), END(DESC_TABLE), statusCode, DescElementComparator()));
-		if((p != END(DESC_TABLE)) && (p->statusCode == statusCode)){
-			ret.descShort = p->descShort;
-			ret.descLong = p->descLong;
+			BEGIN(DESC_TABLE), END(DESC_TABLE), status_code, DescElementComparator()));
+		if((p != END(DESC_TABLE)) && (p->status_code == status_code)){
+			ret.desc_short = p->desc_short;
+			ret.desc_long = p->desc_long;
 		} else {
-			ret.descShort = "Unknown Status Code";
-			ret.descLong = "No description available for this status code.";
+			ret.desc_short = "Unknown Status Code";
+			ret.desc_long = "No description available for this status code.";
 		}
 		return ret;
 	}

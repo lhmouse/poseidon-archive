@@ -10,7 +10,7 @@ namespace Poseidon {
 namespace {
 	const OptionalMap EMPTY_HEADERS;
 
-	SharedNts replaceWithDefault(SharedNts message){
+	SharedNts replace_with_default(SharedNts message){
 		if(message[0] == (char)0xFF){
 			message = sslit("\xFF     <Use default HTML page>");
 		}
@@ -19,21 +19,21 @@ namespace {
 }
 
 namespace Http {
-	Exception::Exception(const char *file, std::size_t line, StatusCode statusCode, OptionalMap headers, SharedNts message)
-		: ProtocolException(file, line, replaceWithDefault(STD_MOVE(message)), static_cast<long>(statusCode))
+	Exception::Exception(const char *file, std::size_t line, StatusCode status_code, OptionalMap headers, SharedNts message)
+		: ProtocolException(file, line, replace_with_default(STD_MOVE(message)), static_cast<long>(status_code))
 	{
 		if(!headers.empty()){
 			m_headers = boost::make_shared<OptionalMap>(STD_MOVE(headers));
 		}
 
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Http::Exception: statusCode = ", statusCode, ", what = ", what());
+			"Http::Exception: status_code = ", status_code, ", what = ", what());
 	}
-	Exception::Exception(const char *file, std::size_t line, StatusCode statusCode, SharedNts message)
-		: ProtocolException(file, line, replaceWithDefault(STD_MOVE(message)), static_cast<long>(statusCode))
+	Exception::Exception(const char *file, std::size_t line, StatusCode status_code, SharedNts message)
+		: ProtocolException(file, line, replace_with_default(STD_MOVE(message)), static_cast<long>(status_code))
 	{
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Http::Exception: statusCode = ", statusCode, ", what = ", what());
+			"Http::Exception: status_code = ", status_code, ", what = ", what());
 	}
 	Exception::~Exception() NOEXCEPT {
 	}

@@ -22,27 +22,27 @@ struct MySqlDaemon {
 	struct SnapshotElement {
 		unsigned thread;
 		const char *table;
-		unsigned long long nsTotal;
+		unsigned long long ns_total;
 	};
 
 	static void start();
 	static void stop();
 
 	// 同步接口。
-	static boost::shared_ptr<MySql::Connection> createConnection();
+	static boost::shared_ptr<MySql::Connection> create_connection();
 
 	// 异步接口。
 	static std::vector<SnapshotElement> snapshot();
 
-	static void waitForAllAsyncOperations();
+	static void wait_for_all_async_operations();
 
-	static boost::shared_ptr<const JobPromise> enqueueForSaving(
-		boost::shared_ptr<const MySql::ObjectBase> object, bool toReplace, bool urgent);
-	static boost::shared_ptr<const JobPromise> enqueueForLoading(
+	static boost::shared_ptr<const JobPromise> enqueue_for_saving(
+		boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace, bool urgent);
+	static boost::shared_ptr<const JobPromise> enqueue_for_loading(
 		boost::shared_ptr<MySql::ObjectBase> object, std::string query);
-	static boost::shared_ptr<const JobPromise> enqueueForBatchLoading(
+	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(
 		boost::shared_ptr<std::deque<boost::shared_ptr<MySql::ObjectBase> > > sink,
-		boost::shared_ptr<MySql::ObjectBase> (*factory)(), const char *tableHint, std::string query);
+		boost::shared_ptr<MySql::ObjectBase> (*factory)(), const char *table_hint, std::string query);
 
 private:
 	MySqlDaemon();

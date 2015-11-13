@@ -23,21 +23,21 @@ std::ostream &operator<<(std::ostream &os, const HexDumper &dumper){
 	return os;
 }
 
-bool isValidUtf8String(const std::string &str){
+bool is_valid_utf8_string(const std::string &str){
 	PROFILE_ME;
 
-	boost::uint32_t codePoint;
+	boost::uint32_t code_point;
 	for(AUTO(it, str.begin()); it != str.end(); ++it){
-		codePoint = static_cast<unsigned char>(*it);
-		if((codePoint & 0x80) == 0){
+		code_point = static_cast<unsigned char>(*it);
+		if((code_point & 0x80) == 0){
 			continue;
 		}
-		const AUTO(bytes, (unsigned)__builtin_clz((~codePoint | 1) & 0xFF) - (sizeof(unsigned) - 1) * CHAR_BIT);
+		const AUTO(bytes, (unsigned)__builtin_clz((~code_point | 1) & 0xFF) - (sizeof(unsigned) - 1) * CHAR_BIT);
 		if(bytes - 2 > 2){ // 2, 3, 4
 			LOG_POSEIDON_WARNING("Invalid UTF-8 leading byte: bytes = ", bytes);
 			return false;
 		}
-		codePoint &= (0xFFu >> bytes);
+		code_point &= (0xFFu >> bytes);
 		for(unsigned i = 1; i < bytes; ++i){
 			++it;
 			if(it == str.end()){
@@ -51,21 +51,21 @@ bool isValidUtf8String(const std::string &str){
 				return false;
 			}
 		}
-		if(codePoint > 0x10FFFFu){
-			LOG_POSEIDON_WARNING("Invalid UTF-8 code point: codePoint = 0x",
-				std::hex, std::setw(6), std::setfill('0'), codePoint);
+		if(code_point > 0x10FFFFu){
+			LOG_POSEIDON_WARNING("Invalid UTF-8 code point: code_point = 0x",
+				std::hex, std::setw(6), std::setfill('0'), code_point);
 			return false;
 		}
-		if(codePoint - 0xD800u < 0x800u){
-			LOG_POSEIDON_WARNING("UTF-8 code point is reserved for UTF-16: codePoint = 0x",
-				std::hex, std::setw(4), std::setfill('0'), codePoint);
+		if(code_point - 0xD800u < 0x800u){
+			LOG_POSEIDON_WARNING("UTF-8 code point is reserved for UTF-16: code_point = 0x",
+				std::hex, std::setw(4), std::setfill('0'), code_point);
 			return false;
 		}
 	}
 	return true;
 }
 
-bool getLine(StreamBuffer &buffer, std::string &line){
+bool get_line(StreamBuffer &buffer, std::string &line){
 	line.clear();
 	if(buffer.empty()){
 		return false;

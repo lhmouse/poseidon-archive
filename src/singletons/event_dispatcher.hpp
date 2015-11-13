@@ -28,17 +28,17 @@ struct EventDispatcher {
 	static void stop();
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
-	static boost::shared_ptr<EventListener> registerListener(unsigned id, EventListenerCallback callback);
+	static boost::shared_ptr<EventListener> register_listener(unsigned id, EventListenerCallback callback);
 
 	// void (boost::shared_ptr<EventT> event)
 	template<typename EventT>
 	static
 		typename boost::enable_if_c<boost::is_base_of<EventBaseWithoutId, EventT>::value,
 			boost::shared_ptr<EventListener> >::type
-		registerListener(boost::function<void (boost::shared_ptr<EventT>)> callback)
+		register_listener(boost::function<void (boost::shared_ptr<EventT>)> callback)
 	{
 		struct Helper {
-			static void checkAndForward(boost::function<void (boost::shared_ptr<EventT>)> &callback,
+			static void check_and_forward(boost::function<void (boost::shared_ptr<EventT>)> &callback,
 				const boost::shared_ptr<EventBaseWithoutId> &event)
 			{
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
@@ -50,11 +50,11 @@ struct EventDispatcher {
 				callback(STD_MOVE(derived));
 			}
 		};
-		return registerListener(EventT::ID, boost::bind(&Helper::checkAndForward, STD_MOVE_IDN(callback), _1));
+		return register_listener(EventT::ID, boost::bind(&Helper::check_and_forward, STD_MOVE_IDN(callback), _1));
 	}
 
-	static void syncRaise(const boost::shared_ptr<EventBaseWithoutId> &event);
-	static void asyncRaise(const boost::shared_ptr<EventBaseWithoutId> &event,
+	static void sync_raise(const boost::shared_ptr<EventBaseWithoutId> &event);
+	static void async_raise(const boost::shared_ptr<EventBaseWithoutId> &event,
 		const boost::shared_ptr<const bool> &withdrawn = boost::shared_ptr<const bool>());
 
 private:

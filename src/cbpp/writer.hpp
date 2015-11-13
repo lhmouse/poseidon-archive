@@ -18,12 +18,12 @@ namespace Cbpp {
 		virtual ~Writer();
 
 	protected:
-		virtual long onEncodedDataAvail(StreamBuffer encoded) = 0;
+		virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
 
 	public:
-		long putDataMessage(boost::uint16_t messageId, StreamBuffer payload);
+		long put_data_message(boost::uint16_t message_id, StreamBuffer payload);
 
-		long putControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam);
+		long put_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param);
 	};
 }
 

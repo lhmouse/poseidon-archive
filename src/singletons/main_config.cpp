@@ -12,29 +12,29 @@ namespace Poseidon {
 namespace {
 	ConfigFile g_config;
 
-	std::string getRealPath(const char *path){
+	std::string get_real_path(const char *path){
 		std::string ret;
-		char *realPath = NULLPTR;
+		char *real_path = NULLPTR;
 		try {
-			realPath = ::realpath(path, NULLPTR);
-			if(!realPath){
+			real_path = ::realpath(path, NULLPTR);
+			if(!real_path){
 				LOG_POSEIDON_ERROR("Could not resolve path: ", path);
 				DEBUG_THROW(SystemException);
 			}
-			ret = realPath;
-			::free(realPath);
+			ret = real_path;
+			::free(real_path);
 		} catch(...){
-			::free(realPath);
+			::free(real_path);
 			throw;
 		}
 		return ret;
 	}
 }
 
-void MainConfig::setRunPath(const char *path){
-	const AUTO(realPath, getRealPath(path));
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting working directory: realPath = ", realPath);
-	if(::chdir(realPath.c_str()) != 0){
+void MainConfig::set_run_path(const char *path){
+	const AUTO(real_path, get_real_path(path));
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting working directory: real_path = ", real_path);
+	if(::chdir(real_path.c_str()) != 0){
 		DEBUG_THROW(SystemException);
 	}
 }
@@ -43,7 +43,7 @@ void MainConfig::reload(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading main.conf...");
 	ConfigFile("main.conf").swap(g_config);
 }
-const ConfigFile &MainConfig::getConfig(){
+const ConfigFile &MainConfig::get_config(){
 	return g_config;
 }
 

@@ -155,17 +155,17 @@ inline std::ostream &operator<<(std::ostream &os, const JsonElement &rhs){
 
 class JsonParser {
 private:
-	static std::string acceptString(std::istream &is);
-	static double acceptNumber(std::istream &is);
-	static JsonObject acceptObject(std::istream &is);
-	static JsonArray acceptArray(std::istream &is);
-	static bool acceptBoolean(std::istream &is);
-	static JsonNull acceptNull(std::istream &is);
+	static std::string accept_string(std::istream &is);
+	static double accept_number(std::istream &is);
+	static JsonObject accept_object(std::istream &is);
+	static JsonArray accept_array(std::istream &is);
+	static bool accept_boolean(std::istream &is);
+	static JsonNull accept_null(std::istream &is);
 
 public:
-	static JsonElement parseElement(std::istream &is);
-	static JsonObject parseObject(std::istream &is);
-	static JsonArray parseArray(std::istream &is);
+	static JsonElement parse_element(std::istream &is);
+	static JsonObject parse_object(std::istream &is);
+	static JsonArray parse_array(std::istream &is);
 
 private:
 	JsonParser();

@@ -16,26 +16,26 @@ class ModuleRaiiBase;
 
 struct ModuleDepository {
 	struct SnapshotElement {
-		SharedNts realPath;
-		void *baseAddr;
-		std::size_t refCount;
+		SharedNts real_path;
+		void *base_addr;
+		std::size_t ref_count;
 	};
 
 	static void start();
 	static void stop();
 
 	static boost::shared_ptr<Module> load(const char *path);
-	static boost::shared_ptr<Module> loadNoThrow(const char *path);
+	static boost::shared_ptr<Module> load_no_throw(const char *path);
 	static bool unload(const boost::shared_ptr<Module> &module);
-	static bool unload(void *baseAddr);
+	static bool unload(void *base_addr);
 
 	static std::vector<SnapshotElement> snapshot();
 
 private:
 	friend ModuleRaiiBase;
 
-	static void registerModuleRaii(ModuleRaiiBase *raii, long priority);
-	static void unregisterModuleRaii(ModuleRaiiBase *raii);
+	static void register_module_raii(ModuleRaiiBase *raii, long priority);
+	static void unregister_module_raii(ModuleRaiiBase *raii);
 
 	ModuleDepository();
 };

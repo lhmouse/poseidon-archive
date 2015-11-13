@@ -28,7 +28,7 @@ public:
 
 	public:
 		UniqueLock();
-		explicit UniqueLock(Mutex &owner, bool locksOwner = true);
+		explicit UniqueLock(Mutex &owner, bool locks_owner = true);
 		~UniqueLock();
 
 #ifdef POSEIDON_CXX11
@@ -45,7 +45,7 @@ public:
 #endif
 
 	public:
-		bool isLocked() const NOEXCEPT;
+		bool is_locked() const NOEXCEPT;
 		void lock() NOEXCEPT;
 		void unlock() NOEXCEPT;
 
@@ -54,12 +54,12 @@ public:
 	public:
 #ifdef POSEIDON_CXX11
 		explicit operator bool() const noexcept {
-			return isLocked();
+			return is_locked();
 		}
 #else
 		typedef bool (UniqueLock::*DummyBool_)() const;
 		operator DummyBool_() const NOEXCEPT {
-			return isLocked() ? &UniqueLock::isLocked : 0;
+			return is_locked() ? &UniqueLock::is_locked : 0;
 		}
 #endif
 	};

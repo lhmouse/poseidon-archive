@@ -24,44 +24,44 @@ namespace Http {
 		~UpgradedSessionBase();
 
 	protected:
-		void onConnect() OVERRIDE;
-		void onReadHup() NOEXCEPT OVERRIDE;
-		void onClose(int errCode) NOEXCEPT OVERRIDE;
+		void on_connect() OVERRIDE;
+		void on_read_hup() NOEXCEPT OVERRIDE;
+		void on_close(int err_code) NOEXCEPT OVERRIDE;
 
-		virtual void onReadAvail(StreamBuffer data) = 0;
+		virtual void on_read_avail(StreamBuffer data) = 0;
 
 	public:
 		bool send(StreamBuffer buffer) OVERRIDE;
 
-		bool hasBeenShutdownRead() const NOEXCEPT OVERRIDE;
-		bool shutdownRead() NOEXCEPT;
-		bool hasBeenShutdownWrite() const NOEXCEPT OVERRIDE;
-		bool shutdownWrite() NOEXCEPT;
-		void forceShutdown() NOEXCEPT;
+		bool has_been_shutdown_read() const NOEXCEPT OVERRIDE;
+		bool shutdown_read() NOEXCEPT;
+		bool has_been_shutdown_write() const NOEXCEPT OVERRIDE;
+		bool shutdown_write() NOEXCEPT;
+		void force_shutdown() NOEXCEPT;
 
-		boost::weak_ptr<const Session> getWeakParent() const {
+		boost::weak_ptr<const Session> get_weak_parent() const {
 			return m_parent;
 		}
-		boost::weak_ptr<Session> getWeakParent(){
+		boost::weak_ptr<Session> get_weak_parent(){
 			return m_parent;
 		}
 
-		boost::shared_ptr<const Session> getParent() const {
+		boost::shared_ptr<const Session> get_parent() const {
 			return m_parent.lock();
 		}
-		boost::shared_ptr<Session> getParent(){
+		boost::shared_ptr<Session> get_parent(){
 			return m_parent.lock();
 		}
 
 		// 以下所有函数，如果原来的 Session 被删除，抛出 bad_weak_ptr。
-		boost::shared_ptr<const Session> getSafeParent() const {
+		boost::shared_ptr<const Session> get_safe_parent() const {
 			return boost::shared_ptr<const Session>(m_parent);
 		}
-		boost::shared_ptr<Session> getSafeParent(){
+		boost::shared_ptr<Session> get_safe_parent(){
 			return boost::shared_ptr<Session>(m_parent);
 		}
 
-		void setTimeout(boost::uint64_t timeout);
+		void set_timeout(boost::uint64_t timeout);
 	};
 }
 

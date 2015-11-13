@@ -12,58 +12,58 @@
 namespace Poseidon {
 
 namespace Http {
-	extern std::string urlEncode(const void *data, std::size_t size);
-	extern std::string urlDecode(const void *data, std::size_t size);
+	extern std::string url_encode(const void *data, std::size_t size);
+	extern std::string url_decode(const void *data, std::size_t size);
 
-	inline std::string urlEncode(const char *data){
-		return urlEncode(data, std::strlen(data));
+	inline std::string url_encode(const char *data){
+		return url_encode(data, std::strlen(data));
 	}
-	inline std::string urlDecode(const char *data){
-		return urlDecode(data, std::strlen(data));
-	}
-
-	inline std::string urlEncode(const std::string &data){
-		return urlEncode(data.data(), data.size());
-	}
-	inline std::string urlDecode(const std::string &data){
-		return urlDecode(data.data(), data.size());
+	inline std::string url_decode(const char *data){
+		return url_decode(data, std::strlen(data));
 	}
 
-	extern std::string urlEncodedFromOptionalMap(const OptionalMap &data);
-	extern OptionalMap optionalMapFromUrlEncoded(const std::string &data);
-
-	extern std::string hexEncode(const void *data, std::size_t size, bool upperCase = false);
-	extern std::string hexDecode(const void *data, std::size_t size);
-
-	inline std::string hexEncode(const char *data, bool upperCase = false){
-		return hexEncode(data, std::strlen(data), upperCase);
+	inline std::string url_encode(const std::string &data){
+		return url_encode(data.data(), data.size());
 	}
-	inline std::string hexDecode(const char *data){
-		return hexDecode(data, std::strlen(data));
+	inline std::string url_decode(const std::string &data){
+		return url_decode(data.data(), data.size());
 	}
 
-	inline std::string hexEncode(const std::string &data, bool upperCase = false){
-		return hexEncode(data.data(), data.size(), upperCase);
+	extern std::string url_encoded_from_optional_map(const OptionalMap &data);
+	extern OptionalMap optional_map_from_url_encoded(const std::string &data);
+
+	extern std::string hex_encode(const void *data, std::size_t size, bool upper_case = false);
+	extern std::string hex_decode(const void *data, std::size_t size);
+
+	inline std::string hex_encode(const char *data, bool upper_case = false){
+		return hex_encode(data, std::strlen(data), upper_case);
 	}
-	inline std::string hexDecode(const std::string &data){
-		return hexDecode(data.data(), data.size());
+	inline std::string hex_decode(const char *data){
+		return hex_decode(data, std::strlen(data));
 	}
 
-	extern std::string base64Encode(const void *data, std::size_t size);
-	extern std::string base64Decode(const void *data, std::size_t size);
-
-	inline std::string base64Encode(const char *data){
-		return base64Encode(data, std::strlen(data));
+	inline std::string hex_encode(const std::string &data, bool upper_case = false){
+		return hex_encode(data.data(), data.size(), upper_case);
 	}
-	inline std::string base64Decode(const char *data){
-		return base64Decode(data, std::strlen(data));
+	inline std::string hex_decode(const std::string &data){
+		return hex_decode(data.data(), data.size());
 	}
 
-	inline std::string base64Encode(const std::string &data){
-		return base64Encode(data.data(), data.size());
+	extern std::string base64_encode(const void *data, std::size_t size);
+	extern std::string base64_decode(const void *data, std::size_t size);
+
+	inline std::string base64_encode(const char *data){
+		return base64_encode(data, std::strlen(data));
 	}
-	inline std::string base64Decode(const std::string &data){
-		return base64Decode(data.data(), data.size());
+	inline std::string base64_decode(const char *data){
+		return base64_decode(data, std::strlen(data));
+	}
+
+	inline std::string base64_encode(const std::string &data){
+		return base64_encode(data.data(), data.size());
+	}
+	inline std::string base64_decode(const std::string &data){
+		return base64_decode(data.data(), data.size());
 	}
 }
 

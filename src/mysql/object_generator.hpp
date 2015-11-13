@@ -18,9 +18,9 @@ public:
 	static ::boost::shared_ptr< ::Poseidon::MySql::ObjectBase> create(){
 		return ::boost::make_shared<MYSQL_OBJECT_NAME>();
 	}
-	static void batchLoad(::std::vector< ::boost::shared_ptr<MYSQL_OBJECT_NAME> > &ret_, ::std::string query_){
+	static void batch_load(::std::vector< ::boost::shared_ptr<MYSQL_OBJECT_NAME> > &ret_, ::std::string query_){
 		::std::vector<boost::shared_ptr< ::Poseidon::MySql::ObjectBase> > temp_;
-		::Poseidon::MySql::ObjectBase::batchLoad(temp_, &create, TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query_));
+		::Poseidon::MySql::ObjectBase::batch_load(temp_, &create, TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query_));
 
 		ret_.reserve(ret_.size() + temp_.size());
 		for(AUTO(it_, temp_.begin()); it_ != temp_.end(); ++it_){
@@ -154,7 +154,7 @@ public:
 
 		MYSQL_OBJECT_FIELDS
 	{
-		::Poseidon::atomicFence(::Poseidon::ATOMIC_RELEASE);
+		::Poseidon::atomic_fence(::Poseidon::ATOMIC_RELEASE);
 	}
 
 public:
@@ -174,10 +174,10 @@ public:
 
 #define FIELD_BOOLEAN(name_)	\
 	bool get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(bool val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
@@ -185,10 +185,10 @@ public:
 
 #define FIELD_TINYINT(name_)	\
 	::boost::int8_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::int8_t val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
@@ -196,10 +196,10 @@ public:
 
 #define FIELD_TINYINT_UNSIGNED(name_)	\
 	::boost::uint8_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint8_t val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
@@ -207,10 +207,10 @@ public:
 
 #define FIELD_SMALLINT(name_)	\
 	::boost::int16_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::int16_t val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
@@ -218,10 +218,10 @@ public:
 
 #define FIELD_SMALLINT_UNSIGNED(name_)	\
 	::boost::uint16_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint16_t val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
@@ -229,10 +229,10 @@ public:
 
 #define FIELD_INTEGER(name_)	\
 	::boost::int32_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::int32_t val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
@@ -240,10 +240,10 @@ public:
 
 #define FIELD_INTEGER_UNSIGNED(name_)	\
 	::boost::uint32_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint32_t val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
@@ -251,10 +251,10 @@ public:
 
 #define FIELD_BIGINT(name_)	\
 	::boost::int64_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::int64_t val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
@@ -262,17 +262,17 @@ public:
 
 #define FIELD_BIGINT_UNSIGNED(name_)	\
 	::boost::uint64_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
 	}
 
 #define FIELD_STRING(name_)	\
-	const ::std::string & unlockedGet_ ## name_() const {	\
+	const ::std::string & unlocked_get_ ## name_() const {	\
 		return name_;	\
 	}	\
 	::std::string get_ ## name_() const {	\
@@ -291,17 +291,17 @@ public:
 
 #define FIELD_DATETIME(name_)	\
 	::boost::uint64_t get_ ## name_() const {	\
-		return ::Poseidon::atomicLoad(name_, ::Poseidon::ATOMIC_CONSUME);	\
+		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
 	}	\
 	void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
-		::Poseidon::atomicStore(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
 		if(invalidates_){	\
 			invalidate();	\
 		}	\
 	}
 
 #define FIELD_UUID(name_)	\
-	const ::Poseidon::Uuid & unlockedGet_ ## name_() const {	\
+	const ::Poseidon::Uuid & unlocked_get_ ## name_() const {	\
 		return name_;	\
 	}	\
 	Poseidon::Uuid get_ ## name_() const {	\
@@ -320,11 +320,11 @@ public:
 
 	MYSQL_OBJECT_FIELDS
 
-	const char *getTableName() const {
+	const char *get_table_name() const {
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
 
-	void syncGenerateSql(::std::string &sql_, bool toReplace_) const {
+	void sync_generate_sql(::std::string &sql_, bool to_replace_) const {
 		::std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
@@ -384,7 +384,7 @@ public:
 													<< get_ ## name_()	\
 													<< '\''),
 
-		if(toReplace_){
+		if(to_replace_){
 			oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
 		} else {
 			oss_ <<"INSERT INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
@@ -392,7 +392,7 @@ public:
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
 		oss_.str().swap(sql_);
 	}
-	void syncFetch(const boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_){
+	void sync_fetch(const boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_){
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -407,18 +407,18 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 
-#define FIELD_BOOLEAN(name_)				set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_TINYINT(name_)				set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(conn_->getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_SMALLINT(name_)				set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_SMALLINT_UNSIGNED(name_)		set_ ## name_(conn_->getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_INTEGER(name_)				set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_INTEGER_UNSIGNED(name_)		set_ ## name_(conn_->getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_BIGINT(name_)					set_ ## name_(conn_->getSigned( TOKEN_TO_STR(name_) ));
-#define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(conn_->getUnsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_STRING(name_)					set_ ## name_(conn_->getString( TOKEN_TO_STR(name_) ));
-#define FIELD_DATETIME(name_)				set_ ## name_(conn_->getDateTime( TOKEN_TO_STR(name_) ));
-#define FIELD_UUID(name_)					set_ ## name_(::Poseidon::Uuid(conn_->getString( TOKEN_TO_STR(name_) )));
+#define FIELD_BOOLEAN(name_)				set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
+#define FIELD_TINYINT(name_)				set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
+#define FIELD_TINYINT_UNSIGNED(name_)		set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_SMALLINT(name_)				set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
+#define FIELD_SMALLINT_UNSIGNED(name_)		set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_INTEGER(name_)				set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
+#define FIELD_INTEGER_UNSIGNED(name_)		set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_BIGINT(name_)					set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
+#define FIELD_BIGINT_UNSIGNED(name_)		set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
+#define FIELD_STRING(name_)					set_ ## name_(conn_->get_string( TOKEN_TO_STR(name_) ));
+#define FIELD_DATETIME(name_)				set_ ## name_(conn_->get_date_time( TOKEN_TO_STR(name_) ));
+#define FIELD_UUID(name_)					set_ ## name_(::Poseidon::Uuid(conn_->get_string( TOKEN_TO_STR(name_) )));
 
 		MYSQL_OBJECT_FIELDS
 	}

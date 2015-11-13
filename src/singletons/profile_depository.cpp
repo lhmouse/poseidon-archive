@@ -25,9 +25,9 @@ namespace {
 		}
 
 		bool operator<(const ProfileKey &rhs) const {
-			const int fileCmp = std::strcmp(file, rhs.file);
-			if(fileCmp != 0){
-				return fileCmp < 0;
+			const int file_cmp = std::strcmp(file, rhs.file);
+			if(file_cmp != 0){
+				return file_cmp < 0;
 			}
 			return line < rhs.line;
 		}
@@ -35,11 +35,11 @@ namespace {
 
 	struct ProfileCounters {
 		volatile unsigned long long samples;
-		volatile unsigned long long nsTotal;
-		volatile unsigned long long nsExclusive;
+		volatile unsigned long long ns_total;
+		volatile unsigned long long ns_exclusive;
 
 		ProfileCounters()
-			: samples(0), nsTotal(0), nsExclusive(0)
+			: samples(0), ns_total(0), ns_exclusive(0)
 		{
 		}
 	};
@@ -60,7 +60,7 @@ void ProfileDepository::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping profile depository...");
 }
 
-bool ProfileDepository::isEnabled(){
+bool ProfileDepository::is_enabled(){
 	return g_enabled;
 }
 
@@ -83,9 +83,9 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 		}
 
 	_writeProfile:
-		atomicAdd(it->second.samples, 1, ATOMIC_RELAXED);
-		atomicAdd(it->second.nsTotal, total * 1e6, ATOMIC_RELAXED);
-		atomicAdd(it->second.nsExclusive, exclusive * 1e6, ATOMIC_RELAXED);
+		atomic_add(it->second.samples, 1, ATOMIC_RELAXED);
+		atomic_add(it->second.ns_total, total * 1e6, ATOMIC_RELAXED);
+		atomic_add(it->second.ns_exclusive, exclusive * 1e6, ATOMIC_RELAXED);
 
 //		LOG_POSEIDON_TRACE("Accumulated profile info: file = ", file, ", line = ", line,
 //			", func = ", func, ", total = ", total, " s, exclusive = ", exclusive, " s");
@@ -94,7 +94,7 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 }
 
 std::vector<ProfileDepository::SnapshotElement> ProfileDepository::snapshot(){
-	Profiler::flushProfilersInThread();
+	Profiler::flush_profilers_in_thread();
 
 	std::vector<SnapshotElement> ret;
 	{
@@ -105,9 +105,9 @@ std::vector<ProfileDepository::SnapshotElement> ProfileDepository::snapshot(){
 			pi.file = it->first.file;
 			pi.line = it->first.line;
 			pi.func = it->first.func;
-			pi.samples = atomicLoad(it->second.samples, ATOMIC_RELAXED);
-			pi.nsTotal = atomicLoad(it->second.nsTotal, ATOMIC_RELAXED);
-			pi.nsExclusive = atomicLoad(it->second.nsExclusive, ATOMIC_RELAXED);
+			pi.samples = atomic_load(it->second.samples, ATOMIC_RELAXED);
+			pi.ns_total = atomic_load(it->second.ns_total, ATOMIC_RELAXED);
+			pi.ns_exclusive = atomic_load(it->second.ns_exclusive, ATOMIC_RELAXED);
 			ret.push_back(pi);
 		}
 	}

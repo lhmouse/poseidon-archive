@@ -25,16 +25,16 @@ namespace {
 			typedef IncrementalAlloc<U> other;
 		};
 
-		void *&incPtr;
-		const size_type incSize;
+		void *&inc_ptr;
+		const size_type inc_size;
 
-		IncrementalAlloc(void *&incPtr_, size_type incSize_)
-			: incPtr(incPtr_), incSize(incSize_)
+		IncrementalAlloc(void *&inc_ptr_, size_type inc_size_)
+			: inc_ptr(inc_ptr_), inc_size(inc_size_)
 		{
 		}
 		template<typename U>
 		IncrementalAlloc(const IncrementalAlloc<U> &rhs)
-			: incPtr(rhs.incPtr), incSize(rhs.incSize)
+			: inc_ptr(rhs.inc_ptr), inc_size(rhs.inc_size)
 		{
 		}
 
@@ -46,12 +46,12 @@ namespace {
 		}
 
 		pointer allocate(size_type n, const void * = 0){
-			const size_type k = n * sizeof(T) + incSize;
-			if(k / sizeof(T) != n + incSize / sizeof(T)){
+			const size_type k = n * sizeof(T) + inc_size;
+			if(k / sizeof(T) != n + inc_size / sizeof(T)){
 				throw std::bad_alloc();
 			}
 			char *const p = static_cast<char *>(::operator new(k));
-			incPtr = p + k - incSize;
+			inc_ptr = p + k - inc_size;
 			return reinterpret_cast<pointer>(p);
 		}
 		void deallocate(pointer p, size_type){

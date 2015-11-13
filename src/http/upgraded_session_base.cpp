@@ -15,64 +15,64 @@ namespace Http {
 	UpgradedSessionBase::~UpgradedSessionBase(){
 	}
 
-	void UpgradedSessionBase::onConnect(){
+	void UpgradedSessionBase::on_connect(){
 	}
-	void UpgradedSessionBase::onReadHup() NOEXCEPT {
+	void UpgradedSessionBase::on_read_hup() NOEXCEPT {
 	}
-	void UpgradedSessionBase::onClose(int errCode) NOEXCEPT {
-		(void)errCode;
+	void UpgradedSessionBase::on_close(int err_code) NOEXCEPT {
+		(void)err_code;
 	}
 
 	bool UpgradedSessionBase::send(StreamBuffer buffer){
-		const AUTO(parent, getParent());
+		const AUTO(parent, get_parent());
 		if(!parent){
 			return false;
 		}
 		return parent->TcpSessionBase::send(STD_MOVE(buffer));
 	}
 
-	bool UpgradedSessionBase::hasBeenShutdownRead() const NOEXCEPT {
-		const AUTO(parent, getParent());
+	bool UpgradedSessionBase::has_been_shutdown_read() const NOEXCEPT {
+		const AUTO(parent, get_parent());
 		if(!parent){
 			return true;
 		}
-		return parent->TcpSessionBase::hasBeenShutdownRead();
+		return parent->TcpSessionBase::has_been_shutdown_read();
 	}
-	bool UpgradedSessionBase::shutdownRead() NOEXCEPT {
-		const AUTO(parent, getParent());
+	bool UpgradedSessionBase::shutdown_read() NOEXCEPT {
+		const AUTO(parent, get_parent());
 		if(!parent){
 			return false;
 		}
-		return parent->TcpSessionBase::shutdownRead();
+		return parent->TcpSessionBase::shutdown_read();
 	}
-	bool UpgradedSessionBase::hasBeenShutdownWrite() const NOEXCEPT {
-		const AUTO(parent, getParent());
+	bool UpgradedSessionBase::has_been_shutdown_write() const NOEXCEPT {
+		const AUTO(parent, get_parent());
 		if(!parent){
 			return true;
 		}
-		return parent->TcpSessionBase::hasBeenShutdownWrite();
+		return parent->TcpSessionBase::has_been_shutdown_write();
 	}
-	bool UpgradedSessionBase::shutdownWrite() NOEXCEPT {
-		const AUTO(parent, getParent());
+	bool UpgradedSessionBase::shutdown_write() NOEXCEPT {
+		const AUTO(parent, get_parent());
 		if(!parent){
 			return false;
 		}
-		return parent->TcpSessionBase::shutdownWrite();
+		return parent->TcpSessionBase::shutdown_write();
 	}
-	void UpgradedSessionBase::forceShutdown() NOEXCEPT {
-		const AUTO(parent, getParent());
+	void UpgradedSessionBase::force_shutdown() NOEXCEPT {
+		const AUTO(parent, get_parent());
 		if(!parent){
 			return;
 		}
-		parent->TcpSessionBase::forceShutdown();
+		parent->TcpSessionBase::force_shutdown();
 	}
 
-	void UpgradedSessionBase::setTimeout(boost::uint64_t timeout){
-		const AUTO(parent, getParent());
+	void UpgradedSessionBase::set_timeout(boost::uint64_t timeout){
+		const AUTO(parent, get_parent());
 		if(!parent){
 			return;
 		}
-		parent->TcpSessionBase::setTimeout(timeout);
+		parent->TcpSessionBase::set_timeout(timeout);
 	}
 }
 

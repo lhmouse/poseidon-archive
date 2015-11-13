@@ -25,47 +25,47 @@ namespace Http {
 		class ErrorJob;
 
 	private:
-		const boost::uint64_t m_maxRequestLength;
+		const boost::uint64_t m_max_request_length;
 
-		boost::uint64_t m_sizeTotal;
-		RequestHeaders m_requestHeaders;
-		std::string m_transferEncoding;
+		boost::uint64_t m_size_total;
+		RequestHeaders m_request_headers;
+		std::string m_transfer_encoding;
 		StreamBuffer m_entity;
 
-		mutable Mutex m_upgradedSessionMutex;
-		boost::shared_ptr<UpgradedSessionBase> m_upgradedSession;
+		mutable Mutex m_upgraded_session_mutex;
+		boost::shared_ptr<UpgradedSessionBase> m_upgraded_session;
 
 	public:
-		explicit Session(UniqueFile socket, boost::uint64_t maxRequestLength = 0);
+		explicit Session(UniqueFile socket, boost::uint64_t max_request_length = 0);
 		~Session();
 
 	protected:
 		// TcpSessionBase
-		void onReadHup() NOEXCEPT OVERRIDE;
-		void onClose(int errCode) NOEXCEPT OVERRIDE;
+		void on_read_hup() NOEXCEPT OVERRIDE;
+		void on_close(int err_code) NOEXCEPT OVERRIDE;
 
-		void onReadAvail(StreamBuffer data) OVERRIDE;
+		void on_read_avail(StreamBuffer data) OVERRIDE;
 
 		// ServerReader
-		void onRequestHeaders(RequestHeaders requestHeaders, std::string transferEncoding, boost::uint64_t contentLength) OVERRIDE;
-		void onRequestEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity) OVERRIDE;
-		bool onRequestEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers) OVERRIDE;
+		void on_request_headers(RequestHeaders request_headers, std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
+		void on_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) OVERRIDE;
+		bool on_request_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) OVERRIDE;
 
 		// ServerWriter
-		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
+		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual boost::shared_ptr<UpgradedSessionBase> predispatchRequest(RequestHeaders &requestHeaders, StreamBuffer &entity);
+		virtual boost::shared_ptr<UpgradedSessionBase> predispatch_request(RequestHeaders &request_headers, StreamBuffer &entity);
 
-		virtual void onSyncRequest(RequestHeaders requestHeaders, StreamBuffer entity) = 0;
+		virtual void on_sync_request(RequestHeaders request_headers, StreamBuffer entity) = 0;
 
 	public:
-		boost::shared_ptr<UpgradedSessionBase> getUpgradedSession() const;
+		boost::shared_ptr<UpgradedSessionBase> get_upgraded_session() const;
 
-		bool send(ResponseHeaders responseHeaders, StreamBuffer entity = StreamBuffer());
-		bool send(StatusCode statusCode, StreamBuffer entity = StreamBuffer(), std::string contentType = "text/plain");
-		bool send(StatusCode statusCode, OptionalMap headers, StreamBuffer entity = StreamBuffer());
-		bool sendDefault(StatusCode statusCode, OptionalMap headers = OptionalMap());
+		bool send(ResponseHeaders response_headers, StreamBuffer entity = StreamBuffer());
+		bool send(StatusCode status_code, StreamBuffer entity = StreamBuffer(), std::string content_type = "text/plain");
+		bool send(StatusCode status_code, OptionalMap headers, StreamBuffer entity = StreamBuffer());
+		bool send_default(StatusCode status_code, OptionalMap headers = OptionalMap());
 	};
 }
 

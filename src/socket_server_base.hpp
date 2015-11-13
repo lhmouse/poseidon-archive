@@ -13,20 +13,20 @@ namespace Poseidon {
 class SocketServerBase : NONCOPYABLE {
 private:
 	const UniqueFile m_socket;
-	const IpPort m_localInfo;
+	const IpPort m_local_info;
 
 public:
 	explicit SocketServerBase(UniqueFile socket);
 	virtual ~SocketServerBase();
 
 protected:
-	int getFd() const {
+	int get_fd() const {
 		return m_socket.get();
 	}
 
 public:
-	const IpPort &getLocalInfo() const {
-		return m_localInfo;
+	const IpPort &get_local_info() const {
+		return m_local_info;
 	}
 
 	virtual bool poll() const = 0;

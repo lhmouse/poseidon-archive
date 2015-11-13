@@ -12,7 +12,7 @@ namespace Poseidon {
 
 // 最多输出七个字节，此函数返回后 write 指向最后一个写入的字节的后面。
 template<typename OutputIterT>
-void vuint50ToBinary(boost::uint64_t val, OutputIterT &write){
+void vuint50_to_binary(boost::uint64_t val, OutputIterT &write){
 	for(unsigned i = 0; i < 6; ++i){
 		const unsigned char by = val & 0x7F;
 		val >>= 7;
@@ -30,19 +30,19 @@ void vuint50ToBinary(boost::uint64_t val, OutputIterT &write){
 	}
 }
 template<typename OutputIterT>
-void vint50ToBinary(boost::int64_t val, OutputIterT &write){
+void vint50_to_binary(boost::int64_t val, OutputIterT &write){
 	AUTO(encoded, static_cast<boost::uint64_t>(val));
 	encoded <<= 1;
 	if(val < 0){
 		encoded = ~encoded;
 	}
 	encoded &= (1ull << 50) - 1;
-	vuint50ToBinary(encoded, write);
+	vuint50_to_binary(encoded, write);
 }
 
 // 返回值指向编码数据的结尾。成功返回 true，出错返回 false。
 template<typename InputIterT>
-bool vuint50FromBinary(boost::uint64_t &val, InputIterT &read, std::size_t count){
+bool vuint50_from_binary(boost::uint64_t &val, InputIterT &read, std::size_t count){
 	val = 0;
 	for(unsigned i = 0; i < 6; ++i){
 		if(count == 0){
@@ -65,9 +65,9 @@ bool vuint50FromBinary(boost::uint64_t &val, InputIterT &read, std::size_t count
 	return true;
 }
 template<typename InputIterT>
-bool vint50FromBinary(boost::int64_t &val, InputIterT &read, std::size_t count){
+bool vint50_from_binary(boost::int64_t &val, InputIterT &read, std::size_t count){
 	boost::uint64_t encoded;
-	const bool ret = vuint50FromBinary(encoded, read, count);
+	const bool ret = vuint50_from_binary(encoded, read, count);
 	if(ret){
 		const bool negative = encoded & 1;
 		encoded >>= 1;

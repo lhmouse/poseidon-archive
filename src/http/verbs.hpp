@@ -25,8 +25,8 @@ namespace Http {
 
 	using namespace Verbs;
 
-	extern Verb getVerbFromString(const char *str);
-	extern const char *getStringFromVerb(Verb verb);
+	extern Verb get_verb_from_string(const char *str);
+	extern const char *get_string_from_verb(Verb verb);
 }
 
 }

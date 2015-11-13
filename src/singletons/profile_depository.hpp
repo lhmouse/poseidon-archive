@@ -18,15 +18,15 @@ struct ProfileDepository {
 		// 采样数。
 		unsigned long long samples;
 		// 控制流进入函数，直到退出函数（正常返回或异常被抛出），经历的总纳秒数。
-		unsigned long long nsTotal;
-		// nsTotal 扣除执行点位于其他 profiler 之中的纳秒数。
-		unsigned long long nsExclusive;
+		unsigned long long ns_total;
+		// ns_total 扣除执行点位于其他 profiler 之中的纳秒数。
+		unsigned long long ns_exclusive;
 	};
 
 	static void start();
 	static void stop();
 
-	static bool isEnabled();
+	static bool is_enabled();
 	static void accumulate(const char *file, unsigned long line, const char *func,
 		double total, double exclusive) NOEXCEPT;
 

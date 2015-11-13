@@ -28,18 +28,18 @@ namespace Http {
 
 	class AuthInfo; // 没有定义的类，当作句柄使用。
 
-	extern boost::shared_ptr<const AuthInfo> createAuthInfo(std::vector<std::string> basicUserPass); // username:password
+	extern boost::shared_ptr<const AuthInfo> create_auth_info(std::vector<std::string> basic_user_pass); // username:password
 
 	// 支持 Basic 和 Digest。如果返回值的 first 成员为 AUTH_SUCCEEDED，second 为指向认证成功的 username:password 的指针。
-	extern std::pair<AuthResult, const std::string *> checkAuthorizationHeader(
-		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, Verb verb, const std::string &authHeader);
-	extern void throwUnauthorized(AuthResult authResult, const IpPort &remoteAddr,
-		bool isProxy = false, OptionalMap headers = OptionalMap()) __attribute__((__noreturn__));
+	extern std::pair<AuthResult, const std::string *> check_authorization_header(
+		const boost::shared_ptr<const AuthInfo> &auth_info, const IpPort &remote_addr, Verb verb, const std::string &auth_header);
+	extern void throw_unauthorized(AuthResult auth_result, const IpPort &remote_addr,
+		bool is_proxy = false, OptionalMap headers = OptionalMap()) __attribute__((__noreturn__));
 
-	// 如果 authInfo 为空指针，返回空指针；否则，返回指向认证成功的 username:password 的指针。
-	extern const std::string *checkAndThrowIfUnauthorized(
-		const boost::shared_ptr<const AuthInfo> &authInfo, const IpPort &remoteAddr, const RequestHeaders &requestHeaders,
-		bool isProxy = false, OptionalMap headers = OptionalMap());
+	// 如果 auth_info 为空指针，返回空指针；否则，返回指向认证成功的 username:password 的指针。
+	extern const std::string *check_and_throw_if_unauthorized(
+		const boost::shared_ptr<const AuthInfo> &auth_info, const IpPort &remote_addr, const RequestHeaders &request_headers,
+		bool is_proxy = false, OptionalMap headers = OptionalMap());
 }
 
 }

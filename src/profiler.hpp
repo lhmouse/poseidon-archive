@@ -10,10 +10,10 @@ namespace Poseidon {
 
 class Profiler : NONCOPYABLE {
 public:
-	static void flushProfilersInThread() NOEXCEPT;
+	static void flush_profilers_in_thread() NOEXCEPT;
 
-	static void *beginStackSwitch() NOEXCEPT;
-	static void endStackSwitch(void *opaque) NOEXCEPT;
+	static void *begin_stack_switch() NOEXCEPT;
+	static void end_stack_switch(void *opaque) NOEXCEPT;
 
 private:
 	Profiler *const m_prev;
@@ -22,8 +22,8 @@ private:
 	const char *const m_func;
 
 	double m_start;
-	double m_exclusiveTotal;
-	double m_exclusiveStart;
+	double m_exclusive_total;
+	double m_exclusive_start;
 
 public:
 	Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT;

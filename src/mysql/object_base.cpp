@@ -12,11 +12,11 @@
 namespace Poseidon {
 
 namespace MySql {
-	void ObjectBase::batchLoad(std::vector<boost::shared_ptr<ObjectBase> > &ret,
-		boost::shared_ptr<ObjectBase> (*factory)(), const char *tableHint, std::string query)
+	void ObjectBase::batch_load(std::vector<boost::shared_ptr<ObjectBase> > &ret,
+		boost::shared_ptr<ObjectBase> (*factory)(), const char *table_hint, std::string query)
 	{
 		const AUTO(queue, boost::make_shared<std::deque<boost::shared_ptr<ObjectBase> > >());
-		const AUTO(promise, MySqlDaemon::enqueueForBatchLoading(queue, factory, tableHint, STD_MOVE(query)));
+		const AUTO(promise, MySqlDaemon::enqueue_for_batch_loading(queue, factory, table_hint, STD_MOVE(query)));
 		JobDispatcher::yield(promise);
 
 		ret.reserve(ret.size() + queue->size());
@@ -24,7 +24,7 @@ namespace MySql {
 	}
 
 	ObjectBase::ObjectBase()
-		: m_autoSaves(false)
+		: m_auto_saves(false)
 	{
 	}
 	ObjectBase::~ObjectBase(){
@@ -32,8 +32,8 @@ namespace MySql {
 
 	bool ObjectBase::invalidate() const NOEXCEPT {
 		try {
-			if(isAutoSavingEnabled()){
-				asyncSave(true, false);
+			if(is_auto_saving_enabled()){
+				async_save(true, false);
 				return true;
 			}
 		} catch(std::exception &e){
@@ -42,36 +42,36 @@ namespace MySql {
 		return false;
 	}
 
-	bool ObjectBase::isAutoSavingEnabled() const {
-		return atomicLoad(m_autoSaves, ATOMIC_CONSUME);
+	bool ObjectBase::is_auto_saving_enabled() const {
+		return atomic_load(m_auto_saves, ATOMIC_CONSUME);
 	}
-	void ObjectBase::enableAutoSaving() const {
-		atomicStore(m_autoSaves, true, ATOMIC_RELEASE);
+	void ObjectBase::enable_auto_saving() const {
+		atomic_store(m_auto_saves, true, ATOMIC_RELEASE);
 	}
-	void ObjectBase::disableAutoSaving() const {
-		atomicStore(m_autoSaves, false, ATOMIC_RELEASE);
-	}
-
-	void *ObjectBase::getCombinedWriteStamp() const {
-		return atomicLoad(m_combinedWriteStamp, ATOMIC_CONSUME);
-	}
-	void ObjectBase::setCombinedWriteStamp(void *stamp) const {
-		atomicStore(m_combinedWriteStamp, stamp, ATOMIC_RELEASE);
+	void ObjectBase::disable_auto_saving() const {
+		atomic_store(m_auto_saves, false, ATOMIC_RELEASE);
 	}
 
-	void ObjectBase::syncSave(bool toReplace) const {
-		const AUTO(promise, MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), toReplace, true));
-		JobDispatcher::yield(promise);
-		enableAutoSaving();
+	void *ObjectBase::get_combined_write_stamp() const {
+		return atomic_load(m_combined_write_stamp, ATOMIC_CONSUME);
 	}
-	void ObjectBase::syncLoad(std::string query){
-		const AUTO(promise, MySqlDaemon::enqueueForLoading(virtualSharedFromThis<ObjectBase>(), STD_MOVE(query)));
-		JobDispatcher::yield(promise);
-		enableAutoSaving();
+	void ObjectBase::set_combined_write_stamp(void *stamp) const {
+		atomic_store(m_combined_write_stamp, stamp, ATOMIC_RELEASE);
 	}
-	void ObjectBase::asyncSave(bool toReplace, bool urgent) const {
-		enableAutoSaving();
-		MySqlDaemon::enqueueForSaving(virtualSharedFromThis<ObjectBase>(), toReplace, urgent);
+
+	void ObjectBase::sync_save(bool to_replace) const {
+		const AUTO(promise, MySqlDaemon::enqueue_for_saving(virtual_shared_from_this<ObjectBase>(), to_replace, true));
+		JobDispatcher::yield(promise);
+		enable_auto_saving();
+	}
+	void ObjectBase::sync_load(std::string query){
+		const AUTO(promise, MySqlDaemon::enqueue_for_loading(virtual_shared_from_this<ObjectBase>(), STD_MOVE(query)));
+		JobDispatcher::yield(promise);
+		enable_auto_saving();
+	}
+	void ObjectBase::async_save(bool to_replace, bool urgent) const {
+		enable_auto_saving();
+		MySqlDaemon::enqueue_for_saving(virtual_shared_from_this<ObjectBase>(), to_replace, urgent);
 	}
 }
 

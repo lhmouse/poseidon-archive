@@ -26,11 +26,11 @@ private:
 	void unlock(int state) const NOEXCEPT;
 
 public:
-	bool isSatisfied() const NOEXCEPT;
-	void checkAndRethrow() const;
+	bool is_satisfied() const NOEXCEPT;
+	void check_and_rethrow() const;
 
-	void setSuccess();
-	void setException(const boost::exception_ptr &except);
+	void set_success();
+	void set_exception(const boost::exception_ptr &except);
 };
 
 }

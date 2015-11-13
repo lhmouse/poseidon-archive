@@ -48,10 +48,10 @@ Mutex::UniqueLock::UniqueLock()
 	: m_owner(NULLPTR), m_locked(false)
 {
 }
-Mutex::UniqueLock::UniqueLock(Mutex &owner, bool locksOwner)
+Mutex::UniqueLock::UniqueLock(Mutex &owner, bool locks_owner)
 	: m_owner(&owner), m_locked(false)
 {
-	if(locksOwner){
+	if(locks_owner){
 		lock();
 	}
 }
@@ -62,7 +62,7 @@ Mutex::UniqueLock::UniqueLock(UniqueLock &&rhs) noexcept
 	rhs.m_locked = false;
 }
 Mutex::UniqueLock &Mutex::UniqueLock::operator=(UniqueLock &&rhs) noexcept {
-	if(isLocked()){
+	if(is_locked()){
 		unlock();
 	}
 	m_owner = rhs.m_owner;
@@ -77,7 +77,7 @@ Mutex::UniqueLock::~UniqueLock(){
 	}
 }
 
-bool Mutex::UniqueLock::isLocked() const NOEXCEPT {
+bool Mutex::UniqueLock::is_locked() const NOEXCEPT {
 	return m_locked;
 }
 void Mutex::UniqueLock::lock() NOEXCEPT {

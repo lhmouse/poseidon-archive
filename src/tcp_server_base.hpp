@@ -15,15 +15,15 @@ class TcpSessionBase;
 // 抽象工厂模式
 class TcpServerBase : public SocketServerBase {
 private:
-	boost::scoped_ptr<ServerSslFactory> m_sslFactory;
+	boost::scoped_ptr<ServerSslFactory> m_ssl_factory;
 
 public:
-	TcpServerBase(const IpPort &bindAddr, const char *cert, const char *privateKey);
+	TcpServerBase(const IpPort &bind_addr, const char *cert, const char *private_key);
 	~TcpServerBase();
 
 protected:
 	// 工厂函数。返回空指针导致抛出一个异常。
-	virtual boost::shared_ptr<TcpSessionBase> onClientConnect(UniqueFile client) const = 0;
+	virtual boost::shared_ptr<TcpSessionBase> on_client_connect(UniqueFile client) const = 0;
 
 public:
 	bool poll() const OVERRIDE;

@@ -31,7 +31,7 @@ void dont_optimize_try_catch_away();
 namespace Poseidon {
 
 namespace {
-	boost::uint64_t g_jobTimeout	= 60000;
+	boost::uint64_t g_job_timeout	= 60000;
 
 	enum FiberState {
 		FS_READY,
@@ -40,14 +40,14 @@ namespace {
 	};
 
 	struct JobElement {
-		const boost::uint64_t enqueuedTime;
+		const boost::uint64_t enqueued_time;
 
 		boost::shared_ptr<JobBase> job;
 		boost::shared_ptr<const JobPromise> promise;
 		boost::shared_ptr<const bool> withdrawn;
 
 		JobElement(boost::shared_ptr<JobBase> job_, boost::shared_ptr<const JobPromise> promise_, boost::shared_ptr<const bool> withdrawn_)
-			: enqueuedTime(getFastMonoClock()), job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), withdrawn(STD_MOVE(withdrawn_))
+			: enqueued_time(get_fast_mono_clock()), job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), withdrawn(STD_MOVE(withdrawn_))
 		{
 		}
 	};
@@ -57,9 +57,9 @@ namespace {
 			assert(cb == sizeof(StackStorage));
 
 			void *ptr;
-			const int errCode = ::posix_memalign(&ptr, 0x1000, cb);
-			if(errCode != 0){
-				LOG_POSEIDON_WARNING("Failed to allocate stack: errCode = ", errCode);
+			const int err_code = ::posix_memalign(&ptr, 0x1000, cb);
+			if(err_code != 0){
+				LOG_POSEIDON_WARNING("Failed to allocate stack: err_code = ", err_code);
 				throw std::bad_alloc();
 			}
 			return ptr;
@@ -71,7 +71,7 @@ namespace {
 		char bytes[0x100000];
 	};
 
-	boost::array<boost::scoped_ptr<StackStorage>, 16> g_stackPool;
+	boost::array<boost::scoped_ptr<StackStorage>, 16> g_stack_pool;
 
 	struct FiberControl {
 		std::deque<JobElement> queue;
@@ -98,7 +98,7 @@ namespace {
 #ifndef __x86_64__
 		__attribute__((__force_align_arg_pointer__))
 #endif
-	void fiberStackBarrier(FiberControl *fiber) NOEXCEPT {
+	void fiber_stack_barrier(FiberControl *fiber) NOEXCEPT {
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Entering fiber ", static_cast<void *>(fiber));
 		try {
 			fiber->queue.front().job->perform();
@@ -110,9 +110,9 @@ namespace {
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Exited from fiber ", static_cast<void *>(fiber));
 	}
 
-	__thread FiberControl *t_currentFiber = NULLPTR;
+	__thread FiberControl *t_current_fiber = NULLPTR;
 
-	void scheduleFiber(FiberControl *fiber) NOEXCEPT {
+	void schedule_fiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;
 
 		assert(!fiber->queue.empty());
@@ -122,8 +122,8 @@ namespace {
 			std::abort();
 		}
 
-		t_currentFiber = fiber;
-		const AUTO(opaque, Profiler::beginStackSwitch());
+		t_current_fiber = fiber;
+		const AUTO(opaque, Profiler::begin_stack_switch());
 		try {
 			::dont_optimize_try_catch_away();
 
@@ -134,7 +134,7 @@ namespace {
 				} else {
 					fiber->state = FS_RUNNING;
 					if(!fiber->stack){
-						for(AUTO(it, g_stackPool.begin()); it != g_stackPool.end(); ++it){
+						for(AUTO(it, g_stack_pool.begin()); it != g_stack_pool.end(); ++it){
 							if(*it){
 								fiber->stack.swap(*it);
 								goto _allocated;
@@ -158,7 +158,7 @@ namespace {
 						: "c"(fiber), "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
 						: "sp", "memory"
 					);
-					fiberStackBarrier(reg);
+					fiber_stack_barrier(reg);
 
 					reg->state = FS_READY;
 					::unchecked_siglongjmp(reg->outer, 1);
@@ -169,41 +169,41 @@ namespace {
 		} catch(...){
 			std::abort();
 		}
-		Profiler::endStackSwitch(opaque);
-		t_currentFiber = NULLPTR;
+		Profiler::end_stack_switch(opaque);
+		t_current_fiber = NULLPTR;
 	}
 
 	volatile bool g_running = false;
 
-	Mutex g_fiberMutex;
-	ConditionVariable g_newJob;
-	std::map<boost::weak_ptr<const void>, FiberControl> g_fiberMap;
+	Mutex g_fiber_mutex;
+	ConditionVariable g_new_job;
+	std::map<boost::weak_ptr<const void>, FiberControl> g_fiber_map;
 
-	void reallyPumpJobs() NOEXCEPT {
+	void really_pump_jobs() NOEXCEPT {
 		PROFILE_ME;
 
-		AUTO(now, getFastMonoClock());
+		AUTO(now, get_fast_mono_clock());
 
-		Mutex::UniqueLock lock(g_fiberMutex);
+		Mutex::UniqueLock lock(g_fiber_mutex);
 		bool busy;
 		do {
 			busy = false;
 
-			for(AUTO(next, g_fiberMap.begin()), it = next; (next != g_fiberMap.end()) && (++next, true); it = next){
+			for(AUTO(next, g_fiber_map.begin()), it = next; (next != g_fiber_map.end()) && (++next, true); it = next){
 				for(;;){
 					if(it->second.queue.empty()){
-						for(AUTO(pit, g_stackPool.begin()); pit != g_stackPool.end(); ++pit){
+						for(AUTO(pit, g_stack_pool.begin()); pit != g_stack_pool.end(); ++pit){
 							if(!*pit){
 								pit->swap(it->second.stack);
 								break;
 							}
 						}
-						g_fiberMap.erase(it);
+						g_fiber_map.erase(it);
 						break;
 					}
 					AUTO_REF(elem, it->second.queue.front());
-					if(elem.promise && !elem.promise->isSatisfied()){
-						if(now < elem.enqueuedTime + g_jobTimeout){
+					if(elem.promise && !elem.promise->is_satisfied()){
+						if(now < elem.enqueued_time + g_job_timeout){
 							break;
 						}
 						LOG_POSEIDON_ERROR("Job timed out");
@@ -218,11 +218,11 @@ namespace {
 						LOG_POSEIDON_DEBUG("Job is withdrawn");
 						done = true;
 					} else {
-						scheduleFiber(&it->second);
+						schedule_fiber(&it->second);
 						done = (it->second.state == FS_READY);
 					}
 
-					now = getFastMonoClock();
+					now = get_fast_mono_clock();
 
 					lock.lock();
 					if(done){
@@ -237,57 +237,57 @@ namespace {
 void JobDispatcher::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting job dispatcher...");
 
-	MainConfig::get(g_jobTimeout, "job_timeout");
-	LOG_POSEIDON_DEBUG("Job timeout = ", g_jobTimeout);
+	MainConfig::get(g_job_timeout, "job_timeout");
+	LOG_POSEIDON_DEBUG("Job timeout = ", g_job_timeout);
 }
 void JobDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
 
-	boost::uint64_t lastInfoTime = 0;
+	boost::uint64_t last_info_time = 0;
 	for(;;){
-		std::size_t pendingFibers;
+		std::size_t pending_fibers;
 		{
-			const Mutex::UniqueLock lock(g_fiberMutex);
-			pendingFibers = g_fiberMap.size();
+			const Mutex::UniqueLock lock(g_fiber_mutex);
+			pending_fibers = g_fiber_map.size();
 		}
-		if(pendingFibers == 0){
+		if(pending_fibers == 0){
 			break;
 		}
 
-		const AUTO(now, getFastMonoClock());
-		if(lastInfoTime + 500 < now){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pendingFibers, " fiber(s) remaining.");
-			lastInfoTime = now;
+		const AUTO(now, get_fast_mono_clock());
+		if(last_info_time + 500 < now){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pending_fibers, " fiber(s) remaining.");
+			last_info_time = now;
 		}
 
-		reallyPumpJobs();
+		really_pump_jobs();
 	}
 }
 
-void JobDispatcher::doModal(){
+void JobDispatcher::do_modal(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
 
-	if(atomicExchange(g_running, true, ATOMIC_ACQ_REL) != false){
+	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one modal loop is allowed at the same time.");
 		std::abort();
 	}
 
 	for(;;){
-		reallyPumpJobs();
+		really_pump_jobs();
 
-		Mutex::UniqueLock lock(g_fiberMutex);
-		if(!atomicLoad(g_running, ATOMIC_CONSUME) && g_fiberMap.empty()){
+		Mutex::UniqueLock lock(g_fiber_mutex);
+		if(!atomic_load(g_running, ATOMIC_CONSUME) && g_fiber_map.empty()){
 			break;
 		}
-		g_newJob.timedWait(lock, 100);
+		g_new_job.timed_wait(lock, 100);
 	}
 }
-bool JobDispatcher::isRunning(){
-	return atomicLoad(g_running, ATOMIC_CONSUME);
+bool JobDispatcher::is_running(){
+	return atomic_load(g_running, ATOMIC_CONSUME);
 }
-void JobDispatcher::quitModal(){
-	atomicStore(g_running, false, ATOMIC_RELEASE);
-	g_newJob.signal();
+void JobDispatcher::quit_modal(){
+	atomic_store(g_running, false, ATOMIC_RELEASE);
+	g_new_job.signal();
 }
 
 void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job,
@@ -295,21 +295,21 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job,
 {
 	PROFILE_ME;
 
-	const boost::weak_ptr<const void> nullWeakPtr;
-	AUTO(category, job->getCategory());
-	if(!(category < nullWeakPtr) && !(nullWeakPtr < category)){
+	const boost::weak_ptr<const void> null_weak_ptr;
+	AUTO(category, job->get_category());
+	if(!(category < null_weak_ptr) && !(null_weak_ptr < category)){
 		category = job;
 	}
 
-	const Mutex::UniqueLock lock(g_fiberMutex);
-	AUTO_REF(queue, g_fiberMap[category].queue);
+	const Mutex::UniqueLock lock(g_fiber_mutex);
+	AUTO_REF(queue, g_fiber_map[category].queue);
 	queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(promise), STD_MOVE(withdrawn)));
-	g_newJob.signal();
+	g_new_job.signal();
 }
 void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 	PROFILE_ME;
 
-	const AUTO(fiber, t_currentFiber);
+	const AUTO(fiber, t_current_fiber);
 	if(!fiber){
 		DEBUG_THROW(Exception, sslit("No current fiber"));
 	}
@@ -321,7 +321,7 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 	fiber->queue.front().promise = promise;
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Yielding from fiber ", static_cast<void *>(fiber));
-	const AUTO(opaque, Profiler::beginStackSwitch());
+	const AUTO(opaque, Profiler::begin_stack_switch());
 	try {
 		::dont_optimize_try_catch_away();
 
@@ -334,23 +334,23 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 	} catch(...){
 		std::abort();
 	}
-	Profiler::endStackSwitch(opaque);
+	Profiler::end_stack_switch(opaque);
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Resumed to fiber ", static_cast<void *>(fiber));
 
 	if(promise){
-		promise->checkAndRethrow();
+		promise->check_and_rethrow();
 	}
 }
-void JobDispatcher::detachYieldable() NOEXCEPT {
+void JobDispatcher::detach_yieldable() NOEXCEPT {
 	PROFILE_ME;
 
-	t_currentFiber = NULLPTR;
+	t_current_fiber = NULLPTR;
 }
 
-void JobDispatcher::pumpAll(){
+void JobDispatcher::pump_all(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
 
-	reallyPumpJobs();
+	really_pump_jobs();
 }
 
 }

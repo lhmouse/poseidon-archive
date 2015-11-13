@@ -23,7 +23,7 @@ struct SslCtxDeleter {
 	CONSTEXPR ::SSL_CTX *operator()() NOEXCEPT {
 		return NULLPTR;
 	}
-	void operator()(::SSL_CTX *sslCtx) NOEXCEPT;
+	void operator()(::SSL_CTX *ssl_ctx) NOEXCEPT;
 };
 
 typedef UniqueHandle<SslCtxDeleter> UniqueSslCtx;

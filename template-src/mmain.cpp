@@ -35,23 +35,23 @@ using namespace Poseidon;
 #include "../src/mysql/object_generator.hpp"
 
 namespace {
-	void loadedProc(bool found){
+	void loaded_proc(bool found){
 		LOG_POSEIDON_FATAL("-- loaded! found = ", found);
 	}
 
 	void write(){
 		AUTO(obj, boost::make_shared<MySqlObj>());
-		obj->enableAutoSaving();
+		obj->enable_auto_saving();
 		obj->set_si(999);
 		obj->set_str("meow");
 		for(int i = 0; i < 10; ++i){
 			obj->set_bi(i);
 		}
-		obj->asyncLoad("SELECT * FROM `MySqlObj`", loadedProc);
+		obj->async_load("SELECT * FROM `MySqlObj`", loaded_proc);
 	}
 }
 MODULE_RAII {
-	enqueueAsyncJob(write, 3000);
+	enqueue_async_job(write, 3000);
 	return VAL_INIT;
 }
 
@@ -66,17 +66,17 @@ struct TestEvent2 : public EventBase<1> {
 	double d;
 };
 
-void event1Proc(boost::shared_ptr<TestEvent1> event){
+void event1_proc(boost::shared_ptr<TestEvent1> event){
 	PROFILE_ME;
-	LOG_POSEIDON_FATAL("event1Proc: i = ", event->i, ", s = ", event->s);
+	LOG_POSEIDON_FATAL("event1_proc: i = ", event->i, ", s = ", event->s);
 }
 
-void event2Proc(boost::shared_ptr<TestEvent2> event){
+void event2_proc(boost::shared_ptr<TestEvent2> event){
 	PROFILE_ME;
-	LOG_POSEIDON_FATAL("event2Proc: d = ", event->d);
+	LOG_POSEIDON_FATAL("event2_proc: d = ", event->d);
 }
 
-void printObjs(std::vector<boost::shared_ptr<MySqlObjFectBase> > v){
+void print_objs(std::vector<boost::shared_ptr<MySqlObjFectBase> > v){
 	LOG_POSEIDON_FATAL("--------- v.size() = ", v.size());
 	for(AUTO(it, v.begin()); it != v.end(); ++it){
 		AUTO(p, static_cast<MySqlObjF *>(it->get()));
@@ -84,18 +84,18 @@ void printObjs(std::vector<boost::shared_ptr<MySqlObjFectBase> > v){
 	}
 }
 
-void mysqlExceptProc(){
+void mysql_except_proc(){
 	LOG_POSEIDON_FATAL("MySQL exception!");
 }
 
-void tickProc(unsigned long long now, unsigned long long period){
+void tick_proc(unsigned long long now, unsigned long long period){
 	PROFILE_ME;
 	LOG_POSEIDON_FATAL("Tick, now = ", now, ", period = ", period);
 
-	MySqlObjF::batchLoad("SELECT * FROM `MySqlObjF`", &printObjs, &mysqlExceptProc);
+	MySqlObjF::batch_load("SELECT * FROM `MySqlObjF`", &print_objs, &mysql_except_proc);
 }
 
-void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
+void profile_proc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
 
 	OptionalMap headers;
@@ -107,7 +107,7 @@ void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	for(AUTO(it, profile.begin()); it != profile.end(); ++it){
 		char temp[128];
 		unsigned len = (unsigned)std::sprintf(temp, "%10llu%20llu%20llu    ",
-			it->samples, it->usTotal, it->usExclusive);
+			it->samples, it->us_total, it->us_exclusive);
 		contents.put(temp, len);
 		contents.put(it->file);
 		len = (unsigned)std::sprintf(temp, ":%lu\n", it->line);
@@ -116,14 +116,14 @@ void profileProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 
-void meowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
+void meow_proc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
 
 	AUTO(obj, boost::make_shared<MySqlObjF>());
 	obj->set_si(123);
 	obj->set_str("meow");
 	obj->set_bi(456789);
-	obj->asyncSave(true);
+	obj->async_save(true);
 
 	OptionalMap headers;
 	StreamBuffer contents;
@@ -137,7 +137,7 @@ void meowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	contents.put("<h1>Meow!</h1>");
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
-void meowMeowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
+void meow_meow_proc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
 
 	OptionalMap headers;
@@ -155,7 +155,7 @@ void meowMeowProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 
 boost::weak_ptr<std::vector<boost::shared_ptr<void> > > g_servlets;
 
-void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
+void load_proc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
 
 	OptionalMap headers;
@@ -169,14 +169,14 @@ void loadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	if(!v.empty()){
 		contents.put("Already loaded");
 	} else {
-		v.push_back(HttpServletDepository::create(1, SSLIT("/meow/"), &meowProc));
-		v.push_back(HttpServletDepository::create(1, SSLIT("/meow/meow/"), &meowMeowProc));
-		v.push_back(TimerDaemon::registerTimer(5000, 10000, &tickProc));
+		v.push_back(HttpServletDepository::create(1, SSLIT("/meow/"), &meow_proc));
+		v.push_back(HttpServletDepository::create(1, SSLIT("/meow/meow/"), &meow_meow_proc));
+		v.push_back(TimerDaemon::register_timer(5000, 10000, &tick_proc));
 		contents.put("OK");
 	}
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
-void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
+void unload_proc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	PROFILE_ME;
 
 	OptionalMap headers;
@@ -196,7 +196,7 @@ void unloadProc(boost::shared_ptr<HttpSession> hs, HttpRequest){
 	hs->send(HTTP_OK, STD_MOVE(headers), STD_MOVE(contents));
 }
 
-void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
+void web_socket_proc(boost::shared_ptr<WebSocketSession> wss,
 	WebSocketOpCode opcode, StreamBuffer incoming)
 {
 	PROFILE_ME;
@@ -205,24 +205,24 @@ void webSocketProc(boost::shared_ptr<WebSocketSession> wss,
 	std::string s;
 	incoming.dump(s);
 
-	char crc32Str[16];
-	std::sprintf(crc32Str, "%08lx", (unsigned long)crc32Sum(s.data(), s.size()));
+	char crc32_str[16];
+	std::sprintf(crc32_str, "%08lx", (unsigned long)crc32_sum(s.data(), s.size()));
 
 	unsigned char md5[16];
-	md5Sum(md5, s.data(), s.size());
-	std::string md5Str = hexEncode(md5, sizeof(md5));
+	md5_sum(md5, s.data(), s.size());
+	std::string md5_str = hex_encode(md5, sizeof(md5));
 
 	unsigned char sha1[20];
-	sha1Sum(sha1, s.data(), s.size());
-	std::string sha1Str = hexEncode(sha1, sizeof(sha1));
+	sha1_sum(sha1, s.data(), s.size());
+	std::string sha1_str = hex_encode(sha1, sizeof(sha1));
 
 	StreamBuffer out;
 	out.put("CRC32: ");
-	out.put(crc32Str);
+	out.put(crc32_str);
 	out.put("\nMD5: ");
-	out.put(md5Str.data(), md5Str.size());
+	out.put(md5_str.data(), md5_str.size());
 	out.put("\nSHA1: ");
-	out.put(sha1Str.data(), sha1Str.size());
+	out.put(sha1_str.data(), sha1_str.size());
 	out.put('\n');
 	wss->send(STD_MOVE(out), false);
 }
@@ -231,7 +231,7 @@ class TestClient : public TcpClientBase {
 public:
 	static boost::shared_ptr<TestClient> create(){
 		AUTO(ret, boost::make_shared<TestClient>());
-		ret->goResident();
+		ret->go_resident();
 		return ret;
 	}
 
@@ -242,7 +242,7 @@ public:
 	}
 
 private:
-	void onReadAvail(const void *data, std::size_t size){
+	void on_read_avail(const void *data, std::size_t size){
 		AUTO(read, (const char *)data);
 		for(std::size_t i = 0; i < size; ++i){
 			std::putchar(read[i]);
@@ -359,13 +359,13 @@ void TestProc(boost::shared_ptr<CbppSession> ps, StreamBuffer incoming){
 }
 
 MODULE_RAII {
-	return HttpServletDepository::create(1, SSLIT("/profile"), &profileProc);
+	return HttpServletDepository::create(1, SSLIT("/profile"), &profile_proc);
 }
 MODULE_RAII {
-	return HttpServletDepository::create(1, SSLIT("/load"), &loadProc);
+	return HttpServletDepository::create(1, SSLIT("/load"), &load_proc);
 }
 MODULE_RAII {
-	return HttpServletDepository::create(1, SSLIT("/unload"), &unloadProc);
+	return HttpServletDepository::create(1, SSLIT("/unload"), &unload_proc);
 }
 MODULE_RAII {
 	AUTO(v, boost::make_shared<std::vector<boost::shared_ptr<void> > >());
@@ -373,13 +373,13 @@ MODULE_RAII {
 	return v;
 }
 MODULE_RAII {
-	return EventDispatcher::registerListener<TestEvent1>(&event1Proc);
+	return EventDispatcher::register_listener<TestEvent1>(&event1_proc);
 }
 MODULE_RAII {
-	return EventDispatcher::registerListener<TestEvent2>(&event2Proc);
+	return EventDispatcher::register_listener<TestEvent2>(&event2_proc);
 }
 MODULE_RAII {
-	return WebSocketServletDepository::create(2, SSLIT("/wstest"), &webSocketProc);
+	return WebSocketServletDepository::create(2, SSLIT("/wstest"), &web_socket_proc);
 }
 
 MODULE_RAII {
@@ -406,7 +406,7 @@ MODULE_RAII {
 
 namespace {
 
-void onClientClose(int id){
+void on_client_close(int id){
 	LOG_POSEIDON_FATAL("Client closed! ", id);
 }
 
@@ -416,17 +416,17 @@ MODULE_RAII {
 
 	LOG_POSEIDON_INFO("Connecting to github...");
 	AUTO(p, TestClient::create());
-	p->registerOnClose(boost::bind(&onClientClose, 0));
-	p->registerOnClose(boost::bind(&onClientClose, 1));
-	p->registerOnClose(boost::bind(&onClientClose, 2));
-	p->registerOnClose(boost::bind(&onClientClose, 3));
+	p->register_on_close(boost::bind(&on_client_close, 0));
+	p->register_on_close(boost::bind(&on_client_close, 1));
+	p->register_on_close(boost::bind(&on_client_close, 2));
+	p->register_on_close(boost::bind(&on_client_close, 3));
 	p->send(StreamBuffer("GET / HTTP/1.1\r\nHost: github.com\r\n\r\n"));
 
 	AUTO(obj, boost::make_shared<MySqlObjF>());
 	obj->set_si(999);
 	obj->set_str("meow");
 	obj->set_bi(456789);
-	obj->asyncSave(false);
+	obj->async_save(false);
 
 	TestMessage req;
 	req.i = 12345;
@@ -445,13 +445,13 @@ MODULE_RAII {
 MODULE_RAII {
 	AUTO(server, (boost::make_shared<CbppServer>(2,
 		IpPort(SharedNts("0.0.0.0"), 8850), NULLPTR, NULLPTR)));
-	EpollDaemon::registerServer(server);
+	EpollDaemon::register_server(server);
 	return server;
 }
 MODULE_RAII {
 	AUTO(server, (boost::make_shared<HttpServer>(2,
 		IpPort(SharedNts("0.0.0.0"), 8860), NULLPTR, NULLPTR, std::vector<std::string>())));
-	EpollDaemon::registerServer(server);
+	EpollDaemon::register_server(server);
 	return server;
 }
 
@@ -484,18 +484,18 @@ namespace {
 		}
 
 	public:
-		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+		boost::weak_ptr<const void> get_category() const OVERRIDE {
 			return sp;
 		}
 		void perform() const OVERRIDE {
 			LOG_POSEIDON_FATAL("!!!! MyJob::perform: ", m_s);
-			suspendCurrentJob(VAL_INIT);
+			suspend_current_job(VAL_INIT);
 		}
 	};
 
 	class MeowJob : public JobBase {
 	public:
-		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+		boost::weak_ptr<const void> get_category() const OVERRIDE {
 			return VAL_INIT;
 		}
 		void perform() const OVERRIDE {
@@ -506,11 +506,11 @@ namespace {
 
 MODULE_RAII {
 	AUTO(withdrawn, boost::make_shared<bool>(true));
-	enqueueJob(boost::make_shared<MyJob>("1  "), 0, withdrawn);
-	enqueueJob(boost::make_shared<MyJob>(" 2 "), 0, withdrawn);
-	enqueueJob(boost::make_shared<MyJob>("  3"), 0, withdrawn);
+	enqueue_job(boost::make_shared<MyJob>("1  "), 0, withdrawn);
+	enqueue_job(boost::make_shared<MyJob>(" 2 "), 0, withdrawn);
+	enqueue_job(boost::make_shared<MyJob>("  3"), 0, withdrawn);
 
-	enqueueJob(boost::make_shared<MeowJob>());
+	enqueue_job(boost::make_shared<MeowJob>());
 
 	LOG_POSEIDON_FATAL("Job enqueued!");
 	return VAL_INIT;
@@ -518,7 +518,7 @@ MODULE_RAII {
 
 namespace {
 
-void meowProc(boost::shared_ptr<Http::Session> session, Http::Request req){
+void meow_proc(boost::shared_ptr<Http::Session> session, Http::Request req){
 	PROFILE_ME;
 
 	LOG_POSEIDON_FATAL("Contents = ", req.contents);
@@ -535,11 +535,11 @@ void meowProc(boost::shared_ptr<Http::Session> session, Http::Request req){
 MODULE_RAII {
 	AUTO(server, boost::make_shared<Http::Server>(2,
 		IpPort(SharedNts("0.0.0.0"), 8860), NULLPTR, NULLPTR, std::vector<std::string>()));
-	EpollDaemon::registerServer(server);
+	EpollDaemon::register_server(server);
 	return server;
 }
 MODULE_RAII {
-	return HttpServletDepository::create(2, SSLIT("/meow"), &meowProc);
+	return HttpServletDepository::create(2, SSLIT("/meow"), &meow_proc);
 }
 
 
@@ -557,20 +557,20 @@ class MyClient : public Http::Client {
 public:
 	static boost::shared_ptr<MyClient> create(){
 		boost::shared_ptr<MyClient> ret(new MyClient);
-		ret->goResident();
+		ret->go_resident();
 
 		OptionalMap headers;
 		headers.set("Host", "github.com");
 //		headers.set("Transfer-Encoding", "chunked");
 //		headers.set("Connection", "Close");
 		ret->send(Http::V_GET, "/", OptionalMap(), STD_MOVE(headers), StreamBuffer("test"));
-//		ret->shutdownWrite();
+//		ret->shutdown_write();
 
 		return ret;
 	}
 
 private:
-	boost::uint64_t m_contentLength;
+	boost::uint64_t m_content_length;
 	StreamBuffer m_contents;
 
 private:
@@ -591,32 +591,32 @@ private:
 	}
 
 protected:
-	void onResponseHeaders(const Http::ResponseHeaders &responseHeaders, boost::uint64_t contentLength) OVERRIDE {
-		LOG_POSEIDON_DEBUG("onResponseHeaders(): statusCode = ", static_cast<unsigned>(responseHeaders.statusCode),
-			", contentLength = ", static_cast<boost::int64_t>(contentLength));
-		for(AUTO(it, responseHeaders.headers.begin()); it != responseHeaders.headers.end(); ++it){
-			LOG_POSEIDON_DEBUG("> ", it->first, " = ", Http::urlDecode(it->second));
+	void on_response_headers(const Http::ResponseHeaders &response_headers, boost::uint64_t content_length) OVERRIDE {
+		LOG_POSEIDON_DEBUG("on_response_headers(): status_code = ", static_cast<unsigned>(response_headers.status_code),
+			", content_length = ", static_cast<boost::int64_t>(content_length));
+		for(AUTO(it, response_headers.headers.begin()); it != response_headers.headers.end(); ++it){
+			LOG_POSEIDON_DEBUG("> ", it->first, " = ", Http::url_decode(it->second));
 		}
-		m_contentLength = contentLength;
+		m_content_length = content_length;
 		m_contents.clear();
 	}
-	void onEntity(boost::uint64_t contentOffset, const StreamBuffer &entity) OVERRIDE {
-		LOG_POSEIDON_DEBUG("onEntity(): contentOffset = ", contentOffset, ", size = ", entity.size());
+	void on_entity(boost::uint64_t content_offset, const StreamBuffer &entity) OVERRIDE {
+		LOG_POSEIDON_DEBUG("on_entity(): content_offset = ", content_offset, ", size = ", entity.size());
 		AUTO(temp, entity);
 		m_contents.splice(temp);
-		if(m_contents.size() >= m_contentLength){
+		if(m_contents.size() >= m_content_length){
 			print();
 		}
 	}
-	void onChunkedTrailer(boost::uint64_t realContentLength, const OptionalMap &headers) OVERRIDE {
-		LOG_POSEIDON_DEBUG("onChunkedTrailer(): realContentLength = ", realContentLength);
+	void on_chunked_trailer(boost::uint64_t real_content_length, const OptionalMap &headers) OVERRIDE {
+		LOG_POSEIDON_DEBUG("on_chunked_trailer(): real_content_length = ", real_content_length);
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-			LOG_POSEIDON_DEBUG("> ", it->first, " = ", Http::urlDecode(it->second));
+			LOG_POSEIDON_DEBUG("> ", it->first, " = ", Http::url_decode(it->second));
 		}
 		print();
 	}
-	void onContentEof(boost::uint64_t realContentLength) OVERRIDE {
-		LOG_POSEIDON_DEBUG("onContentEof(): realContentLength = ", realContentLength);
+	void on_content_eof(boost::uint64_t real_content_length) OVERRIDE {
+		LOG_POSEIDON_DEBUG("on_content_eof(): real_content_length = ", real_content_length);
 		print();
 	}
 };
@@ -656,11 +656,11 @@ namespace {
 		static boost::shared_ptr<const DelayedPromise> create(boost::uint64_t delay){
 			// auto ptr = boost::make_shared<DelayedPromise>();
 			boost::shared_ptr<DelayedPromise> ptr(new DelayedPromise);
-			ptr->m_timer = TimerDaemon::registerTimer(delay, 0,
+			ptr->m_timer = TimerDaemon::register_timer(delay, 0,
 				std::bind([](boost::weak_ptr<DelayedPromise> weak){
 					auto ptr = weak.lock();
 					if(ptr){
-						ptr->setSuccess();
+						ptr->set_success();
 					}
 				}, boost::weak_ptr<DelayedPromise>(ptr)));
 			return ptr;
@@ -675,21 +675,21 @@ namespace {
 }
 
 MODULE_RAII(handles){
-	handles.push(TimerDaemon::registerTimer(1000, 0,
+	handles.push(TimerDaemon::register_timer(1000, 0,
 		std::bind([]{
 			try {
 				AUTO(obj, boost::make_shared<MySqlObj>());
-				obj->enableAutoSaving();
-				obj->syncLoad("SELECT * FROM `MySqlObj` LIMIT 1");
+				obj->enable_auto_saving();
+				obj->sync_load("SELECT * FROM `MySqlObj` LIMIT 1");
 				LOG_POSEIDON_FATAL("Loaded: si = ", obj->get_si(),
-					", str = ", obj->unlockedGet_str(), ", bi = ", obj->get_bi(), ", dt = ", obj->get_dt());
+					", str = ", obj->unlocked_get_str(), ", bi = ", obj->get_bi(), ", dt = ", obj->get_dt());
 			} catch(std::exception &e){
 				LOG_POSEIDON_FATAL("Exception: what = ", e.what());
 			}
 		})
 	));
 /*
-	enqueueAsyncJob([]{
+	enqueue_async_job([]{
 		LOG_POSEIDON_FATAL("--- 1");
 		JobDispatcher::yield(DelayedPromise::create(1000));
 
@@ -705,7 +705,7 @@ MODULE_RAII(handles){
 		LOG_POSEIDON_FATAL("--- 5");
 		JobDispatcher::yield(DelayedPromise::create(5000));
 	});
-	enqueueAsyncJob([]{
+	enqueue_async_job([]{
 		LOG_POSEIDON_FATAL("+++ 1");
 		JobDispatcher::yield(DelayedPromise::create(1000));
 

@@ -17,7 +17,7 @@ namespace WebSocket {
 	Writer::~Writer(){
 	}
 
-	long Writer::putMessage(int opcode, bool masked, StreamBuffer payload){
+	long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 		PROFILE_ME;
 
 		StreamBuffer frame;
@@ -32,18 +32,18 @@ namespace WebSocket {
 			ch |= 0x7E;
 			frame.put(ch);
 			boost::uint16_t temp16;
-			storeBe(temp16, size);
+			store_be(temp16, size);
 			frame.put(&temp16, 2);
 		} else {
 			ch |= 0x7F;
 			frame.put(ch);
 			boost::uint64_t temp64;
-			storeBe(temp64, size);
+			store_be(temp64, size);
 			frame.put(&temp64, 8);
 		}
 		if(masked){
 			boost::uint32_t mask;
-			storeLe(mask, rand32() | 0x80808080u);
+			store_le(mask, rand32() | 0x80808080u);
 			frame.put(&mask, 4);
 			int ch;
 			for(;;){
@@ -58,19 +58,19 @@ namespace WebSocket {
 		} else {
 			frame.splice(payload);
 		}
-		return onEncodedDataAvail(STD_MOVE(frame));
+		return on_encoded_data_avail(STD_MOVE(frame));
 	}
-	long Writer::putCloseMessage(StatusCode statusCode, StreamBuffer additional){
+	long Writer::put_close_message(StatusCode status_code, StreamBuffer additional){
 		PROFILE_ME;
 
 		StreamBuffer payload;
 		boost::uint16_t temp16;
-		storeBe(temp16, statusCode);
+		store_be(temp16, status_code);
 		payload.put(&temp16, 2);
 		char msg[0x7B];
 		unsigned len = additional.get(msg, sizeof(msg));
 		payload.put(msg, len);
-		return putMessage(OP_CLOSE, false, STD_MOVE(payload));
+		return put_message(OP_CLOSE, false, STD_MOVE(payload));
 	}
 }
 

@@ -14,8 +14,8 @@ namespace Poseidon {
 
 class TransactionItemBase : NONCOPYABLE {
 protected:
-	static void logIgnoredStdException(const char *what) NOEXCEPT;
-	static void logIgnoredUnknownException() NOEXCEPT;
+	static void log_ignored_std_exception(const char *what) NOEXCEPT;
+	static void log_ignored_unknown_exception() NOEXCEPT;
 
 public:
 	virtual ~TransactionItemBase();
@@ -47,18 +47,18 @@ public:
 		try {
 			m_unlock();
 		} catch(std::exception &e){
-			logIgnoredStdException(e.what());
+			log_ignored_std_exception(e.what());
 		} catch(...){
-			logIgnoredUnknownException();
+			log_ignored_unknown_exception();
 		}
 	}
 	virtual void commit() NOEXCEPT OVERRIDE {
 		try {
 			m_commit();
 		} catch(std::exception &e){
-			logIgnoredStdException(e.what());
+			log_ignored_std_exception(e.what());
 		} catch(...){
-			logIgnoredUnknownException();
+			log_ignored_unknown_exception();
 		}
 	}
 };

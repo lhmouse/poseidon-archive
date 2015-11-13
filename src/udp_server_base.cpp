@@ -14,9 +14,9 @@
 namespace Poseidon {
 
 namespace {
-	UniqueFile createUdpSocket(const IpPort &addr){
-		SockAddr sa = getSockAddrFromIpPort(addr);
-		UniqueFile udp(::socket(sa.getFamily(), SOCK_DGRAM, IPPROTO_UDP));
+	UniqueFile create_udp_socket(const IpPort &addr){
+		SockAddr sa = get_sock_addr_from_ip_port(addr);
+		UniqueFile udp(::socket(sa.get_family(), SOCK_DGRAM, IPPROTO_UDP));
 		if(!udp){
 			DEBUG_THROW(SystemException);
 		}
@@ -24,20 +24,20 @@ namespace {
 		if(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 			DEBUG_THROW(SystemException);
 		}
-		if(::bind(udp.get(), static_cast<const ::sockaddr *>(sa.getData()), sa.getSize())){
+		if(::bind(udp.get(), static_cast<const ::sockaddr *>(sa.get_data()), sa.get_size())){
 			DEBUG_THROW(SystemException);
 		}
 		return udp;
 	}
 }
 
-UdpServerBase::UdpServerBase(const IpPort &bindAddr)
-	: SocketServerBase(createUdpSocket(bindAddr))
+UdpServerBase::UdpServerBase(const IpPort &bind_addr)
+	: SocketServerBase(create_udp_socket(bind_addr))
 {
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created UDP server on ", getLocalInfo());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created UDP server on ", get_local_info());
 }
 UdpServerBase::~UdpServerBase(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed UDP server on ", getLocalInfo());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed UDP server on ", get_local_info());
 }
 
 bool UdpServerBase::poll() const {

@@ -16,17 +16,17 @@ struct JobDispatcher {
 	static void start();
 	static void stop();
 
-	// 调用 doModal() 之后会阻塞直到任意线程调用 quitModal() 为止。
-	static void doModal();
-	static bool isRunning();
-	static void quitModal();
+	// 调用 do_modal() 之后会阻塞直到任意线程调用 quit_modal() 为止。
+	static void do_modal();
+	static bool is_running();
+	static void quit_modal();
 
 	static void enqueue(boost::shared_ptr<JobBase> job,
 		boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn);
 	static void yield(boost::shared_ptr<const JobPromise> promise);
-	static void detachYieldable() NOEXCEPT;
+	static void detach_yieldable() NOEXCEPT;
 
-	static void pumpAll();
+	static void pump_all();
 
 private:
 	JobDispatcher();

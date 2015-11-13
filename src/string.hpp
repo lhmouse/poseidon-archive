@@ -109,7 +109,7 @@ struct HexDumper {
 
 extern std::ostream &operator<<(std::ostream &os, const HexDumper &dumper);
 
-inline std::string toUpperCase(std::string src){
+inline std::string to_upper_case(std::string src){
 	for(AUTO(it, src.begin()); it != src.end(); ++it){
 		if(('a' <= *it) && (*it <= 'z')){
 			*it -= 0x20;
@@ -117,7 +117,7 @@ inline std::string toUpperCase(std::string src){
 	}
 	return STD_MOVE(src);
 }
-inline std::string toLowerCase(std::string src){
+inline std::string to_lower_case(std::string src){
 	for(AUTO(it, src.begin()); it != src.end(); ++it){
 		if(('A' <= *it) && (*it <= 'Z')){
 			*it += 0x20;
@@ -144,11 +144,11 @@ inline std::string trim(std::string src){
 	return ltrim(rtrim(STD_MOVE(src)));
 }
 
-extern bool isValidUtf8String(const std::string &str);
+extern bool is_valid_utf8_string(const std::string &str);
 
 class StreamBuffer;
 
-extern bool getLine(StreamBuffer &buffer, std::string &line);
+extern bool get_line(StreamBuffer &buffer, std::string &line);
 
 }
 

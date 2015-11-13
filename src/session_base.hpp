@@ -19,21 +19,21 @@ public:
 	~SessionBase();
 
 protected:
-	virtual void onConnect() = 0;
-	virtual void onReadHup() NOEXCEPT = 0;
-	virtual void onClose(int errCode) NOEXCEPT = 0;
+	virtual void on_connect() = 0;
+	virtual void on_read_hup() NOEXCEPT = 0;
+	virtual void on_close(int err_code) NOEXCEPT = 0;
 
 	// 有数据可读触发回调，size 始终不为零。
-	virtual void onReadAvail(StreamBuffer data) = 0;
+	virtual void on_read_avail(StreamBuffer data) = 0;
 
 public:
 	virtual bool send(StreamBuffer buffer) = 0;
 
-	virtual bool hasBeenShutdownRead() const NOEXCEPT = 0;
-	virtual bool hasBeenShutdownWrite() const NOEXCEPT = 0;
-	virtual bool shutdownRead() NOEXCEPT = 0;
-	virtual bool shutdownWrite() NOEXCEPT = 0;
-	virtual void forceShutdown() NOEXCEPT = 0;
+	virtual bool has_been_shutdown_read() const NOEXCEPT = 0;
+	virtual bool has_been_shutdown_write() const NOEXCEPT = 0;
+	virtual bool shutdown_read() NOEXCEPT = 0;
+	virtual bool shutdown_write() NOEXCEPT = 0;
+	virtual void force_shutdown() NOEXCEPT = 0;
 };
 
 }

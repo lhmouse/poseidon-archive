@@ -21,46 +21,46 @@ namespace WebSocket {
 		class ErrorJob;
 
 	private:
-		const boost::uint64_t m_maxRequestLength;
+		const boost::uint64_t m_max_request_length;
 
-		boost::uint64_t m_sizeTotal;
+		boost::uint64_t m_size_total;
 		OpCode m_opcode;
 		StreamBuffer m_payload;
 
 	public:
-		explicit Session(const boost::shared_ptr<Http::Session> &parent, boost::uint64_t maxRequestLength = 0);
+		explicit Session(const boost::shared_ptr<Http::Session> &parent, boost::uint64_t max_request_length = 0);
 		~Session();
 
 	protected:
 		// UpgradedSessionBase
-		void onReadAvail(StreamBuffer data) OVERRIDE;
+		void on_read_avail(StreamBuffer data) OVERRIDE;
 
 		// Reader
-		void onDataMessageHeader(OpCode opcode) OVERRIDE;
-		void onDataMessagePayload(boost::uint64_t wholeOffset, StreamBuffer payload) OVERRIDE;
-		bool onDataMessageEnd(boost::uint64_t wholeSize) OVERRIDE;
+		void on_data_message_header(OpCode opcode) OVERRIDE;
+		void on_data_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) OVERRIDE;
+		bool on_data_message_end(boost::uint64_t whole_size) OVERRIDE;
 
-		bool onControlMessage(OpCode opcode, StreamBuffer payload) OVERRIDE;
+		bool on_control_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
 
 		// Writer
-		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
+		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual void onSyncDataMessage(OpCode opcode, StreamBuffer payload) = 0;
+		virtual void on_sync_data_message(OpCode opcode, StreamBuffer payload) = 0;
 
-		virtual void onSyncControlMessage(OpCode opcode, StreamBuffer payload);
+		virtual void on_sync_control_message(OpCode opcode, StreamBuffer payload);
 
 	public:
-		bool shutdownRead() NOEXCEPT OVERRIDE {
+		bool shutdown_read() NOEXCEPT OVERRIDE {
 			return shutdown(ST_NORMAL_CLOSURE);
 		}
-		bool shutdownWrite() NOEXCEPT OVERRIDE {
+		bool shutdown_write() NOEXCEPT OVERRIDE {
 			return shutdown(ST_NORMAL_CLOSURE);
 		}
 
 		bool send(StreamBuffer payload, bool binary, bool masked = false);
 
-		bool shutdown(StatusCode statusCode, StreamBuffer additional = StreamBuffer()) NOEXCEPT;
+		bool shutdown(StatusCode status_code, StreamBuffer additional = StreamBuffer()) NOEXCEPT;
 	};
 }
 

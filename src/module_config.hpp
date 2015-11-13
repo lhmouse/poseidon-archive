@@ -14,22 +14,22 @@
 
 // 这两个宏必须定义在同一个命名空间下。
 
-#define DECLARE_MODULE_CONFIG(getConfig_, getConfigV_)	\
+#define DECLARE_MODULE_CONFIG(get_config_, get_config_v_)	\
 	namespace ModuleConfigImpl_ {	\
-		extern ::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weakConfig_;	\
-		extern const char *getConfigFileName_();	\
+		extern ::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weak_config_;	\
+		extern const char *get_config_file_name_();	\
 		MODULE_RAII_PRIORITY(handles_, LONG_MIN){	\
-			AUTO(config_, g_weakConfig_.lock());	\
+			AUTO(config_, g_weak_config_.lock());	\
 			if(!config_){	\
-				AUTO(newConfig_, ::boost::make_shared< ::Poseidon::ConfigFile>());	\
-				newConfig_->load(getConfigFileName_());	\
-				g_weakConfig_ = newConfig_;	\
-				config_ = newConfig_;	\
+				AUTO(new_config_, ::boost::make_shared< ::Poseidon::ConfigFile>());	\
+				new_config_->load(get_config_file_name_());	\
+				g_weak_config_ = new_config_;	\
+				config_ = new_config_;	\
 			}	\
 			handles_.push(STD_MOVE_IDN(config_));	\
 		}	\
-		inline ::boost::shared_ptr<const ::Poseidon::ConfigFile> requireConfig_(){	\
-			const AUTO(config_, g_weakConfig_.lock());	\
+		inline ::boost::shared_ptr<const ::Poseidon::ConfigFile> require_config_(){	\
+			const AUTO(config_, g_weak_config_.lock());	\
 			if(!config_){	\
 				DEBUG_THROW(::Poseidon::Exception, ::Poseidon::sslit("Module config is not loaded"));	\
 			}	\
@@ -37,35 +37,35 @@
 		}	\
 	}	\
 	template<typename T_>	\
-	bool getConfig_(T_ &val_, const char *key_){	\
-		return ModuleConfigImpl_::requireConfig_()->get<T_>(val_, key_);	\
+	bool get_config_(T_ &val_, const char *key_){	\
+		return ModuleConfigImpl_::require_config_()->get<T_>(val_, key_);	\
 	}	\
 	template<typename T_, typename DefaultT_>	\
-	bool getConfig_(T_ &val_, const char *key_, const DefaultT_ &defVal_){	\
-		return ModuleConfigImpl_::requireConfig_()->get<T_, DefaultT_>(val_, key_, defVal_);	\
+	bool get_config_(T_ &val_, const char *key_, const DefaultT_ &def_val_){	\
+		return ModuleConfigImpl_::require_config_()->get<T_, DefaultT_>(val_, key_, def_val_);	\
 	}	\
 	template<typename T_>	\
-	T_ getConfig_(const char *key_){	\
-		return ModuleConfigImpl_::requireConfig_()->get<T_>(key_);	\
+	T_ get_config_(const char *key_){	\
+		return ModuleConfigImpl_::require_config_()->get<T_>(key_);	\
 	}	\
 	template<typename T_, typename DefaultT_>	\
-	T_ getConfig_(const char *key_, const DefaultT_ &defVal_){	\
-		return ModuleConfigImpl_::requireConfig_()->get<T_, DefaultT_>(key_, defVal_);	\
+	T_ get_config_(const char *key_, const DefaultT_ &def_val_){	\
+		return ModuleConfigImpl_::require_config_()->get<T_, DefaultT_>(key_, def_val_);	\
 	}	\
 	template<typename T_>	\
-	std::size_t getConfigV_(std::vector<T_> &vals_, const char *key_, bool includingEmpty_ = false){	\
-		return ModuleConfigImpl_::requireConfig_()->getAll<T_>(vals_, key_, includingEmpty_);	\
+	std::size_t get_config_v_(std::vector<T_> &vals_, const char *key_, bool including_empty_ = false){	\
+		return ModuleConfigImpl_::require_config_()->get_all<T_>(vals_, key_, including_empty_);	\
 	}	\
 	template<typename T_>	\
-	std::vector<T_> getConfigV_(const char *key_, bool includingEmpty_ = false){	\
-		return ModuleConfigImpl_::requireConfig_()->getAll<T_>(key_, includingEmpty_);	\
+	std::vector<T_> get_config_v_(const char *key_, bool including_empty_ = false){	\
+		return ModuleConfigImpl_::require_config_()->get_all<T_>(key_, including_empty_);	\
 	}
 
-#define DEFINE_MODULE_CONFIG(fileName_)	\
+#define DEFINE_MODULE_CONFIG(file_name_)	\
 	namespace ModuleConfigImpl_ {	\
-		::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weakConfig_;	\
-		const char *getConfigFileName_(){	\
-			return fileName_;	\
+		::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weak_config_;	\
+		const char *get_config_file_name_(){	\
+			return file_name_;	\
 		}	\
 	}
 

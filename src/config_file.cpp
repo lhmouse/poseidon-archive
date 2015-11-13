@@ -20,12 +20,12 @@ void ConfigFile::load(const char *path){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading config file: ", path);
 
 	StreamBuffer buffer;
-	fileGetContents(buffer, path);
+	file_get_contents(buffer, path);
 
 	OptionalMap contents;
 	std::string line;
 	std::size_t count = 0;
-	while(getLine(buffer, line)){
+	while(get_line(buffer, line)){
 		++count;
 		std::size_t pos = line.find('#');
 		if(pos != std::string::npos){
@@ -41,12 +41,12 @@ void ConfigFile::load(const char *path){
 			DEBUG_THROW(Exception, sslit("Bad config file"));
 		}
 
-		std::size_t keyEnd = line.find_last_not_of(" \t", equ - 1);
-		if((keyEnd == std::string::npos) || (pos >= keyEnd)){
+		std::size_t key_end = line.find_last_not_of(" \t", equ - 1);
+		if((key_end == std::string::npos) || (pos >= key_end)){
 			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": Name expected.");
 			DEBUG_THROW(Exception, sslit("Bad config file"));
 		}
-		SharedNts key(line.data() + pos, static_cast<std::size_t>(keyEnd + 1 - pos));
+		SharedNts key(line.data() + pos, static_cast<std::size_t>(key_end + 1 - pos));
 
 		std::string val;
 		pos = line.find_first_not_of(" \t", equ + 1);
@@ -62,7 +62,7 @@ void ConfigFile::load(const char *path){
 	m_contents.swap(contents);
 }
 
-int ConfigFile::loadNoThrow(const char *path){
+int ConfigFile::load_no_throw(const char *path){
 	try {
 		load(path);
 		return 0;

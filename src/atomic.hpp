@@ -32,7 +32,7 @@ enum MemModel {
 };
 
 template<typename T>
-inline T atomicLoad(const volatile T &mem, MemModel model) NOEXCEPT {
+inline T atomic_load(const volatile T &mem, MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_load_n(&mem, model);
 #else
@@ -42,7 +42,7 @@ inline T atomicLoad(const volatile T &mem, MemModel model) NOEXCEPT {
 #endif
 }
 template<typename T>
-inline void atomicStore(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT {
+inline void atomic_store(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	__atomic_store_n(&mem, val, model);
 #else
@@ -52,7 +52,7 @@ inline void atomicStore(volatile T &mem, typename Identity<T>::type val, MemMode
 #endif
 }
 
-inline void atomicFence(MemModel model) NOEXCEPT {
+inline void atomic_fence(MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	__atomic_thread_fence(model);
 #else
@@ -62,7 +62,7 @@ inline void atomicFence(MemModel model) NOEXCEPT {
 }
 
 template<typename T>
-inline T atomicAdd(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT
+inline T atomic_add(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT
 {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_add_fetch(&mem, val, model);
@@ -72,7 +72,7 @@ inline T atomicAdd(volatile T &mem, typename Identity<T>::type val, MemModel mod
 #endif
 }
 template<typename T>
-inline T atomicSub(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT {
+inline T atomic_sub(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_sub_fetch(&mem, val, model);
 #else
@@ -82,21 +82,21 @@ inline T atomicSub(volatile T &mem, typename Identity<T>::type val, MemModel mod
 }
 
 template<typename T>
-inline bool atomicCompareExchange(volatile T &mem, typename Identity<T>::type &cmp,
-	typename Identity<T>::type xchg, MemModel modelSuccess, MemModel modelFailure) NOEXCEPT
+inline bool atomic_compare_exchange(volatile T &mem, typename Identity<T>::type &cmp,
+	typename Identity<T>::type xchg, MemModel model_success, MemModel model_failure) NOEXCEPT
 {
 #ifdef GCC_HAS_ATOMIC_
-	return __atomic_compare_exchange_n(&mem, &cmp, xchg, false, modelSuccess, modelFailure);
+	return __atomic_compare_exchange_n(&mem, &cmp, xchg, false, model_success, model_failure);
 #else
-	(void)modelSuccess;
-	(void)modelFailure;
+	(void)model_success;
+	(void)model_failure;
 	const T old = cmp;
 	cmp = __sync_val_compare_and_swap(&mem, old, xchg);
 	return cmp == old;
 #endif
 }
 template<typename T>
-inline T atomicExchange(volatile T &mem, typename Identity<T>::type xchg, MemModel model) NOEXCEPT {
+inline T atomic_exchange(volatile T &mem, typename Identity<T>::type xchg, MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_exchange_n(&mem, xchg, model);
 #else
@@ -113,7 +113,7 @@ inline T atomicExchange(volatile T &mem, typename Identity<T>::type xchg, MemMod
 #endif
 }
 
-inline void atomicPause() NOEXCEPT {
+inline void atomic_pause() NOEXCEPT {
 	__builtin_ia32_pause();
 }
 

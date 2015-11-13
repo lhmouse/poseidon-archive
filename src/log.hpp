@@ -26,11 +26,11 @@ public:
 	};
 
 public:
-	static unsigned long long getMask() NOEXCEPT;
-	static unsigned long long setMask(unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT;
+	static unsigned long long get_mask() NOEXCEPT;
+	static unsigned long long set_mask(unsigned long long to_disable, unsigned long long to_enable) NOEXCEPT;
 
-	static const char *getThreadTag() NOEXCEPT;
-	static void setThreadTag(const char *newTag) NOEXCEPT;
+	static const char *get_thread_tag() NOEXCEPT;
+	static void set_thread_tag(const char *new_tag) NOEXCEPT;
 
 private:
 	const unsigned long long m_mask;
@@ -84,7 +84,7 @@ public:
 		if(test_ & ::Poseidon::Logger::SP_MAJOR){	\
 			test_ &= 0x3F;	\
 		}	\
-		if(test_ & ~(::Poseidon::Logger::getMask())){	\
+		if(test_ & ~(::Poseidon::Logger::get_mask())){	\
 			break;	\
 		}	\
 		static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__);	\

@@ -208,19 +208,19 @@ public:
 	void put(const char *str);
 	void put(const std::string &str);
 
-	ConstChunkEnumerator getChunkEnumerator() const NOEXCEPT {
+	ConstChunkEnumerator get_chunk_enumerator() const NOEXCEPT {
 		return ConstChunkEnumerator(*this);
 	}
-	ChunkEnumerator getChunkEnumerator() NOEXCEPT {
+	ChunkEnumerator get_chunk_enumerator() NOEXCEPT {
 		return ChunkEnumerator(*this);
 	}
-	ConstChunkEnumerator getConstChunkEnumerator() const NOEXCEPT {
+	ConstChunkEnumerator get_const_chunk_enumerator() const NOEXCEPT {
 		return ConstChunkEnumerator(*this);
 	}
 
 	// 拆分成两部分，返回 [0, bytes) 部分，[bytes, -) 部分仍保存于当前对象中。
-	StreamBuffer cutOff(std::size_t bytes);
-	// cutOff() 的逆操作。该函数返回后 src 为空。
+	StreamBuffer cut_off(std::size_t bytes);
+	// cut_off() 的逆操作。该函数返回后 src 为空。
 	void splice(StreamBuffer &rhs) NOEXCEPT;
 #ifdef POSEIDON_CXX11
 	void splice(StreamBuffer &&rhs) noexcept {

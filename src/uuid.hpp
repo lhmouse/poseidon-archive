@@ -72,11 +72,11 @@ public:
 		return 16;
 	}
 
-	void toString(char (&str)[36], bool upperCase = true) const;
-	void toString(std::string &str, bool upperCase = true) const;
-	std::string toString(bool upperCase = true) const;
-	bool fromString(const char (&str)[36]);
-	bool fromString(const std::string &str);
+	void to_string(char (&str)[36], bool upper_case = true) const;
+	void to_string(std::string &str, bool upper_case = true) const;
+	std::string to_string(bool upper_case = true) const;
+	bool from_string(const char (&str)[36]);
+	bool from_string(const std::string &str);
 
 public:
 	const unsigned char &operator[](unsigned index) const {

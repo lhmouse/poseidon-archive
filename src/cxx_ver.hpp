@@ -57,14 +57,14 @@ typename std::remove_cv<
 	typename std::remove_reference<
 		typename std::decay<T>::type
 		>::type
-	>::type valueOfHelper(const T &);
+	>::type value_of_helper(const T &);
 #else
 template<typename T>
 typename boost::remove_cv<
 	typename boost::remove_reference<
 		typename boost::decay<T>::type
 		>::type
-	>::type valueOfHelper(const T &);
+	>::type value_of_helper(const T &);
 #endif
 
 #ifdef POSEIDON_CXX11
@@ -129,18 +129,18 @@ Move<T> move(Move<T> rhs) NOEXCEPT {
 // 对 C++98 中无法移动构造 std::tr1::function / boost::function 的补偿。
 // 只能用于直接初始化对象。
 template<typename T>
-T moveAsIdentity(T &rhs) NOEXCEPT {
+T move_as_identity(T &rhs) NOEXCEPT {
 	return Move<T>(rhs); // 隐式转换，无视构造函数。
 }
 template<typename T>
-T moveAsIdentity(Move<T> rhs) NOEXCEPT {
+T move_as_identity(Move<T> rhs) NOEXCEPT {
 	return rhs; // 隐式转换，无视构造函数。
 }
 #endif
 
 #ifndef POSEIDON_CXX11
 template<typename T>
-typename boost::add_reference<T>::type declRef() NOEXCEPT;
+typename boost::add_reference<T>::type decl_ref() NOEXCEPT;
 
 struct ValueInitializer {
 	template<typename T>
@@ -154,7 +154,7 @@ struct ValueInitializer {
 
 #ifdef POSEIDON_CXX11
 #	define CV_VALUE_TYPE(...)		typename ::std::remove_reference<decltype(__VA_ARGS__)>::type
-#	define VALUE_TYPE(...)			decltype(::Poseidon::valueOfHelper(__VA_ARGS__))
+#	define VALUE_TYPE(...)			decltype(::Poseidon::value_of_helper(__VA_ARGS__))
 #	define AUTO(id_, ...)			auto id_ = __VA_ARGS__
 #	define AUTO_REF(id_, ...)		auto &id_ = __VA_ARGS__
 #	define STD_MOVE(expr_)			(::std::move(expr_))
@@ -164,12 +164,12 @@ struct ValueInitializer {
 #	define NULLPTR					nullptr
 #else
 #	define CV_VALUE_TYPE(...)		__typeof__(__VA_ARGS__)
-#	define VALUE_TYPE(...)			__typeof__(::Poseidon::valueOfHelper(__VA_ARGS__))
+#	define VALUE_TYPE(...)			__typeof__(::Poseidon::value_of_helper(__VA_ARGS__))
 #	define AUTO(id_, ...)			VALUE_TYPE(__VA_ARGS__) id_(__VA_ARGS__)
 #	define AUTO_REF(id_, ...)		CV_VALUE_TYPE(__VA_ARGS__) &id_ = (__VA_ARGS__)
 #	define STD_MOVE(expr_)			(::Poseidon::move(expr_))
-#	define STD_MOVE_IDN(expr_)		(::Poseidon::moveAsIdentity(expr_))
-#	define DECLREF(t_)				(::Poseidon::declRef<t_>())
+#	define STD_MOVE_IDN(expr_)		(::Poseidon::move_as_identity(expr_))
+#	define DECLREF(t_)				(::Poseidon::decl_ref<t_>())
 #	define VAL_INIT					(::Poseidon::ValueInitializer())
 #	define NULLPTR					VAL_INIT
 #endif

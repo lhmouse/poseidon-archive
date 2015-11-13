@@ -12,9 +12,9 @@
 namespace Poseidon {
 
 namespace {
-	::pthread_once_t g_sslOnce = PTHREAD_ONCE_INIT;
+	::pthread_once_t g_ssl_once = PTHREAD_ONCE_INIT;
 
-	void initSsl(){
+	void init_ssl(){
 		LOG_POSEIDON_INFO("Initializing SSL library...");
 
 		::OpenSSL_add_all_algorithms();
@@ -23,8 +23,8 @@ namespace {
 		std::atexit(&::EVP_cleanup);
 	}
 
-	UniqueSslCtx createServerSslCtx(const char *cert, const char *privateKey){
-		const int err = ::pthread_once(&g_sslOnce, &initSsl);
+	UniqueSslCtx create_server_ssl_ctx(const char *cert, const char *private_key){
+		const int err = ::pthread_once(&g_ssl_once, &init_ssl);
 		if(err != 0){
 			LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
 			std::abort();
@@ -42,8 +42,8 @@ namespace {
 			DEBUG_THROW(Exception, sslit("::SSL_CTX_use_certificate_file() failed"));
 		}
 
-		LOG_POSEIDON_INFO("Loading server private key: ", privateKey);
-		if(::SSL_CTX_use_PrivateKey_file(ret.get(), privateKey, SSL_FILETYPE_PEM) != 1){
+		LOG_POSEIDON_INFO("Loading server private key: ", private_key);
+		if(::SSL_CTX_use_PrivateKey_file(ret.get(), private_key, SSL_FILETYPE_PEM) != 1){
 			DEBUG_THROW(Exception, sslit("::SSL_CTX_use_PrivateKey_file() failed"));
 		}
 
@@ -54,8 +54,8 @@ namespace {
 
 		return ret;
 	}
-	UniqueSslCtx createClientSslCtx(){
-		const int err = ::pthread_once(&g_sslOnce, &initSsl);
+	UniqueSslCtx create_client_ssl_ctx(){
+		const int err = ::pthread_once(&g_ssl_once, &init_ssl);
 		if(err != 0){
 			LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
 			std::abort();
@@ -73,20 +73,20 @@ namespace {
 }
 
 // SslFactoryBase
-SslFactoryBase::SslFactoryBase(UniqueSslCtx sslCtx)
-	: m_sslCtx(STD_MOVE(sslCtx))
+SslFactoryBase::SslFactoryBase(UniqueSslCtx ssl_ctx)
+	: m_ssl_ctx(STD_MOVE(ssl_ctx))
 {
 }
 SslFactoryBase::~SslFactoryBase(){
 }
 
-UniqueSsl SslFactoryBase::createSsl() const {
-	return UniqueSsl(::SSL_new(m_sslCtx.get()));
+UniqueSsl SslFactoryBase::create_ssl() const {
+	return UniqueSsl(::SSL_new(m_ssl_ctx.get()));
 }
 
 // ServerSslFactory
-ServerSslFactory::ServerSslFactory(const char *cert, const char *privateKey)
-	: SslFactoryBase(createServerSslCtx(cert, privateKey))
+ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
+	: SslFactoryBase(create_server_ssl_ctx(cert, private_key))
 {
 }
 ServerSslFactory::~ServerSslFactory(){
@@ -94,7 +94,7 @@ ServerSslFactory::~ServerSslFactory(){
 
 // ClientSslFactory
 ClientSslFactory::ClientSslFactory()
-	: SslFactoryBase(createClientSslCtx())
+	: SslFactoryBase(create_client_ssl_ctx())
 {
 }
 ClientSslFactory::~ClientSslFactory(){

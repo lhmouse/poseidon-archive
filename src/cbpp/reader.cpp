@@ -12,7 +12,7 @@ namespace Poseidon {
 
 namespace Cbpp {
 	Reader::Reader()
-		: m_sizeExpecting(2), m_state(S_PAYLOAD_SIZE)
+		: m_size_expecting(2), m_state(S_PAYLOAD_SIZE)
 	{
 	}
 	Reader::~Reader(){
@@ -21,14 +21,14 @@ namespace Cbpp {
 		}
 	}
 
-	bool Reader::putEncodedData(StreamBuffer encoded){
+	bool Reader::put_encoded_data(StreamBuffer encoded){
 		PROFILE_ME;
 
 		m_queue.splice(encoded);
 
-		bool hasNextRequest = true;
+		bool has_next_request = true;
 		do {
-			if(m_queue.size() < m_sizeExpecting){
+			if(m_queue.size() < m_size_expecting){
 				break;
 			}
 
@@ -37,69 +37,69 @@ namespace Cbpp {
 				boost::uint64_t temp64;
 
 			case S_PAYLOAD_SIZE:
-				// m_payloadSize = 0;
-				m_messageId = 0;
-				m_payloadOffset = 0;
+				// m_payload_size = 0;
+				m_message_id = 0;
+				m_payload_offset = 0;
 
 				m_queue.get(&temp16, 2);
-				m_payloadSize = loadLe(temp16);
-				if(m_payloadSize == 0xFFFF){
-					m_sizeExpecting = 8;
+				m_payload_size = load_le(temp16);
+				if(m_payload_size == 0xFFFF){
+					m_size_expecting = 8;
 					m_state = S_EX_PAYLOAD_SIZE;
 				} else {
-					m_sizeExpecting = 2;
+					m_size_expecting = 2;
 					m_state = S_MESSAGE_ID;
 				}
 				break;
 
 			case S_EX_PAYLOAD_SIZE:
 				m_queue.get(&temp64, 8);
-				m_payloadSize = loadLe(temp64);
+				m_payload_size = load_le(temp64);
 
-				m_sizeExpecting = 2;
+				m_size_expecting = 2;
 				m_state = S_MESSAGE_ID;
 				break;
 
 			case S_MESSAGE_ID:
-				LOG_POSEIDON_DEBUG("Payload size = ", m_payloadSize);
+				LOG_POSEIDON_DEBUG("Payload size = ", m_payload_size);
 
 				m_queue.get(&temp16, 2);
-				m_messageId = loadLe(temp16);
+				m_message_id = load_le(temp16);
 
-				if(m_messageId != ControlMessage::ID){
-					onDataMessageHeader(m_messageId, m_payloadSize);
+				if(m_message_id != ControlMessage::ID){
+					on_data_message_header(m_message_id, m_payload_size);
 
-					m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize, 4096);
+					m_size_expecting = std::min<boost::uint64_t>(m_payload_size, 4096);
 					m_state = S_DATA_PAYLOAD;
 				} else {
-					m_sizeExpecting = m_payloadSize;
+					m_size_expecting = m_payload_size;
 					m_state = S_CONTROL_PAYLOAD;
 				}
 				break;
 
 			case S_DATA_PAYLOAD:
-				temp64 = std::min<boost::uint64_t>(m_queue.size(), m_payloadSize - m_payloadOffset);
-				onDataMessagePayload(m_payloadOffset, m_queue.cutOff(temp64));
-				m_payloadOffset += temp64;
+				temp64 = std::min<boost::uint64_t>(m_queue.size(), m_payload_size - m_payload_offset);
+				on_data_message_payload(m_payload_offset, m_queue.cut_off(temp64));
+				m_payload_offset += temp64;
 
-				if(m_payloadOffset < m_payloadSize){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_payloadSize - m_payloadOffset, 4096);
+				if(m_payload_offset < m_payload_size){
+					m_size_expecting = std::min<boost::uint64_t>(m_payload_size - m_payload_offset, 4096);
 					// m_state = S_DATA_PAYLOAD;
 				} else {
-					hasNextRequest = onDataMessageEnd(m_payloadOffset);
+					has_next_request = on_data_message_end(m_payload_offset);
 
-					m_sizeExpecting = 2;
+					m_size_expecting = 2;
 					m_state = S_PAYLOAD_SIZE;
 				}
 				break;
 
 			case S_CONTROL_PAYLOAD:
 				{
-					ControlMessage req(m_queue.cutOff(m_payloadSize));
-					hasNextRequest = onControlMessage(req.controlCode, req.vintParam, STD_MOVE(req.stringParam));
-					m_payloadOffset = m_payloadSize;
+					ControlMessage req(m_queue.cut_off(m_payload_size));
+					has_next_request = on_control_message(req.control_code, req.vint_param, STD_MOVE(req.string_param));
+					m_payload_offset = m_payload_size;
 
-					m_sizeExpecting = 2;
+					m_size_expecting = 2;
 					m_state = S_PAYLOAD_SIZE;
 				}
 				break;
@@ -108,9 +108,9 @@ namespace Cbpp {
 				LOG_POSEIDON_FATAL("Invalid state: ", static_cast<unsigned>(m_state));
 				std::abort();
 			}
-		} while(hasNextRequest);
+		} while(has_next_request);
 
-		return hasNextRequest;
+		return has_next_request;
 	}
 }
 

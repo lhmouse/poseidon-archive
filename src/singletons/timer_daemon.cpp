@@ -18,16 +18,16 @@ namespace Poseidon {
 struct TimerItem : NONCOPYABLE {
 	boost::uint64_t period;
 	boost::shared_ptr<const TimerCallback> callback;
-	bool isAsync;
+	bool is_async;
 	unsigned long stamp;
 
-	TimerItem(boost::uint64_t period_, boost::shared_ptr<const TimerCallback> callback_, bool isAsync_)
-		: period(period_), callback(STD_MOVE(callback_)), isAsync(isAsync_), stamp(0)
+	TimerItem(boost::uint64_t period_, boost::shared_ptr<const TimerCallback> callback_, bool is_async_)
+		: period(period_), callback(STD_MOVE(callback_)), is_async(is_async_), stamp(0)
 	{
-		LOG_POSEIDON_DEBUG("Created timer: period = ", period, ", isAsync = ", isAsync);
+		LOG_POSEIDON_DEBUG("Created timer: period = ", period, ", is_async = ", is_async);
 	}
 	~TimerItem(){
-		LOG_POSEIDON_DEBUG("Destroyed timer: period = ", period, ", isAsync = ", isAsync);
+		LOG_POSEIDON_DEBUG("Destroyed timer: period = ", period, ", is_async = ", is_async);
 	}
 };
 
@@ -44,7 +44,7 @@ namespace {
 		}
 
 	public:
-		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+		boost::weak_ptr<const void> get_category() const OVERRIDE {
 			return m_item;
 		}
 		void perform() OVERRIDE {
@@ -78,13 +78,13 @@ namespace {
 	Thread g_thread;
 
 	Mutex g_mutex;
-	ConditionVariable g_newTimer;
+	ConditionVariable g_new_timer;
 	std::vector<TimerQueueElement> g_timers;
 
-	bool pumpOneElement() NOEXCEPT {
+	bool pump_one_element() NOEXCEPT {
 		PROFILE_ME;
 
-		const boost::uint64_t now = getFastMonoClock();
+		const boost::uint64_t now = get_fast_mono_clock();
 
 		boost::shared_ptr<TimerItem> item;
 		{
@@ -112,12 +112,12 @@ namespace {
 		}
 
 		try {
-			if(item->isAsync){
+			if(item->is_async){
 				LOG_POSEIDON_TRACE("Dispatching async timer");
 				(*item->callback)(item, now, item->period);
 			} else {
 				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching");
-				enqueueJob(boost::make_shared<TimerJob>(item, now));
+				enqueue_job(boost::make_shared<TimerJob>(item, now));
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());
@@ -128,42 +128,42 @@ namespace {
 		return true;
 	}
 
-	void daemonLoop(){
+	void daemon_loop(){
 		for(;;){
-			while(pumpOneElement()){
+			while(pump_one_element()){
 				// noop
 			}
 
-			if(!atomicLoad(g_running, ATOMIC_CONSUME)){
+			if(!atomic_load(g_running, ATOMIC_CONSUME)){
 				break;
 			}
 
 			Mutex::UniqueLock lock(g_mutex);
-			g_newTimer.timedWait(lock, 100);
+			g_new_timer.timed_wait(lock, 100);
 		}
 	}
 
-	void threadProc(){
+	void thread_proc(){
 		PROFILE_ME;
 		LOG_POSEIDON_INFO("Timer daemon started.");
 
-		daemonLoop();
+		daemon_loop();
 
 		LOG_POSEIDON_INFO("Timer daemon stopped.");
 	}
 }
 
 void TimerDaemon::start(){
-	if(atomicExchange(g_running, true, ATOMIC_ACQ_REL) != false){
+	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting timer daemon...");
 
-	Thread(threadProc, "  T ").swap(g_thread);
+	Thread(thread_proc, "  T ").swap(g_thread);
 }
 void TimerDaemon::stop(){
-	if(atomicExchange(g_running, false, ATOMIC_ACQ_REL) == false){
+	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping timer daemon...");
@@ -174,54 +174,54 @@ void TimerDaemon::stop(){
 	g_timers.clear();
 }
 
-boost::shared_ptr<TimerItem> TimerDaemon::registerAbsoluteTimer(
-	boost::uint64_t timePoint, boost::uint64_t period, TimerCallback callback, bool isAsync)
+boost::shared_ptr<TimerItem> TimerDaemon::register_absolute_timer(
+	boost::uint64_t time_point, boost::uint64_t period, TimerCallback callback, bool is_async)
 {
 	PROFILE_ME;
 
-	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE(callback)), isAsync));
+	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE(callback)), is_async));
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		g_timers.push_back(TimerQueueElement(timePoint, item, item->stamp));
+		g_timers.push_back(TimerQueueElement(time_point, item, item->stamp));
 		std::push_heap(g_timers.begin(), g_timers.end());
-		g_newTimer.signal();
+		g_new_timer.signal();
 	}
-	LOG_POSEIDON_DEBUG("Created a(n) ", isAsync ? "async " : "", "timer item which will be triggered ",
-		std::max<boost::int64_t>(static_cast<boost::int64_t>(timePoint - getFastMonoClock()), 0),
+	LOG_POSEIDON_DEBUG("Created a(n) ", is_async ? "async " : "", "timer item which will be triggered ",
+		std::max<boost::int64_t>(static_cast<boost::int64_t>(time_point - get_fast_mono_clock()), 0),
 		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
 	return item;
 }
-boost::shared_ptr<TimerItem> TimerDaemon::registerTimer(
-	boost::uint64_t first, boost::uint64_t period, TimerCallback callback, bool isAsync)
+boost::shared_ptr<TimerItem> TimerDaemon::register_timer(
+	boost::uint64_t first, boost::uint64_t period, TimerCallback callback, bool is_async)
 {
-	return registerAbsoluteTimer(getFastMonoClock() + first, period, STD_MOVE(callback), isAsync);
+	return register_absolute_timer(get_fast_mono_clock() + first, period, STD_MOVE(callback), is_async);
 }
 
-boost::shared_ptr<TimerItem> TimerDaemon::registerHourlyTimer(
-	unsigned minute, unsigned second, TimerCallback callback, bool isAsync)
+boost::shared_ptr<TimerItem> TimerDaemon::register_hourly_timer(
+	unsigned minute, unsigned second, TimerCallback callback, bool is_async)
 {
 	const boost::uint64_t MS_PER_HOUR = 3600 * 1000;
-	const AUTO(delta, getLocalTime() - (minute * 60ull + second) * 1000);
-	return registerTimer(MS_PER_HOUR - delta % MS_PER_HOUR, MS_PER_HOUR, STD_MOVE(callback), isAsync);
+	const AUTO(delta, get_local_time() - (minute * 60ull + second) * 1000);
+	return register_timer(MS_PER_HOUR - delta % MS_PER_HOUR, MS_PER_HOUR, STD_MOVE(callback), is_async);
 }
-boost::shared_ptr<TimerItem> TimerDaemon::registerDailyTimer(
-	unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isAsync)
+boost::shared_ptr<TimerItem> TimerDaemon::register_daily_timer(
+	unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool is_async)
 {
 	const boost::uint64_t MS_PER_DAY = 24 * 3600 * 1000;
-	const AUTO(delta, getLocalTime() - (hour * 3600ull + minute * 60ull + second) * 1000);
-	return registerTimer(MS_PER_DAY - delta % MS_PER_DAY, MS_PER_DAY, STD_MOVE(callback), isAsync);
+	const AUTO(delta, get_local_time() - (hour * 3600ull + minute * 60ull + second) * 1000);
+	return register_timer(MS_PER_DAY - delta % MS_PER_DAY, MS_PER_DAY, STD_MOVE(callback), is_async);
 }
-boost::shared_ptr<TimerItem> TimerDaemon::registerWeeklyTimer(
-	unsigned dayOfWeek, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool isAsync)
+boost::shared_ptr<TimerItem> TimerDaemon::register_weekly_timer(
+	unsigned day_of_week, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool is_async)
 {
 	const boost::uint64_t MS_PER_WEEK = 7 * 24 * 3600 * 1000;
 	// 注意 1970-01-01 是星期四。
-	const AUTO(delta, getLocalTime() - ((dayOfWeek + 3) * 86400ull + hour * 3600ull + minute * 60ull + second) * 1000);
-	return registerTimer(MS_PER_WEEK - delta % MS_PER_WEEK, MS_PER_WEEK, STD_MOVE(callback), isAsync);
+	const AUTO(delta, get_local_time() - ((day_of_week + 3) * 86400ull + hour * 3600ull + minute * 60ull + second) * 1000);
+	return register_timer(MS_PER_WEEK - delta % MS_PER_WEEK, MS_PER_WEEK, STD_MOVE(callback), is_async);
 }
 
-void TimerDaemon::setAbsoluteTime(
-	const boost::shared_ptr<TimerItem> &item, boost::uint64_t timePoint, boost::uint64_t period)
+void TimerDaemon::set_absolute_time(
+	const boost::shared_ptr<TimerItem> &item, boost::uint64_t time_point, boost::uint64_t period)
 {
 	PROFILE_ME;
 
@@ -229,14 +229,14 @@ void TimerDaemon::setAbsoluteTime(
 	if(period != TimerDaemon::PERIOD_NOT_MODIFIED){
 		item->period = period;
 	}
-	g_timers.push_back(TimerQueueElement(timePoint, item, ++item->stamp));
+	g_timers.push_back(TimerQueueElement(time_point, item, ++item->stamp));
 	std::push_heap(g_timers.begin(), g_timers.end());
-	g_newTimer.signal();
+	g_new_timer.signal();
 }
-void TimerDaemon::setTime(
+void TimerDaemon::set_time(
 	const boost::shared_ptr<TimerItem> &item, boost::uint64_t first, boost::uint64_t period)
 {
-	return setAbsoluteTime(item, getFastMonoClock() + first, period);
+	return set_absolute_time(item, get_fast_mono_clock() + first, period);
 }
 
 }

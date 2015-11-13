@@ -13,7 +13,7 @@ namespace Poseidon {
 boost::uint32_t rand32();
 boost::uint64_t rand64();
 boost::uint32_t rand32(boost::uint32_t lower, boost::uint32_t upper);
-double randDouble(double lower = 0.0, double upper = 1.0);
+double rand_double(double lower = 0.0, double upper = 1.0);
 
 }
 

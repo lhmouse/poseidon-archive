@@ -23,9 +23,9 @@ public:
 
 public:
 	void load(const char *file);
-	bool loadNoThrow(const char *file);
+	bool load_no_throw(const char *file);
 
-	const std::vector<OptionalMap> &getRawData() const {
+	const std::vector<OptionalMap> &get_raw_data() const {
 		return m_data;
 	}
 
@@ -42,20 +42,20 @@ public:
 	}
 	std::size_t seek(std::size_t row);
 
-	bool fetchRow(){
-		const AUTO(newRow, m_row + 1);
-		if(newRow >= m_data.size()){
+	bool fetch_row(){
+		const AUTO(new_row, m_row + 1);
+		if(new_row >= m_data.size()){
 			return false;
 		}
-		m_row = newRow;
+		m_row = new_row;
 		return true;
 	}
 
-	const std::string &getRaw(const char *key) const;
+	const std::string &get_raw(const char *key) const;
 
 	template<typename T>
 	bool get(T &val, const char *key) const {
-		const AUTO_REF(str, getRaw(key));
+		const AUTO_REF(str, get_raw(key));
 		if(str.empty()){
 			return false;
 		}
@@ -63,26 +63,26 @@ public:
 		return true;
 	}
 	template<typename T, typename DefaultT>
-	bool get(T &val, const char *key, const DefaultT &defVal) const {
-		const AUTO_REF(str, getRaw(key));
+	bool get(T &val, const char *key, const DefaultT &def_val) const {
+		const AUTO_REF(str, get_raw(key));
 		if(str.empty()){
-			val = defVal;
+			val = def_val;
 			return false;
 		}
 		val = boost::lexical_cast<T>(str);
 		return true;
 	}
 	template<typename T, typename DefaultT>
-	T get(const char *key, const DefaultT &defVal) const {
-		const AUTO_REF(str, getRaw(key));
+	T get(const char *key, const DefaultT &def_val) const {
+		const AUTO_REF(str, get_raw(key));
 		if(str.empty()){
-			return T(defVal);
+			return T(def_val);
 		}
 		return boost::lexical_cast<T>(str);
 	}
 	template<typename T>
 	T get(const char *key) const {
-		const AUTO_REF(str, getRaw(key));
+		const AUTO_REF(str, get_raw(key));
 		if(str.empty()){
 			return T();
 		}

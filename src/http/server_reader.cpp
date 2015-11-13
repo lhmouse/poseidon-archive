@@ -17,7 +17,7 @@ namespace Poseidon {
 
 namespace Http {
 	ServerReader::ServerReader()
-		: m_sizeExpecting(EXPECTING_NEW_LINE), m_state(S_FIRST_HEADER)
+		: m_size_expecting(EXPECTING_NEW_LINE), m_state(S_FIRST_HEADER)
 	{
 	}
 	ServerReader::~ServerReader(){
@@ -26,39 +26,39 @@ namespace Http {
 		}
 	}
 
-	bool ServerReader::putEncodedData(StreamBuffer encoded, bool dontParseGetParams){
+	bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_params){
 		PROFILE_ME;
 
 		m_queue.splice(encoded);
 
-		bool hasNextRequest = true;
+		bool has_next_request = true;
 		do {
-			const bool expectingNewLine = (m_sizeExpecting == EXPECTING_NEW_LINE);
+			const bool expecting_new_line = (m_size_expecting == EXPECTING_NEW_LINE);
 
-			if(expectingNewLine){
-				std::size_t lfOffset = 0;
-				AUTO(ce, m_queue.getConstChunkEnumerator());
+			if(expecting_new_line){
+				std::size_t lf_offset = 0;
+				AUTO(ce, m_queue.get_const_chunk_enumerator());
 				while(ce){
 					const AUTO(pos, std::find(ce.begin(), ce.end(), '\n'));
 					if(pos != ce.end()){
-						lfOffset += static_cast<std::size_t>(pos - ce.begin());
+						lf_offset += static_cast<std::size_t>(pos - ce.begin());
 						goto _found;
 					}
-					lfOffset += ce.size();
+					lf_offset += ce.size();
 					++ce;
 				}
 				// 没找到换行符。
 				break;
 			_found:
-				m_sizeExpecting = lfOffset + 1;
+				m_size_expecting = lf_offset + 1;
 			} else {
-				if(m_queue.size() < m_sizeExpecting){
+				if(m_queue.size() < m_size_expecting){
 					break;
 				}
 			}
 
-			AUTO(expected, m_queue.cutOff(m_sizeExpecting));
-			if(expectingNewLine){
+			AUTO(expected, m_queue.cut_off(m_size_expecting));
+			if(expecting_new_line){
 				expected.unput(); // '\n'
 				if(expected.back() == '\r'){
 					expected.unput();
@@ -70,9 +70,9 @@ namespace Http {
 
 			case S_FIRST_HEADER:
 				if(!expected.empty()){
-					m_requestHeaders = RequestHeaders();
-					m_contentLength = 0;
-					m_contentOffset = 0;
+					m_request_headers = RequestHeaders();
+					m_content_length = 0;
+					m_content_offset = 0;
 
 					std::string line;
 					expected.dump(line);
@@ -83,8 +83,8 @@ namespace Http {
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
 					line[pos] = 0;
-					m_requestHeaders.verb = getVerbFromString(line.c_str());
-					if(m_requestHeaders.verb == V_INVALID_VERB){
+					m_request_headers.verb = get_verb_from_string(line.c_str());
+					if(m_request_headers.verb == V_INVALID_VERB){
 						LOG_POSEIDON_WARNING("Bad verb: ", line.c_str());
 						DEBUG_THROW(Exception, ST_NOT_IMPLEMENTED);
 					}
@@ -95,38 +95,38 @@ namespace Http {
 						LOG_POSEIDON_WARNING("Bad request header: expecting URI end, line = ", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
-					m_requestHeaders.uri.assign(line, 0, pos);
+					m_request_headers.uri.assign(line, 0, pos);
 					line.erase(0, pos + 1);
 
-					long verEnd = 0;
-					char verMajorStr[16], verMinorStr[16];
-					if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", verMajorStr, verMinorStr, &verEnd) != 2){
+					long ver_end = 0;
+					char ver_major_str[16], ver_minor_str[16];
+					if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) != 2){
 						LOG_POSEIDON_WARNING("Bad request header: expecting HTTP version, line = ", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
-					if(static_cast<unsigned long>(verEnd) != line.size()){
+					if(static_cast<unsigned long>(ver_end) != line.size()){
 						LOG_POSEIDON_WARNING("Bad request header: junk after HTTP version, line = ", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
-					m_requestHeaders.version = std::strtoul(verMajorStr, NULLPTR, 10) * 10000 + std::strtoul(verMinorStr, NULLPTR, 10);
-					if((m_requestHeaders.version != 10000) && (m_requestHeaders.version != 10001)){
-						LOG_POSEIDON_WARNING("Bad request header: HTTP version not supported, verMajorStr = ", verMajorStr,
-							", verMinorStr = ", verMinorStr);
+					m_request_headers.version = std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10);
+					if((m_request_headers.version != 10000) && (m_request_headers.version != 10001)){
+						LOG_POSEIDON_WARNING("Bad request header: HTTP version not supported, ver_major_str = ", ver_major_str,
+							", ver_minor_str = ", ver_minor_str);
 						DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
 					}
 
-					if(!dontParseGetParams){
-						pos = m_requestHeaders.uri.find('?');
+					if(!dont_parse_get_params){
+						pos = m_request_headers.uri.find('?');
 						if(pos != std::string::npos){
-							m_requestHeaders.getParams = optionalMapFromUrlEncoded(m_requestHeaders.uri.substr(pos + 1));
-							m_requestHeaders.uri.erase(pos);
+							m_request_headers.get_params = optional_map_from_url_encoded(m_request_headers.uri.substr(pos + 1));
+							m_request_headers.uri.erase(pos);
 						}
 					}
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_HEADERS;
 				} else {
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_FIRST_HEADER;
 				}
 				break;
@@ -141,111 +141,111 @@ namespace Http {
 						LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
-					m_requestHeaders.headers.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
+					m_request_headers.headers.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_HEADERS;
 				} else {
-					AUTO(transferEncoding, m_requestHeaders.headers.get("Transfer-Encoding"));
-					AUTO(pos, transferEncoding.find(';'));
+					AUTO(transfer_encoding, m_request_headers.headers.get("Transfer-Encoding"));
+					AUTO(pos, transfer_encoding.find(';'));
 					if(pos != std::string::npos){
-						transferEncoding.erase(pos);
+						transfer_encoding.erase(pos);
 					}
-					transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
-					if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
-						transferEncoding.clear();
+					transfer_encoding = to_lower_case(trim(STD_MOVE(transfer_encoding)));
+					if(transfer_encoding.empty() || (transfer_encoding == STR_IDENTITY)){
+						transfer_encoding.clear();
 
-						const AUTO_REF(contentLength, m_requestHeaders.headers.get("Content-Length"));
-						if(contentLength.empty()){
-							m_contentLength = 0;
+						const AUTO_REF(content_length, m_request_headers.headers.get("Content-Length"));
+						if(content_length.empty()){
+							m_content_length = 0;
 						} else {
 							char *endptr;
-							m_contentLength = ::strtoull(contentLength.c_str(), &endptr, 10);
+							m_content_length = ::strtoull(content_length.c_str(), &endptr, 10);
 							if(*endptr){
-								LOG_POSEIDON_WARNING("Bad request header Content-Length: ", contentLength);
+								LOG_POSEIDON_WARNING("Bad request header Content-Length: ", content_length);
 								DEBUG_THROW(Exception, ST_BAD_REQUEST);
 							}
-							if(m_contentLength > CONTENT_LENGTH_MAX){
-								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", contentLength);
+							if(m_content_length > CONTENT_LENGTH_MAX){
+								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", content_length);
 								DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
 							}
 						}
 					} else {
-						m_contentLength = CONTENT_CHUNKED;
+						m_content_length = CONTENT_CHUNKED;
 					}
 
-					onRequestHeaders(STD_MOVE(m_requestHeaders), STD_MOVE(transferEncoding), m_contentLength);
+					on_request_headers(STD_MOVE(m_request_headers), STD_MOVE(transfer_encoding), m_content_length);
 
-					if(m_contentLength == CONTENT_CHUNKED){
-						m_sizeExpecting = EXPECTING_NEW_LINE;
+					if(m_content_length == CONTENT_CHUNKED){
+						m_size_expecting = EXPECTING_NEW_LINE;
 						m_state = S_CHUNK_HEADER;
 					} else {
-						m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength, 4096);
+						m_size_expecting = std::min<boost::uint64_t>(m_content_length, 4096);
 						m_state = S_IDENTITY;
 					}
 				}
 				break;
 
 			case S_IDENTITY:
-				temp64 = std::min<boost::uint64_t>(expected.size(), m_contentLength - m_contentOffset);
-				onRequestEntity(m_contentOffset, false, expected.cutOff(temp64));
-				m_contentOffset += temp64;
+				temp64 = std::min<boost::uint64_t>(expected.size(), m_content_length - m_content_offset);
+				on_request_entity(m_content_offset, false, expected.cut_off(temp64));
+				m_content_offset += temp64;
 
-				if(m_contentOffset < m_contentLength){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength - m_contentOffset, 4096);
+				if(m_content_offset < m_content_length){
+					m_size_expecting = std::min<boost::uint64_t>(m_content_length - m_content_offset, 4096);
 					// m_state = S_IDENTITY;
 				} else {
-					hasNextRequest = onRequestEnd(m_contentOffset, false, VAL_INIT);
+					has_next_request = on_request_end(m_content_offset, false, VAL_INIT);
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
 				}
 				break;
 
 			case S_CHUNK_HEADER:
 				if(!expected.empty()){
-					m_chunkSize = 0;
-					m_chunkOffset = 0;
-					m_chunkedTrailer.clear();
+					m_chunk_size = 0;
+					m_chunk_offset = 0;
+					m_chunked_trailer.clear();
 
 					std::string line;
 					expected.dump(line);
 
 					char *endptr;
-					m_chunkSize = ::strtoull(line.c_str(), &endptr, 16);
+					m_chunk_size = ::strtoull(line.c_str(), &endptr, 16);
 					if(*endptr && (*endptr != ' ')){
 						LOG_POSEIDON_WARNING("Bad chunk header: ", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
-					if(m_chunkSize > CONTENT_LENGTH_MAX){
+					if(m_chunk_size > CONTENT_LENGTH_MAX){
 						LOG_POSEIDON_WARNING("Inacceptable chunk size in header: ", line);
 						DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
 					}
-					if(m_chunkSize == 0){
-						m_sizeExpecting = EXPECTING_NEW_LINE;
+					if(m_chunk_size == 0){
+						m_size_expecting = EXPECTING_NEW_LINE;
 						m_state = S_CHUNKED_TRAILER;
 					} else {
-						m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize, 4096);
+						m_size_expecting = std::min<boost::uint64_t>(m_chunk_size, 4096);
 						m_state = S_CHUNK_DATA;
 					}
 				} else {
 					// chunk-data 后面应该有一对 CRLF。我们在这里处理这种情况。
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_CHUNK_HEADER;
 				}
 				break;
 
 			case S_CHUNK_DATA:
-				temp64 = std::min<boost::uint64_t>(expected.size(), m_chunkSize - m_chunkOffset);
-				onRequestEntity(m_contentOffset, true, expected.cutOff(temp64));
-				m_contentOffset += temp64;
-				m_chunkOffset += temp64;
+				temp64 = std::min<boost::uint64_t>(expected.size(), m_chunk_size - m_chunk_offset);
+				on_request_entity(m_content_offset, true, expected.cut_off(temp64));
+				m_content_offset += temp64;
+				m_chunk_offset += temp64;
 
-				if(m_chunkOffset < m_chunkSize){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize - m_chunkOffset, 4096);
+				if(m_chunk_offset < m_chunk_size){
+					m_size_expecting = std::min<boost::uint64_t>(m_chunk_size - m_chunk_offset, 4096);
 					// m_state = S_CHUNK_DATA;
 				} else {
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_CHUNK_HEADER;
 				}
 				break;
@@ -260,14 +260,14 @@ namespace Http {
 						LOG_POSEIDON_WARNING("Invalid chunk trailer: line = ", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
-					m_chunkedTrailer.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
+					m_chunked_trailer.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_CHUNKED_TRAILER;
 				} else {
-					hasNextRequest = onRequestEnd(m_contentOffset, true, STD_MOVE(m_chunkedTrailer));
+					has_next_request = on_request_end(m_content_offset, true, STD_MOVE(m_chunked_trailer));
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
 				}
 				break;
@@ -276,9 +276,9 @@ namespace Http {
 				LOG_POSEIDON_ERROR("Unknown state: ", static_cast<unsigned>(m_state));
 				std::abort();
 			}
-		} while(hasNextRequest);
+		} while(has_next_request);
 
-		return hasNextRequest;
+		return has_next_request;
 	}
 }
 

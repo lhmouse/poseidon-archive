@@ -28,14 +28,14 @@ namespace Http {
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		};
 
-		bool isCharSafe(char ch){
+		bool is_char_safe(char ch){
 			return SAFE_CHARS[(unsigned char)ch];
 		}
 
 		const char HEX_TABLE[33] = "00112233445566778899aAbBcCdDeEfF";
 
-		char getHex(char ch, bool upperCase = true){
-			return HEX_TABLE[(unsigned char)ch * 2 + upperCase];
+		char get_hex(char ch, bool upper_case = true){
+			return HEX_TABLE[(unsigned char)ch * 2 + upper_case];
 		}
 
 		const signed char HEX_LITERAL_TABLE[256] = {
@@ -57,12 +57,12 @@ namespace Http {
 			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 		};
 
-		int getHexLiteral(char ch){
+		int get_hex_literal(char ch){
 			return HEX_LITERAL_TABLE[(unsigned char)ch];
 		}
 	}
 
-	std::string urlEncode(const void *data, std::size_t size){
+	std::string url_encode(const void *data, std::size_t size){
 		std::string ret;
 		ret.reserve(size + (size >> 1));
 		std::size_t i = 0;
@@ -73,17 +73,17 @@ namespace Http {
 				ret.push_back('+');
 				continue;
 			}
-			if(isCharSafe(ch)){
+			if(is_char_safe(ch)){
 				ret.push_back(ch);
 				continue;
 			}
 			ret.push_back('%');
-			ret.push_back(getHex((ch >> 4) & 0x0F));
-			ret.push_back(getHex(ch & 0x0F));
+			ret.push_back(get_hex((ch >> 4) & 0x0F));
+			ret.push_back(get_hex(ch & 0x0F));
 		}
 		return ret;
 	}
-	std::string urlDecode(const void *data, std::size_t size){
+	std::string url_decode(const void *data, std::size_t size){
 		std::string ret;
 		ret.reserve(size);
 		std::size_t i = 0;
@@ -98,8 +98,8 @@ namespace Http {
 				ret.push_back(ch);
 				continue;
 			}
-			const int high = getHexLiteral(((const char *)data)[i]);
-			const int low = getHexLiteral(((const char *)data)[i + 1]);
+			const int high = get_hex_literal(((const char *)data)[i]);
+			const int low = get_hex_literal(((const char *)data)[i + 1]);
 			if((high == -1) || (low == -1)){
 				ret.push_back(ch);
 				continue;
@@ -110,54 +110,54 @@ namespace Http {
 		return ret;
 	}
 
-	std::string urlEncodedFromOptionalMap(const OptionalMap &decoded){
+	std::string url_encoded_from_optional_map(const OptionalMap &decoded){
 		std::vector<std::string> parts;
 		parts.reserve(decoded.size());
 		for(AUTO(it, decoded.begin()); it != decoded.end(); ++it){
 			std::string tmp(it->first.get());
 			tmp += '=';
-			tmp += urlEncode(it->second);
+			tmp += url_encode(it->second);
 
 			parts.push_back(VAL_INIT);
 			parts.back().swap(tmp);
 		}
 		return implode('&', parts);
 	}
-	OptionalMap optionalMapFromUrlEncoded(const std::string &encoded){
+	OptionalMap optional_map_from_url_encoded(const std::string &encoded){
 		OptionalMap ret;
 		const AUTO(parts, explode<std::string>('&', encoded));
 		for(AUTO(it, parts.begin()); it != parts.end(); ++it){
 			const AUTO(pos, it->find('='));
 			if(pos == std::string::npos){
-				ret.set(SharedNts(urlDecode(*it)), VAL_INIT);
+				ret.set(SharedNts(url_decode(*it)), VAL_INIT);
 			} else {
-				ret.set(SharedNts(urlDecode(it->substr(0, pos))), urlDecode(it->substr(pos + 1)));
+				ret.set(SharedNts(url_decode(it->substr(0, pos))), url_decode(it->substr(pos + 1)));
 			}
 		}
 		return ret;
 	}
 
-	std::string hexEncode(const void *data, std::size_t size, bool upperCase){
+	std::string hex_encode(const void *data, std::size_t size, bool upper_case){
 		std::string ret;
 		ret.reserve(size * 2);
 		for(std::size_t i = 0; i < size; ++i){
 			const unsigned by = ((const unsigned char *)data)[i];
-			ret.push_back(getHex((by >> 4) & 0x0F, upperCase));
-			ret.push_back(getHex(by & 0x0F, upperCase));
+			ret.push_back(get_hex((by >> 4) & 0x0F, upper_case));
+			ret.push_back(get_hex(by & 0x0F, upper_case));
 		}
 		return ret;
 	}
-	std::string hexDecode(const void *data, std::size_t size){
+	std::string hex_decode(const void *data, std::size_t size){
 		std::string ret;
 		ret.reserve(size / 2);
 		int high = -1;
 		for(std::size_t i = 0; i < size; ++i){
 			const char ch = ((const char *)data)[i];
 			if(high == -1){
-				high = getHexLiteral(ch);
+				high = get_hex_literal(ch);
 				continue;
 			}
-			const int low = getHexLiteral(ch);
+			const int low = get_hex_literal(ch);
 			if(low == -1){
 				continue;
 			}
@@ -167,7 +167,7 @@ namespace Http {
 		return ret;
 	}
 
-	std::string base64Encode(const void *data, std::size_t size){
+	std::string base64_encode(const void *data, std::size_t size){
 		static const char TABLE[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 		std::string ret;
@@ -207,7 +207,7 @@ namespace Http {
 		}
 		return ret;
 	}
-	std::string base64Decode(const void *data, std::size_t size){
+	std::string base64_decode(const void *data, std::size_t size){
 		static const unsigned char TABLE[] = {
 			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,

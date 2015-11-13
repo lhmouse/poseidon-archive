@@ -20,22 +20,22 @@
 namespace Poseidon {
 
 namespace {
-	void sigTermProc(int){
+	void sig_term_proc(int){
 		LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");
-		JobDispatcher::quitModal();
+		JobDispatcher::quit_modal();
 	}
 
-	void sigIntProc(int){
+	void sig_int_proc(int){
 		static const boost::uint64_t KILL_TIMER_EXPIRES = 5000;
-		static boost::uint64_t s_killTimer = 0;
+		static boost::uint64_t s_kill_timer = 0;
 
 		// 系统启动的时候这个时间是从 0 开始的，如果这时候按下 Ctrl+C 就会立即终止。
 		// 因此将计时器的起点设为该区间以外。
-		const AUTO(now, getFastMonoClock() + KILL_TIMER_EXPIRES + 1);
-		if(s_killTimer + KILL_TIMER_EXPIRES < now){
-			s_killTimer = now + KILL_TIMER_EXPIRES;
+		const AUTO(now, get_fast_mono_clock() + KILL_TIMER_EXPIRES + 1);
+		if(s_kill_timer + KILL_TIMER_EXPIRES < now){
+			s_kill_timer = now + KILL_TIMER_EXPIRES;
 		}
-		if(s_killTimer <= now){
+		if(s_kill_timer <= now){
 			LOG_POSEIDON_FATAL("Received SIGINT, will now terminate abnormally...");
 			::raise(SIGKILL);
 		} else {
@@ -71,21 +71,21 @@ namespace {
 			START(EpollDaemon);
 			START(EventDispatcher);
 
-			const AUTO(initModules, MainConfig::getAll<std::string>("init_module"));
-			for(AUTO(it, initModules.begin()); it != initModules.end(); ++it){
+			const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
+			for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
 				ModuleDepository::load(it->c_str());
 			}
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
-			MySqlDaemon::waitForAllAsyncOperations();
+			MySqlDaemon::wait_for_all_async_operations();
 
-			JobDispatcher::doModal();
+			JobDispatcher::do_modal();
 		} catch(...){
-			JobDispatcher::pumpAll();
+			JobDispatcher::pump_all();
 			throw;
 		}
 
-		JobDispatcher::pumpAll();
+		JobDispatcher::pump_all();
 	}
 }
 
@@ -94,28 +94,28 @@ namespace {
 int main(int argc, char **argv){
 	using namespace Poseidon;
 
-	Logger::setThreadTag("P   "); // Primary
+	Logger::set_thread_tag("P   "); // Primary
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "-------------------------- Starting up -------------------------");
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up signal handlers...");
-	::signal(SIGHUP, &sigTermProc);
-	::signal(SIGQUIT, &sigTermProc);
-	::signal(SIGABRT, &sigTermProc);
-	::signal(SIGTERM, &sigTermProc);
-	::signal(SIGINT, &sigIntProc);
+	::signal(SIGHUP, &sig_term_proc);
+	::signal(SIGQUIT, &sig_term_proc);
+	::signal(SIGABRT, &sig_term_proc);
+	::signal(SIGTERM, &sig_term_proc);
+	::signal(SIGINT, &sig_int_proc);
 	::signal(SIGCHLD, SIG_IGN);
 	::signal(SIGPIPE, SIG_IGN);
 
 	try {
-		MainConfig::setRunPath((1 < argc) ? argv[1] : "/usr/etc/poseidon");
+		MainConfig::set_run_path((1 < argc) ? argv[1] : "/usr/etc/poseidon");
 		MainConfig::reload();
 
 		START(ProfileDepository);
 
-		unsigned long long logMask;
-		if(MainConfig::get(logMask, "log_mask")){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask: 0x", std::hex, std::uppercase, logMask);
-			Logger::setMask(static_cast<boost::uint64_t>(-1), logMask);
+		unsigned long long log_mask;
+		if(MainConfig::get(log_mask, "log_mask")){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask: 0x", std::hex, std::uppercase, log_mask);
+			Logger::set_mask(static_cast<boost::uint64_t>(-1), log_mask);
 		}
 
 		run();

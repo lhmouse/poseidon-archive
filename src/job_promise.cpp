@@ -26,30 +26,30 @@ JobPromise::~JobPromise(){
 
 bool JobPromise::check(int cmp) const NOEXCEPT {
 	for(;;){
-		const int state = atomicLoad(m_state, ATOMIC_CONSUME);
+		const int state = atomic_load(m_state, ATOMIC_CONSUME);
 		if(state != S_LOCKED){
 			return state == cmp;
 		}
-		atomicPause();
+		atomic_pause();
 	}
 }
 int JobPromise::lock() const NOEXCEPT {
 	for(;;){
-		const int state = atomicExchange(m_state, S_LOCKED, ATOMIC_SEQ_CST);
+		const int state = atomic_exchange(m_state, S_LOCKED, ATOMIC_SEQ_CST);
 		if(state != S_LOCKED){
 			return state;
 		}
-		atomicPause();
+		atomic_pause();
 	}
 }
 void JobPromise::unlock(int state) const NOEXCEPT {
-	atomicStore(m_state, state, ATOMIC_SEQ_CST);
+	atomic_store(m_state, state, ATOMIC_SEQ_CST);
 }
 
-bool JobPromise::isSatisfied() const NOEXCEPT {
+bool JobPromise::is_satisfied() const NOEXCEPT {
 	return !check(S_UNSATISFIED);
 }
-void JobPromise::checkAndRethrow() const {
+void JobPromise::check_and_rethrow() const {
 	const int state = lock();
 	if(state == S_UNSATISFIED){
 		unlock(state);
@@ -63,7 +63,7 @@ void JobPromise::checkAndRethrow() const {
 	}
 }
 
-void JobPromise::setSuccess(){
+void JobPromise::set_success(){
 	const int state = lock();
 	if(state != S_UNSATISFIED){
 		unlock(state);
@@ -72,7 +72,7 @@ void JobPromise::setSuccess(){
 	m_except = boost::exception_ptr();
 	unlock(S_SATISFIED);
 }
-void JobPromise::setException(const boost::exception_ptr &except){
+void JobPromise::set_exception(const boost::exception_ptr &except){
 	assert(except);
 
 	const int state = lock();

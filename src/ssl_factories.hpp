@@ -12,19 +12,19 @@ namespace Poseidon {
 
 class SslFactoryBase : NONCOPYABLE {
 private:
-	const UniqueSslCtx m_sslCtx;
+	const UniqueSslCtx m_ssl_ctx;
 
 public:
-	explicit SslFactoryBase(UniqueSslCtx sslCtx);
+	explicit SslFactoryBase(UniqueSslCtx ssl_ctx);
 	virtual ~SslFactoryBase() = 0;
 
 public:
-	UniqueSsl createSsl() const;
+	UniqueSsl create_ssl() const;
 };
 
 class ServerSslFactory : public SslFactoryBase {
 public:
-	ServerSslFactory(const char *cert, const char *privateKey);
+	ServerSslFactory(const char *cert, const char *private_key);
 	~ServerSslFactory();
 };
 

@@ -11,13 +11,13 @@ namespace Poseidon {
 
 // 时间单位是毫秒。
 
-boost::uint64_t getUtcTime();
-boost::uint64_t getLocalTime();
-boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local);
-boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc);
+boost::uint64_t get_utc_time();
+boost::uint64_t get_local_time();
+boost::uint64_t get_utc_time_from_local(boost::uint64_t local);
+boost::uint64_t get_local_time_from_utc(boost::uint64_t utc);
 
-boost::uint64_t getFastMonoClock() NOEXCEPT;
-double getHiResMonoClock() NOEXCEPT;
+boost::uint64_t get_fast_mono_clock() NOEXCEPT;
+double get_hi_res_mono_clock() NOEXCEPT;
 
 struct DateTime {
 	unsigned yr;
@@ -31,11 +31,11 @@ struct DateTime {
 	unsigned ms;
 };
 
-DateTime breakDownTime(boost::uint64_t ms);
-boost::uint64_t assembleTime(const DateTime &dt);
+DateTime break_down_time(boost::uint64_t ms);
+boost::uint64_t assemble_time(const DateTime &dt);
 
-std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs);
-boost::uint64_t scanTime(const char *str);
+std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms);
+boost::uint64_t scan_time(const char *str);
 
 }
 

@@ -33,7 +33,7 @@ namespace {
 	::pthread_mutex_t g_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 	__attribute__((__used__, __destructor__))
-	void mutexDestructor() NOEXCEPT {
+	void mutex_destructor() NOEXCEPT {
 		if(::pthread_mutex_destroy(&g_mutex) != 0){
 			std::abort();
 		}
@@ -42,26 +42,26 @@ namespace {
 	__thread char t_tag[5] = "----";
 }
 
-unsigned long long Logger::getMask() NOEXCEPT {
-	return atomicLoad(g_mask, ATOMIC_RELAXED);
+unsigned long long Logger::get_mask() NOEXCEPT {
+	return atomic_load(g_mask, ATOMIC_RELAXED);
 }
-unsigned long long Logger::setMask(unsigned long long toDisable, unsigned long long toEnable) NOEXCEPT {
-	unsigned long long oldMask = atomicLoad(g_mask, ATOMIC_CONSUME), newMask;
+unsigned long long Logger::set_mask(unsigned long long to_disable, unsigned long long to_enable) NOEXCEPT {
+	unsigned long long old_mask = atomic_load(g_mask, ATOMIC_CONSUME), new_mask;
 	do {
-		newMask = oldMask;
-		removeFlags(newMask, toDisable);
-		addFlags(newMask, toEnable);
-	} while(!atomicCompareExchange(g_mask, oldMask, newMask, ATOMIC_ACQ_REL, ATOMIC_CONSUME));
-	return oldMask;
+		new_mask = old_mask;
+		remove_flags(new_mask, to_disable);
+		add_flags(new_mask, to_enable);
+	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, ATOMIC_ACQ_REL, ATOMIC_CONSUME));
+	return old_mask;
 }
 
-const char *Logger::getThreadTag() NOEXCEPT {
+const char *Logger::get_thread_tag() NOEXCEPT {
 	return t_tag;
 }
-void Logger::setThreadTag(const char *newTag) NOEXCEPT {
+void Logger::set_thread_tag(const char *new_tag) NOEXCEPT {
 	unsigned i = 0;
 	while(i < sizeof(t_tag)){
-		const char ch = newTag[i];
+		const char ch = new_tag[i];
 		if(ch == 0){
 			break;
 		}
@@ -77,21 +77,21 @@ Logger::Logger(unsigned long long mask, const char *file, std::size_t line) NOEX
 {
 }
 Logger::~Logger() NOEXCEPT {
-	static const bool stderrUsesAsciiColors = ::isatty(STDERR_FILENO);
-	static const bool stdoutUsesAsciiColors = ::isatty(STDOUT_FILENO);
+	static const bool stderr_uses_ascii_colors = ::isatty(STDERR_FILENO);
+	static const bool stdout_uses_ascii_colors = ::isatty(STDOUT_FILENO);
 
 	try {
-		bool useAsciiColors;
+		bool use_ascii_colors;
 		int fd;
 		if(m_mask & SP_MAJOR){
-			useAsciiColors = stderrUsesAsciiColors;
+			use_ascii_colors = stderr_uses_ascii_colors;
 			fd = STDERR_FILENO;
 		} else {
-			useAsciiColors = stdoutUsesAsciiColors;
+			use_ascii_colors = stdout_uses_ascii_colors;
 			fd = STDOUT_FILENO;
 		}
 
-		AUTO_REF(levelElem, LEVEL_ELEMENTS[__builtin_ctz(m_mask | LV_TRACE)]);
+		AUTO_REF(level_elem, LEVEL_ELEMENTS[__builtin_ctz(m_mask | LV_TRACE)]);
 
 		char temp[256];
 		unsigned len;
@@ -99,19 +99,19 @@ Logger::~Logger() NOEXCEPT {
 		std::string line;
 		line.reserve(255);
 
-		if(useAsciiColors){
+		if(use_ascii_colors){
 			line += "\x1B[0;32m";
 		}
-		len = formatTime(temp, sizeof(temp), getLocalTime(), true);
+		len = format_time(temp, sizeof(temp), get_local_time(), true);
 		line.append(temp, len);
 
-		if(useAsciiColors){
+		if(use_ascii_colors){
 			line += "\x1B[0;33m";
 		}
 		len = (unsigned)std::sprintf(temp, " %02X ", (unsigned)((m_mask >> 8) & 0xFF));
 		line.append(temp, len);
 
-		if(useAsciiColors){
+		if(use_ascii_colors){
 			line += "\x1B[0;39m";
 		}
 		line += '[';
@@ -119,16 +119,16 @@ Logger::~Logger() NOEXCEPT {
 		line += ']';
 		line += ' ';
 
-		if(useAsciiColors){
+		if(use_ascii_colors){
 			line +="\x1B[0;30;4";
-			line += levelElem.color;
+			line += level_elem.color;
 			line += 'm';
 		}
-		line += levelElem.text;
-		if(useAsciiColors){
+		line += level_elem.text;
+		if(use_ascii_colors){
 			line +="\x1B[0;40;3";
-			line += levelElem.color;
-			if(levelElem.highlighted){
+			line += level_elem.color;
+			if(level_elem.highlighted){
 				line += ';';
 				line += '1';
 			}
@@ -145,7 +145,7 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += ' ';
 
-		if(useAsciiColors){
+		if(use_ascii_colors){
 			line += "\x1B[0;34m";
 		}
 		line += '#';
@@ -153,7 +153,7 @@ Logger::~Logger() NOEXCEPT {
 		len = (unsigned)std::sprintf(temp, ":%lu", (unsigned long)m_line);
 		line.append(temp, len);
 
-		if(useAsciiColors){
+		if(use_ascii_colors){
 			line += "\x1B[0m";
 		}
 		line += '\n';
@@ -161,13 +161,13 @@ Logger::~Logger() NOEXCEPT {
 		{
 			::pthread_mutex_lock(&g_mutex);
 
-			std::size_t bytesTotal = 0;
-			while(bytesTotal < line.size()){
-				const AUTO(bytesWritten, ::write(fd, line.data() + bytesTotal, line.size() - bytesTotal)); // noexcept
-				if(bytesWritten <= 0){
+			std::size_t bytes_total = 0;
+			while(bytes_total < line.size()){
+				const AUTO(bytes_written, ::write(fd, line.data() + bytes_total, line.size() - bytes_total)); // noexcept
+				if(bytes_written <= 0){
 					break;
 				}
-				bytesTotal += static_cast<std::size_t>(bytesWritten);
+				bytes_total += static_cast<std::size_t>(bytes_written);
 			}
 
 			::pthread_mutex_unlock(&g_mutex);

@@ -10,7 +10,7 @@
 namespace Poseidon {
 
 namespace WebSocket {
-	extern Http::ResponseHeaders makeHandshakeResponse(const Http::RequestHeaders &requestHeaders);
+	extern Http::ResponseHeaders make_handshake_response(const Http::RequestHeaders &request_headers);
 }
 
 }

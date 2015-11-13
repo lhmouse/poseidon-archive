@@ -15,21 +15,21 @@ std::ostream &operator<<(std::ostream &os, const IpPort &rhs){
 	return os <<rhs.ip <<':' <<rhs.port;
 }
 
-IpPort getRemoteIpPortFromFd(int fd){
+IpPort get_remote_ip_port_from_fd(int fd){
 	::sockaddr sa;
 	::socklen_t salen = sizeof(sa);
 	if(::getpeername(fd, &sa, &salen) != 0){
 		DEBUG_THROW(SystemException);
 	}
-	return getIpPortFromSockAddr(SockAddr(&sa, salen));
+	return get_ip_port_from_sock_addr(SockAddr(&sa, salen));
 }
-IpPort getLocalIpPortFromFd(int fd){
+IpPort get_local_ip_port_from_fd(int fd){
 	::sockaddr sa;
 	::socklen_t salen = sizeof(sa);
 	if(::getsockname(fd, &sa, &salen) != 0){
 		DEBUG_THROW(SystemException);
 	}
-	return getIpPortFromSockAddr(SockAddr(&sa, salen));
+	return get_ip_port_from_sock_addr(SockAddr(&sa, salen));
 }
 
 }

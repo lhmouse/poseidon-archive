@@ -29,9 +29,9 @@ namespace {
 
 	private:
 		bool establish(){
-			const int ret = ::SSL_connect(getSsl());
+			const int ret = ::SSL_connect(get_ssl());
 			if(ret != 1){
-				const int err = ::SSL_get_error(getSsl(), ret);
+				const int err = ::SSL_get_error(get_ssl(), ret);
 				if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
 					return false;
 				}
@@ -42,9 +42,9 @@ namespace {
 		}
 	};
 
-	const ClientSslFactory g_clientSslFactory;
+	const ClientSslFactory g_client_ssl_factory;
 
-	UniqueFile createSocket(int family){
+	UniqueFile create_socket(int family){
 		UniqueFile client(::socket(family, SOCK_STREAM, IPPROTO_TCP));
 		if(!client){
 			DEBUG_THROW(SystemException);
@@ -53,36 +53,36 @@ namespace {
 	}
 }
 
-TcpClientBase::TcpClientBase(const SockAddr &addr, bool useSsl)
-	: SockAddr(addr), TcpSessionBase(createSocket(SockAddr::getFamily()))
+TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl)
+	: SockAddr(addr), TcpSessionBase(create_socket(SockAddr::get_family()))
 {
-	realConnect(useSsl);
+	real_connect(use_ssl);
 }
-TcpClientBase::TcpClientBase(const IpPort &addr, bool useSsl)
-	: SockAddr(getSockAddrFromIpPort(addr)), TcpSessionBase(createSocket(SockAddr::getFamily()))
+TcpClientBase::TcpClientBase(const IpPort &addr, bool use_ssl)
+	: SockAddr(get_sock_addr_from_ip_port(addr)), TcpSessionBase(create_socket(SockAddr::get_family()))
 {
-	realConnect(useSsl);
+	real_connect(use_ssl);
 }
 TcpClientBase::~TcpClientBase(){
 }
 
-void TcpClientBase::realConnect(bool useSsl){
-	if(::connect(m_socket.get(), static_cast<const ::sockaddr *>(SockAddr::getData()), SockAddr::getSize()) != 0){
+void TcpClientBase::real_connect(bool use_ssl){
+	if(::connect(m_socket.get(), static_cast<const ::sockaddr *>(SockAddr::get_data()), SockAddr::get_size()) != 0){
 		if(errno != EINPROGRESS){
 			DEBUG_THROW(SystemException);
 		}
 	}
-	if(useSsl){
+	if(use_ssl){
 		LOG_POSEIDON_INFO("Initiating SSL handshake...");
 
-		AUTO(ssl, g_clientSslFactory.createSsl());
-		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), getFd()));
-		initSsl(STD_MOVE(filter));
+		AUTO(ssl, g_client_ssl_factory.create_ssl());
+		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), get_fd()));
+		init_ssl(STD_MOVE(filter));
 	}
 }
 
-void TcpClientBase::goResident(){
-	EpollDaemon::addSession(virtualSharedFromThis<TcpSessionBase>());
+void TcpClientBase::go_resident(){
+	EpollDaemon::add_session(virtual_shared_from_this<TcpSessionBase>());
 }
 
 }

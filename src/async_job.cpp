@@ -20,7 +20,7 @@ namespace {
 		}
 
 	public:
-		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+		boost::weak_ptr<const void> get_category() const OVERRIDE {
 			return m_category;
 		}
 		void perform() OVERRIDE {
@@ -29,15 +29,15 @@ namespace {
 	};
 }
 
-void enqueueAsyncJob(boost::function<void ()> proc,
+void enqueue_async_job(boost::function<void ()> proc,
 	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
 {
-	enqueueJob(boost::make_shared<AsyncJob>(boost::weak_ptr<const void>(), STD_MOVE(proc)), STD_MOVE(promise), STD_MOVE(withdrawn));
+	enqueue_job(boost::make_shared<AsyncJob>(boost::weak_ptr<const void>(), STD_MOVE(proc)), STD_MOVE(promise), STD_MOVE(withdrawn));
 }
-void enqueueAsyncJob(boost::weak_ptr<const void> category, boost::function<void ()> proc,
+void enqueue_async_job(boost::weak_ptr<const void> category, boost::function<void ()> proc,
 	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
 {
-	enqueueJob(boost::make_shared<AsyncJob>(STD_MOVE(category), STD_MOVE(proc)), STD_MOVE(promise), STD_MOVE(withdrawn));
+	enqueue_job(boost::make_shared<AsyncJob>(STD_MOVE(category), STD_MOVE(proc)), STD_MOVE(promise), STD_MOVE(withdrawn));
 }
 
 }

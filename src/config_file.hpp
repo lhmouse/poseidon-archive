@@ -22,7 +22,7 @@ public:
 
 public:
 	void load(const char *path);
-	int loadNoThrow(const char *path);
+	int load_no_throw(const char *path);
 
 	bool empty() const {
 		return m_contents.empty();
@@ -35,15 +35,15 @@ public:
 		m_contents.swap(rhs.m_contents);
 	}
 
-	const std::string &getRaw(const char *key) const {
+	const std::string &get_raw(const char *key) const {
 		return m_contents.get(key);
 	}
-	std::size_t getRawAll(std::vector<std::string> &vals, const char *key, bool includingEmpty = false) const {
+	std::size_t get_raw_all(std::vector<std::string> &vals, const char *key, bool including_empty = false) const {
 		const AUTO(range, m_contents.range(key));
 		vals.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		std::size_t ret = 0;
 		for(AUTO(it, range.first); it != range.second; ++it){
-			if(includingEmpty || !it->second.empty()){
+			if(including_empty || !it->second.empty()){
 				vals.push_back(it->second);
 				++ret;
 			}
@@ -61,10 +61,10 @@ public:
 		return true;
 	}
 	template<typename T, typename DefaultT>
-	bool get(T &val, const char *key, const DefaultT &defVal) const {
+	bool get(T &val, const char *key, const DefaultT &def_val) const {
 		const AUTO_REF(str, m_contents.get(key));
 		if(str.empty()){
-			val = static_cast<T>(defVal);
+			val = static_cast<T>(def_val);
 			return false;
 		}
 		val = boost::lexical_cast<T>(str);
@@ -77,19 +77,19 @@ public:
 		return val;
 	}
 	template<typename T, typename DefaultT>
-	T get(const char *key, const DefaultT &defVal) const {
+	T get(const char *key, const DefaultT &def_val) const {
 		T val;
-		get(val, key, defVal);
+		get(val, key, def_val);
 		return val;
 	}
 
 	template<typename T>
-	std::size_t getAll(std::vector<T> &vals, const char *key, bool includingEmpty = false) const {
+	std::size_t get_all(std::vector<T> &vals, const char *key, bool including_empty = false) const {
 		const AUTO(range, m_contents.range(key));
 		vals.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		std::size_t ret = 0;
 		for(AUTO(it, range.first); it != range.second; ++it){
-			if(includingEmpty || !it->second.empty()){
+			if(including_empty || !it->second.empty()){
 				vals.push_back(boost::lexical_cast<T>(it->second));
 				++ret;
 			}
@@ -97,9 +97,9 @@ public:
 		return ret;
 	}
 	template<typename T>
-	std::vector<T> getAll(const char *key, bool includingEmpty = false) const {
+	std::vector<T> get_all(const char *key, bool including_empty = false) const {
 		std::vector<T> vals;
-		getAll(vals, key, includingEmpty);
+		get_all(vals, key, including_empty);
 		return vals;
 	}
 };

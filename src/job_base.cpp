@@ -10,16 +10,16 @@ namespace Poseidon {
 JobBase::~JobBase(){
 }
 
-void enqueueJob(boost::shared_ptr<JobBase> job,
+void enqueue_job(boost::shared_ptr<JobBase> job,
 	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
 {
 	JobDispatcher::enqueue(STD_MOVE(job), STD_MOVE(promise), STD_MOVE(withdrawn));
 }
-void yieldJob(boost::shared_ptr<const JobPromise> promise){
+void yield_job(boost::shared_ptr<const JobPromise> promise){
 	JobDispatcher::yield(STD_MOVE(promise));
 }
-void detachYieldableJob() NOEXCEPT {
-	JobDispatcher::detachYieldable();
+void detach_yieldable_job() NOEXCEPT {
+	JobDispatcher::detach_yieldable();
 }
 
 }

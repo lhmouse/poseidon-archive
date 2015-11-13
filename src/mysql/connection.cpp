@@ -50,7 +50,7 @@ namespace MySql {
 		private:
 			const ThreadContext m_context;
 
-			::MYSQL m_mysqlObject;
+			::MYSQL m_mysql_object;
 			UniqueHandle<Closer> m_mysql;
 
 			UniqueHandle<ResultDeleter> m_result;
@@ -60,12 +60,12 @@ namespace MySql {
 			unsigned long *m_lengths;
 
 		public:
-			ConnectionDelegator(const char *serverAddr, unsigned serverPort,
-				const char *userName, const char *password, const char *schema,
-				bool useSsl, const char *charset)
+			ConnectionDelegator(const char *server_addr, unsigned server_port,
+				const char *user_name, const char *password, const char *schema,
+				bool use_ssl, const char *charset)
 				: m_row(NULLPTR), m_lengths(NULLPTR)
 			{
-				if(!m_mysql.reset(::mysql_init(&m_mysqlObject))){
+				if(!m_mysql.reset(::mysql_init(&m_mysql_object))){
 					DEBUG_THROW(SystemException, ENOMEM);
 				}
 
@@ -80,16 +80,16 @@ namespace MySql {
 					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 				}
 
-				if(!::mysql_real_connect(m_mysql.get(), serverAddr, userName,
-					password, schema, serverPort, NULLPTR, useSsl ? CLIENT_SSL : 0))
+				if(!::mysql_real_connect(m_mysql.get(), server_addr, user_name,
+					password, schema, server_port, NULLPTR, use_ssl ? CLIENT_SSL : 0))
 				{
 					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
 				}
 			}
 
 		public:
-			void doExecuteSql(const char *sql, std::size_t len){
-				doDiscardResult();
+			void do_execute_sql(const char *sql, std::size_t len){
+				do_discard_result();
 
 				if(::mysql_real_query(m_mysql.get(), sql, len) != 0){
 					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
@@ -114,17 +114,17 @@ namespace MySql {
 					}
 				}
 			}
-			void doDiscardResult() NOEXCEPT {
+			void do_discard_result() NOEXCEPT {
 				m_result.reset();
 				m_columns.clear();
 				m_row = NULLPTR;
 			}
 
-			boost::uint64_t doGetInsertId() const {
+			boost::uint64_t do_get_insert_id() const {
 				return ::mysql_insert_id(m_mysql.get());
 			}
 
-			bool doFetchRow(){
+			bool do_fetch_row(){
 				if(m_columns.empty()){
 					LOG_POSEIDON_DEBUG("Empty set returned form MySQL server.");
 					return false;
@@ -140,7 +140,7 @@ namespace MySql {
 				return true;
 			}
 
-			boost::int64_t doGetSigned(const char *column) const {
+			boost::int64_t do_get_signed(const char *column) const {
 				const AUTO(it, m_columns.find(column));
 				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -158,7 +158,7 @@ namespace MySql {
 				}
 				return val;
 			}
-			boost::uint64_t doGetUnsigned(const char *column) const {
+			boost::uint64_t do_get_unsigned(const char *column) const {
 				const AUTO(it, m_columns.find(column));
 				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -176,7 +176,7 @@ namespace MySql {
 				}
 				return val;
 			}
-			double doGetDouble(const char *column) const {
+			double do_get_double(const char *column) const {
 				const AUTO(it, m_columns.find(column));
 				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -194,7 +194,7 @@ namespace MySql {
 				}
 				return val;
 			}
-			std::string doGetString(const char *column) const {
+			std::string do_get_string(const char *column) const {
 				const AUTO(it, m_columns.find(column));
 				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -207,7 +207,7 @@ namespace MySql {
 				}
 				return val;
 			}
-			boost::uint64_t doGetDateTime(const char *column) const {
+			boost::uint64_t do_get_date_time(const char *column) const {
 				const AUTO(it, m_columns.find(column));
 				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -217,49 +217,49 @@ namespace MySql {
 				if(!data || (data[0] == 0)){
 					return 0;
 				}
-				return scanTime(data);
+				return scan_time(data);
 			}
 		};
 	}
 
-	boost::shared_ptr<Connection> Connection::create(const char *serverAddr, unsigned serverPort,
-		const char *userName, const char *password, const char *schema, bool useSsl, const char *charset)
+	boost::shared_ptr<Connection> Connection::create(const char *server_addr, unsigned server_port,
+		const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
 	{
 		return boost::make_shared<ConnectionDelegator>(
-			serverAddr, serverPort, userName, password, schema, useSsl, charset);
+			server_addr, server_port, user_name, password, schema, use_ssl, charset);
 	}
 
 	Connection::~Connection(){
 	}
 
-	void Connection::executeSql(const char *sql, std::size_t len){
-		static_cast<ConnectionDelegator &>(*this).doExecuteSql(sql, len);
+	void Connection::execute_sql(const char *sql, std::size_t len){
+		static_cast<ConnectionDelegator &>(*this).do_execute_sql(sql, len);
 	}
-	void Connection::discardResult() NOEXCEPT {
-		static_cast<ConnectionDelegator &>(*this).doDiscardResult();
-	}
-
-	boost::uint64_t Connection::getInsertId() const {
-		return static_cast<const ConnectionDelegator &>(*this).doGetInsertId();
-	}
-	bool Connection::fetchRow(){
-		return static_cast<ConnectionDelegator &>(*this).doFetchRow();
+	void Connection::discard_result() NOEXCEPT {
+		static_cast<ConnectionDelegator &>(*this).do_discard_result();
 	}
 
-	boost::int64_t Connection::getSigned(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).doGetSigned(column);
+	boost::uint64_t Connection::get_insert_id() const {
+		return static_cast<const ConnectionDelegator &>(*this).do_get_insert_id();
 	}
-	boost::uint64_t Connection::getUnsigned(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).doGetUnsigned(column);
+	bool Connection::fetch_row(){
+		return static_cast<ConnectionDelegator &>(*this).do_fetch_row();
 	}
-	double Connection::getDouble(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).doGetDouble(column);
+
+	boost::int64_t Connection::get_signed(const char *column) const {
+		return static_cast<const ConnectionDelegator &>(*this).do_get_signed(column);
 	}
-	std::string Connection::getString(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).doGetString(column);
+	boost::uint64_t Connection::get_unsigned(const char *column) const {
+		return static_cast<const ConnectionDelegator &>(*this).do_get_unsigned(column);
 	}
-	boost::uint64_t Connection::getDateTime(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).doGetDateTime(column);
+	double Connection::get_double(const char *column) const {
+		return static_cast<const ConnectionDelegator &>(*this).do_get_double(column);
+	}
+	std::string Connection::get_string(const char *column) const {
+		return static_cast<const ConnectionDelegator &>(*this).do_get_string(column);
+	}
+	boost::uint64_t Connection::get_date_time(const char *column) const {
+		return static_cast<const ConnectionDelegator &>(*this).do_get_date_time(column);
 	}
 }
 

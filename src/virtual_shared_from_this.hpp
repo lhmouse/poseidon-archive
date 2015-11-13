@@ -21,25 +21,25 @@ public:
 
 public:
 	template<typename DerivedT>
-	boost::shared_ptr<const DerivedT> virtualSharedFromThis() const {
+	boost::shared_ptr<const DerivedT> virtual_shared_from_this() const {
 		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value));
 
 		return boost::shared_ptr<const DerivedT>(shared_from_this(), &dynamic_cast<const DerivedT &>(*this));
 	}
 	template<typename DerivedT>
-	boost::shared_ptr<DerivedT> virtualSharedFromThis(){
+	boost::shared_ptr<DerivedT> virtual_shared_from_this(){
 		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value));
 
 		return boost::shared_ptr<DerivedT>(shared_from_this(), &dynamic_cast<DerivedT &>(*this));
 	}
 
 	template<typename DerivedT>
-	boost::weak_ptr<const DerivedT> virtualWeakFromThis() const {
-		return virtualSharedFromThis<const DerivedT>();
+	boost::weak_ptr<const DerivedT> virtual_weak_from_this() const {
+		return virtual_shared_from_this<const DerivedT>();
 	}
 	template<typename DerivedT>
-	boost::weak_ptr<DerivedT> virtualWeakFromThis(){
-		return virtualSharedFromThis<DerivedT>();
+	boost::weak_ptr<DerivedT> virtual_weak_from_this(){
+		return virtual_shared_from_this<DerivedT>();
 	}
 };
 

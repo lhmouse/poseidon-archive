@@ -22,12 +22,12 @@ namespace WebSocket {
 
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
-			: m_guard(session->getSafeParent()), m_parent(session->getWeakParent()), m_session(session)
+			: m_guard(session->get_safe_parent()), m_parent(session->get_weak_parent()), m_session(session)
 		{
 		}
 
 	private:
-		boost::weak_ptr<const void> getCategory() const FINAL {
+		boost::weak_ptr<const void> get_category() const FINAL {
 			return m_parent;
 		}
 		void perform() FINAL {
@@ -39,26 +39,26 @@ namespace WebSocket {
 			}
 
 			try {
-				reallyPerform(session);
+				really_perform(session);
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"WebSocket::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
-				session->shutdown(e.statusCode(), StreamBuffer(e.what()));
+					"WebSocket::Exception thrown: status_code = ", e.status_code(), ", what = ", e.what());
+				session->shutdown(e.status_code(), StreamBuffer(e.what()));
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: what = ", e.what());
-				session->forceShutdown();
+				session->force_shutdown();
 				throw;
 			} catch(...){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Unknown exception thrown.");
-				session->forceShutdown();
+				session->force_shutdown();
 				throw;
 			}
 		}
 
 	protected:
-		virtual void reallyPerform(const boost::shared_ptr<Session> &session) = 0;
+		virtual void really_perform(const boost::shared_ptr<Session> &session) = 0;
 	};
 
 	class Session::DataMessageJob : public Session::SyncJobBase {
@@ -74,14 +74,14 @@ namespace WebSocket {
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
-			LOG_POSEIDON_DEBUG("Dispatching data message: opcode = ", m_opcode, ", payloadSize = ", m_payload.size());
-			session->onSyncDataMessage(m_opcode, STD_MOVE(m_payload));
+			LOG_POSEIDON_DEBUG("Dispatching data message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
+			session->on_sync_data_message(m_opcode, STD_MOVE(m_payload));
 
-			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
-			session->setTimeout(keepAliveTimeout);
+			const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+			session->set_timeout(keep_alive_timeout);
 		}
 	};
 
@@ -98,133 +98,133 @@ namespace WebSocket {
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
-			LOG_POSEIDON_DEBUG("Dispatching control message: opcode = ", m_opcode, ", payloadSize = ", m_payload.size());
-			session->onSyncControlMessage(m_opcode, STD_MOVE(m_payload));
+			LOG_POSEIDON_DEBUG("Dispatching control message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
+			session->on_sync_control_message(m_opcode, STD_MOVE(m_payload));
 
-			const AUTO(keepAliveTimeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
-			session->setTimeout(keepAliveTimeout);
+			const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+			session->set_timeout(keep_alive_timeout);
 		}
 	};
 
 	class Session::ErrorJob : public Session::SyncJobBase {
 	private:
-		StatusCode m_statusCode;
+		StatusCode m_status_code;
 		StreamBuffer m_additional;
 
 	public:
-		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode statusCode, StreamBuffer additional)
+		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode status_code, StreamBuffer additional)
 			: SyncJobBase(session)
-			, m_statusCode(statusCode), m_additional(STD_MOVE(additional))
+			, m_status_code(status_code), m_additional(STD_MOVE(additional))
 		{
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Session> &session) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
 			try {
-				session->shutdown(m_statusCode, STD_MOVE(m_additional));
+				session->shutdown(m_status_code, STD_MOVE(m_additional));
 			} catch(...){
-				session->forceShutdown();
+				session->force_shutdown();
 			}
 		}
 	};
 
-	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::uint64_t maxRequestLength)
+	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::uint64_t max_request_length)
 		: Http::UpgradedSessionBase(parent)
-		, m_maxRequestLength(maxRequestLength ? maxRequestLength : MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
-		, m_sizeTotal(0)
+		, m_max_request_length(max_request_length ? max_request_length : MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
+		, m_size_total(0)
 	{
 	}
 	Session::~Session(){
 	}
 
-	void Session::onReadAvail(StreamBuffer data){
+	void Session::on_read_avail(StreamBuffer data){
 		PROFILE_ME;
 
 		try {
-			m_sizeTotal += data.size();
-			if(m_sizeTotal > m_maxRequestLength){
+			m_size_total += data.size();
+			if(m_size_total > m_max_request_length){
 				DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
 			}
 
-			Reader::putEncodedData(STD_MOVE(data));
+			Reader::put_encoded_data(STD_MOVE(data));
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"WebSocket::Exception thrown in WebSocket parser: statusCode = ", e.statusCode(), ", what = ", e.what());
-			const AUTO(parent, getParent());
+				"WebSocket::Exception thrown in WebSocket parser: status_code = ", e.status_code(), ", what = ", e.what());
+			const AUTO(parent, get_parent());
 			if(parent){
-				enqueueJob(boost::make_shared<ErrorJob>(
-					virtualSharedFromThis<Session>(), e.statusCode(), StreamBuffer(e.what())));
-				parent->shutdownRead();
-				parent->shutdownWrite();
+				enqueue_job(boost::make_shared<ErrorJob>(
+					virtual_shared_from_this<Session>(), e.status_code(), StreamBuffer(e.what())));
+				parent->shutdown_read();
+				parent->shutdown_write();
 			}
 		}
 	}
 
-	void Session::onDataMessageHeader(OpCode opcode){
+	void Session::on_data_message_header(OpCode opcode){
 		PROFILE_ME;
 
 		m_opcode = opcode;
 		m_payload.clear();
 	}
-	void Session::onDataMessagePayload(boost::uint64_t /* wholeOffset */, StreamBuffer payload){
+	void Session::on_data_message_payload(boost::uint64_t /* whole_offset */, StreamBuffer payload){
 		PROFILE_ME;
 
 		m_payload.splice(payload);
 	}
-	bool Session::onDataMessageEnd(boost::uint64_t /* wholeSize */){
+	bool Session::on_data_message_end(boost::uint64_t /* whole_size */){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<DataMessageJob>(
-			virtualSharedFromThis<Session>(), m_opcode, STD_MOVE(m_payload)));
-		m_sizeTotal = 0;
+		enqueue_job(boost::make_shared<DataMessageJob>(
+			virtual_shared_from_this<Session>(), m_opcode, STD_MOVE(m_payload)));
+		m_size_total = 0;
 
 		return true;
 	}
 
-	bool Session::onControlMessage(OpCode opcode, StreamBuffer payload){
+	bool Session::on_control_message(OpCode opcode, StreamBuffer payload){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ControlMessageJob>(
-			virtualSharedFromThis<Session>(), opcode, STD_MOVE(payload)));
+		enqueue_job(boost::make_shared<ControlMessageJob>(
+			virtual_shared_from_this<Session>(), opcode, STD_MOVE(payload)));
 
 		return true;
 	}
 
-	long Session::onEncodedDataAvail(StreamBuffer encoded){
+	long Session::on_encoded_data_avail(StreamBuffer encoded){
 		PROFILE_ME;
 
 		return UpgradedSessionBase::send(STD_MOVE(encoded));
 	}
 
-	void Session::onSyncControlMessage(OpCode opcode, StreamBuffer payload){
+	void Session::on_sync_control_message(OpCode opcode, StreamBuffer payload){
 		PROFILE_ME;
 		LOG_POSEIDON_DEBUG("Control frame, opcode = ", m_opcode);
 
-		const AUTO(parent, getParent());
+		const AUTO(parent, get_parent());
 		if(!parent){
 			return;
 		}
 
 		switch(opcode){
 		case OP_CLOSE:
-			LOG_POSEIDON_INFO("Received close frame from ", parent->getRemoteInfo());
-			Writer::putCloseMessage(ST_NORMAL_CLOSURE, VAL_INIT);
-			parent->shutdownRead();
-			parent->shutdownWrite();
+			LOG_POSEIDON_INFO("Received close frame from ", parent->get_remote_info());
+			Writer::put_close_message(ST_NORMAL_CLOSURE, VAL_INIT);
+			parent->shutdown_read();
+			parent->shutdown_write();
 			break;
 
 		case OP_PING:
-			LOG_POSEIDON_INFO("Received ping frame from ", parent->getRemoteInfo());
-			Writer::putMessage(OP_PONG, false, STD_MOVE(payload));
+			LOG_POSEIDON_INFO("Received ping frame from ", parent->get_remote_info());
+			Writer::put_message(OP_PONG, false, STD_MOVE(payload));
 			break;
 
 		case OP_PONG:
-			LOG_POSEIDON_INFO("Received pong frame from ", parent->getRemoteInfo());
+			LOG_POSEIDON_INFO("Received pong frame from ", parent->get_remote_info());
 			break;
 
 		default:
@@ -236,24 +236,24 @@ namespace WebSocket {
 	bool Session::send(StreamBuffer payload, bool binary, bool masked){
 		PROFILE_ME;
 
-		return Writer::putMessage(binary ? OP_DATA_BIN : OP_DATA_TEXT, masked, STD_MOVE(payload));
+		return Writer::put_message(binary ? OP_DATA_BIN : OP_DATA_TEXT, masked, STD_MOVE(payload));
 	}
 
-	bool Session::shutdown(StatusCode statusCode, StreamBuffer additional) NOEXCEPT {
+	bool Session::shutdown(StatusCode status_code, StreamBuffer additional) NOEXCEPT {
 		PROFILE_ME;
 
-		const AUTO(parent, getParent());
+		const AUTO(parent, get_parent());
 		if(!parent){
 			return false;
 		}
 
 		try {
-			Writer::putCloseMessage(statusCode, STD_MOVE(additional));
-			parent->shutdownRead();
-			return parent->shutdownWrite();
+			Writer::put_close_message(status_code, STD_MOVE(additional));
+			parent->shutdown_read();
+			return parent->shutdown_write();
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-			parent->forceShutdown();
+			parent->force_shutdown();
 			return false;
 		}
 	}

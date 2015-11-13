@@ -10,11 +10,11 @@
 namespace Poseidon {
 
 struct Thread::Impl {
-	static void *threadProc(void *impl){
+	static void *thread_proc(void *impl){
 		boost::shared_ptr<Impl> self;
 		self.swap(static_cast<Impl *>(impl)->self);
 
-		Logger::setThreadTag(self->tag);
+		Logger::set_thread_tag(self->tag);
 
 		try {
 			self->proc();
@@ -40,7 +40,7 @@ Thread::Thread(boost::function<void ()> proc, const char *tag){
 
 	m_impl->self = m_impl; // 制造循环引用。
 	try {
-		const int err = ::pthread_create(&(m_impl->handle), NULLPTR, &Impl::threadProc, m_impl.get());
+		const int err = ::pthread_create(&(m_impl->handle), NULLPTR, &Impl::thread_proc, m_impl.get());
 		if(err != 0){
 			LOG_POSEIDON_ERROR("::pthread_create() failed with error code ", err);
 			DEBUG_THROW(SystemException, err);

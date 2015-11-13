@@ -11,7 +11,7 @@
 namespace Poseidon {
 
 namespace {
-	void setErrnoBySslRet(::SSL *ssl, int ret){
+	void set_errno_by_ssl_ret(::SSL *ssl, int ret){
 		const int err = ::SSL_get_error(ssl, ret);
 		LOG_POSEIDON_DEBUG("SSL ret = ", ret, ", error = ", err);
 		switch(err){
@@ -63,7 +63,7 @@ long SslFilterBase::read(void *data, unsigned long size){
 	}
 	const long ret = ::SSL_read(m_ssl.get(), data, size);
 	if(ret < 0){
-		setErrnoBySslRet(m_ssl.get(), ret);
+		set_errno_by_ssl_ret(m_ssl.get(), ret);
 	}
 	return ret;
 }
@@ -78,7 +78,7 @@ long SslFilterBase::write(const void *data, unsigned long size){
 	}
 	const long ret = ::SSL_write(m_ssl.get(), data, size);
 	if(ret < 0){
-		setErrnoBySslRet(m_ssl.get(), ret);
+		set_errno_by_ssl_ret(m_ssl.get(), ret);
 	}
 	return ret;
 }

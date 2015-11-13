@@ -21,38 +21,38 @@ namespace Cbpp {
 		class ErrorJob;
 
 	private:
-		const boost::uint64_t m_maxRequestLength;
+		const boost::uint64_t m_max_request_length;
 
-		boost::uint64_t m_sizeTotal;
-		unsigned m_messageId;
+		boost::uint64_t m_size_total;
+		unsigned m_message_id;
 		StreamBuffer m_payload;
 
 	public:
-		explicit Session(UniqueFile socket, boost::uint64_t maxRequestLength = 0);
+		explicit Session(UniqueFile socket, boost::uint64_t max_request_length = 0);
 		~Session();
 
 	protected:
 		// TcpSessionBase
-		void onReadAvail(StreamBuffer data) OVERRIDE;
+		void on_read_avail(StreamBuffer data) OVERRIDE;
 
 		// Reader
-		void onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize) OVERRIDE;
-		void onDataMessagePayload(boost::uint64_t payloadOffset, StreamBuffer payload) OVERRIDE;
-		bool onDataMessageEnd(boost::uint64_t payloadSize) OVERRIDE;
+		void on_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) OVERRIDE;
+		void on_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload) OVERRIDE;
+		bool on_data_message_end(boost::uint64_t payload_size) OVERRIDE;
 
-		bool onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam) OVERRIDE;
+		bool on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param) OVERRIDE;
 
 		// Writer
-		long onEncodedDataAvail(StreamBuffer encoded) OVERRIDE;
+		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual void onSyncDataMessage(boost::uint16_t messageId, StreamBuffer payload) = 0;
+		virtual void on_sync_data_message(boost::uint16_t message_id, StreamBuffer payload) = 0;
 
-		virtual void onSyncControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam);
+		virtual void on_sync_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param);
 
 	public:
-		bool send(boost::uint16_t messageId, StreamBuffer payload);
-		bool sendError(boost::uint16_t messageId, StatusCode statusCode, std::string reason);
+		bool send(boost::uint16_t message_id, StreamBuffer payload);
+		bool send_error(boost::uint16_t message_id, StatusCode status_code, std::string reason);
 
 		template<typename MsgT>
 		bool send(const MsgT &msg){

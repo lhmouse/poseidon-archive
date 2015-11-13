@@ -7,9 +7,9 @@
 
 namespace Poseidon {
 
-SharedNts getErrorDesc(int errCode) NOEXCEPT {
+SharedNts get_error_desc(int err_code) NOEXCEPT {
 	char temp[1024];
-	const char *desc = ::strerror_r(errCode, temp, sizeof(temp));
+	const char *desc = ::strerror_r(err_code, temp, sizeof(temp));
 	if(desc == temp){
 		try {
 			return SharedNts(desc);
@@ -20,10 +20,10 @@ SharedNts getErrorDesc(int errCode) NOEXCEPT {
 	// desc 指向一个静态的字符串。
 	return SharedNts::view(desc);
 }
-std::string getErrorDescAsString(int errCode){
+std::string get_error_desc_as_string(int err_code){
 	std::string ret;
 	ret.resize(1024);
-	const char *desc = ::strerror_r(errCode, &ret[0], ret.size());
+	const char *desc = ::strerror_r(err_code, &ret[0], ret.size());
 	if(desc == &ret[0]){
 		ret.resize(std::strlen(desc));
 	} else {

@@ -25,7 +25,7 @@ namespace Cbpp {
 		}
 
 	private:
-		boost::weak_ptr<const void> getCategory() const FINAL {
+		boost::weak_ptr<const void> get_category() const FINAL {
 			return m_client;
 		}
 		void perform() FINAL {
@@ -37,27 +37,27 @@ namespace Cbpp {
 			}
 
 			try {
-				reallyPerform(client);
+				really_perform(client);
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Cbpp::Exception thrown: statusCode = ", e.statusCode(), ", what = ", e.what());
-				client->forceShutdown();
+					"Cbpp::Exception thrown: status_code = ", e.status_code(), ", what = ", e.what());
+				client->force_shutdown();
 				throw;
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: what = ", e.what());
-				client->forceShutdown();
+				client->force_shutdown();
 				throw;
 			} catch(...){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Unknown exception thrown.");
-				client->forceShutdown();
+				client->force_shutdown();
 				throw;
 			}
 		}
 
 	protected:
-		virtual void reallyPerform(const boost::shared_ptr<Client> &client) = 0;
+		virtual void really_perform(const boost::shared_ptr<Client> &client) = 0;
 	};
 
 	class Client::ConnectJob : public Client::SyncJobBase {
@@ -68,211 +68,211 @@ namespace Cbpp {
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncConnect();
+			client->on_sync_connect();
 		}
 	};
 
 	class Client::DataMessageHeaderJob : public Client::SyncJobBase {
 	private:
-		unsigned m_messageId;
-		boost::uint64_t m_payloadSize;
+		unsigned m_message_id;
+		boost::uint64_t m_payload_size;
 
 	public:
-		DataMessageHeaderJob(const boost::shared_ptr<Client> &client, unsigned messageId, boost::uint64_t payloadSize)
+		DataMessageHeaderJob(const boost::shared_ptr<Client> &client, unsigned message_id, boost::uint64_t payload_size)
 			: SyncJobBase(client)
-			, m_messageId(messageId), m_payloadSize(payloadSize)
+			, m_message_id(message_id), m_payload_size(payload_size)
 		{
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncDataMessageHeader(m_messageId, m_payloadSize);
+			client->on_sync_data_message_header(m_message_id, m_payload_size);
 		}
 	};
 
 	class Client::DataMessagePayloadJob : public Client::SyncJobBase {
 	public:
-		boost::uint64_t m_payloadOffset;
+		boost::uint64_t m_payload_offset;
 		StreamBuffer m_payload;
 
 	public:
-		DataMessagePayloadJob(const boost::shared_ptr<Client> &client, boost::uint64_t payloadOffset, StreamBuffer payload)
+		DataMessagePayloadJob(const boost::shared_ptr<Client> &client, boost::uint64_t payload_offset, StreamBuffer payload)
 			: SyncJobBase(client)
-			, m_payloadOffset(payloadOffset), m_payload(STD_MOVE(payload))
+			, m_payload_offset(payload_offset), m_payload(STD_MOVE(payload))
 		{
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncDataMessagePayload(m_payloadOffset, STD_MOVE(m_payload));
+			client->on_sync_data_message_payload(m_payload_offset, STD_MOVE(m_payload));
 		}
 	};
 
 	class Client::DataMessageEndJob : public Client::SyncJobBase {
 	public:
-		boost::uint64_t m_payloadSize;
+		boost::uint64_t m_payload_size;
 
 	public:
-		DataMessageEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t payloadSize)
+		DataMessageEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t payload_size)
 			: SyncJobBase(client)
-			, m_payloadSize(payloadSize)
+			, m_payload_size(payload_size)
 		{
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncDataMessageEnd(m_payloadSize);
+			client->on_sync_data_message_end(m_payload_size);
 
-			client->m_lastPongTime = getFastMonoClock();
+			client->m_last_pong_time = get_fast_mono_clock();
 		}
 	};
 
 	class Client::ErrorMessageJob : public Client::SyncJobBase {
 	private:
-		boost::uint16_t m_messageId;
-		StatusCode m_statusCode;
+		boost::uint16_t m_message_id;
+		StatusCode m_status_code;
 		std::string m_reason;
 
 	public:
-		ErrorMessageJob(const boost::shared_ptr<Client> &client, boost::uint16_t messageId, StatusCode statusCode, std::string reason)
+		ErrorMessageJob(const boost::shared_ptr<Client> &client, boost::uint16_t message_id, StatusCode status_code, std::string reason)
 			: SyncJobBase(client)
-			, m_messageId(messageId), m_statusCode(statusCode), m_reason(STD_MOVE(reason))
+			, m_message_id(message_id), m_status_code(status_code), m_reason(STD_MOVE(reason))
 		{
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncErrorMessage(m_messageId, m_statusCode, STD_MOVE(m_reason));
+			client->on_sync_error_message(m_message_id, m_status_code, STD_MOVE(m_reason));
 
-			client->m_lastPongTime = getFastMonoClock();
+			client->m_last_pong_time = get_fast_mono_clock();
 		}
 	};
 
-	void Client::keepAliveTimerProc(const boost::weak_ptr<Client> &weakClient, boost::uint64_t now, boost::uint64_t period){
+	void Client::keep_alive_timer_proc(const boost::weak_ptr<Client> &weak_client, boost::uint64_t now, boost::uint64_t period){
 		PROFILE_ME;
 
-		const AUTO(client, weakClient.lock());
+		const AUTO(client, weak_client.lock());
 		if(!client){
 			return;
 		}
 
-		if(client->m_lastPongTime < now - period * 2){
+		if(client->m_last_pong_time < now - period * 2){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"No pong received since the last two keep alive intervals. Shut down the connection.");
-			client->forceShutdown();
+			client->force_shutdown();
 			return;
 		}
 
-		client->sendControl(CTL_PING, 0, boost::lexical_cast<std::string>(getUtcTime()));
+		client->send_control(CTL_PING, 0, boost::lexical_cast<std::string>(get_utc_time()));
 	}
 
-	Client::Client(const SockAddr &addr, bool useSsl, boost::uint64_t keepAliveInterval)
-		: TcpClientBase(addr, useSsl)
-		, m_keepAliveInterval(keepAliveInterval)
-		, m_lastPongTime((boost::uint64_t)-1)
+	Client::Client(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
+		: TcpClientBase(addr, use_ssl)
+		, m_keep_alive_interval(keep_alive_interval)
+		, m_last_pong_time((boost::uint64_t)-1)
 	{
 	}
-	Client::Client(const IpPort &addr, bool useSsl, boost::uint64_t keepAliveInterval)
-		: TcpClientBase(addr, useSsl)
-		, m_keepAliveInterval(keepAliveInterval)
-		, m_lastPongTime((boost::uint64_t)-1)
+	Client::Client(const IpPort &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
+		: TcpClientBase(addr, use_ssl)
+		, m_keep_alive_interval(keep_alive_interval)
+		, m_last_pong_time((boost::uint64_t)-1)
 	{
 	}
 	Client::~Client(){
 	}
 
-	void Client::onConnect(){
+	void Client::on_connect(){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ConnectJob>(
-			virtualSharedFromThis<Client>()));
+		enqueue_job(boost::make_shared<ConnectJob>(
+			virtual_shared_from_this<Client>()));
 
-		TcpClientBase::onConnect();
+		TcpClientBase::on_connect();
 	}
-	void Client::onReadAvail(StreamBuffer data){
+	void Client::on_read_avail(StreamBuffer data){
 		PROFILE_ME;
 
-		Reader::putEncodedData(STD_MOVE(data));
+		Reader::put_encoded_data(STD_MOVE(data));
 	}
 
-	void Client::onDataMessageHeader(boost::uint16_t messageId, boost::uint64_t payloadSize){
+	void Client::on_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<DataMessageHeaderJob>(
-			virtualSharedFromThis<Client>(), messageId, payloadSize));
+		enqueue_job(boost::make_shared<DataMessageHeaderJob>(
+			virtual_shared_from_this<Client>(), message_id, payload_size));
 	}
-	void Client::onDataMessagePayload(boost::uint64_t payloadOffset, StreamBuffer payload){
+	void Client::on_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<DataMessagePayloadJob>(
-			virtualSharedFromThis<Client>(), payloadOffset, STD_MOVE(payload)));
+		enqueue_job(boost::make_shared<DataMessagePayloadJob>(
+			virtual_shared_from_this<Client>(), payload_offset, STD_MOVE(payload)));
 	}
-	bool Client::onDataMessageEnd(boost::uint64_t payloadSize){
+	bool Client::on_data_message_end(boost::uint64_t payload_size){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<DataMessageEndJob>(
-			virtualSharedFromThis<Client>(), payloadSize));
+		enqueue_job(boost::make_shared<DataMessageEndJob>(
+			virtual_shared_from_this<Client>(), payload_size));
 
 		return true;
 	}
 
-	bool Client::onControlMessage(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
+	bool Client::on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ErrorMessageJob>(
-			virtualSharedFromThis<Client>(), controlCode, vintParam, STD_MOVE(stringParam)));
+		enqueue_job(boost::make_shared<ErrorMessageJob>(
+			virtual_shared_from_this<Client>(), control_code, vint_param, STD_MOVE(string_param)));
 
 		return true;
 	}
 
-	long Client::onEncodedDataAvail(StreamBuffer encoded){
+	long Client::on_encoded_data_avail(StreamBuffer encoded){
 		PROFILE_ME;
 
-		if(!m_keepAliveTimer){
-			m_keepAliveTimer = TimerDaemon::registerTimer(m_keepAliveInterval, m_keepAliveInterval,
-				boost::bind(&keepAliveTimerProc, virtualWeakFromThis<Client>(), _2, _3));
+		if(!m_keep_alive_timer){
+			m_keep_alive_timer = TimerDaemon::register_timer(m_keep_alive_interval, m_keep_alive_interval,
+				boost::bind(&keep_alive_timer_proc, virtual_weak_from_this<Client>(), _2, _3));
 		}
 
 		return TcpClientBase::send(STD_MOVE(encoded));
 	}
 
-	void Client::onSyncConnect(){
+	void Client::on_sync_connect(){
 		PROFILE_ME;
-		LOG_POSEIDON_INFO("CBPP client connected: remote = ", getRemoteInfo());
+		LOG_POSEIDON_INFO("CBPP client connected: remote = ", get_remote_info());
 	}
 
-	void Client::onSyncErrorMessage(boost::uint16_t messageId, StatusCode statusCode, std::string reason){
+	void Client::on_sync_error_message(boost::uint16_t message_id, StatusCode status_code, std::string reason){
 		PROFILE_ME;
-		LOG_POSEIDON_INFO("Received CBPP error message from server: messageId = ", messageId,
-			", statusCode = ", statusCode, ", reason = ", reason);
+		LOG_POSEIDON_INFO("Received CBPP error message from server: message_id = ", message_id,
+			", status_code = ", status_code, ", reason = ", reason);
 
-		if(statusCode < 0){
-			LOG_POSEIDON_WARNING("Fatal CBPP error: statusCode = ", statusCode);
+		if(status_code < 0){
+			LOG_POSEIDON_WARNING("Fatal CBPP error: status_code = ", status_code);
 
-			forceShutdown();
+			force_shutdown();
 		}
 	}
 
-	bool Client::send(boost::uint16_t messageId, StreamBuffer payload){
+	bool Client::send(boost::uint16_t message_id, StreamBuffer payload){
 		PROFILE_ME;
 
-		return Writer::putDataMessage(messageId, STD_MOVE(payload));
+		return Writer::put_data_message(message_id, STD_MOVE(payload));
 	}
-	bool Client::sendControl(ControlCode controlCode, boost::int64_t vintParam, std::string stringParam){
+	bool Client::send_control(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
 		PROFILE_ME;
 
-		return Writer::putControlMessage(controlCode, vintParam, STD_MOVE(stringParam));
+		return Writer::put_control_message(control_code, vint_param, STD_MOVE(string_param));
 	}
 }
 

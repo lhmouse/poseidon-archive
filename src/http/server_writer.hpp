@@ -20,18 +20,18 @@ namespace Http {
 		virtual ~ServerWriter();
 
 	protected:
-		virtual long onEncodedDataAvail(StreamBuffer encoded) = 0;
+		virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
 
 	public:
-		long putResponseHeaders(ResponseHeaders responseHeaders);
-		long putEntity(StreamBuffer data);
+		long put_response_headers(ResponseHeaders response_headers);
+		long put_entity(StreamBuffer data);
 
-		long putResponse(ResponseHeaders responseHeaders, StreamBuffer entity);
-		long putDefaultResponse(ResponseHeaders responseHeaders);
+		long put_response(ResponseHeaders response_headers, StreamBuffer entity);
+		long put_default_response(ResponseHeaders response_headers);
 
-		long putChunkedHeader(ResponseHeaders responseHeaders);
-		long putChunk(StreamBuffer entity);
-		long putChunkedTrailer(OptionalMap headers);
+		long put_chunked_header(ResponseHeaders response_headers);
+		long put_chunk(StreamBuffer entity);
+		long put_chunked_trailer(OptionalMap headers);
 	};
 }
 

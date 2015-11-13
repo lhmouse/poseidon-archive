@@ -17,7 +17,7 @@ namespace Poseidon {
 
 namespace Http {
 	ClientReader::ClientReader()
-		: m_sizeExpecting(EXPECTING_NEW_LINE), m_state(S_FIRST_HEADER)
+		: m_size_expecting(EXPECTING_NEW_LINE), m_state(S_FIRST_HEADER)
 	{
 	}
 	ClientReader::~ClientReader(){
@@ -26,39 +26,39 @@ namespace Http {
 		}
 	}
 
-	bool ClientReader::putEncodedData(StreamBuffer encoded){
+	bool ClientReader::put_encoded_data(StreamBuffer encoded){
 		PROFILE_ME;
 
 		m_queue.splice(encoded);
 
-		bool hasNextResponse = true;
+		bool has_next_response = true;
 		do {
-			const bool expectingNewLine = (m_sizeExpecting == EXPECTING_NEW_LINE);
+			const bool expecting_new_line = (m_size_expecting == EXPECTING_NEW_LINE);
 
-			if(expectingNewLine){
-				std::size_t lfOffset = 0;
-				AUTO(ce, m_queue.getConstChunkEnumerator());
+			if(expecting_new_line){
+				std::size_t lf_offset = 0;
+				AUTO(ce, m_queue.get_const_chunk_enumerator());
 				while(ce){
 					const AUTO(pos, std::find(ce.begin(), ce.end(), '\n'));
 					if(pos != ce.end()){
-						lfOffset += static_cast<std::size_t>(pos - ce.begin());
+						lf_offset += static_cast<std::size_t>(pos - ce.begin());
 						goto _found;
 					}
-					lfOffset += ce.size();
+					lf_offset += ce.size();
 					++ce;
 				}
 				// 没找到换行符。
 				break;
 			_found:
-				m_sizeExpecting = lfOffset + 1;
+				m_size_expecting = lf_offset + 1;
 			} else {
-				if(m_queue.size() < m_sizeExpecting){
+				if(m_queue.size() < m_size_expecting){
 					break;
 				}
 			}
 
-			AUTO(expected, m_queue.cutOff(m_sizeExpecting));
-			if(expectingNewLine){
+			AUTO(expected, m_queue.cut_off(m_size_expecting));
+			if(expecting_new_line){
 				expected.unput(); // '\n'
 				if(expected.back() == '\r'){
 					expected.unput();
@@ -70,9 +70,9 @@ namespace Http {
 
 			case S_FIRST_HEADER:
 				if(!expected.empty()){
-					m_responseHeaders = ResponseHeaders();
-					m_contentLength = 0;
-					m_contentOffset = 0;
+					m_response_headers = ResponseHeaders();
+					m_content_length = 0;
+					m_content_offset = 0;
 
 					std::string line;
 					expected.dump(line);
@@ -83,17 +83,17 @@ namespace Http {
 						DEBUG_THROW(BasicException, sslit("No HTTP version in response headers"));
 					}
 					line[pos] = 0;
-					long verEnd = 0;
-					char verMajorStr[16], verMinorStr[16];
-					if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", verMajorStr, verMinorStr, &verEnd) != 2){
+					long ver_end = 0;
+					char ver_major_str[16], ver_minor_str[16];
+					if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) != 2){
 						LOG_POSEIDON_WARNING("Bad response header: expecting HTTP version: line = ", line.c_str());
 						DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
 					}
-					if(static_cast<unsigned long>(verEnd) != pos){
+					if(static_cast<unsigned long>(ver_end) != pos){
 						LOG_POSEIDON_WARNING("Bad response header: junk after HTTP version: line = ", line.c_str());
 						DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
 					}
-					m_responseHeaders.version = std::strtoul(verMajorStr, NULLPTR, 10) * 10000 + std::strtoul(verMinorStr, NULLPTR, 10);
+					m_response_headers.version = std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10);
 					line.erase(0, pos + 1);
 
 					pos = line.find(' ');
@@ -103,20 +103,20 @@ namespace Http {
 					}
 					line[pos] = 0;
 					char *endptr;
-					const AUTO(statusCode, std::strtoul(line.c_str(), &endptr, 10));
+					const AUTO(status_code, std::strtoul(line.c_str(), &endptr, 10));
 					if(*endptr){
 						LOG_POSEIDON_WARNING("Bad response header: expecting status code: line = ", line.c_str());
 						DEBUG_THROW(BasicException, sslit("Malformed status code in response headers"));
 					}
-					m_responseHeaders.statusCode = statusCode;
+					m_response_headers.status_code = status_code;
 					line.erase(0, pos + 1);
 
-					m_responseHeaders.reason = STD_MOVE(line);
+					m_response_headers.reason = STD_MOVE(line);
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_HEADERS;
 				} else {
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_FIRST_HEADER;
 				}
 				break;
@@ -131,116 +131,116 @@ namespace Http {
 						LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
 						DEBUG_THROW(BasicException, sslit("Malformed HTTP header in response headers"));
 					}
-					m_responseHeaders.headers.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
+					m_response_headers.headers.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_HEADERS;
 				} else {
-					AUTO(transferEncoding, m_responseHeaders.headers.get("Transfer-Encoding"));
-					AUTO(pos, transferEncoding.find(';'));
+					AUTO(transfer_encoding, m_response_headers.headers.get("Transfer-Encoding"));
+					AUTO(pos, transfer_encoding.find(';'));
 					if(pos != std::string::npos){
-						transferEncoding.erase(pos);
+						transfer_encoding.erase(pos);
 					}
-					transferEncoding = toLowerCase(trim(STD_MOVE(transferEncoding)));
+					transfer_encoding = to_lower_case(trim(STD_MOVE(transfer_encoding)));
 
-					if(transferEncoding.empty() || (transferEncoding == STR_IDENTITY)){
-						const AUTO_REF(contentLength, m_responseHeaders.headers.get("Content-Length"));
-						if(contentLength.empty()){
-							m_contentLength = CONTENT_TILL_EOF;
+					if(transfer_encoding.empty() || (transfer_encoding == STR_IDENTITY)){
+						const AUTO_REF(content_length, m_response_headers.headers.get("Content-Length"));
+						if(content_length.empty()){
+							m_content_length = CONTENT_TILL_EOF;
 						} else {
 							char *endptr;
-							m_contentLength = ::strtoull(contentLength.c_str(), &endptr, 10);
+							m_content_length = ::strtoull(content_length.c_str(), &endptr, 10);
 							if(*endptr){
-								LOG_POSEIDON_WARNING("Bad request header Content-Length: ", contentLength);
+								LOG_POSEIDON_WARNING("Bad request header Content-Length: ", content_length);
 								DEBUG_THROW(BasicException, sslit("Malformed Content-Length header"));
 							}
-							if(m_contentLength > CONTENT_LENGTH_MAX){
-								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", contentLength);
+							if(m_content_length > CONTENT_LENGTH_MAX){
+								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", content_length);
 								DEBUG_THROW(BasicException, sslit("Inacceptable Content-Length"));
 							}
 						}
 					} else {
-						m_contentLength = CONTENT_CHUNKED;
+						m_content_length = CONTENT_CHUNKED;
 					}
 
-					onResponseHeaders(STD_MOVE(m_responseHeaders), STD_MOVE(transferEncoding), m_contentLength);
+					on_response_headers(STD_MOVE(m_response_headers), STD_MOVE(transfer_encoding), m_content_length);
 
-					if(m_contentLength == CONTENT_CHUNKED){
-						m_sizeExpecting = EXPECTING_NEW_LINE;
+					if(m_content_length == CONTENT_CHUNKED){
+						m_size_expecting = EXPECTING_NEW_LINE;
 						m_state = S_CHUNK_HEADER;
-					} else if(m_contentLength == CONTENT_TILL_EOF){
-						m_sizeExpecting = 4096;
+					} else if(m_content_length == CONTENT_TILL_EOF){
+						m_size_expecting = 4096;
 						m_state = S_IDENTITY;
 					} else {
-						m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength, 4096);
+						m_size_expecting = std::min<boost::uint64_t>(m_content_length, 4096);
 						m_state = S_IDENTITY;
 					}
 				}
 				break;
 
 			case S_IDENTITY:
-				temp64 = std::min<boost::uint64_t>(expected.size(), m_contentLength - m_contentOffset);
-				onResponseEntity(m_contentOffset, false, expected.cutOff(temp64));
-				m_contentOffset += temp64;
+				temp64 = std::min<boost::uint64_t>(expected.size(), m_content_length - m_content_offset);
+				on_response_entity(m_content_offset, false, expected.cut_off(temp64));
+				m_content_offset += temp64;
 
-				if(m_contentLength == CONTENT_TILL_EOF){
-					m_sizeExpecting = 4096;
+				if(m_content_length == CONTENT_TILL_EOF){
+					m_size_expecting = 4096;
 					// m_state = S_IDENTITY;
-				} else if(m_contentOffset < m_contentLength){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_contentLength - m_contentOffset, 4096);
+				} else if(m_content_offset < m_content_length){
+					m_size_expecting = std::min<boost::uint64_t>(m_content_length - m_content_offset, 4096);
 					// m_state = S_IDENTITY;
 				} else {
-					hasNextResponse = onResponseEnd(m_contentOffset, false, VAL_INIT);
+					has_next_response = on_response_end(m_content_offset, false, VAL_INIT);
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
 				}
 				break;
 
 			case S_CHUNK_HEADER:
 				if(!expected.empty()){
-					m_chunkSize = 0;
-					m_chunkOffset = 0;
-					m_chunkedTrailer.clear();
+					m_chunk_size = 0;
+					m_chunk_offset = 0;
+					m_chunked_trailer.clear();
 
 					std::string line;
 					expected.dump(line);
 
 					char *endptr;
-					m_chunkSize = ::strtoull(line.c_str(), &endptr, 16);
+					m_chunk_size = ::strtoull(line.c_str(), &endptr, 16);
 					if(*endptr && (*endptr != ' ')){
 						LOG_POSEIDON_WARNING("Bad chunk header: ", line);
 						DEBUG_THROW(BasicException, sslit("Malformed chunk header"));
 					}
-					if(m_chunkSize > CONTENT_LENGTH_MAX){
+					if(m_chunk_size > CONTENT_LENGTH_MAX){
 						LOG_POSEIDON_WARNING("Inacceptable chunk size in header: ", line);
 						DEBUG_THROW(BasicException, sslit("Inacceptable chunk length"));
 					}
-					if(m_chunkSize == 0){
-						m_sizeExpecting = EXPECTING_NEW_LINE;
+					if(m_chunk_size == 0){
+						m_size_expecting = EXPECTING_NEW_LINE;
 						m_state = S_CHUNKED_TRAILER;
 					} else {
-						m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize, 4096);
+						m_size_expecting = std::min<boost::uint64_t>(m_chunk_size, 4096);
 						m_state = S_CHUNK_DATA;
 					}
 				} else {
 					// chunk-data 后面应该有一对 CRLF。我们在这里处理这种情况。
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_CHUNK_HEADER;
 				}
 				break;
 
 			case S_CHUNK_DATA:
-				temp64 = std::min<boost::uint64_t>(expected.size(), m_chunkSize - m_chunkOffset);
-				onResponseEntity(m_contentOffset, true, expected.cutOff(temp64));
-				m_contentOffset += temp64;
-				m_chunkOffset += temp64;
+				temp64 = std::min<boost::uint64_t>(expected.size(), m_chunk_size - m_chunk_offset);
+				on_response_entity(m_content_offset, true, expected.cut_off(temp64));
+				m_content_offset += temp64;
+				m_chunk_offset += temp64;
 
-				if(m_chunkOffset < m_chunkSize){
-					m_sizeExpecting = std::min<boost::uint64_t>(m_chunkSize - m_chunkOffset, 4096);
+				if(m_chunk_offset < m_chunk_size){
+					m_size_expecting = std::min<boost::uint64_t>(m_chunk_size - m_chunk_offset, 4096);
 					// m_state = S_CHUNK_DATA;
 				} else {
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_CHUNK_HEADER;
 				}
 				break;
@@ -255,14 +255,14 @@ namespace Http {
 						LOG_POSEIDON_WARNING("Invalid chunk trailer: line = ", line);
 						DEBUG_THROW(BasicException, sslit("Invalid HTTP header in chunk trailer"));
 					}
-					m_chunkedTrailer.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
+					m_chunked_trailer.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_CHUNKED_TRAILER;
 				} else {
-					hasNextResponse = onResponseEnd(m_contentOffset, true, STD_MOVE(m_chunkedTrailer));
+					has_next_response = on_response_end(m_content_offset, true, STD_MOVE(m_chunked_trailer));
 
-					m_sizeExpecting = EXPECTING_NEW_LINE;
+					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
 				}
 				break;
@@ -271,31 +271,31 @@ namespace Http {
 				LOG_POSEIDON_ERROR("Unknown state: ", static_cast<unsigned>(m_state));
 				std::abort();
 			}
-		} while(hasNextResponse);
+		} while(has_next_response);
 
-		return hasNextResponse;
+		return has_next_response;
 	}
 
-	bool ClientReader::isContentTillEof() const {
-		return m_contentLength == CONTENT_TILL_EOF;
+	bool ClientReader::is_content_till_eof() const {
+		return m_content_length == CONTENT_TILL_EOF;
 	}
-	bool ClientReader::terminateContent(){
+	bool ClientReader::terminate_content(){
 		PROFILE_ME;
 
-		if(!isContentTillEof()){
+		if(!is_content_till_eof()){
 			DEBUG_THROW(BasicException, sslit("Terminating a non-until-EOF HTTP response"));
 		}
 
-		const AUTO(bytesRemaining, m_queue.size());
-		if(bytesRemaining != 0){
-			onResponseEntity(m_contentOffset, false, STD_MOVE(m_queue));
-			m_contentOffset += bytesRemaining;
+		const AUTO(bytes_remaining, m_queue.size());
+		if(bytes_remaining != 0){
+			on_response_entity(m_content_offset, false, STD_MOVE(m_queue));
+			m_content_offset += bytes_remaining;
 			m_queue.clear();
 		}
 
-		const bool ret = onResponseEnd(m_contentOffset, false, STD_MOVE(m_chunkedTrailer));
+		const bool ret = on_response_end(m_content_offset, false, STD_MOVE(m_chunked_trailer));
 
-		m_sizeExpecting = EXPECTING_NEW_LINE;
+		m_size_expecting = EXPECTING_NEW_LINE;
 		m_state = S_FIRST_HEADER;
 
 		return ret;

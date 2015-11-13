@@ -12,10 +12,10 @@
 namespace Poseidon {
 
 namespace {
-	::pthread_once_t g_tzOnce = PTHREAD_ONCE_INIT;
+	::pthread_once_t g_tz_once = PTHREAD_ONCE_INIT;
 }
 
-boost::uint64_t getUtcTime(){
+boost::uint64_t get_utc_time(){
 	::timespec ts;
 	if(::clock_gettime(CLOCK_REALTIME, &ts) != 0){
 		LOG_POSEIDON_FATAL("Realtime clock is not supported.");
@@ -23,19 +23,19 @@ boost::uint64_t getUtcTime(){
 	}
 	return (boost::uint64_t)ts.tv_sec * 1000 + (unsigned long)ts.tv_nsec / 1000000;
 }
-boost::uint64_t getLocalTime(){
-	return getLocalTimeFromUtc(getUtcTime());
+boost::uint64_t get_local_time(){
+	return get_local_time_from_utc(get_utc_time());
 }
-boost::uint64_t getUtcTimeFromLocal(boost::uint64_t local){
-	const int err = ::pthread_once(&g_tzOnce, &::tzset);
+boost::uint64_t get_utc_time_from_local(boost::uint64_t local){
+	const int err = ::pthread_once(&g_tz_once, &::tzset);
 	if(err != 0){
 		LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
 		std::abort();
 	}
 	return local + (unsigned long)::timezone * 1000;
 }
-boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
-	const int err = ::pthread_once(&g_tzOnce, &::tzset);
+boost::uint64_t get_local_time_from_utc(boost::uint64_t utc){
+	const int err = ::pthread_once(&g_tz_once, &::tzset);
 	if(err != 0){
 		LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
 		std::abort();
@@ -43,8 +43,8 @@ boost::uint64_t getLocalTimeFromUtc(boost::uint64_t utc){
 	return utc - (unsigned long)::timezone * 1000;
 }
 
-// 这里沿用了 MCF 的旧称。在 Windows 上 getFastMonoClock() 是 GetTickCount64() 实现的。
-boost::uint64_t getFastMonoClock() NOEXCEPT {
+// 这里沿用了 MCF 的旧称。在 Windows 上 get_fast_mono_clock() 是 GetTickCount64() 实现的。
+boost::uint64_t get_fast_mono_clock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
 		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
@@ -52,8 +52,8 @@ boost::uint64_t getFastMonoClock() NOEXCEPT {
 	}
 	return (boost::uint64_t)ts.tv_sec * 1000 + (unsigned long)ts.tv_nsec / 1000000;
 }
-// 在 Windows 上 getHiResMonoClock() 是 QueryPerformanceCounter() 实现的。
-double getHiResMonoClock() NOEXCEPT {
+// 在 Windows 上 get_hi_res_mono_clock() 是 QueryPerformanceCounter() 实现的。
+double get_hi_res_mono_clock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
 		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
@@ -62,7 +62,7 @@ double getHiResMonoClock() NOEXCEPT {
 	return (double)ts.tv_sec * 1e3 + (double)ts.tv_nsec / 1e6;
 }
 
-DateTime breakDownTime(boost::uint64_t ms){
+DateTime break_down_time(boost::uint64_t ms){
 	const ::time_t seconds = static_cast< ::time_t>(ms / 1000);
 	const unsigned milliseconds = ms % 1000;
 	::tm desc;
@@ -77,7 +77,7 @@ DateTime breakDownTime(boost::uint64_t ms){
 	dt.ms  = static_cast<unsigned>(milliseconds);
 	return dt;
 }
-boost::uint64_t assembleTime(const DateTime &dt){
+boost::uint64_t assemble_time(const DateTime &dt){
 	::tm desc;
 	desc.tm_year = static_cast<int>(dt.yr - 1900);
 	desc.tm_mon  = static_cast<int>(dt.mon - 1);
@@ -88,7 +88,7 @@ boost::uint64_t assembleTime(const DateTime &dt){
 	return static_cast<boost::uint64_t>(::timegm(&desc)) * 1000 + dt.ms;
 }
 
-std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool showMs){
+std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms){
 	DateTime dt;
 	if(ms == 0){
 		std::memset(&dt, 0, sizeof(dt));
@@ -96,13 +96,13 @@ std::size_t formatTime(char *buffer, std::size_t max, boost::uint64_t ms, bool s
 		std::memset(&dt, 0, sizeof(dt));
 		dt.yr = 9999;
 	} else {
-		dt = breakDownTime(ms);
+		dt = break_down_time(ms);
 	}
 	return (std::size_t)::snprintf(buffer, max,
-		showMs ? "%04u-%02u-%02u %02u:%02u:%02u.%03u" : "%04u-%02u-%02u %02u:%02u:%02u",
+		show_ms ? "%04u-%02u-%02u %02u:%02u:%02u.%03u" : "%04u-%02u-%02u %02u:%02u:%02u",
 		dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec, dt.ms);
 }
-boost::uint64_t scanTime(const char *str){
+boost::uint64_t scan_time(const char *str){
 	DateTime dt;
 	std::memset(&dt, 0, sizeof(dt));
 	std::sscanf(str, "%u-%u-%u %u:%u:%u.%u",
@@ -112,7 +112,7 @@ boost::uint64_t scanTime(const char *str){
 	} else if(dt.yr == 9999){
 		return (boost::uint64_t)-1;
 	} else {
-		return assembleTime(dt);
+		return assemble_time(dt);
 	}
 }
 

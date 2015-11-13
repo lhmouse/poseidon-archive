@@ -31,20 +31,20 @@ namespace {
 
 		TcpSessionBase *addr;
 		// 时间戳，零表示无数据可读/写。
-		boost::uint64_t lastRead;
-		boost::uint64_t lastWritten;
+		boost::uint64_t last_read;
+		boost::uint64_t last_written;
 
 		SessionMapElement(boost::weak_ptr<Epoll> epoll_, boost::shared_ptr<TcpSessionBase> session_)
 			: session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
-			, addr(session.get()), lastRead(0), lastWritten(0)
+			, addr(session.get()), last_read(0), last_written(0)
 		{
 		}
 	};
 
 	MULTI_INDEX_MAP(SessionMap, SessionMapElement,
 		UNIQUE_MEMBER_INDEX(addr)
-		MULTI_MEMBER_INDEX(lastRead)
-		MULTI_MEMBER_INDEX(lastWritten)
+		MULTI_MEMBER_INDEX(last_read)
+		MULTI_MEMBER_INDEX(last_written)
 	)
 
 	enum {
@@ -68,31 +68,31 @@ Epoll::Epoll()
 Epoll::~Epoll(){
 }
 
-void Epoll::notifyWriteable(TcpSessionBase *session) NOEXCEPT {
-	const AUTO(now, getFastMonoClock());
+void Epoll::notify_writeable(TcpSessionBase *session) NOEXCEPT {
+	const AUTO(now, get_fast_mono_clock());
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_DEBUG("Session is no longer in epoll.");
 		return;
 	}
-	m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
+	m_sessions->set_key<IDX_ADDR, IDX_WRITE>(it, now);
 }
-void Epoll::notifyUnlinked(TcpSessionBase *session) NOEXCEPT {
+void Epoll::notify_unlinked(TcpSessionBase *session) NOEXCEPT {
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
-	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), (::epoll_event *)-1) != 0){
-		const int errCode = errno;
-		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->get_fd(), (::epoll_event *)-1) != 0){
+		const int err_code = errno;
+		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", err_code);
 	}
 	m_sessions->erase<IDX_ADDR>(it);
 }
 
-void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
+void Epoll::add_session(const boost::shared_ptr<TcpSessionBase> &session){
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(result, m_sessions->insert(SessionMapElement(shared_from_this(), session)));
 	if(!result.second){
@@ -102,23 +102,23 @@ void Epoll::addSession(const boost::shared_ptr<TcpSessionBase> &session){
 	::epoll_event event;
 	event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
 	event.data.ptr = session.get();
-	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->getFd(), &event) != 0){
-		const int errCode = errno;
+	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_ADD, session->get_fd(), &event) != 0){
+		const int err_code = errno;
 		m_sessions->erase(result.first); // !!
-		DEBUG_THROW(SystemException, errCode);
+		DEBUG_THROW(SystemException, err_code);
 	}
-	session->setEpoll(result.first->epoll);
+	session->set_epoll(result.first->epoll);
 }
-void Epoll::removeSession(const boost::shared_ptr<TcpSessionBase> &session){
+void Epoll::remove_session(const boost::shared_ptr<TcpSessionBase> &session){
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session.get()));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
-	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
-		const int errCode = errno;
-		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+	if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->get_fd(), NULLPTR) != 0){
+		const int err_code = errno;
+		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", err_code);
 	}
 	m_sessions->erase<IDX_ADDR>(it);
 }
@@ -133,9 +133,9 @@ void Epoll::clear(){
 	const Mutex::UniqueLock lock(m_mutex);
 	AUTO(it, m_sessions->begin());
 	while(it != m_sessions->end()){
-		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, it->session->getFd(), NULLPTR) != 0){
-			const int errCode = errno;
-			LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, it->session->get_fd(), NULLPTR) != 0){
+			const int err_code = errno;
+			LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", err_code);
 		}
 		it = m_sessions->erase(it);
 	}
@@ -145,14 +145,14 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 	::epoll_event events[MAX_PUMP_COUNT];
 	const int count = ::epoll_wait(m_epoll.get(), events, MAX_PUMP_COUNT, (int)timeout);
 	if(count < 0){
-		const int errCode = errno;
-		if(errCode != EINTR){
-			LOG_POSEIDON_ERROR("::epoll_wait() failed: errno = ", errCode);
+		const int err_code = errno;
+		if(err_code != EINTR){
+			LOG_POSEIDON_ERROR("::epoll_wait() failed: errno = ", err_code);
 		}
 		return 0;
 	}
 
-	const AUTO(now, getFastMonoClock());
+	const AUTO(now, get_fast_mono_clock());
 	for(unsigned i = 0; i < (unsigned)count; ++i){
 		const AUTO_REF(event, events[i]);
 
@@ -169,62 +169,62 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		}
 
 		if(event.events & EPOLLERR){
-			int errCode;
-			if(atomicLoad(session->m_timedOut, ATOMIC_CONSUME)){
-				errCode = ETIMEDOUT;
+			int err_code;
+			if(atomic_load(session->m_timed_out, ATOMIC_CONSUME)){
+				err_code = ETIMEDOUT;
 			} else {
-				::socklen_t errLen = sizeof(errCode);
-				if(::getsockopt(session->getFd(), SOL_SOCKET, SO_ERROR, &errCode, &errLen) != 0){
-					errCode = errno;
+				::socklen_t err_len = sizeof(err_code);
+				if(::getsockopt(session->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
+					err_code = errno;
 				}
 			}
-			const AUTO(desc, getErrorDesc(errCode));
+			const AUTO(desc, get_error_desc(err_code));
 			try {
-				LOG_POSEIDON_INFO("Socket error: errCode = ", errCode, ", desc = ", desc, " remote is ", session->getRemoteInfo());
+				LOG_POSEIDON_INFO("Socket error: err_code = ", err_code, ", desc = ", desc, " remote is ", session->get_remote_info());
 			} catch(...){
-				LOG_POSEIDON_INFO("Socket error: errCode = ", errCode, ", desc = ", desc, " remote is not connected.");
+				LOG_POSEIDON_INFO("Socket error: err_code = ", err_code, ", desc = ", desc, " remote is not connected.");
 			}
-			session->onClose(errCode);
+			session->on_close(err_code);
 			goto _eraseSession;
 		}
 		if(event.events & EPOLLHUP){
 			try {
-				LOG_POSEIDON_INFO("Socket closed: remote is ", session->getRemoteInfo());
+				LOG_POSEIDON_INFO("Socket closed: remote is ", session->get_remote_info());
 			} catch(...){
 				LOG_POSEIDON_INFO("Socket closed: remote is not connected.");
 			}
-			session->shutdownRead();
-			session->shutdownWrite();
-			session->onClose(0);
+			session->shutdown_read();
+			session->shutdown_write();
+			session->on_close(0);
 			goto _eraseSession;
 		}
 
 		if(event.events & EPOLLIN){
 			const Mutex::UniqueLock lock(m_mutex);
-			m_sessions->setKey<IDX_ADDR, IDX_READ>(it, now);
+			m_sessions->set_key<IDX_ADDR, IDX_READ>(it, now);
 		}
 		if(event.events & EPOLLOUT){
-			session->setConnected();
+			session->set_connected();
 
-			Mutex::UniqueLock sessionLock;
-			if(session->getSendBufferSize(sessionLock) != 0){
+			Mutex::UniqueLock session_lock;
+			if(session->get_send_buffer_size(session_lock) != 0){
 				const Mutex::UniqueLock lock(m_mutex);
-				m_sessions->setKey<IDX_ADDR, IDX_WRITE>(it, now);
+				m_sessions->set_key<IDX_ADDR, IDX_WRITE>(it, now);
 			}
 		}
 		continue;
 
 	_eraseSession:
 		const Mutex::UniqueLock lock(m_mutex);
-		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->getFd(), NULLPTR) != 0){
-			const int errCode = errno;
-			LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", errCode);
+		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->get_fd(), NULLPTR) != 0){
+			const int err_code = errno;
+			LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", err_code);
 		}
 		m_sessions->erase<IDX_ADDR>(it);
 	}
 	return (unsigned)count;
 }
-std::size_t Epoll::pumpReadable(){
+std::size_t Epoll::pump_readable(){
 	boost::uint64_t now = 0;
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
@@ -232,7 +232,7 @@ std::size_t Epoll::pumpReadable(){
 	std::size_t count = 0;
 	{
 		const Mutex::UniqueLock lock(m_mutex);
-		for(AUTO(it, m_sessions->upperBound<IDX_READ>(0)); it != m_sessions->end<IDX_READ>(); ++it){
+		for(AUTO(it, m_sessions->upper_bound<IDX_READ>(0)); it != m_sessions->end<IDX_READ>(); ++it){
 			iterators[count] = it;
 			if(++count >= MAX_PUMP_COUNT){
 				break;
@@ -244,62 +244,62 @@ std::size_t Epoll::pumpReadable(){
 		const AUTO(session, it->session);
 
 		try {
-			std::size_t sendBufferSize;
+			std::size_t send_buffer_size;
 			{
 				Mutex::UniqueLock lock;
-				sendBufferSize = session->getSendBufferSize(lock);
+				send_buffer_size = session->get_send_buffer_size(lock);
 			}
-			if(sendBufferSize > MAX_SEND_BUFFER_SIZE){
+			if(send_buffer_size > MAX_SEND_BUFFER_SIZE){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 					"Max send buffer size exceeded: typeid = ", typeid(*session).name());
 
 				if(now == 0){
-					now = getFastMonoClock();
+					now = get_fast_mono_clock();
 				}
 				const Mutex::UniqueLock lock(m_mutex);
-				m_sessions->setKey<IDX_READ, IDX_READ>(it, now + 1000);
+				m_sessions->set_key<IDX_READ, IDX_READ>(it, now + 1000);
 				continue;
 			}
 
 			unsigned char temp[IO_BUFFER_SIZE];
-			const AUTO(result, session->syncReadAndProcess(temp, sizeof(temp)));
-			if(result.bytesTransferred < 0){
-				if(result.errCode == EINTR){
+			const AUTO(result, session->sync_read_and_process(temp, sizeof(temp)));
+			if(result.bytes_transferred < 0){
+				if(result.err_code == EINTR){
 					continue;
 				}
-				if(result.errCode == EAGAIN){
+				if(result.err_code == EAGAIN){
 					const Mutex::UniqueLock lock(m_mutex);
-					m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
+					m_sessions->set_key<IDX_READ, IDX_READ>(it, 0);
 					continue;
 				}
 				DEBUG_THROW(SystemException);
-			} else if(result.bytesTransferred == 0){
-				session->shutdownRead();
-				session->onReadHup();
+			} else if(result.bytes_transferred == 0){
+				session->shutdown_read();
+				session->on_read_hup();
 
 				const Mutex::UniqueLock lock(m_mutex);
-				m_sessions->setKey<IDX_READ, IDX_READ>(it, 0);
+				m_sessions->set_key<IDX_READ, IDX_READ>(it, 0);
 				continue;
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown while reading socket: what = ", e.what(), ", typeid = ", typeid(*session).name());
-			session->forceShutdown();
+			session->force_shutdown();
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Unknown exception thrown while reading socket: typeid = ", typeid(*session).name());
-			session->forceShutdown();
+			session->force_shutdown();
 		}
 	}
 	return count;
 }
-std::size_t Epoll::pumpWriteable(){
+std::size_t Epoll::pump_writeable(){
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
 	SessionMap::delegated_container::nth_index<IDX_WRITE>::type::iterator iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
 	{
 		const Mutex::UniqueLock lock(m_mutex);
-		for(AUTO(it, m_sessions->upperBound<IDX_WRITE>(0)); it != m_sessions->end<IDX_WRITE>(); ++it){
+		for(AUTO(it, m_sessions->upper_bound<IDX_WRITE>(0)); it != m_sessions->end<IDX_WRITE>(); ++it){
 			iterators[count] = it;
 			if(++count >= MAX_PUMP_COUNT){
 				break;
@@ -312,33 +312,33 @@ std::size_t Epoll::pumpWriteable(){
 
 		try {
 			unsigned char temp[IO_BUFFER_SIZE];
-			const AUTO(result, session->syncWrite(temp, sizeof(temp)));
-			if(result.bytesTransferred < 0){
-				if(result.errCode == EINTR){
+			const AUTO(result, session->sync_write(temp, sizeof(temp)));
+			if(result.bytes_transferred < 0){
+				if(result.err_code == EINTR){
 					continue;
 				}
-				if(result.errCode == EAGAIN){
+				if(result.err_code == EAGAIN){
 					const Mutex::UniqueLock lock(m_mutex);
-					m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
+					m_sessions->set_key<IDX_WRITE, IDX_WRITE>(it, 0);
 					continue;
 				}
 				DEBUG_THROW(SystemException);
-			} else if(result.bytesTransferred == 0){
-				Mutex::UniqueLock sessionLock;
-				if(session->getSendBufferSize(sessionLock) == 0){
+			} else if(result.bytes_transferred == 0){
+				Mutex::UniqueLock session_lock;
+				if(session->get_send_buffer_size(session_lock) == 0){
 					const Mutex::UniqueLock lock(m_mutex);
-					m_sessions->setKey<IDX_WRITE, IDX_WRITE>(it, 0);
+					m_sessions->set_key<IDX_WRITE, IDX_WRITE>(it, 0);
 				}
 				continue;
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown while writing socket: what = ", e.what(), ", typeid = ", typeid(*session).name());
-			session->forceShutdown();
+			session->force_shutdown();
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Unknown exception thrown while writing socket: typeid = ", typeid(*session).name());
-			session->forceShutdown();
+			session->force_shutdown();
 		}
 	}
 	return count;

@@ -8,10 +8,10 @@
 
 namespace Poseidon {
 
-void TransactionItemBase::logIgnoredStdException(const char *what) NOEXCEPT {
+void TransactionItemBase::log_ignored_std_exception(const char *what) NOEXCEPT {
 	LOG_POSEIDON_ERROR("Ignored an std::exception in a transaction operation: what = ", what);
 }
-void TransactionItemBase::logIgnoredUnknownException() NOEXCEPT {
+void TransactionItemBase::log_ignored_unknown_exception() NOEXCEPT {
 	LOG_POSEIDON_ERROR("Ignored an unknown exception in a transaction operation");
 }
 

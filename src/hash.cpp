@@ -51,7 +51,7 @@ namespace {
 		return (u >> bits) | (u << (32 - bits));
 	}
 
-	void md5Chunk(boost::uint32_t (&result)[4], const unsigned char *chunk){
+	void md5_chunk(boost::uint32_t (&result)[4], const unsigned char *chunk){
 		// https://en.wikipedia.org/wiki/MD5
 		const AUTO(w, reinterpret_cast<const boost::uint32_t *>(chunk));
 
@@ -64,7 +64,7 @@ namespace {
 
 #define MD5_STEP(i_, spec_, a_, b_, c_, d_, k_, r_)	\
 		spec_(i_, a_, b_, c_, d_);	\
-		a_ = b_ + rotl(a_ + f + k_ + loadLe(w[g]), r_);
+		a_ = b_ + rotl(a_ + f + k_ + load_le(w[g]), r_);
 
 #define MD5_SPEC_0(i_, a_, b_, c_, d_)	(f = d_ ^ (b_ & (c_ ^ d_)), g = i_)
 #define MD5_SPEC_1(i_, a_, b_, c_, d_)	(f = c_ ^ (d_ & (b_ ^ c_)), g = (5 * i_ + 1) % 16)
@@ -145,12 +145,12 @@ namespace {
 		result[3] += d;
 	}
 
-	void sha1Chunk(boost::uint32_t (&result)[5], const unsigned char *chunk){
+	void sha1_chunk(boost::uint32_t (&result)[5], const unsigned char *chunk){
 		// https://en.wikipedia.org/wiki/SHA-1
 		boost::uint32_t w[80];
 
 		for(std::size_t i = 0; i < 16; ++i){
-			w[i] = loadBe(reinterpret_cast<const boost::uint32_t *>(chunk)[i]);
+			w[i] = load_be(reinterpret_cast<const boost::uint32_t *>(chunk)[i]);
 		}
 		for(std::size_t i = 16; i < 32; ++i){
 			w[i] = rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
@@ -268,12 +268,12 @@ namespace {
 		result[4] += e;
 	}
 
-	void sha256Chunk(boost::uint32_t (&result)[8], const unsigned char *chunk){
+	void sha256_chunk(boost::uint32_t (&result)[8], const unsigned char *chunk){
 		// https://en.wikipedia.org/wiki/SHA-2
 		boost::uint32_t w[64];
 
 		for(std::size_t i = 0; i < 16; ++i){
-			w[i] = loadBe(reinterpret_cast<const boost::uint32_t *>(chunk)[i]);
+			w[i] = load_be(reinterpret_cast<const boost::uint32_t *>(chunk)[i]);
 		}
 		for(std::size_t i = 16; i < 64; ++i){
 			const boost::uint32_t s0 = rotr((rotr(w[i - 15], 11) ^ w[i - 15]), 7) ^ (w[i - 15] >> 3);
@@ -385,7 +385,7 @@ namespace {
 	}
 }
 
-Crc32 crc32Hash(const void *data, std::size_t size){
+Crc32 crc32_hash(const void *data, std::size_t size){
 	register boost::uint32_t crc32 = 0xFFFFFFFF;
 	AUTO(read, (const unsigned char *)data);
 	for(std::size_t i = 0; i < size; ++i){
@@ -395,14 +395,14 @@ Crc32 crc32Hash(const void *data, std::size_t size){
 	return ~crc32;
 }
 
-Md5 md5Hash(const void *data, std::size_t size){
+Md5 md5_hash(const void *data, std::size_t size){
 	boost::uint32_t result[] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u
 	};
 	AUTO(read, reinterpret_cast<const unsigned char *>(data));
 	std::size_t remaining = size;
 	while(remaining >= 64){
-		md5Chunk(result, read);
+		md5_chunk(result, read);
 		read += 64;
 		remaining -= 64;
 	}
@@ -411,29 +411,29 @@ Md5 md5Hash(const void *data, std::size_t size){
 	chunk[remaining] = 0x80;
 	if(remaining >= 56){
 		std::memset(chunk + remaining + 1, 0, 64 - remaining - 1);
-		md5Chunk(result, chunk);
+		md5_chunk(result, chunk);
 		std::memset(chunk, 0, 56);
 	} else {
 		std::memset(chunk + remaining + 1, 0, 56 - remaining - 1);
 	}
-	storeLe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
-	md5Chunk(result, chunk);
+	store_le(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
+	md5_chunk(result, chunk);
 
 	Md5 md5;
 	for(unsigned i = 0; i < sizeof(md5) / 4; ++i){
-		storeLe(reinterpret_cast<boost::uint32_t *>(md5.data())[i], result[i]);
+		store_le(reinterpret_cast<boost::uint32_t *>(md5.data())[i], result[i]);
 	}
 	return md5;
 }
 
-Sha1 sha1Hash(const void *data, std::size_t size){
+Sha1 sha1_hash(const void *data, std::size_t size){
 	boost::uint32_t result[] = {
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u
 	};
 	AUTO(read, reinterpret_cast<const unsigned char *>(data));
 	std::size_t remaining = size;
 	while(remaining >= 64){
-		sha1Chunk(result, read);
+		sha1_chunk(result, read);
 		read += 64;
 		remaining -= 64;
 	}
@@ -442,22 +442,22 @@ Sha1 sha1Hash(const void *data, std::size_t size){
 	chunk[remaining] = 0x80;
 	if(remaining >= 56){
 		std::memset(chunk + remaining + 1, 0, 64 - remaining - 1);
-		sha1Chunk(result, chunk);
+		sha1_chunk(result, chunk);
 		std::memset(chunk, 0, 56);
 	} else {
 		std::memset(chunk + remaining + 1, 0, 56 - remaining - 1);
 	}
-	storeBe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
-	sha1Chunk(result, chunk);
+	store_be(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
+	sha1_chunk(result, chunk);
 
 	Sha1 sha1;
 	for(unsigned i = 0; i < sizeof(sha1) / 4; ++i){
-		storeBe(reinterpret_cast<boost::uint32_t *>(sha1.data())[i], result[i]);
+		store_be(reinterpret_cast<boost::uint32_t *>(sha1.data())[i], result[i]);
 	}
 	return sha1;
 }
 
-Sha256 sha256Hash(const void *data, std::size_t size){
+Sha256 sha256_hash(const void *data, std::size_t size){
 	boost::uint32_t result[] = {
 		0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au,
 		0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u
@@ -465,7 +465,7 @@ Sha256 sha256Hash(const void *data, std::size_t size){
 	AUTO(read, reinterpret_cast<const unsigned char *>(data));
 	std::size_t remaining = size;
 	while(remaining >= 64){
-		sha256Chunk(result, read);
+		sha256_chunk(result, read);
 		read += 64;
 		remaining -= 64;
 	}
@@ -474,17 +474,17 @@ Sha256 sha256Hash(const void *data, std::size_t size){
 	chunk[remaining] = 0x80;
 	if(remaining >= 56){
 		std::memset(chunk + remaining + 1, 0, 64 - remaining - 1);
-		sha256Chunk(result, chunk);
+		sha256_chunk(result, chunk);
 		std::memset(chunk, 0, 56);
 	} else {
 		std::memset(chunk + remaining + 1, 0, 56 - remaining - 1);
 	}
-	storeBe(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
-	sha256Chunk(result, chunk);
+	store_be(reinterpret_cast<boost::uint64_t *>(chunk + 56)[0], size * 8ull);
+	sha256_chunk(result, chunk);
 
 	Sha256 sha256;
 	for(unsigned i = 0; i < sizeof(sha256) / 4; ++i){
-		storeBe(reinterpret_cast<boost::uint32_t *>(sha256.data())[i], result[i]);
+		store_be(reinterpret_cast<boost::uint32_t *>(sha256.data())[i], result[i]);
 	}
 	return sha256;
 }

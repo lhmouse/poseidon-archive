@@ -130,12 +130,12 @@ public:
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
 
-#define FIELD_VINT(name_)				::Poseidon::vint50ToBinary(cur_.name_, write_);
-#define FIELD_VUINT(name_)				::Poseidon::vuint50ToBinary(cur_.name_, write_);
-#define FIELD_STRING(name_)				::Poseidon::vuint50ToBinary(cur_.name_.size(), write_);	\
+#define FIELD_VINT(name_)				::Poseidon::vint50_to_binary(cur_.name_, write_);
+#define FIELD_VUINT(name_)				::Poseidon::vuint50_to_binary(cur_.name_, write_);
+#define FIELD_STRING(name_)				::Poseidon::vuint50_to_binary(cur_.name_.size(), write_);	\
 										write_ = ::std::copy(cur_.name_.begin(), cur_.name_.end(), write_);
 #define FIELD_BYTES(name_, size_)		write_ = ::std::copy(cur_.name_, cur_.name_ + size_, write_);
-#define FIELD_ARRAY(name_, fields_)		::Poseidon::vuint50ToBinary(cur_.name_.size(), write_);	\
+#define FIELD_ARRAY(name_, fields_)		::Poseidon::vuint50_to_binary(cur_.name_.size(), write_);	\
 										for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
 											typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
 											const Element_ &element_ = cur_.name_[i_];	\
@@ -160,15 +160,15 @@ public:
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
 
-#define FIELD_VINT(name_)				if(!::Poseidon::vint50FromBinary(cur_.name_, read_, buffer_.size())){	\
+#define FIELD_VINT(name_)				if(!::Poseidon::vint50_from_binary(cur_.name_, read_, buffer_.size())){	\
 											THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 										}
-#define FIELD_VUINT(name_)				if(!::Poseidon::vuint50FromBinary(cur_.name_, read_, buffer_.size())){	\
+#define FIELD_VUINT(name_)				if(!::Poseidon::vuint50_from_binary(cur_.name_, read_, buffer_.size())){	\
 											THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 										}
 #define FIELD_STRING(name_)				{	\
 											::boost::uint64_t count_;	\
-											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
+											if(!::Poseidon::vuint50_from_binary(count_, read_, buffer_.size())){	\
 												THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 											}	\
 											if(buffer_.size() < count_){	\
@@ -192,7 +192,7 @@ public:
 										}
 #define FIELD_ARRAY(name_, fields_)		{	\
 											::boost::uint64_t count_;	\
-											if(!::Poseidon::vuint50FromBinary(count_, read_, buffer_.size())){	\
+											if(!::Poseidon::vuint50_from_binary(count_, read_, buffer_.size())){	\
 												THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
 											}	\
 											/* cur_.name_.reserve(count_); */	\
@@ -216,7 +216,7 @@ public:
 		return buffer_;
 	}
 
-	void dumpDebug(::std::ostream &os_) const {
+	void dump_debug(::std::ostream &os_) const {
 		typedef MESSAGE_NAME Cur_;
 		const Cur_ &cur_ = *this;
 
@@ -266,7 +266,7 @@ inline ::Poseidon::StreamBuffer &operator>>(::Poseidon::StreamBuffer &buffer_, M
 }
 
 inline ::std::ostream &operator<<(::std::ostream &os_, const MESSAGE_NAME &msg_){
-	msg_.dumpDebug(os_);
+	msg_.dump_debug(os_);
 	return os_;
 }
 

@@ -9,26 +9,26 @@
 namespace Poseidon {
 
 template<typename T>
-T &addFlags(T &val, typename Identity<T>::type flags){
+T &add_flags(T &val, typename Identity<T>::type flags){
 	val |= flags;
 	return val;
 }
 template<typename T>
-T &removeFlags(T &val, typename Identity<T>::type flags){
+T &remove_flags(T &val, typename Identity<T>::type flags){
 	val &= ~flags;
 	return val;
 }
 
 template<typename T>
-bool hasAllFlagsOf(const T &val, typename Identity<T>::type flags){
+bool has_all_flags_of(const T &val, typename Identity<T>::type flags){
 	return (val & flags) == flags;
 }
 template<typename T>
-bool hasAnyFlagsOf(const T &val, typename Identity<T>::type flags){
+bool has_any_flags_of(const T &val, typename Identity<T>::type flags){
 	return (val & flags) != 0;
 }
 template<typename T>
-bool hasNoneFlagsOf(const T &val, typename Identity<T>::type flags){
+bool has_none_flags_of(const T &val, typename Identity<T>::type flags){
 	return (val & flags) == 0;
 }
 

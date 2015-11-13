@@ -31,12 +31,12 @@ namespace Poseidon {
 namespace MySql {
 	class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
 	protected:
-		static void batchLoad(std::vector<boost::shared_ptr<ObjectBase> > &ret,
-			boost::shared_ptr<ObjectBase> (*factory)(), const char *tableHint, std::string query);
+		static void batch_load(std::vector<boost::shared_ptr<ObjectBase> > &ret,
+			boost::shared_ptr<ObjectBase> (*factory)(), const char *table_hint, std::string query);
 
 	private:
-		mutable volatile bool m_autoSaves;
-		mutable void *volatile m_combinedWriteStamp;
+		mutable volatile bool m_auto_saves;
+		mutable void *volatile m_combined_write_stamp;
 
 	protected:
 		mutable Mutex m_mutex;
@@ -50,21 +50,21 @@ namespace MySql {
 		bool invalidate() const NOEXCEPT;
 
 	public:
-		bool isAutoSavingEnabled() const;
-		void enableAutoSaving() const;
-		void disableAutoSaving() const;
+		bool is_auto_saving_enabled() const;
+		void enable_auto_saving() const;
+		void disable_auto_saving() const;
 
-		void *getCombinedWriteStamp() const;
-		void setCombinedWriteStamp(void *stamp) const;
+		void *get_combined_write_stamp() const;
+		void set_combined_write_stamp(void *stamp) const;
 
-		virtual const char *getTableName() const = 0;
+		virtual const char *get_table_name() const = 0;
 
-		virtual void syncGenerateSql(std::string &sql, bool toReplace) const = 0;
-		virtual void syncFetch(const boost::shared_ptr<const Connection> &conn) = 0;
+		virtual void sync_generate_sql(std::string &sql, bool to_replace) const = 0;
+		virtual void sync_fetch(const boost::shared_ptr<const Connection> &conn) = 0;
 
-		void syncSave(bool toReplace) const;
-		void syncLoad(std::string query);
-		void asyncSave(bool toReplace, bool urgent = false) const;
+		void sync_save(bool to_replace) const;
+		void sync_load(std::string query);
+		void async_save(bool to_replace, bool urgent = false) const;
 	};
 }
 

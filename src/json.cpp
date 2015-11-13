@@ -134,7 +134,7 @@ void JsonElement::dump(std::ostream &os) const {
 	}
 }
 
-std::string JsonParser::acceptString(std::istream &is){
+std::string JsonParser::accept_string(std::istream &is){
 	std::string ret;
 	char temp;
 	if(!(is >>temp) || (temp != '\"')){
@@ -260,7 +260,7 @@ std::string JsonParser::acceptString(std::istream &is){
 	ret.erase(write, ret.end());
 	return ret;
 }
-double JsonParser::acceptNumber(std::istream &is){
+double JsonParser::accept_number(std::istream &is){
 	double ret;
 	if(is >>ret){
 		return ret;
@@ -268,7 +268,7 @@ double JsonParser::acceptNumber(std::istream &is){
 	DEBUG_THROW(ProtocolException,
 		sslit("Bad JSON: expecting number"), -1);
 }
-JsonObject JsonParser::acceptObject(std::istream &is){
+JsonObject JsonParser::accept_object(std::istream &is){
 	JsonObject ret;
 	char temp;
 	if(!(is >>temp) || (temp != '{')){
@@ -287,17 +287,17 @@ JsonObject JsonParser::acceptObject(std::istream &is){
 			continue;
 		}
 		is.unget();
-		std::string name = acceptString(is);
+		std::string name = accept_string(is);
 		if(!(is >>temp) || (temp != ':')){
 			DEBUG_THROW(ProtocolException,
 				sslit("Bad JSON: expecting colon"), -1);
 		}
-		JsonElement element = parseElement(is);
+		JsonElement element = parse_element(is);
 		ret[SharedNts(name)] = STD_MOVE(element);
 	}
 	return ret;
 }
-JsonArray JsonParser::acceptArray(std::istream &is){
+JsonArray JsonParser::accept_array(std::istream &is){
 	JsonArray ret;
 	char temp;
 	if(!(is >>temp) || (temp != '[')){
@@ -316,12 +316,12 @@ JsonArray JsonParser::acceptArray(std::istream &is){
 			continue;
 		}
 		is.unget();
-		JsonElement element = parseElement(is);
+		JsonElement element = parse_element(is);
 		ret.push_back(STD_MOVE(element));
 	}
 	return ret;
 }
-bool JsonParser::acceptBoolean(std::istream &is){
+bool JsonParser::accept_boolean(std::istream &is){
 	bool ret;
 	if(!(is >>std::boolalpha >>ret)){
 		DEBUG_THROW(ProtocolException,
@@ -329,7 +329,7 @@ bool JsonParser::acceptBoolean(std::istream &is){
 	}
 	return ret;
 }
-JsonNull JsonParser::acceptNull(std::istream &is){
+JsonNull JsonParser::accept_null(std::istream &is){
 	char temp[5];
 	if(!(is >>std::setw(sizeof(temp)) >>temp) || (std::strcmp(temp, "null") != 0)){
 		DEBUG_THROW(ProtocolException,
@@ -338,7 +338,7 @@ JsonNull JsonParser::acceptNull(std::istream &is){
 	return JsonNull();
 }
 
-JsonElement JsonParser::parseElement(std::istream &is){
+JsonElement JsonParser::parse_element(std::istream &is){
 	JsonElement ret;
 	char temp;
 	if(!(is >>temp)){
@@ -348,7 +348,7 @@ JsonElement JsonParser::parseElement(std::istream &is){
 	is.unget();
 	switch(temp){
 	case '\"':
-		ret = acceptString(is);
+		ret = accept_string(is);
 		break;
 
 	case '-':
@@ -362,24 +362,24 @@ JsonElement JsonParser::parseElement(std::istream &is){
 	case '7':
 	case '8':
 	case '9':
-		ret = acceptNumber(is);
+		ret = accept_number(is);
 		break;
 
 	case '{':
-		ret = acceptObject(is);
+		ret = accept_object(is);
 		break;
 
 	case '[':
-		ret = acceptArray(is);
+		ret = accept_array(is);
 		break;
 
 	case 't':
 	case 'f':
-		ret = acceptBoolean(is);
+		ret = accept_boolean(is);
 		break;
 
 	case 'n':
-		ret = acceptNull(is);
+		ret = accept_null(is);
 		break;
 
 	default:
@@ -388,11 +388,11 @@ JsonElement JsonParser::parseElement(std::istream &is){
 	}
 	return ret;
 }
-JsonObject JsonParser::parseObject(std::istream &is){
-	return acceptObject(is >>std::skipws);
+JsonObject JsonParser::parse_object(std::istream &is){
+	return accept_object(is >>std::skipws);
 }
-JsonArray JsonParser::parseArray(std::istream &is){
-	return acceptArray(is >>std::skipws);
+JsonArray JsonParser::parse_array(std::istream &is){
+	return accept_array(is >>std::skipws);
 }
 
 }

@@ -20,7 +20,7 @@ namespace Http {
 		}
 
 	private:
-		boost::weak_ptr<const void> getCategory() const FINAL {
+		boost::weak_ptr<const void> get_category() const FINAL {
 			return m_client;
 		}
 		void perform() FINAL {
@@ -32,20 +32,20 @@ namespace Http {
 			}
 
 			try {
-				reallyPerform(client);
+				really_perform(client);
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-				client->forceShutdown();
+				client->force_shutdown();
 				throw;
 			} catch(...){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
-				client->forceShutdown();
+				client->force_shutdown();
 				throw;
 			}
 		}
 
 	protected:
-		virtual void reallyPerform(const boost::shared_ptr<Client> &client) = 0;
+		virtual void really_perform(const boost::shared_ptr<Client> &client) = 0;
 	};
 
 	class Client::ConnectJob : public Client::SyncJobBase {
@@ -56,169 +56,169 @@ namespace Http {
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncConnect();
+			client->on_sync_connect();
 		}
 	};
 
 	class Client::ResponseHeadersJob : public Client::SyncJobBase {
 	private:
-		ResponseHeaders m_responseHeaders;
-		std::string m_transferEncoding;
-		boost::uint64_t m_contentLength;
+		ResponseHeaders m_response_headers;
+		std::string m_transfer_encoding;
+		boost::uint64_t m_content_length;
 
 	public:
 		ResponseHeadersJob(const boost::shared_ptr<Client> &client,
-			ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength)
+			ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length)
 			: SyncJobBase(client)
-			, m_responseHeaders(STD_MOVE(responseHeaders)), m_transferEncoding(STD_MOVE(transferEncoding)), m_contentLength(contentLength)
+			, m_response_headers(STD_MOVE(response_headers)), m_transfer_encoding(STD_MOVE(transfer_encoding)), m_content_length(content_length)
 		{
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncResponseHeaders(STD_MOVE(m_responseHeaders), STD_MOVE(m_transferEncoding), m_contentLength);
+			client->on_sync_response_headers(STD_MOVE(m_response_headers), STD_MOVE(m_transfer_encoding), m_content_length);
 		}
 	};
 
 	class Client::ResponseEntityJob : public Client::SyncJobBase {
 	private:
-		boost::uint64_t m_contentOffset;
-		bool m_isChunked;
+		boost::uint64_t m_content_offset;
+		bool m_is_chunked;
 		StreamBuffer m_entity;
 
 	public:
-		ResponseEntityJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentOffset, bool isChunked, StreamBuffer entity)
+		ResponseEntityJob(const boost::shared_ptr<Client> &client, boost::uint64_t content_offset, bool is_chunked, StreamBuffer entity)
 			: SyncJobBase(client)
-			, m_contentOffset(contentOffset), m_isChunked(isChunked), m_entity(STD_MOVE(entity))
+			, m_content_offset(content_offset), m_is_chunked(is_chunked), m_entity(STD_MOVE(entity))
 		{
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncResponseEntity(m_contentOffset, m_isChunked, STD_MOVE(m_entity));
+			client->on_sync_response_entity(m_content_offset, m_is_chunked, STD_MOVE(m_entity));
 		}
 	};
 
 	class Client::ResponseEndJob : public Client::SyncJobBase {
 	private:
-		boost::uint64_t m_contentLength;
-		bool m_isChunked;
+		boost::uint64_t m_content_length;
+		bool m_is_chunked;
 		OptionalMap m_headers;
 
 	public:
-		ResponseEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t contentLength, bool isChunked, OptionalMap headers)
+		ResponseEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t content_length, bool is_chunked, OptionalMap headers)
 			: SyncJobBase(client)
-			, m_contentLength(contentLength), m_isChunked(isChunked), m_headers(STD_MOVE(headers))
+			, m_content_length(content_length), m_is_chunked(is_chunked), m_headers(STD_MOVE(headers))
 		{
 		}
 
 	protected:
-		void reallyPerform(const boost::shared_ptr<Client> &client) OVERRIDE {
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->onSyncResponseEnd(m_contentLength, m_isChunked, STD_MOVE(m_headers));
+			client->on_sync_response_end(m_content_length, m_is_chunked, STD_MOVE(m_headers));
 		}
 	};
 
-	Client::Client(const SockAddr &addr, bool useSsl)
-		: TcpClientBase(addr, useSsl)
+	Client::Client(const SockAddr &addr, bool use_ssl)
+		: TcpClientBase(addr, use_ssl)
 	{
 	}
-	Client::Client(const IpPort &addr, bool useSsl)
-		: TcpClientBase(addr, useSsl)
+	Client::Client(const IpPort &addr, bool use_ssl)
+		: TcpClientBase(addr, use_ssl)
 	{
 	}
 	Client::~Client(){
 	}
 
-	void Client::onConnect(){
+	void Client::on_connect(){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ConnectJob>(
-			virtualSharedFromThis<Client>()));
+		enqueue_job(boost::make_shared<ConnectJob>(
+			virtual_shared_from_this<Client>()));
 
-		TcpClientBase::onConnect();
+		TcpClientBase::on_connect();
 	}
-	void Client::onReadHup() NOEXCEPT {
+	void Client::on_read_hup() NOEXCEPT {
 		PROFILE_ME;
 
 		try {
-			if(ClientReader::isContentTillEof()){
-				terminateContent();
+			if(ClientReader::is_content_till_eof()){
+				terminate_content();
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-			forceShutdown();
+			force_shutdown();
 		} catch(...){
 			LOG_POSEIDON_WARNING("Unknown exception thrown");
-			forceShutdown();
+			force_shutdown();
 		}
 
-		TcpClientBase::onReadHup();
+		TcpClientBase::on_read_hup();
 	}
 
-	void Client::onReadAvail(StreamBuffer data){
+	void Client::on_read_avail(StreamBuffer data){
 		PROFILE_ME;
 
-		ClientReader::putEncodedData(STD_MOVE(data));
+		ClientReader::put_encoded_data(STD_MOVE(data));
 	}
 
-	void Client::onResponseHeaders(ResponseHeaders responseHeaders, std::string transferEncoding, boost::uint64_t contentLength){
+	void Client::on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ResponseHeadersJob>(
-			virtualSharedFromThis<Client>(), STD_MOVE(responseHeaders), STD_MOVE(transferEncoding), contentLength));
+		enqueue_job(boost::make_shared<ResponseHeadersJob>(
+			virtual_shared_from_this<Client>(), STD_MOVE(response_headers), STD_MOVE(transfer_encoding), content_length));
 	}
-	void Client::onResponseEntity(boost::uint64_t entityOffset, bool isChunked, StreamBuffer entity){
+	void Client::on_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ResponseEntityJob>(
-			virtualSharedFromThis<Client>(), entityOffset, isChunked, STD_MOVE(entity)));
+		enqueue_job(boost::make_shared<ResponseEntityJob>(
+			virtual_shared_from_this<Client>(), entity_offset, is_chunked, STD_MOVE(entity)));
 	}
-	bool Client::onResponseEnd(boost::uint64_t contentLength, bool isChunked, OptionalMap headers){
+	bool Client::on_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers){
 		PROFILE_ME;
 
-		enqueueJob(boost::make_shared<ResponseEndJob>(
-			virtualSharedFromThis<Client>(), contentLength, isChunked, STD_MOVE(headers)));
+		enqueue_job(boost::make_shared<ResponseEndJob>(
+			virtual_shared_from_this<Client>(), content_length, is_chunked, STD_MOVE(headers)));
 
 		return true;
 	}
 
-	long Client::onEncodedDataAvail(StreamBuffer encoded){
+	long Client::on_encoded_data_avail(StreamBuffer encoded){
 		PROFILE_ME;
 
 		return TcpClientBase::send(STD_MOVE(encoded));
 	}
 
-	void Client::onSyncConnect(){
+	void Client::on_sync_connect(){
 	}
 
-	bool Client::sendHeaders(RequestHeaders requestHeaders){
-		return ClientWriter::putRequestHeaders(STD_MOVE(requestHeaders));
+	bool Client::send_headers(RequestHeaders request_headers){
+		return ClientWriter::put_request_headers(STD_MOVE(request_headers));
 	}
-	bool Client::sendEntity(StreamBuffer data){
-		return ClientWriter::putEntity(STD_MOVE(data));
-	}
-
-	bool Client::send(RequestHeaders requestHeaders, StreamBuffer entity){
-		return ClientWriter::putRequest(STD_MOVE(requestHeaders), STD_MOVE(entity));
+	bool Client::send_entity(StreamBuffer data){
+		return ClientWriter::put_entity(STD_MOVE(data));
 	}
 
-	bool Client::sendChunkedHeader(RequestHeaders requestHeaders){
-		return ClientWriter::putChunkedHeader(STD_MOVE(requestHeaders));
+	bool Client::send(RequestHeaders request_headers, StreamBuffer entity){
+		return ClientWriter::put_request(STD_MOVE(request_headers), STD_MOVE(entity));
 	}
-	bool Client::sendChunk(StreamBuffer entity){
-		return ClientWriter::putChunk(STD_MOVE(entity));
+
+	bool Client::send_chunked_header(RequestHeaders request_headers){
+		return ClientWriter::put_chunked_header(STD_MOVE(request_headers));
 	}
-	bool Client::sendChunkedTrailer(OptionalMap headers){
-		return ClientWriter::putChunkedTrailer(STD_MOVE(headers));
+	bool Client::send_chunk(StreamBuffer entity){
+		return ClientWriter::put_chunk(STD_MOVE(entity));
+	}
+	bool Client::send_chunked_trailer(OptionalMap headers){
+		return ClientWriter::put_chunked_trailer(STD_MOVE(headers));
 	}
 }
 

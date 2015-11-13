@@ -46,7 +46,7 @@ namespace {
 		}
 
 	protected:
-		boost::weak_ptr<const void> getCategory() const OVERRIDE {
+		boost::weak_ptr<const void> get_category() const OVERRIDE {
 			return m_event;
 		}
 		void perform() OVERRIDE {
@@ -56,7 +56,7 @@ namespace {
 		}
 	};
 
-	std::vector<boost::shared_ptr<const EventListenerCallback> > getCallbacks(const boost::shared_ptr<EventBaseWithoutId> &event){
+	std::vector<boost::shared_ptr<const EventListenerCallback> > get_callbacks(const boost::shared_ptr<EventBaseWithoutId> &event){
 		PROFILE_ME;
 
 		std::vector<boost::shared_ptr<const EventListenerCallback> > callbacks;
@@ -64,15 +64,15 @@ namespace {
 		const Mutex::UniqueLock lock(g_mutex);
 		const AUTO(it, g_listeners.find(event->id()));
 		if(it != g_listeners.end()){
-			AUTO(listenerIt, it->second.begin());
-			while(listenerIt != it->second.end()){
-				const AUTO(listener, listenerIt->lock());
+			AUTO(listener_it, it->second.begin());
+			while(listener_it != it->second.end()){
+				const AUTO(listener, listener_it->lock());
 				if(!listener){
-					listenerIt = it->second.erase(listenerIt);
+					listener_it = it->second.erase(listener_it);
 					continue;
 				}
 				callbacks.push_back(listener->callback);
-				++listenerIt;
+				++listener_it;
 			}
 		}
 		return callbacks;
@@ -92,12 +92,12 @@ void EventDispatcher::stop(){
 	}
 }
 
-boost::shared_ptr<EventListener> EventDispatcher::registerListener(
+boost::shared_ptr<EventListener> EventDispatcher::register_listener(
 	unsigned id, EventListenerCallback callback)
 {
-	AUTO(sharedCallback, boost::make_shared<EventListenerCallback>());
-	sharedCallback->swap(callback);
-	AUTO(listener, boost::make_shared<EventListener>(id, sharedCallback));
+	AUTO(shared_callback, boost::make_shared<EventListenerCallback>());
+	shared_callback->swap(callback);
+	AUTO(listener, boost::make_shared<EventListener>(id, shared_callback));
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_listeners[id].push_back(listener);
@@ -105,22 +105,22 @@ boost::shared_ptr<EventListener> EventDispatcher::registerListener(
 	return listener;
 }
 
-void EventDispatcher::syncRaise(const boost::shared_ptr<EventBaseWithoutId> &event){
+void EventDispatcher::sync_raise(const boost::shared_ptr<EventBaseWithoutId> &event){
 	PROFILE_ME;
 
-	const AUTO(callbacks, getCallbacks(event));
+	const AUTO(callbacks, get_callbacks(event));
 	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
 		(**it)(event);
 	}
 }
-void EventDispatcher::asyncRaise(const boost::shared_ptr<EventBaseWithoutId> &event,
+void EventDispatcher::async_raise(const boost::shared_ptr<EventBaseWithoutId> &event,
 	const boost::shared_ptr<const bool> &withdrawn)
 {
 	PROFILE_ME;
 
-	const AUTO(callbacks, getCallbacks(event));
+	const AUTO(callbacks, get_callbacks(event));
 	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
-		enqueueJob(boost::make_shared<EventJob>(*it, event), VAL_INIT, withdrawn);
+		enqueue_job(boost::make_shared<EventJob>(*it, event), VAL_INIT, withdrawn);
 	}
 }
 

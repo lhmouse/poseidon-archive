@@ -33,19 +33,19 @@ public:
 	~Epoll();
 
 private:
-	void notifyWriteable(TcpSessionBase *session) NOEXCEPT;
-	void notifyUnlinked(TcpSessionBase *session) NOEXCEPT;
+	void notify_writeable(TcpSessionBase *session) NOEXCEPT;
+	void notify_unlinked(TcpSessionBase *session) NOEXCEPT;
 
 public:
-	void addSession(const boost::shared_ptr<TcpSessionBase> &session);
-	void removeSession(const boost::shared_ptr<TcpSessionBase> &session);
+	void add_session(const boost::shared_ptr<TcpSessionBase> &session);
+	void remove_session(const boost::shared_ptr<TcpSessionBase> &session);
 	void snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) const;
 	void clear();
 
 	// 这三个函数必须位于同一个线程内调用。
 	std::size_t wait(unsigned timeout) NOEXCEPT;
-	std::size_t pumpReadable();
-	std::size_t pumpWriteable();
+	std::size_t pump_readable();
+	std::size_t pump_writeable();
 };
 
 }

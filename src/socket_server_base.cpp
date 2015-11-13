@@ -11,7 +11,7 @@
 namespace Poseidon {
 
 SocketServerBase::SocketServerBase(UniqueFile socket)
-	: m_socket(STD_MOVE(socket)), m_localInfo(getLocalIpPortFromFd(m_socket.get()))
+	: m_socket(STD_MOVE(socket)), m_local_info(get_local_ip_port_from_fd(m_socket.get()))
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
@@ -25,10 +25,10 @@ SocketServerBase::SocketServerBase(UniqueFile socket)
 		DEBUG_THROW(SystemException, code);
 	}
 
-	LOG_POSEIDON_INFO("Created socket server, local = ", m_localInfo);
+	LOG_POSEIDON_INFO("Created socket server, local = ", m_local_info);
 }
 SocketServerBase::~SocketServerBase(){
-	LOG_POSEIDON_INFO("Destroyed socket server, local = ", m_localInfo);
+	LOG_POSEIDON_INFO("Destroyed socket server, local = ", m_local_info);
 }
 
 }

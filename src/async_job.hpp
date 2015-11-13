@@ -12,10 +12,10 @@ namespace Poseidon {
 
 class JobPromise;
 
-extern void enqueueAsyncJob(boost::function<void ()> proc,
+extern void enqueue_async_job(boost::function<void ()> proc,
 	boost::shared_ptr<const JobPromise> promise = boost::shared_ptr<const JobPromise>(),
 	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
-extern void enqueueAsyncJob(boost::weak_ptr<const void> category, boost::function<void ()> proc,
+extern void enqueue_async_job(boost::weak_ptr<const void> category, boost::function<void ()> proc,
 	boost::shared_ptr<const JobPromise> promise = boost::shared_ptr<const JobPromise>(),
 	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
 
