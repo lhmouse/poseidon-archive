@@ -15,7 +15,6 @@ namespace Poseidon {
 
 class Uuid {
 public:
-	static const Uuid UUID_NULL;
 	static const Uuid UUID_MIN;
 	static const Uuid UUID_MAX;
 
@@ -35,10 +34,6 @@ public:
 		: m_storage()
 	{
 	}
-#ifdef POSEIDON_CXX11
-	explicit Uuid(std::nullptr_t){
-	}
-#endif
 	explicit Uuid(const unsigned char (&bytes)[16]){
 		std::memcpy(m_storage.bytes, bytes, 16);
 	}

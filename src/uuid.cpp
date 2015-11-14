@@ -30,19 +30,14 @@ namespace {
 	volatile boost::uint32_t g_auto_inc = 0;
 }
 
-const Uuid Uuid::UUID_NULL	(MIN_BYTES);
-const Uuid Uuid::UUID_MIN	(MIN_BYTES);
-const Uuid Uuid::UUID_MAX	(MAX_BYTES);
+const Uuid Uuid::UUID_MIN(MIN_BYTES);
+const Uuid Uuid::UUID_MAX(MAX_BYTES);
 
 Uuid Uuid::random(){
 	const AUTO(utc_now, get_utc_time());
 	const AUTO(unique, ((atomic_add(g_auto_inc, 1, ATOMIC_RELAXED) << 16) & 0x3FFFFFFFu) | g_pid);
 
-	Uuid ret
-#ifdef POSEIDON_CXX11
-		(nullptr)	// 不初始化。
-#endif
-		;
+	Uuid ret;
 	store_be(ret.m_storage.u32[0], utc_now >> 12);
 	store_be(ret.m_storage.u16[2], (utc_now << 4) | (unique >> 26));
 	store_be(ret.m_storage.u16[3], (unique >> 14) & 0x0FFFu); // 版本 = 0
