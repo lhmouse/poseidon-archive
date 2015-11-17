@@ -18,6 +18,8 @@ namespace Http {
 	class UpgradedSessionBase;
 
 	class Session : public TcpSessionBase, private ServerReader, private ServerWriter {
+		friend UpgradedSessionBase;
+
 	private:
 		class SyncJobBase;
 		class ContinueJob;

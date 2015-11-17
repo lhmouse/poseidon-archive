@@ -110,9 +110,9 @@ protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	void on_read_avail(StreamBuffer data) OVERRIDE = 0;
 
-public:
 	bool send(StreamBuffer buffer) OVERRIDE;
 
+public:
 	bool has_been_shutdown_read() const NOEXCEPT OVERRIDE;
 	bool has_been_shutdown_write() const NOEXCEPT OVERRIDE;
 	bool shutdown_read() NOEXCEPT OVERRIDE;

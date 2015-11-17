@@ -26,9 +26,9 @@ protected:
 	// 有数据可读触发回调，size 始终不为零。
 	virtual void on_read_avail(StreamBuffer data) = 0;
 
-public:
 	virtual bool send(StreamBuffer buffer) = 0;
 
+public:
 	virtual bool has_been_shutdown_read() const NOEXCEPT = 0;
 	virtual bool has_been_shutdown_write() const NOEXCEPT = 0;
 	virtual bool shutdown_read() NOEXCEPT = 0;
