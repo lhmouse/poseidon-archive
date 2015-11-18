@@ -99,7 +99,7 @@ namespace {
 		__attribute__((__force_align_arg_pointer__))
 #endif
 	void fiber_stack_barrier(FiberControl *fiber) NOEXCEPT {
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Entering fiber ", static_cast<void *>(fiber));
+		LOG_POSEIDON_TRACE("Entering fiber ", static_cast<void *>(fiber));
 		try {
 			fiber->queue.front().job->perform();
 		} catch(std::exception &e){
@@ -107,7 +107,7 @@ namespace {
 		} catch(...){
 			LOG_POSEIDON_WARNING("Unknown exception thrown");
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Exited from fiber ", static_cast<void *>(fiber));
+		LOG_POSEIDON_TRACE("Exited from fiber ", static_cast<void *>(fiber));
 	}
 
 	__thread FiberControl *t_current_fiber = NULLPTR;
@@ -320,7 +320,7 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 	}
 	fiber->queue.front().promise = promise;
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Yielding from fiber ", static_cast<void *>(fiber));
+	LOG_POSEIDON_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
 	const AUTO(opaque, Profiler::begin_stack_switch());
 	try {
 		::dont_optimize_try_catch_away();
@@ -335,7 +335,7 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 		std::abort();
 	}
 	Profiler::end_stack_switch(opaque);
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_TRACE, "Resumed to fiber ", static_cast<void *>(fiber));
+	LOG_POSEIDON_TRACE("Resumed to fiber ", static_cast<void *>(fiber));
 
 	if(promise){
 		promise->check_and_rethrow();
