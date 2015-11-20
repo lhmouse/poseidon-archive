@@ -15,6 +15,7 @@
 #include "time.hpp"
 #include "errno.hpp"
 #include "atomic.hpp"
+#include "profiler.hpp"
 
 namespace Poseidon {
 
@@ -69,6 +70,8 @@ Epoll::~Epoll(){
 }
 
 void Epoll::notify_writeable(TcpSessionBase *session) NOEXCEPT {
+	PROFILE_ME;
+
 	const AUTO(now, get_fast_mono_clock());
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
@@ -79,6 +82,8 @@ void Epoll::notify_writeable(TcpSessionBase *session) NOEXCEPT {
 	m_sessions->set_key<IDX_ADDR, IDX_WRITE>(it, now);
 }
 void Epoll::notify_unlinked(TcpSessionBase *session) NOEXCEPT {
+	PROFILE_ME;
+
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
 	if(it == m_sessions->end<IDX_ADDR>()){
@@ -93,6 +98,8 @@ void Epoll::notify_unlinked(TcpSessionBase *session) NOEXCEPT {
 }
 
 void Epoll::add_session(const boost::shared_ptr<TcpSessionBase> &session){
+	PROFILE_ME;
+
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(result, m_sessions->insert(SessionMapElement(shared_from_this(), session)));
 	if(!result.second){
@@ -110,6 +117,8 @@ void Epoll::add_session(const boost::shared_ptr<TcpSessionBase> &session){
 	session->set_epoll(result.first->epoll);
 }
 void Epoll::remove_session(const boost::shared_ptr<TcpSessionBase> &session){
+	PROFILE_ME;
+
 	const Mutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session.get()));
 	if(it == m_sessions->end<IDX_ADDR>()){
@@ -123,6 +132,8 @@ void Epoll::remove_session(const boost::shared_ptr<TcpSessionBase> &session){
 	m_sessions->erase<IDX_ADDR>(it);
 }
 void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) const {
+	PROFILE_ME;
+
 	const Mutex::UniqueLock lock(m_mutex);
 	sessions.reserve(m_sessions->size());
 	for(AUTO(it, m_sessions->begin()); it != m_sessions->end(); ++it){
@@ -130,6 +141,8 @@ void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) 
 	}
 }
 void Epoll::clear(){
+	PROFILE_ME;
+
 	const Mutex::UniqueLock lock(m_mutex);
 	AUTO(it, m_sessions->begin());
 	while(it != m_sessions->end()){
@@ -142,6 +155,8 @@ void Epoll::clear(){
 }
 
 std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
+	PROFILE_ME;
+
 	::epoll_event events[MAX_PUMP_COUNT];
 	const int count = ::epoll_wait(m_epoll.get(), events, MAX_PUMP_COUNT, (int)timeout);
 	if(count < 0){
@@ -225,14 +240,16 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 	return (unsigned)count;
 }
 std::size_t Epoll::pump_readable(){
-	boost::uint64_t now = 0;
+	PROFILE_ME;
+
+	const auto now = get_fast_mono_clock();
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
 	SessionMap::delegated_container::nth_index<IDX_READ>::type::iterator iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
 	{
 		const Mutex::UniqueLock lock(m_mutex);
-		for(AUTO(it, m_sessions->upper_bound<IDX_READ>(0)); it != m_sessions->end<IDX_READ>(); ++it){
+		for(AUTO(it, m_sessions->upper_bound<IDX_READ>(0)); it != m_sessions->upper_bound<IDX_READ>(now); ++it){
 			iterators[count] = it;
 			if(++count >= MAX_PUMP_COUNT){
 				break;
@@ -253,11 +270,8 @@ std::size_t Epoll::pump_readable(){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 					"Max send buffer size exceeded: typeid = ", typeid(*session).name());
 
-				if(now == 0){
-					now = get_fast_mono_clock();
-				}
 				const Mutex::UniqueLock lock(m_mutex);
-				m_sessions->set_key<IDX_READ, IDX_READ>(it, now + 1000);
+				m_sessions->set_key<IDX_READ, IDX_READ>(it, now + 5000);
 				continue;
 			}
 
@@ -294,12 +308,16 @@ std::size_t Epoll::pump_readable(){
 	return count;
 }
 std::size_t Epoll::pump_writeable(){
+	PROFILE_ME;
+
+	const auto now = get_fast_mono_clock();
+
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
 	SessionMap::delegated_container::nth_index<IDX_WRITE>::type::iterator iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
 	{
 		const Mutex::UniqueLock lock(m_mutex);
-		for(AUTO(it, m_sessions->upper_bound<IDX_WRITE>(0)); it != m_sessions->end<IDX_WRITE>(); ++it){
+		for(AUTO(it, m_sessions->upper_bound<IDX_WRITE>(0)); it != m_sessions->upper_bound<IDX_WRITE>(now); ++it){
 			iterators[count] = it;
 			if(++count >= MAX_PUMP_COUNT){
 				break;
