@@ -626,7 +626,7 @@ MODULE_RAII(handles){
 }
 
 }
-*/
+
 
 
 #include "../src/precompiled.hpp"
@@ -688,7 +688,7 @@ MODULE_RAII(handles){
 			}
 		})
 	));
-/*
+
 	enqueue_async_job([]{
 		LOG_POSEIDON_FATAL("--- 1");
 		JobDispatcher::yield(DelayedPromise::create(1000));
@@ -722,5 +722,25 @@ MODULE_RAII(handles){
 		JobDispatcher::yield(DelayedPromise::create(5000));
 	});
 	LOG_POSEIDON_FATAL("enqueued!");
+}
 */
+
+#include "../src/singletons/dns_daemon.hpp"
+#include "../src/singletons/job_dispatcher.hpp"
+#include "../src/async_job.hpp"
+#include "../src/job_promise.hpp"
+#include "../src/sock_addr.hpp"
+#include "../src/ip_port.hpp"
+#include "../src/log.hpp"
+#include "../src/module_raii.hpp"
+#include <boost/make_shared.hpp>
+
+MODULE_RAII(){
+	Poseidon::enqueue_async_job([]{
+		auto sock_addr = boost::make_shared<Poseidon::SockAddr>();
+		auto promise = Poseidon::DnsDaemon::async_lookup(sock_addr, "www.google.com", 80);
+		Poseidon::JobDispatcher::yield(promise);
+		promise->check_and_rethrow();
+		LOG_POSEIDON_FATAL("Result = ", Poseidon::get_ip_port_from_sock_addr(*sock_addr));
+	});
 }

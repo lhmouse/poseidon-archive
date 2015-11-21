@@ -4,6 +4,7 @@
 #ifndef POSEIDON_SINGLETONS_JOB_DISPATCHER_HPP_
 #define POSEIDON_SINGLETONS_JOB_DISPATCHER_HPP_
 
+#include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 

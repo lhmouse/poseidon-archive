@@ -73,6 +73,7 @@ namespace {
 			*(param->sock_addr) = SockAddr(param->cb.ar_result->ai_addr, param->cb.ar_result->ai_addrlen);
 			LOG_POSEIDON_DEBUG("DNS lookup success: host:port = ", param->host, ':', param->port,
 				", result = ", get_ip_port_from_sock_addr(*(param->sock_addr)));
+			param->promise->set_success();
 		} catch(Exception &e){
 			LOG_POSEIDON_INFO("Exception thrown in DNS loop: what = ", e.what());
 			param->promise->set_exception(boost::copy_exception(e));
