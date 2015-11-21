@@ -179,7 +179,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::register_absolute_timer(
 {
 	PROFILE_ME;
 
-	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE(callback)), is_async));
+	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE_IDN(callback)), is_async));
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_timers.push_back(TimerQueueElement(time_point, item, item->stamp));

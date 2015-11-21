@@ -56,7 +56,7 @@ namespace {
 		}
 	};
 
-	void dns_callback(::sigval sigval_param) noexcept {
+	void dns_callback(::sigval sigval_param) NOEXCEPT {
 		PROFILE_ME;
 
 		Logger::set_thread_tag("   D"); // DNS

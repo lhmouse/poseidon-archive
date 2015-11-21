@@ -110,7 +110,12 @@ namespace {
 		LOG_POSEIDON_TRACE("Exited from fiber ", static_cast<void *>(fiber));
 	}
 
-	__thread FiberControl *t_current_fiber = NULLPTR;
+	__thread FiberControl *t_current_fiber =
+#ifdef POSEIDON_CXX11
+		NULLPTR;
+#else
+		0;
+#endif
 
 	void schedule_fiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;

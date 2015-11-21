@@ -242,10 +242,10 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 std::size_t Epoll::pump_readable(){
 	PROFILE_ME;
 
-	const auto now = get_fast_mono_clock();
+	const AUTO(now, get_fast_mono_clock());
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
-	SessionMap::delegated_container::nth_index<IDX_READ>::type::iterator iterators[MAX_PUMP_COUNT];
+	VALUE_TYPE(m_sessions->begin<IDX_READ>()) iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
 	{
 		const Mutex::UniqueLock lock(m_mutex);
@@ -310,10 +310,10 @@ std::size_t Epoll::pump_readable(){
 std::size_t Epoll::pump_writeable(){
 	PROFILE_ME;
 
-	const auto now = get_fast_mono_clock();
+	const AUTO(now, get_fast_mono_clock());
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
-	SessionMap::delegated_container::nth_index<IDX_WRITE>::type::iterator iterators[MAX_PUMP_COUNT];
+	VALUE_TYPE(m_sessions->begin<IDX_WRITE>()) iterators[MAX_PUMP_COUNT];
 	std::size_t count = 0;
 	{
 		const Mutex::UniqueLock lock(m_mutex);
