@@ -7,6 +7,7 @@
 #include "time.hpp"
 #include "exception.hpp"
 #include "singletons/main_config.hpp"
+#include "singletons/dns_daemon.hpp"
 #include "singletons/timer_daemon.hpp"
 #include "singletons/mysql_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
@@ -60,6 +61,7 @@ namespace {
 	void run(){
 		PROFILE_ME;
 
+		START(DnsDaemon);
 		START(MySqlDaemon);
 		START(JobDispatcher);
 

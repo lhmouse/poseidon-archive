@@ -7,6 +7,7 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 
 AC_CHECK_LIB([dl], [main], [], [exit -2;])
+AC_CHECK_LIB([anl], [main], [], [exit -2;])
 AC_CHECK_LIB([ssl], [main], [], [exit -2;])
 AC_CHECK_LIB([mysqlclient], [main], [], [exit -2;])
 

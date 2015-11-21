@@ -40,9 +40,9 @@ namespace {
 
 	std::string		g_dump_dir			= "";
 	std::size_t		g_max_threads		= 3;
-	boost::uint64_t	g_save_delay			= 5000;
+	boost::uint64_t	g_save_delay		= 5000;
 	boost::uint64_t	g_reconn_delay		= 10000;
-	std::size_t		g_max_retry_count		= 3;
+	std::size_t		g_max_retry_count	= 3;
 	boost::uint64_t	g_retry_init_delay	= 1000;
 
 	// 对于日志文件的写操作应当互斥。

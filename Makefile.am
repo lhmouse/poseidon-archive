@@ -191,6 +191,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/singletons/event_dispatcher.cpp	\
 	src/singletons/profile_depository.cpp	\
 	src/singletons/system_http_server.cpp	\
+	src/singletons/dns_daemon.cpp	\
 	src/cbpp/reader.cpp	\
 	src/cbpp/writer.cpp	\
 	src/cbpp/session.cpp	\

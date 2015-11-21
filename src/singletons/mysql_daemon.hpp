@@ -36,6 +36,7 @@ struct MySqlDaemon {
 
 	static void wait_for_all_async_operations();
 
+	// 以下第一个参数是出参。
 	static boost::shared_ptr<const JobPromise> enqueue_for_saving(
 		boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace, bool urgent);
 	static boost::shared_ptr<const JobPromise> enqueue_for_loading(
