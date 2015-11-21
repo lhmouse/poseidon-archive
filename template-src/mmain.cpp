@@ -741,6 +741,9 @@ MODULE_RAII(){
 		auto promise = Poseidon::DnsDaemon::async_lookup(sock_addr, "www.google.com", 80);
 		Poseidon::JobDispatcher::yield(promise);
 		promise->check_and_rethrow();
-		LOG_POSEIDON_FATAL("Result = ", Poseidon::get_ip_port_from_sock_addr(*sock_addr));
+		LOG_POSEIDON_FATAL("Async result = ", Poseidon::get_ip_port_from_sock_addr(*sock_addr));
 	});
+
+	auto sock_addr = Poseidon::DnsDaemon::sync_lookup("www.google.com", 80);
+	LOG_POSEIDON_FATAL("Sync result = ", Poseidon::get_ip_port_from_sock_addr(sock_addr));
 }

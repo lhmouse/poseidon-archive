@@ -119,12 +119,24 @@ void DnsDaemon::stop(){
 	}
 }
 
+SockAddr DnsDaemon::sync_lookup(std::string host, unsigned port){
+	PROFILE_ME;
+
+	DnsCallbackParam param(VAL_INIT, STD_MOVE(host), port, VAL_INIT);
+	const int gai_code = ::getaddrinfo(param.cb.ar_name, param.cb.ar_service, param.cb.ar_request, &param.cb.ar_result);
+	if(gai_code != 0){
+		LOG_POSEIDON_WARNING("DNS failure: gai_code = ", gai_code, ", err_msg = ", ::gai_strerror(gai_code));
+		DEBUG_THROW(Exception, sslit("DNS failure"));
+	}
+	return SockAddr(param.cb.ar_result->ai_addr, param.cb.ar_result->ai_addrlen);
+}
+
 boost::shared_ptr<const JobPromise> DnsDaemon::async_lookup(boost::shared_ptr<SockAddr> sock_addr, std::string host, unsigned port){
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<JobPromise>());
 
-	const AUTO(param, new DnsCallbackParam(STD_MOVE(sock_addr), STD_MOVE(host), port, promise));
+	const AUTO(param, new DnsCallbackParam(STD_MOVE(sock_addr), host, port, promise));
 	atomic_add(g_pending_callback_count, 1, ATOMIC_RELAXED); // noexcept
 	try {
 		::sigevent sev;
