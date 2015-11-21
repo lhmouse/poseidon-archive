@@ -74,6 +74,7 @@ pkginclude_singletons_HEADERS = \
 	src/singletons/system_http_server.hpp	\
 	src/singletons/module_depository.hpp	\
 	src/singletons/mysql_daemon.hpp	\
+	src/singletons/dns_daemon.hpp	\
 	src/singletons/event_dispatcher.hpp	\
 	src/singletons/profile_depository.hpp
 
@@ -185,13 +186,13 @@ lib_libposeidon_main_la_SOURCES = \
 	src/singletons/main_config.cpp	\
 	src/singletons/job_dispatcher.cpp	\
 	src/singletons/mysql_daemon.cpp	\
+	src/singletons/dns_daemon.cpp	\
 	src/singletons/epoll_daemon.cpp	\
 	src/singletons/timer_daemon.cpp	\
 	src/singletons/module_depository.cpp	\
 	src/singletons/event_dispatcher.cpp	\
 	src/singletons/profile_depository.cpp	\
 	src/singletons/system_http_server.cpp	\
-	src/singletons/dns_daemon.cpp	\
 	src/cbpp/reader.cpp	\
 	src/cbpp/writer.cpp	\
 	src/cbpp/session.cpp	\
