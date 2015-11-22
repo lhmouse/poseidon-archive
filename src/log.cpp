@@ -19,12 +19,12 @@ namespace {
 	};
 
 	const LevelElement LEVEL_ELEMENTS[] = {
-		{ "FATAL", '5', 1 },	// 粉色
-		{ "ERROR", '1', 1 },	// 红色
-		{ "WARN ", '3', 1 },	// 黄色
-		{ "INFO ", '2', 0 },	// 绿色
-		{ "DEBUG", '6', 0 },	// 青色
-		{ "TRACE", '4', 1 },	// 亮蓝
+		{ "FATAL", '5', 1 },    // 粉色
+		{ "ERROR", '1', 1 },    // 红色
+		{ "WARN ", '3', 1 },    // 黄色
+		{ "INFO ", '2', 0 },    // 绿色
+		{ "DEBUG", '6', 0 },    // 青色
+		{ "TRACE", '4', 1 },    // 亮蓝
 	};
 
 	volatile unsigned long long g_mask = -1ull;

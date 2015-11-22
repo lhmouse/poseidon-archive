@@ -56,7 +56,7 @@ namespace {
 		}
 	};
 
-#define START(x_)	const RaiiSingletonRunner<x_> UNIQUE_ID
+#define START(x_)   const RaiiSingletonRunner<x_> UNIQUE_ID
 
 	void run(){
 		PROFILE_ME;

@@ -43,7 +43,7 @@ namespace MySql {
 			}
 		};
 
-#define DEBUG_THROW_MYSQL_EXCEPTION(mysql_)	\
+#define DEBUG_THROW_MYSQL_EXCEPTION(mysql_) \
 	DEBUG_THROW(::Poseidon::MySql::Exception, ::mysql_errno(mysql_), ::Poseidon::SharedNts(::mysql_error(mysql_)))
 
 		class ConnectionDelegator : public Connection {

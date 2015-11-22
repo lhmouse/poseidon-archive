@@ -18,25 +18,25 @@ namespace Http {
 	class ClientReader {
 	private:
 		enum State {
-			S_FIRST_HEADER		= 0,
-			S_HEADERS			= 1,
-			S_IDENTITY			= 2,
-			S_CHUNK_HEADER		= 3,
-			S_CHUNK_DATA		= 4,
-			S_CHUNKED_TRAILER	= 5,
+			S_FIRST_HEADER      = 0,
+			S_HEADERS           = 1,
+			S_IDENTITY          = 2,
+			S_CHUNK_HEADER      = 3,
+			S_CHUNK_DATA        = 4,
+			S_CHUNKED_TRAILER   = 5,
 		};
 
 	protected:
 		enum {
-			CONTENT_CHUNKED		= (boost::uint64_t)-1,
-			CONTENT_TILL_EOF	= (boost::uint64_t)-2,
+			CONTENT_CHUNKED     = (boost::uint64_t)-1,
+			CONTENT_TILL_EOF    = (boost::uint64_t)-2,
 
-			CONTENT_LENGTH_MAX	= (boost::uint64_t)-100,
+			CONTENT_LENGTH_MAX  = (boost::uint64_t)-100,
 		};
 
 	private:
 		enum {
-			EXPECTING_NEW_LINE	= (boost::uint64_t)-99,
+			EXPECTING_NEW_LINE  = (boost::uint64_t)-99,
 		};
 
 	private:

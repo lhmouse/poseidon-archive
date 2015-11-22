@@ -41,10 +41,10 @@ typedef Exception BasicException;
 
 }
 
-#define DEBUG_THROW(etype_, ...)	\
-	__extension__ ({	\
-		etype_ e_(__FILE__, __LINE__, ## __VA_ARGS__);	\
-		throw e_;	\
+#define DEBUG_THROW(etype_, ...)    \
+	__extension__ ({    \
+		etype_ e_(__FILE__, __LINE__, ## __VA_ARGS__);  \
+		throw e_;   \
 	})
 
 #endif

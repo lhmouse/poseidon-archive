@@ -62,27 +62,27 @@ void Uuid::to_string(char (&str)[36], bool upper_case) const {
 	AUTO(read, begin());
 	char *write = str;
 
-#define PRINT(count_)	\
-	for(std::size_t i = 0; i < count_; ++i){	\
-		const unsigned byte = *(read++);	\
-		unsigned ch = byte >> 4;	\
-		if(ch <= 9){	\
-			ch += '0';	\
-		} else if(upper_case){	\
-			ch += 'A' - 0x0A;	\
-		} else {	\
-			ch += 'a' - 0x0A;	\
-		}	\
-		*(write++) = ch;	\
-		ch = byte & 0x0F;	\
-		if(ch <= 9){	\
-			ch += '0';	\
-		} else if(upper_case){	\
-			ch += 'A' - 0x0A;	\
-		} else {	\
-			ch += 'a' - 0x0A;	\
-		}	\
-		*(write++) = ch;	\
+#define PRINT(count_)   \
+	for(std::size_t i = 0; i < count_; ++i){    \
+		const unsigned byte = *(read++);    \
+		unsigned ch = byte >> 4;    \
+		if(ch <= 9){    \
+			ch += '0';  \
+		} else if(upper_case){  \
+			ch += 'A' - 0x0A;   \
+		} else {    \
+			ch += 'a' - 0x0A;   \
+		}   \
+		*(write++) = ch;    \
+		ch = byte & 0x0F;   \
+		if(ch <= 9){    \
+			ch += '0';  \
+		} else if(upper_case){  \
+			ch += 'A' - 0x0A;   \
+		} else {    \
+			ch += 'a' - 0x0A;   \
+		}   \
+		*(write++) = ch;    \
 	}
 
 	PRINT(4) *(write++) = '-';
@@ -104,32 +104,32 @@ bool Uuid::from_string(const char (&str)[36]){
 	const char *read = str;
 	AUTO(write, begin());
 
-#define SCAN(count_)	\
-	for(std::size_t i = 0; i < count_; ++i){	\
-		unsigned byte;	\
-		unsigned ch = (unsigned char)*(read++);	\
-		if(('0' <= ch) && (ch <= '9')){	\
-			ch -= '0';	\
-		} else if(('A' <= ch) && (ch <= 'F')){	\
-			ch -= 'A' - 0x0A;	\
-		} else if(('a' <= ch) && (ch <= 'f')){	\
-			ch -= 'a' - 0x0A;	\
-		} else {	\
-			return false;	\
-		}	\
-		byte = ch << 4;	\
-		ch = (unsigned char)*(read++);	\
-		if(('0' <= ch) && (ch <= '9')){	\
-			ch -= '0';	\
-		} else if(('A' <= ch) && (ch <= 'F')){	\
-			ch -= 'A' - 0x0A;	\
-		} else if(('a' <= ch) && (ch <= 'f')){	\
-			ch -= 'a' - 0x0A;	\
-		} else {	\
-			return false;	\
-		}	\
-		byte |= ch;	\
-		*(write++) = byte;	\
+#define SCAN(count_)    \
+	for(std::size_t i = 0; i < count_; ++i){    \
+		unsigned byte;  \
+		unsigned ch = (unsigned char)*(read++); \
+		if(('0' <= ch) && (ch <= '9')){ \
+			ch -= '0';  \
+		} else if(('A' <= ch) && (ch <= 'F')){  \
+			ch -= 'A' - 0x0A;   \
+		} else if(('a' <= ch) && (ch <= 'f')){  \
+			ch -= 'a' - 0x0A;   \
+		} else {    \
+			return false;   \
+		}   \
+		byte = ch << 4; \
+		ch = (unsigned char)*(read++);  \
+		if(('0' <= ch) && (ch <= '9')){ \
+			ch -= '0';  \
+		} else if(('A' <= ch) && (ch <= 'F')){  \
+			ch -= 'A' - 0x0A;   \
+		} else if(('a' <= ch) && (ch <= 'f')){  \
+			ch -= 'a' - 0x0A;   \
+		} else {    \
+			return false;   \
+		}   \
+		byte |= ch; \
+		*(write++) = byte;  \
 	}
 
 	SCAN(4) if(*(read++) != '-'){ return false; }

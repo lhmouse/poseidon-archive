@@ -62,14 +62,14 @@ namespace {
 
 		register boost::uint32_t f, g;
 
-#define MD5_STEP(i_, spec_, a_, b_, c_, d_, k_, r_)	\
-		spec_(i_, a_, b_, c_, d_);	\
+#define MD5_STEP(i_, spec_, a_, b_, c_, d_, k_, r_) \
+		spec_(i_, a_, b_, c_, d_);  \
 		a_ = b_ + rotl(a_ + f + k_ + load_le(w[g]), r_);
 
-#define MD5_SPEC_0(i_, a_, b_, c_, d_)	(f = d_ ^ (b_ & (c_ ^ d_)), g = i_)
-#define MD5_SPEC_1(i_, a_, b_, c_, d_)	(f = c_ ^ (d_ & (b_ ^ c_)), g = (5 * i_ + 1) % 16)
-#define MD5_SPEC_2(i_, a_, b_, c_, d_)	(f = b_ ^ c_ ^ d_, g = (3 * i_ + 5) % 16)
-#define MD5_SPEC_3(i_, a_, b_, c_, d_)	(f = c_ ^ (b_ | ~d_), g = (7 * i_) % 16)
+#define MD5_SPEC_0(i_, a_, b_, c_, d_)  (f = d_ ^ (b_ & (c_ ^ d_)), g = i_)
+#define MD5_SPEC_1(i_, a_, b_, c_, d_)  (f = c_ ^ (d_ & (b_ ^ c_)), g = (5 * i_ + 1) % 16)
+#define MD5_SPEC_2(i_, a_, b_, c_, d_)  (f = b_ ^ c_ ^ d_, g = (3 * i_ + 5) % 16)
+#define MD5_SPEC_3(i_, a_, b_, c_, d_)  (f = c_ ^ (b_ | ~d_), g = (7 * i_) % 16)
 
 		MD5_STEP( 0, MD5_SPEC_0, a, b, c, d, 0xD76AA478,  7)
 		MD5_STEP( 1, MD5_SPEC_0, d, a, b, c, 0xE8C7B756, 12)
@@ -167,15 +167,15 @@ namespace {
 
 		register boost::uint32_t f, k;
 
-#define SHA1_STEP(i_, spec_, a_, b_, c_, d_, e_)	\
-		spec_(a_, b_, c_, d_, e_);	\
-		e_ += rotl(a_, 5) + f + k + w[i_];	\
+#define SHA1_STEP(i_, spec_, a_, b_, c_, d_, e_)    \
+		spec_(a_, b_, c_, d_, e_);  \
+		e_ += rotl(a_, 5) + f + k + w[i_];  \
 		b_ = rotl(b_, 30);
 
-#define SHA1_SPEC_0(a_, b_, c_, d_, e_)	(f = d_ ^ (b_ & (c_ ^ d_)), k = 0x5A827999)
-#define SHA1_SPEC_1(a_, b_, c_, d_, e_)	(f = b_ ^ c_ ^ d_, k = 0x6ED9EBA1)
-#define SHA1_SPEC_2(a_, b_, c_, d_, e_)	(f = (b_ & (c_ | d_)) | (c_ & d_), k = 0x8F1BBCDC)
-#define SHA1_SPEC_3(a_, b_, c_, d_, e_)	(f = b_ ^ c_ ^ d_, k = 0xCA62C1D6)
+#define SHA1_SPEC_0(a_, b_, c_, d_, e_) (f = d_ ^ (b_ & (c_ ^ d_)), k = 0x5A827999)
+#define SHA1_SPEC_1(a_, b_, c_, d_, e_) (f = b_ ^ c_ ^ d_, k = 0x6ED9EBA1)
+#define SHA1_SPEC_2(a_, b_, c_, d_, e_) (f = (b_ & (c_ | d_)) | (c_ & d_), k = 0x8F1BBCDC)
+#define SHA1_SPEC_3(a_, b_, c_, d_, e_) (f = b_ ^ c_ ^ d_, k = 0xCA62C1D6)
 
 		SHA1_STEP( 0, SHA1_SPEC_0, a, b, c, d, e)
 		SHA1_STEP( 1, SHA1_SPEC_0, e, a, b, c, d)
@@ -292,14 +292,14 @@ namespace {
 
 		register boost::uint32_t S0, maj, t2, S1, ch, t1;
 
-#define SHA256_STEP(i_, a_, b_, c_, d_, e_, f_, g_, h_, k_)	\
-		S0 = rotr(rotr(rotr(a_, 9) ^ a_, 11) ^ a_, 2);	\
-		maj = (a_ & b_) | (c_ & (a_ ^ b_));	\
-		t2 = S0 + maj;	\
-		S1 = rotr(rotr(rotr(e_, 14) ^ e_, 5) ^ e_, 6);	\
-		ch = g_ ^ (e_ & (f_ ^ g_));	\
-		t1 = h_ + S1 + ch + k_ + w[i_];	\
-		d_ += t1;	\
+#define SHA256_STEP(i_, a_, b_, c_, d_, e_, f_, g_, h_, k_) \
+		S0 = rotr(rotr(rotr(a_, 9) ^ a_, 11) ^ a_, 2);  \
+		maj = (a_ & b_) | (c_ & (a_ ^ b_)); \
+		t2 = S0 + maj;  \
+		S1 = rotr(rotr(rotr(e_, 14) ^ e_, 5) ^ e_, 6);  \
+		ch = g_ ^ (e_ & (f_ ^ g_)); \
+		t1 = h_ + S1 + ch + k_ + w[i_]; \
+		d_ += t1;   \
 		h_ = t1 + t2;
 
 		SHA256_STEP( 0, a, b, c, d, e, f, g, h, 0x428A2F98)

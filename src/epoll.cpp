@@ -21,9 +21,9 @@ namespace Poseidon {
 
 namespace {
 	enum {
-		MAX_PUMP_COUNT			= 256,
-		IO_BUFFER_SIZE			= 4096,
-		MAX_SEND_BUFFER_SIZE	= 65536,
+		MAX_PUMP_COUNT          = 256,
+		IO_BUFFER_SIZE          = 4096,
+		MAX_SEND_BUFFER_SIZE    = 65536,
 	};
 
 	struct SessionMapElement {

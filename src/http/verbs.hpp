@@ -11,15 +11,15 @@ namespace Http {
 
 	namespace Verbs {
 		enum {
-			V_INVALID_VERB	= 0,
-			V_GET			= 1,
-			V_POST			= 2,
-			V_HEAD			= 3,
-			V_PUT			= 4,
-			V_DELETE		= 5,
-			V_TRACE			= 6,
-			V_CONNECT		= 7,
-			V_OPTIONS		= 8,
+			V_INVALID_VERB  = 0,
+			V_GET           = 1,
+			V_POST          = 2,
+			V_HEAD          = 3,
+			V_PUT           = 4,
+			V_DELETE        = 5,
+			V_TRACE         = 6,
+			V_CONNECT       = 7,
+			V_OPTIONS       = 8,
 		};
 	}
 

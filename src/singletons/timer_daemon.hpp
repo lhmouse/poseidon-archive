@@ -19,7 +19,7 @@ typedef boost::function<
 
 struct TimerDaemon {
 	enum {
-		PERIOD_NOT_MODIFIED =	(boost::uint64_t)-1,
+		PERIOD_NOT_MODIFIED =   (boost::uint64_t)-1,
 	};
 
 	static void start();

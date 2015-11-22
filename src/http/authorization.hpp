@@ -15,15 +15,15 @@ namespace Poseidon {
 
 namespace Http {
 	enum AuthResult {
-		AUTH_SUCCEEDED				= 0,
-		AUTH_REQUIRED				= 1,
-		AUTH_INVALID_HEADER			= 2,
-		AUTH_UNKNOWN_SCHEME			= 3,
-		AUTH_INVALID_USER_PASS		= 4,
-		AUTH_INACCEPTABLE_NONCE		= 5,
-		AUTH_EXPIRED				= 6,
-		AUTH_INACCEPTABLE_ALGORITHM	= 7,
-		AUTH_INACCEPTABLE_QOP		= 8,
+		AUTH_SUCCEEDED              = 0,
+		AUTH_REQUIRED               = 1,
+		AUTH_INVALID_HEADER         = 2,
+		AUTH_UNKNOWN_SCHEME         = 3,
+		AUTH_INVALID_USER_PASS      = 4,
+		AUTH_INACCEPTABLE_NONCE     = 5,
+		AUTH_EXPIRED                = 6,
+		AUTH_INACCEPTABLE_ALGORITHM = 7,
+		AUTH_INACCEPTABLE_QOP       = 8,
 	};
 
 	class AuthInfo; // 没有定义的类，当作句柄使用。

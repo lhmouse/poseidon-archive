@@ -30,20 +30,20 @@
 namespace Poseidon {
 
 namespace {
-	std::string		g_server_addr		= "localhost";
-	unsigned		g_server_port		= 3306;
-	std::string		g_username			= "root";
-	std::string		g_password			= "root";
-	std::string		g_schema			= "poseidon";
-	bool			g_use_ssl			= false;
-	std::string		g_charset			= "utf8";
+	std::string     g_server_addr       = "localhost";
+	unsigned        g_server_port       = 3306;
+	std::string     g_username          = "root";
+	std::string     g_password          = "root";
+	std::string     g_schema            = "poseidon";
+	bool            g_use_ssl           = false;
+	std::string     g_charset           = "utf8";
 
-	std::string		g_dump_dir			= "";
-	std::size_t		g_max_threads		= 3;
-	boost::uint64_t	g_save_delay		= 5000;
-	boost::uint64_t	g_reconn_delay		= 10000;
-	std::size_t		g_max_retry_count	= 3;
-	boost::uint64_t	g_retry_init_delay	= 1000;
+	std::string     g_dump_dir          = "";
+	std::size_t     g_max_threads       = 3;
+	boost::uint64_t g_save_delay        = 5000;
+	boost::uint64_t g_reconn_delay      = 10000;
+	std::size_t     g_max_retry_count   = 3;
+	boost::uint64_t g_retry_init_delay  = 1000;
 
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;

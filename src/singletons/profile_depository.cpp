@@ -87,8 +87,8 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 		atomic_add(it->second.ns_total, total * 1e6, ATOMIC_RELAXED);
 		atomic_add(it->second.ns_exclusive, exclusive * 1e6, ATOMIC_RELAXED);
 
-//		LOG_POSEIDON_TRACE("Accumulated profile info: file = ", file, ", line = ", line,
-//			", func = ", func, ", total = ", total, " s, exclusive = ", exclusive, " s");
+//      LOG_POSEIDON_TRACE("Accumulated profile info: file = ", file, ", line = ", line,
+//          ", func = ", func, ", total = ", total, " s, exclusive = ", exclusive, " s");
 	} catch(...){
 	}
 }

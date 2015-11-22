@@ -8,7 +8,7 @@
 #include "cxx_util.hpp"
 
 #if __GNUC__ * 100 + __GNUC_MINOR__ >= 407
-#	define GCC_HAS_ATOMIC_
+#   define GCC_HAS_ATOMIC_
 #endif
 
 namespace Poseidon {

@@ -9,9 +9,9 @@
 namespace Poseidon {
 
 namespace Http {
-	extern const std::string STR_0;			// "0"
-	extern const std::string STR_IDENTITY;	// "identity"
-	extern const std::string STR_CHUNKED;	// "chunked"
+	extern const std::string STR_0;         // "0"
+	extern const std::string STR_IDENTITY;  // "identity"
+	extern const std::string STR_CHUNKED;   // "chunked"
 }
 
 }

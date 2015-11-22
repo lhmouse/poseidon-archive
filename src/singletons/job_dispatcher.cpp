@@ -31,7 +31,7 @@ void dont_optimize_try_catch_away();
 namespace Poseidon {
 
 namespace {
-	boost::uint64_t g_job_timeout	= 60000;
+	boost::uint64_t g_job_timeout   = 60000;
 
 	enum FiberState {
 		FS_READY,

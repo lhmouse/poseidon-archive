@@ -86,41 +86,41 @@ namespace Http {
 			RawNonce raw_nonce = { };
 
 			enum ParserState {
-				PS_KEY_INDENT		= 0,
-				PS_KEY				= 1,
-				PS_VALUE_INDENT		= 2,
-				PS_QUOTED_VALUE		= 3,
-				PS_VALUE			= 4,
+				PS_KEY_INDENT       = 0,
+				PS_KEY              = 1,
+				PS_VALUE_INDENT     = 2,
+				PS_QUOTED_VALUE     = 3,
+				PS_VALUE            = 4,
 			} ps = PS_KEY_INDENT;
 
 			std::string key, value;
 
-#define COMMIT_KEY_VALUE	\
-			if(::strcasecmp(key.c_str(), "username") == 0){	\
-				username = STD_MOVE(value);	\
-			} else if(::strcasecmp(key.c_str(), "realm") == 0){	\
-				realm = STD_MOVE(value);	\
-			} else if(::strcasecmp(key.c_str(), "nonce") == 0){	\
-				nonce = STD_MOVE(value);	\
-				AUTO(nonce_bytes, base64_decode(nonce));	\
-				if(nonce_bytes.size() != sizeof(raw_nonce)){	\
-					LOG_POSEIDON_WARNING("> Inacceptable nonce.");	\
-					return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);	\
-				}	\
-				std::memcpy(&raw_nonce, nonce_bytes.data(), sizeof(raw_nonce));	\
-				xor_nonce(raw_nonce, remote_addr.ip.get());	\
-			} else if(::strcasecmp(key.c_str(), "uri") == 0){	\
-				uri = STD_MOVE(value);	\
-			} else if(::strcasecmp(key.c_str(), "qop") == 0){	\
-				qop = STD_MOVE(value);	\
-			} else if(::strcasecmp(key.c_str(), "cnonce") == 0){	\
-				cnonce = STD_MOVE(value);	\
-			} else if(::strcasecmp(key.c_str(), "nc") == 0){	\
-				nc = STD_MOVE(value);	\
-			} else if(::strcasecmp(key.c_str(), "response") == 0){	\
-				response = STD_MOVE(value);	\
-			} else if(::strcasecmp(key.c_str(), "algorithm") == 0){	\
-				algorithm = STD_MOVE(value);	\
+#define COMMIT_KEY_VALUE    \
+			if(::strcasecmp(key.c_str(), "username") == 0){ \
+				username = STD_MOVE(value); \
+			} else if(::strcasecmp(key.c_str(), "realm") == 0){ \
+				realm = STD_MOVE(value);    \
+			} else if(::strcasecmp(key.c_str(), "nonce") == 0){ \
+				nonce = STD_MOVE(value);    \
+				AUTO(nonce_bytes, base64_decode(nonce));    \
+				if(nonce_bytes.size() != sizeof(raw_nonce)){    \
+					LOG_POSEIDON_WARNING("> Inacceptable nonce.");  \
+					return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);    \
+				}   \
+				std::memcpy(&raw_nonce, nonce_bytes.data(), sizeof(raw_nonce)); \
+				xor_nonce(raw_nonce, remote_addr.ip.get()); \
+			} else if(::strcasecmp(key.c_str(), "uri") == 0){   \
+				uri = STD_MOVE(value);  \
+			} else if(::strcasecmp(key.c_str(), "qop") == 0){   \
+				qop = STD_MOVE(value);  \
+			} else if(::strcasecmp(key.c_str(), "cnonce") == 0){    \
+				cnonce = STD_MOVE(value);   \
+			} else if(::strcasecmp(key.c_str(), "nc") == 0){    \
+				nc = STD_MOVE(value);   \
+			} else if(::strcasecmp(key.c_str(), "response") == 0){  \
+				response = STD_MOVE(value); \
+			} else if(::strcasecmp(key.c_str(), "algorithm") == 0){ \
+				algorithm = STD_MOVE(value);    \
 			}
 
 			for(AUTO(it, str.begin()); it != str.end(); ++it){

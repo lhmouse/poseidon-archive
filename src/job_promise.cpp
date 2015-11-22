@@ -11,9 +11,9 @@ namespace Poseidon {
 
 namespace {
 	enum {
-		S_LOCKED			= -1,
-		S_UNSATISFIED		= 0,
-		S_SATISFIED			= 1,
+		S_LOCKED            = -1,
+		S_UNSATISFIED       = 0,
+		S_SATISFIED         = 1,
 	};
 }
 

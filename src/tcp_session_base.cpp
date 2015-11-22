@@ -35,8 +35,8 @@ TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 		return;
 	}
 	if(atomic_load(m_session->m_shutdown_write, ATOMIC_CONSUME)){
-	    atomic_store(m_session->m_really_shutdown_write, true, ATOMIC_RELEASE);
-	    m_session->notify_epoll_writeable();
+		atomic_store(m_session->m_really_shutdown_write, true, ATOMIC_RELEASE);
+		m_session->notify_epoll_writeable();
 	}
 }
 
