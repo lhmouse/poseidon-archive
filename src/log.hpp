@@ -8,6 +8,7 @@
 #include "cxx_util.hpp"
 #include <sstream>
 #include <cstddef>
+#include <boost/cstdint.hpp>
 
 namespace Poseidon {
 
@@ -26,50 +27,52 @@ public:
 	};
 
 public:
-	static unsigned long long get_mask() NOEXCEPT;
-	static unsigned long long set_mask(unsigned long long to_disable, unsigned long long to_enable) NOEXCEPT;
+	static boost::uint64_t get_mask() NOEXCEPT;
+	static boost::uint64_t set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT;
 
 	static const char *get_thread_tag() NOEXCEPT;
 	static void set_thread_tag(const char *new_tag) NOEXCEPT;
 
 private:
-	const unsigned long long m_mask;
+	const boost::uint64_t m_mask;
 	const char *const m_file;
 	const std::size_t m_line;
 
 	std::stringstream m_stream;
 
 public:
-	Logger(unsigned long long mask, const char *file, std::size_t line) NOEXCEPT;
+	Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEPT;
 	~Logger() NOEXCEPT;
 
 private:
+	// operator<< 的 name lookup 拖慢编译速度。
+	void put(bool val);
+	void put(char val);
+	void put(signed char val);
+	void put(unsigned char val);
+	void put(short val);
+	void put(unsigned short val);
+	void put(int val);
+	void put(unsigned val);
+	void put(long val);
+	void put(unsigned long val);
+	void put(long long val);
+	void put(unsigned long long val);
+	void put(const char *val);
+	void put(const signed char *val);
+	void put(const unsigned char *val);
+	void put(const void *val);
+
 	template<typename T>
 	void put(const T &val){
 		m_stream <<val;
-	}
-
-	void put(bool val){
-		m_stream <<std::boolalpha <<val;
-	}
-	void put(signed char val){
-		m_stream <<(int)val;
-	}
-	void put(unsigned char val){
-		m_stream <<(unsigned)val;
-	}
-	void put(const volatile signed char *val){
-		m_stream <<(const void *)val;
-	}
-	void put(const volatile unsigned char *val){
-		m_stream <<(const void *)val;
 	}
 
 public:
 	template<typename T>
 	Logger &operator,(const T &val) NOEXCEPT {
 		try {
-			put(val);
+			this->put(val);
 		} catch(...){
 		}
 		return *this;
@@ -80,7 +83,7 @@ public:
 
 #define LOG_MASK(mask_, ...)    \
 	do {    \
-		unsigned long long test_ = (mask_); \
+		::boost::uint64_t test_ = (mask_); \
 		if(test_ & ::Poseidon::Logger::SP_MAJOR){   \
 			test_ &= 0x3F;  \
 		}   \

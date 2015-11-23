@@ -27,7 +27,7 @@ namespace {
 		{ "TRACE", '4', 1 },    // 亮蓝
 	};
 
-	volatile unsigned long long g_mask = -1ull;
+	volatile boost::uint64_t g_mask = -1ull;
 
 	// 不要使用 Mutex 对象。如果在其他静态对象的构造函数中输出日志，这个对象可能还没构造。
 	::pthread_mutex_t g_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
@@ -42,11 +42,11 @@ namespace {
 	__thread char t_tag[5] = "----";
 }
 
-unsigned long long Logger::get_mask() NOEXCEPT {
+boost::uint64_t Logger::get_mask() NOEXCEPT {
 	return atomic_load(g_mask, ATOMIC_RELAXED);
 }
-unsigned long long Logger::set_mask(unsigned long long to_disable, unsigned long long to_enable) NOEXCEPT {
-	unsigned long long old_mask = atomic_load(g_mask, ATOMIC_CONSUME), new_mask;
+boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT {
+	boost::uint64_t old_mask = atomic_load(g_mask, ATOMIC_CONSUME), new_mask;
 	do {
 		new_mask = old_mask;
 		remove_flags(new_mask, to_disable);
@@ -72,7 +72,7 @@ void Logger::set_thread_tag(const char *new_tag) NOEXCEPT {
 	}
 }
 
-Logger::Logger(unsigned long long mask, const char *file, std::size_t line) NOEXCEPT
+Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEPT
 	: m_mask(mask), m_file(file), m_line(line)
 {
 }
@@ -174,6 +174,55 @@ Logger::~Logger() NOEXCEPT {
 		}
 	} catch(...){
 	}
+}
+
+void Logger::put(bool val){
+	m_stream <<std::boolalpha <<val;
+}
+void Logger::put(char val){
+	m_stream <<val;
+}
+void Logger::put(signed char val){
+	m_stream <<static_cast<int>(val);
+}
+void Logger::put(unsigned char val){
+	m_stream <<static_cast<unsigned>(val);
+}
+void Logger::put(short val){
+	m_stream <<static_cast<int>(val);
+}
+void Logger::put(unsigned short val){
+	m_stream <<static_cast<unsigned>(val);
+}
+void Logger::put(int val){
+	m_stream <<val;
+}
+void Logger::put(unsigned val){
+	m_stream <<val;
+}
+void Logger::put(long val){
+	m_stream <<val;
+}
+void Logger::put(unsigned long val){
+	m_stream <<val;
+}
+void Logger::put(long long val){
+	m_stream <<val;
+}
+void Logger::put(unsigned long long val){
+	m_stream <<val;
+}
+void Logger::put(const char *val){
+	m_stream <<val;
+}
+void Logger::put(const signed char *val){
+	m_stream <<static_cast<const void *>(val);
+}
+void Logger::put(const unsigned char *val){
+	m_stream <<static_cast<const void *>(val);
+}
+void Logger::put(const void *val){
+	m_stream <<val;
 }
 
 }
