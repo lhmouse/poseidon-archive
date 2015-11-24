@@ -16,7 +16,7 @@ function pushVint(buffer, val){
 	if(val >= 0){
 		pushVuint(buffer, val * 2);
 	} else {
-		pushVuint(buffer, (-val + 1) * 2);
+		pushVuint(buffer, -val * 2 - 1);
 	}
 }
 function pushRaw(buffer, val){ // val = [ 0, 1, 2, 3 ]
