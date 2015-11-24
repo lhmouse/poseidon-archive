@@ -4,6 +4,7 @@
 #ifndef POSEIDON_MODULE_RAII_HPP_
 #define POSEIDON_MODULE_RAII_HPP_
 
+#include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include <boost/shared_ptr.hpp>
 #include <deque>
