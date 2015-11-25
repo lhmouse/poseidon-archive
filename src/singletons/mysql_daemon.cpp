@@ -512,7 +512,7 @@ namespace {
 	};
 
 	volatile bool g_running = false;
-	boost::container::vector<MySqlThread> g_threads;
+	std::vector<boost::shared_ptr<MySqlThread>> g_threads;
 
 	void submit_operation(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
 		if(g_threads.empty()){
@@ -541,7 +541,7 @@ namespace {
 		const AUTO(thread_index, hash % g_threads.size());
 		LOG_POSEIDON_DEBUG("Assigning MySQL table `", table, "` to thread ", thread_index);
 
-		g_threads.at(thread_index).add_operation(STD_MOVE(operation), urgent);
+		g_threads.at(thread_index)->add_operation(STD_MOVE(operation), urgent);
 	}
 }
 
@@ -592,12 +592,14 @@ void MySqlDaemon::start(){
 	LOG_POSEIDON_DEBUG("MySQL retry init delay = ", g_retry_init_delay);
 
 	const AUTO(thread_count, std::max<std::size_t>(g_max_threads, 1));
-	boost::container::vector<MySqlThread> threads(thread_count);
-	for(std::size_t i = 0; i < threads.size(); ++i){
+	g_threads.clear();
+	g_threads.reserve(thread_count);
+	for(std::size_t i = 0; i < thread_count; ++i){
 		LOG_POSEIDON_INFO("Creating MySQL thread ", i);
-		threads.at(i).start();
+		AUTO(thread, boost::make_shared<MySqlThread>());
+		thread->start();
+		g_threads.push_back(STD_MOVE(thread));
 	}
-	g_threads.swap(threads);
 
 	if(!g_dump_dir.empty()){
 		const AUTO(placeholder_path, g_dump_dir + "/placeholder");
@@ -619,15 +621,15 @@ void MySqlDaemon::stop(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MySQL daemon...");
 
-	boost::container::vector<MySqlThread> threads;
-	threads.swap(g_threads);
+	const AUTO(threads, STD_MOVE_IDN(g_threads));
+	g_threads.clear();
 	for(std::size_t i = 0; i < threads.size(); ++i){
 		LOG_POSEIDON_INFO("Stopping MySQL thread ", i);
-		threads.at(i).stop();
+		threads.at(i)->stop();
 	}
 	for(std::size_t i = 0; i < threads.size(); ++i){
 		LOG_POSEIDON_INFO("Waiting for MySQL thread ", i, " to terminate...");
-		threads.at(i).safe_join();
+		threads.at(i)->safe_join();
 	}
 
 	LOG_POSEIDON_INFO("MySQL daemon stopped.");
@@ -643,7 +645,7 @@ std::vector<MySqlDaemon::SnapshotElement> MySqlDaemon::snapshot(){
 
 	std::vector<std::pair<const char *, unsigned long long> > thread_profile;
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		g_threads.at(i).get_profile(thread_profile);
+		g_threads.at(i)->get_profile(thread_profile);
 		ret.reserve(ret.size() + thread_profile.size());
 		for(AUTO(it, thread_profile.begin()); it != thread_profile.end(); ++it){
 			ret.push_back(VAL_INIT);
@@ -659,7 +661,7 @@ std::vector<MySqlDaemon::SnapshotElement> MySqlDaemon::snapshot(){
 
 void MySqlDaemon::wait_for_all_async_operations(){
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		g_threads.at(i).wait_till_idle();
+		g_threads.at(i)->wait_till_idle();
 	}
 }
 
