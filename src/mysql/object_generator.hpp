@@ -324,7 +324,7 @@ public:
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
 
-	void sync_generate_sql(::std::string &sql_, bool to_replace_) const {
+	void generate_sql(::std::string &sql_, bool to_replace_) const {
 		::std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
@@ -392,7 +392,7 @@ public:
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
 		oss_.str().swap(sql_);
 	}
-	void sync_fetch(const boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_){
+	void fetch(const boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_){
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT

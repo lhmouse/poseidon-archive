@@ -94,7 +94,7 @@ namespace {
 		void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
 			PROFILE_ME;
 
-			m_object->sync_generate_sql(query, m_to_replace);
+			m_object->generate_sql(query, m_to_replace);
 			LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->get_table_name(), ": query = ", query);
 			conn->execute_sql(query);
 		}
@@ -131,7 +131,7 @@ namespace {
 				DEBUG_THROW(MySql::Exception, 99999, sslit("No rows returned"));
 			}
 			m_object->disable_auto_saving();
-			m_object->sync_fetch(conn);
+			m_object->fetch(conn);
 			m_object->enable_auto_saving();
 		}
 	};
@@ -169,7 +169,7 @@ namespace {
 			if(m_factory && m_container){
 				while(conn->fetch_row()){
 					AUTO(object, (*m_factory)());
-					object->sync_fetch(conn);
+					object->fetch(conn);
 					object->enable_auto_saving();
 					m_container->push_back(STD_MOVE(object));
 				}

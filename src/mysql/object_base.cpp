@@ -59,12 +59,12 @@ namespace MySql {
 		atomic_store(m_combined_write_stamp, stamp, ATOMIC_RELEASE);
 	}
 
-	void ObjectBase::sync_save(bool to_replace) const {
+	void ObjectBase::save_and_wait(bool to_replace) const {
 		const AUTO(promise, MySqlDaemon::enqueue_for_saving(virtual_shared_from_this<ObjectBase>(), to_replace, true));
 		JobDispatcher::yield(promise);
 		enable_auto_saving();
 	}
-	void ObjectBase::sync_load(std::string query){
+	void ObjectBase::load_and_wait(std::string query){
 		const AUTO(promise, MySqlDaemon::enqueue_for_loading(virtual_shared_from_this<ObjectBase>(), STD_MOVE(query)));
 		JobDispatcher::yield(promise);
 		enable_auto_saving();

@@ -59,11 +59,11 @@ namespace MySql {
 
 		virtual const char *get_table_name() const = 0;
 
-		virtual void sync_generate_sql(std::string &sql, bool to_replace) const = 0;
-		virtual void sync_fetch(const boost::shared_ptr<const Connection> &conn) = 0;
+		virtual void generate_sql(std::string &sql, bool to_replace) const = 0;
+		virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;
 
-		void sync_save(bool to_replace) const;
-		void sync_load(std::string query);
+		void save_and_wait(bool to_replace) const;
+		void load_and_wait(std::string query);
 		void async_save(bool to_replace, bool urgent = false) const;
 	};
 }
