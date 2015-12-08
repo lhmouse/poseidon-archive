@@ -627,7 +627,7 @@ MODULE_RAII(handles){
 
 }
 
-
+*/
 
 #include "../src/precompiled.hpp"
 #include "../src/async_job.hpp"
@@ -649,7 +649,7 @@ using namespace Poseidon;
 	FIELD_BIGINT(bi)	\
 	FIELD_DATETIME(dt)
 #include "../src/mysql/object_generator.hpp"
-
+/*
 namespace {
 	class DelayedPromise : public JobPromise {
 	public:
@@ -673,22 +673,21 @@ namespace {
 		DelayedPromise() = default;
 	};
 }
-
+*/
 MODULE_RAII(handles){
-	handles.push(TimerDaemon::register_timer(1000, 0,
-		std::bind([]{
+	AUTO(obj, boost::make_shared<MySqlObj>());
+	obj->enable_auto_saving();
+	handles.push(TimerDaemon::register_timer(0, 1000,
+		std::bind([=]{
 			try {
-				AUTO(obj, boost::make_shared<MySqlObj>());
-				obj->enable_auto_saving();
-				obj->sync_load("SELECT * FROM `MySqlObj` LIMIT 1");
-				LOG_POSEIDON_FATAL("Loaded: si = ", obj->get_si(),
-					", str = ", obj->unlocked_get_str(), ", bi = ", obj->get_bi(), ", dt = ", obj->get_dt());
+				obj->set_si(1);
+				LOG_POSEIDON_FATAL("SET!");
 			} catch(std::exception &e){
 				LOG_POSEIDON_FATAL("Exception: what = ", e.what());
 			}
 		})
 	));
-
+/*
 	enqueue_async_job([]{
 		LOG_POSEIDON_FATAL("--- 1");
 		JobDispatcher::yield(DelayedPromise::create(1000));
@@ -722,9 +721,10 @@ MODULE_RAII(handles){
 		JobDispatcher::yield(DelayedPromise::create(5000));
 	});
 	LOG_POSEIDON_FATAL("enqueued!");
-}
 */
+}
 
+/*
 #include "../src/singletons/dns_daemon.hpp"
 #include "../src/singletons/job_dispatcher.hpp"
 #include "../src/async_job.hpp"
@@ -747,3 +747,4 @@ MODULE_RAII(){
 	auto sock_addr = Poseidon::DnsDaemon::sync_lookup("www.google.com", 80);
 	LOG_POSEIDON_FATAL("Sync result = ", Poseidon::get_ip_port_from_sock_addr(sock_addr));
 }
+*/

@@ -46,13 +46,12 @@ namespace MySql {
 		// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
 		~ObjectBase();
 
-	protected:
-		bool invalidate() const NOEXCEPT;
-
 	public:
 		bool is_auto_saving_enabled() const;
 		void enable_auto_saving() const;
 		void disable_auto_saving() const;
+
+		bool invalidate() const NOEXCEPT;
 
 		void *get_combined_write_stamp() const;
 		void set_combined_write_stamp(void *stamp) const;

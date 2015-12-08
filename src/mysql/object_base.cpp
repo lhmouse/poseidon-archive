@@ -24,22 +24,10 @@ namespace MySql {
 	}
 
 	ObjectBase::ObjectBase()
-		: m_auto_saves(false)
+		: m_auto_saves(false), m_combined_write_stamp(NULLPTR)
 	{
 	}
 	ObjectBase::~ObjectBase(){
-	}
-
-	bool ObjectBase::invalidate() const NOEXCEPT {
-		try {
-			if(is_auto_saving_enabled()){
-				async_save(true, false);
-				return true;
-			}
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception: what = ", e.what());
-		}
-		return false;
 	}
 
 	bool ObjectBase::is_auto_saving_enabled() const {
@@ -50,6 +38,19 @@ namespace MySql {
 	}
 	void ObjectBase::disable_auto_saving() const {
 		atomic_store(m_auto_saves, false, ATOMIC_RELEASE);
+	}
+
+	bool ObjectBase::invalidate() const NOEXCEPT {
+		if(!is_auto_saving_enabled()){
+			return false;
+		}
+		try {
+			async_save(true, false);
+		} catch(std::exception &e){
+			LOG_POSEIDON_ERROR("std::exception: what = ", e.what());
+			return false;
+		}
+		return true;
 	}
 
 	void *ObjectBase::get_combined_write_stamp() const {

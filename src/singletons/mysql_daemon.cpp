@@ -321,8 +321,20 @@ namespace {
 					elem = &m_queue.front();
 				}
 
+				bool execute_it = false;
 				const AUTO(combinable_object, elem->operation->get_combinable_object());
-				if(!combinable_object || (combinable_object->get_combined_write_stamp() == elem)){
+				if(!combinable_object){
+					execute_it = true;
+				} else {
+					const AUTO(old_write_stamp, combinable_object->get_combined_write_stamp());
+					if(!old_write_stamp){
+						execute_it = true;
+					} else if(old_write_stamp == elem){
+						combinable_object->set_combined_write_stamp(NULLPTR);
+						execute_it = true;
+					}
+				}
+				if(execute_it){
 					boost::exception_ptr except;
 
 					long err_code = 0;
@@ -502,7 +514,10 @@ namespace {
 			m_queue.push_back(OperationQueueElement(STD_MOVE(operation), due_time));
 			OperationQueueElement *const elem = &m_queue.back();
 			if(combinable_object){
-				combinable_object->set_combined_write_stamp(elem);
+				const AUTO(old_write_stamp, combinable_object->get_combined_write_stamp());
+				if(!old_write_stamp){
+					combinable_object->set_combined_write_stamp(elem);
+				}
 			}
 			if(urgent){
 				atomic_store(m_urgent, true, ATOMIC_RELEASE);
