@@ -28,6 +28,12 @@ public:
 	const std::vector<OptionalMap> &get_raw_data() const {
 		return m_data;
 	}
+	std::vector<OptionalMap> &get_raw_data(){
+		return m_data;
+	}
+	void set_raw_data(std::vector<OptionalMap> data){
+		m_data.swap(data);
+	}
 
 	bool empty() const {
 		return m_data.empty();

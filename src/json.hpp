@@ -132,21 +132,20 @@ public:
 inline void swap(JsonObject &lhs, JsonObject &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
+inline void swap(JsonArray &lhs, JsonArray &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
+inline void swap(JsonElement &lhs, JsonElement &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
+
 inline std::ostream &operator<<(std::ostream &os, const JsonObject &rhs){
 	rhs.dump(os);
 	return os;
 }
-
-inline void swap(JsonArray &lhs, JsonArray &rhs) NOEXCEPT {
-	lhs.swap(rhs);
-}
 inline std::ostream &operator<<(std::ostream &os, const JsonArray &rhs){
 	rhs.dump(os);
 	return os;
-}
-
-inline void swap(JsonElement &lhs, JsonElement &rhs) NOEXCEPT {
-	lhs.swap(rhs);
 }
 inline std::ostream &operator<<(std::ostream &os, const JsonElement &rhs){
 	rhs.dump(os);
@@ -170,6 +169,19 @@ public:
 private:
 	JsonParser();
 };
+
+inline std::istream &operator>>(std::istream &is, JsonElement &rhs){
+	JsonParser::parse_element(is).swap(rhs);
+	return is;
+}
+inline std::istream &operator>>(std::istream &is, JsonArray &rhs){
+	JsonParser::parse_array(is).swap(rhs);
+	return is;
+}
+inline std::istream &operator>>(std::istream &is, JsonObject &rhs){
+	JsonParser::parse_object(is).swap(rhs);
+	return is;
+}
 
 }
 
