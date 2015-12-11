@@ -80,6 +80,7 @@ namespace {
 		boost::scoped_ptr<StackStorage> stack;
 		::sigjmp_buf outer;
 		::sigjmp_buf inner;
+		void *profiler_hook;
 
 		FiberControl()
 			: state(FS_READY)
@@ -118,6 +119,7 @@ namespace {
 #else
 		0;
 #endif
+	__thread void *t_profiler_hook;
 
 	void schedule_fiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;
@@ -130,13 +132,13 @@ namespace {
 		}
 
 		t_current_fiber = fiber;
-		const AUTO(opaque, Profiler::begin_stack_switch());
 		try {
 			::dont_optimize_try_catch_away();
 
 			if(sigsetjmp(fiber->outer, true) == 0){
 				if(fiber->state == FS_YIELDED){
 					fiber->state = FS_RUNNING;
+					t_profiler_hook = Profiler::begin_stack_switch();
 					::unchecked_siglongjmp(fiber->inner, 1);
 				} else {
 					fiber->state = FS_RUNNING;
@@ -168,6 +170,7 @@ namespace {
 					fiber_stack_barrier(reg);
 
 					reg->state = FS_READY;
+					t_profiler_hook = Profiler::begin_stack_switch();
 					::unchecked_siglongjmp(reg->outer, 1);
 				}
 			}
@@ -176,7 +179,7 @@ namespace {
 		} catch(...){
 			std::abort();
 		}
-		Profiler::end_stack_switch(opaque);
+		Profiler::end_stack_switch(t_profiler_hook);
 		t_current_fiber = NULLPTR;
 	}
 
@@ -334,8 +337,10 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 
 		if(sigsetjmp(fiber->inner, true) == 0){
 			fiber->state = FS_YIELDED;
+			fiber->profiler_hook = Profiler::begin_stack_switch();
 			::unchecked_siglongjmp(fiber->outer, 1);
 		}
+		Profiler::end_stack_switch(fiber->profiler_hook);
 
 		::dont_optimize_try_catch_away();
 	} catch(...){
