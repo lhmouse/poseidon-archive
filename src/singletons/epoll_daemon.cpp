@@ -29,6 +29,8 @@ namespace {
 	std::vector<boost::weak_ptr<const SocketServerBase> > g_servers;
 
 	std::size_t poll_servers(){
+		PROFILE_ME;
+
 		std::vector<boost::shared_ptr<const SocketServerBase> > servers;
 		{
 			const Mutex::UniqueLock lock(g_server_mutex);
@@ -61,6 +63,8 @@ namespace {
 	}
 
 	void daemon_loop(){
+		PROFILE_ME;
+
 		boost::uint64_t epoll_timeout = 0;
 		for(;;){
 			bool busy = false;

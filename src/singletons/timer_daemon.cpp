@@ -129,6 +129,8 @@ namespace {
 	}
 
 	void daemon_loop(){
+		PROFILE_ME;
+
 		for(;;){
 			while(pump_one_element()){
 				// noop
