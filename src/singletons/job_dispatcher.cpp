@@ -99,6 +99,8 @@ namespace {
 		__attribute__((__force_align_arg_pointer__))
 #endif
 	void fiber_stack_barrier(FiberControl *fiber) NOEXCEPT {
+		PROFILE_ME;
+
 		LOG_POSEIDON_TRACE("Entering fiber ", static_cast<void *>(fiber));
 		try {
 			fiber->queue.front().job->perform();
