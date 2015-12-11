@@ -627,7 +627,7 @@ MODULE_RAII(handles){
 
 }
 
-*/
+
 
 #include "../src/precompiled.hpp"
 #include "../src/async_job.hpp"
@@ -649,7 +649,7 @@ using namespace Poseidon;
 	FIELD_BIGINT(bi)	\
 	FIELD_DATETIME(dt)
 #include "../src/mysql/object_generator.hpp"
-/*
+
 namespace {
 	class DelayedPromise : public JobPromise {
 	public:
@@ -673,7 +673,7 @@ namespace {
 		DelayedPromise() = default;
 	};
 }
-*/
+
 MODULE_RAII(handles){
 	AUTO(obj, boost::make_shared<MySqlObj>());
 	obj->enable_auto_saving();
@@ -687,7 +687,7 @@ MODULE_RAII(handles){
 			}
 		})
 	));
-/*
+
 	enqueue_async_job([]{
 		LOG_POSEIDON_FATAL("--- 1");
 		JobDispatcher::yield(DelayedPromise::create(1000));
@@ -721,10 +721,10 @@ MODULE_RAII(handles){
 		JobDispatcher::yield(DelayedPromise::create(5000));
 	});
 	LOG_POSEIDON_FATAL("enqueued!");
-*/
+
 }
 
-/*
+
 #include "../src/singletons/dns_daemon.hpp"
 #include "../src/singletons/job_dispatcher.hpp"
 #include "../src/async_job.hpp"
@@ -748,3 +748,24 @@ MODULE_RAII(){
 	LOG_POSEIDON_FATAL("Sync result = ", Poseidon::get_ip_port_from_sock_addr(sock_addr));
 }
 */
+
+#include "../src/module_raii.hpp"
+#include "../src/profiler.hpp"
+
+MODULE_RAII(){
+	PROFILE_ME;
+	{
+		::usleep(10000);
+		PROFILE_ME;
+		{
+			::usleep(20000);
+			PROFILE_ME;
+			{
+				::usleep(30000);
+			}
+			::usleep(40000);
+		}
+		::usleep(50000);
+	}
+	::usleep(60000);
+}

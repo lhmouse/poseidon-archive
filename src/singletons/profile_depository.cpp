@@ -94,7 +94,7 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 }
 
 std::vector<ProfileDepository::SnapshotElement> ProfileDepository::snapshot(){
-	Profiler::flush_profilers_in_thread();
+	Profiler::accumulate_all_in_thread();
 
 	std::vector<SnapshotElement> ret;
 	{

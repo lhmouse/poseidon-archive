@@ -31,7 +31,6 @@ pkginclude_HEADERS = \
 	src/hash.hpp	\
 	src/config_file.hpp	\
 	src/tcp_client_base.hpp	\
-	src/transaction.hpp	\
 	src/ssl_factories.hpp	\
 	src/job_base.hpp	\
 	src/async_job.hpp	\
@@ -153,7 +152,6 @@ lib_libposeidon_main_la_SOURCES = \
 	src/profiler.cpp	\
 	src/raii.cpp	\
 	src/virtual_shared_from_this.cpp	\
-	src/transaction.cpp	\
 	src/stream_buffer.cpp	\
 	src/shared_nts.cpp	\
 	src/optional_map.cpp	\
