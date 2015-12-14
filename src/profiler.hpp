@@ -23,6 +23,7 @@ private:
 
 	double m_start;
 	double m_excluded;
+	double m_yielded_since;
 
 public:
 	Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT;

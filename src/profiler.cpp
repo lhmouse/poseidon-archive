@@ -38,6 +38,7 @@ void *Profiler::begin_stack_switch() NOEXCEPT {
 	if(top){
 		const AUTO(now, get_hi_res_mono_clock());
 		top->accumulate(now);
+		top->m_yielded_since = now;
 	}
 	t_top_profiler = NULLPTR;
 	return top;
@@ -50,6 +51,7 @@ void Profiler::end_stack_switch(void *opaque) NOEXCEPT {
 	const AUTO(top, static_cast<Profiler *>(opaque));
 	if(top){
 		const AUTO(now, get_hi_res_mono_clock());
+		top->m_excluded += now - top->m_yielded_since;
 		top->accumulate(now);
 	}
 	t_top_profiler = top;
@@ -57,7 +59,7 @@ void Profiler::end_stack_switch(void *opaque) NOEXCEPT {
 
 Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT
 	: m_prev(t_top_profiler), m_file(file), m_line(line), m_func(func)
-	, m_start(0), m_excluded(0)
+	, m_start(0), m_excluded(0), m_yielded_since(0)
 {
 	if(!ProfileDepository::is_enabled()){
 		return;
