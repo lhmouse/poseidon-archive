@@ -189,7 +189,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::register_absolute_timer(
 		g_new_timer.signal();
 	}
 	LOG_POSEIDON_DEBUG("Created a(n) ", is_async ? "async " : "", "timer item which will be triggered ",
-		std::max<boost::int64_t>(static_cast<boost::int64_t>(time_point - get_fast_mono_clock()), 0),
+		__extension__({ const AUTO(now, get_fast_mono_clock()); (time_point < now) ? 0 : (time_point - now); }),
 		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
 	return item;
 }
@@ -222,9 +222,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::register_weekly_timer(
 	return register_timer(MS_PER_WEEK - delta % MS_PER_WEEK, MS_PER_WEEK, STD_MOVE(callback), is_async);
 }
 
-void TimerDaemon::set_absolute_time(
-	const boost::shared_ptr<TimerItem> &item, boost::uint64_t time_point, boost::uint64_t period)
-{
+void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item, boost::uint64_t time_point, boost::uint64_t period){
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
@@ -235,9 +233,7 @@ void TimerDaemon::set_absolute_time(
 	std::push_heap(g_timers.begin(), g_timers.end());
 	g_new_timer.signal();
 }
-void TimerDaemon::set_time(
-	const boost::shared_ptr<TimerItem> &item, boost::uint64_t first, boost::uint64_t period)
-{
+void TimerDaemon::set_time(const boost::shared_ptr<TimerItem> &item, boost::uint64_t first, boost::uint64_t period){
 	return set_absolute_time(item, get_fast_mono_clock() + first, period);
 }
 
