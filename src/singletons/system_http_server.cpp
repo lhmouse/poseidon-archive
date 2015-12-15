@@ -236,18 +236,22 @@ namespace {
 }
 
 void SystemHttpServer::start(){
-	AUTO(bind, MainConfig::get<std::string>("system_http_bind", "0.0.0.0"));
-	AUTO(port, MainConfig::get<unsigned>("system_http_port", 8900));
-	AUTO(cert, MainConfig::get<std::string>("system_http_certificate"));
-	AUTO(pkey, MainConfig::get<std::string>("system_http_private_key"));
-	AUTO(auth, MainConfig::get_all<std::string>("system_http_auth_user_pass"));
-	AUTO(path, MainConfig::get<std::string>("system_http_path", "~/sys"));
+	AUTO(bind, MainConfig::get<std::string>     ("system_http_bind"));
+	AUTO(port, MainConfig::get<unsigned>        ("system_http_port"));
+	AUTO(cert, MainConfig::get<std::string>     ("system_http_certificate"));
+	AUTO(pkey, MainConfig::get<std::string>     ("system_http_private_key"));
+	AUTO(auth, MainConfig::get_all<std::string> ("system_http_auth_user_pass"));
+	AUTO(path, MainConfig::get<std::string>     ("system_http_path", "/"));
 
-	const IpPort bind_addr(SharedNts(bind), port);
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bind_addr);
-	AUTO(server, boost::make_shared<SystemServer>(bind_addr, cert.c_str(), pkey.c_str(), STD_MOVE(auth), STD_MOVE(path)));
-	g_system_server = server;
-	EpollDaemon::register_server(STD_MOVE_IDN(server));
+	if(bind.empty()){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Systen HTTP server is disabled.");
+	} else {
+		const IpPort bind_addr(SharedNts(bind), port);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bind_addr);
+		AUTO(server, boost::make_shared<SystemServer>(bind_addr, cert.c_str(), pkey.c_str(), STD_MOVE(auth), STD_MOVE(path)));
+		g_system_server = server;
+		EpollDaemon::register_server(STD_MOVE_IDN(server));
+	}
 }
 void SystemHttpServer::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Shutting down system HTTP server...");
