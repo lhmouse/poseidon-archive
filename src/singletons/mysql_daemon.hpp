@@ -29,7 +29,7 @@ struct MySqlDaemon {
 	static void stop();
 
 	// 同步接口。
-	static boost::shared_ptr<MySql::Connection> create_connection();
+	static boost::shared_ptr<MySql::Connection> create_connection(bool from_slave = false);
 
 	// 异步接口。
 	static std::vector<SnapshotElement> snapshot();

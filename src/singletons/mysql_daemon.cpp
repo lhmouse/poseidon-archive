@@ -32,13 +32,15 @@ namespace Poseidon {
 namespace {
 	std::string     g_server_addr       = "localhost";
 	unsigned        g_server_port       = 3306;
+	std::string     g_slave_addr        = VAL_INIT;
+	unsigned        g_slave_port        = 0;
 	std::string     g_username          = "root";
 	std::string     g_password          = "root";
 	std::string     g_schema            = "poseidon";
 	bool            g_use_ssl           = false;
 	std::string     g_charset           = "utf8";
 
-	std::string     g_dump_dir          = "";
+	std::string     g_dump_dir          = VAL_INIT;
 	std::size_t     g_max_threads       = 3;
 	boost::uint64_t g_save_delay        = 5000;
 	boost::uint64_t g_reconn_delay      = 10000;
@@ -66,6 +68,7 @@ namespace {
 			return m_promise;
 		}
 
+		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_table_name() const = 0;
 		virtual void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const = 0;
@@ -85,6 +88,9 @@ namespace {
 		}
 
 	protected:
+		bool should_use_slave() const {
+			return false;
+		}
 		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
 			return m_object;
 		}
@@ -114,6 +120,9 @@ namespace {
 		}
 
 	protected:
+		bool should_use_slave() const {
+			return true;
+		}
 		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
@@ -153,6 +162,9 @@ namespace {
 		}
 
 	protected:
+		bool should_use_slave() const {
+			return true;
+		}
 		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
@@ -248,6 +260,13 @@ namespace {
 			m_profile_flushed_time = now;
 		}
 
+		void sleep_for_reconnection(){
+			::timespec req;
+			req.tv_sec = (::time_t)(g_reconn_delay / 1000);
+			req.tv_nsec = (long)(g_reconn_delay % 1000) * 1000 * 1000;
+			::nanosleep(&req, NULLPTR);
+		}
+
 		void thread_proc(){
 			PROFILE_ME;
 			LOG_POSEIDON_INFO("MySQL thread started.");
@@ -255,40 +274,46 @@ namespace {
 			m_profile_flushed_time = get_hi_res_mono_clock();
 
 			const MySql::ThreadContext thread_context;
-			boost::shared_ptr<MySql::Connection> conn;
+			boost::shared_ptr<MySql::Connection> master_conn, slave_conn;
 
 			for(;;){
 				accumulate_time_for_table("");
 
-				while(!conn){
-					LOG_POSEIDON_INFO("Connecting to MySQL server...");
-
+				while(!master_conn){
+					LOG_POSEIDON_INFO("Connecting to MySQL master server...");
 					try {
-						conn = MySqlDaemon::create_connection();
-						LOG_POSEIDON_INFO("Successfully connected to MySQL server.");
+						master_conn = MySqlDaemon::create_connection(false);
+						LOG_POSEIDON_INFO("Successfully connected to MySQL master server.");
 					} catch(std::exception &e){
 						LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-
-						::timespec req;
-						req.tv_sec = (::time_t)(g_reconn_delay / 1000);
-						req.tv_nsec = (long)(g_reconn_delay % 1000) * 1000 * 1000;
-						::nanosleep(&req, NULLPTR);
+						sleep_for_reconnection();
+					}
+				}
+				while(!slave_conn){
+					LOG_POSEIDON_INFO("Connecting to MySQL slave server...");
+					try {
+						slave_conn = MySqlDaemon::create_connection(true);
+						LOG_POSEIDON_INFO("Successfully connected to MySQL slave server.");
+					} catch(std::exception &e){
+						LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+						sleep_for_reconnection();
 					}
 				}
 
+				bool should_retry = true;
 				try {
-					really_pump_operations(conn);
+					really_pump_operations(master_conn, slave_conn);
+					should_retry = false;
 				} catch(MySql::Exception &e){
 					LOG_POSEIDON_WARNING("MySql::Exception thrown: code = ", e.code(), ", what = ", e.what());
-					conn.reset();
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-					conn.reset();
 				} catch(...){
 					LOG_POSEIDON_WARNING("Unknown exception thrown");
-					conn.reset();
 				}
-				if(!conn){
+				if(should_retry){
+					master_conn.reset();
+					slave_conn.reset();
 					continue;
 				}
 
@@ -302,7 +327,9 @@ namespace {
 			LOG_POSEIDON_INFO("MySQL thread stopped.");
 		}
 
-		void really_pump_operations(const boost::shared_ptr<MySql::Connection> &conn){
+		void really_pump_operations(const boost::shared_ptr<MySql::Connection> &master_conn,
+			const boost::shared_ptr<MySql::Connection> &slave_conn)
+		{
 			PROFILE_ME;
 
 			const AUTO(now, get_fast_mono_clock());
@@ -320,6 +347,9 @@ namespace {
 					}
 					elem = &m_queue.front();
 				}
+
+				const bool uses_slave_conn = elem->operation->should_use_slave();
+				const AUTO_REF(conn, uses_slave_conn ? slave_conn : master_conn);
 
 				bool execute_it = false;
 				const AUTO(combinable_object, elem->operation->get_combinable_object());
@@ -573,6 +603,12 @@ void MySqlDaemon::start(){
 	MainConfig::get(g_server_port, "mysql_server_port");
 	LOG_POSEIDON_DEBUG("MySQL server port = ", g_server_port);
 
+	MainConfig::get(g_slave_addr, "mysql_slave_addr");
+	LOG_POSEIDON_DEBUG("MySQL slave addr = ", g_slave_addr);
+
+	MainConfig::get(g_slave_port, "mysql_slave_port");
+	LOG_POSEIDON_DEBUG("MySQL slave port = ", g_slave_port);
+
 	MainConfig::get(g_username, "mysql_username");
 	LOG_POSEIDON_DEBUG("MySQL username = ", g_username);
 
@@ -650,8 +686,18 @@ void MySqlDaemon::stop(){
 	LOG_POSEIDON_INFO("MySQL daemon stopped.");
 }
 
-boost::shared_ptr<MySql::Connection> MySqlDaemon::create_connection(){
-	return MySql::Connection::create(g_server_addr, g_server_port, g_username, g_password, g_schema, g_use_ssl, g_charset);
+boost::shared_ptr<MySql::Connection> MySqlDaemon::create_connection(bool from_slave){
+	AUTO(addr, &g_server_addr);
+	AUTO(port, &g_server_port);
+	if(from_slave){
+		if(!g_slave_addr.empty()){
+			addr = &g_slave_addr;
+		}
+		if(g_server_port != 0){
+			port = &g_slave_port;
+		}
+	}
+	return MySql::Connection::create(*addr, *port, g_username, g_password, g_schema, g_use_ssl, g_charset);
 }
 
 std::vector<MySqlDaemon::SnapshotElement> MySqlDaemon::snapshot(){
