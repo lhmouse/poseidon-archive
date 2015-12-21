@@ -254,7 +254,7 @@ namespace Cbpp {
 
 	void Client::on_sync_error_message(boost::uint16_t message_id, StatusCode status_code, std::string reason){
 		PROFILE_ME;
-		LOG_POSEIDON_DEBUG("Received CBPP error message from server: message_id = ", message_id,
+		LOG_POSEIDON_TRACE("Received CBPP error message from server: message_id = ", message_id,
 			", status_code = ", status_code, ", reason = ", reason);
 
 		if(status_code < 0){
