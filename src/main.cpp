@@ -61,6 +61,8 @@ namespace {
 	void run(){
 		PROFILE_ME;
 
+		const boost::uint64_t CLEANUP_LOG_MASK = Logger::LV_FATAL | Logger::LV_ERROR | Logger::LV_WARNING | Logger::LV_INFO;
+
 		START(DnsDaemon);
 		START(MySqlDaemon);
 		START(JobDispatcher);
@@ -89,11 +91,11 @@ namespace {
 			JobDispatcher::do_modal();
 		} catch(...){
 			JobDispatcher::pump_all();
-			Logger::set_mask(0, -1ull);
+			Logger::set_mask(0, CLEANUP_LOG_MASK);
 			throw;
 		}
 		JobDispatcher::pump_all();
-		Logger::set_mask(0, -1ull);
+		Logger::set_mask(0, CLEANUP_LOG_MASK);
 	}
 }
 
