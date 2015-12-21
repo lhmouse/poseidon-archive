@@ -65,6 +65,11 @@ namespace {
 		START(MySqlDaemon);
 		START(JobDispatcher);
 
+		unsigned long long log_mask;
+		if(MainConfig::get(log_mask, "log_mask")){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask: 0x", std::hex, std::uppercase, log_mask);
+			Logger::set_mask(-1ull, log_mask);
+		}
 		try {
 			START(SystemHttpServer);
 			START(ModuleDepository);
@@ -84,10 +89,11 @@ namespace {
 			JobDispatcher::do_modal();
 		} catch(...){
 			JobDispatcher::pump_all();
+			Logger::set_mask(0, -1ull);
 			throw;
 		}
-
 		JobDispatcher::pump_all();
+		Logger::set_mask(0, -1ull);
 	}
 }
 
@@ -113,12 +119,6 @@ int main(int argc, char **argv){
 		MainConfig::reload();
 
 		START(ProfileDepository);
-
-		unsigned long long log_mask;
-		if(MainConfig::get(log_mask, "log_mask")){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask: 0x", std::hex, std::uppercase, log_mask);
-			Logger::set_mask(static_cast<boost::uint64_t>(-1), log_mask);
-		}
 
 		run();
 
