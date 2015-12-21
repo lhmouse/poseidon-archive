@@ -89,7 +89,7 @@ namespace {
 			JobDispatcher::do_modal();
 		} catch(...){
 			JobDispatcher::pump_all();
-			Logger::set_mask(0, -1ull);
+			Logger::set_mask(0, Logger::LV_INFO | Logger::LV_WARNING | Logger::LV_ERROR | Logger::LV_FATAL);
 			throw;
 		}
 		JobDispatcher::pump_all();
