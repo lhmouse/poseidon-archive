@@ -95,7 +95,7 @@ namespace {
 		}
 	};
 
-	__attribute__((__noinline__, __nothrow__))
+	__attribute__((__noinline__, __nothrow__, __returns_twice__))
 #ifndef __x86_64__
 		__attribute__((__force_align_arg_pointer__))
 #endif
@@ -113,14 +113,15 @@ namespace {
 		LOG_POSEIDON_TRACE("Exited from fiber ", static_cast<void *>(fiber));
 	}
 
-	__thread FiberControl *t_current_fiber =
+	FiberControl *g_current_fiber =
 #ifdef POSEIDON_CXX11
 		NULLPTR;
 #else
 		0;
 #endif
-	__thread void *t_profiler_hook;
+	void *g_profiler_hook;
 
+	__attribute__((__noinline__, __nothrow__))
 	void schedule_fiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;
 
@@ -131,14 +132,14 @@ namespace {
 			std::abort();
 		}
 
-		t_current_fiber = fiber;
+		g_current_fiber = fiber;
 		try {
 			::dont_optimize_try_catch_away();
 
 			if(sigsetjmp(fiber->outer, true) == 0){
 				if(fiber->state == FS_YIELDED){
 					fiber->state = FS_RUNNING;
-					t_profiler_hook = Profiler::begin_stack_switch();
+					g_profiler_hook = Profiler::begin_stack_switch();
 					::unchecked_siglongjmp(fiber->inner, 1);
 				} else {
 					fiber->state = FS_RUNNING;
@@ -167,12 +168,12 @@ namespace {
 						: "c"(fiber), "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
 						: "sp", "memory"
 					);
-					t_profiler_hook = Profiler::begin_stack_switch();
+					g_profiler_hook = Profiler::begin_stack_switch();
 					fiber_stack_barrier(reg);
-					Profiler::end_stack_switch(t_profiler_hook);
+					Profiler::end_stack_switch(g_profiler_hook);
 
 					reg->state = FS_READY;
-					t_profiler_hook = Profiler::begin_stack_switch();
+					g_profiler_hook = Profiler::begin_stack_switch();
 					::unchecked_siglongjmp(reg->outer, 1);
 				}
 			}
@@ -181,8 +182,8 @@ namespace {
 		} catch(...){
 			std::abort();
 		}
-		Profiler::end_stack_switch(t_profiler_hook);
-		t_current_fiber = NULLPTR;
+		Profiler::end_stack_switch(g_profiler_hook);
+		g_current_fiber = NULLPTR;
 	}
 
 	volatile bool g_running = false;
@@ -321,7 +322,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job,
 void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 	PROFILE_ME;
 
-	const AUTO(fiber, t_current_fiber);
+	const AUTO(fiber, g_current_fiber);
 	if(!fiber){
 		DEBUG_THROW(Exception, sslit("No current fiber"));
 	}
@@ -358,7 +359,7 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 void JobDispatcher::detach_yieldable() NOEXCEPT {
 	PROFILE_ME;
 
-	t_current_fiber = NULLPTR;
+	g_current_fiber = NULLPTR;
 }
 
 void JobDispatcher::pump_all(){
