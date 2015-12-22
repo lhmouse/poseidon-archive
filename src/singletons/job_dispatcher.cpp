@@ -95,7 +95,7 @@ namespace {
 		}
 	};
 
-	__attribute__((__noinline__, __nothrow__, __returns_twice__))
+	__attribute__((__noinline__, __nothrow__))
 #ifndef __x86_64__
 		__attribute__((__force_align_arg_pointer__))
 #endif
