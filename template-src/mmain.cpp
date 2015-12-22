@@ -749,41 +749,17 @@ MODULE_RAII(){
 }
 */
 
+#include "../src/precompiled.hpp"
 #include "../src/module_raii.hpp"
 #include "../src/async_job.hpp"
 #include "../src/profiler.hpp"
 #include "../src/job_promise.hpp"
 #include "../src/singletons/job_dispatcher.hpp"
-#include <boost/make_shared.hpp>
 
 MODULE_RAII(){
 	Poseidon::enqueue_async_job([]{
-		const auto test_yield = []{
-			const auto promise = boost::make_shared<Poseidon::JobPromise>();
-			promise->set_success();
-			Poseidon::JobDispatcher::yield(promise);
-		};
-
-		PROFILE_ME;
-		{
-			::usleep(10000);
-			test_yield();
-			PROFILE_ME;
-			{
-				::usleep(20000);
-				test_yield();
-				PROFILE_ME;
-				{
-					::usleep(30000);
-					test_yield();
-				}
-				::usleep(40000);
-				test_yield();
-			}
-			::usleep(50000);
-			test_yield();
-		}
-		::usleep(60000);
-		test_yield();
+		const auto promise = boost::make_shared<Poseidon::JobPromise>();
+		// promise->set_success();
+		Poseidon::JobDispatcher::yield(promise);
 	});
 }

@@ -167,7 +167,9 @@ namespace {
 						: "c"(fiber), "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
 						: "sp", "memory"
 					);
+					t_profiler_hook = Profiler::begin_stack_switch();
 					fiber_stack_barrier(reg);
+					Profiler::end_stack_switch(t_profiler_hook);
 
 					reg->state = FS_READY;
 					t_profiler_hook = Profiler::begin_stack_switch();
