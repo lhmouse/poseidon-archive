@@ -150,17 +150,15 @@ namespace {
 						;
 					}
 
-					register FiberControl *reg __asm__("cx");
+					register AUTO(reg __asm__("bx"), fiber); // 必须是 callee-saved 寄存器！
 					__asm__ __volatile__(
 #ifdef __x86_64__
-						"movq %%rdx, %%rcx \n"
 						"movq %%rax, %%rsp \n"
 #else
-						"movq %%rdx, %%rcx \n"
 						"movl %%eax, %%esp \n"
 #endif
-						: "=c"(reg)
-						: "d"(fiber), "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
+						: "+b"(reg)
+						: "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
 						: "sp", "memory"
 					);
 					fiber_stack_barrier(reg);
