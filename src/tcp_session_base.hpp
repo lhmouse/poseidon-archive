@@ -44,10 +44,10 @@ public:
 	// 至少一个此对象存活的条件下连接不会由于 RDHUP 而被关掉。
 	class DelayedShutdownGuard : NONCOPYABLE {
 	private:
-		const boost::shared_ptr<TcpSessionBase> m_session;
+		const boost::weak_ptr<TcpSessionBase> m_weak;
 
 	public:
-		explicit DelayedShutdownGuard(boost::shared_ptr<TcpSessionBase> session);
+		explicit DelayedShutdownGuard(boost::weak_ptr<TcpSessionBase> weak);
 		~DelayedShutdownGuard();
 	};
 

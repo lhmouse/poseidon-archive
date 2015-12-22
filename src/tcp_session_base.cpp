@@ -25,18 +25,25 @@
 
 namespace Poseidon {
 
-TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::shared_ptr<TcpSessionBase> session)
-	: m_session(STD_MOVE(session))
+TcpSessionBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::weak_ptr<TcpSessionBase> weak)
+	: m_weak(STD_MOVE(weak))
 {
-	atomic_add(m_session->m_delayed_shutdown_guard_count, 1, ATOMIC_RELAXED);
-}
-TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
-	if(atomic_sub(m_session->m_delayed_shutdown_guard_count, 1, ATOMIC_RELAXED) != 0){
+	const AUTO(session, m_weak.lock());
+	if(!session){
 		return;
 	}
-	if(atomic_load(m_session->m_shutdown_write, ATOMIC_CONSUME)){
-		atomic_store(m_session->m_really_shutdown_write, true, ATOMIC_RELEASE);
-		m_session->notify_epoll_writeable();
+	atomic_add(session->m_delayed_shutdown_guard_count, 1, ATOMIC_RELAXED);
+}
+TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
+	const AUTO(session, m_weak.lock());
+	if(!session){
+		return;
+	}
+	if(atomic_sub(session->m_delayed_shutdown_guard_count, 1, ATOMIC_RELAXED) == 0){
+		if(atomic_load(session->m_shutdown_write, ATOMIC_CONSUME)){
+			atomic_store(session->m_really_shutdown_write, true, ATOMIC_RELEASE);
+			session->notify_epoll_writeable();
+		}
 	}
 }
 
