@@ -31,7 +31,7 @@ void dont_optimize_try_catch_away();
 namespace Poseidon {
 
 namespace {
-	boost::uint64_t g_job_timeout   = 60000;
+	boost::uint64_t g_job_timeout = 60000;
 
 	enum FiberState {
 		FS_READY,
@@ -113,13 +113,7 @@ namespace {
 		LOG_POSEIDON_TRACE("Exited from fiber ", static_cast<void *>(fiber));
 	}
 
-	FiberControl *g_current_fiber =
-#ifdef POSEIDON_CXX11
-		NULLPTR;
-#else
-		0;
-#endif
-	void *g_profiler_hook;
+	AUTO(g_current_fiber, (FiberControl *)0);
 
 	__attribute__((__noinline__, __nothrow__))
 	void schedule_fiber(FiberControl *fiber) NOEXCEPT {
@@ -136,10 +130,11 @@ namespace {
 		try {
 			::dont_optimize_try_catch_away();
 
+			const AUTO(profiler_hook, Profiler::begin_stack_switch());
+
 			if(sigsetjmp(fiber->outer, true) == 0){
 				if(fiber->state == FS_YIELDED){
 					fiber->state = FS_RUNNING;
-					g_profiler_hook = Profiler::begin_stack_switch();
 					::unchecked_siglongjmp(fiber->inner, 1);
 				} else {
 					fiber->state = FS_RUNNING;
@@ -155,34 +150,32 @@ namespace {
 						;
 					}
 
-					register FiberControl *reg __asm__("bx");
+					register FiberControl *reg __asm__("cx");
 					__asm__ __volatile__(
 #ifdef __x86_64__
-						"movq %%rcx, %%rbx \n"
+						"movq %%rdx, %%rcx \n"
 						"movq %%rax, %%rsp \n"
 #else
-						"movl %%ecx, %%ebx \n"
+						"movq %%rdx, %%rcx \n"
 						"movl %%eax, %%esp \n"
 #endif
-						: "=b"(reg)
-						: "c"(fiber), "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
+						: "=c"(reg)
+						: "d"(fiber), "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
 						: "sp", "memory"
 					);
-					g_profiler_hook = Profiler::begin_stack_switch();
 					fiber_stack_barrier(reg);
-					Profiler::end_stack_switch(g_profiler_hook);
 
 					reg->state = FS_READY;
-					g_profiler_hook = Profiler::begin_stack_switch();
 					::unchecked_siglongjmp(reg->outer, 1);
 				}
 			}
+
+			Profiler::end_stack_switch(profiler_hook);
 
 			::dont_optimize_try_catch_away();
 		} catch(...){
 			std::abort();
 		}
-		Profiler::end_stack_switch(g_profiler_hook);
 		g_current_fiber = NULLPTR;
 	}
 

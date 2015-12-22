@@ -10,12 +10,7 @@
 namespace Poseidon {
 
 namespace {
-	__thread Profiler *t_top_profiler =
-#ifdef POSEIDON_CXX11
-		NULLPTR;
-#else
-		0;
-#endif
+	__thread AUTO(t_top_profiler, (Profiler *)0);
 }
 
 void Profiler::accumulate_all_in_thread() NOEXCEPT {
