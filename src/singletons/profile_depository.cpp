@@ -3,7 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "profile_depository.hpp"
-#include <map>
+#include <boost/container/flat_map.hpp>
 #include <cstring>
 #include "main_config.hpp"
 #include "../mutex.hpp"
@@ -47,7 +47,7 @@ namespace {
 	bool g_enabled = true;
 
 	Mutex g_mutex;
-	std::map<ProfileKey, ProfileCounters> g_profile;
+	boost::container::flat_map<ProfileKey, ProfileCounters> g_profile;
 }
 
 void ProfileDepository::start(){
@@ -68,24 +68,13 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 	double total, double exclusive) NOEXCEPT
 {
 	try {
-		std::map<ProfileKey, ProfileCounters>::iterator it;
-		ProfileKey key(file, line, func);
-		{
-			const Mutex::UniqueLock lock(g_mutex);
-			it = g_profile.find(key);
-			if(it != g_profile.end()){
-				goto _writeProfile;
-			}
-		}
-		{
-			const Mutex::UniqueLock lock(g_mutex);
-			it = g_profile.insert(std::make_pair(key, ProfileCounters())).first;
-		}
+		Mutex::UniqueLock lock(g_mutex);
+		AUTO_REF(counters, g_profile[ProfileKey(file, line, func)]);
+		lock.unlock();
 
-	_writeProfile:
-		atomic_add(it->second.samples, 1, ATOMIC_RELAXED);
-		atomic_add(it->second.ns_total, total * 1e6, ATOMIC_RELAXED);
-		atomic_add(it->second.ns_exclusive, exclusive * 1e6, ATOMIC_RELAXED);
+		atomic_add(counters.samples,      1,               ATOMIC_RELAXED);
+		atomic_add(counters.ns_total,     total * 1e6,     ATOMIC_RELAXED);
+		atomic_add(counters.ns_exclusive, exclusive * 1e6, ATOMIC_RELAXED);
 
 //      LOG_POSEIDON_TRACE("Accumulated profile info: file = ", file, ", line = ", line,
 //          ", func = ", func, ", total = ", total, " s, exclusive = ", exclusive, " s");
@@ -101,14 +90,16 @@ std::vector<ProfileDepository::SnapshotElement> ProfileDepository::snapshot(){
 		const Mutex::UniqueLock lock(g_mutex);
 		ret.reserve(g_profile.size());
 		for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
-			SnapshotElement pi;
-			pi.file = it->first.file;
-			pi.line = it->first.line;
-			pi.func = it->first.func;
-			pi.samples = atomic_load(it->second.samples, ATOMIC_RELAXED);
-			pi.ns_total = atomic_load(it->second.ns_total, ATOMIC_RELAXED);
-			pi.ns_exclusive = atomic_load(it->second.ns_exclusive, ATOMIC_RELAXED);
-			ret.push_back(pi);
+			const AUTO_REF(key, it->first);
+			const AUTO_REF(counters, it->second);
+			SnapshotElement elem;
+			elem.file         = key.file;
+			elem.line         = key.line;
+			elem.func         = key.func;
+			elem.samples      = atomic_load(counters.samples, ATOMIC_RELAXED);
+			elem.ns_total     = atomic_load(counters.ns_total, ATOMIC_RELAXED);
+			elem.ns_exclusive = atomic_load(counters.ns_exclusive, ATOMIC_RELAXED);
+			ret.push_back(elem);
 		}
 	}
 	return ret;

@@ -199,8 +199,10 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			} catch(...){
 				LOG_POSEIDON_INFO("Socket error: err_code = ", err_code, ", desc = ", desc, " remote is not connected.");
 			}
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"Socket error: err_code = ", err_code, ", desc = ", desc, ", typeid = ", typeid(*session).name());
 			session->on_close(err_code);
-			goto _eraseSession;
+			goto _erase_session;
 		}
 		if(event.events & EPOLLHUP){
 			try {
@@ -210,8 +212,10 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			}
 			session->shutdown_read();
 			session->shutdown_write();
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"Socket closed gracefully: typeid = ", typeid(*session).name());
 			session->on_close(0);
-			goto _eraseSession;
+			goto _erase_session;
 		}
 
 		if(event.events & EPOLLIN){
@@ -229,7 +233,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		}
 		continue;
 
-	_eraseSession:
+	_erase_session:
 		const Mutex::UniqueLock lock(m_mutex);
 		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->get_fd(), NULLPTR) != 0){
 			const int err_code = errno;
