@@ -25,7 +25,7 @@ int main(){
 
 		unsigned char bytes[32];
 		unsigned char *write = bytes;
-		Poseidon::vint50ToBinary(val, write);
+		Poseidon::vint50_to_binary(val, write);
 		std::cout <<"  Written: " <<std::hex <<std::uppercase;
 		for(const unsigned char *read = bytes; read != write; ++read){
 			std::cout <<std::setfill('0') <<std::setw(2)

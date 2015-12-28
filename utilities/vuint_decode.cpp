@@ -34,7 +34,7 @@ int main(){
 
 		boost::uint64_t val;
 		const unsigned char *read = bytes.c_str();
-		if(!Poseidon::vuint50FromBinary(val, read, bytes.size())){
+		if(!Poseidon::vuint50_from_binary(val, read, bytes.size())){
 			std::cout <<"  Data truncated" <<std::endl;
 			continue;
 		}
