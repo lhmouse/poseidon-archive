@@ -16,7 +16,7 @@ namespace WebSocket {
 		if(request_headers.version < 10001){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "HTTP 1.1 is required to use WebSocket");
 			ret.version = 10000;
-			ret.status_code = Http::ST_METHOD_NOT_ALLOWED;
+			ret.status_code = Http::ST_VERSION_NOT_SUPPORTED;
 			return ret;
 		}
 		ret.version = 10001;
