@@ -1,5 +1,5 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
-// Copyleft 2014 - 2015, LH_Mouse. All wrongs reserved.
+// Copyleft 2014 - 2016, LH_Mouse. All wrongs reserved.
 
 #ifndef POSEIDON_SOCK_ADDR_HPP_
 #define POSEIDON_SOCK_ADDR_HPP_
