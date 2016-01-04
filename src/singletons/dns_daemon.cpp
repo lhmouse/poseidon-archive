@@ -119,7 +119,7 @@ void DnsDaemon::stop(){
 	}
 }
 
-SockAddr DnsDaemon::sync_lookup(std::string host, unsigned port){
+SockAddr DnsDaemon::look_up(std::string host, unsigned port){
 	PROFILE_ME;
 
 	DnsCallbackParam param(VAL_INIT, STD_MOVE(host), port, VAL_INIT);
@@ -131,7 +131,7 @@ SockAddr DnsDaemon::sync_lookup(std::string host, unsigned port){
 	return SockAddr(param.cb.ar_result->ai_addr, param.cb.ar_result->ai_addrlen);
 }
 
-boost::shared_ptr<const JobPromise> DnsDaemon::async_lookup(boost::shared_ptr<SockAddr> sock_addr, std::string host, unsigned port){
+boost::shared_ptr<const JobPromise> DnsDaemon::enqueue_for_looking_up(boost::shared_ptr<SockAddr> sock_addr, std::string host, unsigned port){
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<JobPromise>());
