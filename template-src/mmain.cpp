@@ -759,7 +759,7 @@ MODULE_RAII(){
 MODULE_RAII(){
 	Poseidon::enqueue_async_job([]{
 		const auto promise = boost::make_shared<Poseidon::JobPromise>();
-		// promise->set_success();
+		promise->set_success();
 		Poseidon::JobDispatcher::yield(promise);
 	});
 }
