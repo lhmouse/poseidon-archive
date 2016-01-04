@@ -8,7 +8,6 @@
 #include <poseidon/errno.hpp>
 
 // 转发配置。
-// 转发服务器配置。
 const char          g_server_bind_addr   [] = "0.0.0.0";
 const unsigned      g_server_bind_port      = 16323;
 const std::uint64_t g_keep_alive_timeout    = 15000; // 如果两个请求之间的时间超过该时间（以毫秒计），连接将会被关闭。
