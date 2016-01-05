@@ -15,14 +15,9 @@ private:
 	const UniqueSsl m_ssl;
 	const int m_fd;
 
-	bool m_established;
-
 public:
 	SslFilterBase(Move<UniqueSsl> ssl, int fd);
 	virtual ~SslFilterBase();
-
-protected:
-	virtual bool establish() = 0;
 
 public:
 	::SSL *get_ssl() const {

@@ -25,20 +25,7 @@ namespace {
 		SslFilter(Move<UniqueSsl> ssl, int fd)
 			: SslFilterBase(STD_MOVE(ssl), fd)
 		{
-		}
-
-	private:
-		bool establish(){
-			const int ret = ::SSL_accept(get_ssl());
-			if(ret != 1){
-				const int err = ::SSL_get_error(get_ssl(), ret);
-				if((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)){
-					return false;
-				}
-				LOG_POSEIDON_ERROR("::SSL_accept() = ", ret, ", ::SSL_get_error() = ", err);
-				DEBUG_THROW(Exception, sslit("::SSL_accept() failed"));
-			}
-			return true;
+			::SSL_set_accept_state(get_ssl());
 		}
 	};
 

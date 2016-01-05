@@ -39,28 +39,16 @@ namespace {
 
 SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
 	: m_ssl(STD_MOVE(ssl)), m_fd(fd)
-	, m_established(false)
 {
 	if(!::SSL_set_fd(m_ssl.get(), fd)){
 		DEBUG_THROW(Exception, sslit("::SSL_set_fd() failed"));
 	}
 }
 SslFilterBase::~SslFilterBase(){
-	if(m_established){
-		LOG_POSEIDON_DEBUG("Shutting down SSL...");
-		::SSL_shutdown(m_ssl.get());
-	}
+	::SSL_shutdown(m_ssl.get());
 }
 
 long SslFilterBase::read(void *data, unsigned long size){
-	if(!m_established){
-		if(!establish()){
-			LOG_POSEIDON_DEBUG("Waiting for SSL handshake...");
-			errno = EAGAIN;
-			return -1;
-		}
-		m_established = true;
-	}
 	const long ret = ::SSL_read(m_ssl.get(), data, size);
 	if(ret < 0){
 		set_errno_by_ssl_ret(m_ssl.get(), ret);
@@ -68,14 +56,6 @@ long SslFilterBase::read(void *data, unsigned long size){
 	return ret;
 }
 long SslFilterBase::write(const void *data, unsigned long size){
-	if(!m_established){
-		if(!establish()){
-			LOG_POSEIDON_DEBUG("Waiting for SSL handshake...");
-			errno = EAGAIN;
-			return -1;
-		}
-		m_established = true;
-	}
 	const long ret = ::SSL_write(m_ssl.get(), data, size);
 	if(ret < 0){
 		set_errno_by_ssl_ret(m_ssl.get(), ret);
