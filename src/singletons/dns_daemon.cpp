@@ -56,11 +56,9 @@ namespace {
 		}
 	};
 
-	void dns_callback(::sigval sigval_param) NOEXCEPT {
+	void dispatch_dns_result(DnsCallbackParam *param) NOEXCEPT
+	try {
 		PROFILE_ME;
-
-		Logger::set_thread_tag("   D"); // DNS
-		const boost::scoped_ptr<DnsCallbackParam> param(static_cast<DnsCallbackParam *>(sigval_param.sival_ptr));
 
 		try {
 			const int gai_code = ::gai_error(&(param->cb));
@@ -79,16 +77,22 @@ namespace {
 			param->promise->set_exception(boost::copy_exception(e));
 		} catch(std::exception &e){
 			LOG_POSEIDON_INFO("std::exception thrown in DNS loop: what = ", e.what());
-			try {
-				param->promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
-			} catch(...){
-				param->promise->set_exception(boost::current_exception());
-			}
-		} catch(...){
-			LOG_POSEIDON_INFO("Unknown exception thrown in DNS loop.");
-			param->promise->set_exception(boost::current_exception());
+			param->promise->set_exception(boost::copy_exception(Exception(__FILE__, __LINE__, SharedNts(e.what()))));
 		}
+	} catch(std::exception &e){
+		LOG_POSEIDON_ERROR("std::exception thrown again: what = ", e.what());
+	} catch(...){
+		LOG_POSEIDON_ERROR("Unknown exception thrown again!");
+	}
 
+	void dns_callback(::sigval sigval_param) NOEXCEPT {
+		PROFILE_ME;
+
+		Logger::set_thread_tag("   D"); // DNS
+
+		const auto param = static_cast<DnsCallbackParam *>(sigval_param.sival_ptr);
+		dispatch_dns_result(param);
+		delete param;
 		atomic_sub(g_pending_callback_count, 1, ATOMIC_RELAXED);
 	}
 }
