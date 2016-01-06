@@ -151,7 +151,7 @@ namespace Http {
 
 		try {
 			if(ClientReader::is_content_till_eof()){
-				terminate_content();
+				ClientReader::terminate_content();
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
