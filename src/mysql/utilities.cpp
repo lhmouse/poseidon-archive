@@ -4,11 +4,13 @@
 #include "../precompiled.hpp"
 #include "utilities.hpp"
 #include "../time.hpp"
+#include "../uuid.hpp"
 
 namespace Poseidon {
 
 namespace MySql {
 	std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs){
+		os <<'\'';
 		for(AUTO(it, rhs.str.begin()); it != rhs.str.end(); ++it){
 			switch(*it){
 			case 0:
@@ -37,13 +39,24 @@ namespace MySql {
 				break;
 			}
 		}
+		os <<'\'';
 		return os;
 	}
 
 	std::ostream &operator<<(std::ostream &os, const DateFormatter &rhs){
-		char temp[256];
-		const std::size_t len = format_time(temp, sizeof(temp), rhs.time, true);
-		return os.write(temp, static_cast<std::streamsize>(len));
+		char str[256];
+		format_time(str, sizeof(str), rhs.time, true);
+		os <<'\'';
+		os <<str;
+		os <<'\'';
+		return os;
+	}
+
+	std::ostream &operator<<(std::ostream &os, const UuidFormatter &rhs){
+		os <<'\'';
+		os <<rhs.uuid;
+		os <<'\'';
+		return os;
 	}
 }
 

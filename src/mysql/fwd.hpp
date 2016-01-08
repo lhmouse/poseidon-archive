@@ -10,6 +10,7 @@ namespace MySql {
 	class Exception;
 	class StringEscaper;
 	class DateFormatter;
+	class UuidFormatter;
 
 	class Connection;
 	class ObjectBase;

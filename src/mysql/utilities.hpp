@@ -10,6 +10,8 @@
 
 namespace Poseidon {
 
+class Uuid;
+
 namespace MySql {
 	struct StringEscaper {
 		const std::string &str;
@@ -32,6 +34,17 @@ namespace MySql {
 	};
 
 	extern std::ostream &operator<<(std::ostream &os, const DateFormatter &rhs);
+
+	struct UuidFormatter {
+		const Uuid &uuid;
+
+		explicit UuidFormatter(const Uuid &uuid_)
+			: uuid(uuid_)
+		{
+		}
+	};
+
+	extern std::ostream &operator<<(std::ostream &os, const UuidFormatter &rhs);
 }
 
 }

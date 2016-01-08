@@ -369,20 +369,14 @@ public:
 													<<static_cast< ::boost::uint64_t>(get_ ## name_())),
 #define FIELD_STRING(name_)                 (void)(oss_ <<", "),    \
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<< '\'' \
-													<< ::Poseidon::MySql::StringEscaper(get_ ## name_())    \
-													<< '\''),
+													<< ::Poseidon::MySql::StringEscaper(get_ ## name_())),
 #define FIELD_DATETIME(name_)               (void)(oss_ <<", "),    \
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<< '\'' \
-													<< ::Poseidon::MySql::DateFormatter(get_ ## name_())    \
-													<< '\''),
+													<< ::Poseidon::MySql::DateFormatter(get_ ## name_())),
 
 #define FIELD_UUID(name_)                   (void)(oss_ <<", "),    \
 												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<< '\'' \
-													<< get_ ## name_()  \
-													<< '\''),
+													<< ::Poseidon::MySql::UuidFormatter(get_ ## name_())),
 
 		if(to_replace_){
 			oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
