@@ -91,7 +91,7 @@ public:
 		m_data = rhs;
 	}
 	template<typename T>
-	void set(T rhs, typename boost::enable_if_c<boost::is_arithmetic<T>::value>::type * = NULLPTR){
+	void set(T rhs, typename boost::enable_if_c<boost::is_arithmetic<T>::value, int>::type = 0){
 		m_data = static_cast<double>(rhs);
 	}
 	void set(const char *rhs){
