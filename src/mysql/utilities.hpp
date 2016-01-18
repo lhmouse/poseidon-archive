@@ -24,16 +24,16 @@ namespace MySql {
 
 	extern std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs);
 
-	struct DateFormatter {
+	struct DateTimeFormatter {
 		const boost::uint64_t &time;
 
-		explicit DateFormatter(const boost::uint64_t &time_)
+		explicit DateTimeFormatter(const boost::uint64_t &time_)
 			: time(time_)
 		{
 		}
 	};
 
-	extern std::ostream &operator<<(std::ostream &os, const DateFormatter &rhs);
+	extern std::ostream &operator<<(std::ostream &os, const DateTimeFormatter &rhs);
 
 	struct UuidFormatter {
 		const Uuid &uuid;

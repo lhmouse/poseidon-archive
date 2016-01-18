@@ -9,7 +9,7 @@ namespace Poseidon {
 namespace MySql {
 	class Exception;
 	class StringEscaper;
-	class DateFormatter;
+	class DateTimeFormatter;
 	class UuidFormatter;
 
 	class Connection;
