@@ -347,11 +347,6 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 		promise->check_and_rethrow();
 	}
 }
-void JobDispatcher::detach_yieldable() NOEXCEPT {
-	PROFILE_ME;
-
-	g_current_fiber = NULLPTR;
-}
 
 void JobDispatcher::pump_all(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");

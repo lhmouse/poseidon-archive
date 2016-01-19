@@ -31,9 +31,6 @@ extern void enqueue_job(boost::shared_ptr<JobBase> job,
 	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
 // 切到其它协程，直到 pred 为空或者 pred() 返回 true。必须在任务函数中调用。
 extern void yield_job(boost::shared_ptr<const JobPromise> promise);
-// 设定当前的协程不再可以 yield，此后再调用 yield_job 会抛出异常。
-// 此操作不可逆。
-extern void detach_yieldable_job() NOEXCEPT;
 
 }
 
