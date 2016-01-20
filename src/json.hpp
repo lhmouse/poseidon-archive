@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <boost/variant.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
+#include <boost/type_traits/is_same.hpp>
 #include <boost/utility/enable_if.hpp>
 #include "shared_nts.hpp"
 
@@ -66,7 +67,7 @@ public:
 	{
 	}
 	template<typename T>
-	JsonElement(T t){
+	JsonElement(T t, typename boost::enable_if_c<!boost::is_same<T, JsonElement>::value, int>::type = 0){
 		set(STD_MOVE_IDN(t));
 	}
 
