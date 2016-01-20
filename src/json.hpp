@@ -13,6 +13,8 @@
 #include <boost/variant.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/type_traits/is_same.hpp>
+#include <boost/type_traits/remove_reference.hpp>
+#include <boost/type_traits/remove_cv.hpp>
 #include <boost/utility/enable_if.hpp>
 #include "shared_nts.hpp"
 
@@ -67,7 +69,11 @@ public:
 	{
 	}
 	template<typename T>
-	JsonElement(T t, typename boost::enable_if_c<!boost::is_same<T, JsonElement>::value, int>::type = 0){
+	JsonElement(T t, typename boost::enable_if_c<
+		!boost::is_same<
+			typename boost::remove_reference<typename boost::remove_cv<T>::type>::type, JsonElement>::value,
+			int>::type = 0)
+	{
 		set(STD_MOVE_IDN(t));
 	}
 
@@ -92,7 +98,10 @@ public:
 		m_data = rhs;
 	}
 	template<typename T>
-	void set(T rhs, typename boost::enable_if_c<boost::is_arithmetic<T>::value, int>::type = 0){
+	void set(T rhs, typename boost::enable_if_c<
+		boost::is_arithmetic<T>::value,
+		int>::type = 0)
+	{
 		m_data = static_cast<double>(rhs);
 	}
 	void set(const char *rhs){
