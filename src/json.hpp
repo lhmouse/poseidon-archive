@@ -12,9 +12,7 @@
 #include <cstddef>
 #include <boost/variant.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
-#include <boost/type_traits/is_same.hpp>
-#include <boost/type_traits/remove_reference.hpp>
-#include <boost/type_traits/remove_cv.hpp>
+#include <boost/type_traits/is_enum.hpp>
 #include <boost/utility/enable_if.hpp>
 #include "shared_nts.hpp"
 
@@ -64,17 +62,36 @@ private:
 		> m_data;
 
 public:
-	JsonElement()
+	JsonElement(JsonNull = JsonNull())
 		: m_data(JsonNull())
 	{
 	}
-	template<typename T>
-	JsonElement(T t, typename boost::enable_if_c<
-		!boost::is_same<
-			typename boost::remove_reference<typename boost::remove_cv<T>::type>::type, JsonElement>::value,
-			int>::type = 0)
+	JsonElement(bool rhs)
+		: m_data(rhs)
 	{
-		set(STD_MOVE_IDN(t));
+	}
+	template<typename T>
+	JsonElement(T rhs, typename boost::enable_if_c<
+		boost::is_arithmetic<T>::value || boost::is_enum<T>::value,
+		int>::type = 0)
+		: m_data(static_cast<double>(rhs))
+	{
+	}
+	JsonElement(const char *rhs)
+		: m_data(std::string(rhs))
+	{
+	}
+	JsonElement(std::string rhs)
+		: m_data(STD_MOVE_IDN(rhs))
+	{
+	}
+	JsonElement(JsonObject rhs)
+		: m_data(STD_MOVE_IDN(rhs))
+	{
+	}
+	JsonElement(JsonArray rhs)
+		: m_data(STD_MOVE_IDN(rhs))
+	{
 	}
 
 public:
@@ -90,41 +107,10 @@ public:
 	T &get(){
 		return boost::get<T &>(m_data);
 	}
-
-	void set(JsonNull){
-		m_data = JsonNull();
-	}
-	void set(bool rhs){
-		m_data = rhs;
-	}
 	template<typename T>
-	void set(T rhs, typename boost::enable_if_c<
-		boost::is_arithmetic<T>::value,
-		int>::type = 0)
-	{
-		m_data = static_cast<double>(rhs);
+	void set(T rhs){
+		m_data(STD_MOVE_IDN(rhs)).swap(m_data);
 	}
-	void set(const char *rhs){
-		m_data = std::string(rhs);
-	}
-	void set(std::string rhs){
-		m_data = STD_MOVE_IDN(rhs);
-	}
-	void set(JsonObject rhs){
-		m_data = STD_MOVE_IDN(rhs);
-	}
-	void set(JsonArray rhs){
-		m_data = STD_MOVE_IDN(rhs);
-	}
-	void set(JsonElement rhs){
-		m_data.swap(rhs.m_data);
-	}
-#ifndef POSEIDON_CXX11
-	template<typename T>
-	void set(Move<T> rhs){
-		set(T(rhs));
-	}
-#endif
 
 	void swap(JsonElement &rhs) NOEXCEPT {
 		m_data.swap(rhs.m_data);
