@@ -411,7 +411,7 @@ public:
 #define FIELD_BIGINT(name_)                 set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
 #define FIELD_BIGINT_UNSIGNED(name_)        set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
 #define FIELD_STRING(name_)                 set_ ## name_(conn_->get_string( TOKEN_TO_STR(name_) ));
-#define FIELD_DATETIME(name_)               set_ ## name_(conn_->get_date_time( TOKEN_TO_STR(name_) ));
+#define FIELD_DATETIME(name_)               set_ ## name_(conn_->get_datetime( TOKEN_TO_STR(name_) ));
 #define FIELD_UUID(name_)                   set_ ## name_(::Poseidon::Uuid(conn_->get_string( TOKEN_TO_STR(name_) )));
 
 		MYSQL_OBJECT_FIELDS

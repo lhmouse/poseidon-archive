@@ -207,7 +207,7 @@ namespace MySql {
 				}
 				return val;
 			}
-			boost::uint64_t do_get_date_time(const char *column) const {
+			boost::uint64_t do_get_datetime(const char *column) const {
 				const AUTO(it, m_columns.find(column));
 				if(it == m_columns.end()){
 					LOG_POSEIDON_ERROR("Column not found: ", column);
@@ -258,8 +258,8 @@ namespace MySql {
 	std::string Connection::get_string(const char *column) const {
 		return static_cast<const ConnectionDelegator &>(*this).do_get_string(column);
 	}
-	boost::uint64_t Connection::get_date_time(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).do_get_date_time(column);
+	boost::uint64_t Connection::get_datetime(const char *column) const {
+		return static_cast<const ConnectionDelegator &>(*this).do_get_datetime(column);
 	}
 }
 
