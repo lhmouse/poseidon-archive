@@ -6,8 +6,8 @@
 
 #include "../cxx_ver.hpp"
 #include <vector>
-#include <deque>
 #include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
 
 namespace Poseidon {
 
@@ -42,8 +42,7 @@ struct MySqlDaemon {
 	static boost::shared_ptr<const JobPromise> enqueue_for_loading(
 		boost::shared_ptr<MySql::ObjectBase> object, std::string query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(
-		boost::shared_ptr<std::deque<boost::shared_ptr<MySql::ObjectBase> > > sink,
-		boost::shared_ptr<MySql::ObjectBase> (*factory)(), const char *table_hint, std::string query);
+		boost::function<void (const boost::shared_ptr<MySql::Connection> &)> factory, const char *table_hint, std::string query);
 
 private:
 	MySqlDaemon();

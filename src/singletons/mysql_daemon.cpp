@@ -147,17 +147,15 @@ namespace {
 
 	class BatchLoadOperation : public OperationBase {
 	private:
-		boost::shared_ptr<std::deque<boost::shared_ptr<MySql::ObjectBase> > > m_container;
-		boost::shared_ptr<MySql::ObjectBase> (*const m_factory)();
+		const boost::function<void (const boost::shared_ptr<MySql::Connection> &)> m_factory;
 		const char *const m_table_hint;
 		const std::string m_query;
 
 	public:
 		BatchLoadOperation(boost::shared_ptr<JobPromise> promise,
-			boost::shared_ptr<std::deque<boost::shared_ptr<MySql::ObjectBase> > > container,
-			boost::shared_ptr<MySql::ObjectBase> (*factory)(), const char *table_hint, std::string query)
+			boost::function<void (const boost::shared_ptr<MySql::Connection> &)> factory, const char *table_hint, std::string query)
 			: OperationBase(STD_MOVE(promise))
-			, m_container(STD_MOVE(container)), m_factory(factory), m_table_hint(table_hint), m_query(STD_MOVE(query))
+			, m_factory(STD_MOVE_IDN(factory)), m_table_hint(table_hint), m_query(STD_MOVE(query))
 		{
 		}
 
@@ -178,12 +176,9 @@ namespace {
 			LOG_POSEIDON_INFO("MySQL batch load: table_hint = ", m_table_hint, ", query = ", query);
 			conn->execute_sql(query);
 
-			if(m_factory && m_container){
+			if(m_factory){
 				while(conn->fetch_row()){
-					AUTO(object, (*m_factory)());
-					object->fetch(conn);
-					object->enable_auto_saving();
-					m_container->push_back(STD_MOVE(object));
+					m_factory(conn);
 				}
 			} else {
 				LOG_POSEIDON_DEBUG("Result discarded.");
@@ -747,13 +742,12 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_loading(
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_loading(
-	boost::shared_ptr<std::deque<boost::shared_ptr<MySql::ObjectBase> > > sink,
-	boost::shared_ptr<MySql::ObjectBase> (*factory)(), const char *table_hint, std::string query)
+	boost::function<void (const boost::shared_ptr<MySql::Connection> &)> factory, const char *table_hint, std::string query)
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = table_hint;
 	submit_operation(table_name,
-		boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(sink), factory, table_hint, STD_MOVE(query)),
+		boost::make_shared<BatchLoadOperation>(promise, STD_MOVE_IDN(factory), table_hint, STD_MOVE(query)),
 		true);
 	return STD_MOVE_IDN(promise);
 }

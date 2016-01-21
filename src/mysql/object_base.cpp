@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "object_base.hpp"
+#include "connection.hpp"
 #include "exception.hpp"
 #include "../singletons/mysql_daemon.hpp"
 #include "../singletons/job_dispatcher.hpp"
@@ -11,16 +12,27 @@
 
 namespace Poseidon {
 
+namespace {
+	void create_object_and_push(std::vector<boost::shared_ptr<MySql::ObjectBase> > &ret,
+		boost::shared_ptr<MySql::ObjectBase> (*factory)(), const boost::shared_ptr<MySql::Connection> &conn)
+	{
+		AUTO(obj, (*factory)());
+		obj->fetch(conn);
+		obj->enable_auto_saving();
+		ret.push_back(STD_MOVE(obj));
+	}
+}
+
 namespace MySql {
 	void ObjectBase::batch_load(std::vector<boost::shared_ptr<ObjectBase> > &ret,
 		boost::shared_ptr<ObjectBase> (*factory)(), const char *table_hint, std::string query)
 	{
-		const AUTO(queue, boost::make_shared<std::deque<boost::shared_ptr<ObjectBase> > >());
-		const AUTO(promise, MySqlDaemon::enqueue_for_batch_loading(queue, factory, table_hint, STD_MOVE(query)));
+		boost::function<void (const boost::shared_ptr<MySql::Connection> &)> callback;
+		if(factory){
+			callback = boost::bind(&create_object_and_push, boost::ref(ret), factory, _1);
+		}
+		const AUTO(promise, MySqlDaemon::enqueue_for_batch_loading(STD_MOVE_IDN(callback), table_hint, STD_MOVE(query)));
 		JobDispatcher::yield(promise);
-
-		ret.reserve(ret.size() + queue->size());
-		ret.insert(ret.end(), queue->begin(), queue->end());
 	}
 
 	ObjectBase::ObjectBase()
