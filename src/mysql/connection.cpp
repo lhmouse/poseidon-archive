@@ -14,6 +14,7 @@
 #include "../log.hpp"
 #include "../time.hpp"
 #include "../system_exception.hpp"
+#include "../uuid.hpp"
 
 namespace Poseidon {
 
@@ -219,6 +220,21 @@ namespace MySql {
 				}
 				return scan_time(data);
 			}
+			Uuid do_get_uuid(const char *column) const {
+				const AUTO(it, m_columns.find(column));
+				if(it == m_columns.end()){
+					LOG_POSEIDON_ERROR("Column not found: ", column);
+					DEBUG_THROW(BasicException, sslit("Column not found"));
+				}
+				const AUTO(data, m_row[it->second]);
+				if(!data || (data[0] == 0)){
+					return Uuid();
+				}
+				if(std::strlen(data) != 36){
+					LOG_POSEIDON_ERROR("Invalid UUID string: ", data);
+				}
+				return Uuid(reinterpret_cast<const char (&)[36]>(data[0]));
+			}
 		};
 	}
 
@@ -260,6 +276,9 @@ namespace MySql {
 	}
 	boost::uint64_t Connection::get_datetime(const char *column) const {
 		return static_cast<const ConnectionDelegator &>(*this).do_get_datetime(column);
+	}
+	Uuid Connection::get_uuid(const char *column) const {
+		return static_cast<const ConnectionDelegator &>(*this).do_get_uuid(column);
 	}
 }
 

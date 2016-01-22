@@ -173,6 +173,9 @@ public:
 #undef FIELD_UUID
 
 #define FIELD_BOOLEAN(name_)    \
+	const bool & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	bool get_ ## name_() const {    \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -184,6 +187,9 @@ public:
 	}
 
 #define FIELD_TINYINT(name_)    \
+	const ::boost::int8_t & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	::boost::int8_t get_ ## name_() const { \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -195,6 +201,9 @@ public:
 	}
 
 #define FIELD_TINYINT_UNSIGNED(name_)   \
+	const ::boost::uint8_t & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	::boost::uint8_t get_ ## name_() const {    \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -206,6 +215,9 @@ public:
 	}
 
 #define FIELD_SMALLINT(name_)   \
+	const ::boost::int16_t & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	::boost::int16_t get_ ## name_() const {    \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -217,6 +229,9 @@ public:
 	}
 
 #define FIELD_SMALLINT_UNSIGNED(name_)  \
+	const ::boost::uint16_t & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	::boost::uint16_t get_ ## name_() const {   \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -228,6 +243,9 @@ public:
 	}
 
 #define FIELD_INTEGER(name_)    \
+	const ::boost::int32_t & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	::boost::int32_t get_ ## name_() const {    \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -239,6 +257,9 @@ public:
 	}
 
 #define FIELD_INTEGER_UNSIGNED(name_)   \
+	const ::boost::uint32_t & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	::boost::uint32_t get_ ## name_() const {   \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -250,6 +271,9 @@ public:
 	}
 
 #define FIELD_BIGINT(name_) \
+	const ::boost::int64_t & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	::boost::int64_t get_ ## name_() const {    \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -261,6 +285,9 @@ public:
 	}
 
 #define FIELD_BIGINT_UNSIGNED(name_)    \
+	const ::boost::uint64_t & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	::boost::uint64_t get_ ## name_() const {   \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -290,6 +317,9 @@ public:
 	}
 
 #define FIELD_DATETIME(name_)   \
+	const ::boost::uint64_t & unlocked_get_ ## name_() const {   \
+		return name_;   \
+	}   \
 	::boost::uint64_t get_ ## name_() const {   \
 		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
 	}   \
@@ -412,7 +442,7 @@ public:
 #define FIELD_BIGINT_UNSIGNED(name_)        set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
 #define FIELD_STRING(name_)                 set_ ## name_(conn_->get_string( TOKEN_TO_STR(name_) ));
 #define FIELD_DATETIME(name_)               set_ ## name_(conn_->get_datetime( TOKEN_TO_STR(name_) ));
-#define FIELD_UUID(name_)                   set_ ## name_(::Poseidon::Uuid(conn_->get_string( TOKEN_TO_STR(name_) )));
+#define FIELD_UUID(name_)                   set_ ## name_(conn_->get_uuid( TOKEN_TO_STR(name_) ));
 
 		MYSQL_OBJECT_FIELDS
 	}

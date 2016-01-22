@@ -12,6 +12,8 @@
 
 namespace Poseidon {
 
+class Uuid;
+
 namespace MySql {
 	class Connection : NONCOPYABLE {
 	public:
@@ -48,6 +50,7 @@ namespace MySql {
 		double get_double(const char *column) const;
 		std::string get_string(const char *column) const;
 		boost::uint64_t get_datetime(const char *column) const;
+		Uuid get_uuid(const char *column) const;
 	};
 }
 
