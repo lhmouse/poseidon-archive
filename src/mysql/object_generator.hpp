@@ -48,17 +48,17 @@ private:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 
-#define FIELD_BOOLEAN(name_)                volatile bool name_;
-#define FIELD_TINYINT(name_)                volatile ::boost::int8_t name_;
-#define FIELD_TINYINT_UNSIGNED(name_)       volatile ::boost::uint8_t name_;
-#define FIELD_SMALLINT(name_)               volatile ::boost::int16_t name_;
-#define FIELD_SMALLINT_UNSIGNED(name_)      volatile ::boost::uint16_t name_;
-#define FIELD_INTEGER(name_)                volatile ::boost::int32_t name_;
-#define FIELD_INTEGER_UNSIGNED(name_)       volatile ::boost::uint32_t name_;
-#define FIELD_BIGINT(name_)                 volatile ::boost::int64_t name_;
-#define FIELD_BIGINT_UNSIGNED(name_)        volatile ::boost::uint64_t name_;
+#define FIELD_BOOLEAN(name_)                bool name_;
+#define FIELD_TINYINT(name_)                ::boost::int8_t name_;
+#define FIELD_TINYINT_UNSIGNED(name_)       ::boost::uint8_t name_;
+#define FIELD_SMALLINT(name_)               ::boost::int16_t name_;
+#define FIELD_SMALLINT_UNSIGNED(name_)      ::boost::uint16_t name_;
+#define FIELD_INTEGER(name_)                ::boost::int32_t name_;
+#define FIELD_INTEGER_UNSIGNED(name_)       ::boost::uint32_t name_;
+#define FIELD_BIGINT(name_)                 ::boost::int64_t name_;
+#define FIELD_BIGINT_UNSIGNED(name_)        ::boost::uint64_t name_;
 #define FIELD_STRING(name_)                 ::std::string name_;
-#define FIELD_DATETIME(name_)               volatile ::boost::uint64_t name_;
+#define FIELD_DATETIME(name_)               ::boost::uint64_t name_;
 #define FIELD_UUID(name_)                   ::Poseidon::Uuid name_;
 
 	MYSQL_OBJECT_FIELDS
