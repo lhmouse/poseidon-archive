@@ -48,18 +48,18 @@ public:
 		handles.push(STD_MOVE_IDN(foo));
 	}
 */
-#define MODULE_RAII_PRIORITY(handles_, priority_)   \
-	namespace { \
-		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_) {    \
-			struct Stub_ : public ::Poseidon::ModuleRaiiBase {  \
-				Stub_() \
-					: ::Poseidon::ModuleRaiiBase(priority_) \
-				{   \
-				}   \
-				void init(::Poseidon::HandleStack &) const FINAL;   \
-			} const stub_;  \
-		}   \
-	}   \
+#define MODULE_RAII_PRIORITY(handles_, priority_)	\
+	namespace {	\
+		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_) {	\
+			struct Stub_ : public ::Poseidon::ModuleRaiiBase {	\
+				Stub_()	\
+					: ::Poseidon::ModuleRaiiBase(priority_)	\
+				{	\
+				}	\
+				void init(::Poseidon::HandleStack &) const FINAL;	\
+			} const stub_;	\
+		}	\
+	}	\
 	void TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_)::Stub_::init(::Poseidon::HandleStack & handles_) const
 
 #define MODULE_RAII(handles_)   MODULE_RAII_PRIORITY(handles_, 65535)

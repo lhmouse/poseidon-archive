@@ -284,13 +284,13 @@ private:
 
 #define MESSAGE_NAME	   	TestMessage
 #define MESSAGE_ID			106
-#define MESSAGE_FIELDS \
-	FIELD_VINT(i)   \
-	FIELD_VUINT(j)  \
-	FIELD_ARRAY(a,  \
+#define MESSAGE_FIELDS	\
+	FIELD_VINT(i)	\
+	FIELD_VUINT(j)	\
+	FIELD_ARRAY(a,	\
 		FIELD_BYTES(b, 3)	\
-		FIELD_STRING(s) \
-		FIELD_VUINT(k)  \
+		FIELD_STRING(s)	\
+		FIELD_VUINT(k)	\
 	)
 #include "../src/cbpp/message_generator.hpp"
 

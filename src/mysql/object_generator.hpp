@@ -172,181 +172,169 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 
-#define FIELD_BOOLEAN(name_)    \
-	const bool & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	bool get_ ## name_() const {    \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(bool val_, bool invalidates_ = true){    \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_BOOLEAN(name_)                const bool & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            bool get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(bool val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_TINYINT(name_)    \
-	const ::boost::int8_t & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	::boost::int8_t get_ ## name_() const { \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(::boost::int8_t val_, bool invalidates_ = true){ \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_TINYINT(name_)                const ::boost::int8_t & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::boost::int8_t get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(::boost::int8_t val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_TINYINT_UNSIGNED(name_)   \
-	const ::boost::uint8_t & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	::boost::uint8_t get_ ## name_() const {    \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(::boost::uint8_t val_, bool invalidates_ = true){    \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_TINYINT_UNSIGNED(name_)       const ::boost::uint8_t & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::boost::uint8_t get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(::boost::uint8_t val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_SMALLINT(name_)   \
-	const ::boost::int16_t & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	::boost::int16_t get_ ## name_() const {    \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(::boost::int16_t val_, bool invalidates_ = true){    \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_SMALLINT(name_)               const ::boost::int16_t & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::boost::int16_t get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(::boost::int16_t val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_SMALLINT_UNSIGNED(name_)  \
-	const ::boost::uint16_t & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	::boost::uint16_t get_ ## name_() const {   \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(::boost::uint16_t val_, bool invalidates_ = true){   \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_SMALLINT_UNSIGNED(name_)      const ::boost::uint16_t & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::boost::uint16_t get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(::boost::uint16_t val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_INTEGER(name_)    \
-	const ::boost::int32_t & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	::boost::int32_t get_ ## name_() const {    \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(::boost::int32_t val_, bool invalidates_ = true){    \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_INTEGER(name_)                const ::boost::int32_t & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::boost::int32_t get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(::boost::int32_t val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_INTEGER_UNSIGNED(name_)   \
-	const ::boost::uint32_t & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	::boost::uint32_t get_ ## name_() const {   \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(::boost::uint32_t val_, bool invalidates_ = true){   \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_INTEGER_UNSIGNED(name_)       const ::boost::uint32_t & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::boost::uint32_t get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(::boost::uint32_t val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_BIGINT(name_) \
-	const ::boost::int64_t & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	::boost::int64_t get_ ## name_() const {    \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(::boost::int64_t val_, bool invalidates_ = true){    \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_BIGINT(name_)                 const ::boost::int64_t & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::boost::int64_t get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(::boost::int64_t val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_BIGINT_UNSIGNED(name_)    \
-	const ::boost::uint64_t & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	::boost::uint64_t get_ ## name_() const {   \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){   \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_BIGINT_UNSIGNED(name_)        const ::boost::uint64_t & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::boost::uint64_t get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_STRING(name_) \
-	const ::std::string & unlocked_get_ ## name_() const {  \
-		return name_;   \
-	}   \
-	::std::string get_ ## name_() const {   \
-		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex); \
-		return name_;   \
-	}   \
-	void set_ ## name_(::std::string val_, bool invalidates_ = true){   \
-		{   \
-			const ::Poseidon::Mutex::UniqueLock lock_(m_mutex); \
-			name_.swap(val_);   \
-		}   \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_STRING(name_)                 const ::std::string & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::std::string get_ ## name_() const {	\
+                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	return name_;	\
+                                            }	\
+                                            void set_ ## name_(::std::string val_, bool invalidates_ = true){	\
+                                            	{	\
+                                            		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            		name_.swap(val_);	\
+                                            	}	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_DATETIME(name_)   \
-	const ::boost::uint64_t & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	::boost::uint64_t get_ ## name_() const {   \
-		return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);  \
-	}   \
-	void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){   \
-		::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);  \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_DATETIME(name_)               const ::boost::uint64_t & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::boost::uint64_t get_ ## name_() const {	\
+                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
+                                            }	\
+                                            void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
+                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
-#define FIELD_UUID(name_)   \
-	const ::Poseidon::Uuid & unlocked_get_ ## name_() const {   \
-		return name_;   \
-	}   \
-	Poseidon::Uuid get_ ## name_() const {  \
-		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex); \
-		return name_;   \
-	}   \
-	void set_ ## name_(const ::Poseidon::Uuid val_, bool invalidates_ = true){  \
-		{   \
-			const ::Poseidon::Mutex::UniqueLock lock_(m_mutex); \
-			name_ = val_;   \
-		}   \
-		if(invalidates_){   \
-			invalidate();   \
-		}   \
-	}
+#define FIELD_UUID(name_)                   const ::Poseidon::Uuid & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            Poseidon::Uuid get_ ## name_() const {	\
+                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	return name_;	\
+                                            }	\
+                                            void set_ ## name_(const ::Poseidon::Uuid val_, bool invalidates_ = true){	\
+                                            	{	\
+                                            		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            		name_ = val_;	\
+                                            	}	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 
 	MYSQL_OBJECT_FIELDS
 
@@ -370,43 +358,43 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 
-#define FIELD_BOOLEAN(name_)                (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<<static_cast<long>(get_ ## name_())),
-#define FIELD_TINYINT(name_)                (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<<static_cast<long>(get_ ## name_())),
-#define FIELD_TINYINT_UNSIGNED(name_)       (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<<static_cast<unsigned long>(get_ ## name_())),
-#define FIELD_SMALLINT(name_)               (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<<static_cast<long>(get_ ## name_())),
-#define FIELD_SMALLINT_UNSIGNED(name_)      (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<<static_cast<unsigned long>(get_ ## name_())),
-#define FIELD_INTEGER(name_)                (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<<static_cast<long>(get_ ## name_())),
-#define FIELD_INTEGER_UNSIGNED(name_)       (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<<static_cast<unsigned long>(get_ ## name_())),
-#define FIELD_BIGINT(name_)                 (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<<static_cast< ::boost::int64_t>(get_ ## name_())),
-#define FIELD_BIGINT_UNSIGNED(name_)        (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<<static_cast< ::boost::uint64_t>(get_ ## name_())),
-#define FIELD_STRING(name_)                 (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<< ::Poseidon::MySql::StringEscaper(get_ ## name_())),
-#define FIELD_DATETIME(name_)               (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<< ::Poseidon::MySql::DateTimeFormatter(get_ ## name_())),
+#define FIELD_BOOLEAN(name_)                (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast<long>(get_ ## name_())),
+#define FIELD_TINYINT(name_)                (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast<long>(get_ ## name_())),
+#define FIELD_TINYINT_UNSIGNED(name_)       (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast<unsigned long>(get_ ## name_())),
+#define FIELD_SMALLINT(name_)               (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast<long>(get_ ## name_())),
+#define FIELD_SMALLINT_UNSIGNED(name_)      (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast<unsigned long>(get_ ## name_())),
+#define FIELD_INTEGER(name_)                (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast<long>(get_ ## name_())),
+#define FIELD_INTEGER_UNSIGNED(name_)       (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast<unsigned long>(get_ ## name_())),
+#define FIELD_BIGINT(name_)                 (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast< ::boost::int64_t>(get_ ## name_())),
+#define FIELD_BIGINT_UNSIGNED(name_)        (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast< ::boost::uint64_t>(get_ ## name_())),
+#define FIELD_STRING(name_)                 (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<< ::Poseidon::MySql::StringEscaper(get_ ## name_())),
+#define FIELD_DATETIME(name_)               (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<< ::Poseidon::MySql::DateTimeFormatter(get_ ## name_())),
 
-#define FIELD_UUID(name_)                   (void)(oss_ <<", "),    \
-												(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "    \
-													<< ::Poseidon::MySql::UuidFormatter(get_ ## name_())),
+#define FIELD_UUID(name_)                   (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<< ::Poseidon::MySql::UuidFormatter(get_ ## name_())),
 
 		if(to_replace_){
 			oss_ <<"REPLACE INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";

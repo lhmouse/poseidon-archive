@@ -81,26 +81,26 @@ public:
 
 }
 
-#define LOG_MASK(mask_, ...)    \
-	do {    \
-		::boost::uint64_t test_ = (mask_); \
-		if(test_ & ::Poseidon::Logger::SP_MAJOR){   \
-			test_ &= 0x3F;  \
-		}   \
-		if(test_ & ~(::Poseidon::Logger::get_mask())){  \
-			break;  \
-		}   \
-		static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__);  \
+#define LOG_MASK(mask_, ...)	\
+	do {	\
+		::boost::uint64_t test_ = (mask_);	\
+		if(test_ & ::Poseidon::Logger::SP_MAJOR){	\
+			test_ &= 0x3F;	\
+		}	\
+		if(test_ & ~(::Poseidon::Logger::get_mask())){	\
+			break;	\
+		}	\
+		static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__);	\
 	} while(false)
 
-#define LOG_POSEIDON(level_, ...)   \
+#define LOG_POSEIDON(level_, ...)	\
 	LOG_MASK(::Poseidon::Logger::SP_POSEIDON | (level_), __VA_ARGS__)
 
-#define LOG_POSEIDON_FATAL(...)     LOG_POSEIDON(::Poseidon::Logger::LV_FATAL,      __VA_ARGS__)
-#define LOG_POSEIDON_ERROR(...)     LOG_POSEIDON(::Poseidon::Logger::LV_ERROR,      __VA_ARGS__)
-#define LOG_POSEIDON_WARNING(...)   LOG_POSEIDON(::Poseidon::Logger::LV_WARNING,    __VA_ARGS__)
-#define LOG_POSEIDON_INFO(...)      LOG_POSEIDON(::Poseidon::Logger::LV_INFO,       __VA_ARGS__)
-#define LOG_POSEIDON_DEBUG(...)     LOG_POSEIDON(::Poseidon::Logger::LV_DEBUG,      __VA_ARGS__)
-#define LOG_POSEIDON_TRACE(...)     LOG_POSEIDON(::Poseidon::Logger::LV_TRACE,      __VA_ARGS__)
+#define LOG_POSEIDON_FATAL(...)     LOG_POSEIDON(::Poseidon::Logger::LV_FATAL,   __VA_ARGS__)
+#define LOG_POSEIDON_ERROR(...)     LOG_POSEIDON(::Poseidon::Logger::LV_ERROR,   __VA_ARGS__)
+#define LOG_POSEIDON_WARNING(...)   LOG_POSEIDON(::Poseidon::Logger::LV_WARNING, __VA_ARGS__)
+#define LOG_POSEIDON_INFO(...)      LOG_POSEIDON(::Poseidon::Logger::LV_INFO,    __VA_ARGS__)
+#define LOG_POSEIDON_DEBUG(...)     LOG_POSEIDON(::Poseidon::Logger::LV_DEBUG,   __VA_ARGS__)
+#define LOG_POSEIDON_TRACE(...)     LOG_POSEIDON(::Poseidon::Logger::LV_TRACE,   __VA_ARGS__)
 
 #endif
