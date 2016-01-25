@@ -231,8 +231,4 @@ pkglocalstatesqldump_DATA = \
 	var/poseidon/sqldump/placeholder
 
 lib_LTLIBRARIES = \
-	lib/libposeidon-main.la	\
-	lib/libposeidon-template.la
-
-lib_libposeidon_template_la_SOURCES =	\
-	template-src/mmain.cpp
+	lib/libposeidon-main.la
