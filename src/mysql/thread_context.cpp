@@ -17,7 +17,7 @@ namespace MySql {
 
 		__thread std::size_t t_init_count = 0;
 
-		void init_my_sql(){
+		void init_mysql(){
 			LOG_POSEIDON_INFO("Initializing MySQL library...");
 
 			if(::mysql_library_init(0, NULLPTR, NULLPTR) != 0){
@@ -31,7 +31,7 @@ namespace MySql {
 
 	ThreadContext::ThreadContext(){
 		if(++t_init_count == 1){
-			const int err = ::pthread_once(&g_mysql_once, &init_my_sql);
+			const int err = ::pthread_once(&g_mysql_once, &init_mysql);
 			if(err != 0){
 				LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
 				std::abort();

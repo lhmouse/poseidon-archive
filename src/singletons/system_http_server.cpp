@@ -183,7 +183,7 @@ namespace {
 					}
 					Logger::set_mask(to_disable, to_enable);
 					send_default(Http::ST_OK);
-				} else if(uri == "show_my_sql_profile"){
+				} else if(uri == "show_mysql_profile"){
 					OptionalMap headers;
 					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
 					headers.set(sslit("Content-Disposition"), "attachment; name=\"mysql_threads.csv\"");
