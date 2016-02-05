@@ -40,14 +40,15 @@ namespace {
 	};
 
 	struct JobElement {
-		const boost::uint64_t enqueued_time;
-
 		boost::shared_ptr<JobBase> job;
 		boost::shared_ptr<const JobPromise> promise;
+		boost::uint64_t expiry_time;
 		boost::shared_ptr<const bool> withdrawn;
 
-		JobElement(boost::shared_ptr<JobBase> job_, boost::shared_ptr<const JobPromise> promise_, boost::shared_ptr<const bool> withdrawn_)
-			: enqueued_time(get_fast_mono_clock()), job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), withdrawn(STD_MOVE(withdrawn_))
+		JobElement(boost::shared_ptr<JobBase> job_, boost::shared_ptr<const JobPromise> promise_,
+			boost::shared_ptr<const bool> withdrawn_)
+			: job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), expiry_time(get_fast_mono_clock() + g_job_timeout)
+			, withdrawn(STD_MOVE(withdrawn_))
 		{
 		}
 	};
@@ -104,7 +105,8 @@ namespace {
 
 		LOG_POSEIDON_TRACE("Entering fiber ", static_cast<void *>(fiber));
 		try {
-			fiber->queue.front().job->perform();
+			const AUTO_REF(elem, fiber->queue.front());
+			elem.job->perform();
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 		} catch(...){
@@ -207,7 +209,7 @@ namespace {
 					}
 					AUTO_REF(elem, it->second.queue.front());
 					if(elem.promise && !elem.promise->is_satisfied()){
-						if(now < elem.enqueued_time + g_job_timeout){
+						if(now < elem.expiry_time){
 							break;
 						}
 						LOG_POSEIDON_ERROR("Job timed out");
@@ -322,7 +324,9 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 		LOG_POSEIDON_FATAL("Not in current fiber?!");
 		std::abort();
 	}
-	fiber->queue.front().promise = promise;
+	AUTO_REF(elem, fiber->queue.front());
+	elem.promise = promise;
+	elem.expiry_time = get_fast_mono_clock() + g_job_timeout;
 
 	LOG_POSEIDON_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
 	const AUTO(opaque, Profiler::begin_stack_switch());
