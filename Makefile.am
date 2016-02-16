@@ -140,6 +140,9 @@ bin_poseidon_SOURCES = \
 bin_poseidon_LDADD = \
 	lib/libposeidon-main.la
 
+lib_LTLIBRARIES = \
+	lib/libposeidon-main.la
+
 lib_libposeidon_main_la_SOURCES = \
 	src/string.cpp	\
 	src/time.cpp	\
@@ -229,6 +232,3 @@ pkglocalstatedir = $(localstatedir)/@PACKAGE@
 pkglocalstatesqldumpdir = $(pkglocalstatedir)/sqldump
 pkglocalstatesqldump_DATA = \
 	var/poseidon/sqldump/placeholder
-
-lib_LTLIBRARIES = \
-	lib/libposeidon-main.la
