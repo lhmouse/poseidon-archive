@@ -21,7 +21,7 @@ namespace Poseidon {
 
 namespace {
 	enum {
-		MAX_PUMP_COUNT          = 256,
+		MAX_EPOLL_PUMP_COUNT    = 256,
 		IO_BUFFER_SIZE          = 4096,
 		MAX_SEND_BUFFER_SIZE    = 65536,
 	};
@@ -157,8 +157,8 @@ void Epoll::clear(){
 std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 	PROFILE_ME;
 
-	::epoll_event events[MAX_PUMP_COUNT];
-	const int count = ::epoll_wait(m_epoll.get(), events, MAX_PUMP_COUNT, (int)timeout);
+	::epoll_event events[MAX_EPOLL_PUMP_COUNT];
+	const int count = ::epoll_wait(m_epoll.get(), events, COUNT_OF(events), (int)timeout);
 	if(count < 0){
 		const int err_code = errno;
 		if(err_code != EINTR){
@@ -249,19 +249,17 @@ std::size_t Epoll::pump_readable(){
 	const AUTO(now, get_fast_mono_clock());
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
-	VALUE_TYPE(m_sessions->begin<IDX_READ>()) iterators[MAX_PUMP_COUNT];
-	std::size_t count = 0;
+	std::vector<VALUE_TYPE(m_sessions->begin<IDX_READ>())> iterators;
 	{
 		const Mutex::UniqueLock lock(m_mutex);
-		for(AUTO(it, m_sessions->upper_bound<IDX_READ>(0)); it != m_sessions->upper_bound<IDX_READ>(now); ++it){
-			iterators[count] = it;
-			if(++count >= MAX_PUMP_COUNT){
-				break;
-			}
+		const AUTO(range, std::make_pair(m_sessions->upper_bound<IDX_READ>(0), m_sessions->upper_bound<IDX_READ>(now)));
+		iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
+		for(AUTO(it, range.first); it != range.second; ++it){
+			iterators.push_back(it);
 		}
 	}
-	for(std::size_t i = 0; i < count; ++i){
-		const AUTO_REF(it, iterators[i]);
+	for(AUTO(iit, iterators.begin()); iit != iterators.end(); ++iit){
+		const AUTO(it, *iit);
 		const AUTO(session, it->session);
 
 		try {
@@ -290,7 +288,7 @@ std::size_t Epoll::pump_readable(){
 					m_sessions->set_key<IDX_READ, IDX_READ>(it, 0);
 					continue;
 				}
-				DEBUG_THROW(SystemException);
+				DEBUG_THROW(SystemException, result.err_code);
 			} else if(result.bytes_transferred == 0){
 				session->shutdown_read();
 				session->on_read_hup();
@@ -309,7 +307,7 @@ std::size_t Epoll::pump_readable(){
 			session->force_shutdown();
 		}
 	}
-	return count;
+	return iterators.size();
 }
 std::size_t Epoll::pump_writeable(){
 	PROFILE_ME;
@@ -317,19 +315,17 @@ std::size_t Epoll::pump_writeable(){
 	const AUTO(now, get_fast_mono_clock());
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
-	VALUE_TYPE(m_sessions->begin<IDX_WRITE>()) iterators[MAX_PUMP_COUNT];
-	std::size_t count = 0;
+	std::vector<VALUE_TYPE(m_sessions->begin<IDX_WRITE>())> iterators;
 	{
 		const Mutex::UniqueLock lock(m_mutex);
-		for(AUTO(it, m_sessions->upper_bound<IDX_WRITE>(0)); it != m_sessions->upper_bound<IDX_WRITE>(now); ++it){
-			iterators[count] = it;
-			if(++count >= MAX_PUMP_COUNT){
-				break;
-			}
+		const AUTO(range, std::make_pair(m_sessions->upper_bound<IDX_WRITE>(0), m_sessions->upper_bound<IDX_WRITE>(now)));
+		iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
+		for(AUTO(it, range.first); it != range.second; ++it){
+			iterators.push_back(it);
 		}
 	}
-	for(std::size_t i = 0; i < count; ++i){
-		const AUTO_REF(it, iterators[i]);
+	for(AUTO(iit, iterators.begin()); iit != iterators.end(); ++iit){
+		const AUTO(it, *iit);
 		const AUTO(session, it->session);
 
 		try {
@@ -344,7 +340,7 @@ std::size_t Epoll::pump_writeable(){
 					m_sessions->set_key<IDX_WRITE, IDX_WRITE>(it, 0);
 					continue;
 				}
-				DEBUG_THROW(SystemException);
+				DEBUG_THROW(SystemException, result.err_code);
 			} else if(result.bytes_transferred == 0){
 				Mutex::UniqueLock session_lock;
 				if(session->get_send_buffer_size(session_lock) == 0){
@@ -363,7 +359,7 @@ std::size_t Epoll::pump_writeable(){
 			session->force_shutdown();
 		}
 	}
-	return count;
+	return iterators.size();
 }
 
 }
