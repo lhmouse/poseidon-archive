@@ -250,6 +250,7 @@ std::size_t Epoll::pump_readable(){
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
 	std::vector<VALUE_TYPE(m_sessions->begin<IDX_READ>())> iterators;
+	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
 	{
 		const Mutex::UniqueLock lock(m_mutex);
 		const AUTO(range, std::make_pair(m_sessions->upper_bound<IDX_READ>(0), m_sessions->upper_bound<IDX_READ>(now)));
@@ -316,6 +317,7 @@ std::size_t Epoll::pump_writeable(){
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
 	std::vector<VALUE_TYPE(m_sessions->begin<IDX_WRITE>())> iterators;
+	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
 	{
 		const Mutex::UniqueLock lock(m_mutex);
 		const AUTO(range, std::make_pair(m_sessions->upper_bound<IDX_WRITE>(0), m_sessions->upper_bound<IDX_WRITE>(now)));
