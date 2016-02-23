@@ -41,14 +41,15 @@ namespace {
 
 	struct JobElement {
 		boost::shared_ptr<JobBase> job;
-		boost::shared_ptr<const JobPromise> promise;
-		boost::uint64_t expiry_time;
 		boost::shared_ptr<const bool> withdrawn;
 
-		JobElement(boost::shared_ptr<JobBase> job_, boost::shared_ptr<const JobPromise> promise_,
-			boost::shared_ptr<const bool> withdrawn_)
-			: job(STD_MOVE(job_)), promise(STD_MOVE(promise_)), expiry_time(get_fast_mono_clock() + g_job_timeout)
-			, withdrawn(STD_MOVE(withdrawn_))
+		boost::shared_ptr<const JobPromise> promise;
+		boost::uint64_t expiry_time;
+		bool insignificant;
+
+		JobElement(boost::shared_ptr<JobBase> job_, boost::shared_ptr<const bool> withdrawn_)
+			: job(STD_MOVE(job_)), withdrawn(STD_MOVE(withdrawn_))
+			, promise(), expiry_time(UINT64_MAX), insignificant(false)
 		{
 		}
 	};
@@ -209,7 +210,7 @@ namespace {
 					}
 					AUTO_REF(elem, it->second.queue.front());
 					if(elem.promise && !elem.promise->is_satisfied()){
-						if(now < elem.expiry_time){
+						if((now < elem.expiry_time) || (elem.insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
 							break;
 						}
 						LOG_POSEIDON_ERROR("Job timed out");
@@ -296,9 +297,7 @@ void JobDispatcher::quit_modal(){
 	g_new_job.signal();
 }
 
-void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job,
-	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
-{
+void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn){
 	PROFILE_ME;
 
 	const boost::weak_ptr<const void> null_weak_ptr;
@@ -309,10 +308,10 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job,
 
 	const Mutex::UniqueLock lock(g_fiber_mutex);
 	AUTO_REF(queue, g_fiber_map[category].queue);
-	queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(promise), STD_MOVE(withdrawn)));
+	queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(withdrawn)));
 	g_new_job.signal();
 }
-void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
+void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise, bool insignificant){
 	PROFILE_ME;
 
 	const AUTO(fiber, g_current_fiber);
@@ -320,13 +319,16 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise){
 		DEBUG_THROW(Exception, sslit("No current fiber"));
 	}
 
+	const AUTO(now, get_fast_mono_clock());
+
 	if(fiber->queue.empty()){
 		LOG_POSEIDON_FATAL("Not in current fiber?!");
 		std::abort();
 	}
 	AUTO_REF(elem, fiber->queue.front());
 	elem.promise = promise;
-	elem.expiry_time = get_fast_mono_clock() + g_job_timeout;
+	elem.expiry_time = now + g_job_timeout;
+	elem.insignificant = insignificant;
 
 	LOG_POSEIDON_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
 	const AUTO(opaque, Profiler::begin_stack_switch());

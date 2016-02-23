@@ -3,20 +3,10 @@
 
 #include "precompiled.hpp"
 #include "job_base.hpp"
-#include "singletons/job_dispatcher.hpp"
 
 namespace Poseidon {
 
 JobBase::~JobBase(){
-}
-
-void enqueue_job(boost::shared_ptr<JobBase> job,
-	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
-{
-	JobDispatcher::enqueue(STD_MOVE(job), STD_MOVE(promise), STD_MOVE(withdrawn));
-}
-void yield_job(boost::shared_ptr<const JobPromise> promise){
-	JobDispatcher::yield(STD_MOVE(promise));
 }
 
 }

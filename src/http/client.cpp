@@ -2,6 +2,7 @@
 #include "client.hpp"
 #include "exception.hpp"
 #include "status_codes.hpp"
+#include "../singletons/job_dispatcher.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
@@ -141,8 +142,10 @@ namespace Http {
 	void Client::on_connect(){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<ConnectJob>(
-			virtual_shared_from_this<Client>()));
+		JobDispatcher::enqueue(
+			boost::make_shared<ConnectJob>(
+				virtual_shared_from_this<Client>()),
+			VAL_INIT);
 
 		TcpClientBase::on_connect();
 	}
@@ -173,20 +176,26 @@ namespace Http {
 	void Client::on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<ResponseHeadersJob>(
-			virtual_shared_from_this<Client>(), STD_MOVE(response_headers), STD_MOVE(transfer_encoding), content_length));
+		JobDispatcher::enqueue(
+			boost::make_shared<ResponseHeadersJob>(
+				virtual_shared_from_this<Client>(), STD_MOVE(response_headers), STD_MOVE(transfer_encoding), content_length),
+			VAL_INIT);
 	}
 	void Client::on_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<ResponseEntityJob>(
-			virtual_shared_from_this<Client>(), entity_offset, is_chunked, STD_MOVE(entity)));
+		JobDispatcher::enqueue(
+			boost::make_shared<ResponseEntityJob>(
+				virtual_shared_from_this<Client>(), entity_offset, is_chunked, STD_MOVE(entity)),
+			VAL_INIT);
 	}
 	bool Client::on_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<ResponseEndJob>(
-			virtual_shared_from_this<Client>(), content_length, is_chunked, STD_MOVE(headers)));
+		JobDispatcher::enqueue(
+			boost::make_shared<ResponseEndJob>(
+				virtual_shared_from_this<Client>(), content_length, is_chunked, STD_MOVE(headers)),
+			VAL_INIT);
 
 		return true;
 	}

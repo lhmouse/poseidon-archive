@@ -6,6 +6,7 @@
 #include "exception.hpp"
 #include "control_message.hpp"
 #include "../singletons/main_config.hpp"
+#include "../singletons/job_dispatcher.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../job_base.hpp"
@@ -166,8 +167,10 @@ namespace Cbpp {
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Cbpp::Exception thrown: status_code = ", e.status_code(), ", what = ", e.what());
-			enqueue_job(boost::make_shared<ErrorJob>(
-				virtual_shared_from_this<Session>(), Reader::get_message_id(), e.status_code(), e.what()));
+			JobDispatcher::enqueue(
+				boost::make_shared<ErrorJob>(
+					virtual_shared_from_this<Session>(), Reader::get_message_id(), e.status_code(), e.what()),
+				VAL_INIT);
 		}
 	}
 	void Session::on_data_message_header(boost::uint16_t message_id, boost::uint64_t /* payload_size */){
@@ -184,8 +187,10 @@ namespace Cbpp {
 	bool Session::on_data_message_end(boost::uint64_t /* payload_size */){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<DataMessageJob>(
-			virtual_shared_from_this<Session>(), m_message_id, STD_MOVE(m_payload)));
+		JobDispatcher::enqueue(
+			boost::make_shared<DataMessageJob>(
+				virtual_shared_from_this<Session>(), m_message_id, STD_MOVE(m_payload)),
+			VAL_INIT);
 		m_size_total = 0;
 
 		return true;
@@ -194,8 +199,10 @@ namespace Cbpp {
 	bool Session::on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<ControlMessageJob>(
-			virtual_shared_from_this<Session>(), control_code, vint_param, STD_MOVE(string_param)));
+		JobDispatcher::enqueue(
+			boost::make_shared<ControlMessageJob>(
+				virtual_shared_from_this<Session>(), control_code, vint_param, STD_MOVE(string_param)),
+			VAL_INIT);
 		m_size_total = 0;
 		m_message_id = 0;
 		m_payload.clear();

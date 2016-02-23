@@ -4,6 +4,7 @@
 #include "precompiled.hpp"
 #include "async_job.hpp"
 #include "job_base.hpp"
+#include "singletons/job_dispatcher.hpp"
 
 namespace Poseidon {
 
@@ -29,15 +30,13 @@ namespace {
 	};
 }
 
-void enqueue_async_job(boost::function<void ()> proc,
-	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
-{
-	enqueue_job(boost::make_shared<AsyncJob>(boost::weak_ptr<const void>(), STD_MOVE(proc)), STD_MOVE(promise), STD_MOVE(withdrawn));
+void enqueue_async_job(boost::function<void ()> proc, boost::shared_ptr<const bool> withdrawn){
+	JobDispatcher::enqueue(boost::make_shared<AsyncJob>(
+		boost::weak_ptr<const void>(), STD_MOVE(proc)), STD_MOVE(withdrawn));
 }
-void enqueue_async_job(boost::weak_ptr<const void> category, boost::function<void ()> proc,
-	boost::shared_ptr<const JobPromise> promise, boost::shared_ptr<const bool> withdrawn)
-{
-	enqueue_job(boost::make_shared<AsyncJob>(STD_MOVE(category), STD_MOVE(proc)), STD_MOVE(promise), STD_MOVE(withdrawn));
+void enqueue_async_job(boost::weak_ptr<const void> category, boost::function<void ()> proc, boost::shared_ptr<const bool> withdrawn){
+	JobDispatcher::enqueue(boost::make_shared<AsyncJob>(
+		STD_MOVE(category), STD_MOVE(proc)), STD_MOVE(withdrawn));
 }
 
 }

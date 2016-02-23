@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "timer_daemon.hpp"
+#include "job_dispatcher.hpp"
 #include "../thread.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
@@ -117,7 +118,7 @@ namespace {
 				(*item->callback)(item, now, item->period);
 			} else {
 				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching");
-				enqueue_job(boost::make_shared<TimerJob>(item, now));
+				JobDispatcher::enqueue(boost::make_shared<TimerJob>(item, now), VAL_INIT);
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());

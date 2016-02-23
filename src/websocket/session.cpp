@@ -7,6 +7,7 @@
 #include "../http/session.hpp"
 #include "../optional_map.hpp"
 #include "../singletons/main_config.hpp"
+#include "../singletons/job_dispatcher.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
@@ -157,8 +158,10 @@ namespace WebSocket {
 				"WebSocket::Exception thrown in WebSocket parser: status_code = ", e.status_code(), ", what = ", e.what());
 			const AUTO(parent, get_parent());
 			if(parent){
-				enqueue_job(boost::make_shared<ErrorJob>(
-					virtual_shared_from_this<Session>(), e.status_code(), StreamBuffer(e.what())));
+				JobDispatcher::enqueue(
+					boost::make_shared<ErrorJob>(
+						virtual_shared_from_this<Session>(), e.status_code(), StreamBuffer(e.what())),
+					VAL_INIT);
 				parent->shutdown_read();
 				parent->shutdown_write();
 			}
@@ -179,8 +182,10 @@ namespace WebSocket {
 	bool Session::on_data_message_end(boost::uint64_t /* whole_size */){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<DataMessageJob>(
-			virtual_shared_from_this<Session>(), m_opcode, STD_MOVE(m_payload)));
+		JobDispatcher::enqueue(
+			boost::make_shared<DataMessageJob>(
+				virtual_shared_from_this<Session>(), m_opcode, STD_MOVE(m_payload)),
+			VAL_INIT);
 		m_size_total = 0;
 
 		return true;
@@ -189,8 +194,10 @@ namespace WebSocket {
 	bool Session::on_control_message(OpCode opcode, StreamBuffer payload){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<ControlMessageJob>(
-			virtual_shared_from_this<Session>(), opcode, STD_MOVE(payload)));
+		JobDispatcher::enqueue(
+			boost::make_shared<ControlMessageJob>(
+				virtual_shared_from_this<Session>(), opcode, STD_MOVE(payload)),
+			VAL_INIT);
 
 		return true;
 	}

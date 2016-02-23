@@ -32,7 +32,7 @@ namespace MySql {
 			callback = boost::bind(&create_object_and_push, boost::ref(ret), factory, _1);
 		}
 		const AUTO(promise, MySqlDaemon::enqueue_for_batch_loading(STD_MOVE_IDN(callback), table_hint, STD_MOVE(query)));
-		JobDispatcher::yield(promise);
+		JobDispatcher::yield(promise, false);
 	}
 
 	ObjectBase::ObjectBase()
@@ -74,12 +74,12 @@ namespace MySql {
 
 	void ObjectBase::save_and_wait(bool to_replace) const {
 		const AUTO(promise, MySqlDaemon::enqueue_for_saving(virtual_shared_from_this<ObjectBase>(), to_replace, true));
-		JobDispatcher::yield(promise);
+		JobDispatcher::yield(promise, false);
 		enable_auto_saving();
 	}
 	void ObjectBase::load_and_wait(std::string query){
 		const AUTO(promise, MySqlDaemon::enqueue_for_loading(virtual_shared_from_this<ObjectBase>(), STD_MOVE(query)));
-		JobDispatcher::yield(promise);
+		JobDispatcher::yield(promise, false);
 		enable_auto_saving();
 	}
 	void ObjectBase::async_save(bool to_replace, bool urgent) const {

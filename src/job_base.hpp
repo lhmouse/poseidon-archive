@@ -24,14 +24,6 @@ public:
 	virtual void perform() = 0;
 };
 
-// 加到全局队列中（外部不可见），线程安全的。
-// 如果任务已加入队列之后执行 **withdraw = true 则会撤销该任务。
-extern void enqueue_job(boost::shared_ptr<JobBase> job,
-	boost::shared_ptr<const JobPromise> promise = boost::shared_ptr<const JobPromise>(),
-	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
-// 切到其它协程，直到 pred 为空或者 pred() 返回 true。必须在任务函数中调用。
-extern void yield_job(boost::shared_ptr<const JobPromise> promise);
-
 }
 
 #endif

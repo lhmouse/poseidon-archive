@@ -6,6 +6,7 @@
 #include "exception.hpp"
 #include "control_message.hpp"
 #include "../singletons/timer_daemon.hpp"
+#include "../singletons/job_dispatcher.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
@@ -195,8 +196,10 @@ namespace Cbpp {
 	void Client::on_connect(){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<ConnectJob>(
-			virtual_shared_from_this<Client>()));
+		JobDispatcher::enqueue(
+			boost::make_shared<ConnectJob>(
+				virtual_shared_from_this<Client>()),
+			VAL_INIT);
 
 		TcpClientBase::on_connect();
 	}
@@ -209,20 +212,26 @@ namespace Cbpp {
 	void Client::on_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<DataMessageHeaderJob>(
-			virtual_shared_from_this<Client>(), message_id, payload_size));
+		JobDispatcher::enqueue(
+			boost::make_shared<DataMessageHeaderJob>(
+				virtual_shared_from_this<Client>(), message_id, payload_size),
+			VAL_INIT);
 	}
 	void Client::on_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<DataMessagePayloadJob>(
-			virtual_shared_from_this<Client>(), payload_offset, STD_MOVE(payload)));
+		JobDispatcher::enqueue(
+			boost::make_shared<DataMessagePayloadJob>(
+				virtual_shared_from_this<Client>(), payload_offset, STD_MOVE(payload)),
+			VAL_INIT);
 	}
 	bool Client::on_data_message_end(boost::uint64_t payload_size){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<DataMessageEndJob>(
-			virtual_shared_from_this<Client>(), payload_size));
+		JobDispatcher::enqueue(
+			boost::make_shared<DataMessageEndJob>(
+				virtual_shared_from_this<Client>(), payload_size),
+			VAL_INIT);
 
 		return true;
 	}
@@ -230,8 +239,10 @@ namespace Cbpp {
 	bool Client::on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
 		PROFILE_ME;
 
-		enqueue_job(boost::make_shared<ErrorMessageJob>(
-			virtual_shared_from_this<Client>(), control_code, vint_param, STD_MOVE(string_param)));
+		JobDispatcher::enqueue(
+			boost::make_shared<ErrorMessageJob>(
+				virtual_shared_from_this<Client>(), control_code, vint_param, STD_MOVE(string_param)),
+			VAL_INIT);
 
 		return true;
 	}

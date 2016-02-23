@@ -120,7 +120,7 @@ void EventDispatcher::async_raise(const boost::shared_ptr<EventBaseWithoutId> &e
 
 	const AUTO(callbacks, get_callbacks(event));
 	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
-		enqueue_job(boost::make_shared<EventJob>(*it, event), VAL_INIT, withdrawn);
+		JobDispatcher::enqueue(boost::make_shared<EventJob>(*it, event), withdrawn);
 	}
 }
 

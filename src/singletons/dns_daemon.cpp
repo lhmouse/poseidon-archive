@@ -90,7 +90,7 @@ namespace {
 
 		Logger::set_thread_tag("   D"); // DNS
 
-		const auto param = static_cast<DnsCallbackParam *>(sigval_param.sival_ptr);
+		const AUTO(param, static_cast<DnsCallbackParam *>(sigval_param.sival_ptr));
 		dispatch_dns_result(param);
 		delete param;
 		atomic_sub(g_pending_callback_count, 1, ATOMIC_RELAXED);

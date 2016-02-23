@@ -9,6 +9,7 @@
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../singletons/main_config.hpp"
+#include "../singletons/job_dispatcher.hpp"
 #include "../stream_buffer.hpp"
 #include "../job_base.hpp"
 
@@ -216,8 +217,10 @@ namespace Http {
 		} catch(Exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Http::Exception thrown in HTTP parser: status_code = ", e.status_code(), ", what = ", e.what());
-			enqueue_job(boost::make_shared<ErrorJob>(
-				virtual_shared_from_this<Session>(), e.status_code(), e.headers(), SharedNts(e.what())));
+			JobDispatcher::enqueue(
+				boost::make_shared<ErrorJob>(
+					virtual_shared_from_this<Session>(), e.status_code(), e.headers(), SharedNts(e.what())),
+				VAL_INIT);
 			shutdown_read();
 			shutdown_write();
 			return;
@@ -239,7 +242,9 @@ namespace Http {
 		const AUTO_REF(expect, request_headers.headers.get("Expect"));
 		if(!expect.empty()){
 			if(::strcasecmp(expect.c_str(), "100-continue") == 0){
-				enqueue_job(boost::make_shared<ContinueJob>(virtual_shared_from_this<Session>()));
+				JobDispatcher::enqueue(
+					boost::make_shared<ContinueJob>(virtual_shared_from_this<Session>()),
+					VAL_INIT);
 			} else {
 				LOG_POSEIDON_DEBUG("Unknown HTTP header Expect: ", expect);
 			}
@@ -272,8 +277,10 @@ namespace Http {
 			shutdown_read();
 		}
 
-		enqueue_job(boost::make_shared<RequestJob>(
-			virtual_shared_from_this<Session>(), STD_MOVE(m_request_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity)));
+		JobDispatcher::enqueue(
+			boost::make_shared<RequestJob>(
+				virtual_shared_from_this<Session>(), STD_MOVE(m_request_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity)),
+			VAL_INIT);
 		m_size_total = 0;
 
 		return true;
