@@ -552,7 +552,7 @@ namespace {
 	};
 
 	volatile bool g_running = false;
-	std::vector<boost::shared_ptr<MySqlThread>> g_threads;
+	std::vector<boost::shared_ptr<MySqlThread> > g_threads;
 
 	void submit_operation(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
 		if(g_threads.empty()){
