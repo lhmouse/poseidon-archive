@@ -210,7 +210,7 @@ namespace {
 					}
 					AUTO_REF(elem, it->second.queue.front());
 					if(elem.promise && !elem.promise->is_satisfied()){
-						if((now < elem.expiry_time) || (elem.insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
+						if((now < elem.expiry_time) && !(elem.insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
 							break;
 						}
 						LOG_POSEIDON_ERROR("Job timed out");
