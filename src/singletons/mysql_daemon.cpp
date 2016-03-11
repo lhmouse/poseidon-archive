@@ -431,12 +431,11 @@ namespace {
 			const AUTO(local_now, get_local_time());
 			const AUTO(dt, break_down_time(local_now));
 			char temp[256];
-			unsigned len = (unsigned)std::sprintf(temp, "%04u-%02u-%02u %05u", dt.yr, dt.mon, dt.day, (unsigned)::getpid());
+			unsigned len = (unsigned)std::sprintf(temp, "%04u-%02u-%02u_%05u.log", dt.yr, dt.mon, dt.day, (unsigned)::getpid());
 			std::string dump_path;
 			dump_path.assign(g_dump_dir);
 			dump_path.push_back('/');
 			dump_path.append(temp, len);
-			dump_path.append(".log");
 
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating SQL dump file: ", dump_path);
 			UniqueFile dump_file;
