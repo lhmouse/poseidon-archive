@@ -1,7 +1,7 @@
 //以下所有 buffer 都是所有元素都是 Number 的 Array，每个元素表示一个字节。
 
 function pushVuint(buffer, val){
-	for(var i = 0; i < 6; ++i){
+	for(var i = 0; i < 8; ++i){
 		var by = val & 0x7F;
 		val = Math.floor(val / 128);
 		if(val == 0){
@@ -58,7 +58,7 @@ function pushString(buffer, val){
 
 function shiftVuint(buffer){
 	var val = 0;
-	for(var i = 0; i < 6; ++i){
+	for(var i = 0; i < 8; ++i){
 		var by = buffer.shift();
 		val += (by & 0x7F) * Math.pow(128, i);
 		if(!(by & 0x80)){
@@ -66,7 +66,7 @@ function shiftVuint(buffer){
 		}
 	}
 	var by = buffer.shift();
-	val += (by & 0xFF) * Math.pow(128, 6);
+	val += (by & 0xFF) * Math.pow(128, 8);
 	return val;
 }
 function shiftVint(buffer){
