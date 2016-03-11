@@ -25,7 +25,7 @@ pkginclude_HEADERS = \
 	src/uuid.hpp	\
 	src/tcp_server_base.hpp	\
 	src/event_base.hpp	\
-	src/vint50.hpp	\
+	src/vint64.hpp	\
 	src/multi_index_map.hpp	\
 	src/profiler.hpp	\
 	src/hash.hpp	\

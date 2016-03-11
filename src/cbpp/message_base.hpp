@@ -14,7 +14,7 @@
 #include <cstddef>
 #include <boost/array.hpp>
 #include <boost/cstdint.hpp>
-#include "../vint50.hpp"
+#include "../vint64.hpp"
 #include "../stream_buffer.hpp"
 #include "exception.hpp"
 #include "status_codes.hpp"
