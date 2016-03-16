@@ -12,7 +12,7 @@ namespace Poseidon {
 namespace WebSocket {
 	class Exception : public ProtocolException {
 	public:
-		Exception(const char *file, std::size_t line, StatusCode status_code, SharedNts message = SharedNts());
+		Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, SharedNts message = SharedNts());
 		~Exception() NOEXCEPT;
 
 	public:

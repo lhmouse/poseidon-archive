@@ -7,8 +7,8 @@
 
 namespace Poseidon {
 
-ProtocolException::ProtocolException(const char *file, std::size_t line, SharedNts message, long code)
-	: Exception(file, line, STD_MOVE(message)), m_code(code)
+ProtocolException::ProtocolException(const char *file, std::size_t line, const char *func, SharedNts message, long code)
+	: Exception(file, line, func, STD_MOVE(message)), m_code(code)
 {
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 		"Constructing ProtocolException: code = ", code, ", what = ", what());

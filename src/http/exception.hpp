@@ -17,9 +17,9 @@ namespace Http {
 
 	public:
 		// message 设定为首字节为 0xFF 则发送默认页面。
-		Exception(const char *file, std::size_t line, StatusCode status_code,
+		Exception(const char *file, std::size_t line, const char *func, StatusCode status_code,
 			OptionalMap headers = OptionalMap(), SharedNts message = sslit("\xFF"));
-		Exception(const char *file, std::size_t line, StatusCode status_code, SharedNts message);
+		Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, SharedNts message);
 		~Exception() NOEXCEPT;
 
 	public:

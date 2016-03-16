@@ -15,10 +15,11 @@ class Exception : public std::exception {
 protected:
 	const char *m_file;
 	std::size_t m_line;
+	const char *m_func;
 	SharedNts m_message; // 拷贝构造函数不抛出异常。
 
 public:
-	Exception(const char *fi, std::size_t ln, SharedNts msg);
+	Exception(const char *file, std::size_t line, const char *func, SharedNts message);
 	~Exception() NOEXCEPT;
 
 public:
@@ -32,6 +33,9 @@ public:
 	std::size_t line() const NOEXCEPT {
 		return m_line;
 	}
+	const char *func() const NOEXCEPT {
+		return m_func;
+	}
 	const char *message() const NOEXCEPT {
 		return m_message.get();
 	}
@@ -43,7 +47,7 @@ typedef Exception BasicException;
 
 #define DEBUG_THROW(etype_, ...)	\
 	__extension__ ({	\
-		etype_ e_(__FILE__, __LINE__, ## __VA_ARGS__);	\
+		etype_ e_(__FILE__, __LINE__, __PRETTY_FUNCTION__, ## __VA_ARGS__);	\
 		throw e_;	\
 	})
 

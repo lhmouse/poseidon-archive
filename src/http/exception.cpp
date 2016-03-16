@@ -19,8 +19,8 @@ namespace {
 }
 
 namespace Http {
-	Exception::Exception(const char *file, std::size_t line, StatusCode status_code, OptionalMap headers, SharedNts message)
-		: ProtocolException(file, line, replace_with_default(STD_MOVE(message)), static_cast<long>(status_code))
+	Exception::Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, OptionalMap headers, SharedNts message)
+		: ProtocolException(file, line, func, replace_with_default(STD_MOVE(message)), static_cast<long>(status_code))
 	{
 		if(!headers.empty()){
 			m_headers = boost::make_shared<OptionalMap>(STD_MOVE(headers));
@@ -29,8 +29,8 @@ namespace Http {
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"Http::Exception: status_code = ", status_code, ", what = ", what());
 	}
-	Exception::Exception(const char *file, std::size_t line, StatusCode status_code, SharedNts message)
-		: ProtocolException(file, line, replace_with_default(STD_MOVE(message)), static_cast<long>(status_code))
+	Exception::Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, SharedNts message)
+		: ProtocolException(file, line, func, replace_with_default(STD_MOVE(message)), static_cast<long>(status_code))
 	{
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"Http::Exception: status_code = ", status_code, ", what = ", what());

@@ -99,10 +99,37 @@ namespace {
 	}
 }
 
+std::terminate_handler g_old_terminate_handler = NULLPTR;
+
+__attribute__((__noreturn__))
+void terminate_handler(){
+	LOG_POSEIDON_FATAL("std::terminate() is called!!");
+
+	if(std::uncaught_exception()){
+		try {
+			throw;
+		} catch(Exception &e){
+			LOG_POSEIDON_FATAL("Poseidon::Exception thrown: what = ", e.what(),
+				", file = ", e.file(), ", line = ", e.line(), ", func = ", e.func());
+		} catch(std::exception &e){
+			LOG_POSEIDON_FATAL("std::exception thrown: what = ", e.what());
+		} catch(...){
+			LOG_POSEIDON_FATAL("Unknown exception thrown.");
+		}
+	}
+
+	if(g_old_terminate_handler){
+		(*g_old_terminate_handler)();
+	}
+	std::abort();
+}
+
 }
 
 int main(int argc, char **argv){
 	using namespace Poseidon;
+
+	g_old_terminate_handler = std::set_terminate(&terminate_handler);
 
 	Logger::set_thread_tag("P   "); // Primary
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "-------------------------- Starting up -------------------------");

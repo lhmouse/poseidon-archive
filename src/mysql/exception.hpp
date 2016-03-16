@@ -11,7 +11,7 @@ namespace Poseidon {
 namespace MySql {
 	class Exception : public ProtocolException {
 	public:
-		Exception(const char *file, std::size_t line, long error_code, SharedNts message);
+		Exception(const char *file, std::size_t line, const char *func, long error_code, SharedNts message);
 		~Exception() NOEXCEPT;
 	};
 }

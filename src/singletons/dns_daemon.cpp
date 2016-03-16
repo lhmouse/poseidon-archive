@@ -77,7 +77,7 @@ namespace {
 			param->promise->set_exception(boost::copy_exception(e));
 		} catch(std::exception &e){
 			LOG_POSEIDON_INFO("std::exception thrown in DNS loop: what = ", e.what());
-			param->promise->set_exception(boost::copy_exception(Exception(__FILE__, __LINE__, SharedNts(e.what()))));
+			param->promise->set_exception(boost::copy_exception(e));
 		}
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown again: what = ", e.what());

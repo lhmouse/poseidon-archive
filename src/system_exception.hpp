@@ -14,7 +14,7 @@ private:
 	int m_code;
 
 public:
-	SystemException(const char *file, std::size_t line, int code = errno);
+	SystemException(const char *file, std::size_t line, const char *func, int code = errno);
 	~SystemException() NOEXCEPT;
 
 public:

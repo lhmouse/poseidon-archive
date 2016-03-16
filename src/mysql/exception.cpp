@@ -8,8 +8,8 @@
 namespace Poseidon {
 
 namespace MySql {
-	Exception::Exception(const char *file, std::size_t line, long error_code, SharedNts message)
-		: ProtocolException(file, line, STD_MOVE(message), error_code)
+	Exception::Exception(const char *file, std::size_t line, const char *func, long error_code, SharedNts message)
+		: ProtocolException(file, line, func, STD_MOVE(message), error_code)
 	{
 		LOG_POSEIDON_ERROR("MySql::Exception: error_code = ", error_code, ", what = ", what());
 	}

@@ -13,7 +13,7 @@ private:
 	long m_code;
 
 public:
-	ProtocolException(const char *file, std::size_t line, SharedNts message, long code);
+	ProtocolException(const char *file, std::size_t line, const char *func, SharedNts message, long code);
 	~ProtocolException() NOEXCEPT;
 
 public:
