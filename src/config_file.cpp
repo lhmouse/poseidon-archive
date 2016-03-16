@@ -23,15 +23,42 @@ void ConfigFile::load(const char *path){
 	file_get_contents(buffer, path);
 
 	OptionalMap contents;
-	std::string line;
+	std::string raw_line, line;
 	std::size_t count = 0;
-	while(get_line(buffer, line)){
+	while(get_line(buffer, raw_line)){
 		++count;
-		std::size_t pos = line.find('#');
-		if(pos != std::string::npos){
-			line.erase(pos);
+
+		line.clear();
+		line.reserve(raw_line.size());
+		bool escaped = false;
+		for(auto it = raw_line.begin(); it != raw_line.end(); ++it){
+			char ch = *it;
+			if(escaped){
+				escaped = false;
+				if(ch == 'b'){
+					ch = '\b';
+				} else if(ch == 'f'){
+					ch = '\f';
+				} else if(ch == 'n'){
+					ch = '\n';
+				} else if(ch == 'r'){
+					ch = '\r';
+				} else if(ch == 't'){
+					ch = '\t';
+				}
+				line.push_back(ch);
+			} else if(ch == '\\'){
+				escaped = true;
+			} else {
+				// escaped = false;
+				if(ch == '#'){
+					break;
+				}
+				line.push_back(ch);
+			}
 		}
-		pos = line.find_first_not_of(" \t");
+
+		std::size_t pos = line.find_first_not_of(" \t");
 		if(pos == std::string::npos){
 			continue;
 		}
