@@ -55,14 +55,14 @@ namespace {
 	};
 
 	struct StackStorage FINAL {
-		static void *operator new(std::size_t cb){
+		static void *operator new(std::size_t cb, std::nothrow_t) NOEXCEPT {
 			assert(cb == sizeof(StackStorage));
 
 			void *ptr;
 			const int err_code = ::posix_memalign(&ptr, 0x1000, cb);
 			if(err_code != 0){
 				LOG_POSEIDON_WARNING("Failed to allocate stack: err_code = ", err_code);
-				throw std::bad_alloc();
+				ptr = NULLPTR;
 			}
 			return ptr;
 		}
@@ -70,10 +70,10 @@ namespace {
 			::free(ptr);
 		}
 
-		char bytes[0x100000];
+		char bytes[256 * 1024];
 	};
 
-	boost::array<boost::scoped_ptr<StackStorage>, 16> g_stack_pool;
+	boost::array<boost::scoped_ptr<StackStorage>, 64> g_stack_pool;
 
 	struct FiberControl {
 		std::deque<JobElement> queue;
@@ -119,7 +119,7 @@ namespace {
 	AUTO(g_current_fiber, (FiberControl *)0);
 
 	__attribute__((__noinline__, __nothrow__))
-	void schedule_fiber(FiberControl *fiber) NOEXCEPT {
+	void schedule_fiber(FiberControl *volatile fiber) NOEXCEPT {
 		PROFILE_ME;
 
 		assert(!fiber->queue.empty());
@@ -142,29 +142,36 @@ namespace {
 				} else {
 					fiber->state = FS_RUNNING;
 					if(!fiber->stack){
-						for(AUTO(it, g_stack_pool.begin()); it != g_stack_pool.end(); ++it){
+						AUTO(it, g_stack_pool.begin());
+						for(;;){
+							if(it == g_stack_pool.end()){
+								fiber->stack.reset(new(std::nothrow) StackStorage);
+								break;
+							}
 							if(*it){
 								fiber->stack.swap(*it);
-								goto _allocated;
+								break;
 							}
+							++it;
 						}
-						fiber->stack.reset(new StackStorage);
-					_allocated:
-						;
 					}
 
 					register AUTO(reg __asm__("bx"), fiber); // 必须是 callee-saved 寄存器！
-					__asm__ __volatile__(
+					if(reg->stack){
+						__asm__ __volatile__(
 #ifdef __x86_64__
-						"movq %%rax, %%rsp \n"
+							"movq %%rax, %%rsp \n"
 #else
-						"movl %%eax, %%esp \n"
+							"movl %%eax, %%esp \n"
 #endif
-						: "+b"(reg)
-						: "a"(fiber->stack.get() + 1) // sp 指向可用栈区的末尾。
-						: "sp", "memory"
-					);
-					fiber_stack_barrier(reg);
+							: "+b"(reg)
+							: "a"(reg->stack.get() + 1) // sp 指向可用栈区的末尾。
+							: "sp", "memory"
+						);
+						fiber_stack_barrier(reg);
+					} else {
+						LOG_POSEIDON_WARNING("Failed to allocate stack for this fiber!");
+					}
 
 					reg->state = FS_READY;
 					::unchecked_siglongjmp(reg->outer, 1);
