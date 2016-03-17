@@ -220,7 +220,7 @@ namespace {
 						if((now < elem.expiry_time) && !(elem.insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
 							break;
 						}
-						LOG_POSEIDON_ERROR("Job timed out");
+						LOG_POSEIDON_WARNING("Job timed out");
 					}
 					lock.unlock();
 
