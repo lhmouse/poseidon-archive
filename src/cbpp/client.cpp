@@ -269,7 +269,7 @@ namespace Cbpp {
 			", status_code = ", status_code, ", reason = ", reason);
 
 		if(status_code < 0){
-			LOG_POSEIDON_WARNING("Fatal CBPP error: status_code = ", status_code);
+			LOG_POSEIDON_WARNING("Fatal CBPP error: status_code = ", status_code, ", reason = ", reason);
 
 			force_shutdown();
 		}
