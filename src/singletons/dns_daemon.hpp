@@ -17,7 +17,7 @@ struct DnsDaemon {
 	static void stop();
 
 	// 同步接口。
-	static SockAddr look_up(std::string host, unsigned port);
+	static SockAddr look_up(const std::string &host, unsigned port);
 
 	// 异步接口。
 	// 第一个参数是出参。

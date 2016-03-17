@@ -18,7 +18,7 @@ namespace Poseidon {
 
 namespace {
 	std::size_t g_max_timeout               = 100;
-	boost::uint64_t g_tcp_request_timeout       = 30000;
+	boost::uint64_t g_tcp_request_timeout   = 30000;
 
 	volatile bool g_running = false;
 	Thread g_thread;
