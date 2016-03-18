@@ -183,26 +183,6 @@ namespace {
 					}
 					Logger::set_mask(to_disable, to_enable);
 					send_default(Http::ST_OK);
-				} else if(uri == "show_mysql_profile"){
-					OptionalMap headers;
-					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
-					headers.set(sslit("Content-Disposition"), "attachment; name=\"mysql_threads.csv\"");
-
-					StreamBuffer contents;
-					contents.put("thread,table,ns_total\r\n");
-					AUTO(snapshot, MySqlDaemon::snapshot());
-					std::string str;
-					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-						char temp[256];
-						unsigned len = (unsigned)std::sprintf(temp, "%u,", it->thread);
-						contents.put(temp, len);
-						escape_csv_field(str, it->table);
-						contents.put(str);
-						len = (unsigned)std::sprintf(temp, ",%llu\r\n", it->ns_total);
-						contents.put(temp, len);
-					}
-
-					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 				} else {
 					LOG_POSEIDON_WARNING("No system HTTP handler: ", uri);
 					DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);

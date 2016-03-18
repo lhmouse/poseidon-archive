@@ -5,7 +5,6 @@
 #define POSEIDON_SINGLETONS_MYSQL_DAEMON_HPP_
 
 #include "../cxx_ver.hpp"
-#include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 
@@ -19,12 +18,6 @@ namespace MySql {
 class JobPromise;
 
 struct MySqlDaemon {
-	struct SnapshotElement {
-		unsigned thread;
-		const char *table;
-		unsigned long long ns_total;
-	};
-
 	static void start();
 	static void stop();
 
@@ -32,8 +25,6 @@ struct MySqlDaemon {
 	static boost::shared_ptr<MySql::Connection> create_connection(bool from_slave = false);
 
 	// 异步接口。
-	static std::vector<SnapshotElement> snapshot();
-
 	static void wait_for_all_async_operations();
 
 	// 以下第一个参数是出参。

@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "mysql_daemon.hpp"
 #include "main_config.hpp"
-#include <boost/container/vector.hpp>
+#include <boost/container/flat_map.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -41,7 +41,6 @@ namespace {
 	std::string     g_charset           = "utf8";
 
 	std::string     g_dump_dir          = VAL_INIT;
-	std::size_t     g_max_threads       = 3;
 	boost::uint64_t g_save_delay        = 5000;
 	boost::uint64_t g_reconn_delay      = 10000;
 	std::size_t     g_max_retry_count   = 3;
@@ -199,28 +198,6 @@ namespace {
 			}
 		};
 
-		class WorkingTimeAccumulator : NONCOPYABLE {
-		private:
-			MySqlThread *const m_owner;
-			const char *const m_table;
-
-		public:
-			WorkingTimeAccumulator(MySqlThread *owner, const char *table)
-				: m_owner(owner), m_table(table)
-			{
-				m_owner->accumulate_time_for_table("");
-			}
-			~WorkingTimeAccumulator(){
-				m_owner->accumulate_time_for_table(m_table);
-			}
-		};
-
-		struct TableNameComparator {
-			bool operator()(const char *lhs, const char *rhs) const {
-				return std::strcmp(lhs, rhs) < 0;
-			}
-		};
-
 	private:
 		Thread m_thread;
 		volatile bool m_running;
@@ -230,31 +207,14 @@ namespace {
 		volatile bool m_urgent; // 无视延迟写入，一次性处理队列中所有操作。
 		std::deque<OperationQueueElement> m_queue;
 
-		// 性能统计。
-		mutable Mutex m_profile_mutex;
-		double m_profile_flushed_time;
-		std::map<const char *, unsigned long long, TableNameComparator> m_profile;
-
 	public:
 		MySqlThread()
 			: m_running(false)
 			, m_urgent(false)
-			, m_profile_flushed_time(0)
 		{
 		}
 
 	private:
-		void accumulate_time_for_table(const char *table) NOEXCEPT {
-			const AUTO(now, get_hi_res_mono_clock());
-
-			const Mutex::UniqueLock lock(m_profile_mutex);
-			try {
-				m_profile[table] += (now - m_profile_flushed_time) * 1e6;
-			} catch(...){
-			}
-			m_profile_flushed_time = now;
-		}
-
 		void sleep_for_reconnection(){
 			::timespec req;
 			req.tv_sec = (::time_t)(g_reconn_delay / 1000);
@@ -266,14 +226,10 @@ namespace {
 			PROFILE_ME;
 			LOG_POSEIDON_INFO("MySQL thread started.");
 
-			m_profile_flushed_time = get_hi_res_mono_clock();
-
 			const MySql::ThreadContext thread_context;
 			boost::shared_ptr<MySql::Connection> master_conn, slave_conn;
 
 			for(;;){
-				accumulate_time_for_table("");
-
 				while(!master_conn){
 					LOG_POSEIDON_INFO("Connecting to MySQL master server...");
 					try {
@@ -369,7 +325,6 @@ namespace {
 
 					std::string query = operation->generate_sql();
 					try {
-						const WorkingTimeAccumulator profiler(this, elem->operation->get_table_name());
 						LOG_POSEIDON_DEBUG("Executing SQL: table_name = ", operation->get_table_name(), ", query = ", query);
 						conn->execute_sql(query);
 						operation->fetch_result(conn);
@@ -490,14 +445,6 @@ namespace {
 			}
 		}
 
-		void get_profile(std::vector<std::pair<const char *, unsigned long long> > &ret) const {
-			const Mutex::UniqueLock lock(m_profile_mutex);
-			ret.reserve(ret.size() + m_profile.size());
-			for(AUTO(it, m_profile.begin()); it != m_profile.end(); ++it){
-				ret.push_back(std::make_pair(it->first, it->second));
-			}
-		}
-
 		void wait_till_idle(){
 			for(;;){
 				std::size_t pending_objects;
@@ -555,37 +502,34 @@ namespace {
 		}
 	};
 
+	struct TableNameComparator {
+		bool operator()(const char *lhs, const char *rhs) const {
+			return std::strcmp(lhs, rhs) < 0;
+		}
+	};
+
 	volatile bool g_running = false;
-	std::vector<boost::shared_ptr<MySqlThread> > g_threads;
+
+	Mutex g_thread_mutex;
+	boost::container::flat_map<const char *, boost::shared_ptr<MySqlThread>, TableNameComparator> g_threads;
 
 	void submit_operation(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
-		if(g_threads.empty()){
-			DEBUG_THROW(Exception, sslit("No MySQL thread is running"));
-		}
+		PROFILE_ME;
 
-		// http://www.isthe.com/chongo/tech/comp/fnv/
-		std::size_t hash;
-		if(sizeof(std::size_t) < 8){
-			hash = 2166136261u;
-			const char *p = table;
-			while(*p){
-				hash ^= static_cast<unsigned char>(*p);
-				hash *= 16777619u;
-				++p;
-			}
-		} else {
-			hash = 14695981039346656037u;
-			const char *p = table;
-			while(*p){
-				hash ^= static_cast<unsigned char>(*p);
-				hash *= 1099511628211u;
-				++p;
+		boost::shared_ptr<MySqlThread> thread;
+		{
+			const Mutex::UniqueLock lock(g_thread_mutex);
+			AUTO(it, g_threads.find(table));
+			if(it == g_threads.end()){
+				LOG_POSEIDON_INFO("Creating new MySQL thread: table = ", table);
+				thread = boost::make_shared<MySqlThread>();
+				thread->start();
+				it = g_threads.emplace(table, thread).first;
+			} else {
+				thread = it->second;
 			}
 		}
-		const AUTO(thread_index, hash % g_threads.size());
-		LOG_POSEIDON_DEBUG("Assigning MySQL table `", table, "` to thread ", thread_index);
-
-		g_threads.at(thread_index)->add_operation(STD_MOVE(operation), urgent);
+		thread->add_operation(STD_MOVE(operation), urgent);
 	}
 }
 
@@ -626,9 +570,6 @@ void MySqlDaemon::start(){
 	MainConfig::get(g_dump_dir, "mysql_dump_dir");
 	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_dump_dir);
 
-	MainConfig::get(g_max_threads, "mysql_max_threads");
-	LOG_POSEIDON_DEBUG("MySQL max threads = ", g_max_threads);
-
 	MainConfig::get(g_save_delay, "mysql_save_delay");
 	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_save_delay);
 
@@ -640,16 +581,6 @@ void MySqlDaemon::start(){
 
 	MainConfig::get(g_retry_init_delay, "mysql_retry_init_delay");
 	LOG_POSEIDON_DEBUG("MySQL retry init delay = ", g_retry_init_delay);
-
-	const AUTO(thread_count, std::max<std::size_t>(g_max_threads, 1));
-	g_threads.clear();
-	g_threads.reserve(thread_count);
-	for(std::size_t i = 0; i < thread_count; ++i){
-		LOG_POSEIDON_INFO("Creating MySQL thread ", i);
-		AUTO(thread, boost::make_shared<MySqlThread>());
-		thread->start();
-		g_threads.push_back(STD_MOVE(thread));
-	}
 
 	if(!g_dump_dir.empty()){
 		const AUTO(placeholder_path, g_dump_dir + "/placeholder");
@@ -671,15 +602,23 @@ void MySqlDaemon::stop(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MySQL daemon...");
 
-	const AUTO(threads, STD_MOVE_IDN(g_threads));
-	g_threads.clear();
-	for(std::size_t i = 0; i < threads.size(); ++i){
-		LOG_POSEIDON_INFO("Stopping MySQL thread ", i);
-		threads.at(i)->stop();
-	}
-	for(std::size_t i = 0; i < threads.size(); ++i){
-		LOG_POSEIDON_INFO("Waiting for MySQL thread ", i, " to terminate...");
-		threads.at(i)->safe_join();
+	for(;;){
+		VALUE_TYPE(g_threads) threads;
+		{
+			const Mutex::UniqueLock lock(g_thread_mutex);
+			threads.swap(g_threads);
+		}
+		if(threads.empty()){
+			break;
+		}
+		for(AUTO(it, threads.begin()); it != threads.end(); ++it){
+			LOG_POSEIDON_INFO("Stopping MySQL thread: table = ", it->first);
+			it->second->stop();
+		}
+		for(AUTO(it, threads.begin()); it != threads.end(); ++it){
+			LOG_POSEIDON_INFO("Waiting for MySQL thread to terminate: table = ", it->first);
+			it->second->safe_join();
+		}
 	}
 
 	LOG_POSEIDON_INFO("MySQL daemon stopped.");
@@ -699,29 +638,15 @@ boost::shared_ptr<MySql::Connection> MySqlDaemon::create_connection(bool from_sl
 	return MySql::Connection::create(*addr, *port, g_username, g_password, g_schema, g_use_ssl, g_charset);
 }
 
-std::vector<MySqlDaemon::SnapshotElement> MySqlDaemon::snapshot(){
-	std::vector<SnapshotElement> ret;
-	ret.reserve(100);
-
-	std::vector<std::pair<const char *, unsigned long long> > thread_profile;
-	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		g_threads.at(i)->get_profile(thread_profile);
-		ret.reserve(ret.size() + thread_profile.size());
-		for(AUTO(it, thread_profile.begin()); it != thread_profile.end(); ++it){
-			ret.push_back(VAL_INIT);
-			AUTO_REF(elem, ret.back());
-			elem.thread = i;
-			elem.table = it->first;
-			elem.ns_total = it->second;
-		}
+void MySqlDaemon::wait_for_all_async_operations(){
+	VALUE_TYPE(g_threads) threads;
+	{
+		const Mutex::UniqueLock lock(g_thread_mutex);
+		threads = g_threads;
 	}
 
-	return ret;
-}
-
-void MySqlDaemon::wait_for_all_async_operations(){
-	for(std::size_t i = 0; i < g_threads.size(); ++i){
-		g_threads.at(i)->wait_till_idle();
+	for(AUTO(it, threads.begin()); it != threads.end(); ++it){
+		it->second->wait_till_idle();
 	}
 }
 
