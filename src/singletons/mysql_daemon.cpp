@@ -71,7 +71,8 @@ namespace {
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_table_name() const = 0;
-		virtual void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const = 0;
+		virtual std::string generate_sql() const = 0;
+		virtual void fetch_result(const boost::shared_ptr<MySql::Connection> &conn) const = 0;
 	};
 
 	class SaveOperation : public OperationBase {
@@ -97,12 +98,13 @@ namespace {
 		const char *get_table_name() const OVERRIDE {
 			return m_object->get_table_name();
 		}
-		void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
-			PROFILE_ME;
-
+		std::string generate_sql() const OVERRIDE {
+			std::string query;
 			m_object->generate_sql(query, m_to_replace);
-			LOG_POSEIDON_DEBUG("Executing SQL in ", m_object->get_table_name(), ": query = ", query);
-			conn->execute_sql(query);
+			return query;
+		}
+		void fetch_result(const boost::shared_ptr<MySql::Connection> & /* conn */) const OVERRIDE {
+			// 无事可做。
 		}
 	};
 
@@ -129,12 +131,11 @@ namespace {
 		const char *get_table_name() const OVERRIDE {
 			return m_object->get_table_name();
 		}
-		void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
+		std::string generate_sql() const OVERRIDE {
+			return m_query;
+		}
+		void fetch_result(const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
 			PROFILE_ME;
-
-			query = m_query;
-			LOG_POSEIDON_INFO("MySQL load: table = ", m_object->get_table_name(), ", query = ", query);
-			conn->execute_sql(query);
 
 			if(!conn->fetch_row()){
 				DEBUG_THROW(MySql::Exception, 99999, sslit("No rows returned"));
@@ -169,12 +170,11 @@ namespace {
 		const char *get_table_name() const OVERRIDE {
 			return m_table_hint;
 		}
-		void execute(std::string &query, const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
+		std::string generate_sql() const OVERRIDE {
+			return m_query;
+		}
+		void fetch_result(const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
 			PROFILE_ME;
-
-			query = m_query;
-			LOG_POSEIDON_INFO("MySQL batch load: table_hint = ", m_table_hint, ", query = ", query);
-			conn->execute_sql(query);
 
 			if(m_factory){
 				while(conn->fetch_row()){
@@ -360,17 +360,19 @@ namespace {
 					}
 				}
 				if(execute_it){
+					const AUTO_REF(operation, elem->operation);
 					boost::exception_ptr except;
 
 					long err_code = 0;
 					char message[4096];
 					std::size_t message_len = 0;
 
-					std::string query;
-
+					std::string query = operation->generate_sql();
 					try {
 						const WorkingTimeAccumulator profiler(this, elem->operation->get_table_name());
-						elem->operation->execute(query, conn);
+						LOG_POSEIDON_DEBUG("Executing SQL: table_name = ", operation->get_table_name(), ", query = ", query);
+						conn->execute_sql(query);
+						operation->fetch_result(conn);
 					} catch(MySql::Exception &e){
 						LOG_POSEIDON_WARNING("MySql::Exception thrown: code = ", e.code(), ", what = ", e.what());
 						// except = boost::current_exception();
@@ -499,16 +501,19 @@ namespace {
 		void wait_till_idle(){
 			for(;;){
 				std::size_t pending_objects;
+				std::string pending_sql;
 				{
 					const Mutex::UniqueLock lock(m_mutex);
 					pending_objects = m_queue.size();
 					if(pending_objects == 0){
 						break;
 					}
+					pending_sql = m_queue.front().operation->generate_sql();
 					atomic_store(m_urgent, true, ATOMIC_RELEASE);
 					m_new_operation.signal();
 				}
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pending_objects, " object(s) in my queue.");
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", pending_sql = ", pending_sql);
 
 				::timespec req;
 				req.tv_sec = 0;
