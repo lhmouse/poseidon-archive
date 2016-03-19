@@ -31,7 +31,7 @@ void ConfigFile::load(const char *path){
 		line.clear();
 		line.reserve(raw_line.size());
 		bool escaped = false;
-		for(auto it = raw_line.begin(); it != raw_line.end(); ++it){
+		for(AUTO(it, raw_line.begin()); it != raw_line.end(); ++it){
 			char ch = *it;
 			if(escaped){
 				escaped = false;

@@ -18,22 +18,26 @@ namespace MySql {
 class JobPromise;
 
 struct MySqlDaemon {
+	typedef boost::function<void (const boost::shared_ptr<MySql::Connection> &)> ObjectFactory;
+
 	static void start();
 	static void stop();
 
 	// 同步接口。
 	static boost::shared_ptr<MySql::Connection> create_connection(bool from_slave = false);
 
-	// 异步接口。
 	static void wait_for_all_async_operations();
 
+	// 异步接口。
 	// 以下第一个参数是出参。
 	static boost::shared_ptr<const JobPromise> enqueue_for_saving(
 		boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace, bool urgent);
 	static boost::shared_ptr<const JobPromise> enqueue_for_loading(
 		boost::shared_ptr<MySql::ObjectBase> object, std::string query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(
-		boost::function<void (const boost::shared_ptr<MySql::Connection> &)> factory, const char *table_hint, std::string query);
+		ObjectFactory factory, const char *table_hint, std::string query);
+
+	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
 
 private:
 	MySqlDaemon();

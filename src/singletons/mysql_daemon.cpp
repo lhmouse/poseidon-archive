@@ -51,39 +51,29 @@ namespace {
 
 	// 数据库线程操作。
 	class OperationBase : NONCOPYABLE {
-	private:
-		const boost::shared_ptr<JobPromise> m_promise;
-
 	public:
-		explicit OperationBase(boost::shared_ptr<JobPromise> promise)
-			: m_promise(STD_MOVE(promise))
-		{
-		}
 		virtual ~OperationBase(){
 		}
 
 	public:
-		const boost::shared_ptr<JobPromise> &get_promise() const {
-			return m_promise;
-		}
-
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_table_name() const = 0;
 		virtual std::string generate_sql() const = 0;
 		virtual void fetch_result(const boost::shared_ptr<MySql::Connection> &conn) const = 0;
+		virtual void set_success() const = 0;
+		virtual void set_exception(boost::exception_ptr ep) const = 0;
 	};
 
 	class SaveOperation : public OperationBase {
 	private:
+		const boost::shared_ptr<JobPromise> m_promise;
 		const boost::shared_ptr<const MySql::ObjectBase> m_object;
 		const bool m_to_replace;
 
 	public:
-		SaveOperation(boost::shared_ptr<JobPromise> promise,
-			boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace)
-			: OperationBase(STD_MOVE(promise))
-			, m_object(STD_MOVE(object)), m_to_replace(to_replace)
+		SaveOperation(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace)
+			: m_promise(STD_MOVE(promise)), m_object(STD_MOVE(object)), m_to_replace(to_replace)
 		{
 		}
 
@@ -105,18 +95,23 @@ namespace {
 		void fetch_result(const boost::shared_ptr<MySql::Connection> & /* conn */) const OVERRIDE {
 			// 无事可做。
 		}
+		void set_success() const OVERRIDE {
+			m_promise->set_success();
+		}
+		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+			m_promise->set_exception(STD_MOVE(ep));
+		}
 	};
 
 	class LoadOperation : public OperationBase {
 	private:
+		const boost::shared_ptr<JobPromise> m_promise;
 		const boost::shared_ptr<MySql::ObjectBase> m_object;
 		const std::string m_query;
 
 	public:
-		LoadOperation(boost::shared_ptr<JobPromise> promise,
-			boost::shared_ptr<MySql::ObjectBase> object, std::string query)
-			: OperationBase(STD_MOVE(promise))
-			, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
+		LoadOperation(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<MySql::ObjectBase> object, std::string query)
+			: m_promise(STD_MOVE(promise)), m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
 		{
 		}
 
@@ -143,19 +138,24 @@ namespace {
 			m_object->fetch(conn);
 			m_object->enable_auto_saving();
 		}
+		void set_success() const OVERRIDE {
+			m_promise->set_success();
+		}
+		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+			m_promise->set_exception(STD_MOVE(ep));
+		}
 	};
 
 	class BatchLoadOperation : public OperationBase {
 	private:
-		const boost::function<void (const boost::shared_ptr<MySql::Connection> &)> m_factory;
+		const boost::shared_ptr<JobPromise> m_promise;
+		const MySqlDaemon::ObjectFactory m_factory;
 		const char *const m_table_hint;
 		const std::string m_query;
 
 	public:
-		BatchLoadOperation(boost::shared_ptr<JobPromise> promise,
-			boost::function<void (const boost::shared_ptr<MySql::Connection> &)> factory, const char *table_hint, std::string query)
-			: OperationBase(STD_MOVE(promise))
-			, m_factory(STD_MOVE_IDN(factory)), m_table_hint(table_hint), m_query(STD_MOVE(query))
+		BatchLoadOperation(boost::shared_ptr<JobPromise> promise, MySqlDaemon::ObjectFactory factory, const char *table_hint, std::string query)
+			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_table_hint(table_hint), m_query(STD_MOVE(query))
 		{
 		}
 
@@ -182,6 +182,53 @@ namespace {
 			} else {
 				LOG_POSEIDON_DEBUG("Result discarded.");
 			}
+		}
+		void set_success() const OVERRIDE {
+			m_promise->set_success();
+		}
+		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+			m_promise->set_exception(STD_MOVE(ep));
+		}
+	};
+
+	class WaitOperation : public OperationBase {
+	private:
+		const boost::shared_ptr<JobPromise> m_promise;
+		const boost::shared_ptr<volatile std::size_t> m_counter;
+
+	public:
+		WaitOperation(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<volatile std::size_t> counter)
+			: m_promise(STD_MOVE(promise)), m_counter(STD_MOVE(counter))
+		{
+		}
+
+	protected:
+		bool should_use_slave() const {
+			return true;
+		}
+		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
+			return VAL_INIT; // 不能合并。
+		}
+		const char *get_table_name() const OVERRIDE {
+			return "";
+		}
+		std::string generate_sql() const OVERRIDE {
+			return "DO 0";
+		}
+		void fetch_result(const boost::shared_ptr<MySql::Connection> & /* conn */) const OVERRIDE {
+			// 无事可做。
+		}
+		void set_success() const OVERRIDE {
+			if(atomic_sub(*m_counter, 1, ATOMIC_RELAXED) != 0){
+				return;
+			}
+			m_promise->set_success();
+		}
+		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+			if(atomic_sub(*m_counter, 1, ATOMIC_RELAXED) != 0){
+				return;
+			}
+			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
 
@@ -302,6 +349,14 @@ namespace {
 				const bool uses_slave_conn = elem->operation->should_use_slave();
 				const AUTO_REF(conn, uses_slave_conn ? slave_conn : master_conn);
 
+				const AUTO_REF(operation, elem->operation);
+				boost::exception_ptr except;
+
+				std::string query;
+				long err_code = 0;
+				char message[4096];
+				std::size_t message_len = 0;
+
 				bool execute_it = false;
 				const AUTO(combinable_object, elem->operation->get_combinable_object());
 				if(!combinable_object){
@@ -316,14 +371,7 @@ namespace {
 					}
 				}
 				if(execute_it){
-					const AUTO_REF(operation, elem->operation);
-					boost::exception_ptr except;
-
-					long err_code = 0;
-					char message[4096];
-					std::size_t message_len = 0;
-
-					std::string query = operation->generate_sql();
+					query = operation->generate_sql();
 					try {
 						LOG_POSEIDON_DEBUG("Executing SQL: table_name = ", operation->get_table_name(), ", query = ", query);
 						conn->execute_sql(query);
@@ -353,23 +401,22 @@ namespace {
 						std::memcpy(message, "Unknown exception", 17);
 					}
 					conn->discard_result();
+				}
 
-					const AUTO(promise, elem->operation->get_promise());
-					if(except){
-						const AUTO(retry_count, ++elem->retry_count);
-						if(retry_count < g_max_retry_count){
-							LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-								"Going to retry MySQL operation: retry_count = ", retry_count);
-							elem->due_time = now + (g_retry_init_delay << retry_count);
-							boost::rethrow_exception(except);
-						}
-
-						LOG_POSEIDON_ERROR("Max retry count exceeded.");
-						dump_sql(query, err_code, message, message_len);
-						promise->set_exception(except);
-					} else {
-						promise->set_success();
+				if(except){
+					const AUTO(retry_count, ++elem->retry_count);
+					if(retry_count < g_max_retry_count){
+						LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+							"Going to retry MySQL operation: retry_count = ", retry_count);
+						elem->due_time = now + (g_retry_init_delay << retry_count);
+						boost::rethrow_exception(except);
 					}
+
+					LOG_POSEIDON_ERROR("Max retry count exceeded.");
+					dump_sql_to_file(query, err_code, message, message_len);
+					elem->operation->set_exception(except);
+				} else {
+					elem->operation->set_success();
 				}
 
 				const Mutex::UniqueLock lock(m_mutex);
@@ -377,7 +424,7 @@ namespace {
 			}
 		}
 
-		void dump_sql(const std::string &query, long err_code, const char *message, std::size_t message_len){
+		void dump_sql_to_file(const std::string &query, long err_code, const char *message, std::size_t message_len){
 			PROFILE_ME;
 
 			if(g_dump_dir.empty()){
@@ -448,19 +495,19 @@ namespace {
 		void wait_till_idle(){
 			for(;;){
 				std::size_t pending_objects;
-				std::string pending_sql;
+				std::string current_sql;
 				{
 					const Mutex::UniqueLock lock(m_mutex);
 					pending_objects = m_queue.size();
 					if(pending_objects == 0){
 						break;
 					}
-					pending_sql = m_queue.front().operation->generate_sql();
+					current_sql = m_queue.front().operation->generate_sql();
 					atomic_store(m_urgent, true, ATOMIC_RELEASE);
 					m_new_operation.signal();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", pending_sql = ", pending_sql);
+					"Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_sql = ", current_sql);
 
 				::timespec req;
 				req.tv_sec = 0;
@@ -481,10 +528,7 @@ namespace {
 
 			AUTO(due_time, get_fast_mono_clock());
 			// 有紧急操作时无视写入延迟，这个逻辑不在这里处理。
-			// if(combinable_object && !urgent) // 这个看似合理但是实际是错的。
-			if(combinable_object || urgent){ // 确保紧急操作排在其他所有操作之后。
-				due_time += g_save_delay;
-			}
+			due_time += g_save_delay;
 
 			const Mutex::UniqueLock lock(m_mutex);
 			m_queue.push_back(OperationQueueElement(STD_MOVE(operation), due_time));
@@ -513,7 +557,9 @@ namespace {
 	Mutex g_thread_mutex;
 	boost::container::flat_map<const char *, boost::shared_ptr<MySqlThread>, TableNameComparator> g_threads;
 
-	void submit_operation(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
+	void submit_operation_by_table(const char *table,
+		boost::shared_ptr<OperationBase> operation, bool urgent)
+	{
 		PROFILE_ME;
 
 		boost::shared_ptr<MySqlThread> thread;
@@ -530,6 +576,22 @@ namespace {
 			}
 		}
 		thread->add_operation(STD_MOVE(operation), urgent);
+	}
+	std::size_t submit_operation_all(const boost::shared_ptr<volatile std::size_t> &counter,
+		boost::shared_ptr<OperationBase> operation, bool urgent)
+	{
+		PROFILE_ME;
+
+		VALUE_TYPE(g_threads) threads;
+		{
+			const Mutex::UniqueLock lock(g_thread_mutex);
+			threads = g_threads;
+		}
+		atomic_store(*counter, threads.size(), ATOMIC_RELAXED);
+		for(AUTO(it, threads.begin()); it != threads.end(); ++it){
+			it->second->add_operation(operation, urgent);
+		}
+		return threads.size();
 	}
 }
 
@@ -655,9 +717,8 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_saving(
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = object->get_table_name();
-	submit_operation(table_name,
-		boost::make_shared<SaveOperation>(promise, STD_MOVE(object), to_replace),
-		urgent);
+	AUTO(operation, boost::make_shared<SaveOperation>(promise, STD_MOVE(object), to_replace));
+	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), urgent);
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_loading(
@@ -665,19 +726,27 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_loading(
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = object->get_table_name();
-	submit_operation(table_name,
-		boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)),
-		true);
+	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)));
+	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_loading(
-	boost::function<void (const boost::shared_ptr<MySql::Connection> &)> factory, const char *table_hint, std::string query)
+	MySqlDaemon::ObjectFactory factory, const char *table_hint, std::string query)
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = table_hint;
-	submit_operation(table_name,
-		boost::make_shared<BatchLoadOperation>(promise, STD_MOVE_IDN(factory), table_hint, STD_MOVE(query)),
-		true);
+	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(factory), table_hint, STD_MOVE(query)));
+	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
+	return STD_MOVE_IDN(promise);
+}
+
+boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_waiting_for_all_async_operations(){
+	AUTO(promise, boost::make_shared<JobPromise>());
+	AUTO(counter, boost::make_shared<volatile std::size_t>());
+	AUTO(operation, boost::make_shared<WaitOperation>(promise, STD_MOVE(counter)));
+	if(submit_operation_all(counter, STD_MOVE_IDN(operation), true) == 0){
+		promise->set_success();
+	}
 	return STD_MOVE_IDN(promise);
 }
 
