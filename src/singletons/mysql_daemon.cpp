@@ -743,7 +743,7 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_loading(
 boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_waiting_for_all_async_operations(){
 	AUTO(promise, boost::make_shared<JobPromise>());
 	AUTO(counter, boost::make_shared<volatile std::size_t>());
-	AUTO(operation, boost::make_shared<WaitOperation>(promise, STD_MOVE(counter)));
+	AUTO(operation, boost::make_shared<WaitOperation>(promise, counter));
 	if(submit_operation_all(counter, STD_MOVE_IDN(operation), true) == 0){
 		promise->set_success();
 	}
