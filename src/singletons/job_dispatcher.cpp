@@ -6,6 +6,7 @@
 #include "main_config.hpp"
 #include <stdlib.h>
 #include <setjmp.h>
+#include <boost/container/map.hpp>
 #include "../job_base.hpp"
 #include "../job_promise.hpp"
 #include "../atomic.hpp"
@@ -55,14 +56,14 @@ namespace {
 	};
 
 	struct StackStorage FINAL {
-		static void *operator new(std::size_t cb, std::nothrow_t) NOEXCEPT {
+		static void *operator new(std::size_t cb){
 			assert(cb == sizeof(StackStorage));
 
 			void *ptr;
 			const int err_code = ::posix_memalign(&ptr, 0x1000, cb);
 			if(err_code != 0){
 				LOG_POSEIDON_WARNING("Failed to allocate stack: err_code = ", err_code);
-				ptr = NULLPTR;
+				throw std::bad_alloc();
 			}
 			return ptr;
 		}
@@ -75,7 +76,9 @@ namespace {
 
 	boost::array<boost::scoped_ptr<StackStorage>, 64> g_stack_pool;
 
-	struct FiberControl {
+	struct FiberControl : NONCOPYABLE {
+		struct Initializer { };
+
 		std::deque<JobElement> queue;
 
 		FiberState state;
@@ -84,15 +87,34 @@ namespace {
 		::sigjmp_buf inner;
 		void *profiler_hook;
 
-		FiberControl()
+		explicit FiberControl(Initializer)
 			: state(FS_READY)
 		{
+			AUTO(it, g_stack_pool.begin());
+			for(;;){
+				if(it == g_stack_pool.end()){
+					stack.reset(new StackStorage);
+					break;
+				}
+				if(*it){
+					stack.swap(*it);
+					break;
+				}
+				++it;
+			}
 		}
-		FiberControl(const FiberControl &rhs) NOEXCEPT
-			: state(FS_READY)
-		{
-			if((rhs.state != FS_READY) || !rhs.queue.empty()){
-				std::abort();
+		~FiberControl(){
+			AUTO(it, g_stack_pool.begin());
+			for(;;){
+				if(it == g_stack_pool.end()){
+					stack.reset();
+					break;
+				}
+				if(!*it){
+					stack.swap(*it);
+					break;
+				}
+				++it;
 			}
 		}
 	};
@@ -141,37 +163,19 @@ namespace {
 					::unchecked_siglongjmp(fiber->inner, 1);
 				} else {
 					fiber->state = FS_RUNNING;
-					if(!fiber->stack){
-						AUTO(it, g_stack_pool.begin());
-						for(;;){
-							if(it == g_stack_pool.end()){
-								fiber->stack.reset(new(std::nothrow) StackStorage);
-								break;
-							}
-							if(*it){
-								fiber->stack.swap(*it);
-								break;
-							}
-							++it;
-						}
-					}
 
 					register AUTO(reg __asm__("bx"), fiber); // 必须是 callee-saved 寄存器！
-					if(reg->stack){
-						__asm__ __volatile__(
+					__asm__ __volatile__(
 #ifdef __x86_64__
-							"movq %%rax, %%rsp \n"
+						"movq %%rax, %%rsp \n"
 #else
-							"movl %%eax, %%esp \n"
+						"movl %%eax, %%esp \n"
 #endif
-							: "+b"(reg)
-							: "a"(reg->stack.get() + 1) // sp 指向可用栈区的末尾。
-							: "sp", "memory"
-						);
-						fiber_stack_barrier(reg);
-					} else {
-						LOG_POSEIDON_WARNING("Failed to allocate stack for this fiber!");
-					}
+						: "+b"(reg)
+						: "a"(reg->stack.get() + 1) // sp 指向可用栈区的末尾。
+						: "sp", "memory"
+					);
+					fiber_stack_barrier(reg);
 
 					reg->state = FS_READY;
 					::unchecked_siglongjmp(reg->outer, 1);
@@ -191,7 +195,7 @@ namespace {
 
 	Mutex g_fiber_mutex;
 	ConditionVariable g_new_job;
-	std::map<boost::weak_ptr<const void>, FiberControl> g_fiber_map;
+	boost::container::map<boost::weak_ptr<const void>, FiberControl> g_fiber_map;
 
 	void really_pump_jobs() NOEXCEPT {
 		PROFILE_ME;
@@ -206,12 +210,6 @@ namespace {
 			for(AUTO(next, g_fiber_map.begin()), it = next; (next != g_fiber_map.end()) && (++next, true); it = next){
 				for(;;){
 					if(it->second.queue.empty()){
-						for(AUTO(pit, g_stack_pool.begin()); pit != g_stack_pool.end(); ++pit){
-							if(!*pit){
-								pit->swap(it->second.stack);
-								break;
-							}
-						}
 						g_fiber_map.erase(it);
 						break;
 					}
@@ -314,8 +312,11 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<co
 	}
 
 	const Mutex::UniqueLock lock(g_fiber_mutex);
-	AUTO_REF(queue, g_fiber_map[category].queue);
-	queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(withdrawn)));
+	AUTO(it, g_fiber_map.find(category));
+	if(it == g_fiber_map.end()){
+		it = g_fiber_map.emplace(category, FiberControl::Initializer()).first;
+	}
+	it->second.queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(withdrawn)));
 	g_new_job.signal();
 }
 void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise, bool insignificant){
