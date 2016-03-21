@@ -110,15 +110,14 @@ public:
 	explicit MESSAGE_NAME(::Poseidon::StreamBuffer buffer_)
 		: ::Poseidon::Cbpp::MessageBase()
 	{
-		*this << buffer_;
-
+		deserialize(buffer_);
 		if(!buffer_.empty()){
 			THROW_JUNK_AFTER_PACKET_(MESSAGE_NAME);
 		}
 	}
 
 public:
-	void operator>>(::Poseidon::StreamBuffer &buffer_) const {
+	void serialize(::Poseidon::StreamBuffer &buffer_) const {
 		::Poseidon::StreamBuffer::WriteIterator write_(buffer_);
 
 		typedef MESSAGE_NAME Cur_;
@@ -148,7 +147,7 @@ public:
 		MESSAGE_FIELDS
 	}
 
-	void operator<<(::Poseidon::StreamBuffer &buffer_){
+	void deserialize(::Poseidon::StreamBuffer &buffer_){
 		::Poseidon::StreamBuffer::ReadIterator read_(buffer_);
 
 		typedef MESSAGE_NAME Cur_;
@@ -195,6 +194,9 @@ public:
                                         	if(!::Poseidon::vuint64_from_binary(count_, read_, buffer_.size())){	\
                                         		THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
                                         	}	\
+                                        	if(count_ > cur_.name_.max_size()){	\
+                                        		THROW_LENGTH_ERROR_(MESSAGE_NAME, name_);	\
+                                        	}	\
                                         	/* cur_.name_.reserve(count_); */	\
                                         	for(::boost::uint64_t i_ = 0; i_ < count_; ++i_){	\
                                         		typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
@@ -212,7 +214,7 @@ public:
 
 	operator ::Poseidon::StreamBuffer() const {
 		::Poseidon::StreamBuffer buffer_;
-		*this >> buffer_;
+		serialize(buffer_);
 		return buffer_;
 	}
 
@@ -255,15 +257,6 @@ public:
 		os_ <<"}; ";
 	}
 };
-
-inline ::Poseidon::StreamBuffer &operator<<(::Poseidon::StreamBuffer &buffer_, const MESSAGE_NAME &msg_){
-	msg_ >>buffer_;
-	return buffer_;
-}
-inline ::Poseidon::StreamBuffer &operator>>(::Poseidon::StreamBuffer &buffer_, MESSAGE_NAME &msg_){
-	msg_ <<buffer_;
-	return buffer_;
-}
 
 inline ::std::ostream &operator<<(::std::ostream &os_, const MESSAGE_NAME &msg_){
 	msg_.dump_debug(os_);
