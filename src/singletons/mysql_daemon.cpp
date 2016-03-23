@@ -134,9 +134,7 @@ namespace {
 			if(!conn->fetch_row()){
 				DEBUG_THROW(MySql::Exception, 99999, sslit("No rows returned"));
 			}
-			m_object->disable_auto_saving();
 			m_object->fetch(conn);
-			m_object->enable_auto_saving();
 		}
 		void set_success() const OVERRIDE {
 			m_promise->set_success();
