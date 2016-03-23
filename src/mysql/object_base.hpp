@@ -30,10 +30,6 @@ namespace Poseidon {
 
 namespace MySql {
 	class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
-	protected:
-		static void batch_load(std::vector<boost::shared_ptr<ObjectBase> > &ret,
-			boost::shared_ptr<ObjectBase> (*factory)(), const char *table_hint, std::string query);
-
 	private:
 		mutable volatile bool m_auto_saves;
 		mutable void *volatile m_combined_write_stamp;

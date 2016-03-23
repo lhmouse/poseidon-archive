@@ -18,20 +18,6 @@ public:
 	static ::boost::shared_ptr< ::Poseidon::MySql::ObjectBase> create(){
 		return ::boost::make_shared<MYSQL_OBJECT_NAME>();
 	}
-	static void batch_load(::std::vector< ::boost::shared_ptr<MYSQL_OBJECT_NAME> > &ret_, ::std::string query_){
-		::std::vector<boost::shared_ptr< ::Poseidon::MySql::ObjectBase> > temp_;
-		::Poseidon::MySql::ObjectBase::batch_load(temp_, &create, TOKEN_TO_STR(MYSQL_OBJECT_NAME), STD_MOVE(query_));
-
-		ret_.reserve(ret_.size() + temp_.size());
-		for(AUTO(it_, temp_.begin()); it_ != temp_.end(); ++it_){
-			AUTO(obj_, boost::dynamic_pointer_cast<MYSQL_OBJECT_NAME>(*it_));
-			if(!obj_){
-				DEBUG_THROW(::Poseidon::Exception,
-					::Poseidon::SharedNts::view("Bad dynamic_pointer_cast to " TOKEN_TO_STR(MYSQL_OBJECT_NAME)));
-			}
-			ret_.push_back(STD_MOVE(obj_));
-		}
-	}
 
 private:
 
