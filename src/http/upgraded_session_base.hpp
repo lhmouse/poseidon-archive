@@ -11,16 +11,16 @@
 namespace Poseidon {
 
 namespace Http {
-	class Session;
+	class LowLevelSession;
 
 	class UpgradedSessionBase : public SessionBase {
-		friend Session;
+		friend LowLevelSession;
 
 	private:
-		const boost::weak_ptr<Session> m_parent;
+		const boost::weak_ptr<LowLevelSession> m_parent;
 
 	public:
-		UpgradedSessionBase(const boost::shared_ptr<Session> &parent);
+		UpgradedSessionBase(const boost::shared_ptr<LowLevelSession> &parent);
 		~UpgradedSessionBase();
 
 	protected:
@@ -39,26 +39,26 @@ namespace Http {
 		bool shutdown_write() NOEXCEPT;
 		void force_shutdown() NOEXCEPT;
 
-		boost::weak_ptr<const Session> get_weak_parent() const {
+		boost::weak_ptr<const LowLevelSession> get_weak_parent() const {
 			return m_parent;
 		}
-		boost::weak_ptr<Session> get_weak_parent(){
+		boost::weak_ptr<LowLevelSession> get_weak_parent(){
 			return m_parent;
 		}
 
-		boost::shared_ptr<const Session> get_parent() const {
+		boost::shared_ptr<const LowLevelSession> get_parent() const {
 			return m_parent.lock();
 		}
-		boost::shared_ptr<Session> get_parent(){
+		boost::shared_ptr<LowLevelSession> get_parent(){
 			return m_parent.lock();
 		}
 
-		// 以下所有函数，如果原来的 Session 被删除，抛出 bad_weak_ptr。
-		boost::shared_ptr<const Session> get_safe_parent() const {
-			return boost::shared_ptr<const Session>(m_parent);
+		// 以下所有函数，如果原来的 LowLevelSession 被删除，抛出 bad_weak_ptr。
+		boost::shared_ptr<const LowLevelSession> get_safe_parent() const {
+			return boost::shared_ptr<const LowLevelSession>(m_parent);
 		}
-		boost::shared_ptr<Session> get_safe_parent(){
-			return boost::shared_ptr<Session>(m_parent);
+		boost::shared_ptr<LowLevelSession> get_safe_parent(){
+			return boost::shared_ptr<LowLevelSession>(m_parent);
 		}
 
 		void set_timeout(boost::uint64_t timeout);

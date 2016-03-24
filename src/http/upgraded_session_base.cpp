@@ -3,12 +3,12 @@
 
 #include "../precompiled.hpp"
 #include "upgraded_session_base.hpp"
-#include "session.hpp"
+#include "low_level_session.hpp"
 
 namespace Poseidon {
 
 namespace Http {
-	UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<Session> &parent)
+	UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<LowLevelSession> &parent)
 		: m_parent(parent)
 	{
 	}

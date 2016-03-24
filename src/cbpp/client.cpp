@@ -132,8 +132,6 @@ namespace Cbpp {
 			PROFILE_ME;
 
 			client->on_sync_data_message_end(m_payload_size);
-
-			client->m_last_pong_time = get_fast_mono_clock();
 		}
 	};
 
@@ -155,39 +153,15 @@ namespace Cbpp {
 			PROFILE_ME;
 
 			client->on_sync_error_message(m_message_id, m_status_code, STD_MOVE(m_reason));
-
-			client->m_last_pong_time = get_fast_mono_clock();
 		}
 	};
 
-	void Client::keep_alive_timer_proc(const boost::weak_ptr<Client> &weak_client, boost::uint64_t now, boost::uint64_t period){
-		PROFILE_ME;
-
-		const AUTO(client, weak_client.lock());
-		if(!client){
-			return;
-		}
-
-		if(client->m_last_pong_time < now - period * 2){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"No pong received since the last two keep alive intervals. Shut down the connection.");
-			client->force_shutdown();
-			return;
-		}
-
-		client->send_control(CTL_PING, 0, boost::lexical_cast<std::string>(get_utc_time()));
-	}
-
 	Client::Client(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
-		: TcpClientBase(addr, use_ssl)
-		, m_keep_alive_interval(keep_alive_interval)
-		, m_last_pong_time((boost::uint64_t)-1)
+		: LowLevelClient(addr, use_ssl, keep_alive_interval)
 	{
 	}
 	Client::Client(const IpPort &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
-		: TcpClientBase(addr, use_ssl)
-		, m_keep_alive_interval(keep_alive_interval)
-		, m_last_pong_time((boost::uint64_t)-1)
+		: LowLevelClient(addr, use_ssl, keep_alive_interval)
 	{
 	}
 	Client::~Client(){
@@ -201,15 +175,10 @@ namespace Cbpp {
 				virtual_shared_from_this<Client>()),
 			VAL_INIT);
 
-		TcpClientBase::on_connect();
-	}
-	void Client::on_read_avail(StreamBuffer data){
-		PROFILE_ME;
-
-		Reader::put_encoded_data(STD_MOVE(data));
+		LowLevelClient::on_connect();
 	}
 
-	void Client::on_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
+	void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -217,7 +186,7 @@ namespace Cbpp {
 				virtual_shared_from_this<Client>(), message_id, payload_size),
 			VAL_INIT);
 	}
-	void Client::on_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
+	void Client::on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -225,7 +194,7 @@ namespace Cbpp {
 				virtual_shared_from_this<Client>(), payload_offset, STD_MOVE(payload)),
 			VAL_INIT);
 	}
-	bool Client::on_data_message_end(boost::uint64_t payload_size){
+	bool Client::on_low_level_data_message_end(boost::uint64_t payload_size){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -236,26 +205,15 @@ namespace Cbpp {
 		return true;
 	}
 
-	bool Client::on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
+	bool Client::on_low_level_error_message(boost::uint16_t message_id, StatusCode status_code, std::string reason){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
 			boost::make_shared<ErrorMessageJob>(
-				virtual_shared_from_this<Client>(), control_code, vint_param, STD_MOVE(string_param)),
+				virtual_shared_from_this<Client>(), message_id, status_code, STD_MOVE(reason)),
 			VAL_INIT);
 
 		return true;
-	}
-
-	long Client::on_encoded_data_avail(StreamBuffer encoded){
-		PROFILE_ME;
-
-		if(!m_keep_alive_timer){
-			m_keep_alive_timer = TimerDaemon::register_timer(m_keep_alive_interval, m_keep_alive_interval,
-				boost::bind(&keep_alive_timer_proc, virtual_weak_from_this<Client>(), _2, _3));
-		}
-
-		return TcpClientBase::send(STD_MOVE(encoded));
 	}
 
 	void Client::on_sync_connect(){
@@ -273,17 +231,6 @@ namespace Cbpp {
 
 			force_shutdown();
 		}
-	}
-
-	bool Client::send(boost::uint16_t message_id, StreamBuffer payload){
-		PROFILE_ME;
-
-		return Writer::put_data_message(message_id, STD_MOVE(payload));
-	}
-	bool Client::send_control(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
-		PROFILE_ME;
-
-		return Writer::put_control_message(control_code, vint_param, STD_MOVE(string_param));
 	}
 }
 

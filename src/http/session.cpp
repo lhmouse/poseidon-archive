@@ -5,7 +5,6 @@
 #include "session.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
-#include "upgraded_session_base.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../singletons/main_config.hpp"
@@ -16,19 +15,6 @@
 namespace Poseidon {
 
 namespace Http {
-	namespace {
-		bool is_keep_alive_enabled(const RequestHeaders &request_headers){
-			PROFILE_ME;
-
-			const AUTO_REF(connection, request_headers.headers.get("Connection"));
-			if(request_headers.version < 10001){
-				return ::strcasecmp(connection.c_str(), "Keep-Alive") == 0;
-			} else {
-				return ::strcasecmp(connection.c_str(), "Close") != 0;
-			}
-		}
-	}
-
 	class Session::SyncJobBase : public JobBase {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
@@ -127,7 +113,8 @@ namespace Http {
 			session->on_sync_request(STD_MOVE(m_request_headers), STD_MOVE(m_entity));
 
 			if(keep_alive){
-				session->set_timeout(MainConfig::get<boost::uint64_t>("http_keep_alive_timeout", 5000));
+				const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("http_keep_alive_timeout", 5000));
+				session->set_timeout(keep_alive_timeout);
 			} else {
 				session->shutdown_read();
 				session->shutdown_write();
@@ -135,108 +122,16 @@ namespace Http {
 		}
 	};
 
-	class Session::ErrorJob : public Session::SyncJobBase {
-	private:
-		StatusCode m_status_code;
-		OptionalMap m_headers;
-		SharedNts m_message;
-
-	public:
-		ErrorJob(const boost::shared_ptr<Session> &session,
-			StatusCode status_code, OptionalMap headers, SharedNts message)
-			: SyncJobBase(session)
-			, m_status_code(status_code), m_headers(STD_MOVE(headers)), m_message(STD_MOVE(message))
-		{
-		}
-
-	protected:
-		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
-			PROFILE_ME;
-
-			try {
-				m_headers.set(sslit("Connection"), "Close");
-				if(m_message[0] == (char)0xFF){
-					session->send_default(m_status_code, STD_MOVE(m_headers));
-				} else {
-					session->send(m_status_code, STD_MOVE(m_headers), StreamBuffer(m_message.get()));
-				}
-				session->shutdown_write();
-			} catch(...){
-				session->force_shutdown();
-			}
-		}
-	};
-
 	Session::Session(UniqueFile socket, boost::uint64_t max_request_length)
-		: TcpSessionBase(STD_MOVE(socket))
-		, m_max_request_length(max_request_length ? max_request_length : MainConfig::get<boost::uint64_t>("http_max_request_length", 16384))
-		, m_size_total(0), m_request_headers()
+		: LowLevelSession(STD_MOVE(socket), max_request_length)
 	{
 	}
 	Session::~Session(){
 	}
 
-	void Session::on_read_hup() NOEXCEPT {
-		PROFILE_ME;
-
-		const AUTO(upgraded_session, m_upgraded_session);
-		if(upgraded_session){
-			upgraded_session->on_read_hup();
-		}
-
-		TcpSessionBase::on_read_hup();
-	}
-	void Session::on_close(int err_code) NOEXCEPT {
-		PROFILE_ME;
-
-		const AUTO(upgraded_session, m_upgraded_session);
-		if(upgraded_session){
-			upgraded_session->on_close(err_code);
-		}
-
-		TcpSessionBase::on_close(err_code);
-	}
-
-	void Session::on_read_avail(StreamBuffer data){
-		PROFILE_ME;
-
-		// epoll 线程访问不需要锁。
-		AUTO(upgraded_session, m_upgraded_session);
-		if(upgraded_session){
-			upgraded_session->on_read_avail(STD_MOVE(data));
-			return;
-		}
-
-		try {
-			m_size_total += data.size();
-			if(m_size_total > m_max_request_length){
-				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
-			}
-
-			ServerReader::put_encoded_data(STD_MOVE(data));
-		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Http::Exception thrown in HTTP parser: status_code = ", e.status_code(), ", what = ", e.what());
-			JobDispatcher::enqueue(
-				boost::make_shared<ErrorJob>(
-					virtual_shared_from_this<Session>(), e.status_code(), e.headers(), SharedNts(e.what())),
-				VAL_INIT);
-			shutdown_read();
-			shutdown_write();
-			return;
-		}
-
-		upgraded_session = m_upgraded_session;
-		if(upgraded_session){
-			StreamBuffer queue;
-			queue.swap(ServerReader::get_queue());
-			if(!queue.empty()){
-				upgraded_session->on_read_avail(STD_MOVE(queue));
-			}
-		}
-	}
-
-	void Session::on_request_headers(RequestHeaders request_headers, std::string transfer_encoding, boost::uint64_t /* content_length */){
+	boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request(
+		RequestHeaders request_headers, std::string transfer_encoding, StreamBuffer entity)
+	{
 		PROFILE_ME;
 
 		const AUTO_REF(expect, request_headers.headers.get("Expect"));
@@ -250,94 +145,12 @@ namespace Http {
 			}
 		}
 
-		m_request_headers = STD_MOVE(request_headers);
-		m_transfer_encoding = STD_MOVE(transfer_encoding);
-		m_entity.clear();
-	}
-	void Session::on_request_entity(boost::uint64_t /* entity_offset */, bool /* is_chunked */, StreamBuffer entity){
-		PROFILE_ME;
-
-		m_entity.splice(entity);
-	}
-	bool Session::on_request_end(boost::uint64_t /* content_length */, bool /* is_chunked */, OptionalMap headers){
-		PROFILE_ME;
-
-		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-			m_request_headers.headers.append(it->first, STD_MOVE(it->second));
-		}
-
-		AUTO(upgraded_session, predispatch_request(m_request_headers, m_entity));
-		if(upgraded_session){
-			// epoll 线程访问不需要锁。
-			m_upgraded_session = STD_MOVE(upgraded_session);
-			return false;
-		}
-
-		if(!is_keep_alive_enabled(m_request_headers)){
-			shutdown_read();
-		}
-
 		JobDispatcher::enqueue(
 			boost::make_shared<RequestJob>(
-				virtual_shared_from_this<Session>(), STD_MOVE(m_request_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity)),
+				virtual_shared_from_this<Session>(), STD_MOVE(request_headers), STD_MOVE(transfer_encoding), STD_MOVE(entity)),
 			VAL_INIT);
-		m_size_total = 0;
-
-		return true;
-	}
-
-	long Session::on_encoded_data_avail(StreamBuffer encoded){
-		PROFILE_ME;
-
-		return TcpSessionBase::send(STD_MOVE(encoded));
-	}
-
-	boost::shared_ptr<UpgradedSessionBase> Session::predispatch_request(
-		RequestHeaders & /* request_headers */, StreamBuffer & /* entity */)
-	{
-		PROFILE_ME;
 
 		return VAL_INIT;
-	}
-
-	boost::shared_ptr<UpgradedSessionBase> Session::get_upgraded_session() const {
-		const Mutex::UniqueLock lock(m_upgraded_session_mutex);
-		return m_upgraded_session;
-	}
-
-	bool Session::send(ResponseHeaders response_headers, StreamBuffer entity){
-		PROFILE_ME;
-
-		return ServerWriter::put_response(STD_MOVE(response_headers), STD_MOVE(entity));
-	}
-	bool Session::send(StatusCode status_code, StreamBuffer entity, std::string content_type){
-		PROFILE_ME;
-
-		OptionalMap headers;
-		if(!entity.empty()){
-			headers.set(sslit("Content-Type"), STD_MOVE(content_type));
-		}
-		return send(status_code, STD_MOVE(headers), STD_MOVE(entity));
-	}
-	bool Session::send(StatusCode status_code, OptionalMap headers, StreamBuffer entity){
-		PROFILE_ME;
-
-		ResponseHeaders response_headers;
-		response_headers.version = 10001;
-		response_headers.status_code = status_code;
-		response_headers.reason = get_status_code_desc(status_code).desc_short;
-		response_headers.headers = STD_MOVE(headers);
-		return send(STD_MOVE(response_headers), STD_MOVE(entity));
-	}
-	bool Session::send_default(StatusCode status_code, OptionalMap headers){
-		PROFILE_ME;
-
-		ResponseHeaders response_headers;
-		response_headers.version = 10001;
-		response_headers.status_code = status_code;
-		response_headers.reason = get_status_code_desc(status_code).desc_short;
-		response_headers.headers = STD_MOVE(headers);
-		return ServerWriter::put_default_response(STD_MOVE(response_headers));
 	}
 }
 

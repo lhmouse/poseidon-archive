@@ -129,11 +129,11 @@ namespace Http {
 	};
 
 	Client::Client(const SockAddr &addr, bool use_ssl)
-		: TcpClientBase(addr, use_ssl)
+		: LowLevelClient(addr, use_ssl)
 	{
 	}
 	Client::Client(const IpPort &addr, bool use_ssl)
-		: TcpClientBase(addr, use_ssl)
+		: LowLevelClient(addr, use_ssl)
 	{
 	}
 	Client::~Client(){
@@ -147,33 +147,12 @@ namespace Http {
 				virtual_shared_from_this<Client>()),
 			VAL_INIT);
 
-		TcpClientBase::on_connect();
-	}
-	void Client::on_read_hup() NOEXCEPT {
-		PROFILE_ME;
-
-		try {
-			if(ClientReader::is_content_till_eof()){
-				ClientReader::terminate_content();
-			}
-		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-			force_shutdown();
-		} catch(...){
-			LOG_POSEIDON_WARNING("Unknown exception thrown");
-			force_shutdown();
-		}
-
-		TcpClientBase::on_read_hup();
+		LowLevelClient::on_connect();
 	}
 
-	void Client::on_read_avail(StreamBuffer data){
-		PROFILE_ME;
-
-		ClientReader::put_encoded_data(STD_MOVE(data));
-	}
-
-	void Client::on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length){
+	void Client::on_low_level_response_headers(ResponseHeaders response_headers,
+		std::string transfer_encoding, boost::uint64_t content_length)
+	{
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -181,7 +160,7 @@ namespace Http {
 				virtual_shared_from_this<Client>(), STD_MOVE(response_headers), STD_MOVE(transfer_encoding), content_length),
 			VAL_INIT);
 	}
-	void Client::on_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
+	void Client::on_low_level_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -189,7 +168,7 @@ namespace Http {
 				virtual_shared_from_this<Client>(), entity_offset, is_chunked, STD_MOVE(entity)),
 			VAL_INIT);
 	}
-	bool Client::on_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers){
+	bool Client::on_low_level_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -200,34 +179,9 @@ namespace Http {
 		return true;
 	}
 
-	long Client::on_encoded_data_avail(StreamBuffer encoded){
-		PROFILE_ME;
-
-		return TcpClientBase::send(STD_MOVE(encoded));
-	}
-
 	void Client::on_sync_connect(){
-	}
-
-	bool Client::send_headers(RequestHeaders request_headers){
-		return ClientWriter::put_request_headers(STD_MOVE(request_headers));
-	}
-	bool Client::send_entity(StreamBuffer data){
-		return ClientWriter::put_entity(STD_MOVE(data));
-	}
-
-	bool Client::send(RequestHeaders request_headers, StreamBuffer entity){
-		return ClientWriter::put_request(STD_MOVE(request_headers), STD_MOVE(entity));
-	}
-
-	bool Client::send_chunked_header(RequestHeaders request_headers){
-		return ClientWriter::put_chunked_header(STD_MOVE(request_headers));
-	}
-	bool Client::send_chunk(StreamBuffer entity){
-		return ClientWriter::put_chunk(STD_MOVE(entity));
-	}
-	bool Client::send_chunked_trailer(OptionalMap headers){
-		return ClientWriter::put_chunked_trailer(STD_MOVE(headers));
+		PROFILE_ME;
+		LOG_POSEIDON_INFO("CBPP client connected: remote = ", get_remote_info());
 	}
 }
 

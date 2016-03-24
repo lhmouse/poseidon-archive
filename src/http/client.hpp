@@ -4,17 +4,12 @@
 #ifndef POSEIDON_HTTP_CLIENT_HPP_
 #define POSEIDON_HTTP_CLIENT_HPP_
 
-#include "../tcp_client_base.hpp"
-#include "client_reader.hpp"
-#include "client_writer.hpp"
-#include "request_headers.hpp"
-#include "response_headers.hpp"
-#include "status_codes.hpp"
+#include "low_level_client.hpp"
 
 namespace Poseidon {
 
 namespace Http {
-	class Client : public TcpClientBase, private ClientReader, private ClientWriter {
+	class Client : public LowLevelClient {
 	private:
 		class SyncJobBase;
 		class ConnectJob;
@@ -30,34 +25,20 @@ namespace Http {
 	protected:
 		// TcpClientBase
 		void on_connect() OVERRIDE;
-		void on_read_hup() NOEXCEPT OVERRIDE;
 
-		void on_read_avail(StreamBuffer data) OVERRIDE;
-
-		// ClientReader
-		void on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
-		void on_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) OVERRIDE;
-		bool on_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) OVERRIDE;
-
-		// ClientWriter
-		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
+		// LowLevelClient
+		void on_low_level_response_headers(ResponseHeaders response_headers,
+			std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
+		void on_low_level_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) OVERRIDE;
+		bool on_low_level_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) OVERRIDE;
 
 		// 可覆写。
 		virtual void on_sync_connect();
 
-		virtual void on_sync_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length) = 0;
+		virtual void on_sync_response_headers(ResponseHeaders response_headers,
+			std::string transfer_encoding, boost::uint64_t content_length) = 0;
 		virtual void on_sync_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) = 0;
 		virtual void on_sync_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) = 0;
-
-	public:
-		bool send_headers(RequestHeaders request_headers);
-		bool send_entity(StreamBuffer data);
-
-		bool send(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
-
-		bool send_chunked_header(RequestHeaders request_headers);
-		bool send_chunk(StreamBuffer entity);
-		bool send_chunked_trailer(OptionalMap headers);
 	};
 }
 

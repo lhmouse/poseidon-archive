@@ -28,6 +28,8 @@ namespace Http {
 		swap(lhs.get_params, rhs.get_params);
 		swap(lhs.headers, rhs.headers);
 	}
+
+	extern bool is_keep_alive_enabled(const RequestHeaders &request_headers) NOEXCEPT;
 }
 
 }

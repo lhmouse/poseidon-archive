@@ -118,102 +118,32 @@ namespace Cbpp {
 		}
 	};
 
-	class Session::ErrorJob : public Session::SyncJobBase {
-	private:
-		boost::uint16_t m_message_id;
-		StatusCode m_status_code;
-		std::string m_reason;
-
-	public:
-		ErrorJob(const boost::shared_ptr<Session> &session,
-			boost::uint16_t message_id, StatusCode status_code, std::string reason)
-			: SyncJobBase(session)
-			, m_message_id(message_id), m_status_code(status_code), m_reason(STD_MOVE(reason))
-		{
-		}
-
-	protected:
-		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
-			PROFILE_ME;
-
-			try {
-				session->send_error(m_message_id, m_status_code, STD_MOVE(m_reason));
-				session->shutdown_write();
-			} catch(...){
-				session->force_shutdown();
-			}
-		}
-	};
-
 	Session::Session(UniqueFile socket, boost::uint64_t max_request_length)
-		: TcpSessionBase(STD_MOVE(socket))
-		, m_max_request_length(max_request_length ? max_request_length : MainConfig::get<boost::uint64_t>("cbpp_max_request_length", 16384))
-		, m_size_total(0), m_message_id(0), m_payload()
+		: LowLevelSession(STD_MOVE(socket), max_request_length)
 	{
 	}
 	Session::~Session(){
 	}
 
-	void Session::on_read_avail(StreamBuffer data){
-		PROFILE_ME;
-
-		try {
-			m_size_total += data.size();
-			if(m_size_total > m_max_request_length){
-				DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
-			}
-
-			Reader::put_encoded_data(STD_MOVE(data));
-		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Cbpp::Exception thrown: status_code = ", e.status_code(), ", what = ", e.what());
-			JobDispatcher::enqueue(
-				boost::make_shared<ErrorJob>(
-					virtual_shared_from_this<Session>(), Reader::get_message_id(), e.status_code(), e.what()),
-				VAL_INIT);
-		}
-	}
-	void Session::on_data_message_header(boost::uint16_t message_id, boost::uint64_t /* payload_size */){
-		PROFILE_ME;
-
-		m_message_id = message_id;
-		m_payload.clear();
-	}
-	void Session::on_data_message_payload(boost::uint64_t /* payload_offset */, StreamBuffer payload){
-		PROFILE_ME;
-
-		m_payload.splice(payload);
-	}
-	bool Session::on_data_message_end(boost::uint64_t /* payload_size */){
+	bool Session::on_low_level_data_message(boost::uint16_t message_id, StreamBuffer payload){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
 			boost::make_shared<DataMessageJob>(
-				virtual_shared_from_this<Session>(), m_message_id, STD_MOVE(m_payload)),
+				virtual_shared_from_this<Session>(), message_id, STD_MOVE(payload)),
 			VAL_INIT);
-		m_size_total = 0;
 
 		return true;
 	}
-
-	bool Session::on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
+	bool Session::on_low_level_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
 			boost::make_shared<ControlMessageJob>(
 				virtual_shared_from_this<Session>(), control_code, vint_param, STD_MOVE(string_param)),
 			VAL_INIT);
-		m_size_total = 0;
-		m_message_id = 0;
-		m_payload.clear();
 
 		return true;
-	}
-
-	long Session::on_encoded_data_avail(StreamBuffer encoded){
-		PROFILE_ME;
-
-		return TcpSessionBase::send(STD_MOVE(encoded));
 	}
 
 	void Session::on_sync_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
@@ -224,34 +154,26 @@ namespace Cbpp {
 		switch(control_code){
 		case CTL_PING:
 			LOG_POSEIDON_TRACE("Received ping from ", get_remote_info());
-			send(ControlMessage(ControlMessage::ID, ST_PONG, string_param));
+			send(ControlMessage::ID,
+				ControlMessage(ControlMessage::ID, ST_PONG, STD_MOVE(string_param)));
 			break;
 
 		case CTL_SHUTDOWN:
-			send(ControlMessage(ControlMessage::ID, ST_SHUTDOWN_REQUEST, string_param));
+			send(ControlMessage::ID,
+				ControlMessage(ControlMessage::ID, ST_SHUTDOWN_REQUEST, STD_MOVE(string_param)));
 			shutdown_read();
 			shutdown_write();
 			break;
 
 		case CTL_QUERY_MONO_CLOCK:
-			send(ControlMessage(ControlMessage::ID, ST_MONOTONIC_CLOCK, boost::lexical_cast<std::string>(get_fast_mono_clock())));
+			send(ControlMessage::ID,
+				ControlMessage(ControlMessage::ID, ST_MONOTONIC_CLOCK, boost::lexical_cast<std::string>(get_fast_mono_clock())));
 			break;
 
 		default:
 			LOG_POSEIDON_WARNING("Unknown control code: ", control_code);
-			DEBUG_THROW(Exception, ST_UNKNOWN_CTL_CODE, SharedNts(string_param));
+			DEBUG_THROW(Exception, ST_UNKNOWN_CTL_CODE, sslit("Unknown control code"));
 		}
-	}
-
-	bool Session::send(boost::uint16_t message_id, StreamBuffer payload){
-		PROFILE_ME;
-
-		return Writer::put_data_message(message_id, STD_MOVE(payload));
-	}
-	bool Session::send_error(boost::uint16_t message_id, StatusCode status_code, std::string reason){
-		PROFILE_ME;
-
-		return Writer::put_control_message(message_id, status_code, STD_MOVE(reason));
 	}
 }
 

@@ -87,7 +87,9 @@ pkginclude_http_HEADERS = \
 	src/http/server_writer.hpp	\
 	src/http/client_reader.hpp	\
 	src/http/client_writer.hpp	\
+	src/http/low_level_session.hpp	\
 	src/http/session.hpp	\
+	src/http/low_level_client.hpp	\
 	src/http/client.hpp	\
 	src/http/authorization.hpp	\
 	src/http/verbs.hpp	\
@@ -102,6 +104,7 @@ pkginclude_websocket_HEADERS = \
 	src/websocket/handshake.hpp	\
 	src/websocket/reader.hpp	\
 	src/websocket/writer.hpp	\
+	src/websocket/low_level_session.hpp	\
 	src/websocket/session.hpp	\
 	src/websocket/opcodes.hpp	\
 	src/websocket/status_codes.hpp	\
@@ -111,10 +114,12 @@ pkginclude_cbppdir = $(pkgincludedir)/cbpp
 pkginclude_cbpp_HEADERS = \
 	src/cbpp/fwd.hpp	\
 	src/cbpp/reader.hpp	\
-	src/cbpp/client.hpp	\
 	src/cbpp/writer.hpp	\
 	src/cbpp/message_base.hpp	\
+	src/cbpp/low_level_session.hpp	\
 	src/cbpp/session.hpp	\
+	src/cbpp/low_level_client.hpp	\
+	src/cbpp/client.hpp	\
 	src/cbpp/control_message.hpp	\
 	src/cbpp/message_generator.hpp	\
 	src/cbpp/status_codes.hpp	\
@@ -196,7 +201,9 @@ lib_libposeidon_main_la_SOURCES = \
 	src/singletons/system_http_server.cpp	\
 	src/cbpp/reader.cpp	\
 	src/cbpp/writer.cpp	\
+	src/cbpp/low_level_session.cpp	\
 	src/cbpp/session.cpp	\
+	src/cbpp/low_level_client.cpp	\
 	src/cbpp/client.cpp	\
 	src/cbpp/exception.cpp	\
 	src/http/const_strings.cpp	\
@@ -204,7 +211,9 @@ lib_libposeidon_main_la_SOURCES = \
 	src/http/server_writer.cpp	\
 	src/http/client_reader.cpp	\
 	src/http/client_writer.cpp	\
+	src/http/low_level_session.cpp	\
 	src/http/session.cpp	\
+	src/http/low_level_client.cpp	\
 	src/http/client.cpp	\
 	src/http/authorization.cpp	\
 	src/http/status_codes.cpp	\
@@ -212,9 +221,12 @@ lib_libposeidon_main_la_SOURCES = \
 	src/http/utilities.cpp	\
 	src/http/upgraded_session_base.cpp	\
 	src/http/exception.cpp	\
+	src/http/request_headers.cpp	\
+	src/http/response_headers.cpp	\
 	src/websocket/handshake.cpp	\
 	src/websocket/reader.cpp	\
 	src/websocket/writer.cpp	\
+	src/websocket/low_level_session.cpp	\
 	src/websocket/session.cpp	\
 	src/websocket/exception.cpp	\
 	src/mysql/object_base.cpp	\

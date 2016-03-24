@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "session.hpp"
 #include "exception.hpp"
-#include "../http/session.hpp"
+#include "../http/low_level_session.hpp"
 #include "../optional_map.hpp"
 #include "../singletons/main_config.hpp"
 #include "../singletons/job_dispatcher.hpp"
@@ -18,7 +18,7 @@ namespace WebSocket {
 	class Session::SyncJobBase : public JobBase {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
-		const boost::weak_ptr<Http::Session> m_parent;
+		const boost::weak_ptr<Http::LowLevelSession> m_parent;
 		const boost::weak_ptr<Session> m_session;
 
 	protected:
@@ -110,88 +110,24 @@ namespace WebSocket {
 		}
 	};
 
-	class Session::ErrorJob : public Session::SyncJobBase {
-	private:
-		StatusCode m_status_code;
-		StreamBuffer m_additional;
-
-	public:
-		ErrorJob(const boost::shared_ptr<Session> &session, StatusCode status_code, StreamBuffer additional)
-			: SyncJobBase(session)
-			, m_status_code(status_code), m_additional(STD_MOVE(additional))
-		{
-		}
-
-	protected:
-		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
-			PROFILE_ME;
-
-			try {
-				session->shutdown(m_status_code, STD_MOVE(m_additional));
-			} catch(...){
-				session->force_shutdown();
-			}
-		}
-	};
-
-	Session::Session(const boost::shared_ptr<Http::Session> &parent, boost::uint64_t max_request_length)
-		: Http::UpgradedSessionBase(parent)
-		, m_max_request_length(max_request_length ? max_request_length : MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
-		, m_size_total(0)
+	Session::Session(const boost::shared_ptr<Http::LowLevelSession> &parent, boost::uint64_t max_request_length)
+		: LowLevelSession(parent, max_request_length)
 	{
 	}
 	Session::~Session(){
 	}
 
-	void Session::on_read_avail(StreamBuffer data){
-		PROFILE_ME;
-
-		try {
-			m_size_total += data.size();
-			if(m_size_total > m_max_request_length){
-				DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
-			}
-
-			Reader::put_encoded_data(STD_MOVE(data));
-		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"WebSocket::Exception thrown in WebSocket parser: status_code = ", e.status_code(), ", what = ", e.what());
-			const AUTO(parent, get_parent());
-			if(parent){
-				JobDispatcher::enqueue(
-					boost::make_shared<ErrorJob>(
-						virtual_shared_from_this<Session>(), e.status_code(), StreamBuffer(e.what())),
-					VAL_INIT);
-				parent->shutdown_read();
-				parent->shutdown_write();
-			}
-		}
-	}
-
-	void Session::on_data_message_header(OpCode opcode){
-		PROFILE_ME;
-
-		m_opcode = opcode;
-		m_payload.clear();
-	}
-	void Session::on_data_message_payload(boost::uint64_t /* whole_offset */, StreamBuffer payload){
-		PROFILE_ME;
-
-		m_payload.splice(payload);
-	}
-	bool Session::on_data_message_end(boost::uint64_t /* whole_size */){
+	bool Session::on_low_level_data_message(OpCode opcode, StreamBuffer payload){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
 			boost::make_shared<DataMessageJob>(
-				virtual_shared_from_this<Session>(), m_opcode, STD_MOVE(m_payload)),
+				virtual_shared_from_this<Session>(), opcode, STD_MOVE(payload)),
 			VAL_INIT);
-		m_size_total = 0;
 
 		return true;
 	}
-
-	bool Session::on_control_message(OpCode opcode, StreamBuffer payload){
+	bool Session::on_low_level_control_message(OpCode opcode, StreamBuffer payload){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -202,15 +138,9 @@ namespace WebSocket {
 		return true;
 	}
 
-	long Session::on_encoded_data_avail(StreamBuffer encoded){
-		PROFILE_ME;
-
-		return UpgradedSessionBase::send(STD_MOVE(encoded));
-	}
-
 	void Session::on_sync_control_message(OpCode opcode, StreamBuffer payload){
 		PROFILE_ME;
-		LOG_POSEIDON_DEBUG("Control frame, opcode = ", m_opcode);
+		LOG_POSEIDON_DEBUG("Control frame: opcode = ", opcode);
 
 		const AUTO(parent, get_parent());
 		if(!parent){
@@ -220,14 +150,12 @@ namespace WebSocket {
 		switch(opcode){
 		case OP_CLOSE:
 			LOG_POSEIDON_INFO("Received close frame from ", parent->get_remote_info());
-			Writer::put_close_message(ST_NORMAL_CLOSURE, VAL_INIT);
-			parent->shutdown_read();
-			parent->shutdown_write();
+			shutdown(ST_NORMAL_CLOSURE, VAL_INIT);
 			break;
 
 		case OP_PING:
 			LOG_POSEIDON_INFO("Received ping frame from ", parent->get_remote_info());
-			Writer::put_message(OP_PONG, false, STD_MOVE(payload));
+			send(OP_PONG, STD_MOVE(payload));
 			break;
 
 		case OP_PONG:
@@ -237,31 +165,6 @@ namespace WebSocket {
 		default:
 			DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Invalid opcode"));
 			break;
-		}
-	}
-
-	bool Session::send(StreamBuffer payload, bool binary, bool masked){
-		PROFILE_ME;
-
-		return Writer::put_message(binary ? OP_DATA_BIN : OP_DATA_TEXT, masked, STD_MOVE(payload));
-	}
-
-	bool Session::shutdown(StatusCode status_code, StreamBuffer additional) NOEXCEPT {
-		PROFILE_ME;
-
-		const AUTO(parent, get_parent());
-		if(!parent){
-			return false;
-		}
-
-		try {
-			Writer::put_close_message(status_code, STD_MOVE(additional));
-			parent->shutdown_read();
-			return parent->shutdown_write();
-		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-			parent->force_shutdown();
-			return false;
 		}
 	}
 }
