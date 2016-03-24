@@ -12,11 +12,12 @@ namespace Poseidon {
 namespace Http {
 	class Client::SyncJobBase : public JobBase {
 	private:
+		const TcpSessionBase::DelayedShutdownGuard m_guard;
 		const boost::weak_ptr<Client> m_client;
 
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Client> &client)
-			: m_client(client)
+			: m_guard(client), m_client(client)
 		{
 		}
 
