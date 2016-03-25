@@ -13,10 +13,12 @@ namespace Cbpp {
 	private:
 		class SyncJobBase;
 		class ConnectJob;
-		class DataMessageHeaderJob;
-		class DataMessagePayloadJob;
-		class DataMessageEndJob;
+		class DataMessageJob;
 		class ErrorMessageJob;
+
+	private:
+		unsigned m_message_id;
+		StreamBuffer m_payload;
 
 	protected:
 		Client(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval);
@@ -37,10 +39,7 @@ namespace Cbpp {
 		// 可覆写。
 		virtual void on_sync_connect();
 
-		virtual void on_sync_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) = 0;
-		virtual void on_sync_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload) = 0;
-		virtual void on_sync_data_message_end(boost::uint64_t payload_size) = 0;
-
+		virtual void on_sync_data_message(boost::uint16_t message_id, StreamBuffer payload) = 0;
 		virtual void on_sync_error_message(boost::uint16_t message_id, StatusCode status_code, std::string reason);
 	};
 }

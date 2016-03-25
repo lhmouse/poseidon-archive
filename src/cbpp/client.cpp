@@ -76,35 +76,15 @@ namespace Cbpp {
 		}
 	};
 
-	class Client::DataMessageHeaderJob : public Client::SyncJobBase {
+	class Client::DataMessageJob : public Client::SyncJobBase {
 	private:
 		unsigned m_message_id;
-		boost::uint64_t m_payload_size;
-
-	public:
-		DataMessageHeaderJob(const boost::shared_ptr<Client> &client, unsigned message_id, boost::uint64_t payload_size)
-			: SyncJobBase(client)
-			, m_message_id(message_id), m_payload_size(payload_size)
-		{
-		}
-
-	protected:
-		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-			PROFILE_ME;
-
-			client->on_sync_data_message_header(m_message_id, m_payload_size);
-		}
-	};
-
-	class Client::DataMessagePayloadJob : public Client::SyncJobBase {
-	public:
-		boost::uint64_t m_payload_offset;
 		StreamBuffer m_payload;
 
 	public:
-		DataMessagePayloadJob(const boost::shared_ptr<Client> &client, boost::uint64_t payload_offset, StreamBuffer payload)
+		DataMessageJob(const boost::shared_ptr<Client> &client, unsigned message_id, StreamBuffer payload)
 			: SyncJobBase(client)
-			, m_payload_offset(payload_offset), m_payload(STD_MOVE(payload))
+			, m_message_id(message_id), m_payload(STD_MOVE(payload))
 		{
 		}
 
@@ -112,26 +92,7 @@ namespace Cbpp {
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->on_sync_data_message_payload(m_payload_offset, STD_MOVE(m_payload));
-		}
-	};
-
-	class Client::DataMessageEndJob : public Client::SyncJobBase {
-	public:
-		boost::uint64_t m_payload_size;
-
-	public:
-		DataMessageEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t payload_size)
-			: SyncJobBase(client)
-			, m_payload_size(payload_size)
-		{
-		}
-
-	protected:
-		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-			PROFILE_ME;
-
-			client->on_sync_data_message_end(m_payload_size);
+			client->on_sync_data_message(m_message_id, STD_MOVE(m_payload));
 		}
 	};
 
@@ -181,25 +142,31 @@ namespace Cbpp {
 	void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
 		PROFILE_ME;
 
-		JobDispatcher::enqueue(
-			boost::make_shared<DataMessageHeaderJob>(
-				virtual_shared_from_this<Client>(), message_id, payload_size),
-			VAL_INIT);
+		(void)payload_size;
+
+		m_message_id = message_id;
 	}
 	void Client::on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
 		PROFILE_ME;
 
-		JobDispatcher::enqueue(
-			boost::make_shared<DataMessagePayloadJob>(
-				virtual_shared_from_this<Client>(), payload_offset, STD_MOVE(payload)),
-			VAL_INIT);
+		(void)payload_offset;
+
+		m_payload.splice(payload);
 	}
 	bool Client::on_low_level_data_message_end(boost::uint64_t payload_size){
 		PROFILE_ME;
 
+		(void)payload_size;
+
+		AUTO(message_id, m_message_id);
+		AUTO(payload, STD_MOVE_IDN(m_payload));
+
+		m_message_id = 0;
+		m_payload.clear();
+
 		JobDispatcher::enqueue(
-			boost::make_shared<DataMessageEndJob>(
-				virtual_shared_from_this<Client>(), payload_size),
+			boost::make_shared<DataMessageJob>(
+				virtual_shared_from_this<Client>(), message_id, STD_MOVE(payload)),
 			VAL_INIT);
 
 		return true;

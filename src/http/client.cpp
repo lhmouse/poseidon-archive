@@ -65,38 +65,17 @@ namespace Http {
 		}
 	};
 
-	class Client::ResponseHeadersJob : public Client::SyncJobBase {
+	class Client::ResponseJob : public Client::SyncJobBase {
 	private:
 		ResponseHeaders m_response_headers;
 		std::string m_transfer_encoding;
-		boost::uint64_t m_content_length;
-
-	public:
-		ResponseHeadersJob(const boost::shared_ptr<Client> &client,
-			ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length)
-			: SyncJobBase(client)
-			, m_response_headers(STD_MOVE(response_headers)), m_transfer_encoding(STD_MOVE(transfer_encoding)), m_content_length(content_length)
-		{
-		}
-
-	protected:
-		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-			PROFILE_ME;
-
-			client->on_sync_response_headers(STD_MOVE(m_response_headers), STD_MOVE(m_transfer_encoding), m_content_length);
-		}
-	};
-
-	class Client::ResponseEntityJob : public Client::SyncJobBase {
-	private:
-		boost::uint64_t m_content_offset;
-		bool m_is_chunked;
 		StreamBuffer m_entity;
 
 	public:
-		ResponseEntityJob(const boost::shared_ptr<Client> &client, boost::uint64_t content_offset, bool is_chunked, StreamBuffer entity)
+		ResponseJob(const boost::shared_ptr<Client> &client,
+			ResponseHeaders response_headers, std::string transfer_encoding, StreamBuffer entity)
 			: SyncJobBase(client)
-			, m_content_offset(content_offset), m_is_chunked(is_chunked), m_entity(STD_MOVE(entity))
+			, m_response_headers(STD_MOVE(response_headers)), m_transfer_encoding(STD_MOVE(transfer_encoding)), m_entity(STD_MOVE(entity))
 		{
 		}
 
@@ -104,28 +83,7 @@ namespace Http {
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->on_sync_response_entity(m_content_offset, m_is_chunked, STD_MOVE(m_entity));
-		}
-	};
-
-	class Client::ResponseEndJob : public Client::SyncJobBase {
-	private:
-		boost::uint64_t m_content_length;
-		bool m_is_chunked;
-		OptionalMap m_headers;
-
-	public:
-		ResponseEndJob(const boost::shared_ptr<Client> &client, boost::uint64_t content_length, bool is_chunked, OptionalMap headers)
-			: SyncJobBase(client)
-			, m_content_length(content_length), m_is_chunked(is_chunked), m_headers(STD_MOVE(headers))
-		{
-		}
-
-	protected:
-		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-			PROFILE_ME;
-
-			client->on_sync_response_end(m_content_length, m_is_chunked, STD_MOVE(m_headers));
+			client->on_sync_response(STD_MOVE(m_response_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity));
 		}
 	};
 
@@ -151,30 +109,45 @@ namespace Http {
 		LowLevelClient::on_connect();
 	}
 
-	void Client::on_low_level_response_headers(ResponseHeaders response_headers,
-		std::string transfer_encoding, boost::uint64_t content_length)
+	void Client::on_low_level_response_headers(
+		ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length)
 	{
 		PROFILE_ME;
 
-		JobDispatcher::enqueue(
-			boost::make_shared<ResponseHeadersJob>(
-				virtual_shared_from_this<Client>(), STD_MOVE(response_headers), STD_MOVE(transfer_encoding), content_length),
-			VAL_INIT);
+		(void)content_length;
+
+		m_response_headers = STD_MOVE(response_headers);
+		m_transfer_encoding = STD_MOVE(transfer_encoding);
 	}
 	void Client::on_low_level_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
 		PROFILE_ME;
 
-		JobDispatcher::enqueue(
-			boost::make_shared<ResponseEntityJob>(
-				virtual_shared_from_this<Client>(), entity_offset, is_chunked, STD_MOVE(entity)),
-			VAL_INIT);
+		(void)entity_offset;
+		(void)is_chunked;
+
+		m_entity.splice(entity);
 	}
 	bool Client::on_low_level_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers){
 		PROFILE_ME;
 
+		(void)content_length;
+		(void)is_chunked;
+
+		AUTO(response_headers, STD_MOVE_IDN(m_response_headers));
+		AUTO(transfer_encoding, STD_MOVE_IDN(m_transfer_encoding));
+		AUTO(entity, STD_MOVE_IDN(m_entity));
+
+		m_response_headers = VAL_INIT;
+		m_transfer_encoding.clear();
+		m_entity.clear();
+
+		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
+			response_headers.headers.append(it->first, STD_MOVE(it->second));
+		}
+
 		JobDispatcher::enqueue(
-			boost::make_shared<ResponseEndJob>(
-				virtual_shared_from_this<Client>(), content_length, is_chunked, STD_MOVE(headers)),
+			boost::make_shared<ResponseJob>(
+				virtual_shared_from_this<Client>(), STD_MOVE(response_headers), STD_MOVE(transfer_encoding), STD_MOVE(entity)),
 			VAL_INIT);
 
 		return true;
