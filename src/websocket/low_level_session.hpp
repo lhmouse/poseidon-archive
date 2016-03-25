@@ -26,6 +26,16 @@ namespace WebSocket {
 		~LowLevelSession();
 
 	protected:
+		boost::uint64_t get_low_level_size_total() const {
+			return m_size_total;
+		}
+		OpCode get_low_level_opcode() const {
+			return m_opcode;
+		}
+		const StreamBuffer &get_low_level_payload() const {
+			return m_payload;
+		}
+
 		// UpgradedSessionBase
 		void on_read_avail(StreamBuffer data) OVERRIDE;
 

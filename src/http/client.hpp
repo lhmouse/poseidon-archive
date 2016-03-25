@@ -26,6 +26,16 @@ namespace Http {
 		~Client();
 
 	protected:
+		const ResponseHeaders &get_low_level_response_headers() const {
+			return m_response_headers;
+		}
+		const std::string &get_low_level_transfer_encoding() const {
+			return m_transfer_encoding;
+		}
+		const StreamBuffer &get_low_level_entity() const {
+			return m_entity;
+		}
+
 		// TcpClientBase
 		void on_connect() OVERRIDE;
 

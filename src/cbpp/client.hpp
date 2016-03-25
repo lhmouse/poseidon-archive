@@ -26,6 +26,13 @@ namespace Cbpp {
 		~Client();
 
 	protected:
+		unsigned get_low_level_message_id() const {
+			return m_message_id;
+		}
+		const StreamBuffer &get_low_level_payload() const {
+			return m_payload;
+		}
+
 		// TcpSessionBase
 		void on_connect() OVERRIDE;
 

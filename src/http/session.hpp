@@ -29,6 +29,19 @@ namespace Http {
 		~Session();
 
 	protected:
+		boost::uint64_t get_low_level_size_total() const {
+			return m_size_total;
+		}
+		const RequestHeaders &get_low_level_request_headers() const {
+			return m_request_headers;
+		}
+		const std::string &get_low_level_transfer_encoding() const {
+			return m_transfer_encoding;
+		}
+		const StreamBuffer &get_low_level_entity() const {
+			return m_entity;
+		}
+
 		// LowLevelSession
 		void on_read_avail(StreamBuffer data) OVERRIDE;
 

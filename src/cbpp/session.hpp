@@ -27,6 +27,16 @@ namespace Cbpp {
 		~Session();
 
 	protected:
+		boost::uint64_t get_low_level_size_total() const {
+			return m_size_total;
+		}
+		unsigned get_low_level_message_id() const {
+			return m_message_id;
+		}
+		const StreamBuffer &get_low_level_payload() const {
+			return m_payload;
+		}
+
 		// LowLevelSession
 		void on_read_avail(StreamBuffer data) OVERRIDE;
 

@@ -20,7 +20,7 @@ namespace Http {
 	class LowLevelSession : public TcpSessionBase, private ServerReader, private ServerWriter {
 		friend UpgradedSessionBase;
 
-	protected:
+	private:
 		mutable Mutex m_upgraded_session_mutex;
 		boost::shared_ptr<UpgradedSessionBase> m_upgraded_session;
 
@@ -29,6 +29,11 @@ namespace Http {
 		~LowLevelSession();
 
 	protected:
+		const boost::shared_ptr<UpgradedSessionBase> &get_low_level_upgraded_session() const {
+			// Epoll 线程读取不需要锁。
+			return m_upgraded_session;
+		}
+
 		// TcpSessionBase
 		void on_read_hup() NOEXCEPT OVERRIDE;
 		void on_close(int err_code) NOEXCEPT OVERRIDE;

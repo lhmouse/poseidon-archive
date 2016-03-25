@@ -136,7 +136,8 @@ namespace Http {
 	try {
 		PROFILE_ME;
 
-		if(!m_upgraded_session){
+		const AUTO(upgraded_session, get_low_level_upgraded_session());
+		if(!upgraded_session){
 			m_size_total += data.size();
 			if(m_size_total > m_max_request_length){
 				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
