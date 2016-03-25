@@ -16,14 +16,27 @@ namespace Http {
 		class RequestJob;
 		class ErrorJob;
 
+	private:
+		const boost::uint64_t m_max_request_length;
+
+		boost::uint64_t m_size_total;
+		RequestHeaders m_request_headers;
+		std::string m_transfer_encoding;
+		StreamBuffer m_entity;
+
 	public:
 		explicit Session(UniqueFile socket, boost::uint64_t max_request_length = 0);
 		~Session();
 
 	protected:
 		// LowLevelSession
-		boost::shared_ptr<UpgradedSessionBase> on_low_level_request(
-			RequestHeaders request_headers, std::string transfer_encoding, StreamBuffer entity) OVERRIDE;
+		void on_read_avail(StreamBuffer data) OVERRIDE;
+
+		void on_low_level_request_headers(RequestHeaders request_headers,
+			std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
+		void on_low_level_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) OVERRIDE;
+		boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(
+			boost::uint64_t content_length, bool is_chunked, OptionalMap headers) OVERRIDE;
 
 		// 可覆写。
 		virtual void on_sync_request(RequestHeaders request_headers, StreamBuffer entity) = 0;

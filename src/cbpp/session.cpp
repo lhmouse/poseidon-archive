@@ -119,14 +119,55 @@ namespace Cbpp {
 	};
 
 	Session::Session(UniqueFile socket, boost::uint64_t max_request_length)
-		: LowLevelSession(STD_MOVE(socket), max_request_length)
+		: LowLevelSession(STD_MOVE(socket))
+		, m_max_request_length(max_request_length ? max_request_length
+		                                          : MainConfig::get<boost::uint64_t>("cbpp_max_request_length", 16384))
+		, m_size_total(0), m_message_id(0), m_payload()
 	{
 	}
 	Session::~Session(){
 	}
 
-	bool Session::on_low_level_data_message(boost::uint16_t message_id, StreamBuffer payload){
+	void Session::on_read_avail(StreamBuffer data)
+	try {
+		m_size_total += data.size();
+		if(m_size_total > m_max_request_length){
+			DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
+		}
+
+		LowLevelSession::on_read_avail(STD_MOVE(data));
+	} catch(Exception &e){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Cbpp::Exception thrown: status_code = ", e.status_code(), ", what = ", e.what());
+		send_error(ControlMessage::ID, e.status_code(), e.what());
+		shutdown_read();
+		shutdown_write();
+	}
+
+	void Session::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
 		PROFILE_ME;
+
+		(void)payload_size;
+
+		m_message_id = message_id;
+	}
+	void Session::on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
+		PROFILE_ME;
+
+		(void)payload_offset;
+
+		m_payload.splice(payload);
+	}
+	bool Session::on_low_level_data_message_end(boost::uint64_t payload_size){
+		PROFILE_ME;
+
+		(void)payload_size;
+
+		AUTO(message_id, m_message_id);
+		AUTO(payload, STD_MOVE_IDN(m_payload));
+
+		m_message_id = 0;
+		m_payload.clear();
 
 		JobDispatcher::enqueue(
 			boost::make_shared<DataMessageJob>(
@@ -135,6 +176,7 @@ namespace Cbpp {
 
 		return true;
 	}
+
 	bool Session::on_low_level_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
 		PROFILE_ME;
 

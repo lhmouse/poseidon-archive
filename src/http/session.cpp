@@ -123,18 +123,46 @@ namespace Http {
 	};
 
 	Session::Session(UniqueFile socket, boost::uint64_t max_request_length)
-		: LowLevelSession(STD_MOVE(socket), max_request_length)
+		: LowLevelSession(STD_MOVE(socket))
+		, m_max_request_length(max_request_length ? max_request_length
+		                                          : MainConfig::get<boost::uint64_t>("http_max_request_length", 16384))
+		, m_size_total(0), m_request_headers()
 	{
 	}
 	Session::~Session(){
 	}
 
-	boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request(
-		RequestHeaders request_headers, std::string transfer_encoding, StreamBuffer entity)
+	void Session::on_read_avail(StreamBuffer data)
+	try {
+		PROFILE_ME;
+
+		if(!m_upgraded_session){
+			m_size_total += data.size();
+			if(m_size_total > m_max_request_length){
+				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
+			}
+		}
+
+		LowLevelSession::on_read_avail(STD_MOVE(data));
+	} catch(Exception &e){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Http::Exception thrown in HTTP parser: status_code = ", e.status_code(), ", what = ", e.what());
+		send_default(e.status_code());
+		shutdown_read();
+		shutdown_write();
+	}
+
+	void Session::on_low_level_request_headers(RequestHeaders request_headers,
+		std::string transfer_encoding, boost::uint64_t content_length)
 	{
 		PROFILE_ME;
 
-		const AUTO_REF(expect, request_headers.headers.get("Expect"));
+		(void)content_length;
+
+		m_request_headers = STD_MOVE(request_headers);
+		m_transfer_encoding = STD_MOVE(transfer_encoding);
+
+		const AUTO_REF(expect, m_request_headers.headers.get("Expect"));
 		if(!expect.empty()){
 			if(::strcasecmp(expect.c_str(), "100-continue") == 0){
 				JobDispatcher::enqueue(
@@ -143,6 +171,38 @@ namespace Http {
 			} else {
 				LOG_POSEIDON_DEBUG("Unknown HTTP header Expect: ", expect);
 			}
+		}
+	}
+	void Session::on_low_level_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
+		PROFILE_ME;
+
+		(void)entity_offset;
+		(void)is_chunked;
+
+		m_entity.splice(entity);
+	}
+	boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request_end(
+		boost::uint64_t content_length, bool is_chunked, OptionalMap headers)
+	{
+		PROFILE_ME;
+
+		(void)content_length;
+		(void)is_chunked;
+
+		AUTO(request_headers, STD_MOVE_IDN(m_request_headers));
+		AUTO(transfer_encoding, STD_MOVE_IDN(m_transfer_encoding));
+		AUTO(entity, STD_MOVE_IDN(m_entity));
+
+		m_size_total = 0;
+		m_request_headers = VAL_INIT;
+		m_transfer_encoding.clear();
+		m_entity.clear();
+
+		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
+			request_headers.headers.append(it->first, STD_MOVE(it->second));
+		}
+		if(!is_keep_alive_enabled(request_headers)){
+			shutdown_read();
 		}
 
 		JobDispatcher::enqueue(
