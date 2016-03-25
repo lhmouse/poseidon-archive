@@ -160,8 +160,10 @@ namespace Http {
 
 		(void)content_length;
 
+		m_size_total = 0;
 		m_request_headers = STD_MOVE(request_headers);
 		m_transfer_encoding = STD_MOVE(transfer_encoding);
+		m_entity.clear();
 
 		const AUTO_REF(expect, m_request_headers.headers.get("Expect"));
 		if(!expect.empty()){
@@ -190,25 +192,16 @@ namespace Http {
 		(void)content_length;
 		(void)is_chunked;
 
-		AUTO(request_headers, STD_MOVE_IDN(m_request_headers));
-		AUTO(transfer_encoding, STD_MOVE_IDN(m_transfer_encoding));
-		AUTO(entity, STD_MOVE_IDN(m_entity));
-
-		m_size_total = 0;
-		m_request_headers = VAL_INIT;
-		m_transfer_encoding.clear();
-		m_entity.clear();
-
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-			request_headers.headers.append(it->first, STD_MOVE(it->second));
+			m_request_headers.headers.append(it->first, STD_MOVE(it->second));
 		}
-		if(!is_keep_alive_enabled(request_headers)){
+		if(!is_keep_alive_enabled(m_request_headers)){
 			shutdown_read();
 		}
 
 		JobDispatcher::enqueue(
 			boost::make_shared<RequestJob>(
-				virtual_shared_from_this<Session>(), STD_MOVE(request_headers), STD_MOVE(transfer_encoding), STD_MOVE(entity)),
+				virtual_shared_from_this<Session>(), STD_MOVE(m_request_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity)),
 			VAL_INIT);
 
 		return VAL_INIT;

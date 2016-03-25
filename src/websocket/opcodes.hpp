@@ -11,10 +11,10 @@ namespace WebSocket {
 
 	namespace OpCodes {
 		enum {
-			OP_INVALID_OPCODE   = -1,
+			OP_INVALID          = -1,
 			OP_CONTINUATION     = 0x00,
 			OP_DATA_TEXT        = 0x01,
-			OP_DATA_BIN         = 0x02,
+			OP_DATA_BINARY      = 0x02,
 			OP_CLOSE            = 0x08,
 			OP_PING             = 0x09,
 			OP_PONG             = 0x0A,

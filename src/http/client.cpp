@@ -118,6 +118,7 @@ namespace Http {
 
 		m_response_headers = STD_MOVE(response_headers);
 		m_transfer_encoding = STD_MOVE(transfer_encoding);
+		m_entity.clear();
 	}
 	void Client::on_low_level_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
 		PROFILE_ME;
@@ -133,21 +134,13 @@ namespace Http {
 		(void)content_length;
 		(void)is_chunked;
 
-		AUTO(response_headers, STD_MOVE_IDN(m_response_headers));
-		AUTO(transfer_encoding, STD_MOVE_IDN(m_transfer_encoding));
-		AUTO(entity, STD_MOVE_IDN(m_entity));
-
-		m_response_headers = VAL_INIT;
-		m_transfer_encoding.clear();
-		m_entity.clear();
-
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-			response_headers.headers.append(it->first, STD_MOVE(it->second));
+			m_response_headers.headers.append(it->first, STD_MOVE(it->second));
 		}
 
 		JobDispatcher::enqueue(
 			boost::make_shared<ResponseJob>(
-				virtual_shared_from_this<Client>(), STD_MOVE(response_headers), STD_MOVE(transfer_encoding), STD_MOVE(entity)),
+				virtual_shared_from_this<Client>(), STD_MOVE(m_response_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity)),
 			VAL_INIT);
 
 		return true;

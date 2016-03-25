@@ -145,6 +145,7 @@ namespace Cbpp {
 		(void)payload_size;
 
 		m_message_id = message_id;
+		m_payload.clear();
 	}
 	void Client::on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
 		PROFILE_ME;
@@ -158,15 +159,9 @@ namespace Cbpp {
 
 		(void)payload_size;
 
-		AUTO(message_id, m_message_id);
-		AUTO(payload, STD_MOVE_IDN(m_payload));
-
-		m_message_id = 0;
-		m_payload.clear();
-
 		JobDispatcher::enqueue(
 			boost::make_shared<DataMessageJob>(
-				virtual_shared_from_this<Client>(), message_id, STD_MOVE(payload)),
+				virtual_shared_from_this<Client>(), m_message_id, STD_MOVE(m_payload)),
 			VAL_INIT);
 
 		return true;

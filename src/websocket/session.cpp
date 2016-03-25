@@ -111,18 +111,51 @@ namespace WebSocket {
 	};
 
 	Session::Session(const boost::shared_ptr<Http::LowLevelSession> &parent, boost::uint64_t max_request_length)
-		: LowLevelSession(parent, max_request_length)
+		: LowLevelSession(parent)
+		, m_max_request_length(max_request_length ? max_request_length
+		                                          : MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
+		, m_size_total(0), m_opcode(OP_INVALID)
 	{
 	}
 	Session::~Session(){
 	}
 
-	bool Session::on_low_level_data_message(OpCode opcode, StreamBuffer payload){
+	void Session::on_read_avail(StreamBuffer data)
+	try {
+		m_size_total += data.size();
+		if(m_size_total > m_max_request_length){
+			DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
+		}
+
+		LowLevelSession::on_read_avail(STD_MOVE(data));
+	} catch(Exception &e){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"WebSocket::Exception thrown in WebSocket parser: status_code = ", e.status_code(), ", what = ", e.what());
+		shutdown(e.status_code(), e.what());
+	}
+
+	void Session::on_low_level_message_header(OpCode opcode){
 		PROFILE_ME;
+
+		m_size_total = 0;
+		m_opcode = opcode;
+		m_payload.clear();
+	}
+	void Session::on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload){
+		PROFILE_ME;
+
+		(void)whole_offset;
+
+		m_payload.splice(payload);
+	}
+	bool Session::on_low_level_message_end(boost::uint64_t whole_size){
+		PROFILE_ME;
+
+		(void)whole_size;
 
 		JobDispatcher::enqueue(
 			boost::make_shared<DataMessageJob>(
-				virtual_shared_from_this<Session>(), opcode, STD_MOVE(payload)),
+				virtual_shared_from_this<Session>(), m_opcode, STD_MOVE(m_payload)),
 			VAL_INIT);
 
 		return true;
