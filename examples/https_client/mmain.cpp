@@ -31,9 +31,7 @@ protected:
 		LOG_POSEIDON_INFO("Connection established: remote = ", get_remote_info());
 	}
 
-	void on_sync_response_headers(Poseidon::Http::ResponseHeaders response_headers,
-		std::string transfer_encoding, boost::uint64_t content_length) override
-	{
+	void on_sync_response(Poseidon::Http::ResponseHeaders response_headers, std::string transfer_encoding, Poseidon::StreamBuffer entity) override {
 		LOG_POSEIDON_INFO("Response: HTTP version = ", response_headers.version / 10000, ".", response_headers.version % 10000);
 		LOG_POSEIDON_INFO("Response: Status code = ", response_headers.status_code);
 		LOG_POSEIDON_INFO("Response: Reason = ", response_headers.reason);
@@ -42,17 +40,7 @@ protected:
 		}
 
 		LOG_POSEIDON_WARNING("Transfer-Encoding : ", transfer_encoding);
-		LOG_POSEIDON_WARNING("Content-Length    : ", content_length);
-	}
-	void on_sync_response_entity(boost::uint64_t entity_offset, bool is_chunked, Poseidon::StreamBuffer entity) override {
-		LOG_POSEIDON_DEBUG("Recevied entity: entity_offset = ", entity_offset, ", is_chunked = ", is_chunked, ", entity = ", entity.dump());
-	}
-	void on_sync_response_end(boost::uint64_t content_length, bool is_chunked, Poseidon::OptionalMap headers) override {
-		LOG_POSEIDON_WARNING("End of entity: content_length = ", content_length, ", is_chunked = ", is_chunked);
-
-		for(auto it = headers.begin(); it != headers.end(); ++it){
-			LOG_POSEIDON_INFO("Additional chunked header: ", it->first, ": ", it->second);
-		}
+		LOG_POSEIDON_WARNING("Entity: content_length = ", entity.size());
 	}
 };
 
@@ -63,7 +51,7 @@ MODULE_RAII(/* handles */){
 			LOG_POSEIDON_FATAL("Looking up host: ", g_host);
 			{
 				const auto promise = Poseidon::DnsDaemon::enqueue_for_looking_up(sock_addr, g_host, g_port);
-				Poseidon::JobDispatcher::yield(promise);
+				Poseidon::JobDispatcher::yield(promise, false);
 				promise->check_and_rethrow();
 			}
 
