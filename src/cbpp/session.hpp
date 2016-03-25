@@ -23,7 +23,7 @@ namespace Cbpp {
 		StreamBuffer m_payload;
 
 	public:
-		explicit Session(UniqueFile socket, boost::uint64_t max_request_lengthOVERRIDE);
+		explicit Session(UniqueFile socket, boost::uint64_t max_request_length = 0);
 		~Session();
 
 	protected:
