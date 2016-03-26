@@ -35,8 +35,8 @@ namespace Http {
 		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual void on_low_level_response_headers(ResponseHeaders response_headers,
-			std::string transfer_encoding, boost::uint64_t content_length) = 0;
+		virtual void on_low_level_response_headers(
+			ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length) = 0;
 		virtual void on_low_level_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) = 0;
 		virtual bool on_low_level_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) = 0;
 

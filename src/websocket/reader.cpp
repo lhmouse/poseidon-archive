@@ -42,7 +42,7 @@ namespace WebSocket {
 
 			case S_OPCODE:
 				m_fin = false;
-				m_opcode = OP_INVALID_OPCODE;
+				m_opcode = OP_INVALID;
 				m_frame_size = 0;
 				m_mask = 0;
 				m_frame_offset = 0;

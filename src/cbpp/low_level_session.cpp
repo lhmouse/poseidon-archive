@@ -5,7 +5,6 @@
 #include "low_level_session.hpp"
 #include "exception.hpp"
 #include "control_message.hpp"
-#include "../singletons/main_config.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../time.hpp"
@@ -13,11 +12,8 @@
 namespace Poseidon {
 
 namespace Cbpp {
-	LowLevelSession::LowLevelSession(UniqueFile socket, boost::uint64_t max_request_length)
+	LowLevelSession::LowLevelSession(UniqueFile socket)
 		: TcpSessionBase(STD_MOVE(socket))
-		, m_max_request_length(max_request_length ? max_request_length
-		                                          : MainConfig::get<boost::uint64_t>("cbpp_max_request_length", 16384))
-		, m_size_total(0), m_message_id(0), m_payload()
 	{
 	}
 	LowLevelSession::~LowLevelSession(){
@@ -26,42 +22,23 @@ namespace Cbpp {
 	void LowLevelSession::on_read_avail(StreamBuffer data){
 		PROFILE_ME;
 
-		try {
-			m_size_total += data.size();
-			if(m_size_total > m_max_request_length){
-				DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
-			}
-
-			Reader::put_encoded_data(STD_MOVE(data));
-		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Cbpp::Exception thrown: status_code = ", e.status_code(), ", what = ", e.what());
-			force_shutdown();
-		}
+		Reader::put_encoded_data(STD_MOVE(data));
 	}
 
-	void LowLevelSession::on_data_message_header(boost::uint16_t message_id, boost::uint64_t /* payload_size */){
+	void LowLevelSession::on_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
 		PROFILE_ME;
 
-		m_message_id = message_id;
-		m_payload.clear();
+		on_low_level_data_message_header(message_id, payload_size);
 	}
-	void LowLevelSession::on_data_message_payload(boost::uint64_t /* payload_offset */, StreamBuffer payload){
+	void LowLevelSession::on_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
 		PROFILE_ME;
 
-		m_payload.splice(payload);
+		on_low_level_data_message_payload(payload_offset, STD_MOVE(payload));
 	}
-	bool LowLevelSession::on_data_message_end(boost::uint64_t /* payload_size */){
+	bool LowLevelSession::on_data_message_end(boost::uint64_t payload_size){
 		PROFILE_ME;
 
-		AUTO(message_id, m_message_id);
-		AUTO(payload, STD_MOVE_IDN(m_payload));
-
-		m_size_total = 0;
-		m_message_id = 0;
-		m_payload.clear();
-
-		return on_low_level_data_message(message_id, STD_MOVE(payload));
+		return on_low_level_data_message_end(payload_size);
 	}
 
 	bool LowLevelSession::on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){

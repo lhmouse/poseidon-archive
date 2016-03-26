@@ -13,9 +13,12 @@ namespace Http {
 	private:
 		class SyncJobBase;
 		class ConnectJob;
-		class ResponseHeadersJob;
-		class ResponseEntityJob;
-		class ResponseEndJob;
+		class ResponseJob;
+
+	private:
+		ResponseHeaders m_response_headers;
+		std::string m_transfer_encoding;
+		StreamBuffer m_entity;
 
 	protected:
 		Client(const SockAddr &addr, bool use_ssl);
@@ -23,22 +26,29 @@ namespace Http {
 		~Client();
 
 	protected:
+		const ResponseHeaders &get_low_level_response_headers() const {
+			return m_response_headers;
+		}
+		const std::string &get_low_level_transfer_encoding() const {
+			return m_transfer_encoding;
+		}
+		const StreamBuffer &get_low_level_entity() const {
+			return m_entity;
+		}
+
 		// TcpClientBase
 		void on_connect() OVERRIDE;
 
 		// LowLevelClient
-		void on_low_level_response_headers(ResponseHeaders response_headers,
-			std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
+		void on_low_level_response_headers(
+			ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
 		void on_low_level_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) OVERRIDE;
 		bool on_low_level_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) OVERRIDE;
 
 		// 可覆写。
 		virtual void on_sync_connect();
 
-		virtual void on_sync_response_headers(ResponseHeaders response_headers,
-			std::string transfer_encoding, boost::uint64_t content_length) = 0;
-		virtual void on_sync_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) = 0;
-		virtual void on_sync_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) = 0;
+		virtual void on_sync_response(ResponseHeaders response_headers, std::string transfer_encoding, StreamBuffer entity) = 0;
 	};
 }
 

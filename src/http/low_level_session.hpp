@@ -21,21 +21,19 @@ namespace Http {
 		friend UpgradedSessionBase;
 
 	private:
-		const boost::uint64_t m_max_request_length;
-
-		boost::uint64_t m_size_total;
-		RequestHeaders m_request_headers;
-		std::string m_transfer_encoding;
-		StreamBuffer m_entity;
-
 		mutable Mutex m_upgraded_session_mutex;
 		boost::shared_ptr<UpgradedSessionBase> m_upgraded_session;
 
 	public:
-		explicit LowLevelSession(UniqueFile socket, boost::uint64_t max_request_length = 0);
+		explicit LowLevelSession(UniqueFile socket);
 		~LowLevelSession();
 
 	protected:
+		const boost::shared_ptr<UpgradedSessionBase> &get_low_level_upgraded_session() const {
+			// Epoll 线程读取不需要锁。
+			return m_upgraded_session;
+		}
+
 		// TcpSessionBase
 		void on_read_hup() NOEXCEPT OVERRIDE;
 		void on_close(int err_code) NOEXCEPT OVERRIDE;
@@ -51,8 +49,11 @@ namespace Http {
 		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual boost::shared_ptr<UpgradedSessionBase> on_low_level_request(
-			RequestHeaders request_headers, std::string transfer_encoding, StreamBuffer entity) = 0;
+		virtual void on_low_level_request_headers(RequestHeaders request_headers,
+			std::string transfer_encoding, boost::uint64_t content_length) = 0;
+		virtual void on_low_level_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) = 0;
+		virtual boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(
+			boost::uint64_t content_length, bool is_chunked, OptionalMap headers) = 0;
 
 	public:
 		boost::shared_ptr<UpgradedSessionBase> get_upgraded_session() const;

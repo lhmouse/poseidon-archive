@@ -6,18 +6,14 @@
 #include "exception.hpp"
 #include "../http/low_level_session.hpp"
 #include "../optional_map.hpp"
-#include "../singletons/main_config.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 
 namespace Poseidon {
 
 namespace WebSocket {
-	LowLevelSession::LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent, boost::uint64_t max_request_length)
+	LowLevelSession::LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent)
 		: Http::UpgradedSessionBase(parent)
-		, m_max_request_length(max_request_length ? max_request_length
-		                                          : MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
-		, m_size_total(0)
 	{
 	}
 	LowLevelSession::~LowLevelSession(){
@@ -26,45 +22,23 @@ namespace WebSocket {
 	void LowLevelSession::on_read_avail(StreamBuffer data){
 		PROFILE_ME;
 
-		try {
-			m_size_total += data.size();
-			if(m_size_total > m_max_request_length){
-				DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
-			}
-
-			Reader::put_encoded_data(STD_MOVE(data));
-		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"WebSocket::Exception thrown in WebSocket parser: status_code = ", e.status_code(), ", what = ", e.what());
-			const AUTO(parent, get_parent());
-			if(parent){
-				parent->force_shutdown();
-			}
-		}
+		Reader::put_encoded_data(STD_MOVE(data));
 	}
 
 	void LowLevelSession::on_data_message_header(OpCode opcode){
 		PROFILE_ME;
 
-		m_opcode = opcode;
-		m_payload.clear();
+		on_low_level_message_header(opcode);
 	}
-	void LowLevelSession::on_data_message_payload(boost::uint64_t /* whole_offset */, StreamBuffer payload){
+	void LowLevelSession::on_data_message_payload(boost::uint64_t whole_offset, StreamBuffer payload){
 		PROFILE_ME;
 
-		m_payload.splice(payload);
+		on_low_level_message_payload(whole_offset, STD_MOVE(payload));
 	}
-	bool LowLevelSession::on_data_message_end(boost::uint64_t /* whole_size */){
+	bool LowLevelSession::on_data_message_end(boost::uint64_t whole_size){
 		PROFILE_ME;
 
-		AUTO(opcode, m_opcode);
-		AUTO(payload, STD_MOVE_IDN(m_payload));
-
-		m_size_total = 0;
-		m_opcode = OP_INVALID_OPCODE;
-		m_payload.clear();
-
-		return on_low_level_data_message(opcode, STD_MOVE(payload));
+		return on_low_level_message_end(whole_size);
 	}
 
 	bool LowLevelSession::on_control_message(OpCode opcode, StreamBuffer payload){

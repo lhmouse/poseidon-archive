@@ -15,12 +15,35 @@ namespace WebSocket {
 		class DataMessageJob;
 		class ControlMessageJob;
 
+	private:
+		const boost::uint64_t m_max_request_length;
+
+		boost::uint64_t m_size_total;
+		OpCode m_opcode;
+		StreamBuffer m_payload;
+
 	public:
 		explicit Session(const boost::shared_ptr<Http::LowLevelSession> &parent, boost::uint64_t max_request_length = 0);
 		~Session();
 
 	protected:
-		bool on_low_level_data_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
+		boost::uint64_t get_low_level_size_total() const {
+			return m_size_total;
+		}
+		OpCode get_low_level_opcode() const {
+			return m_opcode;
+		}
+		const StreamBuffer &get_low_level_payload() const {
+			return m_payload;
+		}
+
+		// UpgradedSessionBase
+		void on_read_avail(StreamBuffer data) OVERRIDE;
+
+		void on_low_level_message_header(OpCode opcode) OVERRIDE;
+		void on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) OVERRIDE;
+		bool on_low_level_message_end(boost::uint64_t whole_size) OVERRIDE;
+
 		bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
 
 		// 可覆写。

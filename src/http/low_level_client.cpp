@@ -46,9 +46,7 @@ namespace Http {
 		ClientReader::put_encoded_data(STD_MOVE(data));
 	}
 
-	void LowLevelClient::on_response_headers(ResponseHeaders response_headers,
-		std::string transfer_encoding, boost::uint64_t content_length)
-	{
+	void LowLevelClient::on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length){
 		PROFILE_ME;
 
 		on_low_level_response_headers(STD_MOVE(response_headers), STD_MOVE(transfer_encoding), content_length);

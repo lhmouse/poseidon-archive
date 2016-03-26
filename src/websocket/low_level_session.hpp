@@ -14,15 +14,8 @@ namespace Poseidon {
 
 namespace WebSocket {
 	class LowLevelSession : public Http::UpgradedSessionBase, private Reader, private Writer {
-	private:
-		const boost::uint64_t m_max_request_length;
-
-		boost::uint64_t m_size_total;
-		OpCode m_opcode;
-		StreamBuffer m_payload;
-
 	public:
-		explicit LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent, boost::uint64_t max_request_length = 0);
+		explicit LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent);
 		~LowLevelSession();
 
 	protected:
@@ -40,7 +33,10 @@ namespace WebSocket {
 		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual bool on_low_level_data_message(OpCode opcode, StreamBuffer payload) = 0;
+		virtual void on_low_level_message_header(OpCode opcode) = 0;
+		virtual void on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) = 0;
+		virtual bool on_low_level_message_end(boost::uint64_t whole_size) = 0;
+
 		virtual bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) = 0;
 
 	public:

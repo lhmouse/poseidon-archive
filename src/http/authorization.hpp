@@ -39,7 +39,7 @@ namespace Http {
 	// 如果 auth_info 为空指针，返回空指针；否则，返回指向认证成功的 username:password 的指针。
 	extern const std::string *check_and_throw_if_unauthorized(
 		const boost::shared_ptr<const AuthInfo> &auth_info, const IpPort &remote_addr, const RequestHeaders &request_headers,
-		bool is_proxy = false, OptionalMap headers = OptionalMap());
+		bool is_proxy = false, Move<OptionalMap> headers = OptionalMap());
 }
 
 }
