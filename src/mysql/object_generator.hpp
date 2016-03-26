@@ -405,18 +405,18 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 
-#define FIELD_BOOLEAN(name_)                set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
-#define FIELD_TINYINT(name_)                set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
-#define FIELD_TINYINT_UNSIGNED(name_)       set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_SMALLINT(name_)               set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
-#define FIELD_SMALLINT_UNSIGNED(name_)      set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_INTEGER(name_)                set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
-#define FIELD_INTEGER_UNSIGNED(name_)       set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_BIGINT(name_)                 set_ ## name_(conn_->get_signed( TOKEN_TO_STR(name_) ));
-#define FIELD_BIGINT_UNSIGNED(name_)        set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ));
-#define FIELD_STRING(name_)                 set_ ## name_(conn_->get_string( TOKEN_TO_STR(name_) ));
-#define FIELD_DATETIME(name_)               set_ ## name_(conn_->get_datetime( TOKEN_TO_STR(name_) ));
-#define FIELD_UUID(name_)                   set_ ## name_(conn_->get_uuid( TOKEN_TO_STR(name_) ));
+#define FIELD_BOOLEAN(name_)                set_ ## name_(conn_->get_signed  ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_TINYINT(name_)                set_ ## name_(conn_->get_signed  ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_TINYINT_UNSIGNED(name_)       set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ), false);
+#define FIELD_SMALLINT(name_)               set_ ## name_(conn_->get_signed  ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_SMALLINT_UNSIGNED(name_)      set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ), false);
+#define FIELD_INTEGER(name_)                set_ ## name_(conn_->get_signed  ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_INTEGER_UNSIGNED(name_)       set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ), false);
+#define FIELD_BIGINT(name_)                 set_ ## name_(conn_->get_signed  ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_BIGINT_UNSIGNED(name_)        set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ), false);
+#define FIELD_STRING(name_)                 set_ ## name_(conn_->get_string  ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_DATETIME(name_)               set_ ## name_(conn_->get_datetime( TOKEN_TO_STR(name_) ), false);
+#define FIELD_UUID(name_)                   set_ ## name_(conn_->get_uuid    ( TOKEN_TO_STR(name_) ), false);
 
 		MYSQL_OBJECT_FIELDS
 	}
