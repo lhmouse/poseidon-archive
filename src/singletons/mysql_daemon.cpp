@@ -49,6 +49,8 @@ namespace {
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;
 
+	typedef MySqlDaemon::ObjectFactory ObjectFactory;
+
 	// 数据库线程操作。
 	class OperationBase : NONCOPYABLE {
 	public:
@@ -92,8 +94,8 @@ namespace {
 			m_object->generate_sql(query, m_to_replace);
 			return query;
 		}
-		void fetch_result(const boost::shared_ptr<MySql::Connection> & /* conn */) const OVERRIDE {
-			// 无事可做。
+		void fetch_result(const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
+			(void)conn;
 		}
 		void set_success() const OVERRIDE {
 			m_promise->set_success();
@@ -144,15 +146,51 @@ namespace {
 		}
 	};
 
-	class BatchLoadOperation : public OperationBase {
+	class BatchSaveOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const MySqlDaemon::ObjectFactory m_factory;
 		const char *const m_table_hint;
 		const std::string m_query;
 
 	public:
-		BatchLoadOperation(boost::shared_ptr<JobPromise> promise, MySqlDaemon::ObjectFactory factory, const char *table_hint, std::string query)
+		BatchSaveOperation(boost::shared_ptr<JobPromise> promise, const char *table_hint, std::string query)
+			: m_promise(STD_MOVE(promise)), m_table_hint(table_hint), m_query(STD_MOVE(query))
+		{
+		}
+
+	protected:
+		bool should_use_slave() const {
+			return false;
+		}
+		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
+			return VAL_INIT; // 不能合并。
+		}
+		const char *get_table_name() const OVERRIDE {
+			return m_table_hint;
+		}
+		std::string generate_sql() const OVERRIDE {
+			return m_query;
+		}
+		void fetch_result(const boost::shared_ptr<MySql::Connection> &conn) const OVERRIDE {
+			(void)conn;
+		}
+		void set_success() const OVERRIDE {
+			m_promise->set_success();
+		}
+		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+			m_promise->set_exception(STD_MOVE(ep));
+		}
+	};
+
+	class BatchLoadOperation : public OperationBase {
+	private:
+		const boost::shared_ptr<JobPromise> m_promise;
+		const ObjectFactory m_factory;
+		const char *const m_table_hint;
+		const std::string m_query;
+
+	public:
+		BatchLoadOperation(boost::shared_ptr<JobPromise> promise, ObjectFactory factory, const char *table_hint, std::string query)
 			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_table_hint(table_hint), m_query(STD_MOVE(query))
 		{
 		}
@@ -710,27 +748,28 @@ void MySqlDaemon::wait_for_all_async_operations(){
 	}
 }
 
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_saving(
-	boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace, bool urgent)
-{
+boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_saving(boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace, bool urgent){
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = object->get_table_name();
 	AUTO(operation, boost::make_shared<SaveOperation>(promise, STD_MOVE(object), to_replace));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), urgent);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_loading(
-	boost::shared_ptr<MySql::ObjectBase> object, std::string query)
-{
+boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_loading(boost::shared_ptr<MySql::ObjectBase> object, std::string query){
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = object->get_table_name();
 	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_loading(
-	MySqlDaemon::ObjectFactory factory, const char *table_hint, std::string query)
-{
+boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_saving(const char *table_hint, std::string query){
+	AUTO(promise, boost::make_shared<JobPromise>());
+	const char *const table_name = table_hint;
+	AUTO(operation, boost::make_shared<BatchSaveOperation>(promise, table_hint, STD_MOVE(query)));
+	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
+	return STD_MOVE_IDN(promise);
+}
+boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_loading(ObjectFactory factory, const char *table_hint, std::string query){
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = table_hint;
 	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(factory), table_hint, STD_MOVE(query)));
