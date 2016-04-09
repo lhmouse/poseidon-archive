@@ -6,6 +6,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "socket_server_base.hpp"
+#include "sock_addr.hpp"
 
 namespace Poseidon {
 
@@ -18,8 +19,12 @@ private:
 	boost::scoped_ptr<ServerSslFactory> m_ssl_factory;
 
 public:
-	TcpServerBase(const IpPort &bind_addr, const char *cert, const char *private_key);
+	TcpServerBase(const SockAddr &addr, const char *cert, const char *private_key);
+	TcpServerBase(const IpPort &addr, const char *cert, const char *private_key);
 	~TcpServerBase();
+
+private:
+	void init_ssl_factory(const char *cert, const char *private_key);
 
 protected:
 	// 工厂函数。返回空指针导致抛出一个异常。

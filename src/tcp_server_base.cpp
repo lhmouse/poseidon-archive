@@ -29,9 +29,8 @@ namespace {
 		}
 	};
 
-	UniqueFile create_listen_socket(const IpPort &addr){
-		SockAddr sa = get_sock_addr_from_ip_port(addr);
-		UniqueFile listen(::socket(sa.get_family(), SOCK_STREAM, IPPROTO_TCP));
+	UniqueFile create_listen_socket(const SockAddr &addr){
+		UniqueFile listen(::socket(addr.get_family(), SOCK_STREAM, IPPROTO_TCP));
 		if(!listen){
 			DEBUG_THROW(SystemException);
 		}
@@ -39,7 +38,7 @@ namespace {
 		if(::setsockopt(listen.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 			DEBUG_THROW(SystemException);
 		}
-		if(::bind(listen.get(), static_cast<const ::sockaddr *>(sa.get_data()), sa.get_size())){
+		if(::bind(listen.get(), static_cast<const ::sockaddr *>(addr.get_data()), addr.get_size())){
 			DEBUG_THROW(SystemException);
 		}
 		if(::listen(listen.get(), SOMAXCONN)){
@@ -49,17 +48,28 @@ namespace {
 	}
 }
 
-TcpServerBase::TcpServerBase(const IpPort &bind_addr, const char *cert, const char *private_key)
-	: SocketServerBase(create_listen_socket(bind_addr))
+TcpServerBase::TcpServerBase(const SockAddr &addr, const char *cert, const char *private_key)
+	: SocketServerBase(create_listen_socket(addr))
 {
-	if(cert && (cert[0] != 0)){
-		m_ssl_factory.reset(new ServerSslFactory(cert, private_key));
-	}
+	init_ssl_factory(cert, private_key);
+
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created ", (m_ssl_factory ? "SSL " : ""), "TCP server on ", get_local_info());
+}
+TcpServerBase::TcpServerBase(const IpPort &addr, const char *cert, const char *private_key)
+	: SocketServerBase(create_listen_socket(get_sock_addr_from_ip_port(addr)))
+{
+	init_ssl_factory(cert, private_key);
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created ", (m_ssl_factory ? "SSL " : ""), "TCP server on ", get_local_info());
 }
 TcpServerBase::~TcpServerBase(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed ", (m_ssl_factory ? "SSL " : ""), "TCP server on ", get_local_info());
+}
+
+void TcpServerBase::init_ssl_factory(const char *cert, const char *private_key){
+	if(cert && (cert[0] != 0)){
+		m_ssl_factory.reset(new ServerSslFactory(cert, private_key));
+	}
 }
 
 bool TcpServerBase::poll() const {
