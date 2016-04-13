@@ -59,7 +59,7 @@ struct Epoll::SessionMapDelegator : public SessionMap {
 };
 
 Epoll::Epoll()
-	: m_mutex(true)
+	: m_mutex()
 {
 	if(!m_epoll.reset(::epoll_create(4096))){
 		DEBUG_THROW(SystemException);
@@ -73,7 +73,7 @@ void Epoll::notify_writeable(TcpSessionBase *session) NOEXCEPT {
 	PROFILE_ME;
 
 	const AUTO(now, get_fast_mono_clock());
-	const Mutex::UniqueLock lock(m_mutex);
+	const RecursiveMutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_DEBUG("Session is no longer in epoll.");
@@ -84,7 +84,7 @@ void Epoll::notify_writeable(TcpSessionBase *session) NOEXCEPT {
 void Epoll::notify_unlinked(TcpSessionBase *session) NOEXCEPT {
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_mutex);
+	const RecursiveMutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
@@ -100,7 +100,7 @@ void Epoll::notify_unlinked(TcpSessionBase *session) NOEXCEPT {
 void Epoll::add_session(const boost::shared_ptr<TcpSessionBase> &session){
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_mutex);
+	const RecursiveMutex::UniqueLock lock(m_mutex);
 	const AUTO(result, m_sessions->insert(SessionMapElement(shared_from_this(), session)));
 	if(!result.second){
 		LOG_POSEIDON_WARNING("Session is already in epoll.");
@@ -119,7 +119,7 @@ void Epoll::add_session(const boost::shared_ptr<TcpSessionBase> &session){
 void Epoll::remove_session(const boost::shared_ptr<TcpSessionBase> &session){
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_mutex);
+	const RecursiveMutex::UniqueLock lock(m_mutex);
 	const AUTO(it, m_sessions->find<IDX_ADDR>(session.get()));
 	if(it == m_sessions->end<IDX_ADDR>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
@@ -134,7 +134,7 @@ void Epoll::remove_session(const boost::shared_ptr<TcpSessionBase> &session){
 void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) const {
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_mutex);
+	const RecursiveMutex::UniqueLock lock(m_mutex);
 	sessions.reserve(m_sessions->size());
 	for(AUTO(it, m_sessions->begin()); it != m_sessions->end(); ++it){
 		sessions.push_back(it->session);
@@ -143,7 +143,7 @@ void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) 
 void Epoll::clear(){
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_mutex);
+	const RecursiveMutex::UniqueLock lock(m_mutex);
 	AUTO(it, m_sessions->begin());
 	while(it != m_sessions->end()){
 		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, it->session->get_fd(), NULLPTR) != 0){
@@ -174,7 +174,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		boost::shared_ptr<TcpSessionBase> session;
 		SessionMap::delegated_container::nth_index<IDX_ADDR>::type::iterator it;
 		{
-			const Mutex::UniqueLock lock(m_mutex);
+			const RecursiveMutex::UniqueLock lock(m_mutex);
 			it = m_sessions->find<IDX_ADDR>(static_cast<TcpSessionBase *>(event.data.ptr));
 			if(it == m_sessions->end<IDX_ADDR>()){
 				LOG_POSEIDON_WARNING("Session is not in epoll?");
@@ -219,7 +219,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		}
 
 		if(event.events & EPOLLIN){
-			const Mutex::UniqueLock lock(m_mutex);
+			const RecursiveMutex::UniqueLock lock(m_mutex);
 			m_sessions->set_key<IDX_ADDR, IDX_READ>(it, now);
 		}
 		if(event.events & EPOLLOUT){
@@ -227,14 +227,14 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 
 			Mutex::UniqueLock session_lock;
 			if(session->get_send_buffer_size(session_lock) != 0){
-				const Mutex::UniqueLock lock(m_mutex);
+				const RecursiveMutex::UniqueLock lock(m_mutex);
 				m_sessions->set_key<IDX_ADDR, IDX_WRITE>(it, now);
 			}
 		}
 		continue;
 
 	_erase_session:
-		const Mutex::UniqueLock lock(m_mutex);
+		const RecursiveMutex::UniqueLock lock(m_mutex);
 		if(::epoll_ctl(m_epoll.get(), EPOLL_CTL_DEL, session->get_fd(), NULLPTR) != 0){
 			const int err_code = errno;
 			LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", err_code);
@@ -252,7 +252,7 @@ std::size_t Epoll::pump_readable(){
 	std::vector<VALUE_TYPE(m_sessions->begin<IDX_READ>())> iterators;
 	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
 	{
-		const Mutex::UniqueLock lock(m_mutex);
+		const RecursiveMutex::UniqueLock lock(m_mutex);
 		const AUTO(range, std::make_pair(m_sessions->upper_bound<IDX_READ>(0), m_sessions->upper_bound<IDX_READ>(now)));
 		iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		for(AUTO(it, range.first); it != range.second; ++it){
@@ -273,7 +273,7 @@ std::size_t Epoll::pump_readable(){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 					"Max send buffer size exceeded: typeid = ", typeid(*session).name());
 
-				const Mutex::UniqueLock lock(m_mutex);
+				const RecursiveMutex::UniqueLock lock(m_mutex);
 				m_sessions->set_key<IDX_READ, IDX_READ>(it, now + 5000);
 				continue;
 			}
@@ -285,7 +285,7 @@ std::size_t Epoll::pump_readable(){
 					continue;
 				}
 				if(result.err_code == EAGAIN){
-					const Mutex::UniqueLock lock(m_mutex);
+					const RecursiveMutex::UniqueLock lock(m_mutex);
 					m_sessions->set_key<IDX_READ, IDX_READ>(it, 0);
 					continue;
 				}
@@ -294,7 +294,7 @@ std::size_t Epoll::pump_readable(){
 				session->shutdown_read();
 				session->on_read_hup();
 
-				const Mutex::UniqueLock lock(m_mutex);
+				const RecursiveMutex::UniqueLock lock(m_mutex);
 				m_sessions->set_key<IDX_READ, IDX_READ>(it, 0);
 				continue;
 			}
@@ -319,7 +319,7 @@ std::size_t Epoll::pump_writeable(){
 	std::vector<VALUE_TYPE(m_sessions->begin<IDX_WRITE>())> iterators;
 	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
 	{
-		const Mutex::UniqueLock lock(m_mutex);
+		const RecursiveMutex::UniqueLock lock(m_mutex);
 		const AUTO(range, std::make_pair(m_sessions->upper_bound<IDX_WRITE>(0), m_sessions->upper_bound<IDX_WRITE>(now)));
 		iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		for(AUTO(it, range.first); it != range.second; ++it){
@@ -338,7 +338,7 @@ std::size_t Epoll::pump_writeable(){
 					continue;
 				}
 				if(result.err_code == EAGAIN){
-					const Mutex::UniqueLock lock(m_mutex);
+					const RecursiveMutex::UniqueLock lock(m_mutex);
 					m_sessions->set_key<IDX_WRITE, IDX_WRITE>(it, 0);
 					continue;
 				}
@@ -346,7 +346,7 @@ std::size_t Epoll::pump_writeable(){
 			} else if(result.bytes_transferred == 0){
 				Mutex::UniqueLock session_lock;
 				if(session->get_send_buffer_size(session_lock) == 0){
-					const Mutex::UniqueLock lock(m_mutex);
+					const RecursiveMutex::UniqueLock lock(m_mutex);
 					m_sessions->set_key<IDX_WRITE, IDX_WRITE>(it, 0);
 				}
 				continue;

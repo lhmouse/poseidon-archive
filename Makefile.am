@@ -61,6 +61,7 @@ pkginclude_HEADERS = \
 	src/module_config.hpp	\
 	src/thread.hpp	\
 	src/mutex.hpp	\
+	src/recursive_mutex.hpp	\
 	src/condition_variable.hpp	\
 	src/job_promise.hpp
 
@@ -187,6 +188,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/json.cpp	\
 	src/thread.cpp	\
 	src/mutex.cpp	\
+	src/recursive_mutex.cpp	\
 	src/condition_variable.cpp	\
 	src/job_promise.cpp	\
 	src/singletons/main_config.cpp	\

@@ -6,7 +6,7 @@
 #include <boost/type_traits/decay.hpp>
 #include <dlfcn.h>
 #include "main_config.hpp"
-#include "../mutex.hpp"
+#include "../recursive_mutex.hpp"
 #include "../log.hpp"
 #include "../raii.hpp"
 #include "../exception.hpp"
@@ -17,14 +17,14 @@ namespace Poseidon {
 
 namespace {
 	// 注意 dl 系列的函数都不是线程安全的。
-	Mutex g_mutex(true);
+	RecursiveMutex g_mutex;
 
 	struct DynamicLibraryCloser {
 		CONSTEXPR void *operator()() NOEXCEPT {
 			return VAL_INIT;
 		}
 		void operator()(void *handle) NOEXCEPT {
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			if(::dlclose(handle) != 0){
 				LOG_POSEIDON_WARNING("Error unloading dynamic library: ", ::dlerror());
 			}
@@ -136,7 +136,7 @@ void ModuleDepository::stop(){
 
 	std::vector<boost::weak_ptr<Module> > modules;
 	{
-		const Mutex::UniqueLock lock(g_mutex);
+		const RecursiveMutex::UniqueLock lock(g_mutex);
 		modules.reserve(g_module_map.size());
 		for(AUTO(it, g_module_map.begin()); it != g_module_map.end(); ++it){
 			modules.push_back(it->module);
@@ -159,7 +159,7 @@ void ModuleDepository::stop(){
 }
 
 boost::shared_ptr<Module> ModuleDepository::load(const char *path){
-	const Mutex::UniqueLock lock(g_mutex);
+	const RecursiveMutex::UniqueLock lock(g_mutex);
 
 	LOG_POSEIDON_INFO("Checking whether module has already been loaded: ", path);
 	UniqueHandle<DynamicLibraryCloser> handle(::dlopen(path, RTLD_NOW | RTLD_NOLOAD));
@@ -228,18 +228,18 @@ boost::shared_ptr<Module> ModuleDepository::load_nothrow(const char *path){
 	}
 }
 bool ModuleDepository::unload(const boost::shared_ptr<Module> &module){
-	const Mutex::UniqueLock lock(g_mutex);
+	const RecursiveMutex::UniqueLock lock(g_mutex);
 	return g_module_map.erase<MIDX_MODULE>(module) > 0;
 }
 bool ModuleDepository::unload(void *base_addr){
-	const Mutex::UniqueLock lock(g_mutex);
+	const RecursiveMutex::UniqueLock lock(g_mutex);
 	return g_module_map.erase<MIDX_BASE_ADDR>(base_addr) > 0;
 }
 
 std::vector<ModuleDepository::SnapshotElement> ModuleDepository::snapshot(){
 	std::vector<SnapshotElement> ret;
 	{
-		const Mutex::UniqueLock lock(g_mutex);
+		const RecursiveMutex::UniqueLock lock(g_mutex);
 		for(AUTO(it, g_module_map.begin()); it != g_module_map.end(); ++it){
 			ret.push_back(SnapshotElement());
 			SnapshotElement &mi = ret.back();
@@ -253,7 +253,7 @@ std::vector<ModuleDepository::SnapshotElement> ModuleDepository::snapshot(){
 }
 
 void ModuleDepository::register_module_raii(ModuleRaiiBase *raii, long priority){
-	const Mutex::UniqueLock lock(g_mutex);
+	const RecursiveMutex::UniqueLock lock(g_mutex);
 	::Dl_info info;
 	if(::dladdr(raii, &info) == 0){
 		SharedNts error(::dlerror());
@@ -266,7 +266,7 @@ void ModuleDepository::register_module_raii(ModuleRaiiBase *raii, long priority)
 	}
 }
 void ModuleDepository::unregister_module_raii(ModuleRaiiBase *raii){
-	const Mutex::UniqueLock lock(g_mutex);
+	const RecursiveMutex::UniqueLock lock(g_mutex);
 	g_module_raii_map.erase<MRIDX_RAII>(raii);
 }
 

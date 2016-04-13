@@ -11,7 +11,7 @@
 #include <vector>
 #include <cstddef>
 #include "raii.hpp"
-#include "mutex.hpp"
+#include "recursive_mutex.hpp"
 
 namespace Poseidon {
 
@@ -24,7 +24,7 @@ private:
 	class SessionMapDelegator;
 
 private:
-	mutable Mutex m_mutex; // 可重入。
+	mutable RecursiveMutex m_mutex;
 	UniqueFile m_epoll;
 	boost::scoped_ptr<SessionMapDelegator> m_sessions;
 

@@ -2,14 +2,14 @@
 // Copyleft 2014 - 2016, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "mutex.hpp"
+#include "recursive_mutex.hpp"
 #include <pthread.h>
 #include "log.hpp"
 #include "system_exception.hpp"
 
 namespace Poseidon {
 
-struct Mutex::Impl {
+struct RecursiveMutex::Impl {
 	::pthread_mutex_t mutex; // 第一个成员必须是 mutex。
 	::pthread_mutexattr_t attr;
 
@@ -19,7 +19,7 @@ struct Mutex::Impl {
 			LOG_POSEIDON_ERROR("::pthread_mutexattr_init() failed with error code ", err);
 			DEBUG_THROW(SystemException, err);
 		}
-		err = ::pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+		err = ::pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 		if(err != 0){
 			::pthread_mutexattr_destroy(&attr);
 			LOG_POSEIDON_ERROR("::pthread_mutexattr_settype() failed with error code ", err);
@@ -44,11 +44,11 @@ struct Mutex::Impl {
 	}
 };
 
-Mutex::UniqueLock::UniqueLock()
+RecursiveMutex::UniqueLock::UniqueLock()
 	: m_owner(NULLPTR), m_locked(false)
 {
 }
-Mutex::UniqueLock::UniqueLock(Mutex &owner, bool locks_owner)
+RecursiveMutex::UniqueLock::UniqueLock(RecursiveMutex &owner, bool locks_owner)
 	: m_owner(&owner), m_locked(false)
 {
 	if(locks_owner){
@@ -56,12 +56,12 @@ Mutex::UniqueLock::UniqueLock(Mutex &owner, bool locks_owner)
 	}
 }
 #ifdef POSEIDON_CXX11
-Mutex::UniqueLock::UniqueLock(UniqueLock &&rhs) noexcept
+RecursiveMutex::UniqueLock::UniqueLock(UniqueLock &&rhs) noexcept
 	: m_owner(rhs.m_owner), m_locked(rhs.m_locked)
 {
 	rhs.m_locked = false;
 }
-Mutex::UniqueLock &Mutex::UniqueLock::operator=(UniqueLock &&rhs) noexcept {
+RecursiveMutex::UniqueLock &RecursiveMutex::UniqueLock::operator=(UniqueLock &&rhs) noexcept {
 	if(is_locked()){
 		unlock();
 	}
@@ -71,16 +71,16 @@ Mutex::UniqueLock &Mutex::UniqueLock::operator=(UniqueLock &&rhs) noexcept {
 	return *this;
 }
 #endif
-Mutex::UniqueLock::~UniqueLock(){
+RecursiveMutex::UniqueLock::~UniqueLock(){
 	if(m_locked){
 		unlock();
 	}
 }
 
-bool Mutex::UniqueLock::is_locked() const NOEXCEPT {
+bool RecursiveMutex::UniqueLock::is_locked() const NOEXCEPT {
 	return m_locked;
 }
-void Mutex::UniqueLock::lock() NOEXCEPT {
+void RecursiveMutex::UniqueLock::lock() NOEXCEPT {
 	assert(m_owner);
 	assert(!m_locked);
 
@@ -91,7 +91,7 @@ void Mutex::UniqueLock::lock() NOEXCEPT {
 	}
 	m_locked = true;
 }
-void Mutex::UniqueLock::unlock() NOEXCEPT {
+void RecursiveMutex::UniqueLock::unlock() NOEXCEPT {
 	assert(m_owner);
 	assert(m_locked);
 
@@ -103,11 +103,11 @@ void Mutex::UniqueLock::unlock() NOEXCEPT {
 	m_locked = false;
 }
 
-Mutex::Mutex()
+RecursiveMutex::RecursiveMutex()
 	: m_impl(new Impl())
 {
 }
-Mutex::~Mutex(){
+RecursiveMutex::~RecursiveMutex(){
 }
 
 }

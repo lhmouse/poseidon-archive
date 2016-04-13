@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2016, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_MUTEX_HPP_
-#define POSEIDON_MUTEX_HPP_
+#ifndef POSEIDON_RECURSIVE_MUTEX_HPP_
+#define POSEIDON_RECURSIVE_MUTEX_HPP_
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
@@ -10,25 +10,19 @@
 
 namespace Poseidon {
 
-class ConditionVariable;
-
-class Mutex : NONCOPYABLE {
-	friend ConditionVariable;
-
+class RecursiveMutex : NONCOPYABLE {
 private:
 	class Impl; // pthread_mutex_t
 
 public:
 	class UniqueLock : NONCOPYABLE {
-		friend ConditionVariable;
-
 	private:
-		Mutex *m_owner;
+		RecursiveMutex *m_owner;
 		bool m_locked;
 
 	public:
 		UniqueLock();
-		explicit UniqueLock(Mutex &owner, bool locks_owner = true);
+		explicit UniqueLock(RecursiveMutex &owner, bool locks_owner = true);
 		~UniqueLock();
 
 #ifdef POSEIDON_CXX11
@@ -71,11 +65,11 @@ private:
 	const boost::scoped_ptr<Impl> m_impl;
 
 public:
-	Mutex();
-	~Mutex();
+	RecursiveMutex();
+	~RecursiveMutex();
 };
 
-inline void swap(Mutex::UniqueLock &lhs, Mutex::UniqueLock &rhs) NOEXCEPT {
+inline void swap(RecursiveMutex::UniqueLock &lhs, RecursiveMutex::UniqueLock &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
