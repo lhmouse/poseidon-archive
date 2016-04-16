@@ -52,7 +52,6 @@ MODULE_RAII(/* handles */){
 			{
 				const auto promise = Poseidon::DnsDaemon::enqueue_for_looking_up(sock_addr, g_host, g_port);
 				Poseidon::JobDispatcher::yield(promise, false);
-				promise->check_and_rethrow();
 			}
 
 			LOG_POSEIDON_FATAL("Creating client to ", Poseidon::get_ip_port_from_sock_addr(*sock_addr));
