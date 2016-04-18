@@ -75,7 +75,7 @@ private:
 
 	mutable Mutex m_buffer_mutex;
 	StreamBuffer m_send_buffer;
-	boost::weak_ptr<const boost::weak_ptr<Epoll> > m_epoll;
+	boost::weak_ptr<Epoll> m_epoll;
 
 	mutable Mutex m_timer_mutex;
 	boost::shared_ptr<TimerItem> m_shutdown_timer;
@@ -89,7 +89,7 @@ private:
 
 	void init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter);
 
-	void set_epoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT;
+	void set_epoll(boost::weak_ptr<Epoll> epoll) NOEXCEPT;
 	void notify_epoll_writeable() NOEXCEPT;
 
 	// 同步，线程安全。

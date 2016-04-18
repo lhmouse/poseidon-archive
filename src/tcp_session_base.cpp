@@ -110,24 +110,18 @@ void TcpSessionBase::init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter
 	swap(m_ssl_filter, ssl_filter);
 }
 
-void TcpSessionBase::set_epoll(boost::weak_ptr<const boost::weak_ptr<Epoll> > epoll) NOEXCEPT {
+void TcpSessionBase::set_epoll(boost::weak_ptr<Epoll> epoll) NOEXCEPT {
 	const Mutex::UniqueLock lock(m_buffer_mutex);
-	const AUTO(old_ptr, m_epoll.lock());
-	if(old_ptr){
-		const AUTO(old, old_ptr->lock());
-		if(old){
-			old->notify_unlinked(this);
-		}
+	const AUTO(old_epoll, m_epoll.lock());
+	if(old_epoll){
+		old_epoll->notify_unlinked(this);
 	}
 	m_epoll = STD_MOVE(epoll);
 }
 void TcpSessionBase::notify_epoll_writeable() NOEXCEPT {
-	const AUTO(ptr, m_epoll.lock());
-	if(ptr){
-		const AUTO(epoll, ptr->lock());
-		if(epoll){
-			epoll->notify_writeable(this);
-		}
+	const AUTO(epoll, m_epoll.lock());
+	if(epoll){
+		epoll->notify_writeable(this);
 	}
 }
 

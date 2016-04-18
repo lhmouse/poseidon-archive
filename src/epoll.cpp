@@ -28,15 +28,14 @@ namespace {
 
 	struct SessionMapElement {
 		boost::shared_ptr<TcpSessionBase> session;
-		boost::shared_ptr<const boost::weak_ptr<Epoll> > epoll;
 
 		TcpSessionBase *addr;
 		// 时间戳，零表示无数据可读/写。
 		boost::uint64_t last_read;
 		boost::uint64_t last_written;
 
-		SessionMapElement(boost::weak_ptr<Epoll> epoll_, boost::shared_ptr<TcpSessionBase> session_)
-			: session(STD_MOVE(session_)), epoll(boost::make_shared<boost::weak_ptr<Epoll> >(STD_MOVE(epoll_)))
+		explicit SessionMapElement(boost::shared_ptr<TcpSessionBase> session_)
+			: session(STD_MOVE(session_))
 			, addr(session.get()), last_read(0), last_written(0)
 		{
 		}
@@ -100,8 +99,10 @@ void Epoll::notify_unlinked(TcpSessionBase *session) NOEXCEPT {
 void Epoll::add_session(const boost::shared_ptr<TcpSessionBase> &session){
 	PROFILE_ME;
 
+	boost::weak_ptr<Epoll> weak_this(shared_from_this());
+
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	const AUTO(result, m_sessions->insert(SessionMapElement(shared_from_this(), session)));
+	const AUTO(result, m_sessions->insert(SessionMapElement(session)));
 	if(!result.second){
 		LOG_POSEIDON_WARNING("Session is already in epoll.");
 		return;
@@ -114,7 +115,7 @@ void Epoll::add_session(const boost::shared_ptr<TcpSessionBase> &session){
 		m_sessions->erase(result.first); // !!
 		DEBUG_THROW(SystemException, err_code);
 	}
-	session->set_epoll(result.first->epoll);
+	session->set_epoll(STD_MOVE(weak_this));
 }
 void Epoll::remove_session(const boost::shared_ptr<TcpSessionBase> &session){
 	PROFILE_ME;
