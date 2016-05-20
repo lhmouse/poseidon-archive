@@ -6,7 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
-#include <boost/scoped_ptr.hpp>
+#include <pthread.h>
 
 namespace Poseidon {
 
@@ -14,9 +14,6 @@ class ConditionVariable;
 
 class Mutex : NONCOPYABLE {
 	friend ConditionVariable;
-
-private:
-	class Impl; // pthread_mutex_t
 
 public:
 	class UniqueLock : NONCOPYABLE {
@@ -68,7 +65,7 @@ public:
 	};
 
 private:
-	const boost::scoped_ptr<Impl> m_impl;
+	::pthread_mutex_t m_mutex;
 
 public:
 	Mutex();

@@ -11,53 +11,38 @@
 
 namespace Poseidon {
 
-struct ConditionVariable::Impl {
-	::pthread_cond_t cond; // 第一个成员必须是 cond。
+ConditionVariable::ConditionVariable(){
 	::pthread_condattr_t attr;
-
-	Impl(){
-		int err = ::pthread_condattr_init(&attr);
-		if(err != 0){
-			LOG_POSEIDON_ERROR("::pthread_condattr_init() failed with error code ", err);
-			DEBUG_THROW(SystemException, err);
-		}
-		err = ::pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
-		if(err != 0){
-			::pthread_condattr_destroy(&attr);
-			LOG_POSEIDON_ERROR("::pthread_condattr_settype() failed with error code ", err);
-			DEBUG_THROW(SystemException, err);
-		}
-		err = ::pthread_cond_init(&cond, &attr);
-		if(err != 0){
-			::pthread_condattr_destroy(&attr);
-			LOG_POSEIDON_ERROR("::pthread_cond_init() failed with error code ", err);
-			DEBUG_THROW(SystemException, err);
-		}
+	int err = ::pthread_condattr_init(&attr);
+	if(err != 0){
+		LOG_POSEIDON_ERROR("::pthread_condattr_init() failed with error code ", err);
+		DEBUG_THROW(SystemException, err);
 	}
-	~Impl(){
-		int err = ::pthread_cond_destroy(&cond);
-		if(err != 0){
-			LOG_POSEIDON_ERROR("::pthread_cond_destroy() failed with error code ", err);
-		}
-		err = ::pthread_condattr_destroy(&attr);
-		if(err != 0){
-			LOG_POSEIDON_ERROR("::pthread_condattr_destroy() failed with error code ", err);
-		}
+	err = ::pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+	if(err != 0){
+		::pthread_condattr_destroy(&attr);
+		LOG_POSEIDON_ERROR("::pthread_condattr_settype() failed with error code ", err);
+		DEBUG_THROW(SystemException, err);
 	}
-};
-
-ConditionVariable::ConditionVariable()
-	: m_impl(new Impl())
-{
+	err = ::pthread_cond_init(&m_cond, &attr);
+	if(err != 0){
+		::pthread_condattr_destroy(&attr);
+		LOG_POSEIDON_ERROR("::pthread_cond_init() failed with error code ", err);
+		DEBUG_THROW(SystemException, err);
+	}
+	::pthread_condattr_destroy(&attr);
 }
 ConditionVariable::~ConditionVariable(){
+	int err = ::pthread_cond_destroy(&m_cond);
+	if(err != 0){
+		LOG_POSEIDON_ERROR("::pthread_cond_destroy() failed with error code ", err);
+	}
 }
 
 void ConditionVariable::wait(Mutex::UniqueLock &lock){
 	assert(lock.m_locked);
 
-	const int err = ::pthread_cond_wait(&(m_impl->cond),
-		reinterpret_cast< ::pthread_mutex_t *>(lock.m_owner->m_impl.get()));
+	const int err = ::pthread_cond_wait(&m_cond, &(lock.m_owner->m_mutex));
 	if(err != 0){
 		LOG_POSEIDON_ERROR("::pthread_cond_wait() failed with error code ", err);
 		DEBUG_THROW(SystemException, err);
@@ -78,8 +63,7 @@ bool ConditionVariable::timed_wait(Mutex::UniqueLock &lock, unsigned long long m
 		++tp.tv_sec;
 		tp.tv_nsec -= 1000000000;
 	}
-	const int err = ::pthread_cond_timedwait(&(m_impl->cond),
-		reinterpret_cast< ::pthread_mutex_t *>(lock.m_owner->m_impl.get()), &tp);
+	const int err = ::pthread_cond_timedwait(&m_cond, &(lock.m_owner->m_mutex), &tp);
 	if(err != 0){
 		if(err == ETIMEDOUT){
 			return false;
@@ -91,14 +75,14 @@ bool ConditionVariable::timed_wait(Mutex::UniqueLock &lock, unsigned long long m
 }
 
 void ConditionVariable::signal() NOEXCEPT {
-	const int err = ::pthread_cond_signal(&(m_impl->cond));
+	const int err = ::pthread_cond_signal(&m_cond);
 	if(err != 0){
 		LOG_POSEIDON_FATAL("::pthread_cond_signal() failed with error code ", err);
 		std::abort();
 	}
 }
 void ConditionVariable::broadcast() NOEXCEPT {
-	const int err = ::pthread_cond_broadcast(&(m_impl->cond));
+	const int err = ::pthread_cond_broadcast(&m_cond);
 	if(err != 0){
 		LOG_POSEIDON_FATAL("::pthread_cond_broadcast() failed with error code ", err);
 		std::abort();

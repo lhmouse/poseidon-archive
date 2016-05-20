@@ -9,41 +9,6 @@
 
 namespace Poseidon {
 
-struct RecursiveMutex::Impl {
-	::pthread_mutex_t mutex; // 第一个成员必须是 mutex。
-	::pthread_mutexattr_t attr;
-
-	Impl(){
-		int err = ::pthread_mutexattr_init(&attr);
-		if(err != 0){
-			LOG_POSEIDON_ERROR("::pthread_mutexattr_init() failed with error code ", err);
-			DEBUG_THROW(SystemException, err);
-		}
-		err = ::pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-		if(err != 0){
-			::pthread_mutexattr_destroy(&attr);
-			LOG_POSEIDON_ERROR("::pthread_mutexattr_settype() failed with error code ", err);
-			DEBUG_THROW(SystemException, err);
-		}
-		err = ::pthread_mutex_init(&mutex, &attr);
-		if(err != 0){
-			::pthread_mutexattr_destroy(&attr);
-			LOG_POSEIDON_ERROR("::pthread_mutex_init() failed with error code ", err);
-			DEBUG_THROW(SystemException, err);
-		}
-	}
-	~Impl(){
-		int err = ::pthread_mutex_destroy(&mutex);
-		if(err != 0){
-			LOG_POSEIDON_ERROR("::pthread_mutex_destroy() failed with error code ", err);
-		}
-		err = ::pthread_mutexattr_destroy(&attr);
-		if(err != 0){
-			LOG_POSEIDON_ERROR("::pthread_mutexattr_destroy() failed with error code ", err);
-		}
-	}
-};
-
 RecursiveMutex::UniqueLock::UniqueLock()
 	: m_owner(NULLPTR), m_locked(false)
 {
@@ -84,7 +49,7 @@ void RecursiveMutex::UniqueLock::lock() NOEXCEPT {
 	assert(m_owner);
 	assert(!m_locked);
 
-	const int err = ::pthread_mutex_lock(&(m_owner->m_impl->mutex));
+	const int err = ::pthread_mutex_lock(&(m_owner->m_mutex));
 	if(err != 0){
 		LOG_POSEIDON_FATAL("::pthread_mutex_lock() failed with error code ", err);
 		std::abort();
@@ -95,7 +60,7 @@ void RecursiveMutex::UniqueLock::unlock() NOEXCEPT {
 	assert(m_owner);
 	assert(m_locked);
 
-	const int err = ::pthread_mutex_unlock(&(m_owner->m_impl->mutex));
+	const int err = ::pthread_mutex_unlock(&(m_owner->m_mutex));
 	if(err != 0){
 		LOG_POSEIDON_FATAL("::pthread_mutex_unlock() failed with error code ", err);
 		std::abort();
@@ -103,11 +68,32 @@ void RecursiveMutex::UniqueLock::unlock() NOEXCEPT {
 	m_locked = false;
 }
 
-RecursiveMutex::RecursiveMutex()
-	: m_impl(new Impl())
-{
+RecursiveMutex::RecursiveMutex(){
+	::pthread_mutexattr_t attr;
+	int err = ::pthread_mutexattr_init(&attr);
+	if(err != 0){
+		LOG_POSEIDON_ERROR("::pthread_mutexattr_init() failed with error code ", err);
+		DEBUG_THROW(SystemException, err);
+	}
+	err = ::pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+	if(err != 0){
+		::pthread_mutexattr_destroy(&attr);
+		LOG_POSEIDON_ERROR("::pthread_mutexattr_settype() failed with error code ", err);
+		DEBUG_THROW(SystemException, err);
+	}
+	err = ::pthread_mutex_init(&m_mutex, &attr);
+	if(err != 0){
+		::pthread_mutexattr_destroy(&attr);
+		LOG_POSEIDON_ERROR("::pthread_mutex_init() failed with error code ", err);
+		DEBUG_THROW(SystemException, err);
+	}
+	::pthread_mutexattr_destroy(&attr);
 }
 RecursiveMutex::~RecursiveMutex(){
+	int err = ::pthread_mutex_destroy(&m_mutex);
+	if(err != 0){
+		LOG_POSEIDON_ERROR("::pthread_mutex_destroy() failed with error code ", err);
+	}
 }
 
 }

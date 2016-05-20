@@ -5,17 +5,14 @@
 #define POSEIDON_CONDITION_VARIABLE_HPP_
 
 #include "cxx_util.hpp"
-#include <boost/scoped_ptr.hpp>
 #include "mutex.hpp"
+#include <pthread.h>
 
 namespace Poseidon {
 
 class ConditionVariable : NONCOPYABLE {
 private:
-	class Impl; // pthread_cond_t
-
-private:
-	const boost::scoped_ptr<Impl> m_impl;
+	::pthread_cond_t m_cond;
 
 public:
 	ConditionVariable();
