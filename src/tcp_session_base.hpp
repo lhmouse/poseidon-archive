@@ -71,6 +71,7 @@ private:
 	volatile bool m_shutdown_write;
 	volatile bool m_really_shutdown_write;
 	volatile bool m_timed_out;
+	volatile bool m_throttled;
 	volatile std::size_t m_delayed_shutdown_guard_count;
 
 	mutable Mutex m_buffer_mutex;
@@ -137,6 +138,9 @@ public:
 	void set_timeout(boost::uint64_t timeout);
 
 	void set_no_delay(bool enabled);
+
+	bool is_throttled() const;
+	void set_throttled(bool throttled);
 };
 
 }

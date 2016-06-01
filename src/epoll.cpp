@@ -24,6 +24,8 @@ namespace {
 		MAX_EPOLL_PUMP_COUNT    = 256,
 		IO_BUFFER_SIZE          = 4096,
 		MAX_SEND_BUFFER_SIZE    = 65536,
+
+		THROTTLED_RETRY_DELAY   = 5000,
 	};
 
 	struct SessionMapElement {
@@ -265,6 +267,15 @@ std::size_t Epoll::pump_readable(){
 		const AUTO(session, it->session);
 
 		try {
+			if(session->is_throttled()){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+					"Session is throttled: typeid = ", typeid(*session).name());
+
+				const RecursiveMutex::UniqueLock lock(m_mutex);
+				m_sessions->set_key<IDX_READ, IDX_READ>(it, now + THROTTLED_RETRY_DELAY);
+				continue;
+			}
+
 			std::size_t send_buffer_size;
 			{
 				Mutex::UniqueLock lock;
@@ -275,7 +286,7 @@ std::size_t Epoll::pump_readable(){
 					"Max send buffer size exceeded: typeid = ", typeid(*session).name());
 
 				const RecursiveMutex::UniqueLock lock(m_mutex);
-				m_sessions->set_key<IDX_READ, IDX_READ>(it, now + 5000);
+				m_sessions->set_key<IDX_READ, IDX_READ>(it, now + THROTTLED_RETRY_DELAY);
 				continue;
 			}
 
