@@ -4,6 +4,7 @@
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include "main_config.hpp"
+#include <new>
 #include <stdlib.h>
 #include <setjmp.h>
 #include <boost/container/map.hpp>
@@ -56,14 +57,14 @@ namespace {
 	};
 
 	struct StackStorage FINAL {
-		static void *operator new(std::size_t cb){
+		static void *operator new(std::size_t cb, const std::nothrow_t &) NOEXCEPT {
 			assert(cb == sizeof(StackStorage));
 
 			void *ptr;
 			const int err_code = ::posix_memalign(&ptr, 0x1000, cb);
 			if(err_code != 0){
-				LOG_POSEIDON_WARNING("Failed to allocate stack: err_code = ", err_code);
-				throw std::bad_alloc();
+				LOG_POSEIDON_ERROR("Failed to allocate stack: err_code = ", err_code);
+				return NULLPTR;
 			}
 			return ptr;
 		}
@@ -90,32 +91,40 @@ namespace {
 		explicit FiberControl(Initializer)
 			: state(FS_READY)
 		{
-			AUTO(it, g_stack_pool.begin());
-			for(;;){
-				if(it == g_stack_pool.end()){
-					stack.reset(new StackStorage);
-					break;
-				}
-				if(*it){
-					stack.swap(*it);
-					break;
-				}
-				++it;
-			}
 		}
 		~FiberControl(){
-			AUTO(it, g_stack_pool.begin());
-			for(;;){
-				if(it == g_stack_pool.end()){
-					stack.reset();
-					break;
+			if(stack){
+				AUTO(it, g_stack_pool.begin());
+				for(;;){
+					if(it == g_stack_pool.end()){
+						stack.reset();
+						break;
+					}
+					if(!*it){
+						stack.swap(*it);
+						break;
+					}
+					++it;
 				}
-				if(!*it){
-					stack.swap(*it);
-					break;
-				}
-				++it;
 			}
+		}
+
+		bool try_allocate_stack() NOEXCEPT {
+			if(!stack){
+				AUTO(it, g_stack_pool.begin());
+				for(;;){
+					if(it == g_stack_pool.end()){
+						stack.reset(new(std::nothrow) StackStorage);
+						break;
+					}
+					if(*it){
+						stack.swap(*it);
+						break;
+					}
+					++it;
+				}
+			}
+			return !!stack;
 		}
 	};
 
@@ -162,21 +171,22 @@ namespace {
 					fiber->state = FS_RUNNING;
 					::unchecked_siglongjmp(fiber->inner, 1);
 				} else {
-					fiber->state = FS_RUNNING;
-
 					register AUTO(reg __asm__("bx"), fiber); // 必须是 callee-saved 寄存器！
-					__asm__ __volatile__(
-#ifdef __x86_64__
-						"movq %%rax, %%rsp \n"
-#else
-						"movl %%eax, %%esp \n"
-#endif
-						: "+b"(reg)
-						: "a"(reg->stack.get() + 1) // sp 指向可用栈区的末尾。
-						: "sp", "memory"
-					);
-					fiber_stack_barrier(reg);
 
+					if(reg->try_allocate_stack()){
+						reg->state = FS_RUNNING;
+						__asm__ __volatile__(
+#ifdef __x86_64__
+							"movq %%rax, %%rsp \n"
+#else
+							"movl %%eax, %%esp \n"
+#endif
+							: "+b"(reg)
+							: "a"(reg->stack.get() + 1) // sp 指向可用栈区的末尾。
+							: "sp", "memory"
+						);
+						fiber_stack_barrier(reg);
+					}
 					reg->state = FS_READY;
 					::unchecked_siglongjmp(reg->outer, 1);
 				}
