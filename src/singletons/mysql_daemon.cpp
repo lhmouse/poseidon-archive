@@ -284,6 +284,7 @@ namespace {
 	private:
 		Thread m_thread;
 		volatile bool m_running;
+		volatile bool m_alive;
 
 		mutable Mutex m_mutex;
 		mutable ConditionVariable m_new_operation;
@@ -292,7 +293,7 @@ namespace {
 
 	public:
 		MySqlThread()
-			: m_running(false)
+			: m_running(false), m_alive(false)
 			, m_urgent(false)
 		{
 		}
@@ -358,6 +359,7 @@ namespace {
 				m_new_operation.timed_wait(lock, 100);
 			}
 
+			atomic_store(m_alive, false, ATOMIC_RELEASE);
 			LOG_POSEIDON_INFO("MySQL thread stopped.");
 		}
 
@@ -514,8 +516,10 @@ namespace {
 
 	public:
 		void start(){
+			const Mutex::UniqueLock lock(m_mutex);
 			Thread(boost::bind(&MySqlThread::thread_proc, this), " D  ").swap(m_thread);
 			atomic_store(m_running, true, ATOMIC_RELEASE);
+			atomic_store(m_alive, true, ATOMIC_RELEASE);
 		}
 		void stop(){
 			atomic_store(m_running, false, ATOMIC_RELEASE);
@@ -545,6 +549,26 @@ namespace {
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_sql = ", current_sql);
 
+				auto alive = atomic_load(m_alive, ATOMIC_CONSUME);
+				if(!alive){
+					LOG_POSEIDON_ERROR("MySQL thread seems dead before the queue is emptied. Trying to recover...");
+					try {
+						LOG_POSEIDON_WARNING("Recreating MySQL thread: pending_objects = ", pending_objects);
+						start();
+					} catch(MySql::Exception &e){
+						LOG_POSEIDON_WARNING("MySql::Exception thrown: code = ", e.code(), ", what = ", e.what());
+					} catch(std::exception &e){
+						LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+					} catch(...){
+						LOG_POSEIDON_WARNING("Unknown exception thrown");
+					}
+					alive = atomic_load(m_alive, ATOMIC_CONSUME);
+					if(!alive){
+						LOG_POSEIDON_ERROR("We cannot recover from this situation. Continue with no regard to data loss.");
+						break;
+					}
+				}
+
 				::timespec req;
 				req.tv_sec = 0;
 				req.tv_nsec = 500 * 1000 * 1000;
@@ -555,11 +579,6 @@ namespace {
 		void add_operation(boost::shared_ptr<OperationBase> operation, bool urgent){
 			PROFILE_ME;
 
-			if(!atomic_load(m_running, ATOMIC_CONSUME)){
-				LOG_POSEIDON_ERROR("MySQL thread is being shut down.");
-				DEBUG_THROW(Exception, sslit("MySQL thread is being shut down"));
-			}
-
 			const AUTO(combinable_object, operation->get_combinable_object());
 
 			AUTO(due_time, get_fast_mono_clock());
@@ -567,6 +586,10 @@ namespace {
 			due_time += g_save_delay;
 
 			const Mutex::UniqueLock lock(m_mutex);
+			if(!atomic_load(m_running, ATOMIC_CONSUME)){
+				LOG_POSEIDON_ERROR("MySQL thread is being shut down.");
+				DEBUG_THROW(Exception, sslit("MySQL thread is being shut down"));
+			}
 			m_queue.push_back(OperationQueueElement(STD_MOVE(operation), due_time));
 			OperationQueueElement *const elem = &m_queue.back();
 			if(combinable_object){
@@ -714,7 +737,8 @@ void MySqlDaemon::stop(){
 			it->second->stop();
 		}
 		for(AUTO(it, threads.begin()); it != threads.end(); ++it){
-			LOG_POSEIDON_INFO("Waiting for MySQL thread to terminate: table = ", it->first);
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"Waiting for MySQL thread to terminate: table = ", it->first);
 			it->second->safe_join();
 		}
 	}
