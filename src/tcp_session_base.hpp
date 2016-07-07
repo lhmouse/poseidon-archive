@@ -52,7 +52,7 @@ public:
 	};
 
 private:
-	static void shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak);
+	static void shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now);
 
 private:
 	const UniqueFile m_socket;
@@ -78,6 +78,7 @@ private:
 	StreamBuffer m_send_buffer;
 	boost::weak_ptr<Epoll> m_epoll;
 
+	volatile boost::uint64_t m_shutdown_time;
 	mutable Mutex m_timer_mutex;
 	boost::shared_ptr<TimerItem> m_shutdown_timer;
 

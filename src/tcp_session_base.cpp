@@ -47,9 +47,12 @@ TcpSessionBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	}
 }
 
-void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak){
+void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now){
 	const AUTO(session, weak.lock());
 	if(!session){
+		return;
+	}
+	if(now < session->m_shutdown_time){
 		return;
 	}
 
@@ -78,6 +81,7 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	, m_connected(false)
 	, m_shutdown_read(false), m_shutdown_write(false), m_really_shutdown_write(false), m_timed_out(false), m_throttled(false)
 	, m_delayed_shutdown_guard_count(0)
+	, m_shutdown_time(0)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
@@ -289,12 +293,11 @@ void TcpSessionBase::set_timeout(boost::uint64_t timeout){
 	if(timeout == 0){
 		m_shutdown_timer.reset();
 	} else {
-		if(m_shutdown_timer){
-			TimerDaemon::set_time(m_shutdown_timer, timeout, 10000);
-		} else {
-			m_shutdown_timer = TimerDaemon::register_timer(timeout, 10000,
-				boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>()), true);
+		if(!m_shutdown_timer){
+			m_shutdown_timer = TimerDaemon::register_timer(timeout, timeout,
+				boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2), true);
 		}
+		m_shutdown_time = get_fast_mono_clock() + timeout;
 	}
 }
 
