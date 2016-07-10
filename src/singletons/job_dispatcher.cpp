@@ -4,10 +4,10 @@
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include "main_config.hpp"
-#include <new>
-#include <stdlib.h>
 #include <setjmp.h>
+#include <sys/mman.h>
 #include <boost/container/map.hpp>
+#include <vector>
 #include "../job_base.hpp"
 #include "../job_promise.hpp"
 #include "../atomic.hpp"
@@ -57,25 +57,32 @@ namespace {
 	};
 
 	struct StackStorage FINAL {
-		static void *operator new(std::size_t cb, const std::nothrow_t &) NOEXCEPT {
+		static void *operator new(std::size_t cb){
 			assert(cb == sizeof(StackStorage));
+			(void)cb;
 
-			void *ptr;
-			const int err_code = ::posix_memalign(&ptr, 0x1000, cb);
-			if(err_code != 0){
+			const AUTO(ptr, mmap(NULLPTR, sizeof(StackStorage),
+				PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN | MAP_STACK, -1, 0));
+			if(ptr == MAP_FAILED){
+				const int err_code = errno;
 				LOG_POSEIDON_ERROR("Failed to allocate stack: err_code = ", err_code);
-				return NULLPTR;
+				throw std::bad_alloc();
 			}
 			return ptr;
 		}
 		static void operator delete(void *ptr) NOEXCEPT {
-			::free(ptr);
+			if(::munmap(ptr, sizeof(StackStorage)) != 0){
+				const int err_code = errno;
+				LOG_POSEIDON_ERROR("Failed to deallocate stack: err_code = ", err_code);
+				std::abort();
+			}
 		}
 
 		char bytes[256 * 1024];
 	};
 
 	boost::array<boost::scoped_ptr<StackStorage>, 64> g_stack_pool;
+	std::size_t g_stack_pool_size = 0;
 
 	struct FiberControl : NONCOPYABLE {
 		struct Initializer { };
@@ -91,40 +98,18 @@ namespace {
 		explicit FiberControl(Initializer)
 			: state(FS_READY)
 		{
+			if(g_stack_pool_size > 0){
+				stack.swap(g_stack_pool[--g_stack_pool_size]);
+			} else {
+				stack.reset(new StackStorage);
+			}
 		}
 		~FiberControl(){
-			if(stack){
-				AUTO(it, g_stack_pool.begin());
-				for(;;){
-					if(it == g_stack_pool.end()){
-						stack.reset();
-						break;
-					}
-					if(!*it){
-						stack.swap(*it);
-						break;
-					}
-					++it;
-				}
+			if(g_stack_pool_size < g_stack_pool.size()){
+				stack.swap(g_stack_pool[g_stack_pool_size++]);
+			} else {
+				stack.reset();
 			}
-		}
-
-		bool try_allocate_stack() NOEXCEPT {
-			if(!stack){
-				AUTO(it, g_stack_pool.begin());
-				for(;;){
-					if(it == g_stack_pool.end()){
-						stack.reset(new(std::nothrow) StackStorage);
-						break;
-					}
-					if(*it){
-						stack.swap(*it);
-						break;
-					}
-					++it;
-				}
-			}
-			return !!stack;
 		}
 	};
 
@@ -171,22 +156,21 @@ namespace {
 					fiber->state = FS_RUNNING;
 					::unchecked_siglongjmp(fiber->inner, 1);
 				} else {
+					fiber->state = FS_RUNNING;
 					register AUTO(reg __asm__("bx"), fiber); // 必须是 callee-saved 寄存器！
 
-					if(reg->try_allocate_stack()){
-						reg->state = FS_RUNNING;
-						__asm__ __volatile__(
+					__asm__ __volatile__(
 #ifdef __x86_64__
-							"movq %%rax, %%rsp \n"
+						"movq %%rax, %%rsp \n"
 #else
-							"movl %%eax, %%esp \n"
+						"movl %%eax, %%esp \n"
 #endif
-							: "+b"(reg)
-							: "a"(reg->stack.get() + 1) // sp 指向可用栈区的末尾。
-							: "sp", "memory"
-						);
-						fiber_stack_barrier(reg);
-					}
+						: "+b"(reg)
+						: "a"(reg->stack.get() + 1) // sp 指向可用栈区的末尾。
+						: "sp", "memory"
+					);
+					fiber_stack_barrier(reg);
+
 					reg->state = FS_READY;
 					::unchecked_siglongjmp(reg->outer, 1);
 				}
