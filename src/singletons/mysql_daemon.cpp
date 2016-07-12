@@ -553,6 +553,9 @@ namespace {
 				if(!alive){
 					LOG_POSEIDON_ERROR("MySQL thread seems dead before the queue is emptied. Trying to recover...");
 					try {
+						if(m_thread.joinable()){
+							m_thread.join();
+						}
 						LOG_POSEIDON_WARNING("Recreating MySQL thread: pending_objects = ", pending_objects);
 						start();
 					} catch(MySql::Exception &e){
