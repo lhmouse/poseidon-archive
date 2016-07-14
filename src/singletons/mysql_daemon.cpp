@@ -536,6 +536,7 @@ namespace {
 			for(;;){
 				std::size_t pending_objects;
 				std::string current_sql;
+				bool alive;
 				{
 					const Mutex::UniqueLock lock(m_mutex);
 					pending_objects = m_queue.size();
@@ -543,13 +544,13 @@ namespace {
 						break;
 					}
 					current_sql = m_queue.front().operation->generate_sql();
+					alive = atomic_load(m_alive, ATOMIC_CONSUME);
 					atomic_store(m_urgent, true, ATOMIC_RELEASE);
 					m_new_operation.signal();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_sql = ", current_sql);
 
-				auto alive = atomic_load(m_alive, ATOMIC_CONSUME);
 				if(!alive){
 					LOG_POSEIDON_ERROR("MySQL thread seems dead before the queue is emptied. Trying to recover...");
 					try {
