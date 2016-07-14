@@ -570,6 +570,7 @@ namespace {
 						LOG_POSEIDON_ERROR("We cannot recover from this situation. Continue with no regard to data loss.");
 						break;
 					}
+					stop();
 				}
 
 				::timespec req;
