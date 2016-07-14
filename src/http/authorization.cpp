@@ -328,7 +328,13 @@ namespace Http {
 
 	const std::string *check_and_throw_if_unauthorized(
 		const boost::shared_ptr<const AuthInfo> &auth_info, const IpPort &remote_addr, const RequestHeaders &request_headers,
-		bool is_proxy, Move<OptionalMap> headers)
+		bool is_proxy,
+#ifdef POSEIDON_CXX11
+		Move<OptionalMap>
+#else
+		OptionalMap
+#endif
+			headers)
 	{
 		PROFILE_ME;
 

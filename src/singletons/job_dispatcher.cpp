@@ -6,6 +6,7 @@
 #include "main_config.hpp"
 #include <setjmp.h>
 #include <sys/mman.h>
+#include <errno.h>
 #include <boost/container/map.hpp>
 #include <vector>
 #include "../job_base.hpp"
@@ -51,7 +52,7 @@ namespace {
 
 		JobElement(boost::shared_ptr<JobBase> job_, boost::shared_ptr<const bool> withdrawn_)
 			: job(STD_MOVE(job_)), withdrawn(STD_MOVE(withdrawn_))
-			, promise(), expiry_time(UINT64_MAX), insignificant(false)
+			, promise(), expiry_time((boost::uint64_t)-1), insignificant(false)
 		{
 		}
 	};
