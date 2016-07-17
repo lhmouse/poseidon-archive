@@ -82,6 +82,7 @@ namespace {
 		char bytes[256 * 1024];
 	};
 
+	Mutex g_pool_mutex;
 	boost::array<boost::scoped_ptr<StackStorage>, 64> g_stack_pool;
 	std::size_t g_stack_pool_size = 0;
 
@@ -99,6 +100,7 @@ namespace {
 		explicit FiberControl(Initializer)
 			: state(FS_READY)
 		{
+			const Mutex::UniqueLock lock(g_pool_mutex);
 			if(g_stack_pool_size > 0){
 				stack.swap(g_stack_pool[--g_stack_pool_size]);
 			} else {
@@ -106,6 +108,7 @@ namespace {
 			}
 		}
 		~FiberControl(){
+			const Mutex::UniqueLock lock(g_pool_mutex);
 			if(g_stack_pool_size < g_stack_pool.size()){
 				stack.swap(g_stack_pool[g_stack_pool_size++]);
 			} else {
