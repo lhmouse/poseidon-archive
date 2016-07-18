@@ -127,7 +127,8 @@ namespace {
 
 		LOG_POSEIDON_TRACE("Entering fiber ", static_cast<void *>(fiber));
 		try {
-			fiber->queue.begin()->job->perform();
+			const AUTO_REF(elem, fiber->queue.front());
+			elem.job->perform();
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 		} catch(...){
@@ -137,6 +138,7 @@ namespace {
 
 		fiber->state = FS_READY;
 	}
+
 	void schedule_fiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;
 
