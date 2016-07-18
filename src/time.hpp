@@ -11,13 +11,13 @@ namespace Poseidon {
 
 // 时间单位是毫秒。
 
-boost::uint64_t get_utc_time();
-boost::uint64_t get_local_time();
-boost::uint64_t get_utc_time_from_local(boost::uint64_t local);
-boost::uint64_t get_local_time_from_utc(boost::uint64_t utc);
+extern boost::uint64_t get_utc_time();
+extern boost::uint64_t get_local_time();
+extern boost::uint64_t get_utc_time_from_local(boost::uint64_t local);
+extern boost::uint64_t get_local_time_from_utc(boost::uint64_t utc);
 
-boost::uint64_t get_fast_mono_clock() NOEXCEPT;
-double get_hi_res_mono_clock() NOEXCEPT;
+extern boost::uint64_t get_fast_mono_clock() NOEXCEPT;
+extern double get_hi_res_mono_clock() NOEXCEPT;
 
 struct DateTime {
 	unsigned yr;
@@ -31,11 +31,11 @@ struct DateTime {
 	unsigned ms;
 };
 
-DateTime break_down_time(boost::uint64_t ms);
-boost::uint64_t assemble_time(const DateTime &dt);
+extern DateTime break_down_time(boost::uint64_t ms);
+extern boost::uint64_t assemble_time(const DateTime &dt);
 
-std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms);
-boost::uint64_t scan_time(const char *str);
+extern std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms);
+extern boost::uint64_t scan_time(const char *str);
 
 }
 
