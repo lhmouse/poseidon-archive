@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include "main_config.hpp"
-#include <setjmp.h>
+#include <ucontext.h>
 #include <sys/mman.h>
 #include <errno.h>
 #include <boost/container/map.hpp>
@@ -18,18 +18,6 @@
 #include "../mutex.hpp"
 #include "../condition_variable.hpp"
 #include "../time.hpp"
-
-extern "C"
-__attribute__((__noreturn__, __nothrow__))
-void unchecked_siglongjmp(::sigjmp_buf, int)
-	__asm__("siglongjmp");
-
-namespace {
-
-__attribute__((__noinline__))
-void dont_optimize_try_catch_away();
-
-}
 
 namespace Poseidon {
 
@@ -93,22 +81,27 @@ namespace {
 
 		FiberState state;
 		boost::scoped_ptr<StackStorage> stack;
-		::sigjmp_buf outer;
-		::sigjmp_buf inner;
-		void *profiler_hook;
+		::ucontext_t inner;
+		::ucontext_t outer;
 
 		explicit FiberControl(Initializer)
 			: state(FS_READY)
 		{
-			const Mutex::UniqueLock lock(g_pool_mutex);
+			Mutex::UniqueLock lock(g_pool_mutex);
 			if(g_stack_pool_size > 0){
 				stack.swap(g_stack_pool[--g_stack_pool_size]);
 			} else {
 				stack.reset(new StackStorage);
 			}
+			lock.unlock();
+
+#ifndef NDEBUG
+			std::memset(&inner, 0xCC, sizeof(outer));
+			std::memset(&outer, 0xCC, sizeof(outer));
+#endif
 		}
 		~FiberControl(){
-			const Mutex::UniqueLock lock(g_pool_mutex);
+			Mutex::UniqueLock lock(g_pool_mutex);
 			if(g_stack_pool_size < g_stack_pool.size()){
 				stack.swap(g_stack_pool[g_stack_pool_size++]);
 			} else {
@@ -117,83 +110,68 @@ namespace {
 		}
 	};
 
-	__attribute__((__noinline__, __nothrow__))
-#ifndef __x86_64__
-		__attribute__((__force_align_arg_pointer__))
-#endif
-	void fiber_stack_barrier(FiberControl *fiber) NOEXCEPT {
-		PROFILE_ME;
-
-		LOG_POSEIDON_TRACE("Entering fiber ", static_cast<void *>(fiber));
-		try {
-			const AUTO_REF(elem, fiber->queue.front());
-			elem.job->perform();
-		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_WARNING("Unknown exception thrown");
-		}
-		LOG_POSEIDON_TRACE("Exited from fiber ", static_cast<void *>(fiber));
-	}
-
 	AUTO(g_current_fiber, (FiberControl *)0);
-
-	__attribute__((__noinline__, __nothrow__))
-	void schedule_fiber(FiberControl *volatile fiber) NOEXCEPT {
-		PROFILE_ME;
-
-		assert(!fiber->queue.empty());
-
-		if((fiber->state != FS_READY) && (fiber->state != FS_YIELDED)){
-			LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(fiber->state));
-			std::abort();
-		}
-
-		g_current_fiber = fiber;
-		try {
-			::dont_optimize_try_catch_away();
-
-			const AUTO(profiler_hook, Profiler::begin_stack_switch());
-
-			if(sigsetjmp(fiber->outer, true) == 0){
-				if(fiber->state == FS_YIELDED){
-					fiber->state = FS_RUNNING;
-					::unchecked_siglongjmp(fiber->inner, 1);
-				} else {
-					fiber->state = FS_RUNNING;
-					register AUTO(reg __asm__("bx"), fiber); // 必须是 callee-saved 寄存器！
-
-					__asm__ __volatile__(
-#ifdef __x86_64__
-						"movq %%rax, %%rsp \n"
-#else
-						"movl %%eax, %%esp \n"
-#endif
-						: "+b"(reg)
-						: "a"(reg->stack.get() + 1) // sp 指向可用栈区的末尾。
-						: "sp", "memory"
-					);
-					fiber_stack_barrier(reg);
-
-					reg->state = FS_READY;
-					::unchecked_siglongjmp(reg->outer, 1);
-				}
-			}
-
-			Profiler::end_stack_switch(profiler_hook);
-
-			::dont_optimize_try_catch_away();
-		} catch(...){
-			std::abort();
-		}
-		g_current_fiber = NULLPTR;
-	}
 
 	volatile bool g_running = false;
 
 	Mutex g_fiber_mutex;
 	ConditionVariable g_new_job;
 	boost::container::map<boost::weak_ptr<const void>, FiberControl> g_fiber_map;
+
+	void fiber_proc(int low, int high) NOEXCEPT {
+		PROFILE_ME;
+
+		FiberControl *fiber;
+		const int params[2] = { low, high };
+		std::memcpy(&fiber, params, sizeof(fiber));
+
+		LOG_POSEIDON_TRACE("Entering fiber ", static_cast<void *>(fiber));
+		try {
+			fiber->queue.begin()->job->perform();
+		} catch(std::exception &e){
+			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+		} catch(...){
+			LOG_POSEIDON_WARNING("Unknown exception thrown");
+		}
+		LOG_POSEIDON_TRACE("Exited from fiber ", static_cast<void *>(fiber));
+
+		fiber->state = FS_READY;
+	}
+	void schedule_fiber(FiberControl *fiber) NOEXCEPT {
+		PROFILE_ME;
+
+		if(fiber->state == FS_READY){
+			if(::getcontext(&(fiber->inner)) != 0){
+				const int err_code = errno;
+				LOG_POSEIDON_FATAL("::getcontext() failed: err_code = ", err_code);
+				std::abort();
+			}
+			fiber->inner.uc_stack.ss_sp = fiber->stack.get();
+			fiber->inner.uc_stack.ss_size = sizeof(*(fiber->stack));
+			fiber->inner.uc_link = &(fiber->outer);
+
+			int params[2] = { };
+			std::memcpy(params, &fiber, sizeof(fiber));
+			::makecontext(&(fiber->inner), reinterpret_cast<void (*)()>(&fiber_proc), 2, params[0], params[1]);
+		}
+
+		g_current_fiber = fiber;
+		const AUTO(profiler_hook, Profiler::begin_stack_switch());
+		{
+			if((fiber->state != FS_READY) && (fiber->state != FS_YIELDED)){
+				LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(fiber->state));
+				std::abort();
+			}
+			fiber->state = FS_RUNNING;
+			if(::swapcontext(&(fiber->outer), &(fiber->inner)) != 0){
+				const int err_code = errno;
+				LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
+				std::abort();
+			}
+		}
+		Profiler::end_stack_switch(profiler_hook);
+		g_current_fiber = NULLPTR;
+	}
 
 	void really_pump_jobs() NOEXCEPT {
 		PROFILE_ME;
@@ -206,12 +184,13 @@ namespace {
 			busy = false;
 
 			for(AUTO(next, g_fiber_map.begin()), it = next; (next != g_fiber_map.end()) && (++next, true); it = next){
+				const AUTO(fiber, &(it->second));
 				for(;;){
-					if(it->second.queue.empty()){
+					if(fiber->queue.empty()){
 						g_fiber_map.erase(it);
 						break;
 					}
-					AUTO_REF(elem, it->second.queue.front());
+					AUTO_REF(elem, fiber->queue.front());
 					if(elem.promise && !elem.promise->is_satisfied()){
 						if((now < elem.expiry_time) && !(elem.insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
 							break;
@@ -224,19 +203,19 @@ namespace {
 					busy = true;
 
 					bool done;
-					if((it->second.state == FS_READY) && elem.withdrawn && *elem.withdrawn){
+					if((fiber->state == FS_READY) && elem.withdrawn && *elem.withdrawn){
 						LOG_POSEIDON_DEBUG("Job is withdrawn");
 						done = true;
 					} else {
-						schedule_fiber(&it->second);
-						done = (it->second.state == FS_READY);
+						schedule_fiber(fiber);
+						done = (fiber->state == FS_READY);
 					}
 
 					now = get_fast_mono_clock();
 
 					lock.lock();
 					if(done){
-						it->second.queue.pop_front();
+						fiber->queue.pop_front();
 					}
 				}
 			}
@@ -337,22 +316,16 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise, bool insi
 	elem.insignificant = insignificant;
 
 	LOG_POSEIDON_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
-	const AUTO(opaque, Profiler::begin_stack_switch());
-	try {
-		::dont_optimize_try_catch_away();
-
-		if(sigsetjmp(fiber->inner, true) == 0){
-			fiber->state = FS_YIELDED;
-			fiber->profiler_hook = Profiler::begin_stack_switch();
-			::unchecked_siglongjmp(fiber->outer, 1);
+	const AUTO(profiler_hook, Profiler::begin_stack_switch());
+	{
+		fiber->state = FS_YIELDED;
+		if(::swapcontext(&(fiber->inner), &(fiber->outer)) != 0){
+			const int err_code = errno;
+			LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
+			std::abort();
 		}
-		Profiler::end_stack_switch(fiber->profiler_hook);
-
-		::dont_optimize_try_catch_away();
-	} catch(...){
-		std::abort();
 	}
-	Profiler::end_stack_switch(opaque);
+	Profiler::end_stack_switch(profiler_hook);
 	LOG_POSEIDON_TRACE("Resumed to fiber ", static_cast<void *>(fiber));
 
 	if(promise){
@@ -364,14 +337,6 @@ void JobDispatcher::pump_all(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
 
 	really_pump_jobs();
-}
-
-}
-
-namespace {
-
-__attribute__((__noinline__))
-void dont_optimize_try_catch_away(){
 }
 
 }
