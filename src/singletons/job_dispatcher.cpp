@@ -178,48 +178,48 @@ namespace {
 	void really_pump_jobs() NOEXCEPT {
 		PROFILE_ME;
 
-		AUTO(now, get_fast_mono_clock());
-
 		Mutex::UniqueLock lock(g_fiber_mutex);
 		bool busy;
 		do {
 			busy = false;
 			for(AUTO(next, g_fiber_map.begin()), it = next; (next != g_fiber_map.end()) && (++next, true); it = next){
 				const AUTO(fiber, &(it->second));
+
+			_next:
 				if(fiber->queue.empty()){
 					g_fiber_map.erase(it);
 					continue;
 				}
-
-			_next:
 				AUTO_REF(elem, fiber->queue.front());
 				if(elem.promise && !elem.promise->is_satisfied()){
+					const AUTO(now, get_fast_mono_clock());
 					if((now < elem.expiry_time) && !(elem.insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
 						continue;
 					}
 					LOG_POSEIDON_WARNING("Job timed out");
 				}
-				bool done;
-				lock.unlock();
 
 				elem.promise.reset();
 				busy = true;
 
-				if((fiber->state == FS_READY) && elem.withdrawn && *elem.withdrawn){
-					LOG_POSEIDON_DEBUG("Job is withdrawn");
-					done = true;
-				} else {
-					schedule_fiber(fiber);
-					done = (fiber->state == FS_READY);
+				bool done;
+				lock.unlock();
+				try {
+					if((fiber->state == FS_READY) && (elem.withdrawn && *elem.withdrawn)){
+						LOG_POSEIDON_DEBUG("Job is withdrawn");
+						done = true;
+					} else {
+						schedule_fiber(fiber);
+						done = (fiber->state == FS_READY);
+					}
+				} catch(...){
+					std::abort();
 				}
-				now = get_fast_mono_clock();
-
 				lock.lock();
+
 				if(done){
 					fiber->queue.pop_front();
-					if(!fiber->queue.empty()){
-						goto _next;
-					}
+					goto _next;
 				}
 			}
 		} while(busy);
