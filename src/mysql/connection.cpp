@@ -44,12 +44,13 @@ namespace MySql {
 			}
 		};
 
-#define DEBUG_THROW_MYSQL_EXCEPTION(mysql_)	\
-	DEBUG_THROW(::Poseidon::MySql::Exception, ::mysql_errno(mysql_), ::Poseidon::SharedNts(::mysql_error(mysql_)))
+#define DEBUG_THROW_MYSQL_EXCEPTION(mysql_, schema_)	\
+	DEBUG_THROW(::Poseidon::MySql::Exception, schema_, ::mysql_errno(mysql_), ::Poseidon::SharedNts(::mysql_error(mysql_)))
 
-		class ConnectionDelegator : public Connection {
+		class DelegatedConnection : public Connection {
 		private:
 			const ThreadContext m_context;
+			const SharedNts m_schema;
 
 			::MYSQL m_mysql_object;
 			UniqueHandle<Closer> m_mysql;
@@ -61,30 +62,31 @@ namespace MySql {
 			unsigned long *m_lengths;
 
 		public:
-			ConnectionDelegator(const char *server_addr, unsigned server_port,
+			DelegatedConnection(const char *server_addr, unsigned server_port,
 				const char *user_name, const char *password, const char *schema,
 				bool use_ssl, const char *charset)
-				: m_row(NULLPTR), m_lengths(NULLPTR)
+				: m_schema(schema)
+				, m_row(NULLPTR), m_lengths(NULLPTR)
 			{
 				if(!m_mysql.reset(::mysql_init(&m_mysql_object))){
 					DEBUG_THROW(SystemException, ENOMEM);
 				}
 
 				if(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) != 0){
-					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 				}
 				const ::my_bool TRUE_VALUE = true;
 				if(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &TRUE_VALUE) != 0){
-					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 				}
 				if(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) != 0){
-					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 				}
 
 				if(!::mysql_real_connect(m_mysql.get(), server_addr, user_name,
 					password, schema, server_port, NULLPTR, use_ssl ? CLIENT_SSL : 0))
 				{
-					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 				}
 			}
 
@@ -93,12 +95,12 @@ namespace MySql {
 				do_discard_result();
 
 				if(::mysql_real_query(m_mysql.get(), sql, len) != 0){
-					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
+					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 				}
 
 				if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
 					if(::mysql_errno(m_mysql.get()) != 0){
-						DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
+						DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 					}
 					// 没有返回结果。
 				} else {
@@ -127,13 +129,13 @@ namespace MySql {
 
 			bool do_fetch_row(){
 				if(m_columns.empty()){
-					LOG_POSEIDON_DEBUG("Empty set returned form MySQL server.");
+					LOG_POSEIDON_DEBUG("Empty set returned from MySQL server.");
 					return false;
 				}
 				m_row = ::mysql_fetch_row(m_result.get());
 				if(!m_row){
 					if(::mysql_errno(m_mysql.get()) != 0){
-						DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get());
+						DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 					}
 					return false;
 				}
@@ -232,6 +234,7 @@ namespace MySql {
 				}
 				if(std::strlen(data) != 36){
 					LOG_POSEIDON_ERROR("Invalid UUID string: ", data);
+					DEBUG_THROW(BasicException, sslit("Invalid UUID string"));
 				}
 				return Uuid(reinterpret_cast<const char (&)[36]>(data[0]));
 			}
@@ -241,7 +244,7 @@ namespace MySql {
 	boost::shared_ptr<Connection> Connection::create(const char *server_addr, unsigned server_port,
 		const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
 	{
-		return boost::make_shared<ConnectionDelegator>(
+		return boost::make_shared<DelegatedConnection>(
 			server_addr, server_port, user_name, password, schema, use_ssl, charset);
 	}
 
@@ -249,36 +252,36 @@ namespace MySql {
 	}
 
 	void Connection::execute_sql(const char *sql, std::size_t len){
-		static_cast<ConnectionDelegator &>(*this).do_execute_sql(sql, len);
+		static_cast<DelegatedConnection &>(*this).do_execute_sql(sql, len);
 	}
 	void Connection::discard_result() NOEXCEPT {
-		static_cast<ConnectionDelegator &>(*this).do_discard_result();
+		static_cast<DelegatedConnection &>(*this).do_discard_result();
 	}
 
 	boost::uint64_t Connection::get_insert_id() const {
-		return static_cast<const ConnectionDelegator &>(*this).do_get_insert_id();
+		return static_cast<const DelegatedConnection &>(*this).do_get_insert_id();
 	}
 	bool Connection::fetch_row(){
-		return static_cast<ConnectionDelegator &>(*this).do_fetch_row();
+		return static_cast<DelegatedConnection &>(*this).do_fetch_row();
 	}
 
 	boost::int64_t Connection::get_signed(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).do_get_signed(column);
+		return static_cast<const DelegatedConnection &>(*this).do_get_signed(column);
 	}
 	boost::uint64_t Connection::get_unsigned(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).do_get_unsigned(column);
+		return static_cast<const DelegatedConnection &>(*this).do_get_unsigned(column);
 	}
 	double Connection::get_double(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).do_get_double(column);
+		return static_cast<const DelegatedConnection &>(*this).do_get_double(column);
 	}
 	std::string Connection::get_string(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).do_get_string(column);
+		return static_cast<const DelegatedConnection &>(*this).do_get_string(column);
 	}
 	boost::uint64_t Connection::get_datetime(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).do_get_datetime(column);
+		return static_cast<const DelegatedConnection &>(*this).do_get_datetime(column);
 	}
 	Uuid Connection::get_uuid(const char *column) const {
-		return static_cast<const ConnectionDelegator &>(*this).do_get_uuid(column);
+		return static_cast<const DelegatedConnection &>(*this).do_get_uuid(column);
 	}
 }
 

@@ -12,7 +12,7 @@ namespace WebSocket {
 		: ProtocolException(file, line, func, STD_MOVE(message), static_cast<long>(status_code))
 	{
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"WebSocket::Exception: status_code = ", status_code, ", what = ", what());
+			"WebSocket::Exception: code = ", get_code(), ", what = ", what());
 	}
 	Exception::~Exception() NOEXCEPT {
 	}

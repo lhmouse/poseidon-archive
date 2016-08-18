@@ -23,10 +23,10 @@ namespace Http {
 		~Exception() NOEXCEPT;
 
 	public:
-		StatusCode status_code() const NOEXCEPT {
-			return static_cast<StatusCode>(code());
+		StatusCode get_status_code() const NOEXCEPT {
+			return static_cast<StatusCode>(get_code());
 		}
-		const OptionalMap &headers() const NOEXCEPT;
+		const OptionalMap &get_headers() const NOEXCEPT;
 	};
 }
 

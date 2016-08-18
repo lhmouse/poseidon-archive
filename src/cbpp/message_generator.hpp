@@ -35,9 +35,7 @@ public:
 #define FIELD_VUINT(name_)              ::boost::uint64_t name_;
 #define FIELD_STRING(name_)             ::std::string name_;
 #define FIELD_BYTES(name_, size_)       ::boost::array<unsigned char, size_> name_;
-#define FIELD_ARRAY(name_, fields_)     struct ElementOf ## name_ ## X_ {	\
-                                        	fields_	\
-                                        };	\
+#define FIELD_ARRAY(name_, fields_)     struct ElementOf ## name_ ## X_ { fields_ };	\
                                         ::std::vector<ElementOf ## name_ ## X_> name_;
 
 	MESSAGE_FIELDS
@@ -54,7 +52,7 @@ public:
 #define FIELD_VUINT(name_)              + 1
 #define FIELD_STRING(name_)             + 1
 #define FIELD_BYTES(name_, size_)       + 1
-#define FIELD_ARRAY(name_, fields_)
+#define FIELD_ARRAY(name_, fields_)     + 0
 
 #if (0 MESSAGE_FIELDS) != 0
 	MESSAGE_NAME()

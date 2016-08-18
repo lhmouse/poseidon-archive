@@ -7,12 +7,12 @@
 
 namespace Poseidon {
 
-namespace MySql {
-	Exception::Exception(const char *file, std::size_t line, const char *func, SharedNts schema, long code, SharedNts message)
+namespace MongoDb {
+	Exception::Exception(const char *file, std::size_t line, const char *func, SharedNts database, int code, SharedNts message)
 		: ProtocolException(file, line, func, STD_MOVE(message), code)
-		, m_schema(STD_MOVE(schema))
+		, m_database(STD_MOVE(database))
 	{
-		LOG_POSEIDON_ERROR("MySql::Exception: schema = ", get_schema(), ", code = ", get_code(), ", what = ", what());
+		LOG_POSEIDON_ERROR("MongoDb::Exception: database = ", get_database(), ", code = ", get_code(), ", what = ", what());
 	}
 	Exception::~Exception() NOEXCEPT {
 	}

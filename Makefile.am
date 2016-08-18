@@ -1,7 +1,9 @@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign subdir-objects
-AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Wno-missing-field-initializers -pipe -fPIC -DPIC -pthread
+AM_CPPFLAGS = $(glib_CFLAGS) $(mongo_client_CFLAGS)	\
+	-Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Wno-missing-field-initializers	-pipe -fPIC -DPIC -pthread
 AM_CXXFLAGS =
+AM_LDFLAGS =
 
 %.hpp.gch: %.hpp
 	$(CXX) -x c++-header @DEFS@ $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
@@ -74,6 +76,7 @@ pkginclude_singletons_HEADERS = \
 	src/singletons/system_http_server.hpp	\
 	src/singletons/module_depository.hpp	\
 	src/singletons/mysql_daemon.hpp	\
+	src/singletons/mongodb_daemon.hpp	\
 	src/singletons/dns_daemon.hpp	\
 	src/singletons/event_dispatcher.hpp	\
 	src/singletons/profile_depository.hpp
@@ -137,6 +140,16 @@ pkginclude_mysql_HEADERS = \
 	src/mysql/exception.hpp	\
 	src/mysql/utilities.hpp
 
+pkginclude_mongodbdir = $(pkgincludedir)/mongodb
+pkginclude_mongodb_HEADERS = \
+	src/mongodb/fwd.hpp	\
+	src/mongodb/oid.hpp	\
+	src/mongodb/bson_builder.hpp	\
+	src/mongodb/object_generator.hpp	\
+	src/mongodb/connection.hpp	\
+	src/mongodb/object_base.hpp	\
+	src/mongodb/exception.hpp
+
 bin_PROGRAMS = \
 	bin/poseidon
 
@@ -194,6 +207,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/singletons/main_config.cpp	\
 	src/singletons/job_dispatcher.cpp	\
 	src/singletons/mysql_daemon.cpp	\
+	src/singletons/mongodb_daemon.cpp	\
 	src/singletons/dns_daemon.cpp	\
 	src/singletons/epoll_daemon.cpp	\
 	src/singletons/timer_daemon.cpp	\
@@ -235,7 +249,12 @@ lib_libposeidon_main_la_SOURCES = \
 	src/mysql/exception.cpp	\
 	src/mysql/utilities.cpp	\
 	src/mysql/thread_context.cpp	\
-	src/mysql/connection.cpp
+	src/mysql/connection.cpp	\
+	src/mongodb/oid.cpp	\
+	src/mongodb/bson_builder.cpp	\
+	src/mongodb/object_base.cpp	\
+	src/mongodb/exception.cpp	\
+	src/mongodb/connection.cpp
 
 pkgsysconfdir = $(sysconfdir)/@PACKAGE@
 pkgsysconf_DATA = \

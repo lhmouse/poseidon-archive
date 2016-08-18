@@ -18,7 +18,7 @@ public:
 	~SystemException() NOEXCEPT;
 
 public:
-	int code() const NOEXCEPT {
+	int get_code() const NOEXCEPT {
 		return m_code;
 	}
 };

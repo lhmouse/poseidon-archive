@@ -30,6 +30,7 @@ private:
 #undef FIELD_INTEGER_UNSIGNED
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_DOUBLE
 #undef FIELD_STRING
 #undef FIELD_DATETIME
 #undef FIELD_UUID
@@ -43,6 +44,7 @@ private:
 #define FIELD_INTEGER_UNSIGNED(name_)       ::boost::uint32_t name_;
 #define FIELD_BIGINT(name_)                 ::boost::int64_t name_;
 #define FIELD_BIGINT_UNSIGNED(name_)        ::boost::uint64_t name_;
+#define FIELD_DOUBLE(name_)                 double name_;
 #define FIELD_STRING(name_)                 ::std::string name_;
 #define FIELD_DATETIME(name_)               ::boost::uint64_t name_;
 #define FIELD_UUID(name_)                   ::Poseidon::Uuid name_;
@@ -62,6 +64,7 @@ public:
 #undef FIELD_INTEGER_UNSIGNED
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_DOUBLE
 #undef FIELD_STRING
 #undef FIELD_DATETIME
 #undef FIELD_UUID
@@ -75,6 +78,7 @@ public:
 #define FIELD_INTEGER_UNSIGNED(name_)       , name_()
 #define FIELD_BIGINT(name_)                 , name_()
 #define FIELD_BIGINT_UNSIGNED(name_)        , name_()
+#define FIELD_DOUBLE(name_)                 , name_()
 #define FIELD_STRING(name_)                 , name_()
 #define FIELD_DATETIME(name_)               , name_()
 #define FIELD_UUID(name_)                   , name_()
@@ -92,6 +96,7 @@ public:
 #undef FIELD_INTEGER_UNSIGNED
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_DOUBLE
 #undef FIELD_STRING
 #undef FIELD_DATETIME
 #undef FIELD_UUID
@@ -105,6 +110,7 @@ public:
 #define FIELD_INTEGER_UNSIGNED(name_)       , ::boost::uint32_t name_ ## X_
 #define FIELD_BIGINT(name_)                 , ::boost::int64_t name_ ## X_
 #define FIELD_BIGINT_UNSIGNED(name_)        , ::boost::uint64_t name_ ## X_
+#define FIELD_DOUBLE(name_)                 , double name_ ## X_
 #define FIELD_STRING(name_)                 , ::std::string name_ ## X_
 #define FIELD_DATETIME(name_)               , ::boost::uint64_t name_ ## X_
 #define FIELD_UUID(name_)                   , const ::Poseidon::Uuid & name_ ## X_
@@ -121,6 +127,7 @@ public:
 #undef FIELD_INTEGER_UNSIGNED
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_DOUBLE
 #undef FIELD_STRING
 #undef FIELD_DATETIME
 #undef FIELD_UUID
@@ -134,6 +141,7 @@ public:
 #define FIELD_INTEGER_UNSIGNED(name_)       , name_(name_ ## X_)
 #define FIELD_BIGINT(name_)                 , name_(name_ ## X_)
 #define FIELD_BIGINT_UNSIGNED(name_)        , name_(name_ ## X_)
+#define FIELD_DOUBLE(name_)                 , name_(name_ ## X_)
 #define FIELD_STRING(name_)                 , name_(STD_MOVE(name_ ## X_))
 #define FIELD_DATETIME(name_)               , name_(name_ ## X_)
 #define FIELD_UUID(name_)                   , name_(name_ ## X_)
@@ -154,6 +162,7 @@ public:
 #undef FIELD_INTEGER_UNSIGNED
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_DOUBLE
 #undef FIELD_STRING
 #undef FIELD_DATETIME
 #undef FIELD_UUID
@@ -170,7 +179,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_TINYINT(name_)                const ::boost::int8_t & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -183,7 +191,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_TINYINT_UNSIGNED(name_)       const ::boost::uint8_t & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -196,7 +203,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_SMALLINT(name_)               const ::boost::int16_t & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -209,7 +215,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_SMALLINT_UNSIGNED(name_)      const ::boost::uint16_t & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -222,7 +227,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_INTEGER(name_)                const ::boost::int32_t & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -235,7 +239,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_INTEGER_UNSIGNED(name_)       const ::boost::uint32_t & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -248,7 +251,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_BIGINT(name_)                 const ::boost::int64_t & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -261,7 +263,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_BIGINT_UNSIGNED(name_)        const ::boost::uint64_t & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -274,7 +275,22 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
+#define FIELD_DOUBLE(name_)                 const double & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            double get_ ## name_() const {	\
+                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	return name_;	\
+                                            }	\
+                                            void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
+                                            	{	\
+                                            		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            		name_ = val_;	\
+                                            	}	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
 #define FIELD_STRING(name_)                 const ::std::string & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -291,7 +307,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_DATETIME(name_)               const ::boost::uint64_t & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -304,7 +319,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-
 #define FIELD_UUID(name_)                   const ::Poseidon::Uuid & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
@@ -312,7 +326,7 @@ public:
                                             	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
-                                            void set_ ## name_(const ::Poseidon::Uuid val_, bool invalidates_ = true){	\
+                                            void set_ ## name_(const ::Poseidon::Uuid &val_, bool invalidates_ = true){	\
                                             	{	\
                                             		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
                                             		name_ = val_;	\
@@ -324,11 +338,11 @@ public:
 
 	MYSQL_OBJECT_FIELDS
 
-	const char *get_table_name() const {
+	const char *get_table_name() const OVERRIDE {
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
 
-	void generate_sql(::std::string &sql_, bool to_replace_) const {
+	::std::string generate_sql(bool to_replace_) const OVERRIDE {
 		::std::ostringstream oss_;
 
 #undef FIELD_BOOLEAN
@@ -340,6 +354,7 @@ public:
 #undef FIELD_INTEGER_UNSIGNED
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_DOUBLE
 #undef FIELD_STRING
 #undef FIELD_DATETIME
 #undef FIELD_UUID
@@ -371,6 +386,9 @@ public:
 #define FIELD_BIGINT_UNSIGNED(name_)        (void)(oss_ <<", "),	\
                                             	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
                                             		<<static_cast< ::boost::uint64_t>(get_ ## name_())),
+#define FIELD_DOUBLE(name_)                 (void)(oss_ <<", "),	\
+                                            	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
+                                            		<<static_cast<double>(get_ ## name_())),
 #define FIELD_STRING(name_)                 (void)(oss_ <<", "),	\
                                             	(void)(oss_ <<"`" TOKEN_TO_STR(name_) "` = "	\
                                             		<< ::Poseidon::MySql::StringEscaper(get_ ## name_())),
@@ -388,9 +406,9 @@ public:
 			oss_ <<"INSERT INTO `" TOKEN_TO_STR(MYSQL_OBJECT_NAME) "` SET ";
 		}
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
-		oss_.str().swap(sql_);
+		return oss_.str();
 	}
-	void fetch(const boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_){
+	void fetch(const boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_) OVERRIDE {
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -401,6 +419,7 @@ public:
 #undef FIELD_INTEGER_UNSIGNED
 #undef FIELD_BIGINT
 #undef FIELD_BIGINT_UNSIGNED
+#undef FIELD_DOUBLE
 #undef FIELD_STRING
 #undef FIELD_DATETIME
 #undef FIELD_UUID
@@ -414,6 +433,7 @@ public:
 #define FIELD_INTEGER_UNSIGNED(name_)       set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ), false);
 #define FIELD_BIGINT(name_)                 set_ ## name_(conn_->get_signed  ( TOKEN_TO_STR(name_) ), false);
 #define FIELD_BIGINT_UNSIGNED(name_)        set_ ## name_(conn_->get_unsigned( TOKEN_TO_STR(name_) ), false);
+#define FIELD_DOUBLE(name_)                 set_ ## name_(conn_->get_double  ( TOKEN_TO_STR(name_) ), false);
 #define FIELD_STRING(name_)                 set_ ## name_(conn_->get_string  ( TOKEN_TO_STR(name_) ), false);
 #define FIELD_DATETIME(name_)               set_ ## name_(conn_->get_datetime( TOKEN_TO_STR(name_) ), false);
 #define FIELD_UUID(name_)                   set_ ## name_(conn_->get_uuid    ( TOKEN_TO_STR(name_) ), false);

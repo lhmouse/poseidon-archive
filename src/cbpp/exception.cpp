@@ -12,7 +12,7 @@ namespace Cbpp {
 		: ProtocolException(file, line, func, message, static_cast<long>(status_code))
 	{
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Cbpp::Exception: status_code = ", status_code, ", what = ", what());
+			"Cbpp::Exception: code = ", get_code(), ", what = ", what());
 	}
 	Exception::~Exception() NOEXCEPT {
 	}

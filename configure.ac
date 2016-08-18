@@ -6,9 +6,14 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 
+PKG_CHECK_MODULES([glib], [glib-2.0])
+PKG_CHECK_MODULES([mongo_client], [libmongo-client])
+
 AC_CHECK_LIB([dl], [main], [], [exit -2;])
 AC_CHECK_LIB([ssl], [main], [], [exit -2;])
 AC_CHECK_LIB([mysqlclient], [main], [], [exit -2;])
+AC_CHECK_LIB([glib-2.0], [main], [], [exit -2;])
+AC_CHECK_LIB([mongo-client], [main], [], [exit -2;])
 
 AM_INIT_AUTOMAKE
 LT_INIT

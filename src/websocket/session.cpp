@@ -43,8 +43,8 @@ namespace WebSocket {
 				really_perform(session);
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"WebSocket::Exception thrown: status_code = ", e.status_code(), ", what = ", e.what());
-				session->shutdown(e.status_code(), StreamBuffer(e.what()));
+					"WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+				session->shutdown(e.get_status_code(), StreamBuffer(e.what()));
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: what = ", e.what());
@@ -130,8 +130,8 @@ namespace WebSocket {
 		LowLevelSession::on_read_avail(STD_MOVE(data));
 	} catch(Exception &e){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"WebSocket::Exception thrown in WebSocket parser: status_code = ", e.status_code(), ", what = ", e.what());
-		shutdown(e.status_code(), e.what());
+			"WebSocket::Exception thrown in WebSocket parser: status_code = ", e.get_status_code(), ", what = ", e.what());
+		shutdown(e.get_status_code(), e.what());
 	}
 
 	void Session::on_low_level_message_header(OpCode opcode){

@@ -17,10 +17,10 @@ public:
 	~ProtocolException() NOEXCEPT;
 
 public:
-	long code() const NOEXCEPT {
+	long get_code() const NOEXCEPT {
 		return m_code;
 	}
-	const char *message() const NOEXCEPT {
+	const char *get_message() const NOEXCEPT {
 		return what();
 	}
 };

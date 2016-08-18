@@ -4,14 +4,15 @@
 #include "../precompiled.hpp"
 #include "object_base.hpp"
 #include "connection.hpp"
-#include "../singletons/mysql_daemon.hpp"
+#include "../singletons/mongodb_daemon.hpp"
 #include "../atomic.hpp"
 
 namespace Poseidon {
 
-namespace MySql {
+namespace MongoDb {
 	ObjectBase::ObjectBase()
 		: m_auto_saves(false), m_combined_write_stamp(NULLPTR)
+		, m_oid(Oid::random())
 	{
 	}
 	ObjectBase::~ObjectBase(){
@@ -48,7 +49,7 @@ namespace MySql {
 	}
 	void ObjectBase::async_save(bool to_replace, bool urgent) const {
 		enable_auto_saving();
-		MySqlDaemon::enqueue_for_saving(virtual_shared_from_this<ObjectBase>(), to_replace, urgent);
+		MongoDbDaemon::enqueue_for_saving(virtual_shared_from_this<ObjectBase>(), to_replace, urgent);
 	}
 }
 

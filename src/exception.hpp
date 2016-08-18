@@ -23,20 +23,20 @@ public:
 	~Exception() NOEXCEPT;
 
 public:
-	const char *what() const NOEXCEPT {
+	const char *what() const NOEXCEPT OVERRIDE {
 		return m_message.get();
 	}
 
-	const char *file() const NOEXCEPT {
+	const char *get_file() const NOEXCEPT {
 		return m_file;
 	}
-	std::size_t line() const NOEXCEPT {
+	std::size_t get_line() const NOEXCEPT {
 		return m_line;
 	}
-	const char *func() const NOEXCEPT {
+	const char *get_func() const NOEXCEPT {
 		return m_func;
 	}
-	const char *message() const NOEXCEPT {
+	const char *get_message() const NOEXCEPT {
 		return m_message.get();
 	}
 };

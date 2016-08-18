@@ -94,7 +94,7 @@ int ConfigFile::load_nothrow(const char *path){
 		load(path);
 		return 0;
 	} catch(SystemException &e){
-		return e.code();
+		return e.get_code();
 	}
 }
 

@@ -2,19 +2,17 @@
 // Copyleft 2014 - 2016, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "mysql_daemon.hpp"
+#include "mongodb_daemon.hpp"
 #include "main_config.hpp"
 #include <boost/container/flat_map.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <mysql/mysqld_error.h>
-#include <mysql/errmsg.h>
-#include "../mysql/object_base.hpp"
-#include "../mysql/exception.hpp"
-#include "../mysql/connection.hpp"
-#include "../mysql/thread_context.hpp"
+#include "../mongodb/bson_builder.hpp"
+#include "../mongodb/object_base.hpp"
+#include "../mongodb/exception.hpp"
+#include "../mongodb/connection.hpp"
 #include "../thread.hpp"
 #include "../mutex.hpp"
 #include "../condition_variable.hpp"
@@ -26,19 +24,19 @@
 #include "../profiler.hpp"
 #include "../time.hpp"
 #include "../errno.hpp"
+#include "../http/utilities.hpp" // base64
 
 namespace Poseidon {
 
 namespace {
 	std::string     g_server_addr       = "localhost";
-	unsigned        g_server_port       = 3306;
+	unsigned        g_server_port       = 27017;
 	std::string     g_slave_addr        = VAL_INIT;
 	unsigned        g_slave_port        = 0;
-	std::string     g_username          = "root";
-	std::string     g_password          = "root";
-	std::string     g_schema            = "poseidon";
-	bool            g_use_ssl           = false;
-	std::string     g_charset           = "utf8";
+//	std::string     g_username          = "root";
+//	std::string     g_password          = "root";
+	std::string     g_database          = "poseidon";
+//	bool            g_use_ssl           = false;
 
 	std::string     g_dump_dir          = VAL_INIT;
 	boost::uint64_t g_save_delay        = 5000;
@@ -49,7 +47,7 @@ namespace {
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;
 
-	typedef MySqlDaemon::ObjectFactory ObjectFactory;
+	typedef MongoDbDaemon::ObjectFactory ObjectFactory;
 
 	// 数据库线程操作。
 	class OperationBase : NONCOPYABLE {
@@ -59,10 +57,10 @@ namespace {
 
 	public:
 		virtual bool should_use_slave() const = 0;
-		virtual boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const = 0;
-		virtual const char *get_table_name() const = 0;
-		virtual std::string generate_sql() const = 0;
-		virtual void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const = 0;
+		virtual boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const = 0;
+		virtual const char *get_collection_name() const = 0;
+		virtual MongoDb::BsonBuilder generate_bson() const = 0;
+		virtual void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const = 0;
 		virtual void set_success() const = 0;
 		virtual void set_exception(boost::exception_ptr ep) const = 0;
 	};
@@ -70,12 +68,12 @@ namespace {
 	class SaveOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const boost::shared_ptr<const MySql::ObjectBase> m_object;
+		const boost::shared_ptr<const MongoDb::ObjectBase> m_object;
 		const bool m_to_replace;
 
 	public:
 		SaveOperation(boost::shared_ptr<JobPromise> promise,
-			boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace)
+			boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace)
 			: m_promise(STD_MOVE(promise)), m_object(STD_MOVE(object)), m_to_replace(to_replace)
 		{
 		}
@@ -84,19 +82,23 @@ namespace {
 		bool should_use_slave() const {
 			return false;
 		}
-		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
 			return m_object;
 		}
-		const char *get_table_name() const OVERRIDE {
-			return m_object->get_table_name();
+		const char *get_collection_name() const OVERRIDE {
+			return m_object->get_collection_name();
 		}
-		std::string generate_sql() const OVERRIDE {
-			return m_object->generate_sql(m_to_replace);
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
+			return m_object->generate_bson();
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
-			conn->execute_sql(query);
+			if(m_to_replace){
+//				conn->execute_
+			} else {
+				conn->execute_insert(get_collection_name(), query);
+			}
 		}
 		void set_success() const OVERRIDE {
 			m_promise->set_success();
@@ -109,12 +111,12 @@ namespace {
 	class LoadOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const boost::shared_ptr<MySql::ObjectBase> m_object;
-		const std::string m_query;
+		const boost::shared_ptr<MongoDb::ObjectBase> m_object;
+		const MongoDb::BsonBuilder m_query;
 
 	public:
 		LoadOperation(boost::shared_ptr<JobPromise> promise,
-			boost::shared_ptr<MySql::ObjectBase> object, std::string query)
+			boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query)
 			: m_promise(STD_MOVE(promise)), m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
 		{
 		}
@@ -123,21 +125,21 @@ namespace {
 		bool should_use_slave() const {
 			return true;
 		}
-		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_table_name() const OVERRIDE {
-			return m_object->get_table_name();
+		const char *get_collection_name() const OVERRIDE {
+			return m_object->get_collection_name();
 		}
-		std::string generate_sql() const OVERRIDE {
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			return m_query;
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
-			conn->execute_sql(query);
-			if(!conn->fetch_row()){
-				DEBUG_THROW(MySql::Exception, SharedNts::view(get_table_name()), ER_SP_FETCH_NO_DATA, sslit("No rows returned"));
+			conn->execute_query(get_collection_name(), query, 0, 1);
+			if(!conn->fetch_next()){
+				DEBUG_THROW(MongoDb::Exception, SharedNts::view(get_collection_name()), ENOENT, sslit("No documents returned"));
 			}
 			m_object->fetch(conn);
 		}
@@ -152,13 +154,14 @@ namespace {
 	class DeleteOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const char *const m_table_hint;
-		const std::string m_query;
+		const char *const m_collection_hint;
+		const MongoDb::BsonBuilder m_query;
+		const bool m_delete_all;
 
 	public:
 		DeleteOperation(boost::shared_ptr<JobPromise> promise,
-			const char *table_hint, std::string query)
-			: m_promise(STD_MOVE(promise)), m_table_hint(table_hint), m_query(STD_MOVE(query))
+			const char *collection_hint, MongoDb::BsonBuilder query, bool delete_all)
+			: m_promise(STD_MOVE(promise)), m_collection_hint(collection_hint), m_query(STD_MOVE(query)), m_delete_all(delete_all)
 		{
 		}
 
@@ -166,19 +169,19 @@ namespace {
 		bool should_use_slave() const {
 			return false;
 		}
-		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_table_name() const OVERRIDE {
-			return m_table_hint;
+		const char *get_collection_name() const OVERRIDE {
+			return m_collection_hint;
 		}
-		std::string generate_sql() const OVERRIDE {
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			return m_query;
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
-			conn->execute_sql(query);
+			conn->execute_delete(get_collection_name(), query, m_delete_all);
 		}
 		void set_success() const OVERRIDE {
 			m_promise->set_success();
@@ -192,13 +195,16 @@ namespace {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
 		const ObjectFactory m_factory;
-		const char *const m_table_hint;
-		const std::string m_query;
+		const char *const m_collection_hint;
+		const MongoDb::BsonBuilder m_query;
+		const std::size_t m_begin;
+		const std::size_t m_limit;
 
 	public:
 		BatchLoadOperation(boost::shared_ptr<JobPromise> promise,
-			ObjectFactory factory, const char *table_hint, std::string query)
-			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_table_hint(table_hint), m_query(STD_MOVE(query))
+			ObjectFactory factory, const char *collection_hint, MongoDb::BsonBuilder query, std::size_t begin, std::size_t limit)
+			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_collection_hint(collection_hint)
+			, m_query(STD_MOVE(query)), m_begin(begin), m_limit(limit)
 		{
 		}
 
@@ -206,21 +212,21 @@ namespace {
 		bool should_use_slave() const {
 			return true;
 		}
-		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_table_name() const OVERRIDE {
-			return m_table_hint;
+		const char *get_collection_name() const OVERRIDE {
+			return m_collection_hint;
 		}
-		std::string generate_sql() const OVERRIDE {
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			return m_query;
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
-			conn->execute_sql(query);
+			conn->execute_query(get_collection_name(), query, m_begin, m_limit);
 			if(m_factory){
-				while(conn->fetch_row()){
+				while(conn->fetch_next()){
 					m_factory(conn);
 				}
 			} else {
@@ -251,19 +257,21 @@ namespace {
 		bool should_use_slave() const {
 			return false;
 		}
-		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_table_name() const OVERRIDE {
+		const char *get_collection_name() const OVERRIDE {
 			return "";
 		}
-		std::string generate_sql() const OVERRIDE {
-			return "DO 0";
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
+			MongoDb::BsonBuilder builder;
+			builder.append_signed(sslit("ping"), 1);
+			return builder;
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
-			conn->execute_sql(query);
+			conn->execute_query("test", query, 0, 0);
 		}
 		void set_success() const OVERRIDE {
 			if(atomic_sub(*m_counter, 1, ATOMIC_RELAXED) != 0){
@@ -279,7 +287,7 @@ namespace {
 		}
 	};
 
-	class MySqlThread : NONCOPYABLE {
+	class MongoDbThread : NONCOPYABLE {
 	private:
 		struct OperationQueueElement {
 			boost::shared_ptr<OperationBase> operation;
@@ -303,7 +311,7 @@ namespace {
 		std::deque<OperationQueueElement> m_queue;
 
 	public:
-		MySqlThread()
+		MongoDbThread()
 			: m_running(false), m_alive(false)
 			, m_urgent(false)
 		{
@@ -319,27 +327,26 @@ namespace {
 
 		void thread_proc(){
 			PROFILE_ME;
-			LOG_POSEIDON_INFO("MySQL thread started.");
+			LOG_POSEIDON_INFO("MongoDB thread started.");
 
-			const MySql::ThreadContext thread_context;
-			boost::shared_ptr<MySql::Connection> master_conn, slave_conn;
+			boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
 
 			for(;;){
 				while(!master_conn){
-					LOG_POSEIDON_INFO("Connecting to MySQL master server...");
+					LOG_POSEIDON_INFO("Connecting to MongoDB master server...");
 					try {
-						master_conn = MySqlDaemon::create_connection(false);
-						LOG_POSEIDON_INFO("Successfully connected to MySQL master server.");
+						master_conn = MongoDbDaemon::create_connection(false);
+						LOG_POSEIDON_INFO("Successfully connected to MongoDB master server.");
 					} catch(std::exception &e){
 						LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 						sleep_for_reconnection();
 					}
 				}
 				while(!slave_conn){
-					LOG_POSEIDON_INFO("Connecting to MySQL slave server...");
+					LOG_POSEIDON_INFO("Connecting to MongoDB slave server...");
 					try {
-						slave_conn = MySqlDaemon::create_connection(true);
-						LOG_POSEIDON_INFO("Successfully connected to MySQL slave server.");
+						slave_conn = MongoDbDaemon::create_connection(true);
+						LOG_POSEIDON_INFO("Successfully connected to MongoDB slave server.");
 					} catch(std::exception &e){
 						LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 						sleep_for_reconnection();
@@ -350,8 +357,8 @@ namespace {
 				try {
 					really_pump_operations(master_conn, slave_conn);
 					should_retry = false;
-				} catch(MySql::Exception &e){
-					LOG_POSEIDON_WARNING("MySql::Exception thrown: schema = ", e.get_schema(),
+				} catch(MongoDb::Exception &e){
+					LOG_POSEIDON_WARNING("MongoDb::Exception thrown: database = ", e.get_database(),
 						", code = ", e.get_code(), ", what = ", e.what());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
@@ -372,11 +379,11 @@ namespace {
 			}
 
 			atomic_store(m_alive, false, ATOMIC_RELEASE);
-			LOG_POSEIDON_INFO("MySQL thread stopped.");
+			LOG_POSEIDON_INFO("MongoDB thread stopped.");
 		}
 
-		void really_pump_operations(const boost::shared_ptr<MySql::Connection> &master_conn,
-			const boost::shared_ptr<MySql::Connection> &slave_conn)
+		void really_pump_operations(const boost::shared_ptr<MongoDb::Connection> &master_conn,
+			const boost::shared_ptr<MongoDb::Connection> &slave_conn)
 		{
 			PROFILE_ME;
 
@@ -402,7 +409,7 @@ namespace {
 				const AUTO_REF(operation, elem->operation);
 				boost::exception_ptr except;
 
-				std::string query;
+				MongoDb::BsonBuilder query;
 				long err_code = 0;
 				char message[4096];
 				std::size_t message_len = 0;
@@ -421,12 +428,12 @@ namespace {
 					}
 				}
 				if(execute_it){
-					query = operation->generate_sql();
+					query = operation->generate_bson();
 					try {
-						LOG_POSEIDON_DEBUG("Executing SQL: table_name = ", operation->get_table_name(), ", query = ", query);
+						LOG_POSEIDON_DEBUG("Executing SQL: collection_name = ", operation->get_collection_name());
 						operation->execute(conn, query);
-					} catch(MySql::Exception &e){
-						LOG_POSEIDON_WARNING("MySql::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
+					} catch(MongoDb::Exception &e){
+						LOG_POSEIDON_WARNING("MongoDb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
 						// except = boost::current_exception();
 						except = boost::copy_exception(e);
 
@@ -438,14 +445,14 @@ namespace {
 						// except = boost::current_exception();
 						except = boost::copy_exception(e);
 
-						err_code = ER_UNKNOWN_ERROR;
+						err_code = 99999;
 						message_len = std::min(std::strlen(e.what()), sizeof(message));
 						std::memcpy(message, e.what(), message_len);
 					} catch(...){
 						LOG_POSEIDON_WARNING("Unknown exception thrown");
 						except = boost::current_exception();
 
-						err_code = ER_UNKNOWN_ERROR;
+						err_code = 99999;
 						message_len = 17;
 						std::memcpy(message, "Unknown exception", 17);
 					}
@@ -456,13 +463,13 @@ namespace {
 					const AUTO(retry_count, ++elem->retry_count);
 					if(retry_count < g_max_retry_count){
 						LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-							"Going to retry MySQL operation: retry_count = ", retry_count);
+							"Going to retry MongoDB operation: retry_count = ", retry_count);
 						elem->due_time = now + (g_retry_init_delay << retry_count);
 						boost::rethrow_exception(except);
 					}
 
 					LOG_POSEIDON_ERROR("Max retry count exceeded.");
-					dump_sql_to_file(query, err_code, message, message_len);
+					dump_bson_to_file(query, err_code, message, message_len);
 					elem->operation->set_exception(except);
 				} else {
 					elem->operation->set_success();
@@ -473,11 +480,11 @@ namespace {
 			}
 		}
 
-		void dump_sql_to_file(const std::string &query, long err_code, const char *message, std::size_t message_len){
+		void dump_bson_to_file(const MongoDb::BsonBuilder &query, long err_code, const char *message, std::size_t message_len){
 			PROFILE_ME;
 
 			if(g_dump_dir.empty()){
-				LOG_POSEIDON_WARNING("MySQL dump is disabled.");
+				LOG_POSEIDON_WARNING("MongoDB dump is disabled.");
 				return;
 			}
 
@@ -499,9 +506,9 @@ namespace {
 				std::abort();
 			}
 
-			LOG_POSEIDON_INFO("Writing MySQL dump...");
+			LOG_POSEIDON_INFO("Writing MongoDB dump...");
 			std::string dump;
-			dump.reserve(1024);
+			dump.reserve(4096);
 			dump.append("-- Time = ");
 			len = format_time(temp, sizeof(temp), local_now, false);
 			dump.append(temp, len);
@@ -511,7 +518,7 @@ namespace {
 			dump.append(", Description = ");
 			dump.append(message, message_len);
 			dump.append("\n");
-			dump.append(query);
+			dump.append(Http::base64_encode(query.build()));
 			dump.append(";\n\n");
 
 			const Mutex::UniqueLock lock(g_dump_mutex);
@@ -528,7 +535,7 @@ namespace {
 	public:
 		void start(){
 			const Mutex::UniqueLock lock(m_mutex);
-			Thread(boost::bind(&MySqlThread::thread_proc, this), " D  ").swap(m_thread);
+			Thread(boost::bind(&MongoDbThread::thread_proc, this), " D  ").swap(m_thread);
 			atomic_store(m_running, true, ATOMIC_RELEASE);
 			atomic_store(m_alive, true, ATOMIC_RELEASE);
 		}
@@ -546,7 +553,6 @@ namespace {
 		void wait_till_idle(){
 			for(;;){
 				std::size_t pending_objects;
-				std::string current_sql;
 				bool alive;
 				{
 					const Mutex::UniqueLock lock(m_mutex);
@@ -554,24 +560,23 @@ namespace {
 					if(pending_objects == 0){
 						break;
 					}
-					current_sql = m_queue.front().operation->generate_sql();
 					alive = atomic_load(m_alive, ATOMIC_CONSUME);
 					atomic_store(m_urgent, true, ATOMIC_RELEASE);
 					m_new_operation.signal();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_sql = ", current_sql);
+					"Waiting for SQL queries to complete: pending_objects = ", pending_objects);
 
 				if(!alive){
-					LOG_POSEIDON_ERROR("MySQL thread seems dead before the queue is emptied. Trying to recover...");
+					LOG_POSEIDON_ERROR("MongoDB thread seems dead before the queue is emptied. Trying to recover...");
 					try {
 						if(m_thread.joinable()){
 							m_thread.join();
 						}
-						LOG_POSEIDON_WARNING("Recreating MySQL thread: pending_objects = ", pending_objects);
+						LOG_POSEIDON_WARNING("Recreating MongoDB thread: pending_objects = ", pending_objects);
 						start();
-					} catch(MySql::Exception &e){
-						LOG_POSEIDON_WARNING("MySql::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
+					} catch(MongoDb::Exception &e){
+						LOG_POSEIDON_WARNING("MongoDb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
 					} catch(std::exception &e){
 						LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 					} catch(...){
@@ -603,8 +608,8 @@ namespace {
 
 			const Mutex::UniqueLock lock(m_mutex);
 			if(!atomic_load(m_running, ATOMIC_CONSUME)){
-				LOG_POSEIDON_ERROR("MySQL thread is being shut down.");
-				DEBUG_THROW(Exception, sslit("MySQL thread is being shut down"));
+				LOG_POSEIDON_ERROR("MongoDB thread is being shut down.");
+				DEBUG_THROW(Exception, sslit("MongoDB thread is being shut down"));
 			}
 			m_queue.push_back(OperationQueueElement(STD_MOVE(operation), due_time));
 			OperationQueueElement *const elem = &m_queue.back();
@@ -630,22 +635,22 @@ namespace {
 	volatile bool g_running = false;
 
 	Mutex g_thread_mutex;
-	boost::container::flat_map<const char *, boost::shared_ptr<MySqlThread>, TableNameComparator> g_threads;
+	boost::container::flat_map<const char *, boost::shared_ptr<MongoDbThread>, TableNameComparator> g_threads;
 
-	void submit_operation_by_table(const char *table,
+	void submit_operation_by_collection(const char *collection,
 		boost::shared_ptr<OperationBase> operation, bool urgent)
 	{
 		PROFILE_ME;
 
-		boost::shared_ptr<MySqlThread> thread;
+		boost::shared_ptr<MongoDbThread> thread;
 		{
 			const Mutex::UniqueLock lock(g_thread_mutex);
-			AUTO(it, g_threads.find(table));
+			AUTO(it, g_threads.find(collection));
 			if(it == g_threads.end()){
-				LOG_POSEIDON_INFO("Creating new MySQL thread: table = ", table);
-				thread = boost::make_shared<MySqlThread>();
+				LOG_POSEIDON_INFO("Creating new MongoDB thread: collection = ", collection);
+				thread = boost::make_shared<MongoDbThread>();
 				thread->start();
-				it = g_threads.emplace(table, thread).first;
+				it = g_threads.emplace(collection, thread).first;
 			} else {
 				thread = it->second;
 			}
@@ -670,59 +675,56 @@ namespace {
 	}
 }
 
-void MySqlDaemon::start(){
+void MongoDbDaemon::start(){
 	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MySQL daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MongoDB daemon...");
 
-	MainConfig::get(g_server_addr, "mysql_server_addr");
-	LOG_POSEIDON_DEBUG("MySQL server addr = ", g_server_addr);
+	MainConfig::get(g_server_addr, "mongodb_server_addr");
+	LOG_POSEIDON_DEBUG("MongoDB server addr = ", g_server_addr);
 
-	MainConfig::get(g_server_port, "mysql_server_port");
-	LOG_POSEIDON_DEBUG("MySQL server port = ", g_server_port);
+	MainConfig::get(g_server_port, "mongodb_server_port");
+	LOG_POSEIDON_DEBUG("MongoDB server port = ", g_server_port);
 
-	MainConfig::get(g_slave_addr, "mysql_slave_addr");
-	LOG_POSEIDON_DEBUG("MySQL slave addr = ", g_slave_addr);
+	MainConfig::get(g_slave_addr, "mongodb_slave_addr");
+	LOG_POSEIDON_DEBUG("MongoDB slave addr = ", g_slave_addr);
 
-	MainConfig::get(g_slave_port, "mysql_slave_port");
-	LOG_POSEIDON_DEBUG("MySQL slave port = ", g_slave_port);
+	MainConfig::get(g_slave_port, "mongodb_slave_port");
+	LOG_POSEIDON_DEBUG("MongoDB slave port = ", g_slave_port);
 
-	MainConfig::get(g_username, "mysql_username");
-	LOG_POSEIDON_DEBUG("MySQL username = ", g_username);
+//	MainConfig::get(g_username, "mongodb_username");
+//	LOG_POSEIDON_DEBUG("MongoDB username = ", g_username);
 
-	MainConfig::get(g_password, "mysql_password");
-	LOG_POSEIDON_DEBUG("MySQL password = ", g_password);
+//	MainConfig::get(g_password, "mongodb_password");
+//	LOG_POSEIDON_DEBUG("MongoDB password = ", g_password);
 
-	MainConfig::get(g_schema, "mysql_schema");
-	LOG_POSEIDON_DEBUG("MySQL schema = ", g_schema);
+	MainConfig::get(g_database, "mongodb_database");
+	LOG_POSEIDON_DEBUG("MongoDB database = ", g_database);
 
-	MainConfig::get(g_use_ssl, "mysql_use_ssl");
-	LOG_POSEIDON_DEBUG("MySQL use ssl = ", g_use_ssl);
+//	MainConfig::get(g_use_ssl, "mongodb_use_ssl");
+//	LOG_POSEIDON_DEBUG("MongoDB use ssl = ", g_use_ssl);
 
-	MainConfig::get(g_charset, "mysql_charset");
-	LOG_POSEIDON_DEBUG("MySQL charset = ", g_charset);
+	MainConfig::get(g_dump_dir, "mongodb_dump_dir");
+	LOG_POSEIDON_DEBUG("MongoDB dump dir = ", g_dump_dir);
 
-	MainConfig::get(g_dump_dir, "mysql_dump_dir");
-	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_dump_dir);
+	MainConfig::get(g_save_delay, "mongodb_save_delay");
+	LOG_POSEIDON_DEBUG("MongoDB save delay = ", g_save_delay);
 
-	MainConfig::get(g_save_delay, "mysql_save_delay");
-	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_save_delay);
+	MainConfig::get(g_reconn_delay, "mongodb_reconn_delay");
+	LOG_POSEIDON_DEBUG("MongoDB reconnect delay = ", g_reconn_delay);
 
-	MainConfig::get(g_reconn_delay, "mysql_reconn_delay");
-	LOG_POSEIDON_DEBUG("MySQL reconnect delay = ", g_reconn_delay);
+	MainConfig::get(g_max_retry_count, "mongodb_max_retry_count");
+	LOG_POSEIDON_DEBUG("MongoDB max retry count = ", g_max_retry_count);
 
-	MainConfig::get(g_max_retry_count, "mysql_max_retry_count");
-	LOG_POSEIDON_DEBUG("MySQL max retry count = ", g_max_retry_count);
-
-	MainConfig::get(g_retry_init_delay, "mysql_retry_init_delay");
-	LOG_POSEIDON_DEBUG("MySQL retry init delay = ", g_retry_init_delay);
+	MainConfig::get(g_retry_init_delay, "mongodb_retry_init_delay");
+	LOG_POSEIDON_DEBUG("MongoDB retry init delay = ", g_retry_init_delay);
 
 	if(!g_dump_dir.empty()){
 		const AUTO(placeholder_path, g_dump_dir + "/placeholder");
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Checking whether MySQL dump directory is writeable: test_path = ", placeholder_path);
+			"Checking whether MongoDB dump directory is writeable: test_path = ", placeholder_path);
 		UniqueFile dump_file;
 		if(!dump_file.reset(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644))){
 			const int err_code = errno;
@@ -731,13 +733,13 @@ void MySqlDaemon::start(){
 		}
 	}
 
-	LOG_POSEIDON_INFO("MySQL daemon started.");
+	LOG_POSEIDON_INFO("MongoDB daemon started.");
 }
-void MySqlDaemon::stop(){
+void MongoDbDaemon::stop(){
 	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MySQL daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MongoDB daemon...");
 
 	for(;;){
 		VALUE_TYPE(g_threads) threads;
@@ -749,20 +751,20 @@ void MySqlDaemon::stop(){
 			break;
 		}
 		for(AUTO(it, threads.begin()); it != threads.end(); ++it){
-			LOG_POSEIDON_INFO("Stopping MySQL thread: table = ", it->first);
+			LOG_POSEIDON_INFO("Stopping MongoDB thread: collection = ", it->first);
 			it->second->stop();
 		}
 		for(AUTO(it, threads.begin()); it != threads.end(); ++it){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Waiting for MySQL thread to terminate: table = ", it->first);
+				"Waiting for MongoDB thread to terminate: collection = ", it->first);
 			it->second->safe_join();
 		}
 	}
 
-	LOG_POSEIDON_INFO("MySQL daemon stopped.");
+	LOG_POSEIDON_INFO("MongoDB daemon stopped.");
 }
 
-boost::shared_ptr<MySql::Connection> MySqlDaemon::create_connection(bool from_slave){
+boost::shared_ptr<MongoDb::Connection> MongoDbDaemon::create_connection(bool from_slave){
 	AUTO(addr, &g_server_addr);
 	AUTO(port, &g_server_port);
 	if(from_slave){
@@ -773,10 +775,10 @@ boost::shared_ptr<MySql::Connection> MySqlDaemon::create_connection(bool from_sl
 			port = &g_slave_port;
 		}
 	}
-	return MySql::Connection::create(*addr, *port, g_username, g_password, g_schema, g_use_ssl, g_charset);
+	return MongoDb::Connection::create(*addr, *port, from_slave, g_database);
 }
 
-void MySqlDaemon::wait_for_all_async_operations(){
+void MongoDbDaemon::wait_for_all_async_operations(){
 	VALUE_TYPE(g_threads) threads;
 	{
 		const Mutex::UniqueLock lock(g_thread_mutex);
@@ -788,44 +790,44 @@ void MySqlDaemon::wait_for_all_async_operations(){
 	}
 }
 
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_saving(
-	boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace, bool urgent)
+boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_saving(
+	boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace, bool urgent)
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
-	const char *const table_name = object->get_table_name();
+	const char *const collection_name = object->get_collection_name();
 	AUTO(operation, boost::make_shared<SaveOperation>(promise, STD_MOVE(object), to_replace));
-	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), urgent);
+	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), urgent);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_loading(
-	boost::shared_ptr<MySql::ObjectBase> object, std::string query)
+boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_loading(
+	boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query)
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
-	const char *const table_name = object->get_table_name();
+	const char *const collection_name = object->get_collection_name();
 	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)));
-	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
+	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_deleting(
-	const char *table_hint, std::string query)
+boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
+	const char *collection_hint, MongoDb::BsonBuilder query, bool delete_all)
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
-	const char *const table_name = table_hint;
-	AUTO(operation, boost::make_shared<DeleteOperation>(promise, table_hint, STD_MOVE(query)));
-	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
+	const char *const collection_name = collection_hint;
+	AUTO(operation, boost::make_shared<DeleteOperation>(promise, collection_hint, STD_MOVE(query), delete_all));
+	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_loading(
-	ObjectFactory factory, const char *table_hint, std::string query)
+boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_batch_loading(
+	ObjectFactory factory, const char *collection_hint, MongoDb::BsonBuilder query, std::size_t begin, std::size_t limit)
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
-	const char *const table_name = table_hint;
-	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(factory), table_hint, STD_MOVE(query)));
-	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
+	const char *const collection_name = collection_hint;
+	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(factory), collection_hint, STD_MOVE(query), begin, limit));
+	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
 
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_waiting_for_all_async_operations(){
+boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_waiting_for_all_async_operations(){
 	AUTO(promise, boost::make_shared<JobPromise>());
 	AUTO(counter, boost::make_shared<volatile std::size_t>());
 	AUTO(operation, boost::make_shared<WaitOperation>(promise, counter));

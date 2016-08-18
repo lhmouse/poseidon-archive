@@ -35,7 +35,7 @@ int file_get_contents_nothrow(StreamBuffer &contents, const char *path){
 		file_get_contents(contents, path);
 		return 0;
 	} catch(SystemException &e){
-		return e.code();
+		return e.get_code();
 	}
 }
 
@@ -60,7 +60,7 @@ int file_put_contents_nothrow(const char *path, StreamBuffer contents, bool appe
 		file_put_contents(path, STD_MOVE(contents), append);
 		return 0;
 	} catch(SystemException &e){
-		return e.code();
+		return e.get_code();
 	}
 }
 

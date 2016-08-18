@@ -41,7 +41,7 @@ namespace Cbpp {
 				really_perform(client);
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Cbpp::Exception thrown: status_code = ", e.status_code(), ", what = ", e.what());
+					"Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 				client->force_shutdown();
 				throw;
 			} catch(std::exception &e){

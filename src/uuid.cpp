@@ -14,12 +14,6 @@
 namespace Poseidon {
 
 namespace {
-	inline boost::uint32_t rdtsc_low(){
-		boost::uint32_t ret;
-		__asm__ __volatile__("rdtsc \n" : "=a"(ret) : : "edx");
-		return ret;
-	}
-
 	const unsigned char MIN_BYTES[16] = {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	const unsigned char MAX_BYTES[16] = {

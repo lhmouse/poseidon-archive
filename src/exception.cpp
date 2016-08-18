@@ -11,7 +11,7 @@ Exception::Exception(const char *file, std::size_t line, const char *func, Share
 	: m_file(file), m_line(line), m_func(func), m_message(STD_MOVE(message))
 {
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Constructing Exception: file = ", m_file, ", line = ", m_line, ", func = ", m_func, ", message = ", m_message);
+		"Constructing Exception: file = ", get_file(), ", line = ", get_line(), ", func = ", get_func(), ", message = ", get_message());
 }
 Exception::~Exception() NOEXCEPT {
 }
