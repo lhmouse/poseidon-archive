@@ -238,7 +238,7 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
 				}
 				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_ERROR("Name not found: ", name);
+					LOG_POSEIDON_ERROR("Field not found: name = ", name, ", _id = ", do_get_oid());
 					DEBUG_THROW(BasicException, sslit("Name not found"));
 				}
 				::gboolean val;
@@ -254,7 +254,7 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
 				}
 				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_ERROR("Name not found: ", name);
+					LOG_POSEIDON_ERROR("Field not found: name = ", name, ", _id = ", do_get_oid());
 					DEBUG_THROW(BasicException, sslit("Name not found"));
 				}
 				::gint64 val;
@@ -270,7 +270,7 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
 				}
 				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_ERROR("Name not found: ", name);
+					LOG_POSEIDON_ERROR("Field not found: name = ", name, ", _id = ", do_get_oid());
 					DEBUG_THROW(BasicException, sslit("Name not found"));
 				}
 				::gint64 val;
@@ -286,7 +286,7 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
 				}
 				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_ERROR("Name not found: ", name);
+					LOG_POSEIDON_ERROR("Field not found: name = ", name, ", _id = ", do_get_oid());
 					DEBUG_THROW(BasicException, sslit("Name not found"));
 				}
 				::gdouble val;
@@ -302,7 +302,7 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
 				}
 				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_ERROR("Name not found: ", name);
+					LOG_POSEIDON_ERROR("Field not found: name = ", name, ", _id = ", do_get_oid());
 					DEBUG_THROW(BasicException, sslit("Name not found"));
 				}
 				const ::gchar *val;
@@ -318,7 +318,7 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
 				}
 				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_ERROR("Name not found: ", name);
+					LOG_POSEIDON_ERROR("Field not found: name = ", name, ", _id = ", do_get_oid());
 					DEBUG_THROW(BasicException, sslit("Name not found"));
 				}
 				::gint64 val;
@@ -334,7 +334,7 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
 				}
 				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_ERROR("Name not found: ", name);
+					LOG_POSEIDON_ERROR("Field not found: name = ", name, ", _id = ", do_get_oid());
 					DEBUG_THROW(BasicException, sslit("Name not found"));
 				}
 				const ::gchar *val;
@@ -354,7 +354,7 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
 				}
 				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_ERROR("Name not found: ", name);
+					LOG_POSEIDON_ERROR("Field not found: name = ", name, ", _id = ", do_get_oid());
 					DEBUG_THROW(BasicException, sslit("Name not found"));
 				}
 				::bson_binary_subtype subtype;
@@ -372,7 +372,7 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
 				}
 				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_ERROR("Name not found: ", name);
+					LOG_POSEIDON_ERROR("Field not found: name = ", name, ", _id = ", do_get_oid());
 					DEBUG_THROW(BasicException, sslit("Name not found"));
 				}
 				const ::gchar *val, *options;

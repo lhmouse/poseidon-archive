@@ -5,6 +5,8 @@
 #define POSEIDON_MONGODB_OID_HPP_
 
 #include "../cxx_ver.hpp"
+#include <iosfwd>
+#include <string>
 #include <cstring>
 #include <boost/array.hpp>
 #include <boost/cstdint.hpp>
@@ -38,6 +40,9 @@ namespace MongoDb {
 		explicit Oid(const boost::array<unsigned char, 12> &bytes){
 			std::memcpy(m_storage.bytes, bytes.data(), 12);
 		}
+		// 字符串不合法则抛出异常。
+		explicit Oid(const char (&str)[24]);
+		explicit Oid(const std::string &str);
 
 	public:
 		CONSTEXPR const unsigned char *begin() const {
@@ -61,6 +66,12 @@ namespace MongoDb {
 		CONSTEXPR std::size_t size() const {
 			return 12;
 		}
+
+		void to_string(char (&str)[24], bool upper_case = true) const;
+		void to_string(std::string &str, bool upper_case = true) const;
+		std::string to_string(bool upper_case = true) const;
+		bool from_string(const char (&str)[24]);
+		bool from_string(const std::string &str);
 
 	public:
 		const unsigned char &operator[](unsigned index) const {
@@ -89,6 +100,8 @@ namespace MongoDb {
 	inline bool operator>=(const Oid &lhs, const Oid &rhs){
 		return std::memcmp(lhs.begin(), rhs.begin(), 12) >= 0;
 	}
+
+	extern std::ostream &operator<<(std::ostream &os, const Oid &rhs);
 }
 
 }
