@@ -27,9 +27,9 @@ namespace MongoDb {
 
 #define COPY_BE(field_, src_)	\
 		do {	\
-			boost::uint32_t temp_;	\
-			store_be(temp_, src_);	\
-			std::memcpy(&(field_), &temp_, sizeof(field_));	\
+			boost::uint32_t temp_[1];	\
+			store_be(temp_[0], (src_));	\
+			std::memcpy(&(field_), reinterpret_cast<char *>(temp_ + 1) - sizeof(field_), sizeof(field_));	\
 		} while(0)
 
 		Oid ret;
@@ -39,7 +39,6 @@ namespace MongoDb {
 		COPY_BE(ret.m_storage.inc, auto_inc);
 		return ret;
 	}
-
 
 	Oid::Oid(const char (&str)[24]){
 		if(!from_string(str)){
