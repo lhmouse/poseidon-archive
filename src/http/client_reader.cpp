@@ -277,6 +277,9 @@ namespace Http {
 	}
 
 	bool ClientReader::is_content_till_eof() const {
+		if(m_state < S_IDENTITY){
+			return true;
+		}
 		return m_content_length == CONTENT_TILL_EOF;
 	}
 	bool ClientReader::terminate_content(){

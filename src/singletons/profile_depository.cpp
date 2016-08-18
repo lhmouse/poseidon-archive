@@ -68,16 +68,11 @@ void ProfileDepository::accumulate(const char *file, unsigned long line, const c
 	double total, double exclusive) NOEXCEPT
 {
 	try {
-		Mutex::UniqueLock lock(g_mutex);
+		const Mutex::UniqueLock lock(g_mutex);
 		AUTO_REF(counters, g_profile[ProfileKey(file, line, func)]);
-		lock.unlock();
-
 		atomic_add(counters.samples,      1,               ATOMIC_RELAXED);
 		atomic_add(counters.ns_total,     total * 1e6,     ATOMIC_RELAXED);
 		atomic_add(counters.ns_exclusive, exclusive * 1e6, ATOMIC_RELAXED);
-
-//      LOG_POSEIDON_TRACE("Accumulated profile info: file = ", file, ", line = ", line,
-//          ", func = ", func, ", total = ", total, " s, exclusive = ", exclusive, " s");
 	} catch(...){
 	}
 }
