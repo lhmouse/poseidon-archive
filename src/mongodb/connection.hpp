@@ -50,7 +50,6 @@ namespace MongoDb {
 		boost::uint64_t get_datetime(const char *name) const;
 		Uuid get_uuid(const char *name) const;
 		std::string get_blob(const char *name) const;
-		std::string get_regex(const char *name) const;
 	};
 }
 

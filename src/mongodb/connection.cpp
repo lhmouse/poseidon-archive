@@ -369,22 +369,6 @@ namespace MongoDb {
 				}
 				return std::string(reinterpret_cast<const char *>(data), static_cast<std::size_t>(size));
 			}
-			std::string do_get_regex(const char *name) const {
-				if(!m_result_cursor){
-					LOG_POSEIDON_WARNING("No result returned from MongoDB server.");
-					DEBUG_THROW(BasicException, sslit("MongoDB: No result returned from MongoDB server"));
-				}
-				if(!::bson_cursor_find(m_result_cursor.get(), name)){
-					LOG_POSEIDON_DEBUG("Field not found: name = ", name, ", _id = ", do_get_oid());
-					return std::string();
-				}
-				const ::gchar *val, *options;
-				if(!::bson_cursor_get_regex(m_result_cursor.get(), &val, &options)){
-					LOG_POSEIDON_ERROR("Unexpected BSON type: type = ", static_cast<int>(::bson_cursor_type(m_result_cursor.get())));
-					DEBUG_THROW(BasicException, sslit("Unexpected BSON type"));
-				}
-				return std::string(val);
-			}
 		};
 	}
 
@@ -443,9 +427,6 @@ namespace MongoDb {
 	}
 	std::string Connection::get_blob(const char *name) const {
 		return static_cast<const DelegatedConnection &>(*this).do_get_blob(name);
-	}
-	std::string Connection::get_regex(const char *name) const {
-		return static_cast<const DelegatedConnection &>(*this).do_get_regex(name);
 	}
 }
 

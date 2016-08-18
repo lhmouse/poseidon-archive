@@ -91,9 +91,21 @@ namespace MongoDb {
 		elem.large.swap(value);
 		m_queue.push_back(STD_MOVE(elem));
 	}
-	void BsonBuilder::append_regex(SharedNts name, std::string value){
+
+	void BsonBuilder::append_regex(SharedNts name, std::string value, const char *options){
 		Element elem = { T_REGEX, STD_MOVE(name) };
 		elem.large.swap(value);
+		std::size_t options_len = 0;
+		if(options){
+			options_len = std::strlen(options);
+		}
+		if(options_len > 0){
+			if(options_len > sizeof(elem.small) - 1){
+				options_len = sizeof(elem.small) - 1;
+			}
+			std::memcpy(elem.small, options, options_len);
+		}
+		elem.small[options_len] = 0;
 		m_queue.push_back(STD_MOVE(elem));
 	}
 	void BsonBuilder::append_object(SharedNts name, const BsonBuilder &value){
@@ -229,7 +241,7 @@ namespace MongoDb {
 				if(val_int32 == 0){
 					break;
 				}
-				if(!::bson_append_regex(b.get(), it->name.get(), it->large.c_str(), "")){
+				if(!::bson_append_regex(b.get(), it->name.get(), it->large.c_str(), it->small)){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_regex() failed"), -1);
 				}

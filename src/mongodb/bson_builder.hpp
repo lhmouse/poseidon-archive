@@ -54,7 +54,8 @@ namespace MongoDb {
 		void append_datetime(SharedNts name, boost::uint64_t value);
 		void append_uuid(SharedNts name, const Uuid &value);
 		void append_blob(SharedNts name, std::string value);
-		void append_regex(SharedNts name, std::string value);
+
+		void append_regex(SharedNts name, std::string value, const char *options = "");
 		void append_object(SharedNts name, const BsonBuilder &value);
 		void append_array(SharedNts name, const BsonBuilder &value);
 

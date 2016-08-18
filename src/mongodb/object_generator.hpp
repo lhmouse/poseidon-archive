@@ -29,7 +29,6 @@ private:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 #undef FIELD_BLOB
-#undef FIELD_REGEX
 
 #define FIELD_BOOLEAN(name_)                bool name_;
 #define FIELD_SIGNED(name_)                 ::boost::int64_t name_;
@@ -39,7 +38,6 @@ private:
 #define FIELD_DATETIME(name_)               ::boost::uint64_t name_;
 #define FIELD_UUID(name_)                   ::Poseidon::Uuid name_;
 #define FIELD_BLOB(name_)                   ::std::string name_;
-#define FIELD_REGEX(name_)                  ::std::string name_;
 
 	MONGODB_OBJECT_FIELDS
 
@@ -55,7 +53,6 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 #undef FIELD_BLOB
-#undef FIELD_REGEX
 
 #define FIELD_BOOLEAN(name_)                , name_()
 #define FIELD_SIGNED(name_)                 , name_()
@@ -65,7 +62,6 @@ public:
 #define FIELD_DATETIME(name_)               , name_()
 #define FIELD_UUID(name_)                   , name_()
 #define FIELD_BLOB(name_)                   , name_()
-#define FIELD_REGEX(name_)                  , name_()
 
 		MONGODB_OBJECT_FIELDS
 	{
@@ -79,7 +75,6 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 #undef FIELD_BLOB
-#undef FIELD_REGEX
 
 #define FIELD_BOOLEAN(name_)                , bool name_ ## X_
 #define FIELD_SIGNED(name_)                 , ::boost::int64_t name_ ## X_
@@ -89,7 +84,6 @@ public:
 #define FIELD_DATETIME(name_)               , ::boost::uint64_t name_ ## X_
 #define FIELD_UUID(name_)                   , const ::Poseidon::Uuid & name_ ## X_
 #define FIELD_BLOB(name_)                   , ::std::string name_ ## X_
-#define FIELD_REGEX(name_)                  , ::std::string name_ ## X_
 
 	explicit MONGODB_OBJECT_NAME(STRIP_FIRST(void MONGODB_OBJECT_FIELDS))
 		: ::Poseidon::MongoDb::ObjectBase()
@@ -102,7 +96,6 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 #undef FIELD_BLOB
-#undef FIELD_REGEX
 
 #define FIELD_BOOLEAN(name_)                , name_(name_ ## X_)
 #define FIELD_SIGNED(name_)                 , name_(name_ ## X_)
@@ -112,7 +105,6 @@ public:
 #define FIELD_DATETIME(name_)               , name_(name_ ## X_)
 #define FIELD_UUID(name_)                   , name_(name_ ## X_)
 #define FIELD_BLOB(name_)                   , name_(STD_MOVE(name_ ## X_))
-#define FIELD_REGEX(name_)                  , name_(STD_MOVE(name_ ## X_))
 
 		MONGODB_OBJECT_FIELDS
 	{
@@ -129,7 +121,6 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 #undef FIELD_BLOB
-#undef FIELD_REGEX
 
 #define FIELD_BOOLEAN(name_)                const bool & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
@@ -243,22 +234,6 @@ public:
                                             		invalidate();	\
                                             	}	\
                                             }
-#define FIELD_REGEX(name_)                  const ::std::string & unlocked_get_ ## name_() const {	\
-                                            	return name_;	\
-                                            }	\
-                                            ::std::string get_ ## name_() const {	\
-                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
-                                            	return name_;	\
-                                            }	\
-                                            void set_ ## name_(::std::string val_, bool invalidates_ = true){	\
-                                            	{	\
-                                            		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
-                                            		name_.swap(val_);	\
-                                            	}	\
-                                            	if(invalidates_){	\
-                                            		invalidate();	\
-                                            	}	\
-                                            }
 
 	MONGODB_OBJECT_FIELDS
 
@@ -278,7 +253,6 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 #undef FIELD_BLOB
-#undef FIELD_REGEX
 
 #define FIELD_BOOLEAN(name_)                builder_.append_boolean (::Poseidon::sslit( TOKEN_TO_STR(name_) ), get_ ## name_());
 #define FIELD_SIGNED(name_)                 builder_.append_signed  (::Poseidon::sslit( TOKEN_TO_STR(name_) ), get_ ## name_());
@@ -288,7 +262,6 @@ public:
 #define FIELD_DATETIME(name_)               builder_.append_datetime(::Poseidon::sslit( TOKEN_TO_STR(name_) ), get_ ## name_());
 #define FIELD_UUID(name_)                   builder_.append_uuid    (::Poseidon::sslit( TOKEN_TO_STR(name_) ), get_ ## name_());
 #define FIELD_BLOB(name_)                   builder_.append_blob    (::Poseidon::sslit( TOKEN_TO_STR(name_) ), get_ ## name_());
-#define FIELD_REGEX(name_)                  builder_.append_regex   (::Poseidon::sslit( TOKEN_TO_STR(name_) ), get_ ## name_());
 
 		MONGODB_OBJECT_FIELDS
 		return builder_;
@@ -304,7 +277,6 @@ public:
 #undef FIELD_DATETIME
 #undef FIELD_UUID
 #undef FIELD_BLOB
-#undef FIELD_REGEX
 
 #define FIELD_BOOLEAN(name_)                set_ ## name_(conn_->get_boolean ( TOKEN_TO_STR(name_) ), false);
 #define FIELD_SIGNED(name_)                 set_ ## name_(conn_->get_signed  ( TOKEN_TO_STR(name_) ), false);
@@ -314,7 +286,6 @@ public:
 #define FIELD_DATETIME(name_)               set_ ## name_(conn_->get_datetime( TOKEN_TO_STR(name_) ), false);
 #define FIELD_UUID(name_)                   set_ ## name_(conn_->get_uuid    ( TOKEN_TO_STR(name_) ), false);
 #define FIELD_BLOB(name_)                   set_ ## name_(conn_->get_blob    ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_REGEX(name_)                  set_ ## name_(conn_->get_regex   ( TOKEN_TO_STR(name_) ), false);
 
 		MONGODB_OBJECT_FIELDS
 	}
