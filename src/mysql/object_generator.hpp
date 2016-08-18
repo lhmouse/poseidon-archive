@@ -282,7 +282,7 @@ public:
                                             	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
-                                            void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
+                                            void set_ ## name_(double val_, bool invalidates_ = true){	\
                                             	{	\
                                             		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
                                             		name_ = val_;	\

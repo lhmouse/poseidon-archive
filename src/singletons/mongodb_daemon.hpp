@@ -36,9 +36,9 @@ struct MongoDbDaemon {
 	static boost::shared_ptr<const JobPromise> enqueue_for_loading(
 		boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_deleting(
-		const char *collection_hint, MongoDb::BsonBuilder query, bool delete_all);
+		const char *collection, MongoDb::BsonBuilder query, bool delete_all);
 	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(
-		ObjectFactory factory, const char *collection_hint, MongoDb::BsonBuilder query, std::size_t begin = 0, std::size_t limit = 0x7FFFFFFF);
+		ObjectFactory factory, const char *collection, MongoDb::BsonBuilder query, std::size_t begin = 0, std::size_t limit = 0x7FFFFFFF);
 
 	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
 

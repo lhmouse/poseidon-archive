@@ -174,7 +174,7 @@ public:
                                             	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
-                                            void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
+                                            void set_ ## name_(double val_, bool invalidates_ = true){	\
                                             	{	\
                                             		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
                                             		name_ = val_;	\
@@ -222,6 +222,22 @@ public:
                                             	{	\
                                             		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
                                             		name_ = val_;	\
+                                            	}	\
+                                            	if(invalidates_){	\
+                                            		invalidate();	\
+                                            	}	\
+                                            }
+#define FIELD_BLOB(name_)                   const ::std::string & unlocked_get_ ## name_() const {	\
+                                            	return name_;	\
+                                            }	\
+                                            ::std::string get_ ## name_() const {	\
+                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	return name_;	\
+                                            }	\
+                                            void set_ ## name_(::std::string val_, bool invalidates_ = true){	\
+                                            	{	\
+                                            		const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            		name_.swap(val_);	\
                                             	}	\
                                             	if(invalidates_){	\
                                             		invalidate();	\

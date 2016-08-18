@@ -77,12 +77,12 @@ namespace MongoDb {
 		m_queue.push_back(STD_MOVE(elem));
 	}
 	void BsonBuilder::append_datetime(SharedNts name, boost::uint64_t value){
-		Element elem = { T_STRING, STD_MOVE(name) };
+		Element elem = { T_DATETIME, STD_MOVE(name) };
 		aliased_store(elem.small, value);
 		m_queue.push_back(STD_MOVE(elem));
 	}
 	void BsonBuilder::append_uuid(SharedNts name, const Uuid &value){
-		Element elem = { T_STRING, STD_MOVE(name) };
+		Element elem = { T_UUID, STD_MOVE(name) };
 		value.to_string(elem.small);
 		m_queue.push_back(STD_MOVE(elem));
 	}
@@ -124,50 +124,82 @@ namespace MongoDb {
 		UniqueHandle<BsonDeleter> temp;
 		for(AUTO(it, m_queue.begin()); it != m_queue.end(); ++it){
 			switch(it->type){
+				const ::guint8 *ptr_byte;
+				bool val_bool;
+				boost::int64_t val_int64;
+				boost::uint64_t val_uint64;
+				double val_double;
+				::gint32 val_int32;
+
 			case T_OID:
-				if(!::bson_append_oid(b.get(), it->name.get(), reinterpret_cast<const ::guint8 *>(it->small))){
+				ptr_byte = reinterpret_cast<const ::guint8 *>(it->small);
+				if(!::bson_append_oid(b.get(), it->name.get(), ptr_byte)){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_oid() failed"), -1);
 				}
 				break;
 
 			case T_BOOLEAN:
-				if(!::bson_append_boolean(b.get(), it->name.get(), aliased_load<bool>(it->small))){
+				val_bool = aliased_load<bool>(it->small);
+				if(val_bool == false){
+					break;
+				}
+				if(!::bson_append_boolean(b.get(), it->name.get(), val_bool)){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_boolean() failed"), -1);
 				}
 				break;
 
 			case T_SIGNED:
-				if(!::bson_append_int64(b.get(), it->name.get(), aliased_load<boost::int64_t>(it->small))){
+				val_int64 = aliased_load<boost::int64_t>(it->small);
+				if(val_int64 == 0){
+					break;
+				}
+				if(!::bson_append_int64(b.get(), it->name.get(), val_int64)){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_int64() failed"), -1);
 				}
 				break;
 
 			case T_UNSIGNED:
-				if(!::bson_append_int64(b.get(), it->name.get(), static_cast< ::gint64>(aliased_load<boost::uint64_t>(it->small)))){
+				val_uint64 = aliased_load<boost::uint64_t>(it->small);
+				if(val_uint64 == 0){
+					break;
+				}
+				if(!::bson_append_int64(b.get(), it->name.get(), static_cast< ::gint64>(val_uint64))){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_int64() failed"), -1);
 				}
 				break;
 
 			case T_DOUBLE:
-				if(!::bson_append_double(b.get(), it->name.get(), aliased_load<double>(it->small))){
+				val_double = aliased_load<double>(it->small);
+				if(val_double == 0){
+					break;
+				}
+				if(!::bson_append_double(b.get(), it->name.get(), val_double)){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_double() failed"), -1);
 				}
 				break;
 
 			case T_STRING:
-				if(!::bson_append_string(b.get(), it->name.get(), it->large.data(), narrowing_cast_int32(it->large.size()))){
+				val_int32 = narrowing_cast_int32(it->large.size());
+				if(val_int32 == 0){
+					break;
+				}
+				if(!::bson_append_string(b.get(), it->name.get(), it->large.data(), val_int32)){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_string() failed"), -1);
 				}
 				break;
 
 			case T_DATETIME:
-				if(!::bson_append_utc_datetime(b.get(), it->name.get(), static_cast< ::gint64>(aliased_load<boost::uint64_t>(it->small)))){
+				val_uint64 = aliased_load<boost::uint64_t>(it->small);
+				if(val_uint64 == 0){
+					break;
+				}
+				if(!::bson_append_utc_datetime(b.get(), it->name.get(), static_cast< ::gint64>(val_uint64))){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_utc_datetime() failed"), -1);
 				}
@@ -181,15 +213,22 @@ namespace MongoDb {
 				break;
 
 			case T_BLOB:
-				if(!::bson_append_binary(b.get(), it->name.get(), BSON_BINARY_SUBTYPE_USER_DEFINED,
-					reinterpret_cast<const ::guint8 *>(it->large.data()), narrowing_cast_int32(it->large.size())))
-				{
+				ptr_byte = reinterpret_cast<const ::guint8 *>(it->large.data());
+				val_int32 = narrowing_cast_int32(it->large.size());
+				if(val_int32 == 0){
+					break;
+				}
+				if(!::bson_append_binary(b.get(), it->name.get(), BSON_BINARY_SUBTYPE_USER_DEFINED, ptr_byte, val_int32)){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_binary() failed"), -1);
 				}
 				break;
 
 			case T_REGEX:
+				val_int32 = narrowing_cast_int32(it->large.size());
+				if(val_int32 == 0){
+					break;
+				}
 				if(!::bson_append_regex(b.get(), it->name.get(), it->large.c_str(), "")){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to append data to BSON object: bson_append_regex() failed"), -1);
@@ -197,11 +236,18 @@ namespace MongoDb {
 				break;
 
 			case T_OBJECT:
-				if(!temp.reset(::bson_new_from_data(
-					reinterpret_cast<const ::guint8 *>(it->large.data()), narrowing_cast_int32(it->large.size()))))
-				{
+				ptr_byte = reinterpret_cast<const ::guint8 *>(it->large.data());
+				val_int32 = narrowing_cast_int32(it->large.size());
+				if(val_int32 == 0){
+					break;
+				}
+				if(!temp.reset(::bson_new_from_data(ptr_byte, val_int32))){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to create BSON object: bson_new() failed"), -1);
+				}
+				if(!::bson_finish(temp.get())){
+					DEBUG_THROW(ProtocolException,
+						sslit("Failed to finish BSON object: bson_finish() failed"), -1);
 				}
 				if(!::bson_append_document(b.get(), it->name.get(), temp.get())){
 					DEBUG_THROW(ProtocolException,
@@ -210,15 +256,18 @@ namespace MongoDb {
 				break;
 
 			case T_ARRAY:
-				if(it->large.size() > 0x7FFFFFFF){
-					DEBUG_THROW(ProtocolException,
-						sslit("Failed to create BSON object: BSON size is too large"), -1);
+				ptr_byte = reinterpret_cast<const ::guint8 *>(it->large.data());
+				val_int32 = narrowing_cast_int32(it->large.size());
+				if(val_int32 == 0){
+					break;
 				}
-				if(!temp.reset(::bson_new_from_data(reinterpret_cast<const ::guint8 *>(it->large.data()),
-					static_cast< ::gint32>(std::max<std::size_t>(it->large.size(), 1) - 1))))
-				{
+				if(!temp.reset(::bson_new_from_data(ptr_byte, val_int32))){
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to create BSON object: bson_new() failed"), -1);
+				}
+				if(!::bson_finish(temp.get())){
+					DEBUG_THROW(ProtocolException,
+						sslit("Failed to finish BSON object: bson_finish() failed"), -1);
 				}
 				if(!::bson_append_array(b.get(), it->name.get(), temp.get())){
 					DEBUG_THROW(ProtocolException,

@@ -95,7 +95,9 @@ namespace {
 			PROFILE_ME;
 
 			if(m_to_replace){
-//				conn->execute_
+				MongoDb::BsonBuilder bson;
+				bson.append_oid(m_object->get_oid());
+				conn->execute_update(get_collection_name(), bson, true, false, query);
 			} else {
 				conn->execute_insert(get_collection_name(), query);
 			}
@@ -154,14 +156,14 @@ namespace {
 	class DeleteOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const char *const m_collection_hint;
+		const char *const m_collection;
 		const MongoDb::BsonBuilder m_query;
 		const bool m_delete_all;
 
 	public:
 		DeleteOperation(boost::shared_ptr<JobPromise> promise,
-			const char *collection_hint, MongoDb::BsonBuilder query, bool delete_all)
-			: m_promise(STD_MOVE(promise)), m_collection_hint(collection_hint), m_query(STD_MOVE(query)), m_delete_all(delete_all)
+			const char *collection, MongoDb::BsonBuilder query, bool delete_all)
+			: m_promise(STD_MOVE(promise)), m_collection(collection), m_query(STD_MOVE(query)), m_delete_all(delete_all)
 		{
 		}
 
@@ -173,7 +175,7 @@ namespace {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_collection_name() const OVERRIDE {
-			return m_collection_hint;
+			return m_collection;
 		}
 		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			return m_query;
@@ -195,15 +197,15 @@ namespace {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
 		const ObjectFactory m_factory;
-		const char *const m_collection_hint;
+		const char *const m_collection;
 		const MongoDb::BsonBuilder m_query;
 		const std::size_t m_begin;
 		const std::size_t m_limit;
 
 	public:
 		BatchLoadOperation(boost::shared_ptr<JobPromise> promise,
-			ObjectFactory factory, const char *collection_hint, MongoDb::BsonBuilder query, std::size_t begin, std::size_t limit)
-			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_collection_hint(collection_hint)
+			ObjectFactory factory, const char *collection, MongoDb::BsonBuilder query, std::size_t begin, std::size_t limit)
+			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_collection(collection)
 			, m_query(STD_MOVE(query)), m_begin(begin), m_limit(limit)
 		{
 		}
@@ -216,7 +218,7 @@ namespace {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_collection_name() const OVERRIDE {
-			return m_collection_hint;
+			return m_collection;
 		}
 		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			return m_query;
@@ -430,7 +432,7 @@ namespace {
 				if(execute_it){
 					query = operation->generate_bson();
 					try {
-						LOG_POSEIDON_DEBUG("Executing SQL: collection_name = ", operation->get_collection_name());
+						LOG_POSEIDON_DEBUG("Executing BSON query: collection_name = ", operation->get_collection_name());
 						operation->execute(conn, query);
 					} catch(MongoDb::Exception &e){
 						LOG_POSEIDON_WARNING("MongoDb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
@@ -497,11 +499,11 @@ namespace {
 			dump_path.push_back('/');
 			dump_path.append(temp, len);
 
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating SQL dump file: ", dump_path);
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating BSON dump file: ", dump_path);
 			UniqueFile dump_file;
 			if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 				const int err_code = errno;
-				LOG_POSEIDON_FATAL("Error creating SQL dump file: dump_path = ", dump_path,
+				LOG_POSEIDON_FATAL("Error creating BSON dump file: dump_path = ", dump_path,
 					", errno = ", err_code, ", desc = ", get_error_desc(err_code));
 				std::abort();
 			}
@@ -565,7 +567,7 @@ namespace {
 					m_new_operation.signal();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Waiting for SQL queries to complete: pending_objects = ", pending_objects);
+					"Waiting for BSON queries to complete: pending_objects = ", pending_objects);
 
 				if(!alive){
 					LOG_POSEIDON_ERROR("MongoDB thread seems dead before the queue is emptied. Trying to recover...");
@@ -809,20 +811,20 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_loading(
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
-	const char *collection_hint, MongoDb::BsonBuilder query, bool delete_all)
+	const char *collection, MongoDb::BsonBuilder query, bool delete_all)
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
-	const char *const collection_name = collection_hint;
-	AUTO(operation, boost::make_shared<DeleteOperation>(promise, collection_hint, STD_MOVE(query), delete_all));
+	const char *const collection_name = collection;
+	AUTO(operation, boost::make_shared<DeleteOperation>(promise, collection, STD_MOVE(query), delete_all));
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_batch_loading(
-	ObjectFactory factory, const char *collection_hint, MongoDb::BsonBuilder query, std::size_t begin, std::size_t limit)
+	ObjectFactory factory, const char *collection, MongoDb::BsonBuilder query, std::size_t begin, std::size_t limit)
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
-	const char *const collection_name = collection_hint;
-	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(factory), collection_hint, STD_MOVE(query), begin, limit));
+	const char *const collection_name = collection;
+	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(factory), collection, STD_MOVE(query), begin, limit));
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }

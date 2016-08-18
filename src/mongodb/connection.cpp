@@ -54,6 +54,15 @@ namespace MongoDb {
 			}
 		};
 
+		template<typename T>
+		::gint32 narrowing_cast_int32(const T &value){
+			if(value > 0x7FFFFFFF){
+				DEBUG_THROW(ProtocolException,
+					sslit("The value does not fit into a signed 32-bit integer"), -1);
+			}
+			return static_cast< ::gint32>(value);
+		}
+
 #define DEBUG_THROW_MONGODB_EXCEPTION_USING_ERRNO(conn_, database_)	\
 	do {	\
 		const int err_ = errno;	\
@@ -105,13 +114,12 @@ namespace MongoDb {
 			}
 			UniqueHandle<BsonDeleter> format_bson(const BsonBuilder &builder){
 				std::string data = builder.build();
-				if(data.size() > 0x7FFFFFFF){
-					DEBUG_THROW(ProtocolException,
-						sslit("Failed to create BSON object: BSON size is too large"), -1);
+				if(!data.empty()){
+					data.erase(data.end() - 1);
 				}
 				UniqueHandle<BsonDeleter> b;
-				if(!b.reset(::bson_new_from_data(reinterpret_cast<const ::guint8 *>(data.data()),
-					static_cast< ::gint32>(std::max<std::size_t>(data.size(), 1) - 1))))
+				if(!b.reset(::bson_new_from_data(
+					reinterpret_cast<const ::guint8 *>(data.data()), narrowing_cast_int32(data.size()))))
 				{
 					DEBUG_THROW(ProtocolException,
 						sslit("Failed to create BSON object: bson_new() failed"), -1);
@@ -166,19 +174,15 @@ namespace MongoDb {
 			void do_execute_query(const char *collection, const BsonBuilder &query, std::size_t begin, std::size_t limit){
 				do_discard_result();
 
-				if(begin > 0x7FFFFFFF){
-					DEBUG_THROW(BasicException, sslit("MongoDB: Number of documents to skip is too large"));
-				}
-				if(limit > 0x7FFFFFFF){
-					DEBUG_THROW(BasicException, sslit("MongoDB: Number of documents to return is too large"));
-				}
-
 				const AUTO(ns, format_namspace(collection));
 				 ::gint32 flags = MONGO_WIRE_FLAG_QUERY_SLAVE_OK;
 				const AUTO(bq, format_bson(query));
 				AUTO(packet, ::mongo_sync_cmd_query(m_conn.get(), ns.c_str(), flags,
-					static_cast< ::gint32>(begin), static_cast< ::gint32>(limit), bq.get(), NULLPTR));
+					narrowing_cast_int32(begin), narrowing_cast_int32(limit), bq.get(), NULLPTR));
 				if(!packet){
+					if(errno == ENOENT){
+						return;
+					}
 					DEBUG_THROW_MONGODB_EXCEPTION_USING_ERRNO(m_conn.get(), m_database);
 				}
 				if(!m_cursor.reset(::mongo_sync_cursor_new(m_conn.get(), ns.c_str(), packet))){
@@ -194,7 +198,7 @@ namespace MongoDb {
 
 			bool do_fetch_next(){
 				if(!m_cursor){
-					LOG_POSEIDON_WARNING("No query result cursor?");
+					LOG_POSEIDON_DEBUG("No query result.");
 					return false;
 				}
 				if(!::mongo_sync_cursor_next(m_cursor.get())){
