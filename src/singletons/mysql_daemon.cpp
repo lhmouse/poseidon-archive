@@ -769,7 +769,7 @@ boost::shared_ptr<MySql::Connection> MySqlDaemon::create_connection(bool from_sl
 		if(!g_slave_addr.empty()){
 			addr = &g_slave_addr;
 		}
-		if(g_server_port != 0){
+		if(g_slave_port != 0){
 			port = &g_slave_port;
 		}
 	}
