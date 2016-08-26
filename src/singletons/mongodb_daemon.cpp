@@ -33,8 +33,8 @@ namespace {
 	unsigned        g_server_port       = 27017;
 	std::string     g_slave_addr        = VAL_INIT;
 	unsigned        g_slave_port        = 0;
-//	std::string     g_username          = "root";
-//	std::string     g_password          = "root";
+	std::string     g_username          = "";
+	std::string     g_password          = "";
 	std::string     g_database          = "poseidon";
 //	bool            g_use_ssl           = false;
 
@@ -696,11 +696,11 @@ void MongoDbDaemon::start(){
 	MainConfig::get(g_slave_port, "mongodb_slave_port");
 	LOG_POSEIDON_DEBUG("MongoDB slave port = ", g_slave_port);
 
-//	MainConfig::get(g_username, "mongodb_username");
-//	LOG_POSEIDON_DEBUG("MongoDB username = ", g_username);
+	MainConfig::get(g_username, "mongodb_username");
+	LOG_POSEIDON_DEBUG("MongoDB username = ", g_username);
 
-//	MainConfig::get(g_password, "mongodb_password");
-//	LOG_POSEIDON_DEBUG("MongoDB password = ", g_password);
+	MainConfig::get(g_password, "mongodb_password");
+	LOG_POSEIDON_DEBUG("MongoDB password = ", g_password);
 
 	MainConfig::get(g_database, "mongodb_database");
 	LOG_POSEIDON_DEBUG("MongoDB database = ", g_database);
@@ -777,7 +777,7 @@ boost::shared_ptr<MongoDb::Connection> MongoDbDaemon::create_connection(bool fro
 			port = &g_slave_port;
 		}
 	}
-	return MongoDb::Connection::create(*addr, *port, from_slave, g_database);
+	return MongoDb::Connection::create(*addr, *port, from_slave, g_username, g_password, g_database);
 }
 
 void MongoDbDaemon::wait_for_all_async_operations(){

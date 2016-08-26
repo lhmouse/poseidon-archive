@@ -91,13 +91,16 @@ namespace MongoDb {
 
 		public:
 			DelegatedConnection(const char *server_addr, unsigned server_port,
-				bool slave_ok, const char *database)
+				bool slave_ok, const char *user_name, const char *password, const char *database)
 				: m_database(database)
 			{
 				if(!m_conn.reset(::mongo_sync_connect(server_addr, static_cast<int>(server_port), slave_ok))){
 					DEBUG_THROW(SystemException, errno);
 				}
 
+				if(!::mongo_sync_cmd_authenticate(m_conn.get(), database, user_name, password)){
+					DEBUG_THROW(SystemException, errno);
+				}
 				if(!::mongo_sync_conn_set_auto_reconnect(m_conn.get(), true)){
 					DEBUG_THROW(SystemException, errno);
 				}
@@ -373,9 +376,9 @@ namespace MongoDb {
 	}
 
 	boost::shared_ptr<Connection> Connection::create(const char *server_addr, unsigned server_port,
-		bool slave_ok, const char *database)
+		bool slave_ok, const char *user_name, const char *password, const char *database)
 	{
-		return boost::make_shared<DelegatedConnection>(server_addr, server_port, slave_ok, database);
+		return boost::make_shared<DelegatedConnection>(server_addr, server_port, slave_ok, user_name, password, database);
 	}
 
 	Connection::~Connection(){

@@ -21,12 +21,12 @@ namespace MongoDb {
 	class Connection: NONCOPYABLE {
 	public:
 		static boost::shared_ptr<Connection> create(const char *server_addr, unsigned server_port,
-			bool slave_ok, const char *database);
+			bool slave_ok, const char *user_name, const char *password, const char *database);
 
 		static boost::shared_ptr<Connection> create(const std::string &server_addr, unsigned server_port,
-			bool slave_ok, const std::string &database)
+			bool slave_ok, const std::string &user_name, const std::string &password, const std::string &database)
 		{
-			return create(server_addr.c_str(), server_port, slave_ok, database.c_str());
+			return create(server_addr.c_str(), server_port, slave_ok, user_name.c_str(), password.c_str(), database.c_str());
 		}
 
 	public:
