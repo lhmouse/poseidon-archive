@@ -32,7 +32,6 @@ gettext
 make
 g++ *
 libboost-dev
-libmysqlclient-dev
 libssl-dev
 
 * 建议 g++ 版本至少为 4.7 以支持 C++11 特性。
