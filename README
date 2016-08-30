@@ -15,7 +15,6 @@ CBPP *
 HTTP
 WebSocket
 MySQL sync/async access
-MongoDB sync/async access
 
 * CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，
   简介参见 src/main/cbpp/message_base.hpp 中的注释。
@@ -34,7 +33,6 @@ make
 g++ *
 libboost-dev
 libmysqlclient-dev
-libmongo-client-dev
 libssl-dev
 
 * 建议 g++ 版本至少为 4.7 以支持 C++11 特性。
@@ -47,7 +45,6 @@ Rumtime environment requirements
 ===================
 Debian Linux Wheezy *
 MySQL 5.5
-MongoDB 2.0.6
 
 * 这是主要被支持的 Linux 发行版，使用其他发行版的 Linux 不保证兼容性。
   旧版 Debian（例如 Squeeze）有已知的严重问题（例如 g++ 4.4 的 bug 导致运行时

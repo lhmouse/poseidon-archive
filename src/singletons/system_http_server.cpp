@@ -7,7 +7,6 @@
 #include "epoll_daemon.hpp"
 #include "module_depository.hpp"
 #include "profile_depository.hpp"
-#include "mongodb_daemon.hpp"
 #include <signal.h>
 #include "../log.hpp"
 #include "../exception.hpp"
