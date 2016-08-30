@@ -9,8 +9,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <mysql/mysqld_error.h>
-#include <mysql/errmsg.h>
+#include <mysqld_error.h>
+#include <errmsg.h>
 #include "../mysql/object_base.hpp"
 #include "../mysql/exception.hpp"
 #include "../mysql/connection.hpp"

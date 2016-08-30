@@ -9,7 +9,7 @@
 #include <boost/container/flat_map.hpp>
 #include <string.h>
 #include <stdlib.h>
-#include <mysql/mysql.h>
+#include <mysql.h>
 #include "../raii.hpp"
 #include "../log.hpp"
 #include "../time.hpp"

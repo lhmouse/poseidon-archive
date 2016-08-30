@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign subdir-objects
-AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Wno-missing-field-initializers	-pipe -fPIC -DPIC -pthread
+AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Wno-missing-field-initializers	\
+	-pipe -fPIC -DPIC -pthread $(openssl_CFLAGS)
 AM_CXXFLAGS =
 AM_LDFLAGS =
 
@@ -145,7 +146,8 @@ bin_poseidon_SOURCES = \
 	src/main.cpp
 
 bin_poseidon_LDADD = \
-	lib/libposeidon-main.la
+	lib/libposeidon-main.la	\
+	$(openssl_LIBS)
 
 lib_LTLIBRARIES = \
 	lib/libposeidon-main.la

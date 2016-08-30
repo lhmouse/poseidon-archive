@@ -5,7 +5,7 @@
 #include "thread_context.hpp"
 #include "connection.hpp"
 #include <pthread.h>
-#include <mysql/mysql.h>
+#include <mysql.h>
 #include "../exception.hpp"
 #include "../log.hpp"
 
