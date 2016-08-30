@@ -11,7 +11,7 @@ maintainer="lh_mouse"
 provides="mongo-c-driver,bson"
 
 dstdir="$(pwd)"
-tempdir="${dstdir}/temp-$PPID-$SECONDS-$RANDOM"
+tempdir="$(mktemp -d)"
 
 if [[ $EUID -ne 0 ]]; then
 	echo "You must run this script as root."
@@ -20,6 +20,7 @@ fi
 
 [[ -z "${tempdir}" ]] || rm -rf "${tempdir}"
 mkdir -p "${tempdir}"
+trap "rm -rf \"${tempdir}\"" EXIT
 cd "${tempdir}"
 
 _archive="$(basename -- ${pkgsource})"
@@ -32,5 +33,3 @@ make -j4
 checkinstall -y --pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
 	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="${provides}"
 mv *.deb "${dstdir}"/
-
-[[ -z "${tempdir}" ]] || rm -rf "${tempdir}"
