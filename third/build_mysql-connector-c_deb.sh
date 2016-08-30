@@ -2,13 +2,13 @@
 
 set -e
 
-pkgname="libmongoc"
-pkgversion="1.4.0"
-pkglicense="Apache"
-pkggroup="http://mongoc.org/"
-pkgsource="https://github.com/mongodb/mongo-c-driver/releases/download/${pkgversion}/mongo-c-driver-${pkgversion}.tar.gz"
+pkgname="libmysqlclient"
+pkgversion="6.1.6"
+pkglicense="GPL or Commercial (https://www.mysql.com/about/legal/licensing/oem/)"
+pkggroup="https://dev.mysql.com/"
+pkgsource="https://dev.mysql.com/get/Downloads/Connector-C/mysql-connector-c-${pkgversion}-src.tar.gz"
 maintainer="lh_mouse"
-provides="libmongoc-1.0,libbson-1.0"
+provides="libmysqlclient"
 
 dstdir="$(pwd)"
 tempdir="$(mktemp -d)"
@@ -28,7 +28,7 @@ wget -O "${_archive}" "${pkgsource}"
 tar -xzvf "${_archive}"
 
 cd "$(basename "${_archive}" ".tar.gz")"
-CFLAGS='-O3' ./configure --disable-automatic-init-and-cleanup --prefix=/usr/local
+CFLAGS="-O3" cmake . -DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DCMAKE_INSTALL_PREFIX=/usr/local
 make -j4
 checkinstall -y --pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
 	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="${provides}"
