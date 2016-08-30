@@ -6,9 +6,9 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 
-PKG_CHECK_MODULES([openssl], [openssl])
-
 AC_CHECK_LIB([dl], [main], [], [exit -2;])
+AC_CHECK_LIB([anl], [main], [], [exit -2;])
+PKG_CHECK_MODULES([openssl], [openssl])
 AC_CHECK_LIB([mysqlclient], [main], [], [exit -2;])
 
 AM_INIT_AUTOMAKE
