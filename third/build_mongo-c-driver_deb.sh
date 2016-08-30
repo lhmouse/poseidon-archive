@@ -2,6 +2,11 @@
 
 set -e
 
+if [[ $EUID -ne 0 ]]; then
+	echo "You must run this script as root."
+	exit 1
+fi
+
 prefix="/usr/local"
 
 pkgname="libmongoc-dev"
@@ -13,23 +18,17 @@ maintainer="lh_mouse"
 provides="libmongoc-1.0-dev,libbson-1.0-dev"
 
 dstdir="$(pwd)"
-tempdir="$(mktemp -d)"
+tmpdir="$(pwd)/tmp"
 
-if [[ $EUID -ne 0 ]]; then
-	echo "You must run this script as root."
-	exit 1
-fi
-
-[[ -z "${tempdir}" ]] || rm -rf "${tempdir}"
-mkdir -p "${tempdir}"
-trap "rm -rf \"${tempdir}\"" EXIT
-cd "${tempdir}"
+mkdir -p "${tmpdir}"
+cd "${tmpdir}"
 
 _archive="$(basename -- ${pkgsource})"
-wget -O "${_archive}" "${pkgsource}"
+[[ -f "${_archive}" ]] || (wget -O "${_archive}~" "${pkgsource}" && mv -f "${_archive}~" "${_archive}")
+_unpackeddir="$(basename "${_archive}" ".tar.gz")"
+[[ -z "${_unpackeddir}" ]] || rm -rf "${_unpackeddir}"
 tar -xzvf "${_archive}"
-
-cd "$(basename "${_archive}" ".tar.gz")"
+cd "${_unpackeddir}"
 CFLAGS="-O3" ./configure --disable-automatic-init-and-cleanup --prefix="${prefix}"
 make -j4
 

@@ -5,4 +5,4 @@ export CXXFLAGS+=' -O0 -g'
 
 mkdir -p m4
 autoreconf -if
-./configure --enable-shared --disable-static --prefix=/usr
+./configure --enable-shared --disable-static --prefix=/usr/local
