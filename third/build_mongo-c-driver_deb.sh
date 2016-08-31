@@ -40,6 +40,7 @@ mkdir -p "${prefix}/man"
 mkdir -p "${prefix}/sbin"
 mkdir -p "${prefix}/share/doc"
 
-checkinstall -y --pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
+checkinstall --backup=no --nodoc -y	\
+	--pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
 	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="${provides}"
 mv *.deb "${dstdir}/"
