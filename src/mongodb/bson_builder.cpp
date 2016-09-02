@@ -33,12 +33,12 @@ namespace MongoDb {
 		const AUTO(bson, static_cast< ::bson_t *>(impl));
 		char subscript[32];
 		for(AUTO(it, m_elements.begin()); it != m_elements.end(); ++it){
-			SharedNts key;
+			const char *key_str;
 			if(as_array){
 				std::sprintf(subscript, "%lu", static_cast<unsigned long>(it - m_elements.begin()));
-				key = SharedNts::view(subscript);
+				key_str = subscript;
 			} else {
-				key = it->name;
+				key_str = it->name.get();
 			}
 			switch(it->type){
 				{
@@ -49,59 +49,59 @@ namespace MongoDb {
 			CASE(T_OID){
 				::bson_oid_t oid;
 				::bson_oid_init_from_data(&oid, reinterpret_cast<const unsigned char *>(it->small));
-				if(!::bson_append_oid(bson, key.get(), -1, &oid)){
+				if(!::bson_append_oid(bson, key_str, -1, &oid)){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_oid() failed"), -1);
 				}
 			}
 			CASE(T_BOOLEAN){
 				bool value;
 				std::memcpy(&value, it->small, sizeof(value));
-				if(!::bson_append_bool(bson, key.get(), -1, value)){
+				if(!::bson_append_bool(bson, key_str, -1, value)){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_bool() failed"), -1);
 				}
 			}
 			CASE(T_SIGNED){
 				boost::int64_t value;
 				std::memcpy(&value, it->small, sizeof(value));
-				if(!::bson_append_int64(bson, key.get(), -1, value)){
+				if(!::bson_append_int64(bson, key_str, -1, value)){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_int64() failed"), -1);
 				}
 			}
 			CASE(T_UNSIGNED){
 				boost::uint64_t value;
 				std::memcpy(&value, it->small, sizeof(value));
-				if(!::bson_append_int64(bson, key.get(), -1, static_cast<boost::int64_t>(value))){
+				if(!::bson_append_int64(bson, key_str, -1, static_cast<boost::int64_t>(value))){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_int64() failed"), -1);
 				}
 			}
 			CASE(T_DOUBLE){
 				double value;
 				std::memcpy(&value, it->small, sizeof(value));
-				if(!::bson_append_double(bson, key.get(), -1, value)){
+				if(!::bson_append_double(bson, key_str, -1, value)){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_double() failed"), -1);
 				}
 			}
 			CASE(T_STRING){
-				if(!::bson_append_utf8(bson, key.get(), -1, it->large.data(), narrowing_cast_to_int(it->large.size()))){
+				if(!::bson_append_utf8(bson, key_str, -1, it->large.data(), narrowing_cast_to_int(it->large.size()))){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_utf8() failed"), -1);
 				}
 			}
 			CASE(T_DATETIME){
 				boost::uint64_t value;
 				std::memcpy(&value, it->small, sizeof(value));
-				if(!::bson_append_date_time(bson, key.get(), -1, static_cast<boost::int64_t>(value))){
+				if(!::bson_append_date_time(bson, key_str, -1, static_cast<boost::int64_t>(value))){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_date_time() failed"), -1);
 				}
 			}
 			CASE(T_UUID){
 				char str[36];
 				Uuid(it->small).to_string(str);
-				if(!::bson_append_utf8(bson, key.get(), -1, str, sizeof(str))){
+				if(!::bson_append_utf8(bson, key_str, -1, str, sizeof(str))){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_utf8() failed"), -1);
 				}
 			}
 			CASE(T_BLOB){
-				if(!::bson_append_binary(bson, key.get(), -1, BSON_SUBTYPE_USER,
+				if(!::bson_append_binary(bson, key_str, -1, BSON_SUBTYPE_USER,
 					reinterpret_cast<const unsigned char *>(it->large.data()), narrowing_cast_to_uint32(it->large.size())))
 				{
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_binary() failed"), -1);
@@ -109,27 +109,27 @@ namespace MongoDb {
 			}
 
 			CASE(T_JS_CODE){
-				if(!::bson_append_code(bson, key.get(), -1, it->large.c_str())){
+				if(!::bson_append_code(bson, key_str, -1, it->large.c_str())){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_code() failed"), -1);
 				}
 			}
 			CASE(T_REGEX){
-				if(!::bson_append_regex(bson, key.get(), -1, it->large.c_str(), reinterpret_cast<const char *>(it->small))){
+				if(!::bson_append_regex(bson, key_str, -1, it->large.c_str(), reinterpret_cast<const char *>(it->small))){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_regex() failed"), -1);
 				}
 			}
 			CASE(T_MINKEY){
-				if(!::bson_append_minkey(bson, key.get(), -1)){
+				if(!::bson_append_minkey(bson, key_str, -1)){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_minkey() failed"), -1);
 				}
 			}
 			CASE(T_MAXKEY){
-				if(!::bson_append_maxkey(bson, key.get(), -1)){
+				if(!::bson_append_maxkey(bson, key_str, -1)){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_maxkey() failed"), -1);
 				}
 			}
 			CASE(T_NULL){
-				if(!::bson_append_null(bson, key.get(), -1)){
+				if(!::bson_append_null(bson, key_str, -1)){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_null() failed"), -1);
 				}
 			}
@@ -139,7 +139,7 @@ namespace MongoDb {
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_init_static() failed"), -1);
 				}
 				try {
-					if(!::bson_append_document(bson, key.get(), -1, &obj)){
+					if(!::bson_append_document(bson, key_str, -1, &obj)){
 						DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_init_static() failed"), -1);
 					}
 					::bson_destroy(&obj);
@@ -154,7 +154,7 @@ namespace MongoDb {
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_init_static() failed"), -1);
 				}
 				try {
-					if(!::bson_append_array(bson, key.get(), -1, &obj)){
+					if(!::bson_append_array(bson, key_str, -1, &obj)){
 						DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_init_static() failed"), -1);
 					}
 					::bson_destroy(&obj);
