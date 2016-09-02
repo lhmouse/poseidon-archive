@@ -18,12 +18,10 @@ namespace MySql {
 	class Connection : NONCOPYABLE {
 	public:
 		static boost::shared_ptr<Connection> create(const char *server_addr, unsigned server_port,
-			const char *user_name, const char *password, const char *schema,
-			bool use_ssl, const char *charset);
+			const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset);
 
 		static boost::shared_ptr<Connection> create(const std::string &server_addr, unsigned server_port,
-			const std::string &user_name, const std::string &password, const std::string &schema,
-			bool use_ssl, const std::string &charset)
+			const std::string &user_name, const std::string &password, const std::string &schema, bool use_ssl, const std::string &charset)
 		{
 			return create(server_addr.c_str(), server_port,
 				user_name.c_str(), password.c_str(), schema.c_str(), use_ssl, charset.c_str());

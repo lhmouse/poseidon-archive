@@ -28,7 +28,6 @@ namespace MySql {
 				::mysql_close(mysql);
 			}
 		};
-
 		struct ResultDeleter {
 			CONSTEXPR ::MYSQL_RES *operator()() const NOEXCEPT {
 				return NULLPTR;
@@ -63,8 +62,7 @@ namespace MySql {
 
 		public:
 			DelegatedConnection(const char *server_addr, unsigned server_port,
-				const char *user_name, const char *password, const char *schema,
-				bool use_ssl, const char *charset)
+				const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
 				: m_schema(schema)
 				, m_row(NULLPTR), m_lengths(NULLPTR)
 			{
@@ -244,8 +242,8 @@ namespace MySql {
 	boost::shared_ptr<Connection> Connection::create(const char *server_addr, unsigned server_port,
 		const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
 	{
-		return boost::make_shared<DelegatedConnection>(
-			server_addr, server_port, user_name, password, schema, use_ssl, charset);
+		return boost::make_shared<DelegatedConnection>(server_addr, server_port,
+			user_name, password, schema, use_ssl, charset);
 	}
 
 	Connection::~Connection(){

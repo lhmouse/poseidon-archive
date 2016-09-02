@@ -138,15 +138,13 @@ std::string JsonParser::accept_string(std::istream &is){
 	std::string ret;
 	char temp;
 	if(!(is >>temp) || (temp != '\"')){
-		DEBUG_THROW(ProtocolException,
-			sslit("Bad JSON: expecting string open"), -1);
+		DEBUG_THROW(ProtocolException, sslit("JSON parser: String open expected"), -1);
 	}
 
 	is >>std::noskipws;
 	for(;;){
 		if(!(is >>temp)){
-			DEBUG_THROW(ProtocolException,
-				sslit("Bad JSON: expecting string close"), -1);
+			DEBUG_THROW(ProtocolException, sslit("JSON parser: String not closed"), -1);
 		}
 		if(temp == '\"'){
 			if(ret.empty() || (*ret.rbegin() != '\\')){
@@ -170,8 +168,7 @@ std::string JsonParser::accept_string(std::istream &is){
 		}
 
 		if(read == ret.end()){
-			DEBUG_THROW(ProtocolException,
-				sslit("Bad JSON: escape character at end"), -1);
+			DEBUG_THROW(ProtocolException, sslit("JSON parser: Found escape character at the end"), -1);
 		}
 		ch = *read;
 		++read;
@@ -214,8 +211,7 @@ std::string JsonParser::accept_string(std::istream &is){
 
 		case 'u':
 			if(ret.end() - read < 4){
-				DEBUG_THROW(ProtocolException,
-					sslit("Bad JSON: too few hex digits for \\u"), -1);
+				DEBUG_THROW(ProtocolException, sslit("JSON parser: Too few hex digits for \\u"), -1);
 			} else {
 				unsigned code = 0;
 				for(unsigned i = 12; i != (unsigned)-4; i -= 4){
@@ -228,8 +224,7 @@ std::string JsonParser::accept_string(std::istream &is){
 					} else if(('a' <= ch) && (ch <= 'f')){
 						ch -= 'a' - 0x0A;
 					} else {
-						DEBUG_THROW(ProtocolException,
-							sslit("Bad JSON: invalid hex digit"), -1);
+						DEBUG_THROW(ProtocolException, sslit("JSON parser: Invalid hex digits for \\u"), -1);
 					}
 					code |= ch << i;
 				}
@@ -253,8 +248,7 @@ std::string JsonParser::accept_string(std::istream &is){
 			break;
 
 		default:
-			DEBUG_THROW(ProtocolException,
-				sslit("Bad JSON: invalid escape character"), -1);
+			DEBUG_THROW(ProtocolException, sslit("JSON parser: Unknown escaped character sequence"), -1);
 		}
 	}
 	ret.erase(write, ret.end());
@@ -265,20 +259,17 @@ double JsonParser::accept_number(std::istream &is){
 	if(is >>ret){
 		return ret;
 	}
-	DEBUG_THROW(ProtocolException,
-		sslit("Bad JSON: expecting number"), -1);
+	DEBUG_THROW(ProtocolException, sslit("JSON parser: Number expected"), -1);
 }
 JsonObject JsonParser::accept_object(std::istream &is){
 	JsonObject ret;
 	char temp;
 	if(!(is >>temp) || (temp != '{')){
-		DEBUG_THROW(ProtocolException,
-			sslit("Bad JSON: expecting object open"), -1);
+		DEBUG_THROW(ProtocolException, sslit("JSON parser: Object open expected"), -1);
 	}
 	for(;;){
 		if(!(is >>temp)){
-			DEBUG_THROW(ProtocolException,
-				sslit("Bad JSON: end of stream"), -1);
+			DEBUG_THROW(ProtocolException, sslit("JSON parser: Object not closed"), -1);
 		}
 		if(temp == '}'){
 			break;
@@ -289,8 +280,7 @@ JsonObject JsonParser::accept_object(std::istream &is){
 		is.unget();
 		std::string name = accept_string(is);
 		if(!(is >>temp) || (temp != ':')){
-			DEBUG_THROW(ProtocolException,
-				sslit("Bad JSON: expecting colon"), -1);
+			DEBUG_THROW(ProtocolException, sslit("JSON parser: Colon expected"), -1);
 		}
 		JsonElement element = parse_element(is);
 		ret[SharedNts(name)] = STD_MOVE(element);
@@ -301,13 +291,11 @@ JsonArray JsonParser::accept_array(std::istream &is){
 	JsonArray ret;
 	char temp;
 	if(!(is >>temp) || (temp != '[')){
-		DEBUG_THROW(ProtocolException,
-			sslit("Bad JSON: expecting array open"), -1);
+		DEBUG_THROW(ProtocolException, sslit("JSON parser: Array open expected"), -1);
 	}
 	for(;;){
 		if(!(is >>temp)){
-			DEBUG_THROW(ProtocolException,
-				sslit("Bad JSON: end of stream"), -1);
+			DEBUG_THROW(ProtocolException, sslit("JSON parser: Array not closed"), -1);
 		}
 		if(temp == ']'){
 			break;
@@ -324,16 +312,14 @@ JsonArray JsonParser::accept_array(std::istream &is){
 bool JsonParser::accept_boolean(std::istream &is){
 	bool ret;
 	if(!(is >>std::boolalpha >>ret)){
-		DEBUG_THROW(ProtocolException,
-			sslit("Bad JSON: expecting boolean"), -1);
+		DEBUG_THROW(ProtocolException, sslit("JSON parser: Boolean expected"), -1);
 	}
 	return ret;
 }
 JsonNull JsonParser::accept_null(std::istream &is){
 	char temp[5];
 	if(!(is >>std::setw(sizeof(temp)) >>temp) || (std::strcmp(temp, "null") != 0)){
-		DEBUG_THROW(ProtocolException,
-			sslit("Bad JSON: expecting null"), -1);
+		DEBUG_THROW(ProtocolException, sslit("JSON parser: Null expected"), -1);
 	}
 	return JsonNull();
 }
@@ -342,8 +328,7 @@ JsonElement JsonParser::parse_element(std::istream &is){
 	JsonElement ret;
 	char temp;
 	if(!(is >>temp)){
-		DEBUG_THROW(ProtocolException,
-			sslit("Bad JSON: end of stream"), -1);
+		DEBUG_THROW(ProtocolException, sslit("JSON parser: No input character"), -1);
 	}
 	is.unget();
 	switch(temp){
@@ -383,8 +368,7 @@ JsonElement JsonParser::parse_element(std::istream &is){
 		break;
 
 	default:
-		DEBUG_THROW(ProtocolException,
-			sslit("Bad JSON: unknown element type"), -1);
+		DEBUG_THROW(ProtocolException, sslit("JSON parser: Unknown element type"), -1);
 	}
 	return ret;
 }

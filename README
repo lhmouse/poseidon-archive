@@ -15,6 +15,7 @@ CBPP *
 HTTP
 WebSocket
 MySQL sync/async access
+MongoDB sync/async access
 
 * CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，
   简介参见 src/main/cbpp/message_base.hpp 中的注释。
@@ -22,7 +23,7 @@ MySQL sync/async access
   Specification of CBPP can be found in file 'src/main/cbpp/message_base.hpp'.
 
 编译所需工具
-Toolchains required to build
+Toolchains Required to Build
 ===================
 automake
 autoconf
@@ -40,10 +41,11 @@ libboost-dev
   Support for C++98 is deprecated and might be removed in future versions.
 
 运行环境要求
-Rumtime environment requirements
+Rumtime Environment Requirements
 ===================
 Debian Linux Wheezy *
-MySQL 5.5
+MySQL 5.5 #
+MongoDB 2.4 #
 
 * 这是主要被支持的 Linux 发行版，使用其他发行版的 Linux 不保证兼容性。
   旧版 Debian（例如 Squeeze）有已知的严重问题（例如 g++ 4.4 的 bug 导致运行时
@@ -54,8 +56,14 @@ MySQL 5.5
   (e.g. runtime SIGSEGV due to bugs in g++ 4.4) that we are not willing to
   provide ANY suppport for. It is you that should work around them.
 
+# 在 third 目录下有 MySQL 和 MongoDB 的驱动更新脚本可用于编译最新的客户端驱动。
+  此处列出的是 Debian Jessie 官方源中的服务端版本。
+# There are scripts that can be used to fetch and build latest MySQL and MongoDB
+  client drivers in 'third' directory. The version numbers here are of
+  server-side packages in Debian Jessie sources.
+
 问题反馈
-Report bugs
+Bug Reports
 ===================
 请联系 lh_mouse at 126 dot com（注明 Poseidon 相关）。
 Please email to lh_mouse at 126 dot com.

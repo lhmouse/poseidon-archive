@@ -1,9 +1,9 @@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign subdir-objects
-AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Wno-missing-field-initializers	\
-	-pipe -fPIC -DPIC -pthread $(openssl_CFLAGS)
+AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Wno-missing-field-initializers      \
+	-pipe -fPIC -DPIC -pthread $(openssl_CFLAGS) $(bson_CFLAGS) $(mongoc_CFLAGS)
 AM_CXXFLAGS =
-AM_LDFLAGS =
+AM_LDFLAGS = $(openssl_LIBS) $(bson_LIBS) $(mongoc_LIBS)
 
 %.hpp.gch: %.hpp
 	$(CXX) -x c++-header @DEFS@ $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
@@ -76,6 +76,7 @@ pkginclude_singletons_HEADERS = \
 	src/singletons/system_http_server.hpp	\
 	src/singletons/module_depository.hpp	\
 	src/singletons/mysql_daemon.hpp	\
+	src/singletons/mongodb_daemon.hpp	\
 	src/singletons/dns_daemon.hpp	\
 	src/singletons/event_dispatcher.hpp	\
 	src/singletons/profile_depository.hpp
@@ -139,6 +140,16 @@ pkginclude_mysql_HEADERS = \
 	src/mysql/exception.hpp	\
 	src/mysql/utilities.hpp
 
+pkginclude_mongodbdir = $(pkgincludedir)/mongodb
+pkginclude_mongodb_HEADERS = \
+	src/mongodb/fwd.hpp	\
+	src/mongodb/object_generator.hpp	\
+	src/mongodb/connection.hpp	\
+	src/mongodb/object_base.hpp	\
+	src/mongodb/exception.hpp	\
+	src/mongodb/oid.hpp	\
+	src/mongodb/bson_builder.hpp
+
 bin_PROGRAMS = \
 	bin/poseidon
 
@@ -197,6 +208,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/singletons/main_config.cpp	\
 	src/singletons/job_dispatcher.cpp	\
 	src/singletons/mysql_daemon.cpp	\
+	src/singletons/mongodb_daemon.cpp	\
 	src/singletons/dns_daemon.cpp	\
 	src/singletons/epoll_daemon.cpp	\
 	src/singletons/timer_daemon.cpp	\
@@ -238,7 +250,12 @@ lib_libposeidon_main_la_SOURCES = \
 	src/mysql/exception.cpp	\
 	src/mysql/utilities.cpp	\
 	src/mysql/thread_context.cpp	\
-	src/mysql/connection.cpp
+	src/mysql/connection.cpp	\
+	src/mongodb/object_base.cpp	\
+	src/mongodb/exception.cpp	\
+	src/mongodb/connection.cpp	\
+	src/mongodb/oid.cpp	\
+	src/mongodb/bson_builder.cpp
 
 pkgsysconfdir = $(sysconfdir)/@PACKAGE@
 pkgsysconf_DATA = \
@@ -246,6 +263,10 @@ pkgsysconf_DATA = \
 
 pkglocalstatedir = $(localstatedir)/@PACKAGE@
 
-pkglocalstatesqldumpdir = $(pkglocalstatedir)/sqldump
-pkglocalstatesqldump_DATA = \
-	var/poseidon/sqldump/placeholder
+pkglocalstatemysql_dumpdir = $(pkglocalstatedir)/mysql_dump
+pkglocalstatemysql_dump_DATA = \
+	var/poseidon/mysql_dump/placeholder
+
+pkglocalstatemongodb_dumpdir = $(pkglocalstatedir)/mongodb_dump
+pkglocalstatemongodb_dump_DATA = \
+	var/poseidon/mongodb_dump/placeholder

@@ -10,6 +10,7 @@
 #include "singletons/dns_daemon.hpp"
 #include "singletons/timer_daemon.hpp"
 #include "singletons/mysql_daemon.hpp"
+#include "singletons/mongodb_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/system_http_server.hpp"
 #include "singletons/job_dispatcher.hpp"
@@ -65,6 +66,7 @@ namespace {
 
 		START(DnsDaemon);
 		START(MySqlDaemon);
+		START(MongoDbDaemon);
 		START(JobDispatcher);
 
 		unsigned long long log_mask;
@@ -87,6 +89,8 @@ namespace {
 			}
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
 			MySqlDaemon::wait_for_all_async_operations();
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
+			MongoDbDaemon::wait_for_all_async_operations();
 
 			JobDispatcher::do_modal();
 		} catch(...){
@@ -149,15 +153,18 @@ int main(int argc, char **argv){
 		START(ProfileDepository);
 
 		run();
-
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "------------- Server has been shut down gracefully -------------");
-		return EXIT_SUCCESS;
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());
+		goto _failure;
 	} catch(...){
 		LOG_POSEIDON_ERROR("Unknown exception thrown in main().");
+		goto _failure;
 	}
 
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "------------- Server has been shut down gracefully -------------");
+	return EXIT_SUCCESS;
+
+_failure:
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_WARNING, "----------------- Server has exited abnormally -----------------");
 	return EXIT_FAILURE;
 }

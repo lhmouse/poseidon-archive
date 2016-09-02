@@ -14,31 +14,38 @@
 namespace Poseidon {
 
 namespace {
-	const unsigned char MIN_BYTES[16] = {
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	const unsigned char MAX_BYTES[16] = {
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-
 	const boost::uint32_t g_pid = static_cast<boost::uint16_t>(::getpid());
 
 	volatile boost::uint32_t g_auto_inc = 0;
 }
 
-const Uuid Uuid::UUID_MIN(MIN_BYTES);
-const Uuid Uuid::UUID_MAX(MAX_BYTES);
-
-Uuid Uuid::random(){
+Uuid Uuid::random() NOEXCEPT {
 	const AUTO(utc_now, get_utc_time());
 	const AUTO(unique, ((atomic_add(g_auto_inc, 1, ATOMIC_RELAXED) << 16) & 0x3FFFFFFFu) | g_pid);
+	union {
+		unsigned char bytes[16];
+		boost::uint16_t u16[8];
+		boost::uint32_t u32[4];
+	} un;
+	store_be(un.u32[0], utc_now >> 12);
+	store_be(un.u16[2], (utc_now << 4) | (unique >> 26));
+	store_be(un.u16[3], (unique >> 14) & 0x0FFFu); // 版本 = 0
+	store_be(un.u16[4], 0xC000u | (unique & 0x3FFFu)); // 变种 = 3
+	store_be(un.u16[5], rand32());
+	store_be(un.u32[3], rand32());
+	return Uuid(un.bytes);
+}
+Uuid Uuid::min() NOEXCEPT {
+	static CONSTEXPR const unsigned char bytes[16] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-	Uuid ret;
-	store_be(ret.m_storage.u32[0], utc_now >> 12);
-	store_be(ret.m_storage.u16[2], (utc_now << 4) | (unique >> 26));
-	store_be(ret.m_storage.u16[3], (unique >> 14) & 0x0FFFu); // 版本 = 0
-	store_be(ret.m_storage.u16[4], 0xC000u | (unique & 0x3FFFu)); // 变种 = 3
-	store_be(ret.m_storage.u16[5], rand32());
-	store_be(ret.m_storage.u32[3], rand32());
-	return ret;
+	return Uuid(bytes);
+}
+Uuid Uuid::max() NOEXCEPT {
+	static CONSTEXPR const unsigned char bytes[16] = {
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+
+	return Uuid(bytes);
 }
 
 Uuid::Uuid(const char (&str)[36]){

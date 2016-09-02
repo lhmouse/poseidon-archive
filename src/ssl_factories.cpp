@@ -15,7 +15,7 @@ namespace {
 	::pthread_once_t g_ssl_once = PTHREAD_ONCE_INIT;
 
 	void init_ssl(){
-		LOG_POSEIDON_INFO("Initializing SSL library...");
+		LOG_POSEIDON_INFO("Initializing OpenSSL...");
 
 		::OpenSSL_add_all_algorithms();
 		::SSL_library_init();

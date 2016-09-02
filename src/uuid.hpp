@@ -15,30 +15,23 @@ namespace Poseidon {
 
 class Uuid {
 public:
-	static const Uuid UUID_MIN;
-	static const Uuid UUID_MAX;
-
-public:
-	static Uuid random();
+	static Uuid random() NOEXCEPT;
+	static Uuid min() NOEXCEPT;
+	static Uuid max() NOEXCEPT;
 
 private:
-	union {
-		unsigned char bytes[16];
-		boost::uint16_t u16[8];
-		boost::uint32_t u32[4];
-		boost::uint64_t u64[2];
-	} m_storage;
+	unsigned char m_bytes[16];
 
 public:
 	CONSTEXPR Uuid() NOEXCEPT
-		: m_storage()
+		: m_bytes()
 	{
 	}
 	explicit Uuid(const unsigned char (&bytes)[16]){
-		std::memcpy(m_storage.bytes, bytes, 16);
+		std::memcpy(m_bytes, bytes, 16);
 	}
 	explicit Uuid(const boost::array<unsigned char, 16> &bytes){
-		std::memcpy(m_storage.bytes, bytes.data(), 16);
+		std::memcpy(m_bytes, bytes.data(), 16);
 	}
 	// 字符串不合法则抛出异常。
 	explicit Uuid(const char (&str)[36]);
@@ -46,22 +39,22 @@ public:
 
 public:
 	CONSTEXPR const unsigned char *begin() const {
-		return m_storage.bytes;
+		return m_bytes;
 	}
 	unsigned char *begin(){
-		return m_storage.bytes;
+		return m_bytes;
 	}
 	CONSTEXPR const unsigned char *end() const {
-		return m_storage.bytes + 16;
+		return m_bytes + 16;
 	}
 	unsigned char *end(){
-		return m_storage.bytes + 16;
+		return m_bytes + 16;
 	}
 	CONSTEXPR const unsigned char *data() const {
-		return m_storage.bytes;
+		return m_bytes;
 	}
 	unsigned char *data(){
-		return m_storage.bytes;
+		return m_bytes;
 	}
 	CONSTEXPR std::size_t size() const {
 		return 16;
@@ -75,10 +68,10 @@ public:
 
 public:
 	const unsigned char &operator[](unsigned index) const {
-		return m_storage.bytes[index];
+		return m_bytes[index];
 	}
 	unsigned char &operator[](unsigned index){
-		return m_storage.bytes[index];
+		return m_bytes[index];
 	}
 };
 
