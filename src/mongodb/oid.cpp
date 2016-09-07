@@ -117,9 +117,10 @@ namespace MongoDb {
 	}
 
 	std::ostream &operator<<(std::ostream &os, const Oid &rhs){
-		char temp[24];
-		rhs.to_string(temp);
-		return os.write(temp, 24);
+		char temp[25];
+		rhs.to_string(reinterpret_cast<char (&)[24]>(temp));
+		temp[24] = 0;
+		return os <<temp;
 	}
 }
 

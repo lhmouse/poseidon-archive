@@ -149,9 +149,10 @@ bool Uuid::from_string(const std::string &str){
 }
 
 std::ostream &operator<<(std::ostream &os, const Uuid &rhs){
-	char temp[36];
-	rhs.to_string(temp);
-	return os.write(temp, 36);
+	char temp[37];
+	rhs.to_string(reinterpret_cast<char (&)[36]>(temp));
+	temp[36] = 0;
+	return os <<temp;
 }
 
 }
