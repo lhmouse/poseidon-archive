@@ -46,7 +46,7 @@ namespace MongoDb {
 		AUTO(read, begin());
 		char *write = str;
 
-		for(std::size_t i = 0; i < 24; ++i){
+		for(std::size_t i = 0; i < 12; ++i){
 			const unsigned byte = *(read++);
 			unsigned ch = byte >> 4;
 			if(ch <= 9){
@@ -81,7 +81,7 @@ namespace MongoDb {
 		const char *read = str;
 		AUTO(write, begin());
 
-		for(std::size_t i = 0; i < 24; ++i){
+		for(std::size_t i = 0; i < 12; ++i){
 			unsigned byte;
 			unsigned ch = (unsigned char)*(read++);
 			if(('0' <= ch) && (ch <= '9')){
