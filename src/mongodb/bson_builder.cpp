@@ -310,7 +310,7 @@ namespace MongoDb {
 				DEBUG_THROW(ProtocolException, sslit("BSON builder: Failed to convert BSON to JSON"), -1);
 			}
 			try {
-				os.write(json, static_cast<std::streamsize>(bson.len));
+				os <<json;
 				::bson_free(json);
 			} catch(...){
 				::bson_free(json);
