@@ -436,7 +436,7 @@ namespace {
 				if(execute_it){
 					query = operation->generate_query();
 					try {
-						LOG_POSEIDON_DEBUG("Executing SQL: collection_name = ", operation->get_collection_name(), ", query = ", query);
+						LOG_POSEIDON_DEBUG("Executing BSON: collection_name = ", operation->get_collection_name(), ", query = ", query);
 						operation->execute(conn, query);
 					} catch(MongoDb::Exception &e){
 						LOG_POSEIDON_WARNING("MongoDb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
@@ -503,11 +503,11 @@ namespace {
 			dump_path.push_back('/');
 			dump_path.append(temp, len);
 
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating SQL dump file: ", dump_path);
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating BSON dump file: ", dump_path);
 			UniqueFile dump_file;
 			if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 				const int err_code = errno;
-				LOG_POSEIDON_FATAL("Error creating SQL dump file: dump_path = ", dump_path,
+				LOG_POSEIDON_FATAL("Error creating BSON dump file: dump_path = ", dump_path,
 					", errno = ", err_code, ", desc = ", get_error_desc(err_code));
 				std::abort();
 			}
@@ -573,7 +573,7 @@ namespace {
 					m_new_operation.signal();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_bson = ", current_bson);
+					"Waiting for BSON queries to complete: pending_objects = ", pending_objects, ", current_bson = ", current_bson);
 
 				if(!alive){
 					LOG_POSEIDON_ERROR("MongoDB thread seems dead before the queue is emptied. Trying to recover...");
