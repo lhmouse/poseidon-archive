@@ -104,6 +104,11 @@ namespace MongoDb {
 		ret.append_oid(STD_MOVE(name), value);
 		return ret;
 	}
+	inline BsonBuilder bson_scalar_boolean(SharedNts name, bool value){
+		BsonBuilder ret;
+		ret.append_boolean(STD_MOVE(name), value);
+		return ret;
+	}
 	inline BsonBuilder bson_scalar_signed(SharedNts name, boost::int64_t value){
 		BsonBuilder ret;
 		ret.append_signed(STD_MOVE(name), value);
