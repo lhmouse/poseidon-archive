@@ -24,13 +24,13 @@ public:
 
 class ServerSslFactory : public SslFactoryBase {
 public:
-	ServerSslFactory(const char *cert, const char *private_key);
+	explicit ServerSslFactory(const char *cert, const char *private_key);
 	~ServerSslFactory();
 };
 
 class ClientSslFactory : public SslFactoryBase {
 public:
-	ClientSslFactory();
+	explicit ClientSslFactory(bool accept_invalid_cert);
 	~ClientSslFactory();
 };
 
