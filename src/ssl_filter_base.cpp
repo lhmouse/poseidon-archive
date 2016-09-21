@@ -83,6 +83,9 @@ void SslFilterBase::shutdown() NOEXCEPT {
 	if((::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN) == 0){
 		::SSL_shutdown(m_ssl.get());
 	}
+	if((::SSL_get_shutdown(m_ssl.get()) & SSL_RECEIVED_SHUTDOWN) == 0){
+		::shutdown(::SSL_get_wfd(m_ssl.get()), SHUT_WR);
+	}
 }
 
 }

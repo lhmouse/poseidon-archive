@@ -79,7 +79,8 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_created_time(get_fast_mono_clock())
 	, m_peer_info()
 	, m_connected(false)
-	, m_shutdown_read(false), m_shutdown_write(false), m_really_shutdown_write(false), m_timed_out(false), m_throttled(false)
+	, m_shutdown_read(false), m_read_hup_notified(false), m_shutdown_write(false), m_really_shutdown_write(false)
+	, m_timed_out(false), m_throttled(false)
 	, m_delayed_shutdown_guard_count(0)
 	, m_shutdown_time(0)
 {
@@ -112,6 +113,19 @@ void TcpSessionBase::set_connected(){
 
 void TcpSessionBase::init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter){
 	swap(m_ssl_filter, ssl_filter);
+}
+
+bool TcpSessionBase::is_read_hup_notified() const NOEXCEPT {
+	return atomic_load(m_read_hup_notified, ATOMIC_CONSUME);
+}
+void TcpSessionBase::notify_read_hup() NOEXCEPT {
+	PROFILE_ME;
+
+	atomic_store(m_read_hup_notified, true, ATOMIC_RELEASE);
+
+	shutdown_read();
+	on_read_hup();
+	shutdown_write();
 }
 
 void TcpSessionBase::set_epoll(boost::weak_ptr<Epoll> epoll) NOEXCEPT {
@@ -212,7 +226,6 @@ std::size_t TcpSessionBase::get_send_buffer_size(Mutex::UniqueLock &lock) const 
 void TcpSessionBase::on_connect(){
 }
 void TcpSessionBase::on_read_hup() NOEXCEPT {
-	shutdown_write();
 }
 void TcpSessionBase::on_close(int err_code) NOEXCEPT {
 	(void)err_code;

@@ -68,6 +68,7 @@ private:
 	boost::scoped_ptr<SslFilterBase> m_ssl_filter;
 
 	volatile bool m_shutdown_read;
+	volatile bool m_read_hup_notified;
 	volatile bool m_shutdown_write;
 	volatile bool m_really_shutdown_write;
 	volatile bool m_timed_out;
@@ -90,6 +91,9 @@ private:
 	void set_connected();
 
 	void init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter);
+
+	bool is_read_hup_notified() const NOEXCEPT;
+	void notify_read_hup() NOEXCEPT;
 
 	void set_epoll(boost::weak_ptr<Epoll> epoll) NOEXCEPT;
 	void notify_epoll_writeable() NOEXCEPT;

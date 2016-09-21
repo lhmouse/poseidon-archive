@@ -222,8 +222,10 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		}
 
 		if(event.events & EPOLLIN){
-			const RecursiveMutex::UniqueLock lock(m_mutex);
-			m_sessions->set_key<IDX_ADDR, IDX_READ>(it, now);
+			if(!session->is_read_hup_notified()){
+				const RecursiveMutex::UniqueLock lock(m_mutex);
+				m_sessions->set_key<IDX_ADDR, IDX_READ>(it, now);
+			}
 		}
 		if(event.events & EPOLLOUT){
 			session->set_connected();
@@ -303,8 +305,7 @@ std::size_t Epoll::pump_readable(){
 				}
 				DEBUG_THROW(SystemException, result.err_code);
 			} else if(result.bytes_transferred == 0){
-				session->shutdown_read();
-				session->on_read_hup();
+				session->notify_read_hup();
 
 				const RecursiveMutex::UniqueLock lock(m_mutex);
 				m_sessions->set_key<IDX_READ, IDX_READ>(it, 0);
