@@ -78,16 +78,10 @@ long SslFilterBase::write(const void *data, unsigned long size){
 	}
 	return ret;
 }
-void SslFilterBase::shutdown(int how) NOEXCEPT {
+void SslFilterBase::shutdown() NOEXCEPT {
 	const Mutex::UniqueLock lock(m_mutex);
-	int result = 0;
 	if((::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN) == 0){
-		result = ::SSL_shutdown(m_ssl.get());
-	}
-	if(how != SHUT_RD){
-		while(result == 0){
-			result = ::SSL_shutdown(m_ssl.get());
-		}
+		::SSL_shutdown(m_ssl.get());
 	}
 }
 

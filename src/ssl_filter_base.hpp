@@ -28,7 +28,7 @@ public:
 
 	long read(void *data, unsigned long size);
 	long write(const void *data, unsigned long size);
-	void shutdown(int how) NOEXCEPT;
+	void shutdown() NOEXCEPT;
 };
 
 }

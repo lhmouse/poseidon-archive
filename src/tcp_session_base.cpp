@@ -197,7 +197,7 @@ TcpSessionBase::SyncIoResult TcpSessionBase::sync_write(void *hint, unsigned lon
 
 	if((bytes_avail == 0) && atomic_load(m_really_shutdown_write, ATOMIC_CONSUME)){
 		if(m_ssl_filter){
-			m_ssl_filter->shutdown(SHUT_WR);
+			m_ssl_filter->shutdown();
 		} else {
 			::shutdown(m_socket.get(), SHUT_WR);
 		}
@@ -246,11 +246,7 @@ bool TcpSessionBase::shutdown_read() NOEXCEPT {
 	bool ret = !atomic_load(m_shutdown_read, ATOMIC_CONSUME);
 	if(ret){
 		ret = !atomic_exchange(m_shutdown_read, true, ATOMIC_ACQ_REL);
-		if(m_ssl_filter){
-			m_ssl_filter->shutdown(SHUT_RD);
-		} else {
-			::shutdown(m_socket.get(), SHUT_RD);
-		}
+		::shutdown(m_socket.get(), SHUT_RD);
 	}
 	return ret;
 }
