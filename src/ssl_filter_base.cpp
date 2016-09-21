@@ -3,6 +3,7 @@
 
 #include "precompiled.hpp"
 #include "ssl_filter_base.hpp"
+#include <sys/socket.h>
 #include <errno.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -60,6 +61,7 @@ SslFilterBase::~SslFilterBase(){
 }
 
 long SslFilterBase::read(void *data, unsigned long size){
+	const Mutex::UniqueLock lock(m_mutex);
 	dump_error_queue();
 	const long ret = ::SSL_read(m_ssl.get(), data, size);
 	if(ret < 0){
@@ -68,12 +70,25 @@ long SslFilterBase::read(void *data, unsigned long size){
 	return ret;
 }
 long SslFilterBase::write(const void *data, unsigned long size){
+	const Mutex::UniqueLock lock(m_mutex);
 	dump_error_queue();
 	const long ret = ::SSL_write(m_ssl.get(), data, size);
 	if(ret < 0){
 		set_errno_by_ssl_ret(m_ssl.get(), ret);
 	}
 	return ret;
+}
+void SslFilterBase::shutdown(int how) NOEXCEPT {
+	const Mutex::UniqueLock lock(m_mutex);
+	int result = 0;
+	if((::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN) == 0){
+		result = ::SSL_shutdown(m_ssl.get());
+	}
+	if(how != SHUT_RD){
+		while(result == 0){
+			result = ::SSL_shutdown(m_ssl.get());
+		}
+	}
 }
 
 }

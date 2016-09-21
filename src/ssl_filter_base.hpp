@@ -7,11 +7,13 @@
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include "ssl_raii.hpp"
+#include "mutex.hpp"
 
 namespace Poseidon {
 
 class SslFilterBase : NONCOPYABLE {
 private:
+	mutable Mutex m_mutex;
 	const UniqueSsl m_ssl;
 	const int m_fd;
 
@@ -26,6 +28,7 @@ public:
 
 	long read(void *data, unsigned long size);
 	long write(const void *data, unsigned long size);
+	void shutdown(int how) NOEXCEPT;
 };
 
 }
