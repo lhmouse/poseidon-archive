@@ -18,6 +18,7 @@ namespace {
 		LOG_POSEIDON_INFO("Initializing OpenSSL...");
 
 		::OpenSSL_add_all_algorithms();
+		::SSL_load_error_strings();
 		::SSL_library_init();
 
 		std::atexit(&::EVP_cleanup);
