@@ -36,7 +36,12 @@ namespace {
 			break;
 		case SSL_ERROR_SYSCALL:
 			break;
+		case SSL_ERROR_SSL:
+			dump_error_queue();
+			errno = EPERM;
+			break;
 		default:
+			LOG_POSEIDON_ERROR("Unknown SSL error: ", err);
 			errno = EPERM;
 			break;
 		}
