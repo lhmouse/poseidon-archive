@@ -186,20 +186,6 @@ namespace MongoDb {
 					DEBUG_THROW_MONGODB_EXCEPTION(error, m_database);
 				}
 			}
-			void do_execute_replace(const char *collection, const BsonBuilder &doc){
-				do_discard_result();
-
-				if(!m_collection.reset(::mongoc_client_get_collection(m_client.get(), m_database.get(), collection))){
-					DEBUG_THROW(SystemException, ENOMEM);
-				}
-
-				::bson_error_t error;
-				::bson_t doc_bson;
-				const BsonGuard doc_guard(doc_bson, doc);
-				if(!::mongoc_collection_save(m_collection.get(), &doc_bson, NULLPTR, &error)){
-					DEBUG_THROW_MONGODB_EXCEPTION(error, m_database);
-				}
-			}
 			void do_execute_update(const char *collection, const BsonBuilder &query, const BsonBuilder &doc, bool upsert, bool update_all){
 				do_discard_result();
 
@@ -424,9 +410,6 @@ namespace MongoDb {
 	}
 	void Connection::execute_insert(const char *collection, const BsonBuilder &doc, bool continue_on_error){
 		static_cast<DelegatedConnection &>(*this).do_execute_insert(collection, doc, continue_on_error);
-	}
-	void Connection::execute_replace(const char *collection, const BsonBuilder &doc){
-		static_cast<DelegatedConnection &>(*this).do_execute_replace(collection, doc);
 	}
 	void Connection::execute_update(const char *collection, const BsonBuilder &query, const BsonBuilder &doc, bool upsert, bool update_all){
 		static_cast<DelegatedConnection &>(*this).do_execute_update(collection, query, doc, upsert, update_all);

@@ -99,13 +99,15 @@ namespace {
 			m_object->generate_document(doc);
 			return doc;
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &doc) const OVERRIDE {
 			PROFILE_ME;
 
 			if(m_to_replace){
-				conn->execute_replace(get_collection_name(), query);
+				MongoDb::BsonBuilder query;
+				query.append_oid(sslit("_id"), m_object->get_oid());
+				conn->execute_update(get_collection_name(), query, doc, true, false);
 			} else {
-				conn->execute_insert(get_collection_name(), query, true);
+				conn->execute_insert(get_collection_name(), doc, true);
 			}
 		}
 		void set_success() const OVERRIDE {

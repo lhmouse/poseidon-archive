@@ -37,7 +37,6 @@ namespace MongoDb {
 		void execute_command(const char *collection, const BsonBuilder &query, boost::uint32_t begin, boost::uint32_t limit);
 		void execute_query(const char *collection, const BsonBuilder &query, boost::uint32_t begin, boost::uint32_t limit);
 		void execute_insert(const char *collection, const BsonBuilder &doc, bool continue_on_error);
-		void execute_replace(const char *collection, const BsonBuilder &doc);
 		void execute_update(const char *collection, const BsonBuilder &query, const BsonBuilder &doc, bool upsert, bool update_all);
 		void execute_delete(const char *collection, const BsonBuilder &query, bool delete_all);
 		void discard_result() NOEXCEPT;
