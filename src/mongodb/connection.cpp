@@ -348,10 +348,11 @@ namespace MongoDb {
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
 				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_DATE_TIME){
+				if(type != BSON_TYPE_UTF8){
 					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
 				}
-				return static_cast<boost::uint64_t>(::bson_iter_int64(&iter));
+				const AUTO(str, ::bson_iter_utf8(&iter, NULLPTR));
+				return scan_time(str);
 			}
 			Uuid do_get_uuid(const char *name) const {
 				if(!m_cursor_head){

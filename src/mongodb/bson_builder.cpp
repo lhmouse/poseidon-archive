@@ -5,6 +5,7 @@
 #include "bson_builder.hpp"
 #include "oid.hpp"
 #include "../protocol_exception.hpp"
+#include "../time.hpp"
 #include "../uuid.hpp"
 #pragma GCC push_options
 #pragma GCC diagnostic ignored "-Wsign-conversion"
@@ -89,8 +90,10 @@ namespace MongoDb {
 			CASE(T_DATETIME){
 				boost::uint64_t value;
 				std::memcpy(&value, it->small, sizeof(value));
-				if(!::bson_append_date_time(bson, key_str, -1, static_cast<boost::int64_t>(value))){
-					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_date_time() failed"), -1);
+				char str[64];
+				std::size_t len = format_time(str, sizeof(str), value, true);
+				if(!::bson_append_utf8(bson, key_str, -1, str, (int)len)){
+					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_utf8() failed"), -1);
 				}
 			}
 			CASE(T_UUID){

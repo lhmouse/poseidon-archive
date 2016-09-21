@@ -89,11 +89,10 @@ boost::uint64_t assemble_time(const DateTime &dt){
 }
 
 std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms){
-	DateTime dt;
+	DateTime dt = { 0, 1, 1 };
 	if(ms == 0){
-		std::memset(&dt, 0, sizeof(dt));
+		dt.yr = 0;
 	} else if(ms == (boost::uint64_t)-1){
-		std::memset(&dt, 0, sizeof(dt));
 		dt.yr = 9999;
 	} else {
 		dt = break_down_time(ms);
