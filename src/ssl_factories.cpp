@@ -47,6 +47,10 @@ namespace {
 		if(::SSL_CTX_use_PrivateKey_file(ret.get(), private_key, SSL_FILETYPE_PEM) != 1){
 			DEBUG_THROW(Exception, sslit("::SSL_CTX_use_PrivateKey_file() failed"));
 		}
+		void *const ptr = ret.get();
+		if(::SSL_CTX_set_session_id_context(ret.get(), reinterpret_cast<const unsigned char *>(&ptr), sizeof(ptr)) != 1){
+			DEBUG_THROW(Exception, sslit("::SSL_CTX_set_session_id_context() failed"));
+		}
 
 		LOG_POSEIDON_INFO("Verifying private key...");
 		if(::SSL_CTX_check_private_key(ret.get()) != 1){
