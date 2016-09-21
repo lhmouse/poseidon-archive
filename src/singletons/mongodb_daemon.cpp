@@ -35,7 +35,7 @@ namespace Poseidon {
 
 namespace {
 	std::string     g_server_addr       = "localhost";
-	unsigned        g_server_port       = 3306;
+	unsigned        g_server_port       = 27017;
 	std::string     g_slave_addr        = VAL_INIT;
 	unsigned        g_slave_port        = 0;
 	std::string     g_username          = "root";
