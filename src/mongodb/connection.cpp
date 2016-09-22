@@ -253,6 +253,16 @@ namespace MongoDb {
 				return true;
 			}
 
+#define CHECK_TYPE(iter_, field_, type_)	\
+				{	\
+					const AUTO(t_, ::bson_iter_type(&(iter_)));	\
+					if(t_ != (type_)){	\
+						LOG_POSEIDON_ERROR("BSON type mismatch: field = ", (field_), ", type = ", #type_,	\
+							", expecting ", static_cast<int>(type_), ", got ", static_cast<int>(t_));	\
+						DEBUG_THROW(BasicException, sslit("BSON type mismatch"));	\
+					}	\
+				}
+
 			Oid do_get_oid(const char *name) const {
 				if(!m_cursor_head){
 					DEBUG_THROW(BasicException, sslit("No more results"));
@@ -261,10 +271,7 @@ namespace MongoDb {
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
-				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_OID){
-					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-				}
+				CHECK_TYPE(iter, name, BSON_TYPE_OID)
 				return Oid(::bson_iter_oid(&iter)->bytes);
 			}
 			bool do_get_boolean(const char *name) const {
@@ -275,10 +282,7 @@ namespace MongoDb {
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
-				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_BOOL){
-					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-				}
+				CHECK_TYPE(iter, name, BSON_TYPE_BOOL)
 				return ::bson_iter_bool(&iter);
 			}
 			boost::int64_t do_get_signed(const char *name) const {
@@ -289,10 +293,7 @@ namespace MongoDb {
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
-				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_INT64){
-					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-				}
+				CHECK_TYPE(iter, name, BSON_TYPE_INT64)
 				return ::bson_iter_int64(&iter);
 			}
 			boost::uint64_t do_get_unsigned(const char *name) const {
@@ -303,10 +304,7 @@ namespace MongoDb {
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
-				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_INT64){
-					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-				}
+				CHECK_TYPE(iter, name, BSON_TYPE_INT64)
 				return static_cast<boost::uint64_t>(::bson_iter_int64(&iter));
 			}
 			double do_get_double(const char *name) const {
@@ -317,10 +315,7 @@ namespace MongoDb {
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
-				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_DOUBLE){
-					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-				}
+				CHECK_TYPE(iter, name, BSON_TYPE_DOUBLE)
 				return static_cast<double>(::bson_iter_int64(&iter));
 			}
 			std::string do_get_string(const char *name) const {
@@ -331,12 +326,9 @@ namespace MongoDb {
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
-				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_UTF8){
-					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-				}
+				CHECK_TYPE(iter, name, BSON_TYPE_UTF8)
 				boost::uint32_t len;
-				const AUTO(str, ::bson_iter_utf8(&iter, &len));
+				const char *const str = ::bson_iter_utf8(&iter, &len);
 				return std::string(str, len);
 			}
 			boost::uint64_t do_get_datetime(const char *name) const {
@@ -347,10 +339,7 @@ namespace MongoDb {
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
-				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_UTF8){
-					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-				}
+				CHECK_TYPE(iter, name, BSON_TYPE_UTF8)
 				const AUTO(str, ::bson_iter_utf8(&iter, NULLPTR));
 				return scan_time(str);
 			}
@@ -362,12 +351,9 @@ namespace MongoDb {
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
-				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_UTF8){
-					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-				}
+				CHECK_TYPE(iter, name, BSON_TYPE_UTF8)
 				boost::uint32_t len;
-				const AUTO(str, ::bson_iter_utf8(&iter, &len));
+				const char *const str = ::bson_iter_utf8(&iter, &len);
 				if(len != 36){
 					DEBUG_THROW(BasicException, sslit("Unexpected UUID string length"));
 				}
@@ -381,10 +367,7 @@ namespace MongoDb {
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
 					DEBUG_THROW(BasicException, sslit("Field not found"));
 				}
-				const AUTO(type, ::bson_iter_type(&iter));
-				if(type != BSON_TYPE_BINARY){
-					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-				}
+				CHECK_TYPE(iter, name, BSON_TYPE_BINARY)
 				boost::uint32_t len;
 				const boost::uint8_t *data;
 				::bson_iter_binary(&iter, NULLPTR, &len, &data);
