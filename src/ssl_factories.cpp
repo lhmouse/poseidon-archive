@@ -47,8 +47,10 @@ namespace {
 		if(::SSL_CTX_use_PrivateKey_file(ret.get(), private_key, SSL_FILETYPE_PEM) != 1){
 			DEBUG_THROW(Exception, sslit("::SSL_CTX_use_PrivateKey_file() failed"));
 		}
-		void *const ptr = ret.get();
-		if(::SSL_CTX_set_session_id_context(ret.get(), reinterpret_cast<const unsigned char *>(&ptr), sizeof(ptr)) != 1){
+
+		static const unsigned char SESSION_ID_CONTEXT[SSL_MAX_SSL_SESSION_ID_LENGTH] =
+			{ 0x15, 0x74, 0xFA, 0x87, 0x85, 0x70, 0x00, 0x08, 0xD2, 0xFD, 0x47, 0xC3, 0x84, 0xE3, 0x19, 0xDD };
+		if(::SSL_CTX_set_session_id_context(ret.get(), SESSION_ID_CONTEXT, sizeof(SESSION_ID_CONTEXT)) != 1){
 			DEBUG_THROW(Exception, sslit("::SSL_CTX_set_session_id_context() failed"));
 		}
 
