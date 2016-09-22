@@ -291,7 +291,7 @@ namespace MongoDb {
 				DEBUG_THROW(ProtocolException, sslit("BSON builder: Failed to convert BSON to JSON"), -1);
 			}
 			try {
-				str.assign(json, bson.len);
+				str.assign(json, len);
 				::bson_free(json);
 			} catch(...){
 				::bson_free(json);
