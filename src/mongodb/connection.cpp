@@ -269,7 +269,7 @@ namespace MongoDb {
 				}
 				::bson_iter_t iter;
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					DEBUG_THROW(BasicException, sslit("Field not found"));
+					return VAL_INIT;
 				}
 				CHECK_TYPE(iter, name, BSON_TYPE_OID)
 				return Oid(::bson_iter_oid(&iter)->bytes);
@@ -280,7 +280,7 @@ namespace MongoDb {
 				}
 				::bson_iter_t iter;
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					DEBUG_THROW(BasicException, sslit("Field not found"));
+					return false;
 				}
 				CHECK_TYPE(iter, name, BSON_TYPE_BOOL)
 				return ::bson_iter_bool(&iter);
@@ -291,7 +291,7 @@ namespace MongoDb {
 				}
 				::bson_iter_t iter;
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					DEBUG_THROW(BasicException, sslit("Field not found"));
+					return 0;
 				}
 				CHECK_TYPE(iter, name, BSON_TYPE_INT64)
 				return ::bson_iter_int64(&iter);
@@ -302,7 +302,7 @@ namespace MongoDb {
 				}
 				::bson_iter_t iter;
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					DEBUG_THROW(BasicException, sslit("Field not found"));
+					return 0;
 				}
 				CHECK_TYPE(iter, name, BSON_TYPE_INT64)
 				return static_cast<boost::uint64_t>(::bson_iter_int64(&iter));
@@ -313,7 +313,7 @@ namespace MongoDb {
 				}
 				::bson_iter_t iter;
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					DEBUG_THROW(BasicException, sslit("Field not found"));
+					return 0;
 				}
 				CHECK_TYPE(iter, name, BSON_TYPE_DOUBLE)
 				return static_cast<double>(::bson_iter_int64(&iter));
@@ -324,7 +324,7 @@ namespace MongoDb {
 				}
 				::bson_iter_t iter;
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					DEBUG_THROW(BasicException, sslit("Field not found"));
+					return VAL_INIT;
 				}
 				CHECK_TYPE(iter, name, BSON_TYPE_UTF8)
 				boost::uint32_t len;
@@ -337,7 +337,7 @@ namespace MongoDb {
 				}
 				::bson_iter_t iter;
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					DEBUG_THROW(BasicException, sslit("Field not found"));
+					return 0;
 				}
 				CHECK_TYPE(iter, name, BSON_TYPE_UTF8)
 				const AUTO(str, ::bson_iter_utf8(&iter, NULLPTR));
@@ -349,7 +349,7 @@ namespace MongoDb {
 				}
 				::bson_iter_t iter;
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					DEBUG_THROW(BasicException, sslit("Field not found"));
+					return VAL_INIT;
 				}
 				CHECK_TYPE(iter, name, BSON_TYPE_UTF8)
 				boost::uint32_t len;
@@ -365,7 +365,7 @@ namespace MongoDb {
 				}
 				::bson_iter_t iter;
 				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					DEBUG_THROW(BasicException, sslit("Field not found"));
+					return VAL_INIT;
 				}
 				CHECK_TYPE(iter, name, BSON_TYPE_BINARY)
 				boost::uint32_t len;
