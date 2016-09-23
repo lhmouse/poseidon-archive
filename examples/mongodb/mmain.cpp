@@ -9,7 +9,7 @@
 namespace {
 
 #define MONGODB_OBJECT_NAME         Foo
-#define MONGODB_OBJECT_PRIMARY_KEY  m_string
+#define MONGODB_OBJECT_PRIMARY_KEY  m_string m_unsigned
 #define MONGODB_OBJECT_FIELDS \
 	FIELD_BOOLEAN             (m_boolean)	\
 	FIELD_SIGNED              (m_signed)	\

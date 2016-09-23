@@ -4,8 +4,8 @@
 #ifndef POSEIDON_CXX_UTIL_HPP_
 #define POSEIDON_CXX_UTIL_HPP_
 
-#define TOKEN_TO_STR_(x_)           # x_
-#define TOKEN_TO_STR(x_)            TOKEN_TO_STR_(x_)
+#define TOKEN_TO_STR_(...)          # __VA_ARGS__
+#define TOKEN_TO_STR(...)           TOKEN_TO_STR_(__VA_ARGS__)
 
 #define STRIP_FIRST_(x_, ...)       __VA_ARGS__
 #define STRIP_FIRST(...)            STRIP_FIRST_(__VA_ARGS__)
