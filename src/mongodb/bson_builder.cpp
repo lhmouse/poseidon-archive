@@ -22,7 +22,7 @@ namespace {
 		return static_cast<int>(size);
 	}
 	inline boost::uint32_t narrowing_cast_to_uint32(std::size_t size){
-		if(size > UINT32_MAX){
+		if(size > 0x7FFFFFFFu){
 			DEBUG_THROW(ProtocolException, sslit("BSON builder: The value is too large to fit into a uint32_t"), -1);
 		}
 		return static_cast<boost::uint32_t>(size);
