@@ -501,9 +501,9 @@ namespace {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating SQL dump file: ", dump_path);
 			UniqueFile dump_file;
 			if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
-				const int err_code = errno;
+				const int errno_c = errno;
 				LOG_POSEIDON_FATAL("Error creating SQL dump file: dump_path = ", dump_path,
-					", errno = ", err_code, ", desc = ", get_error_desc(err_code));
+					", errno = ", errno_c, ", desc = ", get_error_desc(errno_c));
 				std::abort();
 			}
 

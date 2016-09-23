@@ -104,10 +104,14 @@ namespace {
 
 			if(m_to_replace){
 				MongoDb::BsonBuilder query;
-				query.append_oid(sslit("_id"), m_object->get_oid());
-				conn->execute_update(get_collection_name(), query, doc, true, false);
+				m_object->generate_primary_key(query);
+				if(query.empty()){
+					query.append_oid(sslit("_id"), m_object->get_oid());
+				}
+				LOG_POSEIDON_DEBUG("Replacing `", doc, "` into `", get_collection_name(), "` using primary key `", query, "`...");
+				conn->execute_update(get_collection_name(), STD_MOVE(query), doc, true, false);
 			} else {
-				conn->execute_insert(get_collection_name(), doc, true);
+				conn->execute_insert(get_collection_name(), doc, false);
 			}
 		}
 		void set_success() const OVERRIDE {
@@ -152,6 +156,7 @@ namespace {
 				DEBUG_THROW(MongoDb::Exception, SharedNts::view(get_collection_name()), MONGOC_ERROR_QUERY_FAILURE, sslit("No rows returned"));
 			}
 			m_object->fetch(conn);
+			m_object->set_oid(conn->get_oid(sslit("_id")));
 		}
 		void set_success() const OVERRIDE {
 			m_promise->set_success();
@@ -508,9 +513,9 @@ namespace {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating BSON dump file: ", dump_path);
 			UniqueFile dump_file;
 			if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
-				const int err_code = errno;
+				const int errno_c = errno;
 				LOG_POSEIDON_FATAL("Error creating BSON dump file: dump_path = ", dump_path,
-					", errno = ", err_code, ", desc = ", get_error_desc(err_code));
+					", errno = ", errno_c, ", desc = ", get_error_desc(errno_c));
 				std::abort();
 			}
 

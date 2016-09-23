@@ -58,6 +58,7 @@ namespace MongoDb {
 		virtual const char *get_collection_name() const = 0;
 
 		virtual void generate_document(BsonBuilder &doc) const = 0;
+		virtual void generate_primary_key(BsonBuilder &query) const = 0;
 		virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;
 		void async_save(bool to_replace, bool urgent = false) const;
 

@@ -17,6 +17,9 @@
 #   error Please #include <poseidon/cbpp/message_base.hpp> first.
 #endif
 
+#pragma GCC push_options
+#pragma GCC diagnostic ignored "-Wshadow"
+
 class MESSAGE_NAME : public ::Poseidon::Cbpp::MessageBase {
 public:
 	enum {
@@ -260,6 +263,8 @@ inline ::std::ostream &operator<<(::std::ostream &os_, const MESSAGE_NAME &msg_)
 	msg_.dump_debug(os_);
 	return os_;
 }
+
+#pragma GCC pop_options
 
 #undef MESSAGE_NAME
 #undef MESSAGE_ID

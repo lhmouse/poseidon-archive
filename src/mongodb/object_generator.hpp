@@ -9,9 +9,16 @@
 #   error MONGODB_OBJECT_FIELDS is undefined.
 #endif
 
+#ifndef MONGODB_OBJECT_PRIMARY_KEY
+#   error MONGODB_OBJECT_PRIMARY_KEY is undefined.
+#endif
+
 #ifndef POSEIDON_MONGODB_OBJECT_BASE_HPP_
 #   error Please #include <poseidon/mongodb/object_base.hpp> first.
 #endif
+
+#pragma GCC push_options
+#pragma GCC diagnostic ignored "-Wshadow"
 
 class MONGODB_OBJECT_NAME : public ::Poseidon::MongoDb::ObjectBase {
 public:
@@ -237,7 +244,35 @@ public:
 #define FIELD_UUID(name_)                   doc.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
 #define FIELD_BLOB(name_)                   doc.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
 
-		doc.append_oid(::Poseidon::SharedNts::view("_id"), get_oid());
+		MONGODB_OBJECT_FIELDS
+	}
+	void generate_primary_key(::Poseidon::MongoDb::BsonBuilder &query) const OVERRIDE {
+
+#undef FIELD_BOOLEAN
+#undef FIELD_SIGNED
+#undef FIELD_UNSIGNED
+#undef FIELD_DOUBLE
+#undef FIELD_STRING
+#undef FIELD_DATETIME
+#undef FIELD_UUID
+#undef FIELD_BLOB
+
+#define FIELD_BOOLEAN(name_)                if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
+                                            	{ query.append_boolean  (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
+#define FIELD_SIGNED(name_)                 if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
+                                            	{ query.append_signed   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
+#define FIELD_UNSIGNED(name_)               if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
+                                            	{ query.append_unsigned (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
+#define FIELD_DOUBLE(name_)                 if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
+                                            	{ query.append_double   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
+#define FIELD_STRING(name_)                 if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
+                                            	{ query.append_string   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
+#define FIELD_DATETIME(name_)               if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
+                                            	{ query.append_datetime (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
+#define FIELD_UUID(name_)                   if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
+                                            	{ query.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
+#define FIELD_BLOB(name_)                   if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
+                                            	{ query.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
 
 		MONGODB_OBJECT_FIELDS
 	}
@@ -261,11 +296,11 @@ public:
 #define FIELD_UUID(name_)                   set_ ## name_(conn_->get_uuid     ( TOKEN_TO_STR(name_) ), false);
 #define FIELD_BLOB(name_)                   set_ ## name_(conn_->get_blob     ( TOKEN_TO_STR(name_) ), false);
 
-		set_oid(conn_->get_oid(::Poseidon::SharedNts::view("_id")));
-
 		MONGODB_OBJECT_FIELDS
 	}
 };
+
+#pragma GCC pop_options
 
 #undef MONGODB_OBJECT_NAME
 #undef MONGODB_OBJECT_FIELDS

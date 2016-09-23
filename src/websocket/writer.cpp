@@ -45,14 +45,14 @@ namespace WebSocket {
 			boost::uint32_t mask;
 			store_le(mask, rand32() | 0x80808080u);
 			frame.put(&mask, 4);
-			int ch;
+			int mb;
 			for(;;){
-				ch = payload.get();
-				if(ch == -1){
+				mb = payload.get();
+				if(mb == -1){
 					break;
 				}
-				ch ^= static_cast<unsigned char>(mask);
-				frame.put(ch);
+				mb ^= static_cast<unsigned char>(mask);
+				frame.put(mb);
 				mask = (mask << 24) | (mask >> 8);
 			}
 		} else {

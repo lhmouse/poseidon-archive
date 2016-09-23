@@ -57,13 +57,13 @@ public:
 	}
 
 public:
-	void *handle() const {
+	void *get_handle() const {
 		return m_handle.get();
 	}
-	const SharedNts &real_path() const {
+	const SharedNts &get_real_path() const {
 		return m_real_path;
 	}
-	void *base_addr() const {
+	void *get_base_addr() const {
 		return m_base_addr;
 	}
 };
@@ -79,8 +79,8 @@ struct ModuleMapElement {
 	HandleStack handles;
 
 	ModuleMapElement(boost::shared_ptr<Module> module_, HandleStack handles_)
-		: module(STD_MOVE(module_)), handle(module->handle())
-		, real_path(module->real_path()), base_addr(module->base_addr())
+		: module(STD_MOVE(module_)), handle(module->get_handle())
+		, real_path(module->get_real_path()), base_addr(module->get_base_addr())
 		, handles(STD_MOVE(handles_))
 	{
 	}
@@ -149,7 +149,7 @@ void ModuleDepository::stop(){
 			modules.pop_back();
 			continue;
 		}
-		LOG_POSEIDON_INFO("Waiting for module to unload: ", module->real_path());
+		LOG_POSEIDON_INFO("Waiting for module to unload: ", module->get_real_path());
 
 		::timespec req;
 		req.tv_sec = 0;
@@ -210,7 +210,7 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 	const AUTO(result, g_module_map.insert(ModuleMapElement(module, STD_MOVE(handles))));
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Duplicate module: module = ", static_cast<void *>(module.get()),
-			", handle = ", module->handle(), ", real_path = ", real_path, ", base_addr = ", base_addr);
+			", handle = ", module->get_handle(), ", real_path = ", real_path, ", base_addr = ", base_addr);
 		DEBUG_THROW(Exception, sslit("Duplicate module"));
 	}
 

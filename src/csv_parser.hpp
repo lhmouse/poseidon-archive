@@ -40,7 +40,7 @@ public:
 	}
 	void clear();
 
-	std::size_t rows() const {
+	std::size_t row_count() const {
 		return m_data.size();
 	}
 	std::size_t tell() const {

@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign subdir-objects
-AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Wno-missing-field-initializers      \
+AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Winvalid-pch -Wno-missing-field-initializers	\
+	-Wwrite-strings -Wsuggest-attribute=noreturn -Wundef -Wshadow -Wstrict-aliasing=2 -Wstrict-overflow=2	\
 	-pipe -fPIC -DPIC -pthread $(openssl_CFLAGS) $(bson_CFLAGS) $(mongoc_CFLAGS)
 AM_CXXFLAGS =
 AM_LDFLAGS = $(openssl_LIBS) $(bson_LIBS) $(mongoc_LIBS)

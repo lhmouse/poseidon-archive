@@ -13,6 +13,9 @@
 #   error Please #include <poseidon/mysql/object_base.hpp> first.
 #endif
 
+#pragma GCC push_options
+#pragma GCC diagnostic ignored "-Wshadow"
+
 class MYSQL_OBJECT_NAME : public ::Poseidon::MySql::ObjectBase {
 public:
 	static ::boost::shared_ptr< ::Poseidon::MySql::ObjectBase> create(){
@@ -388,6 +391,8 @@ public:
 		MYSQL_OBJECT_FIELDS
 	}
 };
+
+#pragma GCC pop_options
 
 #undef MYSQL_OBJECT_NAME
 #undef MYSQL_OBJECT_FIELDS

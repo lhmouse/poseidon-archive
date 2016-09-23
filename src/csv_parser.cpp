@@ -131,9 +131,8 @@ void CsvParser::load(const char *file){
 		}
 	}
 
-	const std::size_t row_count = rows.size();
-	data.resize(row_count);
-	for(std::size_t i = 0; i < row_count; ++i){
+	data.resize(rows.size());
+	for(std::size_t i = 0; i < rows.size(); ++i){
 		AUTO_REF(row, rows.at(i));
 		AUTO_REF(map, data.at(i));
 		for(std::size_t j = 0; j < column_count; ++j){

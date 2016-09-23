@@ -26,7 +26,7 @@ SockAddr::SockAddr(const void *data, unsigned size){
 }
 
 int SockAddr::get_family() const {
-	const AUTO(p, reinterpret_cast<const ::sockaddr *>(m_data));
+	const AUTO(p, reinterpret_cast<const ::sockaddr *>(get_data()));
 	if(m_size < sizeof(p->sa_family)){
 		LOG_POSEIDON_ERROR("Invalid SockAddr: size = ", m_size);
 		DEBUG_THROW(Exception, sslit("Invalid SockAddr"));

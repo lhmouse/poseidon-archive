@@ -71,6 +71,9 @@ namespace MongoDb {
 		void append_object(SharedNts name, const BsonBuilder &obj);
 		void append_array(SharedNts name, const BsonBuilder &arr);
 
+		bool empty() const {
+			return m_elements.empty();
+		}
 		void reserve(std::size_t size){
 			m_elements.reserve(size);
 		}

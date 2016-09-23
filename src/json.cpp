@@ -215,18 +215,18 @@ std::string JsonParser::accept_string(std::istream &is){
 			} else {
 				unsigned code = 0;
 				for(unsigned i = 12; i != (unsigned)-4; i -= 4){
-					unsigned ch = (unsigned char)*read;
+					unsigned hexc = (unsigned char)*read;
 					++read;
-					if(('0' <= ch) && (ch <= '9')){
-						ch -= '0';
-					} else if(('A' <= ch) && (ch <= 'F')){
-						ch -= 'A' - 0x0A;
-					} else if(('a' <= ch) && (ch <= 'f')){
-						ch -= 'a' - 0x0A;
+					if(('0' <= hexc) && (hexc <= '9')){
+						hexc -= '0';
+					} else if(('A' <= hexc) && (hexc <= 'F')){
+						hexc -= 'A' - 0x0A;
+					} else if(('a' <= hexc) && (hexc <= 'f')){
+						hexc -= 'a' - 0x0A;
 					} else {
 						DEBUG_THROW(ProtocolException, sslit("JSON parser: Invalid hex digits for \\u"), -1);
 					}
-					code |= ch << i;
+					code |= hexc << i;
 				}
 				if(code <= 0x7F){
 					*write = code;
