@@ -103,13 +103,14 @@ namespace {
 			PROFILE_ME;
 
 			if(m_to_replace){
-				MongoDb::BsonBuilder query;
-				m_object->generate_primary_key(query);
-				if(query.empty()){
-					query.append_oid(sslit("_id"), m_object->get_oid());
+				MongoDb::BsonBuilder pk, set;
+				m_object->generate_primary_key(pk);
+				if(pk.empty()){
+					pk.append_oid(sslit("_id"), m_object->get_oid());
 				}
-				LOG_POSEIDON_DEBUG("Replacing `", doc, "` into `", get_collection_name(), "` using primary key `", query, "`...");
-				conn->execute_update(get_collection_name(), STD_MOVE(query), doc, true, false);
+				set.append_object(sslit("$set"), std::move(doc));
+				LOG_POSEIDON_DEBUG("Replacing `", doc, "` into `", get_collection_name(), "` using primary key `", pk, "`...");
+				conn->execute_update(get_collection_name(), STD_MOVE(pk), std::move(set), true, false);
 			} else {
 				conn->execute_insert(get_collection_name(), doc, false);
 			}
