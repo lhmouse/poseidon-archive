@@ -22,7 +22,7 @@
 #include "../atomic.hpp"
 #include "../shared_nts.hpp"
 #include "../log.hpp"
-#include "../mutex.hpp"
+#include "../recursive_mutex.hpp"
 #include "../virtual_shared_from_this.hpp"
 #include "../uuid.hpp"
 
@@ -35,7 +35,7 @@ namespace MySql {
 		mutable void *volatile m_combined_write_stamp;
 
 	protected:
-		mutable Mutex m_mutex;
+		mutable RecursiveMutex m_mutex;
 
 	protected:
 		ObjectBase();

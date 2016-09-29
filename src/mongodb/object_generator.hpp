@@ -163,11 +163,11 @@ public:
                                             	return name_;	\
                                             }	\
                                             double get_ ## name_() const {	\
-                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
                                             void set_ ## name_(double val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	  name_ = val_; }	\
                                             	if(invalidates_){ invalidate(); }	\
                                             }
@@ -175,11 +175,11 @@ public:
                                             	return name_;	\
                                             }	\
                                             ::std::string get_ ## name_() const {	\
-                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
                                             void set_ ## name_(::std::string val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	  name_.swap(val_); }	\
                                             	if(invalidates_){ invalidate(); }	\
                                             }
@@ -197,11 +197,11 @@ public:
                                             	return name_;	\
                                             }	\
                                             Poseidon::Uuid get_ ## name_() const {	\
-                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
                                             void set_ ## name_(const ::Poseidon::Uuid &val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	  name_ = val_; }	\
                                             	if(invalidates_){ invalidate(); }	\
                                             }
@@ -209,11 +209,11 @@ public:
                                             	return name_;	\
                                             }	\
                                             ::std::string get_ ## name_() const {	\
-                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
                                             void set_ ## name_(::std::string val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	  name_.swap(val_); }	\
                                             	if(invalidates_){ invalidate(); }	\
                                             }
@@ -247,6 +247,8 @@ public:
 		MONGODB_OBJECT_FIELDS
 	}
 	::std::string generate_primary_key() const OVERRIDE {
+		const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
+
 		MONGODB_OBJECT_PRIMARY_KEY
 	}
 	void fetch(const ::boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_) OVERRIDE {

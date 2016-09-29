@@ -264,11 +264,11 @@ public:
                                             	return name_;	\
                                             }	\
                                             double get_ ## name_() const {	\
-                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
                                             void set_ ## name_(double val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	  name_ = val_; }	\
                                             	if(invalidates_){ invalidate(); }	\
                                             }
@@ -276,11 +276,11 @@ public:
                                             	return name_;	\
                                             }	\
                                             ::std::string get_ ## name_() const {	\
-                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
                                             void set_ ## name_(::std::string val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	  name_.swap(val_); }	\
                                             	if(invalidates_){ invalidate(); }	\
                                             }
@@ -298,11 +298,11 @@ public:
                                             	return name_;	\
                                             }	\
                                             Poseidon::Uuid get_ ## name_() const {	\
-                                            	const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\
                                             void set_ ## name_(const ::Poseidon::Uuid &val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::Mutex::UniqueLock lock_(m_mutex);	\
+                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	  name_ = val_; }	\
                                             	if(invalidates_){ invalidate(); }	\
                                             }
