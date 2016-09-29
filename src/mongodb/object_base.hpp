@@ -7,7 +7,6 @@
 #include "../cxx_ver.hpp"
 #include "../cxx_util.hpp"
 #include "connection.hpp"
-#include "oid.hpp"
 #include "bson_builder.hpp"
 #include "exception.hpp"
 #include <string>
@@ -35,8 +34,6 @@ namespace MongoDb {
 		mutable volatile bool m_auto_saves;
 		mutable void *volatile m_combined_write_stamp;
 
-		Oid m_oid;
-
 	protected:
 		mutable Mutex m_mutex;
 
@@ -58,26 +55,9 @@ namespace MongoDb {
 		virtual const char *get_collection_name() const = 0;
 
 		virtual void generate_document(BsonBuilder &doc) const = 0;
-		virtual void generate_primary_key(BsonBuilder &query) const = 0;
+		virtual std::string generate_primary_key() const = 0;
 		virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;
 		void async_save(bool to_replace, bool urgent = false) const;
-
-		const Oid &unlocked_get_oid() const {
-			return m_oid;
-		}
-		Oid get_oid() const {
-			const Mutex::UniqueLock lock(m_mutex);
-			return m_oid;
-		}
-		void set_oid(const Oid &val, bool invalidates = true){
-			{
-				const Mutex::UniqueLock lock(m_mutex);
-				m_oid = val;
-			}
-			if(invalidates){
-				invalidate();
-			}
-		}
 	};
 }
 

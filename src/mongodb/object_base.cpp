@@ -12,7 +12,6 @@ namespace Poseidon {
 namespace MongoDb {
 	ObjectBase::ObjectBase()
 		: m_auto_saves(false), m_combined_write_stamp(NULLPTR)
-		, m_oid(Oid::random())
 	{
 	}
 	ObjectBase::~ObjectBase(){

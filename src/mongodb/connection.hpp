@@ -15,7 +15,6 @@ namespace Poseidon {
 class Uuid;
 
 namespace MongoDb {
-	class Oid;
 	class BsonBuilder;
 
 	class Connection : NONCOPYABLE {
@@ -43,7 +42,6 @@ namespace MongoDb {
 
 		bool fetch_next();
 
-		Oid get_oid(const char *name) const;
 		bool get_boolean(const char *name) const;
 		boost::int64_t get_signed(const char *name) const;
 		boost::uint64_t get_unsigned(const char *name) const;

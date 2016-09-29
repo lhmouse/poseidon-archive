@@ -224,7 +224,7 @@ public:
 		return TOKEN_TO_STR(MONGODB_OBJECT_NAME);
 	}
 
-	void generate_document(::Poseidon::MongoDb::BsonBuilder &doc) const OVERRIDE {
+	void generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const OVERRIDE {
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -235,48 +235,21 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                doc.append_boolean  (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_SIGNED(name_)                 doc.append_signed   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_UNSIGNED(name_)               doc.append_unsigned (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_DOUBLE(name_)                 doc.append_double   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_STRING(name_)                 doc.append_string   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_DATETIME(name_)               doc.append_datetime (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_UUID(name_)                   doc.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_BLOB(name_)                   doc.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
+#define FIELD_BOOLEAN(name_)                doc_.append_boolean  (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
+#define FIELD_SIGNED(name_)                 doc_.append_signed   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
+#define FIELD_UNSIGNED(name_)               doc_.append_unsigned (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
+#define FIELD_DOUBLE(name_)                 doc_.append_double   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
+#define FIELD_STRING(name_)                 doc_.append_string   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
+#define FIELD_DATETIME(name_)               doc_.append_datetime (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
+#define FIELD_UUID(name_)                   doc_.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
+#define FIELD_BLOB(name_)                   doc_.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
 
 		MONGODB_OBJECT_FIELDS
 	}
-	void generate_primary_key(::Poseidon::MongoDb::BsonBuilder &query) const OVERRIDE {
-
-#undef FIELD_BOOLEAN
-#undef FIELD_SIGNED
-#undef FIELD_UNSIGNED
-#undef FIELD_DOUBLE
-#undef FIELD_STRING
-#undef FIELD_DATETIME
-#undef FIELD_UUID
-#undef FIELD_BLOB
-
-#define FIELD_BOOLEAN(name_)                if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
-                                            	{ query.append_boolean  (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
-#define FIELD_SIGNED(name_)                 if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
-                                            	{ query.append_signed   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
-#define FIELD_UNSIGNED(name_)               if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
-                                            	{ query.append_unsigned (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
-#define FIELD_DOUBLE(name_)                 if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
-                                            	{ query.append_double   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
-#define FIELD_STRING(name_)                 if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
-                                            	{ query.append_string   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
-#define FIELD_DATETIME(name_)               if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
-                                            	{ query.append_datetime (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
-#define FIELD_UUID(name_)                   if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
-                                            	{ query.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
-#define FIELD_BLOB(name_)                   if(__builtin_strstr(TOKEN_TO_STR(MONGODB_OBJECT_PRIMARY_KEY), TOKEN_TO_STR(name_)))	\
-                                            	{ query.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_()); }
-
-		MONGODB_OBJECT_FIELDS
+	::std::string generate_primary_key() const OVERRIDE {
+		MONGODB_OBJECT_PRIMARY_KEY
 	}
-	void fetch(const boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_) OVERRIDE {
+	void fetch(const ::boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_) OVERRIDE {
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED

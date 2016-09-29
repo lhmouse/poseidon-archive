@@ -17,7 +17,6 @@
 #include "../mongodb/object_base.hpp"
 #include "../mongodb/exception.hpp"
 #include "../mongodb/connection.hpp"
-#include "../mongodb/oid.hpp"
 #include "../mongodb/bson_builder.hpp"
 #include "../thread.hpp"
 #include "../mutex.hpp"
@@ -102,17 +101,18 @@ namespace {
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &doc) const OVERRIDE {
 			PROFILE_ME;
 
+			std::string pk;
 			if(m_to_replace){
-				MongoDb::BsonBuilder pk, set;
-				m_object->generate_primary_key(pk);
-				if(pk.empty()){
-					pk.append_oid(sslit("_id"), m_object->get_oid());
-				}
-				set.append_object(sslit("$set"), std::move(doc));
-				LOG_POSEIDON_DEBUG("Replacing `", set, "` into `", get_collection_name(), "` using primary key `", pk, "`...");
-				conn->execute_update(get_collection_name(), STD_MOVE(pk), std::move(set), true, false);
-			} else {
+				pk = m_object->generate_primary_key();
+			}
+			if(pk.empty()){
+				LOG_POSEIDON_DEBUG("Inserting: doc = ", doc);
 				conn->execute_insert(get_collection_name(), doc, false);
+			} else {
+				LOG_POSEIDON_DEBUG("Upserting: pk = ", pk, ", doc = ", doc);
+				auto q = MongoDb::bson_scalar_string(sslit("_id"), std::move(pk));
+				auto d = MongoDb::bson_scalar_object(sslit("$set"), std::move(doc));
+				conn->execute_update(get_collection_name(), std::move(q), std::move(d), true, false);
 			}
 		}
 		void set_success() const OVERRIDE {
@@ -157,7 +157,6 @@ namespace {
 				DEBUG_THROW(MongoDb::Exception, SharedNts::view(get_collection_name()), MONGOC_ERROR_QUERY_FAILURE, sslit("No rows returned"));
 			}
 			m_object->fetch(conn);
-			m_object->set_oid(conn->get_oid(sslit("_id")));
 		}
 		void set_success() const OVERRIDE {
 			m_promise->set_success();

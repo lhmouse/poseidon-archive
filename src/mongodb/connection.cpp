@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "connection.hpp"
 #include "exception.hpp"
-#include "oid.hpp"
 #include "bson_builder.hpp"
 #include <pthread.h>
 #include <stdlib.h>
@@ -263,17 +262,6 @@ namespace MongoDb {
 					}	\
 				}
 
-			Oid do_get_oid(const char *name) const {
-				if(!m_cursor_head){
-					DEBUG_THROW(BasicException, sslit("No more results"));
-				}
-				::bson_iter_t iter;
-				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					return VAL_INIT;
-				}
-				CHECK_TYPE(iter, name, BSON_TYPE_OID)
-				return Oid(::bson_iter_oid(&iter)->bytes);
-			}
 			bool do_get_boolean(const char *name) const {
 				if(!m_cursor_head){
 					DEBUG_THROW(BasicException, sslit("No more results"));
@@ -409,9 +397,6 @@ namespace MongoDb {
 		return static_cast<DelegatedConnection &>(*this).do_fetch_next();
 	}
 
-	Oid Connection::get_oid(const char *name) const {
-		return static_cast<const DelegatedConnection &>(*this).do_get_oid(name);
-	}
 	bool Connection::get_boolean(const char *name) const {
 		return static_cast<const DelegatedConnection &>(*this).do_get_boolean(name);
 	}

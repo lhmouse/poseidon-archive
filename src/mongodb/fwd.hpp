@@ -9,7 +9,6 @@ namespace Poseidon {
 namespace MongoDb {
 	class Exception;
 
-	class Oid;
 	class BsonBuilder;
 
 	class Connection;

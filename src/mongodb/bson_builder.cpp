@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "bson_builder.hpp"
-#include "oid.hpp"
 #include "../protocol_exception.hpp"
 #include "../time.hpp"
 #include "../uuid.hpp"
@@ -47,13 +46,6 @@ namespace MongoDb {
 				} break;	\
 				case (t_): {
 //=============================================================================
-			CASE(T_OID){
-				::bson_oid_t oid;
-				::bson_oid_init_from_data(&oid, reinterpret_cast<const unsigned char *>(it->small));
-				if(!::bson_append_oid(bson, key_str, -1, &oid)){
-					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_oid() failed"), -1);
-				}
-			}
 			CASE(T_BOOLEAN){
 				bool value;
 				std::memcpy(&value, it->small, sizeof(value));
@@ -174,12 +166,6 @@ namespace MongoDb {
 		}
 	}
 
-	void BsonBuilder::append_oid(SharedNts name, const Oid &value){
-		Element elem = { STD_MOVE(name), T_OID };
-		assert(sizeof(elem.small) >= value.size());
-		std::memcpy(elem.small, value.data(), value.size());
-		m_elements.push_back(STD_MOVE(elem));
-	}
 	void BsonBuilder::append_boolean(SharedNts name, bool value){
 		Element elem = { STD_MOVE(name), T_BOOLEAN };
 		assert(sizeof(elem.small) >= sizeof(value));

@@ -148,7 +148,6 @@ pkginclude_mongodb_HEADERS = \
 	src/mongodb/connection.hpp	\
 	src/mongodb/object_base.hpp	\
 	src/mongodb/exception.hpp	\
-	src/mongodb/oid.hpp	\
 	src/mongodb/bson_builder.hpp
 
 bin_PROGRAMS = \
@@ -255,7 +254,6 @@ lib_libposeidon_main_la_SOURCES = \
 	src/mongodb/object_base.cpp	\
 	src/mongodb/exception.cpp	\
 	src/mongodb/connection.cpp	\
-	src/mongodb/oid.cpp	\
 	src/mongodb/bson_builder.cpp
 
 pkgsysconfdir = $(sysconfdir)/@PACKAGE@

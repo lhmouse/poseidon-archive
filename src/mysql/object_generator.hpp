@@ -313,7 +313,7 @@ public:
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
 
-	void generate_sql(std::ostream &os_) const OVERRIDE {
+	void generate_sql(::std::ostream &os_) const OVERRIDE {
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT
@@ -358,7 +358,7 @@ public:
 
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
 	}
-	void fetch(const boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_) OVERRIDE {
+	void fetch(const ::boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_) OVERRIDE {
 
 #undef FIELD_BOOLEAN
 #undef FIELD_TINYINT

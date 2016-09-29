@@ -15,12 +15,9 @@ namespace Poseidon {
 class Uuid;
 
 namespace MongoDb {
-	class Oid;
-
 	class BsonBuilder {
 	private:
 		enum Type {
-			T_OID        =  0,
 			T_BOOLEAN    =  1,
 			T_SIGNED     =  2,
 			T_UNSIGNED   =  3,
@@ -53,7 +50,6 @@ namespace MongoDb {
 		void internal_build(void *impl, bool as_array) const;
 
 	public:
-		void append_oid(SharedNts name, const Oid &value);
 		void append_boolean(SharedNts name, bool value);
 		void append_signed(SharedNts name, boost::int64_t value);
 		void append_unsigned(SharedNts name, boost::uint64_t value);
@@ -102,11 +98,6 @@ namespace MongoDb {
 		return os;
 	}
 
-	inline BsonBuilder bson_scalar_oid(SharedNts name, const Oid &value){
-		BsonBuilder ret;
-		ret.append_oid(STD_MOVE(name), value);
-		return ret;
-	}
 	inline BsonBuilder bson_scalar_boolean(SharedNts name, bool value){
 		BsonBuilder ret;
 		ret.append_boolean(STD_MOVE(name), value);
