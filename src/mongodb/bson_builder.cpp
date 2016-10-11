@@ -221,7 +221,7 @@ namespace MongoDb {
 	void BsonBuilder::append_regex(SharedNts name, std::string regex, const char *options){
 		Element elem = { STD_MOVE(name), T_REGEX };
 		if(options){
-			const AUTO(len, std::min(std::strlen(options), sizeof(elem.small)) - 1);
+			const AUTO(len, std::min(std::strlen(options), sizeof(elem.small) - 1));
 			std::memcpy(elem.small, options, len);
 			elem.small[len] = 0;
 		} else {
