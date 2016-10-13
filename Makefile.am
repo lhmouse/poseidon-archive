@@ -101,7 +101,8 @@ pkginclude_http_HEADERS = \
 	src/http/status_codes.hpp	\
 	src/http/exception.hpp	\
 	src/http/utilities.hpp	\
-	src/http/upgraded_session_base.hpp
+	src/http/upgraded_session_base.hpp	\
+	src/http/url_param.hpp
 
 pkginclude_websocketdir = $(pkgincludedir)/websocket
 pkginclude_websocket_HEADERS = \
