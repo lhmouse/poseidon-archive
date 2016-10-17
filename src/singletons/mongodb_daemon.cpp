@@ -66,8 +66,8 @@ namespace {
 		virtual const char *get_collection_name() const = 0;
 		virtual MongoDb::BsonBuilder generate_query() const = 0;
 		virtual void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const = 0;
-		virtual void set_success() const = 0;
-		virtual void set_exception(boost::exception_ptr ep) const = 0;
+		virtual void set_success() = 0;
+		virtual void set_exception(boost::exception_ptr ep) = 0;
 	};
 
 	class SaveOperation : public OperationBase {
@@ -115,10 +115,10 @@ namespace {
 				conn->execute_update(get_collection_name(), std::move(q), std::move(d), true, false);
 			}
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -152,16 +152,21 @@ namespace {
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
+			if(m_promise.unique()){
+				LOG_POSEIDON_DEBUG("Discarding isolated MongoDB query: collection = ", get_collection_name(), ", query = ", query);
+				return;
+			}
+
 			conn->execute_query(get_collection_name(), query, 0, 1);
 			if(!conn->fetch_next()){
 				DEBUG_THROW(MongoDb::Exception, SharedNts::view(get_collection_name()), MONGOC_ERROR_QUERY_FAILURE, sslit("No rows returned"));
 			}
 			m_object->fetch(conn);
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -198,10 +203,10 @@ namespace {
 
 			conn->execute_delete(get_collection_name(), query, m_delete_all);
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -239,6 +244,11 @@ namespace {
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
+			if(m_promise.unique()){
+				LOG_POSEIDON_DEBUG("Discarding isolated MongoDB query: collection = ", get_collection_name(), ", query = ", query);
+				return;
+			}
+
 			conn->execute_query(get_collection_name(), query, m_begin, m_limit);
 			if(m_factory){
 				while(conn->fetch_next()){
@@ -248,10 +258,10 @@ namespace {
 				LOG_POSEIDON_DEBUG("Result discarded.");
 			}
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -286,13 +296,13 @@ namespace {
 
 			conn->execute_command(get_collection_name(), query, 0, 1);
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			if(atomic_sub(*m_counter, 1, ATOMIC_RELAXED) != 0){
 				return;
 			}
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			if(atomic_sub(*m_counter, 1, ATOMIC_RELAXED) != 0){
 				return;
 			}

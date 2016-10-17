@@ -16,6 +16,7 @@
 #include "singletons/job_dispatcher.hpp"
 #include "singletons/module_depository.hpp"
 #include "singletons/event_dispatcher.hpp"
+#include "singletons/filesystem_daemon.hpp"
 #include "singletons/profile_depository.hpp"
 #include "profiler.hpp"
 
@@ -65,6 +66,7 @@ namespace {
 		const boost::uint64_t CLEANUP_LOG_MASK = Logger::LV_FATAL | Logger::LV_ERROR | Logger::LV_WARNING | Logger::LV_INFO;
 
 		START(DnsDaemon);
+		START(FilesystemDaemon);
 		START(MySqlDaemon);
 		START(MongoDbDaemon);
 		START(JobDispatcher);

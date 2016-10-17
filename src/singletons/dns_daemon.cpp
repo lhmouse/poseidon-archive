@@ -33,7 +33,7 @@ namespace {
 		const int gai_code = ::getaddrinfo(host.c_str(), port, NULLPTR, &res);
 		if(gai_code != 0){
 			const AUTO(err_msg, ::gai_strerror(gai_code));
-			LOG_POSEIDON_DEBUG("DNS look_up failure: host = ", host, ", port = ", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
+			LOG_POSEIDON_DEBUG("DNS lookup failure: host = ", host, ", port = ", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
 			DEBUG_THROW(Exception, SharedNts::view(err_msg));
 		}
 
@@ -45,22 +45,43 @@ namespace {
 			::freeaddrinfo(res);
 			throw;
 		}
-		LOG_POSEIDON_DEBUG("DNS look_up success: host = ", host, ", port = ", port, ", result = ", get_ip_port_from_sock_addr(sock_addr));
+		LOG_POSEIDON_DEBUG("DNS lookup success: host = ", host, ", port = ", port, ", result = ", get_ip_port_from_sock_addr(sock_addr));
 		return sock_addr;
 	}
 
-	struct DnsRequestElement {
-		boost::weak_ptr<JobPromise> promise;
-		boost::shared_ptr<SockAddr> sock_addr;
+	class QueryOperation {
+	private:
+		const boost::shared_ptr<JobPromise> m_promise;
+		const boost::shared_ptr<SockAddr> m_sock_addr;
 
-		std::string host;
-		unsigned port;
+		const std::string m_host;
+		const unsigned m_port;
 
-		DnsRequestElement(boost::weak_ptr<JobPromise> promise_, boost::shared_ptr<SockAddr> sock_addr_,
-			std::string host_, unsigned port_)
-			: promise(STD_MOVE(promise_)), sock_addr(STD_MOVE(sock_addr_))
-			, host(STD_MOVE(host_)), port(port_)
+	public:
+		QueryOperation(boost::weak_ptr<JobPromise> promise,
+			boost::shared_ptr<SockAddr> sock_addr, std::string host, unsigned port)
+			: m_promise(STD_MOVE(promise))
+			, m_sock_addr(STD_MOVE(sock_addr)), m_host(STD_MOVE(host)), m_port(port)
 		{
+		}
+
+	public:
+		void execute() const {
+			if(m_promise.unique()){
+				LOG_POSEIDON_DEBUG("Discarding isolated DNS query: m_host = ", m_host);
+				return;
+			}
+
+			try {
+				*m_sock_addr = real_dns_look_up(m_host, m_port);
+				m_promise->set_success();
+			} catch(Exception &e){
+				LOG_POSEIDON_INFO("Exception thrown: what = ", e.what());
+				m_promise->set_exception(boost::copy_exception(e));
+			} catch(std::exception &e){
+				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
+				m_promise->set_exception(boost::copy_exception(e));
+			}
 		}
 	};
 
@@ -68,50 +89,32 @@ namespace {
 	Thread g_thread;
 
 	Mutex g_mutex;
-	ConditionVariable g_new_request;
-	std::deque<DnsRequestElement> g_requests;
+	ConditionVariable g_new_operation;
+	std::deque<boost::shared_ptr<QueryOperation> > g_operations;
 
 	bool pump_one_element() NOEXCEPT {
 		PROFILE_ME;
 
-		boost::shared_ptr<JobPromise> promise;
-		DnsRequestElement *elem = NULLPTR;
+		boost::shared_ptr<QueryOperation> operation;
 		{
 			const Mutex::UniqueLock lock(g_mutex);
-			while(!g_requests.empty()){
-				AUTO_REF(first, g_requests.front());
-				promise = first.promise.lock();
-				if(promise){
-					elem = &first;
-					break;
-				}
-				g_requests.pop_front();
+			if(!g_operations.empty()){
+				operation = g_operations.front();
 			}
 		}
-		if(!promise){
+		if(!operation){
 			return false;
 		}
-		assert(elem);
 
 		try {
-			try {
-				*(elem->sock_addr) = real_dns_look_up(elem->host, elem->port);
-				promise->set_success();
-			} catch(Exception &e){
-				LOG_POSEIDON_INFO("Exception thrown in DNS loop: what = ", e.what());
-				promise->set_exception(boost::copy_exception(e));
-			} catch(std::exception &e){
-				LOG_POSEIDON_INFO("std::exception thrown in DNS loop: what = ", e.what());
-				promise->set_exception(boost::copy_exception(e));
-			}
+			operation->execute();
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 		} catch(...){
 			LOG_POSEIDON_WARNING("Unknown exception thrown.");
 		}
-
 		const Mutex::UniqueLock lock(g_mutex);
-		g_requests.pop_front();
+		g_operations.pop_front();
 		return true;
 	}
 
@@ -128,7 +131,7 @@ namespace {
 			}
 
 			Mutex::UniqueLock lock(g_mutex);
-			g_new_request.timed_wait(lock, 100);
+			g_new_operation.timed_wait(lock, 100);
 		}
 	}
 
@@ -160,7 +163,7 @@ void DnsDaemon::stop(){
 	if(g_thread.joinable()){
 		g_thread.join();
 	}
-	g_requests.clear();
+	g_operations.clear();
 }
 
 SockAddr DnsDaemon::look_up(const std::string &host, unsigned port){
@@ -175,8 +178,9 @@ boost::shared_ptr<const JobPromise> DnsDaemon::enqueue_for_looking_up(boost::sha
 	AUTO(promise, boost::make_shared<JobPromise>());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		g_requests.push_back(DnsRequestElement(promise, STD_MOVE(sock_addr), STD_MOVE(host), port));
-		g_new_request.signal();
+		g_operations.push_back(boost::make_shared<QueryOperation>(
+			promise, STD_MOVE(sock_addr), STD_MOVE(host), port));
+		g_new_operation.signal();
 	}
 	return STD_MOVE_IDN(promise);
 }

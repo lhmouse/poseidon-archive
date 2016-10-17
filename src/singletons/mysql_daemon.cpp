@@ -63,8 +63,8 @@ namespace {
 		virtual const char *get_table_name() const = 0;
 		virtual std::string generate_sql() const = 0;
 		virtual void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const = 0;
-		virtual void set_success() const = 0;
-		virtual void set_exception(boost::exception_ptr ep) const = 0;
+		virtual void set_success() = 0;
+		virtual void set_exception(boost::exception_ptr ep) = 0;
 	};
 
 	class SaveOperation : public OperationBase {
@@ -106,10 +106,10 @@ namespace {
 
 			conn->execute_sql(query);
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -143,16 +143,21 @@ namespace {
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
 
+			if(m_promise.unique()){
+				LOG_POSEIDON_DEBUG("Discarding isolated MySQL query: table_name = ", get_table_name(), ", query = ", query);
+				return;
+			}
+
 			conn->execute_sql(query);
 			if(!conn->fetch_row()){
 				DEBUG_THROW(MySql::Exception, SharedNts::view(get_table_name()), ER_SP_FETCH_NO_DATA, sslit("No rows returned"));
 			}
 			m_object->fetch(conn);
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -188,10 +193,10 @@ namespace {
 
 			conn->execute_sql(query);
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -226,6 +231,11 @@ namespace {
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
 
+			if(m_promise.unique()){
+				LOG_POSEIDON_DEBUG("Discarding isolated MySQL query: table_name = ", get_table_name(), ", query = ", query);
+				return;
+			}
+
 			conn->execute_sql(query);
 			if(m_factory){
 				while(conn->fetch_row()){
@@ -235,10 +245,10 @@ namespace {
 				LOG_POSEIDON_DEBUG("Result discarded.");
 			}
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -273,13 +283,13 @@ namespace {
 
 			conn->execute_sql(query);
 		}
-		void set_success() const OVERRIDE {
+		void set_success() OVERRIDE {
 			if(atomic_sub(*m_counter, 1, ATOMIC_RELAXED) != 0){
 				return;
 			}
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) const OVERRIDE {
+		void set_exception(boost::exception_ptr ep) OVERRIDE {
 			if(atomic_sub(*m_counter, 1, ATOMIC_RELAXED) != 0){
 				return;
 			}

@@ -80,6 +80,7 @@ pkginclude_singletons_HEADERS = \
 	src/singletons/mongodb_daemon.hpp	\
 	src/singletons/dns_daemon.hpp	\
 	src/singletons/event_dispatcher.hpp	\
+	src/singletons/filesystem_daemon.hpp	\
 	src/singletons/profile_depository.hpp
 
 pkginclude_httpdir = $(pkgincludedir)/http
@@ -215,6 +216,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/singletons/timer_daemon.cpp	\
 	src/singletons/module_depository.cpp	\
 	src/singletons/event_dispatcher.cpp	\
+	src/singletons/filesystem_daemon.cpp	\
 	src/singletons/profile_depository.cpp	\
 	src/singletons/system_http_server.cpp	\
 	src/cbpp/reader.cpp	\

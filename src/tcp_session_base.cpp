@@ -86,14 +86,14 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
 	if(flags == -1){
-		const int code = errno;
+		const int err_code = errno;
 		LOG_POSEIDON_ERROR("Could not get fcntl flags on socket.");
-		DEBUG_THROW(SystemException, code);
+		DEBUG_THROW(SystemException, err_code);
 	}
 	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
-		const int code = errno;
+		const int err_code = errno;
 		LOG_POSEIDON_ERROR("Could not set fcntl flags on socket.");
-		DEBUG_THROW(SystemException, code);
+		DEBUG_THROW(SystemException, err_code);
 	}
 }
 TcpSessionBase::~TcpSessionBase(){
