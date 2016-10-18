@@ -111,7 +111,7 @@ namespace {
 			} else {
 				LOG_POSEIDON_DEBUG("Upserting: pk = ", pk, ", doc = ", doc);
 				AUTO(q, MongoDb::bson_scalar_string(sslit("_id"), STD_MOVE(pk)));
-				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), STD_MOVE(doc)));
+				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), doc));
 				conn->execute_update(get_collection_name(), STD_MOVE(q), STD_MOVE(d), true, false);
 			}
 		}
