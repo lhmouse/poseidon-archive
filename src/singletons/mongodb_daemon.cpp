@@ -110,9 +110,9 @@ namespace {
 				conn->execute_insert(get_collection_name(), doc, false);
 			} else {
 				LOG_POSEIDON_DEBUG("Upserting: pk = ", pk, ", doc = ", doc);
-				auto q = MongoDb::bson_scalar_string(sslit("_id"), std::move(pk));
-				auto d = MongoDb::bson_scalar_object(sslit("$set"), std::move(doc));
-				conn->execute_update(get_collection_name(), std::move(q), std::move(d), true, false);
+				AUTO(q, MongoDb::bson_scalar_string(sslit("_id"), STD_MOVE(pk)));
+				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), STD_MOVE(doc)));
+				conn->execute_update(get_collection_name(), STD_MOVE(q), STD_MOVE(d), true, false);
 			}
 		}
 		void set_success() OVERRIDE {
