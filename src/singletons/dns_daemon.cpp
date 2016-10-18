@@ -58,7 +58,7 @@ namespace {
 		const unsigned m_port;
 
 	public:
-		QueryOperation(boost::weak_ptr<JobPromise> promise,
+		QueryOperation(boost::shared_ptr<JobPromise> promise,
 			boost::shared_ptr<SockAddr> sock_addr, std::string host, unsigned port)
 			: m_promise(STD_MOVE(promise))
 			, m_sock_addr(STD_MOVE(sock_addr)), m_host(STD_MOVE(host)), m_port(port)
