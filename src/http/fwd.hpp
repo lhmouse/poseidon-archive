@@ -9,6 +9,7 @@ namespace Poseidon {
 namespace Http {
 	class RequestHeaders;
 	class ResponseHeaders;
+	class UrlParam;
 	class Exception;
 
 	class ServerReader;
