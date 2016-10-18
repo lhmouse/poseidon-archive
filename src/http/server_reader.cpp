@@ -56,6 +56,7 @@ namespace Http {
 					// 没找到换行符。
 					const AUTO(max_line_length, MainConfig::get<std::size_t>("http_max_header_line_length", 8192));
 					if(m_queue.size() > max_line_length){
+						LOG_POSEIDON_WARNING("HTTP header line is too long: size = ", m_queue.size());
 						DEBUG_THROW(Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
 					}
 					break;
@@ -147,7 +148,7 @@ namespace Http {
 					const AUTO(max_headers, MainConfig::get<std::size_t>("http_max_headers_per_request", 64));
 					if(headers >= max_headers){
 						LOG_POSEIDON_WARNING("Too many HTTP headers: headers = ", headers);
-						DEBUG_THROW(Exception, ST_BAD_REQUEST);
+						DEBUG_THROW(Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
 					}
 
 					std::string line;
