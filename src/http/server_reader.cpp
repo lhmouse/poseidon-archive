@@ -12,6 +12,7 @@
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../string.hpp"
+#include "../singletons/main_config.hpp"
 
 namespace Poseidon {
 
@@ -38,18 +39,27 @@ namespace Http {
 			if(expecting_new_line){
 				std::size_t lf_offset = 0;
 				AUTO(ce, m_queue.get_const_chunk_enumerator());
-				while(ce){
+				for(;;){
+					if(!ce){
+						lf_offset = SIZE_MAX;
+						break;
+					}
 					const AUTO(pos, std::find(ce.begin(), ce.end(), '\n'));
 					if(pos != ce.end()){
 						lf_offset += static_cast<std::size_t>(pos - ce.begin());
-						goto _found;
+						break;
 					}
 					lf_offset += ce.size();
 					++ce;
 				}
-				// 没找到换行符。
-				break;
-			_found:
+				if(lf_offset == SIZE_MAX){
+					// 没找到换行符。
+					const AUTO(max_line_length, MainConfig::get<std::size_t>("http_max_header_line_length", 8192));
+					if(m_queue.size() > max_line_length){
+						DEBUG_THROW(Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
+					}
+					break;
+				}
 				m_size_expecting = lf_offset + 1;
 			} else {
 				if(m_queue.size() < m_size_expecting){
@@ -133,6 +143,13 @@ namespace Http {
 
 			case S_HEADERS:
 				if(!expected.empty()){
+					const AUTO(headers, m_request_headers.headers.size());
+					const AUTO(max_headers, MainConfig::get<std::size_t>("http_max_headers_per_request", 64));
+					if(headers >= max_headers){
+						LOG_POSEIDON_WARNING("Too many HTTP headers: headers = ", headers);
+						DEBUG_THROW(Exception, ST_BAD_REQUEST);
+					}
+
 					std::string line;
 					expected.dump(line);
 
