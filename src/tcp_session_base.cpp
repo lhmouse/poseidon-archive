@@ -66,11 +66,7 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 		return;
 	}
 
-	try {
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote = ", session->get_remote_info());
-	} catch(...){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote is not connected");
-	}
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote = ", session->get_remote_info_nothrow());
 	atomic_store(session->m_timed_out, true, ATOMIC_RELEASE);
 	session->force_shutdown();
 }
@@ -97,11 +93,7 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	}
 }
 TcpSessionBase::~TcpSessionBase(){
-	try {
-		LOG_POSEIDON_INFO("Destroying TCP session: remote = ", get_remote_info());
-	} catch(...){
-		LOG_POSEIDON_INFO("Destroying TCP session that has not been established.");
-	}
+	LOG_POSEIDON_INFO("Destroying TCP session: remote = ", get_remote_info_nothrow());
 }
 
 void TcpSessionBase::set_connected(){
@@ -238,7 +230,7 @@ bool TcpSessionBase::send(StreamBuffer buffer){
 
 	if(atomic_load(m_really_shutdown_write, ATOMIC_CONSUME)){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-			"Connection has been shut down for writing: remote = ", get_remote_info());
+			"Connection has been shut down for writing: remote = ", get_remote_info_nothrow());
 		return false;
 	}
 
@@ -301,6 +293,24 @@ const IpPort &TcpSessionBase::get_local_info() const {
 
 	fetch_peer_info();
 	return m_peer_info.local;
+}
+IpPort TcpSessionBase::get_remote_info_nothrow() const NOEXCEPT
+try {
+	PROFILE_ME;
+
+	return get_remote_info();
+} catch(std::exception &e){
+	LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
+	return IpPort(sslit("<unknown>"), 0);
+}
+IpPort TcpSessionBase::get_local_info_nothrow() const NOEXCEPT
+try {
+	PROFILE_ME;
+
+	return get_local_info();
+} catch(std::exception &e){
+	LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
+	return IpPort(sslit("<unknown>"), 0);
 }
 
 void TcpSessionBase::set_timeout(boost::uint64_t timeout){

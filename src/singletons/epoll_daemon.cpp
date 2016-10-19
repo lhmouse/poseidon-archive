@@ -157,8 +157,8 @@ std::vector<EpollDaemon::SnapshotElement> EpollDaemon::snapshot(){
 	for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
 		ret.push_back(SnapshotElement());
 		AUTO_REF(item, ret.back());
-		item.remote = (*it)->get_remote_info();
-		item.local = (*it)->get_local_info();
+		item.remote = (*it)->get_remote_info_nothrow();
+		item.local = (*it)->get_local_info_nothrow();
 		item.ms_online = now - (*it)->get_created_time();
 	}
 	return ret;

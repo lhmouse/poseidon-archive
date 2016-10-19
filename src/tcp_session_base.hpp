@@ -139,6 +139,8 @@ public:
 
 	const IpPort &get_remote_info() const;
 	const IpPort &get_local_info() const;
+	IpPort get_remote_info_nothrow() const NOEXCEPT;
+	IpPort get_local_info_nothrow() const NOEXCEPT;
 
 	void set_timeout(boost::uint64_t timeout);
 

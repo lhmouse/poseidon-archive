@@ -28,6 +28,9 @@ public:
 	const IpPort &get_local_info() const {
 		return m_local_info;
 	}
+	IpPort get_local_info_nothrow() const NOEXCEPT {
+		return m_local_info;
+	}
 
 	virtual bool poll() const = 0;
 };

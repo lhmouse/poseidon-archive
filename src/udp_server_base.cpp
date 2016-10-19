@@ -37,7 +37,7 @@ UdpServerBase::UdpServerBase(const IpPort &bind_addr)
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created UDP server on ", get_local_info());
 }
 UdpServerBase::~UdpServerBase(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed UDP server on ", get_local_info());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed UDP server on ", get_local_info_nothrow());
 }
 
 bool UdpServerBase::poll() const {

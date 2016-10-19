@@ -197,22 +197,14 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 				}
 			}
 			const AUTO(desc, get_error_desc(err_code));
-			try {
-				LOG_POSEIDON_INFO("Socket error: err_code = ", err_code, ", desc = ", desc, " remote is ", session->get_remote_info());
-			} catch(...){
-				LOG_POSEIDON_INFO("Socket error: err_code = ", err_code, ", desc = ", desc, " remote is not connected.");
-			}
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-				"Socket error: err_code = ", err_code, ", desc = ", desc, ", typeid = ", typeid(*session).name());
+				"Socket error: err_code = ", err_code, ", desc = ", desc, ", typeid = ", typeid(*session).name(),
+				", remote = ", session->get_remote_info_nothrow());
 			session->on_close(err_code);
 			goto _erase_session;
 		}
 		if(event.events & EPOLLHUP){
-			try {
-				LOG_POSEIDON_INFO("Socket closed: remote is ", session->get_remote_info());
-			} catch(...){
-				LOG_POSEIDON_INFO("Socket closed: remote is not connected.");
-			}
+			LOG_POSEIDON_INFO("Socket closed: remote = ", session->get_remote_info_nothrow());
 			session->shutdown_read();
 			session->shutdown_write();
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,

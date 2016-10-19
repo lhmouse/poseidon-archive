@@ -63,7 +63,7 @@ TcpServerBase::TcpServerBase(const IpPort &addr, const char *cert, const char *p
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created ", (m_ssl_factory ? "SSL " : ""), "TCP server on ", get_local_info());
 }
 TcpServerBase::~TcpServerBase(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed ", (m_ssl_factory ? "SSL " : ""), "TCP server on ", get_local_info());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed ", (m_ssl_factory ? "SSL " : ""), "TCP server on ", get_local_info_nothrow());
 }
 
 void TcpServerBase::init_ssl_factory(const char *cert, const char *private_key){
