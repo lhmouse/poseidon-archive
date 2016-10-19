@@ -30,8 +30,8 @@
 namespace Poseidon {
 
 namespace {
-	std::string     g_server_addr       = "localhost";
-	unsigned        g_server_port       = 3306;
+	std::string     g_master_addr       = "localhost";
+	unsigned        g_master_port       = 3306;
 	std::string     g_slave_addr        = VAL_INIT;
 	unsigned        g_slave_port        = 0;
 	std::string     g_username          = "root";
@@ -346,21 +346,28 @@ namespace {
 				while(!master_conn){
 					LOG_POSEIDON_INFO("Connecting to MySQL master server...");
 					try {
-						master_conn = MySqlDaemon::create_connection(false);
+						master_conn = MySql::Connection::create(g_master_addr, g_master_port,
+							g_username, g_password, g_schema, g_use_ssl, g_charset);
 						LOG_POSEIDON_INFO("Successfully connected to MySQL master server.");
 					} catch(std::exception &e){
 						LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 						sleep_for_reconnection();
 					}
 				}
-				while(!slave_conn){
-					LOG_POSEIDON_INFO("Connecting to MySQL slave server...");
-					try {
-						slave_conn = MySqlDaemon::create_connection(true);
-						LOG_POSEIDON_INFO("Successfully connected to MySQL slave server.");
-					} catch(std::exception &e){
-						LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-						sleep_for_reconnection();
+				if((g_master_addr == g_slave_addr) && (g_master_port == g_slave_port)){
+					LOG_POSEIDON_INFO("The master connection is reused as the slave connection.");
+					slave_conn = master_conn;
+				} else {
+					while(!slave_conn){
+						LOG_POSEIDON_INFO("Connecting to MySQL slave server...");
+						try {
+							slave_conn = MySql::Connection::create(g_slave_addr, g_slave_port,
+								g_username, g_password, g_schema, g_use_ssl, g_charset);
+							LOG_POSEIDON_INFO("Successfully connected to MySQL slave server.");
+						} catch(std::exception &e){
+							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+							sleep_for_reconnection();
+						}
 					}
 				}
 
@@ -693,11 +700,11 @@ void MySqlDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MySQL daemon...");
 
-	MainConfig::get(g_server_addr, "mysql_server_addr");
-	LOG_POSEIDON_DEBUG("MySQL server addr = ", g_server_addr);
+	MainConfig::get(g_master_addr, "mysql_server_addr");
+	LOG_POSEIDON_DEBUG("MySQL master addr = ", g_master_addr);
 
-	MainConfig::get(g_server_port, "mysql_server_port");
-	LOG_POSEIDON_DEBUG("MySQL server port = ", g_server_port);
+	MainConfig::get(g_master_port, "mysql_server_port");
+	LOG_POSEIDON_DEBUG("MySQL master port = ", g_master_port);
 
 	MainConfig::get(g_slave_addr, "mysql_slave_addr");
 	LOG_POSEIDON_DEBUG("MySQL slave addr = ", g_slave_addr);
@@ -779,8 +786,8 @@ void MySqlDaemon::stop(){
 }
 
 boost::shared_ptr<MySql::Connection> MySqlDaemon::create_connection(bool from_slave){
-	AUTO(addr, &g_server_addr);
-	AUTO(port, &g_server_port);
+	AUTO(addr, &g_master_addr);
+	AUTO(port, &g_master_port);
 	if(from_slave){
 		if(!g_slave_addr.empty()){
 			addr = &g_slave_addr;

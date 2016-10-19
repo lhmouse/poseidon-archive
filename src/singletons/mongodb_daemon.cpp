@@ -33,8 +33,8 @@
 namespace Poseidon {
 
 namespace {
-	std::string     g_server_addr       = "localhost";
-	unsigned        g_server_port       = 27017;
+	std::string     g_master_addr       = "localhost";
+	unsigned        g_master_port       = 27017;
 	std::string     g_slave_addr        = VAL_INIT;
 	unsigned        g_slave_port        = 0;
 	std::string     g_username          = "root";
@@ -358,21 +358,27 @@ namespace {
 				while(!master_conn){
 					LOG_POSEIDON_INFO("Connecting to MongoDB master server...");
 					try {
-						master_conn = MongoDbDaemon::create_connection(false);
+						master_conn = MongoDb::Connection::create(g_master_addr, g_master_port,
+							g_username, g_password, g_auth_database, g_use_ssl, g_database);
 						LOG_POSEIDON_INFO("Successfully connected to MongoDB master server.");
 					} catch(std::exception &e){
 						LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 						sleep_for_reconnection();
 					}
 				}
-				while(!slave_conn){
-					LOG_POSEIDON_INFO("Connecting to MongoDB slave server...");
-					try {
-						slave_conn = MongoDbDaemon::create_connection(true);
-						LOG_POSEIDON_INFO("Successfully connected to MongoDB slave server.");
-					} catch(std::exception &e){
-						LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-						sleep_for_reconnection();
+				if((g_master_addr == g_slave_addr) && (g_master_port == g_slave_port)){
+					LOG_POSEIDON_INFO("The master connection is reused as the slave connection.");
+					slave_conn = master_conn;
+				} else {
+					while(!slave_conn){
+						LOG_POSEIDON_INFO("Connecting to MongoDB slave server...");
+						try {
+							slave_conn = MongoDbDaemon::create_connection(true);
+							LOG_POSEIDON_INFO("Successfully connected to MongoDB slave server.");
+						} catch(std::exception &e){
+							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+							sleep_for_reconnection();
+						}
 					}
 				}
 
@@ -705,11 +711,11 @@ void MongoDbDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MongoDB daemon...");
 
-	MainConfig::get(g_server_addr, "mongodb_server_addr");
-	LOG_POSEIDON_DEBUG("MongoDB server addr = ", g_server_addr);
+	MainConfig::get(g_master_addr, "mongodb_server_addr");
+	LOG_POSEIDON_DEBUG("MongoDB master addr = ", g_master_addr);
 
-	MainConfig::get(g_server_port, "mongodb_server_port");
-	LOG_POSEIDON_DEBUG("MongoDB server port = ", g_server_port);
+	MainConfig::get(g_master_port, "mongodb_server_port");
+	LOG_POSEIDON_DEBUG("MongoDB master port = ", g_master_port);
 
 	MainConfig::get(g_slave_addr, "mongodb_slave_addr");
 	LOG_POSEIDON_DEBUG("MongoDB slave addr = ", g_slave_addr);
@@ -791,8 +797,8 @@ void MongoDbDaemon::stop(){
 }
 
 boost::shared_ptr<MongoDb::Connection> MongoDbDaemon::create_connection(bool from_slave){
-	AUTO(addr, &g_server_addr);
-	AUTO(port, &g_server_port);
+	AUTO(addr, &g_master_addr);
+	AUTO(port, &g_master_port);
 	if(from_slave){
 		if(!g_slave_addr.empty()){
 			addr = &g_slave_addr;
