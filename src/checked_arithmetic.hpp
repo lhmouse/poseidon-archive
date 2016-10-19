@@ -15,7 +15,7 @@ namespace Poseidon {
 
 template<typename T>
 T checked_add(T lhs, T rhs){
-	BOOST_STATIC_ASSERT(boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value);
+	BOOST_STATIC_ASSERT((boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value));
 
 	const T ret = lhs + rhs;
 	if(ret < lhs){
@@ -31,7 +31,7 @@ template boost::uint64_t checked_add<boost::uint64_t>(boost::uint64_t lhs, boost
 
 template<typename T>
 T saturated_add(T lhs, T rhs) NOEXCEPT {
-	BOOST_STATIC_ASSERT(boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value);
+	BOOST_STATIC_ASSERT((boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value));
 
 	const T ret = lhs + rhs;
 	if(ret < lhs){
@@ -47,7 +47,7 @@ template boost::uint64_t saturated_add<boost::uint64_t>(boost::uint64_t lhs, boo
 
 template<typename T>
 T checked_sub(T lhs, T rhs){
-	BOOST_STATIC_ASSERT(boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value);
+	BOOST_STATIC_ASSERT((boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value));
 
 	const T ret = lhs - rhs;
 	if(ret > lhs){
@@ -63,7 +63,7 @@ template boost::uint64_t checked_sub<boost::uint64_t>(boost::uint64_t lhs, boost
 
 template<typename T>
 T saturated_sub(T lhs, T rhs) NOEXCEPT {
-	BOOST_STATIC_ASSERT(boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value);
+	BOOST_STATIC_ASSERT((boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value));
 
 	const T ret = lhs - rhs;
 	if(ret > lhs){
@@ -79,7 +79,7 @@ template boost::uint64_t saturated_sub<boost::uint64_t>(boost::uint64_t lhs, boo
 
 template<typename T>
 T checked_mul(T lhs, T rhs){
-	BOOST_STATIC_ASSERT(boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value);
+	BOOST_STATIC_ASSERT((boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value));
 
 	if((lhs == 0) || (rhs == 0)){
 		return 0;
@@ -98,7 +98,7 @@ template boost::uint64_t checked_mul<boost::uint64_t>(boost::uint64_t lhs, boost
 
 template<typename T>
 T saturated_mul(T lhs, T rhs) NOEXCEPT {
-	BOOST_STATIC_ASSERT(boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value);
+	BOOST_STATIC_ASSERT((boost::is_unsigned<T>::value && !boost::is_same<T, bool>::value));
 
 	if((lhs == 0) || (rhs == 0)){
 		return 0;
