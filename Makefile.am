@@ -49,6 +49,7 @@ pkginclude_HEADERS = \
 	src/endian.hpp	\
 	src/csv_parser.hpp	\
 	src/string.hpp	\
+	src/checked_arithmetic.hpp	\
 	src/time.hpp	\
 	src/errno.hpp	\
 	src/random.hpp	\
