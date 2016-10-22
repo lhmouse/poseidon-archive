@@ -12,6 +12,7 @@ namespace WebSocket {
 	class Session : public LowLevelSession {
 	private:
 		class SyncJobBase;
+		class ReadHupJob;
 		class DataMessageJob;
 		class ControlMessageJob;
 
@@ -38,6 +39,9 @@ namespace WebSocket {
 		}
 
 		// UpgradedSessionBase
+		void on_read_hup() NOEXCEPT OVERRIDE;
+
+		// LowLevelSession
 		void on_read_avail(StreamBuffer data) OVERRIDE;
 
 		void on_low_level_message_header(OpCode opcode) OVERRIDE;
