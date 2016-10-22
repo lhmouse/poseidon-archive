@@ -18,23 +18,23 @@ namespace WebSocket {
 	class Session::SyncJobBase : public JobBase {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
-		const boost::weak_ptr<Http::LowLevelSession> m_parent;
-		const boost::weak_ptr<Session> m_session;
+		const boost::weak_ptr<TcpSessionBase> m_category;
+		const boost::weak_ptr<Session> m_weak_session;
 
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
-			: m_guard(session->get_safe_parent()), m_parent(session->get_weak_parent()), m_session(session)
+			: m_guard(session->get_safe_parent()), m_category(session->get_safe_parent()), m_weak_session(session)
 		{
 		}
 
 	private:
 		boost::weak_ptr<const void> get_category() const FINAL {
-			return m_parent;
+			return m_category;
 		}
 		void perform() FINAL {
 			PROFILE_ME;
 
-			const AUTO(session, m_session.lock());
+			const AUTO(session, m_weak_session.lock());
 			if(!session){
 				return;
 			}

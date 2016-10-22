@@ -18,22 +18,23 @@ namespace Cbpp {
 	class Session::SyncJobBase : public JobBase {
 	private:
 		const TcpSessionBase::DelayedShutdownGuard m_guard;
-		const boost::weak_ptr<Session> m_session;
+		const boost::weak_ptr<TcpSessionBase> m_category;
+		const boost::weak_ptr<Session> m_weak_session;
 
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
-			: m_guard(session), m_session(session)
+			: m_guard(session), m_category(session), m_weak_session(session)
 		{
 		}
 
 	private:
 		boost::weak_ptr<const void> get_category() const FINAL {
-			return m_session;
+			return m_category;
 		}
 		void perform() FINAL {
 			PROFILE_ME;
 
-			const AUTO(session, m_session.lock());
+			const AUTO(session, m_weak_session.lock());
 			if(!session){
 				return;
 			}
