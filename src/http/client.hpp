@@ -13,6 +13,7 @@ namespace Http {
 	private:
 		class SyncJobBase;
 		class ConnectJob;
+		class ReadHupJob;
 		class ResponseJob;
 
 	private:
@@ -38,6 +39,7 @@ namespace Http {
 
 		// TcpClientBase
 		void on_connect() OVERRIDE;
+		void on_read_hup() NOEXCEPT OVERRIDE;
 
 		// LowLevelClient
 		void on_low_level_response_headers(

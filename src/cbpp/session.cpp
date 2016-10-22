@@ -67,6 +67,21 @@ namespace Cbpp {
 		virtual void really_perform(const boost::shared_ptr<Session> &session) = 0;
 	};
 
+	class Session::ReadHupJob : public Session::SyncJobBase {
+	public:
+		explicit ReadHupJob(const boost::shared_ptr<Session> &session)
+			: SyncJobBase(session)
+		{
+		}
+
+	protected:
+		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
+			PROFILE_ME;
+
+			session->shutdown_write();
+		}
+	};
+
 	class Session::DataMessageJob : public Session::SyncJobBase {
 	private:
 		boost::uint16_t m_message_id;
@@ -127,6 +142,24 @@ namespace Cbpp {
 	{
 	}
 	Session::~Session(){
+	}
+
+	void Session::on_read_hup() NOEXCEPT
+	try {
+		PROFILE_ME;
+
+		JobDispatcher::enqueue(
+			boost::make_shared<ReadHupJob>(
+				virtual_shared_from_this<Session>()),
+			VAL_INIT);
+
+		LowLevelSession::on_read_hup();
+	} catch(std::exception &e){
+		LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+		force_shutdown();
+	} catch(...){
+		LOG_POSEIDON_WARNING("Unknown exception thrown.");
+		force_shutdown();
 	}
 
 	void Session::on_read_avail(StreamBuffer data)

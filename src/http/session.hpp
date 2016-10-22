@@ -12,6 +12,7 @@ namespace Http {
 	class Session : public LowLevelSession {
 	private:
 		class SyncJobBase;
+		class ReadHupJob;
 		class ContinueJob;
 		class RequestJob;
 		class ErrorJob;
@@ -41,6 +42,9 @@ namespace Http {
 		const StreamBuffer &get_low_level_entity() const {
 			return m_entity;
 		}
+
+		// TcpSessionBase
+		void on_read_hup() NOEXCEPT OVERRIDE;
 
 		// LowLevelSession
 		void on_read_avail(StreamBuffer data) OVERRIDE;

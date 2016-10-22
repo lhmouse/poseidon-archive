@@ -77,6 +77,21 @@ namespace Cbpp {
 		}
 	};
 
+	class Client::ReadHupJob : public Client::SyncJobBase {
+	public:
+		explicit ReadHupJob(const boost::shared_ptr<Client> &client)
+			: SyncJobBase(client)
+		{
+		}
+
+	protected:
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
+			PROFILE_ME;
+
+			client->shutdown_write();
+		}
+	};
+
 	class Client::DataMessageJob : public Client::SyncJobBase {
 	private:
 		unsigned m_message_id;
@@ -138,6 +153,23 @@ namespace Cbpp {
 			VAL_INIT);
 
 		LowLevelClient::on_connect();
+	}
+	void Client::on_read_hup() NOEXCEPT
+	try {
+		PROFILE_ME;
+
+		JobDispatcher::enqueue(
+			boost::make_shared<ReadHupJob>(
+				virtual_shared_from_this<Client>()),
+			VAL_INIT);
+
+		LowLevelClient::on_read_hup();
+	} catch(std::exception &e){
+		LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+		force_shutdown();
+	} catch(...){
+		LOG_POSEIDON_WARNING("Unknown exception thrown.");
+		force_shutdown();
 	}
 
 	void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){

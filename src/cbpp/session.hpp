@@ -12,6 +12,7 @@ namespace Cbpp {
 	class Session : public LowLevelSession {
 	private:
 		class SyncJobBase;
+		class ReadHupJob;
 		class DataMessageJob;
 		class ControlMessageJob;
 
@@ -36,6 +37,9 @@ namespace Cbpp {
 		const StreamBuffer &get_low_level_payload() const {
 			return m_payload;
 		}
+
+		// TcpSessionBase
+		void on_read_hup() NOEXCEPT OVERRIDE;
 
 		// LowLevelSession
 		void on_read_avail(StreamBuffer data) OVERRIDE;

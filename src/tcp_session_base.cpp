@@ -117,7 +117,6 @@ void TcpSessionBase::notify_read_hup() NOEXCEPT {
 
 	shutdown_read();
 	on_read_hup();
-	shutdown_write();
 }
 
 void TcpSessionBase::set_epoll(boost::weak_ptr<Epoll> epoll) NOEXCEPT {
