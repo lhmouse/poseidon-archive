@@ -34,7 +34,7 @@ namespace Cbpp {
 			PROFILE_ME;
 
 			const AUTO(client, m_weak_client.lock());
-			if(!client){
+			if(!client || client->has_been_shutdown_write()){
 				return;
 			}
 
