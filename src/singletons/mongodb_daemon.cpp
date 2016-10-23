@@ -48,19 +48,25 @@ namespace {
 	boost::uint64_t g_reconn_delay      = 10000;
 	std::size_t     g_max_retry_count   = 3;
 	boost::uint64_t g_retry_init_delay  = 1000;
+	std::size_t     g_max_thread_count  = 5;
 
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;
 
-	typedef MongoDbDaemon::ObjectFactory ObjectFactory;
-
 	// 数据库线程操作。
 	class OperationBase : NONCOPYABLE {
+	private:
+		boost::shared_ptr<const void> m_probe;
+
 	public:
 		virtual ~OperationBase(){
 		}
 
 	public:
+		void set_probe(boost::shared_ptr<const void> probe){
+			m_probe = STD_MOVE(probe);
+		}
+
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_collection_name() const = 0;
@@ -214,7 +220,7 @@ namespace {
 	class BatchLoadOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const ObjectFactory m_factory;
+		const MongoDbDaemon::ObjectFactory m_factory;
 		const char *const m_collection;
 		const MongoDb::BsonBuilder m_query;
 		const boost::uint32_t m_begin;
@@ -222,7 +228,8 @@ namespace {
 
 	public:
 		BatchLoadOperation(boost::shared_ptr<JobPromise> promise,
-			ObjectFactory factory, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
+			MongoDbDaemon::ObjectFactory factory, const char *collection,
+			MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
 			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_collection(collection)
 			, m_query(STD_MOVE(query)), m_begin(begin), m_limit(limit)
 		{
@@ -628,6 +635,10 @@ namespace {
 			}
 		}
 
+		std::size_t get_queue_size() const {
+			const Mutex::UniqueLock lock(m_mutex);
+			return m_queue.size();
+		}
 		void add_operation(boost::shared_ptr<OperationBase> operation, bool urgent){
 			PROFILE_ME;
 
@@ -657,33 +668,61 @@ namespace {
 		}
 	};
 
-	struct CollectionNameComparator {
-		bool operator()(const char *lhs, const char *rhs) const {
-			return std::strcmp(lhs, rhs) < 0;
-		}
-	};
-
 	volatile bool g_running = false;
 
-	Mutex g_thread_mutex;
-	boost::container::flat_map<const char *, boost::shared_ptr<MongoDbThread>, CollectionNameComparator> g_threads;
+	Mutex g_router_mutex;
+	struct Route {
+		boost::shared_ptr<const void> probe;
+		boost::shared_ptr<MongoDbThread> thread;
+	};
+	boost::container::flat_map<SharedNts, Route> g_router;
+	boost::container::flat_multimap<std::size_t, boost::shared_ptr<MongoDbThread> > g_routing_map;
+	std::vector<boost::shared_ptr<MongoDbThread> > g_threads;
 
 	void submit_operation_by_collection(const char *collection, boost::shared_ptr<OperationBase> operation, bool urgent){
 		PROFILE_ME;
 
+		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<MongoDbThread> thread;
 		{
-			const Mutex::UniqueLock lock(g_thread_mutex);
-			AUTO(it, g_threads.find(collection));
-			if(it == g_threads.end()){
-				LOG_POSEIDON_INFO("Creating new MongoDB thread: collection = ", collection);
-				thread = boost::make_shared<MongoDbThread>();
-				thread->start();
-				it = g_threads.emplace(collection, thread).first;
-			} else {
-				thread = it->second;
+			const Mutex::UniqueLock lock(g_router_mutex);
+
+			AUTO_REF(route, g_router[SharedNts::view(collection)]);
+			if(route.probe.use_count() > 1){
+				probe = route.probe;
+				thread = route.thread;
+				goto _use_thread;
 			}
+			if(!route.probe){
+				route.probe = boost::make_shared<int>();
+			}
+			probe = route.probe;
+
+			g_routing_map.clear();
+			g_routing_map.reserve(g_threads.size());
+			for(std::size_t i = 0; i < g_threads.size(); ++i){
+				AUTO_REF(test_thread, g_threads.at(i));
+				if(!test_thread){
+					LOG_POSEIDON_INFO("Creating new MongoDB thread ", i);
+					thread = boost::make_shared<MongoDbThread>();
+					thread->start();
+					test_thread = thread;
+					goto _use_thread;
+				}
+				g_routing_map.emplace(test_thread->get_queue_size(), test_thread);
+			}
+			if(g_routing_map.empty()){
+				LOG_POSEIDON_FATAL("No available MongoDB thread?!");
+				std::abort();
+			}
+			const AUTO(index, g_routing_map.begin()->first);
+			LOG_POSEIDON_DEBUG("Picking thread ", index, " for collection ", collection);
+			thread = g_threads.at(index);
 		}
+	_use_thread:
+		assert(probe);
+		assert(thread);
+		operation->set_probe(STD_MOVE(probe));
 		thread->add_operation(STD_MOVE(operation), urgent);
 	}
 	std::size_t submit_operation_all(const boost::shared_ptr<volatile std::size_t> &counter,
@@ -691,16 +730,17 @@ namespace {
 	{
 		PROFILE_ME;
 
-		VALUE_TYPE(g_threads) threads;
-		{
-			const Mutex::UniqueLock lock(g_thread_mutex);
-			threads = g_threads;
+		std::size_t count = 0;
+		for(AUTO(it, g_threads.begin()); it != g_threads.end(); ++it){
+			const AUTO_REF(thread, *it);
+			if(!thread){
+				continue;
+			}
+			thread->add_operation(operation, urgent);
+			atomic_add(*counter, 1, ATOMIC_RELAXED);
+			++count;
 		}
-		atomic_store(*counter, threads.size(), ATOMIC_RELAXED);
-		for(AUTO(it, threads.begin()); it != threads.end(); ++it){
-			it->second->add_operation(operation, urgent);
-		}
-		return threads.size();
+		return count;
 	}
 }
 
@@ -753,6 +793,9 @@ void MongoDbDaemon::start(){
 	MainConfig::get(g_retry_init_delay, "mongodb_retry_init_delay");
 	LOG_POSEIDON_DEBUG("MongoDB retry init delay = ", g_retry_init_delay);
 
+	MainConfig::get(g_max_thread_count, "mongodb_max_thread_count");
+	LOG_POSEIDON_DEBUG("MongoDB max_thread_count = ", g_max_thread_count);
+
 	if(!g_dump_dir.empty()){
 		const AUTO(placeholder_path, g_dump_dir + "/placeholder");
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
@@ -765,6 +808,8 @@ void MongoDbDaemon::start(){
 		}
 	}
 
+	g_threads.resize(std::max<std::size_t>(g_max_thread_count, 1));
+
 	LOG_POSEIDON_INFO("MongoDB daemon started.");
 }
 void MongoDbDaemon::stop(){
@@ -773,25 +818,23 @@ void MongoDbDaemon::stop(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MongoDB daemon...");
 
-	for(;;){
-		VALUE_TYPE(g_threads) threads;
-		{
-			const Mutex::UniqueLock lock(g_thread_mutex);
-			threads.swap(g_threads);
+	for(std::size_t i = 0; i < g_threads.size(); ++i){
+		const AUTO_REF(thread, g_threads.at(i));
+		if(!thread){
+			continue;
 		}
-		if(threads.empty()){
-			break;
-		}
-		for(AUTO(it, threads.begin()); it != threads.end(); ++it){
-			LOG_POSEIDON_INFO("Stopping MongoDB thread: collection = ", it->first);
-			it->second->stop();
-		}
-		for(AUTO(it, threads.begin()); it != threads.end(); ++it){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Waiting for MongoDB thread to terminate: collection = ", it->first);
-			it->second->safe_join();
-		}
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MongoDB thread ", i);
+		thread->stop();
 	}
+	for(std::size_t i = 0; i < g_threads.size(); ++i){
+		const AUTO_REF(thread, g_threads.at(i));
+		if(!thread){
+			continue;
+		}
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for MongoDB thread ", i, " to terminate...");
+		thread->safe_join();
+	}
+	g_threads.clear();
 
 	LOG_POSEIDON_INFO("MongoDB daemon stopped.");
 }
@@ -811,14 +854,12 @@ boost::shared_ptr<MongoDb::Connection> MongoDbDaemon::create_connection(bool fro
 }
 
 void MongoDbDaemon::wait_for_all_async_operations(){
-	VALUE_TYPE(g_threads) threads;
-	{
-		const Mutex::UniqueLock lock(g_thread_mutex);
-		threads = g_threads;
-	}
-
-	for(AUTO(it, threads.begin()); it != threads.end(); ++it){
-		it->second->wait_till_idle();
+	for(std::size_t i = 0; i < g_threads.size(); ++i){
+		const AUTO_REF(thread, g_threads.at(i));
+		if(!thread){
+			continue;
+		}
+		thread->wait_till_idle();
 	}
 }
 
@@ -850,7 +891,7 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_batch_loading(
-	ObjectFactory factory, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
+	MongoDbDaemon::ObjectFactory factory, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
 {
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const collection_name = collection;
