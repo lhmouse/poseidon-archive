@@ -374,7 +374,7 @@ namespace {
 					}
 				}
 				if((g_master_addr == g_slave_addr) && (g_master_port == g_slave_port)){
-					LOG_POSEIDON_INFO("The master connection is reused as the slave connection.");
+					LOG_POSEIDON_TRACE("Reusing the master connection as the slave connection.");
 					slave_conn = master_conn;
 				} else {
 					while(!slave_conn){
@@ -676,7 +676,7 @@ namespace {
 		boost::shared_ptr<MongoDbThread> thread;
 	};
 	boost::container::flat_map<SharedNts, Route> g_router;
-	boost::container::flat_multimap<std::size_t, boost::shared_ptr<MongoDbThread> > g_routing_map;
+	boost::container::flat_multimap<std::size_t, std::size_t> g_routing_map;
 	std::vector<boost::shared_ptr<MongoDbThread> > g_threads;
 
 	void submit_operation_by_collection(const char *collection, boost::shared_ptr<OperationBase> operation, bool urgent){
@@ -703,21 +703,26 @@ namespace {
 			for(std::size_t i = 0; i < g_threads.size(); ++i){
 				AUTO_REF(test_thread, g_threads.at(i));
 				if(!test_thread){
-					LOG_POSEIDON_INFO("Creating new MongoDB thread ", i);
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+						"Creating new MongoDB thread ", i, " for collection ", collection);
 					thread = boost::make_shared<MongoDbThread>();
 					thread->start();
 					test_thread = thread;
+					route.thread = thread;
 					goto _use_thread;
 				}
-				g_routing_map.emplace(test_thread->get_queue_size(), test_thread);
+				const AUTO(queue_size, test_thread->get_queue_size());
+				LOG_POSEIDON_DEBUG("> MongoDB thread ", i, "'s queue size: ", queue_size);
+				g_routing_map.emplace(queue_size, i);
 			}
 			if(g_routing_map.empty()){
 				LOG_POSEIDON_FATAL("No available MongoDB thread?!");
 				std::abort();
 			}
-			const AUTO(index, g_routing_map.begin()->first);
+			const AUTO(index, g_routing_map.begin()->second);
 			LOG_POSEIDON_DEBUG("Picking thread ", index, " for collection ", collection);
 			thread = g_threads.at(index);
+			route.thread = thread;
 		}
 	_use_thread:
 		assert(probe);
