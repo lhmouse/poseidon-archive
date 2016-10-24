@@ -148,8 +148,7 @@ namespace Cbpp {
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ConnectJob>(
-				virtual_shared_from_this<Client>()),
+			boost::make_shared<ConnectJob>(virtual_shared_from_this<Client>()),
 			VAL_INIT);
 
 		LowLevelClient::on_connect();
@@ -159,8 +158,7 @@ namespace Cbpp {
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ReadHupJob>(
-				virtual_shared_from_this<Client>()),
+			boost::make_shared<ReadHupJob>(virtual_shared_from_this<Client>()),
 			VAL_INIT);
 
 		LowLevelClient::on_read_hup();
@@ -193,8 +191,8 @@ namespace Cbpp {
 		(void)payload_size;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<DataMessageJob>(
-				virtual_shared_from_this<Client>(), m_message_id, STD_MOVE(m_payload)),
+			boost::make_shared<DataMessageJob>(virtual_shared_from_this<Client>(),
+				m_message_id, STD_MOVE(m_payload)),
 			VAL_INIT);
 
 		return true;
@@ -204,8 +202,8 @@ namespace Cbpp {
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ErrorMessageJob>(
-				virtual_shared_from_this<Client>(), message_id, status_code, STD_MOVE(reason)),
+			boost::make_shared<ErrorMessageJob>(virtual_shared_from_this<Client>(),
+				message_id, status_code, STD_MOVE(reason)),
 			VAL_INIT);
 
 		return true;

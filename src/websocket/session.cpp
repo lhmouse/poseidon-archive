@@ -140,9 +140,8 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ReadHupJob>(
-				virtual_shared_from_this<Session>()),
-		VAL_INIT);
+			boost::make_shared<ReadHupJob>(virtual_shared_from_this<Session>()),
+			VAL_INIT);
 
 		LowLevelSession::on_read_hup();
 	} catch(std::exception &e){
@@ -187,8 +186,8 @@ namespace WebSocket {
 		(void)whole_size;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<DataMessageJob>(
-				virtual_shared_from_this<Session>(), m_opcode, STD_MOVE(m_payload)),
+			boost::make_shared<DataMessageJob>(virtual_shared_from_this<Session>(),
+				m_opcode, STD_MOVE(m_payload)),
 			VAL_INIT);
 
 		return true;
@@ -197,8 +196,8 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ControlMessageJob>(
-				virtual_shared_from_this<Session>(), opcode, STD_MOVE(payload)),
+			boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Session>(),
+				opcode, STD_MOVE(payload)),
 			VAL_INIT);
 
 		return true;

@@ -110,13 +110,14 @@ namespace Http {
 		RequestHeaders m_request_headers;
 		std::string m_transfer_encoding;
 		StreamBuffer m_entity;
+		bool m_keep_alive;
 
 	public:
 		RequestJob(const boost::shared_ptr<Session> &session,
-			RequestHeaders request_headers, std::string transfer_encoding, StreamBuffer entity)
+			RequestHeaders request_headers, std::string transfer_encoding, StreamBuffer entity, bool keep_alive)
 			: SyncJobBase(session)
 			, m_request_headers(STD_MOVE(request_headers))
-			, m_transfer_encoding(STD_MOVE(transfer_encoding)), m_entity(STD_MOVE(entity))
+			, m_transfer_encoding(STD_MOVE(transfer_encoding)), m_entity(STD_MOVE(entity)), m_keep_alive(keep_alive)
 		{
 		}
 
@@ -124,15 +125,12 @@ namespace Http {
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
-			const AUTO(keep_alive, is_keep_alive_enabled(m_request_headers));
-
 			session->on_sync_request(STD_MOVE(m_request_headers), STD_MOVE(m_entity));
 
-			if(keep_alive){
+			if(m_keep_alive){
 				const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("http_keep_alive_timeout", 5000));
 				session->set_timeout(keep_alive_timeout);
 			} else {
-				session->shutdown_read();
 				session->shutdown_write();
 			}
 		}
@@ -153,8 +151,7 @@ namespace Http {
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ReadHupJob>(
-				virtual_shared_from_this<Session>()),
+			boost::make_shared<ReadHupJob>(virtual_shared_from_this<Session>()),
 			VAL_INIT);
 
 		LowLevelSession::on_read_hup();
@@ -166,8 +163,7 @@ namespace Http {
 		force_shutdown();
 	}
 
-	void Session::on_read_avail(StreamBuffer data)
-	try {
+	void Session::on_read_avail(StreamBuffer data){
 		PROFILE_ME;
 
 		const AUTO(upgraded_session, get_low_level_upgraded_session());
@@ -179,12 +175,6 @@ namespace Http {
 		}
 
 		LowLevelSession::on_read_avail(STD_MOVE(data));
-	} catch(Exception &e){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Http::Exception thrown in HTTP parser: status_code = ", e.get_status_code(), ", what = ", e.what());
-		send_default(e.get_status_code());
-		shutdown_read();
-		shutdown_write();
 	}
 
 	void Session::on_low_level_request_headers(RequestHeaders request_headers,
@@ -229,15 +219,16 @@ namespace Http {
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			m_request_headers.headers.append(it->first, STD_MOVE(it->second));
 		}
-		if(!is_keep_alive_enabled(m_request_headers)){
-			shutdown_read();
-		}
+		const bool keep_alive = is_keep_alive_enabled(m_request_headers);
 
 		JobDispatcher::enqueue(
-			boost::make_shared<RequestJob>(
-				virtual_shared_from_this<Session>(), STD_MOVE(m_request_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity)),
+			boost::make_shared<RequestJob>(virtual_shared_from_this<Session>(),
+				STD_MOVE(m_request_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity), keep_alive),
 			VAL_INIT);
 
+		if(!keep_alive){
+			shutdown_read();
+		}
 		return VAL_INIT;
 	}
 }

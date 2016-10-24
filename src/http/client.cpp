@@ -118,8 +118,7 @@ namespace Http {
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ConnectJob>(
-				virtual_shared_from_this<Client>()),
+			boost::make_shared<ConnectJob>(virtual_shared_from_this<Client>()),
 			VAL_INIT);
 
 		LowLevelClient::on_connect();
@@ -129,8 +128,7 @@ namespace Http {
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ReadHupJob>(
-				virtual_shared_from_this<Client>()),
+			boost::make_shared<ReadHupJob>(virtual_shared_from_this<Client>()),
 			VAL_INIT);
 
 		LowLevelClient::on_read_hup();
@@ -172,8 +170,8 @@ namespace Http {
 		}
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ResponseJob>(
-				virtual_shared_from_this<Client>(), STD_MOVE(m_response_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity)),
+			boost::make_shared<ResponseJob>(virtual_shared_from_this<Client>(),
+				STD_MOVE(m_response_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity)),
 			VAL_INIT);
 
 		return true;
