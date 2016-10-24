@@ -71,7 +71,7 @@ namespace WebSocket {
 			case S_FRAME_SIZE:
 				ch = m_queue.get();
 				if((ch & 0x80) == 0){
-					DEBUG_THROW(Exception, ST_ACCESS_DENIED, sslit("Non-masked frames not allowed"));
+					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Non-masked frames not allowed"));
 				}
 				m_frame_size = static_cast<unsigned char>(ch & 0x7F);
 				if(m_frame_size >= 0x7E){
