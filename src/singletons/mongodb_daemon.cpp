@@ -276,13 +276,22 @@ namespace {
 	class WaitOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const boost::shared_ptr<volatile std::size_t> m_counter;
 
 	public:
-		WaitOperation(boost::shared_ptr<JobPromise> promise,
-			boost::shared_ptr<volatile std::size_t> counter)
-			: m_promise(STD_MOVE(promise)), m_counter(STD_MOVE(counter))
+		explicit WaitOperation(boost::shared_ptr<JobPromise> promise)
+			: m_promise(STD_MOVE(promise))
 		{
+		}
+		~WaitOperation(){
+			try {
+				if(!m_promise->is_satisfied()){
+					m_promise->set_success();
+				}
+			} catch(std::exception &e){
+				LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			} catch(...){
+				LOG_POSEIDON_ERROR("Unknown exception thrown");
+			}
 		}
 
 	protected:
@@ -304,15 +313,9 @@ namespace {
 			conn->execute_command(get_collection_name(), query, 0, 1);
 		}
 		void set_success() OVERRIDE {
-			if(atomic_sub(*m_counter, 1, ATOMIC_RELAXED) != 0){
-				return;
-			}
-			m_promise->set_success();
+			// no-op
 		}
 		void set_exception(boost::exception_ptr ep) OVERRIDE {
-			if(atomic_sub(*m_counter, 1, ATOMIC_RELAXED) != 0){
-				return;
-			}
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -730,22 +733,17 @@ namespace {
 		operation->set_probe(STD_MOVE(probe));
 		thread->add_operation(STD_MOVE(operation), urgent);
 	}
-	std::size_t submit_operation_all(const boost::shared_ptr<volatile std::size_t> &counter,
-		boost::shared_ptr<OperationBase> operation, bool urgent)
-	{
+	void submit_operation_all(boost::shared_ptr<OperationBase> operation, bool urgent){
 		PROFILE_ME;
 
-		std::size_t count = 0;
+		const Mutex::UniqueLock lock(g_router_mutex);
 		for(AUTO(it, g_threads.begin()); it != g_threads.end(); ++it){
 			const AUTO_REF(thread, *it);
 			if(!thread){
 				continue;
 			}
 			thread->add_operation(operation, urgent);
-			atomic_add(*counter, 1, ATOMIC_RELAXED);
-			++count;
 		}
-		return count;
 	}
 }
 
@@ -907,11 +905,8 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_batch_loading(
 
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_waiting_for_all_async_operations(){
 	AUTO(promise, boost::make_shared<JobPromise>());
-	AUTO(counter, boost::make_shared<volatile std::size_t>());
-	AUTO(operation, boost::make_shared<WaitOperation>(promise, counter));
-	if(submit_operation_all(counter, STD_MOVE_IDN(operation), true) == 0){
-		promise->set_success();
-	}
+	AUTO(operation, boost::make_shared<WaitOperation>(promise));
+	submit_operation_all(STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
 
