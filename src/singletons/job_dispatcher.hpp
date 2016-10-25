@@ -12,7 +12,11 @@ namespace Poseidon {
 class JobBase;
 class JobPromise;
 
-struct JobDispatcher {
+class JobDispatcher {
+private:
+	JobDispatcher();
+
+public:
 	static void start();
 	static void stop();
 
@@ -25,9 +29,6 @@ struct JobDispatcher {
 	static void yield(boost::shared_ptr<const JobPromise> promise, bool insignificant);
 
 	static void pump_all();
-
-private:
-	JobDispatcher();
 };
 
 }

@@ -13,7 +13,11 @@ namespace Poseidon {
 class TcpSessionBase;
 class SocketServerBase;
 
-struct EpollDaemon {
+class EpollDaemon {
+private:
+	EpollDaemon();
+
+public:
 	struct SnapshotElement {
 		IpPort remote;
 		IpPort local;
@@ -29,9 +33,6 @@ struct EpollDaemon {
 
 	static void add_session(const boost::shared_ptr<TcpSessionBase> &session);
 	static void register_server(boost::weak_ptr<const SocketServerBase> server);
-
-private:
-	EpollDaemon();
 };
 
 }

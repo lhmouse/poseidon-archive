@@ -9,7 +9,11 @@
 
 namespace Poseidon {
 
-struct ProfileDepository {
+class ProfileDepository {
+private:
+	ProfileDepository();
+
+public:
 	struct SnapshotElement {
 		const char *file;
 		unsigned long line;
@@ -31,9 +35,6 @@ struct ProfileDepository {
 		double total, double exclusive) NOEXCEPT;
 
 	static std::vector<SnapshotElement> snapshot();
-
-private:
-	ProfileDepository();
 };
 
 }

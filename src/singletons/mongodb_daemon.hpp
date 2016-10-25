@@ -18,7 +18,11 @@ namespace MongoDb {
 
 class JobPromise;
 
-struct MongoDbDaemon {
+class MongoDbDaemon {
+private:
+	MongoDbDaemon();
+
+public:
 	typedef boost::function<void (const boost::shared_ptr<MongoDb::Connection> &)> ObjectFactory;
 
 	static void start();
@@ -41,9 +45,6 @@ struct MongoDbDaemon {
 		ObjectFactory factory, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit);
 
 	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
-
-private:
-	MongoDbDaemon();
 };
 
 }

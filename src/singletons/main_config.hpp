@@ -8,7 +8,11 @@
 
 namespace Poseidon {
 
-struct MainConfig {
+class MainConfig {
+private:
+	MainConfig();
+
+public:
 	static void set_run_path(const char *path);
 
 	static void reload();
@@ -39,9 +43,6 @@ struct MainConfig {
 	static std::vector<T> get_all(const char *key, bool including_empty = false){
 		return get_config().get_all<T>(key, including_empty);
 	}
-
-private:
-	MainConfig();
 };
 
 }

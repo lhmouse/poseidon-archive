@@ -17,7 +17,11 @@ typedef boost::function<
 	void (const boost::shared_ptr<TimerItem> &item, boost::uint64_t now, boost::uint64_t period)
 	> TimerCallback;
 
-struct TimerDaemon {
+class TimerDaemon {
+private:
+	TimerDaemon();
+
+public:
 	enum {
 		PERIOD_NOT_MODIFIED =   (boost::uint64_t)-1,
 	};
@@ -47,9 +51,6 @@ struct TimerDaemon {
 		boost::uint64_t time_point, boost::uint64_t period = PERIOD_NOT_MODIFIED);
 	static void set_time(const boost::shared_ptr<TimerItem> &item,
 		boost::uint64_t first, boost::uint64_t period = PERIOD_NOT_MODIFIED);
-
-private:
-	TimerDaemon();
 };
 
 }

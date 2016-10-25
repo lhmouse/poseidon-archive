@@ -12,7 +12,11 @@ namespace Poseidon {
 class SockAddr;
 class JobPromise;
 
-struct DnsDaemon {
+class DnsDaemon {
+private:
+	DnsDaemon();
+
+public:
 	static void start();
 	static void stop();
 
@@ -22,9 +26,6 @@ struct DnsDaemon {
 	// 异步接口。
 	// 第一个参数是出参。
 	static boost::shared_ptr<const JobPromise> enqueue_for_looking_up(boost::shared_ptr<SockAddr> sock_addr, std::string host, unsigned port);
-
-private:
-	DnsDaemon();
 };
 
 }

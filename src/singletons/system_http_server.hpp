@@ -6,12 +6,13 @@
 
 namespace Poseidon {
 
-struct SystemHttpServer {
-	static void start();
-	static void stop();
-
+class SystemHttpServer {
 private:
 	SystemHttpServer();
+
+public:
+	static void start();
+	static void stop();
 };
 
 }

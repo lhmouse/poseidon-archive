@@ -23,7 +23,11 @@ typedef boost::function<
 	void (boost::shared_ptr<EventBaseWithoutId> event)
 	> EventListenerCallback;
 
-struct EventDispatcher {
+class EventDispatcher {
+private:
+	EventDispatcher();
+
+public:
 	static void start();
 	static void stop();
 
@@ -56,9 +60,6 @@ struct EventDispatcher {
 	static void sync_raise(const boost::shared_ptr<EventBaseWithoutId> &event);
 	static void async_raise(const boost::shared_ptr<EventBaseWithoutId> &event,
 		const boost::shared_ptr<const bool> &withdrawn = boost::shared_ptr<const bool>());
-
-private:
-	EventDispatcher();
 };
 
 }

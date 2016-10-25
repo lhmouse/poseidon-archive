@@ -18,7 +18,11 @@ namespace MySql {
 
 class JobPromise;
 
-struct MySqlDaemon {
+class MySqlDaemon {
+private:
+	MySqlDaemon();
+
+public:
 	typedef boost::function<void (const boost::shared_ptr<MySql::Connection> &)> ObjectFactory;
 
 	static void start();
@@ -41,9 +45,6 @@ struct MySqlDaemon {
 		ObjectFactory factory, const char *table_hint, std::string query);
 
 	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
-
-private:
-	MySqlDaemon();
 };
 
 }

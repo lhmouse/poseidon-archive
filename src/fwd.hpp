@@ -45,6 +45,19 @@ class TimerItem;
 class Module;
 class EventListener;
 
+class DnsDaemon;
+class EpollDaemon;
+class EventDispatcher;
+class FilesystemDaemon;
+class JobDispatcher;
+class MainConfig;
+class ModuleDepository;
+class MongoDbDaemon;
+class MySqlDaemon;
+class ProfileDepository;
+class SystemHttpServer;
+class TimerDaemon;
+
 }
 
 #endif

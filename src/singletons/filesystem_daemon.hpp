@@ -12,7 +12,11 @@ namespace Poseidon {
 
 class JobPromise;
 
-struct FilesystemDaemon {
+class FilesystemDaemon {
+private:
+	FilesystemDaemon();
+
+public:
 	static void start();
 	static void stop();
 
@@ -29,9 +33,6 @@ struct FilesystemDaemon {
 		std::string data, std::string path, bool appends, bool forces_creation);
 	static boost::shared_ptr<const JobPromise> enqueue_for_removing(
 		std::string path, bool throws_if_does_not_exist = true);
-
-private:
-	FilesystemDaemon();
 };
 
 }

@@ -14,7 +14,16 @@ namespace Poseidon {
 class Module;
 class ModuleRaiiBase;
 
-struct ModuleDepository {
+class ModuleDepository {
+	friend ModuleRaiiBase;
+
+private:
+	static void register_module_raii(ModuleRaiiBase *raii, long priority);
+	static void unregister_module_raii(ModuleRaiiBase *raii);
+
+	ModuleDepository();
+
+public:
 	struct SnapshotElement {
 		SharedNts real_path;
 		void *base_addr;
@@ -30,14 +39,6 @@ struct ModuleDepository {
 	static bool unload(void *base_addr);
 
 	static std::vector<SnapshotElement> snapshot();
-
-private:
-	friend ModuleRaiiBase;
-
-	static void register_module_raii(ModuleRaiiBase *raii, long priority);
-	static void unregister_module_raii(ModuleRaiiBase *raii);
-
-	ModuleDepository();
 };
 
 }
