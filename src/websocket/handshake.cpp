@@ -19,18 +19,23 @@ namespace {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Must use GET verb to use WebSocket");
 			return Http::ST_METHOD_NOT_ALLOWED;
 		}
-		AUTO_REF(websocket_version, request_headers.headers.get("Sec-WebSocket-Version"));
-		if(websocket_version != "13"){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Unknown HTTP header Sec-WebSocket-Version: ", websocket_version);
+		const AUTO_REF(websocket_version, request_headers.headers.get("Sec-WebSocket-Version"));
+		char *endptr;
+		const AUTO(version_num, std::strtol(websocket_version.c_str(), &endptr, 10));
+		if(*endptr != 0){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Unrecognized HTTP header Sec-WebSocket-Version: ", websocket_version);
 			return Http::ST_BAD_REQUEST;
 		}
-		AUTO(sec_web_socket_key, request_headers.headers.get("Sec-WebSocket-Key"));
+		if((version_num < 0) || (version_num < 13)){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Unsupported Sec-WebSocket-Version: ", websocket_version);
+			return Http::ST_BAD_REQUEST;
+		}
+		const AUTO_REF(sec_web_socket_key, request_headers.headers.get("Sec-WebSocket-Key"));
 		if(sec_web_socket_key.empty()){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "No Sec-WebSocket-Key specified.");
 			return Http::ST_BAD_REQUEST;
 		}
-		sec_web_socket_key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-		const AUTO(sha1, sha1_hash(sec_web_socket_key));
+		const AUTO(sha1, sha1_hash(sec_web_socket_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
 		AUTO(sec_web_socket_accept, Http::base64_encode(sha1.data(), sha1.size()));
 		headers.set(sslit("Upgrade"), "websocket");
 		headers.set(sslit("Connection"), "Upgrade");
