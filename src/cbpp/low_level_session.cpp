@@ -66,15 +66,9 @@ namespace Cbpp {
 	bool LowLevelSession::shutdown(StatusCode status_code, std::string reason){
 		PROFILE_ME;
 
-		try {
-			Writer::put_control_message(CTL_SHUTDOWN, status_code, STD_MOVE(reason));
-			shutdown_read();
-			return shutdown_write();
-		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-			force_shutdown();
-			return false;
-		}
+		Writer::put_control_message(CTL_SHUTDOWN, status_code, STD_MOVE(reason));
+		shutdown_read();
+		return shutdown_write();
 	}
 }
 

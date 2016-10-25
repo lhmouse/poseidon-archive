@@ -48,7 +48,7 @@ namespace WebSocket {
 		}
 
 		bool send(OpCode opcode, StreamBuffer payload, bool masked = false);
-		bool shutdown(StatusCode status_code, StreamBuffer additional = StreamBuffer()) NOEXCEPT;
+		bool shutdown(StatusCode status_code, StreamBuffer additional = StreamBuffer());
 	};
 }
 

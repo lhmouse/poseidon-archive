@@ -59,7 +59,7 @@ namespace WebSocket {
 		return Writer::put_message(opcode, masked, STD_MOVE(payload));
 	}
 
-	bool LowLevelSession::shutdown(StatusCode status_code, StreamBuffer additional) NOEXCEPT {
+	bool LowLevelSession::shutdown(StatusCode status_code, StreamBuffer additional){
 		PROFILE_ME;
 
 		const AUTO(parent, get_parent());
@@ -67,15 +67,9 @@ namespace WebSocket {
 			return false;
 		}
 
-		try {
-			Writer::put_close_message(status_code, STD_MOVE(additional));
-			parent->shutdown_read();
-			return parent->shutdown_write();
-		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-			parent->force_shutdown();
-			return false;
-		}
+		Writer::put_close_message(status_code, STD_MOVE(additional));
+		parent->shutdown_read();
+		return parent->shutdown_write();
 	}
 }
 
