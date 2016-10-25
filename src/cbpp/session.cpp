@@ -54,7 +54,13 @@ namespace Cbpp {
 				throw;
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-				session->force_shutdown();
+				try {
+					session->send_error(ControlMessage::ID, ST_INTERNAL_ERROR, e.what());
+					session->shutdown_read();
+					session->shutdown_write();
+				} catch(...){
+					session->force_shutdown();
+				}
 				throw;
 			} catch(...){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
@@ -161,13 +167,28 @@ namespace Cbpp {
 		force_shutdown();
 	}
 
-	void Session::on_read_avail(StreamBuffer data){
+	void Session::on_read_avail(StreamBuffer data)
+	try {
+		PROFILE_ME;
+
 		m_size_total += data.size();
 		if(m_size_total > m_max_request_length){
 			DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
 		}
 
 		LowLevelSession::on_read_avail(STD_MOVE(data));
+	} catch(Exception &e){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Cbpp::Exception thrown in CBPP parser: status_code = ", e.get_status_code(), ", what = ", e.what());
+		send_error(ControlMessage::ID, e.get_status_code(), e.what());
+		shutdown_read();
+		shutdown_write();
+	} catch(std::exception &e){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"std::exception thrown in CBPP parser: what = ", e.what());
+		send_error(ControlMessage::ID, ST_INTERNAL_ERROR, e.what());
+		shutdown_read();
+		shutdown_write();
 	}
 
 	void Session::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){

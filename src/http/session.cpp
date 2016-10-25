@@ -61,7 +61,15 @@ namespace Http {
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: what = ", e.what());
-				session->force_shutdown();
+				try {
+					AUTO(headers, OptionalMap());
+					headers.set(sslit("Connection"), "Close");
+					session->send_default(ST_INTERNAL_SERVER_ERROR, STD_MOVE(headers));
+					session->shutdown_read();
+					session->shutdown_write();
+				} catch(...){
+					session->force_shutdown();
+				}
 				throw;
 			} catch(...){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
@@ -163,7 +171,8 @@ namespace Http {
 		force_shutdown();
 	}
 
-	void Session::on_read_avail(StreamBuffer data){
+	void Session::on_read_avail(StreamBuffer data)
+	try {
 		PROFILE_ME;
 
 		const AUTO(upgraded_session, get_low_level_upgraded_session());
@@ -175,6 +184,16 @@ namespace Http {
 		}
 
 		LowLevelSession::on_read_avail(STD_MOVE(data));
+	} catch(Exception &e){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Http::Exception thrown in HTTP parser: status_code = ", e.get_status_code(), ", what = ", e.what());
+		shutdown_read();
+		shutdown_write();
+	} catch(std::exception &e){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"std::exception thrown in HTTP parser: what = ", e.what());
+		shutdown_read();
+		shutdown_write();
 	}
 
 	void Session::on_low_level_request_headers(RequestHeaders request_headers,

@@ -154,6 +154,8 @@ namespace WebSocket {
 
 	void Session::on_read_avail(StreamBuffer data)
 	try {
+		PROFILE_ME;
+
 		m_size_total += data.size();
 		if(m_size_total > m_max_request_length){
 			DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
@@ -164,6 +166,10 @@ namespace WebSocket {
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"WebSocket::Exception thrown in WebSocket parser: status_code = ", e.get_status_code(), ", what = ", e.what());
 		shutdown(e.get_status_code(), e.what());
+	} catch(std::exception &e){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"std::exception thrown in WebSocket parser: what = ", e.what());
+		shutdown(ST_INTERNAL_ERROR, e.what());
 	}
 
 	void Session::on_low_level_message_header(OpCode opcode){
