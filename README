@@ -18,9 +18,9 @@ MySQL sync/async access
 MongoDB sync/async access
 
 * CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，
-  简介参见 src/main/cbpp/message_base.hpp 中的注释。
+  简介参见 src/cbpp/message_base.hpp 中的注释。
 * CBPP is short for 'Compressed Binary Protocol for Poseidon'.
-  Specification of CBPP can be found in file 'src/main/cbpp/message_base.hpp'.
+  Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.
 
 编译所需工具
 Toolchains Required to Build
