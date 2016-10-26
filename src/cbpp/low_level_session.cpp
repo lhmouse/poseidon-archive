@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "low_level_session.hpp"
 #include "exception.hpp"
-#include "control_message.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../time.hpp"
@@ -58,17 +57,27 @@ namespace Cbpp {
 
 		return Writer::put_data_message(message_id, STD_MOVE(payload));
 	}
-	bool LowLevelSession::send_error(boost::uint16_t message_id, StatusCode status_code, std::string reason){
+	bool LowLevelSession::send_error(boost::uint16_t message_id, StatusCode status_code, const char *reason){
 		PROFILE_ME;
 
-		return Writer::put_control_message(message_id, status_code, STD_MOVE(reason));
+		return Writer::put_control_message(message_id, status_code, reason);
 	}
-	bool LowLevelSession::shutdown(StatusCode status_code, std::string reason){
+	bool LowLevelSession::shutdown(StatusCode status_code, const char *reason) NOEXCEPT {
 		PROFILE_ME;
 
-		Writer::put_control_message(CTL_SHUTDOWN, status_code, STD_MOVE(reason));
-		shutdown_read();
-		return shutdown_write();
+		try {
+			Writer::put_control_message(CTL_SHUTDOWN, status_code, reason);
+			shutdown_read();
+			return shutdown_write();
+		} catch(std::exception &e){
+			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			force_shutdown();
+			return false;
+		} catch(...){
+			LOG_POSEIDON_ERROR("Unknown exception thrown.");
+			force_shutdown();
+			return false;
+		}
 	}
 }
 

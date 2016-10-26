@@ -53,8 +53,8 @@ namespace Cbpp {
 
 	public:
 		bool send(boost::uint16_t message_id, StreamBuffer payload);
-		bool send_control(ControlCode control_code, boost::int64_t vint_param, std::string string_param);
-		bool shutdown(StatusCode status_code, std::string reason = std::string());
+		bool send_control(ControlCode control_code, boost::int64_t vint_param, const char *string_param);
+		bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
 	};
 }
 

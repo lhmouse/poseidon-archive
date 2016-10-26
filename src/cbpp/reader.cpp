@@ -3,12 +3,47 @@
 
 #include "../precompiled.hpp"
 #include "reader.hpp"
-#include "control_message.hpp"
+#include "status_codes.hpp"
+#include "exception.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../endian.hpp"
+#include "../vint64.hpp"
 
 namespace Poseidon {
+
+namespace {
+	inline boost::int64_t shift_vint(StreamBuffer &buffer){
+		AUTO(rit, StreamBuffer::ReadIterator(buffer));
+		boost::int64_t val;
+		if(!vint64_from_binary(val, rit, buffer.size())){
+			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vint"));
+		}
+		return val;
+	}
+	inline boost::uint64_t shift_vuint(StreamBuffer &buffer){
+		AUTO(rit, StreamBuffer::ReadIterator(buffer));
+		boost::uint64_t val;
+		if(!vuint64_from_binary(val, rit, buffer.size())){
+			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vuint"));
+		}
+		return val;
+	}
+	inline std::string shift_string(StreamBuffer &buffer){
+		AUTO(rit, StreamBuffer::ReadIterator(buffer));
+		boost::uint64_t len;
+		if(!vuint64_from_binary(len, rit, buffer.size())){
+			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("string.length"));
+		}
+		if(buffer.size() < len){
+			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("string.data"));
+		}
+		std::string val;
+		val.resize(static_cast<std::size_t>(len));
+		buffer.get(&*val.begin(), val.size());
+		return val;
+	}
+}
 
 namespace Cbpp {
 	Reader::Reader()
@@ -66,7 +101,7 @@ namespace Cbpp {
 				m_queue.get(&temp16, 2);
 				m_message_id = load_le(temp16);
 
-				if(m_message_id != ControlMessage::ID){
+				if(m_message_id != 0){
 					on_data_message_header(m_message_id, m_payload_size);
 
 					m_size_expecting = std::min<boost::uint64_t>(m_payload_size, 4096);
@@ -95,8 +130,10 @@ namespace Cbpp {
 
 			case S_CONTROL_PAYLOAD:
 				{
-					ControlMessage req(m_queue.cut_off(m_payload_size));
-					has_next_request = on_control_message(req.control_code, req.vint_param, STD_MOVE(req.string_param));
+					AUTO(control_code, shift_vuint(m_queue));
+					AUTO(vint_param, shift_vint(m_queue));
+					AUTO(string_param, shift_string(m_queue));
+					has_next_request = on_control_message(control_code, vint_param, STD_MOVE(string_param));
 					m_payload_offset = m_payload_size;
 
 					m_size_expecting = 2;

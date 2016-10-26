@@ -128,7 +128,6 @@ pkginclude_cbpp_HEADERS = \
 	src/cbpp/session.hpp	\
 	src/cbpp/low_level_client.hpp	\
 	src/cbpp/client.hpp	\
-	src/cbpp/control_message.hpp	\
 	src/cbpp/message_generator.hpp	\
 	src/cbpp/status_codes.hpp	\
 	src/cbpp/control_codes.hpp	\

@@ -59,7 +59,7 @@ namespace WebSocket {
 		return Writer::put_message(opcode, masked, STD_MOVE(payload));
 	}
 
-	bool LowLevelSession::shutdown(StatusCode status_code, StreamBuffer additional){
+	bool LowLevelSession::shutdown(StatusCode status_code, const char *reason) NOEXCEPT {
 		PROFILE_ME;
 
 		const AUTO(parent, get_parent());
@@ -67,9 +67,19 @@ namespace WebSocket {
 			return false;
 		}
 
-		Writer::put_close_message(status_code, STD_MOVE(additional));
-		parent->shutdown_read();
-		return parent->shutdown_write();
+		try {
+			Writer::put_close_message(status_code, StreamBuffer(reason));
+			parent->shutdown_read();
+			return parent->shutdown_write();
+		} catch(std::exception &e){
+			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			parent->force_shutdown();
+			return false;
+		} catch(...){
+			LOG_POSEIDON_ERROR("Unknown exception thrown.");
+			parent->force_shutdown();
+			return false;
+		}
 	}
 }
 

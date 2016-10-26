@@ -3,12 +3,28 @@
 
 #include "../precompiled.hpp"
 #include "writer.hpp"
-#include "control_message.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../endian.hpp"
+#include "../vint64.hpp"
 
 namespace Poseidon {
+
+namespace {
+	inline void push_vint(StreamBuffer &buffer, boost::int64_t val){
+		AUTO(wit, StreamBuffer::WriteIterator(buffer));
+		vint64_to_binary(val, wit);
+	}
+	inline void push_vuint(StreamBuffer &buffer, boost::uint64_t val){
+		AUTO(wit, StreamBuffer::WriteIterator(buffer));
+		vuint64_to_binary(val, wit);
+	}
+	inline void push_string(StreamBuffer &buffer, const char *str, std::size_t len){
+		AUTO(wit, StreamBuffer::WriteIterator(buffer));
+		vuint64_to_binary(len, wit);
+		buffer.put(str, len);
+	}
+}
 
 namespace Cbpp {
 	Writer::Writer(){
@@ -36,11 +52,14 @@ namespace Cbpp {
 		frame.splice(payload);
 		return on_encoded_data_avail(STD_MOVE(frame));
 	}
-
-	long Writer::put_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
+	long Writer::put_control_message(ControlCode control_code, boost::int64_t vint_param, const char *string_param){
 		PROFILE_ME;
 
-		return put_data_message(ControlMessage::ID, ControlMessage(control_code, vint_param, string_param));
+		StreamBuffer payload;
+		push_vuint(payload, control_code);
+		push_vint(payload, vint_param);
+		push_string(payload, string_param, std::strlen(string_param));
+		return put_data_message(0, STD_MOVE(payload));
 	}
 }
 

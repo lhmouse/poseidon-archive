@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "session.hpp"
 #include "exception.hpp"
-#include "control_message.hpp"
 #include "../singletons/main_config.hpp"
 #include "../singletons/job_dispatcher.hpp"
 #include "../log.hpp"
@@ -44,23 +43,11 @@ namespace Cbpp {
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
-				try {
-					session->send_error(ControlMessage::ID, e.get_status_code(), e.what());
-					session->shutdown_read();
-					session->shutdown_write();
-				} catch(...){
-					session->force_shutdown();
-				}
+				session->shutdown(e.get_status_code(), e.what());
 				throw;
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-				try {
-					session->send_error(ControlMessage::ID, ST_INTERNAL_ERROR, e.what());
-					session->shutdown_read();
-					session->shutdown_write();
-				} catch(...){
-					session->force_shutdown();
-				}
+				session->shutdown(ST_INTERNAL_ERROR, e.what());
 				throw;
 			} catch(...){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
@@ -180,15 +167,11 @@ namespace Cbpp {
 	} catch(Exception &e){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"Cbpp::Exception thrown in CBPP parser: status_code = ", e.get_status_code(), ", what = ", e.what());
-		send_error(ControlMessage::ID, e.get_status_code(), e.what());
-		shutdown_read();
-		shutdown_write();
+		shutdown(e.get_status_code(), e.what());
 	} catch(std::exception &e){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"std::exception thrown in CBPP parser: what = ", e.what());
-		send_error(ControlMessage::ID, ST_INTERNAL_ERROR, e.what());
-		shutdown_read();
-		shutdown_write();
+		shutdown(ST_INTERNAL_ERROR, e.what());
 	}
 
 	void Session::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
@@ -238,20 +221,11 @@ namespace Cbpp {
 
 		switch(control_code){
 		case CTL_PING:
-			LOG_POSEIDON_TRACE("Received ping from ", get_remote_info());
-			send(ControlMessage::ID,
-				ControlMessage(ControlMessage::ID, ST_PONG, STD_MOVE(string_param)));
+			send_error(0, ST_PONG, string_param.c_str());
 			break;
 
 		case CTL_SHUTDOWN:
-			send(ControlMessage::ID,
-				ControlMessage(ControlMessage::ID, ST_SHUTDOWN_REQUEST, STD_MOVE(string_param)));
-			shutdown_read();
-			break;
-
-		case CTL_QUERY_MONO_CLOCK:
-			send(ControlMessage::ID,
-				ControlMessage(ControlMessage::ID, ST_MONOTONIC_CLOCK, boost::lexical_cast<std::string>(get_fast_mono_clock())));
+			shutdown(ST_SHUTDOWN_REQUEST, string_param.c_str());
 			break;
 
 		default:

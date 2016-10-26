@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "client.hpp"
 #include "exception.hpp"
-#include "control_message.hpp"
 #include "../singletons/job_dispatcher.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"

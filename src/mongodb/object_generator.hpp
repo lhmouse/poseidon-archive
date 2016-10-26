@@ -196,7 +196,7 @@ public:
 #define FIELD_UUID(name_)                   const ::Poseidon::Uuid & unlocked_get_ ## name_() const {	\
                                             	return name_;	\
                                             }	\
-                                            Poseidon::Uuid get_ ## name_() const {	\
+                                            ::Poseidon::Uuid get_ ## name_() const {	\
                                             	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
                                             	return name_;	\
                                             }	\

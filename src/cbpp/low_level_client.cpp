@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "low_level_client.hpp"
 #include "exception.hpp"
-#include "control_message.hpp"
 #include "../singletons/timer_daemon.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
@@ -28,7 +27,10 @@ namespace Cbpp {
 			return;
 		}
 
-		client->send_control(CTL_PING, 0, boost::lexical_cast<std::string>(get_utc_time()));
+		const AUTO(utc_now, get_utc_time());
+		char str[64];
+		std::sprintf(str, "%llu", (unsigned long long)utc_now);
+		client->send_control(CTL_PING, (boost::int64_t)get_utc_time(), str);
 	}
 
 	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
@@ -94,17 +96,27 @@ namespace Cbpp {
 
 		return Writer::put_data_message(message_id, STD_MOVE(payload));
 	}
-	bool LowLevelClient::send_control(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
+	bool LowLevelClient::send_control(ControlCode control_code, boost::int64_t vint_param, const char *string_param){
 		PROFILE_ME;
 
-		return Writer::put_control_message(control_code, vint_param, STD_MOVE(string_param));
+		return Writer::put_control_message(control_code, vint_param, string_param);
 	}
-	bool LowLevelClient::shutdown(StatusCode status_code, std::string reason){
+	bool LowLevelClient::shutdown(StatusCode status_code, const char *reason) NOEXCEPT {
 		PROFILE_ME;
 
-		Writer::put_control_message(CTL_SHUTDOWN, status_code, STD_MOVE(reason));
-		shutdown_read();
-		return shutdown_write();
+		try {
+			Writer::put_control_message(CTL_SHUTDOWN, status_code, reason);
+			shutdown_read();
+			return shutdown_write();
+		} catch(std::exception &e){
+			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			force_shutdown();
+			return false;
+		} catch(...){
+			LOG_POSEIDON_ERROR("Unknown exception thrown.");
+			force_shutdown();
+			return false;
+		}
 	}
 }
 
