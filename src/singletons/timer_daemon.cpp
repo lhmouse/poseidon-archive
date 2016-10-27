@@ -13,6 +13,7 @@
 #include "../time.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
+#include "../checked_arithmetic.hpp"
 
 namespace Poseidon {
 
@@ -190,8 +191,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::register_absolute_timer(
 		g_new_timer.signal();
 	}
 	LOG_POSEIDON_DEBUG("Created a(n) ", is_async ? "async " : "", "timer item which will be triggered ",
-		__extension__({ const AUTO(now, get_fast_mono_clock()); (time_point < now) ? 0 : (time_point - now); }),
-		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
+		saturated_sub(time_point, get_fast_mono_clock()), " microsecond(s) later and has a period of ", item->period, " microsecond(s).");
 	return item;
 }
 boost::shared_ptr<TimerItem> TimerDaemon::register_timer(
