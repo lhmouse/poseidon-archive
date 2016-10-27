@@ -179,7 +179,7 @@ namespace Http {
 		if(!upgraded_session){
 			m_size_total += data.size();
 			if(m_size_total > m_max_request_length){
-				DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
+				DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
 			}
 		}
 

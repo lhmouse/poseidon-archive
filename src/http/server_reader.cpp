@@ -185,7 +185,7 @@ namespace Http {
 							}
 							if(m_content_length > CONTENT_LENGTH_MAX){
 								LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", content_length);
-								DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
+								DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
 							}
 						}
 					} else {
@@ -237,7 +237,7 @@ namespace Http {
 					}
 					if(m_chunk_size > CONTENT_LENGTH_MAX){
 						LOG_POSEIDON_WARNING("Inacceptable chunk size in header: ", line);
-						DEBUG_THROW(Exception, ST_REQUEST_ENTITY_TOO_LARGE);
+						DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
 					}
 					if(m_chunk_size == 0){
 						m_size_expecting = EXPECTING_NEW_LINE;
