@@ -94,7 +94,7 @@ namespace Http {
 			{ 408, "Request Timeout",
 			       "The server did not receive a complete request message within the time that it was prepared to wait." },
 			{ 409, "Conflict",
-			       "The the request could not be completed due to a conflict with the current state of the target resource." },
+			       "The request could not be completed due to a conflict with the current state of the target resource." },
 			{ 410, "Gone",
 			       "Access to the target resource is no longer available at the origin server and that this condition "
 			       "is likely to be permanent." },
