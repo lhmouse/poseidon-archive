@@ -35,7 +35,7 @@ namespace Http {
 			PROFILE_ME;
 
 			const AUTO(session, m_weak_session.lock());
-			if(!session || session->has_been_shutdown_write()){
+			if(!session){
 				return;
 			}
 
