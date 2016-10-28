@@ -113,10 +113,11 @@ bool TcpSessionBase::is_read_hup_notified() const NOEXCEPT {
 void TcpSessionBase::notify_read_hup() NOEXCEPT {
 	PROFILE_ME;
 
-	atomic_store(m_read_hup_notified, true, ATOMIC_RELEASE);
-
-	shutdown_read();
-	on_read_hup();
+	const bool old = atomic_exchange(m_read_hup_notified, true, ATOMIC_RELEASE);
+	if(!old){
+		shutdown_read();
+		on_read_hup();
+	}
 }
 
 void TcpSessionBase::set_epoll(boost::weak_ptr<Epoll> epoll) NOEXCEPT {
