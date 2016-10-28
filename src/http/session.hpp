@@ -13,7 +13,7 @@ namespace Http {
 	private:
 		class SyncJobBase;
 		class ReadHupJob;
-		class ContinueJob;
+		class ExpectJob;
 		class RequestJob;
 		class ErrorJob;
 

@@ -98,10 +98,14 @@ namespace Http {
 		}
 	};
 
-	class Session::ContinueJob : public Session::SyncJobBase {
+	class Session::ExpectJob : public Session::SyncJobBase {
+	private:
+		std::string m_expect;
+
 	public:
-		explicit ContinueJob(const boost::shared_ptr<Session> &session)
+		ExpectJob(const boost::shared_ptr<Session> &session, std::string expect)
 			: SyncJobBase(session)
+			, m_expect(STD_MOVE(expect))
 		{
 		}
 
@@ -109,7 +113,12 @@ namespace Http {
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
-			session->send_default(ST_CONTINUE);
+			if(::strcasecmp(m_expect.c_str(), "100-continue") == 0){
+				session->send_default(ST_CONTINUE);
+				return;
+			}
+			LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", m_expect);
+			DEBUG_THROW(Exception, ST_EXPECTATION_FAILED);
 		}
 	};
 
@@ -210,13 +219,9 @@ namespace Http {
 
 		const AUTO_REF(expect, m_request_headers.headers.get("Expect"));
 		if(!expect.empty()){
-			if(::strcasecmp(expect.c_str(), "100-continue") == 0){
-				JobDispatcher::enqueue(
-					boost::make_shared<ContinueJob>(virtual_shared_from_this<Session>()),
-					VAL_INIT);
-			} else {
-				LOG_POSEIDON_DEBUG("Unknown HTTP header Expect: ", expect);
-			}
+			JobDispatcher::enqueue(
+				boost::make_shared<ExpectJob>(virtual_shared_from_this<Session>(), expect),
+				VAL_INIT);
 		}
 	}
 	void Session::on_low_level_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
