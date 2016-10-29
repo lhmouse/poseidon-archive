@@ -118,7 +118,10 @@ public:
 	}
 
 public:
-	void serialize(::Poseidon::StreamBuffer &buffer_) const {
+	unsigned get_message_id() const OVERRIDE {
+		return MESSAGE_ID;
+	}
+	void serialize(::Poseidon::StreamBuffer &buffer_) const OVERRIDE {
 		::Poseidon::StreamBuffer::WriteIterator write_(buffer_);
 
 		typedef MESSAGE_NAME Cur_;
@@ -148,7 +151,7 @@ public:
 		MESSAGE_FIELDS
 	}
 
-	void deserialize(::Poseidon::StreamBuffer &buffer_){
+	void deserialize(::Poseidon::StreamBuffer &buffer_) OVERRIDE {
 		::Poseidon::StreamBuffer::ReadIterator read_(buffer_);
 
 		typedef MESSAGE_NAME Cur_;
@@ -219,7 +222,7 @@ public:
 		return buffer_;
 	}
 
-	void dump_debug(::std::ostream &os_) const {
+	void dump_debug(::std::ostream &os_) const OVERRIDE {
 		typedef MESSAGE_NAME Cur_;
 		const Cur_ &cur_ = *this;
 

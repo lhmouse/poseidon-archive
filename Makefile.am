@@ -221,6 +221,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/singletons/system_http_server.cpp	\
 	src/cbpp/reader.cpp	\
 	src/cbpp/writer.cpp	\
+	src/cbpp/message_base.cpp	\
 	src/cbpp/low_level_session.cpp	\
 	src/cbpp/session.cpp	\
 	src/cbpp/low_level_client.cpp	\

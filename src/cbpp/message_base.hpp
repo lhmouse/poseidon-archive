@@ -70,7 +70,16 @@
 namespace Poseidon {
 
 namespace Cbpp {
-	struct MessageBase {
+	class MessageBase {
+	protected:
+		MessageBase();
+		virtual ~MessageBase();
+
+	public:
+		virtual unsigned get_message_id() const = 0;
+		virtual void serialize(StreamBuffer &buffer) const = 0;
+		virtual void deserialize(StreamBuffer &buffer) = 0;
+		virtual void dump_debug(std::ostream &os) const = 0;
 	};
 }
 
