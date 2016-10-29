@@ -216,12 +216,6 @@ public:
 		MESSAGE_FIELDS
 	}
 
-	operator ::Poseidon::StreamBuffer() const {
-		::Poseidon::StreamBuffer buffer_;
-		serialize(buffer_);
-		return buffer_;
-	}
-
 	void dump_debug(::std::ostream &os_) const OVERRIDE {
 		typedef MESSAGE_NAME Cur_;
 		const Cur_ &cur_ = *this;
