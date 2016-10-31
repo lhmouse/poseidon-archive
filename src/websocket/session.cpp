@@ -221,7 +221,7 @@ namespace WebSocket {
 		switch(opcode){
 		case OP_CLOSE:
 			LOG_POSEIDON_INFO("Received close frame from ", parent->get_remote_info());
-			shutdown(ST_NORMAL_CLOSURE, VAL_INIT);
+			shutdown(ST_NORMAL_CLOSURE, "");
 			break;
 
 		case OP_PING:
