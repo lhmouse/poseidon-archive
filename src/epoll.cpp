@@ -220,8 +220,6 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			}
 		}
 		if(event.events & EPOLLOUT){
-			session->set_connected();
-
 			Mutex::UniqueLock session_lock;
 			if(session->get_send_buffer_size(session_lock) != 0){
 				const RecursiveMutex::UniqueLock lock(m_mutex);
@@ -336,6 +334,8 @@ std::size_t Epoll::pump_writeable(){
 		const AUTO(session, it->session);
 
 		try {
+			session->set_connected();
+
 			unsigned char temp[IO_BUFFER_SIZE];
 			const AUTO(result, session->sync_write(temp, sizeof(temp)));
 			if(result.bytes_transferred < 0){
