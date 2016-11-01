@@ -88,6 +88,7 @@ protected:
 	~TcpSessionBase();
 
 private:
+	bool has_connected() const NOEXCEPT;
 	void set_connected();
 
 	void init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter);

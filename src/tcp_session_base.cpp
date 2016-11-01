@@ -96,6 +96,9 @@ TcpSessionBase::~TcpSessionBase(){
 	LOG_POSEIDON_INFO("Destroying TCP session: remote = ", get_remote_info_nothrow());
 }
 
+bool TcpSessionBase::has_connected() const NOEXCEPT {
+	return atomic_load(m_connected, ATOMIC_CONSUME);
+}
 void TcpSessionBase::set_connected(){
 	const bool old = atomic_exchange(m_connected, true, ATOMIC_ACQ_REL);
 	if(!old){

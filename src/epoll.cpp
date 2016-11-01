@@ -221,7 +221,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		}
 		if(event.events & EPOLLOUT){
 			Mutex::UniqueLock session_lock;
-			if(session->get_send_buffer_size(session_lock) != 0){
+			if(!session->has_connected() || (session->get_send_buffer_size(session_lock) != 0)){
 				const RecursiveMutex::UniqueLock lock(m_mutex);
 				m_sessions->set_key<IDX_ADDR, IDX_WRITE>(it, now);
 			}
