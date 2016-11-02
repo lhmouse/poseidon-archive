@@ -41,7 +41,7 @@ namespace Http {
 				AUTO(ce, m_queue.get_const_chunk_enumerator());
 				for(;;){
 					if(!ce){
-						lf_offset = SIZE_MAX;
+						lf_offset = static_cast<std::size_t>(-1);
 						break;
 					}
 					const AUTO(pos, std::find(ce.begin(), ce.end(), '\n'));
@@ -52,7 +52,7 @@ namespace Http {
 					lf_offset += ce.size();
 					++ce;
 				}
-				if(lf_offset == SIZE_MAX){
+				if(lf_offset == static_cast<std::size_t>(-1)){
 					// 没找到换行符。
 					const AUTO(max_line_length, MainConfig::get<std::size_t>("http_max_header_line_length", 8192));
 					if(m_queue.size() > max_line_length){

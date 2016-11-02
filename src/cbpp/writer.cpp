@@ -12,15 +12,15 @@ namespace Poseidon {
 
 namespace {
 	inline void push_vint(StreamBuffer &buffer, boost::int64_t val){
-		AUTO(wit, StreamBuffer::WriteIterator(buffer));
+		StreamBuffer::WriteIterator wit(buffer);
 		vint64_to_binary(val, wit);
 	}
 	inline void push_vuint(StreamBuffer &buffer, boost::uint64_t val){
-		AUTO(wit, StreamBuffer::WriteIterator(buffer));
+		StreamBuffer::WriteIterator wit(buffer);
 		vuint64_to_binary(val, wit);
 	}
 	inline void push_string(StreamBuffer &buffer, const char *str, std::size_t len){
-		AUTO(wit, StreamBuffer::WriteIterator(buffer));
+		StreamBuffer::WriteIterator wit(buffer);
 		vuint64_to_binary(len, wit);
 		buffer.put(str, len);
 	}

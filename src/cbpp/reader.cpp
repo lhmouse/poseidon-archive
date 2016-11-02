@@ -14,7 +14,7 @@ namespace Poseidon {
 
 namespace {
 	inline boost::int64_t shift_vint(StreamBuffer &buffer){
-		AUTO(rit, StreamBuffer::ReadIterator(buffer));
+		StreamBuffer::ReadIterator rit(buffer);
 		boost::int64_t val;
 		if(!vint64_from_binary(val, rit, buffer.size())){
 			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vint"));
@@ -22,7 +22,7 @@ namespace {
 		return val;
 	}
 	inline boost::uint64_t shift_vuint(StreamBuffer &buffer){
-		AUTO(rit, StreamBuffer::ReadIterator(buffer));
+		StreamBuffer::ReadIterator rit(buffer);
 		boost::uint64_t val;
 		if(!vuint64_from_binary(val, rit, buffer.size())){
 			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vuint"));
@@ -30,7 +30,7 @@ namespace {
 		return val;
 	}
 	inline std::string shift_string(StreamBuffer &buffer){
-		AUTO(rit, StreamBuffer::ReadIterator(buffer));
+		StreamBuffer::ReadIterator rit(buffer);
 		boost::uint64_t len;
 		if(!vuint64_from_binary(len, rit, buffer.size())){
 			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("string.length"));

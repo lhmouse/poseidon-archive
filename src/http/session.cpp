@@ -62,7 +62,7 @@ namespace Http {
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: what = ", e.what());
 				try {
-					AUTO(headers, OptionalMap());
+					OptionalMap headers;
 					headers.set(sslit("Connection"), "Close");
 					session->send_default(ST_INTERNAL_SERVER_ERROR, STD_MOVE(headers));
 					session->shutdown_read();
