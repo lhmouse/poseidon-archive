@@ -205,14 +205,14 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		}
 
 		if(event.events & EPOLLIN){
-			if(!session->is_read_hup_notified() || !session->has_connected()){
+			if(!session->is_read_hup_notified()){
 				const RecursiveMutex::UniqueLock lock(m_mutex);
 				m_sessions->set_key<0, 1>(it, now);
 			}
 		}
 		if(event.events & EPOLLOUT){
 			Mutex::UniqueLock session_lock;
-			if(session->get_send_buffer_size(session_lock) != 0){
+			if((session->get_send_buffer_size(session_lock) != 0) || !session->has_connected()){
 				const RecursiveMutex::UniqueLock lock(m_mutex);
 				m_sessions->set_key<0, 2>(it, now);
 			}
@@ -250,8 +250,6 @@ std::size_t Epoll::pump_readable(){
 		const AUTO(session, it->session);
 
 		try {
-			session->set_connected();
-
 			if(session->is_throttled()){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 					"Session is throttled: typeid = ", typeid(*session).name());
@@ -327,6 +325,8 @@ std::size_t Epoll::pump_writeable(){
 		const AUTO(session, it->session);
 
 		try {
+			session->set_connected();
+
 			unsigned char temp[IO_BUFFER_SIZE];
 			const AUTO(result, session->sync_write(temp, sizeof(temp)));
 			if(result.bytes_transferred < 0){
