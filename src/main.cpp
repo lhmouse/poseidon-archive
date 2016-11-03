@@ -142,7 +142,6 @@ int main(int argc, char **argv){
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up signal handlers...");
 	::signal(SIGHUP, &sig_term_proc);
-	::signal(SIGQUIT, &sig_term_proc);
 	::signal(SIGTERM, &sig_term_proc);
 	::signal(SIGINT, &sig_int_proc);
 	::signal(SIGCHLD, SIG_IGN);

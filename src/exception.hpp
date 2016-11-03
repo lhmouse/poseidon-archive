@@ -7,6 +7,7 @@
 #include "cxx_ver.hpp"
 #include <exception>
 #include <cstddef>
+#include "log.hpp"
 #include "shared_nts.hpp"
 
 namespace Poseidon {
@@ -45,10 +46,22 @@ typedef Exception BasicException;
 
 }
 
+#define DEBUG_THROW_IMPL(predictor_, etype_, parenthesis_, ...)	\
+	do {	\
+		if(predictor_){	\
+			etype_ e_(__FILE__, __LINE__, __PRETTY_FUNCTION__, ## __VA_ARGS__);	\
+			parenthesis_;	\
+			throw e_;	\
+		}	\
+	} while(false)
+
 #define DEBUG_THROW(etype_, ...)	\
-	__extension__ ({	\
-		etype_ e_(__FILE__, __LINE__, __PRETTY_FUNCTION__, ## __VA_ARGS__);	\
-		throw e_;	\
-	})
+	DEBUG_THROW_IMPL(true, etype_, {	\
+		}, ## __VA_ARGS__)
+
+#define DEBUG_THROW_UNLESS(expr_, etype_, ...)	\
+	DEBUG_THROW_IMPL((expr_) ? false : true, etype_, {	\
+		LOG_POSEIDON_ERROR("Pre-condition not met: ", # __VA_ARGS__);	\
+		}, ## __VA_ARGS__)
 
 #endif
