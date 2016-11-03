@@ -61,7 +61,12 @@ typedef Exception BasicException;
 
 #define DEBUG_THROW_UNLESS(expr_, etype_, ...)	\
 	DEBUG_THROW_IMPL((expr_) ? false : true, etype_, {	\
-		LOG_POSEIDON_ERROR("Pre-condition not met: ", # __VA_ARGS__);	\
+		LOG_POSEIDON_ERROR("Pre-condition not met: ", #expr_);	\
 		}, ## __VA_ARGS__)
+
+#define DEBUG_THROW_ASSERT(expr_)	\
+	DEBUG_THROW_IMPL((expr_) ? false : true, ::Poseidon::Exception, {	\
+		LOG_POSEIDON_ERROR("Assertion failure: " #expr_);	\
+		}, ::Poseidon::sslit("Assertion failure: " #expr_))
 
 #endif
