@@ -42,22 +42,13 @@ namespace {
 		{
 		}
 	};
-
-	MULTI_INDEX_MAP(SessionMap, SessionMapElement,
-		UNIQUE_MEMBER_INDEX(addr)
-		MULTI_MEMBER_INDEX(last_read)
-		MULTI_MEMBER_INDEX(last_written)
-	)
-
-	enum {
-		IDX_ADDR,
-		IDX_READ,
-		IDX_WRITE,
-	};
 }
 
-struct Epoll::SessionMapDelegator : public SessionMap {
-};
+MULTI_INDEX_MAP(Epoll::SessionMap, SessionMapElement,
+	UNIQUE_MEMBER_INDEX(addr)
+	MULTI_MEMBER_INDEX(last_read)
+	MULTI_MEMBER_INDEX(last_written)
+)
 
 Epoll::Epoll()
 	: m_mutex()
@@ -65,7 +56,7 @@ Epoll::Epoll()
 	if(!m_epoll.reset(::epoll_create(4096))){
 		DEBUG_THROW(SystemException);
 	}
-	m_sessions.reset(new SessionMapDelegator);
+	m_sessions.reset(new SessionMap);
 }
 Epoll::~Epoll(){
 }
@@ -75,19 +66,19 @@ void Epoll::notify_writeable(TcpSessionBase *session) NOEXCEPT {
 
 	const AUTO(now, get_fast_mono_clock());
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
-	if(it == m_sessions->end<IDX_ADDR>()){
+	const AUTO(it, m_sessions->find<0>(session));
+	if(it == m_sessions->end<0>()){
 		LOG_POSEIDON_DEBUG("Session is no longer in epoll.");
 		return;
 	}
-	m_sessions->set_key<IDX_ADDR, IDX_WRITE>(it, now);
+	m_sessions->set_key<0, 2>(it, now);
 }
 void Epoll::notify_unlinked(TcpSessionBase *session) NOEXCEPT {
 	PROFILE_ME;
 
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_ADDR>(session));
-	if(it == m_sessions->end<IDX_ADDR>()){
+	const AUTO(it, m_sessions->find<0>(session));
+	if(it == m_sessions->end<0>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
@@ -95,7 +86,7 @@ void Epoll::notify_unlinked(TcpSessionBase *session) NOEXCEPT {
 		const int err_code = errno;
 		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", err_code);
 	}
-	m_sessions->erase<IDX_ADDR>(it);
+	m_sessions->erase<0>(it);
 }
 
 void Epoll::add_session(const boost::shared_ptr<TcpSessionBase> &session){
@@ -123,8 +114,8 @@ void Epoll::remove_session(const boost::shared_ptr<TcpSessionBase> &session){
 	PROFILE_ME;
 
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	const AUTO(it, m_sessions->find<IDX_ADDR>(session.get()));
-	if(it == m_sessions->end<IDX_ADDR>()){
+	const AUTO(it, m_sessions->find<0>(session.get()));
+	if(it == m_sessions->end<0>()){
 		LOG_POSEIDON_WARNING("Session is not in epoll.");
 		return;
 	}
@@ -132,7 +123,7 @@ void Epoll::remove_session(const boost::shared_ptr<TcpSessionBase> &session){
 		const int err_code = errno;
 		LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", err_code);
 	}
-	m_sessions->erase<IDX_ADDR>(it);
+	m_sessions->erase<0>(it);
 }
 void Epoll::snapshot(std::vector<boost::shared_ptr<TcpSessionBase> > &sessions) const {
 	PROFILE_ME;
@@ -175,11 +166,11 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		const AUTO_REF(event, events[i]);
 
 		boost::shared_ptr<TcpSessionBase> session;
-		SessionMap::delegated_container::nth_index<IDX_ADDR>::type::iterator it;
+		SessionMap::delegated_container::nth_index<0>::type::iterator it;
 		{
 			const RecursiveMutex::UniqueLock lock(m_mutex);
-			it = m_sessions->find<IDX_ADDR>(static_cast<TcpSessionBase *>(event.data.ptr));
-			if(it == m_sessions->end<IDX_ADDR>()){
+			it = m_sessions->find<0>(static_cast<TcpSessionBase *>(event.data.ptr));
+			if(it == m_sessions->end<0>()){
 				LOG_POSEIDON_WARNING("Session is not in epoll?");
 				continue;
 			}
@@ -214,16 +205,16 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		}
 
 		if(event.events & EPOLLIN){
-			if(!session->is_read_hup_notified()){
+			if(!session->is_read_hup_notified() || !session->has_connected()){
 				const RecursiveMutex::UniqueLock lock(m_mutex);
-				m_sessions->set_key<IDX_ADDR, IDX_READ>(it, now);
+				m_sessions->set_key<0, 1>(it, now);
 			}
 		}
 		if(event.events & EPOLLOUT){
 			Mutex::UniqueLock session_lock;
-			if(!session->has_connected() || (session->get_send_buffer_size(session_lock) != 0)){
+			if(session->get_send_buffer_size(session_lock) != 0){
 				const RecursiveMutex::UniqueLock lock(m_mutex);
-				m_sessions->set_key<IDX_ADDR, IDX_WRITE>(it, now);
+				m_sessions->set_key<0, 2>(it, now);
 			}
 		}
 		continue;
@@ -234,7 +225,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			const int err_code = errno;
 			LOG_POSEIDON_WARNING("Error deleting from epoll: errno = ", err_code);
 		}
-		m_sessions->erase<IDX_ADDR>(it);
+		m_sessions->erase<0>(it);
 	}
 	return (unsigned)count;
 }
@@ -244,11 +235,11 @@ std::size_t Epoll::pump_readable(){
 	const AUTO(now, get_fast_mono_clock());
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
-	std::vector<VALUE_TYPE(m_sessions->begin<IDX_READ>())> iterators;
+	std::vector<VALUE_TYPE(m_sessions->begin<1>())> iterators;
 	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
 	{
 		const RecursiveMutex::UniqueLock lock(m_mutex);
-		const AUTO(range, std::make_pair(m_sessions->upper_bound<IDX_READ>(0), m_sessions->upper_bound<IDX_READ>(now)));
+		const AUTO(range, std::make_pair(m_sessions->upper_bound<1>(0), m_sessions->upper_bound<1>(now)));
 		iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		for(AUTO(it, range.first); it != range.second; ++it){
 			iterators.push_back(it);
@@ -259,12 +250,14 @@ std::size_t Epoll::pump_readable(){
 		const AUTO(session, it->session);
 
 		try {
+			session->set_connected();
+
 			if(session->is_throttled()){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 					"Session is throttled: typeid = ", typeid(*session).name());
 
 				const RecursiveMutex::UniqueLock lock(m_mutex);
-				m_sessions->set_key<IDX_READ, IDX_READ>(it, now + THROTTLED_RETRY_DELAY);
+				m_sessions->set_key<1, 1>(it, now + THROTTLED_RETRY_DELAY);
 				continue;
 			}
 
@@ -278,7 +271,7 @@ std::size_t Epoll::pump_readable(){
 					"Max send buffer size exceeded: typeid = ", typeid(*session).name());
 
 				const RecursiveMutex::UniqueLock lock(m_mutex);
-				m_sessions->set_key<IDX_READ, IDX_READ>(it, now + THROTTLED_RETRY_DELAY);
+				m_sessions->set_key<1, 1>(it, now + THROTTLED_RETRY_DELAY);
 				continue;
 			}
 
@@ -290,7 +283,7 @@ std::size_t Epoll::pump_readable(){
 				}
 				if(result.err_code == EAGAIN){
 					const RecursiveMutex::UniqueLock lock(m_mutex);
-					m_sessions->set_key<IDX_READ, IDX_READ>(it, 0);
+					m_sessions->set_key<1, 1>(it, 0);
 					continue;
 				}
 				DEBUG_THROW(SystemException, result.err_code);
@@ -298,7 +291,7 @@ std::size_t Epoll::pump_readable(){
 				session->notify_read_hup();
 
 				const RecursiveMutex::UniqueLock lock(m_mutex);
-				m_sessions->set_key<IDX_READ, IDX_READ>(it, 0);
+				m_sessions->set_key<1, 1>(it, 0);
 				continue;
 			}
 		} catch(std::exception &e){
@@ -319,11 +312,11 @@ std::size_t Epoll::pump_writeable(){
 	const AUTO(now, get_fast_mono_clock());
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
-	std::vector<VALUE_TYPE(m_sessions->begin<IDX_WRITE>())> iterators;
+	std::vector<VALUE_TYPE(m_sessions->begin<2>())> iterators;
 	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
 	{
 		const RecursiveMutex::UniqueLock lock(m_mutex);
-		const AUTO(range, std::make_pair(m_sessions->upper_bound<IDX_WRITE>(0), m_sessions->upper_bound<IDX_WRITE>(now)));
+		const AUTO(range, std::make_pair(m_sessions->upper_bound<2>(0), m_sessions->upper_bound<2>(now)));
 		iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		for(AUTO(it, range.first); it != range.second; ++it){
 			iterators.push_back(it);
@@ -334,8 +327,6 @@ std::size_t Epoll::pump_writeable(){
 		const AUTO(session, it->session);
 
 		try {
-			session->set_connected();
-
 			unsigned char temp[IO_BUFFER_SIZE];
 			const AUTO(result, session->sync_write(temp, sizeof(temp)));
 			if(result.bytes_transferred < 0){
@@ -344,7 +335,7 @@ std::size_t Epoll::pump_writeable(){
 				}
 				if(result.err_code == EAGAIN){
 					const RecursiveMutex::UniqueLock lock(m_mutex);
-					m_sessions->set_key<IDX_WRITE, IDX_WRITE>(it, 0);
+					m_sessions->set_key<2, 2>(it, 0);
 					continue;
 				}
 				DEBUG_THROW(SystemException, result.err_code);
@@ -352,7 +343,7 @@ std::size_t Epoll::pump_writeable(){
 				Mutex::UniqueLock session_lock;
 				if(session->get_send_buffer_size(session_lock) == 0){
 					const RecursiveMutex::UniqueLock lock(m_mutex);
-					m_sessions->set_key<IDX_WRITE, IDX_WRITE>(it, 0);
+					m_sessions->set_key<2, 2>(it, 0);
 				}
 				continue;
 			}

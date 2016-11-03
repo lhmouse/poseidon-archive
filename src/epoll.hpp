@@ -20,13 +20,13 @@ class TcpSessionBase;
 class Epoll : NONCOPYABLE, public boost::enable_shared_from_this<Epoll> {
 	friend TcpSessionBase;
 
-private:
-	class SessionMapDelegator;
+public: // XXX
+	class SessionMap;
 
 private:
 	mutable RecursiveMutex m_mutex;
 	UniqueFile m_epoll;
-	boost::scoped_ptr<SessionMapDelegator> m_sessions;
+	boost::scoped_ptr<SessionMap> m_sessions;
 
 public:
 	Epoll();
