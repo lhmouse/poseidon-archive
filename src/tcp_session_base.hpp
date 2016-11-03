@@ -110,7 +110,7 @@ private:
 	// 这里的出参返回写入的数据，一次性写入的字节数不大于 hint_size。如果开启了 SSL，返回明文。
 	SyncIoResult sync_write(void *hint, unsigned long hint_size);
 	// 出参用于确保 epoll 和写入内部缓冲的顺序。
-	std::size_t get_send_buffer_size(Mutex::UniqueLock &lock) const;
+	std::size_t get_send_buffer_size(Mutex::UniqueLock *lock = NULLPTR) const;
 
 protected:
 	void on_connect() OVERRIDE;
