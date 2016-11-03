@@ -211,8 +211,10 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			}
 		}
 		if(event.events & EPOLLOUT){
+			session->set_connected();
+
 			Mutex::UniqueLock session_lock;
-			if((session->get_send_buffer_size(session_lock) != 0) || !session->has_connected()){
+			if((session->get_send_buffer_size(session_lock) != 0) || !session->is_connected_notified()){
 				const RecursiveMutex::UniqueLock lock(m_mutex);
 				m_sessions->set_key<0, 2>(it, now);
 			}
@@ -259,12 +261,8 @@ std::size_t Epoll::pump_readable(){
 				continue;
 			}
 
-			std::size_t send_buffer_size;
-			{
-				Mutex::UniqueLock lock;
-				send_buffer_size = session->get_send_buffer_size(lock);
-			}
-			if(send_buffer_size > MAX_SEND_BUFFER_SIZE){
+			Mutex::UniqueLock session_lock;
+			if(session->get_send_buffer_size(session_lock) > MAX_SEND_BUFFER_SIZE){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 					"Max send buffer size exceeded: typeid = ", typeid(*session).name());
 
@@ -325,7 +323,9 @@ std::size_t Epoll::pump_writeable(){
 		const AUTO(session, it->session);
 
 		try {
-			session->set_connected();
+			if(session->has_connected()){
+				session->notify_connected();
+			}
 
 			unsigned char temp[IO_BUFFER_SIZE];
 			const AUTO(result, session->sync_write(temp, sizeof(temp)));

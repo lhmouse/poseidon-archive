@@ -74,7 +74,7 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: m_socket(STD_MOVE(socket)), m_created_time(get_fast_mono_clock())
 	, m_peer_info()
-	, m_connected(false)
+	, m_connected(false), m_connected_notified(false)
 	, m_shutdown_read(false), m_read_hup_notified(false), m_shutdown_write(false), m_really_shutdown_write(false)
 	, m_timed_out(false), m_throttled(false)
 	, m_delayed_shutdown_guard_count(0)
@@ -100,7 +100,15 @@ bool TcpSessionBase::has_connected() const NOEXCEPT {
 	return atomic_load(m_connected, ATOMIC_CONSUME);
 }
 void TcpSessionBase::set_connected(){
-	const bool old = atomic_exchange(m_connected, true, ATOMIC_ACQ_REL);
+	atomic_store(m_connected, true, ATOMIC_RELEASE);
+}
+bool TcpSessionBase::is_connected_notified() const NOEXCEPT {
+	return atomic_load(m_connected_notified, ATOMIC_CONSUME);
+}
+void TcpSessionBase::notify_connected() NOEXCEPT {
+	PROFILE_ME;
+
+	const bool old = atomic_exchange(m_connected_notified, true, ATOMIC_ACQ_REL);
 	if(!old){
 		on_connect();
 	}
@@ -116,9 +124,8 @@ bool TcpSessionBase::is_read_hup_notified() const NOEXCEPT {
 void TcpSessionBase::notify_read_hup() NOEXCEPT {
 	PROFILE_ME;
 
-	const bool old = atomic_exchange(m_read_hup_notified, true, ATOMIC_RELEASE);
+	const bool old = atomic_exchange(m_read_hup_notified, true, ATOMIC_ACQ_REL);
 	if(!old){
-		shutdown_read();
 		on_read_hup();
 	}
 }

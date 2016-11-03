@@ -19,12 +19,12 @@ private:
 	boost::scoped_ptr<ClientSslFactory> m_ssl_factory;
 
 protected:
-	TcpClientBase(const SockAddr &addr, bool use_ssl, bool accept_invalid_cert = false);
-	TcpClientBase(const IpPort &addr, bool use_ssl, bool accept_invalid_cert = false);
+	TcpClientBase(const SockAddr &addr, bool use_ssl);
+	TcpClientBase(const IpPort &addr, bool use_ssl);
 	~TcpClientBase();
 
 private:
-	void real_connect(bool use_ssl, bool accept_invalid_cert);
+	void real_connect(bool use_ssl);
 
 protected:
 	void on_read_avail(StreamBuffer data) OVERRIDE = 0;

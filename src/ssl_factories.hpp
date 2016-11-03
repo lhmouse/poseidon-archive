@@ -30,7 +30,7 @@ public:
 
 class ClientSslFactory : public SslFactoryBase {
 public:
-	explicit ClientSslFactory(bool accept_invalid_cert);
+	explicit ClientSslFactory();
 	~ClientSslFactory();
 };
 

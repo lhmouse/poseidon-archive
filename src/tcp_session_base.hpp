@@ -65,6 +65,7 @@ private:
 	} m_peer_info;
 
 	volatile bool m_connected;
+	volatile bool m_connected_notified;
 	boost::scoped_ptr<SslFilterBase> m_ssl_filter;
 
 	volatile bool m_shutdown_read;
@@ -90,6 +91,8 @@ protected:
 private:
 	bool has_connected() const NOEXCEPT;
 	void set_connected();
+	bool is_connected_notified() const NOEXCEPT;
+	void notify_connected() NOEXCEPT;
 
 	void init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter);
 

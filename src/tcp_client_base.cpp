@@ -38,20 +38,20 @@ namespace {
 	}
 }
 
-TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool accept_invalid_cert)
+TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl)
 	: SockAddr(addr), TcpSessionBase(create_socket(SockAddr::get_family()))
 {
-	real_connect(use_ssl, accept_invalid_cert);
+	real_connect(use_ssl);
 }
-TcpClientBase::TcpClientBase(const IpPort &addr, bool use_ssl, bool accept_invalid_cert)
+TcpClientBase::TcpClientBase(const IpPort &addr, bool use_ssl)
 	: SockAddr(get_sock_addr_from_ip_port(addr)), TcpSessionBase(create_socket(SockAddr::get_family()))
 {
-	real_connect(use_ssl, accept_invalid_cert);
+	real_connect(use_ssl);
 }
 TcpClientBase::~TcpClientBase(){
 }
 
-void TcpClientBase::real_connect(bool use_ssl, bool accept_invalid_cert){
+void TcpClientBase::real_connect(bool use_ssl){
 	if(::connect(m_socket.get(), static_cast<const ::sockaddr *>(SockAddr::get_data()), SockAddr::get_size()) != 0){
 		if(errno != EINPROGRESS){
 			DEBUG_THROW(SystemException);
@@ -60,7 +60,7 @@ void TcpClientBase::real_connect(bool use_ssl, bool accept_invalid_cert){
 	if(use_ssl){
 		LOG_POSEIDON_INFO("Initiating SSL handshake...");
 
-		m_ssl_factory.reset(new ClientSslFactory(accept_invalid_cert));
+		m_ssl_factory.reset(new ClientSslFactory());
 		AUTO(ssl, m_ssl_factory->create_ssl());
 		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), get_fd()));
 		init_ssl(STD_MOVE(filter));

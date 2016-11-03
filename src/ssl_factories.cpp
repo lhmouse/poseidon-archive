@@ -61,7 +61,7 @@ namespace {
 
 		return ret;
 	}
-	UniqueSslCtx create_client_ssl_ctx(bool accept_invalid_cert){
+	UniqueSslCtx create_client_ssl_ctx(){
 		const int err = ::pthread_once(&g_ssl_once, &init_ssl);
 		if(err != 0){
 			LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
@@ -73,11 +73,11 @@ namespace {
 			LOG_POSEIDON_ERROR("Could not create client SSL context");
 			DEBUG_THROW(SystemException, ENOMEM);
 		}
-		if(accept_invalid_cert){
+//		if(accept_invalid_cert){
 			::SSL_CTX_set_verify(ret.get(), SSL_VERIFY_NONE, NULLPTR);
-		} else {
-			::SSL_CTX_set_verify(ret.get(), SSL_VERIFY_PEER, NULLPTR);
-		}
+//		} else {
+//			::SSL_CTX_set_verify(ret.get(), SSL_VERIFY_PEER, NULLPTR);
+//		}
 
 		return ret;
 	}
@@ -104,8 +104,8 @@ ServerSslFactory::~ServerSslFactory(){
 }
 
 // ClientSslFactory
-ClientSslFactory::ClientSslFactory(bool accept_invalid_cert)
-	: SslFactoryBase(create_client_ssl_ctx(accept_invalid_cert))
+ClientSslFactory::ClientSslFactory()
+	: SslFactoryBase(create_client_ssl_ctx())
 {
 }
 ClientSslFactory::~ClientSslFactory(){
