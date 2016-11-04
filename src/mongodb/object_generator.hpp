@@ -225,6 +225,10 @@ public:
 	}
 
 	void generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const OVERRIDE {
+		AUTO(pkey_, generate_primary_key());
+		if(!pkey_.empty()){
+			doc_.append_string(::Poseidon::SharedNts::view("_id"), STD_MOVE(pkey_));
+		}
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED

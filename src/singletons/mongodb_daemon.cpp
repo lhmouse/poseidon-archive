@@ -107,16 +107,13 @@ namespace {
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &doc) const OVERRIDE {
 			PROFILE_ME;
 
-			std::string pk;
-			if(m_to_replace){
-				pk = m_object->generate_primary_key();
-			}
-			if(pk.empty()){
+			AUTO(pkey, m_object->generate_primary_key());
+			if(pkey.empty()){
 				LOG_POSEIDON_DEBUG("Inserting: doc = ", doc);
 				conn->execute_insert(get_collection_name(), doc, false);
 			} else {
-				LOG_POSEIDON_DEBUG("Upserting: pk = ", pk, ", doc = ", doc);
-				AUTO(q, MongoDb::bson_scalar_string(sslit("_id"), STD_MOVE(pk)));
+				LOG_POSEIDON_DEBUG("Upserting: pkey = ", pkey, ", doc = ", doc);
+				AUTO(q, MongoDb::bson_scalar_string(sslit("_id"), STD_MOVE(pkey)));
 				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), doc));
 				conn->execute_update(get_collection_name(), STD_MOVE(q), STD_MOVE(d), true, false);
 			}
