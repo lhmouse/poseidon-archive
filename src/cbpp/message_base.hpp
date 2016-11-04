@@ -88,6 +88,8 @@ namespace Cbpp {
 			return buffer;
 		}
 	};
+
+	extern std::ostream &operator<<(std::ostream &os, const MessageBase &rhs);
 }
 
 }

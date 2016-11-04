@@ -256,11 +256,6 @@ public:
 	}
 };
 
-inline ::std::ostream &operator<<(::std::ostream &os_, const MESSAGE_NAME &msg_){
-	msg_.dump_debug(os_);
-	return os_;
-}
-
 #pragma GCC pop_options
 
 #undef MESSAGE_NAME
