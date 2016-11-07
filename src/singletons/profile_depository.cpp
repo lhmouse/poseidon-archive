@@ -64,9 +64,7 @@ bool ProfileDepository::is_enabled(){
 	return g_enabled;
 }
 
-void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func,
-	double total, double exclusive) NOEXCEPT
-{
+void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func, double total, double exclusive) NOEXCEPT {
 	try {
 		const Mutex::UniqueLock lock(g_mutex);
 		AUTO_REF(counters, g_profile[ProfileKey(file, line, func)]);
@@ -98,6 +96,10 @@ std::vector<ProfileDepository::SnapshotElement> ProfileDepository::snapshot(){
 		}
 	}
 	return ret;
+}
+void ProfileDepository::clear(){
+	const Mutex::UniqueLock lock(g_mutex);
+	g_profile.clear();
 }
 
 }

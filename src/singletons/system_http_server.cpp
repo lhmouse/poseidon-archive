@@ -83,13 +83,13 @@ namespace {
 
 				if(uri == "shutdown"){
 					LOG_POSEIDON_WARNING("Received shutdown HTTP request. The server will be shutdown now.");
-					send_default(Http::ST_OK);
 					::raise(SIGTERM);
+					send_default(Http::ST_OK);
 				} else if(uri == "load_module"){
 					AUTO_REF(name, request_headers.get_params.at("name"));
 					if(!ModuleDepository::load_nothrow(name.c_str())){
 						LOG_POSEIDON_WARNING("Failed to load module: ", name);
-						send_default(Http::ST_NOT_FOUND);
+						send_default(Http::ST_GONE);
 						return;
 					}
 					send_default(Http::ST_OK);
@@ -104,7 +104,7 @@ namespace {
 					}
 					if(!ModuleDepository::unload(base_addr)){
 						LOG_POSEIDON_WARNING("Module not loaded: base address = ", base_addr);
-						send_default(Http::ST_NOT_FOUND);
+						send_default(Http::ST_GONE);
 						return;
 					}
 					send_default(Http::ST_OK);
@@ -130,6 +130,10 @@ namespace {
 					}
 
 					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
+				} else if(uri == "clear_profile"){
+					LOG_POSEIDON_WARNING("Cleaning up profile data...");
+					ProfileDepository::clear();
+					send_default(Http::ST_OK);
 				} else if(uri == "show_modules"){
 					OptionalMap headers;
 					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
@@ -186,7 +190,7 @@ namespace {
 					LOG_POSEIDON_WARNING("No system HTTP handler: ", uri);
 					DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 				}
-			} catch(std::out_of_range &){
+			} catch(std::logic_error &){
 				DEBUG_THROW(Http::Exception, Http::ST_BAD_REQUEST);
 			}
 		}
