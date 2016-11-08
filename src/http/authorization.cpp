@@ -316,7 +316,7 @@ namespace Http {
 		auth += "\",nonce=\"";
 		RawNonce raw_nonce;
 		raw_nonce.timestamp = get_local_time();
-		raw_nonce.random = rand64();
+		raw_nonce.random = random_uint64();
 		raw_nonce.identifier = g_identifier;
 		xor_nonce(raw_nonce, remote_addr.ip.get());
 		auth += base64_encode(&raw_nonce, sizeof(raw_nonce));

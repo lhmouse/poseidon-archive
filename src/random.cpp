@@ -7,11 +7,11 @@
 namespace Poseidon {
 
 namespace {
-	__thread boost::uint64_t t_rand_seed = 0;
+	__thread boost::uint64_t t_random_seed = 0;
 }
 
-boost::uint32_t rand32(){
-	boost::uint64_t seed = t_rand_seed, tsc;
+boost::uint32_t random_uint32(){
+	boost::uint64_t seed = t_random_seed, tsc;
 	__asm__ __volatile__(
 		"rdtsc \n"
 #ifdef __x86_64__
@@ -25,39 +25,14 @@ boost::uint32_t rand32(){
 	seed ^= tsc;
 	// MMIX by Donald Knuth
 	seed = seed * 6364136223846793005ull + 1442695040888963407ull;
-	t_rand_seed = seed;
+	t_random_seed = seed;
 	return seed >> 32;
 }
-boost::uint64_t rand64(){
-	return ((boost::uint64_t)rand32() << 32) | rand32();
+boost::uint64_t random_uint64(){
+	return (static_cast<boost::uint64_t>(random_uint32()) << 32) | random_uint32();
 }
-boost::uint32_t rand32(boost::uint32_t lower, boost::uint32_t upper){
-	if(lower == upper){
-		return lower;
-	} else if(lower < upper){
-		const AUTO(delta, upper - lower);
-		if(delta < 0x10000){
-			return lower + rand32() % delta;
-		}
-		return lower + rand64() % delta;
-	} else {
-		const AUTO(delta, lower - upper);
-		if(delta < 0x10000){
-			return upper + 1 + rand32() % delta;
-		}
-		return upper + 1 + rand64() % delta;
-	}
-}
-double rand_double(double lower, double upper){
-	if(lower == upper){
-		return lower;
-	} else if(lower < upper){
-		const AUTO(delta, upper - lower);
-		return lower + ((boost::int64_t)rand64() & 0x7FFFFFFFFFFFFFFFll) / 0x1p63 * delta;
-	} else {
-		const AUTO(delta, lower - upper);
-		return upper + 0x1p-64 + ((boost::int64_t)rand64() & 0x7FFFFFFFFFFFFFFFll) / 0x1p63 * delta;
-	}
+double random_double(){
+	return static_cast<boost::int64_t>(random_uint64() >> 1) / 0x1p63;
 }
 
 }

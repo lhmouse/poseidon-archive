@@ -45,7 +45,7 @@ namespace {
 	boost::uint64_t g_reconn_delay      = 10000;
 	std::size_t     g_max_retry_count   = 3;
 	boost::uint64_t g_retry_init_delay  = 1000;
-	std::size_t     g_max_thread_count  = 5;
+	std::size_t     g_max_thread_count  = 8;
 
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;
@@ -438,8 +438,7 @@ namespace {
 
 				std::string query;
 				long err_code = 0;
-				char message[4096];
-				std::size_t message_len = 0;
+				std::string err_msg;
 
 				bool execute_it = false;
 				const AUTO(combinable_object, elem->operation->get_combinable_object());
@@ -465,23 +464,20 @@ namespace {
 						except = boost::copy_exception(e);
 
 						err_code = e.get_code();
-						message_len = std::min(std::strlen(e.what()), sizeof(message));
-						std::memcpy(message, e.what(), message_len);
+						err_msg = e.what();
 					} catch(std::exception &e){
 						LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 						// except = boost::current_exception();
 						except = boost::copy_exception(e);
 
 						err_code = ER_UNKNOWN_ERROR;
-						message_len = std::min(std::strlen(e.what()), sizeof(message));
-						std::memcpy(message, e.what(), message_len);
+						err_msg = e.what();
 					} catch(...){
 						LOG_POSEIDON_WARNING("Unknown exception thrown");
 						except = boost::current_exception();
 
 						err_code = ER_UNKNOWN_ERROR;
-						message_len = 17;
-						std::memcpy(message, "Unknown exception", 17);
+						err_msg = "Unknown exception";
 					}
 					conn->discard_result();
 				}
@@ -496,7 +492,7 @@ namespace {
 					}
 
 					LOG_POSEIDON_ERROR("Max retry count exceeded.");
-					dump_sql_to_file(query, err_code, message, message_len);
+					dump_sql_to_file(query, err_code, err_msg);
 					elem->operation->set_exception(except);
 				} else {
 					elem->operation->set_success();
@@ -507,7 +503,7 @@ namespace {
 			}
 		}
 
-		void dump_sql_to_file(const std::string &query, long err_code, const char *message, std::size_t message_len){
+		void dump_sql_to_file(const std::string &query, long err_code, const std::string &err_msg){
 			PROFILE_ME;
 
 			if(g_dump_dir.empty()){
@@ -527,36 +523,29 @@ namespace {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating SQL dump file: ", dump_path);
 			UniqueFile dump_file;
 			if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
-				const int errno_c = errno;
+				const int saved_errno = errno;
 				LOG_POSEIDON_FATAL("Error creating SQL dump file: dump_path = ", dump_path,
-					", errno = ", errno_c, ", desc = ", get_error_desc(errno_c));
+					", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
 				std::abort();
 			}
 
 			LOG_POSEIDON_INFO("Writing MySQL dump...");
-			std::string dump;
-			dump.reserve(1024);
-			dump.append("-- Time = ");
+			std::ostringstream oss;
 			len = format_time(temp, sizeof(temp), local_now, false);
-			dump.append(temp, len);
-			dump.append(", Error code = ");
-			len = (unsigned)std::sprintf(temp, "%ld", err_code);
-			dump.append(temp, len);
-			dump.append(", Description = ");
-			dump.append(message, message_len);
-			dump.append("\n");
-			dump.append(query);
-			dump.append(";\n\n");
+			oss <<"-- " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
+			oss <<query <<";" <<std::endl;
+			oss <<std::endl;
+			const AUTO(str, oss.str());
 
 			const Mutex::UniqueLock lock(g_dump_mutex);
 			std::size_t total = 0;
 			do {
-				::ssize_t written = ::write(dump_file.get(), dump.data() + total, dump.size() - total);
+				::ssize_t written = ::write(dump_file.get(), str.data() + total, str.size() - total);
 				if(written <= 0){
 					break;
 				}
 				total += static_cast<std::size_t>(written);
-			} while(total < dump.size());
+			} while(total < str.size());
 		}
 
 	public:
@@ -694,7 +683,7 @@ namespace {
 			for(std::size_t i = 0; i < g_threads.size(); ++i){
 				AUTO_REF(test_thread, g_threads.at(i));
 				if(!test_thread){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 						"Creating new MySQL thread ", i, " for table ", table);
 					thread = boost::make_shared<MySqlThread>();
 					thread->start();
@@ -711,7 +700,8 @@ namespace {
 				std::abort();
 			}
 			const AUTO(index, g_routing_map.begin()->second);
-			LOG_POSEIDON_DEBUG("Picking thread ", index, " for table ", table);
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"Picking thread ", index, " for table ", table);
 			thread = g_threads.at(index);
 			route.thread = thread;
 		}

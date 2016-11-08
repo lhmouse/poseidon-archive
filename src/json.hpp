@@ -5,11 +5,11 @@
 #define POSEIDON_JSON_HPP_
 
 #include "cxx_ver.hpp"
-#include <deque>
 #include <string>
-#include <map>
 #include <iosfwd>
 #include <cstddef>
+#include <boost/container/flat_map.hpp>
+#include <boost/container/vector.hpp>
 #include <boost/variant.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/type_traits/is_enum.hpp>
@@ -28,7 +28,7 @@ struct JsonNull {
 
 class JsonElement;
 
-class JsonObject : public std::map<SharedNts, JsonElement> {
+class JsonObject : public boost::container::flat_map<SharedNts, JsonElement> {
 public:
 	void dump(std::string &str) const;
 	std::string dump() const {
@@ -39,7 +39,7 @@ public:
 	void dump(std::ostream &os) const;
 };
 
-class JsonArray : public std::deque<JsonElement> {
+class JsonArray : public boost::container::vector<JsonElement> {
 public:
 	void dump(std::string &str) const;
 	std::string dump() const {

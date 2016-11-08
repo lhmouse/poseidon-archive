@@ -48,7 +48,7 @@ namespace {
 	boost::uint64_t g_reconn_delay      = 10000;
 	std::size_t     g_max_retry_count   = 3;
 	boost::uint64_t g_retry_init_delay  = 1000;
-	std::size_t     g_max_thread_count  = 5;
+	std::size_t     g_max_thread_count  = 8;
 
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;
@@ -70,8 +70,9 @@ namespace {
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_collection_name() const = 0;
-		virtual MongoDb::BsonBuilder generate_query() const = 0;
+		virtual MongoDb::BsonBuilder generate_bson() const = 0;
 		virtual void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const = 0;
+		virtual void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const = 0;
 		virtual void set_success() = 0;
 		virtual void set_exception(boost::exception_ptr ep) = 0;
 	};
@@ -99,7 +100,7 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return m_object->get_collection_name();
 		}
-		MongoDb::BsonBuilder generate_query() const OVERRIDE {
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			MongoDb::BsonBuilder doc;
 			m_object->generate_document(doc);
 			return doc;
@@ -116,6 +117,18 @@ namespace {
 				AUTO(q, MongoDb::bson_scalar_string(sslit("_id"), STD_MOVE(pkey)));
 				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), doc));
 				conn->execute_update(get_collection_name(), STD_MOVE(q), STD_MOVE(d), true, false);
+			}
+		}
+		void dump(std::ostream &os, const MongoDb::BsonBuilder &doc) const OVERRIDE {
+			PROFILE_ME;
+
+			AUTO(pkey, m_object->generate_primary_key());
+			if(pkey.empty()){
+				os <<"db." <<get_collection_name() <<".insert(" <<doc <<")";
+			} else {
+				AUTO(q, MongoDb::bson_scalar_string(sslit("_id"), STD_MOVE(pkey)));
+				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), doc));
+				os <<"db." <<get_collection_name() <<".update(" <<q <<"," <<d <<",{upsert:1})";
 			}
 		}
 		void set_success() OVERRIDE {
@@ -149,7 +162,7 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return m_object->get_collection_name();
 		}
-		MongoDb::BsonBuilder generate_query() const OVERRIDE {
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			return m_query;
 		}
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
@@ -165,6 +178,11 @@ namespace {
 				DEBUG_THROW(MongoDb::Exception, SharedNts::view(get_collection_name()), MONGOC_ERROR_QUERY_FAILURE, sslit("No rows returned"));
 			}
 			m_object->fetch(conn);
+		}
+		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
+			PROFILE_ME;
+
+			os <<"db." <<get_collection_name() <<".find(" <<query <<").limit(1)";
 		}
 		void set_success() OVERRIDE {
 			m_promise->set_success();
@@ -198,13 +216,18 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return m_collection;
 		}
-		MongoDb::BsonBuilder generate_query() const OVERRIDE {
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			return m_query;
 		}
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_delete(get_collection_name(), query, m_delete_all);
+		}
+		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
+			PROFILE_ME;
+
+			os <<"db." <<get_collection_name() <<".remove(" <<query <<",{justOne:" <<!m_delete_all <<"})";
 		}
 		void set_success() OVERRIDE {
 			m_promise->set_success();
@@ -242,7 +265,7 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return m_collection;
 		}
-		MongoDb::BsonBuilder generate_query() const OVERRIDE {
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			return m_query;
 		}
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
@@ -261,6 +284,11 @@ namespace {
 			} else {
 				LOG_POSEIDON_DEBUG("Result discarded.");
 			}
+		}
+		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
+			PROFILE_ME;
+
+			os <<"db." <<get_collection_name() <<".find(" <<query <<").skip(" <<m_begin <<").limit(" <<m_limit <<")";
 		}
 		void set_success() OVERRIDE {
 			m_promise->set_success();
@@ -301,13 +329,18 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return "";
 		}
-		MongoDb::BsonBuilder generate_query() const OVERRIDE {
+		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
 			return MongoDb::bson_scalar_signed(sslit("ping"), 1);
 		}
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_command(get_collection_name(), query, 0, 1);
+		}
+		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
+			PROFILE_ME;
+
+			os <<"db.runCommand(" <<query <<")";
 		}
 		void set_success() OVERRIDE {
 			// no-op
@@ -447,8 +480,7 @@ namespace {
 
 				MongoDb::BsonBuilder query;
 				boost::uint32_t err_code = 0;
-				char message[4096];
-				std::size_t message_len = 0;
+				std::string err_msg;
 
 				bool execute_it = false;
 				const AUTO(combinable_object, elem->operation->get_combinable_object());
@@ -464,7 +496,7 @@ namespace {
 					}
 				}
 				if(execute_it){
-					query = operation->generate_query();
+					query = operation->generate_bson();
 					try {
 						LOG_POSEIDON_DEBUG("Executing BSON: collection_name = ", operation->get_collection_name(), ", query = ", query);
 						operation->execute(conn, query);
@@ -474,23 +506,20 @@ namespace {
 						except = boost::copy_exception(e);
 
 						err_code = e.get_code();
-						message_len = std::min(std::strlen(e.what()), sizeof(message));
-						std::memcpy(message, e.what(), message_len);
+						err_msg = e.what();
 					} catch(std::exception &e){
 						LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 						// except = boost::current_exception();
 						except = boost::copy_exception(e);
 
 						err_code = MONGOC_ERROR_PROTOCOL_ERROR;
-						message_len = std::min(std::strlen(e.what()), sizeof(message));
-						std::memcpy(message, e.what(), message_len);
+						err_msg = e.what();
 					} catch(...){
 						LOG_POSEIDON_WARNING("Unknown exception thrown");
 						except = boost::current_exception();
 
 						err_code = MONGOC_ERROR_PROTOCOL_ERROR;
-						message_len = 17;
-						std::memcpy(message, "Unknown exception", 17);
+						err_msg = "Unknown exception";
 					}
 					conn->discard_result();
 				}
@@ -505,7 +534,7 @@ namespace {
 					}
 
 					LOG_POSEIDON_ERROR("Max retry count exceeded.");
-					dump_bson_to_file(query, err_code, message, message_len);
+					dump_bson_to_file(elem->operation, query, err_code, err_msg);
 					elem->operation->set_exception(except);
 				} else {
 					elem->operation->set_success();
@@ -516,7 +545,9 @@ namespace {
 			}
 		}
 
-		void dump_bson_to_file(const MongoDb::BsonBuilder &query, long err_code, const char *message, std::size_t message_len){
+		void dump_bson_to_file(const boost::shared_ptr<OperationBase> &operation,
+			const MongoDb::BsonBuilder &query, long err_code, const std::string &err_msg)
+		{
 			PROFILE_ME;
 
 			if(g_dump_dir.empty()){
@@ -536,36 +567,30 @@ namespace {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating BSON dump file: ", dump_path);
 			UniqueFile dump_file;
 			if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
-				const int errno_c = errno;
+				const int saved_errno = errno;
 				LOG_POSEIDON_FATAL("Error creating BSON dump file: dump_path = ", dump_path,
-					", errno = ", errno_c, ", desc = ", get_error_desc(errno_c));
+					", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
 				std::abort();
 			}
 
 			LOG_POSEIDON_INFO("Writing MongoDB dump...");
-			std::string dump;
-			dump.reserve(1024);
-			dump.append("-- Time = ");
+			std::ostringstream oss;
 			len = format_time(temp, sizeof(temp), local_now, false);
-			dump.append(temp, len);
-			dump.append(", Error code = ");
-			len = (unsigned)std::sprintf(temp, "%ld", err_code);
-			dump.append(temp, len);
-			dump.append(", Description = ");
-			dump.append(message, message_len);
-			dump.append("\n");
-			dump.append(query.build_json(false));
-			dump.append("\n\n");
+			oss <<"// " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
+			operation->dump(oss, query);
+			oss <<";" <<std::endl;
+			oss <<std::endl;
+			const AUTO(str, oss.str());
 
 			const Mutex::UniqueLock lock(g_dump_mutex);
 			std::size_t total = 0;
 			do {
-				::ssize_t written = ::write(dump_file.get(), dump.data() + total, dump.size() - total);
+				::ssize_t written = ::write(dump_file.get(), str.data() + total, str.size() - total);
 				if(written <= 0){
 					break;
 				}
 				total += static_cast<std::size_t>(written);
-			} while(total < dump.size());
+			} while(total < str.size());
 		}
 
 	public:
@@ -597,7 +622,7 @@ namespace {
 					if(pending_objects == 0){
 						break;
 					}
-					current_bson = m_queue.front().operation->generate_query();
+					current_bson = m_queue.front().operation->generate_bson();
 					alive = atomic_load(m_alive, ATOMIC_CONSUME);
 					atomic_store(m_urgent, true, ATOMIC_RELEASE);
 					m_new_operation.signal();
@@ -703,7 +728,7 @@ namespace {
 			for(std::size_t i = 0; i < g_threads.size(); ++i){
 				AUTO_REF(test_thread, g_threads.at(i));
 				if(!test_thread){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 						"Creating new MongoDB thread ", i, " for collection ", collection);
 					thread = boost::make_shared<MongoDbThread>();
 					thread->start();
@@ -720,7 +745,8 @@ namespace {
 				std::abort();
 			}
 			const AUTO(index, g_routing_map.begin()->second);
-			LOG_POSEIDON_DEBUG("Picking thread ", index, " for collection ", collection);
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"Picking thread ", index, " for collection ", collection);
 			thread = g_threads.at(index);
 			route.thread = thread;
 		}

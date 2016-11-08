@@ -5,8 +5,9 @@
 #define POSEIDON_MONGODB_BSON_BUILDER_HPP_
 
 #include "../cxx_ver.hpp"
-#include <vector>
+#include <boost/container/vector.hpp>
 #include <string>
+#include <iosfwd>
 #include <cstddef>
 #include "../shared_nts.hpp"
 
@@ -44,7 +45,7 @@ namespace MongoDb {
 		};
 
 	private:
-		std::vector<Element> m_elements;
+		boost::container::vector<Element> m_elements;
 
 	private:
 		void internal_build(void *impl, bool as_array) const;

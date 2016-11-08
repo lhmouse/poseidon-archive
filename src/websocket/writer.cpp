@@ -43,7 +43,7 @@ namespace WebSocket {
 		}
 		if(masked){
 			boost::uint32_t mask;
-			store_le(mask, rand32() | 0x80808080u);
+			store_le(mask, random_uint32() | 0x80808080u);
 			frame.put(&mask, 4);
 			int mb;
 			for(;;){
