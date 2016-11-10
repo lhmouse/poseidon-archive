@@ -47,7 +47,7 @@ public:
 			{
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
-					LOG_POSEIDON_ERROR("Incorrect dynamic event type: id = ", event->id(),
+					LOG_POSEIDON_ERROR("Incorrect dynamic event type: id = ", event->get_id(),
 						", expecting = ", typeid(EventT).name(), ", typeid = ", typeid(*event.get()).name());
 					DEBUG_THROW(Exception, sslit("Incorrect dynamic event type"));
 				}
@@ -58,8 +58,7 @@ public:
 	}
 
 	static void sync_raise(const boost::shared_ptr<EventBaseWithoutId> &event);
-	static void async_raise(const boost::shared_ptr<EventBaseWithoutId> &event,
-		const boost::shared_ptr<const bool> &withdrawn = boost::shared_ptr<const bool>());
+	static void async_raise(const boost::shared_ptr<EventBaseWithoutId> &event, const boost::shared_ptr<const bool> &withdrawn);
 };
 
 }

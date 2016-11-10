@@ -62,7 +62,7 @@ namespace {
 		std::vector<boost::shared_ptr<const EventListenerCallback> > callbacks;
 
 		const Mutex::UniqueLock lock(g_mutex);
-		const AUTO(it, g_listeners.find(event->id()));
+		const AUTO(it, g_listeners.find(event->get_id()));
 		if(it != g_listeners.end()){
 			AUTO(listener_it, it->second.begin());
 			while(listener_it != it->second.end()){

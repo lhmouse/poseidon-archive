@@ -13,7 +13,7 @@ public:
 	virtual ~EventBaseWithoutId();
 
 public:
-	virtual unsigned id() const = 0;
+	virtual unsigned get_id() const = 0;
 };
 
 template<unsigned EVENT_ID_T>
@@ -24,7 +24,7 @@ public:
 	};
 
 public:
-	virtual unsigned id() const OVERRIDE {
+	virtual unsigned get_id() const OVERRIDE {
 		return ID;
 	}
 };
