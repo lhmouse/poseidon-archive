@@ -24,7 +24,7 @@ public:
 	};
 
 public:
-	virtual unsigned get_id() const OVERRIDE {
+	unsigned get_id() const OVERRIDE {
 		return ID;
 	}
 };
