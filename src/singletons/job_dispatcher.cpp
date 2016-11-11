@@ -336,10 +336,4 @@ void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise, bool insi
 	}
 }
 
-void JobDispatcher::pump_all(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Flushing all queued jobs...");
-
-	really_pump_jobs();
-}
-
 }

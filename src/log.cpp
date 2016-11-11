@@ -8,6 +8,7 @@
 #include "atomic.hpp"
 #include "time.hpp"
 #include "flags.hpp"
+#include "singletons/main_config.hpp"
 
 namespace Poseidon {
 
@@ -53,6 +54,19 @@ boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_
 		add_flags(new_mask, to_enable);
 	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, ATOMIC_ACQ_REL, ATOMIC_CONSUME));
 	return old_mask;
+}
+
+bool Logger::initialize_mask_from_config(){
+	boost::uint64_t log_mask;
+	if(!MainConfig::get(log_mask, "log_mask")){
+		return false;
+	}
+	set_mask(-1ull, log_mask);
+	return true;
+}
+void Logger::finalize_mask() NOEXCEPT {
+	const boost::uint64_t log_mask = Logger::LV_FATAL | Logger::LV_ERROR | Logger::LV_WARNING | Logger::LV_INFO;
+	set_mask( 0ull, log_mask);
 }
 
 const char *Logger::get_thread_tag() NOEXCEPT {

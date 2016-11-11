@@ -63,20 +63,14 @@ namespace {
 	void run(){
 		PROFILE_ME;
 
-		const boost::uint64_t CLEANUP_LOG_MASK = Logger::LV_FATAL | Logger::LV_ERROR | Logger::LV_WARNING | Logger::LV_INFO;
-
 		START(DnsDaemon);
 		START(FilesystemDaemon);
 		START(MySqlDaemon);
 		START(MongoDbDaemon);
-		START(JobDispatcher);
 
-		unsigned long long log_mask;
-		if(MainConfig::get(log_mask, "log_mask")){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask: 0x", std::hex, std::uppercase, log_mask);
-			Logger::set_mask(-1ull, log_mask);
-		}
 		try {
+			START(JobDispatcher); // FIXME: 如果 ModuleDepository::load() 抛出异常，可能导致其中的 profiler 不断异常栈回溯。
+			                      //        因为此时 std::uncaught_exception() 返回 true。
 			START(SystemHttpServer);
 			START(ModuleDepository);
 
@@ -84,11 +78,14 @@ namespace {
 			START(EpollDaemon);
 			START(EventDispatcher);
 
+			Logger::initialize_mask_from_config();
+
 			const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
 			for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
 				ModuleDepository::load(it->c_str());
 			}
+
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
 			MySqlDaemon::wait_for_all_async_operations();
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
@@ -96,12 +93,10 @@ namespace {
 
 			JobDispatcher::do_modal();
 		} catch(...){
-			JobDispatcher::pump_all();
-			Logger::set_mask(0, CLEANUP_LOG_MASK);
+			Logger::finalize_mask();
 			throw;
 		}
-		JobDispatcher::pump_all();
-		Logger::set_mask(0, CLEANUP_LOG_MASK);
+		Logger::finalize_mask();
 	}
 }
 

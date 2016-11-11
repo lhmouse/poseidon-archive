@@ -30,6 +30,9 @@ public:
 	static boost::uint64_t get_mask() NOEXCEPT;
 	static boost::uint64_t set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT;
 
+	static bool initialize_mask_from_config();
+	static void finalize_mask() NOEXCEPT;
+
 	static const char *get_thread_tag() NOEXCEPT;
 	static void set_thread_tag(const char *new_tag) NOEXCEPT;
 
