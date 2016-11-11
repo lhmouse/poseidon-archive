@@ -76,9 +76,6 @@ namespace {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask: 0x", std::hex, std::uppercase, log_mask);
 			Logger::set_mask(-1ull, log_mask);
 		}
-#ifdef POSEIDON_CXX11
-		std::exception_ptr ep;
-#endif
 		try {
 			START(SystemHttpServer);
 			START(ModuleDepository);
@@ -99,16 +96,8 @@ namespace {
 
 			JobDispatcher::do_modal();
 		} catch(...){
-#ifdef POSEIDON_CXX11
-			ep = std::current_exception();
-		}
-#endif
 			JobDispatcher::pump_all();
 			Logger::set_mask(0, CLEANUP_LOG_MASK);
-#ifdef POSEIDON_CXX11
-		if(ep){
-			std::rethrow_exception(ep);
-#endif
 			throw;
 		}
 		JobDispatcher::pump_all();
