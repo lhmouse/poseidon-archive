@@ -68,35 +68,49 @@ namespace {
 		START(MySqlDaemon);
 		START(MongoDbDaemon);
 
+#ifdef POSEIDON_CXX11
+		std::exception_ptr ep;
+#endif
 		try {
-			START(JobDispatcher); // FIXME: 如果 ModuleDepository::load() 抛出异常，可能导致其中的 profiler 不断异常栈回溯。
-			                      //        因为此时 std::uncaught_exception() 返回 true。
-			START(SystemHttpServer);
-			START(ModuleDepository);
+			START(JobDispatcher);
 
-			START(TimerDaemon);
-			START(EpollDaemon);
-			START(EventDispatcher);
+#ifdef POSEIDON_CXX11
+			try
+#endif
+			{
+				START(SystemHttpServer);
+				START(ModuleDepository);
 
-			Logger::initialize_mask_from_config();
+				START(TimerDaemon);
+				START(EpollDaemon);
+				START(EventDispatcher);
 
-			const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
-			for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
-				ModuleDepository::load(it->c_str());
+				Logger::initialize_mask_from_config();
+
+				const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
+				for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
+					ModuleDepository::load(it->c_str());
+				}
+
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
+				MySqlDaemon::wait_for_all_async_operations();
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
+				MongoDbDaemon::wait_for_all_async_operations();
+
+				JobDispatcher::do_modal();
 			}
-
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
-			MySqlDaemon::wait_for_all_async_operations();
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
-			MongoDbDaemon::wait_for_all_async_operations();
-
-			JobDispatcher::do_modal();
+#ifdef POSEIDON_CXX11
+			catch(...){ ep = std::current_exception(); }
+#endif
 		} catch(...){
 			Logger::finalize_mask();
 			throw;
 		}
 		Logger::finalize_mask();
+#ifdef POSEIDON_CXX11
+		if(ep){ std::rethrow_exception(ep); }
+#endif
 	}
 }
 
