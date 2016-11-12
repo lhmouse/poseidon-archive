@@ -166,7 +166,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 		const AUTO_REF(event, events[i]);
 
 		boost::shared_ptr<TcpSessionBase> session;
-		SessionMap::delegated_container::nth_index<0>::type::iterator it;
+		SessionMap::base_container::nth_index<0>::type::iterator it;
 		{
 			const RecursiveMutex::UniqueLock lock(m_mutex);
 			it = m_sessions->find<0>(static_cast<TcpSessionBase *>(event.data.ptr));

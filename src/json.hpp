@@ -30,16 +30,8 @@ class JsonElement;
 
 class JsonObject : public boost::container::flat_map<SharedNts, JsonElement> {
 public:
-	void dump(std::string &str) const;
-	std::string dump() const {
-		std::string str;
-		dump(str);
-		return str;
-	}
-	void dump(std::ostream &os) const;
-};
+	typedef boost::container::flat_map<SharedNts, JsonElement> base_container;
 
-class JsonArray : public boost::container::vector<JsonElement> {
 public:
 	void dump(std::string &str) const;
 	std::string dump() const {
@@ -49,6 +41,28 @@ public:
 	}
 	void dump(std::ostream &os) const;
 };
+
+inline void swap(JsonObject &lhs, JsonObject &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
+
+class JsonArray : public boost::container::vector<JsonElement> {
+public:
+	typedef boost::container::vector<JsonElement> base_container;
+
+public:
+	void dump(std::string &str) const;
+	std::string dump() const {
+		std::string str;
+		dump(str);
+		return str;
+	}
+	void dump(std::ostream &os) const;
+};
+
+inline void swap(JsonArray &lhs, JsonArray &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
 
 class JsonElement {
 public:
@@ -125,12 +139,6 @@ public:
 	void dump(std::ostream &os) const;
 };
 
-inline void swap(JsonObject &lhs, JsonObject &rhs) NOEXCEPT {
-	lhs.swap(rhs);
-}
-inline void swap(JsonArray &lhs, JsonArray &rhs) NOEXCEPT {
-	lhs.swap(rhs);
-}
 inline void swap(JsonElement &lhs, JsonElement &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }

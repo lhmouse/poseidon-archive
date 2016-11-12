@@ -22,7 +22,7 @@ namespace WebSocket {
 
 	public:
 		long put_message(int opcode, bool masked, StreamBuffer payload);
-		long put_close_message(StatusCode status_code, StreamBuffer additional);
+		long put_close_message(StatusCode status_code, bool masked, StreamBuffer additional);
 	};
 }
 

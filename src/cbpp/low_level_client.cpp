@@ -34,7 +34,7 @@ namespace Cbpp {
 	}
 
 	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
-		: TcpClientBase(addr, use_ssl)
+		: TcpClientBase(addr, use_ssl), Reader(), Writer()
 		, m_keep_alive_interval(keep_alive_interval)
 		, m_last_pong_time((boost::uint64_t)-1)
 	{

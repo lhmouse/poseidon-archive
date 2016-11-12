@@ -5,7 +5,7 @@
 #define POSEIDON_MONGODB_BSON_BUILDER_HPP_
 
 #include "../cxx_ver.hpp"
-#include <boost/container/vector.hpp>
+#include <boost/container/deque.hpp>
 #include <string>
 #include <iosfwd>
 #include <cstddef>
@@ -45,7 +45,7 @@ namespace MongoDb {
 		};
 
 	private:
-		boost::container::vector<Element> m_elements;
+		boost::container::deque<Element> m_elements;
 
 	private:
 		void internal_build(void *impl, bool as_array) const;
@@ -71,9 +71,6 @@ namespace MongoDb {
 		bool empty() const {
 			return m_elements.empty();
 		}
-		void reserve(std::size_t size){
-			m_elements.reserve(size);
-		}
 		void clear() NOEXCEPT {
 			m_elements.clear();
 		}
@@ -92,7 +89,15 @@ namespace MongoDb {
 			return str;
 		}
 		void build_json(std::ostream &os, bool as_array = false) const;
+
+		void swap(BsonBuilder &rhs) noexcept {
+			m_elements.swap(rhs.m_elements);
+		}
 	};
+
+	inline void swap(BsonBuilder &lhs, BsonBuilder &rhs){
+		lhs.swap(rhs);
+	}
 
 	inline std::ostream &operator<<(std::ostream &os, const BsonBuilder &rhs){
 		rhs.build_json(os);

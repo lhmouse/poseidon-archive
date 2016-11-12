@@ -5,7 +5,6 @@
 #include "low_level_session.hpp"
 #include "exception.hpp"
 #include "../http/low_level_session.hpp"
-#include "../optional_map.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 
@@ -13,7 +12,7 @@ namespace Poseidon {
 
 namespace WebSocket {
 	LowLevelSession::LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent)
-		: Http::UpgradedSessionBase(parent)
+		: Http::UpgradedSessionBase(parent), Reader(true), Writer()
 	{
 	}
 	LowLevelSession::~LowLevelSession(){
@@ -68,7 +67,7 @@ namespace WebSocket {
 		}
 
 		try {
-			Writer::put_close_message(status_code, StreamBuffer(reason));
+			Writer::put_close_message(status_code, false, StreamBuffer(reason));
 			parent->shutdown_read();
 			return parent->shutdown_write();
 		} catch(std::exception &e){

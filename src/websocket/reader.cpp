@@ -12,8 +12,9 @@
 namespace Poseidon {
 
 namespace WebSocket {
-	Reader::Reader()
-		: m_size_expecting(1), m_state(S_OPCODE)
+	Reader::Reader(bool force_masked_frames)
+		: m_force_masked_frames(force_masked_frames)
+		, m_size_expecting(1), m_state(S_OPCODE)
 		, m_whole_offset(0), m_prev_fin(true)
 	{
 	}
@@ -42,6 +43,7 @@ namespace WebSocket {
 
 			case S_OPCODE:
 				m_fin = false;
+				m_masked = false;
 				m_opcode = OP_INVALID;
 				m_frame_size = 0;
 				m_mask = 0;
@@ -70,7 +72,8 @@ namespace WebSocket {
 
 			case S_FRAME_SIZE:
 				ch = m_queue.get();
-				if((ch & 0x80) == 0){
+				m_masked = ch & 0x80;
+				if(m_force_masked_frames && !m_masked){
 					DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Non-masked frames not allowed"));
 				}
 				m_frame_size = static_cast<unsigned char>(ch & 0x7F);
@@ -86,8 +89,8 @@ namespace WebSocket {
 						m_state = S_FRAME_SIZE_64;
 					}
 				} else {
-					m_size_expecting = 4;
-					m_state = S_MASK;
+					m_size_expecting = 0;
+					m_state = S_SIZE_END;
 				}
 				break;
 
@@ -95,24 +98,39 @@ namespace WebSocket {
 				m_queue.get(&temp16, 2);
 				m_frame_size = load_be(temp16);
 
-				m_size_expecting = 4;
-				m_state = S_MASK;
+				m_size_expecting = 0;
+				m_state = S_SIZE_END;
 				break;
 
 			case S_FRAME_SIZE_64:
 				m_queue.get(&temp64, 8);
 				m_frame_size = load_be(temp64);
 
-				m_size_expecting = 4;
-				m_state = S_MASK;
+				m_size_expecting = 0;
+				m_state = S_SIZE_END;
+				break;
+
+			case S_SIZE_END:
+				LOG_POSEIDON_DEBUG("Frame size = ", m_frame_size);
+
+				if(m_masked){
+					m_size_expecting = 4;
+					m_state = S_MASK;
+				} else {
+					m_size_expecting = 0;
+					m_state = S_HEADER_END;
+				}
 				break;
 
 			case S_MASK:
-				LOG_POSEIDON_DEBUG("Frame size = ", m_frame_size);
-
 				m_queue.get(&temp32, 4);
 				m_mask = load_le(temp32);
 
+				m_size_expecting = 0;
+				m_state = S_HEADER_END;
+				break;
+
+			case S_HEADER_END:
 				if(m_opcode != OP_CONTINUATION){
 					on_data_message_header(m_opcode);
 				}
@@ -127,32 +145,32 @@ namespace WebSocket {
 				break;
 
 			case S_DATA_FRAME:
+				temp64 = std::min<boost::uint64_t>(m_queue.size(), m_frame_size - m_frame_offset);
 				{
-					temp64 = std::min<boost::uint64_t>(m_queue.size(), m_frame_size - m_frame_offset);
 					StreamBuffer payload;
 					for(std::size_t i = 0; i < temp64; ++i){
 						payload.put(static_cast<unsigned char>(m_queue.get()) ^ m_mask);
 						m_mask = (m_mask << 24) | (m_mask >> 8);
 					}
 					on_data_message_payload(m_whole_offset, STD_MOVE(payload));
-					m_frame_offset += temp64;
-					m_whole_offset += temp64;
+				}
+				m_frame_offset += temp64;
+				m_whole_offset += temp64;
 
-					if(m_frame_offset < m_frame_size){
-						m_size_expecting = std::min<boost::uint64_t>(m_frame_size - m_frame_offset, 4096);
-						// m_state = S_DATA_FRAME;
+				if(m_frame_offset < m_frame_size){
+					m_size_expecting = std::min<boost::uint64_t>(m_frame_size - m_frame_offset, 4096);
+					// m_state = S_DATA_FRAME;
+				} else {
+					if(m_fin){
+						has_next_request = on_data_message_end(m_whole_offset);
+						m_whole_offset = 0;
+						m_prev_fin = true;
 					} else {
-						if(m_fin){
-							has_next_request = on_data_message_end(m_whole_offset);
-							m_whole_offset = 0;
-							m_prev_fin = true;
-						} else {
-							m_prev_fin = false;
-						}
-
-						m_size_expecting = 1;
-						m_state = S_OPCODE;
+						m_prev_fin = false;
 					}
+
+					m_size_expecting = 1;
+					m_state = S_OPCODE;
 				}
 				break;
 
@@ -164,13 +182,13 @@ namespace WebSocket {
 						m_mask = (m_mask << 24) | (m_mask >> 8);
 					}
 					has_next_request = on_control_message(m_opcode, STD_MOVE(payload));
-					m_frame_offset = m_frame_size;
-					m_whole_offset = 0;
-					m_prev_fin = true;
-
-					m_size_expecting = 1;
-					m_state = S_OPCODE;
 				}
+				m_frame_offset = m_frame_size;
+				m_whole_offset = 0;
+				m_prev_fin = true;
+
+				m_size_expecting = 1;
+				m_state = S_OPCODE;
 				break;
 
 			default:

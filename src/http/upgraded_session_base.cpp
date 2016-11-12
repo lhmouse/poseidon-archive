@@ -15,8 +15,6 @@ namespace Http {
 	UpgradedSessionBase::~UpgradedSessionBase(){
 	}
 
-	void UpgradedSessionBase::on_connect(){
-	}
 	void UpgradedSessionBase::on_read_hup() NOEXCEPT {
 	}
 	void UpgradedSessionBase::on_close(int err_code) NOEXCEPT {

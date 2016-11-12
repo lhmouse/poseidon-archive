@@ -66,6 +66,11 @@ namespace {
 		void set_probe(boost::shared_ptr<const void> probe){
 			m_probe = STD_MOVE(probe);
 		}
+		std::string dump_debug(const MongoDb::BsonBuilder &query) const {
+			std::ostringstream oss;
+			dump(oss, query);
+			return oss.str();
+		}
 
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const = 0;
@@ -498,7 +503,7 @@ namespace {
 				if(execute_it){
 					query = operation->generate_bson();
 					try {
-						LOG_POSEIDON_DEBUG("Executing BSON: collection_name = ", operation->get_collection_name(), ", query = ", query);
+						LOG_POSEIDON_DEBUG("Executing MongoDB query: ", operation->dump_debug(query));
 						operation->execute(conn, query);
 					} catch(MongoDb::Exception &e){
 						LOG_POSEIDON_WARNING("MongoDb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());

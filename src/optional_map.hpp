@@ -12,51 +12,51 @@ namespace Poseidon {
 
 class OptionalMap {
 public:
-	typedef std::multimap<SharedNts, std::string> delegated_container;
+	typedef std::multimap<SharedNts, std::string> base_container;
 
-	typedef delegated_container::const_iterator const_iterator;
-	typedef delegated_container::iterator iterator;
+	typedef base_container::const_iterator const_iterator;
+	typedef base_container::iterator iterator;
 
 private:
-	delegated_container m_delegator;
+	base_container m_elements;
 
 public:
 	bool empty() const {
-		return m_delegator.empty();
+		return m_elements.empty();
 	}
 	std::size_t size() const {
-		return m_delegator.size();
+		return m_elements.size();
 	}
 	void clear(){
-		m_delegator.clear();
+		m_elements.clear();
 	}
 
 	const_iterator begin() const {
-		return m_delegator.begin();
+		return m_elements.begin();
 	}
 	iterator begin(){
-		return m_delegator.begin();
+		return m_elements.begin();
 	}
 	const_iterator end() const {
-		return m_delegator.end();
+		return m_elements.end();
 	}
 	iterator end(){
-		return m_delegator.end();
+		return m_elements.end();
 	}
 
 	iterator erase(iterator pos){
-		m_delegator.erase(pos++);
+		m_elements.erase(pos++);
 		return pos;
 	}
 	std::size_t erase(const char *key){
 		return erase(SharedNts::view(key));
 	}
 	std::size_t erase(const SharedNts &key){
-		return m_delegator.erase(key);
+		return m_elements.erase(key);
 	}
 
 	void swap(OptionalMap &rhs) NOEXCEPT {
-		m_delegator.swap(rhs.m_delegator);
+		m_elements.swap(rhs.m_elements);
 	}
 
 	// 一对一的接口。
@@ -64,13 +64,13 @@ public:
 		return find(SharedNts::view(key));
 	}
 	const_iterator find(const SharedNts &key) const {
-		return m_delegator.find(key);
+		return m_elements.find(key);
 	}
 	iterator find(const char *key){
 		return find(SharedNts::view(key));
 	}
 	iterator find(const SharedNts &key){
-		return m_delegator.find(key);
+		return m_elements.find(key);
 	}
 
 	bool has(const char *key) const {
@@ -81,8 +81,8 @@ public:
 	}
 	iterator create(SharedNts key){
 		iterator ret = find(key);
-		if(ret == m_delegator.end()){
-			ret = m_delegator.insert(std::make_pair(STD_MOVE(key), std::string()));
+		if(ret == m_elements.end()){
+			ret = m_elements.insert(std::make_pair(STD_MOVE(key), std::string()));
 		}
 		return ret;
 	}
@@ -106,23 +106,23 @@ public:
 		return range(SharedNts::view(key));
 	}
 	std::pair<const_iterator, const_iterator> range(const SharedNts &key) const {
-		return m_delegator.equal_range(key);
+		return m_elements.equal_range(key);
 	}
 	std::pair<iterator, iterator> range(const char *key){
 		return range(SharedNts::view(key));
 	}
 	std::pair<iterator, iterator> range(const SharedNts &key){
-		return m_delegator.equal_range(key);
+		return m_elements.equal_range(key);
 	}
 	std::size_t count(const char *key) const {
 		return count(SharedNts::view(key));
 	}
 	std::size_t count(const SharedNts &key) const {
-		return m_delegator.count(key);
+		return m_elements.count(key);
 	}
 
 	iterator append(SharedNts key, std::string val){
-		return m_delegator.insert(std::make_pair(STD_MOVE(key), STD_MOVE(val)));
+		return m_elements.insert(std::make_pair(STD_MOVE(key), STD_MOVE(val)));
 	}
 };
 

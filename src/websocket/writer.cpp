@@ -60,7 +60,7 @@ namespace WebSocket {
 		}
 		return on_encoded_data_avail(STD_MOVE(frame));
 	}
-	long Writer::put_close_message(StatusCode status_code, StreamBuffer additional){
+	long Writer::put_close_message(StatusCode status_code, bool masked, StreamBuffer additional){
 		PROFILE_ME;
 
 		StreamBuffer payload;
@@ -70,7 +70,7 @@ namespace WebSocket {
 		char msg[0x7B];
 		unsigned len = additional.get(msg, sizeof(msg));
 		payload.put(msg, len);
-		return put_message(OP_CLOSE, false, STD_MOVE(payload));
+		return put_message(OP_CLOSE, masked, STD_MOVE(payload));
 	}
 }
 

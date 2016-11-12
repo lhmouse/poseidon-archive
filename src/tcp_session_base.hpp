@@ -113,7 +113,8 @@ private:
 	std::size_t get_send_buffer_size(Mutex::UniqueLock *lock = NULLPTR) const;
 
 protected:
-	void on_connect() OVERRIDE;
+	virtual void on_connect();
+
 	void on_read_hup() NOEXCEPT OVERRIDE;
 	void on_close(int err_code) NOEXCEPT OVERRIDE; // 参数就是 errno。
 

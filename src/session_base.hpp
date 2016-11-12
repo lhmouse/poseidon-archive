@@ -19,7 +19,6 @@ public:
 	~SessionBase();
 
 protected:
-	virtual void on_connect() = 0;
 	virtual void on_read_hup() NOEXCEPT = 0;
 	virtual void on_close(int err_code) NOEXCEPT = 0;
 

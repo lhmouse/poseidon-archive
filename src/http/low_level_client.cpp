@@ -4,7 +4,8 @@
 #include "../precompiled.hpp"
 #include "low_level_client.hpp"
 #include "exception.hpp"
-#include "status_codes.hpp"
+#include "utilities.hpp"
+#include "upgraded_client_base.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 
@@ -12,11 +13,11 @@ namespace Poseidon {
 
 namespace Http {
 	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl)
-		: TcpClientBase(addr, use_ssl)
+		: TcpClientBase(addr, use_ssl), ClientReader(), ClientWriter()
 	{
 	}
 	LowLevelClient::LowLevelClient(const IpPort &addr, bool use_ssl)
-		: TcpClientBase(addr, use_ssl)
+		: TcpClientBase(addr, use_ssl), ClientReader(), ClientWriter()
 	{
 	}
 	LowLevelClient::~LowLevelClient(){
@@ -37,13 +38,35 @@ namespace Http {
 			force_shutdown();
 		}
 
+		// epoll 线程读取不需要锁。
+		const AUTO(upgraded_client, m_upgraded_client);
+		if(upgraded_client){
+			upgraded_client->on_read_hup();
+		}
+
 		TcpClientBase::on_read_hup();
 	}
 
 	void LowLevelClient::on_read_avail(StreamBuffer data){
 		PROFILE_ME;
 
+		// epoll 线程读取不需要锁。
+		AUTO(upgraded_client, m_upgraded_client);
+		if(upgraded_client){
+			upgraded_client->on_read_avail(STD_MOVE(data));
+			return;
+		}
+
 		ClientReader::put_encoded_data(STD_MOVE(data));
+
+		upgraded_client = m_upgraded_client;
+		if(upgraded_client){
+			StreamBuffer queue;
+			queue.swap(ClientReader::get_queue());
+			if(!queue.empty()){
+				upgraded_client->on_read_avail(STD_MOVE(queue));
+			}
+		}
 	}
 
 	void LowLevelClient::on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length){
@@ -59,7 +82,13 @@ namespace Http {
 	bool LowLevelClient::on_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers){
 		PROFILE_ME;
 
-		return on_low_level_response_end(content_length, is_chunked, STD_MOVE(headers));
+		AUTO(upgraded_client, on_low_level_response_end(content_length, is_chunked, STD_MOVE(headers)));
+		if(upgraded_client){
+			const Mutex::UniqueLock lock(m_upgraded_client_mutex);
+			m_upgraded_client = STD_MOVE(upgraded_client);
+			return false;
+		}
+		return true;
 	}
 
 	long LowLevelClient::on_encoded_data_avail(StreamBuffer encoded){

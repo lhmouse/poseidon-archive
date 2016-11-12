@@ -226,6 +226,7 @@ std::size_t TcpSessionBase::get_send_buffer_size(Mutex::UniqueLock *lock) const 
 
 void TcpSessionBase::on_connect(){
 }
+
 void TcpSessionBase::on_read_hup() NOEXCEPT {
 }
 void TcpSessionBase::on_close(int err_code) NOEXCEPT {

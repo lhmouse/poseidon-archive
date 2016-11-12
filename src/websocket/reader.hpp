@@ -19,12 +19,16 @@ namespace WebSocket {
 			S_FRAME_SIZE        = 1,
 			S_FRAME_SIZE_16     = 2,
 			S_FRAME_SIZE_64     = 3,
-			S_MASK              = 4,
-			S_DATA_FRAME        = 5,
-			S_CONTROL_FRAME     = 6,
+			S_SIZE_END          = 4,
+			S_MASK              = 5,
+			S_HEADER_END        = 6,
+			S_DATA_FRAME        = 7,
+			S_CONTROL_FRAME     = 8,
 		};
 
 	private:
+		const bool m_force_masked_frames;
+
 		StreamBuffer m_queue;
 
 		boost::uint64_t m_size_expecting;
@@ -34,13 +38,14 @@ namespace WebSocket {
 		bool m_prev_fin;
 
 		bool m_fin;
+		bool m_masked;
 		OpCode m_opcode;
 		boost::uint64_t m_frame_size;
 		boost::uint32_t m_mask;
 		boost::uint64_t m_frame_offset;
 
 	public:
-		Reader();
+		explicit Reader(bool force_masked_frames);
 		virtual ~Reader();
 
 	protected:
