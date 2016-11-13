@@ -146,6 +146,7 @@ public:
 	void pop_front();
 	JsonElement &push_back(JsonElement val);
 	void pop_back();
+	iterator insert(const_iterator pos, JsonElement val);
 
 	const JsonElement &get(size_type index) const; // 若指定的键不存在，则返回空元素。
 	const JsonElement &at(size_type index) const; // 若指定的键不存在，则抛出 std::out_of_range。
@@ -388,6 +389,9 @@ inline JsonElement &JsonArray::push_back(JsonElement val){
 }
 inline void JsonArray::pop_back(){
 	m_elements.pop_back();
+}
+inline JsonArray::iterator JsonArray::insert(JsonArray::const_iterator pos, JsonElement val){
+	return m_elements.insert(pos, STD_MOVE(val));
 }
 
 class JsonParser {
