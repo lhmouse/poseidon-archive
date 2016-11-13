@@ -67,7 +67,7 @@ namespace {
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_table_name() const = 0;
-		virtual std::string generate_sql() const = 0;
+		virtual void generate_sql(std::string &query) const = 0;
 		virtual void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const = 0;
 		virtual void set_success() = 0;
 		virtual void set_exception(boost::exception_ptr ep) = 0;
@@ -96,7 +96,7 @@ namespace {
 		const char *get_table_name() const OVERRIDE {
 			return m_object->get_table_name();
 		}
-		std::string generate_sql() const OVERRIDE {
+		void generate_sql(std::string &query) const OVERRIDE {
 			std::ostringstream oss;
 			if(m_to_replace){
 				oss <<"REPLACE";
@@ -105,7 +105,7 @@ namespace {
 			}
 			oss <<" INTO `" <<get_table_name() <<"` SET ";
 			m_object->generate_sql(oss);
-			return oss.str();
+			query = oss.str();
 		}
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
@@ -143,8 +143,8 @@ namespace {
 		const char *get_table_name() const OVERRIDE {
 			return m_object->get_table_name();
 		}
-		std::string generate_sql() const OVERRIDE {
-			return m_query;
+		void generate_sql(std::string &query) const OVERRIDE {
+			query = m_query;
 		}
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
@@ -191,8 +191,8 @@ namespace {
 		const char *get_table_name() const OVERRIDE {
 			return m_table_hint;
 		}
-		std::string generate_sql() const OVERRIDE {
-			return m_query;
+		void generate_sql(std::string &query) const OVERRIDE {
+			query = m_query;
 		}
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
@@ -231,8 +231,8 @@ namespace {
 		const char *get_table_name() const OVERRIDE {
 			return m_table_hint;
 		}
-		std::string generate_sql() const OVERRIDE {
-			return m_query;
+		void generate_sql(std::string &query) const OVERRIDE {
+			query = m_query;
 		}
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
@@ -290,8 +290,8 @@ namespace {
 		const char *get_table_name() const OVERRIDE {
 			return "";
 		}
-		std::string generate_sql() const OVERRIDE {
-			return "DO 0";
+		void generate_sql(std::string &query) const OVERRIDE {
+			query = "DO 0";
 		}
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
@@ -454,7 +454,7 @@ namespace {
 					}
 				}
 				if(execute_it){
-					query = operation->generate_sql();
+					operation->generate_sql(query);
 					try {
 						LOG_POSEIDON_DEBUG("Executing SQL: table_name = ", operation->get_table_name(), ", query = ", query);
 						operation->execute(conn, query);
@@ -577,7 +577,7 @@ namespace {
 					if(pending_objects == 0){
 						break;
 					}
-					current_sql = m_queue.front().operation->generate_sql();
+					m_queue.front().operation->generate_sql(current_sql);
 					alive = atomic_load(m_alive, ATOMIC_CONSUME);
 					atomic_store(m_urgent, true, ATOMIC_RELEASE);
 					m_new_operation.signal();

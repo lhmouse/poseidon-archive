@@ -8,8 +8,8 @@
 #include <string>
 #include <iosfwd>
 #include <cstddef>
-#include <boost/container/flat_map.hpp>
-#include <boost/container/vector.hpp>
+#include <boost/container/map.hpp>
+#include <boost/container/deque.hpp>
 #include <boost/variant.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/type_traits/is_enum.hpp>
@@ -21,24 +21,76 @@ namespace Poseidon {
 #ifdef POSEIDON_CXX11
 using JsonNull = std::nullptr_t;
 #else
-struct JsonNull {
-	void *unused;
-};
+typedef struct JsonNull_ *JsonNull;
 #endif
 
 class JsonElement;
 
-class JsonObject : public boost::container::flat_map<SharedNts, JsonElement> {
+class JsonObject {
 public:
-	typedef boost::container::flat_map<SharedNts, JsonElement> base_container;
+	typedef boost::container::map<SharedNts, JsonElement> base_container;
+
+	typedef base_container::value_type        value_type;
+	typedef base_container::const_reference   const_reference;
+	typedef base_container::reference         reference;
+	typedef base_container::size_type         size_type;
+	typedef base_container::difference_type   difference_type;
+
+	typedef base_container::const_iterator          const_iterator;
+	typedef base_container::iterator                iterator;
+	typedef base_container::const_reverse_iterator  const_reverse_iterator;
+	typedef base_container::reverse_iterator        reverse_iterator;
+
+private:
+	base_container m_elements;
 
 public:
-	void dump(std::string &str) const;
-	std::string dump() const {
-		std::string str;
-		dump(str);
-		return str;
+	bool empty() const;
+	size_type size() const;
+	void clear();
+
+	const_iterator begin() const;
+	iterator begin();
+	const_iterator cbegin() const;
+	const_iterator end() const;
+	iterator end();
+	const_iterator cend() const;
+
+	const_reverse_iterator rbegin() const;
+	reverse_iterator rbegin();
+	const_reverse_iterator crbegin() const;
+	const_reverse_iterator rend() const;
+	reverse_iterator rend();
+	const_reverse_iterator crend() const;
+
+	iterator erase(const_iterator pos);
+	size_type erase(const char *key);
+	size_type erase(const SharedNts &key);
+
+	void swap(JsonObject &rhs) NOEXCEPT {
+		m_elements.swap(rhs.m_elements);
 	}
+
+	const_iterator find(const char *key) const;
+	const_iterator find(const SharedNts &key) const;
+	iterator find(const char *key);
+	iterator find(const SharedNts &key);
+
+	bool has(const char *key) const;
+	bool has(const SharedNts &key);
+	iterator create(SharedNts key);
+	JsonElement &set(SharedNts key, JsonElement val);
+
+	const JsonElement &get(const char *key) const { // 若指定的键不存在，则返回空元素。
+		return get(SharedNts::view(key));
+	};
+	const JsonElement &get(const SharedNts &key) const;
+	const JsonElement &at(const char *key) const { // 若指定的键不存在，则抛出 std::out_of_range。
+		return at(SharedNts::view(key));
+	};
+	const JsonElement &at(const SharedNts &key) const;
+
+	std::string dump() const;
 	void dump(std::ostream &os) const;
 };
 
@@ -46,17 +98,59 @@ inline void swap(JsonObject &lhs, JsonObject &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-class JsonArray : public boost::container::vector<JsonElement> {
+class JsonArray {
 public:
-	typedef boost::container::vector<JsonElement> base_container;
+	typedef boost::container::deque<JsonElement> base_container;
+
+	typedef base_container::value_type        value_type;
+	typedef base_container::const_reference   const_reference;
+	typedef base_container::reference         reference;
+	typedef base_container::size_type         size_type;
+	typedef base_container::difference_type   difference_type;
+
+	typedef base_container::const_iterator          const_iterator;
+	typedef base_container::iterator                iterator;
+	typedef base_container::const_reverse_iterator  const_reverse_iterator;
+	typedef base_container::reverse_iterator        reverse_iterator;
+
+private:
+	base_container m_elements;
 
 public:
-	void dump(std::string &str) const;
-	std::string dump() const {
-		std::string str;
-		dump(str);
-		return str;
+	bool empty() const;
+	size_type size() const;
+	void clear();
+
+	const_iterator begin() const;
+	iterator begin();
+	const_iterator cbegin() const;
+	const_iterator end() const;
+	iterator end();
+	const_iterator cend() const;
+
+	const_reverse_iterator rbegin() const;
+	reverse_iterator rbegin();
+	const_reverse_iterator crbegin() const;
+	const_reverse_iterator rend() const;
+	reverse_iterator rend();
+	const_reverse_iterator crend() const;
+
+	iterator erase(const_iterator pos);
+	bool erase(size_type index);
+
+	void swap(JsonArray &rhs) NOEXCEPT {
+		m_elements.swap(rhs.m_elements);
 	}
+
+	JsonElement &push_front(JsonElement val);
+	void pop_front();
+	JsonElement &push_back(JsonElement val);
+	void pop_back();
+
+	const JsonElement &get(size_type index) const; // 若指定的键不存在，则返回空元素。
+	const JsonElement &at(size_type index) const; // 若指定的键不存在，则抛出 std::out_of_range。
+
+	std::string dump() const;
 	void dump(std::ostream &os) const;
 };
 
@@ -130,12 +224,7 @@ public:
 		m_data.swap(rhs.m_data);
 	}
 
-	void dump(std::string &str) const;
-	std::string dump() const {
-		std::string str;
-		dump(str);
-		return str;
-	}
+	std::string dump() const;
 	void dump(std::ostream &os) const;
 };
 
@@ -143,17 +232,162 @@ inline void swap(JsonElement &lhs, JsonElement &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const JsonObject &rhs){
-	rhs.dump(os);
-	return os;
+inline bool JsonObject::empty() const {
+	return m_elements.empty();
 }
-inline std::ostream &operator<<(std::ostream &os, const JsonArray &rhs){
-	rhs.dump(os);
-	return os;
+inline JsonObject::size_type JsonObject::size() const {
+	return m_elements.size();
 }
-inline std::ostream &operator<<(std::ostream &os, const JsonElement &rhs){
-	rhs.dump(os);
-	return os;
+inline void JsonObject::clear(){
+	m_elements.clear();
+}
+
+inline JsonObject::const_iterator JsonObject::begin() const {
+	return m_elements.begin();
+}
+inline JsonObject::iterator JsonObject::begin(){
+	return m_elements.begin();
+}
+inline JsonObject::const_iterator JsonObject::cbegin() const {
+	return m_elements.begin();
+}
+inline JsonObject::const_iterator JsonObject::end() const {
+	return m_elements.end();
+}
+inline JsonObject::iterator JsonObject::end(){
+	return m_elements.end();
+}
+inline JsonObject::const_iterator JsonObject::cend() const {
+	return m_elements.end();
+}
+
+inline JsonObject::const_reverse_iterator JsonObject::rbegin() const {
+	return m_elements.rbegin();
+}
+inline JsonObject::reverse_iterator JsonObject::rbegin(){
+	return m_elements.rbegin();
+}
+inline JsonObject::const_reverse_iterator JsonObject::crbegin() const {
+	return m_elements.rbegin();
+}
+inline JsonObject::const_reverse_iterator JsonObject::rend() const {
+	return m_elements.rend();
+}
+inline JsonObject::reverse_iterator JsonObject::rend(){
+	return m_elements.rend();
+}
+inline JsonObject::const_reverse_iterator JsonObject::crend() const {
+	return m_elements.rend();
+}
+
+inline JsonObject::iterator JsonObject::erase(JsonObject::const_iterator pos){
+	return m_elements.erase(pos);
+}
+inline JsonObject::size_type JsonObject::erase(const char *key){
+	return erase(SharedNts::view(key));
+}
+inline JsonObject::size_type JsonObject::erase(const SharedNts &key){
+	return m_elements.erase(key);
+}
+
+inline JsonObject::const_iterator JsonObject::find(const char *key) const {
+	return find(SharedNts::view(key));
+}
+inline JsonObject::const_iterator JsonObject::find(const SharedNts &key) const {
+	return m_elements.find(key);
+}
+inline JsonObject::iterator JsonObject::find(const char *key){
+	return find(SharedNts::view(key));
+}
+inline JsonObject::iterator JsonObject::find(const SharedNts &key){
+	return m_elements.find(key);
+}
+
+inline bool JsonObject::has(const char *key) const {
+	return find(key) != end();
+}
+inline bool JsonObject::has(const SharedNts &key){
+	return find(key) != end();
+}
+inline JsonObject::iterator JsonObject::create(SharedNts key){
+	return m_elements.insert(std::make_pair(STD_MOVE(key), JsonElement())).first;
+}
+inline JsonElement &JsonObject::set(SharedNts key, JsonElement val){
+	const AUTO(it, create(STD_MOVE(key)));
+	it->second = STD_MOVE_IDN(val);
+	return it->second;
+}
+
+inline bool JsonArray::empty() const {
+	return m_elements.empty();
+}
+inline JsonArray::size_type JsonArray::size() const {
+	return m_elements.size();
+}
+inline void JsonArray::clear(){
+	m_elements.clear();
+}
+
+inline JsonArray::const_iterator JsonArray::begin() const {
+	return m_elements.begin();
+}
+inline JsonArray::iterator JsonArray::begin(){
+	return m_elements.begin();
+}
+inline JsonArray::const_iterator JsonArray::cbegin() const {
+	return m_elements.begin();
+}
+inline JsonArray::const_iterator JsonArray::end() const {
+	return m_elements.end();
+}
+inline JsonArray::iterator JsonArray::end(){
+	return m_elements.end();
+}
+inline JsonArray::const_iterator JsonArray::cend() const {
+	return m_elements.end();
+}
+
+inline JsonArray::const_reverse_iterator JsonArray::rbegin() const {
+	return m_elements.rbegin();
+}
+inline JsonArray::reverse_iterator JsonArray::rbegin(){
+	return m_elements.rbegin();
+}
+inline JsonArray::const_reverse_iterator JsonArray::crbegin() const {
+	return m_elements.rbegin();
+}
+inline JsonArray::const_reverse_iterator JsonArray::rend() const {
+	return m_elements.rend();
+}
+inline JsonArray::reverse_iterator JsonArray::rend(){
+	return m_elements.rend();
+}
+inline JsonArray::const_reverse_iterator JsonArray::crend() const {
+	return m_elements.rend();
+}
+
+inline JsonArray::iterator JsonArray::erase(JsonArray::const_iterator pos){
+	return m_elements.erase(pos);
+}
+inline bool JsonArray::erase(JsonArray::size_type index){
+	if(index >= size()){
+		return false;
+	}
+	m_elements.erase(begin() + static_cast<difference_type>(index));
+	return true;
+}
+
+inline JsonElement &JsonArray::push_front(JsonElement val){
+	return *m_elements.insert(m_elements.begin(), STD_MOVE(val));
+}
+inline void JsonArray::pop_front(){
+	m_elements.pop_front();
+}
+inline JsonElement &JsonArray::push_back(JsonElement val){
+	return *m_elements.insert(m_elements.end(), STD_MOVE(val));
+}
+inline void JsonArray::pop_back(){
+	m_elements.pop_back();
 }
 
 class JsonParser {
@@ -174,13 +408,27 @@ private:
 	JsonParser();
 };
 
+inline std::ostream &operator<<(std::ostream &os, const JsonElement &rhs){
+	rhs.dump(os);
+	return os;
+}
 inline std::istream &operator>>(std::istream &is, JsonElement &rhs){
 	JsonParser::parse_element(is).swap(rhs);
 	return is;
 }
+
+inline std::ostream &operator<<(std::ostream &os, const JsonArray &rhs){
+	rhs.dump(os);
+	return os;
+}
 inline std::istream &operator>>(std::istream &is, JsonArray &rhs){
 	JsonParser::parse_array(is).swap(rhs);
 	return is;
+}
+
+inline std::ostream &operator<<(std::ostream &os, const JsonObject &rhs){
+	rhs.dump(os);
+	return os;
 }
 inline std::istream &operator>>(std::istream &is, JsonObject &rhs){
 	JsonParser::parse_object(is).swap(rhs);

@@ -6,17 +6,17 @@
 
 namespace Poseidon {
 
-const std::string &OptionalMap::get(const char *key) const {
-	const const_iterator it = find(key);
+const std::string &OptionalMap::get(const SharedNts &key) const {
+	const AUTO(it, find(key));
 	if(it == end()){
 		return EMPTY_STRING;
 	}
 	return it->second;
 }
-const std::string &OptionalMap::at(const char *key) const {
-	const const_iterator it = find(key);
+const std::string &OptionalMap::at(const SharedNts &key) const {
+	const AUTO(it, find(key));
 	if(it == end()){
-		throw std::out_of_range("Poseidon::OptionalMap::at");
+		throw std::out_of_range(__PRETTY_FUNCTION__);
 	}
 	return it->second;
 }

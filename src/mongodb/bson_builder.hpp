@@ -90,7 +90,7 @@ namespace MongoDb {
 		}
 		void build_json(std::ostream &os, bool as_array = false) const;
 
-		void swap(BsonBuilder &rhs) noexcept {
+		void swap(BsonBuilder &rhs) NOEXCEPT {
 			m_elements.swap(rhs.m_elements);
 		}
 	};

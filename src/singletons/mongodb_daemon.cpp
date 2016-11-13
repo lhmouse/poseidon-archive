@@ -75,7 +75,7 @@ namespace {
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_collection_name() const = 0;
-		virtual MongoDb::BsonBuilder generate_bson() const = 0;
+		virtual void generate_bson(MongoDb::BsonBuilder &query) const = 0;
 		virtual void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const = 0;
 		virtual void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const = 0;
 		virtual void set_success() = 0;
@@ -105,34 +105,32 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return m_object->get_collection_name();
 		}
-		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
-			MongoDb::BsonBuilder doc;
-			m_object->generate_document(doc);
-			return doc;
+		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
+			m_object->generate_document(query);
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &doc) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
 			AUTO(pkey, m_object->generate_primary_key());
 			if(pkey.empty()){
-				LOG_POSEIDON_DEBUG("Inserting: doc = ", doc);
-				conn->execute_insert(get_collection_name(), doc, false);
+				LOG_POSEIDON_DEBUG("Inserting: query = ", query);
+				conn->execute_insert(get_collection_name(), query, false);
 			} else {
-				LOG_POSEIDON_DEBUG("Upserting: pkey = ", pkey, ", doc = ", doc);
+				LOG_POSEIDON_DEBUG("Upserting: pkey = ", pkey, ", query = ", query);
 				AUTO(q, MongoDb::bson_scalar_string(sslit("_id"), STD_MOVE(pkey)));
-				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), doc));
+				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), query));
 				conn->execute_update(get_collection_name(), STD_MOVE(q), STD_MOVE(d), true, false);
 			}
 		}
-		void dump(std::ostream &os, const MongoDb::BsonBuilder &doc) const OVERRIDE {
+		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
 			AUTO(pkey, m_object->generate_primary_key());
 			if(pkey.empty()){
-				os <<"db." <<get_collection_name() <<".insert(" <<doc <<")";
+				os <<"db." <<get_collection_name() <<".insert(" <<query <<")";
 			} else {
 				AUTO(q, MongoDb::bson_scalar_string(sslit("_id"), STD_MOVE(pkey)));
-				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), doc));
+				AUTO(d, MongoDb::bson_scalar_object(sslit("$set"), query));
 				os <<"db." <<get_collection_name() <<".update(" <<q <<"," <<d <<",{upsert:1})";
 			}
 		}
@@ -167,8 +165,8 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return m_object->get_collection_name();
 		}
-		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
-			return m_query;
+		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
+			query = m_query;
 		}
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
@@ -221,8 +219,8 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return m_collection;
 		}
-		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
-			return m_query;
+		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
+			query = m_query;
 		}
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
@@ -270,8 +268,8 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return m_collection;
 		}
-		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
-			return m_query;
+		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
+			query = m_query;
 		}
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
@@ -334,8 +332,8 @@ namespace {
 		const char *get_collection_name() const OVERRIDE {
 			return "";
 		}
-		MongoDb::BsonBuilder generate_bson() const OVERRIDE {
-			return MongoDb::bson_scalar_signed(sslit("ping"), 1);
+		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
+			query = MongoDb::bson_scalar_signed(sslit("ping"), 1);
 		}
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
@@ -501,7 +499,7 @@ namespace {
 					}
 				}
 				if(execute_it){
-					query = operation->generate_bson();
+					operation->generate_bson(query);
 					try {
 						LOG_POSEIDON_DEBUG("Executing MongoDB query: ", operation->dump_debug(query));
 						operation->execute(conn, query);
@@ -627,7 +625,7 @@ namespace {
 					if(pending_objects == 0){
 						break;
 					}
-					current_bson = m_queue.front().operation->generate_bson();
+					m_queue.front().operation->generate_bson(current_bson);
 					alive = atomic_load(m_alive, ATOMIC_CONSUME);
 					atomic_store(m_urgent, true, ATOMIC_RELEASE);
 					m_new_operation.signal();

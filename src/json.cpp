@@ -8,10 +8,29 @@
 
 namespace Poseidon {
 
-void JsonObject::dump(std::string &str) const {
+namespace {
+	const JsonElement NULL_ELEMENT = JsonNull();
+}
+
+const JsonElement &JsonObject::get(const SharedNts &key) const {
+	const AUTO(it, find(key));
+	if(it == end()){
+		return NULL_ELEMENT;
+	}
+	return it->second;
+}
+const JsonElement &JsonObject::at(const SharedNts &key) const {
+	const AUTO(it, find(key));
+	if(it == end()){
+		throw std::out_of_range(__PRETTY_FUNCTION__);
+	}
+	return it->second;
+}
+
+std::string JsonObject::dump() const {
 	std::ostringstream oss;
 	dump(oss);
-	str = oss.str();
+	return oss.str();
 }
 void JsonObject::dump(std::ostream &os) const {
 	os <<'{';
@@ -36,10 +55,25 @@ void JsonObject::dump(std::ostream &os) const {
 	os <<'}';
 }
 
-void JsonArray::dump(std::string &str) const {
+const JsonElement &JsonArray::get(std::size_t index) const {
+	if(index >= size()){
+		return NULL_ELEMENT;
+	}
+	const AUTO(it, begin() + static_cast<difference_type>(index));
+	return *it;
+}
+const JsonElement &JsonArray::at(std::size_t index) const {
+	if(index >= size()){
+		throw std::out_of_range(__PRETTY_FUNCTION__);
+	}
+	const AUTO(it, begin() + static_cast<difference_type>(index));
+	return *it;
+}
+
+std::string JsonArray::dump() const {
 	std::ostringstream oss;
 	dump(oss);
-	str = oss.str();
+	return oss.str();
 }
 void JsonArray::dump(std::ostream &os) const {
 	os <<'[';
@@ -56,10 +90,10 @@ void JsonArray::dump(std::ostream &os) const {
 	os <<']';
 }
 
-void JsonElement::dump(std::string &str) const {
+std::string JsonElement::dump() const {
 	std::ostringstream oss;
 	dump(oss);
-	str = oss.str();
+	return oss.str();
 }
 void JsonElement::dump(std::ostream &os) const {
 	switch(type()){
@@ -282,8 +316,7 @@ JsonObject JsonParser::accept_object(std::istream &is){
 		if(!(is >>temp) || (temp != ':')){
 			DEBUG_THROW(ProtocolException, sslit("JSON parser: Colon expected"), -1);
 		}
-		JsonElement element = parse_element(is);
-		ret[SharedNts(name)] = STD_MOVE(element);
+		ret.set(SharedNts(name), parse_element(is));
 	}
 	return ret;
 }
@@ -304,8 +337,7 @@ JsonArray JsonParser::accept_array(std::istream &is){
 			continue;
 		}
 		is.unget();
-		JsonElement element = parse_element(is);
-		ret.push_back(STD_MOVE(element));
+		ret.push_back(parse_element(is));
 	}
 	return ret;
 }

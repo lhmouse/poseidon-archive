@@ -5,17 +5,25 @@
 #define POSEIDON_OPTIONAL_MAP_HPP_
 
 #include "cxx_ver.hpp"
-#include <map>
+#include <boost/container/map.hpp>
 #include "shared_nts.hpp"
 
 namespace Poseidon {
 
 class OptionalMap {
 public:
-	typedef std::multimap<SharedNts, std::string> base_container;
+	typedef boost::container::multimap<SharedNts, std::string> base_container;
 
-	typedef base_container::const_iterator const_iterator;
-	typedef base_container::iterator iterator;
+	typedef base_container::value_type        value_type;
+	typedef base_container::const_reference   const_reference;
+	typedef base_container::reference         reference;
+	typedef base_container::size_type         size_type;
+	typedef base_container::difference_type   difference_type;
+
+	typedef base_container::const_iterator          const_iterator;
+	typedef base_container::iterator                iterator;
+	typedef base_container::const_reverse_iterator  const_reverse_iterator;
+	typedef base_container::reverse_iterator        reverse_iterator;
 
 private:
 	base_container m_elements;
@@ -24,7 +32,7 @@ public:
 	bool empty() const {
 		return m_elements.empty();
 	}
-	std::size_t size() const {
+	size_type size() const {
 		return m_elements.size();
 	}
 	void clear(){
@@ -37,21 +45,45 @@ public:
 	iterator begin(){
 		return m_elements.begin();
 	}
+	const_iterator cbegin() const {
+		return m_elements.begin();
+	}
 	const_iterator end() const {
 		return m_elements.end();
 	}
 	iterator end(){
 		return m_elements.end();
 	}
-
-	iterator erase(iterator pos){
-		m_elements.erase(pos++);
-		return pos;
+	const_iterator cend() const {
+		return m_elements.end();
 	}
-	std::size_t erase(const char *key){
+
+	const_reverse_iterator rbegin() const {
+		return m_elements.rbegin();
+	}
+	reverse_iterator rbegin(){
+		return m_elements.rbegin();
+	}
+	const_reverse_iterator crbegin() const {
+		return m_elements.rbegin();
+	}
+	const_reverse_iterator rend() const {
+		return m_elements.rend();
+	}
+	reverse_iterator rend(){
+		return m_elements.rend();
+	}
+	const_reverse_iterator crend() const {
+		return m_elements.rend();
+	}
+
+	iterator erase(const_iterator pos){
+		return m_elements.erase(pos);
+	}
+	size_type erase(const char *key){
 		return erase(SharedNts::view(key));
 	}
-	std::size_t erase(const SharedNts &key){
+	size_type erase(const SharedNts &key){
 		return m_elements.erase(key);
 	}
 
@@ -80,26 +112,22 @@ public:
 		return find(key) != end();
 	}
 	iterator create(SharedNts key){
-		iterator ret = find(key);
-		if(ret == m_elements.end()){
-			ret = m_elements.insert(std::make_pair(STD_MOVE(key), std::string()));
-		}
-		return ret;
+		return m_elements.insert(std::make_pair(STD_MOVE(key), std::string()));
 	}
 	std::string &set(SharedNts key, std::string val){
-		AUTO_REF(ret, create(STD_MOVE(key))->second);
-		ret = STD_MOVE(val);
-		return ret;
+		const AUTO(it, create(STD_MOVE(key)));
+		it->second = STD_MOVE(val);
+		return it->second;
 	}
 
-	const std::string &get(const char *key) const; // 若指定的键不存在，则返回空字符串。
-	const std::string &get(const SharedNts &key) const {
-		return get(key.get());
-	}
-	const std::string &at(const char *key) const; // 若指定的键不存在，则抛出 std::out_of_range。
-	const std::string &at(const SharedNts &key) const {
-		return at(key.get());
-	}
+	const std::string &get(const char *key) const { // 若指定的键不存在，则返回空字符串。
+		return get(SharedNts::view(key));
+	};
+	const std::string &get(const SharedNts &key) const;
+	const std::string &at(const char *key) const { // 若指定的键不存在，则抛出 std::out_of_range。
+		return at(SharedNts::view(key));
+	};
+	const std::string &at(const SharedNts &key) const;
 
 	// 一对多的接口。
 	std::pair<const_iterator, const_iterator> range(const char *key) const {
@@ -114,10 +142,10 @@ public:
 	std::pair<iterator, iterator> range(const SharedNts &key){
 		return m_elements.equal_range(key);
 	}
-	std::size_t count(const char *key) const {
+	size_type count(const char *key) const {
 		return count(SharedNts::view(key));
 	}
-	std::size_t count(const SharedNts &key) const {
+	size_type count(const SharedNts &key) const {
 		return m_elements.count(key);
 	}
 

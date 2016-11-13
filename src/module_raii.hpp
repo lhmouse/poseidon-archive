@@ -7,13 +7,13 @@
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include <boost/shared_ptr.hpp>
-#include <deque>
+#include <boost/container/deque.hpp>
 
 namespace Poseidon {
 
 class HandleStack {
 private:
-	std::deque<boost::shared_ptr<const void> > m_queue;
+	boost::container::deque<boost::shared_ptr<const void> > m_queue;
 
 public:
 	~HandleStack();
