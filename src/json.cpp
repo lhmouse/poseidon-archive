@@ -9,22 +9,11 @@
 namespace Poseidon {
 
 namespace {
-	const JsonElement NULL_ELEMENT = JsonNull();
+	const JsonElement g_null_element = JsonNull();
 }
 
-const JsonElement &JsonObject::get(const SharedNts &key) const {
-	const AUTO(it, find(key));
-	if(it == end()){
-		return NULL_ELEMENT;
-	}
-	return it->second;
-}
-const JsonElement &JsonObject::at(const SharedNts &key) const {
-	const AUTO(it, find(key));
-	if(it == end()){
-		throw std::out_of_range(__PRETTY_FUNCTION__);
-	}
-	return it->second;
+const JsonElement &null_element() NOEXCEPT {
+	return g_null_element;
 }
 
 std::string JsonObject::dump() const {
@@ -53,21 +42,6 @@ void JsonObject::dump(std::ostream &os) const {
 		}
 	}
 	os <<'}';
-}
-
-const JsonElement &JsonArray::get(std::size_t index) const {
-	if(index >= size()){
-		return NULL_ELEMENT;
-	}
-	const AUTO(it, begin() + static_cast<difference_type>(index));
-	return *it;
-}
-const JsonElement &JsonArray::at(std::size_t index) const {
-	if(index >= size()){
-		throw std::out_of_range(__PRETTY_FUNCTION__);
-	}
-	const AUTO(it, begin() + static_cast<difference_type>(index));
-	return *it;
 }
 
 std::string JsonArray::dump() const {

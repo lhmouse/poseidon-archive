@@ -187,7 +187,6 @@ lib_libposeidon_main_la_SOURCES = \
 	src/virtual_shared_from_this.cpp	\
 	src/stream_buffer.cpp	\
 	src/shared_nts.cpp	\
-	src/optional_map.cpp	\
 	src/csv_parser.cpp	\
 	src/job_base.cpp	\
 	src/async_job.cpp	\

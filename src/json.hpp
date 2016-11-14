@@ -7,6 +7,7 @@
 #include "cxx_ver.hpp"
 #include <string>
 #include <iosfwd>
+#include <stdexcept>
 #include <cstddef>
 #include <boost/container/map.hpp>
 #include <boost/container/deque.hpp>
@@ -64,8 +65,9 @@ public:
 	const_reverse_iterator crend() const;
 
 	iterator erase(const_iterator pos);
-	size_type erase(const char *key);
-	size_type erase(const SharedNts &key);
+	iterator erase(const_iterator first, const_iterator last);
+	bool erase(const char *key);
+	bool erase(const SharedNts &key);
 
 	void swap(JsonObject &rhs) NOEXCEPT {
 		m_elements.swap(rhs.m_elements);
@@ -78,7 +80,6 @@ public:
 
 	bool has(const char *key) const;
 	bool has(const SharedNts &key);
-	iterator create(SharedNts key);
 	JsonElement &set(SharedNts key, JsonElement val);
 
 	const JsonElement &get(const char *key) const { // 若指定的键不存在，则返回空元素。
@@ -136,6 +137,7 @@ public:
 	const_reverse_iterator crend() const;
 
 	iterator erase(const_iterator pos);
+	iterator erase(const_iterator first, const_iterator last);
 	bool erase(size_type index);
 
 	void swap(JsonArray &rhs) NOEXCEPT {
@@ -233,6 +235,8 @@ inline void swap(JsonElement &lhs, JsonElement &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
+extern const JsonElement &null_element() NOEXCEPT;
+
 inline bool JsonObject::empty() const {
 	return m_elements.empty();
 }
@@ -284,10 +288,13 @@ inline JsonObject::const_reverse_iterator JsonObject::crend() const {
 inline JsonObject::iterator JsonObject::erase(JsonObject::const_iterator pos){
 	return m_elements.erase(pos);
 }
-inline JsonObject::size_type JsonObject::erase(const char *key){
+inline JsonObject::iterator JsonObject::erase(JsonObject::const_iterator first, JsonObject::const_iterator last){
+	return m_elements.erase(first, last);
+}
+inline bool JsonObject::erase(const char *key){
 	return erase(SharedNts::view(key));
 }
-inline JsonObject::size_type JsonObject::erase(const SharedNts &key){
+inline bool JsonObject::erase(const SharedNts &key){
 	return m_elements.erase(key);
 }
 
@@ -310,12 +317,25 @@ inline bool JsonObject::has(const char *key) const {
 inline bool JsonObject::has(const SharedNts &key){
 	return find(key) != end();
 }
-inline JsonObject::iterator JsonObject::create(SharedNts key){
-	return m_elements.insert(std::make_pair(STD_MOVE(key), JsonElement())).first;
-}
 inline JsonElement &JsonObject::set(SharedNts key, JsonElement val){
-	const AUTO(it, create(STD_MOVE(key)));
-	it->second = STD_MOVE_IDN(val);
+	const AUTO(existent, m_elements.equal_range(key));
+	const AUTO(hint, m_elements.erase(existent.first, existent.second));
+	const AUTO(it, m_elements.insert(hint, std::make_pair(STD_MOVE(key), STD_MOVE(val))));
+	return it->second;
+}
+
+inline const JsonElement &JsonObject::get(const SharedNts &key) const {
+	const AUTO(it, find(key));
+	if(it == end()){
+		return null_element();
+	}
+	return it->second;
+}
+inline const JsonElement &JsonObject::at(const SharedNts &key) const {
+	const AUTO(it, find(key));
+	if(it == end()){
+		throw std::out_of_range(__PRETTY_FUNCTION__);
+	}
 	return it->second;
 }
 
@@ -370,6 +390,9 @@ inline JsonArray::const_reverse_iterator JsonArray::crend() const {
 inline JsonArray::iterator JsonArray::erase(JsonArray::const_iterator pos){
 	return m_elements.erase(pos);
 }
+inline JsonArray::iterator JsonArray::erase(JsonArray::const_iterator first, JsonArray::const_iterator last){
+	return m_elements.erase(first, last);
+}
 inline bool JsonArray::erase(JsonArray::size_type index){
 	if(index >= size()){
 		return false;
@@ -392,6 +415,21 @@ inline void JsonArray::pop_back(){
 }
 inline JsonArray::iterator JsonArray::insert(JsonArray::const_iterator pos, JsonElement val){
 	return m_elements.insert(pos, STD_MOVE(val));
+}
+
+inline const JsonElement &JsonArray::get(JsonArray::size_type index) const {
+	if(index >= size()){
+		return null_element();
+	}
+	const AUTO(it, begin() + static_cast<difference_type>(index));
+	return *it;
+}
+inline const JsonElement &JsonArray::at(JsonArray::size_type index) const {
+	if(index >= size()){
+		throw std::out_of_range(__PRETTY_FUNCTION__);
+	}
+	const AUTO(it, begin() + static_cast<difference_type>(index));
+	return *it;
 }
 
 class JsonParser {

@@ -167,7 +167,7 @@ TcpSessionBase::SyncIoResult TcpSessionBase::sync_read_and_process(void *hint, u
 		fetch_peer_info();
 
 		const AUTO(bytes, static_cast<std::size_t>(ret.bytes_transferred));
-		LOG_POSEIDON_TRACE("Read ", bytes, " byte(s) from ", get_remote_info(), ", hex = ", HexDumper(hint, bytes));
+		LOG_POSEIDON_TRACE("Read ", bytes, " byte(s) from ", get_remote_info());
 
 		on_read_avail(StreamBuffer(hint, bytes));
 	}
@@ -198,7 +198,7 @@ TcpSessionBase::SyncIoResult TcpSessionBase::sync_write(void *hint, unsigned lon
 			fetch_peer_info();
 
 			const AUTO(bytes, static_cast<std::size_t>(ret.bytes_transferred));
-			LOG_POSEIDON_TRACE("Wrote ", bytes, " byte(s) to ", get_remote_info(), ", hex = ", HexDumper(hint, bytes));
+			LOG_POSEIDON_TRACE("Wrote ", bytes, " byte(s) to ", get_remote_info());
 
 			const Mutex::UniqueLock lock(m_buffer_mutex);
 			m_send_buffer.discard(bytes);

@@ -13,7 +13,7 @@
 
 namespace Poseidon {
 
-extern const std::string EMPTY_STRING;
+extern const std::string &empty_string() NOEXCEPT;
 
 // 参考 PHP 的 explode() 函数。
 template<typename T>
@@ -96,18 +96,6 @@ inline std::string implode(char separator, const std::vector<std::string> &vec){
 	}
 	return ret;
 }
-
-struct HexDumper {
-	const void *const read;
-	const std::size_t size;
-
-	HexDumper(const void *read_, std::size_t size_)
-		: read(read_), size(size_)
-	{
-	}
-};
-
-extern std::ostream &operator<<(std::ostream &os, const HexDumper &dumper);
 
 inline std::string to_upper_case(std::string src){
 	for(AUTO(it, src.begin()); it != src.end(); ++it){

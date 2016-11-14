@@ -48,8 +48,6 @@
 
 namespace Poseidon {
 
-extern const std::string EMPTY_STRING;
-
 }
 
 #endif

@@ -136,7 +136,7 @@ void CsvParser::load(const char *file){
 		AUTO_REF(row, rows.at(i));
 		AUTO_REF(map, data.at(i));
 		for(std::size_t j = 0; j < column_count; ++j){
-			map.create(keys.at(j))->second.swap(row.at(j));
+			map.set(keys.at(j), STD_MOVE(row.at(j)));
 		}
 	}
 
@@ -164,7 +164,7 @@ const std::string &CsvParser::get_raw(const char *key) const {
 	const AUTO(it, map.find(key));
 	if(it == map.end()){
 		LOG_POSEIDON_WARNING("Column not found: ", key);
-		return EMPTY_STRING;
+		return empty_string();
 	}
 	return it->second;
 }

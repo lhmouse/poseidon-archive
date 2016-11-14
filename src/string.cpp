@@ -10,17 +10,12 @@
 
 namespace Poseidon {
 
-const std::string EMPTY_STRING;
+namespace {
+	const std::string g_empty_string;
+}
 
-std::ostream &operator<<(std::ostream &os, const HexDumper &dumper){
-	AUTO(read, static_cast<const unsigned char *>(dumper.read));
-	os <<std::hex;
-	for(std::size_t i = 0; i < dumper.size; ++i){
-		os <<std::setfill('0') <<std::setw(2) <<static_cast<unsigned>(*read) <<' ';
-		++read;
-	}
-	os << std::dec;
-	return os;
+const std::string &empty_string() NOEXCEPT {
+	return g_empty_string;
 }
 
 bool is_valid_utf8_string(const std::string &str){

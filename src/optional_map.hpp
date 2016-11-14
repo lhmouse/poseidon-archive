@@ -6,9 +6,12 @@
 
 #include "cxx_ver.hpp"
 #include <boost/container/map.hpp>
+#include <stdexcept>
 #include "shared_nts.hpp"
 
 namespace Poseidon {
+
+extern const std::string &empty_string() NOEXCEPT;
 
 class OptionalMap {
 public:
@@ -80,6 +83,9 @@ public:
 	iterator erase(const_iterator pos){
 		return m_elements.erase(pos);
 	}
+	iterator erase(const_iterator first, const_iterator last){
+		return m_elements.erase(first, last);
+	}
 	size_type erase(const char *key){
 		return erase(SharedNts::view(key));
 	}
@@ -111,23 +117,33 @@ public:
 	bool has(const SharedNts &key){
 		return find(key) != end();
 	}
-	iterator create(SharedNts key){
-		return m_elements.insert(std::make_pair(STD_MOVE(key), std::string()));
-	}
 	std::string &set(SharedNts key, std::string val){
-		const AUTO(it, create(STD_MOVE(key)));
-		it->second = STD_MOVE(val);
+		const AUTO(existent, m_elements.equal_range(key));
+		const AUTO(hint, m_elements.erase(existent.first, existent.second));
+		const AUTO(it, m_elements.insert(hint, std::make_pair(STD_MOVE(key), STD_MOVE(val))));
 		return it->second;
 	}
 
 	const std::string &get(const char *key) const { // 若指定的键不存在，则返回空字符串。
 		return get(SharedNts::view(key));
 	};
-	const std::string &get(const SharedNts &key) const;
+	const std::string &get(const SharedNts &key) const {
+		const AUTO(it, find(key));
+		if(it == end()){
+			return empty_string();
+		}
+		return it->second;
+	}
 	const std::string &at(const char *key) const { // 若指定的键不存在，则抛出 std::out_of_range。
 		return at(SharedNts::view(key));
 	};
-	const std::string &at(const SharedNts &key) const;
+	const std::string &at(const SharedNts &key) const {
+		const AUTO(it, find(key));
+		if(it == end()){
+			throw std::out_of_range(__PRETTY_FUNCTION__);
+		}
+		return it->second;
+	}
 
 	// 一对多的接口。
 	std::pair<const_iterator, const_iterator> range(const char *key) const {
