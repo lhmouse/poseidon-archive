@@ -6,6 +6,7 @@
 
 #include "../cxx_ver.hpp"
 #include <boost/container/deque.hpp>
+#include <boost/cstdint.hpp>
 #include <string>
 #include <iosfwd>
 #include <cstddef>
