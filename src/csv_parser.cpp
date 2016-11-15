@@ -26,8 +26,6 @@ void CsvParser::load(const char *file){
 	file_get_contents(buffer, file);
 	buffer.put('\n');
 
-	std::vector<OptionalMap> data;
-
 	std::vector<std::vector<std::string> > rows;
 	{
 		std::vector<std::string> row;
@@ -131,7 +129,7 @@ void CsvParser::load(const char *file){
 		}
 	}
 
-	data.resize(rows.size());
+	std::vector<OptionalMap> data(rows.size());
 	for(std::size_t i = 0; i < rows.size(); ++i){
 		AUTO_REF(row, rows.at(i));
 		AUTO_REF(map, data.at(i));

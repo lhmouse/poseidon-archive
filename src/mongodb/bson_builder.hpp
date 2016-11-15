@@ -48,6 +48,22 @@ namespace MongoDb {
 	private:
 		boost::container::deque<Element> m_elements;
 
+#ifndef POSEIDON_CXX11
+	public:
+		BsonBuilder()
+			: m_elements()
+		{
+		}
+		BsonBuilder(const BsonBuilder &rhs)
+			: m_elements(rhs.m_elements)
+		{
+		}
+		BsonBuilder &operator=(const BsonBuilder &rhs){
+			m_elements = rhs.m_elements;
+			return *this;
+		}
+#endif
+
 	private:
 		void internal_build(void *impl, bool as_array) const;
 

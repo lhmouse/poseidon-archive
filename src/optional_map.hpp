@@ -31,6 +31,22 @@ public:
 private:
 	base_container m_elements;
 
+#ifndef POSEIDON_CXX11
+public:
+	OptionalMap()
+		: m_elements()
+	{
+	}
+	OptionalMap(const OptionalMap &rhs)
+		: m_elements(rhs.m_elements)
+	{
+	}
+	OptionalMap &operator=(const OptionalMap &rhs){
+		m_elements = rhs.m_elements;
+		return *this;
+	}
+#endif
+
 public:
 	bool empty() const {
 		return m_elements.empty();
@@ -120,7 +136,7 @@ public:
 	std::string &set(SharedNts key, std::string val){
 		const AUTO(existent, m_elements.equal_range(key));
 		const AUTO(hint, m_elements.erase(existent.first, existent.second));
-		const AUTO(it, m_elements.insert(hint, std::make_pair(STD_MOVE(key), STD_MOVE(val))));
+		const AUTO(it, m_elements.insert(hint, std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val))));
 		return it->second;
 	}
 
@@ -166,7 +182,7 @@ public:
 	}
 
 	iterator append(SharedNts key, std::string val){
-		return m_elements.insert(std::make_pair(STD_MOVE(key), STD_MOVE(val)));
+		return m_elements.insert(std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val)));
 	}
 };
 

@@ -15,7 +15,15 @@ class HandleStack {
 private:
 	boost::container::deque<boost::shared_ptr<const void> > m_queue;
 
+private:
+	HandleStack(const HandleStack &);
+	HandleStack &operator=(const HandleStack &);
+
 public:
+	HandleStack()
+		: m_queue()
+	{
+	}
 	~HandleStack();
 
 public:

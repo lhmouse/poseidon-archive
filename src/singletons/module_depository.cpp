@@ -76,9 +76,9 @@ struct ModuleMapElement {
 	SharedNts real_path;
 	void *base_addr;
 
-	HandleStack handles;
+	boost::shared_ptr<HandleStack> handles;
 
-	ModuleMapElement(boost::shared_ptr<Module> module_, HandleStack handles_)
+	ModuleMapElement(boost::shared_ptr<Module> module_, boost::shared_ptr<HandleStack> handles_)
 		: module(STD_MOVE(module_)), handle(module->get_handle())
 		, real_path(module->get_real_path()), base_addr(module->get_base_addr())
 		, handles(STD_MOVE(handles_))
@@ -197,13 +197,13 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 
 	AUTO(module, boost::make_shared<Module>(STD_MOVE(handle), real_path, base_addr));
 
-	HandleStack handles;
+	AUTO(handles, boost::make_shared<HandleStack>());
 	LOG_POSEIDON_INFO("Initializing module: ", real_path);
 	for(AUTO(it, g_module_raii_map.begin<MRIDX_PRIORITY>()); it != g_module_raii_map.end<MRIDX_PRIORITY>(); ++it){
 		if(it->base_addr != base_addr){
 			continue;
 		}
-		it->raii->init(handles);
+		it->raii->init(*handles);
 	}
 	LOG_POSEIDON_INFO("Done initializing module: ", real_path);
 

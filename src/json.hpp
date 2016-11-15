@@ -45,6 +45,13 @@ public:
 private:
 	base_container m_elements;
 
+#ifndef POSEIDON_CXX11
+public:
+	JsonObject();
+	JsonObject(const JsonObject &rhs);
+	JsonObject &operator=(const JsonObject &rhs);
+#endif
+
 public:
 	bool empty() const;
 	size_type size() const;
@@ -116,6 +123,13 @@ public:
 
 private:
 	base_container m_elements;
+
+#ifndef POSEIDON_CXX11
+public:
+	JsonArray();
+	JsonArray(const JsonArray &rhs);
+	JsonArray &operator=(const JsonArray &rhs);
+#endif
 
 public:
 	bool empty() const;
@@ -237,6 +251,21 @@ inline void swap(JsonElement &lhs, JsonElement &rhs) NOEXCEPT {
 
 extern const JsonElement &null_element() NOEXCEPT;
 
+#ifndef POSEIDON_CXX11
+inline JsonObject::JsonObject()
+	: m_elements()
+{
+}
+inline JsonObject::JsonObject(const JsonObject &rhs)
+	: m_elements(rhs.m_elements)
+{
+}
+inline JsonObject &JsonObject::operator=(const JsonObject &rhs){
+	m_elements = rhs.m_elements;
+	return *this;
+}
+#endif
+
 inline bool JsonObject::empty() const {
 	return m_elements.empty();
 }
@@ -320,7 +349,7 @@ inline bool JsonObject::has(const SharedNts &key){
 inline JsonElement &JsonObject::set(SharedNts key, JsonElement val){
 	const AUTO(existent, m_elements.equal_range(key));
 	const AUTO(hint, m_elements.erase(existent.first, existent.second));
-	const AUTO(it, m_elements.insert(hint, std::make_pair(STD_MOVE(key), STD_MOVE(val))));
+	const AUTO(it, m_elements.insert(hint, std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val))));
 	return it->second;
 }
 
@@ -338,6 +367,21 @@ inline const JsonElement &JsonObject::at(const SharedNts &key) const {
 	}
 	return it->second;
 }
+
+#ifndef POSEIDON_CXX11
+inline JsonArray::JsonArray()
+	: m_elements()
+{
+}
+inline JsonArray::JsonArray(const JsonArray &rhs)
+	: m_elements(rhs.m_elements)
+{
+}
+inline JsonArray &JsonArray::operator=(const JsonArray &rhs){
+	m_elements = rhs.m_elements;
+	return *this;
+}
+#endif
 
 inline bool JsonArray::empty() const {
 	return m_elements.empty();
@@ -402,19 +446,19 @@ inline bool JsonArray::erase(JsonArray::size_type index){
 }
 
 inline JsonElement &JsonArray::push_front(JsonElement val){
-	return *m_elements.insert(m_elements.begin(), STD_MOVE(val));
+	return *m_elements.insert(m_elements.begin(), STD_MOVE_IDN(val));
 }
 inline void JsonArray::pop_front(){
 	m_elements.pop_front();
 }
 inline JsonElement &JsonArray::push_back(JsonElement val){
-	return *m_elements.insert(m_elements.end(), STD_MOVE(val));
+	return *m_elements.insert(m_elements.end(), STD_MOVE_IDN(val));
 }
 inline void JsonArray::pop_back(){
 	m_elements.pop_back();
 }
 inline JsonArray::iterator JsonArray::insert(JsonArray::const_iterator pos, JsonElement val){
-	return m_elements.insert(pos, STD_MOVE(val));
+	return m_elements.insert(pos, STD_MOVE_IDN(val));
 }
 
 inline const JsonElement &JsonArray::get(JsonArray::size_type index) const {
