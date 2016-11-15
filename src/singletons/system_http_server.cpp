@@ -227,7 +227,7 @@ void SystemHttpServer::start(){
 	AUTO(path, MainConfig::get<std::string>     ("system_http_path", "/"));
 
 	if(bind.empty()){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Systen HTTP server is disabled.");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "System HTTP server is disabled.");
 	} else {
 		const IpPort bind_addr(SharedNts(bind), port);
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bind_addr);
