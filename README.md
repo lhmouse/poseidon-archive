@@ -4,10 +4,6 @@
 波塞冬（Poseidon）是一个游戏服务端框架。  
 Poseidon is a C++ framework for game server development.  
 
-### IRC channel:
-
-<irc://chat.freenode.net/%23mcfproj>
-
 ### 支持功能
 ### Features
 
@@ -61,6 +57,10 @@ Poseidon is a C++ framework for game server development.
 # There are scripts that can be used to fetch and build latest MySQL and MongoDB  
   client drivers in 'third' directory. The version numbers here are of  
   server-side packages in Debian Jessie sources.  
+
+### IRC channel:
+
+<irc://chat.freenode.net/%23mcfproj>
 
 ### 问题反馈
 ### Bug Reports
