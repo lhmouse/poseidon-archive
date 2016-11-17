@@ -17,12 +17,10 @@ Poseidon is a C++ framework for game server development.
     MySQL sync/async access
     MongoDB sync/async access
 
-_
 * CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，  
   简介参见 src/cbpp/message_base.hpp 中的注释。  
 * CBPP is short for 'Compressed Binary Protocol for Poseidon'.  
   Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.  
-_
 
 ### 编译所需工具
 ### Toolchains Required to Build
@@ -37,12 +35,10 @@ _
     g++ *
     libboost-dev
 
-_
 * 建议 g++ 版本至少为 4.7 以支持 C++11 特性。
   针对 C++98 的支持可能在未来的版本中被移除。
 * It is highly recommended that you use at least g++ 4.7 for C++11 features.
   Support for C++98 is deprecated and might be removed in future versions.
-_
 
 ### 运行环境要求
 ### Rumtime Environment Requirements
@@ -51,7 +47,6 @@ _
     MySQL 5.5 #
     MongoDB 2.4 #
 
-_
 * 这是主要被支持的 Linux 发行版，使用其他发行版的 Linux 不保证兼容性。  
   旧版 Debian（例如 Squeeze）有已知的严重问题（例如 g++ 4.4 的 bug 导致运行时  
   段错误），我们不对此类问题提供支持，请自行解决。  
@@ -66,7 +61,6 @@ _
 # There are scripts that can be used to fetch and build latest MySQL and MongoDB  
   client drivers in 'third' directory. The version numbers here are of  
   server-side packages in Debian Jessie sources.  
-_
 
 ### 问题反馈
 ### Bug Reports
