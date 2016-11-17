@@ -66,4 +66,4 @@ Poseidon is a C++ framework for game server development.
 ### Bug Reports
 
 请联系 lh_mouse at 126 dot com（注明 Poseidon 相关）。  
-Please email to lh_mouse at 126 dot com. (Please state your email as Poseidon-related.)  
+Please email to lh_mouse at 126 dot com. (Please state your email as related to Poseidon.)  
