@@ -52,9 +52,9 @@ Poseidon is a C++ framework for game server development.
   (e.g. runtime SIGSEGV due to bugs in g++ 4.4) that we are not willing to  
   provide ANY suppport for. It is you that should work around them.  
 
-# 在 third 目录下有 MySQL 和 MongoDB 的驱动更新脚本可用于编译最新的客户端驱动。  
+\# 在 third 目录下有 MySQL 和 MongoDB 的驱动更新脚本可用于编译最新的客户端驱动。  
   此处列出的是 Debian Jessie 官方源中的服务端版本。  
-# There are scripts that can be used to fetch and build latest MySQL and MongoDB  
+\# There are scripts that can be used to fetch and build latest MySQL and MongoDB  
   client drivers in 'third' directory. The version numbers here are of  
   server-side packages in Debian Jessie sources.  
 
