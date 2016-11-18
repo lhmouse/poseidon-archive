@@ -85,6 +85,12 @@ namespace {
 				START(EpollDaemon);
 				START(EventDispatcher);
 
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for daemon initialization to complete...");
+				::timespec req;
+				req.tv_sec = 1;
+				req.tv_nsec = 0;
+				::nanosleep(&req, NULLPTR);
+
 				Logger::initialize_mask_from_config();
 
 				const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
