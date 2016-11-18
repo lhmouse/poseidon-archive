@@ -131,10 +131,18 @@ namespace {
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
 				m_promise->set_exception(boost::copy_exception(e));
+#endif
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-				m_promise->set_exception(boost::copy_exception(e));
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
+#endif
 			}
 		}
 	};
@@ -162,10 +170,18 @@ namespace {
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
 				m_promise->set_exception(boost::copy_exception(e));
+#endif
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-				m_promise->set_exception(boost::copy_exception(e));
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
+#endif
 			}
 		}
 	};
@@ -191,10 +207,18 @@ namespace {
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
 				m_promise->set_exception(boost::copy_exception(e));
+#endif
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-				m_promise->set_exception(boost::copy_exception(e));
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
+#endif
 			}
 		}
 	};

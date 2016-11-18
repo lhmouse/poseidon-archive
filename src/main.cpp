@@ -101,7 +101,9 @@ namespace {
 				JobDispatcher::do_modal();
 			}
 #ifdef POSEIDON_CXX11
-			catch(...){ ep = std::current_exception(); }
+			catch(...){
+				ep = std::current_exception();
+			}
 #endif
 		} catch(...){
 			Logger::finalize_mask();
@@ -109,7 +111,9 @@ namespace {
 		}
 		Logger::finalize_mask();
 #ifdef POSEIDON_CXX11
-		if(ep){ std::rethrow_exception(ep); }
+		if(ep){
+			std::rethrow_exception(ep);
+		}
 #endif
 	}
 }

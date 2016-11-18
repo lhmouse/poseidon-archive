@@ -59,7 +59,11 @@ void JobPromise::check_and_rethrow() const {
 	unlock(state);
 
 	if(except){
+#ifdef POSEIDON_CXX11
+		std::rethrow_exception(m_except);
+#else
 		boost::rethrow_exception(m_except);
+#endif
 	}
 }
 
@@ -69,10 +73,15 @@ void JobPromise::set_success(){
 		unlock(state);
 		DEBUG_THROW(Exception, sslit("JobPromise is already satisfied"));
 	}
-	m_except = boost::exception_ptr();
+	m_except = VAL_INIT;
 	unlock(S_SATISFIED);
 }
-void JobPromise::set_exception(const boost::exception_ptr &except){
+#ifdef POSEIDON_CXX11
+void JobPromise::set_exception(std::exception_ptr except)
+#else
+void JobPromise::set_exception(boost::exception_ptr except)
+#endif
+{
 	assert(except);
 
 	const int state = lock();
@@ -80,7 +89,7 @@ void JobPromise::set_exception(const boost::exception_ptr &except){
 		unlock(state);
 		DEBUG_THROW(Exception, sslit("JobPromise is already satisfied"));
 	}
-	m_except = except;
+	m_except = STD_MOVE_IDN(except);
 	unlock(S_SATISFIED);
 }
 

@@ -77,10 +77,18 @@ namespace {
 				m_promise->set_success();
 			} catch(Exception &e){
 				LOG_POSEIDON_INFO("Exception thrown: what = ", e.what());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
 				m_promise->set_exception(boost::copy_exception(e));
+#endif
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-				m_promise->set_exception(boost::copy_exception(e));
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
+#endif
 			}
 		}
 	};

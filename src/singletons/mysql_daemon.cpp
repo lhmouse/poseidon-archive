@@ -70,7 +70,11 @@ namespace {
 		virtual void generate_sql(std::string &query) const = 0;
 		virtual void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const = 0;
 		virtual void set_success() = 0;
+#ifdef POSEIDON_CXX11
+		virtual void set_exception(std::exception_ptr ep) = 0;
+#else
 		virtual void set_exception(boost::exception_ptr ep) = 0;
+#endif
 	};
 
 	class SaveOperation : public OperationBase {
@@ -115,7 +119,12 @@ namespace {
 		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) OVERRIDE {
+#ifdef POSEIDON_CXX11
+		void set_exception(std::exception_ptr ep) override
+#else
+		void set_exception(boost::exception_ptr ep)
+#endif
+		{
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -163,7 +172,12 @@ namespace {
 		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) OVERRIDE {
+#ifdef POSEIDON_CXX11
+		void set_exception(std::exception_ptr ep) override
+#else
+		void set_exception(boost::exception_ptr ep)
+#endif
+		{
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -202,7 +216,12 @@ namespace {
 		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) OVERRIDE {
+#ifdef POSEIDON_CXX11
+		void set_exception(std::exception_ptr ep) override
+#else
+		void set_exception(boost::exception_ptr ep)
+#endif
+		{
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -254,7 +273,12 @@ namespace {
 		void set_success() OVERRIDE {
 			m_promise->set_success();
 		}
-		void set_exception(boost::exception_ptr ep) OVERRIDE {
+#ifdef POSEIDON_CXX11
+		void set_exception(std::exception_ptr ep) override
+#else
+		void set_exception(boost::exception_ptr ep)
+#endif
+		{
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -301,7 +325,12 @@ namespace {
 		void set_success() OVERRIDE {
 			// no-op
 		}
-		void set_exception(boost::exception_ptr ep) OVERRIDE {
+#ifdef POSEIDON_CXX11
+		void set_exception(std::exception_ptr ep) override
+#else
+		void set_exception(boost::exception_ptr ep)
+#endif
+		{
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -434,7 +463,11 @@ namespace {
 				const AUTO_REF(conn, uses_slave_conn ? slave_conn : master_conn);
 
 				const AUTO_REF(operation, elem->operation);
+#ifdef POSEIDON_CXX11
+				std::exception_ptr except;
+#else
 				boost::exception_ptr except;
+#endif
 
 				std::string query;
 				long err_code = 0;
@@ -460,21 +493,31 @@ namespace {
 						operation->execute(conn, query);
 					} catch(MySql::Exception &e){
 						LOG_POSEIDON_WARNING("MySql::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
-						// except = boost::current_exception();
+#ifdef POSEIDON_CXX11
+						except = std::current_exception();
+#else
 						except = boost::copy_exception(e);
+#endif
 
 						err_code = e.get_code();
 						err_msg = e.what();
 					} catch(std::exception &e){
 						LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-						// except = boost::current_exception();
-						except = boost::copy_exception(e);
+#ifdef POSEIDON_CXX11
+						except = std::current_exception();
+#else
+						except = boost::copy_exception(std::runtime_error(e.what()));
+#endif
 
 						err_code = ER_UNKNOWN_ERROR;
 						err_msg = e.what();
 					} catch(...){
 						LOG_POSEIDON_WARNING("Unknown exception thrown");
-						except = boost::current_exception();
+#ifdef POSEIDON_CXX11
+						except = std::current_exception();
+#else
+						except = boost::copy_exception(std::bad_exception());
+#endif
 
 						err_code = ER_UNKNOWN_ERROR;
 						err_msg = "Unknown exception";
@@ -488,7 +531,11 @@ namespace {
 						LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 							"Going to retry MySQL operation: retry_count = ", retry_count);
 						elem->due_time = now + (g_retry_init_delay << retry_count);
+#ifdef POSEIDON_CXX11
+						std::rethrow_exception(except);
+#else
 						boost::rethrow_exception(except);
+#endif
 					}
 
 					LOG_POSEIDON_ERROR("Max retry count exceeded.");

@@ -6,7 +6,12 @@
 
 #include "cxx_util.hpp"
 #include <boost/shared_ptr.hpp>
-#include <boost/exception_ptr.hpp>
+
+#ifdef POSEIDON_CXX11
+#	include <exception>
+#else
+#	include <boost/exception_ptr.hpp>
+#endif
 
 namespace Poseidon {
 
@@ -15,7 +20,11 @@ private:
 	// mutable Mutex m_mutex;
 	// bool m_satisfied;
 	mutable volatile int m_state;
+#ifdef POSEIDON_CXX11
+	std::exception_ptr m_except;
+#else
 	boost::exception_ptr m_except;
+#endif
 
 public:
 	JobPromise() NOEXCEPT;
@@ -31,7 +40,11 @@ public:
 	void check_and_rethrow() const;
 
 	void set_success();
-	void set_exception(const boost::exception_ptr &except);
+#ifdef POSEIDON_CXX11
+	void set_exception(std::exception_ptr except);
+#else
+	void set_exception(boost::exception_ptr except);
+#endif
 };
 
 }
