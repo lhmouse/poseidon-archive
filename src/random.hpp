@@ -9,8 +9,6 @@
 
 namespace Poseidon {
 
-// 在区间 [lower, upper) 范围内生成伪随机数。
-// 前置条件：lower < upper
 extern boost::uint32_t random_uint32();
 extern boost::uint64_t random_uint64();
 extern double random_double();
