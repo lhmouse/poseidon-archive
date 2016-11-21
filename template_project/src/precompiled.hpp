@@ -2,6 +2,7 @@
 #define TEMPLATE_PROJECT_PRECOMPILED_HPP_
 
 #include <poseidon/precompiled.hpp>
+#include <poseidon/fwd.hpp>
 
 #include <poseidon/shared_nts.hpp>
 #include <poseidon/exception.hpp>
@@ -19,27 +20,18 @@
 
 #include "log.hpp"
 
-#include <cstdint>
-#include <array>
-#include <type_traits>
-#include <typeinfo>
+#ifdef POSEIDON_CXX11
+#	include <cstdint>
+#	include <array>
+#	include <type_traits>
+#endif
 
-#include <boost/container/flat_map.hpp>
-#include <boost/container/flat_set.hpp>
-
-namespace TemplateProject {
+namespace VendyMahjong {
 
 using Poseidon::Exception;
 using Poseidon::SharedNts;
 
 using Poseidon::sslit;
-
-using Poseidon::checked_add;
-using Poseidon::saturated_add;
-using Poseidon::checked_sub;
-using Poseidon::saturated_sub;
-using Poseidon::checked_mul;
-using Poseidon::saturated_mul;
 
 }
 
