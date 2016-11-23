@@ -16,6 +16,7 @@
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../mutex.hpp"
+#include "../recursive_mutex.hpp"
 #include "../condition_variable.hpp"
 #include "../time.hpp"
 
@@ -77,7 +78,7 @@ namespace {
 	struct FiberControl : NONCOPYABLE {
 		struct Initializer { };
 
-		Mutex queue_mutex;
+		RecursiveMutex queue_mutex;
 		std::deque<JobElement> queue;
 
 		FiberState state;
@@ -183,7 +184,7 @@ namespace {
 
 			JobElement *elem;
 			{
-				const Mutex::UniqueLock queue_lock(fiber->queue_mutex);
+				const RecursiveMutex::UniqueLock queue_lock(fiber->queue_mutex);
 				if(fiber->queue.empty()){
 					break;
 				}
@@ -210,7 +211,7 @@ namespace {
 				break;
 			}
 
-			const Mutex::UniqueLock queue_lock(fiber->queue_mutex);
+			const RecursiveMutex::UniqueLock queue_lock(fiber->queue_mutex);
 			fiber->queue.pop_front();
 		}
 	}
@@ -308,7 +309,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<co
 	}
 	const AUTO(fiber, &(it->second));
 	{
-		const Mutex::UniqueLock queue_lock(fiber->queue_mutex);
+		const RecursiveMutex::UniqueLock queue_lock(fiber->queue_mutex);
 		fiber->queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(withdrawn)));
 	}
 	g_new_job.signal();
