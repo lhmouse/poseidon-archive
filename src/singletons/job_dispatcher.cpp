@@ -77,6 +77,7 @@ namespace {
 	struct FiberControl : NONCOPYABLE {
 		struct Initializer { };
 
+		Mutex queue_mutex;
 		std::deque<JobElement> queue;
 
 		FiberState state;
@@ -114,7 +115,7 @@ namespace {
 
 	volatile bool g_running = false;
 
-	Mutex g_fiber_mutex;
+	Mutex g_fiber_map_mutex;
 	ConditionVariable g_new_job;
 	boost::container::map<boost::weak_ptr<const void>, FiberControl> g_fiber_map;
 
@@ -127,8 +128,7 @@ namespace {
 
 		LOG_POSEIDON_TRACE("Entering fiber ", static_cast<void *>(fiber));
 		try {
-			const AUTO_REF(elem, fiber->queue.front());
-			elem.job->perform();
+			fiber->queue.front().job->perform();
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 		} catch(...){
@@ -175,54 +175,64 @@ namespace {
 		g_current_fiber = NULLPTR;
 	}
 
-	void really_pump_jobs() NOEXCEPT {
+	void really_pump_fiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;
 
-		Mutex::UniqueLock lock(g_fiber_mutex);
-		bool busy;
-		do {
-			busy = false;
-			for(AUTO(next, g_fiber_map.begin()), it = next; (next != g_fiber_map.end()) && (++next, true); it = next){
-				const AUTO(fiber, &(it->second));
+		for(;;){
+			const AUTO(now, get_fast_mono_clock());
 
-			_next:
+			JobElement *elem;
+			{
+				const Mutex::UniqueLock queue_lock(fiber->queue_mutex);
 				if(fiber->queue.empty()){
-					g_fiber_map.erase(it);
-					continue;
+					break;
 				}
-				AUTO_REF(elem, fiber->queue.front());
-				if(elem.promise && !elem.promise->is_satisfied()){
-					const AUTO(now, get_fast_mono_clock());
-					if((now < elem.expiry_time) && !(elem.insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
-						continue;
+				elem = &(fiber->queue.front());
+				if(elem->promise && !elem->promise->is_satisfied()){
+					if((now < elem->expiry_time) && !(elem->insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
+						break;
 					}
 					LOG_POSEIDON_WARNING("Job timed out");
 				}
-
-				elem.promise.reset();
-				busy = true;
-
-				bool done;
-				lock.unlock();
-				try {
-					if((fiber->state == FS_READY) && (elem.withdrawn && *elem.withdrawn)){
-						LOG_POSEIDON_DEBUG("Job is withdrawn");
-						done = true;
-					} else {
-						schedule_fiber(fiber);
-						done = (fiber->state == FS_READY);
-					}
-				} catch(...){
-					std::abort();
-				}
-				lock.lock();
-
-				if(done){
-					fiber->queue.pop_front();
-					goto _next;
-				}
+				elem->promise.reset();
 			}
-		} while(busy);
+
+			try {
+				if((fiber->state == FS_READY) && elem->withdrawn && *(elem->withdrawn)){
+					LOG_POSEIDON_DEBUG("Job is withdrawn");
+				} else {
+					schedule_fiber(fiber);
+				}
+			} catch(...){
+				std::abort();
+			}
+			if(fiber->state != FS_READY){
+				break;
+			}
+
+			const Mutex::UniqueLock queue_lock(fiber->queue_mutex);
+			fiber->queue.pop_front();
+		}
+	}
+
+	void really_pump_jobs() NOEXCEPT {
+		PROFILE_ME;
+
+		Mutex::UniqueLock lock(g_fiber_map_mutex);
+		AUTO(it, g_fiber_map.begin());
+		while(it != g_fiber_map.end()){
+			const AUTO(fiber, &(it->second));
+			if(fiber->queue.empty()){
+				it = g_fiber_map.erase(it);
+				continue;
+			}
+			lock.unlock();
+
+			really_pump_fiber(fiber);
+
+			lock.lock();
+			++it;
+		}
 	}
 }
 
@@ -239,7 +249,7 @@ void JobDispatcher::stop(){
 	for(;;){
 		std::size_t pending_fibers;
 		{
-			const Mutex::UniqueLock lock(g_fiber_mutex);
+			const Mutex::UniqueLock lock(g_fiber_map_mutex);
 			pending_fibers = g_fiber_map.size();
 		}
 		if(pending_fibers == 0){
@@ -267,7 +277,7 @@ void JobDispatcher::do_modal(){
 	for(;;){
 		really_pump_jobs();
 
-		Mutex::UniqueLock lock(g_fiber_mutex);
+		Mutex::UniqueLock lock(g_fiber_map_mutex);
 		if(!atomic_load(g_running, ATOMIC_CONSUME)){
 			break;
 		}
@@ -291,12 +301,16 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<co
 		category = job;
 	}
 
-	const Mutex::UniqueLock lock(g_fiber_mutex);
+	const Mutex::UniqueLock lock(g_fiber_map_mutex);
 	AUTO(it, g_fiber_map.find(category));
 	if(it == g_fiber_map.end()){
 		it = g_fiber_map.emplace(category, FiberControl::Initializer()).first;
 	}
-	it->second.queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(withdrawn)));
+	const AUTO(fiber, &(it->second));
+	{
+		const Mutex::UniqueLock queue_lock(fiber->queue_mutex);
+		fiber->queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(withdrawn)));
+	}
 	g_new_job.signal();
 }
 void JobDispatcher::yield(boost::shared_ptr<const JobPromise> promise, bool insignificant){
