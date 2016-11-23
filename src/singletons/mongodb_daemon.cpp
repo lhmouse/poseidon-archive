@@ -403,7 +403,7 @@ namespace {
 		mutable Mutex m_mutex;
 		mutable ConditionVariable m_new_operation;
 		volatile bool m_urgent; // 无视延迟写入，一次性处理队列中所有操作。
-		std::deque<OperationQueueElement> m_queue;
+		boost::container::deque<OperationQueueElement> m_queue;
 
 	public:
 		MongoDbThread()
@@ -488,9 +488,9 @@ namespace {
 		{
 			PROFILE_ME;
 
-			const AUTO(now, get_fast_mono_clock());
-
 			for(;;){
+				const AUTO(now, get_fast_mono_clock());
+
 				OperationQueueElement *elem;
 				{
 					const Mutex::UniqueLock lock(m_mutex);

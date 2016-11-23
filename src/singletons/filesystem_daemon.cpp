@@ -228,8 +228,7 @@ namespace {
 
 	Mutex g_mutex;
 	ConditionVariable g_new_operation;
-	std::deque<boost::shared_ptr<OperationBase> > g_operations;
-
+	boost::container::deque<boost::shared_ptr<OperationBase> > g_operations;
 
 	bool pump_one_element() NOEXCEPT {
 		PROFILE_ME;
