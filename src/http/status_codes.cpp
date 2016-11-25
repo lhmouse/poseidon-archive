@@ -27,7 +27,7 @@ namespace Http {
 			}
 		};
 
-		const DescElement kDescTable[] = {
+		const DescElement DESC_TABLE[] = {
 			// https://www.rfc-editor.org/rfc/rfc7231.txt
 			{ 100, "Continue",
 			       "The initial part of a request has been received and has not yet been rejected by the server." },
@@ -140,8 +140,8 @@ namespace Http {
 
 	StatusCodeDesc get_status_code_desc(StatusCode status_code){
 		StatusCodeDesc ret;
-		const AUTO(p, std::lower_bound(BEGIN(kDescTable), END(kDescTable), status_code, DescElementComparator()));
-		if((p != END(kDescTable)) && (p->status_code == status_code)){
+		const AUTO(p, std::lower_bound(BEGIN(DESC_TABLE), END(DESC_TABLE), status_code, DescElementComparator()));
+		if((p != END(DESC_TABLE)) && (p->status_code == status_code)){
 			ret.desc_short = p->desc_short;
 			ret.desc_long = p->desc_long;
 		} else {

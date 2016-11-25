@@ -87,8 +87,8 @@ namespace {
 
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for daemon initialization to complete...");
 				::timespec req;
-				req.tv_sec = 1;
-				req.tv_nsec = 0;
+				req.tv_sec = 0;
+				req.tv_nsec = 200000000;
 				::nanosleep(&req, NULLPTR);
 
 				Logger::initialize_mask_from_config();

@@ -46,34 +46,70 @@ namespace {
 		}
 	};
 
-	struct StackStorage FINAL {
-		static void *operator new(std::size_t cb){
-			assert(cb == sizeof(StackStorage));
-			(void)cb;
+	class FiberStackAllocator : NONCOPYABLE {
+	public:
+		struct Storage FINAL {
+			static void *operator new(std::size_t cb){
+				assert(cb == sizeof(Storage));
+				(void)cb;
 
-			const AUTO(ptr, mmap(NULLPTR, sizeof(StackStorage),
-				PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN | MAP_STACK, -1, 0));
-			if(ptr == MAP_FAILED){
-				const int err_code = errno;
-				LOG_POSEIDON_ERROR("Failed to allocate stack: err_code = ", err_code);
-				throw std::bad_alloc();
+				const AUTO(ptr, mmap(NULLPTR, sizeof(Storage),
+					PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN | MAP_STACK, -1, 0));
+				if(ptr == MAP_FAILED){
+					const int err_code = errno;
+					LOG_POSEIDON_ERROR("Failed to allocate stack: err_code = ", err_code);
+					throw std::bad_alloc();
+				}
+				return ptr;
+			}
+			static void operator delete(void *ptr) NOEXCEPT {
+				if(::munmap(ptr, sizeof(Storage)) != 0){
+					const int err_code = errno;
+					LOG_POSEIDON_ERROR("Failed to deallocate stack: err_code = ", err_code);
+					std::abort();
+				}
+			}
+
+			char bytes[256 * 1024];
+		};
+
+#ifdef POSEIDON_CXX11
+		typedef std::unique_ptr<Storage> StoragePtr;
+#else
+		typedef std::auto_ptr<Storage> StoragePtr;
+#endif
+
+	private:
+		mutable Mutex m_mutex;
+		boost::array<StoragePtr, 64> m_pool;
+		std::size_t m_size;
+
+	public:
+		FiberStackAllocator()
+			: m_mutex(), m_pool(), m_size(0)
+		{
+		}
+
+	public:
+		StoragePtr allocate(){
+			const Mutex::UniqueLock lock(m_mutex);
+			StoragePtr ptr;
+			if(m_size == 0){
+				ptr.reset(new Storage);
+			} else {
+				ptr.swap(m_pool.at(--m_size));
 			}
 			return ptr;
 		}
-		static void operator delete(void *ptr) NOEXCEPT {
-			if(::munmap(ptr, sizeof(StackStorage)) != 0){
-				const int err_code = errno;
-				LOG_POSEIDON_ERROR("Failed to deallocate stack: err_code = ", err_code);
-				std::abort();
+		void deallocate(StoragePtr ptr) NOEXCEPT {
+			const Mutex::UniqueLock lock(m_mutex);
+			if(m_size == m_pool.size()){
+				ptr.reset();
+			} else {
+				ptr.swap(m_pool.at(m_size++));
 			}
 		}
-
-		char bytes[256 * 1024];
-	};
-
-	Mutex g_pool_mutex;
-	boost::array<boost::scoped_ptr<StackStorage>, 64> g_stack_pool;
-	std::size_t g_stack_pool_size = 0;
+	} g_stack_allocator;
 
 	struct FiberControl : NONCOPYABLE {
 		struct Initializer { };
@@ -82,33 +118,25 @@ namespace {
 		std::deque<JobElement> queue;
 
 		FiberState state;
-		boost::scoped_ptr<StackStorage> stack;
+		FiberStackAllocator::StoragePtr stack;
 		::ucontext_t inner;
 		::ucontext_t outer;
 
-		explicit FiberControl(Initializer)
-			: state(FS_READY)
-		{
-			Mutex::UniqueLock lock(g_pool_mutex);
-			if(g_stack_pool_size > 0){
-				stack.swap(g_stack_pool[--g_stack_pool_size]);
-			} else {
-				stack.reset(new StackStorage);
-			}
-			lock.unlock();
-
+		explicit FiberControl(Initializer){
+			state = FS_READY;
+			stack = g_stack_allocator.allocate();
 #ifndef NDEBUG
 			std::memset(&inner, 0xCC, sizeof(outer));
 			std::memset(&outer, 0xCC, sizeof(outer));
 #endif
 		}
 		~FiberControl(){
-			Mutex::UniqueLock lock(g_pool_mutex);
-			if(g_stack_pool_size < g_stack_pool.size()){
-				stack.swap(g_stack_pool[g_stack_pool_size++]);
-			} else {
-				stack.reset();
-			}
+			assert(state == FS_READY);
+			g_stack_allocator.deallocate(STD_MOVE_IDN(stack));
+#ifndef NDEBUG
+			std::memset(&inner, 0xCC, sizeof(outer));
+			std::memset(&outer, 0xCC, sizeof(outer));
+#endif
 		}
 	};
 
