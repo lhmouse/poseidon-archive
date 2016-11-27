@@ -28,17 +28,18 @@ namespace {
 		THROTTLED_RETRY_DELAY   = 5000,
 	};
 
+	CONSTEXPR const AUTO(TIME_POINT_MAX, static_cast<boost::uint64_t>(-1));
+
 	struct SessionMapElement {
 		boost::shared_ptr<TcpSessionBase> session;
 
 		TcpSessionBase *addr;
-		// 时间戳，零表示无数据可读/写。
-		boost::uint64_t last_read;
-		boost::uint64_t last_written;
+		boost::uint64_t next_read;
+		boost::uint64_t next_write;
 
 		explicit SessionMapElement(boost::shared_ptr<TcpSessionBase> session_)
 			: session(STD_MOVE(session_))
-			, addr(session.get()), last_read(0), last_written(0)
+			, addr(session.get()), next_read(TIME_POINT_MAX), next_write(TIME_POINT_MAX)
 		{
 		}
 	};
@@ -46,8 +47,8 @@ namespace {
 
 MULTI_INDEX_MAP(Epoll::SessionMap, SessionMapElement,
 	UNIQUE_MEMBER_INDEX(addr)
-	MULTI_MEMBER_INDEX(last_read)
-	MULTI_MEMBER_INDEX(last_written)
+	MULTI_MEMBER_INDEX(next_read)
+	MULTI_MEMBER_INDEX(next_write)
 )
 
 Epoll::Epoll()
@@ -240,8 +241,7 @@ std::size_t Epoll::pump_readable(){
 	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
 	{
 		const RecursiveMutex::UniqueLock lock(m_mutex);
-		const AUTO(range, std::make_pair(m_sessions->upper_bound<1>(0), m_sessions->upper_bound<1>(now)));
-		iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
+		const AUTO(range, std::make_pair(m_sessions->begin<1>(), m_sessions->upper_bound<1>(now)));
 		for(AUTO(it, range.first); it != range.second; ++it){
 			iterators.push_back(it);
 		}
@@ -277,7 +277,7 @@ std::size_t Epoll::pump_readable(){
 				}
 				if(result.err_code == EAGAIN){
 					const RecursiveMutex::UniqueLock lock(m_mutex);
-					m_sessions->set_key<1, 1>(it, 0);
+					m_sessions->set_key<1, 1>(it, TIME_POINT_MAX);
 					continue;
 				}
 				DEBUG_THROW(SystemException, result.err_code);
@@ -285,7 +285,7 @@ std::size_t Epoll::pump_readable(){
 				session->notify_read_hup();
 
 				const RecursiveMutex::UniqueLock lock(m_mutex);
-				m_sessions->set_key<1, 1>(it, 0);
+				m_sessions->set_key<1, 1>(it, TIME_POINT_MAX);
 				continue;
 			}
 		} catch(std::exception &e){
@@ -310,8 +310,7 @@ std::size_t Epoll::pump_writeable(){
 	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
 	{
 		const RecursiveMutex::UniqueLock lock(m_mutex);
-		const AUTO(range, std::make_pair(m_sessions->upper_bound<2>(0), m_sessions->upper_bound<2>(now)));
-		iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
+		const AUTO(range, std::make_pair(m_sessions->begin<2>(), m_sessions->upper_bound<2>(now)));
 		for(AUTO(it, range.first); it != range.second; ++it){
 			iterators.push_back(it);
 		}
@@ -333,7 +332,7 @@ std::size_t Epoll::pump_writeable(){
 				}
 				if(result.err_code == EAGAIN){
 					const RecursiveMutex::UniqueLock lock(m_mutex);
-					m_sessions->set_key<2, 2>(it, 0);
+					m_sessions->set_key<2, 2>(it, TIME_POINT_MAX);
 					continue;
 				}
 				DEBUG_THROW(SystemException, result.err_code);
@@ -341,7 +340,7 @@ std::size_t Epoll::pump_writeable(){
 				Mutex::UniqueLock session_lock;
 				if(session->get_send_buffer_size(&session_lock) == 0){
 					const RecursiveMutex::UniqueLock lock(m_mutex);
-					m_sessions->set_key<2, 2>(it, 0);
+					m_sessions->set_key<2, 2>(it, TIME_POINT_MAX);
 				}
 				continue;
 			}
