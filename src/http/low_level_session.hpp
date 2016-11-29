@@ -41,19 +41,17 @@ namespace Http {
 		void on_read_avail(StreamBuffer data) OVERRIDE;
 
 		// ServerReader
-		void on_request_headers(RequestHeaders request_headers, std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
-		void on_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) OVERRIDE;
-		bool on_request_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) OVERRIDE;
+		void on_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE;
+		void on_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
+		bool on_request_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
 
 		// ServerWriter
 		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
 		// 可覆写。
-		virtual void on_low_level_request_headers(RequestHeaders request_headers,
-			std::string transfer_encoding, boost::uint64_t content_length) = 0;
-		virtual void on_low_level_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) = 0;
-		virtual boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(
-			boost::uint64_t content_length, bool is_chunked, OptionalMap headers) = 0;
+		virtual void on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) = 0;
+		virtual void on_low_level_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) = 0;
+		virtual boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers) = 0;
 
 	public:
 		boost::shared_ptr<UpgradedSessionBase> get_upgraded_session() const;

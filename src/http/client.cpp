@@ -84,14 +84,13 @@ namespace Http {
 	class Client::ResponseJob : public Client::SyncJobBase {
 	private:
 		ResponseHeaders m_response_headers;
-		std::string m_transfer_encoding;
 		StreamBuffer m_entity;
 
 	public:
 		ResponseJob(const boost::shared_ptr<Client> &client,
-			ResponseHeaders response_headers, std::string transfer_encoding, StreamBuffer entity)
+			ResponseHeaders response_headers, StreamBuffer entity)
 			: SyncJobBase(client)
-			, m_response_headers(STD_MOVE(response_headers)), m_transfer_encoding(STD_MOVE(transfer_encoding)), m_entity(STD_MOVE(entity))
+			, m_response_headers(STD_MOVE(response_headers)), m_entity(STD_MOVE(entity))
 		{
 		}
 
@@ -99,7 +98,7 @@ namespace Http {
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->on_sync_response(STD_MOVE(m_response_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity));
+			client->on_sync_response(STD_MOVE(m_response_headers), STD_MOVE(m_entity));
 		}
 	};
 
@@ -140,32 +139,25 @@ namespace Http {
 		force_shutdown();
 	}
 
-	void Client::on_low_level_response_headers(
-		ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length)
-	{
+	void Client::on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length){
 		PROFILE_ME;
 
 		(void)content_length;
 
 		m_response_headers = STD_MOVE(response_headers);
-		m_transfer_encoding = STD_MOVE(transfer_encoding);
 		m_entity.clear();
 	}
-	void Client::on_low_level_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
+	void Client::on_low_level_response_entity(boost::uint64_t entity_offset, StreamBuffer entity){
 		PROFILE_ME;
 
 		(void)entity_offset;
-		(void)is_chunked;
 
 		m_entity.splice(entity);
 	}
-	boost::shared_ptr<UpgradedClientBase> Client::on_low_level_response_end(
-		boost::uint64_t content_length, bool is_chunked, OptionalMap headers)
-	{
+	boost::shared_ptr<UpgradedClientBase> Client::on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers){
 		PROFILE_ME;
 
 		(void)content_length;
-		(void)is_chunked;
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			m_response_headers.headers.append(it->first, STD_MOVE(it->second));
@@ -173,7 +165,7 @@ namespace Http {
 
 		JobDispatcher::enqueue(
 			boost::make_shared<ResponseJob>(virtual_shared_from_this<Client>(),
-				STD_MOVE(m_response_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity)),
+				STD_MOVE(m_response_headers), STD_MOVE(m_entity)),
 			VAL_INIT);
 
 		return VAL_INIT;

@@ -69,20 +69,20 @@ namespace Http {
 		}
 	}
 
-	void LowLevelClient::on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length){
+	void LowLevelClient::on_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length){
 		PROFILE_ME;
 
-		on_low_level_response_headers(STD_MOVE(response_headers), STD_MOVE(transfer_encoding), content_length);
+		on_low_level_response_headers(STD_MOVE(response_headers), content_length);
 	}
-	void LowLevelClient::on_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
+	void LowLevelClient::on_response_entity(boost::uint64_t entity_offset, StreamBuffer entity){
 		PROFILE_ME;
 
-		on_low_level_response_entity(entity_offset, is_chunked, STD_MOVE(entity));
+		on_low_level_response_entity(entity_offset, STD_MOVE(entity));
 	}
-	bool LowLevelClient::on_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers){
+	bool LowLevelClient::on_response_end(boost::uint64_t content_length, OptionalMap headers){
 		PROFILE_ME;
 
-		AUTO(upgraded_client, on_low_level_response_end(content_length, is_chunked, STD_MOVE(headers)));
+		AUTO(upgraded_client, on_low_level_response_end(content_length, STD_MOVE(headers)));
 		if(upgraded_client){
 			const Mutex::UniqueLock lock(m_upgraded_client_mutex);
 			m_upgraded_client = STD_MOVE(upgraded_client);

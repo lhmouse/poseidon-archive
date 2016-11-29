@@ -58,16 +58,15 @@ namespace Http {
 		virtual ~ClientReader();
 
 	protected:
-		// transfer_encoding 确保已被转换为小写并已排序。
-		// 如果 Transfer-Encoding 为空或者不是 identity， content_length 的值为 CONTENT_CHUNKED。
-		virtual void on_response_headers(ResponseHeaders response_headers, std::string transfer_encoding, boost::uint64_t content_length) = 0;
+		// 如果 Transfer-Encoding 为 chunked， content_length 的值为 CONTENT_CHUNKED。
+		virtual void on_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) = 0;
 		// 报文可能分几次收到。
-		virtual void on_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) = 0;
+		virtual void on_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) = 0;
 		// 报文接收完毕。
 		// 如果 on_response_headers() 的 content_length 参数为 CONTENT_TILL_EOF，此处 real_content_length 即为实际接收大小。
 		// 如果 on_response_headers() 的 content_length 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
 		// chunked 允许追加报头。
-		virtual bool on_response_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers) = 0;
+		virtual bool on_response_end(boost::uint64_t content_length, OptionalMap headers) = 0;
 
 	public:
 		const StreamBuffer &get_queue() const {

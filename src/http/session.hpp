@@ -22,7 +22,6 @@ namespace Http {
 
 		boost::uint64_t m_size_total;
 		RequestHeaders m_request_headers;
-		std::string m_transfer_encoding;
 		StreamBuffer m_entity;
 
 	public:
@@ -36,9 +35,6 @@ namespace Http {
 		const RequestHeaders &get_low_level_request_headers() const {
 			return m_request_headers;
 		}
-		const std::string &get_low_level_transfer_encoding() const {
-			return m_transfer_encoding;
-		}
 		const StreamBuffer &get_low_level_entity() const {
 			return m_entity;
 		}
@@ -49,11 +45,9 @@ namespace Http {
 		// LowLevelSession
 		void on_read_avail(StreamBuffer data) OVERRIDE;
 
-		void on_low_level_request_headers(RequestHeaders request_headers,
-			std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
-		void on_low_level_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) OVERRIDE;
-		boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(
-			boost::uint64_t content_length, bool is_chunked, OptionalMap headers) OVERRIDE;
+		void on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE;
+		void on_low_level_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
+		boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
 
 		// 可覆写。
 		virtual void on_sync_request(RequestHeaders request_headers, StreamBuffer entity) = 0;

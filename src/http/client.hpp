@@ -18,7 +18,6 @@ namespace Http {
 
 	private:
 		ResponseHeaders m_response_headers;
-		std::string m_transfer_encoding;
 		StreamBuffer m_entity;
 
 	protected:
@@ -30,9 +29,6 @@ namespace Http {
 		const ResponseHeaders &get_low_level_response_headers() const {
 			return m_response_headers;
 		}
-		const std::string &get_low_level_transfer_encoding() const {
-			return m_transfer_encoding;
-		}
 		const StreamBuffer &get_low_level_entity() const {
 			return m_entity;
 		}
@@ -42,16 +38,14 @@ namespace Http {
 		void on_read_hup() NOEXCEPT OVERRIDE;
 
 		// LowLevelClient
-		void on_low_level_response_headers(ResponseHeaders response_headers,
-			std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE;
-		void on_low_level_response_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity) OVERRIDE;
-		boost::shared_ptr<UpgradedClientBase> on_low_level_response_end(
-			boost::uint64_t content_length, bool is_chunked, OptionalMap headers) OVERRIDE;
+		void on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) OVERRIDE;
+		void on_low_level_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
+		boost::shared_ptr<UpgradedClientBase> on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
 
 		// 可覆写。
 		virtual void on_sync_connect();
 
-		virtual void on_sync_response(ResponseHeaders response_headers, std::string transfer_encoding, StreamBuffer entity) = 0;
+		virtual void on_sync_response(ResponseHeaders response_headers, StreamBuffer entity) = 0;
 	};
 }
 

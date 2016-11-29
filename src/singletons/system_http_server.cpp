@@ -16,6 +16,7 @@
 #include "../http/utilities.hpp"
 #include "../http/exception.hpp"
 #include "../http/authorization.hpp"
+#include "../http/url_param.hpp"
 #include "../shared_nts.hpp"
 
 namespace Poseidon {
@@ -59,10 +60,10 @@ namespace {
 		}
 
 	protected:
-		void on_request_headers(Http::RequestHeaders request_headers, std::string transfer_encoding, boost::uint64_t content_length) OVERRIDE {
+		void on_request_headers(Http::RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE {
 			check_and_throw_if_unauthorized(m_auth_info, get_remote_info(), request_headers);
 
-			Http::Session::on_request_headers(STD_MOVE(request_headers), STD_MOVE(transfer_encoding), content_length);
+			Http::Session::on_request_headers(STD_MOVE(request_headers), content_length);
 		}
 
 		void on_sync_request(Http::RequestHeaders request_headers, StreamBuffer /* entity */) OVERRIDE {
@@ -175,16 +176,9 @@ namespace {
 
 					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
 				} else if(uri == "set_log_mask"){
-					unsigned long long to_enable = 0, to_disable = 0;
-					const AUTO_REF(to_disable_str, request_headers.get_params.get("to_disable"));
-					if(!to_disable_str.empty()){
-						to_disable = boost::lexical_cast<unsigned long long>(to_disable_str);
-					}
-					const AUTO_REF(to_enable_str, request_headers.get_params.get("to_enable"));
-					if(!to_enable_str.empty()){
-						to_enable = boost::lexical_cast<unsigned long long>(to_enable_str);
-					}
-					Logger::set_mask(to_disable, to_enable);
+					const Http::UrlParam to_disable(STD_MOVE(request_headers.headers), "to_disable");
+					const Http::UrlParam to_enable(STD_MOVE(request_headers.headers), "to_enable");
+					Logger::set_mask(to_disable.as_unsigned(), to_enable.as_unsigned());
 					send_default(Http::ST_OK);
 				} else {
 					LOG_POSEIDON_WARNING("No system HTTP handler: ", uri);

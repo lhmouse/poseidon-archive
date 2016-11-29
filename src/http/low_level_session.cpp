@@ -65,22 +65,20 @@ namespace Http {
 		}
 	}
 
-	void LowLevelSession::on_request_headers(RequestHeaders request_headers,
-		std::string transfer_encoding, boost::uint64_t content_length)
-	{
+	void LowLevelSession::on_request_headers(RequestHeaders request_headers, boost::uint64_t content_length){
 		PROFILE_ME;
 
-		on_low_level_request_headers(STD_MOVE(request_headers), STD_MOVE(transfer_encoding), content_length);
+		on_low_level_request_headers(STD_MOVE(request_headers), content_length);
 	}
-	void LowLevelSession::on_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
+	void LowLevelSession::on_request_entity(boost::uint64_t entity_offset, StreamBuffer entity){
 		PROFILE_ME;
 
-		on_low_level_request_entity(entity_offset, is_chunked, STD_MOVE(entity));
+		on_low_level_request_entity(entity_offset, STD_MOVE(entity));
 	}
-	bool LowLevelSession::on_request_end(boost::uint64_t content_length, bool is_chunked, OptionalMap headers){
+	bool LowLevelSession::on_request_end(boost::uint64_t content_length, OptionalMap headers){
 		PROFILE_ME;
 
-		AUTO(upgraded_session, on_low_level_request_end(content_length, is_chunked, STD_MOVE(headers)));
+		AUTO(upgraded_session, on_low_level_request_end(content_length, STD_MOVE(headers)));
 		if(upgraded_session){
 			const Mutex::UniqueLock lock(m_upgraded_session_mutex);
 			m_upgraded_session = STD_MOVE(upgraded_session);

@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "client_reader.hpp"
-#include "const_strings.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
 #include <string.h>
@@ -141,14 +140,8 @@ namespace Http {
 					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_HEADERS;
 				} else {
-					AUTO(transfer_encoding, m_response_headers.headers.get("Transfer-Encoding"));
-					AUTO(pos, transfer_encoding.find(';'));
-					if(pos != std::string::npos){
-						transfer_encoding.erase(pos);
-					}
-					transfer_encoding = to_lower_case(trim(STD_MOVE(transfer_encoding)));
-
-					if(transfer_encoding.empty() || (transfer_encoding == STR_IDENTITY)){
+					const AUTO_REF(transfer_encoding, m_response_headers.headers.get("Transfer-Encoding"));
+					if(transfer_encoding.empty() || (::strcasecmp(transfer_encoding.c_str(), "identity") == 0)){
 						const AUTO_REF(content_length, m_response_headers.headers.get("Content-Length"));
 						if(content_length.empty()){
 							m_content_length = CONTENT_TILL_EOF;
@@ -164,11 +157,14 @@ namespace Http {
 								DEBUG_THROW(BasicException, sslit("Inacceptable Content-Length"));
 							}
 						}
-					} else {
+					} else if(::strcasecmp(transfer_encoding.c_str(), "chunked") == 0){
 						m_content_length = CONTENT_CHUNKED;
+					} else {
+						LOG_POSEIDON_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
+						DEBUG_THROW(BasicException, sslit("Inacceptable Transfer-Encoding"));
 					}
 
-					on_response_headers(STD_MOVE(m_response_headers), STD_MOVE(transfer_encoding), m_content_length);
+					on_response_headers(STD_MOVE(m_response_headers), m_content_length);
 
 					if(m_content_length == CONTENT_CHUNKED){
 						m_size_expecting = EXPECTING_NEW_LINE;
@@ -185,7 +181,7 @@ namespace Http {
 
 			case S_IDENTITY:
 				temp64 = std::min<boost::uint64_t>(expected.size(), m_content_length - m_content_offset);
-				on_response_entity(m_content_offset, false, expected.cut_off(temp64));
+				on_response_entity(m_content_offset, expected.cut_off(temp64));
 				m_content_offset += temp64;
 
 				if(m_content_length == CONTENT_TILL_EOF){
@@ -195,7 +191,7 @@ namespace Http {
 					m_size_expecting = std::min<boost::uint64_t>(m_content_length - m_content_offset, 4096);
 					// m_state = S_IDENTITY;
 				} else {
-					has_next_response = on_response_end(m_content_offset, false, VAL_INIT);
+					has_next_response = on_response_end(m_content_offset, VAL_INIT);
 
 					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
@@ -237,7 +233,7 @@ namespace Http {
 
 			case S_CHUNK_DATA:
 				temp64 = std::min<boost::uint64_t>(expected.size(), m_chunk_size - m_chunk_offset);
-				on_response_entity(m_content_offset, true, expected.cut_off(temp64));
+				on_response_entity(m_content_offset, expected.cut_off(temp64));
 				m_content_offset += temp64;
 				m_chunk_offset += temp64;
 
@@ -265,7 +261,7 @@ namespace Http {
 					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_CHUNKED_TRAILER;
 				} else {
-					has_next_response = on_response_end(m_content_offset, true, STD_MOVE(m_chunked_trailer));
+					has_next_response = on_response_end(m_content_offset, STD_MOVE(m_chunked_trailer));
 
 					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_FIRST_HEADER;
@@ -296,12 +292,12 @@ namespace Http {
 
 		const AUTO(bytes_remaining, m_queue.size());
 		if(bytes_remaining != 0){
-			on_response_entity(m_content_offset, false, STD_MOVE(m_queue));
+			on_response_entity(m_content_offset, STD_MOVE(m_queue));
 			m_content_offset += bytes_remaining;
 			m_queue.clear();
 		}
 
-		const bool ret = on_response_end(m_content_offset, false, STD_MOVE(m_chunked_trailer));
+		const bool ret = on_response_end(m_content_offset, STD_MOVE(m_chunked_trailer));
 
 		m_size_expecting = EXPECTING_NEW_LINE;
 		m_state = S_FIRST_HEADER;

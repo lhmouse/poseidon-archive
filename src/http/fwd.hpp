@@ -10,6 +10,7 @@ namespace Http {
 	class RequestHeaders;
 	class ResponseHeaders;
 	class UrlParam;
+	class HeaderOption;
 	class Exception;
 
 	class ServerReader;

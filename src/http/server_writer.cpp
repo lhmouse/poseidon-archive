@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "server_writer.hpp"
-#include "const_strings.hpp"
 #include "exception.hpp"
 #include "utilities.hpp"
 #include "../log.hpp"
@@ -65,27 +64,13 @@ namespace Http {
 		if(entity.empty()){
 			headers.erase("Content-Type");
 			headers.erase("Transfer-Encoding");
-			headers.set(sslit("Content-Length"), STR_0);
+			headers.set(sslit("Content-Length"), "0");
 		} else {
-			AUTO(transfer_encoding, headers.get("Transfer-Encoding"));
-			AUTO(pos, transfer_encoding.find(';'));
-			if(pos != std::string::npos){
-				transfer_encoding.erase(pos);
-			}
-			transfer_encoding = to_lower_case(trim(STD_MOVE(transfer_encoding)));
-
-			if(transfer_encoding.empty() || (transfer_encoding == STR_IDENTITY)){
-				headers.set(sslit("Content-Length"), boost::lexical_cast<std::string>(entity.size()));
-			} else {
-				// 只有一个 chunk。
-				StreamBuffer chunk;
-				len = (unsigned)std::sprintf(temp, "%llx\r\n", (unsigned long long)entity.size());
-				chunk.put(temp, len);
-				chunk.splice(entity);
-				chunk.put("\r\n0\r\n\r\n");
-				entity.swap(chunk);
-			}
+			headers.erase("Transfer-Encoding");
+			len = (unsigned)std::sprintf(temp, "%llu", (unsigned long long)entity.size());
+			headers.set(sslit("Content-Length"), std::string(temp, len));
 		}
+
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			data.put(it->first.get());
 			data.put(": ");
@@ -135,18 +120,9 @@ namespace Http {
 		data.put("\r\n");
 
 		AUTO_REF(headers, response_headers.headers);
-
-		AUTO(transfer_encoding, headers.get("Transfer-Encoding"));
-		AUTO(pos, transfer_encoding.find(';'));
-		if(pos != std::string::npos){
-			transfer_encoding.erase(pos);
-		}
-		transfer_encoding = to_lower_case(trim(STD_MOVE(transfer_encoding)));
-
-		if(transfer_encoding.empty() || (transfer_encoding == STR_IDENTITY)){
-			headers.set(sslit("Transfer-Encoding"), STR_CHUNKED);
-		} else {
-			headers.set(sslit("Transfer-Encoding"), STD_MOVE(transfer_encoding));
+		const AUTO_REF(transfer_encoding, headers.get("Transfer-Encoding"));
+		if(transfer_encoding.empty() || (::strcasecmp(transfer_encoding.c_str(), "identity") == 0)){
+			headers.set(sslit("Transfer-Encoding"), "chunked");
 		}
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){

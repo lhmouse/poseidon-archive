@@ -125,16 +125,14 @@ namespace Http {
 	class Session::RequestJob : public Session::SyncJobBase {
 	private:
 		RequestHeaders m_request_headers;
-		std::string m_transfer_encoding;
 		StreamBuffer m_entity;
 		bool m_keep_alive;
 
 	public:
 		RequestJob(const boost::shared_ptr<Session> &session,
-			RequestHeaders request_headers, std::string transfer_encoding, StreamBuffer entity, bool keep_alive)
+			RequestHeaders request_headers, StreamBuffer entity, bool keep_alive)
 			: SyncJobBase(session)
-			, m_request_headers(STD_MOVE(request_headers))
-			, m_transfer_encoding(STD_MOVE(transfer_encoding)), m_entity(STD_MOVE(entity)), m_keep_alive(keep_alive)
+			, m_request_headers(STD_MOVE(request_headers)), m_entity(STD_MOVE(entity)), m_keep_alive(keep_alive)
 		{
 		}
 
@@ -205,16 +203,13 @@ namespace Http {
 		shutdown_write();
 	}
 
-	void Session::on_low_level_request_headers(RequestHeaders request_headers,
-		std::string transfer_encoding, boost::uint64_t content_length)
-	{
+	void Session::on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length){
 		PROFILE_ME;
 
 		(void)content_length;
 
 		m_size_total = 0;
 		m_request_headers = STD_MOVE(request_headers);
-		m_transfer_encoding = STD_MOVE(transfer_encoding);
 		m_entity.clear();
 
 		const AUTO_REF(expect, m_request_headers.headers.get("Expect"));
@@ -224,21 +219,17 @@ namespace Http {
 				VAL_INIT);
 		}
 	}
-	void Session::on_low_level_request_entity(boost::uint64_t entity_offset, bool is_chunked, StreamBuffer entity){
+	void Session::on_low_level_request_entity(boost::uint64_t entity_offset, StreamBuffer entity){
 		PROFILE_ME;
 
 		(void)entity_offset;
-		(void)is_chunked;
 
 		m_entity.splice(entity);
 	}
-	boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request_end(
-		boost::uint64_t content_length, bool is_chunked, OptionalMap headers)
-	{
+	boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers){
 		PROFILE_ME;
 
 		(void)content_length;
-		(void)is_chunked;
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
 			m_request_headers.headers.append(it->first, STD_MOVE(it->second));
@@ -247,7 +238,7 @@ namespace Http {
 
 		JobDispatcher::enqueue(
 			boost::make_shared<RequestJob>(virtual_shared_from_this<Session>(),
-				STD_MOVE(m_request_headers), STD_MOVE(m_transfer_encoding), STD_MOVE(m_entity), keep_alive),
+				STD_MOVE(m_request_headers), STD_MOVE(m_entity), keep_alive),
 			VAL_INIT);
 
 		if(!keep_alive){
