@@ -26,6 +26,8 @@ namespace Http {
 		swap(lhs.reason, rhs.reason);
 		swap(lhs.headers, rhs.headers);
 	}
+
+	extern bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT;
 }
 
 }

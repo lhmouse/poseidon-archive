@@ -3,10 +3,19 @@
 
 #include "../precompiled.hpp"
 #include "response_headers.hpp"
+#include <string.h>
 
 namespace Poseidon {
 
 namespace Http {
+	bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT {
+		const AUTO_REF(connection, response_headers.headers.get("Connection"));
+		if(response_headers.version < 10001){
+			return ::strcasecmp(connection.c_str(), "Keep-Alive") == 0;
+		} else {
+			return ::strcasecmp(connection.c_str(), "Close") != 0;
+		}
+	}
 }
 
 }
