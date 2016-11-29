@@ -6,6 +6,7 @@
 #include <poseidon/http/session.hpp>
 #include <poseidon/http/verbs.hpp>
 #include <poseidon/http/status_codes.hpp>
+#include <poseidon/http/header_option.hpp>
 #include <poseidon/tcp_server_base.hpp>
 #include <poseidon/singletons/epoll_daemon.hpp>
 
@@ -43,7 +44,7 @@ protected:
 		oss <<entity.dump() <<std::endl;
 		oss <<"-----" <<std::endl;
 
-		send(Poseidon::Http::ST_OK, Poseidon::StreamBuffer(oss.str()), "text/plain");
+		send(Poseidon::Http::ST_OK, Poseidon::StreamBuffer(oss.str()), Poseidon::Http::HeaderOption("text/plain", { }));
 	}
 };
 

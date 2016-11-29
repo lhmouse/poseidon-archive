@@ -26,7 +26,7 @@ public:
 	}
 
 protected:
-	void on_low_level_request_headers(Poseidon::Http::RequestHeaders request_headers, std::string, std::uint64_t) override {
+	void on_low_level_request_headers(Poseidon::Http::RequestHeaders request_headers, std::uint64_t) override {
 		m_request_headers = std::move(request_headers);
 
 		if(m_request_headers.verb != Poseidon::Http::V_GET){
@@ -38,10 +38,10 @@ protected:
 			return;
 		}
 	}
-	void on_low_level_request_entity(std::uint64_t, bool, Poseidon::StreamBuffer) override {
+	void on_low_level_request_entity(std::uint64_t, Poseidon::StreamBuffer) override {
 		//
 	}
-	boost::shared_ptr<Poseidon::Http::UpgradedSessionBase> on_low_level_request_end(std::uint64_t, bool, Poseidon::OptionalMap) override;
+	boost::shared_ptr<Poseidon::Http::UpgradedSessionBase> on_low_level_request_end(std::uint64_t, Poseidon::OptionalMap) override;
 
 public:
 	void send_http_default_and_shutdown(unsigned status_code){
@@ -73,7 +73,7 @@ protected:
 	}
 };
 
-boost::shared_ptr<Poseidon::Http::UpgradedSessionBase> HttpSession::on_low_level_request_end(std::uint64_t, bool, Poseidon::OptionalMap){
+boost::shared_ptr<Poseidon::Http::UpgradedSessionBase> HttpSession::on_low_level_request_end(std::uint64_t, Poseidon::OptionalMap){
 	if(::strcasecmp(m_request_headers.headers.get("Upgrade").c_str(), "websocket") != 0){
 		send_http_default_and_shutdown(Poseidon::Http::ST_FORBIDDEN);
 		return { };

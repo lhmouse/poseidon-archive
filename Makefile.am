@@ -2,9 +2,9 @@ ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign subdir-objects
 AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-parameter -Winvalid-pch -Wno-missing-field-initializers	\
 	-Wwrite-strings -Wsuggest-attribute=noreturn -Wundef -Wshadow -Wstrict-aliasing=2 -Wstrict-overflow=2	\
-	-pipe -fPIC -DPIC -pthread $(openssl_CFLAGS) $(bson_CFLAGS) $(mongoc_CFLAGS)
+	-pipe -fPIC -DPIC -pthread $(openssl_CFLAGS) $(bson_CFLAGS) $(mongoc_CFLAGS) $(zlib_CFLAGS)
 AM_CXXFLAGS =
-AM_LDFLAGS = $(openssl_LIBS) $(bson_LIBS) $(mongoc_LIBS)
+AM_LDFLAGS = $(openssl_LIBS) $(bson_LIBS) $(mongoc_LIBS) $(zlib_LIBS)
 
 %.hpp.gch: %.hpp
 	$(CXX) -x c++-header @DEFS@ $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
@@ -72,7 +72,8 @@ pkginclude_HEADERS = \
 	src/mutex.hpp	\
 	src/recursive_mutex.hpp	\
 	src/condition_variable.hpp	\
-	src/job_promise.hpp
+	src/job_promise.hpp	\
+	src/zlib.hpp
 
 pkginclude_singletonsdir = $(pkgincludedir)/singletons
 pkginclude_singletons_HEADERS = \
@@ -214,6 +215,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/recursive_mutex.cpp	\
 	src/condition_variable.cpp	\
 	src/job_promise.cpp	\
+	src/zlib.cpp	\
 	src/singletons/main_config.cpp	\
 	src/singletons/job_dispatcher.cpp	\
 	src/singletons/mysql_daemon.cpp	\

@@ -31,7 +31,7 @@ protected:
 		LOG_POSEIDON_INFO("Connection established: remote = ", get_remote_info());
 	}
 
-	void on_sync_response(Poseidon::Http::ResponseHeaders response_headers, std::string transfer_encoding, Poseidon::StreamBuffer entity) override {
+	void on_sync_response(Poseidon::Http::ResponseHeaders response_headers, Poseidon::StreamBuffer entity) override {
 		LOG_POSEIDON_INFO("Response: HTTP version = ", response_headers.version / 10000, ".", response_headers.version % 10000);
 		LOG_POSEIDON_INFO("Response: Status code = ", response_headers.status_code);
 		LOG_POSEIDON_INFO("Response: Reason = ", response_headers.reason);
@@ -39,7 +39,6 @@ protected:
 			LOG_POSEIDON_INFO("Response header: ", it->first, ": ", it->second);
 		}
 
-		LOG_POSEIDON_WARNING("Transfer-Encoding : ", transfer_encoding);
 		LOG_POSEIDON_WARNING("Entity: content_length = ", entity.size());
 	}
 };

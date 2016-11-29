@@ -27,12 +27,12 @@ public:
 	{
 	}
 
-	void on_low_level_response_headers(Poseidon::Http::ResponseHeaders response_headers, std::string, std::uint64_t) override {
+	void on_low_level_response_headers(Poseidon::Http::ResponseHeaders response_headers, std::uint64_t) override {
 		m_response_headers = std::move(response_headers);
 	}
-	void on_low_level_response_entity(std::uint64_t, bool, Poseidon::StreamBuffer) override {
+	void on_low_level_response_entity(std::uint64_t, Poseidon::StreamBuffer) override {
 	}
-	boost::shared_ptr<Poseidon::Http::UpgradedClientBase> on_low_level_response_end(std::uint64_t, bool, Poseidon::OptionalMap) override;
+	boost::shared_ptr<Poseidon::Http::UpgradedClientBase> on_low_level_response_end(std::uint64_t, Poseidon::OptionalMap) override;
 };
 
 class Client : public Poseidon::WebSocket::Client {
@@ -58,7 +58,7 @@ private:
 	}
 };
 
-boost::shared_ptr<Poseidon::Http::UpgradedClientBase> HttpClient::on_low_level_response_end(std::uint64_t, bool, Poseidon::OptionalMap){
+boost::shared_ptr<Poseidon::Http::UpgradedClientBase> HttpClient::on_low_level_response_end(std::uint64_t, Poseidon::OptionalMap){
 	LOG_POSEIDON_DEBUG("End of HTTP response: remote = ", get_remote_info_nothrow());
 	if(!Poseidon::WebSocket::check_handshake_response(m_response_headers, m_sec_websocket_key)){
 		LOG_POSEIDON_ERROR("Invalid WebSocket handshake response.");
