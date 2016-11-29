@@ -6,6 +6,7 @@
 #include "exception.hpp"
 #include "utilities.hpp"
 #include "upgraded_client_base.hpp"
+#include "header_option.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 
@@ -97,21 +98,33 @@ namespace Http {
 		return TcpClientBase::send(STD_MOVE(encoded));
 	}
 
-	bool LowLevelClient::send_headers(RequestHeaders request_headers){
-		PROFILE_ME;
-
-		return ClientWriter::put_request_headers(STD_MOVE(request_headers));
-	}
-	bool LowLevelClient::send_entity(StreamBuffer data){
-		PROFILE_ME;
-
-		return ClientWriter::put_entity(STD_MOVE(data));
-	}
-
 	bool LowLevelClient::send(RequestHeaders request_headers, StreamBuffer entity){
 		PROFILE_ME;
 
 		return ClientWriter::put_request(STD_MOVE(request_headers), STD_MOVE(entity));
+	}
+	bool LowLevelClient::send(Verb verb, std::string uri, OptionalMap get_params){
+		PROFILE_ME;
+
+		return send(verb, STD_MOVE(uri), STD_MOVE(get_params), OptionalMap(), StreamBuffer());
+	}
+	bool LowLevelClient::send(Verb verb, std::string uri, OptionalMap get_params, StreamBuffer entity, const HeaderOption &content_type){
+		PROFILE_ME;
+
+		OptionalMap headers;
+		headers.set(sslit("Content-Type"), content_type.to_string());
+		return send(verb, STD_MOVE(uri), STD_MOVE(get_params), STD_MOVE(headers), STD_MOVE(entity));
+	}
+	bool LowLevelClient::send(Verb verb, std::string uri, OptionalMap get_params, OptionalMap headers, StreamBuffer entity){
+		PROFILE_ME;
+
+		RequestHeaders request_headers;
+		request_headers.verb = verb;
+		request_headers.uri = STD_MOVE(uri);
+		request_headers.version = 10001;
+		request_headers.get_params = STD_MOVE(get_params);
+		request_headers.headers = STD_MOVE(headers);
+		return send(STD_MOVE(request_headers), STD_MOVE(entity));
 	}
 
 	bool LowLevelClient::send_chunked_header(RequestHeaders request_headers){

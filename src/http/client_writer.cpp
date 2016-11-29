@@ -17,35 +17,6 @@ namespace Http {
 	ClientWriter::~ClientWriter(){
 	}
 
-	long ClientWriter::put_request_headers(RequestHeaders request_headers){
-		PROFILE_ME;
-
-		StreamBuffer data;
-
-		data.put(get_string_from_verb(request_headers.verb));
-		data.put(' ');
-		data.put(request_headers.uri);
-		if(!request_headers.get_params.empty()){
-			data.put('?');
-			data.put(url_encoded_from_optional_map(request_headers.get_params));
-		}
-		char temp[64];
-		const unsigned ver_major = request_headers.version / 10000, ver_minor = request_headers.version % 10000;
-		unsigned len = (unsigned)std::sprintf(temp, " HTTP/%u.%u\r\n", ver_major, ver_minor);
-		data.put(temp, len);
-
-		AUTO_REF(headers, request_headers.headers);
-		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-			data.put(it->first.get());
-			data.put(": ");
-			data.put(it->second);
-			data.put("\r\n");
-		}
-		data.put("\r\n");
-
-		return on_encoded_data_avail(STD_MOVE(data));
-	}
-
 	long ClientWriter::put_request(RequestHeaders request_headers, StreamBuffer entity){
 		PROFILE_ME;
 
@@ -90,11 +61,6 @@ namespace Http {
 		data.put("\r\n");
 
 		data.splice(entity);
-
-		return on_encoded_data_avail(STD_MOVE(data));
-	}
-	long ClientWriter::put_entity(StreamBuffer data){
-		PROFILE_ME;
 
 		return on_encoded_data_avail(STD_MOVE(data));
 	}

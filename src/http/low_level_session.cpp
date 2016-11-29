@@ -6,6 +6,7 @@
 #include "exception.hpp"
 #include "utilities.hpp"
 #include "upgraded_session_base.hpp"
+#include "header_option.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../stream_buffer.hpp"
@@ -103,13 +104,16 @@ namespace Http {
 
 		return ServerWriter::put_response(STD_MOVE(response_headers), STD_MOVE(entity));
 	}
-	bool LowLevelSession::send(StatusCode status_code, StreamBuffer entity, std::string content_type){
+	bool LowLevelSession::send(StatusCode status_code){
+		PROFILE_ME;
+
+		return send(status_code, OptionalMap(), StreamBuffer());
+	}
+	bool LowLevelSession::send(StatusCode status_code, StreamBuffer entity, const HeaderOption &content_type){
 		PROFILE_ME;
 
 		OptionalMap headers;
-		if(!entity.empty()){
-			headers.set(sslit("Content-Type"), STD_MOVE(content_type));
-		}
+		headers.set(sslit("Content-Type"), content_type.to_string());
 		return send(status_code, STD_MOVE(headers), STD_MOVE(entity));
 	}
 	bool LowLevelSession::send(StatusCode status_code, OptionalMap headers, StreamBuffer entity){

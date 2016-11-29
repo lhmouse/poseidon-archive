@@ -16,6 +16,7 @@ namespace Poseidon {
 
 namespace Http {
 	class UpgradedSessionBase;
+	class HeaderOption;
 
 	class LowLevelSession : public TcpSessionBase, private ServerReader, private ServerWriter {
 		friend UpgradedSessionBase;
@@ -57,7 +58,8 @@ namespace Http {
 		boost::shared_ptr<UpgradedSessionBase> get_upgraded_session() const;
 
 		bool send(ResponseHeaders response_headers, StreamBuffer entity = StreamBuffer());
-		bool send(StatusCode status_code, StreamBuffer entity = StreamBuffer(), std::string content_type = "text/plain");
+		bool send(StatusCode status_code);
+		bool send(StatusCode status_code, StreamBuffer entity, const HeaderOption &content_type);
 		bool send(StatusCode status_code, OptionalMap headers, StreamBuffer entity = StreamBuffer());
 		bool send_default(StatusCode status_code, OptionalMap headers = OptionalMap());
 	};

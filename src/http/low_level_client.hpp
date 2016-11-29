@@ -15,6 +15,7 @@ namespace Poseidon {
 
 namespace Http {
 	class UpgradedClientBase;
+	class HeaderOption;
 
 	class LowLevelClient : public TcpClientBase, private ClientReader, private ClientWriter {
 		friend UpgradedClientBase;
@@ -55,10 +56,10 @@ namespace Http {
 	public:
 		boost::shared_ptr<UpgradedClientBase> get_upgraded_client() const;
 
-		bool send_headers(RequestHeaders request_headers);
-		bool send_entity(StreamBuffer data);
-
 		bool send(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
+		bool send(Verb verb, std::string uri, OptionalMap get_params = OptionalMap());
+		bool send(Verb verb, std::string uri, OptionalMap get_params, StreamBuffer entity, const HeaderOption &content_type);
+		bool send(Verb verb, std::string uri, OptionalMap get_params, OptionalMap headers, StreamBuffer entity = StreamBuffer());
 
 		bool send_chunked_header(RequestHeaders request_headers);
 		bool send_chunk(StreamBuffer entity);

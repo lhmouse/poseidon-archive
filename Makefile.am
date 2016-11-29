@@ -251,6 +251,8 @@ lib_libposeidon_main_la_SOURCES = \
 	src/http/exception.cpp	\
 	src/http/request_headers.cpp	\
 	src/http/response_headers.cpp	\
+	src/http/url_param.cpp	\
+	src/http/header_option.cpp	\
 	src/websocket/handshake.cpp	\
 	src/websocket/reader.cpp	\
 	src/websocket/writer.cpp	\

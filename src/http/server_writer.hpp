@@ -23,9 +23,6 @@ namespace Http {
 		virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
 
 	public:
-		long put_response_headers(ResponseHeaders response_headers);
-		long put_entity(StreamBuffer data);
-
 		long put_response(ResponseHeaders response_headers, StreamBuffer entity);
 		long put_default_response(ResponseHeaders response_headers);
 

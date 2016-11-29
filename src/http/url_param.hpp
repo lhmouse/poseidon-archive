@@ -18,26 +18,7 @@ namespace Http {
 		std::string m_str;
 
 	public:
-		UrlParam(Move<OptionalMap> map_ref, const char *key)
-			: m_valid(false), m_str()
-		{
-#ifdef POSEIDON_CXX11
-			auto &map = map_ref;
-#else
-			OptionalMap map;
-			map_ref.swap(map);
-#endif
-			const AUTO(it, map.find(SharedNts::view(key)));
-			if(it != map.end()){
-				m_valid = true;
-				m_str.swap(it->second);
-			}
-#ifdef POSEIDON_CXX11
-			// nothing
-#else
-			map_ref.swap(map);
-#endif
-		}
+		UrlParam(Move<OptionalMap> map_ref, const char *key);
 
 	public:
 		bool valid() const NOEXCEPT {
@@ -106,9 +87,6 @@ namespace Http {
 
 	inline std::ostream &operator<<(std::ostream &os, const UrlParam &rhs){
 		return os << rhs.str();
-	}
-	inline std::istream &operator>>(std::istream &is, UrlParam &rhs){
-		return is >> rhs.str();
 	}
 }
 

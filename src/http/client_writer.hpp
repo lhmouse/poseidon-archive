@@ -23,10 +23,7 @@ namespace Http {
 		virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
 
 	public:
-		long put_request_headers(RequestHeaders request_headers);
-		long put_entity(StreamBuffer data);
-
-		long put_request(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
+		long put_request(RequestHeaders request_headers, StreamBuffer entity);
 
 		long put_chunked_header(RequestHeaders request_headers);
 		long put_chunk(StreamBuffer entity);
