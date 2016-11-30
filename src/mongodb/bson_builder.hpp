@@ -48,12 +48,12 @@ namespace MongoDb {
 	private:
 		boost::container::deque<Element> m_elements;
 
-#ifndef POSEIDON_CXX11
 	public:
 		BsonBuilder()
 			: m_elements()
 		{
 		}
+#ifndef POSEIDON_CXX11
 		BsonBuilder(const BsonBuilder &rhs)
 			: m_elements(rhs.m_elements)
 		{
@@ -88,6 +88,9 @@ namespace MongoDb {
 		bool empty() const {
 			return m_elements.empty();
 		}
+		std::size_t size() const {
+			return m_elements.size();
+		}
 		void clear() NOEXCEPT {
 			m_elements.clear();
 		}
@@ -112,7 +115,7 @@ namespace MongoDb {
 		}
 	};
 
-	inline void swap(BsonBuilder &lhs, BsonBuilder &rhs){
+	inline void swap(BsonBuilder &lhs, BsonBuilder &rhs) NOEXCEPT {
 		lhs.swap(rhs);
 	}
 

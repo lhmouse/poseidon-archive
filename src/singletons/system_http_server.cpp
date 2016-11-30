@@ -17,36 +17,11 @@
 #include "../http/exception.hpp"
 #include "../http/authorization.hpp"
 #include "../http/url_param.hpp"
-#include "../shared_nts.hpp"
+#include "../csv_document.hpp"
 
 namespace Poseidon {
 
 namespace {
-	void escape_csv_field(std::string &dst, const char *src){
-		bool needs_quotes = false;
-		dst.clear();
-		const char *read = src;
-		for(;;){
-			const char ch = *(read++);
-			if(ch == 0){
-				break;
-			}
-			switch(ch){
-			case '\"':
-				dst.push_back('\"');
-			case ',':
-			case '\r':
-			case '\n':
-				needs_quotes = true;
-			}
-			dst.push_back(ch);
-		}
-		if(needs_quotes){
-			dst.insert(dst.begin(), '\"');
-			dst.push_back('\"');
-		}
-	}
-
 	class SystemSession : public Http::Session {
 	private:
 		const boost::shared_ptr<const Http::AuthInfo> m_auth_info;
@@ -110,71 +85,68 @@ namespace {
 					}
 					send_default(Http::ST_OK);
 				} else if(uri == "show_profile"){
-					OptionalMap headers;
-					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
-					headers.set(sslit("Content-Disposition"), "attachment; name=\"profile.csv\"");
-
-					StreamBuffer contents;
-					contents.put("file,line,func,samples,ns_total,ns_exclusive\r\n");
+					CsvDocument csv;
+					boost::container::map<SharedNts, std::string> row;
 					AUTO(snapshot, ProfileDepository::snapshot());
-					std::string str;
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-						escape_csv_field(str, it->file);
-						contents.put(str);
-						char temp[256];
-						unsigned len = (unsigned)std::sprintf(temp, ",%llu,", (unsigned long long)it->line);
-						contents.put(temp, len);
-						escape_csv_field(str, it->func);
-						contents.put(str);
-						len = (unsigned)std::sprintf(temp, ",%llu,%llu,%llu\r\n", it->samples, it->ns_total, it->ns_exclusive);
-						contents.put(temp, len);
+						row[sslit("file")] = it->file;
+						row[sslit("line")] = boost::lexical_cast<std::string>(it->line);
+						row[sslit("func")] = it->func;
+						row[sslit("samples")] = boost::lexical_cast<std::string>(it->samples);
+						row[sslit("ns_total")] = boost::lexical_cast<std::string>(it->ns_total);
+						row[sslit("ns_exclusive")] = boost::lexical_cast<std::string>(it->ns_exclusive);
+						if(csv.empty()){
+							csv.reset_headers(row);
+						}
+						csv.append(row);
 					}
 
-					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
+					OptionalMap headers;
+					headers.set(sslit("Content-Type"), "text/csv");
+					headers.set(sslit("Content-Disposition"), "attachment; name=\"profile.csv\"");
+					send(Http::ST_OK, STD_MOVE(headers), StreamBuffer(csv.dump()));
 				} else if(uri == "clear_profile"){
 					LOG_POSEIDON_WARNING("Cleaning up profile data...");
 					ProfileDepository::clear();
 					send_default(Http::ST_OK);
 				} else if(uri == "show_modules"){
-					OptionalMap headers;
-					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
-					headers.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
-
-					StreamBuffer contents;
-					contents.put("real_path,base_addr,ref_count\r\n");
+					CsvDocument csv;
+					boost::container::map<SharedNts, std::string> row;
 					AUTO(snapshot, ModuleDepository::snapshot());
-					std::string str;
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-						escape_csv_field(str, it->real_path);
-						contents.put(str);
-						char temp[256];
-						unsigned len = (unsigned)std::sprintf(temp, ",%p,%llu\r\n", it->base_addr, (unsigned long long)it->ref_count);
-						contents.put(temp, len);
+						row[sslit("real_path")] = it->real_path;
+						row[sslit("base_addr")] = boost::lexical_cast<std::string>(it->base_addr);
+						row[sslit("ref_count")] = boost::lexical_cast<std::string>(it->ref_count);
+						if(csv.empty()){
+							csv.reset_headers(row);
+						}
+						csv.append(row);
 					}
 
-					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
-				} else if(uri == "show_connections"){
 					OptionalMap headers;
-					headers.set(sslit("Content-Type"), "text/csv; charset=utf-8");
-					headers.set(sslit("Content-Disposition"), "attachment; name=\"connections.csv\"");
-
-					StreamBuffer contents;
-					contents.put("remote_ip,remote_port,local_ip,local_port,ms_online\r\n");
+					headers.set(sslit("Content-Type"), "text/csv");
+					headers.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
+					send(Http::ST_OK, STD_MOVE(headers), StreamBuffer(csv.dump()));
+				} else if(uri == "show_connections"){
+					CsvDocument csv;
+					boost::container::map<SharedNts, std::string> row;
 					AUTO(snapshot, EpollDaemon::snapshot());
-					std::string str;
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-						escape_csv_field(str, it->remote.ip);
-						contents.put(str);
-						char temp[256];
-						unsigned len = (unsigned)std::sprintf(temp, ",%u,", it->remote.port);
-						contents.put(temp, len);
-						escape_csv_field(str, it->local.ip);
-						contents.put(str);
-						len = (unsigned)std::sprintf(temp, ",%u,%llu\r\n", it->local.port, (unsigned long long)it->ms_online);
-						contents.put(temp, len);
+						row[sslit("remote_ip")] = it->remote.ip.get();
+						row[sslit("remote_port")] = boost::lexical_cast<std::string>(it->remote.port);
+						row[sslit("local_ip")] = it->local.ip.get();
+						row[sslit("local_port")] = boost::lexical_cast<std::string>(it->local.port);
+						row[sslit("ms_onlinet")] = boost::lexical_cast<std::string>(it->ms_online);
+						if(csv.empty()){
+							csv.reset_headers(row);
+						}
+						csv.append(row);
 					}
 
-					send(Http::ST_OK, STD_MOVE(headers), STD_MOVE(contents));
+					OptionalMap headers;
+					headers.set(sslit("Content-Type"), "text/csv");
+					headers.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
+					send(Http::ST_OK, STD_MOVE(headers), StreamBuffer(csv.dump()));
 				} else if(uri == "set_log_mask"){
 					const Http::UrlParam to_disable(STD_MOVE(request_headers.headers), "to_disable");
 					const Http::UrlParam to_enable(STD_MOVE(request_headers.headers), "to_enable");

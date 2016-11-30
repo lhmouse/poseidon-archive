@@ -42,7 +42,6 @@ pkginclude_HEADERS = \
 	src/ssl_factories.hpp	\
 	src/job_base.hpp	\
 	src/async_job.hpp	\
-	src/file.hpp	\
 	src/udp_server_base.hpp	\
 	src/stream_buffer.hpp	\
 	src/ip_port.hpp	\
@@ -52,7 +51,7 @@ pkginclude_HEADERS = \
 	src/raii.hpp	\
 	src/cxx_util.hpp	\
 	src/endian.hpp	\
-	src/csv_parser.hpp	\
+	src/csv_document.hpp	\
 	src/string.hpp	\
 	src/checked_arithmetic.hpp	\
 	src/time.hpp	\
@@ -188,7 +187,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/virtual_shared_from_this.cpp	\
 	src/stream_buffer.cpp	\
 	src/shared_nts.cpp	\
-	src/csv_parser.cpp	\
+	src/csv_document.cpp	\
 	src/job_base.cpp	\
 	src/async_job.cpp	\
 	src/ssl_raii.cpp	\
@@ -206,7 +205,6 @@ lib_libposeidon_main_la_SOURCES = \
 	src/sock_addr.cpp	\
 	src/hash.cpp	\
 	src/uuid.cpp	\
-	src/file.cpp	\
 	src/config_file.cpp	\
 	src/module_raii.cpp	\
 	src/json.cpp	\

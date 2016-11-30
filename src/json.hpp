@@ -45,9 +45,10 @@ public:
 private:
 	base_container m_elements;
 
-#ifndef POSEIDON_CXX11
 public:
 	JsonObject();
+	explicit JsonObject(std::istream &is);
+#ifndef POSEIDON_CXX11
 	JsonObject(const JsonObject &rhs);
 	JsonObject &operator=(const JsonObject &rhs);
 #endif
@@ -104,6 +105,7 @@ public:
 
 	std::string dump() const;
 	void dump(std::ostream &os) const;
+	void parse(std::istream &is);
 };
 
 inline void swap(JsonObject &lhs, JsonObject &rhs) NOEXCEPT {
@@ -128,9 +130,10 @@ public:
 private:
 	base_container m_elements;
 
-#ifndef POSEIDON_CXX11
 public:
 	JsonArray();
+	explicit JsonArray(std::istream &is);
+#ifndef POSEIDON_CXX11
 	JsonArray(const JsonArray &rhs);
 	JsonArray &operator=(const JsonArray &rhs);
 #endif
@@ -181,6 +184,7 @@ public:
 
 	std::string dump() const;
 	void dump(std::ostream &os) const;
+	void parse(std::istream &is);
 };
 
 inline void swap(JsonArray &lhs, JsonArray &rhs) NOEXCEPT {
@@ -255,19 +259,25 @@ public:
 
 	std::string dump() const;
 	void dump(std::ostream &os) const;
+	void parse(std::istream &is);
 };
 
 inline void swap(JsonElement &lhs, JsonElement &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-extern const JsonElement &null_element() NOEXCEPT;
+extern const JsonElement &null_json_element() NOEXCEPT;
 
-#ifndef POSEIDON_CXX11
 inline JsonObject::JsonObject()
 	: m_elements()
 {
 }
+inline JsonObject::JsonObject(std::istream &is)
+	: m_elements()
+{
+	parse(is);
+}
+#ifndef POSEIDON_CXX11
 inline JsonObject::JsonObject(const JsonObject &rhs)
 	: m_elements(rhs.m_elements)
 {
@@ -379,7 +389,7 @@ inline JsonObject::iterator JsonObject::emplace(KeyT &&key, ParamsT &&...params)
 inline const JsonElement &JsonObject::get(const SharedNts &key) const {
 	const AUTO(it, find(key));
 	if(it == end()){
-		return null_element();
+		return null_json_element();
 	}
 	return it->second;
 }
@@ -391,11 +401,16 @@ inline const JsonElement &JsonObject::at(const SharedNts &key) const {
 	return it->second;
 }
 
-#ifndef POSEIDON_CXX11
 inline JsonArray::JsonArray()
 	: m_elements()
 {
 }
+inline JsonArray::JsonArray(std::istream &is)
+	: m_elements()
+{
+	parse(is);
+}
+#ifndef POSEIDON_CXX11
 inline JsonArray::JsonArray(const JsonArray &rhs)
 	: m_elements(rhs.m_elements)
 {
@@ -504,7 +519,7 @@ inline JsonArray::iterator JsonArray::emplace(const_iterator pos, ParamsT &&...p
 
 inline const JsonElement &JsonArray::get(JsonArray::size_type index) const {
 	if(index >= size()){
-		return null_element();
+		return null_json_element();
 	}
 	const AUTO(it, begin() + static_cast<difference_type>(index));
 	return *it;
@@ -517,30 +532,12 @@ inline const JsonElement &JsonArray::at(JsonArray::size_type index) const {
 	return *it;
 }
 
-class JsonParser {
-private:
-	static std::string accept_string(std::istream &is);
-	static double accept_number(std::istream &is);
-	static JsonObject accept_object(std::istream &is);
-	static JsonArray accept_array(std::istream &is);
-	static bool accept_boolean(std::istream &is);
-	static JsonNull accept_null(std::istream &is);
-
-public:
-	static JsonElement parse_element(std::istream &is);
-	static JsonObject parse_object(std::istream &is);
-	static JsonArray parse_array(std::istream &is);
-
-private:
-	JsonParser();
-};
-
 inline std::ostream &operator<<(std::ostream &os, const JsonElement &rhs){
 	rhs.dump(os);
 	return os;
 }
 inline std::istream &operator>>(std::istream &is, JsonElement &rhs){
-	JsonParser::parse_element(is).swap(rhs);
+	rhs.parse(is);
 	return is;
 }
 
@@ -549,7 +546,7 @@ inline std::ostream &operator<<(std::ostream &os, const JsonArray &rhs){
 	return os;
 }
 inline std::istream &operator>>(std::istream &is, JsonArray &rhs){
-	JsonParser::parse_array(is).swap(rhs);
+	rhs.parse(is);
 	return is;
 }
 
@@ -558,7 +555,7 @@ inline std::ostream &operator<<(std::ostream &os, const JsonObject &rhs){
 	return os;
 }
 inline std::istream &operator>>(std::istream &is, JsonObject &rhs){
-	JsonParser::parse_object(is).swap(rhs);
+	rhs.parse(is);
 	return is;
 }
 

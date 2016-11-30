@@ -3,72 +3,99 @@
 
 #include "../precompiled.hpp"
 #include "header_option.hpp"
-#include "utilities.hpp"
 #include "../string.hpp"
+#include "../profiler.hpp"
+#include "utilities.hpp"
 
 namespace Poseidon {
 
 namespace Http {
-	HeaderOption::HeaderOption(const std::string &str)
-		: m_base(), m_options()
-	{
-		AUTO(pos, str.find(';'));
-		if(pos == std::string::npos){
-			m_base = trim(STD_MOVE(str));
-		} else {
-			AUTO(seg, str.substr(0, pos));
-			++pos;
-			m_base = trim(STD_MOVE(seg));
-			for(;;){
-				const AUTO(end, str.find(';', pos));
-				if(end == std::string::npos){
-					seg = str.substr(pos);
-				} else {
-					seg = str.substr(pos, end - pos);
-				}
-				std::string key;
-				const AUTO(equ, seg.find('='));
-				if(equ == std::string::npos){
-					key = STD_MOVE(seg);
-					seg.clear();
-				} else {
-					key = seg.substr(0, equ);
-					seg.erase(0, equ + 1);
-				}
-				key = trim(STD_MOVE(key));
-				if(!key.empty()){
-					seg = trim(STD_MOVE(seg));
-					if(!seg.empty() && (*seg.begin() == '\"') && (*seg.rbegin() == '\"')){
-						seg.erase(seg.end() - 1);
-						seg.erase(seg.begin());
-						seg = trim(STD_MOVE(seg));
+	std::string HeaderOption::dump() const {
+		PROFILE_ME;
+
+		std::ostringstream oss;
+		dump(oss);
+		return oss.str();
+	}
+	void HeaderOption::dump(std::ostream &os) const {
+		PROFILE_ME;
+
+		os <<m_base;
+		for(AUTO(it, m_options.begin()); it != m_options.end(); ++it){
+			os <<';';
+			os <<' ';
+			os <<it->first.get();
+			if(!it->second.empty()){
+				os <<'=';
+				os <<url_encode(it->second);
+			}
+		}
+	}
+	void HeaderOption::parse(std::istream &is){
+		PROFILE_ME;
+
+		VALUE_TYPE(m_base) base;
+		VALUE_TYPE(m_options) options;
+
+		std::size_t count = 0;
+		while(is){
+			std::string seg;
+			bool quoted = false;
+			char ch;
+			is >>std::noskipws;
+			while(is >>ch){
+				if(quoted){
+					if(ch == '\"'){
+						quoted = false;
+						continue;
 					}
-					m_options.set(SharedNts(key), STD_MOVE(seg));
+					seg += ch;
+					continue;
 				}
-				if(end == std::string::npos){
+				if(ch == '\"'){
+					quoted = true;
+					continue;
+				}
+				if(ch == ';'){
 					break;
 				}
-				pos = end + 1;
+				seg += ch;
 			}
-		}
-	}
-	HeaderOption::HeaderOption(std::string base, OptionalMap options)
-		: m_base(STD_MOVE(base)), m_options(STD_MOVE(options))
-	{
-	}
+			is >>std::skipws;
+			++count;
 
-	std::string HeaderOption::to_string() const {
-		std::string ret;
-		ret = m_base;
-		for(AUTO(it, m_options.begin()); it != m_options.end(); ++it){
-			ret += ';';
-			ret += it->first.get();
-			if(!it->second.empty()){
-				ret += '=';
-				ret += url_encode(it->second);
+			if(count == 1){
+				base = trim(STD_MOVE(seg));
+			} else {
+				std::size_t key_begin = seg.find_first_not_of(" \t");
+				if(key_begin == std::string::npos){
+					continue;
+				}
+				std::size_t equ = seg.find('=', key_begin);
+				std::size_t key_end;
+				if(equ == std::string::npos){
+					key_end = seg.find_last_not_of(" \t");
+				} else {
+					key_end = seg.find_last_not_of(" \t", equ - 1);
+				}
+				if((key_end == std::string::npos) || (key_begin > key_end)){
+					continue;
+				}
+				++key_end;
+				SharedNts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
+				if(equ == std::string::npos){
+					seg.clear();
+				} else {
+					seg.erase(0, equ + 1);
+				}
+				std::string value(trim(STD_MOVE(seg)));
+				seg.clear();
+				options.append(STD_MOVE(key), STD_MOVE(value));
 			}
 		}
-		return ret;
+
+		m_base.swap(base);
+		m_options.swap(options);
 	}
 }
 

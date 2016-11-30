@@ -31,12 +31,12 @@ public:
 private:
 	base_container m_elements;
 
-#ifndef POSEIDON_CXX11
 public:
 	OptionalMap()
 		: m_elements()
 	{
 	}
+#ifndef POSEIDON_CXX11
 	OptionalMap(const OptionalMap &rhs)
 		: m_elements(rhs.m_elements)
 	{
@@ -133,11 +133,10 @@ public:
 	bool has(const SharedNts &key){
 		return find(key) != end();
 	}
-	std::string &set(SharedNts key, std::string val){
+	iterator set(SharedNts key, std::string val){
 		const AUTO(existent, m_elements.equal_range(key));
 		const AUTO(hint, m_elements.erase(existent.first, existent.second));
-		const AUTO(it, m_elements.insert(hint, std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val))));
-		return it->second;
+		return m_elements.insert(hint, std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val)));
 	}
 
 	const std::string &get(const char *key) const { // 若指定的键不存在，则返回空字符串。
@@ -185,6 +184,10 @@ public:
 		return m_elements.insert(std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val)));
 	}
 };
+
+inline void swap(OptionalMap &lhs, OptionalMap &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
 
 }
 

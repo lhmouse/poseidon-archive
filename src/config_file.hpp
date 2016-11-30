@@ -17,12 +17,20 @@ private:
 	OptionalMap m_contents;
 
 public:
-	ConfigFile();
-	explicit ConfigFile(const char *path);
+	ConfigFile()
+		: m_contents()
+	{
+	}
+	explicit ConfigFile(const std::string &path)
+		: m_contents()
+	{
+		load(path);
+	}
 
 public:
-	void load(const char *path);
-	int load_nothrow(const char *path);
+	void load(const std::string &path);
+	int load_nothrow(const std::string &path);
+	void save(const std::string &path);
 
 	bool empty() const {
 		return m_contents.empty();

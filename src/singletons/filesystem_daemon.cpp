@@ -20,7 +20,7 @@
 namespace Poseidon {
 
 namespace {
-	void real_load_file(std::string &data, const std::string &path, bool throws_if_does_not_exist){
+	void real_load_file(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist){
 		int flags = O_RDONLY;
 		UniqueFile file;
 		if(!file.reset(::open(path.c_str(), flags))){
@@ -45,12 +45,12 @@ namespace {
 				DEBUG_THROW(SystemException, err_code);
 			}
 			const std::size_t avail = static_cast<std::size_t>(result);
-			data.append(temp, avail);
+			data.put(temp, avail);
 			bytes_read += avail;
 		}
 		LOG_POSEIDON_DEBUG("Finished loading file: path = ", path, ", bytes_read = ", bytes_read);
 	}
-	void real_save_file(const std::string &data, const std::string &path, bool appends, bool forces_creation){
+	void real_save_file(StreamBuffer data, const std::string &path, bool appends, bool forces_creation){
 		int flags = O_CREAT | O_WRONLY;
 		if(appends){
 			flags |= O_APPEND;
@@ -70,7 +70,7 @@ namespace {
 		std::size_t bytes_written = 0;
 		for(;;){
 			char temp[16384];
-			const std::size_t avail = data.copy(temp, sizeof(temp), bytes_written);
+			const std::size_t avail = data.get(temp, sizeof(temp));
 			if(avail == 0){
 				break;
 			}
@@ -107,13 +107,13 @@ namespace {
 	class LoadOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const boost::shared_ptr<std::string> m_data;
+		const boost::shared_ptr<StreamBuffer> m_data;
 		const std::string m_path;
 		const bool m_throws_if_does_not_exist;
 
 	public:
 		LoadOperation(boost::shared_ptr<JobPromise> promise,
-			boost::shared_ptr<std::string> data, std::string path, bool throws_if_does_not_exist)
+			boost::shared_ptr<StreamBuffer> data, std::string path, bool throws_if_does_not_exist)
 			: m_promise(STD_MOVE(promise))
 			, m_data(STD_MOVE(data)), m_path(STD_MOVE(path)), m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{
@@ -150,14 +150,14 @@ namespace {
 	class SaveOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const std::string m_data;
+		const StreamBuffer m_data;
 		const std::string m_path;
 		const bool m_appends;
 		const bool m_forces_creation;
 
 	public:
 		SaveOperation(boost::shared_ptr<JobPromise> promise,
-			std::string data, std::string path, bool appends, bool forces_creation)
+			StreamBuffer data, std::string path, bool appends, bool forces_creation)
 			: m_promise(STD_MOVE(promise))
 			, m_data(STD_MOVE(data)), m_path(STD_MOVE(path)), m_appends(appends), m_forces_creation(forces_creation)
 		{
@@ -304,12 +304,12 @@ void FilesystemDaemon::stop(){
 	g_operations.clear();
 }
 
-void FilesystemDaemon::load(std::string &data, const std::string &path, bool throws_if_does_not_exist){
+void FilesystemDaemon::load(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
 	real_load_file(data, path, throws_if_does_not_exist);
 }
-void FilesystemDaemon::save(std::string data, const std::string &path, bool appends, bool forces_creation){
+void FilesystemDaemon::save(StreamBuffer data, const std::string &path, bool appends, bool forces_creation){
 	PROFILE_ME;
 
 	real_save_file(STD_MOVE(data), path, appends, forces_creation);
@@ -321,7 +321,7 @@ void FilesystemDaemon::remove(const std::string &path, bool throws_if_does_not_e
 }
 
 boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_loading(
-	boost::shared_ptr<std::string> data, std::string path, bool throws_if_does_not_exist)
+	boost::shared_ptr<StreamBuffer> data, std::string path, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
 
@@ -335,7 +335,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_loading(
 	return promise;
 }
 boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_saving(
-	std::string data, std::string path, bool appends, bool forces_creation)
+	StreamBuffer data, std::string path, bool appends, bool forces_creation)
 {
 	PROFILE_ME;
 

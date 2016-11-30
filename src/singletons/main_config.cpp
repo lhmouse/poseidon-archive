@@ -10,6 +10,8 @@
 namespace Poseidon {
 
 namespace {
+	const std::string g_main_conf("main.conf");
+
 	ConfigFile g_config;
 
 	std::string get_real_path(const char *path){
@@ -40,8 +42,9 @@ void MainConfig::set_run_path(const char *path){
 }
 
 void MainConfig::reload(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading main.conf...");
-	ConfigFile("main.conf").swap(g_config);
+
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading main config file: ", g_main_conf);
+	g_config = ConfigFile(g_main_conf);
 }
 const ConfigFile &MainConfig::get_config(){
 	return g_config;

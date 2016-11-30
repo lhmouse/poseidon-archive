@@ -76,7 +76,7 @@ namespace {
 #ifdef POSEIDON_CXX11
 		typedef std::unique_ptr<Storage> StoragePtr;
 #else
-		typedef std::auto_ptr<Storage> StoragePtr;
+		typedef boost::shared_ptr<Storage> StoragePtr;
 #endif
 
 	private:
@@ -92,12 +92,12 @@ namespace {
 
 	public:
 		StoragePtr allocate(){
-			const Mutex::UniqueLock lock(m_mutex);
 			StoragePtr ptr;
+			const Mutex::UniqueLock lock(m_mutex);
 			if(m_size == 0){
 				ptr.reset(new Storage);
 			} else {
-				ptr.swap(m_pool.at(--m_size));
+				ptr = STD_MOVE(m_pool.at(--m_size));
 			}
 			return ptr;
 		}
@@ -106,7 +106,7 @@ namespace {
 			if(m_size == m_pool.size()){
 				ptr.reset();
 			} else {
-				ptr.swap(m_pool.at(m_size++));
+				m_pool.at(m_size++) = STD_MOVE(ptr);
 			}
 		}
 	} g_stack_allocator;

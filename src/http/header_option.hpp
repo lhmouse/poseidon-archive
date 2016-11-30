@@ -4,6 +4,7 @@
 #ifndef POSEIDON_HTTP_HEADER_OPTION_HPP_
 #define POSEIDON_HTTP_HEADER_OPTION_HPP_
 
+#include <iosfwd>
 #include "../optional_map.hpp"
 
 namespace Poseidon {
@@ -15,8 +16,15 @@ namespace Http {
 		OptionalMap m_options;
 
 	public:
-		explicit HeaderOption(const std::string &str);
-		HeaderOption(std::string base, OptionalMap options);
+		HeaderOption(std::string base, OptionalMap options)
+			: m_base(STD_MOVE(base)), m_options(STD_MOVE(options))
+		{
+		}
+		explicit HeaderOption(std::istream &is)
+			: m_base(), m_options()
+		{
+			parse(is);
+		}
 
 	public:
 		const std::string &get_base() const {
@@ -54,11 +62,14 @@ namespace Http {
 			return m_options.erase(key);
 		}
 
-		std::string to_string() const;
+		std::string dump() const;
+		void dump(std::ostream &os) const;
+		void parse(std::istream &is);
 	};
 
 	inline std::ostream &operator<<(std::ostream &os, const HeaderOption &rhs){
-		return os << rhs.to_string();
+		rhs.dump(os);
+		return os;
 	}
 }
 

@@ -62,7 +62,7 @@ namespace Http {
 		if(status_code / 100 >= 4){
 			AUTO_REF(headers, response_headers.headers);
 
-			headers.set(sslit("Content-Type"), "text/html; charset=utf-8");
+			headers.set(sslit("Content-Type"), "text/html");
 			entity.put("<html><head><title>");
 			const AUTO(desc, get_status_code_desc(status_code));
 			entity.put(desc.desc_short);

@@ -112,7 +112,7 @@ namespace Http {
 		PROFILE_ME;
 
 		OptionalMap headers;
-		headers.set(sslit("Content-Type"), content_type.to_string());
+		headers.set(sslit("Content-Type"), content_type.dump());
 		return send(verb, STD_MOVE(uri), STD_MOVE(get_params), STD_MOVE(headers), STD_MOVE(entity));
 	}
 	bool LowLevelClient::send(Verb verb, std::string uri, OptionalMap get_params, OptionalMap headers, StreamBuffer entity){

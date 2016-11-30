@@ -4,6 +4,7 @@
 #ifndef POSEIDON_JOB_PROMISE_HPP_
 #define POSEIDON_JOB_PROMISE_HPP_
 
+#include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include <boost/shared_ptr.hpp>
 
