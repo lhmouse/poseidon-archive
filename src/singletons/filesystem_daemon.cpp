@@ -20,7 +20,9 @@
 namespace Poseidon {
 
 namespace {
-	void real_load(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist){
+	void real_load(StreamBuffer &data, const std::string &path,
+		boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
+	{
 		int flags = O_RDONLY;
 		UniqueFile file;
 		if(!file.reset(::open(path.c_str(), flags))){
@@ -31,11 +33,18 @@ namespace {
 			LOG_POSEIDON_ERROR("Failed to load file: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
-
+		if(begin != 0){
+			if(::lseek(file.get(), static_cast< ::off_t>(begin), SEEK_SET) == (::off_t)-1){
+				const int err_code = errno;
+				LOG_POSEIDON_ERROR("Failed to seek file: path = ", path, ", err_code = ", err_code);
+				DEBUG_THROW(SystemException, err_code);
+			}
+		}
 		std::size_t bytes_read = 0;
-		for(;;){
+		while(bytes_read < limit){
 			char temp[16384];
-			const ::ssize_t result = ::read(file.get(), temp, sizeof(temp));
+			std::size_t avail = std::min<boost::uint64_t>(limit - bytes_read, sizeof(temp));
+			const ::ssize_t result = ::read(file.get(), temp, avail);
 			if(result == 0){
 				break;
 			}
@@ -44,15 +53,17 @@ namespace {
 				LOG_POSEIDON_ERROR("Error loading file: path = ", path, ", err_code = ", err_code);
 				DEBUG_THROW(SystemException, err_code);
 			}
-			const std::size_t avail = static_cast<std::size_t>(result);
+			avail = static_cast<std::size_t>(result);
 			data.put(temp, avail);
 			bytes_read += avail;
 		}
 		LOG_POSEIDON_DEBUG("Finished loading file: path = ", path, ", bytes_read = ", bytes_read);
 	}
-	void real_save(StreamBuffer data, const std::string &path, bool appends, bool throws_if_exists){
+	void real_save(StreamBuffer data, const std::string &path,
+		boost::uint64_t begin, bool throws_if_exists)
+	{
 		int flags = O_CREAT | O_WRONLY;
-		if(appends){
+		if(begin == FilesystemDaemon::OFFSET_EOF){
 			flags |= O_APPEND;
 		} else {
 			flags |= O_TRUNC;
@@ -66,15 +77,21 @@ namespace {
 			LOG_POSEIDON_ERROR("Failed to save file: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
-
+		if(!(flags & O_APPEND) && (begin != 0)){
+			if(::lseek(file.get(), static_cast< ::off_t>(begin), SEEK_SET) == (::off_t)-1){
+				const int err_code = errno;
+				LOG_POSEIDON_ERROR("Failed to seek file: path = ", path, ", err_code = ", err_code);
+				DEBUG_THROW(SystemException, err_code);
+			}
+		}
 		std::size_t bytes_written = 0;
 		for(;;){
 			char temp[16384];
-			const std::size_t avail = data.get(temp, sizeof(temp));
+			std::size_t avail = data.get(temp, sizeof(temp));
 			if(avail == 0){
 				break;
 			}
-			const ::ssize_t result = ::write(file.get(), temp, avail);
+			::ssize_t result = ::write(file.get(), temp, avail);
 			if(result < 0){
 				const int err_code = errno;
 				LOG_POSEIDON_ERROR("Error saving file: path = ", path, ", err_code = ", err_code);
@@ -139,13 +156,16 @@ namespace {
 		const boost::shared_ptr<JobPromise> m_promise;
 		const boost::shared_ptr<StreamBuffer> m_data;
 		const std::string m_path;
+		const boost::uint64_t m_begin;
+		const boost::uint64_t m_limit;
 		const bool m_throws_if_does_not_exist;
 
 	public:
-		LoadOperation(boost::shared_ptr<JobPromise> promise,
-			boost::shared_ptr<StreamBuffer> data, std::string path, bool throws_if_does_not_exist)
+		LoadOperation(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<StreamBuffer> data, std::string path,
+			boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 			: m_promise(STD_MOVE(promise))
-			, m_data(STD_MOVE(data)), m_path(STD_MOVE(path)), m_throws_if_does_not_exist(throws_if_does_not_exist)
+			, m_data(STD_MOVE(data)), m_path(STD_MOVE(path))
+			, m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{
 		}
 
@@ -157,7 +177,7 @@ namespace {
 			}
 
 			try {
-				real_load(*m_data, m_path, m_throws_if_does_not_exist);
+				real_load(*m_data, m_path, m_begin, m_limit, m_throws_if_does_not_exist);
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
@@ -182,21 +202,22 @@ namespace {
 		const boost::shared_ptr<JobPromise> m_promise;
 		const StreamBuffer m_data;
 		const std::string m_path;
-		const bool m_appends;
+		const boost::uint64_t m_begin;
 		const bool m_throws_if_exists;
 
 	public:
-		SaveOperation(boost::shared_ptr<JobPromise> promise,
-			StreamBuffer data, std::string path, bool appends, bool throws_if_exists)
+		SaveOperation(boost::shared_ptr<JobPromise> promise, StreamBuffer data, std::string path,
+			boost::uint64_t begin, bool throws_if_exists)
 			: m_promise(STD_MOVE(promise))
-			, m_data(STD_MOVE(data)), m_path(STD_MOVE(path)), m_appends(appends), m_throws_if_exists(throws_if_exists)
+			, m_data(STD_MOVE(data)), m_path(STD_MOVE(path))
+			, m_begin(begin), m_throws_if_exists(throws_if_exists)
 		{
 		}
 
 	public:
 		void execute() const OVERRIDE {
 			try {
-				real_save(m_data, m_path, m_appends, m_throws_if_exists);
+				real_save(m_data, m_path, m_begin, m_throws_if_exists);
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
@@ -445,15 +466,19 @@ void FilesystemDaemon::stop(){
 	g_operations.clear();
 }
 
-void FilesystemDaemon::load(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist){
+void FilesystemDaemon::load(StreamBuffer &data, const std::string &path,
+	boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
+{
 	PROFILE_ME;
 
-	real_load(data, path, throws_if_does_not_exist);
+	real_load(data, path, begin, limit, throws_if_does_not_exist);
 }
-void FilesystemDaemon::save(StreamBuffer data, const std::string &path, bool appends, bool throws_if_exists){
+void FilesystemDaemon::save(StreamBuffer data, const std::string &path,
+	boost::uint64_t begin, bool throws_if_exists)
+{
 	PROFILE_ME;
 
-	real_save(STD_MOVE(data), path, appends, throws_if_exists);
+	real_save(STD_MOVE(data), path, begin, throws_if_exists);
 }
 void FilesystemDaemon::remove(const std::string &path, bool throws_if_does_not_exist){
 	PROFILE_ME;
@@ -476,8 +501,8 @@ void FilesystemDaemon::rmdir(const std::string &path, bool throws_if_does_not_ex
 	real_rmdir(path, throws_if_does_not_exist);
 }
 
-boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_loading(
-	boost::shared_ptr<StreamBuffer> data, std::string path, bool throws_if_does_not_exist)
+boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_loading(boost::shared_ptr<StreamBuffer> data, std::string path,
+	boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
 
@@ -485,13 +510,13 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_loading(
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<LoadOperation>(
-			promise, STD_MOVE(data), STD_MOVE(path), throws_if_does_not_exist));
+			promise, STD_MOVE(data), STD_MOVE(path), begin, limit, throws_if_does_not_exist));
 		g_new_operation.signal();
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_saving(
-	StreamBuffer data, std::string path, bool appends, bool throws_if_exists)
+boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_saving(StreamBuffer data, std::string path,
+	boost::uint64_t begin, bool throws_if_exists)
 {
 	PROFILE_ME;
 
@@ -499,7 +524,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_saving(
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<SaveOperation>(
-			promise, STD_MOVE(data), STD_MOVE(path), appends, throws_if_exists));
+			promise, STD_MOVE(data), STD_MOVE(path), begin, throws_if_exists));
 		g_new_operation.signal();
 	}
 	return promise;

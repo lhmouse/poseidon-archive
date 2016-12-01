@@ -34,7 +34,6 @@ public:
 	static void wait_for_all_async_operations();
 
 	// 异步接口。
-	// 以下第一个参数是出参。
 	static boost::shared_ptr<const JobPromise> enqueue_for_saving(
 		boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace, bool urgent);
 	static boost::shared_ptr<const JobPromise> enqueue_for_loading(

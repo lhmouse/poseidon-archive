@@ -6,6 +6,7 @@
 
 #include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
+#include <boost/cstdint.hpp>
 #include <string>
 #include "../stream_buffer.hpp"
 
@@ -14,6 +15,9 @@ namespace Poseidon {
 class JobPromise;
 
 class FilesystemDaemon {
+public:
+	static CONSTEXPR const boost::uint64_t OFFSET_EOF = (boost::uint64_t)-1;
+
 private:
 	FilesystemDaemon();
 
@@ -22,27 +26,24 @@ public:
 	static void stop();
 
 	// 同步接口。
-	static void load(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist = true);
-	static void save(StreamBuffer data, const std::string &path, bool appends = false, bool throws_if_exists = false);
+	static void load(StreamBuffer &data, const std::string &path,
+		boost::uint64_t begin = 0, boost::uint64_t limit = OFFSET_EOF, bool throws_if_does_not_exist = true);
+	static void save(StreamBuffer data, const std::string &path,
+		boost::uint64_t begin = 0, bool throws_if_exists = false); // begin 指定 OFFSET_EOF 为追加模式。
 	static void remove(const std::string &path, bool throws_if_does_not_exist = true);
 	static void rename(const std::string &path, const std::string &new_path);
 	static void mkdir(const std::string &path, bool throws_if_exists = false);
 	static void rmdir(const std::string &path, bool throws_if_does_not_exist = true);
 
 	// 异步接口。
-	// 以下第一个参数是出参。
-	static boost::shared_ptr<const JobPromise> enqueue_for_loading(
-		boost::shared_ptr<StreamBuffer> data, std::string path, bool throws_if_does_not_exist = true);
-	static boost::shared_ptr<const JobPromise> enqueue_for_saving(
-		StreamBuffer data, std::string path, bool appends = false, bool throws_if_exists = false);
-	static boost::shared_ptr<const JobPromise> enqueue_for_removing(
-		std::string path, bool throws_if_does_not_exist = true);
-	static boost::shared_ptr<const JobPromise> enqueue_for_renaming(
-		std::string path, std::string new_path);
-	static boost::shared_ptr<const JobPromise> enqueue_for_mkdir(
-		std::string path, bool throws_if_exists = false);
-	static boost::shared_ptr<const JobPromise> enqueue_for_rmdir(
-		std::string path, bool throws_if_does_not_exist = true);
+	static boost::shared_ptr<const JobPromise> enqueue_for_loading(boost::shared_ptr<StreamBuffer> data, std::string path,
+		boost::uint64_t begin = 0, boost::uint64_t limit = OFFSET_EOF, bool throws_if_does_not_exist = true);
+	static boost::shared_ptr<const JobPromise> enqueue_for_saving(StreamBuffer data, std::string path,
+		boost::uint64_t begin = 0, bool throws_if_exists = false); // begin 指定 OFFSET_EOF 为追加模式。
+	static boost::shared_ptr<const JobPromise> enqueue_for_removing(std::string path, bool throws_if_does_not_exist = true);
+	static boost::shared_ptr<const JobPromise> enqueue_for_renaming(std::string path, std::string new_path);
+	static boost::shared_ptr<const JobPromise> enqueue_for_mkdir(std::string path, bool throws_if_exists = false);
+	static boost::shared_ptr<const JobPromise> enqueue_for_rmdir(std::string path, bool throws_if_does_not_exist = true);
 };
 
 }
