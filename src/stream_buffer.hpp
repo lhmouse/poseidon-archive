@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 #include <iterator>
+#include <iosfwd>
 #include <cstddef>
 
 namespace Poseidon {
@@ -229,22 +230,14 @@ public:
 #endif
 
 	void swap(StreamBuffer &rhs) NOEXCEPT {
-		std::swap(m_first, rhs.m_first);
-		std::swap(m_last, rhs.m_last);
-		std::swap(m_size, rhs.m_size);
+		using std::swap;
+		swap(m_first, rhs.m_first);
+		swap(m_last, rhs.m_last);
+		swap(m_size, rhs.m_size);
 	}
 
-	void dump(std::string &str) const {
-		str.resize(size());
-		if(!str.empty()){
-			peek(&str[0], str.size());
-		}
-	}
-	std::string dump() const {
-		std::string str;
-		dump(str);
-		return str;
-	}
+	std::string dump() const;
+	void dump(std::ostream &os) const;
 
 public:
 	typedef unsigned char value_type;
@@ -262,6 +255,11 @@ public:
 
 inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
 	lhs.swap(rhs);
+}
+
+inline std::ostream &operator<<(std::ostream &os, const StreamBuffer &rhs){
+	rhs.dump(os);
+	return os;
 }
 
 }

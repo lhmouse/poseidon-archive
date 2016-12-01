@@ -83,6 +83,7 @@ public:
 		swap(m_handle, rhs.m_handle);
 	}
 
+public:
 #ifdef POSEIDON_CXX11
 	explicit operator bool() const noexcept {
 		return get() != CloserT()();

@@ -84,8 +84,7 @@ namespace Http {
 					m_content_length = 0;
 					m_content_offset = 0;
 
-					std::string line;
-					expected.dump(line);
+					std::string line = expected.dump();
 
 					AUTO(pos, line.find(' '));
 					if(pos == std::string::npos){
@@ -95,7 +94,7 @@ namespace Http {
 					line[pos] = 0;
 					m_request_headers.verb = get_verb_from_string(line.c_str());
 					if(m_request_headers.verb == V_INVALID_VERB){
-						LOG_POSEIDON_WARNING("Bad verb: ", line.c_str());
+						LOG_POSEIDON_WARNING("Bad verb: ", line);
 						DEBUG_THROW(Exception, ST_NOT_IMPLEMENTED);
 					}
 					line.erase(0, pos + 1);
@@ -150,15 +149,17 @@ namespace Http {
 						DEBUG_THROW(Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
 					}
 
-					std::string line;
-					expected.dump(line);
+					std::string line = expected.dump();
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
-						LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
+						LOG_POSEIDON_WARNING("Invalid HTTP header:", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
-					m_request_headers.headers.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
+					SharedNts key(line.data(), pos);
+					line.erase(0, pos + 1);
+					std::string value(ltrim(STD_MOVE(line)));
+					m_request_headers.headers.append(STD_MOVE(key), STD_MOVE(value));
 
 					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_HEADERS;
@@ -223,8 +224,7 @@ namespace Http {
 					m_chunk_offset = 0;
 					m_chunked_trailer.clear();
 
-					std::string line;
-					expected.dump(line);
+					std::string line = expected.dump();
 
 					char *endptr;
 					m_chunk_size = ::strtoull(line.c_str(), &endptr, 16);
@@ -268,15 +268,17 @@ namespace Http {
 
 			case S_CHUNKED_TRAILER:
 				if(!expected.empty()){
-					std::string line;
-					expected.dump(line);
+					std::string line = expected.dump();
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
-						LOG_POSEIDON_WARNING("Invalid chunk trailer: line = ", line);
+						LOG_POSEIDON_WARNING("Invalid chunk trailer:", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
-					m_chunked_trailer.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
+					SharedNts key(line.data(), pos);
+					line.erase(0, pos + 1);
+					std::string value(ltrim(STD_MOVE(line)));
+					m_chunked_trailer.append(STD_MOVE(key), STD_MOVE(value));
 
 					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_CHUNKED_TRAILER;
@@ -287,10 +289,6 @@ namespace Http {
 					m_state = S_FIRST_HEADER;
 				}
 				break;
-
-			default:
-				LOG_POSEIDON_ERROR("Unknown state: ", static_cast<unsigned>(m_state));
-				std::abort();
 			}
 		} while(has_next_request);
 

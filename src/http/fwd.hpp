@@ -13,6 +13,8 @@ namespace Http {
 	class HeaderOption;
 	class Exception;
 
+	class FormData;
+
 	class ServerReader;
 	class ServerWriter;
 	class ClientReader;

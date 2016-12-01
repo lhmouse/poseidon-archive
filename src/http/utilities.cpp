@@ -7,38 +7,14 @@
 
 namespace Poseidon {
 
-namespace Http {
-	namespace {
-		const bool SAFE_CHARS[256] = {
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0,
-			1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-			1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,
-			0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-			1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		};
+namespace {
+	char get_hex(char ch, bool upper_case){
+		static const char s_hex_table[33] = "00112233445566778899aAbBcCdDeEfF";
 
-		bool is_char_safe(char ch){
-			return SAFE_CHARS[(unsigned char)ch];
-		}
-
-		const char HEX_TABLE[33] = "00112233445566778899aAbBcCdDeEfF";
-
-		char get_hex(char ch, bool upper_case = true){
-			return HEX_TABLE[(unsigned char)ch * 2 + upper_case];
-		}
-
-		const signed char HEX_LITERAL_TABLE[256] = {
+		return s_hex_table[(unsigned char)ch * 2 + upper_case];
+	}
+	int get_hex_rev(char ch){
+		static const signed char s_hex_rev_table[256] = {
 			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -57,12 +33,31 @@ namespace Http {
 			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 		};
 
-		int get_hex_literal(char ch){
-			return HEX_LITERAL_TABLE[(unsigned char)ch];
-		}
+		return s_hex_rev_table[(unsigned char)ch];
 	}
+}
 
+namespace Http {
 	std::string url_encode(const void *data, std::size_t size){
+		static const bool s_safe_chars[256] = {
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0,
+			1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+			0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+			1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,
+			0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+			1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		};
+
 		std::string ret;
 		ret.reserve(size + (size >> 1));
 		std::size_t i = 0;
@@ -73,13 +68,13 @@ namespace Http {
 				ret.push_back('+');
 				continue;
 			}
-			if(is_char_safe(ch)){
+			if(s_safe_chars[(unsigned char)ch]){
 				ret.push_back(ch);
 				continue;
 			}
 			ret.push_back('%');
-			ret.push_back(get_hex((ch >> 4) & 0x0F));
-			ret.push_back(get_hex(ch & 0x0F));
+			ret.push_back(get_hex((ch >> 4) & 0x0F, false));
+			ret.push_back(get_hex(ch & 0x0F, false));
 		}
 		return ret;
 	}
@@ -98,8 +93,8 @@ namespace Http {
 				ret.push_back(ch);
 				continue;
 			}
-			const int high = get_hex_literal(((const char *)data)[i]);
-			const int low = get_hex_literal(((const char *)data)[i + 1]);
+			const int high = get_hex_rev(((const char *)data)[i]);
+			const int low = get_hex_rev(((const char *)data)[i + 1]);
 			if((high == -1) || (low == -1)){
 				ret.push_back(ch);
 				continue;
@@ -129,9 +124,9 @@ namespace Http {
 		for(AUTO(it, parts.begin()); it != parts.end(); ++it){
 			const AUTO(pos, it->find('='));
 			if(pos == std::string::npos){
-				ret.set(SharedNts(url_decode(*it)), VAL_INIT);
+				ret.set(SharedNts(url_decode(it->data(), it->size())), std::string());
 			} else {
-				ret.set(SharedNts(url_decode(it->substr(0, pos))), url_decode(it->substr(pos + 1)));
+				ret.set(SharedNts(url_decode(it->data(), pos)), url_decode(it->data() + pos + 1, it->size() - pos - 1));
 			}
 		}
 		return ret;
@@ -154,10 +149,10 @@ namespace Http {
 		for(std::size_t i = 0; i < size; ++i){
 			const char ch = ((const char *)data)[i];
 			if(high == -1){
-				high = get_hex_literal(ch);
+				high = get_hex_rev(ch);
 				continue;
 			}
-			const int low = get_hex_literal(ch);
+			const int low = get_hex_rev(ch);
 			if(low == -1){
 				continue;
 			}
@@ -168,7 +163,7 @@ namespace Http {
 	}
 
 	std::string base64_encode(const void *data, std::size_t size){
-		static const char TABLE[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+		static const char s_base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 		std::string ret;
 		const std::size_t words = size / 3;
@@ -177,38 +172,38 @@ namespace Http {
 		unsigned word;
 		for(std::size_t i = 0; i < whole; i += 3){
 			word = ((const unsigned char *)data)[i];
-			ret.push_back(TABLE[(word >> 2) & 0x3F]);
+			ret.push_back(s_base64_table[(word >> 2) & 0x3F]);
 			word <<= 8;
 			word |= ((const unsigned char *)data)[i + 1];
-			ret.push_back(TABLE[(word >> 4) & 0x3F]);
+			ret.push_back(s_base64_table[(word >> 4) & 0x3F]);
 			word <<= 8;
 			word |= ((const unsigned char *)data)[i + 2];
-			ret.push_back(TABLE[(word >> 6) & 0x3F]);
-			ret.push_back(TABLE[word & 0x3F]);
+			ret.push_back(s_base64_table[(word >> 6) & 0x3F]);
+			ret.push_back(s_base64_table[word & 0x3F]);
 		}
 		switch(size - whole){
 		case 1:
 			word = ((const unsigned char *)data)[whole];
-			ret.push_back(TABLE[(word >> 2) & 0x3F]);
-			ret.push_back(TABLE[(word << 4) & 0x3F]);
+			ret.push_back(s_base64_table[(word >> 2) & 0x3F]);
+			ret.push_back(s_base64_table[(word << 4) & 0x3F]);
 			ret.push_back('=');
 			ret.push_back('=');
 			break;
 
 		case 2:
 			word = ((const unsigned char *)data)[whole];
-			ret.push_back(TABLE[(word >> 2) & 0x3F]);
+			ret.push_back(s_base64_table[(word >> 2) & 0x3F]);
 			word <<= 8;
 			word |= ((const unsigned char *)data)[whole + 1];
-			ret.push_back(TABLE[(word >> 4) & 0x3F]);
-			ret.push_back(TABLE[(word << 2) & 0x3F]);
+			ret.push_back(s_base64_table[(word >> 4) & 0x3F]);
+			ret.push_back(s_base64_table[(word << 2) & 0x3F]);
 			ret.push_back('=');
 			break;
 		}
 		return ret;
 	}
 	std::string base64_decode(const void *data, std::size_t size){
-		static const unsigned char TABLE[] = {
+		static const unsigned char s_base64_rev_table[] = {
 			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x3E, 0xFF, 0xFF, 0xFF, 0x3F,
@@ -232,7 +227,7 @@ namespace Http {
 		long word = 0;
 		unsigned count = 0;
 		for(std::size_t i = 0; i < size; ++i){
-			const unsigned char ch = TABLE[((const unsigned char *)data)[i]];
+			const unsigned char ch = s_base64_rev_table[((const unsigned char *)data)[i]];
 			if(ch > 0x3F){
 				continue;
 			}

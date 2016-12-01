@@ -39,10 +39,6 @@ public:
 		m_contents.clear();
 	}
 
-	void swap(ConfigFile &rhs) NOEXCEPT {
-		m_contents.swap(rhs.m_contents);
-	}
-
 	const std::string &get_raw(const char *key) const {
 		return m_contents.get(key);
 	}
@@ -109,6 +105,11 @@ public:
 		std::vector<T> vals;
 		get_all(vals, key, including_empty);
 		return vals;
+	}
+
+	void swap(ConfigFile &rhs) NOEXCEPT {
+		using std::swap;
+		swap(m_contents, rhs.m_contents);
 	}
 };
 

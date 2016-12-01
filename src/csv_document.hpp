@@ -132,17 +132,27 @@ public:
 		return it->second.at(row);
 	}
 
+	void swap(CsvDocument &rhs) NOEXCEPT {
+		using std::swap;
+		swap(m_elements, rhs.m_elements);
+	}
+
 	std::string dump() const;
 	void dump(std::ostream &os) const;
 	void parse(std::istream &is);
-
-	void swap(CsvDocument &rhs) NOEXCEPT {
-		m_elements.swap(rhs.m_elements);
-	}
 };
 
 inline void swap(CsvDocument &lhs, CsvDocument &rhs) NOEXCEPT {
 	lhs.swap(rhs);
+}
+
+inline std::ostream &operator<<(std::ostream &os, const CsvDocument &rhs){
+	rhs.dump(os);
+	return os;
+}
+inline std::istream &operator>>(std::istream &is, CsvDocument &rhs){
+	rhs.parse(is);
+	return is;
 }
 
 }

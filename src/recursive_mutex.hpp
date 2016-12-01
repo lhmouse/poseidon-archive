@@ -41,8 +41,9 @@ public:
 		void unlock() NOEXCEPT;
 
 		void swap(UniqueLock &rhs) NOEXCEPT {
-			std::swap(m_owner, rhs.m_owner);
-			std::swap(m_locked, rhs.m_locked);
+			using std::swap;
+			swap(m_owner, rhs.m_owner);
+			swap(m_locked, rhs.m_locked);
 		}
 
 	public:

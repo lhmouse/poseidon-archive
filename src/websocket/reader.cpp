@@ -190,10 +190,6 @@ namespace WebSocket {
 				m_size_expecting = 1;
 				m_state = S_OPCODE;
 				break;
-
-			default:
-				LOG_POSEIDON_FATAL("Invalid state: ", static_cast<unsigned>(m_state));
-				std::abort();
 			}
 		} while(has_next_request);
 

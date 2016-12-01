@@ -3,7 +3,7 @@
 
 #include "precompiled.hpp"
 #include "json.hpp"
-#include "protocol_exception.hpp"
+#include "log.hpp"
 #include "profiler.hpp"
 #include <iomanip>
 
@@ -20,13 +20,17 @@ namespace {
 		std::string ret;
 		char temp;
 		if(!(is >>temp) || (temp != '\"')){
-			DEBUG_THROW(ProtocolException, sslit("JSON parser: String open expected"), -1);
+			LOG_POSEIDON_WARNING("String open expected");
+			is.setstate(std::istream::badbit);
+			return ret;
 		}
 
 		is >>std::noskipws;
 		for(;;){
 			if(!(is >>temp)){
-				DEBUG_THROW(ProtocolException, sslit("JSON parser: String not closed"), -1);
+				LOG_POSEIDON_WARNING("String not closed");
+				is.setstate(std::istream::badbit);
+				return ret;
 			}
 			if(temp == '\"'){
 				if(ret.empty() || (*ret.rbegin() != '\\')){
@@ -50,7 +54,9 @@ namespace {
 			}
 
 			if(read == ret.end()){
-				DEBUG_THROW(ProtocolException, sslit("JSON parser: Found escape character at the end"), -1);
+				LOG_POSEIDON_WARNING("Found escape character at the end");
+				is.setstate(std::istream::badbit);
+				return ret;
 			}
 			ch = *read;
 			++read;
@@ -93,7 +99,9 @@ namespace {
 
 			case 'u':
 				if(ret.end() - read < 4){
-					DEBUG_THROW(ProtocolException, sslit("JSON parser: Too few hex digits for \\u"), -1);
+					LOG_POSEIDON_WARNING("Too few hex digits for \\u");
+					is.setstate(std::istream::badbit);
+					return ret;
 				} else {
 					unsigned code = 0;
 					for(unsigned i = 12; i != (unsigned)-4; i -= 4){
@@ -106,7 +114,9 @@ namespace {
 						} else if(('a' <= hexc) && (hexc <= 'f')){
 							hexc -= 'a' - 0x0A;
 						} else {
-							DEBUG_THROW(ProtocolException, sslit("JSON parser: Invalid hex digits for \\u"), -1);
+							LOG_POSEIDON_WARNING("Invalid hex digits for \\u");
+							is.setstate(std::istream::badbit);
+							return ret;
 						}
 						code |= hexc << i;
 					}
@@ -130,7 +140,9 @@ namespace {
 				break;
 
 			default:
-				DEBUG_THROW(ProtocolException, sslit("JSON parser: Unknown escaped character sequence"), -1);
+				LOG_POSEIDON_WARNING("Unknown escaped character sequence");
+				is.setstate(std::istream::badbit);
+				return ret;
 			}
 		}
 		ret.erase(write, ret.end());
@@ -139,9 +151,11 @@ namespace {
 	double accept_number(std::istream &is){
 		PROFILE_ME;
 
-		double ret;
+		double ret = 0;
 		if(!(is >>ret)){
-			DEBUG_THROW(ProtocolException, sslit("JSON parser: Number expected"), -1);
+			LOG_POSEIDON_WARNING("Number expected");
+			is.setstate(std::istream::badbit);
+			return ret;
 		}
 		return ret;
 	}
@@ -151,11 +165,15 @@ namespace {
 		JsonObject ret;
 		char temp;
 		if(!(is >>temp) || (temp != '{')){
-			DEBUG_THROW(ProtocolException, sslit("JSON parser: Object open expected"), -1);
+			LOG_POSEIDON_WARNING("Object open expected");
+			is.setstate(std::istream::badbit);
+			return ret;
 		}
 		for(;;){
 			if(!(is >>temp)){
-				DEBUG_THROW(ProtocolException, sslit("JSON parser: Object not closed"), -1);
+				LOG_POSEIDON_WARNING("Object not closed");
+				is.setstate(std::istream::badbit);
+				return ret;
 			}
 			if(temp == '}'){
 				break;
@@ -166,7 +184,9 @@ namespace {
 			is.unget();
 			std::string name = accept_string(is);
 			if(!(is >>temp) || (temp != ':')){
-				DEBUG_THROW(ProtocolException, sslit("JSON parser: Colon expected"), -1);
+				LOG_POSEIDON_WARNING("Colon expected");
+				is.setstate(std::istream::badbit);
+				return ret;
 			}
 			ret.set(SharedNts(name), accept_element(is));
 		}
@@ -178,11 +198,15 @@ namespace {
 		JsonArray ret;
 		char temp;
 		if(!(is >>temp) || (temp != '[')){
-			DEBUG_THROW(ProtocolException, sslit("JSON parser: Array open expected"), -1);
+			LOG_POSEIDON_WARNING("Array open expected");
+			is.setstate(std::istream::badbit);
+			return ret;
 		}
 		for(;;){
 			if(!(is >>temp)){
-				DEBUG_THROW(ProtocolException, sslit("JSON parser: Array not closed"), -1);
+				LOG_POSEIDON_WARNING("Array not closed");
+				is.setstate(std::istream::badbit);
+				return ret;
 			}
 			if(temp == ']'){
 				break;
@@ -198,20 +222,25 @@ namespace {
 	bool accept_boolean(std::istream &is){
 		PROFILE_ME;
 
-		bool ret;
+		bool ret = false;
 		if(!(is >>std::boolalpha >>ret)){
-			DEBUG_THROW(ProtocolException, sslit("JSON parser: Boolean expected"), -1);
+			LOG_POSEIDON_WARNING("Boolean expected");
+			is.setstate(std::istream::badbit);
+			return ret;
 		}
 		return ret;
 	}
 	JsonNull accept_null(std::istream &is){
 		PROFILE_ME;
 
+		JsonNull ret = NULLPTR;
 		char temp[5];
 		if(!(is >>std::setw(sizeof(temp)) >>temp) || (std::strcmp(temp, "null") != 0)){
-			DEBUG_THROW(ProtocolException, sslit("JSON parser: Null expected"), -1);
+			LOG_POSEIDON_WARNING("Null expected");
+			is.setstate(std::istream::badbit);
+			return ret;
 		}
-		return JsonNull();
+		return ret;
 	}
 
 	JsonElement accept_element(std::istream &is){
@@ -220,7 +249,9 @@ namespace {
 		JsonElement ret;
 		char temp;
 		if(!(is >>temp)){
-			DEBUG_THROW(ProtocolException, sslit("JSON parser: No input character"), -1);
+			LOG_POSEIDON_WARNING("No input character");
+			is.setstate(std::istream::badbit);
+			return ret;
 		}
 		is.unget();
 		switch(temp){
@@ -260,7 +291,9 @@ namespace {
 			break;
 
 		default:
-			DEBUG_THROW(ProtocolException, sslit("JSON parser: Unknown element type"), -1);
+			LOG_POSEIDON_WARNING("Unknown element type");
+			is.setstate(std::istream::badbit);
+			return ret;
 		}
 		return ret;
 	}

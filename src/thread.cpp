@@ -31,9 +31,13 @@ struct Thread::Impl {
 	boost::shared_ptr<Impl> self;
 };
 
-Thread::Thread() NOEXCEPT {
+Thread::Thread() NOEXCEPT
+	: m_impl()
+{
 }
-Thread::Thread(boost::function<void ()> proc, const char *tag){
+Thread::Thread(boost::function<void ()> proc, const char *tag)
+	: m_impl()
+{
 	m_impl = boost::make_shared<Impl>();
 	std::strncpy(m_impl->tag, tag, sizeof(m_impl->tag));
 	m_impl->proc.swap(proc);
@@ -62,10 +66,6 @@ Thread::~Thread(){
 		LOG_POSEIDON_FATAL("Destructing a joinable thread.");
 		std::terminate();
 	}
-}
-
-void Thread::swap(Thread &rhs) NOEXCEPT {
-	boost::swap(m_impl, rhs.m_impl);
 }
 
 bool Thread::joinable() const NOEXCEPT {

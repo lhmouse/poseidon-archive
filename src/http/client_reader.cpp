@@ -78,8 +78,7 @@ namespace Http {
 					m_content_length = 0;
 					m_content_offset = 0;
 
-					std::string line;
-					expected.dump(line);
+					std::string line = expected.dump();
 
 					AUTO(pos, line.find(' '));
 					if(pos == std::string::npos){
@@ -90,11 +89,11 @@ namespace Http {
 					long ver_end = 0;
 					char ver_major_str[16], ver_minor_str[16];
 					if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) != 2){
-						LOG_POSEIDON_WARNING("Bad response header: expecting HTTP version: line = ", line.c_str());
+						LOG_POSEIDON_WARNING("Bad response header: expecting HTTP version:", line);
 						DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
 					}
 					if(static_cast<unsigned long>(ver_end) != pos){
-						LOG_POSEIDON_WARNING("Bad response header: junk after HTTP version: line = ", line.c_str());
+						LOG_POSEIDON_WARNING("Bad response header: junk after HTTP version:", line);
 						DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
 					}
 					m_response_headers.version = std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10);
@@ -102,14 +101,14 @@ namespace Http {
 
 					pos = line.find(' ');
 					if(pos == std::string::npos){
-						LOG_POSEIDON_WARNING("Bad response header: expecting status code: line = ", line.c_str());
+						LOG_POSEIDON_WARNING("Bad response header: expecting status code:", line);
 						DEBUG_THROW(BasicException, sslit("No status code in response headers"));
 					}
 					line[pos] = 0;
 					char *endptr;
 					const AUTO(status_code, std::strtoul(line.c_str(), &endptr, 10));
 					if(*endptr){
-						LOG_POSEIDON_WARNING("Bad response header: expecting status code: line = ", line.c_str());
+						LOG_POSEIDON_WARNING("Bad response header: expecting status code:", line);
 						DEBUG_THROW(BasicException, sslit("Malformed status code in response headers"));
 					}
 					m_response_headers.status_code = status_code;
@@ -127,15 +126,17 @@ namespace Http {
 
 			case S_HEADERS:
 				if(!expected.empty()){
-					std::string line;
-					expected.dump(line);
+					std::string line = expected.dump();
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
-						LOG_POSEIDON_WARNING("Invalid HTTP header: line = ", line);
+						LOG_POSEIDON_WARNING("Invalid HTTP header: ", line);
 						DEBUG_THROW(BasicException, sslit("Malformed HTTP header in response headers"));
 					}
-					m_response_headers.headers.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
+					SharedNts key(line.data(), pos);
+					line.erase(0, pos + 1);
+					std::string value(ltrim(STD_MOVE(line)));
+					m_response_headers.headers.append(STD_MOVE(key), STD_MOVE(value));
 
 					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_HEADERS;
@@ -204,8 +205,7 @@ namespace Http {
 					m_chunk_offset = 0;
 					m_chunked_trailer.clear();
 
-					std::string line;
-					expected.dump(line);
+					std::string line = expected.dump();
 
 					char *endptr;
 					m_chunk_size = ::strtoull(line.c_str(), &endptr, 16);
@@ -248,15 +248,17 @@ namespace Http {
 
 			case S_CHUNKED_TRAILER:
 				if(!expected.empty()){
-					std::string line;
-					expected.dump(line);
+					std::string line = expected.dump();
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
-						LOG_POSEIDON_WARNING("Invalid chunk trailer: line = ", line);
+						LOG_POSEIDON_WARNING("Invalid chunk trailer:", line);
 						DEBUG_THROW(BasicException, sslit("Invalid HTTP header in chunk trailer"));
 					}
-					m_chunked_trailer.append(SharedNts(line.data(), pos), ltrim(line.substr(pos + 1)));
+					SharedNts key(line.data(), pos);
+					line.erase(0, pos + 1);
+					std::string value(ltrim(STD_MOVE(line)));
+					m_chunked_trailer.append(STD_MOVE(key), STD_MOVE(value));
 
 					m_size_expecting = EXPECTING_NEW_LINE;
 					// m_state = S_CHUNKED_TRAILER;
@@ -267,10 +269,6 @@ namespace Http {
 					m_state = S_FIRST_HEADER;
 				}
 				break;
-
-			default:
-				LOG_POSEIDON_ERROR("Unknown state: ", static_cast<unsigned>(m_state));
-				std::abort();
 			}
 		} while(has_next_response);
 

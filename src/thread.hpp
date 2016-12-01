@@ -25,7 +25,10 @@ public:
 	~Thread(); // if(joinable()){ std::terminate(); }
 
 public:
-	void swap(Thread &rhs) NOEXCEPT;
+	void swap(Thread &rhs) NOEXCEPT {
+		using std::swap;
+		swap(m_impl, rhs.m_impl);
+	}
 
 	bool joinable() const NOEXCEPT;
 	void join();

@@ -77,10 +77,6 @@ public:
 	bool erase(const char *key);
 	bool erase(const SharedNts &key);
 
-	void swap(JsonObject &rhs) NOEXCEPT {
-		m_elements.swap(rhs.m_elements);
-	}
-
 	const_iterator find(const char *key) const;
 	const_iterator find(const SharedNts &key) const;
 	iterator find(const char *key);
@@ -102,6 +98,8 @@ public:
 		return at(SharedNts::view(key));
 	};
 	const JsonElement &at(const SharedNts &key) const;
+
+	void swap(JsonObject &rhs) NOEXCEPT;
 
 	std::string dump() const;
 	void dump(std::ostream &os) const;
@@ -161,10 +159,6 @@ public:
 	iterator erase(const_iterator first, const_iterator last);
 	bool erase(size_type index);
 
-	void swap(JsonArray &rhs) NOEXCEPT {
-		m_elements.swap(rhs.m_elements);
-	}
-
 	JsonElement &push_front(JsonElement val);
 	void pop_front();
 	JsonElement &push_back(JsonElement val);
@@ -181,6 +175,8 @@ public:
 
 	const JsonElement &get(size_type index) const; // 若指定的键不存在，则返回空元素。
 	const JsonElement &at(size_type index) const; // 若指定的键不存在，则抛出 std::out_of_range。
+
+	void swap(JsonArray &rhs) NOEXCEPT;
 
 	std::string dump() const;
 	void dump(std::ostream &os) const;
@@ -254,7 +250,8 @@ public:
 	}
 
 	void swap(JsonElement &rhs) NOEXCEPT {
-		m_data.swap(rhs.m_data);
+		using std::swap;
+		swap(m_data, rhs.m_data);
 	}
 
 	std::string dump() const;
@@ -369,20 +366,16 @@ inline bool JsonObject::has(const SharedNts &key){
 	return find(key) != end();
 }
 inline JsonObject::iterator JsonObject::set(SharedNts key, JsonElement val){
-	AUTO(it, m_elements.find(key));
-	if(it != m_elements.end()){
-		it = m_elements.erase(it);
-	}
-	return m_elements.insert(it, std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val)));
+	const AUTO(existent, m_elements.equal_range(key));
+	const AUTO(hint, m_elements.erase(existent.first, existent.second));
+	return m_elements.insert(hint, std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val)));
 }
 #ifdef POSEIDON_CXX11
 template<typename KeyT, typename ...ParamsT>
 inline JsonObject::iterator JsonObject::emplace(KeyT &&key, ParamsT &&...params){
-	AUTO(it, m_elements.find(key));
-	if(it != m_elements.end()){
-		it = m_elements.erase(it);
-	}
-	return m_elements.emplace_hint(it, std::forward<KeyT>(key), std::forward<ParamsT>(params)...);
+	const AUTO(existent, m_elements.equal_range(key));
+	const AUTO(hint, m_elements.erase(existent.first, existent.second));
+	return m_elements.emplace_hint(hint, std::forward<KeyT>(key), std::forward<ParamsT>(params)...);
 }
 #endif
 
@@ -399,6 +392,11 @@ inline const JsonElement &JsonObject::at(const SharedNts &key) const {
 		throw std::out_of_range(__PRETTY_FUNCTION__);
 	}
 	return it->second;
+}
+
+inline void JsonObject::swap(JsonObject &rhs) NOEXCEPT {
+	using std::swap;
+	swap(m_elements, rhs.m_elements);
 }
 
 inline JsonArray::JsonArray()
@@ -530,6 +528,11 @@ inline const JsonElement &JsonArray::at(JsonArray::size_type index) const {
 	}
 	const AUTO(it, begin() + static_cast<difference_type>(index));
 	return *it;
+}
+
+inline void JsonArray::swap(JsonArray &rhs) NOEXCEPT {
+	using std::swap;
+	swap(m_elements, rhs.m_elements);
 }
 
 inline std::ostream &operator<<(std::ostream &os, const JsonElement &rhs){

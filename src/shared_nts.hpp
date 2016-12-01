@@ -78,7 +78,8 @@ public:
 	}
 
 	void swap(SharedNts &rhs) NOEXCEPT {
-		m_ptr.swap(rhs.m_ptr);
+		using std::swap;
+		swap(m_ptr, rhs.m_ptr);
 	}
 
 public:

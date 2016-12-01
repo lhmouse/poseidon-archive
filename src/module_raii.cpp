@@ -28,10 +28,6 @@ void HandleStack::clear() NOEXCEPT {
 	}
 }
 
-void HandleStack::swap(HandleStack &rhs) NOEXCEPT {
-	m_queue.swap(rhs.m_queue);
-}
-
 ModuleRaiiBase::ModuleRaiiBase(long priority){
 	ModuleDepository::register_module_raii(this, priority);
 }

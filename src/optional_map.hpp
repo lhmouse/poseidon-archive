@@ -110,7 +110,8 @@ public:
 	}
 
 	void swap(OptionalMap &rhs) NOEXCEPT {
-		m_elements.swap(rhs.m_elements);
+		using std::swap;
+		swap(m_elements, rhs.m_elements);
 	}
 
 	// 一对一的接口。

@@ -172,9 +172,9 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += '\n';
 
-		{
-			::pthread_mutex_lock(&g_mutex);
-
+		int err_code = ::pthread_mutex_lock(&g_mutex);
+		assert(err_code == 0);
+		try {
 			std::size_t bytes_total = 0;
 			while(bytes_total < line.size()){
 				const AUTO(bytes_written, ::write(fd, line.data() + bytes_total, line.size() - bytes_total)); // noexcept
@@ -183,8 +183,12 @@ Logger::~Logger() NOEXCEPT {
 				}
 				bytes_total += static_cast<std::size_t>(bytes_written);
 			}
-
-			::pthread_mutex_unlock(&g_mutex);
+			err_code = ::pthread_mutex_unlock(&g_mutex);
+			assert(err_code == 0);
+		} catch(...){
+			err_code = ::pthread_mutex_unlock(&g_mutex);
+			assert(err_code == 0);
+			throw;
 		}
 	} catch(...){
 	}

@@ -95,24 +95,16 @@ namespace MongoDb {
 			m_elements.clear();
 		}
 
-		void build(std::string &bin, bool as_array = false) const;
-		std::string build(bool as_array = false) const {
-			std::string str;
-			build(str, as_array);
-			return str;
-		}
-
-		void build_json(std::string &str, bool as_array = false) const;
-		std::string build_json(bool as_array = false) const {
-			std::string str;
-			build_json(str, as_array);
-			return str;
-		}
-		void build_json(std::ostream &os, bool as_array = false) const;
-
 		void swap(BsonBuilder &rhs) NOEXCEPT {
-			m_elements.swap(rhs.m_elements);
+			using std::swap;
+			swap(m_elements, rhs.m_elements);
 		}
+
+		std::string build(bool as_array = false) const;
+		void build(std::ostream &os, bool as_array = false) const;
+
+		std::string build_json(bool as_array = false) const;
+		void build_json(std::ostream &os, bool as_array = false) const;
 	};
 
 	inline void swap(BsonBuilder &lhs, BsonBuilder &rhs) NOEXCEPT {

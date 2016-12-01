@@ -5,7 +5,6 @@
 #include "csv_document.hpp"
 #include "string.hpp"
 #include "profiler.hpp"
-#include "protocol_exception.hpp"
 #include "log.hpp"
 
 namespace Poseidon {
@@ -80,7 +79,12 @@ void CsvDocument::parse(std::istream &is){
 	while(is){
 		line.clear();
 		std::string seg;
-		enum { Q_INIT, Q_OPEN, Q_CLOSING, Q_CLOSED } quote_state = Q_INIT;
+		enum {
+			Q_INIT,
+			Q_OPEN,
+			Q_CLOSING,
+			Q_CLOSED,
+		} quote_state = Q_INIT;
 		char ch;
 		is >>std::noskipws;
 		while(is >> ch){
@@ -96,6 +100,7 @@ void CsvDocument::parse(std::istream &is){
 					continue;
 				}
 				seg += ch;
+				// quote_state = Q_OPEN;
 				continue;
 			} else if(quote_state == Q_CLOSING){
 				if(ch == '\"'){
@@ -123,7 +128,7 @@ void CsvDocument::parse(std::istream &is){
 		++count;
 
 		if(line.empty() || ((line.size() == 1) && line.front().empty())){
-			LOG_POSEIDON_ERROR("Ignoring empty line on line ", count);
+			LOG_POSEIDON_WARNING("Ignoring empty line on line ", count);
 			continue;
 		}
 
@@ -132,21 +137,26 @@ void CsvDocument::parse(std::istream &is){
 			for(std::size_t i = 0; i < line.size(); ++i){
 				for(std::size_t j = 0; j < i; ++j){
 					if(matrix.at(j).at(0) == line.at(i)){
-						LOG_POSEIDON_ERROR("Duplicate CSV header on line ", count, ": ", line.at(i));
-						DEBUG_THROW(ProtocolException, sslit("Duplicate CSV header"), -1);
+						LOG_POSEIDON_WARNING("Duplicate CSV header on line ", count, ": ", line.at(i));
+						is.setstate(std::istream::badbit);
+						return;
 					}
 				}
 				matrix.at(i).push_back(STD_MOVE(line.at(i)));
 			}
 		} else {
 			if(line.size() != matrix.size()){
-				LOG_POSEIDON_ERROR("Inconsistent CSV column count on line ", count, ": got ", line.size(), ", expecting ", matrix.size());
-				DEBUG_THROW(ProtocolException, sslit("Inconsistent CSV column count"), -1);
+				LOG_POSEIDON_WARNING("Inconsistent CSV column count on line ", count, ": got ", line.size(), ", expecting ", matrix.size());
+				is.setstate(std::istream::badbit);
+				return;
 			}
 			for(std::size_t i = 0; i < line.size(); ++i){
 				matrix.at(i).push_back(STD_MOVE(line.at(i)));
 			}
 		}
+	}
+	if(is.eof()){
+		is.clear();
 	}
 
 	VALUE_TYPE(m_elements) elements;

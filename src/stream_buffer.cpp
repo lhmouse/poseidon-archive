@@ -3,28 +3,38 @@
 
 #include "precompiled.hpp"
 #include "stream_buffer.hpp"
-#include "atomic.hpp"
+#include "profiler.hpp"
 
 namespace Poseidon {
 
-struct StreamBuffer::Chunk FINAL {
-	static volatile bool s_pool_lock;
-	static Chunk *s_pool_head;
+namespace {
+	::pthread_mutex_t g_pool_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+	void *g_pool_head = NULLPTR;
+}
 
+struct StreamBuffer::Chunk FINAL {
 	static void *operator new(std::size_t bytes){
 		assert(bytes == sizeof(Chunk));
+		void *p;
 
-		while(atomic_exchange(s_pool_lock, true, ATOMIC_ACQ_REL) == true){
-			atomic_pause();
+		int err_code = ::pthread_mutex_lock(&g_pool_mutex);
+		assert(err_code == 0);
+		try {
+			const AUTO(head, static_cast<Chunk *>(g_pool_head));
+			if(head){
+				g_pool_head = head->prev;
+				p = head;
+			} else {
+				p = ::operator new(bytes);
+			}
+			err_code = ::pthread_mutex_unlock(&g_pool_mutex);
+			assert(err_code == 0);
+		} catch(...){
+			err_code = ::pthread_mutex_unlock(&g_pool_mutex);
+			assert(err_code == 0);
+			throw;
 		}
-		const AUTO(head, s_pool_head);
-		if(!head){
-			atomic_store(s_pool_lock, false, ATOMIC_RELEASE);
-			return ::operator new(bytes);
-		}
-		s_pool_head = head->prev;
-		atomic_store(s_pool_lock, false, ATOMIC_RELEASE);
-		return head;
+		return p;
 	}
 	static void operator delete(void *p) NOEXCEPT {
 		if(!p){
@@ -32,19 +42,24 @@ struct StreamBuffer::Chunk FINAL {
 		}
 		const AUTO(head, static_cast<Chunk *>(p));
 
-		while(atomic_exchange(s_pool_lock, true, ATOMIC_ACQ_REL) == true){
-			atomic_pause();
+		int err_code = ::pthread_mutex_lock(&g_pool_mutex);
+		assert(err_code == 0);
+		{
+			head->prev = static_cast<Chunk *>(g_pool_head);
+			g_pool_head = head;
 		}
-		head->prev = s_pool_head;
-		s_pool_head = head;
-		atomic_store(s_pool_lock, false, ATOMIC_RELEASE);
+		err_code = ::pthread_mutex_unlock(&g_pool_mutex);
+		assert(err_code == 0);
 	}
 
 	__attribute__((__destructor__(101)))
 	static void pool_destructor() NOEXCEPT {
-		while(s_pool_head){
-			const AUTO(head, s_pool_head);
-			s_pool_head = head->prev;
+		for(;;){
+			const AUTO(head, static_cast<Chunk *>(g_pool_head));
+			if(!head){
+				break;
+			}
+			g_pool_head = head->prev;
 			::operator delete(head);
 		}
 	}
@@ -55,9 +70,6 @@ struct StreamBuffer::Chunk FINAL {
 	unsigned end;
 	unsigned char data[0x100];
 };
-
-volatile bool StreamBuffer::Chunk::s_pool_lock = false;
-StreamBuffer::Chunk *StreamBuffer::Chunk::s_pool_head = NULLPTR;
 
 unsigned char *StreamBuffer::ChunkEnumerator::begin() const NOEXCEPT {
 	assert(m_chunk);
@@ -527,6 +539,23 @@ void StreamBuffer::splice(StreamBuffer &rhs) NOEXCEPT {
 	rhs.m_first = NULLPTR;
 	rhs.m_last = NULLPTR;
 	rhs.m_size = 0;
+}
+
+std::string StreamBuffer::dump() const {
+	PROFILE_ME;
+
+	std::ostringstream oss;
+	dump(oss);
+	return oss.str();
+}
+void StreamBuffer::dump(std::ostream &os) const {
+	PROFILE_ME;
+
+	AUTO(chunk, m_first);
+	while(chunk){
+		os.write(reinterpret_cast<char *>(chunk->data + chunk->begin), chunk->end - chunk->begin);
+		chunk = chunk->next;
+	}
 }
 
 }

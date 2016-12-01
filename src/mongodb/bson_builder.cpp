@@ -6,6 +6,7 @@
 #include "../protocol_exception.hpp"
 #include "../time.hpp"
 #include "../uuid.hpp"
+#include "../profiler.hpp"
 #pragma GCC push_options
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #include <bson.h>
@@ -255,11 +256,20 @@ namespace MongoDb {
 		m_elements.push_back(STD_MOVE(elem));
 	}
 
-	void BsonBuilder::build(std::string &bin, bool as_array) const {
+	std::string BsonBuilder::build(bool as_array) const {
+		PROFILE_ME;
+
+		std::ostringstream oss;
+		build(oss, as_array);
+		return oss.str();
+	}
+	void BsonBuilder::build(std::ostream &os, bool as_array) const {
+		PROFILE_ME;
+
 		::bson_t bson = BSON_INITIALIZER;
 		try {
 			internal_build(&bson, as_array);
-			bin.assign(reinterpret_cast<const char *>(::bson_get_data(&bson)), bson.len);
+			os.write(reinterpret_cast<const char *>(::bson_get_data(&bson)), bson.len);
 			::bson_destroy(&bson);
 		} catch(...){
 			::bson_destroy(&bson);
@@ -267,29 +277,16 @@ namespace MongoDb {
 		}
 	}
 
-	void BsonBuilder::build_json(std::string &str, bool as_array) const {
-		::bson_t bson = BSON_INITIALIZER;
-		try {
-			internal_build(&bson, as_array);
-			std::size_t len;
-			char *json = ::bson_as_json(&bson, &len);
-			if(!json){
-				DEBUG_THROW(ProtocolException, sslit("BSON builder: Failed to convert BSON to JSON"), -1);
-			}
-			try {
-				str.assign(json, len);
-				::bson_free(json);
-			} catch(...){
-				::bson_free(json);
-				throw;
-			}
-			::bson_destroy(&bson);
-		} catch(...){
-			::bson_destroy(&bson);
-			throw;
-		}
+	std::string BsonBuilder::build_json(bool as_array) const {
+		PROFILE_ME;
+
+		std::ostringstream oss;
+		build_json(oss, as_array);
+		return oss.str();
 	}
 	void BsonBuilder::build_json(std::ostream &os, bool as_array) const {
+		PROFILE_ME;
+
 		::bson_t bson = BSON_INITIALIZER;
 		try {
 			internal_build(&bson, as_array);

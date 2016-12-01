@@ -23,7 +23,7 @@ namespace Http {
 	}
 
 	Verb get_verb_from_string(const char *str){
-		const unsigned len = ::strlen(str);
+		const unsigned len = std::strlen(str);
 		if(len == 0){
 			return V_INVALID_VERB;
 		}

@@ -93,6 +93,9 @@ namespace Http {
 				options.append(STD_MOVE(key), STD_MOVE(value));
 			}
 		}
+		if(is.eof()){
+			is.clear();
+		}
 
 		m_base.swap(base);
 		m_options.swap(options);

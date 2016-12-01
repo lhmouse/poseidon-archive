@@ -110,7 +110,8 @@ pkginclude_http_HEADERS = \
 	src/http/upgraded_session_base.hpp	\
 	src/http/upgraded_client_base.hpp	\
 	src/http/url_param.hpp	\
-	src/http/header_option.hpp
+	src/http/header_option.hpp	\
+	src/http/form_data.hpp
 
 pkginclude_websocketdir = $(pkgincludedir)/websocket
 pkginclude_websocket_HEADERS = \
@@ -253,6 +254,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/http/response_headers.cpp	\
 	src/http/url_param.cpp	\
 	src/http/header_option.cpp	\
+	src/http/form_data.cpp	\
 	src/websocket/handshake.cpp	\
 	src/websocket/reader.cpp	\
 	src/websocket/writer.cpp	\

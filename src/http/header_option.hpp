@@ -16,6 +16,10 @@ namespace Http {
 		OptionalMap m_options;
 
 	public:
+		HeaderOption()
+			: m_base(), m_options()
+		{
+		}
 		HeaderOption(std::string base, OptionalMap options)
 			: m_base(STD_MOVE(base)), m_options(STD_MOVE(options))
 		{
@@ -46,6 +50,14 @@ namespace Http {
 			m_options = STD_MOVE(options);
 		}
 
+		bool empty() const {
+			return m_base.empty();
+		}
+		void clear(){
+			m_base.clear();
+			m_options.clear();
+		}
+
 		const std::string &get_option(const char *key) const {
 			return m_options.get(key);
 		}
@@ -62,14 +74,28 @@ namespace Http {
 			return m_options.erase(key);
 		}
 
+		void swap(HeaderOption &rhs) NOEXCEPT {
+			using std::swap;
+			swap(m_base, rhs.m_base);
+			swap(m_options, rhs.m_options);
+		}
+
 		std::string dump() const;
 		void dump(std::ostream &os) const;
 		void parse(std::istream &is);
 	};
 
+	inline void swap(HeaderOption &lhs, HeaderOption &rhs) NOEXCEPT {
+		lhs.swap(rhs);
+	}
+
 	inline std::ostream &operator<<(std::ostream &os, const HeaderOption &rhs){
 		rhs.dump(os);
 		return os;
+	}
+	inline std::istream &operator>>(std::istream &is, HeaderOption &rhs){
+		rhs.parse(is);
+		return is;
 	}
 }
 

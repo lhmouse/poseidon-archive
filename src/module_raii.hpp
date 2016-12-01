@@ -32,7 +32,10 @@ public:
 
 	void clear() NOEXCEPT; // 确保逆序析构。
 
-	void swap(HandleStack &rhs) NOEXCEPT;
+	void swap(HandleStack &rhs) NOEXCEPT {
+		using std::swap;
+		swap(m_queue, rhs.m_queue);
+	}
 };
 
 inline void swap(HandleStack &lhs, HandleStack &rhs) NOEXCEPT {
