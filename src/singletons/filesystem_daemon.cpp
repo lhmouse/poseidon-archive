@@ -63,9 +63,9 @@ namespace {
 		boost::uint64_t begin, bool throws_if_exists)
 	{
 		int flags = O_CREAT | O_WRONLY;
-		if(begin == FilesystemDaemon::OFFSET_EOF){
+		if(begin == FilesystemDaemon::OFFSET_APPEND){
 			flags |= O_APPEND;
-		} else {
+		} else if(begin == FilesystemDaemon::OFFSET_TRUNCATE){
 			flags |= O_TRUNC;
 		}
 		if(throws_if_exists){
