@@ -25,6 +25,9 @@ public:
 	static void load(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist = true);
 	static void save(StreamBuffer data, const std::string &path, bool appends = false, bool forces_creation = false);
 	static void remove(const std::string &path, bool throws_if_does_not_exist = true);
+	static void rename(const std::string &path, const std::string &new_path);
+	static void mkdir(const std::string &path, bool throws_if_exists = false);
+	static void rmdir(const std::string &path, bool throws_if_does_not_exist = true);
 
 	// 异步接口。
 	// 以下第一个参数是出参。
@@ -33,6 +36,12 @@ public:
 	static boost::shared_ptr<const JobPromise> enqueue_for_saving(
 		StreamBuffer data, std::string path, bool appends = false, bool forces_creation = false);
 	static boost::shared_ptr<const JobPromise> enqueue_for_removing(
+		std::string path, bool throws_if_does_not_exist = true);
+	static boost::shared_ptr<const JobPromise> enqueue_for_renaming(
+		std::string path, std::string new_path);
+	static boost::shared_ptr<const JobPromise> enqueue_for_mkdir(
+		std::string path, bool throws_if_exists = false);
+	static boost::shared_ptr<const JobPromise> enqueue_for_rmdir(
 		std::string path, bool throws_if_does_not_exist = true);
 };
 

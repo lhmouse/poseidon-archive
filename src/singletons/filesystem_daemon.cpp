@@ -20,7 +20,7 @@
 namespace Poseidon {
 
 namespace {
-	void real_load_file(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist){
+	void real_load(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist){
 		int flags = O_RDONLY;
 		UniqueFile file;
 		if(!file.reset(::open(path.c_str(), flags))){
@@ -50,7 +50,7 @@ namespace {
 		}
 		LOG_POSEIDON_DEBUG("Finished loading file: path = ", path, ", bytes_read = ", bytes_read);
 	}
-	void real_save_file(StreamBuffer data, const std::string &path, bool appends, bool forces_creation){
+	void real_save(StreamBuffer data, const std::string &path, bool appends, bool forces_creation){
 		int flags = O_CREAT | O_WRONLY;
 		if(appends){
 			flags |= O_APPEND;
@@ -84,13 +84,43 @@ namespace {
 		}
 		LOG_POSEIDON_DEBUG("Finished saving file: path = ", path, ", bytes_written = ", bytes_written);
 	}
-	void real_remove_file(const std::string &path, bool throws_if_does_not_exist){
+	void real_remove(const std::string &path, bool throws_if_does_not_exist){
 		if(!::unlink(path.c_str())){
 			const int err_code = errno;
 			if(!throws_if_does_not_exist && (err_code == ENOENT)){
 				return;
 			}
 			LOG_POSEIDON_DEBUG("Failed to remove file: path = ", path, ", err_code = ", err_code);
+			DEBUG_THROW(SystemException, err_code);
+		}
+	}
+	void real_rename(const std::string &path, const std::string &new_path){
+		if(!::rename(path.c_str(), new_path.c_str())){
+			const int err_code = errno;
+			LOG_POSEIDON_DEBUG("Failed to rename file: path = ", path, ", err_code = ", err_code);
+			DEBUG_THROW(SystemException, err_code);
+		}
+	}
+	void real_mkdir(const std::string &path, bool throws_if_exists){
+		if(!::mkdir(path.c_str(), static_cast< ::mode_t>(0777))){
+			const int err_code = errno;
+			if(!throws_if_exists && (err_code == EEXIST)){
+				struct ::stat buf;
+				if((::lstat(path.c_str(), &buf) == 0) && S_ISDIR(buf.st_mode)){
+					return;
+				}
+			}
+			LOG_POSEIDON_DEBUG("Failed to make directory: path = ", path, ", err_code = ", err_code);
+			DEBUG_THROW(SystemException, err_code);
+		}
+	}
+	void real_rmdir(const std::string &path, bool throws_if_does_not_exist){
+		if(!::rmdir(path.c_str())){
+			const int err_code = errno;
+			if(!throws_if_does_not_exist && (err_code == ENOENT)){
+				return;
+			}
+			LOG_POSEIDON_DEBUG("Failed to remove directory: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
 	}
@@ -127,7 +157,7 @@ namespace {
 			}
 
 			try {
-				real_load_file(*m_data, m_path, m_throws_if_does_not_exist);
+				real_load(*m_data, m_path, m_throws_if_does_not_exist);
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
@@ -166,7 +196,7 @@ namespace {
 	public:
 		void execute() const OVERRIDE {
 			try {
-				real_save_file(m_data, m_path, m_appends, m_forces_creation);
+				real_save(m_data, m_path, m_appends, m_forces_creation);
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
@@ -203,7 +233,118 @@ namespace {
 	public:
 		void execute() const OVERRIDE {
 			try {
-				real_remove_file(m_path, m_throws_if_does_not_exist);
+				real_remove(m_path, m_throws_if_does_not_exist);
+				m_promise->set_success();
+			} catch(SystemException &e){
+				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(e));
+#endif
+			} catch(std::exception &e){
+				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
+#endif
+			}
+		}
+	};
+
+	class RenameOperation : public OperationBase {
+	private:
+		const boost::shared_ptr<JobPromise> m_promise;
+		const std::string m_path;
+		const std::string m_new_path;
+
+	public:
+		RenameOperation(boost::shared_ptr<JobPromise> promise,
+			std::string path, std::string new_path)
+			: m_promise(STD_MOVE(promise))
+			, m_path(STD_MOVE(path)), m_new_path(STD_MOVE(new_path))
+		{
+		}
+
+	public:
+		void execute() const OVERRIDE {
+			try {
+				real_rename(m_path, m_new_path);
+				m_promise->set_success();
+			} catch(SystemException &e){
+				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(e));
+#endif
+			} catch(std::exception &e){
+				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
+#endif
+			}
+		}
+	};
+
+	class MkdirOperation : public OperationBase {
+	private:
+		const boost::shared_ptr<JobPromise> m_promise;
+		const std::string m_path;
+		const bool m_throws_if_exists;
+
+	public:
+		MkdirOperation(boost::shared_ptr<JobPromise> promise,
+			std::string path, bool throws_if_exists)
+			: m_promise(STD_MOVE(promise))
+			, m_path(STD_MOVE(path)), m_throws_if_exists(throws_if_exists)
+		{
+		}
+
+	public:
+		void execute() const OVERRIDE {
+			try {
+				real_mkdir(m_path, m_throws_if_exists);
+				m_promise->set_success();
+			} catch(SystemException &e){
+				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(e));
+#endif
+			} catch(std::exception &e){
+				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
+#ifdef POSEIDON_CXX11
+				m_promise->set_exception(std::current_exception());
+#else
+				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
+#endif
+			}
+		}
+	};
+
+	class RmdirOperation : public OperationBase {
+	private:
+		const boost::shared_ptr<JobPromise> m_promise;
+		const std::string m_path;
+		const bool m_throws_if_does_not_exist;
+
+	public:
+		RmdirOperation(boost::shared_ptr<JobPromise> promise,
+			std::string path, bool throws_if_does_not_exist)
+			: m_promise(STD_MOVE(promise))
+			, m_path(STD_MOVE(path)), m_throws_if_does_not_exist(throws_if_does_not_exist)
+		{
+		}
+
+	public:
+		void execute() const OVERRIDE {
+			try {
+				real_rmdir(m_path, m_throws_if_does_not_exist);
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
@@ -307,17 +448,32 @@ void FilesystemDaemon::stop(){
 void FilesystemDaemon::load(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
-	real_load_file(data, path, throws_if_does_not_exist);
+	real_load(data, path, throws_if_does_not_exist);
 }
 void FilesystemDaemon::save(StreamBuffer data, const std::string &path, bool appends, bool forces_creation){
 	PROFILE_ME;
 
-	real_save_file(STD_MOVE(data), path, appends, forces_creation);
+	real_save(STD_MOVE(data), path, appends, forces_creation);
 }
 void FilesystemDaemon::remove(const std::string &path, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
-	real_remove_file(path, throws_if_does_not_exist);
+	real_remove(path, throws_if_does_not_exist);
+}
+void FilesystemDaemon::rename(const std::string &path, const std::string &new_path){
+	PROFILE_ME;
+
+	real_rename(path, new_path);
+}
+void FilesystemDaemon::mkdir(const std::string &path, bool throws_if_exists){
+	PROFILE_ME;
+
+	real_mkdir(path, throws_if_exists);
+}
+void FilesystemDaemon::rmdir(const std::string &path, bool throws_if_does_not_exist){
+	PROFILE_ME;
+
+	real_rmdir(path, throws_if_does_not_exist);
 }
 
 boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_loading(
@@ -357,6 +513,48 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_removing(
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<RemoveOperation>(
+			promise, STD_MOVE(path), throws_if_does_not_exist));
+		g_new_operation.signal();
+	}
+	return promise;
+}
+boost::shared_ptr<const JobPromise> enqueue_for_renaming(
+	std::string path, std::string new_path)
+{
+	PROFILE_ME;
+
+	AUTO(promise, boost::make_shared<JobPromise>());
+	{
+		const Mutex::UniqueLock lock(g_mutex);
+		g_operations.push_back(boost::make_shared<RenameOperation>(
+			promise, STD_MOVE(path), STD_MOVE(new_path)));
+		g_new_operation.signal();
+	}
+	return promise;
+}
+boost::shared_ptr<const JobPromise> enqueue_for_mkdir(
+	std::string path, bool throws_if_exists)
+{
+	PROFILE_ME;
+
+	AUTO(promise, boost::make_shared<JobPromise>());
+	{
+		const Mutex::UniqueLock lock(g_mutex);
+		g_operations.push_back(boost::make_shared<MkdirOperation>(
+			promise, STD_MOVE(path), throws_if_exists));
+		g_new_operation.signal();
+	}
+	return promise;
+}
+boost::shared_ptr<const JobPromise> enqueue_for_rmdir(
+	std::string path, bool throws_if_does_not_exist)
+{
+	PROFILE_ME;
+
+	AUTO(promise, boost::make_shared<JobPromise>());
+	{
+		const Mutex::UniqueLock lock(g_mutex);
+		g_operations.push_back(boost::make_shared<RmdirOperation>(
 			promise, STD_MOVE(path), throws_if_does_not_exist));
 		g_new_operation.signal();
 	}
