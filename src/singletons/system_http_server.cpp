@@ -73,7 +73,7 @@ namespace {
 					AUTO_REF(base_addr_str, request_headers.get_params.at("base_addr"));
 					std::istringstream iss(base_addr_str);
 					void *base_addr;
-					if(!((iss >>base_addr) && iss.eof())){
+					if(!(iss >>base_addr) || !iss.eof()){
 						LOG_POSEIDON_WARNING("Bad base_addr string: ", base_addr_str);
 						send_default(Http::ST_BAD_REQUEST);
 						return;
