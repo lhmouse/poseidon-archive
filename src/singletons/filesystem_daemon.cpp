@@ -518,7 +518,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_removing(
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> enqueue_for_renaming(
+boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_renaming(
 	std::string path, std::string new_path)
 {
 	PROFILE_ME;
@@ -532,7 +532,7 @@ boost::shared_ptr<const JobPromise> enqueue_for_renaming(
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> enqueue_for_mkdir(
+boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_mkdir(
 	std::string path, bool throws_if_exists)
 {
 	PROFILE_ME;
@@ -546,7 +546,7 @@ boost::shared_ptr<const JobPromise> enqueue_for_mkdir(
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> enqueue_for_rmdir(
+boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_rmdir(
 	std::string path, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
