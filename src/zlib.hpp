@@ -8,6 +8,9 @@
 
 namespace Poseidon {
 
+extern StreamBuffer deflate(StreamBuffer &src, int level = 6);
+extern StreamBuffer inflate(StreamBuffer &src);
+
 extern StreamBuffer gzip_deflate(StreamBuffer &src, int level = 6);
 extern StreamBuffer gzip_inflate(StreamBuffer &src);
 
