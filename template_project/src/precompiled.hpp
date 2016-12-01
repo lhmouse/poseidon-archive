@@ -26,7 +26,7 @@
 #	include <type_traits>
 #endif
 
-namespace VendyMahjong {
+namespace TemplateProject {
 
 using Poseidon::Exception;
 using Poseidon::SharedNts;
