@@ -23,7 +23,7 @@ public:
 
 	// 同步接口。
 	static void load(StreamBuffer &data, const std::string &path, bool throws_if_does_not_exist = true);
-	static void save(StreamBuffer data, const std::string &path, bool appends = false, bool forces_creation = false);
+	static void save(StreamBuffer data, const std::string &path, bool appends = false, bool throws_if_exists = false);
 	static void remove(const std::string &path, bool throws_if_does_not_exist = true);
 	static void rename(const std::string &path, const std::string &new_path);
 	static void mkdir(const std::string &path, bool throws_if_exists = false);
@@ -34,7 +34,7 @@ public:
 	static boost::shared_ptr<const JobPromise> enqueue_for_loading(
 		boost::shared_ptr<StreamBuffer> data, std::string path, bool throws_if_does_not_exist = true);
 	static boost::shared_ptr<const JobPromise> enqueue_for_saving(
-		StreamBuffer data, std::string path, bool appends = false, bool forces_creation = false);
+		StreamBuffer data, std::string path, bool appends = false, bool throws_if_exists = false);
 	static boost::shared_ptr<const JobPromise> enqueue_for_removing(
 		std::string path, bool throws_if_does_not_exist = true);
 	static boost::shared_ptr<const JobPromise> enqueue_for_renaming(

@@ -50,14 +50,14 @@ namespace {
 		}
 		LOG_POSEIDON_DEBUG("Finished loading file: path = ", path, ", bytes_read = ", bytes_read);
 	}
-	void real_save(StreamBuffer data, const std::string &path, bool appends, bool forces_creation){
+	void real_save(StreamBuffer data, const std::string &path, bool appends, bool throws_if_exists){
 		int flags = O_CREAT | O_WRONLY;
 		if(appends){
 			flags |= O_APPEND;
 		} else {
 			flags |= O_TRUNC;
 		}
-		if(forces_creation){
+		if(throws_if_exists){
 			flags |= O_EXCL;
 		}
 		UniqueFile file;
@@ -183,20 +183,20 @@ namespace {
 		const StreamBuffer m_data;
 		const std::string m_path;
 		const bool m_appends;
-		const bool m_forces_creation;
+		const bool m_throws_if_exists;
 
 	public:
 		SaveOperation(boost::shared_ptr<JobPromise> promise,
-			StreamBuffer data, std::string path, bool appends, bool forces_creation)
+			StreamBuffer data, std::string path, bool appends, bool throws_if_exists)
 			: m_promise(STD_MOVE(promise))
-			, m_data(STD_MOVE(data)), m_path(STD_MOVE(path)), m_appends(appends), m_forces_creation(forces_creation)
+			, m_data(STD_MOVE(data)), m_path(STD_MOVE(path)), m_appends(appends), m_throws_if_exists(throws_if_exists)
 		{
 		}
 
 	public:
 		void execute() const OVERRIDE {
 			try {
-				real_save(m_data, m_path, m_appends, m_forces_creation);
+				real_save(m_data, m_path, m_appends, m_throws_if_exists);
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
@@ -450,10 +450,10 @@ void FilesystemDaemon::load(StreamBuffer &data, const std::string &path, bool th
 
 	real_load(data, path, throws_if_does_not_exist);
 }
-void FilesystemDaemon::save(StreamBuffer data, const std::string &path, bool appends, bool forces_creation){
+void FilesystemDaemon::save(StreamBuffer data, const std::string &path, bool appends, bool throws_if_exists){
 	PROFILE_ME;
 
-	real_save(STD_MOVE(data), path, appends, forces_creation);
+	real_save(STD_MOVE(data), path, appends, throws_if_exists);
 }
 void FilesystemDaemon::remove(const std::string &path, bool throws_if_does_not_exist){
 	PROFILE_ME;
@@ -491,7 +491,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_loading(
 	return promise;
 }
 boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_saving(
-	StreamBuffer data, std::string path, bool appends, bool forces_creation)
+	StreamBuffer data, std::string path, bool appends, bool throws_if_exists)
 {
 	PROFILE_ME;
 
@@ -499,7 +499,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_saving(
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<SaveOperation>(
-			promise, STD_MOVE(data), STD_MOVE(path), appends, forces_creation));
+			promise, STD_MOVE(data), STD_MOVE(path), appends, throws_if_exists));
 		g_new_operation.signal();
 	}
 	return promise;
