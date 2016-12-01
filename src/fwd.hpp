@@ -41,6 +41,9 @@ class TcpClientBase;
 class TcpServerBase;
 class UdpServerBase;
 
+class Deflator;
+class Inflator;
+
 class TimerItem;
 class Module;
 class EventListener;
