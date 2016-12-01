@@ -28,7 +28,7 @@ namespace {
 			if(!throws_if_does_not_exist && (err_code == ENOENT)){
 				return;
 			}
-			LOG_POSEIDON_DEBUG("Failed to load file: path = ", path, ", err_code = ", err_code);
+			LOG_POSEIDON_ERROR("Failed to load file: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
 
@@ -63,7 +63,7 @@ namespace {
 		UniqueFile file;
 		if(!file.reset(::open(path.c_str(), flags, static_cast< ::mode_t>(0666)))){
 			const int err_code = errno;
-			LOG_POSEIDON_DEBUG("Failed to save file: path = ", path, ", err_code = ", err_code);
+			LOG_POSEIDON_ERROR("Failed to save file: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
 
@@ -85,42 +85,42 @@ namespace {
 		LOG_POSEIDON_DEBUG("Finished saving file: path = ", path, ", bytes_written = ", bytes_written);
 	}
 	void real_remove(const std::string &path, bool throws_if_does_not_exist){
-		if(!::unlink(path.c_str())){
+		if(::unlink(path.c_str()) != 0){
 			const int err_code = errno;
 			if(!throws_if_does_not_exist && (err_code == ENOENT)){
 				return;
 			}
-			LOG_POSEIDON_DEBUG("Failed to remove file: path = ", path, ", err_code = ", err_code);
+			LOG_POSEIDON_ERROR("Failed to remove file: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
 	}
 	void real_rename(const std::string &path, const std::string &new_path){
-		if(!::rename(path.c_str(), new_path.c_str())){
+		if(::rename(path.c_str(), new_path.c_str()) != 0){
 			const int err_code = errno;
-			LOG_POSEIDON_DEBUG("Failed to rename file: path = ", path, ", err_code = ", err_code);
+			LOG_POSEIDON_ERROR("Failed to rename file: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
 	}
 	void real_mkdir(const std::string &path, bool throws_if_exists){
-		if(!::mkdir(path.c_str(), static_cast< ::mode_t>(0777))){
+		if(::mkdir(path.c_str(), static_cast< ::mode_t>(0777)) != 0){
 			const int err_code = errno;
 			if(!throws_if_exists && (err_code == EEXIST)){
 				struct ::stat buf;
-				if((::lstat(path.c_str(), &buf) == 0) && S_ISDIR(buf.st_mode)){
+				if((::stat(path.c_str(), &buf) == 0) && S_ISDIR(buf.st_mode)){
 					return;
 				}
 			}
-			LOG_POSEIDON_DEBUG("Failed to make directory: path = ", path, ", err_code = ", err_code);
+			LOG_POSEIDON_ERROR("Failed to make directory: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
 	}
 	void real_rmdir(const std::string &path, bool throws_if_does_not_exist){
-		if(!::rmdir(path.c_str())){
+		if(::rmdir(path.c_str()) != 0){
 			const int err_code = errno;
 			if(!throws_if_does_not_exist && (err_code == ENOENT)){
 				return;
 			}
-			LOG_POSEIDON_DEBUG("Failed to remove directory: path = ", path, ", err_code = ", err_code);
+			LOG_POSEIDON_ERROR("Failed to remove directory: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
 	}
