@@ -95,6 +95,8 @@ StreamBuffer Deflator::finalize(){
 			m_context->stream.avail_out = sizeof(m_context->temp);
 		}
 	}
+	m_buffer.put(m_context->temp, sizeof(m_context->temp) - m_context->stream.avail_out);
+
 	StreamBuffer ret;
 	ret.swap(m_buffer);
 	clear();
@@ -186,6 +188,8 @@ StreamBuffer Inflator::finalize(){
 			m_context->stream.avail_out = sizeof(m_context->temp);
 		}
 	}
+	m_buffer.put(m_context->temp, sizeof(m_context->temp) - m_context->stream.avail_out);
+
 	StreamBuffer ret;
 	ret.swap(m_buffer);
 	clear();
