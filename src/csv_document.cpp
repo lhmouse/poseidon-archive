@@ -76,7 +76,7 @@ void CsvDocument::parse(std::istream &is){
 
 	std::vector<std::string> line;
 	std::size_t count = 0;
-	while(is){
+	for(;;){
 		line.clear();
 		std::string seg;
 		enum {
@@ -86,8 +86,7 @@ void CsvDocument::parse(std::istream &is){
 			Q_CLOSED,
 		} quote_state = Q_INIT;
 		char ch;
-		is >>std::noskipws;
-		while(is >> ch){
+		while(is.get(ch)){
 			if(quote_state == Q_INIT){
 				if(ch == '\"'){
 					quote_state = Q_OPEN;
@@ -124,11 +123,13 @@ void CsvDocument::parse(std::istream &is){
 				seg += ch;
 			}
 		}
-		is >>std::skipws;
 		++count;
 
 		if(line.empty() || ((line.size() == 1) && line.front().empty())){
-			LOG_POSEIDON_WARNING("Ignoring empty line on line ", count);
+			if(!is){
+				break;
+			}
+			LOG_POSEIDON_WARNING("Ignoring empty line ", count);
 			continue;
 		}
 
@@ -154,9 +155,6 @@ void CsvDocument::parse(std::istream &is){
 				matrix.at(i).push_back(STD_MOVE(line.at(i)));
 			}
 		}
-	}
-	if(is.eof()){
-		is.clear();
 	}
 
 	VALUE_TYPE(m_elements) elements;

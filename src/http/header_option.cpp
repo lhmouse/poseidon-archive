@@ -37,13 +37,13 @@ namespace Http {
 		VALUE_TYPE(m_base) base;
 		VALUE_TYPE(m_options) options;
 
+		std::string seg;
 		std::size_t count = 0;
-		while(is){
-			std::string seg;
+		for(;;){
+			seg.clear();
 			bool quoted = false;
 			char ch;
-			is >>std::noskipws;
-			while(is >>ch){
+			while(is.get(ch)){
 				if(quoted){
 					if(ch == '\"'){
 						quoted = false;
@@ -61,8 +61,14 @@ namespace Http {
 				}
 				seg += ch;
 			}
-			is >>std::skipws;
 			++count;
+
+			if(seg.empty()){
+				if(!is){
+					break;
+				}
+				continue;
+			}
 
 			if(count == 1){
 				base = trim(STD_MOVE(seg));
@@ -92,9 +98,6 @@ namespace Http {
 				seg.clear();
 				options.append(STD_MOVE(key), STD_MOVE(value));
 			}
-		}
-		if(is.eof()){
-			is.clear();
 		}
 
 		m_base.swap(base);
