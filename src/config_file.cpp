@@ -20,29 +20,38 @@ namespace {
 		line.reserve(size);
 		for(std::size_t i = 0; i < size; ++i){
 			const char ch = data[i];
-			if(ch == '\b'){
+			switch(ch){
+			case '\b':
 				line += '\\';
 				line += '\b';
-			} else if(ch == '\f'){
+				break;
+			case '\f':
 				line += '\\';
 				line += '\f';
-			} else if(ch == '\n'){
+				break;
+			case '\n':
 				line += '\\';
 				line += '\n';
-			} else if(ch == '\r'){
+				break;
+			case '\r':
 				line += '\\';
 				line += '\r';
-			} else if(ch == '\t'){
+				break;
+			case '\t':
 				line += '\\';
 				line += '\t';
-			} else if(ch == '\\'){
+				break;
+			case '\\':
 				line += '\\';
 				line += '\\';
-			} else if(ch == '#'){
+				break;
+			case '#':
 				line += '\\';
 				line += '#';
-			} else {
+				break;
+			default:
 				line += ch;
+				break;
 			}
 		}
 		return line;
@@ -56,30 +65,37 @@ namespace {
 		for(std::size_t i = 0; i < size; ++i){
 			const char ch = data[i];
 			if(escaped){
-				escaped = false;
-				if(ch == 'b'){
+				switch(ch){
+				case 'b':
 					line += '\b';
-				} else if(ch == 'f'){
+					break;
+				case 'f':
 					line += '\f';
-				} else if(ch == 'n'){
+					break;
+				case 'n':
 					line += '\n';
-				} else if(ch == 'r'){
+					break;
+				case 'r':
 					line += '\r';
-				} else if(ch == 't'){
+					break;
+				case 't':
 					line += '\t';
-				} else if(ch == '\\'){
+					break;
+				case '\\':
 					line += '\\';
-				} else {
+					break;
+				default:
 					line += ch;
-				}
-			} else if(ch == '\\'){
-				escaped = true;
-			} else {
-				// escaped = false;
-				if(ch == '#'){
 					break;
 				}
+				escaped = false;
+			} else if(ch == '\\'){
+				escaped = true;
+			} else if(ch == '#'){
+				break;
+			} else {
 				line += ch;
+				// escaped = false;
 			}
 		}
 		return line;

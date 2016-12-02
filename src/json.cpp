@@ -18,134 +18,128 @@ namespace {
 		PROFILE_ME;
 
 		std::string ret;
-		char temp;
-		if(!(is >>temp) || (temp != '\"')){
+		char ch;
+		if(!(is >>ch) || (ch != '\"')){
 			LOG_POSEIDON_WARNING("String open expected");
 			is.setstate(std::istream::badbit);
 			return ret;
 		}
-
-		is >>std::noskipws;
+		enum {
+			S_PLAIN,
+			S_ESCAPED,
+			S_UTF_ZERO,
+			S_UTF_ONE,
+			S_UTF_TWO,
+			S_UTF_THREE,
+		} state = S_PLAIN;
+		unsigned utf16_unit = 0;
 		for(;;){
-			if(!(is >>temp)){
+			if(!is.get(ch)){
 				LOG_POSEIDON_WARNING("String not closed");
 				is.setstate(std::istream::badbit);
 				return ret;
 			}
-			if(temp == '\"'){
-				if(ret.empty() || (*ret.rbegin() != '\\')){
+			if(state != S_PLAIN){
+				switch(state){
+					unsigned hexc;
+
+				case S_ESCAPED:
+					switch(ch){
+					case '\"':
+						ret += '\"';
+						state = S_PLAIN;
+						break;
+					case '\\':
+						ret += '\\';
+						state = S_PLAIN;
+						break;
+					case '/':
+						ret += '/';
+						state = S_PLAIN;
+						break;
+					case 'b':
+						ret += '\b';
+						state = S_PLAIN;
+						break;
+					case 'f':
+						ret += '\f';
+						state = S_PLAIN;
+						break;
+					case 'n':
+						ret += '\n';
+						state = S_PLAIN;
+						break;
+					case 'r':
+						ret += '\r';
+						state = S_PLAIN;
+						break;
+					case 'u':
+						utf16_unit = 0;
+						state = S_UTF_ZERO;
+						break;
+					default:
+						LOG_POSEIDON_WARNING("Unknown escaped character sequence");
+						is.setstate(std::istream::badbit);
+						return ret;
+					}
 					break;
-				}
-			}
-			ret.push_back(temp);
-		}
-		is >>std::skipws;
-
-		std::string::iterator write = ret.begin();
-		std::string::const_iterator read = write;
-		while(read != ret.end()){
-			char ch = *read;
-			++read;
-
-			if(ch != '\\'){
-				*write = ch;
-				++write;
-				continue;
-			}
-
-			if(read == ret.end()){
-				LOG_POSEIDON_WARNING("Found escape character at the end");
-				is.setstate(std::istream::badbit);
-				return ret;
-			}
-			ch = *read;
-			++read;
-
-			switch(ch){
-			case '\"':
-				*write = '\"';
-				++write;
-				break;
-
-			case '\\':
-				*write = '\\';
-				++write;
-				break;
-
-			case '/':
-				*write = '/';
-				++write;
-				break;
-
-			case 'b':
-				*write = '\b';
-				++write;
-				break;
-
-			case 'f':
-				*write = '\f';
-				++write;
-				break;
-
-			case 'n':
-				*write = '\n';
-				++write;
-				break;
-
-			case 'r':
-				*write = '\r';
-				++write;
-				break;
-
-			case 'u':
-				if(ret.end() - read < 4){
-					LOG_POSEIDON_WARNING("Too few hex digits for \\u");
-					is.setstate(std::istream::badbit);
-					return ret;
-				} else {
-					unsigned code = 0;
-					for(unsigned i = 12; i != (unsigned)-4; i -= 4){
-						unsigned hexc = (unsigned char)*read;
-						++read;
-						if(('0' <= hexc) && (hexc <= '9')){
-							hexc -= '0';
-						} else if(('A' <= hexc) && (hexc <= 'F')){
-							hexc -= 'A' - 0x0A;
-						} else if(('a' <= hexc) && (hexc <= 'f')){
-							hexc -= 'a' - 0x0A;
-						} else {
-							LOG_POSEIDON_WARNING("Invalid hex digits for \\u");
-							is.setstate(std::istream::badbit);
-							return ret;
-						}
-						code |= hexc << i;
-					}
-					if(code <= 0x7F){
-						*write = code;
-						++write;
-					} else if(code <= 0x7FF){
-						*write = (code >> 6) | 0xC0;
-						++write;
-						*write = (code & 0x3F) | 0x80;
-						++write;
+				case S_UTF_ZERO:
+				case S_UTF_ONE:
+				case S_UTF_TWO:
+				case S_UTF_THREE:
+					hexc = (unsigned char)ch;
+					if(('0' <= hexc) && (hexc <= '9')){
+						hexc -= '0';
+					} else if(('A' <= hexc) && (hexc <= 'F')){
+						hexc -= 'A' - 0x0A;
+					} else if(('a' <= hexc) && (hexc <= 'f')){
+						hexc -= 'a' - 0x0A;
 					} else {
-						*write = (code >> 12) | 0xE0;
-						++write;
-						*write = ((code >> 6) & 0x3F) | 0x80;
-						++write;
-						*write = (code & 0x3F) | 0x80;
-						++write;
+						LOG_POSEIDON_WARNING("Invalid hex digit for \\u");
+						is.setstate(std::istream::badbit);
+						return ret;
 					}
+					utf16_unit <<= 4;
+					utf16_unit |= hexc;
+					switch(state){
+					case S_UTF_ZERO:
+						state = S_UTF_ONE;
+						break;
+					case S_UTF_ONE:
+						state = S_UTF_TWO;
+						break;
+					case S_UTF_TWO:
+						state = S_UTF_THREE;
+						break;
+					case S_UTF_THREE:
+						if(utf16_unit < 0x80){
+							ret += static_cast<char>(utf16_unit);
+						} else if(utf16_unit < 0x800){
+							ret += static_cast<char>((utf16_unit >> 6) | 0xC0);
+							ret += static_cast<char>((utf16_unit & 0x3F) | 0x80);
+						} else {
+							ret += static_cast<char>((utf16_unit >> 12) | 0xE0);
+							ret += static_cast<char>(((utf16_unit >> 6) & 0x3F) | 0x80);
+							ret += static_cast<char>((utf16_unit & 0x3F) | 0x80);
+						}
+						state = S_PLAIN;
+						break;
+					default:
+						std::abort();
+					}
+					break;
+				default:
+					std::abort();
 				}
+			} else if(ch == '\\'){
+				state = S_ESCAPED;
+			} else if(ch == '\"'){
 				break;
-
-			default:
-				LOG_POSEIDON_WARNING("Unknown escaped character sequence");
-				is.setstate(std::istream::badbit);
-				return ret;
+			} else {
+				ret += ch;
+				// state = S_PLAIN;
 			}
 		}
-		ret.erase(write, ret.end());
 		return ret;
 	}
 	double accept_number(std::istream &is){
@@ -163,27 +157,27 @@ namespace {
 		PROFILE_ME;
 
 		JsonObject ret;
-		char temp;
-		if(!(is >>temp) || (temp != '{')){
+		char ch;
+		if(!(is >>ch) || (ch != '{')){
 			LOG_POSEIDON_WARNING("Object open expected");
 			is.setstate(std::istream::badbit);
 			return ret;
 		}
 		for(;;){
-			if(!(is >>temp)){
+			if(!(is >>ch)){
 				LOG_POSEIDON_WARNING("Object not closed");
 				is.setstate(std::istream::badbit);
 				return ret;
 			}
-			if(temp == '}'){
+			if(ch == '}'){
 				break;
 			}
-			if(temp == ','){
+			if(ch == ','){
 				continue;
 			}
 			is.unget();
 			std::string name = accept_string(is);
-			if(!(is >>temp) || (temp != ':')){
+			if(!(is >>ch) || (ch != ':')){
 				LOG_POSEIDON_WARNING("Colon expected");
 				is.setstate(std::istream::badbit);
 				return ret;
@@ -196,22 +190,22 @@ namespace {
 		PROFILE_ME;
 
 		JsonArray ret;
-		char temp;
-		if(!(is >>temp) || (temp != '[')){
+		char ch;
+		if(!(is >>ch) || (ch != '[')){
 			LOG_POSEIDON_WARNING("Array open expected");
 			is.setstate(std::istream::badbit);
 			return ret;
 		}
 		for(;;){
-			if(!(is >>temp)){
+			if(!(is >>ch)){
 				LOG_POSEIDON_WARNING("Array not closed");
 				is.setstate(std::istream::badbit);
 				return ret;
 			}
-			if(temp == ']'){
+			if(ch == ']'){
 				break;
 			}
-			if(temp == ','){
+			if(ch == ','){
 				continue;
 			}
 			is.unget();
@@ -222,74 +216,74 @@ namespace {
 	bool accept_boolean(std::istream &is){
 		PROFILE_ME;
 
-		bool ret = false;
-		if(!(is >>std::boolalpha >>ret)){
+		char ch;
+		if(!(is >>ch) || ((ch != 'f') && (ch != 't'))){
 			LOG_POSEIDON_WARNING("Boolean expected");
 			is.setstate(std::istream::badbit);
-			return ret;
+			return false;
 		}
-		return ret;
+		char str[8];
+		if((ch == 'f') && (is.readsome(str, 4) == 4) && (std::memcmp(str, "alse", 4) == 0)){
+			return false;
+		} else if((is.readsome(str, 3) == 3) && (std::memcmp(str, "rue", 3) == 0)){
+			return true;
+		} else {
+			LOG_POSEIDON_WARNING("Boolean expected");
+			is.setstate(std::istream::badbit);
+			return false;
+		}
 	}
 	JsonNull accept_null(std::istream &is){
 		PROFILE_ME;
 
-		JsonNull ret = NULLPTR;
-		char temp[5];
-		if(!(is >>std::setw(sizeof(temp)) >>temp) || (std::strcmp(temp, "null") != 0)){
-			LOG_POSEIDON_WARNING("Null expected");
+		char ch;
+		if(!(is >>ch) || (ch != 'n')){
+			LOG_POSEIDON_WARNING("Boolean expected");
 			is.setstate(std::istream::badbit);
-			return ret;
+			return NULLPTR;
 		}
-		return ret;
+		char str[8];
+		if((is.readsome(str, 3) == 3) && (std::memcmp(str, "ull", 3) == 0)){
+			return NULLPTR;
+		} else {
+			LOG_POSEIDON_WARNING("Boolean expected");
+			is.setstate(std::istream::badbit);
+			return NULLPTR;
+		}
 	}
 
 	JsonElement accept_element(std::istream &is){
 		PROFILE_ME;
 
 		JsonElement ret;
-		char temp;
-		if(!(is >>temp)){
+		char ch;
+		if(!(is >>ch)){
 			LOG_POSEIDON_WARNING("No input character");
 			is.setstate(std::istream::badbit);
 			return ret;
 		}
 		is.unget();
-		switch(temp){
+		switch(ch){
 		case '\"':
 			ret = accept_string(is);
 			break;
-
 		case '-':
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
 			ret = accept_number(is);
 			break;
-
 		case '{':
 			ret = accept_object(is);
 			break;
-
 		case '[':
 			ret = accept_array(is);
 			break;
-
 		case 't':
 		case 'f':
 			ret = accept_boolean(is);
 			break;
-
 		case 'n':
 			ret = accept_null(is);
 			break;
-
 		default:
 			LOG_POSEIDON_WARNING("Unknown element type");
 			is.setstate(std::istream::badbit);
@@ -381,71 +375,58 @@ void JsonElement::dump(std::ostream &os) const {
 	case T_BOOL:
 		os <<std::boolalpha <<get<bool>();
 		break;
-
 	case T_NUMBER:
 		os <<std::setprecision(20) <<get<double>();
 		break;
-
-	case T_STRING:
-		{
-			const AUTO_REF(str, get<std::string>());
-			os <<'\"';
-			for(AUTO(it, str.begin()); it != str.end(); ++it){
-				const unsigned ch = (unsigned char)*it;
-				switch(ch){
-				case '\"':
-				case '\\':
-				case '/':
-					os <<'\\' <<*it;
-					break;
-
-				case '\b':
-					os <<'\\' <<'b';
-					break;
-
-				case '\f':
-					os <<'\\' <<'f';
-					break;
-
-				case '\n':
-					os <<'\\' <<'n';
-					break;
-
-				case '\r':
-					os <<'\\' <<'r';
-					break;
-
-				case '\t':
-					os <<'\\' <<'t';
-					break;
-
-				default:
-					if((ch < 0x20) || (ch == 0x7F) || (ch == 0xFF)){
-						os <<'\\' <<'u' <<std::setfill('0') <<std::setw(4) <<ch;
-					} else {
-						os <<(char)ch;
-					}
-					break;
+	case T_STRING: {
+		const AUTO_REF(str, get<std::string>());
+		os <<'\"';
+		for(AUTO(it, str.begin()); it != str.end(); ++it){
+			const unsigned ch = (unsigned char)*it;
+			switch(ch){
+			case '\"':
+			case '\\':
+			case '/':
+				os <<'\\' <<*it;
+				break;
+			case '\b':
+				os <<'\\' <<'b';
+				break;
+			case '\f':
+				os <<'\\' <<'f';
+				break;
+			case '\n':
+				os <<'\\' <<'n';
+				break;
+			case '\r':
+				os <<'\\' <<'r';
+				break;
+			case '\t':
+				os <<'\\' <<'t';
+				break;
+			default:
+				if((ch < 0x20) || (ch == 0x7F) || (ch == 0xFF)){
+					os <<'\\' <<'u' <<std::setfill('0') <<std::setw(4) <<ch;
+				} else {
+					os <<(char)ch;
 				}
+				break;
 			}
-			os <<'\"';
 		}
-		break;
-
+		os <<'\"';
+		} break;
 	case T_OBJECT:
 		os <<get<JsonObject>();
 		break;
-
 	case T_ARRAY:
 		os <<get<JsonArray>();
 		break;
-
 	case T_NULL:
 		os <<"null";
 		break;
-
 	default:
-		assert(false);
+		LOG_POSEIDON_FATAL("Unknown JSON element type: type = ", static_cast<int>(type()));
+		std::abort();
 	}
 }
 void JsonElement::parse(std::istream &is){
