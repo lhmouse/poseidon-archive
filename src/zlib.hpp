@@ -21,6 +21,13 @@ public:
 	explicit Deflator(bool gzip = false, int level = 8);
 
 public:
+	const StreamBuffer &get_buffer() const {
+		return m_buffer;
+	}
+	StreamBuffer &get_buffer(){
+		return m_buffer;
+	}
+
 	void clear();
 	void put(const void *data, std::size_t size);
 	StreamBuffer finalize();
@@ -36,6 +43,13 @@ public:
 	explicit Inflator(bool gzip = false);
 
 public:
+	const StreamBuffer &get_buffer() const {
+		return m_buffer;
+	}
+	StreamBuffer &get_buffer(){
+		return m_buffer;
+	}
+
 	void clear();
 	void put(const void *data, std::size_t size);
 	StreamBuffer finalize();
