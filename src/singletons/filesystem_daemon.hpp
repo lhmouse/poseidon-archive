@@ -14,14 +14,14 @@ namespace Poseidon {
 
 class JobPromise;
 
-class FilesystemDaemon {
+class FileSystemDaemon {
 public:
 	static CONSTEXPR const boost::uint64_t OFFSET_EOF      = (boost::uint64_t)-1;
 	static CONSTEXPR const boost::uint64_t OFFSET_APPEND   = (boost::uint64_t)-2;
 	static CONSTEXPR const boost::uint64_t OFFSET_TRUNCATE = (boost::uint64_t)-3;
 
 private:
-	FilesystemDaemon();
+	FileSystemDaemon();
 
 public:
 	static void start();

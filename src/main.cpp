@@ -64,7 +64,7 @@ namespace {
 		PROFILE_ME;
 
 		START(DnsDaemon);
-		START(FilesystemDaemon);
+		START(FileSystemDaemon);
 		START(MySqlDaemon);
 		START(MongoDbDaemon);
 

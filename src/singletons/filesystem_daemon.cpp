@@ -63,9 +63,9 @@ namespace {
 		boost::uint64_t begin, bool throws_if_exists)
 	{
 		int flags = O_CREAT | O_WRONLY;
-		if(begin == FilesystemDaemon::OFFSET_APPEND){
+		if(begin == FileSystemDaemon::OFFSET_APPEND){
 			flags |= O_APPEND;
-		} else if(begin == FilesystemDaemon::OFFSET_TRUNCATE){
+		} else if(begin == FileSystemDaemon::OFFSET_TRUNCATE){
 			flags |= O_TRUNC;
 		}
 		if(throws_if_exists){
@@ -437,28 +437,28 @@ namespace {
 
 	void thread_proc(){
 		PROFILE_ME;
-		LOG_POSEIDON_INFO("Filesystem daemon started.");
+		LOG_POSEIDON_INFO("FileSystem daemon started.");
 
 		daemon_loop();
 
-		LOG_POSEIDON_INFO("Filesystem daemon stopped.");
+		LOG_POSEIDON_INFO("FileSystem daemon stopped.");
 	}
 }
 
-void FilesystemDaemon::start(){
+void FileSystemDaemon::start(){
 	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting Filesystem daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting FileSystem daemon...");
 
 	Thread(thread_proc, " F  ").swap(g_thread);
 }
-void FilesystemDaemon::stop(){
+void FileSystemDaemon::stop(){
 	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping Filesystem daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping FileSystem daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();
@@ -466,42 +466,42 @@ void FilesystemDaemon::stop(){
 	g_operations.clear();
 }
 
-void FilesystemDaemon::load(StreamBuffer &data, const std::string &path,
+void FileSystemDaemon::load(StreamBuffer &data, const std::string &path,
 	boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
 
 	real_load(data, path, begin, limit, throws_if_does_not_exist);
 }
-void FilesystemDaemon::save(StreamBuffer data, const std::string &path,
+void FileSystemDaemon::save(StreamBuffer data, const std::string &path,
 	boost::uint64_t begin, bool throws_if_exists)
 {
 	PROFILE_ME;
 
 	real_save(STD_MOVE(data), path, begin, throws_if_exists);
 }
-void FilesystemDaemon::remove(const std::string &path, bool throws_if_does_not_exist){
+void FileSystemDaemon::remove(const std::string &path, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
 	real_remove(path, throws_if_does_not_exist);
 }
-void FilesystemDaemon::rename(const std::string &path, const std::string &new_path){
+void FileSystemDaemon::rename(const std::string &path, const std::string &new_path){
 	PROFILE_ME;
 
 	real_rename(path, new_path);
 }
-void FilesystemDaemon::mkdir(const std::string &path, bool throws_if_exists){
+void FileSystemDaemon::mkdir(const std::string &path, bool throws_if_exists){
 	PROFILE_ME;
 
 	real_mkdir(path, throws_if_exists);
 }
-void FilesystemDaemon::rmdir(const std::string &path, bool throws_if_does_not_exist){
+void FileSystemDaemon::rmdir(const std::string &path, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
 	real_rmdir(path, throws_if_does_not_exist);
 }
 
-boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_loading(boost::shared_ptr<StreamBuffer> data, std::string path,
+boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_loading(boost::shared_ptr<StreamBuffer> data, std::string path,
 	boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
@@ -515,7 +515,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_loading(boost:
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_saving(StreamBuffer data, std::string path,
+boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_saving(StreamBuffer data, std::string path,
 	boost::uint64_t begin, bool throws_if_exists)
 {
 	PROFILE_ME;
@@ -529,7 +529,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_saving(StreamB
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_removing(
+boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_removing(
 	std::string path, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
@@ -543,7 +543,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_removing(
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_renaming(
+boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_renaming(
 	std::string path, std::string new_path)
 {
 	PROFILE_ME;
@@ -557,7 +557,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_renaming(
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_mkdir(
+boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_mkdir(
 	std::string path, bool throws_if_exists)
 {
 	PROFILE_ME;
@@ -571,7 +571,7 @@ boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_mkdir(
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FilesystemDaemon::enqueue_for_rmdir(
+boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_rmdir(
 	std::string path, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;

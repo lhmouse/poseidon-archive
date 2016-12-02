@@ -51,7 +51,7 @@ class EventListener;
 class DnsDaemon;
 class EpollDaemon;
 class EventDispatcher;
-class FilesystemDaemon;
+class FileSystemDaemon;
 class JobDispatcher;
 class MainConfig;
 class ModuleDepository;

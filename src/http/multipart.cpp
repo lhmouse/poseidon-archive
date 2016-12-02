@@ -2,7 +2,7 @@
 // Copyleft 2014 - 2016, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "form_data.hpp"
+#include "multipart.hpp"
 #include "utilities.hpp"
 #include "../profiler.hpp"
 #include "../log.hpp"
@@ -14,15 +14,15 @@
 namespace Poseidon {
 
 namespace {
-	const Http::FormDataElement g_empty_form_data_element;
+	const Http::MultipartElement g_empty_multipart_element;
 }
 
 namespace Http {
-	const FormDataElement &empty_form_data_element() NOEXCEPT {
-		return g_empty_form_data_element;
+	const MultipartElement &empty_multipart_element() NOEXCEPT {
+		return g_empty_multipart_element;
 	}
 
-	void FormData::random_boundary(){
+	void Multipart::random_boundary(){
 		PROFILE_ME;
 
 		static const char s_boundary_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -36,14 +36,14 @@ namespace Http {
 		m_boundary.swap(boundary);
 	}
 
-	std::string FormData::dump() const {
+	std::string Multipart::dump() const {
 		PROFILE_ME;
 
 		std::ostringstream oss;
 		dump(oss);
 		return oss.str();
 	}
-	void FormData::dump(std::ostream &os) const {
+	void Multipart::dump(std::ostream &os) const {
 		PROFILE_ME;
 
 		if(m_boundary.empty()){
@@ -52,28 +52,16 @@ namespace Http {
 
 		os <<"--" <<m_boundary;
 		for(AUTO(it, m_elements.begin()); it != m_elements.end(); ++it){
-			const AUTO_REF(name, it->first);
-			const AUTO_REF(elem, it->second);
-			HeaderOption content_disposition;
-			content_disposition.set_base("form-data");
-			content_disposition.set_option(sslit("name"), url_encode(name));
-			if(!elem.filename.empty()){
-				content_disposition.set_option(sslit("filename"), url_encode(elem.filename));
-			}
-			os <<"\r\nContent-Disposition: " <<content_disposition <<"\r\n";
-			for(AUTO(zit, elem.headers.begin()); zit != elem.headers.end(); ++zit){
-				if(zit->first == "Content-Disposition"){
-					continue;
-				}
+			for(AUTO(zit, it->headers.begin()); zit != it->headers.end(); ++zit){
 				os <<zit->first <<": " <<zit->second <<"\r\n";
 			}
 			os <<"\r\n";
-			os <<elem.entity;
+			os <<it->entity;
 			os <<"\r\n--" <<m_boundary;
 		}
 		os <<"--\r\n";
 	}
-	void FormData::parse(std::istream &is){
+	void Multipart::parse(std::istream &is){
 		PROFILE_ME;
 
 		if(m_boundary.empty()){
@@ -82,9 +70,7 @@ namespace Http {
 
 		VALUE_TYPE(m_elements) elements;
 
-		SharedNts name;
-		FormDataElement elem;
-
+		MultipartElement elem;
 		std::string line;
 		enum {
 			S_INIT,
@@ -144,7 +130,6 @@ namespace Http {
 						is.setstate(std::istream::failbit);
 						return;
 					}
-					name = VAL_INIT;
 					elem = VAL_INIT;
 					line.clear();
 					state = S_HEADERS;
@@ -174,21 +159,6 @@ namespace Http {
 						// state = S_HEADERS;
 						break;
 					} else {
-						const AUTO_REF(str, elem.headers.get("Content-Disposition"));
-						std::istringstream iss(str);
-						Http::HeaderOption content_disposition(iss);
-						if(!iss){
-							LOG_POSEIDON_WARNING("Invalid Content-Disposition: ", str);
-							is.setstate(std::istream::failbit);
-							return;
-						}
-						if(::strcasecmp(content_disposition.get_base().c_str(), "form-data") == 0){
-							name = SharedNts(content_disposition.get_option("name"));
-							elem.filename = STD_MOVE(content_disposition.get_option("filename"));
-						} else {
-							LOG_POSEIDON_WARNING("Non-form-data ignored: content_disposition = ", content_disposition);
-						}
-						elem.headers.erase("Content-Disposition");
 						state = S_ENTITY;
 						break;
 					}
@@ -230,9 +200,7 @@ namespace Http {
 							elem.entity.unput();
 						}
 					}
-					if(!name.empty()){
-						elements[STD_MOVE(name)] = STD_MOVE(elem);
-					}
+					elements.push_back(STD_MOVE(elem));
 					state = S_BOUNDARY_END;
 					break;
 				}

@@ -1,31 +1,28 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2016, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_HTTP_FORM_DATA_HPP_
-#define POSEIDON_HTTP_FORM_DATA_HPP_
+#ifndef POSEIDON_HTTP_MULTIPART_HPP_
+#define POSEIDON_HTTP_MULTIPART_HPP_
 
 #include "../cxx_ver.hpp"
-#include "header_option.hpp"
-#include <boost/container/map.hpp>
+#include <boost/container/deque.hpp>
 #include <stdexcept>
-#include "../shared_nts.hpp"
 #include "../optional_map.hpp"
 #include "../stream_buffer.hpp"
 
 namespace Poseidon {
 
 namespace Http {
-	struct FormDataElement {
-		std::string filename;
+	struct MultipartElement {
 		OptionalMap headers;
 		StreamBuffer entity;
 	};
 
-	extern const FormDataElement &empty_form_data_element() NOEXCEPT;
+	extern const MultipartElement &empty_multipart_element() NOEXCEPT;
 
-	class FormData {
+	class Multipart {
 	public:
-		typedef boost::container::map<SharedNts, FormDataElement> base_container;
+		typedef boost::container::deque<MultipartElement> base_container;
 
 		typedef base_container::value_type        value_type;
 		typedef base_container::const_reference   const_reference;
@@ -43,21 +40,21 @@ namespace Http {
 		base_container m_elements;
 
 	public:
-		FormData()
+		Multipart()
 			: m_boundary(), m_elements()
 		{
 		}
-		FormData(std::string boundary, std::istream &is)
+		Multipart(std::string boundary, std::istream &is)
 			: m_boundary(STD_MOVE(boundary)), m_elements()
 		{
 			parse(is);
 		}
 #ifndef POSEIDON_CXX11
-		FormData(const FormData &rhs)
+		Multipart(const Multipart &rhs)
 			: m_boundary(rhs.m_boundary), m_elements(rhs.m_elements)
 		{
 		}
-		FormData &operator=(const FormData &rhs){
+		Multipart &operator=(const Multipart &rhs){
 			m_boundary = rhs.m_boundary;
 			m_elements = rhs.m_elements;
 			return *this;
@@ -127,60 +124,67 @@ namespace Http {
 		iterator erase(const_iterator first, const_iterator last){
 			return m_elements.erase(first, last);
 		}
-		size_type erase(const char *key){
-			return erase(SharedNts::view(key));
-		}
-		size_type erase(const SharedNts &key){
-			return m_elements.erase(key);
-		}
-
-		const_iterator find(const char *key) const {
-			return find(SharedNts::view(key));
-		}
-		const_iterator find(const SharedNts &key) const {
-			return m_elements.find(key);
-		}
-		iterator find(const char *key){
-			return find(SharedNts::view(key));
-		}
-		iterator find(const SharedNts &key){
-			return m_elements.find(key);
-		}
-
-		bool has(const char *key) const {
-			return find(key) != end();
-		}
-		bool has(const SharedNts &key){
-			return find(key) != end();
-		}
-		iterator set(SharedNts key, FormDataElement val){
-			const AUTO(existent, m_elements.equal_range(key));
-			const AUTO(hint, m_elements.erase(existent.first, existent.second));
-			return m_elements.insert(hint, std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val)));
-		}
-
-		const FormDataElement &get(const char *key) const { // 若指定的键不存在，则返回空的 FormDataElement。
-			return get(SharedNts::view(key));
-		};
-		const FormDataElement &get(const SharedNts &key) const {
-			const AUTO(it, find(key));
-			if(it == end()){
-				return empty_form_data_element();
+		bool erase(size_type index){
+			if(index >= size()){
+				return false;
 			}
-			return it->second;
+			m_elements.erase(begin() + static_cast<difference_type>(index));
+			return true;
 		}
-		const FormDataElement &at(const char *key) const { // 若指定的键不存在，则抛出 std::out_of_range。
-			return at(SharedNts::view(key));
-		};
-		const FormDataElement &at(const SharedNts &key) const {
-			const AUTO(it, find(key));
-			if(it == end()){
+
+		bool has(size_type index) const {
+			if(index >= size()){
+				return false;
+			}
+			return true;
+		}
+		const MultipartElement &get(size_type index) const { // 若指定的下标不存在，则返回空元素。
+			if(index >= size()){
+				return empty_multipart_element();
+			}
+			return begin()[static_cast<difference_type>(index)];
+		}
+		const MultipartElement &at(size_type index) const { // 若指定的下标不存在，则抛出 std::out_of_range。
+			if(index >= size()){
 				throw std::out_of_range(__PRETTY_FUNCTION__);
 			}
-			return it->second;
+			return begin()[static_cast<difference_type>(index)];
 		}
+		MultipartElement &push_front(MultipartElement val){
+			m_elements.push_front(STD_MOVE(val));
+			return m_elements.front();
+		}
+		void pop_front(){
+			m_elements.pop_front();
+		}
+		MultipartElement &push_back(MultipartElement val){
+			m_elements.push_back(STD_MOVE(val));
+			return m_elements.back();
+		}
+		void pop_back(){
+			m_elements.pop_back();
+		}
+		iterator insert(const_iterator pos, MultipartElement val){
+			return m_elements.insert(pos, STD_MOVE(val));
+		}
+#ifdef POSEIDON_CXX11
+		template<typename ...ParamsT>
+		MultipartElement &emplace_front(ParamsT &&...params){
+			m_elements.emplace_front(std::forward<ParamsT>(params)...);
+			return m_elements.front();
+		}
+		template<typename ...ParamsT>
+		MultipartElement &emplace_back(ParamsT &&...params){
+			m_elements.emplace_back(std::forward<ParamsT>(params)...);
+			return m_elements.back();
+		}
+		template<typename ...ParamsT>
+		iterator emplace(const_iterator pos, ParamsT &&...params){
+			return m_elements.emplace(pos, std::forward<ParamsT>(params)...);
+		}
+#endif
 
-		void swap(FormData &rhs) NOEXCEPT {
+		void swap(Multipart &rhs) NOEXCEPT {
 			using std::swap;
 			swap(m_elements, rhs.m_elements);
 		}
@@ -190,15 +194,15 @@ namespace Http {
 		void parse(std::istream &is);
 	};
 
-	inline void swap(FormData &lhs, FormData &rhs) NOEXCEPT {
+	inline void swap(Multipart &lhs, Multipart &rhs) NOEXCEPT {
 		lhs.swap(rhs);
 	}
 
-	inline std::ostream &operator<<(std::ostream &os, const FormData &rhs){
+	inline std::ostream &operator<<(std::ostream &os, const Multipart &rhs){
 		rhs.dump(os);
 		return os;
 	}
-	inline std::istream &operator>>(std::istream &is, FormData &rhs){
+	inline std::istream &operator>>(std::istream &is, Multipart &rhs){
 		rhs.parse(is);
 		return is;
 	}

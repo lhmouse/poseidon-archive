@@ -91,7 +91,7 @@ void ConfigFile::load(const std::string &path){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading config file: ", path);
 
 	StreamBuffer buffer;
-	FilesystemDaemon::load(buffer, path);
+	FileSystemDaemon::load(buffer, path);
 
 	OptionalMap contents;
 	std::string line;
@@ -146,7 +146,7 @@ void ConfigFile::save(const std::string &path){
 		line = unescape_line(it->second.data(), it->second.size());
 		buffer.put("\n");
 	}
-	FilesystemDaemon::save(buffer, path);
+	FileSystemDaemon::save(buffer, path);
 }
 
 }
