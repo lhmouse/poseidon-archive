@@ -102,10 +102,10 @@ std::streambuf::int_type Buffer_streambuf::uflow(){
 
 std::streambuf::int_type Buffer_streambuf::pbackfail(std::streambuf::int_type c){
 	if(m_which & std::ios_base::out){
-		const bool flushed = sync_in();
 		if(traits_type::eq_int_type(c, traits_type::eof())){
-			return flushed ? traits_type::not_eof(c) : traits_type::eof();
+			return traits_type::eof();
 		} else {
+			sync_in();
 			m_buffer.unget(c);
 			return c;
 		}
@@ -126,10 +126,11 @@ std::streamsize Buffer_streambuf::xsputn(const std::streambuf::char_type *s, std
 }
 std::streambuf::int_type Buffer_streambuf::overflow(std::streambuf::int_type c){
 	if(m_which & std::ios_base::out){
-		sync_out();
 		if(traits_type::eq_int_type(c, traits_type::eof())){
+			sync_out();
 			return traits_type::not_eof(c);
 		} else {
+			sync_out();
 			m_buffer.put(c);
 			return c;
 		}
