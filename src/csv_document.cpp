@@ -123,8 +123,6 @@ void CsvDocument::parse(std::istream &is){
 				seg += ch;
 			}
 		}
-		++count;
-
 		if(line.empty() || ((line.size() == 1) && line.front().empty())){
 			if(!is){
 				break;
@@ -132,6 +130,7 @@ void CsvDocument::parse(std::istream &is){
 			LOG_POSEIDON_WARNING("Ignoring empty line ", count);
 			continue;
 		}
+		++count;
 
 		if(matrix.empty()){
 			matrix.resize(line.size());

@@ -61,14 +61,13 @@ namespace Http {
 				}
 				seg += ch;
 			}
-			++count;
-
 			if(seg.empty()){
 				if(!is){
 					break;
 				}
 				continue;
 			}
+			++count;
 
 			if(count == 1){
 				base = trim(STD_MOVE(seg));
