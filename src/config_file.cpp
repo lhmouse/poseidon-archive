@@ -106,13 +106,14 @@ void ConfigFile::load(const std::string &path){
 	PROFILE_ME;
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading config file: ", path);
 
-	StreamBuffer buffer;
-	FileSystemDaemon::load(buffer, path);
+	FileSystemDaemon::BlockRead block;
+	FileSystemDaemon::load(block, path);
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Read ", block.size_total, " byte(s) from ", path);
 
 	OptionalMap contents;
 	std::string line;
 	std::size_t count = 0;
-	while(get_line(buffer, line)){
+	while(get_line(block.data, line)){
 		line = escape_line(line.data(), line.size());
 		++count;
 

@@ -20,7 +20,9 @@
 namespace Poseidon {
 
 namespace {
-	void real_load(StreamBuffer &data, const std::string &path,
+	typedef FileSystemDaemon::BlockRead BlockRead;
+
+	void real_load(BlockRead &block, const std::string &path,
 		boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 	{
 		int flags = O_RDONLY;
@@ -33,6 +35,12 @@ namespace {
 			LOG_POSEIDON_ERROR("Failed to load file: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
+		struct ::stat stat_buf;
+		if(::fstat(file.get(), &stat_buf) != 0){
+			const int err_code = errno;
+			LOG_POSEIDON_ERROR("Failed to retrieve file information: path = ", path, ", err_code = ", err_code);
+			DEBUG_THROW(SystemException, err_code);
+		}
 		if(begin != 0){
 			if(::lseek(file.get(), static_cast< ::off_t>(begin), SEEK_SET) == (::off_t)-1){
 				const int err_code = errno;
@@ -40,6 +48,10 @@ namespace {
 				DEBUG_THROW(SystemException, err_code);
 			}
 		}
+
+		block.size_total = static_cast<boost::uint64_t>(stat_buf.st_size);
+		block.begin = begin;
+
 		std::size_t bytes_read = 0;
 		while(bytes_read < limit){
 			char temp[16384];
@@ -54,7 +66,7 @@ namespace {
 				DEBUG_THROW(SystemException, err_code);
 			}
 			avail = static_cast<std::size_t>(result);
-			data.put(temp, avail);
+			block.data.put(temp, avail);
 			bytes_read += avail;
 		}
 		LOG_POSEIDON_DEBUG("Finished loading file: path = ", path, ", bytes_read = ", bytes_read);
@@ -84,6 +96,7 @@ namespace {
 				DEBUG_THROW(SystemException, err_code);
 			}
 		}
+
 		std::size_t bytes_written = 0;
 		for(;;){
 			char temp[16384];
@@ -122,8 +135,8 @@ namespace {
 		if(::mkdir(path.c_str(), static_cast< ::mode_t>(0777)) != 0){
 			const int err_code = errno;
 			if(!throws_if_exists && (err_code == EEXIST)){
-				struct ::stat buf;
-				if((::stat(path.c_str(), &buf) == 0) && S_ISDIR(buf.st_mode)){
+				struct ::stat stat_buf;
+				if((::stat(path.c_str(), &stat_buf) == 0) && S_ISDIR(stat_buf.st_mode)){
 					return;
 				}
 			}
@@ -154,17 +167,17 @@ namespace {
 	class LoadOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
-		const boost::shared_ptr<StreamBuffer> m_data;
+		const boost::shared_ptr<BlockRead> m_block;
 		const std::string m_path;
 		const boost::uint64_t m_begin;
 		const boost::uint64_t m_limit;
 		const bool m_throws_if_does_not_exist;
 
 	public:
-		LoadOperation(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<StreamBuffer> data, std::string path,
+		LoadOperation(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<BlockRead> block, std::string path,
 			boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 			: m_promise(STD_MOVE(promise))
-			, m_data(STD_MOVE(data)), m_path(STD_MOVE(path))
+			, m_block(STD_MOVE(block)), m_path(STD_MOVE(path))
 			, m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{
 		}
@@ -177,7 +190,7 @@ namespace {
 			}
 
 			try {
-				real_load(*m_data, m_path, m_begin, m_limit, m_throws_if_does_not_exist);
+				real_load(*m_block, m_path, m_begin, m_limit, m_throws_if_does_not_exist);
 				m_promise->set_success();
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
@@ -466,12 +479,12 @@ void FileSystemDaemon::stop(){
 	g_operations.clear();
 }
 
-void FileSystemDaemon::load(StreamBuffer &data, const std::string &path,
+void FileSystemDaemon::load(BlockRead &block, const std::string &path,
 	boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
 
-	real_load(data, path, begin, limit, throws_if_does_not_exist);
+	real_load(block, path, begin, limit, throws_if_does_not_exist);
 }
 void FileSystemDaemon::save(StreamBuffer data, const std::string &path,
 	boost::uint64_t begin, bool throws_if_exists)
@@ -501,7 +514,7 @@ void FileSystemDaemon::rmdir(const std::string &path, bool throws_if_does_not_ex
 	real_rmdir(path, throws_if_does_not_exist);
 }
 
-boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_loading(boost::shared_ptr<StreamBuffer> data, std::string path,
+boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_loading(boost::shared_ptr<BlockRead> block, std::string path,
 	boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
@@ -510,7 +523,7 @@ boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_loading(boost:
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<LoadOperation>(
-			promise, STD_MOVE(data), STD_MOVE(path), begin, limit, throws_if_does_not_exist));
+			promise, STD_MOVE(block), STD_MOVE(path), begin, limit, throws_if_does_not_exist));
 		g_new_operation.signal();
 	}
 	return promise;
