@@ -551,10 +551,8 @@ std::string StreamBuffer::dump() const {
 void StreamBuffer::dump(std::ostream &os) const {
 	PROFILE_ME;
 
-	AUTO(chunk, m_first);
-	while(chunk){
+	for(AUTO(chunk, m_first); chunk; chunk = chunk->next){
 		os.write(reinterpret_cast<char *>(chunk->data + chunk->begin), chunk->end - chunk->begin);
-		chunk = chunk->next;
 	}
 }
 
