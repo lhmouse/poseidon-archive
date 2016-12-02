@@ -130,10 +130,6 @@ inline std::string trim(std::string src){
 
 extern bool is_valid_utf8_string(const std::string &str);
 
-class StreamBuffer;
-
-extern bool get_line(StreamBuffer &buffer, std::string &line);
-
 }
 
 #endif

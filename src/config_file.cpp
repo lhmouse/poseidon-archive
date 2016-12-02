@@ -6,7 +6,7 @@
 #include "string.hpp"
 #include "profiler.hpp"
 #include "log.hpp"
-#include "stream_buffer.hpp"
+#include "buffer_streams.hpp"
 #include "singletons/filesystem_daemon.hpp"
 #include "system_exception.hpp"
 
@@ -111,9 +111,14 @@ void ConfigFile::load(const std::string &path){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Read ", block.size_total, " byte(s) from ", path);
 
 	OptionalMap contents;
+
+	Buffer_istream bis(STD_MOVE(block.data));
 	std::string line;
 	std::size_t count = 0;
-	while(get_line(block.data, line)){
+	while(std::getline(bis, line)){
+		if(!line.empty() && (*line.rbegin() == '\r')){
+			line.erase(line.end() - 1);
+		}
 		line = escape_line(line.data(), line.size());
 		++count;
 
@@ -138,6 +143,7 @@ void ConfigFile::load(const std::string &path){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: ", key, " = ", value);
 		contents.append(STD_MOVE(key), STD_MOVE(value));
 	}
+
 	m_contents.swap(contents);
 }
 int ConfigFile::load_nothrow(const std::string &path){
