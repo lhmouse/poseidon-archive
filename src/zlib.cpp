@@ -95,6 +95,7 @@ StreamBuffer Deflator::finalize(){
 	}
 	StreamBuffer ret;
 	ret.swap(m_buffer);
+	clear();
 	return ret;
 }
 
@@ -178,6 +179,7 @@ StreamBuffer Inflator::finalize(){
 	}
 	StreamBuffer ret;
 	ret.swap(m_buffer);
+	clear();
 	return ret;
 }
 
