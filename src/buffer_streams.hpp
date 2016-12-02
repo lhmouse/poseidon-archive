@@ -18,8 +18,8 @@ private:
 	StreamBuffer m_buffer;
 	std::ios_base::openmode m_which;
 
-	boost::array<char_type, 31> m_get_area;
-	boost::array<char_type, 31> m_put_area;
+	boost::array<char_type, 32> m_get_area;
+	boost::array<char_type, 32> m_put_area;
 
 public:
 	explicit Buffer_streambuf(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
