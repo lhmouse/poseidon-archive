@@ -44,6 +44,7 @@ pkginclude_HEADERS = \
 	src/async_job.hpp	\
 	src/udp_server_base.hpp	\
 	src/stream_buffer.hpp	\
+	src/buffer_streams.hpp	\
 	src/ip_port.hpp	\
 	src/exception.hpp	\
 	src/protocol_exception.hpp	\
@@ -187,6 +188,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/raii.cpp	\
 	src/virtual_shared_from_this.cpp	\
 	src/stream_buffer.cpp	\
+	src/buffer_streams.cpp	\
 	src/shared_nts.cpp	\
 	src/csv_document.cpp	\
 	src/job_base.cpp	\

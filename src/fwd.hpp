@@ -6,34 +6,39 @@
 
 namespace Poseidon {
 
-class Thread;
-class Logger;
-class Profiler;
 class Exception;
 class ProtocolException;
 class SystemException;
+
+class Thread;
+class Mutex;
+class RecursiveMutex;
+class ConditionVariable;
 
 class OptionalMap;
 class StreamBuffer;
 class SharedNts;
 class IpPort;
 class SockAddr;
-class SessionBase;
-class Transaction;
-class DateTime;
-class HexDumper;
 class Uuid;
 class VirtualSharedFromThis;
+
+class Buffer_streambuf;
+class Buffer_istream;
+class Buffer_ostream;
+class Buffer_iostream;
 
 class ConfigFile;
 class CsvParser;
 class JsonObject;
 class JsonArray;
+class JsonElement;
 
 class JobBase;
 class JobPromise;
 class EventBaseWithoutId;
 
+class SessionBase;
 class Epoll;
 class SocketServerBase;
 class TcpSessionBase;
