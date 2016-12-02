@@ -150,29 +150,9 @@ void terminate_handler(){
 }
 
 }
-#include "buffer_streams.hpp"
+
 int main(int argc, char **argv){
 	using namespace Poseidon;
-
-    Buffer_iostream s1(StreamBuffer("Hello, world")); // IO stream
-    s1.get();
-    if (s1.putback('Y')) // modifies the buffer
-        std::cout << s1.rdbuf() << '\n';
-    else
-        std::cout << "putback failed\n";
- 
-    Buffer_istream s2(StreamBuffer("Hello, world")); // input-only stream
-    s2.get();
-    if (s2.putback('Y')) // cannot modify input-only buffer
-        std::cout << s2.rdbuf() << '\n';
-    else
-        std::cout << "putback failed\n";
- 
-    s2.clear();
-    if (s2.putback('H')) // non-modifying putback
-        std::cout << s2.rdbuf() << '\n';
-    else
-        std::cout << "putback failed\n";
 
 	g_old_terminate_handler = std::set_terminate(&terminate_handler);
 
