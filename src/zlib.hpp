@@ -19,6 +19,7 @@ private:
 
 public:
 	explicit Deflator(bool gzip = false, int level = 8);
+	~Deflator();
 
 public:
 	const StreamBuffer &get_buffer() const {
@@ -41,6 +42,7 @@ private:
 
 public:
 	explicit Inflator(bool gzip = false);
+	~Inflator();
 
 public:
 	const StreamBuffer &get_buffer() const {

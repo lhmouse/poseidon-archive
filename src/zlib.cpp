@@ -41,6 +41,8 @@ Deflator::Deflator(bool gzip, int level)
 	: m_context(new Context(gzip, level)), m_buffer()
 {
 }
+Deflator::~Deflator(){
+}
 
 void Deflator::clear(){
 	PROFILE_ME;
@@ -125,6 +127,13 @@ struct Inflator::Context : NONCOPYABLE {
 		}
 	}
 };
+
+Inflator::Inflator(bool gzip)
+	: m_context(new Context(gzip)), m_buffer()
+{
+}
+Inflator::~Inflator(){
+}
 
 void Inflator::clear(){
 	PROFILE_ME;
