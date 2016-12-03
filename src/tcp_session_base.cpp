@@ -184,26 +184,22 @@ TcpSessionBase::SyncIoResult TcpSessionBase::sync_write(void *hint, unsigned lon
 	}
 
 	SyncIoResult ret;
-	if(bytes_avail == 0){
-		ret.bytes_transferred = 0;
+	if(m_ssl_filter){
+		ret.bytes_transferred = m_ssl_filter->write(hint, bytes_avail);
 	} else {
-		if(m_ssl_filter){
-			ret.bytes_transferred = m_ssl_filter->write(hint, bytes_avail);
-		} else {
-			ret.bytes_transferred = ::send(m_socket.get(), hint, bytes_avail, MSG_NOSIGNAL);
-		}
-		ret.err_code = errno;
+		ret.bytes_transferred = ::send(m_socket.get(), hint, bytes_avail, MSG_NOSIGNAL);
+	}
+	ret.err_code = errno;
 
-		if(ret.bytes_transferred > 0){
-			fetch_peer_info();
+	if(ret.bytes_transferred > 0){
+		fetch_peer_info();
 
-			const AUTO(bytes, static_cast<std::size_t>(ret.bytes_transferred));
-			LOG_POSEIDON_TRACE("Wrote ", bytes, " byte(s) to ", get_remote_info());
+		const AUTO(bytes, static_cast<std::size_t>(ret.bytes_transferred));
+		LOG_POSEIDON_TRACE("Wrote ", bytes, " byte(s) to ", get_remote_info());
 
-			const Mutex::UniqueLock lock(m_buffer_mutex);
-			m_send_buffer.discard(bytes);
-			bytes_avail = m_send_buffer.size();
-		}
+		const Mutex::UniqueLock lock(m_buffer_mutex);
+		m_send_buffer.discard(bytes);
+		bytes_avail = m_send_buffer.size();
 	}
 
 	if((bytes_avail == 0) && atomic_load(m_really_shutdown_write, ATOMIC_CONSUME)){

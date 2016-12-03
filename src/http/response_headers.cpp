@@ -3,18 +3,31 @@
 
 #include "../precompiled.hpp"
 #include "response_headers.hpp"
+#include "header_option.hpp"
 #include <string.h>
 
 namespace Poseidon {
 
 namespace Http {
 	bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT {
-		const AUTO_REF(connection, response_headers.headers.get("Connection"));
-		if(response_headers.version < 10001){
-			return ::strcasecmp(connection.c_str(), "Keep-Alive") == 0;
-		} else {
-			return ::strcasecmp(connection.c_str(), "Close") != 0;
+		enum { OPT_AUTO, OPT_ON, OPT_OFF } opt = OPT_AUTO;
+		std::istringstream iss(response_headers.headers.get("Connection"));
+		HeaderOption connection(iss);
+		if(iss){
+			if(::strcasecmp(connection.get_base().c_str(), "Keep-Alive") == 0){
+				opt = OPT_ON;
+			} else if(::strcasecmp(connection.get_base().c_str(), "Close") == 0){
+				opt = OPT_OFF;
+			}
 		}
+		if(opt == OPT_AUTO){
+			if(response_headers.version < 10001){
+				opt = OPT_OFF;
+			} else {
+				opt = OPT_ON;
+			}
+		}
+		return opt == OPT_ON;
 	}
 }
 
