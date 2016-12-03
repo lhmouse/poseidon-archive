@@ -13,6 +13,7 @@
 #include "../tcp_session_base.hpp"
 #include "../socket_server_base.hpp"
 #include "../profiler.hpp"
+#include "../checked_arithmetic.hpp"
 
 namespace Poseidon {
 
@@ -48,8 +49,9 @@ namespace {
 		}
 		std::size_t count = 0;
 		for(AUTO(it, servers.begin()); it != servers.end(); ++it){
+			const AUTO_REF(server, *it);
 			try {
-				if(!(*it)->poll()){
+				if(!server->poll()){
 					continue;
 				}
 				++count;
@@ -155,11 +157,12 @@ std::vector<EpollDaemon::SnapshotElement> EpollDaemon::snapshot(){
 	std::vector<SnapshotElement> ret;
 	const AUTO(now, get_fast_mono_clock());
 	for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
+		const AUTO_REF(session, *it);
 		ret.push_back(SnapshotElement());
 		AUTO_REF(item, ret.back());
-		item.remote = (*it)->get_remote_info_nothrow();
-		item.local = (*it)->get_local_info_nothrow();
-		item.ms_online = now - (*it)->get_created_time();
+		item.remote = session->get_remote_info_nothrow();
+		item.local = session->get_local_info_nothrow();
+		item.ms_online = saturated_sub(now, session->get_created_time());
 	}
 	return ret;
 }
