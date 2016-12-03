@@ -11,11 +11,11 @@
 namespace Poseidon {
 
 class SslFactoryBase : NONCOPYABLE {
-private:
-	const UniqueSslCtx m_ssl_ctx;
+protected:
+	UniqueSslCtx m_ctx;
 
-public:
-	explicit SslFactoryBase(UniqueSslCtx ssl_ctx);
+protected:
+	SslFactoryBase();
 	virtual ~SslFactoryBase() = 0;
 
 public:
@@ -25,13 +25,13 @@ public:
 class ServerSslFactory : public SslFactoryBase {
 public:
 	explicit ServerSslFactory(const char *cert, const char *private_key);
-	~ServerSslFactory();
+	~ServerSslFactory() OVERRIDE;
 };
 
 class ClientSslFactory : public SslFactoryBase {
 public:
 	explicit ClientSslFactory();
-	~ClientSslFactory();
+	~ClientSslFactory() OVERRIDE;
 };
 
 }
