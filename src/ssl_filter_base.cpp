@@ -57,10 +57,6 @@ SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
 	}
 }
 SslFilterBase::~SslFilterBase(){
-	int ret = ::SSL_shutdown(m_ssl.get());
-	if(ret < 0){
-		set_errno_by_ssl_ret(m_ssl.get(), ret);
-	}
 }
 
 long SslFilterBase::read(void *data, unsigned long size){
@@ -82,7 +78,7 @@ long SslFilterBase::write(const void *data, unsigned long size){
 	int ret;
 	if(::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN){
 		ret = ::SSL_shutdown(m_ssl.get());
-		if(ret == 0){
+		if(ret == 1){
 			::shutdown(::SSL_get_wfd(m_ssl.get()), SHUT_WR);
 		}
 		ret = 0;
@@ -97,10 +93,10 @@ long SslFilterBase::write(const void *data, unsigned long size){
 void SslFilterBase::send_fin() NOEXCEPT {
 	const Mutex::UniqueLock lock(m_mutex);
 	dump_error_queue();
-	if(::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN){
-		return;
-	}
 	int ret = ::SSL_shutdown(m_ssl.get());
+	if(ret == 1){
+		::shutdown(::SSL_get_wfd(m_ssl.get()), SHUT_WR);
+	}
 	if(ret < 0){
 		set_errno_by_ssl_ret(m_ssl.get(), ret);
 	}
