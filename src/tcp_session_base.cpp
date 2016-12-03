@@ -208,7 +208,7 @@ TcpSessionBase::SyncIoResult TcpSessionBase::sync_write(void *hint, unsigned lon
 
 	if((bytes_avail == 0) && atomic_load(m_really_shutdown_write, ATOMIC_CONSUME)){
 		if(m_ssl_filter){
-			m_ssl_filter->shutdown();
+			m_ssl_filter->send_fin();
 		} else {
 			::shutdown(m_socket.get(), SHUT_WR);
 		}
