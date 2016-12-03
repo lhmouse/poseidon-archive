@@ -64,7 +64,7 @@ long SslFilterBase::read(void *data, unsigned long size){
 	const Mutex::UniqueLock lock(m_mutex);
 	dump_error_queue();
 	const long ret = ::SSL_read(m_ssl.get(), data, size);
-	if((::SSL_get_shutdown(m_ssl.get()) & SSL_RECEIVED_SHUTDOWN) == 0){
+	if((::SSL_get_shutdown(m_ssl.get()) & SSL_RECEIVED_SHUTDOWN) != 0){
 		::shutdown(::SSL_get_rfd(m_ssl.get()), SHUT_RD);
 	}
 	if(ret < 0){
@@ -83,9 +83,10 @@ long SslFilterBase::write(const void *data, unsigned long size){
 }
 void SslFilterBase::send_fin() NOEXCEPT {
 	const Mutex::UniqueLock lock(m_mutex);
-	if((::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN) == 0){
-		::SSL_shutdown(m_ssl.get());
+	if((::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN) != 0){
+		return;
 	}
+	::SSL_shutdown(m_ssl.get());
 }
 
 }
