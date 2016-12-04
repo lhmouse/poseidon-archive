@@ -7,8 +7,9 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 
 AC_CHECK_LIB([dl], [main], [], [echo "***** FIX THIS ERROR *****" && exit -2;])
-PKG_CHECK_MODULES([zlib], [zlib])
 AC_CHECK_LIB([anl], [main], [], [echo "***** FIX THIS ERROR *****" && exit -2;])
+PKG_CHECK_MODULES([zlib], [zlib])
+AC_CHECK_LIB([z], [main], [], [echo "***** FIX THIS ERROR *****" && exit -2;])
 PKG_CHECK_MODULES([openssl], [openssl])
 AC_CHECK_LIB([ssl], [main], [], [echo "***** FIX THIS ERROR *****" && exit -2;])
 AC_CHECK_LIB([mysqlclient], [main], [], [echo "***** FIX THIS ERROR *****" && exit -2;])
