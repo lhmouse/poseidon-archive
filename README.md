@@ -62,4 +62,4 @@ server-side packages in Debian Jessie sources.
 ### Reporting Bugs
 
 请联系 lh_mouse at 126 dot com（注明 Poseidon 相关）。  
-Please email to lh_mouse at 126 dot com. (Please state your email as related to Poseidon.)  
+Please email to lh_mouse at 126 dot com (Please state your email as related to Poseidon).  
