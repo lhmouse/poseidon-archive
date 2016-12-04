@@ -32,7 +32,7 @@ boost::uint64_t random_uint64(){
 	return (static_cast<boost::uint64_t>(random_uint32()) << 32) | random_uint32();
 }
 double random_double(){
-	return static_cast<boost::int64_t>(random_uint64() >> 1) / 0x1p63;
+	return static_cast<boost::int64_t>(random_uint64() >> 11) / 0x1p53;
 }
 
 }

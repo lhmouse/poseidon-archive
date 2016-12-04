@@ -50,7 +50,7 @@ struct RandomBitGeneratorDouble {
 		return 0;
 	}
 	static CONSTEXPR result_type max() NOEXCEPT {
-		return 1; // FIXME 应该是 1 - 0x1p-63，但是这个值不能用 double 表示。
+		return 1 - 0x1p-53;
 	}
 
 	result_type operator()() const NOEXCEPT {
