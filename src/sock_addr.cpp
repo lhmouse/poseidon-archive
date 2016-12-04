@@ -13,6 +13,28 @@
 
 namespace Poseidon {
 
+namespace {
+	bool is_ipv4_private(const unsigned char *ip){
+		if(ip[0] == 0){ // 0.0.0.0/8: 当前网络地址
+			return true;
+		} else if(ip[0] == 10){ // 10.0.0.0/8: A 类私有地址
+			return true;
+		} else if(ip[0] == 127){ // 127.0.0.0/8: 回环地址
+			return true;
+		} else if((ip[0] == 172) && ((ip[1] & 0xF0) == 16)){ // 172.16.0.0/12: B 类私有地址
+			return true;
+		} else if((ip[0] == 169) && (ip[1] == 254)){ // 169.254.0.0/16: 链路本地地址
+			return true;
+		} else if((ip[0] == 192) && (ip[1] == 168)){ // 192.168.0.0/16: C 类私有地址
+			return true;
+		} else if(ip[0] >= 224){ // D 类、E 类地址和广播地址
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
 SockAddr::SockAddr(){
 	m_size = 0;
 }
@@ -39,71 +61,40 @@ bool SockAddr::is_ipv6() const {
 		return false;
 	} else if(family == AF_INET6){
 		return true;
+	} else {
+		LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
+		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
-
-	LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
-	DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 }
 
 bool SockAddr::is_private() const {
+	static const unsigned char s_zeroes[16] = { };
 	const int family = get_family();
+	const AUTO(ip, reinterpret_cast<const unsigned char *>(&static_cast<const ::sockaddr_in *>(get_data())->sin_addr));
 	if(family == AF_INET){
-		const AUTO_REF(ip, reinterpret_cast<const unsigned char (&)[4]>(
-			static_cast<const ::sockaddr_in *>(get_data())->sin_addr));
-		if(ip[0] == 0){ // 0.0.0.0/8: 当前网络地址
-			return true;
-		} else if(ip[0] == 10){ // 10.0.0.0/8: A 类私有地址
-			return true;
-		} else if(ip[0] == 127){ // 127.0.0.0/8: 回环地址
-			return true;
-		} else if((ip[0] == 172) && ((ip[1] & 0xF0) == 16)){ // 172.16.0.0/12: B 类私有地址
-			return true;
-		} else if((ip[0] == 169) && (ip[1] == 254)){ // 169.254.0.0/16: 链路本地地址
-			return true;
-		} else if((ip[0] == 192) && (ip[1] == 168)){ // 192.168.0.0/16: C 类私有地址
-			return true;
-		} else if(ip[0] >= 224){ // D 类、E 类地址和广播地址
-			return true;
-		}
-		return false;
+		return is_ipv4_private(ip);
 	} else if(family == AF_INET6){
-		static const unsigned char ZEROES[16] = { };
-
-		const AUTO_REF(ip, reinterpret_cast<const unsigned char (&)[16]>(
-			static_cast<const ::sockaddr_in6 *>(get_data())->sin6_addr));
-		if(std::memcmp(ip, ZEROES, 15) == 0){
+		if(std::memcmp(ip, s_zeroes, 15) == 0){
 			if(ip[15] == 0){ // ::/128: 未指定的地址
 				return true;
+			} else if(ip[15] == 1){ // ::1/128: 回环地址
+				return true;
+			} else {
+				return false;
 			}
-			if(ip[15] == 1){ // ::1/128: 回环地址
-				return true;
-			}
-		} else if((std::memcmp(ip, ZEROES, 10) == 0) && (ip[10] == 0xFF) && (ip[11] == 0xFF)){ // IPv4 翻译地址
-			if(ip[12] == 0){ // 0.0.0.0/8: 当前网络地址
-				return true;
-			} else if(ip[12] == 10){ // 10.0.0.0/8: A 类私有地址
-				return true;
-			} else if(ip[12] == 127){ // 127.0.0.0/8: 回环地址
-				return true;
-			} else if((ip[12] == 172) && ((ip[13] & 0xF0) == 16)){ // 172.16.0.0/12: B 类私有地址
-				return true;
-			} else if((ip[12] == 169) && (ip[13] == 254)){ // 169.254.0.0/16: 链路本地地址
-				return true;
-			} else if((ip[12] == 192) && (ip[13] == 168)){ // 192.168.0.0/16: C 类私有地址
-				return true;
-			} else if(ip[12] >= 224){ // D 类、E 类地址和广播地址
-				return true;
-			}
-		} else if((ip[0] == 0x01) && (std::memcmp(ip + 1, ZEROES, 7) == 0)){ // 100::/64 黑洞地址
+		} else if((std::memcmp(ip, s_zeroes, 10) == 0) && (ip[10] == 0xFF) && (ip[11] == 0xFF)){ // IPv4 翻译地址
+			return is_ipv4_private(ip + 12);
+		} else if((ip[0] == 0x01) && (std::memcmp(ip + 1, s_zeroes, 7) == 0)){ // 100::/64 黑洞地址
 			return true;
 		} else if(ip[0] >= 0xFC){ // 私有地址、链路本地地址和广播地址
 			return true;
+		} else {
+			return false;
 		}
-		return false;
+	} else {
+		LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
+		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
-
-	LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
-	DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 }
 
 IpPort get_ip_port_from_sock_addr(const SockAddr &sa){
@@ -134,28 +125,26 @@ IpPort get_ip_port_from_sock_addr(const SockAddr &sa){
 		}
 		return IpPort(SharedNts(str),
 			load_be(static_cast<const ::sockaddr_in6 *>(sa.get_data())->sin6_port));
+	} else {
+		LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
+		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
-
-	LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
-	DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 }
 SockAddr get_sock_addr_from_ip_port(const IpPort &addr){
 	::sockaddr_in sin;
+	::sockaddr_in6 sin6;
 	if(::inet_pton(AF_INET, addr.ip.get(), &sin.sin_addr) == 1){
 		sin.sin_family = AF_INET;
 		store_be(sin.sin_port, addr.port);
 		return SockAddr(&sin, sizeof(sin));
-	}
-
-	::sockaddr_in6 sin6;
-	if(::inet_pton(AF_INET6, addr.ip.get(), &sin6.sin6_addr) == 1){
+	} else if(::inet_pton(AF_INET6, addr.ip.get(), &sin6.sin6_addr) == 1){
 		sin6.sin6_family = AF_INET6;
 		store_be(sin6.sin6_port, addr.port);
 		return SockAddr(&sin6, sizeof(sin6));
+	} else {
+		LOG_POSEIDON_ERROR("Unknown address format: ", addr.ip);
+		DEBUG_THROW(Exception, sslit("Unknown address format"));
 	}
-
-	LOG_POSEIDON_ERROR("Unknown address format: ", addr.ip);
-	DEBUG_THROW(Exception, sslit("Unknown address format"));
 }
 
 }
