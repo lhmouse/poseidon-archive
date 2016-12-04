@@ -42,10 +42,12 @@ UniqueSsl SslFactoryBase::create_ssl() const {
 ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
 	: SslFactoryBase()
 {
-	if(!m_ctx.reset(::SSL_CTX_new(::TLSv1_server_method()))){
+	if(!m_ctx.reset(::SSL_CTX_new(::SSLv23_server_method()))){
 		LOG_POSEIDON_ERROR("Could not create server SSL context");
 		DEBUG_THROW(SystemException, ENOMEM);
 	}
+	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv2);
+	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv3);
 	::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULLPTR);
 
 	LOG_POSEIDON_INFO("Loading server certificate: ", cert);
@@ -75,10 +77,12 @@ ServerSslFactory::~ServerSslFactory(){
 ClientSslFactory::ClientSslFactory()
 	: SslFactoryBase()
 {
-	if(!m_ctx.reset(::SSL_CTX_new(::TLSv1_client_method()))){
+	if(!m_ctx.reset(::SSL_CTX_new(::SSLv23_client_method()))){
 		LOG_POSEIDON_ERROR("Could not create client SSL context");
 		DEBUG_THROW(SystemException, ENOMEM);
 	}
+	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv2);
+	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv3);
 //	if(accept_invalid_cert){
 		::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_NONE, NULLPTR);
 //	} else {
