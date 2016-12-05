@@ -39,7 +39,7 @@ class EventBaseWithoutId;
 
 class JobPromise;
 template<typename>
-class JobPromiseContainer>;
+class JobPromiseContainer;
 
 class SessionBase;
 class Epoll;
