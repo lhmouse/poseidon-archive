@@ -29,7 +29,7 @@ private:
 
 public:
 	JobPromise() NOEXCEPT;
-	~JobPromise();
+	virtual ~JobPromise();
 
 private:
 	bool check(int cmp) const NOEXCEPT;
@@ -47,6 +47,36 @@ public:
 	void set_exception(boost::exception_ptr except);
 #endif
 };
+
+template<typename T>
+class JobPromiseContainer : public JobPromise {
+private:
+	T m_t;
+
+public:
+	JobPromiseContainer()
+		: JobPromise()
+		, m_t()
+	{
+	}
+	explicit JobPromiseContainer(T t)
+		: JobPromise()
+		, m_t(STD_MOVE(t))
+	{
+	}
+
+public:
+	T &get() const {
+		JobPromise::check_and_rethrow();
+		return const_cast<T &>(m_t);
+	}
+	void set_success(T t){
+		m_t = STD_MOVE_IDN(t);
+		JobPromise::set_success();
+	}
+};
+
+extern void yield(boost::shared_ptr<const JobPromise> promise, bool insignificant = true);
 
 }
 

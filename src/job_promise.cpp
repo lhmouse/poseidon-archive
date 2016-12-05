@@ -6,16 +6,15 @@
 #include "exception.hpp"
 #include "log.hpp"
 #include "atomic.hpp"
+#include "singletons/job_dispatcher.hpp"
 
 namespace Poseidon {
 
-namespace {
-	enum {
-		S_LOCKED            = -1,
-		S_UNSATISFIED       = 0,
-		S_SATISFIED         = 1,
-	};
-}
+enum {
+	S_LOCKED            = -1,
+	S_UNSATISFIED       = 0,
+	S_SATISFIED         = 1,
+};
 
 JobPromise::JobPromise() NOEXCEPT
 	: m_state(S_UNSATISFIED)
@@ -91,6 +90,10 @@ void JobPromise::set_exception(boost::exception_ptr except)
 	}
 	m_except = STD_MOVE_IDN(except);
 	unlock(S_SATISFIED);
+}
+
+void yield(boost::shared_ptr<const JobPromise> promise, bool insignificant){
+	JobDispatcher::yield(STD_MOVE_IDN(promise), insignificant);
 }
 
 }
