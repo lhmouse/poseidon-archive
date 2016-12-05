@@ -35,8 +35,11 @@ class JsonArray;
 class JsonElement;
 
 class JobBase;
-class JobPromise;
 class EventBaseWithoutId;
+
+class JobPromise;
+template<typename>
+class JobPromiseContainer>;
 
 class SessionBase;
 class Epoll;

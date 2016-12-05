@@ -26,7 +26,7 @@ public:
 	static void quit_modal();
 
 	static void enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn);
-	static void yield(boost::shared_ptr<const JobPromise> promise, bool insignificant);
+	static void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant);
 };
 
 }

@@ -51,17 +51,16 @@ namespace {
 
 	class QueryOperation {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
-		const boost::shared_ptr<SockAddr> m_sock_addr;
+		const boost::shared_ptr<JobPromiseContainer<SockAddr> > m_promise;
 
 		const std::string m_host;
 		const unsigned m_port;
 
 	public:
-		QueryOperation(boost::shared_ptr<JobPromise> promise,
-			boost::shared_ptr<SockAddr> sock_addr, std::string host, unsigned port)
+		QueryOperation(boost::shared_ptr<JobPromiseContainer<SockAddr> > promise,
+			std::string host, unsigned port)
 			: m_promise(STD_MOVE(promise))
-			, m_sock_addr(STD_MOVE(sock_addr)), m_host(STD_MOVE(host)), m_port(port)
+			, m_host(STD_MOVE(host)), m_port(port)
 		{
 		}
 
@@ -73,8 +72,7 @@ namespace {
 			}
 
 			try {
-				*m_sock_addr = real_dns_look_up(m_host, m_port);
-				m_promise->set_success();
+				m_promise->set_success(real_dns_look_up(m_host, m_port));
 			} catch(Exception &e){
 				LOG_POSEIDON_INFO("Exception thrown: what = ", e.what());
 #ifdef POSEIDON_CXX11
@@ -180,14 +178,14 @@ SockAddr DnsDaemon::look_up(const std::string &host, unsigned port){
 	return real_dns_look_up(host, port);
 }
 
-boost::shared_ptr<const JobPromise> DnsDaemon::enqueue_for_looking_up(boost::shared_ptr<SockAddr> sock_addr, std::string host, unsigned port){
+boost::shared_ptr<const JobPromiseContainer<SockAddr> > DnsDaemon::enqueue_for_looking_up(std::string host, unsigned port){
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<JobPromise>());
+	AUTO(promise, boost::make_shared<JobPromiseContainer<SockAddr> >());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<QueryOperation>(
-			promise, STD_MOVE(sock_addr), STD_MOVE(host), port));
+			promise, STD_MOVE(host), port));
 		g_new_operation.signal();
 	}
 	return STD_MOVE_IDN(promise);

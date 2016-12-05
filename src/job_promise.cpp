@@ -92,8 +92,8 @@ void JobPromise::set_exception(boost::exception_ptr except)
 	unlock(S_SATISFIED);
 }
 
-void yield(boost::shared_ptr<const JobPromise> promise, bool insignificant){
-	JobDispatcher::yield(STD_MOVE_IDN(promise), insignificant);
+void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant){
+	JobDispatcher::yield(promise, insignificant);
 }
 
 }

@@ -106,8 +106,7 @@ void ConfigFile::load(const std::string &path){
 	PROFILE_ME;
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading config file: ", path);
 
-	FileSystemDaemon::BlockRead block;
-	FileSystemDaemon::load(block, path);
+	AUTO(block, FileSystemDaemon::load(path));
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Read ", block.size_total, " byte(s) from ", path);
 
 	OptionalMap contents;
@@ -160,16 +159,14 @@ void ConfigFile::save(const std::string &path){
 	PROFILE_ME;
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Saving config file: ", path);
 
-	StreamBuffer buffer;
-	std::string line;
+	Buffer_ostream os;
 	for(AUTO(it, m_contents.begin()); it != m_contents.end(); ++it){
-		line = unescape_line(it->first.get(), std::strlen(it->first.get()));
-		buffer.put(line);
-		buffer.put(" = ");
-		line = unescape_line(it->second.data(), it->second.size());
-		buffer.put("\n");
+		os <<unescape_line(it->first.get(), std::strlen(it->first.get()))
+		   <<" = "
+		   <<unescape_line(it->second.data(), it->second.size())
+		   <<std::endl;
 	}
-	FileSystemDaemon::save(buffer, path);
+	FileSystemDaemon::save(path, STD_MOVE(os.get_buffer()));
 }
 
 }

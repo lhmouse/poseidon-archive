@@ -76,7 +76,7 @@ public:
 	}
 };
 
-extern void yield(boost::shared_ptr<const JobPromise> promise, bool insignificant = true);
+extern void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant = true);
 
 }
 
