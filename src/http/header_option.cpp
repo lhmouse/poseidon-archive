@@ -71,6 +71,10 @@ namespace Http {
 
 			if(count == 1){
 				base = trim(STD_MOVE(seg));
+				if(base.empty()){
+					is.setstate(std::istream::failbit);
+					return;
+				}
 			} else {
 				std::size_t key_begin = seg.find_first_not_of(" \t");
 				if(key_begin == std::string::npos){

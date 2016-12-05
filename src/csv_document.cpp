@@ -72,8 +72,9 @@ void CsvDocument::dump(std::ostream &os) const {
 void CsvDocument::parse(std::istream &is){
 	PROFILE_ME;
 
-	boost::container::vector<boost::container::vector<std::string> > matrix;
+	VALUE_TYPE(m_elements) elements;
 
+	boost::container::vector<boost::container::vector<std::string> > matrix;
 	std::vector<std::string> line;
 	std::size_t count = 0;
 	for(;;){
@@ -133,6 +134,10 @@ void CsvDocument::parse(std::istream &is){
 		++count;
 
 		if(matrix.empty()){
+			if(line.empty()){
+				is.setstate(std::istream::failbit);
+				return;
+			}
 			matrix.resize(line.size());
 			for(std::size_t i = 0; i < line.size(); ++i){
 				for(std::size_t j = 0; j < i; ++j){
@@ -155,13 +160,12 @@ void CsvDocument::parse(std::istream &is){
 			}
 		}
 	}
-
-	VALUE_TYPE(m_elements) elements;
 	for(AUTO(it, matrix.begin()); it != matrix.end(); ++it){
 		SharedNts key(it->at(0));
 		it->erase(it->begin());
 		elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(*it));
 	}
+
 	m_elements.swap(elements);
 }
 
