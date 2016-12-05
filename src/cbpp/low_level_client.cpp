@@ -30,7 +30,7 @@ namespace Cbpp {
 		const AUTO(utc_now, get_utc_time());
 		char str[64];
 		std::sprintf(str, "%llu", (unsigned long long)utc_now);
-		client->send_control(CTL_PING, (boost::int64_t)get_utc_time(), str);
+		client->send_control(Poseidon::Cbpp::CTL_PING, 0, str);
 	}
 
 	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
