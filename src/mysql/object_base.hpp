@@ -39,6 +39,8 @@ namespace MySql {
 
 	protected:
 		ObjectBase();
+
+	public:
 		// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
 		~ObjectBase();
 
