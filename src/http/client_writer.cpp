@@ -8,6 +8,7 @@
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../string.hpp"
+#include "../buffer_streams.hpp"
 
 namespace Poseidon {
 
@@ -27,7 +28,9 @@ namespace Http {
 		data.put(request_headers.uri);
 		if(!request_headers.get_params.empty()){
 			data.put('?');
-			data.put(url_encoded_from_optional_map(request_headers.get_params));
+			Buffer_ostream os;
+			url_encoded_from_optional_map(os, request_headers.get_params);
+			data.splice(os.get_buffer());
 		}
 		char temp[64];
 		const unsigned ver_major = request_headers.version / 10000, ver_minor = request_headers.version % 10000;
@@ -75,7 +78,9 @@ namespace Http {
 		data.put(request_headers.uri);
 		if(!request_headers.get_params.empty()){
 			data.put('?');
-			data.put(url_encoded_from_optional_map(request_headers.get_params));
+			Buffer_ostream os;
+			url_encoded_from_optional_map(os, request_headers.get_params);
+			data.splice(os.get_buffer());
 		}
 		char temp[64];
 		const unsigned ver_major = request_headers.version / 10000, ver_minor = request_headers.version % 10000;

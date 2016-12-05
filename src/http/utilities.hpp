@@ -7,6 +7,7 @@
 #include <string>
 #include <cstring>
 #include <cstddef>
+#include <iosfwd>
 #include "../optional_map.hpp"
 
 namespace Poseidon {
@@ -29,8 +30,8 @@ namespace Http {
 		return url_decode(data.data(), data.size());
 	}
 
-	extern std::string url_encoded_from_optional_map(const OptionalMap &data);
-	extern OptionalMap optional_map_from_url_encoded(const std::string &data);
+	extern OptionalMap optional_map_from_url_encoded(std::istream &is);
+	extern void url_encoded_from_optional_map(std::ostream &os, const OptionalMap &map);
 
 	extern std::string hex_encode(const void *data, std::size_t size, bool upper_case = false);
 	extern std::string hex_decode(const void *data, std::size_t size);

@@ -105,31 +105,37 @@ namespace Http {
 		return ret;
 	}
 
-	std::string url_encoded_from_optional_map(const OptionalMap &decoded){
-		std::vector<std::string> parts;
-		parts.reserve(decoded.size());
-		for(AUTO(it, decoded.begin()); it != decoded.end(); ++it){
-			std::string tmp(it->first.get());
-			tmp += '=';
-			tmp += url_encode(it->second);
-
-			parts.push_back(VAL_INIT);
-			parts.back().swap(tmp);
-		}
-		return implode('&', parts);
-	}
-	OptionalMap optional_map_from_url_encoded(const std::string &encoded){
-		OptionalMap ret;
-		const AUTO(parts, explode<std::string>('&', encoded));
-		for(AUTO(it, parts.begin()); it != parts.end(); ++it){
-			const AUTO(pos, it->find('='));
+	OptionalMap optional_map_from_url_encoded(std::istream &is){
+		OptionalMap map;
+		std::string line;
+		while(std::getline(is, line, '&')){
+			const AUTO(pos, line.find('='));
+			SharedNts key;
 			if(pos == std::string::npos){
-				ret.set(SharedNts(url_decode(it->data(), it->size())), std::string());
+				key = SharedNts(line.data(), line.size());
+				line.clear();
 			} else {
-				ret.set(SharedNts(url_decode(it->data(), pos)), url_decode(it->data() + pos + 1, it->size() - pos - 1));
+				key = SharedNts(line.data(), pos);
+				line.erase(0, pos + 1);
+				line = url_decode(line);
+			}
+			map.set(STD_MOVE(key), STD_MOVE(line));
+		}
+		return map;
+	}
+	void url_encoded_from_optional_map(std::ostream &os, const OptionalMap &map){
+		AUTO(it, map.begin());
+		if(it != map.end()){
+			os <<it->first;
+			os <<'=';
+			os <<url_encode(it->second);
+			while(++it != map.end()){
+				os <<'&';
+				os <<it->first;
+				os <<'=';
+				os <<url_encode(it->second);
 			}
 		}
-		return ret;
 	}
 
 	std::string hex_encode(const void *data, std::size_t size, bool upper_case){

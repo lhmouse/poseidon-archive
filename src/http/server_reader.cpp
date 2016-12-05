@@ -12,6 +12,7 @@
 #include "../profiler.hpp"
 #include "../string.hpp"
 #include "../singletons/main_config.hpp"
+#include "../buffer_streams.hpp"
 
 namespace Poseidon {
 
@@ -127,7 +128,9 @@ namespace Http {
 					if(!dont_parse_get_params){
 						pos = m_request_headers.uri.find('?');
 						if(pos != std::string::npos){
-							m_request_headers.get_params = optional_map_from_url_encoded(m_request_headers.uri.substr(pos + 1));
+							Buffer_istream is;
+							is.set_buffer(StreamBuffer(m_request_headers.uri.data() + pos + 1, m_request_headers.uri.size() - pos - 1));
+							m_request_headers.get_params = optional_map_from_url_encoded(is);
 							m_request_headers.uri.erase(pos);
 						}
 					}
