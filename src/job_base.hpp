@@ -7,7 +7,6 @@
 #include "cxx_util.hpp"
 #include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
 
 namespace Poseidon {
 
@@ -23,6 +22,8 @@ public:
 	virtual boost::weak_ptr<const void> get_category() const = 0;
 	virtual void perform() = 0;
 };
+
+extern void enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn);
 
 }
 
