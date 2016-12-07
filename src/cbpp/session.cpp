@@ -102,15 +102,14 @@ namespace Cbpp {
 
 	class Session::ControlMessageJob : public Session::SyncJobBase {
 	private:
-		ControlCode m_control_code;
-		boost::int64_t m_vint_param;
-		std::string m_string_param;
+		StatusCode m_status_code;
+		StreamBuffer m_param;
 
 	public:
 		ControlMessageJob(const boost::shared_ptr<Session> &session,
-			ControlCode control_code, boost::int64_t vint_param, std::string string_param)
+			StatusCode status_code, StreamBuffer param)
 			: SyncJobBase(session)
-			, m_control_code(control_code), m_vint_param(vint_param), m_string_param(STD_MOVE(string_param))
+			, m_status_code(status_code), m_param(STD_MOVE(param))
 		{
 		}
 
@@ -118,9 +117,8 @@ namespace Cbpp {
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
-			LOG_POSEIDON_DEBUG("Dispatching control message: control_code = ", m_control_code,
-				", vint_param = ", m_vint_param, ", string_param = ", m_string_param);
-			session->on_sync_control_message(m_control_code, m_vint_param, STD_MOVE(m_string_param));
+			LOG_POSEIDON_DEBUG("Dispatching control message: status_code = ", m_status_code, ", param = ", m_param);
+			session->on_sync_control_message(m_status_code, STD_MOVE(m_param));
 
 			const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
 			session->set_timeout(keep_alive_timeout);
@@ -203,33 +201,30 @@ namespace Cbpp {
 		return true;
 	}
 
-	bool Session::on_low_level_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
+	bool Session::on_low_level_control_message(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
 			boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Session>(),
-				control_code, vint_param, STD_MOVE(string_param)),
+				status_code, STD_MOVE(param)),
 			VAL_INIT);
 
 		return true;
 	}
 
-	void Session::on_sync_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
+	void Session::on_sync_control_message(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
-		LOG_POSEIDON_DEBUG("Recevied control message from ", get_remote_info(),
-			", control_code = ", control_code, ", vint_param = ", vint_param, ", string_param = ", string_param);
+		LOG_POSEIDON_DEBUG("Recevied control message from ", get_remote_info(), ", status_code = ", status_code, ", param = ", param);
 
-		switch(control_code){
-		case CTL_PING:
-			send_error(0, ST_PONG, string_param.c_str());
+		switch(status_code){
+		case ST_PING:
+			send_status(ST_PONG, STD_MOVE(param));
 			break;
-
-		case CTL_SHUTDOWN:
-			shutdown(ST_SHUTDOWN_REQUEST, string_param.c_str());
+		case ST_SHUTDOWN:
+			shutdown(ST_SHUTDOWN, "");
 			break;
-
 		default:
-			LOG_POSEIDON_WARNING("Unknown control code: ", control_code);
+			LOG_POSEIDON_WARNING("Unknown control code: ", status_code);
 			DEBUG_THROW(Exception, ST_UNKNOWN_CTL_CODE, sslit("Unknown control code"));
 		}
 	}

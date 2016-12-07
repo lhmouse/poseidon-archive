@@ -7,7 +7,7 @@
 #include <string>
 #include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
-#include "control_codes.hpp"
+#include "status_codes.hpp"
 
 namespace Poseidon {
 
@@ -22,7 +22,7 @@ namespace Cbpp {
 
 	public:
 		long put_data_message(boost::uint16_t message_id, StreamBuffer payload);
-		long put_control_message(ControlCode control_code, boost::int64_t vint_param, const char *string_param);
+		long put_control_message(StatusCode status_code, StreamBuffer param);
 	};
 }
 

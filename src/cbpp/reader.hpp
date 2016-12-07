@@ -7,7 +7,7 @@
 #include <string>
 #include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
-#include "control_codes.hpp"
+#include "status_codes.hpp"
 
 namespace Poseidon {
 
@@ -42,7 +42,7 @@ namespace Cbpp {
 		// 以下两个回调返回 false 导致于当前消息终止后退出循环。
 		virtual bool on_data_message_end(boost::uint64_t payload_size) = 0;
 
-		virtual bool on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param) = 0;
+		virtual bool on_control_message(StatusCode status_code, StreamBuffer param) = 0;
 
 	public:
 		const StreamBuffer &get_queue() const {

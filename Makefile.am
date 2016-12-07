@@ -140,7 +140,6 @@ pkginclude_cbpp_HEADERS = \
 	src/cbpp/client.hpp	\
 	src/cbpp/message_generator.hpp	\
 	src/cbpp/status_codes.hpp	\
-	src/cbpp/control_codes.hpp	\
 	src/cbpp/exception.hpp
 
 pkginclude_mysqldir = $(pkgincludedir)/mysql

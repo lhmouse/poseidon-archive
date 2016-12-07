@@ -48,11 +48,11 @@ namespace Cbpp {
 		void on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload) OVERRIDE;
 		bool on_low_level_data_message_end(boost::uint64_t payload_size) OVERRIDE;
 
-		bool on_low_level_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param) OVERRIDE;
+		bool on_low_level_control_message(StatusCode status_code, StreamBuffer param) OVERRIDE;
 
 		// 可覆写。
 		virtual void on_sync_data_message(boost::uint16_t message_id, StreamBuffer payload) = 0;
-		virtual void on_sync_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param);
+		virtual void on_sync_control_message(StatusCode status_code, StreamBuffer param);
 	};
 }
 

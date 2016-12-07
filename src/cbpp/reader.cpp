@@ -29,18 +29,17 @@ namespace {
 		}
 		return val;
 	}
-	inline std::string shift_string(StreamBuffer &buffer){
+	inline StreamBuffer shift_blob(StreamBuffer &buffer){
 		StreamBuffer::ReadIterator rit(buffer);
 		boost::uint64_t len;
 		if(!vuint64_from_binary(len, rit, buffer.size())){
-			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("string.length"));
+			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("blob.length"));
 		}
 		if(buffer.size() < len){
-			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("string.data"));
+			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("blob.data"));
 		}
-		std::string val;
-		val.resize(static_cast<std::size_t>(len));
-		buffer.get(&*val.begin(), val.size());
+		StreamBuffer val;
+		val = buffer.cut_off(len);
 		return val;
 	}
 }
@@ -130,10 +129,9 @@ namespace Cbpp {
 
 			case S_CONTROL_PAYLOAD:
 				{
-					AUTO(control_code, shift_vuint(m_queue));
-					AUTO(vint_param, shift_vint(m_queue));
-					AUTO(string_param, shift_string(m_queue));
-					has_next_request = on_control_message(control_code, vint_param, STD_MOVE(string_param));
+					AUTO(control_code, shift_vint(m_queue));
+					AUTO(param, shift_blob(m_queue));
+					has_next_request = on_control_message(control_code, STD_MOVE(param));
 					m_payload_offset = m_payload_size;
 
 					m_size_expecting = 2;

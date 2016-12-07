@@ -223,16 +223,13 @@ namespace WebSocket {
 			LOG_POSEIDON_INFO("Received close frame from ", parent->get_remote_info());
 			shutdown(ST_NORMAL_CLOSURE, "");
 			break;
-
 		case OP_PING:
 			LOG_POSEIDON_INFO("Received ping frame from ", parent->get_remote_info());
 			send(OP_PONG, STD_MOVE(payload));
 			break;
-
 		case OP_PONG:
 			LOG_POSEIDON_INFO("Received pong frame from ", parent->get_remote_info());
 			break;
-
 		default:
 			DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Invalid opcode"));
 			break;

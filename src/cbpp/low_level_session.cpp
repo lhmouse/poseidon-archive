@@ -40,10 +40,10 @@ namespace Cbpp {
 		return on_low_level_data_message_end(payload_size);
 	}
 
-	bool LowLevelSession::on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
+	bool LowLevelSession::on_control_message(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
 
-		return on_low_level_control_message(control_code, vint_param, STD_MOVE(string_param));
+		return on_low_level_control_message(status_code, STD_MOVE(param));
 	}
 
 	long LowLevelSession::on_encoded_data_avail(StreamBuffer encoded){
@@ -57,16 +57,16 @@ namespace Cbpp {
 
 		return Writer::put_data_message(message_id, STD_MOVE(payload));
 	}
-	bool LowLevelSession::send_error(boost::uint16_t message_id, StatusCode status_code, const char *reason){
+	bool LowLevelSession::send_status(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
 
-		return Writer::put_control_message(message_id, status_code, reason);
+		return Writer::put_control_message(status_code, STD_MOVE(param));
 	}
-	bool LowLevelSession::shutdown(StatusCode status_code, const char *reason) NOEXCEPT {
+	bool LowLevelSession::shutdown(StatusCode status_code, const char *param) NOEXCEPT {
 		PROFILE_ME;
 
 		try {
-			Writer::put_control_message(CTL_SHUTDOWN, status_code, reason);
+			Writer::put_control_message(status_code, StreamBuffer(param));
 			shutdown_read();
 			return shutdown_write();
 		} catch(std::exception &e){

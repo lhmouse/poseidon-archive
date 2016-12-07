@@ -11,9 +11,9 @@ namespace Cbpp {
 
 	namespace StatusCodes {
 		enum {
-			ST_MONOTONIC_CLOCK      =    3,
-			ST_SHUTDOWN_REQUEST     =    2,
-			ST_PONG                 =    1,
+			ST_SHUTDOWN             =    3,
+			ST_PONG                 =    2,
+			ST_PING                 =    1,
 			ST_OK                   =    0,
 
 			ST_INTERNAL_ERROR       =   -1,

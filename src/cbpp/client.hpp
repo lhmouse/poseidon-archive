@@ -15,7 +15,7 @@ namespace Cbpp {
 		class ConnectJob;
 		class ReadHupJob;
 		class DataMessageJob;
-		class ErrorMessageJob;
+		class ControlMessageJob;
 
 	private:
 		unsigned m_message_id;
@@ -43,13 +43,13 @@ namespace Cbpp {
 		void on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload) OVERRIDE;
 		bool on_low_level_data_message_end(boost::uint64_t payload_size) OVERRIDE;
 
-		bool on_low_level_error_message(boost::uint16_t message_id, StatusCode status_code, std::string reason) OVERRIDE;
+		bool on_low_level_control_message(StatusCode status_code, StreamBuffer param) OVERRIDE;
 
 		// 可覆写。
 		virtual void on_sync_connect();
 
 		virtual void on_sync_data_message(boost::uint16_t message_id, StreamBuffer payload) = 0;
-		virtual void on_sync_error_message(boost::uint16_t message_id, StatusCode status_code, std::string reason);
+		virtual void on_sync_control_message(StatusCode status_code, StreamBuffer param);
 	};
 }
 

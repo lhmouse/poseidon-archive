@@ -19,10 +19,10 @@ namespace {
 		StreamBuffer::WriteIterator wit(buffer);
 		vuint64_to_binary(val, wit);
 	}
-	inline void push_string(StreamBuffer &buffer, const char *str, std::size_t len){
+	inline void push_blob(StreamBuffer &buffer, StreamBuffer val){
 		StreamBuffer::WriteIterator wit(buffer);
-		vuint64_to_binary(len, wit);
-		buffer.put(str, len);
+		vuint64_to_binary(val.size(), wit);
+		buffer.splice(val);
 	}
 }
 
@@ -52,13 +52,12 @@ namespace Cbpp {
 		frame.splice(payload);
 		return on_encoded_data_avail(STD_MOVE(frame));
 	}
-	long Writer::put_control_message(ControlCode control_code, boost::int64_t vint_param, const char *string_param){
+	long Writer::put_control_message(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
 
 		StreamBuffer payload;
-		push_vuint(payload, control_code);
-		push_vint(payload, vint_param);
-		push_string(payload, string_param, std::strlen(string_param));
+		push_vint(payload, status_code);
+		push_blob(payload, STD_MOVE(param));
 		return put_data_message(0, STD_MOVE(payload));
 	}
 }

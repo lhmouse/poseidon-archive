@@ -111,16 +111,15 @@ namespace Cbpp {
 		}
 	};
 
-	class Client::ErrorMessageJob : public Client::SyncJobBase {
+	class Client::ControlMessageJob : public Client::SyncJobBase {
 	private:
-		boost::uint16_t m_message_id;
 		StatusCode m_status_code;
-		std::string m_reason;
+		StreamBuffer m_param;
 
 	public:
-		ErrorMessageJob(const boost::shared_ptr<Client> &client, boost::uint16_t message_id, StatusCode status_code, std::string reason)
+		ControlMessageJob(const boost::shared_ptr<Client> &client, StatusCode status_code, StreamBuffer param)
 			: SyncJobBase(client)
-			, m_message_id(message_id), m_status_code(status_code), m_reason(STD_MOVE(reason))
+			, m_status_code(status_code), m_param(STD_MOVE(param))
 		{
 		}
 
@@ -128,7 +127,7 @@ namespace Cbpp {
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
 			PROFILE_ME;
 
-			client->on_sync_error_message(m_message_id, m_status_code, STD_MOVE(m_reason));
+			client->on_sync_control_message(m_status_code, STD_MOVE(m_param));
 		}
 	};
 
@@ -197,12 +196,12 @@ namespace Cbpp {
 		return true;
 	}
 
-	bool Client::on_low_level_error_message(boost::uint16_t message_id, StatusCode status_code, std::string reason){
+	bool Client::on_low_level_control_message(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
-			boost::make_shared<ErrorMessageJob>(virtual_shared_from_this<Client>(),
-				message_id, status_code, STD_MOVE(reason)),
+			boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Client>(),
+				status_code, STD_MOVE(param)),
 			VAL_INIT);
 
 		return true;
@@ -213,14 +212,12 @@ namespace Cbpp {
 		LOG_POSEIDON_INFO("CBPP client connected: remote = ", get_remote_info());
 	}
 
-	void Client::on_sync_error_message(boost::uint16_t message_id, StatusCode status_code, std::string reason){
+	void Client::on_sync_control_message(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
-		LOG_POSEIDON_TRACE("Received CBPP error message from server: message_id = ", message_id,
-			", status_code = ", status_code, ", reason = ", reason);
+		LOG_POSEIDON_TRACE("Received CBPP error message from server: status_code = ", status_code, ", param = ", param);
 
 		if(status_code < 0){
-			LOG_POSEIDON_WARNING("Fatal CBPP error: status_code = ", status_code, ", reason = ", reason);
-
+			LOG_POSEIDON_WARNING("Fatal CBPP error: status_code = ", status_code, ", param = ", param);
 			force_shutdown();
 		}
 	}

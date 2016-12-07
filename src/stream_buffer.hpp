@@ -170,8 +170,8 @@ public:
 	}
 
 	StreamBuffer(const void *data, std::size_t bytes);
-	StreamBuffer(const char *str);
-	StreamBuffer(const std::string &str);
+	explicit StreamBuffer(const char *str);
+	explicit StreamBuffer(const std::string &str);
 	StreamBuffer(const StreamBuffer &rhs);
 	StreamBuffer &operator=(const StreamBuffer &rhs);
 #ifdef POSEIDON_CXX11

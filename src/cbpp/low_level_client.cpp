@@ -29,8 +29,8 @@ namespace Cbpp {
 
 		const AUTO(utc_now, get_utc_time());
 		char str[64];
-		std::sprintf(str, "%llu", (unsigned long long)utc_now);
-		client->send_control(Poseidon::Cbpp::CTL_PING, 0, str);
+		unsigned len = (unsigned)std::sprintf(str, "%llu", (unsigned long long)utc_now);
+		client->send_control(Poseidon::Cbpp::ST_PING, StreamBuffer(str, len));
 	}
 
 	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
@@ -72,12 +72,12 @@ namespace Cbpp {
 		return on_low_level_data_message_end(payload_size);
 	}
 
-	bool LowLevelClient::on_control_message(ControlCode control_code, boost::int64_t vint_param, std::string string_param){
+	bool LowLevelClient::on_control_message(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
 
 		m_last_pong_time = get_fast_mono_clock();
 
-		return on_low_level_error_message(control_code, vint_param, STD_MOVE(string_param));
+		return on_low_level_control_message(status_code, STD_MOVE(param));
 	}
 
 	long LowLevelClient::on_encoded_data_avail(StreamBuffer encoded){
@@ -96,16 +96,16 @@ namespace Cbpp {
 
 		return Writer::put_data_message(message_id, STD_MOVE(payload));
 	}
-	bool LowLevelClient::send_control(ControlCode control_code, boost::int64_t vint_param, const char *string_param){
+	bool LowLevelClient::send_control(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
 
-		return Writer::put_control_message(control_code, vint_param, string_param);
+		return Writer::put_control_message(status_code, STD_MOVE(param));
 	}
 	bool LowLevelClient::shutdown(StatusCode status_code, const char *reason) NOEXCEPT {
 		PROFILE_ME;
 
 		try {
-			Writer::put_control_message(CTL_SHUTDOWN, status_code, reason);
+			Writer::put_control_message(status_code, StreamBuffer(reason));
 			shutdown_read();
 			return shutdown_write();
 		} catch(std::exception &e){
