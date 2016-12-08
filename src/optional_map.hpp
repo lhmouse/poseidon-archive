@@ -7,6 +7,7 @@
 #include "cxx_ver.hpp"
 #include <boost/container/map.hpp>
 #include <stdexcept>
+#include <iosfwd>
 #include "shared_nts.hpp"
 
 namespace Poseidon {
@@ -188,6 +189,13 @@ public:
 
 inline void swap(OptionalMap &lhs, OptionalMap &rhs) NOEXCEPT {
 	lhs.swap(rhs);
+}
+
+inline std::ostream &operator<<(std::ostream &os, const OptionalMap &rhs){
+	for(AUTO(it, rhs.begin()); it != rhs.end(); ++it){
+		os <<it->first <<" = (" <<it->second.size() <<")\"" <<it->second <<"\"; ";
+	}
+	return os;
 }
 
 }

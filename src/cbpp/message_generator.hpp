@@ -234,7 +234,7 @@ public:
 #define FIELD_BYTES(name_, size_)       os_ << #name_ <<" = (" <<size_ <<")[ " << ::std::hex;	\
                                         for(::boost::uint64_t i_ = 0; i_ < size_; ++i_){	\
                                         	os_ << ::std::setfill('0') << ::std::setw(2)	\
-                                        		<< static_cast<unsigned>(cur_.name_[i_]) <<' ';	\
+                                        	    << static_cast<unsigned>(cur_.name_[i_]) <<' ';	\
                                         }	\
                                         os_ << ::std::dec <<"]; ";
 #define FIELD_ARRAY(name_, fields_)     os_ << #name_ <<" = (" <<cur_.name_.size() <<")[; ";	\
