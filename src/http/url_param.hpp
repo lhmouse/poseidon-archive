@@ -18,6 +18,7 @@ namespace Http {
 		std::string m_str;
 
 	public:
+		UrlParam(const OptionalMap &map_ref, const char *key);
 		UrlParam(Move<OptionalMap> map_ref, const char *key);
 
 	public:

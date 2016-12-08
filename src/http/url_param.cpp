@@ -7,6 +7,16 @@
 namespace Poseidon {
 
 namespace Http {
+	UrlParam::UrlParam(const OptionalMap &map_ref, const char *key)
+		: m_valid(false), m_str()
+	{
+		const AUTO_REF(map, map_ref);
+		const AUTO(it, map.find(SharedNts::view(key)));
+		if(it != map.end()){
+			m_valid = true;
+			m_str = it->second;
+		}
+	}
 	UrlParam::UrlParam(Move<OptionalMap> map_ref, const char *key)
 		: m_valid(false), m_str()
 	{
