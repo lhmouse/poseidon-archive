@@ -136,6 +136,22 @@ namespace Http {
 		response_headers.headers = STD_MOVE(headers);
 		return ServerWriter::put_default_response(STD_MOVE(response_headers));
 	}
+
+	bool LowLevelSession::send_chunked_header(ResponseHeaders response_headers){
+		PROFILE_ME;
+
+		return ServerWriter::put_chunked_header(STD_MOVE(response_headers));
+	}
+	bool LowLevelSession::send_chunk(StreamBuffer entity){
+		PROFILE_ME;
+
+		return ServerWriter::put_chunk(STD_MOVE(entity));
+	}
+	bool LowLevelSession::send_chunked_trailer(OptionalMap headers){
+		PROFILE_ME;
+
+		return ServerWriter::put_chunked_trailer(STD_MOVE(headers));
+	}
 }
 
 }

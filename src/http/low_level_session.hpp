@@ -62,6 +62,10 @@ namespace Http {
 		bool send(StatusCode status_code, StreamBuffer entity, const HeaderOption &content_type);
 		bool send(StatusCode status_code, OptionalMap headers, StreamBuffer entity = StreamBuffer());
 		bool send_default(StatusCode status_code, OptionalMap headers = OptionalMap());
+
+		bool send_chunked_header(ResponseHeaders response_headers);
+		bool send_chunk(StreamBuffer entity);
+		bool send_chunked_trailer(OptionalMap headers);
 	};
 }
 

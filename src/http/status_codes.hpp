@@ -12,6 +12,7 @@ namespace Http {
 	namespace StatusCodes {
 		enum {
 			// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+			ST_NULL                         =   0,
 			ST_CONTINUE                     = 100,
 			ST_SWITCHING_PROTOCOLS          = 101,
 			ST_OK                           = 200,
