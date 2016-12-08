@@ -5,12 +5,24 @@
 #include "client.hpp"
 #include "exception.hpp"
 #include "../singletons/job_dispatcher.hpp"
+#include "../singletons/main_config.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 #include "../time.hpp"
 
 namespace Poseidon {
+
+namespace {
+	boost::uint64_t get_keep_alive_interval(){
+		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+		AUTO(keep_alive_interval, keep_alive_timeout / 2);
+		if(keep_alive_interval < 1){
+			keep_alive_interval = 1;
+		}
+		return keep_alive_interval;
+	}
+}
 
 namespace Cbpp {
 	class Client::SyncJobBase : public JobBase {
@@ -131,12 +143,12 @@ namespace Cbpp {
 		}
 	};
 
-	Client::Client(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
-		: LowLevelClient(addr, use_ssl, keep_alive_interval)
+	Client::Client(const SockAddr &addr, bool use_ssl)
+		: LowLevelClient(addr, use_ssl, get_keep_alive_interval())
 	{
 	}
-	Client::Client(const IpPort &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
-		: LowLevelClient(addr, use_ssl, keep_alive_interval)
+	Client::Client(const IpPort &addr, bool use_ssl)
+		: LowLevelClient(addr, use_ssl, get_keep_alive_interval())
 	{
 	}
 	Client::~Client(){

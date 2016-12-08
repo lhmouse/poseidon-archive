@@ -21,7 +21,7 @@ namespace WebSocket {
 		StreamBuffer m_payload;
 
 	public:
-		Client(const boost::shared_ptr<Http::LowLevelClient> &parent, boost::uint64_t keep_alive_interval);
+		explicit Client(const boost::shared_ptr<Http::LowLevelClient> &parent);
 		~Client();
 
 	protected:

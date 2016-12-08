@@ -14,6 +14,17 @@
 
 namespace Poseidon {
 
+namespace {
+	boost::uint64_t get_keep_alive_interval(){
+		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+		AUTO(keep_alive_interval, keep_alive_timeout / 2);
+		if(keep_alive_interval < 1){
+			keep_alive_interval = 1;
+		}
+		return keep_alive_interval;
+	}
+}
+
 namespace WebSocket {
 	class Client::SyncJobBase : public JobBase {
 	private:
@@ -119,8 +130,8 @@ namespace WebSocket {
 		}
 	};
 
-	Client::Client(const boost::shared_ptr<Http::LowLevelClient> &parent, boost::uint64_t keep_alive_interval)
-		: LowLevelClient(parent, keep_alive_interval)
+	Client::Client(const boost::shared_ptr<Http::LowLevelClient> &parent)
+		: LowLevelClient(parent, get_keep_alive_interval())
 	{
 	}
 	Client::~Client(){
@@ -193,16 +204,13 @@ namespace WebSocket {
 			LOG_POSEIDON_INFO("Received close frame from ", parent->get_remote_info());
 			shutdown(ST_NORMAL_CLOSURE, "");
 			break;
-
 		case OP_PING:
 			LOG_POSEIDON_INFO("Received ping frame from ", parent->get_remote_info());
 			send(OP_PONG, STD_MOVE(payload));
 			break;
-
 		case OP_PONG:
 			LOG_POSEIDON_INFO("Received pong frame from ", parent->get_remote_info());
 			break;
-
 		default:
 			DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Invalid opcode"));
 			break;
