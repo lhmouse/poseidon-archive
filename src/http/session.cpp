@@ -47,11 +47,7 @@ namespace Http {
 				try {
 					AUTO(headers, e.get_headers());
 					headers.set(sslit("Connection"), "Close");
-					if(e.what()[0] == (char)0xFF){
-						session->send_default(e.get_status_code(), STD_MOVE(headers));
-					} else {
-						session->send(e.get_status_code(), STD_MOVE(headers), StreamBuffer(e.what()));
-					}
+					session->send_default(e.get_status_code(), STD_MOVE(headers));
 					session->shutdown_read();
 					session->shutdown_write();
 				} catch(...){
