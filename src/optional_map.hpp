@@ -192,9 +192,11 @@ inline void swap(OptionalMap &lhs, OptionalMap &rhs) NOEXCEPT {
 }
 
 inline std::ostream &operator<<(std::ostream &os, const OptionalMap &rhs){
+	os <<"{; ";
 	for(AUTO(it, rhs.begin()); it != rhs.end(); ++it){
 		os <<it->first <<" = (" <<it->second.size() <<")\"" <<it->second <<"\"; ";
 	}
+	os <<"}; ";
 	return os;
 }
 
