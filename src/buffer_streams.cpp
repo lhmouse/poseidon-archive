@@ -24,7 +24,7 @@ bool Buffer_streambuf::sync_in(){
 		for(AUTO(p, egptr()); p != gptr(); --p){
 			m_buffer.unget(static_cast<unsigned char>(p[-1]));
 		}
-		setg(NULLPTR, NULLPTR, NULLPTR);
+		setg(m_get_area.begin(), m_get_area.end(), m_get_area.end());
 		return true;
 	} else {
 		return false;
@@ -33,7 +33,7 @@ bool Buffer_streambuf::sync_in(){
 bool Buffer_streambuf::sync_out(){
 	if(pptr()){
 		m_buffer.put(pptr(), static_cast<std::size_t>(pptr() - pbase()));
-		setp(NULLPTR, NULLPTR);
+		setp(m_put_area.begin(), m_put_area.end());
 		return true;
 	} else {
 		return false;

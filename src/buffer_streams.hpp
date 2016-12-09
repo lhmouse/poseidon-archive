@@ -101,11 +101,13 @@ protected:
 
 public:
 	explicit Buffer_istream(std::ios_base::openmode which = std::ios_base::in)
-		: std::istream(&m_buf), m_buf(which | std::ios_base::in)
+		: std::istream(&m_buf)
+		, m_buf(which | std::ios_base::in)
 	{
 	}
 	explicit Buffer_istream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in)
-		: std::istream(&m_buf), m_buf(STD_MOVE(buffer), which | std::ios_base::in)
+		: std::istream(&m_buf)
+		, m_buf(STD_MOVE(buffer), which | std::ios_base::in)
 	{
 	}
 	~Buffer_istream() OVERRIDE;
@@ -139,11 +141,13 @@ protected:
 
 public:
 	explicit Buffer_ostream(std::ios_base::openmode which = std::ios_base::out)
-		: std::ostream(&m_buf), m_buf(which | std::ios_base::out)
+		: std::ostream(&m_buf)
+		, m_buf(which | std::ios_base::out)
 	{
 	}
 	explicit Buffer_ostream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::out)
-		: std::ostream(&m_buf), m_buf(STD_MOVE(buffer), which | std::ios_base::out)
+		: std::ostream(&m_buf)
+		, m_buf(STD_MOVE(buffer), which | std::ios_base::out)
 	{
 	}
 	~Buffer_ostream() OVERRIDE;
@@ -177,11 +181,13 @@ protected:
 
 public:
 	explicit Buffer_iostream(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
-		: std::iostream(&m_buf), m_buf(which)
+		: std::iostream(&m_buf)
+		, m_buf(which)
 	{
 	}
 	explicit Buffer_iostream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
-		: std::iostream(&m_buf), m_buf(STD_MOVE(buffer), which)
+		: std::iostream(&m_buf)
+		, m_buf(STD_MOVE(buffer), which)
 	{
 	}
 	~Buffer_iostream() OVERRIDE;
