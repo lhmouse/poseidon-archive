@@ -70,7 +70,12 @@ int Buffer_streambuf::sync(){
 
 std::streamsize Buffer_streambuf::showmanyc(){
 	if(m_which & std::ios_base::in){
-		return static_cast<std::streamsize>(m_buffer.size());
+		std::streamsize n = 0;
+		if(gptr()){
+			n += egptr() - gptr();
+		}
+		n += static_cast<std::streamsize>(m_buffer.size());
+		return n;
 	} else {
 		return 0;
 	}
@@ -86,6 +91,7 @@ std::streamsize Buffer_streambuf::xsgetn(std::streambuf::char_type *s, std::stre
 	}
 }
 std::streambuf::int_type Buffer_streambuf::underflow(){
+	sync_out();
 	VALUE_TYPE(m_get_area) temp;
 	const unsigned bytes_read = m_buffer.get(temp.data(), temp.size());
 	if(bytes_read != 0){
