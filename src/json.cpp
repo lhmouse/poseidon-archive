@@ -175,7 +175,7 @@ namespace {
 			if(ch == ','){
 				continue;
 			}
-			is.unget();
+			is.putback(ch);
 			std::string name = accept_string(is);
 			if(!(is >>ch) || (ch != ':')){
 				LOG_POSEIDON_WARNING("Colon expected");
@@ -208,7 +208,7 @@ namespace {
 			if(ch == ','){
 				continue;
 			}
-			is.unget();
+			is.putback(ch);
 			ret.push_back(accept_element(is));
 		}
 		return ret;
@@ -262,7 +262,7 @@ namespace {
 			is.setstate(std::ios::badbit);
 			return ret;
 		}
-		is.unget();
+		is.putback(ch);
 		switch(ch){
 		case '\"':
 			ret = accept_string(is);

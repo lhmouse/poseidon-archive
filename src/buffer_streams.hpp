@@ -8,7 +8,6 @@
 #include <streambuf>
 #include <istream>
 #include <ostream>
-#include <boost/array.hpp>
 #include "stream_buffer.hpp"
 
 namespace Poseidon {
@@ -17,9 +16,6 @@ class Buffer_streambuf : public std::streambuf {
 private:
 	StreamBuffer m_buffer;
 	std::ios_base::openmode m_which;
-
-	boost::array<char_type, 32> m_get_area;
-	boost::array<char_type, 32> m_put_area;
 
 public:
 	explicit Buffer_streambuf(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
@@ -47,12 +43,6 @@ public:
 	}
 #endif
 	~Buffer_streambuf() OVERRIDE;
-
-private:
-	static std::size_t cast_size(std::streamsize n);
-
-	bool sync_in();
-	bool sync_out();
 
 protected:
 	void imbue(const std::locale &locale) OVERRIDE;
