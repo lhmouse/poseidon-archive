@@ -74,6 +74,7 @@ void CsvDocument::parse(std::istream &is){
 
 	VALUE_TYPE(m_elements) elements;
 
+	typedef std::istream::traits_type traits;
 	boost::container::vector<boost::container::vector<std::string> > matrix;
 	std::vector<std::string> line;
 	std::size_t count = 0;
@@ -87,7 +88,7 @@ void CsvDocument::parse(std::istream &is){
 			Q_CLOSED,
 		} quote_state = Q_INIT;
 		char ch;
-		while(is.get(ch)){
+		while(!traits::eq_int_type(is.peek(), traits::eof()) && is.get(ch)){
 			if(quote_state == Q_INIT){
 				if(ch == '\"'){
 					quote_state = Q_OPEN;
@@ -125,7 +126,7 @@ void CsvDocument::parse(std::istream &is){
 			}
 		}
 		if(line.empty() || ((line.size() == 1) && line.front().empty())){
-			if(!is){
+			if(traits::eq_int_type(is.peek(), traits::eof())){
 				break;
 			}
 			LOG_POSEIDON_WARNING("Ignoring empty line ", count);
@@ -135,7 +136,7 @@ void CsvDocument::parse(std::istream &is){
 
 		if(matrix.empty()){
 			if(line.empty()){
-				is.setstate(std::istream::failbit);
+				is.setstate(std::ios::failbit);
 				return;
 			}
 			matrix.resize(line.size());
@@ -143,7 +144,7 @@ void CsvDocument::parse(std::istream &is){
 				for(std::size_t j = 0; j < i; ++j){
 					if(matrix.at(j).at(0) == line.at(i)){
 						LOG_POSEIDON_WARNING("Duplicate CSV header on line ", count, ": ", line.at(i));
-						is.setstate(std::istream::badbit);
+						is.setstate(std::ios::badbit);
 						return;
 					}
 				}
@@ -152,7 +153,7 @@ void CsvDocument::parse(std::istream &is){
 		} else {
 			if(line.size() != matrix.size()){
 				LOG_POSEIDON_WARNING("Inconsistent CSV column count on line ", count, ": got ", line.size(), ", expecting ", matrix.size());
-				is.setstate(std::istream::badbit);
+				is.setstate(std::ios::badbit);
 				return;
 			}
 			for(std::size_t i = 0; i < line.size(); ++i){
@@ -167,6 +168,10 @@ void CsvDocument::parse(std::istream &is){
 	}
 
 	m_elements.swap(elements);
+
+	if(m_elements.empty()){
+		is.setstate(std::ios::failbit);
+	}
 }
 
 }

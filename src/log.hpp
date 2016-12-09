@@ -6,7 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
-#include <sstream>
+#include "buffer_streams.hpp"
 #include <cstddef>
 #include <boost/cstdint.hpp>
 
@@ -41,7 +41,7 @@ private:
 	const char *const m_file;
 	const std::size_t m_line;
 
-	std::stringstream m_stream;
+	Buffer_ostream m_stream;
 
 public:
 	Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEPT;

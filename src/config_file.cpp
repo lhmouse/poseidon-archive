@@ -109,7 +109,7 @@ void ConfigFile::load(const std::string &path){
 	AUTO(block, FileSystemDaemon::load(path));
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Read ", block.size_total, " byte(s) from ", path);
 
-	OptionalMap contents;
+	VALUE_TYPE(m_contents) contents;
 
 	Buffer_istream bis(STD_MOVE(block.data));
 	std::string line;

@@ -150,12 +150,13 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += ' ';
 
-		char ch;
-		while(m_stream.get(ch)){
-			if(((unsigned char)ch + 1 <= 0x20) || (ch == 0x7F)){
+		StreamBuffer buffer = STD_MOVE(m_stream.get_buffer());
+		int ch;
+		while((ch = buffer.get()) >= 0){
+			if((ch + 1 <= 0x20) || (ch == 0x7F)){
 				ch = ' ';
 			}
-			line.push_back(ch);
+			line.push_back((char)ch);
 		}
 		line += ' ';
 

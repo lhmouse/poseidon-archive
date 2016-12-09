@@ -21,7 +21,7 @@ namespace {
 		char ch;
 		if(!(is >>ch) || (ch != '\"')){
 			LOG_POSEIDON_WARNING("String open expected");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return ret;
 		}
 		enum {
@@ -36,7 +36,7 @@ namespace {
 		for(;;){
 			if(!is.get(ch)){
 				LOG_POSEIDON_WARNING("String not closed");
-				is.setstate(std::istream::badbit);
+				is.setstate(std::ios::badbit);
 				return ret;
 			}
 			if(state != S_PLAIN){
@@ -79,7 +79,7 @@ namespace {
 						break;
 					default:
 						LOG_POSEIDON_WARNING("Unknown escaped character sequence");
-						is.setstate(std::istream::badbit);
+						is.setstate(std::ios::badbit);
 						return ret;
 					}
 					break;
@@ -96,7 +96,7 @@ namespace {
 						hexc -= 'a' - 0x0A;
 					} else {
 						LOG_POSEIDON_WARNING("Invalid hex digit for \\u");
-						is.setstate(std::istream::badbit);
+						is.setstate(std::ios::badbit);
 						return ret;
 					}
 					utf16_unit <<= 4;
@@ -148,7 +148,7 @@ namespace {
 		double ret = 0;
 		if(!(is >>ret)){
 			LOG_POSEIDON_WARNING("Number expected");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return ret;
 		}
 		return ret;
@@ -160,13 +160,13 @@ namespace {
 		char ch;
 		if(!(is >>ch) || (ch != '{')){
 			LOG_POSEIDON_WARNING("Object open expected");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return ret;
 		}
 		for(;;){
 			if(!(is >>ch)){
 				LOG_POSEIDON_WARNING("Object not closed");
-				is.setstate(std::istream::badbit);
+				is.setstate(std::ios::badbit);
 				return ret;
 			}
 			if(ch == '}'){
@@ -179,7 +179,7 @@ namespace {
 			std::string name = accept_string(is);
 			if(!(is >>ch) || (ch != ':')){
 				LOG_POSEIDON_WARNING("Colon expected");
-				is.setstate(std::istream::badbit);
+				is.setstate(std::ios::badbit);
 				return ret;
 			}
 			ret.set(SharedNts(name), accept_element(is));
@@ -193,13 +193,13 @@ namespace {
 		char ch;
 		if(!(is >>ch) || (ch != '[')){
 			LOG_POSEIDON_WARNING("Array open expected");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return ret;
 		}
 		for(;;){
 			if(!(is >>ch)){
 				LOG_POSEIDON_WARNING("Array not closed");
-				is.setstate(std::istream::badbit);
+				is.setstate(std::ios::badbit);
 				return ret;
 			}
 			if(ch == ']'){
@@ -219,7 +219,7 @@ namespace {
 		char ch;
 		if(!(is >>ch) || ((ch != 'f') && (ch != 't'))){
 			LOG_POSEIDON_WARNING("Boolean expected");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return false;
 		}
 		char str[8];
@@ -229,7 +229,7 @@ namespace {
 			return true;
 		} else {
 			LOG_POSEIDON_WARNING("Boolean expected");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return false;
 		}
 	}
@@ -239,7 +239,7 @@ namespace {
 		char ch;
 		if(!(is >>ch) || (ch != 'n')){
 			LOG_POSEIDON_WARNING("Boolean expected");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return NULLPTR;
 		}
 		char str[8];
@@ -247,7 +247,7 @@ namespace {
 			return NULLPTR;
 		} else {
 			LOG_POSEIDON_WARNING("Boolean expected");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return NULLPTR;
 		}
 	}
@@ -259,7 +259,7 @@ namespace {
 		char ch;
 		if(!(is >>ch)){
 			LOG_POSEIDON_WARNING("No input character");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return ret;
 		}
 		is.unget();
@@ -286,7 +286,7 @@ namespace {
 			break;
 		default:
 			LOG_POSEIDON_WARNING("Unknown element type");
-			is.setstate(std::istream::badbit);
+			is.setstate(std::ios::badbit);
 			return ret;
 		}
 		return ret;

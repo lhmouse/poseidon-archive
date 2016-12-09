@@ -70,6 +70,7 @@ namespace Http {
 
 		VALUE_TYPE(m_elements) elements;
 
+		typedef std::istream::traits_type traits;
 		MultipartElement elem;
 		std::string line;
 		enum {
@@ -84,7 +85,7 @@ namespace Http {
 			S_TRAILING_HYPHEN_ONE,
 		} state = S_INIT;
 		char ch;
-		while(is.get(ch)){
+		while(!traits::eq_int_type(is.peek(), traits::eof()) && is.get(ch)){
 			switch(state){
 			case S_INIT:
 				if(ch == '-'){
@@ -127,7 +128,7 @@ namespace Http {
 					}
 					if(line != m_boundary){
 						LOG_POSEIDON_WARNING("Invalid multipart boundary.");
-						is.setstate(std::istream::failbit);
+						is.setstate(std::ios::failbit);
 						return;
 					}
 					elem = VAL_INIT;
@@ -136,7 +137,7 @@ namespace Http {
 					break;
 				}
 				LOG_POSEIDON_WARNING("Invalid multipart boundary.");
-				is.setstate(std::istream::failbit);
+				is.setstate(std::ios::failbit);
 				return;
 
 			case S_HEADERS:
@@ -148,7 +149,7 @@ namespace Http {
 						AUTO(pos, line.find(':'));
 						if(pos == std::string::npos){
 							LOG_POSEIDON_WARNING("Invalid HTTP header: ", line);
-							is.setstate(std::istream::failbit);
+							is.setstate(std::ios::failbit);
 							return;
 						}
 						SharedNts key(line.data(), pos);
@@ -214,7 +215,7 @@ namespace Http {
 					goto _done;
 				}
 				LOG_POSEIDON_WARNING("Invalid multipart termination boundary.");
-				is.setstate(std::istream::failbit);
+				is.setstate(std::ios::failbit);
 				return;
 			}
 		}
@@ -222,6 +223,10 @@ namespace Http {
 		;
 
 		m_elements.swap(elements);
+
+		if(m_elements.empty()){
+			is.setstate(std::ios::failbit);
+		}
 	}
 }
 
