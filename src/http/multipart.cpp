@@ -70,7 +70,6 @@ namespace Http {
 
 		VALUE_TYPE(m_elements) elements;
 
-		typedef std::istream::traits_type traits;
 		MultipartElement elem;
 		std::string line;
 		enum {
@@ -83,9 +82,10 @@ namespace Http {
 			S_LEADING_HYPHEN_ONE,
 			S_BOUNDARY,
 			S_TRAILING_HYPHEN_ONE,
+			S_DONE,
 		} state = S_INIT;
 		char ch;
-		while(!traits::eq_int_type(is.peek(), traits::eof()) && is.get(ch)){
+		while(is.get(ch)){
 			switch(state){
 			case S_INIT:
 				if(ch == '-'){
@@ -212,20 +212,29 @@ namespace Http {
 
 			case S_TRAILING_HYPHEN_ONE:
 				if(ch == '-'){
-					goto _done;
+					state = S_DONE;
+					break;
 				}
 				LOG_POSEIDON_WARNING("Invalid multipart termination boundary.");
 				is.setstate(std::ios::failbit);
 				return;
+
+			case S_DONE:
+				break;
+			}
+			if(state == S_DONE){
+				break;
 			}
 		}
-	_done:
-		;
 
 		m_elements.swap(elements);
 
 		if(m_elements.empty()){
 			is.setstate(std::ios::failbit);
+		} else {
+			if(is.eof() && !is.bad()){
+				is.clear(std::ios::goodbit);
+			}
 		}
 	}
 }

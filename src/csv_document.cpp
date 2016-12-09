@@ -74,7 +74,6 @@ void CsvDocument::parse(std::istream &is){
 
 	VALUE_TYPE(m_elements) elements;
 
-	typedef std::istream::traits_type traits;
 	boost::container::vector<boost::container::vector<std::string> > matrix;
 	std::vector<std::string> line;
 	std::size_t count = 0;
@@ -88,7 +87,7 @@ void CsvDocument::parse(std::istream &is){
 			Q_CLOSED,
 		} quote_state = Q_INIT;
 		char ch;
-		while(!traits::eq_int_type(is.peek(), traits::eof()) && is.get(ch)){
+		while(is.get(ch)){
 			if(quote_state == Q_INIT){
 				if(ch == '\"'){
 					quote_state = Q_OPEN;
@@ -126,7 +125,7 @@ void CsvDocument::parse(std::istream &is){
 			}
 		}
 		if(line.empty() || ((line.size() == 1) && line.front().empty())){
-			if(traits::eq_int_type(is.peek(), traits::eof())){
+			if(!is){
 				break;
 			}
 			LOG_POSEIDON_WARNING("Ignoring empty line ", count);
@@ -171,6 +170,10 @@ void CsvDocument::parse(std::istream &is){
 
 	if(m_elements.empty()){
 		is.setstate(std::ios::failbit);
+	} else {
+		if(is.eof() && !is.bad()){
+			is.clear(std::ios::goodbit);
+		}
 	}
 }
 

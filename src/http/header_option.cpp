@@ -37,14 +37,13 @@ namespace Http {
 		VALUE_TYPE(m_base) base;
 		VALUE_TYPE(m_options) options;
 
-		typedef std::istream::traits_type traits;
 		std::string seg;
 		std::size_t count = 0;
 		for(;;){
 			seg.clear();
 			bool quoted = false;
 			char ch;
-			while(!traits::eq_int_type(is.peek(), traits::eof()) && is.get(ch)){
+			while(is.get(ch)){
 				if(quoted){
 					if(ch == '\"'){
 						quoted = false;
@@ -63,7 +62,7 @@ namespace Http {
 				seg += ch;
 			}
 			if(seg.empty()){
-				if(traits::eq_int_type(is.peek(), traits::eof())){
+				if(!is){
 					break;
 				}
 				continue;
@@ -72,10 +71,6 @@ namespace Http {
 
 			if(count == 1){
 				base = trim(STD_MOVE(seg));
-				if(base.empty()){
-					is.setstate(std::ios::failbit);
-					return;
-				}
 			} else {
 				std::size_t key_begin = seg.find_first_not_of(" \t");
 				if(key_begin == std::string::npos){
@@ -109,6 +104,10 @@ namespace Http {
 
 		if(m_base.empty()){
 			is.setstate(std::ios::failbit);
+		} else {
+			if(is.eof() && !is.bad()){
+				is.clear(std::ios::goodbit);
+			}
 		}
 	}
 }
