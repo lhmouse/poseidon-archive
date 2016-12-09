@@ -361,6 +361,26 @@ void JsonArray::parse(std::istream &is){
 	accept_array(is).swap(*this);
 }
 
+const char *JsonElement::get_type_string(JsonElement::Type type){
+	switch(type){
+	case T_BOOL:
+		return "Boolean";
+	case T_NUMBER:
+		return "Number";
+	case T_STRING:
+		return "String";
+	case T_OBJECT:
+		return "Object";
+	case T_ARRAY:
+		return "Array";
+	case T_NULL:
+		return "Null";
+	default:
+		LOG_POSEIDON_WARNING("Unknown JSON element type: type = ", static_cast<int>(type));
+		return "Undefined";
+	}
+}
+
 std::string JsonElement::dump() const {
 	PROFILE_ME;
 
@@ -371,7 +391,8 @@ std::string JsonElement::dump() const {
 void JsonElement::dump(std::ostream &os) const {
 	PROFILE_ME;
 
-	switch(type()){
+	const Type type = get_type();
+	switch(type){
 	case T_BOOL:
 		os <<std::boolalpha <<get<bool>();
 		break;
@@ -425,7 +446,7 @@ void JsonElement::dump(std::ostream &os) const {
 		os <<"null";
 		break;
 	default:
-		LOG_POSEIDON_FATAL("Unknown JSON element type: type = ", static_cast<int>(type()));
+		LOG_POSEIDON_FATAL("Unknown JSON element type: type = ", static_cast<int>(type));
 		std::abort();
 	}
 }

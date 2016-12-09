@@ -189,8 +189,11 @@ inline void swap(JsonArray &lhs, JsonArray &rhs) NOEXCEPT {
 class JsonElement {
 public:
 	enum Type {
-		T_BOOL, T_NUMBER, T_STRING, T_OBJECT, T_ARRAY, T_NULL
+		T_BOOL, T_NUMBER, T_STRING, T_OBJECT, T_ARRAY, T_NULL,
 	};
+
+public:
+	static const char *get_type_string(Type type);
 
 private:
 	boost::variant<
@@ -231,7 +234,7 @@ public:
 	}
 
 public:
-	Type type() const {
+	Type get_type() const {
 		return static_cast<Type>(m_data.which());
 	}
 

@@ -97,7 +97,7 @@ std::streambuf::int_type Buffer_streambuf::underflow(){
 	if(bytes_read != 0){
 		std::memcpy(m_get_area.end() - bytes_read, temp.data(), bytes_read);
 		setg(m_get_area.begin(), m_get_area.end() - bytes_read, m_get_area.end());
-		return traits_type::not_eof(traits_type::eof());
+		return traits_type::to_int_type(*gptr());
 	} else {
 		return traits_type::eof();
 	}
