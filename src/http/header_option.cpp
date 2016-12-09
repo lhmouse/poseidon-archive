@@ -39,11 +39,13 @@ namespace Http {
 
 		std::string seg;
 		std::size_t count = 0;
+		typedef std::istream::traits_type traits;
+		traits::int_type next = is.peek();
 		for(;;){
 			seg.clear();
 			bool quoted = false;
-			char ch;
-			while(is.get(ch)){
+			for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
+				const char ch = is.get();
 				if(quoted){
 					if(ch == '\"'){
 						quoted = false;
@@ -62,7 +64,7 @@ namespace Http {
 				seg += ch;
 			}
 			if(seg.empty()){
-				if(!is){
+				if(traits::eq_int_type(next, traits::eof())){
 					break;
 				}
 				continue;
@@ -101,14 +103,6 @@ namespace Http {
 
 		m_base.swap(base);
 		m_options.swap(options);
-
-		if(m_base.empty()){
-			is.setstate(std::ios::failbit);
-		} else {
-			if(is.eof() && !is.bad()){
-				is.clear(std::ios::goodbit);
-			}
-		}
 	}
 }
 

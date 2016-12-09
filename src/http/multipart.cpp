@@ -82,10 +82,12 @@ namespace Http {
 			S_LEADING_HYPHEN_ONE,
 			S_BOUNDARY,
 			S_TRAILING_HYPHEN_ONE,
-			S_DONE,
+			S_ACCEPTED,
 		} state = S_INIT;
-		char ch;
-		while(is.get(ch)){
+		typedef std::istream::traits_type traits;
+		traits::int_type next = is.peek();
+		for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
+			const char ch = is.get();
 			switch(state){
 			case S_INIT:
 				if(ch == '-'){
@@ -94,7 +96,6 @@ namespace Http {
 				}
 				// state = S_INIT;
 				break;
-
 			case S_INIT_LEADING_HYPHEN_ONE:
 				if(ch == '-'){
 					line.clear();
@@ -103,7 +104,6 @@ namespace Http {
 				}
 				state = S_INIT;
 				break;
-
 			case S_INIT_BOUNDARY:
 				 line.push_back(ch);
 				 if(std::memcmp(line.data(), m_boundary.data(), line.size()) == 0){
@@ -116,7 +116,6 @@ namespace Http {
 				}
 				state = S_INIT;
 				break;
-
 			case S_BOUNDARY_END:
 				if(ch == '-'){
 					state = S_TRAILING_HYPHEN_ONE;
@@ -139,7 +138,6 @@ namespace Http {
 				LOG_POSEIDON_WARNING("Invalid multipart boundary.");
 				is.setstate(std::ios::failbit);
 				return;
-
 			case S_HEADERS:
 				if(ch == '\n'){
 					if(!line.empty() && (*line.rbegin() == '\r')){
@@ -167,7 +165,6 @@ namespace Http {
 				line.push_back(ch);
 				// state = S_HEADERS;
 				break;
-
 			case S_ENTITY:
 				if(ch == '-'){
 					state = S_LEADING_HYPHEN_ONE;
@@ -176,7 +173,6 @@ namespace Http {
 				elem.entity.put((unsigned char)ch);
 				// state = S_ENTITY;
 				break;
-
 			case S_LEADING_HYPHEN_ONE:
 				if(ch == '-'){
 					line.clear();
@@ -187,7 +183,6 @@ namespace Http {
 				elem.entity.put((unsigned char)ch);
 				state = S_ENTITY;
 				break;
-
 			case S_BOUNDARY:
 				 line.push_back(ch);
 				 if(std::memcmp(line.data(), m_boundary.data(), line.size()) == 0){
@@ -209,33 +204,23 @@ namespace Http {
 				elem.entity.put(line);
 				state = S_ENTITY;
 				break;
-
 			case S_TRAILING_HYPHEN_ONE:
 				if(ch == '-'){
-					state = S_DONE;
+					state = S_ACCEPTED;
 					break;
 				}
 				LOG_POSEIDON_WARNING("Invalid multipart termination boundary.");
 				is.setstate(std::ios::failbit);
 				return;
-
-			case S_DONE:
+			case S_ACCEPTED:
 				break;
 			}
-			if(state == S_DONE){
+			if(state == S_ACCEPTED){
 				break;
 			}
 		}
 
 		m_elements.swap(elements);
-
-		if(m_elements.empty()){
-			is.setstate(std::ios::failbit);
-		} else {
-			if(is.eof() && !is.bad()){
-				is.clear(std::ios::goodbit);
-			}
-		}
 	}
 }
 
