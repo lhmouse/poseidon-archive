@@ -8,6 +8,7 @@
 #include <streambuf>
 #include <istream>
 #include <ostream>
+#include <boost/array.hpp>
 #include "stream_buffer.hpp"
 
 namespace Poseidon {
@@ -16,6 +17,7 @@ class Buffer_streambuf : public std::streambuf {
 private:
 	StreamBuffer m_buffer;
 	std::ios_base::openmode m_which;
+	boost::array<char, 32> m_get_area;
 
 public:
 	explicit Buffer_streambuf(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
@@ -28,15 +30,25 @@ public:
 		, m_buffer(STD_MOVE(buffer)), m_which(which)
 	{
 	}
-#ifdef POSEIDON_CXX14
-	Buffer_streambuf(Buffer_streambuf &&rhs) noexcept
-		: std::streambuf(STD_MOVE(rhs))
-		, m_buffer(STD_MOVE(rhs.buffer)), m_which(rhs.m_which)
+	Buffer_streambuf(const Buffer_streambuf &rhs)
+		: std::streambuf()
+		, m_buffer(rhs.m_buffer), m_which(rhs.m_which)
 	{
 	}
-	Buffer_streambuf &operator=(Buffer_streambuf &&rhs){
+	Buffer_streambuf &operator=(const Buffer_streambuf &rhs){
 		sync();
-		std::streambuf::operator=(std::move(rhs));
+		m_buffer = rhs.m_buffer;
+		m_which = rhs.m_which;
+		return *this;
+	}
+#ifdef POSEIDON_CXX11
+	Buffer_streambuf(Buffer_streambuf &&rhs) noexcept
+		: std::streambuf()
+		, m_buffer(STD_MOVE(rhs.m_buffer)), m_which(rhs.m_which)
+	{
+	}
+	Buffer_streambuf &operator=(Buffer_streambuf &&rhs) noexcept {
+		sync();
 		m_buffer = std::move(rhs.m_buffer);
 		m_which = rhs.m_which;
 		return *this;
@@ -45,17 +57,17 @@ public:
 	~Buffer_streambuf() OVERRIDE;
 
 protected:
-	void imbue(const std::locale &locale) OVERRIDE;
+//	void imbue(const std::locale &locale) OVERRIDE;
 
-	Buffer_streambuf *setbuf(char_type *s, std::streamsize n) OVERRIDE;
-	pos_type seekoff(off_type off, std::ios_base::seekdir way, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) OVERRIDE;
-	pos_type seekpos(pos_type sp, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) OVERRIDE;
+//	Buffer_streambuf *setbuf(char_type *s, std::streamsize n) OVERRIDE;
+//	pos_type seekoff(off_type off, std::ios_base::seekdir way, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) OVERRIDE;
+//	pos_type seekpos(pos_type sp, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) OVERRIDE;
 	int sync() OVERRIDE;
 
 	std::streamsize showmanyc() OVERRIDE;
 	std::streamsize xsgetn(char_type *s, std::streamsize n) OVERRIDE;
 	int_type underflow() OVERRIDE;
-	int_type uflow() OVERRIDE;
+//	int_type uflow() OVERRIDE;
 
 	int_type pbackfail(int_type c = traits_type::eof()) OVERRIDE;
 
@@ -75,14 +87,12 @@ public:
 		m_buffer.swap(buffer);
 	}
 
-#ifdef POSEIDON_CXX14
-	void swap(Buffer_streambuf &rhs) noexcept {
+	void swap(Buffer_streambuf &rhs) NOEXCEPT {
 		sync();
 		using std::swap;
 		swap(m_buffer, rhs.m_buffer);
 		swap(m_which, rhs.m_which);
 	}
-#endif
 };
 
 class Buffer_istream : public std::istream {
@@ -165,22 +175,22 @@ public:
 	}
 #endif
 };
-class Buffer_iostream : public std::iostream {
+class Buffer_stream : public std::iostream {
 protected:
 	Buffer_streambuf m_buf;
 
 public:
-	explicit Buffer_iostream(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
+	explicit Buffer_stream(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
 		: std::iostream(&m_buf)
 		, m_buf(which)
 	{
 	}
-	explicit Buffer_iostream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
+	explicit Buffer_stream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
 		: std::iostream(&m_buf)
 		, m_buf(STD_MOVE(buffer), which)
 	{
 	}
-	~Buffer_iostream() OVERRIDE;
+	~Buffer_stream() OVERRIDE;
 
 public:
 	Buffer_streambuf *rdbuf() const {
@@ -198,26 +208,26 @@ public:
 	}
 
 #ifdef POSEIDON_CXX14
-	void swap(Buffer_ostream &rhs) noexcept {
-		std::ostream::swap(rhs);
+	void swap(Buffer_stream &rhs) noexcept {
+		std::iostream::swap(rhs);
 		using std::swap;
 		swap(m_buf, rhs.m_buf);
 	}
 #endif
 };
 
-#ifdef POSEIDON_CXX14
-inline void swap(Buffer_streambuf &lhs, Buffer_streambuf &rhs) noexcept {
+inline void swap(Buffer_streambuf &lhs, Buffer_streambuf &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
+#ifdef POSEIDON_CXX14
 inline void swap(Buffer_istream &lhs, Buffer_istream &rhs) noexcept {
 	lhs.swap(rhs);
 }
 inline void swap(Buffer_ostream &lhs, Buffer_ostream &rhs) noexcept {
 	lhs.swap(rhs);
 }
-inline void swap(Buffer_iostream &lhs, Buffer_iostream &rhs) noexcept {
+inline void swap(Buffer_stream &lhs, Buffer_stream &rhs) noexcept {
 	lhs.swap(rhs);
 }
 #endif

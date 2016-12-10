@@ -9,78 +9,89 @@ namespace Poseidon {
 Buffer_streambuf::~Buffer_streambuf(){
 }
 
-void Buffer_streambuf::imbue(const std::locale &locale){
-	std::streambuf::imbue(locale);
-}
-
-Buffer_streambuf *Buffer_streambuf::setbuf(Buffer_streambuf::char_type *s, std::streamsize n){
-	std::streambuf::setbuf(s, n);
-	return this;
-}
-Buffer_streambuf::pos_type Buffer_streambuf::seekoff(Buffer_streambuf::off_type off, std::ios_base::seekdir way, std::ios_base::openmode which){
-	return std::streambuf::seekoff(off, way, which);
-}
-Buffer_streambuf::pos_type Buffer_streambuf::seekpos(Buffer_streambuf::pos_type sp, std::ios_base::openmode which){
-	return std::streambuf::seekpos(sp, which);
-}
 int Buffer_streambuf::sync(){
+	setg(m_get_area.begin(), m_get_area.end(), m_get_area.end());
 	return std::streambuf::sync();
 }
 
 std::streamsize Buffer_streambuf::showmanyc(){
-	if(!(m_which & std::ios_base::in)){
+	if(m_which & std::ios_base::in){
+		return static_cast<std::streamsize>(m_buffer.size());
+	} else {
 		return 0;
 	}
-	return static_cast<std::streamsize>(m_buffer.size());
 }
 std::streamsize Buffer_streambuf::xsgetn(Buffer_streambuf::char_type *s, std::streamsize n){
-	if(!(m_which & std::ios_base::in)){
+	if(m_which & std::ios_base::in){
+		int n_got = std::min<std::streamsize>(n, INT_MAX);
+		n_got = static_cast<int>(m_buffer.get(s, static_cast<unsigned>(n_got)));
+		if(gptr() && (egptr() - gptr() > n_got)){
+			setg(m_get_area.begin(), gptr() + n_got, m_get_area.end());
+		} else {
+			setg(m_get_area.begin(), m_get_area.end(), m_get_area.end());
+		}
+		return n_got;
+	} else {
 		return 0;
 	}
-	unsigned n_got = static_cast<unsigned>(std::min<std::streamsize>(n, INT_MAX));
-	n_got = m_buffer.get(s, n_got);
-	return static_cast<std::streamsize>(n_got);
 }
 Buffer_streambuf::int_type Buffer_streambuf::underflow(){
-	if(!(m_which & std::ios_base::in)){
+	if(m_which & std::ios_base::in){
+		char temp[sizeof(m_get_area)];
+		int n_peeked = static_cast<int>(m_buffer.peek(temp, sizeof(temp)));
+		if(n_peeked == 0){
+			return traits_type::eof();
+		}
+		setg(m_get_area.begin(), m_get_area.end() - n_peeked, m_get_area.end());
+		std::copy(temp, temp + n_peeked, gptr());
+		return traits_type::to_int_type(*gptr());
+	} else {
 		return traits_type::eof();
 	}
-	return m_buffer.empty() ? traits_type::eof() : m_buffer.peek();
-}
-Buffer_streambuf::int_type Buffer_streambuf::uflow(){
-	if(!(m_which & std::ios_base::in)){
-		return traits_type::eof();
-	}
-	return m_buffer.empty() ? traits_type::eof() : m_buffer.get();
 }
 
 Buffer_streambuf::int_type Buffer_streambuf::pbackfail(Buffer_streambuf::int_type c){
-	if(!(m_which & std::ios_base::out)){
+	if(m_which & std::ios_base::out){
+		if(traits_type::eq_int_type(c, traits_type::eof())){
+			return traits_type::eof();
+		}
+		m_buffer.unget(c);
+		if(gptr()){
+			std::copy_backward(gptr(), egptr() - 1, egptr());
+			*gptr() = c;
+		}
+		return c;
+	} else {
 		return traits_type::eof();
 	}
-	return traits_type::eq_int_type(c, traits_type::eof()) ? traits_type::eof() : (m_buffer.unget(c), c);
 }
 
 std::streamsize Buffer_streambuf::xsputn(const Buffer_streambuf::char_type *s, std::streamsize n){
-	if(!(m_which & std::ios_base::out)){
+	if(m_which & std::ios_base::out){
+		int n_put = std::min<std::streamsize>(n, INT_MAX);
+		m_buffer.put(s, static_cast<unsigned>(n_put));
+		return n_put;
+	} else {
 		return 0;
 	}
-	unsigned n_put = static_cast<unsigned>(std::min<std::streamsize>(n, INT_MAX));
-	m_buffer.put(s, n_put);
-	return static_cast<std::streamsize>(n_put);
 }
 Buffer_streambuf::int_type Buffer_streambuf::overflow(Buffer_streambuf::int_type c){
-	if(!(m_which & std::ios_base::out)){
+	if(m_which & std::ios_base::out){
+		if(traits_type::eq_int_type(c, traits_type::eof())){
+			return traits_type::not_eof(c);
+		}
+		m_buffer.put(c);
+		return c;
+	} else {
 		return traits_type::eof();
 	}
-	return traits_type::eq_int_type(c, traits_type::eof()) ? traits_type::not_eof(c) : (m_buffer.put(c), c);
 }
 
 Buffer_istream::~Buffer_istream(){
 }
 Buffer_ostream::~Buffer_ostream(){
 }
-Buffer_iostream::~Buffer_iostream(){
+Buffer_stream::~Buffer_stream(){
 }
 
 }
