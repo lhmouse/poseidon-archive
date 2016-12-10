@@ -12,7 +12,8 @@
 #include "../uuid.hpp"
 #include "../time.hpp"
 #include "../random.hpp"
-#include "../hash.hpp"
+#include "../crc32.hpp"
+#include "../md5.hpp"
 
 namespace Poseidon {
 

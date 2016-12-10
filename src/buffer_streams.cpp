@@ -98,8 +98,10 @@ Buffer_streambuf::int_type Buffer_streambuf::overflow(Buffer_streambuf::int_type
 
 Buffer_istream::~Buffer_istream(){
 }
+
 Buffer_ostream::~Buffer_ostream(){
 }
+
 Buffer_stream::~Buffer_stream(){
 }
 

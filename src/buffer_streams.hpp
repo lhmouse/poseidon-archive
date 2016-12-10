@@ -92,8 +92,12 @@ public:
 	}
 };
 
+inline void swap(Buffer_streambuf &lhs, Buffer_streambuf &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
+
 class Buffer_istream : public std::istream {
-protected:
+private:
 	Buffer_streambuf m_sb;
 
 public:
@@ -132,8 +136,15 @@ public:
 	}
 #endif
 };
+
+#ifdef POSEIDON_CXX14
+inline void swap(Buffer_istream &lhs, Buffer_istream &rhs) noexcept {
+	lhs.swap(rhs);
+}
+#endif
+
 class Buffer_ostream : public std::ostream {
-protected:
+private:
 	Buffer_streambuf m_sb;
 
 public:
@@ -172,8 +183,15 @@ public:
 	}
 #endif
 };
+
+#ifdef POSEIDON_CXX14
+inline void swap(Buffer_ostream &lhs, Buffer_ostream &rhs) noexcept {
+	lhs.swap(rhs);
+}
+#endif
+
 class Buffer_stream : public std::iostream {
-protected:
+private:
 	Buffer_streambuf m_sb;
 
 public:
@@ -213,17 +231,7 @@ public:
 #endif
 };
 
-inline void swap(Buffer_streambuf &lhs, Buffer_streambuf &rhs) NOEXCEPT {
-	lhs.swap(rhs);
-}
-
 #ifdef POSEIDON_CXX14
-inline void swap(Buffer_istream &lhs, Buffer_istream &rhs) noexcept {
-	lhs.swap(rhs);
-}
-inline void swap(Buffer_ostream &lhs, Buffer_ostream &rhs) noexcept {
-	lhs.swap(rhs);
-}
 inline void swap(Buffer_stream &lhs, Buffer_stream &rhs) noexcept {
 	lhs.swap(rhs);
 }

@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "handshake.hpp"
 #include "../log.hpp"
-#include "../hash.hpp"
+#include "../sha1.hpp"
 #include "../random.hpp"
 #include "../profiler.hpp"
 #include "../http/utilities.hpp"

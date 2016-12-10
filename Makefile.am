@@ -36,7 +36,10 @@ pkginclude_HEADERS = \
 	src/vint64.hpp	\
 	src/multi_index_map.hpp	\
 	src/profiler.hpp	\
-	src/hash.hpp	\
+	src/crc32.hpp	\
+	src/md5.hpp	\
+	src/sha1.hpp	\
+	src/sha256.hpp	\
 	src/config_file.hpp	\
 	src/tcp_client_base.hpp	\
 	src/ssl_factories.hpp	\
@@ -205,7 +208,10 @@ lib_libposeidon_main_la_SOURCES = \
 	src/event_base.cpp	\
 	src/ip_port.cpp	\
 	src/sock_addr.cpp	\
-	src/hash.cpp	\
+	src/crc32.cpp	\
+	src/md5.cpp	\
+	src/sha1.cpp	\
+	src/sha256.cpp	\
 	src/uuid.cpp	\
 	src/config_file.cpp	\
 	src/module_raii.cpp	\
