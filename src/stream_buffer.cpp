@@ -18,6 +18,7 @@ struct StreamBuffer::Chunk FINAL {
 		void *p;
 
 		int err_code = ::pthread_mutex_lock(&g_pool_mutex);
+		(void)err_code;
 		assert(err_code == 0);
 		try {
 			const AUTO(head, static_cast<Chunk *>(g_pool_head));
@@ -43,6 +44,7 @@ struct StreamBuffer::Chunk FINAL {
 		const AUTO(head, static_cast<Chunk *>(p));
 
 		int err_code = ::pthread_mutex_lock(&g_pool_mutex);
+		(void)err_code;
 		assert(err_code == 0);
 		{
 			head->prev = static_cast<Chunk *>(g_pool_head);

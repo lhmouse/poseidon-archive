@@ -174,6 +174,7 @@ Logger::~Logger() NOEXCEPT {
 		line += '\n';
 
 		int err_code = ::pthread_mutex_lock(&g_mutex);
+		(void)err_code;
 		assert(err_code == 0);
 		try {
 			std::size_t bytes_total = 0;
