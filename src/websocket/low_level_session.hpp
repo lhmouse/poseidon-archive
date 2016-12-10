@@ -40,13 +40,6 @@ namespace WebSocket {
 		virtual bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) = 0;
 
 	public:
-		bool shutdown_read() NOEXCEPT OVERRIDE {
-			return shutdown(ST_NORMAL_CLOSURE);
-		}
-		bool shutdown_write() NOEXCEPT OVERRIDE {
-			return shutdown(ST_NORMAL_CLOSURE);
-		}
-
 		bool send(OpCode opcode, StreamBuffer payload, bool masked = false);
 		bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
 	};

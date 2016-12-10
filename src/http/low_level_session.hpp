@@ -66,6 +66,9 @@ namespace Http {
 		bool send_chunked_header(ResponseHeaders response_headers);
 		bool send_chunk(StreamBuffer entity);
 		bool send_chunked_trailer(OptionalMap headers);
+
+		bool send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers = OptionalMap()) NOEXCEPT;
+		bool send_default_and_shutdown(StatusCode status_code, Move<OptionalMap> headers) NOEXCEPT;
 	};
 }
 

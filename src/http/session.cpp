@@ -44,28 +44,12 @@ namespace Http {
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Http::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
-				try {
-					AUTO(headers, e.get_headers());
-					headers.set(sslit("Connection"), "Close");
-					session->send_default(e.get_status_code(), STD_MOVE(headers));
-					session->shutdown_read();
-					session->shutdown_write();
-				} catch(...){
-					session->force_shutdown();
-				}
+				session->send_default_and_shutdown(e.get_status_code(), e.get_headers());
 				throw;
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: what = ", e.what());
-				try {
-					OptionalMap headers;
-					headers.set(sslit("Connection"), "Close");
-					session->send_default(ST_INTERNAL_SERVER_ERROR, STD_MOVE(headers));
-					session->shutdown_read();
-					session->shutdown_write();
-				} catch(...){
-					session->force_shutdown();
-				}
+				session->send_default_and_shutdown(ST_INTERNAL_SERVER_ERROR);
 				throw;
 			} catch(...){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,

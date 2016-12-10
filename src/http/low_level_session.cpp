@@ -152,6 +152,45 @@ namespace Http {
 
 		return ServerWriter::put_chunked_trailer(STD_MOVE(headers));
 	}
+
+	bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers) NOEXCEPT {
+		PROFILE_ME;
+
+		try {
+			AUTO(real_headers, headers);
+			real_headers.set(sslit("Connection"), "Close");
+			send_default(status_code, STD_MOVE(real_headers));
+			shutdown_read();
+			return shutdown_write();
+		} catch(std::exception &e){
+			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			force_shutdown();
+			return false;
+		} catch(...){
+			LOG_POSEIDON_ERROR("Unknown exception thrown.");
+			force_shutdown();
+			return false;
+		}
+	}
+	bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, Move<OptionalMap> headers) NOEXCEPT {
+		PROFILE_ME;
+
+		try {
+			AUTO(real_headers, STD_MOVE_IDN(headers));
+			real_headers.set(sslit("Connection"), "Close");
+			send_default(status_code, STD_MOVE(real_headers));
+			shutdown_read();
+			return shutdown_write();
+		} catch(std::exception &e){
+			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			force_shutdown();
+			return false;
+		} catch(...){
+			LOG_POSEIDON_ERROR("Unknown exception thrown.");
+			force_shutdown();
+			return false;
+		}
+	}
 }
 
 }
