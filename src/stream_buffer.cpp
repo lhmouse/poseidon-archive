@@ -546,9 +546,15 @@ void StreamBuffer::splice(StreamBuffer &rhs) NOEXCEPT {
 std::string StreamBuffer::dump() const {
 	PROFILE_ME;
 
-	std::ostringstream oss;
-	dump(oss);
-	return oss.str();
+//	std::ostringstream oss;
+//	dump(oss);
+//	return oss.str();
+	std::string str;
+	str.reserve(size());
+	for(AUTO(chunk, m_first); chunk; chunk = chunk->next){
+		str.append(reinterpret_cast<char *>(chunk->data + chunk->begin), chunk->end - chunk->begin);
+	}
+	return str;
 }
 void StreamBuffer::dump(std::ostream &os) const {
 	PROFILE_ME;
