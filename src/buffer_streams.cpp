@@ -45,7 +45,10 @@ Buffer_streambuf::int_type Buffer_streambuf::underflow(){
 		if(n_peeked == 0){
 			return traits_type::eof();
 		}
-		setg(m_get_area.begin(), m_get_area.begin(), m_get_area.begin() + n_peeked);
+		if(n_peeked < static_cast<int>(m_get_area.size())){
+			std::copy_backward(m_get_area.begin(), m_get_area.begin() + n_peeked, m_get_area.end());
+		}
+		setg(m_get_area.end() - n_peeked, m_get_area.end() - n_peeked, m_get_area.end());
 		return traits_type::to_int_type(*gptr());
 	} else {
 		return traits_type::eof();
@@ -59,7 +62,11 @@ Buffer_streambuf::int_type Buffer_streambuf::pbackfail(Buffer_streambuf::int_typ
 		}
 		m_buffer.unget(static_cast<unsigned char>(traits_type::to_char_type(c)));
 		if(gptr()){
-			std::copy_backward(gptr(), egptr() - 1, egptr());
+			if(eback() == m_get_area.begin()){
+				std::copy_backward(gptr(), egptr() - 1, egptr());
+			} else {
+				setg(eback() - 1, gptr(), egptr());
+			}
 			*gptr() = traits_type::to_char_type(c);
 		}
 		return c;
