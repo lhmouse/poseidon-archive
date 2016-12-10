@@ -8,7 +8,7 @@
 namespace Poseidon {
 
 namespace {
-	::pthread_mutex_t g_pool_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+	::pthread_mutex_t g_pool_mutex = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
 	void *g_pool_head = NULLPTR;
 }
 
