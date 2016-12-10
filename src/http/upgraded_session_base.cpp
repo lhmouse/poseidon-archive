@@ -4,6 +4,8 @@
 #include "../precompiled.hpp"
 #include "upgraded_session_base.hpp"
 #include "low_level_session.hpp"
+#include "../log.hpp"
+#include "../profiler.hpp"
 
 namespace Poseidon {
 
@@ -63,6 +65,35 @@ namespace Http {
 			return;
 		}
 		parent->TcpSessionBase::force_shutdown();
+	}
+
+	const IpPort &UpgradedSessionBase::get_remote_info() const {
+		PROFILE_ME;
+
+		return get_safe_parent()->get_remote_info();
+	}
+	const IpPort &UpgradedSessionBase::get_local_info() const {
+		PROFILE_ME;
+
+		return get_safe_parent()->get_remote_info();
+	}
+	IpPort UpgradedSessionBase::get_remote_info_nothrow() const NOEXCEPT
+	try {
+		PROFILE_ME;
+
+		return get_remote_info();
+	} catch(std::exception &e){
+		LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
+		return IpPort(sslit("<unknown>"), 0);
+	}
+	IpPort UpgradedSessionBase::get_local_info_nothrow() const NOEXCEPT
+	try {
+		PROFILE_ME;
+
+		return get_local_info();
+	} catch(std::exception &e){
+		LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
+		return IpPort(sslit("<unknown>"), 0);
 	}
 
 	void UpgradedSessionBase::set_timeout(boost::uint64_t timeout){

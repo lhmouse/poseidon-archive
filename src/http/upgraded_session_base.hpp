@@ -5,6 +5,7 @@
 #define POSEIDON_HTTP_UPGRADED_SESSION_BASE_HPP_
 
 #include "../session_base.hpp"
+#include "../ip_port.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 
@@ -59,6 +60,11 @@ namespace Http {
 		boost::shared_ptr<LowLevelSession> get_safe_parent(){
 			return boost::shared_ptr<LowLevelSession>(m_parent);
 		}
+
+		const IpPort &get_remote_info() const;
+		const IpPort &get_local_info() const;
+		IpPort get_remote_info_nothrow() const NOEXCEPT;
+		IpPort get_local_info_nothrow() const NOEXCEPT;
 
 		void set_timeout(boost::uint64_t timeout);
 	};
