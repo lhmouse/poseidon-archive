@@ -43,7 +43,7 @@ namespace Http {
 				really_perform(session);
 			} catch(Exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Http::Exception thrown in HTTP servlet: status_code = ", e.get_status_code(), ", what = ", e.what());
+					"Http::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 				try {
 					AUTO(headers, e.get_headers());
 					headers.set(sslit("Connection"), "Close");
