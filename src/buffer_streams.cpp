@@ -60,15 +60,8 @@ Buffer_streambuf::int_type Buffer_streambuf::pbackfail(Buffer_streambuf::int_typ
 		if(traits_type::eq_int_type(c, traits_type::eof())){
 			return traits_type::eof();
 		}
+		sync();
 		m_buffer.unget(static_cast<unsigned char>(traits_type::to_char_type(c)));
-		if(gptr()){
-			if(eback() == m_get_area.begin()){
-				std::copy_backward(gptr(), egptr() - 1, egptr());
-			} else {
-				setg(eback() - 1, gptr(), egptr());
-			}
-			*gptr() = traits_type::to_char_type(c);
-		}
 		return c;
 	} else {
 		return traits_type::eof();
