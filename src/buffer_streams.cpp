@@ -10,26 +10,29 @@ Buffer_streambuf::~Buffer_streambuf(){
 }
 
 int Buffer_streambuf::sync(){
-	setg(m_get_area.begin(), m_get_area.end(), m_get_area.end());
+	if(gptr()){
+		m_buffer.discard(static_cast<unsigned>(gptr() - eback()));
+		setg(NULLPTR, NULLPTR, NULLPTR);
+	}
 	return std::streambuf::sync();
 }
 
 std::streamsize Buffer_streambuf::showmanyc(){
 	if(m_which & std::ios_base::in){
-		return static_cast<std::streamsize>(m_buffer.size());
+		std::streamsize n_avail = static_cast<std::streamsize>(m_buffer.size());
+		if(gptr()){
+			n_avail -= gptr() - eback();
+		}
+		return n_avail;
 	} else {
 		return 0;
 	}
 }
 std::streamsize Buffer_streambuf::xsgetn(Buffer_streambuf::char_type *s, std::streamsize n){
 	if(m_which & std::ios_base::in){
+		sync();
 		int n_got = std::min<std::streamsize>(n, INT_MAX);
 		n_got = static_cast<int>(m_buffer.get(s, static_cast<unsigned>(n_got)));
-		if(gptr() && (egptr() - gptr() > n_got)){
-			setg(m_get_area.begin(), gptr() + n_got, m_get_area.end());
-		} else {
-			setg(m_get_area.begin(), m_get_area.end(), m_get_area.end());
-		}
 		return n_got;
 	} else {
 		return 0;
@@ -37,13 +40,12 @@ std::streamsize Buffer_streambuf::xsgetn(Buffer_streambuf::char_type *s, std::st
 }
 Buffer_streambuf::int_type Buffer_streambuf::underflow(){
 	if(m_which & std::ios_base::in){
-		char temp[sizeof(m_get_area)];
-		int n_peeked = static_cast<int>(m_buffer.peek(temp, sizeof(temp)));
+		sync();
+		int n_peeked = static_cast<int>(m_buffer.peek(m_get_area.begin(), m_get_area.size()));
 		if(n_peeked == 0){
 			return traits_type::eof();
 		}
-		setg(m_get_area.begin(), m_get_area.end() - n_peeked, m_get_area.end());
-		std::copy(temp, temp + n_peeked, gptr());
+		setg(m_get_area.begin(), m_get_area.begin(), m_get_area.begin() + n_peeked);
 		return traits_type::to_int_type(*gptr());
 	} else {
 		return traits_type::eof();
@@ -55,10 +57,10 @@ Buffer_streambuf::int_type Buffer_streambuf::pbackfail(Buffer_streambuf::int_typ
 		if(traits_type::eq_int_type(c, traits_type::eof())){
 			return traits_type::eof();
 		}
-		m_buffer.unget(c);
+		m_buffer.unget(static_cast<unsigned char>(traits_type::to_char_type(c)));
 		if(gptr()){
 			std::copy_backward(gptr(), egptr() - 1, egptr());
-			*gptr() = c;
+			*gptr() = traits_type::to_char_type(c);
 		}
 		return c;
 	} else {
@@ -80,7 +82,7 @@ Buffer_streambuf::int_type Buffer_streambuf::overflow(Buffer_streambuf::int_type
 		if(traits_type::eq_int_type(c, traits_type::eof())){
 			return traits_type::not_eof(c);
 		}
-		m_buffer.put(c);
+		m_buffer.put(static_cast<unsigned char>(traits_type::to_char_type(c)));
 		return c;
 	} else {
 		return traits_type::eof();

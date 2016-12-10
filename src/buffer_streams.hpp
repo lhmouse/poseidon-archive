@@ -75,9 +75,6 @@ protected:
 	int_type overflow(int_type c = traits_type::eof()) OVERRIDE;
 
 public:
-	const StreamBuffer &get_buffer() const {
-		return m_buffer;
-	}
 	StreamBuffer &get_buffer(){
 		sync();
 		return m_buffer;
@@ -97,121 +94,121 @@ public:
 
 class Buffer_istream : public std::istream {
 protected:
-	Buffer_streambuf m_buf;
+	Buffer_streambuf m_sb;
 
 public:
 	explicit Buffer_istream(std::ios_base::openmode which = std::ios_base::in)
-		: std::istream(&m_buf)
-		, m_buf(which | std::ios_base::in)
+		: std::istream(&m_sb)
+		, m_sb(which | std::ios_base::in)
 	{
 	}
 	explicit Buffer_istream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in)
-		: std::istream(&m_buf)
-		, m_buf(STD_MOVE(buffer), which | std::ios_base::in)
+		: std::istream(&m_sb)
+		, m_sb(STD_MOVE(buffer), which | std::ios_base::in)
 	{
 	}
 	~Buffer_istream() OVERRIDE;
 
 public:
 	Buffer_streambuf *rdbuf() const {
-		return const_cast<Buffer_streambuf *>(&m_buf);
+		return const_cast<Buffer_streambuf *>(&m_sb);
 	}
 
 	const StreamBuffer &get_buffer() const {
-		return m_buf.get_buffer();
+		return rdbuf()->get_buffer();
 	}
 	StreamBuffer &get_buffer(){
-		return m_buf.get_buffer();
+		return rdbuf()->get_buffer();
 	}
 	void set_buffer(StreamBuffer buffer){
-		m_buf.set_buffer(STD_MOVE(buffer));
+		rdbuf()->set_buffer(STD_MOVE(buffer));
 	}
 
 #ifdef POSEIDON_CXX14
 	void swap(Buffer_istream &rhs) noexcept {
 		std::istream::swap(rhs);
 		using std::swap;
-		swap(m_buf, rhs.m_buf);
+		swap(m_sb, rhs.m_sb);
 	}
 #endif
 };
 class Buffer_ostream : public std::ostream {
 protected:
-	Buffer_streambuf m_buf;
+	Buffer_streambuf m_sb;
 
 public:
 	explicit Buffer_ostream(std::ios_base::openmode which = std::ios_base::out)
-		: std::ostream(&m_buf)
-		, m_buf(which | std::ios_base::out)
+		: std::ostream(&m_sb)
+		, m_sb(which | std::ios_base::out)
 	{
 	}
 	explicit Buffer_ostream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::out)
-		: std::ostream(&m_buf)
-		, m_buf(STD_MOVE(buffer), which | std::ios_base::out)
+		: std::ostream(&m_sb)
+		, m_sb(STD_MOVE(buffer), which | std::ios_base::out)
 	{
 	}
 	~Buffer_ostream() OVERRIDE;
 
 public:
 	Buffer_streambuf *rdbuf() const {
-		return const_cast<Buffer_streambuf *>(&m_buf);
+		return const_cast<Buffer_streambuf *>(&m_sb);
 	}
 
 	const StreamBuffer &get_buffer() const {
-		return m_buf.get_buffer();
+		return rdbuf()->get_buffer();
 	}
 	StreamBuffer &get_buffer(){
-		return m_buf.get_buffer();
+		return rdbuf()->get_buffer();
 	}
 	void set_buffer(StreamBuffer buffer){
-		m_buf.set_buffer(STD_MOVE(buffer));
+		rdbuf()->set_buffer(STD_MOVE(buffer));
 	}
 
 #ifdef POSEIDON_CXX14
 	void swap(Buffer_ostream &rhs) noexcept {
 		std::ostream::swap(rhs);
 		using std::swap;
-		swap(m_buf, rhs.m_buf);
+		swap(m_sb, rhs.m_sb);
 	}
 #endif
 };
 class Buffer_stream : public std::iostream {
 protected:
-	Buffer_streambuf m_buf;
+	Buffer_streambuf m_sb;
 
 public:
 	explicit Buffer_stream(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
-		: std::iostream(&m_buf)
-		, m_buf(which)
+		: std::iostream(&m_sb)
+		, m_sb(which)
 	{
 	}
 	explicit Buffer_stream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
-		: std::iostream(&m_buf)
-		, m_buf(STD_MOVE(buffer), which)
+		: std::iostream(&m_sb)
+		, m_sb(STD_MOVE(buffer), which)
 	{
 	}
 	~Buffer_stream() OVERRIDE;
 
 public:
 	Buffer_streambuf *rdbuf() const {
-		return const_cast<Buffer_streambuf *>(&m_buf);
+		return const_cast<Buffer_streambuf *>(&m_sb);
 	}
 
 	const StreamBuffer &get_buffer() const {
-		return m_buf.get_buffer();
+		return rdbuf()->get_buffer();
 	}
 	StreamBuffer &get_buffer(){
-		return m_buf.get_buffer();
+		return rdbuf()->get_buffer();
 	}
 	void set_buffer(StreamBuffer buffer){
-		m_buf.set_buffer(STD_MOVE(buffer));
+		rdbuf()->set_buffer(STD_MOVE(buffer));
 	}
 
 #ifdef POSEIDON_CXX14
 	void swap(Buffer_stream &rhs) noexcept {
 		std::iostream::swap(rhs);
 		using std::swap;
-		swap(m_buf, rhs.m_buf);
+		swap(m_sb, rhs.m_sb);
 	}
 #endif
 };
