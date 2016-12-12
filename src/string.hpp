@@ -6,6 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
+#include "buffer_streams.hpp"
 #include <vector>
 #include <string>
 #include <cstddef>
@@ -20,16 +21,15 @@ template<typename T>
 inline std::vector<T> explode(char separator, const std::string &str, std::size_t limit = 0){
 	std::vector<T> ret;
 	if(!str.empty()){
-		std::size_t begin = 0;
+		std::size_t begin = 0, end;
 		std::string temp;
 		for(;;){
-			const std::size_t end = str.find(separator, begin);
-			if(end == std::string::npos){
-				temp.assign(str, begin, std::string::npos);
-				ret.push_back(boost::lexical_cast<T>(temp));
-				break;
-			}
 			if((limit != 0) && (ret.size() == limit - 1)){
+				end = std::string::npos;
+			} else {
+				end = str.find(separator, begin);
+			}
+			if(end == std::string::npos){
 				temp.assign(str, begin, std::string::npos);
 				ret.push_back(boost::lexical_cast<T>(temp));
 				break;
@@ -45,16 +45,15 @@ template<>
 inline std::vector<std::string> explode(char separator, const std::string &str, std::size_t limit){
 	std::vector<std::string> ret;
 	if(!str.empty()){
-		std::size_t begin = 0;
+		std::size_t begin = 0, end;
 		std::string temp;
 		for(;;){
-			const std::size_t end = str.find(separator, begin);
-			if(end == std::string::npos){
-				temp.assign(str, begin, std::string::npos);
-				ret.push_back(STD_MOVE(temp));
-				break;
-			}
 			if((limit != 0) && (ret.size() == limit - 1)){
+				end = std::string::npos;
+			} else {
+				end = str.find(separator, begin);
+			}
+			if(end == std::string::npos){
 				temp.assign(str, begin, std::string::npos);
 				ret.push_back(STD_MOVE(temp));
 				break;
@@ -69,14 +68,14 @@ inline std::vector<std::string> explode(char separator, const std::string &str, 
 
 template<typename T>
 inline std::string implode(char separator, const std::vector<T> &vec){
-	std::ostringstream oss;
+	Buffer_ostream os;
 	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
-		oss <<*it;
+		os <<*it;
 		if(separator != 0){
-			oss.put(separator);
+			os <<separator;
 		}
 	}
-	std::string ret = oss.str();
+	std::string ret = os.get_buffer().dump_string();
 	if(!ret.empty()){
 		ret.erase(ret.end() - 1);
 	}

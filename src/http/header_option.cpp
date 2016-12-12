@@ -3,9 +3,10 @@
 
 #include "../precompiled.hpp"
 #include "header_option.hpp"
+#include "urlencoded.hpp"
 #include "../string.hpp"
 #include "../profiler.hpp"
-#include "utilities.hpp"
+#include "../buffer_streams.hpp"
 
 namespace Poseidon {
 
@@ -13,9 +14,9 @@ namespace Http {
 	std::string HeaderOption::dump() const {
 		PROFILE_ME;
 
-		std::ostringstream oss;
-		dump(oss);
-		return oss.str();
+		Buffer_ostream os;
+		dump(os);
+		return os.get_buffer().dump_string();
 	}
 	void HeaderOption::dump(std::ostream &os) const {
 		PROFILE_ME;
@@ -27,7 +28,7 @@ namespace Http {
 			os <<it->first.get();
 			if(!it->second.empty()){
 				os <<'=';
-				os <<url_encode(it->second);
+				url_encode(os, it->second);
 			}
 		}
 	}

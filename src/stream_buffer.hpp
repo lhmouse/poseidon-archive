@@ -236,7 +236,7 @@ public:
 		swap(m_size, rhs.m_size);
 	}
 
-	std::string dump() const;
+	std::string dump_string() const;
 	void dump(std::ostream &os) const;
 
 public:

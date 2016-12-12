@@ -7,6 +7,7 @@
 #include "../time.hpp"
 #include "../uuid.hpp"
 #include "../profiler.hpp"
+#include "../buffer_streams.hpp"
 #pragma GCC push_options
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #include <bson.h>
@@ -259,9 +260,9 @@ namespace MongoDb {
 	std::string BsonBuilder::build(bool as_array) const {
 		PROFILE_ME;
 
-		std::ostringstream oss;
-		build(oss, as_array);
-		return oss.str();
+		Buffer_ostream os;
+		build(os, as_array);
+		return os.get_buffer().dump_string();
 	}
 	void BsonBuilder::build(std::ostream &os, bool as_array) const {
 		PROFILE_ME;
@@ -280,9 +281,9 @@ namespace MongoDb {
 	std::string BsonBuilder::build_json(bool as_array) const {
 		PROFILE_ME;
 
-		std::ostringstream oss;
-		build_json(oss, as_array);
-		return oss.str();
+		Buffer_ostream os;
+		build_json(os, as_array);
+		return os.get_buffer().dump_string();
 	}
 	void BsonBuilder::build_json(std::ostream &os, bool as_array) const {
 		PROFILE_ME;

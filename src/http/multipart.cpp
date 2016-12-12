@@ -3,17 +3,20 @@
 
 #include "../precompiled.hpp"
 #include "multipart.hpp"
-#include "utilities.hpp"
 #include "../profiler.hpp"
 #include "../log.hpp"
 #include "../protocol_exception.hpp"
 #include "../random.hpp"
 #include "../string.hpp"
+#include "../buffer_streams.hpp"
 #include <string.h>
 
 namespace Poseidon {
 
 namespace {
+	CONSTEXPR const char     BOUNDARY_CHARS[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+	CONSTEXPR const unsigned BOUNDARY_LEN     = 60;
+
 	const Http::MultipartElement g_empty_multipart_element;
 }
 
@@ -25,13 +28,10 @@ namespace Http {
 	void Multipart::random_boundary(){
 		PROFILE_ME;
 
-		static const char s_boundary_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-		static const std::size_t s_boundary_len = 60;
-
 		std::string boundary;
-		boundary.reserve(s_boundary_len);
-		for(std::size_t i = 0; i < s_boundary_len; ++i){
-			boundary.push_back(s_boundary_chars[Poseidon::random_uint32() % (sizeof(s_boundary_chars) - 1)]);
+		boundary.reserve(BOUNDARY_LEN);
+		for(unsigned i = 0; i < BOUNDARY_LEN; ++i){
+			boundary.push_back(BOUNDARY_CHARS[Poseidon::random_uint32() % (sizeof(BOUNDARY_CHARS) - 1)]);
 		}
 		m_boundary.swap(boundary);
 	}
@@ -39,9 +39,9 @@ namespace Http {
 	std::string Multipart::dump() const {
 		PROFILE_ME;
 
-		std::ostringstream oss;
-		dump(oss);
-		return oss.str();
+		Buffer_ostream os;
+		dump(os);
+		return os.get_buffer().dump_string();
 	}
 	void Multipart::dump(std::ostream &os) const {
 		PROFILE_ME;

@@ -31,6 +31,7 @@ public:
 
 	void clear();
 	void put(const void *data, std::size_t size);
+	void put(const StreamBuffer &buffer);
 	StreamBuffer finalize();
 };
 
@@ -54,6 +55,7 @@ public:
 
 	void clear();
 	void put(const void *data, std::size_t size);
+	void put(const StreamBuffer &buffer);
 	StreamBuffer finalize();
 };
 

@@ -40,6 +40,8 @@ pkginclude_HEADERS = \
 	src/md5.hpp	\
 	src/sha1.hpp	\
 	src/sha256.hpp	\
+	src/hex.hpp	\
+	src/base64.hpp	\
 	src/config_file.hpp	\
 	src/tcp_client_base.hpp	\
 	src/ssl_factories.hpp	\
@@ -110,7 +112,7 @@ pkginclude_http_HEADERS = \
 	src/http/verbs.hpp	\
 	src/http/status_codes.hpp	\
 	src/http/exception.hpp	\
-	src/http/utilities.hpp	\
+	src/http/urlencoded.hpp	\
 	src/http/upgraded_session_base.hpp	\
 	src/http/upgraded_client_base.hpp	\
 	src/http/url_param.hpp	\
@@ -153,7 +155,7 @@ pkginclude_mysql_HEADERS = \
 	src/mysql/connection.hpp	\
 	src/mysql/object_base.hpp	\
 	src/mysql/exception.hpp	\
-	src/mysql/utilities.hpp
+	src/mysql/formatting.hpp
 
 pkginclude_mongodbdir = $(pkgincludedir)/mongodb
 pkginclude_mongodb_HEADERS = \
@@ -212,6 +214,8 @@ lib_libposeidon_main_la_SOURCES = \
 	src/md5.cpp	\
 	src/sha1.cpp	\
 	src/sha256.cpp	\
+	src/hex.cpp	\
+	src/base64.cpp	\
 	src/uuid.cpp	\
 	src/config_file.cpp	\
 	src/module_raii.cpp	\
@@ -253,7 +257,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/http/authorization.cpp	\
 	src/http/status_codes.cpp	\
 	src/http/verbs.cpp	\
-	src/http/utilities.cpp	\
+	src/http/urlencoded.cpp	\
 	src/http/upgraded_session_base.cpp	\
 	src/http/upgraded_client_base.cpp	\
 	src/http/exception.cpp	\
@@ -272,7 +276,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/websocket/exception.cpp	\
 	src/mysql/object_base.cpp	\
 	src/mysql/exception.cpp	\
-	src/mysql/utilities.cpp	\
+	src/mysql/formatting.cpp	\
 	src/mysql/thread_context.cpp	\
 	src/mysql/connection.cpp	\
 	src/mongodb/object_base.cpp	\

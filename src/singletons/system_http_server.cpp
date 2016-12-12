@@ -13,11 +13,12 @@
 #include "../profiler.hpp"
 #include "../tcp_server_base.hpp"
 #include "../http/session.hpp"
-#include "../http/utilities.hpp"
+#include "../http/urlencoded.hpp"
 #include "../http/exception.hpp"
 #include "../http/authorization.hpp"
 #include "../http/url_param.hpp"
 #include "../csv_document.hpp"
+#include "../buffer_streams.hpp"
 
 namespace Poseidon {
 
@@ -35,20 +36,19 @@ namespace {
 		}
 
 	protected:
-		void on_request_headers(Http::RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE {
-			check_and_throw_if_unauthorized(m_auth_info, get_remote_info(), request_headers);
-
-			Http::Session::on_request_headers(STD_MOVE(request_headers), content_length);
-		}
-
 		void on_sync_request(Http::RequestHeaders request_headers, StreamBuffer /* entity */) OVERRIDE {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", get_remote_info());
 
+			check_and_throw_if_unauthorized(m_auth_info, get_remote_info(), request_headers);
+
 			try {
-				AUTO(uri, Http::url_decode(request_headers.uri));
+				Buffer_istream uri_is;
+				uri_is.set_buffer(StreamBuffer(request_headers.uri));
+				std::string uri;
+				Http::url_decode(uri_is, uri);
 				if((uri.size() < m_prefix.size()) || (uri.compare(0, m_prefix.size(), m_prefix) != 0)){
-					LOG_POSEIDON_WARNING("Inacceptable system HTTP request: uri = ", uri, ", prefix = ", m_prefix);
+					LOG_POSEIDON_WARNING("Inacceptable system HTTP request: uri = ", request_headers.uri, ", prefix = ", m_prefix);
 					DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 				}
 				uri.erase(0, m_prefix.size());
@@ -70,10 +70,11 @@ namespace {
 					}
 					send_default(Http::ST_OK);
 				} else if(uri == "unload_module"){
-					AUTO_REF(base_addr_str, request_headers.get_params.at("base_addr"));
-					std::istringstream iss(base_addr_str);
+					const AUTO_REF(base_addr_str, request_headers.get_params.at("base_addr"));
+					Buffer_istream base_addr_is;
+					base_addr_is.set_buffer(StreamBuffer(base_addr_str));
 					void *base_addr;
-					if(!(iss >>base_addr) || !iss.eof()){
+					if(!(base_addr_is >>base_addr)){
 						LOG_POSEIDON_WARNING("Bad base_addr string: ", base_addr_str);
 						send_default(Http::ST_BAD_REQUEST);
 						return;

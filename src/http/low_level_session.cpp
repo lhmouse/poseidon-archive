@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "low_level_session.hpp"
 #include "exception.hpp"
-#include "utilities.hpp"
 #include "upgraded_session_base.hpp"
 #include "header_option.hpp"
 #include "../log.hpp"

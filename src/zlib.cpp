@@ -75,6 +75,13 @@ void Deflator::put(const void *data, std::size_t size){
 		}
 	}
 }
+void Deflator::put(const StreamBuffer &buffer){
+	PROFILE_ME;
+
+	for(AUTO(en, buffer.get_chunk_enumerator()); en; ++en){
+		put(en.data(), en.size());
+	}
+}
 StreamBuffer Deflator::finalize(){
 	PROFILE_ME;
 
@@ -97,8 +104,7 @@ StreamBuffer Deflator::finalize(){
 	}
 	m_buffer.put(m_context->temp, sizeof(m_context->temp) - m_context->stream.avail_out);
 
-	StreamBuffer ret;
-	ret.swap(m_buffer);
+	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
 	return ret;
 }
@@ -168,6 +174,13 @@ void Inflator::put(const void *data, std::size_t size){
 		}
 	}
 }
+void Inflator::put(const StreamBuffer &buffer){
+	PROFILE_ME;
+
+	for(AUTO(en, buffer.get_chunk_enumerator()); en; ++en){
+		put(en.data(), en.size());
+	}
+}
 StreamBuffer Inflator::finalize(){
 	PROFILE_ME;
 
@@ -190,8 +203,7 @@ StreamBuffer Inflator::finalize(){
 	}
 	m_buffer.put(m_context->temp, sizeof(m_context->temp) - m_context->stream.avail_out);
 
-	StreamBuffer ret;
-	ret.swap(m_buffer);
+	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
 	return ret;
 }

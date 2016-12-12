@@ -7,10 +7,9 @@
 #include "../cxx_ver.hpp"
 #include "../cxx_util.hpp"
 #include "connection.hpp"
-#include "utilities.hpp"
+#include "formatting.hpp"
 #include "exception.hpp"
 #include <string>
-#include <sstream>
 #include <vector>
 #include <exception>
 #include <cstdio>

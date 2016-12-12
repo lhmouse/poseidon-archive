@@ -4,7 +4,8 @@
 #include "../precompiled.hpp"
 #include "authorization.hpp"
 #include "exception.hpp"
-#include "utilities.hpp"
+#include "../hex.hpp"
+#include "../base64.hpp"
 #include "../singletons/main_config.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
@@ -14,6 +15,7 @@
 #include "../random.hpp"
 #include "../crc32.hpp"
 #include "../md5.hpp"
+#include "../stream_buffer.hpp"
 
 namespace Poseidon {
 
@@ -103,12 +105,13 @@ namespace Http {
 				realm = STD_MOVE(value);	\
 			} else if(::strcasecmp(key.c_str(), "nonce") == 0){	\
 				nonce = STD_MOVE(value);	\
-				AUTO(nonce_bytes, base64_decode(nonce));	\
-				if(nonce_bytes.size() != sizeof(raw_nonce)){	\
+				Base64Decoder hex_dec;	\
+				hex_dec.put(nonce.data(), nonce.size());	\
+				AUTO(nonce_bytes, hex_dec.finalize());	\
+				if(nonce_bytes.get(&raw_nonce, sizeof(raw_nonce)) != sizeof(raw_nonce)){	\
 					LOG_POSEIDON_WARNING("> Inacceptable nonce.");	\
 					return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);	\
 				}	\
-				std::memcpy(&raw_nonce, nonce_bytes.data(), sizeof(raw_nonce));	\
 				xor_nonce(raw_nonce, remote_addr.ip.get());	\
 			} else if(::strcasecmp(key.c_str(), "uri") == 0){	\
 				uri = STD_MOVE(value);	\
@@ -134,7 +137,6 @@ namespace Http {
 						ps = PS_KEY;
 					}
 					break;
-
 				case PS_KEY:
 					if(*it == '='){
 						ps = PS_VALUE_INDENT;
@@ -143,7 +145,6 @@ namespace Http {
 						// ps = PS_KEY;
 					}
 					break;
-
 				case PS_VALUE_INDENT:
 					if(*it == ' '){
 						// ps = PS_VALUE_INDENT;
@@ -154,7 +155,6 @@ namespace Http {
 						ps = PS_VALUE;
 					}
 					break;
-
 				case PS_VALUE:
 					if(*it == ','){
 						COMMIT_KEY_VALUE;
@@ -167,7 +167,6 @@ namespace Http {
 						// ps = PS_VALUE;
 					}
 					break;
-
 				case PS_QUOTED_VALUE:
 					if(*it == '\"'){
 						ps = PS_VALUE;
@@ -192,6 +191,10 @@ namespace Http {
 			if(nonce.empty()){
 				LOG_POSEIDON_WARNING("> No nonce specified.");
 				return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);
+			}
+			if(!(qop.empty() || (::strcasecmp(qop.c_str(), "auth") == 0))){
+				LOG_POSEIDON_WARNING("> Inacceptable qop: ", qop);
+				return std::make_pair(AUTH_INACCEPTABLE_QOP, NULLPTR);
 			}
 			if(!(algorithm.empty() || (::strcasecmp(algorithm.c_str(), "MD5") == 0))){
 				LOG_POSEIDON_WARNING("> Inacceptable algorithm: ", algorithm);
@@ -221,41 +224,24 @@ namespace Http {
 				return std::make_pair(AUTH_INVALID_USER_PASS, NULLPTR);
 			}
 
-			std::string a1, a2;
+			Md5_ostream a1_md5s, a2_md5s;
+			a1_md5s <<username <<':' <<realm <<':' <<(auth_it->data() + username.size() + 1);
+			a2_md5s <<get_string_from_verb(verb) <<':' <<uri;
 
-			a1.reserve(255);
-			a1 += username;
-			a1 += ':';
-			a1 += realm;
-			a1 += ':';
-			a1.append(*auth_it, username.size() + 1, std::string::npos);
-
-			a2.reserve(255);
-			a2 += get_string_from_verb(verb);
-			a2 += ':';
-			a2 += uri;
-
-			std::string str_to_hash;
-			AUTO(md5, md5_hash(a1));
-			str_to_hash += hex_encode(md5.data(), md5.size(), false);
-			str_to_hash += ':';
-			str_to_hash += nonce;
-			str_to_hash += ':';
-			if(::strcasecmp(qop.c_str(), "auth") == 0){
-				str_to_hash += nc;
-				str_to_hash += ':';
-				str_to_hash += cnonce;
-				str_to_hash += ':';
-				str_to_hash += qop;
-				str_to_hash += ':';
-			} else if(!qop.empty()){
-				LOG_POSEIDON_WARNING("> Inacceptable qop: ", qop);
-				return std::make_pair(AUTH_INACCEPTABLE_QOP, NULLPTR);
+			Md5_ostream resp_md5s;
+			HexEncoder hex_enc(false);
+			AUTO(md5, a1_md5s.finalize());
+			hex_enc.put(md5.data(), md5.size());
+			resp_md5s <<hex_enc.finalize() <<':' <<nonce <<':';
+			if(!qop.empty()){
+				resp_md5s <<nc <<':' <<cnonce <<':' <<qop <<':';
 			}
-			md5 = md5_hash(a2);
-			str_to_hash += hex_encode(md5.data(), md5.size(), false);
-			md5 = md5_hash(str_to_hash);
-			const AUTO(response_expecting, hex_encode(md5.data(), md5.size()));
+			md5 = a2_md5s.finalize();
+			hex_enc.put(md5.data(), md5.size());
+			resp_md5s <<hex_enc.finalize();
+			md5 = resp_md5s.finalize();
+			hex_enc.put(md5.data(), md5.size());
+			const AUTO(response_expecting, hex_enc.finalize().dump_string());
 			LOG_POSEIDON_DEBUG("> Response expecting: ", response_expecting);
 			if(::strcasecmp(response.c_str(), response_expecting.c_str()) != 0){
 				LOG_POSEIDON_WARNING("> Digest mismatch.");
@@ -280,48 +266,40 @@ namespace Http {
 		case AUTH_REQUIRED:
 			auth += "Authorization required";
 			break;
-
 		case AUTH_INVALID_HEADER:
 			auth += "Invalid HTTP authorization header";
 			break;
-
 		case AUTH_UNKNOWN_SCHEME:
 			auth += "Unknown HTTP authorization scheme";
 			break;
-
 		case AUTH_INVALID_USER_PASS:
 			auth += "Invalid username or password";
 			break;
-
 		case AUTH_INACCEPTABLE_NONCE:
 			auth += "Nonce is not acceptable";
 			break;
-
 		case AUTH_EXPIRED:
 			auth += "Nonce has expired";
 			break;
-
 		case AUTH_INACCEPTABLE_ALGORITHM:
 			auth += "Algorithm is not acceptable";
 			break;
-
 		case AUTH_INACCEPTABLE_QOP:
 			auth += "QoP is not acceptable";
 			break;
-
 		default:
 			LOG_POSEIDON_ERROR("HTTP authorization error: auth_result = ", auth_result);
 			auth += "Internal server error";
 			break;
 		}
-		auth += "\",nonce=\"";
+		auth += "\", nonce=\"";
 		RawNonce raw_nonce;
 		raw_nonce.timestamp = get_local_time();
 		raw_nonce.random = random_uint64();
 		raw_nonce.identifier = g_identifier;
 		xor_nonce(raw_nonce, remote_addr.ip.get());
 		auth += base64_encode(&raw_nonce, sizeof(raw_nonce));
-		auth += "\",qop-value=\"auth\",algorithm=\"MD5\"";
+		auth += "\", qop-value=\"auth\", algorithm=\"MD5\"";
 
 		headers.set(SharedNts(auth_name), STD_MOVE(auth));
 		DEBUG_THROW(Exception, status_code, STD_MOVE(headers));

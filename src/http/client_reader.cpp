@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "client_reader.hpp"
 #include "exception.hpp"
-#include "utilities.hpp"
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -78,7 +77,7 @@ namespace Http {
 					m_content_length = 0;
 					m_content_offset = 0;
 
-					std::string line = expected.dump();
+					std::string line = expected.dump_string();
 
 					AUTO(pos, line.find(' '));
 					if(pos == std::string::npos){
@@ -126,7 +125,7 @@ namespace Http {
 
 			case S_HEADERS:
 				if(!expected.empty()){
-					std::string line = expected.dump();
+					std::string line = expected.dump_string();
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
@@ -205,7 +204,7 @@ namespace Http {
 					m_chunk_offset = 0;
 					m_chunked_trailer.clear();
 
-					std::string line = expected.dump();
+					std::string line = expected.dump_string();
 
 					char *endptr;
 					m_chunk_size = ::strtoull(line.c_str(), &endptr, 16);
@@ -248,7 +247,7 @@ namespace Http {
 
 			case S_CHUNKED_TRAILER:
 				if(!expected.empty()){
-					std::string line = expected.dump();
+					std::string line = expected.dump_string();
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){

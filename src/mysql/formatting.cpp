@@ -2,7 +2,7 @@
 // Copyleft 2014 - 2016, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "utilities.hpp"
+#include "formatting.hpp"
 #include "../time.hpp"
 #include "../uuid.hpp"
 
@@ -12,30 +12,31 @@ namespace MySql {
 	std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs){
 		os <<'\'';
 		for(AUTO(it, rhs.str.begin()); it != rhs.str.end(); ++it){
-			switch(*it){
+			const char ch = *it;
+			switch(ch){
 			case 0:
-				os.put('\\').put('0');
+				os <<"\\0";
 				break;
 			case 0x1A:
-				os.put('\\').put('Z');
+				os <<"\\Z";
 				break;
 			case '\r':
-				os.put('\\').put('r');
+				os <<"\\r";
 				break;
 			case '\n':
-				os.put('\\').put('n');
+				os <<"\\n";
 				break;
 			case '\\':
-				os.put('\\').put('\\');
+				os <<"\\\\";
 				break;
 			case '\'':
-				os.put('\\').put('\'');
+				os <<"\\\'";
 				break;
 			case '\"':
-				os.put('\\').put('\"');
+				os <<"\\\"";
 				break;
 			default:
-				os.put(*it);
+				os <<ch;
 				break;
 			}
 		}

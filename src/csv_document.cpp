@@ -6,6 +6,7 @@
 #include "string.hpp"
 #include "profiler.hpp"
 #include "log.hpp"
+#include "buffer_streams.hpp"
 
 namespace Poseidon {
 
@@ -37,9 +38,9 @@ namespace {
 std::string CsvDocument::dump() const {
 	PROFILE_ME;
 
-	std::ostringstream oss;
-	dump(oss);
-	return oss.str();
+	Buffer_ostream os;
+	dump(os);
+	return os.get_buffer().dump_string();
 }
 void CsvDocument::dump(std::ostream &os) const {
 	PROFILE_ME;

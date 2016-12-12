@@ -26,6 +26,7 @@
 #include "../profiler.hpp"
 #include "../time.hpp"
 #include "../errno.hpp"
+#include "../buffer_streams.hpp"
 
 namespace Poseidon {
 
@@ -101,15 +102,15 @@ namespace {
 			return m_object->get_table_name();
 		}
 		void generate_sql(std::string &query) const OVERRIDE {
-			std::ostringstream oss;
+			Buffer_ostream os;
 			if(m_to_replace){
-				oss <<"REPLACE";
+				os <<"REPLACE";
 			} else {
-				oss <<"INSERT";
+				os <<"INSERT";
 			}
-			oss <<" INTO `" <<get_table_name() <<"` SET ";
-			m_object->generate_sql(oss);
-			query = oss.str();
+			os <<" INTO `" <<get_table_name() <<"` SET ";
+			m_object->generate_sql(os);
+			query = os.get_buffer().dump_string();
 		}
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
@@ -577,12 +578,12 @@ namespace {
 			}
 
 			LOG_POSEIDON_INFO("Writing MySQL dump...");
-			std::ostringstream oss;
+			Buffer_ostream os;
 			len = format_time(temp, sizeof(temp), local_now, false);
-			oss <<"-- " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
-			oss <<query <<";" <<std::endl;
-			oss <<std::endl;
-			const AUTO(str, oss.str());
+			os <<"-- " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
+			os <<query <<";" <<std::endl;
+			os <<std::endl;
+			const AUTO(str, os.get_buffer().dump_string());
 
 			const Mutex::UniqueLock lock(g_dump_mutex);
 			std::size_t total = 0;

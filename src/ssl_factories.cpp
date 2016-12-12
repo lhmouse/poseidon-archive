@@ -60,15 +60,15 @@ ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
 		DEBUG_THROW(Exception, sslit("::SSL_CTX_use_PrivateKey_file() failed"));
 	}
 
-	static const unsigned char SESSION_ID_CONTEXT[SSL_MAX_SSL_SESSION_ID_LENGTH] =
-		{ 0x15, 0x74, 0xFA, 0x87, 0x85, 0x70, 0x00, 0x08, 0xD2, 0xFD, 0x47, 0xC3, 0x84, 0xE3, 0x19, 0xDD };
-	if(::SSL_CTX_set_session_id_context(m_ctx.get(), SESSION_ID_CONTEXT, sizeof(SESSION_ID_CONTEXT)) != 1){
-		DEBUG_THROW(Exception, sslit("::SSL_CTX_set_session_id_context() failed"));
-	}
-
 	LOG_POSEIDON_INFO("Verifying private key...");
 	if(::SSL_CTX_check_private_key(m_ctx.get()) != 1){
 		DEBUG_THROW(Exception, sslit("::SSL_CTX_check_private_key() failed"));
+	}
+
+	static CONSTEXPR const unsigned char s_session_id_context[SSL_MAX_SSL_SESSION_ID_LENGTH] =
+		{ 0x15, 0x74, 0xFA, 0x87, 0x85, 0x70, 0x00, 0x08, 0xD2, 0xFD, 0x47, 0xC3, 0x84, 0xE3, 0x19, 0xDD };
+	if(::SSL_CTX_set_session_id_context(m_ctx.get(), s_session_id_context, sizeof(s_session_id_context)) != 1){
+		DEBUG_THROW(Exception, sslit("::SSL_CTX_set_session_id_context() failed"));
 	}
 }
 ServerSslFactory::~ServerSslFactory(){

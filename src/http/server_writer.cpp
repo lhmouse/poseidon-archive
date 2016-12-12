@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "server_writer.hpp"
 #include "exception.hpp"
-#include "utilities.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../string.hpp"

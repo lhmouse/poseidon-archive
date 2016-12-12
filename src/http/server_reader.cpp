@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "server_reader.hpp"
 #include "exception.hpp"
-#include "utilities.hpp"
+#include "urlencoded.hpp"
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -85,7 +85,7 @@ namespace Http {
 					m_content_length = 0;
 					m_content_offset = 0;
 
-					std::string line = expected.dump();
+					std::string line = expected.dump_string();
 
 					AUTO(pos, line.find(' '));
 					if(pos == std::string::npos){
@@ -130,7 +130,7 @@ namespace Http {
 						if(pos != std::string::npos){
 							Buffer_istream is;
 							is.set_buffer(StreamBuffer(m_request_headers.uri.data() + pos + 1, m_request_headers.uri.size() - pos - 1));
-							m_request_headers.get_params = optional_map_from_url_encoded(is);
+							url_decode_params(is, m_request_headers.get_params);
 							m_request_headers.uri.erase(pos);
 						}
 					}
@@ -152,7 +152,7 @@ namespace Http {
 						DEBUG_THROW(Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
 					}
 
-					std::string line = expected.dump();
+					std::string line = expected.dump_string();
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
@@ -227,7 +227,7 @@ namespace Http {
 					m_chunk_offset = 0;
 					m_chunked_trailer.clear();
 
-					std::string line = expected.dump();
+					std::string line = expected.dump_string();
 
 					char *endptr;
 					m_chunk_size = ::strtoull(line.c_str(), &endptr, 16);
@@ -271,7 +271,7 @@ namespace Http {
 
 			case S_CHUNKED_TRAILER:
 				if(!expected.empty()){
-					std::string line = expected.dump();
+					std::string line = expected.dump_string();
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){

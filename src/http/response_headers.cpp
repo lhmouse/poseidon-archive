@@ -4,6 +4,7 @@
 #include "../precompiled.hpp"
 #include "response_headers.hpp"
 #include "header_option.hpp"
+#include "../buffer_streams.hpp"
 #include <string.h>
 
 namespace Poseidon {
@@ -11,9 +12,9 @@ namespace Poseidon {
 namespace Http {
 	bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT {
 		enum { OPT_AUTO, OPT_ON, OPT_OFF } opt = OPT_AUTO;
-		std::istringstream iss(response_headers.headers.get("Connection"));
-		HeaderOption connection(iss);
-		if(iss){
+		Buffer_istream is(StreamBuffer(response_headers.headers.get("Connection")));
+		HeaderOption connection(is);
+		if(is){
 			if(::strcasecmp(connection.get_base().c_str(), "Keep-Alive") == 0){
 				opt = OPT_ON;
 			} else if(::strcasecmp(connection.get_base().c_str(), "Close") == 0){

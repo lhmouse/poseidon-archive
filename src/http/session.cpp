@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "session.hpp"
 #include "exception.hpp"
-#include "utilities.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../singletons/main_config.hpp"

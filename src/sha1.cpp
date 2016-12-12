@@ -8,7 +8,7 @@
 namespace Poseidon {
 
 namespace {
-	const boost::array<boost::uint32_t, 5> SHA1_REG_INIT = {{
+	CONSTEXPR const boost::array<boost::uint32_t, 5> SHA1_REG_INIT = {{
 		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u }};
 
 	template<unsigned N>
@@ -153,7 +153,9 @@ Sha1_streambuf::int_type Sha1_streambuf::overflow(Sha1_streambuf::int_type c){
 		m_reg[2] += cc;
 		m_reg[3] += dd;
 		m_reg[4] += ee;
-		m_bytes += 16;
+		m_bytes += 64;
+
+		setp(m_chunk.begin(), m_chunk.end());
 	}
 	if(traits_type::eq_int_type(c, traits_type::eof())){
 		return traits_type::not_eof(c);
@@ -164,13 +166,16 @@ Sha1_streambuf::int_type Sha1_streambuf::overflow(Sha1_streambuf::int_type c){
 }
 
 Sha1 Sha1_streambuf::finalize(){
-	boost::uint64_t bits;
-	store_be(bits, (m_bytes + static_cast<unsigned>(pptr() - m_chunk.begin())) * 8);
-
+	boost::uint64_t bytes = m_bytes;
+	if(pptr()){
+		bytes += static_cast<unsigned>(pptr() - m_chunk.begin());
+	}
 	sputc(0x80);
 	while(pptr() != m_chunk.begin() + 56){
 		sputc(0);
 	}
+	boost::uint64_t bits;
+	store_be(bits, bytes * 8);
 	xsputn(reinterpret_cast<const char *>(&bits), sizeof(bits));
 	overflow(traits_type::eof());
 

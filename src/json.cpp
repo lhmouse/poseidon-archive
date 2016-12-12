@@ -5,6 +5,7 @@
 #include "json.hpp"
 #include "log.hpp"
 #include "profiler.hpp"
+#include "buffer_streams.hpp"
 #include <iomanip>
 
 namespace Poseidon {
@@ -300,9 +301,9 @@ const JsonElement &null_json_element() NOEXCEPT {
 std::string JsonObject::dump() const {
 	PROFILE_ME;
 
-	std::ostringstream oss;
-	dump(oss);
-	return oss.str();
+	Buffer_ostream os;
+	dump(os);
+	return os.get_buffer().dump_string();
 }
 void JsonObject::dump(std::ostream &os) const {
 	PROFILE_ME;
@@ -335,9 +336,9 @@ void JsonObject::parse(std::istream &is){
 std::string JsonArray::dump() const {
 	PROFILE_ME;
 
-	std::ostringstream oss;
-	dump(oss);
-	return oss.str();
+	Buffer_ostream os;
+	dump(os);
+	return os.get_buffer().dump_string();
 }
 void JsonArray::dump(std::ostream &os) const {
 	PROFILE_ME;
@@ -384,9 +385,9 @@ const char *JsonElement::get_type_string(JsonElement::Type type){
 std::string JsonElement::dump() const {
 	PROFILE_ME;
 
-	std::ostringstream oss;
-	dump(oss);
-	return oss.str();
+	Buffer_ostream os;
+	dump(os);
+	return os.get_buffer().dump_string();
 }
 void JsonElement::dump(std::ostream &os) const {
 	PROFILE_ME;

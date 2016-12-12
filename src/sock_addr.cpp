@@ -68,12 +68,12 @@ bool SockAddr::is_ipv6() const {
 }
 
 bool SockAddr::is_private() const {
-	static const unsigned char s_zeroes[16] = { };
 	const int family = get_family();
 	const AUTO(ip, reinterpret_cast<const unsigned char *>(&static_cast<const ::sockaddr_in *>(get_data())->sin_addr));
 	if(family == AF_INET){
 		return is_ipv4_private(ip);
 	} else if(family == AF_INET6){
+		static CONSTEXPR const unsigned char s_zeroes[16] = { };
 		if(std::memcmp(ip, s_zeroes, 15) == 0){
 			if(ip[15] == 0){ // ::/128: 未指定的地址
 				return true;

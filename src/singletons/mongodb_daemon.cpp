@@ -29,6 +29,7 @@
 #include "../profiler.hpp"
 #include "../time.hpp"
 #include "../errno.hpp"
+#include "../buffer_streams.hpp"
 
 namespace Poseidon {
 
@@ -67,9 +68,9 @@ namespace {
 			m_probe = STD_MOVE(probe);
 		}
 		std::string dump_debug(const MongoDb::BsonBuilder &query) const {
-			std::ostringstream oss;
-			dump(oss, query);
-			return oss.str();
+			Buffer_ostream os;
+			dump(os, query);
+			return os.get_buffer().dump_string();
 		}
 
 		virtual bool should_use_slave() const = 0;
@@ -624,13 +625,13 @@ namespace {
 			}
 
 			LOG_POSEIDON_INFO("Writing MongoDB dump...");
-			std::ostringstream oss;
+			Buffer_ostream os;
 			len = format_time(temp, sizeof(temp), local_now, false);
-			oss <<"// " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
-			operation->dump(oss, query);
-			oss <<";" <<std::endl;
-			oss <<std::endl;
-			const AUTO(str, oss.str());
+			os <<"// " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
+			operation->dump(os, query);
+			os <<";" <<std::endl;
+			os <<std::endl;
+			const AUTO(str, os.get_buffer().dump_string());
 
 			const Mutex::UniqueLock lock(g_dump_mutex);
 			std::size_t total = 0;

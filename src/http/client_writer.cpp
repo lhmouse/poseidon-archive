@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "client_writer.hpp"
 #include "exception.hpp"
-#include "utilities.hpp"
+#include "urlencoded.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../string.hpp"
@@ -29,7 +29,7 @@ namespace Http {
 		if(!request_headers.get_params.empty()){
 			data.put('?');
 			Buffer_ostream os;
-			url_encoded_from_optional_map(os, request_headers.get_params);
+			url_encode_params(os, request_headers.get_params);
 			data.splice(os.get_buffer());
 		}
 		char temp[64];
@@ -79,7 +79,7 @@ namespace Http {
 		if(!request_headers.get_params.empty()){
 			data.put('?');
 			Buffer_ostream os;
-			url_encoded_from_optional_map(os, request_headers.get_params);
+			url_encode_params(os, request_headers.get_params);
 			data.splice(os.get_buffer());
 		}
 		char temp[64];
