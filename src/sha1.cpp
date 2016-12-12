@@ -14,13 +14,13 @@ namespace {
 	template<unsigned N>
 	inline boost::uint32_t rotl(boost::uint32_t u){
 		boost::uint32_t r = u;
-		__asm__("roll %1, %%eax \n" : "+a"(r) : "I"(N));
+		__asm__("roll %1, %0 \n" : "+r"(r) : "I"(N));
 		return r;
 	}
 	template<unsigned N>
 	inline boost::uint32_t rotr(boost::uint32_t u){
 		boost::uint32_t r = u;
-		__asm__("rorl %1, %%eax \n" : "+a"(r) : "I"(N));
+		__asm__("rorl %1, %0 \n" : "+r"(r) : "I"(N));
 		return r;
 	}
 }
