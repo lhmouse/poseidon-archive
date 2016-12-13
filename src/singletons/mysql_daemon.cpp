@@ -901,14 +901,12 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_saving(
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), urgent);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_loading(
-	boost::shared_ptr<MySql::ObjectBase> object, std::string query)
+void MySqlDaemon::enqueue_for_loading(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<MySql::ObjectBase> object,
+	std::string query)
 {
-	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = object->get_table_name();
-	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<LoadOperation>(STD_MOVE(promise), STD_MOVE(object), STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
-	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_deleting(
 	const char *table_hint, std::string query)
@@ -923,7 +921,7 @@ void MySqlDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promis
 	const char *table_hint, std::string query)
 {
 	const char *const table_name = table_hint;
-	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(factory), table_hint, STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<BatchLoadOperation>(STD_MOVE(promise), STD_MOVE(factory), table_hint, STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 }
 

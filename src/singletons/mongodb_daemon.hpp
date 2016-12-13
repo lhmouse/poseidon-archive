@@ -36,8 +36,8 @@ public:
 	// 异步接口。
 	static boost::shared_ptr<const JobPromise> enqueue_for_saving(
 		boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace, bool urgent);
-	static boost::shared_ptr<const JobPromise> enqueue_for_loading(
-		boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query);
+	static void enqueue_for_loading(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<MongoDb::ObjectBase> object,
+		MongoDb::BsonBuilder query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_deleting(
 		const char *collection, MongoDb::BsonBuilder query, bool delete_all);
 	static void enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, ObjectFactory factory,

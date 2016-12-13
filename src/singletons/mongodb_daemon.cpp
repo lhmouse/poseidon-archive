@@ -949,14 +949,12 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_saving(
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), urgent);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_loading(
-	boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query)
+void MongoDbDaemon::enqueue_for_loading(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<MongoDb::ObjectBase> object,
+	MongoDb::BsonBuilder query)
 {
-	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const collection_name = object->get_collection_name();
-	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<LoadOperation>(STD_MOVE(promise), STD_MOVE(object), STD_MOVE(query)));
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
-	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
 	const char *collection, MongoDb::BsonBuilder query, bool delete_all)
