@@ -5,59 +5,33 @@
 #include "job_promise.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-#include "atomic.hpp"
 #include "singletons/job_dispatcher.hpp"
 
 namespace Poseidon {
 
-enum {
-	S_LOCKED            = -1,
-	S_UNSATISFIED       = 0,
-	S_SATISFIED         = 1,
-};
-
 JobPromise::JobPromise() NOEXCEPT
-	: m_state(S_UNSATISFIED)
+	: m_satisfied(false), m_except()
 {
 }
 JobPromise::~JobPromise(){
 }
 
-bool JobPromise::check(int cmp) const NOEXCEPT {
-	for(;;){
-		const int state = atomic_load(m_state, ATOMIC_CONSUME);
-		if(state != S_LOCKED){
-			return state == cmp;
-		}
-		atomic_pause();
+bool JobPromise::would_throw() const NOEXCEPT {
+	const RecursiveMutex::UniqueLock lock(m_mutex);
+	if(!m_satisfied){
+		return true;
 	}
-}
-int JobPromise::lock() const NOEXCEPT {
-	for(;;){
-		const int state = atomic_exchange(m_state, S_LOCKED, ATOMIC_SEQ_CST);
-		if(state != S_LOCKED){
-			return state;
-		}
-		atomic_pause();
+	if(m_except){
+		return true;
 	}
-}
-void JobPromise::unlock(int state) const NOEXCEPT {
-	atomic_store(m_state, state, ATOMIC_SEQ_CST);
-}
-
-bool JobPromise::is_satisfied() const NOEXCEPT {
-	return !check(S_UNSATISFIED);
+	return false;
 }
 void JobPromise::check_and_rethrow() const {
-	const int state = lock();
-	if(state == S_UNSATISFIED){
-		unlock(state);
-		DEBUG_THROW(Exception, sslit("JobPromise is not satisfied"));
+	const RecursiveMutex::UniqueLock lock(m_mutex);
+	if(!m_satisfied){
+		DEBUG_THROW(Exception, sslit("JobPromise has not been satisfied"));
 	}
-	const AUTO(except, m_except);
-	unlock(state);
-
-	if(except){
+	if(m_except){
 #ifdef POSEIDON_CXX11
 		std::rethrow_exception(m_except);
 #else
@@ -67,13 +41,12 @@ void JobPromise::check_and_rethrow() const {
 }
 
 void JobPromise::set_success(){
-	const int state = lock();
-	if(state != S_UNSATISFIED){
-		unlock(state);
-		DEBUG_THROW(Exception, sslit("JobPromise is already satisfied"));
+	const RecursiveMutex::UniqueLock lock(m_mutex);
+	if(m_satisfied){
+		DEBUG_THROW(Exception, sslit("JobPromise has already been satisfied"));
 	}
-	m_except = VAL_INIT;
-	unlock(S_SATISFIED);
+	m_satisfied = true;
+//	m_except = VAL_INIT;
 }
 #ifdef POSEIDON_CXX11
 void JobPromise::set_exception(std::exception_ptr except)
@@ -81,15 +54,12 @@ void JobPromise::set_exception(std::exception_ptr except)
 void JobPromise::set_exception(boost::exception_ptr except)
 #endif
 {
-	assert(except);
-
-	const int state = lock();
-	if(state != S_UNSATISFIED){
-		unlock(state);
-		DEBUG_THROW(Exception, sslit("JobPromise is already satisfied"));
+	const RecursiveMutex::UniqueLock lock(m_mutex);
+	if(m_satisfied){
+		DEBUG_THROW(Exception, sslit("JobPromise has already been satisfied"));
 	}
+	m_satisfied = true;
 	m_except = STD_MOVE_IDN(except);
-	unlock(S_SATISFIED);
 }
 
 void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant){

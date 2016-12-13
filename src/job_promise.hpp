@@ -6,6 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
+#include "recursive_mutex.hpp"
 #include <boost/shared_ptr.hpp>
 
 #ifdef POSEIDON_CXX11
@@ -17,10 +18,9 @@
 namespace Poseidon {
 
 class JobPromise : NONCOPYABLE {
-private:
-	// mutable Mutex m_mutex;
-	// bool m_satisfied;
-	mutable volatile int m_state;
+protected:
+	mutable RecursiveMutex m_mutex;
+	bool m_satisfied;
 #ifdef POSEIDON_CXX11
 	std::exception_ptr m_except;
 #else
@@ -31,13 +31,12 @@ public:
 	JobPromise() NOEXCEPT;
 	virtual ~JobPromise();
 
-private:
-	bool check(int cmp) const NOEXCEPT;
-	int lock() const NOEXCEPT;
-	void unlock(int state) const NOEXCEPT;
-
 public:
-	bool is_satisfied() const NOEXCEPT;
+	bool is_satisfied() const NOEXCEPT {
+		const RecursiveMutex::UniqueLock lock(m_mutex);
+		return m_satisfied;
+	}
+	bool would_throw() const NOEXCEPT;
 	void check_and_rethrow() const;
 
 	void set_success();
@@ -66,11 +65,20 @@ public:
 	}
 
 public:
+	T *try_get() const NOEXCEPT {
+		const RecursiveMutex::UniqueLock lock(m_mutex);
+		if(JobPromise::would_throw()){
+			return NULLPTR;
+		}
+		return std::addressof(const_cast<T &>(m_t));
+	}
 	T &get() const {
+		const RecursiveMutex::UniqueLock lock(m_mutex);
 		JobPromise::check_and_rethrow();
 		return const_cast<T &>(m_t);
 	}
 	void set_success(T t){
+		const RecursiveMutex::UniqueLock lock(m_mutex);
 		m_t = STD_MOVE_IDN(t);
 		JobPromise::set_success();
 	}
@@ -84,10 +92,19 @@ public:
 	}
 
 public:
+	void *try_get() const NOEXCEPT {
+//		const RecursiveMutex::UniqueLock lock(m_mutex);
+		if(JobPromise::would_throw()){
+			return NULLPTR;
+		}
+		return const_cast<JobPromiseContainer *>(this);
+	}
 	void get() const {
+//		const RecursiveMutex::UniqueLock lock(m_mutex);
 		JobPromise::check_and_rethrow();
 	}
 	void set_success(){
+//		const RecursiveMutex::UniqueLock lock(m_mutex);
 		JobPromise::set_success();
 	}
 };
