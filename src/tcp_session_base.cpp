@@ -20,7 +20,6 @@
 #include "system_exception.hpp"
 #include "epoll.hpp"
 #include "job_base.hpp"
-#include "async_job.hpp"
 #include "profiler.hpp"
 
 namespace Poseidon {
