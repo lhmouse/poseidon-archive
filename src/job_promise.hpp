@@ -70,7 +70,7 @@ public:
 		if(JobPromise::would_throw()){
 			return NULLPTR;
 		}
-		return std::addressof(const_cast<T &>(m_t));
+		return reinterpret_cast<T *>(const_cast<char *>(reinterpret_cast<const volatile char (&)[1]>(m_t)));
 	}
 	T &get() const {
 		const RecursiveMutex::UniqueLock lock(m_mutex);
