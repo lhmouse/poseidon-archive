@@ -75,6 +75,22 @@ public:
 		JobPromise::set_success();
 	}
 };
+template<>
+class JobPromiseContainer<void> : public JobPromise {
+public:
+	JobPromiseContainer()
+		: JobPromise()
+	{
+	}
+
+public:
+	void get() const {
+		JobPromise::check_and_rethrow();
+	}
+	void set_success(){
+		JobPromise::set_success();
+	}
+};
 
 extern void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant = true);
 
