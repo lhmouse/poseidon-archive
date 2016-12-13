@@ -40,8 +40,8 @@ public:
 		boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_deleting(
 		const char *collection, MongoDb::BsonBuilder query, bool delete_all);
-	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(
-		ObjectFactory factory, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit);
+	static void enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, ObjectFactory factory,
+		const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit);
 
 	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
 };

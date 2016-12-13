@@ -967,14 +967,12 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_batch_loading(
-	MongoDbDaemon::ObjectFactory factory, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
+void MongoDbDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, MongoDbDaemon::ObjectFactory factory,
+	const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
 {
-	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const collection_name = collection;
-	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(factory), collection, STD_MOVE(query), begin, limit));
+	AUTO(operation, boost::make_shared<BatchLoadOperation>(STD_MOVE(promise), STD_MOVE(factory), collection, STD_MOVE(query), begin, limit));
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
-	return STD_MOVE_IDN(promise);
 }
 
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_waiting_for_all_async_operations(){

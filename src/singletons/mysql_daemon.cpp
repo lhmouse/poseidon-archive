@@ -919,14 +919,12 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_deleting(
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_loading(
-	MySqlDaemon::ObjectFactory factory, const char *table_hint, std::string query)
+void MySqlDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, MySqlDaemon::ObjectFactory factory,
+	const char *table_hint, std::string query)
 {
-	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = table_hint;
 	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(factory), table_hint, STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
-	return STD_MOVE_IDN(promise);
 }
 
 boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_waiting_for_all_async_operations(){
