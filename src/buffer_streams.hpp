@@ -30,26 +30,15 @@ public:
 		, m_buffer(STD_MOVE(buffer)), m_which(which)
 	{
 	}
-	Buffer_streambuf(const Buffer_streambuf &rhs)
-		: std::streambuf()
-		, m_buffer(rhs.m_buffer), m_which(rhs.m_which)
-	{
-	}
-	Buffer_streambuf &operator=(const Buffer_streambuf &rhs){
-		sync();
-		m_buffer = rhs.m_buffer;
-		m_which = rhs.m_which;
-		return *this;
-	}
 #ifdef POSEIDON_CXX11
 	Buffer_streambuf(Buffer_streambuf &&rhs) noexcept
 		: std::streambuf()
-		, m_buffer(std::move(rhs.m_buffer)), m_which(rhs.m_which)
+		, m_buffer(std::move(rhs.get_buffer())), m_which(rhs.m_which)
 	{
 	}
 	Buffer_streambuf &operator=(Buffer_streambuf &&rhs) noexcept {
 		sync();
-		m_buffer = std::move(rhs.m_buffer);
+		m_buffer = std::move(rhs.get_buffer());
 		m_which = rhs.m_which;
 		return *this;
 	}
@@ -81,7 +70,7 @@ public:
 	void swap(Buffer_streambuf &rhs) NOEXCEPT {
 		sync();
 		using std::swap;
-		swap(m_buffer, rhs.m_buffer);
+		swap(m_buffer, rhs.get_buffer());
 		swap(m_which, rhs.m_which);
 	}
 };

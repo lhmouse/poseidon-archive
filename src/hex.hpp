@@ -30,27 +30,15 @@ public:
 		, m_buffer(STD_MOVE(buffer)), m_upper_case(upper_case), m_which(which)
 	{
 	}
-	Hex_streambuf(const Hex_streambuf &rhs)
-		: std::streambuf()
-		, m_buffer(rhs.m_buffer), m_upper_case(rhs.m_upper_case), m_which(rhs.m_which)
-	{
-	}
-	Hex_streambuf &operator=(const Hex_streambuf &rhs){
-		sync();
-		m_buffer = rhs.m_buffer;
-		m_upper_case = rhs.m_upper_case;
-		m_which = rhs.m_which;
-		return *this;
-	}
 #ifdef POSEIDON_CXX11
 	Hex_streambuf(Hex_streambuf &&rhs) noexcept
 		: std::streambuf()
-		, m_buffer(std::move(rhs.m_buffer)), m_upper_case(rhs.m_upper_case), m_which(rhs.m_which)
+		, m_buffer(std::move(rhs.get_buffer())), m_upper_case(rhs.m_upper_case), m_which(rhs.m_which)
 	{
 	}
 	Hex_streambuf &operator=(Hex_streambuf &&rhs) noexcept {
 		sync();
-		m_buffer = std::move(rhs.m_buffer);
+		m_buffer = std::move(rhs.get_buffer());
 		m_upper_case = rhs.m_upper_case;
 		m_which = rhs.m_which;
 		return *this;
@@ -87,7 +75,7 @@ public:
 	void swap(Hex_streambuf &rhs) NOEXCEPT {
 		sync();
 		using std::swap;
-		swap(m_buffer, rhs.m_buffer);
+		swap(m_buffer, rhs.get_buffer());
 		swap(m_upper_case, rhs.m_upper_case);
 		swap(m_which, rhs.m_which);
 	}
