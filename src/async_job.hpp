@@ -10,6 +10,7 @@
 #include "job_promise.hpp"
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 namespace Poseidon {
 
@@ -88,20 +89,76 @@ protected:
 	}
 };
 
-template<typename ProcT>
-boost::shared_ptr<const JobPromiseContainer<VALUE_TYPE(DECLREF(ProcT)())> > enqueue_async_job(
-	boost::weak_ptr<const void> category, ProcT proc, boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>())
+template<typename ReturnT, typename ProcT>
+boost::shared_ptr<const JobPromiseContainer<ReturnT> > enqueue_async_job_designated(boost::weak_ptr<const void> category,
+#ifdef POSEIDON_CXX11
+	ProcT &&proc,
+#else
+	ProcT proc,
+#endif
+	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>())
 {
-	typedef VALUE_TYPE(DECLREF(ProcT)()) result_type;
-	AUTO(promised_result, boost::make_shared<JobPromiseContainer<result_type> >());
-	enqueue(boost::make_shared<AsyncJob<result_type> >(STD_MOVE(category), promised_result, STD_MOVE_IDN(proc)), STD_MOVE(withdrawn));
+	AUTO(promised_result, boost::make_shared<JobPromiseContainer<ReturnT> >());
+	enqueue(boost::make_shared<AsyncJob<ReturnT> >(STD_MOVE(category), promised_result,
+#ifdef POSEIDON_CXX11
+		std::forward<ProcT>(proc)
+#else
+		STD_MOVE_IDN(proc)
+#endif
+		), STD_MOVE(withdrawn));
 	return STD_MOVE_IDN(promised_result);
+}
+template<typename ReturnT, typename ProcT>
+boost::shared_ptr<const JobPromiseContainer<ReturnT> > enqueue_async_job_designated(
+#ifdef POSEIDON_CXX11
+	ProcT &&proc,
+#else
+	ProcT proc,
+#endif
+	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>())
+{
+	return enqueue_async_job_designated<ReturnT>(boost::weak_ptr<const void>(),
+#ifdef POSEIDON_CXX11
+		std::forward<ProcT>(proc),
+#else
+		STD_MOVE_IDN(proc),
+#endif
+		STD_MOVE(withdrawn));
+}
+
+template<typename ProcT>
+boost::shared_ptr<const JobPromiseContainer<VALUE_TYPE(DECLREF(ProcT)())> > enqueue_async_job(boost::weak_ptr<const void> category,
+#ifdef POSEIDON_CXX11
+	ProcT &&proc,
+#else
+	ProcT proc,
+#endif
+	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>())
+{
+	return enqueue_async_job_designated<VALUE_TYPE(DECLREF(ProcT)())>(STD_MOVE(category),
+#ifdef POSEIDON_CXX11
+		std::forward<ProcT>(proc),
+#else
+		STD_MOVE_IDN(proc),
+#endif
+		STD_MOVE(withdrawn));
 }
 template<typename ProcT>
 boost::shared_ptr<const JobPromiseContainer<VALUE_TYPE(DECLREF(ProcT)())> > enqueue_async_job(
-	ProcT proc, boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>())
+#ifdef POSEIDON_CXX11
+	ProcT &&proc,
+#else
+	ProcT proc,
+#endif
+	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>())
 {
-	return enqueue_async_job(boost::weak_ptr<const void>(), STD_MOVE_IDN(proc), STD_MOVE(withdrawn));
+	return enqueue_async_job_designated<VALUE_TYPE(DECLREF(ProcT)())>(boost::weak_ptr<const void>(),
+#ifdef POSEIDON_CXX11
+		std::forward<ProcT>(proc),
+#else
+		STD_MOVE_IDN(proc),
+#endif
+		STD_MOVE(withdrawn));
 }
 
 }
