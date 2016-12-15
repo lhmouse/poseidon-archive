@@ -44,7 +44,7 @@ public:
 #ifdef POSEIDON_CXX11
 	Buffer_streambuf(Buffer_streambuf &&rhs) noexcept
 		: std::streambuf()
-		, m_buffer(STD_MOVE(rhs.m_buffer)), m_which(rhs.m_which)
+		, m_buffer(std::move(rhs.m_buffer)), m_which(rhs.m_which)
 	{
 	}
 	Buffer_streambuf &operator=(Buffer_streambuf &&rhs) noexcept {
@@ -57,17 +57,11 @@ public:
 	~Buffer_streambuf() OVERRIDE;
 
 protected:
-//	void imbue(const std::locale &locale) OVERRIDE;
-
-//	Buffer_streambuf *setbuf(char_type *s, std::streamsize n) OVERRIDE;
-//	pos_type seekoff(off_type off, std::ios_base::seekdir way, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) OVERRIDE;
-//	pos_type seekpos(pos_type sp, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) OVERRIDE;
 	int sync() OVERRIDE;
 
 	std::streamsize showmanyc() OVERRIDE;
 	std::streamsize xsgetn(char_type *s, std::streamsize n) OVERRIDE;
 	int_type underflow() OVERRIDE;
-//	int_type uflow() OVERRIDE;
 
 	int_type pbackfail(int_type c = traits_type::eof()) OVERRIDE;
 

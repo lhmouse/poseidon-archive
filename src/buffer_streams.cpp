@@ -45,10 +45,7 @@ Buffer_streambuf::int_type Buffer_streambuf::underflow(){
 		if(n_peeked == 0){
 			return traits_type::eof();
 		}
-		if(n_peeked < static_cast<int>(m_get_area.size())){
-			std::copy_backward(m_get_area.begin(), m_get_area.begin() + n_peeked, m_get_area.end());
-		}
-		setg(m_get_area.end() - n_peeked, m_get_area.end() - n_peeked, m_get_area.end());
+		setg(m_get_area.begin(), m_get_area.begin(), m_get_area.begin() + n_peeked);
 		return traits_type::to_int_type(*gptr());
 	} else {
 		return traits_type::eof();

@@ -76,11 +76,11 @@ namespace Http {
 			} else if(ch == '%'){
 				int high, low;
 				if(!is.get(ch) || ((high = from_hex_digit(ch)) < 0)){
-					is.setstate(std::ios::badbit);
+					is.setstate(std::ios::failbit);
 					break;
 				}
 				if(!is.get(ch) || ((low = from_hex_digit(ch)) < 0)){
-					is.setstate(std::ios::badbit);
+					is.setstate(std::ios::failbit);
 					break;
 				}
 				str += (char)((high << 4) | low);

@@ -7,7 +7,7 @@
 #include "protocol_exception.hpp"
 #define ZLIB_CONST 1
 #include <zlib.h>
-
+/*
 namespace Poseidon {
 
 struct Deflator::Context : NONCOPYABLE {
@@ -209,3 +209,4 @@ StreamBuffer Inflator::finalize(){
 }
 
 }
+*/

@@ -71,9 +71,17 @@ namespace Http {
 		if(pos == std::string::npos){
 			return std::make_pair(AUTH_INVALID_HEADER, NULLPTR);
 		}
-		AUTO(str, auth_header.substr(0, pos));
+		std::string str;
+		str.reserve(auth_header.size());
+		str.assign(auth_header, 0, pos);
 		if(::strcasecmp(str.c_str(), "Basic") == 0){
-			str = base64_decode(auth_header.substr(pos + 1));
+			Poseidon::Base64_istream is;
+			is.set_buffer(StreamBuffer(auth_header.data() + pos + 1, auth_header.size() - pos - 1));
+			str.clear();
+			char ch;
+			while(is.get(ch)){
+				str.push_back(ch);
+			}
 
 			const AUTO(auth_it, std::lower_bound(auth_info->basic_user_pass.begin(), auth_info->basic_user_pass.end(), str));
 			if((auth_it == auth_info->basic_user_pass.end()) || (*auth_it != str)){
@@ -83,7 +91,7 @@ namespace Http {
 			LOG_POSEIDON_INFO("> Succeeded");
 			return std::make_pair(AUTH_SUCCEEDED, &*auth_it);
 		} else if(::strcasecmp(str.c_str(), "Digest") == 0){
-			str = auth_header.substr(pos + 1);
+			str.assign(auth_header, pos + 1, std::string::npos);
 
 			std::string username, realm, nonce, uri, qop, cnonce, nc, response, algorithm;
 			RawNonce raw_nonce = { };
@@ -105,10 +113,10 @@ namespace Http {
 				realm = STD_MOVE(value);	\
 			} else if(::strcasecmp(key.c_str(), "nonce") == 0){	\
 				nonce = STD_MOVE(value);	\
-				Base64Decoder hex_dec;	\
-				hex_dec.put(nonce.data(), nonce.size());	\
-				AUTO(nonce_bytes, hex_dec.finalize());	\
-				if(nonce_bytes.get(&raw_nonce, sizeof(raw_nonce)) != sizeof(raw_nonce)){	\
+				Base64_istream base64_is;	\
+				base64_is.set_buffer(StreamBuffer(nonce));	\
+				base64_is.read(reinterpret_cast<char *>(&raw_nonce), sizeof(raw_nonce));	\
+				if(!base64_is || (base64_is.gcount() < static_cast<std::streamsize>(sizeof(raw_nonce)))){	\
 					LOG_POSEIDON_WARNING("> Inacceptable nonce.");	\
 					return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);	\
 				}	\
@@ -229,19 +237,21 @@ namespace Http {
 			a2_md5s <<get_string_from_verb(verb) <<':' <<uri;
 
 			Md5_ostream resp_md5s;
-			HexEncoder hex_enc(false);
 			AUTO(md5, a1_md5s.finalize());
-			hex_enc.put(md5.data(), md5.size());
-			resp_md5s <<hex_enc.finalize() <<':' <<nonce <<':';
+			Hex_ostream hex_os;
+			hex_os.write(reinterpret_cast<const char *>(md5.data()), static_cast<std::streamsize>(md5.size()));
+			resp_md5s <<hex_os.get_buffer() <<':' <<nonce <<':';
 			if(!qop.empty()){
 				resp_md5s <<nc <<':' <<cnonce <<':' <<qop <<':';
 			}
 			md5 = a2_md5s.finalize();
-			hex_enc.put(md5.data(), md5.size());
-			resp_md5s <<hex_enc.finalize();
+			hex_os.set_buffer(VAL_INIT);
+			hex_os.write(reinterpret_cast<const char *>(md5.data()), static_cast<std::streamsize>(md5.size()));
+			resp_md5s <<hex_os.get_buffer();
 			md5 = resp_md5s.finalize();
-			hex_enc.put(md5.data(), md5.size());
-			const AUTO(response_expecting, hex_enc.finalize().dump_string());
+			hex_os.set_buffer(VAL_INIT);
+			hex_os.write(reinterpret_cast<const char *>(md5.data()), static_cast<std::streamsize>(md5.size()));
+			const AUTO(response_expecting, hex_os.get_buffer().dump_string());
 			LOG_POSEIDON_DEBUG("> Response expecting: ", response_expecting);
 			if(::strcasecmp(response.c_str(), response_expecting.c_str()) != 0){
 				LOG_POSEIDON_WARNING("> Digest mismatch.");
@@ -259,49 +269,54 @@ namespace Http {
 		const StatusCode status_code = is_proxy ? ST_PROXY_AUTH_REQUIRED : ST_UNAUTHORIZED;
 		const char *const auth_name = is_proxy ? "Proxy-Authenticate" : "WWW-Authenticate";
 
-		std::string auth;
-		auth.reserve(255);
-		auth += "Digest realm=\"";
+		const char *realm;
 		switch(auth_result){
 		case AUTH_REQUIRED:
-			auth += "Authorization required";
+			realm = "Authorization required";
 			break;
 		case AUTH_INVALID_HEADER:
-			auth += "Invalid HTTP authorization header";
+			realm = "Invalid HTTP authorization header";
 			break;
 		case AUTH_UNKNOWN_SCHEME:
-			auth += "Unknown HTTP authorization scheme";
+			realm = "Unknown HTTP authorization scheme";
 			break;
 		case AUTH_INVALID_USER_PASS:
-			auth += "Invalid username or password";
+			realm = "Invalid username or password";
 			break;
 		case AUTH_INACCEPTABLE_NONCE:
-			auth += "Nonce is not acceptable";
+			realm = "Nonce is not acceptable";
 			break;
 		case AUTH_EXPIRED:
-			auth += "Nonce has expired";
+			realm = "Nonce has expired";
 			break;
 		case AUTH_INACCEPTABLE_ALGORITHM:
-			auth += "Algorithm is not acceptable";
+			realm = "Algorithm is not acceptable";
 			break;
 		case AUTH_INACCEPTABLE_QOP:
-			auth += "QoP is not acceptable";
+			realm = "QoP is not acceptable";
 			break;
 		default:
 			LOG_POSEIDON_ERROR("HTTP authorization error: auth_result = ", auth_result);
-			auth += "Internal server error";
+			realm = "Internal server error";
 			break;
 		}
-		auth += "\", nonce=\"";
+
 		RawNonce raw_nonce;
 		raw_nonce.timestamp = get_local_time();
 		raw_nonce.random = random_uint64();
 		raw_nonce.identifier = g_identifier;
 		xor_nonce(raw_nonce, remote_addr.ip.get());
-		auth += base64_encode(&raw_nonce, sizeof(raw_nonce));
-		auth += "\", qop-value=\"auth\", algorithm=\"MD5\"";
+		Base64_ostream base64_os;
+		base64_os.write(reinterpret_cast<const char *>(&raw_nonce), static_cast<std::streamsize>(sizeof(raw_nonce)));
+		AUTO(nonce, STD_MOVE(base64_os.get_buffer()));
 
-		headers.set(SharedNts(auth_name), STD_MOVE(auth));
+		StreamBuffer auth;
+		auth.put("Digest realm=\"");
+		auth.put(realm);
+		auth.put("\", nonce=\"");
+		auth.splice(nonce);
+		auth.put("\", qop-value=\"auth\", algorithm=\"MD5\"");
+		headers.set(SharedNts(auth_name), auth.dump_string());
 		DEBUG_THROW(Exception, status_code, STD_MOVE(headers));
 	}
 

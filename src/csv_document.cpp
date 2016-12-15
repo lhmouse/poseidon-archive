@@ -146,7 +146,7 @@ void CsvDocument::parse(std::istream &is){
 				for(std::size_t j = 0; j < i; ++j){
 					if(matrix.at(j).at(0) == line.at(i)){
 						LOG_POSEIDON_WARNING("Duplicate CSV header on line ", count, ": ", line.at(i));
-						is.setstate(std::ios::badbit);
+						is.setstate(std::ios::failbit);
 						return;
 					}
 				}
@@ -155,7 +155,7 @@ void CsvDocument::parse(std::istream &is){
 		} else {
 			if(line.size() != matrix.size()){
 				LOG_POSEIDON_WARNING("Inconsistent CSV column count on line ", count, ": got ", line.size(), ", expecting ", matrix.size());
-				is.setstate(std::ios::badbit);
+				is.setstate(std::ios::failbit);
 				return;
 			}
 			for(std::size_t i = 0; i < line.size(); ++i){

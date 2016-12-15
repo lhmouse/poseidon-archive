@@ -48,7 +48,9 @@ namespace WebSocket {
 				goto _done;
 			}
 			const AUTO(sha1, sha1_hash(sec_websocket_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
-			AUTO(sec_websocket_accept, base64_encode(sha1.data(), sha1.size()));
+			Base64_ostream base64_os;
+			base64_os.write(reinterpret_cast<const char *>(sha1.data()), static_cast<int>(sha1.size()));
+			AUTO(sec_websocket_accept, base64_os.get_buffer().dump_string());
 			response.headers.set(sslit("Upgrade"), "websocket");
 			response.headers.set(sslit("Connection"), "Upgrade");
 			response.headers.set(sslit("Sec-WebSocket-Accept"), STD_MOVE(sec_websocket_accept));
@@ -71,11 +73,11 @@ namespace WebSocket {
 		request.headers.set(sslit("Upgrade"), "websocket");
 		request.headers.set(sslit("Connection"), "Keep-Alive");
 		request.headers.set(sslit("Sec-WebSocket-Version"), "13");
-		unsigned char random_bytes[24];
-		for(unsigned i = 0; i < sizeof(random_bytes); ++i){
-			random_bytes[i] = random_uint32();
+		Base64_ostream base64_os;
+		for(unsigned i = 0; i < 24; ++i){
+			base64_os.put(static_cast<char>(random_uint32()));
 		}
-		std::string sec_websocket_key = base64_encode(random_bytes, sizeof(random_bytes));
+		AUTO(sec_websocket_key, base64_os.get_buffer().dump_string());
 		request.headers.set(sslit("Sec-WebSocket-Key"), sec_websocket_key);
 		return std::make_pair(STD_MOVE_IDN(request), STD_MOVE_IDN(sec_websocket_key));
 	}
@@ -106,7 +108,9 @@ namespace WebSocket {
 			return false;
 		}
 		const AUTO(sha1, sha1_hash(sec_websocket_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
-		const AUTO(sec_websocket_accept_expecting, base64_encode(sha1.data(), sha1.size()));
+		Base64_ostream base64_os;
+		base64_os.write(reinterpret_cast<const char *>(sha1.data()), static_cast<int>(sha1.size()));
+		AUTO(sec_websocket_accept_expecting, base64_os.get_buffer().dump_string());
 		if(sec_websocket_accept != sec_websocket_accept_expecting){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 				"Bad Sec-WebSocket-Accept: got ", sec_websocket_accept, ", expecting ", sec_websocket_accept_expecting);
