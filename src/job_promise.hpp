@@ -70,12 +70,48 @@ public:
 		if(JobPromise::would_throw()){
 			return NULLPTR;
 		}
-		return reinterpret_cast<T *>(const_cast<char *>(reinterpret_cast<const volatile char (&)[1]>(m_t)));
+		return const_cast<T *>(reinterpret_cast<const T *>(reinterpret_cast<const char (&)[1]>(m_t)));
 	}
 	T &get() const {
 		const RecursiveMutex::UniqueLock lock(m_mutex);
 		JobPromise::check_and_rethrow();
 		return const_cast<T &>(m_t);
+	}
+	void set_success(T t){
+		const RecursiveMutex::UniqueLock lock(m_mutex);
+		m_t = STD_MOVE_IDN(t);
+		JobPromise::set_success();
+	}
+};
+template<typename T>
+class JobPromiseContainer<const T> : public JobPromise {
+private:
+	T m_t;
+
+public:
+	JobPromiseContainer()
+		: JobPromise()
+		, m_t()
+	{
+	}
+	explicit JobPromiseContainer(T t)
+		: JobPromise()
+		, m_t(STD_MOVE(t))
+	{
+	}
+
+public:
+	const T *try_get() const NOEXCEPT {
+		const RecursiveMutex::UniqueLock lock(m_mutex);
+		if(JobPromise::would_throw()){
+			return NULLPTR;
+		}
+		return reinterpret_cast<const T *>(reinterpret_cast<const char (&)[1]>(m_t));
+	}
+	const T &get() const {
+		const RecursiveMutex::UniqueLock lock(m_mutex);
+		JobPromise::check_and_rethrow();
+		return m_t;
 	}
 	void set_success(T t){
 		const RecursiveMutex::UniqueLock lock(m_mutex);
