@@ -227,6 +227,58 @@ namespace {
 		}
 	};
 
+	class BatchSaveOperation : public OperationBase {
+	private:
+		const boost::shared_ptr<JobPromise> m_promise;
+		const MySqlDaemon::ObjectFactory m_factory;
+		const char *const m_table_hint;
+		const std::string m_query;
+
+	public:
+		BatchSaveOperation(boost::shared_ptr<JobPromise> promise,
+			MySqlDaemon::ObjectFactory factory, const char *table_hint, std::string query)
+			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_table_hint(table_hint), m_query(STD_MOVE(query))
+		{
+		}
+
+	protected:
+		bool should_use_slave() const {
+			return false;
+		}
+		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
+			return VAL_INIT; // 不能合并。
+		}
+		const char *get_table_name() const OVERRIDE {
+			return m_table_hint;
+		}
+		void generate_sql(std::string &query) const OVERRIDE {
+			query = m_query;
+		}
+		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+			PROFILE_ME;
+
+			conn->execute_sql(query);
+			if(m_factory){
+				while(conn->fetch_row()){
+					m_factory(conn);
+				}
+			} else {
+				LOG_POSEIDON_DEBUG("Result discarded.");
+			}
+		}
+		void set_success() OVERRIDE {
+			m_promise->set_success();
+		}
+#ifdef POSEIDON_CXX11
+		void set_exception(std::exception_ptr ep) override
+#else
+		void set_exception(boost::exception_ptr ep)
+#endif
+		{
+			m_promise->set_exception(STD_MOVE(ep));
+		}
+	};
+
 	class BatchLoadOperation : public OperationBase {
 	private:
 		const boost::shared_ptr<JobPromise> m_promise;
@@ -916,6 +968,13 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_deleting(
 	AUTO(operation, boost::make_shared<DeleteOperation>(promise, table_hint, STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
+}
+void MySqlDaemon::enqueue_for_batch_saving(boost::shared_ptr<JobPromise> promise, MySqlDaemon::ObjectFactory factory,
+	const char *table_hint, std::string query)
+{
+	const char *const table_name = table_hint;
+	AUTO(operation, boost::make_shared<BatchSaveOperation>(STD_MOVE(promise), STD_MOVE(factory), table_hint, STD_MOVE(query)));
+	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 }
 void MySqlDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, MySqlDaemon::ObjectFactory factory,
 	const char *table_hint, std::string query)

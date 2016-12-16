@@ -40,6 +40,8 @@ public:
 		std::string query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_deleting(
 		const char *table_hint, std::string query);
+	static void enqueue_for_batch_saving(boost::shared_ptr<JobPromise> promise, ObjectFactory factory,
+		const char *table_hint, std::string query);
 	static void enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, ObjectFactory factory,
 		const char *table_hint, std::string query);
 
