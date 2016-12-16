@@ -185,7 +185,7 @@ StreamBuffer Inflator::finalize(){
 	m_context->stream.next_in = m_context->temp;
 	m_context->stream.avail_in = 0;
 	for(;;){
-		const int err_code = ::inflate(&(m_context->stream), Z_FULL_FLUSH);
+		const int err_code = ::inflate(&(m_context->stream), Z_NO_FLUSH);
 		if(err_code == Z_STREAM_END){
 			break;
 		}
