@@ -57,9 +57,15 @@ namespace {
 	// 数据库线程操作。
 	class OperationBase : NONCOPYABLE {
 	private:
+		const boost::shared_ptr<JobPromise> m_promise;
+
 		boost::shared_ptr<const void> m_probe;
 
 	public:
+		explicit OperationBase(boost::shared_ptr<JobPromise> promise)
+			: m_promise(STD_MOVE(promise))
+		{
+		}
 		virtual ~OperationBase(){
 		}
 
@@ -67,36 +73,43 @@ namespace {
 		void set_probe(boost::shared_ptr<const void> probe){
 			m_probe = STD_MOVE(probe);
 		}
-		std::string dump_debug(const MongoDb::BsonBuilder &query) const {
-			Buffer_ostream os;
-			dump(os, query);
-			return os.get_buffer().dump_string();
-		}
 
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_collection_name() const = 0;
 		virtual void generate_bson(MongoDb::BsonBuilder &query) const = 0;
 		virtual void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const = 0;
+
 		virtual void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const = 0;
-		virtual void set_success() = 0;
+
+		virtual bool is_isolated() const {
+			return m_promise.unique();
+		}
+		virtual void set_success(){
+			m_promise->set_success();
+		}
+		virtual void set_exception(
 #ifdef POSEIDON_CXX11
-		virtual void set_exception(std::exception_ptr ep) = 0;
+			std::exception_ptr ep
 #else
-		virtual void set_exception(boost::exception_ptr ep) = 0;
+			boost::exception_ptr ep
 #endif
+			)
+		{
+			m_promise->set_exception(STD_MOVE(ep));
+		}
 	};
 
 	class SaveOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
 		const boost::shared_ptr<const MongoDb::ObjectBase> m_object;
 		const bool m_to_replace;
 
 	public:
 		SaveOperation(boost::shared_ptr<JobPromise> promise,
 			boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace)
-			: m_promise(STD_MOVE(promise)), m_object(STD_MOVE(object)), m_to_replace(to_replace)
+			: OperationBase(STD_MOVE(promise))
+			, m_object(STD_MOVE(object)), m_to_replace(to_replace)
 		{
 		}
 
@@ -127,6 +140,7 @@ namespace {
 				conn->execute_update(get_collection_name(), STD_MOVE(q), STD_MOVE(d), true, false);
 			}
 		}
+
 		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
@@ -139,29 +153,18 @@ namespace {
 				os <<"db." <<get_collection_name() <<".update(" <<q <<"," <<d <<",{upsert:1})";
 			}
 		}
-		void set_success() OVERRIDE {
-			m_promise->set_success();
-		}
-#ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
-#else
-		void set_exception(boost::exception_ptr ep)
-#endif
-		{
-			m_promise->set_exception(STD_MOVE(ep));
-		}
 	};
 
 	class LoadOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
 		const boost::shared_ptr<MongoDb::ObjectBase> m_object;
 		const MongoDb::BsonBuilder m_query;
 
 	public:
 		LoadOperation(boost::shared_ptr<JobPromise> promise,
 			boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query)
-			: m_promise(STD_MOVE(promise)), m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
+			: OperationBase(STD_MOVE(promise))
+			, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
 		{
 		}
 
@@ -181,7 +184,7 @@ namespace {
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
-			if(m_promise.unique()){
+			if(is_isolated()){
 				LOG_POSEIDON_DEBUG("Discarding isolated MongoDB query: collection = ", get_collection_name(), ", query = ", query);
 				return;
 			}
@@ -192,27 +195,16 @@ namespace {
 			}
 			m_object->fetch(conn);
 		}
+
 		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
 			os <<"db." <<get_collection_name() <<".find(" <<query <<").limit(1)";
 		}
-		void set_success() OVERRIDE {
-			m_promise->set_success();
-		}
-#ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
-#else
-		void set_exception(boost::exception_ptr ep)
-#endif
-		{
-			m_promise->set_exception(STD_MOVE(ep));
-		}
 	};
 
 	class DeleteOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
 		const char *const m_collection;
 		const MongoDb::BsonBuilder m_query;
 		const bool m_delete_all;
@@ -220,7 +212,8 @@ namespace {
 	public:
 		DeleteOperation(boost::shared_ptr<JobPromise> promise,
 			const char *collection, MongoDb::BsonBuilder query, bool delete_all)
-			: m_promise(STD_MOVE(promise)), m_collection(collection), m_query(STD_MOVE(query)), m_delete_all(delete_all)
+			: OperationBase(STD_MOVE(promise))
+			, m_collection(collection), m_query(STD_MOVE(query)), m_delete_all(delete_all)
 		{
 		}
 
@@ -242,28 +235,17 @@ namespace {
 
 			conn->execute_delete(get_collection_name(), query, m_delete_all);
 		}
+
 		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
 			os <<"db." <<get_collection_name() <<".remove(" <<query <<",{justOne:" <<!m_delete_all <<"})";
 		}
-		void set_success() OVERRIDE {
-			m_promise->set_success();
-		}
-#ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
-#else
-		void set_exception(boost::exception_ptr ep)
-#endif
-		{
-			m_promise->set_exception(STD_MOVE(ep));
-		}
 	};
 
 	class BatchLoadOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
-		const MongoDbDaemon::ObjectFactory m_factory;
+		const MongoDbDaemon::QueryCallback m_callback;
 		const char *const m_collection;
 		const MongoDb::BsonBuilder m_query;
 		const boost::uint32_t m_begin;
@@ -271,10 +253,9 @@ namespace {
 
 	public:
 		BatchLoadOperation(boost::shared_ptr<JobPromise> promise,
-			MongoDbDaemon::ObjectFactory factory, const char *collection,
-			MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
-			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_collection(collection)
-			, m_query(STD_MOVE(query)), m_begin(begin), m_limit(limit)
+			MongoDbDaemon::QueryCallback callback, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
+			: OperationBase(STD_MOVE(promise))
+			, m_callback(STD_MOVE_IDN(callback)), m_collection(collection), m_query(STD_MOVE(query)), m_begin(begin), m_limit(limit)
 		{
 		}
 
@@ -294,52 +275,76 @@ namespace {
 		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
-			if(m_promise.unique()){
+			if(is_isolated()){
 				LOG_POSEIDON_DEBUG("Discarding isolated MongoDB query: collection = ", get_collection_name(), ", query = ", query);
 				return;
 			}
 
 			conn->execute_query(get_collection_name(), query, m_begin, m_limit);
-			if(m_factory){
+			if(m_callback){
 				while(conn->fetch_next()){
-					m_factory(conn);
+					m_callback(conn);
 				}
 			} else {
 				LOG_POSEIDON_DEBUG("Result discarded.");
 			}
 		}
+
 		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
 			os <<"db." <<get_collection_name() <<".find(" <<query <<").skip(" <<m_begin <<").limit(" <<m_limit <<")";
 		}
-		void set_success() OVERRIDE {
-			m_promise->set_success();
-		}
-#ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
-#else
-		void set_exception(boost::exception_ptr ep)
-#endif
+	};
+
+	class LowLevelAccessOperation : public OperationBase {
+	private:
+		const MongoDbDaemon::QueryCallback m_callback;
+		const char *const m_collection;
+		const bool m_from_slave;
+
+	public:
+		LowLevelAccessOperation(boost::shared_ptr<JobPromise> promise,
+			MongoDbDaemon::QueryCallback callback, const char *collection, bool from_slave)
+			: OperationBase(STD_MOVE(promise))
+			, m_callback(STD_MOVE_IDN(callback)), m_collection(collection), m_from_slave(from_slave)
 		{
-			m_promise->set_exception(STD_MOVE(ep));
+		}
+
+	protected:
+		bool should_use_slave() const {
+			return m_from_slave;
+		}
+		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
+			return VAL_INIT; // 不能合并。
+		}
+		const char *get_collection_name() const OVERRIDE {
+			return m_collection;
+		}
+		void generate_bson(MongoDb::BsonBuilder & /* query */) const OVERRIDE {
+		}
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder & /* query */) const OVERRIDE {
+			PROFILE_ME;
+
+			m_callback(conn);
+		}
+
+		void dump(std::ostream &os, const MongoDb::BsonBuilder & /* query */) const OVERRIDE {
+			PROFILE_ME;
+
+			os <<"/* low level access */";
 		}
 	};
 
 	class WaitOperation : public OperationBase {
-	private:
-		const boost::shared_ptr<JobPromise> m_promise;
-
 	public:
 		explicit WaitOperation(boost::shared_ptr<JobPromise> promise)
-			: m_promise(STD_MOVE(promise))
+			: OperationBase(STD_MOVE(promise))
 		{
 		}
 		~WaitOperation(){
 			try {
-				if(!m_promise->is_satisfied()){
-					m_promise->set_success();
-				}
+				OperationBase::set_success();
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 			} catch(...){
@@ -365,23 +370,33 @@ namespace {
 
 			conn->execute_command(get_collection_name(), query, 0, 1);
 		}
+
 		void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const OVERRIDE {
 			PROFILE_ME;
 
 			os <<"db.runCommand(" <<query <<")";
 		}
+
 		void set_success() OVERRIDE {
 			// no-op
 		}
+		void set_exception(
 #ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
+			std::exception_ptr /* ep */
 #else
-		void set_exception(boost::exception_ptr ep)
+			boost::exception_ptr /* ep */
 #endif
+			) OVERRIDE
 		{
-			m_promise->set_exception(STD_MOVE(ep));
+			// no-op
 		}
 	};
+
+	StreamBuffer dump_query_as_json(const OperationBase *operation, const MongoDb::BsonBuilder &query){
+		Buffer_ostream os;
+		operation->dump(os, query);
+		return STD_MOVE(os.get_buffer());
+	}
 
 	class MongoDbThread : NONCOPYABLE {
 	private:
@@ -535,7 +550,7 @@ namespace {
 				if(execute_it){
 					operation->generate_bson(query);
 					try {
-						LOG_POSEIDON_DEBUG("Executing MongoDB query: ", operation->dump_debug(query));
+						LOG_POSEIDON_DEBUG("Executing MongoDB query: ", dump_query_as_json(operation.get(), query));
 						operation->execute(conn, query);
 					} catch(MongoDb::Exception &e){
 						LOG_POSEIDON_WARNING("MongoDb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
@@ -965,11 +980,19 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-void MongoDbDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, MongoDbDaemon::ObjectFactory factory,
+void MongoDbDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, MongoDbDaemon::QueryCallback callback,
 	const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
 {
 	const char *const collection_name = collection;
-	AUTO(operation, boost::make_shared<BatchLoadOperation>(STD_MOVE(promise), STD_MOVE(factory), collection, STD_MOVE(query), begin, limit));
+	AUTO(operation, boost::make_shared<BatchLoadOperation>(STD_MOVE(promise), STD_MOVE(callback), collection, STD_MOVE(query), begin, limit));
+	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
+}
+
+void MongoDbDaemon::enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, QueryCallback callback,
+	const char *collection, bool from_slave)
+{
+	const char *const collection_name = collection;
+	AUTO(operation, boost::make_shared<LowLevelAccessOperation>(STD_MOVE(promise), STD_MOVE(callback), collection, from_slave));
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
 }
 

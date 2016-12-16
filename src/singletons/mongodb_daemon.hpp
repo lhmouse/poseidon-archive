@@ -23,7 +23,7 @@ private:
 	MongoDbDaemon();
 
 public:
-	typedef boost::function<void (const boost::shared_ptr<MongoDb::Connection> &)> ObjectFactory;
+	typedef boost::function<void (const boost::shared_ptr<MongoDb::Connection> &)> QueryCallback;
 
 	static void start();
 	static void stop();
@@ -40,8 +40,11 @@ public:
 		MongoDb::BsonBuilder query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_deleting(
 		const char *collection, MongoDb::BsonBuilder query, bool delete_all);
-	static void enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, ObjectFactory factory,
+	static void enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, QueryCallback callback,
 		const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit);
+
+	static void enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, QueryCallback callback,
+		const char *collection, bool from_slave = false);
 
 	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
 };

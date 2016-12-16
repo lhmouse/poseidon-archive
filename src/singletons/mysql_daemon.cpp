@@ -54,9 +54,15 @@ namespace {
 	// 数据库线程操作。
 	class OperationBase : NONCOPYABLE {
 	private:
+		const boost::shared_ptr<JobPromise> m_promise;
+
 		boost::shared_ptr<const void> m_probe;
 
 	public:
+		explicit OperationBase(boost::shared_ptr<JobPromise> promise)
+			: m_promise(STD_MOVE(promise))
+		{
+		}
 		virtual ~OperationBase(){
 		}
 
@@ -70,24 +76,39 @@ namespace {
 		virtual const char *get_table_name() const = 0;
 		virtual void generate_sql(std::string &query) const = 0;
 		virtual void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const = 0;
-		virtual void set_success() = 0;
+
+		virtual void dump(std::ostream &os, const std::string &query) const {
+			os <<query;
+		}
+
+		virtual bool is_isolated() const {
+			return m_promise.unique();
+		}
+		virtual void set_success(){
+			m_promise->set_success();
+		}
+		virtual void set_exception(
 #ifdef POSEIDON_CXX11
-		virtual void set_exception(std::exception_ptr ep) = 0;
+			std::exception_ptr ep
 #else
-		virtual void set_exception(boost::exception_ptr ep) = 0;
+			boost::exception_ptr ep
 #endif
+			)
+		{
+			m_promise->set_exception(STD_MOVE(ep));
+		}
 	};
 
 	class SaveOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
 		const boost::shared_ptr<const MySql::ObjectBase> m_object;
 		const bool m_to_replace;
 
 	public:
 		SaveOperation(boost::shared_ptr<JobPromise> promise,
 			boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace)
-			: m_promise(STD_MOVE(promise)), m_object(STD_MOVE(object)), m_to_replace(to_replace)
+			: OperationBase(STD_MOVE(promise))
+			, m_object(STD_MOVE(object)), m_to_replace(to_replace)
 		{
 		}
 
@@ -117,29 +138,18 @@ namespace {
 
 			conn->execute_sql(query);
 		}
-		void set_success() OVERRIDE {
-			m_promise->set_success();
-		}
-#ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
-#else
-		void set_exception(boost::exception_ptr ep)
-#endif
-		{
-			m_promise->set_exception(STD_MOVE(ep));
-		}
 	};
 
 	class LoadOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
 		const boost::shared_ptr<MySql::ObjectBase> m_object;
 		const std::string m_query;
 
 	public:
 		LoadOperation(boost::shared_ptr<JobPromise> promise,
 			boost::shared_ptr<MySql::ObjectBase> object, std::string query)
-			: m_promise(STD_MOVE(promise)), m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
+			: OperationBase(STD_MOVE(promise))
+			, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
 		{
 		}
 
@@ -159,7 +169,7 @@ namespace {
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
 
-			if(m_promise.unique()){
+			if(is_isolated()){
 				LOG_POSEIDON_DEBUG("Discarding isolated MySQL query: table_name = ", get_table_name(), ", query = ", query);
 				return;
 			}
@@ -170,29 +180,18 @@ namespace {
 			}
 			m_object->fetch(conn);
 		}
-		void set_success() OVERRIDE {
-			m_promise->set_success();
-		}
-#ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
-#else
-		void set_exception(boost::exception_ptr ep)
-#endif
-		{
-			m_promise->set_exception(STD_MOVE(ep));
-		}
 	};
 
 	class DeleteOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
 		const char *const m_table_hint;
 		const std::string m_query;
 
 	public:
 		DeleteOperation(boost::shared_ptr<JobPromise> promise,
 			const char *table_hint, std::string query)
-			: m_promise(STD_MOVE(promise)), m_table_hint(table_hint), m_query(STD_MOVE(query))
+			: OperationBase(STD_MOVE(promise))
+			, m_table_hint(table_hint), m_query(STD_MOVE(query))
 		{
 		}
 
@@ -213,31 +212,20 @@ namespace {
 			PROFILE_ME;
 
 			conn->execute_sql(query);
-		}
-		void set_success() OVERRIDE {
-			m_promise->set_success();
-		}
-#ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
-#else
-		void set_exception(boost::exception_ptr ep)
-#endif
-		{
-			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
 
 	class BatchSaveOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
-		const MySqlDaemon::ObjectFactory m_factory;
+		const MySqlDaemon::QueryCallback m_callback;
 		const char *const m_table_hint;
 		const std::string m_query;
 
 	public:
 		BatchSaveOperation(boost::shared_ptr<JobPromise> promise,
-			MySqlDaemon::ObjectFactory factory, const char *table_hint, std::string query)
-			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_table_hint(table_hint), m_query(STD_MOVE(query))
+			MySqlDaemon::QueryCallback callback, const char *table_hint, std::string query)
+			: OperationBase(STD_MOVE(promise))
+			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_query(STD_MOVE(query))
 		{
 		}
 
@@ -258,38 +246,27 @@ namespace {
 			PROFILE_ME;
 
 			conn->execute_sql(query);
-			if(m_factory){
+			if(m_callback){
 				while(conn->fetch_row()){
-					m_factory(conn);
+					m_callback(conn);
 				}
 			} else {
 				LOG_POSEIDON_DEBUG("Result discarded.");
 			}
 		}
-		void set_success() OVERRIDE {
-			m_promise->set_success();
-		}
-#ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
-#else
-		void set_exception(boost::exception_ptr ep)
-#endif
-		{
-			m_promise->set_exception(STD_MOVE(ep));
-		}
 	};
 
 	class BatchLoadOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
-		const MySqlDaemon::ObjectFactory m_factory;
+		const MySqlDaemon::QueryCallback m_callback;
 		const char *const m_table_hint;
 		const std::string m_query;
 
 	public:
 		BatchLoadOperation(boost::shared_ptr<JobPromise> promise,
-			MySqlDaemon::ObjectFactory factory, const char *table_hint, std::string query)
-			: m_promise(STD_MOVE(promise)), m_factory(STD_MOVE_IDN(factory)), m_table_hint(table_hint), m_query(STD_MOVE(query))
+			MySqlDaemon::QueryCallback callback, const char *table_hint, std::string query)
+			: OperationBase(STD_MOVE(promise))
+			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_query(STD_MOVE(query))
 		{
 		}
 
@@ -309,47 +286,68 @@ namespace {
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
 			PROFILE_ME;
 
-			if(m_promise.unique()){
+			if(is_isolated()){
 				LOG_POSEIDON_DEBUG("Discarding isolated MySQL query: table_name = ", get_table_name(), ", query = ", query);
 				return;
 			}
 
 			conn->execute_sql(query);
-			if(m_factory){
+			if(m_callback){
 				while(conn->fetch_row()){
-					m_factory(conn);
+					m_callback(conn);
 				}
 			} else {
 				LOG_POSEIDON_DEBUG("Result discarded.");
 			}
 		}
-		void set_success() OVERRIDE {
-			m_promise->set_success();
-		}
-#ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
-#else
-		void set_exception(boost::exception_ptr ep)
-#endif
+	};
+
+	class LowLevelAccessOperation : public OperationBase {
+	private:
+		const MySqlDaemon::QueryCallback m_callback;
+		const char *const m_table_hint;
+		const bool m_from_slave;
+
+	public:
+		LowLevelAccessOperation(boost::shared_ptr<JobPromise> promise,
+			MySqlDaemon::QueryCallback callback, const char *table_hint, bool from_slave)
+			: OperationBase(STD_MOVE(promise))
+			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_from_slave(from_slave)
 		{
-			m_promise->set_exception(STD_MOVE(ep));
+		}
+
+	protected:
+		bool should_use_slave() const {
+			return m_from_slave;
+		}
+		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
+			return VAL_INIT; // 不能合并。
+		}
+		const char *get_table_name() const OVERRIDE {
+			return m_table_hint;
+		}
+		void generate_sql(std::string & /* query */) const OVERRIDE {
+		}
+		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string & /* query */) const OVERRIDE {
+			PROFILE_ME;
+
+			m_callback(conn);
+		}
+
+		void dump(std::ostream &os, const std::string & /* query */) const OVERRIDE {
+			os <<"-- <low level access>";
 		}
 	};
 
 	class WaitOperation : public OperationBase {
-	private:
-		const boost::shared_ptr<JobPromise> m_promise;
-
 	public:
 		explicit WaitOperation(boost::shared_ptr<JobPromise> promise)
-			: m_promise(STD_MOVE(promise))
+			: OperationBase(STD_MOVE(promise))
 		{
 		}
 		~WaitOperation(){
 			try {
-				if(!m_promise->is_satisfied()){
-					m_promise->set_success();
-				}
+				OperationBase::set_success();
 			} catch(std::exception &e){
 				LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 			} catch(...){
@@ -375,16 +373,19 @@ namespace {
 
 			conn->execute_sql(query);
 		}
+
 		void set_success() OVERRIDE {
 			// no-op
 		}
+		void set_exception(
 #ifdef POSEIDON_CXX11
-		void set_exception(std::exception_ptr ep) override
+			std::exception_ptr /* ep */
 #else
-		void set_exception(boost::exception_ptr ep)
+			boost::exception_ptr /* ep */
 #endif
+			) OVERRIDE
 		{
-			m_promise->set_exception(STD_MOVE(ep));
+			// no-op
 		}
 	};
 
@@ -592,7 +593,7 @@ namespace {
 					}
 
 					LOG_POSEIDON_ERROR("Max retry count exceeded.");
-					dump_sql_to_file(query, err_code, err_msg);
+					dump_sql_to_file(operation, query, err_code, err_msg);
 					elem->operation->set_exception(except);
 				} else {
 					elem->operation->set_success();
@@ -603,7 +604,9 @@ namespace {
 			}
 		}
 
-		void dump_sql_to_file(const std::string &query, long err_code, const std::string &err_msg){
+		void dump_sql_to_file(const boost::shared_ptr<OperationBase> &operation,
+			const std::string &query, long err_code, const std::string &err_msg)
+		{
 			PROFILE_ME;
 
 			if(g_dump_dir.empty()){
@@ -633,7 +636,8 @@ namespace {
 			Buffer_ostream os;
 			len = format_time(temp, sizeof(temp), local_now, false);
 			os <<"-- " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
-			os <<query <<";" <<std::endl;
+			operation->dump(os, query);
+			os <<";" <<std::endl;
 			os <<std::endl;
 			const AUTO(str, os.get_buffer().dump_string());
 
@@ -969,18 +973,26 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_deleting(
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-void MySqlDaemon::enqueue_for_batch_saving(boost::shared_ptr<JobPromise> promise, MySqlDaemon::ObjectFactory factory,
+void MySqlDaemon::enqueue_for_batch_saving(boost::shared_ptr<JobPromise> promise, MySqlDaemon::QueryCallback callback,
 	const char *table_hint, std::string query)
 {
 	const char *const table_name = table_hint;
-	AUTO(operation, boost::make_shared<BatchSaveOperation>(STD_MOVE(promise), STD_MOVE(factory), table_hint, STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<BatchSaveOperation>(STD_MOVE(promise), STD_MOVE(callback), table_hint, STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 }
-void MySqlDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, MySqlDaemon::ObjectFactory factory,
+void MySqlDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, MySqlDaemon::QueryCallback callback,
 	const char *table_hint, std::string query)
 {
 	const char *const table_name = table_hint;
-	AUTO(operation, boost::make_shared<BatchLoadOperation>(STD_MOVE(promise), STD_MOVE(factory), table_hint, STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<BatchLoadOperation>(STD_MOVE(promise), STD_MOVE(callback), table_hint, STD_MOVE(query)));
+	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
+}
+
+void MySqlDaemon::enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, MySqlDaemon::QueryCallback callback,
+	const char *table_hint, bool from_slave)
+{
+	const char *const table_name = table_hint;
+	AUTO(operation, boost::make_shared<LowLevelAccessOperation>(STD_MOVE(promise), STD_MOVE(callback), table_hint, from_slave));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 }
 
