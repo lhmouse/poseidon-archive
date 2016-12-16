@@ -43,8 +43,8 @@ public:
 	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(
 		QueryCallback callback, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit);
 
-	static void enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise,
-		QueryCallback callback, const char *collection, bool from_slave = false);
+	static void enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, QueryCallback callback,
+		const char *collection, bool from_slave = false);
 
 	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
 };

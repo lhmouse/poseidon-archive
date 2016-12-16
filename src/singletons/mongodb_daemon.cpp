@@ -351,6 +351,10 @@ namespace {
 
 			os <<"/* low level access */";
 		}
+
+		void set_success() OVERRIDE {
+			// no-op
+		}
 	};
 
 	class WaitOperation : public OperationBase {
@@ -1019,8 +1023,8 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_batch_loading(
 	return STD_MOVE_IDN(promise);
 }
 
-void MongoDbDaemon::enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise,
-	QueryCallback callback, const char *collection, bool from_slave)
+void MongoDbDaemon::enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, QueryCallback callback,
+	const char *collection, bool from_slave)
 {
 	const char *const collection_name = collection;
 	AUTO(operation, boost::make_shared<LowLevelAccessOperation>(STD_MOVE(promise), STD_MOVE(callback), collection, from_slave));

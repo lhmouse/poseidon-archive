@@ -45,8 +45,8 @@ public:
 	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(
 		QueryCallback callback, const char *table_hint, std::string query);
 
-	static void enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise,
-		QueryCallback callback, const char *table_hint, bool from_slave = false);
+	static void enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, QueryCallback callback,
+		const char *table_hint, bool from_slave = false);
 
 	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
 };
