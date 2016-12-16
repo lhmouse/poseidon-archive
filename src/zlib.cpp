@@ -31,8 +31,7 @@ struct Deflator::Context : NONCOPYABLE {
 	~Context(){
 		const int err_code = ::deflateEnd(&stream);
 		if(err_code < 0){
-			LOG_POSEIDON_ERROR("::deflateEnd() error: err_code = ", err_code);
-			DEBUG_THROW(ProtocolException, sslit("::deflateEnd()"), err_code);
+			LOG_POSEIDON_WARNING("::deflateEnd() error: err_code = ", err_code);
 		}
 	}
 };
@@ -88,7 +87,7 @@ StreamBuffer Deflator::finalize(){
 	m_context->stream.next_in = m_context->temp;
 	m_context->stream.avail_in = 0;
 	for(;;){
-		const int err_code = ::deflate(&(m_context->stream), Z_FINISH);
+		const int err_code = ::deflate(&(m_context->stream), Z_FULL_FLUSH);
 		if(err_code == Z_STREAM_END){
 			break;
 		}
@@ -130,8 +129,7 @@ struct Inflator::Context : NONCOPYABLE {
 	~Context(){
 		const int err_code = ::inflateEnd(&stream);
 		if(err_code < 0){
-			LOG_POSEIDON_ERROR("::inflateEnd() error: err_code = ", err_code);
-			DEBUG_THROW(ProtocolException, sslit("::inflateEnd()"), err_code);
+			LOG_POSEIDON_WARNING("::inflateEnd() error: err_code = ", err_code);
 		}
 	}
 };
@@ -187,7 +185,7 @@ StreamBuffer Inflator::finalize(){
 	m_context->stream.next_in = m_context->temp;
 	m_context->stream.avail_in = 0;
 	for(;;){
-		const int err_code = ::inflate(&(m_context->stream), Z_FINISH);
+		const int err_code = ::inflate(&(m_context->stream), Z_FULL_FLUSH);
 		if(err_code == Z_STREAM_END){
 			break;
 		}
