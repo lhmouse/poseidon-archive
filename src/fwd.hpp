@@ -28,6 +28,15 @@ class Buffer_istream;
 class Buffer_ostream;
 class Buffer_iostream;
 
+class Crc32_streambuf;
+class Crc32_ostream;
+class Md5_streambuf;
+class Md5_ostream;
+class Sha1_streambuf;
+class Sha1_ostream;
+class Sha256_streambuf;
+class Sha256_ostream;
+
 class ConfigFile;
 class CsvParser;
 class JsonObject;
@@ -48,6 +57,11 @@ class TcpSessionBase;
 class TcpClientBase;
 class TcpServerBase;
 class UdpServerBase;
+
+class HexEncoder;
+class HexDecoder;
+class Base64Encoder;
+class Base64Decoder;
 
 class Deflator;
 class Inflator;

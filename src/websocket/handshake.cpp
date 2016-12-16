@@ -47,7 +47,9 @@ namespace WebSocket {
 				response.status_code = Http::ST_BAD_REQUEST;
 				goto _done;
 			}
-			const AUTO(sha1, sha1_hash(sec_websocket_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
+			Sha1_ostream sha1_os;
+			sha1_os <<sec_websocket_key <<"258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+			const AUTO(sha1, sha1_os.finalize());
 			Base64Encoder enc;
 			enc.put(sha1.data(), sha1.size());
 			AUTO(sec_websocket_accept, enc.finalize().dump_string());
@@ -111,7 +113,9 @@ namespace WebSocket {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "No Sec-WebSocket-Accept specified.");
 			return false;
 		}
-		const AUTO(sha1, sha1_hash(sec_websocket_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
+		Sha1_ostream sha1_os;
+		sha1_os <<sec_websocket_key <<"258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+		const AUTO(sha1, sha1_os.finalize());
 		Base64Encoder enc;
 		enc.put(sha1.data(), sha1.size());
 		AUTO(sec_websocket_accept_expecting, enc.finalize().dump_string());

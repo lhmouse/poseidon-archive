@@ -18,6 +18,10 @@ class Crc32_streambuf : public std::streambuf {
 private:
 	boost::uint32_t m_reg;
 
+private:
+    Crc32_streambuf(const Crc32_streambuf &);
+    Crc32_streambuf &operator=(const Crc32_streambuf &);
+
 public:
 	Crc32_streambuf();
 	~Crc32_streambuf() OVERRIDE;
@@ -27,16 +31,7 @@ protected:
 
 public:
 	Crc32 finalize();
-
-	void swap(Crc32_streambuf &rhs) NOEXCEPT {
-		using std::swap;
-		swap(m_reg, rhs.m_reg);
-	}
 };
-
-inline void swap(Crc32_streambuf &lhs, Crc32_streambuf &rhs) NOEXCEPT {
-	lhs.swap(rhs);
-}
 
 class Crc32_ostream : public std::ostream {
 private:
@@ -57,34 +52,7 @@ public:
 	Crc32 finalize(){
 		return rdbuf()->finalize();
 	}
-
-#ifdef POSEIDON_CXX14
-	void swap(Crc32_ostream &rhs) noexcept {
-		std::ostream::swap(rhs);
-		using std::swap;
-		swap(m_sb, rhs.m_sb);
-	}
-#endif
 };
-
-#ifdef POSEIDON_CXX14
-inline void swap(Crc32_ostream &lhs, Crc32_ostream &rhs) noexcept {
-	lhs.swap(rhs);
-}
-#endif
-
-inline Crc32 crc32_hash(const void *data, std::size_t size){
-	Crc32_ostream s;
-	s.exceptions(std::ios::badbit | std::ios::failbit);
-	s.write(static_cast<const char *>(data), static_cast<std::streamsize>(size));
-	return s.finalize();
-}
-inline Crc32 crc32_hash(const char *str){
-	return crc32_hash(str, std::strlen(str));
-}
-inline Crc32 crc32_hash(const std::string &str){
-	return crc32_hash(str.data(), str.size());
-}
 
 }
 

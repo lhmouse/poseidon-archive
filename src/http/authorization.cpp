@@ -13,7 +13,6 @@
 #include "../uuid.hpp"
 #include "../time.hpp"
 #include "../random.hpp"
-#include "../crc32.hpp"
 #include "../md5.hpp"
 #include "../stream_buffer.hpp"
 
@@ -30,10 +29,9 @@ namespace Http {
 		const AUTO(g_identifier, Uuid::random());
 
 		void xor_nonce(RawNonce &raw_nonce, const char *remote_ip){
-			boost::uint32_t temp[2];
-			temp[0] = static_cast<boost::uint32_t>(::getpid());
-			temp[1] = crc32_hash(remote_ip);
-			const AUTO(md5, md5_hash(temp, sizeof(temp)));
+			Md5_ostream md5_os;
+			md5_os <<(::getpid()) <<'#' <<remote_ip <<'#';
+			const AUTO(md5, md5_os.finalize());
 			for(std::size_t i = 0; i < sizeof(raw_nonce); ++i){
 				reinterpret_cast<unsigned char (&)[sizeof(raw_nonce)]>(raw_nonce)[i] ^= md5.at(i % 16);
 			}

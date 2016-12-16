@@ -21,6 +21,10 @@ private:
 	boost::uint64_t m_bytes;
 	boost::array<char, 64> m_chunk;
 
+private:
+	Sha256_streambuf(const Sha256_streambuf &);
+	Sha256_streambuf &operator=(const Sha256_streambuf &);
+
 public:
 	Sha256_streambuf();
 	~Sha256_streambuf() OVERRIDE;
@@ -30,16 +34,7 @@ protected:
 
 public:
 	Sha256 finalize();
-
-	void swap(Sha256_streambuf &rhs) NOEXCEPT {
-		using std::swap;
-		swap(m_reg, rhs.m_reg);
-	}
 };
-
-inline void swap(Sha256_streambuf &lhs, Sha256_streambuf &rhs) NOEXCEPT {
-	lhs.swap(rhs);
-}
 
 class Sha256_ostream : public std::ostream {
 private:
@@ -60,34 +55,7 @@ public:
 	Sha256 finalize(){
 		return rdbuf()->finalize();
 	}
-
-#ifdef POSEIDON_CXX14
-	void swap(Sha256_ostream &rhs) noexcept {
-		std::ostream::swap(rhs);
-		using std::swap;
-		swap(m_sb, rhs.m_sb);
-	}
-#endif
 };
-
-#ifdef POSEIDON_CXX14
-inline void swap(Sha256_ostream &lhs, Sha256_ostream &rhs) noexcept {
-	lhs.swap(rhs);
-}
-#endif
-
-inline Sha256 sha256_hash(const void *data, std::size_t size){
-	Sha256_ostream s;
-	s.exceptions(std::ios::badbit | std::ios::failbit);
-	s.write(static_cast<const char *>(data), static_cast<std::streamsize>(size));
-	return s.finalize();
-}
-inline Sha256 sha256_hash(const char *str){
-	return sha256_hash(str, std::strlen(str));
-}
-inline Sha256 sha256_hash(const std::string &str){
-	return sha256_hash(str.data(), str.size());
-}
 
 }
 
