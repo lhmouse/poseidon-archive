@@ -48,9 +48,9 @@ namespace WebSocket {
 				goto _done;
 			}
 			const AUTO(sha1, sha1_hash(sec_websocket_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
-			Base64_ostream base64_os;
-			base64_os.write(reinterpret_cast<const char *>(sha1.data()), static_cast<int>(sha1.size()));
-			AUTO(sec_websocket_accept, base64_os.get_buffer().dump_string());
+			Base64Encoder enc;
+			enc.put(sha1.data(), sha1.size());
+			AUTO(sec_websocket_accept, enc.finalize().dump_string());
 			response.headers.set(sslit("Upgrade"), "websocket");
 			response.headers.set(sslit("Connection"), "Upgrade");
 			response.headers.set(sslit("Sec-WebSocket-Accept"), STD_MOVE(sec_websocket_accept));
@@ -73,11 +73,15 @@ namespace WebSocket {
 		request.headers.set(sslit("Upgrade"), "websocket");
 		request.headers.set(sslit("Connection"), "Keep-Alive");
 		request.headers.set(sslit("Sec-WebSocket-Version"), "13");
-		Base64_ostream base64_os;
+		Base64Encoder enc;
 		for(unsigned i = 0; i < 24; ++i){
-			base64_os.put(static_cast<char>(random_uint32()));
+			char str[3];
+			for(unsigned j = 0; j < sizeof(str); ++j){
+				str[j] = static_cast<char>(random_uint32());
+			}
+			enc.put(str, sizeof(str));
 		}
-		AUTO(sec_websocket_key, base64_os.get_buffer().dump_string());
+		AUTO(sec_websocket_key, enc.finalize().dump_string());
 		request.headers.set(sslit("Sec-WebSocket-Key"), sec_websocket_key);
 		return std::make_pair(STD_MOVE_IDN(request), STD_MOVE_IDN(sec_websocket_key));
 	}
@@ -108,9 +112,9 @@ namespace WebSocket {
 			return false;
 		}
 		const AUTO(sha1, sha1_hash(sec_websocket_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
-		Base64_ostream base64_os;
-		base64_os.write(reinterpret_cast<const char *>(sha1.data()), static_cast<int>(sha1.size()));
-		AUTO(sec_websocket_accept_expecting, base64_os.get_buffer().dump_string());
+		Base64Encoder enc;
+		enc.put(sha1.data(), sha1.size());
+		AUTO(sec_websocket_accept_expecting, enc.finalize().dump_string());
 		if(sec_websocket_accept != sec_websocket_accept_expecting){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 				"Bad Sec-WebSocket-Accept: got ", sec_websocket_accept, ", expecting ", sec_websocket_accept_expecting);

@@ -148,13 +148,14 @@ Sha256_streambuf::int_type Sha256_streambuf::overflow(Sha256_streambuf::int_type
 		m_reg[7] += hh;
 		m_bytes += 64;
 
-		setp(m_chunk.begin(), m_chunk.end());
+		setp(NULLPTR, NULLPTR);
 	}
 	if(traits_type::eq_int_type(c, traits_type::eof())){
 		return traits_type::not_eof(c);
 	}
-	setp(m_chunk.begin() + 1, m_chunk.end());
-	pptr()[-1] = c;
+	setp(m_chunk.begin(), m_chunk.end());
+	*pptr() = c;
+	pbump(1);
 	return c;
 }
 
