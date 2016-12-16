@@ -83,9 +83,21 @@ namespace {
 		virtual void dump(std::ostream &os, const MongoDb::BsonBuilder &query) const = 0;
 
 		virtual bool is_isolated() const {
+			if(!m_promise){
+				return false;
+			}
 			return m_promise.unique();
 		}
+		virtual bool is_satisfied() const {
+			if(!m_promise){
+				return true;
+			}
+			return m_promise->is_satisfied();
+		}
 		virtual void set_success(){
+			if(!m_promise){
+				return;
+			}
 			m_promise->set_success();
 		}
 		virtual void set_exception(
@@ -96,6 +108,9 @@ namespace {
 #endif
 			)
 		{
+			if(!m_promise){
+				return;
+			}
 			m_promise->set_exception(STD_MOVE(ep));
 		}
 	};
@@ -601,9 +616,19 @@ namespace {
 
 					LOG_POSEIDON_ERROR("Max retry count exceeded.");
 					dump_bson_to_file(elem->operation, query, err_code, err_msg);
-					elem->operation->set_exception(except);
-				} else {
-					elem->operation->set_success();
+				}
+				try {
+					if(!elem->operation->is_satisfied()){
+						if(except){
+							elem->operation->set_exception(except);
+						} else {
+							elem->operation->set_success();
+						}
+					}
+				} catch(std::exception &e){
+					LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+				} catch(...){
+					LOG_POSEIDON_ERROR("Unknown exception thrown.");
 				}
 
 				const Mutex::UniqueLock lock(m_mutex);
