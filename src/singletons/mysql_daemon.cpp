@@ -232,47 +232,6 @@ namespace {
 		}
 	};
 
-	class BatchSaveOperation : public OperationBase {
-	private:
-		const QueryCallback m_callback;
-		const char *const m_table_hint;
-		const std::string m_query;
-
-	public:
-		BatchSaveOperation(boost::shared_ptr<JobPromise> promise,
-			QueryCallback callback, const char *table_hint, std::string query)
-			: OperationBase(STD_MOVE(promise))
-			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_query(STD_MOVE(query))
-		{
-		}
-
-	protected:
-		bool should_use_slave() const {
-			return false;
-		}
-		boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const OVERRIDE {
-			return VAL_INIT; // 不能合并。
-		}
-		const char *get_table_name() const OVERRIDE {
-			return m_table_hint;
-		}
-		void generate_sql(std::string &query) const OVERRIDE {
-			query = m_query;
-		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
-			PROFILE_ME;
-
-			conn->execute_sql(query);
-			if(m_callback){
-				while(conn->fetch_row()){
-					m_callback(conn);
-				}
-			} else {
-				LOG_POSEIDON_DEBUG("Result discarded.");
-			}
-		}
-	};
-
 	class BatchLoadOperation : public OperationBase {
 	private:
 		const QueryCallback m_callback;
@@ -1003,15 +962,6 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_deleting(
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = table_hint;
 	AUTO(operation, boost::make_shared<DeleteOperation>(promise, table_hint, STD_MOVE(query)));
-	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
-	return STD_MOVE_IDN(promise);
-}
-boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_saving(
-	QueryCallback callback, const char *table_hint, std::string query)
-{
-	AUTO(promise, boost::make_shared<JobPromise>());
-	const char *const table_name = table_hint;
-	AUTO(operation, boost::make_shared<BatchSaveOperation>(promise, STD_MOVE(callback), table_hint, STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }

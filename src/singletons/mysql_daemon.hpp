@@ -40,8 +40,6 @@ public:
 		boost::shared_ptr<MySql::ObjectBase> object, std::string query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_deleting(
 		const char *table_hint, std::string query);
-	static boost::shared_ptr<const JobPromise> enqueue_for_batch_saving(
-		QueryCallback callback, const char *table_hint, std::string query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(
 		QueryCallback callback, const char *table_hint, std::string query);
 
