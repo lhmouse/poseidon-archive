@@ -33,6 +33,8 @@
 
 namespace Poseidon {
 
+typedef MongoDbDaemon::QueryCallback QueryCallback;
+
 namespace {
 	std::string     g_master_addr       = "localhost";
 	unsigned        g_master_port       = 27017;
@@ -260,7 +262,7 @@ namespace {
 
 	class BatchLoadOperation : public OperationBase {
 	private:
-		const MongoDbDaemon::QueryCallback m_callback;
+		const QueryCallback m_callback;
 		const char *const m_collection;
 		const MongoDb::BsonBuilder m_query;
 		const boost::uint32_t m_begin;
@@ -268,7 +270,7 @@ namespace {
 
 	public:
 		BatchLoadOperation(boost::shared_ptr<JobPromise> promise,
-			MongoDbDaemon::QueryCallback callback, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
+			QueryCallback callback, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
 			: OperationBase(STD_MOVE(promise))
 			, m_callback(STD_MOVE_IDN(callback)), m_collection(collection), m_query(STD_MOVE(query)), m_begin(begin), m_limit(limit)
 		{
@@ -314,13 +316,13 @@ namespace {
 
 	class LowLevelAccessOperation : public OperationBase {
 	private:
-		const MongoDbDaemon::QueryCallback m_callback;
+		const QueryCallback m_callback;
 		const char *const m_collection;
 		const bool m_from_slave;
 
 	public:
 		LowLevelAccessOperation(boost::shared_ptr<JobPromise> promise,
-			MongoDbDaemon::QueryCallback callback, const char *collection, bool from_slave)
+			QueryCallback callback, const char *collection, bool from_slave)
 			: OperationBase(STD_MOVE(promise))
 			, m_callback(STD_MOVE_IDN(callback)), m_collection(collection), m_from_slave(from_slave)
 		{
@@ -989,12 +991,14 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_saving(
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), urgent);
 	return STD_MOVE_IDN(promise);
 }
-void MongoDbDaemon::enqueue_for_loading(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<MongoDb::ObjectBase> object,
-	MongoDb::BsonBuilder query)
+boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_loading(
+	boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query)
 {
+	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const collection_name = object->get_collection_name();
-	AUTO(operation, boost::make_shared<LoadOperation>(STD_MOVE(promise), STD_MOVE(object), STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)));
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
+	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
 	const char *collection, MongoDb::BsonBuilder query, bool delete_all)
@@ -1005,16 +1009,18 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-void MongoDbDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, MongoDbDaemon::QueryCallback callback,
-	const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
+boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_batch_loading(
+	QueryCallback callback,const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit)
 {
+	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const collection_name = collection;
-	AUTO(operation, boost::make_shared<BatchLoadOperation>(STD_MOVE(promise), STD_MOVE(callback), collection, STD_MOVE(query), begin, limit));
+	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(callback), collection, STD_MOVE(query), begin, limit));
 	submit_operation_by_collection(collection_name, STD_MOVE_IDN(operation), true);
+	return STD_MOVE_IDN(promise);
 }
 
-void MongoDbDaemon::enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, QueryCallback callback,
-	const char *collection, bool from_slave)
+void MongoDbDaemon::enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise,
+	QueryCallback callback, const char *collection, bool from_slave)
 {
 	const char *const collection_name = collection;
 	AUTO(operation, boost::make_shared<LowLevelAccessOperation>(STD_MOVE(promise), STD_MOVE(callback), collection, from_slave));

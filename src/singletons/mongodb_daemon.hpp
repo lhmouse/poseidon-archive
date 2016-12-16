@@ -36,15 +36,15 @@ public:
 	// 异步接口。
 	static boost::shared_ptr<const JobPromise> enqueue_for_saving(
 		boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace, bool urgent);
-	static void enqueue_for_loading(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<MongoDb::ObjectBase> object,
-		MongoDb::BsonBuilder query);
+	static boost::shared_ptr<const JobPromise> enqueue_for_loading(
+		boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query);
 	static boost::shared_ptr<const JobPromise> enqueue_for_deleting(
 		const char *collection, MongoDb::BsonBuilder query, bool delete_all);
-	static void enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, QueryCallback callback,
-		const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit);
+	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(
+		QueryCallback callback, const char *collection, MongoDb::BsonBuilder query, boost::uint32_t begin, boost::uint32_t limit);
 
-	static void enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, QueryCallback callback,
-		const char *collection, bool from_slave = false);
+	static void enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise,
+		QueryCallback callback, const char *collection, bool from_slave = false);
 
 	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
 };

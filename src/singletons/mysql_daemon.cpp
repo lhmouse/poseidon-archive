@@ -30,6 +30,8 @@
 
 namespace Poseidon {
 
+typedef MySqlDaemon::QueryCallback QueryCallback;
+
 namespace {
 	std::string     g_master_addr       = "localhost";
 	unsigned        g_master_port       = 3306;
@@ -232,13 +234,13 @@ namespace {
 
 	class BatchSaveOperation : public OperationBase {
 	private:
-		const MySqlDaemon::QueryCallback m_callback;
+		const QueryCallback m_callback;
 		const char *const m_table_hint;
 		const std::string m_query;
 
 	public:
 		BatchSaveOperation(boost::shared_ptr<JobPromise> promise,
-			MySqlDaemon::QueryCallback callback, const char *table_hint, std::string query)
+			QueryCallback callback, const char *table_hint, std::string query)
 			: OperationBase(STD_MOVE(promise))
 			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_query(STD_MOVE(query))
 		{
@@ -273,13 +275,13 @@ namespace {
 
 	class BatchLoadOperation : public OperationBase {
 	private:
-		const MySqlDaemon::QueryCallback m_callback;
+		const QueryCallback m_callback;
 		const char *const m_table_hint;
 		const std::string m_query;
 
 	public:
 		BatchLoadOperation(boost::shared_ptr<JobPromise> promise,
-			MySqlDaemon::QueryCallback callback, const char *table_hint, std::string query)
+			QueryCallback callback, const char *table_hint, std::string query)
 			: OperationBase(STD_MOVE(promise))
 			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_query(STD_MOVE(query))
 		{
@@ -319,13 +321,13 @@ namespace {
 
 	class LowLevelAccessOperation : public OperationBase {
 	private:
-		const MySqlDaemon::QueryCallback m_callback;
+		const QueryCallback m_callback;
 		const char *const m_table_hint;
 		const bool m_from_slave;
 
 	public:
 		LowLevelAccessOperation(boost::shared_ptr<JobPromise> promise,
-			MySqlDaemon::QueryCallback callback, const char *table_hint, bool from_slave)
+			QueryCallback callback, const char *table_hint, bool from_slave)
 			: OperationBase(STD_MOVE(promise))
 			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_from_slave(from_slave)
 		{
@@ -982,12 +984,14 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_saving(
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), urgent);
 	return STD_MOVE_IDN(promise);
 }
-void MySqlDaemon::enqueue_for_loading(boost::shared_ptr<JobPromise> promise, boost::shared_ptr<MySql::ObjectBase> object,
-	std::string query)
+boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_loading(
+	boost::shared_ptr<MySql::ObjectBase> object, std::string query)
 {
+	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = object->get_table_name();
-	AUTO(operation, boost::make_shared<LoadOperation>(STD_MOVE(promise), STD_MOVE(object), STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
+	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_deleting(
 	const char *table_hint, std::string query)
@@ -998,23 +1002,27 @@ boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_deleting(
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-void MySqlDaemon::enqueue_for_batch_saving(boost::shared_ptr<JobPromise> promise, MySqlDaemon::QueryCallback callback,
-	const char *table_hint, std::string query)
+boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_saving(
+	QueryCallback callback, const char *table_hint, std::string query)
 {
+	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = table_hint;
-	AUTO(operation, boost::make_shared<BatchSaveOperation>(STD_MOVE(promise), STD_MOVE(callback), table_hint, STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<BatchSaveOperation>(promise, STD_MOVE(callback), table_hint, STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
+	return STD_MOVE_IDN(promise);
 }
-void MySqlDaemon::enqueue_for_batch_loading(boost::shared_ptr<JobPromise> promise, MySqlDaemon::QueryCallback callback,
-	const char *table_hint, std::string query)
+boost::shared_ptr<const JobPromise> MySqlDaemon::enqueue_for_batch_loading(
+	QueryCallback callback, const char *table_hint, std::string query)
 {
+	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const table_name = table_hint;
-	AUTO(operation, boost::make_shared<BatchLoadOperation>(STD_MOVE(promise), STD_MOVE(callback), table_hint, STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(callback), table_hint, STD_MOVE(query)));
 	submit_operation_by_table(table_name, STD_MOVE_IDN(operation), true);
+	return STD_MOVE_IDN(promise);
 }
 
-void MySqlDaemon::enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, MySqlDaemon::QueryCallback callback,
-	const char *table_hint, bool from_slave)
+void MySqlDaemon::enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise,
+	QueryCallback callback, const char *table_hint, bool from_slave)
 {
 	const char *const table_name = table_hint;
 	AUTO(operation, boost::make_shared<LowLevelAccessOperation>(STD_MOVE(promise), STD_MOVE(callback), table_hint, from_slave));
