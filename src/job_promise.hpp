@@ -119,31 +119,6 @@ public:
 		JobPromise::set_success();
 	}
 };
-template<>
-class JobPromiseContainer<void> : public JobPromise {
-public:
-	JobPromiseContainer()
-		: JobPromise()
-	{
-	}
-
-public:
-	void *try_get() const NOEXCEPT {
-//		const RecursiveMutex::UniqueLock lock(m_mutex);
-		if(JobPromise::would_throw()){
-			return NULLPTR;
-		}
-		return const_cast<JobPromiseContainer *>(this);
-	}
-	void get() const {
-//		const RecursiveMutex::UniqueLock lock(m_mutex);
-		JobPromise::check_and_rethrow();
-	}
-	void set_success(){
-//		const RecursiveMutex::UniqueLock lock(m_mutex);
-		JobPromise::set_success();
-	}
-};
 
 extern void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant = true);
 
