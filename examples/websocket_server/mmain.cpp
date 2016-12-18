@@ -68,7 +68,7 @@ protected:
 			LOG_POSEIDON_WARNING("Not something we accept: opcode = ", opcode);
 			DEBUG_THROW(Poseidon::WebSocket::Exception, Poseidon::WebSocket::ST_INACCEPTABLE);
 		}
-		LOG_POSEIDON_FATAL("Received: ", payload.dump());
+		LOG_POSEIDON_FATAL("Received: ", payload);
 		send(Poseidon::WebSocket::OP_DATA_TEXT, std::move(payload));
 	}
 };

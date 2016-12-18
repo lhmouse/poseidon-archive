@@ -45,16 +45,15 @@ protected:
 
 MODULE_RAII(/* handles */){
 	Poseidon::enqueue_async_job(
+		{ },
 		[]{
-			const auto sock_addr = boost::make_shared<Poseidon::SockAddr>();
 			LOG_POSEIDON_FATAL("Looking up host: ", g_host);
-			{
-				const auto promise = Poseidon::DnsDaemon::enqueue_for_looking_up(sock_addr, g_host, g_port);
-				Poseidon::JobDispatcher::yield(promise, false);
-			}
+			const auto promised_sock_addr = Poseidon::DnsDaemon::enqueue_for_looking_up(g_host, g_port);
+			Poseidon::JobDispatcher::yield(promised_sock_addr, false);
+			const auto sock_addr = promised_sock_addr->get();
 
-			LOG_POSEIDON_FATAL("Creating client to ", Poseidon::get_ip_port_from_sock_addr(*sock_addr));
-			const auto client = boost::make_shared<Client>(*sock_addr);
+			LOG_POSEIDON_FATAL("Creating client to ", Poseidon::get_ip_port_from_sock_addr(sock_addr));
+			const auto client = boost::make_shared<Client>(sock_addr);
 			client->go_resident();
 
 			LOG_POSEIDON_FATAL("Creating HTTP request for ", g_uri);

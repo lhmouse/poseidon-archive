@@ -9,6 +9,7 @@
 #include <poseidon/http/header_option.hpp>
 #include <poseidon/tcp_server_base.hpp>
 #include <poseidon/singletons/epoll_daemon.hpp>
+#include <poseidon/buffer_streams.hpp>
 
 // 服务端配置。
 const char          g_bind    [] = "0.0.0.0";
@@ -25,26 +26,26 @@ public:
 
 protected:
 	void on_sync_request(Poseidon::Http::RequestHeaders request_headers, Poseidon::StreamBuffer entity){
-		std::ostringstream oss;
-		oss <<"Request from " <<get_remote_info().ip <<":" <<std::endl;
-		oss <<"-----" <<std::endl;
-		oss <<"Verb    : " <<Poseidon::Http::get_string_from_verb(request_headers.verb) <<std::endl;
-		oss <<"URI     : " <<request_headers.uri <<std::endl;
-		oss <<"Version : " <<(request_headers.version / 10000) <<"." <<(request_headers.version % 10000) <<std::endl;
-		oss <<std::endl;
-		oss <<"GET params :" <<std::endl;
+		Poseidon::Buffer_ostream os;
+		os <<"Request from " <<get_remote_info().ip <<":" <<std::endl;
+		os <<"-----" <<std::endl;
+		os <<"Verb    : " <<Poseidon::Http::get_string_from_verb(request_headers.verb) <<std::endl;
+		os <<"URI     : " <<request_headers.uri <<std::endl;
+		os <<"Version : " <<(request_headers.version / 10000) <<"." <<(request_headers.version % 10000) <<std::endl;
+		os <<std::endl;
+		os <<"GET params :" <<std::endl;
 		for(auto it = request_headers.get_params.begin(); it != request_headers.get_params.end(); ++it){
-			oss <<"  " <<it->first <<" = " <<it->second <<std::endl;
+			os <<"  " <<it->first <<" = " <<it->second <<std::endl;
 		}
-		oss <<"HTTP headers :" <<std::endl;
+		os <<"HTTP headers :" <<std::endl;
 		for(auto it = request_headers.headers.begin(); it != request_headers.headers.end(); ++it){
-			oss <<"  " <<it->first <<" : " <<it->second <<std::endl;
+			os <<"  " <<it->first <<" : " <<it->second <<std::endl;
 		}
-		oss <<"Entity :" <<std::endl;
-		oss <<entity.dump() <<std::endl;
-		oss <<"-----" <<std::endl;
+		os <<"Entity :" <<std::endl;
+		os <<entity <<std::endl;
+		os <<"-----" <<std::endl;
 
-		send(Poseidon::Http::ST_OK, Poseidon::StreamBuffer(oss.str()), Poseidon::Http::HeaderOption("text/plain", { }));
+		send(Poseidon::Http::ST_OK, std::move(os.get_buffer()), Poseidon::Http::HeaderOption("text/plain", { }));
 	}
 };
 

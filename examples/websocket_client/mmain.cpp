@@ -38,7 +38,7 @@ public:
 class Client : public Poseidon::WebSocket::Client {
 public:
 	explicit Client(const boost::shared_ptr<Poseidon::Http::LowLevelClient> &parent)
-		: Poseidon::WebSocket::Client(parent, 15000)
+		: Poseidon::WebSocket::Client(parent)
 	{
 	}
 	~Client(){
@@ -54,7 +54,7 @@ private:
 			LOG_POSEIDON_WARNING("Not something we accept: opcode = ", opcode);
 			DEBUG_THROW(Poseidon::WebSocket::Exception, Poseidon::WebSocket::ST_INACCEPTABLE);
 		}
-		LOG_POSEIDON_ERROR("Received: ", payload.dump());
+		LOG_POSEIDON_ERROR("Received: ", payload);
 	}
 };
 
@@ -75,7 +75,7 @@ boost::shared_ptr<Poseidon::Http::UpgradedClientBase> HttpClient::on_low_level_r
 				return;
 			}
 			auto payload = Poseidon::StreamBuffer("hello world!");
-			LOG_POSEIDON_ERROR("Sending: ", payload.dump());
+			LOG_POSEIDON_ERROR("Sending: ", payload);
 			client->send(Poseidon::WebSocket::OP_DATA_TEXT, std::move(payload));
 		}, boost::weak_ptr<Client>(client)));
 	return std::move(client);

@@ -35,8 +35,7 @@ protected:
 	}
 
 	void on_read_avail(Poseidon::StreamBuffer data) override {
-		LOG_POSEIDON_INFO("Connection read avail: remote = ", get_remote_info(),
-			", data = ", data.dump());
+		LOG_POSEIDON_INFO("Connection read avail: remote = ", get_remote_info(), ", data = ", data);
 
 		Poseidon::StreamBuffer buffer;
 		buffer.put("[Response from echo server] ");
