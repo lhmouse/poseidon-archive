@@ -208,6 +208,7 @@ namespace Http {
 					break;
 				}
 				elem.entity.put('-');
+				elem.entity.put('-');
 				elem.entity.put(line);
 				state = S_ENTITY;
 				break;
