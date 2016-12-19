@@ -79,12 +79,12 @@ namespace Http {
 
 	class Session::ExpectJob : public Session::SyncJobBase {
 	private:
-		std::string m_expect;
+		OptionalMap m_headers;
 
 	public:
-		ExpectJob(const boost::shared_ptr<Session> &session, std::string expect)
+		ExpectJob(const boost::shared_ptr<Session> &session, OptionalMap headers)
 			: SyncJobBase(session)
-			, m_expect(STD_MOVE(expect))
+			, m_headers(STD_MOVE(headers))
 		{
 		}
 
@@ -92,11 +92,17 @@ namespace Http {
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
-			if(::strcasecmp(m_expect.c_str(), "100-continue") == 0){
+			const AUTO_REF(expect, m_headers.get("Expect"));
+			if(::strcasecmp(expect.c_str(), "100-continue") == 0){
+				const AUTO_REF(content_length, m_headers.get("Content-Length"));
+				if(!content_length.empty() && (::strtoull(content_length.c_str(), NULLPTR, 0) >= session->m_max_request_length)){
+					LOG_POSEIDON_WARNING("Request entity too large: content_length = ", content_length);
+					DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
+				}
 				session->send_default(ST_CONTINUE);
 				return;
 			}
-			LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", m_expect);
+			LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", expect);
 			DEBUG_THROW(Exception, ST_EXPECTATION_FAILED);
 		}
 	};
@@ -194,7 +200,7 @@ namespace Http {
 		const AUTO_REF(expect, m_request_headers.headers.get("Expect"));
 		if(!expect.empty()){
 			JobDispatcher::enqueue(
-				boost::make_shared<ExpectJob>(virtual_shared_from_this<Session>(), expect),
+				boost::make_shared<ExpectJob>(virtual_shared_from_this<Session>(), m_request_headers.headers),
 				VAL_INIT);
 		}
 	}
