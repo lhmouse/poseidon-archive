@@ -77,6 +77,7 @@ namespace Http {
 			S_INIT_LEADING_HYPHEN_ONE,
 			S_INIT_BOUNDARY,
 			S_BOUNDARY_END,
+			S_BOUNDARY_END_CR,
 			S_HEADERS,
 			S_ENTITY,
 			S_LEADING_HYPHEN_ONE,
@@ -121,15 +122,21 @@ namespace Http {
 					state = S_TRAILING_HYPHEN_ONE;
 					break;
 				}
+				if(ch == '\r'){
+					state = S_BOUNDARY_END_CR;
+					break;
+				}
 				if(ch == '\n'){
-					if(!line.empty() && (*line.rbegin() == '\r')){
-						line.erase(line.end() - 1);
-					}
-					if(line != m_boundary){
-						LOG_POSEIDON_WARNING("Invalid multipart boundary.");
-						is.setstate(std::ios::failbit);
-						return;
-					}
+					elem = VAL_INIT;
+					line.clear();
+					state = S_HEADERS;
+					break;
+				}
+				LOG_POSEIDON_WARNING("Invalid multipart boundary.");
+				is.setstate(std::ios::failbit);
+				return;
+			case S_BOUNDARY_END_CR:
+				if(ch == '\n'){
 					elem = VAL_INIT;
 					line.clear();
 					state = S_HEADERS;
