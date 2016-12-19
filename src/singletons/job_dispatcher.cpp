@@ -204,9 +204,10 @@ namespace {
 		g_current_fiber = NULLPTR;
 	}
 
-	void really_pump_fiber(FiberControl *fiber) NOEXCEPT {
+	bool really_pump_fiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;
 
+		bool busy = false;
 		for(;;){
 			const AUTO(now, get_fast_mono_clock());
 
@@ -225,6 +226,7 @@ namespace {
 				}
 				elem->promise.reset();
 			}
+			++busy;
 
 			try {
 				if((fiber->state == FS_READY) && elem->withdrawn && *(elem->withdrawn)){
@@ -242,11 +244,13 @@ namespace {
 			const RecursiveMutex::UniqueLock queue_lock(fiber->queue_mutex);
 			fiber->queue.pop_front();
 		}
+		return busy;
 	}
 
-	void really_pump_jobs() NOEXCEPT {
+	bool really_pump_jobs() NOEXCEPT {
 		PROFILE_ME;
 
+		bool busy = false;
 		Mutex::UniqueLock lock(g_fiber_map_mutex);
 		AUTO(it, g_fiber_map.begin());
 		while(it != g_fiber_map.end()){
@@ -257,11 +261,12 @@ namespace {
 			}
 			lock.unlock();
 
-			really_pump_fiber(fiber);
+			busy += really_pump_fiber(fiber);
 
 			lock.lock();
 			++it;
 		}
+		return busy;
 	}
 }
 
@@ -304,7 +309,9 @@ void JobDispatcher::do_modal(){
 	}
 
 	for(;;){
-		really_pump_jobs();
+		while(really_pump_jobs()){
+			// noop
+		}
 
 		Mutex::UniqueLock lock(g_fiber_map_mutex);
 		if(!atomic_load(g_running, ATOMIC_CONSUME)){
