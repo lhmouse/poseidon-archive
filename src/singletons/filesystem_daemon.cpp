@@ -92,7 +92,7 @@ namespace {
 			LOG_POSEIDON_ERROR("Failed to save file: path = ", path, ", err_code = ", err_code);
 			DEBUG_THROW(SystemException, err_code);
 		}
-		if(!(flags & O_APPEND) && (begin != 0)){
+		if(!(flags & (O_APPEND | O_TRUNC)) && (begin != 0)){
 			if(::lseek(file.get(), static_cast< ::off_t>(begin), SEEK_SET) == (::off_t)-1){
 				const int err_code = errno;
 				LOG_POSEIDON_ERROR("Failed to seek file: path = ", path, ", err_code = ", err_code);
