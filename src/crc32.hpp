@@ -19,8 +19,8 @@ private:
 	boost::uint32_t m_reg;
 
 private:
-    Crc32_streambuf(const Crc32_streambuf &);
-    Crc32_streambuf &operator=(const Crc32_streambuf &);
+	Crc32_streambuf(const Crc32_streambuf &);
+	Crc32_streambuf &operator=(const Crc32_streambuf &);
 
 public:
 	Crc32_streambuf();
