@@ -161,6 +161,16 @@ public:
 		}
 		return it->second;
 	}
+	std::string &at(const char *key){ // 若指定的键不存在，则抛出 std::out_of_range。
+		return at(SharedNts::view(key));
+	};
+	std::string &at(const SharedNts &key){
+		const AUTO(it, find(key));
+		if(it == end()){
+			throw std::out_of_range(__PRETTY_FUNCTION__);
+		}
+		return it->second;
+	}
 
 	// 一对多的接口。
 	std::pair<const_iterator, const_iterator> range(const char *key) const {

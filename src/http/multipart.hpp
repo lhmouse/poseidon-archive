@@ -150,6 +150,12 @@ namespace Http {
 			}
 			return begin()[static_cast<difference_type>(index)];
 		}
+		MultipartElement &at(size_type index){ // 若指定的下标不存在，则抛出 std::out_of_range。
+			if(index >= size()){
+				throw std::out_of_range(__PRETTY_FUNCTION__);
+			}
+			return begin()[static_cast<difference_type>(index)];
+		}
 		MultipartElement &push_front(MultipartElement val){
 			m_elements.push_front(STD_MOVE(val));
 			return m_elements.front();

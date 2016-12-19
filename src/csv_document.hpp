@@ -131,6 +131,19 @@ public:
 		}
 		return it->second.at(row);
 	}
+	std::string &at(std::size_t row, const char *key){ // 若指定的键不存在，则返回空字符串。
+		return at(row, SharedNts::view(key));
+	}
+	std::string &at(std::size_t row, const SharedNts &column){
+		const AUTO(it, m_elements.find(column));
+		if(it == m_elements.end()){
+			throw std::out_of_range(__PRETTY_FUNCTION__);
+		}
+		if(row >= it->second.size()){
+			throw std::out_of_range(__PRETTY_FUNCTION__);
+		}
+		return it->second.at(row);
+	}
 
 	void swap(CsvDocument &rhs) NOEXCEPT {
 		using std::swap;
