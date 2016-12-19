@@ -83,7 +83,7 @@ namespace Cbpp {
 	long LowLevelClient::on_encoded_data_avail(StreamBuffer encoded){
 		PROFILE_ME;
 
-		if(!m_keep_alive_timer){
+		if(!m_keep_alive_timer && (m_keep_alive_interval != 0)){
 			m_keep_alive_timer = TimerDaemon::register_timer(m_keep_alive_interval, m_keep_alive_interval,
 				boost::bind(&keep_alive_timer_proc, virtual_weak_from_this<LowLevelClient>(), _2, _3));
 		}
