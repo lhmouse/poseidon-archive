@@ -21,6 +21,7 @@
 #include "epoll.hpp"
 #include "job_base.hpp"
 #include "profiler.hpp"
+#include "checked_arithmetic.hpp"
 
 namespace Poseidon {
 
@@ -326,8 +327,9 @@ void TcpSessionBase::set_timeout(boost::uint64_t timeout){
 		m_shutdown_timer.reset();
 	} else {
 		if(!m_shutdown_timer){
-			m_shutdown_timer = TimerDaemon::register_timer(timeout, timeout,
-				boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2), true);
+			const AUTO(now, get_fast_mono_clock());
+			m_shutdown_timer = TimerDaemon::register_low_level_absolute_timer(saturated_add(now, timeout), timeout,
+				boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
 		}
 		m_shutdown_time = get_fast_mono_clock() + timeout;
 	}
