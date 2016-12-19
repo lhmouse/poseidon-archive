@@ -156,7 +156,7 @@ namespace Http {
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
-						LOG_POSEIDON_WARNING("Invalid HTTP header:", line);
+						LOG_POSEIDON_WARNING("Invalid HTTP header: ", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
 					SharedNts key(line.data(), pos);
@@ -275,7 +275,7 @@ namespace Http {
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
-						LOG_POSEIDON_WARNING("Invalid chunk trailer:", line);
+						LOG_POSEIDON_WARNING("Invalid chunk trailer: ", line);
 						DEBUG_THROW(Exception, ST_BAD_REQUEST);
 					}
 					SharedNts key(line.data(), pos);

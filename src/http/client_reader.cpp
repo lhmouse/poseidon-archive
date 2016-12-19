@@ -88,11 +88,11 @@ namespace Http {
 					long ver_end = 0;
 					char ver_major_str[16], ver_minor_str[16];
 					if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) != 2){
-						LOG_POSEIDON_WARNING("Bad response header: expecting HTTP version:", line);
+						LOG_POSEIDON_WARNING("Bad response header: expecting HTTP version: ", line);
 						DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
 					}
 					if(static_cast<unsigned long>(ver_end) != pos){
-						LOG_POSEIDON_WARNING("Bad response header: junk after HTTP version:", line);
+						LOG_POSEIDON_WARNING("Bad response header: junk after HTTP version: ", line);
 						DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
 					}
 					m_response_headers.version = std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10);
@@ -100,14 +100,14 @@ namespace Http {
 
 					pos = line.find(' ');
 					if(pos == std::string::npos){
-						LOG_POSEIDON_WARNING("Bad response header: expecting status code:", line);
+						LOG_POSEIDON_WARNING("Bad response header: expecting status code: ", line);
 						DEBUG_THROW(BasicException, sslit("No status code in response headers"));
 					}
 					line[pos] = 0;
 					char *endptr;
 					const AUTO(status_code, std::strtoul(line.c_str(), &endptr, 10));
 					if(*endptr){
-						LOG_POSEIDON_WARNING("Bad response header: expecting status code:", line);
+						LOG_POSEIDON_WARNING("Bad response header: expecting status code: ", line);
 						DEBUG_THROW(BasicException, sslit("Malformed status code in response headers"));
 					}
 					m_response_headers.status_code = status_code;
@@ -251,7 +251,7 @@ namespace Http {
 
 					AUTO(pos, line.find(':'));
 					if(pos == std::string::npos){
-						LOG_POSEIDON_WARNING("Invalid chunk trailer:", line);
+						LOG_POSEIDON_WARNING("Invalid chunk trailer: ", line);
 						DEBUG_THROW(BasicException, sslit("Invalid HTTP header in chunk trailer"));
 					}
 					SharedNts key(line.data(), pos);

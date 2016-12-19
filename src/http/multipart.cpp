@@ -67,23 +67,19 @@ namespace Http {
 		if(m_boundary.empty()){
 			DEBUG_THROW(ProtocolException, sslit("Multipart boundary not set"), -1);
 		}
+		const AUTO(window_size, m_boundary.size() + 2);
 
 		VALUE_TYPE(m_elements) elements;
 
-		MultipartElement elem;
-		std::string line;
+		StreamBuffer buffer;
+		std::string queue;
 		enum {
 			S_INIT,
-			S_INIT_LEADING_HYPHEN_ONE,
-			S_INIT_BOUNDARY,
 			S_BOUNDARY_END,
-			S_BOUNDARY_END_CR,
-			S_HEADERS,
-			S_ENTITY,
-			S_LEADING_HYPHEN_ONE,
-			S_BOUNDARY,
-			S_TRAILING_HYPHEN_ONE,
-			S_ACCEPTED,
+			S_BOUNDARY_END_WANTS_LF,
+			S_SEGMENT,
+			S_FINISH_WANTS_HYPHEN,
+			S_FINISH,
 		} state = S_INIT;
 		typedef std::istream::traits_type traits;
 		traits::int_type next = is.peek();
@@ -91,139 +87,103 @@ namespace Http {
 			const char ch = is.get();
 			switch(state){
 			case S_INIT:
-				if(ch == '-'){
-					state = S_INIT_LEADING_HYPHEN_ONE;
+				queue.push_back(ch);
+				if(queue.size() < window_size){
 					break;
 				}
-				// state = S_INIT;
-				break;
-			case S_INIT_LEADING_HYPHEN_ONE:
-				if(ch == '-'){
-					line.clear();
-					state = S_INIT_BOUNDARY;
+				queue.erase(queue.begin(), queue.begin() + static_cast<std::ptrdiff_t>(queue.size() - window_size));
+				if((queue[0] != '-') || (queue[1] != '-') || (queue.compare(2, queue.npos, m_boundary) != 0)){
 					break;
 				}
-				state = S_INIT;
+				queue.clear();
+				state = S_BOUNDARY_END;
 				break;
-			case S_INIT_BOUNDARY:
-				 line.push_back(ch);
-				 if(std::memcmp(line.data(), m_boundary.data(), line.size()) == 0){
-					if(line.size() != m_boundary.size()){
-						// state = S_INIT_BOUNDARY;
-						break;
-					}
-					state = S_BOUNDARY_END;
-					break;
-				}
-				state = S_INIT;
-				break;
+
 			case S_BOUNDARY_END:
-				if(ch == '-'){
-					state = S_TRAILING_HYPHEN_ONE;
-					break;
-				}
 				if(ch == '\r'){
-					state = S_BOUNDARY_END_CR;
+					state = S_BOUNDARY_END_WANTS_LF;
+					break;
+				}
+				if(ch == '-'){
+					state = S_FINISH_WANTS_HYPHEN;
 					break;
 				}
 				if(ch == '\n'){
-					elem = VAL_INIT;
-					line.clear();
-					state = S_HEADERS;
-					break;
-				}
-				LOG_POSEIDON_WARNING("Invalid multipart boundary.");
-				is.setstate(std::ios::failbit);
-				return;
-			case S_BOUNDARY_END_CR:
-				if(ch == '\n'){
-					elem = VAL_INIT;
-					line.clear();
-					state = S_HEADERS;
+					state = S_SEGMENT;
 					break;
 				}
 				LOG_POSEIDON_WARNING("Invalid multipart boundary.");
 				is.setstate(std::ios::failbit);
 				return;
-			case S_HEADERS:
+
+			case S_BOUNDARY_END_WANTS_LF:
 				if(ch == '\n'){
+					state = S_SEGMENT;
+					break;
+				}
+				LOG_POSEIDON_WARNING("Invalid multipart boundary.");
+				is.setstate(std::ios::failbit);
+				return;
+
+			case S_SEGMENT: {
+				queue.push_back(ch);
+				if(queue.size() < window_size){
+					break;
+				}
+				const AUTO(offset, queue.size() - window_size);
+				if((queue[offset] != '-') || (queue[offset + 1] != '-') || (queue.compare(offset + 2, queue.npos, m_boundary) != 0)){
+					break;
+				}
+				queue.erase(queue.end() - static_cast<std::ptrdiff_t>(window_size), queue.end());
+
+				MultipartElement elem;
+				Buffer_istream queue_is;
+				queue_is.set_buffer(StreamBuffer(queue));
+				std::string line;
+				while(std::getline(queue_is, line)){
 					if(!line.empty() && (*line.rbegin() == '\r')){
 						line.erase(line.end() - 1);
 					}
-					if(!line.empty()){
-						AUTO(pos, line.find(':'));
-						if(pos == std::string::npos){
-							LOG_POSEIDON_WARNING("Invalid HTTP header: ", line);
-							is.setstate(std::ios::failbit);
-							return;
-						}
-						SharedNts key(line.data(), pos);
-						line.erase(0, pos + 1);
-						std::string value(ltrim(STD_MOVE(line)));
-						elem.headers.append(STD_MOVE(key), STD_MOVE(value));
-						line.clear();
-						// state = S_HEADERS;
-						break;
-					} else {
-						state = S_ENTITY;
+					if(line.empty()){
 						break;
 					}
-				}
-				line.push_back(ch);
-				// state = S_HEADERS;
-				break;
-			case S_ENTITY:
-				if(ch == '-'){
-					state = S_LEADING_HYPHEN_ONE;
-					break;
-				}
-				elem.entity.put((unsigned char)ch);
-				// state = S_ENTITY;
-				break;
-			case S_LEADING_HYPHEN_ONE:
-				if(ch == '-'){
-					line.clear();
-					state = S_BOUNDARY;
-					break;
-				}
-				elem.entity.put('-');
-				elem.entity.put((unsigned char)ch);
-				state = S_ENTITY;
-				break;
-			case S_BOUNDARY:
-				 line.push_back(ch);
-				 if(std::memcmp(line.data(), m_boundary.data(), line.size()) == 0){
-					if(line.size() != m_boundary.size()){
-						// state = S_BOUNDARY;
-						break;
+					AUTO(pos, line.find(':'));
+					if(pos == std::string::npos){
+						LOG_POSEIDON_WARNING("Invalid HTTP header: ", line);
+						DEBUG_THROW(ProtocolException, sslit("Invalid HTTP header"), -1);
 					}
-					if(elem.entity.back() == '\n'){
-						elem.entity.unput();
-						if(elem.entity.back() == '\r'){
-							elem.entity.unput();
-						}
-					}
-					elements.push_back(STD_MOVE(elem));
-					state = S_BOUNDARY_END;
-					break;
+					SharedNts key(line.data(), pos);
+					line.erase(0, pos + 1);
+					std::string value(ltrim(STD_MOVE(line)));
+					elem.headers.set(STD_MOVE(key), STD_MOVE(value));
 				}
-				elem.entity.put('-');
-				elem.entity.put('-');
-				elem.entity.put(line);
-				state = S_ENTITY;
-				break;
-			case S_TRAILING_HYPHEN_ONE:
+				AUTO(entity, STD_MOVE(queue_is.get_buffer()));
+				if(entity.back() == '\n'){
+					entity.unput();
+					if(entity.back() == '\r'){
+						entity.unput();
+					}
+				}
+				elem.entity = STD_MOVE(entity);
+				elements.push_back(STD_MOVE(elem));
+
+				queue.clear();
+				state = S_BOUNDARY_END;
+				break; }
+
+			case S_FINISH_WANTS_HYPHEN:
 				if(ch == '-'){
-					state = S_ACCEPTED;
+					state = S_FINISH;
 					break;
 				}
 				LOG_POSEIDON_WARNING("Invalid multipart termination boundary.");
 				is.setstate(std::ios::failbit);
 				return;
-			case S_ACCEPTED:
+
+			case S_FINISH:
 				break;
 			}
-			if(state == S_ACCEPTED){
+			if(state == S_FINISH){
 				break;
 			}
 		}

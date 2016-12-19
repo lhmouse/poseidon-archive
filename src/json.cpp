@@ -436,7 +436,7 @@ void JsonElement::dump(std::ostream &os) const {
 			}
 		}
 		os <<'\"';
-		} break;
+		break; }
 	case T_OBJECT:
 		os <<get<JsonObject>();
 		break;
