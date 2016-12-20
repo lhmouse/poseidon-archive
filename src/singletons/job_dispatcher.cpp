@@ -317,7 +317,7 @@ void JobDispatcher::do_modal(){
 		if(!atomic_load(g_running, ATOMIC_CONSUME)){
 			break;
 		}
-		g_new_job.timed_wait(lock, 100);
+		g_new_job.timed_wait(lock, 20);
 	}
 }
 bool JobDispatcher::is_running(){
