@@ -64,6 +64,9 @@ namespace {
 				except = boost::copy_exception(std::runtime_error(e.what()));
 #endif
 			}
+			if(!m_promise){
+				return;
+			}
 			try {
 				if(!m_promise->is_satisfied()){
 					if(except){
