@@ -51,6 +51,8 @@ void Deflator::clear(){
 		LOG_POSEIDON_ERROR("::deflateReset() error: err_code = ", err_code);
 		DEBUG_THROW(ProtocolException, sslit("::deflateReset()"), err_code);
 	}
+	m_context->stream.next_out = m_context->temp;
+	m_context->stream.avail_out = sizeof(m_context->temp);
 	m_buffer.clear();
 }
 void Deflator::put(const void *data, std::size_t size){
@@ -149,6 +151,8 @@ void Inflator::clear(){
 		LOG_POSEIDON_ERROR("::inflateReset() error: err_code = ", err_code);
 		DEBUG_THROW(ProtocolException, sslit("::inflateReset()"), err_code);
 	}
+	m_context->stream.next_out = m_context->temp;
+	m_context->stream.avail_out = sizeof(m_context->temp);
 	m_buffer.clear();
 }
 void Inflator::put(const void *data, std::size_t size){
