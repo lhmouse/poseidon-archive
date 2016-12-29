@@ -31,9 +31,9 @@ MODULE_RAII(){
 				[=](const boost::shared_ptr<Poseidon::MongoDb::Connection> &conn){
 					auto obj = boost::make_shared<Foo>();
 					obj->fetch(conn);
-					LOG_POSEIDON_FATAL("Loaded: boolean = ", obj->get_m_boolean(), ", signed = ", obj->get_m_signed(),
-						", unsigned = ", obj->get_m_unsigned(), ", double = ", obj->get_m_double(), ", string = ", obj->get_m_string(),
-						", datetime = ", obj->get_m_datetime(), ", uuid = ", obj->get_m_uuid(), ", blob = ", obj->get_m_blob());
+					LOG_POSEIDON_FATAL("Loaded: boolean = ", obj->m_boolean, ", signed = ", obj->m_signed,
+						", unsigned = ", obj->m_unsigned, ", double = ", obj->m_double, ", string = ", obj->m_string,
+						", datetime = ", obj->m_datetime, ", uuid = ", obj->m_uuid, ", blob = ", obj->m_blob);
 				}, "Foo", { }, 0, 10);
 			Poseidon::JobDispatcher::yield(promise, true);
 

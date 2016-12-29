@@ -26,7 +26,7 @@ public:
 		return ::boost::make_shared<MONGODB_OBJECT_NAME>();
 	}
 
-private:
+public:
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -37,14 +37,14 @@ private:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                bool name_;
-#define FIELD_SIGNED(name_)                 ::boost::int64_t name_;
-#define FIELD_UNSIGNED(name_)               ::boost::uint64_t name_;
-#define FIELD_DOUBLE(name_)                 double name_;
-#define FIELD_STRING(name_)                 ::std::string name_;
-#define FIELD_DATETIME(name_)               ::boost::uint64_t name_;
-#define FIELD_UUID(name_)                   ::Poseidon::Uuid name_;
-#define FIELD_BLOB(name_)                   ::std::string name_;
+#define FIELD_BOOLEAN(name_)                ::Poseidon::MongoDb::ObjectBase::Field<bool> name_;
+#define FIELD_SIGNED(name_)                 ::Poseidon::MongoDb::ObjectBase::Field< ::boost::int64_t> name_;
+#define FIELD_UNSIGNED(name_)               ::Poseidon::MongoDb::ObjectBase::Field< ::boost::uint64_t> name_;
+#define FIELD_DOUBLE(name_)                 ::Poseidon::MongoDb::ObjectBase::Field<double> name_;
+#define FIELD_STRING(name_)                 ::Poseidon::MongoDb::ObjectBase::Field< ::std::string> name_;
+#define FIELD_DATETIME(name_)               ::Poseidon::MongoDb::ObjectBase::Field< ::boost::uint64_t> name_;
+#define FIELD_UUID(name_)                   ::Poseidon::MongoDb::ObjectBase::Field< ::Poseidon::Uuid> name_;
+#define FIELD_BLOB(name_)                   ::Poseidon::MongoDb::ObjectBase::Field< ::std::string> name_;
 
 	MONGODB_OBJECT_FIELDS
 
@@ -61,14 +61,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                , name_()
-#define FIELD_SIGNED(name_)                 , name_()
-#define FIELD_UNSIGNED(name_)               , name_()
-#define FIELD_DOUBLE(name_)                 , name_()
-#define FIELD_STRING(name_)                 , name_()
-#define FIELD_DATETIME(name_)               , name_()
-#define FIELD_UUID(name_)                   , name_()
-#define FIELD_BLOB(name_)                   , name_()
+#define FIELD_BOOLEAN(name_)                , name_(this)
+#define FIELD_SIGNED(name_)                 , name_(this)
+#define FIELD_UNSIGNED(name_)               , name_(this)
+#define FIELD_DOUBLE(name_)                 , name_(this)
+#define FIELD_STRING(name_)                 , name_(this)
+#define FIELD_DATETIME(name_)               , name_(this)
+#define FIELD_UUID(name_)                   , name_(this)
+#define FIELD_BLOB(name_)                   , name_(this)
 
 		MONGODB_OBJECT_FIELDS
 	{
@@ -104,14 +104,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                , name_(name_ ## X_)
-#define FIELD_SIGNED(name_)                 , name_(name_ ## X_)
-#define FIELD_UNSIGNED(name_)               , name_(name_ ## X_)
-#define FIELD_DOUBLE(name_)                 , name_(name_ ## X_)
-#define FIELD_STRING(name_)                 , name_(STD_MOVE(name_ ## X_))
-#define FIELD_DATETIME(name_)               , name_(name_ ## X_)
-#define FIELD_UUID(name_)                   , name_(name_ ## X_)
-#define FIELD_BLOB(name_)                   , name_(STD_MOVE(name_ ## X_))
+#define FIELD_BOOLEAN(name_)                , name_(this, name_ ## X_)
+#define FIELD_SIGNED(name_)                 , name_(this, name_ ## X_)
+#define FIELD_UNSIGNED(name_)               , name_(this, name_ ## X_)
+#define FIELD_DOUBLE(name_)                 , name_(this, name_ ## X_)
+#define FIELD_STRING(name_)                 , name_(this, STD_MOVE(name_ ## X_))
+#define FIELD_DATETIME(name_)               , name_(this, name_ ## X_)
+#define FIELD_UUID(name_)                   , name_(this, name_ ## X_)
+#define FIELD_BLOB(name_)                   , name_(this, STD_MOVE(name_ ## X_))
 
 		MONGODB_OBJECT_FIELDS
 	{
@@ -119,107 +119,6 @@ public:
 	}
 
 public:
-
-#undef FIELD_BOOLEAN
-#undef FIELD_SIGNED
-#undef FIELD_UNSIGNED
-#undef FIELD_DOUBLE
-#undef FIELD_STRING
-#undef FIELD_DATETIME
-#undef FIELD_UUID
-#undef FIELD_BLOB
-
-#define FIELD_BOOLEAN(name_)                const bool & unlocked_get_ ## name_() const {	\
-                                            	return name_;	\
-                                            }	\
-                                            bool get_ ## name_() const {	\
-                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
-                                            }	\
-                                            void set_ ## name_(bool val_, bool invalidates_ = true){	\
-                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-                                            	if(invalidates_){ invalidate(); }	\
-                                            }
-#define FIELD_SIGNED(name_)                 const ::boost::int64_t & unlocked_get_ ## name_() const {	\
-                                            	return name_;	\
-                                            }	\
-                                            ::boost::int64_t get_ ## name_() const {	\
-                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
-                                            }	\
-                                            void set_ ## name_(::boost::int64_t val_, bool invalidates_ = true){	\
-                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-                                            	if(invalidates_){ invalidate(); }	\
-                                            }
-#define FIELD_UNSIGNED(name_)               const ::boost::uint64_t & unlocked_get_ ## name_() const {	\
-                                            	return name_;	\
-                                            }	\
-                                            ::boost::uint64_t get_ ## name_() const {	\
-                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
-                                            }	\
-                                            void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
-                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-                                            	if(invalidates_){ invalidate(); }	\
-                                            }
-#define FIELD_DOUBLE(name_)                 const double & unlocked_get_ ## name_() const {	\
-                                            	return name_;	\
-                                            }	\
-                                            double get_ ## name_() const {	\
-                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
-                                            	return name_;	\
-                                            }	\
-                                            void set_ ## name_(double val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
-                                            	  name_ = val_; }	\
-                                            	if(invalidates_){ invalidate(); }	\
-                                            }
-#define FIELD_STRING(name_)                 const ::std::string & unlocked_get_ ## name_() const {	\
-                                            	return name_;	\
-                                            }	\
-                                            ::std::string get_ ## name_() const {	\
-                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
-                                            	return name_;	\
-                                            }	\
-                                            void set_ ## name_(::std::string val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
-                                            	  name_.swap(val_); }	\
-                                            	if(invalidates_){ invalidate(); }	\
-                                            }
-#define FIELD_DATETIME(name_)               const ::boost::uint64_t & unlocked_get_ ## name_() const {	\
-                                            	return name_;	\
-                                            }	\
-                                            ::boost::uint64_t get_ ## name_() const {	\
-                                            	return ::Poseidon::atomic_load(name_, ::Poseidon::ATOMIC_CONSUME);	\
-                                            }	\
-                                            void set_ ## name_(::boost::uint64_t val_, bool invalidates_ = true){	\
-                                            	::Poseidon::atomic_store(name_, val_, ::Poseidon::ATOMIC_RELEASE);	\
-                                            	if(invalidates_){ invalidate(); }	\
-                                            }
-#define FIELD_UUID(name_)                   const ::Poseidon::Uuid & unlocked_get_ ## name_() const {	\
-                                            	return name_;	\
-                                            }	\
-                                            ::Poseidon::Uuid get_ ## name_() const {	\
-                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
-                                            	return name_;	\
-                                            }	\
-                                            void set_ ## name_(const ::Poseidon::Uuid &val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
-                                            	  name_ = val_; }	\
-                                            	if(invalidates_){ invalidate(); }	\
-                                            }
-#define FIELD_BLOB(name_)                   const ::std::string & unlocked_get_ ## name_() const {	\
-                                            	return name_;	\
-                                            }	\
-                                            ::std::string get_ ## name_() const {	\
-                                            	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
-                                            	return name_;	\
-                                            }	\
-                                            void set_ ## name_(::std::string val_, bool invalidates_ = true){	\
-                                            	{ const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);	\
-                                            	  name_.swap(val_); }	\
-                                            	if(invalidates_){ invalidate(); }	\
-                                            }
-
-	MONGODB_OBJECT_FIELDS
-
 	const char *get_collection_name() const OVERRIDE {
 		return TOKEN_TO_STR(MONGODB_OBJECT_NAME);
 	}
@@ -239,14 +138,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                doc_.append_boolean  (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_SIGNED(name_)                 doc_.append_signed   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_UNSIGNED(name_)               doc_.append_unsigned (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_DOUBLE(name_)                 doc_.append_double   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_STRING(name_)                 doc_.append_string   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_DATETIME(name_)               doc_.append_datetime (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_UUID(name_)                   doc_.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
-#define FIELD_BLOB(name_)                   doc_.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), get_ ## name_());
+#define FIELD_BOOLEAN(name_)                doc_.append_boolean  (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), name_);
+#define FIELD_SIGNED(name_)                 doc_.append_signed   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), name_);
+#define FIELD_UNSIGNED(name_)               doc_.append_unsigned (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), name_);
+#define FIELD_DOUBLE(name_)                 doc_.append_double   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), name_);
+#define FIELD_STRING(name_)                 doc_.append_string   (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), name_);
+#define FIELD_DATETIME(name_)               doc_.append_datetime (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), name_);
+#define FIELD_UUID(name_)                   doc_.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), name_);
+#define FIELD_BLOB(name_)                   doc_.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(name_)), name_);
 
 		MONGODB_OBJECT_FIELDS
 	}
@@ -266,14 +165,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                set_ ## name_(conn_->get_boolean  ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_SIGNED(name_)                 set_ ## name_(conn_->get_signed   ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_UNSIGNED(name_)               set_ ## name_(conn_->get_unsigned ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_DOUBLE(name_)                 set_ ## name_(conn_->get_double   ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_STRING(name_)                 set_ ## name_(conn_->get_string   ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_DATETIME(name_)               set_ ## name_(conn_->get_datetime ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_UUID(name_)                   set_ ## name_(conn_->get_uuid     ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_BLOB(name_)                   set_ ## name_(conn_->get_blob     ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_BOOLEAN(name_)                name_.set(conn_->get_boolean  ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_SIGNED(name_)                 name_.set(conn_->get_signed   ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_UNSIGNED(name_)               name_.set(conn_->get_unsigned ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_DOUBLE(name_)                 name_.set(conn_->get_double   ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_STRING(name_)                 name_.set(conn_->get_string   ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_DATETIME(name_)               name_.set(conn_->get_datetime ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_UUID(name_)                   name_.set(conn_->get_uuid     ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_BLOB(name_)                   name_.set(conn_->get_blob     ( TOKEN_TO_STR(name_) ), false);
 
 		MONGODB_OBJECT_FIELDS
 	}

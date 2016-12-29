@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <exception>
+#include <iosfwd>
 #include <cstdio>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
@@ -29,6 +30,10 @@ namespace Poseidon {
 
 namespace MySql {
 	class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
+	public:
+		template<typename ValueT>
+		class Field;
+
 	private:
 		mutable volatile bool m_auto_saves;
 		mutable void *volatile m_combined_write_stamp;
@@ -59,6 +64,65 @@ namespace MySql {
 		virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;
 		void async_save(bool to_replace, bool urgent = false) const;
 	};
+
+	template<typename ValueT>
+	class ObjectBase::Field : NONCOPYABLE {
+	private:
+		ObjectBase *const m_parent;
+		ValueT m_value;
+
+	public:
+		explicit Field(ObjectBase *parent, ValueT value = ValueT())
+			: m_parent(parent), m_value(STD_MOVE_IDN(value))
+		{
+		}
+
+	public:
+		const ValueT &unlocked_get() const {
+			return m_value;
+		}
+		ValueT get() const {
+			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
+			return m_value;
+		}
+		void set(ValueT value, bool invalidates_parent){
+			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
+			m_value = STD_MOVE_IDN(value);
+
+			if(invalidates_parent){
+				m_parent->invalidate();
+			}
+		}
+
+		void dump(std::ostream &os) const {
+			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
+			os <<m_value;
+		}
+		void parse(std::istream &is){
+			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
+			is >>m_value;
+		}
+
+	public:
+		operator ValueT() const {
+			return get();
+		}
+		Field &operator=(ValueT value){
+			set(STD_MOVE_IDN(value), true);
+			return *this;
+		}
+	};
+
+	template<typename ValueT>
+	inline std::ostream &operator<<(std::ostream &os, const ObjectBase::Field<ValueT> &rhs){
+		rhs.dump(os);
+		return os;
+	}
+	template<typename ValueT>
+	inline std::istream &operator<<(std::istream &is, ObjectBase::Field<ValueT> &rhs){
+		rhs.parse(is);
+		return is;
+	}
 }
 
 }
