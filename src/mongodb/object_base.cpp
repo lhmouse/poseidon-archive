@@ -27,17 +27,19 @@ namespace MongoDb {
 		atomic_store(m_auto_saves, false, ATOMIC_RELEASE);
 	}
 
-	bool ObjectBase::invalidate() const NOEXCEPT {
+	bool ObjectBase::invalidate() const NOEXCEPT
+	try {
 		if(!is_auto_saving_enabled()){
 			return false;
 		}
-		try {
-			async_save(true, false);
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception: what = ", e.what());
-			return false;
-		}
+		async_save(true, false);
 		return true;
+	} catch(std::exception &e){
+		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+		return false;
+	} catch(...){
+		LOG_POSEIDON_ERROR("Unknown exception thrown.");
+		return false;
 	}
 
 	void *ObjectBase::get_combined_write_stamp() const {
