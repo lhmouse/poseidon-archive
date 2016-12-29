@@ -85,7 +85,7 @@ namespace MySql {
 			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
 			return m_value;
 		}
-		void set(ValueT value, bool invalidates_parent){
+		void set(ValueT value, bool invalidates_parent = true){
 			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
 			m_value = STD_MOVE_IDN(value);
 
@@ -98,9 +98,13 @@ namespace MySql {
 			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
 			os <<m_value;
 		}
-		void parse(std::istream &is){
+		void parse(std::istream &is, bool invalidates_parent = true){
 			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
 			is >>m_value;
+
+			if(invalidates_parent){
+				m_parent->invalidate();
+			}
 		}
 
 	public:
@@ -108,7 +112,7 @@ namespace MySql {
 			return get();
 		}
 		Field &operator=(ValueT value){
-			set(STD_MOVE_IDN(value), true);
+			set(STD_MOVE_IDN(value));
 			return *this;
 		}
 	};
