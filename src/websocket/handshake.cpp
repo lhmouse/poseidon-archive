@@ -76,12 +76,8 @@ namespace WebSocket {
 		request.headers.set(sslit("Connection"), "Keep-Alive");
 		request.headers.set(sslit("Sec-WebSocket-Version"), "13");
 		Base64Encoder enc;
-		for(unsigned i = 0; i < 24; ++i){
-			char str[3];
-			for(unsigned j = 0; j < sizeof(str); ++j){
-				str[j] = static_cast<char>(random_uint32());
-			}
-			enc.put(str, sizeof(str));
+		for(unsigned i = 0; i < 16; ++i){
+			enc.put(static_cast<char>(random_uint32()));
 		}
 		AUTO(sec_websocket_key, enc.finalize().dump_string());
 		request.headers.set(sslit("Sec-WebSocket-Key"), sec_websocket_key);
