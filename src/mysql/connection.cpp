@@ -90,6 +90,10 @@ namespace MySql {
 
 		private:
 			bool find_field_and_check(const char *&data, std::size_t &size, const char *name) const {
+				if(!m_row){
+					LOG_POSEIDON_WARNING("No more results available.");
+					return false;
+				}
 				const AUTO(it, m_fields.find(name));
 				if(it == m_fields.end()){
 					LOG_POSEIDON_WARNING("Field not found: name = ", name);
