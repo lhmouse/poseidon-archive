@@ -75,10 +75,12 @@ namespace WebSocket {
 		request.headers.set(sslit("Upgrade"), "websocket");
 		request.headers.set(sslit("Connection"), "Keep-Alive");
 		request.headers.set(sslit("Sec-WebSocket-Version"), "13");
-		Base64Encoder enc;
-		for(unsigned i = 0; i < 16; ++i){
-			enc.put(static_cast<char>(random_uint32()));
+		boost::uint32_t key[4];
+		for(unsigned i = 0; i < 4; ++i){
+			key[i] = random_uint32();
 		}
+		Base64Encoder enc;
+		enc.put(key, sizeof(key));
 		AUTO(sec_websocket_key, enc.finalize().dump_string());
 		request.headers.set(sslit("Sec-WebSocket-Key"), sec_websocket_key);
 		return std::make_pair(STD_MOVE_IDN(request), STD_MOVE_IDN(sec_websocket_key));
