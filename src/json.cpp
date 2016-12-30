@@ -278,8 +278,7 @@ namespace {
 		case '[':
 			ret = accept_array(is);
 			break;
-		case 't':
-		case 'f':
+		case 't': case 'f':
 			ret = accept_boolean(is);
 			break;
 		case 'n':
@@ -395,10 +394,10 @@ void JsonElement::dump(std::ostream &os) const {
 	const Type type = get_type();
 	switch(type){
 	case T_BOOL:
-		os <<std::boolalpha <<get<bool>();
+		os <<(get<bool>() ? "true" : "false");
 		break;
 	case T_NUMBER:
-		os <<std::setprecision(20) <<get<double>();
+		os <<std::setprecision(16) <<get<double>();
 		break;
 	case T_STRING: {
 		const AUTO_REF(str, get<std::string>());
