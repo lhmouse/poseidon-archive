@@ -43,12 +43,12 @@ namespace MySql {
 		boost::uint64_t get_insert_id() const;
 		bool fetch_row();
 
-		boost::int64_t get_signed(const char *column) const;
-		boost::uint64_t get_unsigned(const char *column) const;
-		double get_double(const char *column) const;
-		std::string get_string(const char *column) const;
-		boost::uint64_t get_datetime(const char *column) const;
-		Uuid get_uuid(const char *column) const;
+		boost::int64_t get_signed(const char *name) const;
+		boost::uint64_t get_unsigned(const char *name) const;
+		double get_double(const char *name) const;
+		std::string get_string(const char *name) const;
+		boost::uint64_t get_datetime(const char *name) const;
+		Uuid get_uuid(const char *name) const;
 	};
 }
 

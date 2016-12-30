@@ -83,7 +83,7 @@ namespace MongoDb {
 		};
 
 #define DEBUG_THROW_MONGODB_EXCEPTION(bson_err_, database_)	\
-	DEBUG_THROW(::Poseidon::MongoDb::Exception, database_, (bson_err_).code, ::Poseidon::SharedNts((bson_err_).message))
+		DEBUG_THROW(::Poseidon::MongoDb::Exception, database_, (bson_err_).code, ::Poseidon::SharedNts((bson_err_).message))
 
 		class DelegatedConnection : public Connection {
 		private:
@@ -130,6 +130,24 @@ namespace MongoDb {
 				if(!m_client.reset(::mongoc_client_new_from_uri(m_uri.get()))){
 					DEBUG_THROW(SystemException, ENOMEM);
 				}
+			}
+
+		private:
+			bool find_bson_element_and_check_type(::bson_iter_t &it, const char *name, ::bson_type_t type_expecting) const {
+				if(!m_cursor_head){
+					LOG_POSEIDON_WARNING("No more results available.");
+					return false;
+				}
+				if(!::bson_iter_init_find(&it, m_cursor_head, name)){
+					LOG_POSEIDON_WARNING("Element not found: name = ", name);
+					return false;
+				}
+				const AUTO(type, ::bson_iter_type(&it));
+				if(type != type_expecting){
+					LOG_POSEIDON_ERROR("BSON type mismatch: name = ", name, ", type_expecting = ", type_expecting, ", type = ", type);
+					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
+				}
+				return true;
 			}
 
 		public:
@@ -252,94 +270,56 @@ namespace MongoDb {
 				return true;
 			}
 
-#define CHECK_TYPE(iter_, field_, type_)	\
-				{	\
-					const AUTO(t_, ::bson_iter_type(&(iter_)));	\
-					if(t_ != (type_)){	\
-						LOG_POSEIDON_ERROR("BSON type mismatch: field = ", (field_), ", type = ", #type_,	\
-							", expecting ", static_cast<int>(type_), ", got ", static_cast<int>(t_));	\
-						DEBUG_THROW(BasicException, sslit("BSON type mismatch"));	\
-					}	\
-				}
-
 			bool do_get_boolean(const char *name) const {
-				if(!m_cursor_head){
-					DEBUG_THROW(BasicException, sslit("No more results"));
-				}
 				::bson_iter_t iter;
-				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					return false;
+				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_BOOL)){
+					return VAL_INIT;
 				}
-				CHECK_TYPE(iter, name, BSON_TYPE_BOOL)
 				return ::bson_iter_bool(&iter);
 			}
 			boost::int64_t do_get_signed(const char *name) const {
-				if(!m_cursor_head){
-					DEBUG_THROW(BasicException, sslit("No more results"));
-				}
 				::bson_iter_t iter;
-				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					return 0;
+				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_INT64)){
+					return VAL_INIT;
 				}
-				CHECK_TYPE(iter, name, BSON_TYPE_INT64)
-				return ::bson_iter_int64(&iter);
+				return ::bson_iter_bool(&iter);
 			}
 			boost::uint64_t do_get_unsigned(const char *name) const {
-				if(!m_cursor_head){
-					DEBUG_THROW(BasicException, sslit("No more results"));
-				}
 				::bson_iter_t iter;
-				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					return 0;
+				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_INT64)){
+					return VAL_INIT;
 				}
-				CHECK_TYPE(iter, name, BSON_TYPE_INT64)
 				return static_cast<boost::uint64_t>(::bson_iter_int64(&iter));
 			}
 			double do_get_double(const char *name) const {
-				if(!m_cursor_head){
-					DEBUG_THROW(BasicException, sslit("No more results"));
-				}
 				::bson_iter_t iter;
-				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					return 0;
+				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_DOUBLE)){
+					return VAL_INIT;
 				}
-				CHECK_TYPE(iter, name, BSON_TYPE_DOUBLE)
 				return static_cast<double>(::bson_iter_int64(&iter));
 			}
 			std::string do_get_string(const char *name) const {
-				if(!m_cursor_head){
-					DEBUG_THROW(BasicException, sslit("No more results"));
-				}
 				::bson_iter_t iter;
-				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
+				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_UTF8)){
 					return VAL_INIT;
 				}
-				CHECK_TYPE(iter, name, BSON_TYPE_UTF8)
 				boost::uint32_t len;
 				const char *const str = ::bson_iter_utf8(&iter, &len);
 				return std::string(str, len);
 			}
 			boost::uint64_t do_get_datetime(const char *name) const {
-				if(!m_cursor_head){
-					DEBUG_THROW(BasicException, sslit("No more results"));
-				}
 				::bson_iter_t iter;
-				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
-					return 0;
+				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_UTF8)){
+					return VAL_INIT;
 				}
-				CHECK_TYPE(iter, name, BSON_TYPE_UTF8)
-				const AUTO(str, ::bson_iter_utf8(&iter, NULLPTR));
+				const char *const str = ::bson_iter_utf8(&iter, NULLPTR);
 				return scan_time(str);
 			}
 			Uuid do_get_uuid(const char *name) const {
-				if(!m_cursor_head){
-					DEBUG_THROW(BasicException, sslit("No more results"));
-				}
 				::bson_iter_t iter;
-				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
+				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_UTF8)){
 					return VAL_INIT;
 				}
-				CHECK_TYPE(iter, name, BSON_TYPE_UTF8)
 				boost::uint32_t len;
 				const char *const str = ::bson_iter_utf8(&iter, &len);
 				if(len != 36){
@@ -348,14 +328,10 @@ namespace MongoDb {
 				return Uuid(reinterpret_cast<const char (&)[36]>(*str));
 			}
 			std::string do_get_blob(const char *name) const {
-				if(!m_cursor_head){
-					DEBUG_THROW(BasicException, sslit("No more results"));
-				}
 				::bson_iter_t iter;
-				if(!::bson_iter_init_find(&iter, m_cursor_head, name)){
+				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_BINARY)){
 					return VAL_INIT;
 				}
-				CHECK_TYPE(iter, name, BSON_TYPE_BINARY)
 				boost::uint32_t len;
 				const boost::uint8_t *data;
 				::bson_iter_binary(&iter, NULLPTR, &len, &data);

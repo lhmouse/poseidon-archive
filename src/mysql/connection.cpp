@@ -37,14 +37,14 @@ namespace MySql {
 			}
 		};
 
-		struct ColumnComparator {
+		struct FieldComparator {
 			bool operator()(const char *lhs, const char *rhs) const NOEXCEPT {
 				return std::strcmp(lhs, rhs) < 0;
 			}
 		};
 
 #define DEBUG_THROW_MYSQL_EXCEPTION(mysql_, schema_)	\
-	DEBUG_THROW(::Poseidon::MySql::Exception, schema_, ::mysql_errno(mysql_), ::Poseidon::SharedNts(::mysql_error(mysql_)))
+		DEBUG_THROW(::Poseidon::MySql::Exception, schema_, ::mysql_errno(mysql_), ::Poseidon::SharedNts(::mysql_error(mysql_)))
 
 		class DelegatedConnection : public Connection {
 		private:
@@ -55,7 +55,7 @@ namespace MySql {
 			UniqueHandle<Closer> m_mysql;
 
 			UniqueHandle<ResultDeleter> m_result;
-			boost::container::flat_map<const char *, std::size_t, ColumnComparator> m_columns;
+			boost::container::flat_map<const char *, std::size_t, FieldComparator> m_fields;
 
 			::MYSQL_ROW m_row;
 			unsigned long *m_lengths;
@@ -88,6 +88,21 @@ namespace MySql {
 				}
 			}
 
+		private:
+			bool find_field_and_check(const char *&data, std::size_t &size, const char *name) const {
+				const AUTO(it, m_fields.find(name));
+				if(it == m_fields.end()){
+					LOG_POSEIDON_WARNING("Field not found: name = ", name);
+					return false;
+				}
+				data = m_row[it->second];
+				if(!data){
+					return false;
+				}
+				size = m_lengths[it->second];
+				return true;
+			}
+
 		public:
 			void do_execute_sql(const char *sql, std::size_t len){
 				do_discard_result();
@@ -104,20 +119,20 @@ namespace MySql {
 				} else {
 					const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
 					const AUTO(count, ::mysql_num_fields(m_result.get()));
-					m_columns.reserve(count);
+					m_fields.reserve(count);
 					for(std::size_t i = 0; i < count; ++i){
 						const char *const name = fields[i].name;
-						if(!m_columns.insert(std::make_pair(name, i)).second){
-							LOG_POSEIDON_ERROR("Duplicate column in MySQL result set: ", name);
-							DEBUG_THROW(BasicException, sslit("Duplicate column"));
+						if(!m_fields.insert(std::make_pair(name, i)).second){
+							LOG_POSEIDON_ERROR("Duplicate field in MySQL result set: ", name);
+							DEBUG_THROW(BasicException, sslit("Duplicate field"));
 						}
-						LOG_POSEIDON_TRACE("MySQL result column: name = ", name, ", index = ", i);
+						LOG_POSEIDON_TRACE("MySQL result field: name = ", name, ", index = ", i);
 					}
 				}
 			}
 			void do_discard_result() NOEXCEPT {
 				m_result.reset();
-				m_columns.clear();
+				m_fields.clear();
 				m_row = NULLPTR;
 			}
 
@@ -126,7 +141,7 @@ namespace MySql {
 			}
 
 			bool do_fetch_row(){
-				if(m_columns.empty()){
+				if(m_fields.empty()){
 					LOG_POSEIDON_DEBUG("Empty set returned from MySQL server.");
 					return false;
 				}
@@ -141,96 +156,71 @@ namespace MySql {
 				return true;
 			}
 
-			boost::int64_t do_get_signed(const char *column) const {
-				const AUTO(it, m_columns.find(column));
-				if(it == m_columns.end()){
-					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(BasicException, sslit("Column not found"));
-				}
-				const AUTO(data, m_row[it->second]);
-				if(!data || (data[0] == 0)){
-					return 0;
+			boost::int64_t do_get_signed(const char *name) const {
+				const char *data;
+				std::size_t size;
+				if(!find_field_and_check(data, size, name)){
+					return VAL_INIT;
 				}
 				char *endptr;
 				const AUTO(val, ::strtoll(data, &endptr, 10));
 				if(endptr[0] != 0){
-					LOG_POSEIDON_ERROR("Could not convert column data to long long: ", data);
-					DEBUG_THROW(BasicException, sslit("Invalid data format"));
+					LOG_POSEIDON_ERROR("Could not convert field data to long long: ", data);
+					DEBUG_THROW(BasicException, sslit("Could not convert field data to long long"));
 				}
 				return val;
 			}
-			boost::uint64_t do_get_unsigned(const char *column) const {
-				const AUTO(it, m_columns.find(column));
-				if(it == m_columns.end()){
-					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(BasicException, sslit("Column not found"));
-				}
-				const AUTO(data, m_row[it->second]);
-				if(!data || (data[0] == 0)){
-					return 0;
+			boost::uint64_t do_get_unsigned(const char *name) const {
+				const char *data;
+				std::size_t size;
+				if(!find_field_and_check(data, size, name)){
+					return VAL_INIT;
 				}
 				char *endptr;
 				const AUTO(val, ::strtoull(data, &endptr, 10));
 				if(endptr[0] != 0){
-					LOG_POSEIDON_ERROR("Could not convert column data to unsigned long long: ", data);
-					DEBUG_THROW(BasicException, sslit("Invalid data format"));
+					LOG_POSEIDON_ERROR("Could not convert field data to unsigned long long: ", data);
+					DEBUG_THROW(BasicException, sslit("Could not convert field data to unsigned long long"));
 				}
 				return val;
 			}
-			double do_get_double(const char *column) const {
-				const AUTO(it, m_columns.find(column));
-				if(it == m_columns.end()){
-					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(BasicException, sslit("Column not found"));
-				}
-				const AUTO(data, m_row[it->second]);
-				if(!data || (data[0] == 0)){
-					return 0;
+			double do_get_double(const char *name) const {
+				const char *data;
+				std::size_t size;
+				if(!find_field_and_check(data, size, name)){
+					return VAL_INIT;
 				}
 				char *endptr;
 				const AUTO(val, ::strtod(data, &endptr));
 				if(endptr[0] != 0){
-					LOG_POSEIDON_ERROR("Could not convert column data to double: ", data);
-					DEBUG_THROW(BasicException, sslit("Invalid data format"));
+					LOG_POSEIDON_ERROR("Could not convert field data to double: ", data);
+					DEBUG_THROW(BasicException, sslit("Could not convert field data to double"));
 				}
 				return val;
 			}
-			std::string do_get_string(const char *column) const {
-				const AUTO(it, m_columns.find(column));
-				if(it == m_columns.end()){
-					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(BasicException, sslit("Column not found"));
+			std::string do_get_string(const char *name) const {
+				const char *data;
+				std::size_t size;
+				if(!find_field_and_check(data, size, name)){
+					return VAL_INIT;
 				}
-				std::string val;
-				const AUTO(data, m_row[it->second]);
-				if(data){
-					val.assign(data, m_lengths[it->second]);
-				}
-				return val;
+				return std::string(data, size);
 			}
-			boost::uint64_t do_get_datetime(const char *column) const {
-				const AUTO(it, m_columns.find(column));
-				if(it == m_columns.end()){
-					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(BasicException, sslit("Column not found"));
-				}
-				const AUTO(data, m_row[it->second]);
-				if(!data || (data[0] == 0)){
-					return 0;
+			boost::uint64_t do_get_datetime(const char *name) const {
+				const char *data;
+				std::size_t size;
+				if(!find_field_and_check(data, size, name)){
+					return VAL_INIT;
 				}
 				return scan_time(data);
 			}
-			Uuid do_get_uuid(const char *column) const {
-				const AUTO(it, m_columns.find(column));
-				if(it == m_columns.end()){
-					LOG_POSEIDON_ERROR("Column not found: ", column);
-					DEBUG_THROW(BasicException, sslit("Column not found"));
+			Uuid do_get_uuid(const char *name) const {
+				const char *data;
+				std::size_t size;
+				if(!find_field_and_check(data, size, name)){
+					return VAL_INIT;
 				}
-				const AUTO(data, m_row[it->second]);
-				if(!data || (data[0] == 0)){
-					return Uuid();
-				}
-				if(std::strlen(data) != 36){
+				if(size != 36){
 					LOG_POSEIDON_ERROR("Invalid UUID string: ", data);
 					DEBUG_THROW(BasicException, sslit("Invalid UUID string"));
 				}
@@ -263,23 +253,23 @@ namespace MySql {
 		return static_cast<DelegatedConnection &>(*this).do_fetch_row();
 	}
 
-	boost::int64_t Connection::get_signed(const char *column) const {
-		return static_cast<const DelegatedConnection &>(*this).do_get_signed(column);
+	boost::int64_t Connection::get_signed(const char *name) const {
+		return static_cast<const DelegatedConnection &>(*this).do_get_signed(name);
 	}
-	boost::uint64_t Connection::get_unsigned(const char *column) const {
-		return static_cast<const DelegatedConnection &>(*this).do_get_unsigned(column);
+	boost::uint64_t Connection::get_unsigned(const char *name) const {
+		return static_cast<const DelegatedConnection &>(*this).do_get_unsigned(name);
 	}
-	double Connection::get_double(const char *column) const {
-		return static_cast<const DelegatedConnection &>(*this).do_get_double(column);
+	double Connection::get_double(const char *name) const {
+		return static_cast<const DelegatedConnection &>(*this).do_get_double(name);
 	}
-	std::string Connection::get_string(const char *column) const {
-		return static_cast<const DelegatedConnection &>(*this).do_get_string(column);
+	std::string Connection::get_string(const char *name) const {
+		return static_cast<const DelegatedConnection &>(*this).do_get_string(name);
 	}
-	boost::uint64_t Connection::get_datetime(const char *column) const {
-		return static_cast<const DelegatedConnection &>(*this).do_get_datetime(column);
+	boost::uint64_t Connection::get_datetime(const char *name) const {
+		return static_cast<const DelegatedConnection &>(*this).do_get_datetime(name);
 	}
-	Uuid Connection::get_uuid(const char *column) const {
-		return static_cast<const DelegatedConnection &>(*this).do_get_uuid(column);
+	Uuid Connection::get_uuid(const char *name) const {
+		return static_cast<const DelegatedConnection &>(*this).do_get_uuid(name);
 	}
 }
 
