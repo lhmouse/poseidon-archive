@@ -29,10 +29,14 @@ public:
 	Md5_streambuf();
 	~Md5_streambuf() OVERRIDE;
 
+private:
+	void eat_chunk();
+
 protected:
 	int_type overflow(int_type c = traits_type::eof()) OVERRIDE;
 
 public:
+	void clear() NOEXCEPT;
 	Md5 finalize();
 };
 
@@ -52,6 +56,9 @@ public:
 		return const_cast<Md5_streambuf *>(&m_sb);
 	}
 
+	void clear() NOEXCEPT {
+		return rdbuf()->clear();
+	}
 	Md5 finalize(){
 		return rdbuf()->finalize();
 	}

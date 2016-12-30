@@ -52,6 +52,10 @@ Crc32_streambuf::Crc32_streambuf()
 Crc32_streambuf::~Crc32_streambuf(){
 }
 
+void Crc32_streambuf::clear() NOEXCEPT {
+	// setp(NULLPTR, NULLPTR);
+	m_reg = CRC32_REG_INIT;
+}
 Crc32_streambuf::int_type Crc32_streambuf::overflow(Crc32_streambuf::int_type c){
 	if(traits_type::eq_int_type(c, traits_type::eof())){
 		return traits_type::not_eof(c);
@@ -63,7 +67,7 @@ Crc32_streambuf::int_type Crc32_streambuf::overflow(Crc32_streambuf::int_type c)
 Crc32 Crc32_streambuf::finalize(){
 	Crc32 crc32;
 	crc32 = ~m_reg;
-	m_reg = CRC32_REG_INIT;
+	clear();
 	return crc32;
 }
 

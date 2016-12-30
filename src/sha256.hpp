@@ -29,10 +29,14 @@ public:
 	Sha256_streambuf();
 	~Sha256_streambuf() OVERRIDE;
 
+private:
+	void eat_chunk();
+
 protected:
 	int_type overflow(int_type c = traits_type::eof()) OVERRIDE;
 
 public:
+	void clear() NOEXCEPT;
 	Sha256 finalize();
 };
 
@@ -52,6 +56,9 @@ public:
 		return const_cast<Sha256_streambuf *>(&m_sb);
 	}
 
+	void clear() NOEXCEPT {
+		return rdbuf()->clear();
+	}
 	Sha256 finalize(){
 		return rdbuf()->finalize();
 	}
