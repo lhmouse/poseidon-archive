@@ -1,5 +1,5 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
-// Copyleft 2014 - 2016, LH_Mouse. All wrongs reserved.
+// Copyleft 2014 - 2017, LH_Mouse. All wrongs reserved.
 
 #ifndef POSEIDON_HTTP_LOW_LEVEL_SESSION_HPP_
 #define POSEIDON_HTTP_LOW_LEVEL_SESSION_HPP_
