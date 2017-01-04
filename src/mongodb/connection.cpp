@@ -200,6 +200,7 @@ namespace MongoDb {
 
 						const AUTO(query_bt, ::bson_sized_new(256));
 						DEBUG_THROW_ASSERT(query_bt);
+						const UniqueHandle<BsonCloser> query_guard(query_bt);
 						bool success = ::bson_append_int64(query_bt, "getMore", -1, m_cursor_id);
 						DEBUG_THROW_ASSERT(success);
 						const AUTO(db_len, std::strlen(m_database));
