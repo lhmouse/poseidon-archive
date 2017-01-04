@@ -155,7 +155,7 @@ public:
 	}
 
 public:
-	const char *get_table_name() const OVERRIDE {
+	const char *get_table() const OVERRIDE {
 		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
 	}
 

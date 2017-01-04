@@ -119,7 +119,7 @@ public:
 	}
 
 public:
-	const char *get_collection_name() const OVERRIDE {
+	const char *get_collection() const OVERRIDE {
 		return TOKEN_TO_STR(MONGODB_OBJECT_NAME);
 	}
 

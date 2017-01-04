@@ -51,12 +51,11 @@ namespace MySql {
 			const ThreadContext m_context;
 			const SharedNts m_schema;
 
-			::MYSQL m_mysql_object;
+			::MYSQL m_mysql_storage;
 			UniqueHandle<Closer> m_mysql;
 
 			UniqueHandle<ResultDeleter> m_result;
 			boost::container::flat_map<const char *, std::size_t, FieldComparator> m_fields;
-
 			::MYSQL_ROW m_row;
 			unsigned long *m_lengths;
 
@@ -66,7 +65,7 @@ namespace MySql {
 				: m_schema(schema)
 				, m_row(NULLPTR), m_lengths(NULLPTR)
 			{
-				if(!m_mysql.reset(::mysql_init(&m_mysql_object))){
+				if(!m_mysql.reset(::mysql_init(&m_mysql_storage))){
 					DEBUG_THROW(SystemException, ENOMEM);
 				}
 
@@ -81,9 +80,11 @@ namespace MySql {
 					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 				}
 
-				if(!::mysql_real_connect(m_mysql.get(), server_addr, user_name,
-					password, schema, server_port, NULLPTR, use_ssl ? CLIENT_SSL : 0))
-				{
+				unsigned long flags = 0;
+				if(use_ssl){
+					flags |= CLIENT_SSL;
+				}
+				if(!::mysql_real_connect(m_mysql.get(), server_addr, user_name, password, schema, server_port, NULLPTR, flags)){
 					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 				}
 			}
@@ -138,6 +139,7 @@ namespace MySql {
 				m_result.reset();
 				m_fields.clear();
 				m_row = NULLPTR;
+				m_lengths = NULLPTR;
 			}
 
 			boost::uint64_t do_get_insert_id() const {
@@ -149,14 +151,15 @@ namespace MySql {
 					LOG_POSEIDON_DEBUG("Empty set returned from MySQL server.");
 					return false;
 				}
-				m_row = ::mysql_fetch_row(m_result.get());
-				if(!m_row){
-					if(::mysql_errno(m_mysql.get()) != 0){
-						DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
-					}
+
+				const AUTO(row, ::mysql_fetch_row(m_result.get()));
+				if(!row){
+					LOG_POSEIDON_DEBUG("No more data.");
 					return false;
 				}
-				m_lengths = ::mysql_fetch_lengths(m_result.get());
+				const AUTO(lengths, ::mysql_fetch_lengths(m_result.get()));
+				m_row = row;
+				m_lengths = lengths;
 				return true;
 			}
 

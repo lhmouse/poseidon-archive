@@ -58,7 +58,7 @@ namespace MySql {
 		void *get_combined_write_stamp() const;
 		void set_combined_write_stamp(void *stamp) const;
 
-		virtual const char *get_table_name() const = 0;
+		virtual const char *get_table() const = 0;
 
 		virtual void generate_sql(std::ostream &os) const = 0;
 		virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;

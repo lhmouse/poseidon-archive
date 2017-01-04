@@ -58,7 +58,7 @@ namespace MongoDb {
 		void *get_combined_write_stamp() const;
 		void set_combined_write_stamp(void *stamp) const;
 
-		virtual const char *get_collection_name() const = 0;
+		virtual const char *get_collection() const = 0;
 
 		virtual void generate_document(BsonBuilder &doc) const = 0;
 		virtual std::string generate_primary_key() const = 0;

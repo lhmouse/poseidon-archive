@@ -15,7 +15,6 @@
 #include "../raii.hpp"
 #include "../log.hpp"
 #include "../time.hpp"
-#include "../system_exception.hpp"
 #include "../uuid.hpp"
 
 namespace Poseidon {
@@ -49,36 +48,12 @@ namespace MongoDb {
 			}
 		};
 
-		struct CollectionCloser {
-			CONSTEXPR ::mongoc_collection_t *operator()() const NOEXCEPT {
+		struct BsonCloser {
+			CONSTEXPR ::bson_t *operator()() const NOEXCEPT {
 				return NULLPTR;
 			}
-			void operator()(::mongoc_collection_t *collection) const NOEXCEPT {
-				::mongoc_collection_destroy(collection);
-			}
-		};
-		struct CursorCloser {
-			CONSTEXPR ::mongoc_cursor_t *operator()() const NOEXCEPT {
-				return NULLPTR;
-			}
-			void operator()(::mongoc_cursor_t *cursor) const NOEXCEPT {
-				::mongoc_cursor_destroy(cursor);
-			}
-		};
-
-		struct BsonGuard : NONCOPYABLE {
-			std::string data;
-			::bson_t &bson;
-
-			BsonGuard(::bson_t &raw, const BsonBuilder &builder)
-				: data(builder.build(false)), bson(raw)
-			{
-				if(!::bson_init_static(&bson, reinterpret_cast<const unsigned char *>(data.data()), data.size())){
-					DEBUG_THROW(SystemException, EINVAL);
-				}
-			}
-			~BsonGuard(){
-				::bson_destroy(&bson);
+			void operator()(::bson_t *bson) const NOEXCEPT {
+				::bson_destroy(bson);
 			}
 		};
 
@@ -92,15 +67,18 @@ namespace MongoDb {
 			UniqueHandle<UriCloser> m_uri;
 			UniqueHandle<ClientCloser> m_client;
 
-			UniqueHandle<CollectionCloser> m_collection;
-			UniqueHandle<CursorCloser> m_cursor;
-			const ::bson_t *m_cursor_head;
+			boost::int64_t m_cursor_id;
+			std::string m_cursor_ns;
+			UniqueHandle<BsonCloser> m_batch_guard;
+			::bson_iter_t m_batch_it;
+			::bson_t m_element_storage;
+			UniqueHandle<BsonCloser> m_element_guard;
 
 		public:
 			DelegatedConnection(const char *server_addr, unsigned server_port,
 				const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
 				: m_database(database)
-				, m_cursor_head(NULLPTR)
+				, m_cursor_id(0), m_cursor_ns()
 			{
 				const int err = ::pthread_once(&g_mongo_once, &init_mongo);
 				if(err != 0){
@@ -109,40 +87,42 @@ namespace MongoDb {
 				}
 
 				if(!m_uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port))){
-					DEBUG_THROW(SystemException, ENOMEM);
+					DEBUG_THROW(BasicException, sslit("::mongoc_uri_new_for_host_port() failed!"));
 				}
 				if(!::mongoc_uri_set_username(m_uri.get(), user_name)){
-					LOG_POSEIDON_ERROR("Failed to set MongoDB user name: ", user_name);
-					DEBUG_THROW(SystemException, EINVAL);
+					DEBUG_THROW(BasicException, sslit("::mongoc_uri_set_username() failed!"));
 				}
 				if(!::mongoc_uri_set_password(m_uri.get(), password)){
-					LOG_POSEIDON_ERROR("Failed to set MongoDB password: ", password);
-					DEBUG_THROW(SystemException, EINVAL);
+					DEBUG_THROW(BasicException, sslit("::mongoc_uri_set_password() failed!"));
 				}
 				if(!::mongoc_uri_set_database(m_uri.get(), auth_database)){
-					LOG_POSEIDON_ERROR("Failed to set MongoDB authentication database: ", auth_database);
-					DEBUG_THROW(SystemException, EINVAL);
+					DEBUG_THROW(BasicException, sslit("::mongoc_uri_set_database() failed!"));
 				}
 				if(!::mongoc_uri_set_option_as_bool(m_uri.get(), "ssl", use_ssl)){
-					DEBUG_THROW(SystemException, EINVAL);
+					DEBUG_THROW(BasicException, sslit("::mongoc_uri_set_option_as_bool() failed!"));
 				}
 
 				if(!m_client.reset(::mongoc_client_new_from_uri(m_uri.get()))){
-					DEBUG_THROW(SystemException, ENOMEM);
+					DEBUG_THROW(BasicException, sslit("::mongoc_client_new_from_uri() failed!"));
 				}
 			}
 
 		private:
 			bool find_bson_element_and_check_type(::bson_iter_t &it, const char *name, ::bson_type_t type_expecting) const {
-				if(!m_cursor_head){
+				if(!m_element_guard){
 					LOG_POSEIDON_WARNING("No more results available.");
 					return false;
 				}
-				if(!::bson_iter_init_find(&it, m_cursor_head, name)){
-					LOG_POSEIDON_WARNING("Element not found: name = ", name);
+				const AUTO(element, m_element_guard.get());
+				if(!::bson_iter_init_find(&it, element, name)){
+					LOG_POSEIDON_WARNING("Field not found: name = ", name);
 					return false;
 				}
 				const AUTO(type, ::bson_iter_type(&it));
+				if((type == BSON_TYPE_UNDEFINED) || (type == BSON_TYPE_NULL)){
+					LOG_POSEIDON_WARNING("Field is undefined or null: name = ", name);
+					return false;
+				}
 				if(type != type_expecting){
 					LOG_POSEIDON_ERROR("BSON type mismatch: name = ", name, ", type_expecting = ", type_expecting, ", type = ", type);
 					DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
@@ -151,190 +131,210 @@ namespace MongoDb {
 			}
 
 		public:
-			void do_execute_command(const char *collection, const BsonBuilder &query, boost::uint32_t begin, boost::uint32_t limit){
+			void do_execute_bson(const BsonBuilder &bson){
+				const AUTO(query_data, bson.build(false));
+				::bson_t query_storage;
+				bool success = ::bson_init_static(&query_storage, reinterpret_cast<const boost::uint8_t *>(query_data.data()), query_data.size());
+				DEBUG_THROW_ASSERT(success);
+				const UniqueHandle<BsonCloser> query_guard(&query_storage);
+				const AUTO(query_bt, query_guard.get());
+
 				do_discard_result();
 
-				if(!m_collection.reset(::mongoc_client_get_collection(m_client.get(), m_database.get(), collection))){
-					DEBUG_THROW(SystemException, ENOMEM);
+				::bson_t reply_storage;
+				::bson_error_t err;
+				success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
+				// `reply` is always set.
+				const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
+				const AUTO(reply_bt, reply_guard.get());
+				if(!success){
+					DEBUG_THROW_MONGODB_EXCEPTION(err, m_database);
 				}
 
-				::bson_t query_bson;
-				const BsonGuard query_guard(query_bson, query);
-				boost::uint32_t flags = MONGOC_QUERY_NONE;
-				if(!m_cursor.reset(::mongoc_collection_command(m_collection.get(),
-					static_cast< ::mongoc_query_flags_t>(flags), begin, limit, 0, &query_bson, NULLPTR, NULLPTR)))
-				{
-					DEBUG_THROW(SystemException, ENOMEM);
-				}
-			}
-			void do_execute_query(const char *collection, const BsonBuilder &query, boost::uint32_t begin, boost::uint32_t limit){
-				do_discard_result();
+				::bson_iter_t it;
+				if(!::bson_iter_init_find(&it, reply_bt, "cursor")){
+					LOG_POSEIDON_DEBUG("No cursor returned from MongoDB server.");
+				} else {
+					DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_DOCUMENT);
+					boost::uint32_t size;
+					const boost::uint8_t *data;
+					::bson_iter_document(&it, &size, &data);
+					::bson_t cursor_storage;
+					success = ::bson_init_static(&cursor_storage, data, size);
+					DEBUG_THROW_ASSERT(success);
+					const UniqueHandle<BsonCloser> cursor_guard(&cursor_storage);
+					const AUTO(cursor_bt, cursor_guard.get());
 
-				if(!m_collection.reset(::mongoc_client_get_collection(m_client.get(), m_database.get(), collection))){
-					DEBUG_THROW(SystemException, ENOMEM);
-				}
-
-				::bson_t query_bson;
-				const BsonGuard query_guard(query_bson, query);
-				boost::uint32_t flags = MONGOC_QUERY_NONE;
-				if(!m_cursor.reset(::mongoc_collection_find(m_collection.get(),
-					static_cast< ::mongoc_query_flags_t>(flags), begin, limit, 0, &query_bson, NULLPTR, NULLPTR)))
-				{
-					DEBUG_THROW(SystemException, ENOMEM);
-				}
-			}
-			void do_execute_insert(const char *collection, const BsonBuilder &doc, bool continue_on_error){
-				do_discard_result();
-
-				if(!m_collection.reset(::mongoc_client_get_collection(m_client.get(), m_database.get(), collection))){
-					DEBUG_THROW(SystemException, ENOMEM);
-				}
-
-				::bson_error_t error;
-				::bson_t doc_bson;
-				const BsonGuard doc_guard(doc_bson, doc);
-				boost::uint32_t flags = MONGOC_INSERT_NONE;
-				if(continue_on_error){
-					flags |= MONGOC_INSERT_CONTINUE_ON_ERROR;
-				}
-				if(!::mongoc_collection_insert(m_collection.get(),
-					static_cast< ::mongoc_insert_flags_t>(flags), &doc_bson, NULLPTR, &error))
-				{
-					DEBUG_THROW_MONGODB_EXCEPTION(error, m_database);
-				}
-			}
-			void do_execute_update(const char *collection, const BsonBuilder &query, const BsonBuilder &doc, bool upsert, bool update_all){
-				do_discard_result();
-
-				if(!m_collection.reset(::mongoc_client_get_collection(m_client.get(), m_database.get(), collection))){
-					DEBUG_THROW(SystemException, ENOMEM);
-				}
-
-				::bson_error_t error;
-				::bson_t query_bson;
-				const BsonGuard query_guard(query_bson, query);
-				::bson_t doc_bson;
-				const BsonGuard doc_guard(doc_bson, doc);
-				boost::uint32_t flags = MONGOC_UPDATE_NONE;
-				if(upsert){
-					flags |= MONGOC_UPDATE_UPSERT;
-				}
-				if(update_all){
-					flags |= MONGOC_UPDATE_MULTI_UPDATE;
-				}
-				if(!::mongoc_collection_update(m_collection.get(),
-					static_cast< ::mongoc_update_flags_t>(flags), &query_bson, &doc_bson, NULLPTR, &error))
-				{
-					DEBUG_THROW_MONGODB_EXCEPTION(error, m_database);
-				}
-			}
-			void do_execute_delete(const char *collection, const BsonBuilder &query, bool delete_all){
-				do_discard_result();
-
-				if(!m_collection.reset(::mongoc_client_get_collection(m_client.get(), m_database.get(), collection))){
-					DEBUG_THROW(SystemException, ENOMEM);
-				}
-
-				::bson_error_t error;
-				::bson_t query_bson;
-				const BsonGuard query_guard(query_bson, query);
-				boost::uint32_t flags = MONGOC_REMOVE_NONE;
-				if(!delete_all){
-					flags |= MONGOC_REMOVE_SINGLE_REMOVE;
-				}
-				if(!::mongoc_collection_remove(m_collection.get(),
-					static_cast< ::mongoc_remove_flags_t>(flags), &query_bson, NULLPTR, &error))
-				{
-					DEBUG_THROW_MONGODB_EXCEPTION(error, m_database);
+					if(::bson_iter_init_find(&it, cursor_bt, "id")){
+						DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_INT64);
+						m_cursor_id = ::bson_iter_int64(&it);
+					}
+					if(::bson_iter_init_find(&it, cursor_bt, "ns")){
+						DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_UTF8);
+						m_cursor_ns = ::bson_iter_utf8(&it, NULLPTR);
+					}
+					if(::bson_iter_init_find(&it, cursor_bt, "firstBatch")){
+						DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_ARRAY);
+						::bson_iter_array(&it, &size, &data);
+						m_batch_guard.reset(::bson_new_from_data(data, size));
+						DEBUG_THROW_ASSERT(m_batch_guard);
+						const AUTO(batch_bt, m_batch_guard.get());
+						success = ::bson_iter_init(&m_batch_it, batch_bt);
+						DEBUG_THROW_ASSERT(success);
+					}
 				}
 			}
 			void do_discard_result() NOEXCEPT {
-				m_cursor_head = NULLPTR;
-				m_cursor.reset();
-				m_collection.reset();
+				m_cursor_id = 0;
+				m_cursor_ns.clear();
+				m_batch_guard.reset();
+				m_element_guard.reset();
 			}
 
 			bool do_fetch_next(){
-				if(!m_cursor){
-					LOG_POSEIDON_DEBUG("Empty set returned from MongoDB server.");
-					return false;
-				}
-				if(!::mongoc_cursor_next(m_cursor.get(), &m_cursor_head)){
-					m_cursor_head = NULLPTR;
-					::bson_error_t error;
-					if(::mongoc_cursor_error(m_cursor.get(), &error)){
-						DEBUG_THROW_MONGODB_EXCEPTION(error, m_database);
+				while(m_batch_guard && !::bson_iter_next(&m_batch_it)){
+					m_batch_guard.reset();
+
+					if(m_cursor_id != 0){
+						LOG_POSEIDON_DEBUG("Fetching more data: cursor_id = ", m_cursor_id);
+
+						const AUTO(query_bt, ::bson_sized_new(256));
+						DEBUG_THROW_ASSERT(query_bt);
+						bool success = ::bson_append_int64(query_bt, "getMore", -1, m_cursor_id);
+						DEBUG_THROW_ASSERT(success);
+						const AUTO(db_len, std::strlen(m_database));
+						DEBUG_THROW_ASSERT(m_cursor_ns.compare(0, db_len, m_database.get()) == 0);
+						DEBUG_THROW_ASSERT(m_cursor_ns.at(db_len) == '.');
+						success = ::bson_append_utf8(query_bt, "collection", -1, m_cursor_ns.c_str() + db_len + 1, -1);
+						DEBUG_THROW_ASSERT(success);
+
+						do_discard_result();
+
+						::bson_t reply_storage;
+						::bson_error_t err;
+						success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
+						// `reply` is always set.
+						const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
+						const AUTO(reply_bt, reply_guard.get());
+						if(!success){
+							DEBUG_THROW_MONGODB_EXCEPTION(err, m_database);
+						}
+
+						::bson_iter_t it;
+						if(!::bson_iter_init_find(&it, reply_bt, "cursor")){
+							LOG_POSEIDON_DEBUG("No cursor returned from MongoDB server.");
+						} else {
+							DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_DOCUMENT);
+							boost::uint32_t size;
+							const boost::uint8_t *data;
+							::bson_iter_document(&it, &size, &data);
+							::bson_t cursor_storage;
+							success = ::bson_init_static(&cursor_storage, data, size);
+							DEBUG_THROW_ASSERT(success);
+							const UniqueHandle<BsonCloser> cursor_guard(&cursor_storage);
+							const AUTO(cursor_bt, cursor_guard.get());
+
+							if(::bson_iter_init_find(&it, cursor_bt, "id")){
+								DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_INT64);
+								m_cursor_id = ::bson_iter_int64(&it);
+							}
+							if(::bson_iter_init_find(&it, cursor_bt, "ns")){
+								DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_UTF8);
+								m_cursor_ns = ::bson_iter_utf8(&it, NULLPTR);
+							}
+							if(::bson_iter_init_find(&it, cursor_bt, "nextBatch")){
+								DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_ARRAY);
+								::bson_iter_array(&it, &size, &data);
+								m_batch_guard.reset(::bson_new_from_data(data, size));
+								DEBUG_THROW_ASSERT(m_batch_guard);
+								const AUTO(batch_bt, m_batch_guard.get());
+								success = ::bson_iter_init(&m_batch_it, batch_bt);
+								DEBUG_THROW_ASSERT(success);
+							}
+						}
 					}
+				}
+				if(!m_batch_guard){
+					LOG_POSEIDON_DEBUG("No more data.");
 					return false;
 				}
+				DEBUG_THROW_ASSERT(::bson_iter_type(&m_batch_it) == BSON_TYPE_DOCUMENT);
+				boost::uint32_t size;
+				const boost::uint8_t *data;
+				::bson_iter_document(&m_batch_it, &size, &data);
+				if(!::bson_init_static(&m_element_storage, data, size)){
+					LOG_POSEIDON_ERROR("::bson_init_static() failed!");
+					DEBUG_THROW(ProtocolException, sslit("::bson_init_static() failed"), -1);
+				}
+				m_element_guard.reset(&m_element_storage);
 				return true;
 			}
 
 			bool do_get_boolean(const char *name) const {
-				::bson_iter_t iter;
-				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_BOOL)){
+				::bson_iter_t it;
+				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BOOL)){
 					return VAL_INIT;
 				}
-				return ::bson_iter_bool(&iter);
+				return ::bson_iter_bool(&it);
 			}
 			boost::int64_t do_get_signed(const char *name) const {
-				::bson_iter_t iter;
-				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_INT64)){
+				::bson_iter_t it;
+				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
 					return VAL_INIT;
 				}
-				return ::bson_iter_bool(&iter);
+				return ::bson_iter_bool(&it);
 			}
 			boost::uint64_t do_get_unsigned(const char *name) const {
-				::bson_iter_t iter;
-				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_INT64)){
+				::bson_iter_t it;
+				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
 					return VAL_INIT;
 				}
-				return static_cast<boost::uint64_t>(::bson_iter_int64(&iter));
+				return static_cast<boost::uint64_t>(::bson_iter_int64(&it));
 			}
 			double do_get_double(const char *name) const {
-				::bson_iter_t iter;
-				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_DOUBLE)){
+				::bson_iter_t it;
+				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_DOUBLE)){
 					return VAL_INIT;
 				}
-				return static_cast<double>(::bson_iter_int64(&iter));
+				return static_cast<double>(::bson_iter_int64(&it));
 			}
 			std::string do_get_string(const char *name) const {
-				::bson_iter_t iter;
-				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_UTF8)){
+				::bson_iter_t it;
+				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
 					return VAL_INIT;
 				}
 				boost::uint32_t len;
-				const char *const str = ::bson_iter_utf8(&iter, &len);
+				const char *const str = ::bson_iter_utf8(&it, &len);
 				return std::string(str, len);
 			}
 			boost::uint64_t do_get_datetime(const char *name) const {
-				::bson_iter_t iter;
-				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_UTF8)){
+				::bson_iter_t it;
+				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
 					return VAL_INIT;
 				}
-				const char *const str = ::bson_iter_utf8(&iter, NULLPTR);
+				const char *const str = ::bson_iter_utf8(&it, NULLPTR);
 				return scan_time(str);
 			}
 			Uuid do_get_uuid(const char *name) const {
-				::bson_iter_t iter;
-				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_UTF8)){
+				::bson_iter_t it;
+				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
 					return VAL_INIT;
 				}
 				boost::uint32_t len;
-				const char *const str = ::bson_iter_utf8(&iter, &len);
+				const char *const str = ::bson_iter_utf8(&it, &len);
 				if(len != 36){
 					DEBUG_THROW(BasicException, sslit("Unexpected UUID string length"));
 				}
 				return Uuid(reinterpret_cast<const char (&)[36]>(*str));
 			}
 			std::string do_get_blob(const char *name) const {
-				::bson_iter_t iter;
-				if(!find_bson_element_and_check_type(iter, name, BSON_TYPE_BINARY)){
+				::bson_iter_t it;
+				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BINARY)){
 					return VAL_INIT;
 				}
 				boost::uint32_t len;
 				const boost::uint8_t *data;
-				::bson_iter_binary(&iter, NULLPTR, &len, &data);
+				::bson_iter_binary(&it, NULLPTR, &len, &data);
 				return std::string(reinterpret_cast<const char *>(data), len);
 			}
 		};
@@ -350,20 +350,8 @@ namespace MongoDb {
 	Connection::~Connection(){
 	}
 
-	void Connection::execute_command(const char *collection, const BsonBuilder &query, boost::uint32_t begin, boost::uint32_t limit){
-		static_cast<DelegatedConnection &>(*this).do_execute_command(collection, query, begin, limit);
-	}
-	void Connection::execute_query(const char *collection, const BsonBuilder &query, boost::uint32_t begin, boost::uint32_t limit){
-		static_cast<DelegatedConnection &>(*this).do_execute_query(collection, query, begin, limit);
-	}
-	void Connection::execute_insert(const char *collection, const BsonBuilder &doc, bool continue_on_error){
-		static_cast<DelegatedConnection &>(*this).do_execute_insert(collection, doc, continue_on_error);
-	}
-	void Connection::execute_update(const char *collection, const BsonBuilder &query, const BsonBuilder &doc, bool upsert, bool update_all){
-		static_cast<DelegatedConnection &>(*this).do_execute_update(collection, query, doc, upsert, update_all);
-	}
-	void Connection::execute_delete(const char *collection, const BsonBuilder &query, bool delete_all){
-		static_cast<DelegatedConnection &>(*this).do_execute_delete(collection, query, delete_all);
+	void Connection::execute_bson(const BsonBuilder &bson){
+		static_cast<DelegatedConnection &>(*this).do_execute_bson(bson);
 	}
 	void Connection::discard_result() NOEXCEPT {
 		static_cast<DelegatedConnection &>(*this).do_discard_result();
