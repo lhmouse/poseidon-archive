@@ -10,7 +10,7 @@ fi
 prefix="/usr/local"
 
 pkgname="libmongoc-dev"
-pkgversion="1.4.2"
+pkgversion="1.5.1"
 pkglicense="Apache"
 pkggroup="http://mongoc.org/"
 pkgsource="https://github.com/mongodb/mongo-c-driver/releases/download/${pkgversion}/mongo-c-driver-${pkgversion}.tar.gz"
