@@ -3,7 +3,7 @@
 
 // 这个文件被置于公有领域（public domain）。
 
-#include "../src/vint50.hpp"
+#include "../src/vint64.hpp"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -25,7 +25,7 @@ int main(){
 
 		unsigned char bytes[32];
 		unsigned char *write = bytes;
-		Poseidon::vint50_to_binary(val, write);
+		Poseidon::vint64_to_binary(val, write);
 		std::cout <<"  Written: " <<std::hex <<std::uppercase;
 		for(const unsigned char *read = bytes; read != write; ++read){
 			std::cout <<std::setfill('0') <<std::setw(2)
