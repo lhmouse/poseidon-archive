@@ -134,7 +134,7 @@ namespace Http {
 					}
 					SharedNts key(line.data(), pos);
 					line.erase(0, pos + 1);
-					std::string value(ltrim(STD_MOVE(line)));
+					std::string value(trim(STD_MOVE(line)));
 					m_response_headers.headers.append(STD_MOVE(key), STD_MOVE(value));
 
 					m_size_expecting = EXPECTING_NEW_LINE;
@@ -256,7 +256,7 @@ namespace Http {
 					}
 					SharedNts key(line.data(), pos);
 					line.erase(0, pos + 1);
-					std::string value(ltrim(STD_MOVE(line)));
+					std::string value(trim(STD_MOVE(line)));
 					m_chunked_trailer.append(STD_MOVE(key), STD_MOVE(value));
 
 					m_size_expecting = EXPECTING_NEW_LINE;

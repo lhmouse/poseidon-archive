@@ -171,7 +171,7 @@ namespace MySql {
 				}
 				char *endptr;
 				const AUTO(val, ::strtoll(data, &endptr, 10));
-				if(endptr[0] != 0){
+				if(*endptr){
 					LOG_POSEIDON_ERROR("Could not convert field data to long long: ", data);
 					DEBUG_THROW(BasicException, sslit("Could not convert field data to long long"));
 				}
@@ -185,7 +185,7 @@ namespace MySql {
 				}
 				char *endptr;
 				const AUTO(val, ::strtoull(data, &endptr, 10));
-				if(endptr[0] != 0){
+				if(*endptr){
 					LOG_POSEIDON_ERROR("Could not convert field data to unsigned long long: ", data);
 					DEBUG_THROW(BasicException, sslit("Could not convert field data to unsigned long long"));
 				}
@@ -199,7 +199,7 @@ namespace MySql {
 				}
 				char *endptr;
 				const AUTO(val, ::strtod(data, &endptr));
-				if(endptr[0] != 0){
+				if(*endptr){
 					LOG_POSEIDON_ERROR("Could not convert field data to double: ", data);
 					DEBUG_THROW(BasicException, sslit("Could not convert field data to double"));
 				}

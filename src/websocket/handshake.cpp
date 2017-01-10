@@ -31,7 +31,7 @@ namespace WebSocket {
 			const AUTO_REF(websocket_version, request.headers.get("Sec-WebSocket-Version"));
 			char *endptr;
 			const AUTO(version_num, std::strtol(websocket_version.c_str(), &endptr, 10));
-			if(*endptr != 0){
+			if(*endptr){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Unrecognized HTTP header Sec-WebSocket-Version: ", websocket_version);
 				response.status_code = Http::ST_BAD_REQUEST;
 				goto _done;

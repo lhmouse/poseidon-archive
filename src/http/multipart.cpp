@@ -154,7 +154,7 @@ namespace Http {
 					}
 					SharedNts key(line.data(), pos);
 					line.erase(0, pos + 1);
-					std::string value(ltrim(STD_MOVE(line)));
+					std::string value(trim(STD_MOVE(line)));
 					elem.headers.set(STD_MOVE(key), STD_MOVE(value));
 				}
 				AUTO(entity, STD_MOVE(queue_is.get_buffer()));
