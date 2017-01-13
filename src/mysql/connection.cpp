@@ -102,6 +102,7 @@ namespace MySql {
 				}
 				data = m_row[it->second];
 				if(!data){
+					LOG_POSEIDON_DEBUG("Field is null: name = ", name);
 					return false;
 				}
 				size = m_lengths[it->second];

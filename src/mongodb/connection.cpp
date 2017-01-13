@@ -120,7 +120,7 @@ namespace MongoDb {
 				}
 				const AUTO(type, ::bson_iter_type(&it));
 				if((type == BSON_TYPE_UNDEFINED) || (type == BSON_TYPE_NULL)){
-					LOG_POSEIDON_WARNING("Field is undefined or null: name = ", name);
+					LOG_POSEIDON_DEBUG("Field is undefined or null: name = ", name);
 					return false;
 				}
 				if(type != type_expecting){
