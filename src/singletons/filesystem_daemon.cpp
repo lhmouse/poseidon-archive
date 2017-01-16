@@ -55,9 +55,17 @@ namespace {
 		block.begin = begin;
 
 		std::size_t bytes_read = 0;
-		while((limit == FileSystemDaemon::LIMIT_EOF) || (bytes_read < limit)){
+		for(;;){
 			char temp[16384];
-			std::size_t avail = std::min<boost::uint64_t>(limit - bytes_read, sizeof(temp));
+			std::size_t avail;
+			if(limit == FileSystemDaemon::LIMIT_EOF){
+				avail = sizeof(temp);
+			} else {
+				avail = std::min<boost::uint64_t>(limit - bytes_read, sizeof(temp));
+			}
+			if(avail == 0){
+				break;
+			}
 			const ::ssize_t result = ::read(file.get(), temp, avail);
 			if(result == 0){
 				break;
