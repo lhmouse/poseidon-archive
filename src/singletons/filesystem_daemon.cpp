@@ -55,7 +55,7 @@ namespace {
 		block.begin = begin;
 
 		std::size_t bytes_read = 0;
-		while(bytes_read < limit){
+		while((limit == FileSystemDaemon::LIMIT_EOF) || (bytes_read < limit)){
 			char temp[16384];
 			std::size_t avail = std::min<boost::uint64_t>(limit - bytes_read, sizeof(temp));
 			const ::ssize_t result = ::read(file.get(), temp, avail);

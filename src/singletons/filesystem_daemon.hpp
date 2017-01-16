@@ -18,7 +18,7 @@ class JobPromiseContainer;
 
 class FileSystemDaemon {
 public:
-	static CONSTEXPR const boost::uint64_t OFFSET_EOF      = (boost::uint64_t)-1;
+	static CONSTEXPR const boost::uint64_t LIMIT_EOF       = (boost::uint64_t)-1;
 	static CONSTEXPR const boost::uint64_t OFFSET_APPEND   = (boost::uint64_t)-2;
 	static CONSTEXPR const boost::uint64_t OFFSET_TRUNCATE = (boost::uint64_t)-3;
 
@@ -37,7 +37,7 @@ public:
 
 	// 同步接口。
 	static BlockRead load(const std::string &path,
-		boost::uint64_t begin = 0, boost::uint64_t limit = OFFSET_EOF, bool throws_if_does_not_exist = true);
+		boost::uint64_t begin = 0, boost::uint64_t limit = LIMIT_EOF, bool throws_if_does_not_exist = true);
 	static void save(const std::string &path, StreamBuffer data,
 		boost::uint64_t begin = OFFSET_TRUNCATE, bool throws_if_exists = false);
 	static void remove(const std::string &path, bool throws_if_does_not_exist = true);
@@ -47,7 +47,7 @@ public:
 
 	// 异步接口。
 	static boost::shared_ptr<const JobPromiseContainer<BlockRead> > enqueue_for_loading(std::string path,
-		boost::uint64_t begin = 0, boost::uint64_t limit = OFFSET_EOF, bool throws_if_does_not_exist = true);
+		boost::uint64_t begin = 0, boost::uint64_t limit = LIMIT_EOF, bool throws_if_does_not_exist = true);
 	static boost::shared_ptr<const JobPromise> enqueue_for_saving(std::string path, StreamBuffer data,
 		boost::uint64_t begin = OFFSET_TRUNCATE, bool throws_if_exists = false);
 	static boost::shared_ptr<const JobPromise> enqueue_for_removing(std::string path, bool throws_if_does_not_exist = true);
