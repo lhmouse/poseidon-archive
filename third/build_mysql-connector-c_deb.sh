@@ -30,7 +30,7 @@ _unpackeddir="$(basename "${_archive}" ".tar.gz")"
 tar -xzvf "${_archive}"
 cd "${_unpackeddir}"
 CFLAGS="-O3" cmake . -DCMAKE_INSTALL_PREFIX=/usr/local	\
-	-DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DMYSQL_UNIX_ADDR="/var/run/mysqld/mysqld.sock" -DMYSQL_USER="mysql"
+	-DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DMYSQL_UNIX_ADDR="/var/run/mysqld/mysqld.sock"
 make -j4
 
 mkdir -p "${prefix}/bin"
