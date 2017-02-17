@@ -78,7 +78,6 @@ namespace Http {
 			Poseidon::Base64Decoder dec;
 			dec.put(str);
 			str = dec.finalize().dump_string();
-LOG_POSEIDON_FATAL("str = ", str);
 
 			const AUTO(auth_it, std::lower_bound(auth_info->basic_user_pass.begin(), auth_info->basic_user_pass.end(), str));
 			if((auth_it == auth_info->basic_user_pass.end()) || (*auth_it != str)){
