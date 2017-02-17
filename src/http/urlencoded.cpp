@@ -54,7 +54,7 @@ namespace Http {
 		PROFILE_ME;
 
 		for(AUTO(it, str.begin()); it != str.end(); ++it){
-			const int ch = *it;
+			const char ch = *it;
 			if(ch == ' '){
 				os <<'+';
 			} else if(is_char_unsafe(ch)){
