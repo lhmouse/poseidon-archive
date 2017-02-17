@@ -29,7 +29,8 @@ _unpackeddir="$(basename "${_archive}" ".tar.gz")"
 [[ -z "${_unpackeddir}" ]] || rm -rf "${_unpackeddir}"
 tar -xzvf "${_archive}"
 cd "${_unpackeddir}"
-CFLAGS="-O3" ./configure --disable-automatic-init-and-cleanup --with-libbson=bundled --prefix="${prefix}"
+CFLAGS="-O3" ./configure --prefix="${prefix}"	\
+	--disable-automatic-init-and-cleanup --with-libbson=bundled
 make -j4
 
 mkdir -p "${prefix}/bin"
