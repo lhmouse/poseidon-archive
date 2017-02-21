@@ -64,22 +64,6 @@ namespace {
 				except = boost::copy_exception(std::runtime_error(e.what()));
 #endif
 			}
-			if(!m_promise){
-				return;
-			}
-			try {
-				if(!m_promise->is_satisfied()){
-					if(except){
-						m_promise->set_exception(except);
-					} else {
-						m_promise->set_success();
-					}
-				}
-			} catch(std::exception &e){
-				LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-			} catch(...){
-				LOG_POSEIDON_ERROR("Unknown exception thrown.");
-			}
 		}
 	};
 }
