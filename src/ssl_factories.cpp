@@ -51,7 +51,7 @@ ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
 	::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULLPTR);
 
 	LOG_POSEIDON_INFO("Loading server certificate: ", cert);
-	if(::SSL_CTX_use_certificate_file(m_ctx.get(), cert, SSL_FILETYPE_PEM) != 1){
+	if(::SSL_CTX_use_certificate_chain_file(m_ctx.get(), cert) != 1){
 		DEBUG_THROW(Exception, sslit("::SSL_CTX_use_certificate_file() failed"));
 	}
 
