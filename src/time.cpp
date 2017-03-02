@@ -89,7 +89,7 @@ boost::uint64_t assemble_time(const DateTime &dt){
 }
 
 std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms){
-	DateTime dt = { };
+	DateTime dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	if(ms == 0){
 		dt.yr = 0;
 	} else if(ms == (boost::uint64_t)-1){
@@ -106,7 +106,7 @@ std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool 
 	}
 }
 boost::uint64_t scan_time(const char *str){
-	DateTime dt = { };
+	DateTime dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	std::sscanf(str,
 		"%u-%u-%u %u:%u:%u.%u", &dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms);
 	if(dt.yr == 0){
