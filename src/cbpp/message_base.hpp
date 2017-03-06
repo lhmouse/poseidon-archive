@@ -68,9 +68,6 @@ namespace Poseidon {
 
 namespace Cbpp {
 	class MessageBase {
-	protected:
-		MessageBase();
-
 	public:
 		virtual ~MessageBase();
 

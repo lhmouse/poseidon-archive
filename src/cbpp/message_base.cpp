@@ -7,8 +7,6 @@
 namespace Poseidon {
 
 namespace Cbpp {
-	MessageBase::MessageBase(){
-	}
 	MessageBase::~MessageBase(){
 	}
 

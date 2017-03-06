@@ -41,10 +41,11 @@ namespace MongoDb {
 	protected:
 		mutable RecursiveMutex m_mutex;
 
-	protected:
-		ObjectBase();
-
 	public:
+		ObjectBase()
+			: m_auto_saves(false), m_combined_write_stamp(NULLPTR)
+		{
+		}
 		// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
 		~ObjectBase();
 

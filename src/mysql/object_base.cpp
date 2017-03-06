@@ -10,10 +10,6 @@
 namespace Poseidon {
 
 namespace MySql {
-	ObjectBase::ObjectBase()
-		: m_auto_saves(false), m_combined_write_stamp(NULLPTR)
-	{
-	}
 	ObjectBase::~ObjectBase(){
 	}
 
