@@ -33,7 +33,6 @@ namespace Http {
 		if(entity.empty()){
 			headers.erase("Content-Type");
 			headers.erase("Transfer-Encoding");
-			headers.set(sslit("Content-Length"), "0");
 		} else {
 			headers.erase("Transfer-Encoding");
 			len = (unsigned)std::sprintf(temp, "%llu", (unsigned long long)entity.size());
