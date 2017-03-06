@@ -16,7 +16,7 @@ namespace Http {
 	ServerWriter::~ServerWriter(){
 	}
 
-	long ServerWriter::put_response(ResponseHeaders response_headers, StreamBuffer entity){
+	long ServerWriter::put_response(ResponseHeaders response_headers, StreamBuffer entity, bool set_content_length){
 		PROFILE_ME;
 
 		StreamBuffer data;
@@ -33,10 +33,15 @@ namespace Http {
 		if(entity.empty()){
 			headers.erase("Content-Type");
 			headers.erase("Transfer-Encoding");
+			if(set_content_length){
+				headers.set(sslit("Content-Length"), "0");
+			}
 		} else {
 			headers.erase("Transfer-Encoding");
-			len = (unsigned)std::sprintf(temp, "%llu", (unsigned long long)entity.size());
-			headers.set(sslit("Content-Length"), std::string(temp, len));
+			if(set_content_length){
+				len = (unsigned)std::sprintf(temp, "%llu", (unsigned long long)entity.size());
+				headers.set(sslit("Content-Length"), std::string(temp, len));
+			}
 		}
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
@@ -71,7 +76,7 @@ namespace Http {
 			entity.put("</p></body></html>");
 		}
 
-		return put_response(STD_MOVE(response_headers), STD_MOVE(entity));
+		return put_response(STD_MOVE(response_headers), STD_MOVE(entity), true);
 	}
 
 	long ServerWriter::put_chunked_header(ResponseHeaders response_headers){

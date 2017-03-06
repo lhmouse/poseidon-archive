@@ -101,7 +101,7 @@ namespace Http {
 	bool LowLevelSession::send(ResponseHeaders response_headers, StreamBuffer entity){
 		PROFILE_ME;
 
-		return ServerWriter::put_response(STD_MOVE(response_headers), STD_MOVE(entity));
+		return ServerWriter::put_response(STD_MOVE(response_headers), STD_MOVE(entity), true);
 	}
 	bool LowLevelSession::send(StatusCode status_code){
 		PROFILE_ME;
