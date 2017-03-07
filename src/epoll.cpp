@@ -320,7 +320,7 @@ std::size_t Epoll::pump_writeable(){
 		const AUTO(session, it->session);
 
 		try {
-			if(session->has_connected()){
+			if(session->is_connected()){
 				session->notify_connected();
 			}
 

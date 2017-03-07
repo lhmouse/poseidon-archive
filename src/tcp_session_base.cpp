@@ -91,9 +91,6 @@ TcpSessionBase::~TcpSessionBase(){
 	LOG_POSEIDON_INFO("Destroying TCP session: remote = ", get_remote_info_nothrow());
 }
 
-bool TcpSessionBase::has_connected() const NOEXCEPT {
-	return atomic_load(m_connected, ATOMIC_CONSUME);
-}
 void TcpSessionBase::set_connected(){
 	atomic_store(m_connected, true, ATOMIC_RELEASE);
 }
@@ -317,6 +314,10 @@ try {
 } catch(std::exception &e){
 	LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
 	return IpPort(sslit("<unknown>"), 0);
+}
+
+bool TcpSessionBase::is_connected() const NOEXCEPT {
+	return atomic_load(m_connected, ATOMIC_CONSUME);
 }
 
 void TcpSessionBase::set_timeout(boost::uint64_t timeout){
