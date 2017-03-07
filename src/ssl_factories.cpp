@@ -8,6 +8,7 @@
 #include <openssl/ssl.h>
 #include "system_exception.hpp"
 #include "log.hpp"
+#include "singletons/main_config.hpp"
 
 namespace Poseidon {
 
@@ -48,7 +49,7 @@ ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
 	}
 	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv2);
 	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv3);
-	::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULLPTR);
+	::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULLPTR);
 
 	LOG_POSEIDON_INFO("Loading server certificate: ", cert);
 	if(::SSL_CTX_use_certificate_chain_file(m_ctx.get(), cert) != 1){
@@ -74,7 +75,7 @@ ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
 ServerSslFactory::~ServerSslFactory(){
 }
 
-ClientSslFactory::ClientSslFactory()
+ClientSslFactory::ClientSslFactory(bool verify_peer)
 	: SslFactoryBase()
 {
 	if(!m_ctx.reset(::SSL_CTX_new(::SSLv23_client_method()))){
@@ -83,11 +84,15 @@ ClientSslFactory::ClientSslFactory()
 	}
 	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv2);
 	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv3);
-//	if(accept_invalid_cert){
+	if(verify_peer){
+		const AUTO(ssl_cert_directory, MainConfig::get<std::string>("ssl_cert_directory", "/etc/ssl/certs"));
+		if(::SSL_CTX_load_verify_locations(m_ctx.get(), NULLPTR, ssl_cert_directory.c_str()) != 1){
+			DEBUG_THROW(Exception, sslit("::SSL_CTX_load_verify_locations() failed"));
+		}
+		::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_PEER, NULLPTR);
+	} else {
 		::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_NONE, NULLPTR);
-//	} else {
-//		::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_PEER, NULLPTR);
-//	}
+	}
 }
 ClientSslFactory::~ClientSslFactory(){
 }

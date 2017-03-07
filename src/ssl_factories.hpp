@@ -15,7 +15,7 @@ protected:
 	UniqueSslCtx m_ctx;
 
 protected:
-	SslFactoryBase();
+	explicit SslFactoryBase();
 	virtual ~SslFactoryBase() = 0;
 
 public:
@@ -30,7 +30,7 @@ public:
 
 class ClientSslFactory : public SslFactoryBase {
 public:
-	explicit ClientSslFactory();
+	explicit ClientSslFactory(bool verify_peer);
 	~ClientSslFactory() OVERRIDE;
 };
 

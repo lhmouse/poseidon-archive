@@ -19,12 +19,12 @@ private:
 	boost::scoped_ptr<ClientSslFactory> m_ssl_factory;
 
 protected:
-	TcpClientBase(const SockAddr &addr, bool use_ssl);
-	TcpClientBase(const IpPort &addr, bool use_ssl);
+	TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_peer);
+	TcpClientBase(const IpPort &addr, bool use_ssl, bool verify_peer);
 	~TcpClientBase();
 
 private:
-	void real_connect(bool use_ssl);
+	void real_connect(bool use_ssl, bool verify_peer);
 
 protected:
 	void on_read_avail(StreamBuffer data) OVERRIDE = 0;

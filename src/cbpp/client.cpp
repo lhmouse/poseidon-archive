@@ -143,12 +143,12 @@ namespace Cbpp {
 		}
 	};
 
-	Client::Client(const SockAddr &addr, bool use_ssl)
-		: LowLevelClient(addr, use_ssl, get_keep_alive_interval())
+	Client::Client(const SockAddr &addr, bool use_ssl, bool verify_peer)
+		: LowLevelClient(addr, use_ssl, verify_peer, get_keep_alive_interval())
 	{
 	}
-	Client::Client(const IpPort &addr, bool use_ssl)
-		: LowLevelClient(addr, use_ssl, get_keep_alive_interval())
+	Client::Client(const IpPort &addr, bool use_ssl, bool verify_peer)
+		: LowLevelClient(addr, use_ssl, verify_peer, get_keep_alive_interval())
 	{
 	}
 	Client::~Client(){

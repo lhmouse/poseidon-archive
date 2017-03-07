@@ -25,8 +25,8 @@ namespace Cbpp {
 		boost::uint64_t m_last_pong_time;
 
 	protected:
-		LowLevelClient(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval);
-		LowLevelClient(const IpPort &addr, bool use_ssl, boost::uint64_t keep_alive_interval);
+		LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer, boost::uint64_t keep_alive_interval);
+		LowLevelClient(const IpPort &addr, bool use_ssl, bool verify_peer, boost::uint64_t keep_alive_interval);
 		~LowLevelClient();
 
 	protected:

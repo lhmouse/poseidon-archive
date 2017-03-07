@@ -21,8 +21,8 @@ namespace Http {
 		StreamBuffer m_entity;
 
 	protected:
-		Client(const SockAddr &addr, bool use_ssl);
-		Client(const IpPort &addr, bool use_ssl);
+		Client(const SockAddr &addr, bool use_ssl, bool verify_peer);
+		Client(const IpPort &addr, bool use_ssl, bool verify_peer);
 		~Client();
 
 	protected:

@@ -33,14 +33,14 @@ namespace Cbpp {
 		client->send_control(Poseidon::Cbpp::ST_PING, StreamBuffer(str, len));
 	}
 
-	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
-		: TcpClientBase(addr, use_ssl), Reader(), Writer()
+	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer, boost::uint64_t keep_alive_interval)
+		: TcpClientBase(addr, use_ssl, verify_peer), Reader(), Writer()
 		, m_keep_alive_interval(keep_alive_interval)
 		, m_last_pong_time((boost::uint64_t)-1)
 	{
 	}
-	LowLevelClient::LowLevelClient(const IpPort &addr, bool use_ssl, boost::uint64_t keep_alive_interval)
-		: TcpClientBase(addr, use_ssl)
+	LowLevelClient::LowLevelClient(const IpPort &addr, bool use_ssl, bool verify_peer, boost::uint64_t keep_alive_interval)
+		: TcpClientBase(addr, use_ssl, verify_peer)
 		, m_keep_alive_interval(keep_alive_interval)
 		, m_last_pong_time((boost::uint64_t)-1)
 	{

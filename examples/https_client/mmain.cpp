@@ -13,14 +13,14 @@
 #include <poseidon/singletons/job_dispatcher.hpp>
 
 // 客户端配置。
-const char          g_host    [] = "github.com";
+const char          g_host    [] = "lhmouse.com";
 const unsigned      g_port       = 443;
 const char          g_uri     [] = "/";
 
 class Client : public Poseidon::Http::Client {
 public:
 	explicit Client(const SockAddr &addr)
-		: Poseidon::Http::Client(addr, true) // use_ssl = true
+		: Poseidon::Http::Client(addr, true, true) // use_ssl = true, verify_peer = true
 	{
 	}
 	~Client(){
@@ -28,15 +28,15 @@ public:
 
 protected:
 	void on_sync_connect() override {
-		LOG_POSEIDON_INFO("Connection established: remote = ", get_remote_info());
+		LOG_POSEIDON_ERROR("Connection established: remote = ", get_remote_info());
 	}
 
 	void on_sync_response(Poseidon::Http::ResponseHeaders response_headers, Poseidon::StreamBuffer entity) override {
-		LOG_POSEIDON_INFO("Response: HTTP version = ", response_headers.version / 10000, ".", response_headers.version % 10000);
-		LOG_POSEIDON_INFO("Response: Status code = ", response_headers.status_code);
-		LOG_POSEIDON_INFO("Response: Reason = ", response_headers.reason);
+		LOG_POSEIDON_ERROR("Response: HTTP version = ", response_headers.version / 10000, ".", response_headers.version % 10000);
+		LOG_POSEIDON_ERROR("Response: Status code = ", response_headers.status_code);
+		LOG_POSEIDON_ERROR("Response: Reason = ", response_headers.reason);
 		for(auto it = response_headers.headers.begin(); it != response_headers.headers.end(); ++it){
-			LOG_POSEIDON_INFO("Response header: ", it->first, ": ", it->second);
+			LOG_POSEIDON_ERROR("Response header: ", it->first, ": ", it->second);
 		}
 
 		LOG_POSEIDON_WARNING("Entity: content_length = ", entity.size());

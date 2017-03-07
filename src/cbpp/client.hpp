@@ -22,8 +22,8 @@ namespace Cbpp {
 		StreamBuffer m_payload;
 
 	protected:
-		Client(const SockAddr &addr, bool use_ssl);
-		Client(const IpPort &addr, bool use_ssl);
+		Client(const SockAddr &addr, bool use_ssl, bool verify_peer);
+		Client(const IpPort &addr, bool use_ssl, bool verify_peer);
 		~Client();
 
 	protected:

@@ -12,12 +12,12 @@
 namespace Poseidon {
 
 namespace Http {
-	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl)
-		: TcpClientBase(addr, use_ssl), ClientReader(), ClientWriter()
+	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer)
+		: TcpClientBase(addr, use_ssl, verify_peer), ClientReader(), ClientWriter()
 	{
 	}
-	LowLevelClient::LowLevelClient(const IpPort &addr, bool use_ssl)
-		: TcpClientBase(addr, use_ssl), ClientReader(), ClientWriter()
+	LowLevelClient::LowLevelClient(const IpPort &addr, bool use_ssl, bool verify_peer)
+		: TcpClientBase(addr, use_ssl, verify_peer), ClientReader(), ClientWriter()
 	{
 	}
 	LowLevelClient::~LowLevelClient(){

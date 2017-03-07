@@ -112,12 +112,12 @@ namespace Http {
 		}
 	};
 
-	Client::Client(const SockAddr &addr, bool use_ssl)
-		: LowLevelClient(addr, use_ssl)
+	Client::Client(const SockAddr &addr, bool use_ssl, bool verify_peer)
+		: LowLevelClient(addr, use_ssl, verify_peer)
 	{
 	}
-	Client::Client(const IpPort &addr, bool use_ssl)
-		: LowLevelClient(addr, use_ssl)
+	Client::Client(const IpPort &addr, bool use_ssl, bool verify_peer)
+		: LowLevelClient(addr, use_ssl, verify_peer)
 	{
 	}
 	Client::~Client(){
