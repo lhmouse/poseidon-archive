@@ -192,15 +192,16 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 				"Socket error: err_code = ", err_code, ", desc = ", desc, ", typeid = ", typeid(*session).name(),
 				", remote = ", session->get_remote_info_nothrow());
+			session->shutdown_read();
+			session->shutdown_write();
 			session->on_close(err_code);
 			goto _erase_session;
 		}
 		if(event.events & EPOLLHUP){
 			LOG_POSEIDON_INFO("Socket closed: remote = ", session->get_remote_info_nothrow());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket closed gracefully: typeid = ", typeid(*session).name());
 			session->shutdown_read();
 			session->shutdown_write();
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-				"Socket closed gracefully: typeid = ", typeid(*session).name());
 			session->on_close(0);
 			goto _erase_session;
 		}
