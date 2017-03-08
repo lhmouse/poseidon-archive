@@ -194,6 +194,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 				", remote = ", session->get_remote_info_nothrow());
 			session->shutdown_read();
 			session->shutdown_write();
+			session->set_connected(false);
 			session->on_close(err_code);
 			goto _erase_session;
 		}
@@ -202,6 +203,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket closed gracefully: typeid = ", typeid(*session).name());
 			session->shutdown_read();
 			session->shutdown_write();
+			session->set_connected(false);
 			session->on_close(0);
 			goto _erase_session;
 		}
@@ -213,8 +215,7 @@ std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 			}
 		}
 		if(event.events & EPOLLOUT){
-			session->set_connected();
-
+			session->set_connected(true);
 			if((session->get_send_buffer_size() != 0) || !session->is_connected_notified()){
 				const RecursiveMutex::UniqueLock lock(m_mutex);
 				m_sessions->set_key<0, 2>(it, now);
@@ -283,6 +284,7 @@ std::size_t Epoll::pump_readable(){
 				}
 				DEBUG_THROW(SystemException, result.err_code);
 			} else if(result.bytes_transferred == 0){
+				session->shutdown_read();
 				session->notify_read_hup();
 
 				const RecursiveMutex::UniqueLock lock(m_mutex);

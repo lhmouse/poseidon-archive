@@ -89,7 +89,7 @@ protected:
 	~TcpSessionBase();
 
 private:
-	void set_connected();
+	void set_connected(bool connected);
 	bool is_connected_notified() const NOEXCEPT;
 	void notify_connected() NOEXCEPT;
 

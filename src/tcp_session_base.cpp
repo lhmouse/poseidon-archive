@@ -91,8 +91,8 @@ TcpSessionBase::~TcpSessionBase(){
 	LOG_POSEIDON_INFO("Destroying TCP session: remote = ", get_remote_info_nothrow());
 }
 
-void TcpSessionBase::set_connected(){
-	atomic_store(m_connected, true, ATOMIC_RELEASE);
+void TcpSessionBase::set_connected(bool connected){
+	atomic_store(m_connected, connected, ATOMIC_RELEASE);
 }
 bool TcpSessionBase::is_connected_notified() const NOEXCEPT {
 	return atomic_load(m_connected_notified, ATOMIC_CONSUME);
@@ -224,8 +224,6 @@ void TcpSessionBase::on_read_hup() NOEXCEPT {
 }
 void TcpSessionBase::on_close(int err_code) NOEXCEPT {
 	(void)err_code;
-
-	m_connected = false;
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer){
