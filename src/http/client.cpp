@@ -33,7 +33,7 @@ namespace Http {
 			PROFILE_ME;
 
 			const AUTO(client, m_weak_client.lock());
-			if(!client || client->has_been_shutdown_read()){
+			if(!client || client->has_been_shutdown_write()){
 				return;
 			}
 
