@@ -43,7 +43,7 @@ namespace Http {
 		void on_read_hup() NOEXCEPT OVERRIDE;
 
 		// LowLevelSession
-		void on_read_avail(StreamBuffer data) OVERRIDE;
+		void on_receive(StreamBuffer data) OVERRIDE;
 
 		void on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE;
 		void on_low_level_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;

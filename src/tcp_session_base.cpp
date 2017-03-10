@@ -75,17 +75,6 @@ TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	, m_delayed_shutdown_guard_count(0)
 	, m_shutdown_time(0)
 {
-	const int flags = ::fcntl(m_socket.get(), F_GETFL);
-	if(flags == -1){
-		const int err_code = errno;
-		LOG_POSEIDON_ERROR("Could not get fcntl flags on socket.");
-		DEBUG_THROW(SystemException, err_code);
-	}
-	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
-		const int err_code = errno;
-		LOG_POSEIDON_ERROR("Could not set fcntl flags on socket.");
-		DEBUG_THROW(SystemException, err_code);
-	}
 }
 TcpSessionBase::~TcpSessionBase(){
 	LOG_POSEIDON_INFO("Destroying TCP session: remote = ", get_remote_info_nothrow());
@@ -156,7 +145,7 @@ TcpSessionBase::SyncIoResult TcpSessionBase::sync_read_and_process(void *hint, u
 	if(m_ssl_filter){
 		ret.bytes_transferred = m_ssl_filter->read(hint, hint_size);
 	} else {
-		ret.bytes_transferred = ::recv(m_socket.get(), hint, hint_size, MSG_NOSIGNAL);
+		ret.bytes_transferred = ::recv(m_socket.get(), hint, hint_size, MSG_NOSIGNAL | MSG_DONTWAIT);
 	}
 	ret.err_code = errno;
 
@@ -166,7 +155,7 @@ TcpSessionBase::SyncIoResult TcpSessionBase::sync_read_and_process(void *hint, u
 		const AUTO(bytes, static_cast<std::size_t>(ret.bytes_transferred));
 		LOG_POSEIDON_TRACE("Read ", bytes, " byte(s) from ", get_remote_info());
 
-		on_read_avail(StreamBuffer(hint, bytes));
+		on_receive(StreamBuffer(hint, bytes));
 	}
 
 	return ret;
@@ -184,7 +173,7 @@ TcpSessionBase::SyncIoResult TcpSessionBase::sync_write(void *hint, unsigned lon
 	if(m_ssl_filter){
 		ret.bytes_transferred = m_ssl_filter->write(hint, bytes_avail);
 	} else {
-		ret.bytes_transferred = ::send(m_socket.get(), hint, bytes_avail, MSG_NOSIGNAL);
+		ret.bytes_transferred = ::send(m_socket.get(), hint, bytes_avail, MSG_NOSIGNAL | MSG_DONTWAIT);
 	}
 	ret.err_code = errno;
 

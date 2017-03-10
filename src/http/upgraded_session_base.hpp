@@ -28,7 +28,7 @@ namespace Http {
 		void on_read_hup() NOEXCEPT OVERRIDE;
 		void on_close(int err_code) NOEXCEPT OVERRIDE;
 
-		virtual void on_read_avail(StreamBuffer data) = 0;
+		virtual void on_receive(StreamBuffer data) = 0;
 
 	public:
 		bool send(StreamBuffer buffer) OVERRIDE;

@@ -42,7 +42,7 @@ namespace Cbpp {
 		void on_read_hup() NOEXCEPT OVERRIDE;
 
 		// LowLevelSession
-		void on_read_avail(StreamBuffer data) OVERRIDE;
+		void on_receive(StreamBuffer data) OVERRIDE;
 
 		void on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) OVERRIDE;
 		void on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload) OVERRIDE;

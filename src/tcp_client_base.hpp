@@ -27,7 +27,7 @@ private:
 	void real_connect(bool use_ssl, bool verify_peer);
 
 protected:
-	void on_read_avail(StreamBuffer data) OVERRIDE = 0;
+	void on_receive(StreamBuffer data) OVERRIDE = 0;
 
 public:
 	void go_resident();

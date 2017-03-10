@@ -67,7 +67,7 @@ TcpServerBase::~TcpServerBase(){
 }
 
 void TcpServerBase::init_ssl_factory(const char *cert, const char *private_key){
-	if(cert && (cert[0] != 0)){
+	if(cert && *cert){
 		m_ssl_factory.reset(new ServerSslFactory(cert, private_key));
 	}
 }

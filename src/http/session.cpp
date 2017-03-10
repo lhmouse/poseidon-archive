@@ -163,7 +163,7 @@ namespace Http {
 		force_shutdown();
 	}
 
-	void Session::on_read_avail(StreamBuffer data)
+	void Session::on_receive(StreamBuffer data)
 	try {
 		PROFILE_ME;
 
@@ -175,7 +175,7 @@ namespace Http {
 			}
 		}
 
-		LowLevelSession::on_read_avail(STD_MOVE(data));
+		LowLevelSession::on_receive(STD_MOVE(data));
 	} catch(Exception &e){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"Http::Exception thrown in HTTP parser: status_code = ", e.get_status_code(), ", what = ", e.what());

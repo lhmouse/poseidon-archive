@@ -75,7 +75,7 @@ namespace Http {
 		if(::strcasecmp(str.c_str(), "Basic") == 0){
 			str.assign(auth_header, pos + 1, std::string::npos);
 
-			Poseidon::Base64Decoder dec;
+			Base64Decoder dec;
 			dec.put(str);
 			str = dec.finalize().dump_string();
 

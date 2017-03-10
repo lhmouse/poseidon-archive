@@ -7,21 +7,21 @@
 
 namespace Poseidon {
 
-namespace Http {
-	namespace {
-		const char VERB_TABLE[][16] = {
-			"INVALID_VERB",
-			"GET",
-			"POST",
-			"HEAD",
-			"PUT",
-			"DELETE",
-			"TRACE",
-			"CONNECT",
-			"OPTIONS",
-		};
-	}
+namespace {
+	CONSTEXPR const char VERB_TABLE[][16] = {
+		"INVALID_VERB",
+		"GET",
+		"POST",
+		"HEAD",
+		"PUT",
+		"DELETE",
+		"TRACE",
+		"CONNECT",
+		"OPTIONS",
+	};
+}
 
+namespace Http {
 	Verb get_verb_from_string(const char *str){
 		const unsigned len = std::strlen(str);
 		if(len == 0){

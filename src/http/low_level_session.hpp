@@ -39,7 +39,7 @@ namespace Http {
 		void on_read_hup() NOEXCEPT OVERRIDE;
 		void on_close(int err_code) NOEXCEPT OVERRIDE;
 
-		void on_read_avail(StreamBuffer data) OVERRIDE;
+		void on_receive(StreamBuffer data) OVERRIDE;
 
 		// ServerReader
 		void on_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE;

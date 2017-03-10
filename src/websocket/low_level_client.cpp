@@ -43,7 +43,7 @@ namespace WebSocket {
 	LowLevelClient::~LowLevelClient(){
 	}
 
-	void LowLevelClient::on_read_avail(StreamBuffer data){
+	void LowLevelClient::on_receive(StreamBuffer data){
 		PROFILE_ME;
 
 		Reader::put_encoded_data(STD_MOVE(data));

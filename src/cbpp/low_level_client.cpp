@@ -30,7 +30,7 @@ namespace Cbpp {
 		const AUTO(utc_now, get_utc_time());
 		char str[64];
 		unsigned len = (unsigned)std::sprintf(str, "%llu", (unsigned long long)utc_now);
-		client->send_control(Poseidon::Cbpp::ST_PING, StreamBuffer(str, len));
+		client->send_control(ST_PING, StreamBuffer(str, len));
 	}
 
 	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer, boost::uint64_t keep_alive_interval)
@@ -48,7 +48,7 @@ namespace Cbpp {
 	LowLevelClient::~LowLevelClient(){
 	}
 
-	void LowLevelClient::on_read_avail(StreamBuffer data){
+	void LowLevelClient::on_receive(StreamBuffer data){
 		PROFILE_ME;
 
 		Reader::put_encoded_data(STD_MOVE(data));

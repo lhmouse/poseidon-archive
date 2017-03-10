@@ -38,7 +38,7 @@ namespace Http {
 		// TcpClientBase
 		void on_read_hup() NOEXCEPT OVERRIDE;
 
-		void on_read_avail(StreamBuffer data) OVERRIDE;
+		void on_receive(StreamBuffer data) OVERRIDE;
 
 		// ClientReader
 		void on_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) OVERRIDE;

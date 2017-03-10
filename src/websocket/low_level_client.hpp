@@ -31,7 +31,7 @@ namespace WebSocket {
 
 	protected:
 		// UpgradedSessionBase
-		void on_read_avail(StreamBuffer data) OVERRIDE;
+		void on_receive(StreamBuffer data) OVERRIDE;
 
 		// Reader
 		void on_data_message_header(OpCode opcode) OVERRIDE;

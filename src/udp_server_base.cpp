@@ -10,10 +10,15 @@
 #include <netinet/in.h>
 #include "system_exception.hpp"
 #include "log.hpp"
+#include "profiler.hpp"
 
 namespace Poseidon {
 
 namespace {
+	enum {
+		IO_BUFFER_SIZE          = 16384,
+	};
+
 	UniqueFile create_udp_socket(const IpPort &addr){
 		SockAddr sa = get_sock_addr_from_ip_port(addr);
 		UniqueFile udp(::socket(sa.get_family(), SOCK_DGRAM, IPPROTO_UDP));
@@ -41,7 +46,34 @@ UdpServerBase::~UdpServerBase(){
 }
 
 bool UdpServerBase::poll() const {
-	return false;
-}
+	unsigned char temp[IO_BUFFER_SIZE];
+	::sockaddr src_addr;
+	::socklen_t src_addr_len = sizeof(src_addr);
+	AUTO(bytes_transferred, ::recvfrom(get_fd(), temp, sizeof(temp), MSG_NOSIGNAL | MSG_DONTWAIT, &src_addr, &src_addr_len));
+	if(bytes_transferred < 0){
+		return false;
+	}
 
+	const AUTO(sock_addr, SockAddr(&src_addr, src_addr_len));
+	const AUTO(bytes, static_cast<std::size_t>(bytes_transferred));
+	LOG_POSEIDON_TRACE("Read ", bytes, " byte(s) from ", get_ip_port_from_sock_addr(sock_addr));
+
+	try {
+		on_receive(sock_addr, StreamBuffer(temp, bytes));
+	} catch(std::exception &e){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"std::exception thrown while reading socket: what = ", e.what(), ", typeid = ", typeid(*this).name());
+	} catch(...){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Unknown exception thrown while reading socket: typeid = ", typeid(*this).name());
+	}
+	return true;
+}
+/*
+bool UdpServerBase::send(const SockAddr &sock_addr, StreamBuffer data) const {
+	PROFILE_ME;
+
+	
+}
+*/
 }

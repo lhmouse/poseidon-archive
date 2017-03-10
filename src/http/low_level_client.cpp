@@ -47,13 +47,13 @@ namespace Http {
 		TcpClientBase::on_read_hup();
 	}
 
-	void LowLevelClient::on_read_avail(StreamBuffer data){
+	void LowLevelClient::on_receive(StreamBuffer data){
 		PROFILE_ME;
 
 		// epoll 线程读取不需要锁。
 		AUTO(upgraded_client, m_upgraded_client);
 		if(upgraded_client){
-			upgraded_client->on_read_avail(STD_MOVE(data));
+			upgraded_client->on_receive(STD_MOVE(data));
 			return;
 		}
 
@@ -64,7 +64,7 @@ namespace Http {
 			StreamBuffer queue;
 			queue.swap(ClientReader::get_queue());
 			if(!queue.empty()){
-				upgraded_client->on_read_avail(STD_MOVE(queue));
+				upgraded_client->on_receive(STD_MOVE(queue));
 			}
 		}
 	}

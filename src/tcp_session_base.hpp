@@ -103,7 +103,7 @@ private:
 
 	// 同步，线程安全。
 	void fetch_peer_info() const;
-	// 和 Windows 的 IsDialogMessage() 类似，这个函数读取并在内部调用 on_read_avail() 处理数据。
+	// 和 Windows 的 IsDialogMessage() 类似，这个函数读取并在内部调用 on_receive() 处理数据。
 	// 这里的出参返回读取的数据，一次性读取的字节数不大于 hint_size。如果开启了 SSL，返回明文。
 	SyncIoResult sync_read_and_process(void *hint, unsigned long hint_size);
 	// 这里的出参返回写入的数据，一次性写入的字节数不大于 hint_size。如果开启了 SSL，返回明文。
@@ -118,7 +118,7 @@ protected:
 	void on_close(int err_code) NOEXCEPT OVERRIDE; // 参数就是 errno。
 
 	// 注意，只能在 epoll 线程中调用这些函数。
-	void on_read_avail(StreamBuffer data) OVERRIDE = 0;
+	void on_receive(StreamBuffer data) OVERRIDE = 0;
 
 	bool send(StreamBuffer buffer) OVERRIDE;
 

@@ -31,7 +31,7 @@ namespace Http {
 		std::string boundary;
 		boundary.reserve(BOUNDARY_LEN);
 		for(unsigned i = 0; i < BOUNDARY_LEN; ++i){
-			boundary.push_back(BOUNDARY_CHARS[Poseidon::random_uint32() % (sizeof(BOUNDARY_CHARS) - 1)]);
+			boundary.push_back(BOUNDARY_CHARS[random_uint32() % (sizeof(BOUNDARY_CHARS) - 1)]);
 		}
 		m_boundary.swap(boundary);
 	}

@@ -18,7 +18,7 @@ namespace Cbpp {
 	LowLevelSession::~LowLevelSession(){
 	}
 
-	void LowLevelSession::on_read_avail(StreamBuffer data){
+	void LowLevelSession::on_receive(StreamBuffer data){
 		PROFILE_ME;
 
 		Reader::put_encoded_data(STD_MOVE(data));
