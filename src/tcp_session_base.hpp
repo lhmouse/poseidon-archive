@@ -76,7 +76,7 @@ private:
 	volatile bool m_throttled;
 	volatile std::size_t m_delayed_shutdown_guard_count;
 
-	mutable Mutex m_buffer_mutex;
+	mutable Mutex m_send_mutex;
 	StreamBuffer m_send_buffer;
 	boost::weak_ptr<Epoll> m_epoll;
 

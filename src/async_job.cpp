@@ -61,7 +61,7 @@ namespace {
 #ifdef POSEIDON_CXX11
 				except = std::current_exception();
 #else
-				except = boost::copy_exception(std::runtime_error(e.what()));
+				except = boost::copy_exception(std::bad_exception());
 #endif
 			}
 		}
@@ -73,7 +73,7 @@ void enqueue_async_categorized_job(boost::weak_ptr<const void> category,
 	boost::shared_ptr<const bool> withdrawn)
 {
 	AUTO(job, boost::make_shared<AsyncJob>(STD_MOVE(category), STD_MOVE(promise), STD_MOVE_IDN(proc)));
-	JobDispatcher::enqueue(STD_MOVE(job), STD_MOVE(withdrawn));
+	JobDispatcher::enqueue(STD_MOVE_IDN(job), STD_MOVE(withdrawn));
 }
 void enqueue_async_job(
 	boost::shared_ptr<JobPromise> promise, boost::function<void ()> proc,

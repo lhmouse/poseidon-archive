@@ -19,12 +19,11 @@ public:
 	explicit SocketServerBase(UniqueFile socket);
 	virtual ~SocketServerBase();
 
-protected:
+public:
 	int get_fd() const {
 		return m_socket.get();
 	}
 
-public:
 	const IpPort &get_local_info() const {
 		return m_local_info;
 	}

@@ -157,7 +157,7 @@ namespace Http {
 					std::string value(trim(STD_MOVE(line)));
 					elem.headers.set(STD_MOVE(key), STD_MOVE(value));
 				}
-				AUTO(entity, STD_MOVE(queue_is.get_buffer()));
+				AUTO(entity, STD_MOVE_IDN(queue_is.get_buffer()));
 				if(entity.back() == '\n'){
 					entity.unput();
 					if(entity.back() == '\r'){

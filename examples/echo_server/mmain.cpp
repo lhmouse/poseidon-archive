@@ -34,7 +34,7 @@ protected:
 			", err_code = ", err_code, ", desc = ", Poseidon::get_error_desc(err_code));
 	}
 
-	void on_read_avail(Poseidon::StreamBuffer data) override {
+	void on_receive(Poseidon::StreamBuffer data) override {
 		LOG_POSEIDON_INFO("Connection read avail: remote = ", get_remote_info(), ", data = ", data);
 
 		Poseidon::StreamBuffer buffer;

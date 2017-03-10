@@ -112,7 +112,7 @@ void TcpSessionBase::notify_read_hup() NOEXCEPT {
 }
 
 void TcpSessionBase::set_epoll(boost::weak_ptr<Epoll> epoll) NOEXCEPT {
-	const Mutex::UniqueLock lock(m_buffer_mutex);
+	const Mutex::UniqueLock lock(m_send_mutex);
 	const AUTO(old_epoll, m_epoll.lock());
 	if(old_epoll){
 		old_epoll->notify_unlinked(this);
@@ -129,11 +129,11 @@ void TcpSessionBase::notify_epoll_writeable() NOEXCEPT {
 void TcpSessionBase::fetch_peer_info() const {
 	const Mutex::UniqueLock lock(m_peer_info.mutex);
 	if(m_peer_info.remote.port == 0){
-		m_peer_info.remote = get_remote_ip_port_from_fd(m_socket.get());
+		m_peer_info.remote = get_remote_ip_port_from_fd(get_fd());
 		LOG_POSEIDON_DEBUG("TCP session remote info = ", m_peer_info.remote);
 	}
 	if(m_peer_info.local.port == 0){
-		m_peer_info.local = get_local_ip_port_from_fd(m_socket.get());
+		m_peer_info.local = get_local_ip_port_from_fd(get_fd());
 		LOG_POSEIDON_DEBUG("TCP session local info = ", m_peer_info.local);
 	}
 }
@@ -145,60 +145,73 @@ TcpSessionBase::SyncIoResult TcpSessionBase::sync_read_and_process(void *hint, u
 	if(m_ssl_filter){
 		ret.bytes_transferred = m_ssl_filter->read(hint, hint_size);
 	} else {
-		ret.bytes_transferred = ::recv(m_socket.get(), hint, hint_size, MSG_NOSIGNAL | MSG_DONTWAIT);
+		ret.bytes_transferred = ::recv(get_fd(), hint, hint_size, MSG_NOSIGNAL | MSG_DONTWAIT);
 	}
-	ret.err_code = errno;
-
+	if(ret.bytes_transferred < 0){
+		ret.err_code = errno;
+	} else {
+		ret.err_code = 0;
+	}
 	if(ret.bytes_transferred > 0){
 		fetch_peer_info();
 
-		const AUTO(bytes, static_cast<std::size_t>(ret.bytes_transferred));
-		LOG_POSEIDON_TRACE("Read ", bytes, " byte(s) from ", get_remote_info());
+		const AUTO(bytes_transferred, static_cast<std::size_t>(ret.bytes_transferred));
+		LOG_POSEIDON_TRACE("Read ", bytes_transferred, " byte(s) from ", get_remote_info());
 
-		on_receive(StreamBuffer(hint, bytes));
+		on_receive(StreamBuffer(hint, bytes_transferred));
 	}
-
 	return ret;
 }
 TcpSessionBase::SyncIoResult TcpSessionBase::sync_write(void *hint, unsigned long hint_size){
 	PROFILE_ME;
 
-	std::size_t bytes_avail;
+	std::size_t bytes_avail = 0;
 	{
-		const Mutex::UniqueLock lock(m_buffer_mutex);
-		bytes_avail = m_send_buffer.peek(hint, hint_size);
+		const Mutex::UniqueLock lock(m_send_mutex);
+		if(!m_send_buffer.empty()){
+			bytes_avail = m_send_buffer.peek(hint, hint_size);
+		}
 	}
 
 	SyncIoResult ret;
-	if(m_ssl_filter){
-		ret.bytes_transferred = m_ssl_filter->write(hint, bytes_avail);
+	if(bytes_avail == 0){
+		ret.bytes_transferred = -1;
+		ret.err_code = EAGAIN;
 	} else {
-		ret.bytes_transferred = ::send(m_socket.get(), hint, bytes_avail, MSG_NOSIGNAL | MSG_DONTWAIT);
+		if(m_ssl_filter){
+			ret.bytes_transferred = m_ssl_filter->write(hint, bytes_avail);
+		} else {
+			ret.bytes_transferred = ::send(get_fd(), hint, bytes_avail, MSG_NOSIGNAL | MSG_DONTWAIT);
+		}
+		if(ret.bytes_transferred < 0){
+			ret.err_code = errno;
+		} else {
+			ret.err_code = 0;
+		}
 	}
-	ret.err_code = errno;
-
 	if(ret.bytes_transferred > 0){
 		fetch_peer_info();
 
-		const AUTO(bytes, static_cast<std::size_t>(ret.bytes_transferred));
-		LOG_POSEIDON_TRACE("Wrote ", bytes, " byte(s) to ", get_remote_info());
+		const AUTO(bytes_transferred, static_cast<std::size_t>(ret.bytes_transferred));
+		LOG_POSEIDON_TRACE("Wrote ", bytes_transferred, " byte(s) to ", get_remote_info());
 
-		const Mutex::UniqueLock lock(m_buffer_mutex);
-		m_send_buffer.discard(bytes);
+		const Mutex::UniqueLock lock(m_send_mutex);
+		m_send_buffer.discard(bytes_transferred);
 		bytes_avail = m_send_buffer.size();
 	}
-
 	if((bytes_avail == 0) && atomic_load(m_really_shutdown_write, ATOMIC_CONSUME)){
 		if(m_ssl_filter){
 			m_ssl_filter->send_fin();
 		} else {
-			::shutdown(m_socket.get(), SHUT_WR);
+			::shutdown(get_fd(), SHUT_WR);
 		}
+		ret.bytes_transferred = -1;
+		ret.err_code = EAGAIN;
 	}
 	return ret;
 }
 std::size_t TcpSessionBase::get_send_buffer_size(Mutex::UniqueLock *lock) const {
-	Mutex::UniqueLock new_lock(m_buffer_mutex);
+	Mutex::UniqueLock new_lock(m_send_mutex);
 	const AUTO(size, m_send_buffer.size());
 	if(lock){
 		lock->swap(new_lock);
@@ -218,13 +231,13 @@ void TcpSessionBase::on_close(int err_code) NOEXCEPT {
 bool TcpSessionBase::send(StreamBuffer buffer){
 	PROFILE_ME;
 
-	if(atomic_load(m_really_shutdown_write, ATOMIC_CONSUME)){
+	if(atomic_load(m_shutdown_write, ATOMIC_CONSUME)){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 			"Connection has been shut down for writing: remote = ", get_remote_info_nothrow());
 		return false;
 	}
 
-	const Mutex::UniqueLock lock(m_buffer_mutex);
+	const Mutex::UniqueLock lock(m_send_mutex);
 	if(!buffer.empty()){
 		m_send_buffer.splice(buffer);
 	}
@@ -241,7 +254,7 @@ bool TcpSessionBase::shutdown_read() NOEXCEPT {
 	bool ret = !atomic_load(m_shutdown_read, ATOMIC_CONSUME);
 	if(ret){
 		ret = !atomic_exchange(m_shutdown_read, true, ATOMIC_ACQ_REL);
-		::shutdown(m_socket.get(), SHUT_RD);
+		::shutdown(get_fd(), SHUT_RD);
 	}
 	return ret;
 }
@@ -267,9 +280,9 @@ void TcpSessionBase::force_shutdown() NOEXCEPT {
 	::linger lng;
 	lng.l_onoff = 1;
 	lng.l_linger = 0;
-	::setsockopt(m_socket.get(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
+	::setsockopt(get_fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
 
-	::shutdown(m_socket.get(), SHUT_RDWR);
+	::shutdown(get_fd(), SHUT_RDWR);
 }
 
 const IpPort &TcpSessionBase::get_remote_info() const {
@@ -327,7 +340,7 @@ void TcpSessionBase::set_no_delay(bool enabled){
 	PROFILE_ME;
 
 	const int val = enabled;
-	if(::setsockopt(m_socket.get(), IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) != 0){
+	if(::setsockopt(get_fd(), IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) != 0){
 		const int err_code = errno;
 		LOG_POSEIDON_WARNING("Error setting TCP socket option: err_code = ", err_code);
 		DEBUG_THROW(SystemException, err_code);

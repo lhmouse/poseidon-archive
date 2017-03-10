@@ -21,7 +21,7 @@ namespace Poseidon {
 
 namespace {
 	enum {
-		MAX_EPOLL_PUMP_COUNT    = 256,
+		MAX_PUMP_COUNT          = 256,
 		IO_BUFFER_SIZE          = 4096,
 		MAX_SEND_BUFFER_SIZE    = 65536,
 
@@ -152,7 +152,7 @@ void Epoll::clear(){
 std::size_t Epoll::wait(unsigned timeout) NOEXCEPT {
 	PROFILE_ME;
 
-	::epoll_event events[MAX_EPOLL_PUMP_COUNT];
+	::epoll_event events[MAX_PUMP_COUNT];
 	const int count = ::epoll_wait(m_epoll.get(), events, COUNT_OF(events), (int)timeout);
 	if(count < 0){
 		const int err_code = errno;
@@ -240,7 +240,7 @@ std::size_t Epoll::pump_readable(){
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
 	std::vector<VALUE_TYPE(m_sessions->begin<1>())> iterators;
-	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
+	iterators.reserve(MAX_PUMP_COUNT);
 	{
 		const RecursiveMutex::UniqueLock lock(m_mutex);
 		const AUTO(range, std::make_pair(m_sessions->begin<1>(), m_sessions->upper_bound<1>(now)));
@@ -293,11 +293,11 @@ std::size_t Epoll::pump_readable(){
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown while reading socket: what = ", e.what(), ", typeid = ", typeid(*session).name());
+				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*session).name());
 			session->force_shutdown();
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown while reading socket: typeid = ", typeid(*session).name());
+				"Unknown exception thrown: typeid = ", typeid(*session).name());
 			session->force_shutdown();
 		}
 	}
@@ -310,7 +310,7 @@ std::size_t Epoll::pump_writeable(){
 
 	// 有序的关系型容器在插入元素时迭代器不失效。这一点非常重要。
 	std::vector<VALUE_TYPE(m_sessions->begin<2>())> iterators;
-	iterators.reserve(MAX_EPOLL_PUMP_COUNT);
+	iterators.reserve(MAX_PUMP_COUNT);
 	{
 		const RecursiveMutex::UniqueLock lock(m_mutex);
 		const AUTO(range, std::make_pair(m_sessions->begin<2>(), m_sessions->upper_bound<2>(now)));
