@@ -22,9 +22,8 @@ namespace Poseidon {
 namespace {
 	enum {
 		MAX_PUMP_COUNT          = 256,
-		IO_BUFFER_SIZE          = 4096,
+		IO_BUFFER_SIZE          = 16384,
 		MAX_SEND_BUFFER_SIZE    = 65536,
-
 		THROTTLED_RETRY_DELAY   = 5000,
 	};
 

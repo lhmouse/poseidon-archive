@@ -17,8 +17,8 @@ namespace Poseidon {
 
 namespace {
 	enum {
-		MAX_PUMP_COUNT          = 65536,
-		IO_BUFFER_SIZE          = 4096,
+		MAX_PUMP_COUNT          = 1024,
+		IO_BUFFER_SIZE          = 16384,
 	};
 
 	UniqueFile create_udp_socket(const SockAddr &addr){
