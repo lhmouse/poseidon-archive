@@ -22,7 +22,7 @@ private:
 
 public:
 	HttpClient(const Poseidon::SockAddr &sock_addr, bool use_ssl, std::string sec_websocket_key)
-		: Poseidon::Http::LowLevelClient(sock_addr, use_ssl)
+		: Poseidon::Http::LowLevelClient(sock_addr, use_ssl, true)
 		, m_sec_websocket_key(std::move(sec_websocket_key))
 	{
 	}
