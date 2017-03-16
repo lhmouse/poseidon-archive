@@ -27,7 +27,7 @@ public:
 protected:
 	void on_sync_request(Poseidon::Http::RequestHeaders request_headers, Poseidon::StreamBuffer entity){
 		Poseidon::Buffer_ostream os;
-		os <<"Request from " <<get_remote_info().ip <<":" <<std::endl;
+		os <<"Request from " <<get_remote_info() <<":" <<std::endl;
 		os <<"-----" <<std::endl;
 		os <<"Verb    : " <<Poseidon::Http::get_string_from_verb(request_headers.verb) <<std::endl;
 		os <<"URI     : " <<request_headers.uri <<std::endl;
@@ -63,9 +63,9 @@ public:
 };
 
 MODULE_RAII(handles){
-	const auto ip_port = Poseidon::IpPort(Poseidon::SharedNts::view(g_bind), g_port);
+	const auto ip_port = Poseidon::IpPort(g_bind, g_port);
 	auto server = boost::make_shared<Server>(ip_port);
 	LOG_POSEIDON_FATAL("HTTP server created successfully on ", ip_port);
-	Poseidon::EpollDaemon::register_server(server);
+	Poseidon::EpollDaemon::add_socket(server);
 	handles.push(std::move(server));
 }

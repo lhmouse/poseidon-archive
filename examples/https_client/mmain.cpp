@@ -19,7 +19,7 @@ const char          g_uri     [] = "/";
 
 class Client : public Poseidon::Http::Client {
 public:
-	explicit Client(const SockAddr &addr)
+	explicit Client(const Poseidon::SockAddr &addr)
 		: Poseidon::Http::Client(addr, true, true) // use_ssl = true, verify_peer = true
 	{
 	}

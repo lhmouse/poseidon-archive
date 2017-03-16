@@ -62,7 +62,7 @@ public:
 };
 
 MODULE_RAII(handles){
-	auto server = boost::make_shared<Server>(Poseidon::IpPort(Poseidon::sslit(g_server_bind_addr), g_server_bind_port));
-	Poseidon::EpollDaemon::register_server(server);
+	auto server = boost::make_shared<Server>(Poseidon::IpPort(g_server_bind_addr, g_server_bind_port));
+	Poseidon::EpollDaemon::add_socket(server);
 	handles.push(std::move(server));
 }

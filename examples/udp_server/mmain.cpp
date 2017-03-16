@@ -4,6 +4,7 @@
 #include <poseidon/stream_buffer.hpp>
 #include <poseidon/udp_server_base.hpp>
 #include <poseidon/singletons/epoll_daemon.hpp>
+#include <poseidon/shared_nts.hpp>
 
 // 服务端配置。
 const char          g_bind    [] = "0.0.0.0";
@@ -24,9 +25,9 @@ public:
 };
 
 MODULE_RAII(handles){
-	const auto ip_port = Poseidon::IpPort(Poseidon::SharedNts::view(g_bind), g_port);
+	const auto ip_port = Poseidon::IpPort(g_bind, g_port);
 	auto server = boost::make_shared<Server>(ip_port);
 	LOG_POSEIDON_FATAL("UDP server created successfully on ", ip_port);
-	Poseidon::EpollDaemon::register_server(server);
+	Poseidon::EpollDaemon::add_socket(server);
 	handles.push(std::move(server));
 }

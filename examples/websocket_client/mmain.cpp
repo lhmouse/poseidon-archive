@@ -7,6 +7,7 @@
 #include <poseidon/websocket/exception.hpp>
 #include <poseidon/http/low_level_client.hpp>
 #include <poseidon/singletons/timer_daemon.hpp>
+#include <poseidon/sock_addr.hpp>
 
 // 转发配置。
 const char          g_client_connect_addr [] = "127.0.0.1";
@@ -59,7 +60,7 @@ private:
 };
 
 boost::shared_ptr<Poseidon::Http::UpgradedClientBase> HttpClient::on_low_level_response_end(std::uint64_t, Poseidon::OptionalMap){
-	LOG_POSEIDON_DEBUG("End of HTTP response: remote = ", get_remote_info_nothrow());
+	LOG_POSEIDON_DEBUG("End of HTTP response: remote = ", get_remote_info());
 	if(!Poseidon::WebSocket::check_handshake_response(m_response_headers, m_sec_websocket_key)){
 		LOG_POSEIDON_ERROR("Invalid WebSocket handshake response.");
 		force_shutdown();
@@ -83,7 +84,7 @@ boost::shared_ptr<Poseidon::Http::UpgradedClientBase> HttpClient::on_low_level_r
 
 MODULE_RAII(){
 	auto request_pair = Poseidon::WebSocket::make_handshake_request("/", { }, g_client_connect_addr);
-	const auto sock_addr = Poseidon::get_sock_addr_from_ip_port(Poseidon::IpPort(Poseidon::sslit(g_client_connect_addr), g_client_connect_port));
+	const auto sock_addr = Poseidon::get_sock_addr_from_ip_port(Poseidon::IpPort(g_client_connect_addr, g_client_connect_port));
 	auto client = boost::make_shared<HttpClient>(sock_addr, false, std::move(request_pair.second));
 	client->go_resident();
 	DEBUG_THROW_ASSERT(client->send(std::move(request_pair.first)));
