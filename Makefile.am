@@ -22,10 +22,10 @@ EXTRA_DIST = \
 
 pkginclude_HEADERS = \
 	src/fwd.hpp	\
+	src/socket_base.hpp	\
 	src/tcp_session_base.hpp	\
 	src/optional_map.hpp	\
 	src/ssl_raii.hpp	\
-	src/socket_server_base.hpp	\
 	src/log.hpp	\
 	src/precompiled.hpp	\
 	src/shared_nts.hpp	\
@@ -65,7 +65,6 @@ pkginclude_HEADERS = \
 	src/random.hpp	\
 	src/flags.hpp	\
 	src/atomic.hpp	\
-	src/epoll.hpp	\
 	src/session_base.hpp	\
 	src/cxx_ver.hpp	\
 	src/ssl_filter_base.hpp	\
@@ -200,13 +199,12 @@ lib_libposeidon_main_la_SOURCES = \
 	src/ssl_raii.cpp	\
 	src/ssl_filter_base.cpp	\
 	src/ssl_factories.cpp	\
+	src/socket_base.cpp	\
 	src/tcp_session_base.cpp	\
-	src/socket_server_base.cpp	\
 	src/tcp_server_base.cpp	\
 	src/tcp_client_base.cpp	\
 	src/udp_server_base.cpp	\
 	src/session_base.cpp	\
-	src/epoll.cpp	\
 	src/event_base.cpp	\
 	src/ip_port.cpp	\
 	src/sock_addr.cpp	\

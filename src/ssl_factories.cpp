@@ -49,7 +49,7 @@ ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
 	}
 	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv2);
 	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv3);
-	::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULLPTR);
+	::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_PEER, NULLPTR);
 
 	LOG_POSEIDON_INFO("Loading server certificate: ", cert);
 	if(::SSL_CTX_use_certificate_chain_file(m_ctx.get(), cert) != 1){

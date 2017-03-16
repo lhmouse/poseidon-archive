@@ -3,108 +3,229 @@
 
 #include "../precompiled.hpp"
 #include "epoll_daemon.hpp"
-#include "main_config.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
+#include <errno.h>
 #include "job_dispatcher.hpp"
 #include "../thread.hpp"
-#include "../epoll.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
 #include "../time.hpp"
-#include "../tcp_session_base.hpp"
-#include "../socket_server_base.hpp"
+#include "../socket_base.hpp"
 #include "../profiler.hpp"
+#include "../recursive_mutex.hpp"
+#include "../raii.hpp"
+#include "../multi_index_map.hpp"
 #include "../checked_arithmetic.hpp"
+#include "../system_exception.hpp"
+#include "../errno.hpp"
 
 namespace Poseidon {
 
 namespace {
-	std::size_t g_max_timeout               = 100;
-	boost::uint64_t g_tcp_request_timeout   = 30000;
-
 	volatile bool g_running = false;
 	Thread g_thread;
 
-	boost::shared_ptr<Epoll> g_epoll = boost::make_shared<Epoll>();
+	struct SocketElement {
+		boost::shared_ptr<SocketBase> socket;
 
-	Mutex g_server_mutex;
-	std::vector<boost::weak_ptr<const SocketServerBase> > g_servers;
+		int fd;
+		boost::uint64_t read_time;
+		boost::uint64_t write_time;
 
-	std::size_t poll_servers(){
+		explicit SocketElement(boost::shared_ptr<SocketBase> socket_)
+			: socket(STD_MOVE_IDN(socket_))
+			, fd(socket->get_fd()), read_time((boost::uint64_t)-1), write_time((boost::uint64_t)-1)
+		{
+		}
+	};
+	MULTI_INDEX_MAP(SocketMap, SocketElement,
+		UNIQUE_MEMBER_INDEX(fd)
+		MULTI_MEMBER_INDEX(read_time)
+		MULTI_MEMBER_INDEX(write_time)
+	)
+	RecursiveMutex g_mutex;
+	UniqueFile g_epoll;
+	SocketMap g_socket_map;
+
+	bool pump_readable_sockets() NOEXCEPT {
 		PROFILE_ME;
 
-		std::vector<boost::shared_ptr<const SocketServerBase> > servers;
+		std::vector<VALUE_TYPE(g_socket_map.begin<1>())> iterators;
+		const AUTO(now, get_fast_mono_clock());
 		{
-			const Mutex::UniqueLock lock(g_server_mutex);
-			servers.reserve(g_servers.size());
-			AUTO(it, g_servers.begin());
-			while(it != g_servers.end()){
-				AUTO(server, it->lock());
-				if(!server){
-					it = g_servers.erase(it);
-					continue;
-				}
-				servers.push_back(STD_MOVE(server));
-				++it;
-			}
-		}
-		std::size_t count = 0;
-		for(AUTO(it, servers.begin()); it != servers.end(); ++it){
-			const AUTO_REF(server, *it);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
+			const AUTO(range, std::make_pair(g_socket_map.begin<1>(), g_socket_map.upper_bound<1>(now)));
 			try {
-				if(!server->poll()){
-					continue;
+				iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
+				for(AUTO(it, range.first); it != range.second; ++it){
+					iterators.push_back(it);
 				}
-				++count;
 			} catch(std::exception &e){
-				LOG_POSEIDON_WARNING("std::exception thrown while accepting connection: what = ", e.what());
-			} catch(...){
-				LOG_POSEIDON_WARNING("Unknown exception thrown while accepting connection.");
+				LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+				return false;
 			}
 		}
-		return count;
+		LOG_POSEIDON_TRACE("Number of readable sockets: ", iterators.size());
+		for(AUTO(iit, iterators.begin()); iit != iterators.end(); ++iit){
+			const AUTO(it, *iit);
+			if(it->socket->is_throttled()){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+					"Session is throttled: typeid = ", typeid(*socket).name());
+				const RecursiveMutex::UniqueLock lock(g_mutex);
+				g_socket_map.set_key<1, 1>(it, now + 5000);
+				continue;
+			}
+			try {
+				const int err_code = it->socket->poll_read_and_process();
+				if((err_code != 0) && (err_code != EINTR)){
+					if(err_code == EWOULDBLOCK){
+						const RecursiveMutex::UniqueLock lock(g_mutex);
+						g_socket_map.set_key<1, 1>(it, (boost::uint64_t)-1);
+						continue;
+					}
+					DEBUG_THROW(SystemException, err_code);
+				}
+			} catch(std::exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*(it->socket)).name());
+				it->socket->force_shutdown();
+				const RecursiveMutex::UniqueLock lock(g_mutex);
+				g_socket_map.erase<1>(it);
+				continue;
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Unknown exception thrown: typeid = ", typeid(*(it->socket)).name());
+				it->socket->force_shutdown();
+				const RecursiveMutex::UniqueLock lock(g_mutex);
+				g_socket_map.erase<1>(it);
+				continue;
+			}
+		}
+		return !iterators.empty();
+	}
+
+	bool pump_writeable_sockets() NOEXCEPT {
+		PROFILE_ME;
+
+		std::vector<VALUE_TYPE(g_socket_map.begin<2>())> iterators;
+		const AUTO(now, get_fast_mono_clock());
+		{
+			const RecursiveMutex::UniqueLock lock(g_mutex);
+			const AUTO(range, std::make_pair(g_socket_map.begin<2>(), g_socket_map.upper_bound<2>(now)));
+			try {
+				iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
+				for(AUTO(it, range.first); it != range.second; ++it){
+					iterators.push_back(it);
+				}
+			} catch(std::exception &e){
+				LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+				return false;
+			}
+		}
+		LOG_POSEIDON_TRACE("Number of writeable sockets: ", iterators.size());
+		for(AUTO(iit, iterators.begin()); iit != iterators.end(); ++iit){
+			const AUTO(it, *iit);
+			try {
+				Mutex::UniqueLock session_lock;
+				const int err_code = it->socket->poll_write(session_lock);
+				if((err_code != 0) && (err_code != EINTR)){
+					if(err_code == EWOULDBLOCK){
+						const RecursiveMutex::UniqueLock lock(g_mutex);
+						g_socket_map.set_key<2, 2>(it, (boost::uint64_t)-1);
+						continue;
+					}
+					DEBUG_THROW(SystemException, err_code);
+				}
+			} catch(std::exception &e){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*(it->socket)).name());
+				it->socket->force_shutdown();
+				const RecursiveMutex::UniqueLock lock(g_mutex);
+				g_socket_map.erase<2>(it);
+				continue;
+			} catch(...){
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+					"Unknown exception thrown: typeid = ", typeid(*(it->socket)).name());
+				it->socket->force_shutdown();
+				const RecursiveMutex::UniqueLock lock(g_mutex);
+				g_socket_map.erase<2>(it);
+				continue;
+			}
+		}
+		return !iterators.empty();
+	}
+
+	void wait_for_sockets(unsigned timeout) NOEXCEPT {
+		PROFILE_ME;
+
+		::epoll_event events[256];
+		const int result = ::epoll_wait(g_epoll.get(), events, COUNT_OF(events), (int)timeout);
+		if(result < 0){
+			const int err_code = errno;
+			if(err_code != EINTR){
+				LOG_POSEIDON_ERROR("::epoll_wait() failed! errno was ", err_code);
+			}
+			return;
+		}
+		const std::size_t count = static_cast<unsigned>(result);
+		if(count != 0){
+			const AUTO(now, Poseidon::get_fast_mono_clock());
+			const RecursiveMutex::UniqueLock lock(g_mutex);
+			for(std::size_t i = 0; i < count; ++i){
+				const AUTO(it, g_socket_map.find<0>(events[i].data.fd));
+				if(it == g_socket_map.end()){
+					LOG_POSEIDON_WARNING("Socket reported by epoll is not registered: fd = ", events[i].data.fd);
+					continue;
+				}
+				if(events[i].events & (EPOLLHUP | EPOLLERR)){
+					int err_code;
+					if(it->socket->was_timed_out()){
+						err_code = ETIMEDOUT;
+					} else {
+						::socklen_t err_len = sizeof(err_code);
+						if(::getsockopt(it->socket->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
+							err_code = errno;
+							LOG_POSEIDON_WARNING("::getsockopt() failed, errno was ", err_code, ": fd = ", it->socket->get_fd());
+						}
+					}
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+						"Socket closed: err_code = ", err_code, ", desc = ", get_error_desc(err_code), ", typeid = ", typeid(*(it->socket)).name());
+					it->socket->on_close(err_code);
+					g_socket_map.erase<0>(it);
+					continue;
+				}
+				if(events[i].events & EPOLLIN){
+					g_socket_map.set_key<0, 1>(it, now);
+				}
+				if(events[i].events & EPOLLOUT){
+					g_socket_map.set_key<0, 2>(it, now);
+				}
+			}
+		}
 	}
 
 	void daemon_loop(){
 		PROFILE_ME;
 
-		boost::uint64_t epoll_timeout = 0;
+		unsigned timeout = 1;
 		for(;;){
-			bool busy = false;
-
-			try {
-				if(JobDispatcher::is_running()){
-					if(poll_servers() > 0){
-						++busy;
-					}
-					if(g_epoll->pump_readable() > 0){
-						++busy;
-					}
-				}
-				if(g_epoll->pump_writeable() > 0){
-					++busy;
-				}
-				if(g_epoll->wait(epoll_timeout) > 0){
-					++busy;
-				}
-				// 二次指数回退算法。如果有连接接入（忙），epoll 等待时间就短一些；反之（闲）亦然。
-				if(busy){
-					epoll_timeout = 0;
-				} else {
-					epoll_timeout |= 1;
-					epoll_timeout <<= 1;
-					if(epoll_timeout > g_max_timeout){
-						epoll_timeout = g_max_timeout;
-					}
-				}
-			} catch(std::exception &e){
-				LOG_POSEIDON_ERROR("std::exception thrown while flush data: what = ", e.what());
-			} catch(...){
-				LOG_POSEIDON_ERROR("Unknown exception thrown while flush data.");
-			}
+			bool busy;
+			do {
+				busy = JobDispatcher::is_running() && pump_readable_sockets();
+				busy += pump_writeable_sockets();
+			} while(busy);
 
 			if(!busy && !atomic_load(g_running, ATOMIC_CONSUME)){
 				break;
 			}
+			if(busy){
+				timeout = 1;
+			} else {
+				timeout = std::min<unsigned>(timeout << 1, 200);
+			}
+			wait_for_sockets(timeout);
 		}
 	}
 
@@ -125,12 +246,11 @@ void EpollDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting epoll daemon...");
 
-	MainConfig::get(g_max_timeout, "epoll_max_timeout");
-	LOG_POSEIDON_DEBUG("Max timeout = ", g_max_timeout);
-
-	MainConfig::get(g_tcp_request_timeout, "epoll_tcp_request_timeout");
-	LOG_POSEIDON_DEBUG("Tcp request timeout = ", g_tcp_request_timeout);
-
+	if(!g_epoll.reset(::epoll_create(4096))){
+		const int err_code = errno;
+		LOG_POSEIDON_FATAL("Failed to create epoll! errno was ", err_code);
+		std::abort();
+	}
 	Thread(&thread_proc, "   N").swap(g_thread);
 }
 void EpollDaemon::stop(){
@@ -142,37 +262,63 @@ void EpollDaemon::stop(){
 	if(g_thread.joinable()){
 		g_thread.join();
 	}
-	g_epoll->clear();
-	g_servers.clear();
-}
-
-boost::uint64_t EpollDaemon::get_tcp_request_timeout(){
-	return g_tcp_request_timeout;
+	g_socket_map.clear();
+	g_epoll.reset();
 }
 
 std::vector<EpollDaemon::SnapshotElement> EpollDaemon::snapshot(){
-	std::vector<boost::shared_ptr<TcpSessionBase> > sessions;
-	g_epoll->snapshot(sessions);
+	PROFILE_ME;
 
-	std::vector<SnapshotElement> ret;
+	std::vector<EpollDaemon::SnapshotElement> snapshot;
 	const AUTO(now, get_fast_mono_clock());
-	for(AUTO(it, sessions.begin()); it != sessions.end(); ++it){
-		const AUTO_REF(session, *it);
-		ret.push_back(SnapshotElement());
-		AUTO_REF(item, ret.back());
-		item.remote = session->get_remote_info_nothrow();
-		item.local = session->get_local_info_nothrow();
-		item.ms_online = saturated_sub(now, session->get_created_time());
+	const RecursiveMutex::UniqueLock lock(g_mutex);
+	snapshot.reserve(g_socket_map.size());
+	for(AUTO(it, g_socket_map.begin()); it != g_socket_map.end(); ++it){
+		SnapshotElement elem;
+		elem.remote = it->socket->get_remote_info();
+		elem.local = it->socket->get_local_info();
+		elem.ms_online = saturated_sub(now, it->socket->get_creation_time());
+		snapshot.push_back(STD_MOVE(elem));
 	}
-	return ret;
+	return snapshot;
 }
+void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket){
+	PROFILE_ME;
 
-void EpollDaemon::add_session(const boost::shared_ptr<TcpSessionBase> &session){
-	g_epoll->add_session(session);
+	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const AUTO(result, g_socket_map.insert(SocketElement(socket)));
+	if(!result.second){
+		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket,
+			", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
+		DEBUG_THROW(Exception, sslit("Socket is already in epoll"));
+	}
+	try {
+		::epoll_event event = { };
+		event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
+		event.data.fd = socket->get_fd();
+		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, socket->get_fd(), &event) != 0){
+			const int err_code = errno;
+			LOG_POSEIDON_ERROR("::epoll_ctl() failed, errno was ", err_code, ": socket = ", socket,
+				", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
+			DEBUG_THROW(SystemException, err_code);
+		}
+	} catch(...){
+		g_socket_map.erase(result.first);
+		throw;
+	}
 }
-void EpollDaemon::register_server(boost::weak_ptr<const SocketServerBase> server){
-	const Mutex::UniqueLock lock(g_server_mutex);
-	g_servers.push_back(STD_MOVE(server));
+bool EpollDaemon::mark_socket_writeable(int fd) NOEXCEPT {
+	PROFILE_ME;
+
+	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const AUTO(it, g_socket_map.find<0>(fd));
+	if(it == g_socket_map.end()){
+		LOG_POSEIDON_DEBUG("Socket not found in epoll: fd = ", fd);
+		return false;
+	}
+	const AUTO(now, get_fast_mono_clock());
+	g_socket_map.set_key<0, 2>(it, now);
+	return true;
 }
 
 }

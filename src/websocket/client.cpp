@@ -56,17 +56,14 @@ namespace WebSocket {
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 				client->shutdown(e.get_status_code(), e.what());
-				throw;
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: what = ", e.what());
 				client->shutdown(ST_INTERNAL_ERROR, e.what());
-				throw;
 			} catch(...){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Unknown exception thrown.");
 				client->force_shutdown();
-				throw;
 			}
 		}
 

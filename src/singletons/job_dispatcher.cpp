@@ -308,16 +308,23 @@ void JobDispatcher::do_modal(){
 		std::abort();
 	}
 
+	unsigned timeout = 1;
 	for(;;){
-		while(really_pump_jobs()){
-			// noop
-		}
+		bool busy;
+		do {
+			busy = really_pump_jobs();
+		} while(busy);
 
 		Mutex::UniqueLock lock(g_fiber_map_mutex);
 		if(!atomic_load(g_running, ATOMIC_CONSUME)){
 			break;
 		}
-		g_new_job.timed_wait(lock, 20);
+		if(busy){
+			timeout = 1;
+		} else {
+			timeout = std::min<unsigned>(timeout << 1, 100);
+		}
+		g_new_job.timed_wait(lock, timeout);
 	}
 }
 bool JobDispatcher::is_running(){

@@ -4,42 +4,35 @@
 #ifndef POSEIDON_IP_PORT_HPP_
 #define POSEIDON_IP_PORT_HPP_
 
-#include "cxx_ver.hpp"
-#include <iosfwd>
-#include <string>
-#include <utility>
-#include "shared_nts.hpp"
+#include <cstddef>
 
 namespace Poseidon {
 
-struct IpPort {
-	SharedNts ip;
-	unsigned port;
+class SockAddr;
 
-	IpPort()
-		: ip(), port()
-	{
-	}
-	IpPort(SharedNts ip_, unsigned port_)
-		: ip(STD_MOVE(ip_)), port(port_)
-	{
-	}
+class IpPort {
+private:
+	char m_ip[128];
+	unsigned m_port;
 
-	void swap(IpPort &rhs) NOEXCEPT {
-		using std::swap;
-		swap(ip, rhs.ip);
-		swap(port, rhs.port);
+public:
+	IpPort();
+	IpPort(const char *ip, unsigned port);
+
+public:
+	const char *get_ip() const {
+		return m_ip;
+	}
+	unsigned get_port() const {
+		return m_port;
 	}
 };
 
-inline void swap(IpPort &lhs, IpPort &rhs) NOEXCEPT {
-	lhs.swap(rhs);
-}
+extern const IpPort &unknown_ip_port() NOEXCEPT;
 
 extern std::ostream &operator<<(std::ostream &os, const IpPort &rhs);
 
-extern IpPort get_remote_ip_port_from_fd(int fd);
-extern IpPort get_local_ip_port_from_fd(int fd);
+extern IpPort get_ip_port_from_sock_addr(const SockAddr &sa);
 
 }
 

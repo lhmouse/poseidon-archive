@@ -21,7 +21,6 @@ public:
 protected:
 	virtual void on_read_hup() NOEXCEPT = 0;
 	virtual void on_close(int err_code) NOEXCEPT = 0;
-
 	// 有数据可读触发回调，size 始终不为零。
 	virtual void on_receive(StreamBuffer data) = 0;
 

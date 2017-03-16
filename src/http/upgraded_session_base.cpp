@@ -67,33 +67,19 @@ namespace Http {
 		parent->TcpSessionBase::force_shutdown();
 	}
 
-	const IpPort &UpgradedSessionBase::get_remote_info() const {
-		PROFILE_ME;
-
-		return get_safe_parent()->get_remote_info();
-	}
-	const IpPort &UpgradedSessionBase::get_local_info() const {
-		PROFILE_ME;
-
-		return get_safe_parent()->get_remote_info();
-	}
-	IpPort UpgradedSessionBase::get_remote_info_nothrow() const NOEXCEPT
+	const IpPort &UpgradedSessionBase::get_remote_info() const NOEXCEPT
 	try {
-		PROFILE_ME;
-
-		return get_remote_info();
+		return get_safe_parent()->get_remote_info();
 	} catch(std::exception &e){
 		LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
-		return IpPort(sslit("<unknown>"), 0);
+		return unknown_ip_port();
 	}
-	IpPort UpgradedSessionBase::get_local_info_nothrow() const NOEXCEPT
+	const IpPort &UpgradedSessionBase::get_local_info() const NOEXCEPT
 	try {
-		PROFILE_ME;
-
-		return get_local_info();
+		return get_safe_parent()->get_remote_info();
 	} catch(std::exception &e){
 		LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
-		return IpPort(sslit("<unknown>"), 0);
+		return unknown_ip_port();
 	}
 
 	void UpgradedSessionBase::set_timeout(boost::uint64_t timeout){

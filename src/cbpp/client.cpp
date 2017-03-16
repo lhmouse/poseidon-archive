@@ -55,17 +55,14 @@ namespace Cbpp {
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 				client->force_shutdown();
-				throw;
 			} catch(std::exception &e){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"std::exception thrown: what = ", e.what());
 				client->force_shutdown();
-				throw;
 			} catch(...){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 					"Unknown exception thrown.");
 				client->force_shutdown();
-				throw;
 			}
 		}
 

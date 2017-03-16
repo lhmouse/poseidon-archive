@@ -33,7 +33,7 @@ namespace {
 		case SSL_ERROR_WANT_WRITE:
 		case SSL_ERROR_WANT_CONNECT:
 		case SSL_ERROR_WANT_ACCEPT:
-			errno = EAGAIN;
+			errno = EWOULDBLOCK;
 			break;
 		case SSL_ERROR_SYSCALL:
 			break;
@@ -59,7 +59,7 @@ SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
 SslFilterBase::~SslFilterBase(){
 }
 
-long SslFilterBase::read(void *data, unsigned long size){
+long SslFilterBase::recv(void *data, unsigned long size){
 	const Mutex::UniqueLock lock(m_mutex);
 	dump_error_queue();
 	int ret;
@@ -72,7 +72,7 @@ long SslFilterBase::read(void *data, unsigned long size){
 	}
 	return ret;
 }
-long SslFilterBase::write(const void *data, unsigned long size){
+long SslFilterBase::send(const void *data, unsigned long size){
 	const Mutex::UniqueLock lock(m_mutex);
 	dump_error_queue();
 	int ret;

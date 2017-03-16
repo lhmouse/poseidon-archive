@@ -419,6 +419,7 @@ namespace {
 
 			boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
 
+			unsigned timeout = 1;
 			for(;;){
 				while(!master_conn){
 					LOG_POSEIDON_INFO("Connecting to MongoDB master server...");
@@ -466,10 +467,16 @@ namespace {
 				}
 
 				Mutex::UniqueLock lock(m_mutex);
-				if(!atomic_load(m_running, ATOMIC_CONSUME) && m_queue.empty()){
+				bool busy = !m_queue.empty();
+				if(!busy && !atomic_load(m_running, ATOMIC_CONSUME)){
 					break;
 				}
-				m_new_operation.timed_wait(lock, 100);
+				if(busy){
+					timeout = 1;
+				} else {
+					timeout = std::min<unsigned>(timeout << 1, 100);
+				}
+				m_new_operation.timed_wait(lock, timeout);
 			}
 
 			atomic_store(m_alive, false, ATOMIC_RELEASE);

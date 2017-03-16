@@ -10,8 +10,7 @@
 
 namespace Poseidon {
 
-class TcpSessionBase;
-class SocketServerBase;
+class SocketBase;
 
 class EpollDaemon {
 private:
@@ -27,12 +26,9 @@ public:
 	static void start();
 	static void stop();
 
-	static boost::uint64_t get_tcp_request_timeout();
-
 	static std::vector<SnapshotElement> snapshot();
-
-	static void add_session(const boost::shared_ptr<TcpSessionBase> &session);
-	static void register_server(boost::weak_ptr<const SocketServerBase> server);
+	static void add_socket(const boost::shared_ptr<SocketBase> &socket);
+	static bool mark_socket_writeable(int fd) NOEXCEPT;
 };
 
 }

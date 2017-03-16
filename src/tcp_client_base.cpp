@@ -3,7 +3,6 @@
 
 #include "precompiled.hpp"
 #include "tcp_client_base.hpp"
-#include "tcp_session_base.hpp"
 #include "ssl_factories.hpp"
 #include "ssl_filter_base.hpp"
 #include "sock_addr.hpp"
@@ -11,11 +10,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <errno.h>
 #include <openssl/ssl.h>
 #include "singletons/epoll_daemon.hpp"
-#include "system_exception.hpp"
 #include "log.hpp"
+#include "system_exception.hpp"
+#include "profiler.hpp"
 
 namespace Poseidon {
 
@@ -29,37 +28,34 @@ namespace {
 		}
 	};
 
-	UniqueFile create_socket(int family){
-		UniqueFile client(::socket(family, SOCK_STREAM, IPPROTO_TCP));
-		if(!client){
+	UniqueFile create_tcp_socket(int family){
+		UniqueFile tcp;
+		if(!tcp.reset(::socket(family, SOCK_STREAM, IPPROTO_TCP))){
 			DEBUG_THROW(SystemException);
 		}
-		return client;
+		return tcp;
 	}
 }
 
 TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_peer)
-	: SockAddr(addr), TcpSessionBase(create_socket(SockAddr::get_family()))
+	: TcpSessionBase(create_tcp_socket(addr.get_family()))
 {
-	real_connect(use_ssl, verify_peer);
+	init_connect(addr, use_ssl, verify_peer);
 }
 TcpClientBase::TcpClientBase(const IpPort &addr, bool use_ssl, bool verify_peer)
-	: SockAddr(get_sock_addr_from_ip_port(addr)), TcpSessionBase(create_socket(SockAddr::get_family()))
+	: TcpSessionBase(create_tcp_socket(get_sock_addr_from_ip_port(addr).get_family())) // XXX: Get addr family from IP directly?
 {
-	real_connect(use_ssl, verify_peer);
+	init_connect(get_sock_addr_from_ip_port(addr), use_ssl, verify_peer);
 }
 TcpClientBase::~TcpClientBase(){
 }
 
-void TcpClientBase::real_connect(bool use_ssl, bool verify_peer){
-	if(::connect(m_socket.get(), static_cast<const ::sockaddr *>(SockAddr::get_data()), SockAddr::get_size()) != 0){
-		if(errno != EINPROGRESS){
-			DEBUG_THROW(SystemException);
-		}
+void TcpClientBase::init_connect(const SockAddr &addr, bool use_ssl, bool verify_peer){
+	if((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.get_data()), addr.get_size()) != 0) && (errno != EINPROGRESS)){
+		DEBUG_THROW(SystemException);
 	}
 	if(use_ssl){
 		LOG_POSEIDON_INFO("Initiating SSL handshake...");
-
 		m_ssl_factory.reset(new ClientSslFactory(verify_peer));
 		AUTO(ssl, m_ssl_factory->create_ssl());
 		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), get_fd()));
@@ -68,7 +64,7 @@ void TcpClientBase::real_connect(bool use_ssl, bool verify_peer){
 }
 
 void TcpClientBase::go_resident(){
-	EpollDaemon::add_session(virtual_shared_from_this<TcpSessionBase>());
+	EpollDaemon::add_socket(virtual_shared_from_this<SocketBase>());
 }
 
 }

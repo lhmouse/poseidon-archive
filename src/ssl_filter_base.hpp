@@ -27,8 +27,8 @@ public:
 		return m_ssl.get();
 	}
 
-	long read(void *data, unsigned long size);
-	long write(const void *data, unsigned long size);
+	long recv(void *data, unsigned long size);
+	long send(const void *data, unsigned long size);
 	void send_fin() NOEXCEPT;
 };
 

@@ -5,16 +5,12 @@
 #define POSEIDON_TCP_CLIENT_BASE_HPP_
 
 #include "tcp_session_base.hpp"
-#include <string>
-#include <boost/scoped_ptr.hpp>
-#include "sock_addr.hpp"
 
 namespace Poseidon {
 
 class ClientSslFactory;
-class IpPort;
 
-class TcpClientBase : protected SockAddr, public TcpSessionBase {
+class TcpClientBase : public TcpSessionBase {
 private:
 	boost::scoped_ptr<ClientSslFactory> m_ssl_factory;
 
@@ -24,10 +20,7 @@ protected:
 	~TcpClientBase();
 
 private:
-	void real_connect(bool use_ssl, bool verify_peer);
-
-protected:
-	void on_receive(StreamBuffer data) OVERRIDE = 0;
+	void init_connect(const SockAddr &addr, bool use_ssl, bool verify_peer);
 
 public:
 	void go_resident();

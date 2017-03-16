@@ -134,17 +134,23 @@ namespace {
 	void daemon_loop(){
 		PROFILE_ME;
 
+		unsigned timeout = 1;
 		for(;;){
-			while(pump_one_element()){
-				// noop
-			}
-
-			if(!atomic_load(g_running, ATOMIC_CONSUME)){
-				break;
-			}
+			bool busy;
+			do {
+				busy = pump_one_element();
+			} while(busy);
 
 			Mutex::UniqueLock lock(g_mutex);
-			g_new_timer.timed_wait(lock, 100);
+			if(!busy && !atomic_load(g_running, ATOMIC_CONSUME)){
+				break;
+			}
+			if(busy){
+				timeout = 1;
+			} else {
+				timeout = std::min<unsigned>(timeout << 1, 100);
+			}
+			g_new_timer.timed_wait(lock, timeout);
 		}
 	}
 
@@ -198,7 +204,7 @@ boost::shared_ptr<TimerItem> TimerDaemon::register_absolute_timer(
 boost::shared_ptr<TimerItem> TimerDaemon::register_timer(
 	boost::uint64_t first, boost::uint64_t period, TimerCallback callback)
 {
-	return register_absolute_timer(get_fast_mono_clock() + first, period, STD_MOVE(callback));
+	return register_absolute_timer(saturated_add(get_fast_mono_clock(), first), period, STD_MOVE(callback));
 }
 
 boost::shared_ptr<TimerItem> TimerDaemon::register_hourly_timer(
@@ -253,7 +259,7 @@ void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item, bo
 	g_new_timer.signal();
 }
 void TimerDaemon::set_time(const boost::shared_ptr<TimerItem> &item, boost::uint64_t first, boost::uint64_t period){
-	return set_absolute_time(item, get_fast_mono_clock() + first, period);
+	return set_absolute_time(item, saturated_add(get_fast_mono_clock(), first), period);
 }
 
 }

@@ -50,9 +50,8 @@ class JobPromise;
 template<typename>
 class JobPromiseContainer;
 
+class SocketBase;
 class SessionBase;
-class Epoll;
-class SocketServerBase;
 class TcpSessionBase;
 class TcpClientBase;
 class TcpServerBase;

@@ -442,17 +442,23 @@ namespace {
 	void daemon_loop(){
 		PROFILE_ME;
 
+		unsigned timeout = 1;
 		for(;;){
-			while(pump_one_element()){
-				// noop
-			}
-
-			if(!atomic_load(g_running, ATOMIC_CONSUME)){
-				break;
-			}
+			bool busy;
+			do {
+				busy = pump_one_element();
+			} while(busy);
 
 			Mutex::UniqueLock lock(g_mutex);
-			g_new_operation.timed_wait(lock, 100);
+			if(!busy && !atomic_load(g_running, ATOMIC_CONSUME)){
+				break;
+			}
+			if(busy){
+				timeout = 1;
+			} else {
+				timeout = std::min<unsigned>(timeout << 1, 200);
+			}
+			g_new_operation.timed_wait(lock, timeout);
 		}
 	}
 

@@ -12,12 +12,12 @@ class IpPort;
 
 class SockAddr {
 private:
-	char m_data[128];
+	unsigned char m_data[128];
 	unsigned m_size;
 
 public:
 	SockAddr();
-	SockAddr(const void *data, unsigned size);
+	SockAddr(const void *data, std::size_t size);
 
 public:
 	const void *get_data() const {
@@ -30,11 +30,9 @@ public:
 	int get_family() const;
 	// 如果是 IPv4 地址返回 false，如果是 IPv6 地址返回 true，否则抛出一个异常。
 	bool is_ipv6() const;
-
 	bool is_private() const;
 };
 
-extern IpPort get_ip_port_from_sock_addr(const SockAddr &sa);
 extern SockAddr get_sock_addr_from_ip_port(const IpPort &addr);
 
 }

@@ -61,10 +61,8 @@ namespace Http {
 			return boost::shared_ptr<LowLevelSession>(m_parent);
 		}
 
-		const IpPort &get_remote_info() const;
-		const IpPort &get_local_info() const;
-		IpPort get_remote_info_nothrow() const NOEXCEPT;
-		IpPort get_local_info_nothrow() const NOEXCEPT;
+		const IpPort &get_remote_info() const NOEXCEPT;
+		const IpPort &get_local_info() const NOEXCEPT;
 
 		void set_timeout(boost::uint64_t timeout);
 	};

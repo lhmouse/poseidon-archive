@@ -78,12 +78,11 @@ namespace {
 			try
 #endif
 			{
-				START(SystemHttpServer);
 				START(ModuleDepository);
-
 				START(TimerDaemon);
 				START(EpollDaemon);
 				START(EventDispatcher);
+				START(SystemHttpServer);
 
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for daemon initialization to complete...");
 				::timespec req;
