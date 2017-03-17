@@ -67,7 +67,9 @@ namespace {
 				return false;
 			}
 		}
-		LOG_POSEIDON_TRACE("Number of readable sockets: ", iterators.size());
+		if(iterators.empty()){
+			return false;
+		}
 		for(AUTO(iit, iterators.begin()); iit != iterators.end(); ++iit){
 			const AUTO(it, *iit);
 			if(it->socket->is_throttled()){
@@ -103,7 +105,7 @@ namespace {
 				continue;
 			}
 		}
-		return !iterators.empty();
+		return true;
 	}
 
 	bool pump_writeable_sockets() NOEXCEPT {
@@ -124,7 +126,9 @@ namespace {
 				return false;
 			}
 		}
-		LOG_POSEIDON_TRACE("Number of writeable sockets: ", iterators.size());
+		if(iterators.empty()){
+			return false;
+		}
 		for(AUTO(iit, iterators.begin()); iit != iterators.end(); ++iit){
 			const AUTO(it, *iit);
 			try {
@@ -154,10 +158,10 @@ namespace {
 				continue;
 			}
 		}
-		return !iterators.empty();
+		return true;
 	}
 
-	void wait_for_sockets(unsigned timeout) NOEXCEPT {
+	bool wait_for_sockets(unsigned timeout) NOEXCEPT {
 		PROFILE_ME;
 
 		::epoll_event events[256];
@@ -167,43 +171,46 @@ namespace {
 			if(err_code != EINTR){
 				LOG_POSEIDON_ERROR("::epoll_wait() failed! errno was ", err_code);
 			}
-			return;
+			return false;
 		}
-		const std::size_t count = static_cast<unsigned>(result);
-		if(count != 0){
-			const AUTO(now, Poseidon::get_fast_mono_clock());
-			const RecursiveMutex::UniqueLock lock(g_mutex);
-			for(std::size_t i = 0; i < count; ++i){
-				const AUTO(it, g_socket_map.find<0>(events[i].data.fd));
-				if(it == g_socket_map.end()){
-					LOG_POSEIDON_WARNING("Socket reported by epoll is not registered: fd = ", events[i].data.fd);
-					continue;
-				}
-				if(events[i].events & (EPOLLHUP | EPOLLERR)){
-					int err_code;
-					if(it->socket->was_timed_out()){
-						err_code = ETIMEDOUT;
-					} else {
-						::socklen_t err_len = sizeof(err_code);
-						if(::getsockopt(it->socket->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
-							err_code = errno;
-							LOG_POSEIDON_WARNING("::getsockopt() failed, errno was ", err_code, ": fd = ", it->socket->get_fd());
-						}
+		if(result == 0){
+			return false;
+		}
+		const AUTO(now, Poseidon::get_fast_mono_clock());
+		const RecursiveMutex::UniqueLock lock(g_mutex);
+		for(unsigned i = 0; i < (unsigned)result; ++i){
+			const AUTO(it, g_socket_map.find<0>(events[i].data.fd));
+			if(it == g_socket_map.end()){
+				LOG_POSEIDON_DEBUG("Socket reported by epoll is not registered: fd = ", events[i].data.fd);
+				continue;
+			}
+			if(events[i].events & (EPOLLHUP | EPOLLERR)){
+				int err_code;
+				if(it->socket->was_timed_out()){
+					err_code = ETIMEDOUT;
+				} else if(events[i].events & EPOLLERR){
+					::socklen_t err_len = sizeof(err_code);
+					if(::getsockopt(it->socket->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
+						err_code = errno;
+						LOG_POSEIDON_WARNING("::getsockopt() failed, errno was ", err_code, ": fd = ", it->socket->get_fd());
 					}
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-						"Socket closed: err_code = ", err_code, ", desc = ", get_error_desc(err_code), ", typeid = ", typeid(*(it->socket)).name());
-					it->socket->on_close(err_code);
-					g_socket_map.erase<0>(it);
-					continue;
+				} else {
+					err_code = 0;
 				}
-				if(events[i].events & EPOLLIN){
-					g_socket_map.set_key<0, 1>(it, now);
-				}
-				if(events[i].events & EPOLLOUT){
-					g_socket_map.set_key<0, 2>(it, now);
-				}
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+					"Socket closed: err_code = ", err_code, ", desc = ", get_error_desc(err_code), ", typeid = ", typeid(*(it->socket)).name());
+				it->socket->on_close(err_code);
+				g_socket_map.erase<0>(it);
+				continue;
+			}
+			if(events[i].events & EPOLLIN){
+				g_socket_map.set_key<0, 1>(it, now);
+			}
+			if(events[i].events & EPOLLOUT){
+				g_socket_map.set_key<0, 2>(it, now);
 			}
 		}
+		return true;
 	}
 
 	void daemon_loop(){
@@ -213,7 +220,8 @@ namespace {
 		for(;;){
 			bool busy;
 			do {
-				busy = JobDispatcher::is_running() && pump_readable_sockets();
+				busy = wait_for_sockets(0);
+				busy += JobDispatcher::is_running() && pump_readable_sockets();
 				busy += pump_writeable_sockets();
 			} while(busy);
 
