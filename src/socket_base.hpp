@@ -6,6 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
+#include <boost/cstdint.hpp>
 #include "virtual_shared_from_this.hpp"
 #include "raii.hpp"
 #include "mutex.hpp"
