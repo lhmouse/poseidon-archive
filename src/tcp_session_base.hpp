@@ -8,6 +8,7 @@
 #include "cxx_util.hpp"
 #include "socket_base.hpp"
 #include "session_base.hpp"
+#include <boost/scoped_ptr.hpp>
 
 namespace Poseidon {
 
