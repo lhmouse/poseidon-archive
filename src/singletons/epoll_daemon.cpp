@@ -34,9 +34,13 @@ namespace {
 		boost::uint64_t read_time;
 		boost::uint64_t write_time;
 
+		mutable bool readable;
+		mutable bool writeable;
+
 		explicit SocketElement(boost::shared_ptr<SocketBase> socket_)
 			: socket(STD_MOVE_IDN(socket_))
 			, fd(socket->get_fd()), read_time((boost::uint64_t)-1), write_time((boost::uint64_t)-1)
+			, readable(false), writeable(false)
 		{
 		}
 	};
@@ -45,6 +49,7 @@ namespace {
 		MULTI_MEMBER_INDEX(read_time)
 		MULTI_MEMBER_INDEX(write_time)
 	)
+
 	RecursiveMutex g_mutex;
 	UniqueFile g_epoll;
 	SocketMap g_socket_map;
@@ -80,7 +85,7 @@ namespace {
 				continue;
 			}
 			try {
-				const int err_code = it->socket->poll_read_and_process();
+				const int err_code = it->socket->poll_read_and_process(it->readable);
 				if((err_code != 0) && (err_code != EINTR)){
 					if(err_code == EWOULDBLOCK){
 						const RecursiveMutex::UniqueLock lock(g_mutex);
@@ -133,7 +138,7 @@ namespace {
 			const AUTO(it, *iit);
 			try {
 				Mutex::UniqueLock session_lock;
-				const int err_code = it->socket->poll_write(session_lock);
+				const int err_code = it->socket->poll_write(session_lock, it->writeable);
 				if((err_code != 0) && (err_code != EINTR)){
 					if(err_code == EWOULDBLOCK){
 						const RecursiveMutex::UniqueLock lock(g_mutex);
@@ -204,9 +209,11 @@ namespace {
 				continue;
 			}
 			if(events[i].events & EPOLLIN){
+				it->readable = true;
 				g_socket_map.set_key<0, 1>(it, now);
 			}
 			if(events[i].events & EPOLLOUT){
+				it->writeable = true;
 				g_socket_map.set_key<0, 2>(it, now);
 			}
 		}

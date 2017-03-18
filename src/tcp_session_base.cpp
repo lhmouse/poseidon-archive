@@ -50,8 +50,10 @@ void TcpSessionBase::init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter
 	swap(m_ssl_filter, ssl_filter);
 }
 
-int TcpSessionBase::poll_read_and_process(){
+int TcpSessionBase::poll_read_and_process(bool readable){
 	PROFILE_ME;
+
+	(void)readable;
 
 	bool read_hup;
 	std::string data;
@@ -106,13 +108,13 @@ int TcpSessionBase::poll_read_and_process(){
 	}
 	return 0;
 }
-int TcpSessionBase::poll_write(Mutex::UniqueLock &socket_lock){
+int TcpSessionBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
 	PROFILE_ME;
 
 	bool newly_connected;
 	std::string data;
 	try {
-		newly_connected = !atomic_load(m_connected, ATOMIC_CONSUME) && !atomic_exchange(m_connected, true, ATOMIC_ACQ_REL);
+		newly_connected = writeable && !atomic_load(m_connected, ATOMIC_CONSUME) && !atomic_exchange(m_connected, true, ATOMIC_ACQ_REL);
 		if(newly_connected && !m_connected_notified){
 			on_connect();
 			m_connected_notified = true;

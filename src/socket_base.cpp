@@ -158,11 +158,13 @@ try {
 	return unknown_ip_port();
 }
 
-int SocketBase::poll_read_and_process(){
+int SocketBase::poll_read_and_process(bool readable){
+	(void)readable;
 	return EWOULDBLOCK;
 }
-int SocketBase::poll_write(Mutex::UniqueLock &socket_lock){
+int SocketBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
 	(void)socket_lock;
+	(void)writeable;
 	return EWOULDBLOCK;
 }
 void SocketBase::on_close(int err_code) NOEXCEPT {

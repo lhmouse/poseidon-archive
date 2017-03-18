@@ -44,8 +44,8 @@ protected:
 	void init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter);
 
 	// 注意，只能在 epoll 线程中调用这些函数。
-	int poll_read_and_process() OVERRIDE;
-	int poll_write(Mutex::UniqueLock &socket_lock) OVERRIDE;
+	int poll_read_and_process(bool readable) OVERRIDE;
+	int poll_write(Mutex::UniqueLock &socket_lock, bool writeable) OVERRIDE;
 
 	virtual void on_connect();
 	void on_read_hup() NOEXCEPT OVERRIDE;

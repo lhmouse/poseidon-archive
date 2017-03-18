@@ -32,7 +32,7 @@ protected:
 	virtual boost::shared_ptr<TcpSessionBase> on_client_connect(UniqueFile client) const = 0;
 
 public:
-	int poll_read_and_process() OVERRIDE;
+	int poll_read_and_process(bool readable) OVERRIDE;
 };
 
 }

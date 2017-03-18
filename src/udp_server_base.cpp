@@ -48,8 +48,10 @@ UdpServerBase::~UdpServerBase(){
 		"Destroyed UDP server on ", get_local_info());
 }
 
-int UdpServerBase::poll_read_and_process(){
+int UdpServerBase::poll_read_and_process(bool readable){
 	PROFILE_ME;
+
+	(void)readable;
 
 	SockAddr sock_addr;
 	std::string data;
@@ -82,8 +84,10 @@ int UdpServerBase::poll_read_and_process(){
 	}
 	return 0;
 }
-int UdpServerBase::poll_write(Mutex::UniqueLock &socket_lock){
+int UdpServerBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
 	PROFILE_ME;
+
+	(void)writeable;
 
 	SockAddr sock_addr;
 	std::string data;

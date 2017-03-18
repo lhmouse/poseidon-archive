@@ -78,8 +78,10 @@ void TcpServerBase::init_ssl_factory(const char *cert, const char *private_key){
 	m_ssl_factory.reset(new ServerSslFactory(cert, private_key));
 }
 
-int TcpServerBase::poll_read_and_process(){
+int TcpServerBase::poll_read_and_process(bool readable){
 	PROFILE_ME;
+
+	(void)readable;
 
 	for(unsigned i = 0; i < 16; ++i){
 		boost::shared_ptr<TcpSessionBase> session;
