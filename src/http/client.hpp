@@ -20,7 +20,7 @@ namespace Http {
 		ResponseHeaders m_response_headers;
 		StreamBuffer m_entity;
 
-	protected:
+	public:
 		Client(const SockAddr &addr, bool use_ssl, bool verify_peer);
 		Client(const IpPort &addr, bool use_ssl, bool verify_peer);
 		~Client();

@@ -17,17 +17,19 @@ namespace WebSocket {
 		class ControlMessageJob;
 
 	private:
-		const boost::uint64_t m_max_request_length;
-
+		volatile boost::uint64_t m_max_request_length;
 		boost::uint64_t m_size_total;
 		OpCode m_opcode;
 		StreamBuffer m_payload;
 
 	public:
-		explicit Session(const boost::shared_ptr<Http::LowLevelSession> &parent, boost::uint64_t max_request_length = 0);
+		explicit Session(const boost::shared_ptr<Http::LowLevelSession> &parent);
 		~Session();
 
 	protected:
+		boost::uint64_t get_max_request_length() const;
+		void set_max_request_length(boost::uint64_t max_request_length);
+
 		boost::uint64_t get_low_level_size_total() const {
 			return m_size_total;
 		}

@@ -6,24 +6,12 @@
 #include "exception.hpp"
 #include "../http/low_level_client.hpp"
 #include "../optional_map.hpp"
-#include "../singletons/main_config.hpp"
 #include "../singletons/job_dispatcher.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 
 namespace Poseidon {
-
-namespace {
-	boost::uint64_t get_keep_alive_interval(){
-		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
-		AUTO(keep_alive_interval, keep_alive_timeout / 2);
-		if(keep_alive_interval < 1){
-			keep_alive_interval = 1;
-		}
-		return keep_alive_interval;
-	}
-}
 
 namespace WebSocket {
 	class Client::SyncJobBase : public JobBase {
@@ -129,7 +117,7 @@ namespace WebSocket {
 	};
 
 	Client::Client(const boost::shared_ptr<Http::LowLevelClient> &parent)
-		: LowLevelClient(parent, get_keep_alive_interval())
+		: LowLevelClient(parent)
 	{
 	}
 	Client::~Client(){

@@ -207,11 +207,12 @@ void TcpSessionBase::set_no_delay(bool enabled){
 void TcpSessionBase::set_timeout(boost::uint64_t timeout){
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_shutdown_mutex);
 	if(timeout == 0){
+		const Mutex::UniqueLock lock(m_shutdown_mutex);
 		m_shutdown_timer.reset();
 	} else {
 		const AUTO(now, get_fast_mono_clock());
+		const Mutex::UniqueLock lock(m_shutdown_mutex);
 		if(!m_shutdown_timer){
 			m_shutdown_timer = TimerDaemon::register_low_level_absolute_timer(now + 5000, 5000,
 				boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));

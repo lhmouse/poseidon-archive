@@ -14,7 +14,7 @@ class TcpClientBase : public TcpSessionBase {
 private:
 	boost::scoped_ptr<ClientSslFactory> m_ssl_factory;
 
-protected:
+public:
 	TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_peer);
 	TcpClientBase(const IpPort &addr, bool use_ssl, bool verify_peer);
 	~TcpClientBase();

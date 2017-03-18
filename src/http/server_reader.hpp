@@ -51,7 +51,7 @@ namespace Http {
 		boost::uint64_t m_chunk_offset;
 		OptionalMap m_chunked_trailer;
 
-	protected:
+	public:
 		ServerReader();
 		virtual ~ServerReader();
 

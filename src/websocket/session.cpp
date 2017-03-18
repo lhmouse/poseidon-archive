@@ -11,6 +11,7 @@
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
+#include "../atomic.hpp"
 
 namespace Poseidon {
 
@@ -123,14 +124,20 @@ namespace WebSocket {
 		}
 	};
 
-	Session::Session(const boost::shared_ptr<Http::LowLevelSession> &parent, boost::uint64_t max_request_length)
+	Session::Session(const boost::shared_ptr<Http::LowLevelSession> &parent)
 		: LowLevelSession(parent)
-		, m_max_request_length(max_request_length ? max_request_length
-		                                          : MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
+		, m_max_request_length(MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
 		, m_size_total(0), m_opcode(OP_INVALID)
 	{
 	}
 	Session::~Session(){
+	}
+
+	boost::uint64_t Session::get_max_request_length() const {
+		return atomic_load(m_max_request_length, ATOMIC_CONSUME);
+	}
+	void Session::set_max_request_length(boost::uint64_t max_request_length){
+		atomic_store(m_max_request_length, max_request_length, ATOMIC_RELEASE);
 	}
 
 	void Session::on_read_hup() NOEXCEPT
@@ -155,7 +162,7 @@ namespace WebSocket {
 		PROFILE_ME;
 
 		m_size_total += data.size();
-		if(m_size_total > m_max_request_length){
+		if(m_size_total > get_max_request_length()){
 			DEBUG_THROW(Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
 		}
 

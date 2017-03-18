@@ -5,6 +5,7 @@
 #define POSEIDON_WEBSOCKET_LOW_LEVEL_CLIENT_HPP_
 
 #include "../http/upgraded_client_base.hpp"
+#include "../mutex.hpp"
 #include "opcodes.hpp"
 #include "status_codes.hpp"
 #include "reader.hpp"
@@ -20,14 +21,16 @@ namespace WebSocket {
 		static void keep_alive_timer_proc(const boost::weak_ptr<LowLevelClient> &weak_client, boost::uint64_t now, boost::uint64_t period);
 
 	private:
-		const boost::uint64_t m_keep_alive_interval;
-
+		mutable Mutex m_keep_alive_mutex;
 		boost::shared_ptr<TimerItem> m_keep_alive_timer;
 		boost::uint64_t m_last_pong_time;
 
 	public:
-		LowLevelClient(const boost::shared_ptr<Http::LowLevelClient> &parent, boost::uint64_t keep_alive_interval);
+		explicit LowLevelClient(const boost::shared_ptr<Http::LowLevelClient> &parent);
 		~LowLevelClient();
+
+	private:
+		void create_keep_alive_timer(boost::uint64_t period);
 
 	protected:
 		// UpgradedSessionBase

@@ -21,7 +21,7 @@ namespace Cbpp {
 		unsigned m_message_id;
 		StreamBuffer m_payload;
 
-	protected:
+	public:
 		Client(const SockAddr &addr, bool use_ssl, bool verify_peer);
 		Client(const IpPort &addr, bool use_ssl, bool verify_peer);
 		~Client();

@@ -18,17 +18,19 @@ namespace Http {
 		class ErrorJob;
 
 	private:
-		const boost::uint64_t m_max_request_length;
-
+		volatile boost::uint64_t m_max_request_length;
 		boost::uint64_t m_size_total;
 		RequestHeaders m_request_headers;
 		StreamBuffer m_entity;
 
 	public:
-		explicit Session(UniqueFile socket, boost::uint64_t max_request_length = 0);
+		explicit Session(UniqueFile socket);
 		~Session();
 
 	protected:
+		boost::uint64_t get_max_request_length() const;
+		void set_max_request_length(boost::uint64_t max_request_length);
+
 		boost::uint64_t get_low_level_size_total() const {
 			return m_size_total;
 		}

@@ -5,6 +5,7 @@
 #define POSEIDON_HTTP_LOW_LEVEL_CLIENT_HPP_
 
 #include "../tcp_client_base.hpp"
+#include "../mutex.hpp"
 #include "client_reader.hpp"
 #include "client_writer.hpp"
 #include "request_headers.hpp"
@@ -24,7 +25,7 @@ namespace Http {
 		mutable Mutex m_upgraded_client_mutex;
 		boost::shared_ptr<UpgradedClientBase> m_upgraded_client;
 
-	protected:
+	public:
 		LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer);
 		LowLevelClient(const IpPort &addr, bool use_ssl, bool verify_peer);
 		~LowLevelClient();
