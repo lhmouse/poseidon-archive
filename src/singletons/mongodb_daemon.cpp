@@ -590,7 +590,7 @@ namespace {
 					}
 				}
 				if((g_master_addr == g_slave_addr) && (g_master_port == g_slave_port)){
-					LOG_POSEIDON_TRACE("Reusing the master connection as the slave connection.");
+					// LOG_POSEIDON_TRACE("Reusing the master connection as the slave connection.");
 					slave_conn = master_conn;
 				}
 				while(!slave_conn){
