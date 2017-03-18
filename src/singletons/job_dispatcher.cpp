@@ -313,7 +313,7 @@ void JobDispatcher::do_modal(){
 		bool busy;
 		do {
 			busy = really_pump_jobs();
-			timeout = std::min(timeout * 2u + 1u, busy * 100u);
+			timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 		} while(busy);
 
 		Mutex::UniqueLock lock(g_fiber_map_mutex);

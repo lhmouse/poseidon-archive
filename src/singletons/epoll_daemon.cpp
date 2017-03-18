@@ -224,7 +224,7 @@ namespace {
 				busy = wait_for_sockets(0);
 				busy += JobDispatcher::is_running() && pump_readable_sockets();
 				busy += pump_writeable_sockets();
-				timeout = std::min(timeout * 2u + 1u, busy * 100u);
+				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 			} while(busy);
 
 			if(!atomic_load(g_running, ATOMIC_CONSUME)){

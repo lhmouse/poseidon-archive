@@ -610,7 +610,7 @@ namespace {
 				bool busy;
 				do {
 					busy = pump_one_operation(master_conn, slave_conn);
-					timeout = std::min<unsigned>(timeout * 2u + 1u, busy * 100u);
+					timeout = std::min<unsigned>(timeout * 2u + 1u, !busy * 100u);
 				} while(busy);
 
 				Mutex::UniqueLock lock(m_mutex);

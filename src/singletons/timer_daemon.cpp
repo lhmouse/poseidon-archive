@@ -140,7 +140,7 @@ namespace {
 			bool busy;
 			do {
 				busy = pump_one_element();
-				timeout = std::min(timeout * 2u + 1u, busy * 100u);
+				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 			} while(busy);
 
 			Mutex::UniqueLock lock(g_mutex);
