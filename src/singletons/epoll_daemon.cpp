@@ -74,7 +74,7 @@ namespace {
 			const AUTO(it, *iit);
 			if(it->socket->is_throttled()){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-					"Session is throttled: typeid = ", typeid(*socket).name());
+					"Session is throttled: typeid = ", typeid(*(it->socket)).name());
 				const RecursiveMutex::UniqueLock lock(g_mutex);
 				g_socket_map.set_key<1, 1>(it, now + 5000);
 				continue;
