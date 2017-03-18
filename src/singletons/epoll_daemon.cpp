@@ -213,35 +213,25 @@ namespace {
 		return true;
 	}
 
-	void daemon_loop(){
+	void thread_proc(){
 		PROFILE_ME;
+		LOG_POSEIDON_INFO("Epoll daemon started.");
 
-		unsigned timeout = 1;
+		unsigned timeout = 0;
 		for(;;){
 			bool busy;
 			do {
 				busy = wait_for_sockets(0);
 				busy += JobDispatcher::is_running() && pump_readable_sockets();
 				busy += pump_writeable_sockets();
+				timeout = std::min(timeout * 2u + 1u, busy * 100u);
 			} while(busy);
 
-			if(!busy && !atomic_load(g_running, ATOMIC_CONSUME)){
+			if(!atomic_load(g_running, ATOMIC_CONSUME)){
 				break;
-			}
-			if(busy){
-				timeout = 1;
-			} else {
-				timeout = std::min<unsigned>(timeout << 1, 200);
 			}
 			wait_for_sockets(timeout);
 		}
-	}
-
-	void thread_proc(){
-		PROFILE_ME;
-		LOG_POSEIDON_INFO("Epoll daemon started.");
-
-		daemon_loop();
 
 		LOG_POSEIDON_INFO("Epoll daemon stopped.");
 	}

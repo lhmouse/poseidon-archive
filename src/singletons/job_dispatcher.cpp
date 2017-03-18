@@ -26,9 +26,9 @@ namespace {
 	boost::uint64_t g_job_timeout = 60000;
 
 	enum FiberState {
-		FS_READY,
-		FS_RUNNING,
-		FS_YIELDED,
+		FS_READY   = 0,
+		FS_RUNNING = 1,
+		FS_YIELDED = 2,
 	};
 
 	struct JobElement {
@@ -308,21 +308,17 @@ void JobDispatcher::do_modal(){
 		std::abort();
 	}
 
-	unsigned timeout = 1;
+	unsigned timeout = 0;
 	for(;;){
 		bool busy;
 		do {
 			busy = really_pump_jobs();
+			timeout = std::min(timeout * 2u + 1u, busy * 100u);
 		} while(busy);
 
 		Mutex::UniqueLock lock(g_fiber_map_mutex);
 		if(!atomic_load(g_running, ATOMIC_CONSUME)){
 			break;
-		}
-		if(busy){
-			timeout = 1;
-		} else {
-			timeout = std::min<unsigned>(timeout << 1, 100);
 		}
 		g_new_job.timed_wait(lock, timeout);
 	}
@@ -370,23 +366,26 @@ void JobDispatcher::yield(const boost::shared_ptr<const JobPromise> &promise, bo
 		LOG_POSEIDON_FATAL("Not in current fiber?!");
 		std::abort();
 	}
-	AUTO_REF(elem, fiber->queue.front());
-	elem.promise = promise;
-	elem.expiry_time = now + g_job_timeout;
-	elem.insignificant = insignificant;
-
-	LOG_POSEIDON_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
-	const AUTO(profiler_hook, Profiler::begin_stack_switch());
-	{
-		fiber->state = FS_YIELDED;
-		if(::swapcontext(&(fiber->inner), &(fiber->outer)) != 0){
-			const int err_code = errno;
-			LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
-			std::abort();
+	if(promise && promise->is_satisfied()){
+		LOG_POSEIDON_TRACE("Skipped yielding from fiber ", static_cast<void *>(fiber));
+	} else {
+		LOG_POSEIDON_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
+		AUTO_REF(elem, fiber->queue.front());
+		elem.promise = promise;
+		elem.expiry_time = now + g_job_timeout;
+		elem.insignificant = insignificant;
+		const AUTO(profiler_hook, Profiler::begin_stack_switch());
+		{
+			fiber->state = FS_YIELDED;
+			if(::swapcontext(&(fiber->inner), &(fiber->outer)) != 0){
+				const int err_code = errno;
+				LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
+				std::abort();
+			}
 		}
+		Profiler::end_stack_switch(profiler_hook);
+		LOG_POSEIDON_TRACE("Resumed to fiber ", static_cast<void *>(fiber));
 	}
-	Profiler::end_stack_switch(profiler_hook);
-	LOG_POSEIDON_TRACE("Resumed to fiber ", static_cast<void *>(fiber));
 
 	if(promise){
 		promise->check_and_rethrow();

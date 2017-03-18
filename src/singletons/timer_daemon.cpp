@@ -131,34 +131,24 @@ namespace {
 		return true;
 	}
 
-	void daemon_loop(){
-		PROFILE_ME;
-
-		unsigned timeout = 1;
-		for(;;){
-			bool busy;
-			do {
-				busy = pump_one_element();
-			} while(busy);
-
-			Mutex::UniqueLock lock(g_mutex);
-			if(!busy && !atomic_load(g_running, ATOMIC_CONSUME)){
-				break;
-			}
-			if(busy){
-				timeout = 1;
-			} else {
-				timeout = std::min<unsigned>(timeout << 1, 100);
-			}
-			g_new_timer.timed_wait(lock, timeout);
-		}
-	}
-
 	void thread_proc(){
 		PROFILE_ME;
 		LOG_POSEIDON_INFO("Timer daemon started.");
 
-		daemon_loop();
+		unsigned timeout = 0;
+		for(;;){
+			bool busy;
+			do {
+				busy = pump_one_element();
+				timeout = std::min(timeout * 2u + 1u, busy * 100u);
+			} while(busy);
+
+			Mutex::UniqueLock lock(g_mutex);
+			if(!atomic_load(g_running, ATOMIC_CONSUME)){
+				break;
+			}
+			g_new_timer.timed_wait(lock, timeout);
+		}
 
 		LOG_POSEIDON_INFO("Timer daemon stopped.");
 	}
