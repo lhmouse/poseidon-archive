@@ -52,7 +52,7 @@ IpPort get_ip_port_from_sock_addr(const SockAddr &sa){
 		if(!str){
 			DEBUG_THROW(SystemException);
 		}
-		return IpPort(SharedNts(str), load_be(static_cast<const ::sockaddr_in *>(sa.data())->sin_port));
+		return IpPort(str, load_be(static_cast<const ::sockaddr_in *>(sa.data())->sin_port));
 	} else if(family == AF_INET6){
 		if(sa.size() < sizeof(::sockaddr_in6)){
 			LOG_POSEIDON_WARNING("Invalid IPv6 SockAddr: size = ", sa.size());
@@ -63,7 +63,7 @@ IpPort get_ip_port_from_sock_addr(const SockAddr &sa){
 		if(!str){
 			DEBUG_THROW(SystemException);
 		}
-		return IpPort(SharedNts(str), load_be(static_cast<const ::sockaddr_in6 *>(sa.data())->sin6_port));
+		return IpPort(str, load_be(static_cast<const ::sockaddr_in6 *>(sa.data())->sin6_port));
 	} else {
 		LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
