@@ -30,10 +30,12 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 
 	const Poseidon::Mutex::UniqueLock lock(session->m_send_mutex);
 	if(!session->m_send_buffer.empty()){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Send buffer is not empty. Retry later...");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+			"Shutdown pending: remote = ", session->get_remote_info(), ", send_buffer_size = ", session->m_send_buffer.size());
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection timed out: remote = ", session->get_remote_info());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+		"Connection timed out: remote = ", session->get_remote_info());
 	session->set_timed_out();
 	session->force_shutdown();
 }
