@@ -8,13 +8,13 @@
 #include "cxx_util.hpp"
 
 #if __GNUC__ * 100 + __GNUC_MINOR__ >= 407
-#   define GCC_HAS_ATOMIC_
+#   define GCC_HAS_ATOMIC_ 1
 #endif
 
 namespace Poseidon {
 
 enum MemModel {
-#if __GNUC__ * 100 + __GNUC_MINOR__ >= 407
+#ifdef GCC_HAS_ATOMIC_
 	ATOMIC_RELAXED = __ATOMIC_RELAXED,
 	ATOMIC_CONSUME = __ATOMIC_CONSUME,
 	ATOMIC_ACQUIRE = __ATOMIC_ACQUIRE,
