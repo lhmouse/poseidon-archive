@@ -51,7 +51,7 @@ TcpClientBase::~TcpClientBase(){
 }
 
 void TcpClientBase::init_connect(const SockAddr &addr, bool use_ssl, bool verify_peer){
-	if((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.get_data()), addr.get_size()) != 0) && (errno != EINPROGRESS)){
+	if((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) != 0) && (errno != EINPROGRESS)){
 		DEBUG_THROW(SystemException);
 	}
 	if(use_ssl){

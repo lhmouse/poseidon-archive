@@ -124,7 +124,7 @@ try {
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_info_mutex);
-	if(m_local_info.get_port() == 0){
+	if(m_local_info.port() == 0){
 		::sockaddr_storage sa;
 		::socklen_t salen = sizeof(sa);
 		if(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
@@ -143,7 +143,7 @@ try {
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_info_mutex);
-	if(m_local_info.get_port() == 0){
+	if(m_local_info.port() == 0){
 		::sockaddr_storage sa;
 		::socklen_t salen = sizeof(sa);
 		if(::getsockname(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){

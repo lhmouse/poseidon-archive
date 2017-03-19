@@ -39,7 +39,7 @@ namespace {
 		if(::setsockopt(tcp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 			DEBUG_THROW(SystemException);
 		}
-		if(::bind(tcp.get(), static_cast<const ::sockaddr *>(addr.get_data()), addr.get_size()) != 0){
+		if(::bind(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) != 0){
 			DEBUG_THROW(SystemException);
 		}
 		if(::listen(tcp.get(), SOMAXCONN) != 0){

@@ -44,13 +44,13 @@ SockAddr::SockAddr(){
 	std::memset(m_data, 0, sizeof(sa_family_t));
 	m_size = 0;
 }
-SockAddr::SockAddr(const void *data, std::size_t size){
-	if(size > sizeof(m_data)){
-		LOG_POSEIDON_ERROR("SockAddr size too large: size = ", size);
+SockAddr::SockAddr(const void *data_p, std::size_t size_p){
+	if(size_p > sizeof(m_data)){
+		LOG_POSEIDON_ERROR("SockAddr size too large: size_p = ", size_p);
 		DEBUG_THROW(Exception, sslit("SockAddr size too large"));
 	}
-	std::memcpy(m_data, data, size);
-	m_size = size;
+	std::memcpy(m_data, data_p, size_p);
+	m_size = size_p;
 }
 
 int SockAddr::get_family() const {
@@ -75,10 +75,13 @@ bool SockAddr::is_ipv6() const {
 }
 bool SockAddr::is_private() const {
 	const int family = get_family();
-	const AUTO(ip, m_data + sizeof(::sa_family_t));
 	if(family == AF_INET){
+		const AUTO_REF(sin, *static_cast<const ::sockaddr_in *>(static_cast<const void *>(m_data)));
+		const AUTO(ip, reinterpret_cast<const unsigned char *>(&(sin.sin_addr)));
 		return is_ipv4_private(ip);
 	} else if(family == AF_INET6){
+		const AUTO_REF(sin6, *static_cast<const ::sockaddr_in6 *>(static_cast<const void *>(m_data)));
+		const AUTO(ip, reinterpret_cast<const unsigned char *>(&(sin6.sin6_addr)));
 		if(are_zeroes(ip, 15)){
 			if(ip[15] == 0){ // ::/128: 未指定的地址
 				return true;
@@ -103,19 +106,21 @@ bool SockAddr::is_private() const {
 }
 
 SockAddr get_sock_addr_from_ip_port(const IpPort &addr){
-	::sockaddr_in sin;
-	::sockaddr_in6 sin6;
-	if(::inet_pton(AF_INET, addr.get_ip(), &(sin.sin_addr)) == 1){
-		sin.sin_family = AF_INET;
-		store_be(sin.sin_port, addr.get_port());
-		return SockAddr(&sin, sizeof(sin));
-	} else if(::inet_pton(AF_INET6, addr.get_ip(), &(sin6.sin6_addr)) == 1){
-		sin6.sin6_family = AF_INET6;
-		store_be(sin6.sin6_port, addr.get_port());
-		return SockAddr(&sin6, sizeof(sin6));
+	union {
+		::sockaddr_in sin;
+		::sockaddr_in6 sin6;
+	} sa;
+	if(::inet_pton(AF_INET, addr.ip(), &(sa.sin.sin_addr)) == 1){
+		sa.sin.sin_family = AF_INET;
+		store_be(sa.sin.sin_port, addr.port());
+		return SockAddr(&sa, sizeof(sa.sin));
+	} else if(::inet_pton(AF_INET6, addr.ip(), &(sa.sin6.sin6_addr)) == 1){
+		sa.sin6.sin6_family = AF_INET6;
+		store_be(sa.sin6.sin6_port, addr.port());
+		return SockAddr(&sa, sizeof(sa.sin6));
 	} else {
-		LOG_POSEIDON_ERROR("Unknown address format: ip = ", addr.get_ip());
-		DEBUG_THROW(Exception, sslit("Unknown address format"));
+		LOG_POSEIDON_ERROR("Unknown IPI address format: ip = ", addr.ip());
+		DEBUG_THROW(Exception, sslit("Unknown IP address format"));
 	}
 }
 

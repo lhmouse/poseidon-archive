@@ -133,10 +133,10 @@ namespace {
 					boost::container::map<SharedNts, std::string> row;
 					AUTO(snapshot, EpollDaemon::snapshot());
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-						row[sslit("remote_ip")] = it->remote.get_ip();
-						row[sslit("remote_port")] = boost::lexical_cast<std::string>(it->remote.get_port());
-						row[sslit("local_ip")] = it->local.get_ip();
-						row[sslit("local_port")] = boost::lexical_cast<std::string>(it->local.get_port());
+						row[sslit("remote_ip")] = it->remote.ip();
+						row[sslit("remote_port")] = boost::lexical_cast<std::string>(it->remote.port());
+						row[sslit("local_ip")] = it->local.ip();
+						row[sslit("local_port")] = boost::lexical_cast<std::string>(it->local.port());
 						row[sslit("ms_onlinet")] = boost::lexical_cast<std::string>(it->ms_online);
 						if(csv.empty()){
 							csv.reset_headers(row);

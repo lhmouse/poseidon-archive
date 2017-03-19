@@ -17,13 +17,13 @@ private:
 
 public:
 	IpPort();
-	IpPort(const char *ip, unsigned port);
+	IpPort(const char *ip_p, unsigned port_p);
 
 public:
-	const char *get_ip() const {
+	const char *ip() const {
 		return m_ip;
 	}
-	unsigned get_port() const {
+	unsigned port() const {
 		return m_port;
 	}
 };

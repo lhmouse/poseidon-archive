@@ -116,7 +116,7 @@ namespace Http {
 					LOG_POSEIDON_WARNING("> Inacceptable nonce.");	\
 					return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);	\
 				}	\
-				xor_nonce(raw_nonce, remote_addr.get_ip());	\
+				xor_nonce(raw_nonce, remote_addr.ip());	\
 			} else if(::strcasecmp(key.c_str(), "uri") == 0){	\
 				uri = STD_MOVE(value);	\
 			} else if(::strcasecmp(key.c_str(), "qop") == 0){	\
@@ -299,7 +299,7 @@ namespace Http {
 		raw_nonce.timestamp = get_local_time();
 		raw_nonce.random = random_uint64();
 		raw_nonce.identifier = g_identifier;
-		xor_nonce(raw_nonce, remote_addr.get_ip());
+		xor_nonce(raw_nonce, remote_addr.ip());
 		Base64Encoder enc;
 		enc.put(&raw_nonce, sizeof(raw_nonce));
 		AUTO(nonce, enc.finalize());

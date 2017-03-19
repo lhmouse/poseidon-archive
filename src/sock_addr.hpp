@@ -17,13 +17,13 @@ private:
 
 public:
 	SockAddr();
-	SockAddr(const void *data, std::size_t size);
+	SockAddr(const void *data_p, std::size_t size_p);
 
 public:
-	const void *get_data() const {
+	const void *data() const {
 		return m_data;
 	}
-	unsigned get_size() const {
+	unsigned size() const {
 		return m_size;
 	}
 

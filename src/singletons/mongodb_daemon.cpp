@@ -905,6 +905,8 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_saving(
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_loading(
 	boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query)
 {
+	DEBUG_THROW_ASSERT(!query.empty());
+
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const collection = object->get_collection();
 	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)));
@@ -914,6 +916,8 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_loading(
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
 	const char *collection_hint, MongoDb::BsonBuilder query)
 {
+	DEBUG_THROW_ASSERT(!query.empty());
+
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const collection = collection_hint;
 	AUTO(operation, boost::make_shared<DeleteOperation>(promise, collection_hint, STD_MOVE(query)));
@@ -923,6 +927,8 @@ boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_deleting(
 boost::shared_ptr<const JobPromise> MongoDbDaemon::enqueue_for_batch_loading(
 	QueryCallback callback, const char *collection_hint, MongoDb::BsonBuilder query)
 {
+	DEBUG_THROW_ASSERT(!query.empty());
+
 	AUTO(promise, boost::make_shared<JobPromise>());
 	const char *const collection = collection_hint;
 	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(callback), collection_hint, STD_MOVE(query)));

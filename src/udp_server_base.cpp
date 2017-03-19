@@ -24,7 +24,7 @@ namespace {
 		if(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 			DEBUG_THROW(SystemException);
 		}
-		if(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.get_data()), addr.get_size()) != 0){
+		if(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) != 0){
 			DEBUG_THROW(SystemException);
 		}
 		return udp;
@@ -106,8 +106,8 @@ int UdpServerBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
 		}
 		try {
 			::sockaddr_storage sa;
-			DEBUG_THROW_ASSERT(sock_addr.get_size() <= sizeof(sa));
-			::socklen_t sa_len = sock_addr.get_size();
+			DEBUG_THROW_ASSERT(sock_addr.size() <= sizeof(sa));
+			::socklen_t sa_len = sock_addr.size();
 			::ssize_t result = ::sendto(get_fd(), &data[0], data.size(), MSG_NOSIGNAL | MSG_DONTWAIT,
 				static_cast< ::sockaddr *>(static_cast<void *>(&sa)), sa_len);
 			if(result < 0){
