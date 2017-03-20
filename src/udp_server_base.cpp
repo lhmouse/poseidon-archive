@@ -84,7 +84,7 @@ int UdpServerBase::poll_read_and_process(bool readable){
 	}
 	return 0;
 }
-int UdpServerBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
+int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 	PROFILE_ME;
 
 	(void)writeable;
@@ -119,7 +119,7 @@ int UdpServerBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
 			continue;
 		}
 	}
-	(void)socket_lock;
+	(void)write_lock;
 	return 0;
 }
 
@@ -134,6 +134,7 @@ bool UdpServerBase::send(const SockAddr &sock_addr, StreamBuffer buffer) const {
 
 	const Mutex::UniqueLock lock(m_send_mutex);
 	m_send_queue.emplace_back(sock_addr, STD_MOVE(buffer));
+	EpollDaemon::mark_socket_writeable(get_fd());
 	return true;
 }
 

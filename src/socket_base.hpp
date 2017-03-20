@@ -75,7 +75,7 @@ public:
 
 	// 返回一个 errno 告诉 epoll 如何处理。
 	virtual int poll_read_and_process(bool readable);
-	virtual int poll_write(Mutex::UniqueLock &socket_lock, bool writeable);
+	virtual int poll_write(Mutex::UniqueLock &write_lock, bool writeable);
 	virtual void on_close(int err_code) NOEXCEPT;
 };
 

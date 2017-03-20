@@ -28,10 +28,14 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 		return;
 	}
 
-	const Poseidon::Mutex::UniqueLock lock(session->m_send_mutex);
-	if(!session->m_send_buffer.empty()){
+	std::size_t send_buffer_size;
+	{
+		const Poseidon::Mutex::UniqueLock lock(session->m_send_mutex);
+		send_buffer_size = session->m_send_buffer.size();
+	}
+	if(send_buffer_size > 0){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-			"Shutdown pending: remote = ", session->get_remote_info(), ", send_buffer_size = ", session->m_send_buffer.size());
+			"Shutdown pending: remote = ", session->get_remote_info(), ", send_buffer_size = ", send_buffer_size);
 		return;
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
@@ -57,10 +61,10 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 
 	(void)readable;
 
-	bool read_hup;
 	std::string data;
 	try {
 		data.resize(4096);
+
 		::ssize_t result;
 		if(m_ssl_filter){
 			result = m_ssl_filter->recv(&data[0], data.size());
@@ -70,7 +74,6 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 		if(result < 0){
 			return errno;
 		}
-		read_hup = (result == 0);
 		data.erase(data.begin() + result, data.end());
 		LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", get_remote_info());
 	} catch(std::exception &e){
@@ -78,27 +81,16 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 		force_shutdown();
 		return EPIPE;
 	}
+
 	try {
-		if(!read_hup){
-			on_receive(StreamBuffer(data));
-		}
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-		force_shutdown();
-		return EPIPE;
-	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown.");
-		force_shutdown();
-		return EPIPE;
-	}
-	try {
-		if(read_hup && !m_read_hup_notified){
-			on_read_hup();
-			m_read_hup_notified = true;
-		}
-		if(read_hup){
+		if(data.empty()){
+			if(!m_read_hup_notified){
+				on_read_hup();
+				m_read_hup_notified = true;
+			}
 			return EWOULDBLOCK;
 		}
+		on_receive(StreamBuffer(data));
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 		force_shutdown();
@@ -110,16 +102,18 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 	}
 	return 0;
 }
-int TcpSessionBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
+int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 	PROFILE_ME;
 
-	bool newly_connected;
-	std::string data;
+	assert(!write_lock);
+
 	try {
-		newly_connected = writeable && !atomic_load(m_connected, ATOMIC_CONSUME) && !atomic_exchange(m_connected, true, ATOMIC_ACQ_REL);
-		if(newly_connected && !m_connected_notified){
-			on_connect();
-			m_connected_notified = true;
+		if(writeable){
+			atomic_store(m_connected, true, ATOMIC_RELEASE);
+			if(!m_connected_notified){
+				on_connect();
+				m_connected_notified = true;
+			}
 		}
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
@@ -130,9 +124,12 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
 		force_shutdown();
 		return EPIPE;
 	}
+
+	std::string data;
 	try {
 		data.resize(4096);
-		const Poseidon::Mutex::UniqueLock lock(m_send_mutex);
+
+		Poseidon::Mutex::UniqueLock lock(m_send_mutex);
 		const std::size_t avail = m_send_buffer.peek(&data[0], data.size());
 		if(avail == 0){
 			if(should_really_shutdown_write()){
@@ -144,13 +141,9 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
 			}
 			return EWOULDBLOCK;
 		}
-		data.resize(avail);
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-		force_shutdown();
-		return EPIPE;
-	}
-	try {
+		lock.unlock();
+		data.erase(data.begin() + static_cast<std::ptrdiff_t>(avail), data.end());
+
 		::ssize_t result;
 		if(m_ssl_filter){
 			result = m_ssl_filter->send(&data[0], data.size());
@@ -160,10 +153,13 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
 		if(result < 0){
 			return errno;
 		}
-		assert(!socket_lock);
-		Mutex::UniqueLock(m_send_mutex).swap(socket_lock);
+		lock.lock();
 		m_send_buffer.discard(static_cast<std::size_t>(result));
 		LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", get_remote_info());
+		swap(write_lock, lock);
+		if(m_send_buffer.empty()){
+			return EWOULDBLOCK;
+		}
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 		force_shutdown();

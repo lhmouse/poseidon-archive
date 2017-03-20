@@ -27,7 +27,7 @@ public:
 protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	int poll_read_and_process(bool readable) OVERRIDE;
-	int poll_write(Mutex::UniqueLock &socket_lock, bool writeable) OVERRIDE;
+	int poll_write(Mutex::UniqueLock &write_lock, bool writeable) OVERRIDE;
 
 	virtual void on_receive(const SockAddr &sock_addr, StreamBuffer data) const = 0;
 

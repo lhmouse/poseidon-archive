@@ -137,8 +137,8 @@ namespace {
 		for(AUTO(iit, iterators.begin()); iit != iterators.end(); ++iit){
 			const AUTO(it, *iit);
 			try {
-				Mutex::UniqueLock session_lock;
-				const int err_code = it->socket->poll_write(session_lock, it->writeable);
+				Mutex::UniqueLock write_lock;
+				const int err_code = it->socket->poll_write(write_lock, it->writeable);
 				if((err_code != 0) && (err_code != EINTR)){
 					if(err_code == EWOULDBLOCK){
 						const RecursiveMutex::UniqueLock lock(g_mutex);

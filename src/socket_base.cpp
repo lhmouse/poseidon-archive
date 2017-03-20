@@ -162,8 +162,8 @@ int SocketBase::poll_read_and_process(bool readable){
 	(void)readable;
 	return EWOULDBLOCK;
 }
-int SocketBase::poll_write(Mutex::UniqueLock &socket_lock, bool writeable){
-	(void)socket_lock;
+int SocketBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
+	(void)write_lock;
 	(void)writeable;
 	return EWOULDBLOCK;
 }
