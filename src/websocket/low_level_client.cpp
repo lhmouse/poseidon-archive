@@ -80,7 +80,7 @@ namespace WebSocket {
 	bool LowLevelClient::on_data_message_end(boost::uint64_t whole_size){
 		PROFILE_ME;
 
-		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 		create_keep_alive_timer(keep_alive_timeout / 2);
 
 		return on_low_level_message_end(whole_size);
@@ -89,7 +89,7 @@ namespace WebSocket {
 	bool LowLevelClient::on_control_message(OpCode opcode, StreamBuffer payload){
 		PROFILE_ME;
 
-		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 		create_keep_alive_timer(keep_alive_timeout / 2);
 
 		return on_low_level_control_message(opcode, STD_MOVE(payload));
