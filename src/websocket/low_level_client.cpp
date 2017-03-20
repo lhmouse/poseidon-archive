@@ -53,8 +53,9 @@ namespace WebSocket {
 		if(m_keep_alive_timer){
 			return;
 		}
+		const AUTO(now, get_fast_mono_clock());
 		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
-		m_keep_alive_timer = TimerDaemon::register_low_level_absolute_timer(0, keep_alive_timeout / 2,
+		m_keep_alive_timer = TimerDaemon::register_low_level_absolute_timer(now, keep_alive_timeout / 2,
 			boost::bind(&keep_alive_timer_proc, virtual_weak_from_this<LowLevelClient>(), _2, _3));
 	}
 
