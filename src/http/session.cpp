@@ -176,31 +176,6 @@ namespace Http {
 		force_shutdown();
 	}
 
-	void Session::on_receive(StreamBuffer data)
-	try {
-		PROFILE_ME;
-
-		const AUTO(upgraded_session, get_low_level_upgraded_session());
-		if(!upgraded_session){
-			m_size_total += data.size();
-			if(m_size_total > get_max_request_length()){
-				DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
-			}
-		}
-
-		LowLevelSession::on_receive(STD_MOVE(data));
-	} catch(Exception &e){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Http::Exception thrown in HTTP parser: status_code = ", e.get_status_code(), ", what = ", e.what());
-		shutdown_read();
-		shutdown_write();
-	} catch(std::exception &e){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"std::exception thrown in HTTP parser: what = ", e.what());
-		shutdown_read();
-		shutdown_write();
-	}
-
 	void Session::on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length){
 		PROFILE_ME;
 
@@ -221,6 +196,11 @@ namespace Http {
 		PROFILE_ME;
 
 		(void)entity_offset;
+
+		m_size_total += entity.size();
+		if(m_size_total > get_max_request_length()){
+			DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
+		}
 
 		m_entity.splice(entity);
 	}

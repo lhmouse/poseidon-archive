@@ -156,26 +156,6 @@ namespace Cbpp {
 		force_shutdown();
 	}
 
-	void Session::on_receive(StreamBuffer data)
-	try {
-		PROFILE_ME;
-
-		m_size_total += data.size();
-		if(m_size_total > get_max_request_length()){
-			DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
-		}
-
-		LowLevelSession::on_receive(STD_MOVE(data));
-	} catch(Exception &e){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Cbpp::Exception thrown in CBPP parser: status_code = ", e.get_status_code(), ", what = ", e.what());
-		shutdown(e.get_status_code(), e.what());
-	} catch(std::exception &e){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"std::exception thrown in CBPP parser: what = ", e.what());
-		shutdown(ST_INTERNAL_ERROR, e.what());
-	}
-
 	void Session::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
 		PROFILE_ME;
 
@@ -189,6 +169,11 @@ namespace Cbpp {
 		PROFILE_ME;
 
 		(void)payload_offset;
+
+		m_size_total += payload.size();
+		if(m_size_total > get_max_request_length()){
+			DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
+		}
 
 		m_payload.splice(payload);
 	}

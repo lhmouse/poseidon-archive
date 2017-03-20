@@ -44,8 +44,6 @@ namespace WebSocket {
 		void on_read_hup() NOEXCEPT OVERRIDE;
 
 		// LowLevelSession
-		void on_receive(StreamBuffer data) OVERRIDE;
-
 		void on_low_level_message_header(OpCode opcode) OVERRIDE;
 		void on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) OVERRIDE;
 		bool on_low_level_message_end(boost::uint64_t whole_size) OVERRIDE;
