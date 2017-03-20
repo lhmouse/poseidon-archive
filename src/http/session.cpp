@@ -10,6 +10,7 @@
 #include "../singletons/job_dispatcher.hpp"
 #include "../stream_buffer.hpp"
 #include "../job_base.hpp"
+#include "../atomic.hpp"
 
 namespace Poseidon {
 
@@ -102,7 +103,7 @@ namespace Http {
 			const AUTO_REF(expect, m_headers.get("Expect"));
 			if(::strcasecmp(expect.c_str(), "100-continue") == 0){
 				const AUTO_REF(content_length, m_headers.get("Content-Length"));
-				if(!content_length.empty() && (::strtoull(content_length.c_str(), NULLPTR, 0) >= session->m_max_request_length)){
+				if(!content_length.empty() && (::strtoull(content_length.c_str(), NULLPTR, 0) > session->get_max_request_length())){
 					LOG_POSEIDON_WARNING("Request entity too large: content_length = ", content_length);
 					DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
 				}
@@ -151,6 +152,13 @@ namespace Http {
 	Session::~Session(){
 	}
 
+	boost::uint64_t Session::get_max_request_length() const {
+		return atomic_load(m_max_request_length, ATOMIC_CONSUME);
+	}
+	void Session::set_max_request_length(boost::uint64_t max_request_length){
+		atomic_store(m_max_request_length, max_request_length, ATOMIC_RELEASE);
+	}
+
 	void Session::on_read_hup() NOEXCEPT
 	try {
 		PROFILE_ME;
@@ -175,7 +183,7 @@ namespace Http {
 		const AUTO(upgraded_session, get_low_level_upgraded_session());
 		if(!upgraded_session){
 			m_size_total += data.size();
-			if(m_size_total > m_max_request_length){
+			if(m_size_total > get_max_request_length()){
 				DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
 			}
 		}

@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include "singletons/epoll_daemon.hpp"
+#include "singletons/main_config.hpp"
 #include "log.hpp"
 #include "system_exception.hpp"
 #include "profiler.hpp"
@@ -19,34 +20,48 @@
 
 namespace Poseidon {
 
-void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now){
+void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now, boost::uint64_t period){
+	PROFILE_ME;
+
 	const AUTO(session, weak.lock());
 	if(!session){
 		return;
 	}
-	if(now < session->m_shutdown_time){
-		return;
-	}
 
-	std::size_t send_buffer_size;
-	{
-		const Poseidon::Mutex::UniqueLock lock(session->m_send_mutex);
-		send_buffer_size = session->m_send_buffer.size();
-	}
-	if(send_buffer_size > 0){
+	(void)period;
+
+	const AUTO(shutdown_time, atomic_load(session->m_shutdown_time, ATOMIC_CONSUME));
+	if(shutdown_time < now){
+		std::size_t send_buffer_size;
+		{
+			const Poseidon::Mutex::UniqueLock lock(session->m_send_mutex);
+			send_buffer_size = session->m_send_buffer.size();
+		}
+		if(send_buffer_size == 0){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"Connection closed due to inactivity: remote = ", session->get_remote_info());
+			session->set_timed_out();
+			session->force_shutdown();
+			return;
+		}
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 			"Shutdown pending: remote = ", session->get_remote_info(), ", send_buffer_size = ", send_buffer_size);
+	}
+
+	const AUTO(last_write_time, atomic_load(session->m_last_write_time, ATOMIC_CONSUME));
+	const AUTO(tcp_response_timeout, MainConfig::get<boost::uint64_t>("tcp_response_timeout", 30000));
+	if(saturated_sub(now, last_write_time) <= tcp_response_timeout){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+			"The connection seems dead: remote = ", session->get_remote_info());
+		session->force_shutdown();
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-		"Connection timed out: remote = ", session->get_remote_info());
-	session->set_timed_out();
-	session->force_shutdown();
 }
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: SocketBase(STD_MOVE(socket)), SessionBase()
 	, m_connected(false), m_connected_notified(false), m_read_hup_notified(false)
+	, m_shutdown_time((boost::uint64_t)-1), m_last_write_time((boost::uint64_t)-1)
 {
 }
 TcpSessionBase::~TcpSessionBase(){
@@ -54,6 +69,16 @@ TcpSessionBase::~TcpSessionBase(){
 
 void TcpSessionBase::init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter){
 	swap(m_ssl_filter, ssl_filter);
+}
+void TcpSessionBase::create_shutdown_timer(){
+	PROFILE_ME;
+
+	const Mutex::UniqueLock lock(m_shutdown_mutex);
+	if(m_shutdown_timer){
+		return;
+	}
+	m_shutdown_timer = TimerDaemon::register_low_level_absolute_timer(0, 5000,
+		boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2, _3));
 }
 
 int TcpSessionBase::poll_read_and_process(bool readable){
@@ -153,6 +178,10 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 		if(result < 0){
 			return errno;
 		}
+		const AUTO(now, get_fast_mono_clock());
+		atomic_store(m_last_write_time, now, ATOMIC_RELEASE);
+		create_shutdown_timer();
+
 		lock.lock();
 		m_send_buffer.discard(static_cast<std::size_t>(result));
 		LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", get_remote_info());
@@ -207,18 +236,9 @@ void TcpSessionBase::set_no_delay(bool enabled){
 void TcpSessionBase::set_timeout(boost::uint64_t timeout){
 	PROFILE_ME;
 
-	if(timeout == 0){
-		const Mutex::UniqueLock lock(m_shutdown_mutex);
-		m_shutdown_timer.reset();
-	} else {
-		const AUTO(now, get_fast_mono_clock());
-		const Mutex::UniqueLock lock(m_shutdown_mutex);
-		if(!m_shutdown_timer){
-			m_shutdown_timer = TimerDaemon::register_low_level_absolute_timer(now + 5000, 5000,
-				boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
-		}
-		m_shutdown_time = saturated_add(now, timeout);
-	}
+	const AUTO(now, get_fast_mono_clock());
+	atomic_store(m_shutdown_time, saturated_add(now, timeout), ATOMIC_RELEASE);
+	create_shutdown_timer();
 }
 
 bool TcpSessionBase::send(StreamBuffer buffer){

@@ -20,7 +20,7 @@ class TcpSessionBase : public SocketBase, public SessionBase {
 	friend TcpServerBase;
 
 private:
-	static void shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now);
+	static void shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now, boost::uint64_t period);
 
 private:
 	boost::scoped_ptr<SslFilterBase> m_ssl_filter;
@@ -33,6 +33,7 @@ private:
 	StreamBuffer m_send_buffer;
 
 	volatile boost::uint64_t m_shutdown_time;
+	volatile boost::uint64_t m_last_write_time;
 	mutable Mutex m_shutdown_mutex;
 	boost::shared_ptr<TimerItem> m_shutdown_timer;
 
@@ -42,6 +43,7 @@ public:
 
 protected:
 	void init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter);
+	void create_shutdown_timer();
 
 	// 注意，只能在 epoll 线程中调用这些函数。
 	int poll_read_and_process(bool readable) OVERRIDE;

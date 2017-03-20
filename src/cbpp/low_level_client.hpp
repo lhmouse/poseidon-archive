@@ -20,9 +20,9 @@ namespace Cbpp {
 		static void keep_alive_timer_proc(const boost::weak_ptr<LowLevelClient> &weak_client, boost::uint64_t now, boost::uint64_t period);
 
 	private:
+		volatile boost::uint64_t m_last_pong_time;
 		mutable Mutex m_keep_alive_mutex;
 		boost::shared_ptr<TimerItem> m_keep_alive_timer;
-		boost::uint64_t m_last_pong_time;
 
 	public:
 		LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer);
@@ -30,7 +30,7 @@ namespace Cbpp {
 		~LowLevelClient();
 
 	private:
-		void create_keep_alive_timer(boost::uint64_t period);
+		void create_keep_alive_timer();
 
 	protected:
 		// TcpSessionBase

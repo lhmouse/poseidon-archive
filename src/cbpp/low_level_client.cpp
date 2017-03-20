@@ -10,6 +10,7 @@
 #include "../profiler.hpp"
 #include "../time.hpp"
 #include "../checked_arithmetic.hpp"
+#include "../atomic.hpp"
 
 namespace Poseidon {
 
@@ -22,11 +23,7 @@ namespace Cbpp {
 			return;
 		}
 
-		boost::uint64_t interval_since_last_pong;
-		{
-			const Mutex::UniqueLock lock(client->m_keep_alive_mutex);
-			interval_since_last_pong = saturated_sub(now, client->m_last_pong_time);
-		}
+		const AUTO(interval_since_last_pong, saturated_sub(now, atomic_load(client->m_last_pong_time, ATOMIC_CONSUME)));
 		if(interval_since_last_pong >= saturated_add(period, period)){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"No pong received since the last two keep alive intervals. Shut down the connection.");
@@ -42,27 +39,27 @@ namespace Cbpp {
 
 	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer)
 		: TcpClientBase(addr, use_ssl, verify_peer), Reader(), Writer()
-		, m_keep_alive_timer(), m_last_pong_time((boost::uint64_t)-1)
+		, m_last_pong_time((boost::uint64_t)-1)
 	{
 	}
 	LowLevelClient::LowLevelClient(const IpPort &addr, bool use_ssl, bool verify_peer)
 		: TcpClientBase(addr, use_ssl, verify_peer)
-		, m_keep_alive_timer(), m_last_pong_time((boost::uint64_t)-1)
+		, m_last_pong_time((boost::uint64_t)-1)
 	{
 	}
 	LowLevelClient::~LowLevelClient(){
 	}
 
-	void LowLevelClient::create_keep_alive_timer(boost::uint64_t period){
+	void LowLevelClient::create_keep_alive_timer(){
 		PROFILE_ME;
 
-		const AUTO(now, get_fast_mono_clock());
 		const Mutex::UniqueLock lock(m_keep_alive_mutex);
-		if(!m_keep_alive_timer){
-			m_keep_alive_timer = TimerDaemon::register_low_level_absolute_timer(now, period,
-				boost::bind(&keep_alive_timer_proc, virtual_weak_from_this<LowLevelClient>(), _2, _3));
+		if(m_keep_alive_timer){
+			return;
 		}
-		m_last_pong_time = saturated_add(now, period);
+		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+		m_keep_alive_timer = TimerDaemon::register_low_level_absolute_timer(0, keep_alive_timeout / 2,
+			boost::bind(&keep_alive_timer_proc, virtual_weak_from_this<LowLevelClient>(), _2, _3));
 	}
 
 	void LowLevelClient::on_receive(StreamBuffer data){
@@ -84,8 +81,9 @@ namespace Cbpp {
 	bool LowLevelClient::on_data_message_end(boost::uint64_t payload_size){
 		PROFILE_ME;
 
-		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
-		create_keep_alive_timer(keep_alive_timeout / 2);
+		const AUTO(now, get_fast_mono_clock());
+		atomic_store(m_last_pong_time, now, ATOMIC_RELEASE);
+		create_keep_alive_timer();
 
 		return on_low_level_data_message_end(payload_size);
 	}
@@ -93,8 +91,9 @@ namespace Cbpp {
 	bool LowLevelClient::on_control_message(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;
 
-		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
-		create_keep_alive_timer(keep_alive_timeout / 2);
+		const AUTO(now, get_fast_mono_clock());
+		atomic_store(m_last_pong_time, now, ATOMIC_RELEASE);
+		create_keep_alive_timer();
 
 		return on_low_level_control_message(status_code, STD_MOVE(param));
 	}
