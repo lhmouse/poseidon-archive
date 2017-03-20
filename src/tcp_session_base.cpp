@@ -48,9 +48,9 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 			"Shutdown pending: remote = ", session->get_remote_info(), ", send_buffer_size = ", send_buffer_size);
 	}
 
-	const AUTO(last_access_time, atomic_load(session->m_last_access_time, ATOMIC_CONSUME));
+	const AUTO(last_use_time, atomic_load(session->m_last_use_time, ATOMIC_CONSUME));
 	const AUTO(tcp_response_timeout, MainConfig::get<boost::uint64_t>("tcp_response_timeout", 30000));
-	if(saturated_add(last_access_time, tcp_response_timeout) < now){
+	if(saturated_add(last_use_time, tcp_response_timeout) < now){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 			"The connection seems dead: remote = ", session->get_remote_info());
 		session->force_shutdown();
@@ -61,7 +61,7 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: SocketBase(STD_MOVE(socket)), SessionBase()
 	, m_connected(false), m_connected_notified(false), m_read_hup_notified(false)
-	, m_shutdown_time((boost::uint64_t)-1), m_last_access_time((boost::uint64_t)-1)
+	, m_shutdown_time((boost::uint64_t)-1), m_last_use_time((boost::uint64_t)-1)
 {
 }
 TcpSessionBase::~TcpSessionBase(){
@@ -100,7 +100,7 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 			return errno;
 		}
 		const AUTO(now, get_fast_mono_clock());
-		atomic_store(m_last_access_time, now, ATOMIC_RELEASE);
+		atomic_store(m_last_use_time, now, ATOMIC_RELEASE);
 		create_shutdown_timer();
 
 		data.erase(data.begin() + result, data.end());
@@ -183,7 +183,7 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 			return errno;
 		}
 		const AUTO(now, get_fast_mono_clock());
-		atomic_store(m_last_access_time, now, ATOMIC_RELEASE);
+		atomic_store(m_last_use_time, now, ATOMIC_RELEASE);
 		create_shutdown_timer();
 
 		lock.lock();

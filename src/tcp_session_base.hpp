@@ -33,7 +33,7 @@ private:
 	StreamBuffer m_send_buffer;
 
 	volatile boost::uint64_t m_shutdown_time;
-	volatile boost::uint64_t m_last_access_time;
+	volatile boost::uint64_t m_last_use_time;
 	mutable Mutex m_shutdown_mutex;
 	boost::shared_ptr<TimerItem> m_shutdown_timer;
 
