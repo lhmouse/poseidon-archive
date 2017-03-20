@@ -50,7 +50,7 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 
 	const AUTO(last_write_time, atomic_load(session->m_last_write_time, ATOMIC_CONSUME));
 	const AUTO(tcp_response_timeout, MainConfig::get<boost::uint64_t>("tcp_response_timeout", 30000));
-	if(saturated_sub(now, last_write_time) <= tcp_response_timeout){
+	if(saturated_add(last_write_time, tcp_response_timeout) < now){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 			"The connection seems dead: remote = ", session->get_remote_info());
 		session->force_shutdown();
