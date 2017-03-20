@@ -140,7 +140,7 @@ Logger::~Logger() NOEXCEPT {
 		}
 		line += level_elem.text;
 		if(use_ascii_colors){
-			line +="\x1B[0;40;3";
+			line +="\x1B[0;3";
 			line += level_elem.color;
 			if(level_elem.highlighted){
 				line += ';';
