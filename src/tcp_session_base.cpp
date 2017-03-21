@@ -77,7 +77,8 @@ void TcpSessionBase::create_shutdown_timer(){
 	if(m_shutdown_timer){
 		return;
 	}
-	m_shutdown_timer = TimerDaemon::register_low_level_absolute_timer(0, 5000,
+	const AUTO(now, get_fast_mono_clock());
+	m_shutdown_timer = TimerDaemon::register_low_level_absolute_timer(now, 5000,
 		boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2, _3));
 }
 
