@@ -87,16 +87,21 @@ namespace {
 	bool pump_one_element() NOEXCEPT {
 		PROFILE_ME;
 
-		const boost::uint64_t now = get_fast_mono_clock();
+		const AUTO(now, get_fast_mono_clock());
 
 		boost::shared_ptr<TimerItem> item;
 		{
 			const Mutex::UniqueLock lock(g_mutex);
-			while(!g_timers.empty() && (now >= g_timers.front().next)){
+			for(;;){
+				if(g_timers.empty()){
+					return false;
+				}
+				if(now < g_timers.front().next){
+					return false;
+				}
 				item = g_timers.front().item.lock();
 				const AUTO(stamp, g_timers.front().stamp);
 				std::pop_heap(g_timers.begin(), g_timers.end());
-
 				if(item && (stamp == item->stamp)){
 					if(item->period == 0){
 						g_timers.pop_back();
@@ -106,14 +111,9 @@ namespace {
 					}
 					break;
 				}
-				item.reset();
 				g_timers.pop_back();
 			}
 		}
-		if(!item){
-			return false;
-		}
-
 		try {
 			if(item->low_level){
 				LOG_POSEIDON_TRACE("Dispatching async timer");
@@ -127,7 +127,6 @@ namespace {
 		} catch(...){
 			LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching timer job.");
 		}
-
 		return true;
 	}
 

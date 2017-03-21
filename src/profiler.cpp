@@ -10,17 +10,16 @@
 namespace Poseidon {
 
 namespace {
-	__thread AUTO(t_top_profiler, (Profiler *)0);
+	__thread Profiler *t_top_profiler = NULLPTR;
 }
 
 void Profiler::accumulate_all_in_thread() NOEXCEPT {
-	if(!ProfileDepository::is_enabled()){
-		return;
-	}
-
-	const AUTO(now, get_hi_res_mono_clock());
-	for(AUTO(cur, t_top_profiler); cur; cur = cur->m_prev){
-		cur->accumulate(now);
+	const AUTO(top, t_top_profiler);
+	if(top){
+		const AUTO(now, get_hi_res_mono_clock());
+		for(AUTO(cur, top); cur; cur = cur->m_prev){
+			cur->accumulate(now);
+		}
 	}
 }
 

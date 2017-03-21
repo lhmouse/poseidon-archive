@@ -19,6 +19,7 @@
 #include "../recursive_mutex.hpp"
 #include "../condition_variable.hpp"
 #include "../time.hpp"
+#include "../checked_arithmetic.hpp"
 
 namespace Poseidon {
 
@@ -140,9 +141,9 @@ namespace {
 		}
 	};
 
-	AUTO(g_current_fiber, (FiberControl *)0);
-
 	volatile bool g_running = false;
+
+	FiberControl *volatile g_current_fiber = NULLPTR;
 
 	Mutex g_fiber_map_mutex;
 	ConditionVariable g_new_job;
@@ -182,6 +183,7 @@ namespace {
 			fiber->inner.uc_link = &(fiber->outer);
 
 			int params[2] = { };
+			BOOST_STATIC_ASSERT(sizeof(fiber) <= sizeof(params));
 			std::memcpy(params, &fiber, sizeof(fiber));
 			::makecontext(&(fiber->inner), reinterpret_cast<void (*)()>(&fiber_proc), 2, params[0], params[1]);
 		}
@@ -204,67 +206,55 @@ namespace {
 		g_current_fiber = NULLPTR;
 	}
 
-	bool really_pump_fiber(FiberControl *fiber) NOEXCEPT {
+	bool pump_one_fiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;
 
-		bool busy = false;
-		for(;;){
-			const AUTO(now, get_fast_mono_clock());
+		const AUTO(now, get_fast_mono_clock());
 
-			JobElement *elem;
-			{
-				const RecursiveMutex::UniqueLock queue_lock(fiber->queue_mutex);
-				if(fiber->queue.empty()){
-					break;
-				}
-				elem = &(fiber->queue.front());
-				if(elem->promise && !elem->promise->is_satisfied()){
-					if((now < elem->expiry_time) && !(elem->insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
-						break;
-					}
-					LOG_POSEIDON_WARNING("Job timed out");
-				}
-				elem->promise.reset();
+		JobElement *elem;
+		{
+			const RecursiveMutex::UniqueLock queue_lock(fiber->queue_mutex);
+			if(fiber->queue.empty()){
+				return false;
 			}
-			++busy;
-
-			try {
-				if((fiber->state == FS_READY) && elem->withdrawn && *(elem->withdrawn)){
-					LOG_POSEIDON_DEBUG("Job is withdrawn");
-				} else {
-					schedule_fiber(fiber);
+			elem = &(fiber->queue.front());
+			if(elem->promise && !elem->promise->is_satisfied()){
+				if((now < elem->expiry_time) && !(elem->insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
+					return false;
 				}
-			} catch(...){
-				std::abort();
+				LOG_POSEIDON_WARNING("Job timed out");
 			}
-			if(fiber->state != FS_READY){
-				break;
-			}
-
+			elem->promise.reset();
+		}
+		if((fiber->state == FS_READY) && elem->withdrawn && *(elem->withdrawn)){
+			LOG_POSEIDON_DEBUG("Job is withdrawn");
+		} else {
+			schedule_fiber(fiber);
+		}
+		if(fiber->state == FS_READY){
 			const RecursiveMutex::UniqueLock queue_lock(fiber->queue_mutex);
 			fiber->queue.pop_front();
 		}
-		return busy;
+		return true;
 	}
-
-	bool really_pump_jobs() NOEXCEPT {
+	bool pump_one_round() NOEXCEPT {
 		PROFILE_ME;
 
 		bool busy = false;
 		Mutex::UniqueLock lock(g_fiber_map_mutex);
 		AUTO(it, g_fiber_map.begin());
 		while(it != g_fiber_map.end()){
-			const AUTO(fiber, &(it->second));
+			AUTO(fiber, &(it->second));
+			lock.unlock();
+			{
+				busy += pump_one_fiber(fiber);
+			}
+			lock.lock();
 			if(fiber->queue.empty()){
 				it = g_fiber_map.erase(it);
-				continue;
+			} else {
+				++it;
 			}
-			lock.unlock();
-
-			busy += really_pump_fiber(fiber);
-
-			lock.lock();
-			++it;
 		}
 		return busy;
 	}
@@ -296,7 +286,7 @@ void JobDispatcher::stop(){
 			last_info_time = now;
 		}
 
-		really_pump_jobs();
+		pump_one_round();
 	}
 }
 
@@ -312,7 +302,7 @@ void JobDispatcher::do_modal(){
 	for(;;){
 		bool busy;
 		do {
-			busy = really_pump_jobs();
+			busy = pump_one_round();
 			timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 		} while(busy);
 
@@ -360,8 +350,6 @@ void JobDispatcher::yield(const boost::shared_ptr<const JobPromise> &promise, bo
 		DEBUG_THROW(Exception, sslit("No current fiber"));
 	}
 
-	const AUTO(now, get_fast_mono_clock());
-
 	if(fiber->queue.empty()){
 		LOG_POSEIDON_FATAL("Not in current fiber?!");
 		std::abort();
@@ -372,7 +360,7 @@ void JobDispatcher::yield(const boost::shared_ptr<const JobPromise> &promise, bo
 		LOG_POSEIDON_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
 		AUTO_REF(elem, fiber->queue.front());
 		elem.promise = promise;
-		elem.expiry_time = now + g_job_timeout;
+		elem.expiry_time = saturated_add(get_fast_mono_clock(), g_job_timeout);
 		elem.insignificant = insignificant;
 		const AUTO(profiler_hook, Profiler::begin_stack_switch());
 		{
