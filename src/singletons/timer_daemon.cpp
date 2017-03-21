@@ -236,6 +236,11 @@ boost::shared_ptr<TimerItem> TimerDaemon::register_low_level_absolute_timer(
 		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
 	return item;
 }
+boost::shared_ptr<TimerItem> TimerDaemon::register_low_level_timer(
+	boost::uint64_t first, boost::uint64_t period, TimerCallback callback)
+{
+	return register_low_level_absolute_timer(saturated_add(get_fast_mono_clock(), first), period, STD_MOVE(callback));
+}
 
 void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item, boost::uint64_t time_point, boost::uint64_t period){
 	PROFILE_ME;

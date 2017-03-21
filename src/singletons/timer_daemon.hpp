@@ -48,6 +48,8 @@ public:
 
 	static boost::shared_ptr<TimerItem> register_low_level_absolute_timer(
 		boost::uint64_t time_point, boost::uint64_t period, TimerCallback callback);
+	static boost::shared_ptr<TimerItem> register_low_level_timer(
+		boost::uint64_t first, boost::uint64_t period, TimerCallback callback);
 
 	static void set_absolute_time(const boost::shared_ptr<TimerItem> &item,
 		boost::uint64_t time_point, boost::uint64_t period = PERIOD_NOT_MODIFIED);
