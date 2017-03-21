@@ -92,26 +92,24 @@ namespace {
 		boost::shared_ptr<TimerItem> item;
 		{
 			const Mutex::UniqueLock lock(g_mutex);
-			for(;;){
-				if(g_timers.empty()){
-					return false;
-				}
-				if(now < g_timers.front().next){
-					return false;
-				}
-				item = g_timers.front().item.lock();
-				const AUTO(stamp, g_timers.front().stamp);
-				std::pop_heap(g_timers.begin(), g_timers.end());
-				if(item && (stamp == item->stamp)){
-					if(item->period == 0){
-						g_timers.pop_back();
-					} else {
-						g_timers.back().next += item->period;
-						std::push_heap(g_timers.begin(), g_timers.end());
-					}
-					break;
-				}
+		_pick_next:
+			if(g_timers.empty()){
+				return false;
+			}
+			if(now < g_timers.front().next){
+				return false;
+			}
+			std::pop_heap(g_timers.begin(), g_timers.end());
+			item = g_timers.back().item.lock();
+			if(!item || (item->stamp != g_timers.back().stamp)){
 				g_timers.pop_back();
+				goto _pick_next;
+			}
+			if(item->period == 0){
+				g_timers.pop_back();
+			} else {
+				g_timers.back().next = saturated_add(g_timers.back().next, item->period);
+				std::push_heap(g_timers.begin(), g_timers.end());
 			}
 		}
 		try {
