@@ -113,7 +113,6 @@ pkginclude_http_HEADERS = \
 	src/http/exception.hpp	\
 	src/http/urlencoded.hpp	\
 	src/http/upgraded_session_base.hpp	\
-	src/http/upgraded_client_base.hpp	\
 	src/http/url_param.hpp	\
 	src/http/header_option.hpp	\
 	src/http/multipart.hpp
@@ -257,7 +256,6 @@ lib_libposeidon_main_la_SOURCES = \
 	src/http/verbs.cpp	\
 	src/http/urlencoded.cpp	\
 	src/http/upgraded_session_base.cpp	\
-	src/http/upgraded_client_base.cpp	\
 	src/http/exception.cpp	\
 	src/http/request_headers.cpp	\
 	src/http/response_headers.cpp	\

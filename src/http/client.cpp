@@ -161,7 +161,7 @@ namespace Http {
 
 		m_entity.splice(entity);
 	}
-	boost::shared_ptr<UpgradedClientBase> Client::on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers){
+	boost::shared_ptr<UpgradedSessionBase> Client::on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers){
 		PROFILE_ME;
 
 		(void)content_length;

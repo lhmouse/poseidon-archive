@@ -39,7 +39,7 @@ namespace WebSocket {
 	}
 
 	LowLevelClient::LowLevelClient(const boost::shared_ptr<Http::LowLevelClient> &parent)
-		: Http::UpgradedClientBase(parent), Reader(false), Writer()
+		: Http::UpgradedSessionBase(parent), Reader(false), Writer()
 		, m_last_pong_time((boost::uint64_t)-1)
 	{
 	}
@@ -97,7 +97,7 @@ namespace WebSocket {
 	long LowLevelClient::on_encoded_data_avail(StreamBuffer encoded){
 		PROFILE_ME;
 
-		return UpgradedClientBase::send(STD_MOVE(encoded));
+		return UpgradedSessionBase::send(STD_MOVE(encoded));
 	}
 
 	bool LowLevelClient::send(OpCode opcode, StreamBuffer payload, bool masked){

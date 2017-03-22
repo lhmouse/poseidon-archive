@@ -23,7 +23,6 @@ namespace Http {
 	class Session;
 	class Client;
 	class UpgradedSessionBase;
-	class UpgradedClientBase;
 }
 
 }

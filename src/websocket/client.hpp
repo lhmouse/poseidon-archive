@@ -32,7 +32,7 @@ namespace WebSocket {
 			return m_payload;
 		}
 
-		// UpgradedClientBase
+		// UpgradedSessionBase
 		void on_read_hup() NOEXCEPT OVERRIDE;
 
 		// LowLevelClient

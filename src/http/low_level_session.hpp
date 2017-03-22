@@ -4,8 +4,8 @@
 #ifndef POSEIDON_HTTP_LOW_LEVEL_SESSION_HPP_
 #define POSEIDON_HTTP_LOW_LEVEL_SESSION_HPP_
 
-#include "../mutex.hpp"
 #include "../tcp_session_base.hpp"
+#include "../mutex.hpp"
 #include "server_reader.hpp"
 #include "server_writer.hpp"
 #include "request_headers.hpp"

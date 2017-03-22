@@ -4,7 +4,7 @@
 #ifndef POSEIDON_WEBSOCKET_LOW_LEVEL_CLIENT_HPP_
 #define POSEIDON_WEBSOCKET_LOW_LEVEL_CLIENT_HPP_
 
-#include "../http/upgraded_client_base.hpp"
+#include "../http/upgraded_session_base.hpp"
 #include "../mutex.hpp"
 #include "opcodes.hpp"
 #include "status_codes.hpp"
@@ -16,7 +16,7 @@ namespace Poseidon {
 class TimerItem;
 
 namespace WebSocket {
-	class LowLevelClient : public Http::UpgradedClientBase, private Reader, private Writer {
+	class LowLevelClient : public Http::UpgradedSessionBase, private Reader, private Writer {
 	private:
 		static void keep_alive_timer_proc(const boost::weak_ptr<LowLevelClient> &weak_client, boost::uint64_t now, boost::uint64_t period);
 

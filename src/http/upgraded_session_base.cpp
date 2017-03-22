@@ -3,14 +3,14 @@
 
 #include "../precompiled.hpp"
 #include "upgraded_session_base.hpp"
-#include "low_level_session.hpp"
-#include "../log.hpp"
-#include "../profiler.hpp"
+#include "../tcp_session_base.hpp"
+#include "../ip_port.hpp"
+#include "../exception.hpp"
 
 namespace Poseidon {
 
 namespace Http {
-	UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<LowLevelSession> &parent)
+	UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<TcpSessionBase> &parent)
 		: m_parent(parent)
 	{
 	}
@@ -23,71 +23,93 @@ namespace Http {
 		(void)err_code;
 	}
 
-	bool UpgradedSessionBase::send(StreamBuffer buffer){
-		const AUTO(parent, get_parent());
-		if(!parent){
-			return false;
-		}
-		return parent->TcpSessionBase::send(STD_MOVE(buffer));
-	}
-
 	bool UpgradedSessionBase::has_been_shutdown_read() const NOEXCEPT {
 		const AUTO(parent, get_parent());
 		if(!parent){
 			return true;
 		}
-		return parent->TcpSessionBase::has_been_shutdown_read();
+		return parent->has_been_shutdown_read();
 	}
 	bool UpgradedSessionBase::shutdown_read() NOEXCEPT {
 		const AUTO(parent, get_parent());
 		if(!parent){
 			return false;
 		}
-		return parent->TcpSessionBase::shutdown_read();
+		return parent->shutdown_read();
 	}
 	bool UpgradedSessionBase::has_been_shutdown_write() const NOEXCEPT {
 		const AUTO(parent, get_parent());
 		if(!parent){
 			return true;
 		}
-		return parent->TcpSessionBase::has_been_shutdown_write();
+		return parent->has_been_shutdown_write();
 	}
 	bool UpgradedSessionBase::shutdown_write() NOEXCEPT {
 		const AUTO(parent, get_parent());
 		if(!parent){
 			return false;
 		}
-		return parent->TcpSessionBase::shutdown_write();
+		return parent->shutdown_write();
 	}
 	void UpgradedSessionBase::force_shutdown() NOEXCEPT {
 		const AUTO(parent, get_parent());
 		if(!parent){
 			return;
 		}
-		parent->TcpSessionBase::force_shutdown();
+		parent->force_shutdown();
 	}
 
-	const IpPort &UpgradedSessionBase::get_remote_info() const NOEXCEPT
-	try {
-		return get_safe_parent()->get_remote_info();
-	} catch(std::exception &e){
-		LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
-		return unknown_ip_port();
+	const IpPort &UpgradedSessionBase::get_remote_info() const NOEXCEPT {
+		const AUTO(parent, get_parent());
+		if(!parent){
+			return unknown_ip_port();
+		}
+		return parent->get_remote_info();
 	}
-	const IpPort &UpgradedSessionBase::get_local_info() const NOEXCEPT
-	try {
-		return get_safe_parent()->get_remote_info();
-	} catch(std::exception &e){
-		LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
-		return unknown_ip_port();
+	const IpPort &UpgradedSessionBase::get_local_info() const NOEXCEPT {
+		const AUTO(parent, get_parent());
+		if(!parent){
+			return unknown_ip_port();
+		}
+		return parent->get_local_info();
 	}
 
+	bool UpgradedSessionBase::is_throttled() const {
+		const AUTO(parent, get_parent());
+		if(!parent){
+			return false;
+		}
+		return parent->is_throttled();
+	}
+	bool UpgradedSessionBase::is_connected() const NOEXCEPT {
+		const AUTO(parent, get_parent());
+		if(!parent){
+			return false;
+		}
+		return parent->is_connected();
+	}
+
+	void UpgradedSessionBase::set_no_delay(bool enabled){
+		const AUTO(parent, get_parent());
+		if(!parent){
+			DEBUG_THROW(BasicException, sslit("Parent session is gone"));
+		}
+		parent->set_no_delay(enabled);
+	}
 	void UpgradedSessionBase::set_timeout(boost::uint64_t timeout){
 		const AUTO(parent, get_parent());
 		if(!parent){
-			return;
+			DEBUG_THROW(BasicException, sslit("Parent session is gone"));
 		}
-		parent->TcpSessionBase::set_timeout(timeout);
+		parent->set_timeout(timeout);
+	}
+
+	bool UpgradedSessionBase::send(StreamBuffer buffer){
+		const AUTO(parent, get_parent());
+		if(!parent){
+			return false;
+		}
+		return parent->send(STD_MOVE(buffer));
 	}
 }
 

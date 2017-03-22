@@ -82,7 +82,7 @@ public:
 	void set_no_delay(bool enabled = true);
 	void set_timeout(boost::uint64_t timeout);
 
-	bool send(StreamBuffer buffer);
+	bool send(StreamBuffer buffer) OVERRIDE;
 };
 
 }

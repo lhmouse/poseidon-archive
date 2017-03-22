@@ -15,15 +15,15 @@
 namespace Poseidon {
 
 namespace Http {
-	class UpgradedClientBase;
+	class UpgradedSessionBase;
 	class HeaderOption;
 
 	class LowLevelClient : public TcpClientBase, private ClientReader, private ClientWriter {
-		friend UpgradedClientBase;
+		friend UpgradedSessionBase;
 
 	private:
 		mutable Mutex m_upgraded_client_mutex;
-		boost::shared_ptr<UpgradedClientBase> m_upgraded_client;
+		boost::shared_ptr<UpgradedSessionBase> m_upgraded_client;
 
 	public:
 		LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer);
@@ -31,7 +31,7 @@ namespace Http {
 		~LowLevelClient();
 
 	protected:
-		const boost::shared_ptr<UpgradedClientBase> &get_low_level_upgraded_client() const {
+		const boost::shared_ptr<UpgradedSessionBase> &get_low_level_upgraded_client() const {
 			// Epoll 线程读取不需要锁。
 			return m_upgraded_client;
 		}
@@ -52,10 +52,10 @@ namespace Http {
 		// 可覆写。
 		virtual void on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) = 0;
 		virtual void on_low_level_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) = 0;
-		virtual boost::shared_ptr<UpgradedClientBase> on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers) = 0;
+		virtual boost::shared_ptr<UpgradedSessionBase> on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers) = 0;
 
 	public:
-		boost::shared_ptr<UpgradedClientBase> get_upgraded_client() const;
+		boost::shared_ptr<UpgradedSessionBase> get_upgraded_client() const;
 
 		bool send(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
 		bool send(Verb verb, std::string uri, OptionalMap get_params = OptionalMap());

@@ -40,7 +40,7 @@ namespace Http {
 		// LowLevelClient
 		void on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) OVERRIDE;
 		void on_low_level_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
-		boost::shared_ptr<UpgradedClientBase> on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
+		boost::shared_ptr<UpgradedSessionBase> on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
 
 		// 可覆写。
 		virtual void on_sync_connect();

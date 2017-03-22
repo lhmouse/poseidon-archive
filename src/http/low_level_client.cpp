@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "low_level_client.hpp"
 #include "exception.hpp"
-#include "upgraded_client_base.hpp"
+#include "upgraded_session_base.hpp"
 #include "header_option.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
