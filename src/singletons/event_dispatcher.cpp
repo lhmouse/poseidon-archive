@@ -14,10 +14,10 @@ namespace Poseidon {
 
 struct EventListener : NONCOPYABLE {
 	const std::type_info &type_info;
-	const boost::shared_ptr<const EventListenerCallback> callback;
+	const EventListenerCallback callback;
 
-	EventListener(const std::type_info &type_info_, boost::shared_ptr<const EventListenerCallback> callback_)
-		: type_info(type_info_), callback(STD_MOVE(callback_))
+	EventListener(const std::type_info &type_info_, EventListenerCallback callback_)
+		: type_info(type_info_), callback(STD_MOVE_IDN(callback_))
 	{
 		LOG_POSEIDON_INFO("Created event listener for event ", type_info.name());
 	}
@@ -55,7 +55,7 @@ namespace {
 		void perform() OVERRIDE {
 			PROFILE_ME;
 
-			(*(m_listener->callback))(m_event);
+			m_listener->callback(m_event);
 		}
 	};
 
@@ -90,13 +90,7 @@ void EventDispatcher::stop(){
 boost::shared_ptr<EventListener> EventDispatcher::register_listener_explicit(const std::type_info &type_info, EventListenerCallback callback){
 	PROFILE_ME;
 
-#ifdef POSEIDON_CXX11
-	auto shared_callback = boost::make_shared<EventListenerCallback>(std::move(callback));
-#else
-	AUTO(shared_callback, boost::make_shared<EventListenerCallback>());
-	shared_callback->swap(callback);
-#endif
-	AUTO(listener, boost::make_shared<EventListener>(type_info, STD_MOVE_IDN(shared_callback)));
+	AUTO(listener, boost::make_shared<EventListener>(type_info, STD_MOVE_IDN(callback)));
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_listeners.emplace(&type_info, listener);
@@ -111,7 +105,7 @@ void EventDispatcher::sync_raise(const boost::shared_ptr<EventBase> &event){
 	get_listeners(listeners, typeid(*event));
 	for(AUTO(it, listeners.begin()); it != listeners.end(); ++it){
 		AUTO_REF(listener, *it);
-		(*(listener->callback))(event);
+		listener->callback(event);
 	}
 }
 void EventDispatcher::async_raise(const boost::shared_ptr<EventBase> &event, const boost::shared_ptr<const bool> &withdrawn){
