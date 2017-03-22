@@ -16,10 +16,6 @@ namespace Http {
 		: TcpClientBase(addr, use_ssl, verify_peer), ClientReader(), ClientWriter()
 	{
 	}
-	LowLevelClient::LowLevelClient(const IpPort &addr, bool use_ssl, bool verify_peer)
-		: TcpClientBase(addr, use_ssl, verify_peer), ClientReader(), ClientWriter()
-	{
-	}
 	LowLevelClient::~LowLevelClient(){
 	}
 

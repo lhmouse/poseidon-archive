@@ -17,7 +17,8 @@ private:
 
 public:
 	SockAddr();
-	SockAddr(const void *data_p, std::size_t size_p);
+	SockAddr(const void *addr_data, std::size_t addr_size);
+	SockAddr(const IpPort &ip_port);
 
 public:
 	const void *data() const {
@@ -32,8 +33,6 @@ public:
 	bool is_ipv6() const;
 	bool is_private() const;
 };
-
-extern SockAddr get_sock_addr_from_ip_port(const IpPort &addr);
 
 }
 

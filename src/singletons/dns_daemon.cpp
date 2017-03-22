@@ -33,7 +33,7 @@ namespace {
 		const int gai_code = ::getaddrinfo(host.c_str(), port, NULLPTR, &res);
 		if(gai_code != 0){
 			const AUTO(err_msg, ::gai_strerror(gai_code));
-			LOG_POSEIDON_DEBUG("DNS lookup failure: host = ", host, ", port = ", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
+			LOG_POSEIDON_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
 			DEBUG_THROW(Exception, SharedNts::view(err_msg));
 		}
 
@@ -45,7 +45,7 @@ namespace {
 			::freeaddrinfo(res);
 			throw;
 		}
-		LOG_POSEIDON_DEBUG("DNS lookup success: host = ", host, ", port = ", port, ", result = ", get_ip_port_from_sock_addr(sock_addr));
+		LOG_POSEIDON_DEBUG("DNS lookup success: host:port = ", host, ":", port, ", result = ", IpPort(sock_addr));
 		return sock_addr;
 	}
 

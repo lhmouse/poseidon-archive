@@ -124,14 +124,13 @@ try {
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_info_mutex);
-	if(m_local_info.port() == 0){
+	if(m_remote_info.port() == 0){
 		::sockaddr_storage sa;
 		::socklen_t salen = sizeof(sa);
 		if(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
 			DEBUG_THROW(SystemException);
 		}
-		const SockAddr sock_addr(&sa, salen);
-		m_remote_info = get_ip_port_from_sock_addr(sock_addr);
+		m_remote_info = SockAddr(&sa, salen);
 	}
 	return m_remote_info;
 } catch(std::exception &e){
@@ -149,8 +148,7 @@ try {
 		if(::getsockname(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
 			DEBUG_THROW(SystemException);
 		}
-		const SockAddr sock_addr(&sa, salen);
-		m_local_info = get_ip_port_from_sock_addr(sock_addr);
+		m_local_info = SockAddr(&sa, salen);
 	}
 	return m_local_info;
 } catch(std::exception &e){

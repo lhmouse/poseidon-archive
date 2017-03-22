@@ -52,7 +52,7 @@ MODULE_RAII(/* handles */){
 			Poseidon::JobDispatcher::yield(promised_sock_addr, false);
 			const auto sock_addr = promised_sock_addr->get();
 
-			LOG_POSEIDON_FATAL("Creating client to ", Poseidon::get_ip_port_from_sock_addr(sock_addr));
+			LOG_POSEIDON_FATAL("Creating client to ", Poseidon::IpPort(sock_addr));
 			const auto client = boost::make_shared<Client>(sock_addr);
 			client->go_resident();
 

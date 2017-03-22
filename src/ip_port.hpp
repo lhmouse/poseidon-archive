@@ -17,7 +17,8 @@ private:
 
 public:
 	IpPort();
-	IpPort(const char *ip_p, unsigned port_p);
+	IpPort(const char *ip_str, unsigned port_num);
+	IpPort(const SockAddr &sock_addr);
 
 public:
 	const char *ip() const {
@@ -31,8 +32,6 @@ public:
 extern const IpPort &unknown_ip_port() NOEXCEPT;
 
 extern std::ostream &operator<<(std::ostream &os, const IpPort &rhs);
-
-extern IpPort get_ip_port_from_sock_addr(const SockAddr &sa);
 
 }
 

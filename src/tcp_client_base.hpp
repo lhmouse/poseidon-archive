@@ -15,12 +15,8 @@ private:
 	boost::scoped_ptr<ClientSslFactory> m_ssl_factory;
 
 public:
-	TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_peer);
-	TcpClientBase(const IpPort &addr, bool use_ssl, bool verify_peer);
+	explicit TcpClientBase(const SockAddr &addr, bool use_ssl = false, bool verify_peer = true);
 	~TcpClientBase();
-
-private:
-	void init_connect(const SockAddr &addr, bool use_ssl, bool verify_peer);
 
 public:
 	void go_resident();

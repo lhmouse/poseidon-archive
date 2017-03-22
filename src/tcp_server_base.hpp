@@ -21,11 +21,7 @@ private:
 
 public:
 	explicit TcpServerBase(const SockAddr &addr, const char *cert = "", const char *private_key = "");
-	explicit TcpServerBase(const IpPort &addr, const char *cert = "", const char *private_key = "");
 	~TcpServerBase();
-
-private:
-	void init_ssl_factory(const char *cert, const char *private_key);
 
 protected:
 	// 工厂函数。返回空指针导致抛出一个异常。

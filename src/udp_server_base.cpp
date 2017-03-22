@@ -37,12 +37,6 @@ UdpServerBase::UdpServerBase(const SockAddr &addr)
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 		"Created UDP server on ", get_local_info());
 }
-UdpServerBase::UdpServerBase(const IpPort &addr)
-	: SocketBase(create_udp_socket(get_sock_addr_from_ip_port(addr)))
-{
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Created UDP server on ", get_local_info());
-}
 UdpServerBase::~UdpServerBase(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 		"Destroyed UDP server on ", get_local_info());
@@ -67,7 +61,7 @@ int UdpServerBase::poll_read_and_process(bool readable){
 			}
 			sock_addr = SockAddr(&sa, sa_len);
 			data.erase(data.begin() + result, data.end());
-			LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", get_ip_port_from_sock_addr(sock_addr));
+			LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", IpPort(sock_addr));
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 			return EINTR;
@@ -113,7 +107,7 @@ int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 			if(result < 0){
 				continue;
 			}
-			LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", get_ip_port_from_sock_addr(sock_addr));
+			LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", IpPort(sock_addr));
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 			continue;
@@ -128,7 +122,7 @@ bool UdpServerBase::send(const SockAddr &sock_addr, StreamBuffer buffer) const {
 
 	if(has_been_shutdown_write()){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-			"UDP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", get_ip_port_from_sock_addr(sock_addr));
+			"UDP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", IpPort(sock_addr));
 		return false;
 	}
 

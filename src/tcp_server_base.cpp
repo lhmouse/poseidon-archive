@@ -52,15 +52,9 @@ namespace {
 TcpServerBase::TcpServerBase(const SockAddr &addr, const char *cert, const char *private_key)
 	: SocketBase(create_tcp_socket(addr))
 {
-	init_ssl_factory(cert, private_key);
-
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Created TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
-}
-TcpServerBase::TcpServerBase(const IpPort &addr, const char *cert, const char *private_key)
-	: SocketBase(create_tcp_socket(get_sock_addr_from_ip_port(addr)))
-{
-	init_ssl_factory(cert, private_key);
+	if(cert && *cert){
+		m_ssl_factory.reset(new ServerSslFactory(cert, private_key));
+	}
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 		"Created TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
@@ -68,14 +62,6 @@ TcpServerBase::TcpServerBase(const IpPort &addr, const char *cert, const char *p
 TcpServerBase::~TcpServerBase(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 		"Destroyed TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
-}
-
-void TcpServerBase::init_ssl_factory(const char *cert, const char *private_key){
-	if(!cert || !*cert){
-		LOG_POSEIDON_DEBUG("Do not use SSL because no server certificate has been specified.");
-		return;
-	}
-	m_ssl_factory.reset(new ServerSslFactory(cert, private_key));
 }
 
 int TcpServerBase::poll_read_and_process(bool readable){

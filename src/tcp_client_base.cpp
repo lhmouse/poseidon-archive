@@ -40,17 +40,6 @@ namespace {
 TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_peer)
 	: TcpSessionBase(create_tcp_socket(addr.get_family()))
 {
-	init_connect(addr, use_ssl, verify_peer);
-}
-TcpClientBase::TcpClientBase(const IpPort &addr, bool use_ssl, bool verify_peer)
-	: TcpSessionBase(create_tcp_socket(get_sock_addr_from_ip_port(addr).get_family())) // XXX: Get addr family from IP directly?
-{
-	init_connect(get_sock_addr_from_ip_port(addr), use_ssl, verify_peer);
-}
-TcpClientBase::~TcpClientBase(){
-}
-
-void TcpClientBase::init_connect(const SockAddr &addr, bool use_ssl, bool verify_peer){
 	if((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) != 0) && (errno != EINPROGRESS)){
 		DEBUG_THROW(SystemException);
 	}
@@ -61,6 +50,8 @@ void TcpClientBase::init_connect(const SockAddr &addr, bool use_ssl, bool verify
 		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), get_fd()));
 		init_ssl(STD_MOVE(filter));
 	}
+}
+TcpClientBase::~TcpClientBase(){
 }
 
 void TcpClientBase::go_resident(){

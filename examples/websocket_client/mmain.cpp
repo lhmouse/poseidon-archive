@@ -84,8 +84,8 @@ boost::shared_ptr<Poseidon::Http::UpgradedSessionBase> HttpClient::on_low_level_
 
 MODULE_RAII(){
 	auto request_pair = Poseidon::WebSocket::make_handshake_request("/", { }, g_client_connect_addr);
-	const auto sock_addr = Poseidon::get_sock_addr_from_ip_port(Poseidon::IpPort(g_client_connect_addr, g_client_connect_port));
-	auto client = boost::make_shared<HttpClient>(sock_addr, false, std::move(request_pair.second));
+	const Poseidon::IpPort ip_port(g_client_connect_addr, g_client_connect_port);
+	auto client = boost::make_shared<HttpClient>(ip_port, false, std::move(request_pair.second));
 	client->go_resident();
 	DEBUG_THROW_ASSERT(client->send(std::move(request_pair.first)));
 }

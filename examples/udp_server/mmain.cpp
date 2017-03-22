@@ -19,7 +19,7 @@ public:
 
 public:
 	void on_receive(const Poseidon::SockAddr &sock_addr, Poseidon::StreamBuffer data) const override {
-		LOG_POSEIDON_ERROR("Read UDP packet: remote = ", Poseidon::get_ip_port_from_sock_addr(sock_addr), ", data = ", data);
+		LOG_POSEIDON_ERROR("Read UDP packet: remote = ", Poseidon::IpPort(sock_addr), ", data = ", data);
 		send(sock_addr, Poseidon::StreamBuffer("hello world!\n"));
 	}
 };

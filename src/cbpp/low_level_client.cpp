@@ -42,11 +42,6 @@ namespace Cbpp {
 		, m_last_pong_time((boost::uint64_t)-1)
 	{
 	}
-	LowLevelClient::LowLevelClient(const IpPort &addr, bool use_ssl, bool verify_peer)
-		: TcpClientBase(addr, use_ssl, verify_peer)
-		, m_last_pong_time((boost::uint64_t)-1)
-	{
-	}
 	LowLevelClient::~LowLevelClient(){
 	}
 

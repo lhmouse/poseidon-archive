@@ -21,7 +21,6 @@ private:
 
 public:
 	explicit UdpServerBase(const SockAddr &addr);
-	explicit UdpServerBase(const IpPort &addr);
 	~UdpServerBase();
 
 protected:

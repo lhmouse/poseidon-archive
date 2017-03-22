@@ -26,8 +26,7 @@ namespace Http {
 		boost::shared_ptr<UpgradedSessionBase> m_upgraded_client;
 
 	public:
-		LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer);
-		LowLevelClient(const IpPort &addr, bool use_ssl, bool verify_peer);
+		explicit LowLevelClient(const SockAddr &addr, bool use_ssl = false, bool verify_peer = true);
 		~LowLevelClient();
 
 	protected:
