@@ -74,7 +74,8 @@ namespace MongoDb {
 			case T_UNSIGNED: {
 				boost::uint64_t value;
 				std::memcpy(&value, it->small, sizeof(value));
-				if(!::bson_append_int64(bt, key_str, -1, static_cast<boost::int64_t>(value))){
+				boost::int64_t shifted = static_cast<boost::int64_t>(value - (1ull << 63));
+				if(!::bson_append_int64(bt, key_str, -1, shifted)){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_int64() failed"), -1);
 				}
 				break; }

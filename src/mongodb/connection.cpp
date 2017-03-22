@@ -276,28 +276,32 @@ namespace MongoDb {
 				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BOOL)){
 					return VAL_INIT;
 				}
-				return ::bson_iter_bool(&it);
+				const bool value = ::bson_iter_bool(&it);
+				return value;
 			}
 			boost::int64_t do_get_signed(const char *name) const {
 				::bson_iter_t it;
 				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
 					return VAL_INIT;
 				}
-				return ::bson_iter_bool(&it);
+				const boost::int64_t value = ::bson_iter_int64(&it);
+				return value;
 			}
 			boost::uint64_t do_get_unsigned(const char *name) const {
 				::bson_iter_t it;
 				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
 					return VAL_INIT;
 				}
-				return static_cast<boost::uint64_t>(::bson_iter_int64(&it));
+				const boost::int64_t shifted = ::bson_iter_int64(&it);
+				return static_cast<boost::uint64_t>(shifted) + (1ull << 63);
 			}
 			double do_get_double(const char *name) const {
 				::bson_iter_t it;
 				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_DOUBLE)){
 					return VAL_INIT;
 				}
-				return static_cast<double>(::bson_iter_int64(&it));
+				const double value = ::bson_iter_double(&it);
+				return value;
 			}
 			std::string do_get_string(const char *name) const {
 				::bson_iter_t it;
