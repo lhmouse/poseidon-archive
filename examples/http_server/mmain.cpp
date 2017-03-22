@@ -18,7 +18,7 @@ const unsigned      g_port       = 17550;
 class Session : public Poseidon::Http::Session {
 public:
 	explicit Session(Poseidon::UniqueFile socket)
-		: Poseidon::Http::Session(std::move(socket), 0x1000)
+		: Poseidon::Http::Session(std::move(socket))
 	{
 	}
 	~Session(){
