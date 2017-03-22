@@ -7,13 +7,13 @@
 
 namespace Poseidon {
 
-EventBaseWithoutId::~EventBaseWithoutId(){
+EventBase::~EventBase(){
 }
 
-void sync_raise_event(const boost::shared_ptr<EventBaseWithoutId> &event){
+void sync_raise_event(const boost::shared_ptr<EventBase> &event){
 	EventDispatcher::sync_raise(event);
 }
-void async_raise_event(const boost::shared_ptr<EventBaseWithoutId> &event, const boost::shared_ptr<const bool> &withdrawn){
+void async_raise_event(const boost::shared_ptr<EventBase> &event, const boost::shared_ptr<const bool> &withdrawn){
 	EventDispatcher::async_raise(event, withdrawn);
 }
 

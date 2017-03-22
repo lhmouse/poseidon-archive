@@ -271,13 +271,12 @@ void EpollDaemon::stop(){
 	g_epoll.reset();
 }
 
-std::vector<EpollDaemon::SnapshotElement> EpollDaemon::snapshot(){
+void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snapshot){
 	PROFILE_ME;
 
-	std::vector<EpollDaemon::SnapshotElement> snapshot;
 	const AUTO(now, get_fast_mono_clock());
 	const RecursiveMutex::UniqueLock lock(g_mutex);
-	snapshot.reserve(g_socket_map.size());
+	snapshot.reserve(snapshot.size() + g_socket_map.size());
 	for(AUTO(it, g_socket_map.begin()); it != g_socket_map.end(); ++it){
 		SnapshotElement elem;
 		elem.remote = it->socket->get_remote_info();
@@ -285,7 +284,6 @@ std::vector<EpollDaemon::SnapshotElement> EpollDaemon::snapshot(){
 		elem.ms_online = saturated_sub(now, it->socket->get_creation_time());
 		snapshot.push_back(STD_MOVE(elem));
 	}
-	return snapshot;
 }
 void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket){
 	PROFILE_ME;

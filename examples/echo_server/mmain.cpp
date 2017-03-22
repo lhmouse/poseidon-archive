@@ -28,6 +28,7 @@ protected:
 	}
 	void on_read_hup() noexcept override {
 		LOG_POSEIDON_INFO("Connection read hup: remote = ", get_remote_info());
+		shutdown_write();
 	}
 	void on_close(int err_code) noexcept override {
 		LOG_POSEIDON_INFO("Connection error: remote = ", get_remote_info(),

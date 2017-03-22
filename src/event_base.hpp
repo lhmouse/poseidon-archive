@@ -8,29 +8,13 @@
 
 namespace Poseidon {
 
-class EventBaseWithoutId {
+class EventBase {
 public:
-	virtual ~EventBaseWithoutId();
-
-public:
-	virtual unsigned get_id() const = 0;
+	virtual ~EventBase();
 };
 
-template<unsigned EVENT_ID_T>
-class EventBase : public EventBaseWithoutId {
-public:
-	enum {
-		ID = EVENT_ID_T
-	};
-
-public:
-	unsigned get_id() const OVERRIDE {
-		return ID;
-	}
-};
-
-extern void sync_raise_event(const boost::shared_ptr<EventBaseWithoutId> &event);
-extern void async_raise_event(const boost::shared_ptr<EventBaseWithoutId> &event,
+extern void sync_raise_event(const boost::shared_ptr<EventBase> &event);
+extern void async_raise_event(const boost::shared_ptr<EventBase> &event,
 	const boost::shared_ptr<const bool> &withdrawn = boost::shared_ptr<const bool>());
 
 }

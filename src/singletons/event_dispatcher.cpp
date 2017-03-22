@@ -4,6 +4,7 @@
 #include "../precompiled.hpp"
 #include "event_dispatcher.hpp"
 #include "job_dispatcher.hpp"
+#include "../event_base.hpp"
 #include "../log.hpp"
 #include "../mutex.hpp"
 #include "../job_base.hpp"
@@ -12,36 +13,38 @@
 namespace Poseidon {
 
 struct EventListener : NONCOPYABLE {
-	const unsigned id;
+	const std::type_info &type_info;
 	const boost::shared_ptr<const EventListenerCallback> callback;
 
-	EventListener(unsigned id_, boost::shared_ptr<const EventListenerCallback> callback_)
-		: id(id_), callback(STD_MOVE(callback_))
+	EventListener(const std::type_info &type_info_, boost::shared_ptr<const EventListenerCallback> callback_)
+		: type_info(type_info_), callback(STD_MOVE(callback_))
 	{
-		LOG_POSEIDON_INFO("Created event listener for event ", id);
+		LOG_POSEIDON_INFO("Created event listener for event ", type_info.name());
 	}
 	~EventListener(){
-		LOG_POSEIDON_INFO("Destroyed event listener for event ", id);
+		LOG_POSEIDON_INFO("Destroyed event listener for event ", type_info.name());
 	}
 };
 
 namespace {
-	typedef std::map<unsigned,
-		std::vector<boost::weak_ptr<EventListener> >
-		> ListenerMap;
+	struct TypeInfoComparator {
+		bool operator()(const std::type_info *lhs, const std::type_info *rhs) const NOEXCEPT {
+			return (*lhs).before(*rhs);
+		}
+	};
+	typedef boost::container::multimap<const std::type_info *, boost::weak_ptr<EventListener>, TypeInfoComparator> ListenerMap;
 
 	Mutex g_mutex;
 	ListenerMap g_listeners;
 
 	class EventJob : public JobBase {
 	private:
-		const boost::shared_ptr<const EventListenerCallback> m_callback;
-		const boost::shared_ptr<EventBaseWithoutId> m_event;
+		const boost::shared_ptr<const EventListener> m_listener;
+		const boost::shared_ptr<EventBase> m_event;
 
 	public:
-		EventJob(boost::shared_ptr<const EventListenerCallback> callback,
-			boost::shared_ptr<EventBaseWithoutId> event)
-			: m_callback(STD_MOVE(callback)), m_event(STD_MOVE(event))
+		EventJob(boost::shared_ptr<const EventListener> listener, boost::shared_ptr<EventBase> event)
+			: m_listener(STD_MOVE(listener)), m_event(STD_MOVE(event))
 		{
 		}
 
@@ -52,30 +55,26 @@ namespace {
 		void perform() OVERRIDE {
 			PROFILE_ME;
 
-			(*m_callback)(m_event);
+			(*(m_listener->callback))(m_event);
 		}
 	};
 
-	std::vector<boost::shared_ptr<const EventListenerCallback> > get_callbacks(const boost::shared_ptr<EventBaseWithoutId> &event){
+	void get_listeners(std::vector<boost::shared_ptr<const EventListener> > &listeners, const std::type_info &type_info){
 		PROFILE_ME;
 
-		std::vector<boost::shared_ptr<const EventListenerCallback> > callbacks;
-
 		const Mutex::UniqueLock lock(g_mutex);
-		const AUTO(it, g_listeners.find(event->get_id()));
-		if(it != g_listeners.end()){
-			AUTO(listener_it, it->second.begin());
-			while(listener_it != it->second.end()){
-				const AUTO(listener, listener_it->lock());
-				if(!listener){
-					listener_it = it->second.erase(listener_it);
-					continue;
-				}
-				callbacks.push_back(listener->callback);
-				++listener_it;
+		const AUTO(range, g_listeners.equal_range(&type_info));
+		listeners.reserve(listeners.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
+		AUTO(it, range.first);
+		while(it != range.second){
+			AUTO(listener, it->second.lock());
+			if(!listener){
+				it = g_listeners.erase(it);
+				continue;
 			}
+			listeners.push_back(STD_MOVE(listener));
+			++it;
 		}
-		return callbacks;
 	}
 }
 
@@ -85,42 +84,44 @@ void EventDispatcher::start(){
 void EventDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Removing all event listeners...");
 
-	ListenerMap listeners;
-	{
-		const Mutex::UniqueLock lock(g_mutex);
-		listeners.swap(g_listeners);
-	}
+	g_listeners.clear();
 }
 
-boost::shared_ptr<EventListener> EventDispatcher::register_listener(
-	unsigned id, EventListenerCallback callback)
-{
+boost::shared_ptr<EventListener> EventDispatcher::register_listener_explicit(const std::type_info &type_info, EventListenerCallback callback){
+	PROFILE_ME;
+
+#ifdef POSEIDON_CXX11
+	auto shared_callback = boost::make_shared<EventListenerCallback>(std::move(callback));
+#else
 	AUTO(shared_callback, boost::make_shared<EventListenerCallback>());
 	shared_callback->swap(callback);
-	AUTO(listener, boost::make_shared<EventListener>(id, shared_callback));
+#endif
+	AUTO(listener, boost::make_shared<EventListener>(type_info, STD_MOVE_IDN(shared_callback)));
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		g_listeners[id].push_back(listener);
+		g_listeners.emplace(&type_info, listener);
 	}
 	return listener;
 }
 
-void EventDispatcher::sync_raise(const boost::shared_ptr<EventBaseWithoutId> &event){
+void EventDispatcher::sync_raise(const boost::shared_ptr<EventBase> &event){
 	PROFILE_ME;
 
-	const AUTO(callbacks, get_callbacks(event));
-	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
-		(**it)(event);
+	std::vector<boost::shared_ptr<const EventListener> > listeners;
+	get_listeners(listeners, typeid(*event));
+	for(AUTO(it, listeners.begin()); it != listeners.end(); ++it){
+		AUTO_REF(listener, *it);
+		(*(listener->callback))(event);
 	}
 }
-void EventDispatcher::async_raise(const boost::shared_ptr<EventBaseWithoutId> &event,
-	const boost::shared_ptr<const bool> &withdrawn)
-{
+void EventDispatcher::async_raise(const boost::shared_ptr<EventBase> &event, const boost::shared_ptr<const bool> &withdrawn){
 	PROFILE_ME;
 
-	const AUTO(callbacks, get_callbacks(event));
-	for(AUTO(it, callbacks.begin()); it != callbacks.end(); ++it){
-		JobDispatcher::enqueue(boost::make_shared<EventJob>(*it, event), withdrawn);
+	std::vector<boost::shared_ptr<const EventListener> > listeners;
+	get_listeners(listeners, typeid(*event));
+	for(AUTO(it, listeners.begin()); it != listeners.end(); ++it){
+		AUTO_REF(listener, *it);
+		JobDispatcher::enqueue(boost::make_shared<EventJob>(STD_MOVE_IDN(listener), event), withdrawn);
 	}
 }
 

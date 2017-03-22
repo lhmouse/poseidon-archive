@@ -44,7 +44,7 @@ class JsonArray;
 class JsonElement;
 
 class JobBase;
-class EventBaseWithoutId;
+class EventBase;
 
 class JobPromise;
 template<typename>

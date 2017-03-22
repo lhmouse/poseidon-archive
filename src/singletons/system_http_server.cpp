@@ -131,7 +131,8 @@ namespace {
 				} else if(uri == "show_connections"){
 					CsvDocument csv;
 					boost::container::map<SharedNts, std::string> row;
-					AUTO(snapshot, EpollDaemon::snapshot());
+					std::vector<EpollDaemon::SnapshotElement> snapshot;
+					EpollDaemon::make_snapshot(snapshot);
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 						row[sslit("remote_ip")] = it->remote.ip();
 						row[sslit("remote_port")] = boost::lexical_cast<std::string>(it->remote.port());
