@@ -55,25 +55,18 @@ Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXC
 	: m_prev(t_top_profiler), m_file(file), m_line(line), m_func(func)
 	, m_start(0), m_excluded(0), m_yielded_since(0)
 {
-	if(!ProfileDepository::is_enabled()){
-		return;
+	if(ProfileDepository::is_enabled()){
+		const AUTO(now, get_hi_res_mono_clock());
+		m_start = now;
+		t_top_profiler = this;
 	}
-
-	const AUTO(now, get_hi_res_mono_clock());
-	m_start = now;
-
-	t_top_profiler = this;
 }
 Profiler::~Profiler() NOEXCEPT {
-	if(!ProfileDepository::is_enabled()){
-		return;
+	if(ProfileDepository::is_enabled()){
+		const AUTO(now, get_hi_res_mono_clock());
+		t_top_profiler = m_prev;
+		accumulate(now);
 	}
-
-	t_top_profiler = m_prev;
-
-	const AUTO(now, get_hi_res_mono_clock());
-	accumulate(now);
-
 	if(std::uncaught_exception()){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"Exception backtrace: file = ", m_file, ", line = ", m_line, ", func = ", m_func);
