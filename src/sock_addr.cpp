@@ -54,13 +54,13 @@ SockAddr::SockAddr(const void *addr_data, std::size_t addr_size){
 	m_size = addr_size;
 }
 SockAddr::SockAddr(const IpPort &ip_port){
-	if(::inet_pton(AF_INET, ip_port.ip(), static_cast< ::sockaddr_in *>(static_cast<void *>(m_data))) == 1){
+	if(::inet_pton(AF_INET, ip_port.ip(), &(static_cast< ::sockaddr_in *>(static_cast<void *>(m_data))->sin_addr)) == 1){
 		BOOST_STATIC_ASSERT(sizeof(m_data) >= sizeof(::sockaddr_in));
 		AUTO_REF(sin, *static_cast< ::sockaddr_in *>(static_cast<void *>(m_data)));
 		sin.sin_family = AF_INET;
 		store_be(sin.sin_port, ip_port.port());
 		m_size = sizeof(sin);
-	} else if(::inet_pton(AF_INET6, ip_port.ip(), static_cast< ::sockaddr_in6 *>(static_cast<void *>(m_data))) == 1){
+	} else if(::inet_pton(AF_INET6, ip_port.ip(), &(static_cast< ::sockaddr_in6 *>(static_cast<void *>(m_data))->sin6_addr)) == 1){
 		BOOST_STATIC_ASSERT(sizeof(m_data) >= sizeof(::sockaddr_in6));
 		AUTO_REF(sin6, *static_cast< ::sockaddr_in6 *>(static_cast<void *>(m_data)));
 		sin6.sin6_family = AF_INET6;
