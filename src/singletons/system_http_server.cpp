@@ -197,7 +197,7 @@ void SystemHttpServer::start(){
 	if(bind.empty()){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "System HTTP server is disabled.");
 	} else {
-		const IpPort bind_addr(SharedNts(bind), port);
+		const IpPort bind_addr(bind.c_str(), port);
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bind_addr);
 		AUTO(server, boost::make_shared<SystemServer>(bind_addr, cert.c_str(), pkey.c_str(), STD_MOVE(auth), STD_MOVE(path)));
 		g_system_server = server;

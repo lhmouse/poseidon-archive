@@ -41,7 +41,8 @@ namespace {
 }
 
 SockAddr::SockAddr(){
-	std::memset(m_data, 0, sizeof(sa_family_t));
+	static CONSTEXPR const ::sa_family_t NULL_FAMILY = AF_UNSPEC;
+	std::memcpy(m_data, &NULL_FAMILY, sizeof(NULL_FAMILY));
 	m_size = 0;
 }
 SockAddr::SockAddr(const void *addr_data, std::size_t addr_size){
@@ -66,7 +67,7 @@ SockAddr::SockAddr(const IpPort &ip_port){
 		store_be(sin6.sin6_port, ip_port.port());
 		m_size = sizeof(sin6);
 	} else {
-		LOG_POSEIDON_ERROR("Unknown IPI address format: ip = ", ip_port.ip());
+		LOG_POSEIDON_ERROR("Unknown IP address format: ip = ", ip_port.ip());
 		DEBUG_THROW(Exception, sslit("Unknown IP address format"));
 	}
 }
