@@ -86,7 +86,7 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 
 	(void)readable;
 
-	std::string data;
+	std::vector<unsigned char> data;
 	try {
 		data.resize(4096);
 
@@ -119,7 +119,7 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 			}
 			return EWOULDBLOCK;
 		}
-		on_receive(StreamBuffer(data));
+		on_receive(StreamBuffer(data.data(), data.size()));
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 		force_shutdown();
@@ -154,7 +154,7 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 		return EPIPE;
 	}
 
-	std::string data;
+	std::vector<unsigned char> data;
 	try {
 		data.resize(4096);
 

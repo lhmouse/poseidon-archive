@@ -48,12 +48,12 @@ int UdpServerBase::poll_read_and_process(bool readable){
 	(void)readable;
 
 	SockAddr sock_addr;
-	std::string data;
+	std::vector<unsigned char> data;
 	for(unsigned i = 0; i < 256; ++i){
 		try {
 			::sockaddr_storage sa;
 			::socklen_t sa_len = sizeof(sa);
-			data.resize(16384);
+			data.resize(65536);
 			::ssize_t result = ::recvfrom(get_fd(), &data[0], data.size(), MSG_NOSIGNAL | MSG_DONTWAIT,
 				static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &sa_len);
 			if(result < 0){
@@ -67,7 +67,7 @@ int UdpServerBase::poll_read_and_process(bool readable){
 			return EINTR;
 		}
 		try {
-			on_receive(sock_addr, StreamBuffer(data));
+			on_receive(sock_addr, StreamBuffer(data.data(), data.size()));
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 			continue;
@@ -84,15 +84,17 @@ int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 	(void)writeable;
 
 	SockAddr sock_addr;
-	std::string data;
+	std::vector<unsigned char> data;
 	for(unsigned i = 0; i < 256; ++i){
 		try {
 			const Mutex::UniqueLock lock(m_send_mutex);
 			if(m_send_queue.empty()){
 				return EWOULDBLOCK;
 			}
-			sock_addr = m_send_queue.front().first;
-			data = m_send_queue.front().second.dump_string();
+			AUTO_REF(elem, m_send_queue.front());
+			sock_addr = elem.first;
+			data.resize(elem.second.size());
+			data.erase(data.begin() + static_cast<std::ptrdiff_t>(elem.second.get(data.data(), data.size())), data.end());
 			m_send_queue.pop_front();
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
