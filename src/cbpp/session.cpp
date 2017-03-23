@@ -132,13 +132,6 @@ namespace Cbpp {
 	Session::~Session(){
 	}
 
-	boost::uint64_t Session::get_max_request_length() const {
-		return atomic_load(m_max_request_length, ATOMIC_CONSUME);
-	}
-	void Session::set_max_request_length(boost::uint64_t max_request_length){
-		atomic_store(m_max_request_length, max_request_length, ATOMIC_RELEASE);
-	}
-
 	void Session::on_read_hup() NOEXCEPT
 	try {
 		PROFILE_ME;
@@ -216,6 +209,13 @@ namespace Cbpp {
 			LOG_POSEIDON_WARNING("Unknown control code: ", status_code);
 			DEBUG_THROW(Exception, ST_UNKNOWN_CTL_CODE, sslit("Unknown control code"));
 		}
+	}
+
+	boost::uint64_t Session::get_max_request_length() const {
+		return atomic_load(m_max_request_length, ATOMIC_CONSUME);
+	}
+	void Session::set_max_request_length(boost::uint64_t max_request_length){
+		atomic_store(m_max_request_length, max_request_length, ATOMIC_RELEASE);
 	}
 }
 

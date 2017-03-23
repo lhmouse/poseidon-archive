@@ -28,9 +28,6 @@ namespace Http {
 		~Session();
 
 	protected:
-		boost::uint64_t get_max_request_length() const;
-		void set_max_request_length(boost::uint64_t max_request_length);
-
 		boost::uint64_t get_low_level_size_total() const {
 			return m_size_total;
 		}
@@ -51,6 +48,10 @@ namespace Http {
 
 		// 可覆写。
 		virtual void on_sync_request(RequestHeaders request_headers, StreamBuffer entity) = 0;
+
+	public:
+		boost::uint64_t get_max_request_length() const;
+		void set_max_request_length(boost::uint64_t max_request_length);
 	};
 }
 

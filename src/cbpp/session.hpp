@@ -27,9 +27,6 @@ namespace Cbpp {
 		~Session();
 
 	protected:
-		boost::uint64_t get_max_request_length() const;
-		void set_max_request_length(boost::uint64_t max_request_length);
-
 		boost::uint64_t get_low_level_size_total() const {
 			return m_size_total;
 		}
@@ -53,6 +50,10 @@ namespace Cbpp {
 		// 可覆写。
 		virtual void on_sync_data_message(boost::uint16_t message_id, StreamBuffer payload) = 0;
 		virtual void on_sync_control_message(StatusCode status_code, StreamBuffer param);
+
+	public:
+		boost::uint64_t get_max_request_length() const;
+		void set_max_request_length(boost::uint64_t max_request_length);
 	};
 }
 
