@@ -65,6 +65,21 @@ namespace WebSocket {
 		virtual void really_perform(const boost::shared_ptr<Client> &client) = 0;
 	};
 
+	class Client::ConnectJob : public Client::SyncJobBase {
+	public:
+		explicit ConnectJob(const boost::shared_ptr<Client> &client)
+			: SyncJobBase(client)
+		{
+		}
+
+	protected:
+		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
+			PROFILE_ME;
+
+			client->on_sync_connect();
+		}
+	};
+
 	class Client::ReadHupJob : public Client::SyncJobBase {
 	public:
 		explicit ReadHupJob(const boost::shared_ptr<Client> &client)
@@ -129,8 +144,16 @@ namespace WebSocket {
 	Client::~Client(){
 	}
 
-	void Client::on_read_hup() NOEXCEPT
-	try {
+	void Client::on_connect(){
+		PROFILE_ME;
+
+		JobDispatcher::enqueue(
+			boost::make_shared<ConnectJob>(virtual_shared_from_this<Client>()),
+			VAL_INIT);
+
+		LowLevelClient::on_connect();
+	}
+	void Client::on_read_hup(){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -138,12 +161,6 @@ namespace WebSocket {
 			VAL_INIT);
 
 		LowLevelClient::on_read_hup();
-	} catch(std::exception &e){
-		LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-		force_shutdown();
-	} catch(...){
-		LOG_POSEIDON_WARNING("Unknown exception thrown.");
-		force_shutdown();
 	}
 
 	void Client::on_low_level_message_header(OpCode opcode){
@@ -180,6 +197,9 @@ namespace WebSocket {
 			VAL_INIT);
 
 		return true;
+	}
+
+	void Client::on_sync_connect(){
 	}
 
 	void Client::on_sync_control_message(OpCode opcode, StreamBuffer payload){

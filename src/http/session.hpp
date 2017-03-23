@@ -39,7 +39,7 @@ namespace Http {
 		}
 
 		// TcpSessionBase
-		void on_read_hup() NOEXCEPT OVERRIDE;
+		void on_read_hup() OVERRIDE;
 
 		// LowLevelSession
 		void on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE;

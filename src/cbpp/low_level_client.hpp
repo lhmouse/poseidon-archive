@@ -32,7 +32,9 @@ namespace Cbpp {
 		void create_keep_alive_timer();
 
 	protected:
-		// TcpSessionBase
+		// TcpClientBase
+		void on_connect() OVERRIDE;
+		void on_read_hup() OVERRIDE;
 		void on_receive(StreamBuffer data) OVERRIDE;
 
 		// Reader

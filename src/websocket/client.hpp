@@ -12,6 +12,7 @@ namespace WebSocket {
 	class Client : public LowLevelClient {
 	private:
 		class SyncJobBase;
+		class ConnectJob;
 		class ReadHupJob;
 		class DataMessageJob;
 		class ControlMessageJob;
@@ -33,7 +34,8 @@ namespace WebSocket {
 		}
 
 		// UpgradedSessionBase
-		void on_read_hup() NOEXCEPT OVERRIDE;
+		void on_connect() OVERRIDE;
+		void on_read_hup() OVERRIDE;
 
 		// LowLevelClient
 		void on_low_level_message_header(OpCode opcode) OVERRIDE;
@@ -43,6 +45,8 @@ namespace WebSocket {
 		bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
 
 		// 可覆写。
+		virtual void on_sync_connect();
+
 		virtual void on_sync_data_message(OpCode opcode, StreamBuffer payload) = 0;
 		virtual void on_sync_control_message(OpCode opcode, StreamBuffer payload);
 	};

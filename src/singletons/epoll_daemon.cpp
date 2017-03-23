@@ -204,6 +204,8 @@ namespace {
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 					"Socket closed: err_code = ", err_code, ", desc = ", get_error_desc(err_code), ", typeid = ", typeid(*(it->socket)).name());
+				it->socket->shutdown_read();
+				it->socket->shutdown_write();
 				it->socket->on_close(err_code);
 				g_socket_map.erase<0>(it);
 				continue;

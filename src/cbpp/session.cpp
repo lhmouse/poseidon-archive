@@ -132,8 +132,7 @@ namespace Cbpp {
 	Session::~Session(){
 	}
 
-	void Session::on_read_hup() NOEXCEPT
-	try {
+	void Session::on_read_hup(){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -141,12 +140,6 @@ namespace Cbpp {
 			VAL_INIT);
 
 		LowLevelSession::on_read_hup();
-	} catch(std::exception &e){
-		LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-		force_shutdown();
-	} catch(...){
-		LOG_POSEIDON_WARNING("Unknown exception thrown.");
-		force_shutdown();
 	}
 
 	void Session::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){

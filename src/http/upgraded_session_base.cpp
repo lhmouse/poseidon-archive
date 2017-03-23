@@ -17,12 +17,6 @@ namespace Http {
 	UpgradedSessionBase::~UpgradedSessionBase(){
 	}
 
-	void UpgradedSessionBase::on_read_hup() NOEXCEPT {
-	}
-	void UpgradedSessionBase::on_close(int err_code) NOEXCEPT {
-		(void)err_code;
-	}
-
 	bool UpgradedSessionBase::has_been_shutdown_read() const NOEXCEPT {
 		const AUTO(parent, get_parent());
 		if(!parent){
@@ -80,13 +74,6 @@ namespace Http {
 			return false;
 		}
 		return parent->is_throttled();
-	}
-	bool UpgradedSessionBase::is_connected() const NOEXCEPT {
-		const AUTO(parent, get_parent());
-		if(!parent){
-			return false;
-		}
-		return parent->is_connected();
 	}
 
 	void UpgradedSessionBase::set_no_delay(bool enabled){

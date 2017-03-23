@@ -58,6 +58,10 @@ namespace WebSocket {
 			boost::bind(&keep_alive_timer_proc, virtual_weak_from_this<LowLevelClient>(), _2, _3));
 	}
 
+	void LowLevelClient::on_connect(){
+	}
+	void LowLevelClient::on_read_hup(){
+	}
 	void LowLevelClient::on_receive(StreamBuffer data){
 		PROFILE_ME;
 

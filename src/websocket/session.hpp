@@ -38,7 +38,7 @@ namespace WebSocket {
 		}
 
 		// UpgradedSessionBase
-		void on_read_hup() NOEXCEPT OVERRIDE;
+		void on_read_hup() OVERRIDE;
 
 		// LowLevelSession
 		void on_low_level_message_header(OpCode opcode) OVERRIDE;

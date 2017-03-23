@@ -139,8 +139,7 @@ namespace WebSocket {
 	Session::~Session(){
 	}
 
-	void Session::on_read_hup() NOEXCEPT
-	try {
+	void Session::on_read_hup(){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -148,12 +147,6 @@ namespace WebSocket {
 			VAL_INIT);
 
 		LowLevelSession::on_read_hup();
-	} catch(std::exception &e){
-		LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-		force_shutdown();
-	} catch(...){
-		LOG_POSEIDON_WARNING("Unknown exception thrown.");
-		force_shutdown();
 	}
 
 	void Session::on_low_level_message_header(OpCode opcode){

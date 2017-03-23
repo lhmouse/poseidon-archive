@@ -34,7 +34,7 @@ namespace Http {
 
 		// TcpClientBase
 		void on_connect() OVERRIDE;
-		void on_read_hup() NOEXCEPT OVERRIDE;
+		void on_read_hup() OVERRIDE;
 
 		// LowLevelClient
 		void on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) OVERRIDE;

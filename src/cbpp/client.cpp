@@ -144,8 +144,7 @@ namespace Cbpp {
 
 		LowLevelClient::on_connect();
 	}
-	void Client::on_read_hup() NOEXCEPT
-	try {
+	void Client::on_read_hup(){
 		PROFILE_ME;
 
 		JobDispatcher::enqueue(
@@ -153,12 +152,6 @@ namespace Cbpp {
 			VAL_INIT);
 
 		LowLevelClient::on_read_hup();
-	} catch(std::exception &e){
-		LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-		force_shutdown();
-	} catch(...){
-		LOG_POSEIDON_WARNING("Unknown exception thrown.");
-		force_shutdown();
 	}
 
 	void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
@@ -201,8 +194,6 @@ namespace Cbpp {
 	}
 
 	void Client::on_sync_connect(){
-		PROFILE_ME;
-		LOG_POSEIDON_INFO("CBPP client connected: remote = ", get_remote_info());
 	}
 
 	void Client::on_sync_control_message(StatusCode status_code, StreamBuffer param){

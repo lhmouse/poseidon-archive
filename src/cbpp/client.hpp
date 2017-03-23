@@ -35,7 +35,7 @@ namespace Cbpp {
 
 		// TcpSessionBase
 		void on_connect() OVERRIDE;
-		void on_read_hup() NOEXCEPT OVERRIDE;
+		void on_read_hup() OVERRIDE;
 
 		// LowLevelClient
 		void on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) OVERRIDE;

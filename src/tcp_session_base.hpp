@@ -20,12 +20,11 @@ class TcpSessionBase : public SocketBase, public SessionBase {
 	friend TcpServerBase;
 
 private:
-	static void shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now, boost::uint64_t period);
+	static void shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now);
 
 private:
 	boost::scoped_ptr<SslFilterBase> m_ssl_filter;
 
-	volatile bool m_connected;
 	bool m_connected_notified;
 	bool m_read_hup_notified;
 
@@ -49,9 +48,9 @@ protected:
 	int poll_read_and_process(bool readable) OVERRIDE;
 	int poll_write(Mutex::UniqueLock &write_lock, bool writeable) OVERRIDE;
 
-	virtual void on_connect();
-	void on_read_hup() NOEXCEPT OVERRIDE;
-	void on_close(int err_code) NOEXCEPT OVERRIDE; // 参数就是 errno。
+	void on_connect() OVERRIDE = 0;
+	void on_read_hup() OVERRIDE = 0;
+	void on_close(int err_code) NOEXCEPT OVERRIDE = 0; // 参数就是 errno。
 
 	void on_receive(StreamBuffer data) OVERRIDE = 0;
 
@@ -77,7 +76,6 @@ public:
 	}
 
 	bool is_throttled() const OVERRIDE;
-	bool is_connected() const NOEXCEPT;
 
 	void set_no_delay(bool enabled = true);
 	void set_timeout(boost::uint64_t timeout);

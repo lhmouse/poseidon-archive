@@ -20,7 +20,9 @@ namespace Http {
 	LowLevelSession::~LowLevelSession(){
 	}
 
-	void LowLevelSession::on_read_hup() NOEXCEPT {
+	void LowLevelSession::on_connect(){
+	}
+	void LowLevelSession::on_read_hup(){
 		PROFILE_ME;
 
 		// epoll 线程读取不需要锁。
@@ -28,8 +30,6 @@ namespace Http {
 		if(upgraded_session){
 			upgraded_session->on_read_hup();
 		}
-
-		TcpSessionBase::on_read_hup();
 	}
 	void LowLevelSession::on_close(int err_code) NOEXCEPT {
 		PROFILE_ME;
@@ -39,10 +39,7 @@ namespace Http {
 		if(upgraded_session){
 			upgraded_session->on_close(err_code);
 		}
-
-		TcpSessionBase::on_close(err_code);
 	}
-
 	void LowLevelSession::on_receive(StreamBuffer data){
 		PROFILE_ME;
 
@@ -57,6 +54,8 @@ namespace Http {
 
 		upgraded_session = m_upgraded_session;
 		if(upgraded_session){
+			upgraded_session->on_connect();
+
 			StreamBuffer queue;
 			queue.swap(ServerReader::get_queue());
 			if(!queue.empty()){

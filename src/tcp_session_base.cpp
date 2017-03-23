@@ -20,15 +20,13 @@
 
 namespace Poseidon {
 
-void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now, boost::uint64_t period){
+void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now){
 	PROFILE_ME;
 
 	const AUTO(session, weak.lock());
 	if(!session){
 		return;
 	}
-
-	(void)period;
 
 	const AUTO(shutdown_time, atomic_load(session->m_shutdown_time, ATOMIC_CONSUME));
 	if(shutdown_time < now){
@@ -60,7 +58,7 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 
 TcpSessionBase::TcpSessionBase(UniqueFile socket)
 	: SocketBase(STD_MOVE(socket)), SessionBase()
-	, m_connected(false), m_connected_notified(false), m_read_hup_notified(false)
+	, m_connected_notified(false), m_read_hup_notified(false)
 	, m_shutdown_time((boost::uint64_t)-1), m_last_use_time((boost::uint64_t)-1)
 {
 }
@@ -77,8 +75,8 @@ void TcpSessionBase::create_shutdown_timer(){
 	if(m_shutdown_timer){
 		return;
 	}
-	m_shutdown_timer = TimerDaemon::register_low_level_timer(0, 5000,
-		boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2, _3));
+	m_shutdown_timer = TimerDaemon::register_low_level_timer(1000, 5000,
+		boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
 }
 
 int TcpSessionBase::poll_read_and_process(bool readable){
@@ -108,14 +106,16 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 		atomic_store(m_last_use_time, now, ATOMIC_RELEASE);
 		create_shutdown_timer();
 
+		if(data.empty() && !m_read_hup_notified){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"TCP connection read hung up: local = ", get_local_info(), ", remote = ", get_remote_info());
+			shutdown_read();
+			on_read_hup();
+			m_read_hup_notified = true;
+		}
 		if(data.empty()){
-			if(!m_read_hup_notified){
-				on_read_hup();
-				m_read_hup_notified = true;
-			}
 			return EWOULDBLOCK;
 		}
-
 		on_receive(STD_MOVE(data));
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
@@ -133,28 +133,17 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 
 	assert(!write_lock);
 
-	try {
-		if(writeable){
-			atomic_store(m_connected, true, ATOMIC_RELEASE);
-			if(!m_connected_notified){
-				on_connect();
-				m_connected_notified = true;
-			}
-		}
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-		force_shutdown();
-		return EPIPE;
-	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown.");
-		force_shutdown();
-		return EPIPE;
-	}
-
 	std::vector<unsigned char> temp;
 
 	Poseidon::StreamBuffer data;
 	try {
+		if(writeable && !m_connected_notified){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"TCP connection established: local = ", get_local_info(), ", remote = ", get_remote_info());
+			on_connect();
+			m_connected_notified = true;
+		}
+
 		temp.resize(4096);
 		Poseidon::Mutex::UniqueLock lock(m_send_mutex);
 		const std::size_t avail = m_send_buffer.peek(temp.data(), temp.size());
@@ -204,32 +193,12 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 	return 0;
 }
 
-void TcpSessionBase::on_connect(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-		"TCP connection established: local = ", get_local_info(), ", remote = ", get_remote_info());
-}
-void TcpSessionBase::on_read_hup() NOEXCEPT {
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-		"TCP connection read hung up: local = ", get_local_info(), ", remote = ", get_remote_info());
-	SocketBase::shutdown_read();
-}
-void TcpSessionBase::on_close(int err_code) NOEXCEPT {
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-		"TCP connection closed: local = ", get_local_info(), ", remote = ", get_remote_info(), ", err_code = ", err_code);
-	SocketBase::shutdown_read();
-	SocketBase::shutdown_write();
-	atomic_store(m_connected, false, ATOMIC_RELEASE);
-}
-
 bool TcpSessionBase::is_throttled() const {
 	const Mutex::UniqueLock lock(m_send_mutex);
 	if(m_send_buffer.size() >= 65536){
 		return true;
 	}
 	return SocketBase::is_throttled();
-}
-bool TcpSessionBase::is_connected() const NOEXCEPT {
-	return atomic_load(m_connected, ATOMIC_CONSUME);
 }
 
 void TcpSessionBase::set_no_delay(bool enabled){

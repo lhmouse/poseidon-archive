@@ -30,10 +30,11 @@ namespace Http {
 		~UpgradedSessionBase();
 
 	protected:
-		void on_read_hup() NOEXCEPT OVERRIDE;
-		void on_close(int err_code) NOEXCEPT OVERRIDE;
+		void on_connect() OVERRIDE = 0;
+		void on_read_hup() OVERRIDE = 0;
+		void on_close(int err_code) NOEXCEPT OVERRIDE = 0;
 
-		virtual void on_receive(StreamBuffer data) = 0;
+		void on_receive(StreamBuffer data) OVERRIDE = 0;
 
 	public:
 		bool has_been_shutdown_read() const NOEXCEPT OVERRIDE;
@@ -60,7 +61,6 @@ namespace Http {
 		const IpPort &get_local_info() const NOEXCEPT;
 
 		bool is_throttled() const;
-		bool is_connected() const NOEXCEPT;
 
 		void set_no_delay(bool enabled = true);
 		void set_timeout(boost::uint64_t timeout);
