@@ -86,25 +86,28 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 
 	(void)readable;
 
-	std::vector<unsigned char> data;
-	try {
-		data.resize(4096);
+	std::vector<unsigned char> temp;
 
+	Poseidon::StreamBuffer data;
+	try {
+		temp.resize(4096);
 		::ssize_t result;
 		if(m_ssl_filter){
-			result = m_ssl_filter->recv(&data[0], data.size());
+			result = m_ssl_filter->recv(temp.data(), temp.size());
 		} else {
-			result = ::recv(get_fd(), &data[0], data.size(), MSG_NOSIGNAL | MSG_DONTWAIT);
+			result = ::recv(get_fd(), temp.data(), temp.size(), MSG_NOSIGNAL | MSG_DONTWAIT);
 		}
 		if(result < 0){
 			return errno;
 		}
+		temp.resize(static_cast<std::size_t>(result));
+		data.put(temp.data(), temp.size());
+		LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", get_remote_info());
+
 		const AUTO(now, get_fast_mono_clock());
 		atomic_store(m_last_use_time, now, ATOMIC_RELEASE);
 		create_shutdown_timer();
 
-		data.erase(data.begin() + result, data.end());
-		LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", get_remote_info());
 		if(data.empty()){
 			if(!m_read_hup_notified){
 				on_read_hup();
@@ -113,7 +116,7 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 			return EWOULDBLOCK;
 		}
 
-		on_receive(StreamBuffer(data.data(), data.size()));
+		on_receive(STD_MOVE(data));
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 		force_shutdown();
@@ -148,12 +151,13 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 		return EPIPE;
 	}
 
-	std::vector<unsigned char> data;
-	try {
-		data.resize(4096);
+	std::vector<unsigned char> temp;
 
+	Poseidon::StreamBuffer data;
+	try {
+		temp.resize(4096);
 		Poseidon::Mutex::UniqueLock lock(m_send_mutex);
-		const std::size_t avail = m_send_buffer.peek(&data[0], data.size());
+		const std::size_t avail = m_send_buffer.peek(temp.data(), temp.size());
 		if(avail == 0){
 			if(should_really_shutdown_write()){
 				if(m_ssl_filter){
@@ -165,24 +169,25 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 			return EWOULDBLOCK;
 		}
 		lock.unlock();
-		data.erase(data.begin() + static_cast<std::ptrdiff_t>(avail), data.end());
+		temp.resize(avail);
 
 		::ssize_t result;
 		if(m_ssl_filter){
-			result = m_ssl_filter->send(&data[0], data.size());
+			result = m_ssl_filter->send(temp.data(), temp.size());
 		} else {
-			result = ::send(get_fd(), &data[0], data.size(), MSG_NOSIGNAL | MSG_DONTWAIT);
+			result = ::send(get_fd(), temp.data(), temp.size(), MSG_NOSIGNAL | MSG_DONTWAIT);
 		}
 		if(result < 0){
 			return errno;
 		}
+		LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", get_remote_info());
+
 		const AUTO(now, get_fast_mono_clock());
 		atomic_store(m_last_use_time, now, ATOMIC_RELEASE);
 		create_shutdown_timer();
 
 		lock.lock();
 		m_send_buffer.discard(static_cast<std::size_t>(result));
-		LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", get_remote_info());
 		swap(write_lock, lock);
 		if(m_send_buffer.empty()){
 			return EWOULDBLOCK;
