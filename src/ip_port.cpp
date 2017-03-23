@@ -48,6 +48,15 @@ IpPort::IpPort(const SockAddr &sock_addr){
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
 }
+IpPort::IpPort(const IpPort &rhs) NOEXCEPT {
+	std::strcpy(m_ip, rhs.m_ip);
+	m_port = rhs.m_port;
+}
+IpPort &IpPort::operator=(const IpPort &rhs) NOEXCEPT {
+	std::strcpy(m_ip, rhs.m_ip);
+	m_port = rhs.m_port;
+	return *this;
+}
 
 namespace {
 	const IpPort g_unknown_ip_port;

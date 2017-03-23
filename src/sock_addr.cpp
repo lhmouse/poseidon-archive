@@ -71,6 +71,15 @@ SockAddr::SockAddr(const IpPort &ip_port){
 		DEBUG_THROW(Exception, sslit("Unknown IP address format"));
 	}
 }
+SockAddr::SockAddr(const SockAddr &rhs) NOEXCEPT {
+	std::memcpy(m_data, rhs.m_data, rhs.m_size);
+	m_size = rhs.m_size;
+}
+SockAddr &SockAddr::operator=(const SockAddr &rhs) NOEXCEPT {
+	std::memcpy(m_data, rhs.m_data, rhs.m_size);
+	m_size = rhs.m_size;
+	return *this;
+}
 
 int SockAddr::get_family() const {
 	::sa_family_t sa_family;

@@ -19,6 +19,8 @@ public:
 	IpPort();
 	IpPort(const char *ip_str, unsigned port_num);
 	IpPort(const SockAddr &sock_addr);
+	IpPort(const IpPort &ip_port) NOEXCEPT;
+	IpPort &operator=(const IpPort &ip_port) NOEXCEPT;
 
 public:
 	const char *ip() const {

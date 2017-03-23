@@ -19,6 +19,8 @@ public:
 	SockAddr();
 	SockAddr(const void *addr_data, std::size_t addr_size);
 	SockAddr(const IpPort &ip_port);
+	SockAddr(const SockAddr &rhs) NOEXCEPT;
+	SockAddr &operator=(const SockAddr &rhs) NOEXCEPT;
 
 public:
 	const void *data() const {
