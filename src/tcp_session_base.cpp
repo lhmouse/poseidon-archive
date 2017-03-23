@@ -105,12 +105,6 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 
 		data.erase(data.begin() + result, data.end());
 		LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", get_remote_info());
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-		force_shutdown();
-		return EPIPE;
-	}
-	try {
 		if(data.empty()){
 			if(!m_read_hup_notified){
 				on_read_hup();
@@ -118,17 +112,7 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 			}
 			return EWOULDBLOCK;
 		}
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-		force_shutdown();
-		return EPIPE;
-	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown.");
-		force_shutdown();
-		return EPIPE;
-	}
 
-	try {
 		on_receive(StreamBuffer(data.data(), data.size()));
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
@@ -205,6 +189,10 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 		}
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+		force_shutdown();
+		return EPIPE;
+	} catch(...){
+		LOG_POSEIDON_ERROR("Unknown exception thrown.");
 		force_shutdown();
 		return EPIPE;
 	}
