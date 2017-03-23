@@ -4,6 +4,7 @@
 #ifndef POSEIDON_MONGODB_CONNECTION_HPP_
 #define POSEIDON_MONGODB_CONNECTION_HPP_
 
+#include "../cxx_ver.hpp"
 #include "../cxx_util.hpp"
 #include <string>
 #include <cstring>

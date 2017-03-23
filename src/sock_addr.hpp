@@ -4,6 +4,7 @@
 #ifndef POSEIDON_SOCK_ADDR_HPP_
 #define POSEIDON_SOCK_ADDR_HPP_
 
+#include "cxx_ver.hpp"
 #include <cstddef>
 
 namespace Poseidon {

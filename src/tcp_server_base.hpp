@@ -5,6 +5,7 @@
 #define POSEIDON_TCP_SERVER_BASE_HPP_
 
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include "socket_base.hpp"
 #include "sock_addr.hpp"
 #include "ip_port.hpp"

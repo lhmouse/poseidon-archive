@@ -4,6 +4,7 @@
 #ifndef POSEIDON_THREAD_HPP_
 #define POSEIDON_THREAD_HPP_
 
+#include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>

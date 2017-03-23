@@ -4,6 +4,7 @@
 #ifndef POSEIDON_CRC32_HPP_
 #define POSEIDON_CRC32_HPP_
 
+#include "cxx_ver.hpp"
 #include <string>
 #include <cstring>
 #include <cstddef>

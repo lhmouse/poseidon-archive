@@ -4,6 +4,7 @@
 #ifndef POSEIDON_MD5_HPP_
 #define POSEIDON_MD5_HPP_
 
+#include "cxx_ver.hpp"
 #include <string>
 #include <cstring>
 #include <cstddef>

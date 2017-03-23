@@ -4,6 +4,7 @@
 #ifndef POSEIDON_SINGLETONS_EPOLL_DAEMON_HPP_
 #define POSEIDON_SINGLETONS_EPOLL_DAEMON_HPP_
 
+#include "../cxx_ver.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include "../ip_port.hpp"
