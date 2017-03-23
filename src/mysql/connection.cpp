@@ -72,7 +72,7 @@ namespace MySql {
 				if(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) != 0){
 					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 				}
-				const ::my_bool TRUE_VALUE = true;
+				static CONSTEXPR const ::my_bool TRUE_VALUE = true;
 				if(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &TRUE_VALUE) != 0){
 					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
 				}

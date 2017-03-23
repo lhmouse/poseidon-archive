@@ -20,7 +20,7 @@ namespace {
 		if(!udp.reset(::socket(addr.get_family(), SOCK_DGRAM, IPPROTO_UDP))){
 			DEBUG_THROW(SystemException);
 		}
-		const int TRUE_VALUE = true;
+		static CONSTEXPR const int TRUE_VALUE = true;
 		if(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
 			DEBUG_THROW(SystemException);
 		}
