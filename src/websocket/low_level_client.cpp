@@ -62,6 +62,9 @@ namespace WebSocket {
 	}
 	void LowLevelClient::on_read_hup(){
 	}
+	void LowLevelClient::on_close(int err_code) NOEXCEPT {
+		(void)err_code;
+	}
 	void LowLevelClient::on_receive(StreamBuffer data){
 		PROFILE_ME;
 

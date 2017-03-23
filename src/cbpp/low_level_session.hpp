@@ -21,6 +21,7 @@ namespace Cbpp {
 		// TcpSessionBase
 		void on_connect() OVERRIDE;
 		void on_read_hup() OVERRIDE;
+		void on_close(int err_code) NOEXCEPT OVERRIDE;
 		void on_receive(StreamBuffer data) OVERRIDE;
 
 		// Reader

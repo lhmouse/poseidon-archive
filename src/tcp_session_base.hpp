@@ -51,7 +51,6 @@ protected:
 	void on_connect() OVERRIDE = 0;
 	void on_read_hup() OVERRIDE = 0;
 	void on_close(int err_code) NOEXCEPT OVERRIDE = 0; // 参数就是 errno。
-
 	void on_receive(StreamBuffer data) OVERRIDE = 0;
 
 public:

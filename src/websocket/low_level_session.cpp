@@ -22,6 +22,9 @@ namespace WebSocket {
 	}
 	void LowLevelSession::on_read_hup(){
 	}
+	void LowLevelSession::on_close(int err_code) NOEXCEPT {
+		(void)err_code;
+	}
 	void LowLevelSession::on_receive(StreamBuffer data){
 		PROFILE_ME;
 
