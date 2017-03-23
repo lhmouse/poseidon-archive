@@ -133,6 +133,11 @@ int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 	return 0;
 }
 
+void UdpServerBase::on_message_too_large(const SockAddr &sock_addr, StreamBuffer data) const {
+	(void)sock_addr;
+	(void)data;
+}
+
 bool UdpServerBase::send(const SockAddr &sock_addr, StreamBuffer buffer) const {
 	PROFILE_ME;
 

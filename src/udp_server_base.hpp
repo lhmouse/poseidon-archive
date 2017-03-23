@@ -29,7 +29,7 @@ protected:
 	int poll_write(Mutex::UniqueLock &write_lock, bool writeable) OVERRIDE;
 
 	virtual void on_receive(const SockAddr &sock_addr, StreamBuffer data) const = 0;
-	virtual void on_message_too_large(const SockAddr &sock_addr, StreamBuffer data) const = 0;
+	virtual void on_message_too_large(const SockAddr &sock_addr, StreamBuffer data) const;
 
 public:
 	bool has_been_shutdown_read() const NOEXCEPT {
