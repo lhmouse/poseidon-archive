@@ -107,6 +107,10 @@ int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 			::ssize_t result = ::sendto(get_fd(), &data[0], data.size(), MSG_NOSIGNAL | MSG_DONTWAIT,
 				static_cast< ::sockaddr *>(static_cast<void *>(&sa)), sa_len);
 			if(result < 0){
+				if(errno == EMSGSIZE){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "UDP packet is too large: size = ", data.size());
+					on_message_too_large(sock_addr, StreamBuffer(data.data(), data.size()));
+				}
 				continue;
 			}
 			LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", IpPort(sock_addr));
