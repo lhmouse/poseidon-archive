@@ -143,7 +143,7 @@ namespace {
 
 	volatile bool g_running = false;
 
-	FiberControl *volatile g_current_fiber = NULLPTR;
+	__thread FiberControl *volatile t_current_fiber = 0; // XXX: NULLPTR
 
 	Mutex g_fiber_map_mutex;
 	ConditionVariable g_new_job;
@@ -188,7 +188,7 @@ namespace {
 			::makecontext(&(fiber->inner), reinterpret_cast<void (*)()>(&fiber_proc), 2, params[0], params[1]);
 		}
 
-		g_current_fiber = fiber;
+		t_current_fiber = fiber;
 		const AUTO(profiler_hook, Profiler::begin_stack_switch());
 		{
 			if((fiber->state != FS_READY) && (fiber->state != FS_YIELDED)){
@@ -203,7 +203,7 @@ namespace {
 			}
 		}
 		Profiler::end_stack_switch(profiler_hook);
-		g_current_fiber = NULLPTR;
+		t_current_fiber = NULLPTR;
 	}
 
 	bool pump_one_fiber(FiberControl *fiber) NOEXCEPT {
@@ -345,7 +345,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<co
 void JobDispatcher::yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant){
 	PROFILE_ME;
 
-	const AUTO(fiber, g_current_fiber);
+	const AUTO(fiber, t_current_fiber);
 	if(!fiber){
 		DEBUG_THROW(Exception, sslit("No current fiber"));
 	}
