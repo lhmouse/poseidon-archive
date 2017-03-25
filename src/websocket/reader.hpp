@@ -57,6 +57,13 @@ namespace WebSocket {
 		virtual bool on_control_message(OpCode opcode, StreamBuffer payload) = 0;
 
 	public:
+		const StreamBuffer &get_queue() const {
+			return m_queue;
+		}
+		StreamBuffer &get_queue(){
+			return m_queue;
+		}
+
 		bool put_encoded_data(StreamBuffer encoded);
 	};
 }
