@@ -50,6 +50,21 @@ namespace {
 	boost::uint64_t g_retry_init_delay  = 1000;
 	std::size_t     g_max_thread_count  = 8;
 
+
+	inline boost::shared_ptr<MySql::Connection> real_create_connection(bool from_slave){
+		AUTO(addr, &g_master_addr);
+		AUTO(port, &g_master_port);
+		if(from_slave){
+			if(!g_slave_addr.empty()){
+				addr = &g_slave_addr;
+			}
+			if(g_slave_port != 0){
+				port = &g_slave_port;
+			}
+		}
+		return MySql::Connection::create(*addr, *port, g_username, g_password, g_schema, g_use_ssl, g_charset);
+	}
+
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;
 
@@ -562,29 +577,29 @@ namespace {
 
 			unsigned timeout = 0;
 			for(;;){
-				while(!master_conn){
-					LOG_POSEIDON_INFO("Connecting to MySQL master server...");
-					try {
-						master_conn = MySql::Connection::create(g_master_addr, g_master_port,
-							g_username, g_password, g_schema, g_use_ssl, g_charset);
-						LOG_POSEIDON_INFO("Successfully connected to MySQL master server.");
-					} catch(std::exception &e){
-						LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-						::timespec req;
-						req.tv_sec = (::time_t)(g_reconn_delay / 1000);
-						req.tv_nsec = (long)(g_reconn_delay % 1000) * 1000 * 1000;
-						::nanosleep(&req, NULLPTR);
+				bool busy;
+				do {
+					while(!master_conn){
+						LOG_POSEIDON_INFO("Connecting to MySQL master server...");
+						try {
+							master_conn = real_create_connection(false);
+							LOG_POSEIDON_INFO("Successfully connected to MySQL master server.");
+						} catch(std::exception &e){
+							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+							::timespec req;
+							req.tv_sec = (::time_t)(g_reconn_delay / 1000);
+							req.tv_nsec = (long)(g_reconn_delay % 1000) * 1000 * 1000;
+							::nanosleep(&req, NULLPTR);
+						}
 					}
-				}
-				if((g_master_addr == g_slave_addr) && (g_master_port == g_slave_port)){
-					// LOG_POSEIDON_TRACE("Reusing the master connection as the slave connection.");
-					slave_conn = master_conn;
-				} else {
+					if((g_master_addr == g_slave_addr) && (g_master_port == g_slave_port)){
+						// LOG_POSEIDON_TRACE("Reusing the master connection as the slave connection.");
+						slave_conn = master_conn;
+					}
 					while(!slave_conn){
 						LOG_POSEIDON_INFO("Connecting to MySQL slave server...");
 						try {
-							slave_conn = MySql::Connection::create(g_slave_addr, g_slave_port,
-								g_username, g_password, g_schema, g_use_ssl, g_charset);
+							slave_conn = real_create_connection(true);
 							LOG_POSEIDON_INFO("Successfully connected to MySQL slave server.");
 						} catch(std::exception &e){
 							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
@@ -594,10 +609,6 @@ namespace {
 							::nanosleep(&req, NULLPTR);
 						}
 					}
-				}
-
-				bool busy;
-				do {
 					busy = pump_one_operation(master_conn, slave_conn);
 					timeout = std::min<unsigned>(timeout * 2u + 1u, !busy * 100u);
 				} while(busy);
@@ -859,17 +870,7 @@ void MySqlDaemon::stop(){
 }
 
 boost::shared_ptr<MySql::Connection> MySqlDaemon::create_connection(bool from_slave){
-	AUTO(addr, &g_master_addr);
-	AUTO(port, &g_master_port);
-	if(from_slave){
-		if(!g_slave_addr.empty()){
-			addr = &g_slave_addr;
-		}
-		if(g_slave_port != 0){
-			port = &g_slave_port;
-		}
-	}
-	return MySql::Connection::create(*addr, *port, g_username, g_password, g_schema, g_use_ssl, g_charset);
+	return real_create_connection(from_slave);
 }
 
 void MySqlDaemon::wait_for_all_async_operations(){
