@@ -147,11 +147,11 @@ namespace Cbpp {
 	void Client::on_read_hup(){
 		PROFILE_ME;
 
+		LowLevelClient::on_read_hup();
+
 		JobDispatcher::enqueue(
 			boost::make_shared<ReadHupJob>(virtual_shared_from_this<Client>()),
 			VAL_INIT);
-
-		LowLevelClient::on_read_hup();
 	}
 
 	void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){

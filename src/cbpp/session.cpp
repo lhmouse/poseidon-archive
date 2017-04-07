@@ -135,11 +135,11 @@ namespace Cbpp {
 	void Session::on_read_hup(){
 		PROFILE_ME;
 
+		LowLevelSession::on_read_hup();
+
 		JobDispatcher::enqueue(
 			boost::make_shared<ReadHupJob>(virtual_shared_from_this<Session>()),
 			VAL_INIT);
-
-		LowLevelSession::on_read_hup();
 	}
 
 	void Session::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
