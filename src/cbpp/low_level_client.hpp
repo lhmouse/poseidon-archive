@@ -15,7 +15,7 @@ namespace Poseidon {
 class TimerItem;
 
 namespace Cbpp {
-	class LowLevelClient : public TcpClientBase, private Reader, private Writer {
+	class LowLevelClient : public TcpClientBase, protected Reader, protected Writer {
 	private:
 		static void keep_alive_timer_proc(const boost::weak_ptr<LowLevelClient> &weak_client, boost::uint64_t now, boost::uint64_t period);
 

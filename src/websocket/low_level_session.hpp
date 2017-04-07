@@ -13,7 +13,7 @@
 namespace Poseidon {
 
 namespace WebSocket {
-	class LowLevelSession : public Http::UpgradedSessionBase, private Reader, private Writer {
+	class LowLevelSession : public Http::UpgradedSessionBase, protected Reader, protected Writer {
 	public:
 		explicit LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent);
 		~LowLevelSession();

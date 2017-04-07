@@ -147,20 +147,20 @@ namespace WebSocket {
 	void Client::on_connect(){
 		PROFILE_ME;
 
+		LowLevelClient::on_connect();
+
 		JobDispatcher::enqueue(
 			boost::make_shared<ConnectJob>(virtual_shared_from_this<Client>()),
 			VAL_INIT);
-
-		LowLevelClient::on_connect();
 	}
 	void Client::on_read_hup(){
 		PROFILE_ME;
 
-		LowLevelClient::on_read_hup();
-
 		JobDispatcher::enqueue(
 			boost::make_shared<ReadHupJob>(virtual_shared_from_this<Client>()),
 			VAL_INIT);
+
+		LowLevelClient::on_read_hup();
 	}
 
 	void Client::on_low_level_message_header(OpCode opcode){

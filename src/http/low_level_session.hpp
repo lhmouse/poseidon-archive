@@ -18,7 +18,7 @@ namespace Http {
 	class UpgradedSessionBase;
 	class HeaderOption;
 
-	class LowLevelSession : public TcpSessionBase, private ServerReader, private ServerWriter {
+	class LowLevelSession : public TcpSessionBase, protected ServerReader, protected ServerWriter {
 		friend UpgradedSessionBase;
 
 	private:
