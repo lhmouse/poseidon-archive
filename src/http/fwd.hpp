@@ -13,6 +13,7 @@ namespace Http {
 	class HeaderOption;
 	class Exception;
 
+	class AuthInfo;
 	class Multipart;
 
 	class ServerReader;
