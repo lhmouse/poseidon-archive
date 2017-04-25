@@ -40,7 +40,7 @@ namespace {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", get_remote_info());
 
-			check_and_throw_if_unauthorized(m_auth_info, get_remote_info(), request_headers);
+			Http::check_and_throw_if_unauthorized(m_auth_info, get_remote_info(), request_headers);
 
 			try {
 				Buffer_istream uri_is;
