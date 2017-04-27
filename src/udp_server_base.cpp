@@ -149,7 +149,7 @@ bool UdpServerBase::send(const SockAddr &sock_addr, StreamBuffer buffer) const {
 
 	const Mutex::UniqueLock lock(m_send_mutex);
 	m_send_queue.emplace_back(sock_addr, STD_MOVE(buffer));
-	EpollDaemon::mark_socket_writeable(get_fd());
+	EpollDaemon::mark_socket_writeable(this);
 	return true;
 }
 

@@ -228,7 +228,7 @@ bool TcpSessionBase::send(StreamBuffer buffer){
 
 	const Mutex::UniqueLock lock(m_send_mutex);
 	m_send_buffer.splice(buffer);
-	EpollDaemon::mark_socket_writeable(get_fd());
+	EpollDaemon::mark_socket_writeable(this);
 	return true;
 }
 

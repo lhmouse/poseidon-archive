@@ -14,7 +14,7 @@
 #include "../time.hpp"
 #include "../socket_base.hpp"
 #include "../profiler.hpp"
-#include "../recursive_mutex.hpp"
+#include "../mutex.hpp"
 #include "../raii.hpp"
 #include "../multi_index_map.hpp"
 #include "../checked_arithmetic.hpp"
@@ -30,141 +30,31 @@ namespace {
 	struct SocketElement {
 		boost::shared_ptr<SocketBase> socket;
 
-		int fd;
+		void *ptr;
 		boost::uint64_t read_time;
 		boost::uint64_t write_time;
+		int err_code;
 
 		mutable bool readable;
 		mutable bool writeable;
 
 		explicit SocketElement(boost::shared_ptr<SocketBase> socket_)
 			: socket(STD_MOVE_IDN(socket_))
-			, fd(socket->get_fd()), read_time((boost::uint64_t)-1), write_time((boost::uint64_t)-1)
+			, ptr(socket.get()), read_time((boost::uint64_t)-1), write_time((boost::uint64_t)-1), err_code(-1)
 			, readable(false), writeable(false)
 		{
 		}
 	};
 	MULTI_INDEX_MAP(SocketMap, SocketElement,
-		UNIQUE_MEMBER_INDEX(fd)
+		UNIQUE_MEMBER_INDEX(ptr)
 		MULTI_MEMBER_INDEX(read_time)
 		MULTI_MEMBER_INDEX(write_time)
+		MULTI_MEMBER_INDEX(err_code)
 	)
 
-	RecursiveMutex g_mutex;
+	Mutex g_mutex;
 	UniqueFile g_epoll;
 	SocketMap g_socket_map;
-
-	bool pump_readable_sockets() NOEXCEPT {
-		PROFILE_ME;
-
-		std::vector<VALUE_TYPE(g_socket_map.begin<1>())> iterators;
-		const AUTO(now, get_fast_mono_clock());
-		{
-			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(range, std::make_pair(g_socket_map.begin<1>(), g_socket_map.upper_bound<1>(now)));
-			try {
-				iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
-				for(AUTO(it, range.first); it != range.second; ++it){
-					iterators.push_back(it);
-				}
-			} catch(std::exception &e){
-				LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-				return false;
-			}
-		}
-		if(iterators.empty()){
-			return false;
-		}
-		for(AUTO(iit, iterators.begin()); iit != iterators.end(); ++iit){
-			const AUTO(it, *iit);
-			if(it->socket->is_throttled()){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-					"Session is throttled: typeid = ", typeid(*(it->socket)).name());
-				const RecursiveMutex::UniqueLock lock(g_mutex);
-				g_socket_map.set_key<1, 1>(it, now + 5000);
-				continue;
-			}
-			try {
-				const int err_code = it->socket->poll_read_and_process(it->readable);
-				if((err_code != 0) && (err_code != EINTR)){
-					if(err_code == EWOULDBLOCK){
-						const RecursiveMutex::UniqueLock lock(g_mutex);
-						g_socket_map.set_key<1, 1>(it, (boost::uint64_t)-1);
-						continue;
-					}
-					DEBUG_THROW(SystemException, err_code);
-				}
-			} catch(std::exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*(it->socket)).name());
-				it->socket->force_shutdown();
-				const RecursiveMutex::UniqueLock lock(g_mutex);
-				g_socket_map.erase<1>(it);
-				continue;
-			} catch(...){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Unknown exception thrown: typeid = ", typeid(*(it->socket)).name());
-				it->socket->force_shutdown();
-				const RecursiveMutex::UniqueLock lock(g_mutex);
-				g_socket_map.erase<1>(it);
-				continue;
-			}
-		}
-		return true;
-	}
-
-	bool pump_writeable_sockets() NOEXCEPT {
-		PROFILE_ME;
-
-		std::vector<VALUE_TYPE(g_socket_map.begin<2>())> iterators;
-		const AUTO(now, get_fast_mono_clock());
-		{
-			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(range, std::make_pair(g_socket_map.begin<2>(), g_socket_map.upper_bound<2>(now)));
-			try {
-				iterators.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
-				for(AUTO(it, range.first); it != range.second; ++it){
-					iterators.push_back(it);
-				}
-			} catch(std::exception &e){
-				LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-				return false;
-			}
-		}
-		if(iterators.empty()){
-			return false;
-		}
-		for(AUTO(iit, iterators.begin()); iit != iterators.end(); ++iit){
-			const AUTO(it, *iit);
-			try {
-				Mutex::UniqueLock write_lock;
-				const int err_code = it->socket->poll_write(write_lock, it->writeable);
-				if((err_code != 0) && (err_code != EINTR)){
-					if(err_code == EWOULDBLOCK){
-						const RecursiveMutex::UniqueLock lock(g_mutex);
-						g_socket_map.set_key<2, 2>(it, (boost::uint64_t)-1);
-						continue;
-					}
-					DEBUG_THROW(SystemException, err_code);
-				}
-			} catch(std::exception &e){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*(it->socket)).name());
-				it->socket->force_shutdown();
-				const RecursiveMutex::UniqueLock lock(g_mutex);
-				g_socket_map.erase<2>(it);
-				continue;
-			} catch(...){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Unknown exception thrown: typeid = ", typeid(*(it->socket)).name());
-				it->socket->force_shutdown();
-				const RecursiveMutex::UniqueLock lock(g_mutex);
-				g_socket_map.erase<2>(it);
-				continue;
-			}
-		}
-		return true;
-	}
 
 	bool wait_for_sockets(unsigned timeout) NOEXCEPT {
 		PROFILE_ME;
@@ -182,12 +72,20 @@ namespace {
 			return false;
 		}
 		const AUTO(now, Poseidon::get_fast_mono_clock());
-		const RecursiveMutex::UniqueLock lock(g_mutex);
+		const Mutex::UniqueLock lock(g_mutex);
 		for(unsigned i = 0; i < (unsigned)result; ++i){
-			const AUTO(it, g_socket_map.find<0>(events[i].data.fd));
+			const AUTO(it, g_socket_map.find<0>(events[i].data.ptr));
 			if(it == g_socket_map.end()){
 				LOG_POSEIDON_DEBUG("Socket reported by epoll is not registered: fd = ", events[i].data.fd);
 				continue;
+			}
+			if(events[i].events & EPOLLIN){
+				it->readable = true;
+				g_socket_map.set_key<0, 1>(it, now);
+			}
+			if(events[i].events & EPOLLOUT){
+				it->writeable = true;
+				g_socket_map.set_key<0, 2>(it, now);
 			}
 			if(events[i].events & (EPOLLHUP | EPOLLERR)){
 				int err_code;
@@ -202,21 +100,148 @@ namespace {
 				} else {
 					err_code = 0;
 				}
+				g_socket_map.set_key<0, 3>(it, err_code);
+			}
+		}
+		return true;
+	}
+
+	bool pump_one_readable_socket() NOEXCEPT {
+		PROFILE_ME;
+
+		const AUTO(now, get_fast_mono_clock());
+		boost::shared_ptr<SocketBase> socket;
+		bool readable;
+		{
+			const Mutex::UniqueLock lock(g_mutex);
+			const AUTO(it, g_socket_map.begin<1>());
+			if(it == g_socket_map.end<1>()){
+				return false;
+			}
+			if(now < it->read_time){
+				return false;
+			}
+			if(it->socket->is_throttled()){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-					"Socket closed: err_code = ", err_code, ", desc = ", get_error_desc(err_code), ", typeid = ", typeid(*(it->socket)).name());
-				it->socket->shutdown_read();
-				it->socket->shutdown_write();
-				it->socket->on_close(err_code);
+					"Session is throttled: typeid = ", typeid(*(it->socket)).name());
+				g_socket_map.set_key<1, 1>(it, now + 5000);
+				return false;
+			}
+			socket = it->socket;
+			readable = it->readable;
+		}
+
+		int err_code;
+		try {
+			err_code = socket->poll_read_and_process(readable);
+		} catch(std::exception &e){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
+			err_code = EPIPE;
+		} catch(...){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"Unknown exception thrown: typeid = ", typeid(*socket).name());
+			err_code = EPIPE;
+		}
+		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
+			const Mutex::UniqueLock lock(g_mutex);
+			const AUTO(it, g_socket_map.find<0>(socket.get()));
+			if(it != g_socket_map.end<0>()){
+				g_socket_map.set_key<0, 1>(it, (boost::uint64_t)-1);
+			}
+		} else if((err_code != 0) && (err_code != EINTR)){
+			const Mutex::UniqueLock lock(g_mutex);
+			const AUTO(it, g_socket_map.find<0>(socket.get()));
+			if(it != g_socket_map.end<0>()){
+				socket->force_shutdown();
 				g_socket_map.erase<0>(it);
-				continue;
 			}
-			if(events[i].events & EPOLLIN){
-				it->readable = true;
-				g_socket_map.set_key<0, 1>(it, now);
+		}
+		return true;
+	}
+
+	bool pump_one_writeable_socket() NOEXCEPT {
+		PROFILE_ME;
+
+		const AUTO(now, get_fast_mono_clock());
+		boost::shared_ptr<SocketBase> socket;
+		bool writeable;
+		{
+			const Mutex::UniqueLock lock(g_mutex);
+			const AUTO(it, g_socket_map.begin<2>());
+			if(it == g_socket_map.end<2>()){
+				return false;
 			}
-			if(events[i].events & EPOLLOUT){
-				it->writeable = true;
-				g_socket_map.set_key<0, 2>(it, now);
+			if(now < it->write_time){
+				return false;
+			}
+			socket = it->socket;
+			writeable = it->writeable;
+		}
+
+		Mutex::UniqueLock write_lock;
+		int err_code;
+		try {
+			err_code = socket->poll_write(write_lock, writeable);
+		} catch(std::exception &e){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
+			err_code = EPIPE;
+		} catch(...){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"Unknown exception thrown: typeid = ", typeid(*socket).name());
+			err_code = EPIPE;
+		}
+		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
+			const Mutex::UniqueLock lock(g_mutex);
+			const AUTO(it, g_socket_map.find<0>(socket.get()));
+			if(it != g_socket_map.end<0>()){
+				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
+			}
+		} else if((err_code != 0) && (err_code != EINTR)){
+			const Mutex::UniqueLock lock(g_mutex);
+			const AUTO(it, g_socket_map.find<0>(socket.get()));
+			if(it != g_socket_map.end<0>()){
+				socket->force_shutdown();
+				g_socket_map.erase<0>(it);
+			}
+		}
+		return true;
+	}
+
+	bool pump_one_closed_socket() NOEXCEPT {
+		PROFILE_ME;
+
+		// const AUTO(now, get_fast_mono_clock());
+		boost::shared_ptr<SocketBase> socket;
+		int err_code;
+		{
+			const Mutex::UniqueLock lock(g_mutex);
+			const AUTO(it, g_socket_map.lower_bound<3>(0));
+			if(it == g_socket_map.end<3>()){
+				return false;
+			}
+			socket = it->socket;
+			err_code = it->err_code;
+		}
+
+		try {
+			socket->shutdown_read();
+			socket->shutdown_write();
+			socket->on_close(err_code);
+		} catch(std::exception &e){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
+		} catch(...){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+				"Unknown exception thrown: typeid = ", typeid(*socket).name());
+		}
+		{
+			const Mutex::UniqueLock lock(g_mutex);
+			const AUTO(it, g_socket_map.find<0>(socket.get()));
+			if(it != g_socket_map.end<0>()){
+				socket->force_shutdown();
+				g_socket_map.erase<0>(it);
 			}
 		}
 		return true;
@@ -231,8 +256,9 @@ namespace {
 			bool busy;
 			do {
 				busy = wait_for_sockets(0);
-				busy += JobDispatcher::is_running() && pump_readable_sockets();
-				busy += pump_writeable_sockets();
+				busy += JobDispatcher::is_running() && pump_one_readable_socket();
+				busy += pump_one_writeable_socket();
+				busy += pump_one_closed_socket();
 				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 			} while(busy);
 
@@ -277,7 +303,7 @@ void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snaps
 	PROFILE_ME;
 
 	const AUTO(now, get_fast_mono_clock());
-	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const Mutex::UniqueLock lock(g_mutex);
 	snapshot.reserve(snapshot.size() + g_socket_map.size());
 	for(AUTO(it, g_socket_map.begin()); it != g_socket_map.end(); ++it){
 		SnapshotElement elem;
@@ -290,7 +316,7 @@ void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snaps
 void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket){
 	PROFILE_ME;
 
-	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const Mutex::UniqueLock lock(g_mutex);
 	const AUTO(result, g_socket_map.insert(SocketElement(socket)));
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket,
@@ -300,7 +326,7 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket){
 	try {
 		::epoll_event event = { };
 		event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
-		event.data.fd = socket->get_fd();
+		event.data.ptr = socket.get();
 		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, socket->get_fd(), &event) != 0){
 			const int err_code = errno;
 			LOG_POSEIDON_ERROR("::epoll_ctl() failed, errno was ", err_code, ": socket = ", socket,
@@ -312,13 +338,13 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket){
 		throw;
 	}
 }
-bool EpollDaemon::mark_socket_writeable(int fd) NOEXCEPT {
+bool EpollDaemon::mark_socket_writeable(const SocketBase *ptr) NOEXCEPT {
 	PROFILE_ME;
 
-	const RecursiveMutex::UniqueLock lock(g_mutex);
-	const AUTO(it, g_socket_map.find<0>(fd));
+	const Mutex::UniqueLock lock(g_mutex);
+	const AUTO(it, g_socket_map.find<0>(const_cast<void *>(static_cast<const void *>(ptr))));
 	if(it == g_socket_map.end()){
-		LOG_POSEIDON_DEBUG("Socket not found in epoll: fd = ", fd);
+		LOG_POSEIDON_DEBUG("Socket not found in epoll: ptr = ", ptr);
 		return false;
 	}
 	const AUTO(now, get_fast_mono_clock());

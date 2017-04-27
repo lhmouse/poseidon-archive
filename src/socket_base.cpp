@@ -37,7 +37,7 @@ SocketBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	if(atomic_sub(socket->m_delayed_shutdown_guard_count, 1, ATOMIC_RELAXED) == 0){
 		if(atomic_load(socket->m_shutdown_write, ATOMIC_CONSUME)){
 			atomic_store(socket->m_really_shutdown_write, true, ATOMIC_RELEASE);
-			const bool pending = EpollDaemon::mark_socket_writeable(socket->get_fd());
+			const bool pending = EpollDaemon::mark_socket_writeable(socket.get());
 			if(!pending){
 				::shutdown(socket->get_fd(), SHUT_WR);
 			}
@@ -165,7 +165,7 @@ int SocketBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 	(void)writeable;
 	return EWOULDBLOCK;
 }
-void SocketBase::on_close(int err_code) NOEXCEPT {
+void SocketBase::on_close(int err_code){
 	(void)err_code;
 }
 

@@ -59,11 +59,11 @@ public:
 		return m_creation_time;
 	}
 
-	virtual bool has_been_shutdown_read() const NOEXCEPT;
-	virtual bool has_been_shutdown_write() const NOEXCEPT;
-	virtual bool shutdown_read() NOEXCEPT;
-	virtual bool shutdown_write() NOEXCEPT;
-	virtual void force_shutdown() NOEXCEPT;
+	bool has_been_shutdown_read() const NOEXCEPT;
+	bool has_been_shutdown_write() const NOEXCEPT;
+	bool shutdown_read() NOEXCEPT;
+	bool shutdown_write() NOEXCEPT;
+	void force_shutdown() NOEXCEPT;
 
 	virtual bool is_throttled() const;
 	void set_throttled(bool throttled);
@@ -76,7 +76,7 @@ public:
 	// 返回一个 errno 告诉 epoll 如何处理。
 	virtual int poll_read_and_process(bool readable);
 	virtual int poll_write(Mutex::UniqueLock &write_lock, bool writeable);
-	virtual void on_close(int err_code) NOEXCEPT;
+	virtual void on_close(int err_code);
 };
 
 }

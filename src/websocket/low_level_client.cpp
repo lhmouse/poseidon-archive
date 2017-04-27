@@ -62,7 +62,7 @@ namespace WebSocket {
 	}
 	void LowLevelClient::on_read_hup(){
 	}
-	void LowLevelClient::on_close(int err_code) NOEXCEPT {
+	void LowLevelClient::on_close(int err_code){
 		(void)err_code;
 	}
 	void LowLevelClient::on_receive(StreamBuffer data){

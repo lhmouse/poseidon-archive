@@ -77,7 +77,7 @@ namespace Cbpp {
 
 		on_low_level_data_message_payload(payload_offset, STD_MOVE(payload));
 	}
-	void LowLevelClient::on_close(int err_code) NOEXCEPT {
+	void LowLevelClient::on_close(int err_code){
 		(void)err_code;
 	}
 	bool LowLevelClient::on_data_message_end(boost::uint64_t payload_size){

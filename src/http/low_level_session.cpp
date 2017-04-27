@@ -31,7 +31,7 @@ namespace Http {
 			upgraded_session->on_read_hup();
 		}
 	}
-	void LowLevelSession::on_close(int err_code) NOEXCEPT {
+	void LowLevelSession::on_close(int err_code){
 		PROFILE_ME;
 
 		// epoll 线程读取不需要锁。
