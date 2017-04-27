@@ -115,7 +115,7 @@ void SocketBase::set_throttled(bool throttled){
 	atomic_store(m_throttled, throttled, ATOMIC_RELEASE);
 }
 
-bool SocketBase::was_timed_out() const NOEXCEPT {
+bool SocketBase::did_time_out() const NOEXCEPT {
 	return atomic_load(m_timed_out, ATOMIC_CONSUME);
 }
 

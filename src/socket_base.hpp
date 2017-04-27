@@ -68,7 +68,7 @@ public:
 	virtual bool is_throttled() const;
 	void set_throttled(bool throttled);
 
-	bool was_timed_out() const NOEXCEPT;
+	bool did_time_out() const NOEXCEPT;
 
 	const IpPort &get_remote_info() const NOEXCEPT;
 	const IpPort &get_local_info() const NOEXCEPT;

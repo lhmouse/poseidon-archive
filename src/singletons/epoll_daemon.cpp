@@ -89,7 +89,7 @@ namespace {
 			}
 			if(events[i].events & (EPOLLHUP | EPOLLERR)){
 				int err_code;
-				if(it->socket->was_timed_out()){
+				if(it->socket->did_time_out()){
 					err_code = ETIMEDOUT;
 				} else if(events[i].events & EPOLLERR){
 					::socklen_t err_len = sizeof(err_code);
