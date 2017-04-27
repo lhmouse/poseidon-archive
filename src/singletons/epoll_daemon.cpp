@@ -30,7 +30,7 @@ namespace {
 	struct SocketElement {
 		boost::shared_ptr<SocketBase> socket;
 
-		void *ptr;
+		const SocketBase *ptr;
 		boost::uint64_t read_time;
 		boost::uint64_t write_time;
 		int err_code;
@@ -74,7 +74,7 @@ namespace {
 		const AUTO(now, Poseidon::get_fast_mono_clock());
 		const Mutex::UniqueLock lock(g_mutex);
 		for(unsigned i = 0; i < (unsigned)result; ++i){
-			const AUTO(it, g_socket_map.find<0>(events[i].data.ptr));
+			const AUTO(it, g_socket_map.find<0>((SocketBase *)events[i].data.ptr));
 			if(it == g_socket_map.end()){
 				LOG_POSEIDON_DEBUG("Socket reported by epoll is not registered: fd = ", events[i].data.fd);
 				continue;
@@ -347,7 +347,7 @@ bool EpollDaemon::mark_socket_writeable(const SocketBase *ptr) NOEXCEPT {
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
-	const AUTO(it, g_socket_map.find<0>(const_cast<void *>(static_cast<const void *>(ptr))));
+	const AUTO(it, g_socket_map.find<0>(ptr));
 	if(it == g_socket_map.end()){
 		LOG_POSEIDON_DEBUG("Socket not found in epoll: ptr = ", ptr);
 		return false;
