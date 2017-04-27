@@ -121,14 +121,19 @@ namespace {
 			if(now < it->read_time){
 				return false;
 			}
-			if(it->socket->is_throttled()){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-					"Session is throttled: typeid = ", typeid(*(it->socket)).name());
-				g_socket_map.set_key<1, 1>(it, now + 5000);
-				return false;
-			}
 			socket = it->socket;
 			readable = it->readable;
+		}
+
+		if(socket->is_throttled()){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"Session is throttled: typeid = ", typeid(*socket).name());
+			const Mutex::UniqueLock lock(g_mutex);
+			const AUTO(it, g_socket_map.find<0>(socket.get()));
+			if(it != g_socket_map.end<0>()){
+				g_socket_map.set_key<0, 1>(it, now + 5000);
+			}
+			return false;
 		}
 
 		int err_code;
