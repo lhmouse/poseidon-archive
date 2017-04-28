@@ -110,11 +110,11 @@ namespace {
 				ep = std::current_exception();
 			}
 #endif
+			Logger::finalize_mask();
 		} catch(...){
 			Logger::finalize_mask();
 			throw;
 		}
-		Logger::finalize_mask();
 #ifdef POSEIDON_CXX11
 		if(ep){
 			std::rethrow_exception(ep);
