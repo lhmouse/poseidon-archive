@@ -100,6 +100,8 @@ namespace {
 				} else {
 					err_code = 0;
 				}
+				it->socket->shutdown_read();
+				it->socket->shutdown_write();
 				g_socket_map.set_key<0, 3>(it, err_code);
 			}
 		}
@@ -231,8 +233,6 @@ namespace {
 		}
 
 		try {
-			socket->shutdown_read();
-			socket->shutdown_write();
 			socket->on_close(err_code);
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
