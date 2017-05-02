@@ -100,8 +100,7 @@ namespace {
 				} else {
 					err_code = 0;
 				}
-				it->socket->shutdown_read();
-				it->socket->shutdown_write();
+				it->socket->force_shutdown();
 				g_socket_map.set_key<0, 3>(it, err_code);
 			}
 		}
