@@ -28,11 +28,6 @@
 
 namespace TemplateProject {
 
-using Poseidon::Exception;
-using Poseidon::SharedNts;
-
-using Poseidon::sslit;
-
 }
 
 #endif
