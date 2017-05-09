@@ -87,6 +87,14 @@ namespace Http {
 
 					std::string line = expected.dump_string();
 
+					for(AUTO(it, line.begin()); it != line.end(); ++it){
+						const unsigned ch = static_cast<unsigned char>(*it);
+						if((ch < 0x20) || (ch >= 0x7F)){
+							LOG_POSEIDON_WARNING("Invalid HTTP request header: line = ", line);
+							DEBUG_THROW(BasicException, sslit("Invalid HTTP request header"));
+						}
+					}
+
 					AUTO(pos, line.find(' '));
 					if(pos == std::string::npos){
 						LOG_POSEIDON_WARNING("Bad request header: expecting verb, line = ", line);
