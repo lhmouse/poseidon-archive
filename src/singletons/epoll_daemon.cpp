@@ -38,9 +38,9 @@ namespace {
 		mutable bool readable;
 		mutable bool writeable;
 
-		explicit SocketElement(boost::shared_ptr<SocketBase> socket_)
+		SocketElement(boost::shared_ptr<SocketBase> socket_, boost::uint64_t now)
 			: socket(STD_MOVE_IDN(socket_))
-			, ptr(socket.get()), read_time((boost::uint64_t)-1), write_time((boost::uint64_t)-1), err_code(-1)
+			, ptr(socket.get()), read_time(now), write_time(now), err_code(-1)
 			, readable(false), writeable(false)
 		{
 		}
@@ -320,8 +320,9 @@ void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snaps
 void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket){
 	PROFILE_ME;
 
+	const AUTO(now, Poseidon::get_fast_mono_clock());
 	const Mutex::UniqueLock lock(g_mutex);
-	const AUTO(result, g_socket_map.insert(SocketElement(socket)));
+	const AUTO(result, g_socket_map.insert(SocketElement(socket, now)));
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket,
 			", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
