@@ -142,10 +142,12 @@ namespace {
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
+			socket->SocketBase::force_shutdown();
 			err_code = EPIPE;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Unknown exception thrown: typeid = ", typeid(*socket).name());
+			socket->SocketBase::force_shutdown();
 			err_code = EPIPE;
 		}
 		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
@@ -158,7 +160,6 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				socket->SocketBase::force_shutdown();
 				g_socket_map.erase<0>(it);
 			}
 		}
@@ -191,10 +192,12 @@ namespace {
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
+			socket->SocketBase::force_shutdown();
 			err_code = EPIPE;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Unknown exception thrown: typeid = ", typeid(*socket).name());
+			socket->SocketBase::force_shutdown();
 			err_code = EPIPE;
 		}
 		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
@@ -207,7 +210,6 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				socket->SocketBase::force_shutdown();
 				g_socket_map.erase<0>(it);
 			}
 		}
@@ -235,15 +237,16 @@ namespace {
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
+			socket->SocketBase::force_shutdown();
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Unknown exception thrown: typeid = ", typeid(*socket).name());
+			socket->SocketBase::force_shutdown();
 		}
 		{
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				socket->SocketBase::force_shutdown();
 				g_socket_map.erase<0>(it);
 			}
 		}
