@@ -63,7 +63,7 @@ public:
 	virtual bool has_been_shutdown_write() const NOEXCEPT;
 	virtual bool shutdown_read() NOEXCEPT;
 	virtual bool shutdown_write() NOEXCEPT;
-	void force_shutdown() NOEXCEPT;
+	virtual void force_shutdown() NOEXCEPT;
 
 	virtual bool is_throttled() const;
 	void set_throttled(bool throttled);
