@@ -54,27 +54,15 @@ protected:
 	void on_receive(StreamBuffer data) OVERRIDE = 0;
 
 public:
-	bool has_been_shutdown_read() const NOEXCEPT OVERRIDE {
-		return SocketBase::has_been_shutdown_read();
-	}
-	bool has_been_shutdown_write() const NOEXCEPT OVERRIDE {
-		return SocketBase::has_been_shutdown_write();
-	}
-	bool shutdown_read() NOEXCEPT OVERRIDE {
-		return SocketBase::shutdown_read();
-	}
-	bool shutdown_write() NOEXCEPT OVERRIDE {
-		return SocketBase::shutdown_write();
-	}
-	void force_shutdown() NOEXCEPT OVERRIDE {
-		return SocketBase::force_shutdown();
-	}
-
-	bool is_using_ssl() const {
-		return !!m_ssl_filter;
-	}
+	bool has_been_shutdown_read() const NOEXCEPT OVERRIDE;
+	bool has_been_shutdown_write() const NOEXCEPT OVERRIDE;
+	bool shutdown_read() NOEXCEPT OVERRIDE;
+	bool shutdown_write() NOEXCEPT OVERRIDE;
+	void force_shutdown() NOEXCEPT OVERRIDE;
 
 	bool is_throttled() const OVERRIDE;
+
+	bool is_using_ssl() const;
 
 	void set_no_delay(bool enabled = true);
 	void set_timeout(boost::uint64_t timeout);

@@ -193,12 +193,33 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 	return 0;
 }
 
+bool TcpSessionBase::has_been_shutdown_read() const NOEXCEPT {
+	return SocketBase::has_been_shutdown_read();
+}
+bool TcpSessionBase::has_been_shutdown_write() const NOEXCEPT {
+	return SocketBase::has_been_shutdown_write();
+}
+bool TcpSessionBase::shutdown_read() NOEXCEPT {
+	return SocketBase::shutdown_read();
+}
+bool TcpSessionBase::shutdown_write() NOEXCEPT {
+	EpollDaemon::mark_socket_writeable(this);
+	return SocketBase::shutdown_write();
+}
+void TcpSessionBase::force_shutdown() NOEXCEPT {
+	SocketBase::force_shutdown();
+}
+
 bool TcpSessionBase::is_throttled() const {
 	const Mutex::UniqueLock lock(m_send_mutex);
 	if(m_send_buffer.size() >= 65536){
 		return true;
 	}
 	return SocketBase::is_throttled();
+}
+
+bool TcpSessionBase::is_using_ssl() const {
+	return !!m_ssl_filter;
 }
 
 void TcpSessionBase::set_no_delay(bool enabled){
