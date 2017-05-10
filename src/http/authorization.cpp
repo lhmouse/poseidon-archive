@@ -15,29 +15,59 @@
 #include "../random.hpp"
 #include "../md5.hpp"
 #include "../stream_buffer.hpp"
+#include <openssl/aes.h>
 
 namespace Poseidon {
 
-namespace Http {
-	namespace {
-		struct RawNonce {
-			boost::uint64_t timestamp;
-			boost::uint64_t random;
-			Uuid identifier;
-		};
+namespace {
+	struct PlainNonce {
+		boost::uint64_t random;
+		boost::uint64_t timestamp;
+		Uuid identifier;
+	};
+	typedef boost::array<unsigned char, sizeof(PlainNonce)> CipherNonce;
 
-		const AUTO(g_identifier, Uuid::random());
+	BOOST_STATIC_ASSERT(sizeof(PlainNonce) % 16 == 0);
 
-		void xor_nonce(RawNonce &raw_nonce, const char *remote_ip){
-			Md5_ostream md5_os;
-			md5_os <<(::getpid()) <<'#' <<remote_ip <<'#';
-			const AUTO(md5, md5_os.finalize());
-			for(std::size_t i = 0; i < sizeof(raw_nonce); ++i){
-				reinterpret_cast<unsigned char (&)[sizeof(raw_nonce)]>(raw_nonce)[i] ^= md5.at(i % 16);
-			}
+	const Uuid g_identifier = Uuid::random();
+
+	CipherNonce encrypt_nonce(const PlainNonce &plain_nonce, const char *remote_ip){
+		PROFILE_ME;
+
+		Md5_ostream md5_os;
+		md5_os <<g_identifier <<':' <<remote_ip;
+		AUTO(md5, md5_os.finalize());
+		::AES_KEY aes_key[1];
+		if(::AES_set_encrypt_key(md5.data(), 128, aes_key) != 0){
+			LOG_POSEIDON_FATAL("::AES_set_encrypt_key() failed!");
+			std::abort();
 		}
+		CipherNonce cipler_nonce;
+		for(std::size_t i = 0; i < sizeof(PlainNonce); i += 16){
+			::AES_ecb_encrypt(reinterpret_cast<const unsigned char *>(&plain_nonce) + i, cipler_nonce.data() + i, aes_key, AES_ENCRYPT);
+		}
+		return cipler_nonce;
 	}
+	PlainNonce decrypt_nonce(const CipherNonce &cipler_nonce, const char *remote_ip){
+		PROFILE_ME;
 
+		Md5_ostream md5_os;
+		md5_os <<g_identifier <<':' <<remote_ip;
+		AUTO(md5, md5_os.finalize());
+		::AES_KEY aes_key[1];
+		if(::AES_set_decrypt_key(md5.data(), 128, aes_key) != 0){
+			LOG_POSEIDON_FATAL("::AES_set_decrypt_key() failed!");
+			std::abort();
+		}
+		PlainNonce plain_nonce;
+		for(std::size_t i = 0; i < sizeof(PlainNonce); i += 16){
+			::AES_ecb_encrypt(cipler_nonce.data() + i, reinterpret_cast<unsigned char *>(&plain_nonce) + i, aes_key, AES_DECRYPT);
+		}
+		return plain_nonce;
+	}
+}
+
+namespace Http {
 	struct AuthInfo {
 		std::vector<std::string> basic_user_pass;
 
@@ -90,7 +120,7 @@ namespace Http {
 			str.assign(auth_header, pos + 1, std::string::npos);
 
 			std::string username, realm, nonce, uri, qop, cnonce, nc, response, algorithm;
-			RawNonce raw_nonce = { };
+			PlainNonce plain_nonce = { };
 
 			enum ParserState {
 				PS_KEY_INDENT       = 0,
@@ -111,12 +141,13 @@ namespace Http {
 				nonce = STD_MOVE(value);	\
 				Base64Decoder dec;	\
 				dec.put(nonce.data(), nonce.size());	\
-				AUTO(nonce_bytes, dec.finalize());	\
-				if(nonce_bytes.get(&raw_nonce, sizeof(raw_nonce)) < sizeof(raw_nonce)){	\
+				AUTO(buffer, dec.finalize());	\
+				CipherNonce cipler_nonce;	\
+				if(buffer.get(cipler_nonce.data(), cipler_nonce.size()) < cipler_nonce.size()){	\
 					LOG_POSEIDON_WARNING("> Inacceptable nonce.");	\
 					return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);	\
 				}	\
-				xor_nonce(raw_nonce, remote_addr.ip());	\
+				plain_nonce = decrypt_nonce(cipler_nonce, remote_addr.ip());	\
 			} else if(::strcasecmp(key.c_str(), "uri") == 0){	\
 				uri = STD_MOVE(value);	\
 			} else if(::strcasecmp(key.c_str(), "qop") == 0){	\
@@ -205,17 +236,17 @@ namespace Http {
 				return std::make_pair(AUTH_INACCEPTABLE_ALGORITHM, NULLPTR);
 			}
 
-			if(raw_nonce.identifier != g_identifier){
-				LOG_POSEIDON_WARNING("> Unexpected identifier: ", raw_nonce.identifier, ", expecting ", g_identifier);
+			if(plain_nonce.identifier != g_identifier){
+				LOG_POSEIDON_WARNING("> Unexpected identifier: ", plain_nonce.identifier, ", expecting ", g_identifier);
 				return std::make_pair(AUTH_INACCEPTABLE_NONCE, NULLPTR);
 			}
 			const AUTO(local_now, get_local_time());
-			if(local_now < raw_nonce.timestamp){
+			if(local_now < plain_nonce.timestamp){
 				LOG_POSEIDON_WARNING("> Nonce timestamp is in the future.");
 				return std::make_pair(AUTH_EXPIRED, NULLPTR);
 			}
 			const AUTO(nonce_expiry_time, MainConfig::get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000));
-			if(local_now - raw_nonce.timestamp > nonce_expiry_time){
+			if(local_now - plain_nonce.timestamp > nonce_expiry_time){
 				LOG_POSEIDON_WARNING("> Nonce has expired.");
 				return std::make_pair(AUTH_EXPIRED, NULLPTR);
 			}
@@ -295,13 +326,14 @@ namespace Http {
 			break;
 		}
 
-		RawNonce raw_nonce;
-		raw_nonce.timestamp = get_local_time();
-		raw_nonce.random = random_uint64();
-		raw_nonce.identifier = g_identifier;
-		xor_nonce(raw_nonce, remote_addr.ip());
+		PlainNonce plain_nonce = { };
+		plain_nonce.timestamp = get_local_time();
+		plain_nonce.random = random_uint64();
+		plain_nonce.identifier = g_identifier;
+		CipherNonce cipler_nonce;
+		cipler_nonce = encrypt_nonce(plain_nonce, remote_addr.ip());
 		Base64Encoder enc;
-		enc.put(&raw_nonce, sizeof(raw_nonce));
+		enc.put(cipler_nonce.data(), cipler_nonce.size());
 		AUTO(nonce, enc.finalize());
 
 		StreamBuffer auth;
