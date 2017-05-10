@@ -100,7 +100,7 @@ namespace {
 				} else {
 					err_code = 0;
 				}
-				it->socket->force_shutdown();
+				it->socket->SocketBase::force_shutdown();
 				g_socket_map.set_key<0, 3>(it, err_code);
 			}
 		}
@@ -159,7 +159,7 @@ namespace {
 			const Mutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				socket->force_shutdown();
+				socket->SocketBase::force_shutdown();
 				g_socket_map.erase<0>(it);
 			}
 		}
@@ -208,7 +208,7 @@ namespace {
 			const Mutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				socket->force_shutdown();
+				socket->SocketBase::force_shutdown();
 				g_socket_map.erase<0>(it);
 			}
 		}
@@ -244,7 +244,7 @@ namespace {
 			const Mutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				socket->force_shutdown();
+				socket->SocketBase::force_shutdown();
 				g_socket_map.erase<0>(it);
 			}
 		}
