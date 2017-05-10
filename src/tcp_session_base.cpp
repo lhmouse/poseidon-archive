@@ -148,6 +148,7 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 		Poseidon::Mutex::UniqueLock lock(m_send_mutex);
 		const std::size_t avail = m_send_buffer.peek(temp.data(), temp.size());
 		if(avail == 0){
+_check_shutdown:
 			if(should_really_shutdown_write()){
 				if(m_ssl_filter){
 					m_ssl_filter->send_fin();
@@ -179,7 +180,7 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 		m_send_buffer.discard(static_cast<std::size_t>(result));
 		swap(write_lock, lock);
 		if(m_send_buffer.empty()){
-			return EWOULDBLOCK;
+			goto _check_shutdown;
 		}
 	} catch(std::exception &e){
 		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
