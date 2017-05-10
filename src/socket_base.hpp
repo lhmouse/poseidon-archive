@@ -59,10 +59,10 @@ public:
 		return m_creation_time;
 	}
 
-	bool has_been_shutdown_read() const NOEXCEPT;
-	bool has_been_shutdown_write() const NOEXCEPT;
-	bool shutdown_read() NOEXCEPT;
-	bool shutdown_write() NOEXCEPT;
+	virtual bool has_been_shutdown_read() const NOEXCEPT;
+	virtual bool has_been_shutdown_write() const NOEXCEPT;
+	virtual bool shutdown_read() NOEXCEPT;
+	virtual bool shutdown_write() NOEXCEPT;
 	void force_shutdown() NOEXCEPT;
 
 	virtual bool is_throttled() const;
