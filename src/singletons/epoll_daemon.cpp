@@ -100,8 +100,6 @@ namespace {
 				} else {
 					err_code = 0;
 				}
-				it->socket->SocketBase::shutdown_read();
-				it->socket->SocketBase::shutdown_write();
 				g_socket_map.set_key<0, 3>(it, err_code);
 			}
 		}
