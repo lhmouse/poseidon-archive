@@ -14,7 +14,7 @@
 #include "../time.hpp"
 #include "../socket_base.hpp"
 #include "../profiler.hpp"
-#include "../mutex.hpp"
+#include "../recursive_mutex.hpp"
 #include "../raii.hpp"
 #include "../multi_index_map.hpp"
 #include "../checked_arithmetic.hpp"
@@ -52,7 +52,7 @@ namespace {
 		MULTI_MEMBER_INDEX(err_code)
 	)
 
-	Mutex g_mutex;
+	RecursiveMutex g_mutex;
 	UniqueFile g_epoll;
 	SocketMap g_socket_map;
 
@@ -72,7 +72,7 @@ namespace {
 			return false;
 		}
 		const AUTO(now, Poseidon::get_fast_mono_clock());
-		const Mutex::UniqueLock lock(g_mutex);
+		const RecursiveMutex::UniqueLock lock(g_mutex);
 		for(unsigned i = 0; i < (unsigned)result; ++i){
 			const AUTO(it, g_socket_map.find<0>((SocketBase *)events[i].data.ptr));
 			if(it == g_socket_map.end()){
@@ -115,7 +115,7 @@ namespace {
 		boost::shared_ptr<SocketBase> socket;
 		bool readable;
 		{
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.begin<1>());
 			if(it == g_socket_map.end<1>()){
 				return false;
@@ -130,7 +130,7 @@ namespace {
 		if(socket->is_throttled()){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 				"Session is throttled: typeid = ", typeid(*socket).name());
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 1>(it, now + 5000);
@@ -151,13 +151,13 @@ namespace {
 			err_code = EPIPE;
 		}
 		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 1>(it, (boost::uint64_t)-1);
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				socket->SocketBase::force_shutdown();
@@ -174,7 +174,7 @@ namespace {
 		boost::shared_ptr<SocketBase> socket;
 		bool writeable;
 		{
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.begin<2>());
 			if(it == g_socket_map.end<2>()){
 				return false;
@@ -200,13 +200,13 @@ namespace {
 			err_code = EPIPE;
 		}
 		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				socket->SocketBase::force_shutdown();
@@ -223,7 +223,7 @@ namespace {
 		boost::shared_ptr<SocketBase> socket;
 		int err_code;
 		{
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.lower_bound<3>(0));
 			if(it == g_socket_map.end<3>()){
 				return false;
@@ -242,7 +242,7 @@ namespace {
 				"Unknown exception thrown: typeid = ", typeid(*socket).name());
 		}
 		{
-			const Mutex::UniqueLock lock(g_mutex);
+			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				socket->SocketBase::force_shutdown();
@@ -308,7 +308,7 @@ void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snaps
 	PROFILE_ME;
 
 	const AUTO(now, get_fast_mono_clock());
-	const Mutex::UniqueLock lock(g_mutex);
+	const RecursiveMutex::UniqueLock lock(g_mutex);
 	snapshot.reserve(snapshot.size() + g_socket_map.size());
 	for(AUTO(it, g_socket_map.begin()); it != g_socket_map.end(); ++it){
 		SnapshotElement elem;
@@ -322,7 +322,7 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket){
 	PROFILE_ME;
 
 	const AUTO(now, Poseidon::get_fast_mono_clock());
-	const Mutex::UniqueLock lock(g_mutex);
+	const RecursiveMutex::UniqueLock lock(g_mutex);
 	const AUTO(result, g_socket_map.insert(SocketElement(socket, now)));
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket,
@@ -347,7 +347,7 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket){
 bool EpollDaemon::mark_socket_writeable(const SocketBase *ptr) NOEXCEPT {
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(g_mutex);
+	const RecursiveMutex::UniqueLock lock(g_mutex);
 	const AUTO(it, g_socket_map.find<0>(ptr));
 	if(it == g_socket_map.end()){
 		LOG_POSEIDON_DEBUG("Socket not found in epoll: ptr = ", ptr);
