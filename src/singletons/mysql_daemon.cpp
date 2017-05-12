@@ -614,7 +614,7 @@ namespace {
 				} while(busy);
 
 				Mutex::UniqueLock lock(m_mutex);
-				if(!atomic_load(m_running, ATOMIC_CONSUME)){
+				if(m_queue.empty() && !atomic_load(m_running, ATOMIC_CONSUME)){
 					break;
 				}
 				m_new_operation.timed_wait(lock, timeout);
