@@ -184,6 +184,7 @@ namespace Http {
 				break;
 			}
 			if(state == S_FINISH){
+				next = is.peek();
 				break;
 			}
 		}

@@ -60,6 +60,7 @@ namespace Http {
 					continue;
 				}
 				if(ch == ';'){
+					next = is.peek();
 					break;
 				}
 				seg += ch;

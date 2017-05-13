@@ -118,6 +118,7 @@ void CsvDocument::parse(std::istream &is){
 					seg.erase(seg.end() - 1);
 				}
 				line.push_back(trim(STD_MOVE(seg)));
+				next = is.peek();
 				break;
 			} else if(ch == ','){
 				line.push_back(trim(STD_MOVE(seg)));
