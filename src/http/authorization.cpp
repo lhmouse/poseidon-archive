@@ -364,10 +364,11 @@ namespace Http {
 
 		const AUTO_REF(auth_header, request_headers.headers.get(is_proxy ? "Proxy-Authorization" : "Authorization"));
 		const AUTO(result, check_authorization_header(auth_info, remote_addr, request_headers.verb, auth_header));
-		if(result.first == AUTH_SUCCEEDED){
-			return result.second;
+		if(result.first != AUTH_SUCCEEDED){
+			throw_unauthorized(result.first, remote_addr, is_proxy, STD_MOVE(headers));
+			std::abort();
 		}
-		throw_unauthorized(result.first, remote_addr, is_proxy, STD_MOVE(headers));
+		return result.second;
 	}
 }
 
