@@ -150,8 +150,8 @@ namespace {
 					headers.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
 					send(Http::ST_OK, STD_MOVE(headers), StreamBuffer(csv.dump()));
 				} else if(uri == "set_log_mask"){
-					const Http::UrlParam to_disable(STD_MOVE(request_headers.headers), "to_disable");
-					const Http::UrlParam to_enable(STD_MOVE(request_headers.headers), "to_enable");
+					const Http::UrlParam to_disable(STD_MOVE(request_headers.get_params), "to_disable");
+					const Http::UrlParam to_enable(STD_MOVE(request_headers.get_params), "to_enable");
 					Logger::set_mask(to_disable.as_unsigned(), to_enable.as_unsigned());
 					send_default(Http::ST_OK);
 				} else {
