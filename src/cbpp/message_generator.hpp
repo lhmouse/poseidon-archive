@@ -21,28 +21,41 @@
 #pragma GCC diagnostic ignored "-Wshadow"
 
 class MESSAGE_NAME : public ::Poseidon::Cbpp::MessageBase {
-public:
-	enum {
-		ID = MESSAGE_ID
-	};
+private:
+	template<typename T>
+	static void dump_hex(::std::ostream &os, const T &t){
+		bool first = true;
+		for(AUTO(it, t.begin()); it != t.end(); ++it){
+			static CONSTEXPR const char table[] = "0123456789abcdef";
+			const unsigned c = static_cast<unsigned char>(*it);
+			if(first){
+				first = false;
+			} else {
+				os <<' ';
+			}
+			os <<table[c / 16] <<table[c % 16];
+		}
+	}
 
 public:
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
+#undef FIELD_FIXED
 #undef FIELD_STRING
-#undef FIELD_BYTES
+#undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
-#undef FIELD_CHUNKED
+#undef FIELD_LIST
 
-#define FIELD_VINT(name_)               ::boost::int64_t name_;
-#define FIELD_VUINT(name_)              ::boost::uint64_t name_;
-#define FIELD_STRING(name_)             ::std::string name_;
-#define FIELD_BYTES(name_, size_)       ::boost::array<unsigned char, size_> name_;
-#define FIELD_ARRAY(name_, fields_)     struct ElementOf ## name_ ## X_ { fields_ };	\
-                                        ::std::vector<ElementOf ## name_ ## X_> name_;
-#define FIELD_CHUNKED(name_, fields_)   struct ElementOf ## name_ ## X_ { fields_ };	\
-                                        ::std::vector<ElementOf ## name_ ## X_> name_;
+#define FIELD_VINT(id_)               ::boost::int64_t id_;
+#define FIELD_VUINT(id_)              ::boost::uint64_t id_;
+#define FIELD_FIXED(id_, n_)          ::boost::array<unsigned char, n_> id_;
+#define FIELD_STRING(id_)             ::std::string id_;
+#define FIELD_FLEXIBLE(id_)           ::boost::container::vector<unsigned char> id_;
+#define FIELD_ARRAY(id_, ...)         struct Cbpp ## id_ ## F_ { __VA_ARGS__ };	\
+                                      ::boost::container::vector< Cbpp ## id_ ## F_ > id_;
+#define FIELD_LIST(id_, ...)          struct Cbpp ## id_ ## F_ { __VA_ARGS__ };	\
+                                      ::boost::container::deque< Cbpp ## id_ ## F_ > id_;
 
 	MESSAGE_FIELDS
 
@@ -50,17 +63,19 @@ public:
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
+#undef FIELD_FIXED
 #undef FIELD_STRING
-#undef FIELD_BYTES
+#undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
-#undef FIELD_CHUNKED
+#undef FIELD_LIST
 
-#define FIELD_VINT(name_)               + 1
-#define FIELD_VUINT(name_)              + 1
-#define FIELD_STRING(name_)             + 1
-#define FIELD_BYTES(name_, size_)       + 1
-#define FIELD_ARRAY(name_, fields_)     + 1
-#define FIELD_CHUNKED(name_, fields_)   + 1
+#define FIELD_VINT(id_)               + 1
+#define FIELD_VUINT(id_)              + 1
+#define FIELD_FIXED(id_, n_)          + 1
+#define FIELD_STRING(id_)             + 1
+#define FIELD_FLEXIBLE(id_)           + 1
+#define FIELD_ARRAY(id_, ...)         + 1
+#define FIELD_LIST(id_, ...)          + 1
 
 #if (0 MESSAGE_FIELDS) != 0
 	MESSAGE_NAME()
@@ -68,17 +83,19 @@ public:
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
+#undef FIELD_FIXED
 #undef FIELD_STRING
-#undef FIELD_BYTES
+#undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
-#undef FIELD_CHUNKED
+#undef FIELD_LIST
 
-#define FIELD_VINT(name_)               , name_()
-#define FIELD_VUINT(name_)              , name_()
-#define FIELD_STRING(name_)             , name_()
-#define FIELD_BYTES(name_, size_)       , name_()
-#define FIELD_ARRAY(name_, fields_)     , name_()
-#define FIELD_CHUNKED(name_, fields_)   , name_()
+#define FIELD_VINT(id_)               , id_()
+#define FIELD_VUINT(id_)              , id_()
+#define FIELD_FIXED(id_, n_)          , id_()
+#define FIELD_STRING(id_)             , id_()
+#define FIELD_FLEXIBLE(id_)           , id_()
+#define FIELD_ARRAY(id_, ...)         , id_()
+#define FIELD_LIST(id_, ...)          , id_()
 
 		MESSAGE_FIELDS
 	{
@@ -87,34 +104,38 @@ public:
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
+#undef FIELD_FIXED
 #undef FIELD_STRING
-#undef FIELD_BYTES
+#undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
-#undef FIELD_CHUNKED
+#undef FIELD_LIST
 
-#define FIELD_VINT(name_)               , ::boost::int64_t name_ ## X_
-#define FIELD_VUINT(name_)              , ::boost::uint64_t name_ ## X_
-#define FIELD_STRING(name_)             , ::std::string name_ ## X_
-#define FIELD_BYTES(name_, size_),      , const ::boost::array<unsigned char, size_> &name_ ## X_
-#define FIELD_ARRAY(name_, fields_)     , ::std::vector<ElementOf ## name_ ## X_> name_ ## X_
-#define FIELD_CHUNKED(name_, fields_)   , ::std::vector<ElementOf ## name_ ## X_> name_ ## X_
+#define FIELD_VINT(id_)               , ::boost::int64_t id_ ## X_
+#define FIELD_VUINT(id_)              , ::boost::uint64_t id_ ## X_
+#define FIELD_FIXED(id_, n_)          , const ::boost::array<unsigned char, n_> & id_ ## X_
+#define FIELD_STRING(id_)             , ::std::string id_ ## X_
+#define FIELD_FLEXIBLE(id_)           , ::boost::container::vector<unsigned char> id_ ## X_
+#define FIELD_ARRAY(id_, ...)         , ::boost::container::vector< Cbpp ## id_ ## F_ > id_ ## X_
+#define FIELD_LIST(id_, ...)          , ::boost::container::deque< Cbpp ## id_ ## F_ > id_ ## X_
 
 	explicit MESSAGE_NAME(STRIP_FIRST(void MESSAGE_FIELDS))
 		: ::Poseidon::Cbpp::MessageBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
+#undef FIELD_FIXED
 #undef FIELD_STRING
-#undef FIELD_BYTES
+#undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
-#undef FIELD_CHUNKED
+#undef FIELD_LIST
 
-#define FIELD_VINT(name_)               , name_(name_ ## X_)
-#define FIELD_VUINT(name_)              , name_(name_ ## X_)
-#define FIELD_STRING(name_)             , name_(STD_MOVE(name_ ## X_))
-#define FIELD_BYTES(name_, size_)       , name_(name_ ## X_)
-#define FIELD_ARRAY(name_, fields_)     , name_(STD_MOVE(name_ ## X_))
-#define FIELD_CHUNKED(name_, fields_)   , name_(STD_MOVE(name_ ## X_))
+#define FIELD_VINT(id_)               , id_(id_ ## X_)
+#define FIELD_VUINT(id_)              , id_(id_ ## X_)
+#define FIELD_FIXED(id_, n_)          , id_(id_ ## X_)
+#define FIELD_STRING(id_)             , id_(STD_MOVE(id_ ## X_))
+#define FIELD_FLEXIBLE(id_)           , id_(STD_MOVE(id_ ## X_))
+#define FIELD_ARRAY(id_, ...)         , id_(STD_MOVE(id_ ## X_))
+#define FIELD_LIST(id_, ...)          , id_(STD_MOVE(id_ ## X_))
 
 		MESSAGE_FIELDS
 	{
@@ -133,193 +154,178 @@ public:
 		return MESSAGE_ID;
 	}
 	void serialize(::Poseidon::StreamBuffer &buffer_) const OVERRIDE {
-		::Poseidon::StreamBuffer::WriteIterator it_(buffer_);
-
-		typedef MESSAGE_NAME Cur_;
-		const Cur_ &cur_ = *this;
+		const AUTO(cur_, this);
+		::Poseidon::StreamBuffer::WriteIterator w_(buffer_);
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
+#undef FIELD_FIXED
 #undef FIELD_STRING
-#undef FIELD_BYTES
+#undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
-#undef FIELD_CHUNKED
+#undef FIELD_LIST
 
-#define FIELD_VINT(name_)               ::Poseidon::vint64_to_binary(cur_.name_, it_);
-#define FIELD_VUINT(name_)              ::Poseidon::vuint64_to_binary(cur_.name_, it_);
-#define FIELD_STRING(name_)             ::Poseidon::vuint64_to_binary(cur_.name_.size(), it_);	\
-                                        it_ = ::std::copy(cur_.name_.begin(), cur_.name_.end(), it_);
-#define FIELD_BYTES(name_, size_)       it_ = ::std::copy(cur_.name_, cur_.name_ + size_, it_);
-#define FIELD_ARRAY(name_, fields_)     ::Poseidon::vuint64_to_binary(cur_.name_.size(), it_);	\
-                                        for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
-                                        	typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-                                        	const Element_ &element_ = cur_.name_[i_];	\
-                                        	typedef Element_ Cur_;	\
-                                        	const Cur_ &cur_ = element_;	\
-                                        	\
-                                        	fields_	\
-                                        }
-#define FIELD_CHUNKED(name_, fields_)   for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
-                                        	typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-                                        	const Element_ &element_ = cur_.name_[i_];	\
-                                        	typedef Element_ Cur_;	\
-                                        	const Cur_ &cur_ = element_;	\
-                                        	\
-                                        	::Poseidon::StreamBuffer nested_;	\
-                                        	{	\
-                                        		::Poseidon::StreamBuffer::WriteIterator it_(nested_);	\
-                                        		fields_	\
-                                        	}	\
-                                        	::Poseidon::vuint64_to_binary(nested_.size(), it_);	\
-                                        	buffer_.splice(nested_);	\
+#define FIELD_VINT(id_)               ::Poseidon::vint64_to_binary(cur_->id_, w_);
+#define FIELD_VUINT(id_)              ::Poseidon::vuint64_to_binary(cur_->id_, w_);
+#define FIELD_FIXED(id_, n_)          w_ = ::std::copy(cur_->id_.begin(), cur_->id_.end(), w_);
+#define FIELD_STRING(id_)             ::Poseidon::vuint64_to_binary(cur_->id_.size(), w_);	\
+                                      w_ = ::std::copy(cur_->id_.begin(), cur_->id_.end(), w_);
+#define FIELD_FLEXIBLE(id_)           w_ = ::std::copy(cur_->id_.begin(), cur_->id_.end(), w_);
+#define FIELD_ARRAY(id_, ...)         ::Poseidon::vuint64_to_binary(cur_->id_.size(), w_);	\
+                                      for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                        const AUTO(cur_, it_);	\
+                                        __VA_ARGS__	\
+                                      }
+#define FIELD_LIST(id_, ...)          for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                        ::boost::container::deque<unsigned char> chunk_;	\
+                                        {	\
+                                          const AUTO(cur_, it_);	\
+                                          ::std::back_insert_iterator< ::boost::container::deque<unsigned char> > w_(chunk_);	\
+                                          __VA_ARGS__	\
                                         }	\
-                                        *it_ = 0;	\
-                                        ++it_;
+                                        ::Poseidon::vuint64_to_binary(chunk_.size(), w_);	\
+                                        w_ = ::std::copy(chunk_.begin(), chunk_.end(), w_);	\
+                                      }	\
+                                      *w_ = 0;	\
+                                      ++w_;
 
 		MESSAGE_FIELDS
 	}
 
 	void deserialize(::Poseidon::StreamBuffer &buffer_) OVERRIDE {
-		::Poseidon::StreamBuffer::ReadIterator it_(buffer_);
-
-		typedef MESSAGE_NAME Cur_;
-		Cur_ &cur_ = *this;
+		const AUTO(cur_, this);
+		::Poseidon::StreamBuffer::ReadIterator r_(buffer_);
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
+#undef FIELD_FIXED
 #undef FIELD_STRING
-#undef FIELD_BYTES
+#undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
-#undef FIELD_CHUNKED
+#undef FIELD_LIST
 
-#define FIELD_VINT(name_)               if(!::Poseidon::vint64_from_binary(cur_.name_, it_, buffer_.size())){	\
-                                        	THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
-                                        }
-#define FIELD_VUINT(name_)              if(!::Poseidon::vuint64_from_binary(cur_.name_, it_, buffer_.size())){	\
-                                        	THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
-                                        }
-#define FIELD_STRING(name_)             {	\
-                                        	::boost::uint64_t count_;	\
-                                        	if(!::Poseidon::vuint64_from_binary(count_, it_, buffer_.size())){	\
-                                        		THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
-                                        	}	\
-                                        	if(buffer_.size() < count_){	\
-                                        		THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
-                                        	}	\
-                                        	if(count_ > cur_.name_.max_size()){	\
-                                        		THROW_LENGTH_ERROR_(MESSAGE_NAME, name_);	\
-                                        	}	\
-                                        	/* cur_.name_.reserve(count_); */	\
-                                        	for(::boost::uint64_t i_ = 0; i_ < count_; ++i_){	\
-                                        		cur_.name_.push_back(*it_);	\
-                                        		++it_;	\
-                                        	}	\
-                                        }
-#define FIELD_BYTES(name_, size_)       if(buffer_.size() < size_){	\
-                                        	THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
+#define FIELD_VINT(id_)               cur_->id_ = 0;	\
+                                      if(!Poseidon::vint64_from_binary(cur_->id_, r_, SIZE_MAX)){	\
+                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                      }
+#define FIELD_VUINT(id_)              cur_->id_ = 0;	\
+                                      if(!Poseidon::vuint64_from_binary(cur_->id_, r_, SIZE_MAX)){	\
+                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                      }
+#define FIELD_FIXED(id_, n_)          {	\
+                                        cur_->id_.fill(0);	\
+                                        int c_;	\
+                                        for(::std::size_t i_ = 0; i_ < n_; ++i_){	\
+                                          if((c_ = *r_) < 0){	\
+                                            THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                          }	\
+                                          ++r_;	\
+                                          cur_->id_[i_] = static_cast<unsigned char>(c_);	\
                                         }	\
-                                        for(::boost::uint64_t i_ = 0; i_ < size_; ++i_){	\
-                                        	cur_.name_[i_] = *it_;	\
-                                        	++it_;	\
-                                        }
-#define FIELD_ARRAY(name_, fields_)     {	\
-                                        	::boost::uint64_t count_;	\
-                                        	if(!::Poseidon::vuint64_from_binary(count_, it_, buffer_.size())){	\
-                                        		THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
-                                        	}	\
-                                        	if(count_ > cur_.name_.max_size()){	\
-                                        		THROW_LENGTH_ERROR_(MESSAGE_NAME, name_);	\
-                                        	}	\
-                                        	/* cur_.name_.reserve(count_); */	\
-                                        	for(::boost::uint64_t i_ = 0; i_ < count_; ++i_){	\
-                                        		typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-                                        		cur_.name_.push_back(Element_());	\
-                                        		Element_ &element_ = cur_.name_.back();	\
-                                        		typedef Element_ Cur_;	\
-                                        		Cur_ &cur_ = element_;	\
-                                        		\
-                                        		fields_	\
-                                        	}	\
-                                        }
-#define FIELD_CHUNKED(name_, fields_)   {	\
-                                        	::boost::uint64_t count_;	\
-                                        	for(;;){	\
-                                        		if(!::Poseidon::vuint64_from_binary(count_, it_, buffer_.size())){	\
-                                        			THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
-                                        		}	\
-                                        		if(count_ == 0){	\
-                                        			break;	\
-                                        		}	\
-                                        		::Poseidon::StreamBuffer nested_ = buffer_.cut_off(count_);	\
-                                        		if(nested_.size() < count_){	\
-                                        			THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
-                                        		}	\
-                                        		typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-                                        		cur_.name_.push_back(Element_());	\
-                                        		Element_ &element_ = cur_.name_.back();	\
-                                        		typedef Element_ Cur_;	\
-                                        		Cur_ &cur_ = element_;	\
-                                        		\
-                                        		{	\
-                                        			::Poseidon::StreamBuffer::ReadIterator it_(nested_);	\
-                                        			fields_	\
-                                        		}	\
-                                        	}	\
-                                        }
+                                      }
+#define FIELD_STRING(id_)             {	\
+                                        cur_->id_.clear();	\
+                                        ::boost::uint64_t n_;	\
+                                        if(!Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
+                                          THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        }	\
+                                        int c_;	\
+                                        for(::std::size_t i_ = 0; i_ < n_; ++i_){	\
+                                          if((c_ = *r_) < 0){	\
+                                            THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                          }	\
+                                          ++r_;	\
+                                          cur_->id_.push_back(c_);	\
+                                        }	\
+                                      }
+#define FIELD_FLEXIBLE(id_)           {	\
+                                        cur_->id_.clear();	\
+                                        int c_;	\
+                                        while((c_ = *r_) >= 0){	\
+                                          ++r_;	\
+                                          cur_->id_.push_back(c_);	\
+                                        }	\
+                                      }
+#define FIELD_ARRAY(id_, ...)         {	\
+                                        cur_->id_.clear();	\
+                                        ::boost::uint64_t n_;	\
+                                        if(!Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
+                                          THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        }	\
+                                        for(::std::size_t i_ = 0; i_ < n_; ++i_){	\
+                                          const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
+                                          const AUTO(cur_, it_);	\
+                                          __VA_ARGS__	\
+                                        }	\
+                                      }
+#define FIELD_LIST(id_, ...)          {	\
+                                        cur_->id_.clear();	\
+                                        ::boost::uint64_t n_;	\
+                                        for(;;){	\
+                                          if(!Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
+                                            THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                          }	\
+                                          if(n_ == 0){	\
+                                            break;	\
+                                          }	\
+                                          ::Poseidon::StreamBuffer chunk_;	\
+                                          int c_;	\
+                                          for(::std::size_t i_ = 0; i_ < n_; ++i_){	\
+                                            if((c_ = *r_) < 0){	\
+                                              THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                            }	\
+                                            ++r_;	\
+                                            chunk_.put(c_);	\
+                                          }	\
+                                          const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
+                                          const AUTO(cur_, it_);	\
+                                          ::Poseidon::StreamBuffer::ReadIterator r_(chunk_);	\
+                                          __VA_ARGS__	\
+                                        }	\
+                                      }
 
 		MESSAGE_FIELDS
 	}
 
 	void dump_debug(::std::ostream &os_) const OVERRIDE {
-		typedef MESSAGE_NAME Cur_;
-		const Cur_ &cur_ = *this;
-
-		os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<ID <<") = {; ";
+		const AUTO(cur_, this);
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
+#undef FIELD_FIXED
 #undef FIELD_STRING
-#undef FIELD_BYTES
+#undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
-#undef FIELD_CHUNKED
+#undef FIELD_LIST
 
-#define FIELD_VINT(name_)               os_ << #name_ <<" = " <<cur_.name_ <<"; ";
-#define FIELD_VUINT(name_)              os_ << #name_ <<" = " <<cur_.name_ <<"; ";
-#define FIELD_STRING(name_)             os_ << #name_ <<" = String(" <<cur_.name_.size() <<")\"" <<cur_.name_ <<"\"; ";
-#define FIELD_BYTES(name_, size_)       os_ << #name_ <<" = Bytes(" <<size_ <<")[ " << ::std::hex;	\
-                                        for(::boost::uint64_t i_ = 0; i_ < size_; ++i_){	\
-                                        	os_ << ::std::setfill('0') << ::std::setw(2)	\
-                                        	    << static_cast<unsigned>(cur_.name_[i_]) <<' ';	\
-                                        }	\
-                                        os_ << ::std::dec <<"]; ";
-#define FIELD_ARRAY(name_, fields_)     os_ << #name_ <<" = Array(" <<cur_.name_.size() <<")[; ";	\
-                                        for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
-                                        	typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-                                        	const Element_ &element_ = cur_.name_[i_];	\
-                                        	typedef Element_ Cur_;	\
-                                        	const Cur_ &cur_ = element_;	\
-                                        	\
-                                        	os_ <<"{; ";	\
-                                        	fields_	\
-                                        	os_ <<"}; ";	\
-                                        }	\
-                                        os_ <<"]; ";
+#define FIELD_VINT(id_)               os_ <<TOKEN_TO_STR(id_) <<": vint = " <<cur_->id_ <<"; ";
+#define FIELD_VUINT(id_)              os_ <<TOKEN_TO_STR(id_) <<": vuint = " <<cur_->id_ <<"; ";
+#define FIELD_FIXED(id_, n_)          os_ <<TOKEN_TO_STR(id_) <<": fixed(" <<cur_->id_.size() <<") = ";	\
+                                      dump_hex(os_, cur_->id_);	\
+                                      os_ <<"; ";
+#define FIELD_STRING(id_)             os_ <<TOKEN_TO_STR(id_) <<": string(" <<cur_->id_.size() <<") = \"" <<cur_->id_ <<"\"; ";
+#define FIELD_FLEXIBLE(id_)           os_ <<TOKEN_TO_STR(id_) <<": flexible(" <<cur_->id_.size() <<") = <";	\
+                                      dump_hex(os_, cur_->id_);	\
+                                      os_ <<">; ";
+#define FIELD_ARRAY(id_, ...)         os_ <<TOKEN_TO_STR(id_) <<": array(" <<cur_->id_.size() <<") = [; ";	\
+                                      for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                        const AUTO(cur_, it_);	\
+                                        os_ <<"{; ";	\
+                                        __VA_ARGS__	\
+                                        os_ <<"}; ";	\
+                                      }	\
+                                      os_ <<"]; ";
+#define FIELD_LIST(id_, ...)          os_ <<TOKEN_TO_STR(id_) <<": list(" <<cur_->id_.size() <<") = [; ";	\
+                                      for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                        const AUTO(cur_, it_);	\
+                                        os_ <<"{; ";	\
+                                        __VA_ARGS__	\
+                                        os_ <<"}; ";	\
+                                      }	\
+                                      os_ <<"]; ";
 
-#define FIELD_CHUNKED(name_, fields_)   os_ << #name_ <<" = Chunked(" <<cur_.name_.size() <<")[; ";	\
-                                        for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
-                                        	typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
-                                        	const Element_ &element_ = cur_.name_[i_];	\
-                                        	typedef Element_ Cur_;	\
-                                        	const Cur_ &cur_ = element_;	\
-                                        	\
-                                        	os_ <<"{; ";	\
-                                        	fields_	\
-                                        	os_ <<"}; ";	\
-                                        }	\
-                                        os_ <<"]; ";
-
+		os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<get_message_id() <<") = {; ";
 		MESSAGE_FIELDS
-
 		os_ <<"}; ";
 	}
 };

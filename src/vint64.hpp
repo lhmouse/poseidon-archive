@@ -4,7 +4,6 @@
 #ifndef POSEIDON_VINT64_HPP_
 #define POSEIDON_VINT64_HPP_
 
-#include "cxx_ver.hpp"
 #include <cstddef>
 #include <boost/cstdint.hpp>
 
@@ -31,11 +30,8 @@ void vuint64_to_binary(boost::uint64_t val, OutputIterT &write){
 }
 template<typename OutputIterT>
 void vint64_to_binary(boost::int64_t val, OutputIterT &write){
-	AUTO(encoded, static_cast<boost::uint64_t>(val));
-	encoded <<= 1;
-	if(val < 0){
-		encoded = ~encoded;
-	}
+	boost::uint64_t encoded = static_cast<boost::uint64_t>(val);
+	encoded = (encoded << 1) ^ -(encoded >> 63);
 	vuint64_to_binary(encoded, write);
 }
 
@@ -47,7 +43,10 @@ bool vuint64_from_binary(boost::uint64_t &val, InputIterT &read, std::size_t cou
 		if(count == 0){
 			return false;
 		}
-		const unsigned char by = *read;
+		const int by = (sizeof(*read) == 1) ? (*read & 0xFF) : *read;
+		if(static_cast<unsigned>(by) > 0xFF){
+			return false;
+		}
 		++read;
 		--count;
 		val |= static_cast<boost::uint64_t>(by & 0x7F) << (i * 7);
@@ -58,7 +57,10 @@ bool vuint64_from_binary(boost::uint64_t &val, InputIterT &read, std::size_t cou
 	if(count == 0){
 		return false;
 	}
-	const unsigned char by = *read;
+	const int by = (sizeof(*read) == 1) ? (*read & 0xFF) : *read;
+	if(static_cast<unsigned>(by) > 0xFF){
+		return false;
+	}
 	++read;
 	val |= static_cast<boost::uint64_t>(by) << (8 * 7);
 	return true;
@@ -68,11 +70,7 @@ bool vint64_from_binary(boost::int64_t &val, InputIterT &read, std::size_t count
 	boost::uint64_t encoded;
 	const bool ret = vuint64_from_binary(encoded, read, count);
 	if(ret){
-		const bool negative = encoded & 1;
-		encoded >>= 1;
-		if(negative){
-			encoded = ~encoded;
-		}
+		encoded = (encoded >> 1) ^ -(encoded & 1);
 		val = static_cast<boost::int64_t>(encoded);
 	}
 	return ret;

@@ -33,14 +33,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                ::Poseidon::MySql::ObjectBase::Field<bool> name_;
-#define FIELD_SIGNED(name_)                 ::Poseidon::MySql::ObjectBase::Field< ::boost::int64_t> name_;
-#define FIELD_UNSIGNED(name_)               ::Poseidon::MySql::ObjectBase::Field< ::boost::uint64_t> name_;
-#define FIELD_DOUBLE(name_)                 ::Poseidon::MySql::ObjectBase::Field<double> name_;
-#define FIELD_STRING(name_)                 ::Poseidon::MySql::ObjectBase::Field< ::std::string> name_;
-#define FIELD_DATETIME(name_)               ::Poseidon::MySql::ObjectBase::Field< ::boost::uint64_t> name_;
-#define FIELD_UUID(name_)                   ::Poseidon::MySql::ObjectBase::Field< ::Poseidon::Uuid> name_;
-#define FIELD_BLOB(name_)                   ::Poseidon::MySql::ObjectBase::Field< ::std::string> name_;
+#define FIELD_BOOLEAN(id_)                ::Poseidon::MySql::ObjectBase::Field<bool> id_;
+#define FIELD_SIGNED(id_)                 ::Poseidon::MySql::ObjectBase::Field< ::boost::int64_t> id_;
+#define FIELD_UNSIGNED(id_)               ::Poseidon::MySql::ObjectBase::Field< ::boost::uint64_t> id_;
+#define FIELD_DOUBLE(id_)                 ::Poseidon::MySql::ObjectBase::Field<double> id_;
+#define FIELD_STRING(id_)                 ::Poseidon::MySql::ObjectBase::Field< ::std::string> id_;
+#define FIELD_DATETIME(id_)               ::Poseidon::MySql::ObjectBase::Field< ::boost::uint64_t> id_;
+#define FIELD_UUID(id_)                   ::Poseidon::MySql::ObjectBase::Field< ::Poseidon::Uuid> id_;
+#define FIELD_BLOB(id_)                   ::Poseidon::MySql::ObjectBase::Field< ::std::string> id_;
 
 	MYSQL_OBJECT_FIELDS
 
@@ -57,14 +57,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                , name_(this)
-#define FIELD_SIGNED(name_)                 , name_(this)
-#define FIELD_UNSIGNED(name_)               , name_(this)
-#define FIELD_DOUBLE(name_)                 , name_(this)
-#define FIELD_STRING(name_)                 , name_(this)
-#define FIELD_DATETIME(name_)               , name_(this)
-#define FIELD_UUID(name_)                   , name_(this)
-#define FIELD_BLOB(name_)                   , name_(this)
+#define FIELD_BOOLEAN(id_)                , id_(this)
+#define FIELD_SIGNED(id_)                 , id_(this)
+#define FIELD_UNSIGNED(id_)               , id_(this)
+#define FIELD_DOUBLE(id_)                 , id_(this)
+#define FIELD_STRING(id_)                 , id_(this)
+#define FIELD_DATETIME(id_)               , id_(this)
+#define FIELD_UUID(id_)                   , id_(this)
+#define FIELD_BLOB(id_)                   , id_(this)
 
 		MYSQL_OBJECT_FIELDS
 	{
@@ -79,14 +79,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                , bool name_ ## X_
-#define FIELD_SIGNED(name_)                 , ::boost::int64_t name_ ## X_
-#define FIELD_UNSIGNED(name_)               , ::boost::uint64_t name_ ## X_
-#define FIELD_DOUBLE(name_)                 , double name_ ## X_
-#define FIELD_STRING(name_)                 , ::std::string name_ ## X_
-#define FIELD_DATETIME(name_)               , ::boost::uint64_t name_ ## X_
-#define FIELD_UUID(name_)                   , const ::Poseidon::Uuid & name_ ## X_
-#define FIELD_BLOB(name_)                   , ::std::string name_ ## X_
+#define FIELD_BOOLEAN(id_)                , bool id_ ## X_
+#define FIELD_SIGNED(id_)                 , ::boost::int64_t id_ ## X_
+#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t id_ ## X_
+#define FIELD_DOUBLE(id_)                 , double id_ ## X_
+#define FIELD_STRING(id_)                 , ::std::string id_ ## X_
+#define FIELD_DATETIME(id_)               , ::boost::uint64_t id_ ## X_
+#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_ ## X_
+#define FIELD_BLOB(id_)                   , ::std::string id_ ## X_
 
 	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
 		: ::Poseidon::MySql::ObjectBase()
@@ -100,14 +100,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                , name_(this, name_ ## X_)
-#define FIELD_SIGNED(name_)                 , name_(this, name_ ## X_)
-#define FIELD_UNSIGNED(name_)               , name_(this, name_ ## X_)
-#define FIELD_DOUBLE(name_)                 , name_(this, name_ ## X_)
-#define FIELD_STRING(name_)                 , name_(this, STD_MOVE(name_ ## X_))
-#define FIELD_DATETIME(name_)               , name_(this, name_ ## X_)
-#define FIELD_UUID(name_)                   , name_(this, name_ ## X_)
-#define FIELD_BLOB(name_)                   , name_(this, STD_MOVE(name_ ## X_))
+#define FIELD_BOOLEAN(id_)                , id_(this, id_ ## X_)
+#define FIELD_SIGNED(id_)                 , id_(this, id_ ## X_)
+#define FIELD_UNSIGNED(id_)               , id_(this, id_ ## X_)
+#define FIELD_DOUBLE(id_)                 , id_(this, id_ ## X_)
+#define FIELD_STRING(id_)                 , id_(this, STD_MOVE(id_ ## X_))
+#define FIELD_DATETIME(id_)               , id_(this, id_ ## X_)
+#define FIELD_UUID(id_)                   , id_(this, id_ ## X_)
+#define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(id_ ## X_))
 
 		MYSQL_OBJECT_FIELDS
 	{
@@ -130,22 +130,22 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(name_) "` = " <<name_),
-#define FIELD_SIGNED(name_)                 (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(name_) "` = " <<name_),
-#define FIELD_UNSIGNED(name_)               (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(name_) "` = " <<name_),
-#define FIELD_DOUBLE(name_)                 (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(name_) "` = " <<name_),
-#define FIELD_STRING(name_)                 (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(name_) "` = " << ::Poseidon::MySql::StringEscaper(name_)),
-#define FIELD_DATETIME(name_)               (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(name_) "` = " << ::Poseidon::MySql::DateTimeFormatter(name_)),
-#define FIELD_UUID(name_)                   (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(name_) "` = " << ::Poseidon::MySql::UuidFormatter(name_)),
-#define FIELD_BLOB(name_)                   (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(name_) "` = " << ::Poseidon::MySql::StringEscaper(name_)),
+#define FIELD_BOOLEAN(id_)                (void)(os_ <<", "),	\
+                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_),
+#define FIELD_SIGNED(id_)                 (void)(os_ <<", "),	\
+                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_),
+#define FIELD_UNSIGNED(id_)               (void)(os_ <<", "),	\
+                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_),
+#define FIELD_DOUBLE(id_)                 (void)(os_ <<", "),	\
+                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_),
+#define FIELD_STRING(id_)                 (void)(os_ <<", "),	\
+                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_)),
+#define FIELD_DATETIME(id_)               (void)(os_ <<", "),	\
+                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::DateTimeFormatter(id_)),
+#define FIELD_UUID(id_)                   (void)(os_ <<", "),	\
+                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::UuidFormatter(id_)),
+#define FIELD_BLOB(id_)                   (void)(os_ <<", "),	\
+                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_)),
 
 		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
 	}
@@ -160,14 +160,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(name_)                name_.set(conn_->get_signed   ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_SIGNED(name_)                 name_.set(conn_->get_signed   ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_UNSIGNED(name_)               name_.set(conn_->get_unsigned ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_DOUBLE(name_)                 name_.set(conn_->get_double   ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_STRING(name_)                 name_.set(conn_->get_string   ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_DATETIME(name_)               name_.set(conn_->get_datetime ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_UUID(name_)                   name_.set(conn_->get_uuid     ( TOKEN_TO_STR(name_) ), false);
-#define FIELD_BLOB(name_)                   name_.set(conn_->get_string   ( TOKEN_TO_STR(name_) ), false);
+#define FIELD_BOOLEAN(id_)                id_.set(conn_->get_signed   ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_SIGNED(id_)                 id_.set(conn_->get_signed   ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_UNSIGNED(id_)               id_.set(conn_->get_unsigned ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_DOUBLE(id_)                 id_.set(conn_->get_double   ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_STRING(id_)                 id_.set(conn_->get_string   ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_DATETIME(id_)               id_.set(conn_->get_datetime ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_UUID(id_)                   id_.set(conn_->get_uuid     ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_BLOB(id_)                   id_.set(conn_->get_string   ( TOKEN_TO_STR(id_) ), false);
 
 		MYSQL_OBJECT_FIELDS
 	}

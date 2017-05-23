@@ -7,12 +7,13 @@
 #include "../cxx_ver.hpp"
 #include "../cxx_util.hpp"
 #include <string>
-#include <vector>
 #include <algorithm>
 #include <iomanip>
 #include <ostream>
 #include <cstddef>
 #include <boost/array.hpp>
+#include <boost/container/vector.hpp>
+#include <boost/container/deque.hpp>
 #include <boost/cstdint.hpp>
 #include "../vint64.hpp"
 #include "../stream_buffer.hpp"
@@ -52,7 +53,7 @@
 #define THROW_END_OF_STREAM_(message_, field_)	\
 	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
 		::Poseidon::Cbpp::ST_END_OF_STREAM, ::Poseidon::sslit(	\
-			"End of stream encountered, expecting " TOKEN_TO_STR(message_) "::" TOKEN_TO_STR(field_) ))
+			"End of stream encountered in message " TOKEN_TO_STR(message_) " while parsing " TOKEN_TO_STR(field_) ))
 
 #define THROW_JUNK_AFTER_PACKET_(message_)	\
 	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
@@ -62,7 +63,7 @@
 #define THROW_LENGTH_ERROR_(message_, field_)	\
 	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
 		::Poseidon::Cbpp::ST_LENGTH_ERROR, ::Poseidon::sslit(	\
-			"Length error in message field " TOKEN_TO_STR(message_) "::" TOKEN_TO_STR(field_) ))
+			"Length error in message " TOKEN_TO_STR(message_) " while parsing " TOKEN_TO_STR(field_) ))
 
 namespace Poseidon {
 
