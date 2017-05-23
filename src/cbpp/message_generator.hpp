@@ -21,6 +21,11 @@
 #pragma GCC diagnostic ignored "-Wshadow"
 
 class MESSAGE_NAME : public ::Poseidon::Cbpp::MessageBase {
+public:
+	enum {
+		ID = MESSAGE_ID
+	};
+
 private:
 	template<typename T>
 	static void dump_hex(::std::ostream &os, const T &t){
