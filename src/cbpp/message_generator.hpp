@@ -33,12 +33,15 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
+#undef FIELD_CHUNKED
 
 #define FIELD_VINT(name_)               ::boost::int64_t name_;
 #define FIELD_VUINT(name_)              ::boost::uint64_t name_;
 #define FIELD_STRING(name_)             ::std::string name_;
 #define FIELD_BYTES(name_, size_)       ::boost::array<unsigned char, size_> name_;
 #define FIELD_ARRAY(name_, fields_)     struct ElementOf ## name_ ## X_ { fields_ };	\
+                                        ::std::vector<ElementOf ## name_ ## X_> name_;
+#define FIELD_CHUNKED(name_, fields_)   struct ElementOf ## name_ ## X_ { fields_ };	\
                                         ::std::vector<ElementOf ## name_ ## X_> name_;
 
 	MESSAGE_FIELDS
@@ -50,12 +53,14 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
+#undef FIELD_CHUNKED
 
 #define FIELD_VINT(name_)               + 1
 #define FIELD_VUINT(name_)              + 1
 #define FIELD_STRING(name_)             + 1
 #define FIELD_BYTES(name_, size_)       + 1
-#define FIELD_ARRAY(name_, fields_)     + 0
+#define FIELD_ARRAY(name_, fields_)     + 1
+#define FIELD_CHUNKED(name_, fields_)   + 1
 
 #if (0 MESSAGE_FIELDS) != 0
 	MESSAGE_NAME()
@@ -66,12 +71,14 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
+#undef FIELD_CHUNKED
 
 #define FIELD_VINT(name_)               , name_()
 #define FIELD_VUINT(name_)              , name_()
 #define FIELD_STRING(name_)             , name_()
 #define FIELD_BYTES(name_, size_)       , name_()
 #define FIELD_ARRAY(name_, fields_)     , name_()
+#define FIELD_CHUNKED(name_, fields_)   , name_()
 
 		MESSAGE_FIELDS
 	{
@@ -83,12 +90,14 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
+#undef FIELD_CHUNKED
 
 #define FIELD_VINT(name_)               , ::boost::int64_t name_ ## X_
 #define FIELD_VUINT(name_)              , ::boost::uint64_t name_ ## X_
 #define FIELD_STRING(name_)             , ::std::string name_ ## X_
 #define FIELD_BYTES(name_, size_),      , const ::boost::array<unsigned char, size_> &name_ ## X_
-#define FIELD_ARRAY(name_, fields_)
+#define FIELD_ARRAY(name_, fields_)     , ::std::vector<ElementOf ## name_ ## X_> name_ ## X_
+#define FIELD_CHUNKED(name_, fields_)   , ::std::vector<ElementOf ## name_ ## X_> name_ ## X_
 
 	explicit MESSAGE_NAME(STRIP_FIRST(void MESSAGE_FIELDS))
 		: ::Poseidon::Cbpp::MessageBase()
@@ -98,12 +107,14 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
+#undef FIELD_CHUNKED
 
 #define FIELD_VINT(name_)               , name_(name_ ## X_)
 #define FIELD_VUINT(name_)              , name_(name_ ## X_)
 #define FIELD_STRING(name_)             , name_(STD_MOVE(name_ ## X_))
 #define FIELD_BYTES(name_, size_)       , name_(name_ ## X_)
-#define FIELD_ARRAY(name_, fields_)     , name_()
+#define FIELD_ARRAY(name_, fields_)     , name_(STD_MOVE(name_ ## X_))
+#define FIELD_CHUNKED(name_, fields_)   , name_(STD_MOVE(name_ ## X_))
 
 		MESSAGE_FIELDS
 	{
@@ -122,7 +133,7 @@ public:
 		return MESSAGE_ID;
 	}
 	void serialize(::Poseidon::StreamBuffer &buffer_) const OVERRIDE {
-		::Poseidon::StreamBuffer::WriteIterator write_(buffer_);
+		::Poseidon::StreamBuffer::WriteIterator it_(buffer_);
 
 		typedef MESSAGE_NAME Cur_;
 		const Cur_ &cur_ = *this;
@@ -132,13 +143,14 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
+#undef FIELD_CHUNKED
 
-#define FIELD_VINT(name_)               ::Poseidon::vint64_to_binary(cur_.name_, write_);
-#define FIELD_VUINT(name_)              ::Poseidon::vuint64_to_binary(cur_.name_, write_);
-#define FIELD_STRING(name_)             ::Poseidon::vuint64_to_binary(cur_.name_.size(), write_);	\
-                                        write_ = ::std::copy(cur_.name_.begin(), cur_.name_.end(), write_);
-#define FIELD_BYTES(name_, size_)       write_ = ::std::copy(cur_.name_, cur_.name_ + size_, write_);
-#define FIELD_ARRAY(name_, fields_)     ::Poseidon::vuint64_to_binary(cur_.name_.size(), write_);	\
+#define FIELD_VINT(name_)               ::Poseidon::vint64_to_binary(cur_.name_, it_);
+#define FIELD_VUINT(name_)              ::Poseidon::vuint64_to_binary(cur_.name_, it_);
+#define FIELD_STRING(name_)             ::Poseidon::vuint64_to_binary(cur_.name_.size(), it_);	\
+                                        it_ = ::std::copy(cur_.name_.begin(), cur_.name_.end(), it_);
+#define FIELD_BYTES(name_, size_)       it_ = ::std::copy(cur_.name_, cur_.name_ + size_, it_);
+#define FIELD_ARRAY(name_, fields_)     ::Poseidon::vuint64_to_binary(cur_.name_.size(), it_);	\
                                         for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
                                         	typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
                                         	const Element_ &element_ = cur_.name_[i_];	\
@@ -147,12 +159,28 @@ public:
                                         	\
                                         	fields_	\
                                         }
+#define FIELD_CHUNKED(name_, fields_)   for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
+                                        	typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
+                                        	const Element_ &element_ = cur_.name_[i_];	\
+                                        	typedef Element_ Cur_;	\
+                                        	const Cur_ &cur_ = element_;	\
+                                        	\
+                                        	::Poseidon::StreamBuffer nested_;	\
+                                        	{	\
+                                        		::Poseidon::StreamBuffer::WriteIterator it_(nested_);	\
+                                        		fields_	\
+                                        	}	\
+                                        	::Poseidon::vuint64_to_binary(nested_.size(), it_);	\
+                                        	buffer_.splice(nested_);	\
+                                        }	\
+                                        *it_ = 0;	\
+                                        ++it_;
 
 		MESSAGE_FIELDS
 	}
 
 	void deserialize(::Poseidon::StreamBuffer &buffer_) OVERRIDE {
-		::Poseidon::StreamBuffer::ReadIterator read_(buffer_);
+		::Poseidon::StreamBuffer::ReadIterator it_(buffer_);
 
 		typedef MESSAGE_NAME Cur_;
 		Cur_ &cur_ = *this;
@@ -162,16 +190,17 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
+#undef FIELD_CHUNKED
 
-#define FIELD_VINT(name_)               if(!::Poseidon::vint64_from_binary(cur_.name_, read_, buffer_.size())){	\
+#define FIELD_VINT(name_)               if(!::Poseidon::vint64_from_binary(cur_.name_, it_, buffer_.size())){	\
                                         	THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
                                         }
-#define FIELD_VUINT(name_)              if(!::Poseidon::vuint64_from_binary(cur_.name_, read_, buffer_.size())){	\
+#define FIELD_VUINT(name_)              if(!::Poseidon::vuint64_from_binary(cur_.name_, it_, buffer_.size())){	\
                                         	THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
                                         }
 #define FIELD_STRING(name_)             {	\
                                         	::boost::uint64_t count_;	\
-                                        	if(!::Poseidon::vuint64_from_binary(count_, read_, buffer_.size())){	\
+                                        	if(!::Poseidon::vuint64_from_binary(count_, it_, buffer_.size())){	\
                                         		THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
                                         	}	\
                                         	if(buffer_.size() < count_){	\
@@ -182,20 +211,20 @@ public:
                                         	}	\
                                         	/* cur_.name_.reserve(count_); */	\
                                         	for(::boost::uint64_t i_ = 0; i_ < count_; ++i_){	\
-                                        		cur_.name_.push_back(*read_);	\
-                                        		++read_;	\
+                                        		cur_.name_.push_back(*it_);	\
+                                        		++it_;	\
                                         	}	\
                                         }
 #define FIELD_BYTES(name_, size_)       if(buffer_.size() < size_){	\
                                         	THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
                                         }	\
                                         for(::boost::uint64_t i_ = 0; i_ < size_; ++i_){	\
-                                        	cur_.name_[i_] = *read_;	\
-                                        	++read_;	\
+                                        	cur_.name_[i_] = *it_;	\
+                                        	++it_;	\
                                         }
 #define FIELD_ARRAY(name_, fields_)     {	\
                                         	::boost::uint64_t count_;	\
-                                        	if(!::Poseidon::vuint64_from_binary(count_, read_, buffer_.size())){	\
+                                        	if(!::Poseidon::vuint64_from_binary(count_, it_, buffer_.size())){	\
                                         		THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
                                         	}	\
                                         	if(count_ > cur_.name_.max_size()){	\
@@ -210,6 +239,31 @@ public:
                                         		Cur_ &cur_ = element_;	\
                                         		\
                                         		fields_	\
+                                        	}	\
+                                        }
+#define FIELD_CHUNKED(name_, fields_)   {	\
+                                        	::boost::uint64_t count_;	\
+                                        	for(;;){	\
+                                        		if(!::Poseidon::vuint64_from_binary(count_, it_, buffer_.size())){	\
+                                        			THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
+                                        		}	\
+                                        		if(count_ == 0){	\
+                                        			break;	\
+                                        		}	\
+                                        		::Poseidon::StreamBuffer nested_ = buffer_.cut_off(count_);	\
+                                        		if(nested_.size() < count_){	\
+                                        			THROW_END_OF_STREAM_(MESSAGE_NAME, name_);	\
+                                        		}	\
+                                        		typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
+                                        		cur_.name_.push_back(Element_());	\
+                                        		Element_ &element_ = cur_.name_.back();	\
+                                        		typedef Element_ Cur_;	\
+                                        		Cur_ &cur_ = element_;	\
+                                        		\
+                                        		{	\
+                                        			::Poseidon::StreamBuffer::ReadIterator it_(nested_);	\
+                                        			fields_	\
+                                        		}	\
                                         	}	\
                                         }
 
@@ -227,17 +281,31 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BYTES
 #undef FIELD_ARRAY
+#undef FIELD_CHUNKED
 
 #define FIELD_VINT(name_)               os_ << #name_ <<" = " <<cur_.name_ <<"; ";
 #define FIELD_VUINT(name_)              os_ << #name_ <<" = " <<cur_.name_ <<"; ";
-#define FIELD_STRING(name_)             os_ << #name_ <<" = (" <<cur_.name_.size() <<")\"" <<cur_.name_ <<"\"; ";
-#define FIELD_BYTES(name_, size_)       os_ << #name_ <<" = (" <<size_ <<")[ " << ::std::hex;	\
+#define FIELD_STRING(name_)             os_ << #name_ <<" = String(" <<cur_.name_.size() <<")\"" <<cur_.name_ <<"\"; ";
+#define FIELD_BYTES(name_, size_)       os_ << #name_ <<" = Bytes(" <<size_ <<")[ " << ::std::hex;	\
                                         for(::boost::uint64_t i_ = 0; i_ < size_; ++i_){	\
                                         	os_ << ::std::setfill('0') << ::std::setw(2)	\
                                         	    << static_cast<unsigned>(cur_.name_[i_]) <<' ';	\
                                         }	\
                                         os_ << ::std::dec <<"]; ";
-#define FIELD_ARRAY(name_, fields_)     os_ << #name_ <<" = (" <<cur_.name_.size() <<")[; ";	\
+#define FIELD_ARRAY(name_, fields_)     os_ << #name_ <<" = Array(" <<cur_.name_.size() <<")[; ";	\
+                                        for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
+                                        	typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
+                                        	const Element_ &element_ = cur_.name_[i_];	\
+                                        	typedef Element_ Cur_;	\
+                                        	const Cur_ &cur_ = element_;	\
+                                        	\
+                                        	os_ <<"{; ";	\
+                                        	fields_	\
+                                        	os_ <<"}; ";	\
+                                        }	\
+                                        os_ <<"]; ";
+
+#define FIELD_CHUNKED(name_, fields_)   os_ << #name_ <<" = Chunked(" <<cur_.name_.size() <<")[; ";	\
                                         for(::boost::uint64_t i_ = 0; i_ < cur_.name_.size(); ++i_){	\
                                         	typedef Cur_::ElementOf ## name_ ## X_ Element_;	\
                                         	const Element_ &element_ = cur_.name_[i_];	\
