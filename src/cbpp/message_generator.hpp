@@ -329,7 +329,7 @@ public:
                                       }	\
                                       os_ <<"]; ";
 
-		os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<get_message_id() <<") = {; ";
+		os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<get_id() <<") = {; ";
 		MESSAGE_FIELDS
 		os_ <<"}; ";
 	}
