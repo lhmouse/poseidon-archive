@@ -23,12 +23,12 @@
 namespace Poseidon {
 
 namespace {
-	void sig_term_proc(int){
+	void sigterm_proc(int){
 		LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");
 		JobDispatcher::quit_modal();
 	}
 
-	void sig_int_proc(int){
+	void sigint_proc(int){
 		static const boost::uint64_t KILL_TIMER_EXPIRES = 5000;
 		static boost::uint64_t s_kill_timer = 0;
 
@@ -159,14 +159,20 @@ int main(int argc, char **argv){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "-------------------------- Starting up -------------------------");
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up signal handlers...");
-	::signal(SIGHUP, &sig_term_proc);
-	::signal(SIGTERM, &sig_term_proc);
-	::signal(SIGINT, &sig_int_proc);
+	::signal(SIGHUP, &sigterm_proc);
+	::signal(SIGTERM, &sigterm_proc);
+	::signal(SIGINT, &sigint_proc);
 	::signal(SIGCHLD, SIG_IGN);
 	::signal(SIGPIPE, SIG_IGN);
 
 	try {
-		MainConfig::set_run_path((1 < argc) ? argv[1] : "/usr/etc/poseidon");
+		const char *run_path;
+		if(argc > 1){
+			run_path = argv[1];
+		} else{
+			run_path = "/usr/etc/poseidon";
+		}
+		MainConfig::set_run_path(run_path);
 		MainConfig::reload();
 
 		START(ProfileDepository);
