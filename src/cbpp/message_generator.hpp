@@ -155,8 +155,8 @@ public:
 	}
 
 public:
-	unsigned get_message_id() const OVERRIDE {
-		return MESSAGE_ID;
+	unsigned get_id() const OVERRIDE {
+		return wID;
 	}
 	void serialize(::Poseidon::StreamBuffer &buffer_) const OVERRIDE {
 		const AUTO(cur_, this);
