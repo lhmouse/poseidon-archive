@@ -167,7 +167,7 @@ public:
 #define FIELD_STRING(id_)                 id_.set(conn_->get_string   ( TOKEN_TO_STR(id_) ), false);
 #define FIELD_DATETIME(id_)               id_.set(conn_->get_datetime ( TOKEN_TO_STR(id_) ), false);
 #define FIELD_UUID(id_)                   id_.set(conn_->get_uuid     ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_BLOB(id_)                   id_.set(conn_->get_string   ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_BLOB(id_)                   id_.set(conn_->get_blob     ( TOKEN_TO_STR(id_) ), false);
 
 		MYSQL_OBJECT_FIELDS
 	}

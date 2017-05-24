@@ -38,9 +38,9 @@ public:
 
 #define FIELD_VINT(id_)               ::boost::int64_t id_;
 #define FIELD_VUINT(id_)              ::boost::uint64_t id_;
-#define FIELD_FIXED(id_, n_)          ::boost::array<unsigned char, n_> id_;
+#define FIELD_FIXED(id_, n_)          ::boost::array<char, n_> id_;
 #define FIELD_STRING(id_)             ::std::string id_;
-#define FIELD_FLEXIBLE(id_)           ::boost::container::vector<unsigned char> id_;
+#define FIELD_FLEXIBLE(id_)           ::std::string id_;
 #define FIELD_ARRAY(id_, ...)         struct Cbpp ## id_ ## F_ { __VA_ARGS__ };	\
                                       ::boost::container::vector< Cbpp ## id_ ## F_ > id_;
 #define FIELD_LIST(id_, ...)          struct Cbpp ## id_ ## F_ { __VA_ARGS__ };	\
@@ -101,9 +101,9 @@ public:
 
 #define FIELD_VINT(id_)               , ::boost::int64_t id_ ## X_
 #define FIELD_VUINT(id_)              , ::boost::uint64_t id_ ## X_
-#define FIELD_FIXED(id_, n_)          , const ::boost::array<unsigned char, n_> & id_ ## X_
+#define FIELD_FIXED(id_, n_)          , const ::boost::array<char, n_> & id_ ## X_
 #define FIELD_STRING(id_)             , ::std::string id_ ## X_
-#define FIELD_FLEXIBLE(id_)           , ::boost::container::vector<unsigned char> id_ ## X_
+#define FIELD_FLEXIBLE(id_)           , ::std::string id_ ## X_
 #define FIELD_ARRAY(id_, ...)         , ::boost::container::vector< Cbpp ## id_ ## F_ > id_ ## X_
 #define FIELD_LIST(id_, ...)          , ::boost::container::deque< Cbpp ## id_ ## F_ > id_ ## X_
 
