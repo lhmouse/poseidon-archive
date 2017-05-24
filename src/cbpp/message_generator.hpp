@@ -26,22 +26,6 @@ public:
 		ID = MESSAGE_ID
 	};
 
-private:
-	template<typename T>
-	static void dump_hex(::std::ostream &os, const T &t){
-		bool first = true;
-		for(AUTO(it, t.begin()); it != t.end(); ++it){
-			static CONSTEXPR const char table[] = "0123456789abcdef";
-			const unsigned c = static_cast<unsigned char>(*it);
-			if(first){
-				first = false;
-			} else {
-				os <<' ';
-			}
-			os <<table[c / 16] <<table[c % 16];
-		}
-	}
-
 public:
 
 #undef FIELD_VINT
@@ -305,12 +289,20 @@ public:
 
 #define FIELD_VINT(id_)               os_ <<TOKEN_TO_STR(id_) <<": vint = " <<cur_->id_ <<"; ";
 #define FIELD_VUINT(id_)              os_ <<TOKEN_TO_STR(id_) <<": vuint = " <<cur_->id_ <<"; ";
-#define FIELD_FIXED(id_, n_)          os_ <<TOKEN_TO_STR(id_) <<": fixed(" <<cur_->id_.size() <<") = ";	\
-                                      dump_hex(os_, cur_->id_);	\
-                                      os_ <<"; ";
+#define FIELD_FIXED(id_, n_)          os_ <<TOKEN_TO_STR(id_) <<": fixed(" <<cur_->id_.size() <<") = <";	\
+                                      for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                        const char *const table_ = "0123456789abcdef";	\
+                                        const unsigned c_ = static_cast<unsigned char>(*it_);	\
+                                        os_ <<table_[c_ / 16] <<table_[c_ % 16] <<"; ";	\
+                                      }	\
+                                      os_ <<">; ";
 #define FIELD_STRING(id_)             os_ <<TOKEN_TO_STR(id_) <<": string(" <<cur_->id_.size() <<") = \"" <<cur_->id_ <<"\"; ";
 #define FIELD_FLEXIBLE(id_)           os_ <<TOKEN_TO_STR(id_) <<": flexible(" <<cur_->id_.size() <<") = <";	\
-                                      dump_hex(os_, cur_->id_);	\
+                                      for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                        const char *const table_ = "0123456789abcdef";	\
+                                        const unsigned c_ = static_cast<unsigned char>(*it_);	\
+                                        os_ <<table_[c_ / 16] <<table_[c_ % 16] <<"; ";	\
+                                      }	\
                                       os_ <<">; ";
 #define FIELD_ARRAY(id_, ...)         os_ <<TOKEN_TO_STR(id_) <<": array(" <<cur_->id_.size() <<") = [; ";	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
