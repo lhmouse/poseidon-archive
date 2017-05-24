@@ -289,7 +289,7 @@ public:
 
 #define FIELD_VINT(id_)               os_ <<TOKEN_TO_STR(id_) <<": vint = " <<cur_->id_ <<"; ";
 #define FIELD_VUINT(id_)              os_ <<TOKEN_TO_STR(id_) <<": vuint = " <<cur_->id_ <<"; ";
-#define FIELD_FIXED(id_, n_)          os_ <<TOKEN_TO_STR(id_) <<": fixed(" <<cur_->id_.size() <<") = <";	\
+#define FIELD_FIXED(id_, n_)          os_ <<TOKEN_TO_STR(id_) <<": fixed(" <<cur_->id_.size() <<") = <; ";	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         const char *const table_ = "0123456789abcdef";	\
                                         const unsigned c_ = static_cast<unsigned char>(*it_);	\
@@ -297,7 +297,7 @@ public:
                                       }	\
                                       os_ <<">; ";
 #define FIELD_STRING(id_)             os_ <<TOKEN_TO_STR(id_) <<": string(" <<cur_->id_.size() <<") = \"" <<cur_->id_ <<"\"; ";
-#define FIELD_FLEXIBLE(id_)           os_ <<TOKEN_TO_STR(id_) <<": flexible(" <<cur_->id_.size() <<") = <";	\
+#define FIELD_FLEXIBLE(id_)           os_ <<TOKEN_TO_STR(id_) <<": flexible(" <<cur_->id_.size() <<") = <; ";	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         const char *const table_ = "0123456789abcdef";	\
                                         const unsigned c_ = static_cast<unsigned char>(*it_);	\
