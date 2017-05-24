@@ -120,6 +120,8 @@ public:
 	}
 
 	void generate_sql(::std::ostream &os_) const OVERRIDE {
+		bool flag_ = false;
+		static CONSTEXPR const char delims_[2][4] = { "", ", " };
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -130,24 +132,17 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_),
-#define FIELD_SIGNED(id_)                 (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_),
-#define FIELD_UNSIGNED(id_)               (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_),
-#define FIELD_DOUBLE(id_)                 (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_),
-#define FIELD_STRING(id_)                 (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_)),
-#define FIELD_DATETIME(id_)               (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::DateTimeFormatter(id_)),
-#define FIELD_UUID(id_)                   (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::UuidFormatter(id_)),
-#define FIELD_BLOB(id_)                   (void)(os_ <<", "),	\
-                                            (void)(os_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_)),
+#define FIELD_BOOLEAN(id_)                os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
+#define FIELD_SIGNED(id_)                 os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
+#define FIELD_UNSIGNED(id_)               os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
+#define FIELD_DOUBLE(id_)                 os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
+#define FIELD_STRING(id_)                 os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_);
+#define FIELD_DATETIME(id_)               os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::DateTimeFormatter(id_);
+#define FIELD_UUID(id_)                   os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::UuidFormatter(id_);
+#define FIELD_BLOB(id_)                   os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_);
 
-		STRIP_FIRST(MYSQL_OBJECT_FIELDS) (void)0;
+		if(false)
+		MYSQL_OBJECT_FIELDS
 	}
 	void fetch(const ::boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_) OVERRIDE {
 
