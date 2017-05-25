@@ -120,8 +120,8 @@ public:
 	}
 
 	void generate_sql(::std::ostream &os_) const OVERRIDE {
-		bool flag_ = false;
 		static CONSTEXPR const char delims_[2][4] = { "", ", " };
+		bool flag_ = false;
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -141,7 +141,6 @@ public:
 #define FIELD_UUID(id_)                   os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::UuidFormatter(id_);
 #define FIELD_BLOB(id_)                   os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_);
 
-		if(false)
 		MYSQL_OBJECT_FIELDS
 	}
 	void fetch(const ::boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_) OVERRIDE {
