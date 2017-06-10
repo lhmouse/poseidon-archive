@@ -1,4 +1,4 @@
-//以下所有 buffer 都是所有元素都是 Number 的 Array，每个元素表示一个字节。
+// 以下所有 buffer 都是所有元素都是 Number 的 Array，每个元素表示一个字节。
 
 function pushVuint(buffer, val){
 	for(var i = 0; i < 8; ++i){
@@ -19,17 +19,13 @@ function pushVint(buffer, val){
 		pushVuint(buffer, -val * 2 - 1);
 	}
 }
-function pushRaw(buffer, val){ // val = [ 0, 1, 2, 3 ]
-	for(var i = 0; i < val.length; ++i){
+function pushFixed(buffer, val, length){
+	for(var i = 0; i < length; ++i){
 		buffer.push(val[i]);
 	}
 }
-function pushBytes(buffer, val){
-	pushVuint(buffer, val.length);
-	pushRaw(buffer, val);
-}
 function pushString(buffer, val){
-	var bytes = new Array;
+	var bytes = [];
 	for(var i = 0; i < val.length; ++i){
 		var codePoint = val.charCodeAt(i);
 		if((0xD800 <= codePoint) && (codePoint < 0xDC00)){
@@ -53,12 +49,22 @@ function pushString(buffer, val){
 			bytes.push(((codePoint       ) & 0x3F) | 0x80);
 		}
 	}
-	pushBytes(buffer, bytes);
+	pushVuint(buffer, bytes.length);
+	pushFixed(buffer, bytes, bytes.length);
+}
+function pushFlexible(buffer, val){
+	for(var i = 0; i < val.length; ++i){
+		buffer.push(val[i]);
+	}
 }
 
 function shiftVuint(buffer){
 	var val = 0;
 	for(var i = 0; i < 8; ++i){
+		if(buffer.length == 0){
+			// TODO
+			throw "End of stream encountered";
+		}
 		var by = buffer.shift();
 		val += (by & 0x7F) * Math.pow(128, i);
 		if(!(by & 0x80)){
@@ -70,15 +76,15 @@ function shiftVuint(buffer){
 	return val;
 }
 function shiftVint(buffer){
-	var tmp = shiftVuint(buffer);
-	if(!(tmp & 1)){
-		return tmp / 2;
+	var temp = shiftVuint(buffer);
+	if(!(temp & 1)){
+		return temp / 2;
 	} else {
-		return -(tmp + 1) / 2;
+		return -(temp + 1) / 2;
 	}
 }
-function shiftRaw(buffer, length){
-	var val = new Array;
+function shiftFixed(buffer, length){
+	var val = [];
 	for(var i = 0; i < length; ++i){
 		if(buffer.length == 0){
 			// TODO
@@ -88,13 +94,10 @@ function shiftRaw(buffer, length){
 	}
 	return val;
 }
-function shiftBytes(buffer){
-	var length = shiftVuint(buffer);
-	return shiftRaw(buffer, length);
-}
 function shiftString(buffer){
 	var val = "";
-	var bytes = shiftBytes(buffer);
+	var length = shiftVuint(buffer);
+	var bytes = shiftFixed(buffer, length);
 	while(bytes.length > 0){
 		var codePoint = bytes.shift();
 		if(codePoint >= 0x80){
@@ -115,7 +118,6 @@ function shiftString(buffer){
 				codePoint |=  bytes.shift() & 0x3F;
 			}
 		}
-
 		if(codePoint < 0x10000){
 			val += String.fromCharCode(codePoint);
 		} else {
@@ -123,6 +125,13 @@ function shiftString(buffer){
 			var trailing = codePoint & 0x3FF;
 			val += String.fromCharCode(leading | 0xD800, trailing | 0xDC00);
 		}
+	}
+	return val;
+}
+function shiftFlexible(buffer){
+	var val = [];
+	while(buffer.length > 0){
+		val.push(buffer.shift());
 	}
 	return val;
 }
@@ -144,7 +153,7 @@ function recvBytes(blob, callback){
 		}
 
 		var view = new Uint8Array(reader.result);
-		var buffer = new Array;
+		var buffer = new Array();
 		for(var i = 0; i < view.length; ++i){
 			buffer.push(view[i]);
 		}
@@ -171,7 +180,7 @@ function recvBytes(blob, callback){
 		}
 
 		var view = new Uint8Array(reader.result);
-		var buffer = new Array;
+		var buffer = new Array();
 		for(var i = 0; i < view.length; ++i){
 			buffer.push(view[i]);
 		}

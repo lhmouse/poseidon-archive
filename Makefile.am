@@ -7,7 +7,7 @@ AM_CXXFLAGS =
 AM_LDFLAGS = $(openssl_LIBS) $(bson_LIBS) $(mongoc_LIBS) $(zlib_LIBS)
 
 %.hpp.gch: %.hpp
-	$(CXX) -x c++-header @DEFS@ $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $< -o $@
+	$(CXX) -x c++-header @DEFS@ $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -Wno-error $< -o $@
 
 BUILT_SOURCES = \
 	src/precompiled.hpp.gch
