@@ -56,7 +56,7 @@ server-side packages in Debian Jessie sources.
 
 ### IRC channel:
 
-<irc://chat.freenode.net/%23mcfproj>
+<https://webchat.freenode.net/?channels=%23mcfproj>
 
 ### 问题反馈
 ### Reporting Bugs
