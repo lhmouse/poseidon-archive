@@ -4,7 +4,7 @@ AM_CPPFLAGS = -Wall -Wextra -Werror -Wsign-conversion -Wno-error=unused-paramete
 	-Wwrite-strings -Wsuggest-attribute=noreturn -Wundef -Wshadow -Wstrict-aliasing=2 -Wstrict-overflow=2	\
 	-pipe -fPIC -DPIC -pthread $(openssl_CFLAGS) $(bson_CFLAGS) $(mongoc_CFLAGS) $(zlib_CFLAGS)
 AM_CXXFLAGS =
-AM_LDFLAGS = $(openssl_LIBS) $(bson_LIBS) $(mongoc_LIBS) $(zlib_LIBS)
+AM_LIBS = $(openssl_LIBS) $(bson_LIBS) $(mongoc_LIBS) $(zlib_LIBS)
 
 %.hpp.gch: %.hpp
 	$(CXX) -x c++-header @DEFS@ $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -Wno-error $< -o $@
