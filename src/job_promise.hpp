@@ -83,6 +83,7 @@ public:
 		JobPromise::set_success();
 	}
 };
+
 template<typename T>
 class JobPromiseContainer<const T> : public JobPromise {
 private:
