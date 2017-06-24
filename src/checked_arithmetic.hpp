@@ -6,7 +6,6 @@
 
 #include "cxx_ver.hpp"
 #include "exception.hpp"
-#include <boost/cstdint.hpp>
 #include <boost/type_traits/is_unsigned.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/static_assert.hpp>
@@ -24,10 +23,11 @@ T checked_add(T lhs, T rhs){
 	return ret;
 }
 
-template boost::uint8_t  checked_add<boost::uint8_t >(boost::uint8_t  lhs, boost::uint8_t  rhs);
-template boost::uint16_t checked_add<boost::uint16_t>(boost::uint16_t lhs, boost::uint16_t rhs);
-template boost::uint32_t checked_add<boost::uint32_t>(boost::uint32_t lhs, boost::uint32_t rhs);
-template boost::uint64_t checked_add<boost::uint64_t>(boost::uint64_t lhs, boost::uint64_t rhs);
+template unsigned char      checked_add<unsigned char     >(unsigned char      lhs, unsigned char      rhs);
+template unsigned short     checked_add<unsigned short    >(unsigned short     lhs, unsigned short     rhs);
+template unsigned int       checked_add<unsigned int      >(unsigned int       lhs, unsigned int       rhs);
+template unsigned long      checked_add<unsigned long     >(unsigned long      lhs, unsigned long      rhs);
+template unsigned long long checked_add<unsigned long long>(unsigned long long lhs, unsigned long long rhs);
 
 template<typename T>
 T saturated_add(T lhs, T rhs) NOEXCEPT {
@@ -40,10 +40,11 @@ T saturated_add(T lhs, T rhs) NOEXCEPT {
 	return ret;
 }
 
-template boost::uint8_t  saturated_add<boost::uint8_t >(boost::uint8_t  lhs, boost::uint8_t  rhs) NOEXCEPT;
-template boost::uint16_t saturated_add<boost::uint16_t>(boost::uint16_t lhs, boost::uint16_t rhs) NOEXCEPT;
-template boost::uint32_t saturated_add<boost::uint32_t>(boost::uint32_t lhs, boost::uint32_t rhs) NOEXCEPT;
-template boost::uint64_t saturated_add<boost::uint64_t>(boost::uint64_t lhs, boost::uint64_t rhs) NOEXCEPT;
+template unsigned char      saturated_add<unsigned char     >(unsigned char      lhs, unsigned char      rhs) NOEXCEPT;
+template unsigned short     saturated_add<unsigned short    >(unsigned short     lhs, unsigned short     rhs) NOEXCEPT;
+template unsigned int       saturated_add<unsigned int      >(unsigned int       lhs, unsigned int       rhs) NOEXCEPT;
+template unsigned long      saturated_add<unsigned long     >(unsigned long      lhs, unsigned long      rhs) NOEXCEPT;
+template unsigned long long saturated_add<unsigned long long>(unsigned long long lhs, unsigned long long rhs) NOEXCEPT;
 
 template<typename T>
 T checked_sub(T lhs, T rhs){
@@ -56,10 +57,11 @@ T checked_sub(T lhs, T rhs){
 	return ret;
 }
 
-template boost::uint8_t  checked_sub<boost::uint8_t >(boost::uint8_t  lhs, boost::uint8_t  rhs);
-template boost::uint16_t checked_sub<boost::uint16_t>(boost::uint16_t lhs, boost::uint16_t rhs);
-template boost::uint32_t checked_sub<boost::uint32_t>(boost::uint32_t lhs, boost::uint32_t rhs);
-template boost::uint64_t checked_sub<boost::uint64_t>(boost::uint64_t lhs, boost::uint64_t rhs);
+template unsigned char      checked_sub<unsigned char     >(unsigned char      lhs, unsigned char      rhs);
+template unsigned short     checked_sub<unsigned short    >(unsigned short     lhs, unsigned short     rhs);
+template unsigned int       checked_sub<unsigned int      >(unsigned int       lhs, unsigned int       rhs);
+template unsigned long      checked_sub<unsigned long     >(unsigned long      lhs, unsigned long      rhs);
+template unsigned long long checked_sub<unsigned long long>(unsigned long long lhs, unsigned long long rhs);
 
 template<typename T>
 T saturated_sub(T lhs, T rhs) NOEXCEPT {
@@ -72,10 +74,11 @@ T saturated_sub(T lhs, T rhs) NOEXCEPT {
 	return ret;
 }
 
-template boost::uint8_t  saturated_sub<boost::uint8_t >(boost::uint8_t  lhs, boost::uint8_t  rhs) NOEXCEPT;
-template boost::uint16_t saturated_sub<boost::uint16_t>(boost::uint16_t lhs, boost::uint16_t rhs) NOEXCEPT;
-template boost::uint32_t saturated_sub<boost::uint32_t>(boost::uint32_t lhs, boost::uint32_t rhs) NOEXCEPT;
-template boost::uint64_t saturated_sub<boost::uint64_t>(boost::uint64_t lhs, boost::uint64_t rhs) NOEXCEPT;
+template unsigned char      saturated_sub<unsigned char     >(unsigned char      lhs, unsigned char      rhs) NOEXCEPT;
+template unsigned short     saturated_sub<unsigned short    >(unsigned short     lhs, unsigned short     rhs) NOEXCEPT;
+template unsigned int       saturated_sub<unsigned int      >(unsigned int       lhs, unsigned int       rhs) NOEXCEPT;
+template unsigned long      saturated_sub<unsigned long     >(unsigned long      lhs, unsigned long      rhs) NOEXCEPT;
+template unsigned long long saturated_sub<unsigned long long>(unsigned long long lhs, unsigned long long rhs) NOEXCEPT;
 
 template<typename T>
 T checked_mul(T lhs, T rhs){
@@ -91,10 +94,11 @@ T checked_mul(T lhs, T rhs){
 	return ret;
 }
 
-template boost::uint8_t  checked_mul<boost::uint8_t >(boost::uint8_t  lhs, boost::uint8_t  rhs);
-template boost::uint16_t checked_mul<boost::uint16_t>(boost::uint16_t lhs, boost::uint16_t rhs);
-template boost::uint32_t checked_mul<boost::uint32_t>(boost::uint32_t lhs, boost::uint32_t rhs);
-template boost::uint64_t checked_mul<boost::uint64_t>(boost::uint64_t lhs, boost::uint64_t rhs);
+template unsigned char      checked_mul<unsigned char     >(unsigned char      lhs, unsigned char      rhs);
+template unsigned short     checked_mul<unsigned short    >(unsigned short     lhs, unsigned short     rhs);
+template unsigned int       checked_mul<unsigned int      >(unsigned int       lhs, unsigned int       rhs);
+template unsigned long      checked_mul<unsigned long     >(unsigned long      lhs, unsigned long      rhs);
+template unsigned long long checked_mul<unsigned long long>(unsigned long long lhs, unsigned long long rhs);
 
 template<typename T>
 T saturated_mul(T lhs, T rhs) NOEXCEPT {
@@ -110,10 +114,11 @@ T saturated_mul(T lhs, T rhs) NOEXCEPT {
 	return ret;
 }
 
-template boost::uint8_t  saturated_mul<boost::uint8_t >(boost::uint8_t  lhs, boost::uint8_t  rhs) NOEXCEPT;
-template boost::uint16_t saturated_mul<boost::uint16_t>(boost::uint16_t lhs, boost::uint16_t rhs) NOEXCEPT;
-template boost::uint32_t saturated_mul<boost::uint32_t>(boost::uint32_t lhs, boost::uint32_t rhs) NOEXCEPT;
-template boost::uint64_t saturated_mul<boost::uint64_t>(boost::uint64_t lhs, boost::uint64_t rhs) NOEXCEPT;
+template unsigned char      saturated_mul<unsigned char     >(unsigned char      lhs, unsigned char      rhs) NOEXCEPT;
+template unsigned short     saturated_mul<unsigned short    >(unsigned short     lhs, unsigned short     rhs) NOEXCEPT;
+template unsigned int       saturated_mul<unsigned int      >(unsigned int       lhs, unsigned int       rhs) NOEXCEPT;
+template unsigned long      saturated_mul<unsigned long     >(unsigned long      lhs, unsigned long      rhs) NOEXCEPT;
+template unsigned long long saturated_mul<unsigned long long>(unsigned long long lhs, unsigned long long rhs) NOEXCEPT;
 
 }
 
