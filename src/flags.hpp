@@ -12,14 +12,14 @@
 namespace Poseidon {
 
 template<typename T>
-T &add_flags(T &val, typename Identity<T>::type flags){
+inline T &add_flags(T &val, typename Identity<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
 	val |= flags;
 	return val;
 }
 template<typename T>
-T &remove_flags(T &val, typename Identity<T>::type flags){
+inline T &remove_flags(T &val, typename Identity<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
 	val &= ~flags;
@@ -27,19 +27,19 @@ T &remove_flags(T &val, typename Identity<T>::type flags){
 }
 
 template<typename T>
-bool has_all_flags_of(const T &val, typename Identity<T>::type flags){
+inline bool has_all_flags_of(const T &val, typename Identity<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
 	return (val & flags) == flags;
 }
 template<typename T>
-bool has_any_flags_of(const T &val, typename Identity<T>::type flags){
+inline bool has_any_flags_of(const T &val, typename Identity<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
 	return (val & flags) != 0;
 }
 template<typename T>
-bool has_none_flags_of(const T &val, typename Identity<T>::type flags){
+inline bool has_none_flags_of(const T &val, typename Identity<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
 	return (val & flags) == 0;

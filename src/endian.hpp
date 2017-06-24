@@ -13,7 +13,7 @@
 namespace Poseidon {
 
 template<typename ValueT>
-ValueT load_le(const ValueT &mem){
+inline ValueT load_le(const ValueT &mem){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
 
@@ -25,7 +25,7 @@ ValueT load_le(const ValueT &mem){
 	return static_cast<ValueT>(u);
 }
 template<typename ValueT>
-ValueT load_be(const ValueT &mem){
+inline ValueT load_be(const ValueT &mem){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
 
@@ -38,7 +38,7 @@ ValueT load_be(const ValueT &mem){
 }
 
 template<typename ValueT>
-void store_le(ValueT &mem, typename Identity<ValueT>::type val){
+inline void store_le(ValueT &mem, typename Identity<ValueT>::type val){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
 
@@ -49,7 +49,7 @@ void store_le(ValueT &mem, typename Identity<ValueT>::type val){
 	}
 }
 template<typename ValueT>
-void store_be(ValueT &mem, typename Identity<ValueT>::type val){
+inline void store_be(ValueT &mem, typename Identity<ValueT>::type val){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
 
