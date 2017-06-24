@@ -62,8 +62,7 @@ inline void atomic_fence(MemModel model) NOEXCEPT {
 }
 
 template<typename T>
-inline T atomic_add(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT
-{
+inline T atomic_add(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_add_fetch(&mem, val, model);
 #else
