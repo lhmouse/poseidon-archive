@@ -28,13 +28,13 @@ CFLAGS="-O3" cmake . -DCMAKE_INSTALL_PREFIX=/usr/local	\
 	-DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DMYSQL_UNIX_ADDR="/var/run/mysqld/mysqld.sock"
 make -j4
 
-mkdir -p "${prefix}/bin"
-mkdir -p "${prefix}/etc"
-mkdir -p "${prefix}/include"
-mkdir -p "${prefix}/lib"
-mkdir -p "${prefix}/man"
-mkdir -p "${prefix}/sbin"
-mkdir -p "${prefix}/share/doc"
+sudo mkdir -p "${prefix}/bin"
+sudo mkdir -p "${prefix}/etc"
+sudo mkdir -p "${prefix}/include"
+sudo mkdir -p "${prefix}/lib"
+sudo mkdir -p "${prefix}/man"
+sudo mkdir -p "${prefix}/sbin"
+sudo mkdir -p "${prefix}/share/doc"
 
 sudo checkinstall --backup=no --nodoc -y	\
 	--pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
