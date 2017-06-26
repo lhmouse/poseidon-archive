@@ -2,11 +2,6 @@
 
 set -e
 
-if [[ $EUID -ne 0 ]]; then
-	echo "You must run this script as root."
-	exit 1
-fi
-
 prefix="/usr/local"
 
 pkgname="libmongoc-dev"
@@ -41,7 +36,7 @@ mkdir -p "${prefix}/man"
 mkdir -p "${prefix}/sbin"
 mkdir -p "${prefix}/share/doc"
 
-checkinstall --backup=no --nodoc -y	\
+sudo checkinstall --backup=no --nodoc -y	\
 	--pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
 	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="${provides}"
-mv *.deb "${dstdir}/"
+sudo mv *.deb "${dstdir}/"
