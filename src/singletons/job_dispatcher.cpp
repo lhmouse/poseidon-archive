@@ -54,8 +54,7 @@ namespace {
 				assert(cb == sizeof(Storage));
 				(void)cb;
 
-				const AUTO(ptr, mmap(NULLPTR, sizeof(Storage),
-					PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN | MAP_STACK, -1, 0));
+				void *const ptr = mmap(NULLPTR, sizeof(Storage), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 				if(ptr == MAP_FAILED){
 					const int err_code = errno;
 					LOG_POSEIDON_ERROR("Failed to allocate stack: err_code = ", err_code);
