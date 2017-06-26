@@ -72,7 +72,7 @@ public:
 			: m_chunk(rhs.m_first)
 		{
 		}
-		ConstChunkEnumerator(ChunkEnumerator &rhs) NOEXCEPT
+		ConstChunkEnumerator(const ChunkEnumerator &rhs) NOEXCEPT
 			: m_chunk(rhs.m_chunk)
 		{
 		}
