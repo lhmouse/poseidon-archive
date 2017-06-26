@@ -74,15 +74,9 @@ namespace {
 			char bytes[256 * 1024];
 		};
 
-#ifdef POSEIDON_CXX11
-		typedef std::unique_ptr<Storage> StoragePtr;
-#else
-		typedef boost::shared_ptr<Storage> StoragePtr;
-#endif
-
 	private:
 		mutable Mutex m_mutex;
-		boost::array<StoragePtr, 64> m_pool;
+		boost::array<boost::scoped_ptr<Storage>, 64> m_pool;
 		std::size_t m_size;
 
 	public:
@@ -92,22 +86,20 @@ namespace {
 		}
 
 	public:
-		StoragePtr allocate(){
-			StoragePtr ptr;
+		void allocate(boost::scoped_ptr<Storage> &ptr){
 			const Mutex::UniqueLock lock(m_mutex);
 			if(m_size == 0){
 				ptr.reset(new Storage);
 			} else {
-				ptr = STD_MOVE(m_pool.at(--m_size));
+				ptr.swap(m_pool.at(--m_size));
 			}
-			return ptr;
 		}
-		void deallocate(StoragePtr ptr) NOEXCEPT {
+		void deallocate(boost::scoped_ptr<Storage> &ptr) NOEXCEPT {
 			const Mutex::UniqueLock lock(m_mutex);
 			if(m_size == m_pool.size()){
 				ptr.reset();
 			} else {
-				m_pool.at(m_size++) = STD_MOVE(ptr);
+				ptr.swap(m_pool.at(m_size++));
 			}
 		}
 	} g_stack_allocator;
@@ -119,13 +111,13 @@ namespace {
 		std::deque<JobElement> queue;
 
 		FiberState state;
-		FiberStackAllocator::StoragePtr stack;
+		boost::scoped_ptr<FiberStackAllocator::Storage> stack;
 		::ucontext_t inner;
 		::ucontext_t outer;
 
 		explicit FiberControl(Initializer){
 			state = FS_READY;
-			stack = g_stack_allocator.allocate();
+			g_stack_allocator.allocate(stack);
 #ifndef NDEBUG
 			std::memset(&inner, 0xCC, sizeof(outer));
 			std::memset(&outer, 0xCC, sizeof(outer));
@@ -133,7 +125,7 @@ namespace {
 		}
 		~FiberControl(){
 			assert(state == FS_READY);
-			g_stack_allocator.deallocate(STD_MOVE_IDN(stack));
+			g_stack_allocator.deallocate(stack);
 #ifndef NDEBUG
 			std::memset(&inner, 0xCC, sizeof(outer));
 			std::memset(&outer, 0xCC, sizeof(outer));
