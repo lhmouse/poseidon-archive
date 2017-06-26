@@ -126,7 +126,7 @@ public:
 			m_owner->get();
 			return *this;
 		}
-		ReadIterator operator++(int){
+		ReadIterator &operator++(int){
 			m_owner->get();
 			return *this;
 		}
