@@ -39,8 +39,8 @@ public:
 		unsigned char *data() const NOEXCEPT {
 			return begin();
 		}
-		unsigned size() const NOEXCEPT {
-			return static_cast<unsigned>(end() - begin());
+		std::size_t size() const NOEXCEPT {
+			return static_cast<std::size_t>(end() - begin());
 		}
 
 	public:
