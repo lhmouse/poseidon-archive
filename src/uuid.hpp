@@ -67,10 +67,10 @@ public:
 	bool from_string(const std::string &str);
 
 public:
-	const unsigned char &operator[](unsigned index) const {
+	const unsigned char &operator[](std::size_t index) const {
 		return m_bytes[index];
 	}
-	unsigned char &operator[](unsigned index){
+	unsigned char &operator[](std::size_t index){
 		return m_bytes[index];
 	}
 };
