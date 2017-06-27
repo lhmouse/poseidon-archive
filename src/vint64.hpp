@@ -76,6 +76,7 @@ bool vint64_from_binary(boost::int64_t &val, InputIterT &read, std::size_t count
 	if(!vuint64_from_binary(encoded, read, count)){
 		return false;
 	}
+	encoded = (encoded >> 1) ^ -(encoded & 1);
 	val = static_cast<boost::int64_t>(encoded);
 	return true;
 }
