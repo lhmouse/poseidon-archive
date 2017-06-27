@@ -13,18 +13,19 @@ namespace Poseidon {
 template<typename OutputIterT>
 void vuint64_to_binary(boost::uint64_t val, OutputIterT &write){
 	for(unsigned i = 0; i < 8; ++i){
-		const unsigned char by = val & 0x7F;
+		const unsigned byte = val & 0x7F;
 		val >>= 7;
 		if(val == 0){
-			*write = by;
+			*write = static_cast<boost::uint8_t>(byte);
 			++write;
 			return;
 		}
-		*write = static_cast<unsigned char>(by | 0x80);
+		*write = static_cast<boost::uint8_t>(byte | 0x80);
 		++write;
 	}
 	if(val != 0){
-		*write = static_cast<unsigned char>(val);
+		const unsigned byte = val;
+		*write = static_cast<boost::uint8_t>(byte);
 		++write;
 	}
 }
@@ -43,37 +44,40 @@ bool vuint64_from_binary(boost::uint64_t &val, InputIterT &read, std::size_t cou
 		if(count == 0){
 			return false;
 		}
-		const int by = (sizeof(*read) == 1) ? (*read & 0xFF) : *read;
-		if(static_cast<unsigned>(by) > 0xFF){
+		const unsigned byte = (sizeof(*read) == 1) ? static_cast<boost::uint8_t>(*read)
+		                                           : static_cast<unsigned>(static_cast<int>(*read));
+		if(byte > 0xFF){
 			return false;
 		}
 		++read;
 		--count;
-		val |= static_cast<boost::uint64_t>(by & 0x7F) << (i * 7);
-		if(!(by & 0x80)){
+		val |= static_cast<boost::uint64_t>(byte & 0x7F) << (i * 7);
+		if((byte & 0x80) == 0){
 			return true;
 		}
 	}
 	if(count == 0){
 		return false;
 	}
-	const int by = (sizeof(*read) == 1) ? (*read & 0xFF) : *read;
-	if(static_cast<unsigned>(by) > 0xFF){
+	const unsigned byte = (sizeof(*read) == 1) ? static_cast<boost::uint8_t>(*read)
+	                                           : static_cast<unsigned>(static_cast<int>(*read));
+	if(byte > 0xFF){
 		return false;
 	}
 	++read;
-	val |= static_cast<boost::uint64_t>(by) << (8 * 7);
+	--count;
+	val |= static_cast<boost::uint64_t>(byte) << (8 * 7);
 	return true;
 }
 template<typename InputIterT>
 bool vint64_from_binary(boost::int64_t &val, InputIterT &read, std::size_t count){
+	val = 0;
 	boost::uint64_t encoded;
-	const bool ret = vuint64_from_binary(encoded, read, count);
-	if(ret){
-		encoded = (encoded >> 1) ^ -(encoded & 1);
-		val = static_cast<boost::int64_t>(encoded);
+	if(!vuint64_from_binary(encoded, read, count)){
+		return false;
 	}
-	return ret;
+	val = static_cast<boost::int64_t>(encoded);
+	return true;
 }
 
 }
