@@ -9,7 +9,7 @@
 
 namespace Poseidon {
 
-// 最多输出七个字节，此函数返回后 write 指向最后一个写入的字节的后面。
+// 最多输出 9 个字节，此函数返回后 write 指向最后一个写入的字节的后面。
 template<typename OutputIterT>
 void vuint64_to_binary(boost::uint64_t val, OutputIterT &write){
 	for(unsigned i = 0; i < 8; ++i){
