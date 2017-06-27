@@ -12,9 +12,7 @@
 
 namespace Poseidon {
 
-class VirtualSharedFromThis
-	: public boost::enable_shared_from_this<VirtualSharedFromThis>
-{
+class VirtualSharedFromThis : public boost::enable_shared_from_this<VirtualSharedFromThis> {
 public:
 	// 定义在别处。参考源文件中的注释。
 	virtual ~VirtualSharedFromThis() = 0;
