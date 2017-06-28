@@ -9,11 +9,11 @@
 #include <cstddef>
 
 #if __cplusplus >= 201103l
-#   define POSEIDON_CXX11
+#   define POSEIDON_CXX11           1
 #endif
 
 #if __cplusplus >= 201402l
-#   define POSEIDON_CXX14
+#   define POSEIDON_CXX14           1
 #endif
 
 #ifdef POSEIDON_CXX11
