@@ -32,11 +32,6 @@
 
 namespace Poseidon {
 
-template<typename T>
-struct Identity {
-	typedef T type;
-};
-
 template<unsigned long UniqueT>
 class Noncopyable {
 public:
