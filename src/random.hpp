@@ -43,21 +43,6 @@ struct RandomBitGeneratorUint64 {
 	}
 };
 
-struct RandomBitGeneratorDouble {
-	typedef double result_type;
-
-	static CONSTEXPR result_type min() NOEXCEPT {
-		return 0;
-	}
-	static CONSTEXPR result_type max() NOEXCEPT {
-		return 1 - 0x1p-53;
-	}
-
-	result_type operator()() const NOEXCEPT {
-		return random_double();
-	}
-};
-
 }
 
 #endif
