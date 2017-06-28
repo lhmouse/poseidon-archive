@@ -24,7 +24,7 @@ inline std::vector<T> explode(char separator, const std::string &str, std::size_
 		std::size_t begin = 0, end;
 		std::string temp;
 		for(;;){
-			if((limit != 0) && (ret.size() == limit - 1)){
+			if(ret.size() == limit - 1){
 				end = std::string::npos;
 			} else {
 				end = str.find(separator, begin);
@@ -48,7 +48,7 @@ inline std::vector<std::string> explode(char separator, const std::string &str, 
 		std::size_t begin = 0, end;
 		std::string temp;
 		for(;;){
-			if((limit != 0) && (ret.size() == limit - 1)){
+			if(ret.size() == limit - 1){
 				end = std::string::npos;
 			} else {
 				end = str.find(separator, begin);
