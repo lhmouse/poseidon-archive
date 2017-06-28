@@ -113,6 +113,7 @@ template<typename CloserT>
 bool operator==(typename UniqueHandle<CloserT>::Handle lhs, const UniqueHandle<CloserT> &rhs){
 	return lhs == rhs.get();
 }
+
 template<typename CloserT>
 bool operator!=(const UniqueHandle<CloserT> &lhs, const UniqueHandle<CloserT> &rhs){
 	return lhs.get() != rhs.get();
@@ -138,6 +139,7 @@ template<typename CloserT>
 bool operator<(typename UniqueHandle<CloserT>::Handle lhs, const UniqueHandle<CloserT> &rhs){
 	return lhs < rhs.get();
 }
+
 template<typename CloserT>
 bool operator>(const UniqueHandle<CloserT> &lhs, const UniqueHandle<CloserT> &rhs){
 	return lhs.get() > rhs.get();
@@ -163,6 +165,7 @@ template<typename CloserT>
 bool operator<=(typename UniqueHandle<CloserT>::Handle lhs, const UniqueHandle<CloserT> &rhs){
 	return lhs <= rhs.get();
 }
+
 template<typename CloserT>
 bool operator>=(const UniqueHandle<CloserT> &lhs, const UniqueHandle<CloserT> &rhs){
 	return lhs.get() >= rhs.get();
