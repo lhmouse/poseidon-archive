@@ -65,18 +65,22 @@ public:
 	iterator begin(){
 		return m_elements.begin();
 	}
+#ifdef POSEIDON_CXX11
 	const_iterator cbegin() const {
 		return m_elements.begin();
 	}
+#endif
 	const_iterator end() const {
 		return m_elements.end();
 	}
 	iterator end(){
 		return m_elements.end();
 	}
+#ifdef POSEIDON_CXX11
 	const_iterator cend() const {
 		return m_elements.end();
 	}
+#endif
 
 	const_reverse_iterator rbegin() const {
 		return m_elements.rbegin();
@@ -84,18 +88,22 @@ public:
 	reverse_iterator rbegin(){
 		return m_elements.rbegin();
 	}
+#ifdef POSEIDON_CXX11
 	const_reverse_iterator crbegin() const {
 		return m_elements.rbegin();
 	}
+#endif
 	const_reverse_iterator rend() const {
 		return m_elements.rend();
 	}
 	reverse_iterator rend(){
 		return m_elements.rend();
 	}
+#ifdef POSEIDON_CXX11
 	const_reverse_iterator crend() const {
 		return m_elements.rend();
 	}
+#endif
 
 	iterator erase(const_iterator pos){
 		return m_elements.erase(pos);
