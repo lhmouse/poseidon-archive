@@ -146,7 +146,7 @@ public:
 	iterator set(SharedNts key, std::string val){
 		const AUTO(existent, m_elements.equal_range(key));
 		const AUTO(hint, m_elements.erase(existent.first, existent.second));
-		return m_elements.insert(hint, std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val)));
+		return m_elements.emplace_hint(hint, STD_MOVE_IDN(key), STD_MOVE_IDN(val));
 	}
 
 	const std::string &get(const char *key) const { // 若指定的键不存在，则返回空字符串。
@@ -201,7 +201,7 @@ public:
 	}
 
 	iterator append(SharedNts key, std::string val){
-		return m_elements.insert(std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val)));
+		return m_elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(val));
 	}
 };
 
