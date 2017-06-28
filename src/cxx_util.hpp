@@ -40,8 +40,11 @@ struct Identity {
 template<unsigned long UniqueT>
 class Noncopyable {
 public:
-	Noncopyable(){
-	}
+#if __cplusplus >= 201103l
+	Noncopyable() = default;
+#else
+	Noncopyable(){ }
+#endif
 
 private:
 	Noncopyable(const Noncopyable &);
