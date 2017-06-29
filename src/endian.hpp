@@ -8,6 +8,7 @@
 #include <climits>
 #include <boost/type_traits/make_unsigned.hpp>
 #include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/common_type.hpp>
 #include <boost/static_assert.hpp>
 
 namespace Poseidon {
@@ -38,7 +39,7 @@ inline ValueT load_be(const ValueT &mem){
 }
 
 template<typename ValueT>
-inline void store_le(ValueT &mem, typename Identity<ValueT>::type val){
+inline void store_le(ValueT &mem, typename boost::common_type<ValueT>::type val){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
 
@@ -49,7 +50,7 @@ inline void store_le(ValueT &mem, typename Identity<ValueT>::type val){
 	}
 }
 template<typename ValueT>
-inline void store_be(ValueT &mem, typename Identity<ValueT>::type val){
+inline void store_be(ValueT &mem, typename boost::common_type<ValueT>::type val){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
 

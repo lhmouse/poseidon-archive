@@ -6,6 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
+#include <boost/type_traits/common_type.hpp>
 
 #if __GNUC__ * 100 + __GNUC_MINOR__ >= 407
 #   define GCC_HAS_ATOMIC_ 1
@@ -42,7 +43,7 @@ inline T atomic_load(const volatile T &mem, MemModel model) NOEXCEPT {
 #endif
 }
 template<typename T>
-inline void atomic_store(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT {
+inline void atomic_store(volatile T &mem, typename boost::common_type<T>::type val, MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	__atomic_store_n(&mem, val, model);
 #else
@@ -62,7 +63,7 @@ inline void atomic_fence(MemModel model) NOEXCEPT {
 }
 
 template<typename T>
-inline T atomic_add(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT {
+inline T atomic_add(volatile T &mem, typename boost::common_type<T>::type val, MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_add_fetch(&mem, val, model);
 #else
@@ -71,7 +72,7 @@ inline T atomic_add(volatile T &mem, typename Identity<T>::type val, MemModel mo
 #endif
 }
 template<typename T>
-inline T atomic_sub(volatile T &mem, typename Identity<T>::type val, MemModel model) NOEXCEPT {
+inline T atomic_sub(volatile T &mem, typename boost::common_type<T>::type val, MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_sub_fetch(&mem, val, model);
 #else
@@ -81,8 +82,8 @@ inline T atomic_sub(volatile T &mem, typename Identity<T>::type val, MemModel mo
 }
 
 template<typename T>
-inline bool atomic_compare_exchange(volatile T &mem, typename Identity<T>::type &cmp,
-	typename Identity<T>::type xchg, MemModel model_success, MemModel model_failure) NOEXCEPT
+inline bool atomic_compare_exchange(volatile T &mem, typename boost::common_type<T>::type &cmp,
+	typename boost::common_type<T>::type xchg, MemModel model_success, MemModel model_failure) NOEXCEPT
 {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_compare_exchange_n(&mem, &cmp, xchg, false, model_success, model_failure);
@@ -95,7 +96,7 @@ inline bool atomic_compare_exchange(volatile T &mem, typename Identity<T>::type 
 #endif
 }
 template<typename T>
-inline T atomic_exchange(volatile T &mem, typename Identity<T>::type xchg, MemModel model) NOEXCEPT {
+inline T atomic_exchange(volatile T &mem, typename boost::common_type<T>::type xchg, MemModel model) NOEXCEPT {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_exchange_n(&mem, xchg, model);
 #else
