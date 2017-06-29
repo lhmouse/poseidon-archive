@@ -360,36 +360,28 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		lhs.swap(rhs);	\
 	}
 
-#define UNIQUE_INDEX_(ignored_, ...)	\
-	, ::boost::multi_index::ordered_unique<	\
-		::boost::multi_index::identity<value_type>,	\
-		## __VA_ARGS__>
-
-#define MULTI_INDEX_(ignored_, ...)	\
-	, ::boost::multi_index::ordered_non_unique<	\
-		::boost::multi_index::identity<value_type>,	\
-		## __VA_ARGS__>
-
 #define UNIQUE_INDEX(...)	\
-	UNIQUE_INDEX_(void, ## __VA_ARGS__)
+	, ::boost::multi_index::ordered_unique<	\
+		::boost::multi_index::identity<	\
+			value_type>,	\
+		## __VA_ARGS__>
 
 #define MULTI_INDEX(...)	\
-	MULTI_INDEX_(void, ## __VA_ARGS__)
+	, ::boost::multi_index::ordered_non_unique<	\
+		::boost::multi_index::identity<	\
+			value_type>,	\
+		## __VA_ARGS__>
 
 #define UNIQUE_MEMBER_INDEX(member_, ...)	\
 	, ::boost::multi_index::ordered_unique<	\
-		::boost::multi_index::member<value_type,	\
-			CV_VALUE_TYPE(DECLREF(value_type).member_),	\
-			&value_type::member_	\
-		>,	\
+		::boost::multi_index::member<	\
+			value_type, CV_VALUE_TYPE(DECLREF(value_type).member_), &value_type::member_>,	\
 		## __VA_ARGS__>
 
 #define MULTI_MEMBER_INDEX(member_, ...)	\
 	, ::boost::multi_index::ordered_non_unique<	\
-		::boost::multi_index::member<value_type,	\
-			CV_VALUE_TYPE(DECLREF(value_type).member_),	\
-			&value_type::member_	\
-		>,	\
+		::boost::multi_index::member<	\
+			value_type, CV_VALUE_TYPE(DECLREF(value_type).member_), &value_type::member_>,	\
 		## __VA_ARGS__>
 
 #define SEQUENCED_INDEX()	\
