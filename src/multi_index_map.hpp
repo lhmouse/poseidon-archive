@@ -147,11 +147,11 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		::std::size_t size() const {	\
 			return m_elements.size();	\
 		}	\
-		void clear() {	\
+		void clear(){	\
 			m_elements.clear();	\
 		}	\
 		\
-		void swap(class_name_ &rhs) throw() {	\
+		void swap(class_name_ &rhs) NOEXCEPT {	\
 			m_elements.swap(rhs.m_elements);	\
 		}	\
 		\
@@ -357,7 +357,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		}	\
 	};	\
 	\
-	inline void swap(class_name_ &lhs, class_name_ &rhs) throw() {	\
+	inline void swap(class_name_ &lhs, class_name_ &rhs) NOEXCEPT {	\
 		lhs.swap(rhs);	\
 	}
 
