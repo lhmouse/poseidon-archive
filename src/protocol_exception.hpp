@@ -20,9 +20,6 @@ public:
 	long get_code() const NOEXCEPT {
 		return m_code;
 	}
-	const char *get_message() const NOEXCEPT {
-		return what();
-	}
 };
 
 }
