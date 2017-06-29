@@ -84,12 +84,6 @@ namespace {
 	};
 }
 
-SharedNts SharedNts::view(const char *str){
-	SharedNts ret;
-	ret.m_ptr.reset(boost::shared_ptr<void>(), str);
-	return ret;
-}
-
 void SharedNts::assign(const char *str, std::size_t len){
 	if(len == 0){
 		m_ptr.reset(boost::shared_ptr<void>(), "");

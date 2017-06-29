@@ -15,7 +15,9 @@ namespace Poseidon {
 
 class SharedNts {
 public:
-	static SharedNts view(const char *str);
+	static SharedNts view(const char *str){
+		return SharedNts(boost::shared_ptr<void>(), str);
+	}
 
 private:
 	boost::shared_ptr<const char> m_ptr;
