@@ -45,10 +45,11 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 				STRIP_FIRST(void indices_)>	\
 			> base_container;	\
 		\
-		typedef base_container::const_iterator const_iterator;	\
-		typedef base_container::iterator iterator;	\
-		typedef base_container::const_reverse_iterator const_reverse_iterator;	\
-		typedef base_container::reverse_iterator reverse_iterator;	\
+		typedef typename base_container::const_iterator const_iterator;	\
+		typedef typename base_container::iterator iterator;	\
+		typedef typename base_container::const_reverse_iterator const_reverse_iterator;	\
+		typedef typename base_container::reverse_iterator reverse_iterator;	\
+		\
 	private:	\
 		template<unsigned IndexIdT>	\
 		struct KeyModifier {	\
