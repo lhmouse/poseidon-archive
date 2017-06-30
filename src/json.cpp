@@ -269,7 +269,8 @@ namespace {
 			ret = accept_string(is);
 			break;
 		case '-':
-		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
 			ret = accept_number(is);
 			break;
 		case '{':
@@ -405,11 +406,6 @@ void JsonElement::dump(std::ostream &os) const {
 		for(AUTO(it, str.begin()); it != str.end(); ++it){
 			const unsigned ch = (unsigned char)*it;
 			switch(ch){
-			case '\"':
-			case '\\':
-			case '/':
-				os <<'\\' <<*it;
-				break;
 			case '\b':
 				os <<'\\' <<'b';
 				break;
@@ -424,6 +420,11 @@ void JsonElement::dump(std::ostream &os) const {
 				break;
 			case '\t':
 				os <<'\\' <<'t';
+				break;
+			case '\"':
+			case '\\':
+			case '/':
+				os <<'\\' <<(char)ch;
 				break;
 			default:
 				if((ch < 0x20) || (ch == 0x7F) || (ch == 0xFF)){

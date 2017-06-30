@@ -3,102 +3,96 @@
 
 #include "precompiled.hpp"
 #include "config_file.hpp"
-#include "string.hpp"
 #include "profiler.hpp"
 #include "log.hpp"
+#include "string.hpp"
 #include "buffer_streams.hpp"
 #include "singletons/filesystem_daemon.hpp"
 #include "system_exception.hpp"
+#include <iomanip>
 
 namespace Poseidon {
 
 namespace {
-	std::string unescape(const char *data, std::size_t size){
+	void escape(std::ostream &os, const char *data, std::size_t size){
 		PROFILE_ME;
 
-		std::string line;
-		line.reserve(size);
 		for(std::size_t i = 0; i < size; ++i){
-			const char ch = data[i];
+			const unsigned ch = (unsigned char)data[i];
 			switch(ch){
 			case '\b':
-				line += '\\';
-				line += '\b';
+				os <<'\\' <<'b';
 				break;
 			case '\f':
-				line += '\\';
-				line += '\f';
+				os <<'\\' <<'f';
 				break;
 			case '\n':
-				line += '\\';
-				line += '\n';
+				os <<'\\' <<'n';
 				break;
 			case '\r':
-				line += '\\';
-				line += '\r';
+				os <<'\\' <<'r';
 				break;
 			case '\t':
-				line += '\\';
-				line += '\t';
+				os <<'\\' <<'t';
 				break;
 			case '\\':
-				line += '\\';
-				line += '\\';
-				break;
+			case ' ':
+			case '=':
 			case '#':
-				line += '\\';
-				line += '#';
+				os <<'\\' <<(char)ch;
 				break;
 			default:
-				line += ch;
+				os <<(char)ch;
 				break;
 			}
 		}
-		return line;
 	}
-	std::string escape_line(const char *data, std::size_t size){
+	char unescape(std::string &seg, std::istream &is, const char *terminators){
 		PROFILE_ME;
 
-		std::string line;
-		line.reserve(size);
+		char term;
+		seg.clear();
 		bool escaped = false;
-		for(std::size_t i = 0; i < size; ++i){
-			const char ch = data[i];
+		for(;;){
+			char ch;
+			if(!is.get(ch)){
+				term = 0;
+				break;
+			}
 			if(escaped){
 				switch(ch){
-				case 'b':
-					line += '\b';
+				case '\b':
+					seg += '\b';
 					break;
-				case 'f':
-					line += '\f';
+				case '\f':
+					seg += '\f';
 					break;
-				case 'n':
-					line += '\n';
+				case '\n':
+					seg += '\n';
 					break;
-				case 'r':
-					line += '\r';
+				case '\r':
+					seg += '\r';
 					break;
-				case 't':
-					line += '\t';
-					break;
-				case '\\':
-					line += '\\';
+				case '\t':
+					seg += '\t';
 					break;
 				default:
-					line += ch;
+					seg += ch;
 					break;
 				}
 				escaped = false;
 			} else if(ch == '\\'){
 				escaped = true;
-			} else if(ch == '#'){
-				break;
 			} else {
-				line += ch;
-				// escaped = false;
+				const char *const pos = std::strchr(terminators, ch);
+				if(pos){
+					term = *pos;
+					break;
+				}
+				seg += ch;
 			}
 		}
-		return line;
+		return term;
 	}
 }
 
@@ -111,36 +105,40 @@ void ConfigFile::load(const std::string &path){
 
 	VALUE_TYPE(m_contents) contents;
 
-	Buffer_istream bis(STD_MOVE(block.data));
-	std::string line;
-	std::size_t count = 0;
-	while(std::getline(bis, line)){
-		if(!line.empty() && (*line.rbegin() == '\r')){
-			line.erase(line.end() - 1);
+	std::size_t line = 0;
+	for(;;){
+		StreamBuffer buf;
+		for(;;){
+			const int ch = block.data.get();
+			if(ch < 0){
+				break;
+			}
+			if(ch == '\n'){
+				break;
+			}
+			buf.put((unsigned char)ch);
 		}
-		line = escape_line(line.data(), line.size());
-		++count;
+		if(buf.back() == '\r'){
+			buf.unput();
+		}
+		if(buf.empty() && block.data.empty()){
+			break;
+		}
+		++line;
 
-		std::size_t key_begin = line.find_first_not_of(" \t");
-		if(key_begin == std::string::npos){
+		Buffer_istream is(STD_MOVE(buf));
+		std::string key, val;
+		const char key_term = unescape(key, is, "=#");
+		key = trim(STD_MOVE(key));
+		if(key.empty()){
 			continue;
 		}
-		std::size_t equ = line.find('=', key_begin);
-		if(equ == std::string::npos){
-			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": '=' expected.");
-			DEBUG_THROW(Exception, sslit("Bad config file"));
+		if(key_term == '='){
+			unescape(val, is, "#");
+			val = trim(STD_MOVE(val));
 		}
-		std::size_t key_end = line.find_last_not_of(" \t", equ - 1);
-		if((key_end == std::string::npos) || (key_begin > key_end)){
-			LOG_POSEIDON_ERROR("Error in config file on line ", count, ": Name expected.");
-			DEBUG_THROW(Exception, sslit("Bad config file"));
-		}
-		++key_end;
-		SharedNts key(line.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
-		line.erase(0, equ + 1);
-		std::string value(trim(STD_MOVE(line)));
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: ", key, " = ", value);
-		contents.append(STD_MOVE(key), STD_MOVE(value));
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: #", std::setw(3), line, " | ", key, " = ", val);
+		contents.append(SharedNts(key), STD_MOVE(val));
 	}
 
 	m_contents.swap(contents);
@@ -160,10 +158,10 @@ void ConfigFile::save(const std::string &path){
 
 	Buffer_ostream os;
 	for(AUTO(it, m_contents.begin()); it != m_contents.end(); ++it){
-		os <<unescape(it->first.get(), std::strlen(it->first.get()))
-		   <<" = "
-		   <<unescape(it->second.data(), it->second.size())
-		   <<std::endl;
+		escape(os, it->first.get(), std::strlen(it->first.get()));
+		os <<" = ";
+		escape(os, it->second.data(), it->second.size());
+		os <<std::endl;
 	}
 	FileSystemDaemon::save(path, STD_MOVE(os.get_buffer()));
 }
