@@ -20,22 +20,6 @@ RecursiveMutex::UniqueLock::UniqueLock(RecursiveMutex &owner, bool locks_owner)
 		lock();
 	}
 }
-#ifdef POSEIDON_CXX11
-RecursiveMutex::UniqueLock::UniqueLock(UniqueLock &&rhs) noexcept
-	: m_owner(rhs.m_owner), m_locked(rhs.m_locked)
-{
-	rhs.m_locked = false;
-}
-RecursiveMutex::UniqueLock &RecursiveMutex::UniqueLock::operator=(UniqueLock &&rhs) noexcept {
-	if(is_locked()){
-		unlock();
-	}
-	m_owner = rhs.m_owner;
-	m_locked = rhs.m_locked;
-	rhs.m_locked = false;
-	return *this;
-}
-#endif
 RecursiveMutex::UniqueLock::~UniqueLock(){
 	if(m_locked){
 		unlock();

@@ -18,6 +18,10 @@ public:
 private:
 	Handle m_handle;
 
+private:
+	UniqueHandle(const UniqueHandle &);
+	UniqueHandle &operator=(const UniqueHandle &);
+
 public:
 	UniqueHandle() NOEXCEPT
 		: m_handle(CloserT()())
@@ -27,38 +31,21 @@ public:
 		: m_handle(rhs)
 	{
 	}
+	UniqueHandle(Move<UniqueHandle> rhs) NOEXCEPT
+		: m_handle(CloserT()())
+	{
+		rhs.swap(*this);
+	}
+	UniqueHandle &operator=(Move<UniqueHandle> rhs) NOEXCEPT {
+		UniqueHandle(STD_MOVE(rhs)).swap(*this);
+		return *this;
+	}
 	~UniqueHandle() NOEXCEPT {
 		const Handle old = m_handle;
 		if(old != CloserT()()){
 			CloserT()(old);
 		}
 	}
-
-#ifdef POSEIDON_CXX11
-	UniqueHandle(const UniqueHandle &) = delete;
-	UniqueHandle &operator=(const UniqueHandle &) = delete;
-
-	UniqueHandle(UniqueHandle &&rhs) noexcept
-		: m_handle(rhs.m_handle)
-	{
-		rhs.m_handle = CloserT()();
-	}
-	UniqueHandle &operator=(UniqueHandle &&rhs) noexcept {
-		reset(std::move(rhs));
-		return *this;
-	}
-#else
-	// public 但是没有定义。仅作为 RVO 转移使用，如果拷贝构造会导致错误。
-	UniqueHandle(const UniqueHandle &)
-		__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership.")));
-	UniqueHandle &operator=(const UniqueHandle &)
-		__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership.")));
-
-	UniqueHandle &operator=(Move<UniqueHandle> rhs) NOEXCEPT {
-		reset(STD_MOVE(rhs));
-		return *this;
-	}
-#endif
 
 public:
 	Handle get() const NOEXCEPT {

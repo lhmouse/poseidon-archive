@@ -14,15 +14,20 @@ namespace Poseidon {
 class Thread : NONCOPYABLE {
 private:
 	class Impl;
-
-private:
 	boost::shared_ptr<Impl> m_impl;
 
 public:
 	Thread() NOEXCEPT;
 	Thread(boost::function<void ()> proc, const char *tag); // tag 用于在日志中显示。最多四个字符。
-	Thread(Move<Thread> rhs) NOEXCEPT;
-	Thread &operator=(Move<Thread> rhs) NOEXCEPT;
+	Thread(Move<Thread> rhs) NOEXCEPT
+		: m_impl()
+	{
+		rhs.swap(*this);
+	}
+	Thread &operator=(Move<Thread> rhs) NOEXCEPT {
+		Thread(STD_MOVE(rhs)).swap(*this);
+		return *this;
+	}
 	~Thread(); // if(joinable()){ std::terminate(); }
 
 public:

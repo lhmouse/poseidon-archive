@@ -17,23 +17,23 @@ public:
 		RecursiveMutex *m_owner;
 		bool m_locked;
 
+	private:
+		UniqueLock(const UniqueLock &rhs);
+		UniqueLock &operator=(const UniqueLock &rhs);
+
 	public:
 		UniqueLock();
 		explicit UniqueLock(RecursiveMutex &owner, bool locks_owner = true);
+		UniqueLock(Move<UniqueLock> rhs) NOEXCEPT
+			: m_owner(NULLPTR), m_locked(false)
+		{
+			rhs.swap(*this);
+		}
+		UniqueLock &operator=(Move<UniqueLock> rhs) NOEXCEPT {
+			UniqueLock(STD_MOVE(rhs)).swap(*this);
+			return *this;
+		}
 		~UniqueLock();
-
-#ifdef POSEIDON_CXX11
-		UniqueLock(const UniqueLock &rhs) = delete;
-		UniqueLock &operator=(const UniqueLock &rhs) = delete;
-
-		UniqueLock(UniqueLock &&rhs) noexcept;
-		UniqueLock &operator=(UniqueLock &&rhs) noexcept;
-#else
-		UniqueLock(const UniqueLock &)
-			__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership of unique locks.")));
-		UniqueLock &operator=(const UniqueLock &)
-			__attribute__((__error__("Use explicit STD_MOVE() to transfer ownership of unique locks.")));
-#endif
 
 	public:
 		bool is_locked() const NOEXCEPT;

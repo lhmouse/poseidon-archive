@@ -20,22 +20,6 @@ Mutex::UniqueLock::UniqueLock(Mutex &owner, bool locks_owner)
 		lock();
 	}
 }
-#ifdef POSEIDON_CXX11
-Mutex::UniqueLock::UniqueLock(UniqueLock &&rhs) noexcept
-	: m_owner(rhs.m_owner), m_locked(rhs.m_locked)
-{
-	rhs.m_locked = false;
-}
-Mutex::UniqueLock &Mutex::UniqueLock::operator=(UniqueLock &&rhs) noexcept {
-	if(is_locked()){
-		unlock();
-	}
-	m_owner = rhs.m_owner;
-	m_locked = rhs.m_locked;
-	rhs.m_locked = false;
-	return *this;
-}
-#endif
 Mutex::UniqueLock::~UniqueLock(){
 	if(m_locked){
 		unlock();
