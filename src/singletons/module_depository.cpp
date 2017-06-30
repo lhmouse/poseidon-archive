@@ -200,16 +200,15 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 
 	return module;
 }
-boost::shared_ptr<Module> ModuleDepository::load_nothrow(const char *path){
-	try {
-		return load(path);
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown while loading module: path = ", path, ", what = ", e.what());
-		return VAL_INIT;
-	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown while loading module: path = ", path);
-		return VAL_INIT;
-	}
+boost::shared_ptr<Module> ModuleDepository::load_nothrow(const char *path)
+try {
+	return load(path);
+} catch(std::exception &e){
+	LOG_POSEIDON_ERROR("std::exception thrown while loading module: path = ", path, ", what = ", e.what());
+	return VAL_INIT;
+} catch(...){
+	LOG_POSEIDON_ERROR("Unknown exception thrown while loading module: path = ", path);
+	return VAL_INIT;
 }
 bool ModuleDepository::unload(const boost::shared_ptr<Module> &module){
 	const RecursiveMutex::UniqueLock lock(g_mutex);

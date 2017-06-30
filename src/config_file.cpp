@@ -13,7 +13,7 @@
 namespace Poseidon {
 
 namespace {
-	std::string unescape_line(const char *data, std::size_t size){
+	std::string unescape(const char *data, std::size_t size){
 		PROFILE_ME;
 
 		std::string line;
@@ -145,15 +145,14 @@ void ConfigFile::load(const std::string &path){
 
 	m_contents.swap(contents);
 }
-int ConfigFile::load_nothrow(const std::string &path){
+int ConfigFile::load_nothrow(const std::string &path)
+try {
 	PROFILE_ME;
 
-	try {
-		load(path);
-		return 0;
-	} catch(SystemException &e){
-		return e.get_code();
-	}
+	load(path);
+	return 0;
+} catch(SystemException &e){
+	return e.get_code();
 }
 void ConfigFile::save(const std::string &path){
 	PROFILE_ME;
@@ -161,9 +160,9 @@ void ConfigFile::save(const std::string &path){
 
 	Buffer_ostream os;
 	for(AUTO(it, m_contents.begin()); it != m_contents.end(); ++it){
-		os <<unescape_line(it->first.get(), std::strlen(it->first.get()))
+		os <<unescape(it->first.get(), std::strlen(it->first.get()))
 		   <<" = "
-		   <<unescape_line(it->second.data(), it->second.size())
+		   <<unescape(it->second.data(), it->second.size())
 		   <<std::endl;
 	}
 	FileSystemDaemon::save(path, STD_MOVE(os.get_buffer()));
