@@ -30,8 +30,14 @@ bool Mutex::UniqueLock::is_locked() const NOEXCEPT {
 	return m_locked;
 }
 void Mutex::UniqueLock::lock() NOEXCEPT {
-	assert(m_target);
-	assert(!m_locked);
+	if(!m_target){
+		LOG_POSEIDON_FATAL("No Mutex has been assigned to this UniqueLock.");
+		std::abort();
+	}
+	if(m_locked){
+		LOG_POSEIDON_FATAL("The Mutex has already been locked by this UniqueLock.");
+		std::abort();
+	}
 
 	const int err = ::pthread_mutex_lock(&(m_target->m_mutex));
 	if(err != 0){
@@ -41,8 +47,14 @@ void Mutex::UniqueLock::lock() NOEXCEPT {
 	m_locked = true;
 }
 void Mutex::UniqueLock::unlock() NOEXCEPT {
-	assert(m_target);
-	assert(m_locked);
+	if(!m_target){
+		LOG_POSEIDON_FATAL("No Mutex has been assigned to this UniqueLock.");
+		std::abort();
+	}
+	if(!m_locked){
+		LOG_POSEIDON_FATAL("The Mutex has not been locked by this UniqueLock.");
+		std::abort();
+	}
 
 	const int err = ::pthread_mutex_unlock(&(m_target->m_mutex));
 	if(err != 0){
