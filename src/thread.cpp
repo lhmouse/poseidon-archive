@@ -65,15 +65,25 @@ bool Thread::joinable() const NOEXCEPT {
 	return !!m_impl;
 }
 void Thread::join(){
-	assert(m_impl);
-
-	::pthread_join(m_impl->handle, NULLPTR);
+	if(!m_impl){
+		LOG_POSEIDON_ERROR("Attempting to join a non-joinable thread.");
+		DEBUG_THROW(Exception, sslit("Attempting to join a non-joinable thread"));
+	}
+	int err_code = ::pthread_join(m_impl->handle, NULLPTR);
+	if(err_code != 0){
+		LOG_POSEIDON_WARNING("::pthread_join() failed: err_code = ", err_code);
+	}
 	m_impl.reset();
 }
 void Thread::detach(){
-	assert(m_impl);
-
-	::pthread_detach(m_impl->handle);
+	if(!m_impl){
+		LOG_POSEIDON_ERROR("Attempting to detach a non-joinable thread.");
+		DEBUG_THROW(Exception, sslit("Attempting to detach a non-joinable thread"));
+	}
+	int err_code = ::pthread_detach(m_impl->handle);
+	if(err_code != 0){
+		LOG_POSEIDON_WARNING("::pthread_detach() failed: err_code = ", err_code);
+	}
 	m_impl.reset();
 }
 
