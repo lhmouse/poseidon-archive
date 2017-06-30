@@ -155,7 +155,7 @@ void Sha1_streambuf::eat_chunk(){
 	m_bytes += 64;
 }
 
-void Sha1_streambuf::clear() NOEXCEPT {
+void Sha1_streambuf::reset() NOEXCEPT {
 	setp(NULLPTR, NULLPTR);
 	m_reg = SHA1_REG_INIT;
 	m_bytes = 0;
@@ -194,7 +194,7 @@ Sha1 Sha1_streambuf::finalize(){
 	for(unsigned i = 0; i < m_reg.size(); ++i){
 		store_be(reinterpret_cast<boost::uint32_t *>(sha1.data())[i], m_reg[i]);
 	}
-	clear();
+	reset();
 	return sha1;
 }
 

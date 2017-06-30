@@ -31,7 +31,7 @@ protected:
 	int_type overflow(int_type c = traits_type::eof()) OVERRIDE;
 
 public:
-	void clear() NOEXCEPT;
+	void reset() NOEXCEPT;
 	Crc32 finalize();
 };
 
@@ -51,8 +51,8 @@ public:
 		return const_cast<Crc32_streambuf *>(&m_sb);
 	}
 
-	void clear() NOEXCEPT {
-		return rdbuf()->clear();
+	void reset() NOEXCEPT {
+		return rdbuf()->reset();
 	}
 	Crc32 finalize(){
 		return rdbuf()->finalize();

@@ -127,7 +127,7 @@ void Md5_streambuf::eat_chunk(){
 	m_bytes += 64;
 }
 
-void Md5_streambuf::clear() NOEXCEPT {
+void Md5_streambuf::reset() NOEXCEPT {
 	setp(NULLPTR, NULLPTR);
 	m_reg = MD5_REG_INIT;
 	m_bytes = 0;
@@ -166,7 +166,7 @@ Md5 Md5_streambuf::finalize(){
 	for(unsigned i = 0; i < m_reg.size(); ++i){
 		store_le(reinterpret_cast<boost::uint32_t *>(md5.data())[i], m_reg[i]);
 	}
-	clear();
+	reset();
 	return md5;
 }
 

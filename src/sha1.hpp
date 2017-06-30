@@ -37,7 +37,7 @@ protected:
 	int_type overflow(int_type c = traits_type::eof()) OVERRIDE;
 
 public:
-	void clear() NOEXCEPT;
+	void reset() NOEXCEPT;
 	Sha1 finalize();
 };
 
@@ -57,8 +57,8 @@ public:
 		return const_cast<Sha1_streambuf *>(&m_sb);
 	}
 
-	void clear() NOEXCEPT {
-		return rdbuf()->clear();
+	void reset() NOEXCEPT {
+		return rdbuf()->reset();
 	}
 	Sha1 finalize(){
 		return rdbuf()->finalize();

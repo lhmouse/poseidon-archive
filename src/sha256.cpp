@@ -148,7 +148,7 @@ void Sha256_streambuf::eat_chunk(){
 	m_bytes += 64;
 }
 
-void Sha256_streambuf::clear() NOEXCEPT {
+void Sha256_streambuf::reset() NOEXCEPT {
 	setp(NULLPTR, NULLPTR);
 	m_reg = SHA256_REG_INIT;
 	m_bytes = 0;
@@ -187,7 +187,7 @@ Sha256 Sha256_streambuf::finalize(){
 	for(unsigned i = 0; i < m_reg.size(); ++i){
 		store_be(reinterpret_cast<boost::uint32_t *>(sha256.data())[i], m_reg[i]);
 	}
-	clear();
+	reset();
 	return sha256;
 }
 
