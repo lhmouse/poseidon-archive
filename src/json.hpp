@@ -214,8 +214,13 @@ public:
 		: m_data(rhs)
 	{
 	}
+#ifdef POSEIDOX_CXX11
+	template<typename T, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = nullptr>
+	JsonElement(T rhs)
+#else
 	template<typename T>
 	JsonElement(T rhs, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = 0)
+#endif
 		: m_data(static_cast<double>(rhs))
 	{
 	}
