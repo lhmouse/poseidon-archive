@@ -42,7 +42,7 @@ ConditionVariable::~ConditionVariable(){
 void ConditionVariable::wait(Mutex::UniqueLock &lock){
 	assert(lock.m_locked);
 
-	const int err = ::pthread_cond_wait(&m_cond, &(lock.m_owner->m_mutex));
+	const int err = ::pthread_cond_wait(&m_cond, &(lock.m_target->m_mutex));
 	if(err != 0){
 		LOG_POSEIDON_ERROR("::pthread_cond_wait() failed with error code ", err);
 		DEBUG_THROW(SystemException, err);
@@ -63,7 +63,7 @@ bool ConditionVariable::timed_wait(Mutex::UniqueLock &lock, unsigned long long m
 		++tp.tv_sec;
 		tp.tv_nsec -= 1000000000;
 	}
-	const int err = ::pthread_cond_timedwait(&m_cond, &(lock.m_owner->m_mutex), &tp);
+	const int err = ::pthread_cond_timedwait(&m_cond, &(lock.m_target->m_mutex), &tp);
 	if(err != 0){
 		if(err == ETIMEDOUT){
 			return false;

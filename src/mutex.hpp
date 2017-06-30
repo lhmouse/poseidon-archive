@@ -20,7 +20,7 @@ public:
 		friend ConditionVariable;
 
 	private:
-		Mutex *m_owner;
+		Mutex *m_target;
 		bool m_locked;
 
 	private:
@@ -29,9 +29,9 @@ public:
 
 	public:
 		UniqueLock();
-		explicit UniqueLock(Mutex &owner, bool locks_owner = true);
+		explicit UniqueLock(Mutex &target, bool locks_target = true);
 		UniqueLock(Move<UniqueLock> rhs) NOEXCEPT
-			: m_owner(NULLPTR), m_locked(false)
+			: m_target(NULLPTR), m_locked(false)
 		{
 			rhs.swap(*this);
 		}
@@ -48,7 +48,7 @@ public:
 
 		void swap(UniqueLock &rhs) NOEXCEPT {
 			using std::swap;
-			swap(m_owner, rhs.m_owner);
+			swap(m_target, rhs.m_target);
 			swap(m_locked, rhs.m_locked);
 		}
 

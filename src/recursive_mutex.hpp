@@ -14,7 +14,7 @@ class RecursiveMutex : NONCOPYABLE {
 public:
 	class UniqueLock : NONCOPYABLE {
 	private:
-		RecursiveMutex *m_owner;
+		RecursiveMutex *m_target;
 		bool m_locked;
 
 	private:
@@ -23,9 +23,9 @@ public:
 
 	public:
 		UniqueLock();
-		explicit UniqueLock(RecursiveMutex &owner, bool locks_owner = true);
+		explicit UniqueLock(RecursiveMutex &target, bool locks_target = true);
 		UniqueLock(Move<UniqueLock> rhs) NOEXCEPT
-			: m_owner(NULLPTR), m_locked(false)
+			: m_target(NULLPTR), m_locked(false)
 		{
 			rhs.swap(*this);
 		}
@@ -42,7 +42,7 @@ public:
 
 		void swap(UniqueLock &rhs) NOEXCEPT {
 			using std::swap;
-			swap(m_owner, rhs.m_owner);
+			swap(m_target, rhs.m_target);
 			swap(m_locked, rhs.m_locked);
 		}
 

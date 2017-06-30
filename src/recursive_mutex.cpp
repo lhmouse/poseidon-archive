@@ -10,13 +10,13 @@
 namespace Poseidon {
 
 RecursiveMutex::UniqueLock::UniqueLock()
-	: m_owner(NULLPTR), m_locked(false)
+	: m_target(NULLPTR), m_locked(false)
 {
 }
-RecursiveMutex::UniqueLock::UniqueLock(RecursiveMutex &owner, bool locks_owner)
-	: m_owner(&owner), m_locked(false)
+RecursiveMutex::UniqueLock::UniqueLock(RecursiveMutex &target, bool locks_target)
+	: m_target(&target), m_locked(false)
 {
-	if(locks_owner){
+	if(locks_target){
 		lock();
 	}
 }
@@ -30,10 +30,10 @@ bool RecursiveMutex::UniqueLock::is_locked() const NOEXCEPT {
 	return m_locked;
 }
 void RecursiveMutex::UniqueLock::lock() NOEXCEPT {
-	assert(m_owner);
+	assert(m_target);
 	assert(!m_locked);
 
-	const int err = ::pthread_mutex_lock(&(m_owner->m_mutex));
+	const int err = ::pthread_mutex_lock(&(m_target->m_mutex));
 	if(err != 0){
 		LOG_POSEIDON_FATAL("::pthread_mutex_lock() failed with error code ", err);
 		std::abort();
@@ -41,10 +41,10 @@ void RecursiveMutex::UniqueLock::lock() NOEXCEPT {
 	m_locked = true;
 }
 void RecursiveMutex::UniqueLock::unlock() NOEXCEPT {
-	assert(m_owner);
+	assert(m_target);
 	assert(m_locked);
 
-	const int err = ::pthread_mutex_unlock(&(m_owner->m_mutex));
+	const int err = ::pthread_mutex_unlock(&(m_target->m_mutex));
 	if(err != 0){
 		LOG_POSEIDON_FATAL("::pthread_mutex_unlock() failed with error code ", err);
 		std::abort();
