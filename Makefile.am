@@ -280,6 +280,9 @@ lib_libposeidon_main_la_SOURCES = \
 	src/mongodb/connection.cpp	\
 	src/mongodb/bson_builder.cpp
 
+lib_libposeidon_main_la_LDFLAGS = \
+	-version 1:0:0
+
 pkgsysconfdir = $(sysconfdir)/@PACKAGE@
 pkgsysconf_DATA = \
 	etc/poseidon/main-template.conf

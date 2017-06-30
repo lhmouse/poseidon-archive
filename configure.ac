@@ -19,7 +19,7 @@ PKG_CHECK_MODULES([mongoc], [libmongoc-1.0])
 AC_CHECK_LIB([mongoc-1.0], [main], [], [echo "***** FIX THIS ERROR *****"; exit -2;])
 
 AM_INIT_AUTOMAKE
-LT_INIT
+LT_INIT([disable-static,dlopen])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
