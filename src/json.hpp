@@ -214,8 +214,8 @@ public:
 		: m_data(rhs)
 	{
 	}
-	template<typename T, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = 0>
-	JsonElement(T rhs)
+	template<typename T>
+	JsonElement(T rhs, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = 0)
 		: m_data(static_cast<double>(rhs))
 	{
 	}
