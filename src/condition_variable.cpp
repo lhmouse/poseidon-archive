@@ -40,7 +40,14 @@ ConditionVariable::~ConditionVariable(){
 }
 
 void ConditionVariable::wait(Mutex::UniqueLock &lock){
-	assert(lock.m_locked);
+	if(!lock.m_target){
+		LOG_POSEIDON_FATAL("No Mutex has been assigned to that UniqueLock.");
+		std::abort();
+	}
+	if(!lock.m_locked){
+		LOG_POSEIDON_FATAL("The Mutex has not been locked by that UniqueLock.");
+		std::abort();
+	}
 
 	const int err = ::pthread_cond_wait(&m_cond, &(lock.m_target->m_mutex));
 	if(err != 0){
@@ -49,7 +56,14 @@ void ConditionVariable::wait(Mutex::UniqueLock &lock){
 	}
 }
 bool ConditionVariable::timed_wait(Mutex::UniqueLock &lock, unsigned long long ms){
-	assert(lock.m_locked);
+	if(!lock.m_target){
+		LOG_POSEIDON_FATAL("No Mutex has been assigned to that UniqueLock.");
+		std::abort();
+	}
+	if(!lock.m_locked){
+		LOG_POSEIDON_FATAL("The Mutex has not been locked by that UniqueLock.");
+		std::abort();
+	}
 
 	::timespec tp;
 	if(::clock_gettime(CLOCK_MONOTONIC, &tp) != 0){
