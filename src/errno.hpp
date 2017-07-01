@@ -5,8 +5,6 @@
 #define POSEIDON_ERRNO_HPP_
 
 #include "cxx_ver.hpp"
-#include <string>
-#include <errno.h>
 #include "shared_nts.hpp"
 
 namespace Poseidon {

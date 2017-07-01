@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "verbs.hpp"
-#include <string.h>
 
 namespace Poseidon {
 

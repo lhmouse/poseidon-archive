@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "client_reader.hpp"
 #include "exception.hpp"
-#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include "../log.hpp"

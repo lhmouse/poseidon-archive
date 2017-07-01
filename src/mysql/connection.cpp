@@ -6,8 +6,6 @@
 #include "thread_context.hpp"
 #include "exception.hpp"
 #include "formatting.hpp"
-#include <boost/container/flat_map.hpp>
-#include <string.h>
 #include <stdlib.h>
 #include <mysql.h>
 #include "../raii.hpp"

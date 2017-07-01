@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include "log.hpp"

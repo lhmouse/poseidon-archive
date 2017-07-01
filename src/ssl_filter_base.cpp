@@ -4,7 +4,6 @@
 #include "precompiled.hpp"
 #include "ssl_filter_base.hpp"
 #include <sys/socket.h>
-#include <errno.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include "exception.hpp"

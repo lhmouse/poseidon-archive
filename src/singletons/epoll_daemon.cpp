@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
-#include <errno.h>
 #include "job_dispatcher.hpp"
 #include "../thread.hpp"
 #include "../log.hpp"

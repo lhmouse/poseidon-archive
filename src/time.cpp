@@ -4,9 +4,6 @@
 #include "precompiled.hpp"
 #include "time.hpp"
 #include "log.hpp"
-#include <pthread.h>
-#include <time.h>
-#include <string.h>
 #include <stdio.h>
 
 namespace Poseidon {

@@ -5,7 +5,6 @@
 #include "server_reader.hpp"
 #include "exception.hpp"
 #include "urlencoded.hpp"
-#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include "../log.hpp"

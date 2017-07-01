@@ -5,7 +5,6 @@
 #include "request_headers.hpp"
 #include "header_option.hpp"
 #include "../buffer_streams.hpp"
-#include <string.h>
 
 namespace Poseidon {
 

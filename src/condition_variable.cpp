@@ -4,7 +4,6 @@
 #include "precompiled.hpp"
 #include "condition_variable.hpp"
 #include <boost/static_assert.hpp>
-#include <pthread.h>
 #include <time.h>
 #include "log.hpp"
 #include "system_exception.hpp"

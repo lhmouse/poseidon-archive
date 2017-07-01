@@ -3,7 +3,6 @@
 
 #include "precompiled.hpp"
 #include "errno.hpp"
-#include <string.h>
 
 namespace Poseidon {
 

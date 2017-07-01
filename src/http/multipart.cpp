@@ -9,7 +9,6 @@
 #include "../random.hpp"
 #include "../string.hpp"
 #include "../buffer_streams.hpp"
-#include <string.h>
 
 namespace Poseidon {
 

@@ -6,7 +6,6 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
-#include <pthread.h>
 
 namespace Poseidon {
 

@@ -3,7 +3,6 @@
 
 #include "precompiled.hpp"
 #include "mutex.hpp"
-#include <pthread.h>
 #include "log.hpp"
 #include "system_exception.hpp"
 

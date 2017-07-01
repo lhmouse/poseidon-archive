@@ -73,11 +73,11 @@ private:
 
 public:
 	template<typename T>
-	Logger &operator,(const T &val) NOEXCEPT {
-		try {
-			this->put(val);
-		} catch(...){
-		}
+	Logger &operator,(const T &val) NOEXCEPT
+	try {
+		this->put(val);
+		return *this;
+	} catch(...){
 		return *this;
 	}
 };

@@ -3,8 +3,6 @@
 
 #include "precompiled.hpp"
 #include "ssl_factories.hpp"
-#include <pthread.h>
-#include <errno.h>
 #include <openssl/ssl.h>
 #include "system_exception.hpp"
 #include "log.hpp"

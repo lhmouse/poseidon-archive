@@ -5,7 +5,6 @@
 #include "connection.hpp"
 #include "exception.hpp"
 #include "bson_builder.hpp"
-#include <pthread.h>
 #include <stdlib.h>
 #pragma GCC push_options
 #pragma GCC diagnostic ignored "-Wsign-conversion"

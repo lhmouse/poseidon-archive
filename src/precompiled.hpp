@@ -14,12 +14,19 @@
 #include <algorithm>
 #include <utility>
 #include <functional>
+#include <bitset>
 
 #include <cassert>
 #include <cstring>
 #include <cstdlib>
 #include <cstddef>
 #include <cstdio>
+#include <cctype>
+
+#include <pthread.h>
+#include <errno.h>
+#include <string.h>
+#include <time.h>
 
 #include <boost/array.hpp>
 #include <boost/shared_ptr.hpp>

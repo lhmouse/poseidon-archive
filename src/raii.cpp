@@ -4,8 +4,6 @@
 #include "precompiled.hpp"
 #include "raii.hpp"
 #include <unistd.h>
-#include <errno.h>
-#include <string.h>
 #include "log.hpp"
 #include "errno.hpp"
 

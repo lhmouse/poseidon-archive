@@ -3,7 +3,6 @@
 
 #include "precompiled.hpp"
 #include "thread.hpp"
-#include <pthread.h>
 #include "log.hpp"
 #include "system_exception.hpp"
 

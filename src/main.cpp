@@ -90,6 +90,7 @@ namespace {
 				req.tv_nsec = 200000000;
 				::nanosleep(&req, NULLPTR);
 
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask...");
 				Logger::initialize_mask_from_config();
 
 				const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
@@ -103,6 +104,7 @@ namespace {
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
 				MongoDbDaemon::wait_for_all_async_operations();
 
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
 				JobDispatcher::do_modal();
 			}
 #ifdef POSEIDON_CXX11

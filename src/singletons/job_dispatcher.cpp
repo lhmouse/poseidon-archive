@@ -6,9 +6,6 @@
 #include "main_config.hpp"
 #include <ucontext.h>
 #include <sys/mman.h>
-#include <errno.h>
-#include <boost/container/map.hpp>
-#include <vector>
 #include "../job_base.hpp"
 #include "../job_promise.hpp"
 #include "../atomic.hpp"
@@ -282,8 +279,6 @@ void JobDispatcher::stop(){
 }
 
 void JobDispatcher::do_modal(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
-
 	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
 		LOG_POSEIDON_FATAL("Only one modal loop is allowed at the same time.");
 		std::abort();

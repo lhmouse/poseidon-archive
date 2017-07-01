@@ -3,8 +3,6 @@
 
 #include "precompiled.hpp"
 #include "log.hpp"
-#include <unistd.h>
-#include <pthread.h>
 #include "atomic.hpp"
 #include "time.hpp"
 #include "flags.hpp"
@@ -28,7 +26,7 @@ namespace {
 		{ "TRACE", '4', 1 },    // 亮蓝
 	};
 
-	volatile boost::uint64_t g_mask = -1ull;
+	volatile boost::uint64_t g_mask = (boost::uint64_t)-1;
 
 	// 不要使用 Mutex 对象。如果在其他静态对象的构造函数中输出日志，这个对象可能还没构造。
 	::pthread_mutex_t g_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
@@ -47,26 +45,30 @@ boost::uint64_t Logger::get_mask() NOEXCEPT {
 	return atomic_load(g_mask, ATOMIC_RELAXED);
 }
 boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT {
-	boost::uint64_t old_mask = atomic_load(g_mask, ATOMIC_CONSUME), new_mask;
+	boost::uint64_t old_mask = atomic_load(g_mask, ATOMIC_RELAXED), new_mask;
 	do {
 		new_mask = old_mask;
 		remove_flags(new_mask, to_disable);
 		add_flags(new_mask, to_enable);
-	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, ATOMIC_ACQ_REL, ATOMIC_CONSUME));
+	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, ATOMIC_RELAXED, ATOMIC_RELAXED));
 	return old_mask;
 }
 
 bool Logger::initialize_mask_from_config(){
-	boost::uint64_t log_mask;
-	if(!MainConfig::get(log_mask, "log_mask")){
+	std::bitset<64> new_mask_bits;
+	if(!MainConfig::get(new_mask_bits, "log_masked_levels")){
 		return false;
 	}
-	set_mask(-1ull, log_mask);
+	new_mask_bits.flip();
+#ifdef POSEIDON_CXX11
+	set_mask((boost::uint64_t)-1, new_mask_bits.to_ullong());
+#else
+	set_mask((boost::uint64_t)-1, new_mask_bits.to_ulong());
+#endif
 	return true;
 }
 void Logger::finalize_mask() NOEXCEPT {
-	const boost::uint64_t log_mask = Logger::LV_FATAL | Logger::LV_ERROR | Logger::LV_WARNING | Logger::LV_INFO;
-	set_mask( 0ull, log_mask);
+	set_mask(0, LV_INFO | LV_WARNING | LV_ERROR | LV_FATAL);
 }
 
 const char *Logger::get_thread_tag() NOEXCEPT {
