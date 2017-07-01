@@ -178,7 +178,7 @@ namespace {
 		}
 
 	public:
-		boost::shared_ptr<TcpSessionBase> on_client_connect(UniqueFile client) const OVERRIDE {
+		boost::shared_ptr<TcpSessionBase> on_client_connect(Move<UniqueFile> client) const OVERRIDE {
 			return boost::make_shared<SystemSession>(STD_MOVE(client), m_auth_info, m_path + '/');
 		}
 	};
