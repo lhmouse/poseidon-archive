@@ -45,7 +45,7 @@ SocketBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	}
 }
 
-SocketBase::SocketBase(UniqueFile socket)
+SocketBase::SocketBase(Move<UniqueFile> socket)
 	: m_socket(STD_MOVE(socket)), m_creation_time(get_fast_mono_clock())
 	, m_shutdown_read(false), m_shutdown_write(false), m_really_shutdown_write(false)
 	, m_throttled(false), m_timed_out(false), m_delayed_shutdown_guard_count(0)

@@ -123,7 +123,7 @@ namespace Cbpp {
 		}
 	};
 
-	Session::Session(UniqueFile socket)
+	Session::Session(Move<UniqueFile> socket)
 		: LowLevelSession(STD_MOVE(socket))
 		, m_max_request_length(MainConfig::get<boost::uint64_t>("cbpp_max_request_length", 16384))
 		, m_size_total(0), m_message_id(0), m_payload()

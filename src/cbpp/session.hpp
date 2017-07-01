@@ -23,7 +23,7 @@ namespace Cbpp {
 		StreamBuffer m_payload;
 
 	public:
-		explicit Session(UniqueFile socket);
+		explicit Session(Move<UniqueFile> socket);
 		~Session();
 
 	protected:

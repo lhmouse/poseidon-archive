@@ -44,7 +44,7 @@ private:
 	mutable IpPort m_local_info;
 
 public:
-	explicit SocketBase(UniqueFile socket);
+	explicit SocketBase(Move<UniqueFile> socket);
 	~SocketBase();
 
 protected:

@@ -29,7 +29,7 @@ namespace {
 		const std::string m_prefix;
 
 	public:
-		SystemSession(UniqueFile socket, boost::shared_ptr<const Http::AuthInfo> auth_info, std::string prefix)
+		SystemSession(Move<UniqueFile> socket, boost::shared_ptr<const Http::AuthInfo> auth_info, std::string prefix)
 			: Http::Session(STD_MOVE(socket))
 			, m_auth_info(STD_MOVE(auth_info)), m_prefix(STD_MOVE(prefix))
 		{

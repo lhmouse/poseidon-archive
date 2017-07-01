@@ -24,7 +24,7 @@ namespace Http {
 		StreamBuffer m_entity;
 
 	public:
-		explicit Session(UniqueFile socket);
+		explicit Session(Move<UniqueFile> socket);
 		~Session();
 
 	protected:

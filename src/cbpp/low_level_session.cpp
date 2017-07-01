@@ -11,7 +11,7 @@
 namespace Poseidon {
 
 namespace Cbpp {
-	LowLevelSession::LowLevelSession(UniqueFile socket)
+	LowLevelSession::LowLevelSession(Move<UniqueFile> socket)
 		: TcpSessionBase(STD_MOVE(socket)), Reader(), Writer()
 	{
 	}

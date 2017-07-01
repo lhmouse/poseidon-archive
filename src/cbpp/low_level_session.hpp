@@ -14,7 +14,7 @@ namespace Poseidon {
 namespace Cbpp {
 	class LowLevelSession : public TcpSessionBase, protected Reader, protected Writer {
 	public:
-		explicit LowLevelSession(UniqueFile socket);
+		explicit LowLevelSession(Move<UniqueFile> socket);
 		~LowLevelSession();
 
 	protected:

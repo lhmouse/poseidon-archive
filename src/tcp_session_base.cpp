@@ -56,7 +56,7 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 	}
 }
 
-TcpSessionBase::TcpSessionBase(UniqueFile socket)
+TcpSessionBase::TcpSessionBase(Move<UniqueFile> socket)
 	: SocketBase(STD_MOVE(socket)), SessionBase()
 	, m_connected_notified(false), m_read_hup_notified(false)
 	, m_shutdown_time((boost::uint64_t)-1), m_last_use_time((boost::uint64_t)-1)

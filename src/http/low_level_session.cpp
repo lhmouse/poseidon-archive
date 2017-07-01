@@ -13,7 +13,7 @@
 namespace Poseidon {
 
 namespace Http {
-	LowLevelSession::LowLevelSession(UniqueFile socket)
+	LowLevelSession::LowLevelSession(Move<UniqueFile> socket)
 		: TcpSessionBase(STD_MOVE(socket)), ServerReader(), ServerWriter()
 	{
 	}

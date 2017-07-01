@@ -26,7 +26,7 @@ namespace Http {
 		boost::shared_ptr<UpgradedSessionBase> m_upgraded_session;
 
 	public:
-		explicit LowLevelSession(UniqueFile socket);
+		explicit LowLevelSession(Move<UniqueFile> socket);
 		~LowLevelSession();
 
 	protected:

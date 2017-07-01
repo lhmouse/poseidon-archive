@@ -37,7 +37,7 @@ private:
 	boost::shared_ptr<TimerItem> m_shutdown_timer;
 
 public:
-	explicit TcpSessionBase(UniqueFile socket);
+	explicit TcpSessionBase(Move<UniqueFile> socket);
 	~TcpSessionBase();
 
 protected:

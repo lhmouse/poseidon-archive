@@ -144,7 +144,7 @@ namespace Http {
 		}
 	};
 
-	Session::Session(UniqueFile socket)
+	Session::Session(Move<UniqueFile> socket)
 		: LowLevelSession(STD_MOVE(socket))
 		, m_max_request_length(config_get_max_request_length()), m_size_total(0), m_request_headers()
 	{
