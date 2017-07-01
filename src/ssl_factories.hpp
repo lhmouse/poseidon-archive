@@ -19,7 +19,7 @@ protected:
 	virtual ~SslFactoryBase() = 0;
 
 public:
-	UniqueSsl create_ssl() const;
+	void create_ssl(UniqueSsl &ssl) const;
 };
 
 class ServerSslFactory : public SslFactoryBase {

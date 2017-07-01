@@ -90,8 +90,10 @@ int TcpServerBase::poll_read_and_process(bool readable){
 		}
 		try {
 			if(m_ssl_factory){
-				AUTO(ssl, m_ssl_factory->create_ssl());
-				boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), session->get_fd()));
+				UniqueSsl ssl;
+				m_ssl_factory->create_ssl(ssl);
+				boost::scoped_ptr<SslFilterBase> filter;
+				filter.reset(new SslFilter(STD_MOVE(ssl), session->get_fd()));
 				session->init_ssl(STD_MOVE(filter));
 			}
 			const AUTO(tcp_request_timeout, MainConfig::get<boost::uint64_t>("tcp_request_timeout", 5000));

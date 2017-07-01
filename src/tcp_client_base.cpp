@@ -46,8 +46,10 @@ TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_pee
 	if(use_ssl){
 		LOG_POSEIDON_INFO("Initiating SSL handshake...");
 		m_ssl_factory.reset(new ClientSslFactory(verify_peer));
-		AUTO(ssl, m_ssl_factory->create_ssl());
-		boost::scoped_ptr<SslFilterBase> filter(new SslFilter(STD_MOVE(ssl), get_fd()));
+		UniqueSsl ssl;
+		m_ssl_factory->create_ssl(ssl);
+		boost::scoped_ptr<SslFilterBase> filter;
+		filter.reset(new SslFilter(STD_MOVE(ssl), get_fd()));
 		init_ssl(STD_MOVE(filter));
 	}
 }

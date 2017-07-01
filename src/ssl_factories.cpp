@@ -36,8 +36,8 @@ SslFactoryBase::SslFactoryBase(){
 SslFactoryBase::~SslFactoryBase(){
 }
 
-UniqueSsl SslFactoryBase::create_ssl() const {
-	return UniqueSsl(::SSL_new(m_ctx.get()));
+void SslFactoryBase::create_ssl(UniqueSsl &ssl) const {
+	ssl.reset(::SSL_new(m_ctx.get()));
 }
 
 ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
