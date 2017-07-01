@@ -40,7 +40,7 @@ namespace {
 #ifdef POSEIDON_CXX11
 		UniqueFile tcp;
 #else
-		__thread UniqueFile tcp;
+		static __thread UniqueFile tcp;
 #endif
 		if(!tcp.reset(::socket(addr.get_family(), SOCK_STREAM, IPPROTO_TCP))){
 			DEBUG_THROW(SystemException);

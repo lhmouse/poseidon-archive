@@ -25,7 +25,7 @@ namespace {
 #ifdef POSEIDON_CXX11
 		UniqueFile udp;
 #else
-		__thread UniqueFile udp;
+		static __thread UniqueFile udp;
 #endif
 		if(!udp.reset(::socket(addr.get_family(), SOCK_DGRAM, IPPROTO_UDP))){
 			DEBUG_THROW(SystemException);
