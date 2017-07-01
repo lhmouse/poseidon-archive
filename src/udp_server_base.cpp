@@ -15,8 +15,18 @@
 namespace Poseidon {
 
 namespace {
-	UniqueFile create_udp_socket(const SockAddr &addr){
+#ifdef POSEIDON_CXX11
+	UniqueFile
+#else
+	Move<UniqueFile>
+#endif
+		create_udp_socket(const SockAddr &addr)
+	{
+#ifdef POSEIDON_CXX11
 		UniqueFile udp;
+#else
+		__thread UniqueFile udp;
+#endif
 		if(!udp.reset(::socket(addr.get_family(), SOCK_DGRAM, IPPROTO_UDP))){
 			DEBUG_THROW(SystemException);
 		}
@@ -27,7 +37,7 @@ namespace {
 		if(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) != 0){
 			DEBUG_THROW(SystemException);
 		}
-		return udp;
+		return STD_MOVE(udp);
 	}
 }
 

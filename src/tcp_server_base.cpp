@@ -30,8 +30,18 @@ namespace {
 		}
 	};
 
-	UniqueFile create_tcp_socket(const SockAddr &addr){
+#ifdef POSEIDON_CXX11
+	UniqueFile
+#else
+	Move<UniqueFile>
+#endif
+		create_tcp_socket(const SockAddr &addr)
+	{
+#ifdef POSEIDON_CXX11
 		UniqueFile tcp;
+#else
+		__thread UniqueFile tcp;
+#endif
 		if(!tcp.reset(::socket(addr.get_family(), SOCK_STREAM, IPPROTO_TCP))){
 			DEBUG_THROW(SystemException);
 		}
@@ -45,7 +55,7 @@ namespace {
 		if(::listen(tcp.get(), SOMAXCONN) != 0){
 			DEBUG_THROW(SystemException);
 		}
-		return tcp;
+		return STD_MOVE(tcp);
 	}
 }
 
