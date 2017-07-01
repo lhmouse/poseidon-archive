@@ -39,7 +39,7 @@ private:
 	void *const m_base_addr;
 
 public:
-	Module(UniqueHandle<DynamicLibraryCloser> handle, SharedNts real_path, void *base_addr)
+	Module(Move<UniqueHandle<DynamicLibraryCloser> > handle, SharedNts real_path, void *base_addr)
 		: m_handle(STD_MOVE(handle)), m_real_path(STD_MOVE(real_path)), m_base_addr(base_addr)
 	{
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Constructor of module: ", m_real_path);
