@@ -28,12 +28,22 @@ namespace {
 		}
 	};
 
-	UniqueFile create_tcp_socket(int family){
+#ifdef POSEIDON_CXX11
+	UniqueFile
+#else
+	Move<UniqueFile>
+#endif
+		create_tcp_socket(int family)
+	{
+#ifdef POSEIDON_CXX11
 		UniqueFile tcp;
+#else
+		static __thread UniqueFile tcp;
+#endif
 		if(!tcp.reset(::socket(family, SOCK_STREAM, IPPROTO_TCP))){
 			DEBUG_THROW(SystemException);
 		}
-		return tcp;
+		return STD_MOVE(tcp);
 	}
 }
 
