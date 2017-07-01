@@ -72,7 +72,7 @@ namespace {
 				it = g_listeners.erase(it);
 				continue;
 			}
-			listeners.push_back(STD_MOVE(listener));
+			listeners.push_back(STD_MOVE_IDN(listener));
 			++it;
 		}
 	}
