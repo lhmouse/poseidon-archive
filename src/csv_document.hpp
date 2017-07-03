@@ -49,63 +49,13 @@ public:
 	void reset_header(){
 		m_elements.clear();
 	}
-	void reset_header(const boost::container::map<SharedNts, std::string> &row){
-		VALUE_TYPE(m_elements) elements;
-		for(AUTO(it, row.begin()); it != row.end(); ++it){
-			elements[it->first];
-		}
-		m_elements.swap(elements);
-	}
+	void reset_header(const boost::container::map<SharedNts, std::string> &row);
 #ifdef POSEIDON_CXX11
-	void reset_header(std::initializer_list<SharedNts> header){
-		VALUE_TYPE(m_elements) elements;
-		for(AUTO(it, header.begin()); it != header.end(); ++it){
-			elements[*it];
-		}
-		m_elements.swap(elements);
-	}
+	void reset_header(std::initializer_list<SharedNts> header);
 #endif
-	void append(const boost::container::map<SharedNts, std::string> &row){
-		AUTO(it, m_elements.begin());
-		try {
-			while(it != m_elements.end()){
-				std::string value;
-				const AUTO(rit, row.find(it->first));
-				if(rit != row.end()){
-					value = rit->second;
-				}
-				it->second.push_back(STD_MOVE(value));
-				++it;
-			}
-		} catch(...){
-			while(it != m_elements.begin()){
-				--it;
-				it->second.pop_back();
-			}
-			throw;
-		}
-	}
+	void append(const boost::container::map<SharedNts, std::string> &row);
 #ifdef POSEIDON_CXX11
-	void append(boost::container::map<SharedNts, std::string> &&row){
-		AUTO(it, m_elements.begin());
-		try {
-			while(it != m_elements.end()){
-				std::string value;
-				const AUTO(rit, row.find(it->first));
-				if(rit != row.end()){
-					value = std::move(rit->second);
-				}
-				it->second.push_back(STD_MOVE(value));
-				++it;
-			}
-		} catch(...){
-			while(it != m_elements.begin()){
-				--it;
-				it->second.pop_back();
-			}
-			throw;
-		}
-	}
+	void append(boost::container::map<SharedNts, std::string> &&row);
 #endif
 
 	bool empty() const {

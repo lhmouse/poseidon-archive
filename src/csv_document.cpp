@@ -45,6 +45,65 @@ CsvDocument::CsvDocument(std::istream &is)
 	}
 }
 
+void CsvDocument::reset_header(const boost::container::map<SharedNts, std::string> &row){
+	VALUE_TYPE(m_elements) elements;
+	for(AUTO(it, row.begin()); it != row.end(); ++it){
+		elements[it->first];
+	}
+	m_elements.swap(elements);
+}
+#ifdef POSEIDON_CXX11
+void CsvDocument::reset_header(std::initializer_list<SharedNts> header){
+	VALUE_TYPE(m_elements) elements;
+	for(AUTO(it, header.begin()); it != header.end(); ++it){
+		elements[*it];
+	}
+	m_elements.swap(elements);
+}
+#endif
+void CsvDocument::append(const boost::container::map<SharedNts, std::string> &row){
+	AUTO(it, m_elements.begin());
+	try {
+		while(it != m_elements.end()){
+			std::string value;
+			const AUTO(rit, row.find(it->first));
+			if(rit != row.end()){
+				value = rit->second;
+			}
+			it->second.push_back(STD_MOVE(value));
+			++it;
+		}
+	} catch(...){
+		while(it != m_elements.begin()){
+			--it;
+			it->second.pop_back();
+		}
+		throw;
+	}
+}
+#ifdef POSEIDON_CXX11
+void CsvDocument::append(boost::container::map<SharedNts, std::string> &&row){
+	AUTO(it, m_elements.begin());
+	try {
+		while(it != m_elements.end()){
+			std::string value;
+			const AUTO(rit, row.find(it->first));
+			if(rit != row.end()){
+				value = std::move(rit->second);
+			}
+			it->second.push_back(STD_MOVE(value));
+			++it;
+		}
+	} catch(...){
+		while(it != m_elements.begin()){
+			--it;
+			it->second.pop_back();
+		}
+		throw;
+	}
+}
+#endif
+
 std::string CsvDocument::dump() const {
 	PROFILE_ME;
 
