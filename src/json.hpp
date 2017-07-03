@@ -27,6 +27,8 @@ typedef struct JsonNull_ *JsonNull;
 
 class JsonElement;
 
+extern const JsonElement &null_json_element() NOEXCEPT;
+
 class JsonObject {
 public:
 	typedef boost::container::map<SharedNts, JsonElement> base_container;
@@ -272,8 +274,6 @@ public:
 inline void swap(JsonElement &lhs, JsonElement &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
-
-extern const JsonElement &null_json_element() NOEXCEPT;
 
 inline JsonObject::JsonObject()
 	: m_elements()
