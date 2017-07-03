@@ -339,7 +339,12 @@ void JsonObject::dump(std::ostream &os) const {
 	os <<'}';
 }
 void JsonObject::parse(std::istream &is){
-	accept_object(is).swap(*this);
+	PROFILE_ME;
+
+	AUTO(obj, accept_object(is));
+	if(is){
+		obj.swap(*this);
+	}
 }
 
 JsonArray::JsonArray(std::istream &is)
@@ -377,7 +382,10 @@ void JsonArray::dump(std::ostream &os) const {
 void JsonArray::parse(std::istream &is){
 	PROFILE_ME;
 
-	accept_array(is).swap(*this);
+	AUTO(arr, accept_array(is));
+	if(is){
+		arr.swap(*this);
+	}
 }
 
 const char *JsonElement::get_type_string(JsonElement::Type type){
@@ -470,7 +478,12 @@ void JsonElement::dump(std::ostream &os) const {
 	}
 }
 void JsonElement::parse(std::istream &is){
-	accept_element(is).swap(*this);
+	PROFILE_ME;
+
+	AUTO(elem, accept_element(is));
+	if(is){
+		elem.swap(*this);
+	}
 }
 
 }
