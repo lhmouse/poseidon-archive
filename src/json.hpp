@@ -400,26 +400,22 @@ inline JsonElement &JsonObject::at(const SharedNts &key){
 	return it->second;
 }
 inline JsonObject::iterator JsonObject::set(SharedNts key, JsonElement val){
-	AUTO(old, m_elements.equal_range(key));
-	AUTO(it, old.first);
-	if(it == old.second){
+	AUTO(it, m_elements.find(key));
+	if(it == m_elements.end()){
 		it = m_elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(val)).first;
 	} else {
 		it->second.swap(val);
-		m_elements.erase(++old.first, old.second);
 	}
 	return it;
 }
 #ifdef POSEIDON_CXX11
 template<typename KeyT, typename ...ParamsT>
 inline JsonObject::iterator JsonObject::emplace(KeyT &&key, ParamsT &&...params){
-	AUTO(old, m_elements.equal_range(key));
-	AUTO(it, old.first);
-	if(it == old.second){
+	AUTO(it, m_elements.find(key));
+	if(it == m_elements.end()){
 		it = m_elements.emplace(std::forward<KeyT>(key), std::forward<ParamsT>(params)...).first;
 	} else {
 		it->second = JsonElement(std::forward<ParamsT>(params)...);
-		m_elements.erase(++old.first, old.second);
 	}
 	return it;
 }
