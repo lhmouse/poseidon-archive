@@ -27,10 +27,10 @@ public:
 	{
 	}
 #ifdef POSEIDON_CXX11
-	explicit CsvDocument(std::initializer_list<SharedNts> headers)
+	explicit CsvDocument(std::initializer_list<SharedNts> header)
 		: m_elements()
 	{
-		reset_headers(headers);
+		reset_header(header);
 	}
 #endif
 	explicit CsvDocument(std::istream &is)
@@ -50,10 +50,10 @@ public:
 #endif
 
 public:
-	void reset_headers(){
+	void reset_header(){
 		m_elements.clear();
 	}
-	void reset_headers(const boost::container::map<SharedNts, std::string> &row){
+	void reset_header(const boost::container::map<SharedNts, std::string> &row){
 		VALUE_TYPE(m_elements) elements;
 		for(AUTO(it, row.begin()); it != row.end(); ++it){
 			elements[it->first];
@@ -61,9 +61,9 @@ public:
 		m_elements.swap(elements);
 	}
 #ifdef POSEIDON_CXX11
-	void reset_headers(std::initializer_list<SharedNts> headers){
+	void reset_header(std::initializer_list<SharedNts> header){
 		VALUE_TYPE(m_elements) elements;
-		for(AUTO(it, headers.begin()); it != headers.end(); ++it){
+		for(AUTO(it, header.begin()); it != header.end(); ++it){
 			elements[*it];
 		}
 		m_elements.swap(elements);

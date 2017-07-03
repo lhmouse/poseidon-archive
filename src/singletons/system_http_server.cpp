@@ -36,24 +36,24 @@ namespace {
 		}
 
 	protected:
-		void on_sync_request(Http::RequestHeaders request_headers, StreamBuffer /* entity */) OVERRIDE {
+		void on_sync_request(Http::RequestHeaders request_header, StreamBuffer /* entity */) OVERRIDE {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", get_remote_info());
 
-			Http::check_and_throw_if_unauthorized(m_auth_info, get_remote_info(), request_headers);
+			Http::check_and_throw_if_unauthorized(m_auth_info, get_remote_info(), request_header);
 
 			try {
 				Buffer_istream uri_is;
-				uri_is.set_buffer(StreamBuffer(request_headers.uri));
+				uri_is.set_buffer(StreamBuffer(request_header.uri));
 				std::string uri;
 				Http::url_decode(uri_is, uri);
 				if((uri.size() < m_prefix.size()) || (uri.compare(0, m_prefix.size(), m_prefix) != 0)){
-					LOG_POSEIDON_WARNING("Inacceptable system HTTP request: uri = ", request_headers.uri, ", prefix = ", m_prefix);
+					LOG_POSEIDON_WARNING("Inacceptable system HTTP request: uri = ", request_header.uri, ", prefix = ", m_prefix);
 					DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 				}
 				uri.erase(0, m_prefix.size());
 
-				if(request_headers.verb != Http::V_GET){
+				if(request_header.verb != Http::V_GET){
 					DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);
 				}
 
@@ -62,7 +62,7 @@ namespace {
 					::raise(SIGTERM);
 					send_default(Http::ST_OK);
 				} else if(uri == "load_module"){
-					AUTO_REF(name, request_headers.get_params.at("name"));
+					AUTO_REF(name, request_header.get_params.at("name"));
 					if(!ModuleDepository::load_nothrow(name.c_str())){
 						LOG_POSEIDON_WARNING("Failed to load module: ", name);
 						send_default(Http::ST_GONE);
@@ -70,7 +70,7 @@ namespace {
 					}
 					send_default(Http::ST_OK);
 				} else if(uri == "unload_module"){
-					const AUTO_REF(base_addr_str, request_headers.get_params.at("base_addr"));
+					const AUTO_REF(base_addr_str, request_header.get_params.at("base_addr"));
 					Buffer_istream base_addr_is;
 					base_addr_is.set_buffer(StreamBuffer(base_addr_str));
 					void *base_addr;
@@ -97,15 +97,15 @@ namespace {
 						row[sslit("ns_total")] = boost::lexical_cast<std::string>(it->ns_total);
 						row[sslit("ns_exclusive")] = boost::lexical_cast<std::string>(it->ns_exclusive);
 						if(csv.empty()){
-							csv.reset_headers(row);
+							csv.reset_header(row);
 						}
 						csv.append(row);
 					}
 
-					OptionalMap headers;
-					headers.set(sslit("Content-Type"), "text/csv");
-					headers.set(sslit("Content-Disposition"), "attachment; name=\"profile.csv\"");
-					send(Http::ST_OK, STD_MOVE(headers), StreamBuffer(csv.dump()));
+					OptionalMap header;
+					header.set(sslit("Content-Type"), "text/csv");
+					header.set(sslit("Content-Disposition"), "attachment; name=\"profile.csv\"");
+					send(Http::ST_OK, STD_MOVE(header), StreamBuffer(csv.dump()));
 				} else if(uri == "clear_profile"){
 					LOG_POSEIDON_WARNING("Cleaning up profile data...");
 					ProfileDepository::clear();
@@ -119,15 +119,15 @@ namespace {
 						row[sslit("base_addr")] = boost::lexical_cast<std::string>(it->base_addr);
 						row[sslit("ref_count")] = boost::lexical_cast<std::string>(it->ref_count);
 						if(csv.empty()){
-							csv.reset_headers(row);
+							csv.reset_header(row);
 						}
 						csv.append(row);
 					}
 
-					OptionalMap headers;
-					headers.set(sslit("Content-Type"), "text/csv");
-					headers.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
-					send(Http::ST_OK, STD_MOVE(headers), StreamBuffer(csv.dump()));
+					OptionalMap header;
+					header.set(sslit("Content-Type"), "text/csv");
+					header.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
+					send(Http::ST_OK, STD_MOVE(header), StreamBuffer(csv.dump()));
 				} else if(uri == "show_connections"){
 					CsvDocument csv;
 					boost::container::map<SharedNts, std::string> row;
@@ -140,18 +140,18 @@ namespace {
 						row[sslit("local_port")] = boost::lexical_cast<std::string>(it->local.port());
 						row[sslit("ms_onlinet")] = boost::lexical_cast<std::string>(it->ms_online);
 						if(csv.empty()){
-							csv.reset_headers(row);
+							csv.reset_header(row);
 						}
 						csv.append(row);
 					}
 
-					OptionalMap headers;
-					headers.set(sslit("Content-Type"), "text/csv");
-					headers.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
-					send(Http::ST_OK, STD_MOVE(headers), StreamBuffer(csv.dump()));
+					OptionalMap header;
+					header.set(sslit("Content-Type"), "text/csv");
+					header.set(sslit("Content-Disposition"), "attachment; name=\"modules.csv\"");
+					send(Http::ST_OK, STD_MOVE(header), StreamBuffer(csv.dump()));
 				} else if(uri == "set_log_mask"){
-					const Http::UrlParam to_disable(STD_MOVE(request_headers.get_params), "to_disable");
-					const Http::UrlParam to_enable(STD_MOVE(request_headers.get_params), "to_enable");
+					const Http::UrlParam to_disable(STD_MOVE(request_header.get_params), "to_disable");
+					const Http::UrlParam to_enable(STD_MOVE(request_header.get_params), "to_enable");
 					Logger::set_mask(to_disable.as_unsigned(), to_enable.as_unsigned());
 					send_default(Http::ST_OK);
 				} else {
