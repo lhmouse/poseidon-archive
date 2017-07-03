@@ -95,8 +95,6 @@ namespace Cbpp {
 				break;
 
 			case S_MESSAGE_ID:
-				LOG_POSEIDON_DEBUG("Payload size = ", m_payload_size);
-
 				m_queue.get(&temp16, 2);
 				m_message_id = load_le(temp16);
 
