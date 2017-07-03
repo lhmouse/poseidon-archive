@@ -85,7 +85,7 @@ public:
 	iterator find(const SharedNts &key);
 
 	bool has(const char *key) const;
-	bool has(const SharedNts &key);
+	bool has(const SharedNts &key) const;
 	const JsonElement &get(const char *key) const { // 若指定的键不存在，则返回空元素。
 		return get(SharedNts::view(key));
 	}
@@ -371,7 +371,7 @@ inline bool JsonObject::has(const char *key) const {
 	}
 	return true;
 }
-inline bool JsonObject::has(const SharedNts &key){
+inline bool JsonObject::has(const SharedNts &key) const {
 	const AUTO(it, find(key));
 	if(it == end()){
 		return false;
