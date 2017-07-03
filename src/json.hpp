@@ -101,7 +101,7 @@ public:
 	iterator set(SharedNts key, JsonElement val);
 #ifdef POSEIDON_CXX11
 	template<typename KeyT, typename ...ParamsT>
-	iterator emplace(KeyT &&key, ParamsT &&...params);
+	iterator emplace_or_assign(KeyT &&key, ParamsT &&...params);
 #endif
 
 	void swap(JsonObject &rhs) NOEXCEPT;
@@ -410,7 +410,7 @@ inline JsonObject::iterator JsonObject::set(SharedNts key, JsonElement val){
 }
 #ifdef POSEIDON_CXX11
 template<typename KeyT, typename ...ParamsT>
-inline JsonObject::iterator JsonObject::emplace(KeyT &&key, ParamsT &&...params){
+inline JsonObject::iterator JsonObject::emplace_or_assign(KeyT &&key, ParamsT &&...params){
 	AUTO(it, m_elements.find(key));
 	if(it == m_elements.end()){
 		it = m_elements.emplace(std::forward<KeyT>(key), std::forward<ParamsT>(params)...).first;
