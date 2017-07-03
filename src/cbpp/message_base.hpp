@@ -8,7 +8,6 @@
 #include "../cxx_util.hpp"
 #include <string>
 #include <algorithm>
-#include <iomanip>
 #include <ostream>
 #include <cstddef>
 #include <boost/array.hpp>

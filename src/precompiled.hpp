@@ -15,6 +15,8 @@
 #include <utility>
 #include <functional>
 #include <bitset>
+#include <iomanip>
+#include <ostream>
 
 #include <cassert>
 #include <cstring>

@@ -279,11 +279,6 @@ inline JsonObject::JsonObject()
 	: m_elements()
 {
 }
-inline JsonObject::JsonObject(std::istream &is)
-	: m_elements()
-{
-	parse(is);
-}
 #ifndef POSEIDON_CXX11
 inline JsonObject::JsonObject(const JsonObject &rhs)
 	: m_elements(rhs.m_elements)
@@ -405,16 +400,28 @@ inline JsonElement &JsonObject::at(const SharedNts &key){
 	return it->second;
 }
 inline JsonObject::iterator JsonObject::set(SharedNts key, JsonElement val){
-	const AUTO(existent, m_elements.equal_range(key));
-	const AUTO(hint, m_elements.erase(existent.first, existent.second));
-	return m_elements.insert(hint, std::make_pair(STD_MOVE_IDN(key), STD_MOVE_IDN(val)));
+	AUTO(old, m_elements.equal_range(key));
+	AUTO(it, old.first);
+	if(it == old.second){
+		it = m_elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(val)).first;
+	} else {
+		it->second.swap(val);
+		m_elements.erase(++old.first, old.second);
+	}
+	return it;
 }
 #ifdef POSEIDON_CXX11
 template<typename KeyT, typename ...ParamsT>
 inline JsonObject::iterator JsonObject::emplace(KeyT &&key, ParamsT &&...params){
-	const AUTO(existent, m_elements.equal_range(key));
-	const AUTO(hint, m_elements.erase(existent.first, existent.second));
-	return m_elements.emplace_hint(hint, std::forward<KeyT>(key), std::forward<ParamsT>(params)...);
+	AUTO(old, m_elements.equal_range(key));
+	AUTO(it, old.first);
+	if(it == old.second){
+		it = m_elements.emplace(std::forward<KeyT>(key), std::forward<ParamsT>(params)...).first;
+	} else {
+		it->second = JsonElement(std::forward<ParamsT>(params)...);
+		m_elements.erase(++old.first, old.second);
+	}
+	return it;
 }
 #endif
 
@@ -426,11 +433,6 @@ inline void JsonObject::swap(JsonObject &rhs) NOEXCEPT {
 inline JsonArray::JsonArray()
 	: m_elements()
 {
-}
-inline JsonArray::JsonArray(std::istream &is)
-	: m_elements()
-{
-	parse(is);
 }
 #ifndef POSEIDON_CXX11
 inline JsonArray::JsonArray(const JsonArray &rhs)

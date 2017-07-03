@@ -9,7 +9,6 @@
 #include "buffer_streams.hpp"
 #include "singletons/filesystem_daemon.hpp"
 #include "system_exception.hpp"
-#include <iomanip>
 
 namespace Poseidon {
 

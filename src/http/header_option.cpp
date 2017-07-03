@@ -7,10 +7,20 @@
 #include "../string.hpp"
 #include "../profiler.hpp"
 #include "../buffer_streams.hpp"
+#include "../protocol_exception.hpp"
 
 namespace Poseidon {
 
 namespace Http {
+	HeaderOption::HeaderOption(std::istream &is)
+		: m_base(), m_options()
+	{
+		parse(is);
+		if(!is){
+			DEBUG_THROW(ProtocolException, sslit("Http::HeaderOption parser error"), -1);
+		}
+	}
+
 	std::string HeaderOption::dump() const {
 		PROFILE_ME;
 

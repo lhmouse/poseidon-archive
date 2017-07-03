@@ -44,11 +44,7 @@ namespace Http {
 			: m_boundary(), m_elements()
 		{
 		}
-		Multipart(std::string boundary, std::istream &is)
-			: m_boundary(STD_MOVE(boundary)), m_elements()
-		{
-			parse(is);
-		}
+		Multipart(std::string boundary, std::istream &is);
 #ifndef POSEIDON_CXX11
 		Multipart(const Multipart &rhs)
 			: m_boundary(rhs.m_boundary), m_elements(rhs.m_elements)

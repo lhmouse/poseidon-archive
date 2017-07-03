@@ -149,8 +149,8 @@ public:
 		if(it == old.second){
 			it = m_elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(val));
 		} else {
-			m_elements.erase(++old.first, old.second);
 			it->second.swap(val);
+			m_elements.erase(++old.first, old.second);
 		}
 		return it;
 	}

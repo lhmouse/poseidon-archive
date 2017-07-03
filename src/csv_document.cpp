@@ -7,6 +7,7 @@
 #include "profiler.hpp"
 #include "log.hpp"
 #include "buffer_streams.hpp"
+#include "protocol_exception.hpp"
 
 namespace Poseidon {
 
@@ -32,6 +33,15 @@ namespace {
 			field.insert(field.end(), '\"');
 		}
 		return field;
+	}
+}
+
+CsvDocument::CsvDocument(std::istream &is)
+	: m_elements()
+{
+	parse(is);
+	if(!is){
+		DEBUG_THROW(ProtocolException, sslit("CsvDocument parser error"), -1);
 	}
 }
 

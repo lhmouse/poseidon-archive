@@ -24,11 +24,7 @@ namespace Http {
 			: m_base(STD_MOVE(base)), m_options(STD_MOVE(options))
 		{
 		}
-		explicit HeaderOption(std::istream &is)
-			: m_base(), m_options()
-		{
-			parse(is);
-		}
+		explicit HeaderOption(std::istream &is);
 
 	public:
 		const std::string &get_base() const {

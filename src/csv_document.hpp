@@ -33,11 +33,7 @@ public:
 		reset_header(header);
 	}
 #endif
-	explicit CsvDocument(std::istream &is)
-		: m_elements()
-	{
-		parse(is);
-	}
+	explicit CsvDocument(std::istream &is);
 #ifndef POSEIDON_CXX11
 	CsvDocument(const CsvDocument &rhs)
 		: m_elements(rhs.m_elements)

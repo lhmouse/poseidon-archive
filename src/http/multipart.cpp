@@ -24,6 +24,15 @@ namespace Http {
 		return g_empty_multipart_element;
 	}
 
+	Multipart::Multipart(std::string boundary, std::istream &is)
+		: m_boundary(STD_MOVE(boundary)), m_elements()
+	{
+		parse(is);
+		if(!is){
+			DEBUG_THROW(ProtocolException, sslit("Http::Multipart parser error"), -1);
+		}
+	}
+
 	void Multipart::random_boundary(){
 		PROFILE_ME;
 
