@@ -85,6 +85,28 @@ public:
 			throw;
 		}
 	}
+#ifdef POSEIDON_CXX11
+	void append(boost::container::map<SharedNts, std::string> &&row){
+		AUTO(it, m_elements.begin());
+		try {
+			while(it != m_elements.end()){
+				std::string value;
+				const AUTO(rit, row.find(it->first));
+				if(rit != row.end()){
+					value = std::move(rit->second);
+				}
+				it->second.push_back(STD_MOVE(value));
+				++it;
+			}
+		} catch(...){
+			while(it != m_elements.begin()){
+				--it;
+				it->second.pop_back();
+			}
+			throw;
+		}
+	}
+#endif
 
 	bool empty() const {
 		return size() == 0;
