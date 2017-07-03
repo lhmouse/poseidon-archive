@@ -258,7 +258,7 @@ public:
 	}
 	template<typename T>
 	void set(T rhs){
-		m_data(STD_MOVE_IDN(rhs)).swap(m_data);
+		JsonElement(STD_MOVE_IDN(rhs)).swap(*this);
 	}
 
 	void swap(JsonElement &rhs) NOEXCEPT {
