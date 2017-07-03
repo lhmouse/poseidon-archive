@@ -115,6 +115,15 @@ inline void swap(JsonObject &lhs, JsonObject &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
+inline std::ostream &operator<<(std::ostream &os, const JsonObject &rhs){
+	rhs.dump(os);
+	return os;
+}
+inline std::istream &operator>>(std::istream &is, JsonObject &rhs){
+	rhs.parse(is);
+	return is;
+}
+
 class JsonArray {
 public:
 	typedef boost::container::deque<JsonElement> base_container;
@@ -191,6 +200,15 @@ public:
 
 inline void swap(JsonArray &lhs, JsonArray &rhs) NOEXCEPT {
 	lhs.swap(rhs);
+}
+
+inline std::ostream &operator<<(std::ostream &os, const JsonArray &rhs){
+	rhs.dump(os);
+	return os;
+}
+inline std::istream &operator>>(std::istream &is, JsonArray &rhs){
+	rhs.parse(is);
+	return is;
 }
 
 class JsonElement {
@@ -571,24 +589,6 @@ inline std::ostream &operator<<(std::ostream &os, const JsonElement &rhs){
 	return os;
 }
 inline std::istream &operator>>(std::istream &is, JsonElement &rhs){
-	rhs.parse(is);
-	return is;
-}
-
-inline std::ostream &operator<<(std::ostream &os, const JsonArray &rhs){
-	rhs.dump(os);
-	return os;
-}
-inline std::istream &operator>>(std::istream &is, JsonArray &rhs){
-	rhs.parse(is);
-	return is;
-}
-
-inline std::ostream &operator<<(std::ostream &os, const JsonObject &rhs){
-	rhs.dump(os);
-	return os;
-}
-inline std::istream &operator>>(std::istream &is, JsonObject &rhs){
 	rhs.parse(is);
 	return is;
 }
