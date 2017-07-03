@@ -86,15 +86,15 @@ public:
 	bool has(const SharedNts &key);
 	const JsonElement &get(const char *key) const { // 若指定的键不存在，则返回空元素。
 		return get(SharedNts::view(key));
-	};
+	}
 	const JsonElement &get(const SharedNts &key) const;
 	const JsonElement &at(const char *key) const { // 若指定的键不存在，则抛出 std::out_of_range。
 		return at(SharedNts::view(key));
-	};
+	}
 	const JsonElement &at(const SharedNts &key) const;
 	JsonElement &at(const char *key){ // 若指定的键不存在，则抛出 std::out_of_range。
 		return at(SharedNts::view(key));
-	};
+	}
 	JsonElement &at(const SharedNts &key);
 	iterator set(SharedNts key, JsonElement val);
 #ifdef POSEIDON_CXX11
