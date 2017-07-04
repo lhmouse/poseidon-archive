@@ -18,7 +18,7 @@ class ModuleDepository {
 
 private:
 	static void register_module_raii(ModuleRaiiBase *raii, long priority);
-	static void unregister_module_raii(ModuleRaiiBase *raii);
+	static void unregister_module_raii(ModuleRaiiBase *raii) NOEXCEPT;
 
 	ModuleDepository();
 
@@ -34,7 +34,7 @@ public:
 
 	static void *load(const std::string &path);
 	static void *load_nothrow(const std::string &path);
-	static bool unload(void *base_address);
+	static bool unload(void *base_address) NOEXCEPT;
 
 	static std::vector<SnapshotElement> snapshot();
 };
