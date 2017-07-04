@@ -203,6 +203,9 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 boost::shared_ptr<Module> ModuleDepository::load_nothrow(const char *path)
 try {
 	return load(path);
+} catch(Exception &e){
+	LOG_POSEIDON_ERROR("Exception thrown while loading module: path = ", path, ", what = ", e.what());
+	return VAL_INIT;
 } catch(std::exception &e){
 	LOG_POSEIDON_ERROR("std::exception thrown while loading module: path = ", path, ", what = ", e.what());
 	return VAL_INIT;

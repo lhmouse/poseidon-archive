@@ -149,8 +149,16 @@ try {
 	load(path);
 	return 0;
 } catch(SystemException &e){
+	LOG_POSEIDON_ERROR("SystemException thrown while loading config file: path = ", path, ", code = ", e.get_code(), ", what = ", e.what());
 	return e.get_code();
+} catch(std::exception &e){
+	LOG_POSEIDON_ERROR("std::exception thrown while loading config file: path = ", path, ", what = ", e.what());
+	return EINVAL;
+} catch(...){
+	LOG_POSEIDON_ERROR("Unknown exception thrown while loading config file: path = ", path);
+	return EINVAL;
 }
+
 void ConfigFile::save(const std::string &path){
 	PROFILE_ME;
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Saving config file: ", path);
