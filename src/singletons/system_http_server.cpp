@@ -63,7 +63,7 @@ namespace {
 					send_default(Http::ST_OK);
 				} else if(uri == "load_module"){
 					AUTO_REF(name, request_header.get_params.at("name"));
-					if(!ModuleDepository::load_nothrow(name.c_str())){
+					if(!ModuleDepository::load_nothrow(name)){
 						LOG_POSEIDON_WARNING("Failed to load module: ", name);
 						send_default(Http::ST_GONE);
 						return;

@@ -142,23 +142,23 @@ void ModuleDepository::stop(){
 	}
 }
 
-boost::shared_ptr<Module> ModuleDepository::load(const char *path){
+boost::shared_ptr<Module> ModuleDepository::load(const std::string &path){
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 
 	LOG_POSEIDON_INFO("Checking whether module has already been loaded: ", path);
-	UniqueHandle<DynamicLibraryCloser> handle(::dlopen(path, RTLD_NOW | RTLD_NOLOAD));
-	if(handle){
+	UniqueHandle<DynamicLibraryCloser> handle;
+	if(handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NOLOAD))){
 		LOG_POSEIDON_DEBUG("Module already loaded, trying retrieving a shared_ptr from static map...");
 		const AUTO(it, g_module_map.find<1>(handle.get()));
 		if(it != g_module_map.end<1>()){
 			LOG_POSEIDON_DEBUG("Got shared_ptr from loaded module: ", it->real_path);
 			return it->module;
 		}
-		LOG_POSEIDON_DEBUG("Not found. Let's load as a new module.");
+		LOG_POSEIDON_DEBUG("... No module was found. Load it as a new module.");
 	}
 
 	LOG_POSEIDON_INFO("Loading new module: ", path);
-	if(!handle.reset(::dlopen(path, RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND))){
+	if(!handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND))){
 		SharedNts error(::dlerror());
 		LOG_POSEIDON_ERROR("Error loading dynamic library: ", error);
 		DEBUG_THROW(Exception, STD_MOVE(error));
@@ -200,7 +200,7 @@ boost::shared_ptr<Module> ModuleDepository::load(const char *path){
 
 	return module;
 }
-boost::shared_ptr<Module> ModuleDepository::load_nothrow(const char *path)
+boost::shared_ptr<Module> ModuleDepository::load_nothrow(const std::string &path)
 try {
 	return load(path);
 } catch(Exception &e){

@@ -33,8 +33,8 @@ public:
 	static void start();
 	static void stop();
 
-	static boost::shared_ptr<Module> load(const char *path);
-	static boost::shared_ptr<Module> load_nothrow(const char *path);
+	static boost::shared_ptr<Module> load(const std::string &path);
+	static boost::shared_ptr<Module> load_nothrow(const std::string &path);
 	static bool unload(const boost::shared_ptr<Module> &module);
 	static bool unload(void *base_addr);
 
