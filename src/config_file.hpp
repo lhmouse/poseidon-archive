@@ -7,7 +7,6 @@
 #include "cxx_ver.hpp"
 #include "optional_map.hpp"
 #include <vector>
-#include <algorithm>
 #include <boost/lexical_cast.hpp>
 
 namespace Poseidon {
@@ -44,13 +43,22 @@ public:
 	}
 	std::size_t get_all_raw(std::vector<std::string> &vals, const char *key, bool including_empty = false) const {
 		const AUTO(range, m_contents.range(key));
-		vals.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
+		vals.reserve(vals.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
 		std::size_t ret = 0;
 		for(AUTO(it, range.first); it != range.second; ++it){
-			if(including_empty || !it->second.empty()){
+			if(it->second.empty()){
+				if(!including_empty){
+					continue;
+				}
+#ifdef POSEIDON_CXX11
+				vals.emplace_back();
+#else
+				vals.push_back(VAL_INIT);
+#endif
+			} else {
 				vals.push_back(it->second);
-				++ret;
 			}
+			++ret;
 		}
 		return ret;
 	}
@@ -78,7 +86,7 @@ public:
 	T get(const char *key) const {
 		const AUTO_REF(str, m_contents.get(key));
 		if(str.empty()){
-			return T();
+			return VAL_INIT;
 		}
 		return boost::lexical_cast<T>(str);
 	}
@@ -94,20 +102,44 @@ public:
 	template<typename T>
 	std::size_t get_all(std::vector<T> &vals, const char *key, bool including_empty = false) const {
 		const AUTO(range, m_contents.range(key));
-		vals.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
+		vals.reserve(vals.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
 		std::size_t ret = 0;
 		for(AUTO(it, range.first); it != range.second; ++it){
-			if(including_empty || !it->second.empty()){
+			if(it->second.empty()){
+				if(!including_empty){
+					continue;
+				}
+#ifdef POSEIDON_CXX11
+				vals.emplace_back();
+#else
+				vals.push_back(VAL_INIT);
+#endif
+			} else {
 				vals.push_back(boost::lexical_cast<T>(it->second));
-				++ret;
 			}
+			++ret;
 		}
 		return ret;
 	}
 	template<typename T>
 	std::vector<T> get_all(const char *key, bool including_empty = false) const {
 		std::vector<T> vals;
-		get_all(vals, key, including_empty);
+		const AUTO(range, m_contents.range(key));
+		vals.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
+		for(AUTO(it, range.first); it != range.second; ++it){
+			if(it->second.empty()){
+				if(!including_empty){
+					continue;
+				}
+#ifdef POSEIDON_CXX11
+				vals.emplace_back();
+#else
+				vals.push_back(VAL_INIT);
+#endif
+			} else {
+				vals.push_back(boost::lexical_cast<T>(it->second));
+			}
+		}
 		return vals;
 	}
 
