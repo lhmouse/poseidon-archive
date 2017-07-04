@@ -242,11 +242,11 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 	)	\
 		\
 		template<unsigned ToIndexIdT>	\
-		typename base_container::nth_index<ToIndexIdT>::type::const_iterator project(typename base_container::const_iterator pos) const {	\
+		typename base_container::nth_index<ToIndexIdT>::type::const_iterator project(const_iterator pos) const {	\
 			return m_elements.project<ToIndexIdT>(pos);	\
 		}	\
 		template<unsigned ToIndexIdT>	\
-		typename base_container::nth_index<ToIndexIdT>::type::iterator project(typename base_container::iterator pos){	\
+		typename base_container::nth_index<ToIndexIdT>::type::iterator project(iterator pos){	\
 			return m_elements.project<ToIndexIdT>(pos);	\
 		}	\
 		\
@@ -264,9 +264,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		}	\
 		\
 		template<unsigned IndexIdToSetT>	\
-		bool set_key(typename base_container::iterator pos,	\
-			typename base_container::nth_index<IndexIdToSetT>::type::key_type key)	\
-		{	\
+		bool set_key(iterator pos, typename base_container::nth_index<IndexIdToSetT>::type::key_type key){	\
 			typename base_container::nth_index<IndexIdToSetT>::type::key_type old =	\
 				typename base_container::nth_index<IndexIdToSetT>::type::key_from_value()(*pos);	\
 			return get_index<IndexIdToSetT>().modify_key(m_elements.project<IndexIdToSetT>(pos),	\
