@@ -104,7 +104,7 @@ namespace {
 		struct Initializer { };
 
 		RecursiveMutex queue_mutex;
-		std::deque<JobElement> queue;
+		boost::container::deque<JobElement> queue;
 
 		FiberState state;
 		boost::scoped_ptr<FiberStackAllocator::Storage> stack;
