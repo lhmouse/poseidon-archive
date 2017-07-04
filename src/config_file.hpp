@@ -76,15 +76,19 @@ public:
 	}
 	template<typename T>
 	T get(const char *key) const {
-		T val;
-		get(val, key, T());
-		return val;
+		const AUTO_REF(str, m_contents.get(key));
+		if(str.empty()){
+			return T();
+		}
+		return boost::lexical_cast<T>(str);
 	}
 	template<typename T, typename DefaultT>
 	T get(const char *key, const DefaultT &def_val) const {
-		T val;
-		get(val, key, def_val);
-		return val;
+		const AUTO_REF(str, m_contents.get(key));
+		if(str.empty()){
+			return static_cast<T>(def_val);
+		}
+		return boost::lexical_cast<T>(str);
 	}
 
 	template<typename T>
