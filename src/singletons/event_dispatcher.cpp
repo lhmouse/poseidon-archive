@@ -45,8 +45,7 @@ namespace {
 	public:
 		EventJob(boost::shared_ptr<const EventListener> listener, boost::shared_ptr<EventBase> event)
 			: m_listener(STD_MOVE(listener)), m_event(STD_MOVE(event))
-		{
-		}
+		{ }
 
 	protected:
 		boost::weak_ptr<const void> get_category() const OVERRIDE {

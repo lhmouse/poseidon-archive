@@ -14,8 +14,7 @@ namespace WebSocket {
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"WebSocket::Exception: code = ", get_code(), ", what = ", what());
 	}
-	Exception::~Exception() NOEXCEPT {
-	}
+	Exception::~Exception() NOEXCEPT { }
 }
 
 }

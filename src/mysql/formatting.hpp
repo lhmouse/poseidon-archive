@@ -18,8 +18,7 @@ namespace MySql {
 
 		explicit StringEscaper(const std::string &str_)
 			: str(str_)
-		{
-		}
+		{ }
 	};
 
 	extern std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs);
@@ -29,8 +28,7 @@ namespace MySql {
 
 		explicit DateTimeFormatter(const boost::uint64_t &time_)
 			: time(time_)
-		{
-		}
+		{ }
 	};
 
 	extern std::ostream &operator<<(std::ostream &os, const DateTimeFormatter &rhs);
@@ -40,8 +38,7 @@ namespace MySql {
 
 		explicit UuidFormatter(const Uuid &uuid_)
 			: uuid(uuid_)
-		{
-		}
+		{ }
 	};
 
 	extern std::ostream &operator<<(std::ostream &os, const UuidFormatter &rhs);

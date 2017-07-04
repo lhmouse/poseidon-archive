@@ -24,8 +24,7 @@ namespace Cbpp {
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
 			: m_guard(session), m_category(session), m_weak_session(session)
-		{
-		}
+		{ }
 
 	private:
 		boost::weak_ptr<const void> get_category() const FINAL {
@@ -62,8 +61,7 @@ namespace Cbpp {
 	public:
 		explicit ReadHupJob(const boost::shared_ptr<Session> &session)
 			: SyncJobBase(session)
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -83,8 +81,7 @@ namespace Cbpp {
 			boost::uint16_t message_id, StreamBuffer payload)
 			: SyncJobBase(session)
 			, m_message_id(message_id), m_payload(STD_MOVE(payload))
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -108,8 +105,7 @@ namespace Cbpp {
 			StatusCode status_code, StreamBuffer param)
 			: SyncJobBase(session)
 			, m_status_code(status_code), m_param(STD_MOVE(param))
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -127,10 +123,8 @@ namespace Cbpp {
 		: LowLevelSession(STD_MOVE(socket))
 		, m_max_request_length(MainConfig::get<boost::uint64_t>("cbpp_max_request_length", 16384))
 		, m_size_total(0), m_message_id(0), m_payload()
-	{
-	}
-	Session::~Session(){
-	}
+	{ }
+	Session::~Session(){ }
 
 	void Session::on_read_hup(){
 		PROFILE_ME;

@@ -10,8 +10,7 @@
 namespace Poseidon {
 
 namespace MySql {
-	ObjectBase::~ObjectBase(){
-	}
+	ObjectBase::~ObjectBase(){ }
 
 	bool ObjectBase::is_auto_saving_enabled() const {
 		return atomic_load(m_auto_saves, ATOMIC_CONSUME);

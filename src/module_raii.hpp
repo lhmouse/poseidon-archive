@@ -22,8 +22,7 @@ private:
 public:
 	HandleStack()
 		: m_queue()
-	{
-	}
+	{ }
 	~HandleStack();
 
 public:

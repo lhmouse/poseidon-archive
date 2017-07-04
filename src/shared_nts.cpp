@@ -30,13 +30,11 @@ namespace {
 
 		IncrementalAlloc(void *&inc_ptr_, size_type inc_size_)
 			: inc_ptr(inc_ptr_), inc_size(inc_size_)
-		{
-		}
+		{ }
 		template<typename U>
 		IncrementalAlloc(const IncrementalAlloc<U> &rhs)
 			: inc_ptr(rhs.inc_ptr), inc_size(rhs.inc_size)
-		{
-		}
+		{ }
 
 		pointer address(reference r) const {
 			return reinterpret_cast<pointer>(&reinterpret_cast<char &>(r));

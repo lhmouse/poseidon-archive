@@ -59,13 +59,11 @@ public:
 	JobPromiseContainer()
 		: JobPromise()
 		, m_result(), m_inited(false)
-	{
-	}
+	{ }
 	explicit JobPromiseContainer(typename boost::remove_const<ResultT>::type result)
 		: JobPromise()
 		, m_result(STD_MOVE_IDN(result)), m_inited(false)
-	{
-	}
+	{ }
 
 public:
 	ResultT *try_get() const NOEXCEPT {

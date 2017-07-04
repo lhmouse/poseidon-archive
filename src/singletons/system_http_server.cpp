@@ -32,8 +32,7 @@ namespace {
 		SystemSession(Move<UniqueFile> socket, boost::shared_ptr<const Http::AuthInfo> auth_info, std::string prefix)
 			: Http::Session(STD_MOVE(socket))
 			, m_auth_info(STD_MOVE(auth_info)), m_prefix(STD_MOVE(prefix))
-		{
-		}
+		{ }
 
 	protected:
 		void on_sync_request(Http::RequestHeaders request_header, StreamBuffer /* entity */) OVERRIDE {
@@ -174,8 +173,7 @@ namespace {
 			std::vector<std::string> user_pass, std::string path)
 			: TcpServerBase(bind_addr, cert, private_key)
 			, m_auth_info(Http::create_auth_info(STD_MOVE(user_pass))), m_path(STD_MOVE(path))
-		{
-		}
+		{ }
 
 	public:
 		boost::shared_ptr<TcpSessionBase> on_client_connect(Move<UniqueFile> client) const OVERRIDE {

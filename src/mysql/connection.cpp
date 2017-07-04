@@ -250,8 +250,7 @@ namespace MySql {
 			user_name, password, schema, use_ssl, charset);
 	}
 
-	Connection::~Connection(){
-	}
+	Connection::~Connection(){ }
 
 	void Connection::execute_sql(const char *sql, std::size_t len){
 		static_cast<DelegatedConnection &>(*this).do_execute_sql(sql, len);

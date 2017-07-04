@@ -42,8 +42,7 @@ public:
 
 	SharedNts(const SharedNts &rhs) NOEXCEPT
 		: m_ptr(rhs.m_ptr)
-	{
-	}
+	{ }
 	SharedNts &operator=(const SharedNts &rhs) NOEXCEPT {
 		m_ptr = rhs.m_ptr;
 		return *this;

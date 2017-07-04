@@ -44,8 +44,7 @@ namespace MongoDb {
 	public:
 		ObjectBase()
 			: m_auto_saves(false), m_combined_write_stamp(NULLPTR)
-		{
-		}
+		{ }
 		// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
 		~ObjectBase();
 
@@ -76,8 +75,7 @@ namespace MongoDb {
 	public:
 		explicit Field(ObjectBase *parent, ValueT value = ValueT())
 			: m_parent(parent), m_value(STD_MOVE_IDN(value))
-		{
-		}
+		{ }
 
 	public:
 		const ValueT &unlocked_get() const {

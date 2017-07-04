@@ -12,10 +12,8 @@
 namespace Poseidon {
 
 namespace WebSocket {
-	Writer::Writer(){
-	}
-	Writer::~Writer(){
-	}
+	Writer::Writer(){ }
+	Writer::~Writer(){ }
 
 	long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 		PROFILE_ME;

@@ -40,10 +40,8 @@ namespace Cbpp {
 	LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer)
 		: TcpClientBase(addr, use_ssl, verify_peer), Reader(), Writer()
 		, m_last_pong_time((boost::uint64_t)-1)
-	{
-	}
-	LowLevelClient::~LowLevelClient(){
-	}
+	{ }
+	LowLevelClient::~LowLevelClient(){ }
 
 	void LowLevelClient::create_keep_alive_timer(){
 		PROFILE_ME;
@@ -57,10 +55,8 @@ namespace Cbpp {
 			boost::bind(&keep_alive_timer_proc, virtual_weak_from_this<LowLevelClient>(), _2, _3));
 	}
 
-	void LowLevelClient::on_connect(){
-	}
-	void LowLevelClient::on_read_hup(){
-	}
+	void LowLevelClient::on_connect(){ }
+	void LowLevelClient::on_read_hup(){ }
 	void LowLevelClient::on_receive(StreamBuffer data){
 		PROFILE_ME;
 

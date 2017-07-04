@@ -19,8 +19,7 @@ namespace Http {
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 			"Http::Exception: code = ", get_code(), ", what = ", what());
 	}
-	Exception::~Exception() NOEXCEPT {
-	}
+	Exception::~Exception() NOEXCEPT { }
 
 	const OptionalMap &Exception::get_headers() const NOEXCEPT {
 		return m_headers ? *m_headers : g_empty_heades;

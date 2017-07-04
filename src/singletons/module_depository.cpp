@@ -81,8 +81,7 @@ namespace {
 			: module(STD_MOVE(module_)), handle(module->get_handle())
 			, real_path(module->get_real_path()), base_addr(module->get_base_addr())
 			, handles(STD_MOVE(handles_))
-		{
-		}
+		{ }
 	};
 	MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,
 		UNIQUE_MEMBER_INDEX(module)
@@ -102,8 +101,7 @@ namespace {
 			ModuleRaiiBase *raii_, long priority_)
 			: base_addr(base_addr_)
 			, raii(raii_), priority(priority_)
-		{
-		}
+		{ }
 	};
 	MULTI_INDEX_MAP(ModuleRaiiMap, ModuleRaiiMapElement,
 		UNIQUE_MEMBER_INDEX(raii)

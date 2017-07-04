@@ -22,8 +22,7 @@ namespace Cbpp {
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Client> &client)
 			: m_guard(client), m_category(client), m_weak_client(client)
-		{
-		}
+		{ }
 
 	private:
 		boost::weak_ptr<const void> get_category() const FINAL {
@@ -62,8 +61,7 @@ namespace Cbpp {
 	public:
 		explicit ConnectJob(const boost::shared_ptr<Client> &client)
 			: SyncJobBase(client)
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -77,8 +75,7 @@ namespace Cbpp {
 	public:
 		explicit ReadHupJob(const boost::shared_ptr<Client> &client)
 			: SyncJobBase(client)
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -97,8 +94,7 @@ namespace Cbpp {
 		DataMessageJob(const boost::shared_ptr<Client> &client, unsigned message_id, StreamBuffer payload)
 			: SyncJobBase(client)
 			, m_message_id(message_id), m_payload(STD_MOVE(payload))
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -117,8 +113,7 @@ namespace Cbpp {
 		ControlMessageJob(const boost::shared_ptr<Client> &client, StatusCode status_code, StreamBuffer param)
 			: SyncJobBase(client)
 			, m_status_code(status_code), m_param(STD_MOVE(param))
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -130,10 +125,8 @@ namespace Cbpp {
 
 	Client::Client(const SockAddr &addr, bool use_ssl, bool verify_peer)
 		: LowLevelClient(addr, use_ssl, verify_peer)
-	{
-	}
-	Client::~Client(){
-	}
+	{ }
+	Client::~Client(){ }
 
 	void Client::on_connect(){
 		PROFILE_ME;
@@ -193,8 +186,7 @@ namespace Cbpp {
 		return true;
 	}
 
-	void Client::on_sync_connect(){
-	}
+	void Client::on_sync_connect(){ }
 
 	void Client::on_sync_control_message(StatusCode status_code, StreamBuffer param){
 		PROFILE_ME;

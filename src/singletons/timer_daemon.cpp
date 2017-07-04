@@ -43,8 +43,7 @@ namespace {
 	public:
 		TimerJob(boost::weak_ptr<TimerItem> item, boost::uint64_t now)
 			: m_item(STD_MOVE(item)), m_now(now)
-		{
-		}
+		{ }
 
 	public:
 		boost::weak_ptr<const void> get_category() const OVERRIDE {
@@ -69,8 +68,7 @@ namespace {
 
 		TimerQueueElement(boost::uint64_t next_, boost::weak_ptr<TimerItem> item_, unsigned long stamp_)
 			: next(next_), item(STD_MOVE(item_)), stamp(stamp_)
-		{
-		}
+		{ }
 
 		bool operator<(const TimerQueueElement &rhs) const {
 			return next > rhs.next;

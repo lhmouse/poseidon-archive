@@ -10,8 +10,7 @@ namespace Poseidon {
 
 RecursiveMutex::UniqueLock::UniqueLock()
 	: m_target(NULLPTR), m_locked(false)
-{
-}
+{ }
 RecursiveMutex::UniqueLock::UniqueLock(RecursiveMutex &target, bool locks_target)
 	: m_target(&target), m_locked(false)
 {

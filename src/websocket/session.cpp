@@ -31,8 +31,7 @@ namespace WebSocket {
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
 			: m_guard(safe_get_parent(session)), m_category(safe_get_parent(session)), m_weak_session(session)
-		{
-		}
+		{ }
 
 	private:
 		boost::weak_ptr<const void> get_category() const FINAL {
@@ -71,8 +70,7 @@ namespace WebSocket {
 	public:
 		explicit ReadHupJob(const boost::shared_ptr<Session> &session)
 			: SyncJobBase(session)
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -91,8 +89,7 @@ namespace WebSocket {
 		DataMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
 			: SyncJobBase(session)
 			, m_opcode(opcode), m_payload(STD_MOVE(payload))
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -115,8 +112,7 @@ namespace WebSocket {
 		ControlMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
 			: SyncJobBase(session)
 			, m_opcode(opcode), m_payload(STD_MOVE(payload))
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -134,10 +130,8 @@ namespace WebSocket {
 		: LowLevelSession(parent)
 		, m_max_request_length(MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
 		, m_size_total(0), m_opcode(OP_INVALID)
-	{
-	}
-	Session::~Session(){
-	}
+	{ }
+	Session::~Session(){ }
 
 	void Session::on_read_hup(){
 		PROFILE_ME;

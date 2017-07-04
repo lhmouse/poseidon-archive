@@ -41,10 +41,8 @@ namespace WebSocket {
 	LowLevelClient::LowLevelClient(const boost::shared_ptr<Http::LowLevelClient> &parent)
 		: Http::UpgradedSessionBase(parent), Reader(false), Writer()
 		, m_last_pong_time((boost::uint64_t)-1)
-	{
-	}
-	LowLevelClient::~LowLevelClient(){
-	}
+	{ }
+	LowLevelClient::~LowLevelClient(){ }
 
 	void LowLevelClient::create_keep_alive_timer(){
 		PROFILE_ME;
@@ -58,10 +56,8 @@ namespace WebSocket {
 			boost::bind(&keep_alive_timer_proc, virtual_weak_from_this<LowLevelClient>(), _2, _3));
 	}
 
-	void LowLevelClient::on_connect(){
-	}
-	void LowLevelClient::on_read_hup(){
-	}
+	void LowLevelClient::on_connect(){ }
+	void LowLevelClient::on_read_hup(){ }
 	void LowLevelClient::on_close(int err_code){
 		(void)err_code;
 	}

@@ -47,8 +47,7 @@ namespace {
 namespace Cbpp {
 	Reader::Reader()
 		: m_size_expecting(2), m_state(S_PAYLOAD_SIZE)
-	{
-	}
+	{ }
 	Reader::~Reader(){
 		if(m_state != S_PAYLOAD_SIZE){
 			LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature message has to be discarded.");

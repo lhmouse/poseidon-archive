@@ -11,10 +11,8 @@ namespace Poseidon {
 
 JobPromise::JobPromise() NOEXCEPT
 	: m_satisfied(false), m_except()
-{
-}
-JobPromise::~JobPromise(){
-}
+{ }
+JobPromise::~JobPromise(){ }
 
 bool JobPromise::would_throw() const NOEXCEPT {
 	const RecursiveMutex::UniqueLock lock(m_mutex);

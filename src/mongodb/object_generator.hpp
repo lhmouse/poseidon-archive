@@ -71,8 +71,7 @@ public:
 #define FIELD_BLOB(id_)                   , id_(this)
 
 		MONGODB_OBJECT_FIELDS
-	{
-	}
+	{ }
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED

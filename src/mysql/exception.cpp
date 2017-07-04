@@ -14,8 +14,7 @@ namespace MySql {
 	{
 		LOG_POSEIDON_ERROR("MySql::Exception: schema = ", get_schema(), ", code = ", get_code(), ", what = ", what());
 	}
-	Exception::~Exception() NOEXCEPT {
-	}
+	Exception::~Exception() NOEXCEPT { }
 }
 
 }

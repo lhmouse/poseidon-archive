@@ -57,8 +57,7 @@ SocketBase::SocketBase(Move<UniqueFile> socket)
 		DEBUG_THROW(SystemException);
 	}
 }
-SocketBase::~SocketBase(){
-}
+SocketBase::~SocketBase(){ }
 
 bool SocketBase::should_really_shutdown_write() const NOEXCEPT {
 	return atomic_load(m_really_shutdown_write, ATOMIC_CONSUME);

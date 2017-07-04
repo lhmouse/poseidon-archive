@@ -61,8 +61,7 @@ namespace {
 			std::string host, unsigned port)
 			: m_promise(STD_MOVE(promise))
 			, m_host(STD_MOVE(host)), m_port(port)
-		{
-		}
+		{ }
 
 	public:
 		void execute() const {

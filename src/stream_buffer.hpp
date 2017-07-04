@@ -29,8 +29,7 @@ public:
 	public:
 		explicit ChunkEnumerator(StreamBuffer &rhs) NOEXCEPT
 			: m_chunk(rhs.m_first)
-		{
-		}
+		{ }
 
 	public:
 		unsigned char *begin() const NOEXCEPT;
@@ -70,12 +69,10 @@ public:
 	public:
 		explicit ConstChunkEnumerator(const StreamBuffer &rhs) NOEXCEPT
 			: m_chunk(rhs.m_first)
-		{
-		}
+		{ }
 		ConstChunkEnumerator(const ChunkEnumerator &rhs) NOEXCEPT
 			: m_chunk(rhs.m_chunk)
-		{
-		}
+		{ }
 
 	public:
 		const unsigned char *begin() const NOEXCEPT;
@@ -115,8 +112,7 @@ public:
 	public:
 		explicit ReadIterator(StreamBuffer &owner)
 			: m_owner(&owner)
-		{
-		}
+		{ }
 
 	public:
 		int operator*() const {
@@ -139,8 +135,7 @@ public:
 	public:
 		explicit WriteIterator(StreamBuffer &owner)
 			: m_owner(&owner)
-		{
-		}
+		{ }
 
 	public:
 		WriteIterator &operator=(unsigned char byte){
@@ -166,8 +161,7 @@ private:
 public:
 	CONSTEXPR StreamBuffer() NOEXCEPT
 		: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
-	{
-	}
+	{ }
 
 	StreamBuffer(const void *data, std::size_t bytes);
 	explicit StreamBuffer(const char *str);

@@ -21,8 +21,7 @@ namespace {
 
 		ProfileKey(const char *file_, unsigned long line_, const char *func_)
 			: file(file_), line(line_), func(func_)
-		{
-		}
+		{ }
 
 		bool operator<(const ProfileKey &rhs) const {
 			const int file_cmp = std::strcmp(file, rhs.file);
@@ -40,8 +39,7 @@ namespace {
 
 		ProfileCounters()
 			: samples(0), ns_total(0), ns_exclusive(0)
-		{
-		}
+		{ }
 	};
 
 	bool g_enabled = true;

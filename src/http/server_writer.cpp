@@ -11,10 +11,8 @@
 namespace Poseidon {
 
 namespace Http {
-	ServerWriter::ServerWriter(){
-	}
-	ServerWriter::~ServerWriter(){
-	}
+	ServerWriter::ServerWriter(){ }
+	ServerWriter::~ServerWriter(){ }
 
 	long ServerWriter::put_response(ResponseHeaders response_headers, StreamBuffer entity, bool set_content_length){
 		PROFILE_ME;

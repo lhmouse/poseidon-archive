@@ -351,8 +351,7 @@ namespace MongoDb {
 			user_name, password, auth_database, use_ssl, database);
 	}
 
-	Connection::~Connection(){
-	}
+	Connection::~Connection(){ }
 
 	void Connection::execute_bson(const BsonBuilder &bson){
 		static_cast<DelegatedConnection &>(*this).do_execute_bson(bson);

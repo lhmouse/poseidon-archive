@@ -130,10 +130,8 @@ namespace {
 	public:
 		explicit OperationBase(boost::shared_ptr<JobPromise> promise)
 			: m_promise(STD_MOVE(promise))
-		{
-		}
-		virtual ~OperationBase(){
-		}
+		{ }
+		virtual ~OperationBase(){ }
 
 	public:
 		void set_probe(boost::shared_ptr<const void> probe){
@@ -189,8 +187,7 @@ namespace {
 			boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace)
 			: OperationBase(STD_MOVE(promise))
 			, m_object(STD_MOVE(object)), m_to_replace(to_replace)
-		{
-		}
+		{ }
 
 	protected:
 		bool should_use_slave() const {
@@ -230,8 +227,7 @@ namespace {
 			boost::shared_ptr<MySql::ObjectBase> object, std::string query)
 			: OperationBase(STD_MOVE(promise))
 			, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
-		{
-		}
+		{ }
 
 	protected:
 		bool should_use_slave() const {
@@ -272,8 +268,7 @@ namespace {
 			const char *table_hint, std::string query)
 			: OperationBase(STD_MOVE(promise))
 			, m_table_hint(table_hint), m_query(STD_MOVE(query))
-		{
-		}
+		{ }
 
 	protected:
 		bool should_use_slave() const {
@@ -306,8 +301,7 @@ namespace {
 			QueryCallback callback, const char *table_hint, std::string query)
 			: OperationBase(STD_MOVE(promise))
 			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_query(STD_MOVE(query))
-		{
-		}
+		{ }
 
 	protected:
 		bool should_use_slave() const {
@@ -352,8 +346,7 @@ namespace {
 			QueryCallback callback, const char *table_hint, bool from_slave)
 			: OperationBase(STD_MOVE(promise))
 			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_from_slave(from_slave)
-		{
-		}
+		{ }
 
 	protected:
 		bool should_use_slave() const {
@@ -365,8 +358,7 @@ namespace {
 		const char *get_table() const OVERRIDE {
 			return m_table_hint;
 		}
-		void generate_sql(std::string & /* query */) const OVERRIDE {
-		}
+		void generate_sql(std::string & /* query */) const OVERRIDE { }
 		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string & /* query */) const OVERRIDE {
 			PROFILE_ME;
 
@@ -382,8 +374,7 @@ namespace {
 	public:
 		explicit WaitOperation(boost::shared_ptr<JobPromise> promise)
 			: OperationBase(STD_MOVE(promise))
-		{
-		}
+		{ }
 		~WaitOperation(){
 			try {
 				OperationBase::set_success();
@@ -437,8 +428,7 @@ namespace {
 
 			OperationQueueElement(boost::shared_ptr<OperationBase> operation_, boost::uint64_t due_time_)
 				: operation(STD_MOVE(operation_)), due_time(due_time_), retry_count(0)
-			{
-			}
+			{ }
 		};
 
 	private:
@@ -454,8 +444,7 @@ namespace {
 		MySqlThread()
 			: m_running(false)
 			, m_urgent(false)
-		{
-		}
+		{ }
 
 	private:
 		bool pump_one_operation(boost::shared_ptr<MySql::Connection> &master_conn,

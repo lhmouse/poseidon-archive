@@ -13,15 +13,11 @@ namespace Poseidon {
 namespace WebSocket {
 	LowLevelSession::LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent)
 		: Http::UpgradedSessionBase(parent), Reader(true), Writer()
-	{
-	}
-	LowLevelSession::~LowLevelSession(){
-	}
+	{ }
+	LowLevelSession::~LowLevelSession(){ }
 
-	void LowLevelSession::on_connect(){
-	}
-	void LowLevelSession::on_read_hup(){
-	}
+	void LowLevelSession::on_connect(){ }
+	void LowLevelSession::on_read_hup(){ }
 	void LowLevelSession::on_close(int err_code){
 		(void)err_code;
 	}

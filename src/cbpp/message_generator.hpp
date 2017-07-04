@@ -87,8 +87,7 @@ public:
 #define FIELD_LIST(id_, ...)          , id_()
 
 		MESSAGE_FIELDS
-	{
-	}
+	{ }
 #endif
 
 #undef FIELD_VINT
@@ -127,8 +126,7 @@ public:
 #define FIELD_LIST(id_, ...)          , id_(STD_MOVE(id_ ## X_))
 
 		MESSAGE_FIELDS
-	{
-	}
+	{ }
 	explicit MESSAGE_NAME(::Poseidon::StreamBuffer buffer_)
 		: ::Poseidon::Cbpp::MessageBase()
 	{

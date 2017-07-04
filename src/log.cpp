@@ -90,8 +90,7 @@ void Logger::set_thread_tag(const char *new_tag) NOEXCEPT {
 
 Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEPT
 	: m_mask(mask), m_file(file), m_line(line)
-{
-}
+{ }
 Logger::~Logger() NOEXCEPT {
 	static const bool stderr_uses_ascii_colors = ::isatty(STDERR_FILENO);
 	static const bool stdout_uses_ascii_colors = ::isatty(STDOUT_FILENO);
@@ -194,8 +193,7 @@ Logger::~Logger() NOEXCEPT {
 			assert(err_code == 0);
 			throw;
 		}
-	} catch(...){
-	}
+	} catch(...){ }
 }
 
 void Logger::put(bool val){

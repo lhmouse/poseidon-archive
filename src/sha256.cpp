@@ -27,10 +27,8 @@ namespace {
 
 Sha256_streambuf::Sha256_streambuf()
 	: m_reg(SHA256_REG_INIT), m_bytes(0)
-{
-}
-Sha256_streambuf::~Sha256_streambuf(){
-}
+{ }
+Sha256_streambuf::~Sha256_streambuf(){ }
 
 void Sha256_streambuf::eat_chunk(){
 	// https://en.wikipedia.org/wiki/SHA-2
@@ -191,7 +189,6 @@ Sha256 Sha256_streambuf::finalize(){
 	return sha256;
 }
 
-Sha256_ostream::~Sha256_ostream(){
-}
+Sha256_ostream::~Sha256_ostream(){ }
 
 }

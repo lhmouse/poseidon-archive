@@ -29,8 +29,7 @@ namespace WebSocket {
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Client> &client)
 			: m_guard(safe_get_parent(client)), m_category(safe_get_parent(client)), m_weak_client(client)
-		{
-		}
+		{ }
 
 	private:
 		boost::weak_ptr<const void> get_category() const FINAL {
@@ -69,8 +68,7 @@ namespace WebSocket {
 	public:
 		explicit ConnectJob(const boost::shared_ptr<Client> &client)
 			: SyncJobBase(client)
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -84,8 +82,7 @@ namespace WebSocket {
 	public:
 		explicit ReadHupJob(const boost::shared_ptr<Client> &client)
 			: SyncJobBase(client)
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -104,8 +101,7 @@ namespace WebSocket {
 		DataMessageJob(const boost::shared_ptr<Client> &client, OpCode opcode, StreamBuffer payload)
 			: SyncJobBase(client)
 			, m_opcode(opcode), m_payload(STD_MOVE(payload))
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -125,8 +121,7 @@ namespace WebSocket {
 		ControlMessageJob(const boost::shared_ptr<Client> &client, OpCode opcode, StreamBuffer payload)
 			: SyncJobBase(client)
 			, m_opcode(opcode), m_payload(STD_MOVE(payload))
-		{
-		}
+		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -139,10 +134,8 @@ namespace WebSocket {
 
 	Client::Client(const boost::shared_ptr<Http::LowLevelClient> &parent)
 		: LowLevelClient(parent)
-	{
-	}
-	Client::~Client(){
-	}
+	{ }
+	Client::~Client(){ }
 
 	void Client::on_connect(){
 		PROFILE_ME;
@@ -199,8 +192,7 @@ namespace WebSocket {
 		return true;
 	}
 
-	void Client::on_sync_connect(){
-	}
+	void Client::on_sync_connect(){ }
 
 	void Client::on_sync_control_message(OpCode opcode, StreamBuffer payload){
 		PROFILE_ME;

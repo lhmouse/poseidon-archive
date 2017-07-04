@@ -46,10 +46,8 @@ namespace {
 
 Base64Encoder::Base64Encoder()
 	: m_seq(1)
-{
-}
-Base64Encoder::~Base64Encoder(){
-}
+{ }
+Base64Encoder::~Base64Encoder(){ }
 
 void Base64Encoder::clear(){
 	m_seq = 1;
@@ -103,10 +101,8 @@ StreamBuffer Base64Encoder::finalize(){
 
 Base64Decoder::Base64Decoder()
 	: m_seq(1)
-{
-}
-Base64Decoder::~Base64Decoder(){
-}
+{ }
+Base64Decoder::~Base64Decoder(){ }
 
 void Base64Decoder::clear(){
 	m_seq = 1;

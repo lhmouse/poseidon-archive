@@ -15,13 +15,10 @@ namespace Poseidon {
 namespace Http {
 	LowLevelSession::LowLevelSession(Move<UniqueFile> socket)
 		: TcpSessionBase(STD_MOVE(socket)), ServerReader(), ServerWriter()
-	{
-	}
-	LowLevelSession::~LowLevelSession(){
-	}
+	{ }
+	LowLevelSession::~LowLevelSession(){ }
 
-	void LowLevelSession::on_connect(){
-	}
+	void LowLevelSession::on_connect(){ }
 	void LowLevelSession::on_read_hup(){
 		PROFILE_ME;
 

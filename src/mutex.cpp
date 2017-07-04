@@ -10,8 +10,7 @@ namespace Poseidon {
 
 Mutex::UniqueLock::UniqueLock()
 	: m_target(NULLPTR), m_locked(false)
-{
-}
+{ }
 Mutex::UniqueLock::UniqueLock(Mutex &target, bool locks_target)
 	: m_target(&target), m_locked(false)
 {

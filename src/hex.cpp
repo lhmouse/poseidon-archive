@@ -28,10 +28,8 @@ namespace {
 
 HexEncoder::HexEncoder(bool upper_case)
 	: m_upper_case(upper_case)
-{
-}
-HexEncoder::~HexEncoder(){
-}
+{ }
+HexEncoder::~HexEncoder(){ }
 
 void HexEncoder::clear(){
 	m_buffer.clear();
@@ -62,10 +60,8 @@ StreamBuffer HexEncoder::finalize(){
 
 HexDecoder::HexDecoder()
 	: m_seq(1)
-{
-}
-HexDecoder::~HexDecoder(){
-}
+{ }
+HexDecoder::~HexDecoder(){ }
 
 void HexDecoder::clear(){
 	m_seq = 1;

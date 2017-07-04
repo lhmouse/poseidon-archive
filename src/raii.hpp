@@ -25,12 +25,10 @@ private:
 public:
 	UniqueHandle() NOEXCEPT
 		: m_handle(CloserT()())
-	{
-	}
+	{ }
 	explicit UniqueHandle(Handle rhs) NOEXCEPT
 		: m_handle(rhs)
-	{
-	}
+	{ }
 	UniqueHandle(Move<UniqueHandle> rhs) NOEXCEPT
 		: m_handle(CloserT()())
 	{

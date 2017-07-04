@@ -48,8 +48,7 @@ private:
 public:
 	Sha1_ostream()
 		: std::ostream(&m_sb)
-	{
-	}
+	{ }
 	~Sha1_ostream() OVERRIDE;
 
 public:

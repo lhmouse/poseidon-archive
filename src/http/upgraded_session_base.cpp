@@ -12,10 +12,8 @@ namespace Poseidon {
 namespace Http {
 	UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<TcpSessionBase> &parent)
 		: m_parent(parent)
-	{
-	}
-	UpgradedSessionBase::~UpgradedSessionBase(){
-	}
+	{ }
+	UpgradedSessionBase::~UpgradedSessionBase(){ }
 
 	bool UpgradedSessionBase::has_been_shutdown_read() const NOEXCEPT {
 		const AUTO(parent, get_parent());

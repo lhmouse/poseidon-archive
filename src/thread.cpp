@@ -32,8 +32,7 @@ struct Thread::Impl {
 
 Thread::Thread() NOEXCEPT
 	: m_impl()
-{
-}
+{ }
 Thread::Thread(boost::function<void ()> proc, const char *tag)
 	: m_impl()
 {

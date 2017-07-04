@@ -31,8 +31,7 @@ SslFactoryBase::SslFactoryBase(){
 		std::abort();
 	}
 }
-SslFactoryBase::~SslFactoryBase(){
-}
+SslFactoryBase::~SslFactoryBase(){ }
 
 void SslFactoryBase::create_ssl(UniqueSsl &ssl) const {
 	ssl.reset(::SSL_new(m_ctx.get()));
@@ -70,8 +69,7 @@ ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
 		DEBUG_THROW(Exception, sslit("::SSL_CTX_set_session_id_context() failed"));
 	}
 }
-ServerSslFactory::~ServerSslFactory(){
-}
+ServerSslFactory::~ServerSslFactory(){ }
 
 ClientSslFactory::ClientSslFactory(bool verify_peer)
 	: SslFactoryBase()
@@ -92,7 +90,6 @@ ClientSslFactory::ClientSslFactory(bool verify_peer)
 		::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_NONE, NULLPTR);
 	}
 }
-ClientSslFactory::~ClientSslFactory(){
-}
+ClientSslFactory::~ClientSslFactory(){ }
 
 }

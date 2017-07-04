@@ -168,8 +168,7 @@ namespace {
 
 	class OperationBase : NONCOPYABLE {
 	public:
-		virtual ~OperationBase(){
-		}
+		virtual ~OperationBase(){ }
 
 	public:
 		virtual void execute() const = 0;
@@ -188,8 +187,7 @@ namespace {
 			boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 			: m_promise(STD_MOVE(promise)), m_path(STD_MOVE(path))
 			, m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
-		{
-		}
+		{ }
 
 	public:
 		void execute() const OVERRIDE {
@@ -232,8 +230,7 @@ namespace {
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_data(STD_MOVE(data))
 			, m_begin(begin), m_throws_if_exists(throws_if_exists)
-		{
-		}
+		{ }
 
 	public:
 		void execute() const OVERRIDE {
@@ -269,8 +266,7 @@ namespace {
 			std::string path, bool throws_if_does_not_exist)
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_throws_if_does_not_exist(throws_if_does_not_exist)
-		{
-		}
+		{ }
 
 	public:
 		void execute() const OVERRIDE {
@@ -306,8 +302,7 @@ namespace {
 			std::string path, std::string new_path)
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_new_path(STD_MOVE(new_path))
-		{
-		}
+		{ }
 
 	public:
 		void execute() const OVERRIDE {
@@ -343,8 +338,7 @@ namespace {
 			std::string path, bool throws_if_exists)
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_throws_if_exists(throws_if_exists)
-		{
-		}
+		{ }
 
 	public:
 		void execute() const OVERRIDE {
@@ -380,8 +374,7 @@ namespace {
 			std::string path, bool throws_if_does_not_exist)
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_throws_if_does_not_exist(throws_if_does_not_exist)
-		{
-		}
+		{ }
 
 	public:
 		void execute() const OVERRIDE {

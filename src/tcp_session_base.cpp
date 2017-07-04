@@ -60,10 +60,8 @@ TcpSessionBase::TcpSessionBase(Move<UniqueFile> socket)
 	: SocketBase(STD_MOVE(socket)), SessionBase()
 	, m_connected_notified(false), m_read_hup_notified(false)
 	, m_shutdown_time((boost::uint64_t)-1), m_last_use_time((boost::uint64_t)-1)
-{
-}
-TcpSessionBase::~TcpSessionBase(){
-}
+{ }
+TcpSessionBase::~TcpSessionBase(){ }
 
 void TcpSessionBase::init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter){
 	swap(m_ssl_filter, ssl_filter);

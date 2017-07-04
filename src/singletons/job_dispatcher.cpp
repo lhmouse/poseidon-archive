@@ -40,8 +40,7 @@ namespace {
 		JobElement(boost::shared_ptr<JobBase> job_, boost::shared_ptr<const bool> withdrawn_)
 			: job(STD_MOVE(job_)), withdrawn(STD_MOVE(withdrawn_))
 			, promise(), expiry_time((boost::uint64_t)-1), insignificant(false)
-		{
-		}
+		{ }
 	};
 
 	class FiberStackAllocator : NONCOPYABLE {
@@ -78,8 +77,7 @@ namespace {
 	public:
 		FiberStackAllocator()
 			: m_mutex(), m_pool(), m_size(0)
-		{
-		}
+		{ }
 
 	public:
 		void allocate(boost::scoped_ptr<Storage> &ptr){

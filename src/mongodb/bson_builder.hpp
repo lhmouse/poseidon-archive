@@ -51,13 +51,11 @@ namespace MongoDb {
 	public:
 		BsonBuilder()
 			: m_elements()
-		{
-		}
+		{ }
 #ifndef POSEIDON_CXX11
 		BsonBuilder(const BsonBuilder &rhs)
 			: m_elements(rhs.m_elements)
-		{
-		}
+		{ }
 		BsonBuilder &operator=(const BsonBuilder &rhs){
 			m_elements = rhs.m_elements;
 			return *this;

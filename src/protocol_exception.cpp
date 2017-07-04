@@ -13,7 +13,6 @@ ProtocolException::ProtocolException(const char *file, std::size_t line, const c
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 		"Constructing ProtocolException: code = ", get_code(), ", what = ", what());
 }
-ProtocolException::~ProtocolException() NOEXCEPT {
-}
+ProtocolException::~ProtocolException() NOEXCEPT { }
 
 }

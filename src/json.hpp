@@ -228,12 +228,10 @@ private:
 public:
 	JsonElement(JsonNull = JsonNull())
 		: m_data(JsonNull())
-	{
-	}
+	{ }
 	JsonElement(bool rhs)
 		: m_data(rhs)
-	{
-	}
+	{ }
 #ifdef POSEIDOX_CXX11
 	template<typename T, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = nullptr>
 	JsonElement(T rhs)
@@ -242,24 +240,19 @@ public:
 	JsonElement(T rhs, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = 0)
 #endif
 		: m_data(static_cast<double>(rhs))
-	{
-	}
+	{ }
 	JsonElement(const char *rhs)
 		: m_data(std::string(rhs))
-	{
-	}
+	{ }
 	JsonElement(std::string rhs)
 		: m_data(STD_MOVE_IDN(rhs))
-	{
-	}
+	{ }
 	JsonElement(JsonObject rhs)
 		: m_data(STD_MOVE_IDN(rhs))
-	{
-	}
+	{ }
 	JsonElement(JsonArray rhs)
 		: m_data(STD_MOVE_IDN(rhs))
-	{
-	}
+	{ }
 
 public:
 	Type get_type() const {
@@ -295,13 +288,11 @@ inline void swap(JsonElement &lhs, JsonElement &rhs) NOEXCEPT {
 
 inline JsonObject::JsonObject()
 	: m_elements()
-{
-}
+{ }
 #ifndef POSEIDON_CXX11
 inline JsonObject::JsonObject(const JsonObject &rhs)
 	: m_elements(rhs.m_elements)
-{
-}
+{ }
 inline JsonObject &JsonObject::operator=(const JsonObject &rhs){
 	m_elements = rhs.m_elements;
 	return *this;
@@ -446,13 +437,11 @@ inline void JsonObject::swap(JsonObject &rhs) NOEXCEPT {
 
 inline JsonArray::JsonArray()
 	: m_elements()
-{
-}
+{ }
 #ifndef POSEIDON_CXX11
 inline JsonArray::JsonArray(const JsonArray &rhs)
 	: m_elements(rhs.m_elements)
-{
-}
+{ }
 inline JsonArray &JsonArray::operator=(const JsonArray &rhs){
 	m_elements = rhs.m_elements;
 	return *this;

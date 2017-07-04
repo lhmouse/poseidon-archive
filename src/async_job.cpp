@@ -23,10 +23,8 @@ namespace {
 			boost::shared_ptr<JobPromise> promise, boost::function<void ()> proc)
 			: m_category(STD_MOVE(category))
 			, m_promise(STD_MOVE(promise)), m_proc(STD_MOVE_IDN(proc))
-		{
-		}
-		~AsyncJob(){
-		}
+		{ }
+		~AsyncJob(){ }
 
 	protected:
 		boost::weak_ptr<const void> get_category() const OVERRIDE {

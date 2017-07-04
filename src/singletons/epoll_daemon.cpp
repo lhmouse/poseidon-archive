@@ -41,8 +41,7 @@ namespace {
 			: socket(STD_MOVE_IDN(socket_))
 			, ptr(socket.get()), read_time(now), write_time(now), err_code(-1)
 			, readable(false), writeable(false)
-		{
-		}
+		{ }
 	};
 	MULTI_INDEX_MAP(SocketMap, SocketElement,
 		UNIQUE_MEMBER_INDEX(ptr)

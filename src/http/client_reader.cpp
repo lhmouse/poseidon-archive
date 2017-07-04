@@ -15,8 +15,7 @@ namespace Poseidon {
 namespace Http {
 	ClientReader::ClientReader()
 		: m_size_expecting(EXPECTING_NEW_LINE), m_state(S_FIRST_HEADER)
-	{
-	}
+	{ }
 	ClientReader::~ClientReader(){
 		if(m_state != S_FIRST_HEADER){
 			LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature response has to be discarded.");

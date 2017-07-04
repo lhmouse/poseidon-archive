@@ -55,8 +55,7 @@ SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
 		DEBUG_THROW(Exception, sslit("::SSL_set_fd() failed"));
 	}
 }
-SslFilterBase::~SslFilterBase(){
-}
+SslFilterBase::~SslFilterBase(){ }
 
 long SslFilterBase::recv(void *data, unsigned long size){
 	const Mutex::UniqueLock lock(m_mutex);

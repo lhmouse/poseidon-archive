@@ -18,8 +18,7 @@ private:
 public:
 	ConfigFile()
 		: m_contents()
-	{
-	}
+	{ }
 	explicit ConfigFile(const std::string &path)
 		: m_contents()
 	{

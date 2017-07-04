@@ -18,12 +18,10 @@ namespace Http {
 	public:
 		HeaderOption()
 			: m_base(), m_options()
-		{
-		}
+		{ }
 		HeaderOption(std::string base, OptionalMap options)
 			: m_base(STD_MOVE(base)), m_options(STD_MOVE(options))
-		{
-		}
+		{ }
 		explicit HeaderOption(std::istream &is);
 
 	public:

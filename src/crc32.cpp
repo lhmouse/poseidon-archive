@@ -47,10 +47,8 @@ namespace {
 
 Crc32_streambuf::Crc32_streambuf()
 	: m_reg(CRC32_REG_INIT)
-{
-}
-Crc32_streambuf::~Crc32_streambuf(){
-}
+{ }
+Crc32_streambuf::~Crc32_streambuf(){ }
 
 void Crc32_streambuf::reset() NOEXCEPT {
 	// setp(NULLPTR, NULLPTR);
@@ -71,7 +69,6 @@ Crc32 Crc32_streambuf::finalize(){
 	return crc32;
 }
 
-Crc32_ostream::~Crc32_ostream(){
-}
+Crc32_ostream::~Crc32_ostream(){ }
 
 }
