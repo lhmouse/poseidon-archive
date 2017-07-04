@@ -310,7 +310,7 @@ void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snaps
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	snapshot.reserve(snapshot.size() + g_socket_map.size());
 	for(AUTO(it, g_socket_map.begin()); it != g_socket_map.end(); ++it){
-		SnapshotElement elem;
+		SnapshotElement elem = { };
 		elem.remote = it->socket->get_remote_info();
 		elem.local = it->socket->get_local_info();
 		elem.ms_online = saturated_sub(now, it->socket->get_creation_time());

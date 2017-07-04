@@ -11,7 +11,6 @@
 
 namespace Poseidon {
 
-class Module;
 class ModuleRaiiBase;
 
 class ModuleDepository {
@@ -25,18 +24,17 @@ private:
 
 public:
 	struct SnapshotElement {
+		void *dl_handle;
+		void *base_address;
 		SharedNts real_path;
-		void *base_addr;
-		std::size_t ref_count;
 	};
 
 	static void start();
 	static void stop();
 
-	static boost::shared_ptr<Module> load(const std::string &path);
-	static boost::shared_ptr<Module> load_nothrow(const std::string &path);
-	static bool unload(const boost::shared_ptr<Module> &module);
-	static bool unload(void *base_addr);
+	static void *load(const std::string &path);
+	static void *load_nothrow(const std::string &path);
+	static bool unload(void *base_address);
 
 	static std::vector<SnapshotElement> snapshot();
 };

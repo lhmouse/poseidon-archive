@@ -36,16 +36,7 @@ public:
 		return m_queue.size();
 	}
 	void clear() NOEXCEPT; // 确保逆序析构。
-
-	void swap(HandleStack &rhs) NOEXCEPT {
-		using std::swap;
-		swap(m_queue, rhs.m_queue);
-	}
 };
-
-inline void swap(HandleStack &lhs, HandleStack &rhs) NOEXCEPT {
-	lhs.swap(rhs);
-}
 
 class ModuleRaiiBase : NONCOPYABLE {
 public:
@@ -58,12 +49,6 @@ public:
 
 }
 
-/*
-	MODULE_RAII(handles){
-		AUTO(foo, boost::make_shared<Foo>());
-		handles.push(STD_MOVE_IDN(foo));
-	}
-*/
 #define MODULE_RAII_PRIORITY(handles_, priority_)	\
 	namespace {	\
 		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_) {	\

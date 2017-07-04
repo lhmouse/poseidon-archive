@@ -69,17 +69,17 @@ namespace {
 					}
 					send_default(Http::ST_OK);
 				} else if(uri == "unload_module"){
-					const AUTO_REF(base_addr_str, request_header.get_params.at("base_addr"));
-					Buffer_istream base_addr_is;
-					base_addr_is.set_buffer(StreamBuffer(base_addr_str));
-					void *base_addr;
-					if(!(base_addr_is >>base_addr)){
-						LOG_POSEIDON_WARNING("Bad base_addr string: ", base_addr_str);
+					const AUTO_REF(base_address_str, request_header.get_params.at("base_address"));
+					Buffer_istream base_address_is;
+					base_address_is.set_buffer(StreamBuffer(base_address_str));
+					void *base_address;
+					if(!(base_address_is >>base_address)){
+						LOG_POSEIDON_WARNING("Bad base_address string: ", base_address_str);
 						send_default(Http::ST_BAD_REQUEST);
 						return;
 					}
-					if(!ModuleDepository::unload(base_addr)){
-						LOG_POSEIDON_WARNING("Module not loaded: base address = ", base_addr);
+					if(!ModuleDepository::unload(base_address)){
+						LOG_POSEIDON_WARNING("Module not loaded: base address = ", base_address);
 						send_default(Http::ST_GONE);
 						return;
 					}
@@ -114,9 +114,9 @@ namespace {
 					boost::container::map<SharedNts, std::string> row;
 					AUTO(snapshot, ModuleDepository::snapshot());
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
+						row[sslit("dl_handle")] = boost::lexical_cast<std::string>(it->dl_handle);
+						row[sslit("base_address")] = boost::lexical_cast<std::string>(it->base_address);
 						row[sslit("real_path")] = it->real_path;
-						row[sslit("base_addr")] = boost::lexical_cast<std::string>(it->base_addr);
-						row[sslit("ref_count")] = boost::lexical_cast<std::string>(it->ref_count);
 						if(csv.empty()){
 							csv.reset_header(row);
 						}
@@ -137,7 +137,7 @@ namespace {
 						row[sslit("remote_port")] = boost::lexical_cast<std::string>(it->remote.port());
 						row[sslit("local_ip")] = it->local.ip();
 						row[sslit("local_port")] = boost::lexical_cast<std::string>(it->local.port());
-						row[sslit("ms_onlinet")] = boost::lexical_cast<std::string>(it->ms_online);
+						row[sslit("ms_online")] = boost::lexical_cast<std::string>(it->ms_online);
 						if(csv.empty()){
 							csv.reset_header(row);
 						}
