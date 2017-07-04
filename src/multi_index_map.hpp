@@ -59,8 +59,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 			\
 			explicit KeyModifier(key_type &key)	\
 				: m_key(key)	\
-			{	\
-			}	\
+			{ }	\
 			\
 			void operator()(key_type &old){	\
 				using ::std::swap;	\

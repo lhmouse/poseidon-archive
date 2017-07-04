@@ -55,8 +55,7 @@ public:
 			struct Stub_ : public ::Poseidon::ModuleRaiiBase {	\
 				Stub_()	\
 					: ::Poseidon::ModuleRaiiBase(priority_)	\
-				{	\
-				}	\
+				{ }	\
 				void init(::Poseidon::HandleStack &) const FINAL;	\
 			} const stub_;	\
 		}	\
