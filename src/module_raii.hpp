@@ -30,6 +30,12 @@ public:
 	void push(boost::shared_ptr<const void> handle);
 	boost::shared_ptr<const void> pop();
 
+	bool empty() const {
+		return m_queue.empty();
+	}
+	std::size_t size() const {
+		return m_queue.size();
+	}
 	void clear() NOEXCEPT; // 确保逆序析构。
 
 	void swap(HandleStack &rhs) NOEXCEPT {
