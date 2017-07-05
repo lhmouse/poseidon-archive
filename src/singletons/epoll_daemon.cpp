@@ -96,7 +96,7 @@ namespace {
 			const AUTO(ptr, static_cast<SocketBase *>(events[i].data.ptr));
 			const AUTO(it, g_socket_map.find<0>(ptr));
 			if(it == g_socket_map.end()){
-				LOG_POSEIDON_DEBUG("Socket reported by epoll is not registered: ptr = ", static_cast<void *>(ptr));
+				LOG_POSEIDON_TRACE("Socket reported by epoll is not registered: ptr = ", static_cast<void *>(ptr));
 				continue;
 			}
 			if(events[i].events & EPOLLIN){
@@ -372,7 +372,7 @@ bool EpollDaemon::mark_socket_writeable(const SocketBase *ptr) NOEXCEPT {
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	const AUTO(it, g_socket_map.find<0>(ptr));
 	if(it == g_socket_map.end()){
-		LOG_POSEIDON_DEBUG("Socket not found in epoll: ptr = ", ptr);
+		LOG_POSEIDON_TRACE("Socket not found in epoll: ptr = ", ptr);
 		return false;
 	}
 	const AUTO(now, get_fast_mono_clock());
