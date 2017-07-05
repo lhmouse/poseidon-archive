@@ -199,13 +199,18 @@ void SystemHttpServer::start(){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing system HTTP server on ", bind_addr);
 		AUTO(server, boost::make_shared<SystemServer>(bind_addr, cert.c_str(), pkey.c_str(), STD_MOVE(auth), STD_MOVE(path)));
 		g_system_server = server;
-		EpollDaemon::add_socket(STD_MOVE_IDN(server));
+		EpollDaemon::add_socket(STD_MOVE_IDN(server), true);
 	}
 }
 void SystemHttpServer::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Shutting down system HTTP server...");
 
-	g_system_server.reset();
+	boost::shared_ptr<SystemServer> system_server;
+	system_server.swap(g_system_server);
+	if(system_server){
+		system_server->shutdown_read();
+		system_server->shutdown_write();
+	}
 }
 
 }
