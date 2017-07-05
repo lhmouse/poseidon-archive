@@ -31,7 +31,7 @@ public:
 	~Profiler() NOEXCEPT;
 
 private:
-	void accumulate(double now) NOEXCEPT;
+	void accumulate(double now, bool new_sample) NOEXCEPT;
 };
 
 }

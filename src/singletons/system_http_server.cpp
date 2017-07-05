@@ -93,8 +93,8 @@ namespace {
 						row[sslit("line")] = boost::lexical_cast<std::string>(it->line);
 						row[sslit("func")] = it->func;
 						row[sslit("samples")] = boost::lexical_cast<std::string>(it->samples);
-						row[sslit("ns_total")] = boost::lexical_cast<std::string>(it->ns_total);
-						row[sslit("ns_exclusive")] = boost::lexical_cast<std::string>(it->ns_exclusive);
+						row[sslit("total")] = boost::lexical_cast<std::string>(it->total);
+						row[sslit("exclusive")] = boost::lexical_cast<std::string>(it->exclusive);
 						if(csv.empty()){
 							csv.reset_header(row);
 						}

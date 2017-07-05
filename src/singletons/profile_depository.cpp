@@ -7,7 +7,6 @@
 #include <cstring>
 #include "main_config.hpp"
 #include "../mutex.hpp"
-#include "../atomic.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 
@@ -33,12 +32,12 @@ namespace {
 	};
 
 	struct ProfileCounters {
-		volatile unsigned long long samples;
-		volatile unsigned long long ns_total;
-		volatile unsigned long long ns_exclusive;
+		unsigned long long samples;
+		double total;
+		double exclusive;
 
 		ProfileCounters()
-			: samples(0), ns_total(0), ns_exclusive(0)
+			: samples(0), total(0), exclusive(0)
 		{ }
 	};
 
@@ -62,13 +61,16 @@ bool ProfileDepository::is_enabled(){
 	return g_enabled;
 }
 
-void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func, double total, double exclusive) NOEXCEPT
+void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func,
+	double total, double exclusive, bool new_sample) NOEXCEPT
 try {
 	const Mutex::UniqueLock lock(g_mutex);
 	AUTO_REF(counters, g_profile[ProfileKey(file, line, func)]);
-	atomic_add(counters.samples,      1,               ATOMIC_RELAXED);
-	atomic_add(counters.ns_total,     total * 1e6,     ATOMIC_RELAXED);
-	atomic_add(counters.ns_exclusive, exclusive * 1e6, ATOMIC_RELAXED);
+	if(new_sample){
+		++counters.samples;
+	}
+	counters.total += total;
+	counters.exclusive += exclusive;
 } catch(...){
 	//
 }
@@ -81,15 +83,13 @@ std::vector<ProfileDepository::SnapshotElement> ProfileDepository::snapshot(){
 		const Mutex::UniqueLock lock(g_mutex);
 		ret.reserve(g_profile.size());
 		for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
-			const AUTO_REF(key, it->first);
-			const AUTO_REF(counters, it->second);
 			SnapshotElement elem;
-			elem.file         = key.file;
-			elem.line         = key.line;
-			elem.func         = key.func;
-			elem.samples      = atomic_load(counters.samples, ATOMIC_RELAXED);
-			elem.ns_total     = atomic_load(counters.ns_total, ATOMIC_RELAXED);
-			elem.ns_exclusive = atomic_load(counters.ns_exclusive, ATOMIC_RELAXED);
+			elem.file = it->first.file;
+			elem.line = it->first.line;
+			elem.func = it->first.func;
+			elem.samples = it->second.samples;
+			elem.total = it->second.total;
+			elem.exclusive = it->second.exclusive;
 			ret.push_back(elem);
 		}
 	}

@@ -18,7 +18,7 @@ void Profiler::accumulate_all_in_thread() NOEXCEPT {
 	if(top){
 		const AUTO(now, get_hi_res_mono_clock());
 		for(AUTO(cur, top); cur; cur = cur->m_prev){
-			cur->accumulate(now);
+			cur->accumulate(now, false);
 		}
 	}
 }
@@ -31,7 +31,7 @@ void *Profiler::begin_stack_switch() NOEXCEPT {
 	const AUTO(top, t_top_profiler);
 	if(top){
 		const AUTO(now, get_hi_res_mono_clock());
-		top->accumulate(now);
+		top->accumulate(now, false);
 		top->m_yielded_since = now;
 	}
 	t_top_profiler = NULLPTR;
@@ -46,7 +46,7 @@ void Profiler::end_stack_switch(void *opaque) NOEXCEPT {
 	if(top){
 		const AUTO(now, get_hi_res_mono_clock());
 		top->m_excluded += now - top->m_yielded_since;
-		top->accumulate(now);
+		top->accumulate(now, false);
 	}
 	t_top_profiler = top;
 }
@@ -65,7 +65,7 @@ Profiler::~Profiler() NOEXCEPT {
 	if(ProfileDepository::is_enabled()){
 		const AUTO(now, get_hi_res_mono_clock());
 		t_top_profiler = m_prev;
-		accumulate(now);
+		accumulate(now, true);
 	}
 	if(std::uncaught_exception()){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
@@ -73,7 +73,7 @@ Profiler::~Profiler() NOEXCEPT {
 	}
 }
 
-void Profiler::accumulate(double now) NOEXCEPT {
+void Profiler::accumulate(double now, bool new_sample) NOEXCEPT {
 	const AUTO(total, now - m_start);
 	const AUTO(exclusive, total - m_excluded);
 	m_start = now;
@@ -83,7 +83,7 @@ void Profiler::accumulate(double now) NOEXCEPT {
 		m_prev->m_excluded += total;
 	}
 
-	ProfileDepository::accumulate(m_file, m_line, m_func, total, exclusive);
+	ProfileDepository::accumulate(m_file, m_line, m_func, total, exclusive, new_sample);
 }
 
 }
