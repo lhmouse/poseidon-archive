@@ -93,9 +93,10 @@ namespace {
 		const AUTO(now, Poseidon::get_fast_mono_clock());
 		const RecursiveMutex::UniqueLock lock(g_mutex);
 		for(unsigned i = 0; i < (unsigned)result; ++i){
-			const AUTO(it, g_socket_map.find<0>(static_cast<SocketBase *>(events[i].data.ptr)));
+			const AUTO(ptr, static_cast<SocketBase *>(events[i].data.ptr));
+			const AUTO(it, g_socket_map.find<0>(ptr));
 			if(it == g_socket_map.end()){
-				LOG_POSEIDON_DEBUG("Socket reported by epoll is not registered: fd = ", events[i].data.fd);
+				LOG_POSEIDON_DEBUG("Socket reported by epoll is not registered: ptr = ", static_cast<void *>(ptr));
 				continue;
 			}
 			if(events[i].events & EPOLLIN){
