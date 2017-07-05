@@ -39,12 +39,12 @@ public:
 		boost::uint64_t first, boost::uint64_t period, TimerCallback callback);
 
 	static boost::shared_ptr<TimerItem> register_hourly_timer(
-		unsigned minute, unsigned second, TimerCallback callback);
+		unsigned minute, unsigned second, TimerCallback callback, bool utc);
 	static boost::shared_ptr<TimerItem> register_daily_timer(
-		unsigned hour, unsigned minute, unsigned second, TimerCallback callback);
+		unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc);
 	// 0 = 星期日
 	static boost::shared_ptr<TimerItem> register_weekly_timer(
-		unsigned day_of_week, unsigned hour, unsigned minute, unsigned second, TimerCallback callback);
+		unsigned day_of_week, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc);
 
 	static boost::shared_ptr<TimerItem> register_low_level_absolute_timer(
 		boost::uint64_t time_point, boost::uint64_t period, TimerCallback callback);
