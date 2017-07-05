@@ -20,10 +20,10 @@ public:
 		: m_queue()
 	{ }
 #ifndef POSEIDON_CXX11
-	HandleStack(const HandleStack &)
+	HandleStack(const HandleStack &rhs)
 		: m_queue(rhs.m_queue)
 	{ }
-	HandleStack &operator=(const HandleStack &){
+	HandleStack &operator=(const HandleStack &rhs){
 		m_queue = rhs.m_queue;
 		return *this;
 	}
