@@ -127,8 +127,6 @@ namespace {
 		}
 	};
 
-	volatile bool g_running = false;
-
 	__thread FiberControl *volatile t_current_fiber = 0; // XXX: NULLPTR
 
 	Mutex g_fiber_map_mutex;
@@ -192,7 +190,7 @@ namespace {
 		t_current_fiber = NULLPTR;
 	}
 
-	bool pump_one_fiber(FiberControl *fiber) NOEXCEPT {
+	bool pump_one_fiber(FiberControl *fiber, bool force_expiry) NOEXCEPT {
 		PROFILE_ME;
 
 		const AUTO(now, get_fast_mono_clock());
@@ -205,7 +203,7 @@ namespace {
 			}
 			elem = &(fiber->queue.front());
 			if(elem->promise && !elem->promise->is_satisfied()){
-				if((now < elem->expiry_time) && !(elem->insignificant && !atomic_load(g_running, ATOMIC_CONSUME))){
+				if((now < elem->expiry_time) && !(elem->insignificant && force_expiry)){
 					return false;
 				}
 				LOG_POSEIDON_WARNING("Job timed out");
@@ -223,7 +221,7 @@ namespace {
 		}
 		return true;
 	}
-	bool pump_one_round() NOEXCEPT {
+	bool pump_one_round(bool force_expiry) NOEXCEPT {
 		PROFILE_ME;
 
 		bool busy = false;
@@ -236,7 +234,7 @@ namespace {
 			AUTO(fiber, &(it->second));
 			lock.unlock();
 			{
-				busy += pump_one_fiber(fiber);
+				busy += pump_one_fiber(fiber, force_expiry);
 			}
 			lock.lock();
 			if(fiber->queue.empty()){
@@ -275,37 +273,25 @@ void JobDispatcher::stop(){
 			last_info_time = now;
 		}
 
-		pump_one_round();
+		pump_one_round(true);
 	}
 }
 
-void JobDispatcher::do_modal(){
-	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
-		LOG_POSEIDON_FATAL("Only one modal loop is allowed at the same time.");
-		std::abort();
-	}
-
+void JobDispatcher::do_modal(const volatile bool &running){
 	unsigned timeout = 0;
 	for(;;){
 		bool busy;
 		do {
-			busy = pump_one_round();
+			busy = pump_one_round(!atomic_load(running, ATOMIC_CONSUME));
 			timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 		} while(busy);
 
 		Mutex::UniqueLock lock(g_fiber_map_mutex);
-		if(!atomic_load(g_running, ATOMIC_CONSUME)){
+		if(!atomic_load(running, ATOMIC_CONSUME)){
 			break;
 		}
 		g_new_job.timed_wait(lock, timeout);
 	}
-}
-bool JobDispatcher::is_running(){
-	return atomic_load(g_running, ATOMIC_CONSUME);
-}
-void JobDispatcher::quit_modal(){
-	atomic_store(g_running, false, ATOMIC_RELEASE);
-	g_new_job.signal();
 }
 
 void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn){

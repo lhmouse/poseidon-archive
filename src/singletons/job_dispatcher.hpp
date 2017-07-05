@@ -20,10 +20,7 @@ public:
 	static void start();
 	static void stop();
 
-	// 调用 do_modal() 之后会阻塞直到任意线程调用 quit_modal() 为止。
-	static void do_modal();
-	static bool is_running();
-	static void quit_modal();
+	static void do_modal(const volatile bool &running);
 
 	static void enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn);
 	static void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant);

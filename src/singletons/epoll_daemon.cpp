@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
-#include "job_dispatcher.hpp"
 #include "../thread.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
@@ -94,7 +93,7 @@ namespace {
 		const AUTO(now, Poseidon::get_fast_mono_clock());
 		const RecursiveMutex::UniqueLock lock(g_mutex);
 		for(unsigned i = 0; i < (unsigned)result; ++i){
-			const AUTO(it, g_socket_map.find<0>((SocketBase *)events[i].data.ptr));
+			const AUTO(it, g_socket_map.find<0>(static_cast<SocketBase *>(events[i].data.ptr)));
 			if(it == g_socket_map.end()){
 				LOG_POSEIDON_DEBUG("Socket reported by epoll is not registered: fd = ", events[i].data.fd);
 				continue;
@@ -283,7 +282,7 @@ namespace {
 			do {
 				busy = reap_unowned_sockets();
 				busy += wait_for_sockets(0);
-				busy += JobDispatcher::is_running() && pump_one_readable_socket();
+				busy += pump_one_readable_socket();
 				busy += pump_one_writeable_socket();
 				busy += pump_one_closed_socket();
 				timeout = std::min(timeout * 2u + 1u, !busy * 100u);

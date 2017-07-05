@@ -6,6 +6,8 @@
 #include "log.hpp"
 #include "time.hpp"
 #include "exception.hpp"
+#include "atomic.hpp"
+#include "checked_arithmetic.hpp"
 #include "singletons/main_config.hpp"
 #include "singletons/dns_daemon.hpp"
 #include "singletons/timer_daemon.hpp"
@@ -23,29 +25,36 @@
 namespace Poseidon {
 
 namespace {
+	volatile bool g_running = true;
+
 	void sigterm_proc(int){
 		LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");
-		JobDispatcher::quit_modal();
+		atomic_store(g_running, false, ATOMIC_RELEASE);
+	}
+
+	void sighup_proc(int){
+		LOG_POSEIDON_WARNING("Received SIGHUP, will now exit...");
+		atomic_store(g_running, false, ATOMIC_RELEASE);
 	}
 
 	void sigint_proc(int){
-		static const boost::uint64_t KILL_TIMER_EXPIRES = 5000;
+		static const boost::uint64_t KILL_TIMEOUT = 5000;
+		static const boost::uint64_t RESET_TIMEOUT = 10000;
 		static boost::uint64_t s_kill_timer = 0;
 
 		// 系统启动的时候这个时间是从 0 开始的，如果这时候按下 Ctrl+C 就会立即终止。
 		// 因此将计时器的起点设为该区间以外。
-		const AUTO(now, get_fast_mono_clock() + KILL_TIMER_EXPIRES + 1);
-		if(s_kill_timer + KILL_TIMER_EXPIRES < now){
-			s_kill_timer = now + KILL_TIMER_EXPIRES;
+		const AUTO(virtual_now, saturated_add(get_fast_mono_clock(), RESET_TIMEOUT));
+		if(saturated_sub(virtual_now, s_kill_timer) >= RESET_TIMEOUT){
+			s_kill_timer = virtual_now;
 		}
-		if(s_kill_timer <= now){
-			LOG_POSEIDON_FATAL("Received SIGINT, will now terminate abnormally...");
-			::raise(SIGKILL);
-		} else {
-			LOG_POSEIDON_WARNING("Received SIGINT, trying to exit gracefully... If I don't terminate in ",
-				KILL_TIMER_EXPIRES, " milliseconds, press ^C again.");
-			::raise(SIGTERM);
+		if(saturated_sub(virtual_now, s_kill_timer) >= KILL_TIMEOUT){
+			LOG_POSEIDON_FATAL("----------------------------- Process was killed ------------------------------");
+			std::_Exit(EXIT_FAILURE);
 		}
+		LOG_POSEIDON_WARNING("Received SIGINT, trying to exit gracefully...");
+		LOG_POSEIDON_WARNING("  If I don't terminate in ", KILL_TIMEOUT, " milliseconds, press ^C again.");
+		atomic_store(g_running, false, ATOMIC_RELEASE);
 	}
 
 	template<typename T>
@@ -84,28 +93,28 @@ namespace {
 				START(EventDispatcher);
 				START(SystemHttpServer);
 
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for daemon initialization to complete...");
+				LOG_POSEIDON_INFO("Waiting for daemon initialization to complete...");
 				::timespec req;
 				req.tv_sec = 0;
 				req.tv_nsec = 200000000;
 				::nanosleep(&req, NULLPTR);
 
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask...");
+				LOG_POSEIDON_INFO("Setting new log mask...");
 				Logger::initialize_mask_from_config();
 
 				const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
 				for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
+					LOG_POSEIDON_INFO("Loading init module: ", *it);
 					ModuleDepository::load(it->c_str());
 				}
 
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
+				LOG_POSEIDON_INFO("Waiting for all asynchronous MySQL operations to complete...");
 				MySqlDaemon::wait_for_all_async_operations();
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
+				LOG_POSEIDON_INFO("Waiting for all asynchronous MongoDB operations to complete...");
 				MongoDbDaemon::wait_for_all_async_operations();
 
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
-				JobDispatcher::do_modal();
+				LOG_POSEIDON_INFO("Entering modal loop...");
+				JobDispatcher::do_modal(g_running);
 			}
 #ifdef POSEIDON_CXX11
 			catch(...){
@@ -125,73 +134,44 @@ namespace {
 	}
 }
 
-std::terminate_handler g_old_terminate_handler = NULLPTR;
-
-__attribute__((__noreturn__))
-void terminate_handler(){
-	LOG_POSEIDON_FATAL("std::terminate() is called!!");
-
-	if(std::uncaught_exception()){
-		try {
-			throw;
-		} catch(Exception &e){
-			LOG_POSEIDON_FATAL("Poseidon::Exception thrown: what = ", e.what(),
-				", file = ", e.get_file(), ", line = ", e.get_line(), ", func = ", e.get_func());
-		} catch(std::exception &e){
-			LOG_POSEIDON_FATAL("std::exception thrown: what = ", e.what());
-		} catch(...){
-			LOG_POSEIDON_FATAL("Unknown exception thrown.");
-		}
-	}
-
-	if(g_old_terminate_handler){
-		(*g_old_terminate_handler)();
-	}
-	std::abort();
 }
 
-}
-
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+try {
 	using namespace Poseidon;
 
-	g_old_terminate_handler = std::set_terminate(&terminate_handler);
-
 	Logger::set_thread_tag("P   "); // Primary
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "-------------------------- Starting up -------------------------");
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up signal handlers...");
-	::signal(SIGHUP, &sigterm_proc);
+	::signal(SIGHUP, &sighup_proc);
 	::signal(SIGTERM, &sigterm_proc);
 	::signal(SIGINT, &sigint_proc);
 	::signal(SIGCHLD, SIG_IGN);
 	::signal(SIGPIPE, SIG_IGN);
 
-	try {
-		const char *run_path;
-		if(argc > 1){
-			run_path = argv[1];
-		} else{
-			run_path = "/usr/etc/poseidon";
-		}
-		MainConfig::set_run_path(run_path);
-		MainConfig::reload();
+	LOG_POSEIDON_INFO("--------------------------------- Starting up ---------------------------------");
 
-		START(ProfileDepository);
-
-		run();
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());
-		goto _failure;
-	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown in main().");
-		goto _failure;
+	const char *run_path;
+	if(argc > 1){
+		run_path = argv[1];
+	} else{
+		run_path = "/usr/etc/poseidon";
 	}
+	MainConfig::set_run_path(run_path);
+	MainConfig::reload();
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "------------- Server has been shut down gracefully -------------");
+	START(ProfileDepository);
+	run();
+
+	LOG_POSEIDON_INFO("-------------------------- Process exited gracefully --------------------------");
 	return EXIT_SUCCESS;
+} catch(std::exception &e){
+	LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());
 
-_failure:
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_WARNING, "----------------- Server has exited abnormally -----------------");
+	LOG_POSEIDON_ERROR("-------------------------- Process exited abnormally --------------------------");
+	return EXIT_FAILURE;
+} catch(...){
+	LOG_POSEIDON_ERROR("Unknown exception thrown in main().");
+
+	LOG_POSEIDON_ERROR("-------------------------- Process exited abnormally --------------------------");
 	return EXIT_FAILURE;
 }
