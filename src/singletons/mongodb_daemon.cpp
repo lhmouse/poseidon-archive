@@ -11,6 +11,7 @@
 #include <unistd.h>
 #pragma GCC push_options
 #pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
 #include <bson.h>
 #include <mongoc.h>
 #pragma GCC pop_options

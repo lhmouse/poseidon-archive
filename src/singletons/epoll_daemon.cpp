@@ -345,7 +345,7 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket, bool t
 
 	const AUTO(now, Poseidon::get_fast_mono_clock());
 	const RecursiveMutex::UniqueLock lock(g_mutex);
-	const AUTO(result, g_socket_map.insert(SocketElement(socket, now, take_ownership)));
+	const AUTO(result, g_socket_map.insert(SocketElement(socket, take_ownership, now)));
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket,
 			", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());

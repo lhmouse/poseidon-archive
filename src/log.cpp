@@ -106,7 +106,7 @@ Logger::~Logger() NOEXCEPT {
 			fd = STDOUT_FILENO;
 		}
 
-		AUTO_REF(level_elem, LEVEL_ELEMENTS[__builtin_ctz(m_mask | LV_TRACE)]);
+		AUTO_REF(level_elem, LEVEL_ELEMENTS[__builtin_ctzll(m_mask | LV_TRACE)]);
 
 		char temp[256];
 		unsigned len;
