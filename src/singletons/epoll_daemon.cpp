@@ -46,7 +46,7 @@ namespace {
 	};
 	MULTI_INDEX_MAP(SocketMap, SocketElement,
 		UNIQUE_MEMBER_INDEX(ptr)
-		UNIQUE_MEMBER_INDEX(owning)
+		MULTI_MEMBER_INDEX(owning)
 		MULTI_MEMBER_INDEX(read_time)
 		MULTI_MEMBER_INDEX(write_time)
 		MULTI_MEMBER_INDEX(err_code)
