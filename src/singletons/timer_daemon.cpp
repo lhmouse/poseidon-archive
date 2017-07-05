@@ -237,7 +237,9 @@ boost::shared_ptr<TimerItem> TimerDaemon::register_low_level_timer(
 	return register_low_level_absolute_timer(saturated_add(get_fast_mono_clock(), first), period, STD_MOVE(callback));
 }
 
-void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item, boost::uint64_t time_point, boost::uint64_t period){
+void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item,
+	boost::uint64_t time_point, boost::uint64_t period)
+{
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
@@ -248,7 +250,9 @@ void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item, bo
 	std::push_heap(g_timers.begin(), g_timers.end());
 	g_new_timer.signal();
 }
-void TimerDaemon::set_time(const boost::shared_ptr<TimerItem> &item, boost::uint64_t first, boost::uint64_t period){
+void TimerDaemon::set_time(const boost::shared_ptr<TimerItem> &item,
+	boost::uint64_t first, boost::uint64_t period)
+{
 	return set_absolute_time(item, saturated_add(get_fast_mono_clock(), first), period);
 }
 
