@@ -17,18 +17,21 @@ public:
 	enum {
 		SP_POSEIDON     = 0x0080,
 		SP_MAJOR        = 0x0040,
-
-		LV_FATAL        = 0x0001 | SP_MAJOR,
-		LV_ERROR        = 0x0002 | SP_MAJOR,
-		LV_WARNING      = 0x0004 | SP_MAJOR,
-		LV_INFO         = 0x0008,
-		LV_DEBUG        = 0x0010,
 		LV_TRACE        = 0x0020,
+		LV_DEBUG        = 0x0010,
+		LV_INFO         = 0x0008,
+		LV_WARNING      = 0x0004 | SP_MAJOR,
+		LV_ERROR        = 0x0002 | SP_MAJOR,
+		LV_FATAL        = 0x0001 | SP_MAJOR,
 	};
 
 public:
 	static boost::uint64_t get_mask() NOEXCEPT;
 	static boost::uint64_t set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT;
+
+	static bool check_mask(boost::uint64_t mask){
+		return (mask & SP_MAJOR) || ((mask & ~get_mask()) == 0);
+	}
 
 	static bool initialize_mask_from_config();
 	static void finalize_mask() NOEXCEPT;
@@ -84,17 +87,8 @@ public:
 
 }
 
-#define LOG_MASK(mask_, ...)	\
-	do {	\
-		::boost::uint64_t test_ = (mask_);	\
-		if(test_ & ::Poseidon::Logger::SP_MAJOR){	\
-			test_ &= 0x3F;	\
-		}	\
-		if(test_ & ~(::Poseidon::Logger::get_mask())){	\
-			break;	\
-		}	\
-		static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__);	\
-	} while(false)
+#define LOG_MASK(mask_, ...)	    (::Poseidon::Logger::check_mask(mask_) &&	\
+                                      (static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__), true))
 
 #define LOG_POSEIDON(level_, ...)   LOG_MASK(::Poseidon::Logger::SP_POSEIDON | (level_), __VA_ARGS__)
 #define LOG_POSEIDON_FATAL(...)     LOG_POSEIDON(::Poseidon::Logger::LV_FATAL,   __VA_ARGS__)
