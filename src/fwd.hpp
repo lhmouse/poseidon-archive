@@ -66,7 +66,6 @@ class Deflator;
 class Inflator;
 
 class TimerItem;
-class Module;
 class EventListener;
 
 class DnsDaemon;

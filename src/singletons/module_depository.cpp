@@ -53,9 +53,13 @@ namespace {
 		void *m_base_address;
 		SharedNts m_real_path;
 
+		HandleStack m_handles;
+
 	public:
-		Module(Move<UniqueHandle<DynamicLibraryCloser> > dl_handle, SharedNts real_path, void *base_address)
+		Module(Move<UniqueHandle<DynamicLibraryCloser> > dl_handle, void *base_address, SharedNts real_path,
+			Move<HandleStack> handles)
 			: m_dl_handle(STD_MOVE(dl_handle)), m_base_address(base_address), m_real_path(STD_MOVE(real_path))
+			, m_handles(STD_MOVE(handles))
 		{
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Constructor of module: ", m_real_path);
 			LOG_POSEIDON_DEBUG("> dl_handle = ", m_dl_handle, ", base_address = ", m_base_address, ", real_path = ", m_real_path);
@@ -75,17 +79,23 @@ namespace {
 		const SharedNts &get_real_path() const {
 			return m_real_path;
 		}
+
+		const HandleStack &get_handle_stack() const {
+			return m_handles;
+		}
+		HandleStack &get_handle_stack(){
+			return m_handles;
+		}
 	};
 
 	struct ModuleMapElement {
 		boost::shared_ptr<Module> module;
-		boost::shared_ptr<HandleStack> handles;
 
 		void *dl_handle;
 		void *base_address;
 
-		ModuleMapElement(boost::shared_ptr<Module> module_, boost::shared_ptr<HandleStack> handles_)
-			: module(STD_MOVE(module_)), handles(STD_MOVE(handles_))
+		explicit ModuleMapElement(boost::shared_ptr<Module> module_)
+			: module(STD_MOVE(module_))
 			, dl_handle(module->get_dl_handle()), base_address(module->get_base_address())
 		{ }
 	};
@@ -150,17 +160,17 @@ void *ModuleDepository::load(const std::string &path){
 
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	LOG_POSEIDON_INFO("Loading module: ", path);
-	UniqueHandle<DynamicLibraryCloser> handle;
-	if(!handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND))){
+	UniqueHandle<DynamicLibraryCloser> dl_handle;
+	if(!dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND))){
 		const char *const error = ::dlerror();
 		LOG_POSEIDON_ERROR("Error loading dynamic library: ", error);
 		DEBUG_THROW(Exception, SharedNts(error));
 	}
-	AUTO(it, g_module_map.find<0>(handle.get()));
+	AUTO(it, g_module_map.find<0>(dl_handle.get()));
 	if(it != g_module_map.end()){
 		LOG_POSEIDON_WARNING("Module already loaded: ", path);
 	} else {
-		void *const init_sym = ::dlsym(handle.get(), "_init");
+		void *const init_sym = ::dlsym(dl_handle.get(), "_init");
 		if(!init_sym){
 			const char *const error = ::dlerror();
 			LOG_POSEIDON_ERROR("Error locating `_init()`: ", error);
@@ -172,17 +182,17 @@ void *ModuleDepository::load(const std::string &path){
 			LOG_POSEIDON_ERROR("Error getting real path and base address: ", error);
 			DEBUG_THROW(Exception, SharedNts(error));
 		}
-		AUTO(module, boost::make_shared<Module>(STD_MOVE(handle), SharedNts(info.dli_fname), info.dli_fbase));
-		AUTO(handles, boost::make_shared<HandleStack>());
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing NEW module: ", module->get_real_path());
+		HandleStack handles;
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing NEW module: ", info.dli_fname);
 		const AUTO(raii_range_lower, g_module_raii_map.lower_bound<1>(std::make_pair(info.dli_fbase, LONG_MIN)));
 		const AUTO(raii_range_upper, g_module_raii_map.upper_bound<1>(std::make_pair(info.dli_fbase, LONG_MAX)));
 		for(AUTO(raii_it, raii_range_lower); raii_it != raii_range_upper; ++raii_it){
 			LOG_POSEIDON_DEBUG("> Performing module RAII initialization: raii = ", static_cast<void *>(raii_it->raii));
-			raii_it->raii->init(*handles);
+			raii_it->raii->init(handles);
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing module: ", module->get_real_path());
-		const AUTO(result, g_module_map.insert(ModuleMapElement(STD_MOVE(module), STD_MOVE(handles))));
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing module: ", info.dli_fname);
+		const AUTO(result, g_module_map.insert(ModuleMapElement(
+			boost::make_shared<Module>(STD_MOVE(dl_handle), info.dli_fbase, SharedNts(info.dli_fname), STD_MOVE(handles)))));
 		DEBUG_THROW_ASSERT(result.second);
 		it = result.first;
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,

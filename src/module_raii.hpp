@@ -15,14 +15,19 @@ class HandleStack {
 private:
 	boost::container::deque<boost::shared_ptr<const void> > m_queue;
 
-private:
-	HandleStack(const HandleStack &);
-	HandleStack &operator=(const HandleStack &);
-
 public:
 	HandleStack()
 		: m_queue()
 	{ }
+#ifndef POSEIDON_CXX11
+	HandleStack(const HandleStack &)
+		: m_queue(rhs.m_queue)
+	{ }
+	HandleStack &operator=(const HandleStack &){
+		m_queue = rhs.m_queue;
+		return *this;
+	}
+#endif
 	~HandleStack();
 
 public:
@@ -36,7 +41,16 @@ public:
 		return m_queue.size();
 	}
 	void clear() NOEXCEPT; // 确保逆序析构。
+
+	void swap(HandleStack &rhs) NOEXCEPT {
+		using std::swap;
+		swap(m_queue, rhs.m_queue);
+	}
 };
+
+inline void swap(HandleStack &lhs, HandleStack &rhs) NOEXCEPT {
+	lhs.swap(rhs);
+}
 
 class ModuleRaiiBase : NONCOPYABLE {
 public:
