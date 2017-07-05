@@ -91,109 +91,104 @@ void Logger::set_thread_tag(const char *new_tag) NOEXCEPT {
 Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEPT
 	: m_mask(mask), m_file(file), m_line(line)
 { }
-Logger::~Logger() NOEXCEPT {
+Logger::~Logger() NOEXCEPT
+try {
 	static const bool stderr_uses_ascii_colors = ::isatty(STDERR_FILENO);
 	static const bool stdout_uses_ascii_colors = ::isatty(STDOUT_FILENO);
 
-	try {
-		bool use_ascii_colors;
-		int fd;
-		if(m_mask & SP_MAJOR){
-			use_ascii_colors = stderr_uses_ascii_colors;
-			fd = STDERR_FILENO;
-		} else {
-			use_ascii_colors = stdout_uses_ascii_colors;
-			fd = STDOUT_FILENO;
+	bool use_ascii_colors;
+	int fd;
+	if(m_mask & SP_MAJOR){
+		use_ascii_colors = stderr_uses_ascii_colors;
+		fd = STDERR_FILENO;
+	} else {
+		use_ascii_colors = stdout_uses_ascii_colors;
+		fd = STDOUT_FILENO;
+	}
+
+	AUTO_REF(level_elem, LEVEL_ELEMENTS[__builtin_ctzll(m_mask | LV_TRACE)]);
+
+	char temp[256];
+	unsigned len;
+
+	std::string line;
+	line.reserve(255);
+
+	if(use_ascii_colors){
+		line += "\x1B[0;32m";
+	}
+	len = format_time(temp, sizeof(temp), get_local_time(), true);
+	line.append(temp, len);
+
+	if(use_ascii_colors){
+		line += "\x1B[0;33m";
+	}
+	len = (unsigned)std::sprintf(temp, " %02X ", (unsigned)((m_mask >> 8) & 0xFF));
+	line.append(temp, len);
+
+	if(use_ascii_colors){
+		line += "\x1B[0;39m";
+	}
+	line += '[';
+	line.append(t_tag, sizeof(t_tag) - 1);
+	line += ']';
+	line += ' ';
+
+	if(use_ascii_colors){
+		line +="\x1B[0;30;4";
+		line += level_elem.color;
+		line += 'm';
+	}
+	line += level_elem.text;
+	if(use_ascii_colors){
+		line +="\x1B[0;3";
+		line += level_elem.color;
+		if(level_elem.highlighted){
+			line += ';';
+			line += '1';
 		}
+		line += 'm';
+	}
+	line += ' ';
 
-		AUTO_REF(level_elem, LEVEL_ELEMENTS[__builtin_ctzll(m_mask | LV_TRACE)]);
-
-		char temp[256];
-		unsigned len;
-
-		std::string line;
-		line.reserve(255);
-
-		if(use_ascii_colors){
-			line += "\x1B[0;32m";
+	StreamBuffer buffer = STD_MOVE(m_stream.get_buffer());
+	int ch;
+	while((ch = buffer.get()) >= 0){
+		if((ch + 1 <= 0x20) || (ch == 0x7F)){
+			ch = ' ';
 		}
-		len = format_time(temp, sizeof(temp), get_local_time(), true);
-		line.append(temp, len);
+		line.push_back((char)ch);
+	}
+	line += ' ';
 
-		if(use_ascii_colors){
-			line += "\x1B[0;33m";
-		}
-		len = (unsigned)std::sprintf(temp, " %02X ", (unsigned)((m_mask >> 8) & 0xFF));
-		line.append(temp, len);
+	if(use_ascii_colors){
+		line += "\x1B[0;34m";
+	}
+	line += '#';
+	line += m_file;
+	len = (unsigned)std::sprintf(temp, ":%lu", (unsigned long)m_line);
+	line.append(temp, len);
 
-		if(use_ascii_colors){
-			line += "\x1B[0;39m";
-		}
-		line += '[';
-		line.append(t_tag, sizeof(t_tag) - 1);
-		line += ']';
-		line += ' ';
+	if(use_ascii_colors){
+		line += "\x1B[0m";
+	}
+	line += '\n';
 
-		if(use_ascii_colors){
-			line +="\x1B[0;30;4";
-			line += level_elem.color;
-			line += 'm';
+	int err_code = ::pthread_mutex_lock(&g_mutex);
+	(void)err_code;
+	assert(err_code == 0);
+	std::size_t bytes_total = 0;
+	while(bytes_total < line.size()){
+		const AUTO(bytes_written, ::write(fd, line.data() + bytes_total, line.size() - bytes_total)); // noexcept
+		if(bytes_written <= 0){
+			break;
 		}
-		line += level_elem.text;
-		if(use_ascii_colors){
-			line +="\x1B[0;3";
-			line += level_elem.color;
-			if(level_elem.highlighted){
-				line += ';';
-				line += '1';
-			}
-			line += 'm';
-		}
-		line += ' ';
-
-		StreamBuffer buffer = STD_MOVE(m_stream.get_buffer());
-		int ch;
-		while((ch = buffer.get()) >= 0){
-			if((ch + 1 <= 0x20) || (ch == 0x7F)){
-				ch = ' ';
-			}
-			line.push_back((char)ch);
-		}
-		line += ' ';
-
-		if(use_ascii_colors){
-			line += "\x1B[0;34m";
-		}
-		line += '#';
-		line += m_file;
-		len = (unsigned)std::sprintf(temp, ":%lu", (unsigned long)m_line);
-		line.append(temp, len);
-
-		if(use_ascii_colors){
-			line += "\x1B[0m";
-		}
-		line += '\n';
-
-		int err_code = ::pthread_mutex_lock(&g_mutex);
-		(void)err_code;
-		assert(err_code == 0);
-		try {
-			std::size_t bytes_total = 0;
-			while(bytes_total < line.size()){
-				const AUTO(bytes_written, ::write(fd, line.data() + bytes_total, line.size() - bytes_total)); // noexcept
-				if(bytes_written <= 0){
-					break;
-				}
-				bytes_total += static_cast<std::size_t>(bytes_written);
-			}
-			err_code = ::pthread_mutex_unlock(&g_mutex);
-			assert(err_code == 0);
-		} catch(...){
-			err_code = ::pthread_mutex_unlock(&g_mutex);
-			assert(err_code == 0);
-			throw;
-		}
-	} catch(...){ }
+		bytes_total += static_cast<std::size_t>(bytes_written);
+	}
+	err_code = ::pthread_mutex_unlock(&g_mutex);
+	assert(err_code == 0);
+} catch(...){
+	return;
 }
 
 void Logger::put(bool val){
