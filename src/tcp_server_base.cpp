@@ -108,7 +108,7 @@ int TcpServerBase::poll_read_and_process(bool readable){
 			}
 			const AUTO(tcp_request_timeout, MainConfig::get<boost::uint64_t>("tcp_request_timeout", 5000));
 			session->set_timeout(tcp_request_timeout);
-			EpollDaemon::add_socket(session);
+			EpollDaemon::add_socket(session, true);
 			LOG_POSEIDON_INFO("Accepted TCP connection from ", session->get_remote_info());
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());

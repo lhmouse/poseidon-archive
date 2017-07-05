@@ -66,7 +66,7 @@ TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_pee
 TcpClientBase::~TcpClientBase(){ }
 
 void TcpClientBase::go_resident(){
-	EpollDaemon::add_socket(virtual_shared_from_this<SocketBase>());
+	EpollDaemon::add_socket(virtual_shared_from_this<SocketBase>(), true);
 }
 
 }

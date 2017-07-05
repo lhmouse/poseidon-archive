@@ -30,6 +30,7 @@ namespace {
 		boost::shared_ptr<SocketBase> socket;
 
 		const SocketBase *ptr;
+		bool owning;
 		boost::uint64_t read_time;
 		boost::uint64_t write_time;
 		int err_code;
@@ -37,14 +38,15 @@ namespace {
 		mutable bool readable;
 		mutable bool writeable;
 
-		SocketElement(boost::shared_ptr<SocketBase> socket_, boost::uint64_t now)
-			: socket(STD_MOVE_IDN(socket_))
-			, ptr(socket.get()), read_time(now), write_time(now), err_code(-1)
+		SocketElement(const boost::shared_ptr<SocketBase> &socket_, bool owning_, boost::uint64_t now_)
+			: socket(socket_)
+			, ptr(socket.get()), owning(owning_), read_time(now_), write_time(now_), err_code(-1)
 			, readable(false), writeable(false)
 		{ }
 	};
 	MULTI_INDEX_MAP(SocketMap, SocketElement,
 		UNIQUE_MEMBER_INDEX(ptr)
+		UNIQUE_MEMBER_INDEX(owning)
 		MULTI_MEMBER_INDEX(read_time)
 		MULTI_MEMBER_INDEX(write_time)
 		MULTI_MEMBER_INDEX(err_code)
@@ -53,6 +55,26 @@ namespace {
 	RecursiveMutex g_mutex;
 	UniqueFile g_epoll;
 	SocketMap g_socket_map;
+
+	bool reap_unowned_sockets() NOEXCEPT {
+		PROFILE_ME;
+
+		bool busy = false;
+		const RecursiveMutex::UniqueLock lock(g_mutex);
+		const AUTO(end, g_socket_map.upper_bound<1>(false));
+		for(AUTO(it, g_socket_map.begin<1>()); it != end; ++it){
+			const AUTO_REF(socket, it->socket);
+			if(!socket.unique()){
+				continue;
+			}
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"Reaping unowned socket: typeid = ", typeid(*socket).name());
+			socket->shutdown_read();
+			socket->shutdown_write();
+			++busy;
+		}
+		return busy;
+	}
 
 	bool wait_for_sockets(unsigned timeout) NOEXCEPT {
 		PROFILE_ME;
@@ -79,11 +101,11 @@ namespace {
 			}
 			if(events[i].events & EPOLLIN){
 				it->readable = true;
-				g_socket_map.set_key<0, 1>(it, now);
+				g_socket_map.set_key<0, 2>(it, now);
 			}
 			if(events[i].events & EPOLLOUT){
 				it->writeable = true;
-				g_socket_map.set_key<0, 2>(it, now);
+				g_socket_map.set_key<0, 3>(it, now);
 			}
 			if(events[i].events & (EPOLLHUP | EPOLLERR)){
 				int err_code;
@@ -98,7 +120,7 @@ namespace {
 				} else {
 					err_code = 0;
 				}
-				g_socket_map.set_key<0, 3>(it, err_code);
+				g_socket_map.set_key<0, 4>(it, err_code);
 			}
 		}
 		return true;
@@ -112,8 +134,8 @@ namespace {
 		bool readable;
 		{
 			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(it, g_socket_map.begin<1>());
-			if(it == g_socket_map.end<1>()){
+			const AUTO(it, g_socket_map.begin<2>());
+			if(it == g_socket_map.end<2>()){
 				return false;
 			}
 			if(now < it->read_time){
@@ -129,7 +151,7 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				g_socket_map.set_key<0, 1>(it, now + 5000);
+				g_socket_map.set_key<0, 2>(it, now + 5000);
 			}
 			return false;
 		}
@@ -152,7 +174,7 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				g_socket_map.set_key<0, 1>(it, (boost::uint64_t)-1);
+				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
 			const RecursiveMutex::UniqueLock lock(g_mutex);
@@ -172,8 +194,8 @@ namespace {
 		bool writeable;
 		{
 			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(it, g_socket_map.begin<2>());
-			if(it == g_socket_map.end<2>()){
+			const AUTO(it, g_socket_map.begin<3>());
+			if(it == g_socket_map.end<3>()){
 				return false;
 			}
 			if(now < it->write_time){
@@ -202,7 +224,7 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
+				g_socket_map.set_key<0, 3>(it, (boost::uint64_t)-1);
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
 			const RecursiveMutex::UniqueLock lock(g_mutex);
@@ -222,8 +244,8 @@ namespace {
 		int err_code;
 		{
 			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(it, g_socket_map.lower_bound<3>(0));
-			if(it == g_socket_map.end<3>()){
+			const AUTO(it, g_socket_map.lower_bound<4>(0));
+			if(it == g_socket_map.end<4>()){
 				return false;
 			}
 			socket = it->socket;
@@ -259,7 +281,8 @@ namespace {
 		for(;;){
 			bool busy;
 			do {
-				busy = wait_for_sockets(0);
+				busy = reap_unowned_sockets();
+				busy += wait_for_sockets(0);
 				busy += JobDispatcher::is_running() && pump_one_readable_socket();
 				busy += pump_one_writeable_socket();
 				busy += pump_one_closed_socket();
@@ -317,12 +340,12 @@ void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snaps
 		snapshot.push_back(STD_MOVE(elem));
 	}
 }
-void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket){
+void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket, bool take_ownership){
 	PROFILE_ME;
 
 	const AUTO(now, Poseidon::get_fast_mono_clock());
 	const RecursiveMutex::UniqueLock lock(g_mutex);
-	const AUTO(result, g_socket_map.insert(SocketElement(socket, now)));
+	const AUTO(result, g_socket_map.insert(SocketElement(socket, now, take_ownership)));
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket,
 			", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
@@ -353,7 +376,7 @@ bool EpollDaemon::mark_socket_writeable(const SocketBase *ptr) NOEXCEPT {
 		return false;
 	}
 	const AUTO(now, get_fast_mono_clock());
-	g_socket_map.set_key<0, 2>(it, now);
+	g_socket_map.set_key<0, 3>(it, now);
 	return true;
 }
 

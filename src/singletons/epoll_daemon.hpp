@@ -28,7 +28,7 @@ public:
 	static void stop();
 
 	static void make_snapshot(std::vector<SnapshotElement> &snapshot);
-	static void add_socket(const boost::shared_ptr<SocketBase> &socket);
+	static void add_socket(const boost::shared_ptr<SocketBase> &socket, bool take_ownership = false);
 	static bool mark_socket_writeable(const SocketBase *ptr) NOEXCEPT;
 };
 

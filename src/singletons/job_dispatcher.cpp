@@ -229,7 +229,10 @@ namespace {
 		bool busy = false;
 		Mutex::UniqueLock lock(g_fiber_map_mutex);
 		AUTO(it, g_fiber_map.begin());
-		while(it != g_fiber_map.end()){
+		for(;;){
+			if(it == g_fiber_map.end()){
+				break;
+			}
 			AUTO(fiber, &(it->second));
 			lock.unlock();
 			{
