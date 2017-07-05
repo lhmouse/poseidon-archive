@@ -96,9 +96,7 @@ public:
 		static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__);	\
 	} while(false)
 
-#define LOG_POSEIDON(level_, ...)	\
-	LOG_MASK(::Poseidon::Logger::SP_POSEIDON | (level_), __VA_ARGS__)
-
+#define LOG_POSEIDON(level_, ...)	LOG_MASK(::Poseidon::Logger::SP_POSEIDON | (level_), __VA_ARGS__)
 #define LOG_POSEIDON_FATAL(...)     LOG_POSEIDON(::Poseidon::Logger::LV_FATAL,   __VA_ARGS__)
 #define LOG_POSEIDON_ERROR(...)     LOG_POSEIDON(::Poseidon::Logger::LV_ERROR,   __VA_ARGS__)
 #define LOG_POSEIDON_WARNING(...)   LOG_POSEIDON(::Poseidon::Logger::LV_WARNING, __VA_ARGS__)
