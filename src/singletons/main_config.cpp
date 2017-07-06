@@ -7,6 +7,7 @@
 #include "../log.hpp"
 #include "../system_exception.hpp"
 #include "../raii.hpp"
+#include "../mutex.hpp"
 #include <limits.h>
 #include <stdlib.h>
 
@@ -22,7 +23,8 @@ namespace {
 		}
 	};
 
-	ConfigFile g_config;
+	Mutex g_mutex;
+	boost::shared_ptr<ConfigFile> g_config;
 }
 
 void MainConfig::set_run_path(const char *path){
@@ -42,12 +44,19 @@ void MainConfig::set_run_path(const char *path){
 void MainConfig::reload(){
 	static CONSTEXPR const char MAIN_CONF[] = "main.conf";
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading main config file: ", MAIN_CONF);
-	ConfigFile config(MAIN_CONF);
+	AUTO(config, boost::make_shared<ConfigFile>(MAIN_CONF));
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done loading main config file: ", MAIN_CONF);
+
+	const Mutex::UniqueLock lock(g_mutex);
 	g_config.swap(config);
 }
 
-const ConfigFile &MainConfig::get_config(){
+boost::shared_ptr<const ConfigFile> MainConfig::get_config(){
+	const Mutex::UniqueLock lock(g_mutex);
+	if(!g_config){
+		LOG_POSEIDON_ERROR("Main config file has not been loaded.");
+		DEBUG_THROW(Exception, sslit("Main config file has not been loaded"));
+	}
 	return g_config;
 }
 
