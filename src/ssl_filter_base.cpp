@@ -22,7 +22,7 @@ namespace {
 	}
 	void set_errno_by_ssl_ret(::SSL *ssl, int ret){
 		const int err = ::SSL_get_error(ssl, ret);
-		LOG_POSEIDON_DEBUG("SSL ret = ", ret, ", error = ", err);
+		LOG_POSEIDON_TRACE("SSL ret = ", ret, ", error = ", err);
 		switch(err){
 		case SSL_ERROR_NONE:
 		case SSL_ERROR_ZERO_RETURN:
