@@ -21,10 +21,14 @@ IpPort::IpPort(){
 IpPort::IpPort(const char *ip_str, unsigned port_num){
 	const AUTO(ip_size, std::strlen(ip_str) + 1);
 	if(ip_size > sizeof(m_ip)){
-		LOG_POSEIDON_ERROR("IP address is too long: ip_str = ", ip_str);
-		DEBUG_THROW(Exception, sslit("IP address is too long"));
+		LOG_POSEIDON_ERROR("IP address string is too long: ", ip_str);
+		DEBUG_THROW(Exception, sslit("IP address string is too long"));
 	}
 	std::memcpy(m_ip, ip_str, ip_size);
+	if(port_num >= 0x10000){
+		LOG_POSEIDON_ERROR("Port number is too large: ", port_num);
+		DEBUG_THROW(Exception, sslit("Port number is too large"));
+	}
 	m_port = port_num;
 }
 IpPort::IpPort(const SockAddr &sock_addr){
