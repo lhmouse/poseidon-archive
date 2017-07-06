@@ -18,22 +18,19 @@ namespace {
 void MainConfig::set_run_path(const char *path){
 	char *const real_path = ::realpath(path, NULLPTR);
 	if(!real_path){
-		LOG_POSEIDON_ERROR("Could not resolve path: ", path);
-		DEBUG_THROW(SystemException);
+		const int err_code = errno;
+		LOG_POSEIDON_ERROR("Could not resolve path (errno was ", err_code, "): ", path);
+		DEBUG_THROW(SystemException, err_code);
 	}
-	try {
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting working directory: ", real_path);
-		if(::chdir(real_path) != 0){
-			LOG_POSEIDON_ERROR("Could not set working directory: ", real_path);
-			DEBUG_THROW(SystemException);
-		}
+	if(::chdir(real_path) != 0){
+		const int err_code = errno;
 		::free(real_path);
-	} catch(...){
-		::free(real_path);
-		throw;
+		LOG_POSEIDON_ERROR("Could not set working directory (errno was ", err_code, "): ", real_path);
+		DEBUG_THROW(SystemException, err_code);
 	}
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Set new working directory: ", real_path);
+	::free(real_path);
 }
-
 void MainConfig::reload(){
 	static CONSTEXPR const char MAIN_CONF[] = "main.conf";
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading main config file: ", MAIN_CONF);
@@ -41,6 +38,7 @@ void MainConfig::reload(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done loading main config file: ", MAIN_CONF);
 	g_config.swap(config);
 }
+
 const ConfigFile &MainConfig::get_config(){
 	return g_config;
 }

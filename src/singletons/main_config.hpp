@@ -14,8 +14,8 @@ private:
 
 public:
 	static void set_run_path(const char *path);
-
 	static void reload();
+
 	static const ConfigFile &get_config();
 
 	template<typename T>
