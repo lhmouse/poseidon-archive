@@ -123,10 +123,10 @@ namespace {
 		}
 		try {
 			if(item->low_level){
-				LOG_POSEIDON_TRACE("Dispatching async timer");
+				LOG_POSEIDON_TRACE("Dispatching low level timer: item = ", item);
 				(*item->callback)(item, now, item->period);
 			} else {
-				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching");
+				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: item = ", item);
 				JobDispatcher::enqueue(boost::make_shared<TimerJob>(item, now), VAL_INIT);
 			}
 		} catch(std::exception &e){
