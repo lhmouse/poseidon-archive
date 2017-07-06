@@ -252,7 +252,7 @@ void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item,
 	if(period != TimerDaemon::PERIOD_NOT_MODIFIED){
 		item->period = period;
 	}
-	g_timers.push_back(TimerQueueElement(time_point, item, ++item->stamp));
+	g_timers.push_back(TimerQueueElement(time_point, item, ++(item->stamp)));
 	std::push_heap(g_timers.begin(), g_timers.end());
 	g_new_timer.signal();
 }
