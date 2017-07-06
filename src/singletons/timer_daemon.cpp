@@ -79,6 +79,13 @@ namespace {
 		}
 	};
 
+	inline void swap(TimerQueueElement &lhs, TimerQueueElement &rhs) NOEXCEPT {
+		using std::swap;
+		swap(lhs.next, rhs.next);
+		swap(lhs.item, rhs.item);
+		swap(lhs.stamp, rhs.stamp);
+	}
+
 	volatile bool g_running = false;
 	Thread g_thread;
 
@@ -252,7 +259,8 @@ void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item,
 	if(period != TimerDaemon::PERIOD_NOT_MODIFIED){
 		item->period = period;
 	}
-	g_timers.push_back(TimerQueueElement(time_point, item, ++(item->stamp)));
+	g_timers.push_back(TimerQueueElement(time_point, item, item->stamp)); // may throw std::bad_alloc.
+	g_timers.back().stamp = ++(item->stamp);
 	std::push_heap(g_timers.begin(), g_timers.end());
 	g_new_timer.signal();
 }
