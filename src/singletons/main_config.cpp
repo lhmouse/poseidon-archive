@@ -6,30 +6,38 @@
 #include "../config_file.hpp"
 #include "../log.hpp"
 #include "../system_exception.hpp"
+#include "../raii.hpp"
 #include <limits.h>
 #include <stdlib.h>
 
 namespace Poseidon {
 
 namespace {
+	struct RealPathFreeer {
+		CONSTEXPR char *operator()() const NOEXCEPT {
+			return NULLPTR;
+		}
+		void operator()(char *ptr) const NOEXCEPT {
+			::free(ptr);
+		}
+	};
+
 	ConfigFile g_config;
 }
 
 void MainConfig::set_run_path(const char *path){
-	char *const real_path = ::realpath(path, NULLPTR);
-	if(!real_path){
+	UniqueHandle<RealPathFreeer> real_path;
+	if(!real_path.reset(::realpath(path, NULLPTR))){
 		const int err_code = errno;
 		LOG_POSEIDON_ERROR("Could not resolve path (errno was ", err_code, "): ", path);
 		DEBUG_THROW(SystemException, err_code);
 	}
-	if(::chdir(real_path) != 0){
+	if(::chdir(real_path.get()) != 0){
 		const int err_code = errno;
-		::free(real_path);
 		LOG_POSEIDON_ERROR("Could not set working directory (errno was ", err_code, "): ", real_path);
 		DEBUG_THROW(SystemException, err_code);
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Set new working directory: ", real_path);
-	::free(real_path);
 }
 void MainConfig::reload(){
 	static CONSTEXPR const char MAIN_CONF[] = "main.conf";

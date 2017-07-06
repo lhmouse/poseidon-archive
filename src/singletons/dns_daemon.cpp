@@ -14,12 +14,23 @@
 #include "../job_promise.hpp"
 #include "../sock_addr.hpp"
 #include "../ip_port.hpp"
+#include "../raii.hpp"
 #include "../profiler.hpp"
 
 namespace Poseidon {
 
 namespace {
+	struct AddrinfoFreeer {
+		CONSTEXPR ::addrinfo *operator()() const NOEXCEPT {
+			return NULLPTR;
+		}
+		void operator()(::addrinfo *res) const NOEXCEPT {
+			::freeaddrinfo(res);
+		}
+	};
+
 	SockAddr real_dns_look_up(const std::string &host_raw, unsigned port_raw){
+		UniqueHandle<AddrinfoFreeer> res;
 		std::string host;
 		if(!host_raw.empty() && (host_raw.begin()[0] == '[') && (host_raw.end()[-1] == ']')){
 			host.assign(host_raw.begin() + 1, host_raw.end() - 1);
@@ -28,23 +39,17 @@ namespace {
 		}
 		char port[16];
 		std::sprintf(port, "%u", port_raw);
-
-		::addrinfo *res;
-		const int gai_code = ::getaddrinfo(host.c_str(), port, NULLPTR, &res);
+		::addrinfo *tmp_res;
+		const int gai_code = ::getaddrinfo(host.c_str(), port, NULLPTR, &tmp_res);
 		if(gai_code != 0){
-			const AUTO(err_msg, ::gai_strerror(gai_code));
-			LOG_POSEIDON_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
-			DEBUG_THROW(Exception, SharedNts::view(err_msg));
+			const char *const err_msg = ::gai_strerror(gai_code);
+			LOG_POSEIDON_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code,
+				", err_msg = ", err_msg);
+			DEBUG_THROW(Exception, SharedNts(err_msg));
 		}
+		res.reset(tmp_res);
 
-		SockAddr sock_addr;
-		try {
-			sock_addr = SockAddr(res->ai_addr, res->ai_addrlen);
-			::freeaddrinfo(res);
-		} catch(...){
-			::freeaddrinfo(res);
-			throw;
-		}
+		SockAddr sock_addr(res.get()->ai_addr, res.get()->ai_addrlen);
 		LOG_POSEIDON_DEBUG("DNS lookup success: host:port = ", host, ":", port, ", result = ", IpPort(sock_addr));
 		return sock_addr;
 	}
