@@ -13,8 +13,7 @@
 namespace Poseidon {
 
 class JobPromise;
-template<typename>
-class JobPromiseContainer;
+template<typename> class JobPromiseContainer;
 
 class FileSystemDaemon {
 public:

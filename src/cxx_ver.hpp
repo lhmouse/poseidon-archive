@@ -51,8 +51,7 @@
 namespace Poseidon {
 
 #ifdef POSEIDON_CXX11
-template<typename T>
-using Move = typename std::remove_reference<T>::type &&;
+template<typename T> using Move = typename std::remove_reference<T>::type &&;
 #else
 template<typename T>
 class Move {

@@ -31,8 +31,7 @@ namespace Poseidon {
 namespace MySql {
 	class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
 	public:
-		template<typename ValueT>
-		class Field;
+		template<typename ValueT> class Field;
 
 	private:
 		mutable volatile bool m_auto_saves;

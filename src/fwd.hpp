@@ -47,8 +47,7 @@ class JobBase;
 class EventBase;
 
 class JobPromise;
-template<typename>
-class JobPromiseContainer;
+template<typename> class JobPromiseContainer;
 
 class SocketBase;
 class SessionBase;

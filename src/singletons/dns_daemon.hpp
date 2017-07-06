@@ -10,8 +10,7 @@
 namespace Poseidon {
 
 class SockAddr;
-template<typename>
-class JobPromiseContainer;
+template<typename> class JobPromiseContainer;
 
 class DnsDaemon {
 private:
