@@ -256,7 +256,7 @@ void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item,
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
-	if(period != TimerDaemon::PERIOD_NOT_MODIFIED){
+	if(period != PERIOD_NOT_MODIFIED){
 		item->period = period;
 	}
 	g_timers.push_back(TimerQueueElement(time_point, item, item->stamp)); // may throw std::bad_alloc.
