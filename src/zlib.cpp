@@ -18,7 +18,6 @@ struct Deflator::Context : NONCOPYABLE {
 		stream.zalloc = NULLPTR;
 		stream.zfree = NULLPTR;
 		stream.opaque = NULLPTR;
-
 		const int err_code = ::deflateInit2(&stream, level, Z_DEFLATED, 15 + gzip * 16, 9, Z_DEFAULT_STRATEGY);
 		if(err_code != 0){
 			LOG_POSEIDON_ERROR("::deflateInit2() error: err_code = ", err_code);
@@ -58,7 +57,6 @@ void Deflator::put(const void *data, std::size_t size){
 		m_ctx->stream.avail_in = step;
 		m_ctx->stream.next_out = m_ctx->temp;
 		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
-
 		const int err_code = ::deflate(&(m_ctx->stream), Z_NO_FLUSH);
 		if(err_code != 0){
 			LOG_POSEIDON_ERROR("::deflate() error: err_code = ", err_code);
@@ -78,17 +76,21 @@ void Deflator::put(const StreamBuffer &buffer){
 StreamBuffer Deflator::finalize(){
 	PROFILE_ME;
 
-	m_ctx->stream.next_in = NULLPTR;
-	m_ctx->stream.avail_in = 0;
-	m_ctx->stream.next_out = m_ctx->temp;
-	m_ctx->stream.avail_out = sizeof(m_ctx->temp);
-
-	const int err_code = ::deflate(&(m_ctx->stream), Z_FINISH);
-	if(err_code != Z_STREAM_END){
-		LOG_POSEIDON_ERROR("::deflate() didn't terminate the stream: err_code = ", err_code);
-		DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
+	for(;;){
+		m_ctx->stream.next_in = NULLPTR;
+		m_ctx->stream.avail_in = 0;
+		m_ctx->stream.next_out = m_ctx->temp;
+		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
+		const int err_code = ::deflate(&(m_ctx->stream), Z_FINISH);
+		if(err_code == Z_STREAM_END){
+			break;
+		}
+		if(err_code != 0){
+			LOG_POSEIDON_ERROR("::deflate() error: err_code = ", err_code);
+			DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
+		}
+		m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 	}
-	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
@@ -103,7 +105,6 @@ struct Inflator::Context : NONCOPYABLE {
 		stream.zalloc = NULLPTR;
 		stream.zfree = NULLPTR;
 		stream.opaque = NULLPTR;
-
 		const int err_code = ::inflateInit2(&stream, 15 + gzip * 16);
 		if(err_code != 0){
 			LOG_POSEIDON_ERROR("::inflateInit2() error: err_code = ", err_code);
@@ -145,17 +146,18 @@ void Inflator::put(const void *data, std::size_t size){
 		m_ctx->stream.avail_in = step;
 		m_ctx->stream.next_out = m_ctx->temp;
 		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
-
 		const int err_code = ::inflate(&(m_ctx->stream), Z_NO_FLUSH);
-		if((err_code != 0) && (err_code != Z_STREAM_END)){
+		if(err_code == Z_STREAM_END){
+			m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
+			total += step - m_ctx->stream.avail_in;
+			break;
+		}
+		if(err_code != 0){
 			LOG_POSEIDON_ERROR("::inflate() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 		}
 		m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 		total += step - m_ctx->stream.avail_in;
-		if(err_code == Z_STREAM_END){
-			break;
-		}
 	}
 }
 void Inflator::put(const StreamBuffer &buffer){
@@ -167,18 +169,6 @@ void Inflator::put(const StreamBuffer &buffer){
 }
 StreamBuffer Inflator::finalize(){
 	PROFILE_ME;
-
-	m_ctx->stream.next_in = NULLPTR;
-	m_ctx->stream.avail_in = 0;
-	m_ctx->stream.next_out = m_ctx->temp;
-	m_ctx->stream.avail_out = sizeof(m_ctx->temp);
-
-	const int err_code = ::inflate(&(m_ctx->stream), Z_FINISH);
-	if(err_code != Z_STREAM_END){
-		LOG_POSEIDON_ERROR("::inflate() didn't get a terminated stream: err_code = ", err_code);
-		DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
-	}
-	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
