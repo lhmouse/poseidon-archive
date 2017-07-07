@@ -177,6 +177,7 @@ namespace {
 				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
+			LOG_POSEIDON_DEBUG("Socket read error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
@@ -227,6 +228,7 @@ namespace {
 				g_socket_map.set_key<0, 3>(it, (boost::uint64_t)-1);
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
+			LOG_POSEIDON_DEBUG("Socket write error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
@@ -264,6 +266,7 @@ namespace {
 			socket->SocketBase::force_shutdown();
 		}
 		{
+			LOG_POSEIDON_DEBUG("Socket closed: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
