@@ -24,7 +24,6 @@ struct Deflator::Context : NONCOPYABLE {
 			LOG_POSEIDON_ERROR("::deflateInit2() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::deflateInit2()"), err_code);
 		}
-
 		stream.next_out = temp;
 		stream.avail_out = sizeof(temp);
 	}
@@ -34,23 +33,26 @@ struct Deflator::Context : NONCOPYABLE {
 			LOG_POSEIDON_WARNING("::deflateEnd() error: err_code = ", err_code);
 		}
 	}
+
+	void reset() NOEXCEPT {
+		const int err_code = ::deflateReset(&stream);
+		if(err_code < 0){
+			LOG_POSEIDON_ERROR("::deflateReset() error: err_code = ", err_code);
+		}
+		stream.next_out = temp;
+		stream.avail_out = sizeof(temp);
+	}
 };
 
 Deflator::Deflator(bool gzip, int level)
-	: m_context(new Context(gzip, level)), m_buffer()
+	: m_ctx(new Context(gzip, level)), m_buffer()
 { }
 Deflator::~Deflator(){ }
 
 void Deflator::clear(){
 	PROFILE_ME;
 
-	const int err_code = ::deflateReset(&(m_context->stream));
-	if(err_code < 0){
-		LOG_POSEIDON_ERROR("::deflateReset() error: err_code = ", err_code);
-		DEBUG_THROW(ProtocolException, sslit("::deflateReset()"), err_code);
-	}
-	m_context->stream.next_out = m_context->temp;
-	m_context->stream.avail_out = sizeof(m_context->temp);
+	m_ctx->reset();
 	m_buffer.clear();
 }
 void Deflator::put(const void *data, std::size_t size){
@@ -59,10 +61,10 @@ void Deflator::put(const void *data, std::size_t size){
 	std::size_t total = 0;
 	while(size > total){
 		const unsigned step = static_cast<unsigned>(std::min<std::size_t>(size - total, UINT_MAX));
-		m_context->stream.next_in = static_cast<const ::Bytef *>(data) + total;
-		m_context->stream.avail_in = step;
-		while(m_context->stream.avail_in != 0){
-			const int err_code = ::deflate(&(m_context->stream), Z_NO_FLUSH);
+		m_ctx->stream.next_in = static_cast<const ::Bytef *>(data) + total;
+		m_ctx->stream.avail_in = step;
+		while(m_ctx->stream.avail_in != 0){
+			const int err_code = ::deflate(&(m_ctx->stream), Z_NO_FLUSH);
 			if(err_code == Z_STREAM_END){
 				break;
 			}
@@ -70,10 +72,10 @@ void Deflator::put(const void *data, std::size_t size){
 				LOG_POSEIDON_ERROR("::deflate() error: err_code = ", err_code);
 				DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
 			}
-			if(m_context->stream.avail_out == 0){
-				m_buffer.put(m_context->temp, sizeof(m_context->temp));
-				m_context->stream.next_out = m_context->temp;
-				m_context->stream.avail_out = sizeof(m_context->temp);
+			if(m_ctx->stream.avail_out == 0){
+				m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp));
+				m_ctx->stream.next_out = m_ctx->temp;
+				m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 			}
 		}
 		total += step;
@@ -89,10 +91,10 @@ void Deflator::put(const StreamBuffer &buffer){
 StreamBuffer Deflator::finalize(){
 	PROFILE_ME;
 
-	m_context->stream.next_in = m_context->temp;
-	m_context->stream.avail_in = 0;
+	m_ctx->stream.next_in = m_ctx->temp;
+	m_ctx->stream.avail_in = 0;
 	for(;;){
-		const int err_code = ::deflate(&(m_context->stream), Z_FINISH);
+		const int err_code = ::deflate(&(m_ctx->stream), Z_FINISH);
 		if(err_code == Z_STREAM_END){
 			break;
 		}
@@ -100,13 +102,13 @@ StreamBuffer Deflator::finalize(){
 			LOG_POSEIDON_ERROR("::deflate() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
 		}
-		if(m_context->stream.avail_out == 0){
-			m_buffer.put(m_context->temp, sizeof(m_context->temp));
-			m_context->stream.next_out = m_context->temp;
-			m_context->stream.avail_out = sizeof(m_context->temp);
+		if(m_ctx->stream.avail_out == 0){
+			m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp));
+			m_ctx->stream.next_out = m_ctx->temp;
+			m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 		}
 	}
-	m_buffer.put(m_context->temp, sizeof(m_context->temp) - m_context->stream.avail_out);
+	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
@@ -127,7 +129,6 @@ struct Inflator::Context : NONCOPYABLE {
 			LOG_POSEIDON_ERROR("::inflateInit2() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::deflateInit2()"), err_code);
 		}
-
 		stream.next_out = temp;
 		stream.avail_out = sizeof(temp);
 	}
@@ -137,23 +138,26 @@ struct Inflator::Context : NONCOPYABLE {
 			LOG_POSEIDON_WARNING("::inflateEnd() error: err_code = ", err_code);
 		}
 	}
+
+	void reset() NOEXCEPT {
+		const int err_code = ::inflateReset(&stream);
+		if(err_code < 0){
+			LOG_POSEIDON_ERROR("::inflateReset() error: err_code = ", err_code);
+		}
+		stream.next_out = temp;
+		stream.avail_out = sizeof(temp);
+	}
 };
 
 Inflator::Inflator(bool gzip)
-	: m_context(new Context(gzip)), m_buffer()
+	: m_ctx(new Context(gzip)), m_buffer()
 { }
 Inflator::~Inflator(){ }
 
 void Inflator::clear(){
 	PROFILE_ME;
 
-	const int err_code = ::inflateReset(&(m_context->stream));
-	if(err_code < 0){
-		LOG_POSEIDON_ERROR("::inflateReset() error: err_code = ", err_code);
-		DEBUG_THROW(ProtocolException, sslit("::inflateReset()"), err_code);
-	}
-	m_context->stream.next_out = m_context->temp;
-	m_context->stream.avail_out = sizeof(m_context->temp);
+	m_ctx->reset();
 	m_buffer.clear();
 }
 void Inflator::put(const void *data, std::size_t size){
@@ -162,10 +166,10 @@ void Inflator::put(const void *data, std::size_t size){
 	std::size_t total = 0;
 	while(size > total){
 		const unsigned step = static_cast<unsigned>(std::min<std::size_t>(size - total, UINT_MAX));
-		m_context->stream.next_in = static_cast<const ::Bytef *>(data) + total;
-		m_context->stream.avail_in = step;
-		while(m_context->stream.avail_in != 0){
-			const int err_code = ::inflate(&(m_context->stream), Z_NO_FLUSH);
+		m_ctx->stream.next_in = static_cast<const ::Bytef *>(data) + total;
+		m_ctx->stream.avail_in = step;
+		while(m_ctx->stream.avail_in != 0){
+			const int err_code = ::inflate(&(m_ctx->stream), Z_NO_FLUSH);
 			if(err_code == Z_STREAM_END){
 				break;
 			}
@@ -173,10 +177,10 @@ void Inflator::put(const void *data, std::size_t size){
 				LOG_POSEIDON_ERROR("::inflate() error: err_code = ", err_code);
 				DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 			}
-			if(m_context->stream.avail_out == 0){
-				m_buffer.put(m_context->temp, sizeof(m_context->temp));
-				m_context->stream.next_out = m_context->temp;
-				m_context->stream.avail_out = sizeof(m_context->temp);
+			if(m_ctx->stream.avail_out == 0){
+				m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp));
+				m_ctx->stream.next_out = m_ctx->temp;
+				m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 			}
 		}
 		total += step;
@@ -192,10 +196,10 @@ void Inflator::put(const StreamBuffer &buffer){
 StreamBuffer Inflator::finalize(){
 	PROFILE_ME;
 
-	m_context->stream.next_in = m_context->temp;
-	m_context->stream.avail_in = 0;
+	m_ctx->stream.next_in = m_ctx->temp;
+	m_ctx->stream.avail_in = 0;
 	for(;;){
-		const int err_code = ::inflate(&(m_context->stream), Z_NO_FLUSH);
+		const int err_code = ::inflate(&(m_ctx->stream), Z_FINISH);
 		if(err_code == Z_STREAM_END){
 			break;
 		}
@@ -203,17 +207,37 @@ StreamBuffer Inflator::finalize(){
 			LOG_POSEIDON_ERROR("::inflate() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 		}
-		if(m_context->stream.avail_out == 0){
-			m_buffer.put(m_context->temp, sizeof(m_context->temp));
-			m_context->stream.next_out = m_context->temp;
-			m_context->stream.avail_out = sizeof(m_context->temp);
+		if(m_ctx->stream.avail_out == 0){
+			m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp));
+			m_ctx->stream.next_out = m_ctx->temp;
+			m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 		}
 	}
-	m_buffer.put(m_context->temp, sizeof(m_context->temp) - m_context->stream.avail_out);
+	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
 	return ret;
 }
+
+struct T {
+	T(){
+		StreamBuffer src;
+		Deflator def;
+		def.put("hello ");
+		src.splice(def.finalize());
+//		src.put("\x00\x00\xFF\xFF", 4);
+//		def.put("world!");
+//		src.splice(def.finalize());
+//		src.put("\x00\x00\xFF\xFF", 4);
+		LOG_POSEIDON_FATAL("src = ", src);
+
+		StreamBuffer dst;
+		Inflator inf;
+		inf.put(src);
+		dst.splice(inf.finalize());
+		LOG_POSEIDON_FATAL("dst = ", dst);
+	}
+} t;
 
 }

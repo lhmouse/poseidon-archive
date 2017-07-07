@@ -16,7 +16,7 @@ namespace Poseidon {
 class Deflator : NONCOPYABLE {
 private:
 	struct Context;
-	boost::scoped_ptr<Context> m_context;
+	boost::scoped_ptr<Context> m_ctx;
 	StreamBuffer m_buffer;
 
 public:
@@ -49,7 +49,7 @@ public:
 class Inflator : NONCOPYABLE {
 private:
 	struct Context;
-	boost::scoped_ptr<Context> m_context;
+	boost::scoped_ptr<Context> m_ctx;
 	StreamBuffer m_buffer;
 
 public:
