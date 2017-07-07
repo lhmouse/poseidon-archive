@@ -76,11 +76,11 @@ void Deflator::put(const StreamBuffer &buffer){
 StreamBuffer Deflator::finalize(){
 	PROFILE_ME;
 
+	m_ctx->stream.next_in = NULLPTR;
+	m_ctx->stream.avail_in = 0;
+	m_ctx->stream.next_out = m_ctx->temp;
+	m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 	for(;;){
-		m_ctx->stream.next_in = NULLPTR;
-		m_ctx->stream.avail_in = 0;
-		m_ctx->stream.next_out = m_ctx->temp;
-		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 		const int err_code = ::deflate(&(m_ctx->stream), Z_FINISH);
 		if(err_code == Z_STREAM_END){
 			break;
@@ -89,8 +89,8 @@ StreamBuffer Deflator::finalize(){
 			LOG_POSEIDON_ERROR("::deflate() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
 		}
-		m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 	}
+	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
@@ -169,6 +169,22 @@ void Inflator::put(const StreamBuffer &buffer){
 }
 StreamBuffer Inflator::finalize(){
 	PROFILE_ME;
+
+	m_ctx->stream.next_in = NULLPTR;
+	m_ctx->stream.avail_in = 0;
+	m_ctx->stream.next_out = m_ctx->temp;
+	m_ctx->stream.avail_out = sizeof(m_ctx->temp);
+	for(;;){
+		const int err_code = ::inflate(&(m_ctx->stream), Z_FINISH);
+		if(err_code == Z_STREAM_END){
+			break;
+		}
+		if(err_code != 0){
+			LOG_POSEIDON_ERROR("::inflate() error: err_code = ", err_code);
+			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
+		}
+	}
+	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
