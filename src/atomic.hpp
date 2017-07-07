@@ -38,8 +38,9 @@ inline T atomic_load(const volatile T &mem, MemModel model) NOEXCEPT {
 	return __atomic_load_n(&mem, model);
 #else
 	(void)model;
+	T val = mem;
 	__sync_synchronize();
-	return mem;
+	return val;
 #endif
 }
 template<typename T>
@@ -48,8 +49,8 @@ inline void atomic_store(volatile T &mem, typename boost::common_type<T>::type v
 	__atomic_store_n(&mem, val, model);
 #else
 	(void)model;
-	mem = val;
 	__sync_synchronize();
+	mem = val;
 #endif
 }
 
