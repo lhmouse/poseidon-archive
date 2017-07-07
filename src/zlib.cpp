@@ -83,14 +83,12 @@ StreamBuffer Deflator::finalize(){
 	m_ctx->stream.next_out = m_ctx->temp;
 	m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 
-	const int err_code = ::deflate(&(m_ctx->stream), Z_FULL_FLUSH);
-	if(err_code != Z_BUF_ERROR){
-		if(err_code != 0){
-			LOG_POSEIDON_ERROR("::deflate() error: err_code = ", err_code);
-			DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
-		}
-		m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
+	const int err_code = ::deflate(&(m_ctx->stream), Z_FINISH);
+	if(err_code != Z_STREAM_END){
+		LOG_POSEIDON_ERROR("::deflate() didn't terminate the stream: err_code = ", err_code);
+		DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
 	}
+	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
@@ -149,15 +147,15 @@ void Inflator::put(const void *data, std::size_t size){
 		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 
 		const int err_code = ::inflate(&(m_ctx->stream), Z_NO_FLUSH);
-		if(err_code == Z_STREAM_END){
-			break;
-		}
-		if(err_code != 0){
+		if((err_code != 0) && (err_code != Z_STREAM_END)){
 			LOG_POSEIDON_ERROR("::inflate() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 		}
 		m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 		total += step - m_ctx->stream.avail_in;
+		if(err_code == Z_STREAM_END){
+			break;
+		}
 	}
 }
 void Inflator::put(const StreamBuffer &buffer){
@@ -175,14 +173,12 @@ StreamBuffer Inflator::finalize(){
 	m_ctx->stream.next_out = m_ctx->temp;
 	m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 
-	const int err_code = ::inflate(&(m_ctx->stream), Z_FULL_FLUSH);
-	if(err_code != Z_BUF_ERROR){
-		if(err_code != 0){
-			LOG_POSEIDON_ERROR("::inflate() error: err_code = ", err_code);
-			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
-		}
-		m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
+	const int err_code = ::inflate(&(m_ctx->stream), Z_FINISH);
+	if(err_code != Z_STREAM_END){
+		LOG_POSEIDON_ERROR("::inflate() didn't get a terminated stream: err_code = ", err_code);
+		DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 	}
+	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
