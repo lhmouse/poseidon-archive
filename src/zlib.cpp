@@ -19,14 +19,14 @@ struct Deflator::Context : NONCOPYABLE {
 		stream.zfree = NULLPTR;
 		stream.opaque = NULLPTR;
 		const int err_code = ::deflateInit2(&stream, level, Z_DEFLATED, 15 + gzip * 16, 9, Z_DEFAULT_STRATEGY);
-		if(err_code != 0){
+		if(err_code < 0){
 			LOG_POSEIDON_ERROR("::deflateInit2() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::deflateInit2()"), err_code);
 		}
 	}
 	~Context(){
 		const int err_code = ::deflateEnd(&stream);
-		if(err_code != 0){
+		if(err_code < 0){
 			LOG_POSEIDON_WARNING("::deflateEnd() error: err_code = ", err_code);
 		}
 	}
@@ -41,7 +41,7 @@ void Deflator::clear(){
 	PROFILE_ME;
 
 	const int err_code = ::deflateReset(&(m_ctx->stream));
-	if(err_code != 0){
+	if(err_code < 0){
 		LOG_POSEIDON_FATAL("::deflateReset() error: err_code = ", err_code);
 		std::abort();
 	}
@@ -50,21 +50,30 @@ void Deflator::clear(){
 void Deflator::put(const void *data, std::size_t size){
 	PROFILE_ME;
 
-	std::size_t total = 0;
-	while(size > total){
-		const unsigned step = static_cast<unsigned>(std::min<std::size_t>(size - total, UINT_MAX));
-		m_ctx->stream.next_in = static_cast<const ::Bytef *>(data) + total;
-		m_ctx->stream.avail_in = step;
+	const ::Bytef *const begin = static_cast<const ::Bytef *>(data);
+	m_ctx->stream.next_in = begin;
+	m_ctx->stream.avail_in = 0;
+	int err_code;
+	do {
+		if(m_ctx->stream.avail_in == 0){
+			std::size_t remaining = static_cast<std::size_t>(begin + size - m_ctx->stream.next_in);
+			if(remaining > UINT_MAX){
+				remaining = UINT_MAX;
+			}
+			m_ctx->stream.avail_in = remaining;
+		}
+		if(m_ctx->stream.avail_in == 0){
+			break;
+		}
 		m_ctx->stream.next_out = m_ctx->temp;
 		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
-		const int err_code = ::deflate(&(m_ctx->stream), Z_NO_FLUSH);
-		if(err_code != 0){
+		err_code = ::deflate(&(m_ctx->stream), Z_NO_FLUSH);
+		if(err_code < 0){
 			LOG_POSEIDON_ERROR("::deflate() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
 		}
-		m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
-		total += step - m_ctx->stream.avail_in;
-	}
+		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
+	} while(err_code != Z_STREAM_END);
 }
 void Deflator::put(const StreamBuffer &buffer){
 	PROFILE_ME;
@@ -78,19 +87,17 @@ StreamBuffer Deflator::finalize(){
 
 	m_ctx->stream.next_in = NULLPTR;
 	m_ctx->stream.avail_in = 0;
-	m_ctx->stream.next_out = m_ctx->temp;
-	m_ctx->stream.avail_out = sizeof(m_ctx->temp);
-	for(;;){
-		const int err_code = ::deflate(&(m_ctx->stream), Z_FINISH);
-		if(err_code == Z_STREAM_END){
-			break;
-		}
-		if(err_code != 0){
+	int err_code;
+	do {
+		m_ctx->stream.next_out = m_ctx->temp;
+		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
+		err_code = ::deflate(&(m_ctx->stream), Z_FINISH);
+		if(err_code < 0){
 			LOG_POSEIDON_ERROR("::deflate() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
 		}
-	}
-	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
+		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
+	} while(err_code != Z_STREAM_END);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
@@ -106,16 +113,14 @@ struct Inflator::Context : NONCOPYABLE {
 		stream.zfree = NULLPTR;
 		stream.opaque = NULLPTR;
 		const int err_code = ::inflateInit2(&stream, 15 + gzip * 16);
-		if(err_code != 0){
+		if(err_code < 0){
 			LOG_POSEIDON_ERROR("::inflateInit2() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::deflateInit2()"), err_code);
 		}
-		stream.next_out = temp;
-		stream.avail_out = sizeof(temp);
 	}
 	~Context(){
 		const int err_code = ::inflateEnd(&stream);
-		if(err_code != 0){
+		if(err_code < 0){
 			LOG_POSEIDON_WARNING("::inflateEnd() error: err_code = ", err_code);
 		}
 	}
@@ -130,7 +135,7 @@ void Inflator::clear(){
 	PROFILE_ME;
 
 	const int err_code = ::inflateReset(&(m_ctx->stream));
-	if(err_code != 0){
+	if(err_code < 0){
 		LOG_POSEIDON_FATAL("::inflateReset() error: err_code = ", err_code);
 		std::abort();
 	}
@@ -139,26 +144,30 @@ void Inflator::clear(){
 void Inflator::put(const void *data, std::size_t size){
 	PROFILE_ME;
 
-	std::size_t total = 0;
-	while(size > total){
-		const unsigned step = static_cast<unsigned>(std::min<std::size_t>(size - total, UINT_MAX));
-		m_ctx->stream.next_in = static_cast<const ::Bytef *>(data) + total;
-		m_ctx->stream.avail_in = step;
-		m_ctx->stream.next_out = m_ctx->temp;
-		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
-		const int err_code = ::inflate(&(m_ctx->stream), Z_NO_FLUSH);
-		if(err_code == Z_STREAM_END){
-			m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
-			total += step - m_ctx->stream.avail_in;
+	const ::Bytef *const begin = static_cast<const ::Bytef *>(data);
+	m_ctx->stream.next_in = begin;
+	m_ctx->stream.avail_in = 0;
+	int err_code;
+	do {
+		if(m_ctx->stream.avail_in == 0){
+			std::size_t remaining = static_cast<std::size_t>(begin + size - m_ctx->stream.next_in);
+			if(remaining > UINT_MAX){
+				remaining = UINT_MAX;
+			}
+			m_ctx->stream.avail_in = remaining;
+		}
+		if(m_ctx->stream.avail_in == 0){
 			break;
 		}
-		if(err_code != 0){
+		m_ctx->stream.next_out = m_ctx->temp;
+		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
+		err_code = ::inflate(&(m_ctx->stream), Z_NO_FLUSH);
+		if(err_code < 0){
 			LOG_POSEIDON_ERROR("::inflate() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 		}
-		m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
-		total += step - m_ctx->stream.avail_in;
-	}
+		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
+	} while(err_code != Z_STREAM_END);
 }
 void Inflator::put(const StreamBuffer &buffer){
 	PROFILE_ME;
@@ -172,19 +181,17 @@ StreamBuffer Inflator::finalize(){
 
 	m_ctx->stream.next_in = NULLPTR;
 	m_ctx->stream.avail_in = 0;
-	m_ctx->stream.next_out = m_ctx->temp;
-	m_ctx->stream.avail_out = sizeof(m_ctx->temp);
-	for(;;){
-		const int err_code = ::inflate(&(m_ctx->stream), Z_FINISH);
-		if(err_code == Z_STREAM_END){
-			break;
-		}
-		if(err_code != 0){
+	int err_code;
+	do {
+		m_ctx->stream.next_out = m_ctx->temp;
+		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
+		err_code = ::inflate(&(m_ctx->stream), Z_FINISH);
+		if(err_code < 0){
 			LOG_POSEIDON_ERROR("::inflate() error: err_code = ", err_code);
 			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 		}
-	}
-	m_buffer.put(m_ctx->temp, sizeof(m_ctx->temp) - m_ctx->stream.avail_out);
+		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
+	} while(err_code != Z_STREAM_END);
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
