@@ -122,7 +122,7 @@ namespace MongoDb {
 		return os;
 	}
 	template<typename ValueT>
-	inline std::istream &operator<<(std::istream &is, ObjectBase::Field<ValueT> &rhs){
+	inline std::istream &operator>>(std::istream &is, ObjectBase::Field<ValueT> &rhs){
 		rhs.parse(is);
 		return is;
 	}
