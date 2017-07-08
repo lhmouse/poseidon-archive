@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
+#include <unistd.h>
 #include "../thread.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
@@ -25,11 +26,33 @@ namespace {
 	volatile bool g_running = false;
 	Thread g_thread;
 
+	class WeakableSocket {
+	private:
+		boost::shared_ptr<SocketBase> m_strong;
+		boost::weak_ptr<SocketBase> m_weak;
+		UniqueFile m_dup_fd;
+
+	public:
+		WeakableSocket(bool owning, const boost::shared_ptr<SocketBase> &socket){
+			if(owning){
+				m_strong = socket;
+			} else {
+				m_weak = socket;
+				m_dup_fd.reset(::dup(socket->get_fd()));
+				DEBUG_THROW_ASSERT(m_dup_fd);
+			}
+		}
+
+	public:
+		boost::shared_ptr<SocketBase> lock() const NOEXCEPT {
+			return m_strong ? m_strong : m_weak.lock();
+		}
+	};
+
 	struct SocketElement {
-		boost::shared_ptr<SocketBase> socket;
+		boost::shared_ptr<WeakableSocket> weakable;
 
 		const SocketBase *ptr;
-		bool owning;
 		boost::uint64_t read_time;
 		boost::uint64_t write_time;
 		int err_code;
@@ -37,15 +60,14 @@ namespace {
 		mutable bool readable;
 		mutable bool writeable;
 
-		SocketElement(const boost::shared_ptr<SocketBase> &socket_, bool owning_, boost::uint64_t now_)
-			: socket(socket_)
-			, ptr(socket.get()), owning(owning_), read_time(now_), write_time(now_), err_code(-1)
+		SocketElement(bool owning, const boost::shared_ptr<SocketBase> &socket, boost::uint64_t now)
+			: weakable(boost::make_shared<WeakableSocket>(owning, socket))
+			, ptr(socket.get()), read_time(now), write_time(now), err_code(-1)
 			, readable(false), writeable(false)
 		{ }
 	};
 	MULTI_INDEX_MAP(SocketMap, SocketElement,
 		UNIQUE_MEMBER_INDEX(ptr)
-		MULTI_MEMBER_INDEX(owning)
 		MULTI_MEMBER_INDEX(read_time)
 		MULTI_MEMBER_INDEX(write_time)
 		MULTI_MEMBER_INDEX(err_code)
@@ -54,26 +76,6 @@ namespace {
 	RecursiveMutex g_mutex;
 	UniqueFile g_epoll;
 	SocketMap g_socket_map;
-
-	bool reap_unowned_sockets() NOEXCEPT {
-		PROFILE_ME;
-
-		bool busy = false;
-		const RecursiveMutex::UniqueLock lock(g_mutex);
-		const AUTO(end, g_socket_map.upper_bound<1>(false));
-		for(AUTO(it, g_socket_map.begin<1>()); it != end; ++it){
-			const AUTO_REF(socket, it->socket);
-			if(!socket.unique()){
-				continue;
-			}
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-				"Reaping unowned socket: typeid = ", typeid(*socket).name());
-			socket->shutdown_read();
-			socket->shutdown_write();
-			++busy;
-		}
-		return busy;
-	}
 
 	bool wait_for_sockets(unsigned timeout) NOEXCEPT {
 		PROFILE_ME;
@@ -99,28 +101,33 @@ namespace {
 				LOG_POSEIDON_TRACE("Socket reported by epoll is not registered: ptr = ", static_cast<void *>(ptr));
 				continue;
 			}
+			const AUTO(socket, it->weakable->lock());
+			if(!socket){
+				g_socket_map.erase<0>(it);
+				continue;
+			}
 			if(events[i].events & EPOLLIN){
 				it->readable = true;
-				g_socket_map.set_key<0, 2>(it, now);
+				g_socket_map.set_key<0, 1>(it, now);
 			}
 			if(events[i].events & EPOLLOUT){
 				it->writeable = true;
-				g_socket_map.set_key<0, 3>(it, now);
+				g_socket_map.set_key<0, 2>(it, now);
 			}
 			if(events[i].events & (EPOLLHUP | EPOLLERR)){
 				int err_code;
-				if(it->socket->did_time_out()){
+				if(socket->did_time_out()){
 					err_code = ETIMEDOUT;
 				} else if(events[i].events & EPOLLERR){
 					::socklen_t err_len = sizeof(err_code);
-					if(::getsockopt(it->socket->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
+					if(::getsockopt(socket->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
 						err_code = errno;
-						LOG_POSEIDON_WARNING("::getsockopt() failed, errno was ", err_code, ": fd = ", it->socket->get_fd());
+						LOG_POSEIDON_WARNING("::getsockopt() failed, errno was ", err_code, ": fd = ", socket->get_fd());
 					}
 				} else {
 					err_code = 0;
 				}
-				g_socket_map.set_key<0, 4>(it, err_code);
+				g_socket_map.set_key<0, 3>(it, err_code);
 			}
 		}
 		return true;
@@ -134,14 +141,18 @@ namespace {
 		bool readable;
 		{
 			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(it, g_socket_map.begin<2>());
-			if(it == g_socket_map.end<2>()){
+			const AUTO(it, g_socket_map.begin<1>());
+			if(it == g_socket_map.end<1>()){
 				return false;
 			}
 			if(now < it->read_time){
 				return false;
 			}
-			socket = it->socket;
+			socket = it->weakable->lock();
+			if(!socket){
+				g_socket_map.erase<1>(it);
+				return true;
+			}
 			readable = it->readable;
 		}
 
@@ -151,9 +162,9 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				g_socket_map.set_key<0, 2>(it, now + 5000);
+				g_socket_map.set_key<0, 1>(it, now + 5000);
 			}
-			return false;
+			return true;
 		}
 
 		int err_code;
@@ -174,7 +185,7 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
+				g_socket_map.set_key<0, 1>(it, (boost::uint64_t)-1);
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
 			LOG_POSEIDON_DEBUG("Socket read error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
@@ -195,14 +206,18 @@ namespace {
 		bool writeable;
 		{
 			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(it, g_socket_map.begin<3>());
-			if(it == g_socket_map.end<3>()){
+			const AUTO(it, g_socket_map.begin<2>());
+			if(it == g_socket_map.end<2>()){
 				return false;
 			}
 			if(now < it->write_time){
 				return false;
 			}
-			socket = it->socket;
+			socket = it->weakable->lock();
+			if(!socket){
+				g_socket_map.erase<2>(it);
+				return true;
+			}
 			writeable = it->writeable;
 		}
 
@@ -225,7 +240,7 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				g_socket_map.set_key<0, 3>(it, (boost::uint64_t)-1);
+				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
 			LOG_POSEIDON_DEBUG("Socket write error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
@@ -246,11 +261,15 @@ namespace {
 		int err_code;
 		{
 			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(it, g_socket_map.lower_bound<4>(0));
-			if(it == g_socket_map.end<4>()){
+			const AUTO(it, g_socket_map.lower_bound<3>(0));
+			if(it == g_socket_map.end<3>()){
 				return false;
 			}
-			socket = it->socket;
+			socket = it->weakable->lock();
+			if(!socket){
+				g_socket_map.erase<3>(it);
+				return true;
+			}
 			err_code = it->err_code;
 		}
 
@@ -284,8 +303,7 @@ namespace {
 		for(;;){
 			bool busy;
 			do {
-				busy = reap_unowned_sockets();
-				busy += wait_for_sockets(0);
+				busy = wait_for_sockets(0);
 				busy += pump_one_readable_socket();
 				busy += pump_one_writeable_socket();
 				busy += pump_one_closed_socket();
@@ -336,10 +354,15 @@ void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snaps
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	snapshot.reserve(snapshot.size() + g_socket_map.size());
 	for(AUTO(it, g_socket_map.begin()); it != g_socket_map.end(); ++it){
+		const AUTO(socket, it->weakable->lock());
+		if(!socket){
+			continue;
+		}
 		SnapshotElement elem = { };
-		elem.remote = it->socket->get_remote_info();
-		elem.local = it->socket->get_local_info();
-		elem.ms_online = saturated_sub(now, it->socket->get_creation_time());
+		elem.remote = socket->get_remote_info();
+		elem.local = socket->get_local_info();
+		elem.ms_online = saturated_sub(now, socket->get_creation_time());
+		elem.established = it->writeable;
 		snapshot.push_back(STD_MOVE(elem));
 	}
 }
@@ -348,7 +371,7 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket, bool t
 
 	const AUTO(now, Poseidon::get_fast_mono_clock());
 	const RecursiveMutex::UniqueLock lock(g_mutex);
-	const AUTO(result, g_socket_map.insert(SocketElement(socket, take_ownership, now)));
+	const AUTO(result, g_socket_map.insert(SocketElement(take_ownership, socket, now)));
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket,
 			", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
@@ -379,7 +402,7 @@ bool EpollDaemon::mark_socket_writeable(const SocketBase *ptr) NOEXCEPT {
 		return false;
 	}
 	const AUTO(now, get_fast_mono_clock());
-	g_socket_map.set_key<0, 3>(it, now);
+	g_socket_map.set_key<0, 2>(it, now);
 	return true;
 }
 

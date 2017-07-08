@@ -22,6 +22,7 @@ public:
 		IpPort remote;
 		IpPort local;
 		boost::uint64_t ms_online;
+		bool established;
 	};
 
 	static void start();

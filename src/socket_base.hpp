@@ -16,7 +16,7 @@ namespace Poseidon {
 
 class IpPort;
 
-class SocketBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
+class SocketBase : public virtual VirtualSharedFromThis {
 public:
 	// 至少一个此对象存活的条件下连接不会由于 RDHUP 而被关掉。
 	class DelayedShutdownGuard : NONCOPYABLE {
