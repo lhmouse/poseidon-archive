@@ -50,7 +50,7 @@ namespace {
 	};
 
 	struct SocketElement {
-		boost::shared_ptr<WeakableSocket> weakable;
+		boost::shared_ptr<const WeakableSocket> weakable;
 
 		const SocketBase *ptr;
 		boost::uint64_t read_time;
