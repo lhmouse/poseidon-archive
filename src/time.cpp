@@ -18,7 +18,7 @@ boost::uint64_t get_utc_time(){
 		LOG_POSEIDON_FATAL("Realtime clock is not supported.");
 		std::abort();
 	}
-	return (boost::uint64_t)ts.tv_sec * 1000 + (unsigned long)ts.tv_nsec / 1000000;
+	return (boost::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
 boost::uint64_t get_local_time(){
 	return get_local_time_from_utc(get_utc_time());
@@ -29,7 +29,7 @@ boost::uint64_t get_utc_time_from_local(boost::uint64_t local){
 		LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
 		std::abort();
 	}
-	return local + (unsigned long)::timezone * 1000;
+	return local + (boost::uint64_t)(::timezone * 1000);
 }
 boost::uint64_t get_local_time_from_utc(boost::uint64_t utc){
 	const int err = ::pthread_once(&g_tz_once, &::tzset);
@@ -37,7 +37,7 @@ boost::uint64_t get_local_time_from_utc(boost::uint64_t utc){
 		LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
 		std::abort();
 	}
-	return utc - (unsigned long)::timezone * 1000;
+	return utc - (boost::uint64_t)(::timezone * 1000);
 }
 
 // 这里沿用了 MCF 的旧称。在 Windows 上 get_fast_mono_clock() 是 GetTickCount64() 实现的。
@@ -47,7 +47,7 @@ boost::uint64_t get_fast_mono_clock() NOEXCEPT {
 		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
 		std::abort();
 	}
-	return (boost::uint64_t)ts.tv_sec * 1000 + (unsigned long)ts.tv_nsec / 1000000;
+	return (boost::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
 // 在 Windows 上 get_hi_res_mono_clock() 是 QueryPerformanceCounter() 实现的。
 double get_hi_res_mono_clock() NOEXCEPT {
