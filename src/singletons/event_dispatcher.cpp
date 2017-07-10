@@ -86,7 +86,7 @@ void EventDispatcher::stop(){
 	g_listeners.clear();
 }
 
-boost::shared_ptr<EventListener> EventDispatcher::register_listener_explicit(const std::type_info &type_info, EventListenerCallback callback){
+boost::shared_ptr<const EventListener> EventDispatcher::register_listener_explicit(const std::type_info &type_info, EventListenerCallback callback){
 	PROFILE_ME;
 
 	AUTO(listener, boost::make_shared<EventListener>(type_info, STD_MOVE_IDN(callback)));
@@ -94,7 +94,7 @@ boost::shared_ptr<EventListener> EventDispatcher::register_listener_explicit(con
 		const Mutex::UniqueLock lock(g_mutex);
 		g_listeners.emplace(&type_info, listener);
 	}
-	return listener;
+	return STD_MOVE_IDN(listener);
 }
 
 void EventDispatcher::sync_raise(const boost::shared_ptr<EventBase> &event){
