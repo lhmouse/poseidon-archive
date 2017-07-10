@@ -14,7 +14,7 @@ const std::uint64_t g_keep_alive_timeout    = 15000; // 如果两个请求之间
 
 class Session : public Poseidon::TcpSessionBase {
 public:
-	explicit Session(Poseidon::UniqueFile socket)
+	explicit Session(Poseidon::UniqueFile &&socket)
 		: Poseidon::TcpSessionBase(std::move(socket))
 	{
 		get_remote_info(); // 这样后面 get_remote_info() 都不会抛出异常。
@@ -26,11 +26,11 @@ protected:
 	void on_connect() override {
 		LOG_POSEIDON_INFO("Connection established: remote = ", get_remote_info());
 	}
-	void on_read_hup() noexcept override {
+	void on_read_hup() override {
 		LOG_POSEIDON_INFO("Connection read hup: remote = ", get_remote_info());
 		shutdown_write();
 	}
-	void on_close(int err_code) noexcept override {
+	void on_close(int err_code) override {
 		LOG_POSEIDON_INFO("Connection error: remote = ", get_remote_info(),
 			", err_code = ", err_code, ", desc = ", Poseidon::get_error_desc(err_code));
 	}
@@ -57,7 +57,7 @@ public:
 	}
 
 public:
-	boost::shared_ptr<Poseidon::TcpSessionBase> on_client_connect(Poseidon::UniqueFile socket) const override {
+	boost::shared_ptr<Poseidon::TcpSessionBase> on_client_connect(Poseidon::UniqueFile &&socket) const override {
 		return boost::make_shared<Session>(std::move(socket));
 	}
 };

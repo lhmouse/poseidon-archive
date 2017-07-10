@@ -17,7 +17,7 @@ const unsigned      g_port       = 17550;
 
 class Session : public Poseidon::Http::Session {
 public:
-	explicit Session(Poseidon::UniqueFile socket)
+	explicit Session(Poseidon::UniqueFile &&socket)
 		: Poseidon::Http::Session(std::move(socket))
 	{
 	}
@@ -57,7 +57,7 @@ public:
 	}
 
 public:
-	boost::shared_ptr<Poseidon::TcpSessionBase> on_client_connect(Poseidon::UniqueFile client) const override {
+	boost::shared_ptr<Poseidon::TcpSessionBase> on_client_connect(Poseidon::UniqueFile &&client) const override {
 		return boost::make_shared<Session>(std::move(client));
 	}
 };

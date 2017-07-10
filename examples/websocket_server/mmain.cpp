@@ -18,7 +18,7 @@ private:
 	Poseidon::Http::RequestHeaders m_request_headers;
 
 public:
-	explicit HttpSession(Poseidon::UniqueFile socket)
+	explicit HttpSession(Poseidon::UniqueFile &&socket)
 		: Poseidon::Http::LowLevelSession(std::move(socket))
 	{
 	}
@@ -97,7 +97,7 @@ public:
 	}
 
 public:
-	boost::shared_ptr<Poseidon::TcpSessionBase> on_client_connect(Poseidon::UniqueFile socket) const override {
+	boost::shared_ptr<Poseidon::TcpSessionBase> on_client_connect(Poseidon::UniqueFile &&socket) const override {
 		return boost::make_shared<HttpSession>(std::move(socket));
 	}
 };
