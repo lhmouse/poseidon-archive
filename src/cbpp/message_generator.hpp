@@ -192,11 +192,11 @@ public:
 #undef FIELD_LIST
 
 #define FIELD_VINT(id_)               cur_->id_ = 0;	\
-                                      if(!Poseidon::vint64_from_binary(cur_->id_, r_, SIZE_MAX)){	\
+                                      if(!::Poseidon::vint64_from_binary(cur_->id_, r_, SIZE_MAX)){	\
                                         THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }
 #define FIELD_VUINT(id_)              cur_->id_ = 0;	\
-                                      if(!Poseidon::vuint64_from_binary(cur_->id_, r_, SIZE_MAX)){	\
+                                      if(!::Poseidon::vuint64_from_binary(cur_->id_, r_, SIZE_MAX)){	\
                                         THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }
 #define FIELD_FIXED(id_, n_)          {	\
@@ -213,7 +213,7 @@ public:
 #define FIELD_STRING(id_)             {	\
                                         cur_->id_.clear();	\
                                         ::boost::uint64_t n_;	\
-                                        if(!Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
+                                        if(!::Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
                                           THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                         }	\
                                         int c_;	\
@@ -236,7 +236,7 @@ public:
 #define FIELD_ARRAY(id_, ...)         {	\
                                         cur_->id_.clear();	\
                                         ::boost::uint64_t n_;	\
-                                        if(!Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
+                                        if(!::Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
                                           THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                         }	\
                                         for(::std::size_t i_ = 0; i_ < n_; ++i_){	\
@@ -249,7 +249,7 @@ public:
                                         cur_->id_.clear();	\
                                         ::boost::uint64_t n_;	\
                                         for(;;){	\
-                                          if(!Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
+                                          if(!::Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
                                             THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                           }	\
                                           if(n_ == 0){	\

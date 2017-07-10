@@ -92,7 +92,7 @@ namespace {
 		if(result == 0){
 			return false;
 		}
-		const AUTO(now, Poseidon::get_fast_mono_clock());
+		const AUTO(now, get_fast_mono_clock());
 		const RecursiveMutex::UniqueLock lock(g_mutex);
 		for(unsigned i = 0; i < (unsigned)result; ++i){
 			const AUTO(ptr, static_cast<SocketBase *>(events[i].data.ptr));
@@ -369,7 +369,7 @@ void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snaps
 void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket, bool take_ownership){
 	PROFILE_ME;
 
-	const AUTO(now, Poseidon::get_fast_mono_clock());
+	const AUTO(now, get_fast_mono_clock());
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	const AUTO(result, g_socket_map.insert(SocketElement(take_ownership, socket, now)));
 	if(!result.second){

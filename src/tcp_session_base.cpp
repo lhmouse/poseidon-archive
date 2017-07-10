@@ -32,7 +32,7 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 	if(shutdown_time < now){
 		std::size_t send_buffer_size;
 		{
-			const Poseidon::Mutex::UniqueLock lock(session->m_send_mutex);
+			const Mutex::UniqueLock lock(session->m_send_mutex);
 			send_buffer_size = session->m_send_buffer.size();
 		}
 		if(send_buffer_size == 0){
@@ -84,7 +84,7 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 
 	std::vector<unsigned char> temp;
 
-	Poseidon::StreamBuffer data;
+	StreamBuffer data;
 	try {
 		temp.resize(4096);
 		::ssize_t result;
@@ -133,7 +133,7 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 
 	std::vector<unsigned char> temp;
 
-	Poseidon::StreamBuffer data;
+	StreamBuffer data;
 	try {
 		if(writeable && !m_connected_notified){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
@@ -143,7 +143,7 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 		}
 
 		temp.resize(4096);
-		Poseidon::Mutex::UniqueLock lock(m_send_mutex);
+		Mutex::UniqueLock lock(m_send_mutex);
 		const std::size_t avail = m_send_buffer.peek(temp.data(), temp.size());
 		if(avail == 0){
 _check_shutdown:

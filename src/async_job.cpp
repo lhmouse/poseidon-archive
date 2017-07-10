@@ -41,7 +41,7 @@ namespace {
 			try {
 				m_proc();
 			} catch(Exception &e){
-				LOG_POSEIDON_DEBUG("Poseidon::Exception thrown: what = ", e.what());
+				LOG_POSEIDON_DEBUG("Exception thrown: what = ", e.what());
 #ifdef POSEIDON_CXX11
 				except = std::current_exception();
 #else
