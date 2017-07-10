@@ -65,7 +65,6 @@ class Deflator;
 class Inflator;
 
 class TimerItem;
-class EventListener;
 
 class DnsDaemon;
 class EpollDaemon;
