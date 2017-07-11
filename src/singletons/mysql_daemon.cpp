@@ -33,8 +33,8 @@ namespace Poseidon {
 typedef MySqlDaemon::QueryCallback QueryCallback;
 
 namespace {
-	std::string     g_master_addr       = "localhost";
-	unsigned        g_master_port       = 3306;
+	std::string     g_server_addr       = "localhost";
+	unsigned        g_server_port       = 3306;
 	std::string     g_slave_addr        = VAL_INIT;
 	unsigned        g_slave_port        = 0;
 	std::string     g_username          = "root";
@@ -52,8 +52,8 @@ namespace {
 
 
 	inline boost::shared_ptr<MySql::Connection> real_create_connection(bool from_slave){
-		AUTO(addr, &g_master_addr);
-		AUTO(port, &g_master_port);
+		AUTO(addr, &g_server_addr);
+		AUTO(port, &g_server_port);
 		if(from_slave){
 			if(!g_slave_addr.empty()){
 				addr = &g_slave_addr;
@@ -581,7 +581,7 @@ namespace {
 							::nanosleep(&req, NULLPTR);
 						}
 					}
-					if((g_master_addr == g_slave_addr) && (g_master_port == g_slave_port) && !slave_conn){
+					if((g_server_addr == g_slave_addr) && (g_server_port == g_slave_port) && !slave_conn){
 						LOG_POSEIDON_DEBUG("Reusing the master connection as the slave connection.");
 						slave_conn = master_conn;
 					}
@@ -770,50 +770,50 @@ void MySqlDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MySQL daemon...");
 
-	MainConfig::get(g_master_addr, "mysql_server_addr");
-	LOG_POSEIDON_DEBUG("MySQL master addr = ", g_master_addr);
+	MainConfig::get(g_server_addr, "mysql_server_addr");
+	LOG_POSEIDON_DEBUG("mysql_server_addr = ", g_server_addr);
 
-	MainConfig::get(g_master_port, "mysql_server_port");
-	LOG_POSEIDON_DEBUG("MySQL master port = ", g_master_port);
+	MainConfig::get(g_server_port, "mysql_server_port");
+	LOG_POSEIDON_DEBUG("mysql_server_port = ", g_server_port);
 
 	MainConfig::get(g_slave_addr, "mysql_slave_addr");
-	LOG_POSEIDON_DEBUG("MySQL slave addr = ", g_slave_addr);
+	LOG_POSEIDON_DEBUG("mysql_slave_addr = ", g_slave_addr);
 
 	MainConfig::get(g_slave_port, "mysql_slave_port");
-	LOG_POSEIDON_DEBUG("MySQL slave port = ", g_slave_port);
+	LOG_POSEIDON_DEBUG("mysql_slave_port = ", g_slave_port);
 
 	MainConfig::get(g_username, "mysql_username");
-	LOG_POSEIDON_DEBUG("MySQL username = ", g_username);
+	LOG_POSEIDON_DEBUG("mysql_username = ", g_username);
 
 	MainConfig::get(g_password, "mysql_password");
-	LOG_POSEIDON_DEBUG("MySQL password = ", g_password);
+	LOG_POSEIDON_DEBUG("mysql_password = ", g_password);
 
 	MainConfig::get(g_schema, "mysql_schema");
-	LOG_POSEIDON_DEBUG("MySQL schema = ", g_schema);
+	LOG_POSEIDON_DEBUG("mysql_schema = ", g_schema);
 
 	MainConfig::get(g_use_ssl, "mysql_use_ssl");
-	LOG_POSEIDON_DEBUG("MySQL use ssl = ", g_use_ssl);
+	LOG_POSEIDON_DEBUG("mysql_use_ssl = ", g_use_ssl);
 
 	MainConfig::get(g_charset, "mysql_charset");
-	LOG_POSEIDON_DEBUG("MySQL charset = ", g_charset);
+	LOG_POSEIDON_DEBUG("mysql_charset = ", g_charset);
 
 	MainConfig::get(g_dump_dir, "mysql_dump_dir");
-	LOG_POSEIDON_DEBUG("MySQL dump dir = ", g_dump_dir);
+	LOG_POSEIDON_DEBUG("mysql_dump_dir = ", g_dump_dir);
 
 	MainConfig::get(g_save_delay, "mysql_save_delay");
-	LOG_POSEIDON_DEBUG("MySQL save delay = ", g_save_delay);
+	LOG_POSEIDON_DEBUG("mysql_save_delay = ", g_save_delay);
 
 	MainConfig::get(g_reconn_delay, "mysql_reconn_delay");
-	LOG_POSEIDON_DEBUG("MySQL reconnect delay = ", g_reconn_delay);
+	LOG_POSEIDON_DEBUG("mysql_reconn_delay = ", g_reconn_delay);
 
 	MainConfig::get(g_max_retry_count, "mysql_max_retry_count");
-	LOG_POSEIDON_DEBUG("MySQL max retry count = ", g_max_retry_count);
+	LOG_POSEIDON_DEBUG("mysql_max_retry_count = ", g_max_retry_count);
 
 	MainConfig::get(g_retry_init_delay, "mysql_retry_init_delay");
-	LOG_POSEIDON_DEBUG("MySQL retry init delay = ", g_retry_init_delay);
+	LOG_POSEIDON_DEBUG("mysql_retry_init_delay = ", g_retry_init_delay);
 
 	MainConfig::get(g_max_thread_count, "mysql_max_thread_count");
-	LOG_POSEIDON_DEBUG("MySQL max thread count = ", g_max_thread_count);
+	LOG_POSEIDON_DEBUG("mysql_max_thread_count = ", g_max_thread_count);
 
 	if(!g_dump_dir.empty()){
 		const AUTO(placeholder_path, g_dump_dir + "/placeholder");

@@ -37,8 +37,8 @@ namespace Poseidon {
 typedef MongoDbDaemon::QueryCallback QueryCallback;
 
 namespace {
-	std::string     g_master_addr       = "localhost";
-	unsigned        g_master_port       = 27017;
+	std::string     g_server_addr       = "localhost";
+	unsigned        g_server_port       = 27017;
 	std::string     g_slave_addr        = VAL_INIT;
 	unsigned        g_slave_port        = 0;
 	std::string     g_username          = "root";
@@ -55,8 +55,8 @@ namespace {
 	std::size_t     g_max_thread_count  = 8;
 
 	inline boost::shared_ptr<MongoDb::Connection> real_create_connection(bool from_slave){
-		AUTO(addr, &g_master_addr);
-		AUTO(port, &g_master_port);
+		AUTO(addr, &g_server_addr);
+		AUTO(port, &g_server_port);
 		if(from_slave){
 			if(!g_slave_addr.empty()){
 				addr = &g_slave_addr;
@@ -594,7 +594,7 @@ namespace {
 							::nanosleep(&req, NULLPTR);
 						}
 					}
-					if((g_master_addr == g_slave_addr) && (g_master_port == g_slave_port) && !slave_conn){
+					if((g_server_addr == g_slave_addr) && (g_server_port == g_slave_port) && !slave_conn){
 						LOG_POSEIDON_DEBUG("Reusing the master connection as the slave connection.");
 						slave_conn = master_conn;
 					}
@@ -783,50 +783,50 @@ void MongoDbDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MongoDB daemon...");
 
-	MainConfig::get(g_master_addr, "mongodb_server_addr");
-	LOG_POSEIDON_DEBUG("MongoDB master addr = ", g_master_addr);
+	MainConfig::get(g_server_addr, "mongodb_server_addr");
+	LOG_POSEIDON_DEBUG("mongodb_server_addr = ", g_server_addr);
 
-	MainConfig::get(g_master_port, "mongodb_server_port");
-	LOG_POSEIDON_DEBUG("MongoDB master port = ", g_master_port);
+	MainConfig::get(g_server_port, "mongodb_server_port");
+	LOG_POSEIDON_DEBUG("mongodb_server_port = ", g_server_port);
 
 	MainConfig::get(g_slave_addr, "mongodb_slave_addr");
-	LOG_POSEIDON_DEBUG("MongoDB slave addr = ", g_slave_addr);
+	LOG_POSEIDON_DEBUG("mongodb_slave_addr = ", g_slave_addr);
 
 	MainConfig::get(g_slave_port, "mongodb_slave_port");
-	LOG_POSEIDON_DEBUG("MongoDB slave port = ", g_slave_port);
+	LOG_POSEIDON_DEBUG("mongodb_slave_port = ", g_slave_port);
 
 	MainConfig::get(g_username, "mongodb_username");
-	LOG_POSEIDON_DEBUG("MongoDB username = ", g_username);
+	LOG_POSEIDON_DEBUG("mongodb_username = ", g_username);
 
 	MainConfig::get(g_password, "mongodb_password");
-	LOG_POSEIDON_DEBUG("MongoDB password = ", g_password);
+	LOG_POSEIDON_DEBUG("mongodb_password = ", g_password);
 
 	MainConfig::get(g_auth_database, "mongodb_auth_database");
-	LOG_POSEIDON_DEBUG("MongoDB auth database = ", g_auth_database);
+	LOG_POSEIDON_DEBUG("mongodb_auth_database = ", g_auth_database);
 
 	MainConfig::get(g_database, "mongodb_database");
-	LOG_POSEIDON_DEBUG("MongoDB database = ", g_database);
+	LOG_POSEIDON_DEBUG("mongodb_database = ", g_database);
 
 	MainConfig::get(g_use_ssl, "mongodb_use_ssl");
-	LOG_POSEIDON_DEBUG("MongoDB use ssl = ", g_use_ssl);
+	LOG_POSEIDON_DEBUG("mongodb_use_ssl = ", g_use_ssl);
 
 	MainConfig::get(g_dump_dir, "mongodb_dump_dir");
-	LOG_POSEIDON_DEBUG("MongoDB dump dir = ", g_dump_dir);
+	LOG_POSEIDON_DEBUG("mongodb_dump_dir = ", g_dump_dir);
 
 	MainConfig::get(g_save_delay, "mongodb_save_delay");
-	LOG_POSEIDON_DEBUG("MongoDB save delay = ", g_save_delay);
+	LOG_POSEIDON_DEBUG("mongodb_save_delay = ", g_save_delay);
 
 	MainConfig::get(g_reconn_delay, "mongodb_reconn_delay");
-	LOG_POSEIDON_DEBUG("MongoDB reconnect delay = ", g_reconn_delay);
+	LOG_POSEIDON_DEBUG("mongodb_reconn_delay = ", g_reconn_delay);
 
 	MainConfig::get(g_max_retry_count, "mongodb_max_retry_count");
-	LOG_POSEIDON_DEBUG("MongoDB max retry count = ", g_max_retry_count);
+	LOG_POSEIDON_DEBUG("mongodb_max_retry_count = ", g_max_retry_count);
 
 	MainConfig::get(g_retry_init_delay, "mongodb_retry_init_delay");
-	LOG_POSEIDON_DEBUG("MongoDB retry init delay = ", g_retry_init_delay);
+	LOG_POSEIDON_DEBUG("mongodb_retry_init_delay = ", g_retry_init_delay);
 
 	MainConfig::get(g_max_thread_count, "mongodb_max_thread_count");
-	LOG_POSEIDON_DEBUG("MongoDB max_thread_count = ", g_max_thread_count);
+	LOG_POSEIDON_DEBUG("mongodb_max_thread_count = ", g_max_thread_count);
 
 	if(!g_dump_dir.empty()){
 		const AUTO(placeholder_path, g_dump_dir + "/placeholder");

@@ -251,7 +251,7 @@ void JobDispatcher::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting job dispatcher...");
 
 	MainConfig::get(g_job_timeout, "job_timeout");
-	LOG_POSEIDON_DEBUG("Job timeout = ", g_job_timeout);
+	LOG_POSEIDON_DEBUG("job_timeout = ", g_job_timeout);
 }
 void JobDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
