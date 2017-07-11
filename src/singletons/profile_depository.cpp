@@ -21,16 +21,7 @@ namespace {
 		ProfileKey(const char *file_, unsigned long line_, const char *func_)
 			: file(file_), line(line_), func(func_)
 		{ }
-
-		bool operator<(const ProfileKey &rhs) const {
-			const int file_cmp = std::strcmp(file, rhs.file);
-			if(file_cmp != 0){
-				return file_cmp < 0;
-			}
-			return line < rhs.line;
-		}
 	};
-
 	struct ProfileCounters {
 		unsigned long long samples;
 		double total;
@@ -40,11 +31,22 @@ namespace {
 			: samples(0), total(0), exclusive(0)
 		{ }
 	};
+	struct ProfileKeyComparator {
+		bool operator()(const ProfileKey &lhs, const ProfileKey &rhs) const NOEXCEPT {
+			int cmp = std::strcmp(lhs.file, rhs.file);
+			if(cmp != 0){
+				return cmp < 0;
+			}
+			return lhs.line < rhs.line;
+		}
+	};
+	typedef boost::container::flat_map<ProfileKey,
+		ProfileCounters, ProfileKeyComparator> ProfileMap;
 
 	bool g_enabled = true;
 
 	Mutex g_mutex;
-	boost::container::flat_map<ProfileKey, ProfileCounters> g_profile;
+	ProfileMap g_profile;
 }
 
 void ProfileDepository::start(){
