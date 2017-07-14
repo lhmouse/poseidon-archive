@@ -32,6 +32,7 @@ public:
 #undef FIELD_VUINT
 #undef FIELD_FIXED
 #undef FIELD_STRING
+#undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
 #undef FIELD_LIST
@@ -40,6 +41,7 @@ public:
 #define FIELD_VUINT(id_)              ::boost::uint64_t id_;
 #define FIELD_FIXED(id_, n_)          ::boost::array<char, n_> id_;
 #define FIELD_STRING(id_)             ::std::string id_;
+#define FIELD_BLOB(id_)               ::std::string id_;
 #define FIELD_FLEXIBLE(id_)           ::std::string id_;
 #define FIELD_ARRAY(id_, ...)         struct Cbpp ## id_ ## F_ { __VA_ARGS__ };	\
                                       ::boost::container::vector< Cbpp ## id_ ## F_ > id_;
@@ -54,6 +56,7 @@ public:
 #undef FIELD_VUINT
 #undef FIELD_FIXED
 #undef FIELD_STRING
+#undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
 #undef FIELD_LIST
@@ -62,6 +65,7 @@ public:
 #define FIELD_VUINT(id_)              + 1
 #define FIELD_FIXED(id_, n_)          + 1
 #define FIELD_STRING(id_)             + 1
+#define FIELD_BLOB(id_)               + 1
 #define FIELD_FLEXIBLE(id_)           + 1
 #define FIELD_ARRAY(id_, ...)         + 1
 #define FIELD_LIST(id_, ...)          + 1
@@ -74,6 +78,7 @@ public:
 #undef FIELD_VUINT
 #undef FIELD_FIXED
 #undef FIELD_STRING
+#undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
 #undef FIELD_LIST
@@ -82,6 +87,7 @@ public:
 #define FIELD_VUINT(id_)              , id_()
 #define FIELD_FIXED(id_, n_)          , id_()
 #define FIELD_STRING(id_)             , id_()
+#define FIELD_BLOB(id_)               , id_()
 #define FIELD_FLEXIBLE(id_)           , id_()
 #define FIELD_ARRAY(id_, ...)         , id_()
 #define FIELD_LIST(id_, ...)          , id_()
@@ -94,6 +100,7 @@ public:
 #undef FIELD_VUINT
 #undef FIELD_FIXED
 #undef FIELD_STRING
+#undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
 #undef FIELD_LIST
@@ -102,6 +109,7 @@ public:
 #define FIELD_VUINT(id_)              , ::boost::uint64_t id_ ## X_
 #define FIELD_FIXED(id_, n_)          , const ::boost::array<char, n_> & id_ ## X_
 #define FIELD_STRING(id_)             , ::std::string id_ ## X_
+#define FIELD_BLOB(id_)               , ::std::string id_ ## X_
 #define FIELD_FLEXIBLE(id_)           , ::std::string id_ ## X_
 #define FIELD_ARRAY(id_, ...)         , ::boost::container::vector< Cbpp ## id_ ## F_ > id_ ## X_
 #define FIELD_LIST(id_, ...)          , ::boost::container::deque< Cbpp ## id_ ## F_ > id_ ## X_
@@ -113,6 +121,7 @@ public:
 #undef FIELD_VUINT
 #undef FIELD_FIXED
 #undef FIELD_STRING
+#undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
 #undef FIELD_LIST
@@ -121,6 +130,7 @@ public:
 #define FIELD_VUINT(id_)              , id_(id_ ## X_)
 #define FIELD_FIXED(id_, n_)          , id_(id_ ## X_)
 #define FIELD_STRING(id_)             , id_(STD_MOVE(id_ ## X_))
+#define FIELD_BLOB(id_)               , id_(STD_MOVE(id_ ## X_))
 #define FIELD_FLEXIBLE(id_)           , id_(STD_MOVE(id_ ## X_))
 #define FIELD_ARRAY(id_, ...)         , id_(STD_MOVE(id_ ## X_))
 #define FIELD_LIST(id_, ...)          , id_(STD_MOVE(id_ ## X_))
@@ -148,6 +158,7 @@ public:
 #undef FIELD_VUINT
 #undef FIELD_FIXED
 #undef FIELD_STRING
+#undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
 #undef FIELD_LIST
@@ -156,6 +167,8 @@ public:
 #define FIELD_VUINT(id_)              ::Poseidon::vuint64_to_binary(cur_->id_, w_);
 #define FIELD_FIXED(id_, n_)          w_ = ::std::copy(cur_->id_.begin(), cur_->id_.end(), w_);
 #define FIELD_STRING(id_)             ::Poseidon::vuint64_to_binary(cur_->id_.size(), w_);	\
+                                      w_ = ::std::copy(cur_->id_.begin(), cur_->id_.end(), w_);
+#define FIELD_BLOB(id_)               ::Poseidon::vuint64_to_binary(cur_->id_.size(), w_);	\
                                       w_ = ::std::copy(cur_->id_.begin(), cur_->id_.end(), w_);
 #define FIELD_FLEXIBLE(id_)           w_ = ::std::copy(cur_->id_.begin(), cur_->id_.end(), w_);
 #define FIELD_ARRAY(id_, ...)         ::Poseidon::vuint64_to_binary(cur_->id_.size(), w_);	\
@@ -187,6 +200,7 @@ public:
 #undef FIELD_VUINT
 #undef FIELD_FIXED
 #undef FIELD_STRING
+#undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
 #undef FIELD_LIST
@@ -211,6 +225,21 @@ public:
                                         }	\
                                       }
 #define FIELD_STRING(id_)             {	\
+                                        cur_->id_.clear();	\
+                                        ::boost::uint64_t n_;	\
+                                        if(!::Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
+                                          THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        }	\
+                                        int c_;	\
+                                        for(::std::size_t i_ = 0; i_ < n_; ++i_){	\
+                                          if((c_ = *r_) < 0){	\
+                                            THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                          }	\
+                                          ++r_;	\
+                                          cur_->id_.push_back(c_);	\
+                                        }	\
+                                      }
+#define FIELD_BLOB(id_)               {	\
                                         cur_->id_.clear();	\
                                         ::boost::uint64_t n_;	\
                                         if(!::Poseidon::vuint64_from_binary(n_, r_, SIZE_MAX)){	\
@@ -281,6 +310,7 @@ public:
 #undef FIELD_VUINT
 #undef FIELD_FIXED
 #undef FIELD_STRING
+#undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
 #undef FIELD_ARRAY
 #undef FIELD_LIST
@@ -294,7 +324,15 @@ public:
                                         os_ <<table_[c_ / 16] <<table_[c_ % 16] <<"; ";	\
                                       }	\
                                       os_ <<">; ";
-#define FIELD_STRING(id_)             os_ <<TOKEN_TO_STR(id_) <<": string(" <<cur_->id_.size() <<") = \"" <<cur_->id_ <<"\"; ";
+#define FIELD_STRING(id_)             os_ <<TOKEN_TO_STR(id_) <<": string(" <<cur_->id_.size() <<") = \""	\
+                                        <<cur_->id_ <<"\"; ";
+#define FIELD_BLOB(id_)               os_ <<TOKEN_TO_STR(id_) <<": blob(" <<cur_->id_.size() <<") = <; "	\
+                                      for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                        const char *const table_ = "0123456789abcdef";	\
+                                        const unsigned c_ = static_cast<unsigned char>(*it_);	\
+                                        os_ <<table_[c_ / 16] <<table_[c_ % 16] <<"; ";	\
+                                      }	\
+                                      os_ <<">; ";
 #define FIELD_FLEXIBLE(id_)           os_ <<TOKEN_TO_STR(id_) <<": flexible(" <<cur_->id_.size() <<") = <; ";	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         const char *const table_ = "0123456789abcdef";	\
