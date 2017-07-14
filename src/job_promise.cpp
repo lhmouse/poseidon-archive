@@ -12,7 +12,11 @@ namespace Poseidon {
 JobPromise::JobPromise() NOEXCEPT
 	: m_satisfied(false), m_except()
 { }
-JobPromise::~JobPromise(){ }
+JobPromise::~JobPromise(){
+	if(!m_satisfied){
+		LOG_POSEIDON_WARNING("Destroying an unsatisfied JobPromise.");
+	}
+}
 
 bool JobPromise::would_throw() const NOEXCEPT {
 	const RecursiveMutex::UniqueLock lock(m_mutex);
