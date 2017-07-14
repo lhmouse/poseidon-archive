@@ -20,12 +20,13 @@ namespace Cbpp {
 			ST_END_OF_STREAM        =   -2,
 			ST_NOT_FOUND            =   -3,
 			ST_REQUEST_TOO_LARGE    =   -4,
-			ST_RESPONSE_TOO_LARGE   =   -5,
+//			ST_RESPONSE_TOO_LARGE   =   -5,
 			ST_JUNK_AFTER_PACKET    =   -6,
 			ST_FORBIDDEN            =   -7,
-			ST_AUTH_REQUIRED        =   -8,
+//			ST_AUTH_REQUIRED        =   -8,
 			ST_LENGTH_ERROR         =   -9,
 			ST_UNKNOWN_CTL_CODE     =  -10,
+			ST_DATA_CORRUPTED       =  -11,
 		};
 	}
 
