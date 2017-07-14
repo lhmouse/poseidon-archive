@@ -15,9 +15,10 @@ namespace Poseidon {
 
 class Uuid {
 public:
+	static const Uuid &min() NOEXCEPT;
+	static const Uuid &max() NOEXCEPT;
+
 	static Uuid random() NOEXCEPT;
-	static Uuid min() NOEXCEPT;
-	static Uuid max() NOEXCEPT;
 
 private:
 	unsigned char m_bytes[16];

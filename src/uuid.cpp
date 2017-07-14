@@ -14,9 +14,23 @@
 namespace Poseidon {
 
 namespace {
-	const boost::uint32_t g_pid = static_cast<boost::uint16_t>(::getpid());
+	CONSTEXPR const unsigned char BYTES_MIN[16] =
+		{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	CONSTEXPR const unsigned char BYTES_MAX[16] =
+		{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
+	const Uuid g_min_uuid(BYTES_MIN);
+	const Uuid g_max_uuid(BYTES_MAX);
+
+	const unsigned g_pid = static_cast<boost::uint16_t>(::getpid());
 	volatile boost::uint32_t g_auto_inc = 0;
+}
+
+const Uuid &Uuid::min() NOEXCEPT {
+	return g_min_uuid;
+}
+const Uuid &Uuid::max() NOEXCEPT {
+	return g_max_uuid;
 }
 
 Uuid Uuid::random() NOEXCEPT {
@@ -34,16 +48,6 @@ Uuid Uuid::random() NOEXCEPT {
 	store_be(un.u16[5], random_uint32());
 	store_be(un.u32[3], random_uint32());
 	return Uuid(un.bytes);
-}
-Uuid Uuid::min() NOEXCEPT {
-	static CONSTEXPR const unsigned char bytes[16] =
-		{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	return Uuid(bytes);
-}
-Uuid Uuid::max() NOEXCEPT {
-	static CONSTEXPR const unsigned char bytes[16] =
-		{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-	return Uuid(bytes);
 }
 
 Uuid::Uuid(const char (&str)[36]){
