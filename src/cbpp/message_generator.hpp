@@ -326,7 +326,7 @@ public:
                                       os_ <<">; ";
 #define FIELD_STRING(id_)             os_ <<TOKEN_TO_STR(id_) <<": string(" <<cur_->id_.size() <<") = \""	\
                                         <<cur_->id_ <<"\"; ";
-#define FIELD_BLOB(id_)               os_ <<TOKEN_TO_STR(id_) <<": blob(" <<cur_->id_.size() <<") = <; "	\
+#define FIELD_BLOB(id_)               os_ <<TOKEN_TO_STR(id_) <<": blob(" <<cur_->id_.size() <<") = <; ";	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         const char *const table_ = "0123456789abcdef";	\
                                         const unsigned c_ = static_cast<unsigned char>(*it_);	\
