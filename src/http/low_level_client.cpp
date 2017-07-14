@@ -17,7 +17,11 @@ namespace Http {
 	{ }
 	LowLevelClient::~LowLevelClient(){ }
 
-	void LowLevelClient::on_connect(){ }
+	void LowLevelClient::on_connect(){
+		PROFILE_ME;
+
+		//
+	}
 	void LowLevelClient::on_read_hup(){
 		PROFILE_ME;
 

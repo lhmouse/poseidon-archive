@@ -18,7 +18,11 @@ namespace Http {
 	{ }
 	LowLevelSession::~LowLevelSession(){ }
 
-	void LowLevelSession::on_connect(){ }
+	void LowLevelSession::on_connect(){
+		PROFILE_ME;
+
+		//
+	}
 	void LowLevelSession::on_read_hup(){
 		PROFILE_ME;
 
