@@ -52,7 +52,8 @@ namespace MongoDb {
 			char key_storage[32];
 			const char *key_str;
 			if(as_array){
-				::bson_uint32_to_string(static_cast<boost::uint32_t>(it - m_elements.begin()), &key_str, key_storage, sizeof(key_storage));
+				::bson_uint32_to_string(static_cast<boost::uint32_t>(it - m_elements.begin()),
+					&key_str, key_storage, sizeof(key_storage));
 			} else {
 				key_str = it->name.get();
 			}
@@ -109,7 +110,8 @@ namespace MongoDb {
 				break; }
 			case T_BLOB: {
 				if(!::bson_append_binary(bt, key_str, -1, BSON_SUBTYPE_BINARY,
-					reinterpret_cast<const boost::uint8_t *>(it->large.data()), static_cast<unsigned>(narrowing_cast_to_int(it->large.size()))))
+					reinterpret_cast<const boost::uint8_t *>(it->large.data()),
+					static_cast<unsigned>(narrowing_cast_to_int(it->large.size()))))
 				{
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_binary() failed"), -1);
 				}
@@ -141,7 +143,9 @@ namespace MongoDb {
 				break; }
 			case T_OBJECT: {
 				::bson_t child_storage;
-				if(!::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size())){
+				if(!::bson_init_static(&child_storage,
+					reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()))
+				{
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_init_static() failed"), -1);
 				}
 				const UniqueHandle<BsonCloser> child_guard(&child_storage);
@@ -152,7 +156,9 @@ namespace MongoDb {
 				break; }
 			case T_ARRAY: {
 				::bson_t child_storage;
-				if(!::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size())){
+				if(!::bson_init_static(&child_storage,
+					reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()))
+				{
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_init_static() failed"), -1);
 				}
 				const UniqueHandle<BsonCloser> child_guard(&child_storage);

@@ -13,14 +13,22 @@ namespace Poseidon {
 namespace {
 	::pthread_once_t g_ssl_once = PTHREAD_ONCE_INIT;
 
+	void uninit_ssl(){
+		LOG_POSEIDON_INFO("Uninitializing OpenSSL...");
+
+		EVP_cleanup();
+	}
+
 	void init_ssl(){
 		LOG_POSEIDON_INFO("Initializing OpenSSL...");
 
-		::OpenSSL_add_all_algorithms();
-		::SSL_load_error_strings();
-		::SSL_library_init();
+		OpenSSL_add_all_algorithms();
+		OpenSSL_add_all_ciphers();
+		OpenSSL_add_all_digests();
+		SSL_load_error_strings();
+		SSL_library_init();
 
-		std::atexit(&::EVP_cleanup);
+		std::atexit(&uninit_ssl);
 	}
 }
 
