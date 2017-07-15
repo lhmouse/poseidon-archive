@@ -28,31 +28,11 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 		return;
 	}
 
-	const AUTO(shutdown_time, atomic_load(session->m_shutdown_time, ATOMIC_CONSUME));
-	if(shutdown_time < now){
-		std::size_t send_buffer_size;
-		{
-			const Mutex::UniqueLock lock(session->m_send_mutex);
-			send_buffer_size = session->m_send_buffer.size();
-		}
-		if(send_buffer_size == 0){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-				"Connection closed due to inactivity: remote = ", session->get_remote_info());
-			session->set_timed_out();
-			session->force_shutdown();
-			return;
-		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-			"Shutdown pending: remote = ", session->get_remote_info(), ", send_buffer_size = ", send_buffer_size);
-	}
-
-	const AUTO(last_use_time, atomic_load(session->m_last_use_time, ATOMIC_CONSUME));
-	const AUTO(tcp_response_timeout, MainConfig::get<boost::uint64_t>("tcp_response_timeout", 30000));
-	if(saturated_add(last_use_time, tcp_response_timeout) < now){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-			"The connection seems dead: remote = ", session->get_remote_info());
+	try {
+		session->on_shutdown_timer(now);
+	} catch(std::exception &e){
+		LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 		session->force_shutdown();
-		return;
 	}
 }
 
@@ -190,6 +170,37 @@ _check_shutdown:
 		return EPIPE;
 	}
 	return 0;
+}
+
+void TcpSessionBase::on_shutdown_timer(boost::uint64_t now){
+	PROFILE_ME;
+
+	const AUTO(shutdown_time, atomic_load(m_shutdown_time, ATOMIC_CONSUME));
+	if(shutdown_time < now){
+		std::size_t send_buffer_size;
+		{
+			const Mutex::UniqueLock lock(m_send_mutex);
+			send_buffer_size = m_send_buffer.size();
+		}
+		if(send_buffer_size == 0){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+				"Connection closed due to inactivity: remote = ", get_remote_info());
+			set_timed_out();
+			force_shutdown();
+			return;
+		}
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+			"Shutdown pending: remote = ", get_remote_info(), ", send_buffer_size = ", send_buffer_size);
+	}
+
+	const AUTO(last_use_time, atomic_load(m_last_use_time, ATOMIC_CONSUME));
+	const AUTO(tcp_response_timeout, MainConfig::get<boost::uint64_t>("tcp_response_timeout", 30000));
+	if(saturated_add(last_use_time, tcp_response_timeout) < now){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
+			"The connection seems dead: remote = ", get_remote_info());
+		force_shutdown();
+		return;
+	}
 }
 
 bool TcpSessionBase::has_been_shutdown_read() const NOEXCEPT {

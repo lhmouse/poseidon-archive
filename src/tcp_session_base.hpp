@@ -53,6 +53,9 @@ protected:
 	void on_close(int err_code) OVERRIDE = 0; // 参数就是 errno。
 	void on_receive(StreamBuffer data) OVERRIDE = 0;
 
+	// 注意，只能在 timer 线程中调用这些函数。
+	virtual void on_shutdown_timer(boost::uint64_t now);
+
 public:
 	bool has_been_shutdown_read() const NOEXCEPT OVERRIDE;
 	bool has_been_shutdown_write() const NOEXCEPT OVERRIDE;
