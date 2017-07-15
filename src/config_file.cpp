@@ -46,7 +46,7 @@ namespace {
 			}
 		}
 	}
-	char unescape(std::string &seg, std::istream &is, const char *terminators){
+	char unescape(std::string &seg, std::istream &is, const char *stops_at){
 		PROFILE_ME;
 
 		char term;
@@ -60,19 +60,19 @@ namespace {
 			}
 			if(escaped){
 				switch(ch){
-				case '\b':
+				case 'b':
 					seg += '\b';
 					break;
-				case '\f':
+				case 'f':
 					seg += '\f';
 					break;
-				case '\n':
+				case 'n':
 					seg += '\n';
 					break;
-				case '\r':
+				case 'r':
 					seg += '\r';
 					break;
-				case '\t':
+				case 't':
 					seg += '\t';
 					break;
 				default:
@@ -83,7 +83,7 @@ namespace {
 			} else if(ch == '\\'){
 				escaped = true;
 			} else {
-				const char *const pos = std::strchr(terminators, ch);
+				const char *const pos = std::strchr(stops_at, ch);
 				if(pos){
 					term = *pos;
 					break;
@@ -128,12 +128,20 @@ void ConfigFile::load(const std::string &path){
 		Buffer_istream is(STD_MOVE(buf));
 		std::string key, val;
 		const char key_term = unescape(key, is, "=#");
+		if(!is){
+			LOG_POSEIDON_ERROR("Error parsing escape sequence on line #", line);
+			DEBUG_THROW(Exception, sslit("Error parsing escape sequence"));
+		}
 		key = trim(STD_MOVE(key));
 		if(key.empty()){
 			continue;
 		}
 		if(key_term == '='){
 			unescape(val, is, "#");
+			if(!is){
+				LOG_POSEIDON_ERROR("Error parsing escape sequence on line #", line);
+				DEBUG_THROW(Exception, sslit("Error parsing escape sequence"));
+			}
 			val = trim(STD_MOVE(val));
 		}
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: #", std::setw(3), line, " | ", key, " = ", val);

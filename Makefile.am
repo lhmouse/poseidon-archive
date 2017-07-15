@@ -196,6 +196,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/csv_document.cpp	\
 	src/job_base.cpp	\
 	src/async_job.cpp	\
+	src/optional_map.cpp	\
 	src/ssl_raii.cpp	\
 	src/ssl_filter_base.cpp	\
 	src/ssl_factories.cpp	\

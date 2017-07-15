@@ -45,6 +45,7 @@ public:
 		return *this;
 	}
 #endif
+	~OptionalMap();
 
 public:
 	bool empty() const {
@@ -213,14 +214,7 @@ inline void swap(OptionalMap &lhs, OptionalMap &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const OptionalMap &rhs){
-	os <<"{; ";
-	for(AUTO(it, rhs.begin()); it != rhs.end(); ++it){
-		os <<it->first <<" = (" <<it->second.size() <<")\"" <<it->second <<"\"; ";
-	}
-	os <<"}; ";
-	return os;
-}
+extern std::ostream &operator<<(std::ostream &os, const OptionalMap &rhs);
 
 }
 
