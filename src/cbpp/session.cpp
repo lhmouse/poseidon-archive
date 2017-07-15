@@ -194,7 +194,7 @@ namespace Cbpp {
 			break;
 		default:
 			LOG_POSEIDON_WARNING("Unknown control code: ", status_code);
-			DEBUG_THROW(Exception, ST_UNKNOWN_CTL_CODE, sslit("Unknown control code"));
+			DEBUG_THROW(Exception, ST_UNKNOWN_CONTROL_CODE, sslit("Unknown control code"));
 		}
 	}
 
