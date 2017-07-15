@@ -49,15 +49,13 @@ namespace {
 	char unescape(std::string &seg, std::istream &is, const char *stops_at){
 		PROFILE_ME;
 
-		char term;
 		seg.clear();
+
+		typedef std::istream::traits_type traits;
+		traits::int_type next = is.peek();
 		bool escaped = false;
-		for(;;){
-			char ch;
-			if(!is.get(ch)){
-				term = 0;
-				break;
-			}
+		for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
+			const char ch = is.get();
 			if(escaped){
 				switch(ch){
 				case 'b':
@@ -85,13 +83,12 @@ namespace {
 			} else {
 				const char *const pos = std::strchr(stops_at, ch);
 				if(pos){
-					term = *pos;
-					break;
+					return *pos;
 				}
 				seg += ch;
 			}
 		}
-		return term;
+		return 0;
 	}
 }
 

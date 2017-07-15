@@ -63,8 +63,8 @@ namespace {
 	char url_decode_step(std::istream &is, std::string &str, const char *stops_at){
 		typedef std::istream::traits_type traits;
 		traits::int_type next = is.peek();
-		const char *pos;
-		int high, low;
+		const char *pos = "";
+		int high = 1, low = 1;
 		enum {
 			S_PLAIN,
 			S_WANTS_HIGH,
