@@ -78,6 +78,7 @@ namespace Http {
 			return valid() ? &UrlParam::valid : 0;
 		}
 #endif
+
 		operator const std::string &() const NOEXCEPT {
 			return str();
 		}

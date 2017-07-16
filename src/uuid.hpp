@@ -21,43 +21,55 @@ public:
 	static Uuid random() NOEXCEPT;
 
 private:
-	unsigned char m_bytes[16];
+	boost::array<unsigned char, 16> m_bytes;
 
 public:
 	CONSTEXPR Uuid() NOEXCEPT
 		: m_bytes()
 	{ }
 	explicit Uuid(const unsigned char (&bytes)[16]){
-		std::memcpy(m_bytes, bytes, 16);
+		std::memcpy(m_bytes.data(), bytes, 16);
 	}
 	explicit Uuid(const boost::array<unsigned char, 16> &bytes){
-		std::memcpy(m_bytes, bytes.data(), 16);
+		std::memcpy(m_bytes.data(), bytes.data(), 16);
 	}
 	// 字符串不合法则抛出异常。
 	explicit Uuid(const char (&str)[36]);
 	explicit Uuid(const std::string &str);
 
 public:
-	CONSTEXPR const unsigned char *begin() const {
+	bool is_null() const {
+		static CONSTEXPR const unsigned char null_bytes[16] = { };
+		return std::memcmp(m_bytes.data(), null_bytes, 16) == 0;
+	}
+
+	const boost::array<unsigned char, 16> &as_array() const {
 		return m_bytes;
+	}
+	boost::array<unsigned char, 16> &as_array(){
+		return m_bytes;
+	}
+
+	const unsigned char *begin() const {
+		return m_bytes.data();
 	}
 	unsigned char *begin(){
-		return m_bytes;
+		return m_bytes.data();
 	}
-	CONSTEXPR const unsigned char *end() const {
-		return m_bytes + 16;
+	const unsigned char *end() const {
+		return m_bytes.data() + m_bytes.size();
 	}
 	unsigned char *end(){
-		return m_bytes + 16;
+		return m_bytes.data() + m_bytes.size();
 	}
-	CONSTEXPR const unsigned char *data() const {
-		return m_bytes;
+	const unsigned char *data() const {
+		return m_bytes.data();
 	}
 	unsigned char *data(){
-		return m_bytes;
+		return m_bytes.data();
 	}
-	CONSTEXPR std::size_t size() const {
-		return 16;
+	std::size_t size() const {
+		return m_bytes.size();
 	}
 
 	void to_string(char (&str)[36], bool upper_case = true) const;
@@ -67,31 +79,49 @@ public:
 	bool from_string(const std::string &str);
 
 public:
+#ifdef POSEIDON_CXX11
+	explicit operator bool() const noexcept {
+		return !is_null();
+	}
+#else
+	typedef bool (Uuid::*DummyBool_)() const;
+	operator DummyBool_() const NOEXCEPT {
+		return !is_null() ? &Uuid::is_null : 0;
+	}
+#endif
+
+	operator const boost::array<unsigned char, 16> &() const {
+		return as_array();
+	}
+	operator boost::array<unsigned char, 16> &(){
+		return as_array();
+	}
+
 	const unsigned char &operator[](std::size_t index) const {
-		return m_bytes[index];
+		return as_array()[index];
 	}
 	unsigned char &operator[](std::size_t index){
-		return m_bytes[index];
+		return as_array()[index];
 	}
 };
 
 inline bool operator==(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.begin(), rhs.begin(), 16) == 0;
+	return std::memcmp(lhs.data(), rhs.data(), 16) == 0;
 }
 inline bool operator!=(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.begin(), rhs.begin(), 16) != 0;
+	return std::memcmp(lhs.data(), rhs.data(), 16) != 0;
 }
 inline bool operator<(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.begin(), rhs.begin(), 16) < 0;
+	return std::memcmp(lhs.data(), rhs.data(), 16) < 0;
 }
 inline bool operator>(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.begin(), rhs.begin(), 16) > 0;
+	return std::memcmp(lhs.data(), rhs.data(), 16) > 0;
 }
 inline bool operator<=(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.begin(), rhs.begin(), 16) <= 0;
+	return std::memcmp(lhs.data(), rhs.data(), 16) <= 0;
 }
 inline bool operator>=(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.begin(), rhs.begin(), 16) >= 0;
+	return std::memcmp(lhs.data(), rhs.data(), 16) >= 0;
 }
 
 extern std::ostream &operator<<(std::ostream &os, const Uuid &rhs);
