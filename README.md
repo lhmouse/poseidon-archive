@@ -35,9 +35,9 @@ Support for C++98 is deprecated and might be removed in future versions.
 * libboost-dev  
 
 ### 运行环境要求
-### Rumtime Environment Requirements
+### Runtime Environment Requirements
 
-* Debian Linux Wheezy  
+* Debian Linux Stretch  
 这是主要被支持的 Linux 发行版，使用其他发行版的 Linux 不保证兼容性。  
 旧版 Debian（例如 Squeeze）有已知的严重问题（例如 g++ 4.4 的 bug 导致运行时  
 段错误），我们不对此类问题提供支持，请自行解决。  
@@ -46,12 +46,12 @@ guarantee full compatibility with other Linux distributions.
 Older Debian versions (e.g. Squeeze) are known to have some serious problems  
 (e.g. runtime SIGSEGV due to bugs in g++ 4.4) that we are not willing to  
 provide ANY suppport for. It is you that should work around them.  
-* MySQL 5.5  
-* MongoDB 2.4  
-在 third 目录下有 MySQL 和 MongoDB 的驱动更新脚本可用于编译最新的客户端驱动。  
+* MySQL 5.7  
+* MongoDB 3.4  
+在 `third` 目录下有 MySQL 和 MongoDB 的驱动更新脚本可用于编译最新的客户端驱动。  
 此处列出的是 Debian Jessie 官方源中的服务端版本。  
 There are scripts that can be used to fetch and build latest MySQL and MongoDB  
-client drivers in 'third' directory. The version numbers here are of  
+client drivers in `third` directory. The version numbers here are of  
 server-side packages in Debian Jessie sources.  
 
 ### IRC channel:
@@ -59,7 +59,7 @@ server-side packages in Debian Jessie sources.
 <https://webchat.freenode.net/?channels=%23mcfproj>
 
 ### 问题反馈
-### Reporting Bugs
+### Bug Reports
 
 请联系 lh_mouse at 126 dot com（注明 Poseidon 相关）。  
 Please email to lh_mouse at 126 dot com (Please state your email as related to Poseidon).  
