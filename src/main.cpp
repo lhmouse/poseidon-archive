@@ -49,7 +49,7 @@ namespace {
 			s_kill_timer = virtual_now;
 		}
 		if(saturated_sub(virtual_now, s_kill_timer) >= KILL_TIMEOUT){
-			LOG_POSEIDON_FATAL("----------------------------- Process was killed ------------------------------");
+			LOG_POSEIDON_FATAL("--------------------- Process was killed ----------------------");
 			std::_Exit(EXIT_FAILURE);
 		}
 		LOG_POSEIDON_WARNING("Received SIGINT, trying to exit gracefully...");
@@ -136,10 +136,10 @@ namespace {
 
 }
 
+using namespace Poseidon;
+
 int main(int argc, char **argv)
 try {
-	using namespace Poseidon;
-
 	Logger::set_thread_tag("P   "); // Primary
 
 	::signal(SIGHUP, &sighup_proc);
@@ -148,7 +148,7 @@ try {
 	::signal(SIGCHLD, SIG_IGN);
 	::signal(SIGPIPE, SIG_IGN);
 
-	LOG_POSEIDON_INFO("--------------------------------- Starting up ---------------------------------");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "------------------------- Starting up -------------------------");
 
 	const char *run_path;
 	if(argc > 1){
@@ -162,16 +162,16 @@ try {
 	START(ProfileDepository);
 	run();
 
-	LOG_POSEIDON_INFO("-------------------------- Process exited gracefully --------------------------");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "------------------ Process exited gracefully ------------------");
 	return EXIT_SUCCESS;
 } catch(std::exception &e){
 	LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());
 
-	LOG_POSEIDON_ERROR("-------------------------- Process exited abnormally --------------------------");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_ERROR, "------------------ Process exited abnormally ------------------");
 	return EXIT_FAILURE;
 } catch(...){
 	LOG_POSEIDON_ERROR("Unknown exception thrown in main().");
 
-	LOG_POSEIDON_ERROR("-------------------------- Process exited abnormally --------------------------");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_ERROR, "------------------ Process exited abnormally ------------------");
 	return EXIT_FAILURE;
 }
