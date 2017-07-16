@@ -232,13 +232,13 @@ namespace MySql {
 				}
 				return Uuid(reinterpret_cast<const char (&)[36]>(data[0]));
 			}
-			std::string do_get_blob(const char *name) const {
+			std::basic_string<unsigned char> do_get_blob(const char *name) const {
 				const char *data;
 				std::size_t size;
 				if(!find_field_and_check(data, size, name)){
 					return VAL_INIT;
 				}
-				return std::string(data, size);
+				return std::basic_string<unsigned char>(reinterpret_cast<const unsigned char *>(data), size);
 			}
 		};
 	}
@@ -284,7 +284,7 @@ namespace MySql {
 	Uuid Connection::get_uuid(const char *name) const {
 		return static_cast<const DelegatedConnection &>(*this).do_get_uuid(name);
 	}
-	std::string Connection::get_blob(const char *name) const {
+	std::basic_string<unsigned char> Connection::get_blob(const char *name) const {
 		return static_cast<const DelegatedConnection &>(*this).do_get_blob(name);
 	}
 }

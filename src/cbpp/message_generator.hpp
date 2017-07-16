@@ -39,10 +39,10 @@ public:
 
 #define FIELD_VINT(id_)               ::boost::int64_t id_;
 #define FIELD_VUINT(id_)              ::boost::uint64_t id_;
-#define FIELD_FIXED(id_, n_)          ::boost::array<char, n_> id_;
+#define FIELD_FIXED(id_, n_)          ::boost::array<unsigned char, n_> id_;
 #define FIELD_STRING(id_)             ::std::string id_;
-#define FIELD_BLOB(id_)               ::std::string id_;
-#define FIELD_FLEXIBLE(id_)           ::std::string id_;
+#define FIELD_BLOB(id_)               ::std::basic_string<unsigned char> id_;
+#define FIELD_FLEXIBLE(id_)           ::std::basic_string<unsigned char> id_;
 #define FIELD_ARRAY(id_, ...)         struct Cbpp ## id_ ## F_ { __VA_ARGS__ };	\
                                       ::boost::container::vector< Cbpp ## id_ ## F_ > id_;
 #define FIELD_LIST(id_, ...)          struct Cbpp ## id_ ## F_ { __VA_ARGS__ };	\
@@ -107,10 +107,10 @@ public:
 
 #define FIELD_VINT(id_)               , ::boost::int64_t id_ ## X_
 #define FIELD_VUINT(id_)              , ::boost::uint64_t id_ ## X_
-#define FIELD_FIXED(id_, n_)          , const ::boost::array<char, n_> & id_ ## X_
+#define FIELD_FIXED(id_, n_)          , const ::boost::array<unsigned char, n_> & id_ ## X_
 #define FIELD_STRING(id_)             , ::std::string id_ ## X_
-#define FIELD_BLOB(id_)               , ::std::string id_ ## X_
-#define FIELD_FLEXIBLE(id_)           , ::std::string id_ ## X_
+#define FIELD_BLOB(id_)               , ::std::basic_string<unsigned char> id_ ## X_
+#define FIELD_FLEXIBLE(id_)           , ::std::basic_string<unsigned char> id_ ## X_
 #define FIELD_ARRAY(id_, ...)         , ::boost::container::vector< Cbpp ## id_ ## F_ > id_ ## X_
 #define FIELD_LIST(id_, ...)          , ::boost::container::deque< Cbpp ## id_ ## F_ > id_ ## X_
 
@@ -176,15 +176,18 @@ public:
                                         const AUTO(cur_, it_);	\
                                         __VA_ARGS__	\
                                       }
-#define FIELD_LIST(id_, ...)          for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
-                                        ::boost::container::deque<unsigned char> chunk_;	\
-                                        {	\
-                                          const AUTO(cur_, it_);	\
-                                          ::std::back_insert_iterator< ::boost::container::deque<unsigned char> > w_(chunk_);	\
-                                          __VA_ARGS__	\
+#define FIELD_LIST(id_, ...)          {	\
+                                        ::std::basic_string<unsigned char> chunk_;	\
+                                        for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                          chunk_.clear();	\
+                                          {	\
+                                            const AUTO(cur_, it_);	\
+                                            AUTO(w_, ::std::back_inserter(chunk_));	\
+                                            __VA_ARGS__	\
+                                          }	\
+                                          ::Poseidon::vuint64_to_binary(chunk_.size(), w_);	\
+                                          w_ = ::std::copy(chunk_.begin(), chunk_.end(), w_);	\
                                         }	\
-                                        ::Poseidon::vuint64_to_binary(chunk_.size(), w_);	\
-                                        w_ = ::std::copy(chunk_.begin(), chunk_.end(), w_);	\
                                       }	\
                                       *w_ = 0;	\
                                       ++w_;

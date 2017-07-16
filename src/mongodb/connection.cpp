@@ -331,7 +331,7 @@ namespace MongoDb {
 				}
 				return Uuid(reinterpret_cast<const char (&)[36]>(*str));
 			}
-			std::string do_get_blob(const char *name) const {
+			std::basic_string<unsigned char> do_get_blob(const char *name) const {
 				::bson_iter_t it;
 				if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BINARY)){
 					return VAL_INIT;
@@ -339,7 +339,7 @@ namespace MongoDb {
 				boost::uint32_t len;
 				const boost::uint8_t *data;
 				::bson_iter_binary(&it, NULLPTR, &len, &data);
-				return std::string(reinterpret_cast<const char *>(data), len);
+				return std::basic_string<unsigned char>(data, len);
 			}
 		};
 	}
@@ -385,7 +385,7 @@ namespace MongoDb {
 	Uuid Connection::get_uuid(const char *name) const {
 		return static_cast<const DelegatedConnection &>(*this).do_get_uuid(name);
 	}
-	std::string Connection::get_blob(const char *name) const {
+	std::basic_string<unsigned char> Connection::get_blob(const char *name) const {
 		return static_cast<const DelegatedConnection &>(*this).do_get_blob(name);
 	}
 }
