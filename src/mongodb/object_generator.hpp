@@ -44,7 +44,7 @@ public:
 #define FIELD_STRING(id_)                 ::Poseidon::MongoDb::ObjectBase::Field< ::std::string> id_;
 #define FIELD_DATETIME(id_)               ::Poseidon::MongoDb::ObjectBase::Field< ::boost::uint64_t> id_;
 #define FIELD_UUID(id_)                   ::Poseidon::MongoDb::ObjectBase::Field< ::Poseidon::Uuid> id_;
-#define FIELD_BLOB(id_)                   ::Poseidon::MongoDb::ObjectBase::Field< ::std::basic_string<unsigned char>> id_;
+#define FIELD_BLOB(id_)                   ::Poseidon::MongoDb::ObjectBase::Field< ::std::basic_string<unsigned char> > id_;
 
 	MONGODB_OBJECT_FIELDS
 

@@ -40,7 +40,7 @@ public:
 #define FIELD_STRING(id_)                 ::Poseidon::MySql::ObjectBase::Field< ::std::string> id_;
 #define FIELD_DATETIME(id_)               ::Poseidon::MySql::ObjectBase::Field< ::boost::uint64_t> id_;
 #define FIELD_UUID(id_)                   ::Poseidon::MySql::ObjectBase::Field< ::Poseidon::Uuid> id_;
-#define FIELD_BLOB(id_)                   ::Poseidon::MySql::ObjectBase::Field< ::std::basic_string<unsigned char>> id_;
+#define FIELD_BLOB(id_)                   ::Poseidon::MySql::ObjectBase::Field< ::std::basic_string<unsigned char> > id_;
 
 	MYSQL_OBJECT_FIELDS
 
