@@ -68,7 +68,7 @@ bool Logger::initialize_mask_from_config(){
 	return true;
 }
 void Logger::finalize_mask() NOEXCEPT {
-	set_mask(0, LV_INFO | LV_WARNING | LV_ERROR | LV_FATAL);
+	set_mask(0, SP_POSEIDON | SP_MAJOR | LV_INFO | LV_WARNING | LV_ERROR | LV_FATAL);
 }
 
 const char *Logger::get_thread_tag() NOEXCEPT {
