@@ -41,7 +41,7 @@ namespace MongoDb {
 		struct Element {
 			SharedNts name;
 			Type type;
-			std::string large;
+			std::basic_string<unsigned char> large;
 			unsigned char small[16];
 		};
 
@@ -70,13 +70,13 @@ namespace MongoDb {
 		void append_signed(SharedNts name, boost::int64_t value);
 		void append_unsigned(SharedNts name, boost::uint64_t value);
 		void append_double(SharedNts name, double value);
-		void append_string(SharedNts name, std::string value);
+		void append_string(SharedNts name, const std::string &value);
 		void append_datetime(SharedNts name, boost::uint64_t value);
 		void append_uuid(SharedNts name, const Uuid &value);
-		void append_blob(SharedNts name, std::string value);
+		void append_blob(SharedNts name, const std::basic_string<unsigned char> &value);
 
-		void append_js_code(SharedNts name, std::string code);
-		void append_regex(SharedNts name, std::string regex, const char *options = "");
+		void append_js_code(SharedNts name, const std::string &code);
+		void append_regex(SharedNts name, const std::string &regex, const char *options = "");
 		void append_minkey(SharedNts name);
 		void append_maxkey(SharedNts name);
 		void append_null(SharedNts name);
@@ -98,7 +98,7 @@ namespace MongoDb {
 			swap(m_elements, rhs.m_elements);
 		}
 
-		std::string build(bool as_array = false) const;
+		std::basic_string<unsigned char> build(bool as_array = false) const;
 		void build(std::ostream &os, bool as_array = false) const;
 
 		std::string build_json(bool as_array = false) const;
@@ -134,9 +134,9 @@ namespace MongoDb {
 		ret.append_double(STD_MOVE(name), value);
 		return ret;
 	}
-	inline BsonBuilder bson_scalar_string(SharedNts name, std::string value){
+	inline BsonBuilder bson_scalar_string(SharedNts name, const std::string &value){
 		BsonBuilder ret;
-		ret.append_string(STD_MOVE(name), STD_MOVE(value));
+		ret.append_string(STD_MOVE(name), value);
 		return ret;
 	}
 	inline BsonBuilder bson_scalar_datetime(SharedNts name, boost::uint64_t value){
@@ -149,15 +149,15 @@ namespace MongoDb {
 		ret.append_uuid(STD_MOVE(name), value);
 		return ret;
 	}
-	inline BsonBuilder bson_scalar_blob(SharedNts name, std::string value){
+	inline BsonBuilder bson_scalar_blob(SharedNts name, const std::basic_string<unsigned char> &value){
 		BsonBuilder ret;
-		ret.append_blob(STD_MOVE(name), STD_MOVE(value));
+		ret.append_blob(STD_MOVE(name), value);
 		return ret;
 	}
 
-	inline BsonBuilder bson_scalar_regex(SharedNts name, std::string regex, const char *options = ""){
+	inline BsonBuilder bson_scalar_regex(SharedNts name, const std::string &regex, const char *options = ""){
 		BsonBuilder ret;
-		ret.append_regex(STD_MOVE(name), STD_MOVE(regex), options);
+		ret.append_regex(STD_MOVE(name), regex, options);
 		return ret;
 	}
 	inline BsonBuilder bson_scalar_minkey(SharedNts name){

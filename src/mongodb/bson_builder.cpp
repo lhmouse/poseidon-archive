@@ -88,7 +88,9 @@ namespace MongoDb {
 				}
 				break; }
 			case T_STRING: {
-				if(!::bson_append_utf8(bt, key_str, -1, it->large.data(), narrowing_cast_to_int(it->large.size()))){
+				if(!::bson_append_utf8(bt, key_str, -1, reinterpret_cast<const char *>(it->large.data()),
+					narrowing_cast_to_int(it->large.size())))
+				{
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_utf8() failed"), -1);
 				}
 				break; }
@@ -109,20 +111,21 @@ namespace MongoDb {
 				}
 				break; }
 			case T_BLOB: {
-				if(!::bson_append_binary(bt, key_str, -1, BSON_SUBTYPE_BINARY,
-					reinterpret_cast<const boost::uint8_t *>(it->large.data()),
+				if(!::bson_append_binary(bt, key_str, -1, BSON_SUBTYPE_BINARY, it->large.data(),
 					static_cast<unsigned>(narrowing_cast_to_int(it->large.size()))))
 				{
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_binary() failed"), -1);
 				}
 				break; }
 			case T_JS_CODE: {
-				if(!::bson_append_code(bt, key_str, -1, it->large.c_str())){
+				if(!::bson_append_code(bt, key_str, -1, reinterpret_cast<const char *>(it->large.c_str()))){
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_code() failed"), -1);
 				}
 				break; }
 			case T_REGEX: {
-				if(!::bson_append_regex(bt, key_str, -1, it->large.c_str(), reinterpret_cast<const char *>(it->small))){
+				if(!::bson_append_regex(bt, key_str, -1, reinterpret_cast<const char *>(it->large.c_str()),
+					reinterpret_cast<const char *>(it->small)))
+				{
 					DEBUG_THROW(ProtocolException, sslit("BSON builder: bson_append_regex() failed"), -1);
 				}
 				break; }
@@ -197,9 +200,9 @@ namespace MongoDb {
 		std::memcpy(elem.small, &value, sizeof(value));
 		m_elements.push_back(STD_MOVE(elem));
 	}
-	void BsonBuilder::append_string(SharedNts name, std::string value){
+	void BsonBuilder::append_string(SharedNts name, const std::string &value){
 		Element elem = { STD_MOVE(name), T_STRING };
-		elem.large.swap(value);
+		elem.large.append(reinterpret_cast<const unsigned char *>(value.data()), value.size());
 		m_elements.push_back(STD_MOVE(elem));
 	}
 	void BsonBuilder::append_datetime(SharedNts name, boost::uint64_t value){
@@ -214,18 +217,18 @@ namespace MongoDb {
 		std::memcpy(elem.small, value.data(), value.size());
 		m_elements.push_back(STD_MOVE(elem));
 	}
-	void BsonBuilder::append_blob(SharedNts name, std::string value){
+	void BsonBuilder::append_blob(SharedNts name, const std::basic_string<unsigned char> &value){
 		Element elem = { STD_MOVE(name), T_BLOB };
-		elem.large.swap(value);
+		elem.large.append(value.data(), value.size());
 		m_elements.push_back(STD_MOVE(elem));
 	}
 
-	void BsonBuilder::append_js_code(SharedNts name, std::string code){
+	void BsonBuilder::append_js_code(SharedNts name, const std::string &code){
 		Element elem = { STD_MOVE(name), T_JS_CODE };
-		elem.large.swap(code);
+		elem.large.append(reinterpret_cast<const unsigned char *>(code.data()), code.size());
 		m_elements.push_back(STD_MOVE(elem));
 	}
-	void BsonBuilder::append_regex(SharedNts name, std::string regex, const char *options){
+	void BsonBuilder::append_regex(SharedNts name, const std::string &regex, const char *options){
 		Element elem = { STD_MOVE(name), T_REGEX };
 		if(options){
 			const AUTO(len, std::min(std::strlen(options), sizeof(elem.small) - 1));
@@ -234,7 +237,7 @@ namespace MongoDb {
 		} else {
 			elem.small[0] = 0;
 		}
-		elem.large.swap(regex);
+		elem.large.append(reinterpret_cast<const unsigned char *>(regex.data()), regex.size());
 		m_elements.push_back(STD_MOVE(elem));
 	}
 	void BsonBuilder::append_minkey(SharedNts name){
@@ -251,23 +254,21 @@ namespace MongoDb {
 	}
 	void BsonBuilder::append_object(SharedNts name, const BsonBuilder &obj){
 		Element elem = { STD_MOVE(name), T_OBJECT };
-		std::string bin = obj.build(false);
-		elem.large.swap(bin);
+		elem.large = obj.build(false);
 		m_elements.push_back(STD_MOVE(elem));
 	}
 	void BsonBuilder::append_array(SharedNts name, const BsonBuilder &arr){
 		Element elem = { STD_MOVE(name), T_ARRAY };
-		std::string bin = arr.build(true);
-		elem.large.swap(bin);
+		elem.large = arr.build(true);
 		m_elements.push_back(STD_MOVE(elem));
 	}
 
-	std::string BsonBuilder::build(bool as_array) const {
+	std::basic_string<unsigned char> BsonBuilder::build(bool as_array) const {
 		PROFILE_ME;
 
 		Buffer_ostream os;
 		build(os, as_array);
-		return os.get_buffer().dump_string();
+		return os.get_buffer().dump_byte_string();
 	}
 	void BsonBuilder::build(std::ostream &os, bool as_array) const {
 		PROFILE_ME;

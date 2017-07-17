@@ -549,7 +549,17 @@ std::string StreamBuffer::dump_string() const {
 	std::string str;
 	str.reserve(size());
 	for(AUTO(chunk, m_first); chunk; chunk = chunk->next){
-		str.append(reinterpret_cast<char *>(chunk->data + chunk->begin), chunk->end - chunk->begin);
+		str.append(reinterpret_cast<const char *>(chunk->data + chunk->begin), chunk->end - chunk->begin);
+	}
+	return str;
+}
+std::basic_string<unsigned char> StreamBuffer::dump_byte_string() const {
+	PROFILE_ME;
+
+	std::basic_string<unsigned char> str;
+	str.reserve(size());
+	for(AUTO(chunk, m_first); chunk; chunk = chunk->next){
+		str.append(chunk->data + chunk->begin, chunk->end - chunk->begin);
 	}
 	return str;
 }
@@ -557,7 +567,7 @@ void StreamBuffer::dump(std::ostream &os) const {
 	PROFILE_ME;
 
 	for(AUTO(chunk, m_first); chunk; chunk = chunk->next){
-		os.write(reinterpret_cast<char *>(chunk->data + chunk->begin), chunk->end - chunk->begin);
+		os.write(reinterpret_cast<const char *>(chunk->data + chunk->begin), chunk->end - chunk->begin);
 	}
 }
 

@@ -231,6 +231,7 @@ public:
 	}
 
 	std::string dump_string() const;
+	std::basic_string<unsigned char> dump_byte_string() const;
 	void dump(std::ostream &os) const;
 
 public:
