@@ -16,26 +16,19 @@
 namespace Poseidon {
 
 namespace WebSocket {
-	inline boost::shared_ptr<TcpSessionBase> safe_get_parent(const boost::shared_ptr<Session> &session){
-		AUTO(parent, session->get_parent());
-		DEBUG_THROW_ASSERT(parent);
-		return parent;
-	}
-
 	class Session::SyncJobBase : public JobBase {
 	private:
-		const TcpSessionBase::DelayedShutdownGuard m_guard;
-		const boost::weak_ptr<TcpSessionBase> m_category;
+		const SocketBase::DelayedShutdownGuard m_guard;
 		const boost::weak_ptr<Session> m_weak_session;
 
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Session> &session)
-			: m_guard(safe_get_parent(session)), m_category(safe_get_parent(session)), m_weak_session(session)
+			: m_guard(boost::shared_ptr<SocketBase>(session->get_weak_parent())), m_weak_session(session)
 		{ }
 
 	private:
 		boost::weak_ptr<const void> get_category() const FINAL {
-			return m_category;
+			return m_weak_session;
 		}
 		void perform() FINAL {
 			PROFILE_ME;

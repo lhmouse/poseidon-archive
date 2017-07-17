@@ -15,18 +15,17 @@ namespace Poseidon {
 namespace Http {
 	class Client::SyncJobBase : public JobBase {
 	private:
-		const TcpSessionBase::DelayedShutdownGuard m_guard;
-		const boost::weak_ptr<TcpSessionBase> m_category;
+		const SocketBase::DelayedShutdownGuard m_guard;
 		const boost::weak_ptr<Client> m_weak_client;
 
 	protected:
 		explicit SyncJobBase(const boost::shared_ptr<Client> &client)
-			: m_guard(client), m_category(client), m_weak_client(client)
+			: m_guard(client), m_weak_client(client)
 		{ }
 
 	private:
 		boost::weak_ptr<const void> get_category() const FINAL {
-			return m_category;
+			return m_weak_client;
 		}
 		void perform() FINAL {
 			PROFILE_ME;
