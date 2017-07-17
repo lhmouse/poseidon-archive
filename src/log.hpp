@@ -15,14 +15,14 @@ namespace Poseidon {
 class Logger : NONCOPYABLE {
 public:
 	enum {
-		SP_POSEIDON     = 0x0080,
-		SP_MAJOR        = 0x0040,
-		LV_TRACE        = 0x0020,
-		LV_DEBUG        = 0x0010,
-		LV_INFO         = 0x0008,
-		LV_WARNING      = 0x0004 | SP_MAJOR,
-		LV_ERROR        = 0x0002 | SP_MAJOR,
-		LV_FATAL        = 0x0001 | SP_MAJOR,
+		SP_POSEIDON = 0x80,
+		SP_MAJOR    = 0x40,
+		LV_TRACE    = 0x20,
+		LV_DEBUG    = 0x10,
+		LV_INFO     = 0x08,
+		LV_WARNING  = 0x04,
+		LV_ERROR    = 0x42,
+		LV_FATAL    = 0x41,
 	};
 
 public:

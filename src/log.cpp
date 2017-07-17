@@ -177,13 +177,10 @@ try {
 	int err_code = ::pthread_mutex_lock(&g_mutex);
 	(void)err_code;
 	assert(err_code == 0);
-	std::size_t bytes_total = 0;
-	while(bytes_total < line.size()){
-		const AUTO(bytes_written, ::write(fd, line.data() + bytes_total, line.size() - bytes_total)); // noexcept
-		if(bytes_written <= 0){
-			break;
-		}
-		bytes_total += static_cast<std::size_t>(bytes_written);
+	std::size_t total = 0;
+	::ssize_t written;
+	while((total < line.size()) && (written = ::write(fd, line.data() + total, line.size() - total)) > 0){
+		total += (std::size_t)written;
 	}
 	err_code = ::pthread_mutex_unlock(&g_mutex);
 	assert(err_code == 0);
