@@ -166,6 +166,7 @@ public:
 	StreamBuffer(const void *data, std::size_t bytes);
 	explicit StreamBuffer(const char *str);
 	explicit StreamBuffer(const std::string &str);
+	explicit StreamBuffer(const std::basic_string<unsigned char> &str);
 	StreamBuffer(const StreamBuffer &rhs);
 	StreamBuffer &operator=(const StreamBuffer &rhs);
 #ifdef POSEIDON_CXX11
@@ -202,6 +203,7 @@ public:
 	void put(const void *data, std::size_t bytes);
 	void put(const char *str);
 	void put(const std::string &str);
+	void put(const std::basic_string<unsigned char> &str);
 
 	ConstChunkEnumerator get_chunk_enumerator() const NOEXCEPT {
 		return ConstChunkEnumerator(*this);

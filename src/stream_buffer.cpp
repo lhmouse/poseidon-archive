@@ -125,6 +125,11 @@ StreamBuffer::StreamBuffer(const std::string &str)
 {
 	put(str);
 }
+StreamBuffer::StreamBuffer(const std::basic_string<unsigned char> &str)
+	: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
+{
+	put(str);
+}
 StreamBuffer::StreamBuffer(const StreamBuffer &rhs)
 	: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
 {
@@ -461,6 +466,9 @@ void StreamBuffer::put(const char *str){
 	put(str, std::strlen(str));
 }
 void StreamBuffer::put(const std::string &str){
+	put(str.data(), str.size());
+}
+void StreamBuffer::put(const std::basic_string<unsigned char> &str){
 	put(str.data(), str.size());
 }
 
