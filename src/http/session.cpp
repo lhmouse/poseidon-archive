@@ -96,7 +96,7 @@ namespace Http {
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
-			session->on_sync_expect(std::move(m_request_headers));
+			session->on_sync_expect(STD_MOVE(m_request_headers));
 		}
 	};
 
