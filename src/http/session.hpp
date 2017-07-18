@@ -47,6 +47,7 @@ namespace Http {
 		boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
 
 		// 可覆写。
+		virtual void on_sync_expect(RequestHeaders request_headers);
 		virtual void on_sync_request(RequestHeaders request_headers, StreamBuffer entity) = 0;
 
 	public:

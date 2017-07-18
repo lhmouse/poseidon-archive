@@ -84,30 +84,19 @@ namespace Http {
 
 	class Session::ExpectJob : public Session::SyncJobBase {
 	private:
-		OptionalMap m_headers;
+		RequestHeaders m_request_headers;
 
 	public:
-		ExpectJob(const boost::shared_ptr<Session> &session, OptionalMap headers)
+		ExpectJob(const boost::shared_ptr<Session> &session, RequestHeaders request_headers)
 			: SyncJobBase(session)
-			, m_headers(STD_MOVE(headers))
+			, m_request_headers(STD_MOVE(request_headers))
 		{ }
 
 	protected:
 		void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 			PROFILE_ME;
 
-			const AUTO_REF(expect, m_headers.get("Expect"));
-			if(::strcasecmp(expect.c_str(), "100-continue") == 0){
-				const AUTO_REF(content_length, m_headers.get("Content-Length"));
-				if(!content_length.empty() && (::strtoull(content_length.c_str(), NULLPTR, 0) > session->get_max_request_length())){
-					LOG_POSEIDON_WARNING("Request entity too large: content_length = ", content_length);
-					DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
-				}
-				session->send_default(ST_CONTINUE);
-				return;
-			}
-			LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", expect);
-			DEBUG_THROW(Exception, ST_EXPECTATION_FAILED);
+			session->on_sync_expect(std::move(m_request_headers));
 		}
 	};
 
@@ -167,7 +156,7 @@ namespace Http {
 		const AUTO_REF(expect, m_request_headers.headers.get("Expect"));
 		if(!expect.empty()){
 			JobDispatcher::enqueue(
-				boost::make_shared<ExpectJob>(virtual_shared_from_this<Session>(), m_request_headers.headers),
+				boost::make_shared<ExpectJob>(virtual_shared_from_this<Session>(), m_request_headers),
 				VAL_INIT);
 		}
 	}
@@ -202,6 +191,28 @@ namespace Http {
 			shutdown_read();
 		}
 		return VAL_INIT;
+	}
+
+	void Session::on_sync_expect(RequestHeaders request_headers){
+		PROFILE_ME;
+
+		const AUTO_REF(expect, request_headers.headers.get("Expect"));
+		if(::strcasecmp(expect.c_str(), "100-continue") == 0){
+			const AUTO_REF(content_length_str, request_headers.headers.get("Content-Length"));
+			if(content_length_str.empty()){
+				LOG_POSEIDON_WARNING("Content-Length is not set: remote = ", get_remote_info());
+				DEBUG_THROW(Exception, ST_LENGTH_REQUIRED);
+			}
+			const AUTO(content_length, ::strtoull(content_length_str.c_str(), NULLPTR, 10));
+			if(content_length > get_max_request_length()){
+				LOG_POSEIDON_WARNING("Request entity too large: content_length = ", content_length);
+				LOG_POSEIDON_WARNING("Request entity too large: content_length = ", content_length);
+			}
+			send_default(ST_CONTINUE);
+		} else {
+			LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", expect);
+			DEBUG_THROW(Exception, ST_EXPECTATION_FAILED);
+		}
 	}
 
 	boost::uint64_t Session::get_max_request_length() const {
