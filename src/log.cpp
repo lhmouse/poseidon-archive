@@ -73,6 +73,7 @@ bool Logger::initialize_mask_from_config(){
 			break;
 		case ' ':
 		case ',':
+		case '_':
 		case '-':
 			break;
 		default:
