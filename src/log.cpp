@@ -55,16 +55,31 @@ boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_
 }
 
 bool Logger::initialize_mask_from_config(){
-	std::bitset<64> new_mask_bits;
-	if(!MainConfig::get(new_mask_bits, "log_masked_levels")){
+	std::string log_masked_levels;
+	if(!MainConfig::get(log_masked_levels, "log_masked_levels")){
 		return false;
 	}
-	new_mask_bits.flip();
-#ifdef POSEIDON_CXX11
-	set_mask((boost::uint64_t)-1, new_mask_bits.to_ullong());
-#else
-	set_mask((boost::uint64_t)-1, new_mask_bits.to_ulong());
-#endif
+	boost::uint64_t new_mask = (boost::uint64_t)-1;
+	unsigned index = 0;
+	for(AUTO(it, log_masked_levels.rbegin()); (it != log_masked_levels.rend()) && (index < 64); ++it){
+		switch(*it){
+		case '0':
+			new_mask |=  (1ull << index);
+			++index;
+			break;
+		case '1':
+			new_mask &= ~(1ull << index);
+			++index;
+			break;
+		case ' ':
+		case ',':
+		case '-':
+			break;
+		default:
+			throw std::invalid_argument("Invalid log_masked_levels config string");
+		}
+	}
+	set_mask((boost::uint64_t)-1, new_mask);
 	return true;
 }
 void Logger::finalize_mask() NOEXCEPT {
