@@ -37,7 +37,7 @@ namespace Http {
 		if(accept_encoding.empty()){
 			return CE_IDENTITY;
 		}
-		boost::array<double, CE_NOT_ACCEPTABLE> encodings;
+		boost::array<double, CE_NOT_ACCEPTABLE + 1> encodings;
 		encodings.fill(-42);
 		std::size_t begin = 0, end;
 		Buffer_istream is;

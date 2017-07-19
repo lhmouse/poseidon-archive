@@ -32,10 +32,10 @@ namespace Http {
 	extern bool is_keep_alive_enabled(const RequestHeaders &request_headers);
 
 	enum ContentEncoding {
-		CE_IDENTITY        = 0,
-		CE_DEFLATE         = 1,
-		CE_GZIP            = 2,
-		CE_NOT_ACCEPTABLE,
+		CE_IDENTITY        =  0,
+		CE_DEFLATE         =  1,
+		CE_GZIP            =  2,
+		CE_NOT_ACCEPTABLE  = 15,
 	};
 
 	extern ContentEncoding pick_content_encoding(const RequestHeaders &request_headers);
