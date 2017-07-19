@@ -50,7 +50,8 @@ namespace Http {
 				is.clear();
 				is.get_buffer().put(accept_encoding.data() + begin, end - begin);
 				HeaderOption opt(is);
-				double q = std::strtod(opt.get_option("q").c_str(), NULLPTR);
+				const AUTO_REF(q_str, opt.get_option("q"));
+				const double q = q_str.empty() ? 1.0 : std::strtod(q_str.c_str(), NULLPTR);
 				if(!std::isnan(q) && (q >= 0)){
 					if(::strcasecmp(opt.get_base().c_str(), "identity") == 0){
 						encodings.at(CE_IDENTITY) = q;
