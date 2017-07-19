@@ -78,7 +78,7 @@ namespace Http {
 			identity_q = encodings.at(CE_NOT_ACCEPTABLE);
 		}
 		if(identity_q < 0){
-			identity_q = 1.0;
+			identity_q = 0.000001;
 		}
 		if(encodings.at(CE_GZIP) > identity_q){
 			return CE_GZIP;
