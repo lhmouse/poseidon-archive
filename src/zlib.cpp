@@ -193,6 +193,9 @@ void Inflator::put(const void *data, std::size_t size){
 			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 		}
 		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
+		if(err_code == Z_STREAM_END){
+			break;
+		}
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
 }
