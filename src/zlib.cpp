@@ -54,7 +54,7 @@ void Deflator::put(const void *data, std::size_t size){
 	m_ctx->stream.next_in = begin;
 	m_ctx->stream.avail_in = 0;
 	int err_code;
-	do {
+	for(;;){
 		if(m_ctx->stream.avail_in == 0){
 			std::size_t remaining = static_cast<std::size_t>(begin + size - m_ctx->stream.next_in);
 			if(remaining > UINT_MAX){
@@ -73,7 +73,8 @@ void Deflator::put(const void *data, std::size_t size){
 			DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
 		}
 		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
-	} while(err_code != Z_STREAM_END);
+		DEBUG_THROW_ASSERT(err_code == 0);
+	}
 }
 void Deflator::put(const StreamBuffer &buffer){
 	PROFILE_ME;
@@ -82,13 +83,34 @@ void Deflator::put(const StreamBuffer &buffer){
 		put(en.data(), en.size());
 	}
 }
+void Deflator::flush(){
+	PROFILE_ME;
+
+	m_ctx->stream.next_in = NULLPTR;
+	m_ctx->stream.avail_in = 0;
+	int err_code;
+	for(;;){
+		m_ctx->stream.next_out = m_ctx->temp;
+		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
+		err_code = ::deflate(&(m_ctx->stream), Z_SYNC_FLUSH);
+		if(err_code == Z_BUF_ERROR){
+			break;
+		}
+		if(err_code < 0){
+			LOG_POSEIDON_ERROR("::deflate() error: err_code = ", err_code);
+			DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
+		}
+		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
+		DEBUG_THROW_ASSERT(err_code == 0);
+	}
+}
 StreamBuffer Deflator::finalize(){
 	PROFILE_ME;
 
 	m_ctx->stream.next_in = NULLPTR;
 	m_ctx->stream.avail_in = 0;
 	int err_code;
-	do {
+	for(;;){
 		m_ctx->stream.next_out = m_ctx->temp;
 		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 		err_code = ::deflate(&(m_ctx->stream), Z_FINISH);
@@ -97,7 +119,11 @@ StreamBuffer Deflator::finalize(){
 			DEBUG_THROW(ProtocolException, sslit("::deflate()"), err_code);
 		}
 		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
-	} while(err_code != Z_STREAM_END);
+		if(err_code == Z_STREAM_END){
+			break;
+		}
+		DEBUG_THROW_ASSERT(err_code == 0);
+	}
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
@@ -148,7 +174,7 @@ void Inflator::put(const void *data, std::size_t size){
 	m_ctx->stream.next_in = begin;
 	m_ctx->stream.avail_in = 0;
 	int err_code;
-	do {
+	for(;;){
 		if(m_ctx->stream.avail_in == 0){
 			std::size_t remaining = static_cast<std::size_t>(begin + size - m_ctx->stream.next_in);
 			if(remaining > UINT_MAX){
@@ -167,7 +193,8 @@ void Inflator::put(const void *data, std::size_t size){
 			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 		}
 		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
-	} while(err_code != Z_STREAM_END);
+		DEBUG_THROW_ASSERT(err_code == 0);
+	}
 }
 void Inflator::put(const StreamBuffer &buffer){
 	PROFILE_ME;
@@ -176,13 +203,34 @@ void Inflator::put(const StreamBuffer &buffer){
 		put(en.data(), en.size());
 	}
 }
+void Inflator::flush(){
+	PROFILE_ME;
+
+	m_ctx->stream.next_in = NULLPTR;
+	m_ctx->stream.avail_in = 0;
+	int err_code;
+	for(;;){
+		m_ctx->stream.next_out = m_ctx->temp;
+		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
+		err_code = ::inflate(&(m_ctx->stream), Z_SYNC_FLUSH);
+		if(err_code == Z_BUF_ERROR){
+			break;
+		}
+		if(err_code < 0){
+			LOG_POSEIDON_ERROR("::inflate() error: err_code = ", err_code);
+			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
+		}
+		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
+		DEBUG_THROW_ASSERT(err_code == 0);
+	}
+}
 StreamBuffer Inflator::finalize(){
 	PROFILE_ME;
 
 	m_ctx->stream.next_in = NULLPTR;
 	m_ctx->stream.avail_in = 0;
 	int err_code;
-	do {
+	for(;;){
 		m_ctx->stream.next_out = m_ctx->temp;
 		m_ctx->stream.avail_out = sizeof(m_ctx->temp);
 		err_code = ::inflate(&(m_ctx->stream), Z_FINISH);
@@ -191,7 +239,11 @@ StreamBuffer Inflator::finalize(){
 			DEBUG_THROW(ProtocolException, sslit("::inflate()"), err_code);
 		}
 		m_buffer.put(m_ctx->temp, static_cast<unsigned>(m_ctx->stream.next_out - m_ctx->temp));
-	} while(err_code != Z_STREAM_END);
+		if(err_code == Z_STREAM_END){
+			break;
+		}
+		DEBUG_THROW_ASSERT(err_code == 0);
+	}
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();

@@ -43,6 +43,7 @@ public:
 		put(str.data(), str.size());
 	}
 	void put(const StreamBuffer &buffer);
+	void flush();
 	StreamBuffer finalize();
 };
 
@@ -76,6 +77,7 @@ public:
 		put(str.data(), str.size());
 	}
 	StreamBuffer finalize();
+	void flush();
 	void put(const StreamBuffer &buffer);
 };
 
