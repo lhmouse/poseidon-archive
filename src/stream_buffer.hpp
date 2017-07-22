@@ -45,7 +45,7 @@ public:
 	CONSTEXPR StreamBuffer() NOEXCEPT
 		: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
 	{ }
-	StreamBuffer(const void *data, std::size_t size);
+	StreamBuffer(const void *data, std::size_t count);
 	explicit StreamBuffer(const char *str);
 	explicit StreamBuffer(const std::string &str);
 	explicit StreamBuffer(const std::basic_string<unsigned char> &str);
@@ -87,11 +87,11 @@ public:
 	int unput() NOEXCEPT;
 	void unget(unsigned char data);
 
-	std::size_t peek(void *data, std::size_t size) const NOEXCEPT;
-	std::size_t get(void *data, std::size_t size) NOEXCEPT;
-	std::size_t discard(std::size_t size) NOEXCEPT;
-	void put(unsigned char data, std::size_t size);
-	void put(const void *data, std::size_t size);
+	std::size_t peek(void *data, std::size_t count) const NOEXCEPT;
+	std::size_t get(void *data, std::size_t count) NOEXCEPT;
+	std::size_t discard(std::size_t count) NOEXCEPT;
+	void put(unsigned char data, std::size_t count);
+	void put(const void *data, std::size_t count);
 	void put(const char *str){
 		put(str, std::strlen(str));
 	}
@@ -104,7 +104,7 @@ public:
 
 	void *squash();
 
-	StreamBuffer cut_off(std::size_t size);
+	StreamBuffer cut_off(std::size_t count);
 	void splice(StreamBuffer &rhs) NOEXCEPT;
 #ifdef POSEIDON_CXX11
 	void splice(StreamBuffer &&rhs) NOEXCEPT {
@@ -112,8 +112,8 @@ public:
 	}
 #endif
 
-	bool enumerate_chunk(const void **data, std::size_t *size, EnumerationCookie &cookie) const NOEXCEPT;
-	bool enumerate_chunk(void **data, std::size_t *size, EnumerationCookie &cookie) NOEXCEPT;
+	bool enumerate_chunk(const void **data, std::size_t *count, EnumerationCookie &cookie) const NOEXCEPT;
+	bool enumerate_chunk(void **data, std::size_t *count, EnumerationCookie &cookie) NOEXCEPT;
 
 	void swap(StreamBuffer &rhs) NOEXCEPT {
 		using std::swap;
