@@ -18,6 +18,8 @@ struct Deflator::Context : NONCOPYABLE {
 		stream.zalloc = NULLPTR;
 		stream.zfree = NULLPTR;
 		stream.opaque = NULLPTR;
+		stream.next_in = NULLPTR;
+		stream.avail_in = 0;
 		const int err_code = ::deflateInit2(&stream, level, Z_DEFLATED, 15 + gzip * 16, 9, Z_DEFAULT_STRATEGY);
 		if(err_code < 0){
 			LOG_POSEIDON_ERROR("::deflateInit2() error: err_code = ", err_code);
@@ -138,6 +140,8 @@ struct Inflator::Context : NONCOPYABLE {
 		stream.zalloc = NULLPTR;
 		stream.zfree = NULLPTR;
 		stream.opaque = NULLPTR;
+		stream.next_in = NULLPTR;
+		stream.avail_in = 0;
 		const int err_code = ::inflateInit2(&stream, 15 + gzip * 16);
 		if(err_code < 0){
 			LOG_POSEIDON_ERROR("::inflateInit2() error: err_code = ", err_code);
