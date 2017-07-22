@@ -46,8 +46,11 @@ void HexEncoder::put(const void *data, std::size_t size){
 void HexEncoder::put(const StreamBuffer &buffer){
 	PROFILE_ME;
 
-	for(AUTO(en, buffer.get_chunk_enumerator()); en; ++en){
-		put(en.data(), en.size());
+	const void *data;
+	std::size_t size;
+	StreamBuffer::EnumerationCookie cookie;
+	while(buffer.enumerate_chunk(&data, &size, cookie)){
+		put(data, size);
 	}
 }
 StreamBuffer HexEncoder::finalize(){
@@ -92,8 +95,11 @@ void HexDecoder::put(const void *data, std::size_t size){
 void HexDecoder::put(const StreamBuffer &buffer){
 	PROFILE_ME;
 
-	for(AUTO(en, buffer.get_chunk_enumerator()); en; ++en){
-		put(en.data(), en.size());
+	const void *data;
+	std::size_t size;
+	StreamBuffer::EnumerationCookie cookie;
+	while(buffer.enumerate_chunk(&data, &size, cookie)){
+		put(data, size);
 	}
 }
 StreamBuffer HexDecoder::finalize(){

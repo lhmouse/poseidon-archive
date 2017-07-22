@@ -35,22 +35,23 @@ namespace Http {
 			const bool expecting_new_line = (m_size_expecting == EXPECTING_NEW_LINE);
 
 			if(expecting_new_line){
-				std::size_t lf_offset = 0;
-				AUTO(ce, m_queue.get_const_chunk_enumerator());
+				std::ptrdiff_t lf_offset = 0;
+				StreamBuffer::EnumerationCookie cookie;
 				for(;;){
-					if(!ce){
-						lf_offset = static_cast<std::size_t>(-1);
+					const void *data, *pos;
+					std::size_t size;
+					if(!m_queue.enumerate_chunk(&data, &size, cookie)){
+						lf_offset = -1;
 						break;
 					}
-					const AUTO(pos, std::find(ce.begin(), ce.end(), '\n'));
-					if(pos != ce.end()){
-						lf_offset += static_cast<std::size_t>(pos - ce.begin());
+					pos = std::memchr(data, '\n', size);
+					if(pos){
+						lf_offset += static_cast<const char *>(pos) - static_cast<const char *>(data);
 						break;
 					}
-					lf_offset += ce.size();
-					++ce;
+					lf_offset += static_cast<std::ptrdiff_t>(size);
 				}
-				if(lf_offset == static_cast<std::size_t>(-1)){
+				if(lf_offset < 0){
 					// 没找到换行符。
 					const AUTO(max_line_length, MainConfig::get<std::size_t>("http_max_header_line_length", 8192));
 					if(m_queue.size() > max_line_length){
@@ -59,7 +60,7 @@ namespace Http {
 					}
 					break;
 				}
-				m_size_expecting = lf_offset + 1;
+				m_size_expecting = static_cast<std::size_t>(lf_offset) + 1;
 			} else {
 				if(m_queue.size() < m_size_expecting){
 					break;

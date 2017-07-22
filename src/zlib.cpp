@@ -81,8 +81,11 @@ void Deflator::put(const void *data, std::size_t size){
 void Deflator::put(const StreamBuffer &buffer){
 	PROFILE_ME;
 
-	for(AUTO(en, buffer.get_chunk_enumerator()); en; ++en){
-		put(en.data(), en.size());
+	const void *data;
+	std::size_t size;
+	StreamBuffer::EnumerationCookie cookie;
+	while(buffer.enumerate_chunk(&data, &size, cookie)){
+		put(data, size);
 	}
 }
 void Deflator::flush(){
@@ -206,8 +209,11 @@ void Inflator::put(const void *data, std::size_t size){
 void Inflator::put(const StreamBuffer &buffer){
 	PROFILE_ME;
 
-	for(AUTO(en, buffer.get_chunk_enumerator()); en; ++en){
-		put(en.data(), en.size());
+	const void *data;
+	std::size_t size;
+	StreamBuffer::EnumerationCookie cookie;
+	while(buffer.enumerate_chunk(&data, &size, cookie)){
+		put(data, size);
 	}
 }
 void Inflator::flush(){
