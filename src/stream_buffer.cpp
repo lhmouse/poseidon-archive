@@ -82,18 +82,26 @@ StreamBuffer::StreamBuffer(const StreamBuffer &rhs)
 	m_size = rhs.m_size;
 }
 StreamBuffer::~StreamBuffer(){
-	clear();
-}
-
-void StreamBuffer::clear() NOEXCEPT {
 	AUTO(chunk, m_first);
 	while(chunk){
 		const AUTO(next, chunk->next);
 		ChunkHeader::destroy(chunk);
 		chunk = next;
 	}
-	m_first = NULLPTR;
-	m_last = NULLPTR;
+#ifndef NDEBUG
+	std::memset(&m_first, 0xFE, sizeof(m_first));
+	std::memset(&m_last,  0xFC, sizeof(m_last));
+	std::memset(&m_size,  0xFA, sizeof(m_size));
+#endif
+}
+
+void StreamBuffer::clear() NOEXCEPT {
+	AUTO(chunk, m_first);
+	while(chunk){
+		chunk->begin = chunk->end;
+		const AUTO(next, chunk->next);
+		chunk = next;
+	}
 	m_size = 0;
 }
 
