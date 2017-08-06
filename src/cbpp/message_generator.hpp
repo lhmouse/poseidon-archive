@@ -17,7 +17,7 @@
 #   error Please #include <poseidon/cbpp/message_base.hpp> first.
 #endif
 
-#pragma GCC push_options
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 
 class MESSAGE_NAME : public ::Poseidon::Cbpp::MessageBase {
@@ -366,7 +366,7 @@ public:
 	}
 };
 
-#pragma GCC pop_options
+#pragma GCC diagnostic pop
 
 #undef MESSAGE_NAME
 #undef MESSAGE_ID

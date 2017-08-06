@@ -9,12 +9,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#pragma GCC push_options
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <bson.h>
 #include <mongoc.h>
-#pragma GCC pop_options
+#pragma GCC diagnostic pop
 #include "../mongodb/object_base.hpp"
 #include "../mongodb/exception.hpp"
 #include "../mongodb/connection.hpp"

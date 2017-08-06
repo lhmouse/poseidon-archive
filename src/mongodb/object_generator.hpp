@@ -17,7 +17,7 @@
 #   error Please #include <poseidon/mongodb/object_base.hpp> first.
 #endif
 
-#pragma GCC push_options
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 
 class MONGODB_OBJECT_NAME : public ::Poseidon::MongoDb::ObjectBase {
@@ -177,7 +177,7 @@ public:
 	}
 };
 
-#pragma GCC pop_options
+#pragma GCC diagnostic pop
 
 #undef MONGODB_OBJECT_NAME
 #undef MONGODB_OBJECT_FIELDS

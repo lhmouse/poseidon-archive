@@ -13,7 +13,7 @@
 #   error Please #include <poseidon/mysql/object_base.hpp> first.
 #endif
 
-#pragma GCC push_options
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 
 class MYSQL_OBJECT_NAME : public ::Poseidon::MySql::ObjectBase {
@@ -166,7 +166,7 @@ public:
 	}
 };
 
-#pragma GCC pop_options
+#pragma GCC diagnostic pop
 
 #undef MYSQL_OBJECT_NAME
 #undef MYSQL_OBJECT_FIELDS

@@ -9,10 +9,10 @@
 #include "../profiler.hpp"
 #include "../buffer_streams.hpp"
 #include "../raii.hpp"
-#pragma GCC push_options
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #include <bson.h>
-#pragma GCC pop_options
+#pragma GCC diagnostic pop
 
 namespace Poseidon {
 

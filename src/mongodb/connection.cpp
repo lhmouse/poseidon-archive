@@ -6,11 +6,11 @@
 #include "exception.hpp"
 #include "bson_builder.hpp"
 #include <stdlib.h>
-#pragma GCC push_options
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #include <bson.h>
 #include <mongoc.h>
-#pragma GCC pop_options
+#pragma GCC diagnostic pop
 #include "../raii.hpp"
 #include "../log.hpp"
 #include "../time.hpp"
