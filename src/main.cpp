@@ -93,27 +93,27 @@ namespace {
 				START(EventDispatcher);
 				START(SystemHttpServer);
 
-				LOG_POSEIDON_INFO("Waiting for daemon initialization to complete...");
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for daemon initialization to complete...");
 				::timespec req;
 				req.tv_sec = 0;
 				req.tv_nsec = 200000000;
 				::nanosleep(&req, NULLPTR);
 
-				LOG_POSEIDON_INFO("Setting new log mask...");
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask...");
 				Logger::initialize_mask_from_config();
 
 				const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
 				for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
-					LOG_POSEIDON_INFO("Loading init module: ", *it);
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", *it);
 					ModuleDepository::load(it->c_str());
 				}
 
-				LOG_POSEIDON_INFO("Waiting for all asynchronous MySQL operations to complete...");
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
 				MySqlDaemon::wait_for_all_async_operations();
-				LOG_POSEIDON_INFO("Waiting for all asynchronous MongoDB operations to complete...");
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
 				MongoDbDaemon::wait_for_all_async_operations();
 
-				LOG_POSEIDON_INFO("Entering modal loop...");
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
 				JobDispatcher::do_modal(g_running);
 			}
 #ifdef POSEIDON_CXX11
