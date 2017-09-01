@@ -5,6 +5,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AC_PROG_CXX
 AC_PROG_LIBTOOL
+AC_LIBTOOL_DLOPEN
 
 AC_CHECK_LIB([dl], [main], [], [echo "***** FIX THIS ERROR *****"; exit -2;])
 AC_CHECK_LIB([anl], [main], [], [echo "***** FIX THIS ERROR *****"; exit -2;])
