@@ -285,9 +285,13 @@ lib_libposeidon_main_la_SOURCES = \
 lib_libposeidon_main_la_LDFLAGS = \
 	-no-undefined -version-info 6:0:0
 
+sysconf_DATA =
+
 pkgsysconfdir = $(sysconfdir)/@PACKAGE@
 pkgsysconf_DATA = \
 	etc/poseidon/main-template.conf
+
+localstate_DATA =
 
 pkglocalstatedir = $(localstatedir)/@PACKAGE@
 
