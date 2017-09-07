@@ -20,7 +20,7 @@ public:
 		LV_TRACE    = 0x20,
 		LV_DEBUG    = 0x10,
 		LV_INFO     = 0x08,
-		LV_WARNING  = 0x04,
+		LV_WARNING  = 0x44,
 		LV_ERROR    = 0x42,
 		LV_FATAL    = 0x41,
 	};
