@@ -206,7 +206,7 @@ namespace Http {
 			const AUTO(content_length, ::strtoull(content_length_str.c_str(), NULLPTR, 10));
 			if(content_length > get_max_request_length()){
 				LOG_POSEIDON_WARNING("Request entity too large: content_length = ", content_length);
-				LOG_POSEIDON_WARNING("Request entity too large: content_length = ", content_length);
+				DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
 			}
 			send_default(ST_CONTINUE);
 		} else {
