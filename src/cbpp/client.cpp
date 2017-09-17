@@ -192,8 +192,24 @@ namespace Cbpp {
 		LOG_POSEIDON_TRACE("Received CBPP error message from server: status_code = ", status_code, ", param = ", param);
 
 		if(status_code < 0){
-			LOG_POSEIDON_WARNING("Fatal CBPP error: status_code = ", status_code, ", param = ", param);
-			force_shutdown();
+			LOG_POSEIDON_INFO("Received negative status code from ", get_remote_info());
+			shutdown(ST_SHUTDOWN, static_cast<char *>(param.squash()));
+		} else {
+			switch(status_code){
+			case ST_SHUTDOWN:
+				LOG_POSEIDON_INFO("Received SHUTDOWN frame from ", get_remote_info());
+				shutdown(ST_SHUTDOWN, static_cast<char *>(param.squash()));
+				break;
+			case ST_PING:
+				LOG_POSEIDON_DEBUG("Received PING frame from ", get_remote_info());
+				send_control(ST_PONG, STD_MOVE(param));
+				break;
+			case ST_PONG:
+				LOG_POSEIDON_DEBUG("Received PONG frame from ", get_remote_info());
+				break;
+			default:
+				DEBUG_THROW(Exception, ST_UNKNOWN_CONTROL_CODE, sslit("Unknown control code"));
+			}
 		}
 	}
 }

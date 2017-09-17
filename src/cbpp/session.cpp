@@ -184,16 +184,25 @@ namespace Cbpp {
 		PROFILE_ME;
 		LOG_POSEIDON_DEBUG("Recevied control message from ", get_remote_info(), ", status_code = ", status_code, ", param = ", param);
 
-		switch(status_code){
-		case ST_PING:
-			send_status(ST_PONG, STD_MOVE(param));
-			break;
-		case ST_SHUTDOWN:
-			shutdown(ST_SHUTDOWN, "");
-			break;
-		default:
-			LOG_POSEIDON_WARNING("Unknown control code: ", status_code);
-			DEBUG_THROW(Exception, ST_UNKNOWN_CONTROL_CODE, sslit("Unknown control code"));
+		if(status_code < 0){
+			LOG_POSEIDON_INFO("Received negative status code from ", get_remote_info());
+			shutdown(ST_SHUTDOWN, static_cast<char *>(param.squash()));
+		} else {
+			switch(status_code){
+			case ST_SHUTDOWN:
+				LOG_POSEIDON_INFO("Received SHUTDOWN frame from ", get_remote_info());
+				shutdown(ST_SHUTDOWN, static_cast<char *>(param.squash()));
+				break;
+			case ST_PING:
+				LOG_POSEIDON_DEBUG("Received PING frame from ", get_remote_info());
+				send_status(ST_PONG, STD_MOVE(param));
+				break;
+			case ST_PONG:
+				LOG_POSEIDON_DEBUG("Received PONG frame from ", get_remote_info());
+				break;
+			default:
+				DEBUG_THROW(Exception, ST_UNKNOWN_CONTROL_CODE, sslit("Unknown control code"));
+			}
 		}
 	}
 
