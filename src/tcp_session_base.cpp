@@ -88,6 +88,7 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
 				"TCP connection read hung up: local = ", get_local_info(), ", remote = ", get_remote_info());
 			shutdown_read();
+			SocketBase::shutdown_read();
 			on_read_hup();
 			m_read_hup_notified = true;
 		}
