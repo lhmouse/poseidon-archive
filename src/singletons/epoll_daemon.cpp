@@ -173,12 +173,12 @@ namespace {
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
-			socket->SocketBase::force_shutdown();
+			socket->force_shutdown();
 			err_code = EPIPE;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Unknown exception thrown: typeid = ", typeid(*socket).name());
-			socket->SocketBase::force_shutdown();
+			socket->force_shutdown();
 			err_code = EPIPE;
 		}
 		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
@@ -228,12 +228,12 @@ namespace {
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
-			socket->SocketBase::force_shutdown();
+			socket->force_shutdown();
 			err_code = EPIPE;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Unknown exception thrown: typeid = ", typeid(*socket).name());
-			socket->SocketBase::force_shutdown();
+			socket->force_shutdown();
 			err_code = EPIPE;
 		}
 		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
@@ -273,18 +273,15 @@ namespace {
 			err_code = it->err_code;
 		}
 
+		socket->force_shutdown();
 		try {
-			socket->force_shutdown();
-			socket->SocketBase::force_shutdown();
 			socket->on_close(err_code);
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
-			socket->SocketBase::force_shutdown();
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"Unknown exception thrown: typeid = ", typeid(*socket).name());
-			socket->SocketBase::force_shutdown();
 		}
 		{
 			LOG_POSEIDON_DEBUG("Socket closed: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
