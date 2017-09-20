@@ -14,16 +14,6 @@
 
 namespace Poseidon {
 
-namespace {
-	boost::uint64_t config_get_max_request_length(){
-		AUTO(max_request_length, MainConfig::get<boost::uint64_t>("http_max_request_length", 16384));
-		if(max_request_length < 1){
-			max_request_length = 1;
-		}
-		return max_request_length;
-	}
-}
-
 namespace Http {
 	class Session::SyncJobBase : public JobBase {
 	private:
@@ -130,7 +120,8 @@ namespace Http {
 
 	Session::Session(Move<UniqueFile> socket)
 		: LowLevelSession(STD_MOVE(socket))
-		, m_max_request_length(config_get_max_request_length()), m_size_total(0), m_request_headers()
+		, m_max_request_length(MainConfig::get<boost::uint64_t>("http_max_request_length", 16384))
+		, m_size_total(0), m_request_headers()
 	{ }
 	Session::~Session(){ }
 
