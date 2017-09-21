@@ -5,7 +5,7 @@ set -e
 prefix="/usr/local"
 
 pkgname="libmysqlclient-dev"
-pkgversion="6.1.10"
+pkgversion="6.1.11"
 pkglicense="GPL or Commercial (https://www.mysql.com/about/legal/licensing/oem/)"
 pkggroup="https://dev.mysql.com/"
 pkgsource="https://dev.mysql.com/get/Downloads/Connector-C/mysql-connector-c-${pkgversion}-src.tar.gz"
