@@ -40,7 +40,7 @@ IpPort::IpPort(const SockAddr &sock_addr){
 			DEBUG_THROW(SystemException);
 		}
 		m_port = load_be(sin.sin_port);
-	} else if(family == AF_INET){
+	} else if(family == AF_INET6){
 		const AUTO_REF(sin6, *static_cast<const ::sockaddr_in6 *>(sock_addr.data()));
 		BOOST_STATIC_ASSERT(sizeof(m_ip) >= INET6_ADDRSTRLEN);
 		if(!::inet_ntop(AF_INET6, &(sin6.sin6_addr), m_ip, sizeof(m_ip))){
