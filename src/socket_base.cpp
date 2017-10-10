@@ -34,7 +34,7 @@ SocketBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 		return;
 	}
 	if(atomic_sub(socket->m_delayed_shutdown_guard_count, 1, ATOMIC_RELAXED) == 0){
-		if(atomic_load(socket->m_shutdown_write, ATOMIC_CONSUME)){
+		if(atomic_load(socket->m_shutdown_write, ATOMIC_ACQUIRE)){
 			atomic_store(socket->m_really_shutdown_write, true, ATOMIC_RELEASE);
 			const bool pending = EpollDaemon::mark_socket_writeable(socket.get());
 			if(!pending){
@@ -63,61 +63,76 @@ SocketBase::~SocketBase(){
 }
 
 bool SocketBase::should_really_shutdown_write() const NOEXCEPT {
-	return atomic_load(m_really_shutdown_write, ATOMIC_CONSUME);
+	return atomic_load(m_really_shutdown_write, ATOMIC_ACQUIRE);
 }
 void SocketBase::set_timed_out() NOEXCEPT {
 	atomic_store(m_timed_out, true, ATOMIC_RELEASE);
 }
 
 bool SocketBase::has_been_shutdown_read() const NOEXCEPT {
-	return atomic_load(m_shutdown_read, ATOMIC_CONSUME);
+	return atomic_load(m_shutdown_read, ATOMIC_ACQUIRE);
 }
 bool SocketBase::shutdown_read() NOEXCEPT {
 	PROFILE_ME;
 
-	bool ret = !atomic_load(m_shutdown_read, ATOMIC_CONSUME);
-	if(ret){
-		ret = !atomic_exchange(m_shutdown_read, true, ATOMIC_ACQ_REL);
-		::shutdown(get_fd(), SHUT_RD);
+	bool was_shutdown_read = atomic_load(m_shutdown_read, ATOMIC_ACQUIRE);
+	if(!was_shutdown_read){
+		was_shutdown_read = atomic_exchange(m_shutdown_read, true, ATOMIC_ACQ_REL);
 	}
-	return ret;
+	if(was_shutdown_read){
+		return false;
+	}
+	::shutdown(get_fd(), SHUT_RD);
+	return true;
 }
 bool SocketBase::has_been_shutdown_write() const NOEXCEPT {
-	return atomic_load(m_shutdown_write, ATOMIC_CONSUME);
+	return atomic_load(m_shutdown_write, ATOMIC_ACQUIRE);
 }
 bool SocketBase::shutdown_write() NOEXCEPT {
 	PROFILE_ME;
 
-	bool ret = !atomic_load(m_shutdown_write, ATOMIC_CONSUME);
-	if(ret){
-		ret = !atomic_exchange(m_shutdown_write, true, ATOMIC_ACQ_REL);
-		const DelayedShutdownGuard guard(virtual_shared_from_this<SocketBase>());
+	bool was_shutdown_write = atomic_load(m_shutdown_write, ATOMIC_ACQUIRE);
+	if(!was_shutdown_write){
+		was_shutdown_write = atomic_exchange(m_shutdown_write, true, ATOMIC_ACQ_REL);
 	}
-	return ret;
+	if(was_shutdown_write){
+		return false;
+	}
+	const DelayedShutdownGuard guard(virtual_shared_from_this<SocketBase>());
+	return true;
 }
 void SocketBase::force_shutdown() NOEXCEPT {
 	PROFILE_ME;
 
-	atomic_store(m_shutdown_read, true, ATOMIC_RELEASE);
-	atomic_store(m_shutdown_write, true, ATOMIC_RELEASE);
-
-	::linger lng;
-	lng.l_onoff = 1;
-	lng.l_linger = 0;
-	::setsockopt(get_fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
-
+	bool was_shutdown_read = atomic_load(m_shutdown_read, ATOMIC_ACQUIRE);
+	if(!was_shutdown_read){
+		was_shutdown_read = atomic_exchange(m_shutdown_read, true, ATOMIC_ACQ_REL);
+	}
+	bool was_shutdown_write = atomic_load(m_shutdown_write, ATOMIC_ACQUIRE);
+	if(!was_shutdown_write){
+		was_shutdown_write = atomic_exchange(m_shutdown_write, true, ATOMIC_ACQ_REL);
+	}
+	if(was_shutdown_read && was_shutdown_write){
+		return;
+	}
+	if(!was_shutdown_write){
+		::linger lng;
+		lng.l_onoff = 1;
+		lng.l_linger = 0;
+		::setsockopt(get_fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
+	}
 	::shutdown(get_fd(), SHUT_RDWR);
 }
 
 bool SocketBase::is_throttled() const {
-	return atomic_load(m_throttled, ATOMIC_CONSUME);
+	return atomic_load(m_throttled, ATOMIC_ACQUIRE);
 }
 void SocketBase::set_throttled(bool throttled){
 	atomic_store(m_throttled, throttled, ATOMIC_RELEASE);
 }
 
 bool SocketBase::did_time_out() const NOEXCEPT {
-	return atomic_load(m_timed_out, ATOMIC_CONSUME);
+	return atomic_load(m_timed_out, ATOMIC_ACQUIRE);
 }
 
 const IpPort &SocketBase::get_remote_info() const NOEXCEPT
