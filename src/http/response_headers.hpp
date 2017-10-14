@@ -11,6 +11,8 @@
 
 namespace Poseidon {
 
+class StreamBuffer;
+
 namespace Http {
 	struct ResponseHeaders {
 		unsigned version; // x * 10000 + y 表示 HTTP x.y
@@ -28,6 +30,8 @@ namespace Http {
 	}
 
 	extern bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT;
+
+	extern std::pair<ResponseHeaders, StreamBuffer> make_default_response(StatusCode status_code, OptionalMap headers);
 }
 
 }

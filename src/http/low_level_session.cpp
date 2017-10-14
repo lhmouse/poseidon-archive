@@ -125,16 +125,6 @@ namespace Http {
 		response_headers.headers = STD_MOVE(headers);
 		return send(STD_MOVE(response_headers), STD_MOVE(entity));
 	}
-	bool LowLevelSession::send_default(StatusCode status_code, OptionalMap headers){
-		PROFILE_ME;
-
-		ResponseHeaders response_headers;
-		response_headers.version = 10001;
-		response_headers.status_code = status_code;
-		response_headers.reason = get_status_code_desc(status_code).desc_short;
-		response_headers.headers = STD_MOVE(headers);
-		return ServerWriter::put_default_response(STD_MOVE(response_headers));
-	}
 
 	bool LowLevelSession::send_chunked_header(ResponseHeaders response_headers){
 		PROFILE_ME;
@@ -152,43 +142,47 @@ namespace Http {
 		return ServerWriter::put_chunked_trailer(STD_MOVE(headers));
 	}
 
-	bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers) NOEXCEPT {
+	bool LowLevelSession::send_default(StatusCode status_code, OptionalMap headers){
 		PROFILE_ME;
 
-		try {
-			AUTO(real_headers, headers);
-			real_headers.set(sslit("Connection"), "Close");
-			send_default(status_code, STD_MOVE(real_headers));
-			shutdown_read();
-			return shutdown_write();
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-			force_shutdown();
-			return false;
-		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown.");
-			force_shutdown();
-			return false;
-		}
+		AUTO(pair, make_default_response(status_code, STD_MOVE(headers)));
+		return ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false);
 	}
-	bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, Move<OptionalMap> headers) NOEXCEPT {
+	bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers) NOEXCEPT
+	try {
 		PROFILE_ME;
 
-		try {
-			AUTO(real_headers, STD_MOVE_IDN(headers));
-			real_headers.set(sslit("Connection"), "Close");
-			send_default(status_code, STD_MOVE(real_headers));
-			shutdown_read();
-			return shutdown_write();
-		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-			force_shutdown();
-			return false;
-		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown.");
-			force_shutdown();
-			return false;
-		}
+		AUTO(pair, make_default_response(status_code, headers));
+		pair.first.headers.set(sslit("Connection"), "Close");
+		ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false);
+		shutdown_read();
+		return shutdown_write();
+	} catch(std::exception &e){
+		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+		force_shutdown();
+		return false;
+	} catch(...){
+		LOG_POSEIDON_ERROR("Unknown exception thrown.");
+		force_shutdown();
+		return false;
+	}
+	bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, Move<OptionalMap> headers) NOEXCEPT
+	try {
+		PROFILE_ME;
+
+		AUTO(pair, make_default_response(status_code, STD_MOVE(headers)));
+		pair.first.headers.set(sslit("Connection"), "Close");
+		ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false);
+		shutdown_read();
+		return shutdown_write();
+	} catch(std::exception &e){
+		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+		force_shutdown();
+		return false;
+	} catch(...){
+		LOG_POSEIDON_ERROR("Unknown exception thrown.");
+		force_shutdown();
+		return false;
 	}
 }
 

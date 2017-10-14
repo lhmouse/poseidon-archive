@@ -54,28 +54,6 @@ namespace Http {
 
 		return on_encoded_data_avail(STD_MOVE(data));
 	}
-	long ServerWriter::put_default_response(ResponseHeaders response_headers){
-		PROFILE_ME;
-
-		StreamBuffer entity;
-
-		const AUTO(status_code, response_headers.status_code);
-		if(status_code / 100 >= 4){
-			AUTO_REF(headers, response_headers.headers);
-
-			headers.set(sslit("Content-Type"), "text/html");
-			entity.put("<html><head><title>");
-			const AUTO(desc, get_status_code_desc(status_code));
-			entity.put(desc.desc_short);
-			entity.put("</title></head><body><h1>");
-			entity.put(desc.desc_short);
-			entity.put("</h1><hr /><p>");
-			entity.put(desc.desc_long);
-			entity.put("</p></body></html>");
-		}
-
-		return put_response(STD_MOVE(response_headers), STD_MOVE(entity), true);
-	}
 
 	long ServerWriter::put_chunked_header(ResponseHeaders response_headers){
 		PROFILE_ME;
