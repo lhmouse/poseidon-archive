@@ -16,7 +16,7 @@ namespace Http {
 	ClientWriter::ClientWriter(){ }
 	ClientWriter::~ClientWriter(){ }
 
-	long ClientWriter::put_request(RequestHeaders request_headers, StreamBuffer entity){
+	long ClientWriter::put_request(RequestHeaders request_headers, StreamBuffer entity, bool set_content_length){
 		PROFILE_ME;
 
 		StreamBuffer data;
@@ -39,18 +39,22 @@ namespace Http {
 		if(entity.empty()){
 			headers.erase("Content-Type");
 			headers.erase("Transfer-Encoding");
-			if((request_headers.verb == V_POST) || (request_headers.verb == V_PUT)){
-				headers.set(sslit("Content-Length"), "0");
-			} else {
-				headers.erase("Content-Length");
+			if(set_content_length){
+				if((request_headers.verb == V_POST) || (request_headers.verb == V_PUT)){
+					headers.set(sslit("Content-Length"), "0");
+				} else {
+					headers.erase("Content-Length");
+				}
 			}
 		} else {
 			if(!headers.has("Content-Type")){
 				headers.set(sslit("Content-Type"), "application/x-www-form-urlencoded");
 			}
 			headers.erase("Transfer-Encoding");
-			len = (unsigned)std::sprintf(temp, "%llu", (unsigned long long)entity.size());
-			headers.set(sslit("Content-Length"), std::string(temp, len));
+			if(set_content_length){
+				len = (unsigned)std::sprintf(temp, "%llu", (unsigned long long)entity.size());
+				headers.set(sslit("Content-Length"), std::string(temp, len));
+			}
 		}
 
 		for(AUTO(it, headers.begin()); it != headers.end(); ++it){

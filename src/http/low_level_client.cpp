@@ -99,7 +99,7 @@ namespace Http {
 	bool LowLevelClient::send(RequestHeaders request_headers, StreamBuffer entity){
 		PROFILE_ME;
 
-		return ClientWriter::put_request(STD_MOVE(request_headers), STD_MOVE(entity));
+		return ClientWriter::put_request(STD_MOVE(request_headers), STD_MOVE(entity), true);
 	}
 	bool LowLevelClient::send(Verb verb, std::string uri, OptionalMap get_params){
 		PROFILE_ME;

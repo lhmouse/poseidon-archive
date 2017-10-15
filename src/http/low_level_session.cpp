@@ -146,7 +146,7 @@ namespace Http {
 		PROFILE_ME;
 
 		AUTO(pair, make_default_response(status_code, STD_MOVE(headers)));
-		return ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false);
+		return ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
 	}
 	bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers) NOEXCEPT
 	try {
@@ -154,7 +154,7 @@ namespace Http {
 
 		AUTO(pair, make_default_response(status_code, headers));
 		pair.first.headers.set(sslit("Connection"), "Close");
-		ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false);
+		ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
 		shutdown_read();
 		return shutdown_write();
 	} catch(std::exception &e){
@@ -172,7 +172,7 @@ namespace Http {
 
 		AUTO(pair, make_default_response(status_code, STD_MOVE(headers)));
 		pair.first.headers.set(sslit("Connection"), "Close");
-		ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false);
+		ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
 		shutdown_read();
 		return shutdown_write();
 	} catch(std::exception &e){
