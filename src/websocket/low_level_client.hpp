@@ -64,8 +64,8 @@ namespace WebSocket {
 			return shutdown(ST_NORMAL_CLOSURE);
 		}
 
-		bool send(OpCode opcode, StreamBuffer payload, bool masked = true);
-		bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
+		virtual bool send(OpCode opcode, StreamBuffer payload, bool masked = true);
+		virtual bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
 	};
 }
 

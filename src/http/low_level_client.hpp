@@ -57,14 +57,14 @@ namespace Http {
 	public:
 		boost::shared_ptr<UpgradedSessionBase> get_upgraded_client() const;
 
-		bool send(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
-		bool send(Verb verb, std::string uri, OptionalMap get_params = OptionalMap());
-		bool send(Verb verb, std::string uri, OptionalMap get_params, StreamBuffer entity, const HeaderOption &content_type);
-		bool send(Verb verb, std::string uri, OptionalMap get_params, OptionalMap headers, StreamBuffer entity = StreamBuffer());
+		virtual bool send(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
+		virtual bool send(Verb verb, std::string uri, OptionalMap get_params = OptionalMap());
+		virtual bool send(Verb verb, std::string uri, OptionalMap get_params, StreamBuffer entity, const HeaderOption &content_type);
+		virtual bool send(Verb verb, std::string uri, OptionalMap get_params, OptionalMap headers, StreamBuffer entity = StreamBuffer());
 
-		bool send_chunked_header(RequestHeaders request_headers);
-		bool send_chunk(StreamBuffer entity);
-		bool send_chunked_trailer(OptionalMap headers);
+		virtual bool send_chunked_header(RequestHeaders request_headers);
+		virtual bool send_chunk(StreamBuffer entity);
+		virtual bool send_chunked_trailer(OptionalMap headers);
 	};
 }
 

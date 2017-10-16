@@ -56,9 +56,9 @@ namespace Cbpp {
 		virtual bool on_low_level_control_message(StatusCode status_code, StreamBuffer param) = 0;
 
 	public:
-		bool send(boost::uint16_t message_id, StreamBuffer payload);
-		bool send_control(StatusCode status_code, StreamBuffer param);
-		bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
+		virtual bool send(boost::uint16_t message_id, StreamBuffer payload);
+		virtual bool send_control(StatusCode status_code, StreamBuffer param);
+		virtual bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
 	};
 }
 

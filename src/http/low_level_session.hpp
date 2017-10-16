@@ -57,18 +57,18 @@ namespace Http {
 	public:
 		boost::shared_ptr<UpgradedSessionBase> get_upgraded_session() const;
 
-		bool send(ResponseHeaders response_headers, StreamBuffer entity = StreamBuffer());
-		bool send(StatusCode status_code);
-		bool send(StatusCode status_code, StreamBuffer entity, const HeaderOption &content_type);
-		bool send(StatusCode status_code, OptionalMap headers, StreamBuffer entity = StreamBuffer());
+		virtual bool send(ResponseHeaders response_headers, StreamBuffer entity = StreamBuffer());
+		virtual bool send(StatusCode status_code);
+		virtual bool send(StatusCode status_code, StreamBuffer entity, const HeaderOption &content_type);
+		virtual bool send(StatusCode status_code, OptionalMap headers, StreamBuffer entity = StreamBuffer());
 
-		bool send_chunked_header(ResponseHeaders response_headers);
-		bool send_chunk(StreamBuffer entity);
-		bool send_chunked_trailer(OptionalMap headers);
+		virtual bool send_chunked_header(ResponseHeaders response_headers);
+		virtual bool send_chunk(StreamBuffer entity);
+		virtual bool send_chunked_trailer(OptionalMap headers);
 
-		bool send_default(StatusCode status_code, OptionalMap headers = OptionalMap());
-		bool send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers = OptionalMap()) NOEXCEPT;
-		bool send_default_and_shutdown(StatusCode status_code, Move<OptionalMap> headers) NOEXCEPT;
+		virtual bool send_default(StatusCode status_code, OptionalMap headers = OptionalMap());
+		virtual bool send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers = OptionalMap()) NOEXCEPT;
+		virtual bool send_default_and_shutdown(StatusCode status_code, Move<OptionalMap> headers) NOEXCEPT;
 	};
 }
 

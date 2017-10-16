@@ -43,8 +43,8 @@ namespace WebSocket {
 		virtual bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) = 0;
 
 	public:
-		bool send(OpCode opcode, StreamBuffer payload, bool masked = false);
-		bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
+		virtual bool send(OpCode opcode, StreamBuffer payload, bool masked = false);
+		virtual bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
 	};
 }
 
