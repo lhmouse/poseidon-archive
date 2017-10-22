@@ -213,7 +213,6 @@ bool TcpSessionBase::shutdown_read() NOEXCEPT {
 	return SocketBase::shutdown_read();
 }
 bool TcpSessionBase::shutdown_write() NOEXCEPT {
-	EpollDaemon::mark_socket_writeable(this);
 	return SocketBase::shutdown_write();
 }
 void TcpSessionBase::force_shutdown() NOEXCEPT {
