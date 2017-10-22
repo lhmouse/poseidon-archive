@@ -36,11 +36,6 @@ namespace {
 		boost::shared_ptr<const JobPromise> promise;
 		boost::uint64_t expiry_time;
 		bool insignificant;
-
-		JobElement(boost::shared_ptr<JobBase> job_, boost::shared_ptr<const bool> withdrawn_)
-			: job(STD_MOVE(job_)), withdrawn(STD_MOVE(withdrawn_))
-			, promise(), expiry_time((boost::uint64_t)-1), insignificant(false)
-		{ }
 	};
 
 	class FiberStackAllocator : NONCOPYABLE {
@@ -311,7 +306,8 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<co
 	const AUTO(fiber, &(it->second));
 	{
 		const RecursiveMutex::UniqueLock queue_lock(fiber->queue_mutex);
-		fiber->queue.push_back(JobElement(STD_MOVE(job), STD_MOVE(withdrawn)));
+		JobElement elem = { STD_MOVE(job), STD_MOVE(withdrawn) };
+		fiber->queue.push_back(STD_MOVE(elem));
 	}
 	g_new_job.signal();
 }
