@@ -23,10 +23,6 @@ namespace {
 	struct ModuleRaiiMapElement {
 		ModuleRaiiBase *raii;
 		std::pair<void *, long> base_address_priority;
-
-		ModuleRaiiMapElement(ModuleRaiiBase *raii_, void *base_address, long priority_)
-			: raii(raii_), base_address_priority(base_address, priority_)
-		{ }
 	};
 	MULTI_INDEX_MAP(ModuleRaiiMap, ModuleRaiiMapElement,
 		UNIQUE_MEMBER_INDEX(raii)
@@ -116,7 +112,8 @@ void ModuleDepository::register_module_raii(ModuleRaiiBase *raii, long priority)
 		LOG_POSEIDON_ERROR("Error getting base address: ", error);
 		DEBUG_THROW(Exception, SharedNts(error));
 	}
-	const AUTO(result, g_module_raii_map.insert(ModuleRaiiMapElement(raii, info.dli_fbase, priority)));
+	ModuleRaiiMapElement elem = { raii, std::make_pair(info.dli_fbase, priority) };
+	const AUTO(result, g_module_raii_map.insert(STD_MOVE(elem)));
 	if(!result.second){
 		LOG_POSEIDON_ERROR("Duplicate ModuleRaii? raii = ", static_cast<void *>(raii));
 		DEBUG_THROW(Exception, sslit("Duplicate ModuleRaii"));
