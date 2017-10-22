@@ -189,11 +189,7 @@ namespace {
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
 			LOG_POSEIDON_DEBUG("Socket read error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
-			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(it, g_socket_map.find<0>(socket.get()));
-			if(it != g_socket_map.end<0>()){
-				g_socket_map.erase<0>(it);
-			}
+			socket->shutdown_read();
 		}
 		return true;
 	}
@@ -244,11 +240,7 @@ namespace {
 			}
 		} else if((err_code != 0) && (err_code != EINTR)){
 			LOG_POSEIDON_DEBUG("Socket write error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
-			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(it, g_socket_map.find<0>(socket.get()));
-			if(it != g_socket_map.end<0>()){
-				g_socket_map.erase<0>(it);
-			}
+			socket->shutdown_write();
 		}
 		return true;
 	}
