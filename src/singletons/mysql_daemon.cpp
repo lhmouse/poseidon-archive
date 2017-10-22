@@ -425,10 +425,6 @@ namespace {
 			boost::shared_ptr<OperationBase> operation;
 			boost::uint64_t due_time;
 			std::size_t retry_count;
-
-			OperationQueueElement(boost::shared_ptr<OperationBase> operation_, boost::uint64_t due_time_)
-				: operation(STD_MOVE(operation_)), due_time(due_time_), retry_count(0)
-			{ }
 		};
 
 	private:
@@ -671,12 +667,12 @@ namespace {
 				LOG_POSEIDON_ERROR("MySQL thread is being shut down.");
 				DEBUG_THROW(Exception, sslit("MySQL thread is being shut down"));
 			}
-			m_queue.push_back(OperationQueueElement(STD_MOVE(operation), due_time));
-			OperationQueueElement *const elem = &m_queue.back();
+			OperationQueueElement elem = { STD_MOVE(operation), due_time };
+			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){
 				const AUTO(old_write_stamp, combinable_object->get_combined_write_stamp());
 				if(!old_write_stamp){
-					combinable_object->set_combined_write_stamp(elem);
+					combinable_object->set_combined_write_stamp(&m_queue.back());
 				}
 			}
 			if(urgent){
