@@ -3,6 +3,7 @@
 
 #include "precompiled.hpp"
 #include "shared_nts.hpp"
+#include "checked_arithmetic.hpp"
 #include <memory>
 #include <iostream>
 #include <boost/make_shared.hpp>
@@ -11,7 +12,11 @@ namespace Poseidon {
 
 namespace {
 	template<typename T>
-	struct IncrementalAlloc {
+	class IncrementalAlloc {
+		template<typename>
+		friend class IncrementalAlloc;
+
+	public:
 		typedef T *             pointer;
 		typedef const T *       const_pointer;
 		typedef T &             reference;
@@ -25,17 +30,20 @@ namespace {
 			typedef IncrementalAlloc<U> other;
 		};
 
-		void *&inc_ptr;
-		const size_type inc_size;
+	private:
+		void **m_inc_ptr;
+		size_type m_inc_size;
 
-		IncrementalAlloc(void *&inc_ptr_, size_type inc_size_)
-			: inc_ptr(inc_ptr_), inc_size(inc_size_)
+	public:
+		IncrementalAlloc(void **inc_ptr, size_type inc_size)
+			: m_inc_ptr(inc_ptr), m_inc_size(inc_size)
 		{ }
 		template<typename U>
 		IncrementalAlloc(const IncrementalAlloc<U> &rhs)
-			: inc_ptr(rhs.inc_ptr), inc_size(rhs.inc_size)
+			: m_inc_ptr(rhs.m_inc_ptr), m_inc_size(rhs.m_inc_size)
 		{ }
 
+	public:
 		pointer address(reference r) const {
 			return reinterpret_cast<pointer>(&reinterpret_cast<char &>(r));
 		}
@@ -44,13 +52,15 @@ namespace {
 		}
 
 		pointer allocate(size_type n, const void * = 0){
-			const size_type k = n * sizeof(T) + inc_size;
-			if(k / sizeof(T) != n + inc_size / sizeof(T)){
-				throw std::bad_alloc();
+			size_type k = checked_mul(sizeof(T), n);
+			if(m_inc_ptr){
+				k = checked_add(k, m_inc_size);
 			}
-			char *const p = static_cast<char *>(::operator new(k));
-			inc_ptr = p + k - inc_size;
-			return reinterpret_cast<pointer>(p);
+			void *const p = ::operator new(k);
+			if(m_inc_ptr){
+				*m_inc_ptr = static_cast<char *>(p) + k - m_inc_size;
+			}
+			return static_cast<pointer>(p);
 		}
 		void deallocate(pointer p, size_type){
 			::operator delete(p);
@@ -87,7 +97,7 @@ void SharedNts::assign(const char *str, std::size_t len){
 		m_ptr.reset(boost::shared_ptr<void>(), "");
 	} else {
 		void *dst;
-		AUTO(sp, boost::allocate_shared<char>(IncrementalAlloc<char>(dst, len + 1)));
+		AUTO(sp, boost::allocate_shared<char>(IncrementalAlloc<char>(&dst, len + 1)));
 		std::memcpy(dst, str, len);
 		static_cast<char *>(dst)[len] = 0;
 		m_ptr.reset(STD_MOVE_IDN(sp), static_cast<const char *>(dst));
