@@ -14,7 +14,7 @@
 namespace Poseidon {
 
 namespace {
-	struct RealPathFreeer {
+	struct RealPathDeleter {
 		CONSTEXPR char *operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
@@ -28,7 +28,7 @@ namespace {
 }
 
 void MainConfig::set_run_path(const char *path){
-	UniqueHandle<RealPathFreeer> real_path;
+	UniqueHandle<RealPathDeleter> real_path;
 	if(!real_path.reset(::realpath(path, NULLPTR))){
 		const int err_code = errno;
 		LOG_POSEIDON_ERROR("Could not resolve path (errno was ", err_code, "): ", path);

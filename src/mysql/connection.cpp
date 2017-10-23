@@ -6,13 +6,13 @@
 #include "thread_context.hpp"
 #include "exception.hpp"
 #include "formatting.hpp"
-#include <stdlib.h>
-#include <mysql.h>
 #include "../raii.hpp"
 #include "../log.hpp"
 #include "../time.hpp"
 #include "../system_exception.hpp"
 #include "../uuid.hpp"
+#include <cstdlib>
+#include <mysql.h>
 
 namespace Poseidon {
 
