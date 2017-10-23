@@ -17,20 +17,37 @@
 
 namespace Poseidon {
 
-struct TimerItem : NONCOPYABLE {
-	boost::uint64_t period;
-	boost::shared_ptr<const TimerCallback> callback;
-	bool low_level;
-	unsigned long stamp;
+class TimerItem : NONCOPYABLE {
+private:
+	boost::uint64_t m_period;
+	unsigned long m_stamp;
+	boost::shared_ptr<const TimerCallback> m_callback;
+	bool m_low_level;
 
-	TimerItem(boost::uint64_t period_, boost::shared_ptr<const TimerCallback> callback_, bool low_level_)
-		: period(period_), callback(STD_MOVE(callback_)), low_level(low_level_)
-		, stamp(0)
-	{
-		LOG_POSEIDON_DEBUG("Created timer: period = ", period, ", low_level = ", low_level);
+public:
+	TimerItem(boost::uint64_t period, boost::shared_ptr<const TimerCallback> callback, bool low_level)
+		: m_period(period), m_stamp(0), m_callback(STD_MOVE_IDN(callback)), m_low_level(low_level)
+	{ }
+
+public:
+	boost::uint64_t get_period() const {
+		return m_period;
 	}
-	~TimerItem(){
-		LOG_POSEIDON_DEBUG("Destroyed timer: period = ", period, ", low_level = ", low_level);
+	unsigned long get_stamp() const {
+		return m_stamp;
+	}
+	const boost::shared_ptr<const TimerCallback> &get_callback() const {
+		return m_callback;
+	}
+	bool is_low_level() const {
+		return m_low_level;
+	}
+
+	unsigned long set_period(boost::uint64_t period){
+		if(period != TimerDaemon::PERIOD_NOT_MODIFIED){
+			m_period = period;
+		}
+		return ++m_stamp;
 	}
 };
 
@@ -61,29 +78,19 @@ namespace {
 				return;
 			}
 
-			(*item->callback)(item, m_now, item->period);
+			const AUTO(callback, item->get_callback());
+			(*callback)(item, m_now, item->get_period());
 		}
 	};
 
 	struct TimerQueueElement {
-		boost::uint64_t next;
 		boost::weak_ptr<TimerItem> item;
+		boost::uint64_t next;
 		unsigned long stamp;
-
-		TimerQueueElement(boost::uint64_t next_, const boost::shared_ptr<TimerItem> &item_)
-			: next(next_), item(item_), stamp(item_->stamp)
-		{ }
-
-		bool operator<(const TimerQueueElement &rhs) const {
-			return next > rhs.next;
-		}
 	};
 
-	inline void swap(TimerQueueElement &lhs, TimerQueueElement &rhs) NOEXCEPT {
-		using std::swap;
-		swap(lhs.next, rhs.next);
-		swap(lhs.item, rhs.item);
-		swap(lhs.stamp, rhs.stamp);
+	bool operator<(const TimerQueueElement &lhs, const TimerQueueElement &rhs){
+		return lhs.next > rhs.next;
 	}
 
 	volatile bool g_running = false;
@@ -110,21 +117,22 @@ namespace {
 			}
 			std::pop_heap(g_timers.begin(), g_timers.end());
 			item = g_timers.back().item.lock();
-			if(!item || (item->stamp != g_timers.back().stamp)){
+			if(!item || (item->get_stamp() != g_timers.back().stamp)){
 				g_timers.pop_back();
 				goto _pick_next;
 			}
-			if(item->period == 0){
+			if(item->get_period() == 0){
 				g_timers.pop_back();
 			} else {
-				g_timers.back().next = saturated_add(g_timers.back().next, item->period);
+				g_timers.back().next = saturated_add(g_timers.back().next, item->get_period());
 				std::push_heap(g_timers.begin(), g_timers.end());
 			}
 		}
 		try {
-			if(item->low_level){
+			if(item->is_low_level()){
 				LOG_POSEIDON_TRACE("Dispatching low level timer: item = ", item);
-				(*item->callback)(item, now, item->period);
+				const AUTO(callback, item->get_callback());
+				(*callback)(item, now, item->get_period());
 			} else {
 				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: item = ", item);
 				JobDispatcher::enqueue(boost::make_shared<TimerJob>(item, now), VAL_INIT);
@@ -189,12 +197,13 @@ boost::shared_ptr<TimerItem> TimerDaemon::register_absolute_timer(
 	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE_IDN(callback)), false));
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		g_timers.push_back(TimerQueueElement(first, item));
+		TimerQueueElement elem = { item, first, item->get_stamp() };
+		g_timers.push_back(STD_MOVE(elem));
 		std::push_heap(g_timers.begin(), g_timers.end());
 		g_new_timer.signal();
 	}
 	LOG_POSEIDON_DEBUG("Created a timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()),
-		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
+		" microsecond(s) later and has a period of ", item->get_period(), " microsecond(s).");
 	return item;
 }
 boost::shared_ptr<TimerItem> TimerDaemon::register_timer(
@@ -235,12 +244,13 @@ boost::shared_ptr<TimerItem> TimerDaemon::register_low_level_absolute_timer(
 	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE_IDN(callback)), true));
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		g_timers.push_back(TimerQueueElement(first, item));
+		TimerQueueElement elem = { item, first, item->get_stamp() };
+		g_timers.push_back(STD_MOVE(elem));
 		std::push_heap(g_timers.begin(), g_timers.end());
 		g_new_timer.signal();
 	}
 	LOG_POSEIDON_DEBUG("Created a low level timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()),
-		" microsecond(s) later and has a period of ", item->period, " microsecond(s).");
+		" microsecond(s) later and has a period of ", item->get_period(), " microsecond(s).");
 	return item;
 }
 boost::shared_ptr<TimerItem> TimerDaemon::register_low_level_timer(
@@ -256,11 +266,9 @@ void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item,
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
-	if(period != PERIOD_NOT_MODIFIED){
-		item->period = period;
-	}
-	g_timers.push_back(TimerQueueElement(first, item)); // may throw std::bad_alloc.
-	g_timers.back().stamp = ++(item->stamp);
+	g_timers.emplace_back(); // This may throw std::bad_alloc.
+	TimerQueueElement elem = { item, first, item->set_period(period) }; // This throws no exception.
+	g_timers.back() = STD_MOVE_IDN(elem); // This does not throw an exception, either.
 	std::push_heap(g_timers.begin(), g_timers.end());
 	g_new_timer.signal();
 }
