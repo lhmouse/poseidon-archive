@@ -89,11 +89,6 @@ namespace {
 
 		void *dl_handle;
 		void *base_address;
-
-		explicit ModuleMapElement(boost::shared_ptr<Module> module_)
-			: module(STD_MOVE(module_))
-			, dl_handle(module->get_dl_handle()), base_address(module->get_base_address())
-		{ }
 	};
 	MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,
 		UNIQUE_MEMBER_INDEX(dl_handle)
@@ -188,12 +183,13 @@ void *ModuleDepository::load(const std::string &path){
 			raii_it->raii->init(handles);
 		}
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing module: ", info.dli_fname);
-		const AUTO(result, g_module_map.insert(ModuleMapElement(
-			boost::make_shared<Module>(STD_MOVE(dl_handle), info.dli_fbase, SharedNts(info.dli_fname), STD_MOVE(handles)))));
+		const AUTO(module, boost::make_shared<Module>(STD_MOVE(dl_handle), info.dli_fbase, SharedNts(info.dli_fname), STD_MOVE(handles)));
+		ModuleMapElement elem = { module, module->get_dl_handle(), module->get_base_address() };
+		const AUTO(result, g_module_map.insert(STD_MOVE(elem)));
 		DEBUG_THROW_ASSERT(result.second);
 		it = result.first;
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Loaded module: base_address = ", it->module->get_base_address(), ", real_path = ", it->module->get_real_path());
+			"Loaded module: base_address = ", module->get_base_address(), ", real_path = ", module->get_real_path());
 	}
 	return it->module->get_base_address();
 }
