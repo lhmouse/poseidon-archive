@@ -98,7 +98,7 @@ namespace {
 
 	Mutex g_mutex;
 	ConditionVariable g_new_timer;
-	std::vector<TimerQueueElement> g_timers;
+	boost::container::vector<TimerQueueElement> g_timers;
 
 	bool pump_one_element() NOEXCEPT {
 		PROFILE_ME;

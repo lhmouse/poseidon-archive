@@ -13,10 +13,7 @@ namespace Poseidon {
 template<typename CloserT>
 class UniqueHandle {
 public:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-attributes"
 	typedef VALUE_TYPE(DECLREF(CloserT)()) Handle;
-#pragma GCC diagnostic pop
 
 private:
 	Handle m_handle;

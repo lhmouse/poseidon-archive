@@ -3,16 +3,24 @@
 
 #include "../precompiled.hpp"
 #include "bson_builder.hpp"
+
+#if __GNUC__ >= 6
+#  pragma GCC diagnostic ignored "-Wignored-attributes"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 #include "../protocol_exception.hpp"
 #include "../time.hpp"
 #include "../uuid.hpp"
 #include "../profiler.hpp"
 #include "../buffer_streams.hpp"
 #include "../raii.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
 #include <bson.h>
-#pragma GCC diagnostic pop
+
+#if __GNUC__ >= 6
+#  pragma GCC diagnostic pop
+#endif
 
 namespace Poseidon {
 
