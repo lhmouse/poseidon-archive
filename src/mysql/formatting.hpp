@@ -13,32 +13,53 @@ namespace Poseidon {
 class Uuid;
 
 namespace MySql {
-	struct StringEscaper {
-		const std::string &str;
+	class StringEscaper {
+	private:
+		const std::string &m_ref;
 
-		explicit StringEscaper(const std::string &str_)
-			: str(str_)
+	public:
+		explicit StringEscaper(const std::string &ref)
+			: m_ref(ref)
 		{ }
+
+	public:
+		const std::string &get() const {
+			return m_ref;
+		}
 	};
 
 	extern std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs);
 
-	struct DateTimeFormatter {
-		const boost::uint64_t &time;
+	class DateTimeFormatter {
+	private:
+		const boost::uint64_t &m_ref;
 
-		explicit DateTimeFormatter(const boost::uint64_t &time_)
-			: time(time_)
+	public:
+		explicit DateTimeFormatter(const boost::uint64_t &ref)
+			: m_ref(ref)
 		{ }
+
+	public:
+		const boost::uint64_t &get() const {
+			return m_ref;
+		}
 	};
 
 	extern std::ostream &operator<<(std::ostream &os, const DateTimeFormatter &rhs);
 
-	struct UuidFormatter {
-		const Uuid &uuid;
+	class UuidFormatter {
+	private:
+		const Uuid &m_ref;
 
-		explicit UuidFormatter(const Uuid &uuid_)
-			: uuid(uuid_)
+	public:
+		explicit UuidFormatter(const Uuid &ref)
+			: m_ref(ref)
 		{ }
+
+	public:
+		const Uuid &get() const {
+			return m_ref;
+		}
 	};
 
 	extern std::ostream &operator<<(std::ostream &os, const UuidFormatter &rhs);
