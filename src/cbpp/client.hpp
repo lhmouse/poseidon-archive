@@ -7,51 +7,51 @@
 #include "low_level_client.hpp"
 
 namespace Poseidon {
-
 namespace Cbpp {
-	class Client : public LowLevelClient {
-	private:
-		class SyncJobBase;
-		class ConnectJob;
-		class ReadHupJob;
-		class DataMessageJob;
-		class ControlMessageJob;
 
-	private:
-		unsigned m_message_id;
-		StreamBuffer m_payload;
+class Client : public LowLevelClient {
+private:
+	class SyncJobBase;
+	class ConnectJob;
+	class ReadHupJob;
+	class DataMessageJob;
+	class ControlMessageJob;
 
-	public:
-		explicit Client(const SockAddr &addr, bool use_ssl = false, bool verify_peer = true);
-		~Client();
+private:
+	unsigned m_message_id;
+	StreamBuffer m_payload;
 
-	protected:
-		unsigned get_low_level_message_id() const {
-			return m_message_id;
-		}
-		const StreamBuffer &get_low_level_payload() const {
-			return m_payload;
-		}
+public:
+	explicit Client(const SockAddr &addr, bool use_ssl = false, bool verify_peer = true);
+	~Client();
 
-		// TcpSessionBase
-		void on_connect() OVERRIDE;
-		void on_read_hup() OVERRIDE;
+protected:
+	unsigned get_low_level_message_id() const {
+		return m_message_id;
+	}
+	const StreamBuffer &get_low_level_payload() const {
+		return m_payload;
+	}
 
-		// LowLevelClient
-		void on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) OVERRIDE;
-		void on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload) OVERRIDE;
-		bool on_low_level_data_message_end(boost::uint64_t payload_size) OVERRIDE;
+	// TcpSessionBase
+	void on_connect() OVERRIDE;
+	void on_read_hup() OVERRIDE;
 
-		bool on_low_level_control_message(StatusCode status_code, StreamBuffer param) OVERRIDE;
+	// LowLevelClient
+	void on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) OVERRIDE;
+	void on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload) OVERRIDE;
+	bool on_low_level_data_message_end(boost::uint64_t payload_size) OVERRIDE;
 
-		// 可覆写。
-		virtual void on_sync_connect();
+	bool on_low_level_control_message(StatusCode status_code, StreamBuffer param) OVERRIDE;
 
-		virtual void on_sync_data_message(boost::uint16_t message_id, StreamBuffer payload) = 0;
-		virtual void on_sync_control_message(StatusCode status_code, StreamBuffer param);
-	};
+	// 可覆写。
+	virtual void on_sync_connect();
+
+	virtual void on_sync_data_message(boost::uint16_t message_id, StreamBuffer payload) = 0;
+	virtual void on_sync_control_message(StatusCode status_code, StreamBuffer param);
+};
+
 }
-
 }
 
 #endif

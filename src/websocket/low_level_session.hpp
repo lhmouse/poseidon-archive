@@ -11,43 +11,43 @@
 #include "writer.hpp"
 
 namespace Poseidon {
-
 namespace WebSocket {
-	class LowLevelSession : public Http::UpgradedSessionBase, protected Reader, protected Writer {
-	public:
-		explicit LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent);
-		~LowLevelSession();
 
-	protected:
-		// UpgradedSessionBase
-		void on_connect() OVERRIDE;
-		void on_read_hup() OVERRIDE;
-		void on_close(int err_code) OVERRIDE;
-		void on_receive(StreamBuffer data) OVERRIDE;
+class LowLevelSession : public Http::UpgradedSessionBase, protected Reader, protected Writer {
+public:
+	explicit LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent);
+	~LowLevelSession();
 
-		// Reader
-		void on_data_message_header(OpCode opcode) OVERRIDE;
-		void on_data_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) OVERRIDE;
-		bool on_data_message_end(boost::uint64_t whole_size) OVERRIDE;
+protected:
+	// UpgradedSessionBase
+	void on_connect() OVERRIDE;
+	void on_read_hup() OVERRIDE;
+	void on_close(int err_code) OVERRIDE;
+	void on_receive(StreamBuffer data) OVERRIDE;
 
-		bool on_control_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
+	// Reader
+	void on_data_message_header(OpCode opcode) OVERRIDE;
+	void on_data_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) OVERRIDE;
+	bool on_data_message_end(boost::uint64_t whole_size) OVERRIDE;
 
-		// Writer
-		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
+	bool on_control_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
 
-		// 可覆写。
-		virtual void on_low_level_message_header(OpCode opcode) = 0;
-		virtual void on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) = 0;
-		virtual bool on_low_level_message_end(boost::uint64_t whole_size) = 0;
+	// Writer
+	long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
-		virtual bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) = 0;
+	// 可覆写。
+	virtual void on_low_level_message_header(OpCode opcode) = 0;
+	virtual void on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) = 0;
+	virtual bool on_low_level_message_end(boost::uint64_t whole_size) = 0;
 
-	public:
-		virtual bool send(OpCode opcode, StreamBuffer payload, bool masked = false);
-		virtual bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
-	};
+	virtual bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) = 0;
+
+public:
+	virtual bool send(OpCode opcode, StreamBuffer payload, bool masked = false);
+	virtual bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
+};
+
 }
-
 }
 
 #endif

@@ -5,27 +5,27 @@
 #define POSEIDON_HTTP_FWD_HPP_
 
 namespace Poseidon {
-
 namespace Http {
-	class RequestHeaders;
-	class ResponseHeaders;
-	class UrlParam;
-	class HeaderOption;
-	class Exception;
 
-	class AuthInfo;
-	class Multipart;
+class RequestHeaders;
+class ResponseHeaders;
+class UrlParam;
+class HeaderOption;
+class Exception;
 
-	class ServerReader;
-	class ServerWriter;
-	class ClientReader;
-	class ClientWriter;
+class AuthInfo;
+class Multipart;
 
-	class Session;
-	class Client;
-	class UpgradedSessionBase;
+class ServerReader;
+class ServerWriter;
+class ClientReader;
+class ClientWriter;
+
+class Session;
+class Client;
+class UpgradedSessionBase;
+
 }
-
 }
 
 #endif

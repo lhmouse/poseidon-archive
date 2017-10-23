@@ -10,22 +10,22 @@
 #include "status_codes.hpp"
 
 namespace Poseidon {
-
 namespace Cbpp {
-	class Writer {
-	public:
-		Writer();
-		virtual ~Writer();
 
-	protected:
-		virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
+class Writer {
+public:
+	Writer();
+	virtual ~Writer();
 
-	public:
-		long put_data_message(boost::uint16_t message_id, StreamBuffer payload);
-		long put_control_message(StatusCode status_code, StreamBuffer param);
-	};
+protected:
+	virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
+
+public:
+	long put_data_message(boost::uint16_t message_id, StreamBuffer payload);
+	long put_control_message(StatusCode status_code, StreamBuffer param);
+};
+
 }
-
 }
 
 #endif

@@ -12,25 +12,25 @@
 #include "request_headers.hpp"
 
 namespace Poseidon {
-
 namespace Http {
-	class ClientWriter {
-	public:
-		ClientWriter();
-		virtual ~ClientWriter();
 
-	protected:
-		virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
+class ClientWriter {
+public:
+	ClientWriter();
+	virtual ~ClientWriter();
 
-	public:
-		long put_request(RequestHeaders request_headers, StreamBuffer entity, bool set_content_length);
+protected:
+	virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
 
-		long put_chunked_header(RequestHeaders request_headers);
-		long put_chunk(StreamBuffer entity);
-		long put_chunked_trailer(OptionalMap headers);
-	};
+public:
+	long put_request(RequestHeaders request_headers, StreamBuffer entity, bool set_content_length);
+
+	long put_chunked_header(RequestHeaders request_headers);
+	long put_chunk(StreamBuffer entity);
+	long put_chunked_trailer(OptionalMap headers);
+};
+
 }
-
 }
 
 #endif

@@ -5,18 +5,18 @@
 #define POSEIDON_CBPP_FWD_HPP_
 
 namespace Poseidon {
-
 namespace Cbpp {
-	class MessageBase;
-	class Exception;
 
-	class Reader;
-	class Writer;
+class MessageBase;
+class Exception;
 
-	class Session;
-	class Client;
+class Reader;
+class Writer;
+
+class Session;
+class Client;
+
 }
-
 }
 
 #endif

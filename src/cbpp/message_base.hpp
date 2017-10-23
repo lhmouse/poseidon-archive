@@ -65,29 +65,29 @@
 			"Length error in message " TOKEN_TO_STR(message_) " while parsing " TOKEN_TO_STR(field_) ))
 
 namespace Poseidon {
-
 namespace Cbpp {
-	class MessageBase {
-	public:
-		virtual ~MessageBase();
 
-	public:
-		virtual unsigned get_id() const = 0;
-		virtual void serialize(StreamBuffer &buffer) const = 0;
-		virtual void deserialize(StreamBuffer &buffer) = 0;
-		virtual void dump_debug(std::ostream &os) const = 0;
+class MessageBase {
+public:
+	virtual ~MessageBase();
 
-	public:
-		operator StreamBuffer() const {
-			StreamBuffer buffer;
-			serialize(buffer);
-			return buffer;
-		}
-	};
+public:
+	virtual unsigned get_id() const = 0;
+	virtual void serialize(StreamBuffer &buffer) const = 0;
+	virtual void deserialize(StreamBuffer &buffer) = 0;
+	virtual void dump_debug(std::ostream &os) const = 0;
 
-	extern std::ostream &operator<<(std::ostream &os, const MessageBase &rhs);
+public:
+	operator StreamBuffer() const {
+		StreamBuffer buffer;
+		serialize(buffer);
+		return buffer;
+	}
+};
+
+extern std::ostream &operator<<(std::ostream &os, const MessageBase &rhs);
+
 }
-
 }
 
 #endif

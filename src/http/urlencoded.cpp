@@ -7,6 +7,7 @@
 #include "../buffer_streams.hpp"
 
 namespace Poseidon {
+namespace Http {
 
 namespace {
 	CONSTEXPR const bool UNSAFE_CHAR_TABLE[256] = {
@@ -118,59 +119,58 @@ namespace {
 	}
 }
 
-namespace Http {
-	void url_encode(std::ostream &os, const std::string &str){
-		PROFILE_ME;
+void url_encode(std::ostream &os, const std::string &str){
+	PROFILE_ME;
 
-		url_encode_step(os, str);
-	}
-	void url_decode(std::istream &is, std::string &str){
-		PROFILE_ME;
+	url_encode_step(os, str);
+}
+void url_decode(std::istream &is, std::string &str){
+	PROFILE_ME;
 
-		str.clear();
-		url_decode_step(is, str, "");
-	}
+	str.clear();
+	url_decode_step(is, str, "");
+}
 
-	void url_encode_params(std::ostream &os, const OptionalMap &params){
-		PROFILE_ME;
+void url_encode_params(std::ostream &os, const OptionalMap &params){
+	PROFILE_ME;
 
-		AUTO(it, params.begin());
-		if(it != params.end()){
+	AUTO(it, params.begin());
+	if(it != params.end()){
+		os <<it->first;
+		os <<'=';
+		url_encode_step(os, it->second);
+
+		while(++it != params.end()){
+			os <<'&';
+
 			os <<it->first;
 			os <<'=';
 			url_encode_step(os, it->second);
-
-			while(++it != params.end()){
-				os <<'&';
-
-				os <<it->first;
-				os <<'=';
-				url_encode_step(os, it->second);
-			}
 		}
 	}
-	void url_decode_params(std::istream &is, OptionalMap &params){
-		PROFILE_ME;
+}
+void url_decode_params(std::istream &is, OptionalMap &params){
+	PROFILE_ME;
 
-		params.clear();
-		for(;;){
-			std::string key, val;
-			const char key_term = url_decode_step(is, key, "=&");
+	params.clear();
+	for(;;){
+		std::string key, val;
+		const char key_term = url_decode_step(is, key, "=&");
+		if(!is){
+			break;
+		}
+		if(key_term == '='){
+			url_decode_step(is, val, "&");
 			if(!is){
 				break;
 			}
-			if(key_term == '='){
-				url_decode_step(is, val, "&");
-				if(!is){
-					break;
-				}
-			}
-			params.append(SharedNts(key), STD_MOVE(val));
-			if(is.eof()){
-				break;
-			}
+		}
+		params.append(SharedNts(key), STD_MOVE(val));
+		if(is.eof()){
+			break;
 		}
 	}
 }
 
+}
 }

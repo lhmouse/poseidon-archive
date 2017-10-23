@@ -27,107 +27,107 @@
 #include "../uuid.hpp"
 
 namespace Poseidon {
-
 namespace MongoDb {
-	class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
-	public:
-		template<typename ValueT> class Field;
 
-	private:
-		mutable volatile bool m_auto_saves;
-		mutable void *volatile m_combined_write_stamp;
+class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
+public:
+	template<typename ValueT> class Field;
 
-	protected:
-		mutable RecursiveMutex m_mutex;
+private:
+	mutable volatile bool m_auto_saves;
+	mutable void *volatile m_combined_write_stamp;
 
-	public:
-		ObjectBase()
-			: m_auto_saves(false), m_combined_write_stamp(NULLPTR)
-		{ }
-		// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
-		~ObjectBase();
+protected:
+	mutable RecursiveMutex m_mutex;
 
-	public:
-		bool is_auto_saving_enabled() const;
-		void enable_auto_saving() const;
-		void disable_auto_saving() const;
+public:
+	ObjectBase()
+		: m_auto_saves(false), m_combined_write_stamp(NULLPTR)
+	{ }
+	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
+	~ObjectBase();
 
-		bool invalidate() const NOEXCEPT;
+public:
+	bool is_auto_saving_enabled() const;
+	void enable_auto_saving() const;
+	void disable_auto_saving() const;
 
-		void *get_combined_write_stamp() const;
-		void set_combined_write_stamp(void *stamp) const;
+	bool invalidate() const NOEXCEPT;
 
-		virtual const char *get_collection() const = 0;
+	void *get_combined_write_stamp() const;
+	void set_combined_write_stamp(void *stamp) const;
 
-		virtual void generate_document(BsonBuilder &doc) const = 0;
-		virtual std::string generate_primary_key() const = 0;
-		virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;
-		void async_save(bool to_replace, bool urgent = false) const;
-	};
+	virtual const char *get_collection() const = 0;
 
-	template<typename ValueT>
-	class ObjectBase::Field : NONCOPYABLE {
-	private:
-		ObjectBase *const m_parent;
-		ValueT m_value;
+	virtual void generate_document(BsonBuilder &doc) const = 0;
+	virtual std::string generate_primary_key() const = 0;
+	virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;
+	void async_save(bool to_replace, bool urgent = false) const;
+};
 
-	public:
-		explicit Field(ObjectBase *parent, ValueT value = ValueT())
-			: m_parent(parent), m_value(STD_MOVE_IDN(value))
-		{ }
+template<typename ValueT>
+class ObjectBase::Field : NONCOPYABLE {
+private:
+	ObjectBase *const m_parent;
+	ValueT m_value;
 
-	public:
-		const ValueT &unlocked_get() const {
-			return m_value;
-		}
-		ValueT get() const {
-			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
-			return m_value;
-		}
-		void set(ValueT value, bool invalidates_parent = true){
-			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
-			m_value = STD_MOVE_IDN(value);
+public:
+	explicit Field(ObjectBase *parent, ValueT value = ValueT())
+		: m_parent(parent), m_value(STD_MOVE_IDN(value))
+	{ }
 
-			if(invalidates_parent){
-				m_parent->invalidate();
-			}
-		}
-
-		void dump(std::ostream &os) const {
-			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
-			os <<m_value;
-		}
-		void parse(std::istream &is, bool invalidates_parent = true){
-			const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
-			is >>m_value;
-
-			if(invalidates_parent){
-				m_parent->invalidate();
-			}
-		}
-
-	public:
-		operator ValueT() const {
-			return get();
-		}
-		Field &operator=(ValueT value){
-			set(STD_MOVE_IDN(value));
-			return *this;
-		}
-	};
-
-	template<typename ValueT>
-	inline std::ostream &operator<<(std::ostream &os, const ObjectBase::Field<ValueT> &rhs){
-		rhs.dump(os);
-		return os;
+public:
+	const ValueT &unlocked_get() const {
+		return m_value;
 	}
-	template<typename ValueT>
-	inline std::istream &operator>>(std::istream &is, ObjectBase::Field<ValueT> &rhs){
-		rhs.parse(is);
-		return is;
+	ValueT get() const {
+		const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
+		return m_value;
 	}
+	void set(ValueT value, bool invalidates_parent = true){
+		const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
+		m_value = STD_MOVE_IDN(value);
+
+		if(invalidates_parent){
+			m_parent->invalidate();
+		}
+	}
+
+	void dump(std::ostream &os) const {
+		const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
+		os <<m_value;
+	}
+	void parse(std::istream &is, bool invalidates_parent = true){
+		const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
+		is >>m_value;
+
+		if(invalidates_parent){
+			m_parent->invalidate();
+		}
+	}
+
+public:
+	operator ValueT() const {
+		return get();
+	}
+	Field &operator=(ValueT value){
+		set(STD_MOVE_IDN(value));
+		return *this;
+	}
+};
+
+template<typename ValueT>
+inline std::ostream &operator<<(std::ostream &os, const ObjectBase::Field<ValueT> &rhs){
+	rhs.dump(os);
+	return os;
+}
+template<typename ValueT>
+inline std::istream &operator>>(std::istream &is, ObjectBase::Field<ValueT> &rhs){
+	rhs.parse(is);
+	return is;
 }
 
+}
 }
 
 #endif

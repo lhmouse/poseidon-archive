@@ -5,34 +5,34 @@
 #define POSEIDON_CBPP_STATUS_CODES_HPP_
 
 namespace Poseidon {
-
 namespace Cbpp {
-	typedef int StatusCode;
 
-	namespace StatusCodes {
-		enum {
-			ST_SHUTDOWN                =    3,
-			ST_PONG                    =    2,
-			ST_PING                    =    1,
-			ST_OK                      =    0,
+typedef int StatusCode;
 
-			ST_INTERNAL_ERROR          =   -1,
-			ST_END_OF_STREAM           =   -2,
-			ST_NOT_FOUND               =   -3,
-			ST_REQUEST_TOO_LARGE       =   -4,
+namespace StatusCodes {
+	enum {
+		ST_SHUTDOWN                =    3,
+		ST_PONG                    =    2,
+		ST_PING                    =    1,
+		ST_OK                      =    0,
+
+		ST_INTERNAL_ERROR          =   -1,
+		ST_END_OF_STREAM           =   -2,
+		ST_NOT_FOUND               =   -3,
+		ST_REQUEST_TOO_LARGE       =   -4,
 //			ST_RESPONSE_TOO_LARGE      =   -5,
-			ST_JUNK_AFTER_PACKET       =   -6,
-			ST_FORBIDDEN               =   -7,
-			ST_AUTHORIZATION_FAILURE   =   -8,
-			ST_LENGTH_ERROR            =   -9,
-			ST_UNKNOWN_CONTROL_CODE    =  -10,
-			ST_DATA_CORRUPTED          =  -11,
-		};
-	}
-
-	using namespace StatusCodes;
+		ST_JUNK_AFTER_PACKET       =   -6,
+		ST_FORBIDDEN               =   -7,
+		ST_AUTHORIZATION_FAILURE   =   -8,
+		ST_LENGTH_ERROR            =   -9,
+		ST_UNKNOWN_CONTROL_CODE    =  -10,
+		ST_DATA_CORRUPTED          =  -11,
+	};
 }
 
+using namespace StatusCodes;
+
+}
 }
 
 #endif

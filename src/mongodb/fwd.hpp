@@ -5,16 +5,16 @@
 #define POSEIDON_MONGODB_FWD_HPP_
 
 namespace Poseidon {
-
 namespace MongoDb {
-	class Exception;
 
-	class BsonBuilder;
+class Exception;
 
-	class Connection;
-	class ObjectBase;
+class BsonBuilder;
+
+class Connection;
+class ObjectBase;
+
 }
-
 }
 
 #endif

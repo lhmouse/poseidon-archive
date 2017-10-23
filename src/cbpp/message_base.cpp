@@ -5,14 +5,14 @@
 #include "message_base.hpp"
 
 namespace Poseidon {
-
 namespace Cbpp {
-	MessageBase::~MessageBase(){ }
 
-	std::ostream &operator<<(std::ostream &os, const MessageBase &rhs){
-		rhs.dump_debug(os);
-		return os;
-	}
+MessageBase::~MessageBase(){ }
+
+std::ostream &operator<<(std::ostream &os, const MessageBase &rhs){
+	rhs.dump_debug(os);
+	return os;
 }
 
+}
 }

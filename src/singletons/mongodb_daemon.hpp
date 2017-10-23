@@ -5,16 +5,11 @@
 #define POSEIDON_SINGLETONS_MONGODB_DAEMON_HPP_
 
 #include "../cxx_ver.hpp"
+#include "../mongodb/fwd.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 
 namespace Poseidon {
-
-namespace MongoDb {
-	class ObjectBase;
-	class Connection;
-	class BsonBuilder;
-}
 
 class JobPromise;
 

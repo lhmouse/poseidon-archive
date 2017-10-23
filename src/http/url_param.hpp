@@ -10,88 +10,88 @@
 #include "../uuid.hpp"
 
 namespace Poseidon {
-
 namespace Http {
-	class UrlParam {
-	public:
-		bool m_valid;
-		std::string m_str;
 
-	public:
-		UrlParam(const OptionalMap &map_ref, const char *key);
-		UrlParam(Move<OptionalMap> map_ref, const char *key);
+class UrlParam {
+public:
+	bool m_valid;
+	std::string m_str;
 
-	public:
-		bool valid() const NOEXCEPT {
-			return m_valid;
-		}
-		const std::string &str() const NOEXCEPT {
-			return m_str;
-		}
-		std::string &str() NOEXCEPT {
-			return m_str;
-		}
+public:
+	UrlParam(const OptionalMap &map_ref, const char *key);
+	UrlParam(Move<OptionalMap> map_ref, const char *key);
 
-		const std::string &as_string() const NOEXCEPT {
-			return m_str;
-		}
-		bool as_boolean() const NOEXCEPT {
-			if(m_str.empty()){
-				return false;
-			}
-			return m_str != "0";
-		}
-		long long as_signed() const NOEXCEPT {
-			if(m_str.empty()){
-				return 0;
-			}
-			return ::strtoll(m_str.c_str(), NULLPTR, 0);
-		}
-		unsigned long long as_unsigned() const NOEXCEPT {
-			if(m_str.empty()){
-				return 0;
-			}
-			return ::strtoull(m_str.c_str(), NULLPTR, 0);
-		}
-		double as_double() const NOEXCEPT {
-			if(m_str.empty()){
-				return 0;
-			}
-			return std::strtod(m_str.c_str(), NULLPTR);
-		}
-		Uuid as_uuid() const NOEXCEPT {
-			Uuid uuid;
-			if(!uuid.from_string(m_str)){
-				return VAL_INIT;
-			}
-			return uuid;
-		}
+public:
+	bool valid() const NOEXCEPT {
+		return m_valid;
+	}
+	const std::string &str() const NOEXCEPT {
+		return m_str;
+	}
+	std::string &str() NOEXCEPT {
+		return m_str;
+	}
 
-	public:
+	const std::string &as_string() const NOEXCEPT {
+		return m_str;
+	}
+	bool as_boolean() const NOEXCEPT {
+		if(m_str.empty()){
+			return false;
+		}
+		return m_str != "0";
+	}
+	long long as_signed() const NOEXCEPT {
+		if(m_str.empty()){
+			return 0;
+		}
+		return ::strtoll(m_str.c_str(), NULLPTR, 0);
+	}
+	unsigned long long as_unsigned() const NOEXCEPT {
+		if(m_str.empty()){
+			return 0;
+		}
+		return ::strtoull(m_str.c_str(), NULLPTR, 0);
+	}
+	double as_double() const NOEXCEPT {
+		if(m_str.empty()){
+			return 0;
+		}
+		return std::strtod(m_str.c_str(), NULLPTR);
+	}
+	Uuid as_uuid() const NOEXCEPT {
+		Uuid uuid;
+		if(!uuid.from_string(m_str)){
+			return VAL_INIT;
+		}
+		return uuid;
+	}
+
+public:
 #ifdef POSEIDON_CXX11
-		explicit operator bool() const noexcept {
-			return valid();
-		}
+	explicit operator bool() const noexcept {
+		return valid();
+	}
 #else
-		typedef bool (UrlParam::*DummyBool_)() const;
-		operator DummyBool_() const NOEXCEPT {
-			return valid() ? &UrlParam::valid : 0;
-		}
+	typedef bool (UrlParam::*DummyBool_)() const;
+	operator DummyBool_() const NOEXCEPT {
+		return valid() ? &UrlParam::valid : 0;
+	}
 #endif
 
-		operator const std::string &() const NOEXCEPT {
-			return str();
-		}
-		operator std::string &() NOEXCEPT {
-			return str();
-		}
-	};
-
-	inline std::ostream &operator<<(std::ostream &os, const UrlParam &rhs){
-		return os << rhs.str();
+	operator const std::string &() const NOEXCEPT {
+		return str();
 	}
+	operator std::string &() NOEXCEPT {
+		return str();
+	}
+};
+
+inline std::ostream &operator<<(std::ostream &os, const UrlParam &rhs){
+	return os << rhs.str();
 }
 
+}
 }
 
 #endif

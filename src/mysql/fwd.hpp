@@ -5,18 +5,18 @@
 #define POSEIDON_MYSQL_FWD_HPP_
 
 namespace Poseidon {
-
 namespace MySql {
-	class Exception;
 
-	class StringEscaper;
-	class DateTimeFormatter;
-	class UuidFormatter;
+class Exception;
 
-	class Connection;
-	class ObjectBase;
+class StringEscaper;
+class DateTimeFormatter;
+class UuidFormatter;
+
+class Connection;
+class ObjectBase;
+
 }
-
 }
 
 #endif

@@ -4,67 +4,66 @@
 #ifndef POSEIDON_MYSQL_FORMATTING_HPP_
 #define POSEIDON_MYSQL_FORMATTING_HPP_
 
+#include "../fwd.hpp"
 #include <iosfwd>
 #include <string>
 #include <boost/cstdint.hpp>
 
 namespace Poseidon {
-
-class Uuid;
-
 namespace MySql {
-	class StringEscaper {
-	private:
-		const std::string &m_ref;
 
-	public:
-		explicit StringEscaper(const std::string &ref)
-			: m_ref(ref)
-		{ }
+class StringEscaper {
+private:
+	const std::string &m_ref;
 
-	public:
-		const std::string &get() const {
-			return m_ref;
-		}
-	};
+public:
+	explicit StringEscaper(const std::string &ref)
+		: m_ref(ref)
+	{ }
 
-	extern std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs);
+public:
+	const std::string &get() const {
+		return m_ref;
+	}
+};
 
-	class DateTimeFormatter {
-	private:
-		const boost::uint64_t &m_ref;
+extern std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs);
 
-	public:
-		explicit DateTimeFormatter(const boost::uint64_t &ref)
-			: m_ref(ref)
-		{ }
+class DateTimeFormatter {
+private:
+	const boost::uint64_t &m_ref;
 
-	public:
-		const boost::uint64_t &get() const {
-			return m_ref;
-		}
-	};
+public:
+	explicit DateTimeFormatter(const boost::uint64_t &ref)
+		: m_ref(ref)
+	{ }
 
-	extern std::ostream &operator<<(std::ostream &os, const DateTimeFormatter &rhs);
+public:
+	const boost::uint64_t &get() const {
+		return m_ref;
+	}
+};
 
-	class UuidFormatter {
-	private:
-		const Uuid &m_ref;
+extern std::ostream &operator<<(std::ostream &os, const DateTimeFormatter &rhs);
 
-	public:
-		explicit UuidFormatter(const Uuid &ref)
-			: m_ref(ref)
-		{ }
+class UuidFormatter {
+private:
+	const Uuid &m_ref;
 
-	public:
-		const Uuid &get() const {
-			return m_ref;
-		}
-	};
+public:
+	explicit UuidFormatter(const Uuid &ref)
+		: m_ref(ref)
+	{ }
 
-	extern std::ostream &operator<<(std::ostream &os, const UuidFormatter &rhs);
+public:
+	const Uuid &get() const {
+		return m_ref;
+	}
+};
+
+extern std::ostream &operator<<(std::ostream &os, const UuidFormatter &rhs);
+
 }
-
 }
 
 #endif

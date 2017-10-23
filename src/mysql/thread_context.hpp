@@ -10,21 +10,21 @@
 #include <boost/scoped_ptr.hpp>
 
 namespace Poseidon {
-
 namespace MySql {
-	class ThreadContext : NONCOPYABLE {
-	private:
-		void *operator new(std::size_t);
-		void operator delete(void *) NOEXCEPT;
-		void *operator new[](std::size_t);
-		void operator delete[](void *) NOEXCEPT;
 
-	public:
-		ThreadContext();
-		~ThreadContext();
-	};
+class ThreadContext : NONCOPYABLE {
+private:
+	void *operator new(std::size_t);
+	void operator delete(void *) NOEXCEPT;
+	void *operator new[](std::size_t);
+	void operator delete[](void *) NOEXCEPT;
+
+public:
+	ThreadContext();
+	~ThreadContext();
+};
+
 }
-
 }
 
 #endif

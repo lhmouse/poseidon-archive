@@ -7,23 +7,23 @@
 #include "../protocol_exception.hpp"
 
 namespace Poseidon {
-
 namespace MySql {
-	class Exception : public ProtocolException {
-	private:
-		SharedNts m_schema;
 
-	public:
-		Exception(const char *file, std::size_t line, const char *func, SharedNts schema, long code, SharedNts message);
-		~Exception() NOEXCEPT;
+class Exception : public ProtocolException {
+private:
+	SharedNts m_schema;
 
-	public:
-		const char *get_schema() const {
-			return m_schema.get();
-		}
-	};
+public:
+	Exception(const char *file, std::size_t line, const char *func, SharedNts schema, long code, SharedNts message);
+	~Exception() NOEXCEPT;
+
+public:
+	const char *get_schema() const {
+		return m_schema.get();
+	}
+};
+
 }
-
 }
 
 #endif

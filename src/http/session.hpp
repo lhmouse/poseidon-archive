@@ -7,55 +7,55 @@
 #include "low_level_session.hpp"
 
 namespace Poseidon {
-
 namespace Http {
-	class Session : public LowLevelSession {
-	private:
-		class SyncJobBase;
-		class ReadHupJob;
-		class ExpectJob;
-		class RequestJob;
-		class ErrorJob;
 
-	private:
-		volatile boost::uint64_t m_max_request_length;
-		boost::uint64_t m_size_total;
-		RequestHeaders m_request_headers;
-		StreamBuffer m_entity;
+class Session : public LowLevelSession {
+private:
+	class SyncJobBase;
+	class ReadHupJob;
+	class ExpectJob;
+	class RequestJob;
+	class ErrorJob;
 
-	public:
-		explicit Session(Move<UniqueFile> socket);
-		~Session();
+private:
+	volatile boost::uint64_t m_max_request_length;
+	boost::uint64_t m_size_total;
+	RequestHeaders m_request_headers;
+	StreamBuffer m_entity;
 
-	protected:
-		boost::uint64_t get_low_level_size_total() const {
-			return m_size_total;
-		}
-		const RequestHeaders &get_low_level_request_headers() const {
-			return m_request_headers;
-		}
-		const StreamBuffer &get_low_level_entity() const {
-			return m_entity;
-		}
+public:
+	explicit Session(Move<UniqueFile> socket);
+	~Session();
 
-		// TcpSessionBase
-		void on_read_hup() OVERRIDE;
+protected:
+	boost::uint64_t get_low_level_size_total() const {
+		return m_size_total;
+	}
+	const RequestHeaders &get_low_level_request_headers() const {
+		return m_request_headers;
+	}
+	const StreamBuffer &get_low_level_entity() const {
+		return m_entity;
+	}
 
-		// LowLevelSession
-		void on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE;
-		void on_low_level_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
-		boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
+	// TcpSessionBase
+	void on_read_hup() OVERRIDE;
 
-		// 可覆写。
-		virtual void on_sync_expect(RequestHeaders request_headers);
-		virtual void on_sync_request(RequestHeaders request_headers, StreamBuffer entity) = 0;
+	// LowLevelSession
+	void on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE;
+	void on_low_level_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
+	boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
 
-	public:
-		boost::uint64_t get_max_request_length() const;
-		void set_max_request_length(boost::uint64_t max_request_length);
-	};
+	// 可覆写。
+	virtual void on_sync_expect(RequestHeaders request_headers);
+	virtual void on_sync_request(RequestHeaders request_headers, StreamBuffer entity) = 0;
+
+public:
+	boost::uint64_t get_max_request_length() const;
+	void set_max_request_length(boost::uint64_t max_request_length);
+};
+
 }
-
 }
 
 #endif

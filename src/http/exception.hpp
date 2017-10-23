@@ -9,24 +9,24 @@
 #include "status_codes.hpp"
 
 namespace Poseidon {
-
 namespace Http {
-	class Exception : public ProtocolException {
-	private:
-		boost::shared_ptr<OptionalMap> m_headers;
 
-	public:
-		Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, OptionalMap headers = OptionalMap());
-		~Exception() NOEXCEPT;
+class Exception : public ProtocolException {
+private:
+	boost::shared_ptr<OptionalMap> m_headers;
 
-	public:
-		StatusCode get_status_code() const NOEXCEPT {
-			return static_cast<StatusCode>(get_code());
-		}
-		const OptionalMap &get_headers() const NOEXCEPT;
-	};
+public:
+	Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, OptionalMap headers = OptionalMap());
+	~Exception() NOEXCEPT;
+
+public:
+	StatusCode get_status_code() const NOEXCEPT {
+		return static_cast<StatusCode>(get_code());
+	}
+	const OptionalMap &get_headers() const NOEXCEPT;
+};
+
 }
-
 }
 
 #endif

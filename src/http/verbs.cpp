@@ -5,6 +5,7 @@
 #include "verbs.hpp"
 
 namespace Poseidon {
+namespace Http {
 
 namespace {
 	CONSTEXPR const char VERB_TABLE[][16] = {
@@ -20,30 +21,29 @@ namespace {
 	};
 }
 
-namespace Http {
-	Verb get_verb_from_string(const char *str){
-		const unsigned len = std::strlen(str);
-		if(len == 0){
-			return V_INVALID_VERB;
-		}
-		const char *const begin = VERB_TABLE[0];
-		const AUTO(pos, static_cast<const char *>(::memmem(begin, sizeof(VERB_TABLE), str, len + 1)));
-		if(!pos){
-			return V_INVALID_VERB;
-		}
-		const unsigned i = (unsigned)(pos - begin) / sizeof(VERB_TABLE[0]);
-		if(pos != VERB_TABLE[i]){
-			return V_INVALID_VERB;
-		}
-		return static_cast<Verb>(i);
+Verb get_verb_from_string(const char *str){
+	const unsigned len = std::strlen(str);
+	if(len == 0){
+		return V_INVALID_VERB;
 	}
-	const char *get_string_from_verb(Verb verb){
-		unsigned i = static_cast<unsigned>(verb);
-		if(i >= COUNT_OF(VERB_TABLE)){
-			i = static_cast<unsigned>(V_INVALID_VERB);
-		}
-		return VERB_TABLE[i];
+	const char *const begin = VERB_TABLE[0];
+	const AUTO(pos, static_cast<const char *>(::memmem(begin, sizeof(VERB_TABLE), str, len + 1)));
+	if(!pos){
+		return V_INVALID_VERB;
 	}
+	const unsigned i = (unsigned)(pos - begin) / sizeof(VERB_TABLE[0]);
+	if(pos != VERB_TABLE[i]){
+		return V_INVALID_VERB;
+	}
+	return static_cast<Verb>(i);
+}
+const char *get_string_from_verb(Verb verb){
+	unsigned i = static_cast<unsigned>(verb);
+	if(i >= COUNT_OF(VERB_TABLE)){
+		i = static_cast<unsigned>(V_INVALID_VERB);
+	}
+	return VERB_TABLE[i];
 }
 
+}
 }

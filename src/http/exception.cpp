@@ -6,24 +6,24 @@
 #include "../log.hpp"
 
 namespace Poseidon {
+namespace Http {
 
 namespace {
 	const OptionalMap g_empty_heades;
 }
 
-namespace Http {
-	Exception::Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, OptionalMap headers)
-		: ProtocolException(file, line, func, SharedNts::view(get_status_code_desc(status_code).desc_short), static_cast<long>(status_code))
-		, m_headers(!headers.empty() ? boost::make_shared<OptionalMap>(STD_MOVE(headers)) : boost::shared_ptr<OptionalMap>())
-	{
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Http::Exception: code = ", get_code(), ", what = ", what());
-	}
-	Exception::~Exception() NOEXCEPT { }
+Exception::Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, OptionalMap headers)
+	: ProtocolException(file, line, func, SharedNts::view(get_status_code_desc(status_code).desc_short), static_cast<long>(status_code))
+	, m_headers(!headers.empty() ? boost::make_shared<OptionalMap>(STD_MOVE(headers)) : boost::shared_ptr<OptionalMap>())
+{
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+		"Http::Exception: code = ", get_code(), ", what = ", what());
+}
+Exception::~Exception() NOEXCEPT { }
 
-	const OptionalMap &Exception::get_headers() const NOEXCEPT {
-		return m_headers ? *m_headers : g_empty_heades;
-	}
+const OptionalMap &Exception::get_headers() const NOEXCEPT {
+	return m_headers ? *m_headers : g_empty_heades;
 }
 
+}
 }

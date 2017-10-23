@@ -12,25 +12,25 @@
 #include "response_headers.hpp"
 
 namespace Poseidon {
-
 namespace Http {
-	class ServerWriter {
-	public:
-		ServerWriter();
-		virtual ~ServerWriter();
 
-	protected:
-		virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
+class ServerWriter {
+public:
+	ServerWriter();
+	virtual ~ServerWriter();
 
-	public:
-		long put_response(ResponseHeaders response_headers, StreamBuffer entity, bool set_content_length);
+protected:
+	virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
 
-		long put_chunked_header(ResponseHeaders response_headers);
-		long put_chunk(StreamBuffer entity);
-		long put_chunked_trailer(OptionalMap headers);
-	};
+public:
+	long put_response(ResponseHeaders response_headers, StreamBuffer entity, bool set_content_length);
+
+	long put_chunked_header(ResponseHeaders response_headers);
+	long put_chunk(StreamBuffer entity);
+	long put_chunked_trailer(OptionalMap headers);
+};
+
 }
-
 }
 
 #endif

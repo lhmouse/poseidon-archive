@@ -7,23 +7,23 @@
 #include "../protocol_exception.hpp"
 
 namespace Poseidon {
-
 namespace MongoDb {
-	class Exception : public ProtocolException {
-	private:
-		SharedNts m_database;
 
-	public:
-		Exception(const char *file, std::size_t line, const char *func, SharedNts database, unsigned long code, SharedNts message);
-		~Exception() NOEXCEPT;
+class Exception : public ProtocolException {
+private:
+	SharedNts m_database;
 
-	public:
-		const char *get_database() const {
-			return m_database.get();
-		}
-	};
+public:
+	Exception(const char *file, std::size_t line, const char *func, SharedNts database, unsigned long code, SharedNts message);
+	~Exception() NOEXCEPT;
+
+public:
+	const char *get_database() const {
+		return m_database.get();
+	}
+};
+
 }
-
 }
 
 #endif

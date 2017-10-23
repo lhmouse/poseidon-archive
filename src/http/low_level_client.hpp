@@ -13,61 +13,61 @@
 #include "status_codes.hpp"
 
 namespace Poseidon {
-
 namespace Http {
-	class UpgradedSessionBase;
-	class HeaderOption;
 
-	class LowLevelClient : public TcpClientBase, protected ClientReader, protected ClientWriter {
-		friend UpgradedSessionBase;
+class UpgradedSessionBase;
+class HeaderOption;
 
-	private:
-		mutable Mutex m_upgraded_client_mutex;
-		boost::shared_ptr<UpgradedSessionBase> m_upgraded_client;
+class LowLevelClient : public TcpClientBase, protected ClientReader, protected ClientWriter {
+	friend UpgradedSessionBase;
 
-	public:
-		explicit LowLevelClient(const SockAddr &addr, bool use_ssl = false, bool verify_peer = true);
-		~LowLevelClient();
+private:
+	mutable Mutex m_upgraded_client_mutex;
+	boost::shared_ptr<UpgradedSessionBase> m_upgraded_client;
 
-	protected:
-		const boost::shared_ptr<UpgradedSessionBase> &get_low_level_upgraded_client() const {
-			// Epoll 线程读取不需要锁。
-			return m_upgraded_client;
-		}
+public:
+	explicit LowLevelClient(const SockAddr &addr, bool use_ssl = false, bool verify_peer = true);
+	~LowLevelClient();
 
-		// TcpClientBase
-		void on_connect() OVERRIDE;
-		void on_read_hup() OVERRIDE;
-		void on_close(int err_code) OVERRIDE;
-		void on_receive(StreamBuffer data) OVERRIDE;
+protected:
+	const boost::shared_ptr<UpgradedSessionBase> &get_low_level_upgraded_client() const {
+		// Epoll 线程读取不需要锁。
+		return m_upgraded_client;
+	}
 
-		// ClientReader
-		void on_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) OVERRIDE;
-		void on_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
-		bool on_response_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
+	// TcpClientBase
+	void on_connect() OVERRIDE;
+	void on_read_hup() OVERRIDE;
+	void on_close(int err_code) OVERRIDE;
+	void on_receive(StreamBuffer data) OVERRIDE;
 
-		// ClientWriter
-		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
+	// ClientReader
+	void on_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) OVERRIDE;
+	void on_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
+	bool on_response_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
 
-		// 可覆写。
-		virtual void on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) = 0;
-		virtual void on_low_level_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) = 0;
-		virtual boost::shared_ptr<UpgradedSessionBase> on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers) = 0;
+	// ClientWriter
+	long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
-	public:
-		boost::shared_ptr<UpgradedSessionBase> get_upgraded_client() const;
+	// 可覆写。
+	virtual void on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) = 0;
+	virtual void on_low_level_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) = 0;
+	virtual boost::shared_ptr<UpgradedSessionBase> on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers) = 0;
 
-		virtual bool send(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
-		virtual bool send(Verb verb, std::string uri, OptionalMap get_params = OptionalMap());
-		virtual bool send(Verb verb, std::string uri, OptionalMap get_params, StreamBuffer entity, const HeaderOption &content_type);
-		virtual bool send(Verb verb, std::string uri, OptionalMap get_params, OptionalMap headers, StreamBuffer entity = StreamBuffer());
+public:
+	boost::shared_ptr<UpgradedSessionBase> get_upgraded_client() const;
 
-		virtual bool send_chunked_header(RequestHeaders request_headers);
-		virtual bool send_chunk(StreamBuffer entity);
-		virtual bool send_chunked_trailer(OptionalMap headers);
-	};
+	virtual bool send(RequestHeaders request_headers, StreamBuffer entity = StreamBuffer());
+	virtual bool send(Verb verb, std::string uri, OptionalMap get_params = OptionalMap());
+	virtual bool send(Verb verb, std::string uri, OptionalMap get_params, StreamBuffer entity, const HeaderOption &content_type);
+	virtual bool send(Verb verb, std::string uri, OptionalMap get_params, OptionalMap headers, StreamBuffer entity = StreamBuffer());
+
+	virtual bool send_chunked_header(RequestHeaders request_headers);
+	virtual bool send_chunk(StreamBuffer entity);
+	virtual bool send_chunked_trailer(OptionalMap headers);
+};
+
 }
-
 }
 
 #endif

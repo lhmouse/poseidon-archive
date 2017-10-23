@@ -5,16 +5,12 @@
 #define POSEIDON_SINGLETONS_MYSQL_DAEMON_HPP_
 
 #include "../cxx_ver.hpp"
+#include "../mysql/fwd.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <string>
 
 namespace Poseidon {
-
-namespace MySql {
-	class ObjectBase;
-	class Connection;
-}
 
 class JobPromise;
 

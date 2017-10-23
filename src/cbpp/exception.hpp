@@ -8,20 +8,20 @@
 #include "status_codes.hpp"
 
 namespace Poseidon {
-
 namespace Cbpp {
-	class Exception : public ProtocolException {
-	public:
-		Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, SharedNts message = SharedNts());
-		~Exception() NOEXCEPT;
 
-	public:
-		StatusCode get_status_code() const NOEXCEPT {
-			return static_cast<StatusCode>(get_code());
-		}
-	};
+class Exception : public ProtocolException {
+public:
+	Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, SharedNts message = SharedNts());
+	~Exception() NOEXCEPT;
+
+public:
+	StatusCode get_status_code() const NOEXCEPT {
+		return static_cast<StatusCode>(get_code());
+	}
+};
+
 }
-
 }
 
 #endif

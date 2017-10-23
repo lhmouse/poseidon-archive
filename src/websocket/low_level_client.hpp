@@ -5,6 +5,7 @@
 #define POSEIDON_WEBSOCKET_LOW_LEVEL_CLIENT_HPP_
 
 #include "../http/upgraded_session_base.hpp"
+#include "../fwd.hpp"
 #include "../mutex.hpp"
 #include "opcodes.hpp"
 #include "status_codes.hpp"
@@ -12,63 +13,61 @@
 #include "writer.hpp"
 
 namespace Poseidon {
-
-class TimerItem;
-
 namespace WebSocket {
-	class LowLevelClient : public Http::UpgradedSessionBase, protected Reader, protected Writer {
-	private:
-		static void keep_alive_timer_proc(const boost::weak_ptr<LowLevelClient> &weak_client, boost::uint64_t now, boost::uint64_t period);
 
-	private:
-		volatile boost::uint64_t m_last_pong_time;
-		mutable Mutex m_keep_alive_mutex;
-		boost::shared_ptr<TimerItem> m_keep_alive_timer;
+class LowLevelClient : public Http::UpgradedSessionBase, protected Reader, protected Writer {
+private:
+	static void keep_alive_timer_proc(const boost::weak_ptr<LowLevelClient> &weak_client, boost::uint64_t now, boost::uint64_t period);
 
-	public:
-		explicit LowLevelClient(const boost::shared_ptr<Http::LowLevelClient> &parent);
-		~LowLevelClient();
+private:
+	volatile boost::uint64_t m_last_pong_time;
+	mutable Mutex m_keep_alive_mutex;
+	boost::shared_ptr<TimerItem> m_keep_alive_timer;
 
-	private:
-		void create_keep_alive_timer();
+public:
+	explicit LowLevelClient(const boost::shared_ptr<Http::LowLevelClient> &parent);
+	~LowLevelClient();
 
-	protected:
-		// UpgradedSessionBase
-		void on_connect() OVERRIDE;
-		void on_read_hup() OVERRIDE;
-		void on_close(int err_code) OVERRIDE;
-		void on_receive(StreamBuffer data) OVERRIDE;
+private:
+	void create_keep_alive_timer();
 
-		// Reader
-		void on_data_message_header(OpCode opcode) OVERRIDE;
-		void on_data_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) OVERRIDE;
-		bool on_data_message_end(boost::uint64_t whole_size) OVERRIDE;
+protected:
+	// UpgradedSessionBase
+	void on_connect() OVERRIDE;
+	void on_read_hup() OVERRIDE;
+	void on_close(int err_code) OVERRIDE;
+	void on_receive(StreamBuffer data) OVERRIDE;
 
-		bool on_control_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
+	// Reader
+	void on_data_message_header(OpCode opcode) OVERRIDE;
+	void on_data_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) OVERRIDE;
+	bool on_data_message_end(boost::uint64_t whole_size) OVERRIDE;
 
-		// Writer
-		long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
+	bool on_control_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
 
-		// 可覆写。
-		virtual void on_low_level_message_header(OpCode opcode) = 0;
-		virtual void on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) = 0;
-		virtual bool on_low_level_message_end(boost::uint64_t whole_size) = 0;
+	// Writer
+	long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
 
-		virtual bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) = 0;
+	// 可覆写。
+	virtual void on_low_level_message_header(OpCode opcode) = 0;
+	virtual void on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) = 0;
+	virtual bool on_low_level_message_end(boost::uint64_t whole_size) = 0;
 
-	public:
-		bool shutdown_read() NOEXCEPT OVERRIDE {
-			return shutdown(ST_NORMAL_CLOSURE);
-		}
-		bool shutdown_write() NOEXCEPT OVERRIDE {
-			return shutdown(ST_NORMAL_CLOSURE);
-		}
+	virtual bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) = 0;
 
-		virtual bool send(OpCode opcode, StreamBuffer payload, bool masked = true);
-		virtual bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
-	};
+public:
+	bool shutdown_read() NOEXCEPT OVERRIDE {
+		return shutdown(ST_NORMAL_CLOSURE);
+	}
+	bool shutdown_write() NOEXCEPT OVERRIDE {
+		return shutdown(ST_NORMAL_CLOSURE);
+	}
+
+	virtual bool send(OpCode opcode, StreamBuffer payload, bool masked = true);
+	virtual bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
+};
+
 }
-
 }
 
 #endif
