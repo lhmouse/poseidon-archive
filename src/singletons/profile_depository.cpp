@@ -3,8 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "profile_depository.hpp"
-#include <boost/container/flat_map.hpp>
-#include <cstring>
 #include "main_config.hpp"
 #include "../mutex.hpp"
 #include "../log.hpp"
@@ -17,19 +15,11 @@ namespace {
 		const char *file;
 		unsigned long line;
 		const char *func;
-
-		ProfileKey(const char *file_, unsigned long line_, const char *func_)
-			: file(file_), line(line_), func(func_)
-		{ }
 	};
 	struct ProfileCounters {
 		unsigned long long samples;
 		double total;
 		double exclusive;
-
-		ProfileCounters()
-			: samples(0), total(0), exclusive(0)
-		{ }
 	};
 	struct ProfileKeyComparator {
 		bool operator()(const ProfileKey &lhs, const ProfileKey &rhs) const NOEXCEPT {
@@ -40,8 +30,7 @@ namespace {
 			return lhs.line < rhs.line;
 		}
 	};
-	typedef boost::container::flat_map<ProfileKey,
-		ProfileCounters, ProfileKeyComparator> ProfileMap;
+	typedef boost::container::flat_map<ProfileKey, ProfileCounters, ProfileKeyComparator> ProfileMap;
 
 	bool g_enabled = true;
 
@@ -63,14 +52,12 @@ bool ProfileDepository::is_enabled(){
 	return g_enabled;
 }
 
-void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func,
-	double total, double exclusive, bool new_sample) NOEXCEPT
+void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func, bool new_sample, double total, double exclusive) NOEXCEPT
 try {
 	const Mutex::UniqueLock lock(g_mutex);
-	AUTO_REF(counters, g_profile[ProfileKey(file, line, func)]);
-	if(new_sample){
-		++counters.samples;
-	}
+	const ProfileKey key = { file, line, func };
+	AUTO_REF(counters, g_profile[key]);
+	counters.samples += new_sample;
 	counters.total += total;
 	counters.exclusive += exclusive;
 } catch(...){

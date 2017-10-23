@@ -31,8 +31,7 @@ public:
 	static void stop();
 
 	static bool is_enabled();
-	static void accumulate(const char *file, unsigned long line, const char *func,
-		double total, double exclusive, bool new_sample) NOEXCEPT;
+	static void accumulate(const char *file, unsigned long line, const char *func, bool new_sample, double total, double exclusive) NOEXCEPT;
 
 	static std::vector<SnapshotElement> snapshot();
 	static void clear();

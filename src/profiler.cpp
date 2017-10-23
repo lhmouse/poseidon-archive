@@ -83,7 +83,7 @@ void Profiler::accumulate(double now, bool new_sample) NOEXCEPT {
 		m_prev->m_excluded += total;
 	}
 
-	ProfileDepository::accumulate(m_file, m_line, m_func, total, exclusive, new_sample);
+	ProfileDepository::accumulate(m_file, m_line, m_func, new_sample, total, exclusive);
 }
 
 }
