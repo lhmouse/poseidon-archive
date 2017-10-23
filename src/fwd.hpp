@@ -64,7 +64,8 @@ class Base64Decoder;
 class Deflator;
 class Inflator;
 
-class TimerItem;
+class EventListener;
+class Timer;
 
 class DnsDaemon;
 class EpollDaemon;

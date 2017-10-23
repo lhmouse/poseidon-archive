@@ -17,15 +17,17 @@
 
 namespace Poseidon {
 
-class TimerItem : NONCOPYABLE {
+typedef TimerDaemon::TimerCallback TimerCallback;
+
+class Timer : NONCOPYABLE {
 private:
 	boost::uint64_t m_period;
 	unsigned long m_stamp;
-	boost::shared_ptr<const TimerCallback> m_callback;
+	TimerCallback m_callback;
 	bool m_low_level;
 
 public:
-	TimerItem(boost::uint64_t period, boost::shared_ptr<const TimerCallback> callback, bool low_level)
+	Timer(boost::uint64_t period, TimerCallback callback, bool low_level)
 		: m_period(period), m_stamp(0), m_callback(STD_MOVE_IDN(callback)), m_low_level(low_level)
 	{ }
 
@@ -36,7 +38,7 @@ public:
 	unsigned long get_stamp() const {
 		return m_stamp;
 	}
-	const boost::shared_ptr<const TimerCallback> &get_callback() const {
+	const TimerCallback &get_callback() const {
 		return m_callback;
 	}
 	bool is_low_level() const {
@@ -58,33 +60,32 @@ namespace {
 
 	class TimerJob : public JobBase {
 	private:
-		const boost::weak_ptr<TimerItem> m_item;
+		const boost::weak_ptr<Timer> m_weak_timer;
 		const boost::uint64_t m_now;
+		const boost::uint64_t m_period;
 
 	public:
-		TimerJob(boost::weak_ptr<TimerItem> item, boost::uint64_t now)
-			: m_item(STD_MOVE(item)), m_now(now)
+		TimerJob(boost::weak_ptr<Timer> weak_timer, boost::uint64_t now, boost::uint64_t period)
+			: m_weak_timer(STD_MOVE(weak_timer)), m_now(now), m_period(period)
 		{ }
 
 	public:
 		boost::weak_ptr<const void> get_category() const OVERRIDE {
-			return m_item;
+			return m_weak_timer;
 		}
 		void perform() OVERRIDE {
 			PROFILE_ME;
 
-			const AUTO(item, m_item.lock());
-			if(!item){
+			const AUTO(timer, m_weak_timer.lock());
+			if(!timer){
 				return;
 			}
-
-			const AUTO(callback, item->get_callback());
-			(*callback)(item, m_now, item->get_period());
+			timer->get_callback()(timer, m_now, m_period);
 		}
 	};
 
 	struct TimerQueueElement {
-		boost::weak_ptr<TimerItem> item;
+		boost::weak_ptr<Timer> timer;
 		boost::uint64_t next;
 		unsigned long stamp;
 	};
@@ -105,7 +106,8 @@ namespace {
 
 		const AUTO(now, get_fast_mono_clock());
 
-		boost::shared_ptr<TimerItem> item;
+		boost::shared_ptr<Timer> timer;
+		boost::uint64_t period;
 		{
 			const Mutex::UniqueLock lock(g_mutex);
 		_pick_next:
@@ -116,26 +118,26 @@ namespace {
 				return false;
 			}
 			std::pop_heap(g_timers.begin(), g_timers.end());
-			item = g_timers.back().item.lock();
-			if(!item || (item->get_stamp() != g_timers.back().stamp)){
+			timer = g_timers.back().timer.lock();
+			if(!timer || (timer->get_stamp() != g_timers.back().stamp)){
 				g_timers.pop_back();
 				goto _pick_next;
 			}
-			if(item->get_period() == 0){
+			period = timer->get_period();
+			if(period == 0){
 				g_timers.pop_back();
 			} else {
-				g_timers.back().next = saturated_add(g_timers.back().next, item->get_period());
+				g_timers.back().next = saturated_add(g_timers.back().next, period);
 				std::push_heap(g_timers.begin(), g_timers.end());
 			}
 		}
 		try {
-			if(item->is_low_level()){
-				LOG_POSEIDON_TRACE("Dispatching low level timer: item = ", item);
-				const AUTO(callback, item->get_callback());
-				(*callback)(item, now, item->get_period());
+			if(timer->is_low_level()){
+				LOG_POSEIDON_TRACE("Dispatching low level timer: timer = ", timer);
+				timer->get_callback()(timer, now, timer->get_period());
 			} else {
-				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: item = ", item);
-				JobDispatcher::enqueue(boost::make_shared<TimerJob>(item, now), VAL_INIT);
+				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: timer = ", timer);
+				JobDispatcher::enqueue(boost::make_shared<TimerJob>(timer, now, period), VAL_INIT);
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());
@@ -189,94 +191,76 @@ void TimerDaemon::stop(){
 	g_timers.clear();
 }
 
-boost::shared_ptr<TimerItem> TimerDaemon::register_absolute_timer(
-	boost::uint64_t first, boost::uint64_t period, TimerCallback callback)
-{
+boost::shared_ptr<Timer> TimerDaemon::register_absolute_timer(boost::uint64_t first, boost::uint64_t period, TimerCallback callback){
 	PROFILE_ME;
 
-	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE_IDN(callback)), false));
+	AUTO(timer, boost::make_shared<Timer>(period, STD_MOVE_IDN(callback), false));
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		TimerQueueElement elem = { item, first, item->get_stamp() };
+		TimerQueueElement elem = { timer, first, timer->get_stamp() };
 		g_timers.push_back(STD_MOVE(elem));
 		std::push_heap(g_timers.begin(), g_timers.end());
 		g_new_timer.signal();
 	}
 	LOG_POSEIDON_DEBUG("Created a timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()),
-		" microsecond(s) later and has a period of ", item->get_period(), " microsecond(s).");
-	return item;
+		" microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
+	return timer;
 }
-boost::shared_ptr<TimerItem> TimerDaemon::register_timer(
-	boost::uint64_t delta_first, boost::uint64_t period, TimerCallback callback)
-{
+boost::shared_ptr<Timer> TimerDaemon::register_timer(boost::uint64_t delta_first, boost::uint64_t period, TimerCallback callback){
 	const AUTO(now, get_fast_mono_clock());
 	return register_absolute_timer(saturated_add(now, delta_first), period, STD_MOVE(callback));
 }
 
-boost::shared_ptr<TimerItem> TimerDaemon::register_hourly_timer(
-	unsigned minute, unsigned second, TimerCallback callback, bool utc)
-{
+boost::shared_ptr<Timer> TimerDaemon::register_hourly_timer(unsigned minute, unsigned second, TimerCallback callback, bool utc){
 	const AUTO(virt_now, utc ? get_utc_time() : get_local_time());
 	const AUTO(delta, checked_sub(virt_now, (minute * 60ul + second) * 1000));
 	return register_timer(MS_PER_HOUR - delta % MS_PER_HOUR, MS_PER_HOUR, STD_MOVE(callback));
 }
-boost::shared_ptr<TimerItem> TimerDaemon::register_daily_timer(
-	unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc)
-{
+boost::shared_ptr<Timer> TimerDaemon::register_daily_timer(unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc){
 	const AUTO(virt_now, utc ? get_utc_time() : get_local_time());
 	const AUTO(delta, checked_sub(virt_now, (hour * 3600ul + minute * 60ul + second) * 1000));
 	return register_timer(MS_PER_DAY - delta % MS_PER_DAY, MS_PER_DAY, STD_MOVE(callback));
 }
-boost::shared_ptr<TimerItem> TimerDaemon::register_weekly_timer(
-	unsigned day_of_week, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc)
-{
+boost::shared_ptr<Timer> TimerDaemon::register_weekly_timer(unsigned day_of_week, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc){
 	// 注意 1970-01-01 是星期四。
 	const AUTO(virt_now, utc ? get_utc_time() : get_local_time());
 	const AUTO(delta, checked_sub(virt_now, ((day_of_week + 3) * 86400ul + hour * 3600ul + minute * 60ul + second) * 1000ul));
 	return register_timer(MS_PER_WEEK - delta % MS_PER_WEEK, MS_PER_WEEK, STD_MOVE(callback));
 }
 
-boost::shared_ptr<TimerItem> TimerDaemon::register_low_level_absolute_timer(
-	boost::uint64_t first, boost::uint64_t period, TimerCallback callback)
-{
+boost::shared_ptr<Timer> TimerDaemon::register_low_level_absolute_timer(boost::uint64_t first, boost::uint64_t period, TimerCallback callback){
 	PROFILE_ME;
 
-	AUTO(item, boost::make_shared<TimerItem>(period, boost::make_shared<TimerCallback>(STD_MOVE_IDN(callback)), true));
+	AUTO(timer, boost::make_shared<Timer>(period, STD_MOVE_IDN(callback), true));
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		TimerQueueElement elem = { item, first, item->get_stamp() };
+		TimerQueueElement elem = { timer, first, timer->get_stamp() };
 		g_timers.push_back(STD_MOVE(elem));
 		std::push_heap(g_timers.begin(), g_timers.end());
 		g_new_timer.signal();
 	}
 	LOG_POSEIDON_DEBUG("Created a low level timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()),
-		" microsecond(s) later and has a period of ", item->get_period(), " microsecond(s).");
-	return item;
+		" microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
+	return timer;
 }
-boost::shared_ptr<TimerItem> TimerDaemon::register_low_level_timer(
-	boost::uint64_t delta_first, boost::uint64_t period, TimerCallback callback)
-{
+boost::shared_ptr<Timer> TimerDaemon::register_low_level_timer(boost::uint64_t delta_first, boost::uint64_t period, TimerCallback callback){
 	const AUTO(now, get_fast_mono_clock());
 	return register_low_level_absolute_timer(saturated_add(now, delta_first), period, STD_MOVE(callback));
 }
 
-void TimerDaemon::set_absolute_time(const boost::shared_ptr<TimerItem> &item,
-	boost::uint64_t first, boost::uint64_t period)
-{
+void TimerDaemon::set_absolute_time(const boost::shared_ptr<Timer> &timer, boost::uint64_t first, boost::uint64_t period){
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
 	g_timers.emplace_back(); // This may throw std::bad_alloc.
-	TimerQueueElement elem = { item, first, item->set_period(period) }; // This throws no exception.
+	TimerQueueElement elem = { timer, first, timer->set_period(period) }; // This throws no exception.
 	g_timers.back() = STD_MOVE_IDN(elem); // This does not throw an exception, either.
 	std::push_heap(g_timers.begin(), g_timers.end());
 	g_new_timer.signal();
 }
-void TimerDaemon::set_time(const boost::shared_ptr<TimerItem> &item,
-	boost::uint64_t delta_first, boost::uint64_t period)
-{
+void TimerDaemon::set_time(const boost::shared_ptr<Timer> &timer, boost::uint64_t delta_first, boost::uint64_t period){
 	const AUTO(now, get_fast_mono_clock());
-	return set_absolute_time(item, saturated_add(now, delta_first), period);
+	return set_absolute_time(timer, saturated_add(now, delta_first), period);
 }
 
 }

@@ -14,7 +14,7 @@ namespace Poseidon {
 
 class TcpServerBase;
 class SslFilterBase;
-class TimerItem;
+class Timer;
 
 class TcpSessionBase : public SocketBase, public SessionBase {
 	friend TcpServerBase;
@@ -34,7 +34,7 @@ private:
 	volatile boost::uint64_t m_shutdown_time;
 	volatile boost::uint64_t m_last_use_time;
 	mutable Mutex m_shutdown_mutex;
-	boost::shared_ptr<TimerItem> m_shutdown_timer;
+	boost::shared_ptr<Timer> m_shutdown_timer;
 
 public:
 	explicit TcpSessionBase(Move<UniqueFile> socket);

@@ -15,28 +15,24 @@
 
 namespace Poseidon {
 
+class EventListener;
 class EventBase;
-
-typedef boost::function<
-	void (const boost::shared_ptr<EventBase> &event)
-	> EventListenerCallback;
 
 class EventDispatcher {
 private:
 	EventDispatcher();
 
 public:
+	typedef boost::function<void (const boost::shared_ptr<EventBase> &event)> EventListenerCallback;
+
 	static void start();
 	static void stop();
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
-	static boost::shared_ptr<const EventListenerCallback> register_listener_explicit(
-		const std::type_info &type_info, EventListenerCallback callback);
+	static boost::shared_ptr<const EventListener> register_listener_explicit(const std::type_info &type_info, EventListenerCallback callback);
 
 	template<typename EventT>
-	static boost::shared_ptr<const EventListenerCallback> register_listener(
-		boost::function<void (const boost::shared_ptr<EventT> &)> callback)
-	{
+	static boost::shared_ptr<const EventListener> register_listener(boost::function<void (const boost::shared_ptr<EventT> &)> callback){
 		struct Helper {
 			static void safe_fwd(boost::function<void (const boost::shared_ptr<EventT> &)> &callback, const boost::shared_ptr<EventBase> &event){
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));

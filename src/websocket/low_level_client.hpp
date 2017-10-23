@@ -22,7 +22,7 @@ private:
 private:
 	volatile boost::uint64_t m_last_pong_time;
 	mutable Mutex m_keep_alive_mutex;
-	boost::shared_ptr<TimerItem> m_keep_alive_timer;
+	boost::shared_ptr<Timer> m_keep_alive_timer;
 
 public:
 	explicit LowLevelClient(const boost::shared_ptr<Http::LowLevelClient> &parent);
