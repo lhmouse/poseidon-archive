@@ -290,9 +290,7 @@ bool ClientReader::is_content_till_eof() const {
 bool ClientReader::terminate_content(){
 	PROFILE_ME;
 
-	if(!is_content_till_eof()){
-		DEBUG_THROW(BasicException, sslit("Terminating a non-until-EOF HTTP response"));
-	}
+	DEBUG_THROW_ASSERT(is_content_till_eof());
 
 	const AUTO(bytes_remaining, m_queue.size());
 	if(bytes_remaining != 0){
