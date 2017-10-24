@@ -108,7 +108,7 @@ pkginclude_http_HEADERS = \
 	src/http/session.hpp	\
 	src/http/low_level_client.hpp	\
 	src/http/client.hpp	\
-	src/http/authorization.hpp	\
+	src/http/authentication.hpp	\
 	src/http/verbs.hpp	\
 	src/http/status_codes.hpp	\
 	src/http/exception.hpp	\
@@ -253,7 +253,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/http/session.cpp	\
 	src/http/low_level_client.cpp	\
 	src/http/client.cpp	\
-	src/http/authorization.cpp	\
+	src/http/authentication.cpp	\
 	src/http/status_codes.cpp	\
 	src/http/verbs.cpp	\
 	src/http/urlencoded.cpp	\
@@ -283,7 +283,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/mongodb/bson_builder.cpp
 
 lib_libposeidon_main_la_LDFLAGS = \
-	-no-undefined -version-info 7:0:0
+	-no-undefined -version-info 8:0:0
 
 sysconf_DATA =
 

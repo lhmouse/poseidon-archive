@@ -13,7 +13,7 @@ class UrlParam;
 class HeaderOption;
 class Exception;
 
-class AuthInfo;
+class AuthenticationContext;
 class Multipart;
 
 class ServerReader;

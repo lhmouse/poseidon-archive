@@ -15,7 +15,7 @@
 #include "../http/session.hpp"
 #include "../http/urlencoded.hpp"
 #include "../http/exception.hpp"
-#include "../http/authorization.hpp"
+#include "../http/authentication.hpp"
 #include "../http/url_param.hpp"
 #include "../csv_document.hpp"
 #include "../buffer_streams.hpp"
@@ -25,11 +25,11 @@ namespace Poseidon {
 namespace {
 	class SystemSession : public Http::Session {
 	private:
-		const boost::shared_ptr<const Http::AuthInfo> m_auth_info;
+		const boost::shared_ptr<const Http::AuthenticationContext> m_auth_info;
 		const std::string m_prefix;
 
 	public:
-		SystemSession(Move<UniqueFile> socket, boost::shared_ptr<const Http::AuthInfo> auth_info, std::string prefix)
+		SystemSession(Move<UniqueFile> socket, boost::shared_ptr<const Http::AuthenticationContext> auth_info, std::string prefix)
 			: Http::Session(STD_MOVE(socket))
 			, m_auth_info(STD_MOVE(auth_info)), m_prefix(STD_MOVE(prefix))
 		{ }
@@ -39,7 +39,7 @@ namespace {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system HTTP request from ", get_remote_info());
 
-			Http::check_and_throw_if_unauthorized(m_auth_info, get_remote_info(), request_header);
+			Http::check_authentication_simple(m_auth_info, false, get_remote_info(), request_header);
 
 			try {
 				Buffer_istream uri_is;
@@ -165,14 +165,14 @@ namespace {
 
 	class SystemServer : public TcpServerBase {
 	private:
-		const boost::shared_ptr<const Http::AuthInfo> m_auth_info;
+		const boost::shared_ptr<const Http::AuthenticationContext> m_auth_info;
 		const std::string m_path;
 
 	public:
 		SystemServer(const IpPort &bind_addr, const char *cert, const char *private_key,
 			std::vector<std::string> user_pass, std::string path)
 			: TcpServerBase(bind_addr, cert, private_key)
-			, m_auth_info(Http::create_auth_info(STD_MOVE(user_pass))), m_path(STD_MOVE(path))
+			, m_auth_info(Http::create_authentication_context("System Server", STD_MOVE(user_pass))), m_path(STD_MOVE(path))
 		{ }
 
 	public:
