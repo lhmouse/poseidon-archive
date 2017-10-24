@@ -27,16 +27,8 @@ namespace {
 	};
 
 	volatile boost::uint64_t g_mask = (boost::uint64_t)-1;
-
 	// 不要使用 Mutex 对象。如果在其他静态对象的构造函数中输出日志，这个对象可能还没构造。
 	::pthread_mutex_t g_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-
-	__attribute__((__used__, __destructor__))
-	void mutex_destructor() NOEXCEPT {
-		if(::pthread_mutex_destroy(&g_mutex) != 0){
-			std::abort();
-		}
-	}
 
 	__thread char t_tag[5] = "----";
 }
