@@ -76,6 +76,14 @@ public:
 	StreamBuffer finalize();
 };
 
+extern std::string base64_encode(const void *data, std::size_t size);
+extern std::string base64_encode(const char *str);
+extern std::string base64_encode(const std::string &str);
+
+extern std::string base64_decode(const void *data, std::size_t size);
+extern std::string base64_decode(const char *str);
+extern std::string base64_decode(const std::string &str);
+
 }
 
 #endif

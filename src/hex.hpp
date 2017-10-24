@@ -83,6 +83,14 @@ public:
 	StreamBuffer finalize();
 };
 
+extern std::string hex_encode(const void *data, std::size_t size, bool upper_case = false);
+extern std::string hex_encode(const char *str, bool upper_case = false);
+extern std::string hex_encode(const std::string &str, bool upper_case = false);
+
+extern std::string hex_decode(const void *data, std::size_t size);
+extern std::string hex_decode(const char *str);
+extern std::string hex_decode(const std::string &str);
+
 }
 
 #endif

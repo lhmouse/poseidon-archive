@@ -110,4 +110,48 @@ StreamBuffer HexDecoder::finalize(){
 	return ret;
 }
 
+std::string hex_encode(const void *data, std::size_t size, bool upper_case){
+	PROFILE_ME;
+
+	HexEncoder enc(upper_case);
+	enc.put(data, size);
+	return enc.get_buffer().dump_string();
+}
+std::string hex_encode(const char *str, bool upper_case){
+	PROFILE_ME;
+
+	HexEncoder enc(upper_case);
+	enc.put(str);
+	return enc.get_buffer().dump_string();
+}
+std::string hex_encode(const std::string &str, bool upper_case){
+	PROFILE_ME;
+
+	HexEncoder enc(upper_case);
+	enc.put(str);
+	return enc.get_buffer().dump_string();
+}
+
+std::string hex_decode(const void *data, std::size_t size){
+	PROFILE_ME;
+
+	HexDecoder dec;
+	dec.put(data, size);
+	return dec.get_buffer().dump_string();
+}
+std::string hex_decode(const char *str){
+	PROFILE_ME;
+
+	HexDecoder dec;
+	dec.put(str);
+	return dec.get_buffer().dump_string();
+}
+std::string hex_decode(const std::string &str){
+	PROFILE_ME;
+
+	HexDecoder dec;
+	dec.put(str);
+	return dec.get_buffer().dump_string();
+}
+
 }

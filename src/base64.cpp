@@ -180,4 +180,48 @@ StreamBuffer Base64Decoder::finalize(){
 	return ret;
 }
 
+std::string base64_encode(const void *data, std::size_t size){
+	PROFILE_ME;
+
+	Base64Encoder enc;
+	enc.put(data, size);
+	return enc.get_buffer().dump_string();
+}
+std::string base64_encode(const char *str){
+	PROFILE_ME;
+
+	Base64Encoder enc;
+	enc.put(str);
+	return enc.get_buffer().dump_string();
+}
+std::string base64_encode(const std::string &str){
+	PROFILE_ME;
+
+	Base64Encoder enc;
+	enc.put(str);
+	return enc.get_buffer().dump_string();
+}
+
+std::string base64_decode(const void *data, std::size_t size){
+	PROFILE_ME;
+
+	Base64Decoder dec;
+	dec.put(data, size);
+	return dec.get_buffer().dump_string();
+}
+std::string base64_decode(const char *str){
+	PROFILE_ME;
+
+	Base64Decoder dec;
+	dec.put(str);
+	return dec.get_buffer().dump_string();
+}
+std::string base64_decode(const std::string &str){
+	PROFILE_ME;
+
+	Base64Decoder dec;
+	dec.put(str);
+	return dec.get_buffer().dump_string();
+}
+
 }
