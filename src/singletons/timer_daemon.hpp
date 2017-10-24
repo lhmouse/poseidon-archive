@@ -11,7 +11,7 @@
 
 namespace Poseidon {
 
-class Timer;
+class Timer; // 没有定义的类，当作句柄使用。
 
 class TimerDaemon {
 private:

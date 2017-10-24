@@ -15,7 +15,7 @@
 
 namespace Poseidon {
 
-class EventListener;
+class EventListener; // 没有定义的类，当作句柄使用。
 class EventBase;
 
 class EventDispatcher {
