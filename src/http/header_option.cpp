@@ -108,7 +108,6 @@ void HeaderOption::parse(std::istream &is){
 				seg.erase(0, equ + 1);
 			}
 			std::string value(trim(STD_MOVE(seg)));
-			seg.clear();
 			options.append(STD_MOVE(key), STD_MOVE(value));
 		}
 	}
