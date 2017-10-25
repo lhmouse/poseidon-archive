@@ -158,7 +158,7 @@ namespace {
 
 		if(socket->is_throttled()){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-				"Session is throttled: typeid = ", typeid(*socket).name());
+				"Session is throttled: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
@@ -171,17 +171,17 @@ namespace {
 		try {
 			err_code = socket->poll_read_and_process(readable);
 			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-				LOG_POSEIDON_DEBUG("Socket read error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+				LOG_POSEIDON_DEBUG("Socket read error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				socket->force_shutdown();
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
+				"std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 			socket->force_shutdown();
 			err_code = EPIPE;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown: typeid = ", typeid(*socket).name());
+				"Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			socket->force_shutdown();
 			err_code = EPIPE;
 		}
@@ -223,17 +223,17 @@ namespace {
 		try {
 			err_code = socket->poll_write(write_lock, writeable);
 			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-				LOG_POSEIDON_DEBUG("Socket write error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+				LOG_POSEIDON_DEBUG("Socket write error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				socket->force_shutdown();
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
+				"std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 			socket->force_shutdown();
 			err_code = EPIPE;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown: typeid = ", typeid(*socket).name());
+				"Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			socket->force_shutdown();
 			err_code = EPIPE;
 		}
@@ -272,13 +272,13 @@ namespace {
 			socket->on_close(err_code);
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
+				"std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown: typeid = ", typeid(*socket).name());
+				"Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 		}
 		{
-			LOG_POSEIDON_DEBUG("Socket closed: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+			LOG_POSEIDON_DEBUG("Socket closed: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
@@ -366,8 +366,7 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket, bool t
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	const AUTO(result, g_socket_map.insert(SocketElement(take_ownership, socket, now)));
 	if(!result.second){
-		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket,
-			", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
+		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
 		DEBUG_THROW(Exception, sslit("Socket is already in epoll"));
 	}
 	try {
@@ -376,8 +375,7 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket, bool t
 		event.data.ptr = socket.get();
 		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, socket->get_fd(), &event) != 0){
 			const int err_code = errno;
-			LOG_POSEIDON_ERROR("::epoll_ctl() failed, errno was ", err_code, ": socket = ", socket,
-				", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
+			LOG_POSEIDON_ERROR("::epoll_ctl() failed, errno was ", err_code, ": socket = ", socket, ", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
 			DEBUG_THROW(SystemException, err_code);
 		}
 	} catch(...){
