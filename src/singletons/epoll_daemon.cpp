@@ -107,11 +107,15 @@ namespace {
 				continue;
 			}
 			if(events[i].events & EPOLLIN){
-				it->readable = true;
+				if(!(events[i].events & EPOLLERR)){
+					it->readable = true;
+				}
 				g_socket_map.set_key<0, 1>(it, now);
 			}
 			if(events[i].events & EPOLLOUT){
-				it->writeable = true;
+				if(!(events[i].events & EPOLLERR)){
+					it->writeable = true;
+				}
 				g_socket_map.set_key<0, 2>(it, now);
 			}
 			if(events[i].events & (EPOLLHUP | EPOLLERR)){
