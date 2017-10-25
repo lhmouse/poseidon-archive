@@ -6,8 +6,6 @@
 
 #if __GNUC__ >= 6
 #  pragma GCC diagnostic ignored "-Wignored-attributes"
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
 #include "../protocol_exception.hpp"
@@ -16,11 +14,11 @@
 #include "../profiler.hpp"
 #include "../buffer_streams.hpp"
 #include "../raii.hpp"
-#include <bson.h>
 
-#if __GNUC__ >= 6
-#  pragma GCC diagnostic pop
-#endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#include <bson.h>
+#pragma GCC diagnostic pop
 
 namespace Poseidon {
 namespace MongoDb {

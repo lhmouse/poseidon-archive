@@ -6,8 +6,6 @@
 
 #if __GNUC__ >= 6
 #  pragma GCC diagnostic ignored "-Wignored-attributes"
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
 #include "exception.hpp"
@@ -17,12 +15,12 @@
 #include "../time.hpp"
 #include "../uuid.hpp"
 #include <cstdlib>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
 #include <mongoc.h>
 #include <bson.h>
-
-#if __GNUC__ >= 6
-#  pragma GCC diagnostic pop
-#endif
+#pragma GCC diagnostic pop
 
 namespace Poseidon {
 namespace MongoDb {
