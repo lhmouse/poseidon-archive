@@ -373,14 +373,10 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 			LOG_POSEIDON_WARNING("Invalid HTTP Digest authentication header, equals sign not found: ", seg);
 			return std::make_pair(AUTH_HEADER_FORMAT_ERROR, NULLPTR);
 		}
-		std::size_t key_end;
-		if(equ == std::string::npos){
-			key_end = seg.find_last_not_of(" \t");
-		} else {
-			key_end = seg.find_last_not_of(" \t", equ - 1);
-		}
+		std::size_t key_end = seg.find_last_not_of(" \t", equ - 1);
 		if((key_end == std::string::npos) || (key_begin > key_end)){
-			continue;
+			LOG_POSEIDON_WARNING("Invalid HTTP Digest authentication header, no key specified: ", seg);
+			return std::make_pair(AUTH_HEADER_FORMAT_ERROR, NULLPTR);
 		}
 		++key_end;
 		SharedNts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
