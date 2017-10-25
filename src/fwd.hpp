@@ -17,6 +17,7 @@ class ConditionVariable;
 
 class OptionalMap;
 class StreamBuffer;
+class HexPrinter;
 class SharedNts;
 class IpPort;
 class SockAddr;

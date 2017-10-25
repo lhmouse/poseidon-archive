@@ -16,6 +16,7 @@
 #include <boost/cstdint.hpp>
 #include "../vint64.hpp"
 #include "../stream_buffer.hpp"
+#include "../hex_printer.hpp"
 #include "exception.hpp"
 #include "status_codes.hpp"
 

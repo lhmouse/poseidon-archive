@@ -32,6 +32,7 @@ pkginclude_HEADERS = \
 	src/shared_nts.hpp	\
 	src/module_raii.hpp	\
 	src/uuid.hpp	\
+	src/hex_printer.hpp	\
 	src/tcp_server_base.hpp	\
 	src/event_base.hpp	\
 	src/vint64.hpp	\
@@ -216,6 +217,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/hex.cpp	\
 	src/base64.cpp	\
 	src/uuid.cpp	\
+	src/hex_printer.cpp	\
 	src/config_file.cpp	\
 	src/module_raii.cpp	\
 	src/json.cpp	\
