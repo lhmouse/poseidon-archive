@@ -193,6 +193,9 @@ std::pair<AuthenticationResult, const char *> check_authentication_basic(
 		LOG_POSEIDON_INFO("HTTP authentication succeeded (assuming anonymous).");
 		return std::make_pair(AUTH_SUCCEEDED, NULLPTR);
 	}
+	if(header_value.empty()){
+		return std::make_pair(AUTH_HEADER_NOT_SET, NULLPTR);
+	}
 	if(::strncasecmp(header_value.c_str(), "Basic ", 6) != 0){
 		LOG_POSEIDON_WARNING("HTTP authentication scheme not supported: ", header_value);
 		return std::make_pair(AUTH_SCHEME_NOT_SUPPORTED, NULLPTR);
@@ -311,6 +314,9 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 	if(!context){
 		LOG_POSEIDON_INFO("HTTP authentication succeeded (assuming anonymous).");
 		return std::make_pair(AUTH_SUCCEEDED, NULLPTR);
+	}
+	if(header_value.empty()){
+		return std::make_pair(AUTH_HEADER_NOT_SET, NULLPTR);
 	}
 	if(::strncasecmp(header_value.c_str(), "Digest ", 7) != 0){
 		LOG_POSEIDON_WARNING("HTTP authentication scheme not supported: ", header_value);
@@ -473,7 +479,7 @@ __attribute__((__noreturn__)) void throw_authentication_failure_digest(
 	if(result == AUTH_REQUEST_EXPIRED){
 		bos <<", stale=true";
 	}
-	bos <<", qop-options=" <<StringQuoter("auth");
+	bos <<", qop=" <<StringQuoter("auth");
 
 	do_throw_authentication_failure(is_proxy, bos.get_buffer().dump_string());
 }
