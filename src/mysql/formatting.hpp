@@ -17,7 +17,7 @@ private:
 	const std::string &m_ref;
 
 public:
-	explicit StringEscaper(const std::string &ref)
+	explicit CONSTEXPR StringEscaper(const std::string &ref)
 		: m_ref(ref)
 	{ }
 
@@ -34,7 +34,7 @@ private:
 	const boost::uint64_t &m_ref;
 
 public:
-	explicit DateTimeFormatter(const boost::uint64_t &ref)
+	explicit CONSTEXPR DateTimeFormatter(const boost::uint64_t &ref)
 		: m_ref(ref)
 	{ }
 
@@ -51,7 +51,7 @@ private:
 	const Uuid &m_ref;
 
 public:
-	explicit UuidFormatter(const Uuid &ref)
+	explicit CONSTEXPR UuidFormatter(const Uuid &ref)
 		: m_ref(ref)
 	{ }
 
