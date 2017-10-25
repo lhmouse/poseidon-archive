@@ -370,7 +370,7 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 		}
 		std::size_t equ = seg.find('=', key_begin);
 		if(equ == std::string::npos){
-			LOG_POSEIDON_WARNING("Invalid HTTP Digest authentication header, equans sign not found: ", seg);
+			LOG_POSEIDON_WARNING("Invalid HTTP Digest authentication header, equals sign not found: ", seg);
 			return std::make_pair(AUTH_HEADER_FORMAT_ERROR, NULLPTR);
 		}
 		std::size_t key_end;
