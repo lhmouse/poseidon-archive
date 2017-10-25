@@ -142,13 +142,13 @@ public:
 		return find(key) != end();
 	}
 	iterator set(SharedNts key, std::string val){
-		AUTO(range, m_elements.equal_range(key));
-		if(range.first == range.second){
+		AUTO(pair, m_elements.equal_range(key));
+		if(pair.first == pair.second){
 			return m_elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(val));
 		} else {
-			range.first = m_elements.erase(range.first, --range.second);
-			range.first->second.swap(val);
-			return range.first;
+			pair.first = m_elements.erase(pair.first, --pair.second);
+			pair.first->second.swap(val);
+			return pair.first;
 		}
 	}
 
