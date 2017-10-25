@@ -6,14 +6,12 @@
 
 namespace Poseidon {
 
-OptionalMap::~OptionalMap(){ }
-
 std::ostream &operator<<(std::ostream &os, const OptionalMap &rhs){
-	os <<"{; ";
+	os <<"}\n";
 	for(AUTO(it, rhs.begin()); it != rhs.end(); ++it){
-		os <<it->first <<" = (" <<it->second.size() <<")\"" <<it->second <<"\"; ";
+		os <<it->first <<" = (" <<it->second.size() <<")\"" <<it->second <<"\"\n";
 	}
-	os <<"}; ";
+	os <<"}\n";
 	return os;
 }
 

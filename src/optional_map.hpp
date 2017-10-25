@@ -45,7 +45,6 @@ public:
 		return *this;
 	}
 #endif
-	~OptionalMap();
 
 public:
 	bool empty() const {
