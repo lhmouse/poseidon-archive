@@ -289,7 +289,6 @@ bool ClientReader::is_content_till_eof() const {
 }
 bool ClientReader::terminate_content(){
 	PROFILE_ME;
-
 	DEBUG_THROW_ASSERT(is_content_till_eof());
 
 	const AUTO(bytes_remaining, m_queue.size());
