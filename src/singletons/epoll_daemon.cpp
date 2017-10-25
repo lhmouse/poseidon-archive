@@ -170,6 +170,10 @@ namespace {
 		int err_code;
 		try {
 			err_code = socket->poll_read_and_process(readable);
+			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
+				LOG_POSEIDON_DEBUG("Socket read error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+				socket->force_shutdown();
+			}
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
@@ -187,9 +191,6 @@ namespace {
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 1>(it, (boost::uint64_t)-1);
 			}
-		} else if((err_code != 0) && (err_code != EINTR)){
-			LOG_POSEIDON_DEBUG("Socket read error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
-			socket->shutdown_read();
 		}
 		return true;
 	}
@@ -221,6 +222,10 @@ namespace {
 		int err_code;
 		try {
 			err_code = socket->poll_write(write_lock, writeable);
+			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
+				LOG_POSEIDON_DEBUG("Socket write error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+				socket->force_shutdown();
+			}
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
 				"std::exception thrown: what = ", e.what(), ", typeid = ", typeid(*socket).name());
@@ -238,9 +243,6 @@ namespace {
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
 			}
-		} else if((err_code != 0) && (err_code != EINTR)){
-			LOG_POSEIDON_DEBUG("Socket write error: typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
-			socket->shutdown_write();
 		}
 		return true;
 	}
