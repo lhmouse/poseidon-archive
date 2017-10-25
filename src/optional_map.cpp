@@ -7,7 +7,7 @@
 namespace Poseidon {
 
 std::ostream &operator<<(std::ostream &os, const OptionalMap &rhs){
-	os <<"}\n";
+	os <<"{\n";
 	for(AUTO(it, rhs.begin()); it != rhs.end(); ++it){
 		os <<it->first <<" = (" <<it->second.size() <<")\"" <<it->second <<"\"\n";
 	}
