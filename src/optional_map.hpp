@@ -143,15 +143,14 @@ public:
 		return find(key) != end();
 	}
 	iterator set(SharedNts key, std::string val){
-		AUTO(old, m_elements.equal_range(key));
-		AUTO(it, old.first);
-		if(it == old.second){
-			it = m_elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(val));
+		AUTO(range, m_elements.equal_range(key));
+		if(range.first == range.second){
+			return m_elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(val));
 		} else {
-			it->second.swap(val);
-			m_elements.erase(++old.first, old.second);
+			range.first = m_elements.erase(range.first, --range.second);
+			range.first->second.swap(val);
+			return range.first;
 		}
-		return it;
 	}
 
 	const std::string &get(const char *key) const { // 若指定的键不存在，则返回空字符串。
