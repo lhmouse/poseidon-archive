@@ -32,25 +32,25 @@ extern boost::shared_ptr<const AuthenticationContext> create_authentication_cont
 	const std::string &realm, const std::vector<std::string> &basic_user_pass);
 // 支持 Basic 和 Digest 方式认证，如果参数 auth_info 为空返回成功。
 extern std::pair<AuthenticationResult, const char *> check_authentication(
-	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_addr, const RequestHeaders &request_headers);
+	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, const RequestHeaders &request_headers);
 // 建议 Digest 方式认证。
 __attribute__((__noreturn__)) extern void throw_authentication_failure(
-	const std::string &realm, bool is_proxy, const IpPort &remote_addr, AuthenticationResult result);
+	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, AuthenticationResult result);
 // 一站式接口：如果调用 check_authentication() 并成功则正常返回，否则调用 throw_authentication_failure() 而不返回。
 extern const char *check_authentication_simple(
-	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_addr, const RequestHeaders &request_headers);
+	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, const RequestHeaders &request_headers);
 
 // 以下是各个认证方式的独立接口。
 // Basic
 extern std::pair<AuthenticationResult, const char *> check_authentication_basic(
 	const boost::shared_ptr<const AuthenticationContext> &context, const std::string &header_value);
 __attribute__((__noreturn__)) extern void throw_authentication_failure_basic(
-	const std::string &realm, bool is_proxy, AuthenticationResult result);
+	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, AuthenticationResult result);
 // Digest
 extern std::pair<AuthenticationResult, const char *> check_authentication_digest(
-	const boost::shared_ptr<const AuthenticationContext> &context, const IpPort &remote_addr, Verb verb, const std::string &header_value);
+	const boost::shared_ptr<const AuthenticationContext> &context, const IpPort &remote_info, Verb verb, const std::string &header_value);
 __attribute__((__noreturn__)) extern void throw_authentication_failure_digest(
-	const std::string &realm, bool is_proxy, const IpPort &remote_addr, AuthenticationResult result);
+	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, AuthenticationResult result);
 
 }
 }
