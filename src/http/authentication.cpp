@@ -177,7 +177,7 @@ namespace {
 	__attribute__((__noreturn__)) void do_throw_authentication_failure(bool is_proxy, std::string authenticate_str){
 		PROFILE_ME;
 
-		Poseidon::OptionalMap headers;
+		OptionalMap headers;
 		headers.set(SharedNts::view(is_proxy ? "Proxy-Authenticate" : "WWW-Authenticate"), STD_MOVE(authenticate_str));
 		DEBUG_THROW(Exception, is_proxy ? ST_PROXY_AUTH_REQUIRED : ST_UNAUTHORIZED, STD_MOVE(headers));
 	}
@@ -323,7 +323,7 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 		return std::make_pair(AUTH_SCHEME_NOT_SUPPORTED, NULLPTR);
 	}
 
-	Poseidon::OptionalMap params;
+	OptionalMap params;
 	Buffer_istream bis;
 	bis.set_buffer(StreamBuffer(header_value.c_str() + 7));
 	std::string seg;
