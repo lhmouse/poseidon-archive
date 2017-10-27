@@ -41,8 +41,7 @@ namespace {
 void ProfileDepository::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting profile depository...");
 
-	MainConfig::get(g_enabled, "profiler_enabled");
-	LOG_POSEIDON_DEBUG("profiler_enabled = ", g_enabled);
+	g_enabled = MainConfig::get<bool>("profiler_enabled", false);
 }
 void ProfileDepository::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping profile depository...");
