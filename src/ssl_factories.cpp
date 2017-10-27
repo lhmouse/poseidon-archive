@@ -45,7 +45,7 @@ void SslFactoryBase::create_ssl(UniqueSsl &ssl) const {
 	ssl.reset(::SSL_new(m_ctx.get()));
 }
 
-ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
+ServerSslFactory::ServerSslFactory(const char *certificate, const char *private_key)
 	: SslFactoryBase()
 {
 	if(!m_ctx.reset(::SSL_CTX_new(::SSLv23_server_method()))){
@@ -56,8 +56,8 @@ ServerSslFactory::ServerSslFactory(const char *cert, const char *private_key)
 	::SSL_CTX_set_options(m_ctx.get(), SSL_OP_NO_SSLv3);
 	::SSL_CTX_set_verify(m_ctx.get(), SSL_VERIFY_PEER, NULLPTR);
 
-	LOG_POSEIDON_INFO("Loading server certificate: ", cert);
-	if(::SSL_CTX_use_certificate_chain_file(m_ctx.get(), cert) != 1){
+	LOG_POSEIDON_INFO("Loading server certificate: ", certificate);
+	if(::SSL_CTX_use_certificate_chain_file(m_ctx.get(), certificate) != 1){
 		DEBUG_THROW(Exception, sslit("::SSL_CTX_use_certificate_file() failed"));
 	}
 

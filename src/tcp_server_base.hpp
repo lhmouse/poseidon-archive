@@ -21,7 +21,7 @@ private:
 	boost::scoped_ptr<ServerSslFactory> m_ssl_factory;
 
 public:
-	explicit TcpServerBase(const SockAddr &addr, const char *cert = "", const char *private_key = "");
+	explicit TcpServerBase(const SockAddr &addr, const char *certificate = "", const char *private_key = "");
 	~TcpServerBase();
 
 protected:

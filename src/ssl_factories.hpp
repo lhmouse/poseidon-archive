@@ -24,7 +24,7 @@ public:
 
 class ServerSslFactory : public SslFactoryBase {
 public:
-	explicit ServerSslFactory(const char *cert, const char *private_key);
+	explicit ServerSslFactory(const char *certificate, const char *private_key);
 	~ServerSslFactory() OVERRIDE;
 };
 

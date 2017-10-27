@@ -59,11 +59,11 @@ namespace {
 	}
 }
 
-TcpServerBase::TcpServerBase(const SockAddr &addr, const char *cert, const char *private_key)
+TcpServerBase::TcpServerBase(const SockAddr &addr, const char *certificate, const char *private_key)
 	: SocketBase(create_tcp_socket(addr))
 {
-	if(cert && *cert){
-		m_ssl_factory.reset(new ServerSslFactory(cert, private_key));
+	if(certificate && *certificate){
+		m_ssl_factory.reset(new ServerSslFactory(certificate, private_key));
 	}
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
