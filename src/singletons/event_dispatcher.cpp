@@ -84,6 +84,8 @@ namespace {
 
 void EventDispatcher::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting event dispatcher...");
+
+	//
 }
 void EventDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping event dispatcher...");
