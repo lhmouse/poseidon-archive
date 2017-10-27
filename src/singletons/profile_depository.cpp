@@ -32,7 +32,7 @@ namespace {
 	};
 	typedef boost::container::flat_map<ProfileKey, ProfileCounters, ProfileKeyComparator> ProfileMap;
 
-	bool g_enabled = true;
+	bool g_enabled = false;
 
 	Mutex g_mutex;
 	ProfileMap g_profile;
