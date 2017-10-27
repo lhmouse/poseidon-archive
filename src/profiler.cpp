@@ -3,7 +3,6 @@
 
 #include "precompiled.hpp"
 #include "profiler.hpp"
-#include "singletons/main_config.hpp"
 #include "singletons/profile_depository.hpp"
 #include "time.hpp"
 #include "log.hpp"
@@ -12,11 +11,6 @@ namespace Poseidon {
 
 namespace {
 	__thread Profiler *t_top_profiler = 0; // XXX: NULLPTR
-
-	bool is_profiler_enabled(){
-		const AUTO(profiler_enabled, MainConfig::get<bool>("profiler_enabled", true));
-		return profiler_enabled;
-	}
 }
 
 void Profiler::accumulate_all_in_thread() NOEXCEPT {
@@ -30,50 +24,52 @@ void Profiler::accumulate_all_in_thread() NOEXCEPT {
 }
 
 void *Profiler::begin_stack_switch() NOEXCEPT {
-	if(is_profiler_enabled()){
-		const AUTO(top, t_top_profiler);
-		if(top){
-			const AUTO(now, get_hi_res_mono_clock());
-			top->accumulate(now, false);
-			top->m_yielded_since = now;
-		}
-		t_top_profiler = NULLPTR;
-		return top;
-	} else {
+	if(!ProfileDepository::is_enabled()){
 		return NULLPTR;
 	}
+
+	const AUTO(top, t_top_profiler);
+	if(top){
+		const AUTO(now, get_hi_res_mono_clock());
+		top->accumulate(now, false);
+		top->m_yielded_since = now;
+	}
+	t_top_profiler = NULLPTR;
+	return top;
 }
 void Profiler::end_stack_switch(void *opaque) NOEXCEPT {
-	if(is_profiler_enabled()){
-		const AUTO(top, static_cast<Profiler *>(opaque));
-		if(top){
-			const AUTO(now, get_hi_res_mono_clock());
-			top->m_excluded += now - top->m_yielded_since;
-			top->accumulate(now, false);
-		}
-		t_top_profiler = top;
+	if(!ProfileDepository::is_enabled()){
+		return;
 	}
+
+	const AUTO(top, static_cast<Profiler *>(opaque));
+	if(top){
+		const AUTO(now, get_hi_res_mono_clock());
+		top->m_excluded += now - top->m_yielded_since;
+		top->accumulate(now, false);
+	}
+	t_top_profiler = top;
 }
 
 Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT
 	: m_prev(t_top_profiler), m_file(file), m_line(line), m_func(func)
 	, m_start(0), m_excluded(0), m_yielded_since(0)
 {
-	if(is_profiler_enabled()){
+	if(ProfileDepository::is_enabled()){
 		const AUTO(now, get_hi_res_mono_clock());
 		m_start = now;
 		t_top_profiler = this;
 	}
 }
 Profiler::~Profiler() NOEXCEPT {
-	if(std::uncaught_exception()){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Exception backtrace: file = ", m_file, ", line = ", m_line, ", func = ", m_func);
-	}
-
-	if(is_profiler_enabled()){
+	if(ProfileDepository::is_enabled()){
 		const AUTO(now, get_hi_res_mono_clock());
 		t_top_profiler = m_prev;
 		accumulate(now, true);
+	}
+	if(std::uncaught_exception()){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
+			"Exception backtrace: file = ", m_file, ", line = ", m_line, ", func = ", m_func);
 	}
 }
 

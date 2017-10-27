@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "profile_depository.hpp"
+#include "main_config.hpp"
 #include "../mutex.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
@@ -31,6 +32,8 @@ namespace {
 	};
 	typedef boost::container::flat_map<ProfileKey, ProfileCounters, ProfileKeyComparator> ProfileMap;
 
+	bool g_enabled = true;
+
 	Mutex g_mutex;
 	ProfileMap g_profile;
 }
@@ -38,12 +41,17 @@ namespace {
 void ProfileDepository::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting profile depository...");
 
-	//
+	MainConfig::get(g_enabled, "profiler_enabled");
+	LOG_POSEIDON_DEBUG("profiler_enabled = ", g_enabled);
 }
 void ProfileDepository::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping profile depository...");
 
 	//
+}
+
+bool ProfileDepository::is_enabled(){
+	return g_enabled;
 }
 
 void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func, bool new_sample, double total, double exclusive) NOEXCEPT
