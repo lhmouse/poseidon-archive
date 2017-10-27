@@ -46,6 +46,8 @@ void ProfileDepository::start(){
 }
 void ProfileDepository::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping profile depository...");
+
+	//
 }
 
 bool ProfileDepository::is_enabled(){

@@ -132,18 +132,13 @@ void ModuleDepository::start(){
 void ModuleDepository::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading all modules...");
 
-	ModuleMap module_map;
-	{
-		const RecursiveMutex::UniqueLock lock(g_mutex);
-		module_map.swap(g_module_map);
-	}
 	for(;;){
-		const AUTO(it, module_map.begin());
-		if(it == module_map.end()){
+		const AUTO(it, g_module_map.begin());
+		if(it == g_module_map.end()){
 			break;
 		}
 		LOG_POSEIDON_INFO("Unloading module: ", it->module->get_real_path());
-		module_map.erase(it);
+		g_module_map.erase(it);
 	}
 }
 
