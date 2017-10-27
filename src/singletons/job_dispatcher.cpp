@@ -21,8 +21,6 @@
 namespace Poseidon {
 
 namespace {
-	boost::uint64_t g_job_timeout = 60000;
-
 	enum FiberState {
 		FS_READY   = 0,
 		FS_RUNNING = 1,
@@ -245,8 +243,7 @@ namespace {
 void JobDispatcher::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting job dispatcher...");
 
-	MainConfig::get(g_job_timeout, "job_timeout");
-	LOG_POSEIDON_DEBUG("job_timeout = ", g_job_timeout);
+	//
 }
 void JobDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
@@ -327,9 +324,10 @@ void JobDispatcher::yield(const boost::shared_ptr<const JobPromise> &promise, bo
 		LOG_POSEIDON_TRACE("Skipped yielding from fiber ", static_cast<void *>(fiber));
 	} else {
 		LOG_POSEIDON_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
+		const AUTO(job_timeout, MainConfig::get<boost::uint64_t>("job_timeout", 60000));
 		AUTO_REF(elem, fiber->queue.front());
 		elem.promise = promise;
-		elem.expiry_time = saturated_add(get_fast_mono_clock(), g_job_timeout);
+		elem.expiry_time = saturated_add(get_fast_mono_clock(), job_timeout);
 		elem.insignificant = insignificant;
 		const AUTO(profiler_hook, Profiler::begin_stack_switch());
 		{

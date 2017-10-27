@@ -47,8 +47,8 @@ boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_
 }
 
 bool Logger::initialize_mask_from_config(){
-	std::string log_masked_levels;
-	if(!MainConfig::get(log_masked_levels, "log_masked_levels")){
+	const AUTO(log_masked_levels, MainConfig::get<std::string>("log_masked_levels"));
+	if(log_masked_levels.empty()){
 		return false;
 	}
 	boost::uint64_t new_mask = (boost::uint64_t)-1;

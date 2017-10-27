@@ -27,42 +27,36 @@
 #include "../time.hpp"
 #include "../errno.hpp"
 #include "../buffer_streams.hpp"
+#include "../checked_arithmetic.hpp"
 
 namespace Poseidon {
 
 typedef MySqlDaemon::QueryCallback QueryCallback;
 
 namespace {
-	std::string     g_server_addr       = "localhost";
-	unsigned        g_server_port       = 3306;
-	std::string     g_slave_addr        = VAL_INIT;
-	unsigned        g_slave_port        = 0;
-	std::string     g_username          = "root";
-	std::string     g_password          = "root";
-	std::string     g_schema            = "poseidon";
-	bool            g_use_ssl           = false;
-	std::string     g_charset           = "utf8";
-
-	std::string     g_dump_dir          = VAL_INIT;
-	boost::uint64_t g_save_delay        = 5000;
-	boost::uint64_t g_reconn_delay      = 10000;
-	std::size_t     g_max_retry_count   = 3;
-	boost::uint64_t g_retry_init_delay  = 1000;
-	std::size_t     g_max_thread_count  = 8;
-
-
-	inline boost::shared_ptr<MySql::Connection> real_create_connection(bool from_slave){
-		AUTO(addr, &g_server_addr);
-		AUTO(port, &g_server_port);
+	boost::shared_ptr<MySql::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<MySql::Connection> &master_conn = boost::shared_ptr<MySql::Connection>()){
+		std::string server_addr;
+		unsigned server_port = 0;
 		if(from_slave){
-			if(!g_slave_addr.empty()){
-				addr = &g_slave_addr;
-			}
-			if(g_slave_port != 0){
-				port = &g_slave_port;
-			}
+			server_addr = MainConfig::get<std::string>("mysql_slave_addr");
+			server_port = MainConfig::get<unsigned>("mysql_slave_port");
 		}
-		return MySql::Connection::create(*addr, *port, g_username, g_password, g_schema, g_use_ssl, g_charset);
+		if(server_addr.empty()){
+			if(master_conn){
+				LOG_POSEIDON_DEBUG("MySQL slave is not configured. Reuse the master connection as a slave.");
+				return master_conn;
+			}
+			server_addr = MainConfig::get<std::string>("mysql_server_addr", "localhost");
+			server_port = MainConfig::get<unsigned>("mysql_server_port", 3306);
+		}
+
+		std::string username = MainConfig::get<std::string>("mysql_username", "root");
+		std::string password = MainConfig::get<std::string>("mysql_password");
+		std::string schema   = MainConfig::get<std::string>("mysql_schema", "poseidon");
+		bool        use_ssl  = MainConfig::get<bool>("mysql_use_ssl", false);
+		std::string charset  = MainConfig::get<std::string>("mysql_charset", "utf8");
+
+		return MySql::Connection::create(server_addr.c_str(), server_port, username.c_str(), password.c_str(), schema.c_str(), use_ssl, charset.c_str());
 	}
 
 	// 对于日志文件的写操作应当互斥。
@@ -72,7 +66,8 @@ namespace {
 	try {
 		PROFILE_ME;
 
-		if(g_dump_dir.empty()){
+		const AUTO(dump_dir, MainConfig::get<std::string>("mysql_dump_dir"));
+		if(dump_dir.empty()){
 			LOG_POSEIDON_WARNING("MySQL dump is disabled.");
 			return;
 		}
@@ -82,7 +77,8 @@ namespace {
 		char temp[256];
 		unsigned len = (unsigned)std::sprintf(temp, "%04u-%02u-%02u_%05u.log", dt.yr, dt.mon, dt.day, (unsigned)::getpid());
 		std::string dump_path;
-		dump_path.assign(g_dump_dir);
+		dump_path.reserve(1023);
+		dump_path.assign(dump_dir);
 		dump_path.push_back('/');
 		dump_path.append(temp, len);
 
@@ -526,11 +522,12 @@ namespace {
 				conn->discard_result();
 			}
 			if(except){
-				const AUTO(retry_count, ++elem->retry_count);
-				if(retry_count < g_max_retry_count){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-						"Going to retry MySQL operation: retry_count = ", retry_count);
-					elem->due_time = now + (g_retry_init_delay << retry_count);
+				const AUTO(max_retry_count, MainConfig::get<std::size_t>("mysql_max_retry_count", 3));
+				const AUTO(retry_count, ++(elem->retry_count));
+				if(retry_count < max_retry_count){
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Going to retry MySQL operation: retry_count = ", retry_count);
+					const AUTO(retry_init_delay, MainConfig::get<boost::uint64_t>("mysql_retry_init_delay", 1000));
+					elem->due_time = now + (retry_init_delay << retry_count);
 					conn.reset();
 					return true;
 				}
@@ -558,6 +555,8 @@ namespace {
 			LOG_POSEIDON_INFO("MySQL thread started.");
 
 			const MySql::ThreadContext thread_context;
+			const AUTO(reconnect_delay, MainConfig::get<boost::uint64_t>("mysql_reconn_delay", 5000));
+
 			boost::shared_ptr<MySql::Connection> master_conn, slave_conn;
 
 			unsigned timeout = 0;
@@ -572,25 +571,21 @@ namespace {
 						} catch(std::exception &e){
 							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
-							req.tv_sec = (::time_t)(g_reconn_delay / 1000);
-							req.tv_nsec = (long)(g_reconn_delay % 1000) * 1000 * 1000;
+							req.tv_sec = (::time_t)(reconnect_delay / 1000);
+							req.tv_nsec = (long)(reconnect_delay % 1000) * 1000 * 1000;
 							::nanosleep(&req, NULLPTR);
 						}
-					}
-					if((g_server_addr == g_slave_addr) && (g_server_port == g_slave_port) && !slave_conn){
-						LOG_POSEIDON_DEBUG("Reusing the master connection as the slave connection.");
-						slave_conn = master_conn;
 					}
 					while(!slave_conn){
 						LOG_POSEIDON_INFO("Connecting to MySQL slave server...");
 						try {
-							slave_conn = real_create_connection(true);
+							slave_conn = real_create_connection(true, master_conn);
 							LOG_POSEIDON_INFO("Successfully connected to MySQL slave server.");
 						} catch(std::exception &e){
 							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
-							req.tv_sec = (::time_t)(g_reconn_delay / 1000);
-							req.tv_nsec = (long)(g_reconn_delay % 1000) * 1000 * 1000;
+							req.tv_sec = (::time_t)(reconnect_delay / 1000);
+							req.tv_nsec = (long)(reconnect_delay % 1000) * 1000 * 1000;
 							::nanosleep(&req, NULLPTR);
 						}
 					}
@@ -658,9 +653,10 @@ namespace {
 
 			const AUTO(combinable_object, operation->get_combinable_object());
 
-			AUTO(due_time, get_fast_mono_clock());
+			const AUTO(now, get_fast_mono_clock());
+			const AUTO(save_delay, MainConfig::get<boost::uint64_t>("mysql_save_delay", 5000));
 			// 有紧急操作时无视写入延迟，这个逻辑不在这里处理。
-			due_time += g_save_delay;
+			const AUTO(due_time, saturated_add(now, save_delay));
 
 			const Mutex::UniqueLock lock(m_mutex);
 			if(!atomic_load(m_running, ATOMIC_CONSUME)){
@@ -766,64 +762,20 @@ void MySqlDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MySQL daemon...");
 
-	MainConfig::get(g_server_addr, "mysql_server_addr");
-	LOG_POSEIDON_DEBUG("mysql_server_addr = ", g_server_addr);
-
-	MainConfig::get(g_server_port, "mysql_server_port");
-	LOG_POSEIDON_DEBUG("mysql_server_port = ", g_server_port);
-
-	MainConfig::get(g_slave_addr, "mysql_slave_addr");
-	LOG_POSEIDON_DEBUG("mysql_slave_addr = ", g_slave_addr);
-
-	MainConfig::get(g_slave_port, "mysql_slave_port");
-	LOG_POSEIDON_DEBUG("mysql_slave_port = ", g_slave_port);
-
-	MainConfig::get(g_username, "mysql_username");
-	LOG_POSEIDON_DEBUG("mysql_username = ", g_username);
-
-	MainConfig::get(g_password, "mysql_password");
-	LOG_POSEIDON_DEBUG("mysql_password = ", g_password);
-
-	MainConfig::get(g_schema, "mysql_schema");
-	LOG_POSEIDON_DEBUG("mysql_schema = ", g_schema);
-
-	MainConfig::get(g_use_ssl, "mysql_use_ssl");
-	LOG_POSEIDON_DEBUG("mysql_use_ssl = ", g_use_ssl);
-
-	MainConfig::get(g_charset, "mysql_charset");
-	LOG_POSEIDON_DEBUG("mysql_charset = ", g_charset);
-
-	MainConfig::get(g_dump_dir, "mysql_dump_dir");
-	LOG_POSEIDON_DEBUG("mysql_dump_dir = ", g_dump_dir);
-
-	MainConfig::get(g_save_delay, "mysql_save_delay");
-	LOG_POSEIDON_DEBUG("mysql_save_delay = ", g_save_delay);
-
-	MainConfig::get(g_reconn_delay, "mysql_reconn_delay");
-	LOG_POSEIDON_DEBUG("mysql_reconn_delay = ", g_reconn_delay);
-
-	MainConfig::get(g_max_retry_count, "mysql_max_retry_count");
-	LOG_POSEIDON_DEBUG("mysql_max_retry_count = ", g_max_retry_count);
-
-	MainConfig::get(g_retry_init_delay, "mysql_retry_init_delay");
-	LOG_POSEIDON_DEBUG("mysql_retry_init_delay = ", g_retry_init_delay);
-
-	MainConfig::get(g_max_thread_count, "mysql_max_thread_count");
-	LOG_POSEIDON_DEBUG("mysql_max_thread_count = ", g_max_thread_count);
-
-	if(!g_dump_dir.empty()){
-		const AUTO(placeholder_path, g_dump_dir + "/placeholder");
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Checking whether MySQL dump directory is writeable: test_path = ", placeholder_path);
-		UniqueFile dump_file;
-		if(!dump_file.reset(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644))){
+	const AUTO(dump_dir, MainConfig::get<std::string>("mysql_dump_dir"));
+	if(!dump_dir.empty()){
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MySQL dump directory is writeable: ", dump_dir);
+		const AUTO(placeholder_path, dump_dir + "/placeholder");
+		UniqueFile probe;
+		if(!probe.reset(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644))){
 			const int err_code = errno;
-			LOG_POSEIDON_FATAL("Could not create placeholder file: placeholder_path = ", placeholder_path, ", errno = ", err_code);
+			LOG_POSEIDON_FATAL("Could not create placeholder file \"", placeholder_path, "\" (errno was ", err_code, ": ", get_error_desc(err_code), ").");
 			std::abort();
 		}
 	}
 
-	g_threads.resize(std::max<std::size_t>(g_max_thread_count, 1));
+	const AUTO(max_thread_count, MainConfig::get<std::size_t>("mysql_max_thread_count", 1));
+	g_threads.resize(std::max<std::size_t>(max_thread_count, 1));
 
 	LOG_POSEIDON_INFO("MySQL daemon started.");
 }

@@ -80,8 +80,7 @@ namespace {
 		UniqueHandle<BsonCloser> m_element_guard;
 
 	public:
-		DelegatedConnection(const char *server_addr, unsigned server_port,
-			const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
+		DelegatedConnection(const char *server_addr, unsigned server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
 			: m_database(database)
 			, m_cursor_id(0), m_cursor_ns()
 		{
@@ -350,11 +349,8 @@ namespace {
 	};
 }
 
-boost::shared_ptr<Connection> Connection::create(const char *server_addr, unsigned server_port,
-	const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
-{
-	return boost::make_shared<DelegatedConnection>(server_addr, server_port,
-		user_name, password, auth_database, use_ssl, database);
+boost::shared_ptr<Connection> Connection::create(const char *server_addr, unsigned server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database){
+	return boost::make_shared<DelegatedConnection>(server_addr, server_port, user_name, password, auth_database, use_ssl, database);
 }
 
 Connection::~Connection(){ }

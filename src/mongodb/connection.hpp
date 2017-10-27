@@ -19,15 +19,7 @@ class BsonBuilder;
 
 class Connection : NONCOPYABLE {
 public:
-	static boost::shared_ptr<Connection> create(const char *server_addr, unsigned server_port,
-		const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database);
-
-	static boost::shared_ptr<Connection> create(const std::string &server_addr, unsigned server_port,
-		const std::string &user_name, const std::string &password, const std::string &auth_database, bool use_ssl, const std::string &database)
-	{
-		return create(server_addr.c_str(), server_port,
-			user_name.c_str(), password.c_str(), auth_database.c_str(), use_ssl, database.c_str());
-	}
+	static boost::shared_ptr<Connection> create(const char *server_addr, unsigned server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database);
 
 public:
 	virtual ~Connection() = 0;

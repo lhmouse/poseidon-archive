@@ -30,7 +30,6 @@ public:
 	static void start();
 	static void stop();
 
-	static bool is_enabled();
 	static void accumulate(const char *file, unsigned long line, const char *func, bool new_sample, double total, double exclusive) NOEXCEPT;
 
 	static std::vector<SnapshotElement> snapshot();
