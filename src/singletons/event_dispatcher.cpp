@@ -65,18 +65,18 @@ namespace {
 		}
 	};
 
-	void get_listeners(std::vector<boost::shared_ptr<const EventListener> > &listeners, const std::type_info *type_info){
+	void get_listeners(std::vector<boost::shared_ptr<const EventListener> > &ret, const std::type_info *type_info){
 		PROFILE_ME;
 
 		const Mutex::UniqueLock lock(g_mutex);
 		const AUTO(range, g_listeners.equal_range(type_info));
-		listeners.reserve(listeners.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
+		ret.reserve(ret.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
 		bool expired;
 		for(AUTO(it, range.first); it != range.second; expired ? (it = g_listeners.erase(it)) : ++it){
 			AUTO(listener, it->second.lock());
 			expired = !listener;
 			if(listener){
-				listeners.push_back(STD_MOVE_IDN(listener));
+				ret.push_back(STD_MOVE_IDN(listener));
 			}
 		}
 	}

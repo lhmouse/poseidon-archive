@@ -16,12 +16,6 @@ class ModuleRaiiBase;
 class ModuleDepository {
 	friend ModuleRaiiBase;
 
-private:
-	static void register_module_raii(ModuleRaiiBase *raii, long priority);
-	static void unregister_module_raii(ModuleRaiiBase *raii) NOEXCEPT;
-
-	ModuleDepository();
-
 public:
 	struct SnapshotElement {
 		void *dl_handle;
@@ -29,6 +23,13 @@ public:
 		SharedNts real_path;
 	};
 
+private:
+	static void register_module_raii(ModuleRaiiBase *raii, long priority);
+	static void unregister_module_raii(ModuleRaiiBase *raii) NOEXCEPT;
+
+	ModuleDepository();
+
+public:
 	static void start();
 	static void stop();
 
@@ -36,7 +37,7 @@ public:
 	static void *load_nothrow(const std::string &path);
 	static bool unload(void *base_address) NOEXCEPT;
 
-	static std::vector<SnapshotElement> snapshot();
+	static void snapshot(std::vector<SnapshotElement> &ret);
 };
 
 }

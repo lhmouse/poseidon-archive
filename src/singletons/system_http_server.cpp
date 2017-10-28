@@ -19,6 +19,8 @@
 #include "../http/url_param.hpp"
 #include "../csv_document.hpp"
 #include "../buffer_streams.hpp"
+#include "../time.hpp"
+#include "../checked_arithmetic.hpp"
 
 namespace Poseidon {
 
@@ -87,7 +89,8 @@ namespace {
 				} else if(uri == "show_profile"){
 					CsvDocument csv;
 					boost::container::map<SharedNts, std::string> row;
-					AUTO(snapshot, ProfileDepository::snapshot());
+					std::vector<ProfileDepository::SnapshotElement> snapshot;
+					ProfileDepository::snapshot(snapshot);
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 						row[sslit("file")] = it->file;
 						row[sslit("line")] = boost::lexical_cast<std::string>(it->line);
@@ -112,7 +115,8 @@ namespace {
 				} else if(uri == "show_modules"){
 					CsvDocument csv;
 					boost::container::map<SharedNts, std::string> row;
-					AUTO(snapshot, ModuleDepository::snapshot());
+					std::vector<ModuleDepository::SnapshotElement> snapshot;
+					ModuleDepository::snapshot(snapshot);
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 						row[sslit("dl_handle")] = boost::lexical_cast<std::string>(it->dl_handle);
 						row[sslit("base_address")] = boost::lexical_cast<std::string>(it->base_address);
@@ -131,13 +135,13 @@ namespace {
 					CsvDocument csv;
 					boost::container::map<SharedNts, std::string> row;
 					std::vector<EpollDaemon::SnapshotElement> snapshot;
-					EpollDaemon::make_snapshot(snapshot);
+					EpollDaemon::snapshot(snapshot);
 					for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
-						row[sslit("remote_ip")] = it->remote.ip();
-						row[sslit("remote_port")] = boost::lexical_cast<std::string>(it->remote.port());
-						row[sslit("local_ip")] = it->local.ip();
-						row[sslit("local_port")] = boost::lexical_cast<std::string>(it->local.port());
-						row[sslit("ms_online")] = boost::lexical_cast<std::string>(it->ms_online);
+						row[sslit("remote_ip")] = it->remote_info.ip();
+						row[sslit("remote_port")] = boost::lexical_cast<std::string>(it->remote_info.port());
+						row[sslit("local_ip")] = it->local_info.ip();
+						row[sslit("local_port")] = boost::lexical_cast<std::string>(it->local_info.port());
+						row[sslit("ms_online")] = boost::lexical_cast<std::string>(saturated_sub(get_utc_time(), it->creation_time));
 						if(csv.empty()){
 							csv.reset_header(row);
 						}

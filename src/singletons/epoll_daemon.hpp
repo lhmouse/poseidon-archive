@@ -14,23 +14,26 @@ namespace Poseidon {
 class SocketBase;
 
 class EpollDaemon {
+public:
+	struct SnapshotElement {
+		IpPort remote_info;
+		IpPort local_info;
+		boost::uint64_t creation_time;
+		bool readable;
+		bool writeable;
+	};
+
 private:
 	EpollDaemon();
 
 public:
-	struct SnapshotElement {
-		IpPort remote;
-		IpPort local;
-		boost::uint64_t ms_online;
-		bool established;
-	};
-
 	static void start();
 	static void stop();
 
-	static void make_snapshot(std::vector<SnapshotElement> &snapshot);
 	static void add_socket(const boost::shared_ptr<SocketBase> &socket, bool take_ownership = false);
 	static bool mark_socket_writeable(const SocketBase *ptr) NOEXCEPT;
+
+	static void snapshot(std::vector<SnapshotElement> &ret);
 };
 
 }

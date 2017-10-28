@@ -49,7 +49,7 @@ void ProfileDepository::stop(){
 	//
 }
 
-bool ProfileDepository::is_enabled(){
+bool ProfileDepository::is_enabled() NOEXCEPT {
 	return g_enabled;
 }
 
@@ -64,30 +64,26 @@ try {
 } catch(...){
 	//
 }
-
-std::vector<ProfileDepository::SnapshotElement> ProfileDepository::snapshot(){
-	Profiler::accumulate_all_in_thread();
-
-	std::vector<SnapshotElement> ret;
-	{
-		const Mutex::UniqueLock lock(g_mutex);
-		ret.reserve(g_profile.size());
-		for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
-			SnapshotElement elem;
-			elem.file = it->first.file;
-			elem.line = it->first.line;
-			elem.func = it->first.func;
-			elem.samples = it->second.samples;
-			elem.total = it->second.total;
-			elem.exclusive = it->second.exclusive;
-			ret.push_back(elem);
-		}
-	}
-	return ret;
-}
-void ProfileDepository::clear(){
+void ProfileDepository::clear() NOEXCEPT {
 	const Mutex::UniqueLock lock(g_mutex);
 	g_profile.clear();
+}
+
+void ProfileDepository::snapshot(std::vector<ProfileDepository::SnapshotElement> &ret){
+	Profiler::accumulate_all_in_thread();
+
+	const Mutex::UniqueLock lock(g_mutex);
+	ret.reserve(ret.size() + g_profile.size());
+	for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
+		SnapshotElement elem = { };
+		elem.file = it->first.file;
+		elem.line = it->first.line;
+		elem.func = it->first.func;
+		elem.samples = it->second.samples;
+		elem.total = it->second.total;
+		elem.exclusive = it->second.exclusive;
+		ret.push_back(STD_MOVE(elem));
+	}
 }
 
 }

@@ -344,25 +344,6 @@ void EpollDaemon::stop(){
 	g_epoll.reset();
 }
 
-void EpollDaemon::make_snapshot(std::vector<EpollDaemon::SnapshotElement> &snapshot){
-	PROFILE_ME;
-
-	const AUTO(now, get_fast_mono_clock());
-	const RecursiveMutex::UniqueLock lock(g_mutex);
-	snapshot.reserve(snapshot.size() + g_socket_map.size());
-	for(AUTO(it, g_socket_map.begin()); it != g_socket_map.end(); ++it){
-		const AUTO(socket, it->weakable->lock());
-		if(!socket){
-			continue;
-		}
-		SnapshotElement elem = { };
-		elem.remote = socket->get_remote_info();
-		elem.local = socket->get_local_info();
-		elem.ms_online = saturated_sub(now, socket->get_creation_time());
-		elem.established = it->writeable;
-		snapshot.push_back(STD_MOVE(elem));
-	}
-}
 void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket, bool take_ownership){
 	PROFILE_ME;
 
@@ -399,6 +380,26 @@ bool EpollDaemon::mark_socket_writeable(const SocketBase *ptr) NOEXCEPT {
 	const AUTO(now, get_fast_mono_clock());
 	g_socket_map.set_key<0, 2>(it, now);
 	return true;
+}
+
+void EpollDaemon::snapshot(std::vector<EpollDaemon::SnapshotElement> &ret){
+	PROFILE_ME;
+
+	const RecursiveMutex::UniqueLock lock(g_mutex);
+	ret.reserve(ret.size() + g_socket_map.size());
+	for(AUTO(it, g_socket_map.begin()); it != g_socket_map.end(); ++it){
+		const AUTO(socket, it->weakable->lock());
+		if(!socket){
+			continue;
+		}
+		SnapshotElement elem = { };
+		elem.remote_info = socket->get_remote_info();
+		elem.local_info = socket->get_local_info();
+		elem.creation_time = socket->get_creation_time();
+		elem.readable = it->readable;
+		elem.writeable = it->writeable;
+		ret.push_back(STD_MOVE(elem));
+	}
 }
 
 }

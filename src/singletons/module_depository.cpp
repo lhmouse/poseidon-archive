@@ -218,22 +218,18 @@ bool ModuleDepository::unload(void *base_address) NOEXCEPT {
 	return true;
 }
 
-std::vector<ModuleDepository::SnapshotElement> ModuleDepository::snapshot(){
+void ModuleDepository::snapshot(std::vector<ModuleDepository::SnapshotElement> &ret){
 	PROFILE_ME;
 
-	std::vector<SnapshotElement> ret;
-	{
-		const RecursiveMutex::UniqueLock lock(g_mutex);
-		ret.reserve(g_module_map.size());
-		for(AUTO(it, g_module_map.begin()); it != g_module_map.end(); ++it){
-			SnapshotElement elem = { };
-			elem.dl_handle = it->module->get_dl_handle();
-			elem.base_address = it->module->get_base_address();
-			elem.real_path = it->module->get_real_path();
-			ret.push_back(STD_MOVE(elem));
-		}
+	const RecursiveMutex::UniqueLock lock(g_mutex);
+	ret.reserve(ret.size() + g_module_map.size());
+	for(AUTO(it, g_module_map.begin()); it != g_module_map.end(); ++it){
+		SnapshotElement elem = { };
+		elem.dl_handle = it->module->get_dl_handle();
+		elem.base_address = it->module->get_base_address();
+		elem.real_path = it->module->get_real_path();
+		ret.push_back(STD_MOVE(elem));
 	}
-	return ret;
 }
 
 }
