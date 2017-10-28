@@ -118,27 +118,24 @@ bool LowLevelClient::send(OpCode opcode, StreamBuffer payload, bool masked){
 	return Writer::put_message(opcode, masked, STD_MOVE(payload));
 }
 
-bool LowLevelClient::shutdown(StatusCode status_code, const char *reason) NOEXCEPT {
+bool LowLevelClient::shutdown(StatusCode status_code, const char *reason) NOEXCEPT
+try {
 	PROFILE_ME;
 
-	const AUTO(parent, get_parent());
-	if(!parent){
+	if(has_been_shutdown_write()){
 		return false;
 	}
-
-	try {
-		Writer::put_close_message(status_code, true, StreamBuffer(reason));
-		parent->shutdown_read();
-		return parent->shutdown_write();
-	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
-		parent->force_shutdown();
-		return false;
-	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown.");
-		parent->force_shutdown();
-		return false;
-	}
+	Writer::put_close_message(status_code, true, StreamBuffer(reason));
+	shutdown_read();
+	return shutdown_write();
+} catch(std::exception &e){
+	LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+	force_shutdown();
+	return false;
+} catch(...){
+	LOG_POSEIDON_ERROR("Unknown exception thrown.");
+	force_shutdown();
+	return false;
 }
 
 }

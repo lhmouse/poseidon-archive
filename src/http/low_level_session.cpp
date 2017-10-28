@@ -170,6 +170,9 @@ bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, Move<Opt
 try {
 	PROFILE_ME;
 
+	if(has_been_shutdown_write()){
+		return false;
+	}
 	AUTO(pair, make_default_response(status_code, STD_MOVE(headers)));
 	pair.first.headers.set(sslit("Connection"), "Close");
 	ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
