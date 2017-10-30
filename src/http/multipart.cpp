@@ -18,6 +18,24 @@ namespace {
 	CONSTEXPR const unsigned BOUNDARY_LEN     = 60;
 
 	const Http::MultipartElement g_empty_multipart_element;
+
+	inline bool try_pop(std::string &str, char ch){
+		if(str.empty()){
+			return false;
+		}
+#ifdef POSEIDON_CXX11
+		if(str.back() != ch){
+			return false;
+		}
+		str.pop_back();
+#else
+		if(*str.rbegin() != ch){
+			return false;
+		}
+		str.erase(str.end() - 1);
+#endif
+		return true;
+	}
 }
 
 const MultipartElement &empty_multipart_element() NOEXCEPT {
@@ -145,17 +163,21 @@ void Multipart::parse(std::istream &is){
 			queue.erase(queue.end() - static_cast<std::ptrdiff_t>(window_size), queue.end());
 
 			MultipartElement elem;
-			Buffer_istream queue_is;
-			queue_is.set_buffer(StreamBuffer(queue));
 			std::string line;
-			while(std::getline(queue_is, line)){
-				if(!line.empty() && (*line.rbegin() == '\r')){
-					line.erase(line.end() - 1);
+			for(;;){
+				AUTO(pos, queue.find('\n'));
+				if(pos == std::string::npos){
+					line = STD_MOVE(queue);
+					queue.clear();
+				} else {
+					line = queue.substr(0, pos);
+					queue.erase(0, pos + 1);
 				}
+				try_pop(line, '\r');
 				if(line.empty()){
 					break;
 				}
-				AUTO(pos, line.find(':'));
+				pos = line.find(':');
 				if(pos == std::string::npos){
 					LOG_POSEIDON_WARNING("Invalid HTTP header: ", line);
 					DEBUG_THROW(ProtocolException, sslit("Invalid HTTP header"), -1);
@@ -165,14 +187,10 @@ void Multipart::parse(std::istream &is){
 				std::string value(trim(STD_MOVE(line)));
 				elem.headers.set(STD_MOVE(key), STD_MOVE(value));
 			}
-			AUTO(entity, STD_MOVE_IDN(queue_is.get_buffer()));
-			if(entity.back() == '\n'){
-				entity.unput();
-				if(entity.back() == '\r'){
-					entity.unput();
-				}
+			if(try_pop(queue, '\n')){
+				try_pop(queue, '\r');
 			}
-			elem.entity = STD_MOVE(entity);
+			elem.entity = StreamBuffer(queue);
 			elements.push_back(STD_MOVE(elem));
 
 			queue.clear();
