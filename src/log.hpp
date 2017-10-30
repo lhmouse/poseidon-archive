@@ -30,7 +30,7 @@ public:
 	static boost::uint64_t set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT;
 
 	static bool check_mask(boost::uint64_t mask) NOEXCEPT {
-		return (mask & SP_MAJOR) || ((mask & ~get_mask()) == 0);
+		return (mask & ~get_mask() & (-(mask & SP_MAJOR) >> 56)) == 0;
 	}
 
 	static bool initialize_mask_from_config();
