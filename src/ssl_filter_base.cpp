@@ -20,30 +20,26 @@ namespace {
 			LOG_POSEIDON_WARNING("SSL error: ", str);
 		}
 	}
-	void set_errno_by_ssl_ret(::SSL *ssl, int ret){
-		const int err = ::SSL_get_error(ssl, ret);
-		LOG_POSEIDON_TRACE("SSL ret = ", ret, ", error = ", err);
+	int get_errno_from_ssl_ret(::SSL *ssl, int ssl_ret){
+		const int err = ::SSL_get_error(ssl, ssl_ret);
+		LOG_POSEIDON_TRACE("SSL error: ssl_ret = ", ssl_ret, ", err = ", err);
 		switch(err){
 		case SSL_ERROR_NONE:
 		case SSL_ERROR_ZERO_RETURN:
-			errno = 0;
-			break;
+			return 0;
 		case SSL_ERROR_WANT_READ:
 		case SSL_ERROR_WANT_WRITE:
 		case SSL_ERROR_WANT_CONNECT:
 		case SSL_ERROR_WANT_ACCEPT:
-			errno = EWOULDBLOCK;
-			break;
+			return EWOULDBLOCK;
 		case SSL_ERROR_SYSCALL:
-			break;
+			return EPIPE;
 		case SSL_ERROR_SSL:
 			dump_error_queue();
-			errno = EPERM;
-			break;
+			return EPERM;
 		default:
-			LOG_POSEIDON_ERROR("Unknown SSL error: ", err);
-			errno = EPERM;
-			break;
+			LOG_POSEIDON_ERROR("Unknown SSL error: ", ssl_ret);
+			return EPERM;
 		}
 	}
 }
@@ -59,44 +55,53 @@ SslFilterBase::~SslFilterBase(){ }
 
 long SslFilterBase::recv(void *data, unsigned long size){
 	const Mutex::UniqueLock lock(m_mutex);
-	dump_error_queue();
-	int ret;
-	ret = ::SSL_read(m_ssl.get(), data, size);
-	if(::SSL_get_shutdown(m_ssl.get()) & SSL_RECEIVED_SHUTDOWN){
-		::shutdown(::SSL_get_rfd(m_ssl.get()), SHUT_RD);
+	long bytes_read = ::SSL_read(m_ssl.get(), data, size);
+	if(bytes_read <= 0){
+		if(::SSL_get_shutdown(m_ssl.get()) & SSL_RECEIVED_SHUTDOWN){
+			::shutdown(::SSL_get_rfd(m_ssl.get()), SHUT_RD);
+		}
 	}
-	if(ret < 0){
-		set_errno_by_ssl_ret(m_ssl.get(), ret);
+	if(bytes_read < 0){
+		const int err = get_errno_from_ssl_ret(m_ssl.get(), bytes_read);
+		if(err == 0){
+			bytes_read = 0;
+		}
+		errno = err;
 	}
-	return ret;
+	return bytes_read;
 }
 long SslFilterBase::send(const void *data, unsigned long size){
 	const Mutex::UniqueLock lock(m_mutex);
-	dump_error_queue();
-	int ret;
-	if(::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN){
-		ret = ::SSL_shutdown(m_ssl.get());
-		if(ret == 1){
-			::shutdown(::SSL_get_wfd(m_ssl.get()), SHUT_WR);
+	long bytes_written = ::SSL_write(m_ssl.get(), data, size);
+	if(bytes_written <= 0){
+		if(::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN){
+			const int status = ::SSL_shutdown(m_ssl.get());
+			if(status == 1){
+				::shutdown(::SSL_get_wfd(m_ssl.get()), SHUT_WR);
+			}
+			if(status < 0){
+				LOG_POSEIDON_WARNING("::SSL_shutdown() failed: status = ", status);
+			}
 		}
-		ret = 0;
-	} else {
-		ret = ::SSL_write(m_ssl.get(), data, size);
 	}
-	if(ret < 0){
-		set_errno_by_ssl_ret(m_ssl.get(), ret);
+	if(bytes_written < 0){
+		const int err = get_errno_from_ssl_ret(m_ssl.get(), bytes_written);
+		if(err == 0){
+			bytes_written = 0;
+		}
+		errno = err;
 	}
-	return ret;
+	return bytes_written;
 }
 void SslFilterBase::send_fin() NOEXCEPT {
 	const Mutex::UniqueLock lock(m_mutex);
-	dump_error_queue();
-	int ret = ::SSL_shutdown(m_ssl.get());
-	if(ret == 1){
+	const int status = ::SSL_shutdown(m_ssl.get());
+	if(status == 1){
 		::shutdown(::SSL_get_wfd(m_ssl.get()), SHUT_WR);
 	}
-	if(ret < 0){
-		set_errno_by_ssl_ret(m_ssl.get(), ret);
+	if(status < 0){
+		const int err = get_errno_from_ssl_ret(m_ssl.get(), status);
+		errno = err;
 	}
 }
 
