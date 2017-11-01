@@ -396,6 +396,7 @@ void EpollDaemon::snapshot(std::vector<EpollDaemon::SnapshotElement> &ret){
 		elem.remote_info = socket->get_remote_info();
 		elem.local_info = socket->get_local_info();
 		elem.creation_time = socket->get_creation_time();
+		elem.listening = socket->is_listening();
 		elem.readable = it->readable;
 		elem.writeable = it->writeable;
 		ret.push_back(STD_MOVE(elem));

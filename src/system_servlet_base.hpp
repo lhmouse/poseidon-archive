@@ -17,9 +17,8 @@ public:
 	virtual ~SystemServletBase();
 
 public:
-	virtual const char *get_handler_uri() const = 0;
-	virtual Poseidon::JsonObject handle_http_get() const = 0;
-	virtual Poseidon::JsonObject handle_http_post(Poseidon::JsonObject params) const = 0;
+	virtual const char *get_uri() const = 0;
+	virtual void handle(JsonObject &response, JsonObject request) const = 0;
 };
 
 }

@@ -19,6 +19,7 @@ public:
 		IpPort remote_info;
 		IpPort local_info;
 		boost::uint64_t creation_time;
+		bool listening;
 		bool readable;
 		bool writeable;
 	};

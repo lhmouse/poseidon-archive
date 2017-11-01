@@ -41,12 +41,12 @@ namespace {
 
 	boost::shared_ptr<SystemSocketServer> g_server;
 
-	struct uriComparator {
+	struct UriComparator {
 		bool operator()(const char *lhs, const char *rhs) const NOEXCEPT {
 			return ::strcasecmp(lhs, rhs) < 0;
 		}
 	};
-	typedef boost::container::flat_map<const char *, boost::weak_ptr<const SystemServletBase> > ServletMap;
+	typedef boost::container::flat_map<const char *, boost::weak_ptr<const SystemServletBase>, UriComparator> ServletMap;
 
 	Mutex g_mutex;
 	ServletMap g_servlet_map;
@@ -61,9 +61,13 @@ void SystemServer::start(){
 	const AUTO(pkey, MainConfig::get<std::string>("system_http_private_key"));
 	const AUTO(relm, MainConfig::get<std::string>("system_http_auth_realm", "Poseidon Test Server"));
 	const AUTO(auth, MainConfig::get_all<std::string>("system_http_auth_user_pass"));
-	const AUTO(server, boost::make_shared<SystemSocketServer>(IpPort(bind.c_str(), port), cert.c_str(), pkey.c_str(), Http::create_authentication_context(relm, auth)));
-	EpollDaemon::add_socket(server, false);
-	g_server = server;
+	if(bind.empty()){
+		LOG_POSEIDON_INFO("System server is disabled.");
+	} else {
+		const AUTO(server, boost::make_shared<SystemSocketServer>(IpPort(bind.c_str(), port), cert.c_str(), pkey.c_str(), Http::create_authentication_context(relm, auth)));
+		EpollDaemon::add_socket(server, false);
+		g_server = server;
+	}
 }
 void SystemServer::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping system server...");
@@ -105,13 +109,18 @@ boost::shared_ptr<const SystemServletBase> SystemServer::register_servlet(boost:
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
-	const char *const uri = servlet->get_handler_uri();
-	LOG_POSEIDON_INFO("Registering system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
+	const char *const uri = servlet->get_uri();
+	if(uri[0] != '/'){
+		LOG_POSEIDON_ERROR("System servlet URI must begin with a slash: ", uri);
+		DEBUG_THROW(Exception, sslit("System servlet URI must begin with a slash"));
+	}
+	LOG_POSEIDON_DEBUG("Registering system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	const AUTO(pair, g_servlet_map.emplace(uri, servlet));
 	if(!pair.second){
 		LOG_POSEIDON_ERROR("Duplicate system servlet: ", uri);
 		DEBUG_THROW(Exception, sslit("Duplicate system servlet"));
 	}
+	LOG_POSEIDON_INFO("Registered system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	return STD_MOVE_IDN(servlet);
 }
 

@@ -64,10 +64,6 @@ try {
 } catch(...){
 	//
 }
-void ProfileDepository::clear() NOEXCEPT {
-	const Mutex::UniqueLock lock(g_mutex);
-	g_profile.clear();
-}
 
 void ProfileDepository::snapshot(std::vector<ProfileDepository::SnapshotElement> &ret){
 	Profiler::accumulate_all_in_thread();
@@ -84,6 +80,10 @@ void ProfileDepository::snapshot(std::vector<ProfileDepository::SnapshotElement>
 		elem.exclusive = it->second.exclusive;
 		ret.push_back(STD_MOVE(elem));
 	}
+}
+void ProfileDepository::clear() NOEXCEPT {
+	const Mutex::UniqueLock lock(g_mutex);
+	g_profile.clear();
 }
 
 }
