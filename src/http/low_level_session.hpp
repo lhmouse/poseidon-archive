@@ -64,7 +64,7 @@ public:
 
 	virtual bool send_chunked_header(ResponseHeaders response_headers);
 	virtual bool send_chunk(StreamBuffer entity);
-	virtual bool send_chunked_trailer(OptionalMap headers);
+	virtual bool send_chunked_trailer(OptionalMap headers = OptionalMap());
 
 	virtual bool send_default(StatusCode status_code, OptionalMap headers = OptionalMap());
 	virtual bool send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers = OptionalMap()) NOEXCEPT;
