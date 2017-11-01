@@ -26,6 +26,13 @@ namespace {
 		{ "TRACE", '4', 1 },    // 亮蓝
 	};
 
+	class Invalid_log_masked_levels : public std::exception {
+	public:
+		const char *what() const NOEXCEPT {
+			return "Invalid log_masked_levels config string";
+		}
+	};
+
 	volatile boost::uint64_t g_mask = (boost::uint64_t)-1;
 	// 不要使用 Mutex 对象。如果在其他静态对象的构造函数中输出日志，这个对象可能还没构造。
 	::pthread_mutex_t g_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
@@ -69,7 +76,7 @@ bool Logger::initialize_mask_from_config(){
 		case '-':
 			break;
 		default:
-			throw std::invalid_argument("Invalid log_masked_levels config string");
+			throw Invalid_log_masked_levels();
 		}
 	}
 	set_mask((boost::uint64_t)-1, new_mask);
