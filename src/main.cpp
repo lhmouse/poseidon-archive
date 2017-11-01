@@ -14,7 +14,7 @@
 #include "singletons/mysql_daemon.hpp"
 #include "singletons/mongodb_daemon.hpp"
 #include "singletons/epoll_daemon.hpp"
-#include "singletons/system_http_server.hpp"
+#include "singletons/system_server.hpp"
 #include "singletons/job_dispatcher.hpp"
 #include "singletons/module_depository.hpp"
 #include "singletons/event_dispatcher.hpp"
@@ -91,7 +91,7 @@ namespace {
 				START(TimerDaemon);
 				START(EpollDaemon);
 				START(EventDispatcher);
-				START(SystemHttpServer);
+				START(SystemServer);
 
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for daemon initialization to complete...");
 				::timespec req;

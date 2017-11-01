@@ -49,6 +49,7 @@ pkginclude_HEADERS = \
 	src/ssl_factories.hpp	\
 	src/job_base.hpp	\
 	src/async_job.hpp	\
+	src/system_servlet_base.hpp	\
 	src/udp_server_base.hpp	\
 	src/stream_buffer.hpp	\
 	src/buffer_streams.hpp	\
@@ -79,6 +80,7 @@ pkginclude_HEADERS = \
 	src/recursive_mutex.hpp	\
 	src/condition_variable.hpp	\
 	src/job_promise.hpp	\
+	src/system_session.hpp	\
 	src/zlib.hpp
 
 pkginclude_singletonsdir = $(pkgincludedir)/singletons
@@ -87,7 +89,7 @@ pkginclude_singletons_HEADERS = \
 	src/singletons/timer_daemon.hpp	\
 	src/singletons/main_config.hpp	\
 	src/singletons/epoll_daemon.hpp	\
-	src/singletons/system_http_server.hpp	\
+	src/singletons/system_server.hpp	\
 	src/singletons/module_depository.hpp	\
 	src/singletons/mysql_daemon.hpp	\
 	src/singletons/mongodb_daemon.hpp	\
@@ -197,6 +199,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/csv_document.cpp	\
 	src/job_base.cpp	\
 	src/async_job.cpp	\
+	src/system_servlet_base.cpp	\
 	src/optional_map.cpp	\
 	src/ssl_raii.cpp	\
 	src/ssl_filter_base.cpp	\
@@ -226,6 +229,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/recursive_mutex.cpp	\
 	src/condition_variable.cpp	\
 	src/job_promise.cpp	\
+	src/system_session.cpp	\
 	src/zlib.cpp	\
 	src/singletons/main_config.cpp	\
 	src/singletons/job_dispatcher.cpp	\
@@ -238,7 +242,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/singletons/event_dispatcher.cpp	\
 	src/singletons/filesystem_daemon.cpp	\
 	src/singletons/profile_depository.cpp	\
-	src/singletons/system_http_server.cpp	\
+	src/singletons/system_server.cpp	\
 	src/cbpp/reader.cpp	\
 	src/cbpp/writer.cpp	\
 	src/cbpp/message_base.cpp	\
@@ -285,7 +289,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/mongodb/bson_builder.cpp
 
 lib_libposeidon_main_la_LDFLAGS = \
-	-no-undefined -version-info 8:0:0
+	-no-undefined -version-info 9:0:0
 
 sysconf_DATA =
 
