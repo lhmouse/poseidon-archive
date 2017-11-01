@@ -45,7 +45,7 @@ SocketBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 }
 
 SocketBase::SocketBase(Move<UniqueFile> socket)
-	: m_socket(STD_MOVE(socket)), m_creation_time(get_fast_mono_clock())
+	: m_socket(STD_MOVE(socket)), m_creation_time(get_utc_time())
 	, m_shutdown_read(false), m_shutdown_write(false), m_really_shutdown_write(false)
 	, m_throttled(false), m_timed_out(false), m_delayed_shutdown_guard_count(0)
 {
@@ -67,6 +67,17 @@ bool SocketBase::should_really_shutdown_write() const NOEXCEPT {
 }
 void SocketBase::set_timed_out() NOEXCEPT {
 	atomic_store(m_timed_out, true, ATOMIC_RELEASE);
+}
+
+bool SocketBase::is_listening() const {
+	PROFILE_ME;
+
+	int val;
+	::socklen_t len = sizeof(val);
+	if(::getsockopt(get_fd(), SOL_SOCKET, SO_ACCEPTCONN, &val, &len) != 0){
+		DEBUG_THROW(SystemException);
+	}
+	return (len >= sizeof(int)) && (val != 0);
 }
 
 bool SocketBase::has_been_shutdown_read() const NOEXCEPT {
@@ -119,7 +130,10 @@ void SocketBase::force_shutdown() NOEXCEPT {
 		::linger lng;
 		lng.l_onoff = 1;
 		lng.l_linger = 0;
-		::setsockopt(get_fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
+		if(::setsockopt(get_fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng)) != 0){
+			const int err_code = errno;
+			LOG_POSEIDON_WARNING("::setsockopt() failed, errno was ", err_code);
+		}
 	}
 	::shutdown(get_fd(), SHUT_RDWR);
 }
@@ -141,12 +155,16 @@ try {
 
 	const Mutex::UniqueLock lock(m_info_mutex);
 	if(m_remote_info.port() == 0){
-		::sockaddr_storage sa;
-		::socklen_t salen = sizeof(sa);
-		if(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
-			DEBUG_THROW(SystemException);
+		if(is_listening()){
+			m_remote_info = listening_ip_port();
+		} else {
+			::sockaddr_storage sa;
+			::socklen_t salen = sizeof(sa);
+			if(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
+				DEBUG_THROW(SystemException);
+			}
+			m_remote_info = SockAddr(&sa, salen);
 		}
-		m_remote_info = SockAddr(&sa, salen);
 	}
 	return m_remote_info;
 } catch(std::exception &e){

@@ -15,7 +15,7 @@
 namespace Poseidon {
 
 IpPort::IpPort(){
-	std::memcpy(m_ip, "<unknown>", 10);
+	std::strcpy(m_ip, "???");
 	m_port = 0;
 }
 IpPort::IpPort(const char *ip_str, unsigned port_num){
@@ -63,11 +63,23 @@ IpPort &IpPort::operator=(const IpPort &rhs) NOEXCEPT {
 }
 
 namespace {
-	const IpPort g_unknown_ip_port;
+	const IpPort g_unknown_ip_port("<unknown>", 0);
+	const IpPort g_listening_ip_port("<listening>", 0);
 }
 
 const IpPort &unknown_ip_port() NOEXCEPT {
 	return g_unknown_ip_port;
+}
+const IpPort &listening_ip_port() NOEXCEPT {
+	return g_listening_ip_port;
+}
+
+bool operator<(const IpPort &lhs, const IpPort &rhs) NOEXCEPT {
+	int cmp = std::strcmp(lhs.ip(), rhs.ip());
+	if(cmp != 0){
+		return cmp < 0;
+	}
+	return lhs.port() < rhs.port();
 }
 
 std::ostream &operator<<(std::ostream &os, const IpPort &rhs){

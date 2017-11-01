@@ -59,6 +59,8 @@ public:
 		return m_creation_time;
 	}
 
+	bool is_listening() const;
+
 	virtual bool has_been_shutdown_read() const NOEXCEPT;
 	virtual bool has_been_shutdown_write() const NOEXCEPT;
 	virtual bool shutdown_read() NOEXCEPT;

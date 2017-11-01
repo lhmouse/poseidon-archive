@@ -33,6 +33,9 @@ public:
 };
 
 extern const IpPort &unknown_ip_port() NOEXCEPT;
+extern const IpPort &listening_ip_port() NOEXCEPT;
+
+extern bool operator<(const IpPort &lhs, const IpPort &rhs) NOEXCEPT;
 
 extern std::ostream &operator<<(std::ostream &os, const IpPort &rhs);
 
