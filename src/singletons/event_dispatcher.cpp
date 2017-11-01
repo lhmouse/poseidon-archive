@@ -64,22 +64,6 @@ namespace {
 			listener->get_callback()(m_event);
 		}
 	};
-
-	void get_listeners(std::vector<boost::shared_ptr<const EventListener> > &ret, const std::type_info *type_info){
-		PROFILE_ME;
-
-		const Mutex::UniqueLock lock(g_mutex);
-		const AUTO(range, g_listeners.equal_range(type_info));
-		ret.reserve(ret.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
-		bool expired;
-		for(AUTO(it, range.first); it != range.second; expired ? (it = g_listeners.erase(it)) : ++it){
-			AUTO(listener, it->second.lock());
-			expired = !listener;
-			if(listener){
-				ret.push_back(STD_MOVE_IDN(listener));
-			}
-		}
-	}
 }
 
 void EventDispatcher::start(){
@@ -91,6 +75,22 @@ void EventDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping event dispatcher...");
 
 	g_listeners.clear();
+}
+
+void EventDispatcher::get_listeners(std::vector<boost::shared_ptr<const EventListener> > &ret, const std::type_info &type_info){
+	PROFILE_ME;
+
+	const Mutex::UniqueLock lock(g_mutex);
+	const AUTO(range, g_listeners.equal_range(&type_info));
+	ret.reserve(ret.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
+	bool expired;
+	for(AUTO(it, range.first); it != range.second; expired ? (it = g_listeners.erase(it)) : ++it){
+		AUTO(listener, it->second.lock());
+		expired = !listener;
+		if(listener){
+			ret.push_back(STD_MOVE_IDN(listener));
+		}
+	}
 }
 
 boost::shared_ptr<const EventListener> EventDispatcher::register_listener_explicit(const std::type_info &type_info, EventListenerCallback callback){
@@ -108,7 +108,7 @@ void EventDispatcher::sync_raise(const boost::shared_ptr<EventBase> &event){
 	PROFILE_ME;
 
 	std::vector<boost::shared_ptr<const EventListener> > listeners;
-	get_listeners(listeners, &typeid(*event));
+	get_listeners(listeners, typeid(*event));
 	for(AUTO(it, listeners.begin()); it != listeners.end(); ++it){
 		AUTO_REF(listener, *it);
 		listener->get_callback()(event);
@@ -118,7 +118,7 @@ void EventDispatcher::async_raise(const boost::shared_ptr<EventBase> &event, con
 	PROFILE_ME;
 
 	std::vector<boost::shared_ptr<const EventListener> > listeners;
-	get_listeners(listeners, &typeid(*event));
+	get_listeners(listeners, typeid(*event));
 	for(AUTO(it, listeners.begin()); it != listeners.end(); ++it){
 		AUTO_REF(listener, *it);
 		JobDispatcher::enqueue(boost::make_shared<EventJob>(STD_MOVE_IDN(listener), event), withdrawn);
