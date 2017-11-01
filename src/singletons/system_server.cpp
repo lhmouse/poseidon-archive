@@ -55,8 +55,8 @@ namespace {
 void SystemServer::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting system server...");
 
-	const AUTO(bind, MainConfig::get<std::string>("system_http_bind", "127.0.0.1"));
-	const AUTO(port, MainConfig::get<unsigned>("system_http_port", 8901));
+	const AUTO(bind, MainConfig::get<std::string>("system_http_bind"));
+	const AUTO(port, MainConfig::get<unsigned>("system_http_port"));
 	const AUTO(cert, MainConfig::get<std::string>("system_http_certificate"));
 	const AUTO(pkey, MainConfig::get<std::string>("system_http_private_key"));
 	const AUTO(relm, MainConfig::get<std::string>("system_http_auth_realm", "Poseidon Test Server"));
