@@ -20,7 +20,10 @@ namespace {
 
 		std::string ret;
 		char ch;
-		if(!(is >>ch) || (ch != '\"')){
+		if(!(is >>ch)){
+			return ret;
+		}
+		if(ch != '\"'){
 			LOG_POSEIDON_WARNING("String open expected");
 			is.setstate(std::ios::failbit);
 			return ret;
@@ -159,7 +162,10 @@ namespace {
 
 		JsonObject ret;
 		char ch;
-		if(!(is >>ch) || (ch != '{')){
+		if(!(is >>ch)){
+			return ret;
+		}
+		if(ch != '{'){
 			LOG_POSEIDON_WARNING("Object open expected");
 			is.setstate(std::ios::failbit);
 			return ret;
@@ -178,7 +184,10 @@ namespace {
 			}
 			is.putback(ch);
 			std::string name = accept_string(is);
-			if(!(is >>ch) || (ch != ':')){
+			if(!(is >>ch)){
+				return ret;
+			}
+			if(ch != ':'){
 				LOG_POSEIDON_WARNING("Colon expected");
 				is.setstate(std::ios::failbit);
 				return ret;
@@ -192,7 +201,10 @@ namespace {
 
 		JsonArray ret;
 		char ch;
-		if(!(is >>ch) || (ch != '[')){
+		if(!(is >>ch)){
+			return ret;
+		}
+		if(ch != '['){
 			LOG_POSEIDON_WARNING("Array open expected");
 			is.setstate(std::ios::failbit);
 			return ret;
@@ -218,7 +230,10 @@ namespace {
 		PROFILE_ME;
 
 		char ch;
-		if(!(is >>ch) || ((ch != 'f') && (ch != 't'))){
+		if(!(is >>ch)){
+			return false;
+		}
+		if((ch != 'f') && (ch != 't')){
 			LOG_POSEIDON_WARNING("Boolean expected");
 			is.setstate(std::ios::failbit);
 			return false;
@@ -238,7 +253,10 @@ namespace {
 		PROFILE_ME;
 
 		char ch;
-		if(!(is >>ch) || (ch != 'n')){
+		if(!(is >>ch)){
+			return NULLPTR;
+		}
+		if(ch != 'n'){
 			LOG_POSEIDON_WARNING("Boolean expected");
 			is.setstate(std::ios::failbit);
 			return NULLPTR;
