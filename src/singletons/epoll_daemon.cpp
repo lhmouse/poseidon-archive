@@ -106,13 +106,13 @@ namespace {
 				g_socket_map.erase<0>(it);
 				continue;
 			}
-			if(events[i].events & EPOLLIN){
+			if((events[i].events & EPOLLIN) && !socket->has_been_shutdown_read()){
 				if(!(events[i].events & EPOLLERR)){
 					it->readable = true;
 				}
 				g_socket_map.set_key<0, 1>(it, now);
 			}
-			if(events[i].events & EPOLLOUT){
+			if((events[i].events & EPOLLOUT) && !socket->has_been_shutdown_write()){
 				if(!(events[i].events & EPOLLERR)){
 					it->writeable = true;
 				}
