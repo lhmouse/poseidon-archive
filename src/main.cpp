@@ -256,7 +256,11 @@ namespace {
 					if(*eptr != 0){
 						throw std::bad_cast(); // XXX
 					}
-					address_to_unload = reinterpret_cast<void *>(boost::numeric_cast<boost::uintptr_t>(val));
+#ifdef POSEIDON_CXX11
+					address_to_unload = reinterpret_cast<void *>(boost::numeric_cast<std::uintptr_t>(val));
+#else
+					address_to_unload = reinterpret_cast<void *>(val);
+#endif
 					to_unload = true;
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
