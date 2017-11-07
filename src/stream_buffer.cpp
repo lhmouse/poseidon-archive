@@ -66,20 +66,7 @@ StreamBuffer::StreamBuffer(const std::basic_string<unsigned char> &str)
 StreamBuffer::StreamBuffer(const StreamBuffer &rhs)
 	: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
 {
-	AUTO(chunk, rhs.m_first);
-	if(!chunk){
-		return;
-	}
-	const AUTO(integral, ChunkHeader::create(rhs.m_size, NULLPTR, NULLPTR, false));
-	while(chunk){
-		const std::size_t avail = chunk->end - chunk->begin;
-		std::memcpy(integral->data + integral->end, chunk->data + chunk->begin, avail);
-		integral->end += avail;
-		chunk = chunk->next;
-	}
-	m_first = integral;
-	m_last = integral;
-	m_size = rhs.m_size;
+	put(rhs);
 }
 StreamBuffer::~StreamBuffer(){
 	AUTO(chunk, m_first);
@@ -350,6 +337,34 @@ void StreamBuffer::put(const void *data, std::size_t count){
 		m_last = next;
 	}
 	std::memcpy(chunk->data + chunk->end, data, count);
+	chunk->end += count;
+	m_size += count;
+}
+void StreamBuffer::put(const StreamBuffer &data){
+	const AUTO(count, data.size());
+	AUTO(chunk, m_last);
+	AUTO(prev, chunk);
+	if(chunk && (chunk->capacity - chunk->end < count)){
+		const std::size_t avail = chunk->end - chunk->begin;
+		if(chunk->capacity - avail >= count){
+			std::memmove(chunk->data, chunk->data + chunk->begin, avail);
+			chunk->begin = 0;
+			chunk->end = avail;
+		} else {
+			chunk = NULLPTR;
+		}
+	}
+	if(!chunk){
+		const AUTO(next, ChunkHeader::create(count, prev, NULLPTR, false));
+		(prev ? prev->next : m_first) = next;
+		chunk = next;
+		m_last = next;
+	}
+	for(AUTO(src, data.m_first); src; src = src->next){
+		const std::size_t avail = src->end - src->begin;
+		std::memcpy(chunk->data + chunk->end, src->data + src->begin, avail);
+		chunk->end += avail;
+	}
 	chunk->end += count;
 	m_size += count;
 }

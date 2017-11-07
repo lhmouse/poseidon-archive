@@ -92,6 +92,7 @@ public:
 	std::size_t discard(std::size_t count) NOEXCEPT;
 	void put(unsigned char data, std::size_t count);
 	void put(const void *data, std::size_t count);
+	void put(const StreamBuffer &data);
 	void put(const char *str){
 		put(str, std::strlen(str));
 	}
