@@ -18,7 +18,8 @@ public:
 
 public:
 	virtual const char *get_uri() const = 0;
-	virtual void handle(JsonObject &response, JsonObject request) const = 0;
+	virtual void handle_get(JsonObject &response) const = 0;
+	virtual void handle_post(JsonObject &response, JsonObject request) const = 0;
 };
 
 }

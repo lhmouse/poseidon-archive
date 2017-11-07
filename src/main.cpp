@@ -70,13 +70,14 @@ namespace {
 		const char *get_uri() const FINAL {
 			return "/poseidon/help";
 		}
-		void handle(JsonObject &resp, JsonObject /*req*/) const FINAL {
-			resp.set(sslit("_description"), "Retreive general information of this process.");
+		void handle_get(JsonObject &resp) const FINAL {
+			resp.set(sslit("description"), "Retreive general information of this process.");
 			static const char *const PARAM_INFO[][2] = {
 				{ NULLPTR }
 			};
-			resp.set(sslit("_parameters"), make_help(PARAM_INFO));
-
+			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+		}
+		void handle_post(JsonObject &resp, JsonObject /*req*/) const FINAL {
 			// .servlets = list of servlets
 			std::vector<boost::shared_ptr<const SystemServletBase> > servlets;
 			SystemServer::get_all_servlets(servlets);
@@ -93,8 +94,8 @@ namespace {
 		const char *get_uri() const FINAL {
 			return "/poseidon/logger";
 		}
-		void handle(JsonObject &resp, JsonObject req) const FINAL {
-			resp.set(sslit("_description"), "Enable or disable specific levels of logs.");
+		void handle_get(JsonObject &resp) const FINAL {
+			resp.set(sslit("description"), "Enable or disable specific levels of logs.");
 			static const char *const PARAM_INFO[][2] = {
 				{ "mask_to_disable",  "Log levels corresponding to bit ones here will be disabled.\n"
 				                      "This parameter shall be a String of digit zeroes and ones.\n"
@@ -104,15 +105,16 @@ namespace {
 				                    "This parameter overrides `mask_to_disable`." },
 				{ NULLPTR }
 			};
-			resp.set(sslit("_parameters"), make_help(PARAM_INFO));
-
+			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+		}
+		void handle_post(JsonObject &resp, JsonObject req) const FINAL {
 			std::bitset<64> mask_to_enable, mask_to_disable;
 			if(req.has("mask_to_enable")){
 				try {
 					mask_to_enable = std::bitset<64>(req.get("mask_to_enable").get<std::string>());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("_error"), "Invalid parameter `mask_to_enable`: It shall be a String of digit zeroes and ones.");
+					resp.set(sslit("error"), "Invalid parameter `mask_to_enable`: It shall be a String of digit zeroes and ones.");
 					return;
 				}
 			}
@@ -121,7 +123,7 @@ namespace {
 					mask_to_disable = std::bitset<64>(req.get("mask_to_disable").get<std::string>());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("_error"), "Invalid parameter `mask_to_disable`: It shall be a String of digit zeroes and ones.");
+					resp.set(sslit("error"), "Invalid parameter `mask_to_disable`: It shall be a String of digit zeroes and ones.");
 					return;
 				}
 			}
@@ -144,13 +146,14 @@ namespace {
 		const char *get_uri() const FINAL {
 			return "/poseidon/network";
 		}
-		void handle(JsonObject &resp, JsonObject /*req*/) const FINAL {
-			resp.set(sslit("_description"), "Retreive information about incoming and outgoing connections in this server process.");
+		void handle_get(JsonObject &resp) const FINAL {
+			resp.set(sslit("description"), "Retreive information about incoming and outgoing connections in this server process.");
 			static const char *const PARAM_INFO[][2] = {
 				{ NULLPTR }
 			};
-			resp.set(sslit("_parameters"), make_help(PARAM_INFO));
-
+			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+		}
+		void handle_post(JsonObject &resp, JsonObject /*req*/) const FINAL {
 			// .sockets = all sockets managed by epoll.
 			std::vector<EpollDaemon::SnapshotElement> snapshot;
 			EpollDaemon::snapshot(snapshot);
@@ -175,21 +178,22 @@ namespace {
 		const char *get_uri() const FINAL {
 			return "/poseidon/profiler";
 		}
-		void handle(JsonObject &resp, JsonObject req) const FINAL {
-			resp.set(sslit("_description"), "View profiling information that has been collected within this process.");
+		void handle_get(JsonObject &resp) const FINAL {
+			resp.set(sslit("description"), "View profiling information that has been collected within this process.");
 			static const char *const PARAM_INFO[][2] = {
 				{ "clear", "If set to `true`, all data will be purged." },
 				{ NULLPTR }
 			};
-			resp.set(sslit("_parameters"), make_help(PARAM_INFO));
-
+			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+		}
+		void handle_post(JsonObject &resp, JsonObject req) const FINAL {
 			bool clear = false;
 			if(req.has("clear")){
 				try {
 					clear = req.get("clear").get<bool>();
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("_error"), "Invalid parameter `clear`: It shall be a Boolean.");
+					resp.set(sslit("error"), "Invalid parameter `clear`: It shall be a Boolean.");
 					return;
 				}
 			}
@@ -221,8 +225,8 @@ namespace {
 		const char *get_uri() const FINAL {
 			return "/poseidon/modules";
 		}
-		void handle(JsonObject &resp, JsonObject req) const FINAL {
-			resp.set(sslit("_description"), "Load or unload modules in the current process.");
+		void handle_get(JsonObject &resp) const FINAL {
+			resp.set(sslit("description"), "Load or unload modules in the current process.");
 			static const char *const PARAM_INFO[][2] = {
 				{ "path_to_load", "The path to a shared object file which will be loaded.\n"
 				                  "This path will be passed to `dlopen()`, hence the normal library search rules apply.\n"
@@ -232,8 +236,9 @@ namespace {
 				                       "This parameter cannot be specified together with `path_to_load`." },
 				{ NULLPTR }
 			};
-			resp.set(sslit("_parameters"), make_help(PARAM_INFO));
-
+			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+		}
+		void handle_post(JsonObject &resp, JsonObject req) const FINAL {
 			bool to_load = false;
 			std::string path_to_load;
 			if(req.has("path_to_load")){
@@ -242,7 +247,7 @@ namespace {
 					to_load = true;
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("_error"), "Invalid parameter `path_to_load`: It shall be a String designating a shared object file to load.");
+					resp.set(sslit("error"), "Invalid parameter `path_to_load`: It shall be a String designating a shared object file to load.");
 					return;
 				}
 			}
@@ -264,13 +269,13 @@ namespace {
 					to_unload = true;
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("_error"), "Invalid parameter `address_to_unload`: It shall be a String representing a number in decimal, or hexadecimal with the prefix `0x`.");
+					resp.set(sslit("error"), "Invalid parameter `address_to_unload`: It shall be a String representing a number in decimal, or hexadecimal with the prefix `0x`.");
 					return;
 				}
 			}
 			if(to_load && to_unload){
 				LOG_POSEIDON_WARNING("`address_to_load` and `path_to_unload` cannot be specified together.");
-				resp.set(sslit("_error"), "`address_to_load` and `path_to_unload` cannot be specified together.");
+				resp.set(sslit("error"), "`address_to_load` and `path_to_unload` cannot be specified together.");
 				return;
 			}
 
@@ -288,7 +293,7 @@ namespace {
 				}
 				if(!what.empty()){
 					LOG_POSEIDON_WARNING("Failed to load module: ", what);
-					resp.set(sslit("_error"), "Failed to load module: " + what);
+					resp.set(sslit("error"), "Failed to load module: " + what);
 					return;
 				}
 			}
@@ -296,7 +301,7 @@ namespace {
 				const bool result = ModuleDepository::unload(address_to_unload);
 				if(!result){
 					LOG_POSEIDON_WARNING("Failed to unload module: 0x", std::hex, address_to_unload);
-					resp.set(sslit("_error"), "Failed to unload module. Maybe it has been unloaded already?");
+					resp.set(sslit("error"), "Failed to unload module. Maybe it has been unloaded already?");
 					return;
 				}
 			}

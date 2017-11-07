@@ -109,7 +109,9 @@ void SystemSession::on_sync_request(Http::RequestHeaders request_headers, Stream
 	case Http::V_HEAD:
 	case Http::V_POST:
 		DEBUG_THROW_ASSERT(m_servlet);
-		if(request_headers.verb == Http::V_POST){
+		if(request_headers.verb != Http::V_POST){
+			// no parameters
+		} else {
 			LOG_POSEIDON_DEBUG("Parsing POST entity as JSON Object: ", request_entity);
 			bis.set_buffer(STD_MOVE(request_entity));
 			if(!(bis >>request)){
@@ -118,7 +120,11 @@ void SystemSession::on_sync_request(Http::RequestHeaders request_headers, Stream
 			}
 		}
 		LOG_POSEIDON_DEBUG("SystemSession request: ", request);
-		m_servlet->handle(response, STD_MOVE(request));
+		if(request_headers.verb != Http::V_POST){
+			m_servlet->handle_get(response);
+		} else {
+			m_servlet->handle_post(response, STD_MOVE(request));
+		}
 		LOG_POSEIDON_DEBUG("SystemSession response: ", response);
 		bos <<response;
 		response_headers.headers.set(sslit("Content-Type"), "application/json");
