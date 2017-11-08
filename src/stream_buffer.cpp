@@ -365,7 +365,6 @@ void StreamBuffer::put(const StreamBuffer &data){
 		std::memcpy(chunk->data + chunk->end, src->data + src->begin, avail);
 		chunk->end += avail;
 	}
-	chunk->end += count;
 	m_size += count;
 }
 
