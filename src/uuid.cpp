@@ -35,16 +35,16 @@ const Uuid &Uuid::max() NOEXCEPT {
 
 Uuid Uuid::random() NOEXCEPT {
 	const AUTO(utc_now, get_utc_time());
-	const AUTO(unique, ((atomic_add(g_auto_inc, 1, ATOMIC_RELAXED) << 16) & 0x3FFFFFFFu) | g_pid);
+	const AUTO(unique, (atomic_add(g_auto_inc, 1, ATOMIC_RELAXED) << 16) | g_pid);
 	union {
 		unsigned char bytes[16];
 		boost::uint16_t u16[8];
 		boost::uint32_t u32[4];
 	} un;
 	store_be(un.u32[0], utc_now >> 12);
-	store_be(un.u16[2], (utc_now << 4) | (unique >> 26));
-	store_be(un.u16[3], (unique >> 14) & 0x0FFFu); // 版本 = 0
-	store_be(un.u16[4], 0xC000u | (unique & 0x3FFFu)); // 变种 = 3
+	store_be(un.u16[2], (utc_now << 4) | ((unique >> 26) & 0x000F));
+	store_be(un.u16[3], 0xE000 | ((unique >> 14) & 0x0FFFu)); // 版本 = 14
+	store_be(un.u16[4], 0xC000 | (unique & 0x3FFF)); // 变种 = 3
 	store_be(un.u16[5], random_uint32());
 	store_be(un.u32[3], random_uint32());
 	return Uuid(un.bytes);
