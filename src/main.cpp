@@ -71,7 +71,7 @@ namespace {
 			return "/poseidon/help";
 		}
 		void handle_get(JsonObject &resp) const FINAL {
-			resp.set(sslit("description"), "Retreive general information of this process.");
+			resp.set(sslit("description"), "Retreive general information about this process.");
 			static const char *const PARAM_INFO[][2] = {
 				{ NULLPTR }
 			};
