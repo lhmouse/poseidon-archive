@@ -53,8 +53,7 @@ void TcpSessionBase::create_shutdown_timer(){
 	if(m_shutdown_timer){
 		return;
 	}
-	m_shutdown_timer = TimerDaemon::register_low_level_timer(1000, 5000,
-		boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
+	m_shutdown_timer = TimerDaemon::register_low_level_timer(1000, 15000, boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
 }
 
 int TcpSessionBase::poll_read_and_process(bool readable){
