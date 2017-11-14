@@ -4,25 +4,12 @@
 #include "precompiled.hpp"
 #include "md5.hpp"
 #include "endian.hpp"
+#include <x86intrin.h>
 
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<boost::uint32_t, 4> MD5_REG_INIT = {{
-		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u }};
-
-	template<unsigned N>
-	inline boost::uint32_t rotl(boost::uint32_t u){
-		boost::uint32_t r = u;
-		__asm__("roll %1, %0 \n" : "+r"(r) : "I"(N));
-		return r;
-	}
-	template<unsigned N>
-	inline boost::uint32_t rotr(boost::uint32_t u){
-		boost::uint32_t r = u;
-		__asm__("rorl %1, %0 \n" : "+r"(r) : "I"(N));
-		return r;
-	}
+	CONSTEXPR const boost::array<boost::uint32_t, 4> MD5_REG_INIT = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u }};
 }
 
 Md5_streambuf::Md5_streambuf()
@@ -43,7 +30,7 @@ void Md5_streambuf::eat_chunk(){
 
 #define MD5_STEP(i_, spec_, a_, b_, c_, d_, k_, r_)	\
 	spec_(i_, a_, b_, c_, d_);	\
-	a_ = b_ + rotl<r_>(a_ + ff + k_ + load_le(ww[gg]));
+	a_ = b_ + __rold(a_ + ff + k_ + load_le(ww[gg]), r_);
 
 #define MD5_SPEC_0(i_, a_, b_, c_, d_)  (ff = d_ ^ (b_ & (c_ ^ d_)), gg = i_)
 #define MD5_SPEC_1(i_, a_, b_, c_, d_)  (ff = c_ ^ (d_ & (b_ ^ c_)), gg = (5 * i_ + 1) % 16)

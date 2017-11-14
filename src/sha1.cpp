@@ -4,25 +4,12 @@
 #include "precompiled.hpp"
 #include "sha1.hpp"
 #include "endian.hpp"
+#include <x86intrin.h>
 
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<boost::uint32_t, 5> SHA1_REG_INIT = {{
-		0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u }};
-
-	template<unsigned N>
-	inline boost::uint32_t rotl(boost::uint32_t u){
-		boost::uint32_t r = u;
-		__asm__("roll %1, %0 \n" : "+r"(r) : "I"(N));
-		return r;
-	}
-	template<unsigned N>
-	inline boost::uint32_t rotr(boost::uint32_t u){
-		boost::uint32_t r = u;
-		__asm__("rorl %1, %0 \n" : "+r"(r) : "I"(N));
-		return r;
-	}
+	CONSTEXPR const boost::array<boost::uint32_t, 5> SHA1_REG_INIT = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u }};
 }
 
 Sha1_streambuf::Sha1_streambuf()
@@ -37,10 +24,10 @@ void Sha1_streambuf::eat_chunk(){
 		ww[i] = load_be(reinterpret_cast<const boost::uint32_t *>(m_chunk.data())[i]);
 	}
 	for(std::size_t i = 16; i < 32; ++i){
-		ww[i] = rotl<1>(ww[i - 3] ^ ww[i - 8] ^ ww[i - 14] ^ ww[i - 16]);
+		ww[i] = __rold(ww[i - 3] ^ ww[i - 8] ^ ww[i - 14] ^ ww[i - 16], 1);
 	}
 	for(std::size_t i = 32; i < 80; ++i){
-		ww[i] = rotl<2>(ww[i - 6] ^ ww[i - 16] ^ ww[i - 28] ^ ww[i - 32]);
+		ww[i] = __rold(ww[i - 6] ^ ww[i - 16] ^ ww[i - 28] ^ ww[i - 32], 2);
 	}
 
 	register boost::uint32_t aa = m_reg[0];
@@ -53,8 +40,8 @@ void Sha1_streambuf::eat_chunk(){
 
 #define SHA1_STEP(i_, spec_, a_, b_, c_, d_, e_)	\
 	spec_(a_, b_, c_, d_, e_);	\
-	e_ += rotl<5>(a_) + ff + kk + ww[i_];	\
-	b_ = rotl<30>(b_);
+	e_ += __rold(a_, 5) + ff + kk + ww[i_];	\
+	b_ = __rold(b_, 30);
 
 #define SHA1_SPEC_0(a_, b_, c_, d_, e_) (ff = d_ ^ (b_ & (c_ ^ d_)), kk = 0x5A827999)
 #define SHA1_SPEC_1(a_, b_, c_, d_, e_) (ff = b_ ^ c_ ^ d_, kk = 0x6ED9EBA1)

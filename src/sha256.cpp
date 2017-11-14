@@ -4,25 +4,12 @@
 #include "precompiled.hpp"
 #include "sha256.hpp"
 #include "endian.hpp"
+#include <x86intrin.h>
 
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<boost::uint32_t, 8> SHA256_REG_INIT = {{
-		0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au, 0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u }};
-
-	template<unsigned N>
-	inline boost::uint32_t rotl(boost::uint32_t u){
-		boost::uint32_t r = u;
-		__asm__("roll %1, %0 \n" : "+r"(r) : "I"(N));
-		return r;
-	}
-	template<unsigned N>
-	inline boost::uint32_t rotr(boost::uint32_t u){
-		boost::uint32_t r = u;
-		__asm__("rorl %1, %0 \n" : "+r"(r) : "I"(N));
-		return r;
-	}
+	CONSTEXPR const boost::array<boost::uint32_t, 8> SHA256_REG_INIT = {{ 0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au, 0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u }};
 }
 
 Sha256_streambuf::Sha256_streambuf()
@@ -37,8 +24,8 @@ void Sha256_streambuf::eat_chunk(){
 		ww[i] = load_be(reinterpret_cast<const boost::uint32_t *>(m_chunk.data())[i]);
 	}
 	for(std::size_t i = 16; i < 64; ++i){
-		const boost::uint32_t s0 = rotr<7>((rotr<11>(ww[i - 15]) ^ ww[i - 15])) ^ (ww[i - 15] >> 3);
-		const boost::uint32_t s1 = rotr<17>((rotr<2>(ww[i - 2]) ^ ww[i - 2])) ^ (ww[i - 2] >> 10);
+		const boost::uint32_t s0 = __rord(__rord(ww[i - 15], 11) ^ ww[i - 15], 7) ^ (ww[i - 15] >> 3);
+		const boost::uint32_t s1 = __rord(__rord(ww[i - 2], 2) ^ ww[i - 2], 17) ^ (ww[i - 2] >> 10);
 		ww[i] = ww[i - 16] + ww[i - 7] + s0 + s1;
 	}
 
@@ -54,10 +41,10 @@ void Sha256_streambuf::eat_chunk(){
 	register boost::uint32_t S0, maj, t2, S1, ch, t1;
 
 #define SHA256_STEP(i_, a_, b_, c_, d_, e_, f_, g_, h_, k_)	\
-	S0 = rotr<2>(rotr<11>(rotr<9>(a_) ^ a_) ^ a_);	\
+	S0 = __rord(__rord(__rord(a_, 9) ^ a_, 11) ^ a_, 2);	\
 	maj = (a_ & b_) | (c_ & (a_ ^ b_));	\
 	t2 = S0 + maj;	\
-	S1 = rotr<6>(rotr<5>(rotr<14>(e_) ^ e_) ^ e_);	\
+	S1 = __rord(__rord(__rord(e_, 14) ^ e_, 5) ^ e_, 6);	\
 	ch = g_ ^ (e_ & (f_ ^ g_));	\
 	t1 = h_ + S1 + ch + k_ + ww[i_];	\
 	d_ += t1;	\
