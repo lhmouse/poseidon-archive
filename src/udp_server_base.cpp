@@ -52,27 +52,23 @@ UdpServerBase::~UdpServerBase(){
 		"Destroyed UDP server on ", get_local_info());
 }
 
-int UdpServerBase::poll_read_and_process(bool readable){
+int UdpServerBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){
 	PROFILE_ME;
 
 	(void)readable;
 
-	std::vector<unsigned char> temp;
 	for(unsigned i = 0; i < 256; ++i){
 		SockAddr sock_addr;
 		StreamBuffer data;
 		try {
 			::sockaddr_storage sa;
 			::socklen_t sa_len = sizeof(sa);
-			temp.resize(65536);
-			::ssize_t result = ::recvfrom(get_fd(), temp.data(), temp.size(), MSG_NOSIGNAL | MSG_DONTWAIT,
-				static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &sa_len);
+			::ssize_t result = ::recvfrom(get_fd(), hint_buffer, hint_capacity, MSG_NOSIGNAL | MSG_DONTWAIT, static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &sa_len);
 			if(result < 0){
 				return errno;
 			}
-			temp.resize(static_cast<std::size_t>(result));
 			sock_addr = SockAddr(&sa, sa_len);
-			data.put(temp.data(), temp.size());
+			data.put(hint_buffer, static_cast<std::size_t>(result));
 			LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", IpPort(sock_addr));
 		} catch(std::exception &e){
 			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
@@ -90,13 +86,12 @@ int UdpServerBase::poll_read_and_process(bool readable){
 	}
 	return 0;
 }
-int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
+int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable){
 	PROFILE_ME;
 
 	(void)write_lock;
 	(void)writeable;
 
-	std::vector<unsigned char> temp;
 	for(unsigned i = 0; i < 256; ++i){
 		SockAddr sock_addr;
 		StreamBuffer data;
@@ -116,17 +111,14 @@ int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 			::sockaddr_storage sa;
 			DEBUG_THROW_ASSERT(sock_addr.size() <= sizeof(sa));
 			::socklen_t sa_len = sock_addr.size();
-			if(data.size() >= 65536){
+			const std::size_t avail = data.peek(hint_buffer, hint_capacity);
+			if(avail < data.size()){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "UDP packet is too large: size = ", data.size());
 		_too_large:
 				on_message_too_large(sock_addr, STD_MOVE(data));
 				continue;
 			}
-			temp.resize(65536);
-			const std::size_t avail = data.peek(temp.data(), temp.size());
-			temp.resize(avail);
-			::ssize_t result = ::sendto(get_fd(), temp.data(), temp.size(), MSG_NOSIGNAL | MSG_DONTWAIT,
-				static_cast< ::sockaddr *>(static_cast<void *>(&sa)), sa_len);
+			::ssize_t result = ::sendto(get_fd(), hint_buffer, avail, MSG_NOSIGNAL | MSG_DONTWAIT, static_cast< ::sockaddr *>(static_cast<void *>(&sa)), sa_len);
 			if(result < 0){
 				if(errno == EMSGSIZE){
 					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "UDP packet is too large: size = ", data.size());

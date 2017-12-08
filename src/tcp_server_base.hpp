@@ -29,7 +29,7 @@ protected:
 	virtual boost::shared_ptr<TcpSessionBase> on_client_connect(Move<UniqueFile> client) const = 0;
 
 public:
-	int poll_read_and_process(bool readable) OVERRIDE;
+	int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable) OVERRIDE;
 };
 
 }

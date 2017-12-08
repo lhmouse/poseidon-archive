@@ -56,27 +56,23 @@ void TcpSessionBase::create_shutdown_timer(){
 	m_shutdown_timer = TimerDaemon::register_low_level_timer(1000, 15000, boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
 }
 
-int TcpSessionBase::poll_read_and_process(bool readable){
+int TcpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){
 	PROFILE_ME;
 
 	(void)readable;
 
-	std::vector<unsigned char> temp;
-
 	StreamBuffer data;
 	try {
-		temp.resize(4096);
 		::ssize_t result;
 		if(m_ssl_filter){
-			result = m_ssl_filter->recv(temp.data(), temp.size());
+			result = m_ssl_filter->recv(hint_buffer, hint_capacity);
 		} else {
-			result = ::recv(get_fd(), temp.data(), temp.size(), MSG_NOSIGNAL | MSG_DONTWAIT);
+			result = ::recv(get_fd(), hint_buffer, hint_capacity, MSG_NOSIGNAL | MSG_DONTWAIT);
 		}
 		if(result < 0){
 			return errno;
 		}
-		temp.resize(static_cast<std::size_t>(result));
-		data.put(temp.data(), temp.size());
+		data.put(hint_buffer, static_cast<std::size_t>(result));
 		LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", get_remote_info());
 
 		const AUTO(now, get_fast_mono_clock());
@@ -105,12 +101,10 @@ int TcpSessionBase::poll_read_and_process(bool readable){
 	}
 	return 0;
 }
-int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
+int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable){
 	PROFILE_ME;
 
 	assert(!write_lock);
-
-	std::vector<unsigned char> temp;
 
 	StreamBuffer data;
 	try {
@@ -121,9 +115,8 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
 			m_connected_notified = true;
 		}
 
-		temp.resize(4096);
 		Mutex::UniqueLock lock(m_send_mutex);
-		const std::size_t avail = m_send_buffer.peek(temp.data(), temp.size());
+		const std::size_t avail = m_send_buffer.peek(hint_buffer, hint_capacity);
 		if(avail == 0){
 _check_shutdown:
 			if(should_really_shutdown_write()){
@@ -136,13 +129,12 @@ _check_shutdown:
 			return EWOULDBLOCK;
 		}
 		lock.unlock();
-		temp.resize(avail);
 
 		::ssize_t result;
 		if(m_ssl_filter){
-			result = m_ssl_filter->send(temp.data(), temp.size());
+			result = m_ssl_filter->send(hint_buffer, avail);
 		} else {
-			result = ::send(get_fd(), temp.data(), temp.size(), MSG_NOSIGNAL | MSG_DONTWAIT);
+			result = ::send(get_fd(), hint_buffer, avail, MSG_NOSIGNAL | MSG_DONTWAIT);
 		}
 		if(result < 0){
 			return errno;

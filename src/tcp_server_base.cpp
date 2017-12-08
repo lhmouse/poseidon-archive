@@ -74,9 +74,11 @@ TcpServerBase::~TcpServerBase(){
 		"Destroyed TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
 }
 
-int TcpServerBase::poll_read_and_process(bool readable){
+int TcpServerBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){
 	PROFILE_ME;
 
+	(void)hint_buffer;
+	(void)hint_capacity;
 	(void)readable;
 
 	for(unsigned i = 0; i < 16; ++i){

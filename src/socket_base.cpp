@@ -190,12 +190,16 @@ try {
 	return unknown_ip_port();
 }
 
-int SocketBase::poll_read_and_process(bool readable){
+int SocketBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){
+	(void)hint_buffer;
+	(void)hint_capacity;
 	(void)readable;
 	return EWOULDBLOCK;
 }
-int SocketBase::poll_write(Mutex::UniqueLock &write_lock, bool writeable){
+int SocketBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable){
 	(void)write_lock;
+	(void)hint_buffer;
+	(void)hint_capacity;
 	(void)writeable;
 	return EWOULDBLOCK;
 }

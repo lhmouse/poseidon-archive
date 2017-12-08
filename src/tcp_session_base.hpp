@@ -45,8 +45,8 @@ protected:
 	void create_shutdown_timer();
 
 	// 注意，只能在 epoll 线程中调用这些函数。
-	int poll_read_and_process(bool readable) OVERRIDE;
-	int poll_write(Mutex::UniqueLock &write_lock, bool writeable) OVERRIDE;
+	int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable) OVERRIDE;
+	int poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable) OVERRIDE;
 
 	void on_connect() OVERRIDE = 0;
 	void on_read_hup() OVERRIDE = 0;

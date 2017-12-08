@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "epoll_daemon.hpp"
+#include "main_config.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
@@ -137,7 +138,7 @@ namespace {
 		return true;
 	}
 
-	bool pump_one_readable_socket() NOEXCEPT {
+	bool pump_one_readable_socket(std::vector<unsigned char> &io_buffer) NOEXCEPT {
 		PROFILE_ME;
 
 		const AUTO(now, get_fast_mono_clock());
@@ -173,7 +174,7 @@ namespace {
 
 		int err_code;
 		try {
-			err_code = socket->poll_read_and_process(readable);
+			err_code = socket->poll_read_and_process(io_buffer.data(), io_buffer.size(), readable);
 			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
 				LOG_POSEIDON_DEBUG("Socket read error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				socket->force_shutdown();
@@ -199,7 +200,7 @@ namespace {
 		return true;
 	}
 
-	bool pump_one_writeable_socket() NOEXCEPT {
+	bool pump_one_writeable_socket(std::vector<unsigned char> &io_buffer) NOEXCEPT {
 		PROFILE_ME;
 
 		const AUTO(now, get_fast_mono_clock());
@@ -225,7 +226,7 @@ namespace {
 		Mutex::UniqueLock write_lock;
 		int err_code;
 		try {
-			err_code = socket->poll_write(write_lock, writeable);
+			err_code = socket->poll_write(write_lock, io_buffer.data(), io_buffer.size(), writeable);
 			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
 				LOG_POSEIDON_DEBUG("Socket write error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				socket->force_shutdown();
@@ -296,13 +297,17 @@ namespace {
 		PROFILE_ME;
 		LOG_POSEIDON_INFO("Epoll daemon started.");
 
+		std::vector<unsigned char> io_buffer;
+		const AUTO(io_buffer_size, MainConfig::get<std::size_t>("epoll_io_buffer_size", 4096));
+		io_buffer.resize(std::max<std::size_t>(io_buffer_size, 508)); // 508 is the maximum size of UDP packets guaranteed to be transmitted.
+
 		unsigned timeout = 0;
 		for(;;){
 			bool busy;
 			do {
 				busy = wait_for_sockets(0);
-				busy += pump_one_readable_socket();
-				busy += pump_one_writeable_socket();
+				busy += pump_one_readable_socket(io_buffer);
+				busy += pump_one_writeable_socket(io_buffer);
 				busy += pump_one_closed_socket();
 				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 			} while(busy);
@@ -324,7 +329,7 @@ void EpollDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting epoll daemon...");
 
-	if(!g_epoll.reset(::epoll_create(4096))){
+	if(!g_epoll.reset(::epoll_create(100))){
 		const int err_code = errno;
 		LOG_POSEIDON_FATAL("Failed to create epoll! errno was ", err_code);
 		std::abort();
