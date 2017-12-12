@@ -192,7 +192,7 @@ void Client::on_sync_control_message(StatusCode status_code, StreamBuffer param)
 	LOG_POSEIDON_TRACE("Received CBPP error message from server: status_code = ", status_code, ", param = ", param);
 
 	if(status_code < 0){
-		LOG_POSEIDON_INFO("Received negative status code from ", get_remote_info());
+		LOG_POSEIDON_WARNING("Received negative status code from ", get_remote_info(), ": status_code = ", status_code);
 		shutdown(ST_SHUTDOWN, static_cast<char *>(param.squash()));
 	} else {
 		switch(status_code){
