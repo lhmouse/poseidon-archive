@@ -7,6 +7,7 @@
 #include "singletons/timer_daemon.hpp"
 #include "singletons/mysql_daemon.hpp"
 #include "singletons/mongodb_daemon.hpp"
+#include "singletons/workhorse_camp.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/system_server.hpp"
 #include "singletons/job_dispatcher.hpp"
@@ -343,6 +344,7 @@ namespace {
 		START(MySqlDaemon);
 		START(MongoDbDaemon);
 		START(JobDispatcher);
+		START(WorkhorseCamp);
 
 		try {
 			START(ModuleDepository);
