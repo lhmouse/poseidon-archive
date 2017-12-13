@@ -17,9 +17,6 @@ private:
 public:
 	explicit TcpClientBase(const SockAddr &addr, bool use_ssl = false, bool verify_peer = true);
 	~TcpClientBase();
-
-public:
-	void go_resident();
 };
 
 }
