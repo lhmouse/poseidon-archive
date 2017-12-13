@@ -439,9 +439,7 @@ namespace {
 		{ }
 
 	private:
-		bool pump_one_operation(boost::shared_ptr<MySql::Connection> &master_conn,
-			boost::shared_ptr<MySql::Connection> &slave_conn) NOEXCEPT
-		{
+		bool pump_one_operation(boost::shared_ptr<MySql::Connection> &master_conn, boost::shared_ptr<MySql::Connection> &slave_conn) NOEXCEPT {
 			PROFILE_ME;
 
 			const AUTO(now, get_fast_mono_clock());
