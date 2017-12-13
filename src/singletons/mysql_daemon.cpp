@@ -86,8 +86,7 @@ namespace {
 		UniqueFile dump_file;
 		if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 			const int saved_errno = errno;
-			LOG_POSEIDON_FATAL("Error creating SQL dump file: dump_path = ", dump_path,
-				", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
+			LOG_POSEIDON_FATAL("Error creating SQL dump file: dump_path = ", dump_path, ", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
 			std::abort();
 		}
 
@@ -632,8 +631,7 @@ namespace {
 					atomic_store(m_urgent, true, ATOMIC_RELEASE);
 					m_new_operation.signal();
 				}
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_sql = ", current_sql);
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_sql = ", current_sql);
 
 				::timespec req;
 				req.tv_sec = 0;
@@ -711,8 +709,7 @@ namespace {
 			for(std::size_t i = 0; i < g_threads.size(); ++i){
 				AUTO_REF(test_thread, g_threads.at(i));
 				if(!test_thread){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-						"Creating new MySQL thread ", i, " for table ", table);
+					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Creating new MySQL thread ", i, " for table ", table);
 					thread = boost::make_shared<MySqlThread>();
 					thread->start();
 					test_thread = thread;
@@ -728,8 +725,7 @@ namespace {
 				std::abort();
 			}
 			const AUTO(index, g_routing_map.begin()->second);
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-				"Picking thread ", index, " for table ", table);
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Picking thread ", index, " for table ", table);
 			thread = g_threads.at(index);
 			route.thread = thread;
 		}
