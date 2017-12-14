@@ -122,13 +122,13 @@ namespace {
 	// 数据库线程操作。
 	class OperationBase : NONCOPYABLE {
 	private:
-		const boost::shared_ptr<Promise> m_promise;
+		const boost::weak_ptr<Promise> m_weak_promise;
 
 		boost::shared_ptr<const void> m_probe;
 
 	public:
-		explicit OperationBase(boost::shared_ptr<Promise> promise)
-			: m_promise(STD_MOVE(promise))
+		explicit OperationBase(const boost::shared_ptr<Promise> &promise)
+			: m_weak_promise(promise)
 		{ }
 		virtual ~OperationBase(){ }
 
@@ -144,28 +144,28 @@ namespace {
 		virtual void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const = 0;
 
 		virtual bool is_isolated() const {
-			if(!m_promise){
-				return false;
-			}
-			return m_promise.unique();
+			return m_weak_promise.expired();
 		}
 		virtual bool is_satisfied() const {
-			if(!m_promise){
+			const AUTO(promise, m_weak_promise.lock());
+			if(!promise){
 				return true;
 			}
-			return m_promise->is_satisfied();
+			return promise->is_satisfied();
 		}
 		virtual void set_success(){
-			if(!m_promise){
+			const AUTO(promise, m_weak_promise.lock());
+			if(!promise){
 				return;
 			}
-			m_promise->set_success();
+			promise->set_success();
 		}
 		virtual void set_exception(STD_EXCEPTION_PTR ep){
-			if(!m_promise){
+			const AUTO(promise, m_weak_promise.lock());
+			if(!promise){
 				return;
 			}
-			m_promise->set_exception(STD_MOVE(ep));
+			promise->set_exception(STD_MOVE(ep));
 		}
 	};
 
@@ -175,9 +175,9 @@ namespace {
 		const bool m_to_replace;
 
 	public:
-		SaveOperation(boost::shared_ptr<Promise> promise,
+		SaveOperation(const boost::shared_ptr<Promise> &promise,
 			boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace)
-			: OperationBase(STD_MOVE(promise))
+			: OperationBase(promise)
 			, m_object(STD_MOVE(object)), m_to_replace(to_replace)
 		{ }
 
@@ -226,9 +226,9 @@ namespace {
 		const MongoDb::BsonBuilder m_query;
 
 	public:
-		LoadOperation(boost::shared_ptr<Promise> promise,
+		LoadOperation(const boost::shared_ptr<Promise> &promise,
 			boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query)
-			: OperationBase(STD_MOVE(promise))
+			: OperationBase(promise)
 			, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
 		{ }
 
@@ -267,9 +267,9 @@ namespace {
 		const MongoDb::BsonBuilder m_query;
 
 	public:
-		DeleteOperation(boost::shared_ptr<Promise> promise,
+		DeleteOperation(const boost::shared_ptr<Promise> &promise,
 			const char *collection, MongoDb::BsonBuilder query)
-			: OperationBase(STD_MOVE(promise))
+			: OperationBase(promise)
 			, m_collection(collection), m_query(STD_MOVE(query))
 		{ }
 
@@ -300,9 +300,9 @@ namespace {
 		const MongoDb::BsonBuilder m_query;
 
 	public:
-		BatchLoadOperation(boost::shared_ptr<Promise> promise,
+		BatchLoadOperation(const boost::shared_ptr<Promise> &promise,
 			QueryCallback callback, const char *collection_hint, MongoDb::BsonBuilder query)
-			: OperationBase(STD_MOVE(promise))
+			: OperationBase(promise)
 			, m_callback(STD_MOVE_IDN(callback)), m_collection_hint(collection_hint), m_query(STD_MOVE(query))
 		{ }
 
@@ -345,9 +345,9 @@ namespace {
 		const bool m_from_slave;
 
 	public:
-		LowLevelAccessOperation(boost::shared_ptr<Promise> promise,
+		LowLevelAccessOperation(const boost::shared_ptr<Promise> &promise,
 			QueryCallback callback, const char *collection_hint, bool from_slave)
-			: OperationBase(STD_MOVE(promise))
+			: OperationBase(promise)
 			, m_callback(STD_MOVE_IDN(callback)), m_collection_hint(collection_hint), m_from_slave(from_slave)
 		{ }
 
@@ -375,8 +375,8 @@ namespace {
 
 	class WaitOperation : public OperationBase {
 	public:
-		explicit WaitOperation(boost::shared_ptr<Promise> promise)
-			: OperationBase(STD_MOVE(promise))
+		explicit WaitOperation(const boost::shared_ptr<Promise> &promise)
+			: OperationBase(promise)
 		{ }
 		~WaitOperation(){
 			try {
@@ -829,9 +829,9 @@ boost::shared_ptr<const Promise> MongoDbDaemon::enqueue_for_batch_loading(QueryC
 	return STD_MOVE_IDN(promise);
 }
 
-void MongoDbDaemon::enqueue_for_low_level_access(boost::shared_ptr<Promise> promise, QueryCallback callback, const char *collection_hint, bool from_slave){
+void MongoDbDaemon::enqueue_for_low_level_access(const boost::shared_ptr<Promise> &promise, QueryCallback callback, const char *collection_hint, bool from_slave){
 	const char *const collection = collection_hint;
-	AUTO(operation, boost::make_shared<LowLevelAccessOperation>(STD_MOVE(promise), STD_MOVE(callback), collection_hint, from_slave));
+	AUTO(operation, boost::make_shared<LowLevelAccessOperation>(promise, STD_MOVE(callback), collection_hint, from_slave));
 	submit_operation_by_collection(collection, STD_MOVE_IDN(operation), true);
 }
 

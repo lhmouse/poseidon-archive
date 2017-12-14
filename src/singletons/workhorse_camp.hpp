@@ -23,9 +23,9 @@ public:
 	static void start();
 	static void stop();
 
-	static void enqueue_isolated(boost::shared_ptr<Promise> promise, JobProcedure procedure);
+	static void enqueue_isolated(const boost::shared_ptr<Promise> &promise, JobProcedure procedure);
 	// 具有相同 thread_hint 的任务保证由同一个线程执行。
-	static void enqueue(boost::shared_ptr<Promise> promise, JobProcedure procedure, std::size_t thread_hint);
+	static void enqueue(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t thread_hint);
 };
 
 }

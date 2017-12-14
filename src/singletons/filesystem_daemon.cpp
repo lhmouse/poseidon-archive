@@ -166,6 +166,18 @@ namespace {
 		}
 	}
 
+#define CHECK_AND_SET(p_, ...)	\
+	do {	\
+		const AUTO(t_, (p_));	\
+		if(!t_){	\
+			break;	\
+		}	\
+		if(t_->is_satisfied()){	\
+			break;	\
+		}	\
+		t_-> __VA_ARGS__;	\
+	} while(false)
+
 	class OperationBase : NONCOPYABLE {
 	public:
 		virtual ~OperationBase(){ }
@@ -176,225 +188,201 @@ namespace {
 
 	class LoadOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<PromiseContainer<BlockRead> > m_promise;
+		const boost::weak_ptr<PromiseContainer<BlockRead> > m_weak_promise;
 		const std::string m_path;
 		const boost::uint64_t m_begin;
 		const boost::uint64_t m_limit;
 		const bool m_throws_if_does_not_exist;
 
 	public:
-		LoadOperation(boost::shared_ptr<PromiseContainer<BlockRead> > promise, std::string path,
+		LoadOperation(const boost::weak_ptr<PromiseContainer<BlockRead> > &promise, std::string path,
 			boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
-			: m_promise(STD_MOVE(promise)), m_path(STD_MOVE(path))
+			: m_weak_promise(promise), m_path(STD_MOVE(path))
 			, m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{ }
 
 	public:
 		void execute() const OVERRIDE {
-			if(m_promise.unique()){
+			PROFILE_ME;
+
+			const AUTO(promise, m_weak_promise.lock());
+			if(!promise){
 				LOG_POSEIDON_DEBUG("Discarding isolated loading operation: path = ", m_path);
 				return;
 			}
 
 			try {
-				m_promise->set_success(real_load(m_path, m_begin, m_limit, m_throws_if_does_not_exist));
+				AUTO(block, real_load(m_path, m_begin, m_limit, m_throws_if_does_not_exist));
+				CHECK_AND_SET(promise, set_success(STD_MOVE(block)));
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(e));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			}
 		}
 	};
 
 	class SaveOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<Promise> m_promise;
+		const boost::weak_ptr<Promise> m_weak_promise;
 		const std::string m_path;
 		const StreamBuffer m_data;
 		const boost::uint64_t m_begin;
 		const bool m_throws_if_exists;
 
 	public:
-		SaveOperation(boost::shared_ptr<Promise> promise, std::string path, StreamBuffer data,
+		SaveOperation(const boost::shared_ptr<Promise> &promise, std::string path, StreamBuffer data,
 			boost::uint64_t begin, bool throws_if_exists)
-			: m_promise(STD_MOVE(promise))
+			: m_weak_promise(promise)
 			, m_path(STD_MOVE(path)), m_data(STD_MOVE(data))
 			, m_begin(begin), m_throws_if_exists(throws_if_exists)
 		{ }
 
 	public:
 		void execute() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(promise, m_weak_promise.lock());
+
 			try {
 				real_save(m_path, m_data, m_begin, m_throws_if_exists);
-				m_promise->set_success();
+				CHECK_AND_SET(promise, set_success());
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(e));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			}
 		}
 	};
 
 	class RemoveOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<Promise> m_promise;
+		const boost::weak_ptr<Promise> m_weak_promise;
 		const std::string m_path;
 		const bool m_throws_if_does_not_exist;
 
 	public:
-		RemoveOperation(boost::shared_ptr<Promise> promise,
+		RemoveOperation(const boost::shared_ptr<Promise> &promise,
 			std::string path, bool throws_if_does_not_exist)
-			: m_promise(STD_MOVE(promise))
+			: m_weak_promise(promise)
 			, m_path(STD_MOVE(path)), m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{ }
 
 	public:
 		void execute() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(promise, m_weak_promise.lock());
+
 			try {
 				real_remove(m_path, m_throws_if_does_not_exist);
-				m_promise->set_success();
+				CHECK_AND_SET(promise, set_success());
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(e));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			}
 		}
 	};
 
 	class RenameOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<Promise> m_promise;
+		const boost::weak_ptr<Promise> m_weak_promise;
 		const std::string m_path;
 		const std::string m_new_path;
 
 	public:
-		RenameOperation(boost::shared_ptr<Promise> promise,
+		RenameOperation(const boost::shared_ptr<Promise> &promise,
 			std::string path, std::string new_path)
-			: m_promise(STD_MOVE(promise))
+			: m_weak_promise(promise)
 			, m_path(STD_MOVE(path)), m_new_path(STD_MOVE(new_path))
 		{ }
 
 	public:
 		void execute() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(promise, m_weak_promise.lock());
+
 			try {
 				real_rename(m_path, m_new_path);
-				m_promise->set_success();
+				CHECK_AND_SET(promise, set_success());
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(e));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			}
 		}
 	};
 
 	class MkdirOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<Promise> m_promise;
+		const boost::weak_ptr<Promise> m_weak_promise;
 		const std::string m_path;
 		const bool m_throws_if_exists;
 
 	public:
-		MkdirOperation(boost::shared_ptr<Promise> promise,
+		MkdirOperation(const boost::shared_ptr<Promise> &promise,
 			std::string path, bool throws_if_exists)
-			: m_promise(STD_MOVE(promise))
+			: m_weak_promise(promise)
 			, m_path(STD_MOVE(path)), m_throws_if_exists(throws_if_exists)
 		{ }
 
 	public:
 		void execute() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(promise, m_weak_promise.lock());
+
 			try {
 				real_mkdir(m_path, m_throws_if_exists);
-				m_promise->set_success();
+				CHECK_AND_SET(promise, set_success());
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(e));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			}
 		}
 	};
 
 	class RmdirOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<Promise> m_promise;
+		const boost::weak_ptr<Promise> m_weak_promise;
 		const std::string m_path;
 		const bool m_throws_if_does_not_exist;
 
 	public:
-		RmdirOperation(boost::shared_ptr<Promise> promise,
+		RmdirOperation(const boost::shared_ptr<Promise> &promise,
 			std::string path, bool throws_if_does_not_exist)
-			: m_promise(STD_MOVE(promise))
+			: m_weak_promise(promise)
 			, m_path(STD_MOVE(path)), m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{ }
 
 	public:
 		void execute() const OVERRIDE {
+			PROFILE_ME;
+
+			const AUTO(promise, m_weak_promise.lock());
+
 			try {
 				real_rmdir(m_path, m_throws_if_does_not_exist);
-				m_promise->set_success();
+				CHECK_AND_SET(promise, set_success());
 			} catch(SystemException &e){
 				LOG_POSEIDON_INFO("SystemException thrown: what = ", e.what(), ", code = ", e.get_code());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(e));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
-#endif
+				CHECK_AND_SET(promise, set_exception(STD_CURRENT_EXCEPTION()));
 			}
 		}
 	};

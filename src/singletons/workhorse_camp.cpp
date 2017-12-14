@@ -24,7 +24,7 @@ namespace {
 	class WorkhorseThread : NONCOPYABLE {
 	private:
 		struct JobQueueElement {
-			boost::shared_ptr<Promise> promise;
+			boost::weak_ptr<Promise> weak_promise;
 			JobProcedure procedure;
 		};
 
@@ -63,12 +63,13 @@ namespace {
 				LOG_POSEIDON_WARNING("Unknown exception thrown");
 				except = STD_CURRENT_EXCEPTION();
 			}
-			if(!elem->promise->is_satisfied()){
+			const AUTO(promise, elem->weak_promise.lock());
+			if(promise && !promise->is_satisfied()){
 				try {
 					if(!except){
-						elem->promise->set_success();
+						promise->set_success();
 					} else {
-						elem->promise->set_exception(except);
+						promise->set_exception(except);
 					}
 				} catch(std::exception &e){
 					LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
@@ -143,7 +144,7 @@ namespace {
 			const Mutex::UniqueLock lock(m_mutex);
 			return m_queue.size();
 		}
-		void add_job(boost::shared_ptr<Promise> promise, JobProcedure procedure){
+		void add_job(const boost::shared_ptr<Promise> &promise, JobProcedure procedure){
 			PROFILE_ME;
 
 			const Mutex::UniqueLock lock(m_mutex);
@@ -151,7 +152,7 @@ namespace {
 				LOG_POSEIDON_ERROR("Workhorse thread is being shut down.");
 				DEBUG_THROW(Exception, sslit("Workhorse thread is being shut down"));
 			}
-			JobQueueElement elem = { STD_MOVE(promise), STD_MOVE_IDN(procedure) };
+			JobQueueElement elem = { promise, STD_MOVE_IDN(procedure) };
 			m_queue.push_back(STD_MOVE(elem));
 			m_new_job.signal();
 		}
@@ -162,7 +163,7 @@ namespace {
 	Poseidon::Mutex g_router_mutex;
 	std::vector<boost::shared_ptr<WorkhorseThread> > g_threads;
 
-	void submit_job_using_seed(boost::shared_ptr<Promise> promise, JobProcedure procedure, std::size_t seed){
+	void submit_job_using_seed(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t seed){
 		PROFILE_ME;
 
 		boost::shared_ptr<WorkhorseThread> thread;
@@ -221,17 +222,17 @@ void WorkhorseCamp::stop(){
 	LOG_POSEIDON_INFO("workhorse daemon stopped.");
 }
 
-void WorkhorseCamp::enqueue_isolated(boost::shared_ptr<Promise> promise, JobProcedure procedure){
+void WorkhorseCamp::enqueue_isolated(const boost::shared_ptr<Promise> &promise, JobProcedure procedure){
 	DEBUG_THROW_ASSERT(!g_threads.empty());
 
 	std::size_t seed = random_uint32();
-	submit_job_using_seed(STD_MOVE(promise), STD_MOVE_IDN(procedure), seed);
+	submit_job_using_seed(promise, STD_MOVE_IDN(procedure), seed);
 }
-void WorkhorseCamp::enqueue(boost::shared_ptr<Promise> promise, JobProcedure procedure, std::size_t thread_hint){
+void WorkhorseCamp::enqueue(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t thread_hint){
 	DEBUG_THROW_ASSERT(!g_threads.empty());
 
 	std::size_t seed = static_cast<boost::uint64_t>(thread_hint) * 134775813 / 65539;
-	submit_job_using_seed(STD_MOVE(promise), STD_MOVE_IDN(procedure), seed);
+	submit_job_using_seed(promise, STD_MOVE_IDN(procedure), seed);
 }
 
 }

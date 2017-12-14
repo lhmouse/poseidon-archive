@@ -56,41 +56,36 @@ namespace {
 
 	class QueryOperation {
 	private:
-		const boost::shared_ptr<PromiseContainer<SockAddr> > m_promise;
+		const boost::weak_ptr<PromiseContainer<SockAddr> > m_weak_promise;
 
 		const std::string m_host;
 		const unsigned m_port;
 
 	public:
-		QueryOperation(boost::shared_ptr<PromiseContainer<SockAddr> > promise,
+		QueryOperation(const boost::shared_ptr<PromiseContainer<SockAddr> > &promise,
 			std::string host, unsigned port)
-			: m_promise(STD_MOVE(promise))
+			: m_weak_promise(promise)
 			, m_host(STD_MOVE(host)), m_port(port)
 		{ }
 
 	public:
 		void execute() const {
-			if(m_promise.unique()){
+			PROFILE_ME;
+
+			const AUTO(promise, m_weak_promise.lock());
+			if(!promise){
 				LOG_POSEIDON_DEBUG("Discarding isolated DNS query: m_host = ", m_host);
 				return;
 			}
 
 			try {
-				m_promise->set_success(real_dns_look_up(m_host, m_port));
+				promise->set_success(real_dns_look_up(m_host, m_port));
 			} catch(Exception &e){
 				LOG_POSEIDON_INFO("Exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(e));
-#endif
+				promise->set_exception(STD_CURRENT_EXCEPTION());
 			} catch(std::exception &e){
 				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				m_promise->set_exception(std::current_exception());
-#else
-				m_promise->set_exception(boost::copy_exception(std::runtime_error(e.what())));
-#endif
+				promise->set_exception(STD_CURRENT_EXCEPTION());
 			}
 		}
 	};
