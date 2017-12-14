@@ -163,7 +163,7 @@ struct ValueInitializer {
 #  include <stdexcept>
 #  include <boost/exception_ptr.hpp>
 #  define STD_EXCEPTION_PTR            ::boost::exception_ptr
-#  define STD_CURRENT_EXCEPTION()      (::boost::copy_exception(::std::runtime_error(__PRETTY_FUNCTION)))
+#  define STD_CURRENT_EXCEPTION()      (::boost::copy_exception(::std::runtime_error(__PRETTY_FUNCTION__)))
 #  define STD_RETHROW_EXCEPTION(ep_)   (::boost::rethrow_exception(ep_))
 #endif
 
