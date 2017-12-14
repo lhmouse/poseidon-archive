@@ -137,7 +137,7 @@ namespace {
 		virtual boost::shared_ptr<const MySql::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_table() const = 0;
 		virtual void generate_sql(std::string &query) const = 0;
-		virtual void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const = 0;
+		virtual void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) = 0;
 
 		virtual bool is_isolated() const {
 			return m_weak_promise.expired();
@@ -167,8 +167,8 @@ namespace {
 
 	class SaveOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<const MySql::ObjectBase> m_object;
-		const bool m_to_replace;
+		boost::shared_ptr<const MySql::ObjectBase> m_object;
+		bool m_to_replace;
 
 	public:
 		SaveOperation(const boost::shared_ptr<Promise> &promise,
@@ -198,7 +198,7 @@ namespace {
 			m_object->generate_sql(os);
 			query = os.get_buffer().dump_string();
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_sql(query);
@@ -207,8 +207,8 @@ namespace {
 
 	class LoadOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<MySql::ObjectBase> m_object;
-		const std::string m_query;
+		boost::shared_ptr<MySql::ObjectBase> m_object;
+		std::string m_query;
 
 	public:
 		LoadOperation(const boost::shared_ptr<Promise> &promise,
@@ -230,7 +230,7 @@ namespace {
 		void generate_sql(std::string &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			if(is_isolated()){
@@ -248,8 +248,8 @@ namespace {
 
 	class DeleteOperation : public OperationBase {
 	private:
-		const char *const m_table_hint;
-		const std::string m_query;
+		const char *m_table_hint;
+		std::string m_query;
 
 	public:
 		DeleteOperation(const boost::shared_ptr<Promise> &promise,
@@ -271,7 +271,7 @@ namespace {
 		void generate_sql(std::string &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_sql(query);
@@ -280,9 +280,9 @@ namespace {
 
 	class BatchLoadOperation : public OperationBase {
 	private:
-		const QueryCallback m_callback;
-		const char *const m_table_hint;
-		const std::string m_query;
+		QueryCallback m_callback;
+		const char *m_table_hint;
+		std::string m_query;
 
 	public:
 		BatchLoadOperation(const boost::shared_ptr<Promise> &promise,
@@ -304,7 +304,7 @@ namespace {
 		void generate_sql(std::string &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			if(is_isolated()){
@@ -325,9 +325,9 @@ namespace {
 
 	class LowLevelAccessOperation : public OperationBase {
 	private:
-		const QueryCallback m_callback;
-		const char *const m_table_hint;
-		const bool m_from_slave;
+		QueryCallback m_callback;
+		const char *m_table_hint;
+		bool m_from_slave;
 
 	public:
 		LowLevelAccessOperation(const boost::shared_ptr<Promise> &promise,
@@ -346,8 +346,10 @@ namespace {
 		const char *get_table() const OVERRIDE {
 			return m_table_hint;
 		}
-		void generate_sql(std::string & /* query */) const OVERRIDE { }
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string & /* query */) const OVERRIDE {
+		void generate_sql(std::string & /* query */) const OVERRIDE {
+			// no query
+		}
+		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string & /* query */) OVERRIDE {
 			PROFILE_ME;
 
 			m_callback(conn);
@@ -386,7 +388,7 @@ namespace {
 		void generate_sql(std::string &query) const OVERRIDE {
 			query = "DO 0";
 		}
-		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MySql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_sql(query);

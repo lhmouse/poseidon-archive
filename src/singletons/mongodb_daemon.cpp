@@ -141,7 +141,7 @@ namespace {
 		virtual boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const = 0;
 		virtual const char *get_collection() const = 0;
 		virtual void generate_bson(MongoDb::BsonBuilder &query) const = 0;
-		virtual void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const = 0;
+		virtual void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) = 0;
 
 		virtual bool is_isolated() const {
 			return m_weak_promise.expired();
@@ -171,8 +171,8 @@ namespace {
 
 	class SaveOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<const MongoDb::ObjectBase> m_object;
-		const bool m_to_replace;
+		boost::shared_ptr<const MongoDb::ObjectBase> m_object;
+		bool m_to_replace;
 
 	public:
 		SaveOperation(const boost::shared_ptr<Promise> &promise,
@@ -213,7 +213,7 @@ namespace {
 			}
 			query = q;
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_bson(query);
@@ -222,8 +222,8 @@ namespace {
 
 	class LoadOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<MongoDb::ObjectBase> m_object;
-		const MongoDb::BsonBuilder m_query;
+		boost::shared_ptr<MongoDb::ObjectBase> m_object;
+		MongoDb::BsonBuilder m_query;
 
 	public:
 		LoadOperation(const boost::shared_ptr<Promise> &promise,
@@ -245,7 +245,7 @@ namespace {
 		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
 			PROFILE_ME;
 
 			if(is_isolated()){
@@ -263,8 +263,8 @@ namespace {
 
 	class DeleteOperation : public OperationBase {
 	private:
-		const char *const m_collection;
-		const MongoDb::BsonBuilder m_query;
+		const char *m_collection;
+		MongoDb::BsonBuilder m_query;
 
 	public:
 		DeleteOperation(const boost::shared_ptr<Promise> &promise,
@@ -286,7 +286,7 @@ namespace {
 		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_bson(query);
@@ -295,9 +295,9 @@ namespace {
 
 	class BatchLoadOperation : public OperationBase {
 	private:
-		const QueryCallback m_callback;
-		const char *const m_collection_hint;
-		const MongoDb::BsonBuilder m_query;
+		QueryCallback m_callback;
+		const char *m_collection_hint;
+		MongoDb::BsonBuilder m_query;
 
 	public:
 		BatchLoadOperation(const boost::shared_ptr<Promise> &promise,
@@ -319,7 +319,7 @@ namespace {
 		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
 			PROFILE_ME;
 
 			if(is_isolated()){
@@ -340,9 +340,9 @@ namespace {
 
 	class LowLevelAccessOperation : public OperationBase {
 	private:
-		const QueryCallback m_callback;
-		const char *const m_collection_hint;
-		const bool m_from_slave;
+		QueryCallback m_callback;
+		const char *m_collection_hint;
+		bool m_from_slave;
 
 	public:
 		LowLevelAccessOperation(const boost::shared_ptr<Promise> &promise,
@@ -361,8 +361,10 @@ namespace {
 		const char *get_collection() const OVERRIDE {
 			return m_collection_hint;
 		}
-		void generate_bson(MongoDb::BsonBuilder & /* query */) const OVERRIDE { }
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder & /* query */) const OVERRIDE {
+		void generate_bson(MongoDb::BsonBuilder & /* query */) const OVERRIDE {
+			// no query
+		}
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder & /* query */) OVERRIDE {
 			PROFILE_ME;
 
 			m_callback(conn);
@@ -401,7 +403,7 @@ namespace {
 		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
 			query = MongoDb::bson_scalar_signed(sslit("ping"), 1);
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) const OVERRIDE {
+		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_bson(query);
