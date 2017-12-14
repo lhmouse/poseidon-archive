@@ -10,7 +10,7 @@
 namespace Poseidon {
 
 class JobBase;
-class JobPromise;
+class Promise;
 
 class JobDispatcher {
 private:
@@ -23,7 +23,7 @@ public:
 	static void do_modal(const volatile bool &running);
 
 	static void enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn);
-	static void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant);
+	static void yield(const boost::shared_ptr<const Promise> &promise, bool insignificant);
 };
 
 }

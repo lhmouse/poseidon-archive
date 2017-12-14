@@ -14,7 +14,7 @@
 #include "../system_exception.hpp"
 #include "../log.hpp"
 #include "../raii.hpp"
-#include "../job_promise.hpp"
+#include "../promise.hpp"
 #include "../profiler.hpp"
 
 namespace Poseidon {
@@ -176,14 +176,14 @@ namespace {
 
 	class LoadOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromiseContainer<BlockRead> > m_promise;
+		const boost::shared_ptr<PromiseContainer<BlockRead> > m_promise;
 		const std::string m_path;
 		const boost::uint64_t m_begin;
 		const boost::uint64_t m_limit;
 		const bool m_throws_if_does_not_exist;
 
 	public:
-		LoadOperation(boost::shared_ptr<JobPromiseContainer<BlockRead> > promise, std::string path,
+		LoadOperation(boost::shared_ptr<PromiseContainer<BlockRead> > promise, std::string path,
 			boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 			: m_promise(STD_MOVE(promise)), m_path(STD_MOVE(path))
 			, m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
@@ -218,14 +218,14 @@ namespace {
 
 	class SaveOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
+		const boost::shared_ptr<Promise> m_promise;
 		const std::string m_path;
 		const StreamBuffer m_data;
 		const boost::uint64_t m_begin;
 		const bool m_throws_if_exists;
 
 	public:
-		SaveOperation(boost::shared_ptr<JobPromise> promise, std::string path, StreamBuffer data,
+		SaveOperation(boost::shared_ptr<Promise> promise, std::string path, StreamBuffer data,
 			boost::uint64_t begin, bool throws_if_exists)
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_data(STD_MOVE(data))
@@ -257,12 +257,12 @@ namespace {
 
 	class RemoveOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
+		const boost::shared_ptr<Promise> m_promise;
 		const std::string m_path;
 		const bool m_throws_if_does_not_exist;
 
 	public:
-		RemoveOperation(boost::shared_ptr<JobPromise> promise,
+		RemoveOperation(boost::shared_ptr<Promise> promise,
 			std::string path, bool throws_if_does_not_exist)
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_throws_if_does_not_exist(throws_if_does_not_exist)
@@ -293,12 +293,12 @@ namespace {
 
 	class RenameOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
+		const boost::shared_ptr<Promise> m_promise;
 		const std::string m_path;
 		const std::string m_new_path;
 
 	public:
-		RenameOperation(boost::shared_ptr<JobPromise> promise,
+		RenameOperation(boost::shared_ptr<Promise> promise,
 			std::string path, std::string new_path)
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_new_path(STD_MOVE(new_path))
@@ -329,12 +329,12 @@ namespace {
 
 	class MkdirOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
+		const boost::shared_ptr<Promise> m_promise;
 		const std::string m_path;
 		const bool m_throws_if_exists;
 
 	public:
-		MkdirOperation(boost::shared_ptr<JobPromise> promise,
+		MkdirOperation(boost::shared_ptr<Promise> promise,
 			std::string path, bool throws_if_exists)
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_throws_if_exists(throws_if_exists)
@@ -365,12 +365,12 @@ namespace {
 
 	class RmdirOperation : public OperationBase {
 	private:
-		const boost::shared_ptr<JobPromise> m_promise;
+		const boost::shared_ptr<Promise> m_promise;
 		const std::string m_path;
 		const bool m_throws_if_does_not_exist;
 
 	public:
-		RmdirOperation(boost::shared_ptr<JobPromise> promise,
+		RmdirOperation(boost::shared_ptr<Promise> promise,
 			std::string path, bool throws_if_does_not_exist)
 			: m_promise(STD_MOVE(promise))
 			, m_path(STD_MOVE(path)), m_throws_if_does_not_exist(throws_if_does_not_exist)
@@ -511,12 +511,12 @@ void FileSystemDaemon::rmdir(const std::string &path, bool throws_if_does_not_ex
 	real_rmdir(path, throws_if_does_not_exist);
 }
 
-boost::shared_ptr<const JobPromiseContainer<BlockRead> > FileSystemDaemon::enqueue_for_loading(std::string path,
+boost::shared_ptr<const PromiseContainer<BlockRead> > FileSystemDaemon::enqueue_for_loading(std::string path,
 	boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<JobPromiseContainer<BlockRead> >());
+	AUTO(promise, boost::make_shared<PromiseContainer<BlockRead> >());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<LoadOperation>(
@@ -525,12 +525,12 @@ boost::shared_ptr<const JobPromiseContainer<BlockRead> > FileSystemDaemon::enque
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_saving(std::string path, StreamBuffer data,
+boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_saving(std::string path, StreamBuffer data,
 	boost::uint64_t begin, bool throws_if_exists)
 {
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<JobPromise>());
+	AUTO(promise, boost::make_shared<Promise>());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<SaveOperation>(
@@ -539,12 +539,12 @@ boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_saving(std::st
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_removing(
+boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_removing(
 	std::string path, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<JobPromise>());
+	AUTO(promise, boost::make_shared<Promise>());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<RemoveOperation>(
@@ -553,12 +553,12 @@ boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_removing(
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_renaming(
+boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_renaming(
 	std::string path, std::string new_path)
 {
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<JobPromise>());
+	AUTO(promise, boost::make_shared<Promise>());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<RenameOperation>(
@@ -567,12 +567,12 @@ boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_renaming(
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_mkdir(
+boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_mkdir(
 	std::string path, bool throws_if_exists)
 {
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<JobPromise>());
+	AUTO(promise, boost::make_shared<Promise>());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<MkdirOperation>(
@@ -581,12 +581,12 @@ boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_mkdir(
 	}
 	return promise;
 }
-boost::shared_ptr<const JobPromise> FileSystemDaemon::enqueue_for_rmdir(
+boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_rmdir(
 	std::string path, bool throws_if_does_not_exist)
 {
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<JobPromise>());
+	AUTO(promise, boost::make_shared<Promise>());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<RmdirOperation>(

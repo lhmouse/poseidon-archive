@@ -2,23 +2,23 @@
 // Copyleft 2014 - 2017, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "job_promise.hpp"
+#include "promise.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "singletons/job_dispatcher.hpp"
 
 namespace Poseidon {
 
-JobPromise::JobPromise() NOEXCEPT
+Promise::Promise() NOEXCEPT
 	: m_satisfied(false), m_except()
 { }
-JobPromise::~JobPromise(){
+Promise::~Promise(){
 	if(!m_satisfied){
-		LOG_POSEIDON_WARNING("Destroying an unsatisfied JobPromise.");
+		LOG_POSEIDON_WARNING("Destroying an unsatisfied Promise.");
 	}
 }
 
-bool JobPromise::would_throw() const NOEXCEPT {
+bool Promise::would_throw() const NOEXCEPT {
 	const RecursiveMutex::UniqueLock lock(m_mutex);
 	if(!m_satisfied){
 		return true;
@@ -28,10 +28,10 @@ bool JobPromise::would_throw() const NOEXCEPT {
 	}
 	return false;
 }
-void JobPromise::check_and_rethrow() const {
+void Promise::check_and_rethrow() const {
 	const RecursiveMutex::UniqueLock lock(m_mutex);
 	if(!m_satisfied){
-		DEBUG_THROW(Exception, sslit("JobPromise has not been satisfied"));
+		DEBUG_THROW(Exception, sslit("Promise has not been satisfied"));
 	}
 	if(m_except){
 #ifdef POSEIDON_CXX11
@@ -42,29 +42,29 @@ void JobPromise::check_and_rethrow() const {
 	}
 }
 
-void JobPromise::set_success(){
+void Promise::set_success(){
 	const RecursiveMutex::UniqueLock lock(m_mutex);
 	if(m_satisfied){
-		DEBUG_THROW(Exception, sslit("JobPromise has already been satisfied"));
+		DEBUG_THROW(Exception, sslit("Promise has already been satisfied"));
 	}
 	m_satisfied = true;
 //	m_except = VAL_INIT;
 }
 #ifdef POSEIDON_CXX11
-void JobPromise::set_exception(std::exception_ptr except)
+void Promise::set_exception(std::exception_ptr except)
 #else
-void JobPromise::set_exception(boost::exception_ptr except)
+void Promise::set_exception(boost::exception_ptr except)
 #endif
 {
 	const RecursiveMutex::UniqueLock lock(m_mutex);
 	if(m_satisfied){
-		DEBUG_THROW(Exception, sslit("JobPromise has already been satisfied"));
+		DEBUG_THROW(Exception, sslit("Promise has already been satisfied"));
 	}
 	m_satisfied = true;
 	m_except = STD_MOVE_IDN(except);
 }
 
-void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant){
+void yield(const boost::shared_ptr<const Promise> &promise, bool insignificant){
 	JobDispatcher::yield(promise, insignificant);
 }
 

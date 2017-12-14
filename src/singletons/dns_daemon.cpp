@@ -11,7 +11,7 @@
 #include "../thread.hpp"
 #include "../mutex.hpp"
 #include "../condition_variable.hpp"
-#include "../job_promise.hpp"
+#include "../promise.hpp"
 #include "../sock_addr.hpp"
 #include "../ip_port.hpp"
 #include "../raii.hpp"
@@ -56,13 +56,13 @@ namespace {
 
 	class QueryOperation {
 	private:
-		const boost::shared_ptr<JobPromiseContainer<SockAddr> > m_promise;
+		const boost::shared_ptr<PromiseContainer<SockAddr> > m_promise;
 
 		const std::string m_host;
 		const unsigned m_port;
 
 	public:
-		QueryOperation(boost::shared_ptr<JobPromiseContainer<SockAddr> > promise,
+		QueryOperation(boost::shared_ptr<PromiseContainer<SockAddr> > promise,
 			std::string host, unsigned port)
 			: m_promise(STD_MOVE(promise))
 			, m_host(STD_MOVE(host)), m_port(port)
@@ -178,10 +178,10 @@ SockAddr DnsDaemon::look_up(const std::string &host, unsigned port){
 	return real_dns_look_up(host, port);
 }
 
-boost::shared_ptr<const JobPromiseContainer<SockAddr> > DnsDaemon::enqueue_for_looking_up(std::string host, unsigned port){
+boost::shared_ptr<const PromiseContainer<SockAddr> > DnsDaemon::enqueue_for_looking_up(std::string host, unsigned port){
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<JobPromiseContainer<SockAddr> >());
+	AUTO(promise, boost::make_shared<PromiseContainer<SockAddr> >());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
 		g_operations.push_back(boost::make_shared<QueryOperation>(

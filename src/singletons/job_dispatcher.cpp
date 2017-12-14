@@ -7,7 +7,7 @@
 #include <ucontext.h>
 #include <sys/mman.h>
 #include "../job_base.hpp"
-#include "../job_promise.hpp"
+#include "../promise.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -31,7 +31,7 @@ namespace {
 		boost::shared_ptr<JobBase> job;
 		boost::shared_ptr<const bool> withdrawn;
 
-		boost::shared_ptr<const JobPromise> promise;
+		boost::shared_ptr<const Promise> promise;
 		boost::uint64_t expiry_time;
 		bool insignificant;
 	};
@@ -308,7 +308,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<co
 	}
 	g_new_job.signal();
 }
-void JobDispatcher::yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant){
+void JobDispatcher::yield(const boost::shared_ptr<const Promise> &promise, bool insignificant){
 	PROFILE_ME;
 
 	const AUTO(fiber, t_current_fiber);

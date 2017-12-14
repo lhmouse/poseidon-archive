@@ -12,7 +12,7 @@
 
 namespace Poseidon {
 
-class JobPromise;
+class Promise;
 
 class MySqlDaemon {
 private:
@@ -30,14 +30,14 @@ public:
 	static void wait_for_all_async_operations();
 
 	// 异步接口。
-	static boost::shared_ptr<const JobPromise> enqueue_for_saving(boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace, bool urgent);
-	static boost::shared_ptr<const JobPromise> enqueue_for_loading(boost::shared_ptr<MySql::ObjectBase> object, std::string query);
-	static boost::shared_ptr<const JobPromise> enqueue_for_deleting(const char *table_hint, std::string query);
-	static boost::shared_ptr<const JobPromise> enqueue_for_batch_loading(QueryCallback callback, const char *table_hint, std::string query);
+	static boost::shared_ptr<const Promise> enqueue_for_saving(boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace, bool urgent);
+	static boost::shared_ptr<const Promise> enqueue_for_loading(boost::shared_ptr<MySql::ObjectBase> object, std::string query);
+	static boost::shared_ptr<const Promise> enqueue_for_deleting(const char *table_hint, std::string query);
+	static boost::shared_ptr<const Promise> enqueue_for_batch_loading(QueryCallback callback, const char *table_hint, std::string query);
 
-	static void enqueue_for_low_level_access(boost::shared_ptr<JobPromise> promise, QueryCallback callback, const char *table_hint, bool from_slave = false);
+	static void enqueue_for_low_level_access(boost::shared_ptr<Promise> promise, QueryCallback callback, const char *table_hint, bool from_slave = false);
 
-	static boost::shared_ptr<const JobPromise> enqueue_for_waiting_for_all_async_operations();
+	static boost::shared_ptr<const Promise> enqueue_for_waiting_for_all_async_operations();
 };
 
 }

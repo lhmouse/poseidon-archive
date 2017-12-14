@@ -12,7 +12,7 @@
 #include "../exception.hpp"
 #include "../log.hpp"
 #include "../raii.hpp"
-#include "../job_promise.hpp"
+#include "../promise.hpp"
 #include "../profiler.hpp"
 #include "../random.hpp"
 
@@ -24,7 +24,7 @@ namespace {
 	class WorkhorseThread : NONCOPYABLE {
 	private:
 		struct JobQueueElement {
-			boost::shared_ptr<JobPromise> promise;
+			boost::shared_ptr<Promise> promise;
 			JobProcedure procedure;
 		};
 
@@ -155,7 +155,7 @@ namespace {
 			const Mutex::UniqueLock lock(m_mutex);
 			return m_queue.size();
 		}
-		void add_job(boost::shared_ptr<JobPromise> promise, JobProcedure procedure){
+		void add_job(boost::shared_ptr<Promise> promise, JobProcedure procedure){
 			PROFILE_ME;
 
 			const Mutex::UniqueLock lock(m_mutex);
@@ -174,7 +174,7 @@ namespace {
 	Poseidon::Mutex g_router_mutex;
 	std::vector<boost::shared_ptr<WorkhorseThread> > g_threads;
 
-	void submit_job_using_seed(boost::shared_ptr<JobPromise> promise, JobProcedure procedure, std::size_t seed){
+	void submit_job_using_seed(boost::shared_ptr<Promise> promise, JobProcedure procedure, std::size_t seed){
 		PROFILE_ME;
 
 		boost::shared_ptr<WorkhorseThread> thread;
@@ -233,13 +233,13 @@ void WorkhorseCamp::stop(){
 	LOG_POSEIDON_INFO("workhorse daemon stopped.");
 }
 
-void WorkhorseCamp::enqueue_isolated(boost::shared_ptr<JobPromise> promise, JobProcedure procedure){
+void WorkhorseCamp::enqueue_isolated(boost::shared_ptr<Promise> promise, JobProcedure procedure){
 	DEBUG_THROW_ASSERT(!g_threads.empty());
 
 	std::size_t seed = random_uint32();
 	submit_job_using_seed(STD_MOVE(promise), STD_MOVE_IDN(procedure), seed);
 }
-void WorkhorseCamp::enqueue(boost::shared_ptr<JobPromise> promise, JobProcedure procedure, std::size_t thread_hint){
+void WorkhorseCamp::enqueue(boost::shared_ptr<Promise> promise, JobProcedure procedure, std::size_t thread_hint){
 	DEBUG_THROW_ASSERT(!g_threads.empty());
 
 	std::size_t seed = static_cast<boost::uint64_t>(thread_hint) * 134775813 / 65539;

@@ -48,8 +48,8 @@ class JobBase;
 class EventBase;
 class SystemServletBase;
 
-class JobPromise;
-template<typename> class JobPromiseContainer;
+class Promise;
+template<typename> class PromiseContainer;
 
 class SocketBase;
 class SessionBase;

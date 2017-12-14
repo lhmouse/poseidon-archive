@@ -10,7 +10,7 @@
 
 namespace Poseidon {
 
-class JobPromise;
+class Promise;
 
 class JobBase : NONCOPYABLE {
 public:

@@ -10,7 +10,7 @@
 namespace Poseidon {
 
 class SockAddr;
-template<typename> class JobPromiseContainer;
+template<typename> class PromiseContainer;
 
 class DnsDaemon {
 private:
@@ -24,7 +24,7 @@ public:
 	static SockAddr look_up(const std::string &host, unsigned port);
 
 	// 异步接口。
-	static boost::shared_ptr<const JobPromiseContainer<SockAddr> > enqueue_for_looking_up(std::string host, unsigned port);
+	static boost::shared_ptr<const PromiseContainer<SockAddr> > enqueue_for_looking_up(std::string host, unsigned port);
 };
 
 }

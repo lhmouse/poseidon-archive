@@ -5,16 +5,16 @@
 #define POSEIDON_ASYNC_JOB_HPP_
 
 #include "cxx_ver.hpp"
-#include "job_promise.hpp"
+#include "promise.hpp"
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 
 namespace Poseidon {
 
-extern void enqueue_async_categorized_job(boost::weak_ptr<const void> category, const boost::shared_ptr<JobPromise> &promise, boost::function<void ()> procedure,
+extern void enqueue_async_categorized_job(boost::weak_ptr<const void> category, const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure,
 	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
-extern void enqueue_async_job(const boost::shared_ptr<JobPromise> &promise, boost::function<void ()> procedure,
+extern void enqueue_async_job(const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure,
 	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
 
 }

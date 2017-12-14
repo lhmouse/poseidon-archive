@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2017, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_JOB_PROMISE_HPP_
-#define POSEIDON_JOB_PROMISE_HPP_
+#ifndef POSEIDON_PROMISE_HPP_
+#define POSEIDON_PROMISE_HPP_
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
@@ -19,7 +19,7 @@
 
 namespace Poseidon {
 
-class JobPromise : NONCOPYABLE {
+class Promise : NONCOPYABLE {
 protected:
 	mutable RecursiveMutex m_mutex;
 	bool m_satisfied;
@@ -30,8 +30,8 @@ protected:
 #endif
 
 public:
-	JobPromise() NOEXCEPT;
-	virtual ~JobPromise();
+	Promise() NOEXCEPT;
+	virtual ~Promise();
 
 public:
 	bool is_satisfied() const NOEXCEPT {
@@ -50,25 +50,25 @@ public:
 };
 
 template<typename ResultT>
-class JobPromiseContainer : public JobPromise {
+class PromiseContainer : public Promise {
 private:
 	mutable typename boost::remove_const<ResultT>::type m_result;
 	bool m_inited;
 
 public:
-	JobPromiseContainer()
-		: JobPromise()
+	PromiseContainer()
+		: Promise()
 		, m_result(), m_inited(false)
 	{ }
-	explicit JobPromiseContainer(typename boost::remove_const<ResultT>::type result)
-		: JobPromise()
+	explicit PromiseContainer(typename boost::remove_const<ResultT>::type result)
+		: Promise()
 		, m_result(STD_MOVE_IDN(result)), m_inited(false)
 	{ }
 
 public:
 	ResultT *try_get() const NOEXCEPT {
 		const RecursiveMutex::UniqueLock lock(m_mutex);
-		if(JobPromise::would_throw()){
+		if(Promise::would_throw()){
 			return NULLPTR;
 		}
 		// Note that `m_inited` can't be `false` here once the promise is marked successful.
@@ -80,7 +80,7 @@ public:
 	}
 	ResultT &get() const {
 		const RecursiveMutex::UniqueLock lock(m_mutex);
-		JobPromise::check_and_rethrow();
+		Promise::check_and_rethrow();
 		return m_result;
 	}
 	void set_success(typename boost::remove_const<ResultT>::type result){
@@ -88,12 +88,12 @@ public:
 		if(!m_inited){
 			m_result = STD_MOVE_IDN(result);
 		}
-		JobPromise::set_success();
+		Promise::set_success();
 		m_inited = true;
 	}
 };
 
-extern void yield(const boost::shared_ptr<const JobPromise> &promise, bool insignificant = true);
+extern void yield(const boost::shared_ptr<const Promise> &promise, bool insignificant = true);
 
 }
 

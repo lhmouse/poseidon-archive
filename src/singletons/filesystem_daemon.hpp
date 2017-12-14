@@ -12,8 +12,8 @@
 
 namespace Poseidon {
 
-class JobPromise;
-template<typename> class JobPromiseContainer;
+class Promise;
+template<typename> class PromiseContainer;
 
 class FileSystemDaemon {
 public:
@@ -45,14 +45,14 @@ public:
 	static void rmdir(const std::string &path, bool throws_if_does_not_exist = true);
 
 	// 异步接口。
-	static boost::shared_ptr<const JobPromiseContainer<BlockRead> > enqueue_for_loading(std::string path,
+	static boost::shared_ptr<const PromiseContainer<BlockRead> > enqueue_for_loading(std::string path,
 		boost::uint64_t begin = 0, boost::uint64_t limit = LIMIT_EOF, bool throws_if_does_not_exist = true);
-	static boost::shared_ptr<const JobPromise> enqueue_for_saving(std::string path, StreamBuffer data,
+	static boost::shared_ptr<const Promise> enqueue_for_saving(std::string path, StreamBuffer data,
 		boost::uint64_t begin = OFFSET_TRUNCATE, bool throws_if_exists = false);
-	static boost::shared_ptr<const JobPromise> enqueue_for_removing(std::string path, bool throws_if_does_not_exist = true);
-	static boost::shared_ptr<const JobPromise> enqueue_for_renaming(std::string path, std::string new_path);
-	static boost::shared_ptr<const JobPromise> enqueue_for_mkdir(std::string path, bool throws_if_exists = false);
-	static boost::shared_ptr<const JobPromise> enqueue_for_rmdir(std::string path, bool throws_if_does_not_exist = true);
+	static boost::shared_ptr<const Promise> enqueue_for_removing(std::string path, bool throws_if_does_not_exist = true);
+	static boost::shared_ptr<const Promise> enqueue_for_renaming(std::string path, std::string new_path);
+	static boost::shared_ptr<const Promise> enqueue_for_mkdir(std::string path, bool throws_if_exists = false);
+	static boost::shared_ptr<const Promise> enqueue_for_rmdir(std::string path, bool throws_if_does_not_exist = true);
 };
 
 }
