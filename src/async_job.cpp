@@ -31,34 +31,15 @@ namespace {
 		void perform() OVERRIDE {
 			PROFILE_ME;
 
-#ifdef POSEIDON_CXX11
-			std::exception_ptr except;
-#else
-			boost::exception_ptr except;
-#endif
+			STD_EXCEPTION_PTR except;
 			try {
 				m_procedure();
-			} catch(Exception &e){
-				LOG_POSEIDON_DEBUG("Exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				except = std::current_exception();
-#else
-				except = boost::copy_exception(e);
-#endif
 			} catch(std::exception &e){
 				LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				except = std::current_exception();
-#else
-				except = boost::copy_exception(std::runtime_error(e.what()));
-#endif
+				except = STD_CURRENT_EXCEPTION();
 			} catch(...){
 				LOG_POSEIDON_DEBUG("Unknown exception thrown.");
-#ifdef POSEIDON_CXX11
-				except = std::current_exception();
-#else
-				except = boost::copy_exception(std::bad_exception());
-#endif
+				except = STD_CURRENT_EXCEPTION();
 			}
 			const AUTO(promise, m_weak_promise.lock());
 			if(promise && !promise->is_satisfied()){

@@ -9,43 +9,43 @@
 #include <cstddef>
 
 #if __cplusplus >= 201103l
-#   define POSEIDON_CXX11           1
+#  define POSEIDON_CXX11           1
 #endif
 
 #if __cplusplus >= 201402l
-#   define POSEIDON_CXX14           1
+#  define POSEIDON_CXX14           1
 #endif
 
 #ifdef POSEIDON_CXX11
-#   define ENABLE_IF_CXX11(...)     __VA_ARGS__
+#  define ENABLE_IF_CXX11(...)     __VA_ARGS__
 #else
-#   define ENABLE_IF_CXX11(...)
+#  define ENABLE_IF_CXX11(...)
 #endif
 
 #ifdef POSEIDON_CXX14
-#   define ENABLE_IF_CXX14(...)     __VA_ARGS__
+#  define ENABLE_IF_CXX14(...)     __VA_ARGS__
 #else
-#   define ENABLE_IF_CXX14(...)
+#  define ENABLE_IF_CXX14(...)
 #endif
 
 #ifdef POSEIDON_CXX11
-#   include <type_traits>
+#  include <type_traits>
 #else
-#   include <boost/type_traits/add_reference.hpp>
-#   include <boost/type_traits/remove_cv.hpp>
-#   include <boost/type_traits/remove_reference.hpp>
+#  include <boost/type_traits/add_reference.hpp>
+#  include <boost/type_traits/remove_cv.hpp>
+#  include <boost/type_traits/remove_reference.hpp>
 #endif
 
 #ifdef POSEIDON_CXX11
-#   define CONSTEXPR                constexpr
-#   define NOEXCEPT                 noexcept
-#   define OVERRIDE                 override
-#   define FINAL                    final
+#  define CONSTEXPR                constexpr
+#  define NOEXCEPT                 noexcept
+#  define OVERRIDE                 override
+#  define FINAL                    final
 #else
-#   define CONSTEXPR
-#   define NOEXCEPT                 throw()
-#   define OVERRIDE
-#   define FINAL
+#  define CONSTEXPR
+#  define NOEXCEPT                 throw()
+#  define OVERRIDE
+#  define FINAL
 #endif
 
 namespace Poseidon {
@@ -133,25 +133,38 @@ struct ValueInitializer {
 }
 
 #ifdef POSEIDON_CXX11
-#   define CV_VALUE_TYPE(...)       typename ::std::remove_reference<decltype(__VA_ARGS__)>::type
-#   define VALUE_TYPE(...)          typename ::std::remove_cv<CV_VALUE_TYPE(__VA_ARGS__)>::type
-#   define AUTO(id_, ...)           auto id_ = __VA_ARGS__
-#   define AUTO_REF(id_, ...)       auto &id_ = __VA_ARGS__
-#   define STD_MOVE(expr_)          (::std::move(expr_))
-#   define STD_MOVE_IDN(expr_)      (::std::move(expr_))
-#   define DECLREF(t_)              (::std::declval<typename ::std::add_lvalue_reference<t_>::type>())
-#   define VAL_INIT                 { }
-#   define NULLPTR                  nullptr
+#  define CV_VALUE_TYPE(...)       typename ::std::remove_reference<decltype(__VA_ARGS__)>::type
+#  define VALUE_TYPE(...)          typename ::std::remove_cv<CV_VALUE_TYPE(__VA_ARGS__)>::type
+#  define AUTO(id_, ...)           auto id_ = __VA_ARGS__
+#  define AUTO_REF(id_, ...)       auto &id_ = __VA_ARGS__
+#  define STD_MOVE(expr_)          (::std::move(expr_))
+#  define STD_MOVE_IDN(expr_)      (::std::move(expr_))
+#  define DECLREF(t_)              (::std::declval<typename ::std::add_lvalue_reference<t_>::type>())
+#  define VAL_INIT                 { }
+#  define NULLPTR                  nullptr
 #else
-#   define CV_VALUE_TYPE(...)       __typeof__(__VA_ARGS__)
-#   define VALUE_TYPE(...)          typename ::boost::remove_cv<CV_VALUE_TYPE(__VA_ARGS__)>::type
-#   define AUTO(id_, ...)           VALUE_TYPE(__VA_ARGS__) id_(__VA_ARGS__)
-#   define AUTO_REF(id_, ...)       CV_VALUE_TYPE(__VA_ARGS__) &id_ = (__VA_ARGS__)
-#   define STD_MOVE(expr_)          (::Poseidon::move(expr_))
-#   define STD_MOVE_IDN(expr_)      (::Poseidon::move_as_identity(expr_))
-#   define DECLREF(t_)              (::Poseidon::decl_ref<t_>())
-#   define VAL_INIT                 (::Poseidon::ValueInitializer())
-#   define NULLPTR                  VAL_INIT
+#  define CV_VALUE_TYPE(...)       __typeof__(__VA_ARGS__)
+#  define VALUE_TYPE(...)          typename ::boost::remove_cv<CV_VALUE_TYPE(__VA_ARGS__)>::type
+#  define AUTO(id_, ...)           VALUE_TYPE(__VA_ARGS__) id_(__VA_ARGS__)
+#  define AUTO_REF(id_, ...)       CV_VALUE_TYPE(__VA_ARGS__) &id_ = (__VA_ARGS__)
+#  define STD_MOVE(expr_)          (::Poseidon::move(expr_))
+#  define STD_MOVE_IDN(expr_)      (::Poseidon::move_as_identity(expr_))
+#  define DECLREF(t_)              (::Poseidon::decl_ref<t_>())
+#  define VAL_INIT                 (::Poseidon::ValueInitializer())
+#  define NULLPTR                  VAL_INIT
+#endif
+
+#ifdef POSEIDON_CXX11
+#  include <exception>
+#  define STD_EXCEPTION_PTR            ::std::exception_ptr
+#  define STD_CURRENT_EXCEPTION()      (::std::current_exception())
+#  define STD_RETHROW_EXCEPTION(ep_)   (::std::rethrow_exception(ep_))
+#else
+#  include <stdexcept>
+#  include <boost/exception_ptr.hpp>
+#  define STD_EXCEPTION_PTR            ::boost::exception_ptr
+#  define STD_CURRENT_EXCEPTION()      (::boost::copy_exception(::std::runtime_error(__PRETTY_FUNCTION)))
+#  define STD_RETHROW_EXCEPTION(ep_)   (::boost::rethrow_exception(ep_))
 #endif
 
 #endif

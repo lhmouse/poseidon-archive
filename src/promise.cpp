@@ -34,11 +34,7 @@ void Promise::check_and_rethrow() const {
 		DEBUG_THROW(Exception, sslit("Promise has not been satisfied"));
 	}
 	if(m_except){
-#ifdef POSEIDON_CXX11
-		std::rethrow_exception(m_except);
-#else
-		boost::rethrow_exception(m_except);
-#endif
+		STD_RETHROW_EXCEPTION(m_except);
 	}
 }
 
@@ -50,12 +46,7 @@ void Promise::set_success(){
 	m_satisfied = true;
 //	m_except = VAL_INIT;
 }
-#ifdef POSEIDON_CXX11
-void Promise::set_exception(std::exception_ptr except)
-#else
-void Promise::set_exception(boost::exception_ptr except)
-#endif
-{
+void Promise::set_exception(STD_EXCEPTION_PTR except){
 	const RecursiveMutex::UniqueLock lock(m_mutex);
 	if(m_satisfied){
 		DEBUG_THROW(Exception, sslit("Promise has already been satisfied"));

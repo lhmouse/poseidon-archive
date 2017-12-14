@@ -161,14 +161,7 @@ namespace {
 			}
 			m_promise->set_success();
 		}
-		virtual void set_exception(
-#ifdef POSEIDON_CXX11
-			std::exception_ptr ep
-#else
-			boost::exception_ptr ep
-#endif
-			)
-		{
+		virtual void set_exception(STD_EXCEPTION_PTR ep){
 			if(!m_promise){
 				return;
 			}
@@ -417,14 +410,7 @@ namespace {
 		void set_success() OVERRIDE {
 			// no-op
 		}
-		void set_exception(
-#ifdef POSEIDON_CXX11
-			std::exception_ptr /* ep */
-#else
-			boost::exception_ptr /* ep */
-#endif
-			) OVERRIDE
-		{
+		void set_exception(STD_EXCEPTION_PTR /*ep*/){
 			// no-op
 		}
 	};
@@ -473,20 +459,9 @@ namespace {
 			AUTO_REF(conn, elem->operation->should_use_slave() ? slave_conn : master_conn);
 
 			MongoDb::BsonBuilder query;
-#ifdef POSEIDON_CXX11
-			std::exception_ptr except;
-#else
-			boost::exception_ptr except;
-#endif
+			STD_EXCEPTION_PTR except;
 			boost::uint32_t err_code = 0;
 			char err_msg[4096];
-#define SET_ERR_CODE_AND_MSG(c_, s_)	\
-			do {	\
-				err_code = (c_);	\
-				const std::size_t len_ = std::min<std::size_t>(std::strlen(s_), sizeof(err_msg) - 1);	\
-				std::memcpy(err_msg, (s_), len_);	\
-				err_msg[len_] = 0;	\
-			} while(false)
 
 			bool execute_it = false;
 			const AUTO(combinable_object, elem->operation->get_combinable_object());
@@ -508,28 +483,19 @@ namespace {
 					operation->execute(conn, query);
 				} catch(MongoDb::Exception &e){
 					LOG_POSEIDON_WARNING("MongoDb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
-#ifdef POSEIDON_CXX11
-					except = std::current_exception();
-#else
-					except = boost::copy_exception(e);
-#endif
-					SET_ERR_CODE_AND_MSG(e.get_code(), e.what());
+					except = STD_CURRENT_EXCEPTION();
+					err_code = e.get_code();
+					::stpncpy(err_msg, e.what(), sizeof(err_msg) - 1)[0] = 0;
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-					except = std::current_exception();
-#else
-					except = boost::copy_exception(std::runtime_error(e.what()));
-#endif
-					SET_ERR_CODE_AND_MSG(MONGOC_ERROR_PROTOCOL_ERROR, e.what());
+					except = STD_CURRENT_EXCEPTION();
+					err_code = MONGOC_ERROR_PROTOCOL_ERROR;
+					::stpncpy(err_msg, e.what(), sizeof(err_msg) - 1)[0] = 0;
 				} catch(...){
 					LOG_POSEIDON_WARNING("Unknown exception thrown");
-#ifdef POSEIDON_CXX11
-					except = std::current_exception();
-#else
-					except = boost::copy_exception(std::bad_exception());
-#endif
-					SET_ERR_CODE_AND_MSG(MONGOC_ERROR_PROTOCOL_ERROR, "Unknown exception");
+					except = STD_CURRENT_EXCEPTION();
+					err_code = MONGOC_ERROR_PROTOCOL_ERROR;
+					std::strcpy(err_msg, "Unknown exception");
 				}
 				conn->discard_result();
 			}

@@ -53,27 +53,15 @@ namespace {
 				}
 				elem = &m_queue.front();
 			}
-#ifdef POSEIDON_CXX11
-			std::exception_ptr except;
-#else
-			boost::exception_ptr except;
-#endif
+			STD_EXCEPTION_PTR except;
 			try {
 				elem->procedure();
 			} catch(std::exception &e){
 				LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
-#ifdef POSEIDON_CXX11
-				except = std::current_exception();
-#else
-				except = boost::copy_exception(std::runtime_error(e.what()));
-#endif
+				except = STD_CURRENT_EXCEPTION();
 			} catch(...){
 				LOG_POSEIDON_WARNING("Unknown exception thrown");
-#ifdef POSEIDON_CXX11
-				except = std::current_exception();
-#else
-				except = boost::copy_exception(std::bad_exception());
-#endif
+				except = STD_CURRENT_EXCEPTION();
 			}
 			if(!elem->promise->is_satisfied()){
 				try {

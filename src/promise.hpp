@@ -10,24 +10,13 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/type_traits/remove_const.hpp>
 
-#ifdef POSEIDON_CXX11
-#	include <exception>
-#	include <memory>
-#else
-#	include <boost/exception_ptr.hpp>
-#endif
-
 namespace Poseidon {
 
 class Promise : NONCOPYABLE {
 protected:
 	mutable RecursiveMutex m_mutex;
 	bool m_satisfied;
-#ifdef POSEIDON_CXX11
-	std::exception_ptr m_except;
-#else
-	boost::exception_ptr m_except;
-#endif
+	STD_EXCEPTION_PTR m_except;
 
 public:
 	Promise() NOEXCEPT;
@@ -42,11 +31,7 @@ public:
 	void check_and_rethrow() const;
 
 	void set_success();
-#ifdef POSEIDON_CXX11
-	void set_exception(std::exception_ptr except);
-#else
-	void set_exception(boost::exception_ptr except);
-#endif
+	void set_exception(STD_EXCEPTION_PTR except);
 };
 
 template<typename ResultT>
@@ -72,11 +57,7 @@ public:
 			return NULLPTR;
 		}
 		// Note that `m_inited` can't be `false` here once the promise is marked successful.
-#ifdef POSEIDON_CXX11
-		return std::addressof(m_result);
-#else
 		return reinterpret_cast<ResultT *>(reinterpret_cast<char (&)[1]>(m_result));
-#endif
 	}
 	ResultT &get() const {
 		const RecursiveMutex::UniqueLock lock(m_mutex);
