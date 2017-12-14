@@ -83,6 +83,7 @@ class MySqlDaemon;
 class ProfileDepository;
 class SystemServer;
 class TimerDaemon;
+class WorkhorseCamp;
 
 }
 
