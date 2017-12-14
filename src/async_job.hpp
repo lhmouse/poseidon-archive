@@ -12,11 +12,9 @@
 
 namespace Poseidon {
 
-extern void enqueue_async_categorized_job(boost::weak_ptr<const void> category,
-	boost::shared_ptr<JobPromise> promise, boost::function<void ()> proc,
+extern void enqueue_async_categorized_job(boost::weak_ptr<const void> category, const boost::shared_ptr<JobPromise> &promise, boost::function<void ()> procedure,
 	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
-extern void enqueue_async_job(
-	boost::shared_ptr<JobPromise> promise, boost::function<void ()> proc,
+extern void enqueue_async_job(const boost::shared_ptr<JobPromise> &promise, boost::function<void ()> procedure,
 	boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
 
 }

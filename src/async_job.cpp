@@ -15,16 +15,14 @@ namespace {
 	class AsyncJob : public JobBase {
 	private:
 		const boost::weak_ptr<const void> m_category;
-		const boost::shared_ptr<JobPromise> m_promise;
-		const boost::function<void ()> m_proc;
+		const boost::weak_ptr<JobPromise> m_weak_promise;
+		const boost::function<void ()> m_procedure;
 
 	public:
-		AsyncJob(boost::weak_ptr<const void> category,
-			boost::shared_ptr<JobPromise> promise, boost::function<void ()> proc)
+		AsyncJob(boost::weak_ptr<const void> category, const boost::shared_ptr<JobPromise> &promise, boost::function<void ()> procedure)
 			: m_category(STD_MOVE(category))
-			, m_promise(STD_MOVE(promise)), m_proc(STD_MOVE_IDN(proc))
+			, m_weak_promise(promise), m_procedure(STD_MOVE_IDN(procedure))
 		{ }
-		~AsyncJob(){ }
 
 	protected:
 		boost::weak_ptr<const void> get_category() const OVERRIDE {
@@ -39,7 +37,7 @@ namespace {
 			boost::exception_ptr except;
 #endif
 			try {
-				m_proc();
+				m_procedure();
 			} catch(Exception &e){
 				LOG_POSEIDON_DEBUG("Exception thrown: what = ", e.what());
 #ifdef POSEIDON_CXX11
@@ -62,22 +60,32 @@ namespace {
 				except = boost::copy_exception(std::bad_exception());
 #endif
 			}
+			const AUTO(promise, m_weak_promise.lock());
+			if(promise && !promise->is_satisfied()){
+				try {
+					if(!except){
+						promise->set_success();
+					} else {
+						promise->set_exception(except);
+					}
+				} catch(std::exception &e){
+					LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+				}
+			}
 		}
 	};
 }
 
-void enqueue_async_categorized_job(boost::weak_ptr<const void> category,
-	boost::shared_ptr<JobPromise> promise, boost::function<void ()> proc,
+void enqueue_async_categorized_job(boost::weak_ptr<const void> category, const boost::shared_ptr<JobPromise> &promise, boost::function<void ()> procedure,
 	boost::shared_ptr<const bool> withdrawn)
 {
-	AUTO(job, boost::make_shared<AsyncJob>(STD_MOVE(category), STD_MOVE(promise), STD_MOVE_IDN(proc)));
+	AUTO(job, boost::make_shared<AsyncJob>(STD_MOVE(category), promise, STD_MOVE_IDN(procedure)));
 	JobDispatcher::enqueue(STD_MOVE_IDN(job), STD_MOVE(withdrawn));
 }
-void enqueue_async_job(
-	boost::shared_ptr<JobPromise> promise, boost::function<void ()> proc,
+void enqueue_async_job(const boost::shared_ptr<JobPromise> &promise, boost::function<void ()> procedure,
 	boost::shared_ptr<const bool> withdrawn)
 {
-	enqueue_async_categorized_job(VAL_INIT, STD_MOVE(promise), STD_MOVE_IDN(proc), STD_MOVE(withdrawn));
+	enqueue_async_categorized_job(VAL_INIT, promise, STD_MOVE_IDN(procedure), STD_MOVE(withdrawn));
 }
 
 }
