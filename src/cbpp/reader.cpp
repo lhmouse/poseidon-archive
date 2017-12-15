@@ -75,7 +75,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 			m_payload_offset = 0;
 
 			m_queue.get(&temp16, 2);
-			m_payload_size = load_le(temp16);
+			m_payload_size = load_be(temp16);
 			if(m_payload_size == 0xFFFF){
 				m_size_expecting = 8;
 				m_state = S_EX_PAYLOAD_SIZE;
@@ -87,7 +87,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case S_EX_PAYLOAD_SIZE:
 			m_queue.get(&temp64, 8);
-			m_payload_size = load_le(temp64);
+			m_payload_size = load_be(temp64);
 
 			m_size_expecting = 2;
 			m_state = S_MESSAGE_ID;
@@ -95,7 +95,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case S_MESSAGE_ID:
 			m_queue.get(&temp16, 2);
-			m_message_id = load_le(temp16);
+			m_message_id = load_be(temp16);
 
 			if(m_message_id != 0){
 				on_data_message_header(m_message_id, m_payload_size);

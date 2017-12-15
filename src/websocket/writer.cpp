@@ -40,8 +40,7 @@ long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 		frame.put(&temp64, 8);
 	}
 	if(masked){
-		boost::uint32_t mask;
-		store_le(mask, random_uint32() | 0x80808080u);
+		boost::uint32_t mask = random_uint32() | 0x80808080;
 		frame.put(&mask, 4);
 		int mb;
 		for(;;){

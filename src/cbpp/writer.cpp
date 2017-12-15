@@ -37,15 +37,15 @@ long Writer::put_data_message(boost::uint16_t message_id, StreamBuffer payload){
 	boost::uint16_t temp16;
 	boost::uint64_t temp64;
 	if(payload.size() < 0xFFFF){
-		store_le(temp16, payload.size());
+		store_be(temp16, payload.size());
 		frame.put(&temp16, 2);
 	} else {
-		store_le(temp16, 0xFFFF);
+		store_be(temp16, 0xFFFF);
 		frame.put(&temp16, 2);
-		store_le(temp64, payload.size());
+		store_be(temp64, payload.size());
 		frame.put(&temp64, 8);
 	}
-	store_le(temp16, message_id);
+	store_be(temp16, message_id);
 	frame.put(&temp16, 2);
 	frame.splice(payload);
 	return on_encoded_data_avail(STD_MOVE(frame));
