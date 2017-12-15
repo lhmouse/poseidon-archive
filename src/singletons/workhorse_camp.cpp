@@ -130,8 +130,7 @@ namespace {
 					}
 					m_new_job.signal();
 				}
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-					"Waiting for jobs to complete: pending_objects = ", pending_objects);
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for jobs to complete: pending_objects = ", pending_objects);
 
 				::timespec req;
 				req.tv_sec = 0;
@@ -219,7 +218,7 @@ void WorkhorseCamp::stop(){
 	}
 	g_threads.clear();
 
-	LOG_POSEIDON_INFO("workhorse daemon stopped.");
+	LOG_POSEIDON_INFO("Workhorse daemon stopped.");
 }
 
 void WorkhorseCamp::enqueue_isolated(const boost::shared_ptr<Promise> &promise, JobProcedure procedure){
