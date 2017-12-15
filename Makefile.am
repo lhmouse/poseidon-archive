@@ -55,6 +55,7 @@ pkginclude_HEADERS = \
 	src/buffer_streams.hpp	\
 	src/ip_port.hpp	\
 	src/exception.hpp	\
+	src/tiny_exception.hpp	\
 	src/protocol_exception.hpp	\
 	src/system_exception.hpp	\
 	src/raii.hpp	\
@@ -189,6 +190,7 @@ lib_libposeidon_main_la_SOURCES = \
 	src/random.cpp	\
 	src/log.cpp	\
 	src/exception.cpp	\
+	src/tiny_exception.cpp	\
 	src/protocol_exception.cpp	\
 	src/system_exception.cpp	\
 	src/profiler.cpp	\

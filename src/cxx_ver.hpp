@@ -154,16 +154,20 @@ struct ValueInitializer {
 #  define NULLPTR                  VAL_INIT
 #endif
 
+#include "tiny_exception.hpp"
+
 #ifdef POSEIDON_CXX11
 #  include <exception>
 #  define STD_EXCEPTION_PTR            ::std::exception_ptr
 #  define STD_CURRENT_EXCEPTION()      (::std::current_exception())
+#  define STD_MAKE_EXCEPTION_PTR(e_)   (::std::make_exception_ptr(e_))
 #  define STD_RETHROW_EXCEPTION(ep_)   (::std::rethrow_exception(ep_))
 #else
 #  include <stdexcept>
 #  include <boost/exception_ptr.hpp>
 #  define STD_EXCEPTION_PTR            ::boost::exception_ptr
-#  define STD_CURRENT_EXCEPTION()      (::boost::copy_exception(::std::runtime_error(__PRETTY_FUNCTION__)))
+#  define STD_CURRENT_EXCEPTION()      (::boost::copy_exception(::Poseidon::TinyException(__PRETTY_FUNCTION__)))
+#  define STD_MAKE_EXCEPTION_PTR(e_)   (::boost::copy_exception(e_))
 #  define STD_RETHROW_EXCEPTION(ep_)   (::boost::rethrow_exception(ep_))
 #endif
 
