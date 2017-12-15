@@ -26,7 +26,7 @@ public:
 
 protected:
 	// 工厂函数。返回空指针导致抛出一个异常。
-	virtual boost::shared_ptr<TcpSessionBase> on_client_connect(Move<UniqueFile> client) const = 0;
+	virtual boost::shared_ptr<TcpSessionBase> on_client_connect(Move<UniqueFile> client) = 0;
 
 public:
 	int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable) OVERRIDE;

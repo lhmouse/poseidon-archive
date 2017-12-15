@@ -135,12 +135,12 @@ int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint
 	return 0;
 }
 
-void UdpServerBase::on_message_too_large(const SockAddr &sock_addr, StreamBuffer data) const {
+void UdpServerBase::on_message_too_large(const SockAddr &sock_addr, StreamBuffer data){
 	(void)sock_addr;
 	(void)data;
 }
 
-bool UdpServerBase::send(const SockAddr &sock_addr, StreamBuffer buffer) const {
+bool UdpServerBase::send(const SockAddr &sock_addr, StreamBuffer buffer){
 	PROFILE_ME;
 
 	if(has_been_shutdown_write()){

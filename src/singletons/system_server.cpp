@@ -29,7 +29,7 @@ namespace {
 		{ }
 
 	protected:
-		virtual boost::shared_ptr<TcpSessionBase> on_client_connect(Move<UniqueFile> client) const OVERRIDE {
+		virtual boost::shared_ptr<TcpSessionBase> on_client_connect(Move<UniqueFile> client) OVERRIDE {
 			PROFILE_ME;
 
 			AUTO(session, boost::make_shared<SystemSession>(STD_MOVE(client), m_auth_ctx));
