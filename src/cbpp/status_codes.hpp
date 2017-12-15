@@ -27,6 +27,7 @@ namespace StatusCodes {
 		ST_LENGTH_ERROR            =   -9,
 		ST_UNKNOWN_CONTROL_CODE    =  -10,
 		ST_DATA_CORRUPTED          =  -11,
+		ST_GONE_AWAY               =  -12,
 	};
 }
 
