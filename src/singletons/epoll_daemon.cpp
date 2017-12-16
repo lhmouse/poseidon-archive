@@ -355,19 +355,12 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket, bool t
 	const AUTO(now, get_fast_mono_clock());
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	const AUTO(result, g_socket_map.insert(SocketElement(take_ownership, socket, now)));
-	if(!result.second){
-		LOG_POSEIDON_ERROR("Socket is already in epoll: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
-		DEBUG_THROW(Exception, sslit("Socket is already in epoll"));
-	}
+	DEBUG_THROW_UNLESS(result.second, Exception, sslit("Socket is already in epoll"));
 	try {
 		::epoll_event event = { };
-		event.events = static_cast< ::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
+		event.events = static_cast<boost::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
 		event.data.ptr = socket.get();
-		if(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, socket->get_fd(), &event) != 0){
-			const int err_code = errno;
-			LOG_POSEIDON_ERROR("::epoll_ctl() failed, errno was ", err_code, ": socket = ", socket, ", typeid = ", typeid(*socket).name(), ", fd = ", socket->get_fd());
-			DEBUG_THROW(SystemException, err_code);
-		}
+		DEBUG_THROW_UNLESS(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, socket->get_fd(), &event) == 0, SystemException);
 	} catch(...){
 		g_socket_map.erase(result.first);
 		throw;

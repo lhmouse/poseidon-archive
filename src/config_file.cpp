@@ -125,20 +125,14 @@ void ConfigFile::load(const std::string &path){
 		Buffer_istream is(STD_MOVE(buf));
 		std::string key, val;
 		const char key_term = unescape(key, is, "=#");
-		if(!is){
-			LOG_POSEIDON_ERROR("Error parsing escape sequence on line #", line);
-			DEBUG_THROW(Exception, sslit("Error parsing escape sequence"));
-		}
+		DEBUG_THROW_UNLESS(is, Exception, sslit("Error parsing escape sequence"));
 		key = trim(STD_MOVE(key));
 		if(key.empty()){
 			continue;
 		}
 		if(key_term == '='){
 			unescape(val, is, "#");
-			if(!is){
-				LOG_POSEIDON_ERROR("Error parsing escape sequence on line #", line);
-				DEBUG_THROW(Exception, sslit("Error parsing escape sequence"));
-			}
+			DEBUG_THROW_UNLESS(is, Exception, sslit("Error parsing escape sequence"));
 			val = trim(STD_MOVE(val));
 		}
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: #", std::setw(3), line, " | ", key, " = ", val);

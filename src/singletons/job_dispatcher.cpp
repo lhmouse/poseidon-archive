@@ -312,10 +312,7 @@ void JobDispatcher::yield(const boost::shared_ptr<const Promise> &promise, bool 
 	PROFILE_ME;
 
 	const AUTO(fiber, t_current_fiber);
-	if(!fiber){
-		DEBUG_THROW(Exception, sslit("No current fiber"));
-	}
-
+	DEBUG_THROW_UNLESS(fiber, Exception, sslit("No current fiber"));
 	if(fiber->queue.empty()){
 		LOG_POSEIDON_FATAL("Not in current fiber?!");
 		std::abort();

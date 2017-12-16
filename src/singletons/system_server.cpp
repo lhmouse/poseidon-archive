@@ -110,16 +110,10 @@ boost::shared_ptr<const SystemServletBase> SystemServer::register_servlet(boost:
 
 	const Mutex::UniqueLock lock(g_mutex);
 	const char *const uri = servlet->get_uri();
-	if(uri[0] != '/'){
-		LOG_POSEIDON_ERROR("System servlet URI must begin with a slash: ", uri);
-		DEBUG_THROW(Exception, sslit("System servlet URI must begin with a slash"));
-	}
+	DEBUG_THROW_UNLESS(uri[0] == '/', Exception, sslit("System servlet URI must begin with a slash"));
 	LOG_POSEIDON_DEBUG("Registering system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	const AUTO(pair, g_servlet_map.emplace(uri, servlet));
-	if(!pair.second){
-		LOG_POSEIDON_ERROR("Duplicate system servlet: ", uri);
-		DEBUG_THROW(Exception, sslit("Duplicate system servlet"));
-	}
+	DEBUG_THROW_UNLESS(pair.second, Exception, sslit("Duplicate system servlet"));
 	LOG_POSEIDON_INFO("Registered system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	return STD_MOVE_IDN(servlet);
 }
