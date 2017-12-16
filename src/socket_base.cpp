@@ -148,17 +148,18 @@ try {
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_info_mutex);
-	if(m_remote_info.port() == 0){
-		if(is_listening()){
-			m_remote_info = listening_ip_port();
-		} else {
-			::sockaddr_storage sa;
-			::socklen_t salen = sizeof(sa);
-			DEBUG_THROW_UNLESS(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) == 0, SystemException);
-			m_remote_info = SockAddr(&sa, salen);
-		}
+	if(m_remote_info.port() != 0){
+		return m_remote_info;
 	}
-	return m_remote_info;
+	if(is_listening()){
+		return m_remote_info = listening_ip_port();
+	}
+	::sockaddr_storage sa;
+	::socklen_t salen = sizeof(sa);
+	if(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
+		return unknown_ip_port();
+	}
+	return m_remote_info = SockAddr(&sa, salen);
 } catch(std::exception &e){
 	LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
 	return unknown_ip_port();
@@ -168,13 +169,15 @@ try {
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_info_mutex);
-	if(m_local_info.port() == 0){
-		::sockaddr_storage sa;
-		::socklen_t salen = sizeof(sa);
-		DEBUG_THROW_UNLESS(::getsockname(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) == 0, SystemException);
-		m_local_info = SockAddr(&sa, salen);
+	if(m_local_info.port() != 0){
+		return m_local_info;
 	}
-	return m_local_info;
+	::sockaddr_storage sa;
+	::socklen_t salen = sizeof(sa);
+	if(::getsockname(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
+		return unknown_ip_port();
+	}
+	return m_local_info = SockAddr(&sa, salen);
 } catch(std::exception &e){
 	LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
 	return unknown_ip_port();
