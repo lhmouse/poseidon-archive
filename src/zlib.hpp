@@ -11,12 +11,16 @@
 #include <cstring>
 #include <boost/scoped_ptr.hpp>
 
+#undef ZLIB_CONST
+#define ZLIB_CONST 1
+#include <zlib.h>
+
 namespace Poseidon {
 
 class Deflator : NONCOPYABLE {
 private:
-	struct Context;
-	boost::scoped_ptr<Context> m_ctx;
+	::z_stream m_stream;
+	unsigned char m_temp[16384];
 	StreamBuffer m_buffer;
 
 public:
@@ -49,8 +53,8 @@ public:
 
 class Inflator : NONCOPYABLE {
 private:
-	struct Context;
-	boost::scoped_ptr<Context> m_ctx;
+	::z_stream m_stream;
+	unsigned char m_temp[16384];
 	StreamBuffer m_buffer;
 
 public:
