@@ -62,9 +62,6 @@ namespace {
 		}
 	};
 
-#define DEBUG_THROW_MONGODB_EXCEPTION(bson_err_, database_)	\
-	DEBUG_THROW(::Poseidon::MongoDb::Exception, database_, (bson_err_).code, ::Poseidon::SharedNts((bson_err_).message))
-
 	class DelegatedConnection : public Connection {
 	private:
 		const SharedNts m_database;
@@ -84,31 +81,17 @@ namespace {
 			: m_database(database)
 			, m_cursor_id(0), m_cursor_ns()
 		{
-			const int err = ::pthread_once(&g_mongo_once, &init_mongo);
+			int err = ::pthread_once(&g_mongo_once, &init_mongo);
 			if(err != 0){
 				LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
 				std::abort();
 			}
-
-			if(!m_uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port))){
-				DEBUG_THROW(BasicException, sslit("::mongoc_uri_new_for_host_port() failed!"));
-			}
-			if(!::mongoc_uri_set_username(m_uri.get(), user_name)){
-				DEBUG_THROW(BasicException, sslit("::mongoc_uri_set_username() failed!"));
-			}
-			if(!::mongoc_uri_set_password(m_uri.get(), password)){
-				DEBUG_THROW(BasicException, sslit("::mongoc_uri_set_password() failed!"));
-			}
-			if(!::mongoc_uri_set_database(m_uri.get(), auth_database)){
-				DEBUG_THROW(BasicException, sslit("::mongoc_uri_set_database() failed!"));
-			}
-			if(!::mongoc_uri_set_option_as_bool(m_uri.get(), "ssl", use_ssl)){
-				DEBUG_THROW(BasicException, sslit("::mongoc_uri_set_option_as_bool() failed!"));
-			}
-
-			if(!m_client.reset(::mongoc_client_new_from_uri(m_uri.get()))){
-				DEBUG_THROW(BasicException, sslit("::mongoc_client_new_from_uri() failed!"));
-			}
+			DEBUG_THROW_UNLESS(m_uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port)), BasicException, sslit("::mongoc_uri_new_for_host_port() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_username(m_uri.get(), user_name), BasicException, sslit("::mongoc_uri_set_username() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_password(m_uri.get(), password), BasicException, sslit("::mongoc_uri_set_password() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_database(m_uri.get(), auth_database), BasicException, sslit("::mongoc_uri_set_database() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_option_as_bool(m_uri.get(), "ssl", use_ssl), BasicException, sslit("::mongoc_uri_set_option_as_bool() failed"));
+			DEBUG_THROW_UNLESS(m_client.reset(::mongoc_client_new_from_uri(m_uri.get())), BasicException, sslit("::mongoc_client_new_from_uri() failed"));
 		}
 
 	private:
@@ -127,10 +110,7 @@ namespace {
 				LOG_POSEIDON_DEBUG("Field is undefined or null: name = ", name);
 				return false;
 			}
-			if(type != type_expecting){
-				LOG_POSEIDON_ERROR("BSON type mismatch: name = ", name, ", type_expecting = ", type_expecting, ", type = ", type);
-				DEBUG_THROW(BasicException, sslit("BSON type mismatch"));
-			}
+			DEBUG_THROW_UNLESS(type == type_expecting, BasicException, sslit("BSON type mismatch"));
 			return true;
 		}
 
@@ -151,9 +131,7 @@ namespace {
 			// `reply` is always set.
 			const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
 			const AUTO(reply_bt, reply_guard.get());
-			if(!success){
-				DEBUG_THROW_MONGODB_EXCEPTION(err, m_database);
-			}
+			DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, SharedNts(err.message));
 
 			::bson_iter_t it;
 			if(!::bson_iter_init_find(&it, reply_bt, "cursor")){
@@ -221,9 +199,7 @@ namespace {
 					// `reply` is always set.
 					const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
 					const AUTO(reply_bt, reply_guard.get());
-					if(!success){
-						DEBUG_THROW_MONGODB_EXCEPTION(err, m_database);
-					}
+					DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, SharedNts(err.message));
 
 					::bson_iter_t it;
 					if(!::bson_iter_init_find(&it, reply_bt, "cursor")){
@@ -267,10 +243,7 @@ namespace {
 			boost::uint32_t size;
 			const boost::uint8_t *data;
 			::bson_iter_document(&m_batch_it, &size, &data);
-			if(!::bson_init_static(&m_element_storage, data, size)){
-				LOG_POSEIDON_ERROR("::bson_init_static() failed!");
-				DEBUG_THROW(ProtocolException, sslit("::bson_init_static() failed"), -1);
-			}
+			DEBUG_THROW_UNLESS(::bson_init_static(&m_element_storage, data, size), ProtocolException, sslit("::bson_init_static() failed"), -1);
 			m_element_guard.reset(&m_element_storage);
 			return true;
 		}
@@ -331,9 +304,7 @@ namespace {
 			}
 			boost::uint32_t len;
 			const char *const str = ::bson_iter_utf8(&it, &len);
-			if(len != 36){
-				DEBUG_THROW(BasicException, sslit("Unexpected UUID string length"));
-			}
+			DEBUG_THROW_UNLESS(len == 36, BasicException, sslit("Unexpected UUID string length"));
 			return Uuid(reinterpret_cast<const char (&)[36]>(*str));
 		}
 		std::basic_string<unsigned char> do_get_blob(const char *name) const {

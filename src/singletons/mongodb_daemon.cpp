@@ -252,11 +252,8 @@ namespace {
 				LOG_POSEIDON_DEBUG("Discarding isolated MongoDB query: collection = ", get_collection(), ", query = ", query);
 				return;
 			}
-
 			conn->execute_bson(query);
-			if(!conn->fetch_next()){
-				DEBUG_THROW(MongoDb::Exception, SharedNts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, sslit("No documents returned"));
-			}
+			DEBUG_THROW_UNLESS(conn->fetch_next(), MongoDb::Exception, SharedNts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, sslit("No documents returned"));
 			m_object->fetch(conn);
 		}
 	};
@@ -637,10 +634,7 @@ namespace {
 			const AUTO(due_time, saturated_add(now, save_delay));
 
 			const Mutex::UniqueLock lock(m_mutex);
-			if(!atomic_load(m_running, ATOMIC_CONSUME)){
-				LOG_POSEIDON_ERROR("MongoDB thread is being shut down.");
-				DEBUG_THROW(Exception, sslit("MongoDB thread is being shut down"));
-			}
+			DEBUG_THROW_UNLESS(atomic_load(m_running, ATOMIC_CONSUME), Exception, sslit("MongoDB thread is being shut down"));
 			OperationQueueElement elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){

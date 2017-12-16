@@ -47,9 +47,7 @@ namespace {
 SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
 	: m_ssl(STD_MOVE(ssl)), m_fd(fd)
 {
-	if(!::SSL_set_fd(m_ssl.get(), fd)){
-		DEBUG_THROW(Exception, sslit("::SSL_set_fd() failed"));
-	}
+	DEBUG_THROW_UNLESS(::SSL_set_fd(m_ssl.get(), fd), Exception, sslit("::SSL_set_fd() failed"));
 }
 SslFilterBase::~SslFilterBase(){ }
 

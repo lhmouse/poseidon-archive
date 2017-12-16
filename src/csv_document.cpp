@@ -40,9 +40,7 @@ CsvDocument::CsvDocument(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	if(!is){
-		DEBUG_THROW(ProtocolException, sslit("CsvDocument parser error"), -1);
-	}
+	DEBUG_THROW_UNLESS(is, ProtocolException, sslit("CsvDocument parser error"), -1);
 }
 
 void CsvDocument::reset_header(const boost::container::map<SharedNts, std::string> &row){

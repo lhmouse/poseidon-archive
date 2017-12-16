@@ -38,16 +38,13 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->force_shutdown();
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 			client->force_shutdown();
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
 			client->force_shutdown();
 		}
 	}

@@ -38,8 +38,7 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Http::Exception thrown in HTTP servlet: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown in HTTP servlet: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->shutdown_read();
 			client->shutdown_write();
 		} catch(std::exception &e){
@@ -157,8 +156,7 @@ boost::shared_ptr<UpgradedSessionBase> Client::on_low_level_response_end(boost::
 	}
 
 	JobDispatcher::enqueue(
-		boost::make_shared<ResponseJob>(virtual_shared_from_this<Client>(),
-			STD_MOVE(m_response_headers), STD_MOVE(m_entity)),
+		boost::make_shared<ResponseJob>(virtual_shared_from_this<Client>(), STD_MOVE(m_response_headers), STD_MOVE(m_entity)),
 		VAL_INIT);
 
 	return VAL_INIT;

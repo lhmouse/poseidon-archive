@@ -20,9 +20,7 @@
 			::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weak_config_file_local_;	\
 			inline ::boost::shared_ptr<const ::Poseidon::ConfigFile> require_config_file_(){	\
 				const AUTO(config_file_, g_weak_config_file_local_.lock());	\
-				if(!config_file_){	\
-					DEBUG_THROW(::Poseidon::Exception, ::Poseidon::sslit("Module config is not loaded"));	\
-				}	\
+				DEBUG_THROW_UNLESS(config_file_, ::Poseidon::Exception, ::Poseidon::sslit("Module config is not loaded"));	\
 				return config_file_;	\
 			}	\
 		}	\

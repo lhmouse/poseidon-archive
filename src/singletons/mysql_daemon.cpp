@@ -237,11 +237,8 @@ namespace {
 				LOG_POSEIDON_DEBUG("Discarding isolated MySQL query: table = ", get_table(), ", query = ", query);
 				return;
 			}
-
 			conn->execute_sql(query);
-			if(!conn->fetch_row()){
-				DEBUG_THROW(MySql::Exception, SharedNts::view(get_table()), ER_SP_FETCH_NO_DATA, sslit("No rows returned"));
-			}
+			DEBUG_THROW_UNLESS(conn->fetch_row(), MySql::Exception, SharedNts::view(get_table()), ER_SP_FETCH_NO_DATA, sslit("No rows returned"));
 			m_object->fetch(conn);
 		}
 	};
@@ -623,10 +620,7 @@ namespace {
 			const AUTO(due_time, saturated_add(now, save_delay));
 
 			const Mutex::UniqueLock lock(m_mutex);
-			if(!atomic_load(m_running, ATOMIC_CONSUME)){
-				LOG_POSEIDON_ERROR("MySQL thread is being shut down.");
-				DEBUG_THROW(Exception, sslit("MySQL thread is being shut down"));
-			}
+			DEBUG_THROW_UNLESS(atomic_load(m_running, ATOMIC_CONSUME), Exception, sslit("MySQL thread is being shut down"));
 			OperationQueueElement elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){

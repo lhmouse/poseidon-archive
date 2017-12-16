@@ -43,8 +43,7 @@ namespace {
 		const int gai_code = ::getaddrinfo(host.c_str(), port, NULLPTR, &tmp_res);
 		if(gai_code != 0){
 			const char *const err_msg = ::gai_strerror(gai_code);
-			LOG_POSEIDON_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code,
-				", err_msg = ", err_msg);
+			LOG_POSEIDON_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
 			DEBUG_THROW(Exception, SharedNts(err_msg));
 		}
 		res.reset(tmp_res);

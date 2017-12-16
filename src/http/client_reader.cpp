@@ -80,43 +80,25 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 				for(AUTO(it, line.begin()); it != line.end(); ++it){
 					const unsigned ch = static_cast<unsigned char>(*it);
-					if((ch < 0x20) || (ch >= 0x7F)){
-						LOG_POSEIDON_WARNING("Invalid HTTP response header: line = ", line);
-						DEBUG_THROW(BasicException, sslit("Invalid HTTP response header"));
-					}
+					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), BasicException, sslit("Invalid HTTP response header"));
 				}
 
 				AUTO(pos, line.find(' '));
-				if(pos == std::string::npos){
-					LOG_POSEIDON_WARNING("Bad request header: expecting verb, line = ", line);
-					DEBUG_THROW(BasicException, sslit("No HTTP version in response headers"));
-				}
-				line[pos] = 0;
+				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("No HTTP version in response headers"));
+				line.at(pos) = 0;
 				long ver_end = 0;
 				char ver_major_str[16], ver_minor_str[16];
-				if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) != 2){
-					LOG_POSEIDON_WARNING("Bad response header: expecting HTTP version: ", line);
-					DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
-				}
-				if(static_cast<unsigned long>(ver_end) != pos){
-					LOG_POSEIDON_WARNING("Bad response header: junk after HTTP version: ", line);
-					DEBUG_THROW(BasicException, sslit("Malformed HTTP version in response headers"));
-				}
+				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, BasicException, sslit("Malformed HTTP version in response headers"));
+				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == pos, BasicException, sslit("Malformed HTTP version in response headers"));
 				m_response_headers.version = std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10);
 				line.erase(0, pos + 1);
 
 				pos = line.find(' ');
-				if(pos == std::string::npos){
-					LOG_POSEIDON_WARNING("Bad response header: expecting status code: ", line);
-					DEBUG_THROW(BasicException, sslit("No status code in response headers"));
-				}
+				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("No status code in response headers"));
 				line[pos] = 0;
-				char *endptr;
-				const AUTO(status_code, std::strtoul(line.c_str(), &endptr, 10));
-				if(*endptr){
-					LOG_POSEIDON_WARNING("Bad response header: expecting status code: ", line);
-					DEBUG_THROW(BasicException, sslit("Malformed status code in response headers"));
-				}
+				char *eptr;
+				const AUTO(status_code, std::strtoul(line.c_str(), &eptr, 10));
+				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Malformed status code in response headers"));
 				m_response_headers.status_code = status_code;
 				line.erase(0, pos + 1);
 
@@ -135,10 +117,7 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				if(pos == std::string::npos){
-					LOG_POSEIDON_WARNING("Invalid HTTP header: ", line);
-					DEBUG_THROW(BasicException, sslit("Malformed HTTP header in response headers"));
-				}
+				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("Malformed HTTP header in response headers"));
 				SharedNts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
@@ -153,16 +132,10 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 					if(content_length.empty()){
 						m_content_length = CONTENT_TILL_EOF;
 					} else {
-						char *endptr;
-						m_content_length = ::strtoull(content_length.c_str(), &endptr, 10);
-						if(*endptr){
-							LOG_POSEIDON_WARNING("Bad request header Content-Length: ", content_length);
-							DEBUG_THROW(BasicException, sslit("Malformed Content-Length header"));
-						}
-						if(m_content_length > CONTENT_LENGTH_MAX){
-							LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", content_length);
-							DEBUG_THROW(BasicException, sslit("Inacceptable Content-Length"));
-						}
+						char *eptr;
+						m_content_length = ::strtoull(content_length.c_str(), &eptr, 10);
+						DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Malformed Content-Length header"));
+						DEBUG_THROW_UNLESS(m_content_length <= CONTENT_LENGTH_MAX, BasicException, sslit("Inacceptable Content-Length"));
 					}
 				} else if(::strcasecmp(transfer_encoding.c_str(), "chunked") == 0){
 					m_content_length = CONTENT_CHUNKED;
@@ -213,16 +186,10 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 				std::string line = expected.dump_string();
 
-				char *endptr;
-				m_chunk_size = ::strtoull(line.c_str(), &endptr, 16);
-				if(*endptr && (*endptr != ' ')){
-					LOG_POSEIDON_WARNING("Bad chunk header: ", line);
-					DEBUG_THROW(BasicException, sslit("Malformed chunk header"));
-				}
-				if(m_chunk_size > CONTENT_LENGTH_MAX){
-					LOG_POSEIDON_WARNING("Inacceptable chunk size in header: ", line);
-					DEBUG_THROW(BasicException, sslit("Inacceptable chunk length"));
-				}
+				char *eptr;
+				m_chunk_size = ::strtoull(line.c_str(), &eptr, 16);
+				DEBUG_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), BasicException, sslit("Malformed chunk header"));
+				DEBUG_THROW_UNLESS(m_chunk_size <= CONTENT_LENGTH_MAX, BasicException, sslit("Inacceptable chunk length"));
 				if(m_chunk_size == 0){
 					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_CHUNKED_TRAILER;
@@ -257,10 +224,7 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				if(pos == std::string::npos){
-					LOG_POSEIDON_WARNING("Invalid chunk trailer: ", line);
-					DEBUG_THROW(BasicException, sslit("Invalid HTTP header in chunk trailer"));
-				}
+				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("Invalid HTTP header in chunk trailer"));
 				SharedNts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));

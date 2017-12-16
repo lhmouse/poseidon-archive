@@ -50,12 +50,8 @@ SocketBase::SocketBase(Move<UniqueFile> socket)
 	, m_throttled(false), m_timed_out(false), m_delayed_shutdown_guard_count(0)
 {
 	const int flags = ::fcntl(m_socket.get(), F_GETFL);
-	if(flags == -1){
-		DEBUG_THROW(SystemException);
-	}
-	if(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) != 0){
-		DEBUG_THROW(SystemException);
-	}
+	DEBUG_THROW_UNLESS(flags != -1, SystemException);
+	DEBUG_THROW_UNLESS(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) == 0, SystemException);
 }
 SocketBase::~SocketBase(){
 	// This FD may have been dup()'d.
@@ -74,9 +70,7 @@ bool SocketBase::is_listening() const {
 
 	int val;
 	::socklen_t len = sizeof(val);
-	if(::getsockopt(get_fd(), SOL_SOCKET, SO_ACCEPTCONN, &val, &len) != 0){
-		DEBUG_THROW(SystemException);
-	}
+	DEBUG_THROW_UNLESS(::getsockopt(get_fd(), SOL_SOCKET, SO_ACCEPTCONN, &val, &len) == 0, SystemException);
 	return (len >= sizeof(int)) && (val != 0);
 }
 
@@ -160,9 +154,7 @@ try {
 		} else {
 			::sockaddr_storage sa;
 			::socklen_t salen = sizeof(sa);
-			if(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
-				DEBUG_THROW(SystemException);
-			}
+			DEBUG_THROW_UNLESS(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) == 0, SystemException);
 			m_remote_info = SockAddr(&sa, salen);
 		}
 	}
@@ -179,9 +171,7 @@ try {
 	if(m_local_info.port() == 0){
 		::sockaddr_storage sa;
 		::socklen_t salen = sizeof(sa);
-		if(::getsockname(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
-			DEBUG_THROW(SystemException);
-		}
+		DEBUG_THROW_UNLESS(::getsockname(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) == 0, SystemException);
 		m_local_info = SockAddr(&sa, salen);
 	}
 	return m_local_info;

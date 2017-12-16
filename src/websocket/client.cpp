@@ -39,16 +39,13 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 			client->shutdown(ST_INTERNAL_ERROR, e.what());
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
 			client->force_shutdown();
 		}
 	}
@@ -168,8 +165,7 @@ bool Client::on_low_level_message_end(boost::uint64_t whole_size){
 	(void)whole_size;
 
 	JobDispatcher::enqueue(
-		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Client>(),
-			m_opcode, STD_MOVE(m_payload)),
+		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Client>(), m_opcode, STD_MOVE(m_payload)),
 		VAL_INIT);
 
 	return true;
@@ -178,8 +174,7 @@ bool Client::on_low_level_control_message(OpCode opcode, StreamBuffer payload){
 	PROFILE_ME;
 
 	JobDispatcher::enqueue(
-		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Client>(),
-			opcode, STD_MOVE(payload)),
+		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Client>(), opcode, STD_MOVE(payload)),
 		VAL_INIT);
 
 	return true;

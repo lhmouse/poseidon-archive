@@ -17,28 +17,20 @@ namespace {
 	inline boost::int64_t shift_vint(StreamBuffer &buffer){
 		StreamBuffer::ReadIterator rit(buffer);
 		boost::int64_t val;
-		if(!vint64_from_binary(val, rit, buffer.size())){
-			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vint"));
-		}
+		DEBUG_THROW_UNLESS(vint64_from_binary(val, rit, buffer.size()), Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vint"));
 		return val;
 	}
 	inline boost::uint64_t shift_vuint(StreamBuffer &buffer){
 		StreamBuffer::ReadIterator rit(buffer);
 		boost::uint64_t val;
-		if(!vuint64_from_binary(val, rit, buffer.size())){
-			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vuint"));
-		}
+		DEBUG_THROW_UNLESS(vuint64_from_binary(val, rit, buffer.size()), Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vuint"));
 		return val;
 	}
 	inline StreamBuffer shift_blob(StreamBuffer &buffer){
 		StreamBuffer::ReadIterator rit(buffer);
 		boost::uint64_t len;
-		if(!vuint64_from_binary(len, rit, buffer.size())){
-			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("blob.length"));
-		}
-		if(buffer.size() < len){
-			DEBUG_THROW(Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("blob.data"));
-		}
+		DEBUG_THROW_UNLESS(vuint64_from_binary(len, rit, buffer.size()), Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("blob.length"));
+		DEBUG_THROW_UNLESS(len <= buffer.size(), Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("blob.data"));
 		StreamBuffer val;
 		val = buffer.cut_off(len);
 		return val;

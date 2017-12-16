@@ -42,11 +42,8 @@ Thread::Thread(boost::function<void ()> proc, const char *tag)
 
 	m_impl->self = m_impl; // 制造循环引用。
 	try {
-		const int err = ::pthread_create(&(m_impl->handle), NULLPTR, &Impl::thread_proc, m_impl.get());
-		if(err != 0){
-			LOG_POSEIDON_ERROR("::pthread_create() failed with error code ", err);
-			DEBUG_THROW(SystemException, err);
-		}
+		int err_code = ::pthread_create(&(m_impl->handle), NULLPTR, &Impl::thread_proc, m_impl.get());
+		DEBUG_THROW_UNLESS(err_code == 0, SystemException);
 	} catch(...){
 		m_impl->self.reset();
 		throw;
@@ -63,25 +60,15 @@ bool Thread::joinable() const NOEXCEPT {
 	return !!m_impl;
 }
 void Thread::join(){
-	if(!m_impl){
-		LOG_POSEIDON_ERROR("Attempting to join a non-joinable thread.");
-		DEBUG_THROW(Exception, sslit("Attempting to join a non-joinable thread"));
-	}
+	DEBUG_THROW_UNLESS(m_impl, Exception, sslit("Attempting to join a non-joinable thread"));
 	int err_code = ::pthread_join(m_impl->handle, NULLPTR);
-	if(err_code != 0){
-		LOG_POSEIDON_WARNING("::pthread_join() failed: err_code = ", err_code);
-	}
+	DEBUG_THROW_UNLESS(err_code == 0, SystemException);
 	m_impl.reset();
 }
 void Thread::detach(){
-	if(!m_impl){
-		LOG_POSEIDON_ERROR("Attempting to detach a non-joinable thread.");
-		DEBUG_THROW(Exception, sslit("Attempting to detach a non-joinable thread"));
-	}
+	DEBUG_THROW_UNLESS(m_impl, Exception, sslit("Attempting to detach a non-joinable thread"));
 	int err_code = ::pthread_detach(m_impl->handle);
-	if(err_code != 0){
-		LOG_POSEIDON_WARNING("::pthread_detach() failed: err_code = ", err_code);
-	}
+	DEBUG_THROW_UNLESS(err_code == 0, SystemException);
 	m_impl.reset();
 }
 

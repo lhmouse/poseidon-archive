@@ -147,10 +147,7 @@ namespace {
 			PROFILE_ME;
 
 			const Mutex::UniqueLock lock(m_mutex);
-			if(!atomic_load(m_running, ATOMIC_CONSUME)){
-				LOG_POSEIDON_ERROR("Workhorse thread is being shut down.");
-				DEBUG_THROW(Exception, sslit("Workhorse thread is being shut down"));
-			}
+			DEBUG_THROW_UNLESS(atomic_load(m_running, ATOMIC_CONSUME), Exception, sslit("Workhorse thread is being shut down"));
 			JobQueueElement elem = { promise, STD_MOVE_IDN(procedure) };
 			m_queue.push_back(STD_MOVE(elem));
 			m_new_job.signal();
@@ -159,7 +156,7 @@ namespace {
 
 	volatile bool g_running = false;
 
-	Poseidon::Mutex g_router_mutex;
+	Mutex g_router_mutex;
 	std::vector<boost::shared_ptr<WorkhorseThread> > g_threads;
 
 	void submit_job_using_seed(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t seed){

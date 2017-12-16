@@ -40,8 +40,7 @@ private:
 		try {
 			really_perform(session);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			session->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
@@ -150,10 +149,7 @@ void Session::on_low_level_data_message_payload(boost::uint64_t payload_offset, 
 	(void)payload_offset;
 
 	m_size_total += payload.size();
-	if(m_size_total > get_max_request_length()){
-		DEBUG_THROW(Exception, ST_REQUEST_TOO_LARGE);
-	}
-
+	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, ST_REQUEST_TOO_LARGE);
 	m_payload.splice(payload);
 }
 bool Session::on_low_level_data_message_end(boost::uint64_t payload_size){
@@ -162,8 +158,7 @@ bool Session::on_low_level_data_message_end(boost::uint64_t payload_size){
 	(void)payload_size;
 
 	JobDispatcher::enqueue(
-		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Session>(),
-			m_message_id, STD_MOVE(m_payload)),
+		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Session>(), m_message_id, STD_MOVE(m_payload)),
 		VAL_INIT);
 
 	return true;
@@ -173,8 +168,7 @@ bool Session::on_low_level_control_message(StatusCode status_code, StreamBuffer 
 	PROFILE_ME;
 
 	JobDispatcher::enqueue(
-		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Session>(),
-			status_code, STD_MOVE(param)),
+		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Session>(), status_code, STD_MOVE(param)),
 		VAL_INIT);
 
 	return true;

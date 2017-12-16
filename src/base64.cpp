@@ -127,30 +127,30 @@ void Base64Decoder::put(const void *data, std::size_t size){
 			} else if((seq >= (1ul << 18)) && ((seq >> 18) <= 1)){
 				n_add = 1ul << 18;
 			}
-			if(n_add == 0){
-				DEBUG_THROW(ProtocolException, sslit("Invalid base64 padding character encountered"), -1);
-			}
+			DEBUG_THROW_UNLESS(n_add != 0, ProtocolException, sslit("Invalid base64 padding character encountered"), -1);
 			seq += n_add;
 		} else {
 			const int digit = from_base64_digit(ch);
-			if(digit < 0){
-				DEBUG_THROW(ProtocolException, sslit("Invalid base64 character encountered"), -1);
-			}
+			DEBUG_THROW_UNLESS(digit >= 0, ProtocolException, sslit("Invalid base64 character encountered"), -1);
 			seq += static_cast<unsigned>(digit);
 		}
 		if(seq >= (1ul << 24)){
 			const unsigned n = 4 - (seq >> 24);
-			if((n < 1) || (n > 3)){
-				DEBUG_THROW(ProtocolException, sslit("Invalid base64 data"), -1);
-			}
-			//if(n >= 1){
+			switch(n){
+			case 1:
 				m_buffer.put(seq >> 16);
-			//}
-			if(n >= 2){
+				break;
+			case 2:
+				m_buffer.put(seq >> 16);
 				m_buffer.put(seq >>  8);
-			}
-			if(n >= 3){
+				break;
+			case 3:
+				m_buffer.put(seq >> 16);
+				m_buffer.put(seq >>  8);
 				m_buffer.put(seq >>  0);
+				break;
+			default:
+				DEBUG_THROW(ProtocolException, sslit("Invalid base64 data"), -1);
 			}
 			m_seq = 1;
 		} else {

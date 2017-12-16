@@ -40,8 +40,8 @@ private:
 	struct Element {
 		SharedNts name;
 		Type type;
-		std::basic_string<unsigned char> large;
-		unsigned char small[16];
+		std::string large;
+		char small[16];
 	};
 
 private:

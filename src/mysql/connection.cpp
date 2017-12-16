@@ -41,9 +41,6 @@ namespace {
 		}
 	};
 
-#define DEBUG_THROW_MYSQL_EXCEPTION(mysql_, schema_)	\
-	DEBUG_THROW(::Poseidon::MySql::Exception, schema_, ::mysql_errno(mysql_), ::Poseidon::SharedNts(::mysql_error(mysql_)))
-
 	class DelegatedConnection : public Connection {
 	private:
 		const ThreadContext m_context;
@@ -62,28 +59,16 @@ namespace {
 			: m_schema(schema)
 			, m_row(NULLPTR), m_lengths(NULLPTR)
 		{
-			if(!m_mysql.reset(::mysql_init(&m_mysql_storage))){
-				DEBUG_THROW(SystemException, ENOMEM);
-			}
-
-			if(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) != 0){
-				DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
-			}
+			DEBUG_THROW_UNLESS(m_mysql.reset(::mysql_init(&m_mysql_storage)), BasicException, sslit("::mysql_init() failed"));
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_COMPRESS"));
 			static CONSTEXPR const ::my_bool TRUE_VALUE = true;
-			if(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &TRUE_VALUE) != 0){
-				DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
-			}
-			if(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) != 0){
-				DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
-			}
-
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &TRUE_VALUE) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
 			unsigned long flags = 0;
 			if(use_ssl){
 				flags |= CLIENT_SSL;
 			}
-			if(!::mysql_real_connect(m_mysql.get(), server_addr, user_name, password, schema, server_port, NULLPTR, flags)){
-				DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
-			}
+			DEBUG_THROW_UNLESS(::mysql_real_connect(m_mysql.get(), server_addr, user_name, password, schema, server_port, NULLPTR, flags), Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
 		}
 
 	private:
@@ -110,14 +95,10 @@ namespace {
 		void do_execute_sql(const char *sql, std::size_t len){
 			do_discard_result();
 
-			if(::mysql_real_query(m_mysql.get(), sql, len) != 0){
-				DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
-			}
+			DEBUG_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
 
 			if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
-				if(::mysql_errno(m_mysql.get()) != 0){
-					DEBUG_THROW_MYSQL_EXCEPTION(m_mysql.get(), m_schema);
-				}
+				DEBUG_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
 				// 没有返回结果。
 			} else {
 				const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
@@ -125,10 +106,7 @@ namespace {
 				m_fields.reserve(count);
 				for(std::size_t i = 0; i < count; ++i){
 					const char *const name = fields[i].name;
-					if(!m_fields.insert(std::make_pair(name, i)).second){
-						LOG_POSEIDON_ERROR("Duplicate field in MySQL result set: ", name);
-						DEBUG_THROW(BasicException, sslit("Duplicate field"));
-					}
+					DEBUG_THROW_UNLESS(m_fields.insert(std::make_pair(name, i)).second, BasicException, sslit("Duplicate field"));
 					LOG_POSEIDON_TRACE("MySQL result field: name = ", name, ", index = ", i);
 				}
 			}
@@ -167,12 +145,9 @@ namespace {
 			if(!find_field_and_check(data, size, name)){
 				return VAL_INIT;
 			}
-			char *endptr;
-			const AUTO(val, ::strtoll(data, &endptr, 10));
-			if(*endptr){
-				LOG_POSEIDON_ERROR("Could not convert field data to long long: ", data);
-				DEBUG_THROW(BasicException, sslit("Could not convert field data to long long"));
-			}
+			char *eptr;
+			const AUTO(val, ::strtoll(data, &eptr, 10));
+			DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to long long"));
 			return val;
 		}
 		boost::uint64_t do_get_unsigned(const char *name) const {
@@ -181,12 +156,9 @@ namespace {
 			if(!find_field_and_check(data, size, name)){
 				return VAL_INIT;
 			}
-			char *endptr;
-			const AUTO(val, ::strtoull(data, &endptr, 10));
-			if(*endptr){
-				LOG_POSEIDON_ERROR("Could not convert field data to unsigned long long: ", data);
-				DEBUG_THROW(BasicException, sslit("Could not convert field data to unsigned long long"));
-			}
+			char *eptr;
+			const AUTO(val, ::strtoull(data, &eptr, 10));
+			DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to unsigned long long"));
 			return val;
 		}
 		double do_get_double(const char *name) const {
@@ -195,12 +167,9 @@ namespace {
 			if(!find_field_and_check(data, size, name)){
 				return VAL_INIT;
 			}
-			char *endptr;
-			const AUTO(val, ::strtod(data, &endptr));
-			if(*endptr){
-				LOG_POSEIDON_ERROR("Could not convert field data to double: ", data);
-				DEBUG_THROW(BasicException, sslit("Could not convert field data to double"));
-			}
+			char *eptr;
+			const AUTO(val, ::strtod(data, &eptr));
+			DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to double"));
 			return val;
 		}
 		std::string do_get_string(const char *name) const {
@@ -225,10 +194,7 @@ namespace {
 			if(!find_field_and_check(data, size, name)){
 				return VAL_INIT;
 			}
-			if(size != 36){
-				LOG_POSEIDON_ERROR("Invalid UUID string: ", data);
-				DEBUG_THROW(BasicException, sslit("Invalid UUID string"));
-			}
+			DEBUG_THROW_UNLESS(size == 36, BasicException, sslit("Invalid UUID string"));
 			return Uuid(reinterpret_cast<const char (&)[36]>(data[0]));
 		}
 		std::basic_string<unsigned char> do_get_blob(const char *name) const {

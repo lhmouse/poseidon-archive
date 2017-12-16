@@ -80,10 +80,7 @@ SockAddr &SockAddr::operator=(const SockAddr &rhs) NOEXCEPT {
 
 int SockAddr::get_family() const {
 	::sa_family_t sa_family;
-	if(m_size < sizeof(sa_family)){
-		LOG_POSEIDON_ERROR("Invalid SockAddr: size = ", m_size);
-		DEBUG_THROW(Exception, sslit("Invalid SockAddr"));
-	}
+	DEBUG_THROW_UNLESS(m_size >= sizeof(sa_family), Exception, sslit("Invalid SockAddr"));
 	std::memcpy(&sa_family, m_data, sizeof(sa_family));
 	return sa_family;
 }

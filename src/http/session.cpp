@@ -40,16 +40,13 @@ private:
 		try {
 			really_perform(session);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Http::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			session->send_default_and_shutdown(e.get_status_code(), e.get_headers());
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 			session->send_default_and_shutdown(ST_INTERNAL_SERVER_ERROR);
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
 			session->force_shutdown();
 		}
 	}

@@ -70,32 +70,19 @@ boost::shared_ptr<const AuthenticationContext> create_authentication_context(
 	const std::string &realm, const std::vector<std::string> &basic_user_pass)
 {
 	PROFILE_ME;
-
-	if(basic_user_pass.empty()){
-		LOG_POSEIDON_ERROR("No username:password provided!");
-		DEBUG_THROW(BasicException, sslit("No username:password provided"));
-	}
+	DEBUG_THROW_UNLESS(!basic_user_pass.empty(), BasicException, sslit("No username:password provided"));
 
 	AUTO(context, boost::make_shared<AuthenticationContext>(realm));
 	std::string str;
 	for(AUTO(it, basic_user_pass.begin()); it != basic_user_pass.end(); ++it){
 		str = *it;
 		AUTO(pos, str.find('\0'));
-		if(pos != std::string::npos){
-			LOG_POSEIDON_ERROR("Username or password shall not contain null characters: ", str);
-			DEBUG_THROW(BasicException, sslit("Username or password shall not contain null characters"));
-		}
+		DEBUG_THROW_UNLESS(pos == std::string::npos, BasicException, sslit("Username or password shall not contain null characters"));
 		pos = str.find(':');
-		if(pos == std::string::npos){
-			LOG_POSEIDON_ERROR("Colon delimiter not found: ", str);
-			DEBUG_THROW(BasicException, sslit("Colon delimiter not found"));
-		}
-		str.at(pos) = '\0';
+		DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("Colon delimiter not found"));
+		str.at(pos) = 0;
 		const AUTO(old_password, context->get_password(str.c_str()).second);
-		if(old_password){
-			LOG_POSEIDON_ERROR("Duplicate username: ", str);
-			DEBUG_THROW(BasicException, sslit("Duplicate username"));
-		}
+		DEBUG_THROW_UNLESS(!old_password, BasicException, sslit("Duplicate username"));
 		context->set_password(str.c_str(), str.c_str() + pos + 1);
 	}
 	return STD_MOVE_IDN(context);

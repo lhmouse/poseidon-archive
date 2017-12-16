@@ -30,9 +30,7 @@ bool Promise::would_throw() const NOEXCEPT {
 }
 void Promise::check_and_rethrow() const {
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	if(!m_satisfied){
-		DEBUG_THROW(Exception, sslit("Promise has not been satisfied"));
-	}
+	DEBUG_THROW_UNLESS(m_satisfied, Exception, sslit("Promise has not been satisfied"));
 	if(m_except){
 		STD_RETHROW_EXCEPTION(m_except);
 	}
@@ -40,17 +38,13 @@ void Promise::check_and_rethrow() const {
 
 void Promise::set_success(){
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	if(m_satisfied){
-		DEBUG_THROW(Exception, sslit("Promise has already been satisfied"));
-	}
+	DEBUG_THROW_UNLESS(!m_satisfied, Exception, sslit("Promise has already been satisfied"));
 	m_satisfied = true;
-//	m_except = VAL_INIT;
+	m_except = VAL_INIT;
 }
 void Promise::set_exception(STD_EXCEPTION_PTR except){
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	if(m_satisfied){
-		DEBUG_THROW(Exception, sslit("Promise has already been satisfied"));
-	}
+	DEBUG_THROW_UNLESS(!m_satisfied, Exception, sslit("Promise has already been satisfied"));
 	m_satisfied = true;
 	m_except = STD_MOVE_IDN(except);
 }

@@ -54,10 +54,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 			if(lf_offset < 0){
 				// 没找到换行符。
 				const AUTO(max_line_length, MainConfig::get<std::size_t>("http_max_header_line_length", 8192));
-				if(m_queue.size() > max_line_length){
-					LOG_POSEIDON_WARNING("HTTP header line is too long: size = ", m_queue.size());
-					DEBUG_THROW(Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
-				}
+				DEBUG_THROW_UNLESS(m_queue.size() <= max_line_length, Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
 				break;
 			}
 			m_size_expecting = static_cast<std::size_t>(lf_offset) + 1;
@@ -88,49 +85,27 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 				for(AUTO(it, line.begin()); it != line.end(); ++it){
 					const unsigned ch = static_cast<unsigned char>(*it);
-					if((ch < 0x20) || (ch >= 0x7F)){
-						LOG_POSEIDON_WARNING("Invalid HTTP request header: line = ", line);
-						DEBUG_THROW(BasicException, sslit("Invalid HTTP request header"));
-					}
+					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), BasicException, sslit("Invalid HTTP request header"));
 				}
 
 				AUTO(pos, line.find(' '));
-				if(pos == std::string::npos){
-					LOG_POSEIDON_WARNING("Bad request header: expecting verb, line = ", line);
-					DEBUG_THROW(Exception, ST_BAD_REQUEST);
-				}
-				line[pos] = 0;
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, ST_BAD_REQUEST);
+				line.at(pos) = 0;
 				m_request_headers.verb = get_verb_from_string(line.c_str());
-				if(m_request_headers.verb == V_INVALID_VERB){
-					LOG_POSEIDON_WARNING("Bad verb: ", line);
-					DEBUG_THROW(Exception, ST_NOT_IMPLEMENTED);
-				}
+				DEBUG_THROW_UNLESS(m_request_headers.verb != V_INVALID_VERB, Exception, ST_NOT_IMPLEMENTED);
 				line.erase(0, pos + 1);
 
 				pos = line.find(' ');
-				if(pos == std::string::npos){
-					LOG_POSEIDON_WARNING("Bad request header: expecting URI end, line = ", line);
-					DEBUG_THROW(Exception, ST_BAD_REQUEST);
-				}
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, ST_BAD_REQUEST);
 				m_request_headers.uri.assign(line, 0, pos);
 				line.erase(0, pos + 1);
 
 				long ver_end = 0;
 				char ver_major_str[16], ver_minor_str[16];
-				if(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) != 2){
-					LOG_POSEIDON_WARNING("Bad request header: expecting HTTP version, line = ", line);
-					DEBUG_THROW(Exception, ST_BAD_REQUEST);
-				}
-				if(static_cast<unsigned long>(ver_end) != line.size()){
-					LOG_POSEIDON_WARNING("Bad request header: junk after HTTP version, line = ", line);
-					DEBUG_THROW(Exception, ST_BAD_REQUEST);
-				}
+				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, Exception, ST_BAD_REQUEST);
+				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == line.size(), Exception, ST_BAD_REQUEST);
 				m_request_headers.version = std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10);
-				if((m_request_headers.version != 10000) && (m_request_headers.version != 10001)){
-					LOG_POSEIDON_WARNING("Bad request header: HTTP version not supported, ver_major_str = ", ver_major_str,
-						", ver_minor_str = ", ver_minor_str);
-					DEBUG_THROW(Exception, ST_VERSION_NOT_SUPPORTED);
-				}
+				DEBUG_THROW_UNLESS(m_request_headers.version <= 10001, Exception, ST_VERSION_NOT_SUPPORTED);
 
 				if(!dont_parse_get_params){
 					pos = m_request_headers.uri.find('?');
@@ -154,18 +129,12 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 			if(!expected.empty()){
 				const AUTO(headers, m_request_headers.headers.size());
 				const AUTO(max_headers, MainConfig::get<std::size_t>("http_max_headers_per_request", 64));
-				if(headers >= max_headers){
-					LOG_POSEIDON_WARNING("Too many HTTP headers: headers = ", headers);
-					DEBUG_THROW(Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
-				}
+				DEBUG_THROW_UNLESS(headers <= max_headers, Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
 
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				if(pos == std::string::npos){
-					LOG_POSEIDON_WARNING("Invalid HTTP header: ", line);
-					DEBUG_THROW(Exception, ST_BAD_REQUEST);
-				}
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, ST_BAD_REQUEST);
 				SharedNts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
@@ -180,16 +149,10 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 					if(content_length.empty()){
 						m_content_length = 0;
 					} else {
-						char *endptr;
-						m_content_length = ::strtoull(content_length.c_str(), &endptr, 10);
-						if(*endptr){
-							LOG_POSEIDON_WARNING("Bad request header Content-Length: ", content_length);
-							DEBUG_THROW(Exception, ST_BAD_REQUEST);
-						}
-						if(m_content_length > CONTENT_LENGTH_MAX){
-							LOG_POSEIDON_WARNING("Inacceptable Content-Length: ", content_length);
-							DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
-						}
+						char *eptr;
+						m_content_length = ::strtoull(content_length.c_str(), &eptr, 10);
+						DEBUG_THROW_UNLESS(*eptr == 0, Exception, ST_BAD_REQUEST);
+						DEBUG_THROW_UNLESS(m_content_length <= CONTENT_LENGTH_MAX, Exception, ST_PAYLOAD_TOO_LARGE);
 					}
 				} else if(::strcasecmp(transfer_encoding.c_str(), "chunked") == 0){
 					m_content_length = CONTENT_CHUNKED;
@@ -236,16 +199,10 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 				std::string line = expected.dump_string();
 
-				char *endptr;
-				m_chunk_size = ::strtoull(line.c_str(), &endptr, 16);
-				if(*endptr && (*endptr != ' ')){
-					LOG_POSEIDON_WARNING("Bad chunk header: ", line);
-					DEBUG_THROW(Exception, ST_BAD_REQUEST);
-				}
-				if(m_chunk_size > CONTENT_LENGTH_MAX){
-					LOG_POSEIDON_WARNING("Inacceptable chunk size in header: ", line);
-					DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
-				}
+				char *eptr;
+				m_chunk_size = ::strtoull(line.c_str(), &eptr, 16);
+				DEBUG_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), Exception, ST_BAD_REQUEST);
+				DEBUG_THROW_UNLESS(m_chunk_size <= CONTENT_LENGTH_MAX, Exception, ST_PAYLOAD_TOO_LARGE);
 				if(m_chunk_size == 0){
 					m_size_expecting = EXPECTING_NEW_LINE;
 					m_state = S_CHUNKED_TRAILER;
@@ -281,10 +238,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				if(pos == std::string::npos){
-					LOG_POSEIDON_WARNING("Invalid chunk trailer: ", line);
-					DEBUG_THROW(Exception, ST_BAD_REQUEST);
-				}
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, ST_BAD_REQUEST);
 				SharedNts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));

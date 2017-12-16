@@ -39,12 +39,8 @@ void SystemSession::initialize_once(const Http::RequestHeaders &request_headers)
 	Buffer_istream bis;
 	bis.set_buffer(StreamBuffer(request_headers.uri));
 	Http::url_decode(bis, m_decoded_uri);
-	if(m_decoded_uri.empty()){
-		DEBUG_THROW(Http::Exception, Http::ST_BAD_REQUEST);
-	}
-	if(*m_decoded_uri.begin() != '/'){
-		DEBUG_THROW(Http::Exception, Http::ST_BAD_REQUEST);
-	}
+	DEBUG_THROW_UNLESS(!m_decoded_uri.empty(), Http::Exception, Http::ST_BAD_REQUEST);
+	DEBUG_THROW_UNLESS(m_decoded_uri[0] == '/', Http::Exception, Http::ST_BAD_REQUEST);
 	LOG_POSEIDON_DEBUG("Decoded request URI: ", m_decoded_uri);
 
 	switch(request_headers.verb){
@@ -114,10 +110,8 @@ void SystemSession::on_sync_request(Http::RequestHeaders request_headers, Stream
 		} else {
 			LOG_POSEIDON_DEBUG("Parsing POST entity as JSON Object: ", request_entity);
 			bis.set_buffer(STD_MOVE(request_entity));
-			if(!(bis >>request)){
-				LOG_POSEIDON_WARNING("Invalid JSON request. Bytes remaining are discarded: ", bis.get_buffer());
-				DEBUG_THROW(Http::Exception, Http::ST_BAD_REQUEST);
-			}
+			request.parse(bis);
+			DEBUG_THROW_UNLESS(bis, Http::Exception, Http::ST_BAD_REQUEST);
 		}
 		LOG_POSEIDON_DEBUG("SystemSession request: ", request);
 		if(request_headers.verb != Http::V_POST){
@@ -126,7 +120,7 @@ void SystemSession::on_sync_request(Http::RequestHeaders request_headers, Stream
 			m_servlet->handle_post(response, STD_MOVE(request));
 		}
 		LOG_POSEIDON_DEBUG("SystemSession response: ", response);
-		bos <<response;
+		response.dump(bos);
 		response_headers.headers.set(sslit("Content-Type"), "application/json");
 		Http::Session::send_chunked_header(STD_MOVE(response_headers));
 		if(request_headers.verb == Http::V_HEAD){

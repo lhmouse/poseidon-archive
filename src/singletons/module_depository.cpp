@@ -102,17 +102,10 @@ void ModuleDepository::register_module_raii(ModuleRaiiBase *raii, long priority)
 
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	::Dl_info info;
-	if(::dladdr(raii, &info) == 0){
-		const char *const error = ::dlerror();
-		LOG_POSEIDON_ERROR("Error getting base address: ", error);
-		DEBUG_THROW(Exception, SharedNts(error));
-	}
+	DEBUG_THROW_UNLESS(::dladdr(raii, &info), Exception, sslit("Error getting base address"));
 	ModuleRaiiMapElement elem = { raii, std::make_pair(info.dli_fbase, priority) };
 	const AUTO(result, g_module_raii_map.insert(STD_MOVE(elem)));
-	if(!result.second){
-		LOG_POSEIDON_ERROR("Duplicate ModuleRaii? raii = ", static_cast<void *>(raii));
-		DEBUG_THROW(Exception, sslit("Duplicate ModuleRaii"));
-	}
+	DEBUG_THROW_UNLESS(result.second, Exception, sslit("Duplicate ModuleRaii"));
 }
 void ModuleDepository::unregister_module_raii(ModuleRaiiBase *raii) NOEXCEPT {
 	PROFILE_ME;
@@ -148,27 +141,15 @@ void *ModuleDepository::load(const std::string &path){
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	LOG_POSEIDON_INFO("Loading module: ", path);
 	UniqueHandle<DynamicLibraryCloser> dl_handle;
-	if(!dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND))){
-		const char *const error = ::dlerror();
-		LOG_POSEIDON_ERROR("Error loading dynamic library: ", error);
-		DEBUG_THROW(Exception, SharedNts(error));
-	}
+	DEBUG_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND)), Exception, SharedNts(::dlerror()));
 	AUTO(it, g_module_map.find<0>(dl_handle.get()));
 	if(it != g_module_map.end()){
 		LOG_POSEIDON_WARNING("Module already loaded: ", path);
 	} else {
 		void *const init_sym = ::dlsym(dl_handle.get(), "_init");
-		if(!init_sym){
-			const char *const error = ::dlerror();
-			LOG_POSEIDON_ERROR("Error locating `_init()`: ", error);
-			DEBUG_THROW(Exception, SharedNts(error));
-		}
+		DEBUG_THROW_UNLESS(init_sym, Exception, SharedNts(::dlerror()));
 		::Dl_info info;
-		if(::dladdr(init_sym, &info) == 0){
-			const char *const error = ::dlerror();
-			LOG_POSEIDON_ERROR("Error getting real path and base address: ", error);
-			DEBUG_THROW(Exception, SharedNts(error));
-		}
+		DEBUG_THROW_UNLESS(::dladdr(init_sym, &info), Exception, SharedNts(::dlerror()));
 		HandleStack handles;
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing NEW module: ", info.dli_fname);
 		const AUTO(raii_range_lower, g_module_raii_map.lower_bound<1>(std::make_pair(info.dli_fbase, LONG_MIN)));
@@ -183,8 +164,7 @@ void *ModuleDepository::load(const std::string &path){
 		const AUTO(result, g_module_map.insert(STD_MOVE(elem)));
 		DEBUG_THROW_ASSERT(result.second);
 		it = result.first;
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"Loaded module: base_address = ", module->get_base_address(), ", real_path = ", module->get_real_path());
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loaded module: base_address = ", module->get_base_address(), ", real_path = ", module->get_real_path());
 	}
 	return it->module->get_base_address();
 }

@@ -41,16 +41,13 @@ private:
 		try {
 			really_perform(session);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			session->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
 			session->shutdown(ST_INTERNAL_ERROR, e.what());
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
 			session->force_shutdown();
 		}
 	}
@@ -167,8 +164,7 @@ bool Session::on_low_level_control_message(OpCode opcode, StreamBuffer payload){
 	PROFILE_ME;
 
 	JobDispatcher::enqueue(
-		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Session>(),
-			opcode, STD_MOVE(payload)),
+		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Session>(), opcode, STD_MOVE(payload)),
 		VAL_INIT);
 
 	return true;
