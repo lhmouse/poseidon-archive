@@ -53,72 +53,59 @@ namespace {
 		return sock_addr;
 	}
 
-	class QueryOperation {
-	private:
-		const boost::weak_ptr<PromiseContainer<SockAddr> > m_weak_promise;
-
-		const std::string m_host;
-		const unsigned m_port;
-
-	public:
-		QueryOperation(const boost::shared_ptr<PromiseContainer<SockAddr> > &promise,
-			std::string host, unsigned port)
-			: m_weak_promise(promise)
-			, m_host(STD_MOVE(host)), m_port(port)
-		{ }
-
-	public:
-		void execute() const {
-			PROFILE_ME;
-
-			const AUTO(promise, m_weak_promise.lock());
-			if(!promise){
-				LOG_POSEIDON_DEBUG("Discarding isolated DNS query: m_host = ", m_host);
-				return;
-			}
-
-			try {
-				promise->set_success(real_dns_look_up(m_host, m_port));
-			} catch(Exception &e){
-				LOG_POSEIDON_INFO("Exception thrown: what = ", e.what());
-				promise->set_exception(STD_CURRENT_EXCEPTION());
-			} catch(std::exception &e){
-				LOG_POSEIDON_INFO("std::exception thrown: what = ", e.what());
-				promise->set_exception(STD_CURRENT_EXCEPTION());
-			}
-		}
-	};
-
 	volatile bool g_running = false;
 	Thread g_thread;
 
+	struct RequestElement {
+		boost::weak_ptr<PromiseContainer<SockAddr> > weak_promise;
+		std::string host;
+		unsigned port;
+	};
+
 	Mutex g_mutex;
-	ConditionVariable g_new_operation;
-	boost::container::deque<boost::shared_ptr<QueryOperation> > g_operations;
+	ConditionVariable g_new_request;
+	boost::container::deque<RequestElement> g_queue;
 
 	bool pump_one_element() NOEXCEPT {
 		PROFILE_ME;
 
-		boost::shared_ptr<QueryOperation> operation;
+		RequestElement *elem;
 		{
 			const Mutex::UniqueLock lock(g_mutex);
-			if(!g_operations.empty()){
-				operation = g_operations.front();
+			if(g_queue.empty()){
+				return false;
 			}
+			if(g_queue.front().weak_promise.expired()){
+				g_queue.pop_front();
+				return true;
+			}
+			elem = &g_queue.front();
 		}
-		if(!operation){
-			return false;
-		}
-
+		SockAddr sock_addr;
+		STD_EXCEPTION_PTR except;
 		try {
-			operation->execute();
+			sock_addr = real_dns_look_up(elem->host, elem->port);
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+			except = STD_CURRENT_EXCEPTION();
 		} catch(...){
 			LOG_POSEIDON_WARNING("Unknown exception thrown.");
+			except = STD_CURRENT_EXCEPTION();
+		}
+		const AUTO(promise, elem->weak_promise.lock());
+		if(promise && !promise->is_satisfied()){
+			try {
+				if(!except){
+					promise->set_success(STD_MOVE(sock_addr));
+				} else {
+					promise->set_exception(except);
+				}
+			} catch(std::exception &e){
+				LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			}
 		}
 		const Mutex::UniqueLock lock(g_mutex);
-		g_operations.pop_front();
+		g_queue.pop_front();
 		return true;
 	}
 
@@ -138,7 +125,7 @@ namespace {
 			if(!atomic_load(g_running, ATOMIC_CONSUME)){
 				break;
 			}
-			g_new_operation.timed_wait(lock, timeout);
+			g_new_request.timed_wait(lock, timeout);
 		}
 
 		LOG_POSEIDON_INFO("DNS daemon stopped.");
@@ -163,7 +150,7 @@ void DnsDaemon::stop(){
 	if(g_thread.joinable()){
 		g_thread.join();
 	}
-	g_operations.clear();
+	g_queue.clear();
 }
 
 SockAddr DnsDaemon::look_up(const std::string &host, unsigned port){
@@ -178,9 +165,9 @@ boost::shared_ptr<const PromiseContainer<SockAddr> > DnsDaemon::enqueue_for_look
 	AUTO(promise, boost::make_shared<PromiseContainer<SockAddr> >());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		g_operations.push_back(boost::make_shared<QueryOperation>(
-			promise, STD_MOVE(host), port));
-		g_new_operation.signal();
+		RequestElement elem = { promise, STD_MOVE(host), port };
+		g_queue.push_back(STD_MOVE(elem));
+		g_new_request.signal();
 	}
 	return STD_MOVE_IDN(promise);
 }
