@@ -27,11 +27,14 @@ public:
 		const RecursiveMutex::UniqueLock lock(m_mutex);
 		return m_satisfied;
 	}
-	bool would_throw() const NOEXCEPT;
+	bool would_throw() const NOEXCEPT {
+		const RecursiveMutex::UniqueLock lock(m_mutex);
+		return !(m_satisfied && !m_except);
+	}
 	void check_and_rethrow() const;
 
-	void set_success();
-	void set_exception(STD_EXCEPTION_PTR except);
+	void set_success(bool throw_if_already_set = true);
+	void set_exception(STD_EXCEPTION_PTR except, bool throw_if_already_set = true);
 };
 
 template<typename ResultT>
@@ -64,12 +67,13 @@ public:
 		Promise::check_and_rethrow();
 		return m_result;
 	}
-	void set_success(typename boost::remove_const<ResultT>::type result){
+
+	void set_success(typename boost::remove_const<ResultT>::type result, bool throw_if_already_set = true){
 		const RecursiveMutex::UniqueLock lock(m_mutex);
 		if(!m_inited){
 			m_result = STD_MOVE_IDN(result);
 		}
-		Promise::set_success();
+		Promise::set_success(throw_if_already_set);
 		m_inited = true;
 	}
 };

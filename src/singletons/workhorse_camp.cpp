@@ -64,15 +64,11 @@ namespace {
 				except = STD_CURRENT_EXCEPTION();
 			}
 			const AUTO(promise, elem->weak_promise.lock());
-			if(promise && !promise->is_satisfied()){
-				try {
-					if(!except){
-						promise->set_success();
-					} else {
-						promise->set_exception(except);
-					}
-				} catch(std::exception &e){
-					LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			if(promise){
+				if(except){
+					promise->set_exception(STD_MOVE(except), false);
+				} else {
+					promise->set_success(false);
 				}
 			}
 			const Mutex::UniqueLock lock(m_mutex);

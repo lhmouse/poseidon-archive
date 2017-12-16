@@ -18,33 +18,35 @@ Promise::~Promise(){
 	}
 }
 
-bool Promise::would_throw() const NOEXCEPT {
-	const RecursiveMutex::UniqueLock lock(m_mutex);
-	if(!m_satisfied){
-		return true;
-	}
-	if(m_except){
-		return true;
-	}
-	return false;
-}
 void Promise::check_and_rethrow() const {
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	DEBUG_THROW_UNLESS(m_satisfied, Exception, sslit("Promise has not been satisfied"));
+	if(!m_satisfied){
+		DEBUG_THROW(Exception, sslit("Promise has not been satisfied"));
+	}
 	if(m_except){
 		STD_RETHROW_EXCEPTION(m_except);
 	}
 }
 
-void Promise::set_success(){
+void Promise::set_success(bool throw_if_already_set){
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	DEBUG_THROW_UNLESS(!m_satisfied, Exception, sslit("Promise has already been satisfied"));
+	if(m_satisfied){
+		if(throw_if_already_set){
+			DEBUG_THROW(Exception, sslit("Promise has already been satisfied"));
+		}
+		return;
+	}
 	m_satisfied = true;
 	m_except = VAL_INIT;
 }
-void Promise::set_exception(STD_EXCEPTION_PTR except){
+void Promise::set_exception(STD_EXCEPTION_PTR except, bool throw_if_already_set){
 	const RecursiveMutex::UniqueLock lock(m_mutex);
-	DEBUG_THROW_UNLESS(!m_satisfied, Exception, sslit("Promise has already been satisfied"));
+	if(m_satisfied){
+		if(throw_if_already_set){
+			DEBUG_THROW(Exception, sslit("Promise has already been satisfied"));
+		}
+		return;
+	}
 	m_satisfied = true;
 	m_except = STD_MOVE_IDN(except);
 }
