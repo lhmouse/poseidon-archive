@@ -157,10 +157,7 @@ void Session::on_low_level_request_entity(boost::uint64_t entity_offset, StreamB
 	(void)entity_offset;
 
 	m_size_total += entity.size();
-	if(m_size_total > get_max_request_length()){
-		DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
-	}
-
+	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, ST_PAYLOAD_TOO_LARGE);
 	m_entity.splice(entity);
 }
 boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers){
@@ -174,8 +171,7 @@ boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request_end(boost::
 	const bool keep_alive = is_keep_alive_enabled(m_request_headers);
 
 	JobDispatcher::enqueue(
-		boost::make_shared<RequestJob>(virtual_shared_from_this<Session>(),
-			STD_MOVE(m_request_headers), STD_MOVE(m_entity), keep_alive),
+		boost::make_shared<RequestJob>(virtual_shared_from_this<Session>(), STD_MOVE(m_request_headers), STD_MOVE(m_entity), keep_alive),
 		VAL_INIT);
 
 	if(!keep_alive){
@@ -190,15 +186,11 @@ void Session::on_sync_expect(RequestHeaders request_headers){
 	const AUTO_REF(expect, request_headers.headers.get("Expect"));
 	if(::strcasecmp(expect.c_str(), "100-continue") == 0){
 		const AUTO_REF(content_length_str, request_headers.headers.get("Content-Length"));
-		if(content_length_str.empty()){
-			LOG_POSEIDON_WARNING("Content-Length is not set: remote = ", get_remote_info());
-			DEBUG_THROW(Exception, ST_LENGTH_REQUIRED);
-		}
-		const AUTO(content_length, ::strtoull(content_length_str.c_str(), NULLPTR, 10));
-		if(content_length > get_max_request_length()){
-			LOG_POSEIDON_WARNING("Request entity too large: content_length = ", content_length);
-			DEBUG_THROW(Exception, ST_PAYLOAD_TOO_LARGE);
-		}
+		DEBUG_THROW_UNLESS(!content_length_str.empty(), Exception, ST_LENGTH_REQUIRED);
+		char *eptr;
+		const AUTO(content_length, ::strtoull(content_length_str.c_str(), &eptr, 10));
+		DEBUG_THROW_UNLESS(*eptr == 0, Exception, ST_BAD_REQUEST);
+		DEBUG_THROW_UNLESS(content_length <= get_max_request_length(), Exception, ST_PAYLOAD_TOO_LARGE);
 		send_default(ST_CONTINUE);
 	} else {
 		LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", expect);

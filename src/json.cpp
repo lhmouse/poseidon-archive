@@ -320,9 +320,7 @@ JsonObject::JsonObject(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	if(!is){
-		DEBUG_THROW(ProtocolException, sslit("JsonObject parser error"), -1);
-	}
+	DEBUG_THROW_UNLESS(is, ProtocolException, sslit("JsonObject parser error"), -1);
 }
 
 std::string JsonObject::dump() const {
@@ -369,9 +367,7 @@ JsonArray::JsonArray(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	if(!is){
-		DEBUG_THROW(ProtocolException, sslit("JsonArray parser error"), -1);
-	}
+	DEBUG_THROW_UNLESS(is, ProtocolException, sslit("JsonArray parser error"), -1);
 }
 
 std::string JsonArray::dump() const {

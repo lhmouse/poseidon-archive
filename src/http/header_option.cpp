@@ -16,9 +16,7 @@ HeaderOption::HeaderOption(std::istream &is)
 	: m_base(), m_options()
 {
 	parse(is);
-	if(!is){
-		DEBUG_THROW(ProtocolException, sslit("Http::HeaderOption parser error"), -1);
-	}
+	DEBUG_THROW_UNLESS(is, ProtocolException, sslit("Http::HeaderOption parser error"), -1);
 }
 
 std::string HeaderOption::dump() const {

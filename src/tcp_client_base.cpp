@@ -40,9 +40,7 @@ namespace {
 #else
 		static __thread UniqueFile tcp;
 #endif
-		if(!tcp.reset(::socket(family, SOCK_STREAM, IPPROTO_TCP))){
-			DEBUG_THROW(SystemException);
-		}
+		DEBUG_THROW_UNLESS(tcp.reset(::socket(family, SOCK_STREAM, IPPROTO_TCP)), SystemException);
 		return STD_MOVE(tcp);
 	}
 }
@@ -50,9 +48,7 @@ namespace {
 TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_peer)
 	: TcpSessionBase(create_tcp_socket(addr.get_family()))
 {
-	if((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) != 0) && (errno != EINPROGRESS)){
-		DEBUG_THROW(SystemException);
-	}
+	DEBUG_THROW_UNLESS((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) == 0) || (errno == EINPROGRESS), SystemException);
 	if(use_ssl){
 		LOG_POSEIDON_INFO("Initiating SSL handshake...");
 		m_ssl_factory.reset(new ClientSslFactory(verify_peer));

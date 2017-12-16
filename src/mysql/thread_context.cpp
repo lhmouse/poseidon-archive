@@ -35,13 +35,8 @@ ThreadContext::ThreadContext(){
 			LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
 			std::abort();
 		}
-
 		LOG_POSEIDON_INFO("Initializing MySQL thread...");
-
-		if(::mysql_thread_init() != 0){
-			LOG_POSEIDON_ERROR("Could not initialize MySQL thread.");
-			DEBUG_THROW(Exception, sslit("::mysql_thread_init() failed"));
-		}
+		DEBUG_THROW_UNLESS(::mysql_thread_init() == 0, Exception, sslit("::mysql_thread_init() failed"));
 	}
 }
 ThreadContext::~ThreadContext(){

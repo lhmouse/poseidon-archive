@@ -79,9 +79,7 @@ void HexDecoder::put(const void *data, std::size_t size){
 			continue;
 		}
 		const int digit = from_hex_digit(ch);
-		if(digit < 0){
-			DEBUG_THROW(ProtocolException, sslit("Invalid hex character encountered"), -1);
-		}
+		DEBUG_THROW_UNLESS(digit >= 0, ProtocolException, sslit("Invalid hex character encountered"), -1);
 		unsigned seq = m_seq << 4;
 		seq += static_cast<unsigned>(digit);
 		if(seq >= 0x0100){
@@ -105,6 +103,7 @@ void HexDecoder::put(const StreamBuffer &buffer){
 StreamBuffer HexDecoder::finalize(){
 	PROFILE_ME;
 
+	DEBUG_THROW_UNLESS(m_seq == 1, ProtocolException, sslit("Incomplete hex data"), -1);
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
 	return ret;

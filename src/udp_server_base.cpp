@@ -27,16 +27,10 @@ namespace {
 #else
 		static __thread UniqueFile udp;
 #endif
-		if(!udp.reset(::socket(addr.get_family(), SOCK_DGRAM, IPPROTO_UDP))){
-			DEBUG_THROW(SystemException);
-		}
+		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM, IPPROTO_UDP)), SystemException);
 		static CONSTEXPR const int TRUE_VALUE = true;
-		if(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) != 0){
-			DEBUG_THROW(SystemException);
-		}
-		if(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) != 0){
-			DEBUG_THROW(SystemException);
-		}
+		DEBUG_THROW_UNLESS(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) == 0, SystemException);
+		DEBUG_THROW_UNLESS(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) == 0, SystemException);
 		return STD_MOVE(udp);
 	}
 }
@@ -44,12 +38,10 @@ namespace {
 UdpServerBase::UdpServerBase(const SockAddr &addr)
 	: SocketBase(create_udp_socket(addr))
 {
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Created UDP server on ", get_local_info());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created UDP server on ", get_local_info());
 }
 UdpServerBase::~UdpServerBase(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Destroyed UDP server on ", get_local_info());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed UDP server on ", get_local_info());
 }
 
 int UdpServerBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){

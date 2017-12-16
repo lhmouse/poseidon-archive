@@ -46,10 +46,7 @@ SockAddr::SockAddr(){
 	m_size = 0;
 }
 SockAddr::SockAddr(const void *addr_data, std::size_t addr_size){
-	if(addr_size > sizeof(m_data)){
-		LOG_POSEIDON_ERROR("SockAddr size too large: addr_size = ", addr_size);
-		DEBUG_THROW(Exception, sslit("SockAddr size too large"));
-	}
+	DEBUG_THROW_UNLESS(addr_size <= sizeof(m_data), Exception, sslit("SockAddr size too large"));
 	std::memcpy(m_data, addr_data, addr_size);
 	m_size = addr_size;
 }

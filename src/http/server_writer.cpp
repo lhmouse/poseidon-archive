@@ -86,11 +86,7 @@ long ServerWriter::put_chunked_header(ResponseHeaders response_headers){
 }
 long ServerWriter::put_chunk(StreamBuffer entity){
 	PROFILE_ME;
-
-	if(entity.empty()){
-		LOG_POSEIDON_ERROR("You are not allowed to send an empty chunk");
-		DEBUG_THROW(BasicException, sslit("You are not allowed to send an empty chunk"));
-	}
+	DEBUG_THROW_UNLESS(!entity.empty(), BasicException, sslit("You are not allowed to send an empty chunk"));
 
 	StreamBuffer chunk;
 

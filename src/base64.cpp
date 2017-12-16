@@ -171,10 +171,7 @@ void Base64Decoder::put(const StreamBuffer &buffer){
 StreamBuffer Base64Decoder::finalize(){
 	PROFILE_ME;
 
-	if(m_seq != 1){
-		DEBUG_THROW(ProtocolException, sslit("Incomplete base64 data"), -1);
-	}
-
+	DEBUG_THROW_UNLESS(m_seq == 1, ProtocolException, sslit("Incomplete base64 data"), -1);
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
 	return ret;
