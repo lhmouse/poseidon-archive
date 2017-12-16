@@ -135,7 +135,7 @@ void ConfigFile::load(const std::string &path){
 			DEBUG_THROW_UNLESS(is, Exception, sslit("Error parsing escape sequence"));
 			val = trim(STD_MOVE(val));
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: #", std::setw(3), line, " | ", key, " = ", val);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: ", std::setw(3), line, " | ", key, " = ", val);
 		contents.append(SharedNts(key), STD_MOVE(val));
 	}
 
