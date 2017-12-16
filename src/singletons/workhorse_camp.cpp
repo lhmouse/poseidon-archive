@@ -45,17 +45,18 @@ namespace {
 		bool pump_one_job() NOEXCEPT {
 			PROFILE_ME;
 
-			JobQueueElement *elem;
+			JobQueueElement elem;
 			{
 				const Mutex::UniqueLock lock(m_mutex);
 				if(m_queue.empty()){
 					return false;
 				}
-				elem = &m_queue.front();
+				elem = STD_MOVE(m_queue.front());
+				m_queue.pop_front();
 			}
 			STD_EXCEPTION_PTR except;
 			try {
-				elem->procedure();
+				elem.procedure();
 			} catch(std::exception &e){
 				LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 				except = STD_CURRENT_EXCEPTION();
@@ -63,7 +64,7 @@ namespace {
 				LOG_POSEIDON_WARNING("Unknown exception thrown");
 				except = STD_CURRENT_EXCEPTION();
 			}
-			const AUTO(promise, elem->weak_promise.lock());
+			const AUTO(promise, elem.weak_promise.lock());
 			if(promise && !promise->is_satisfied()){
 				try {
 					if(!except){
@@ -75,8 +76,6 @@ namespace {
 					LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 				}
 			}
-			const Mutex::UniqueLock lock(m_mutex);
-			m_queue.pop_front();
 			return true;
 		}
 
