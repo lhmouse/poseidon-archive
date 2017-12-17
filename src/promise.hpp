@@ -29,7 +29,7 @@ public:
 	}
 	bool would_throw() const NOEXCEPT {
 		const RecursiveMutex::UniqueLock lock(m_mutex);
-		return !(m_satisfied && !m_except);
+		return !m_satisfied || m_except;
 	}
 	void check_and_rethrow() const;
 

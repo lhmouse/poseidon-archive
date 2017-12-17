@@ -37,7 +37,7 @@ void Promise::set_success(bool throw_if_already_set){
 		return;
 	}
 	m_satisfied = true;
-	m_except = VAL_INIT;
+	m_except = NULLPTR;
 }
 void Promise::set_exception(STD_EXCEPTION_PTR except, bool throw_if_already_set){
 	const RecursiveMutex::UniqueLock lock(m_mutex);
