@@ -63,6 +63,14 @@ public:
 
 }
 
+#define INIT_PRIORITY_ESSENTIAL        100
+#define INIT_PRIORITY_STATIC         10000
+#define INIT_PRIORITY_HIGH           20000
+#define INIT_PRIORITY_ABOVE_NORMAL   30000
+#define INIT_PRIORITY_NORMAL         40000
+#define INIT_PRIORITY_BELOW_NORMAL   50000
+#define INIT_PRIORITY_LOW            60000
+
 #define MODULE_RAII_PRIORITY(handles_, priority_)	\
 	namespace {	\
 		namespace TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_) {	\
@@ -76,14 +84,7 @@ public:
 	}	\
 	void TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_)::Stub_::init(::Poseidon::HandleStack & handles_) const
 
-#define MODULE_RAII(handles_)   MODULE_RAII_PRIORITY(handles_, 65535)
+#define MODULE_RAII(handles_)   MODULE_RAII_PRIORITY(handles_, INIT_PRIORITY_NORMAL)
 
-#define INIT_PRIORITY_ESSENTIAL        100
-#define INIT_PRIORITY_STATIC         10000
-#define INIT_PRIORITY_HIGH           20000
-#define INIT_PRIORITY_ABOVE_NORMAL   30000
-#define INIT_PRIORITY_NORMAL         40000
-#define INIT_PRIORITY_BELOW_NORMAL   50000
-#define INIT_PRIORITY_LOW            60000
 
 #endif
