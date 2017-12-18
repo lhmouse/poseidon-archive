@@ -173,6 +173,7 @@ void TcpSessionBase::on_shutdown_timer(boost::uint64_t now){
 		}
 		if(send_buffer_size == 0){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection closed due to inactivity: remote = ", get_remote_info());
+force_time_out:
 			set_timed_out();
 			force_shutdown();
 			return;
@@ -182,10 +183,9 @@ void TcpSessionBase::on_shutdown_timer(boost::uint64_t now){
 
 	const AUTO(last_use_time, atomic_load(m_last_use_time, ATOMIC_CONSUME));
 	const AUTO(tcp_response_timeout, MainConfig::get<boost::uint64_t>("tcp_response_timeout", 30000));
-	if(saturated_add(last_use_time, tcp_response_timeout) < now){
+	if(saturated_sub(now, last_use_time) > tcp_response_timeout){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "The connection seems dead: remote = ", get_remote_info());
-		force_shutdown();
-		return;
+		goto force_time_out;
 	}
 }
 
