@@ -6,6 +6,7 @@
 
 namespace Poseidon {
 
+class TinyException;
 class Exception;
 class ProtocolException;
 class SystemException;
