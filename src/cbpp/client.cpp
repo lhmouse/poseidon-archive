@@ -164,8 +164,7 @@ bool Client::on_low_level_data_message_end(boost::uint64_t payload_size){
 	(void)payload_size;
 
 	JobDispatcher::enqueue(
-		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Client>(),
-			m_message_id, STD_MOVE(m_payload)),
+		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Client>(), m_message_id, STD_MOVE(m_payload)),
 		VAL_INIT);
 
 	return true;
@@ -175,8 +174,7 @@ bool Client::on_low_level_control_message(StatusCode status_code, StreamBuffer p
 	PROFILE_ME;
 
 	JobDispatcher::enqueue(
-		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Client>(),
-			status_code, STD_MOVE(param)),
+		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Client>(), status_code, STD_MOVE(param)),
 		VAL_INIT);
 
 	return true;

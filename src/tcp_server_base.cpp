@@ -58,12 +58,10 @@ TcpServerBase::TcpServerBase(const SockAddr &addr, const char *certificate, cons
 		m_ssl_factory.reset(new ServerSslFactory(certificate, private_key));
 	}
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Created TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
 }
 TcpServerBase::~TcpServerBase(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Destroyed TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
 }
 
 int TcpServerBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){

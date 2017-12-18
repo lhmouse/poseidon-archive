@@ -14,8 +14,7 @@ public:
 };
 
 extern void sync_raise_event(const boost::shared_ptr<EventBase> &event);
-extern void async_raise_event(const boost::shared_ptr<EventBase> &event,
-	const boost::shared_ptr<const bool> &withdrawn = boost::shared_ptr<const bool>());
+extern void async_raise_event(const boost::shared_ptr<EventBase> &event, const boost::shared_ptr<const bool> &withdrawn = boost::shared_ptr<const bool>());
 
 }
 

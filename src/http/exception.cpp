@@ -16,8 +16,7 @@ Exception::Exception(const char *file, std::size_t line, const char *func, Statu
 	: ProtocolException(file, line, func, SharedNts::view(get_status_code_desc(status_code).desc_short), static_cast<long>(status_code))
 	, m_headers(!headers.empty() ? boost::make_shared<OptionalMap>(STD_MOVE(headers)) : boost::shared_ptr<OptionalMap>())
 {
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Http::Exception: code = ", get_code(), ", what = ", what());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception: code = ", get_code(), ", what = ", what());
 }
 Exception::~Exception() NOEXCEPT { }
 

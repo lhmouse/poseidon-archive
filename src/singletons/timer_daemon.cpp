@@ -202,8 +202,7 @@ boost::shared_ptr<Timer> TimerDaemon::register_absolute_timer(boost::uint64_t fi
 		std::push_heap(g_timers.begin(), g_timers.end());
 		g_new_timer.signal();
 	}
-	LOG_POSEIDON_DEBUG("Created a timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()),
-		" microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
+	LOG_POSEIDON_DEBUG("Created a timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()), " microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
 	return timer;
 }
 boost::shared_ptr<Timer> TimerDaemon::register_timer(boost::uint64_t delta_first, boost::uint64_t period, TimerCallback callback){
@@ -239,8 +238,7 @@ boost::shared_ptr<Timer> TimerDaemon::register_low_level_absolute_timer(boost::u
 		std::push_heap(g_timers.begin(), g_timers.end());
 		g_new_timer.signal();
 	}
-	LOG_POSEIDON_DEBUG("Created a low level timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()),
-		" microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
+	LOG_POSEIDON_DEBUG("Created a low level timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()), " microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
 	return timer;
 }
 boost::shared_ptr<Timer> TimerDaemon::register_low_level_timer(boost::uint64_t delta_first, boost::uint64_t period, TimerCallback callback){

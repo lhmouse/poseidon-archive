@@ -75,8 +75,7 @@ private:
 	StreamBuffer m_payload;
 
 public:
-	DataMessageJob(const boost::shared_ptr<Session> &session,
-		boost::uint16_t message_id, StreamBuffer payload)
+	DataMessageJob(const boost::shared_ptr<Session> &session, boost::uint16_t message_id, StreamBuffer payload)
 		: SyncJobBase(session)
 		, m_message_id(message_id), m_payload(STD_MOVE(payload))
 	{ }
@@ -99,8 +98,7 @@ private:
 	StreamBuffer m_param;
 
 public:
-	ControlMessageJob(const boost::shared_ptr<Session> &session,
-		StatusCode status_code, StreamBuffer param)
+	ControlMessageJob(const boost::shared_ptr<Session> &session, StatusCode status_code, StreamBuffer param)
 		: SyncJobBase(session)
 		, m_status_code(status_code), m_param(STD_MOVE(param))
 	{ }

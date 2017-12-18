@@ -53,15 +53,11 @@ namespace {
 	};
 }
 
-void enqueue_async_categorized_job(boost::weak_ptr<const void> category, const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure,
-	boost::shared_ptr<const bool> withdrawn)
-{
+void enqueue_async_categorized_job(boost::weak_ptr<const void> category, const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure, boost::shared_ptr<const bool> withdrawn){
 	AUTO(job, boost::make_shared<AsyncJob>(STD_MOVE(category), promise, STD_MOVE_IDN(procedure)));
 	JobDispatcher::enqueue(STD_MOVE_IDN(job), STD_MOVE(withdrawn));
 }
-void enqueue_async_job(const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure,
-	boost::shared_ptr<const bool> withdrawn)
-{
+void enqueue_async_job(const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure, boost::shared_ptr<const bool> withdrawn){
 	enqueue_async_categorized_job(VAL_INIT, promise, STD_MOVE_IDN(procedure), STD_MOVE(withdrawn));
 }
 

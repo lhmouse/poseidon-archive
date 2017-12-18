@@ -162,8 +162,7 @@ namespace {
 		}
 
 		if(socket->is_throttled()){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-				"Session is throttled: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Session is throttled: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
@@ -180,13 +179,11 @@ namespace {
 				socket->force_shutdown();
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 			socket->force_shutdown();
 			err_code = EPIPE;
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			socket->force_shutdown();
 			err_code = EPIPE;
 		}
@@ -232,13 +229,11 @@ namespace {
 				socket->force_shutdown();
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 			socket->force_shutdown();
 			err_code = EPIPE;
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			socket->force_shutdown();
 			err_code = EPIPE;
 		}
@@ -276,11 +271,9 @@ namespace {
 		try {
 			socket->on_close(err_code);
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-				"Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 		}
 		{
 			LOG_POSEIDON_DEBUG("Socket closed: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);

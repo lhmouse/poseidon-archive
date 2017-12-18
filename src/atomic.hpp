@@ -83,8 +83,7 @@ inline T atomic_sub(volatile T &mem, typename boost::common_type<T>::type val, M
 }
 
 template<typename T>
-inline bool atomic_compare_exchange(volatile T &mem, typename boost::common_type<T>::type &cmp,
-	typename boost::common_type<T>::type xchg, MemModel model_success, MemModel model_failure) NOEXCEPT
+inline bool atomic_compare_exchange(volatile T &mem, typename boost::common_type<T>::type &cmp, typename boost::common_type<T>::type xchg, MemModel model_success, MemModel model_failure) NOEXCEPT
 {
 #ifdef GCC_HAS_ATOMIC_
 	return __atomic_compare_exchange_n(&mem, &cmp, xchg, false, model_success, model_failure);

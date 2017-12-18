@@ -118,8 +118,7 @@ bool check_handshake_response(const Http::ResponseHeaders &response, const std::
 	enc.put(sha1.data(), sha1.size());
 	AUTO(sec_websocket_accept_expecting, enc.finalize().dump_string());
 	if(sec_websocket_accept != sec_websocket_accept_expecting){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-			"Bad Sec-WebSocket-Accept: got ", sec_websocket_accept, ", expecting ", sec_websocket_accept_expecting);
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Bad Sec-WebSocket-Accept: got ", sec_websocket_accept, ", expecting ", sec_websocket_accept_expecting);
 		return false;
 	}
 	return true;

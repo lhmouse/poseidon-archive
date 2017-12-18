@@ -136,8 +136,7 @@ bool UdpServerBase::send(const SockAddr &sock_addr, StreamBuffer buffer){
 	PROFILE_ME;
 
 	if(has_been_shutdown_write()){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG,
-			"UDP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", IpPort(sock_addr));
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "UDP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", IpPort(sock_addr));
 		return false;
 	}
 

@@ -89,8 +89,7 @@ private:
 	StreamBuffer m_entity;
 
 public:
-	ResponseJob(const boost::shared_ptr<Client> &client,
-		ResponseHeaders response_headers, StreamBuffer entity)
+	ResponseJob(const boost::shared_ptr<Client> &client, ResponseHeaders response_headers, StreamBuffer entity)
 		: SyncJobBase(client)
 		, m_response_headers(STD_MOVE(response_headers)), m_entity(STD_MOVE(entity))
 	{ }

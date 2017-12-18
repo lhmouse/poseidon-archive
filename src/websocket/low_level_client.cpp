@@ -26,8 +26,7 @@ void LowLevelClient::keep_alive_timer_proc(const boost::weak_ptr<LowLevelClient>
 
 	const AUTO(interval_since_last_pong, saturated_sub(now, atomic_load(client->m_last_pong_time, ATOMIC_CONSUME)));
 	if(interval_since_last_pong >= saturated_add(period, period)){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-			"No pong received since the last two keep alive intervals. Shut down the connection.");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "No pong received since the last two keep alive intervals. Shut down the connection.");
 		client->force_shutdown();
 		return;
 	}

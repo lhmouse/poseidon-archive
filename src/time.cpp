@@ -94,18 +94,13 @@ std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool 
 	} else {
 		dt = break_down_time(ms);
 	}
-	if(show_ms){
-		return (unsigned)::snprintf(buffer, max,
-			"%04u-%02u-%02u %02u:%02u:%02u.%03u", dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec, dt.ms);
-	} else {
-		return (unsigned)::snprintf(buffer, max,
-			"%04u-%02u-%02u %02u:%02u:%02u", dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec);
-	}
+	return (unsigned)::snprintf(buffer, max, show_ms ? "%04u-%02u-%02u %02u:%02u:%02u.%03u"
+	                                                 : "%04u-%02u-%02u %02u:%02u:%02u",
+		dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec, dt.ms);
 }
 boost::uint64_t scan_time(const char *str){
 	DateTime dt = { 1234, 1, 1, 0, 0, 0, 0 };
-	std::sscanf(str,
-		"%u-%u-%u %u:%u:%u.%u", &dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms);
+	std::sscanf(str, "%u-%u-%u %u:%u:%u.%u", &dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms);
 	if(dt.yr == 0){
 		return 0;
 	} else if(dt.yr == 9999){

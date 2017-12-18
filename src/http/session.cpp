@@ -94,8 +94,7 @@ private:
 	bool m_keep_alive;
 
 public:
-	RequestJob(const boost::shared_ptr<Session> &session,
-		RequestHeaders request_headers, StreamBuffer entity, bool keep_alive)
+	RequestJob(const boost::shared_ptr<Session> &session, RequestHeaders request_headers, StreamBuffer entity, bool keep_alive)
 		: SyncJobBase(session)
 		, m_request_headers(STD_MOVE(request_headers)), m_entity(STD_MOVE(entity)), m_keep_alive(keep_alive)
 	{ }

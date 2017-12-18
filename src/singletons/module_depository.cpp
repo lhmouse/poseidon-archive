@@ -52,8 +52,7 @@ namespace {
 		HandleStack m_handles;
 
 	public:
-		Module(Move<UniqueHandle<DynamicLibraryCloser> > dl_handle, void *base_address, SharedNts real_path,
-			Move<HandleStack> handles)
+		Module(Move<UniqueHandle<DynamicLibraryCloser> > dl_handle, void *base_address, SharedNts real_path, Move<HandleStack> handles)
 			: m_dl_handle(STD_MOVE(dl_handle)), m_base_address(base_address), m_real_path(STD_MOVE(real_path))
 			, m_handles(STD_MOVE(handles))
 		{
@@ -192,8 +191,7 @@ bool ModuleDepository::unload(void *base_address) NOEXCEPT {
 		LOG_POSEIDON_WARNING("Module not found: base_address = ", base_address);
 		return false;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO,
-		"Unloading module: base_address = ", base_address, ", real_path = ", it->module->get_real_path());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading module: base_address = ", base_address, ", real_path = ", it->module->get_real_path());
 	g_module_map.erase<1>(it);
 	return true;
 }
