@@ -400,7 +400,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_) const {
 }
 
 #pragma GCC diagnostic pop
-#endif
+#endif // CBPP_MESSAGE_EMIT_EXTERNAL_DEFINITIONS
 
 #undef MESSAGE_NAME
 #undef MESSAGE_ID
