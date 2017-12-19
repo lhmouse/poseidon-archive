@@ -393,7 +393,7 @@ public:
 	}
 };
 
-#ifndef MESSAGE_DEFINE_RTTI
+#ifdef MESSAGE_DEFINE_RTTI
 MESSAGE_NAME::~MESSAGE_NAME(){ }
 #endif
 
