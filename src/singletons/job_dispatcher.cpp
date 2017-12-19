@@ -36,35 +36,34 @@ namespace {
 		bool insignificant;
 	};
 
+	struct StackStorage FINAL {
+		static void *operator new(std::size_t cb){
+			assert(cb == sizeof(StackStorage));
+			(void)cb;
+
+			void *const ptr = mmap(NULLPTR, sizeof(StackStorage), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+			if(ptr == MAP_FAILED){
+				const int err_code = errno;
+				LOG_POSEIDON_ERROR("Failed to allocate stack: err_code = ", err_code);
+				throw std::bad_alloc();
+			}
+			return ptr;
+		}
+		static void operator delete(void *ptr) NOEXCEPT {
+			if(::munmap(ptr, sizeof(StackStorage)) != 0){
+				const int err_code = errno;
+				LOG_POSEIDON_ERROR("Failed to deallocate stack: err_code = ", err_code);
+				std::abort();
+			}
+		}
+
+		char bytes[0x40000];
+	};
+
 	class FiberStackAllocator : NONCOPYABLE {
-	public:
-		struct Storage FINAL {
-			static void *operator new(std::size_t cb){
-				assert(cb == sizeof(Storage));
-				(void)cb;
-
-				void *const ptr = mmap(NULLPTR, sizeof(Storage), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
-				if(ptr == MAP_FAILED){
-					const int err_code = errno;
-					LOG_POSEIDON_ERROR("Failed to allocate stack: err_code = ", err_code);
-					throw std::bad_alloc();
-				}
-				return ptr;
-			}
-			static void operator delete(void *ptr) NOEXCEPT {
-				if(::munmap(ptr, sizeof(Storage)) != 0){
-					const int err_code = errno;
-					LOG_POSEIDON_ERROR("Failed to deallocate stack: err_code = ", err_code);
-					std::abort();
-				}
-			}
-
-			char bytes[256 * 1024];
-		};
-
 	private:
 		mutable Mutex m_mutex;
-		boost::array<boost::scoped_ptr<Storage>, 64> m_pool;
+		boost::array<boost::scoped_ptr<StackStorage>, 64> m_pool;
 		std::size_t m_size;
 
 	public:
@@ -73,15 +72,15 @@ namespace {
 		{ }
 
 	public:
-		void allocate(boost::scoped_ptr<Storage> &ptr){
+		void allocate(boost::scoped_ptr<StackStorage> &ptr){
 			const Mutex::UniqueLock lock(m_mutex);
 			if(m_size == 0){
-				ptr.reset(new Storage);
+				ptr.reset(new StackStorage);
 			} else {
 				ptr.swap(m_pool.at(--m_size));
 			}
 		}
-		void deallocate(boost::scoped_ptr<Storage> &ptr) NOEXCEPT {
+		void deallocate(boost::scoped_ptr<StackStorage> &ptr) NOEXCEPT {
 			const Mutex::UniqueLock lock(m_mutex);
 			if(m_size == m_pool.size()){
 				ptr.reset();
@@ -98,7 +97,7 @@ namespace {
 		boost::container::deque<JobElement> queue;
 
 		FiberState state;
-		boost::scoped_ptr<FiberStackAllocator::Storage> stack;
+		boost::scoped_ptr<StackStorage> stack;
 		::ucontext_t inner;
 		::ucontext_t outer;
 
