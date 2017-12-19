@@ -23,7 +23,7 @@
 class MESSAGE_NAME : public ::Poseidon::Cbpp::MessageBase {
 public:
 	enum {
-		ID = MESSAGE_ID
+		ID = MESSAGE_ID,
 	};
 
 public:
