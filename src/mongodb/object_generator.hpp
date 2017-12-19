@@ -17,9 +17,6 @@
 #  error Please #include <poseidon/mongodb/object_base.hpp> first.
 #endif
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-
 class OBJECT_NAME : public ::Poseidon::MongoDb::ObjectBase {
 public:
 	static ::boost::shared_ptr< ::Poseidon::MongoDb::ObjectBase> create(){
@@ -119,15 +116,30 @@ public:
 	~OBJECT_NAME() OVERRIDE;
 
 public:
-	const char *get_collection() const OVERRIDE {
-		return TOKEN_TO_STR(OBJECT_NAME);
-	}
+	const char *get_collection() const OVERRIDE;
+	void generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const OVERRIDE;
+	::std::string generate_primary_key() const OVERRIDE;
+	void fetch(const ::boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_) OVERRIDE;
+};
 
-	void generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const OVERRIDE {
-		AUTO(pkey_, generate_primary_key());
-		if(!pkey_.empty()){
-			doc_.append_string(::Poseidon::SharedNts::view("_id"), STD_MOVE(pkey_));
-		}
+#ifdef MONGODB_OBJECT_EMIT_EXTERNAL_DEFINITIONS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+
+OBJECT_NAME::~OBJECT_NAME(){ }
+
+const char *OBJECT_NAME::get_collection() const OVERRIDE {
+	return TOKEN_TO_STR(OBJECT_NAME);
+}
+void OBJECT_NAME::generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const {
+	PROFILE_ME;
+
+	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
+
+	AUTO(pkey_, generate_primary_key());
+	if(!pkey_.empty()){
+		doc_.append_string(::Poseidon::SharedNts::view("_id"), STD_MOVE(pkey_));
+	}
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -147,14 +159,19 @@ public:
 #define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
 #define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
 
-		OBJECT_FIELDS
-	}
-	::std::string generate_primary_key() const OVERRIDE {
-		const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
+	OBJECT_FIELDS
+}
+::std::string OBJECT_NAME::generate_primary_key() const {
+	PROFILE_ME;
 
-		OBJECT_PRIMARY_KEY
-	}
-	void fetch(const ::boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_) OVERRIDE {
+	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
+
+	OBJECT_PRIMARY_KEY
+}
+void fetch(const ::boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_){
+	PROFILE_ME;
+
+	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -174,15 +191,11 @@ public:
 #define FIELD_UUID(id_)                   id_.set(conn_->get_uuid     ( TOKEN_TO_STR(id_) ), false);
 #define FIELD_BLOB(id_)                   id_.set(conn_->get_blob     ( TOKEN_TO_STR(id_) ), false);
 
-		OBJECT_FIELDS
-	}
-};
-
-#ifdef OBJECT_DEFINE_RTTI
-OBJECT_NAME::~OBJECT_NAME(){ }
-#endif
+	OBJECT_FIELDS
+}
 
 #pragma GCC diagnostic pop
+#endif // MONGODB_OBJECT_EMIT_EXTERNAL_DEFINITIONS
 
 #undef OBJECT_NAME
 #undef OBJECT_FIELDS

@@ -22,6 +22,7 @@
 #include "../atomic.hpp"
 #include "../shared_nts.hpp"
 #include "../log.hpp"
+#include "../profiler.hpp"
 #include "../recursive_mutex.hpp"
 #include "../virtual_shared_from_this.hpp"
 #include "../uuid.hpp"
@@ -32,6 +33,7 @@ namespace MySql {
 class ObjectBase : NONCOPYABLE, public virtual VirtualSharedFromThis {
 public:
 	template<typename ValueT> class Field;
+	class Delimiter;
 
 private:
 	mutable volatile bool m_auto_saves;
@@ -124,6 +126,29 @@ template<typename ValueT>
 inline std::istream &operator>>(std::istream &is, ObjectBase::Field<ValueT> &rhs){
 	rhs.parse(is);
 	return is;
+}
+
+class ObjectBase::Delimiter {
+private:
+	mutable std::size_t m_count;
+
+public:
+	Delimiter()
+		: m_count(0)
+	{ }
+
+public:
+	void dump(std::ostream &os) const {
+		if(m_count == 0){
+			os <<", ";
+		}
+		++m_count;
+	}
+};
+
+inline std::ostream &operator<<(std::ostream &os, const ObjectBase::Delimiter &rhs){
+	rhs.dump(os);
+	return os;
 }
 
 }

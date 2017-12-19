@@ -73,7 +73,7 @@ public:
 	virtual ~MessageBase();
 
 public:
-	virtual unsigned get_id() const = 0;
+	virtual boost::uint64_t get_id() const = 0;
 	virtual void serialize(StreamBuffer &buffer) const = 0;
 	virtual void deserialize(StreamBuffer &buffer) = 0;
 	virtual void dump_debug(std::ostream &os) const = 0;

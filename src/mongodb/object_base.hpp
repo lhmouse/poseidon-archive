@@ -22,6 +22,7 @@
 #include "../atomic.hpp"
 #include "../shared_nts.hpp"
 #include "../log.hpp"
+#include "../profiler.hpp"
 #include "../recursive_mutex.hpp"
 #include "../virtual_shared_from_this.hpp"
 #include "../uuid.hpp"

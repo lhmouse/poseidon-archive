@@ -17,9 +17,6 @@
 #  error Please #include <poseidon/cbpp/message_base.hpp> first.
 #endif
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-
 class MESSAGE_NAME : public ::Poseidon::Cbpp::MessageBase {
 public:
 	enum {
@@ -148,12 +145,24 @@ public:
 	~MESSAGE_NAME();
 
 public:
-	unsigned get_id() const OVERRIDE {
-		return ID;
-	}
-	void serialize(::Poseidon::StreamBuffer &buffer_) const OVERRIDE {
-		const AUTO(cur_, this);
-		::Poseidon::StreamBuffer::WriteIterator w_(buffer_);
+	boost::uint64_t get_id() const OVERRIDE;
+	void serialize(::Poseidon::StreamBuffer &buffer_) const OVERRIDE;
+	void deserialize(::Poseidon::StreamBuffer &buffer_) OVERRIDE;
+	void dump_debug(::std::ostream &os_) const OVERRIDE;
+};
+
+#ifdef CBPP_MESSAGE_EMIT_EXTERNAL_DEFINITIONS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+
+MESSAGE_NAME::~MESSAGE_NAME(){ }
+
+boost::uint64_t MESSAGE_NAME::get_id() const {
+	return ID;
+}
+void MESSAGE_NAME::serialize(::Poseidon::StreamBuffer &buffer_) const {
+	const AUTO(cur_, this);
+	::Poseidon::StreamBuffer::WriteIterator w_(buffer_);
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -207,12 +216,11 @@ public:
                                     ++w_;	\
                                   }
 
-		MESSAGE_FIELDS
-	}
-
-	void deserialize(::Poseidon::StreamBuffer &buffer_) OVERRIDE {
-		const AUTO(cur_, this);
-		::Poseidon::StreamBuffer::ReadIterator r_(buffer_);
+	MESSAGE_FIELDS
+}
+void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
+	const AUTO(cur_, this);
+	::Poseidon::StreamBuffer::ReadIterator r_(buffer_);
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -322,14 +330,13 @@ public:
                                     }	\
                                   }
 
-		MESSAGE_FIELDS
-	}
+	MESSAGE_FIELDS
+}
+void MESSAGE_NAME::dump_debug(::std::ostream &os_) const {
+	static CONSTEXPR int s_indent_step_ = 2;
 
-	void dump_debug(::std::ostream &os_) const OVERRIDE {
-		static CONSTEXPR int s_indent_step_ = 2;
-
-		const AUTO(cur_, this);
-		int indent_ = s_indent_step_;
+	const AUTO(cur_, this);
+	int indent_ = s_indent_step_;
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -387,17 +394,13 @@ public:
                                     os_ << ::std::setw(indent_) <<"" <<"]\n";	\
                                   }
 
-		os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<get_id() <<") = {\n";
-		MESSAGE_FIELDS
-		os_ <<"}\n";
-	}
-};
-
-#ifdef MESSAGE_DEFINE_RTTI
-MESSAGE_NAME::~MESSAGE_NAME(){ }
-#endif
+	os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<get_id() <<") = {\n";
+	MESSAGE_FIELDS
+	os_ <<"}\n";
+}
 
 #pragma GCC diagnostic pop
+#endif
 
 #undef MESSAGE_NAME
 #undef MESSAGE_ID
