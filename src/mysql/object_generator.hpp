@@ -1,25 +1,25 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2017, LH_Mouse. All wrongs reserved.
 
-#ifndef MYSQL_OBJECT_NAME
-#   error MYSQL_OBJECT_NAME is undefined.
+#ifndef OBJECT_NAME
+#  error OBJECT_NAME is undefined.
 #endif
 
-#ifndef MYSQL_OBJECT_FIELDS
-#   error MYSQL_OBJECT_FIELDS is undefined.
+#ifndef OBJECT_FIELDS
+#  error OBJECT_FIELDS is undefined.
 #endif
 
 #ifndef POSEIDON_MYSQL_OBJECT_BASE_HPP_
-#   error Please #include <poseidon/mysql/object_base.hpp> first.
+#  error Please #include <poseidon/mysql/object_base.hpp> first.
 #endif
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 
-class MYSQL_OBJECT_NAME : public ::Poseidon::MySql::ObjectBase {
+class OBJECT_NAME : public ::Poseidon::MySql::ObjectBase {
 public:
 	static ::boost::shared_ptr< ::Poseidon::MySql::ObjectBase> create(){
-		return ::boost::make_shared<MYSQL_OBJECT_NAME>();
+		return ::boost::make_shared<OBJECT_NAME>();
 	}
 
 public:
@@ -42,10 +42,10 @@ public:
 #define FIELD_UUID(id_)                   ::Poseidon::MySql::ObjectBase::Field< ::Poseidon::Uuid> id_;
 #define FIELD_BLOB(id_)                   ::Poseidon::MySql::ObjectBase::Field< ::std::basic_string<unsigned char> > id_;
 
-	MYSQL_OBJECT_FIELDS
+	OBJECT_FIELDS
 
 public:
-	MYSQL_OBJECT_NAME()
+	OBJECT_NAME()
 		: ::Poseidon::MySql::ObjectBase()
 
 #undef FIELD_BOOLEAN
@@ -66,7 +66,7 @@ public:
 #define FIELD_UUID(id_)                   , id_(this)
 #define FIELD_BLOB(id_)                   , id_(this)
 
-		MYSQL_OBJECT_FIELDS
+		OBJECT_FIELDS
 	{ }
 
 #undef FIELD_BOOLEAN
@@ -87,7 +87,7 @@ public:
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_ ## X_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_ ## X_
 
-	explicit MYSQL_OBJECT_NAME(STRIP_FIRST(void MYSQL_OBJECT_FIELDS))
+	explicit OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 		: ::Poseidon::MySql::ObjectBase()
 
 #undef FIELD_BOOLEAN
@@ -108,14 +108,15 @@ public:
 #define FIELD_UUID(id_)                   , id_(this, id_ ## X_)
 #define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(id_ ## X_))
 
-		MYSQL_OBJECT_FIELDS
+		OBJECT_FIELDS
 	{
 		::Poseidon::atomic_fence(::Poseidon::ATOMIC_RELEASE);
 	}
+	~OBJECT_NAME() OVERRIDE;
 
 public:
 	const char *get_table() const OVERRIDE {
-		return TOKEN_TO_STR(MYSQL_OBJECT_NAME);
+		return TOKEN_TO_STR(OBJECT_NAME);
 	}
 
 	void generate_sql(::std::ostream &os_) const OVERRIDE {
@@ -140,7 +141,7 @@ public:
 #define FIELD_UUID(id_)                   os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::UuidFormatter(id_);
 #define FIELD_BLOB(id_)                   os_ <<delims_[flag_++] <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_);
 
-		MYSQL_OBJECT_FIELDS
+		OBJECT_FIELDS
 	}
 	void fetch(const ::boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_) OVERRIDE {
 
@@ -162,11 +163,15 @@ public:
 #define FIELD_UUID(id_)                   id_.set(conn_->get_uuid     ( TOKEN_TO_STR(id_) ), false);
 #define FIELD_BLOB(id_)                   id_.set(conn_->get_blob     ( TOKEN_TO_STR(id_) ), false);
 
-		MYSQL_OBJECT_FIELDS
+		OBJECT_FIELDS
 	}
 };
 
+#ifdef OBJECT_DEFINE_RTTI
+OBJECT_NAME::~OBJECT_NAME(){ }
+#endif
+
 #pragma GCC diagnostic pop
 
-#undef MYSQL_OBJECT_NAME
-#undef MYSQL_OBJECT_FIELDS
+#undef OBJECT_NAME
+#undef OBJECT_FIELDS

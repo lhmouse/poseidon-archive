@@ -1,29 +1,29 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2017, LH_Mouse. All wrongs reserved.
 
-#ifndef MONGODB_OBJECT_NAME
-#   error MONGODB_OBJECT_NAME is undefined.
+#ifndef OBJECT_NAME
+#  error OBJECT_NAME is undefined.
 #endif
 
-#ifndef MONGODB_OBJECT_FIELDS
-#   error MONGODB_OBJECT_FIELDS is undefined.
+#ifndef OBJECT_FIELDS
+#  error OBJECT_FIELDS is undefined.
 #endif
 
-#ifndef MONGODB_OBJECT_PRIMARY_KEY
-#   error MONGODB_OBJECT_PRIMARY_KEY is undefined.
+#ifndef OBJECT_PRIMARY_KEY
+#  error OBJECT_PRIMARY_KEY is undefined.
 #endif
 
 #ifndef POSEIDON_MONGODB_OBJECT_BASE_HPP_
-#   error Please #include <poseidon/mongodb/object_base.hpp> first.
+#  error Please #include <poseidon/mongodb/object_base.hpp> first.
 #endif
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 
-class MONGODB_OBJECT_NAME : public ::Poseidon::MongoDb::ObjectBase {
+class OBJECT_NAME : public ::Poseidon::MongoDb::ObjectBase {
 public:
 	static ::boost::shared_ptr< ::Poseidon::MongoDb::ObjectBase> create(){
-		return ::boost::make_shared<MONGODB_OBJECT_NAME>();
+		return ::boost::make_shared<OBJECT_NAME>();
 	}
 
 public:
@@ -46,10 +46,10 @@ public:
 #define FIELD_UUID(id_)                   ::Poseidon::MongoDb::ObjectBase::Field< ::Poseidon::Uuid> id_;
 #define FIELD_BLOB(id_)                   ::Poseidon::MongoDb::ObjectBase::Field< ::std::basic_string<unsigned char> > id_;
 
-	MONGODB_OBJECT_FIELDS
+	OBJECT_FIELDS
 
 public:
-	MONGODB_OBJECT_NAME()
+	OBJECT_NAME()
 		: ::Poseidon::MongoDb::ObjectBase()
 
 #undef FIELD_BOOLEAN
@@ -70,7 +70,7 @@ public:
 #define FIELD_UUID(id_)                   , id_(this)
 #define FIELD_BLOB(id_)                   , id_(this)
 
-		MONGODB_OBJECT_FIELDS
+		OBJECT_FIELDS
 	{ }
 
 #undef FIELD_BOOLEAN
@@ -91,7 +91,7 @@ public:
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_ ## X_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_ ## X_
 
-	explicit MONGODB_OBJECT_NAME(STRIP_FIRST(void MONGODB_OBJECT_FIELDS))
+	explicit OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 		: ::Poseidon::MongoDb::ObjectBase()
 
 #undef FIELD_BOOLEAN
@@ -112,14 +112,15 @@ public:
 #define FIELD_UUID(id_)                   , id_(this, id_ ## X_)
 #define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(id_ ## X_))
 
-		MONGODB_OBJECT_FIELDS
+		OBJECT_FIELDS
 	{
 		::Poseidon::atomic_fence(::Poseidon::ATOMIC_RELEASE);
 	}
+	~OBJECT_NAME() OVERRIDE;
 
 public:
 	const char *get_collection() const OVERRIDE {
-		return TOKEN_TO_STR(MONGODB_OBJECT_NAME);
+		return TOKEN_TO_STR(OBJECT_NAME);
 	}
 
 	void generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const OVERRIDE {
@@ -146,12 +147,12 @@ public:
 #define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
 #define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
 
-		MONGODB_OBJECT_FIELDS
+		OBJECT_FIELDS
 	}
 	::std::string generate_primary_key() const OVERRIDE {
 		const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
 
-		MONGODB_OBJECT_PRIMARY_KEY
+		OBJECT_PRIMARY_KEY
 	}
 	void fetch(const ::boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_) OVERRIDE {
 
@@ -173,12 +174,16 @@ public:
 #define FIELD_UUID(id_)                   id_.set(conn_->get_uuid     ( TOKEN_TO_STR(id_) ), false);
 #define FIELD_BLOB(id_)                   id_.set(conn_->get_blob     ( TOKEN_TO_STR(id_) ), false);
 
-		MONGODB_OBJECT_FIELDS
+		OBJECT_FIELDS
 	}
 };
 
+#ifdef OBJECT_DEFINE_RTTI
+OBJECT_NAME::~OBJECT_NAME(){ }
+#endif
+
 #pragma GCC diagnostic pop
 
-#undef MONGODB_OBJECT_NAME
-#undef MONGODB_OBJECT_FIELDS
-#undef MONGODB_OBJECT_PRIMARY_KEY
+#undef OBJECT_NAME
+#undef OBJECT_FIELDS
+#undef OBJECT_PRIMARY_KEY

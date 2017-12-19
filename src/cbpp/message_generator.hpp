@@ -2,19 +2,19 @@
 // Copyleft 2014 - 2017, LH_Mouse. All wrongs reserved.
 
 #ifndef MESSAGE_NAME
-#   error MESSAGE_NAME is undefined.
+#  error MESSAGE_NAME is undefined.
 #endif
 
 #ifndef MESSAGE_ID
-#   error MESSAGE_ID is undefined.
+#  error MESSAGE_ID is undefined.
 #endif
 
 #ifndef MESSAGE_FIELDS
-#   error MESSAGE_FIELDS is undefined.
+#  error MESSAGE_FIELDS is undefined.
 #endif
 
 #ifndef POSEIDON_CBPP_MESSAGE_BASE_HPP_
-#   error Please #include <poseidon/cbpp/message_base.hpp> first.
+#  error Please #include <poseidon/cbpp/message_base.hpp> first.
 #endif
 
 #pragma GCC diagnostic push
@@ -145,6 +145,7 @@ public:
 			THROW_JUNK_AFTER_PACKET_(MESSAGE_NAME);
 		}
 	}
+	~MESSAGE_NAME();
 
 public:
 	unsigned get_id() const OVERRIDE {
@@ -391,6 +392,10 @@ public:
 		os_ <<"}\n";
 	}
 };
+
+#ifndef MESSAGE_DEFINE_RTTI
+MESSAGE_NAME::~MESSAGE_NAME(){ }
+#endif
 
 #pragma GCC diagnostic pop
 
