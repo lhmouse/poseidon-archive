@@ -80,6 +80,15 @@ public:
 
 extern void yield(const boost::shared_ptr<const Promise> &promise, bool insignificant = true);
 
+template<typename ResultT>
+inline ResultT wait(const boost::shared_ptr<const PromiseContainer<ResultT> > &promise, bool insignificant = true){
+	(+yield)(promise, insignificant);
+	return STD_MOVE(promise->get());
+}
+inline void wait(const boost::shared_ptr<const Promise> &promise, bool insignificant = true){
+	(+yield)(promise, insignificant);
+}
+
 }
 
 #endif
