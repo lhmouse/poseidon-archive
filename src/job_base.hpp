@@ -23,7 +23,7 @@ public:
 	virtual void perform() = 0;
 };
 
-extern void enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn);
+extern void enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
 
 }
 
