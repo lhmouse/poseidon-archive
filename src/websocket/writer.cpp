@@ -57,7 +57,7 @@ long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 	}
 	return on_encoded_data_avail(STD_MOVE(frame));
 }
-long Writer::put_close_message(StatusCode status_code, bool masked, StreamBuffer additional){
+long Writer::put_close_message(StatusCode status_code, bool masked, StreamBuffer addition){
 	PROFILE_ME;
 
 	StreamBuffer payload;
@@ -65,7 +65,7 @@ long Writer::put_close_message(StatusCode status_code, bool masked, StreamBuffer
 	store_be(temp16, status_code);
 	payload.put(&temp16, 2);
 	char msg[0x7B];
-	unsigned len = additional.get(msg, sizeof(msg));
+	unsigned len = addition.get(msg, sizeof(msg));
 	payload.put(msg, len);
 	return put_message(OP_CLOSE, masked, STD_MOVE(payload));
 }
