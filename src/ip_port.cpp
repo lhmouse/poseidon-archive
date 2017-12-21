@@ -14,6 +14,15 @@
 
 namespace Poseidon {
 
+namespace {
+	inline ::sockaddr_in &as_sin(const void *data) NOEXCEPT {
+		return *static_cast< ::sockaddr_in *>(const_cast<void *>(data));
+	}
+	inline ::sockaddr_in6 &as_sin6(const void *data) NOEXCEPT {
+		return *static_cast< ::sockaddr_in6 *>(const_cast<void *>(data));
+	}
+}
+
 IpPort::IpPort(){
 	std::strcpy(m_ip, "???");
 	m_port = 0;
@@ -28,17 +37,19 @@ IpPort::IpPort(const char *ip_str, unsigned port_num){
 IpPort::IpPort(const SockAddr &sock_addr){
 	const int family = sock_addr.get_family();
 	if(family == AF_INET){
-		const AUTO_REF(sin, *static_cast<const ::sockaddr_in *>(sock_addr.data()));
+		::sockaddr_in &sin = as_sin(sock_addr.data());
+		DEBUG_THROW_UNLESS(sock_addr.size() >= sizeof(sin), Exception, sslit("Invalid IPv4 SockAddr"));
 		BOOST_STATIC_ASSERT(sizeof(m_ip) >= INET_ADDRSTRLEN);
 		DEBUG_THROW_UNLESS(::inet_ntop(AF_INET, &(sin.sin_addr), m_ip, sizeof(m_ip)), SystemException);
 		m_port = load_be(sin.sin_port);
 	} else if(family == AF_INET6){
-		const AUTO_REF(sin6, *static_cast<const ::sockaddr_in6 *>(sock_addr.data()));
+		::sockaddr_in6 &sin6 = as_sin6(sock_addr.data());
+		DEBUG_THROW_UNLESS(sock_addr.size() >= sizeof(sin6), Exception, sslit("Invalid IPv6 SockAddr"));
 		BOOST_STATIC_ASSERT(sizeof(m_ip) >= INET6_ADDRSTRLEN);
 		DEBUG_THROW_UNLESS(::inet_ntop(AF_INET6, &(sin6.sin6_addr), m_ip, sizeof(m_ip)), SystemException);
 		m_port = load_be(sin6.sin6_port);
 	} else {
-		LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
+		LOG_POSEIDON_ERROR("Unknown IP protocol: family = ", family);
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
 }

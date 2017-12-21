@@ -14,53 +14,65 @@
 namespace Poseidon {
 
 namespace {
-	bool is_ipv4_private(const unsigned char *ip){
-		if(ip[0] == 0){ // 0.0.0.0/8: 当前网络地址
+	inline bool is_ipv4_private(const unsigned char *addr){
+		if(addr[0] == 0){ // 0.0.0.0/8: 当前网络地址
 			return true;
-		} else if(ip[0] == 10){ // 10.0.0.0/8: A 类私有地址
+		} else if(addr[0] == 10){ // 10.0.0.0/8: A 类私有地址
 			return true;
-		} else if(ip[0] == 127){ // 127.0.0.0/8: 回环地址
+		} else if(addr[0] == 127){ // 127.0.0.0/8: 回环地址
 			return true;
-		} else if((ip[0] == 172) && ((ip[1] & 0xF0) == 16)){ // 172.16.0.0/12: B 类私有地址
+		} else if((addr[0] == 172) && ((addr[1] & 0xF0) == 16)){ // 172.16.0.0/12: B 类私有地址
 			return true;
-		} else if((ip[0] == 169) && (ip[1] == 254)){ // 169.254.0.0/16: 链路本地地址
+		} else if((addr[0] == 169) && (addr[1] == 254)){ // 169.254.0.0/16: 链路本地地址
 			return true;
-		} else if((ip[0] == 192) && (ip[1] == 168)){ // 192.168.0.0/16: C 类私有地址
+		} else if((addr[0] == 192) && (addr[1] == 168)){ // 192.168.0.0/16: C 类私有地址
 			return true;
-		} else if(ip[0] >= 224){ // D 类、E 类地址和广播地址
+		} else if(addr[0] >= 224){ // D 类、E 类地址和广播地址
 			return true;
 		} else {
 			return false;
 		}
 	}
-	bool are_zeroes(const void *p, unsigned len){
-		static CONSTEXPR const unsigned char ZEROES[16] = { };
-		assert(len <= sizeof(ZEROES));
-		return std::memcmp(p, ZEROES, len) == 0;
+	inline bool are_zeroes(const unsigned char *data, std::size_t size){
+		for(std::size_t i = 0; i < size; ++i){
+			if(data[i] != 0){
+				return false;
+			}
+		}
+		return true;
+	}
+
+	inline ::sockaddr &as_sa(const void *data) NOEXCEPT {
+		return *static_cast< ::sockaddr *>(const_cast<void *>(data));
+	}
+	inline ::sockaddr_in &as_sin(const void *data) NOEXCEPT {
+		return *static_cast< ::sockaddr_in *>(const_cast<void *>(data));
+	}
+	inline ::sockaddr_in6 &as_sin6(const void *data) NOEXCEPT {
+		return *static_cast< ::sockaddr_in6 *>(const_cast<void *>(data));
 	}
 }
 
 SockAddr::SockAddr(){
-	static CONSTEXPR const ::sa_family_t NULL_FAMILY = AF_UNSPEC;
-	std::memcpy(m_data, &NULL_FAMILY, sizeof(NULL_FAMILY));
+	as_sa(m_data).sa_family = AF_UNSPEC;
 	m_size = 0;
 }
 SockAddr::SockAddr(const void *addr_data, std::size_t addr_size){
-	DEBUG_THROW_UNLESS(addr_size <= sizeof(m_data), Exception, sslit("SockAddr size too large"));
+	DEBUG_THROW_UNLESS(addr_size <= sizeof(m_data), Exception, sslit("Too many bytes for SockAddr"));
 	std::memcpy(m_data, addr_data, addr_size);
 	m_size = addr_size;
 }
 SockAddr::SockAddr(const IpPort &ip_port){
-	if(::inet_pton(AF_INET, ip_port.ip(), &(static_cast< ::sockaddr_in *>(static_cast<void *>(m_data))->sin_addr)) == 1){
-		BOOST_STATIC_ASSERT(sizeof(m_data) >= sizeof(::sockaddr_in));
-		AUTO_REF(sin, *static_cast< ::sockaddr_in *>(static_cast<void *>(m_data)));
+	if(::inet_pton(AF_INET, ip_port.ip(), &(as_sa(m_data).sa_data)) == 1){
+		::sockaddr_in &sin = as_sin(m_data);
+		BOOST_STATIC_ASSERT(sizeof(m_data) >= sizeof(sin));
 		sin.sin_family = AF_INET;
 		store_be(sin.sin_port, ip_port.port());
 		m_size = sizeof(sin);
-	} else if(::inet_pton(AF_INET6, ip_port.ip(), &(static_cast< ::sockaddr_in6 *>(static_cast<void *>(m_data))->sin6_addr)) == 1){
-		BOOST_STATIC_ASSERT(sizeof(m_data) >= sizeof(::sockaddr_in6));
-		AUTO_REF(sin6, *static_cast< ::sockaddr_in6 *>(static_cast<void *>(m_data)));
-		sin6.sin6_family = AF_INET6;
+	} else if(::inet_pton(AF_INET6, ip_port.ip(), &(as_sa(m_data).sa_data)) == 1){
+		::sockaddr_in6 &sin6 = as_sin6(m_data);
+		BOOST_STATIC_ASSERT(sizeof(m_data) >= sizeof(sin6));
+		sin6.sin6_family = AF_INET;
 		store_be(sin6.sin6_port, ip_port.port());
 		m_size = sizeof(sin6);
 	} else {
@@ -69,20 +81,21 @@ SockAddr::SockAddr(const IpPort &ip_port){
 	}
 }
 SockAddr::SockAddr(const SockAddr &rhs) NOEXCEPT {
-	std::memcpy(m_data, rhs.m_data, rhs.m_size);
-	m_size = rhs.m_size;
+	const std::size_t addr_size = rhs.m_size;
+	std::memcpy(m_data, rhs.m_data, addr_size);
+	m_size = addr_size;
 }
 SockAddr &SockAddr::operator=(const SockAddr &rhs) NOEXCEPT {
-	std::memcpy(m_data, rhs.m_data, rhs.m_size);
-	m_size = rhs.m_size;
+	const std::size_t addr_size = rhs.m_size;
+	std::memcpy(m_data, rhs.m_data, addr_size);
+	m_size = addr_size;
 	return *this;
 }
 
 int SockAddr::get_family() const {
-	::sa_family_t sa_family;
-	DEBUG_THROW_UNLESS(m_size >= sizeof(sa_family), Exception, sslit("Invalid SockAddr"));
-	std::memcpy(&sa_family, m_data, sizeof(sa_family));
-	return sa_family;
+	::sockaddr &sa = as_sa(m_data);
+	DEBUG_THROW_UNLESS(m_size >= sizeof(sa.sa_family), Exception, sslit("Empty SockAddr"));
+	return sa.sa_family;
 }
 bool SockAddr::is_ipv6() const {
 	const int family = get_family();
@@ -91,38 +104,40 @@ bool SockAddr::is_ipv6() const {
 	} else if(family == AF_INET6){
 		return true;
 	} else {
-		LOG_POSEIDON_WARNING("Unknown IP protocol ", family);
+		LOG_POSEIDON_ERROR("Unknown IP protocol: family = ", family);
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
 }
 bool SockAddr::is_private() const {
 	const int family = get_family();
 	if(family == AF_INET){
-		const AUTO_REF(sin, *static_cast<const ::sockaddr_in *>(static_cast<const void *>(m_data)));
-		const AUTO(ip, reinterpret_cast<const unsigned char *>(&(sin.sin_addr)));
-		return is_ipv4_private(ip);
+		const ::sockaddr_in &sin = as_sin(m_data);
+		DEBUG_THROW_UNLESS(m_size >= sizeof(sin), Exception, sslit("Invalid IPv4 SockAddr"));
+		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin.sin_addr));
+		return is_ipv4_private(addr);
 	} else if(family == AF_INET6){
-		const AUTO_REF(sin6, *static_cast<const ::sockaddr_in6 *>(static_cast<const void *>(m_data)));
-		const AUTO(ip, reinterpret_cast<const unsigned char *>(&(sin6.sin6_addr)));
-		if(are_zeroes(ip, 15)){
-			if(ip[15] == 0){ // ::/128: 未指定的地址
+		const ::sockaddr_in6 &sin6 = as_sin6(m_data);
+		DEBUG_THROW_UNLESS(m_size >= sizeof(sin6), Exception, sslit("Invalid IPv6 SockAddr"));
+		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin6.sin6_addr));
+		if(are_zeroes(addr, 15)){
+			if(addr[15] == 0){ // ::/128: 未指定的地址
 				return true;
-			} else if(ip[15] == 1){ // ::1/128: 回环地址
+			} else if(addr[15] == 1){ // ::1/128: 回环地址
 				return true;
 			} else {
 				return false;
 			}
-		} else if(are_zeroes(ip, 10) && (ip[10] == 0xFF) && (ip[11] == 0xFF)){ // IPv4 翻译地址
-			return is_ipv4_private(ip + 12);
-		} else if((ip[0] == 0x01) && are_zeroes(ip + 1, 7)){ // 100::/64 黑洞地址
+		} else if(are_zeroes(addr, 10) && (addr[10] == 0xFF) && (addr[11] == 0xFF)){ // IPv4 翻译地址
+			return is_ipv4_private(addr + 12);
+		} else if((addr[0] == 0x01) && are_zeroes(addr + 1, 7)){ // 100::/64 黑洞地址
 			return true;
-		} else if(ip[0] >= 0xFC){ // 私有地址、链路本地地址和广播地址
+		} else if(addr[0] >= 0xFC){ // 私有地址、链路本地地址和广播地址
 			return true;
 		} else {
 			return false;
 		}
 	} else {
-		LOG_POSEIDON_WARNING("Unknown IP protocol: family = ", family);
+		LOG_POSEIDON_ERROR("Unknown IP protocol: family = ", family);
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
 }
