@@ -10,7 +10,7 @@
 
 namespace Poseidon {
 
-#define ABORT_UNLESS(c_, ...)   do { if(c_){ break; } LOG_POSEIDON_FATAL(__VA_ARGS__); } while(false)
+#define ABORT_UNLESS(c_, ...)   do { if(c_){ break; } LOG_POSEIDON_FATAL(__VA_ARGS__); std::abort(); } while(false)
 
 namespace {
 	class ConditionVariableAttribute : NONCOPYABLE {
