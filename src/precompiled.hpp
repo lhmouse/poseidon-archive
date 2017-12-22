@@ -50,6 +50,7 @@
 #include <boost/container/deque.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
+#include <boost/optional.hpp>
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"

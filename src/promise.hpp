@@ -9,28 +9,24 @@
 #include "recursive_mutex.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/type_traits/remove_const.hpp>
+#include <boost/optional.hpp>
 
 namespace Poseidon {
 
 class Promise : NONCOPYABLE {
 protected:
 	mutable RecursiveMutex m_mutex;
-	bool m_satisfied;
-	STD_EXCEPTION_PTR m_except;
+	boost::optional<STD_EXCEPTION_PTR> m_except;
 
 public:
-	Promise() NOEXCEPT;
+	Promise()
+		: m_mutex(), m_except()
+	{ }
 	virtual ~Promise();
 
 public:
-	bool is_satisfied() const NOEXCEPT {
-		const RecursiveMutex::UniqueLock lock(m_mutex);
-		return m_satisfied;
-	}
-	bool would_throw() const NOEXCEPT {
-		const RecursiveMutex::UniqueLock lock(m_mutex);
-		return !m_satisfied || m_except;
-	}
+	bool is_satisfied() const NOEXCEPT;
+	bool would_throw() const NOEXCEPT;
 	void check_and_rethrow() const;
 
 	void set_success(bool throw_if_already_set = true);
@@ -40,17 +36,12 @@ public:
 template<typename ResultT>
 class PromiseContainer : public Promise {
 private:
-	mutable typename boost::remove_const<ResultT>::type m_result;
-	bool m_inited;
+	mutable boost::optional<typename boost::remove_const<ResultT>::type> m_result;
+	bool m_result_accepted;
 
 public:
 	PromiseContainer()
-		: Promise()
-		, m_result(), m_inited(false)
-	{ }
-	explicit PromiseContainer(typename boost::remove_const<ResultT>::type result)
-		: Promise()
-		, m_result(STD_MOVE_IDN(result)), m_inited(false)
+		: m_result(), m_result_accepted(false)
 	{ }
 
 public:
@@ -59,22 +50,23 @@ public:
 		if(Promise::would_throw()){
 			return NULLPTR;
 		}
-		// Note that `m_inited` can't be `false` here once the promise is marked successful.
-		return reinterpret_cast<ResultT *>(reinterpret_cast<char (&)[1]>(m_result));
+		// `m_result_accepted` will not be false if `Promise::would_throw()` yields true.
+		return m_result.get_ptr();
 	}
 	ResultT &get() const {
 		const RecursiveMutex::UniqueLock lock(m_mutex);
 		Promise::check_and_rethrow();
-		return m_result;
+		// Likewise. See comments in `try_get()`.
+		return m_result.get();
 	}
-
 	void set_success(typename boost::remove_const<ResultT>::type result, bool throw_if_already_set = true){
 		const RecursiveMutex::UniqueLock lock(m_mutex);
-		if(!m_inited){
+		// If `m_result_accepted` is true, `Promise::set_success()` will throw an exception eventually. Hence we do not set the value here.
+		if(!m_result_accepted){
 			m_result = STD_MOVE_IDN(result);
 		}
 		Promise::set_success(throw_if_already_set);
-		m_inited = true;
+		m_result_accepted = true;
 	}
 };
 
