@@ -21,7 +21,7 @@ public:
 	static void stop();
 
 	static boost::shared_ptr<const SystemServletBase> get_servlet(const char *uri);
-	static void get_all_servlets(std::vector<boost::shared_ptr<const SystemServletBase> > &ret);
+	static void get_all_servlets(boost::container::vector<boost::shared_ptr<const SystemServletBase> > &ret);
 
 	// 返回的 shared_ptr 是该处理程序的唯一持有者。
 	static boost::shared_ptr<const SystemServletBase> register_servlet(boost::shared_ptr<SystemServletBase> servlet);

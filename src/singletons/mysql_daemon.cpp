@@ -603,7 +603,7 @@ namespace {
 	};
 	boost::container::flat_map<SharedNts, Route> g_router;
 	boost::container::flat_multimap<std::size_t, std::size_t> g_routing_map;
-	std::vector<boost::shared_ptr<MySqlThread> > g_threads;
+	boost::container::vector<boost::shared_ptr<MySqlThread> > g_threads;
 
 	void add_operation_by_table(const char *table, boost::shared_ptr<OperationBase> operation, bool urgent){
 		PROFILE_ME;

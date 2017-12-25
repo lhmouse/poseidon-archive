@@ -65,7 +65,7 @@ try {
 	//
 }
 
-void ProfileDepository::snapshot(std::vector<ProfileDepository::SnapshotElement> &ret){
+void ProfileDepository::snapshot(boost::container::vector<ProfileDepository::SnapshotElement> &ret){
 	Profiler::accumulate_all_in_thread();
 
 	const Mutex::UniqueLock lock(g_mutex);

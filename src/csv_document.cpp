@@ -143,7 +143,7 @@ void CsvDocument::parse(std::istream &is){
 	VALUE_TYPE(m_elements) elements;
 
 	boost::container::vector<boost::container::vector<std::string> > matrix;
-	std::vector<std::string> line;
+	boost::container::vector<std::string> line;
 	std::size_t count = 0;
 	typedef std::istream::traits_type traits;
 	traits::int_type next = is.peek();

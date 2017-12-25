@@ -48,11 +48,11 @@
 		return ModuleConfigImpl_::require_config_file_()->get<T_, DefaultT_>(key_, def_val_);	\
 	}	\
 	template<typename T_>	\
-	std::size_t get_config_v_(std::vector<T_> &vals_, const char *key_, bool including_empty_ = false){	\
+	std::size_t get_config_v_(boost::container::vector<T_> &vals_, const char *key_, bool including_empty_ = false){	\
 		return ModuleConfigImpl_::require_config_file_()->get_all<T_>(vals_, key_, including_empty_);	\
 	}	\
 	template<typename T_>	\
-	std::vector<T_> get_config_v_(const char *key_, bool including_empty_ = false){	\
+	boost::container::vector<T_> get_config_v_(const char *key_, bool including_empty_ = false){	\
 		return ModuleConfigImpl_::require_config_file_()->get_all<T_>(key_, including_empty_);	\
 	}
 

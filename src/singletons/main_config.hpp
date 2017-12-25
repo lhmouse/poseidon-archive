@@ -37,11 +37,11 @@ public:
 	}
 
 	template<typename T>
-	static std::size_t get_all(std::vector<T> &vals, const char *key, bool including_empty = false){
+	static std::size_t get_all(boost::container::vector<T> &vals, const char *key, bool including_empty = false){
 		return get_config()->get_all<T>(vals, key, including_empty);
 	}
 	template<typename T>
-	static std::vector<T> get_all(const char *key, bool including_empty = false){
+	static boost::container::vector<T> get_all(const char *key, bool including_empty = false){
 		return get_config()->get_all<T>(key, including_empty);
 	}
 };

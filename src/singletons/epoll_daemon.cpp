@@ -138,7 +138,7 @@ namespace {
 		return true;
 	}
 
-	bool pump_one_readable_socket(std::vector<unsigned char> &io_buffer) NOEXCEPT {
+	bool pump_one_readable_socket(boost::container::vector<unsigned char> &io_buffer) NOEXCEPT {
 		PROFILE_ME;
 
 		const AUTO(now, get_fast_mono_clock());
@@ -197,7 +197,7 @@ namespace {
 		return true;
 	}
 
-	bool pump_one_writeable_socket(std::vector<unsigned char> &io_buffer) NOEXCEPT {
+	bool pump_one_writeable_socket(boost::container::vector<unsigned char> &io_buffer) NOEXCEPT {
 		PROFILE_ME;
 
 		const AUTO(now, get_fast_mono_clock());
@@ -290,7 +290,7 @@ namespace {
 		PROFILE_ME;
 		LOG_POSEIDON_INFO("Epoll daemon started.");
 
-		std::vector<unsigned char> io_buffer;
+		boost::container::vector<unsigned char> io_buffer;
 		const AUTO(io_buffer_size, MainConfig::get<std::size_t>("epoll_io_buffer_size", 4096));
 		io_buffer.resize(std::max<std::size_t>(io_buffer_size, 508)); // 508 is the maximum size of UDP packets guaranteed to be transmitted.
 
@@ -373,7 +373,7 @@ bool EpollDaemon::mark_socket_writeable(const SocketBase *ptr) NOEXCEPT {
 	return true;
 }
 
-void EpollDaemon::snapshot(std::vector<EpollDaemon::SnapshotElement> &ret){
+void EpollDaemon::snapshot(boost::container::vector<EpollDaemon::SnapshotElement> &ret){
 	PROFILE_ME;
 
 	const RecursiveMutex::UniqueLock lock(g_mutex);

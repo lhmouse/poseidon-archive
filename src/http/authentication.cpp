@@ -33,7 +33,7 @@ private:
 private:
 	const std::string m_realm;
 
-	std::vector<std::string> m_passwords;
+	boost::container::vector<std::string> m_passwords;
 
 public:
 	explicit AuthenticationContext(std::string realm)
@@ -67,7 +67,7 @@ public:
 };
 
 boost::shared_ptr<const AuthenticationContext> create_authentication_context(
-	const std::string &realm, const std::vector<std::string> &basic_user_pass)
+	const std::string &realm, const boost::container::vector<std::string> &basic_user_pass)
 {
 	PROFILE_ME;
 	DEBUG_THROW_UNLESS(!basic_user_pass.empty(), BasicException, sslit("No username:password provided"));

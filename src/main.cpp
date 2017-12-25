@@ -80,7 +80,7 @@ namespace {
 		}
 		void handle_post(JsonObject &resp, JsonObject /*req*/) const FINAL {
 			// .servlets = list of servlets
-			std::vector<boost::shared_ptr<const SystemServletBase> > servlets;
+			boost::container::vector<boost::shared_ptr<const SystemServletBase> > servlets;
 			SystemServer::get_all_servlets(servlets);
 			JsonArray arr;
 			for(AUTO(it, servlets.begin()); it != servlets.end(); ++it){
@@ -156,7 +156,7 @@ namespace {
 		}
 		void handle_post(JsonObject &resp, JsonObject /*req*/) const FINAL {
 			// .sockets = all sockets managed by epoll.
-			std::vector<EpollDaemon::SnapshotElement> snapshot;
+			boost::container::vector<EpollDaemon::SnapshotElement> snapshot;
 			EpollDaemon::snapshot(snapshot);
 			JsonArray arr;
 			char str[256];
@@ -204,7 +204,7 @@ namespace {
 			}
 
 			// .profile = all profile data.
-			std::vector<ProfileDepository::SnapshotElement> snapshot;
+			boost::container::vector<ProfileDepository::SnapshotElement> snapshot;
 			ProfileDepository::snapshot(snapshot);
 			JsonArray arr;
 			for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
@@ -308,7 +308,7 @@ namespace {
 			}
 
 			// .modules = all loaded modules.
-			std::vector<ModuleDepository::SnapshotElement> snapshot;
+			boost::container::vector<ModuleDepository::SnapshotElement> snapshot;
 			ModuleDepository::snapshot(snapshot);
 			JsonArray arr;
 			char str[256];
@@ -354,7 +354,7 @@ namespace {
 			START(SystemServer);
 
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up built-in system servlets...");
-			std::vector<boost::shared_ptr<const SystemServletBase> > system_servlets;
+			boost::container::vector<boost::shared_ptr<const SystemServletBase> > system_servlets;
 			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_help>()));
 			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_logger>()));
 			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_network>()));

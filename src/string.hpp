@@ -18,8 +18,8 @@ extern const std::string &empty_string() NOEXCEPT;
 
 // 参考 PHP 的 explode() 函数。
 template<typename T>
-inline std::vector<T> explode(char separator, const std::string &str, std::size_t limit = 0){
-	std::vector<T> ret;
+inline boost::container::vector<T> explode(char separator, const std::string &str, std::size_t limit = 0){
+	boost::container::vector<T> ret;
 	if(!str.empty()){
 		std::size_t begin = 0, end;
 		std::string temp;
@@ -42,8 +42,8 @@ inline std::vector<T> explode(char separator, const std::string &str, std::size_
 	return ret;
 }
 template<>
-inline std::vector<std::string> explode(char separator, const std::string &str, std::size_t limit){
-	std::vector<std::string> ret;
+inline boost::container::vector<std::string> explode(char separator, const std::string &str, std::size_t limit){
+	boost::container::vector<std::string> ret;
 	if(!str.empty()){
 		std::size_t begin = 0, end;
 		std::string temp;
@@ -67,7 +67,7 @@ inline std::vector<std::string> explode(char separator, const std::string &str, 
 }
 
 template<typename T>
-inline std::string implode(char separator, const std::vector<T> &vec){
+inline std::string implode(char separator, const boost::container::vector<T> &vec){
 	Buffer_ostream os;
 	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
 		os <<*it;
@@ -82,7 +82,7 @@ inline std::string implode(char separator, const std::vector<T> &vec){
 	return ret;
 }
 template<>
-inline std::string implode(char separator, const std::vector<std::string> &vec){
+inline std::string implode(char separator, const boost::container::vector<std::string> &vec){
 	std::string ret;
 	for(AUTO(it, vec.begin()); it != vec.end(); ++it){
 		ret.append(*it);

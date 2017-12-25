@@ -34,7 +34,7 @@ public:
 	static void add_socket(const boost::shared_ptr<SocketBase> &socket, bool take_ownership = false);
 	static bool mark_socket_writeable(const SocketBase *ptr) NOEXCEPT;
 
-	static void snapshot(std::vector<SnapshotElement> &ret);
+	static void snapshot(boost::container::vector<SnapshotElement> &ret);
 };
 
 }

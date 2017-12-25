@@ -91,7 +91,7 @@ boost::shared_ptr<const SystemServletBase> SystemServer::get_servlet(const char 
 	}
 	return servlet;
 }
-void SystemServer::get_all_servlets(std::vector<boost::shared_ptr<const SystemServletBase> > &ret){
+void SystemServer::get_all_servlets(boost::container::vector<boost::shared_ptr<const SystemServletBase> > &ret){
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);

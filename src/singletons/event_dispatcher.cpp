@@ -77,7 +77,7 @@ void EventDispatcher::stop(){
 	g_listeners.clear();
 }
 
-void EventDispatcher::get_listeners(std::vector<boost::shared_ptr<const EventListener> > &ret, const std::type_info &type_info){
+void EventDispatcher::get_listeners(boost::container::vector<boost::shared_ptr<const EventListener> > &ret, const std::type_info &type_info){
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
@@ -107,7 +107,7 @@ boost::shared_ptr<const EventListener> EventDispatcher::register_listener_explic
 void EventDispatcher::sync_raise(const boost::shared_ptr<EventBase> &event){
 	PROFILE_ME;
 
-	std::vector<boost::shared_ptr<const EventListener> > listeners;
+	boost::container::vector<boost::shared_ptr<const EventListener> > listeners;
 	get_listeners(listeners, typeid(*event));
 	for(AUTO(it, listeners.begin()); it != listeners.end(); ++it){
 		AUTO_REF(listener, *it);
@@ -117,7 +117,7 @@ void EventDispatcher::sync_raise(const boost::shared_ptr<EventBase> &event){
 void EventDispatcher::async_raise(const boost::shared_ptr<EventBase> &event, const boost::shared_ptr<const bool> &withdrawn){
 	PROFILE_ME;
 
-	std::vector<boost::shared_ptr<const EventListener> > listeners;
+	boost::container::vector<boost::shared_ptr<const EventListener> > listeners;
 	get_listeners(listeners, typeid(*event));
 	for(AUTO(it, listeners.begin()); it != listeners.end(); ++it){
 		AUTO_REF(listener, *it);

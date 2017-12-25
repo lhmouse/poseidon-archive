@@ -30,7 +30,7 @@ public:
 	static bool is_enabled() NOEXCEPT;
 	static void accumulate(const char *file, unsigned long line, const char *func, bool new_sample, double total, double exclusive) NOEXCEPT;
 
-	static void snapshot(std::vector<SnapshotElement> &ret);
+	static void snapshot(boost::container::vector<SnapshotElement> &ret);
 	static void clear() NOEXCEPT;
 };
 

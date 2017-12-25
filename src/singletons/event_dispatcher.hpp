@@ -28,7 +28,7 @@ public:
 	static void start();
 	static void stop();
 
-	static void get_listeners(std::vector<boost::shared_ptr<const EventListener> > &ret, const std::type_info &type_inf);
+	static void get_listeners(boost::container::vector<boost::shared_ptr<const EventListener> > &ret, const std::type_info &type_inf);
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
 	static boost::shared_ptr<const EventListener> register_listener_explicit(const std::type_info &type_info, EventListenerCallback callback);

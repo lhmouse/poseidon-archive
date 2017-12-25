@@ -153,7 +153,7 @@ namespace {
 	volatile bool g_running = false;
 
 	Mutex g_router_mutex;
-	std::vector<boost::shared_ptr<WorkhorseThread> > g_threads;
+	boost::container::vector<boost::shared_ptr<WorkhorseThread> > g_threads;
 
 	void submit_job_using_seed(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t seed){
 		PROFILE_ME;

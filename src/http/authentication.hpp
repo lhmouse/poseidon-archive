@@ -29,7 +29,7 @@ class AuthenticationContext; // 没有定义的类，当作句柄使用。
 // 以下是通用接口。
 // 创建一个认证上下文，参数 basic_user_pass 应当包含一系列的 username:password 字符串且不得为空。
 extern boost::shared_ptr<const AuthenticationContext> create_authentication_context(
-	const std::string &realm, const std::vector<std::string> &basic_user_pass);
+	const std::string &realm, const boost::container::vector<std::string> &basic_user_pass);
 // 支持 Basic 和 Digest 方式认证，如果参数 auth_info 为空返回成功。
 extern std::pair<AuthenticationResult, const char *> check_authentication(
 	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, const RequestHeaders &request_headers);

@@ -196,7 +196,7 @@ bool ModuleDepository::unload(void *base_address) NOEXCEPT {
 	return true;
 }
 
-void ModuleDepository::snapshot(std::vector<ModuleDepository::SnapshotElement> &ret){
+void ModuleDepository::snapshot(boost::container::vector<ModuleDepository::SnapshotElement> &ret){
 	PROFILE_ME;
 
 	const RecursiveMutex::UniqueLock lock(g_mutex);

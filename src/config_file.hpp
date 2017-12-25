@@ -40,7 +40,7 @@ public:
 	const std::string &get_raw(const char *key) const {
 		return m_contents.get(key);
 	}
-	std::size_t get_all_raw(std::vector<std::string> &vals, const char *key, bool including_empty = false) const {
+	std::size_t get_all_raw(boost::container::vector<std::string> &vals, const char *key, bool including_empty = false) const {
 		const AUTO(range, m_contents.range(key));
 		vals.reserve(vals.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
 		std::size_t ret = 0;
@@ -95,7 +95,7 @@ public:
 	}
 
 	template<typename T>
-	std::size_t get_all(std::vector<T> &vals, const char *key, bool including_empty = false) const {
+	std::size_t get_all(boost::container::vector<T> &vals, const char *key, bool including_empty = false) const {
 		const AUTO(range, m_contents.range(key));
 		vals.reserve(vals.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
 		std::size_t ret = 0;
@@ -117,8 +117,8 @@ public:
 		return ret;
 	}
 	template<typename T>
-	std::vector<T> get_all(const char *key, bool including_empty = false) const {
-		std::vector<T> vals;
+	boost::container::vector<T> get_all(const char *key, bool including_empty = false) const {
+		boost::container::vector<T> vals;
 		const AUTO(range, m_contents.range(key));
 		vals.reserve(static_cast<std::size_t>(std::distance(range.first, range.second)));
 		for(AUTO(it, range.first); it != range.second; ++it){

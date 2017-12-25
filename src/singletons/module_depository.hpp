@@ -37,7 +37,7 @@ public:
 	static void *load_nothrow(const std::string &path);
 	static bool unload(void *base_address) NOEXCEPT;
 
-	static void snapshot(std::vector<SnapshotElement> &ret);
+	static void snapshot(boost::container::vector<SnapshotElement> &ret);
 };
 
 }
