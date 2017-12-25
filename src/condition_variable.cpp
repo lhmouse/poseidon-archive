@@ -3,10 +3,11 @@
 
 #include "precompiled.hpp"
 #include "condition_variable.hpp"
+#include "log.hpp"
+#include "errno.hpp"
+#include "system_exception.hpp"
 #include <boost/static_assert.hpp>
 #include <time.h>
-#include "log.hpp"
-#include "system_exception.hpp"
 
 namespace Poseidon {
 
@@ -22,11 +23,11 @@ namespace {
 			int err = ::pthread_condattr_init(&m_attr);
 			DEBUG_THROW_UNLESS(err == 0, SystemException);
 			err = ::pthread_condattr_setclock(&m_attr, CLOCK_MONOTONIC);
-			ABORT_UNLESS(err == 0, "::pthread_condattr_settype() failed with error code ", err);
+			ABORT_UNLESS(err == 0, "::pthread_condattr_settype() failed with ", err, " (", get_error_desc(err), ")");
 		}
 		~ConditionVariableAttribute(){
 			int err = ::pthread_condattr_destroy(&m_attr);
-			ABORT_UNLESS(err == 0, "::pthread_condattr_destroy() failed with error code ", err);
+			ABORT_UNLESS(err == 0, "::pthread_condattr_destroy() failed with ", err, " (", get_error_desc(err), ")");
 		}
 
 	public:
@@ -42,7 +43,7 @@ ConditionVariable::ConditionVariable(){
 }
 ConditionVariable::~ConditionVariable(){
 	int err = ::pthread_cond_destroy(&m_cond);
-	ABORT_UNLESS(err == 0, "::pthread_cond_destroy() failed with error code ", err);
+	ABORT_UNLESS(err == 0, "::pthread_cond_destroy() failed with ", err, " (", get_error_desc(err), ")");
 }
 
 void ConditionVariable::wait(Mutex::UniqueLock &lock){
@@ -75,11 +76,11 @@ bool ConditionVariable::timed_wait(Mutex::UniqueLock &lock, unsigned long long m
 
 void ConditionVariable::signal() NOEXCEPT {
 	int err = ::pthread_cond_signal(&m_cond);
-	ABORT_UNLESS(err == 0, "::pthread_cond_signal() failed with error code ", err);
+	ABORT_UNLESS(err == 0, "::pthread_cond_signal() failed with ", err, " (", get_error_desc(err), ")");
 }
 void ConditionVariable::broadcast() NOEXCEPT {
 	int err = ::pthread_cond_broadcast(&m_cond);
-	ABORT_UNLESS(err == 0, "::pthread_cond_broadcast() failed with error code ", err);
+	ABORT_UNLESS(err == 0, "::pthread_cond_broadcast() failed with ", err, " (", get_error_desc(err), ")");
 }
 
 }
