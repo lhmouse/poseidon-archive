@@ -42,29 +42,7 @@ public:
 	OBJECT_FIELDS
 
 public:
-	OBJECT_NAME()
-		: ::Poseidon::MySql::ObjectBase()
-
-#undef FIELD_BOOLEAN
-#undef FIELD_SIGNED
-#undef FIELD_UNSIGNED
-#undef FIELD_DOUBLE
-#undef FIELD_STRING
-#undef FIELD_DATETIME
-#undef FIELD_UUID
-#undef FIELD_BLOB
-
-#define FIELD_BOOLEAN(id_)                , id_(this)
-#define FIELD_SIGNED(id_)                 , id_(this)
-#define FIELD_UNSIGNED(id_)               , id_(this)
-#define FIELD_DOUBLE(id_)                 , id_(this)
-#define FIELD_STRING(id_)                 , id_(this)
-#define FIELD_DATETIME(id_)               , id_(this)
-#define FIELD_UUID(id_)                   , id_(this)
-#define FIELD_BLOB(id_)                   , id_(this)
-
-		OBJECT_FIELDS
-	{ }
+	OBJECT_NAME();
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -84,8 +62,64 @@ public:
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_ ## X_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_ ## X_
 
-	explicit OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
-		: ::Poseidon::MySql::ObjectBase()
+	explicit OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS));
+
+	~OBJECT_NAME() OVERRIDE;
+
+public:
+	const char *get_table() const OVERRIDE;
+	void generate_sql(::std::ostream &os_) const OVERRIDE;
+	void fetch(const ::boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_) OVERRIDE;
+};
+
+#ifdef MYSQL_OBJECT_EMIT_EXTERNAL_DEFINITIONS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+
+OBJECT_NAME::OBJECT_NAME()
+	: ::Poseidon::MySql::ObjectBase()
+
+#undef FIELD_BOOLEAN
+#undef FIELD_SIGNED
+#undef FIELD_UNSIGNED
+#undef FIELD_DOUBLE
+#undef FIELD_STRING
+#undef FIELD_DATETIME
+#undef FIELD_UUID
+#undef FIELD_BLOB
+
+#define FIELD_BOOLEAN(id_)                , id_(this)
+#define FIELD_SIGNED(id_)                 , id_(this)
+#define FIELD_UNSIGNED(id_)               , id_(this)
+#define FIELD_DOUBLE(id_)                 , id_(this)
+#define FIELD_STRING(id_)                 , id_(this)
+#define FIELD_DATETIME(id_)               , id_(this)
+#define FIELD_UUID(id_)                   , id_(this)
+#define FIELD_BLOB(id_)                   , id_(this)
+
+	OBJECT_FIELDS
+{ }
+
+#undef FIELD_BOOLEAN
+#undef FIELD_SIGNED
+#undef FIELD_UNSIGNED
+#undef FIELD_DOUBLE
+#undef FIELD_STRING
+#undef FIELD_DATETIME
+#undef FIELD_UUID
+#undef FIELD_BLOB
+
+#define FIELD_BOOLEAN(id_)                , bool id_ ## X_
+#define FIELD_SIGNED(id_)                 , ::boost::int64_t id_ ## X_
+#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t id_ ## X_
+#define FIELD_DOUBLE(id_)                 , double id_ ## X_
+#define FIELD_STRING(id_)                 , ::std::string id_ ## X_
+#define FIELD_DATETIME(id_)               , ::boost::uint64_t id_ ## X_
+#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_ ## X_
+#define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_ ## X_
+
+OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
+	: ::Poseidon::MySql::ObjectBase()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -105,21 +139,10 @@ public:
 #define FIELD_UUID(id_)                   , id_(this, id_ ## X_)
 #define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(id_ ## X_))
 
-		OBJECT_FIELDS
-	{
-		::Poseidon::atomic_fence(::Poseidon::ATOMIC_RELEASE);
-	}
-	~OBJECT_NAME() OVERRIDE;
-
-public:
-	const char *get_table() const OVERRIDE;
-	void generate_sql(::std::ostream &os_) const OVERRIDE;
-	void fetch(const ::boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_) OVERRIDE;
-};
-
-#ifdef MYSQL_OBJECT_EMIT_EXTERNAL_DEFINITIONS
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
+	OBJECT_FIELDS
+{
+	::Poseidon::atomic_fence(::Poseidon::ATOMIC_RELEASE);
+}
 
 OBJECT_NAME::~OBJECT_NAME(){ }
 

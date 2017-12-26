@@ -68,30 +68,8 @@ public:
 #define FIELD_LIST(id_, ...)      + 1
 
 #if (0 MESSAGE_FIELDS) != 0
-	MESSAGE_NAME()
-		: ::Poseidon::Cbpp::MessageBase()
-
-#undef FIELD_VINT
-#undef FIELD_VUINT
-#undef FIELD_FIXED
-#undef FIELD_STRING
-#undef FIELD_BLOB
-#undef FIELD_FLEXIBLE
-#undef FIELD_ARRAY
-#undef FIELD_LIST
-
-#define FIELD_VINT(id_)           , id_()
-#define FIELD_VUINT(id_)          , id_()
-#define FIELD_FIXED(id_, n_)      , id_()
-#define FIELD_STRING(id_)         , id_()
-#define FIELD_BLOB(id_)           , id_()
-#define FIELD_FLEXIBLE(id_)       , id_()
-#define FIELD_ARRAY(id_, ...)     , id_()
-#define FIELD_LIST(id_, ...)      , id_()
-
-		MESSAGE_FIELDS
-	{ }
-#endif
+	MESSAGE_NAME();
+#endif // (0 MESSAGE_FIELDS) != 0
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -111,8 +89,87 @@ public:
 #define FIELD_ARRAY(id_, ...)     , ::boost::container::vector< Cbpp ## id_ ## F_ > id_ ## X_
 #define FIELD_LIST(id_, ...)      , ::boost::container::deque< Cbpp ## id_ ## F_ > id_ ## X_
 
-	explicit MESSAGE_NAME(STRIP_FIRST(void MESSAGE_FIELDS))
-		: ::Poseidon::Cbpp::MessageBase()
+	explicit MESSAGE_NAME(STRIP_FIRST(void MESSAGE_FIELDS));
+
+	explicit MESSAGE_NAME(::Poseidon::StreamBuffer buffer_);
+
+	~MESSAGE_NAME() OVERRIDE;
+
+public:
+	boost::uint64_t get_id() const OVERRIDE;
+	void serialize(::Poseidon::StreamBuffer &buffer_) const OVERRIDE;
+	void deserialize(::Poseidon::StreamBuffer &buffer_) OVERRIDE;
+	void dump_debug(::std::ostream &os_) const OVERRIDE;
+};
+
+#ifdef CBPP_MESSAGE_EMIT_EXTERNAL_DEFINITIONS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_FIXED
+#undef FIELD_STRING
+#undef FIELD_BLOB
+#undef FIELD_FLEXIBLE
+#undef FIELD_ARRAY
+#undef FIELD_LIST
+
+#define FIELD_VINT(id_)           + 1
+#define FIELD_VUINT(id_)          + 1
+#define FIELD_FIXED(id_, n_)      + 1
+#define FIELD_STRING(id_)         + 1
+#define FIELD_BLOB(id_)           + 1
+#define FIELD_FLEXIBLE(id_)       + 1
+#define FIELD_ARRAY(id_, ...)     + 1
+#define FIELD_LIST(id_, ...)      + 1
+
+#if (0 MESSAGE_FIELDS) != 0
+MESSAGE_NAME::MESSAGE_NAME()
+	: ::Poseidon::Cbpp::MessageBase()
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_FIXED
+#undef FIELD_STRING
+#undef FIELD_BLOB
+#undef FIELD_FLEXIBLE
+#undef FIELD_ARRAY
+#undef FIELD_LIST
+
+#define FIELD_VINT(id_)           , id_()
+#define FIELD_VUINT(id_)          , id_()
+#define FIELD_FIXED(id_, n_)      , id_()
+#define FIELD_STRING(id_)         , id_()
+#define FIELD_BLOB(id_)           , id_()
+#define FIELD_FLEXIBLE(id_)       , id_()
+#define FIELD_ARRAY(id_, ...)     , id_()
+#define FIELD_LIST(id_, ...)      , id_()
+
+	MESSAGE_FIELDS
+{ }
+#endif // (0 MESSAGE_FIELDS) != 0
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_FIXED
+#undef FIELD_STRING
+#undef FIELD_BLOB
+#undef FIELD_FLEXIBLE
+#undef FIELD_ARRAY
+#undef FIELD_LIST
+
+#define FIELD_VINT(id_)           , ::boost::int64_t id_ ## X_
+#define FIELD_VUINT(id_)          , ::boost::uint64_t id_ ## X_
+#define FIELD_FIXED(id_, n_)      , const ::boost::array<unsigned char, n_> & id_ ## X_
+#define FIELD_STRING(id_)         , ::std::string id_ ## X_
+#define FIELD_BLOB(id_)           , ::std::basic_string<unsigned char> id_ ## X_
+#define FIELD_FLEXIBLE(id_)       , ::std::basic_string<unsigned char> id_ ## X_
+#define FIELD_ARRAY(id_, ...)     , ::boost::container::vector< Cbpp ## id_ ## F_ > id_ ## X_
+#define FIELD_LIST(id_, ...)      , ::boost::container::deque< Cbpp ## id_ ## F_ > id_ ## X_
+
+MESSAGE_NAME::MESSAGE_NAME(STRIP_FIRST(void MESSAGE_FIELDS))
+	: ::Poseidon::Cbpp::MessageBase()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -132,28 +189,17 @@ public:
 #define FIELD_ARRAY(id_, ...)     , id_(STD_MOVE(id_ ## X_))
 #define FIELD_LIST(id_, ...)      , id_(STD_MOVE(id_ ## X_))
 
-		MESSAGE_FIELDS
-	{ }
-	explicit MESSAGE_NAME(::Poseidon::StreamBuffer buffer_)
-		: ::Poseidon::Cbpp::MessageBase()
-	{
-		deserialize(buffer_);
-		if(!buffer_.empty()){
-			THROW_JUNK_AFTER_PACKET_(MESSAGE_NAME);
-		}
+	MESSAGE_FIELDS
+{ }
+
+MESSAGE_NAME::MESSAGE_NAME(::Poseidon::StreamBuffer buffer_)
+	: ::Poseidon::Cbpp::MessageBase()
+{
+	deserialize(buffer_);
+	if(!buffer_.empty()){
+		THROW_JUNK_AFTER_PACKET_(MESSAGE_NAME);
 	}
-	~MESSAGE_NAME();
-
-public:
-	boost::uint64_t get_id() const OVERRIDE;
-	void serialize(::Poseidon::StreamBuffer &buffer_) const OVERRIDE;
-	void deserialize(::Poseidon::StreamBuffer &buffer_) OVERRIDE;
-	void dump_debug(::std::ostream &os_) const OVERRIDE;
-};
-
-#ifdef CBPP_MESSAGE_EMIT_EXTERNAL_DEFINITIONS
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
+}
 
 MESSAGE_NAME::~MESSAGE_NAME(){ }
 
