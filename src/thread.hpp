@@ -38,7 +38,7 @@ public:
 
 	bool joinable() const NOEXCEPT;
 	void join();
-	void detach();
+//	void detach();
 };
 
 inline void swap(Thread &lhs, Thread &rhs) NOEXCEPT {

@@ -65,11 +65,11 @@ void Thread::join(){
 	DEBUG_THROW_UNLESS(err_code == 0, SystemException);
 	m_impl.reset();
 }
-void Thread::detach(){
-	DEBUG_THROW_UNLESS(m_impl, Exception, sslit("Attempting to detach a non-joinable thread"));
-	int err_code = ::pthread_detach(m_impl->handle);
-	DEBUG_THROW_UNLESS(err_code == 0, SystemException);
-	m_impl.reset();
-}
+//void Thread::detach(){
+//	DEBUG_THROW_UNLESS(m_impl, Exception, sslit("Attempting to detach a non-joinable thread"));
+//	int err_code = ::pthread_detach(m_impl->handle);
+//	DEBUG_THROW_UNLESS(err_code == 0, SystemException);
+//	m_impl.reset();
+//}
 
 }
