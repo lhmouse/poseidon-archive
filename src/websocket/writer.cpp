@@ -64,7 +64,8 @@ long Writer::put_close_message(StatusCode status_code, bool masked, StreamBuffer
 	boost::uint16_t temp16;
 	store_be(temp16, status_code);
 	payload.put(&temp16, 2);
-	char msg[0x7B];
+	// Make sure the payload is no longer than 125 bytes, whose length fits into a byte.
+	char msg[125 - 2];
 	unsigned len = addition.get(msg, sizeof(msg));
 	payload.put(msg, len);
 	return put_message(OP_CLOSE, masked, STD_MOVE(payload));
