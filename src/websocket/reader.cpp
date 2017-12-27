@@ -67,7 +67,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 			DEBUG_THROW_UNLESS(!(m_force_masked_frames && !m_masked), Exception, ST_PROTOCOL_ERROR, sslit("Non-masked frames not allowed"));
 			m_frame_size = static_cast<unsigned char>(ch & 0x7F);
 			if(m_frame_size >= 0x7E){
-				DEBUG_THROW_UNLESS(has_any_flags_of(m_opcode, OP_FL_CONTROL), Exception, ST_PROTOCOL_ERROR, sslit("Control frame too large"));
+				DEBUG_THROW_UNLESS(has_none_flags_of(m_opcode, OP_FL_CONTROL), Exception, ST_PROTOCOL_ERROR, sslit("Control frame too large"));
 				if(m_frame_size == 0x7E){
 					m_size_expecting = 2;
 					m_state = S_FRAME_SIZE_16;
