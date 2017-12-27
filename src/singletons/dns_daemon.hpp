@@ -21,10 +21,10 @@ public:
 	static void stop();
 
 	// 同步接口。
-	static SockAddr look_up(const std::string &host, unsigned port);
+	static SockAddr look_up(const std::string &host, boost::uint16_t port);
 
 	// 异步接口。
-	static boost::shared_ptr<const PromiseContainer<SockAddr> > enqueue_for_looking_up(std::string host, unsigned port);
+	static boost::shared_ptr<const PromiseContainer<SockAddr> > enqueue_for_looking_up(std::string host, boost::uint16_t port);
 };
 
 }
