@@ -270,7 +270,8 @@ void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
                                     }	\
                                     cur_->id_.reserve(nreq_);	\
                                     for(::std::size_t ncur_ = 0; ncur_ < nreq_; ++ncur_){	\
-                                      const AUTO(cur_, &*cur_->id_.emplace(cur_->id_.end()));	\
+                                      const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
+                                      const AUTO(cur_, &*it_);	\
                                       __VA_ARGS__	\
                                     }	\
                                   }
@@ -296,7 +297,8 @@ void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
                                         THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
                                       {	\
-                                        const AUTO(cur_, &*cur_->id_.emplace(cur_->id_.end()));	\
+                                        const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
+                                        const AUTO(cur_, &*it_);	\
                                         AUTO_REF(buf_, chunk_buf_);	\
                                         __VA_ARGS__	\
                                       }	\
