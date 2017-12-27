@@ -6,7 +6,6 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <vector>
 
 namespace Poseidon {
 

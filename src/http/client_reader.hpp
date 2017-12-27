@@ -4,7 +4,6 @@
 #ifndef POSEIDON_HTTP_CLIENT_READER_HPP_
 #define POSEIDON_HTTP_CLIENT_READER_HPP_
 
-#include <vector>
 #include <string>
 #include <cstddef>
 #include <boost/cstdint.hpp>

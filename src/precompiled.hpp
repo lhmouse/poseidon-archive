@@ -4,11 +4,6 @@
 #ifndef POSEIDON_PRECOMPILED_HPP_
 #define POSEIDON_PRECOMPILED_HPP_
 
-#include <vector>
-#include <list>
-#include <map>
-#include <set>
-//#include <deque>
 #include <string>
 #include <iterator>
 #include <algorithm>

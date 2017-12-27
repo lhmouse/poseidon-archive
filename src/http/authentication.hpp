@@ -5,7 +5,6 @@
 #define POSEIDON_HTTP_AUTHENTICATION_HPP_
 
 #include <string>
-#include <vector>
 #include <boost/shared_ptr.hpp>
 #include "request_headers.hpp"
 #include "../ip_port.hpp"

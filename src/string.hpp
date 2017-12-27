@@ -7,7 +7,6 @@
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include "buffer_streams.hpp"
-#include <vector>
 #include <string>
 #include <cstddef>
 #include <boost/lexical_cast.hpp>

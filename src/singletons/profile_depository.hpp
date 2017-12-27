@@ -5,7 +5,6 @@
 #define POSEIDON_PROFILE_DEPOSITORY_HPP_
 
 #include "../cxx_ver.hpp"
-#include <vector>
 
 namespace Poseidon {
 

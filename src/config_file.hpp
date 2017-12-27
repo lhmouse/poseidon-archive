@@ -6,7 +6,6 @@
 
 #include "cxx_ver.hpp"
 #include "optional_map.hpp"
-#include <vector>
 #include <boost/lexical_cast.hpp>
 
 namespace Poseidon {

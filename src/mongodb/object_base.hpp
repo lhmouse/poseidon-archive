@@ -10,7 +10,6 @@
 #include "bson_builder.hpp"
 #include "exception.hpp"
 #include <string>
-#include <vector>
 #include <exception>
 #include <iosfwd>
 #include <cstdio>
