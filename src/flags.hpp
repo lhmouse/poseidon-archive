@@ -16,14 +16,14 @@ template<typename T>
 inline T &add_flags(T &val, typename boost::common_type<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
-	val |= flags;
+	val = static_cast<T>(val | flags);
 	return val;
 }
 template<typename T>
 inline T &remove_flags(T &val, typename boost::common_type<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
-	val &= ~flags;
+	val = static_cast<T>(val & ~flags);
 	return val;
 }
 
