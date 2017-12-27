@@ -30,7 +30,7 @@ namespace {
 		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM, IPPROTO_UDP)), SystemException);
 		static CONSTEXPR const int TRUE_VALUE = true;
 		DEBUG_THROW_UNLESS(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) == 0, SystemException);
-		DEBUG_THROW_UNLESS(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) == 0, SystemException);
+		DEBUG_THROW_UNLESS(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0, SystemException);
 		return STD_MOVE(udp);
 	}
 }
@@ -102,7 +102,7 @@ int UdpServerBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint
 		try {
 			::sockaddr_storage sa;
 			DEBUG_THROW_ASSERT(sock_addr.size() <= sizeof(sa));
-			::socklen_t sa_len = sock_addr.size();
+			::socklen_t sa_len = static_cast<unsigned>(sock_addr.size());
 			const std::size_t avail = data.peek(hint_buffer, hint_capacity);
 			if(avail < data.size()){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "UDP packet is too large: size = ", data.size());

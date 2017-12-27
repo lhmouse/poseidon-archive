@@ -54,7 +54,7 @@ void HeaderOption::parse(std::istream &is){
 		seg.clear();
 		bool quoted = false;
 		for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
-			const char ch = is.get();
+			const char ch = traits::to_char_type(is.get());
 			if(quoted){
 				if(ch == '\"'){
 					quoted = false;

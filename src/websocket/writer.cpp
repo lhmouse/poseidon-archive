@@ -19,22 +19,22 @@ long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 	PROFILE_ME;
 
 	StreamBuffer frame;
-	unsigned char ch = opcode | OP_FL_FIN;
-	frame.put(ch);
+	unsigned ch = boost::numeric_cast<unsigned>(opcode | OP_FL_FIN);
+	frame.put(static_cast<unsigned char>(ch));
 	const std::size_t size = payload.size();
 	ch = masked ? 0x80 : 0;
 	if(size < 0x7E){
-		ch |= size;
-		frame.put(ch);
+		ch |= static_cast<unsigned>(size);
+		frame.put(static_cast<unsigned char>(ch));
 	} else if(size < 0x10000){
 		ch |= 0x7E;
-		frame.put(ch);
+		frame.put(static_cast<unsigned char>(ch));
 		boost::uint16_t temp16;
-		store_be(temp16, size);
+		store_be(temp16, static_cast<boost::uint16_t>(size));
 		frame.put(&temp16, 2);
 	} else {
 		ch |= 0x7F;
-		frame.put(ch);
+		frame.put(static_cast<unsigned char>(ch));
 		boost::uint64_t temp64;
 		store_be(temp64, size);
 		frame.put(&temp64, 8);
@@ -42,14 +42,13 @@ long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 	if(masked){
 		boost::uint32_t mask = random_uint32() | 0x80808080;
 		frame.put(&mask, 4);
-		int mb;
 		for(;;){
-			mb = payload.get();
+			int mb = payload.get();
 			if(mb == -1){
 				break;
 			}
 			mb ^= static_cast<unsigned char>(mask);
-			frame.put(mb);
+			frame.put(static_cast<unsigned char>(mb));
 			mask = (mask << 24) | (mask >> 8);
 		}
 	} else {
@@ -62,11 +61,11 @@ long Writer::put_close_message(StatusCode status_code, bool masked, StreamBuffer
 
 	StreamBuffer payload;
 	boost::uint16_t temp16;
-	store_be(temp16, status_code);
+	store_be(temp16, boost::numeric_cast<boost::uint16_t>(status_code));
 	payload.put(&temp16, 2);
 	// Make sure the payload is no longer than 125 bytes, whose length fits into a byte.
 	char msg[125 - 2];
-	unsigned len = addition.get(msg, sizeof(msg));
+	std::size_t len = addition.get(msg, sizeof(msg));
 	payload.put(msg, len);
 	return put_message(OP_CLOSE, masked, STD_MOVE(payload));
 }

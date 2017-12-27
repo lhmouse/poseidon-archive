@@ -27,11 +27,10 @@ IpPort::IpPort(){
 	std::strcpy(m_ip, "???");
 	m_port = 0;
 }
-IpPort::IpPort(const char *ip_str, unsigned port_num){
+IpPort::IpPort(const char *ip_str, boost::uint16_t port_num){
 	const AUTO(ip_size, std::strlen(ip_str) + 1);
 	DEBUG_THROW_UNLESS(ip_size <= sizeof(m_ip), Exception, sslit("IP address string is too long"));
 	std::memcpy(m_ip, ip_str, ip_size);
-	DEBUG_THROW_UNLESS(port_num <= 65535, Exception, sslit("Port number is too large"));
 	m_port = port_num;
 }
 IpPort::IpPort(const SockAddr &sock_addr){

@@ -21,7 +21,7 @@ inline ValueT load_le(const ValueT &mem){
 	const unsigned char *read = reinterpret_cast<const unsigned char *>(&mem);
 	Unsigned u = 0;
 	for(unsigned i = 0; i < sizeof(u); ++i){
-		u |= static_cast<Unsigned>(*(read++)) << (i * CHAR_BIT);
+		u = static_cast<Unsigned>(u + (static_cast<Unsigned>(*(read++)) << (i * CHAR_BIT)));
 	}
 	return static_cast<ValueT>(u);
 }
@@ -33,7 +33,7 @@ inline ValueT load_be(const ValueT &mem){
 	const unsigned char *read = reinterpret_cast<const unsigned char *>(&mem);
 	Unsigned u = 0;
 	for(unsigned i = sizeof(u); i > 0; --i){
-		u |= static_cast<Unsigned>(*(read++)) << ((i - 1) * CHAR_BIT);
+		u = static_cast<Unsigned>(u + (static_cast<Unsigned>(*(read++)) << ((i - 1) * CHAR_BIT)));
 	}
 	return static_cast<ValueT>(u);
 }

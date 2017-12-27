@@ -14,7 +14,7 @@ class IpPort;
 class SockAddr {
 private:
 	unsigned char m_data[128];
-	unsigned m_size;
+	std::size_t m_size;
 
 public:
 	SockAddr();
@@ -27,7 +27,7 @@ public:
 	const void *data() const {
 		return m_data;
 	}
-	unsigned size() const {
+	std::size_t size() const {
 		return m_size;
 	}
 

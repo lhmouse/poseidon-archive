@@ -17,7 +17,7 @@ namespace MySql {
 
 class Connection : NONCOPYABLE {
 public:
-	static boost::shared_ptr<Connection> create(const char *server_addr, unsigned server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset);
+	static boost::shared_ptr<Connection> create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset);
 
 public:
 	virtual ~Connection() = 0;

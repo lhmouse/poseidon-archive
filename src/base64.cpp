@@ -16,7 +16,7 @@ namespace {
 		'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
 	};
 
-	unsigned char to_base64_digit(int byte){
+	unsigned char to_base64_digit(unsigned long byte){
 		return BASE64_TABLE[byte & 0x3F];
 	}
 
@@ -57,7 +57,7 @@ void Base64Encoder::put(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
-		const unsigned ch = static_cast<const unsigned char *>(data)[i];
+		const unsigned char ch = static_cast<const unsigned char *>(data)[i];
 		unsigned long seq = m_seq << 8;
 		seq += static_cast<unsigned>(ch);
 		if(seq >= (1ul << 24)){
@@ -115,7 +115,7 @@ void Base64Decoder::put(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
-		const unsigned ch = static_cast<const unsigned char *>(data)[i];
+		const unsigned char ch = static_cast<const unsigned char *>(data)[i];
 		if((ch == ' ') || (ch == '\t') || (ch == '\r') || (ch == '\n')){
 			continue;
 		}
@@ -135,19 +135,19 @@ void Base64Decoder::put(const void *data, std::size_t size){
 			seq += static_cast<unsigned>(digit);
 		}
 		if(seq >= (1ul << 24)){
-			const unsigned n = 4 - (seq >> 24);
+			const unsigned n = static_cast<unsigned>(4 - (seq >> 24));
 			switch(n){
 			case 1:
-				m_buffer.put(seq >> 16);
+				m_buffer.put(static_cast<unsigned char>(seq >> 16));
 				break;
 			case 2:
-				m_buffer.put(seq >> 16);
-				m_buffer.put(seq >>  8);
+				m_buffer.put(static_cast<unsigned char>(seq >> 16));
+				m_buffer.put(static_cast<unsigned char>(seq >>  8));
 				break;
 			case 3:
-				m_buffer.put(seq >> 16);
-				m_buffer.put(seq >>  8);
-				m_buffer.put(seq >>  0);
+				m_buffer.put(static_cast<unsigned char>(seq >> 16));
+				m_buffer.put(static_cast<unsigned char>(seq >>  8));
+				m_buffer.put(static_cast<unsigned char>(seq >>  0));
 				break;
 			default:
 				DEBUG_THROW(ProtocolException, sslit("Invalid base64 data"), -1);

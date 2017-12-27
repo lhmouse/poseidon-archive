@@ -55,7 +55,7 @@ namespace {
 		unsigned long *m_lengths;
 
 	public:
-		DelegatedConnection(const char *server_addr, unsigned server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
+		DelegatedConnection(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
 			: m_schema(schema)
 			, m_row(NULLPTR), m_lengths(NULLPTR)
 		{
@@ -208,7 +208,7 @@ namespace {
 	};
 }
 
-boost::shared_ptr<Connection> Connection::create(const char *server_addr, unsigned server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset){
+boost::shared_ptr<Connection> Connection::create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset){
 	return boost::make_shared<DelegatedConnection>(server_addr, server_port, user_name, password, schema, use_ssl, charset);
 }
 

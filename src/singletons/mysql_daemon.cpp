@@ -4,13 +4,6 @@
 #include "../precompiled.hpp"
 #include "mysql_daemon.hpp"
 #include "main_config.hpp"
-#include <boost/container/flat_map.hpp>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <mysqld_error.h>
-#include <errmsg.h>
 #include "../mysql/object_base.hpp"
 #include "../mysql/exception.hpp"
 #include "../mysql/connection.hpp"
@@ -28,6 +21,12 @@
 #include "../errno.hpp"
 #include "../buffer_streams.hpp"
 #include "../checked_arithmetic.hpp"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <mysqld_error.h>
+#include <errmsg.h>
 
 namespace Poseidon {
 
@@ -36,10 +35,10 @@ typedef MySqlDaemon::QueryCallback QueryCallback;
 namespace {
 	boost::shared_ptr<MySql::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<MySql::Connection> &master_conn = boost::shared_ptr<MySql::Connection>()){
 		std::string server_addr;
-		unsigned server_port = 0;
+		boost::uint16_t server_port = 0;
 		if(from_slave){
 			server_addr = MainConfig::get<std::string>("mysql_slave_addr");
-			server_port = MainConfig::get<unsigned>("mysql_slave_port");
+			server_port = MainConfig::get<boost::uint16_t>("mysql_slave_port");
 		}
 		if(server_addr.empty()){
 			if(master_conn){
@@ -47,7 +46,7 @@ namespace {
 				return master_conn;
 			}
 			server_addr = MainConfig::get<std::string>("mysql_server_addr", "localhost");
-			server_port = MainConfig::get<unsigned>("mysql_server_port", 3306);
+			server_port = MainConfig::get<boost::uint16_t>("mysql_server_port", 3306);
 		}
 
 		std::string username = MainConfig::get<std::string>("mysql_username", "root");
@@ -75,7 +74,7 @@ namespace {
 		const AUTO(local_now, get_local_time());
 		const AUTO(dt, break_down_time(local_now));
 		char temp[256];
-		unsigned len = (unsigned)std::sprintf(temp, "%04u-%02u-%02u_%05u.log", dt.yr, dt.mon, dt.day, (unsigned)::getpid());
+		std::size_t len = (unsigned)std::sprintf(temp, "%04u-%02u-%02u_%05u.log", dt.yr, dt.mon, dt.day, (unsigned)::getpid());
 		std::string dump_path;
 		dump_path.reserve(1023);
 		dump_path.assign(dump_dir);

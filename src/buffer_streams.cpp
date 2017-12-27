@@ -10,7 +10,7 @@ Buffer_streambuf::~Buffer_streambuf(){ }
 
 int Buffer_streambuf::sync(){
 	if(gptr()){
-		m_buffer.discard(static_cast<unsigned>(gptr() - eback()));
+		m_buffer.discard(static_cast<std::size_t>(gptr() - eback()));
 		setg(NULLPTR, NULLPTR, NULLPTR);
 	}
 	return std::streambuf::sync();
@@ -30,8 +30,8 @@ std::streamsize Buffer_streambuf::showmanyc(){
 std::streamsize Buffer_streambuf::xsgetn(Buffer_streambuf::char_type *s, std::streamsize n){
 	if(m_which & std::ios_base::in){
 		sync();
-		int n_got = std::min<std::streamsize>(n, INT_MAX);
-		n_got = static_cast<int>(m_buffer.get(s, static_cast<unsigned>(n_got)));
+		std::streamsize n_got = std::min<std::streamsize>(n, PTRDIFF_MAX);
+		n_got = static_cast<std::streamsize>(m_buffer.get(s, static_cast<std::size_t>(n_got)));
 		return n_got;
 	} else {
 		return 0;
@@ -40,7 +40,7 @@ std::streamsize Buffer_streambuf::xsgetn(Buffer_streambuf::char_type *s, std::st
 Buffer_streambuf::int_type Buffer_streambuf::underflow(){
 	if(m_which & std::ios_base::in){
 		sync();
-		int n_peeked = static_cast<int>(m_buffer.peek(m_get_area.begin(), m_get_area.size()));
+		std::streamsize n_peeked = static_cast<std::streamsize>(m_buffer.peek(m_get_area.begin(), m_get_area.size()));
 		if(n_peeked == 0){
 			return traits_type::eof();
 		}
@@ -66,8 +66,8 @@ Buffer_streambuf::int_type Buffer_streambuf::pbackfail(Buffer_streambuf::int_typ
 
 std::streamsize Buffer_streambuf::xsputn(const Buffer_streambuf::char_type *s, std::streamsize n){
 	if(m_which & std::ios_base::out){
-		int n_put = std::min<std::streamsize>(n, INT_MAX);
-		m_buffer.put(s, static_cast<unsigned>(n_put));
+		std::streamsize n_put = std::min<std::streamsize>(n, PTRDIFF_MAX);
+		m_buffer.put(s, static_cast<std::size_t>(n_put));
 		return n_put;
 	} else {
 		return 0;

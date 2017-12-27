@@ -24,7 +24,7 @@ void vuint64_to_binary(boost::uint64_t val, OutputIterT &write){
 		++write;
 	}
 	if(val != 0){
-		const unsigned byte = val;
+		const unsigned byte = static_cast<unsigned>(val);
 		*write = static_cast<boost::uint8_t>(byte);
 		++write;
 	}

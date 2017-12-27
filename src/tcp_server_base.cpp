@@ -45,7 +45,7 @@ namespace {
 		DEBUG_THROW_UNLESS(tcp.reset(::socket(addr.get_family(), SOCK_STREAM, IPPROTO_TCP)), SystemException);
 		static CONSTEXPR const int TRUE_VALUE = true;
 		DEBUG_THROW_UNLESS(::setsockopt(tcp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) == 0, SystemException);
-		DEBUG_THROW_UNLESS(::bind(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) == 0, SystemException);
+		DEBUG_THROW_UNLESS(::bind(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0, SystemException);
 		DEBUG_THROW_UNLESS(::listen(tcp.get(), SOMAXCONN) == 0, SystemException);
 		return STD_MOVE(tcp);
 	}

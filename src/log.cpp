@@ -124,7 +124,7 @@ try {
 	AUTO_REF(level_elem, LEVEL_ELEMENTS[__builtin_ctzll(m_mask | LV_TRACE)]);
 
 	char temp[256];
-	unsigned len;
+	std::size_t len;
 
 	std::string line;
 	line.reserve(255);

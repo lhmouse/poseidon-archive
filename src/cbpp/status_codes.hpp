@@ -7,7 +7,7 @@
 namespace Poseidon {
 namespace Cbpp {
 
-typedef int StatusCode;
+typedef long StatusCode;
 
 namespace StatusCodes {
 	enum {

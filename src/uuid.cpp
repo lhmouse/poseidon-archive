@@ -39,12 +39,12 @@ Uuid Uuid::random() NOEXCEPT {
 		boost::uint16_t u16[8];
 		boost::uint32_t u32[4];
 	} un;
-	store_be(un.u32[0], utc_now >> 12);
-	store_be(un.u16[2], (utc_now << 4) | ((unique >> 26) & 0x000F));
-	store_be(un.u16[3], 0xE000 | ((unique >> 14) & 0x0FFFu)); // 版本 = 14
-	store_be(un.u16[4], 0xC000 | (unique & 0x3FFF)); // 变种 = 3
-	store_be(un.u16[5], random_uint32());
-	store_be(un.u32[3], random_uint32());
+	store_be(un.u32[0], static_cast<boost::uint32_t>(utc_now >> 12));
+	store_be(un.u16[2], static_cast<boost::uint16_t>((utc_now << 4) | ((unique >> 26) & 0x000F)));
+	store_be(un.u16[3], static_cast<boost::uint16_t>(0xE000 | ((unique >> 14) & 0x0FFFu))); // 版本 = 14
+	store_be(un.u16[4], static_cast<boost::uint16_t>(0xC000 | (unique & 0x3FFF))); // 变种 = 3
+	store_be(un.u16[5], static_cast<boost::uint16_t>(random_uint32()));
+	store_be(un.u32[3], static_cast<boost::uint32_t>(random_uint32()));
 	return Uuid(un.bytes);
 }
 
@@ -70,7 +70,7 @@ void Uuid::to_string(char (&str)[36], bool upper_case) const {
 		} else {	\
 			ch += 'a' - 0x0A;	\
 		}	\
-		*(write++) = ch;	\
+		*(write++) = static_cast<char>(ch);	\
 		ch = byte & 0x0F;	\
 		if(ch <= 9){	\
 			ch += '0';	\
@@ -79,7 +79,7 @@ void Uuid::to_string(char (&str)[36], bool upper_case) const {
 		} else {	\
 			ch += 'a' - 0x0A;	\
 		}	\
-		*(write++) = ch;	\
+		*(write++) = static_cast<char>(ch);	\
 	}
 
 	PRINT(4) *(write++) = '-';
@@ -126,7 +126,7 @@ bool Uuid::from_string(const char (&str)[36]){
 			return false;	\
 		}	\
 		byte |= ch;	\
-		*(write++) = byte;	\
+		*(write++) = static_cast<unsigned char>(byte);	\
 	}
 
 	SCAN(4) if(*(read++) != '-'){ return false; }

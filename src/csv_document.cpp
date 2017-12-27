@@ -157,7 +157,7 @@ void CsvDocument::parse(std::istream &is){
 			Q_CLOSED,
 		} quote_state = Q_INIT;
 		for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
-			const char ch = is.get();
+			const char ch = traits::to_char_type(is.get());
 			if(quote_state == Q_INIT){
 				if(ch == '\"'){
 					quote_state = Q_OPEN;

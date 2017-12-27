@@ -103,7 +103,7 @@ void Multipart::parse(std::istream &is){
 	typedef std::istream::traits_type traits;
 	traits::int_type next = is.peek();
 	for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
-		const char ch = is.get();
+		const char ch = traits::to_char_type(is.get());
 		switch(state){
 		case S_INIT:
 			queue.push_back(ch);

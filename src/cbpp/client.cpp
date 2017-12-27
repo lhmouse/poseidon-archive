@@ -83,11 +83,11 @@ protected:
 
 class Client::DataMessageJob : public Client::SyncJobBase {
 private:
-	unsigned m_message_id;
+	boost::uint16_t m_message_id;
 	StreamBuffer m_payload;
 
 public:
-	DataMessageJob(const boost::shared_ptr<Client> &client, unsigned message_id, StreamBuffer payload)
+	DataMessageJob(const boost::shared_ptr<Client> &client, boost::uint16_t message_id, StreamBuffer payload)
 		: SyncJobBase(client)
 		, m_message_id(message_id), m_payload(STD_MOVE(payload))
 	{ }

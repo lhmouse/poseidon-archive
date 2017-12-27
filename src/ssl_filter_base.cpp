@@ -53,7 +53,7 @@ SslFilterBase::~SslFilterBase(){ }
 
 long SslFilterBase::recv(void *data, unsigned long size){
 	const Mutex::UniqueLock lock(m_mutex);
-	long bytes_read = ::SSL_read(m_ssl.get(), data, size);
+	int bytes_read = ::SSL_read(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
 	if(bytes_read <= 0){
 		if(::SSL_get_shutdown(m_ssl.get()) & SSL_RECEIVED_SHUTDOWN){
 			::shutdown(::SSL_get_rfd(m_ssl.get()), SHUT_RD);
@@ -70,7 +70,7 @@ long SslFilterBase::recv(void *data, unsigned long size){
 }
 long SslFilterBase::send(const void *data, unsigned long size){
 	const Mutex::UniqueLock lock(m_mutex);
-	long bytes_written = ::SSL_write(m_ssl.get(), data, size);
+	int bytes_written = ::SSL_write(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
 	if(bytes_written <= 0){
 		if(::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN){
 			const int status = ::SSL_shutdown(m_ssl.get());

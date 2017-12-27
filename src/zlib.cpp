@@ -47,7 +47,7 @@ void Deflator::put(const void *data, std::size_t size){
 			if(remaining > UINT_MAX){
 				remaining = UINT_MAX;
 			}
-			m_stream.avail_in = remaining;
+			m_stream.avail_in = static_cast<unsigned>(remaining);
 		}
 		if(m_stream.avail_in == 0){
 			break;
@@ -149,7 +149,7 @@ void Inflator::put(const void *data, std::size_t size){
 			if(remaining > UINT_MAX){
 				remaining = UINT_MAX;
 			}
-			m_stream.avail_in = remaining;
+			m_stream.avail_in = static_cast<unsigned>(remaining);
 		}
 		if(m_stream.avail_in == 0){
 			break;

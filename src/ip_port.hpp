@@ -14,11 +14,11 @@ class SockAddr;
 class IpPort {
 private:
 	char m_ip[128];
-	unsigned m_port;
+	boost::uint16_t m_port;
 
 public:
 	IpPort();
-	IpPort(const char *ip_str, unsigned port_num);
+	IpPort(const char *ip_str, boost::uint16_t port_num);
 	IpPort(const SockAddr &sock_addr);
 	IpPort(const IpPort &ip_port) NOEXCEPT;
 	IpPort &operator=(const IpPort &ip_port) NOEXCEPT;
@@ -27,7 +27,7 @@ public:
 	const char *ip() const {
 		return m_ip;
 	}
-	unsigned port() const {
+	boost::uint16_t port() const {
 		return m_port;
 	}
 };
