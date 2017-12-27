@@ -37,7 +37,7 @@ long Writer::put_data_message(boost::uint16_t message_id, StreamBuffer payload){
 	boost::uint16_t temp16;
 	boost::uint64_t temp64;
 	if(payload.size() < 0xFFFF){
-		store_be(temp16, payload.size());
+		store_be(temp16, static_cast<boost::uint16_t>(payload.size()));
 		frame.put(&temp16, 2);
 	} else {
 		store_be(temp16, 0xFFFF);

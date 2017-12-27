@@ -248,8 +248,8 @@ namespace {
 		for(unsigned i = 0; i < 16; ++i){
 			const unsigned hi = out[i] / 16;
 			const unsigned lo = out[i] % 16;
-			*(write++) = 'a' + hi;
-			*(write++) = 'a' + lo;
+			*(write++) = static_cast<char>('a' + hi);
+			*(write++) = static_cast<char>('a' + lo);
 		}
 		*write = 0;
 	}
@@ -271,7 +271,7 @@ namespace {
 			if(lo >= 16){
 				return false;
 			}
-			in[i] = (hi << 4) | lo;
+			in[i] = static_cast<unsigned char>(hi * 16 + lo);
 		}
 		if(*read != 0){
 			return false;

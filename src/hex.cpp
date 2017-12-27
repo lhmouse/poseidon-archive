@@ -74,7 +74,7 @@ void HexDecoder::put(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
-		const unsigned ch = static_cast<const unsigned char *>(data)[i];
+		const unsigned char ch = static_cast<const unsigned char *>(data)[i];
 		if((ch == ' ') || (ch == '\t') || (ch == '\r') || (ch == '\n')){
 			continue;
 		}
@@ -83,7 +83,7 @@ void HexDecoder::put(const void *data, std::size_t size){
 		unsigned seq = m_seq << 4;
 		seq += static_cast<unsigned>(digit);
 		if(seq >= 0x0100){
-			m_buffer.put(seq);
+			m_buffer.put(static_cast<unsigned char>(seq));
 			m_seq = 1;
 		} else {
 			m_seq = seq;

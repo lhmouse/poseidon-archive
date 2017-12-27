@@ -61,7 +61,7 @@ double get_hi_res_mono_clock() NOEXCEPT {
 
 DateTime break_down_time(boost::uint64_t ms){
 	const ::time_t seconds = static_cast< ::time_t>(ms / 1000);
-	const unsigned milliseconds = ms % 1000;
+	const unsigned milliseconds = static_cast<unsigned>(ms % 1000);
 	::tm desc;
 	::gmtime_r(&seconds, &desc);
 	DateTime dt;

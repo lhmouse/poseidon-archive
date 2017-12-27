@@ -23,13 +23,13 @@ boost::uint32_t random_uint32(){
 			new_seed += 1442695040888963407u;
 		} while(!atomic_compare_exchange(s_seed, old_seed, new_seed, ATOMIC_RELAXED, ATOMIC_RELAXED));
 	}
-	return new_seed >> 32;
+	return static_cast<boost::uint32_t>(new_seed >> 32);
 }
 boost::uint64_t random_uint64(){
-	return ((boost::uint64_t)random_uint32() << 32) + random_uint32();
+	return (static_cast<boost::uint64_t>(random_uint32()) << 32) + random_uint32();
 }
 double random_double(){
-	return (boost::int64_t)(random_uint64() >> 1) / 0x1p63;
+	return static_cast<double>(static_cast<boost::int64_t>(random_uint64() >> 1)) / 0x1p63;
 }
 
 }

@@ -90,14 +90,14 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 				char ver_major_str[16], ver_minor_str[16];
 				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, BasicException, sslit("Malformed HTTP version in response headers"));
 				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == pos, BasicException, sslit("Malformed HTTP version in response headers"));
-				m_response_headers.version = std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10);
+				m_response_headers.version = boost::numeric_cast<unsigned>(std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10));
 				line.erase(0, pos + 1);
 
 				pos = line.find(' ');
 				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("No status code in response headers"));
 				line[pos] = 0;
 				char *eptr;
-				const AUTO(status_code, std::strtoul(line.c_str(), &eptr, 10));
+				const unsigned status_code = boost::numeric_cast<unsigned>(std::strtoul(line.c_str(), &eptr, 10));
 				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Malformed status code in response headers"));
 				m_response_headers.status_code = status_code;
 				line.erase(0, pos + 1);

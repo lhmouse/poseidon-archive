@@ -98,7 +98,7 @@ inline std::string implode(char separator, const boost::container::vector<std::s
 inline std::string to_upper_case(std::string src){
 	for(AUTO(it, src.begin()); it != src.end(); ++it){
 		if(('a' <= *it) && (*it <= 'z')){
-			*it -= 0x20;
+			*it = static_cast<char>(*it - 0x20);
 		}
 	}
 	return STD_MOVE(src);
@@ -106,7 +106,7 @@ inline std::string to_upper_case(std::string src){
 inline std::string to_lower_case(std::string src){
 	for(AUTO(it, src.begin()); it != src.end(); ++it){
 		if(('A' <= *it) && (*it <= 'Z')){
-			*it += 0x20;
+			*it = static_cast<char>(*it + 0x20);
 		}
 	}
 	return STD_MOVE(src);

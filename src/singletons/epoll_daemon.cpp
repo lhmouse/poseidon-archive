@@ -81,8 +81,8 @@ namespace {
 	bool wait_for_sockets(unsigned timeout) NOEXCEPT {
 		PROFILE_ME;
 
-		::epoll_event events[256];
-		const int result = ::epoll_wait(g_epoll.get(), events, COUNT_OF(events), (int)timeout);
+		boost::array< ::epoll_event, 256> events;
+		const int result = ::epoll_wait(g_epoll.get(), events.data(), static_cast<int>(events.size()), static_cast<int>(std::min<unsigned>(timeout, INT_MAX)));
 		if(result < 0){
 			const int err_code = errno;
 			if(err_code != EINTR){
@@ -95,7 +95,7 @@ namespace {
 		}
 		const AUTO(now, get_fast_mono_clock());
 		const RecursiveMutex::UniqueLock lock(g_mutex);
-		for(unsigned i = 0; i < (unsigned)result; ++i){
+		for(unsigned i = 0; i < static_cast<unsigned>(result); ++i){
 			const AUTO(ptr, static_cast<SocketBase *>(events[i].data.ptr));
 			const AUTO(it, g_socket_map.find<0>(ptr));
 			if(it == g_socket_map.end()){

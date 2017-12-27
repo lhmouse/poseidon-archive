@@ -16,6 +16,7 @@
 #include "../raii.hpp"
 
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #include <bson.h>
 #pragma GCC diagnostic pop

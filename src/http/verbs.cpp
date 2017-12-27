@@ -22,7 +22,7 @@ namespace {
 }
 
 Verb get_verb_from_string(const char *str){
-	const unsigned len = std::strlen(str);
+	const std::size_t len = std::strlen(str);
 	if(len == 0){
 		return V_INVALID_VERB;
 	}
@@ -31,18 +31,18 @@ Verb get_verb_from_string(const char *str){
 	if(!pos){
 		return V_INVALID_VERB;
 	}
-	const unsigned i = (unsigned)(pos - begin) / sizeof(VERB_TABLE[0]);
-	if(pos != VERB_TABLE[i]){
+	std::size_t index = static_cast<std::size_t>(pos - begin) / sizeof(VERB_TABLE[0]);
+	if(pos != VERB_TABLE[index]){
 		return V_INVALID_VERB;
 	}
-	return static_cast<Verb>(i);
+	return static_cast<Verb>(index);
 }
 const char *get_string_from_verb(Verb verb){
-	unsigned i = static_cast<unsigned>(verb);
-	if(i >= COUNT_OF(VERB_TABLE)){
-		i = static_cast<unsigned>(V_INVALID_VERB);
+	std::size_t index = static_cast<std::size_t>(verb);
+	if(index >= COUNT_OF(VERB_TABLE)){
+		index = static_cast<unsigned>(V_INVALID_VERB);
 	}
-	return VERB_TABLE[i];
+	return VERB_TABLE[index];
 }
 
 }

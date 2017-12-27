@@ -23,8 +23,8 @@ namespace {
 		const boost::shared_ptr<const Http::AuthenticationContext> m_auth_ctx;
 
 	public:
-		SystemSocketServer(const IpPort &ip_port, const char *certificate, const char *private_key, boost::shared_ptr<const Http::AuthenticationContext> auth_ctx)
-			: TcpServerBase(ip_port, certificate, private_key)
+		SystemSocketServer(const std::string &bind, boost::uint16_t port, const std::string &cert, const std::string &pkey, boost::shared_ptr<const Http::AuthenticationContext> auth_ctx)
+			: TcpServerBase(IpPort(bind.c_str(), port), cert.c_str(), pkey.c_str())
 			, m_auth_ctx(STD_MOVE(auth_ctx))
 		{ }
 
@@ -56,7 +56,7 @@ void SystemServer::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting system server...");
 
 	const AUTO(bind, MainConfig::get<std::string>("system_http_bind"));
-	const AUTO(port, MainConfig::get<unsigned>("system_http_port"));
+	const AUTO(port, MainConfig::get<boost::uint16_t>("system_http_port"));
 	const AUTO(cert, MainConfig::get<std::string>("system_http_certificate"));
 	const AUTO(pkey, MainConfig::get<std::string>("system_http_private_key"));
 	const AUTO(relm, MainConfig::get<std::string>("system_http_auth_realm", "Poseidon Test Server"));
@@ -64,7 +64,8 @@ void SystemServer::start(){
 	if(bind.empty()){
 		LOG_POSEIDON_INFO("System server is disabled.");
 	} else {
-		const AUTO(server, boost::make_shared<SystemSocketServer>(IpPort(bind.c_str(), port), cert.c_str(), pkey.c_str(), Http::create_authentication_context(relm, auth)));
+		const AUTO(auth_ctx, Http::create_authentication_context(relm, auth));
+		const AUTO(server, boost::make_shared<SystemSocketServer>(bind, port, cert, pkey, auth_ctx));
 		EpollDaemon::add_socket(server, false);
 		g_server = server;
 	}

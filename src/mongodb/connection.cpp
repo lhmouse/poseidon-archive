@@ -17,6 +17,7 @@
 #include <cstdlib>
 
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #include <mongoc.h>
 #include <bson.h>
@@ -77,7 +78,7 @@ namespace {
 		UniqueHandle<BsonCloser> m_element_guard;
 
 	public:
-		DelegatedConnection(const char *server_addr, unsigned server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
+		DelegatedConnection(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
 			: m_database(database)
 			, m_cursor_id(0), m_cursor_ns()
 		{
@@ -320,7 +321,7 @@ namespace {
 	};
 }
 
-boost::shared_ptr<Connection> Connection::create(const char *server_addr, unsigned server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database){
+boost::shared_ptr<Connection> Connection::create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database){
 	return boost::make_shared<DelegatedConnection>(server_addr, server_port, user_name, password, auth_database, use_ssl, database);
 }
 

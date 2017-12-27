@@ -104,7 +104,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 				char ver_major_str[16], ver_minor_str[16];
 				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, Exception, ST_BAD_REQUEST);
 				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == line.size(), Exception, ST_BAD_REQUEST);
-				m_request_headers.version = std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10);
+				m_request_headers.version = boost::numeric_cast<unsigned>(std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10));
 				DEBUG_THROW_UNLESS(m_request_headers.version <= 10001, Exception, ST_VERSION_NOT_SUPPORTED);
 
 				if(!dont_parse_get_params){

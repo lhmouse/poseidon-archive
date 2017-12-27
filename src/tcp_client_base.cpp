@@ -48,7 +48,7 @@ namespace {
 TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_peer)
 	: TcpSessionBase(create_tcp_socket(addr.get_family()))
 {
-	DEBUG_THROW_UNLESS((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.data()), addr.size()) == 0) || (errno == EINPROGRESS), SystemException);
+	DEBUG_THROW_UNLESS((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0) || (errno == EINPROGRESS), SystemException);
 	if(use_ssl){
 		LOG_POSEIDON_INFO("Initiating SSL handshake...");
 		m_ssl_factory.reset(new ClientSslFactory(verify_peer));

@@ -55,7 +55,7 @@ namespace {
 		traits::int_type next = is.peek();
 		bool escaped = false;
 		for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
-			const char ch = is.get();
+			const char ch = traits::to_char_type(is.get());
 			if(escaped){
 				switch(ch){
 				case 'b':

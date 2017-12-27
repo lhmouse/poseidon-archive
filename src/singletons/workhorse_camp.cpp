@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "workhorse_camp.hpp"
 #include "main_config.hpp"
-#include <boost/container/flat_map.hpp>
 #include "../thread.hpp"
 #include "../mutex.hpp"
 #include "../condition_variable.hpp"

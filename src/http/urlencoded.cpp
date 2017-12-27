@@ -72,7 +72,7 @@ namespace {
 			S_WANTS_LOW,
 		} state = S_PLAIN;
 		for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
-			const char ch = is.get();
+			const char ch = traits::to_char_type(is.get());
 			switch(state){
 			case S_PLAIN:
 				if(ch == '%'){

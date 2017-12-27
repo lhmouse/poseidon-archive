@@ -4,17 +4,6 @@
 #include "../precompiled.hpp"
 #include "mongodb_daemon.hpp"
 #include "main_config.hpp"
-#include <boost/container/flat_map.hpp>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wconversion"
-#include <bson.h>
-#include <mongoc.h>
-#pragma GCC diagnostic pop
 #include "../mongodb/object_base.hpp"
 #include "../mongodb/exception.hpp"
 #include "../mongodb/connection.hpp"
@@ -32,6 +21,17 @@
 #include "../errno.hpp"
 #include "../buffer_streams.hpp"
 #include "../checked_arithmetic.hpp"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#include <bson.h>
+#include <mongoc.h>
+#pragma GCC diagnostic pop
 
 namespace Poseidon {
 
@@ -40,10 +40,10 @@ typedef MongoDbDaemon::QueryCallback QueryCallback;
 namespace {
 	boost::shared_ptr<MongoDb::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<MongoDb::Connection> &master_conn = boost::shared_ptr<MongoDb::Connection>()){
 		std::string server_addr;
-		unsigned server_port = 0;
+		boost::uint16_t server_port = 0;
 		if(from_slave){
 			server_addr = MainConfig::get<std::string>("mongodb_slave_addr");
-			server_port = MainConfig::get<unsigned>("mongodb_slave_port");
+			server_port = MainConfig::get<boost::uint16_t>("mongodb_slave_port");
 		}
 		if(server_addr.empty()){
 			if(master_conn){
@@ -51,7 +51,7 @@ namespace {
 				return master_conn;
 			}
 			server_addr = MainConfig::get<std::string>("mongodb_server_addr", "localhost");
-			server_port = MainConfig::get<unsigned>("mongodb_server_port", 27017);
+			server_port = MainConfig::get<boost::uint16_t>("mongodb_server_port", 27017);
 		}
 
 		std::string username = MainConfig::get<std::string>("mongodb_username", "root");
@@ -79,7 +79,7 @@ namespace {
 		const AUTO(local_now, get_local_time());
 		const AUTO(dt, break_down_time(local_now));
 		char temp[256];
-		unsigned len = (unsigned)std::sprintf(temp, "%04u-%02u-%02u_%05u.log", dt.yr, dt.mon, dt.day, (unsigned)::getpid());
+		std::size_t len = (unsigned)std::sprintf(temp, "%04u-%02u-%02u_%05u.log", dt.yr, dt.mon, dt.day, (unsigned)::getpid());
 		std::string dump_path;
 		dump_path.reserve(1023);
 		dump_path.assign(dump_dir);
@@ -420,7 +420,7 @@ namespace {
 
 			MongoDb::BsonBuilder query;
 			STD_EXCEPTION_PTR except;
-			boost::uint32_t err_code = 0;
+			long err_code = 0;
 			char err_msg[4096];
 
 			bool execute_it = false;

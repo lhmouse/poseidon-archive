@@ -136,7 +136,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 			{
 				StreamBuffer payload;
 				for(std::size_t i = 0; i < temp64; ++i){
-					payload.put(static_cast<unsigned char>(m_queue.get()) ^ m_mask);
+					payload.put(static_cast<unsigned char>(m_queue.get() ^ static_cast<int>(m_mask)));
 					m_mask = (m_mask << 24) | (m_mask >> 8);
 				}
 				on_data_message_payload(m_whole_offset, STD_MOVE(payload));
@@ -165,7 +165,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 			{
 				StreamBuffer payload;
 				for(std::size_t i = 0; i < m_frame_size; ++i){
-					payload.put(static_cast<unsigned char>(m_queue.get()) ^ m_mask);
+					payload.put(static_cast<unsigned char>(m_queue.get() ^ static_cast<int>(m_mask)));
 					m_mask = (m_mask << 24) | (m_mask >> 8);
 				}
 				has_next_request = on_control_message(m_opcode, STD_MOVE(payload));
