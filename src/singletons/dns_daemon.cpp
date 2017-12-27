@@ -29,7 +29,7 @@ namespace {
 		}
 	};
 
-	SockAddr real_dns_look_up(const std::string &host_raw, unsigned port_raw){
+	SockAddr real_dns_look_up(const std::string &host_raw, boost::uint16_t port_raw){
 		UniqueHandle<AddrinfoFreeer> res;
 		std::string host;
 		if(!host_raw.empty() && (host_raw.begin()[0] == '[') && (host_raw.end()[-1] == ']')){
@@ -59,7 +59,7 @@ namespace {
 	struct RequestElement {
 		boost::weak_ptr<PromiseContainer<SockAddr> > weak_promise;
 		std::string host;
-		unsigned port;
+		boost::uint16_t port;
 	};
 
 	Mutex g_mutex;
@@ -149,13 +149,13 @@ void DnsDaemon::stop(){
 	g_queue.clear();
 }
 
-SockAddr DnsDaemon::look_up(const std::string &host, unsigned port){
+SockAddr DnsDaemon::look_up(const std::string &host, boost::uint16_t port){
 	PROFILE_ME;
 
 	return real_dns_look_up(host, port);
 }
 
-boost::shared_ptr<const PromiseContainer<SockAddr> > DnsDaemon::enqueue_for_looking_up(std::string host, unsigned port){
+boost::shared_ptr<const PromiseContainer<SockAddr> > DnsDaemon::enqueue_for_looking_up(std::string host, boost::uint16_t port){
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<PromiseContainer<SockAddr> >());
