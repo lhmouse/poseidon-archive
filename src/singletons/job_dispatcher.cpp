@@ -307,7 +307,7 @@ void JobDispatcher::enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<co
 	}
 	g_new_job.signal();
 }
-void JobDispatcher::yield(const boost::shared_ptr<const Promise> &promise, bool insignificant){
+void JobDispatcher::yield(boost::shared_ptr<const Promise> promise, bool insignificant){
 	PROFILE_ME;
 
 	const AUTO(fiber, t_current_fiber);

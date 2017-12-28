@@ -23,7 +23,8 @@ public:
 	static void do_modal(const volatile bool &running);
 
 	static void enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn);
-	static void yield(const boost::shared_ptr<const Promise> &promise, bool insignificant);
+	// Pass `promise` by value to avoid false aliasing.
+	static void yield(boost::shared_ptr<const Promise> promise, bool insignificant);
 };
 
 }
