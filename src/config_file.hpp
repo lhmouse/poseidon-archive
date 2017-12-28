@@ -48,13 +48,9 @@ public:
 				if(!including_empty){
 					continue;
 				}
-#ifdef POSEIDON_CXX11
 				vals.emplace_back();
-#else
-				vals.push_back(VAL_INIT);
-#endif
 			} else {
-				vals.push_back(it->second);
+				vals.emplace_back(it->second);
 			}
 			++ret;
 		}
@@ -103,13 +99,9 @@ public:
 				if(!including_empty){
 					continue;
 				}
-#ifdef POSEIDON_CXX11
 				vals.emplace_back();
-#else
-				vals.push_back(VAL_INIT);
-#endif
 			} else {
-				vals.push_back(boost::lexical_cast<T>(it->second));
+				vals.emplace_back(boost::lexical_cast<T>(it->second));
 			}
 			++ret;
 		}
@@ -125,13 +117,9 @@ public:
 				if(!including_empty){
 					continue;
 				}
-#ifdef POSEIDON_CXX11
 				vals.emplace_back();
-#else
-				vals.push_back(VAL_INIT);
-#endif
 			} else {
-				vals.push_back(boost::lexical_cast<T>(it->second));
+				vals.emplace_back(boost::lexical_cast<T>(it->second));
 			}
 		}
 		return vals;
