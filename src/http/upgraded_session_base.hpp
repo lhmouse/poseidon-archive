@@ -34,6 +34,8 @@ protected:
 	void on_close(int err_code) OVERRIDE = 0;
 	void on_receive(StreamBuffer data) OVERRIDE = 0;
 
+	virtual void on_shutdown_timer(boost::uint64_t now) = 0;
+
 public:
 	bool has_been_shutdown_read() const NOEXCEPT OVERRIDE;
 	bool shutdown_read() NOEXCEPT OVERRIDE;

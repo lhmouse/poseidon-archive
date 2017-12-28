@@ -65,6 +65,18 @@ void LowLevelSession::on_receive(StreamBuffer data){
 	}
 }
 
+void LowLevelSession::on_shutdown_timer(boost::uint64_t now){
+	PROFILE_ME;
+
+	// timer 线程读取需要锁。
+	const AUTO(upgraded_session, get_upgraded_session());
+	if(upgraded_session){
+		upgraded_session->on_shutdown_timer(now);
+	}
+
+	TcpSessionBase::on_shutdown_timer(now);
+}
+
 void LowLevelSession::on_request_headers(RequestHeaders request_headers, boost::uint64_t content_length){
 	PROFILE_ME;
 

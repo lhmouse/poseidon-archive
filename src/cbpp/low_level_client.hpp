@@ -5,7 +5,6 @@
 #define POSEIDON_CBPP_LOW_LEVEL_CLIENT_HPP_
 
 #include "../tcp_client_base.hpp"
-#include "../fwd.hpp"
 #include "../mutex.hpp"
 #include "reader.hpp"
 #include "writer.hpp"
@@ -15,20 +14,9 @@ namespace Poseidon {
 namespace Cbpp {
 
 class LowLevelClient : public TcpClientBase, protected Reader, protected Writer {
-private:
-	static void keep_alive_timer_proc(const boost::weak_ptr<LowLevelClient> &weak_client, boost::uint64_t now, boost::uint64_t period);
-
-private:
-	volatile boost::uint64_t m_last_pong_time;
-	mutable Mutex m_keep_alive_mutex;
-	boost::shared_ptr<Timer> m_keep_alive_timer;
-
 public:
 	explicit LowLevelClient(const SockAddr &addr, bool use_ssl = false, bool verify_peer = true);
 	~LowLevelClient();
-
-private:
-	void create_keep_alive_timer();
 
 protected:
 	// TcpClientBase

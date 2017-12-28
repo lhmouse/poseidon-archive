@@ -15,6 +15,10 @@ UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<TcpSessionBase>
 { }
 UpgradedSessionBase::~UpgradedSessionBase(){ }
 
+void UpgradedSessionBase::on_shutdown_timer(boost::uint64_t now){
+	(void)now;
+}
+
 bool UpgradedSessionBase::has_been_shutdown_read() const NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){

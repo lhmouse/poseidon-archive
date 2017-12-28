@@ -68,6 +68,18 @@ void LowLevelClient::on_receive(StreamBuffer data){
 	}
 }
 
+void LowLevelClient::on_shutdown_timer(boost::uint64_t now){
+	PROFILE_ME;
+
+	// timer 线程读取需要锁。
+	const AUTO(upgraded_client, get_upgraded_client());
+	if(upgraded_client){
+		upgraded_client->on_shutdown_timer(now);
+	}
+
+	TcpClientBase::on_shutdown_timer(now);
+}
+
 void LowLevelClient::on_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length){
 	PROFILE_ME;
 
@@ -94,6 +106,11 @@ long LowLevelClient::on_encoded_data_avail(StreamBuffer encoded){
 	PROFILE_ME;
 
 	return TcpClientBase::send(STD_MOVE(encoded));
+}
+
+boost::shared_ptr<UpgradedSessionBase> LowLevelClient::get_upgraded_client() const {
+	const Mutex::UniqueLock lock(m_upgraded_client_mutex);
+	return m_upgraded_client;
 }
 
 bool LowLevelClient::send(RequestHeaders request_headers, StreamBuffer entity){

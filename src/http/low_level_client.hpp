@@ -41,6 +41,9 @@ protected:
 	void on_close(int err_code) OVERRIDE;
 	void on_receive(StreamBuffer data) OVERRIDE;
 
+	// 注意，只能在 timer 线程中调用这些函数。
+	void on_shutdown_timer(boost::uint64_t now) OVERRIDE;
+
 	// ClientReader
 	void on_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) OVERRIDE;
 	void on_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
