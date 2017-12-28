@@ -19,16 +19,17 @@ namespace WebSocket {
 class Session::SyncJobBase : public JobBase {
 private:
 	const SocketBase::DelayedShutdownGuard m_guard;
+	const boost::weak_ptr<TcpSessionBase> m_weak_parent;
 	const boost::weak_ptr<Session> m_weak_session;
 
 protected:
 	explicit SyncJobBase(const boost::shared_ptr<Session> &session)
-		: m_guard(boost::shared_ptr<SocketBase>(session->get_weak_parent())), m_weak_session(session)
+		: m_guard(boost::shared_ptr<SocketBase>(session->get_weak_parent())), m_weak_parent(session->get_weak_parent()), m_weak_session(session)
 	{ }
 
 private:
 	boost::weak_ptr<const void> get_category() const FINAL {
-		return m_weak_session;
+		return m_weak_parent;
 	}
 	void perform() FINAL {
 		PROFILE_ME;

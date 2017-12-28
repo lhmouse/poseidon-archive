@@ -17,16 +17,17 @@ namespace WebSocket {
 class Client::SyncJobBase : public JobBase {
 private:
 	const SocketBase::DelayedShutdownGuard m_guard;
+	const boost::weak_ptr<TcpSessionBase> m_weak_parent;
 	const boost::weak_ptr<Client> m_weak_client;
 
 protected:
 	explicit SyncJobBase(const boost::shared_ptr<Client> &client)
-		: m_guard(boost::shared_ptr<SocketBase>(client->get_weak_parent())), m_weak_client(client)
+		: m_guard(boost::shared_ptr<SocketBase>(client->get_weak_parent())), m_weak_parent(client->get_weak_parent()), m_weak_client(client)
 	{ }
 
 private:
 	boost::weak_ptr<const void> get_category() const FINAL {
-		return m_weak_client;
+		return m_weak_parent;
 	}
 	void perform() FINAL {
 		PROFILE_ME;
