@@ -92,6 +92,72 @@ namespace {
 	}
 }
 
+ConfigFile::ConfigFile()
+	: m_contents()
+{ }
+ConfigFile::ConfigFile(const std::string &path)
+	: m_contents()
+{
+	load(path);
+}
+
+bool ConfigFile::empty() const {
+	return m_contents.empty();
+}
+std::size_t ConfigFile::size() const {
+	return m_contents.size();
+}
+void ConfigFile::clear(){
+	m_contents.clear();
+}
+
+bool ConfigFile::get_raw(std::string &val, const char *key) const {
+	PROFILE_ME;
+
+	const AUTO(it, m_contents.find(key));
+	if(it == m_contents.end()){
+		return false;
+	}
+	val = it->second;
+	return true;
+}
+const std::string &ConfigFile::get_raw(const char *key) const {
+	PROFILE_ME;
+
+	const AUTO(it, m_contents.find(key));
+	if(it == m_contents.end()){
+		return empty_string();
+	}
+	return it->second;
+}
+
+std::size_t ConfigFile::get_all_raw(boost::container::vector<std::string> &vals, const char *key, bool including_empty) const {
+	PROFILE_ME;
+
+	const AUTO(range, m_contents.range(key));
+	vals.reserve(vals.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
+	std::size_t total = 0;
+	for(AUTO(it, range.first); it != range.second; ++it){
+		if(it->second.empty()){
+			if(!including_empty){
+				continue;
+			}
+			vals.emplace_back();
+		} else {
+			vals.emplace_back(it->second);
+		}
+		++total;
+	}
+	return total;
+}
+boost::container::vector<std::string> ConfigFile::get_all_raw(const char *key, bool including_empty) const {
+	PROFILE_ME;
+
+	boost::container::vector<std::string> vals;
+	get_all_raw(vals, key, including_empty);
+	return vals;
+}
+
 void ConfigFile::load(const std::string &path){
 	PROFILE_ME;
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading config file: ", path);

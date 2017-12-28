@@ -43,7 +43,7 @@ void MainConfig::reload(){
 	g_config.swap(config);
 }
 
-boost::shared_ptr<const ConfigFile> MainConfig::get_config(){
+boost::shared_ptr<const ConfigFile> MainConfig::get_file(){
 	const Mutex::UniqueLock lock(g_mutex);
 	DEBUG_THROW_UNLESS(g_config, Exception, sslit("Main config file has not been loaded"));
 	return g_config;
