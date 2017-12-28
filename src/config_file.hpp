@@ -49,8 +49,8 @@ public:
 		return val;
 	}
 
-	template<typename T, typename DefaultT>
-	bool get(T &val, const char *key, const DefaultT &def_val) const {
+	template<typename T, typename DefValT>
+	bool get(T &val, const char *key, const DefValT &def_val) const {
 		const AUTO_REF(str, m_contents.get(key));
 		if(str.empty()){
 			val = static_cast<T>(def_val);
@@ -59,10 +59,10 @@ public:
 		val = boost::lexical_cast<T>(str);
 		return true;
 	}
-	template<typename T, typename DefaultT>
-	T get(const char *key, const DefaultT &def_val) const {
+	template<typename T, typename DefValT>
+	T get(const char *key, const DefValT &def_val) const {
 		T val = VAL_INIT;
-		get<T, DefaultT>(val, key, def_val);
+		get<T, DefValT>(val, key, def_val);
 		return val;
 	}
 
