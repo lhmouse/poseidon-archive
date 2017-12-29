@@ -13,6 +13,7 @@ class Session : public LowLevelSession {
 private:
 	class SyncJobBase;
 	class ReadHupJob;
+	class PingJob;
 	class DataMessageJob;
 	class ControlMessageJob;
 
@@ -39,6 +40,7 @@ protected:
 
 	// TcpSessionBase
 	void on_read_hup() OVERRIDE;
+	void on_shutdown_timer(boost::uint64_t now) OVERRIDE;
 
 	// LowLevelSession
 	void on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) OVERRIDE;

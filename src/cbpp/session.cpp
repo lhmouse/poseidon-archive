@@ -69,6 +69,23 @@ protected:
 	}
 };
 
+class Session::PingJob : public Session::SyncJobBase {
+public:
+	explicit PingJob(const boost::shared_ptr<Session> &session)
+		: SyncJobBase(session)
+	{ }
+
+protected:
+	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
+		PROFILE_ME;
+
+		const boost::uint64_t local_now = Poseidon::get_local_time();
+		char str[256];
+		std::size_t len = format_time(str, sizeof(str), local_now, true);
+		session->send_status(ST_PING, StreamBuffer(str, len));
+	}
+};
+
 class Session::DataMessageJob : public Session::SyncJobBase {
 private:
 	boost::uint16_t m_message_id;
@@ -130,6 +147,15 @@ void Session::on_read_hup(){
 		VAL_INIT);
 
 	LowLevelSession::on_read_hup();
+}
+void Session::on_shutdown_timer(boost::uint64_t now){
+	PROFILE_ME;
+
+	JobDispatcher::enqueue(
+		boost::make_shared<PingJob>(virtual_shared_from_this<Session>()),
+		VAL_INIT);
+
+	LowLevelSession::on_shutdown_timer(now);
 }
 
 void Session::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){

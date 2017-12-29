@@ -11,6 +11,7 @@
 #include "../log.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
+#include "../time.hpp"
 #include "../atomic.hpp"
 
 namespace Poseidon {
@@ -68,6 +69,23 @@ protected:
 		PROFILE_ME;
 
 		session->shutdown_write();
+	}
+};
+
+class Session::PingJob : public Session::SyncJobBase {
+public:
+	explicit PingJob(const boost::shared_ptr<Session> &session)
+		: SyncJobBase(session)
+	{ }
+
+protected:
+	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
+		PROFILE_ME;
+
+		const boost::uint64_t local_now = Poseidon::get_local_time();
+		char str[256];
+		std::size_t len = format_time(str, sizeof(str), local_now, true);
+		session->send(OP_PING, StreamBuffer(str, len));
 	}
 };
 
@@ -132,6 +150,15 @@ void Session::on_read_hup(){
 		VAL_INIT);
 
 	LowLevelSession::on_read_hup();
+}
+void Session::on_shutdown_timer(boost::uint64_t now){
+	PROFILE_ME;
+
+	JobDispatcher::enqueue(
+		boost::make_shared<PingJob>(virtual_shared_from_this<Session>()),
+		VAL_INIT);
+
+	LowLevelSession::on_shutdown_timer(now);
 }
 
 void Session::on_low_level_message_header(OpCode opcode){
