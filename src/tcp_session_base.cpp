@@ -53,7 +53,8 @@ void TcpSessionBase::create_shutdown_timer(){
 	if(m_shutdown_timer){
 		return;
 	}
-	m_shutdown_timer = TimerDaemon::register_low_level_timer(1000, 15000, boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
+	const AUTO(period, MainConfig::get<boost::uint64_t>("tcp_shutdown_timer_period", 15000));
+	m_shutdown_timer = TimerDaemon::register_low_level_timer(period, period, boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
 }
 
 int TcpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){
