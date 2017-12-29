@@ -79,7 +79,7 @@ protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 		PROFILE_ME;
 
-		const boost::uint64_t local_now = Poseidon::get_local_time();
+		const boost::uint64_t local_now = get_local_time();
 		char str[256];
 		std::size_t len = format_time(str, sizeof(str), local_now, true);
 		session->send_status(ST_PING, StreamBuffer(str, len));
