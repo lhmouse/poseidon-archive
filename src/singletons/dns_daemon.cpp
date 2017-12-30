@@ -11,13 +11,13 @@
 #include "../thread.hpp"
 #include "../mutex.hpp"
 #include "../condition_variable.hpp"
-#include "../promise.hpp"
-#include "../sock_addr.hpp"
 #include "../ip_port.hpp"
 #include "../raii.hpp"
 #include "../profiler.hpp"
 
 namespace Poseidon {
+
+template class PromiseContainer<SockAddr>;
 
 namespace {
 	struct AddrinfoFreeer {

@@ -6,11 +6,12 @@
 
 #include <boost/shared_ptr.hpp>
 #include <string>
+#include "../sock_addr.hpp"
+#include "../promise.hpp"
 
 namespace Poseidon {
 
-class SockAddr;
-template<typename> class PromiseContainer;
+extern template class PromiseContainer<SockAddr>;
 
 class DnsDaemon {
 private:

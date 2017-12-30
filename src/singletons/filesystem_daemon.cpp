@@ -19,11 +19,11 @@
 
 namespace Poseidon {
 
-namespace {
-	typedef FileSystemDaemon::BlockRead BlockRead;
+template class PromiseContainer<FileBlockRead>;
 
-	BlockRead real_load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
-		BlockRead block = { };
+namespace {
+	FileBlockRead real_load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
+		FileBlockRead block = { };
 
 		int flags = O_RDONLY;
 		UniqueFile file;
@@ -186,15 +186,15 @@ namespace {
 
 	class LoadOperation : public OperationBase {
 	private:
-		boost::shared_ptr<BlockRead> m_block;
+		boost::shared_ptr<PromiseContainer<FileBlockRead> > m_promised_block;
 		boost::uint64_t m_begin;
 		boost::uint64_t m_limit;
 		bool m_throws_if_does_not_exist;
 
 	public:
-		LoadOperation(const boost::shared_ptr<Promise> &promise, std::string path, boost::shared_ptr<BlockRead> block, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
-			: OperationBase(promise, STD_MOVE(path))
-			, m_block(STD_MOVE(block)), m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
+		LoadOperation(boost::shared_ptr<PromiseContainer<FileBlockRead> > promised_block, std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
+			: OperationBase(promised_block, STD_MOVE(path))
+			, m_promised_block(STD_MOVE(promised_block)), m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{ }
 
 	public:
@@ -205,7 +205,8 @@ namespace {
 				LOG_POSEIDON_DEBUG("Discarding isolated loading operation: path = ", get_path());
 				return;
 			}
-			*m_block = real_load(get_path(), m_begin, m_limit, m_throws_if_does_not_exist);
+			AUTO(block, real_load(get_path(), m_begin, m_limit, m_throws_if_does_not_exist));
+			m_promised_block->set_success(STD_MOVE(block));
 		}
 	};
 
@@ -399,7 +400,7 @@ void FileSystemDaemon::stop(){
 	g_operations.clear();
 }
 
-BlockRead FileSystemDaemon::load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
+FileBlockRead FileSystemDaemon::load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
 	return real_load(path, begin, limit, throws_if_does_not_exist);
@@ -430,11 +431,11 @@ void FileSystemDaemon::rmdir(const std::string &path, bool throws_if_does_not_ex
 	real_rmdir(path, throws_if_does_not_exist);
 }
 
-boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_loading(boost::shared_ptr<BlockRead> block, std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
+boost::shared_ptr<const PromiseContainer<FileBlockRead> > FileSystemDaemon::enqueue_for_loading(std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<Promise>());
-	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(path), STD_MOVE(block), begin, limit, throws_if_does_not_exist));
+	AUTO(promise, boost::make_shared<PromiseContainer<FileBlockRead> >());
+	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(path), begin, limit, throws_if_does_not_exist));
 	submit_operation(STD_MOVE(operation));
 	return promise;
 }
