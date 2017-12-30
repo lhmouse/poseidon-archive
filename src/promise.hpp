@@ -43,6 +43,7 @@ public:
 	PromiseContainer()
 		: m_result(), m_result_accepted(false)
 	{ }
+	~PromiseContainer() OVERRIDE;
 
 public:
 	ResultT *try_get() const NOEXCEPT {
@@ -69,6 +70,9 @@ public:
 		m_result_accepted = true;
 	}
 };
+
+template<typename ResultT>
+PromiseContainer<ResultT>::~PromiseContainer(){ }
 
 extern void yield(const boost::shared_ptr<const Promise> &promise, bool insignificant = true);
 
