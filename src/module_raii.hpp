@@ -6,6 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
+#include "profiler.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/container/deque.hpp>
 
@@ -78,11 +79,15 @@ public:
 				Stub_()	\
 					: ::Poseidon::ModuleRaiiBase(priority_)	\
 				{ }	\
-				void init(::Poseidon::HandleStack &) const FINAL;	\
+				void init(::Poseidon::HandleStack & handles_) const FINAL {	\
+					PROFILE_ME;	\
+					unwrapped_init(handles_);	\
+				}	\
+				void unwrapped_init(::Poseidon::HandleStack &) const;	\
 			} const stub_;	\
 		}	\
 	}	\
-	void TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_)::Stub_::init(::Poseidon::HandleStack & handles_) const
+	void TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_)::Stub_::unwrapped_init(::Poseidon::HandleStack & handles_) const
 
 #define MODULE_RAII(handles_)   MODULE_RAII_PRIORITY(handles_, INIT_PRIORITY_NORMAL)
 
