@@ -63,16 +63,16 @@ SockAddr::SockAddr(const void *addr_data, std::size_t addr_size){
 	m_size = addr_size;
 }
 SockAddr::SockAddr(const IpPort &ip_port){
-	if(::inet_pton(AF_INET, ip_port.ip(), &(as_sa(m_data).sa_data)) == 1){
+	if(::inet_pton(AF_INET, ip_port.ip(), &(as_sin(m_data).sin_addr)) == 1){
 		::sockaddr_in &sin = as_sin(m_data);
 		BOOST_STATIC_ASSERT(sizeof(m_data) >= sizeof(sin));
 		sin.sin_family = AF_INET;
 		store_be(sin.sin_port, ip_port.port());
 		m_size = sizeof(sin);
-	} else if(::inet_pton(AF_INET6, ip_port.ip(), &(as_sa(m_data).sa_data)) == 1){
+	} else if(::inet_pton(AF_INET6, ip_port.ip(), &(as_sin6(m_data).sin6_addr)) == 1){
 		::sockaddr_in6 &sin6 = as_sin6(m_data);
 		BOOST_STATIC_ASSERT(sizeof(m_data) >= sizeof(sin6));
-		sin6.sin6_family = AF_INET;
+		sin6.sin6_family = AF_INET6;
 		store_be(sin6.sin6_port, ip_port.port());
 		m_size = sizeof(sin6);
 	} else {
