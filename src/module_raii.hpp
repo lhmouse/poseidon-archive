@@ -79,15 +79,15 @@ public:
 				Stub_()	\
 					: ::Poseidon::ModuleRaiiBase(priority_)	\
 				{ }	\
-				void init(::Poseidon::HandleStack & handles_) const FINAL {	\
+				void init(::Poseidon::HandleStack & handle_stack_) const FINAL {	\
 					PROFILE_ME;	\
-					unwrapped_init(handles_);	\
+					unwrapped_init_(handle_stack_);	\
 				}	\
-				void unwrapped_init(::Poseidon::HandleStack &) const;	\
+				void unwrapped_init_(::Poseidon::HandleStack &) const;	\
 			} const stub_;	\
 		}	\
 	}	\
-	void TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_)::Stub_::unwrapped_init(::Poseidon::HandleStack & handles_) const
+	void TOKEN_CAT3(ModuleRaii_, __LINE__, Stub_)::Stub_::unwrapped_init_(::Poseidon::HandleStack & handles_) const
 
 #define MODULE_RAII(handles_)   MODULE_RAII_PRIORITY(handles_, INIT_PRIORITY_NORMAL)
 
