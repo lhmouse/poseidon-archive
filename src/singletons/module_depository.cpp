@@ -27,7 +27,7 @@ namespace {
 	MULTI_INDEX_MAP(ModuleRaiiMap, ModuleRaiiMapElement,
 		UNIQUE_MEMBER_INDEX(raii)
 		MULTI_MEMBER_INDEX(base_address_priority)
-	)
+	);
 	ModuleRaiiMap g_module_raii_map;
 
 	struct DynamicLibraryCloser {
@@ -92,7 +92,7 @@ namespace {
 	MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,
 		UNIQUE_MEMBER_INDEX(dl_handle)
 		UNIQUE_MEMBER_INDEX(base_address)
-	)
+	);
 	ModuleMap g_module_map;
 }
 

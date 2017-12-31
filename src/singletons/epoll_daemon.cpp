@@ -72,7 +72,7 @@ namespace {
 		MULTI_MEMBER_INDEX(read_time)
 		MULTI_MEMBER_INDEX(write_time)
 		MULTI_MEMBER_INDEX(err_code)
-	)
+	);
 
 	RecursiveMutex g_mutex;
 	UniqueFile g_epoll;
