@@ -106,6 +106,12 @@ bool SocketBase::shutdown_write() NOEXCEPT {
 	const DelayedShutdownGuard guard(virtual_shared_from_this<SocketBase>());
 	return true;
 }
+void SocketBase::mark_shutdown() NOEXCEPT {
+	PROFILE_ME;
+
+	atomic_store(m_shutdown_read, true, ATOMIC_RELEASE);
+	atomic_store(m_shutdown_write, true, ATOMIC_RELEASE);
+}
 void SocketBase::force_shutdown() NOEXCEPT {
 	PROFILE_ME;
 

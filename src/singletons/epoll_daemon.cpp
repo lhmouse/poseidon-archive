@@ -20,6 +20,7 @@
 #include "../checked_arithmetic.hpp"
 #include "../system_exception.hpp"
 #include "../errno.hpp"
+#include "../flags.hpp"
 
 namespace Poseidon {
 
@@ -86,7 +87,7 @@ namespace {
 		if(result < 0){
 			const int err_code = errno;
 			if(err_code != EINTR){
-				LOG_POSEIDON_ERROR("::epoll_wait() failed! errno was ", err_code);
+				LOG_POSEIDON_ERROR("::epoll_wait() failed! errno was ", err_code, " (", get_error_desc(err_code), ")");
 			}
 			return false;
 		}
@@ -107,27 +108,23 @@ namespace {
 				g_socket_map.erase<0>(it);
 				continue;
 			}
-			if((events[i].events & EPOLLIN) && !socket->has_been_shutdown_read()){
-				if(!(events[i].events & EPOLLERR)){
-					it->readable = true;
-				}
+			if(has_any_flags_of(events[i].events, EPOLLIN) && !socket->has_been_shutdown_read()){
+				it->readable += has_none_flags_of(events[i].events, EPOLLERR);
 				g_socket_map.set_key<0, 1>(it, now);
 			}
-			if((events[i].events & EPOLLOUT) && !socket->has_been_shutdown_write()){
-				if(!(events[i].events & EPOLLERR)){
-					it->writeable = true;
-				}
+			if(has_any_flags_of(events[i].events, EPOLLOUT) && !socket->has_been_shutdown_write()){
+				it->writeable += has_none_flags_of(events[i].events, EPOLLERR);
 				g_socket_map.set_key<0, 2>(it, now);
 			}
-			if(events[i].events & (EPOLLHUP | EPOLLERR)){
+			if(has_any_flags_of(events[i].events, EPOLLHUP | EPOLLERR)){
 				int err_code;
 				if(socket->did_time_out()){
 					err_code = ETIMEDOUT;
-				} else if(events[i].events & EPOLLERR){
+				} else if(has_any_flags_of(events[i].events, EPOLLERR)){
 					::socklen_t err_len = sizeof(err_code);
 					if(::getsockopt(socket->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
 						err_code = errno;
-						LOG_POSEIDON_WARNING("::getsockopt() failed, errno was ", err_code, ": fd = ", socket->get_fd());
+						LOG_POSEIDON_WARNING("::getsockopt() failed: fd = ", socket->get_fd(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
 					}
 				} else {
 					err_code = 0;
@@ -175,17 +172,17 @@ namespace {
 		try {
 			err_code = socket->poll_read_and_process(io_buffer.data(), io_buffer.size(), readable);
 			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-				LOG_POSEIDON_DEBUG("Socket read error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+				LOG_POSEIDON_DEBUG("Socket read error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
 				socket->force_shutdown();
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
+			err_code = ECONNRESET;
 			socket->force_shutdown();
-			err_code = EPIPE;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			err_code = ECONNRESET;
 			socket->force_shutdown();
-			err_code = EPIPE;
 		}
 		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
 			const RecursiveMutex::UniqueLock lock(g_mutex);
@@ -225,17 +222,17 @@ namespace {
 		try {
 			err_code = socket->poll_write(write_lock, io_buffer.data(), io_buffer.size(), writeable);
 			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-				LOG_POSEIDON_DEBUG("Socket write error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+				LOG_POSEIDON_DEBUG("Socket write error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
 				socket->force_shutdown();
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
+			err_code = ECONNRESET;
 			socket->force_shutdown();
-			err_code = EPIPE;
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			err_code = ECONNRESET;
 			socket->force_shutdown();
-			err_code = EPIPE;
 		}
 		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
 			const RecursiveMutex::UniqueLock lock(g_mutex);
@@ -267,7 +264,7 @@ namespace {
 			err_code = it->err_code;
 		}
 
-		socket->force_shutdown();
+		socket->mark_shutdown();
 		try {
 			socket->on_close(err_code);
 		} catch(std::exception &e){
@@ -276,7 +273,7 @@ namespace {
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 		}
 		{
-			LOG_POSEIDON_DEBUG("Socket closed: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+			LOG_POSEIDON_DEBUG("Socket closed: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
@@ -324,7 +321,7 @@ void EpollDaemon::start(){
 
 	if(!g_epoll.reset(::epoll_create(100))){
 		const int err_code = errno;
-		LOG_POSEIDON_FATAL("Failed to create epoll! errno was ", err_code);
+		LOG_POSEIDON_FATAL("Failed to create epoll: err_code = ", err_code, " (", get_error_desc(err_code), ")");
 		std::abort();
 	}
 	Thread(&thread_proc, "   N").swap(g_thread);
