@@ -5,7 +5,7 @@ set -e
 prefix="/usr/local"
 
 pkgname="libmongoc-dev"
-pkgversion="1.8.1"
+pkgversion="1.8.2"
 pkglicense="Apache"
 pkggroup="http://mongoc.org/"
 pkgsource="https://github.com/mongodb/mongo-c-driver/releases/download/${pkgversion}/mongo-c-driver-${pkgversion}.tar.gz"
@@ -24,7 +24,7 @@ _unpackeddir="$(basename "${_archive}" ".tar.gz")"
 [[ -z "${_unpackeddir}" ]] || rm -rf "${_unpackeddir}"
 tar -xzvf "${_archive}"
 cd "${_unpackeddir}"
-CFLAGS="-O3" ./configure --prefix="${prefix}"	\
+CFLAGS="-O2" ./configure --prefix="${prefix}"	\
 	--disable-automatic-init-and-cleanup --with-libbson=bundled
 make -j4
 

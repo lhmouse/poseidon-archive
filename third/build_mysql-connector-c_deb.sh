@@ -24,7 +24,7 @@ _unpackeddir="$(basename "${_archive}" ".tar.gz")"
 [[ -z "${_unpackeddir}" ]] || rm -rf "${_unpackeddir}"
 tar -xzvf "${_archive}"
 cd "${_unpackeddir}"
-CFLAGS="-O3" cmake . -DCMAKE_INSTALL_PREFIX=/usr/local	\
+CFLAGS="-O2" cmake . -DCMAKE_INSTALL_PREFIX=/usr/local	\
 	-DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DMYSQL_UNIX_ADDR="/var/run/mysqld/mysqld.sock"
 make -j4
 
