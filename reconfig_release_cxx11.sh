@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CPPFLAGS+=' -DNDEBUG -std=c++11'
-export CXXFLAGS+=' -O3 -g'
+export CXXFLAGS+=' -O2 -g'
 
 mkdir -p m4
 autoreconf -if
