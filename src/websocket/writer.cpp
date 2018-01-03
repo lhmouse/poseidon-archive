@@ -19,7 +19,7 @@ long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 	PROFILE_ME;
 
 	StreamBuffer frame;
-	unsigned ch = boost::numeric_cast<unsigned>(opcode | OP_FL_FIN);
+	unsigned ch = boost::numeric_cast<unsigned>(opcode) | OP_FL_FIN;
 	frame.put(static_cast<unsigned char>(ch));
 	const std::size_t size = payload.size();
 	ch = masked ? 0x80 : 0;

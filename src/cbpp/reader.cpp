@@ -8,34 +8,9 @@
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../endian.hpp"
-#include "../vint64.hpp"
 
 namespace Poseidon {
 namespace Cbpp {
-
-namespace {
-	inline boost::int64_t shift_vint(StreamBuffer &buffer){
-		StreamBuffer::ReadIterator rit(buffer);
-		boost::int64_t val;
-		DEBUG_THROW_UNLESS(vint64_from_binary(val, rit, buffer.size()), Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vint"));
-		return val;
-	}
-	inline boost::uint64_t shift_vuint(StreamBuffer &buffer){
-		StreamBuffer::ReadIterator rit(buffer);
-		boost::uint64_t val;
-		DEBUG_THROW_UNLESS(vuint64_from_binary(val, rit, buffer.size()), Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("vuint"));
-		return val;
-	}
-	inline StreamBuffer shift_blob(StreamBuffer &buffer){
-		StreamBuffer::ReadIterator rit(buffer);
-		boost::uint64_t len;
-		DEBUG_THROW_UNLESS(vuint64_from_binary(len, rit, buffer.size()), Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("blob.length"));
-		DEBUG_THROW_UNLESS(len <= buffer.size(), Cbpp::Exception, Cbpp::ST_END_OF_STREAM, sslit("blob.data"));
-		StreamBuffer val;
-		val = buffer.cut_off(len);
-		return val;
-	}
-}
 
 Reader::Reader()
 	: m_size_expecting(2), m_state(S_PAYLOAD_SIZE)
@@ -118,14 +93,14 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case S_CONTROL_PAYLOAD:
 			{
-				AUTO(control_code, shift_vint(m_queue));
-				AUTO(param, shift_blob(m_queue));
-				has_next_request = on_control_message(control_code, STD_MOVE(param));
-				m_payload_offset = m_payload_size;
-
-				m_size_expecting = 2;
-				m_state = S_PAYLOAD_SIZE;
+				boost::uint32_t temp32;
+				DEBUG_THROW_UNLESS(m_queue.get(&temp32, 4) == 4, Exception, ST_END_OF_STREAM, sslit("control.code"));
+				has_next_request = on_control_message(static_cast<boost::int32_t>(temp32), STD_MOVE(m_queue));
 			}
+			m_payload_offset = m_payload_size;
+
+			m_size_expecting = 2;
+			m_state = S_PAYLOAD_SIZE;
 			break;
 		}
 	} while(has_next_request);

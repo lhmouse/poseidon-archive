@@ -6,26 +6,9 @@
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../endian.hpp"
-#include "../vint64.hpp"
 
 namespace Poseidon {
 namespace Cbpp {
-
-namespace {
-	inline void push_vint(StreamBuffer &buffer, boost::int64_t val){
-		StreamBuffer::WriteIterator wit(buffer);
-		vint64_to_binary(val, wit);
-	}
-	inline void push_vuint(StreamBuffer &buffer, boost::uint64_t val){
-		StreamBuffer::WriteIterator wit(buffer);
-		vuint64_to_binary(val, wit);
-	}
-	inline void push_blob(StreamBuffer &buffer, StreamBuffer val){
-		StreamBuffer::WriteIterator wit(buffer);
-		vuint64_to_binary(val.size(), wit);
-		buffer.splice(val);
-	}
-}
 
 Writer::Writer(){ }
 Writer::~Writer(){ }
@@ -54,8 +37,10 @@ long Writer::put_control_message(StatusCode status_code, StreamBuffer param){
 	PROFILE_ME;
 
 	StreamBuffer payload;
-	push_vint(payload, status_code);
-	push_blob(payload, STD_MOVE(param));
+	boost::uint32_t temp32;
+	store_be(temp32, static_cast<boost::uint32_t>(boost::numeric_cast<boost::int32_t>(status_code)));
+	payload.put(&temp32, 4);
+	payload.splice(param);
 	return put_data_message(0, STD_MOVE(payload));
 }
 
