@@ -93,9 +93,10 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case S_CONTROL_PAYLOAD:
 			{
+				Poseidon::StreamBuffer payload = m_queue.cut_off(m_payload_size);
 				boost::uint32_t temp32;
-				DEBUG_THROW_UNLESS(m_queue.get(&temp32, 4) == 4, Exception, ST_END_OF_STREAM, sslit("control.code"));
-				has_next_request = on_control_message(static_cast<boost::int32_t>(temp32), STD_MOVE(m_queue));
+				DEBUG_THROW_UNLESS(payload.get(&temp32, 4) == 4, Exception, ST_END_OF_STREAM, sslit("control.code"));
+				has_next_request = on_control_message(static_cast<boost::int32_t>(load_be(temp32)), STD_MOVE(payload));
 			}
 			m_payload_offset = m_payload_size;
 
