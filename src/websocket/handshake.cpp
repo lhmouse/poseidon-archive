@@ -75,6 +75,8 @@ std::pair<Http::RequestHeaders, std::string> make_handshake_request(std::string 
 	request.headers.set(sslit("Upgrade"), "websocket");
 	request.headers.set(sslit("Connection"), "Keep-Alive");
 	request.headers.set(sslit("Sec-WebSocket-Version"), "13");
+	request.headers.set(sslit("Pragma"), "no-cache");
+	request.headers.set(sslit("Cache-Control"), "no-cache");
 	boost::uint32_t key[4];
 	for(unsigned i = 0; i < 4; ++i){
 		key[i] = random_uint32();
