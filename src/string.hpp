@@ -10,6 +10,7 @@
 #include <string>
 #include <cstddef>
 #include <boost/lexical_cast.hpp>
+#include <boost/container/vector.hpp>
 
 namespace Poseidon {
 

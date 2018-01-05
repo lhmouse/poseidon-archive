@@ -4,6 +4,7 @@
 #ifndef POSEIDON_TINY_EXCEPTION_HPP_
 #define POSEIDON_TINY_EXCEPTION_HPP_
 
+#include "cxx_ver.hpp"
 #include <exception>
 
 namespace Poseidon {
