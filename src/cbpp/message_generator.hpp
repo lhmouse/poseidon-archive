@@ -120,13 +120,13 @@ void MESSAGE_NAME::serialize(::Poseidon::StreamBuffer &buffer_) const {
                                     unsigned char temp_[16];	\
                                     unsigned char *wptr_ = temp_;	\
                                     ::Poseidon::vint64_to_binary(cur_->id_, wptr_);	\
-                                    buf_.put(temp_, static_cast<unsigned>(wptr_ - temp_));	\
+                                    buf_.put(temp_, static_cast< ::std::size_t>(wptr_ - temp_));	\
                                   }
 #define FIELD_VUINT(id_)          {	\
                                     unsigned char temp_[16];	\
                                     unsigned char *wptr_ = temp_;	\
                                     ::Poseidon::vuint64_to_binary(cur_->id_, wptr_);	\
-                                    buf_.put(temp_, static_cast<unsigned>(wptr_ - temp_));	\
+                                    buf_.put(temp_, static_cast< ::std::size_t>(wptr_ - temp_));	\
                                   }
 #define FIELD_FIXED(id_, n_)      {	\
                                     buf_.put(cur_->id_.data(), cur_->id_.size());	\
@@ -135,14 +135,14 @@ void MESSAGE_NAME::serialize(::Poseidon::StreamBuffer &buffer_) const {
                                     unsigned char temp_[16];	\
                                     unsigned char *wptr_ = temp_;	\
                                     ::Poseidon::vuint64_to_binary(cur_->id_.size(), wptr_);	\
-                                    buf_.put(temp_, static_cast<unsigned>(wptr_ - temp_));	\
+                                    buf_.put(temp_, static_cast< ::std::size_t>(wptr_ - temp_));	\
                                     buf_.put(cur_->id_);	\
                                   }
 #define FIELD_BLOB(id_)           {	\
                                     unsigned char temp_[16];	\
                                     unsigned char *wptr_ = temp_;	\
                                     ::Poseidon::vuint64_to_binary(cur_->id_.size(), wptr_);	\
-                                    buf_.put(temp_, static_cast<unsigned>(wptr_ - temp_));	\
+                                    buf_.put(temp_, static_cast< ::std::size_t>(wptr_ - temp_));	\
                                     buf_.put(cur_->id_);	\
                                   }
 #define FIELD_FLEXIBLE(id_)       {	\
@@ -152,7 +152,7 @@ void MESSAGE_NAME::serialize(::Poseidon::StreamBuffer &buffer_) const {
                                     unsigned char temp_[16];	\
                                     unsigned char *wptr_ = temp_;	\
                                     ::Poseidon::vuint64_to_binary(cur_->id_.size(), wptr_);	\
-                                    buf_.put(temp_, static_cast<unsigned>(wptr_ - temp_));	\
+                                    buf_.put(temp_, static_cast< ::std::size_t>(wptr_ - temp_));	\
                                     for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                       const AUTO(cur_, &*it_);	\
                                       __VA_ARGS__	\
@@ -169,7 +169,7 @@ void MESSAGE_NAME::serialize(::Poseidon::StreamBuffer &buffer_) const {
                                       unsigned char temp_[16];	\
                                       unsigned char *wptr_ = temp_;	\
                                       ::Poseidon::vuint64_to_binary(chunk_buf_.size(), wptr_);	\
-                                      buf_.put(temp_, static_cast<unsigned>(wptr_ - temp_));	\
+                                      buf_.put(temp_, static_cast< ::std::size_t>(wptr_ - temp_));	\
                                       buf_.splice(chunk_buf_);	\
                                     }	\
                                     buf_.put(static_cast<unsigned char>(0));	\
@@ -193,20 +193,20 @@ void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
 #define FIELD_VINT(id_)           {	\
                                     unsigned char temp_[16];	\
                                     unsigned char *rptr_ = temp_;	\
-                                    const unsigned nmax_ = buf_.peek(temp_, sizeof(temp_));	\
+                                    const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                     if(!::Poseidon::vint64_from_binary(cur_->id_, rptr_, nmax_)){	\
                                       THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                     }	\
-                                    buf_.discard(static_cast<unsigned>(rptr_ - temp_));	\
+                                    buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                   }
 #define FIELD_VUINT(id_)          {	\
                                     unsigned char temp_[16];	\
                                     unsigned char *rptr_ = temp_;	\
-                                    const unsigned nmax_ = buf_.peek(temp_, sizeof(temp_));	\
+                                    const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                     if(!::Poseidon::vuint64_from_binary(cur_->id_, rptr_, nmax_)){	\
                                       THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                     }	\
-                                    buf_.discard(static_cast<unsigned>(rptr_ - temp_));	\
+                                    buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                   }
 #define FIELD_FIXED(id_, n_)      {	\
                                     ::boost::uint64_t nreq_ = cur_->id_.size();	\
@@ -219,11 +219,11 @@ void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
                                     ::boost::uint64_t nreq_;	\
                                     unsigned char temp_[16];	\
                                     unsigned char *rptr_ = temp_;	\
-                                    const unsigned nmax_ = buf_.peek(temp_, sizeof(temp_));	\
+                                    const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                     if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
                                       THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                     }	\
-                                    buf_.discard(static_cast<unsigned>(rptr_ - temp_));	\
+                                    buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                     if(nreq_ > SIZE_MAX){	\
                                       THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
                                     }	\
@@ -237,11 +237,11 @@ void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
                                     ::boost::uint64_t nreq_;	\
                                     unsigned char temp_[16];	\
                                     unsigned char *rptr_ = temp_;	\
-                                    const unsigned nmax_ = buf_.peek(temp_, sizeof(temp_));	\
+                                    const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                     if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
                                       THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                     }	\
-                                    buf_.discard(static_cast<unsigned>(rptr_ - temp_));	\
+                                    buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                     if(nreq_ > SIZE_MAX){	\
                                       THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
                                     }	\
@@ -260,11 +260,11 @@ void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
                                     ::boost::uint64_t nreq_;	\
                                     unsigned char temp_[16];	\
                                     unsigned char *rptr_ = temp_;	\
-                                    const unsigned nmax_ = buf_.peek(temp_, sizeof(temp_));	\
+                                    const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                     if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
                                       THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                     }	\
-                                    buf_.discard(static_cast<unsigned>(rptr_ - temp_));	\
+                                    buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                     if(nreq_ > SIZE_MAX){	\
                                       THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
                                     }	\
@@ -281,11 +281,11 @@ void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
                                       ::boost::uint64_t nreq_;	\
                                       unsigned char temp_[16];	\
                                       unsigned char *rptr_ = temp_;	\
-                                      const unsigned nmax_ = buf_.peek(temp_, sizeof(temp_));	\
+                                      const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                       if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
                                         THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
-                                      buf_.discard(static_cast<unsigned>(rptr_ - temp_));	\
+                                      buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                       if(nreq_ == 0){	\
                                         break;	\
                                       }	\
