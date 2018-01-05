@@ -40,8 +40,7 @@ namespace {
 				m_strong = socket;
 			} else {
 				m_weak = socket;
-				m_dup_fd.reset(::dup(socket->get_fd()));
-				DEBUG_THROW_ASSERT(m_dup_fd);
+				DEBUG_THROW_ASSERT(m_dup_fd.reset(::dup(socket->get_fd())));
 			}
 		}
 
