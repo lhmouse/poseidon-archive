@@ -137,7 +137,7 @@ try {
 	}
 	buf.put(" #");
 	buf.put(m_file);
-	len = (unsigned)std::sprintf(str, ":%ld", (long)m_line);
+	len = (unsigned)std::sprintf(str, ":%lu", (unsigned long)m_line);
 	// Restore the color and end this line of log.
 	if(output_color){
 		buf.put("\x1B[0m");
