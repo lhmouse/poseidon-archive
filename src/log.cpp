@@ -100,19 +100,33 @@ try {
 	StreamBuffer buf;
 	char str[256];
 	std::size_t len;
-	// Append the timestamp in green.
+	// Append the timestamp in red (when outputting to stderr) or green (when outputting to stdout).
 	if(output_color){
-		buf.put("\x1B[0;32m");
+		if(s_levels.at(level).to_stderr){
+			buf.put("\x1B[0;31m");
+		} else {
+			buf.put("\x1B[0;32m");
+		}
 	}
 	len = format_time(str, sizeof(str), get_local_time(), true);
 	buf.put(str, len);
-	// Append the thread tag in grey.
 	if(output_color){
-		buf.put("\x1B[0;37m");
+		buf.put("\x1B[0m");
 	}
-	buf.put(" [");
+	buf.put(' ');
+	// Append the thread tag in red (when outputting to stderr) or yellow (when outputting to stdout).
+	if(output_color){
+		if(s_levels.at(level).to_stderr){
+			buf.put("\x1B[0;30;41m");
+		} else {
+			buf.put("\x1B[0;30;43m");
+		}
+	}
 	buf.put(t_tag, sizeof(t_tag) - 1);
-	buf.put("] ");
+	if(output_color){
+		buf.put("\x1B[0m");
+	}
+	buf.put(' ');
 	// Append the level name in reversed color.
 	if(output_color){
 		buf.put("\x1B[0;30;4");
@@ -120,6 +134,10 @@ try {
 		buf.put('m');
 	}
 	buf.put(s_levels.at(level).name);
+	if(output_color){
+		buf.put("\x1B[0m");
+	}
+	buf.put(' ');
 	// Append the log data.
 	if(output_color){
 		buf.put("\x1B[0;3");
@@ -129,13 +147,16 @@ try {
 		}
 		buf.put('m');
 	}
-	buf.put(' ');
 	buf.splice(m_stream.get_buffer());
+	if(output_color){
+		buf.put("\x1B[0m");
+	}
+	buf.put(' ');
 	// Append the file name and line number in brightblue.
 	if(output_color){
 		buf.put("\x1B[0;34m");
 	}
-	buf.put(" #");
+	buf.put('#');
 	buf.put(m_file);
 	len = (unsigned)std::sprintf(str, ":%lu", (unsigned long)m_line);
 	// Restore the color and end this line of log.

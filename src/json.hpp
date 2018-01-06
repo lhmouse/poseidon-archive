@@ -221,9 +221,7 @@ public:
 	static const char *get_type_string(Type type);
 
 private:
-	boost::variant<
-		bool, double, std::string, JsonObject, JsonArray, JsonNull
-		> m_data;
+	boost::variant<bool, double, std::string, JsonObject, JsonArray, JsonNull> m_data;
 
 public:
 	JsonElement(JsonNull = JsonNull())
