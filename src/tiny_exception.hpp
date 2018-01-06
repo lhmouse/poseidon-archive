@@ -4,7 +4,6 @@
 #ifndef POSEIDON_TINY_EXCEPTION_HPP_
 #define POSEIDON_TINY_EXCEPTION_HPP_
 
-#include "cxx_ver.hpp"
 #include <exception>
 
 namespace Poseidon {
@@ -14,13 +13,13 @@ private:
 	const char *m_static_msg;
 
 public:
-	explicit TinyException(const char *static_msg)
+	explicit TinyException(const char *static_msg) throw()
 		: m_static_msg(static_msg)
 	{ }
-	~TinyException() NOEXCEPT;
+	~TinyException() throw();
 
 public:
-	const char *what() const NOEXCEPT OVERRIDE {
+	const char *what() const throw() {
 		return m_static_msg;
 	}
 };
