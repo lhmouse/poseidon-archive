@@ -22,22 +22,22 @@ public:
 	static boost::shared_ptr<Connection> create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database);
 
 public:
-	virtual ~Connection() = 0;
+	virtual ~Connection();
 
 public:
-	void execute_bson(const BsonBuilder &bson);
-	void discard_result() NOEXCEPT;
+	virtual void execute_bson(const BsonBuilder &bson) = 0;
+	virtual void discard_result() NOEXCEPT = 0;
 
-	bool fetch_next();
+	virtual bool fetch_next() = 0;
 
-	bool get_boolean(const char *name) const;
-	boost::int64_t get_signed(const char *name) const;
-	boost::uint64_t get_unsigned(const char *name) const;
-	double get_double(const char *name) const;
-	std::string get_string(const char *name) const;
-	boost::uint64_t get_datetime(const char *name) const;
-	Uuid get_uuid(const char *name) const;
-	std::basic_string<unsigned char> get_blob(const char *name) const;
+	virtual bool get_boolean(const char *name) const = 0;
+	virtual boost::int64_t get_signed(const char *name) const = 0;
+	virtual boost::uint64_t get_unsigned(const char *name) const = 0;
+	virtual double get_double(const char *name) const = 0;
+	virtual std::string get_string(const char *name) const = 0;
+	virtual boost::uint64_t get_datetime(const char *name) const = 0;
+	virtual Uuid get_uuid(const char *name) const = 0;
+	virtual std::basic_string<unsigned char> get_blob(const char *name) const = 0;
 };
 
 }

@@ -92,8 +92,8 @@ namespace {
 		}
 
 	public:
-		void do_execute_sql(const char *sql, std::size_t len){
-			do_discard_result();
+		void execute_sql_explicit(const char *sql, std::size_t len) FINAL {
+			discard_result();
 
 			DEBUG_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
 
@@ -111,18 +111,18 @@ namespace {
 				}
 			}
 		}
-		void do_discard_result() NOEXCEPT {
+		void discard_result() NOEXCEPT FINAL {
 			m_result.reset();
 			m_fields.clear();
 			m_row = NULLPTR;
 			m_lengths = NULLPTR;
 		}
 
-		boost::uint64_t do_get_insert_id() const {
+		boost::uint64_t get_insert_id() const FINAL {
 			return ::mysql_insert_id(m_mysql.get());
 		}
 
-		bool do_fetch_row(){
+		bool fetch_row() FINAL {
 			if(m_fields.empty()){
 				LOG_POSEIDON_DEBUG("Empty set returned from MySQL server.");
 				return false;
@@ -139,7 +139,7 @@ namespace {
 			return true;
 		}
 
-		boost::int64_t do_get_signed(const char *name) const {
+		boost::int64_t get_signed(const char *name) const FINAL {
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -150,7 +150,7 @@ namespace {
 			DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to long long"));
 			return val;
 		}
-		boost::uint64_t do_get_unsigned(const char *name) const {
+		boost::uint64_t get_unsigned(const char *name) const FINAL {
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -161,7 +161,7 @@ namespace {
 			DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to unsigned long long"));
 			return val;
 		}
-		double do_get_double(const char *name) const {
+		double get_double(const char *name) const FINAL {
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -172,7 +172,7 @@ namespace {
 			DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to double"));
 			return val;
 		}
-		std::string do_get_string(const char *name) const {
+		std::string get_string(const char *name) const FINAL {
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -180,7 +180,7 @@ namespace {
 			}
 			return std::string(data, size);
 		}
-		boost::uint64_t do_get_datetime(const char *name) const {
+		boost::uint64_t get_datetime(const char *name) const FINAL {
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -188,7 +188,7 @@ namespace {
 			}
 			return scan_time(data);
 		}
-		Uuid do_get_uuid(const char *name) const {
+		Uuid get_uuid(const char *name) const FINAL {
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -197,7 +197,7 @@ namespace {
 			DEBUG_THROW_UNLESS(size == 36, BasicException, sslit("Invalid UUID string"));
 			return Uuid(reinterpret_cast<const char (&)[36]>(data[0]));
 		}
-		std::basic_string<unsigned char> do_get_blob(const char *name) const {
+		std::basic_string<unsigned char> get_blob(const char *name) const FINAL {
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -213,42 +213,6 @@ boost::shared_ptr<Connection> Connection::create(const char *server_addr, boost:
 }
 
 Connection::~Connection(){ }
-
-void Connection::execute_sql(const char *sql, std::size_t len){
-	static_cast<DelegatedConnection &>(*this).do_execute_sql(sql, len);
-}
-void Connection::discard_result() NOEXCEPT {
-	static_cast<DelegatedConnection &>(*this).do_discard_result();
-}
-
-boost::uint64_t Connection::get_insert_id() const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_insert_id();
-}
-bool Connection::fetch_row(){
-	return static_cast<DelegatedConnection &>(*this).do_fetch_row();
-}
-
-boost::int64_t Connection::get_signed(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_signed(name);
-}
-boost::uint64_t Connection::get_unsigned(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_unsigned(name);
-}
-double Connection::get_double(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_double(name);
-}
-std::string Connection::get_string(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_string(name);
-}
-boost::uint64_t Connection::get_datetime(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_datetime(name);
-}
-Uuid Connection::get_uuid(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_uuid(name);
-}
-std::basic_string<unsigned char> Connection::get_blob(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_blob(name);
-}
 
 }
 }

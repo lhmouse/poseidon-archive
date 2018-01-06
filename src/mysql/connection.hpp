@@ -20,28 +20,32 @@ public:
 	static boost::shared_ptr<Connection> create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset);
 
 public:
-	virtual ~Connection() = 0;
+	virtual ~Connection();
 
 public:
-	void execute_sql(const char *sql, std::size_t len);
+	virtual void execute_sql_explicit(const char *sql, std::size_t len) = 0;
+	virtual void discard_result() NOEXCEPT = 0;
+
+	virtual boost::uint64_t get_insert_id() const = 0;
+	virtual bool fetch_row() = 0;
+
+	virtual boost::int64_t get_signed(const char *name) const = 0;
+	virtual boost::uint64_t get_unsigned(const char *name) const = 0;
+	virtual double get_double(const char *name) const = 0;
+	virtual std::string get_string(const char *name) const = 0;
+	virtual boost::uint64_t get_datetime(const char *name) const = 0;
+	virtual Uuid get_uuid(const char *name) const = 0;
+	virtual std::basic_string<unsigned char> get_blob(const char *name) const = 0;
+
+	void execute_sql(const char *sql, std::size_t len){
+		execute_sql_explicit(sql, len);
+	}
 	void execute_sql(const char *sql){
-		execute_sql(sql, std::strlen(sql));
+		execute_sql_explicit(sql, std::strlen(sql));
 	}
 	void execute_sql(const std::string &sql){
-		execute_sql(sql.data(), sql.size());
+		execute_sql_explicit(sql.data(), sql.size());
 	}
-	void discard_result() NOEXCEPT;
-
-	boost::uint64_t get_insert_id() const;
-	bool fetch_row();
-
-	boost::int64_t get_signed(const char *name) const;
-	boost::uint64_t get_unsigned(const char *name) const;
-	double get_double(const char *name) const;
-	std::string get_string(const char *name) const;
-	boost::uint64_t get_datetime(const char *name) const;
-	Uuid get_uuid(const char *name) const;
-	std::basic_string<unsigned char> get_blob(const char *name) const;
 };
 
 }

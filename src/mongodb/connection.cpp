@@ -116,7 +116,7 @@ namespace {
 		}
 
 	public:
-		void do_execute_bson(const BsonBuilder &bson){
+		void execute_bson(const BsonBuilder &bson) FINAL {
 			const AUTO(query_data, bson.build(false));
 			::bson_t query_storage;
 			bool success = ::bson_init_static(&query_storage, reinterpret_cast<const boost::uint8_t *>(query_data.data()), query_data.size());
@@ -124,7 +124,7 @@ namespace {
 			const UniqueHandle<BsonCloser> query_guard(&query_storage);
 			const AUTO(query_bt, query_guard.get());
 
-			do_discard_result();
+			discard_result();
 
 			::bson_t reply_storage;
 			::bson_error_t err;
@@ -167,14 +167,14 @@ namespace {
 				}
 			}
 		}
-		void do_discard_result() NOEXCEPT {
+		void discard_result() NOEXCEPT FINAL {
 			m_cursor_id = 0;
 			m_cursor_ns.clear();
 			m_batch_guard.reset();
 			m_element_guard.reset();
 		}
 
-		bool do_fetch_next(){
+		bool fetch_next() FINAL {
 			while(m_batch_guard && !::bson_iter_next(&m_batch_it)){
 				m_batch_guard.reset();
 
@@ -192,7 +192,7 @@ namespace {
 					success = ::bson_append_utf8(query_bt, "collection", -1, m_cursor_ns.c_str() + db_len + 1, -1);
 					DEBUG_THROW_ASSERT(success);
 
-					do_discard_result();
+					discard_result();
 
 					::bson_t reply_storage;
 					::bson_error_t err;
@@ -249,7 +249,7 @@ namespace {
 			return true;
 		}
 
-		bool do_get_boolean(const char *name) const {
+		bool get_boolean(const char *name) const FINAL {
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BOOL)){
 				return VAL_INIT;
@@ -257,7 +257,7 @@ namespace {
 			const bool value = ::bson_iter_bool(&it);
 			return value;
 		}
-		boost::int64_t do_get_signed(const char *name) const {
+		boost::int64_t get_signed(const char *name) const FINAL {
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
 				return VAL_INIT;
@@ -265,7 +265,7 @@ namespace {
 			const boost::int64_t value = ::bson_iter_int64(&it);
 			return value;
 		}
-		boost::uint64_t do_get_unsigned(const char *name) const {
+		boost::uint64_t get_unsigned(const char *name) const FINAL {
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
 				return VAL_INIT;
@@ -273,7 +273,7 @@ namespace {
 			const boost::int64_t shifted = ::bson_iter_int64(&it);
 			return static_cast<boost::uint64_t>(shifted) + (1ull << 63);
 		}
-		double do_get_double(const char *name) const {
+		double get_double(const char *name) const FINAL {
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_DOUBLE)){
 				return VAL_INIT;
@@ -281,7 +281,7 @@ namespace {
 			const double value = ::bson_iter_double(&it);
 			return value;
 		}
-		std::string do_get_string(const char *name) const {
+		std::string get_string(const char *name) const FINAL {
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
 				return VAL_INIT;
@@ -290,7 +290,7 @@ namespace {
 			const char *const str = ::bson_iter_utf8(&it, &len);
 			return std::string(str, len);
 		}
-		boost::uint64_t do_get_datetime(const char *name) const {
+		boost::uint64_t get_datetime(const char *name) const FINAL {
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
 				return VAL_INIT;
@@ -298,7 +298,7 @@ namespace {
 			const char *const str = ::bson_iter_utf8(&it, NULLPTR);
 			return scan_time(str);
 		}
-		Uuid do_get_uuid(const char *name) const {
+		Uuid get_uuid(const char *name) const FINAL {
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
 				return VAL_INIT;
@@ -308,7 +308,7 @@ namespace {
 			DEBUG_THROW_UNLESS(len == 36, BasicException, sslit("Unexpected UUID string length"));
 			return Uuid(reinterpret_cast<const char (&)[36]>(*str));
 		}
-		std::basic_string<unsigned char> do_get_blob(const char *name) const {
+		std::basic_string<unsigned char> get_blob(const char *name) const FINAL {
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BINARY)){
 				return VAL_INIT;
@@ -326,42 +326,6 @@ boost::shared_ptr<Connection> Connection::create(const char *server_addr, boost:
 }
 
 Connection::~Connection(){ }
-
-void Connection::execute_bson(const BsonBuilder &bson){
-	static_cast<DelegatedConnection &>(*this).do_execute_bson(bson);
-}
-void Connection::discard_result() NOEXCEPT {
-	static_cast<DelegatedConnection &>(*this).do_discard_result();
-}
-
-bool Connection::fetch_next(){
-	return static_cast<DelegatedConnection &>(*this).do_fetch_next();
-}
-
-bool Connection::get_boolean(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_boolean(name);
-}
-boost::int64_t Connection::get_signed(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_signed(name);
-}
-boost::uint64_t Connection::get_unsigned(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_unsigned(name);
-}
-double Connection::get_double(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_double(name);
-}
-std::string Connection::get_string(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_string(name);
-}
-boost::uint64_t Connection::get_datetime(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_datetime(name);
-}
-Uuid Connection::get_uuid(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_uuid(name);
-}
-std::basic_string<unsigned char> Connection::get_blob(const char *name) const {
-	return static_cast<const DelegatedConnection &>(*this).do_get_blob(name);
-}
 
 }
 }
