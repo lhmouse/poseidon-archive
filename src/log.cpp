@@ -11,32 +11,7 @@
 namespace Poseidon {
 
 namespace {
-	struct LevelElement {
-		char text[16];
-		char color;
-		bool highlighted;
-	};
-
-	const LevelElement LEVEL_ELEMENTS[] = {
-		{ "FATAL", '5', 1 },    // 粉色
-		{ "ERROR", '1', 1 },    // 红色
-		{ "WARN ", '3', 1 },    // 黄色
-		{ "INFO ", '2', 0 },    // 绿色
-		{ "DEBUG", '6', 0 },    // 青色
-		{ "TRACE", '4', 1 },    // 亮蓝
-	};
-
-	class Invalid_log_masked_levels : public std::exception {
-	public:
-		const char *what() const NOEXCEPT {
-			return "Invalid log_masked_levels config string";
-		}
-	};
-
 	volatile boost::uint64_t g_mask = (boost::uint64_t)-1;
-	// 不要使用 Mutex 对象。如果在其他静态对象的构造函数中输出日志，这个对象可能还没构造。
-	::pthread_mutex_t g_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-
 	__thread char t_tag[5] = "----";
 }
 
@@ -44,7 +19,8 @@ boost::uint64_t Logger::get_mask() NOEXCEPT {
 	return atomic_load(g_mask, ATOMIC_RELAXED);
 }
 boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT {
-	boost::uint64_t old_mask = atomic_load(g_mask, ATOMIC_RELAXED), new_mask;
+	boost::uint64_t old_mask, new_mask;
+	old_mask = atomic_load(g_mask, ATOMIC_RELAXED);
 	do {
 		new_mask = old_mask;
 		remove_flags(new_mask, to_disable);
@@ -74,9 +50,11 @@ bool Logger::initialize_mask_from_config(){
 		case ',':
 		case '_':
 		case '-':
+		case ';':
+		case '/':
 			break;
 		default:
-			throw Invalid_log_masked_levels();
+			throw std::invalid_argument("Invalid log_masked_levels string in main.conf");
 		}
 	}
 	set_mask((boost::uint64_t)-1, new_mask);
@@ -89,122 +67,106 @@ void Logger::finalize_mask() NOEXCEPT {
 const char *Logger::get_thread_tag() NOEXCEPT {
 	return t_tag;
 }
-void Logger::set_thread_tag(const char *new_tag) NOEXCEPT {
-	unsigned i = 0;
-	while(i < sizeof(t_tag)){
-		const char ch = new_tag[i];
-		if(ch == 0){
-			break;
-		}
-		t_tag[i++] = ch;
-	}
-	while(i < sizeof(t_tag)){
-		t_tag[i++] = ' ';
-	}
+void Logger::set_thread_tag(const char *tag) NOEXCEPT {
+	::snprintf(t_tag, sizeof(t_tag), "%-*s", (int)(sizeof(t_tag) - 1), tag);
 }
 
 Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEPT
 	: m_mask(mask), m_file(file), m_line(line)
-{ }
+{
+	m_stream <<std::boolalpha;
+}
 Logger::~Logger() NOEXCEPT
 try {
-	static const bool stderr_uses_ascii_colors = ::isatty(STDERR_FILENO);
-	static const bool stdout_uses_ascii_colors = ::isatty(STDOUT_FILENO);
+	struct LevelElement {
+		char name[16];
+		unsigned char color;
+		bool highlighted;
+		bool to_stderr;
+	};
+	static CONSTEXPR const boost::array<LevelElement, 6> s_levels = {{
+		{ "FATAL", '5', 1, 1 },  // brightmagenta
+		{ "ERROR", '1', 1, 1 },  // brightred
+		{ "WARN ", '3', 1, 1 },  // brightyellow
+		{ "INFO ", '2', 0, 0 },  // green
+		{ "DEBUG", '6', 0, 0 },  // cyan
+		{ "TRACE", '4', 1, 0 },  // brightblue
+	}};
 
-	bool use_ascii_colors;
-	int fd;
-	if(m_mask & SP_MAJOR){
-		use_ascii_colors = stderr_uses_ascii_colors;
-		fd = STDERR_FILENO;
-	} else {
-		use_ascii_colors = stdout_uses_ascii_colors;
-		fd = STDOUT_FILENO;
-	}
+	const unsigned level = static_cast<unsigned>(__builtin_ctzl(m_mask | LV_TRACE));
+	const int output_fd = s_levels.at(level).to_stderr ? STDERR_FILENO : STDOUT_FILENO;
+	const bool output_color = ::isatty(output_fd);
 
-	AUTO_REF(level_elem, LEVEL_ELEMENTS[__builtin_ctzll(m_mask | LV_TRACE)]);
-
-	char temp[256];
+	StreamBuffer buf;
+	char str[256];
 	std::size_t len;
-
-	std::string line;
-	line.reserve(255);
-
-	if(use_ascii_colors){
-		line += "\x1B[0;32m";
+	// Append the timestamp in green.
+	if(output_color){
+		buf.put("\x1B[0;32m");
 	}
-	len = format_time(temp, sizeof(temp), get_local_time(), true);
-	line.append(temp, len);
-
-	if(use_ascii_colors){
-		line += "\x1B[0;33m";
+	len = format_time(str, sizeof(str), get_local_time(), true);
+	buf.put(str, len);
+	// Append the thread tag in grey.
+	if(output_color){
+		buf.put("\x1B[0;37m");
 	}
-	len = (unsigned)std::sprintf(temp, " %02X ", (unsigned)((m_mask >> 8) & 0xFF));
-	line.append(temp, len);
-
-	if(use_ascii_colors){
-		line += "\x1B[0;39m";
+	buf.put(" [");
+	buf.put(t_tag, sizeof(t_tag) - 1);
+	buf.put("] ");
+	// Append the level name in reversed color.
+	if(output_color){
+		buf.put("\x1B[0;30;4");
+		buf.put(s_levels.at(level).color);
+		buf.put('m');
 	}
-	line += '[';
-	line.append(t_tag, sizeof(t_tag) - 1);
-	line += ']';
-	line += ' ';
-
-	if(use_ascii_colors){
-		line +="\x1B[0;30;4";
-		line += level_elem.color;
-		line += 'm';
-	}
-	line += level_elem.text;
-	if(use_ascii_colors){
-		line +="\x1B[0;3";
-		line += level_elem.color;
-		if(level_elem.highlighted){
-			line += ';';
-			line += '1';
+	buf.put(s_levels.at(level).name);
+	// Append the log data.
+	if(output_color){
+		buf.put("\x1B[0;3");
+		buf.put(s_levels.at(level).color);
+		if(s_levels.at(level).highlighted){
+			buf.put(";1");
 		}
-		line += 'm';
+		buf.put('m');
 	}
-	line += ' ';
-
-	StreamBuffer buffer = STD_MOVE(m_stream.get_buffer());
-	int ch;
-	while((ch = buffer.get()) >= 0){
-		if((ch == 0x7F) || (ch == 0xFF) || ((ch < 0x20) && (ch != '\a') && (ch != '\t') && (ch != '\f') && (ch != '\v') && (ch != '\r') && (ch != '\n'))){
-			ch = ' ';
-		}
-		line.push_back((char)ch);
+	buf.put(' ');
+	buf.splice(m_stream.get_buffer());
+	// Append the file name and line number in brightblue.
+	if(output_color){
+		buf.put("\x1B[0;34m");
 	}
-	line += ' ';
-
-	if(use_ascii_colors){
-		line += "\x1B[0;34m";
+	buf.put(" #");
+	buf.put(m_file);
+	len = (unsigned)std::sprintf(str, ":%ld", (long)m_line);
+	// Restore the color and end this line of log.
+	if(output_color){
+		buf.put("\x1B[0m");
 	}
-	line += '#';
-	line += m_file;
-	len = (unsigned)std::sprintf(temp, ":%lu", (unsigned long)m_line);
-	line.append(temp, len);
+	buf.put('\n');
 
-	if(use_ascii_colors){
-		line += "\x1B[0m";
-	}
-	line += '\n';
-
-	int err_code = ::pthread_mutex_lock(&g_mutex);
+	static ::pthread_mutex_t s_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+	int err_code = ::pthread_mutex_lock(&s_mutex);
 	(void)err_code;
 	assert(err_code == 0);
-	std::size_t total = 0;
-	::ssize_t written;
-	while((total < line.size()) && (written = ::write(fd, line.data() + total, line.size() - total)) > 0){
-		total += (std::size_t)written;
+	for(;;){
+		len = buf.peek(str, sizeof(str));
+		if(len == 0){
+			break;
+		}
+		::ssize_t written = ::write(output_fd, str, len);
+		if(written <= 0){
+			break;
+		}
+		buf.discard(static_cast<std::size_t>(written));
 	}
-	err_code = ::pthread_mutex_unlock(&g_mutex);
+	err_code = ::pthread_mutex_unlock(&s_mutex);
 	assert(err_code == 0);
 } catch(...){
 	return;
 }
 
 void Logger::put(bool val){
-	m_stream <<std::boolalpha <<val;
+	m_stream <<val;
 }
 void Logger::put(char val){
 	m_stream <<val;

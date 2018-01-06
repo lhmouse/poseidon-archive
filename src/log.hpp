@@ -37,7 +37,7 @@ public:
 	static void finalize_mask() NOEXCEPT;
 
 	static const char *get_thread_tag() NOEXCEPT;
-	static void set_thread_tag(const char *new_tag) NOEXCEPT;
+	static void set_thread_tag(const char *tag) NOEXCEPT;
 
 private:
 	const boost::uint64_t m_mask;
