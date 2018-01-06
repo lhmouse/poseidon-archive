@@ -100,10 +100,10 @@ try {
 	StreamBuffer buf;
 	char str[256];
 	std::size_t len;
-	// Append the timestamp in red (when outputting to stderr) or green (when outputting to stdout).
+	// Append the timestamp in brightred (when outputting to stderr) or green (when outputting to stdout).
 	if(output_color){
 		if(s_levels.at(level).to_stderr){
-			buf.put("\x1B[0;31m");
+			buf.put("\x1B[0;31;1m");
 		} else {
 			buf.put("\x1B[0;32m");
 		}
