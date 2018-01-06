@@ -406,6 +406,7 @@ namespace {
 			STD_EXCEPTION_PTR except;
 			long err_code = 0;
 			char err_msg[4096];
+			err_msg[0] = 0;
 
 			bool execute_it = false;
 			const AUTO(combinable_object, elem->operation->get_combinable_object());
@@ -429,12 +430,12 @@ namespace {
 					LOG_POSEIDON_WARNING("MySql::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = e.get_code();
-					::stpncpy(err_msg, e.what(), sizeof(err_msg) - 1)[0] = 0;
+					::snprintf(err_msg, sizeof(err_msg), "MySql::Exception: %s", e.what());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = ER_UNKNOWN_ERROR;
-					::stpncpy(err_msg, e.what(), sizeof(err_msg) - 1)[0] = 0;
+					::snprintf(err_msg, sizeof(err_msg), "std::exception: %s", e.what());
 				} catch(...){
 					LOG_POSEIDON_WARNING("Unknown exception thrown");
 					except = STD_CURRENT_EXCEPTION();
