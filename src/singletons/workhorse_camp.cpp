@@ -154,8 +154,9 @@ namespace {
 	Mutex g_router_mutex;
 	boost::container::vector<boost::shared_ptr<WorkhorseThread> > g_threads;
 
-	void submit_job_using_seed(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t seed){
+	void add_job_using_seed(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t seed){
 		PROFILE_ME;
+		DEBUG_THROW_UNLESS(!g_threads.empty(), BasicException, sslit("Workhorse support is not enabled"));
 
 		boost::shared_ptr<WorkhorseThread> thread;
 		{
@@ -181,8 +182,12 @@ void WorkhorseCamp::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting workhorse daemon...");
 
-	const AUTO(max_thread_count, MainConfig::get<std::size_t>("workhorse_max_thread_count", 1));
-	g_threads.resize(std::max<std::size_t>(max_thread_count, 1));
+	const AUTO(max_thread_count, MainConfig::get<std::size_t>("workhorse_max_thread_count"));
+	if(max_thread_count == 0){
+		LOG_POSEIDON_FATAL("You shall not set `workhorse_max_thread_count` in `main.conf` to zero.");
+		std::abort();
+	}
+	g_threads.resize(max_thread_count);
 
 	LOG_POSEIDON_INFO("Workhorse daemon started.");
 }
@@ -214,16 +219,12 @@ void WorkhorseCamp::stop(){
 }
 
 void WorkhorseCamp::enqueue_isolated(const boost::shared_ptr<Promise> &promise, JobProcedure procedure){
-	DEBUG_THROW_ASSERT(!g_threads.empty());
-
 	std::size_t seed = random_uint32();
-	submit_job_using_seed(promise, STD_MOVE_IDN(procedure), seed);
+	add_job_using_seed(promise, STD_MOVE_IDN(procedure), seed);
 }
 void WorkhorseCamp::enqueue(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t thread_hint){
-	DEBUG_THROW_ASSERT(!g_threads.empty());
-
 	std::size_t seed = static_cast<boost::uint64_t>(thread_hint) * 134775813 / 65539;
-	submit_job_using_seed(promise, STD_MOVE_IDN(procedure), seed);
+	add_job_using_seed(promise, STD_MOVE_IDN(procedure), seed);
 }
 
 }
