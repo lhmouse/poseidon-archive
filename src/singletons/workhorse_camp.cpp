@@ -219,12 +219,10 @@ void WorkhorseCamp::stop(){
 }
 
 void WorkhorseCamp::enqueue_isolated(const boost::shared_ptr<Promise> &promise, JobProcedure procedure){
-	std::size_t seed = random_uint32();
-	add_job_using_seed(promise, STD_MOVE_IDN(procedure), seed);
+	add_job_using_seed(promise, STD_MOVE_IDN(procedure), random_uint32());
 }
 void WorkhorseCamp::enqueue(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t thread_hint){
-	std::size_t seed = static_cast<boost::uint64_t>(thread_hint) * 134775813 / 65539;
-	add_job_using_seed(promise, STD_MOVE_IDN(procedure), seed);
+	add_job_using_seed(promise, STD_MOVE_IDN(procedure), (boost::uint64_t)thread_hint * 134775813 / 65539);
 }
 
 }
