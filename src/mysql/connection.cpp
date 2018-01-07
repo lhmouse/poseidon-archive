@@ -99,7 +99,7 @@ namespace {
 
 			if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
 				DEBUG_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
-				// 没有返回结果。
+				LOG_POSEIDON_DEBUG("No result was returned from MySQL server.");
 			} else {
 				const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
 				const AUTO(count, ::mysql_num_fields(m_result.get()));

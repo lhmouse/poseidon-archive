@@ -53,13 +53,11 @@ namespace {
 			server_addr = MainConfig::get<std::string>("mongodb_server_addr", "localhost");
 			server_port = MainConfig::get<boost::uint16_t>("mongodb_server_port", 27017);
 		}
-
 		std::string username = MainConfig::get<std::string>("mongodb_username", "root");
 		std::string password = MainConfig::get<std::string>("mongodb_password");
-		std::string auth_db  = MainConfig::get<std::string>("mongodb_auth_database", "admin");
-		bool        use_ssl  = MainConfig::get<bool>("mongodb_use_ssl", false);
+		std::string auth_db = MainConfig::get<std::string>("mongodb_auth_database", "admin");
+		bool use_ssl = MainConfig::get<bool>("mongodb_use_ssl", false);
 		std::string database = MainConfig::get<std::string>("mongodb_database", "poseidon");
-
 		return MongoDb::Connection::create(server_addr.c_str(), server_port, username.c_str(), password.c_str(), auth_db.c_str(), use_ssl, database.c_str());
 	}
 
@@ -622,6 +620,7 @@ namespace {
 
 	void add_operation_by_collection(const char *collection, boost::shared_ptr<OperationBase> operation, bool urgent){
 		PROFILE_ME;
+		DEBUG_THROW_UNLESS(!g_threads.empty(), BasicException, sslit("MongoDB support is not enabled"));
 
 		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<MongoDbThread> thread;
@@ -672,6 +671,7 @@ namespace {
 	}
 	void add_operation_all(boost::shared_ptr<OperationBase> operation, bool urgent){
 		PROFILE_ME;
+		DEBUG_THROW_UNLESS(!g_threads.empty(), BasicException, sslit("MongoDB support is not enabled"));
 
 		const Mutex::UniqueLock lock(g_router_mutex);
 		for(AUTO(it, g_threads.begin()); it != g_threads.end(); ++it){
@@ -691,20 +691,46 @@ void MongoDbDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MongoDB daemon...");
 
-	const AUTO(dump_dir, MainConfig::get<std::string>("mongodb_dump_dir"));
-	if(!dump_dir.empty()){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MongoDB dump directory is writeable: ", dump_dir);
-		const AUTO(placeholder_path, dump_dir + "/placeholder");
-		UniqueFile probe;
-		if(!probe.reset(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644))){
-			const int err_code = errno;
-			LOG_POSEIDON_FATAL("Could not create placeholder file \"", placeholder_path, "\" (errno was ", err_code, ": ", get_error_desc(err_code), ").");
+	const AUTO(max_thread_count, MainConfig::get<std::size_t>("mongodb_max_thread_count"));
+	if(max_thread_count == 0){
+		LOG_POSEIDON_WARNING("MongoDB support has been disabled. To enable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to a value greater than zero.");
+	} else {
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MongoDB master server is up...");
+		try {
+			const AUTO(conn, real_create_connection(false));
+			conn->execute_bson(MongoDb::bson_scalar_signed(sslit("ping"), 1));
+		} catch(std::exception &e){
+			LOG_POSEIDON_FATAL("Could not connect to MongoDB master server: ", e.what());
+			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
 			std::abort();
 		}
-	}
 
-	const AUTO(max_thread_count, MainConfig::get<std::size_t>("mongodb_max_thread_count", 1));
-	g_threads.resize(std::max<std::size_t>(max_thread_count, 1));
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MongoDB slave server is up...");
+		try {
+			const AUTO(conn, real_create_connection(true));
+			conn->execute_bson(MongoDb::bson_scalar_signed(sslit("ping"), 1));
+		} catch(std::exception &e){
+			LOG_POSEIDON_FATAL("Could not connect to MongoDB slave server: ", e.what());
+			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
+			std::abort();
+		}
+
+		const AUTO(dump_dir, MainConfig::get<std::string>("mongodb_dump_dir"));
+		if(dump_dir.empty()){
+			LOG_POSEIDON_WARNING("MongoDB error dump has been disabled. To enable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to the path to the dump directory.");
+		} else {
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MongoDB dump directory is writeable...");
+			try {
+				const AUTO(placeholder_path, dump_dir + "/placeholder");
+				DEBUG_THROW_ASSERT(UniqueFile(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)));
+			} catch(std::exception &e){
+				LOG_POSEIDON_FATAL("Could not write MongoDB dump: ", e.what());
+				LOG_POSEIDON_WARNING("To disable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to an empty string.");
+				std::abort();
+			}
+		}
+	}
+	g_threads.resize(max_thread_count);
 
 	LOG_POSEIDON_INFO("MongoDB daemon started.");
 }

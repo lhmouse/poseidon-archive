@@ -136,7 +136,7 @@ namespace {
 
 			::bson_iter_t it;
 			if(!::bson_iter_init_find(&it, reply_bt, "cursor")){
-				LOG_POSEIDON_DEBUG("No cursor returned from MongoDB server.");
+				LOG_POSEIDON_DEBUG("No cursor was returned from MongoDB server.");
 			} else {
 				DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_DOCUMENT);
 				boost::uint32_t size;
