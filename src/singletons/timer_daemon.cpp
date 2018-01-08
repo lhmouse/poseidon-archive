@@ -131,6 +131,7 @@ namespace {
 				std::push_heap(g_timers.begin(), g_timers.end());
 			}
 		}
+
 		try {
 			if(timer->is_low_level()){
 				LOG_POSEIDON_TRACE("Dispatching low level timer: timer = ", timer);

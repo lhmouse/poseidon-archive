@@ -52,6 +52,7 @@ namespace {
 				}
 				elem = &m_queue.front();
 			}
+
 			STD_EXCEPTION_PTR except;
 			try {
 				elem->procedure();
