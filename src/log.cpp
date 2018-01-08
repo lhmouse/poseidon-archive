@@ -83,16 +83,15 @@ try {
 	struct LevelElement {
 		char name[16];
 		unsigned char color;
-		bool highlighted;
 		bool to_stderr;
 	};
 	static CONSTEXPR const boost::array<LevelElement, 6> s_levels = {{
-		{ "FATAL", '5', 1, 1 },  // brightmagenta
-		{ "ERROR", '1', 1, 1 },  // brightred
-		{ "WARN ", '3', 1, 1 },  // brightyellow
-		{ "INFO ", '2', 0, 0 },  // green
-		{ "DEBUG", '6', 0, 0 },  // cyan
-		{ "TRACE", '4', 1, 0 },  // brightblue
+		{ "FATAL", '5', 1 },  // magenta
+		{ "ERROR", '1', 1 },  // red
+		{ "WARN ", '3', 1 },  // yellow
+		{ "INFO ", '2', 0 },  // green
+		{ "DEBUG", '6', 0 },  // cyan
+		{ "TRACE", '4', 0 },  // blue
 	}};
 
 	const unsigned level = static_cast<unsigned>(__builtin_ctzl(m_mask | LV_TRACE));
@@ -153,7 +152,7 @@ try {
 	if(output_color){
 		buf.put("\x1B[0;7;3");
 		buf.put(s_levels.at(level).color);
-		if(s_levels.at(level).highlighted){
+		if(s_levels.at(level).to_stderr){
 			buf.put(";1");
 		}
 		buf.put('m');
@@ -167,7 +166,7 @@ try {
 	if(output_color){
 		buf.put("\x1B[0;3");
 		buf.put(s_levels.at(level).color);
-		if(s_levels.at(level).highlighted){
+		if(s_levels.at(level).to_stderr){
 			buf.put(";1");
 		}
 		buf.put('m');
@@ -177,11 +176,11 @@ try {
 		buf.put("\x1B[0m");
 	}
 	buf.put(' ');
-	// Append the file name and line number in brightblue.
+	// Append the file name and line number in blue.
 	if(output_color){
 		buf.put("\x1B[0;34m");
 	}
-	buf.put('#');
+	buf.put("### ");
 	buf.put(m_file);
 	len = (unsigned)std::sprintf(str, ":%lu", (unsigned long)m_line);
 	buf.put(str, len);
