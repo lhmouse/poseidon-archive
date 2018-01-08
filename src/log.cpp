@@ -19,7 +19,7 @@ namespace {
 		CFG_YELLOW  = 0003,
 		CFG_BLUE    = 0004,
 		CFG_MAGNETA = 0005,
-		CFG_CYANG   = 0006,
+		CFG_CYAN    = 0006,
 		CFG_WHITE   = 0007,
 
 		CBG_BLACK   = 0000,
@@ -28,7 +28,7 @@ namespace {
 		CBG_YELLOW  = 0030,
 		CBG_BLUE    = 0040,
 		CBG_MAGNETA = 0050,
-		CBG_CYANG   = 0060,
+		CBG_CYAN    = 0060,
 		CBG_WHITE   = 0070,
 
 		CFL_BRIGHT  = 0100,
@@ -45,7 +45,7 @@ namespace {
 		{ "ERROR", CFG_RED     | CFL_BRIGHT, 1 },
 		{ "WARN ", CFG_YELLOW  | CFL_BRIGHT, 1 },
 		{ "INFO ", CFG_GREEN               , 0 },
-		{ "DEBUG", CFG_CYANG               , 0 },
+		{ "DEBUG", CFG_CYAN                , 0 },
 		{ "TRACE", CFG_BLUE                , 0 },
 	}};
 
