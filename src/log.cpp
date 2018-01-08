@@ -118,11 +118,11 @@ try {
 		buf.put("\x1B[0m");
 	}
 	buf.put(' ');
-	// Append the thread tag in reversed red (when outputting to stderr) or yellow (when outputting to stdout).
+	// Append the thread tag in reversed brightred (when outputting to stderr) or yellow (when outputting to stdout).
 	if(output_color){
 		buf.put("\x1B[0;7;3");
 		if(s_levels.at(level).to_stderr){
-			buf.put("1");
+			buf.put("1;1");
 		} else {
 			buf.put("3");
 		}
@@ -133,11 +133,11 @@ try {
 		buf.put("\x1B[0m");
 	}
 	buf.put(' ');
-	// Append the thread id in red (when outputting to stderr) or yellow (when outputting to stdout).
+	// Append the thread id in brightred (when outputting to stderr) or yellow (when outputting to stdout).
 	if(output_color){
 		buf.put("\x1B[0;3");
 		if(s_levels.at(level).to_stderr){
-			buf.put("1");
+			buf.put("1;1");
 		} else {
 			buf.put("3");
 		}
@@ -153,6 +153,9 @@ try {
 	if(output_color){
 		buf.put("\x1B[0;7;3");
 		buf.put(s_levels.at(level).color);
+		if(s_levels.at(level).highlighted){
+			buf.put(";1");
+		}
 		buf.put('m');
 	}
 	buf.put(s_levels.at(level).name);
