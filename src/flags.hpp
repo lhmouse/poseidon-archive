@@ -26,6 +26,13 @@ inline T &remove_flags(T &val, typename boost::common_type<T>::type flags){
 	val = static_cast<T>(val & ~flags);
 	return val;
 }
+template<typename T>
+inline T &flip_flags(T &val, typename boost::common_type<T>::type flags){
+	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
+
+	val = static_cast<T>(val ^ flags);
+	return val;
+}
 
 template<typename T>
 inline bool has_all_flags_of(const T &val, typename boost::common_type<T>::type flags){
