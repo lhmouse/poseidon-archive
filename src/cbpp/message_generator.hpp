@@ -40,10 +40,10 @@ public:
 #define FIELD_STRING(id_)         ::std::string id_;
 #define FIELD_BLOB(id_)           ::std::basic_string<unsigned char> id_;
 #define FIELD_FLEXIBLE(id_)       ::Poseidon::StreamBuffer id_;
-#define FIELD_ARRAY(id_, ...)     struct Cbpp ## id_ ## F_ { __VA_ARGS__ };	\
-                                  ::boost::container::vector< Cbpp ## id_ ## F_ > id_;
-#define FIELD_LIST(id_, ...)      struct Cbpp ## id_ ## F_ { __VA_ARGS__ };	\
-                                  ::boost::container::deque< Cbpp ## id_ ## F_ > id_;
+#define FIELD_ARRAY(id_, ...)     struct Cbpp##id_##F_ { __VA_ARGS__ };	\
+                                  ::boost::container::vector< Cbpp##id_##F_ > id_;
+#define FIELD_LIST(id_, ...)      struct Cbpp##id_##F_ { __VA_ARGS__ };	\
+                                  ::boost::container::deque< Cbpp##id_##F_ > id_;
 
 	MESSAGE_FIELDS
 

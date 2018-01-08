@@ -57,14 +57,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                , bool id_ ## X_
-#define FIELD_SIGNED(id_)                 , ::boost::int64_t id_ ## X_
-#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t id_ ## X_
-#define FIELD_DOUBLE(id_)                 , double id_ ## X_
-#define FIELD_STRING(id_)                 , ::std::string id_ ## X_
-#define FIELD_DATETIME(id_)               , ::boost::uint64_t id_ ## X_
-#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_ ## X_
-#define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_ ## X_
+#define FIELD_BOOLEAN(id_)                , bool id_##X_
+#define FIELD_SIGNED(id_)                 , ::boost::int64_t id_##X_
+#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t id_##X_
+#define FIELD_DOUBLE(id_)                 , double id_##X_
+#define FIELD_STRING(id_)                 , ::std::string id_##X_
+#define FIELD_DATETIME(id_)               , ::boost::uint64_t id_##X_
+#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
+#define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
 	explicit OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS));
 
@@ -114,14 +114,14 @@ OBJECT_NAME::OBJECT_NAME()
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                , bool id_ ## X_
-#define FIELD_SIGNED(id_)                 , ::boost::int64_t id_ ## X_
-#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t id_ ## X_
-#define FIELD_DOUBLE(id_)                 , double id_ ## X_
-#define FIELD_STRING(id_)                 , ::std::string id_ ## X_
-#define FIELD_DATETIME(id_)               , ::boost::uint64_t id_ ## X_
-#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_ ## X_
-#define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_ ## X_
+#define FIELD_BOOLEAN(id_)                , bool id_##X_
+#define FIELD_SIGNED(id_)                 , ::boost::int64_t id_##X_
+#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t id_##X_
+#define FIELD_DOUBLE(id_)                 , double id_##X_
+#define FIELD_STRING(id_)                 , ::std::string id_##X_
+#define FIELD_DATETIME(id_)               , ::boost::uint64_t id_##X_
+#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
+#define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
 OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 	: ::Poseidon::MongoDb::ObjectBase()
@@ -135,14 +135,14 @@ OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                , id_(this, id_ ## X_)
-#define FIELD_SIGNED(id_)                 , id_(this, id_ ## X_)
-#define FIELD_UNSIGNED(id_)               , id_(this, id_ ## X_)
-#define FIELD_DOUBLE(id_)                 , id_(this, id_ ## X_)
-#define FIELD_STRING(id_)                 , id_(this, STD_MOVE(id_ ## X_))
-#define FIELD_DATETIME(id_)               , id_(this, id_ ## X_)
-#define FIELD_UUID(id_)                   , id_(this, id_ ## X_)
-#define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(id_ ## X_))
+#define FIELD_BOOLEAN(id_)                , id_(this, id_##X_)
+#define FIELD_SIGNED(id_)                 , id_(this, id_##X_)
+#define FIELD_UNSIGNED(id_)               , id_(this, id_##X_)
+#define FIELD_DOUBLE(id_)                 , id_(this, id_##X_)
+#define FIELD_STRING(id_)                 , id_(this, STD_MOVE(id_##X_))
+#define FIELD_DATETIME(id_)               , id_(this, id_##X_)
+#define FIELD_UUID(id_)                   , id_(this, id_##X_)
+#define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(id_##X_))
 
 	OBJECT_FIELDS
 {
