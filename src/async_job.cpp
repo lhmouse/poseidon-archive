@@ -25,10 +25,10 @@ namespace {
 		{ }
 
 	protected:
-		boost::weak_ptr<const void> get_category() const OVERRIDE {
+		boost::weak_ptr<const void> get_category() const FINAL {
 			return m_category;
 		}
-		void perform() OVERRIDE {
+		void perform() FINAL {
 			PROFILE_ME;
 
 			STD_EXCEPTION_PTR except;
@@ -54,11 +54,10 @@ namespace {
 }
 
 void enqueue_async_categorized_job(boost::weak_ptr<const void> category, const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure, boost::shared_ptr<const bool> withdrawn){
-	AUTO(job, boost::make_shared<AsyncJob>(STD_MOVE(category), promise, STD_MOVE_IDN(procedure)));
-	JobDispatcher::enqueue(STD_MOVE_IDN(job), STD_MOVE(withdrawn));
+	JobDispatcher::enqueue(boost::make_shared<AsyncJob>(STD_MOVE(category), promise, STD_MOVE_IDN(procedure)), STD_MOVE(withdrawn));
 }
 void enqueue_async_job(const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure, boost::shared_ptr<const bool> withdrawn){
-	enqueue_async_categorized_job(VAL_INIT, promise, STD_MOVE_IDN(procedure), STD_MOVE(withdrawn));
+	JobDispatcher::enqueue(boost::make_shared<AsyncJob>(boost::weak_ptr<const void>(), promise, STD_MOVE_IDN(procedure)), STD_MOVE(withdrawn));
 }
 
 }
