@@ -7,6 +7,8 @@
 #include "time.hpp"
 #include "flags.hpp"
 #include "singletons/main_config.hpp"
+#include <unistd.h>
+#include <sys/syscall.h>
 
 namespace Poseidon {
 
@@ -102,11 +104,13 @@ try {
 	std::size_t len;
 	// Append the timestamp in brightred (when outputting to stderr) or green (when outputting to stdout).
 	if(output_color){
+		buf.put("\x1B[0;3");
 		if(s_levels.at(level).to_stderr){
-			buf.put("\x1B[0;31;1m");
+			buf.put("1;1");
 		} else {
-			buf.put("\x1B[0;32m");
+			buf.put("2");
 		}
+		buf.put('m');
 	}
 	len = format_time(str, sizeof(str), get_local_time(), true);
 	buf.put(str, len);
@@ -114,22 +118,40 @@ try {
 		buf.put("\x1B[0m");
 	}
 	buf.put(' ');
-	// Append the thread tag in red (when outputting to stderr) or yellow (when outputting to stdout).
+	// Append the thread tag in reversed red (when outputting to stderr) or yellow (when outputting to stdout).
 	if(output_color){
+		buf.put("\x1B[0;7;3");
 		if(s_levels.at(level).to_stderr){
-			buf.put("\x1B[0;30;41m");
+			buf.put("1");
 		} else {
-			buf.put("\x1B[0;30;43m");
+			buf.put("3");
 		}
+		buf.put('m');
 	}
 	buf.put(t_tag, sizeof(t_tag) - 1);
 	if(output_color){
 		buf.put("\x1B[0m");
 	}
 	buf.put(' ');
+	// Append the thread id in red (when outputting to stderr) or yellow (when outputting to stdout).
+	if(output_color){
+		buf.put("\x1B[0;3");
+		if(s_levels.at(level).to_stderr){
+			buf.put("1");
+		} else {
+			buf.put("3");
+		}
+		buf.put('m');
+	}
+	len = (unsigned)std::sprintf(str, "%5lu", (unsigned long)::syscall(SYS_gettid));
+	buf.put(str, len);
+	if(output_color){
+		buf.put("\x1B[0m");
+	}
+	buf.put(' ');
 	// Append the level name in reversed color.
 	if(output_color){
-		buf.put("\x1B[0;30;4");
+		buf.put("\x1B[0;7;3");
 		buf.put(s_levels.at(level).color);
 		buf.put('m');
 	}
@@ -159,6 +181,7 @@ try {
 	buf.put('#');
 	buf.put(m_file);
 	len = (unsigned)std::sprintf(str, ":%lu", (unsigned long)m_line);
+	buf.put(str, len);
 	// Restore the color and end this line of log.
 	if(output_color){
 		buf.put("\x1B[0m");
