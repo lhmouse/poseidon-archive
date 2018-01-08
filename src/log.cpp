@@ -5,7 +5,6 @@
 #include "log.hpp"
 #include "atomic.hpp"
 #include "time.hpp"
-#include "flags.hpp"
 #include "singletons/main_config.hpp"
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -13,6 +12,76 @@
 namespace Poseidon {
 
 namespace {
+	enum {
+		CFG_BLACK   = 0000,
+		CFG_RED     = 0001,
+		CFG_GREEN   = 0002,
+		CFG_YELLOW  = 0003,
+		CFG_BLUE    = 0004,
+		CFG_MAGNETA = 0005,
+		CFG_CYANG   = 0006,
+		CFG_WHITE   = 0007,
+
+		CBG_BLACK   = 0000,
+		CBG_RED     = 0010,
+		CBG_GREEN   = 0020,
+		CBG_YELLOW  = 0030,
+		CBG_BLUE    = 0040,
+		CBG_MAGNETA = 0050,
+		CBG_CYANG   = 0060,
+		CBG_WHITE   = 0070,
+
+		CFL_BRIGHT  = 0100,
+		CFL_REVERSE = 0200,
+	};
+
+	struct LevelElement {
+		char name[16];
+		int color;
+		bool to_stderr;
+	};
+	CONSTEXPR const boost::array<LevelElement, 6> s_levels = {{
+		{ "FATAL", CFG_MAGNETA | CFL_BRIGHT, 1 },
+		{ "ERROR", CFG_RED     | CFL_BRIGHT, 1 },
+		{ "WARN ", CFG_YELLOW  | CFL_BRIGHT, 1 },
+		{ "INFO ", CFG_GREEN               , 0 },
+		{ "DEBUG", CFG_CYANG               , 0 },
+		{ "TRACE", CFG_BLUE                , 0 },
+	}};
+
+	std::size_t begin_color(char *buf, int flags){
+		std::size_t len = 0;
+		buf[len++] = '\x1B';
+		buf[len++] = '[';
+		buf[len++] = '0';
+		buf[len++] = ';';
+		buf[len++] = '3';
+		buf[len++] = (char)('0' + (((flags & 0007) >> 0) & 7));
+		buf[len++] = ';';
+		buf[len++] = '4';
+		buf[len++] = (char)('0' + (((flags & 0070) >> 3) & 7));
+		if(flags & CFL_BRIGHT){
+			buf[len++] = ';';
+			buf[len++] = '1';
+		}
+		if(flags & CFL_REVERSE){
+			buf[len++] = ';';
+			buf[len++] = '7';
+		}
+		buf[len++] = 'm';
+		buf[len] = 0;
+		return len;
+	}
+	std::size_t end_color(char *buf){
+		std::size_t len = 0;
+		buf[len++] = '\x1B';
+		buf[len++] = '[';
+		buf[len++] = '0';
+		buf[len++] = 'm';
+		buf[len] = 0;
+		return len;
+	}
+
 	volatile boost::uint64_t g_mask = (boost::uint64_t)-1;
 	__thread char t_tag[5] = "----";
 }
@@ -25,8 +94,8 @@ boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_
 	old_mask = atomic_load(g_mask, ATOMIC_RELAXED);
 	do {
 		new_mask = old_mask;
-		remove_flags(new_mask, to_disable);
-		add_flags(new_mask, to_enable);
+		new_mask &= ~to_disable;
+		new_mask |= to_enable;
 	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, ATOMIC_RELAXED, ATOMIC_RELAXED));
 	return old_mask;
 }
@@ -41,7 +110,7 @@ bool Logger::initialize_mask_from_config(){
 	for(AUTO(it, log_masked_levels.rbegin()); (it != log_masked_levels.rend()) && (index < 64); ++it){
 		switch(*it){
 		case '0':
-			new_mask |=  (1ull << index);
+			new_mask |= (1ull << index);
 			++index;
 			break;
 		case '1':
@@ -80,105 +149,84 @@ Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEP
 }
 Logger::~Logger() NOEXCEPT
 try {
-	struct LevelElement {
-		char name[16];
-		unsigned char color;
-		bool to_stderr;
-	};
-	static CONSTEXPR const boost::array<LevelElement, 6> s_levels = {{
-		{ "FATAL", '5', 1 },  // magenta
-		{ "ERROR", '1', 1 },  // red
-		{ "WARN ", '3', 1 },  // yellow
-		{ "INFO ", '2', 0 },  // green
-		{ "DEBUG", '6', 0 },  // cyan
-		{ "TRACE", '4', 0 },  // blue
-	}};
-
 	const unsigned level = static_cast<unsigned>(__builtin_ctzl(m_mask | LV_TRACE));
-	const int output_fd = s_levels.at(level).to_stderr ? STDERR_FILENO : STDOUT_FILENO;
+	const LevelElement *const lc = &s_levels.at(level);
+	const int output_fd = lc->to_stderr ? STDERR_FILENO : STDOUT_FILENO;
 	const bool output_color = ::isatty(output_fd);
 
 	StreamBuffer buf;
+	int flags;
 	char str[256];
 	std::size_t len;
 	// Append the timestamp in brightred (when outputting to stderr) or green (when outputting to stdout).
 	if(output_color){
-		buf.put("\x1B[0;3");
-		if(s_levels.at(level).to_stderr){
-			buf.put("1;1");
-		} else {
-			buf.put("2");
-		}
-		buf.put('m');
+		flags = lc->to_stderr ? (CFG_RED | CFL_BRIGHT) : CFG_GREEN;
+		len = begin_color(str, flags);
+		buf.put(str, len);
 	}
 	len = format_time(str, sizeof(str), get_local_time(), true);
 	buf.put(str, len);
 	if(output_color){
-		buf.put("\x1B[0m");
+		len = end_color(str);
+		buf.put(str, len);
 	}
 	buf.put(' ');
-	// Append the thread tag in reversed brightred (when outputting to stderr) or yellow (when outputting to stdout).
+	// Append the thread tag in reverse brightred (when outputting to stderr) or yellow (when outputting to stdout).
 	if(output_color){
-		buf.put("\x1B[0;7;3");
-		if(s_levels.at(level).to_stderr){
-			buf.put("1;1");
-		} else {
-			buf.put("3");
-		}
-		buf.put('m');
+		flags = lc->to_stderr ? (CFG_RED | CFL_BRIGHT) : CFG_YELLOW;
+		flags ^= CFL_REVERSE;
+		len = begin_color(str, flags);
+		buf.put(str, len);
 	}
 	buf.put(t_tag, sizeof(t_tag) - 1);
 	if(output_color){
-		buf.put("\x1B[0m");
+		len = end_color(str);
+		buf.put(str, len);
 	}
 	buf.put(' ');
 	// Append the thread id in brightred (when outputting to stderr) or yellow (when outputting to stdout).
 	if(output_color){
-		buf.put("\x1B[0;3");
-		if(s_levels.at(level).to_stderr){
-			buf.put("1;1");
-		} else {
-			buf.put("3");
-		}
-		buf.put('m');
+		flags = lc->to_stderr ? (CFG_RED | CFL_BRIGHT) : CFG_YELLOW;
+		len = begin_color(str, flags);
+		buf.put(str, len);
 	}
 	len = (unsigned)std::sprintf(str, "%5lu", (unsigned long)::syscall(SYS_gettid));
 	buf.put(str, len);
 	if(output_color){
-		buf.put("\x1B[0m");
+		len = end_color(str);
+		buf.put(str, len);
 	}
 	buf.put(' ');
-	// Append the level name in reversed color.
+	// Append the level name in reverse color.
 	if(output_color){
-		buf.put("\x1B[0;7;3");
-		buf.put(s_levels.at(level).color);
-		if(s_levels.at(level).to_stderr){
-			buf.put(";1");
-		}
-		buf.put('m');
+		flags = lc->color;
+		flags ^= CFL_REVERSE;
+		len = begin_color(str, flags);
+		buf.put(str, len);
 	}
-	buf.put(s_levels.at(level).name);
+	buf.put(lc->name);
 	if(output_color){
-		buf.put("\x1B[0m");
+		len = end_color(str);
+		buf.put(str, len);
 	}
 	buf.put(' ');
 	// Append the log data.
 	if(output_color){
-		buf.put("\x1B[0;3");
-		buf.put(s_levels.at(level).color);
-		if(s_levels.at(level).to_stderr){
-			buf.put(";1");
-		}
-		buf.put('m');
+		flags = lc->color;
+		len = begin_color(str, flags);
+		buf.put(str, len);
 	}
 	buf.splice(m_stream.get_buffer());
 	if(output_color){
-		buf.put("\x1B[0m");
+		len = end_color(str);
+		buf.put(str, len);
 	}
 	buf.put(' ');
 	// Append the file name and line number in blue.
 	if(output_color){
-		buf.put("\x1B[0;34m");
+		flags = CFG_BLUE;
+		len = begin_color(str, flags);
+		buf.put(str, len);
 	}
 	buf.put("### ");
 	buf.put(m_file);
@@ -186,7 +234,8 @@ try {
 	buf.put(str, len);
 	// Restore the color and end this line of log.
 	if(output_color){
-		buf.put("\x1B[0m");
+		len = end_color(str);
+		buf.put(str, len);
 	}
 	buf.put('\n');
 
