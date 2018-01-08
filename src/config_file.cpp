@@ -178,7 +178,7 @@ void ConfigFile::load(const std::string &path){
 			if(ch == '\n'){
 				break;
 			}
-			buf.put((unsigned char)ch);
+			buf.put(ch);
 		}
 		if(buf.back() == '\r'){
 			buf.unput();

@@ -172,7 +172,7 @@ void MESSAGE_NAME::serialize(::Poseidon::StreamBuffer &buffer_) const {
                                       buf_.put(temp_, static_cast< ::std::size_t>(wptr_ - temp_));	\
                                       buf_.splice(chunk_buf_);	\
                                     }	\
-                                    buf_.put(static_cast<unsigned char>(0));	\
+                                    buf_.put(0);	\
                                   }
 
 	MESSAGE_FIELDS

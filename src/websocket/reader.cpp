@@ -51,7 +51,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 			ch = m_queue.get();
 			DEBUG_THROW_UNLESS(has_none_flags_of(ch, OP_FL_RSV1 | OP_FL_RSV2 | OP_FL_RSV3), Exception, ST_PROTOCOL_ERROR, sslit("Reserved bits set"));
-			m_opcode = static_cast<OpCode>(ch & OP_FL_OPCODE);
+			m_opcode = ch & OP_FL_OPCODE;
 			m_fin = ch & OP_FL_FIN;
 			DEBUG_THROW_UNLESS(!((m_opcode & OP_FL_CONTROL) && !m_fin), Exception, ST_PROTOCOL_ERROR, sslit("Control frame fragemented"));
 			DEBUG_THROW_UNLESS(!((m_opcode == OP_CONTINUATION) && m_prev_fin), Exception, ST_PROTOCOL_ERROR, sslit("Dangling frame continuation"));
@@ -65,7 +65,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 			ch = m_queue.get();
 			m_masked = ch & 0x80;
 			DEBUG_THROW_UNLESS(!(m_force_masked_frames && !m_masked), Exception, ST_PROTOCOL_ERROR, sslit("Non-masked frames not allowed"));
-			m_frame_size = static_cast<unsigned char>(ch & 0x7F);
+			m_frame_size = ch & 0x7F;
 			if(m_frame_size >= 0x7E){
 				DEBUG_THROW_UNLESS(has_none_flags_of(m_opcode, OP_FL_CONTROL), Exception, ST_PROTOCOL_ERROR, sslit("Control frame too large"));
 				if(m_frame_size == 0x7E){
@@ -136,7 +136,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 			{
 				StreamBuffer payload;
 				for(std::size_t i = 0; i < temp64; ++i){
-					payload.put(static_cast<unsigned char>(m_queue.get() ^ static_cast<int>(m_mask)));
+					payload.put(m_queue.get() ^ (int)m_mask);
 					m_mask = (m_mask << 24) | (m_mask >> 8);
 				}
 				on_data_message_payload(m_whole_offset, STD_MOVE(payload));
@@ -165,7 +165,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 			{
 				StreamBuffer payload;
 				for(std::size_t i = 0; i < m_frame_size; ++i){
-					payload.put(static_cast<unsigned char>(m_queue.get() ^ static_cast<int>(m_mask)));
+					payload.put(m_queue.get() ^ (int)m_mask);
 					m_mask = (m_mask << 24) | (m_mask >> 8);
 				}
 				has_next_request = on_control_message(m_opcode, STD_MOVE(payload));

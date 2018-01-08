@@ -135,19 +135,19 @@ void Base64Decoder::put(const void *data, std::size_t size){
 			seq += static_cast<unsigned>(digit);
 		}
 		if(seq >= (1ul << 24)){
-			const unsigned n = static_cast<unsigned>(4 - (seq >> 24));
+			const unsigned long n = 4 - (seq >> 24);
 			switch(n){
 			case 1:
-				m_buffer.put(static_cast<unsigned char>(seq >> 16));
+				m_buffer.put((seq >> 16) & 0xFF);
 				break;
 			case 2:
-				m_buffer.put(static_cast<unsigned char>(seq >> 16));
-				m_buffer.put(static_cast<unsigned char>(seq >>  8));
+				m_buffer.put((seq >> 16) & 0xFF);
+				m_buffer.put((seq >>  8) & 0xFF);
 				break;
 			case 3:
-				m_buffer.put(static_cast<unsigned char>(seq >> 16));
-				m_buffer.put(static_cast<unsigned char>(seq >>  8));
-				m_buffer.put(static_cast<unsigned char>(seq >>  0));
+				m_buffer.put((seq >> 16) & 0xFF);
+				m_buffer.put((seq >>  8) & 0xFF);
+				m_buffer.put((seq >>  0) & 0xFF);
 				break;
 			default:
 				DEBUG_THROW(ProtocolException, sslit("Invalid base64 data"), -1);

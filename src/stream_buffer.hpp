@@ -82,15 +82,15 @@ public:
 	}
 	int get() NOEXCEPT;
 	bool discard() NOEXCEPT;
-	void put(unsigned char data);
+	void put(int data);
 	int back() const NOEXCEPT;
 	int unput() NOEXCEPT;
-	void unget(unsigned char data);
+	void unget(int data);
 
 	std::size_t peek(void *data, std::size_t count) const NOEXCEPT;
 	std::size_t get(void *data, std::size_t count) NOEXCEPT;
 	std::size_t discard(std::size_t count) NOEXCEPT;
-	void put(unsigned char data, std::size_t count);
+	void put(int data, std::size_t count);
 	void put(const void *data, std::size_t count);
 	void put(const StreamBuffer &data);
 	void put(const char *str){

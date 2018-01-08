@@ -141,7 +141,7 @@ bool StreamBuffer::discard() NOEXCEPT {
 	}
 	return discarded;
 }
-void StreamBuffer::put(unsigned char data){
+void StreamBuffer::put(int data){
 	AUTO(chunk, m_last);
 	AUTO(prev, chunk);
 	if(chunk && (chunk->capacity == chunk->end)){
@@ -160,7 +160,7 @@ void StreamBuffer::put(unsigned char data){
 		m_last = next;
 		chunk = next;
 	}
-	chunk->data[chunk->end] = data;
+	chunk->data[chunk->end] = static_cast<unsigned char>(data);
 	chunk->end += 1;
 	m_size += 1;
 }
@@ -195,7 +195,7 @@ int StreamBuffer::unput() NOEXCEPT {
 	}
 	return read;
 }
-void StreamBuffer::unget(unsigned char data){
+void StreamBuffer::unget(int data){
 	AUTO(chunk, m_first);
 	AUTO(next, chunk);
 	if(chunk && (chunk->begin == 0)){
@@ -214,7 +214,7 @@ void StreamBuffer::unget(unsigned char data){
 		m_first = prev;
 		chunk = prev;
 	}
-	chunk->data[chunk->begin - 1] = data;
+	chunk->data[chunk->begin - 1] = static_cast<unsigned char>(data);
 	chunk->begin -= 1;
 	m_size += 1;
 }
@@ -294,7 +294,7 @@ std::size_t StreamBuffer::discard(std::size_t count) NOEXCEPT {
 	}
 	return total;
 }
-void StreamBuffer::put(unsigned char data, std::size_t count){
+void StreamBuffer::put(int data, std::size_t count){
 	AUTO(chunk, m_last);
 	AUTO(prev, chunk);
 	if(chunk && (chunk->capacity - chunk->end < count)){

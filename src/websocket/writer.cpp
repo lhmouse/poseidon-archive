@@ -20,21 +20,21 @@ long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 
 	StreamBuffer frame;
 	unsigned ch = boost::numeric_cast<unsigned>(opcode) | OP_FL_FIN;
-	frame.put(static_cast<unsigned char>(ch));
+	frame.put(ch & 0xFF);
 	const std::size_t size = payload.size();
 	ch = masked ? 0x80 : 0;
 	if(size < 0x7E){
 		ch |= static_cast<unsigned>(size);
-		frame.put(static_cast<unsigned char>(ch));
+		frame.put(ch & 0xFF);
 	} else if(size < 0x10000){
 		ch |= 0x7E;
-		frame.put(static_cast<unsigned char>(ch));
+		frame.put(ch & 0xFF);
 		boost::uint16_t temp16;
 		store_be(temp16, static_cast<boost::uint16_t>(size));
 		frame.put(&temp16, 2);
 	} else {
 		ch |= 0x7F;
-		frame.put(static_cast<unsigned char>(ch));
+		frame.put(ch & 0xFF);
 		boost::uint64_t temp64;
 		store_be(temp64, size);
 		frame.put(&temp64, 8);
@@ -47,8 +47,8 @@ long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 			if(mb == -1){
 				break;
 			}
-			mb ^= static_cast<unsigned char>(mask);
-			frame.put(static_cast<unsigned char>(mb));
+			mb ^= (int)mask;
+			frame.put(mb);
 			mask = (mask << 24) | (mask >> 8);
 		}
 	} else {

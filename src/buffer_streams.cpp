@@ -57,7 +57,7 @@ Buffer_streambuf::int_type Buffer_streambuf::pbackfail(Buffer_streambuf::int_typ
 			return traits_type::eof();
 		}
 		sync();
-		m_buffer.unget(static_cast<unsigned char>(traits_type::to_char_type(c)));
+		m_buffer.unget(traits_type::to_char_type(c));
 		return c;
 	} else {
 		return traits_type::eof();
@@ -78,7 +78,7 @@ Buffer_streambuf::int_type Buffer_streambuf::overflow(Buffer_streambuf::int_type
 		if(traits_type::eq_int_type(c, traits_type::eof())){
 			return traits_type::not_eof(c);
 		}
-		m_buffer.put(static_cast<unsigned char>(traits_type::to_char_type(c)));
+		m_buffer.put(traits_type::to_char_type(c));
 		return c;
 	} else {
 		return traits_type::eof();
