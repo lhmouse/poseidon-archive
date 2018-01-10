@@ -13,26 +13,18 @@ namespace Poseidon {
 
 namespace {
 	enum {
-		CFG_BLACK   = 0000,
-		CFG_RED     = 0001,
-		CFG_GREEN   = 0002,
-		CFG_YELLOW  = 0003,
-		CFG_BLUE    = 0004,
-		CFG_MAGNETA = 0005,
-		CFG_CYAN    = 0006,
-		CFG_WHITE   = 0007,
+		CFG_BLACK    = 0000,
+		CFG_RED      = 0001,
+		CFG_GREEN    = 0002,
+		CFG_YELLOW   = 0003,
+		CFG_BLUE     = 0004,
+		CFG_MAGNETA  = 0005,
+		CFG_CYAN     = 0006,
+		CFG_WHITE    = 0007,
 
-		CBG_BLACK   = 0000,
-		CBG_RED     = 0010,
-		CBG_GREEN   = 0020,
-		CBG_YELLOW  = 0030,
-		CBG_BLUE    = 0040,
-		CBG_MAGNETA = 0050,
-		CBG_CYAN    = 0060,
-		CBG_WHITE   = 0070,
-
-		CFL_BRIGHT  = 0100,
-		CFL_REVERSE = 0200,
+		CFL_BRIGHT   = 0010,
+		CFL_BLINKING = 0020,
+		CFL_REVERSE  = 0040,
 	};
 
 	struct LevelElement {
@@ -57,12 +49,13 @@ namespace {
 		buf[len++] = ';';
 		buf[len++] = '3';
 		buf[len++] = (char)('0' + (((flags & 0007) >> 0) & 7));
-		buf[len++] = ';';
-		buf[len++] = '4';
-		buf[len++] = (char)('0' + (((flags & 0070) >> 3) & 7));
 		if(flags & CFL_BRIGHT){
 			buf[len++] = ';';
 			buf[len++] = '1';
+		}
+		if(flags & CFL_BLINKING){
+			buf[len++] = ';';
+			buf[len++] = '5';
 		}
 		if(flags & CFL_REVERSE){
 			buf[len++] = ';';
