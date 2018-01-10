@@ -13,11 +13,13 @@
 namespace Poseidon {
 
 class TcpServerBase;
+class TcpClientBase;
 class SslFilterBase;
 class Timer;
 
 class TcpSessionBase : public SocketBase, public SessionBase {
 	friend TcpServerBase;
+	friend TcpClientBase;
 
 private:
 	static void shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now);
@@ -40,10 +42,11 @@ public:
 	explicit TcpSessionBase(Move<UniqueFile> socket);
 	~TcpSessionBase();
 
-protected:
+private:
 	void init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter);
 	void create_shutdown_timer();
 
+protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable) OVERRIDE;
 	int poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable) OVERRIDE;
