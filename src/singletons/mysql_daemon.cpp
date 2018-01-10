@@ -25,8 +25,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <mysqld_error.h>
-#include <errmsg.h>
+#include <mysql/mysqld_error.h>
+#include <mysql/errmsg.h>
 
 namespace Poseidon {
 

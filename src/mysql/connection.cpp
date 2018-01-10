@@ -11,8 +11,7 @@
 #include "../time.hpp"
 #include "../system_exception.hpp"
 #include "../uuid.hpp"
-#include <cstdlib>
-#include <mysql.h>
+#include <mysql/mysql.h>
 
 namespace Poseidon {
 namespace MySql {

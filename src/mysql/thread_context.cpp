@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "thread_context.hpp"
 #include "connection.hpp"
-#include <mysql.h>
+#include <mysql/mysql.h>
 #include "../exception.hpp"
 #include "../log.hpp"
 
