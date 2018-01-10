@@ -36,7 +36,7 @@ sudo mkdir -p "${prefix}/man"
 sudo mkdir -p "${prefix}/sbin"
 sudo mkdir -p "${prefix}/share/doc"
 
-sudo checkinstall --backup=no --nodoc -y --exclude="${tmpdir}" --exclude="$(echo ~)"	\
+sudo checkinstall --backup=no --nodoc -y --addso=yes --exclude="${tmpdir}" --exclude="$(echo ~)"	\
 	--pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
 	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="${provides}"
 sudo mv *.deb "${dstdir}/"
