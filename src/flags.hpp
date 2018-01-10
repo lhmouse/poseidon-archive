@@ -12,25 +12,29 @@
 
 namespace Poseidon {
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+
 template<typename T>
 inline T &add_flags(T &val, typename boost::common_type<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
-	val = static_cast<T>(val | flags);
+	val |= flags;
 	return val;
 }
 template<typename T>
 inline T &remove_flags(T &val, typename boost::common_type<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
-	val = static_cast<T>(val & ~flags);
+	val &= ~flags;
 	return val;
 }
 template<typename T>
 inline T &flip_flags(T &val, typename boost::common_type<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
-	val = static_cast<T>(val ^ flags);
+	val ^= flags;
 	return val;
 }
 
@@ -52,6 +56,8 @@ inline bool has_none_flags_of(const T &val, typename boost::common_type<T>::type
 
 	return (val & flags) == 0;
 }
+
+#pragma GCC diagnostic pop
 
 }
 
