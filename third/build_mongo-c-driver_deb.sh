@@ -26,7 +26,7 @@ tar -xzvf "${_archive}"
 cd "${_unpackeddir}"
 CFLAGS="-O2" ./configure --prefix="${prefix}"	\
 	--disable-automatic-init-and-cleanup --with-libbson=bundled
-make -j4
+make -j"$(nproc)"
 
 sudo mkdir -p "${prefix}/bin"
 sudo mkdir -p "${prefix}/etc"
@@ -36,7 +36,7 @@ sudo mkdir -p "${prefix}/man"
 sudo mkdir -p "${prefix}/sbin"
 sudo mkdir -p "${prefix}/share/doc"
 
-sudo checkinstall --backup=no --nodoc -y --exclude=$(readlink -f ~)	\
+sudo checkinstall --backup=no --nodoc -y --exclude="${tmpdir}" --exclude="$(echo ~)"	\
 	--pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
 	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="${provides}"
 sudo mv *.deb "${dstdir}/"
