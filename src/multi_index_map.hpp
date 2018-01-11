@@ -44,7 +44,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 			ValT m_val;	\
 			\
 		public:	\
-			KeySetter(Poseidon::Move<ValT> val)	\
+			KeySetter(::Poseidon::Move<ValT> val)	\
 				: m_val(STD_MOVE_IDN(val))	\
 			{ }	\
 			\
