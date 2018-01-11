@@ -20,7 +20,6 @@ namespace Poseidon {
 class Deflator : NONCOPYABLE {
 private:
 	::z_stream m_stream;
-	unsigned char m_temp[16384];
 	StreamBuffer m_buffer;
 
 public:
@@ -54,7 +53,6 @@ public:
 class Inflator : NONCOPYABLE {
 private:
 	::z_stream m_stream;
-	unsigned char m_temp[16384];
 	StreamBuffer m_buffer;
 
 public:

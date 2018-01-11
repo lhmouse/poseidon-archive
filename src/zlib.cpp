@@ -52,11 +52,12 @@ void Deflator::put(const void *data, std::size_t size){
 		if(m_stream.avail_in == 0){
 			break;
 		}
-		m_stream.next_out = m_temp;
-		m_stream.avail_out = sizeof(m_temp);
+		unsigned char temp[4096];
+		m_stream.next_out = temp;
+		m_stream.avail_out = sizeof(temp);
 		err_code = ::deflate(&m_stream, Z_NO_FLUSH);
 		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::deflate()"), err_code);
-		m_buffer.put(m_temp, static_cast<unsigned>(m_stream.next_out - m_temp));
+		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
 }
@@ -77,14 +78,15 @@ void Deflator::flush(){
 	m_stream.avail_in = 0;
 	int err_code;
 	for(;;){
-		m_stream.next_out = m_temp;
-		m_stream.avail_out = sizeof(m_temp);
+		unsigned char temp[4096];
+		m_stream.next_out = temp;
+		m_stream.avail_out = sizeof(temp);
 		err_code = ::deflate(&m_stream, Z_SYNC_FLUSH);
 		if(err_code == Z_BUF_ERROR){
 			break;
 		}
 		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::deflate()"), err_code);
-		m_buffer.put(m_temp, static_cast<unsigned>(m_stream.next_out - m_temp));
+		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
 }
@@ -95,17 +97,19 @@ StreamBuffer Deflator::finalize(){
 	m_stream.avail_in = 0;
 	int err_code;
 	for(;;){
-		m_stream.next_out = m_temp;
-		m_stream.avail_out = sizeof(m_temp);
+		unsigned char temp[4096];
+		m_stream.next_out = temp;
+		m_stream.avail_out = sizeof(temp);
 		err_code = ::deflate(&m_stream, Z_FINISH);
 		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::deflate()"), err_code);
-		m_buffer.put(m_temp, static_cast<unsigned>(m_stream.next_out - m_temp));
+		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		if(err_code == Z_STREAM_END){
 			break;
 		}
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
-	AUTO(ret, STD_MOVE_IDN(m_buffer));
+	StreamBuffer ret;
+	ret.swap(m_buffer);
 	clear();
 	return ret;
 }
@@ -154,11 +158,12 @@ void Inflator::put(const void *data, std::size_t size){
 		if(m_stream.avail_in == 0){
 			break;
 		}
-		m_stream.next_out = m_temp;
-		m_stream.avail_out = sizeof(m_temp);
+		unsigned char temp[4096];
+		m_stream.next_out = temp;
+		m_stream.avail_out = sizeof(temp);
 		err_code = ::inflate(&m_stream, Z_NO_FLUSH);
 		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::inflate()"), err_code);
-		m_buffer.put(m_temp, static_cast<unsigned>(m_stream.next_out - m_temp));
+		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		if(err_code == Z_STREAM_END){
 			break;
 		}
@@ -182,14 +187,15 @@ void Inflator::flush(){
 	m_stream.avail_in = 0;
 	int err_code;
 	for(;;){
-		m_stream.next_out = m_temp;
-		m_stream.avail_out = sizeof(m_temp);
+		unsigned char temp[4096];
+		m_stream.next_out = temp;
+		m_stream.avail_out = sizeof(temp);
 		err_code = ::inflate(&m_stream, Z_SYNC_FLUSH);
 		if(err_code == Z_BUF_ERROR){
 			break;
 		}
 		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::inflate()"), err_code);
-		m_buffer.put(m_temp, static_cast<unsigned>(m_stream.next_out - m_temp));
+		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
 }
@@ -200,17 +206,19 @@ StreamBuffer Inflator::finalize(){
 	m_stream.avail_in = 0;
 	int err_code;
 	for(;;){
-		m_stream.next_out = m_temp;
-		m_stream.avail_out = sizeof(m_temp);
+		unsigned char temp[4096];
+		m_stream.next_out = temp;
+		m_stream.avail_out = sizeof(temp);
 		err_code = ::inflate(&m_stream, Z_FINISH);
 		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::inflate()"), err_code);
-		m_buffer.put(m_temp, static_cast<unsigned>(m_stream.next_out - m_temp));
+		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		if(err_code == Z_STREAM_END){
 			break;
 		}
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
-	AUTO(ret, STD_MOVE_IDN(m_buffer));
+	StreamBuffer ret;
+	ret.swap(m_buffer);
 	clear();
 	return ret;
 }
