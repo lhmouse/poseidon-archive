@@ -8,6 +8,7 @@
 #include <openssl/err.h>
 #include "exception.hpp"
 #include "log.hpp"
+#include "profiler.hpp"
 
 namespace Poseidon {
 
@@ -52,6 +53,8 @@ SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
 SslFilterBase::~SslFilterBase(){ }
 
 long SslFilterBase::recv(void *data, unsigned long size){
+	PROFILE_ME;
+
 	const Mutex::UniqueLock lock(m_mutex);
 	int bytes_read = ::SSL_read(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
 	if(bytes_read <= 0){
@@ -69,6 +72,8 @@ long SslFilterBase::recv(void *data, unsigned long size){
 	return bytes_read;
 }
 long SslFilterBase::send(const void *data, unsigned long size){
+	PROFILE_ME;
+
 	const Mutex::UniqueLock lock(m_mutex);
 	int bytes_written = ::SSL_write(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
 	if(bytes_written <= 0){
@@ -92,6 +97,8 @@ long SslFilterBase::send(const void *data, unsigned long size){
 	return bytes_written;
 }
 void SslFilterBase::send_fin() NOEXCEPT {
+	PROFILE_ME;
+
 	const Mutex::UniqueLock lock(m_mutex);
 	const int status = ::SSL_shutdown(m_ssl.get());
 	if(status == 1){
