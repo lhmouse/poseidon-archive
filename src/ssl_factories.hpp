@@ -7,31 +7,34 @@
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include "ssl_raii.hpp"
+#include <boost/scoped_ptr.hpp>
 
 namespace Poseidon {
 
-class SslFactoryBase : NONCOPYABLE {
-protected:
-	UniqueSslCtx m_ctx;
+class SslFilter;
 
-protected:
-	explicit SslFactoryBase();
-	virtual ~SslFactoryBase() = 0;
+class SslServerFactory : NONCOPYABLE {
+private:
+	const UniqueSslCtx m_ssl_ctx;
 
 public:
-	void create_ssl(UniqueSsl &ssl) const;
+	explicit SslServerFactory(const char *certificate, const char *private_key);
+	~SslServerFactory();
+
+public:
+	void create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd);
 };
 
-class ServerSslFactory : public SslFactoryBase {
-public:
-	explicit ServerSslFactory(const char *certificate, const char *private_key);
-	~ServerSslFactory() OVERRIDE;
-};
+class SslClientFactory : NONCOPYABLE {
+private:
+	const UniqueSslCtx m_ssl_ctx;
 
-class ClientSslFactory : public SslFactoryBase {
 public:
-	explicit ClientSslFactory(bool verify_peer);
-	~ClientSslFactory() OVERRIDE;
+	explicit SslClientFactory(bool verify_peer);
+	~SslClientFactory();
+
+public:
+	void create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd);
 };
 
 }

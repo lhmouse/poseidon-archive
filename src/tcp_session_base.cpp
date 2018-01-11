@@ -3,7 +3,7 @@
 
 #include "precompiled.hpp"
 #include "tcp_session_base.hpp"
-#include "ssl_filter_base.hpp"
+#include "ssl_filter.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -43,7 +43,8 @@ TcpSessionBase::TcpSessionBase(Move<UniqueFile> socket)
 { }
 TcpSessionBase::~TcpSessionBase(){ }
 
-void TcpSessionBase::init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter){
+void TcpSessionBase::init_ssl(boost::scoped_ptr<SslFilter> &ssl_filter){
+	DEBUG_THROW_ASSERT(!m_ssl_filter);
 	swap(m_ssl_filter, ssl_filter);
 }
 void TcpSessionBase::create_shutdown_timer(){

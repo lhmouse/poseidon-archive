@@ -4,7 +4,7 @@
 #include "precompiled.hpp"
 #include "tcp_client_base.hpp"
 #include "ssl_factories.hpp"
-#include "ssl_filter_base.hpp"
+#include "ssl_filter.hpp"
 #include "sock_addr.hpp"
 #include "ip_port.hpp"
 #include <sys/types.h>
@@ -19,15 +19,6 @@
 namespace Poseidon {
 
 namespace {
-	class SslFilter : public SslFilterBase {
-	public:
-		SslFilter(Move<UniqueSsl> ssl, int fd)
-			: SslFilterBase(STD_MOVE(ssl), fd)
-		{
-			::SSL_set_connect_state(get_ssl());
-		}
-	};
-
 #ifdef POSEIDON_CXX11
 	UniqueFile
 #else
@@ -51,12 +42,10 @@ TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_pee
 	DEBUG_THROW_UNLESS((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0) || (errno == EINPROGRESS), SystemException);
 	if(use_ssl){
 		LOG_POSEIDON_INFO("Initiating SSL handshake...");
-		m_ssl_factory.reset(new ClientSslFactory(verify_peer));
-		UniqueSsl ssl;
-		m_ssl_factory->create_ssl(ssl);
-		boost::scoped_ptr<SslFilterBase> filter;
-		filter.reset(new SslFilter(STD_MOVE(ssl), get_fd()));
-		init_ssl(STD_MOVE(filter));
+		m_ssl_factory.reset(new SslClientFactory(verify_peer));
+		boost::scoped_ptr<SslFilter> ssl_filter;
+		m_ssl_factory->create_ssl_filter(ssl_filter, get_fd());
+		TcpSessionBase::init_ssl(ssl_filter);
 	}
 }
 TcpClientBase::~TcpClientBase(){ }

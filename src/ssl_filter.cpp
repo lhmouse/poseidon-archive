@@ -2,13 +2,13 @@
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "ssl_filter_base.hpp"
-#include <sys/socket.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+#include "ssl_filter.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "profiler.hpp"
+#include <sys/socket.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 namespace Poseidon {
 
@@ -21,6 +21,7 @@ namespace {
 			LOG_POSEIDON_WARNING("SSL error: ", str);
 		}
 	}
+
 	int get_errno_from_ssl_ret(::SSL *ssl, int ssl_ret){
 		const int err = ::SSL_get_error(ssl, ssl_ret);
 		LOG_POSEIDON_TRACE("SSL error: ssl_ret = ", ssl_ret, ", err = ", err);
@@ -45,14 +46,19 @@ namespace {
 	}
 }
 
-SslFilterBase::SslFilterBase(Move<UniqueSsl> ssl, int fd)
-	: m_ssl(STD_MOVE(ssl)), m_fd(fd)
+SslFilter::SslFilter(Move<UniqueSsl> ssl, SslFilter::Direction dir, int fd)
+	: m_ssl(STD_MOVE(ssl))
 {
+	if(dir == DIR_TO_CONNECT){
+		::SSL_set_connect_state(m_ssl.get());
+	} else if(dir == DIR_TO_ACCEPT){
+		::SSL_set_accept_state(m_ssl.get());
+	}
 	DEBUG_THROW_UNLESS(::SSL_set_fd(m_ssl.get(), fd), Exception, sslit("::SSL_set_fd() failed"));
 }
-SslFilterBase::~SslFilterBase(){ }
+SslFilter::~SslFilter(){ }
 
-long SslFilterBase::recv(void *data, unsigned long size){
+long SslFilter::recv(void *data, unsigned long size){
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_mutex);
@@ -71,7 +77,7 @@ long SslFilterBase::recv(void *data, unsigned long size){
 	}
 	return bytes_read;
 }
-long SslFilterBase::send(const void *data, unsigned long size){
+long SslFilter::send(const void *data, unsigned long size){
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_mutex);
@@ -96,7 +102,7 @@ long SslFilterBase::send(const void *data, unsigned long size){
 	}
 	return bytes_written;
 }
-void SslFilterBase::send_fin() NOEXCEPT {
+void SslFilter::send_fin() NOEXCEPT {
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_mutex);

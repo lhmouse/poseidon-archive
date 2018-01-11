@@ -12,13 +12,13 @@
 
 namespace Poseidon {
 
-class ServerSslFactory;
+class SslServerFactory;
 class TcpSessionBase;
 
 // 抽象工厂模式
 class TcpServerBase : public SocketBase {
 private:
-	boost::scoped_ptr<ServerSslFactory> m_ssl_factory;
+	boost::scoped_ptr<SslServerFactory> m_ssl_factory;
 
 public:
 	explicit TcpServerBase(const SockAddr &addr, const char *certificate = "", const char *private_key = "");

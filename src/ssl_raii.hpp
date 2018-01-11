@@ -5,8 +5,8 @@
 #define POSEIDON_SSL_RAII_HPP_
 
 #include "cxx_ver.hpp"
-#include <openssl/ossl_typ.h>
 #include "raii.hpp"
+#include <openssl/ssl.h>
 
 namespace Poseidon {
 

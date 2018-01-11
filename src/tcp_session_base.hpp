@@ -14,7 +14,7 @@ namespace Poseidon {
 
 class TcpServerBase;
 class TcpClientBase;
-class SslFilterBase;
+class SslFilter;
 class Timer;
 
 class TcpSessionBase : public SocketBase, public SessionBase {
@@ -25,7 +25,7 @@ private:
 	static void shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now);
 
 private:
-	boost::scoped_ptr<SslFilterBase> m_ssl_filter;
+	boost::scoped_ptr<SslFilter> m_ssl_filter;
 
 	bool m_connected_notified;
 	bool m_read_hup_notified;
@@ -43,7 +43,7 @@ public:
 	~TcpSessionBase();
 
 private:
-	void init_ssl(Move<boost::scoped_ptr<SslFilterBase> > ssl_filter);
+	void init_ssl(boost::scoped_ptr<SslFilter> &ssl_filter);
 	void create_shutdown_timer();
 
 protected:

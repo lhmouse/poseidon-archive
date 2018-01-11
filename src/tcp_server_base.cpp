@@ -5,7 +5,7 @@
 #include "tcp_server_base.hpp"
 #include "tcp_session_base.hpp"
 #include "ssl_factories.hpp"
-#include "ssl_filter_base.hpp"
+#include "ssl_filter.hpp"
 #include "sock_addr.hpp"
 #include "ip_port.hpp"
 #include <sys/types.h>
@@ -21,15 +21,6 @@
 namespace Poseidon {
 
 namespace {
-	class SslFilter : public SslFilterBase {
-	public:
-		SslFilter(Move<UniqueSsl> ssl, int fd)
-			: SslFilterBase(STD_MOVE(ssl), fd)
-		{
-			::SSL_set_accept_state(get_ssl());
-		}
-	};
-
 #ifdef POSEIDON_CXX11
 	UniqueFile
 #else
@@ -55,7 +46,7 @@ TcpServerBase::TcpServerBase(const SockAddr &addr, const char *certificate, cons
 	: SocketBase(create_tcp_socket(addr))
 {
 	if(certificate && *certificate){
-		m_ssl_factory.reset(new ServerSslFactory(certificate, private_key));
+		m_ssl_factory.reset(new SslServerFactory(certificate, private_key));
 	}
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
@@ -92,11 +83,9 @@ int TcpServerBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t
 		}
 		try {
 			if(m_ssl_factory){
-				UniqueSsl ssl;
-				m_ssl_factory->create_ssl(ssl);
-				boost::scoped_ptr<SslFilterBase> filter;
-				filter.reset(new SslFilter(STD_MOVE(ssl), session->get_fd()));
-				session->init_ssl(STD_MOVE(filter));
+				boost::scoped_ptr<SslFilter> ssl_filter;
+				m_ssl_factory->create_ssl_filter(ssl_filter, session->get_fd());
+				session->init_ssl(ssl_filter);
 			}
 			const AUTO(tcp_request_timeout, MainConfig::get<boost::uint64_t>("tcp_request_timeout", 5000));
 			session->set_timeout(tcp_request_timeout);

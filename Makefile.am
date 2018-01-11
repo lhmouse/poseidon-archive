@@ -72,7 +72,7 @@ pkginclude_HEADERS = \
 	poseidon/src/atomic.hpp	\
 	poseidon/src/session_base.hpp	\
 	poseidon/src/cxx_ver.hpp	\
-	poseidon/src/ssl_filter_base.hpp	\
+	poseidon/src/ssl_filter.hpp	\
 	poseidon/src/sock_addr.hpp	\
 	poseidon/src/virtual_shared_from_this.hpp	\
 	poseidon/src/json.hpp	\
@@ -206,7 +206,7 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/system_servlet_base.cpp	\
 	poseidon/src/optional_map.cpp	\
 	poseidon/src/ssl_raii.cpp	\
-	poseidon/src/ssl_filter_base.cpp	\
+	poseidon/src/ssl_filter.cpp	\
 	poseidon/src/ssl_factories.cpp	\
 	poseidon/src/socket_base.cpp	\
 	poseidon/src/tcp_session_base.cpp	\

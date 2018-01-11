@@ -3,7 +3,6 @@
 
 #include "precompiled.hpp"
 #include "ssl_raii.hpp"
-#include <openssl/ssl.h>
 
 namespace Poseidon {
 
