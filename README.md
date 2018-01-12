@@ -12,6 +12,7 @@ CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，
 简介参见 src/cbpp/message_base.hpp 中的注释。  
 CBPP is short for 'Compressed Binary Protocol for Poseidon'.  
 Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.  
+
 * HTTP  
 * WebSocket  
 * MySQL  
@@ -28,11 +29,13 @@ Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.
 * gettext  
 * make  
 * g++  
+* libboost-dev  
+* lib{a,l,ub}san  
+
 建议 g++ 版本至少为 4.7 以支持 C++11 特性。  
 针对 C++98 的支持可能在未来的版本中被移除。  
 It is highly recommended that you use at least g++ 4.7 for C++11 features.  
 Support for C++98 is deprecated and might be removed in future versions.  
-* libboost-dev  
 
 ### 运行环境要求
 ### Runtime Environment Requirements
