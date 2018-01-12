@@ -39,6 +39,9 @@ public:
 	void put(char ch){
 		put(&ch, 1);
 	}
+	void put(int ch){
+		put(static_cast<char>(ch));
+	}
 	void put(const char *str){
 		put(str, std::strlen(str));
 	}
@@ -71,6 +74,9 @@ public:
 	void put(const void *data, std::size_t size);
 	void put(char ch){
 		put(&ch, 1);
+	}
+	void put(int ch){
+		put(static_cast<char>(ch));
 	}
 	void put(const char *str){
 		put(str, std::strlen(str));
