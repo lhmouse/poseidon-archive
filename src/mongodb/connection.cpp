@@ -12,6 +12,7 @@
 #include "bson_builder.hpp"
 #include "../raii.hpp"
 #include "../log.hpp"
+#include "../profiler.hpp"
 #include "../time.hpp"
 #include "../uuid.hpp"
 #include <cstdlib>
@@ -82,6 +83,8 @@ namespace {
 			: m_database(database)
 			, m_cursor_id(0), m_cursor_ns()
 		{
+			PROFILE_ME;
+
 			int err = ::pthread_once(&g_mongo_once, &init_mongo);
 			if(err != 0){
 				LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
@@ -97,6 +100,8 @@ namespace {
 
 	private:
 		bool find_bson_element_and_check_type(::bson_iter_t &it, const char *name, ::bson_type_t type_expecting) const {
+			PROFILE_ME;
+
 			if(!m_element_guard){
 				LOG_POSEIDON_WARNING("No more results available.");
 				return false;
@@ -117,6 +122,8 @@ namespace {
 
 	public:
 		void execute_bson(const BsonBuilder &bson) FINAL {
+			PROFILE_ME;
+
 			const AUTO(query_data, bson.build(false));
 			::bson_t query_storage;
 			bool success = ::bson_init_static(&query_storage, reinterpret_cast<const boost::uint8_t *>(query_data.data()), query_data.size());
@@ -126,6 +133,7 @@ namespace {
 
 			discard_result();
 
+			LOG_POSEIDON_DEBUG("Sending query to MongoDB server: ", bson.build_json());
 			::bson_t reply_storage;
 			::bson_error_t err;
 			success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
@@ -168,6 +176,8 @@ namespace {
 			}
 		}
 		void discard_result() NOEXCEPT FINAL {
+			PROFILE_ME;
+
 			m_cursor_id = 0;
 			m_cursor_ns.clear();
 			m_batch_guard.reset();
@@ -175,6 +185,8 @@ namespace {
 		}
 
 		bool fetch_next() FINAL {
+			PROFILE_ME;
+
 			while(m_batch_guard && !::bson_iter_next(&m_batch_it)){
 				m_batch_guard.reset();
 
@@ -250,6 +262,8 @@ namespace {
 		}
 
 		bool get_boolean(const char *name) const FINAL {
+			PROFILE_ME;
+
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BOOL)){
 				return VAL_INIT;
@@ -258,6 +272,8 @@ namespace {
 			return value;
 		}
 		boost::int64_t get_signed(const char *name) const FINAL {
+			PROFILE_ME;
+
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
 				return VAL_INIT;
@@ -266,6 +282,8 @@ namespace {
 			return value;
 		}
 		boost::uint64_t get_unsigned(const char *name) const FINAL {
+			PROFILE_ME;
+
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
 				return VAL_INIT;
@@ -274,6 +292,8 @@ namespace {
 			return static_cast<boost::uint64_t>(shifted) + (1ull << 63);
 		}
 		double get_double(const char *name) const FINAL {
+			PROFILE_ME;
+
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_DOUBLE)){
 				return VAL_INIT;
@@ -282,6 +302,8 @@ namespace {
 			return value;
 		}
 		std::string get_string(const char *name) const FINAL {
+			PROFILE_ME;
+
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
 				return VAL_INIT;
@@ -291,6 +313,8 @@ namespace {
 			return std::string(str, len);
 		}
 		boost::uint64_t get_datetime(const char *name) const FINAL {
+			PROFILE_ME;
+
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
 				return VAL_INIT;
@@ -299,6 +323,8 @@ namespace {
 			return scan_time(str);
 		}
 		Uuid get_uuid(const char *name) const FINAL {
+			PROFILE_ME;
+
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
 				return VAL_INIT;
@@ -309,6 +335,8 @@ namespace {
 			return Uuid(reinterpret_cast<const char (&)[36]>(*str));
 		}
 		std::basic_string<unsigned char> get_blob(const char *name) const FINAL {
+			PROFILE_ME;
+
 			::bson_iter_t it;
 			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BINARY)){
 				return VAL_INIT;

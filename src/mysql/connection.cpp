@@ -8,6 +8,7 @@
 #include "formatting.hpp"
 #include "../raii.hpp"
 #include "../log.hpp"
+#include "../profiler.hpp"
 #include "../time.hpp"
 #include "../system_exception.hpp"
 #include "../uuid.hpp"
@@ -58,6 +59,8 @@ namespace {
 			: m_schema(schema)
 			, m_row(NULLPTR), m_lengths(NULLPTR)
 		{
+			PROFILE_ME;
+
 			DEBUG_THROW_UNLESS(m_mysql.reset(::mysql_init(&m_mysql_storage)), BasicException, sslit("::mysql_init() failed"));
 			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_COMPRESS"));
 			static CONSTEXPR const ::my_bool TRUE_VALUE = true;
@@ -72,6 +75,8 @@ namespace {
 
 	private:
 		bool find_field_and_check(const char *&data, std::size_t &size, const char *name) const {
+			PROFILE_ME;
+
 			if(!m_row){
 				LOG_POSEIDON_WARNING("No more results available.");
 				return false;
@@ -92,8 +97,11 @@ namespace {
 
 	public:
 		void execute_sql_explicit(const char *sql, std::size_t len) FINAL {
+			PROFILE_ME;
+
 			discard_result();
 
+			LOG_POSEIDON_DEBUG("Sending query to MySQL server: ", std::string(sql, len));
 			DEBUG_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
 
 			if(!m_result.reset(::mysql_use_result(m_mysql.get()))){
@@ -111,6 +119,8 @@ namespace {
 			}
 		}
 		void discard_result() NOEXCEPT FINAL {
+			PROFILE_ME;
+
 			m_result.reset();
 			m_fields.clear();
 			m_row = NULLPTR;
@@ -122,6 +132,8 @@ namespace {
 		}
 
 		bool fetch_row() FINAL {
+			PROFILE_ME;
+
 			if(m_fields.empty()){
 				LOG_POSEIDON_DEBUG("Empty set returned from MySQL server.");
 				return false;
@@ -139,6 +151,8 @@ namespace {
 		}
 
 		boost::int64_t get_signed(const char *name) const FINAL {
+			PROFILE_ME;
+
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -150,6 +164,8 @@ namespace {
 			return val;
 		}
 		boost::uint64_t get_unsigned(const char *name) const FINAL {
+			PROFILE_ME;
+
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -161,6 +177,8 @@ namespace {
 			return val;
 		}
 		double get_double(const char *name) const FINAL {
+			PROFILE_ME;
+
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -172,6 +190,8 @@ namespace {
 			return val;
 		}
 		std::string get_string(const char *name) const FINAL {
+			PROFILE_ME;
+
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -180,6 +200,8 @@ namespace {
 			return std::string(data, size);
 		}
 		boost::uint64_t get_datetime(const char *name) const FINAL {
+			PROFILE_ME;
+
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -188,6 +210,8 @@ namespace {
 			return scan_time(data);
 		}
 		Uuid get_uuid(const char *name) const FINAL {
+			PROFILE_ME;
+
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
@@ -197,6 +221,8 @@ namespace {
 			return Uuid(reinterpret_cast<const char (&)[36]>(data[0]));
 		}
 		std::basic_string<unsigned char> get_blob(const char *name) const FINAL {
+			PROFILE_ME;
+
 			const char *data;
 			std::size_t size;
 			if(!find_field_and_check(data, size, name)){
