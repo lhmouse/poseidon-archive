@@ -66,8 +66,7 @@ namespace {
 
 	class DelegatedConnection : public Connection {
 	private:
-		const SharedNts m_database;
-
+		SharedNts m_database;
 		UniqueHandle<UriCloser> m_uri;
 		UniqueHandle<ClientCloser> m_client;
 
@@ -85,11 +84,7 @@ namespace {
 		{
 			PROFILE_ME;
 
-			int err = ::pthread_once(&g_mongo_once, &init_mongo);
-			if(err != 0){
-				LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
-				std::abort();
-			}
+			DEBUG_THROW_ASSERT(::pthread_once(&g_mongo_once, &init_mongo) == 0);
 			DEBUG_THROW_UNLESS(m_uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port)), BasicException, sslit("::mongoc_uri_new_for_host_port() failed"));
 			DEBUG_THROW_UNLESS(::mongoc_uri_set_username(m_uri.get(), user_name), BasicException, sslit("::mongoc_uri_set_username() failed"));
 			DEBUG_THROW_UNLESS(::mongoc_uri_set_password(m_uri.get(), password), BasicException, sslit("::mongoc_uri_set_password() failed"));

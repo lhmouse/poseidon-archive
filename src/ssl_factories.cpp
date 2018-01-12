@@ -41,13 +41,13 @@ namespace {
 		create_server_ssl_ctx(const char *certificate, const char *private_key)
 	{
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(::pthread_once(&g_ssl_once, &init_openssl) == 0, Exception, sslit("init_openssl() failed"));
 
 #ifdef POSEIDON_CXX11
 		UniqueSslCtx ssl_ctx;
 #else
 		static __thread UniqueSslCtx ssl_ctx;
 #endif
+		DEBUG_THROW_ASSERT(::pthread_once(&g_ssl_once, &init_openssl) == 0);
 		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_server_method())), Exception, sslit("::SSLv23_server_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv3);
@@ -76,13 +76,13 @@ namespace {
 		create_client_ssl_ctx(bool verify_peer)
 	{
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(::pthread_once(&g_ssl_once, &init_openssl) == 0, Exception, sslit("init_openssl() failed"));
 
 #ifdef POSEIDON_CXX11
 		UniqueSslCtx ssl_ctx;
 #else
 		static __thread UniqueSslCtx ssl_ctx;
 #endif
+		DEBUG_THROW_ASSERT(::pthread_once(&g_ssl_once, &init_openssl) == 0);
 		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_client_method())), Exception, sslit("::SSLv23_client_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv3);

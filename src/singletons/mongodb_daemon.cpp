@@ -488,12 +488,11 @@ namespace {
 			PROFILE_ME;
 			LOG_POSEIDON_INFO("MongoDB thread started.");
 
-			const AUTO(reconnect_delay, MainConfig::get<boost::uint64_t>("mongodb_reconn_delay", 5000));
-
 			boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
 
 			unsigned timeout = 0;
 			for(;;){
+				const AUTO(reconnect_delay, MainConfig::get<boost::uint64_t>("mongodb_reconn_delay", 5000));
 				bool busy;
 				do {
 					while(!master_conn){

@@ -7,7 +7,6 @@
 #include "../mysql/object_base.hpp"
 #include "../mysql/exception.hpp"
 #include "../mysql/connection.hpp"
-#include "../mysql/thread_context.hpp"
 #include "../thread.hpp"
 #include "../mutex.hpp"
 #include "../condition_variable.hpp"
@@ -472,13 +471,11 @@ namespace {
 			PROFILE_ME;
 			LOG_POSEIDON_INFO("MySQL thread started.");
 
-			const MySql::ThreadContext thread_context;
-			const AUTO(reconnect_delay, MainConfig::get<boost::uint64_t>("mysql_reconn_delay", 5000));
-
 			boost::shared_ptr<MySql::Connection> master_conn, slave_conn;
 
 			unsigned timeout = 0;
 			for(;;){
+				const AUTO(reconnect_delay, MainConfig::get<boost::uint64_t>("mysql_reconn_delay", 5000));
 				bool busy;
 				do {
 					while(!master_conn){

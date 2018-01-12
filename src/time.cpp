@@ -24,17 +24,15 @@ boost::uint64_t get_local_time(){
 	return get_local_time_from_utc(get_utc_time());
 }
 boost::uint64_t get_utc_time_from_local(boost::uint64_t local){
-	const int err = ::pthread_once(&g_tz_once, &::tzset);
-	if(err != 0){
-		LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
+	if(::pthread_once(&g_tz_once, &::tzset) != 0){
+		LOG_POSEIDON_FATAL("::pthread_once() failed.");
 		std::abort();
 	}
 	return local + (boost::uint64_t)(::timezone * 1000);
 }
 boost::uint64_t get_local_time_from_utc(boost::uint64_t utc){
-	const int err = ::pthread_once(&g_tz_once, &::tzset);
-	if(err != 0){
-		LOG_POSEIDON_FATAL("::pthread_once() failed with error code ", err);
+	if(::pthread_once(&g_tz_once, &::tzset) != 0){
+		LOG_POSEIDON_FATAL("::pthread_once() failed.");
 		std::abort();
 	}
 	return utc - (boost::uint64_t)(::timezone * 1000);

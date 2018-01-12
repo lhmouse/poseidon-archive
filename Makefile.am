@@ -155,7 +155,6 @@ pkginclude_mysqldir = $(pkgincludedir)/mysql
 pkginclude_mysql_HEADERS = \
 	poseidon/src/mysql/fwd.hpp	\
 	poseidon/src/mysql/object_generator.hpp	\
-	poseidon/src/mysql/thread_context.hpp	\
 	poseidon/src/mysql/connection.hpp	\
 	poseidon/src/mysql/object_base.hpp	\
 	poseidon/src/mysql/exception.hpp	\
@@ -284,7 +283,6 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/mysql/object_base.cpp	\
 	poseidon/src/mysql/exception.cpp	\
 	poseidon/src/mysql/formatting.cpp	\
-	poseidon/src/mysql/thread_context.cpp	\
 	poseidon/src/mysql/connection.cpp	\
 	poseidon/src/mongodb/object_base.cpp	\
 	poseidon/src/mongodb/exception.cpp	\

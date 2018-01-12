@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "connection.hpp"
-#include "thread_context.hpp"
 #include "exception.hpp"
 #include "formatting.hpp"
 #include "../raii.hpp"
@@ -43,9 +42,7 @@ namespace {
 
 	class DelegatedConnection : public Connection {
 	private:
-		const ThreadContext m_context;
-		const SharedNts m_schema;
-
+		SharedNts m_schema;
 		::MYSQL m_mysql_storage;
 		UniqueHandle<Closer> m_mysql;
 
