@@ -246,8 +246,8 @@ namespace {
 		::AES_encrypt(reinterpret_cast<const unsigned char *>(nonce), out.data(), &aes_key);
 		char *write = str;
 		for(unsigned i = 0; i < 16; ++i){
-			const unsigned hi = out[i] / 16;
-			const unsigned lo = out[i] % 16;
+			const int hi = out[i] / 16;
+			const int lo = out[i] % 16;
 			*(write++) = static_cast<char>('a' + hi);
 			*(write++) = static_cast<char>('a' + lo);
 		}
@@ -263,12 +263,12 @@ namespace {
 		boost::array<unsigned char, 16> in;
 		const char *read = str;
 		for(unsigned i = 0; i < 16; ++i){
-			const unsigned hi = static_cast<unsigned>(*(read++)) - 'a';
-			if(hi >= 16){
+			const int hi = *(read++) - 'a';
+			if((hi < 0) || (hi >= 16)){
 				return false;
 			}
-			const unsigned lo = static_cast<unsigned>(*(read++)) - 'a';
-			if(lo >= 16){
+			const int lo = *(read++) - 'a';
+			if((lo < 0) || (lo >= 16)){
 				return false;
 			}
 			in[i] = static_cast<unsigned char>(hi * 16 + lo);
