@@ -59,7 +59,7 @@ namespace {
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;
 
-	void dump_sql_to_file(const std::string &query, long err_code, const char *err_msg) NOEXCEPT
+	void dump_sql_to_file(const std::string &query, unsigned long err_code, const char *err_msg) NOEXCEPT
 	try {
 		PROFILE_ME;
 
@@ -402,7 +402,7 @@ namespace {
 
 			std::string query;
 			STD_EXCEPTION_PTR except;
-			long err_code = 0;
+			unsigned long err_code = 0;
 			char err_msg[4096];
 			err_msg[0] = 0;
 

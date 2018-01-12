@@ -9,8 +9,8 @@ namespace Poseidon {
 namespace MongoDb {
 
 Exception::Exception(const char *file, std::size_t line, const char *func, SharedNts database, unsigned long code, SharedNts message)
-	: ProtocolException(file, line, func, STD_MOVE(message), static_cast<long>(code))
-	, m_database(STD_MOVE(database))
+	: BasicException(file, line, func, STD_MOVE(message))
+	, m_database(STD_MOVE(database)), m_code(code)
 {
 	LOG_POSEIDON_ERROR("MongoDb::Exception: database = ", get_database(), ", code = ", get_code(), ", what = ", what());
 }

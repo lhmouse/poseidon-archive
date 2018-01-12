@@ -4,20 +4,23 @@
 #ifndef POSEIDON_WEBSOCKET_EXCEPTION_HPP_
 #define POSEIDON_WEBSOCKET_EXCEPTION_HPP_
 
-#include "../protocol_exception.hpp"
+#include "../exception.hpp"
 #include "status_codes.hpp"
 
 namespace Poseidon {
 namespace WebSocket {
 
-class Exception : public ProtocolException {
+class Exception : public BasicException {
+private:
+	StatusCode m_status_code;
+
 public:
 	Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, SharedNts message = SharedNts());
 	~Exception() NOEXCEPT;
 
 public:
 	StatusCode get_status_code() const NOEXCEPT {
-		return static_cast<StatusCode>(get_code());
+		return m_status_code;
 	}
 };
 

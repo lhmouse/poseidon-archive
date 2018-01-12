@@ -4,7 +4,7 @@
 #include "precompiled.hpp"
 #include "base64.hpp"
 #include "profiler.hpp"
-#include "protocol_exception.hpp"
+#include "exception.hpp"
 
 namespace Poseidon {
 
@@ -127,11 +127,11 @@ void Base64Decoder::put(const void *data, std::size_t size){
 			} else if((seq >= (1ul << 18)) && ((seq >> 18) <= 1)){
 				n_add = 1ul << 18;
 			}
-			DEBUG_THROW_UNLESS(n_add != 0, ProtocolException, sslit("Invalid base64 padding character encountered"), -1);
+			DEBUG_THROW_UNLESS(n_add != 0, Exception, sslit("Invalid base64 padding character encountered"));
 			seq += n_add;
 		} else {
 			const int digit = from_base64_digit(ch);
-			DEBUG_THROW_UNLESS(digit >= 0, ProtocolException, sslit("Invalid base64 character encountered"), -1);
+			DEBUG_THROW_UNLESS(digit >= 0, Exception, sslit("Invalid base64 character encountered"));
 			seq += static_cast<unsigned>(digit);
 		}
 		if(seq >= (1ul << 24)){
@@ -150,7 +150,7 @@ void Base64Decoder::put(const void *data, std::size_t size){
 				m_buffer.put((seq >>  0) & 0xFF);
 				break;
 			default:
-				DEBUG_THROW(ProtocolException, sslit("Invalid base64 data"), -1);
+				DEBUG_THROW(Exception, sslit("Invalid base64 data"));
 			}
 			m_seq = 1;
 		} else {
@@ -171,7 +171,7 @@ void Base64Decoder::put(const StreamBuffer &buffer){
 StreamBuffer Base64Decoder::finalize(){
 	PROFILE_ME;
 
-	DEBUG_THROW_UNLESS(m_seq == 1, ProtocolException, sslit("Incomplete base64 data"), -1);
+	DEBUG_THROW_UNLESS(m_seq == 1, Exception, sslit("Incomplete base64 data"));
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
 	return ret;

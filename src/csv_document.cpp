@@ -7,7 +7,7 @@
 #include "profiler.hpp"
 #include "log.hpp"
 #include "buffer_streams.hpp"
-#include "protocol_exception.hpp"
+#include "exception.hpp"
 
 namespace Poseidon {
 
@@ -40,7 +40,7 @@ CsvDocument::CsvDocument(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, ProtocolException, sslit("CsvDocument parser error"), -1);
+	DEBUG_THROW_UNLESS(is, Exception, sslit("CsvDocument parser error"));
 }
 
 void CsvDocument::reset_header(const boost::container::map<SharedNts, std::string> &row){

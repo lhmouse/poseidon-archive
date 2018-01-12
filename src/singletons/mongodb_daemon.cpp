@@ -64,7 +64,7 @@ namespace {
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;
 
-	void dump_bson_to_file(const MongoDb::BsonBuilder &query, long err_code, const char *err_msg) NOEXCEPT
+	void dump_bson_to_file(const MongoDb::BsonBuilder &query, unsigned long err_code, const char *err_msg) NOEXCEPT
 	try {
 		PROFILE_ME;
 
@@ -418,7 +418,7 @@ namespace {
 
 			MongoDb::BsonBuilder query;
 			STD_EXCEPTION_PTR except;
-			long err_code = 0;
+			unsigned long err_code = 0;
 			char err_msg[4096];
 			err_msg[0] = 0;
 

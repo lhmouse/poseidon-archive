@@ -57,7 +57,6 @@ pkginclude_HEADERS = \
 	poseidon/src/ip_port.hpp	\
 	poseidon/src/exception.hpp	\
 	poseidon/src/tiny_exception.hpp	\
-	poseidon/src/protocol_exception.hpp	\
 	poseidon/src/system_exception.hpp	\
 	poseidon/src/raii.hpp	\
 	poseidon/src/cxx_util.hpp	\
@@ -192,7 +191,6 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/log.cpp	\
 	poseidon/src/exception.cpp	\
 	poseidon/src/tiny_exception.cpp	\
-	poseidon/src/protocol_exception.cpp	\
 	poseidon/src/system_exception.cpp	\
 	poseidon/src/profiler.cpp	\
 	poseidon/src/raii.cpp	\
@@ -294,7 +292,7 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/mongodb/bson_builder.cpp
 
 lib_libposeidon_main_la_LDFLAGS = \
-	-no-undefined -version-info 16:0:0
+	-no-undefined -version-info 17:0:0
 
 sysconf_DATA =
 

@@ -6,7 +6,7 @@
 #include "log.hpp"
 #include "profiler.hpp"
 #include "buffer_streams.hpp"
-#include "protocol_exception.hpp"
+#include "exception.hpp"
 
 namespace Poseidon {
 
@@ -320,7 +320,7 @@ JsonObject::JsonObject(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, ProtocolException, sslit("JsonObject parser error"), -1);
+	DEBUG_THROW_UNLESS(is, Exception, sslit("JsonObject parser error"));
 }
 
 std::string JsonObject::dump() const {
@@ -367,7 +367,7 @@ JsonArray::JsonArray(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, ProtocolException, sslit("JsonArray parser error"), -1);
+	DEBUG_THROW_UNLESS(is, Exception, sslit("JsonArray parser error"));
 }
 
 std::string JsonArray::dump() const {

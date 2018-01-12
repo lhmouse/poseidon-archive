@@ -4,7 +4,7 @@
 #include "precompiled.hpp"
 #include "zlib.hpp"
 #include "profiler.hpp"
-#include "protocol_exception.hpp"
+#include "exception.hpp"
 
 namespace Poseidon {
 
@@ -15,7 +15,7 @@ Deflator::Deflator(bool gzip, int level){
 	m_stream.next_in = NULLPTR;
 	m_stream.avail_in = 0;
 	int err_code = ::deflateInit2(&m_stream, level, Z_DEFLATED, 15 + gzip * 16, 9, Z_DEFAULT_STRATEGY);
-	DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::deflateInit2()"), err_code);
+	DEBUG_THROW_UNLESS(err_code >= 0, Exception, sslit("::deflateInit2()"));
 }
 Deflator::~Deflator(){
 	int err_code = ::deflateEnd(&m_stream);
@@ -56,7 +56,7 @@ void Deflator::put(const void *data, std::size_t size){
 		m_stream.next_out = temp;
 		m_stream.avail_out = sizeof(temp);
 		err_code = ::deflate(&m_stream, Z_NO_FLUSH);
-		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::deflate()"), err_code);
+		DEBUG_THROW_UNLESS(err_code >= 0, Exception, sslit("::deflate()"));
 		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
@@ -85,7 +85,7 @@ void Deflator::flush(){
 		if(err_code == Z_BUF_ERROR){
 			break;
 		}
-		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::deflate()"), err_code);
+		DEBUG_THROW_UNLESS(err_code >= 0, Exception, sslit("::deflate()"));
 		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
@@ -101,7 +101,7 @@ StreamBuffer Deflator::finalize(){
 		m_stream.next_out = temp;
 		m_stream.avail_out = sizeof(temp);
 		err_code = ::deflate(&m_stream, Z_FINISH);
-		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::deflate()"), err_code);
+		DEBUG_THROW_UNLESS(err_code >= 0, Exception, sslit("::deflate()"));
 		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		if(err_code == Z_STREAM_END){
 			break;
@@ -121,7 +121,7 @@ Inflator::Inflator(bool gzip){
 	m_stream.next_in = NULLPTR;
 	m_stream.avail_in = 0;
 	int err_code = ::inflateInit2(&m_stream, 15 + gzip * 16);
-	DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::deflateInit2()"), err_code);
+	DEBUG_THROW_UNLESS(err_code >= 0, Exception, sslit("::deflateInit2()"));
 }
 Inflator::~Inflator(){
 	int err_code = ::inflateEnd(&m_stream);
@@ -162,7 +162,7 @@ void Inflator::put(const void *data, std::size_t size){
 		m_stream.next_out = temp;
 		m_stream.avail_out = sizeof(temp);
 		err_code = ::inflate(&m_stream, Z_NO_FLUSH);
-		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::inflate()"), err_code);
+		DEBUG_THROW_UNLESS(err_code >= 0, Exception, sslit("::inflate()"));
 		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		if(err_code == Z_STREAM_END){
 			break;
@@ -194,7 +194,7 @@ void Inflator::flush(){
 		if(err_code == Z_BUF_ERROR){
 			break;
 		}
-		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::inflate()"), err_code);
+		DEBUG_THROW_UNLESS(err_code >= 0, Exception, sslit("::inflate()"));
 		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
@@ -210,7 +210,7 @@ StreamBuffer Inflator::finalize(){
 		m_stream.next_out = temp;
 		m_stream.avail_out = sizeof(temp);
 		err_code = ::inflate(&m_stream, Z_FINISH);
-		DEBUG_THROW_UNLESS(err_code >= 0, ProtocolException, sslit("::inflate()"), err_code);
+		DEBUG_THROW_UNLESS(err_code >= 0, Exception, sslit("::inflate()"));
 		m_buffer.put(temp, static_cast<unsigned>(m_stream.next_out - temp));
 		if(err_code == Z_STREAM_END){
 			break;

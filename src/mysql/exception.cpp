@@ -8,9 +8,9 @@
 namespace Poseidon {
 namespace MySql {
 
-Exception::Exception(const char *file, std::size_t line, const char *func, SharedNts schema, long code, SharedNts message)
-	: ProtocolException(file, line, func, STD_MOVE(message), code)
-	, m_schema(STD_MOVE(schema))
+Exception::Exception(const char *file, std::size_t line, const char *func, SharedNts schema, unsigned long code, SharedNts message)
+	: BasicException(file, line, func, STD_MOVE(message))
+	, m_schema(STD_MOVE(schema)), m_code(code)
 {
 	LOG_POSEIDON_ERROR("MySql::Exception: schema = ", get_schema(), ", code = ", get_code(), ", what = ", what());
 }

@@ -4,22 +4,26 @@
 #ifndef POSEIDON_MONGODB_EXCEPTION_HPP_
 #define POSEIDON_MONGODB_EXCEPTION_HPP_
 
-#include "../protocol_exception.hpp"
+#include "../exception.hpp"
 
 namespace Poseidon {
 namespace MongoDb {
 
-class Exception : public ProtocolException {
+class Exception : public BasicException {
 private:
 	SharedNts m_database;
+	unsigned long m_code;
 
 public:
 	Exception(const char *file, std::size_t line, const char *func, SharedNts database, unsigned long code, SharedNts message);
 	~Exception() NOEXCEPT;
 
 public:
-	const char *get_database() const {
+	const char *get_database() const NOEXCEPT {
 		return m_database.get();
+	}
+	unsigned long get_code() const NOEXCEPT {
+		return m_code;
 	}
 };
 

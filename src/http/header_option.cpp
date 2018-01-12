@@ -7,7 +7,7 @@
 #include "../string.hpp"
 #include "../profiler.hpp"
 #include "../buffer_streams.hpp"
-#include "../protocol_exception.hpp"
+#include "../exception.hpp"
 
 namespace Poseidon {
 namespace Http {
@@ -16,7 +16,7 @@ HeaderOption::HeaderOption(std::istream &is)
 	: m_base(), m_options()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, ProtocolException, sslit("Http::HeaderOption parser error"), -1);
+	DEBUG_THROW_UNLESS(is, Exception, sslit("Http::HeaderOption parser error"));
 }
 
 std::string HeaderOption::dump() const {

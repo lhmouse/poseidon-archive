@@ -4,15 +4,18 @@
 #ifndef POSEIDON_HTTP_EXCEPTION_HPP_
 #define POSEIDON_HTTP_EXCEPTION_HPP_
 
-#include "../protocol_exception.hpp"
+#include "../exception.hpp"
 #include "../optional_map.hpp"
 #include "status_codes.hpp"
 
 namespace Poseidon {
 namespace Http {
 
-class Exception : public ProtocolException {
+extern const OptionalMap &empty_headers() NOEXCEPT;
+
+class Exception : public BasicException {
 private:
+	StatusCode m_status_code;
 	boost::shared_ptr<OptionalMap> m_headers;
 
 public:
@@ -21,9 +24,11 @@ public:
 
 public:
 	StatusCode get_status_code() const NOEXCEPT {
-		return static_cast<StatusCode>(get_code());
+		return m_status_code;
 	}
-	const OptionalMap &get_headers() const NOEXCEPT;
+	const OptionalMap &get_headers() const NOEXCEPT {
+		return m_headers ? *m_headers : empty_headers();
+	}
 };
 
 }

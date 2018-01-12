@@ -5,7 +5,7 @@
 #include "multipart.hpp"
 #include "../profiler.hpp"
 #include "../log.hpp"
-#include "../protocol_exception.hpp"
+#include "../exception.hpp"
 #include "../random.hpp"
 #include "../string.hpp"
 #include "../buffer_streams.hpp"
@@ -14,8 +14,8 @@ namespace Poseidon {
 namespace Http {
 
 namespace {
-	CONSTEXPR const char     BOUNDARY_CHARS[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-	CONSTEXPR const unsigned BOUNDARY_LEN     = 60;
+	CONSTEXPR const char     s_boundary_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+	CONSTEXPR const unsigned s_boundary_len     = 60;
 
 	const Http::MultipartElement g_empty_multipart_element;
 
@@ -46,16 +46,16 @@ Multipart::Multipart(std::string boundary, std::istream &is)
 	: m_boundary(STD_MOVE(boundary)), m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, ProtocolException, sslit("Http::Multipart parser error"), -1);
+	DEBUG_THROW_UNLESS(is, BasicException, sslit("Http::Multipart parser error"));
 }
 
 void Multipart::random_boundary(){
 	PROFILE_ME;
 
 	std::string boundary;
-	boundary.reserve(BOUNDARY_LEN);
-	for(unsigned i = 0; i < BOUNDARY_LEN; ++i){
-		boundary.push_back(BOUNDARY_CHARS[random_uint32() % (sizeof(BOUNDARY_CHARS) - 1)]);
+	boundary.reserve(s_boundary_len);
+	for(unsigned i = 0; i < s_boundary_len; ++i){
+		boundary.push_back(s_boundary_chars[random_uint32() % (sizeof(s_boundary_chars) - 1)]);
 	}
 	m_boundary.swap(boundary);
 }
@@ -69,7 +69,7 @@ std::string Multipart::dump() const {
 }
 void Multipart::dump(std::ostream &os) const {
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!m_boundary.empty(), ProtocolException, sslit("Multipart boundary not set"), -1);
+	DEBUG_THROW_UNLESS(!m_boundary.empty(), BasicException, sslit("Multipart boundary not set"));
 
 	os <<"--" <<m_boundary;
 	for(AUTO(it, m_elements.begin()); it != m_elements.end(); ++it){
@@ -84,7 +84,7 @@ void Multipart::dump(std::ostream &os) const {
 }
 void Multipart::parse(std::istream &is){
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!m_boundary.empty(), ProtocolException, sslit("Multipart boundary not set"), -1);
+	DEBUG_THROW_UNLESS(!m_boundary.empty(), BasicException, sslit("Multipart boundary not set"));
 
 	const AUTO(window_size, m_boundary.size() + 2);
 
@@ -171,7 +171,7 @@ void Multipart::parse(std::istream &is){
 					break;
 				}
 				pos = line.find(':');
-				DEBUG_THROW_UNLESS(pos != std::string::npos, ProtocolException, sslit("Invalid HTTP header"), -1);
+				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("Invalid HTTP header"));
 				SharedNts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));

@@ -244,7 +244,7 @@ namespace {
 			boost::uint32_t size;
 			const boost::uint8_t *data;
 			::bson_iter_document(&m_batch_it, &size, &data);
-			DEBUG_THROW_UNLESS(::bson_init_static(&m_element_storage, data, size), ProtocolException, sslit("::bson_init_static() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_init_static(&m_element_storage, data, size), BasicException, sslit("::bson_init_static() failed"));
 			m_element_guard.reset(&m_element_storage);
 			return true;
 		}

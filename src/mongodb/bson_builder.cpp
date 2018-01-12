@@ -8,7 +8,7 @@
 #  pragma GCC diagnostic ignored "-Wignored-attributes"
 #endif
 
-#include "../protocol_exception.hpp"
+#include "../exception.hpp"
 #include "../time.hpp"
 #include "../uuid.hpp"
 #include "../profiler.hpp"
@@ -60,74 +60,74 @@ void BsonBuilder::internal_build(void *impl, bool as_array) const {
 		case T_BOOLEAN: {
 			bool value;
 			std::memcpy(&value, it->small, sizeof(value));
-			DEBUG_THROW_UNLESS(::bson_append_bool(bt, key_str, -1, value), ProtocolException, sslit("BSON builder: bson_append_bool() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_bool(bt, key_str, -1, value), BasicException, sslit("BSON builder: bson_append_bool() failed"));
 			break; }
 		case T_SIGNED: {
 			boost::int64_t value;
 			std::memcpy(&value, it->small, sizeof(value));
-			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, value), ProtocolException, sslit("BSON builder: bson_append_int64() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, value), BasicException, sslit("BSON builder: bson_append_int64() failed"));
 			break; }
 		case T_UNSIGNED: {
 			boost::uint64_t value;
 			std::memcpy(&value, it->small, sizeof(value));
 			boost::int64_t shifted = static_cast<boost::int64_t>(value - (1ull << 63));
-			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, shifted), ProtocolException, sslit("BSON builder: bson_append_int64() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, shifted), BasicException, sslit("BSON builder: bson_append_int64() failed"));
 			break; }
 		case T_DOUBLE: {
 			double value;
 			std::memcpy(&value, it->small, sizeof(value));
-			DEBUG_THROW_UNLESS(::bson_append_double(bt, key_str, -1, value), ProtocolException, sslit("BSON builder: bson_append_double() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_double(bt, key_str, -1, value), BasicException, sslit("BSON builder: bson_append_double() failed"));
 			break; }
 		case T_STRING: {
-			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, it->large.data(), boost::numeric_cast<int>(it->large.size())), ProtocolException, sslit("BSON builder: bson_append_utf8() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, it->large.data(), boost::numeric_cast<int>(it->large.size())), BasicException, sslit("BSON builder: bson_append_utf8() failed"));
 			break; }
 		case T_DATETIME: {
 			boost::uint64_t value;
 			std::memcpy(&value, it->small, sizeof(value));
 			char str[64];
 			std::size_t len = format_time(str, sizeof(str), value, true);
-			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, str, static_cast<int>(len)), ProtocolException, sslit("BSON builder: bson_append_utf8() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, str, static_cast<int>(len)), BasicException, sslit("BSON builder: bson_append_utf8() failed"));
 			break; }
 		case T_UUID: {
 			char str[36];
 			Uuid(it->small).to_string(str);
-			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, str, sizeof(str)), ProtocolException, sslit("BSON builder: bson_append_utf8() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, str, sizeof(str)), BasicException, sslit("BSON builder: bson_append_utf8() failed"));
 			break; }
 		case T_BLOB: {
 			DEBUG_THROW_UNLESS(::bson_append_binary(bt, key_str, -1, BSON_SUBTYPE_BINARY,
-				reinterpret_cast<const boost::uint8_t *>(it->large.data()), boost::numeric_cast<unsigned>(it->large.size())), ProtocolException, sslit("BSON builder: bson_append_binary() failed"), -1);
+				reinterpret_cast<const boost::uint8_t *>(it->large.data()), boost::numeric_cast<unsigned>(it->large.size())), BasicException, sslit("BSON builder: bson_append_binary() failed"));
 			break; }
 		case T_JS_CODE: {
-			DEBUG_THROW_UNLESS(::bson_append_code(bt, key_str, -1, it->large.c_str()), ProtocolException, sslit("BSON builder: bson_append_code() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_code(bt, key_str, -1, it->large.c_str()), BasicException, sslit("BSON builder: bson_append_code() failed"));
 			break; }
 		case T_REGEX: {
-			DEBUG_THROW_UNLESS(::bson_append_regex(bt, key_str, -1, it->large.c_str(), it->small), ProtocolException, sslit("BSON builder: bson_append_regex() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_regex(bt, key_str, -1, it->large.c_str(), it->small), BasicException, sslit("BSON builder: bson_append_regex() failed"));
 			break; }
 		case T_MINKEY: {
-			DEBUG_THROW_UNLESS(::bson_append_minkey(bt, key_str, -1), ProtocolException, sslit("BSON builder: bson_append_minkey() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_minkey(bt, key_str, -1), BasicException, sslit("BSON builder: bson_append_minkey() failed"));
 			break; }
 		case T_MAXKEY: {
-			DEBUG_THROW_UNLESS(::bson_append_maxkey(bt, key_str, -1), ProtocolException, sslit("BSON builder: bson_append_maxkey() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_maxkey(bt, key_str, -1), BasicException, sslit("BSON builder: bson_append_maxkey() failed"));
 			break; }
 		case T_NULL: {
-			DEBUG_THROW_UNLESS(::bson_append_null(bt, key_str, -1), ProtocolException, sslit("BSON builder: bson_append_null() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_null(bt, key_str, -1), BasicException, sslit("BSON builder: bson_append_null() failed"));
 			break; }
 		case T_OBJECT: {
 			::bson_t child_storage;
-			DEBUG_THROW_UNLESS(::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()), ProtocolException, sslit("BSON builder: bson_init_static() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()), BasicException, sslit("BSON builder: bson_init_static() failed"));
 			const UniqueHandle<BsonCloser> child_guard(&child_storage);
 			const AUTO(child_bt, child_guard.get());
-			DEBUG_THROW_UNLESS(::bson_append_document(bt, key_str, -1, child_bt), ProtocolException, sslit("BSON builder: bson_append_document() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_document(bt, key_str, -1, child_bt), BasicException, sslit("BSON builder: bson_append_document() failed"));
 			break; }
 		case T_ARRAY: {
 			::bson_t child_storage;
-			DEBUG_THROW_UNLESS(::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()), ProtocolException, sslit("BSON builder: bson_init_static() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()), BasicException, sslit("BSON builder: bson_init_static() failed"));
 			const UniqueHandle<BsonCloser> child_guard(&child_storage);
 			const AUTO(child_bt, child_guard.get());
-			DEBUG_THROW_UNLESS(::bson_append_array(bt, key_str, -1, child_bt), ProtocolException, sslit("BSON builder: bson_append_array() failed"), -1);
+			DEBUG_THROW_UNLESS(::bson_append_array(bt, key_str, -1, child_bt), BasicException, sslit("BSON builder: bson_append_array() failed"));
 			break; }
 		default:
-			DEBUG_THROW(ProtocolException, sslit("BSON builder: Unknown element type"), -1);
+			DEBUG_THROW(BasicException, sslit("BSON builder: Unknown element type"));
 		}
 	}
 }
@@ -257,7 +257,7 @@ void BsonBuilder::build_json(std::ostream &os, bool as_array) const {
 	internal_build(bt, as_array);
 
 	const AUTO(json, ::bson_as_json(bt, NULLPTR));
-	DEBUG_THROW_UNLESS(json, ProtocolException, sslit("BSON builder: Failed to convert BSON to JSON"), -1);
+	DEBUG_THROW_UNLESS(json, BasicException, sslit("BSON builder: Failed to convert BSON to JSON"));
 	const UniqueHandle<BsonStringDeleter> json_guard(json);
 
 	os <<json;
