@@ -38,7 +38,7 @@ namespace Poseidon {
 typedef MongoDbDaemon::QueryCallback QueryCallback;
 
 namespace {
-	boost::shared_ptr<MongoDb::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<MongoDb::Connection> &master_conn = boost::shared_ptr<MongoDb::Connection>()){
+	boost::shared_ptr<MongoDb::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<MongoDb::Connection> &master_conn){
 		std::string server_addr;
 		boost::uint16_t server_port = 0;
 		if(from_slave){
@@ -489,7 +489,6 @@ namespace {
 			LOG_POSEIDON_INFO("MongoDB thread started.");
 
 			boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
-
 			unsigned timeout = 0;
 			for(;;){
 				const AUTO(reconnect_delay, MainConfig::get<boost::uint64_t>("mongodb_reconn_delay", 5000));
@@ -498,7 +497,7 @@ namespace {
 					while(!master_conn){
 						LOG_POSEIDON_INFO("Connecting to MongoDB master server...");
 						try {
-							master_conn = real_create_connection(false);
+							master_conn = real_create_connection(false, VAL_INIT);
 							LOG_POSEIDON_INFO("Successfully connected to MongoDB master server.");
 						} catch(std::exception &e){
 							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
@@ -694,10 +693,11 @@ void MongoDbDaemon::start(){
 	if(max_thread_count == 0){
 		LOG_POSEIDON_WARNING("MongoDB support has been disabled. To enable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to a value greater than zero.");
 	} else {
+		boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MongoDB master server is up...");
 		try {
-			const AUTO(conn, real_create_connection(false));
-			conn->execute_bson(MongoDb::bson_scalar_signed(sslit("ping"), 1));
+			master_conn = real_create_connection(false, VAL_INIT);
+			master_conn->execute_bson(MongoDb::bson_scalar_signed(sslit("ping"), 1));
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MongoDB master server: ", e.what());
 			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
@@ -706,8 +706,10 @@ void MongoDbDaemon::start(){
 
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MongoDB slave server is up...");
 		try {
-			const AUTO(conn, real_create_connection(true));
-			conn->execute_bson(MongoDb::bson_scalar_signed(sslit("ping"), 1));
+			slave_conn = real_create_connection(true, master_conn);
+			if(slave_conn != master_conn){
+				slave_conn->execute_bson(MongoDb::bson_scalar_signed(sslit("ping"), 1));
+			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MongoDB slave server: ", e.what());
 			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
@@ -761,7 +763,7 @@ void MongoDbDaemon::stop(){
 }
 
 boost::shared_ptr<MongoDb::Connection> MongoDbDaemon::create_connection(bool from_slave){
-	return real_create_connection(from_slave);
+	return real_create_connection(from_slave, VAL_INIT);
 }
 
 void MongoDbDaemon::wait_for_all_async_operations(){
