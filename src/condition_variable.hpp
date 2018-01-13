@@ -6,6 +6,7 @@
 
 #include "cxx_util.hpp"
 #include "mutex.hpp"
+#include <pthread.h>
 
 namespace Poseidon {
 

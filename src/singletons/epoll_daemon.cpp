@@ -323,7 +323,7 @@ void EpollDaemon::start(){
 		LOG_POSEIDON_FATAL("Failed to create epoll: err_code = ", err_code, " (", get_error_desc(err_code), ")");
 		std::abort();
 	}
-	Thread(&thread_proc, "   N").swap(g_thread);
+	Thread(&thread_proc, sslit("   N"), sslit("Network")).swap(g_thread);
 }
 void EpollDaemon::stop(){
 	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){

@@ -178,7 +178,7 @@ void TimerDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting timer daemon...");
 
-	Thread(thread_proc, "  T ").swap(g_thread);
+	Thread(&thread_proc, sslit("  T "), sslit("Timer")).swap(g_thread);
 }
 void TimerDaemon::stop(){
 	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){

@@ -6,6 +6,7 @@ AM_CPPFLAGS = -Wall -Wextra -Werror -Wconversion -Wsign-conversion -Wno-error=un
 	-pipe -fPIC -DPIC -pthread	\
 	$(openssl_CFLAGS) $(bson_CFLAGS) $(mongoc_CFLAGS) $(zlib_CFLAGS)
 AM_CXXFLAGS =
+AM_LDFLAGS = -pthread
 AM_LIBS = $(openssl_LIBS) $(bson_LIBS) $(mongoc_LIBS) $(zlib_LIBS)
 
 %.hpp.gch: %.hpp
@@ -290,7 +291,7 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/mongodb/bson_builder.cpp
 
 lib_libposeidon_main_la_LDFLAGS = \
-	-no-undefined -version-info 17:0:0
+	-no-undefined -version-info 18:0:0
 
 sysconf_DATA =
 

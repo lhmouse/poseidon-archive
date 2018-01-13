@@ -399,6 +399,7 @@ using namespace Poseidon;
 int main(int argc, char **argv)
 try {
 	Logger::set_thread_tag("P   "); // Primary
+	::pthread_setname_np(::pthread_self(), "Primary");
 
 	::signal(SIGHUP, &sighup_proc);
 	::signal(SIGTERM, &sigterm_proc);

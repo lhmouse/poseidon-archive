@@ -8,68 +8,65 @@
 
 namespace Poseidon {
 
-struct Thread::Impl {
-	static void *thread_proc(void *impl){
-		boost::shared_ptr<Impl> self;
-		self.swap(static_cast<Impl *>(impl)->self);
+namespace {
+	struct ThreadControlBlock {
+		boost::function<void ()> proc;
+		SharedNts tag;
+		SharedNts name;
 
-		Logger::set_thread_tag(self->tag);
+		boost::shared_ptr<ThreadControlBlock> ref;
+		::pthread_t handle;
+	};
 
-		try {
-			self->proc();
-		} catch(...){
-			std::terminate();
-		}
-		return NULLPTR;
-	}
-
-	char tag[8];
-	boost::function<void ()> proc;
-	::pthread_t handle;
-
-	boost::shared_ptr<Impl> self;
-};
-
-Thread::Thread() NOEXCEPT
-	: m_impl()
-{ }
-Thread::Thread(boost::function<void ()> proc, const char *tag)
-	: m_impl()
-{
-	m_impl = boost::make_shared<Impl>();
-	std::strncpy(m_impl->tag, tag, sizeof(m_impl->tag));
-	m_impl->proc.swap(proc);
-
-	m_impl->self = m_impl; // 制造循环引用。
+	void *thread_proc(void *param)
 	try {
-		int err_code = ::pthread_create(&(m_impl->handle), NULLPTR, &Impl::thread_proc, m_impl.get());
-		DEBUG_THROW_UNLESS(err_code == 0, SystemException);
+		boost::shared_ptr<ThreadControlBlock> tcb;
+		// Break the circular reference. This allows `*tcb` to be deleted.
+		tcb.swap(*static_cast<boost::shared_ptr<ThreadControlBlock> *>(param));
+
+		// Ignore any errors.
+		Logger::set_thread_tag(tcb->tag);
+		::pthread_setname_np(::pthread_self(), tcb->name);
+
+		// Do something.
+		tcb->proc();
+		return NULLPTR;
 	} catch(...){
-		m_impl->self.reset();
+		std::terminate();
+	}
+}
+
+Thread::Thread(boost::function<void ()> proc, SharedNts tag, SharedNts name){
+	ThreadControlBlock temp = { STD_MOVE_IDN(proc), STD_MOVE(tag), STD_MOVE(name) };
+	const AUTO(tcb, boost::make_shared<ThreadControlBlock>(STD_MOVE(temp)));
+	try {
+		// Create a circular reference. This prevents `*tcb` from being deleted before it is consumed by the new thread.
+		int err = ::pthread_create(&(tcb->handle), NULLPTR, &thread_proc, &(tcb->ref = tcb));
+		DEBUG_THROW_UNLESS(err == 0, SystemException, err);
+	} catch(...){
+		// Break the circular reference. This allows `*tcb` to be deleted.
+		tcb->ref.reset();
 		throw;
 	}
+	m_tcb = tcb;
 }
 Thread::~Thread(){
 	if(joinable()){
-		LOG_POSEIDON_FATAL("Destructing a joinable thread.");
+		LOG_POSEIDON_FATAL("Attempting to destroy a joinable thread.");
 		std::terminate();
 	}
 }
 
 bool Thread::joinable() const NOEXCEPT {
-	return !!m_impl;
+	const AUTO(tcb, static_cast<ThreadControlBlock *>(m_tcb.get()));
+	return tcb;
 }
 void Thread::join(){
-	DEBUG_THROW_UNLESS(m_impl, Exception, sslit("Attempting to join a non-joinable thread"));
-	int err_code = ::pthread_join(m_impl->handle, NULLPTR);
-	DEBUG_THROW_UNLESS(err_code == 0, SystemException);
-	m_impl.reset();
+	const AUTO(tcb, static_cast<ThreadControlBlock *>(m_tcb.get()));
+	DEBUG_THROW_UNLESS(tcb, Exception, sslit("Thread is not joinable"));
+	int err = ::pthread_join(tcb->handle, NULLPTR);
+	DEBUG_THROW_UNLESS(err == 0, SystemException, err);
+	m_tcb.reset();
 }
-//void Thread::detach(){
-//	DEBUG_THROW_UNLESS(m_impl, Exception, sslit("Attempting to detach a non-joinable thread"));
-//	int err_code = ::pthread_detach(m_impl->handle);
-//	DEBUG_THROW_UNLESS(err_code == 0, SystemException);
-//	m_impl.reset();
-//}
 
 }

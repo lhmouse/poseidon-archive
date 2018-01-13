@@ -386,7 +386,7 @@ void FileSystemDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting FileSystem daemon...");
 
-	Thread(thread_proc, " F  ").swap(g_thread);
+	Thread(&thread_proc, sslit(" F  "), sslit("Filesystem")).swap(g_thread);
 }
 void FileSystemDaemon::stop(){
 	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){

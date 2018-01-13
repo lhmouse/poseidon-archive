@@ -6,39 +6,30 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
-#include <boost/shared_ptr.hpp>
+#include "shared_nts.hpp"
 #include <boost/function.hpp>
 
 namespace Poseidon {
 
 class Thread : NONCOPYABLE {
 private:
-	class Impl;
-	boost::shared_ptr<Impl> m_impl;
+	boost::shared_ptr<void> m_tcb;
 
 public:
-	Thread() NOEXCEPT;
-	Thread(boost::function<void ()> proc, const char *tag); // tag 用于在日志中显示。最多四个字符。
-	Thread(Move<Thread> rhs) NOEXCEPT
-		: m_impl()
-	{
-		rhs.swap(*this);
-	}
-	Thread &operator=(Move<Thread> rhs) NOEXCEPT {
-		Thread(STD_MOVE(rhs)).swap(*this);
-		return *this;
-	}
-	~Thread(); // if(joinable()){ std::terminate(); }
+	Thread() NOEXCEPT
+		: m_tcb()
+	{ }
+	Thread(boost::function<void ()> proc, SharedNts tag, SharedNts name);
+	~Thread(); // The destructor calls `std::terminate()` if `joinable()` returns `true`.
 
 public:
-	void swap(Thread &rhs) NOEXCEPT {
-		using std::swap;
-		swap(m_impl, rhs.m_impl);
-	}
-
 	bool joinable() const NOEXCEPT;
 	void join();
-//	void detach();
+
+	void swap(Thread &rhs) NOEXCEPT {
+		using std::swap;
+		swap(m_tcb, rhs.m_tcb);
+	}
 };
 
 inline void swap(Thread &lhs, Thread &rhs) NOEXCEPT {

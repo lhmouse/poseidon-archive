@@ -135,7 +135,7 @@ void DnsDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting DNS daemon...");
 
-	Thread(thread_proc, "   D").swap(g_thread);
+	Thread(&thread_proc, sslit("   D"), sslit("DNS")).swap(g_thread);
 }
 void DnsDaemon::stop(){
 	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){

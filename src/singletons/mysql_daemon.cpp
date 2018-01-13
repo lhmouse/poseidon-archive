@@ -520,7 +520,7 @@ namespace {
 	public:
 		void start(){
 			const Mutex::UniqueLock lock(m_mutex);
-			Thread(boost::bind(&MySqlThread::thread_proc, this), " M  ").swap(m_thread);
+			Thread(boost::bind(&MySqlThread::thread_proc, this), sslit(" M  "), sslit("MySQL")).swap(m_thread);
 			atomic_store(m_running, true, ATOMIC_RELEASE);
 		}
 		void stop(){

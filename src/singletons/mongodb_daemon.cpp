@@ -537,7 +537,7 @@ namespace {
 	public:
 		void start(){
 			const Mutex::UniqueLock lock(m_mutex);
-			Thread(boost::bind(&MongoDbThread::thread_proc, this), " G  ").swap(m_thread);
+			Thread(boost::bind(&MongoDbThread::thread_proc, this), sslit(" G  "), sslit("MongoDB")).swap(m_thread);
 			atomic_store(m_running, true, ATOMIC_RELEASE);
 		}
 		void stop(){

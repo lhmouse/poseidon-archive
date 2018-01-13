@@ -101,7 +101,7 @@ namespace {
 	public:
 		void start(){
 			const Mutex::UniqueLock lock(m_mutex);
-			Thread(boost::bind(&WorkhorseThread::thread_proc, this), "  W ").swap(m_thread);
+			Thread(boost::bind(&WorkhorseThread::thread_proc, this), sslit("  W "), sslit("Workhorse")).swap(m_thread);
 			atomic_store(m_running, true, ATOMIC_RELEASE);
 		}
 		void stop(){
