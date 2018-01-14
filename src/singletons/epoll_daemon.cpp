@@ -128,6 +128,7 @@ namespace {
 				} else {
 					err_code = 0;
 				}
+				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket closed: remote = ", socket->get_remote_info(), ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
 				g_socket_map.set_key<0, 3>(it, err_code);
 			}
 		}
@@ -158,7 +159,7 @@ namespace {
 		}
 
 		if(socket->is_throttled()){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Session is throttled: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket is throttled: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
