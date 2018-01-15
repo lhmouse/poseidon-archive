@@ -99,10 +99,10 @@ namespace {
 			resp.set(sslit("description"), "Enable or disable specific levels of logs.");
 			static const char *const PARAM_INFO[][2] = {
 				{ "mask_to_disable",  "Log levels corresponding to bit ones here will be disabled.\n"
-				                      "This parameter shall be a String of digit zeroes and ones.\n"
+				                      "This parameter shall be a `String` of digit zeroes and ones.\n"
 				                      "This parameter is overriden by `mask_to_enable`." },
 				{ "mask_to_enable", "Log levels corresponding to bit ones here will be enabled.\n"
-				                    "This parameter shall be a String of digit zeroes and ones.\n"
+				                    "This parameter shall be a `String` of digit zeroes and ones.\n"
 				                    "This parameter overrides `mask_to_disable`." },
 				{ NULLPTR }
 			};
@@ -115,7 +115,7 @@ namespace {
 					mask_to_enable = std::bitset<64>(req.get("mask_to_enable").get<std::string>());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `mask_to_enable`: It shall be a String of digit zeroes and ones.");
+					resp.set(sslit("error"), "Invalid parameter `mask_to_enable`: It shall be a `String` of digit zeroes and ones.");
 					return;
 				}
 			}
@@ -124,7 +124,7 @@ namespace {
 					mask_to_disable = std::bitset<64>(req.get("mask_to_disable").get<std::string>());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `mask_to_disable`: It shall be a String of digit zeroes and ones.");
+					resp.set(sslit("error"), "Invalid parameter `mask_to_disable`: It shall be a `String` of digit zeroes and ones.");
 					return;
 				}
 			}
@@ -148,7 +148,7 @@ namespace {
 			return "/poseidon/network";
 		}
 		void handle_get(JsonObject &resp) const FINAL {
-			resp.set(sslit("description"), "Retreive information about incoming and outgoing connections in this server process.");
+			resp.set(sslit("description"), "Retreive information about incoming and outgoing connections in this process.");
 			static const char *const PARAM_INFO[][2] = {
 				{ NULLPTR }
 			};
@@ -194,7 +194,7 @@ namespace {
 					clear = req.get("clear").get<bool>();
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `clear`: It shall be a Boolean.");
+					resp.set(sslit("error"), "Invalid parameter `clear`: It shall be a `Boolean`.");
 					return;
 				}
 			}
@@ -248,7 +248,7 @@ namespace {
 					to_load = true;
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `path_to_load`: It shall be a String designating a shared object file to load.");
+					resp.set(sslit("error"), "Invalid parameter `path_to_load`: It shall be a `String` representing the path of a shared object file to load.");
 					return;
 				}
 			}
@@ -270,7 +270,7 @@ namespace {
 					to_unload = true;
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `address_to_unload`: It shall be a String representing a number in decimal, or hexadecimal with the prefix `0x`.");
+					resp.set(sslit("error"), "Invalid parameter `address_to_unload`: It shall be a `String` representing a number in decimal, or hexadecimal with the prefix `0x`.");
 					return;
 				}
 			}
