@@ -48,11 +48,7 @@ SocketBase::SocketBase(Move<UniqueFile> socket)
 	: m_socket(STD_MOVE(socket)), m_creation_time(get_utc_time())
 	, m_shutdown_read(false), m_shutdown_write(false), m_really_shutdown_write(false)
 	, m_throttled(false), m_timed_out(false), m_delayed_shutdown_guard_count(0)
-{
-	const int flags = ::fcntl(m_socket.get(), F_GETFL);
-	DEBUG_THROW_UNLESS(flags != -1, SystemException);
-	DEBUG_THROW_UNLESS(::fcntl(m_socket.get(), F_SETFL, flags | O_NONBLOCK) == 0, SystemException);
-}
+{ }
 SocketBase::~SocketBase(){
 	// This FD may have been dup()'d.
 	::shutdown(get_fd(), SHUT_RDWR);

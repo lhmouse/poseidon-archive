@@ -24,7 +24,7 @@ namespace {
 #else
 		static __thread UniqueFile udp;
 #endif
-		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM, IPPROTO_UDP)), SystemException);
+		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), SystemException);
 		return STD_MOVE(udp);
 	}
 }

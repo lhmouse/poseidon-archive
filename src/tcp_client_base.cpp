@@ -28,7 +28,7 @@ namespace {
 #else
 		static __thread UniqueFile tcp;
 #endif
-		DEBUG_THROW_UNLESS(tcp.reset(::socket(addr.get_family(), SOCK_STREAM, IPPROTO_TCP)), SystemException);
+		DEBUG_THROW_UNLESS(tcp.reset(::socket(addr.get_family(), SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP)), SystemException);
 		DEBUG_THROW_UNLESS((::connect(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0) || (errno == EINPROGRESS), SystemException);
 		return STD_MOVE(tcp);
 	}

@@ -24,7 +24,7 @@ namespace {
 #else
 		static __thread UniqueFile udp;
 #endif
-		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM, IPPROTO_UDP)), SystemException);
+		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), SystemException);
 		static CONSTEXPR const int TRUE_VALUE = true;
 		DEBUG_THROW_UNLESS(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) == 0, SystemException);
 		DEBUG_THROW_UNLESS(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0, SystemException);
