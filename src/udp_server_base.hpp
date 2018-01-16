@@ -4,34 +4,14 @@
 #ifndef POSEIDON_UDP_SERVER_BASE_HPP_
 #define POSEIDON_UDP_SERVER_BASE_HPP_
 
-#include <boost/shared_ptr.hpp>
-#include <boost/container/deque.hpp>
-#include "socket_base.hpp"
-#include "sock_addr.hpp"
-#include "ip_port.hpp"
-#include "stream_buffer.hpp"
+#include "udp_session_base.hpp"
 
 namespace Poseidon {
 
-class UdpServerBase : public SocketBase {
-private:
-	mutable Mutex m_send_mutex;
-	mutable boost::container::deque<std::pair<SockAddr, StreamBuffer> > m_send_queue;
-
+class UdpServerBase : public UdpSessionBase {
 public:
 	explicit UdpServerBase(const SockAddr &addr);
 	~UdpServerBase();
-
-protected:
-	// 注意，只能在 epoll 线程中调用这些函数。
-	int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable) OVERRIDE;
-	int poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable) OVERRIDE;
-
-	virtual void on_receive(const SockAddr &sock_addr, StreamBuffer data) = 0;
-	virtual void on_message_too_large(const SockAddr &sock_addr, StreamBuffer data);
-
-public:
-	bool send(const SockAddr &sock_addr, StreamBuffer buffer);
 };
 
 }

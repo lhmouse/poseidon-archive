@@ -52,6 +52,7 @@ pkginclude_HEADERS = \
 	poseidon/src/job_base.hpp	\
 	poseidon/src/async_job.hpp	\
 	poseidon/src/system_servlet_base.hpp	\
+	poseidon/src/udp_session_base.hpp	\
 	poseidon/src/udp_server_base.hpp	\
 	poseidon/src/udp_client_base.hpp	\
 	poseidon/src/stream_buffer.hpp	\
@@ -211,6 +212,7 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/tcp_session_base.cpp	\
 	poseidon/src/tcp_server_base.cpp	\
 	poseidon/src/tcp_client_base.cpp	\
+	poseidon/src/udp_session_base.cpp	\
 	poseidon/src/udp_server_base.cpp	\
 	poseidon/src/udp_client_base.cpp	\
 	poseidon/src/session_base.cpp	\
