@@ -5,8 +5,7 @@
 #define POSEIDON_HTTP_UPGRADED_SESSION_BASE_HPP_
 
 #include "../session_base.hpp"
-#include "../fwd.hpp"
-#include "../ip_port.hpp"
+#include "../tcp_session_base.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/cstdint.hpp>

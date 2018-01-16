@@ -4,7 +4,7 @@
 #ifndef POSEIDON_MYSQL_FORMATTING_HPP_
 #define POSEIDON_MYSQL_FORMATTING_HPP_
 
-#include "../fwd.hpp"
+#include "../uuid.hpp"
 #include <iosfwd>
 #include <string>
 #include <boost/cstdint.hpp>

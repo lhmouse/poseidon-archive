@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "formatting.hpp"
 #include "../time.hpp"
-#include "../uuid.hpp"
 
 namespace Poseidon {
 namespace MySql {

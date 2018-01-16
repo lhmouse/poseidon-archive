@@ -6,7 +6,7 @@
 
 #include "../cxx_ver.hpp"
 #include "../cxx_util.hpp"
-#include "../fwd.hpp"
+#include "../uuid.hpp"
 #include <string>
 #include <cstring>
 #include <boost/cstdint.hpp>

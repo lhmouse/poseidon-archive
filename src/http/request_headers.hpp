@@ -5,7 +5,6 @@
 #define POSEIDON_HTTP_REQUEST_HEADERS_HPP_
 
 #include "../cxx_ver.hpp"
-#include <string>
 #include "verbs.hpp"
 #include "../optional_map.hpp"
 
@@ -19,15 +18,6 @@ struct RequestHeaders {
 	OptionalMap get_params;
 	OptionalMap headers;
 };
-
-inline void swap(RequestHeaders &lhs, RequestHeaders &rhs) NOEXCEPT {
-	using std::swap;
-	swap(lhs.verb, rhs.verb);
-	swap(lhs.uri, rhs.uri);
-	swap(lhs.version, rhs.version);
-	swap(lhs.get_params, rhs.get_params);
-	swap(lhs.headers, rhs.headers);
-}
 
 extern bool is_keep_alive_enabled(const RequestHeaders &request_headers);
 

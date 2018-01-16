@@ -2,6 +2,7 @@
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
+#include "fwd.hpp"
 #include "singletons/main_config.hpp"
 #include "singletons/dns_daemon.hpp"
 #include "singletons/timer_daemon.hpp"

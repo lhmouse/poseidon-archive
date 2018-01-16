@@ -14,7 +14,6 @@
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../time.hpp"
-#include "../uuid.hpp"
 #include <cstdlib>
 
 #pragma GCC diagnostic push

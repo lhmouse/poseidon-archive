@@ -4,8 +4,8 @@
 #ifndef POSEIDON_SYSTEM_SESSION_HPP_
 #define POSEIDON_SYSTEM_SESSION_HPP_
 
-#include "http/session.hpp"
 #include "http/fwd.hpp"
+#include "http/session.hpp"
 
 namespace Poseidon {
 

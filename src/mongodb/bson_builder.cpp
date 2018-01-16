@@ -10,7 +10,6 @@
 
 #include "../exception.hpp"
 #include "../time.hpp"
-#include "../uuid.hpp"
 #include "../profiler.hpp"
 #include "../buffer_streams.hpp"
 #include "../raii.hpp"

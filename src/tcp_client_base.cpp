@@ -6,15 +6,12 @@
 #include "ssl_factories.hpp"
 #include "ssl_filter.hpp"
 #include "sock_addr.hpp"
-#include "ip_port.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <openssl/ssl.h>
-#include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include "system_exception.hpp"
-#include "profiler.hpp"
 
 namespace Poseidon {
 
@@ -24,22 +21,22 @@ namespace {
 #else
 	Move<UniqueFile>
 #endif
-		create_tcp_socket(int family)
+		create_tcp_socket(const SockAddr &addr)
 	{
 #ifdef POSEIDON_CXX11
 		UniqueFile tcp;
 #else
 		static __thread UniqueFile tcp;
 #endif
-		DEBUG_THROW_UNLESS(tcp.reset(::socket(family, SOCK_STREAM, IPPROTO_TCP)), SystemException);
+		DEBUG_THROW_UNLESS(tcp.reset(::socket(addr.get_family(), SOCK_STREAM, IPPROTO_TCP)), SystemException);
+		DEBUG_THROW_UNLESS((::connect(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0) || (errno == EINPROGRESS), SystemException);
 		return STD_MOVE(tcp);
 	}
 }
 
 TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_peer)
-	: TcpSessionBase(create_tcp_socket(addr.get_family()))
+	: TcpSessionBase(create_tcp_socket(addr))
 {
-	DEBUG_THROW_UNLESS((::connect(get_fd(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0) || (errno == EINPROGRESS), SystemException);
 	if(use_ssl){
 		LOG_POSEIDON_INFO("Initiating SSL handshake...");
 		m_ssl_factory.reset(new SslClientFactory(verify_peer));

@@ -56,6 +56,8 @@ class SessionBase;
 class TcpSessionBase;
 class TcpClientBase;
 class TcpServerBase;
+class UdpSessionBase;
+class UdpClientBase;
 class UdpServerBase;
 
 class SystemSession;

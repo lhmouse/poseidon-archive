@@ -5,10 +5,9 @@
 #define POSEIDON_HTTP_RESPONSE_HEADERS_HPP_
 
 #include "../cxx_ver.hpp"
-#include "../fwd.hpp"
-#include <string>
 #include "status_codes.hpp"
 #include "../optional_map.hpp"
+#include "../stream_buffer.hpp"
 
 namespace Poseidon {
 namespace Http {
@@ -19,14 +18,6 @@ struct ResponseHeaders {
 	std::string reason;
 	OptionalMap headers;
 };
-
-inline void swap(ResponseHeaders &lhs, ResponseHeaders &rhs) NOEXCEPT {
-	using std::swap;
-	swap(lhs.version, rhs.version);
-	swap(lhs.status_code, rhs.status_code);
-	swap(lhs.reason, rhs.reason);
-	swap(lhs.headers, rhs.headers);
-}
 
 extern bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT;
 

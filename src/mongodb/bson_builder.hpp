@@ -5,11 +5,10 @@
 #define POSEIDON_MONGODB_BSON_BUILDER_HPP_
 
 #include "../cxx_ver.hpp"
-#include "../fwd.hpp"
 #include "../shared_nts.hpp"
+#include "../uuid.hpp"
 #include <boost/container/deque.hpp>
 #include <boost/cstdint.hpp>
-#include <string>
 #include <iosfwd>
 #include <cstddef>
 

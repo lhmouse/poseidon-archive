@@ -10,7 +10,6 @@
 #include "../profiler.hpp"
 #include "../time.hpp"
 #include "../system_exception.hpp"
-#include "../uuid.hpp"
 #include <mysql/mysql.h>
 
 namespace Poseidon {
