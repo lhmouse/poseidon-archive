@@ -9,4 +9,4 @@ mkdir -p m4
 autoreconf -if
 
 ./configure CPPFLAGS="${CPPFLAGS} ${_common_pp} ${_optimize}" CFLAGS="${CFLAGS} ${_c_pp}" CXXFLAGS="${CXXFLAGS} ${_cxx_pp}" LDFLAGS="${LDFLAGS} ${_optimize}"	\
-	--enable-shared --disable-static --prefix=/usr/local
+	--enable-shared --disable-static --prefix="/usr/local"
