@@ -129,7 +129,7 @@ void ModuleDepository::stop(){
 		if(it == g_module_map.end()){
 			break;
 		}
-		LOG_POSEIDON_INFO("Unloading module: ", it->module->get_real_path());
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading module: ", it->module->get_real_path());
 		g_module_map.erase(it);
 	}
 }
@@ -138,7 +138,7 @@ void *ModuleDepository::load(const std::string &path){
 	PROFILE_ME;
 
 	const RecursiveMutex::UniqueLock lock(g_mutex);
-	LOG_POSEIDON_INFO("Loading module: ", path);
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading module: ", path);
 	UniqueHandle<DynamicLibraryCloser> dl_handle;
 	DEBUG_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND)), Exception, SharedNts(::dlerror()));
 	AUTO(it, g_module_map.find<0>(dl_handle.get()));

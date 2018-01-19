@@ -92,7 +92,7 @@ namespace {
 			std::abort();
 		}
 
-		LOG_POSEIDON_INFO("Writing MongoDB dump...");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Writing MongoDB dump...");
 		Buffer_ostream os;
 		len = format_time(temp, sizeof(temp), local_now, false);
 		os <<"// " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
@@ -486,7 +486,7 @@ namespace {
 
 		void thread_proc(){
 			PROFILE_ME;
-			LOG_POSEIDON_INFO("MongoDB thread started.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MongoDB thread started.");
 
 			boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
 			unsigned timeout = 0;
@@ -495,10 +495,10 @@ namespace {
 				bool busy;
 				do {
 					while(!master_conn){
-						LOG_POSEIDON_INFO("Connecting to MongoDB master server...");
+						LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Connecting to MongoDB master server...");
 						try {
 							master_conn = real_create_connection(false, VAL_INIT);
-							LOG_POSEIDON_INFO("Successfully connected to MongoDB master server.");
+							LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Successfully connected to MongoDB master server.");
 						} catch(std::exception &e){
 							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
@@ -508,10 +508,10 @@ namespace {
 						}
 					}
 					while(!slave_conn){
-						LOG_POSEIDON_INFO("Connecting to MongoDB slave server...");
+						LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Connecting to MongoDB slave server...");
 						try {
 							slave_conn = real_create_connection(true, master_conn);
-							LOG_POSEIDON_INFO("Successfully connected to MongoDB slave server.");
+							LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Successfully connected to MongoDB slave server.");
 						} catch(std::exception &e){
 							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
@@ -531,7 +531,7 @@ namespace {
 				m_new_operation.timed_wait(lock, timeout);
 			}
 
-			LOG_POSEIDON_INFO("MongoDB thread stopped.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MongoDB thread stopped.");
 		}
 
 	public:
@@ -733,7 +733,7 @@ void MongoDbDaemon::start(){
 	}
 	g_threads.resize(max_thread_count);
 
-	LOG_POSEIDON_INFO("MongoDB daemon started.");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MongoDB daemon started.");
 }
 void MongoDbDaemon::stop(){
 	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
@@ -759,7 +759,7 @@ void MongoDbDaemon::stop(){
 	}
 	g_threads.clear();
 
-	LOG_POSEIDON_INFO("MongoDB daemon stopped.");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MongoDB daemon stopped.");
 }
 
 boost::shared_ptr<MongoDb::Connection> MongoDbDaemon::create_connection(bool from_slave){

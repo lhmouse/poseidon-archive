@@ -78,7 +78,7 @@ namespace {
 
 		void thread_proc(){
 			PROFILE_ME;
-			LOG_POSEIDON_INFO("Workhorse thread started.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse thread started.");
 
 			unsigned timeout = 0;
 			for(;;){
@@ -95,7 +95,7 @@ namespace {
 				m_new_job.timed_wait(lock, timeout);
 			}
 
-			LOG_POSEIDON_INFO("Workhorse thread stopped.");
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse thread stopped.");
 		}
 
 	public:
@@ -190,7 +190,7 @@ void WorkhorseCamp::start(){
 	}
 	g_threads.resize(max_thread_count);
 
-	LOG_POSEIDON_INFO("Workhorse daemon started.");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse daemon started.");
 }
 void WorkhorseCamp::stop(){
 	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
@@ -216,7 +216,7 @@ void WorkhorseCamp::stop(){
 	}
 	g_threads.clear();
 
-	LOG_POSEIDON_INFO("Workhorse daemon stopped.");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse daemon stopped.");
 }
 
 void WorkhorseCamp::enqueue_isolated(const boost::shared_ptr<Promise> &promise, JobProcedure procedure){

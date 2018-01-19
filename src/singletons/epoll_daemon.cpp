@@ -285,7 +285,7 @@ namespace {
 
 	void thread_proc(){
 		PROFILE_ME;
-		LOG_POSEIDON_INFO("Epoll daemon started.");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Epoll daemon started.");
 
 		boost::container::vector<unsigned char> io_buffer;
 		const AUTO(io_buffer_size, MainConfig::get<std::size_t>("epoll_io_buffer_size", 4096));
@@ -308,7 +308,7 @@ namespace {
 			wait_for_sockets(timeout);
 		}
 
-		LOG_POSEIDON_INFO("Epoll daemon stopped.");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Epoll daemon stopped.");
 	}
 }
 

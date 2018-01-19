@@ -107,7 +107,7 @@ namespace {
 
 	void thread_proc(){
 		PROFILE_ME;
-		LOG_POSEIDON_INFO("DNS daemon started.");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "DNS daemon started.");
 
 		unsigned timeout = 0;
 		for(;;){
@@ -124,7 +124,7 @@ namespace {
 			g_new_request.timed_wait(lock, timeout);
 		}
 
-		LOG_POSEIDON_INFO("DNS daemon stopped.");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "DNS daemon stopped.");
 	}
 }
 

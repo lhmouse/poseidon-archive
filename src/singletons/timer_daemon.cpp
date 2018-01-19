@@ -150,7 +150,7 @@ namespace {
 
 	void thread_proc(){
 		PROFILE_ME;
-		LOG_POSEIDON_INFO("Timer daemon started.");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Timer daemon started.");
 
 		unsigned timeout = 0;
 		for(;;){
@@ -167,7 +167,7 @@ namespace {
 			g_new_timer.timed_wait(lock, timeout);
 		}
 
-		LOG_POSEIDON_INFO("Timer daemon stopped.");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Timer daemon stopped.");
 	}
 }
 

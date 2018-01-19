@@ -62,7 +62,7 @@ void SystemServer::start(){
 	const AUTO(relm, MainConfig::get<std::string>("system_http_auth_realm", "Poseidon Test Server"));
 	const AUTO(auth, MainConfig::get_all<std::string>("system_http_auth_user_pass"));
 	if(bind.empty()){
-		LOG_POSEIDON_INFO("System server is disabled.");
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "System server is disabled.");
 	} else {
 		const AUTO(auth_ctx, Http::create_authentication_context(relm, auth));
 		const AUTO(server, boost::make_shared<SystemSocketServer>(bind, port, cert, pkey, auth_ctx));
@@ -115,7 +115,7 @@ boost::shared_ptr<const SystemServletBase> SystemServer::register_servlet(boost:
 	LOG_POSEIDON_DEBUG("Registering system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	const AUTO(pair, g_servlet_map.emplace(uri, servlet));
 	DEBUG_THROW_UNLESS(pair.second, Exception, sslit("Duplicate system servlet"));
-	LOG_POSEIDON_INFO("Registered system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Registered system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	return STD_MOVE_IDN(servlet);
 }
 

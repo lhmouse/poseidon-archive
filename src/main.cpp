@@ -362,12 +362,6 @@ namespace {
 			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_profiler>()));
 			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_modules>()));
 
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for daemon initialization to complete...");
-			::timespec req;
-			req.tv_sec = 0;
-			req.tv_nsec = 200000000;
-			::nanosleep(&req, NULLPTR);
-
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask...");
 			Logger::initialize_mask_from_config();
 
