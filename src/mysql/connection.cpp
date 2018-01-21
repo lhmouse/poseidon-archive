@@ -59,8 +59,8 @@ namespace {
 
 			DEBUG_THROW_UNLESS(m_mysql.reset(::mysql_init(&m_mysql_storage)), BasicException, sslit("::mysql_init() failed"));
 			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_COMPRESS"));
-			static CONSTEXPR const ::my_bool TRUE_VALUE = true;
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &TRUE_VALUE) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
+			static CONSTEXPR const ::my_bool s_true_value = true;
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &s_true_value) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
 			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
 			unsigned long flags = 0;
 			if(use_ssl){
