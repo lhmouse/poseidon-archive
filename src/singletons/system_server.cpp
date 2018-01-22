@@ -73,6 +73,7 @@ void SystemServer::start(){
 void SystemServer::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping system server...");
 
+	const Mutex::UniqueLock lock(g_mutex);
 	g_servlet_map.clear();
 	g_server.reset();
 }

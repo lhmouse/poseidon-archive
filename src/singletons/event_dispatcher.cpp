@@ -74,6 +74,7 @@ void EventDispatcher::start(){
 void EventDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping event dispatcher...");
 
+	const Mutex::UniqueLock lock(g_mutex);
 	g_listeners.clear();
 }
 

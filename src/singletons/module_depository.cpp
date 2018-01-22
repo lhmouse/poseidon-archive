@@ -124,14 +124,8 @@ void ModuleDepository::start(){
 void ModuleDepository::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading all modules...");
 
-	for(;;){
-		const AUTO(it, g_module_map.begin());
-		if(it == g_module_map.end()){
-			break;
-		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading module: ", it->module->get_real_path());
-		g_module_map.erase(it);
-	}
+	const RecursiveMutex::UniqueLock lock(g_mutex);
+	g_module_map.clear();
 }
 
 void *ModuleDepository::load(const std::string &path){

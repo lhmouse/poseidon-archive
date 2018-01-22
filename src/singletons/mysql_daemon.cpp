@@ -740,9 +740,11 @@ void MySqlDaemon::stop(){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for MySQL thread ", i, " to terminate...");
 		thread->safe_join();
 	}
-	g_threads.clear();
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MySQL daemon stopped.");
+
+	const Mutex::UniqueLock lock(g_router_mutex);
+	g_threads.clear();
 }
 
 boost::shared_ptr<MySql::Connection> MySqlDaemon::create_connection(bool from_slave){

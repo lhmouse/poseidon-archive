@@ -247,24 +247,23 @@ void JobDispatcher::start(){
 void JobDispatcher::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
 
+	Mutex::UniqueLock lock(g_fiber_map_mutex);
 	boost::uint64_t last_info_time = 0;
 	for(;;){
-		std::size_t pending_fibers;
-		{
-			const Mutex::UniqueLock lock(g_fiber_map_mutex);
-			pending_fibers = g_fiber_map.size();
-		}
+		const AUTO(pending_fibers, g_fiber_map.size());
 		if(pending_fibers == 0){
 			break;
 		}
+		lock.unlock();
 
 		const AUTO(now, get_fast_mono_clock());
 		if(last_info_time + 500 < now){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pending_fibers, " fiber(s) remaining.");
 			last_info_time = now;
 		}
-
 		pump_one_round(true);
+
+		lock.lock();
 	}
 }
 

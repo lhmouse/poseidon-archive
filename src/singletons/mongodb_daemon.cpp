@@ -757,9 +757,11 @@ void MongoDbDaemon::stop(){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for MongoDB thread ", i, " to terminate...");
 		thread->safe_join();
 	}
-	g_threads.clear();
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MongoDB daemon stopped.");
+
+	const Mutex::UniqueLock lock(g_router_mutex);
+	g_threads.clear();
 }
 
 boost::shared_ptr<MongoDb::Connection> MongoDbDaemon::create_connection(bool from_slave){

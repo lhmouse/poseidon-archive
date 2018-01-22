@@ -46,7 +46,8 @@ void ProfileDepository::start(){
 void ProfileDepository::stop(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping profile depository...");
 
-	//
+	const Mutex::UniqueLock lock(g_mutex);
+	g_profile.clear();
 }
 
 bool ProfileDepository::is_enabled() NOEXCEPT {

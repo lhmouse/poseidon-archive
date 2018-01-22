@@ -319,11 +319,7 @@ void EpollDaemon::start(){
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting epoll daemon...");
 
-	if(!g_epoll.reset(::epoll_create(100))){
-		const int err_code = errno;
-		LOG_POSEIDON_FATAL("Failed to create epoll: err_code = ", err_code, " (", get_error_desc(err_code), ")");
-		std::abort();
-	}
+	DEBUG_THROW_UNLESS(g_epoll.reset(::epoll_create(100)), SystemException);
 	Thread(&thread_proc, sslit("   N"), sslit("Network")).swap(g_thread);
 }
 void EpollDaemon::stop(){
@@ -335,6 +331,8 @@ void EpollDaemon::stop(){
 	if(g_thread.joinable()){
 		g_thread.join();
 	}
+
+	const RecursiveMutex::UniqueLock lock(g_mutex);
 	g_socket_map.clear();
 	g_epoll.reset();
 }

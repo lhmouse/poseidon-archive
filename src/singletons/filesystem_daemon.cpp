@@ -397,6 +397,8 @@ void FileSystemDaemon::stop(){
 	if(g_thread.joinable()){
 		g_thread.join();
 	}
+
+	const Mutex::UniqueLock lock(g_mutex);
 	g_operations.clear();
 }
 

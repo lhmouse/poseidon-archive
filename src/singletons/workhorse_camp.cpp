@@ -214,9 +214,11 @@ void WorkhorseCamp::stop(){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for workhorse thread ", i, " to terminate...");
 		thread->safe_join();
 	}
-	g_threads.clear();
 
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse daemon stopped.");
+
+	const Mutex::UniqueLock lock(g_router_mutex);
+	g_threads.clear();
 }
 
 void WorkhorseCamp::enqueue_isolated(const boost::shared_ptr<Promise> &promise, JobProcedure procedure){
