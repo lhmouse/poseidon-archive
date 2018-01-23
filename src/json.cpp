@@ -23,11 +23,12 @@ namespace {
 		if(!(is >>ch)){
 			return ret;
 		}
-		if(ch != '\"'){
+		if((ch != '\"') && (ch != '\'')){
 			LOG_POSEIDON_WARNING("String open expected");
 			is.setstate(std::ios::failbit);
 			return ret;
 		}
+		const char equote = ch;
 		enum {
 			S_PLAIN,
 			S_ESCAPED,
@@ -137,7 +138,7 @@ namespace {
 				}
 			} else if(ch == '\\'){
 				state = S_ESCAPED;
-			} else if(ch == '\"'){
+			} else if(ch == equote){
 				break;
 			} else {
 				ret += ch;
@@ -284,6 +285,7 @@ namespace {
 		is.putback(ch);
 		switch(ch){
 		case '\"':
+		case '\'':
 			ret = accept_string(is);
 			break;
 		case '-':
@@ -336,21 +338,16 @@ void JsonObject::dump(std::ostream &os) const {
 	os <<'{';
 	AUTO(it, begin());
 	if(it != end()){
-		os <<'\"';
-		os <<it->first.get();
-		os <<'\"';
-		os <<':';
-		it->second.dump(os);
-
-		while(++it != end()){
+		goto _loop_entry;
+		do {
 			os <<',';
-
+	_loop_entry:
 			os <<'\"';
 			os <<it->first.get();
 			os <<'\"';
 			os <<':';
-			it->second.dump(os);
-		}
+			os <<it->second;
+		} while(++it != end());
 	}
 	os <<'}';
 }
@@ -383,13 +380,12 @@ void JsonArray::dump(std::ostream &os) const {
 	os <<'[';
 	AUTO(it, begin());
 	if(it != end()){
-		it->dump(os);
-
-		while(++it != end()){
+		goto _loop_entry;
+		do {
 			os <<',';
-
-			it->dump(os);
-		}
+	_loop_entry:
+			os <<*it;
+		} while(++it != end());
 	}
 	os <<']';
 }
