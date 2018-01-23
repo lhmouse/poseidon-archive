@@ -5,6 +5,10 @@
 #  error OBJECT_NAME is undefined.
 #endif
 
+#ifndef OBJECT_COLLECTION
+#  error OBJECT_COLLECTION is undefined.
+#endif
+
 #ifndef OBJECT_FIELDS
 #  error OBJECT_FIELDS is undefined.
 #endif
@@ -18,11 +22,6 @@
 #endif
 
 class OBJECT_NAME : public ::Poseidon::MongoDb::ObjectBase {
-public:
-	static ::boost::shared_ptr< ::Poseidon::MongoDb::ObjectBase> create(){
-		return ::boost::make_shared<OBJECT_NAME>();
-	}
-
 public:
 
 #undef FIELD_BOOLEAN
@@ -152,7 +151,7 @@ OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 OBJECT_NAME::~OBJECT_NAME(){ }
 
 const char *OBJECT_NAME::get_collection() const OVERRIDE {
-	return TOKEN_TO_STR(OBJECT_NAME);
+	return OBJECT_COLLECTION;
 }
 void OBJECT_NAME::generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const {
 	PROFILE_ME;
@@ -189,7 +188,7 @@ void OBJECT_NAME::generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) cons
 
 	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
 
-	OBJECT_PRIMARY_KEY
+	return OBJECT_PRIMARY_KEY;
 }
 void fetch(const ::boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_){
 	PROFILE_ME;

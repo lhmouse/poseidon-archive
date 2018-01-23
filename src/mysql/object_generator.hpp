@@ -5,6 +5,10 @@
 #  error OBJECT_NAME is undefined.
 #endif
 
+#ifndef OBJECT_TABLE
+#  error OBJECT_TABLE is undefined.
+#endif
+
 #ifndef OBJECT_FIELDS
 #  error OBJECT_FIELDS is undefined.
 #endif
@@ -14,11 +18,6 @@
 #endif
 
 class OBJECT_NAME : public ::Poseidon::MySql::ObjectBase {
-public:
-	static ::boost::shared_ptr< ::Poseidon::MySql::ObjectBase> create(){
-		return ::boost::make_shared<OBJECT_NAME>();
-	}
-
 public:
 
 #undef FIELD_BOOLEAN
@@ -147,7 +146,7 @@ OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 OBJECT_NAME::~OBJECT_NAME(){ }
 
 const char *OBJECT_NAME::get_table() const OVERRIDE {
-	return TOKEN_TO_STR(OBJECT_NAME);
+	return OBJECT_TABLE;
 }
 void OBJECT_NAME::generate_sql(::std::ostream &os_) const {
 	PROFILE_ME;
