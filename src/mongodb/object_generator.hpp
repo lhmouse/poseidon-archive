@@ -150,7 +150,7 @@ OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 
 OBJECT_NAME::~OBJECT_NAME(){ }
 
-const char *OBJECT_NAME::get_collection() const OVERRIDE {
+const char *OBJECT_NAME::get_collection() const {
 	return OBJECT_COLLECTION;
 }
 void OBJECT_NAME::generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const {

@@ -145,7 +145,7 @@ OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 
 OBJECT_NAME::~OBJECT_NAME(){ }
 
-const char *OBJECT_NAME::get_table() const OVERRIDE {
+const char *OBJECT_NAME::get_table() const {
 	return OBJECT_TABLE;
 }
 void OBJECT_NAME::generate_sql(::std::ostream &os_) const {
