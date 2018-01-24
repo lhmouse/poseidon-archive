@@ -23,17 +23,10 @@ namespace {
 		if(str.empty()){
 			return false;
 		}
-#ifdef POSEIDON_CXX11
-		if(str.back() != ch){
-			return false;
-		}
-		str.pop_back();
-#else
 		if(*str.rbegin() != ch){
 			return false;
 		}
 		str.erase(str.end() - 1);
-#endif
 		return true;
 	}
 }
@@ -60,12 +53,12 @@ void Multipart::random_boundary(){
 	m_boundary.swap(boundary);
 }
 
-std::string Multipart::dump() const {
+StreamBuffer Multipart::dump() const {
 	PROFILE_ME;
 
-	Buffer_ostream os;
-	dump(os);
-	return os.get_buffer().dump_string();
+	Buffer_ostream bos;
+	dump(bos);
+	return STD_MOVE(bos.get_buffer());
 }
 void Multipart::dump(std::ostream &os) const {
 	PROFILE_ME;

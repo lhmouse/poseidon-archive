@@ -325,12 +325,12 @@ JsonObject::JsonObject(std::istream &is)
 	DEBUG_THROW_UNLESS(is, Exception, sslit("JsonObject parser error"));
 }
 
-std::string JsonObject::dump() const {
+StreamBuffer JsonObject::dump() const {
 	PROFILE_ME;
 
-	Buffer_ostream os;
-	dump(os);
-	return os.get_buffer().dump_string();
+	Buffer_ostream bos;
+	dump(bos);
+	return STD_MOVE(bos.get_buffer());
 }
 void JsonObject::dump(std::ostream &os) const {
 	PROFILE_ME;
@@ -367,12 +367,12 @@ JsonArray::JsonArray(std::istream &is)
 	DEBUG_THROW_UNLESS(is, Exception, sslit("JsonArray parser error"));
 }
 
-std::string JsonArray::dump() const {
+StreamBuffer JsonArray::dump() const {
 	PROFILE_ME;
 
-	Buffer_ostream os;
-	dump(os);
-	return os.get_buffer().dump_string();
+	Buffer_ostream bos;
+	dump(bos);
+	return STD_MOVE(bos.get_buffer());
 }
 void JsonArray::dump(std::ostream &os) const {
 	PROFILE_ME;
@@ -418,12 +418,12 @@ const char *JsonElement::get_type_string(JsonElement::Type type){
 	}
 }
 
-std::string JsonElement::dump() const {
+StreamBuffer JsonElement::dump() const {
 	PROFILE_ME;
 
-	Buffer_ostream os;
-	dump(os);
-	return os.get_buffer().dump_string();
+	Buffer_ostream bos;
+	dump(bos);
+	return STD_MOVE(bos.get_buffer());
 }
 void JsonElement::dump(std::ostream &os) const {
 	PROFILE_ME;

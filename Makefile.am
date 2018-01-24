@@ -295,7 +295,7 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/mongodb/bson_builder.cpp
 
 lib_libposeidon_main_la_LDFLAGS = \
-	-no-undefined -version-info 18:0:0
+	-no-undefined -version-info 19:0:0
 
 sysconf_DATA =
 

@@ -124,7 +124,7 @@ bool LowLevelSession::send(StatusCode status_code, StreamBuffer entity, const He
 	PROFILE_ME;
 
 	OptionalMap headers;
-	headers.set(sslit("Content-Type"), content_type.dump());
+	headers.set(sslit("Content-Type"), content_type.dump().dump_string());
 	return send(status_code, STD_MOVE(headers), STD_MOVE(entity));
 }
 bool LowLevelSession::send(StatusCode status_code, OptionalMap headers, StreamBuffer entity){

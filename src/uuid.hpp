@@ -39,8 +39,7 @@ public:
 
 public:
 	bool is_null() const {
-		static CONSTEXPR const unsigned char null_bytes[16] = { };
-		return std::memcmp(m_bytes.data(), null_bytes, 16) == 0;
+		return m_bytes == min().m_bytes;
 	}
 
 	const boost::array<unsigned char, 16> &as_array() const {
@@ -106,22 +105,22 @@ public:
 };
 
 inline bool operator==(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.data(), rhs.data(), 16) == 0;
+	return std::memcmp(lhs.data(), rhs.data(), lhs.size()) == 0;
 }
 inline bool operator!=(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.data(), rhs.data(), 16) != 0;
+	return std::memcmp(lhs.data(), rhs.data(), lhs.size()) != 0;
 }
 inline bool operator<(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.data(), rhs.data(), 16) < 0;
+	return std::memcmp(lhs.data(), rhs.data(), lhs.size()) < 0;
 }
 inline bool operator>(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.data(), rhs.data(), 16) > 0;
+	return std::memcmp(lhs.data(), rhs.data(), lhs.size()) > 0;
 }
 inline bool operator<=(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.data(), rhs.data(), 16) <= 0;
+	return std::memcmp(lhs.data(), rhs.data(), lhs.size()) <= 0;
 }
 inline bool operator>=(const Uuid &lhs, const Uuid &rhs){
-	return std::memcmp(lhs.data(), rhs.data(), 16) >= 0;
+	return std::memcmp(lhs.data(), rhs.data(), lhs.size()) >= 0;
 }
 
 extern std::ostream &operator<<(std::ostream &os, const Uuid &rhs);

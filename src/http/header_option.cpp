@@ -19,12 +19,12 @@ HeaderOption::HeaderOption(std::istream &is)
 	DEBUG_THROW_UNLESS(is, Exception, sslit("Http::HeaderOption parser error"));
 }
 
-std::string HeaderOption::dump() const {
+StreamBuffer HeaderOption::dump() const {
 	PROFILE_ME;
 
-	Buffer_ostream os;
-	dump(os);
-	return os.get_buffer().dump_string();
+	Buffer_ostream bos;
+	dump(bos);
+	return STD_MOVE(bos.get_buffer());
 }
 void HeaderOption::dump(std::ostream &os) const {
 	PROFILE_ME;

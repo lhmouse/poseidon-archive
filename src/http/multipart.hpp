@@ -189,7 +189,7 @@ public:
 		swap(m_elements, rhs.m_elements);
 	}
 
-	std::string dump() const;
+	StreamBuffer dump() const;
 	void dump(std::ostream &os) const;
 	void parse(std::istream &is);
 };

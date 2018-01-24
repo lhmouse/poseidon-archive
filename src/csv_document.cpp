@@ -102,12 +102,12 @@ void CsvDocument::append(boost::container::map<SharedNts, std::string> &&row){
 }
 #endif
 
-std::string CsvDocument::dump() const {
+StreamBuffer CsvDocument::dump() const {
 	PROFILE_ME;
 
-	Buffer_ostream os;
-	dump(os);
-	return os.get_buffer().dump_string();
+	Buffer_ostream bos;
+	dump(bos);
+	return STD_MOVE(bos.get_buffer());
 }
 void CsvDocument::dump(std::ostream &os) const {
 	PROFILE_ME;

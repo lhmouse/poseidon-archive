@@ -19,13 +19,16 @@
 
 namespace Poseidon {
 
+class StreamBuffer;
+class JsonObject;
+class JsonArray;
+class JsonElement;
+
 #ifdef POSEIDON_CXX11
 using JsonNull = std::nullptr_t;
 #else
 typedef struct JsonNull_ *JsonNull;
 #endif
-
-class JsonElement;
 
 extern const JsonElement &null_json_element() NOEXCEPT;
 
@@ -106,7 +109,7 @@ public:
 
 	void swap(JsonObject &rhs) NOEXCEPT;
 
-	std::string dump() const;
+	StreamBuffer dump() const;
 	void dump(std::ostream &os) const;
 	void parse(std::istream &is);
 };
@@ -193,7 +196,7 @@ public:
 
 	void swap(JsonArray &rhs) NOEXCEPT;
 
-	std::string dump() const;
+	StreamBuffer dump() const;
 	void dump(std::ostream &os) const;
 	void parse(std::istream &is);
 };
@@ -275,7 +278,7 @@ public:
 		swap(m_data, rhs.m_data);
 	}
 
-	std::string dump() const;
+	StreamBuffer dump() const;
 	void dump(std::ostream &os) const;
 	void parse(std::istream &is);
 };

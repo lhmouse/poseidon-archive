@@ -493,9 +493,4 @@ void StreamBuffer::dump(std::ostream &os) const {
 	}
 }
 
-std::ostream &operator<<(std::ostream &os, const StreamBuffer &rhs){
-	rhs.dump(os);
-	return os;
-}
-
 }

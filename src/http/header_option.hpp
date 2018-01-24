@@ -4,8 +4,9 @@
 #ifndef POSEIDON_HTTP_HEADER_OPTION_HPP_
 #define POSEIDON_HTTP_HEADER_OPTION_HPP_
 
-#include <iosfwd>
 #include "../optional_map.hpp"
+#include "../fwd.hpp"
+#include <iosfwd>
 
 namespace Poseidon {
 namespace Http {
@@ -74,7 +75,7 @@ public:
 		swap(m_options, rhs.m_options);
 	}
 
-	std::string dump() const;
+	StreamBuffer dump() const;
 	void dump(std::ostream &os) const;
 	void parse(std::istream &is);
 };

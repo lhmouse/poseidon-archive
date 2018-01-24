@@ -127,7 +127,7 @@ bool LowLevelClient::send(Verb verb, std::string uri, OptionalMap get_params, St
 	PROFILE_ME;
 
 	OptionalMap headers;
-	headers.set(sslit("Content-Type"), content_type.dump());
+	headers.set(sslit("Content-Type"), content_type.dump().dump_string());
 	return send(verb, STD_MOVE(uri), STD_MOVE(get_params), STD_MOVE(headers), STD_MOVE(entity));
 }
 bool LowLevelClient::send(Verb verb, std::string uri, OptionalMap get_params, OptionalMap headers, StreamBuffer entity){

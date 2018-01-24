@@ -145,7 +145,10 @@ inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-extern std::ostream &operator<<(std::ostream &os, const StreamBuffer &rhs);
+inline std::ostream &operator<<(std::ostream &os, const StreamBuffer &rhs){
+	rhs.dump(os);
+	return os;
+}
 
 class StreamBuffer::ReadIterator : public std::iterator<std::input_iterator_tag, int> {
 private:
