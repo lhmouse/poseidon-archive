@@ -223,7 +223,7 @@ namespace {
 			PROFILE_ME;
 
 			if(!get_promise()){
-				LOG_POSEIDON_DEBUG("Discarding isolated MongoDB query: collection = ", get_collection(), ", query = ", query);
+				LOG_POSEIDON_WARNING("Discarding isolated MongoDB query: collection = ", get_collection(), ", query = ", query);
 				return;
 			}
 			conn->execute_bson(query);
@@ -292,7 +292,7 @@ namespace {
 			PROFILE_ME;
 
 			if(!get_promise()){
-				LOG_POSEIDON_DEBUG("Discarding isolated MongoDB query: collection = ", get_collection(), ", query = ", query);
+				LOG_POSEIDON_WARNING("Discarding isolated MongoDB query: collection = ", get_collection(), ", query = ", query);
 				return;
 			}
 			conn->execute_bson(query);

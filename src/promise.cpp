@@ -9,11 +9,7 @@
 
 namespace Poseidon {
 
-Promise::~Promise(){
-	if(!m_except){
-		LOG_POSEIDON_WARNING("Destroying an unsatisfied Promise.");
-	}
-}
+Promise::~Promise(){ }
 
 bool Promise::is_satisfied() const NOEXCEPT {
 	const RecursiveMutex::UniqueLock lock(m_mutex);

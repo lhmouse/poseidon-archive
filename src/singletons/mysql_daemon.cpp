@@ -206,7 +206,7 @@ namespace {
 			PROFILE_ME;
 
 			if(!get_promise()){
-				LOG_POSEIDON_DEBUG("Discarding isolated MySQL query: table = ", get_table(), ", query = ", query);
+				LOG_POSEIDON_WARNING("Discarding isolated MySQL query: table = ", get_table(), ", query = ", query);
 				return;
 			}
 			conn->execute_sql(query);
@@ -275,7 +275,7 @@ namespace {
 			PROFILE_ME;
 
 			if(!get_promise()){
-				LOG_POSEIDON_DEBUG("Discarding isolated MySQL query: table = ", get_table(), ", query = ", query);
+				LOG_POSEIDON_WARNING("Discarding isolated MySQL query: table = ", get_table(), ", query = ", query);
 				return;
 			}
 			conn->execute_sql(query);
