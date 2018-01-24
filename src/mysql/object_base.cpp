@@ -48,5 +48,13 @@ void ObjectBase::async_save(bool to_replace, bool urgent) const {
 	MySqlDaemon::enqueue_for_saving(virtual_shared_from_this<ObjectBase>(), to_replace, urgent);
 }
 
+template class ObjectBase::Field<bool>;
+template class ObjectBase::Field<boost::int64_t>;
+template class ObjectBase::Field<boost::uint64_t>;
+template class ObjectBase::Field<double>;
+template class ObjectBase::Field<std::string>;
+template class ObjectBase::Field<Uuid>;
+template class ObjectBase::Field<std::basic_string<unsigned char> >;
+
 }
 }

@@ -93,22 +93,9 @@ public:
 		}
 	}
 
-	void dump(std::ostream &os) const {
-		const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
-		os <<m_value;
-	}
-	void parse(std::istream &is, bool invalidates_parent = true){
-		const RecursiveMutex::UniqueLock lock(m_parent->m_mutex);
-		is >>m_value;
-
-		if(invalidates_parent){
-			m_parent->invalidate();
-		}
-	}
-
 public:
-	operator ValueT() const {
-		return get();
+	operator const ValueT &() const {
+		return unlocked_get();
 	}
 	Field &operator=(ValueT value){
 		set(STD_MOVE_IDN(value));
@@ -126,6 +113,14 @@ inline std::istream &operator>>(std::istream &is, ObjectBase::Field<ValueT> &rhs
 	rhs.parse(is);
 	return is;
 }
+
+extern template class ObjectBase::Field<bool>;
+extern template class ObjectBase::Field<boost::int64_t>;
+extern template class ObjectBase::Field<boost::uint64_t>;
+extern template class ObjectBase::Field<double>;
+extern template class ObjectBase::Field<std::string>;
+extern template class ObjectBase::Field<Uuid>;
+extern template class ObjectBase::Field<std::basic_string<unsigned char> >;
 
 class ObjectBase::Delimiter {
 private:
