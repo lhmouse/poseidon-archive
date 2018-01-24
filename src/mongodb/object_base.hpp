@@ -103,17 +103,6 @@ public:
 	}
 };
 
-template<typename ValueT>
-inline std::ostream &operator<<(std::ostream &os, const ObjectBase::Field<ValueT> &rhs){
-	rhs.dump(os);
-	return os;
-}
-template<typename ValueT>
-inline std::istream &operator>>(std::istream &is, ObjectBase::Field<ValueT> &rhs){
-	rhs.parse(is);
-	return is;
-}
-
 extern template class ObjectBase::Field<bool>;
 extern template class ObjectBase::Field<boost::int64_t>;
 extern template class ObjectBase::Field<boost::uint64_t>;
@@ -121,6 +110,19 @@ extern template class ObjectBase::Field<double>;
 extern template class ObjectBase::Field<std::string>;
 extern template class ObjectBase::Field<Uuid>;
 extern template class ObjectBase::Field<std::basic_string<unsigned char> >;
+
+template<typename ValueT>
+inline std::ostream &operator<<(std::ostream &os, const ObjectBase::Field<ValueT> &rhs){
+	return os <<rhs.unlocked_get();
+}
+template<typename ValueT>
+inline std::istream &operator>>(std::istream &is, ObjectBase::Field<ValueT> &rhs){
+	ValueT value;
+	if(is >>value){
+		rhs.set(STD_MOVE(value));
+	}
+	return is;
+}
 
 }
 }
