@@ -135,7 +135,7 @@ public:
 
 public:
 	void apply(std::ostream &os) const {
-		if(m_count == 0){
+		if(m_count != 0){
 			os <<", ";
 		}
 		++m_count;
