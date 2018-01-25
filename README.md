@@ -51,13 +51,14 @@ guarantee full compatibility with other Linux distributions.
 Older Debian versions (e.g. Squeeze) are known to have some serious problems  
 (e.g. runtime SIGSEGV due to bugs in g++ 4.4) that we are not willing to  
 provide ANY suppport for. It is you that should work around them.  
-* MySQL 5.7  
-* MongoDB 3.4  
+
+* MySQL (MariaDB) 10.1  
+* MongoDB 3.2  
 在 `third` 目录下有 MySQL 和 MongoDB 的驱动更新脚本可用于编译最新的客户端驱动。  
-此处列出的是 Debian Jessie 官方源中的服务端版本。  
+此处列出的是 Debian Stretch 的 APT 源中的版本。  
 There are scripts that can be used to fetch and build latest MySQL and MongoDB  
-client drivers in `third` directory. The version numbers here are of  
-server-side packages in Debian Jessie sources.  
+client drivers in `third` directory. The version numbers here are of packages  
+from Debian Stretch APT sources.  
 
 ### IRC channel:
 
