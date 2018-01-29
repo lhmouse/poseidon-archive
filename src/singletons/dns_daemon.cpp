@@ -118,7 +118,7 @@ namespace {
 			} while(busy);
 
 			Mutex::UniqueLock lock(g_mutex);
-			if(!atomic_load(g_running, ATOMIC_CONSUME)){
+			if(!atomic_load(g_running, memorder_consume)){
 				break;
 			}
 			g_new_request.timed_wait(lock, timeout);
@@ -129,7 +129,7 @@ namespace {
 }
 
 void DnsDaemon::start(){
-	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
+	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
@@ -138,7 +138,7 @@ void DnsDaemon::start(){
 	Thread(&thread_proc, sslit("   D"), sslit("DNS")).swap(g_thread);
 }
 void DnsDaemon::stop(){
-	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
+	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
 		return;
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping DNS daemon...");

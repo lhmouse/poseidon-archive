@@ -33,7 +33,7 @@ const Uuid &Uuid::max() NOEXCEPT {
 
 Uuid Uuid::random() NOEXCEPT {
 	const AUTO(utc_now, get_utc_time());
-	const AUTO(unique, (atomic_add(g_auto_inc, 1, ATOMIC_RELAXED) << 16) | g_pid);
+	const AUTO(unique, (atomic_add(g_auto_inc, 1, memorder_relaxed) << 16) | g_pid);
 	union {
 		unsigned char bytes[16];
 		boost::uint16_t u16[8];

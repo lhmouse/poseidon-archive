@@ -78,7 +78,7 @@ int TcpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_
 		LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", get_remote_info());
 
 		const AUTO(now, get_fast_mono_clock());
-		atomic_store(m_last_use_time, now, ATOMIC_RELEASE);
+		atomic_store(m_last_use_time, now, memorder_release);
 		create_shutdown_timer();
 
 		if(data.empty() && !m_read_hup_notified){
@@ -142,7 +142,7 @@ _check_shutdown:
 		LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", get_remote_info());
 
 		const AUTO(now, get_fast_mono_clock());
-		atomic_store(m_last_use_time, now, ATOMIC_RELEASE);
+		atomic_store(m_last_use_time, now, memorder_release);
 		create_shutdown_timer();
 
 		lock.lock();
@@ -166,7 +166,7 @@ _check_shutdown:
 void TcpSessionBase::on_shutdown_timer(boost::uint64_t now){
 	PROFILE_ME;
 
-	const AUTO(shutdown_time, atomic_load(m_shutdown_time, ATOMIC_CONSUME));
+	const AUTO(shutdown_time, atomic_load(m_shutdown_time, memorder_consume));
 	if(shutdown_time < now){
 		std::size_t send_buffer_size;
 		{
@@ -183,7 +183,7 @@ force_time_out:
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Shutdown pending: remote = ", get_remote_info(), ", send_buffer_size = ", send_buffer_size);
 	}
 
-	const AUTO(last_use_time, atomic_load(m_last_use_time, ATOMIC_CONSUME));
+	const AUTO(last_use_time, atomic_load(m_last_use_time, memorder_consume));
 	const AUTO(tcp_response_timeout, MainConfig::get<boost::uint64_t>("tcp_response_timeout", 30000));
 	if(saturated_sub(now, last_use_time) > tcp_response_timeout){
 		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "The connection seems dead: remote = ", get_remote_info());
@@ -229,7 +229,7 @@ void TcpSessionBase::set_timeout(boost::uint64_t timeout){
 	PROFILE_ME;
 
 	const AUTO(now, get_fast_mono_clock());
-	atomic_store(m_shutdown_time, saturated_add(now, timeout), ATOMIC_RELEASE);
+	atomic_store(m_shutdown_time, saturated_add(now, timeout), memorder_release);
 	create_shutdown_timer();
 }
 

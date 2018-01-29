@@ -33,12 +33,12 @@ namespace {
 
 	void sigterm_proc(int){
 		LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");
-		atomic_store(g_running, false, ATOMIC_RELEASE);
+		atomic_store(g_running, false, memorder_release);
 	}
 
 	void sighup_proc(int){
 		LOG_POSEIDON_WARNING("Received SIGHUP, will now exit...");
-		atomic_store(g_running, false, ATOMIC_RELEASE);
+		atomic_store(g_running, false, memorder_release);
 	}
 
 	void sigint_proc(int){
@@ -57,7 +57,7 @@ namespace {
 			std::_Exit(EXIT_FAILURE);
 		}
 		LOG_POSEIDON_WARNING("Received SIGINT, trying to exit gracefully... If I don't terminate in ", s_kill_timeout, " milliseconds, press ^C again.");
-		atomic_store(g_running, false, ATOMIC_RELEASE);
+		atomic_store(g_running, false, memorder_release);
 	}
 
 	JsonObject make_help(const char *const (*param_info)[2]){

@@ -225,10 +225,10 @@ void Session::on_sync_control_message(StatusCode status_code, StreamBuffer param
 }
 
 boost::uint64_t Session::get_max_request_length() const {
-	return atomic_load(m_max_request_length, ATOMIC_CONSUME);
+	return atomic_load(m_max_request_length, memorder_consume);
 }
 void Session::set_max_request_length(boost::uint64_t max_request_length){
-	atomic_store(m_max_request_length, max_request_length, ATOMIC_RELEASE);
+	atomic_store(m_max_request_length, max_request_length, memorder_release);
 }
 
 }

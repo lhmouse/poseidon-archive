@@ -388,10 +388,10 @@ namespace {
 			{
 				const Mutex::UniqueLock lock(m_mutex);
 				if(m_queue.empty()){
-					atomic_store(m_urgent, false, ATOMIC_RELAXED);
+					atomic_store(m_urgent, false, memorder_relaxed);
 					return false;
 				}
-				if(!atomic_load(m_urgent, ATOMIC_CONSUME) && (now < m_queue.front().due_time)){
+				if(!atomic_load(m_urgent, memorder_consume) && (now < m_queue.front().due_time)){
 					return false;
 				}
 				elem = &m_queue.front();
@@ -508,7 +508,7 @@ namespace {
 				} while(busy);
 
 				Mutex::UniqueLock lock(m_mutex);
-				if(m_queue.empty() && !atomic_load(m_running, ATOMIC_CONSUME)){
+				if(m_queue.empty() && !atomic_load(m_running, memorder_consume)){
 					break;
 				}
 				m_new_operation.timed_wait(lock, timeout);
@@ -521,10 +521,10 @@ namespace {
 		void start(){
 			const Mutex::UniqueLock lock(m_mutex);
 			Thread(boost::bind(&MySqlThread::thread_proc, this), sslit(" M  "), sslit("MySQL")).swap(m_thread);
-			atomic_store(m_running, true, ATOMIC_RELEASE);
+			atomic_store(m_running, true, memorder_release);
 		}
 		void stop(){
-			atomic_store(m_running, false, ATOMIC_RELEASE);
+			atomic_store(m_running, false, memorder_release);
 		}
 		void safe_join(){
 			wait_till_idle();
@@ -545,7 +545,7 @@ namespace {
 						break;
 					}
 					m_queue.front().operation->generate_sql(current_sql);
-					atomic_store(m_urgent, true, ATOMIC_RELEASE);
+					atomic_store(m_urgent, true, memorder_release);
 					m_new_operation.signal();
 				}
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_sql = ", current_sql);
@@ -572,7 +572,7 @@ namespace {
 			const AUTO(due_time, saturated_add(now, save_delay));
 
 			const Mutex::UniqueLock lock(m_mutex);
-			DEBUG_THROW_UNLESS(atomic_load(m_running, ATOMIC_CONSUME), Exception, sslit("MySQL thread is being shut down"));
+			DEBUG_THROW_UNLESS(atomic_load(m_running, memorder_consume), Exception, sslit("MySQL thread is being shut down"));
 			OperationQueueElement elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){
@@ -582,7 +582,7 @@ namespace {
 				}
 			}
 			if(urgent){
-				atomic_store(m_urgent, true, ATOMIC_RELEASE);
+				atomic_store(m_urgent, true, memorder_release);
 			}
 			m_new_operation.signal();
 		}
@@ -666,7 +666,7 @@ namespace {
 }
 
 void MySqlDaemon::start(){
-	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
+	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
@@ -719,7 +719,7 @@ void MySqlDaemon::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MySQL daemon started.");
 }
 void MySqlDaemon::stop(){
-	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
+	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
 		return;
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MySQL daemon...");

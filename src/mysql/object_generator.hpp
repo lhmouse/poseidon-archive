@@ -140,7 +140,7 @@ OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 
 	OBJECT_FIELDS
 {
-	::Poseidon::atomic_fence(::Poseidon::ATOMIC_RELEASE);
+	::Poseidon::atomic_fence(::Poseidon::memorder_release);
 }
 
 OBJECT_NAME::~OBJECT_NAME(){ }

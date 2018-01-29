@@ -80,16 +80,16 @@ namespace {
 }
 
 boost::uint64_t Logger::get_mask() NOEXCEPT {
-	return atomic_load(g_mask, ATOMIC_RELAXED);
+	return atomic_load(g_mask, memorder_relaxed);
 }
 boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT {
 	boost::uint64_t old_mask, new_mask;
-	old_mask = atomic_load(g_mask, ATOMIC_RELAXED);
+	old_mask = atomic_load(g_mask, memorder_relaxed);
 	do {
 		new_mask = old_mask;
 		new_mask &= ~to_disable;
 		new_mask |= to_enable;
-	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, ATOMIC_RELAXED, ATOMIC_RELAXED));
+	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, memorder_relaxed, memorder_relaxed));
 	return old_mask;
 }
 

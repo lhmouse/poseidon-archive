@@ -13,13 +13,13 @@ namespace MongoDb {
 ObjectBase::~ObjectBase(){ }
 
 bool ObjectBase::is_auto_saving_enabled() const {
-	return atomic_load(m_auto_saves, ATOMIC_CONSUME);
+	return atomic_load(m_auto_saves, memorder_consume);
 }
 void ObjectBase::enable_auto_saving() const {
-	atomic_store(m_auto_saves, true, ATOMIC_RELEASE);
+	atomic_store(m_auto_saves, true, memorder_release);
 }
 void ObjectBase::disable_auto_saving() const {
-	atomic_store(m_auto_saves, false, ATOMIC_RELEASE);
+	atomic_store(m_auto_saves, false, memorder_release);
 }
 
 bool ObjectBase::invalidate() const NOEXCEPT
@@ -38,10 +38,10 @@ try {
 }
 
 void *ObjectBase::get_combined_write_stamp() const {
-	return atomic_load(m_combined_write_stamp, ATOMIC_CONSUME);
+	return atomic_load(m_combined_write_stamp, memorder_consume);
 }
 void ObjectBase::set_combined_write_stamp(void *stamp) const {
-	atomic_store(m_combined_write_stamp, stamp, ATOMIC_RELEASE);
+	atomic_store(m_combined_write_stamp, stamp, memorder_release);
 }
 void ObjectBase::async_save(bool to_replace, bool urgent) const {
 	enable_auto_saving();

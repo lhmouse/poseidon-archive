@@ -302,7 +302,7 @@ namespace {
 				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 			} while(busy);
 
-			if(!atomic_load(g_running, ATOMIC_CONSUME)){
+			if(!atomic_load(g_running, memorder_consume)){
 				break;
 			}
 			wait_for_sockets(timeout);
@@ -313,7 +313,7 @@ namespace {
 }
 
 void EpollDaemon::start(){
-	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
+	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
@@ -323,7 +323,7 @@ void EpollDaemon::start(){
 	Thread(&thread_proc, sslit("   N"), sslit("Network")).swap(g_thread);
 }
 void EpollDaemon::stop(){
-	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
+	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
 		return;
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping epoll daemon...");

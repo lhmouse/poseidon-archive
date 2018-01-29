@@ -161,7 +161,7 @@ namespace {
 			} while(busy);
 
 			Mutex::UniqueLock lock(g_mutex);
-			if(!atomic_load(g_running, ATOMIC_CONSUME)){
+			if(!atomic_load(g_running, memorder_consume)){
 				break;
 			}
 			g_new_timer.timed_wait(lock, timeout);
@@ -172,7 +172,7 @@ namespace {
 }
 
 void TimerDaemon::start(){
-	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
+	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
@@ -181,7 +181,7 @@ void TimerDaemon::start(){
 	Thread(&thread_proc, sslit("  T "), sslit("Timer")).swap(g_thread);
 }
 void TimerDaemon::stop(){
-	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
+	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
 		return;
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping timer daemon...");

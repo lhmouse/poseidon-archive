@@ -272,12 +272,12 @@ void JobDispatcher::do_modal(const volatile bool &running){
 	for(;;){
 		bool busy;
 		do {
-			busy = pump_one_round(!atomic_load(running, ATOMIC_CONSUME));
+			busy = pump_one_round(!atomic_load(running, memorder_consume));
 			timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 		} while(busy);
 
 		Mutex::UniqueLock lock(g_fiber_map_mutex);
-		if(!atomic_load(running, ATOMIC_CONSUME)){
+		if(!atomic_load(running, memorder_consume)){
 			break;
 		}
 		g_new_job.timed_wait(lock, timeout);

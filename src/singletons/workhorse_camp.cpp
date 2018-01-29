@@ -89,7 +89,7 @@ namespace {
 				} while(busy);
 
 				Mutex::UniqueLock lock(m_mutex);
-				if(m_queue.empty() && !atomic_load(m_running, ATOMIC_CONSUME)){
+				if(m_queue.empty() && !atomic_load(m_running, memorder_consume)){
 					break;
 				}
 				m_new_job.timed_wait(lock, timeout);
@@ -102,10 +102,10 @@ namespace {
 		void start(){
 			const Mutex::UniqueLock lock(m_mutex);
 			Thread(boost::bind(&WorkhorseThread::thread_proc, this), sslit("  W "), sslit("Workhorse")).swap(m_thread);
-			atomic_store(m_running, true, ATOMIC_RELEASE);
+			atomic_store(m_running, true, memorder_release);
 		}
 		void stop(){
-			atomic_store(m_running, false, ATOMIC_RELEASE);
+			atomic_store(m_running, false, memorder_release);
 		}
 		void safe_join(){
 			wait_till_idle();
@@ -143,7 +143,7 @@ namespace {
 			PROFILE_ME;
 
 			const Mutex::UniqueLock lock(m_mutex);
-			DEBUG_THROW_UNLESS(atomic_load(m_running, ATOMIC_CONSUME), Exception, sslit("Workhorse thread is being shut down"));
+			DEBUG_THROW_UNLESS(atomic_load(m_running, memorder_consume), Exception, sslit("Workhorse thread is being shut down"));
 			JobQueueElement elem = { promise, STD_MOVE_IDN(procedure) };
 			m_queue.push_back(STD_MOVE(elem));
 			m_new_job.signal();
@@ -177,7 +177,7 @@ namespace {
 }
 
 void WorkhorseCamp::start(){
-	if(atomic_exchange(g_running, true, ATOMIC_ACQ_REL) != false){
+	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
@@ -193,7 +193,7 @@ void WorkhorseCamp::start(){
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse daemon started.");
 }
 void WorkhorseCamp::stop(){
-	if(atomic_exchange(g_running, false, ATOMIC_ACQ_REL) == false){
+	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
 		return;
 	}
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping workhorse daemon...");

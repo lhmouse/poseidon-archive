@@ -14,14 +14,14 @@ namespace {
 boost::uint32_t random_uint32(){
 	boost::uint64_t old_seed, new_seed;
 	{
-		old_seed = atomic_load(s_seed, ATOMIC_RELAXED);
+		old_seed = atomic_load(s_seed, memorder_relaxed);
 		do {
 			new_seed = old_seed;
 			new_seed ^= __builtin_ia32_rdtsc();
 			// MMIX by Donald Knuth
 			new_seed *= 6364136223846793005u;
 			new_seed += 1442695040888963407u;
-		} while(!atomic_compare_exchange(s_seed, old_seed, new_seed, ATOMIC_RELAXED, ATOMIC_RELAXED));
+		} while(!atomic_compare_exchange(s_seed, old_seed, new_seed, memorder_relaxed, memorder_relaxed));
 	}
 	return static_cast<boost::uint32_t>(new_seed >> 32);
 }
