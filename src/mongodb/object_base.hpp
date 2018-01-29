@@ -62,8 +62,6 @@ public:
 	virtual void generate_document(BsonBuilder &doc) const = 0;
 	virtual std::string generate_primary_key() const = 0;
 	virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;
-
-	void async_save(bool to_replace, bool urgent = false) const;
 };
 
 template<typename ValueT>
