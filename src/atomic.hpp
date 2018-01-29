@@ -20,34 +20,34 @@ enum MemOrder {
 };
 
 template<typename T>
-inline T atomic_load(const volatile T &mem, MemOrder order) NOEXCEPT {
-	return __atomic_load_n(&mem, order);
+inline T atomic_load(const volatile T &ref, MemOrder order) NOEXCEPT {
+	return __atomic_load_n(&ref, order);
 }
-template<typename T>
-inline void atomic_store(volatile T &mem, typename boost::common_type<T>::type val, MemOrder order) NOEXCEPT {
-	__atomic_store_n(&mem, val, order);
+template<typename T, typename U>
+inline void atomic_store(volatile T &ref, const U &val, MemOrder order) NOEXCEPT {
+	__atomic_store_n(&ref, val, order);
 }
 
 inline void atomic_fence(MemOrder order) NOEXCEPT {
 	__atomic_thread_fence(order);
 }
 
-template<typename T>
-inline T atomic_add(volatile T &mem, typename boost::common_type<T>::type val, MemOrder order) NOEXCEPT {
-	return __atomic_add_fetch(&mem, val, order);
+template<typename T, typename U>
+inline T atomic_add(volatile T &ref, const U &val, MemOrder order) NOEXCEPT {
+	return __atomic_add_fetch(&ref, val, order);
 }
-template<typename T>
-inline T atomic_sub(volatile T &mem, typename boost::common_type<T>::type val, MemOrder order) NOEXCEPT {
-	return __atomic_sub_fetch(&mem, val, order);
+template<typename T, typename U>
+inline T atomic_sub(volatile T &ref, const U &val, MemOrder order) NOEXCEPT {
+	return __atomic_sub_fetch(&ref, val, order);
 }
 
-template<typename T>
-inline bool atomic_compare_exchange(volatile T &mem, typename boost::common_type<T>::type &cmp, typename boost::common_type<T>::type xchg, MemOrder order_success, MemOrder order_failure) NOEXCEPT {
-	return __atomic_compare_exchange_n(&mem, &cmp, xchg, false, order_success, order_failure);
+template<typename T, typename U>
+inline bool atomic_compare_exchange(volatile T &ref, T &cmp, const U &xchg, MemOrder order_success, MemOrder order_failure) NOEXCEPT {
+	return __atomic_compare_exchange_n(&ref, &cmp, xchg, false, order_success, order_failure);
 }
-template<typename T>
-inline T atomic_exchange(volatile T &mem, typename boost::common_type<T>::type xchg, MemOrder order) NOEXCEPT {
-	return __atomic_exchange_n(&mem, xchg, order);
+template<typename T, typename U>
+inline T atomic_exchange(volatile T &ref, const U &xchg, MemOrder order) NOEXCEPT {
+	return __atomic_exchange_n(&ref, xchg, order);
 }
 
 inline void atomic_pause() NOEXCEPT {
