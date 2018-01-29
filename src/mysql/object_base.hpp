@@ -15,9 +15,10 @@
 #include <cstdio>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/function.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/type_traits/is_base_of.hpp>
+#include <boost/utility/enable_if.hpp>
 #include "../atomic.hpp"
 #include "../shared_nts.hpp"
 #include "../log.hpp"
@@ -49,20 +50,18 @@ public:
 	~ObjectBase();
 
 public:
-	bool is_auto_saving_enabled() const;
-	void enable_auto_saving() const;
-	void disable_auto_saving() const;
+	bool is_auto_saving_enabled() const NOEXCEPT;
+	void enable_auto_saving() const NOEXCEPT;
+	void disable_auto_saving() const NOEXCEPT;
 
 	bool invalidate() const NOEXCEPT;
 
-	void *get_combined_write_stamp() const;
-	void set_combined_write_stamp(void *stamp) const;
+	void *get_combined_write_stamp() const NOEXCEPT;
+	void set_combined_write_stamp(void *stamp) const NOEXCEPT;
 
 	virtual const char *get_table() const = 0;
-
 	virtual void generate_sql(std::ostream &os) const = 0;
 	virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;
-	void async_save(bool to_replace, bool urgent = false) const;
 };
 
 template<typename ValueT>
@@ -145,6 +144,19 @@ public:
 inline std::ostream &operator<<(std::ostream &os, const ObjectBase::Delimiter &rhs){
 	rhs.apply(os);
 	return os;
+}
+
+extern void enqueue_for_saving(const boost::shared_ptr<ObjectBase> &obj);
+
+template<typename ObjectT>
+typename boost::enable_if_c<boost::is_base_of<ObjectBase, ObjectT>::value,
+	const boost::shared_ptr<ObjectT> &>::type begin_synchronization(const boost::shared_ptr<ObjectT> &obj, bool save_now)
+{
+	obj->enable_auto_saving();
+	if(save_now){
+		enqueue_for_saving(obj);
+	}
+	return obj;
 }
 
 }
