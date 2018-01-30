@@ -13,6 +13,8 @@ SystemException::SystemException(const char *file, std::size_t line, const char 
 {
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Constructing SystemException: code = ", get_code(), ", what = ", what());
 }
-SystemException::~SystemException() NOEXCEPT { }
+SystemException::~SystemException() NOEXCEPT {
+	//
+}
 
 }

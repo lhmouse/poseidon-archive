@@ -10,8 +10,12 @@
 namespace Poseidon {
 namespace Cbpp {
 
-Writer::Writer(){ }
-Writer::~Writer(){ }
+Writer::Writer(){
+	//
+}
+Writer::~Writer(){
+	//
+}
 
 long Writer::put_data_message(boost::uint16_t message_id, StreamBuffer payload){
 	PROFILE_ME;

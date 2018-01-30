@@ -6,6 +6,8 @@
 
 namespace Poseidon {
 
-TinyException::~TinyException() throw() { }
+TinyException::~TinyException() throw() {
+	//
+}
 
 }

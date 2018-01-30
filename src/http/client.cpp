@@ -21,7 +21,9 @@ private:
 protected:
 	explicit SyncJobBase(const boost::shared_ptr<Client> &client)
 		: m_guard(client), m_weak_client(client)
-	{ }
+	{
+		//
+	}
 
 private:
 	boost::weak_ptr<const void> get_category() const FINAL {
@@ -59,7 +61,9 @@ class Client::ConnectJob : public Client::SyncJobBase {
 public:
 	explicit ConnectJob(const boost::shared_ptr<Client> &client)
 		: SyncJobBase(client)
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -73,7 +77,9 @@ class Client::ReadHupJob : public Client::SyncJobBase {
 public:
 	explicit ReadHupJob(const boost::shared_ptr<Client> &client)
 		: SyncJobBase(client)
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -92,7 +98,9 @@ public:
 	ResponseJob(const boost::shared_ptr<Client> &client, ResponseHeaders response_headers, StreamBuffer entity)
 		: SyncJobBase(client)
 		, m_response_headers(STD_MOVE(response_headers)), m_entity(STD_MOVE(entity))
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -104,8 +112,12 @@ protected:
 
 Client::Client(const SockAddr &addr, bool use_ssl, bool verify_peer)
 	: LowLevelClient(addr, use_ssl, verify_peer)
-{ }
-Client::~Client(){ }
+{
+	//
+}
+Client::~Client(){
+	//
+}
 
 void Client::on_connect(){
 	PROFILE_ME;
@@ -161,7 +173,11 @@ boost::shared_ptr<UpgradedSessionBase> Client::on_low_level_response_end(boost::
 	return VAL_INIT;
 }
 
-void Client::on_sync_connect(){ }
+void Client::on_sync_connect(){
+	PROFILE_ME;
+
+	//
+}
 
 }
 }

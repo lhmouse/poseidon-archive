@@ -18,7 +18,9 @@ private:
 public:
 	Thread() NOEXCEPT
 		: m_tcb()
-	{ }
+	{
+		//
+	}
 	Thread(boost::function<void ()> proc, SharedNts tag, SharedNts name);
 	~Thread(); // The destructor calls `std::terminate()` if `joinable()` returns `true`.
 

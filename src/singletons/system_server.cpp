@@ -26,7 +26,9 @@ namespace {
 		SystemSocketServer(const std::string &bind, boost::uint16_t port, const std::string &cert, const std::string &pkey, boost::shared_ptr<const Http::AuthenticationContext> auth_ctx)
 			: TcpServerBase(IpPort(bind.c_str(), port), cert.c_str(), pkey.c_str())
 			, m_auth_ctx(STD_MOVE(auth_ctx))
-		{ }
+		{
+			//
+		}
 
 	protected:
 		virtual boost::shared_ptr<TcpSessionBase> on_client_connect(Move<UniqueFile> client) OVERRIDE {

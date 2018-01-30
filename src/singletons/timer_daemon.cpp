@@ -29,7 +29,9 @@ private:
 public:
 	Timer(boost::uint64_t period, TimerCallback callback, bool low_level)
 		: m_period(period), m_stamp(0), m_callback(STD_MOVE_IDN(callback)), m_low_level(low_level)
-	{ }
+	{
+		//
+	}
 
 public:
 	boost::uint64_t get_period() const {
@@ -67,7 +69,9 @@ namespace {
 	public:
 		TimerJob(boost::weak_ptr<Timer> weak_timer, boost::uint64_t now, boost::uint64_t period)
 			: m_weak_timer(STD_MOVE(weak_timer)), m_now(now), m_period(period)
-		{ }
+		{
+			//
+		}
 
 	public:
 		boost::weak_ptr<const void> get_category() const OVERRIDE {

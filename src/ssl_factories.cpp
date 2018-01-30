@@ -100,8 +100,12 @@ namespace {
 
 SslServerFactory::SslServerFactory(const char *certificate, const char *private_key)
 	: m_ssl_ctx(create_server_ssl_ctx(certificate, private_key))
-{ }
-SslServerFactory::~SslServerFactory(){ }
+{
+	//
+}
+SslServerFactory::~SslServerFactory(){
+	//
+}
 
 void SslServerFactory::create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd){
 	UniqueSsl ssl;
@@ -111,8 +115,12 @@ void SslServerFactory::create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filte
 
 SslClientFactory::SslClientFactory(bool verify_peer)
 	: m_ssl_ctx(create_client_ssl_ctx(verify_peer))
-{ }
-SslClientFactory::~SslClientFactory(){ }
+{
+	//
+}
+SslClientFactory::~SslClientFactory(){
+	//
+}
 
 void SslClientFactory::create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd){
 	UniqueSsl ssl;

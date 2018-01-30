@@ -170,8 +170,12 @@ namespace {
 	public:
 		OperationBase(const boost::shared_ptr<Promise> &promise, std::string path)
 			: m_weak_promise(promise), m_path(STD_MOVE(path))
-		{ }
-		virtual ~OperationBase(){ }
+		{
+			//
+		}
+		virtual ~OperationBase(){
+			//
+		}
 
 	public:
 		const std::string &get_path() const {
@@ -195,7 +199,9 @@ namespace {
 		LoadOperation(boost::shared_ptr<PromiseContainer<FileBlockRead> > promised_block, std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
 			: OperationBase(promised_block, STD_MOVE(path))
 			, m_promised_block(STD_MOVE(promised_block)), m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
-		{ }
+		{
+			//
+		}
 
 	public:
 		void execute() OVERRIDE {
@@ -220,7 +226,9 @@ namespace {
 		SaveOperation(const boost::shared_ptr<Promise> &promise, std::string path, StreamBuffer data, boost::uint64_t begin, bool throws_if_exists)
 			: OperationBase(promise, STD_MOVE(path))
 			, m_data(STD_MOVE(data)), m_begin(begin), m_throws_if_exists(throws_if_exists)
-		{ }
+		{
+			//
+		}
 
 	public:
 		void execute() OVERRIDE {
@@ -238,7 +246,9 @@ namespace {
 		RemoveOperation(const boost::shared_ptr<Promise> &promise, std::string path, bool throws_if_does_not_exist)
 			: OperationBase(promise, STD_MOVE(path))
 			, m_throws_if_does_not_exist(throws_if_does_not_exist)
-		{ }
+		{
+			//
+		}
 
 	public:
 		void execute() OVERRIDE {
@@ -256,7 +266,9 @@ namespace {
 		RenameOperation(const boost::shared_ptr<Promise> &promise, std::string path, std::string new_path)
 			: OperationBase(promise, STD_MOVE(path))
 			, m_new_path(STD_MOVE(new_path))
-		{ }
+		{
+			//
+		}
 
 	public:
 		void execute() OVERRIDE {
@@ -274,7 +286,9 @@ namespace {
 		MkdirOperation(const boost::shared_ptr<Promise> &promise, std::string path, bool throws_if_exists)
 			: OperationBase(promise, STD_MOVE(path))
 			, m_throws_if_exists(throws_if_exists)
-		{ }
+		{
+			//
+		}
 
 	public:
 		void execute() OVERRIDE {
@@ -292,7 +306,9 @@ namespace {
 		RmdirOperation(const boost::shared_ptr<Promise> &promise, std::string path, bool throws_if_does_not_exist)
 			: OperationBase(promise, STD_MOVE(path))
 			, m_throws_if_does_not_exist(throws_if_does_not_exist)
-		{ }
+		{
+			//
+		}
 
 	public:
 		void execute() OVERRIDE {

@@ -37,11 +37,15 @@ namespace {
 	public:
 		IncrementalAlloc(void **inc_ptr, size_type inc_size)
 			: m_inc_ptr(inc_ptr), m_inc_size(inc_size)
-		{ }
+		{
+			//
+		}
 		template<typename U>
 		IncrementalAlloc(const IncrementalAlloc<U> &rhs)
 			: m_inc_ptr(rhs.m_inc_ptr), m_inc_size(rhs.m_inc_size)
-		{ }
+		{
+			//
+		}
 
 	public:
 		pointer address(reference r) const {

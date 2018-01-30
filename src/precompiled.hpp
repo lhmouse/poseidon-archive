@@ -50,6 +50,8 @@
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 
-namespace Poseidon { }
+namespace Poseidon {
+	//
+}
 
 #endif

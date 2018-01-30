@@ -69,7 +69,9 @@ namespace {
 	public:
 		FiberStackAllocator()
 			: m_mutex(), m_pool(), m_size(0)
-		{ }
+		{
+			//
+		}
 
 	public:
 		void allocate(boost::scoped_ptr<StackStorage> &ptr){

@@ -26,7 +26,9 @@ private:
 public:
 	CsvDocument()
 		: m_elements()
-	{ }
+	{
+		//
+	}
 #ifdef POSEIDON_CXX11
 	explicit CsvDocument(std::initializer_list<SharedNts> header)
 		: m_elements()
@@ -38,7 +40,9 @@ public:
 #ifndef POSEIDON_CXX11
 	CsvDocument(const CsvDocument &rhs)
 		: m_elements(rhs.m_elements)
-	{ }
+	{
+		//
+	}
 	CsvDocument &operator=(const CsvDocument &rhs){
 		m_elements = rhs.m_elements;
 		return *this;

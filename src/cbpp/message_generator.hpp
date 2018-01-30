@@ -87,7 +87,9 @@ MESSAGE_NAME::MESSAGE_NAME()
 #define FIELD_LIST(id_, ...)      , id_()
 
 	MESSAGE_FIELDS
-{ }
+{
+	//
+}
 
 MESSAGE_NAME::MESSAGE_NAME(::Poseidon::StreamBuffer buffer_)
 	: ::Poseidon::Cbpp::MessageBase()
@@ -98,7 +100,9 @@ MESSAGE_NAME::MESSAGE_NAME(::Poseidon::StreamBuffer buffer_)
 	}
 }
 
-MESSAGE_NAME::~MESSAGE_NAME(){ }
+MESSAGE_NAME::~MESSAGE_NAME(){
+	//
+}
 
 boost::uint64_t MESSAGE_NAME::get_id() const {
 	return ID;

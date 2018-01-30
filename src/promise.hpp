@@ -21,7 +21,9 @@ protected:
 public:
 	Promise()
 		: m_mutex(), m_except()
-	{ }
+	{
+		//
+	}
 	virtual ~Promise();
 
 public:
@@ -42,7 +44,9 @@ private:
 public:
 	PromiseContainer()
 		: m_result(), m_result_accepted(false)
-	{ }
+	{
+		//
+	}
 	~PromiseContainer() OVERRIDE;
 
 public:
@@ -72,7 +76,9 @@ public:
 };
 
 template<typename ResultT>
-PromiseContainer<ResultT>::~PromiseContainer(){ }
+PromiseContainer<ResultT>::~PromiseContainer(){
+	//
+}
 
 extern void yield(const boost::shared_ptr<const Promise> &promise, bool insignificant = true);
 

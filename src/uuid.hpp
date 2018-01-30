@@ -26,7 +26,9 @@ private:
 public:
 	CONSTEXPR Uuid() NOEXCEPT
 		: m_bytes()
-	{ }
+	{
+		//
+	}
 	explicit Uuid(const unsigned char (&bytes)[16]){
 		std::memcpy(m_bytes.data(), bytes, 16);
 	}

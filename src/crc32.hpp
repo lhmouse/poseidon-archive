@@ -42,7 +42,9 @@ private:
 public:
 	Crc32_ostream()
 		: std::ostream(&m_sb)
-	{ }
+	{
+		//
+	}
 	~Crc32_ostream() OVERRIDE;
 
 public:

@@ -30,7 +30,9 @@ public:
 	public:
 		CONSTEXPR EnumerationCookie() NOEXCEPT
 			: prev(NULLPTR)
-		{ }
+		{
+			//
+		}
 	};
 
 	class ReadIterator;
@@ -44,7 +46,9 @@ private:
 public:
 	CONSTEXPR StreamBuffer() NOEXCEPT
 		: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
-	{ }
+	{
+		//
+	}
 	StreamBuffer(const void *data, std::size_t count);
 	explicit StreamBuffer(const char *str);
 	explicit StreamBuffer(const std::string &str);
@@ -157,7 +161,9 @@ private:
 public:
 	explicit ReadIterator(StreamBuffer &parent)
 		: m_parent(&parent)
-	{ }
+	{
+		//
+	}
 
 public:
 	int operator*() const {
@@ -180,7 +186,9 @@ private:
 public:
 	explicit WriteIterator(StreamBuffer &parent)
 		: m_parent(&parent)
-	{ }
+	{
+		//
+	}
 
 public:
 	WriteIterator &operator=(unsigned char byte){

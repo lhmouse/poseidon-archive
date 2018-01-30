@@ -12,6 +12,8 @@ Exception::Exception(const char *file, std::size_t line, const char *func, Share
 {
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Constructing Exception: file = ", get_file(), ", line = ", get_line(), ", func = ", get_func(), ", message = ", get_message());
 }
-Exception::~Exception() NOEXCEPT { }
+Exception::~Exception() NOEXCEPT {
+	//
+}
 
 }

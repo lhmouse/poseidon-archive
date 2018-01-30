@@ -127,8 +127,12 @@ namespace {
 	public:
 		explicit OperationBase(const boost::shared_ptr<Promise> &promise)
 			: m_weak_promise(promise)
-		{ }
-		virtual ~OperationBase(){ }
+		{
+			//
+		}
+		virtual ~OperationBase(){
+			//
+		}
 
 	public:
 		void set_probe(boost::shared_ptr<const void> probe){
@@ -154,7 +158,9 @@ namespace {
 		SaveOperation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace)
 			: OperationBase(promise)
 			, m_object(STD_MOVE(object)), m_to_replace(to_replace)
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -204,7 +210,9 @@ namespace {
 		LoadOperation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query)
 			: OperationBase(promise)
 			, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -241,7 +249,9 @@ namespace {
 		DeleteOperation(const boost::shared_ptr<Promise> &promise, const char *collection, MongoDb::BsonBuilder query)
 			: OperationBase(promise)
 			, m_collection(collection), m_query(STD_MOVE(query))
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -273,7 +283,9 @@ namespace {
 		BatchLoadOperation(const boost::shared_ptr<Promise> &promise, QueryCallback callback, const char *collection_hint, MongoDb::BsonBuilder query)
 			: OperationBase(promise)
 			, m_callback(STD_MOVE_IDN(callback)), m_collection_hint(collection_hint), m_query(STD_MOVE(query))
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -316,7 +328,9 @@ namespace {
 		LowLevelAccessOperation(const boost::shared_ptr<Promise> &promise, QueryCallback callback, const char *collection_hint, bool from_slave)
 			: OperationBase(promise)
 			, m_callback(STD_MOVE_IDN(callback)), m_collection_hint(collection_hint), m_from_slave(from_slave)
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -342,7 +356,9 @@ namespace {
 	public:
 		explicit WaitOperation(const boost::shared_ptr<Promise> &promise)
 			: OperationBase(promise)
-		{ }
+		{
+			//
+		}
 		~WaitOperation() OVERRIDE {
 			const AUTO(promise, OperationBase::get_promise());
 			if(promise){
@@ -394,7 +410,9 @@ namespace {
 		MongoDbThread()
 			: m_running(false)
 			, m_urgent(false)
-		{ }
+		{
+			//
+		}
 
 	private:
 		bool pump_one_operation(boost::shared_ptr<MongoDb::Connection> &master_conn, boost::shared_ptr<MongoDb::Connection> &slave_conn) NOEXCEPT {

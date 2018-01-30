@@ -23,7 +23,9 @@ Exception::Exception(const char *file, std::size_t line, const char *func, Statu
 {
 	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception: status_code = ", get_status_code(), ", what = ", what());
 }
-Exception::~Exception() NOEXCEPT { }
+Exception::~Exception() NOEXCEPT {
+	//
+}
 
 }
 }

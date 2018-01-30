@@ -22,7 +22,9 @@ namespace {
 		AsyncJob(boost::weak_ptr<const void> category, const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure)
 			: m_category(STD_MOVE(category))
 			, m_weak_promise(promise), m_procedure(STD_MOVE_IDN(procedure))
-		{ }
+		{
+			//
+		}
 
 	protected:
 		boost::weak_ptr<const void> get_category() const FINAL {

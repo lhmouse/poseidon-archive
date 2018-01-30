@@ -56,7 +56,9 @@ SslFilter::SslFilter(Move<UniqueSsl> ssl, SslFilter::Direction dir, int fd)
 	}
 	DEBUG_THROW_UNLESS(::SSL_set_fd(m_ssl.get(), fd), Exception, sslit("::SSL_set_fd() failed"));
 }
-SslFilter::~SslFilter(){ }
+SslFilter::~SslFilter(){
+	//
+}
 
 long SslFilter::recv(void *data, unsigned long size){
 	PROFILE_ME;

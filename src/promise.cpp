@@ -9,7 +9,9 @@
 
 namespace Poseidon {
 
-Promise::~Promise(){ }
+Promise::~Promise(){
+	//
+}
 
 bool Promise::is_satisfied() const NOEXCEPT {
 	const RecursiveMutex::UniqueLock lock(m_mutex);

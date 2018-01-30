@@ -48,7 +48,9 @@ private:
 public:
 	Md5_ostream()
 		: std::ostream(&m_sb)
-	{ }
+	{
+		//
+	}
 	~Md5_ostream() OVERRIDE;
 
 public:

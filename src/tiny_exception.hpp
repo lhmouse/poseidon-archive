@@ -15,7 +15,9 @@ private:
 public:
 	explicit TinyException(const char *static_msg) throw()
 		: m_static_msg(static_msg)
-	{ }
+	{
+		//
+	}
 	~TinyException() throw();
 
 public:

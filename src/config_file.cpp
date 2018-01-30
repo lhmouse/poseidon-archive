@@ -94,7 +94,9 @@ namespace {
 
 ConfigFile::ConfigFile()
 	: m_contents()
-{ }
+{
+	//
+}
 ConfigFile::ConfigFile(const std::string &path)
 	: m_contents()
 {

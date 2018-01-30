@@ -13,8 +13,12 @@ namespace WebSocket {
 
 LowLevelSession::LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent)
 	: Http::UpgradedSessionBase(parent), Reader(true), Writer()
-{ }
-LowLevelSession::~LowLevelSession(){ }
+{
+	//
+}
+LowLevelSession::~LowLevelSession(){
+	//
+}
 
 void LowLevelSession::on_connect(){
 	PROFILE_ME;

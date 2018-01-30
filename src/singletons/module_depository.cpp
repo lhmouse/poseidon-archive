@@ -21,6 +21,7 @@ namespace {
 	RecursiveMutex g_mutex;
 
 	struct ModuleRaiiMapElement {
+		// Indices.
 		ModuleRaiiBase *raii;
 		std::pair<void *, long> base_address_priority;
 	};
@@ -84,8 +85,9 @@ namespace {
 	};
 
 	struct ModuleMapElement {
+		// Invariants.
 		boost::shared_ptr<Module> module;
-
+		// Indices.
 		void *dl_handle;
 		void *base_address;
 	};

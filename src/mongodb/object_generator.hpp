@@ -102,7 +102,9 @@ OBJECT_NAME::OBJECT_NAME()
 #define FIELD_BLOB(id_)                   , id_(this)
 
 	OBJECT_FIELDS
-{ }
+{
+	//
+}
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -148,7 +150,9 @@ OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
 	::Poseidon::atomic_fence(::Poseidon::memorder_release);
 }
 
-OBJECT_NAME::~OBJECT_NAME(){ }
+OBJECT_NAME::~OBJECT_NAME(){
+	//
+}
 
 const char *OBJECT_NAME::get_collection() const {
 	return OBJECT_COLLECTION;

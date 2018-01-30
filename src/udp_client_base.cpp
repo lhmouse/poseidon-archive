@@ -31,7 +31,11 @@ namespace {
 
 UdpClientBase::UdpClientBase(const SockAddr &addr)
 	: UdpSessionBase(create_udp_socket(addr))
-{ }
-UdpClientBase::~UdpClientBase(){ }
+{
+	//
+}
+UdpClientBase::~UdpClientBase(){
+	//
+}
 
 }

@@ -7,7 +7,9 @@
 
 namespace Poseidon {
 
-EventBase::~EventBase(){ }
+EventBase::~EventBase(){
+	//
+}
 
 void sync_raise_event(const boost::shared_ptr<EventBase> &event){
 	EventDispatcher::sync_raise(event);

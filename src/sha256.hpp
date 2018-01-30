@@ -48,7 +48,9 @@ private:
 public:
 	Sha256_ostream()
 		: std::ostream(&m_sb)
-	{ }
+	{
+		//
+	}
 	~Sha256_ostream() OVERRIDE;
 
 public:

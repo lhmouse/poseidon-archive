@@ -45,6 +45,8 @@ TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_pee
 		TcpSessionBase::init_ssl(ssl_filter);
 	}
 }
-TcpClientBase::~TcpClientBase(){ }
+TcpClientBase::~TcpClientBase(){
+	//
+}
 
 }

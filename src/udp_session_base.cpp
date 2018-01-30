@@ -16,8 +16,12 @@ namespace Poseidon {
 
 UdpSessionBase::UdpSessionBase(Move<UniqueFile> socket)
 	: SocketBase(STD_MOVE(socket))
-{ }
-UdpSessionBase::~UdpSessionBase(){ }
+{
+	//
+}
+UdpSessionBase::~UdpSessionBase(){
+	//
+}
 
 bool UdpSessionBase::has_been_shutdown_read() const NOEXCEPT {
 	return SocketBase::has_been_shutdown_read();

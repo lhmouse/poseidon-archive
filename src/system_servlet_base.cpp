@@ -6,6 +6,8 @@
 
 namespace Poseidon {
 
-SystemServletBase::~SystemServletBase(){ }
+SystemServletBase::~SystemServletBase(){
+	//
+}
 
 }

@@ -233,7 +233,9 @@ boost::shared_ptr<Connection> Connection::create(const char *server_addr, boost:
 	return boost::make_shared<DelegatedConnection>(server_addr, server_port, user_name, password, schema, use_ssl, charset);
 }
 
-Connection::~Connection(){ }
+Connection::~Connection(){
+	//
+}
 
 }
 }

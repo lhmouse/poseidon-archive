@@ -19,11 +19,15 @@ private:
 public:
 	HandleStack()
 		: m_queue()
-	{ }
+	{
+		//
+	}
 #ifndef POSEIDON_CXX11
 	HandleStack(const HandleStack &rhs)
 		: m_queue(rhs.m_queue)
-	{ }
+	{
+		//
+	}
 	HandleStack &operator=(const HandleStack &rhs){
 		m_queue = rhs.m_queue;
 		return *this;
@@ -78,7 +82,9 @@ public:
 			struct Stub_ : public ::Poseidon::ModuleRaiiBase {	\
 				Stub_()	\
 					: ::Poseidon::ModuleRaiiBase(priority_)	\
-				{ }	\
+				{	\
+					/* */	\
+				}	\
 				void init(::Poseidon::HandleStack & handle_stack_) const FINAL {	\
 					PROFILE_ME;	\
 					unwrapped_init_(handle_stack_);	\

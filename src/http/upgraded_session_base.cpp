@@ -6,16 +6,23 @@
 #include "../tcp_session_base.hpp"
 #include "../ip_port.hpp"
 #include "../exception.hpp"
+#include "../profiler.hpp"
 
 namespace Poseidon {
 namespace Http {
 
 UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<TcpSessionBase> &parent)
 	: m_parent(parent)
-{ }
-UpgradedSessionBase::~UpgradedSessionBase(){ }
+{
+	//
+}
+UpgradedSessionBase::~UpgradedSessionBase(){
+	//
+}
 
 void UpgradedSessionBase::on_shutdown_timer(boost::uint64_t now){
+	PROFILE_ME;
+
 	(void)now;
 }
 

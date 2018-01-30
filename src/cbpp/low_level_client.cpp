@@ -12,8 +12,12 @@ namespace Cbpp {
 
 LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer)
 	: TcpClientBase(addr, use_ssl, verify_peer), Reader(), Writer()
-{ }
-LowLevelClient::~LowLevelClient(){ }
+{
+	//
+}
+LowLevelClient::~LowLevelClient(){
+	//
+}
 
 void LowLevelClient::on_connect(){
 	PROFILE_ME;

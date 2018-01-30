@@ -23,7 +23,9 @@ private:
 protected:
 	explicit SyncJobBase(const boost::shared_ptr<Client> &client)
 		: m_guard(boost::shared_ptr<SocketBase>(client->get_weak_parent())), m_weak_parent(client->get_weak_parent()), m_weak_client(client)
-	{ }
+	{
+		//
+	}
 
 private:
 	boost::weak_ptr<const void> get_category() const FINAL {
@@ -59,7 +61,9 @@ class Client::ConnectJob : public Client::SyncJobBase {
 public:
 	explicit ConnectJob(const boost::shared_ptr<Client> &client)
 		: SyncJobBase(client)
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -73,7 +77,9 @@ class Client::ReadHupJob : public Client::SyncJobBase {
 public:
 	explicit ReadHupJob(const boost::shared_ptr<Client> &client)
 		: SyncJobBase(client)
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -92,7 +98,9 @@ public:
 	DataMessageJob(const boost::shared_ptr<Client> &client, OpCode opcode, StreamBuffer payload)
 		: SyncJobBase(client)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -112,7 +120,9 @@ public:
 	ControlMessageJob(const boost::shared_ptr<Client> &client, OpCode opcode, StreamBuffer payload)
 		: SyncJobBase(client)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
@@ -125,8 +135,12 @@ protected:
 
 Client::Client(const boost::shared_ptr<Http::LowLevelClient> &parent)
 	: LowLevelClient(parent)
-{ }
-Client::~Client(){ }
+{
+	//
+}
+Client::~Client(){
+	//
+}
 
 void Client::on_connect(){
 	PROFILE_ME;
@@ -181,7 +195,11 @@ bool Client::on_low_level_control_message(OpCode opcode, StreamBuffer payload){
 	return true;
 }
 
-void Client::on_sync_connect(){ }
+void Client::on_sync_connect(){
+	PROFILE_ME;
+
+	//
+}
 
 void Client::on_sync_control_message(OpCode opcode, StreamBuffer payload){
 	PROFILE_ME;

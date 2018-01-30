@@ -14,8 +14,12 @@ namespace {
 
 Sha1_streambuf::Sha1_streambuf()
 	: m_reg(SHA1_REG_INIT), m_bytes(0)
-{ }
-Sha1_streambuf::~Sha1_streambuf(){ }
+{
+	//
+}
+Sha1_streambuf::~Sha1_streambuf(){
+	//
+}
 
 void Sha1_streambuf::eat_chunk(){
 	// https://en.wikipedia.org/wiki/SHA-1
@@ -183,6 +187,8 @@ Sha1 Sha1_streambuf::finalize(){
 	return sha1;
 }
 
-Sha1_ostream::~Sha1_ostream(){ }
+Sha1_ostream::~Sha1_ostream(){
+	//
+}
 
 }

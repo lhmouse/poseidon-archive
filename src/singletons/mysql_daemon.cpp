@@ -121,8 +121,12 @@ namespace {
 	public:
 		explicit OperationBase(const boost::shared_ptr<Promise> &promise)
 			: m_weak_promise(promise)
-		{ }
-		virtual ~OperationBase(){ }
+		{
+			//
+		}
+		virtual ~OperationBase(){
+			//
+		}
 
 	public:
 		void set_probe(boost::shared_ptr<const void> probe){
@@ -148,7 +152,9 @@ namespace {
 		SaveOperation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace)
 			: OperationBase(promise)
 			, m_object(STD_MOVE(object)), m_to_replace(to_replace)
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -187,7 +193,9 @@ namespace {
 		LoadOperation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<MySql::ObjectBase> object, std::string query)
 			: OperationBase(promise)
 			, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -224,7 +232,9 @@ namespace {
 		DeleteOperation(const boost::shared_ptr<Promise> &promise, const char *table_hint, std::string query)
 			: OperationBase(promise)
 			, m_table_hint(table_hint), m_query(STD_MOVE(query))
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -256,7 +266,9 @@ namespace {
 		BatchLoadOperation(const boost::shared_ptr<Promise> &promise, QueryCallback callback, const char *table_hint, std::string query)
 			: OperationBase(promise)
 			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_query(STD_MOVE(query))
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -299,7 +311,9 @@ namespace {
 		LowLevelAccessOperation(const boost::shared_ptr<Promise> &promise, QueryCallback callback, const char *table_hint, bool from_slave)
 			: OperationBase(promise)
 			, m_callback(STD_MOVE_IDN(callback)), m_table_hint(table_hint), m_from_slave(from_slave)
-		{ }
+		{
+			//
+		}
 
 	protected:
 		bool should_use_slave() const OVERRIDE {
@@ -325,7 +339,9 @@ namespace {
 	public:
 		explicit WaitOperation(const boost::shared_ptr<Promise> &promise)
 			: OperationBase(promise)
-		{ }
+		{
+			//
+		}
 		~WaitOperation() OVERRIDE {
 			const AUTO(promise, OperationBase::get_promise());
 			if(promise){
@@ -376,8 +392,10 @@ namespace {
 	public:
 		MySqlThread()
 			: m_running(false)
-			, m_urgent(false)
-		{ }
+			, m_urgent(false), m_queue()
+		{
+			//
+		}
 
 	private:
 		bool pump_one_operation(boost::shared_ptr<MySql::Connection> &master_conn, boost::shared_ptr<MySql::Connection> &slave_conn) NOEXCEPT {

@@ -18,7 +18,9 @@ template class ObjectBase::Field<std::string>;
 template class ObjectBase::Field<Uuid>;
 template class ObjectBase::Field<std::basic_string<unsigned char> >;
 
-ObjectBase::~ObjectBase(){ }
+ObjectBase::~ObjectBase(){
+	//
+}
 
 bool ObjectBase::is_auto_saving_enabled() const NOEXCEPT {
 	return atomic_load(m_auto_saves, memorder_consume);

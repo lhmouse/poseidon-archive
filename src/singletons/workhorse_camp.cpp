@@ -38,7 +38,10 @@ namespace {
 	public:
 		WorkhorseThread()
 			: m_running(false)
-		{ }
+			, m_queue()
+		{
+			//
+		}
 
 	private:
 		bool pump_one_job() NOEXCEPT {

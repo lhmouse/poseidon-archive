@@ -23,16 +23,22 @@ public:
 	explicit Buffer_streambuf(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
 		: std::streambuf()
 		, m_buffer(), m_which(which)
-	{ }
+	{
+		//
+	}
 	explicit Buffer_streambuf(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
 		: std::streambuf()
 		, m_buffer(STD_MOVE(buffer)), m_which(which)
-	{ }
+	{
+		//
+	}
 #ifdef POSEIDON_CXX11
 	Buffer_streambuf(Buffer_streambuf &&rhs) noexcept
 		: std::streambuf()
 		, m_buffer(std::move(rhs.get_buffer())), m_which(rhs.m_which)
-	{ }
+	{
+		//
+	}
 	Buffer_streambuf &operator=(Buffer_streambuf &&rhs) noexcept {
 		sync();
 		m_buffer = std::move(rhs.get_buffer());
@@ -84,11 +90,15 @@ public:
 	explicit Buffer_istream(std::ios_base::openmode which = std::ios_base::in)
 		: std::istream(&m_sb)
 		, m_sb(which | std::ios_base::in)
-	{ }
+	{
+		//
+	}
 	explicit Buffer_istream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in)
 		: std::istream(&m_sb)
 		, m_sb(STD_MOVE(buffer), which | std::ios_base::in)
-	{ }
+	{
+		//
+	}
 	~Buffer_istream() OVERRIDE;
 
 public:
@@ -129,11 +139,15 @@ public:
 	explicit Buffer_ostream(std::ios_base::openmode which = std::ios_base::out)
 		: std::ostream(&m_sb)
 		, m_sb(which | std::ios_base::out)
-	{ }
+	{
+		//
+	}
 	explicit Buffer_ostream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::out)
 		: std::ostream(&m_sb)
 		, m_sb(STD_MOVE(buffer), which | std::ios_base::out)
-	{ }
+	{
+		//
+	}
 	~Buffer_ostream() OVERRIDE;
 
 public:
@@ -174,11 +188,15 @@ public:
 	explicit Buffer_stream(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
 		: std::iostream(&m_sb)
 		, m_sb(which)
-	{ }
+	{
+		//
+	}
 	explicit Buffer_stream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
 		: std::iostream(&m_sb)
 		, m_sb(STD_MOVE(buffer), which)
-	{ }
+	{
+		//
+	}
 	~Buffer_stream() OVERRIDE;
 
 public:

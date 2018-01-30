@@ -61,10 +61,14 @@ private:
 public:
 	explicit Move(T &rhs) NOEXCEPT
 		: m_holds(rhs)
-	{ }
+	{
+		//
+	}
 	Move(const Move &rhs) NOEXCEPT
 		: m_holds(rhs.m_holds)
-	{ }
+	{
+		//
+	}
 
 public:
 	void swap(T &rhs){

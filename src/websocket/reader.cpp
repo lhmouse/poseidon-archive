@@ -17,7 +17,9 @@ Reader::Reader(bool force_masked_frames)
 	: m_force_masked_frames(force_masked_frames)
 	, m_size_expecting(1), m_state(S_OPCODE)
 	, m_whole_offset(0), m_prev_fin(true)
-{ }
+{
+	//
+}
 Reader::~Reader(){
 	if(m_state != S_OPCODE){
 		LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature request has to be discarded.");

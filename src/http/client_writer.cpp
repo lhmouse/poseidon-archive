@@ -13,8 +13,12 @@
 namespace Poseidon {
 namespace Http {
 
-ClientWriter::ClientWriter(){ }
-ClientWriter::~ClientWriter(){ }
+ClientWriter::ClientWriter(){
+	//
+}
+ClientWriter::~ClientWriter(){
+	//
+}
 
 long ClientWriter::put_request(RequestHeaders request_headers, StreamBuffer entity, bool set_content_length){
 	PROFILE_ME;

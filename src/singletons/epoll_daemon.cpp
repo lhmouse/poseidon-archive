@@ -51,21 +51,16 @@ namespace {
 	};
 
 	struct SocketElement {
+		// Invariants.
 		boost::shared_ptr<const WeakableSocket> weakable;
-
+		// Indices.
 		const SocketBase *ptr;
 		boost::uint64_t read_time;
 		boost::uint64_t write_time;
 		int err_code;
-
+		// Variables.
 		mutable bool readable;
 		mutable bool writeable;
-
-		SocketElement(bool owning, const boost::shared_ptr<SocketBase> &socket, boost::uint64_t now)
-			: weakable(boost::make_shared<WeakableSocket>(owning, socket))
-			, ptr(socket.get()), read_time(now), write_time(now), err_code(-1)
-			, readable(false), writeable(false)
-		{ }
 	};
 	MULTI_INDEX_MAP(SocketMap, SocketElement,
 		UNIQUE_MEMBER_INDEX(ptr)
@@ -342,7 +337,8 @@ void EpollDaemon::add_socket(const boost::shared_ptr<SocketBase> &socket, bool t
 
 	const AUTO(now, get_fast_mono_clock());
 	const RecursiveMutex::UniqueLock lock(g_mutex);
-	const AUTO(result, g_socket_map.insert(SocketElement(take_ownership, socket, now)));
+	SocketElement elem = { boost::make_shared<WeakableSocket>(take_ownership, socket), socket.get(), now, now, -1 };
+	const AUTO(result, g_socket_map.insert(STD_MOVE(elem)));
 	DEBUG_THROW_UNLESS(result.second, Exception, sslit("Socket is already in epoll"));
 	try {
 		::epoll_event event = { };

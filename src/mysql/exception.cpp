@@ -14,7 +14,9 @@ Exception::Exception(const char *file, std::size_t line, const char *func, Share
 {
 	LOG_POSEIDON_ERROR("MySql::Exception: schema = ", get_schema(), ", code = ", get_code(), ", what = ", what());
 }
-Exception::~Exception() NOEXCEPT { }
+Exception::~Exception() NOEXCEPT {
+	//
+}
 
 }
 }

@@ -14,8 +14,12 @@ namespace {
 
 Md5_streambuf::Md5_streambuf()
 	: m_reg(MD5_REG_INIT), m_bytes(0)
-{ }
-Md5_streambuf::~Md5_streambuf(){ }
+{
+	//
+}
+Md5_streambuf::~Md5_streambuf(){
+	//
+}
 
 void Md5_streambuf::eat_chunk(){
 	// https://en.wikipedia.org/wiki/MD5
@@ -155,6 +159,8 @@ Md5 Md5_streambuf::finalize(){
 	return md5;
 }
 
-Md5_ostream::~Md5_ostream(){ }
+Md5_ostream::~Md5_ostream(){
+	//
+}
 
 }

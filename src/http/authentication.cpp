@@ -38,7 +38,9 @@ private:
 public:
 	explicit AuthenticationContext(std::string realm)
 		: m_realm(STD_MOVE(realm))
-	{ }
+	{
+		//
+	}
 
 public:
 	const std::string &get_realm() const {
@@ -137,7 +139,9 @@ namespace {
 	public:
 		StringQuoter(const char *str)
 			: m_str(str)
-		{ }
+		{
+			//
+		}
 
 	public:
 		const char *get() const {

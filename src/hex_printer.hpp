@@ -19,7 +19,9 @@ private:
 public:
 	CONSTEXPR HexPrinter(const void *data, std::size_t size, char delimiter = ' ')
 		: m_data(data), m_size(size), m_delimiter(delimiter)
-	{ }
+	{
+		//
+	}
 
 public:
 	const void *get_data() const {

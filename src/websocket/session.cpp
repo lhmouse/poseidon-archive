@@ -26,7 +26,9 @@ private:
 protected:
 	explicit SyncJobBase(const boost::shared_ptr<Session> &session)
 		: m_guard(boost::shared_ptr<SocketBase>(session->get_weak_parent())), m_weak_parent(session->get_weak_parent()), m_weak_session(session)
-	{ }
+	{
+		//
+	}
 
 private:
 	boost::weak_ptr<const void> get_category() const FINAL {
@@ -62,7 +64,9 @@ class Session::ReadHupJob : public Session::SyncJobBase {
 public:
 	explicit ReadHupJob(const boost::shared_ptr<Session> &session)
 		: SyncJobBase(session)
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -76,7 +80,9 @@ class Session::PingJob : public Session::SyncJobBase {
 public:
 	explicit PingJob(const boost::shared_ptr<Session> &session)
 		: SyncJobBase(session)
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -98,7 +104,9 @@ public:
 	DataMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
 		: SyncJobBase(session)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -121,7 +129,9 @@ public:
 	ControlMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
 		: SyncJobBase(session)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -139,8 +149,12 @@ Session::Session(const boost::shared_ptr<Http::LowLevelSession> &parent)
 	: LowLevelSession(parent)
 	, m_max_request_length(MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
 	, m_size_total(0), m_opcode(OP_INVALID)
-{ }
-Session::~Session(){ }
+{
+	//
+}
+Session::~Session(){
+	//
+}
 
 void Session::on_read_hup(){
 	PROFILE_ME;

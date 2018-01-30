@@ -21,7 +21,9 @@ private:
 public:
 	explicit EventListener(EventListenerCallback callback)
 		: m_callback(STD_MOVE_IDN(callback))
-	{ }
+	{
+		//
+	}
 
 public:
 	const EventListenerCallback &get_callback() const {
@@ -48,7 +50,9 @@ namespace {
 	public:
 		EventJob(boost::weak_ptr<const EventListener> weak_listener, boost::shared_ptr<EventBase> event)
 			: m_weak_listener(STD_MOVE(weak_listener)), m_event(STD_MOVE(event))
-		{ }
+		{
+			//
+		}
 
 	protected:
 		boost::weak_ptr<const void> get_category() const OVERRIDE {

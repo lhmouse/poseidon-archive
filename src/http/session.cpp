@@ -23,7 +23,9 @@ private:
 protected:
 	explicit SyncJobBase(const boost::shared_ptr<Session> &session)
 		: m_guard(session), m_weak_session(session)
-	{ }
+	{
+		//
+	}
 
 private:
 	boost::weak_ptr<const void> get_category() const FINAL {
@@ -59,7 +61,9 @@ class Session::ReadHupJob : public Session::SyncJobBase {
 public:
 	explicit ReadHupJob(const boost::shared_ptr<Session> &session)
 		: SyncJobBase(session)
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -77,7 +81,9 @@ public:
 	ExpectJob(const boost::shared_ptr<Session> &session, RequestHeaders request_headers)
 		: SyncJobBase(session)
 		, m_request_headers(STD_MOVE(request_headers))
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -97,7 +103,9 @@ public:
 	RequestJob(const boost::shared_ptr<Session> &session, RequestHeaders request_headers, StreamBuffer entity, bool keep_alive)
 		: SyncJobBase(session)
 		, m_request_headers(STD_MOVE(request_headers)), m_entity(STD_MOVE(entity)), m_keep_alive(keep_alive)
-	{ }
+	{
+		//
+	}
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
@@ -118,8 +126,12 @@ Session::Session(Move<UniqueFile> socket)
 	: LowLevelSession(STD_MOVE(socket))
 	, m_max_request_length(MainConfig::get<boost::uint64_t>("http_max_request_length", 16384))
 	, m_size_total(0), m_request_headers()
-{ }
-Session::~Session(){ }
+{
+	//
+}
+Session::~Session(){
+	//
+}
 
 void Session::on_read_hup(){
 	PROFILE_ME;

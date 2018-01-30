@@ -35,11 +35,15 @@ private:
 public:
 	OptionalMap()
 		: m_elements()
-	{ }
+	{
+		//
+	}
 #ifndef POSEIDON_CXX11
 	OptionalMap(const OptionalMap &rhs)
 		: m_elements(rhs.m_elements)
-	{ }
+	{
+		//
+	}
 	OptionalMap &operator=(const OptionalMap &rhs){
 		m_elements = rhs.m_elements;
 		return *this;

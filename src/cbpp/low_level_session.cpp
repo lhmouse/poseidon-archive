@@ -13,8 +13,12 @@ namespace Cbpp {
 
 LowLevelSession::LowLevelSession(Move<UniqueFile> socket)
 	: TcpSessionBase(STD_MOVE(socket)), Reader(), Writer()
-{ }
-LowLevelSession::~LowLevelSession(){ }
+{
+	//
+}
+LowLevelSession::~LowLevelSession(){
+	//
+}
 
 void LowLevelSession::on_connect(){
 	PROFILE_ME;
