@@ -5,7 +5,7 @@ AM_CPPFLAGS = -Wall -Wextra -Werror -Wconversion -Wsign-conversion -Wno-error=un
 	-Wundef -Wshadow -Wstrict-aliasing=2 -Wstrict-overflow=2 -Wno-error=pragmas	\
 	-pipe -fPIC -DPIC -pthread	\
 	$(openssl_CFLAGS) $(bson_CFLAGS) $(mongoc_CFLAGS) $(zlib_CFLAGS)
-AM_CXXFLAGS =
+AM_CXXFLAGS = -Wnon-virtual-dtor
 AM_LDFLAGS = -pthread
 AM_LIBS = $(openssl_LIBS) $(bson_LIBS) $(mongoc_LIBS) $(zlib_LIBS)
 
