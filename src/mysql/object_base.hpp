@@ -19,7 +19,6 @@
 #include <boost/cstdint.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 #include <boost/utility/enable_if.hpp>
-#include "../atomic.hpp"
 #include "../shared_nts.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
