@@ -10,12 +10,13 @@
 #include <boost/type_traits/make_unsigned.hpp>
 #include <boost/type_traits/common_type.hpp>
 #include <boost/static_assert.hpp>
+#include <byteswap.h>
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #  define POSEIDON_BSWAP_UNLESS_BE(bits_)   //
-#  define POSEIDON_BSWAP_UNLESS_LE(bits_)   __builtin_bswap##bits_
+#  define POSEIDON_BSWAP_UNLESS_LE(bits_)   __bswap_##bits_
 #elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#  define POSEIDON_BSWAP_UNLESS_BE(bits_)   __builtin_bswap##bits_
+#  define POSEIDON_BSWAP_UNLESS_BE(bits_)   __bswap_##bits_
 #  define POSEIDON_BSWAP_UNLESS_LE(bits_)   //
 #else
 #  error This architecture is not supported.
