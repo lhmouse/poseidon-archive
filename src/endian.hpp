@@ -5,60 +5,91 @@
 #define POSEIDON_ENDIAN_HPP_
 
 #include "cxx_util.hpp"
-#include <climits>
-#include <boost/type_traits/make_unsigned.hpp>
+#include <boost/cstdint.hpp>
 #include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/make_unsigned.hpp>
 #include <boost/type_traits/common_type.hpp>
 #include <boost/static_assert.hpp>
 
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#  define POSEIDON_BSWAP_UNLESS_BE(bits_)   //
+#  define POSEIDON_BSWAP_UNLESS_LE(bits_)   __builtin_bswap##bits_
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#  define POSEIDON_BSWAP_UNLESS_BE(bits_)   __builtin_bswap##bits_
+#  define POSEIDON_BSWAP_UNLESS_LE(bits_)   //
+#else
+#  error This architecture is not supported.
+#endif
+
 namespace Poseidon {
 
-template<typename ValueT>
-inline ValueT load_le(const ValueT &mem){
-	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
-	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
+template<unsigned kSizeT>
+struct ByteSwapper;
 
-	const unsigned char *read = reinterpret_cast<const unsigned char *>(&mem);
-	Unsigned u = 0;
-	for(unsigned i = 0; i < sizeof(u); ++i){
-		u = static_cast<Unsigned>(u + (static_cast<Unsigned>(*(read++)) << (i * CHAR_BIT)));
+template<>
+struct ByteSwapper<1> {
+	static boost::uint8_t bswap_unless_be(boost::uint8_t value){
+		return value;
 	}
-	return static_cast<ValueT>(u);
+	static boost::uint8_t bswap_unless_le(boost::uint8_t value){
+		return value;
+	}
+};
+
+template<>
+struct ByteSwapper<2> {
+	static boost::uint16_t bswap_unless_be(boost::uint16_t value){
+		return POSEIDON_BSWAP_UNLESS_BE(16)(value);
+	}
+	static boost::uint16_t bswap_unless_le(boost::uint16_t value){
+		return POSEIDON_BSWAP_UNLESS_LE(16)(value);
+	}
+};
+
+template<>
+struct ByteSwapper<4> {
+	static boost::uint32_t bswap_unless_be(boost::uint32_t value){
+		return POSEIDON_BSWAP_UNLESS_BE(32)(value);
+	}
+	static boost::uint32_t bswap_unless_le(boost::uint32_t value){
+		return POSEIDON_BSWAP_UNLESS_LE(32)(value);
+	}
+};
+
+template<>
+struct ByteSwapper<8> {
+	static boost::uint64_t bswap_unless_be(boost::uint64_t value){
+		return POSEIDON_BSWAP_UNLESS_BE(64)(value);
+	}
+	static boost::uint64_t bswap_unless_le(boost::uint64_t value){
+		return POSEIDON_BSWAP_UNLESS_LE(64)(value);
+	}
+};
+
+template<typename ValueT>
+ValueT load_be(ValueT value){
+	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
+	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
+	return static_cast<ValueT>(ByteSwapper<sizeof(temp)>::bswap_unless_be(temp));
 }
 template<typename ValueT>
-inline ValueT load_be(const ValueT &mem){
+void store_be(ValueT &ref, typename boost::common_type<ValueT>::type value){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
-	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
-
-	const unsigned char *read = reinterpret_cast<const unsigned char *>(&mem);
-	Unsigned u = 0;
-	for(unsigned i = sizeof(u); i > 0; --i){
-		u = static_cast<Unsigned>(u + (static_cast<Unsigned>(*(read++)) << ((i - 1) * CHAR_BIT)));
-	}
-	return static_cast<ValueT>(u);
+	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
+	ref = static_cast<ValueT>(ByteSwapper<sizeof(temp)>::bswap_unless_be(temp));
 }
 
 template<typename ValueT>
-inline void store_le(ValueT &mem, typename boost::common_type<ValueT>::type val){
+ValueT load_le(ValueT value){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
-	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
-
-	unsigned char *write = reinterpret_cast<unsigned char *>(&mem);
-	Unsigned u = static_cast<Unsigned>(val);
-	for(unsigned i = 0; i < sizeof(u); ++i){
-		*(write++) = static_cast<unsigned char>(u >> (i * CHAR_BIT));
-	}
+	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
+	return static_cast<ValueT>(ByteSwapper<sizeof(temp)>::bswap_unless_le(temp));
 }
 template<typename ValueT>
-inline void store_be(ValueT &mem, typename boost::common_type<ValueT>::type val){
+void store_le(ValueT &ref, typename boost::common_type<ValueT>::type value){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
-	typedef typename boost::make_unsigned<ValueT>::type Unsigned;
-
-	unsigned char *write = reinterpret_cast<unsigned char *>(&mem);
-	Unsigned u = static_cast<Unsigned>(val);
-	for(unsigned i = sizeof(u); i > 0; --i){
-		*(write++) = static_cast<unsigned char>(u >> ((i - 1) * CHAR_BIT));
-	}
+	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
+	ref = static_cast<ValueT>(ByteSwapper<sizeof(temp)>::bswap_unless_le(temp));
 }
 
 }
