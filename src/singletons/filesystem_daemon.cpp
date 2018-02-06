@@ -59,7 +59,7 @@ namespace {
 			if(limit == FileSystemDaemon::LIMIT_EOF){
 				avail = sizeof(temp);
 			} else {
-				avail = std::min<boost::uint64_t>(limit - bytes_read, sizeof(temp));
+				avail = static_cast<std::size_t>(std::min<boost::uint64_t>(limit - bytes_read, sizeof(temp)));
 			}
 			if(avail == 0){
 				break;

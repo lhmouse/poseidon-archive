@@ -142,7 +142,7 @@ Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEP
 }
 Logger::~Logger() NOEXCEPT
 try {
-	const unsigned level = static_cast<unsigned>(__builtin_ctzl(m_mask | LV_TRACE));
+	const unsigned level = static_cast<unsigned>(__builtin_ctzll(m_mask | LV_TRACE));
 	const LevelElement *const lc = &s_levels.at(level);
 	const int output_fd = lc->to_stderr ? STDERR_FILENO : STDOUT_FILENO;
 	const bool output_color = ::isatty(output_fd);

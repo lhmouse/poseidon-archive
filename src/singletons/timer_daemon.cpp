@@ -219,18 +219,18 @@ boost::shared_ptr<Timer> TimerDaemon::register_timer(boost::uint64_t delta_first
 
 boost::shared_ptr<Timer> TimerDaemon::register_hourly_timer(unsigned minute, unsigned second, TimerCallback callback, bool utc){
 	const AUTO(virt_now, utc ? get_utc_time() : get_local_time());
-	const AUTO(delta, checked_sub(virt_now, (minute * 60ul + second) * 1000));
+	const AUTO(delta, checked_sub<boost::uint64_t>(virt_now, (minute * 60ull + second) * 1000ull));
 	return register_timer(MS_PER_HOUR - delta % MS_PER_HOUR, MS_PER_HOUR, STD_MOVE(callback));
 }
 boost::shared_ptr<Timer> TimerDaemon::register_daily_timer(unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc){
 	const AUTO(virt_now, utc ? get_utc_time() : get_local_time());
-	const AUTO(delta, checked_sub(virt_now, (hour * 3600ul + minute * 60ul + second) * 1000));
+	const AUTO(delta, checked_sub<boost::uint64_t>(virt_now, (hour * 3600ull + minute * 60ull + second) * 1000ull));
 	return register_timer(MS_PER_DAY - delta % MS_PER_DAY, MS_PER_DAY, STD_MOVE(callback));
 }
 boost::shared_ptr<Timer> TimerDaemon::register_weekly_timer(unsigned day_of_week, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc){
 	// 注意 1970-01-01 是星期四。
 	const AUTO(virt_now, utc ? get_utc_time() : get_local_time());
-	const AUTO(delta, checked_sub(virt_now, ((day_of_week + 3) * 86400ul + hour * 3600ul + minute * 60ul + second) * 1000ul));
+	const AUTO(delta, checked_sub<boost::uint64_t>(virt_now, ((day_of_week + 3ull) * 86400ull + hour * 3600ull + minute * 60ull + second) * 1000ull));
 	return register_timer(MS_PER_WEEK - delta % MS_PER_WEEK, MS_PER_WEEK, STD_MOVE(callback));
 }
 

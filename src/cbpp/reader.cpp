@@ -79,7 +79,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case S_DATA_PAYLOAD:
 			temp64 = std::min<boost::uint64_t>(m_queue.size(), m_payload_size - m_payload_offset);
-			on_data_message_payload(m_payload_offset, m_queue.cut_off(temp64));
+			on_data_message_payload(m_payload_offset, m_queue.cut_off(boost::numeric_cast<std::size_t>(temp64)));
 			m_payload_offset += temp64;
 
 			if(m_payload_offset < m_payload_size){
@@ -95,7 +95,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case S_CONTROL_PAYLOAD:
 			{
-				StreamBuffer payload = m_queue.cut_off(m_payload_size);
+				StreamBuffer payload = m_queue.cut_off(boost::numeric_cast<std::size_t>(m_payload_size));
 				boost::uint32_t temp32;
 				DEBUG_THROW_UNLESS(payload.get(&temp32, 4) == 4, Exception, ST_END_OF_STREAM, sslit("control.code"));
 				has_next_request = on_control_message(static_cast<boost::int32_t>(load_be(temp32)), STD_MOVE(payload));

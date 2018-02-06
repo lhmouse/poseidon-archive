@@ -66,7 +66,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 			}
 		}
 
-		AUTO(expected, m_queue.cut_off(m_size_expecting));
+		AUTO(expected, m_queue.cut_off(boost::numeric_cast<std::size_t>(m_size_expecting)));
 		if(expecting_new_line){
 			expected.unput(); // '\n'
 			if(expected.back() == '\r'){
@@ -178,7 +178,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 		case S_IDENTITY:
 			temp64 = std::min<boost::uint64_t>(expected.size(), m_content_length - m_content_offset);
 			if(temp64 > 0){
-				on_request_entity(m_content_offset, expected.cut_off(temp64));
+				on_request_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
 			}
 			m_content_offset += temp64;
 
@@ -222,7 +222,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 		case S_CHUNK_DATA:
 			temp64 = std::min<boost::uint64_t>(expected.size(), m_chunk_size - m_chunk_offset);
 			assert(temp64 > 0);
-			on_request_entity(m_content_offset, expected.cut_off(temp64));
+			on_request_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
 			m_content_offset += temp64;
 			m_chunk_offset += temp64;
 

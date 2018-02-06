@@ -158,14 +158,14 @@ namespace {
 	Mutex g_router_mutex;
 	boost::container::vector<boost::shared_ptr<WorkhorseThread> > g_threads;
 
-	void add_job_using_seed(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t seed){
+	void add_job_using_seed(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, boost::uint64_t seed){
 		PROFILE_ME;
 		DEBUG_THROW_UNLESS(!g_threads.empty(), BasicException, sslit("Workhorse support is not enabled"));
 
 		boost::shared_ptr<WorkhorseThread> thread;
 		{
 			const Mutex::UniqueLock lock(g_router_mutex);
-			std::size_t i = seed % g_threads.size();
+			std::size_t i = static_cast<std::size_t>(seed % g_threads.size());
 			thread = g_threads.at(i);
 			if(!thread){
 				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Creating new workhorse thread ", i);
@@ -228,7 +228,7 @@ void WorkhorseCamp::enqueue_isolated(const boost::shared_ptr<Promise> &promise, 
 	add_job_using_seed(promise, STD_MOVE_IDN(procedure), random_uint32());
 }
 void WorkhorseCamp::enqueue(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t thread_hint){
-	add_job_using_seed(promise, STD_MOVE_IDN(procedure), (boost::uint64_t)thread_hint * 134775813 / 65539);
+	add_job_using_seed(promise, STD_MOVE_IDN(procedure), static_cast<boost::uint64_t>(thread_hint) * 134775813 / 65539);
 }
 
 }
