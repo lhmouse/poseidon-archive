@@ -112,7 +112,7 @@ public:
 	StreamBuffer cut_off(std::size_t count);
 	void splice(StreamBuffer &rhs) NOEXCEPT;
 #ifdef POSEIDON_CXX11
-	void splice(StreamBuffer &&rhs) NOEXCEPT {
+	void splice(StreamBuffer &&rhs) noexcept {
 		splice(rhs);
 	}
 #endif
