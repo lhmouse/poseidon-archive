@@ -21,24 +21,14 @@
 namespace Poseidon {
 
 namespace {
-#ifdef POSEIDON_CXX11
-	UniqueFile
-#else
-	Move<UniqueFile>
-#endif
-		create_tcp_socket(const SockAddr &addr)
-	{
-#ifdef POSEIDON_CXX11
+	UniqueFile create_tcp_socket(const SockAddr &addr){
 		UniqueFile tcp;
-#else
-		static __thread UniqueFile tcp;
-#endif
 		DEBUG_THROW_UNLESS(tcp.reset(::socket(addr.get_family(), SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP)), SystemException);
 		static CONSTEXPR const int s_true_value = true;
 		DEBUG_THROW_UNLESS(::setsockopt(tcp.get(), SOL_SOCKET, SO_REUSEADDR, &s_true_value, sizeof(s_true_value)) == 0, SystemException);
 		DEBUG_THROW_UNLESS(::bind(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0, SystemException);
 		DEBUG_THROW_UNLESS(::listen(tcp.get(), SOMAXCONN) == 0, SystemException);
-		return STD_MOVE(tcp);
+		return tcp;
 	}
 }
 

@@ -12,23 +12,13 @@
 namespace Poseidon {
 
 namespace {
-#ifdef POSEIDON_CXX11
-	UniqueFile
-#else
-	Move<UniqueFile>
-#endif
-		create_udp_socket(const SockAddr &addr)
-	{
-#ifdef POSEIDON_CXX11
+	UniqueFile create_udp_socket(const SockAddr &addr){
 		UniqueFile udp;
-#else
-		static __thread UniqueFile udp;
-#endif
 		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), SystemException);
 		static CONSTEXPR const int s_true_value = true;
 		DEBUG_THROW_UNLESS(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &s_true_value, sizeof(s_true_value)) == 0, SystemException);
 		DEBUG_THROW_UNLESS(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0, SystemException);
-		return STD_MOVE(udp);
+		return udp;
 	}
 }
 

@@ -12,20 +12,10 @@
 namespace Poseidon {
 
 namespace {
-#ifdef POSEIDON_CXX11
-	UniqueFile
-#else
-	Move<UniqueFile>
-#endif
-		create_udp_socket(const SockAddr &addr)
-	{
-#ifdef POSEIDON_CXX11
+	UniqueFile create_udp_socket(const SockAddr &addr){
 		UniqueFile udp;
-#else
-		static __thread UniqueFile udp;
-#endif
 		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), SystemException);
-		return STD_MOVE(udp);
+		return udp;
 	}
 }
 

@@ -33,20 +33,10 @@ namespace {
 
 	::pthread_once_t g_ssl_once = PTHREAD_ONCE_INIT;
 
-#ifdef POSEIDON_CXX11
-	UniqueSslCtx
-#else
-	Move<UniqueSslCtx>
-#endif
-		create_server_ssl_ctx(const char *certificate, const char *private_key)
-	{
+	UniqueSslCtx create_server_ssl_ctx(const char *certificate, const char *private_key){
 		PROFILE_ME;
 
-#ifdef POSEIDON_CXX11
 		UniqueSslCtx ssl_ctx;
-#else
-		static __thread UniqueSslCtx ssl_ctx;
-#endif
 		DEBUG_THROW_ASSERT(::pthread_once(&g_ssl_once, &init_openssl) == 0);
 		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_server_method())), Exception, sslit("::SSLv23_server_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
@@ -65,23 +55,13 @@ namespace {
 		} else {
 			::SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_NONE, NULLPTR);
 		}
-		return STD_MOVE(ssl_ctx);
+		return ssl_ctx;
 	}
 
-#ifdef POSEIDON_CXX11
-	UniqueSslCtx
-#else
-	Move<UniqueSslCtx>
-#endif
-		create_client_ssl_ctx(bool verify_peer)
-	{
+	UniqueSslCtx create_client_ssl_ctx(bool verify_peer){
 		PROFILE_ME;
 
-#ifdef POSEIDON_CXX11
 		UniqueSslCtx ssl_ctx;
-#else
-		static __thread UniqueSslCtx ssl_ctx;
-#endif
 		DEBUG_THROW_ASSERT(::pthread_once(&g_ssl_once, &init_openssl) == 0);
 		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_client_method())), Exception, sslit("::SSLv23_client_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
@@ -94,7 +74,7 @@ namespace {
 		} else {
 			::SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_NONE, NULLPTR);
 		}
-		return STD_MOVE(ssl_ctx);
+		return ssl_ctx;
 	}
 }
 
