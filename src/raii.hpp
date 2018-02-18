@@ -18,10 +18,6 @@ public:
 private:
 	Handle m_handle;
 
-private:
-	UniqueHandle(const UniqueHandle &);
-	UniqueHandle &operator=(const UniqueHandle &);
-
 public:
 	UniqueHandle() NOEXCEPT
 		: m_handle(CloserT()())
@@ -48,6 +44,24 @@ public:
 			CloserT()(old);
 		}
 	}
+#ifdef POSEIDON_CXX11
+	UniqueHandle(const UniqueHandle &) = delete;
+	UniqueHandle &operator=(const UniqueHandle &) = delete;
+#else
+	// Move support.
+	UniqueHandle(UniqueHandle &rhs) NOEXCEPT
+		: m_handle(CloserT()())
+	{
+		rhs.swap(*this);
+	}
+	UniqueHandle &operator=(UniqueHandle &rhs) NOEXCEPT {
+		UniqueHandle(STD_MOVE(rhs)).swap(*this);
+		return *this;
+	}
+	operator Move<UniqueHandle> (){
+		return Move<UniqueHandle>(*this);
+	}
+#endif
 
 public:
 	Handle get() const NOEXCEPT {

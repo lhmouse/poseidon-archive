@@ -175,7 +175,7 @@ namespace {
 			}
 		}
 		assert(thread);
-		thread->add_job(STD_MOVE(promise), STD_MOVE_IDN(procedure));
+		thread->add_job(promise, STD_MOVE_IDN(procedure));
 	}
 }
 

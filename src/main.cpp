@@ -88,7 +88,7 @@ namespace {
 				const AUTO_REF(servlet, *it);
 				arr.push_back(servlet->get_uri());
 			}
-			resp.set(sslit("servlets"), STD_MOVE(arr));
+			resp.set(sslit("servlets"), STD_MOVE_IDN(arr));
 		}
 	};
 
@@ -170,9 +170,9 @@ namespace {
 				obj.set(sslit("listening"), elem.listening);
 				obj.set(sslit("readable"), elem.readable);
 				obj.set(sslit("writeable"), elem.writeable);
-				arr.push_back(STD_MOVE(obj));
+				arr.push_back(STD_MOVE_IDN(obj));
 			}
-			resp.set(sslit("sockets"), STD_MOVE(arr));
+			resp.set(sslit("sockets"), STD_MOVE_IDN(arr));
 		}
 	};
 
@@ -217,9 +217,9 @@ namespace {
 				obj.set(sslit("samples"), elem.samples);
 				obj.set(sslit("total"), elem.total);
 				obj.set(sslit("exclusive"), elem.exclusive);
-				arr.push_back(STD_MOVE(obj));
+				arr.push_back(STD_MOVE_IDN(obj));
 			}
-			resp.set(sslit("profile"), STD_MOVE(arr));
+			resp.set(sslit("profile"), STD_MOVE_IDN(arr));
 		}
 	};
 
@@ -319,9 +319,9 @@ namespace {
 				obj.set(sslit("dl_handle"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "0x%llx", (unsigned long long)elem.dl_handle)));
 				obj.set(sslit("base_address"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "0x%llx", (unsigned long long)elem.base_address)));
 				obj.set(sslit("real_path"), elem.real_path.get());
-				arr.push_back(STD_MOVE(obj));
+				arr.push_back(STD_MOVE_IDN(obj));
 			}
-			resp.set(sslit("modules"), STD_MOVE(arr));
+			resp.set(sslit("modules"), STD_MOVE_IDN(arr));
 		}
 	};
 

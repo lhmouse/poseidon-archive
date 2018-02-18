@@ -454,7 +454,7 @@ boost::shared_ptr<const PromiseContainer<FileBlockRead> > FileSystemDaemon::enqu
 
 	AUTO(promise, boost::make_shared<PromiseContainer<FileBlockRead> >());
 	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(path), begin, limit, throws_if_does_not_exist));
-	submit_operation(STD_MOVE(operation));
+	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
 boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_saving(std::string path, StreamBuffer data, boost::uint64_t begin, bool throws_if_exists){
@@ -462,7 +462,7 @@ boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_saving(std::strin
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<SaveOperation>(promise, STD_MOVE(path), STD_MOVE(data), begin, throws_if_exists));
-	submit_operation(STD_MOVE(operation));
+	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
 boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_removing(std::string path, bool throws_if_does_not_exist){
@@ -470,7 +470,7 @@ boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_removing(std::str
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<RemoveOperation>(promise, STD_MOVE(path), throws_if_does_not_exist));
-	submit_operation(STD_MOVE(operation));
+	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
 boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_renaming(std::string path, std::string new_path){
@@ -478,7 +478,7 @@ boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_renaming(std::str
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<RenameOperation>(promise, STD_MOVE(path), STD_MOVE(new_path)));
-	submit_operation(STD_MOVE(operation));
+	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
 boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_mkdir(std::string path, bool throws_if_exists){
@@ -486,7 +486,7 @@ boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_mkdir(std::string
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<MkdirOperation>(promise, STD_MOVE(path), throws_if_exists));
-	submit_operation(STD_MOVE(operation));
+	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
 boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_rmdir(std::string path, bool throws_if_does_not_exist){
@@ -494,7 +494,7 @@ boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_rmdir(std::string
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<RmdirOperation>(promise, STD_MOVE(path), throws_if_does_not_exist));
-	submit_operation(STD_MOVE(operation));
+	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
 
