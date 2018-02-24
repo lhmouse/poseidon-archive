@@ -22,10 +22,10 @@ public:
 	static void stop();
 
 	// 同步接口。
-	static SockAddr look_up(const std::string &host, boost::uint16_t port);
+	static SockAddr look_up(const std::string &host, boost::uint16_t port, bool prefer_ipv4 = true);
 
 	// 异步接口。
-	static boost::shared_ptr<const PromiseContainer<SockAddr> > enqueue_for_looking_up(std::string host, boost::uint16_t port);
+	static boost::shared_ptr<const PromiseContainer<SockAddr> > enqueue_for_looking_up(std::string host, boost::uint16_t port, bool prefer_ipv4 = true);
 };
 
 }

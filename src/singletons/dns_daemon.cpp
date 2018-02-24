@@ -29,7 +29,7 @@ namespace {
 		}
 	};
 
-	SockAddr real_dns_look_up(const std::string &host_raw, boost::uint16_t port_raw){
+	SockAddr real_dns_look_up(const std::string &host_raw, boost::uint16_t port_raw, bool prefer_ipv4){
 		UniqueHandle<AddrinfoFreeer> res;
 		std::string host;
 		if(!host_raw.empty() && (host_raw.begin()[0] == '[') && (host_raw.end()[-1] == ']')){
@@ -39,14 +39,16 @@ namespace {
 		}
 		char port[16];
 		std::sprintf(port, "%u", port_raw);
-		::addrinfo *tmp_res;
-		const int gai_code = ::getaddrinfo(host.c_str(), port, NULLPTR, &tmp_res);
+		::addrinfo hint = { };
+		hint.ai_family = prefer_ipv4 ? AF_INET : AF_INET6;
+		::addrinfo *res_ptr;
+		const int gai_code = ::getaddrinfo(host.c_str(), port, &hint, &res_ptr);
 		if(gai_code != 0){
 			const char *const err_msg = ::gai_strerror(gai_code);
 			LOG_POSEIDON_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
 			DEBUG_THROW(Exception, SharedNts(err_msg));
 		}
-		res.reset(tmp_res);
+		res.reset(res_ptr);
 
 		SockAddr sock_addr(res.get()->ai_addr, res.get()->ai_addrlen);
 		LOG_POSEIDON_DEBUG("DNS lookup success: host:port = ", host, ":", port, ", result = ", IpPort(sock_addr));
@@ -60,6 +62,7 @@ namespace {
 		boost::weak_ptr<PromiseContainer<SockAddr> > weak_promise;
 		std::string host;
 		boost::uint16_t port;
+		bool prefer_ipv4;
 	};
 
 	Mutex g_mutex;
@@ -84,7 +87,7 @@ namespace {
 		SockAddr sock_addr;
 		STD_EXCEPTION_PTR except;
 		try {
-			sock_addr = real_dns_look_up(elem->host, elem->port);
+			sock_addr = real_dns_look_up(elem->host, elem->port, elem->prefer_ipv4);
 		} catch(std::exception &e){
 			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 			except = STD_CURRENT_EXCEPTION();
@@ -151,19 +154,19 @@ void DnsDaemon::stop(){
 	g_queue.clear();
 }
 
-SockAddr DnsDaemon::look_up(const std::string &host, boost::uint16_t port){
+SockAddr DnsDaemon::look_up(const std::string &host, boost::uint16_t port, bool prefer_ipv4){
 	PROFILE_ME;
 
-	return real_dns_look_up(host, port);
+	return real_dns_look_up(host, port, prefer_ipv4);
 }
 
-boost::shared_ptr<const PromiseContainer<SockAddr> > DnsDaemon::enqueue_for_looking_up(std::string host, boost::uint16_t port){
+boost::shared_ptr<const PromiseContainer<SockAddr> > DnsDaemon::enqueue_for_looking_up(std::string host, boost::uint16_t port, bool prefer_ipv4){
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<PromiseContainer<SockAddr> >());
 	{
 		const Mutex::UniqueLock lock(g_mutex);
-		RequestElement elem = { promise, STD_MOVE(host), port };
+		RequestElement elem = { promise, STD_MOVE(host), port, prefer_ipv4 };
 		g_queue.push_back(STD_MOVE(elem));
 		g_new_request.signal();
 	}
