@@ -276,11 +276,11 @@ public:
 
 	template<typename T>
 	const T &get() const {
-		return boost::get<const T &>(m_data);
+		return boost::get<T>(m_data);
 	}
 	template<typename T>
 	T &get(){
-		return boost::get<T &>(m_data);
+		return boost::get<T>(m_data);
 	}
 	template<typename T>
 	void set(T rhs){
