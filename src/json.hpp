@@ -457,11 +457,11 @@ const T &JsonObject::get(const SharedNts &key) const {
 }
 template<typename T>
 const T &JsonObject::at(const SharedNts &key) const {
-	return at(key).at<T>();
+	return at(key).get<T>();
 }
 template<typename T>
 T &JsonObject::at(const SharedNts &key){
-	return at(key).at<T>();
+	return at(key).get<T>();
 }
 inline JsonObject::iterator JsonObject::set(SharedNts key, JsonElement val){
 	AUTO(it, m_elements.find(key));
@@ -599,11 +599,11 @@ inline const T &JsonArray::get(JsonArray::size_type index) const {
 }
 template<typename T>
 inline const T &JsonArray::at(JsonArray::size_type index) const {
-	return at(index).at<T>();
+	return at(index).get<T>();
 }
 template<typename T>
 inline T &JsonArray::at(JsonArray::size_type index){
-	return at(index).at<T>();
+	return at(index).get<T>();
 }
 inline JsonElement &JsonArray::push_front(JsonElement val){
 	m_elements.push_front(STD_MOVE(val));
