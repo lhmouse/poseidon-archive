@@ -89,18 +89,36 @@ public:
 
 	bool has(const char *key) const;
 	bool has(const SharedNts &key) const;
-	const JsonElement &get(const char *key) const { // 若指定的键不存在，则返回空元素。
+	const JsonElement &get(const SharedNts &key) const; // 若指定的键不存在，则返回空元素。
+	const JsonElement &at(const SharedNts &key) const; // 若指定的键不存在，则抛出 std::out_of_range。
+	JsonElement &at(const SharedNts &key); // 若指定的键不存在，则抛出 std::out_of_range。
+	const JsonElement &get(const char *key) const {
 		return get(SharedNts::view(key));
 	}
-	const JsonElement &get(const SharedNts &key) const;
-	const JsonElement &at(const char *key) const { // 若指定的键不存在，则抛出 std::out_of_range。
+	const JsonElement &at(const char *key) const {
 		return at(SharedNts::view(key));
 	}
-	const JsonElement &at(const SharedNts &key) const;
-	JsonElement &at(const char *key){ // 若指定的键不存在，则抛出 std::out_of_range。
+	JsonElement &at(const char *key){
 		return at(SharedNts::view(key));
 	}
-	JsonElement &at(const SharedNts &key);
+	template<typename T>
+	const T &get(const SharedNts &key) const;
+	template<typename T>
+	const T &at(const SharedNts &key) const;
+	template<typename T>
+	T &at(const SharedNts &key);
+	template<typename T>
+	const T &get(const char *key) const {
+		return get<T>(SharedNts::view(key));
+	}
+	template<typename T>
+	const T &at(const char *key) const {
+		return at<T>(SharedNts::view(key));
+	}
+	template<typename T>
+	T &at(const char *key){
+		return at<T>(SharedNts::view(key));
+	}
 	iterator set(SharedNts key, JsonElement val);
 #ifdef POSEIDON_CXX11
 	template<typename KeyT, typename ...ParamsT>
@@ -180,6 +198,12 @@ public:
 	const JsonElement &get(size_type index) const; // 若指定的下标不存在，则返回空元素。
 	const JsonElement &at(size_type index) const; // 若指定的下标不存在，则抛出 std::out_of_range。
 	JsonElement &at(size_type index); // 若指定的下标不存在，则抛出 std::out_of_range。
+	template<typename T>
+	const T &get(size_type index) const;
+	template<typename T>
+	const T &at(size_type index) const;
+	template<typename T>
+	T &at(size_type index);
 	JsonElement &push_front(JsonElement val);
 	void pop_front();
 	JsonElement &push_back(JsonElement val);
@@ -427,6 +451,18 @@ inline JsonElement &JsonObject::at(const SharedNts &key){
 	}
 	return it->second;
 }
+template<typename T>
+const T &JsonObject::get(const SharedNts &key) const {
+	return get(key).get<T>();
+}
+template<typename T>
+const T &JsonObject::at(const SharedNts &key) const {
+	return at(key).at<T>();
+}
+template<typename T>
+T &JsonObject::at(const SharedNts &key){
+	return at(key).at<T>();
+}
 inline JsonObject::iterator JsonObject::set(SharedNts key, JsonElement val){
 	AUTO(it, m_elements.find(key));
 	if(it == m_elements.end()){
@@ -556,6 +592,18 @@ inline JsonElement &JsonArray::at(JsonArray::size_type index){
 		throw std::out_of_range(__PRETTY_FUNCTION__);
 	}
 	return begin()[static_cast<difference_type>(index)];
+}
+template<typename T>
+inline const T &JsonArray::get(JsonArray::size_type index) const {
+	return get(index).get<T>();
+}
+template<typename T>
+inline const T &JsonArray::at(JsonArray::size_type index) const {
+	return at(index).at<T>();
+}
+template<typename T>
+inline T &JsonArray::at(JsonArray::size_type index){
+	return at(index).at<T>();
 }
 inline JsonElement &JsonArray::push_front(JsonElement val){
 	m_elements.push_front(STD_MOVE(val));
