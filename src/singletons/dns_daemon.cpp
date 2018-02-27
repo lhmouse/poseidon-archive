@@ -39,18 +39,37 @@ namespace {
 		}
 		char port[16];
 		std::sprintf(port, "%u", port_raw);
-		::addrinfo hint = { };
-		hint.ai_family = prefer_ipv4 ? AF_INET : AF_INET6;
 		::addrinfo *res_ptr;
-		const int gai_code = ::getaddrinfo(host.c_str(), port, &hint, &res_ptr);
+		const int gai_code = ::getaddrinfo(host.c_str(), port, NULLPTR, &res_ptr);
 		if(gai_code != 0){
 			const char *const err_msg = ::gai_strerror(gai_code);
 			LOG_POSEIDON_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
 			DEBUG_THROW(Exception, SharedNts(err_msg));
 		}
-		res.reset(res_ptr);
+		DEBUG_THROW_ASSERT(res.reset(res_ptr));
 
-		SockAddr sock_addr(res.get()->ai_addr, res.get()->ai_addrlen);
+		::addrinfo *res_ptr_ipv4 = NULLPTR;
+		::addrinfo *res_ptr_ipv6 = NULLPTR;
+		while(res_ptr){
+			switch(res_ptr->ai_family){
+			case AF_INET:
+				res_ptr_ipv4 = res_ptr;
+				break;
+			case AF_INET6:
+				res_ptr_ipv6 = res_ptr;
+				break;
+			}
+			res_ptr = res_ptr->ai_next;
+		}
+		if(prefer_ipv4){
+			res_ptr = res_ptr_ipv4;
+		} else {
+			res_ptr = res_ptr_ipv6;
+		}
+		if(!res_ptr){
+			res_ptr = res.get();
+		}
+		SockAddr sock_addr(res_ptr->ai_addr, res_ptr->ai_addrlen);
 		LOG_POSEIDON_DEBUG("DNS lookup success: host:port = ", host, ":", port, ", result = ", IpPort(sock_addr));
 		return sock_addr;
 	}
