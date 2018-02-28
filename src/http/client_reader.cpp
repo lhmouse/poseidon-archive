@@ -163,7 +163,9 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 		case S_IDENTITY:
 			temp64 = std::min<boost::uint64_t>(expected.size(), m_content_length - m_content_offset);
-			on_response_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
+			if(temp64 > 0){
+				on_response_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
+			}
 			m_content_offset += temp64;
 
 			if(m_content_length == CONTENT_TILL_EOF){
