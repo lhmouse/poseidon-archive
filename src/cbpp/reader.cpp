@@ -79,7 +79,9 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case S_DATA_PAYLOAD:
 			temp64 = std::min<boost::uint64_t>(m_queue.size(), m_payload_size - m_payload_offset);
-			on_data_message_payload(m_payload_offset, m_queue.cut_off(boost::numeric_cast<std::size_t>(temp64)));
+			if(temp64 > 0){
+				on_data_message_payload(m_payload_offset, m_queue.cut_off(boost::numeric_cast<std::size_t>(temp64)));
+			}
 			m_payload_offset += temp64;
 
 			if(m_payload_offset < m_payload_size){

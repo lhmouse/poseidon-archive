@@ -135,7 +135,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case S_DATA_FRAME:
 			temp64 = std::min<boost::uint64_t>(m_queue.size(), m_frame_size - m_frame_offset);
-			{
+			if(temp64 > 0){
 				StreamBuffer payload;
 				for(std::size_t i = 0; i < temp64; ++i){
 					payload.put(m_queue.get() ^ (int)m_mask);
