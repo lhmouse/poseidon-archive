@@ -180,7 +180,7 @@ bin_poseidon_SOURCES = \
 
 bin_poseidon_LDADD = \
 	lib/libposeidon-main.la	\
-	$(openssl_LIBS)
+	$(AM_LIBS)
 
 lib_LTLIBRARIES = \
 	lib/libposeidon-main.la
