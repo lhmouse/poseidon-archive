@@ -101,7 +101,8 @@ pkginclude_singletons_HEADERS = \
 	poseidon/src/singletons/event_dispatcher.hpp	\
 	poseidon/src/singletons/filesystem_daemon.hpp	\
 	poseidon/src/singletons/profile_depository.hpp	\
-	poseidon/src/singletons/workhorse_camp.hpp
+	poseidon/src/singletons/workhorse_camp.hpp	\
+	poseidon/src/singletons/simple_http_client_daemon.hpp
 
 pkginclude_httpdir = $(pkgincludedir)/http
 pkginclude_http_HEADERS = \
@@ -250,6 +251,7 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/singletons/profile_depository.cpp	\
 	poseidon/src/singletons/system_http_server.cpp	\
 	poseidon/src/singletons/workhorse_camp.cpp	\
+	poseidon/src/singletons/simple_http_client_daemon.cpp	\
 	poseidon/src/cbpp/reader.cpp	\
 	poseidon/src/cbpp/writer.cpp	\
 	poseidon/src/cbpp/message_base.cpp	\

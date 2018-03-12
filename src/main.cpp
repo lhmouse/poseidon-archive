@@ -16,6 +16,7 @@
 #include "singletons/event_dispatcher.hpp"
 #include "singletons/filesystem_daemon.hpp"
 #include "singletons/profile_depository.hpp"
+#include "singletons/simple_http_client_daemon.hpp"
 #include "log.hpp"
 #include "profiler.hpp"
 #include "time.hpp"
@@ -353,6 +354,7 @@ namespace {
 			START(EpollDaemon);
 			START(EventDispatcher);
 			START(SystemHttpServer);
+			START(SimpleHttpClientDaemon);
 
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up built-in system servlets...");
 			boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > system_http_servlets;
