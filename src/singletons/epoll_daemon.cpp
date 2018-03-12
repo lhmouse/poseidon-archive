@@ -4,10 +4,6 @@
 #include "../precompiled.hpp"
 #include "epoll_daemon.hpp"
 #include "main_config.hpp"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/epoll.h>
-#include <unistd.h>
 #include "../thread.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
@@ -21,6 +17,10 @@
 #include "../system_exception.hpp"
 #include "../errno.hpp"
 #include "../flags.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
+#include <unistd.h>
 
 namespace Poseidon {
 
