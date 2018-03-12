@@ -10,7 +10,7 @@
 #include "singletons/mongodb_daemon.hpp"
 #include "singletons/workhorse_camp.hpp"
 #include "singletons/epoll_daemon.hpp"
-#include "singletons/system_server.hpp"
+#include "singletons/system_http_server.hpp"
 #include "singletons/job_dispatcher.hpp"
 #include "singletons/module_depository.hpp"
 #include "singletons/event_dispatcher.hpp"
@@ -22,7 +22,7 @@
 #include "exception.hpp"
 #include "atomic.hpp"
 #include "checked_arithmetic.hpp"
-#include "system_servlet_base.hpp"
+#include "system_http_servlet_base.hpp"
 #include "json.hpp"
 #include <signal.h>
 
@@ -68,7 +68,7 @@ namespace {
 		return obj;
 	}
 
-	struct SystemServlet_help : public SystemServletBase {
+	struct SystemHttpServlet_help : public SystemHttpServletBase {
 		const char *get_uri() const FINAL {
 			return "/poseidon/help";
 		}
@@ -81,8 +81,8 @@ namespace {
 		}
 		void handle_post(JsonObject &resp, JsonObject /*req*/) const FINAL {
 			// .servlets = list of servlets
-			boost::container::vector<boost::shared_ptr<const SystemServletBase> > servlets;
-			SystemServer::get_all_servlets(servlets);
+			boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > servlets;
+			SystemHttpServer::get_all_servlets(servlets);
 			JsonArray arr;
 			for(AUTO(it, servlets.begin()); it != servlets.end(); ++it){
 				const AUTO_REF(servlet, *it);
@@ -92,7 +92,7 @@ namespace {
 		}
 	};
 
-	struct SystemServlet_logger : public SystemServletBase {
+	struct SystemHttpServlet_logger : public SystemHttpServletBase {
 		const char *get_uri() const FINAL {
 			return "/poseidon/logger";
 		}
@@ -144,7 +144,7 @@ namespace {
 		}
 	};
 
-	struct SystemServlet_network : public SystemServletBase {
+	struct SystemHttpServlet_network : public SystemHttpServletBase {
 		const char *get_uri() const FINAL {
 			return "/poseidon/network";
 		}
@@ -176,7 +176,7 @@ namespace {
 		}
 	};
 
-	struct SystemServlet_profiler : public SystemServletBase {
+	struct SystemHttpServlet_profiler : public SystemHttpServletBase {
 		const char *get_uri() const FINAL {
 			return "/poseidon/profiler";
 		}
@@ -223,7 +223,7 @@ namespace {
 		}
 	};
 
-	struct SystemServlet_modules : public SystemServletBase {
+	struct SystemHttpServlet_modules : public SystemHttpServletBase {
 		const char *get_uri() const FINAL {
 			return "/poseidon/modules";
 		}
@@ -352,15 +352,15 @@ namespace {
 			START(TimerDaemon);
 			START(EpollDaemon);
 			START(EventDispatcher);
-			START(SystemServer);
+			START(SystemHttpServer);
 
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up built-in system servlets...");
-			boost::container::vector<boost::shared_ptr<const SystemServletBase> > system_servlets;
-			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_help>()));
-			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_logger>()));
-			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_network>()));
-			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_profiler>()));
-			system_servlets.push_back(SystemServer::register_servlet(boost::make_shared<SystemServlet_modules>()));
+			boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > system_http_servlets;
+			system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_help>()));
+			system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_logger>()));
+			system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_network>()));
+			system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_profiler>()));
+			system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_modules>()));
 
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask...");
 			Logger::initialize_mask_from_config();

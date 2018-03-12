@@ -2,10 +2,10 @@
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "system_session.hpp"
-#include "singletons/system_server.hpp"
+#include "system_http_session.hpp"
+#include "singletons/system_http_server.hpp"
 #include "singletons/main_config.hpp"
-#include "system_servlet_base.hpp"
+#include "system_http_servlet_base.hpp"
 #include "profiler.hpp"
 #include "log.hpp"
 #include "json.hpp"
@@ -15,18 +15,18 @@
 
 namespace Poseidon {
 
-SystemSession::SystemSession(Move<UniqueFile> socket, boost::shared_ptr<const Http::AuthenticationContext> auth_ctx)
+SystemHttpSession::SystemHttpSession(Move<UniqueFile> socket, boost::shared_ptr<const Http::AuthenticationContext> auth_ctx)
 	: Http::Session(STD_MOVE(socket))
 	, m_auth_ctx(STD_MOVE(auth_ctx))
 	, m_initialized(false), m_decoded_uri(), m_servlet()
 {
-	LOG_POSEIDON_INFO("SystemSession constructor: remote = ", get_remote_info());
+	LOG_POSEIDON_INFO("SystemHttpSession constructor: remote = ", get_remote_info());
 }
-SystemSession::~SystemSession(){
-	LOG_POSEIDON_INFO("SystemSession destructor: remote = ", get_remote_info());
+SystemHttpSession::~SystemHttpSession(){
+	LOG_POSEIDON_INFO("SystemHttpSession destructor: remote = ", get_remote_info());
 }
 
-void SystemSession::initialize_once(const Http::RequestHeaders &request_headers){
+void SystemHttpSession::initialize_once(const Http::RequestHeaders &request_headers){
 	PROFILE_ME;
 
 	if(m_initialized){
@@ -34,7 +34,7 @@ void SystemSession::initialize_once(const Http::RequestHeaders &request_headers)
 	}
 
 	const AUTO(user, Http::check_authentication_simple(m_auth_ctx, false, get_remote_info(), request_headers));
-	LOG_POSEIDON_INFO("SystemSession authentication succeeded: remote = ", get_remote_info(), ", user = ", user, ", URI = ", request_headers.uri, ", headers = ", request_headers.headers);
+	LOG_POSEIDON_INFO("SystemHttpSession authentication succeeded: remote = ", get_remote_info(), ", user = ", user, ", URI = ", request_headers.uri, ", headers = ", request_headers.headers);
 
 	Buffer_istream bis;
 	bis.set_buffer(StreamBuffer(request_headers.uri));
@@ -50,12 +50,12 @@ void SystemSession::initialize_once(const Http::RequestHeaders &request_headers)
 	case Http::V_HEAD:
 	case Http::V_POST:
 		for(;;){
-			m_servlet = SystemServer::get_servlet(m_decoded_uri.c_str());
+			m_servlet = SystemHttpServer::get_servlet(m_decoded_uri.c_str());
 			if(m_servlet){
 				break;
 			}
 			if(*m_decoded_uri.rbegin() == '/'){
-				LOG_POSEIDON_WARNING("SystemSession URI not handled: ", m_decoded_uri);
+				LOG_POSEIDON_WARNING("SystemHttpSession URI not handled: ", m_decoded_uri);
 				DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
 			}
 			m_decoded_uri.push_back('/');
@@ -69,14 +69,14 @@ void SystemSession::initialize_once(const Http::RequestHeaders &request_headers)
 	++m_initialized;
 }
 
-void SystemSession::on_sync_expect(Http::RequestHeaders request_headers){
+void SystemHttpSession::on_sync_expect(Http::RequestHeaders request_headers){
 	PROFILE_ME;
 
 	initialize_once(request_headers);
 
 	Http::Session::on_sync_expect(STD_MOVE(request_headers));
 }
-void SystemSession::on_sync_request(Http::RequestHeaders request_headers, StreamBuffer request_entity){
+void SystemHttpSession::on_sync_request(Http::RequestHeaders request_headers, StreamBuffer request_entity){
 	PROFILE_ME;
 
 	initialize_once(request_headers);
@@ -113,13 +113,13 @@ void SystemSession::on_sync_request(Http::RequestHeaders request_headers, Stream
 			request.parse(bis);
 			DEBUG_THROW_UNLESS(bis, Http::Exception, Http::ST_BAD_REQUEST);
 		}
-		LOG_POSEIDON_DEBUG("SystemSession request: ", request);
+		LOG_POSEIDON_DEBUG("SystemHttpSession request: ", request);
 		if(request_headers.verb != Http::V_POST){
 			m_servlet->handle_get(response);
 		} else {
 			m_servlet->handle_post(response, STD_MOVE(request));
 		}
-		LOG_POSEIDON_DEBUG("SystemSession response: ", response);
+		LOG_POSEIDON_DEBUG("SystemHttpSession response: ", response);
 		response.dump(bos);
 		response_headers.headers.set(sslit("Content-Type"), "application/json");
 		Http::Session::send_chunked_header(STD_MOVE(response_headers));

@@ -2,11 +2,11 @@
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "system_servlet_base.hpp"
+#include "system_http_servlet_base.hpp"
 
 namespace Poseidon {
 
-SystemServletBase::~SystemServletBase(){
+SystemHttpServletBase::~SystemHttpServletBase(){
 	//
 }
 

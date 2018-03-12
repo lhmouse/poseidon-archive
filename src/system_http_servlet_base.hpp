@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_SYSTEM_SERVLET_BASE_HPP_
-#define POSEIDON_SYSTEM_SERVLET_BASE_HPP_
+#ifndef POSEIDON_SYSTEM_HTTP_SERVLET_BASE_HPP_
+#define POSEIDON_SYSTEM_HTTP_SERVLET_BASE_HPP_
 
 #include "cxx_util.hpp"
 #include <boost/weak_ptr.hpp>
@@ -12,9 +12,9 @@ namespace Poseidon {
 
 class JsonObject;
 
-class SystemServletBase : NONCOPYABLE {
+class SystemHttpServletBase : NONCOPYABLE {
 public:
-	virtual ~SystemServletBase();
+	virtual ~SystemHttpServletBase();
 
 public:
 	virtual const char *get_uri() const = 0;

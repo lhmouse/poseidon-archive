@@ -51,7 +51,7 @@ pkginclude_HEADERS = \
 	poseidon/src/ssl_factories.hpp	\
 	poseidon/src/job_base.hpp	\
 	poseidon/src/async_job.hpp	\
-	poseidon/src/system_servlet_base.hpp	\
+	poseidon/src/system_http_servlet_base.hpp	\
 	poseidon/src/udp_session_base.hpp	\
 	poseidon/src/udp_server_base.hpp	\
 	poseidon/src/udp_client_base.hpp	\
@@ -84,7 +84,7 @@ pkginclude_HEADERS = \
 	poseidon/src/recursive_mutex.hpp	\
 	poseidon/src/condition_variable.hpp	\
 	poseidon/src/promise.hpp	\
-	poseidon/src/system_session.hpp	\
+	poseidon/src/system_http_session.hpp	\
 	poseidon/src/zlib.hpp
 
 pkginclude_singletonsdir = $(pkgincludedir)/singletons
@@ -93,7 +93,7 @@ pkginclude_singletons_HEADERS = \
 	poseidon/src/singletons/timer_daemon.hpp	\
 	poseidon/src/singletons/main_config.hpp	\
 	poseidon/src/singletons/epoll_daemon.hpp	\
-	poseidon/src/singletons/system_server.hpp	\
+	poseidon/src/singletons/system_http_server.hpp	\
 	poseidon/src/singletons/module_depository.hpp	\
 	poseidon/src/singletons/mysql_daemon.hpp	\
 	poseidon/src/singletons/mongodb_daemon.hpp	\
@@ -203,7 +203,7 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/csv_document.cpp	\
 	poseidon/src/job_base.cpp	\
 	poseidon/src/async_job.cpp	\
-	poseidon/src/system_servlet_base.cpp	\
+	poseidon/src/system_http_servlet_base.cpp	\
 	poseidon/src/optional_map.cpp	\
 	poseidon/src/ssl_raii.cpp	\
 	poseidon/src/ssl_filter.cpp	\
@@ -235,7 +235,7 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/recursive_mutex.cpp	\
 	poseidon/src/condition_variable.cpp	\
 	poseidon/src/promise.cpp	\
-	poseidon/src/system_session.cpp	\
+	poseidon/src/system_http_session.cpp	\
 	poseidon/src/zlib.cpp	\
 	poseidon/src/singletons/main_config.cpp	\
 	poseidon/src/singletons/job_dispatcher.cpp	\
@@ -248,7 +248,7 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/singletons/event_dispatcher.cpp	\
 	poseidon/src/singletons/filesystem_daemon.cpp	\
 	poseidon/src/singletons/profile_depository.cpp	\
-	poseidon/src/singletons/system_server.cpp	\
+	poseidon/src/singletons/system_http_server.cpp	\
 	poseidon/src/singletons/workhorse_camp.cpp	\
 	poseidon/src/cbpp/reader.cpp	\
 	poseidon/src/cbpp/writer.cpp	\

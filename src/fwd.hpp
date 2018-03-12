@@ -46,7 +46,7 @@ class JsonElement;
 
 class JobBase;
 class EventBase;
-class SystemServletBase;
+class SystemHttpServletBase;
 
 class Promise;
 template<typename> class PromiseContainer;
@@ -60,7 +60,7 @@ class UdpSessionBase;
 class UdpClientBase;
 class UdpServerBase;
 
-class SystemSession;
+class SystemHttpSession;
 
 class HexEncoder;
 class HexDecoder;
@@ -83,7 +83,7 @@ class ModuleDepository;
 class MongoDbDaemon;
 class MySqlDaemon;
 class ProfileDepository;
-class SystemServer;
+class SystemHttpServer;
 class TimerDaemon;
 class WorkhorseCamp;
 

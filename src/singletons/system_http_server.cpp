@@ -2,15 +2,15 @@
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "system_server.hpp"
+#include "system_http_server.hpp"
 #include "job_dispatcher.hpp"
 #include "main_config.hpp"
 #include "epoll_daemon.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
-#include "../system_session.hpp"
+#include "../system_http_session.hpp"
 #include "../tcp_server_base.hpp"
-#include "../system_servlet_base.hpp"
+#include "../system_http_servlet_base.hpp"
 #include "../mutex.hpp"
 #include "../exception.hpp"
 #include "../http/authentication.hpp"
@@ -34,7 +34,7 @@ namespace {
 		virtual boost::shared_ptr<TcpSessionBase> on_client_connect(Move<UniqueFile> client) OVERRIDE {
 			PROFILE_ME;
 
-			AUTO(session, boost::make_shared<SystemSession>(STD_MOVE(client), m_auth_ctx));
+			AUTO(session, boost::make_shared<SystemHttpSession>(STD_MOVE(client), m_auth_ctx));
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system TCP client from ", session->get_remote_info());
 			session->set_no_delay(true);
 			return STD_MOVE_IDN(session);
@@ -48,14 +48,14 @@ namespace {
 			return ::strcasecmp(lhs, rhs) < 0;
 		}
 	};
-	typedef boost::container::flat_map<const char *, boost::weak_ptr<const SystemServletBase>, UriComparator> ServletMap;
+	typedef boost::container::flat_map<const char *, boost::weak_ptr<const SystemHttpServletBase>, UriComparator> ServletMap;
 
 	Mutex g_mutex;
 	ServletMap g_servlet_map;
 }
 
-void SystemServer::start(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting system server...");
+void SystemHttpServer::start(){
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting system HTTP server...");
 
 	const AUTO(bind, MainConfig::get<std::string>("system_http_bind"));
 	const AUTO(port, MainConfig::get<boost::uint16_t>("system_http_port"));
@@ -72,15 +72,15 @@ void SystemServer::start(){
 		g_server = server;
 	}
 }
-void SystemServer::stop(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping system server...");
+void SystemHttpServer::stop(){
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping system HTTP server...");
 
 	const Mutex::UniqueLock lock(g_mutex);
 	g_servlet_map.clear();
 	g_server.reset();
 }
 
-boost::shared_ptr<const SystemServletBase> SystemServer::get_servlet(const char *uri){
+boost::shared_ptr<const SystemHttpServletBase> SystemHttpServer::get_servlet(const char *uri){
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
@@ -95,7 +95,7 @@ boost::shared_ptr<const SystemServletBase> SystemServer::get_servlet(const char 
 	}
 	return servlet;
 }
-void SystemServer::get_all_servlets(boost::container::vector<boost::shared_ptr<const SystemServletBase> > &ret){
+void SystemHttpServer::get_all_servlets(boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > &ret){
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
@@ -109,7 +109,7 @@ void SystemServer::get_all_servlets(boost::container::vector<boost::shared_ptr<c
 	}
 }
 
-boost::shared_ptr<const SystemServletBase> SystemServer::register_servlet(boost::shared_ptr<SystemServletBase> servlet){
+boost::shared_ptr<const SystemHttpServletBase> SystemHttpServer::register_servlet(boost::shared_ptr<SystemHttpServletBase> servlet){
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(g_mutex);
