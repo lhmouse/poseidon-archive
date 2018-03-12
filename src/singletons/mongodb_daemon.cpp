@@ -492,9 +492,9 @@ namespace {
 			const AUTO(promise, elem->operation->get_promise());
 			if(promise){
 				if(except){
-					promise->set_success(false);
-				} else {
 					promise->set_exception(STD_MOVE(except), false);
+				} else {
+					promise->set_success(false);
 				}
 			}
 			const Mutex::UniqueLock lock(m_mutex);

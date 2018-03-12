@@ -46,9 +46,9 @@ namespace {
 			const AUTO(promise, m_weak_promise.lock());
 			if(promise){
 				if(except){
-					promise->set_success(false);
-				} else {
 					promise->set_exception(STD_MOVE(except), false);
+				} else {
+					promise->set_success(false);
 				}
 			}
 		}
