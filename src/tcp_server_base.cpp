@@ -8,15 +8,15 @@
 #include "ssl_filter.hpp"
 #include "sock_addr.hpp"
 #include "ip_port.hpp"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <openssl/ssl.h>
 #include "singletons/main_config.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include "system_exception.hpp"
 #include "profiler.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <openssl/ssl.h>
 
 namespace Poseidon {
 
@@ -56,7 +56,7 @@ int TcpServerBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t
 		boost::shared_ptr<TcpSessionBase> session;
 		try {
 			UniqueFile client;
-			if(!client.reset(::accept(get_fd(), NULLPTR, NULLPTR))){
+			if(!client.reset(::accept4(get_fd(), NULLPTR, NULLPTR, SOCK_NONBLOCK))){
 				return errno;
 			}
 			session = on_client_connect(STD_MOVE(client));
