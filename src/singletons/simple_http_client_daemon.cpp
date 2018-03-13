@@ -163,7 +163,7 @@ namespace {
 				}
 				continue;
 			}
-			if(has_any_flags_of(pset.revents, POLLIN) && !socket->has_been_shutdown_read()){
+			if(has_any_flags_of(pset.revents, POLLIN)){
 				readable += has_none_flags_of(pset.revents, POLLERR);
 				err_code = socket->poll_read_and_process(buffer, sizeof(buffer), readable);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
@@ -171,7 +171,7 @@ namespace {
 					socket->force_shutdown();
 				}
 			}
-			if(has_any_flags_of(pset.revents, POLLOUT) && !socket->has_been_shutdown_write()){
+			if(has_any_flags_of(pset.revents, POLLOUT)){
 				writeable += has_none_flags_of(pset.revents, POLLERR);
 				Mutex::UniqueLock write_lock;
 				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writeable);
