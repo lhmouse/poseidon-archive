@@ -17,7 +17,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
-#include <bson.h>
+#include <libbson-1.0/bson.h>
 #pragma GCC diagnostic pop
 
 namespace Poseidon {

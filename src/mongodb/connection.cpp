@@ -19,8 +19,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
-#include <mongoc.h>
-#include <bson.h>
+#include <libbson-1.0/bson.h>
+#include <libmongoc-1.0/mongoc.h>
 #pragma GCC diagnostic pop
 
 namespace Poseidon {

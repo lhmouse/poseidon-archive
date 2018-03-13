@@ -28,7 +28,6 @@ Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.
 * automake  
 * autoconf  
 * libtool  
-* pkg-config  
 * libssl-dev  
 * gettext  
 * make  
