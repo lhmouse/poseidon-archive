@@ -36,10 +36,7 @@ SocketBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	if(atomic_sub(socket->m_delayed_shutdown_guard_count, 1, memorder_relaxed) == 0){
 		if(atomic_load(socket->m_shutdown_write, memorder_acquire)){
 			atomic_store(socket->m_really_shutdown_write, true, memorder_release);
-			const bool pending = EpollDaemon::mark_socket_writeable(socket.get());
-			if(!pending){
-				::shutdown(socket->get_fd(), SHUT_WR);
-			}
+			EpollDaemon::mark_socket_writeable(socket.get());
 		}
 	}
 }
