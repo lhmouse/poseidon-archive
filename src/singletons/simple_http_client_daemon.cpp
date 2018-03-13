@@ -198,19 +198,18 @@ namespace {
 		} while(!socket->has_been_shutdown_read());
 	}
 
-	class SimpleHttpClient : public Http::LowLevelClient {
+	class SimpleHttpClient : public Http::LowLevelClient, public Promise {
 	private:
 		const bool m_wants_entity;
-		const boost::shared_ptr<Promise> m_promised_closure;
 
 		bool m_finished;
 		Http::ResponseHeaders m_response_headers;
 		StreamBuffer m_response_entity;
 
 	public:
-		SimpleHttpClient(const SockAddr &sock_addr, bool use_ssl, bool wants_entity, boost::shared_ptr<Promise> promised_closure)
+		SimpleHttpClient(const SockAddr &sock_addr, bool use_ssl, bool wants_entity)
 			: Http::LowLevelClient(sock_addr, use_ssl)
-			, m_wants_entity(wants_entity), m_promised_closure(STD_MOVE_IDN(promised_closure))
+			, m_wants_entity(wants_entity)
 			, m_finished(false), m_response_headers(), m_response_entity()
 		{
 			//
@@ -218,9 +217,7 @@ namespace {
 
 	protected:
 		void on_close(int err_code) OVERRIDE {
-			if(m_promised_closure){
-				m_promised_closure->set_success(false);
-			}
+			Promise::set_success(false);
 			return Http::LowLevelClient::on_close(err_code);
 		}
 
@@ -296,12 +293,11 @@ namespace {
 					const AUTO(promised_sock_addr, DnsDaemon::enqueue_for_looking_up(params.host, params.port));
 					JobDispatcher::yield(promised_sock_addr, true);
 					const AUTO_REF(sock_addr, promised_sock_addr->get());
-					const AUTO(promised_closure, boost::make_shared<Promise>());
-					client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl, params.request_headers.verb != Http::V_HEAD, promised_closure);
+					client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl, params.request_headers.verb != Http::V_HEAD);
 					client->set_no_delay(true);
 					client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 					EpollDaemon::add_socket(client);
-					JobDispatcher::yield(promised_closure, true);
+					JobDispatcher::yield(client, true);
 					DEBUG_THROW_UNLESS(client->is_finished(), Exception, sslit("Connection was closed prematurely"));
 				} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
@@ -358,7 +354,7 @@ SimpleHttpResponse SimpleHttpClientDaemon::perform(SimpleHttpRequest request){
 		LOG_POSEIDON_DEBUG("Trying: ", Http::get_string_from_verb(request.request_headers.verb), " ", request.request_headers.uri);
 		AUTO(params, parse_simple_http_client_params(should_check_redirect ? request.request_headers : STD_MOVE_IDN(request.request_headers)));
 		AUTO(sock_addr, DnsDaemon::look_up(params.host, params.port));
-		client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl, params.request_headers.verb != Http::V_HEAD, boost::shared_ptr<Promise>());
+		client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl, params.request_headers.verb != Http::V_HEAD);
 		client->set_no_delay(true);
 		client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 		poll_internal(client);
