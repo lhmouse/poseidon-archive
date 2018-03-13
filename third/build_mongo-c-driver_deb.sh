@@ -10,7 +10,6 @@ pkglicense="Apache"
 pkggroup="http://mongoc.org/"
 pkgsource="https://github.com/mongodb/mongo-c-driver/releases/download/${pkgversion}/mongo-c-driver-${pkgversion}.tar.gz"
 maintainer="lh_mouse"
-provides="libmongoc-1.0-dev,libbson-1.0-dev"
 
 dstdir="$(pwd)"
 tmpdir="$(pwd)/tmp"
@@ -24,9 +23,6 @@ _unpackeddir="$(basename "${_archive}" ".tar.gz")"
 [[ -z "${_unpackeddir}" ]] || rm -rf "${_unpackeddir}"
 tar -xzvf "${_archive}"
 cd "${_unpackeddir}"
-CFLAGS="-O2" ./configure --prefix="${prefix}"	\
-	--disable-automatic-init-and-cleanup --with-libbson=bundled
-make -j"$(nproc)"
 
 sudo mkdir -p "${prefix}/bin"
 sudo mkdir -p "${prefix}/etc"
@@ -36,7 +32,21 @@ sudo mkdir -p "${prefix}/man"
 sudo mkdir -p "${prefix}/sbin"
 sudo mkdir -p "${prefix}/share/doc"
 
+pushd "src/libbson"
+./configure --prefix="${prefix}"
+find "src/bson" -name "*.h" -exec sed -i "s@#include <bson.h>@#include \"bson.h\"@" "{}" ";"
+make -j"$(nproc)"
+sudo checkinstall --backup=no --nodoc -y --addso=yes --exclude="${tmpdir}" --exclude="${HOME}"	\
+	--pkgname="libbson-dev" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
+	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="libbson-1.0-dev"
+sudo mv *.deb "${dstdir}/"
+popd
+
+./configure --prefix="${prefix}"	\
+	--disable-automatic-init-and-cleanup --with-libbson=system
+find "src/mongoc" -name "*.h" -exec sed -i "s@#include <bson.h>@#include <libbson-1.0/bson.h>@" "{}" ";"
+make -j"$(nproc)"
 sudo checkinstall --backup=no --nodoc -y --addso=yes --exclude="${tmpdir}" --exclude="${HOME}"	\
 	--pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
-	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="${provides}"
+	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="libmongoc-1.0-dev"
 sudo mv *.deb "${dstdir}/"
