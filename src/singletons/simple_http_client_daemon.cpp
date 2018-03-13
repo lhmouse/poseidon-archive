@@ -147,6 +147,57 @@ namespace {
 		return params;
 	}
 
+	void poll_internal(const boost::shared_ptr<SocketBase> &socket){
+		PROFILE_ME;
+
+		bool readable = false, writeable = false;
+		unsigned char buffer[2048];
+		do {
+			::pollfd pset = { socket->get_fd(), POLLIN | POLLOUT };
+			int err_code = ::poll(&pset, 1, -1);
+			if(err_code < 0){
+				err_code = errno;
+				if(err_code != EINTR){
+					LOG_POSEIDON_ERROR("::poll() failed! errno was ", err_code, " (", get_error_desc(err_code), ")");
+					DEBUG_THROW(SystemException, err_code);
+				}
+				continue;
+			}
+			if(has_any_flags_of(pset.revents, POLLIN) && !socket->has_been_shutdown_read()){
+				readable += has_none_flags_of(pset.revents, POLLERR);
+				err_code = socket->poll_read_and_process(buffer, sizeof(buffer), readable);
+				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
+					LOG_POSEIDON_DEBUG("Socket read error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
+					socket->force_shutdown();
+				}
+			}
+			if(has_any_flags_of(pset.revents, POLLOUT) && !socket->has_been_shutdown_write()){
+				writeable += has_none_flags_of(pset.revents, POLLERR);
+				Mutex::UniqueLock write_lock;
+				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writeable);
+				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
+					LOG_POSEIDON_DEBUG("Socket write error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
+					socket->force_shutdown();
+				}
+			}
+			if(has_any_flags_of(pset.revents, POLLHUP | POLLERR)){
+				if(socket->did_time_out()){
+					err_code = ETIMEDOUT;
+				} else if(has_any_flags_of(pset.revents, POLLERR)){
+					::socklen_t err_len = sizeof(err_code);
+					if(::getsockopt(socket->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
+						err_code = errno;
+						LOG_POSEIDON_WARNING("::getsockopt() failed: fd = ", socket->get_fd(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
+					}
+				} else {
+					err_code = 0;
+				}
+				socket->mark_shutdown();
+				socket->on_close(err_code);
+			}
+		} while(!socket->has_been_shutdown_read());
+	}
+
 	class SimpleHttpClient : public Http::LowLevelClient {
 	private:
 		const bool m_wants_entity;
@@ -310,55 +361,7 @@ SimpleHttpResponse SimpleHttpClientDaemon::perform(SimpleHttpRequest request){
 		client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl, params.request_headers.verb != Http::V_HEAD, boost::shared_ptr<Promise>());
 		client->set_no_delay(true);
 		client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
-		const AUTO(socket, static_cast<SocketBase *>(client.get()));
-
-		bool readable = false, writeable = false;
-		unsigned char buffer[2048];
-		do {
-			::pollfd pset = { socket->get_fd(), POLLIN | POLLOUT };
-			int err_code = ::poll(&pset, 1, -1);
-			if(err_code < 0){
-				err_code = errno;
-				if(err_code != EINTR){
-					LOG_POSEIDON_ERROR("::poll() failed! errno was ", err_code, " (", get_error_desc(err_code), ")");
-					DEBUG_THROW(SystemException, err_code);
-				}
-				continue;
-			}
-			if(has_any_flags_of(pset.revents, POLLIN) && !socket->has_been_shutdown_read()){
-				readable += has_none_flags_of(pset.revents, POLLERR);
-				err_code = socket->poll_read_and_process(buffer, sizeof(buffer), readable);
-				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-					LOG_POSEIDON_DEBUG("Socket read error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
-					socket->force_shutdown();
-				}
-			}
-			if(has_any_flags_of(pset.revents, POLLOUT) && !socket->has_been_shutdown_write()){
-				writeable += has_none_flags_of(pset.revents, POLLERR);
-				Mutex::UniqueLock write_lock;
-				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writeable);
-				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-					LOG_POSEIDON_DEBUG("Socket write error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
-					socket->force_shutdown();
-				}
-			}
-			if(has_any_flags_of(pset.revents, POLLHUP | POLLERR)){
-				if(socket->did_time_out()){
-					err_code = ETIMEDOUT;
-				} else if(has_any_flags_of(pset.revents, POLLERR)){
-					::socklen_t err_len = sizeof(err_code);
-					if(::getsockopt(socket->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
-						err_code = errno;
-						LOG_POSEIDON_WARNING("::getsockopt() failed: fd = ", socket->get_fd(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
-					}
-				} else {
-					err_code = 0;
-				}
-				socket->mark_shutdown();
-				socket->on_close(err_code);
-			}
-		} while(!socket->has_been_shutdown_read());
-
+		poll_internal(client);
 		DEBUG_THROW_UNLESS(client->is_finished(), Exception, sslit("Connection was closed prematurely"));
 	} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
