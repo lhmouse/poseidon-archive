@@ -1,0 +1,35 @@
+language: c++
+
+os: linux
+dist: xenial
+sudo: required
+
+matrix:
+  include:
+    - env: "_config=debug_cxx98"
+    - env: "_config=debug_cxx11"
+    - env: "_config=optimized_debug_cxx98"
+    - env: "_config=optimized_debug_cxx11"
+    - env: "_config=release_cxx98"
+    - env: "_config=release_cxx11"
+
+before_install:
+  - "sudo apt-get -qq update"
+  - "_pkgarch=$(echo \"${_arch}\" | sed \"s/[^a-zA-Z0-9]/-/g\")"
+  - "sudo apt-get install -y libssl-dev libboost-dev libmysqlclient-dev libmongoc-dev"
+
+install:
+  - "./reconfig_${_config}.sh"
+  - "make -j$(nproc)"
+  - "make check"
+
+script:
+  - "exit 0"
+
+notifications:
+  irc:
+    channels:
+      - "ircs://chat.freenode.net:6697/#mcfproj"
+    template:
+      - "[ lh_mouse %{repository_slug}#%{commit}] %{result} on %{branch} by %{author} (%{build_url})"
+  email: false
