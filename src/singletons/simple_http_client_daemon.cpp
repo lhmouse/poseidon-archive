@@ -143,9 +143,7 @@ namespace {
 		// get_params = "{ param=value }"
 		params.request_headers = STD_MOVE(request_headers);
 		params.request_headers.version = 10001;
-		params.request_headers.headers.set(sslit("Connection"), "Close");
 		params.request_headers.headers.set(sslit("Host"), params.host);
-		params.request_headers.headers.erase("Expect");
 		return params;
 	}
 
@@ -194,6 +192,13 @@ namespace {
 		}
 
 	public:
+		bool send(Http::RequestHeaders request_headers, StreamBuffer request_entity){
+			request_headers.headers.set(sslit("Connection"), "Close");
+			request_headers.headers.erase("Expect");
+			DEBUG_THROW_UNLESS(Http::LowLevelClient::send(STD_MOVE(request_headers), STD_MOVE(request_entity)), Exception, sslit("Failed to send data to remote server"));
+			return true;
+		}
+
 		// WARNING: Only call these functions after `has_been_shutdown_read()` returns `true` to avoid race conditions!
 		bool is_finished() const {
 			return m_finished;
@@ -225,28 +230,29 @@ namespace {
 		void perform() FINAL {
 			PROFILE_ME;
 
+			AUTO_REF(request, m_request);
 			SimpleHttpResponse response;
 			STD_EXCEPTION_PTR except;
 			try {
 				boost::shared_ptr<SimpleHttpClient> client;
 
-				const bool should_check_redirect = can_be_redirected(m_request);
+				const bool should_check_redirect = can_be_redirected(request);
 				const AUTO(max_redirect_count, MainConfig::get<std::size_t>("simple_http_client_max_redirect_count", 10));
 				std::size_t retry_count_remaining = checked_add<std::size_t>(max_redirect_count, 1);
 				do {
-					LOG_POSEIDON_DEBUG("Trying: ", Http::get_string_from_verb(m_request.request_headers.verb), " ", m_request.request_headers.uri);
-					AUTO(params, parse_simple_http_client_params(should_check_redirect ? m_request.request_headers : STD_MOVE_IDN(m_request.request_headers)));
+					LOG_POSEIDON_DEBUG("Trying: ", Http::get_string_from_verb(request.request_headers.verb), " ", request.request_headers.uri);
+					AUTO(params, parse_simple_http_client_params(should_check_redirect ? request.request_headers : STD_MOVE_IDN(request.request_headers)));
 					const AUTO(promised_sock_addr, DnsDaemon::enqueue_for_looking_up(params.host, params.port));
 					JobDispatcher::yield(promised_sock_addr, true);
 					const AUTO_REF(sock_addr, promised_sock_addr->get());
 					const AUTO(promised_closure, boost::make_shared<Promise>());
 					client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl, params.request_headers.verb != Http::V_HEAD, promised_closure);
 					client->set_no_delay(true);
-					client->send(params.request_headers.verb, STD_MOVE(params.request_headers.uri), STD_MOVE(params.request_headers.get_params), STD_MOVE(params.request_headers.headers), should_check_redirect ? m_request.request_entity : STD_MOVE_IDN(m_request.request_entity));
+					client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 					EpollDaemon::add_socket(client);
 					JobDispatcher::yield(promised_closure, true);
 					DEBUG_THROW_UNLESS(client->is_finished(), Exception, sslit("Connection was closed prematurely"));
-				} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(m_request, client->get_response_headers()));
+				} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
 				SimpleHttpResponse temp = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };
 				response = STD_MOVE(temp);
@@ -303,7 +309,7 @@ SimpleHttpResponse SimpleHttpClientDaemon::perform(SimpleHttpRequest request){
 		AUTO(sock_addr, DnsDaemon::look_up(params.host, params.port));
 		client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl, params.request_headers.verb != Http::V_HEAD, boost::shared_ptr<Promise>());
 		client->set_no_delay(true);
-		client->send(params.request_headers.verb, STD_MOVE(params.request_headers.uri), STD_MOVE(params.request_headers.get_params), STD_MOVE(params.request_headers.headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
+		client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 		const AUTO(socket, static_cast<SocketBase *>(client.get()));
 
 		bool readable = false, writeable = false;
