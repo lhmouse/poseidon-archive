@@ -10,7 +10,6 @@ pkglicense="GPL or Commercial \\(https://www.mysql.com/about/legal/licensing/oem
 pkggroup="https://dev.mysql.com/"
 pkgsource="https://dev.mysql.com/get/Downloads/Connector-C/mysql-connector-c-${pkgversion}-src.tar.gz"
 maintainer="lh_mouse"
-provides="libmysqlclient-dev"
 
 dstdir="$(pwd)"
 tmpdir="$(pwd)/tmp"
@@ -24,9 +23,6 @@ _unpackeddir="$(basename "${_archive}" ".tar.gz")"
 [[ -z "${_unpackeddir}" ]] || rm -rf "${_unpackeddir}"
 tar -xzvf "${_archive}"
 cd "${_unpackeddir}"
-CFLAGS="-O2" cmake . -DCMAKE_INSTALL_PREFIX="${prefix}" -DINSTALL_INCLUDEDIR="${prefix}/include/mysql"	\
-	-DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DMYSQL_UNIX_ADDR="/var/run/mysqld/mysqld.sock"
-make -j"$(nproc)"
 
 sudo mkdir -p "${prefix}/bin"
 sudo mkdir -p "${prefix}/etc"
@@ -36,7 +32,10 @@ sudo mkdir -p "${prefix}/man"
 sudo mkdir -p "${prefix}/sbin"
 sudo mkdir -p "${prefix}/share/doc"
 
+cmake . -DCMAKE_INSTALL_PREFIX="${prefix}" -DINSTALL_INCLUDEDIR="${prefix}/include/mysql"	\
+	-DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DMYSQL_UNIX_ADDR="/var/run/mysqld/mysqld.sock"
+make -j"$(nproc)"
 sudo checkinstall --backup=no --nodoc -y --addso=yes --exclude="${tmpdir}" --exclude="${HOME}"	\
 	--pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
-	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="${provides}"
+	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="libmysqlclient-dev"
 sudo mv *.deb "${dstdir}/"
