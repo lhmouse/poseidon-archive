@@ -11,6 +11,7 @@ addons:
       - libboost-dev
       - libmysqlclient-dev
       - libmongoc-dev
+      - libbson-dev
 
 matrix:
   include:
