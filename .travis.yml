@@ -25,7 +25,7 @@ before_install:
   - "pushd third"
   - "./build_mysql-connector-c_deb.sh"
   - "./build_mongo-c-driver_deb.sh"
-  - popd
+  - "popd"
 
 install:
   - "./reconfig_${_config}.sh"
