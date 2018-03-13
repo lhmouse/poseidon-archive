@@ -347,7 +347,7 @@ SimpleHttpResponse SimpleHttpClientDaemon::perform(SimpleHttpRequest request){
 		const AUTO(verb, request.request_headers.verb);
 		LOG_POSEIDON_DEBUG("Trying: ", Http::get_string_from_verb(verb), " ", request.request_headers.uri);
 		AUTO(params, parse_simple_http_client_params(should_check_redirect ? request.request_headers : STD_MOVE_IDN(request.request_headers)));
-		AUTO(sock_addr, DnsDaemon::look_up(params.host, params.port));
+		const AUTO(sock_addr, DnsDaemon::look_up(params.host, params.port));
 		client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl);
 		client->set_no_delay(true);
 		client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
