@@ -364,10 +364,7 @@ boost::shared_ptr<const PromiseContainer<SimpleHttpResponse> > SimpleHttpClientD
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<PromiseContainer<SimpleHttpResponse> >());
-	{
-		AUTO(job, boost::make_shared<AsyncPerformJob>(promise, STD_MOVE(request)));
-		JobDispatcher::enqueue(STD_MOVE_IDN(job), VAL_INIT);
-	}
+	JobDispatcher::enqueue(boost::make_shared<AsyncPerformJob>(promise, STD_MOVE(request)), VAL_INIT);
 	return STD_MOVE_IDN(promise);
 }
 
