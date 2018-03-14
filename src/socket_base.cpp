@@ -188,6 +188,7 @@ int SocketBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hi
 	(void)hint_buffer;
 	(void)hint_capacity;
 	(void)readable;
+
 	return EWOULDBLOCK;
 }
 int SocketBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable){
@@ -195,6 +196,7 @@ int SocketBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_bu
 	(void)hint_buffer;
 	(void)hint_capacity;
 	(void)writeable;
+
 	return EWOULDBLOCK;
 }
 void SocketBase::on_close(int err_code){
