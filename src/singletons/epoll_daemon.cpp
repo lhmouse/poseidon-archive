@@ -166,25 +166,25 @@ namespace {
 		int err_code;
 		try {
 			err_code = socket->poll_read_and_process(io_buffer.data(), io_buffer.size(), readable);
-			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-				LOG_POSEIDON_DEBUG("Socket read error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
-				socket->force_shutdown();
-			}
+			LOG_POSEIDON_TRACE("Socket read result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 			err_code = ECONNRESET;
-			socket->force_shutdown();
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON_WARNING("Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			err_code = ECONNRESET;
-			socket->force_shutdown();
 		}
-		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
+		if((err_code == 0) || (err_code == EINTR)){
+			// Success.
+		} else if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 1>(it, (boost::uint64_t)-1);
 			}
+		} else {
+			LOG_POSEIDON_DEBUG("Socket read error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
+			socket->force_shutdown();
 		}
 		return true;
 	}
@@ -216,25 +216,25 @@ namespace {
 		int err_code;
 		try {
 			err_code = socket->poll_write(write_lock, io_buffer.data(), io_buffer.size(), writeable);
-			if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-				LOG_POSEIDON_DEBUG("Socket write error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
-				socket->force_shutdown();
-			}
+			LOG_POSEIDON_TRACE("Socket write result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 			err_code = ECONNRESET;
-			socket->force_shutdown();
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			err_code = ECONNRESET;
-			socket->force_shutdown();
 		}
-		if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
+		if((err_code == 0) || (err_code == EINTR)){
+			// Success.
+		} else if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
 			}
+		} else {
+			LOG_POSEIDON_DEBUG("Socket write error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
+			socket->force_shutdown();
 		}
 		return true;
 	}
@@ -261,19 +261,17 @@ namespace {
 
 		socket->mark_shutdown();
 		try {
+			LOG_POSEIDON_DEBUG("Socket closed: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
 			socket->on_close(err_code);
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 		} catch(...){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 		}
-		{
-			LOG_POSEIDON_DEBUG("Socket closed: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
-			const RecursiveMutex::UniqueLock lock(g_mutex);
-			const AUTO(it, g_socket_map.find<0>(socket.get()));
-			if(it != g_socket_map.end<0>()){
-				g_socket_map.erase<0>(it);
-			}
+		const RecursiveMutex::UniqueLock lock(g_mutex);
+		const AUTO(it, g_socket_map.find<0>(socket.get()));
+		if(it != g_socket_map.end<0>()){
+			g_socket_map.erase<0>(it);
 		}
 		return true;
 	}

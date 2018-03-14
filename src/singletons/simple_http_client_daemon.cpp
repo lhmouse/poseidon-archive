@@ -166,6 +166,7 @@ namespace {
 			if(has_any_flags_of(pset.revents, POLLIN) && has_none_flags_of(pset.revents, POLLERR)){
 				readable = true;
 				err_code = socket->poll_read_and_process(buffer, sizeof(buffer), readable);
+				LOG_POSEIDON_TRACE("Socket read result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
 					LOG_POSEIDON_DEBUG("Socket read error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
 					socket->force_shutdown();
@@ -175,6 +176,7 @@ namespace {
 				writeable = true;
 				Mutex::UniqueLock write_lock;
 				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writeable);
+				LOG_POSEIDON_TRACE("Socket write result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
 					LOG_POSEIDON_DEBUG("Socket write error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
 					socket->force_shutdown();
