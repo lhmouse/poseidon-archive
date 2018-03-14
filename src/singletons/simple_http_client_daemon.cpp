@@ -163,16 +163,16 @@ namespace {
 				}
 				continue;
 			}
-			if(has_any_flags_of(pset.revents, POLLIN)){
-				readable += has_none_flags_of(pset.revents, POLLERR);
+			if(has_any_flags_of(pset.revents, POLLIN) && has_none_flags_of(pset.revents, POLLERR)){
+				readable = true;
 				err_code = socket->poll_read_and_process(buffer, sizeof(buffer), readable);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
 					LOG_POSEIDON_DEBUG("Socket read error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
 					socket->force_shutdown();
 				}
 			}
-			if(has_any_flags_of(pset.revents, POLLOUT)){
-				writeable += has_none_flags_of(pset.revents, POLLERR);
+			if(has_any_flags_of(pset.revents, POLLOUT) && has_none_flags_of(pset.revents, POLLERR)){
+				writeable = true;
 				Mutex::UniqueLock write_lock;
 				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writeable);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){

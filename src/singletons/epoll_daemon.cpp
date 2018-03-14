@@ -102,12 +102,12 @@ namespace {
 				g_socket_map.erase<0>(it);
 				continue;
 			}
-			if(has_any_flags_of(events[i].events, EPOLLIN)){
-				it->readable += has_none_flags_of(events[i].events, EPOLLERR);
+			if(has_any_flags_of(events[i].events, EPOLLIN) && has_none_flags_of(events[i].events, EPOLLERR)){
+				it->readable = true;
 				g_socket_map.set_key<0, 1>(it, now);
 			}
-			if(has_any_flags_of(events[i].events, EPOLLOUT)){
-				it->writeable += has_none_flags_of(events[i].events, EPOLLERR);
+			if(has_any_flags_of(events[i].events, EPOLLOUT) && has_none_flags_of(events[i].events, EPOLLERR)){
+				it->writeable = true;
 				g_socket_map.set_key<0, 2>(it, now);
 			}
 			if(has_any_flags_of(events[i].events, EPOLLHUP | EPOLLERR)){
