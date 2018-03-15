@@ -9,6 +9,7 @@ AC_LANG([C++])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT([disable-static dlopen])
 
+AC_CHECK_LIB([rt], [clock_gettime], [], [AC_MSG_ERROR([Could not find clock library.])])
 AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR([Could not find dynamic library loader.])])
 AC_CHECK_LIB([z], [deflate], [], [AC_MSG_ERROR([Could not find zlib.])])
 AC_CHECK_LIB([ssl], [SSL_read], [], [AC_MSG_ERROR([Could not find openssl.])])
