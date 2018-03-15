@@ -6,7 +6,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CXX
 AC_LANG([C++])
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT([disable-static dlopen])
 
 AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR([Could not find dynamic library loader.])])
