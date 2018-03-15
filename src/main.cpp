@@ -6,8 +6,12 @@
 #include "singletons/main_config.hpp"
 #include "singletons/dns_daemon.hpp"
 #include "singletons/timer_daemon.hpp"
-#include "singletons/mysql_daemon.hpp"
-#include "singletons/mongodb_daemon.hpp"
+#ifdef ENABLE_MYSQL
+#  include "singletons/mysql_daemon.hpp"
+#endif
+#ifdef ENABLE_MONGODB
+#  include "singletons/mongodb_daemon.hpp"
+#endif
 #include "singletons/workhorse_camp.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/system_http_server.hpp"
@@ -343,8 +347,12 @@ namespace {
 
 		START(DnsDaemon);
 		START(FileSystemDaemon);
+#ifdef ENABLE_MYSQL
 		START(MySqlDaemon);
+#endif
+#ifdef ENABLE_MONGODB
 		START(MongoDbDaemon);
+#endif
 		START(JobDispatcher);
 		START(WorkhorseCamp);
 
@@ -373,10 +381,14 @@ namespace {
 				ModuleDepository::load(it->c_str());
 			}
 
+#ifdef ENABLE_MYSQL
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
 			MySqlDaemon::wait_for_all_async_operations();
+#endif
+#ifdef ENABLE_MONGODB
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
 			MongoDbDaemon::wait_for_all_async_operations();
+#endif
 
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
 			JobDispatcher::do_modal(g_running);

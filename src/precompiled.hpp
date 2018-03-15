@@ -4,6 +4,10 @@
 #ifndef POSEIDON_PRECOMPILED_HPP_
 #define POSEIDON_PRECOMPILED_HPP_
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include <string>
 #include <iterator>
 #include <algorithm>

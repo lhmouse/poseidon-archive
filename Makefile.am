@@ -8,20 +8,20 @@ AM_CXXFLAGS = -Wnon-virtual-dtor
 AM_LDFLAGS = -pthread
 
 %.hpp.gch: %.hpp
-	$(CXX) -x c++-header @DEFS@ $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -Wno-error $< -o $@
+	${CXX} -x c++-header ${DEFS} -I. ${AM_CPPFLAGS} ${CPPFLAGS} ${AM_CXXFLAGS} ${CXXFLAGS} -Wno-error $< -o $@
 
-BUILT_SOURCES = \
+BUILT_SOURCES =	\
 	poseidon/src/precompiled.hpp.gch
 
-CLEANFILES = \
+CLEANFILES =	\
 	poseidon/src/precompiled.hpp.gch
 
-EXTRA_DIST = \
+EXTRA_DIST =	\
 	etc/poseidon/main-template.conf	\
 	var/poseidon/mysql_dump/placeholder	\
 	var/poseidon/mongodb_dump/placeholder
 
-pkginclude_HEADERS = \
+pkginclude_HEADERS =	\
 	poseidon/src/fwd.hpp	\
 	poseidon/src/socket_base.hpp	\
 	poseidon/src/tcp_session_base.hpp	\
@@ -85,25 +85,29 @@ pkginclude_HEADERS = \
 	poseidon/src/system_http_session.hpp	\
 	poseidon/src/zlib.hpp
 
-pkginclude_singletonsdir = $(pkgincludedir)/singletons
-pkginclude_singletons_HEADERS = \
+pkginclude_singletonsdir = ${pkgincludedir}/singletons
+pkginclude_singletons_HEADERS =	\
 	poseidon/src/singletons/job_dispatcher.hpp	\
 	poseidon/src/singletons/timer_daemon.hpp	\
 	poseidon/src/singletons/main_config.hpp	\
 	poseidon/src/singletons/epoll_daemon.hpp	\
 	poseidon/src/singletons/system_http_server.hpp	\
 	poseidon/src/singletons/module_depository.hpp	\
-	poseidon/src/singletons/mysql_daemon.hpp	\
-	poseidon/src/singletons/mongodb_daemon.hpp	\
 	poseidon/src/singletons/dns_daemon.hpp	\
 	poseidon/src/singletons/event_dispatcher.hpp	\
 	poseidon/src/singletons/filesystem_daemon.hpp	\
 	poseidon/src/singletons/profile_depository.hpp	\
 	poseidon/src/singletons/workhorse_camp.hpp	\
 	poseidon/src/singletons/simple_http_client_daemon.hpp
+if ENABLE_MYSQL
+pkginclude_singletons_HEADERS += poseidon/src/singletons/mysql_daemon.hpp
+endif
+if ENABLE_MONGODB
+pkginclude_singletons_HEADERS += poseidon/src/singletons/mongodb_daemon.hpp
+endif
 
-pkginclude_httpdir = $(pkgincludedir)/http
-pkginclude_http_HEADERS = \
+pkginclude_httpdir = ${pkgincludedir}/http
+pkginclude_http_HEADERS =	\
 	poseidon/src/http/fwd.hpp	\
 	poseidon/src/http/request_headers.hpp	\
 	poseidon/src/http/response_headers.hpp	\
@@ -125,8 +129,8 @@ pkginclude_http_HEADERS = \
 	poseidon/src/http/header_option.hpp	\
 	poseidon/src/http/multipart.hpp
 
-pkginclude_websocketdir = $(pkgincludedir)/websocket
-pkginclude_websocket_HEADERS = \
+pkginclude_websocketdir = ${pkgincludedir}/websocket
+pkginclude_websocket_HEADERS =	\
 	poseidon/src/websocket/fwd.hpp	\
 	poseidon/src/websocket/handshake.hpp	\
 	poseidon/src/websocket/reader.hpp	\
@@ -139,8 +143,8 @@ pkginclude_websocket_HEADERS = \
 	poseidon/src/websocket/status_codes.hpp	\
 	poseidon/src/websocket/exception.hpp
 
-pkginclude_cbppdir = $(pkgincludedir)/cbpp
-pkginclude_cbpp_HEADERS = \
+pkginclude_cbppdir = ${pkgincludedir}/cbpp
+pkginclude_cbpp_HEADERS =	\
 	poseidon/src/cbpp/fwd.hpp	\
 	poseidon/src/cbpp/reader.hpp	\
 	poseidon/src/cbpp/writer.hpp	\
@@ -153,38 +157,42 @@ pkginclude_cbpp_HEADERS = \
 	poseidon/src/cbpp/status_codes.hpp	\
 	poseidon/src/cbpp/exception.hpp
 
-pkginclude_mysqldir = $(pkgincludedir)/mysql
-pkginclude_mysql_HEADERS = \
+if ENABLE_MYSQL
+pkginclude_mysqldir = ${pkgincludedir}/mysql
+pkginclude_mysql_HEADERS =	\
 	poseidon/src/mysql/fwd.hpp	\
 	poseidon/src/mysql/object_generator.hpp	\
 	poseidon/src/mysql/connection.hpp	\
 	poseidon/src/mysql/object_base.hpp	\
 	poseidon/src/mysql/exception.hpp	\
 	poseidon/src/mysql/formatting.hpp
+endif
 
-pkginclude_mongodbdir = $(pkgincludedir)/mongodb
-pkginclude_mongodb_HEADERS = \
+if ENABLE_MONGODB
+pkginclude_mongodbdir = ${pkgincludedir}/mongodb
+pkginclude_mongodb_HEADERS =	\
 	poseidon/src/mongodb/fwd.hpp	\
 	poseidon/src/mongodb/object_generator.hpp	\
 	poseidon/src/mongodb/connection.hpp	\
 	poseidon/src/mongodb/object_base.hpp	\
 	poseidon/src/mongodb/exception.hpp	\
 	poseidon/src/mongodb/bson_builder.hpp
+endif
 
-bin_PROGRAMS = \
+bin_PROGRAMS =	\
 	bin/poseidon
 
-bin_poseidon_SOURCES = \
+bin_poseidon_SOURCES =	\
 	poseidon/src/main.cpp
 
-bin_poseidon_LDADD = \
+bin_poseidon_LDADD =	\
 	lib/libposeidon-main.la	\
-	$(AM_LIBS)
+	${AM_LIBS}
 
-lib_LTLIBRARIES = \
+lib_LTLIBRARIES =	\
 	lib/libposeidon-main.la
 
-lib_libposeidon_main_la_SOURCES = \
+lib_libposeidon_main_la_SOURCES =	\
 	poseidon/src/string.cpp	\
 	poseidon/src/time.cpp	\
 	poseidon/src/errno.cpp	\
@@ -238,8 +246,6 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/zlib.cpp	\
 	poseidon/src/singletons/main_config.cpp	\
 	poseidon/src/singletons/job_dispatcher.cpp	\
-	poseidon/src/singletons/mysql_daemon.cpp	\
-	poseidon/src/singletons/mongodb_daemon.cpp	\
 	poseidon/src/singletons/dns_daemon.cpp	\
 	poseidon/src/singletons/epoll_daemon.cpp	\
 	poseidon/src/singletons/timer_daemon.cpp	\
@@ -284,33 +290,41 @@ lib_libposeidon_main_la_SOURCES = \
 	poseidon/src/websocket/session.cpp	\
 	poseidon/src/websocket/low_level_client.cpp	\
 	poseidon/src/websocket/client.cpp	\
-	poseidon/src/websocket/exception.cpp	\
+	poseidon/src/websocket/exception.cpp
+if ENABLE_MYSQL
+lib_libposeidon_main_la_SOURCES +=	\
+	poseidon/src/singletons/mysql_daemon.cpp	\
 	poseidon/src/mysql/object_base.cpp	\
 	poseidon/src/mysql/exception.cpp	\
 	poseidon/src/mysql/formatting.cpp	\
-	poseidon/src/mysql/connection.cpp	\
+	poseidon/src/mysql/connection.cpp
+endif
+if ENABLE_MONGODB
+lib_libposeidon_main_la_SOURCES +=	\
+	poseidon/src/singletons/mongodb_daemon.cpp	\
 	poseidon/src/mongodb/object_base.cpp	\
 	poseidon/src/mongodb/exception.cpp	\
 	poseidon/src/mongodb/connection.cpp	\
 	poseidon/src/mongodb/bson_builder.cpp
+endif
 
-lib_libposeidon_main_la_LDFLAGS = \
+lib_libposeidon_main_la_LDFLAGS =	\
 	-no-undefined -version-info 20:0:0
 
 sysconf_DATA =
 
-pkgsysconfdir = $(sysconfdir)/@PACKAGE@
-pkgsysconf_DATA = \
+pkgsysconfdir = ${sysconfdir}/@PACKAGE@
+pkgsysconf_DATA =	\
 	etc/poseidon/main-template.conf
 
 localstate_DATA =
 
-pkglocalstatedir = $(localstatedir)/@PACKAGE@
+pkglocalstatedir = ${localstatedir}/@PACKAGE@
 
-pkglocalstatemysql_dumpdir = $(pkglocalstatedir)/mysql_dump
-pkglocalstatemysql_dump_DATA = \
+pkglocalstatemysql_dumpdir = ${pkglocalstatedir}/mysql_dump
+pkglocalstatemysql_dump_DATA =	\
 	var/poseidon/mysql_dump/placeholder
 
-pkglocalstatemongodb_dumpdir = $(pkglocalstatedir)/mongodb_dump
-pkglocalstatemongodb_dump_DATA = \
+pkglocalstatemongodb_dumpdir = ${pkglocalstatedir}/mongodb_dump
+pkglocalstatemongodb_dump_DATA =	\
 	var/poseidon/mongodb_dump/placeholder
