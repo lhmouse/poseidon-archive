@@ -6,12 +6,6 @@
 #include "singletons/main_config.hpp"
 #include "singletons/dns_daemon.hpp"
 #include "singletons/timer_daemon.hpp"
-#ifdef ENABLE_MYSQL
-#  include "singletons/mysql_daemon.hpp"
-#endif
-#ifdef ENABLE_MONGODB
-#  include "singletons/mongodb_daemon.hpp"
-#endif
 #include "singletons/workhorse_camp.hpp"
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/system_http_server.hpp"
@@ -21,6 +15,15 @@
 #include "singletons/filesystem_daemon.hpp"
 #include "singletons/profile_depository.hpp"
 #include "singletons/simple_http_client_daemon.hpp"
+#ifdef ENABLE_MYSQL
+#  include "singletons/mysql_daemon.hpp"
+#endif
+#ifdef ENABLE_MONGODB
+#  include "singletons/mongodb_daemon.hpp"
+#endif
+#ifdef ENABLE_LIBMAGIC
+#  include "singletons/libmagic_daemon.hpp"
+#endif
 #include "log.hpp"
 #include "profiler.hpp"
 #include "time.hpp"
@@ -345,6 +348,9 @@ namespace {
 	void run(){
 		PROFILE_ME;
 
+#ifdef ENABLE_LIBMAGIC
+		START(LibMagicDaemon);
+#endif
 		START(DnsDaemon);
 		START(FileSystemDaemon);
 #ifdef ENABLE_MYSQL
