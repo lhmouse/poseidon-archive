@@ -32,12 +32,12 @@ AM_COND_IF([ENABLE_MONGODB], [
 	AC_DEFINE([ENABLE_MONGODB], [1], [Define to 1 to build the MongoDB daemon.])
 ])
 
-AC_ARG_ENABLE([libmagic], AS_HELP_STRING([--disable-libmagic], [disable libmagic support]))
-AM_CONDITIONAL([ENABLE_LIBMAGIC], [test "${enable_libmagic}" != "no"])
-AM_COND_IF([ENABLE_LIBMAGIC], [
+AC_ARG_ENABLE([magic], AS_HELP_STRING([--disable-magic], [disable magic number recognition]))
+AM_CONDITIONAL([ENABLE_MAGIC], [test "${enable_magic}" != "no"])
+AM_COND_IF([ENABLE_MAGIC], [
 	AC_CHECK_LIB([magic], [magic_open], [],
-		[AC_MSG_ERROR([Could not find libmagic. (Pass --disable-libmagic to disable libmagic support.)])])
-	AC_DEFINE([ENABLE_LIBMAGIC], [1], [Define to 1 to utilize libmagic.])
+		[AC_MSG_ERROR([Could not find libmagic. (Pass --disable-magic to disable magic number recognition.)])])
+	AC_DEFINE([ENABLE_MAGIC], [1], [Define to 1 to build the Magic daemon.])
 ])
 
 AC_CONFIG_FILES([Makefile])

@@ -21,8 +21,8 @@
 #ifdef ENABLE_MONGODB
 #  include "singletons/mongodb_daemon.hpp"
 #endif
-#ifdef ENABLE_LIBMAGIC
-#  include "singletons/libmagic_daemon.hpp"
+#ifdef ENABLE_MAGIC
+#  include "singletons/magic_daemon.hpp"
 #endif
 #include "log.hpp"
 #include "profiler.hpp"
@@ -348,8 +348,8 @@ namespace {
 	void run(){
 		PROFILE_ME;
 
-#ifdef ENABLE_LIBMAGIC
-		START(LibMagicDaemon);
+#ifdef ENABLE_MAGIC
+		START(MagicDaemon);
 #endif
 		START(DnsDaemon);
 		START(FileSystemDaemon);

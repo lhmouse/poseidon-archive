@@ -2,7 +2,7 @@
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "libmagic_daemon.hpp"
+#include "magic_daemon.hpp"
 #include "main_config.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
@@ -40,27 +40,27 @@ namespace {
 	UniqueHandle<MagicCloser> g_cookie;
 }
 
-void LibMagicDaemon::start(){
+void MagicDaemon::start(){
 	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting libmagic daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting magic daemon...");
 
-	const AUTO_REF(database, MainConfig::get<std::string>("libmagic_database", "/usr/share/misc/magic"));
-	LOG_POSEIDON_INFO("Loading libmagic database: ", database);
+	const AUTO_REF(database, MainConfig::get<std::string>("magic_database", "/usr/share/misc/magic"));
+	LOG_POSEIDON_INFO("Loading magic database: ", database);
 	open_database(database.c_str()).swap(g_cookie);
 }
-void LibMagicDaemon::stop(){
+void MagicDaemon::stop(){
 	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping libmagic daemon...");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping magic daemon...");
 
 	g_cookie.reset();
 }
 
-const char *LibMagicDaemon::guess_mime_type(const void *data, std::size_t size){
+const char *MagicDaemon::guess_mime_type(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	DEBUG_THROW_ASSERT(data);

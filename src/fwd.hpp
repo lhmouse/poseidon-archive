@@ -86,7 +86,7 @@ class ProfileDepository;
 class SystemHttpServer;
 class TimerDaemon;
 class WorkhorseCamp;
-class LibMagicDaemon;
+class MagicDaemon;
 
 }
 
