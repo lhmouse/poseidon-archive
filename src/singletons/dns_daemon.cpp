@@ -3,8 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "dns_daemon.hpp"
-#include <netdb.h>
-#include <unistd.h>
 #include "../log.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
@@ -14,6 +12,8 @@
 #include "../ip_port.hpp"
 #include "../raii.hpp"
 #include "../profiler.hpp"
+#include <netdb.h>
+#include <unistd.h>
 
 namespace Poseidon {
 
