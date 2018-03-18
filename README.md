@@ -34,6 +34,7 @@ Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.
 * g++  
 * libboost-dev  
 * lib{a,l,ub}san  
+* libmagic-dev (_OPTIONAL_)  
 
 建议 g++ 版本至少为 4.7 以支持 C++11 特性。  
 针对 C++98 的支持可能在未来的版本中被移除。  

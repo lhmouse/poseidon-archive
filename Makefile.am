@@ -104,6 +104,9 @@ endif
 if ENABLE_MONGODB
 pkginclude_singletons_HEADERS += poseidon/src/singletons/mongodb_daemon.hpp
 endif
+if ENABLE_LIBMAGIC
+pkginclude_singletons_HEADERS += poseidon/src/singletons/libmagic_daemon.hpp
+endif
 
 pkginclude_httpdir = ${pkgincludedir}/http
 pkginclude_http_HEADERS =	\
@@ -305,6 +308,10 @@ lib_libposeidon_main_la_SOURCES +=	\
 	poseidon/src/mongodb/exception.cpp	\
 	poseidon/src/mongodb/connection.cpp	\
 	poseidon/src/mongodb/bson_builder.cpp
+endif
+if ENABLE_LIBMAGIC
+lib_libposeidon_main_la_SOURCES +=	\
+	poseidon/src/singletons/libmagic_daemon.cpp
 endif
 
 lib_libposeidon_main_la_LDFLAGS =	\
