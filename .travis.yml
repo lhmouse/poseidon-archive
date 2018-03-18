@@ -9,6 +9,7 @@ addons:
     packages:
       - libssl-dev
       - libboost-dev
+      - libmagic-dev
       - cmake
       - checkinstall
 
