@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 _common_pp="-DNDEBUG"
 _c_pp="-std=c99"
 _cxx_pp="-std=c++98"
