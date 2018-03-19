@@ -3,22 +3,12 @@
 
 #include "../precompiled.hpp"
 #include "bson_builder.hpp"
-
-#if __GNUC__ >= 6
-#  pragma GCC diagnostic ignored "-Wignored-attributes"
-#endif
-
 #include "../exception.hpp"
 #include "../time.hpp"
 #include "../profiler.hpp"
 #include "../buffer_streams.hpp"
 #include "../raii.hpp"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
 #include <libbson-1.0/bson.h>
-#pragma GCC diagnostic pop
 
 namespace Poseidon {
 namespace MongoDb {
