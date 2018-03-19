@@ -434,8 +434,8 @@ void StreamBuffer::splice(StreamBuffer &rhs) NOEXCEPT {
 }
 
 bool StreamBuffer::enumerate_chunk(const void **data, std::size_t *count, StreamBuffer::EnumerationCookie &cookie) const NOEXCEPT {
-	const AUTO(chunk, cookie.prev ? cookie.prev->next : m_first);
-	cookie.prev = chunk;
+	const AUTO(chunk, cookie.m_prev ? cookie.m_prev->next : m_first);
+	cookie.m_prev = chunk;
 	if(!chunk){
 		return false;
 	}
@@ -448,8 +448,8 @@ bool StreamBuffer::enumerate_chunk(const void **data, std::size_t *count, Stream
 	return true;
 }
 bool StreamBuffer::enumerate_chunk(void **data, std::size_t *count, StreamBuffer::EnumerationCookie &cookie) NOEXCEPT {
-	const AUTO(chunk, cookie.prev ? cookie.prev->next : m_first);
-	cookie.prev = chunk;
+	const AUTO(chunk, cookie.m_prev ? cookie.m_prev->next : m_first);
+	cookie.m_prev = chunk;
 	if(!chunk){
 		return false;
 	}

@@ -19,22 +19,7 @@ private:
 	struct ChunkHeader;
 
 public:
-	class EnumerationCookie {
-	public:
-		ChunkHeader *prev;
-
-	private:
-		EnumerationCookie(const EnumerationCookie &);
-		EnumerationCookie &operator=(const EnumerationCookie &);
-
-	public:
-		CONSTEXPR EnumerationCookie() NOEXCEPT
-			: prev(NULLPTR)
-		{
-			//
-		}
-	};
-
+	class EnumerationCookie;
 	class ReadIterator;
 	class WriteIterator;
 
@@ -153,6 +138,21 @@ inline std::ostream &operator<<(std::ostream &os, const StreamBuffer &rhs){
 	rhs.dump(os);
 	return os;
 }
+
+class StreamBuffer::EnumerationCookie {
+	friend StreamBuffer;
+
+private:
+	ChunkHeader *m_prev;
+
+public:
+	CONSTEXPR EnumerationCookie() NOEXCEPT
+		: m_prev(NULLPTR)
+	{
+		//
+	}
+};
+
 
 class StreamBuffer::ReadIterator : public std::iterator<std::input_iterator_tag, int> {
 private:
