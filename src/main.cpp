@@ -366,11 +366,13 @@ try {
 		case '?':
 _print_help:
 			::fprintf(stderr,
+                //        1         2         3         4         5         6         7         8
+				// 345678901234567890123456789012345678901234567890123456789012345678901234567890
 				"Usage: %s [-dhv?] [<directory>]\n"
 				"  -d            daemonize\n"
 				"  -h -?         show this help message\n"
-				"  -v            do not load log masks from 'main.conf'\n"
-				"  <directory>   set new working directory\n"
+				"  -v            do not load `log_masked_levels` from 'main.conf'\n"
+				"  <directory>   set working directory here before anything else\n"
 				, argv[0]);
 			return EXIT_FAILURE;
 		default:
@@ -385,7 +387,7 @@ _print_help:
 		new_wd = argv[optind];
 		break;
 	default:
-		::fprintf(stderr, "Too many arguments - %s\n", argv[optind + 1]);
+		::fprintf(stderr, "Too many arguments: %s\n", argv[optind + 1]);
 		goto _print_help;
 	}
 
@@ -396,7 +398,6 @@ _print_help:
 	}
 
 	Logger::set_thread_tag("P   "); // Primary
-	::pthread_setname_np(::pthread_self(), "Primary");
 
 	::signal(SIGHUP, &sighup_proc);
 	::signal(SIGTERM, &sigterm_proc);
