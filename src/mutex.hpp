@@ -16,54 +16,7 @@ class Mutex : NONCOPYABLE {
 	friend ConditionVariable;
 
 public:
-	class UniqueLock : NONCOPYABLE {
-		friend ConditionVariable;
-
-	private:
-		Mutex *m_target;
-		bool m_locked;
-
-	private:
-		UniqueLock(const UniqueLock &rhs);
-		UniqueLock &operator=(const UniqueLock &rhs);
-
-	public:
-		UniqueLock();
-		explicit UniqueLock(Mutex &target, bool locks_target = true);
-		UniqueLock(Move<UniqueLock> rhs) NOEXCEPT
-			: m_target(NULLPTR), m_locked(false)
-		{
-			rhs.swap(*this);
-		}
-		UniqueLock &operator=(Move<UniqueLock> rhs) NOEXCEPT {
-			UniqueLock(STD_MOVE(rhs)).swap(*this);
-			return *this;
-		}
-		~UniqueLock();
-
-	public:
-		bool is_locked() const NOEXCEPT;
-		void lock() NOEXCEPT;
-		void unlock() NOEXCEPT;
-
-		void swap(UniqueLock &rhs) NOEXCEPT {
-			using std::swap;
-			swap(m_target, rhs.m_target);
-			swap(m_locked, rhs.m_locked);
-		}
-
-	public:
-#ifdef POSEIDON_CXX11
-		explicit operator bool() const noexcept {
-			return is_locked();
-		}
-#else
-		typedef bool (UniqueLock::*DummyBool_)() const;
-		operator DummyBool_() const NOEXCEPT {
-			return is_locked() ? &UniqueLock::is_locked : 0;
-		}
-#endif
-	};
+	class UniqueLock;
 
 private:
 	::pthread_mutex_t m_mutex;
@@ -71,6 +24,55 @@ private:
 public:
 	Mutex();
 	~Mutex();
+};
+
+class Mutex::UniqueLock : NONCOPYABLE {
+	friend ConditionVariable;
+
+private:
+	Mutex *m_target;
+	bool m_locked;
+
+private:
+	UniqueLock(const UniqueLock &rhs);
+	UniqueLock &operator=(const UniqueLock &rhs);
+
+public:
+	UniqueLock();
+	explicit UniqueLock(Mutex &target, bool locks_target = true);
+	UniqueLock(Move<UniqueLock> rhs) NOEXCEPT
+		: m_target(NULLPTR), m_locked(false)
+	{
+		rhs.swap(*this);
+	}
+	UniqueLock &operator=(Move<UniqueLock> rhs) NOEXCEPT {
+		UniqueLock(STD_MOVE(rhs)).swap(*this);
+		return *this;
+	}
+	~UniqueLock();
+
+public:
+	bool is_locked() const NOEXCEPT;
+	void lock() NOEXCEPT;
+	void unlock() NOEXCEPT;
+
+	void swap(UniqueLock &rhs) NOEXCEPT {
+		using std::swap;
+		swap(m_target, rhs.m_target);
+		swap(m_locked, rhs.m_locked);
+	}
+
+public:
+#ifdef POSEIDON_CXX11
+	explicit operator bool() const noexcept {
+		return is_locked();
+	}
+#else
+	typedef bool (UniqueLock::*DummyBool_)() const;
+	operator DummyBool_() const NOEXCEPT {
+		return is_locked() ? &UniqueLock::is_locked : 0;
+	}
+#endif
 };
 
 inline void swap(Mutex::UniqueLock &lhs, Mutex::UniqueLock &rhs) NOEXCEPT {

@@ -19,14 +19,7 @@ class IpPort;
 class SocketBase : public virtual VirtualSharedFromThis {
 public:
 	// 至少一个此对象存活的条件下连接不会由于 RDHUP 而被关掉。
-	class DelayedShutdownGuard : NONCOPYABLE {
-	private:
-		const boost::weak_ptr<SocketBase> m_weak;
-
-	public:
-		explicit DelayedShutdownGuard(boost::weak_ptr<SocketBase> weak);
-		~DelayedShutdownGuard();
-	};
+	class DelayedShutdownGuard;
 
 private:
 	const UniqueFile m_socket;
@@ -80,6 +73,15 @@ public:
 	virtual int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable);
 	virtual int poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable);
 	virtual void on_close(int err_code);
+};
+
+class SocketBase::DelayedShutdownGuard : NONCOPYABLE {
+private:
+	const boost::weak_ptr<SocketBase> m_weak;
+
+public:
+	explicit DelayedShutdownGuard(boost::weak_ptr<SocketBase> weak);
+	~DelayedShutdownGuard();
 };
 
 }
