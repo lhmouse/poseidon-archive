@@ -66,9 +66,8 @@ public:
 	bool shutdown_write() NOEXCEPT OVERRIDE;
 	void force_shutdown() NOEXCEPT OVERRIDE;
 
-	bool is_throttled() const OVERRIDE;
-
 	bool is_using_ssl() const;
+	bool is_throttled() const OVERRIDE;
 
 	void set_no_delay(bool enabled = true);
 	void set_timeout(boost::uint64_t timeout);

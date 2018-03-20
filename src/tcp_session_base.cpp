@@ -4,10 +4,6 @@
 #include "precompiled.hpp"
 #include "tcp_session_base.hpp"
 #include "ssl_filter.hpp"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 #include "singletons/epoll_daemon.hpp"
 #include "singletons/main_config.hpp"
 #include "log.hpp"
@@ -17,6 +13,10 @@
 #include "checked_arithmetic.hpp"
 #include "singletons/timer_daemon.hpp"
 #include "time.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 
 namespace Poseidon {
 
@@ -211,16 +211,15 @@ void TcpSessionBase::force_shutdown() NOEXCEPT {
 	SocketBase::force_shutdown();
 }
 
+bool TcpSessionBase::is_using_ssl() const {
+	return !!m_ssl_filter;
+}
 bool TcpSessionBase::is_throttled() const {
 	const Mutex::UniqueLock lock(m_send_mutex);
 	if(m_send_buffer.size() >= 65536){
 		return true;
 	}
 	return SocketBase::is_throttled();
-}
-
-bool TcpSessionBase::is_using_ssl() const {
-	return !!m_ssl_filter;
 }
 
 void TcpSessionBase::set_no_delay(bool enabled){
