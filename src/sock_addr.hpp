@@ -35,6 +35,7 @@ public:
 	// 如果是 IPv4 地址返回 false，如果是 IPv6 地址返回 true，否则抛出一个异常。
 	bool is_ipv6() const;
 	bool is_private() const;
+	bool is_multicast() const;
 };
 
 }

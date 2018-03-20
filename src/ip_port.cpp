@@ -35,19 +35,22 @@ IpPort::IpPort(const char *ip_str, boost::uint16_t port_num){
 }
 IpPort::IpPort(const SockAddr &sock_addr){
 	const int family = sock_addr.get_family();
-	if(family == AF_INET){
+	switch(family){
+	case AF_INET: {
 		::sockaddr_in &sin = as_sin(sock_addr.data());
 		DEBUG_THROW_UNLESS(sock_addr.size() >= sizeof(sin), Exception, sslit("Invalid IPv4 SockAddr"));
 		BOOST_STATIC_ASSERT(sizeof(m_ip) >= INET_ADDRSTRLEN);
 		DEBUG_THROW_UNLESS(::inet_ntop(AF_INET, &(sin.sin_addr), m_ip, sizeof(m_ip)), SystemException);
 		m_port = load_be(sin.sin_port);
-	} else if(family == AF_INET6){
+		break; }
+	case AF_INET6: {
 		::sockaddr_in6 &sin6 = as_sin6(sock_addr.data());
 		DEBUG_THROW_UNLESS(sock_addr.size() >= sizeof(sin6), Exception, sslit("Invalid IPv6 SockAddr"));
 		BOOST_STATIC_ASSERT(sizeof(m_ip) >= INET6_ADDRSTRLEN);
 		DEBUG_THROW_UNLESS(::inet_ntop(AF_INET6, &(sin6.sin6_addr), m_ip, sizeof(m_ip)), SystemException);
 		m_port = load_be(sin6.sin6_port);
-	} else {
+		break; }
+	default:
 		LOG_POSEIDON_ERROR("Unknown IP protocol: family = ", family);
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
@@ -75,7 +78,7 @@ const IpPort &listening_ip_port() NOEXCEPT {
 }
 
 bool operator<(const IpPort &lhs, const IpPort &rhs) NOEXCEPT {
-	int cmp = std::strcmp(lhs.ip(), rhs.ip());
+	const int cmp = std::strcmp(lhs.ip(), rhs.ip());
 	if(cmp != 0){
 		return cmp < 0;
 	}

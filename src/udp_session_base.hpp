@@ -37,6 +37,11 @@ public:
 	bool shutdown_write() NOEXCEPT OVERRIDE;
 	void force_shutdown() NOEXCEPT OVERRIDE;
 
+	void add_membership(const SockAddr &group);
+	void drop_membership(const SockAddr &group);
+	void set_multicast_loop(bool enabled = true);
+	void set_multicast_ttl(int ttl);
+
 	bool send(const SockAddr &sock_addr, StreamBuffer buffer);
 };
 

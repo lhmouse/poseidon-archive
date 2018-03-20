@@ -29,17 +29,18 @@ namespace {
 			return true;
 		} else if(addr[0] >= 224){ // D 类、E 类地址和广播地址
 			return true;
-		} else {
-			return false;
 		}
+		return false;
+	}
+	inline bool is_ipv4_multicast(const unsigned char *addr){
+		return (addr[0] & 0xF0) == 224;
 	}
 	inline bool are_zeroes(const unsigned char *data, std::size_t size){
-		for(std::size_t i = 0; i < size; ++i){
-			if(data[i] != 0){
-				return false;
-			}
-		}
-		return true;
+#ifdef POSEIDON_CXX11
+		return std::all_of(data, data + size, [](unsigned char byte){ return byte == 0; });
+#else
+		return std::count(data, data + size, static_cast<unsigned char>(0)) == size;
+#endif
 	}
 
 	inline ::sockaddr &as_sa(const void *data) NOEXCEPT {
@@ -99,23 +100,25 @@ int SockAddr::get_family() const {
 }
 bool SockAddr::is_ipv6() const {
 	const int family = get_family();
-	if(family == AF_INET){
+	switch(family){
+	case AF_INET:
 		return false;
-	} else if(family == AF_INET6){
+	case AF_INET6:
 		return true;
-	} else {
+	default:
 		LOG_POSEIDON_ERROR("Unknown IP protocol: family = ", family);
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
 }
 bool SockAddr::is_private() const {
 	const int family = get_family();
-	if(family == AF_INET){
+	switch(family){
+	case AF_INET: {
 		const ::sockaddr_in &sin = as_sin(m_data);
 		DEBUG_THROW_UNLESS(m_size >= sizeof(sin), Exception, sslit("Invalid IPv4 SockAddr"));
 		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin.sin_addr));
-		return is_ipv4_private(addr);
-	} else if(family == AF_INET6){
+		return is_ipv4_private(addr); }
+	case AF_INET6: {
 		const ::sockaddr_in6 &sin6 = as_sin6(m_data);
 		DEBUG_THROW_UNLESS(m_size >= sizeof(sin6), Exception, sslit("Invalid IPv6 SockAddr"));
 		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin6.sin6_addr));
@@ -133,10 +136,32 @@ bool SockAddr::is_private() const {
 			return true;
 		} else if(addr[0] >= 0xFC){ // 私有地址、链路本地地址和广播地址
 			return true;
-		} else {
-			return false;
 		}
-	} else {
+		return false; }
+	default:
+		LOG_POSEIDON_ERROR("Unknown IP protocol: family = ", family);
+		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
+	}
+}
+bool SockAddr::is_multicast() const {
+	const int family = get_family();
+	switch(family){
+	case AF_INET: {
+		const ::sockaddr_in &sin = as_sin(m_data);
+		DEBUG_THROW_UNLESS(m_size >= sizeof(sin), Exception, sslit("Invalid IPv4 SockAddr"));
+		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin.sin_addr));
+		return is_ipv4_multicast(addr); }
+	case AF_INET6: {
+		const ::sockaddr_in6 &sin6 = as_sin6(m_data);
+		DEBUG_THROW_UNLESS(m_size >= sizeof(sin6), Exception, sslit("Invalid IPv6 SockAddr"));
+		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin6.sin6_addr));
+		if((addr[0] == 0xFF) && (addr[1] == 0)){
+			return true;
+		} else if(are_zeroes(addr, 10) && (addr[10] == 0xFF) && (addr[11] == 0xFF)){ // IPv4 翻译地址
+			return is_ipv4_multicast(addr + 12);
+		}
+		return false; }
+	default:
 		LOG_POSEIDON_ERROR("Unknown IP protocol: family = ", family);
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}

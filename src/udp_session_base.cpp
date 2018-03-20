@@ -3,16 +3,37 @@
 
 #include "precompiled.hpp"
 #include "udp_session_base.hpp"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/udp.h>
 #include "singletons/epoll_daemon.hpp"
 #include "log.hpp"
 #include "system_exception.hpp"
 #include "profiler.hpp"
+#include "errno.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/udp.h>
+#include <net/if.h>
 
 namespace Poseidon {
+
+namespace {
+	struct InterfaceListFreeer {
+		CONSTEXPR struct ::if_nameindex *operator()() NOEXCEPT {
+			return NULLPTR;
+		}
+		void operator()(struct ::if_nameindex *ptr) NOEXCEPT {
+			::if_freenameindex(ptr);
+		}
+	};
+
+	UniqueHandle<InterfaceListFreeer> get_all_interfaces(){
+		PROFILE_ME;
+
+		UniqueHandle<InterfaceListFreeer> list;
+		DEBUG_THROW_UNLESS(list.reset(::if_nameindex()), SystemException);
+		return list;
+	}
+}
 
 UdpSessionBase::UdpSessionBase(Move<UniqueFile> socket)
 	: SocketBase(STD_MOVE(socket))
@@ -125,6 +146,115 @@ int UdpSessionBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hin
 void UdpSessionBase::on_message_too_large(const SockAddr &sock_addr, StreamBuffer data){
 	(void)sock_addr;
 	(void)data;
+}
+
+void UdpSessionBase::add_membership(const SockAddr &group){
+	PROFILE_ME;
+
+	const bool use_ipv6 = is_using_ipv6();
+	DEBUG_THROW_UNLESS(group.is_ipv6() == use_ipv6, Exception, sslit("Socket family does not match the group address provided"));
+	const AUTO(interfaces, get_all_interfaces());
+	AUTO(ptr, interfaces.get());
+	try {
+		while(ptr->if_name){
+			LOG_POSEIDON_DEBUG("Adding UDP socket to multicast group: group = ", IpPort(group), ", interface = ", ptr->if_name);
+			if(use_ipv6){
+				::ipv6_mreq mreq;
+				mreq.ipv6mr_multiaddr = static_cast<const ::sockaddr_in6 *>(group.data())->sin6_addr;
+				mreq.ipv6mr_interface = ptr->if_index;
+				if(::setsockopt(get_fd(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0){
+					const int err_code = errno;
+					LOG_POSEIDON_ERROR("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
+					DEBUG_THROW(SystemException, err_code);
+				}
+			} else {
+				::ip_mreqn mreq;
+				mreq.imr_multiaddr = static_cast<const ::sockaddr_in *>(group.data())->sin_addr;
+				mreq.imr_address.s_addr = INADDR_ANY;
+				mreq.imr_ifindex = static_cast<int>(ptr->if_index);
+				if(::setsockopt(get_fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0){
+					const int err_code = errno;
+					LOG_POSEIDON_ERROR("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
+					DEBUG_THROW(SystemException, err_code);
+				}
+			}
+			++ptr;
+		}
+	} catch(...){
+		while(ptr != interfaces.get()){
+			--ptr;
+			LOG_POSEIDON_DEBUG("Removing UDP socket from multicast group: group = ", IpPort(group), ", interface = ", ptr->if_name);
+			if(use_ipv6){
+				::ipv6_mreq mreq;
+				mreq.ipv6mr_multiaddr = static_cast<const ::sockaddr_in6 *>(group.data())->sin6_addr;
+				mreq.ipv6mr_interface = ptr->if_index;
+				if(::setsockopt(get_fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0){
+					const int err_code = errno;
+					LOG_POSEIDON_WARNING("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
+				}
+			} else {
+				::ip_mreqn mreq;
+				mreq.imr_multiaddr = static_cast<const ::sockaddr_in *>(group.data())->sin_addr;
+				mreq.imr_address.s_addr = INADDR_ANY;
+				mreq.imr_ifindex = static_cast<int>(ptr->if_index);
+				if(::setsockopt(get_fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0){
+					const int err_code = errno;
+					LOG_POSEIDON_WARNING("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
+				}
+			}
+		}
+		throw;
+	}
+}
+void UdpSessionBase::drop_membership(const SockAddr &group){
+	PROFILE_ME;
+
+	const bool use_ipv6 = is_using_ipv6();
+	DEBUG_THROW_UNLESS(group.is_ipv6() == use_ipv6, Exception, sslit("Socket family does not match the group address provided"));
+	const AUTO(interfaces, get_all_interfaces());
+	AUTO(ptr, interfaces.get());
+	while(ptr->if_name){
+		LOG_POSEIDON_DEBUG("Removing UDP socket from multicast group: group = ", IpPort(group), ", interface = ", ptr->if_name);
+		if(use_ipv6){
+			::ipv6_mreq mreq;
+			mreq.ipv6mr_multiaddr = static_cast<const ::sockaddr_in6 *>(group.data())->sin6_addr;
+			mreq.ipv6mr_interface = ptr->if_index;
+			if(::setsockopt(get_fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0){
+				const int err_code = errno;
+				LOG_POSEIDON_WARNING("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
+			}
+		} else {
+			::ip_mreqn mreq;
+			mreq.imr_multiaddr = static_cast<const ::sockaddr_in *>(group.data())->sin_addr;
+			mreq.imr_address.s_addr = INADDR_ANY;
+			mreq.imr_ifindex = static_cast<int>(ptr->if_index);
+			if(::setsockopt(get_fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0){
+				const int err_code = errno;
+				LOG_POSEIDON_WARNING("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
+			}
+		}
+		++ptr;
+	}
+}
+void UdpSessionBase::set_multicast_loop(bool enabled){
+	const bool use_ipv6 = is_using_ipv6();
+	if(use_ipv6){
+		const int val = enabled;
+		DEBUG_THROW_UNLESS(::setsockopt(get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &val, sizeof(val)) == 0, SystemException);
+	} else {
+		const int val = enabled;
+		DEBUG_THROW_UNLESS(::setsockopt(get_fd(), IPPROTO_IP, IP_MULTICAST_LOOP, &val, sizeof(val)) == 0, SystemException);
+	}
+}
+void UdpSessionBase::set_multicast_ttl(int ttl){
+	const bool use_ipv6 = is_using_ipv6();
+	if(use_ipv6){
+		const int val = ttl;
+		DEBUG_THROW_UNLESS(::setsockopt(get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &val, sizeof(val)) == 0, SystemException);
+	} else {
+		const int val = ttl;
+		DEBUG_THROW_UNLESS(::setsockopt(get_fd(), IPPROTO_IP, IP_MULTICAST_TTL, &val, sizeof(val)) == 0, SystemException);
+	}
 }
 
 bool UdpSessionBase::send(const SockAddr &sock_addr, StreamBuffer buffer){
