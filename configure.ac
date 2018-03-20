@@ -10,15 +10,17 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT([disable-static dlopen])
 
 AC_CHECK_LIB([rt], [clock_gettime], [], [AC_MSG_ERROR([Could not find clock library.])])
+AC_CHECK_LIB([pthread], [pthread_once], [], [AC_MSG_ERROR([Could not find POSIX thread library.])])
 AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR([Could not find dynamic library loader.])])
 AC_CHECK_LIB([z], [deflate], [], [AC_MSG_ERROR([Could not find zlib.])])
+AC_CHECK_LIB([crypto], [ERR_load_CRYPTO_strings], [], [AC_MSG_ERROR([Could not find openssl.])])
 AC_CHECK_LIB([ssl], [SSL_read], [], [AC_MSG_ERROR([Could not find openssl.])])
 
 AC_ARG_ENABLE([mysql], AS_HELP_STRING([--disable-mysql], [disable MySQL support]))
 AM_CONDITIONAL([ENABLE_MYSQL], [test "${enable_mysql}" != "no"])
 AM_COND_IF([ENABLE_MYSQL], [
 	AC_CHECK_LIB([mysqlclient], [mysql_real_connect], [],
-		[AC_MSG_ERROR([Could not find libmysqlclient. (Pass --disable-mysql to disable MySQL support.)])], [-pthread])
+		[AC_MSG_ERROR([Could not find libmysqlclient. (Pass --disable-mysql to disable MySQL support.)])])
 	AC_DEFINE([ENABLE_MYSQL], [1], [Define to 1 to build the MySQL daemon.])
 ])
 
