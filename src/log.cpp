@@ -38,7 +38,7 @@ namespace {
 		{ "WARN ", CFG_YELLOW  | CFL_BRIGHT, 1 },
 		{ "INFO ", CFG_GREEN               , 0 },
 		{ "DEBUG", CFG_CYAN                , 0 },
-		{ "TRACE", CFG_BLUE                , 0 },
+		{ "TRACE", CFG_BLUE    | CFL_BRIGHT, 0 },
 	}};
 
 	std::size_t begin_color(char *buf, int flags){
