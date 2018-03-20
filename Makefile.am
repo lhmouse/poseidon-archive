@@ -316,10 +316,10 @@ lib_libposeidon_main_la_SOURCES +=	\
 endif
 
 lib_libposeidon_main_la_LDFLAGS =	\
-	-pthread -Wl,--no-allow-shlib-undefined -version-info 21:0:0
+	-pthread -Wl,--no-undefined -version-info 21:0:0
 
-#lib_libposeidon_main_la_LIBADD =	\
-#	${AM_LIBS}
+lib_libposeidon_main_la_LIBADD =	\
+	${AM_LIBS}
 
 sysconf_DATA =
 
