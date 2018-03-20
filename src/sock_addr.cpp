@@ -39,7 +39,7 @@ namespace {
 #ifdef POSEIDON_CXX11
 		return std::all_of(data, data + size, [](unsigned char byte){ return byte == 0; });
 #else
-		return std::count(data, data + size, static_cast<unsigned char>(0)) == size;
+		return std::count(data, data + size, static_cast<unsigned char>(0)) == static_cast<std::ptrdiff_t>(size);
 #endif
 	}
 
