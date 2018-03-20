@@ -53,6 +53,34 @@ SocketBase::~SocketBase(){
 	::shutdown(get_fd(), SHUT_RDWR);
 }
 
+void SocketBase::fetch_remote_info_unlocked() const {
+	PROFILE_ME;
+
+	if(is_listening()){
+		m_remote_info = listening_ip_port();
+		return;
+	}
+	::sockaddr_storage sa;
+	::socklen_t salen = sizeof(sa);
+	if(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
+		return;
+	}
+	const SockAddr sock_addr(&sa, salen);
+	m_remote_info = sock_addr;
+}
+void SocketBase::fetch_local_info_unlocked() const {
+	PROFILE_ME;
+
+	::sockaddr_storage sa;
+	::socklen_t salen = sizeof(sa);
+	if(::getsockname(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
+		return;
+	}
+	const SockAddr sock_addr(&sa, salen);
+	m_local_info = sock_addr;
+	m_ipv6 = sock_addr.is_ipv6();
+}
+
 bool SocketBase::should_really_shutdown_write() const NOEXCEPT {
 	return atomic_load(m_really_shutdown_write, memorder_acquire);
 }
@@ -149,20 +177,15 @@ try {
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_info_mutex);
-	if(m_remote_info.port() != 0){
-		return m_remote_info;
+	if(!m_remote_info){
+		fetch_remote_info_unlocked();
 	}
-	if(is_listening()){
-		return m_remote_info = listening_ip_port();
-	}
-	::sockaddr_storage sa;
-	::socklen_t salen = sizeof(sa);
-	if(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
+	if(!m_remote_info){
 		return unknown_ip_port();
 	}
-	return m_remote_info = SockAddr(&sa, salen);
+	return m_remote_info.get();
 } catch(std::exception &e){
-	LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
+	LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 	return unknown_ip_port();
 }
 const IpPort &SocketBase::get_local_info() const NOEXCEPT
@@ -170,18 +193,32 @@ try {
 	PROFILE_ME;
 
 	const Mutex::UniqueLock lock(m_info_mutex);
-	if(m_local_info.port() != 0){
-		return m_local_info;
+	if(!m_local_info){
+		fetch_local_info_unlocked();
 	}
-	::sockaddr_storage sa;
-	::socklen_t salen = sizeof(sa);
-	if(::getsockname(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
+	if(!m_local_info){
 		return unknown_ip_port();
 	}
-	return m_local_info = SockAddr(&sa, salen);
+	return m_local_info.get();
 } catch(std::exception &e){
-	LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
+	LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 	return unknown_ip_port();
+}
+bool SocketBase::is_using_ipv6() const NOEXCEPT
+try {
+	PROFILE_ME;
+
+	const Mutex::UniqueLock lock(m_info_mutex);
+	if(!m_ipv6){
+		fetch_local_info_unlocked();
+	}
+	if(!m_ipv6){
+		return false;
+	}
+	return m_ipv6.get();
+} catch(std::exception &e){
+	LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+	return false;
 }
 
 int SocketBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){

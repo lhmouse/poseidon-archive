@@ -315,7 +315,7 @@ lib_libposeidon_main_la_SOURCES +=	\
 endif
 
 lib_libposeidon_main_la_LDFLAGS =	\
-	-no-undefined -version-info 20:0:0
+	-no-undefined -version-info 21:0:0
 
 sysconf_DATA =
 

@@ -6,11 +6,12 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
-#include <boost/cstdint.hpp>
 #include "virtual_shared_from_this.hpp"
 #include "raii.hpp"
 #include "mutex.hpp"
 #include "ip_port.hpp"
+#include <boost/optional.hpp>
+#include <boost/cstdint.hpp>
 
 namespace Poseidon {
 
@@ -33,12 +34,17 @@ private:
 	volatile std::size_t m_delayed_shutdown_guard_count;
 
 	mutable Mutex m_info_mutex;
-	mutable IpPort m_remote_info;
-	mutable IpPort m_local_info;
+	mutable boost::optional<IpPort> m_remote_info;
+	mutable boost::optional<IpPort> m_local_info;
+	mutable boost::optional<bool> m_ipv6;
 
 public:
 	explicit SocketBase(Move<UniqueFile> socket);
 	~SocketBase();
+
+private:
+	void fetch_remote_info_unlocked() const;
+	void fetch_local_info_unlocked() const;
 
 protected:
 	bool should_really_shutdown_write() const NOEXCEPT;
@@ -68,6 +74,7 @@ public:
 
 	const IpPort &get_remote_info() const NOEXCEPT;
 	const IpPort &get_local_info() const NOEXCEPT;
+	bool is_using_ipv6() const NOEXCEPT;
 
 	// 返回一个 errno 告诉 epoll 如何处理。
 	virtual int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable);
