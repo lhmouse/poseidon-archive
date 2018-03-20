@@ -7,6 +7,9 @@
 #include "../time.hpp"
 #include "../profiler.hpp"
 #include "../buffer_streams.hpp"
+#if __GNUC__ >= 6
+#  pragma GCC diagnostic ignored "-Wignored-attributes"
+#endif
 #include "../raii.hpp"
 #include <libbson-1.0/bson.h>
 

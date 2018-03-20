@@ -5,10 +5,13 @@
 #include "connection.hpp"
 #include "exception.hpp"
 #include "bson_builder.hpp"
-#include "../raii.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../time.hpp"
+#if __GNUC__ >= 6
+#  pragma GCC diagnostic ignored "-Wignored-attributes"
+#endif
+#include "../raii.hpp"
 #include <cstdlib>
 #include <libbson-1.0/bson.h>
 #include <libmongoc-1.0/mongoc.h>
