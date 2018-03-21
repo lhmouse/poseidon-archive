@@ -17,14 +17,16 @@ namespace Poseidon {
 namespace MongoDb {
 
 namespace {
-	::pthread_once_t g_mongo_once = PTHREAD_ONCE_INIT;
-
-	void init_mongo(){
-		LOG_POSEIDON_INFO("Initializing MongoDB client...");
-
+	void init_mongoc(){
 		::mongoc_init();
 
 		std::atexit(&::mongoc_cleanup);
+	}
+
+	::pthread_once_t g_mongoc_once = PTHREAD_ONCE_INIT;
+
+	void init_mongoc_once(){
+		DEBUG_THROW_ASSERT(::pthread_once(&g_mongoc_once, &init_mongoc) == 0);
 	}
 
 	struct UriCloser {
@@ -56,7 +58,6 @@ namespace {
 	class DelegatedConnection : public Connection {
 	private:
 		SharedNts m_database;
-		UniqueHandle<UriCloser> m_uri;
 		UniqueHandle<ClientCloser> m_client;
 
 		boost::int64_t m_cursor_id;
@@ -73,13 +74,15 @@ namespace {
 		{
 			PROFILE_ME;
 
-			DEBUG_THROW_ASSERT(::pthread_once(&g_mongo_once, &init_mongo) == 0);
-			DEBUG_THROW_UNLESS(m_uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port)), BasicException, sslit("::mongoc_uri_new_for_host_port() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_username(m_uri.get(), user_name), BasicException, sslit("::mongoc_uri_set_username() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_password(m_uri.get(), password), BasicException, sslit("::mongoc_uri_set_password() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_database(m_uri.get(), auth_database), BasicException, sslit("::mongoc_uri_set_database() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_option_as_bool(m_uri.get(), "ssl", use_ssl), BasicException, sslit("::mongoc_uri_set_option_as_bool() failed"));
-			DEBUG_THROW_UNLESS(m_client.reset(::mongoc_client_new_from_uri(m_uri.get())), BasicException, sslit("::mongoc_client_new_from_uri() failed"));
+			init_mongoc_once();
+
+			UniqueHandle<UriCloser> uri;
+			DEBUG_THROW_UNLESS(uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port)), BasicException, sslit("::mongoc_uri_new_for_host_port() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_username(uri.get(), user_name), BasicException, sslit("::mongoc_uri_set_username() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_password(uri.get(), password), BasicException, sslit("::mongoc_uri_set_password() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_database(uri.get(), auth_database), BasicException, sslit("::mongoc_uri_set_database() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_option_as_bool(uri.get(), "ssl", use_ssl), BasicException, sslit("::mongoc_uri_set_option_as_bool() failed"));
+			DEBUG_THROW_UNLESS(m_client.reset(::mongoc_client_new_from_uri(uri.get())), BasicException, sslit("::mongoc_client_new_from_uri() failed"));
 		}
 
 	private:
