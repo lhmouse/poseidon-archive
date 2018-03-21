@@ -86,6 +86,43 @@ namespace {
 		}
 
 	private:
+		bool parse_reply_cursor(const ::bson_t *reply_bt, const char *batch_id){
+			PROFILE_ME;
+
+			::bson_iter_t it;
+			if(!::bson_iter_init_find(&it, reply_bt, "cursor")){
+				LOG_POSEIDON_DEBUG("No cursor was returned from MongoDB server.");
+				return false;
+			}
+			DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_DOCUMENT);
+			boost::uint32_t size;
+			const boost::uint8_t *data;
+			::bson_iter_document(&it, &size, &data);
+			::bson_t cursor_storage;
+			DEBUG_THROW_ASSERT(::bson_init_static(&cursor_storage, data, size));
+			const UniqueHandle<BsonCloser> cursor_guard(&cursor_storage);
+			const AUTO(cursor_bt, cursor_guard.get());
+
+			if(::bson_iter_init_find(&it, cursor_bt, "id")){
+				DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_INT64);
+				m_cursor_id = ::bson_iter_int64(&it);
+				LOG_POSEIDON_TRACE("Parsing MongoDB reply cursor: cursor_id = ", m_cursor_id);
+			}
+			if(::bson_iter_init_find(&it, cursor_bt, "ns")){
+				DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_UTF8);
+				m_cursor_ns = ::bson_iter_utf8(&it, NULLPTR);
+				LOG_POSEIDON_TRACE("Parsing MongoDB reply cursor: cursor_ns = ", m_cursor_ns);
+			}
+			if(::bson_iter_init_find(&it, cursor_bt, batch_id)){
+				DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_ARRAY);
+				::bson_iter_array(&it, &size, &data);
+				DEBUG_THROW_ASSERT(m_batch_guard.reset(::bson_new_from_data(data, size)));
+				const AUTO(batch_bt, m_batch_guard.get());
+				DEBUG_THROW_ASSERT(::bson_iter_init(&m_batch_it, batch_bt));
+			}
+			return true;
+		}
+
 		bool find_bson_element_and_check_type(::bson_iter_t &it, const char *name, ::bson_type_t type_expecting) const {
 			PROFILE_ME;
 
@@ -127,37 +164,7 @@ namespace {
 			const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
 			const AUTO(reply_bt, reply_guard.get());
 			DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, SharedNts(err.message));
-
-			::bson_iter_t it;
-			if(::bson_iter_init_find(&it, reply_bt, "cursor")){
-				DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_DOCUMENT);
-				boost::uint32_t size;
-				const boost::uint8_t *data;
-				::bson_iter_document(&it, &size, &data);
-				::bson_t cursor_storage;
-				DEBUG_THROW_ASSERT(::bson_init_static(&cursor_storage, data, size));
-				const UniqueHandle<BsonCloser> cursor_guard(&cursor_storage);
-				const AUTO(cursor_bt, cursor_guard.get());
-
-				if(::bson_iter_init_find(&it, cursor_bt, "id")){
-					DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_INT64);
-					m_cursor_id = ::bson_iter_int64(&it);
-				}
-				if(::bson_iter_init_find(&it, cursor_bt, "ns")){
-					DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_UTF8);
-					m_cursor_ns = ::bson_iter_utf8(&it, NULLPTR);
-				}
-				if(::bson_iter_init_find(&it, cursor_bt, "firstBatch")){
-					DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_ARRAY);
-					::bson_iter_array(&it, &size, &data);
-					m_batch_guard.reset(::bson_new_from_data(data, size));
-					DEBUG_THROW_ASSERT(m_batch_guard);
-					const AUTO(batch_bt, m_batch_guard.get());
-					DEBUG_THROW_ASSERT(::bson_iter_init(&m_batch_it, batch_bt));
-				}
-			} else {
-				LOG_POSEIDON_DEBUG("No cursor was returned from MongoDB server.");
-			}
+			parse_reply_cursor(reply_bt, "firstBatch");
 		}
 		void discard_result() NOEXCEPT FINAL {
 			PROFILE_ME;
@@ -171,66 +178,38 @@ namespace {
 		bool fetch_next() FINAL {
 			PROFILE_ME;
 
-			while(m_batch_guard && !::bson_iter_next(&m_batch_it)){
-				m_batch_guard.reset();
-
-				if(m_cursor_id != 0){
-					LOG_POSEIDON_DEBUG("Fetching more data: cursor_id = ", m_cursor_id);
-
-					const AUTO(query_bt, ::bson_sized_new(256));
-					DEBUG_THROW_ASSERT(query_bt);
-					const UniqueHandle<BsonCloser> query_guard(query_bt);
-					DEBUG_THROW_ASSERT(::bson_append_int64(query_bt, "getMore", -1, m_cursor_id));
-					const AUTO(db_len, std::strlen(m_database));
-					DEBUG_THROW_ASSERT(m_cursor_ns.compare(0, db_len, m_database.get()) == 0);
-					DEBUG_THROW_ASSERT(m_cursor_ns.at(db_len) == '.');
-					DEBUG_THROW_ASSERT(::bson_append_utf8(query_bt, "collection", -1, m_cursor_ns.c_str() + db_len + 1, -1));
-
-					discard_result();
-
-					::bson_t reply_storage;
-					::bson_error_t err;
-					bool success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
-					// `reply` is always set.
-					const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
-					const AUTO(reply_bt, reply_guard.get());
-					DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, SharedNts(err.message));
-
-					::bson_iter_t it;
-					if(::bson_iter_init_find(&it, reply_bt, "cursor")){
-						DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_DOCUMENT);
-						boost::uint32_t size;
-						const boost::uint8_t *data;
-						::bson_iter_document(&it, &size, &data);
-						::bson_t cursor_storage;
-						DEBUG_THROW_ASSERT(::bson_init_static(&cursor_storage, data, size));
-						const UniqueHandle<BsonCloser> cursor_guard(&cursor_storage);
-						const AUTO(cursor_bt, cursor_guard.get());
-
-						if(::bson_iter_init_find(&it, cursor_bt, "id")){
-							DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_INT64);
-							m_cursor_id = ::bson_iter_int64(&it);
-						}
-						if(::bson_iter_init_find(&it, cursor_bt, "ns")){
-							DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_UTF8);
-							m_cursor_ns = ::bson_iter_utf8(&it, NULLPTR);
-						}
-						if(::bson_iter_init_find(&it, cursor_bt, "nextBatch")){
-							DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_ARRAY);
-							::bson_iter_array(&it, &size, &data);
-							m_batch_guard.reset(::bson_new_from_data(data, size));
-							DEBUG_THROW_ASSERT(m_batch_guard);
-							const AUTO(batch_bt, m_batch_guard.get());
-							DEBUG_THROW_ASSERT(::bson_iter_init(&m_batch_it, batch_bt));
-						}
-					} else {
-						LOG_POSEIDON_DEBUG("No cursor returned from MongoDB server.");
+			for(;;){
+				if(m_batch_guard){
+					if(::bson_iter_next(&m_batch_it)){
+						break;
 					}
+					m_batch_guard.reset();
 				}
-			}
-			if(!m_batch_guard){
-				LOG_POSEIDON_DEBUG("No more data.");
-				return false;
+				if(m_cursor_id == 0){
+					LOG_POSEIDON_DEBUG("No more data.");
+					return false;
+				}
+				LOG_POSEIDON_DEBUG("Issuing `getMore` request: cursor_id = ", m_cursor_id);
+
+				UniqueHandle<BsonCloser> query_guard;
+				DEBUG_THROW_ASSERT(query_guard.reset(::bson_sized_new(1024)));
+				const AUTO(query_bt, query_guard.get());
+				DEBUG_THROW_ASSERT(::bson_append_int64(query_bt, "getMore", -1, m_cursor_id));
+				const AUTO(database_len, std::strlen(m_database));
+				DEBUG_THROW_ASSERT(m_cursor_ns.compare(0, database_len, m_database.get()) == 0);
+				DEBUG_THROW_ASSERT(m_cursor_ns.at(database_len) == '.');
+				DEBUG_THROW_ASSERT(::bson_append_utf8(query_bt, "collection", -1, m_cursor_ns.c_str() + database_len + 1, -1));
+
+				discard_result();
+
+				::bson_t reply_storage;
+				::bson_error_t err;
+				bool success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
+				// `reply` is always set.
+				const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
+				const AUTO(reply_bt, reply_guard.get());
+				DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, SharedNts(err.message));
+				parse_reply_cursor(reply_bt, "nextBatch");
 			}
 			DEBUG_THROW_ASSERT(::bson_iter_type(&m_batch_it) == BSON_TYPE_DOCUMENT);
 			boost::uint32_t size;
