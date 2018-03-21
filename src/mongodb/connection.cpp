@@ -113,8 +113,7 @@ namespace {
 
 			const AUTO(query_data, bson.build(false));
 			::bson_t query_storage;
-			bool success = ::bson_init_static(&query_storage, reinterpret_cast<const boost::uint8_t *>(query_data.data()), query_data.size());
-			DEBUG_THROW_ASSERT(success);
+			DEBUG_THROW_ASSERT(::bson_init_static(&query_storage, reinterpret_cast<const boost::uint8_t *>(query_data.data()), query_data.size()));
 			const UniqueHandle<BsonCloser> query_guard(&query_storage);
 			const AUTO(query_bt, query_guard.get());
 
@@ -123,23 +122,20 @@ namespace {
 			LOG_POSEIDON_DEBUG("Sending query to MongoDB server: ", bson.build_json());
 			::bson_t reply_storage;
 			::bson_error_t err;
-			success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
+			bool success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
 			// `reply` is always set.
 			const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
 			const AUTO(reply_bt, reply_guard.get());
 			DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, SharedNts(err.message));
 
 			::bson_iter_t it;
-			if(!::bson_iter_init_find(&it, reply_bt, "cursor")){
-				LOG_POSEIDON_DEBUG("No cursor was returned from MongoDB server.");
-			} else {
+			if(::bson_iter_init_find(&it, reply_bt, "cursor")){
 				DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_DOCUMENT);
 				boost::uint32_t size;
 				const boost::uint8_t *data;
 				::bson_iter_document(&it, &size, &data);
 				::bson_t cursor_storage;
-				success = ::bson_init_static(&cursor_storage, data, size);
-				DEBUG_THROW_ASSERT(success);
+				DEBUG_THROW_ASSERT(::bson_init_static(&cursor_storage, data, size));
 				const UniqueHandle<BsonCloser> cursor_guard(&cursor_storage);
 				const AUTO(cursor_bt, cursor_guard.get());
 
@@ -157,9 +153,10 @@ namespace {
 					m_batch_guard.reset(::bson_new_from_data(data, size));
 					DEBUG_THROW_ASSERT(m_batch_guard);
 					const AUTO(batch_bt, m_batch_guard.get());
-					success = ::bson_iter_init(&m_batch_it, batch_bt);
-					DEBUG_THROW_ASSERT(success);
+					DEBUG_THROW_ASSERT(::bson_iter_init(&m_batch_it, batch_bt));
 				}
+			} else {
+				LOG_POSEIDON_DEBUG("No cursor was returned from MongoDB server.");
 			}
 		}
 		void discard_result() NOEXCEPT FINAL {
@@ -183,35 +180,30 @@ namespace {
 					const AUTO(query_bt, ::bson_sized_new(256));
 					DEBUG_THROW_ASSERT(query_bt);
 					const UniqueHandle<BsonCloser> query_guard(query_bt);
-					bool success = ::bson_append_int64(query_bt, "getMore", -1, m_cursor_id);
-					DEBUG_THROW_ASSERT(success);
+					DEBUG_THROW_ASSERT(::bson_append_int64(query_bt, "getMore", -1, m_cursor_id));
 					const AUTO(db_len, std::strlen(m_database));
 					DEBUG_THROW_ASSERT(m_cursor_ns.compare(0, db_len, m_database.get()) == 0);
 					DEBUG_THROW_ASSERT(m_cursor_ns.at(db_len) == '.');
-					success = ::bson_append_utf8(query_bt, "collection", -1, m_cursor_ns.c_str() + db_len + 1, -1);
-					DEBUG_THROW_ASSERT(success);
+					DEBUG_THROW_ASSERT(::bson_append_utf8(query_bt, "collection", -1, m_cursor_ns.c_str() + db_len + 1, -1));
 
 					discard_result();
 
 					::bson_t reply_storage;
 					::bson_error_t err;
-					success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
+					bool success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
 					// `reply` is always set.
 					const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
 					const AUTO(reply_bt, reply_guard.get());
 					DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, SharedNts(err.message));
 
 					::bson_iter_t it;
-					if(!::bson_iter_init_find(&it, reply_bt, "cursor")){
-						LOG_POSEIDON_DEBUG("No cursor returned from MongoDB server.");
-					} else {
+					if(::bson_iter_init_find(&it, reply_bt, "cursor")){
 						DEBUG_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_DOCUMENT);
 						boost::uint32_t size;
 						const boost::uint8_t *data;
 						::bson_iter_document(&it, &size, &data);
 						::bson_t cursor_storage;
-						success = ::bson_init_static(&cursor_storage, data, size);
-						DEBUG_THROW_ASSERT(success);
+						DEBUG_THROW_ASSERT(::bson_init_static(&cursor_storage, data, size));
 						const UniqueHandle<BsonCloser> cursor_guard(&cursor_storage);
 						const AUTO(cursor_bt, cursor_guard.get());
 
@@ -229,9 +221,10 @@ namespace {
 							m_batch_guard.reset(::bson_new_from_data(data, size));
 							DEBUG_THROW_ASSERT(m_batch_guard);
 							const AUTO(batch_bt, m_batch_guard.get());
-							success = ::bson_iter_init(&m_batch_it, batch_bt);
-							DEBUG_THROW_ASSERT(success);
+							DEBUG_THROW_ASSERT(::bson_iter_init(&m_batch_it, batch_bt));
 						}
+					} else {
+						LOG_POSEIDON_DEBUG("No cursor returned from MongoDB server.");
 					}
 				}
 			}
