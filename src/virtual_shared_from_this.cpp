@@ -8,7 +8,7 @@
 namespace Poseidon {
 
 void VirtualSharedFromThis::fail_dynamic_cast(const std::type_info &dst_type, const VirtualSharedFromThis *src){
-	LOG_POSEIDON_ERROR("dynamic_cast to `", dst_type.name(), "` failed on an object having type `", typeid(src).name(), "`");
+	LOG_POSEIDON_ERROR("dynamic_cast to `", dst_type.name(), "` failed on an object having type `", typeid(*src).name(), "`");
 	throw std::bad_cast();
 }
 
