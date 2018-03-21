@@ -62,10 +62,8 @@ void TcpSessionBase::create_shutdown_timer(){
 	m_shutdown_timer = TimerDaemon::register_low_level_timer(period, period, boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
 }
 
-int TcpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){
+int TcpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool /*readable*/){
 	PROFILE_ME;
-
-	(void)readable;
 
 	StreamBuffer data;
 	try {

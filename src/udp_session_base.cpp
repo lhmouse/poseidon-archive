@@ -82,10 +82,8 @@ void UdpSessionBase::force_shutdown() NOEXCEPT {
 	SocketBase::force_shutdown();
 }
 
-int UdpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){
+int UdpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool /*readable*/){
 	PROFILE_ME;
-
-	(void)readable;
 
 	for(unsigned i = 0; i < 256; ++i){
 		SockAddr sock_addr;
@@ -116,11 +114,8 @@ int UdpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_
 	}
 	return 0;
 }
-int UdpSessionBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable){
+int UdpSessionBase::poll_write(Mutex::UniqueLock &/*write_lock*/, unsigned char *hint_buffer, std::size_t hint_capacity, bool /*writeable*/){
 	PROFILE_ME;
-
-	(void)write_lock;
-	(void)writeable;
 
 	for(unsigned i = 0; i < 256; ++i){
 		SockAddr sock_addr;
@@ -165,9 +160,8 @@ int UdpSessionBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hin
 	return 0;
 }
 
-void UdpSessionBase::on_message_too_large(const SockAddr &sock_addr, StreamBuffer data){
-	(void)sock_addr;
-	(void)data;
+void UdpSessionBase::on_message_too_large(const SockAddr &/*sock_addr*/, StreamBuffer /*data*/){
+	//
 }
 
 void UdpSessionBase::add_membership(const SockAddr &group){

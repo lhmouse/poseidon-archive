@@ -142,29 +142,19 @@ void Client::on_read_hup(){
 	LowLevelClient::on_read_hup();
 }
 
-void Client::on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length){
+void Client::on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t /*content_length*/){
 	PROFILE_ME;
-
-	(void)content_length;
 
 	m_response_headers = STD_MOVE(response_headers);
 	m_entity.clear();
 }
-void Client::on_low_level_response_entity(boost::uint64_t entity_offset, StreamBuffer entity){
+void Client::on_low_level_response_entity(boost::uint64_t /*entity_offset*/, StreamBuffer entity){
 	PROFILE_ME;
-
-	(void)entity_offset;
 
 	m_entity.splice(entity);
 }
-boost::shared_ptr<UpgradedSessionBase> Client::on_low_level_response_end(boost::uint64_t content_length, OptionalMap headers){
+boost::shared_ptr<UpgradedSessionBase> Client::on_low_level_response_end(boost::uint64_t /*content_length*/, OptionalMap /*headers*/){
 	PROFILE_ME;
-
-	(void)content_length;
-
-	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
-		m_response_headers.headers.append(it->first, STD_MOVE(it->second));
-	}
 
 	JobDispatcher::enqueue(
 		boost::make_shared<ResponseJob>(virtual_shared_from_this<Client>(), STD_MOVE(m_response_headers), STD_MOVE(m_entity)),

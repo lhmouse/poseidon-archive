@@ -21,19 +21,13 @@ LowLevelSession::~LowLevelSession(){
 }
 
 void LowLevelSession::on_connect(){
-	PROFILE_ME;
-
 	//
 }
 void LowLevelSession::on_read_hup(){
-	PROFILE_ME;
-
 	//
 }
-void LowLevelSession::on_close(int err_code){
-	PROFILE_ME;
-
-	(void)err_code;
+void LowLevelSession::on_close(int /*err_code*/){
+	//
 }
 void LowLevelSession::on_receive(StreamBuffer data){
 	PROFILE_ME;

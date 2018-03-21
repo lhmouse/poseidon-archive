@@ -182,19 +182,15 @@ void Session::on_low_level_message_header(OpCode opcode){
 	m_opcode = opcode;
 	m_payload.clear();
 }
-void Session::on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload){
+void Session::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, StreamBuffer payload){
 	PROFILE_ME;
-
-	(void)whole_offset;
 
 	m_size_total += payload.size();
 	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
 	m_payload.splice(payload);
 }
-bool Session::on_low_level_message_end(boost::uint64_t whole_size){
+bool Session::on_low_level_message_end(boost::uint64_t /*whole_size*/){
 	PROFILE_ME;
-
-	(void)whole_size;
 
 	JobDispatcher::enqueue(
 		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Session>(), m_opcode, STD_MOVE(m_payload)),

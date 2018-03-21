@@ -20,10 +20,8 @@ UpgradedSessionBase::~UpgradedSessionBase(){
 	//
 }
 
-void UpgradedSessionBase::on_shutdown_timer(boost::uint64_t now){
-	PROFILE_ME;
-
-	(void)now;
+void UpgradedSessionBase::on_shutdown_timer(boost::uint64_t /*now*/){
+	//
 }
 
 bool UpgradedSessionBase::has_been_shutdown_read() const NOEXCEPT {

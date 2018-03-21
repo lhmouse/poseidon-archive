@@ -157,25 +157,19 @@ void Client::on_read_hup(){
 	LowLevelClient::on_read_hup();
 }
 
-void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
+void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t /*payload_size*/){
 	PROFILE_ME;
-
-	(void)payload_size;
 
 	m_message_id = message_id;
 	m_payload.clear();
 }
-void Client::on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
+void Client::on_low_level_data_message_payload(boost::uint64_t /*payload_offset*/, StreamBuffer payload){
 	PROFILE_ME;
-
-	(void)payload_offset;
 
 	m_payload.splice(payload);
 }
-bool Client::on_low_level_data_message_end(boost::uint64_t payload_size){
+bool Client::on_low_level_data_message_end(boost::uint64_t /*payload_size*/){
 	PROFILE_ME;
-
-	(void)payload_size;
 
 	JobDispatcher::enqueue(
 		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Client>(), m_message_id, STD_MOVE(m_payload)),

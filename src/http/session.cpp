@@ -143,10 +143,8 @@ void Session::on_read_hup(){
 	LowLevelSession::on_read_hup();
 }
 
-void Session::on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length){
+void Session::on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t /*content_length*/){
 	PROFILE_ME;
-
-	(void)content_length;
 
 	m_size_total = 0;
 	m_request_headers = STD_MOVE(request_headers);
@@ -159,10 +157,8 @@ void Session::on_low_level_request_headers(RequestHeaders request_headers, boost
 			VAL_INIT);
 	}
 }
-void Session::on_low_level_request_entity(boost::uint64_t entity_offset, StreamBuffer entity){
+void Session::on_low_level_request_entity(boost::uint64_t /*entity_offset*/, StreamBuffer entity){
 	PROFILE_ME;
-
-	(void)entity_offset;
 
 	m_size_total += entity.size();
 	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, ST_PAYLOAD_TOO_LARGE);

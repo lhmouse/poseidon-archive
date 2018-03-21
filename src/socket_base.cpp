@@ -221,23 +221,14 @@ try {
 	return false;
 }
 
-int SocketBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable){
-	(void)hint_buffer;
-	(void)hint_capacity;
-	(void)readable;
-
+int SocketBase::poll_read_and_process(unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*readable*/){
 	return EWOULDBLOCK;
 }
-int SocketBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable){
-	(void)write_lock;
-	(void)hint_buffer;
-	(void)hint_capacity;
-	(void)writeable;
-
+int SocketBase::poll_write(Mutex::UniqueLock &/*write_lock*/, unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*writeable*/){
 	return EWOULDBLOCK;
 }
-void SocketBase::on_close(int err_code){
-	(void)err_code;
+void SocketBase::on_close(int /*err_code*/){
+	//
 }
 
 }
