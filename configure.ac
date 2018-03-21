@@ -1,4 +1,4 @@
-AC_INIT([poseidon], [0.1], [lh_mouse@126.com])
+AC_INIT([poseidon], [0.1], [lh_mouse@126.com], [poseidon], [https://github.com/lhmouse/poseidon])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])

@@ -348,35 +348,32 @@ namespace {
 }
 
 int main(int argc, char **argv, char **/*envp*/){
+	bool all_logs = false;
 	bool daemonize = false;
+	int help = 0; // 1 = exit with EXIT_SUCCESS, * = exit with EXIT_FAILURE.
+	bool version = false;
 	const char *new_wd = NULLPTR;
-	bool verbose = false;
 
 	int opt;
-	while((opt = ::getopt(argc, argv, "dhv?")) != -1){
+	while((opt = ::getopt(argc, argv, "adhv?")) != -1){
 		switch(opt){
+		case 'a':
+			all_logs = true;
+			break;
 		case 'd':
 			daemonize = true;
 			break;
-		case 'v':
-			verbose = true;
-			break;
 		case 'h':
 		case '?':
-_print_help:
-			::fprintf(stderr,
-                //        1         2         3         4         5         6         7         8
-				// 345678901234567890123456789012345678901234567890123456789012345678901234567890
-				"Usage: %s [-dhv?] [<directory>]\n"
-				"  -d            daemonize\n"
-				"  -h -?         show this help message\n"
-				"  -v            do not load `log_masked_levels` from 'main.conf'\n"
-				"  <directory>   set working directory here before anything else\n"
-				, argv[0]);
-			return EXIT_FAILURE;
+			help |= 1;
+			break;
+		case 'v':
+			version = true;
+			break;
 		default:
 			::fprintf(stderr, "Unknown option: %c\n", opt);
-			goto _print_help;
+			help |= 2;
+			break;
 		}
 	}
 	switch(argc - optind){
@@ -387,7 +384,30 @@ _print_help:
 		break;
 	default:
 		::fprintf(stderr, "Too many arguments: %s\n", argv[optind + 1]);
-		goto _print_help;
+		help |= 2;
+		break;
+	}
+	if(help){
+		::fprintf(stdout,
+            //        1         2         3         4         5         6         7         8
+			// 345678901234567890123456789012345678901234567890123456789012345678901234567890
+			"Usage: %s [-adhv?] [<directory>]\n"
+			"  -a            do not load `log_masked_levels` from 'main.conf'\n"
+			"  -d            daemonize\n"
+			"  -h -?         show this help message then exit\n"
+			"  -v            print version string then exit\n"
+			"  <directory>   set working directory here before anything else\n"
+			, argv[0]);
+		return (help == 1) ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
+	if(version){
+		::fprintf(stdout,
+			"%s (built on %s %s)\n"
+			"\n"
+			"Visit the home page at <%s>.\n"
+			"Report bugs to <%s>.\n"
+			, PACKAGE_STRING, __DATE__, __TIME__, PACKAGE_URL, PACKAGE_BUGREPORT);
+		return EXIT_SUCCESS;
 	}
 
 	if(daemonize && (::daemon(true, true) != 0)){
@@ -443,7 +463,7 @@ _print_help:
 		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_profiler>()));
 		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_modules>()));
 
-		if(!verbose){
+		if(!all_logs){
 			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask...");
 			Logger::initialize_mask_from_config();
 		}
