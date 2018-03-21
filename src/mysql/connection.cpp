@@ -99,18 +99,17 @@ namespace {
 
 			LOG_POSEIDON_DEBUG("Sending query to MySQL server: ", std::string(sql, len));
 			DEBUG_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
-
+			DEBUG_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
 			if(m_result.reset(::mysql_use_result(m_mysql.get()))){
 				const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
 				const AUTO(count, ::mysql_num_fields(m_result.get()));
 				m_fields.reserve(count);
 				for(std::size_t i = 0; i < count; ++i){
 					const char *const name = fields[i].name;
-					DEBUG_THROW_UNLESS(m_fields.insert(std::make_pair(name, i)).second, BasicException, sslit("Duplicate field"));
+					DEBUG_THROW_UNLESS(m_fields.emplace(name, i).second, BasicException, sslit("Duplicate field"));
 					LOG_POSEIDON_TRACE("MySQL result field: name = ", name, ", index = ", i);
 				}
 			} else {
-				DEBUG_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
 				LOG_POSEIDON_DEBUG("No result was returned from MySQL server.");
 			}
 		}
@@ -134,7 +133,6 @@ namespace {
 				LOG_POSEIDON_DEBUG("Empty set returned from MySQL server.");
 				return false;
 			}
-
 			const AUTO(row, ::mysql_fetch_row(m_result.get()));
 			if(!row){
 				LOG_POSEIDON_DEBUG("No more data.");
