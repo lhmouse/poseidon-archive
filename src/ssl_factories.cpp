@@ -12,32 +12,41 @@
 
 namespace Poseidon {
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
 namespace {
-	void uninit_openssl(){
-		LOG_POSEIDON_INFO("Uninitializing OpenSSL...");
-
-		EVP_cleanup();
-	}
 	void init_openssl(){
-		LOG_POSEIDON_INFO("Initializing OpenSSL...");
+		::OpenSSL_add_all_algorithms();
+		::OpenSSL_add_all_ciphers();
+		::OpenSSL_add_all_digests();
+		::SSL_load_error_strings();
+		::SSL_library_init();
 
-		EVP_cleanup();
-		OpenSSL_add_all_algorithms();
-		OpenSSL_add_all_ciphers();
-		OpenSSL_add_all_digests();
-		SSL_load_error_strings();
-		SSL_library_init();
-
-		std::atexit(&uninit_openssl);
+		std::atexit(&::EVP_cleanup);
 	}
 
 	::pthread_once_t g_ssl_once = PTHREAD_ONCE_INIT;
+}
 
+void init_ssl_once(){
+	DEBUG_THROW_ASSERT(::pthread_once(&g_ssl_once, &init_openssl) == 0);
+}
+
+#else
+
+void init_ssl_once(){
+	// Since OpenSSL 1.1.0 no explicit initialization or cleanup is required.
+}
+
+#endif
+
+namespace {
 	UniqueSslCtx create_server_ssl_ctx(const char *certificate, const char *private_key){
 		PROFILE_ME;
 
+		init_ssl_once();
+
 		UniqueSslCtx ssl_ctx;
-		DEBUG_THROW_ASSERT(::pthread_once(&g_ssl_once, &init_openssl) == 0);
 		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_server_method())), Exception, sslit("::SSLv23_server_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv3);
@@ -61,8 +70,9 @@ namespace {
 	UniqueSslCtx create_client_ssl_ctx(bool verify_peer){
 		PROFILE_ME;
 
+		init_ssl_once();
+
 		UniqueSslCtx ssl_ctx;
-		DEBUG_THROW_ASSERT(::pthread_once(&g_ssl_once, &init_openssl) == 0);
 		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_client_method())), Exception, sslit("::SSLv23_client_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv3);

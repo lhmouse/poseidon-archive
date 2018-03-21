@@ -347,8 +347,7 @@ namespace {
 	};
 }
 
-int main(int argc, char **argv, char **/*envp*/)
-try {
+int main(int argc, char **argv, char **/*envp*/){
 	bool daemonize = false;
 	const char *new_wd = NULLPTR;
 	bool verbose = false;
@@ -405,82 +404,78 @@ _print_help:
 	::signal(SIGCHLD, SIG_IGN);
 	::signal(SIGPIPE, SIG_IGN);
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "------------------------- Starting up -------------------------");
-
-	if(new_wd){
-		MainConfig::set_run_path(new_wd);
-	}
-	MainConfig::reload();
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting up: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
+	try {
+		if(new_wd){
+			MainConfig::set_run_path(new_wd);
+		}
+		MainConfig::reload();
 
 #define START(x_)   const RaiiSingletonRunner<x_> UNIQUE_ID
 
-	START(ProfileDepository);
+		START(ProfileDepository);
 #ifdef ENABLE_MAGIC
-	START(MagicDaemon);
+		START(MagicDaemon);
 #endif
-	START(DnsDaemon);
-	START(FileSystemDaemon);
+		START(DnsDaemon);
+		START(FileSystemDaemon);
 #ifdef ENABLE_MYSQL
-	START(MySqlDaemon);
+		START(MySqlDaemon);
 #endif
 #ifdef ENABLE_MONGODB
-	START(MongoDbDaemon);
+		START(MongoDbDaemon);
 #endif
-	START(JobDispatcher);
-	START(WorkhorseCamp);
+		START(JobDispatcher);
+		START(WorkhorseCamp);
 
-	START(ModuleDepository);
-	START(TimerDaemon);
-	START(EpollDaemon);
-	START(EventDispatcher);
-	START(SystemHttpServer);
-	START(SimpleHttpClientDaemon);
+		START(ModuleDepository);
+		START(TimerDaemon);
+		START(EpollDaemon);
+		START(EventDispatcher);
+		START(SystemHttpServer);
+		START(SimpleHttpClientDaemon);
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up built-in system servlets...");
-	boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > system_http_servlets;
-	system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_help>()));
-	system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_logger>()));
-	system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_network>()));
-	system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_profiler>()));
-	system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_modules>()));
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up built-in system servlets...");
+		boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > system_http_servlets;
+		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_help>()));
+		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_logger>()));
+		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_network>()));
+		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_profiler>()));
+		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_modules>()));
 
-	if(!verbose){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask...");
-		Logger::initialize_mask_from_config();
-	}
+		if(!verbose){
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask...");
+			Logger::initialize_mask_from_config();
+		}
 
-	const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
-	for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
-		const AUTO(path, it->c_str());
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", path);
-		ModuleDepository::load(path);
-	}
+		const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
+		for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
+			const AUTO(path, it->c_str());
+			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", path);
+			ModuleDepository::load(path);
+		}
 
 #ifdef ENABLE_MYSQL
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
-	MySqlDaemon::wait_for_all_async_operations();
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
+		MySqlDaemon::wait_for_all_async_operations();
 #endif
 #ifdef ENABLE_MONGODB
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
-	MongoDbDaemon::wait_for_all_async_operations();
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
+		MongoDbDaemon::wait_for_all_async_operations();
 #endif
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
-	JobDispatcher::do_modal(g_running);
-
+		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
+		JobDispatcher::do_modal(g_running);
+	} catch(std::exception &e){
+		Logger::finalize_mask();
+		LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());
+		return EXIT_FAILURE;
+	} catch(...){
+		Logger::finalize_mask();
+		LOG_POSEIDON_ERROR("Unknown exception thrown in main().");
+		return EXIT_FAILURE;
+	}
 	Logger::finalize_mask();
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "------------------ Process exited gracefully ------------------");
+	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Shutting down: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
 	return EXIT_SUCCESS;
-} catch(std::exception &e){
-	Logger::finalize_mask();
-	LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());
-
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_ERROR, "------------------ Process exited abnormally ------------------");
-	return EXIT_FAILURE;
-} catch(...){
-	Logger::finalize_mask();
-	LOG_POSEIDON_ERROR("Unknown exception thrown in main().");
-
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_ERROR, "------------------ Process exited abnormally ------------------");
-	return EXIT_FAILURE;
 }

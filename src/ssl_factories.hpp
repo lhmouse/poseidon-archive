@@ -11,6 +11,8 @@
 
 namespace Poseidon {
 
+extern void init_ssl_once();
+
 class SslFilter;
 
 class SslServerFactory : NONCOPYABLE {
