@@ -12,8 +12,16 @@ namespace Poseidon {
 
 template<typename CloserT>
 class UniqueHandle {
+private:
+	template<typename T>
+	static T decay_helper(const T &) NOEXCEPT;
+
 public:
-	typedef VALUE_TYPE(DECLREF(CloserT)()) Handle;
+#ifdef POSEIDON_CXX11
+	using Handle = decltype(decay_helper(std::declval<CloserT>()()));
+#else
+	typedef __typeof__(decay_helper(DECLREF(CloserT)())) Handle;
+#endif
 
 private:
 	Handle m_handle;
