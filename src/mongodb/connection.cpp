@@ -123,25 +123,24 @@ namespace {
 			return true;
 		}
 
-		bool find_bson_element_and_check_type(::bson_iter_t &it, const char *name, ::bson_type_t type_expecting) const {
+		::bson_type_t find_bson_element_and_check(::bson_iter_t &it, const char *name) const {
 			PROFILE_ME;
 
 			if(!m_element_guard){
 				LOG_POSEIDON_WARNING("No more results available.");
-				return false;
+				return BSON_TYPE_EOD;
 			}
 			const AUTO(element, m_element_guard.get());
 			if(!::bson_iter_init_find(&it, element, name)){
 				LOG_POSEIDON_WARNING("Field not found: name = ", name);
-				return false;
+				return BSON_TYPE_EOD;
 			}
 			const AUTO(type, ::bson_iter_type(&it));
 			if((type == BSON_TYPE_UNDEFINED) || (type == BSON_TYPE_NULL)){
-				LOG_POSEIDON_DEBUG("Field is undefined or null: name = ", name);
-				return false;
+				LOG_POSEIDON_DEBUG("Field is `undefined` or `null`: name = ", name);
+				return BSON_TYPE_EOD;
 			}
-			DEBUG_THROW_UNLESS(type == type_expecting, BasicException, sslit("BSON type mismatch"));
-			return true;
+			return type;
 		}
 
 	public:
@@ -175,7 +174,7 @@ namespace {
 			m_element_guard.reset();
 		}
 
-		bool fetch_next() FINAL {
+		bool fetch_document() FINAL {
 			PROFILE_ME;
 
 			for(;;){
@@ -189,7 +188,7 @@ namespace {
 					LOG_POSEIDON_DEBUG("No more data.");
 					return false;
 				}
-				LOG_POSEIDON_DEBUG("Issuing `getMore` request: cursor_id = ", m_cursor_id);
+				LOG_POSEIDON_DEBUG("Issuing a `getMore` request: cursor_id = ", m_cursor_id);
 
 				UniqueHandle<BsonCloser> query_guard;
 				DEBUG_THROW_ASSERT(query_guard.reset(::bson_sized_new(1024)));
@@ -223,87 +222,251 @@ namespace {
 		bool get_boolean(const char *name) const FINAL {
 			PROFILE_ME;
 
+			bool value = false;
 			::bson_iter_t it;
-			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BOOL)){
-				return VAL_INIT;
+			switch(find_bson_element_and_check(it, name)){
+			case BSON_TYPE_EOD:
+				break;
+			case BSON_TYPE_BOOL:
+				value = ::bson_iter_bool(&it);
+				break;
+			case BSON_TYPE_INT32:
+				value = ::bson_iter_int32(&it) != 0;
+				break;
+			case BSON_TYPE_INT64:
+				value = ::bson_iter_int64(&it) != 0;
+				break;
+			case BSON_TYPE_DOUBLE:
+				value = ::bson_iter_double(&it) != 0;
+				break;
+			case BSON_TYPE_UTF8: {
+				boost::uint32_t size;
+				const char *data;
+				data = ::bson_iter_utf8(&it, &size);
+				value = (size != 0) && (std::strcmp(data, "0") != 0);
+				break; }
+			case BSON_TYPE_BINARY: {
+				boost::uint32_t size;
+				const boost::uint8_t *data;
+				::bson_iter_binary(&it, NULLPTR, &size, &data);
+				value = size != 0;
+				break; }
+			case BSON_TYPE_DOCUMENT:
+			case BSON_TYPE_ARRAY:
+				value = true;
+				break;
+			default:
+				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
+				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
 			}
-			const bool value = ::bson_iter_bool(&it);
 			return value;
 		}
 		boost::int64_t get_signed(const char *name) const FINAL {
 			PROFILE_ME;
 
+			boost::int64_t value = 0;
 			::bson_iter_t it;
-			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
-				return VAL_INIT;
+			switch(find_bson_element_and_check(it, name)){
+			case BSON_TYPE_EOD:
+				break;
+			case BSON_TYPE_BOOL:
+				value = ::bson_iter_bool(&it);
+				break;
+			case BSON_TYPE_INT32:
+				value = ::bson_iter_int32(&it);
+				break;
+			case BSON_TYPE_INT64:
+				value = ::bson_iter_int64(&it);
+				break;
+			case BSON_TYPE_DOUBLE:
+				value = boost::numeric_cast<boost::int64_t>(::bson_iter_double(&it));
+				break;
+			case BSON_TYPE_UTF8: {
+				boost::uint32_t size;
+				const char *data;
+				data = ::bson_iter_utf8(&it, &size);
+				char *eptr;
+				value = ::strtoll(data, &eptr, 0);
+				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `long long`"));
+				break; }
+			default:
+				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
+				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
 			}
-			const boost::int64_t value = ::bson_iter_int64(&it);
 			return value;
 		}
 		boost::uint64_t get_unsigned(const char *name) const FINAL {
 			PROFILE_ME;
 
+			boost::uint64_t value = 0;
 			::bson_iter_t it;
-			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_INT64)){
-				return VAL_INIT;
+			switch(find_bson_element_and_check(it, name)){
+			case BSON_TYPE_EOD:
+				break;
+			case BSON_TYPE_BOOL:
+				value = ::bson_iter_bool(&it);
+				break;
+			case BSON_TYPE_INT32:
+				value = boost::numeric_cast<boost::uint32_t>(::bson_iter_int32(&it));
+				break;
+			case BSON_TYPE_INT64:
+				value = boost::numeric_cast<boost::uint64_t>(::bson_iter_int64(&it));
+				break;
+			case BSON_TYPE_DOUBLE:
+				value = boost::numeric_cast<boost::uint64_t>(::bson_iter_double(&it));
+				break;
+			case BSON_TYPE_UTF8: {
+				boost::uint32_t size;
+				const char *data;
+				data = ::bson_iter_utf8(&it, &size);
+				char *eptr;
+				value = ::strtoull(data, &eptr, 0);
+				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `unsigned long long`"));
+				break; }
+			default:
+				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
+				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
 			}
-			const boost::int64_t shifted = ::bson_iter_int64(&it);
-			return static_cast<boost::uint64_t>(shifted) + (1ull << 63);
+			return value;
 		}
 		double get_double(const char *name) const FINAL {
 			PROFILE_ME;
 
+			double value = 0;
 			::bson_iter_t it;
-			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_DOUBLE)){
-				return VAL_INIT;
+			switch(find_bson_element_and_check(it, name)){
+			case BSON_TYPE_EOD:
+				break;
+			case BSON_TYPE_BOOL:
+				value = ::bson_iter_bool(&it);
+				break;
+			case BSON_TYPE_INT32:
+				value = ::bson_iter_int32(&it);
+				break;
+			case BSON_TYPE_INT64:
+				value = boost::numeric_cast<double>(::bson_iter_int64(&it));
+				break;
+			case BSON_TYPE_DOUBLE:
+				value = ::bson_iter_double(&it);
+				break;
+			case BSON_TYPE_UTF8: {
+				boost::uint32_t size;
+				const char *data;
+				data = ::bson_iter_utf8(&it, &size);
+				char *eptr;
+				value = ::strtod(data, &eptr);
+				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `double`"));
+				break; }
+			default:
+				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
+				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
 			}
-			const double value = ::bson_iter_double(&it);
 			return value;
 		}
 		std::string get_string(const char *name) const FINAL {
 			PROFILE_ME;
 
+			std::string value;
 			::bson_iter_t it;
-			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
-				return VAL_INIT;
+			switch(find_bson_element_and_check(it, name)){
+			case BSON_TYPE_EOD:
+				break;
+			case BSON_TYPE_BOOL:
+				value = ::bson_iter_bool(&it) ? "true" : "false";
+				break;
+			case BSON_TYPE_INT32:
+				value = boost::lexical_cast<std::string>(::bson_iter_int32(&it));
+				break;
+			case BSON_TYPE_INT64:
+				value = boost::lexical_cast<std::string>(::bson_iter_int64(&it));
+				break;
+			case BSON_TYPE_DOUBLE:
+				value = boost::lexical_cast<std::string>(::bson_iter_double(&it));
+				break;
+			case BSON_TYPE_UTF8: {
+				boost::uint32_t size;
+				const char *data;
+				data = ::bson_iter_utf8(&it, &size);
+				value.assign(data, size);
+				break; }
+			case BSON_TYPE_BINARY: {
+				boost::uint32_t size;
+				const boost::uint8_t *data;
+				::bson_iter_binary(&it, NULLPTR, &size, &data);
+				value.assign(reinterpret_cast<const char *>(data), size);
+				break; }
+			default:
+				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
+				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
 			}
-			boost::uint32_t len;
-			const char *const str = ::bson_iter_utf8(&it, &len);
-			return std::string(str, len);
+			return value;
 		}
 		boost::uint64_t get_datetime(const char *name) const FINAL {
 			PROFILE_ME;
 
+			boost::uint64_t value = 0;
 			::bson_iter_t it;
-			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
-				return VAL_INIT;
+			switch(find_bson_element_and_check(it, name)){
+			case BSON_TYPE_EOD:
+				break;
+			case BSON_TYPE_UTF8: {
+				boost::uint32_t size;
+				const char *data;
+				data = ::bson_iter_utf8(&it, &size);
+				value = scan_time(data);
+				break; }
+			default:
+				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
+				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
 			}
-			const char *const str = ::bson_iter_utf8(&it, NULLPTR);
-			return scan_time(str);
+			return value;
 		}
 		Uuid get_uuid(const char *name) const FINAL {
 			PROFILE_ME;
 
+			Uuid value;
 			::bson_iter_t it;
-			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_UTF8)){
-				return VAL_INIT;
+			switch(find_bson_element_and_check(it, name)){
+			case BSON_TYPE_EOD:
+				break;
+			case BSON_TYPE_UTF8: {
+				boost::uint32_t size;
+				const char *data;
+				data = ::bson_iter_utf8(&it, &size);
+				DEBUG_THROW_UNLESS(size == 36, BasicException, sslit("Invalid UUID string length"));
+				value.from_string(*reinterpret_cast<const char (*)[36]>(data));
+				break; }
+			default:
+				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
+				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
 			}
-			boost::uint32_t len;
-			const char *const str = ::bson_iter_utf8(&it, &len);
-			DEBUG_THROW_UNLESS(len == 36, BasicException, sslit("Unexpected UUID string length"));
-			return Uuid(reinterpret_cast<const char (&)[36]>(*str));
+			return value;
 		}
 		std::basic_string<unsigned char> get_blob(const char *name) const FINAL {
 			PROFILE_ME;
 
+			std::basic_string<unsigned char> value;
 			::bson_iter_t it;
-			if(!find_bson_element_and_check_type(it, name, BSON_TYPE_BINARY)){
-				return VAL_INIT;
+			switch(find_bson_element_and_check(it, name)){
+			case BSON_TYPE_EOD:
+				break;
+			case BSON_TYPE_UTF8: {
+				boost::uint32_t size;
+				const char *data;
+				data = ::bson_iter_utf8(&it, &size);
+				value.assign(reinterpret_cast<const boost::uint8_t *>(data), size);
+				break; }
+			case BSON_TYPE_BINARY: {
+				boost::uint32_t size;
+				const boost::uint8_t *data;
+				::bson_iter_binary(&it, NULLPTR, &size, &data);
+				value.assign(data, size);
+				break; }
+			default:
+				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
+				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
 			}
-			boost::uint32_t len;
-			const boost::uint8_t *data;
-			::bson_iter_binary(&it, NULLPTR, &len, &data);
-			return std::basic_string<unsigned char>(data, len);
+			return value;
 		}
 	};
 }

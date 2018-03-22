@@ -229,7 +229,7 @@ namespace {
 				return;
 			}
 			conn->execute_bson(query);
-			DEBUG_THROW_UNLESS(conn->fetch_next(), MongoDb::Exception, SharedNts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, sslit("No documents returned"));
+			DEBUG_THROW_UNLESS(conn->fetch_document(), MongoDb::Exception, SharedNts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, sslit("No documents returned"));
 			m_object->fetch(conn);
 		}
 	};
@@ -303,7 +303,7 @@ namespace {
 			}
 			conn->execute_bson(query);
 			if(m_callback){
-				while(conn->fetch_next()){
+				while(conn->fetch_document()){
 					m_callback(conn);
 				}
 			} else {
