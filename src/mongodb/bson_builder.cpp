@@ -59,8 +59,7 @@ void BsonBuilder::internal_build(void *impl, bool as_array) const {
 		case T_UNSIGNED: {
 			boost::uint64_t value;
 			std::memcpy(&value, it->small, sizeof(value));
-			boost::int64_t shifted = static_cast<boost::int64_t>(value - (1ull << 63));
-			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, shifted), BasicException, sslit("BSON builder: bson_append_int64() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, boost::numeric_cast<boost::int64_t>(value)), BasicException, sslit("BSON builder: bson_append_int64() failed"));
 			break; }
 		case T_DOUBLE: {
 			double value;

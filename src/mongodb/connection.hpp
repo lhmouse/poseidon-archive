@@ -28,7 +28,7 @@ public:
 	virtual void execute_bson(const BsonBuilder &bson) = 0;
 	virtual void discard_result() NOEXCEPT = 0;
 
-	virtual bool fetch_next() = 0;
+	virtual bool fetch_document() = 0;
 
 	virtual bool get_boolean(const char *name) const = 0;
 	virtual boost::int64_t get_signed(const char *name) const = 0;
