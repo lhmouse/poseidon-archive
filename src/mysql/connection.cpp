@@ -84,7 +84,7 @@ namespace {
 			}
 			data = m_row[it->second];
 			if(!data){
-				LOG_POSEIDON_DEBUG("Field is null: name = ", name);
+				LOG_POSEIDON_DEBUG("Field is `null`: name = ", name);
 				return false;
 			}
 			size = m_lengths[it->second];
@@ -144,85 +144,100 @@ namespace {
 			return true;
 		}
 
+		bool get_boolean(const char *name) const FINAL {
+			PROFILE_ME;
+
+			bool value = false;
+			const char *data;
+			std::size_t size;
+			if(find_field_and_check(data, size, name)){
+				value = (size != 0) && (std::strcmp(data, "0") != 0);
+			}
+			return value;
+		}
 		boost::int64_t get_signed(const char *name) const FINAL {
 			PROFILE_ME;
 
+			boost::int64_t value = 0;
 			const char *data;
 			std::size_t size;
-			if(!find_field_and_check(data, size, name)){
-				return VAL_INIT;
+			if(find_field_and_check(data, size, name)){
+				char *eptr;
+				value = ::strtoll(data, &eptr, 0);
+				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `long long`"));
 			}
-			char *eptr;
-			const AUTO(val, ::strtoll(data, &eptr, 10));
-			DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to long long"));
-			return val;
+			return value;
 		}
 		boost::uint64_t get_unsigned(const char *name) const FINAL {
 			PROFILE_ME;
 
+			boost::uint64_t value = 0;
 			const char *data;
 			std::size_t size;
-			if(!find_field_and_check(data, size, name)){
-				return VAL_INIT;
+			if(find_field_and_check(data, size, name)){
+				char *eptr;
+				value = ::strtoull(data, &eptr, 0);
+				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `unsigned long long`"));
 			}
-			char *eptr;
-			const AUTO(val, ::strtoull(data, &eptr, 10));
-			DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to unsigned long long"));
-			return val;
+			return value;
 		}
 		double get_double(const char *name) const FINAL {
 			PROFILE_ME;
 
+			double value = 0;
 			const char *data;
 			std::size_t size;
-			if(!find_field_and_check(data, size, name)){
-				return VAL_INIT;
+			if(find_field_and_check(data, size, name)){
+				char *eptr;
+				value = ::strtod(data, &eptr);
+				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `double`"));
 			}
-			char *eptr;
-			const AUTO(val, ::strtod(data, &eptr));
-			DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to double"));
-			return val;
+			return value;
 		}
 		std::string get_string(const char *name) const FINAL {
 			PROFILE_ME;
 
+			std::string value;
 			const char *data;
 			std::size_t size;
-			if(!find_field_and_check(data, size, name)){
-				return VAL_INIT;
+			if(find_field_and_check(data, size, name)){
+				value.assign(data, size);
 			}
-			return std::string(data, size);
+			return value;
 		}
 		boost::uint64_t get_datetime(const char *name) const FINAL {
 			PROFILE_ME;
 
+			boost::uint64_t value = 0;
 			const char *data;
 			std::size_t size;
-			if(!find_field_and_check(data, size, name)){
-				return VAL_INIT;
+			if(find_field_and_check(data, size, name)){
+				value = scan_time(data);
 			}
-			return scan_time(data);
+			return value;
 		}
 		Uuid get_uuid(const char *name) const FINAL {
 			PROFILE_ME;
 
+			Uuid value;
 			const char *data;
 			std::size_t size;
-			if(!find_field_and_check(data, size, name)){
-				return VAL_INIT;
+			if(find_field_and_check(data, size, name)){
+				DEBUG_THROW_UNLESS(size == 36, BasicException, sslit("Invalid UUID string length"));
+				value.from_string(*reinterpret_cast<const char (*)[36]>(data));
 			}
-			DEBUG_THROW_UNLESS(size == 36, BasicException, sslit("Invalid UUID string"));
-			return Uuid(reinterpret_cast<const char (&)[36]>(data[0]));
+			return value;
 		}
 		std::basic_string<unsigned char> get_blob(const char *name) const FINAL {
 			PROFILE_ME;
 
+			std::basic_string<unsigned char> value;
 			const char *data;
 			std::size_t size;
-			if(!find_field_and_check(data, size, name)){
-				return VAL_INIT;
+			if(find_field_and_check(data, size, name)){
+				value.assign(reinterpret_cast<const unsigned char *>(data), size);
 			}
-			return std::basic_string<unsigned char>(reinterpret_cast<const unsigned char *>(data), size);
+			return value;
 		}
 	};
 }
