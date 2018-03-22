@@ -12,12 +12,11 @@ Poseidon is a C++ framework for game server development.
 ### Features
 
 * CBPP  
-CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，  
-简介参见 src/cbpp/message_base.hpp 中的注释。  
-CBPP is short for 'Compressed Binary Protocol for Poseidon'.  
-Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.  
-
-* HTTP  
+    CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，  
+    简介参见 src/cbpp/message_base.hpp 中的注释。  
+    CBPP is short for 'Compressed Binary Protocol for Poseidon'.  
+    Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.  
+* HTTP 1.1  
 * WebSocket  
 * MySQL  
 * MongoDB  
@@ -32,17 +31,16 @@ Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.
 * gettext  
 * make  
 * g++  
+    建议 g++ 版本至少为 4.7 以支持 C++11 特性。  
+    针对 C++98 的支持将会在未来的版本中被移除。  
+    It is highly recommended that you use at least g++ 4.7 for C++11 features.  
+    Support for C++98 is deprecated and will be removed in future versions.  
 * libboost-dev  
 * lib{a,l,ub}san (_OPTIONAL_)  
 * libmysqlclient-dev (_OPTIONAL_)  
 * libbson-dev (_OPTIONAL_)  
 * libmongoc-dev (_OPTIONAL_)  
 * libmagic-dev (_OPTIONAL_)  
-
-建议 g++ 版本至少为 4.7 以支持 C++11 特性。  
-针对 C++98 的支持可能在未来的版本中被移除。  
-It is highly recommended that you use at least g++ 4.7 for C++11 features.  
-Support for C++98 is deprecated and might be removed in future versions.  
 
 ### 运行环境要求
 ### Runtime Environment Requirements
