@@ -32,7 +32,7 @@ Poseidon is a C++ framework for game server development.
 * make  
 * g++  
     建议 g++ 版本至少为 4.7 以支持 C++11 特性。  
-    针对 C++98 的支持将会在未来的版本中被移除。  
+    针对 C++98 的支持将会在未来的版本中被移除。  
     It is highly recommended that you use at least g++ 4.7 for C++11 features.  
     Support for C++98 is deprecated and will be removed in future versions.  
 * libboost-dev  
