@@ -29,6 +29,7 @@ public:
 	virtual boost::uint64_t get_insert_id() const = 0;
 	virtual bool fetch_row() = 0;
 
+	virtual bool get_boolean(const char *name) const = 0;
 	virtual boost::int64_t get_signed(const char *name) const = 0;
 	virtual boost::uint64_t get_unsigned(const char *name) const = 0;
 	virtual double get_double(const char *name) const = 0;

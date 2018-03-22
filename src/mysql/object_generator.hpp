@@ -192,7 +192,7 @@ void OBJECT_NAME::fetch(const ::boost::shared_ptr<const ::Poseidon::MySql::Conne
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                id_.set(conn_->get_signed   ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_BOOLEAN(id_)                id_.set(conn_->get_boolean  ( TOKEN_TO_STR(id_) ), false);
 #define FIELD_SIGNED(id_)                 id_.set(conn_->get_signed   ( TOKEN_TO_STR(id_) ), false);
 #define FIELD_UNSIGNED(id_)               id_.set(conn_->get_unsigned ( TOKEN_TO_STR(id_) ), false);
 #define FIELD_DOUBLE(id_)                 id_.set(conn_->get_double   ( TOKEN_TO_STR(id_) ), false);
