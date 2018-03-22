@@ -4,6 +4,7 @@
 #include "precompiled.hpp"
 #include "time.hpp"
 #include "log.hpp"
+#include "exception.hpp"
 #include <stdio.h>
 
 namespace Poseidon {
@@ -57,55 +58,64 @@ double get_hi_res_mono_clock() NOEXCEPT {
 	return (double)ts.tv_sec * 1e3 + (double)ts.tv_nsec / 1e6;
 }
 
-DateTime break_down_time(boost::uint64_t ms){
-	const ::time_t seconds = static_cast< ::time_t>(ms / 1000);
-	const unsigned milliseconds = static_cast<unsigned>(ms % 1000);
-	::tm desc;
-	::gmtime_r(&seconds, &desc);
-	DateTime dt;
-	dt.yr  = static_cast<unsigned>(1900 + desc.tm_year);
-	dt.mon = static_cast<unsigned>(1 + desc.tm_mon);
-	dt.day = static_cast<unsigned>(desc.tm_mday);
-	dt.hr  = static_cast<unsigned>(desc.tm_hour);
-	dt.min = static_cast<unsigned>(desc.tm_min);
-	dt.sec = static_cast<unsigned>(desc.tm_sec);
-	dt.ms  = static_cast<unsigned>(milliseconds);
-	return dt;
-}
-boost::uint64_t assemble_time(const DateTime &dt){
-	::tm desc;
-	desc.tm_year = static_cast<int>(dt.yr - 1900);
-	desc.tm_mon  = static_cast<int>(dt.mon - 1);
-	desc.tm_mday = static_cast<int>(dt.day);
-	desc.tm_hour = static_cast<int>(dt.hr);
-	desc.tm_min  = static_cast<int>(dt.min);
-	desc.tm_sec  = static_cast<int>(dt.sec);
-	return static_cast<boost::uint64_t>(::timegm(&desc)) * 1000 + dt.ms;
-}
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
 
-std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms){
+DateTime break_down_time(boost::uint64_t ms){
 	DateTime dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	if(ms == 0){
 		dt.yr = 0;
 	} else if(ms == (boost::uint64_t)-1){
 		dt.yr = 9999;
 	} else {
-		dt = break_down_time(ms);
+		const AUTO(dt_sec, (::time_t)(ms / 1000));
+		const AUTO(dt_ms, (unsigned)(ms % 1000));
+		::tm desc;
+		::gmtime_r(&dt_sec, &desc);
+		dt.yr  = 1900 + desc.tm_year;
+		dt.mon = 1 + desc.tm_mon;
+		dt.day = desc.tm_mday;
+		dt.hr  = desc.tm_hour;
+		dt.min = desc.tm_min;
+		dt.sec = desc.tm_sec;
+		dt.ms  = dt_ms;
 	}
+	return dt;
+}
+boost::uint64_t assemble_time(const DateTime &dt){
+	boost::uint64_t ms;
+	if(dt.yr == 0){
+		ms = 0;
+	} else if(dt.yr == 9999){
+		ms = (boost::uint64_t)-1;
+	} else {
+		::tm desc;
+		desc.tm_year = dt.yr - 1900;
+		desc.tm_mon  = dt.mon - 1;
+		desc.tm_mday = dt.day;
+		desc.tm_hour = dt.hr;
+		desc.tm_min  = dt.min;
+		desc.tm_sec  = dt.sec;
+		ms = (boost::uint64_t)::timegm(&desc) * 1000 + dt.ms;
+	}
+	return ms;
+}
+
+#pragma GCC diagnostic pop
+
+std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms){
+	DateTime dt = break_down_time(ms);
 	return (unsigned)::snprintf(buffer, max, show_ms ? "%04u-%02u-%02u %02u:%02u:%02u.%03u"
 	                                                 : "%04u-%02u-%02u %02u:%02u:%02u",
 		dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec, dt.ms);
 }
 boost::uint64_t scan_time(const char *str){
 	DateTime dt = { 1234, 1, 1, 0, 0, 0, 0 };
-	std::sscanf(str, "%u-%u-%u %u:%u:%u.%u", &dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms);
-	if(dt.yr == 0){
-		return 0;
-	} else if(dt.yr == 9999){
-		return (boost::uint64_t)-1;
-	} else {
-		return assemble_time(dt);
+	if(std::sscanf(str, "%u-%u-%u %u:%u:%u.%u", &dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms) < 3){
+		LOG_POSEIDON_ERROR("Time string is not valid: ", str);
+		DEBUG_THROW(Exception, sslit("Time string is not valid"));
 	}
+	return assemble_time(dt);
 }
 
 }
