@@ -180,18 +180,6 @@ pkginclude_mongodb_HEADERS =	\
 	poseidon/src/mongodb/bson_builder.hpp
 endif
 
-bin_PROGRAMS =	\
-	bin/poseidon
-
-bin_poseidon_SOURCES =	\
-	poseidon/src/main.cpp
-
-bin_poseidon_LDFLAGS =	\
-	-pthread
-
-bin_poseidon_LDADD =	\
-	lib/libposeidon-main.la
-
 lib_LTLIBRARIES =	\
 	lib/libposeidon-main.la
 
@@ -320,6 +308,18 @@ lib_libposeidon_main_la_LDFLAGS =	\
 
 lib_libposeidon_main_la_LIBADD =	\
 	${AM_LIBS}
+
+bin_PROGRAMS =	\
+	bin/poseidon
+
+bin_poseidon_SOURCES =	\
+	poseidon/src/main.cpp
+
+bin_poseidon_LDFLAGS =	\
+	-pthread
+
+bin_poseidon_LDADD =	\
+	lib/libposeidon-main.la
 
 sysconf_DATA =
 
