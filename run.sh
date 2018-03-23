@@ -2,20 +2,31 @@
 
 set -e
 
-_type="$1"
-test -z "${_type}" || shift
+_pwd="$(pwd)"
+_cmd="${_pwd}/bin/poseidon"
+_runpath="$(find "${_pwd}" -path '*/lib/.libs' -type d -print0 | sed -r 's/\x00/:/g')"
+_confpath="${_pwd}/etc/poseidon"
 
-_runpath="$(find $(pwd) -path '*/lib/.libs' -type d -print0 | sed -r 's/\x00/:/g')"
-_confpath="$(pwd)/etc/poseidon"
+_type="$1"
+[[ "$#" -ge 1 ]] && shift
 
 export LD_LIBRARY_PATH="${_runpath}"
 
-if [[ "{_type}" == "-d" ]]; then
-	./libtool --mode=execute gdb --args poseidon "${_confpath}" $*
-elif [[ "{_type}" == "-v" ]]; then
-	./libtool --mode=execute valgrind --leak-check=full --log-file='valgrind.log' poseidon "${_confpath}" $*
-elif [[ "{_type}" == "-vgdb" ]]; then
-	./libtool --mode=execute valgrind --vgdb=yes --vgdb-error=0 --leak-check=full --log-file='valgrind.log' poseidon "${_confpath}" $*
-else
-	poseidon "${_confpath}" $*
-fi
+case "${_type}" in
+(""|"--")
+	"${_cmd}" "${_confpath}" $*
+	;;
+("-d")
+	./libtool --mode=execute gdb --args "${_cmd}" "${_confpath}" $*
+	;;
+("-v")
+	./libtool --mode=execute valgrind --leak-check=full --log-file='valgrind.log' "${_cmd}" "${_confpath}" $*
+	;;
+("-vgdb")
+	./libtool --mode=execute valgrind --vgdb=yes --vgdb-error=0 --leak-check=full --log-file='valgrind.log' "${_cmd}" "${_confpath}" $*
+	;;
+(*)
+	echo "Invalid option: ${_type}" >&2
+	exit 1
+	;;
+esac
