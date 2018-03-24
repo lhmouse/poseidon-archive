@@ -7,9 +7,9 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::uint32_t CRC32_REG_INIT = 0xFFFFFFFF;
+	CONSTEXPR const boost::uint32_t g_crc32_reg_init = 0xFFFFFFFF;
 
-	CONSTEXPR const boost::uint32_t CRC32_TABLE[256] = {
+	CONSTEXPR const boost::uint32_t g_crc32_table[256] = {
 		0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
 		0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988, 0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91,
 		0x1DB71064, 0x6AB020F2, 0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7,
@@ -46,7 +46,7 @@ namespace {
 }
 
 Crc32_streambuf::Crc32_streambuf()
-	: m_reg(CRC32_REG_INIT)
+	: m_reg(g_crc32_reg_init)
 {
 	//
 }
@@ -56,13 +56,13 @@ Crc32_streambuf::~Crc32_streambuf(){
 
 void Crc32_streambuf::reset() NOEXCEPT {
 	// setp(NULLPTR, NULLPTR);
-	m_reg = CRC32_REG_INIT;
+	m_reg = g_crc32_reg_init;
 }
 Crc32_streambuf::int_type Crc32_streambuf::overflow(Crc32_streambuf::int_type c){
 	if(traits_type::eq_int_type(c, traits_type::eof())){
 		return traits_type::not_eof(c);
 	}
-	m_reg = CRC32_TABLE[(m_reg ^ (unsigned)c) & 0xFF] ^ (m_reg >> 8);
+	m_reg = g_crc32_table[(m_reg ^ (unsigned)c) & 0xFF] ^ (m_reg >> 8);
 	return c;
 }
 

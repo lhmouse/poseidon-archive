@@ -45,10 +45,10 @@ protected:
 
 public:
 	bool shutdown_read() NOEXCEPT OVERRIDE {
-		return shutdown(ST_NORMAL_CLOSURE);
+		return shutdown(status_normal_closure);
 	}
 	bool shutdown_write() NOEXCEPT OVERRIDE {
-		return shutdown(ST_NORMAL_CLOSURE);
+		return shutdown(status_normal_closure);
 	}
 
 	virtual bool send(OpCode opcode, StreamBuffer payload, bool masked = true);

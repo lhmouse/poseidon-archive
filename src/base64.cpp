@@ -9,18 +9,13 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const unsigned char BASE64_TABLE[64] = {
+	CONSTEXPR const unsigned char g_base64_table[64] = {
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
 		'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
 		'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
 		'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
 	};
-
-	unsigned char to_base64_digit(unsigned long byte){
-		return BASE64_TABLE[byte & 0x3F];
-	}
-
-	CONSTEXPR const signed char BASE64_REV_TABLE[256] = {
+	CONSTEXPR const signed char g_base64_reverse_table[256] = {
 		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
@@ -39,8 +34,11 @@ namespace {
 		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	};
 
+	unsigned char to_base64_digit(unsigned long byte){
+		return g_base64_table[byte & 0x3F];
+	}
 	int from_base64_digit(unsigned char ch){
-		return BASE64_REV_TABLE[ch & 0xFF];
+		return g_base64_reverse_table[ch & 0xFF];
 	}
 }
 

@@ -151,34 +151,34 @@ void CsvDocument::parse(std::istream &is){
 		line.clear();
 		std::string seg;
 		enum {
-			Q_INIT,
-			Q_OPEN,
-			Q_CLOSING,
-			Q_CLOSED,
-		} quote_state = Q_INIT;
+			quote_init,
+			quote_open,
+			quote_closing,
+			quote_closed,
+		} quote_state = quote_init;
 		for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
 			const char ch = traits::to_char_type(is.get());
-			if(quote_state == Q_INIT){
+			if(quote_state == quote_init){
 				if(ch == '\"'){
-					quote_state = Q_OPEN;
+					quote_state = quote_open;
 					continue;
 				}
-				quote_state = Q_CLOSED;
-			} else if(quote_state == Q_OPEN){
+				quote_state = quote_closed;
+			} else if(quote_state == quote_open){
 				if(ch == '\"'){
-					quote_state = Q_CLOSING;
+					quote_state = quote_closing;
 					continue;
 				}
 				seg += ch;
-				// quote_state = Q_OPEN;
+				// quote_state = quote_open;
 				continue;
-			} else if(quote_state == Q_CLOSING){
+			} else if(quote_state == quote_closing){
 				if(ch == '\"'){
 					seg += '\"';
-					quote_state = Q_OPEN;
+					quote_state = quote_open;
 					continue;
 				}
-				quote_state = Q_CLOSED;
+				quote_state = quote_closed;
 			}
 			if(ch == '\n'){
 				if(!seg.empty() && (*seg.rbegin() == '\r')){
@@ -190,7 +190,7 @@ void CsvDocument::parse(std::istream &is){
 			} else if(ch == ','){
 				line.push_back(trim(STD_MOVE(seg)));
 				seg.clear();
-				quote_state = Q_INIT;
+				quote_state = quote_init;
 			} else {
 				seg += ch;
 			}

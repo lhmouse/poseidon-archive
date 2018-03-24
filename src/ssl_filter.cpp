@@ -49,9 +49,9 @@ namespace {
 SslFilter::SslFilter(Move<UniqueSsl> ssl, SslFilter::Direction dir, int fd)
 	: m_ssl(STD_MOVE(ssl))
 {
-	if(dir == DIR_TO_CONNECT){
+	if(dir == to_connect){
 		::SSL_set_connect_state(m_ssl.get());
-	} else if(dir == DIR_TO_ACCEPT){
+	} else if(dir == to_accept){
 		::SSL_set_accept_state(m_ssl.get());
 	}
 	DEBUG_THROW_UNLESS(::SSL_set_fd(m_ssl.get(), fd), Exception, sslit("::SSL_set_fd() failed"));

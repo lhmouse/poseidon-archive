@@ -45,13 +45,13 @@ private:
 		try {
 			really_perform(session);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			session->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-			session->shutdown(ST_INTERNAL_ERROR, e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
+			session->shutdown(status_internal_error, e.what());
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			session->force_shutdown();
 		}
 	}
@@ -91,7 +91,7 @@ protected:
 		const boost::uint64_t local_now = get_local_time();
 		char str[256];
 		std::size_t len = format_time(str, sizeof(str), local_now, true);
-		session->send(OP_PING, StreamBuffer(str, len));
+		session->send(opcode_ping, StreamBuffer(str, len));
 	}
 };
 
@@ -148,7 +148,7 @@ protected:
 Session::Session(const boost::shared_ptr<Http::LowLevelSession> &parent)
 	: LowLevelSession(parent)
 	, m_max_request_length(MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
-	, m_size_total(0), m_opcode(OP_INVALID)
+	, m_size_total(0), m_opcode(opcode_invalid)
 {
 	//
 }
@@ -186,7 +186,7 @@ void Session::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, Str
 	PROFILE_ME;
 
 	m_size_total += payload.size();
-	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, ST_MESSAGE_TOO_LARGE, sslit("Message too large"));
+	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_message_too_large, sslit("Message too large"));
 	m_payload.splice(payload);
 }
 bool Session::on_low_level_message_end(boost::uint64_t /*whole_size*/){
@@ -218,27 +218,27 @@ void Session::on_sync_control_message(OpCode opcode, StreamBuffer payload){
 	}
 
 	switch(opcode){
-	case OP_CLOSE:
+	case opcode_close:
 		LOG_POSEIDON_INFO("Received close frame from ", parent->get_remote_info());
-		shutdown(ST_NORMAL_CLOSURE, "");
+		shutdown(status_normal_closure, "");
 		break;
-	case OP_PING:
+	case opcode_ping:
 		LOG_POSEIDON_DEBUG("Received ping frame from ", parent->get_remote_info());
-		send(OP_PONG, STD_MOVE(payload));
+		send(opcode_pong, STD_MOVE(payload));
 		break;
-	case OP_PONG:
+	case opcode_pong:
 		LOG_POSEIDON_DEBUG("Received pong frame from ", parent->get_remote_info());
 		break;
 	default:
-		DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Invalid opcode"));
+		DEBUG_THROW(Exception, status_protocol_error, sslit("Invalid opcode"));
 	}
 }
 
 boost::uint64_t Session::get_max_request_length() const {
-	return atomic_load(m_max_request_length, memorder_consume);
+	return atomic_load(m_max_request_length, memory_order_consume);
 }
 void Session::set_max_request_length(boost::uint64_t max_request_length){
-	atomic_store(m_max_request_length, max_request_length, memorder_release);
+	atomic_store(m_max_request_length, max_request_length, memory_order_release);
 }
 
 }

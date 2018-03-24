@@ -44,7 +44,7 @@ long ClientWriter::put_request(RequestHeaders request_headers, StreamBuffer enti
 		headers.erase("Content-Type");
 		headers.erase("Transfer-Encoding");
 		if(set_content_length){
-			if((request_headers.verb == V_POST) || (request_headers.verb == V_PUT)){
+			if((request_headers.verb == verb_post) || (request_headers.verb == verb_put)){
 				headers.set(sslit("Content-Length"), "0");
 			} else {
 				headers.erase("Content-Length");

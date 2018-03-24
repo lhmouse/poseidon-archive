@@ -22,9 +22,9 @@ namespace Poseidon {
 
 namespace {
 	enum FiberState {
-		FS_READY   = 0,
-		FS_RUNNING = 1,
-		FS_YIELDED = 2,
+		fiber_state_ready    = 0,
+		fiber_state_running  = 1,
+		fiber_state_yielded  = 2,
 	};
 
 	struct JobElement {
@@ -104,7 +104,7 @@ namespace {
 		::ucontext_t outer;
 
 		explicit FiberControl(Initializer){
-			state = FS_READY;
+			state = fiber_state_ready;
 			g_stack_allocator.allocate(stack);
 #ifndef NDEBUG
 			std::memset(&inner, 0xCC, sizeof(outer));
@@ -112,7 +112,7 @@ namespace {
 #endif
 		}
 		~FiberControl(){
-			assert(state == FS_READY);
+			assert(state == fiber_state_ready);
 			g_stack_allocator.deallocate(stack);
 #ifndef NDEBUG
 			std::memset(&inner, 0xCC, sizeof(outer));
@@ -144,13 +144,13 @@ namespace {
 		}
 		LOG_POSEIDON_TRACE("Exited from fiber ", static_cast<void *>(fiber));
 
-		fiber->state = FS_READY;
+		fiber->state = fiber_state_ready;
 	}
 
 	void schedule_fiber(FiberControl *fiber) NOEXCEPT {
 		PROFILE_ME;
 
-		if(fiber->state == FS_READY){
+		if(fiber->state == fiber_state_ready){
 			if(::getcontext(&(fiber->inner)) != 0){
 				const int err_code = errno;
 				LOG_POSEIDON_FATAL("::getcontext() failed: err_code = ", err_code);
@@ -169,11 +169,11 @@ namespace {
 		t_current_fiber = fiber;
 		const AUTO(profiler_hook, Profiler::begin_stack_switch());
 		{
-			if((fiber->state != FS_READY) && (fiber->state != FS_YIELDED)){
+			if((fiber->state != fiber_state_ready) && (fiber->state != fiber_state_yielded)){
 				LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(fiber->state));
 				std::abort();
 			}
-			fiber->state = FS_RUNNING;
+			fiber->state = fiber_state_running;
 			if(::swapcontext(&(fiber->outer), &(fiber->inner)) != 0){
 				const int err_code = errno;
 				LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
@@ -204,12 +204,12 @@ namespace {
 			}
 			elem->promise.reset();
 		}
-		if((fiber->state == FS_READY) && elem->withdrawn && *(elem->withdrawn)){
+		if((fiber->state == fiber_state_ready) && elem->withdrawn && *(elem->withdrawn)){
 			LOG_POSEIDON_DEBUG("Job is withdrawn");
 		} else {
 			schedule_fiber(fiber);
 		}
-		if(fiber->state == FS_READY){
+		if(fiber->state == fiber_state_ready){
 			const RecursiveMutex::UniqueLock queue_lock(fiber->queue_mutex);
 			fiber->queue.pop_front();
 		}
@@ -242,12 +242,12 @@ namespace {
 }
 
 void JobDispatcher::start(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting job dispatcher...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting job dispatcher...");
 
 	//
 }
 void JobDispatcher::stop(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping job dispatcher...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping job dispatcher...");
 
 	Mutex::UniqueLock lock(g_fiber_map_mutex);
 	boost::uint64_t last_info_time = 0;
@@ -260,7 +260,7 @@ void JobDispatcher::stop(){
 
 		const AUTO(now, get_fast_mono_clock());
 		if(last_info_time + 500 < now){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "There are ", pending_fibers, " fiber(s) remaining.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "There are ", pending_fibers, " fiber(s) remaining.");
 			last_info_time = now;
 		}
 		pump_one_round(true);
@@ -274,12 +274,12 @@ void JobDispatcher::do_modal(const volatile bool &running){
 	for(;;){
 		bool busy;
 		do {
-			busy = pump_one_round(!atomic_load(running, memorder_consume));
+			busy = pump_one_round(!atomic_load(running, memory_order_consume));
 			timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 		} while(busy);
 
 		Mutex::UniqueLock lock(g_fiber_map_mutex);
-		if(!atomic_load(running, memorder_consume)){
+		if(!atomic_load(running, memory_order_consume)){
 			break;
 		}
 		g_new_job.timed_wait(lock, timeout);
@@ -328,7 +328,7 @@ void JobDispatcher::yield(boost::shared_ptr<const Promise> promise, bool insigni
 		elem.insignificant = insignificant;
 		const AUTO(profiler_hook, Profiler::begin_stack_switch());
 		{
-			fiber->state = FS_YIELDED;
+			fiber->state = fiber_state_yielded;
 			if(::swapcontext(&(fiber->inner), &(fiber->outer)) != 0){
 				const int err_code = errno;
 				LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);

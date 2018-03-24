@@ -81,7 +81,7 @@ namespace {
 
 		void thread_proc(){
 			PROFILE_ME;
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse thread started.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Workhorse thread started.");
 
 			unsigned timeout = 0;
 			for(;;){
@@ -92,23 +92,23 @@ namespace {
 				} while(busy);
 
 				Mutex::UniqueLock lock(m_mutex);
-				if(m_queue.empty() && !atomic_load(m_running, memorder_consume)){
+				if(m_queue.empty() && !atomic_load(m_running, memory_order_consume)){
 					break;
 				}
 				m_new_job.timed_wait(lock, timeout);
 			}
 
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse thread stopped.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Workhorse thread stopped.");
 		}
 
 	public:
 		void start(){
 			const Mutex::UniqueLock lock(m_mutex);
 			Thread(boost::bind(&WorkhorseThread::thread_proc, this), sslit("  W "), sslit("Workhorse")).swap(m_thread);
-			atomic_store(m_running, true, memorder_release);
+			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
-			atomic_store(m_running, false, memorder_release);
+			atomic_store(m_running, false, memory_order_release);
 		}
 		void safe_join(){
 			wait_till_idle();
@@ -129,7 +129,7 @@ namespace {
 					}
 					m_new_job.signal();
 				}
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for jobs to complete: pending_objects = ", pending_objects);
+				LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for jobs to complete: pending_objects = ", pending_objects);
 
 				::timespec req;
 				req.tv_sec = 0;
@@ -146,7 +146,7 @@ namespace {
 			PROFILE_ME;
 
 			const Mutex::UniqueLock lock(m_mutex);
-			DEBUG_THROW_UNLESS(atomic_load(m_running, memorder_consume), Exception, sslit("Workhorse thread is being shut down"));
+			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, sslit("Workhorse thread is being shut down"));
 			JobQueueElement elem = { promise, STD_MOVE_IDN(procedure) };
 			m_queue.push_back(STD_MOVE(elem));
 			m_new_job.signal();
@@ -168,7 +168,7 @@ namespace {
 			std::size_t i = static_cast<std::size_t>(seed % g_threads.size());
 			thread = g_threads.at(i);
 			if(!thread){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Creating new workhorse thread ", i);
+				LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Creating new workhorse thread ", i);
 				thread = boost::make_shared<WorkhorseThread>();
 				thread->start();
 				g_threads.at(i) = thread;
@@ -180,11 +180,11 @@ namespace {
 }
 
 void WorkhorseCamp::start(){
-	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
+	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting workhorse daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting workhorse daemon...");
 
 	const AUTO(max_thread_count, MainConfig::get<std::size_t>("workhorse_max_thread_count"));
 	if(max_thread_count == 0){
@@ -193,20 +193,20 @@ void WorkhorseCamp::start(){
 	}
 	g_threads.resize(max_thread_count);
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse daemon started.");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Workhorse daemon started.");
 }
 void WorkhorseCamp::stop(){
-	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
+	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping workhorse daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping workhorse daemon...");
 
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		const AUTO_REF(thread, g_threads.at(i));
 		if(!thread){
 			continue;
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping workhorse thread ", i);
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping workhorse thread ", i);
 		thread->stop();
 	}
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
@@ -214,11 +214,11 @@ void WorkhorseCamp::stop(){
 		if(!thread){
 			continue;
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for workhorse thread ", i, " to terminate...");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for workhorse thread ", i, " to terminate...");
 		thread->safe_join();
 	}
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Workhorse daemon stopped.");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Workhorse daemon stopped.");
 
 	const Mutex::UniqueLock lock(g_router_mutex);
 	g_threads.clear();

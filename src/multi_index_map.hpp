@@ -13,7 +13,7 @@ typedef ::std::pair<int, ::std::string> Item;
 MULTI_INDEX_MAP(Container, Item,
 	UNIQUE_MEMBER_INDEX(first)
 	MULTI_MEMBER_INDEX(second)
-	SEQUENCED_INDEX()
+	SEQUENCE_INDEX()
 );
 
 基本用法和 ::std::map 类似，只是 find, count, lower_bound, upper_bound, equal_range 等
@@ -304,6 +304,6 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 #define UNIQUE_MEMBER_INDEX(member_, ...)   , ::boost::multi_index::ordered_unique< ::boost::multi_index::member<value_type, CV_VALUE_TYPE(DECLREF(value_type).member_), &value_type::member_>, ## __VA_ARGS__>
 #define MULTI_INDEX(...)                    , ::boost::multi_index::ordered_non_unique< ::boost::multi_index::identity<value_type>, ## __VA_ARGS__>
 #define MULTI_MEMBER_INDEX(member_, ...)    , ::boost::multi_index::ordered_non_unique< ::boost::multi_index::member<value_type, CV_VALUE_TYPE(DECLREF(value_type).member_), &value_type::member_>, ## __VA_ARGS__>
-#define SEQUENCED_INDEX()                   , ::boost::multi_index::sequenced<>
+#define SEQUENCE_INDEX()                    , ::boost::multi_index::sequenced<>
 
 #endif

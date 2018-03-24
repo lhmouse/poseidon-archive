@@ -23,13 +23,13 @@ ObjectBase::~ObjectBase(){
 }
 
 bool ObjectBase::is_auto_saving_enabled() const NOEXCEPT {
-	return atomic_load(m_auto_saves, memorder_consume);
+	return atomic_load(m_auto_saves, memory_order_consume);
 }
 void ObjectBase::enable_auto_saving() const NOEXCEPT {
-	atomic_store(m_auto_saves, true, memorder_release);
+	atomic_store(m_auto_saves, true, memory_order_release);
 }
 void ObjectBase::disable_auto_saving() const NOEXCEPT {
-	atomic_store(m_auto_saves, false, memorder_release);
+	atomic_store(m_auto_saves, false, memory_order_release);
 }
 
 bool ObjectBase::invalidate() const NOEXCEPT
@@ -48,10 +48,10 @@ try {
 }
 
 void *ObjectBase::get_combined_write_stamp() const NOEXCEPT {
-	return atomic_load(m_combined_write_stamp, memorder_consume);
+	return atomic_load(m_combined_write_stamp, memory_order_consume);
 }
 void ObjectBase::set_combined_write_stamp(void *stamp) const NOEXCEPT {
-	atomic_store(m_combined_write_stamp, stamp, memorder_release);
+	atomic_store(m_combined_write_stamp, stamp, memory_order_release);
 }
 
 // Non-member functions.

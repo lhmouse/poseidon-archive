@@ -78,7 +78,7 @@ namespace {
 		dump_path.push_back('/');
 		dump_path.append(temp, len);
 
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Creating BSON dump file: ", dump_path);
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Creating BSON dump file: ", dump_path);
 		UniqueFile dump_file;
 		if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 			const int saved_errno = errno;
@@ -86,7 +86,7 @@ namespace {
 			std::abort();
 		}
 
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Writing MongoDB dump...");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Writing MongoDB dump...");
 		Buffer_ostream os;
 		len = format_time(temp, sizeof(temp), local_now, false);
 		os <<"// " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
@@ -417,10 +417,10 @@ namespace {
 			{
 				const Mutex::UniqueLock lock(m_mutex);
 				if(m_queue.empty()){
-					atomic_store(m_urgent, false, memorder_relaxed);
+					atomic_store(m_urgent, false, memory_order_relaxed);
 					return false;
 				}
-				if(!atomic_load(m_urgent, memorder_consume) && (now < m_queue.front().due_time)){
+				if(!atomic_load(m_urgent, memory_order_consume) && (now < m_queue.front().due_time)){
 					return false;
 				}
 				elem = &m_queue.front();
@@ -474,7 +474,7 @@ namespace {
 				const AUTO(max_retry_count, MainConfig::get<std::size_t>("mongodb_max_retry_count", 3));
 				const AUTO(retry_count, ++(elem->retry_count));
 				if(retry_count < max_retry_count){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Going to retry MongoDB operation: retry_count = ", retry_count);
+					LOG_POSEIDON(Logger::special_major | Logger::level_info, "Going to retry MongoDB operation: retry_count = ", retry_count);
 					const AUTO(retry_init_delay, MainConfig::get<boost::uint64_t>("mongodb_retry_init_delay", 1000));
 					elem->due_time = now + (retry_init_delay << retry_count);
 					conn.reset();
@@ -498,7 +498,7 @@ namespace {
 
 		void thread_proc(){
 			PROFILE_ME;
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MongoDB thread started.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB thread started.");
 
 			boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
 			unsigned timeout = 0;
@@ -507,10 +507,10 @@ namespace {
 				bool busy;
 				do {
 					while(!master_conn){
-						LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Connecting to MongoDB master server...");
+						LOG_POSEIDON(Logger::special_major | Logger::level_info, "Connecting to MongoDB master server...");
 						try {
 							master_conn = real_create_connection(false, VAL_INIT);
-							LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Successfully connected to MongoDB master server.");
+							LOG_POSEIDON(Logger::special_major | Logger::level_info, "Successfully connected to MongoDB master server.");
 						} catch(std::exception &e){
 							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
@@ -520,10 +520,10 @@ namespace {
 						}
 					}
 					while(!slave_conn){
-						LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Connecting to MongoDB slave server...");
+						LOG_POSEIDON(Logger::special_major | Logger::level_info, "Connecting to MongoDB slave server...");
 						try {
 							slave_conn = real_create_connection(true, master_conn);
-							LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Successfully connected to MongoDB slave server.");
+							LOG_POSEIDON(Logger::special_major | Logger::level_info, "Successfully connected to MongoDB slave server.");
 						} catch(std::exception &e){
 							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
@@ -537,23 +537,23 @@ namespace {
 				} while(busy);
 
 				Mutex::UniqueLock lock(m_mutex);
-				if(m_queue.empty() && !atomic_load(m_running, memorder_consume)){
+				if(m_queue.empty() && !atomic_load(m_running, memory_order_consume)){
 					break;
 				}
 				m_new_operation.timed_wait(lock, timeout);
 			}
 
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MongoDB thread stopped.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB thread stopped.");
 		}
 
 	public:
 		void start(){
 			const Mutex::UniqueLock lock(m_mutex);
 			Thread(boost::bind(&MongoDbThread::thread_proc, this), sslit(" G  "), sslit("MongoDB")).swap(m_thread);
-			atomic_store(m_running, true, memorder_release);
+			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
-			atomic_store(m_running, false, memorder_release);
+			atomic_store(m_running, false, memory_order_release);
 		}
 		void safe_join(){
 			wait_till_idle();
@@ -574,10 +574,10 @@ namespace {
 						break;
 					}
 					m_queue.front().operation->generate_bson(current_bson);
-					atomic_store(m_urgent, true, memorder_release);
+					atomic_store(m_urgent, true, memory_order_release);
 					m_new_operation.signal();
 				}
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for BSON queries to complete: pending_objects = ", pending_objects, ", current_bson = ", current_bson);
+				LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for BSON queries to complete: pending_objects = ", pending_objects, ", current_bson = ", current_bson);
 
 				::timespec req;
 				req.tv_sec = 0;
@@ -601,7 +601,7 @@ namespace {
 			const AUTO(due_time, saturated_add(now, save_delay));
 
 			const Mutex::UniqueLock lock(m_mutex);
-			DEBUG_THROW_UNLESS(atomic_load(m_running, memorder_consume), Exception, sslit("MongoDB thread is being shut down"));
+			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, sslit("MongoDB thread is being shut down"));
 			OperationQueueElement elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){
@@ -611,7 +611,7 @@ namespace {
 				}
 			}
 			if(urgent){
-				atomic_store(m_urgent, true, memorder_release);
+				atomic_store(m_urgent, true, memory_order_release);
 			}
 			m_new_operation.signal();
 		}
@@ -653,7 +653,7 @@ namespace {
 			for(std::size_t i = 0; i < g_threads.size(); ++i){
 				AUTO_REF(test_thread, g_threads.at(i));
 				if(!test_thread){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Creating new MongoDB thread ", i, " for collection ", collection);
+					LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Creating new MongoDB thread ", i, " for collection ", collection);
 					thread = boost::make_shared<MongoDbThread>();
 					thread->start();
 					test_thread = thread;
@@ -669,7 +669,7 @@ namespace {
 				std::abort();
 			}
 			const AUTO(index, g_routing_map.begin()->second);
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Picking thread ", index, " for collection ", collection);
+			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Picking thread ", index, " for collection ", collection);
 			thread = g_threads.at(index);
 			route.thread = thread;
 		}
@@ -695,18 +695,18 @@ namespace {
 }
 
 void MongoDbDaemon::start(){
-	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
+	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting MongoDB daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting MongoDB daemon...");
 
 	const AUTO(max_thread_count, MainConfig::get<std::size_t>("mongodb_max_thread_count"));
 	if(max_thread_count == 0){
 		LOG_POSEIDON_WARNING("MongoDB support has been disabled. To enable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to a value greater than zero.");
 	} else {
 		boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MongoDB master server is up...");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB master server is up...");
 		try {
 			master_conn = real_create_connection(false, VAL_INIT);
 			master_conn->execute_bson(MongoDb::bson_scalar_signed(sslit("ping"), 1));
@@ -716,7 +716,7 @@ void MongoDbDaemon::start(){
 			std::abort();
 		}
 
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MongoDB slave server is up...");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB slave server is up...");
 		try {
 			slave_conn = real_create_connection(true, master_conn);
 			if(slave_conn != master_conn){
@@ -732,7 +732,7 @@ void MongoDbDaemon::start(){
 		if(dump_dir.empty()){
 			LOG_POSEIDON_WARNING("MongoDB error dump has been disabled. To enable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to the path to the dump directory.");
 		} else {
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Checking whether MongoDB dump directory is writeable...");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB dump directory is writeable...");
 			try {
 				const AUTO(placeholder_path, dump_dir + "/placeholder");
 				DEBUG_THROW_ASSERT(UniqueFile(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)));
@@ -745,20 +745,20 @@ void MongoDbDaemon::start(){
 	}
 	g_threads.resize(max_thread_count);
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MongoDB daemon started.");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB daemon started.");
 }
 void MongoDbDaemon::stop(){
-	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
+	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MongoDB daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping MongoDB daemon...");
 
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		const AUTO_REF(thread, g_threads.at(i));
 		if(!thread){
 			continue;
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping MongoDB thread ", i);
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping MongoDB thread ", i);
 		thread->stop();
 	}
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
@@ -766,11 +766,11 @@ void MongoDbDaemon::stop(){
 		if(!thread){
 			continue;
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for MongoDB thread ", i, " to terminate...");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for MongoDB thread ", i, " to terminate...");
 		thread->safe_join();
 	}
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "MongoDB daemon stopped.");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB daemon stopped.");
 
 	const Mutex::UniqueLock lock(g_router_mutex);
 	g_threads.clear();

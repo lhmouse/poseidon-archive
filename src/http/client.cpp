@@ -40,15 +40,15 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown in HTTP servlet: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Http::Exception thrown in HTTP servlet: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->shutdown_read();
 			client->shutdown_write();
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
 			client->shutdown_read();
 			client->shutdown_write();
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			client->force_shutdown();
 		}
 	}

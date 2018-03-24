@@ -14,12 +14,12 @@ namespace Poseidon {
 namespace Http {
 
 ClientReader::ClientReader()
-	: m_size_expecting(EXPECTING_NEW_LINE), m_state(S_FIRST_HEADER)
+	: m_size_expecting(content_length_expecting_endl), m_state(state_first_header)
 {
 	//
 }
 ClientReader::~ClientReader(){
-	if(m_state != S_FIRST_HEADER){
+	if(m_state != state_first_header){
 		LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature response has to be discarded.");
 	}
 }
@@ -31,7 +31,7 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 	bool has_next_response = true;
 	do {
-		const bool expecting_new_line = (m_size_expecting == EXPECTING_NEW_LINE);
+		const bool expecting_new_line = (m_size_expecting == content_length_expecting_endl);
 
 		if(expecting_new_line){
 			std::ptrdiff_t lf_offset = 0;
@@ -72,7 +72,7 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 		switch(m_state){
 			boost::uint64_t temp64;
 
-		case S_FIRST_HEADER:
+		case state_first_header:
 			if(!expected.empty()){
 				m_response_headers = ResponseHeaders();
 				m_content_length = 0;
@@ -106,15 +106,15 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 				m_response_headers.reason = STD_MOVE(line);
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				m_state = S_HEADERS;
+				m_size_expecting = content_length_expecting_endl;
+				m_state = state_headers;
 			} else {
-				m_size_expecting = EXPECTING_NEW_LINE;
-				// m_state = S_FIRST_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				// m_state = state_first_header;
 			}
 			break;
 
-		case S_HEADERS:
+		case state_headers:
 			if(!expected.empty()){
 				std::string line = expected.dump_string();
 
@@ -125,22 +125,22 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 				std::string value(trim(STD_MOVE(line)));
 				m_response_headers.headers.append(STD_MOVE(key), STD_MOVE(value));
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				// m_state = S_HEADERS;
+				m_size_expecting = content_length_expecting_endl;
+				// m_state = state_headers;
 			} else {
 				const AUTO_REF(transfer_encoding, m_response_headers.headers.get("Transfer-Encoding"));
 				if(transfer_encoding.empty() || (::strcasecmp(transfer_encoding.c_str(), "identity") == 0)){
 					const AUTO_REF(content_length, m_response_headers.headers.get("Content-Length"));
 					if(content_length.empty()){
-						m_content_length = CONTENT_TILL_EOF;
+						m_content_length = content_length_until_eof;
 					} else {
 						char *eptr;
 						m_content_length = ::strtoull(content_length.c_str(), &eptr, 10);
 						DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Malformed Content-Length header"));
-						DEBUG_THROW_UNLESS(m_content_length <= CONTENT_LENGTH_MAX, BasicException, sslit("Inacceptable Content-Length"));
+						DEBUG_THROW_UNLESS(m_content_length <= content_length_max, BasicException, sslit("Inacceptable Content-Length"));
 					}
 				} else if(::strcasecmp(transfer_encoding.c_str(), "chunked") == 0){
-					m_content_length = CONTENT_CHUNKED;
+					m_content_length = content_length_chunked;
 				} else {
 					LOG_POSEIDON_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
 					DEBUG_THROW(BasicException, sslit("Inacceptable Transfer-Encoding"));
@@ -148,41 +148,41 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 				on_response_headers(STD_MOVE(m_response_headers), m_content_length);
 
-				if(m_content_length == CONTENT_CHUNKED){
-					m_size_expecting = EXPECTING_NEW_LINE;
-					m_state = S_CHUNK_HEADER;
-				} else if(m_content_length == CONTENT_TILL_EOF){
+				if(m_content_length == content_length_chunked){
+					m_size_expecting = content_length_expecting_endl;
+					m_state = state_chunk_header;
+				} else if(m_content_length == content_length_until_eof){
 					m_size_expecting = 4096;
-					m_state = S_IDENTITY;
+					m_state = state_identity;
 				} else {
 					m_size_expecting = std::min<boost::uint64_t>(m_content_length, 4096);
-					m_state = S_IDENTITY;
+					m_state = state_identity;
 				}
 			}
 			break;
 
-		case S_IDENTITY:
+		case state_identity:
 			temp64 = std::min<boost::uint64_t>(expected.size(), m_content_length - m_content_offset);
 			if(temp64 > 0){
 				on_response_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
 			}
 			m_content_offset += temp64;
 
-			if(m_content_length == CONTENT_TILL_EOF){
+			if(m_content_length == content_length_until_eof){
 				m_size_expecting = 4096;
-				// m_state = S_IDENTITY;
+				// m_state = state_identity;
 			} else if(m_content_offset < m_content_length){
 				m_size_expecting = std::min<boost::uint64_t>(m_content_length - m_content_offset, 4096);
-				// m_state = S_IDENTITY;
+				// m_state = state_identity;
 			} else {
 				has_next_response = on_response_end(m_content_offset, VAL_INIT);
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				m_state = S_FIRST_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				m_state = state_first_header;
 			}
 			break;
 
-		case S_CHUNK_HEADER:
+		case state_chunk_header:
 			if(!expected.empty()){
 				m_chunk_size = 0;
 				m_chunk_offset = 0;
@@ -193,22 +193,22 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 				char *eptr;
 				m_chunk_size = ::strtoull(line.c_str(), &eptr, 16);
 				DEBUG_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), BasicException, sslit("Malformed chunk header"));
-				DEBUG_THROW_UNLESS(m_chunk_size <= CONTENT_LENGTH_MAX, BasicException, sslit("Inacceptable chunk length"));
+				DEBUG_THROW_UNLESS(m_chunk_size <= content_length_max, BasicException, sslit("Inacceptable chunk length"));
 				if(m_chunk_size == 0){
-					m_size_expecting = EXPECTING_NEW_LINE;
-					m_state = S_CHUNKED_TRAILER;
+					m_size_expecting = content_length_expecting_endl;
+					m_state = state_chunked_trailer;
 				} else {
 					m_size_expecting = std::min<boost::uint64_t>(m_chunk_size, 4096);
-					m_state = S_CHUNK_DATA;
+					m_state = state_chunk_data;
 				}
 			} else {
 				// chunk-data 后面应该有一对 CRLF。我们在这里处理这种情况。
-				m_size_expecting = EXPECTING_NEW_LINE;
-				// m_state = S_CHUNK_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				// m_state = state_chunk_header;
 			}
 			break;
 
-		case S_CHUNK_DATA:
+		case state_chunk_data:
 			temp64 = std::min<boost::uint64_t>(expected.size(), m_chunk_size - m_chunk_offset);
 			on_response_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
 			m_content_offset += temp64;
@@ -216,14 +216,14 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 			if(m_chunk_offset < m_chunk_size){
 				m_size_expecting = std::min<boost::uint64_t>(m_chunk_size - m_chunk_offset, 4096);
-				// m_state = S_CHUNK_DATA;
+				// m_state = state_chunk_data;
 			} else {
-				m_size_expecting = EXPECTING_NEW_LINE;
-				m_state = S_CHUNK_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				m_state = state_chunk_header;
 			}
 			break;
 
-		case S_CHUNKED_TRAILER:
+		case state_chunked_trailer:
 			if(!expected.empty()){
 				std::string line = expected.dump_string();
 
@@ -234,13 +234,13 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 				std::string value(trim(STD_MOVE(line)));
 				m_chunked_trailer.append(STD_MOVE(key), STD_MOVE(value));
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				// m_state = S_CHUNKED_TRAILER;
+				m_size_expecting = content_length_expecting_endl;
+				// m_state = state_chunked_trailer;
 			} else {
 				has_next_response = on_response_end(m_content_offset, STD_MOVE(m_chunked_trailer));
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				m_state = S_FIRST_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				m_state = state_first_header;
 			}
 			break;
 		}
@@ -250,10 +250,10 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 }
 
 bool ClientReader::is_content_till_eof() const {
-	if(m_state < S_IDENTITY){
+	if(m_state < state_identity){
 		return false;
 	}
-	return m_content_length == CONTENT_TILL_EOF;
+	return m_content_length == content_length_until_eof;
 }
 bool ClientReader::terminate_content(){
 	PROFILE_ME;
@@ -268,8 +268,8 @@ bool ClientReader::terminate_content(){
 
 	const bool ret = on_response_end(m_content_offset, STD_MOVE(m_chunked_trailer));
 
-	m_size_expecting = EXPECTING_NEW_LINE;
-	m_state = S_FIRST_HEADER;
+	m_size_expecting = content_length_expecting_endl;
+	m_state = state_first_header;
 
 	return ret;
 }

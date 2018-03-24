@@ -23,9 +23,11 @@ extern template class PromiseContainer<FileBlockRead>;
 
 class FileSystemDaemon {
 public:
-	static CONSTEXPR const boost::uint64_t LIMIT_EOF       = (boost::uint64_t)-1;
-	static CONSTEXPR const boost::uint64_t OFFSET_APPEND   = (boost::uint64_t)-2;
-	static CONSTEXPR const boost::uint64_t OFFSET_TRUNCATE = (boost::uint64_t)-3;
+	enum {
+		limit_eof        = -1ull,
+		offset_append    = -2ull,
+		offset_truncate  = -3ull,
+	};
 
 private:
 	FileSystemDaemon();
@@ -35,16 +37,16 @@ public:
 	static void stop();
 
 	// 同步接口。
-	static FileBlockRead load(const std::string &path, boost::uint64_t begin = 0, boost::uint64_t limit = LIMIT_EOF, bool throws_if_does_not_exist = true);
-	static void save(const std::string &path, StreamBuffer data, boost::uint64_t begin = OFFSET_TRUNCATE, bool throws_if_exists = false);
+	static FileBlockRead load(const std::string &path, boost::uint64_t begin = 0, boost::uint64_t limit = limit_eof, bool throws_if_does_not_exist = true);
+	static void save(const std::string &path, StreamBuffer data, boost::uint64_t begin = offset_truncate, bool throws_if_exists = false);
 	static void remove(const std::string &path, bool throws_if_does_not_exist = true);
 	static void rename(const std::string &path, const std::string &new_path);
 	static void mkdir(const std::string &path, bool throws_if_exists = false);
 	static void rmdir(const std::string &path, bool throws_if_does_not_exist = true);
 
 	// 异步接口。
-	static boost::shared_ptr<const PromiseContainer<FileBlockRead> > enqueue_for_loading(std::string path, boost::uint64_t begin = 0, boost::uint64_t limit = LIMIT_EOF, bool throws_if_does_not_exist = true);
-	static boost::shared_ptr<const Promise> enqueue_for_saving(std::string path, StreamBuffer data, boost::uint64_t begin = OFFSET_TRUNCATE, bool throws_if_exists = false);
+	static boost::shared_ptr<const PromiseContainer<FileBlockRead> > enqueue_for_loading(std::string path, boost::uint64_t begin = 0, boost::uint64_t limit = limit_eof, bool throws_if_does_not_exist = true);
+	static boost::shared_ptr<const Promise> enqueue_for_saving(std::string path, StreamBuffer data, boost::uint64_t begin = offset_truncate, bool throws_if_exists = false);
 	static boost::shared_ptr<const Promise> enqueue_for_removing(std::string path, bool throws_if_does_not_exist = true);
 	static boost::shared_ptr<const Promise> enqueue_for_renaming(std::string path, std::string new_path);
 	static boost::shared_ptr<const Promise> enqueue_for_mkdir(std::string path, bool throws_if_exists = false);

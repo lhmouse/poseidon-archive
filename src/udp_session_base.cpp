@@ -138,7 +138,7 @@ int UdpSessionBase::poll_write(Mutex::UniqueLock &/*write_lock*/, unsigned char 
 			::socklen_t sa_len = static_cast<unsigned>(sock_addr.size());
 			const std::size_t avail = data.peek(hint_buffer, hint_capacity);
 			if(avail < data.size()){
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "UDP packet is too large: size = ", data.size());
+				LOG_POSEIDON(Logger::special_major | Logger::level_debug, "UDP packet is too large: size = ", data.size());
 		_too_large:
 				on_message_too_large(sock_addr, STD_MOVE(data));
 				continue;
@@ -146,7 +146,7 @@ int UdpSessionBase::poll_write(Mutex::UniqueLock &/*write_lock*/, unsigned char 
 			::ssize_t result = ::sendto(get_fd(), hint_buffer, avail, MSG_NOSIGNAL | MSG_DONTWAIT, static_cast< ::sockaddr *>(static_cast<void *>(&sa)), sa_len);
 			if(result < 0){
 				if(errno == EMSGSIZE){
-					LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "UDP packet is too large: size = ", data.size());
+					LOG_POSEIDON(Logger::special_major | Logger::level_debug, "UDP packet is too large: size = ", data.size());
 					goto _too_large;
 				}
 				continue;
@@ -225,7 +225,7 @@ bool UdpSessionBase::send(const SockAddr &sock_addr, StreamBuffer buffer){
 	PROFILE_ME;
 
 	if(has_been_shutdown_write()){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "UDP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", IpPort(sock_addr));
+		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "UDP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", IpPort(sock_addr));
 		return false;
 	}
 

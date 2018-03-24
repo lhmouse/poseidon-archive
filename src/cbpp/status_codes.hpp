@@ -11,25 +11,25 @@ typedef long StatusCode;
 
 namespace StatusCodes {
 	enum {
-		ST_SHUTDOWN                =    3,
-		ST_PONG                    =    2,
-		ST_PING                    =    1,
-		ST_OK                      =    0,
+		status_shutdown                =    3,
+		status_pong                    =    2,
+		status_ping                    =    1,
+		status_ok                      =    0,
 
-		ST_INTERNAL_ERROR          =   -1,
-		ST_END_OF_STREAM           =   -2,
-		ST_NOT_FOUND               =   -3,
-		ST_REQUEST_TOO_LARGE       =   -4,
-		ST_BAD_REQUEST             =   -5,
-		ST_JUNK_AFTER_PACKET       =   -6,
-		ST_FORBIDDEN               =   -7,
-		ST_AUTHORIZATION_FAILURE   =   -8,
-		ST_LENGTH_ERROR            =   -9,
-		ST_UNKNOWN_CONTROL_CODE    =  -10,
-		ST_DATA_CORRUPTED          =  -11,
-		ST_GONE_AWAY               =  -12,
-		ST_INVALID_ARGUMENT        =  -13,
-		ST_UNSUPPORTED             =  -14,
+		status_internal_error          =   -1,
+		status_end_of_stream           =   -2,
+		status_not_found               =   -3,
+		status_request_too_large       =   -4,
+		status_bad_request             =   -5,
+		status_junk_after_packet       =   -6,
+		status_forbidden               =   -7,
+		status_authorization_failure   =   -8,
+		status_length_error            =   -9,
+		status_unknown_control_code    =  -10,
+		status_data_corrupted          =  -11,
+		status_gone_away               =  -12,
+		status_invalid_argument        =  -13,
+		status_unsupported             =  -14,
 	};
 }
 

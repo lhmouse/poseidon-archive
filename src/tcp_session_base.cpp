@@ -39,7 +39,7 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 TcpSessionBase::TcpSessionBase(Move<UniqueFile> socket)
 	: SocketBase(STD_MOVE(socket)), SessionBase()
 	, m_connected_notified(false), m_read_hup_notified(false)
-	, m_shutdown_time((boost::uint64_t)-1), m_last_use_time((boost::uint64_t)-1)
+	, m_shutdown_time(-1ull), m_last_use_time(-1ull)
 {
 	//
 }
@@ -80,11 +80,11 @@ int TcpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_
 		LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", get_remote_info());
 
 		const AUTO(now, get_fast_mono_clock());
-		atomic_store(m_last_use_time, now, memorder_release);
+		atomic_store(m_last_use_time, now, memory_order_release);
 		create_shutdown_timer();
 
 		if(data.empty() && !m_read_hup_notified){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "TCP connection read hung up: local = ", get_local_info(), ", remote = ", get_remote_info());
+			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "TCP connection read hung up: local = ", get_local_info(), ", remote = ", get_remote_info());
 			shutdown_read();
 			on_read_hup();
 			m_read_hup_notified = true;
@@ -112,7 +112,7 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hin
 	StreamBuffer data;
 	try {
 		if(writeable && !m_connected_notified){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "TCP connection established: local = ", get_local_info(), ", remote = ", get_remote_info());
+			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "TCP connection established: local = ", get_local_info(), ", remote = ", get_remote_info());
 			on_connect();
 			m_connected_notified = true;
 		}
@@ -144,7 +144,7 @@ _check_shutdown:
 		LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", get_remote_info());
 
 		const AUTO(now, get_fast_mono_clock());
-		atomic_store(m_last_use_time, now, memorder_release);
+		atomic_store(m_last_use_time, now, memory_order_release);
 		create_shutdown_timer();
 
 		lock.lock();
@@ -168,7 +168,7 @@ _check_shutdown:
 void TcpSessionBase::on_shutdown_timer(boost::uint64_t now){
 	PROFILE_ME;
 
-	const AUTO(shutdown_time, atomic_load(m_shutdown_time, memorder_consume));
+	const AUTO(shutdown_time, atomic_load(m_shutdown_time, memory_order_consume));
 	if(shutdown_time < now){
 		std::size_t send_buffer_size;
 		{
@@ -176,19 +176,19 @@ void TcpSessionBase::on_shutdown_timer(boost::uint64_t now){
 			send_buffer_size = m_send_buffer.size();
 		}
 		if(send_buffer_size == 0){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Connection closed due to inactivity: remote = ", get_remote_info());
+			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Connection closed due to inactivity: remote = ", get_remote_info());
 force_time_out:
 			set_timed_out();
 			force_shutdown();
 			return;
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Shutdown pending: remote = ", get_remote_info(), ", send_buffer_size = ", send_buffer_size);
+		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Shutdown pending: remote = ", get_remote_info(), ", send_buffer_size = ", send_buffer_size);
 	}
 
-	const AUTO(last_use_time, atomic_load(m_last_use_time, memorder_consume));
+	const AUTO(last_use_time, atomic_load(m_last_use_time, memory_order_consume));
 	const AUTO(tcp_response_timeout, MainConfig::get<boost::uint64_t>("tcp_response_timeout", 30000));
 	if(saturated_sub(now, last_use_time) > tcp_response_timeout){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "The connection seems dead: remote = ", get_remote_info());
+		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "The connection seems dead: remote = ", get_remote_info());
 		goto force_time_out;
 	}
 }
@@ -230,7 +230,7 @@ void TcpSessionBase::set_timeout(boost::uint64_t timeout){
 	PROFILE_ME;
 
 	const AUTO(now, get_fast_mono_clock());
-	atomic_store(m_shutdown_time, saturated_add(now, timeout), memorder_release);
+	atomic_store(m_shutdown_time, saturated_add(now, timeout), memory_order_release);
 	create_shutdown_timer();
 }
 
@@ -238,7 +238,7 @@ bool TcpSessionBase::send(StreamBuffer buffer){
 	PROFILE_ME;
 
 	if(has_been_shutdown_write()){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "TCP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", get_remote_info());
+		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "TCP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", get_remote_info());
 		return false;
 	}
 

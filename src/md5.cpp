@@ -9,11 +9,11 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<boost::uint32_t, 4> MD5_REG_INIT = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u }};
+	CONSTEXPR const boost::array<boost::uint32_t, 4> g_md5_reg_init = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u }};
 }
 
 Md5_streambuf::Md5_streambuf()
-	: m_reg(MD5_REG_INIT), m_bytes(0)
+	: m_reg(g_md5_reg_init), m_bytes(0)
 {
 	//
 }
@@ -118,7 +118,7 @@ void Md5_streambuf::eat_chunk(){
 
 void Md5_streambuf::reset() NOEXCEPT {
 	setp(NULLPTR, NULLPTR);
-	m_reg = MD5_REG_INIT;
+	m_reg = g_md5_reg_init;
 	m_bytes = 0;
 }
 Md5_streambuf::int_type Md5_streambuf::overflow(Md5_streambuf::int_type c){

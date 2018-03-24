@@ -18,7 +18,7 @@ private:
 
 public:
 	enum {
-		PERIOD_NOT_MODIFIED =   (boost::uint64_t)-1,
+		period_intact  = -1ull,
 	};
 
 	typedef boost::function<void (const boost::shared_ptr<Timer> &item, boost::uint64_t now, boost::uint64_t period)> TimerCallback;
@@ -41,8 +41,8 @@ public:
 	static boost::shared_ptr<Timer> register_low_level_absolute_timer(boost::uint64_t first, boost::uint64_t period, TimerCallback callback);
 	static boost::shared_ptr<Timer> register_low_level_timer(boost::uint64_t delta_first, boost::uint64_t period, TimerCallback callback);
 
-	static void set_absolute_time(const boost::shared_ptr<Timer> &item, boost::uint64_t first, boost::uint64_t period = PERIOD_NOT_MODIFIED);
-	static void set_time(const boost::shared_ptr<Timer> &item, boost::uint64_t delta_first, boost::uint64_t period = PERIOD_NOT_MODIFIED);
+	static void set_absolute_time(const boost::shared_ptr<Timer> &item, boost::uint64_t first, boost::uint64_t period = period_intact);
+	static void set_time(const boost::shared_ptr<Timer> &item, boost::uint64_t delta_first, boost::uint64_t period = period_intact);
 };
 
 }

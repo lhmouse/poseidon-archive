@@ -50,17 +50,17 @@
 
 #define THROW_END_OF_STREAM_(message_, field_)	\
 	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
-		::Poseidon::Cbpp::ST_END_OF_STREAM, ::Poseidon::sslit(	\
+		::Poseidon::Cbpp::status_end_of_stream, ::Poseidon::sslit(	\
 			"End of stream encountered in message " TOKEN_TO_STR(message_) " while parsing " TOKEN_TO_STR(field_) ))
 
 #define THROW_JUNK_AFTER_PACKET_(message_)	\
 	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
-		::Poseidon::Cbpp::ST_JUNK_AFTER_PACKET, ::Poseidon::sslit(	\
+		::Poseidon::Cbpp::status_junk_after_packet, ::Poseidon::sslit(	\
 			"Junk after message " TOKEN_TO_STR(message_) ))
 
 #define THROW_LENGTH_ERROR_(message_, field_)	\
 	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
-		::Poseidon::Cbpp::ST_LENGTH_ERROR, ::Poseidon::sslit(	\
+		::Poseidon::Cbpp::status_length_error, ::Poseidon::sslit(	\
 			"Length error in message " TOKEN_TO_STR(message_) " while parsing " TOKEN_TO_STR(field_) ))
 
 namespace Poseidon {

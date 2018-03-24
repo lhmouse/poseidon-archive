@@ -9,11 +9,11 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<boost::uint32_t, 5> SHA1_REG_INIT = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u }};
+	CONSTEXPR const boost::array<boost::uint32_t, 5> g_sha1_reg_init = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u }};
 }
 
 Sha1_streambuf::Sha1_streambuf()
-	: m_reg(SHA1_REG_INIT), m_bytes(0)
+	: m_reg(g_sha1_reg_init), m_bytes(0)
 {
 	//
 }
@@ -146,7 +146,7 @@ void Sha1_streambuf::eat_chunk(){
 
 void Sha1_streambuf::reset() NOEXCEPT {
 	setp(NULLPTR, NULLPTR);
-	m_reg = SHA1_REG_INIT;
+	m_reg = g_sha1_reg_init;
 	m_bytes = 0;
 }
 Sha1_streambuf::int_type Sha1_streambuf::overflow(Sha1_streambuf::int_type c){

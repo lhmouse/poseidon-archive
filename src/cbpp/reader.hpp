@@ -15,11 +15,11 @@ namespace Cbpp {
 class Reader {
 private:
 	enum State {
-		S_PAYLOAD_SIZE      = 0,
-		S_EX_PAYLOAD_SIZE   = 1,
-		S_MESSAGE_ID        = 2,
-		S_DATA_PAYLOAD      = 3,
-		S_CONTROL_PAYLOAD   = 4,
+		state_payload_size      = 0,
+		state_ex_payload_size   = 1,
+		state_message_id        = 2,
+		state_data_payload      = 3,
+		state_control_payload   = 4,
 	};
 
 private:

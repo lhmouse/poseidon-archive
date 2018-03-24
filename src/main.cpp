@@ -44,12 +44,12 @@ namespace {
 
 	void sigterm_proc(int){
 		LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");
-		atomic_store(g_running, false, memorder_release);
+		atomic_store(g_running, false, memory_order_release);
 	}
 
 	void sighup_proc(int){
 		LOG_POSEIDON_WARNING("Received SIGHUP, will now exit...");
-		atomic_store(g_running, false, memorder_release);
+		atomic_store(g_running, false, memory_order_release);
 	}
 
 	void sigint_proc(int){
@@ -68,7 +68,7 @@ namespace {
 			std::_Exit(EXIT_FAILURE);
 		}
 		LOG_POSEIDON_WARNING("Received SIGINT, trying to exit gracefully... If I don't terminate in ", s_kill_timeout, " milliseconds, press ^C again.");
-		atomic_store(g_running, false, memorder_release);
+		atomic_store(g_running, false, memory_order_release);
 	}
 
 	JsonObject make_help(const char *const (*param_info)[2]){
@@ -85,10 +85,10 @@ namespace {
 		}
 		void handle_get(JsonObject &resp) const FINAL {
 			resp.set(sslit("description"), "Retreive general information about this process.");
-			static const char *const PARAM_INFO[][2] = {
+			static const char *const s_param_info[][2] = {
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
 		void handle_post(JsonObject &resp, JsonObject /*req*/) const FINAL {
 			// .servlets = list of servlets
@@ -109,7 +109,7 @@ namespace {
 		}
 		void handle_get(JsonObject &resp) const FINAL {
 			resp.set(sslit("description"), "Enable or disable specific levels of logs.");
-			static const char *const PARAM_INFO[][2] = {
+			static const char *const s_param_info[][2] = {
 				{ "mask_to_disable",  "Log levels corresponding to bit ones here will be disabled.\n"
 				                      "This parameter shall be a `String` of digit zeroes and ones.\n"
 				                      "This parameter is overriden by `mask_to_enable`." },
@@ -118,7 +118,7 @@ namespace {
 				                    "This parameter overrides `mask_to_disable`." },
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
 		void handle_post(JsonObject &resp, JsonObject req) const FINAL {
 			std::bitset<64> mask_to_enable, mask_to_disable;
@@ -161,10 +161,10 @@ namespace {
 		}
 		void handle_get(JsonObject &resp) const FINAL {
 			resp.set(sslit("description"), "Retreive information about incoming and outgoing connections in this process.");
-			static const char *const PARAM_INFO[][2] = {
+			static const char *const s_param_info[][2] = {
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
 		void handle_post(JsonObject &resp, JsonObject /*req*/) const FINAL {
 			// .sockets = all sockets managed by epoll.
@@ -193,11 +193,11 @@ namespace {
 		}
 		void handle_get(JsonObject &resp) const FINAL {
 			resp.set(sslit("description"), "View profiling information that has been collected within this process.");
-			static const char *const PARAM_INFO[][2] = {
+			static const char *const s_param_info[][2] = {
 				{ "clear", "If set to `true`, all data will be purged." },
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
 		void handle_post(JsonObject &resp, JsonObject req) const FINAL {
 			bool clear = false;
@@ -240,7 +240,7 @@ namespace {
 		}
 		void handle_get(JsonObject &resp) const FINAL {
 			resp.set(sslit("description"), "Load or unload modules in the current process.");
-			static const char *const PARAM_INFO[][2] = {
+			static const char *const s_param_info[][2] = {
 				{ "path_to_load", "The path to a shared object file which will be loaded.\n"
 				                  "This path will be passed to `dlopen()`, hence the normal library search rules apply.\n"
 				                  "This parameter cannot be specified together with `address_to_unload`." },
@@ -249,7 +249,7 @@ namespace {
 				                       "This parameter cannot be specified together with `path_to_load`." },
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(PARAM_INFO));
+			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
 		void handle_post(JsonObject &resp, JsonObject req) const FINAL {
 			bool to_load = false;
@@ -424,7 +424,7 @@ int main(int argc, char **argv, char **/*envp*/){
 	::signal(SIGCHLD, SIG_IGN);
 	::signal(SIGPIPE, SIG_IGN);
 
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting up: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting up: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
 	try {
 		if(new_wd){
 			MainConfig::set_run_path(new_wd);
@@ -455,7 +455,7 @@ int main(int argc, char **argv, char **/*envp*/){
 		START(SystemHttpServer);
 		START(SimpleHttpClientDaemon);
 
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting up built-in system servlets...");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Setting up built-in system servlets...");
 		boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > system_http_servlets;
 		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_help>()));
 		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_logger>()));
@@ -464,27 +464,27 @@ int main(int argc, char **argv, char **/*envp*/){
 		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_modules>()));
 
 		if(!all_logs){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new log mask...");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Setting new log mask...");
 			Logger::initialize_mask_from_config();
 		}
 
 		const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
 		for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
 			const AUTO(path, it->c_str());
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading init module: ", path);
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading init module: ", path);
 			ModuleDepository::load(path);
 		}
 
 #ifdef ENABLE_MYSQL
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MySQL operations to complete...");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MySQL operations to complete...");
 		MySqlDaemon::wait_for_all_async_operations();
 #endif
 #ifdef ENABLE_MONGODB
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Waiting for all asynchronous MongoDB operations to complete...");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MongoDB operations to complete...");
 		MongoDbDaemon::wait_for_all_async_operations();
 #endif
 
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Entering modal loop...");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Entering modal loop...");
 		JobDispatcher::do_modal(g_running);
 	} catch(std::exception &e){
 		Logger::finalize_mask();
@@ -496,6 +496,6 @@ int main(int argc, char **argv, char **/*envp*/){
 		return EXIT_FAILURE;
 	}
 	Logger::finalize_mask();
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Shutting down: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Shutting down: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
 	return EXIT_SUCCESS;
 }

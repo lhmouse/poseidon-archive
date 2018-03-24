@@ -96,11 +96,11 @@ std::pair<AuthenticationResult, const char *> check_authentication(
 
 	if(!context){
 		LOG_POSEIDON_INFO("HTTP authentication succeeded (assuming anonymous).");
-		return std::make_pair(AUTH_SUCCEEDED, NULLPTR);
+		return std::make_pair(auth_succeeded, NULLPTR);
 	}
 	const AUTO_REF(header_value, request_headers.headers.get(is_proxy ? "Proxy-Authorization" : "Authorization"));
 	if(header_value.empty()){
-		return std::make_pair(AUTH_HEADER_NOT_SET, NULLPTR);
+		return std::make_pair(auth_header_not_set, NULLPTR);
 	}
 	if(::strncasecmp(header_value.c_str(), "Basic ", 6) == 0){
 		return check_authentication_basic(context, header_value);
@@ -109,7 +109,7 @@ std::pair<AuthenticationResult, const char *> check_authentication(
 		return check_authentication_digest(context, remote_info, request_headers.verb, header_value);
 	}
 	LOG_POSEIDON_WARNING("HTTP authentication scheme not supported: ", header_value);
-	return std::make_pair(AUTH_SCHEME_NOT_SUPPORTED, NULLPTR);
+	return std::make_pair(auth_scheme_not_supported, NULLPTR);
 }
 __attribute__((__noreturn__)) void throw_authentication_failure(
 	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, AuthenticationResult result)
@@ -124,7 +124,7 @@ const char *check_authentication_simple(
 	PROFILE_ME;
 
 	const AUTO(pair, check_authentication(context, is_proxy, remote_info, request_headers));
-	if(pair.first != AUTH_SUCCEEDED){
+	if(pair.first != auth_succeeded){
 		DEBUG_THROW_ASSERT(context);
 		throw_authentication_failure(context, is_proxy, remote_info, pair.first);
 	}
@@ -170,7 +170,7 @@ namespace {
 
 		OptionalMap headers;
 		headers.set(SharedNts::view(is_proxy ? "Proxy-Authenticate" : "WWW-Authenticate"), STD_MOVE(authenticate_str));
-		DEBUG_THROW(Exception, is_proxy ? ST_PROXY_AUTH_REQUIRED : ST_UNAUTHORIZED, STD_MOVE(headers));
+		DEBUG_THROW(Exception, is_proxy ? status_proxy_auth_required : status_unauthorized, STD_MOVE(headers));
 	}
 }
 
@@ -182,41 +182,41 @@ std::pair<AuthenticationResult, const char *> check_authentication_basic(
 
 	if(!context){
 		LOG_POSEIDON_INFO("HTTP authentication succeeded (assuming anonymous).");
-		return std::make_pair(AUTH_SUCCEEDED, NULLPTR);
+		return std::make_pair(auth_succeeded, NULLPTR);
 	}
 	if(header_value.empty()){
-		return std::make_pair(AUTH_HEADER_NOT_SET, NULLPTR);
+		return std::make_pair(auth_header_not_set, NULLPTR);
 	}
 	if(::strncasecmp(header_value.c_str(), "Basic ", 6) != 0){
 		LOG_POSEIDON_WARNING("HTTP authentication scheme not supported: ", header_value);
-		return std::make_pair(AUTH_SCHEME_NOT_SUPPORTED, NULLPTR);
+		return std::make_pair(auth_scheme_not_supported, NULLPTR);
 	}
 
 	AUTO(auth_str, base64_decode(header_value.c_str() + 6));
 	const AUTO(colon_pos, auth_str.find(':'));
 	if(colon_pos == std::string::npos){
 		LOG_POSEIDON_ERROR("Colon delimiter not found: ", auth_str);
-		return std::make_pair(AUTH_HEADER_FORMAT_ERROR, NULLPTR);
+		return std::make_pair(auth_header_format_error, NULLPTR);
 	}
 	auth_str.at(colon_pos) = 0;
 
 	const AUTO(pair, context->get_password(auth_str.c_str()));
 	if(!pair.second){
 		LOG_POSEIDON_DEBUG("User not found: ", auth_str);
-		return std::make_pair(AUTH_PASSWORD_INCORRECT, NULLPTR);
+		return std::make_pair(auth_password_incorrect, NULLPTR);
 	}
 	if(::strcmp(auth_str.c_str() + colon_pos + 1, pair.second) != 0){
 		LOG_POSEIDON_DEBUG("Password incorrect: ", auth_str);
-		return std::make_pair(AUTH_PASSWORD_INCORRECT, NULLPTR);
+		return std::make_pair(auth_password_incorrect, NULLPTR);
 	}
 	LOG_POSEIDON_INFO("HTTP authentication succeeded (using password via the Basic scheme): ", pair.first);
-	return std::make_pair(AUTH_SUCCEEDED, pair.first);
+	return std::make_pair(auth_succeeded, pair.first);
 }
 __attribute__((__noreturn__)) void throw_authentication_failure_basic(
 	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, AuthenticationResult result)
 {
 	PROFILE_ME;
-	DEBUG_THROW_ASSERT(result != AUTH_SUCCEEDED);
+	DEBUG_THROW_ASSERT(result != auth_succeeded);
 
 	Buffer_ostream bos;
 	bos <<"Basic realm=" <<StringQuoter(context->get_realm().c_str());
@@ -285,12 +285,12 @@ namespace {
 	}
 
 	void finalize_as_hex(char *str, Md5_ostream &md5_os){
-		static CONSTEXPR const char HEX_TABLE[] = "0123456789abcdef";
+		static CONSTEXPR const char s_hex_table[] = "0123456789abcdef";
 		const AUTO(md5, md5_os.finalize());
 		char *write = str;
 		for(unsigned i = 0; i < 16; ++i){
-			*(write++) = HEX_TABLE[md5[i] / 16];
-			*(write++) = HEX_TABLE[md5[i] % 16];
+			*(write++) = s_hex_table[md5[i] / 16];
+			*(write++) = s_hex_table[md5[i] % 16];
 		}
 		*write = 0;
 	}
@@ -304,14 +304,14 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 
 	if(!context){
 		LOG_POSEIDON_INFO("HTTP authentication succeeded (assuming anonymous).");
-		return std::make_pair(AUTH_SUCCEEDED, NULLPTR);
+		return std::make_pair(auth_succeeded, NULLPTR);
 	}
 	if(header_value.empty()){
-		return std::make_pair(AUTH_HEADER_NOT_SET, NULLPTR);
+		return std::make_pair(auth_header_not_set, NULLPTR);
 	}
 	if(::strncasecmp(header_value.c_str(), "Digest ", 7) != 0){
 		LOG_POSEIDON_WARNING("HTTP authentication scheme not supported: ", header_value);
-		return std::make_pair(AUTH_SCHEME_NOT_SUPPORTED, NULLPTR);
+		return std::make_pair(auth_scheme_not_supported, NULLPTR);
 	}
 
 	OptionalMap params;
@@ -362,12 +362,12 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 		std::size_t equ = seg.find('=', key_begin);
 		if(equ == std::string::npos){
 			LOG_POSEIDON_WARNING("Invalid HTTP Digest authentication header, equals sign not found: ", seg);
-			return std::make_pair(AUTH_HEADER_FORMAT_ERROR, NULLPTR);
+			return std::make_pair(auth_header_format_error, NULLPTR);
 		}
 		std::size_t key_end = seg.find_last_not_of(" \t", equ - 1);
 		if((key_end == std::string::npos) || (key_begin > key_end)){
 			LOG_POSEIDON_WARNING("Invalid HTTP Digest authentication header, no key specified: ", seg);
-			return std::make_pair(AUTH_HEADER_FORMAT_ERROR, NULLPTR);
+			return std::make_pair(auth_header_format_error, NULLPTR);
 		}
 		++key_end;
 		SharedNts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
@@ -384,39 +384,39 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 	const AUTO_REF(response_str, params.get("response"));
 	if(response_str.empty()){
 		LOG_POSEIDON_DEBUG("No digest response set?");
-		return std::make_pair(AUTH_HEADER_FORMAT_ERROR, NULLPTR);
+		return std::make_pair(auth_header_format_error, NULLPTR);
 	}
 	const AUTO_REF(algorithm_str, params.get("algorithm"));
 	if(!algorithm_str.empty() && (::strcasecmp(algorithm_str.c_str(), "md5") != 0)){
 		LOG_POSEIDON_DEBUG("Unsupported algorithm: ", algorithm_str);
-		return std::make_pair(AUTH_ALGORITHM_NOT_SUPPORTED, NULLPTR);
+		return std::make_pair(auth_algorithm_not_supported, NULLPTR);
 	}
 	const AUTO_REF(qop_str, params.get("qop"));
 	if(!qop_str.empty() && (::strcasecmp(qop_str.c_str(), "auth") != 0)){
 		LOG_POSEIDON_DEBUG("Unsupported QoP: ", qop_str);
-		return std::make_pair(AUTH_QOP_NOT_SUPPORTED, NULLPTR);
+		return std::make_pair(auth_qop_not_supported, NULLPTR);
 	}
 
 	Nonce nonce[1];
 	const AUTO_REF(nonce_str, params.get("nonce"));
 	if(!decrypt_nonce(nonce, nonce_str.c_str(), remote_info.ip())){
 		LOG_POSEIDON_DEBUG("Failed to decrypt nonce: ", nonce_str);
-		return std::make_pair(AUTH_HEADER_FORMAT_ERROR, NULLPTR);
+		return std::make_pair(auth_header_format_error, NULLPTR);
 	}
 	if(nonce->server_id != g_server_id){
 		LOG_POSEIDON_DEBUG("Server ID mismatch: ", std::hex, std::setfill('0'), std::setw(8), nonce->server_id);
-		return std::make_pair(AUTH_PASSWORD_INCORRECT, NULLPTR);
+		return std::make_pair(auth_password_incorrect, NULLPTR);
 	}
 	const AUTO(nonce_expiry_time, MainConfig::get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000));
 	if(nonce->timestamp < saturated_sub(get_utc_time(), nonce_expiry_time)){
 		LOG_POSEIDON_DEBUG("Nonce expired: ", nonce->timestamp);
-		return std::make_pair(AUTH_REQUEST_EXPIRED, NULLPTR);
+		return std::make_pair(auth_request_expired, NULLPTR);
 	}
 	const AUTO_REF(username_str, params.get("username"));
 	const AUTO(pair, context->get_password(username_str.c_str()));
 	if(!pair.second){
 		LOG_POSEIDON_DEBUG("User not found: ", username_str);
-		return std::make_pair(AUTH_PASSWORD_INCORRECT, NULLPTR);
+		return std::make_pair(auth_password_incorrect, NULLPTR);
 	}
 	const AUTO_REF(realm_str, params.get("realm"));
 	const AUTO_REF(cnonce_str, params.get("cnonce"));
@@ -442,16 +442,16 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 	finalize_as_hex(str, resp_md5_os);
 	if(::strcasecmp(response_str.c_str(), str) != 0){
 		LOG_POSEIDON_DEBUG("Digest incorrect: ", response_str, ", expecting ", str);
-		return std::make_pair(AUTH_PASSWORD_INCORRECT, NULLPTR);
+		return std::make_pair(auth_password_incorrect, NULLPTR);
 	}
 	LOG_POSEIDON_INFO("HTTP authentication succeeded (using password via the Digest scheme): ", pair.first);
-	return std::make_pair(AUTH_SUCCEEDED, pair.first);
+	return std::make_pair(auth_succeeded, pair.first);
 }
 __attribute__((__noreturn__)) void throw_authentication_failure_digest(
 	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, AuthenticationResult result)
 {
 	PROFILE_ME;
-	DEBUG_THROW_ASSERT(result != AUTH_SUCCEEDED);
+	DEBUG_THROW_ASSERT(result != auth_succeeded);
 
 	Buffer_ostream bos;
 	bos <<"Digest realm=" <<StringQuoter(context->get_realm().c_str());
@@ -463,7 +463,7 @@ __attribute__((__noreturn__)) void throw_authentication_failure_digest(
 	LOG_POSEIDON_DEBUG("New nonce: ", nonce_str);
 	bos <<", nonce=" <<StringQuoter(nonce_str);
 
-	if(result == AUTH_REQUEST_EXPIRED){
+	if(result == auth_request_expired){
 		bos <<", stale=true";
 	}
 	bos <<", qop=" <<StringQuoter("auth");

@@ -30,13 +30,13 @@ namespace {
 		}
 		const char equote = ch;
 		enum {
-			S_PLAIN,
-			S_ESCAPED,
-			S_UTF_ZERO,
-			S_UTF_ONE,
-			S_UTF_TWO,
-			S_UTF_THREE,
-		} state = S_PLAIN;
+			state_plain,
+			state_escaped,
+			state_utf_zero,
+			state_utf_one,
+			state_utf_two,
+			state_utf_three,
+		} state = state_plain;
 		unsigned utf16_unit = 0;
 		for(;;){
 			if(!is.get(ch)){
@@ -44,43 +44,43 @@ namespace {
 				is.setstate(std::ios::failbit);
 				return ret;
 			}
-			if(state != S_PLAIN){
+			if(state != state_plain){
 				switch(state){
 					unsigned hexc;
 
-				case S_ESCAPED:
+				case state_escaped:
 					switch(ch){
 					case '\"':
 						ret += '\"';
-						state = S_PLAIN;
+						state = state_plain;
 						break;
 					case '\\':
 						ret += '\\';
-						state = S_PLAIN;
+						state = state_plain;
 						break;
 					case '/':
 						ret += '/';
-						state = S_PLAIN;
+						state = state_plain;
 						break;
 					case 'b':
 						ret += '\b';
-						state = S_PLAIN;
+						state = state_plain;
 						break;
 					case 'f':
 						ret += '\f';
-						state = S_PLAIN;
+						state = state_plain;
 						break;
 					case 'n':
 						ret += '\n';
-						state = S_PLAIN;
+						state = state_plain;
 						break;
 					case 'r':
 						ret += '\r';
-						state = S_PLAIN;
+						state = state_plain;
 						break;
 					case 'u':
 						utf16_unit = 0;
-						state = S_UTF_ZERO;
+						state = state_utf_zero;
 						break;
 					default:
 						LOG_POSEIDON_WARNING("Unknown escaped character sequence");
@@ -88,10 +88,10 @@ namespace {
 						return ret;
 					}
 					break;
-				case S_UTF_ZERO:
-				case S_UTF_ONE:
-				case S_UTF_TWO:
-				case S_UTF_THREE:
+				case state_utf_zero:
+				case state_utf_one:
+				case state_utf_two:
+				case state_utf_three:
 					hexc = (unsigned char)ch;
 					if(('0' <= hexc) && (hexc <= '9')){
 						hexc -= '0';
@@ -107,16 +107,16 @@ namespace {
 					utf16_unit <<= 4;
 					utf16_unit |= hexc;
 					switch(state){
-					case S_UTF_ZERO:
-						state = S_UTF_ONE;
+					case state_utf_zero:
+						state = state_utf_one;
 						break;
-					case S_UTF_ONE:
-						state = S_UTF_TWO;
+					case state_utf_one:
+						state = state_utf_two;
 						break;
-					case S_UTF_TWO:
-						state = S_UTF_THREE;
+					case state_utf_two:
+						state = state_utf_three;
 						break;
-					case S_UTF_THREE:
+					case state_utf_three:
 						if(utf16_unit < 0x80){
 							ret += static_cast<char>(utf16_unit);
 						} else if(utf16_unit < 0x800){
@@ -127,7 +127,7 @@ namespace {
 							ret += static_cast<char>(((utf16_unit >> 6) & 0x3F) | 0x80);
 							ret += static_cast<char>((utf16_unit & 0x3F) | 0x80);
 						}
-						state = S_PLAIN;
+						state = state_plain;
 						break;
 					default:
 						std::abort();
@@ -137,12 +137,12 @@ namespace {
 					std::abort();
 				}
 			} else if(ch == '\\'){
-				state = S_ESCAPED;
+				state = state_escaped;
 			} else if(ch == equote){
 				break;
 			} else {
 				ret += ch;
-				// state = S_PLAIN;
+				// state = state_plain;
 			}
 		}
 		return ret;
@@ -400,21 +400,21 @@ void JsonArray::parse(std::istream &is){
 
 const char *JsonElement::get_type_string(JsonElement::Type type){
 	switch(type){
-	case T_BOOL:
-		return "Boolean";
-	case T_NUMBER:
-		return "Number";
-	case T_STRING:
-		return "String";
-	case T_OBJECT:
-		return "Object";
-	case T_ARRAY:
-		return "Array";
-	case T_NULL:
-		return "Null";
+	case type_boolean:
+		return "boolean";
+	case type_number:
+		return "number";
+	case type_string:
+		return "string";
+	case type_object:
+		return "object";
+	case type_array:
+		return "array";
+	case type_null:
+		return "null";
 	default:
 		LOG_POSEIDON_WARNING("Unknown JSON element type: type = ", static_cast<int>(type));
-		return "Undefined";
+		return "undefined";
 	}
 }
 
@@ -430,13 +430,13 @@ void JsonElement::dump(std::ostream &os) const {
 
 	const Type type = get_type();
 	switch(type){
-	case T_BOOL:
+	case type_boolean:
 		os <<(get<bool>() ? "true" : "false");
 		break;
-	case T_NUMBER:
+	case type_number:
 		os <<std::setprecision(16) <<get<double>();
 		break;
-	case T_STRING: {
+	case type_string: {
 		const AUTO_REF(str, get<std::string>());
 		os <<'\"';
 		for(AUTO(it, str.begin()); it != str.end(); ++it){
@@ -473,13 +473,13 @@ void JsonElement::dump(std::ostream &os) const {
 		}
 		os <<'\"';
 		break; }
-	case T_OBJECT:
+	case type_object:
 		os <<get<JsonObject>();
 		break;
-	case T_ARRAY:
+	case type_array:
 		os <<get<JsonArray>();
 		break;
-	case T_NULL:
+	case type_null:
 		os <<"null";
 		break;
 	default:

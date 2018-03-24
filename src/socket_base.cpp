@@ -26,16 +26,16 @@ SocketBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::weak_ptr<SocketBas
 	if(!socket){
 		return;
 	}
-	atomic_add(socket->m_delayed_shutdown_guard_count, 1, memorder_relaxed);
+	atomic_add(socket->m_delayed_shutdown_guard_count, 1, memory_order_relaxed);
 }
 SocketBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	const AUTO(socket, m_weak.lock());
 	if(!socket){
 		return;
 	}
-	if(atomic_sub(socket->m_delayed_shutdown_guard_count, 1, memorder_relaxed) == 0){
-		if(atomic_load(socket->m_shutdown_write, memorder_acquire)){
-			atomic_store(socket->m_really_shutdown_write, true, memorder_release);
+	if(atomic_sub(socket->m_delayed_shutdown_guard_count, 1, memory_order_relaxed) == 0){
+		if(atomic_load(socket->m_shutdown_write, memory_order_acquire)){
+			atomic_store(socket->m_really_shutdown_write, true, memory_order_release);
 			EpollDaemon::mark_socket_writeable(socket.get());
 		}
 	}
@@ -82,10 +82,10 @@ void SocketBase::fetch_local_info_unlocked() const {
 }
 
 bool SocketBase::should_really_shutdown_write() const NOEXCEPT {
-	return atomic_load(m_really_shutdown_write, memorder_acquire);
+	return atomic_load(m_really_shutdown_write, memory_order_acquire);
 }
 void SocketBase::set_timed_out() NOEXCEPT {
-	atomic_store(m_timed_out, true, memorder_release);
+	atomic_store(m_timed_out, true, memory_order_release);
 }
 
 bool SocketBase::is_listening() const {
@@ -98,14 +98,14 @@ bool SocketBase::is_listening() const {
 }
 
 bool SocketBase::has_been_shutdown_read() const NOEXCEPT {
-	return atomic_load(m_shutdown_read, memorder_acquire);
+	return atomic_load(m_shutdown_read, memory_order_acquire);
 }
 bool SocketBase::shutdown_read() NOEXCEPT {
 	PROFILE_ME;
 
-	bool was_shutdown_read = atomic_load(m_shutdown_read, memorder_acquire);
+	bool was_shutdown_read = atomic_load(m_shutdown_read, memory_order_acquire);
 	if(!was_shutdown_read){
-		was_shutdown_read = atomic_exchange(m_shutdown_read, true, memorder_acq_rel);
+		was_shutdown_read = atomic_exchange(m_shutdown_read, true, memory_order_acq_rel);
 	}
 	if(was_shutdown_read){
 		return false;
@@ -114,14 +114,14 @@ bool SocketBase::shutdown_read() NOEXCEPT {
 	return true;
 }
 bool SocketBase::has_been_shutdown_write() const NOEXCEPT {
-	return atomic_load(m_shutdown_write, memorder_acquire);
+	return atomic_load(m_shutdown_write, memory_order_acquire);
 }
 bool SocketBase::shutdown_write() NOEXCEPT {
 	PROFILE_ME;
 
-	bool was_shutdown_write = atomic_load(m_shutdown_write, memorder_acquire);
+	bool was_shutdown_write = atomic_load(m_shutdown_write, memory_order_acquire);
 	if(!was_shutdown_write){
-		was_shutdown_write = atomic_exchange(m_shutdown_write, true, memorder_acq_rel);
+		was_shutdown_write = atomic_exchange(m_shutdown_write, true, memory_order_acq_rel);
 	}
 	if(was_shutdown_write){
 		return false;
@@ -132,19 +132,19 @@ bool SocketBase::shutdown_write() NOEXCEPT {
 void SocketBase::mark_shutdown() NOEXCEPT {
 	PROFILE_ME;
 
-	atomic_store(m_shutdown_read, true, memorder_release);
-	atomic_store(m_shutdown_write, true, memorder_release);
+	atomic_store(m_shutdown_read, true, memory_order_release);
+	atomic_store(m_shutdown_write, true, memory_order_release);
 }
 void SocketBase::force_shutdown() NOEXCEPT {
 	PROFILE_ME;
 
-	bool was_shutdown_read = atomic_load(m_shutdown_read, memorder_acquire);
+	bool was_shutdown_read = atomic_load(m_shutdown_read, memory_order_acquire);
 	if(!was_shutdown_read){
-		was_shutdown_read = atomic_exchange(m_shutdown_read, true, memorder_acq_rel);
+		was_shutdown_read = atomic_exchange(m_shutdown_read, true, memory_order_acq_rel);
 	}
-	bool was_shutdown_write = atomic_load(m_shutdown_write, memorder_acquire);
+	bool was_shutdown_write = atomic_load(m_shutdown_write, memory_order_acquire);
 	if(!was_shutdown_write){
-		was_shutdown_write = atomic_exchange(m_shutdown_write, true, memorder_acq_rel);
+		was_shutdown_write = atomic_exchange(m_shutdown_write, true, memory_order_acq_rel);
 	}
 	if(was_shutdown_read && was_shutdown_write){
 		return;
@@ -162,14 +162,14 @@ void SocketBase::force_shutdown() NOEXCEPT {
 }
 
 bool SocketBase::is_throttled() const {
-	return atomic_load(m_throttled, memorder_acquire);
+	return atomic_load(m_throttled, memory_order_acquire);
 }
 void SocketBase::set_throttled(bool throttled){
-	atomic_store(m_throttled, throttled, memorder_release);
+	atomic_store(m_throttled, throttled, memory_order_release);
 }
 
 bool SocketBase::did_time_out() const NOEXCEPT {
-	return atomic_load(m_timed_out, memorder_acquire);
+	return atomic_load(m_timed_out, memory_order_acquire);
 }
 
 const IpPort &SocketBase::get_remote_info() const NOEXCEPT

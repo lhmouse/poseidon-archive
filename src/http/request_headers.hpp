@@ -22,10 +22,10 @@ struct RequestHeaders {
 extern bool is_keep_alive_enabled(const RequestHeaders &request_headers);
 
 enum ContentEncoding {
-	CE_IDENTITY        =  0,
-	CE_DEFLATE         =  1,
-	CE_GZIP            =  2,
-	CE_NOT_ACCEPTABLE  = 15,
+	content_encoding_identity        =  0,
+	content_encoding_deflate         =  1,
+	content_encoding_gzip            =  2,
+	content_encoding_not_acceptable  = 15,
 };
 
 extern ContentEncoding pick_content_encoding(const RequestHeaders &request_headers);

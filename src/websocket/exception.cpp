@@ -12,7 +12,7 @@ Exception::Exception(const char *file, std::size_t line, const char *func, Statu
 	: BasicException(file, line, func, STD_MOVE(message))
 	, m_status_code(status_code)
 {
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception: status_code = ", get_status_code(), ", what = ", what());
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "WebSocket::Exception: status_code = ", get_status_code(), ", what = ", what());
 }
 Exception::~Exception() NOEXCEPT {
 	//

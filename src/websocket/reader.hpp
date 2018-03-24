@@ -15,15 +15,15 @@ namespace WebSocket {
 class Reader {
 private:
 	enum State {
-		S_OPCODE            = 0,
-		S_FRAME_SIZE        = 1,
-		S_FRAME_SIZE_16     = 2,
-		S_FRAME_SIZE_64     = 3,
-		S_SIZE_END          = 4,
-		S_MASK              = 5,
-		S_HEADER_END        = 6,
-		S_DATA_FRAME        = 7,
-		S_CONTROL_FRAME     = 8,
+		state_opcode            = 0,
+		state_frame_size        = 1,
+		state_frame_size_16     = 2,
+		state_frame_size_64     = 3,
+		state_size_end          = 4,
+		state_mask              = 5,
+		state_header_end        = 6,
+		state_data_frame        = 7,
+		state_control_frame     = 8,
 	};
 
 private:

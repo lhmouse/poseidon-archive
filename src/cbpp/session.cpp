@@ -42,13 +42,13 @@ private:
 		try {
 			really_perform(session);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			session->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-			session->shutdown(ST_INTERNAL_ERROR, e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
+			session->shutdown(status_internal_error, e.what());
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			session->force_shutdown();
 		}
 	}
@@ -88,7 +88,7 @@ protected:
 		const boost::uint64_t local_now = get_local_time();
 		char str[256];
 		std::size_t len = format_time(str, sizeof(str), local_now, true);
-		session->send_status(ST_PING, StreamBuffer(str, len));
+		session->send_status(status_ping, StreamBuffer(str, len));
 	}
 };
 
@@ -183,7 +183,7 @@ void Session::on_low_level_data_message_payload(boost::uint64_t /*payload_offset
 	PROFILE_ME;
 
 	m_size_total += payload.size();
-	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, ST_REQUEST_TOO_LARGE);
+	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_request_too_large);
 	m_payload.splice(payload);
 }
 bool Session::on_low_level_data_message_end(boost::uint64_t /*payload_size*/){
@@ -212,31 +212,31 @@ void Session::on_sync_control_message(StatusCode status_code, StreamBuffer param
 
 	if(status_code < 0){
 		LOG_POSEIDON_WARNING("Received negative status code from ", get_remote_info(), ": status_code = ", status_code);
-		shutdown(ST_SHUTDOWN, static_cast<char *>(param.squash()));
+		shutdown(status_shutdown, static_cast<char *>(param.squash()));
 	} else {
 		switch(status_code){
-		case ST_SHUTDOWN:
+		case status_shutdown:
 			LOG_POSEIDON_INFO("Received SHUTDOWN frame from ", get_remote_info());
-			shutdown(ST_SHUTDOWN, static_cast<char *>(param.squash()));
+			shutdown(status_shutdown, static_cast<char *>(param.squash()));
 			break;
-		case ST_PING:
+		case status_ping:
 			LOG_POSEIDON_DEBUG("Received PING frame from ", get_remote_info());
-			send_status(ST_PONG, STD_MOVE(param));
+			send_status(status_pong, STD_MOVE(param));
 			break;
-		case ST_PONG:
+		case status_pong:
 			LOG_POSEIDON_DEBUG("Received PONG frame from ", get_remote_info());
 			break;
 		default:
-			DEBUG_THROW(Exception, ST_UNKNOWN_CONTROL_CODE, sslit("Unknown control code"));
+			DEBUG_THROW(Exception, status_unknown_control_code, sslit("Unknown control code"));
 		}
 	}
 }
 
 boost::uint64_t Session::get_max_request_length() const {
-	return atomic_load(m_max_request_length, memorder_consume);
+	return atomic_load(m_max_request_length, memory_order_consume);
 }
 void Session::set_max_request_length(boost::uint64_t max_request_length){
-	atomic_store(m_max_request_length, max_request_length, memorder_release);
+	atomic_store(m_max_request_length, max_request_length, memory_order_release);
 }
 
 }

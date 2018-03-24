@@ -41,21 +41,21 @@ namespace {
 }
 
 void MagicDaemon::start(){
-	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
+	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting magic daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting magic daemon...");
 
 	const AUTO_REF(database, MainConfig::get<std::string>("magic_database", "/usr/share/misc/magic"));
 	LOG_POSEIDON_INFO("Loading magic database: ", database);
 	open_database(database.c_str()).swap(g_cookie);
 }
 void MagicDaemon::stop(){
-	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
+	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping magic daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping magic daemon...");
 
 	g_cookie.reset();
 }

@@ -40,13 +40,13 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->force_shutdown();
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
 			client->force_shutdown();
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			client->force_shutdown();
 		}
 	}
@@ -200,22 +200,22 @@ void Client::on_sync_control_message(StatusCode status_code, StreamBuffer param)
 
 	if(status_code < 0){
 		LOG_POSEIDON_WARNING("Received negative status code from ", get_remote_info(), ": status_code = ", status_code);
-		shutdown(ST_SHUTDOWN, static_cast<char *>(param.squash()));
+		shutdown(status_shutdown, static_cast<char *>(param.squash()));
 	} else {
 		switch(status_code){
-		case ST_SHUTDOWN:
+		case status_shutdown:
 			LOG_POSEIDON_INFO("Received SHUTDOWN frame from ", get_remote_info());
-			shutdown(ST_SHUTDOWN, static_cast<char *>(param.squash()));
+			shutdown(status_shutdown, static_cast<char *>(param.squash()));
 			break;
-		case ST_PING:
+		case status_ping:
 			LOG_POSEIDON_DEBUG("Received PING frame from ", get_remote_info());
-			send_control(ST_PONG, STD_MOVE(param));
+			send_control(status_pong, STD_MOVE(param));
 			break;
-		case ST_PONG:
+		case status_pong:
 			LOG_POSEIDON_DEBUG("Received PONG frame from ", get_remote_info());
 			break;
 		default:
-			DEBUG_THROW(Exception, ST_UNKNOWN_CONTROL_CODE, sslit("Unknown control code"));
+			DEBUG_THROW(Exception, status_unknown_control_code, sslit("Unknown control code"));
 		}
 	}
 }

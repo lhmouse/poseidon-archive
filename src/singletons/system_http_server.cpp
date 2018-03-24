@@ -35,7 +35,7 @@ namespace {
 			PROFILE_ME;
 
 			AUTO(session, boost::make_shared<SystemHttpSession>(STD_MOVE(client), m_auth_ctx));
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Accepted system TCP client from ", session->get_remote_info());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Accepted system TCP client from ", session->get_remote_info());
 			session->set_no_delay(true);
 			return STD_MOVE_IDN(session);
 		}
@@ -55,7 +55,7 @@ namespace {
 }
 
 void SystemHttpServer::start(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting system HTTP server...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting system HTTP server...");
 
 	const AUTO(bind, MainConfig::get<std::string>("system_http_bind"));
 	const AUTO(port, MainConfig::get<boost::uint16_t>("system_http_port"));
@@ -64,7 +64,7 @@ void SystemHttpServer::start(){
 	const AUTO(relm, MainConfig::get<std::string>("system_http_auth_realm", "Poseidon Test Server"));
 	const AUTO(auth, MainConfig::get_all<std::string>("system_http_auth_user_pass"));
 	if(bind.empty()){
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "System server is disabled.");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "System server is disabled.");
 	} else {
 		const AUTO(auth_ctx, Http::create_authentication_context(relm, auth));
 		const AUTO(server, boost::make_shared<SystemSocketServer>(bind, port, cert, pkey, auth_ctx));
@@ -73,7 +73,7 @@ void SystemHttpServer::start(){
 	}
 }
 void SystemHttpServer::stop(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping system HTTP server...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping system HTTP server...");
 
 	const Mutex::UniqueLock lock(g_mutex);
 	g_servlet_map.clear();
@@ -118,7 +118,7 @@ boost::shared_ptr<const SystemHttpServletBase> SystemHttpServer::register_servle
 	LOG_POSEIDON_DEBUG("Registering system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	const AUTO(pair, g_servlet_map.emplace(uri, servlet));
 	DEBUG_THROW_UNLESS(pair.second, Exception, sslit("Duplicate system servlet"));
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Registered system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Registered system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	return STD_MOVE_IDN(servlet);
 }
 

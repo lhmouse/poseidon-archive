@@ -30,16 +30,16 @@ namespace {
 }
 
 void MainConfig::set_run_path(const char *path){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Setting new working directory: ", path);
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Setting new working directory: ", path);
 	UniqueHandle<RealPathDeleter> real_path;
 	DEBUG_THROW_UNLESS(real_path.reset(::realpath(path, NULLPTR)), SystemException);
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "> Resolved real path: ", real_path);
+	LOG_POSEIDON(Logger::special_major | Logger::level_debug, "> Resolved real path: ", real_path);
 	DEBUG_THROW_UNLESS(::chdir(real_path.get()) == 0, SystemException);
 }
 void MainConfig::reload(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading main config file: ", g_main_conf_name);
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading main config file: ", g_main_conf_name);
 	AUTO(config, boost::make_shared<ConfigFile>(g_main_conf_name));
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done loading main config file: ", g_main_conf_name);
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Done loading main config file: ", g_main_conf_name);
 	const Mutex::UniqueLock lock(g_mutex);
 	g_config.swap(config);
 }

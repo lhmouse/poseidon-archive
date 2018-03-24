@@ -162,10 +162,10 @@ boost::container::vector<std::string> ConfigFile::get_all_raw(const char *key, b
 
 void ConfigFile::load(const std::string &path){
 	PROFILE_ME;
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading config file: ", path);
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading config file: ", path);
 
 	AUTO(block, FileSystemDaemon::load(path));
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Read ", block.size_total, " byte(s) from ", path);
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Read ", block.size_total, " byte(s) from ", path);
 
 	VALUE_TYPE(m_contents) contents;
 
@@ -203,7 +203,7 @@ void ConfigFile::load(const std::string &path){
 			DEBUG_THROW_UNLESS(is, Exception, sslit("Error parsing escape sequence"));
 			val = trim(STD_MOVE(val));
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Config: ", std::setw(3), line, " | ", key, " = ", val);
+		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Config: ", std::setw(3), line, " | ", key, " = ", val);
 		contents.append(SharedNts(key), STD_MOVE(val));
 	}
 
@@ -228,7 +228,7 @@ try {
 
 void ConfigFile::save(const std::string &path){
 	PROFILE_ME;
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Saving config file: ", path);
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Saving config file: ", path);
 
 	Buffer_ostream os;
 	for(AUTO(it, m_contents.begin()); it != m_contents.end(); ++it){

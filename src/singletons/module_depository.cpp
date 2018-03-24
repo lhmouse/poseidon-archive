@@ -57,11 +57,11 @@ namespace {
 			: m_dl_handle(STD_MOVE(dl_handle)), m_base_address(base_address), m_real_path(STD_MOVE(real_path))
 			, m_handles(STD_MOVE(handles))
 		{
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Constructor of module: ", m_real_path);
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Constructor of module: ", m_real_path);
 			LOG_POSEIDON_DEBUG("> dl_handle = ", m_dl_handle, ", base_address = ", m_base_address, ", real_path = ", m_real_path);
 		}
 		~Module(){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destructor of module: ", m_real_path);
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Destructor of module: ", m_real_path);
 			LOG_POSEIDON_DEBUG("> dl_handle = ", m_dl_handle, ", base_address = ", m_base_address, ", real_path = ", m_real_path);
 		}
 
@@ -121,10 +121,10 @@ void ModuleDepository::unregister_module_raii(ModuleRaiiBase *raii) NOEXCEPT {
 }
 
 void ModuleDepository::start(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting module depository...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting module depository...");
 }
 void ModuleDepository::stop(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading all modules...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unloading all modules...");
 
 	const RecursiveMutex::UniqueLock lock(g_mutex);
 	g_module_map.clear();
@@ -134,7 +134,7 @@ void *ModuleDepository::load(const std::string &path){
 	PROFILE_ME;
 
 	const RecursiveMutex::UniqueLock lock(g_mutex);
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loading module: ", path);
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading module: ", path);
 	UniqueHandle<DynamicLibraryCloser> dl_handle;
 	DEBUG_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND)), Exception, SharedNts(::dlerror()));
 	AUTO(it, g_module_map.find<0>(dl_handle.get()));
@@ -146,20 +146,20 @@ void *ModuleDepository::load(const std::string &path){
 		::Dl_info info;
 		DEBUG_THROW_UNLESS(::dladdr(init_sym, &info), Exception, SharedNts(::dlerror()));
 		HandleStack handles;
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Initializing NEW module: ", info.dli_fname);
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Initializing NEW module: ", info.dli_fname);
 		const AUTO(raii_range_lower, g_module_raii_map.lower_bound<1>(std::make_pair(info.dli_fbase, LONG_MIN)));
 		const AUTO(raii_range_upper, g_module_raii_map.upper_bound<1>(std::make_pair(info.dli_fbase, LONG_MAX)));
 		for(AUTO(raii_it, raii_range_lower); raii_it != raii_range_upper; ++raii_it){
-			LOG_POSEIDON_DEBUG("> Performing module RAII initialization: raii = ", static_cast<void *>(raii_it->raii));
+			LOG_POSEIDON_DEBUG("> Performing module initialization: raii = ", static_cast<void *>(raii_it->raii));
 			raii_it->raii->init(handles);
 		}
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Done initializing module: ", info.dli_fname);
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Done initializing module: ", info.dli_fname);
 		const AUTO(module, boost::make_shared<Module>(STD_MOVE(dl_handle), info.dli_fbase, SharedNts(info.dli_fname), STD_MOVE(handles)));
 		ModuleMapElement elem = { module, module->get_dl_handle(), module->get_base_address() };
 		const AUTO(result, g_module_map.insert(STD_MOVE(elem)));
 		DEBUG_THROW_ASSERT(result.second);
 		it = result.first;
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Loaded module: base_address = ", module->get_base_address(), ", real_path = ", module->get_real_path());
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loaded module: base_address = ", module->get_base_address(), ", real_path = ", module->get_real_path());
 	}
 	return it->module->get_base_address();
 }
@@ -187,7 +187,7 @@ bool ModuleDepository::unload(void *base_address) NOEXCEPT {
 		LOG_POSEIDON_WARNING("Module not found: base_address = ", base_address);
 		return false;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unloading module: base_address = ", base_address, ", real_path = ", it->module->get_real_path());
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unloading module: base_address = ", base_address, ", real_path = ", it->module->get_real_path());
 	g_module_map.erase<1>(it);
 	return true;
 }

@@ -11,15 +11,15 @@ typedef unsigned Verb;
 
 namespace Verbs {
 	enum {
-		V_INVALID_VERB  = 0,
-		V_GET           = 1,
-		V_POST          = 2,
-		V_HEAD          = 3,
-		V_PUT           = 4,
-		V_DELETE        = 5,
-		V_TRACE         = 6,
-		V_CONNECT       = 7,
-		V_OPTIONS       = 8,
+		verb_invalid_verb  = 0,
+		verb_get           = 1,
+		verb_post          = 2,
+		verb_head          = 3,
+		verb_put           = 4,
+		verb_delete        = 5,
+		verb_trace         = 6,
+		verb_connect       = 7,
+		verb_options       = 8,
 	};
 }
 

@@ -25,10 +25,10 @@ namespace {
 UdpServerBase::UdpServerBase(const SockAddr &addr)
 	: UdpSessionBase(create_udp_socket(addr))
 {
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Created UDP server on ", get_local_info());
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Created UDP server on ", get_local_info());
 }
 UdpServerBase::~UdpServerBase(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Destroyed UDP server on ", get_local_info());
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Destroyed UDP server on ", get_local_info());
 }
 
 }

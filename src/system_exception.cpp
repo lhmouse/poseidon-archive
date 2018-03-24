@@ -11,7 +11,7 @@ namespace Poseidon {
 SystemException::SystemException(const char *file, std::size_t line, const char *func, int code)
 	: Exception(file, line, func, get_error_desc(code)), m_code(code)
 {
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Constructing SystemException: code = ", get_code(), ", what = ", what());
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Constructing SystemException: code = ", get_code(), ", what = ", what());
 }
 SystemException::~SystemException() NOEXCEPT {
 	//

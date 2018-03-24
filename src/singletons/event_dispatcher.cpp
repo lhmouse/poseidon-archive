@@ -71,12 +71,12 @@ namespace {
 }
 
 void EventDispatcher::start(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting event dispatcher...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting event dispatcher...");
 
 	//
 }
 void EventDispatcher::stop(){
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping event dispatcher...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping event dispatcher...");
 
 	const Mutex::UniqueLock lock(g_mutex);
 	g_listeners.clear();

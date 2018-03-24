@@ -13,18 +13,18 @@ namespace Poseidon {
 
 namespace {
 	enum {
-		CFG_BLACK    = 0000,
-		CFG_RED      = 0001,
-		CFG_GREEN    = 0002,
-		CFG_YELLOW   = 0003,
-		CFG_BLUE     = 0004,
-		CFG_MAGNETA  = 0005,
-		CFG_CYAN     = 0006,
-		CFG_WHITE    = 0007,
+		cfg_black    = 0000,
+		cfg_red      = 0001,
+		cfg_green    = 0002,
+		cfg_yellow   = 0003,
+		cfg_blue     = 0004,
+		cfg_magneta  = 0005,
+		cfg_cyan     = 0006,
+		cfg_white    = 0007,
 
-		CFL_BRIGHT   = 0010,
-		CFL_BLINKING = 0020,
-		CFL_REVERSE  = 0040,
+		cfl_bright   = 0010,
+		cfl_blinking = 0020,
+		cfl_reverse  = 0040,
 	};
 
 	struct LevelElement {
@@ -32,13 +32,13 @@ namespace {
 		int color;
 		bool to_stderr;
 	};
-	CONSTEXPR const boost::array<LevelElement, 6> s_levels = {{
-		{ "FATAL", CFG_MAGNETA | CFL_BRIGHT, 1 },
-		{ "ERROR", CFG_RED     | CFL_BRIGHT, 1 },
-		{ "WARN ", CFG_YELLOW  | CFL_BRIGHT, 1 },
-		{ "INFO ", CFG_GREEN               , 0 },
-		{ "DEBUG", CFG_CYAN                , 0 },
-		{ "TRACE", CFG_BLUE    | CFL_BRIGHT, 0 },
+	CONSTEXPR const boost::array<LevelElement, 6> g_levels = {{
+		{ "FATAL", cfg_magneta | cfl_bright, 1 },
+		{ "ERROR", cfg_red     | cfl_bright, 1 },
+		{ "WARN ", cfg_yellow  | cfl_bright, 1 },
+		{ "INFO ", cfg_green               , 0 },
+		{ "DEBUG", cfg_cyan                , 0 },
+		{ "TRACE", cfg_blue    | cfl_bright, 0 },
 	}};
 
 	std::size_t begin_color(char *buf, int flags){
@@ -49,15 +49,15 @@ namespace {
 		buf[len++] = ';';
 		buf[len++] = '3';
 		buf[len++] = (char)('0' + (((flags & 0007) >> 0) & 7));
-		if(flags & CFL_BRIGHT){
+		if(flags & cfl_bright){
 			buf[len++] = ';';
 			buf[len++] = '1';
 		}
-		if(flags & CFL_BLINKING){
+		if(flags & cfl_blinking){
 			buf[len++] = ';';
 			buf[len++] = '5';
 		}
-		if(flags & CFL_REVERSE){
+		if(flags & cfl_reverse){
 			buf[len++] = ';';
 			buf[len++] = '7';
 		}
@@ -75,21 +75,21 @@ namespace {
 		return len;
 	}
 
-	volatile boost::uint64_t g_mask = (boost::uint64_t)-1;
+	volatile boost::uint64_t g_mask = -1ull;
 	__thread char t_tag[5] = "----";
 }
 
 boost::uint64_t Logger::get_mask() NOEXCEPT {
-	return atomic_load(g_mask, memorder_relaxed);
+	return atomic_load(g_mask, memory_order_relaxed);
 }
 boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT {
 	boost::uint64_t old_mask, new_mask;
-	old_mask = atomic_load(g_mask, memorder_relaxed);
+	old_mask = atomic_load(g_mask, memory_order_relaxed);
 	do {
 		new_mask = old_mask;
 		new_mask &= ~to_disable;
 		new_mask |= to_enable;
-	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, memorder_relaxed, memorder_relaxed));
+	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, memory_order_relaxed, memory_order_relaxed));
 	return old_mask;
 }
 
@@ -98,7 +98,7 @@ bool Logger::initialize_mask_from_config(){
 	if(log_masked_levels.empty()){
 		return false;
 	}
-	boost::uint64_t new_mask = (boost::uint64_t)-1;
+	boost::uint64_t new_mask = -1ull;
 	unsigned index = 0;
 	for(AUTO(it, log_masked_levels.rbegin()); (it != log_masked_levels.rend()) && (index < 64); ++it){
 		switch(*it){
@@ -121,11 +121,11 @@ bool Logger::initialize_mask_from_config(){
 			throw std::invalid_argument("Invalid log_masked_levels string in main.conf");
 		}
 	}
-	set_mask((boost::uint64_t)-1, new_mask);
+	set_mask(-1ull, new_mask);
 	return true;
 }
 void Logger::finalize_mask() NOEXCEPT {
-	set_mask(0, SP_POSEIDON | SP_MAJOR | LV_INFO | LV_WARNING | LV_ERROR | LV_FATAL);
+	set_mask(0, special_poseidon | special_major | level_info | level_warning | level_error | level_fatal);
 }
 
 const char *Logger::get_thread_tag() NOEXCEPT {
@@ -142,8 +142,8 @@ Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEP
 }
 Logger::~Logger() NOEXCEPT
 try {
-	const unsigned level = static_cast<unsigned>(__builtin_ctzll(m_mask | LV_TRACE));
-	const LevelElement *const lc = &s_levels.at(level);
+	const unsigned level = static_cast<unsigned>(__builtin_ctzll(m_mask | level_trace));
+	const LevelElement *const lc = &g_levels.at(level);
 	const int output_fd = lc->to_stderr ? STDERR_FILENO : STDOUT_FILENO;
 	const bool output_color = ::isatty(output_fd);
 
@@ -153,7 +153,7 @@ try {
 	std::size_t len;
 	// Append the timestamp in brightred (when outputting to stderr) or green (when outputting to stdout).
 	if(output_color){
-		flags = lc->to_stderr ? (CFG_RED | CFL_BRIGHT) : CFG_GREEN;
+		flags = lc->to_stderr ? (cfg_red | cfl_bright) : cfg_green;
 		len = begin_color(str, flags);
 		buf.put(str, len);
 	}
@@ -166,8 +166,8 @@ try {
 	buf.put(' ');
 	// Append the thread tag in reverse brightred (when outputting to stderr) or yellow (when outputting to stdout).
 	if(output_color){
-		flags = lc->to_stderr ? (CFG_RED | CFL_BRIGHT) : CFG_YELLOW;
-		flags ^= CFL_REVERSE;
+		flags = lc->to_stderr ? (cfg_red | cfl_bright) : cfg_yellow;
+		flags ^= cfl_reverse;
 		len = begin_color(str, flags);
 		buf.put(str, len);
 	}
@@ -179,7 +179,7 @@ try {
 	buf.put(' ');
 	// Append the thread id in brightred (when outputting to stderr) or yellow (when outputting to stdout).
 	if(output_color){
-		flags = lc->to_stderr ? (CFG_RED | CFL_BRIGHT) : CFG_YELLOW;
+		flags = lc->to_stderr ? (cfg_red | cfl_bright) : cfg_yellow;
 		len = begin_color(str, flags);
 		buf.put(str, len);
 	}
@@ -193,7 +193,7 @@ try {
 	// Append the level name in reverse color.
 	if(output_color){
 		flags = lc->color;
-		flags ^= CFL_REVERSE;
+		flags ^= cfl_reverse;
 		len = begin_color(str, flags);
 		buf.put(str, len);
 	}
@@ -217,7 +217,7 @@ try {
 	buf.put(' ');
 	// Append the file name and line number in blue.
 	if(output_color){
-		flags = CFG_BLUE;
+		flags = cfg_blue;
 		len = begin_color(str, flags);
 		buf.put(str, len);
 	}

@@ -42,13 +42,13 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-			client->shutdown(ST_INTERNAL_ERROR, e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
+			client->shutdown(status_internal_error, e.what());
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			client->force_shutdown();
 		}
 	}
@@ -207,19 +207,19 @@ void Client::on_sync_control_message(OpCode opcode, StreamBuffer payload){
 	}
 
 	switch(opcode){
-	case OP_CLOSE:
+	case opcode_close:
 		LOG_POSEIDON_INFO("Received close frame from ", parent->get_remote_info());
-		shutdown(ST_NORMAL_CLOSURE, "");
+		shutdown(status_normal_closure, "");
 		break;
-	case OP_PING:
+	case opcode_ping:
 		LOG_POSEIDON_DEBUG("Received ping frame from ", parent->get_remote_info());
-		send(OP_PONG, STD_MOVE(payload));
+		send(opcode_pong, STD_MOVE(payload));
 		break;
-	case OP_PONG:
+	case opcode_pong:
 		LOG_POSEIDON_DEBUG("Received pong frame from ", parent->get_remote_info());
 		break;
 	default:
-		DEBUG_THROW(Exception, ST_PROTOCOL_ERROR, sslit("Invalid opcode"));
+		DEBUG_THROW(Exception, status_protocol_error, sslit("Invalid opcode"));
 	}
 }
 

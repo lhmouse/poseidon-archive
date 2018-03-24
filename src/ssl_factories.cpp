@@ -100,7 +100,7 @@ SslServerFactory::~SslServerFactory(){
 void SslServerFactory::create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd){
 	UniqueSsl ssl;
 	DEBUG_THROW_UNLESS(ssl.reset(::SSL_new(m_ssl_ctx.get())), Exception, sslit("::SSL_new() failed"));
-	ssl_filter.reset(new SslFilter(STD_MOVE(ssl), SslFilter::DIR_TO_ACCEPT, fd));
+	ssl_filter.reset(new SslFilter(STD_MOVE(ssl), SslFilter::to_accept, fd));
 }
 
 SslClientFactory::SslClientFactory(bool verify_peer)
@@ -115,7 +115,7 @@ SslClientFactory::~SslClientFactory(){
 void SslClientFactory::create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd){
 	UniqueSsl ssl;
 	DEBUG_THROW_UNLESS(ssl.reset(::SSL_new(m_ssl_ctx.get())), Exception, sslit("::SSL_new() failed"));
-	ssl_filter.reset(new SslFilter(STD_MOVE(ssl), SslFilter::DIR_TO_CONNECT, fd));
+	ssl_filter.reset(new SslFilter(STD_MOVE(ssl), SslFilter::to_connect, fd));
 }
 
 }

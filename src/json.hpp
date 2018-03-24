@@ -241,70 +241,88 @@ inline std::istream &operator>>(std::istream &is, JsonArray &rhs){
 class JsonElement {
 public:
 	enum Type {
-		T_BOOL, T_NUMBER, T_STRING, T_OBJECT, T_ARRAY, T_NULL,
+		type_null    = 0,
+		type_boolean = 1,
+		type_number  = 2,
+		type_string  = 3,
+		type_object  = 4,
+		type_array   = 5,
 	};
+
+	typedef JsonNull    Type_null;
+	typedef bool        Type_boolean;
+	typedef double      Type_number;
+	typedef std::string Type_string;
+	typedef JsonObject  Type_object;
+	typedef JsonArray   Type_array;
 
 public:
 	static const char *get_type_string(Type type);
 
 private:
-	boost::variant<bool, double, std::string, JsonObject, JsonArray, JsonNull> m_data;
+	boost::variant< Type_null
+	              , Type_boolean
+	              , Type_number
+	              , Type_string
+	              , Type_object
+	              , Type_array
+		> m_variant;
 
 public:
 	JsonElement(JsonNull = JsonNull())
-		: m_data(JsonNull())
+		: m_variant(JsonNull())
 	{
 		//
 	}
 	JsonElement(bool rhs)
-		: m_data(rhs)
+		: m_variant(rhs)
 	{
 		//
 	}
-#ifdef POSEIDOX_CXX11
+#ifdef POSEIDON_CXX11
 	template<typename T, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = nullptr>
 	JsonElement(T rhs)
 #else
 	template<typename T>
 	JsonElement(T rhs, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = 0)
 #endif
-		: m_data(static_cast<double>(rhs))
+		: m_variant(static_cast<double>(rhs))
 	{
 		//
 	}
 	JsonElement(const char *rhs)
-		: m_data(std::string(rhs))
+		: m_variant(std::string(rhs))
 	{
 		//
 	}
 	JsonElement(std::string rhs)
-		: m_data(STD_MOVE_IDN(rhs))
+		: m_variant(STD_MOVE_IDN(rhs))
 	{
 		//
 	}
 	JsonElement(JsonObject rhs)
-		: m_data(STD_MOVE_IDN(rhs))
+		: m_variant(STD_MOVE_IDN(rhs))
 	{
 		//
 	}
 	JsonElement(JsonArray rhs)
-		: m_data(STD_MOVE_IDN(rhs))
+		: m_variant(STD_MOVE_IDN(rhs))
 	{
 		//
 	}
 
 public:
 	Type get_type() const {
-		return static_cast<Type>(m_data.which());
+		return static_cast<Type>(m_variant.which());
 	}
 
 	template<typename T>
 	const T &get() const {
-		return boost::get<T>(m_data);
+		return boost::get<T>(m_variant);
 	}
 	template<typename T>
 	T &get(){
-		return boost::get<T>(m_data);
+		return boost::get<T>(m_variant);
 	}
 	template<typename T>
 	void set(T rhs){
@@ -313,7 +331,7 @@ public:
 
 	void swap(JsonElement &rhs) NOEXCEPT {
 		using std::swap;
-		swap(m_data, rhs.m_data);
+		swap(m_variant, rhs.m_variant);
 	}
 
 	StreamBuffer dump() const;

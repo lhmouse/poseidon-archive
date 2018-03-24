@@ -17,12 +17,12 @@ namespace Poseidon {
 namespace Http {
 
 ServerReader::ServerReader()
-	: m_size_expecting(EXPECTING_NEW_LINE), m_state(S_FIRST_HEADER)
+	: m_size_expecting(content_length_expecting_endl), m_state(state_first_header)
 {
 	//
 }
 ServerReader::~ServerReader(){
-	if(m_state != S_FIRST_HEADER){
+	if(m_state != state_first_header){
 		LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature request has to be discarded.");
 	}
 }
@@ -34,7 +34,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 	bool has_next_request = true;
 	do {
-		const bool expecting_new_line = (m_size_expecting == EXPECTING_NEW_LINE);
+		const bool expecting_new_line = (m_size_expecting == content_length_expecting_endl);
 
 		if(expecting_new_line){
 			std::ptrdiff_t lf_offset = 0;
@@ -56,7 +56,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 			if(lf_offset < 0){
 				// 没找到换行符。
 				const AUTO(max_line_length, MainConfig::get<std::size_t>("http_max_header_line_length", 8192));
-				DEBUG_THROW_UNLESS(m_queue.size() <= max_line_length, Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
+				DEBUG_THROW_UNLESS(m_queue.size() <= max_line_length, Exception, status_bad_request); // XXX 用一个别的状态码？
 				break;
 			}
 			m_size_expecting = static_cast<std::size_t>(lf_offset) + 1;
@@ -77,7 +77,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 		switch(m_state){
 			boost::uint64_t temp64;
 
-		case S_FIRST_HEADER:
+		case state_first_header:
 			if(!expected.empty()){
 				m_request_headers = RequestHeaders();
 				m_content_length = 0;
@@ -91,23 +91,23 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 				}
 
 				AUTO(pos, line.find(' '));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, ST_BAD_REQUEST);
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
 				line.at(pos) = 0;
 				m_request_headers.verb = get_verb_from_string(line.c_str());
-				DEBUG_THROW_UNLESS(m_request_headers.verb != V_INVALID_VERB, Exception, ST_NOT_IMPLEMENTED);
+				DEBUG_THROW_UNLESS(m_request_headers.verb != verb_invalid_verb, Exception, status_not_implemented);
 				line.erase(0, pos + 1);
 
 				pos = line.find(' ');
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, ST_BAD_REQUEST);
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
 				m_request_headers.uri.assign(line, 0, pos);
 				line.erase(0, pos + 1);
 
 				long ver_end = 0;
 				char ver_major_str[16], ver_minor_str[16];
-				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, Exception, ST_BAD_REQUEST);
-				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == line.size(), Exception, ST_BAD_REQUEST);
+				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, Exception, status_bad_request);
+				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == line.size(), Exception, status_bad_request);
 				m_request_headers.version = boost::numeric_cast<unsigned>(std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10));
-				DEBUG_THROW_UNLESS(m_request_headers.version <= 10001, Exception, ST_VERSION_NOT_SUPPORTED);
+				DEBUG_THROW_UNLESS(m_request_headers.version <= 10001, Exception, status_version_not_supported);
 
 				if(!dont_parse_get_params){
 					pos = m_request_headers.uri.find('?');
@@ -119,31 +119,31 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 					}
 				}
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				m_state = S_HEADERS;
+				m_size_expecting = content_length_expecting_endl;
+				m_state = state_headers;
 			} else {
-				m_size_expecting = EXPECTING_NEW_LINE;
-				// m_state = S_FIRST_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				// m_state = state_first_header;
 			}
 			break;
 
-		case S_HEADERS:
+		case state_headers:
 			if(!expected.empty()){
 				const AUTO(headers, m_request_headers.headers.size());
 				const AUTO(max_headers, MainConfig::get<std::size_t>("http_max_headers_per_request", 64));
-				DEBUG_THROW_UNLESS(headers <= max_headers, Exception, ST_BAD_REQUEST); // XXX 用一个别的状态码？
+				DEBUG_THROW_UNLESS(headers <= max_headers, Exception, status_bad_request); // XXX 用一个别的状态码？
 
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, ST_BAD_REQUEST);
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
 				SharedNts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				m_request_headers.headers.append(STD_MOVE(key), STD_MOVE(value));
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				// m_state = S_HEADERS;
+				m_size_expecting = content_length_expecting_endl;
+				// m_state = state_headers;
 			} else {
 				const AUTO_REF(transfer_encoding, m_request_headers.headers.get("Transfer-Encoding"));
 				if(transfer_encoding.empty() || (::strcasecmp(transfer_encoding.c_str(), "identity") == 0)){
@@ -153,11 +153,11 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 					} else {
 						char *eptr;
 						m_content_length = ::strtoull(content_length.c_str(), &eptr, 10);
-						DEBUG_THROW_UNLESS(*eptr == 0, Exception, ST_BAD_REQUEST);
-						DEBUG_THROW_UNLESS(m_content_length <= CONTENT_LENGTH_MAX, Exception, ST_PAYLOAD_TOO_LARGE);
+						DEBUG_THROW_UNLESS(*eptr == 0, Exception, status_bad_request);
+						DEBUG_THROW_UNLESS(m_content_length <= content_length_max, Exception, status_payload_too_large);
 					}
 				} else if(::strcasecmp(transfer_encoding.c_str(), "chunked") == 0){
-					m_content_length = CONTENT_CHUNKED;
+					m_content_length = content_length_chunked;
 				} else {
 					LOG_POSEIDON_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
 					DEBUG_THROW(BasicException, sslit("Inacceptable Transfer-Encoding"));
@@ -165,17 +165,17 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 				on_request_headers(STD_MOVE(m_request_headers), m_content_length);
 
-				if(m_content_length == CONTENT_CHUNKED){
-					m_size_expecting = EXPECTING_NEW_LINE;
-					m_state = S_CHUNK_HEADER;
+				if(m_content_length == content_length_chunked){
+					m_size_expecting = content_length_expecting_endl;
+					m_state = state_chunk_header;
 				} else {
 					m_size_expecting = std::min<boost::uint64_t>(m_content_length, 4096);
-					m_state = S_IDENTITY;
+					m_state = state_identity;
 				}
 			}
 			break;
 
-		case S_IDENTITY:
+		case state_identity:
 			temp64 = std::min<boost::uint64_t>(expected.size(), m_content_length - m_content_offset);
 			if(temp64 > 0){
 				on_request_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
@@ -184,16 +184,16 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 			if(m_content_offset < m_content_length){
 				m_size_expecting = std::min<boost::uint64_t>(m_content_length - m_content_offset, 4096);
-				// m_state = S_IDENTITY;
+				// m_state = state_identity;
 			} else {
 				has_next_request = on_request_end(m_content_offset, VAL_INIT);
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				m_state = S_FIRST_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				m_state = state_first_header;
 			}
 			break;
 
-		case S_CHUNK_HEADER:
+		case state_chunk_header:
 			if(!expected.empty()){
 				m_chunk_size = 0;
 				m_chunk_offset = 0;
@@ -203,23 +203,23 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 				char *eptr;
 				m_chunk_size = ::strtoull(line.c_str(), &eptr, 16);
-				DEBUG_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), Exception, ST_BAD_REQUEST);
-				DEBUG_THROW_UNLESS(m_chunk_size <= CONTENT_LENGTH_MAX, Exception, ST_PAYLOAD_TOO_LARGE);
+				DEBUG_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), Exception, status_bad_request);
+				DEBUG_THROW_UNLESS(m_chunk_size <= content_length_max, Exception, status_payload_too_large);
 				if(m_chunk_size == 0){
-					m_size_expecting = EXPECTING_NEW_LINE;
-					m_state = S_CHUNKED_TRAILER;
+					m_size_expecting = content_length_expecting_endl;
+					m_state = state_chunked_trailer;
 				} else {
 					m_size_expecting = std::min<boost::uint64_t>(m_chunk_size, 4096);
-					m_state = S_CHUNK_DATA;
+					m_state = state_chunk_data;
 				}
 			} else {
 				// chunk-data 后面应该有一对 CRLF。我们在这里处理这种情况。
-				m_size_expecting = EXPECTING_NEW_LINE;
-				// m_state = S_CHUNK_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				// m_state = state_chunk_header;
 			}
 			break;
 
-		case S_CHUNK_DATA:
+		case state_chunk_data:
 			temp64 = std::min<boost::uint64_t>(expected.size(), m_chunk_size - m_chunk_offset);
 			assert(temp64 > 0);
 			on_request_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
@@ -228,31 +228,31 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 			if(m_chunk_offset < m_chunk_size){
 				m_size_expecting = std::min<boost::uint64_t>(m_chunk_size - m_chunk_offset, 4096);
-				// m_state = S_CHUNK_DATA;
+				// m_state = state_chunk_data;
 			} else {
-				m_size_expecting = EXPECTING_NEW_LINE;
-				m_state = S_CHUNK_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				m_state = state_chunk_header;
 			}
 			break;
 
-		case S_CHUNKED_TRAILER:
+		case state_chunked_trailer:
 			if(!expected.empty()){
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, ST_BAD_REQUEST);
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
 				SharedNts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				m_chunked_trailer.append(STD_MOVE(key), STD_MOVE(value));
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				// m_state = S_CHUNKED_TRAILER;
+				m_size_expecting = content_length_expecting_endl;
+				// m_state = state_chunked_trailer;
 			} else {
 				has_next_request = on_request_end(m_content_offset, STD_MOVE(m_chunked_trailer));
 
-				m_size_expecting = EXPECTING_NEW_LINE;
-				m_state = S_FIRST_HEADER;
+				m_size_expecting = content_length_expecting_endl;
+				m_state = state_first_header;
 			}
 			break;
 		}

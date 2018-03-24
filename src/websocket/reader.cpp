@@ -15,13 +15,13 @@ namespace WebSocket {
 
 Reader::Reader(bool force_masked_frames)
 	: m_force_masked_frames(force_masked_frames)
-	, m_size_expecting(1), m_state(S_OPCODE)
+	, m_size_expecting(1), m_state(state_opcode)
 	, m_whole_offset(0), m_prev_fin(true)
 {
 	//
 }
 Reader::~Reader(){
-	if(m_state != S_OPCODE){
+	if(m_state != state_opcode){
 		LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature request has to be discarded.");
 	}
 }
@@ -43,97 +43,97 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 			boost::uint32_t temp32;
 			boost::uint64_t temp64;
 
-		case S_OPCODE:
+		case state_opcode:
 			m_fin = false;
 			m_masked = false;
-			m_opcode = OP_INVALID;
+			m_opcode = opcode_invalid;
 			m_frame_size = 0;
 			m_mask = 0;
 			m_frame_offset = 0;
 
 			ch = m_queue.get();
-			DEBUG_THROW_UNLESS(has_none_flags_of(ch, OP_FL_RSV1 | OP_FL_RSV2 | OP_FL_RSV3), Exception, ST_PROTOCOL_ERROR, sslit("Reserved bits set"));
-			m_opcode = ch & OP_FL_OPCODE;
-			m_fin = ch & OP_FL_FIN;
-			DEBUG_THROW_UNLESS(!((m_opcode & OP_FL_CONTROL) && !m_fin), Exception, ST_PROTOCOL_ERROR, sslit("Control frame fragemented"));
-			DEBUG_THROW_UNLESS(!((m_opcode == OP_CONTINUATION) && m_prev_fin), Exception, ST_PROTOCOL_ERROR, sslit("Dangling frame continuation"));
-			DEBUG_THROW_UNLESS(!((m_opcode != OP_CONTINUATION) && !m_prev_fin), Exception, ST_PROTOCOL_ERROR, sslit("Final frame following a frame that needs continuation"));
+			DEBUG_THROW_UNLESS(has_none_flags_of(ch, opmask_rsv1 | opmask_rsv2 | opmask_rsv3), Exception, status_protocol_error, sslit("Reserved bits set"));
+			m_opcode = ch & opmask_opcode;
+			m_fin = ch & opmask_fin;
+			DEBUG_THROW_UNLESS(!(has_all_flags_of(m_opcode, opmask_control) && !m_fin), Exception, status_protocol_error, sslit("Control frame fragemented"));
+			DEBUG_THROW_UNLESS(!((m_opcode == opcode_continuation) && m_prev_fin), Exception, status_protocol_error, sslit("Dangling frame continuation"));
+			DEBUG_THROW_UNLESS(!((m_opcode != opcode_continuation) && !m_prev_fin), Exception, status_protocol_error, sslit("Final frame following a frame that needs continuation"));
 
 			m_size_expecting = 1;
-			m_state = S_FRAME_SIZE;
+			m_state = state_frame_size;
 			break;
 
-		case S_FRAME_SIZE:
+		case state_frame_size:
 			ch = m_queue.get();
 			m_masked = ch & 0x80;
-			DEBUG_THROW_UNLESS(!(m_force_masked_frames && !m_masked), Exception, ST_PROTOCOL_ERROR, sslit("Non-masked frames not allowed"));
+			DEBUG_THROW_UNLESS(!(m_force_masked_frames && !m_masked), Exception, status_protocol_error, sslit("Non-masked frames not allowed"));
 			m_frame_size = ch & 0x7F;
 			if(m_frame_size >= 0x7E){
-				DEBUG_THROW_UNLESS(has_none_flags_of(m_opcode, OP_FL_CONTROL), Exception, ST_PROTOCOL_ERROR, sslit("Control frame too large"));
+				DEBUG_THROW_UNLESS(has_none_flags_of(m_opcode, opmask_control), Exception, status_protocol_error, sslit("Control frame too large"));
 				if(m_frame_size == 0x7E){
 					m_size_expecting = 2;
-					m_state = S_FRAME_SIZE_16;
+					m_state = state_frame_size_16;
 				} else {
 					m_size_expecting = 8;
-					m_state = S_FRAME_SIZE_64;
+					m_state = state_frame_size_64;
 				}
 			} else {
 				m_size_expecting = 0;
-				m_state = S_SIZE_END;
+				m_state = state_size_end;
 			}
 			break;
 
-		case S_FRAME_SIZE_16:
+		case state_frame_size_16:
 			m_queue.get(&temp16, 2);
 			m_frame_size = load_be(temp16);
 
 			m_size_expecting = 0;
-			m_state = S_SIZE_END;
+			m_state = state_size_end;
 			break;
 
-		case S_FRAME_SIZE_64:
+		case state_frame_size_64:
 			m_queue.get(&temp64, 8);
 			m_frame_size = load_be(temp64);
 
 			m_size_expecting = 0;
-			m_state = S_SIZE_END;
+			m_state = state_size_end;
 			break;
 
-		case S_SIZE_END:
+		case state_size_end:
 			LOG_POSEIDON_DEBUG("Frame size = ", m_frame_size);
 
 			if(m_masked){
 				m_size_expecting = 4;
-				m_state = S_MASK;
+				m_state = state_mask;
 			} else {
 				m_size_expecting = 0;
-				m_state = S_HEADER_END;
+				m_state = state_header_end;
 			}
 			break;
 
-		case S_MASK:
+		case state_mask:
 			m_queue.get(&temp32, 4);
 			m_mask = load_le(temp32);
 
 			m_size_expecting = 0;
-			m_state = S_HEADER_END;
+			m_state = state_header_end;
 			break;
 
-		case S_HEADER_END:
-			if(m_opcode != OP_CONTINUATION){
+		case state_header_end:
+			if(m_opcode != opcode_continuation){
 				on_data_message_header(m_opcode);
 			}
 
-			if((m_opcode & OP_FL_CONTROL) == 0){
+			if(has_none_flags_of(m_opcode, opmask_control)){
 				m_size_expecting = std::min<boost::uint64_t>(m_frame_size, 4096);
-				m_state = S_DATA_FRAME;
+				m_state = state_data_frame;
 			} else {
 				m_size_expecting = m_frame_size;
-				m_state = S_CONTROL_FRAME;
+				m_state = state_control_frame;
 			}
 			break;
 
-		case S_DATA_FRAME:
+		case state_data_frame:
 			temp64 = std::min<boost::uint64_t>(m_queue.size(), m_frame_size - m_frame_offset);
 			if(temp64 > 0){
 				StreamBuffer payload;
@@ -148,7 +148,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 			if(m_frame_offset < m_frame_size){
 				m_size_expecting = std::min<boost::uint64_t>(m_frame_size - m_frame_offset, 4096);
-				// m_state = S_DATA_FRAME;
+				// m_state = state_data_frame;
 			} else {
 				if(m_fin){
 					has_next_request = on_data_message_end(m_whole_offset);
@@ -159,11 +159,11 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 				}
 
 				m_size_expecting = 1;
-				m_state = S_OPCODE;
+				m_state = state_opcode;
 			}
 			break;
 
-		case S_CONTROL_FRAME:
+		case state_control_frame:
 			{
 				StreamBuffer payload;
 				for(std::size_t i = 0; i < m_frame_size; ++i){
@@ -177,7 +177,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 			m_prev_fin = true;
 
 			m_size_expecting = 1;
-			m_state = S_OPCODE;
+			m_state = state_opcode;
 			break;
 		}
 	} while(has_next_request);

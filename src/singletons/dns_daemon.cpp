@@ -129,7 +129,7 @@ namespace {
 
 	void thread_proc(){
 		PROFILE_ME;
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "DNS daemon started.");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "DNS daemon started.");
 
 		unsigned timeout = 0;
 		for(;;){
@@ -140,30 +140,30 @@ namespace {
 			} while(busy);
 
 			Mutex::UniqueLock lock(g_mutex);
-			if(!atomic_load(g_running, memorder_consume)){
+			if(!atomic_load(g_running, memory_order_consume)){
 				break;
 			}
 			g_new_request.timed_wait(lock, timeout);
 		}
 
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "DNS daemon stopped.");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "DNS daemon stopped.");
 	}
 }
 
 void DnsDaemon::start(){
-	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
+	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting DNS daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting DNS daemon...");
 
 	Thread(&thread_proc, sslit("   D"), sslit("DNS")).swap(g_thread);
 }
 void DnsDaemon::stop(){
-	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
+	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping DNS daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping DNS daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();

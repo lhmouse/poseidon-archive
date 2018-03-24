@@ -9,20 +9,20 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const unsigned char HEX_TABLE[32] = {
+	CONSTEXPR const unsigned char g_hex_table[32] = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
 	};
 
 	unsigned char to_hex_digit(unsigned byte, bool upper_case){
-		return HEX_TABLE[(byte & 0x0F) + upper_case * sizeof(HEX_TABLE) / 2];
+		return g_hex_table[(byte & 0x0F) + upper_case * sizeof(g_hex_table) / 2];
 	}
 	int from_hex_digit(unsigned char ch){
-		const AUTO(p, static_cast<const unsigned char *>(std::memchr(HEX_TABLE, ch, sizeof(HEX_TABLE))));
+		const AUTO(p, static_cast<const unsigned char *>(std::memchr(g_hex_table, ch, sizeof(g_hex_table))));
 		if(!p){
 			return -1;
 		}
-		return (p - HEX_TABLE) & 0x0F;
+		return (p - g_hex_table) & 0x0F;
 	}
 }
 

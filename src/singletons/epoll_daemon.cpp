@@ -123,7 +123,7 @@ namespace {
 				} else {
 					err_code = 0;
 				}
-				LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket closed: remote = ", socket->get_remote_info(), ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
+				LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Socket closed: remote = ", socket->get_remote_info(), ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
 				g_socket_map.set_key<0, 3>(it, err_code);
 			}
 		}
@@ -154,7 +154,7 @@ namespace {
 		}
 
 		if(socket->is_throttled()){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_DEBUG, "Socket is throttled: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Socket is throttled: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
@@ -180,7 +180,7 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				g_socket_map.set_key<0, 1>(it, (boost::uint64_t)-1);
+				g_socket_map.set_key<0, 1>(it, -1ull);
 			}
 		} else {
 			LOG_POSEIDON_DEBUG("Socket read error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
@@ -218,10 +218,10 @@ namespace {
 			err_code = socket->poll_write(write_lock, io_buffer.data(), io_buffer.size(), writeable);
 			LOG_POSEIDON_TRACE("Socket write result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 			err_code = ECONNRESET;
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 			err_code = ECONNRESET;
 		}
 		if((err_code == 0) || (err_code == EINTR)){
@@ -230,7 +230,7 @@ namespace {
 			const RecursiveMutex::UniqueLock lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
-				g_socket_map.set_key<0, 2>(it, (boost::uint64_t)-1);
+				g_socket_map.set_key<0, 2>(it, -1ull);
 			}
 		} else {
 			LOG_POSEIDON_DEBUG("Socket write error: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
@@ -264,9 +264,9 @@ namespace {
 			LOG_POSEIDON_DEBUG("Socket closed: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
 			socket->on_close(err_code);
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 		}
 		const RecursiveMutex::UniqueLock lock(g_mutex);
 		const AUTO(it, g_socket_map.find<0>(socket.get()));
@@ -278,7 +278,7 @@ namespace {
 
 	void thread_proc(){
 		PROFILE_ME;
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Epoll daemon started.");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Epoll daemon started.");
 
 		boost::container::vector<unsigned char> io_buffer;
 		const AUTO(io_buffer_size, MainConfig::get<std::size_t>("epoll_io_buffer_size", 4096));
@@ -295,31 +295,31 @@ namespace {
 				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 			} while(busy);
 
-			if(!atomic_load(g_running, memorder_consume)){
+			if(!atomic_load(g_running, memory_order_consume)){
 				break;
 			}
 			wait_for_sockets(timeout);
 		}
 
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Epoll daemon stopped.");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Epoll daemon stopped.");
 	}
 }
 
 void EpollDaemon::start(){
-	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
+	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting epoll daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting epoll daemon...");
 
 	DEBUG_THROW_UNLESS(g_epoll.reset(::epoll_create(100)), SystemException);
 	Thread(&thread_proc, sslit("   N"), sslit("Network")).swap(g_thread);
 }
 void EpollDaemon::stop(){
-	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
+	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping epoll daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping epoll daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();

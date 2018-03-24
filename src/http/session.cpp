@@ -42,13 +42,13 @@ private:
 		try {
 			really_perform(session);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Http::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Http::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			session->send_default_and_shutdown(e.get_status_code(), e.get_headers());
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "std::exception thrown: what = ", e.what());
-			session->send_default_and_shutdown(ST_INTERNAL_SERVER_ERROR);
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
+			session->send_default_and_shutdown(status_internal_server_error);
 		} catch(...){
-			LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Unknown exception thrown.");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			session->force_shutdown();
 		}
 	}
@@ -161,7 +161,7 @@ void Session::on_low_level_request_entity(boost::uint64_t /*entity_offset*/, Str
 	PROFILE_ME;
 
 	m_size_total += entity.size();
-	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, ST_PAYLOAD_TOO_LARGE);
+	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_payload_too_large);
 	m_entity.splice(entity);
 }
 boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers){
@@ -190,23 +190,23 @@ void Session::on_sync_expect(RequestHeaders request_headers){
 	const AUTO_REF(expect, request_headers.headers.get("Expect"));
 	if(::strcasecmp(expect.c_str(), "100-continue") == 0){
 		const AUTO_REF(content_length_str, request_headers.headers.get("Content-Length"));
-		DEBUG_THROW_UNLESS(!content_length_str.empty(), Exception, ST_LENGTH_REQUIRED);
+		DEBUG_THROW_UNLESS(!content_length_str.empty(), Exception, status_length_required);
 		char *eptr;
 		const AUTO(content_length, ::strtoull(content_length_str.c_str(), &eptr, 10));
-		DEBUG_THROW_UNLESS(*eptr == 0, Exception, ST_BAD_REQUEST);
-		DEBUG_THROW_UNLESS(content_length <= get_max_request_length(), Exception, ST_PAYLOAD_TOO_LARGE);
-		send_default(ST_CONTINUE);
+		DEBUG_THROW_UNLESS(*eptr == 0, Exception, status_bad_request);
+		DEBUG_THROW_UNLESS(content_length <= get_max_request_length(), Exception, status_payload_too_large);
+		send_default(status_continue);
 	} else {
 		LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", expect);
-		DEBUG_THROW(Exception, ST_EXPECTATION_FAILED);
+		DEBUG_THROW(Exception, status_expectation_failed);
 	}
 }
 
 boost::uint64_t Session::get_max_request_length() const {
-	return atomic_load(m_max_request_length, memorder_consume);
+	return atomic_load(m_max_request_length, memory_order_consume);
 }
 void Session::set_max_request_length(boost::uint64_t max_request_length){
-	atomic_store(m_max_request_length, max_request_length, memorder_release);
+	atomic_store(m_max_request_length, max_request_length, memory_order_release);
 }
 
 }

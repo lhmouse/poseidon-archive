@@ -10,7 +10,7 @@ namespace Poseidon {
 namespace Http {
 
 namespace {
-	CONSTEXPR const bool UNSAFE_CHAR_TABLE[256] = {
+	CONSTEXPR const bool g_unsafe_char_table[256] = {
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1,
@@ -28,25 +28,24 @@ namespace {
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
-
-	bool is_char_unsafe(char ch){
-		return UNSAFE_CHAR_TABLE[ch & 0xFF];
-	}
-
-	CONSTEXPR const char HEX_TABLE[32] = {
+	CONSTEXPR const char g_hex_table[32] = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
 	};
 
+	bool is_char_unsafe(char ch){
+		return g_unsafe_char_table[ch & 0xFF];
+	}
+
 	char to_hex_digit(int byte, bool upper_case = false){
-		return HEX_TABLE[(byte & 0x0F) + upper_case * sizeof(HEX_TABLE) / 2];
+		return g_hex_table[(byte & 0x0F) + upper_case * sizeof(g_hex_table) / 2];
 	}
 	int from_hex_digit(char ch){
-		const AUTO(p, static_cast<const char *>(std::memchr(HEX_TABLE, ch, sizeof(HEX_TABLE))));
+		const AUTO(p, static_cast<const char *>(std::memchr(g_hex_table, ch, sizeof(g_hex_table))));
 		if(!p){
 			return -1;
 		}
-		return (p - HEX_TABLE) & 0x0F;
+		return (p - g_hex_table) & 0x0F;
 	}
 
 	void url_encode_step(std::ostream &os, const std::string &str){
@@ -67,16 +66,16 @@ namespace {
 		const char *pos = "";
 		int high = 1, low = 1;
 		enum {
-			S_PLAIN,
-			S_WANTS_HIGH,
-			S_WANTS_LOW,
-		} state = S_PLAIN;
+			state_plain,
+			state_wants_high,
+			state_wants_low,
+		} state = state_plain;
 		for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
 			const char ch = traits::to_char_type(is.get());
 			switch(state){
-			case S_PLAIN:
+			case state_plain:
 				if(ch == '%'){
-					state = S_WANTS_HIGH;
+					state = state_wants_high;
 					break;
 				}
 				pos = std::strchr(stops_at, ch);
@@ -88,30 +87,30 @@ namespace {
 				} else {
 					str += ch;
 				}
-				// state = S_PLAIN;
+				// state = state_plain;
 				break;
 
-			case S_WANTS_HIGH:
+			case state_wants_high:
 				high = from_hex_digit(ch);
 				if(high < 0){
 					is.setstate(std::ios::failbit);
 					return 0;
 				}
-				state = S_WANTS_LOW;
+				state = state_wants_low;
 				break;
 
-			case S_WANTS_LOW:
+			case state_wants_low:
 				low = from_hex_digit(ch);
 				if(low < 0){
 					is.setstate(std::ios::failbit);
 					return 0;
 				}
 				str += static_cast<char>((high << 4) | low);
-				state = S_PLAIN;
+				state = state_plain;
 				break;
 			}
 		}
-		if(state != S_PLAIN){
+		if(state != state_plain){
 			is.setstate(std::ios::failbit);
 			return 0;
 		}

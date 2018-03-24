@@ -48,7 +48,7 @@ public:
 	}
 
 	unsigned long set_period(boost::uint64_t period){
-		if(period != TimerDaemon::PERIOD_NOT_MODIFIED){
+		if(period != TimerDaemon::period_intact){
 			m_period = period;
 		}
 		return ++m_stamp;
@@ -56,9 +56,11 @@ public:
 };
 
 namespace {
-	CONSTEXPR const boost::uint64_t MS_PER_HOUR = 3600000;
-	CONSTEXPR const boost::uint64_t MS_PER_DAY  = MS_PER_HOUR * 24;
-	CONSTEXPR const boost::uint64_t MS_PER_WEEK = MS_PER_DAY * 7;
+	enum {
+		ms_per_hour = 1000ull * 3600,
+		ms_per_day  = ms_per_hour * 24,
+		ms_per_week = ms_per_day * 7,
+	};
 
 	class TimerJob : public JobBase {
 	private:
@@ -154,7 +156,7 @@ namespace {
 
 	void thread_proc(){
 		PROFILE_ME;
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Timer daemon started.");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Timer daemon started.");
 
 		unsigned timeout = 0;
 		for(;;){
@@ -165,30 +167,30 @@ namespace {
 			} while(busy);
 
 			Mutex::UniqueLock lock(g_mutex);
-			if(!atomic_load(g_running, memorder_consume)){
+			if(!atomic_load(g_running, memory_order_consume)){
 				break;
 			}
 			g_new_timer.timed_wait(lock, timeout);
 		}
 
-		LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Timer daemon stopped.");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Timer daemon stopped.");
 	}
 }
 
 void TimerDaemon::start(){
-	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
+	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting timer daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting timer daemon...");
 
 	Thread(&thread_proc, sslit("  T "), sslit("Timer")).swap(g_thread);
 }
 void TimerDaemon::stop(){
-	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
+	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping timer daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping timer daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();
@@ -220,18 +222,18 @@ boost::shared_ptr<Timer> TimerDaemon::register_timer(boost::uint64_t delta_first
 boost::shared_ptr<Timer> TimerDaemon::register_hourly_timer(unsigned minute, unsigned second, TimerCallback callback, bool utc){
 	const AUTO(virt_now, utc ? get_utc_time() : get_local_time());
 	const AUTO(delta, checked_sub<boost::uint64_t>(virt_now, (minute * 60ull + second) * 1000ull));
-	return register_timer(MS_PER_HOUR - delta % MS_PER_HOUR, MS_PER_HOUR, STD_MOVE(callback));
+	return register_timer(ms_per_hour - delta % ms_per_hour, ms_per_hour, STD_MOVE(callback));
 }
 boost::shared_ptr<Timer> TimerDaemon::register_daily_timer(unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc){
 	const AUTO(virt_now, utc ? get_utc_time() : get_local_time());
 	const AUTO(delta, checked_sub<boost::uint64_t>(virt_now, (hour * 3600ull + minute * 60ull + second) * 1000ull));
-	return register_timer(MS_PER_DAY - delta % MS_PER_DAY, MS_PER_DAY, STD_MOVE(callback));
+	return register_timer(ms_per_day - delta % ms_per_day, ms_per_day, STD_MOVE(callback));
 }
 boost::shared_ptr<Timer> TimerDaemon::register_weekly_timer(unsigned day_of_week, unsigned hour, unsigned minute, unsigned second, TimerCallback callback, bool utc){
 	// 注意 1970-01-01 是星期四。
 	const AUTO(virt_now, utc ? get_utc_time() : get_local_time());
 	const AUTO(delta, checked_sub<boost::uint64_t>(virt_now, ((day_of_week + 3ull) * 86400ull + hour * 3600ull + minute * 60ull + second) * 1000ull));
-	return register_timer(MS_PER_WEEK - delta % MS_PER_WEEK, MS_PER_WEEK, STD_MOVE(callback));
+	return register_timer(ms_per_week - delta % ms_per_week, ms_per_week, STD_MOVE(callback));
 }
 
 boost::shared_ptr<Timer> TimerDaemon::register_low_level_absolute_timer(boost::uint64_t first, boost::uint64_t period, TimerCallback callback){

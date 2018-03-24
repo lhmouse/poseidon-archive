@@ -14,9 +14,8 @@ namespace Poseidon {
 class SslFilter : NONCOPYABLE {
 public:
 	enum Direction {
-		DIR_UNSPECIFIED = 0,
-		DIR_TO_CONNECT  = 1,
-		DIR_TO_ACCEPT   = 2,
+		to_connect  = 1,
+		to_accept   = 2,
 	};
 
 private:

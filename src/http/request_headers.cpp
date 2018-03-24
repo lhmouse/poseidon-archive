@@ -11,33 +11,33 @@ namespace Http {
 
 bool is_keep_alive_enabled(const RequestHeaders &request_headers){
 	const AUTO_REF(connection, request_headers.headers.get("Connection"));
-	enum { R_AUTO, R_ON, R_OFF } result = R_AUTO;
+	enum { opt_auto, opt_on, opt_off } opt = opt_auto;
 	Buffer_istream is;
-	is.get_buffer().put(connection);
-	HeaderOption opt(is);
+	is.set_buffer(StreamBuffer(connection));
+	HeaderOption connection_option(is);
 	if(is){
-		if(::strcasecmp(opt.get_base().c_str(), "Keep-Alive") == 0){
-			result = R_ON;
-		} else if(::strcasecmp(opt.get_base().c_str(), "Close") == 0){
-			result = R_OFF;
+		if(::strcasecmp(connection_option.get_base().c_str(), "Keep-Alive") == 0){
+			opt = opt_on;
+		} else if(::strcasecmp(connection_option.get_base().c_str(), "Close") == 0){
+			opt = opt_off;
 		}
 	}
-	if(result == R_AUTO){
+	if(opt == opt_auto){
 		if(request_headers.version < 10001){
-			result = R_OFF;
+			opt = opt_off;
 		} else {
-			result = R_ON;
+			opt = opt_on;
 		}
 	}
-	return result == R_ON;
+	return opt == opt_on;
 }
 
 ContentEncoding pick_content_encoding(const RequestHeaders &request_headers){
 	const AUTO_REF(accept_encoding, request_headers.headers.get("Accept-Encoding"));
 	if(accept_encoding.empty()){
-		return CE_IDENTITY;
+		return content_encoding_identity;
 	}
-	boost::array<double, CE_NOT_ACCEPTABLE + 1> encodings;
+	boost::array<double, content_encoding_not_acceptable + 1> encodings;
 	encodings.fill(-42);
 	std::size_t begin = 0, end;
 	Buffer_istream is;
@@ -54,11 +54,11 @@ ContentEncoding pick_content_encoding(const RequestHeaders &request_headers){
 			const double q = q_str.empty() ? 1.0 : std::strtod(q_str.c_str(), NULLPTR);
 			if(!std::isnan(q) && (q >= 0)){
 				if(::strcasecmp(opt.get_base().c_str(), "identity") == 0){
-					encodings.at(CE_IDENTITY) = q;
+					encodings.at(content_encoding_identity) = q;
 				} else if(::strcasecmp(opt.get_base().c_str(), "deflate") == 0){
-					encodings.at(CE_DEFLATE) = q;
+					encodings.at(content_encoding_deflate) = q;
 				} else if(::strcasecmp(opt.get_base().c_str(), "gzip") == 0){
-					encodings.at(CE_GZIP) = q;
+					encodings.at(content_encoding_gzip) = q;
 				} else if(::strcasecmp(opt.get_base().c_str(), "*") == 0){
 					for(std::size_t i = 0; i < encodings.size(); ++i){
 						if(encodings[i] < 0){
@@ -73,21 +73,21 @@ ContentEncoding pick_content_encoding(const RequestHeaders &request_headers){
 		}
 		begin = end + 1;
 	}
-	double identity_q = encodings.at(CE_IDENTITY);
+	double identity_q = encodings.at(content_encoding_identity);
 	if(identity_q < 0){
-		identity_q = encodings.at(CE_NOT_ACCEPTABLE);
+		identity_q = encodings.at(content_encoding_not_acceptable);
 	}
 	if(identity_q < 0){
 		identity_q = 0.000001;
 	}
-	if(encodings.at(CE_GZIP) > identity_q){
-		return CE_GZIP;
-	} else if(encodings.at(CE_DEFLATE) > identity_q){
-		return CE_DEFLATE;
+	if(encodings.at(content_encoding_gzip) > identity_q){
+		return content_encoding_gzip;
+	} else if(encodings.at(content_encoding_deflate) > identity_q){
+		return content_encoding_deflate;
 	} else if(identity_q > 0){
-		return CE_IDENTITY;
+		return content_encoding_identity;
 	}
-	return CE_NOT_ACCEPTABLE;
+	return content_encoding_not_acceptable;
 }
 
 }

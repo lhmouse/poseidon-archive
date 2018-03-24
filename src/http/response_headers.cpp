@@ -10,24 +10,26 @@ namespace Poseidon {
 namespace Http {
 
 bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT {
-	enum { OPT_AUTO, OPT_ON, OPT_OFF } opt = OPT_AUTO;
-	Buffer_istream is(StreamBuffer(response_headers.headers.get("Connection")));
-	HeaderOption connection(is);
+	const AUTO_REF(connection, response_headers.headers.get("Connection"));
+	enum { opt_auto, opt_on, opt_off } opt = opt_auto;
+	Buffer_istream is;
+	is.set_buffer(StreamBuffer(connection));
+	HeaderOption connection_option(is);
 	if(is){
-		if(::strcasecmp(connection.get_base().c_str(), "Keep-Alive") == 0){
-			opt = OPT_ON;
-		} else if(::strcasecmp(connection.get_base().c_str(), "Close") == 0){
-			opt = OPT_OFF;
+		if(::strcasecmp(connection_option.get_base().c_str(), "Keep-Alive") == 0){
+			opt = opt_on;
+		} else if(::strcasecmp(connection_option.get_base().c_str(), "Close") == 0){
+			opt = opt_off;
 		}
 	}
-	if(opt == OPT_AUTO){
+	if(opt == opt_auto){
 		if(response_headers.version < 10001){
-			opt = OPT_OFF;
+			opt = opt_off;
 		} else {
-			opt = OPT_ON;
+			opt = opt_on;
 		}
 	}
-	return opt == OPT_ON;
+	return opt == opt_on;
 }
 
 std::pair<ResponseHeaders, StreamBuffer> make_default_response(StatusCode status_code, OptionalMap headers){

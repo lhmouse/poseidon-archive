@@ -29,9 +29,9 @@ template class PromiseContainer<SimpleHttpResponse>;
 namespace {
 	bool can_be_redirected(const SimpleHttpRequest &request){
 		switch(request.request_headers.verb){
-		case Http::V_HEAD:
+		case Http::verb_head:
 			return false;
-		case Http::V_GET:
+		case Http::verb_get:
 			return !request.dont_redirect_get;
 		default:
 			return request.redirect_non_get;
@@ -46,15 +46,15 @@ namespace {
 			return false;
 		}
 		switch(respones_headers.status_code){
-		case Http::ST_MOVED_PERMANENTLY: // 301
-		case Http::ST_FOUND: // 302
-		case Http::ST_TEMPORARY_REDIRECT: // 307
+		case Http::status_moved_permanently: // 301
+		case Http::status_found: // 302
+		case Http::status_temporary_redirect: // 307
 			LOG_POSEIDON_DEBUG("Redirecting intactly: location = ", location);
 			request.request_headers.uri = location;
 			return true;
-		case Http::ST_SEE_OTHER: // 303
+		case Http::status_see_other: // 303
 			LOG_POSEIDON_DEBUG("Redirecting intactly: location = ", location);
-			request.request_headers.verb = Http::V_GET;
+			request.request_headers.verb = Http::verb_get;
 			request.request_headers.uri = location;
 			request.request_entity.clear();
 			return true;
@@ -293,7 +293,7 @@ namespace {
 					client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 					EpollDaemon::add_socket(client);
 					JobDispatcher::yield(client, true);
-					DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::V_HEAD), Exception, sslit("Connection was closed prematurely"));
+					DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, sslit("Connection was closed prematurely"));
 				} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
 				SimpleHttpResponse temp = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };
@@ -320,19 +320,19 @@ namespace {
 }
 
 void SimpleHttpClientDaemon::start(){
-	if(atomic_exchange(g_running, true, memorder_acq_rel) != false){
+	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Starting simple HTTP client daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting simple HTTP client daemon...");
 
 	//
 }
 void SimpleHttpClientDaemon::stop(){
-	if(atomic_exchange(g_running, false, memorder_acq_rel) == false){
+	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::SP_MAJOR | Logger::LV_INFO, "Stopping simple HTTP client daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping simple HTTP client daemon...");
 
 	//
 }
@@ -354,7 +354,7 @@ SimpleHttpResponse SimpleHttpClientDaemon::perform(SimpleHttpRequest request){
 		client->set_no_delay(true);
 		client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 		poll_internal(client);
-		DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::V_HEAD), Exception, sslit("Connection was closed prematurely"));
+		DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, sslit("Connection was closed prematurely"));
 	} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
 	SimpleHttpResponse response = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };

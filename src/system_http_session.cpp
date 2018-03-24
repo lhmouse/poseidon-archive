@@ -39,16 +39,16 @@ void SystemHttpSession::initialize_once(const Http::RequestHeaders &request_head
 	Buffer_istream bis;
 	bis.set_buffer(StreamBuffer(request_headers.uri));
 	Http::url_decode(bis, m_decoded_uri);
-	DEBUG_THROW_UNLESS(!m_decoded_uri.empty(), Http::Exception, Http::ST_BAD_REQUEST);
-	DEBUG_THROW_UNLESS(m_decoded_uri[0] == '/', Http::Exception, Http::ST_BAD_REQUEST);
+	DEBUG_THROW_UNLESS(!m_decoded_uri.empty(), Http::Exception, Http::status_bad_request);
+	DEBUG_THROW_UNLESS(m_decoded_uri[0] == '/', Http::Exception, Http::status_bad_request);
 	LOG_POSEIDON_DEBUG("Decoded request URI: ", m_decoded_uri);
 
 	switch(request_headers.verb){
-	case Http::V_OPTIONS:
+	case Http::verb_options:
 		break;
-	case Http::V_GET:
-	case Http::V_HEAD:
-	case Http::V_POST:
+	case Http::verb_get:
+	case Http::verb_head:
+	case Http::verb_post:
 		for(;;){
 			m_servlet = SystemHttpServer::get_servlet(m_decoded_uri.c_str());
 			if(m_servlet){
@@ -56,14 +56,14 @@ void SystemHttpSession::initialize_once(const Http::RequestHeaders &request_head
 			}
 			if(*m_decoded_uri.rbegin() == '/'){
 				LOG_POSEIDON_WARNING("SystemHttpSession URI not handled: ", m_decoded_uri);
-				DEBUG_THROW(Http::Exception, Http::ST_NOT_FOUND);
+				DEBUG_THROW(Http::Exception, Http::status_not_found);
 			}
 			m_decoded_uri.push_back('/');
 			LOG_POSEIDON_DEBUG("Retrying: ", m_decoded_uri);
 		}
 		break;
 	default:
-		DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);
+		DEBUG_THROW(Http::Exception, Http::status_method_not_allowed);
 	}
 
 	++m_initialized;
@@ -85,7 +85,7 @@ void SystemHttpSession::on_sync_request(Http::RequestHeaders request_headers, St
 
 	Http::ResponseHeaders response_headers;
 	response_headers.version = 10001;
-	response_headers.status_code = Http::ST_OK;
+	response_headers.status_code = Http::status_ok;
 	response_headers.reason = "OK";
 	response_headers.headers.set(sslit("Connection"), keep_alive ? "Keep-Alive" : "Close");
 	response_headers.headers.set(sslit("Access-Control-Allow-Origin"), "*");
@@ -98,23 +98,23 @@ void SystemHttpSession::on_sync_request(Http::RequestHeaders request_headers, St
 	Buffer_ostream bos;
 
 	switch(request_headers.verb){
-	case Http::V_OPTIONS:
+	case Http::verb_options:
 		Http::Session::send(STD_MOVE(response_headers));
 		break;
-	case Http::V_GET:
-	case Http::V_HEAD:
-	case Http::V_POST:
+	case Http::verb_get:
+	case Http::verb_head:
+	case Http::verb_post:
 		DEBUG_THROW_ASSERT(m_servlet);
-		if(request_headers.verb != Http::V_POST){
+		if(request_headers.verb != Http::verb_post){
 			// no parameters
 		} else {
 			LOG_POSEIDON_DEBUG("Parsing POST entity as JSON Object: ", request_entity);
 			bis.set_buffer(STD_MOVE(request_entity));
 			request.parse(bis);
-			DEBUG_THROW_UNLESS(bis, Http::Exception, Http::ST_BAD_REQUEST);
+			DEBUG_THROW_UNLESS(bis, Http::Exception, Http::status_bad_request);
 		}
 		LOG_POSEIDON_DEBUG("SystemHttpSession request: ", request);
-		if(request_headers.verb != Http::V_POST){
+		if(request_headers.verb != Http::verb_post){
 			m_servlet->handle_get(response);
 		} else {
 			m_servlet->handle_post(response, STD_MOVE(request));
@@ -123,7 +123,7 @@ void SystemHttpSession::on_sync_request(Http::RequestHeaders request_headers, St
 		response.dump(bos);
 		response_headers.headers.set(sslit("Content-Type"), "application/json");
 		Http::Session::send_chunked_header(STD_MOVE(response_headers));
-		if(request_headers.verb == Http::V_HEAD){
+		if(request_headers.verb == Http::verb_head){
 			LOG_POSEIDON_DEBUG("The response entity for a HEAD request will be discarded.");
 			break;
 		}
@@ -131,7 +131,7 @@ void SystemHttpSession::on_sync_request(Http::RequestHeaders request_headers, St
 		Http::Session::send_chunked_trailer();
 		break;
 	default:
-		DEBUG_THROW(Http::Exception, Http::ST_METHOD_NOT_ALLOWED);
+		DEBUG_THROW(Http::Exception, Http::status_method_not_allowed);
 	}
 }
 

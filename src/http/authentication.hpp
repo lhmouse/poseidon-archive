@@ -13,14 +13,14 @@ namespace Poseidon {
 namespace Http {
 
 enum AuthenticationResult {
-	AUTH_SUCCEEDED               = 0,
-	AUTH_HEADER_NOT_SET          = 1,
-	AUTH_HEADER_FORMAT_ERROR     = 2,
-	AUTH_SCHEME_NOT_SUPPORTED    = 3,
-	AUTH_PASSWORD_INCORRECT      = 4,
-	AUTH_REQUEST_EXPIRED         = 5,
-	AUTH_ALGORITHM_NOT_SUPPORTED = 7,
-	AUTH_QOP_NOT_SUPPORTED       = 8,
+	auth_succeeded               = 0,
+	auth_header_not_set          = 1,
+	auth_header_format_error     = 2,
+	auth_scheme_not_supported    = 3,
+	auth_password_incorrect      = 4,
+	auth_request_expired         = 5,
+	auth_algorithm_not_supported = 7,
+	auth_qop_not_supported       = 8,
 };
 
 class AuthenticationContext; // 没有定义的类，当作句柄使用。

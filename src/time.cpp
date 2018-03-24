@@ -65,7 +65,7 @@ DateTime break_down_time(boost::uint64_t ms){
 	DateTime dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	if(ms == 0){
 		dt.yr = 0;
-	} else if(ms == (boost::uint64_t)-1){
+	} else if(ms == -1ull){
 		dt.yr = 9999;
 	} else {
 		const AUTO(dt_sec, (::time_t)(ms / 1000));
@@ -87,7 +87,7 @@ boost::uint64_t assemble_time(const DateTime &dt){
 	if(dt.yr == 0){
 		ms = 0;
 	} else if(dt.yr == 9999){
-		ms = (boost::uint64_t)-1;
+		ms = -1ull;
 	} else {
 		::tm desc;
 		desc.tm_year = dt.yr - 1900;

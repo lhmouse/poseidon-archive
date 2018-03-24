@@ -86,19 +86,19 @@ void Multipart::parse(std::istream &is){
 	StreamBuffer buffer;
 	std::string queue;
 	enum {
-		S_INIT,
-		S_BOUNDARY_END,
-		S_BOUNDARY_END_WANTS_LF,
-		S_SEGMENT,
-		S_FINISH_WANTS_HYPHEN,
-		S_FINISH,
-	} state = S_INIT;
+		state_init,
+		state_boundary_end,
+		state_boundary_end_wants_lf,
+		state_segment,
+		state_finish_wants_hyphen,
+		state_finish,
+	} state = state_init;
 	typedef std::istream::traits_type traits;
 	traits::int_type next = is.peek();
 	for(; !traits::eq_int_type(next, traits::eof()); next = is.peek()){
 		const char ch = traits::to_char_type(is.get());
 		switch(state){
-		case S_INIT:
+		case state_init:
 			queue.push_back(ch);
 			if(queue.size() < window_size){
 				break;
@@ -108,36 +108,36 @@ void Multipart::parse(std::istream &is){
 				break;
 			}
 			queue.clear();
-			state = S_BOUNDARY_END;
+			state = state_boundary_end;
 			break;
 
-		case S_BOUNDARY_END:
+		case state_boundary_end:
 			if(ch == '\r'){
-				state = S_BOUNDARY_END_WANTS_LF;
+				state = state_boundary_end_wants_lf;
 				break;
 			}
 			if(ch == '-'){
-				state = S_FINISH_WANTS_HYPHEN;
+				state = state_finish_wants_hyphen;
 				break;
 			}
 			if(ch == '\n'){
-				state = S_SEGMENT;
+				state = state_segment;
 				break;
 			}
 			LOG_POSEIDON_WARNING("Invalid multipart boundary.");
 			is.setstate(std::ios::failbit);
 			return;
 
-		case S_BOUNDARY_END_WANTS_LF:
+		case state_boundary_end_wants_lf:
 			if(ch == '\n'){
-				state = S_SEGMENT;
+				state = state_segment;
 				break;
 			}
 			LOG_POSEIDON_WARNING("Invalid multipart boundary.");
 			is.setstate(std::ios::failbit);
 			return;
 
-		case S_SEGMENT: {
+		case state_segment: {
 			queue.push_back(ch);
 			if(queue.size() < window_size){
 				break;
@@ -177,22 +177,22 @@ void Multipart::parse(std::istream &is){
 			elements.push_back(STD_MOVE(elem));
 
 			queue.clear();
-			state = S_BOUNDARY_END;
+			state = state_boundary_end;
 			break; }
 
-		case S_FINISH_WANTS_HYPHEN:
+		case state_finish_wants_hyphen:
 			if(ch == '-'){
-				state = S_FINISH;
+				state = state_finish;
 				break;
 			}
 			LOG_POSEIDON_WARNING("Invalid multipart termination boundary.");
 			is.setstate(std::ios::failbit);
 			return;
 
-		case S_FINISH:
+		case state_finish:
 			break;
 		}
-		if(state == S_FINISH){
+		if(state == state_finish){
 			next = is.peek();
 			break;
 		}

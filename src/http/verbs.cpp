@@ -8,8 +8,8 @@ namespace Poseidon {
 namespace Http {
 
 namespace {
-	CONSTEXPR const char VERB_TABLE[][16] = {
-		"INVALID_VERB",
+	CONSTEXPR const char g_verb_table[][16] = {
+		"INVALID-VERB",
 		"GET",
 		"POST",
 		"HEAD",
@@ -24,25 +24,25 @@ namespace {
 Verb get_verb_from_string(const char *str){
 	const std::size_t len = std::strlen(str);
 	if(len == 0){
-		return V_INVALID_VERB;
+		return verb_invalid_verb;
 	}
-	const char *const begin = VERB_TABLE[0];
-	const AUTO(pos, static_cast<const char *>(::memmem(begin, sizeof(VERB_TABLE), str, len + 1)));
+	const char *const begin = g_verb_table[0];
+	const AUTO(pos, static_cast<const char *>(::memmem(begin, sizeof(g_verb_table), str, len + 1)));
 	if(!pos){
-		return V_INVALID_VERB;
+		return verb_invalid_verb;
 	}
-	std::size_t index = static_cast<std::size_t>(pos - begin) / sizeof(VERB_TABLE[0]);
-	if(pos != VERB_TABLE[index]){
-		return V_INVALID_VERB;
+	std::size_t index = static_cast<std::size_t>(pos - begin) / sizeof(g_verb_table[0]);
+	if(pos != g_verb_table[index]){
+		return verb_invalid_verb;
 	}
 	return static_cast<Verb>(index);
 }
 const char *get_string_from_verb(Verb verb){
 	std::size_t index = static_cast<std::size_t>(verb);
-	if(index >= COUNT_OF(VERB_TABLE)){
-		index = static_cast<unsigned>(V_INVALID_VERB);
+	if(index >= COUNT_OF(g_verb_table)){
+		index = static_cast<unsigned>(verb_invalid_verb);
 	}
-	return VERB_TABLE[index];
+	return g_verb_table[index];
 }
 
 }

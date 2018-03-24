@@ -17,25 +17,20 @@ namespace Http {
 class ClientReader {
 private:
 	enum State {
-		S_FIRST_HEADER      = 0,
-		S_HEADERS           = 1,
-		S_IDENTITY          = 2,
-		S_CHUNK_HEADER      = 3,
-		S_CHUNK_DATA        = 4,
-		S_CHUNKED_TRAILER   = 5,
+		state_first_header      = 0,
+		state_headers           = 1,
+		state_identity          = 2,
+		state_chunk_header      = 3,
+		state_chunk_data        = 4,
+		state_chunked_trailer   = 5,
 	};
 
 protected:
 	enum {
-		CONTENT_CHUNKED     = (boost::uint64_t)-1,
-		CONTENT_TILL_EOF    = (boost::uint64_t)-2,
-
-		CONTENT_LENGTH_MAX  = (boost::uint64_t)-100,
-	};
-
-private:
-	enum {
-		EXPECTING_NEW_LINE  = (boost::uint64_t)-99,
+		content_length_chunked        =   -1ull,
+		content_length_until_eof      =   -2ull,
+		content_length_expecting_endl =  -99ull,
+		content_length_max            = -100ull,
 	};
 
 private:
@@ -57,13 +52,13 @@ public:
 	virtual ~ClientReader();
 
 protected:
-	// 如果 Transfer-Encoding 为 chunked， content_length 的值为 CONTENT_CHUNKED。
+	// 如果 Transfer-Encoding 为 chunked， content_length 的值为 content_length_chunked。
 	virtual void on_response_headers(ResponseHeaders response_headers, boost::uint64_t content_length) = 0;
 	// 报文可能分几次收到。
 	virtual void on_response_entity(boost::uint64_t entity_offset, StreamBuffer entity) = 0;
 	// 报文接收完毕。
-	// 如果 on_response_headers() 的 content_length 参数为 CONTENT_TILL_EOF，此处 real_content_length 即为实际接收大小。
-	// 如果 on_response_headers() 的 content_length 参数为 CONTENT_CHUNKED，使用这个函数标识结束。
+	// 如果 on_response_headers() 的 content_length 参数为 content_length_until_eof，此处 real_content_length 即为实际接收大小。
+	// 如果 on_response_headers() 的 content_length 参数为 content_length_chunked，使用这个函数标识结束。
 	// chunked 允许追加报头。
 	virtual bool on_response_end(boost::uint64_t content_length, OptionalMap headers) = 0;
 

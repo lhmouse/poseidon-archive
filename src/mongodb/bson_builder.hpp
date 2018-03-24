@@ -18,22 +18,22 @@ namespace MongoDb {
 class BsonBuilder {
 private:
 	enum Type {
-		T_BOOLEAN    =  1,
-		T_SIGNED     =  2,
-		T_UNSIGNED   =  3,
-		T_DOUBLE     =  4,
-		T_STRING     =  5,
-		T_DATETIME   =  6,
-		T_UUID       =  7,
-		T_BLOB       =  8,
+		type_boolean    =  1,
+		type_signed     =  2,
+		type_unsigned   =  3,
+		type_double     =  4,
+		type_string     =  5,
+		type_datetime   =  6,
+		type_uuid       =  7,
+		type_blob       =  8,
 
-		T_JS_CODE    = 93,
-		T_REGEX      = 94,
-		T_MINKEY     = 95,
-		T_MAXKEY     = 96,
-		T_NULL       = 97,
-		T_OBJECT     = 98,
-		T_ARRAY      = 99,
+		type_js_code    = 93,
+		type_regex      = 94,
+		type_minkey     = 95,
+		type_maxkey     = 96,
+		type_null       = 97,
+		type_object     = 98,
+		type_array      = 99,
 	};
 
 	struct Element {
