@@ -85,8 +85,8 @@ public:
 		return !is_null();
 	}
 #else
-	typedef bool (Uuid::*DummyBool_)() const;
-	operator DummyBool_() const NOEXCEPT {
+	typedef bool (Uuid::*Dummy_bool_)() const;
+	operator Dummy_bool_() const NOEXCEPT {
 		return !is_null() ? &Uuid::is_null : 0;
 	}
 #endif

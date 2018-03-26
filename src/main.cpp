@@ -71,30 +71,30 @@ namespace {
 		atomic_store(g_running, false, memory_order_release);
 	}
 
-	JsonObject make_help(const char *const (*param_info)[2]){
-		JsonObject obj;
+	Json_object make_help(const char *const (*param_info)[2]){
+		Json_object obj;
 		for(AUTO(ptr, param_info); (*ptr)[0]; ++ptr){
-			obj.set(SharedNts::view((*ptr)[0]), (*ptr)[1]);
+			obj.set(Shared_nts::view((*ptr)[0]), (*ptr)[1]);
 		}
 		return obj;
 	}
 
-	struct SystemHttpServlet_help : public SystemHttpServletBase {
+	struct System_http_servlet_help : public System_http_servlet_base {
 		const char *get_uri() const FINAL {
 			return "/poseidon/help";
 		}
-		void handle_get(JsonObject &resp) const FINAL {
+		void handle_get(Json_object &resp) const FINAL {
 			resp.set(sslit("description"), "Retreive general information about this process.");
 			static const char *const s_param_info[][2] = {
 				{ NULLPTR }
 			};
 			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
-		void handle_post(JsonObject &resp, JsonObject /*req*/) const FINAL {
+		void handle_post(Json_object &resp, Json_object /*req*/) const FINAL {
 			// .servlets = list of servlets
-			boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > servlets;
-			SystemHttpServer::get_all_servlets(servlets);
-			JsonArray arr;
+			boost::container::vector<boost::shared_ptr<const System_http_servlet_base> > servlets;
+			System_http_server::get_all_servlets(servlets);
+			Json_array arr;
 			for(AUTO(it, servlets.begin()); it != servlets.end(); ++it){
 				const AUTO_REF(servlet, *it);
 				arr.push_back(servlet->get_uri());
@@ -103,11 +103,11 @@ namespace {
 		}
 	};
 
-	struct SystemHttpServlet_logger : public SystemHttpServletBase {
+	struct System_http_servlet_logger : public System_http_servlet_base {
 		const char *get_uri() const FINAL {
 			return "/poseidon/logger";
 		}
-		void handle_get(JsonObject &resp) const FINAL {
+		void handle_get(Json_object &resp) const FINAL {
 			resp.set(sslit("description"), "Enable or disable specific levels of logs.");
 			static const char *const s_param_info[][2] = {
 				{ "mask_to_disable",  "Log levels corresponding to bit ones here will be disabled.\n"
@@ -120,7 +120,7 @@ namespace {
 			};
 			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
-		void handle_post(JsonObject &resp, JsonObject req) const FINAL {
+		void handle_post(Json_object &resp, Json_object req) const FINAL {
 			std::bitset<64> mask_to_enable, mask_to_disable;
 			if(req.has("mask_to_enable")){
 				try {
@@ -155,26 +155,26 @@ namespace {
 		}
 	};
 
-	struct SystemHttpServlet_network : public SystemHttpServletBase {
+	struct System_http_servlet_network : public System_http_servlet_base {
 		const char *get_uri() const FINAL {
 			return "/poseidon/network";
 		}
-		void handle_get(JsonObject &resp) const FINAL {
+		void handle_get(Json_object &resp) const FINAL {
 			resp.set(sslit("description"), "Retreive information about incoming and outgoing connections in this process.");
 			static const char *const s_param_info[][2] = {
 				{ NULLPTR }
 			};
 			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
-		void handle_post(JsonObject &resp, JsonObject /*req*/) const FINAL {
+		void handle_post(Json_object &resp, Json_object /*req*/) const FINAL {
 			// .sockets = all sockets managed by epoll.
-			boost::container::vector<EpollDaemon::SnapshotElement> snapshot;
-			EpollDaemon::snapshot(snapshot);
-			JsonArray arr;
+			boost::container::vector<Epoll_daemon::Snapshot_element> snapshot;
+			Epoll_daemon::snapshot(snapshot);
+			Json_array arr;
 			char str[256];
 			for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 				const AUTO_REF(elem, *it);
-				JsonObject obj;
+				Json_object obj;
 				obj.set(sslit("remote_info"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "%s:%u", elem.remote_info.ip(), elem.remote_info.port())));
 				obj.set(sslit("local_info"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "%s:%u", elem.local_info.ip(), elem.local_info.port())));
 				obj.set(sslit("creation_time"), std::string(str, format_time(str, sizeof(str), elem.creation_time, false)));
@@ -187,11 +187,11 @@ namespace {
 		}
 	};
 
-	struct SystemHttpServlet_profiler : public SystemHttpServletBase {
+	struct System_http_servlet_profiler : public System_http_servlet_base {
 		const char *get_uri() const FINAL {
 			return "/poseidon/profiler";
 		}
-		void handle_get(JsonObject &resp) const FINAL {
+		void handle_get(Json_object &resp) const FINAL {
 			resp.set(sslit("description"), "View profiling information that has been collected within this process.");
 			static const char *const s_param_info[][2] = {
 				{ "clear", "If set to `true`, all data will be purged." },
@@ -199,7 +199,7 @@ namespace {
 			};
 			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
-		void handle_post(JsonObject &resp, JsonObject req) const FINAL {
+		void handle_post(Json_object &resp, Json_object req) const FINAL {
 			bool clear = false;
 			if(req.has("clear")){
 				try {
@@ -212,16 +212,16 @@ namespace {
 			}
 
 			if(clear){
-				ProfileDepository::clear();
+				Profile_depository::clear();
 			}
 
 			// .profile = all profile data.
-			boost::container::vector<ProfileDepository::SnapshotElement> snapshot;
-			ProfileDepository::snapshot(snapshot);
-			JsonArray arr;
+			boost::container::vector<Profile_depository::Snapshot_element> snapshot;
+			Profile_depository::snapshot(snapshot);
+			Json_array arr;
 			for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 				const AUTO_REF(elem, *it);
-				JsonObject obj;
+				Json_object obj;
 				obj.set(sslit("file"), elem.file);
 				obj.set(sslit("line"), elem.line);
 				obj.set(sslit("func"), elem.func);
@@ -234,11 +234,11 @@ namespace {
 		}
 	};
 
-	struct SystemHttpServlet_modules : public SystemHttpServletBase {
+	struct System_http_servlet_modules : public System_http_servlet_base {
 		const char *get_uri() const FINAL {
 			return "/poseidon/modules";
 		}
-		void handle_get(JsonObject &resp) const FINAL {
+		void handle_get(Json_object &resp) const FINAL {
 			resp.set(sslit("description"), "Load or unload modules in the current process.");
 			static const char *const s_param_info[][2] = {
 				{ "path_to_load", "The path to a shared object file which will be loaded.\n"
@@ -251,7 +251,7 @@ namespace {
 			};
 			resp.set(sslit("parameters"), make_help(s_param_info));
 		}
-		void handle_post(JsonObject &resp, JsonObject req) const FINAL {
+		void handle_post(Json_object &resp, Json_object req) const FINAL {
 			bool to_load = false;
 			std::string path_to_load;
 			if(req.has("path_to_load")){
@@ -295,7 +295,7 @@ namespace {
 			if(to_load){
 				std::string what;
 				try {
-					ModuleDepository::load(path_to_load);
+					Module_depository::load(path_to_load);
 					// what.clear();
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
@@ -311,7 +311,7 @@ namespace {
 				}
 			}
 			if(to_unload){
-				const bool result = ModuleDepository::unload(address_to_unload);
+				const bool result = Module_depository::unload(address_to_unload);
 				if(!result){
 					LOG_POSEIDON_WARNING("Failed to unload module: 0x", std::hex, address_to_unload);
 					resp.set(sslit("error"), "Failed to unload module. Maybe it has been unloaded already?");
@@ -320,13 +320,13 @@ namespace {
 			}
 
 			// .modules = all loaded modules.
-			boost::container::vector<ModuleDepository::SnapshotElement> snapshot;
-			ModuleDepository::snapshot(snapshot);
-			JsonArray arr;
+			boost::container::vector<Module_depository::Snapshot_element> snapshot;
+			Module_depository::snapshot(snapshot);
+			Json_array arr;
 			char str[256];
 			for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 				const AUTO_REF(elem, *it);
-				JsonObject obj;
+				Json_object obj;
 				obj.set(sslit("dl_handle"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "0x%llx", (unsigned long long)elem.dl_handle)));
 				obj.set(sslit("base_address"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "0x%llx", (unsigned long long)elem.base_address)));
 				obj.set(sslit("real_path"), elem.real_path.get());
@@ -337,11 +337,11 @@ namespace {
 	};
 
 	template<typename T>
-	struct RaiiSingletonRunner : NONCOPYABLE {
-		RaiiSingletonRunner(){
+	struct Raii_singleton_runner : NONCOPYABLE {
+		Raii_singleton_runner(){
 			T::start();
 		}
-		~RaiiSingletonRunner(){
+		~Raii_singleton_runner(){
 			T::stop();
 		}
 	};
@@ -427,65 +427,65 @@ int main(int argc, char **argv, char **/*envp*/){
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting up: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
 	try {
 		if(new_wd){
-			MainConfig::set_run_path(new_wd);
+			Main_config::set_run_path(new_wd);
 		}
-		MainConfig::reload();
+		Main_config::reload();
 
-#define START(x_)   const RaiiSingletonRunner<x_> UNIQUE_ID
+#define START(x_)   const Raii_singleton_runner<x_> UNIQUE_ID
 
-		START(ProfileDepository);
+		START(Profile_depository);
 #ifdef ENABLE_MAGIC
-		START(MagicDaemon);
+		START(Magic_daemon);
 #endif
-		START(DnsDaemon);
-		START(FileSystemDaemon);
+		START(Dns_daemon);
+		START(File_system_daemon);
 #ifdef ENABLE_MYSQL
-		START(MySqlDaemon);
+		START(My_sql_daemon);
 #endif
 #ifdef ENABLE_MONGODB
-		START(MongoDbDaemon);
+		START(Mongo_db_daemon);
 #endif
-		START(JobDispatcher);
-		START(WorkhorseCamp);
+		START(Job_dispatcher);
+		START(Workhorse_camp);
 
-		START(ModuleDepository);
-		START(TimerDaemon);
-		START(EpollDaemon);
-		START(EventDispatcher);
-		START(SystemHttpServer);
-		START(SimpleHttpClientDaemon);
+		START(Module_depository);
+		START(Timer_daemon);
+		START(Epoll_daemon);
+		START(Event_dispatcher);
+		START(System_http_server);
+		START(Simple_http_client_daemon);
 
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Setting up built-in system servlets...");
-		boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > system_http_servlets;
-		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_help>()));
-		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_logger>()));
-		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_network>()));
-		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_profiler>()));
-		system_http_servlets.push_back(SystemHttpServer::register_servlet(boost::make_shared<SystemHttpServlet_modules>()));
+		boost::container::vector<boost::shared_ptr<const System_http_servlet_base> > system_http_servlets;
+		system_http_servlets.push_back(System_http_server::register_servlet(boost::make_shared<System_http_servlet_help>()));
+		system_http_servlets.push_back(System_http_server::register_servlet(boost::make_shared<System_http_servlet_logger>()));
+		system_http_servlets.push_back(System_http_server::register_servlet(boost::make_shared<System_http_servlet_network>()));
+		system_http_servlets.push_back(System_http_server::register_servlet(boost::make_shared<System_http_servlet_profiler>()));
+		system_http_servlets.push_back(System_http_server::register_servlet(boost::make_shared<System_http_servlet_modules>()));
 
 		if(!all_logs){
 			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Setting new log mask...");
 			Logger::initialize_mask_from_config();
 		}
 
-		const AUTO(init_modules, MainConfig::get_all<std::string>("init_module"));
+		const AUTO(init_modules, Main_config::get_all<std::string>("init_module"));
 		for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
 			const AUTO(path, it->c_str());
 			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading init module: ", path);
-			ModuleDepository::load(path);
+			Module_depository::load(path);
 		}
 
 #ifdef ENABLE_MYSQL
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MySQL operations to complete...");
-		MySqlDaemon::wait_for_all_async_operations();
+		My_sql_daemon::wait_for_all_async_operations();
 #endif
 #ifdef ENABLE_MONGODB
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MongoDB operations to complete...");
-		MongoDbDaemon::wait_for_all_async_operations();
+		Mongo_db_daemon::wait_for_all_async_operations();
 #endif
 
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Entering modal loop...");
-		JobDispatcher::do_modal(g_running);
+		Job_dispatcher::do_modal(g_running);
 	} catch(std::exception &e){
 		Logger::finalize_mask();
 		LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());

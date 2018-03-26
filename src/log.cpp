@@ -27,12 +27,12 @@ namespace {
 		cfl_reverse  = 0040,
 	};
 
-	struct LevelElement {
+	struct Level_element {
 		char name[16];
 		int color;
 		bool to_stderr;
 	};
-	CONSTEXPR const boost::array<LevelElement, 6> g_levels = {{
+	CONSTEXPR const boost::array<Level_element, 6> g_levels = {{
 		{ "FATAL", cfg_magneta | cfl_bright, 1 },
 		{ "ERROR", cfg_red     | cfl_bright, 1 },
 		{ "WARN ", cfg_yellow  | cfl_bright, 1 },
@@ -94,7 +94,7 @@ boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_
 }
 
 bool Logger::initialize_mask_from_config(){
-	const AUTO(log_masked_levels, MainConfig::get<std::string>("log_masked_levels"));
+	const AUTO(log_masked_levels, Main_config::get<std::string>("log_masked_levels"));
 	if(log_masked_levels.empty()){
 		return false;
 	}
@@ -143,11 +143,11 @@ Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEP
 Logger::~Logger() NOEXCEPT
 try {
 	const unsigned level = static_cast<unsigned>(__builtin_ctzll(m_mask | level_trace));
-	const LevelElement *const lc = &g_levels.at(level);
+	const Level_element *const lc = &g_levels.at(level);
 	const int output_fd = lc->to_stderr ? STDERR_FILENO : STDOUT_FILENO;
 	const bool output_color = ::isatty(output_fd);
 
-	StreamBuffer buf;
+	Stream_buffer buf;
 	int flags;
 	char str[256];
 	std::size_t len;

@@ -13,48 +13,48 @@
 
 namespace Poseidon {
 
-class SharedNts {
+class Shared_nts {
 public:
-	static SharedNts view(const char *str){
-		return SharedNts(boost::shared_ptr<void>(), str);
+	static Shared_nts view(const char *str){
+		return Shared_nts(boost::shared_ptr<void>(), str);
 	}
 
 private:
 	boost::shared_ptr<const char> m_ptr;
 
 public:
-	SharedNts() NOEXCEPT {
+	Shared_nts() NOEXCEPT {
 		assign("", 0);
 	}
-	SharedNts(const char *str, std::size_t len){
+	Shared_nts(const char *str, std::size_t len){
 		assign(str, len);
 	}
-	explicit SharedNts(const char *str){
+	explicit Shared_nts(const char *str){
 		assign(str);
 	}
-	explicit SharedNts(const std::string &str){
+	explicit Shared_nts(const std::string &str){
 		assign(str);
 	}
 	template<typename T>
-	SharedNts(boost::shared_ptr<T> sp, const char *str){
+	Shared_nts(boost::shared_ptr<T> sp, const char *str){
 		assign(STD_MOVE_IDN(sp), str);
 	}
 
-	SharedNts(const SharedNts &rhs) NOEXCEPT
+	Shared_nts(const Shared_nts &rhs) NOEXCEPT
 		: m_ptr(rhs.m_ptr)
 	{
 		//
 	}
-	SharedNts &operator=(const SharedNts &rhs) NOEXCEPT {
+	Shared_nts &operator=(const Shared_nts &rhs) NOEXCEPT {
 		m_ptr = rhs.m_ptr;
 		return *this;
 	}
 #ifdef POSEIDON_CXX11
-	SharedNts(SharedNts &&rhs) NOEXCEPT {
+	Shared_nts(Shared_nts &&rhs) NOEXCEPT {
 		assign("", 0);
 		swap(rhs);
 	}
-	SharedNts &operator=(SharedNts &&rhs) NOEXCEPT {
+	Shared_nts &operator=(Shared_nts &&rhs) NOEXCEPT {
 		swap(rhs);
 		return *this;
 	}
@@ -80,7 +80,7 @@ public:
 		return m_ptr.get();
 	}
 
-	void swap(SharedNts &rhs) NOEXCEPT {
+	void swap(Shared_nts &rhs) NOEXCEPT {
 		using std::swap;
 		swap(m_ptr, rhs.m_ptr);
 	}
@@ -91,113 +91,113 @@ public:
 	}
 };
 
-inline bool operator==(const SharedNts &lhs, const SharedNts &rhs){
+inline bool operator==(const Shared_nts &lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs.get(), rhs.get()) == 0;
 }
-inline bool operator==(const SharedNts &lhs, const char *rhs){
+inline bool operator==(const Shared_nts &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) == 0;
 }
-inline bool operator==(const SharedNts &lhs, const std::string &rhs){
+inline bool operator==(const Shared_nts &lhs, const std::string &rhs){
 	return lhs.get() == rhs;
 }
-inline bool operator==(const char *lhs, const SharedNts &rhs){
+inline bool operator==(const char *lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs, rhs.get()) == 0;
 }
-inline bool operator==(const std::string &lhs, const SharedNts &rhs){
+inline bool operator==(const std::string &lhs, const Shared_nts &rhs){
 	return lhs == rhs.get();
 }
 
-inline bool operator!=(const SharedNts &lhs, const SharedNts &rhs){
+inline bool operator!=(const Shared_nts &lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs.get(), rhs.get()) != 0;
 }
-inline bool operator!=(const SharedNts &lhs, const char *rhs){
+inline bool operator!=(const Shared_nts &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) != 0;
 }
-inline bool operator!=(const SharedNts &lhs, const std::string &rhs){
+inline bool operator!=(const Shared_nts &lhs, const std::string &rhs){
 	return lhs.get() != rhs;
 }
-inline bool operator!=(const char *lhs, const SharedNts &rhs){
+inline bool operator!=(const char *lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs, rhs.get()) != 0;
 }
-inline bool operator!=(const std::string &lhs, const SharedNts &rhs){
+inline bool operator!=(const std::string &lhs, const Shared_nts &rhs){
 	return lhs != rhs.get();
 }
 
-inline bool operator<(const SharedNts &lhs, const SharedNts &rhs){
+inline bool operator<(const Shared_nts &lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs.get(), rhs.get()) < 0;
 }
-inline bool operator<(const SharedNts &lhs, const char *rhs){
+inline bool operator<(const Shared_nts &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) < 0;
 }
-inline bool operator<(const SharedNts &lhs, const std::string &rhs){
+inline bool operator<(const Shared_nts &lhs, const std::string &rhs){
 	return lhs.get() < rhs;
 }
-inline bool operator<(const char *lhs, const SharedNts &rhs){
+inline bool operator<(const char *lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs, rhs.get()) < 0;
 }
-inline bool operator<(const std::string &lhs, const SharedNts &rhs){
+inline bool operator<(const std::string &lhs, const Shared_nts &rhs){
 	return lhs < rhs.get();
 }
 
-inline bool operator>(const SharedNts &lhs, const SharedNts &rhs){
+inline bool operator>(const Shared_nts &lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs.get(), rhs.get()) > 0;
 }
-inline bool operator>(const SharedNts &lhs, const char *rhs){
+inline bool operator>(const Shared_nts &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) > 0;
 }
-inline bool operator>(const SharedNts &lhs, const std::string &rhs){
+inline bool operator>(const Shared_nts &lhs, const std::string &rhs){
 	return lhs.get() > rhs;
 }
-inline bool operator>(const char *lhs, const SharedNts &rhs){
+inline bool operator>(const char *lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs, rhs.get()) > 0;
 }
-inline bool operator>(const std::string &lhs, const SharedNts &rhs){
+inline bool operator>(const std::string &lhs, const Shared_nts &rhs){
 	return lhs > rhs.get();
 }
 
-inline bool operator<=(const SharedNts &lhs, const SharedNts &rhs){
+inline bool operator<=(const Shared_nts &lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs.get(), rhs.get()) <= 0;
 }
-inline bool operator<=(const SharedNts &lhs, const char *rhs){
+inline bool operator<=(const Shared_nts &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) <= 0;
 }
-inline bool operator<=(const SharedNts &lhs, const std::string &rhs){
+inline bool operator<=(const Shared_nts &lhs, const std::string &rhs){
 	return lhs.get() <= rhs;
 }
-inline bool operator<=(const char *lhs, const SharedNts &rhs){
+inline bool operator<=(const char *lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs, rhs.get()) <= 0;
 }
-inline bool operator<=(const std::string &lhs, const SharedNts &rhs){
+inline bool operator<=(const std::string &lhs, const Shared_nts &rhs){
 	return lhs <= rhs.get();
 }
 
-inline bool operator>=(const SharedNts &lhs, const SharedNts &rhs){
+inline bool operator>=(const Shared_nts &lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs.get(), rhs.get()) >= 0;
 }
-inline bool operator>=(const SharedNts &lhs, const char *rhs){
+inline bool operator>=(const Shared_nts &lhs, const char *rhs){
 	return std::strcmp(lhs.get(), rhs) >= 0;
 }
-inline bool operator>=(const SharedNts &lhs, const std::string &rhs){
+inline bool operator>=(const Shared_nts &lhs, const std::string &rhs){
 	return lhs.get() >= rhs;
 }
-inline bool operator>=(const char *lhs, const SharedNts &rhs){
+inline bool operator>=(const char *lhs, const Shared_nts &rhs){
 	return std::strcmp(lhs, rhs.get()) >= 0;
 }
-inline bool operator>=(const std::string &lhs, const SharedNts &rhs){
+inline bool operator>=(const std::string &lhs, const Shared_nts &rhs){
 	return lhs >= rhs.get();
 }
 
-inline void swap(SharedNts &lhs, SharedNts &rhs) NOEXCEPT {
+inline void swap(Shared_nts &lhs, Shared_nts &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-extern std::istream &operator>>(std::istream &is, SharedNts &rhs);
-extern std::ostream &operator<<(std::ostream &os, const SharedNts &rhs);
+extern std::istream &operator>>(std::istream &is, Shared_nts &rhs);
+extern std::ostream &operator<<(std::ostream &os, const Shared_nts &rhs);
 
 // Shared String LITeral
 template<std::size_t N>
-inline SharedNts sslit(const char (&str)[N]){
-	return SharedNts::view(str);
+inline Shared_nts sslit(const char (&str)[N]){
+	return Shared_nts::view(str);
 }
 
 }

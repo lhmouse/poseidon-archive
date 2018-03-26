@@ -12,18 +12,18 @@
 
 namespace Poseidon {
 
-class VirtualSharedFromThis : public boost::enable_shared_from_this<VirtualSharedFromThis> {
+class Virtual_shared_from_this : public boost::enable_shared_from_this<Virtual_shared_from_this> {
 private:
-	__attribute__((__noreturn__)) static void fail_dynamic_cast(const std::type_info &dst_type, const VirtualSharedFromThis *src);
+	__attribute__((__noreturn__)) static void fail_dynamic_cast(const std::type_info &dst_type, const Virtual_shared_from_this *src);
 
 public:
 	// 定义在别处。参考源文件中的注释。
-	virtual ~VirtualSharedFromThis();
+	virtual ~Virtual_shared_from_this();
 
 public:
 	template<typename DerivedT>
 	boost::shared_ptr<const DerivedT> virtual_shared_from_this() const {
-		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value));
+		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<Virtual_shared_from_this, DerivedT>::value));
 		const AUTO(ptr, dynamic_cast<const DerivedT *>(this));
 		if(!ptr){
 			fail_dynamic_cast(typeid(DerivedT), this);
@@ -32,7 +32,7 @@ public:
 	}
 	template<typename DerivedT>
 	boost::shared_ptr<DerivedT> virtual_shared_from_this(){
-		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<VirtualSharedFromThis, DerivedT>::value));
+		BOOST_STATIC_ASSERT((boost::is_virtual_base_of<Virtual_shared_from_this, DerivedT>::value));
 		const AUTO(ptr, dynamic_cast<DerivedT *>(this));
 		if(!ptr){
 			fail_dynamic_cast(typeid(DerivedT), this);

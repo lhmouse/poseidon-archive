@@ -6,9 +6,9 @@
 #include "../time.hpp"
 
 namespace Poseidon {
-namespace MySql {
+namespace My_sql {
 
-std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs){
+std::ostream &operator<<(std::ostream &os, const String_escaper &rhs){
 	const AUTO_REF(ref, rhs.get());
 	os <<'\'';
 	for(AUTO(it, ref.begin()); it != ref.end(); ++it){
@@ -44,7 +44,7 @@ std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs){
 	return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const DateTimeFormatter &rhs){
+std::ostream &operator<<(std::ostream &os, const Date_time_formatter &rhs){
 	const AUTO_REF(ref, rhs.get());
 	char str[256];
 	format_time(str, sizeof(str), ref, true);
@@ -54,7 +54,7 @@ std::ostream &operator<<(std::ostream &os, const DateTimeFormatter &rhs){
 	return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const UuidFormatter &rhs){
+std::ostream &operator<<(std::ostream &os, const Uuid_formatter &rhs){
 	const AUTO_REF(ref, rhs.get());
 	os <<'\'';
 	os <<ref;

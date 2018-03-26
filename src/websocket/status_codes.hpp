@@ -5,11 +5,11 @@
 #define POSEIDON_WEBSOCKET_STATUS_CODES_HPP_
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
-typedef unsigned StatusCode;
+typedef unsigned Status_code;
 
-namespace StatusCodes {
+namespace Status_codes {
 	enum {
 		status_normal_closure       = 1000,
 		status_going_away           = 1001,
@@ -27,7 +27,7 @@ namespace StatusCodes {
 	};
 }
 
-using namespace StatusCodes;
+using namespace Status_codes;
 
 }
 }

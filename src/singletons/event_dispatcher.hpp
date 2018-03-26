@@ -14,28 +14,28 @@
 
 namespace Poseidon {
 
-class EventListener; // 没有定义的类，当作句柄使用。
-class EventBase;
+class Event_listener; // 没有定义的类，当作句柄使用。
+class Event_base;
 
-class EventDispatcher {
+class Event_dispatcher {
 private:
-	EventDispatcher();
+	Event_dispatcher();
 
 public:
-	typedef boost::function<void (const boost::shared_ptr<EventBase> &event)> EventListenerCallback;
+	typedef boost::function<void (const boost::shared_ptr<Event_base> &event)> Event_listener_callback;
 
 	static void start();
 	static void stop();
 
-	static void get_listeners(boost::container::vector<boost::shared_ptr<const EventListener> > &ret, const std::type_info &type_inf);
+	static void get_listeners(boost::container::vector<boost::shared_ptr<const Event_listener> > &ret, const std::type_info &type_inf);
 
 	// 返回的 shared_ptr 是该响应器的唯一持有者。
-	static boost::shared_ptr<const EventListener> register_listener_explicit(const std::type_info &type_info, EventListenerCallback callback);
+	static boost::shared_ptr<const Event_listener> register_listener_explicit(const std::type_info &type_info, Event_listener_callback callback);
 
 	template<typename EventT>
-	static boost::shared_ptr<const EventListener> register_listener(boost::function<void (const boost::shared_ptr<EventT> &)> callback){
+	static boost::shared_ptr<const Event_listener> register_listener(boost::function<void (const boost::shared_ptr<EventT> &)> callback){
 		struct Helper {
-			static void safe_fwd(boost::function<void (const boost::shared_ptr<EventT> &)> &callback, const boost::shared_ptr<EventBase> &event){
+			static void safe_fwd(boost::function<void (const boost::shared_ptr<EventT> &)> &callback, const boost::shared_ptr<Event_base> &event){
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
 					LOG_POSEIDON_ERROR("Incorrect dynamic event type: expecting ", typeid(EventT).name(), ", got ", typeid(*event).name());
@@ -47,8 +47,8 @@ public:
 		return register_listener_explicit(typeid(EventT), boost::bind(&Helper::safe_fwd, STD_MOVE_IDN(callback), _1));
 	}
 
-	static void sync_raise(const boost::shared_ptr<EventBase> &event);
-	static void async_raise(const boost::shared_ptr<EventBase> &event, const boost::shared_ptr<const bool> &withdrawn);
+	static void sync_raise(const boost::shared_ptr<Event_base> &event);
+	static void async_raise(const boost::shared_ptr<Event_base> &event, const boost::shared_ptr<const bool> &withdrawn);
 };
 
 }

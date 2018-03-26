@@ -10,7 +10,7 @@
 #include "../random.hpp"
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
 Writer::Writer(){
 	//
@@ -19,10 +19,10 @@ Writer::~Writer(){
 	//
 }
 
-long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
+long Writer::put_message(int opcode, bool masked, Stream_buffer payload){
 	PROFILE_ME;
 
-	StreamBuffer frame;
+	Stream_buffer frame;
 	unsigned ch = boost::numeric_cast<unsigned>(opcode) | opmask_fin;
 	frame.put(ch & 0xFF);
 	const std::size_t size = payload.size();
@@ -60,10 +60,10 @@ long Writer::put_message(int opcode, bool masked, StreamBuffer payload){
 	}
 	return on_encoded_data_avail(STD_MOVE(frame));
 }
-long Writer::put_close_message(StatusCode status_code, bool masked, StreamBuffer addition){
+long Writer::put_close_message(Status_code status_code, bool masked, Stream_buffer addition){
 	PROFILE_ME;
 
-	StreamBuffer payload;
+	Stream_buffer payload;
 	boost::uint16_t temp16;
 	store_be(temp16, boost::numeric_cast<boost::uint16_t>(status_code));
 	payload.put(&temp16, 2);

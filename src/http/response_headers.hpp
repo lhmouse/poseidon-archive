@@ -12,16 +12,16 @@
 namespace Poseidon {
 namespace Http {
 
-struct ResponseHeaders {
+struct Response_headers {
 	unsigned version; // x * 10000 + y 表示 HTTP x.y
-	StatusCode status_code;
+	Status_code status_code;
 	std::string reason;
-	OptionalMap headers;
+	Optional_map headers;
 };
 
-extern bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT;
+extern bool is_keep_alive_enabled(const Response_headers &response_headers) NOEXCEPT;
 
-extern std::pair<ResponseHeaders, StreamBuffer> make_default_response(StatusCode status_code, OptionalMap headers);
+extern std::pair<Response_headers, Stream_buffer> make_default_response(Status_code status_code, Optional_map headers);
 
 }
 }

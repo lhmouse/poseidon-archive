@@ -11,22 +11,22 @@
 namespace Poseidon {
 namespace Http {
 
-extern const OptionalMap &empty_headers() NOEXCEPT;
+extern const Optional_map &empty_headers() NOEXCEPT;
 
-class Exception : public BasicException {
+class Exception : public Basic_exception {
 private:
-	StatusCode m_status_code;
-	boost::shared_ptr<OptionalMap> m_headers;
+	Status_code m_status_code;
+	boost::shared_ptr<Optional_map> m_headers;
 
 public:
-	Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, OptionalMap headers = OptionalMap());
+	Exception(const char *file, std::size_t line, const char *func, Status_code status_code, Optional_map headers = Optional_map());
 	~Exception() NOEXCEPT;
 
 public:
-	StatusCode get_status_code() const NOEXCEPT {
+	Status_code get_status_code() const NOEXCEPT {
 		return m_status_code;
 	}
-	const OptionalMap &get_headers() const NOEXCEPT {
+	const Optional_map &get_headers() const NOEXCEPT {
 		return m_headers ? *m_headers : empty_headers();
 	}
 };

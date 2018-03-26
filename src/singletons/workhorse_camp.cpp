@@ -17,14 +17,14 @@
 
 namespace Poseidon {
 
-typedef WorkhorseCamp::JobProcedure JobProcedure;
+typedef Workhorse_camp::Job_procedure Job_procedure;
 
 namespace {
-	class WorkhorseThread : NONCOPYABLE {
+	class Workhorse_thread : NONCOPYABLE {
 	private:
-		struct JobQueueElement {
+		struct Job_queue_element {
 			boost::weak_ptr<Promise> weak_promise;
-			JobProcedure procedure;
+			Job_procedure procedure;
 		};
 
 	private:
@@ -32,11 +32,11 @@ namespace {
 		volatile bool m_running;
 
 		mutable Mutex m_mutex;
-		mutable ConditionVariable m_new_job;
-		boost::container::deque<JobQueueElement> m_queue;
+		mutable Condition_variable m_new_job;
+		boost::container::deque<Job_queue_element> m_queue;
 
 	public:
-		WorkhorseThread()
+		Workhorse_thread()
 			: m_running(false)
 			, m_queue()
 		{
@@ -47,9 +47,9 @@ namespace {
 		bool pump_one_job() NOEXCEPT {
 			PROFILE_ME;
 
-			JobQueueElement *elem;
+			Job_queue_element *elem;
 			{
-				const Mutex::UniqueLock lock(m_mutex);
+				const Mutex::Unique_lock lock(m_mutex);
 				if(m_queue.empty()){
 					return false;
 				}
@@ -74,7 +74,7 @@ namespace {
 					promise->set_success(false);
 				}
 			}
-			const Mutex::UniqueLock lock(m_mutex);
+			const Mutex::Unique_lock lock(m_mutex);
 			m_queue.pop_front();
 			return true;
 		}
@@ -91,7 +91,7 @@ namespace {
 					timeout = std::min<unsigned>(timeout * 2u + 1u, !busy * 100u);
 				} while(busy);
 
-				Mutex::UniqueLock lock(m_mutex);
+				Mutex::Unique_lock lock(m_mutex);
 				if(m_queue.empty() && !atomic_load(m_running, memory_order_consume)){
 					break;
 				}
@@ -103,8 +103,8 @@ namespace {
 
 	public:
 		void start(){
-			const Mutex::UniqueLock lock(m_mutex);
-			Thread(boost::bind(&WorkhorseThread::thread_proc, this), sslit("  W "), sslit("Workhorse")).swap(m_thread);
+			const Mutex::Unique_lock lock(m_mutex);
+			Thread(boost::bind(&Workhorse_thread::thread_proc, this), sslit("  W "), sslit("Workhorse")).swap(m_thread);
 			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
@@ -122,7 +122,7 @@ namespace {
 			for(;;){
 				std::size_t pending_objects;
 				{
-					const Mutex::UniqueLock lock(m_mutex);
+					const Mutex::Unique_lock lock(m_mutex);
 					pending_objects = m_queue.size();
 					if(pending_objects == 0){
 						break;
@@ -139,15 +139,15 @@ namespace {
 		}
 
 		std::size_t get_queue_size() const {
-			const Mutex::UniqueLock lock(m_mutex);
+			const Mutex::Unique_lock lock(m_mutex);
 			return m_queue.size();
 		}
-		void add_job(const boost::shared_ptr<Promise> &promise, JobProcedure procedure){
+		void add_job(const boost::shared_ptr<Promise> &promise, Job_procedure procedure){
 			PROFILE_ME;
 
-			const Mutex::UniqueLock lock(m_mutex);
+			const Mutex::Unique_lock lock(m_mutex);
 			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, sslit("Workhorse thread is being shut down"));
-			JobQueueElement elem = { promise, STD_MOVE_IDN(procedure) };
+			Job_queue_element elem = { promise, STD_MOVE_IDN(procedure) };
 			m_queue.push_back(STD_MOVE(elem));
 			m_new_job.signal();
 		}
@@ -156,20 +156,20 @@ namespace {
 	volatile bool g_running = false;
 
 	Mutex g_router_mutex;
-	boost::container::vector<boost::shared_ptr<WorkhorseThread> > g_threads;
+	boost::container::vector<boost::shared_ptr<Workhorse_thread> > g_threads;
 
-	void add_job_using_seed(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, boost::uint64_t seed){
+	void add_job_using_seed(const boost::shared_ptr<Promise> &promise, Job_procedure procedure, boost::uint64_t seed){
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), BasicException, sslit("Workhorse support is not enabled"));
+		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, sslit("Workhorse support is not enabled"));
 
-		boost::shared_ptr<WorkhorseThread> thread;
+		boost::shared_ptr<Workhorse_thread> thread;
 		{
-			const Mutex::UniqueLock lock(g_router_mutex);
+			const Mutex::Unique_lock lock(g_router_mutex);
 			std::size_t i = static_cast<std::size_t>(seed % g_threads.size());
 			thread = g_threads.at(i);
 			if(!thread){
 				LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Creating new workhorse thread ", i);
-				thread = boost::make_shared<WorkhorseThread>();
+				thread = boost::make_shared<Workhorse_thread>();
 				thread->start();
 				g_threads.at(i) = thread;
 			}
@@ -179,14 +179,14 @@ namespace {
 	}
 }
 
-void WorkhorseCamp::start(){
+void Workhorse_camp::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting workhorse daemon...");
 
-	const AUTO(max_thread_count, MainConfig::get<std::size_t>("workhorse_max_thread_count"));
+	const AUTO(max_thread_count, Main_config::get<std::size_t>("workhorse_max_thread_count"));
 	if(max_thread_count == 0){
 		LOG_POSEIDON_FATAL("You shall not set `workhorse_max_thread_count` in `main.conf` to zero.");
 		std::abort();
@@ -195,7 +195,7 @@ void WorkhorseCamp::start(){
 
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Workhorse daemon started.");
 }
-void WorkhorseCamp::stop(){
+void Workhorse_camp::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
@@ -220,14 +220,14 @@ void WorkhorseCamp::stop(){
 
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Workhorse daemon stopped.");
 
-	const Mutex::UniqueLock lock(g_router_mutex);
+	const Mutex::Unique_lock lock(g_router_mutex);
 	g_threads.clear();
 }
 
-void WorkhorseCamp::enqueue_isolated(const boost::shared_ptr<Promise> &promise, JobProcedure procedure){
+void Workhorse_camp::enqueue_isolated(const boost::shared_ptr<Promise> &promise, Job_procedure procedure){
 	add_job_using_seed(promise, STD_MOVE_IDN(procedure), random_uint32());
 }
-void WorkhorseCamp::enqueue(const boost::shared_ptr<Promise> &promise, JobProcedure procedure, std::size_t thread_hint){
+void Workhorse_camp::enqueue(const boost::shared_ptr<Promise> &promise, Job_procedure procedure, std::size_t thread_hint){
 	add_job_using_seed(promise, STD_MOVE_IDN(procedure), static_cast<boost::uint64_t>(thread_hint) * 134775813 / 65539);
 }
 

@@ -10,7 +10,7 @@
 #include "../stream_buffer.hpp"
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
 class Writer {
 public:
@@ -18,11 +18,11 @@ public:
 	virtual ~Writer();
 
 protected:
-	virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
+	virtual long on_encoded_data_avail(Stream_buffer encoded) = 0;
 
 public:
-	long put_message(int opcode, bool masked, StreamBuffer payload);
-	long put_close_message(StatusCode status_code, bool masked, StreamBuffer addition);
+	long put_message(int opcode, bool masked, Stream_buffer payload);
+	long put_close_message(Status_code status_code, bool masked, Stream_buffer addition);
 };
 
 }

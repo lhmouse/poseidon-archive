@@ -12,17 +12,17 @@
 #include "../profiler.hpp"
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
-class Client::SyncJobBase : public JobBase {
+class Client::Sync_job_base : public Job_base {
 private:
-	const SocketBase::DelayedShutdownGuard m_guard;
-	const boost::weak_ptr<TcpSessionBase> m_weak_parent;
+	const Socket_base::Delayed_shutdown_guard m_guard;
+	const boost::weak_ptr<Tcp_session_base> m_weak_parent;
 	const boost::weak_ptr<Client> m_weak_client;
 
 protected:
-	explicit SyncJobBase(const boost::shared_ptr<Client> &client)
-		: m_guard(boost::shared_ptr<SocketBase>(client->get_weak_parent())), m_weak_parent(client->get_weak_parent()), m_weak_client(client)
+	explicit Sync_job_base(const boost::shared_ptr<Client> &client)
+		: m_guard(boost::shared_ptr<Socket_base>(client->get_weak_parent())), m_weak_parent(client->get_weak_parent()), m_weak_client(client)
 	{
 		//
 	}
@@ -42,7 +42,7 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Web_socket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
@@ -57,10 +57,10 @@ protected:
 	virtual void really_perform(const boost::shared_ptr<Client> &client) = 0;
 };
 
-class Client::ConnectJob : public Client::SyncJobBase {
+class Client::Connect_job : public Client::Sync_job_base {
 public:
-	explicit ConnectJob(const boost::shared_ptr<Client> &client)
-		: SyncJobBase(client)
+	explicit Connect_job(const boost::shared_ptr<Client> &client)
+		: Sync_job_base(client)
 	{
 		//
 	}
@@ -73,10 +73,10 @@ protected:
 	}
 };
 
-class Client::ReadHupJob : public Client::SyncJobBase {
+class Client::Read_hup_job : public Client::Sync_job_base {
 public:
-	explicit ReadHupJob(const boost::shared_ptr<Client> &client)
-		: SyncJobBase(client)
+	explicit Read_hup_job(const boost::shared_ptr<Client> &client)
+		: Sync_job_base(client)
 	{
 		//
 	}
@@ -89,14 +89,14 @@ protected:
 	}
 };
 
-class Client::DataMessageJob : public Client::SyncJobBase {
+class Client::Data_message_job : public Client::Sync_job_base {
 private:
-	OpCode m_opcode;
-	StreamBuffer m_payload;
+	Op_code m_opcode;
+	Stream_buffer m_payload;
 
 public:
-	DataMessageJob(const boost::shared_ptr<Client> &client, OpCode opcode, StreamBuffer payload)
-		: SyncJobBase(client)
+	Data_message_job(const boost::shared_ptr<Client> &client, Op_code opcode, Stream_buffer payload)
+		: Sync_job_base(client)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
 	{
 		//
@@ -111,14 +111,14 @@ protected:
 	}
 };
 
-class Client::ControlMessageJob : public Client::SyncJobBase {
+class Client::Control_message_job : public Client::Sync_job_base {
 private:
-	OpCode m_opcode;
-	StreamBuffer m_payload;
+	Op_code m_opcode;
+	Stream_buffer m_payload;
 
 public:
-	ControlMessageJob(const boost::shared_ptr<Client> &client, OpCode opcode, StreamBuffer payload)
-		: SyncJobBase(client)
+	Control_message_job(const boost::shared_ptr<Client> &client, Op_code opcode, Stream_buffer payload)
+		: Sync_job_base(client)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
 	{
 		//
@@ -133,8 +133,8 @@ protected:
 	}
 };
 
-Client::Client(const boost::shared_ptr<Http::LowLevelClient> &parent)
-	: LowLevelClient(parent)
+Client::Client(const boost::shared_ptr<Http::Low_level_client> &parent)
+	: Low_level_client(parent)
 {
 	//
 }
@@ -145,29 +145,29 @@ Client::~Client(){
 void Client::on_connect(){
 	PROFILE_ME;
 
-	LowLevelClient::on_connect();
+	Low_level_client::on_connect();
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ConnectJob>(virtual_shared_from_this<Client>()),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Connect_job>(virtual_shared_from_this<Client>()),
 		VAL_INIT);
 }
 void Client::on_read_hup(){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ReadHupJob>(virtual_shared_from_this<Client>()),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Read_hup_job>(virtual_shared_from_this<Client>()),
 		VAL_INIT);
 
-	LowLevelClient::on_read_hup();
+	Low_level_client::on_read_hup();
 }
 
-void Client::on_low_level_message_header(OpCode opcode){
+void Client::on_low_level_message_header(Op_code opcode){
 	PROFILE_ME;
 
 	m_opcode = opcode;
 	m_payload.clear();
 }
-void Client::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, StreamBuffer payload){
+void Client::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, Stream_buffer payload){
 	PROFILE_ME;
 
 	m_payload.splice(payload);
@@ -175,17 +175,17 @@ void Client::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, Stre
 bool Client::on_low_level_message_end(boost::uint64_t /*whole_size*/){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Client>(), m_opcode, STD_MOVE(m_payload)),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Data_message_job>(virtual_shared_from_this<Client>(), m_opcode, STD_MOVE(m_payload)),
 		VAL_INIT);
 
 	return true;
 }
-bool Client::on_low_level_control_message(OpCode opcode, StreamBuffer payload){
+bool Client::on_low_level_control_message(Op_code opcode, Stream_buffer payload){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Client>(), opcode, STD_MOVE(payload)),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Control_message_job>(virtual_shared_from_this<Client>(), opcode, STD_MOVE(payload)),
 		VAL_INIT);
 
 	return true;
@@ -197,7 +197,7 @@ void Client::on_sync_connect(){
 	//
 }
 
-void Client::on_sync_control_message(OpCode opcode, StreamBuffer payload){
+void Client::on_sync_control_message(Op_code opcode, Stream_buffer payload){
 	PROFILE_ME;
 	LOG_POSEIDON_DEBUG("Control frame: opcode = ", opcode);
 

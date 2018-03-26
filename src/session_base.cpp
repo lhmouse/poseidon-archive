@@ -6,7 +6,7 @@
 
 namespace Poseidon {
 
-SessionBase::~SessionBase(){
+Session_base::~Session_base(){
 	//
 }
 

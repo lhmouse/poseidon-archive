@@ -10,16 +10,16 @@
 
 namespace Poseidon {
 
-class JsonObject;
+class Json_object;
 
-class SystemHttpServletBase : NONCOPYABLE {
+class System_http_servlet_base : NONCOPYABLE {
 public:
-	virtual ~SystemHttpServletBase();
+	virtual ~System_http_servlet_base();
 
 public:
 	virtual const char *get_uri() const = 0;
-	virtual void handle_get(JsonObject &response) const = 0;
-	virtual void handle_post(JsonObject &response, JsonObject request) const = 0;
+	virtual void handle_get(Json_object &response) const = 0;
+	virtual void handle_post(Json_object &response, Json_object request) const = 0;
 };
 
 }

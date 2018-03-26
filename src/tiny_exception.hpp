@@ -8,17 +8,17 @@
 
 namespace Poseidon {
 
-class TinyException : public std::exception {
+class Tiny_exception : public std::exception {
 private:
 	const char *m_static_msg;
 
 public:
-	explicit TinyException(const char *static_msg) throw()
+	explicit Tiny_exception(const char *static_msg) throw()
 		: m_static_msg(static_msg)
 	{
 		//
 	}
-	~TinyException() throw();
+	~Tiny_exception() throw();
 
 public:
 	const char *what() const throw() {

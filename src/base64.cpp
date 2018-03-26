@@ -42,20 +42,20 @@ namespace {
 	}
 }
 
-Base64Encoder::Base64Encoder()
+Base64_encoder::Base64_encoder()
 	: m_seq(1)
 {
 	//
 }
-Base64Encoder::~Base64Encoder(){
+Base64_encoder::~Base64_encoder(){
 	//
 }
 
-void Base64Encoder::clear(){
+void Base64_encoder::clear(){
 	m_seq = 1;
 	m_buffer.clear();
 }
-void Base64Encoder::put(const void *data, std::size_t size){
+void Base64_encoder::put(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
@@ -73,17 +73,17 @@ void Base64Encoder::put(const void *data, std::size_t size){
 		}
 	}
 }
-void Base64Encoder::put(const StreamBuffer &buffer){
+void Base64_encoder::put(const Stream_buffer &buffer){
 	PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
-	StreamBuffer::EnumerationCookie cookie;
+	Stream_buffer::Enumeration_cookie cookie;
 	while(buffer.enumerate_chunk(&data, &size, cookie)){
 		put(data, size);
 	}
 }
-StreamBuffer Base64Encoder::finalize(){
+Stream_buffer Base64_encoder::finalize(){
 	PROFILE_ME;
 
 	const AUTO(seq, m_seq);
@@ -104,20 +104,20 @@ StreamBuffer Base64Encoder::finalize(){
 	return ret;
 }
 
-Base64Decoder::Base64Decoder()
+Base64_decoder::Base64_decoder()
 	: m_seq(1)
 {
 	//
 }
-Base64Decoder::~Base64Decoder(){
+Base64_decoder::~Base64_decoder(){
 	//
 }
 
-void Base64Decoder::clear(){
+void Base64_decoder::clear(){
 	m_seq = 1;
 	m_buffer.clear();
 }
-void Base64Decoder::put(const void *data, std::size_t size){
+void Base64_decoder::put(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
@@ -164,17 +164,17 @@ void Base64Decoder::put(const void *data, std::size_t size){
 		}
 	}
 }
-void Base64Decoder::put(const StreamBuffer &buffer){
+void Base64_decoder::put(const Stream_buffer &buffer){
 	PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
-	StreamBuffer::EnumerationCookie cookie;
+	Stream_buffer::Enumeration_cookie cookie;
 	while(buffer.enumerate_chunk(&data, &size, cookie)){
 		put(data, size);
 	}
 }
-StreamBuffer Base64Decoder::finalize(){
+Stream_buffer Base64_decoder::finalize(){
 	PROFILE_ME;
 
 	DEBUG_THROW_UNLESS(m_seq == 1, Exception, sslit("Incomplete base64 data"));
@@ -186,21 +186,21 @@ StreamBuffer Base64Decoder::finalize(){
 std::string base64_encode(const void *data, std::size_t size){
 	PROFILE_ME;
 
-	Base64Encoder enc;
+	Base64_encoder enc;
 	enc.put(data, size);
 	return enc.get_buffer().dump_string();
 }
 std::string base64_encode(const char *str){
 	PROFILE_ME;
 
-	Base64Encoder enc;
+	Base64_encoder enc;
 	enc.put(str);
 	return enc.get_buffer().dump_string();
 }
 std::string base64_encode(const std::string &str){
 	PROFILE_ME;
 
-	Base64Encoder enc;
+	Base64_encoder enc;
 	enc.put(str);
 	return enc.get_buffer().dump_string();
 }
@@ -208,21 +208,21 @@ std::string base64_encode(const std::string &str){
 std::string base64_decode(const void *data, std::size_t size){
 	PROFILE_ME;
 
-	Base64Decoder dec;
+	Base64_decoder dec;
 	dec.put(data, size);
 	return dec.get_buffer().dump_string();
 }
 std::string base64_decode(const char *str){
 	PROFILE_ME;
 
-	Base64Decoder dec;
+	Base64_decoder dec;
 	dec.put(str);
 	return dec.get_buffer().dump_string();
 }
 std::string base64_decode(const std::string &str){
 	PROFILE_ME;
 
-	Base64Decoder dec;
+	Base64_decoder dec;
 	dec.put(str);
 	return dec.get_buffer().dump_string();
 }

@@ -92,28 +92,28 @@ namespace {
 	}
 }
 
-ConfigFile::ConfigFile()
+Config_file::Config_file()
 	: m_contents()
 {
 	//
 }
-ConfigFile::ConfigFile(const std::string &path)
+Config_file::Config_file(const std::string &path)
 	: m_contents()
 {
 	load(path);
 }
 
-bool ConfigFile::empty() const {
+bool Config_file::empty() const {
 	return m_contents.empty();
 }
-std::size_t ConfigFile::size() const {
+std::size_t Config_file::size() const {
 	return m_contents.size();
 }
-void ConfigFile::clear(){
+void Config_file::clear(){
 	m_contents.clear();
 }
 
-bool ConfigFile::get_raw(std::string &val, const char *key) const {
+bool Config_file::get_raw(std::string &val, const char *key) const {
 	PROFILE_ME;
 
 	const AUTO(it, m_contents.find(key));
@@ -123,7 +123,7 @@ bool ConfigFile::get_raw(std::string &val, const char *key) const {
 	val = it->second;
 	return true;
 }
-const std::string &ConfigFile::get_raw(const char *key) const {
+const std::string &Config_file::get_raw(const char *key) const {
 	PROFILE_ME;
 
 	const AUTO(it, m_contents.find(key));
@@ -133,7 +133,7 @@ const std::string &ConfigFile::get_raw(const char *key) const {
 	return it->second;
 }
 
-std::size_t ConfigFile::get_all_raw(boost::container::vector<std::string> &vals, const char *key, bool including_empty) const {
+std::size_t Config_file::get_all_raw(boost::container::vector<std::string> &vals, const char *key, bool including_empty) const {
 	PROFILE_ME;
 
 	const AUTO(range, m_contents.range(key));
@@ -152,7 +152,7 @@ std::size_t ConfigFile::get_all_raw(boost::container::vector<std::string> &vals,
 	}
 	return total;
 }
-boost::container::vector<std::string> ConfigFile::get_all_raw(const char *key, bool including_empty) const {
+boost::container::vector<std::string> Config_file::get_all_raw(const char *key, bool including_empty) const {
 	PROFILE_ME;
 
 	boost::container::vector<std::string> vals;
@@ -160,18 +160,18 @@ boost::container::vector<std::string> ConfigFile::get_all_raw(const char *key, b
 	return vals;
 }
 
-void ConfigFile::load(const std::string &path){
+void Config_file::load(const std::string &path){
 	PROFILE_ME;
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading config file: ", path);
 
-	AUTO(block, FileSystemDaemon::load(path));
+	AUTO(block, File_system_daemon::load(path));
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Read ", block.size_total, " byte(s) from ", path);
 
 	VALUE_TYPE(m_contents) contents;
 
 	std::size_t line = 0;
 	for(;;){
-		StreamBuffer buf;
+		Stream_buffer buf;
 		for(;;){
 			const int ch = block.data.get();
 			if(ch < 0){
@@ -204,19 +204,19 @@ void ConfigFile::load(const std::string &path){
 			val = trim(STD_MOVE(val));
 		}
 		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Config: ", std::setw(3), line, " | ", key, " = ", val);
-		contents.append(SharedNts(key), STD_MOVE(val));
+		contents.append(Shared_nts(key), STD_MOVE(val));
 	}
 
 	m_contents.swap(contents);
 }
-int ConfigFile::load_nothrow(const std::string &path)
+int Config_file::load_nothrow(const std::string &path)
 try {
 	PROFILE_ME;
 
 	load(path);
 	return 0;
-} catch(SystemException &e){
-	LOG_POSEIDON_ERROR("SystemException thrown while loading config file: path = ", path, ", code = ", e.get_code(), ", what = ", e.what());
+} catch(System_exception &e){
+	LOG_POSEIDON_ERROR("System_exception thrown while loading config file: path = ", path, ", code = ", e.get_code(), ", what = ", e.what());
 	return e.get_code();
 } catch(std::exception &e){
 	LOG_POSEIDON_ERROR("std::exception thrown while loading config file: path = ", path, ", what = ", e.what());
@@ -226,7 +226,7 @@ try {
 	return EINVAL;
 }
 
-void ConfigFile::save(const std::string &path){
+void Config_file::save(const std::string &path){
 	PROFILE_ME;
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Saving config file: ", path);
 
@@ -237,7 +237,7 @@ void ConfigFile::save(const std::string &path){
 		escape(os, it->second.data(), it->second.size());
 		os <<std::endl;
 	}
-	FileSystemDaemon::save(path, STD_MOVE(os.get_buffer()));
+	File_system_daemon::save(path, STD_MOVE(os.get_buffer()));
 }
 
 }

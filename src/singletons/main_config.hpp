@@ -9,15 +9,15 @@
 
 namespace Poseidon {
 
-class MainConfig {
+class Main_config {
 private:
-	MainConfig();
+	Main_config();
 
 public:
 	static void set_run_path(const char *path);
 	static void reload();
 
-	static boost::shared_ptr<const ConfigFile> get_file();
+	static boost::shared_ptr<const Config_file> get_file();
 
 	static bool get_raw(std::string &val, const char *key){
 		return get_file()->get_raw(val, key);

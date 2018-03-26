@@ -9,12 +9,12 @@
 namespace Poseidon {
 namespace Http {
 
-bool is_keep_alive_enabled(const RequestHeaders &request_headers){
+bool is_keep_alive_enabled(const Request_headers &request_headers){
 	const AUTO_REF(connection, request_headers.headers.get("Connection"));
 	enum { opt_auto, opt_on, opt_off } opt = opt_auto;
 	Buffer_istream is;
-	is.set_buffer(StreamBuffer(connection));
-	HeaderOption connection_option(is);
+	is.set_buffer(Stream_buffer(connection));
+	Header_option connection_option(is);
 	if(is){
 		if(::strcasecmp(connection_option.get_base().c_str(), "Keep-Alive") == 0){
 			opt = opt_on;
@@ -32,7 +32,7 @@ bool is_keep_alive_enabled(const RequestHeaders &request_headers){
 	return opt == opt_on;
 }
 
-ContentEncoding pick_content_encoding(const RequestHeaders &request_headers){
+Content_encoding pick_content_encoding(const Request_headers &request_headers){
 	const AUTO_REF(accept_encoding, request_headers.headers.get("Accept-Encoding"));
 	if(accept_encoding.empty()){
 		return content_encoding_identity;
@@ -49,7 +49,7 @@ ContentEncoding pick_content_encoding(const RequestHeaders &request_headers){
 		if(begin != end){
 			is.clear();
 			is.get_buffer().put(accept_encoding.data() + begin, end - begin);
-			HeaderOption opt(is);
+			Header_option opt(is);
 			const AUTO_REF(q_str, opt.get_option("q"));
 			const double q = q_str.empty() ? 1.0 : std::strtod(q_str.c_str(), NULLPTR);
 			if(!std::isnan(q) && (q >= 0)){

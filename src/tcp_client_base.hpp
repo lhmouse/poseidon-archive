@@ -8,15 +8,15 @@
 
 namespace Poseidon {
 
-class SslClientFactory;
+class Ssl_client_factory;
 
-class TcpClientBase : public TcpSessionBase {
+class Tcp_client_base : public Tcp_session_base {
 private:
-	boost::scoped_ptr<SslClientFactory> m_ssl_factory;
+	boost::scoped_ptr<Ssl_client_factory> m_ssl_factory;
 
 public:
-	explicit TcpClientBase(const SockAddr &addr, bool use_ssl = false, bool verify_peer = true);
-	~TcpClientBase();
+	explicit Tcp_client_base(const Sock_addr &addr, bool use_ssl = false, bool verify_peer = true);
+	~Tcp_client_base();
 };
 
 }

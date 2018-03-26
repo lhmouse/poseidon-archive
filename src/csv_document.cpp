@@ -36,14 +36,14 @@ namespace {
 	}
 }
 
-CsvDocument::CsvDocument(std::istream &is)
+Csv_document::Csv_document(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, sslit("CsvDocument parser error"));
+	DEBUG_THROW_UNLESS(is, Exception, sslit("Csv_document parser error"));
 }
 
-void CsvDocument::reset_header(const boost::container::map<SharedNts, std::string> &row){
+void Csv_document::reset_header(const boost::container::map<Shared_nts, std::string> &row){
 	VALUE_TYPE(m_elements) elements;
 	for(AUTO(it, row.begin()); it != row.end(); ++it){
 		elements[it->first];
@@ -51,7 +51,7 @@ void CsvDocument::reset_header(const boost::container::map<SharedNts, std::strin
 	m_elements.swap(elements);
 }
 #ifdef POSEIDON_CXX11
-void CsvDocument::reset_header(std::initializer_list<SharedNts> header){
+void Csv_document::reset_header(std::initializer_list<Shared_nts> header){
 	VALUE_TYPE(m_elements) elements;
 	for(AUTO(it, header.begin()); it != header.end(); ++it){
 		elements[*it];
@@ -59,7 +59,7 @@ void CsvDocument::reset_header(std::initializer_list<SharedNts> header){
 	m_elements.swap(elements);
 }
 #endif
-void CsvDocument::append(const boost::container::map<SharedNts, std::string> &row){
+void Csv_document::append(const boost::container::map<Shared_nts, std::string> &row){
 	AUTO(it, m_elements.begin());
 	try {
 		while(it != m_elements.end()){
@@ -80,7 +80,7 @@ void CsvDocument::append(const boost::container::map<SharedNts, std::string> &ro
 	}
 }
 #ifdef POSEIDON_CXX11
-void CsvDocument::append(boost::container::map<SharedNts, std::string> &&row){
+void Csv_document::append(boost::container::map<Shared_nts, std::string> &&row){
 	AUTO(it, m_elements.begin());
 	try {
 		while(it != m_elements.end()){
@@ -102,14 +102,14 @@ void CsvDocument::append(boost::container::map<SharedNts, std::string> &&row){
 }
 #endif
 
-StreamBuffer CsvDocument::dump() const {
+Stream_buffer Csv_document::dump() const {
 	PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
-void CsvDocument::dump(std::ostream &os) const {
+void Csv_document::dump(std::ostream &os) const {
 	PROFILE_ME;
 
 	AUTO(it, m_elements.begin());
@@ -137,7 +137,7 @@ void CsvDocument::dump(std::ostream &os) const {
 		++row;
 	}
 }
-void CsvDocument::parse(std::istream &is){
+void Csv_document::parse(std::istream &is){
 	PROFILE_ME;
 
 	VALUE_TYPE(m_elements) elements;
@@ -232,7 +232,7 @@ void CsvDocument::parse(std::istream &is){
 		}
 	}
 	for(AUTO(it, matrix.begin()); it != matrix.end(); ++it){
-		SharedNts key(it->at(0));
+		Shared_nts key(it->at(0));
 		it->erase(it->begin());
 		elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(*it));
 	}

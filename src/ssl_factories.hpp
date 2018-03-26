@@ -13,30 +13,30 @@ namespace Poseidon {
 
 extern void init_ssl_once();
 
-class SslFilter;
+class Ssl_filter;
 
-class SslServerFactory : NONCOPYABLE {
+class Ssl_server_factory : NONCOPYABLE {
 private:
-	const UniqueSslCtx m_ssl_ctx;
+	const Unique_ssl_ctx m_ssl_ctx;
 
 public:
-	explicit SslServerFactory(const char *certificate, const char *private_key);
-	~SslServerFactory();
+	explicit Ssl_server_factory(const char *certificate, const char *private_key);
+	~Ssl_server_factory();
 
 public:
-	void create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd);
+	void create_ssl_filter(boost::scoped_ptr<Ssl_filter> &ssl_filter, int fd);
 };
 
-class SslClientFactory : NONCOPYABLE {
+class Ssl_client_factory : NONCOPYABLE {
 private:
-	const UniqueSslCtx m_ssl_ctx;
+	const Unique_ssl_ctx m_ssl_ctx;
 
 public:
-	explicit SslClientFactory(bool verify_peer);
-	~SslClientFactory();
+	explicit Ssl_client_factory(bool verify_peer);
+	~Ssl_client_factory();
 
 public:
-	void create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd);
+	void create_ssl_filter(boost::scoped_ptr<Ssl_filter> &ssl_filter, int fd);
 };
 
 }

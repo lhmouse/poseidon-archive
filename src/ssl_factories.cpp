@@ -41,12 +41,12 @@ void init_ssl_once(){
 #endif
 
 namespace {
-	UniqueSslCtx create_server_ssl_ctx(const char *certificate, const char *private_key){
+	Unique_ssl_ctx create_server_ssl_ctx(const char *certificate, const char *private_key){
 		PROFILE_ME;
 
 		init_ssl_once();
 
-		UniqueSslCtx ssl_ctx;
+		Unique_ssl_ctx ssl_ctx;
 		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_server_method())), Exception, sslit("::SSLv23_server_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv3);
@@ -67,17 +67,17 @@ namespace {
 		return ssl_ctx;
 	}
 
-	UniqueSslCtx create_client_ssl_ctx(bool verify_peer){
+	Unique_ssl_ctx create_client_ssl_ctx(bool verify_peer){
 		PROFILE_ME;
 
 		init_ssl_once();
 
-		UniqueSslCtx ssl_ctx;
+		Unique_ssl_ctx ssl_ctx;
 		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_client_method())), Exception, sslit("::SSLv23_client_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv3);
 		if(verify_peer){
-			const AUTO(ssl_cert_directory, MainConfig::get<std::string>("ssl_cert_directory", "/etc/ssl/certs"));
+			const AUTO(ssl_cert_directory, Main_config::get<std::string>("ssl_cert_directory", "/etc/ssl/certs"));
 			LOG_POSEIDON_INFO("Loading trusted CA certificates: ", ssl_cert_directory);
 			DEBUG_THROW_UNLESS(::SSL_CTX_load_verify_locations(ssl_ctx.get(), NULLPTR, ssl_cert_directory.c_str()) == 1, Exception, sslit("::SSL_CTX_load_verify_locations() failed"));
 			::SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_PEER, NULLPTR);
@@ -88,34 +88,34 @@ namespace {
 	}
 }
 
-SslServerFactory::SslServerFactory(const char *certificate, const char *private_key)
+Ssl_server_factory::Ssl_server_factory(const char *certificate, const char *private_key)
 	: m_ssl_ctx(create_server_ssl_ctx(certificate, private_key))
 {
 	//
 }
-SslServerFactory::~SslServerFactory(){
+Ssl_server_factory::~Ssl_server_factory(){
 	//
 }
 
-void SslServerFactory::create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd){
-	UniqueSsl ssl;
+void Ssl_server_factory::create_ssl_filter(boost::scoped_ptr<Ssl_filter> &ssl_filter, int fd){
+	Unique_ssl ssl;
 	DEBUG_THROW_UNLESS(ssl.reset(::SSL_new(m_ssl_ctx.get())), Exception, sslit("::SSL_new() failed"));
-	ssl_filter.reset(new SslFilter(STD_MOVE(ssl), SslFilter::to_accept, fd));
+	ssl_filter.reset(new Ssl_filter(STD_MOVE(ssl), Ssl_filter::to_accept, fd));
 }
 
-SslClientFactory::SslClientFactory(bool verify_peer)
+Ssl_client_factory::Ssl_client_factory(bool verify_peer)
 	: m_ssl_ctx(create_client_ssl_ctx(verify_peer))
 {
 	//
 }
-SslClientFactory::~SslClientFactory(){
+Ssl_client_factory::~Ssl_client_factory(){
 	//
 }
 
-void SslClientFactory::create_ssl_filter(boost::scoped_ptr<SslFilter> &ssl_filter, int fd){
-	UniqueSsl ssl;
+void Ssl_client_factory::create_ssl_filter(boost::scoped_ptr<Ssl_filter> &ssl_filter, int fd){
+	Unique_ssl ssl;
 	DEBUG_THROW_UNLESS(ssl.reset(::SSL_new(m_ssl_ctx.get())), Exception, sslit("::SSL_new() failed"));
-	ssl_filter.reset(new SslFilter(STD_MOVE(ssl), SslFilter::to_connect, fd));
+	ssl_filter.reset(new Ssl_filter(STD_MOVE(ssl), Ssl_filter::to_connect, fd));
 }
 
 }

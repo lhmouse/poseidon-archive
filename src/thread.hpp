@@ -21,7 +21,7 @@ public:
 	{
 		//
 	}
-	Thread(boost::function<void ()> proc, SharedNts tag, SharedNts name);
+	Thread(boost::function<void ()> proc, Shared_nts tag, Shared_nts name);
 	~Thread(); // The destructor calls `std::terminate()` if `joinable()` returns `true`.
 
 public:

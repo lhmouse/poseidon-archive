@@ -51,7 +51,7 @@ DEFINE_MODULE_CONFIG(path) 在模块被加载时解析指定的配置文件。
 
 #define DECLARE_MODULE_CONFIG(prefix_)	\
 	/* Declare an access function for this module. This function is going to be defined in `DEFINE_MODULE_CONFIG`. */	\
-	extern ::boost::shared_ptr<const ::Poseidon::ConfigFile> module_config_require_nifty_();	\
+	extern ::boost::shared_ptr<const ::Poseidon::Config_file> module_config_require_nifty_();	\
 	/* Define getters with the suffix `_raw`. */	\
 	inline bool TOKEN_CAT2(prefix_, _raw) (::std::string &val_, const char *key_){	\
 		return module_config_require_nifty_()->get_raw(val_, key_);	\
@@ -76,12 +76,12 @@ DEFINE_MODULE_CONFIG(path) 在模块被加载时解析指定的配置文件。
 		return module_config_require_nifty_()->get<T_>(key_);	\
 	}	\
 	/* Define getters with no suffix and requires the user to provide a default value if no entry is found. */	\
-	template<typename T_, typename DefValT_>	\
-	inline bool TOKEN_CAT2(prefix_, ) (T_ &val_, const char *key_, const DefValT_ &def_val_){	\
+	template<typename T_, typename Def_val_t_>	\
+	inline bool TOKEN_CAT2(prefix_, ) (T_ &val_, const char *key_, const Def_val_t_ &def_val_){	\
 		return module_config_require_nifty_()->get<T_>(val_, key_, def_val_);	\
 	}	\
-	template<typename T_, typename DefValT_>	\
-	inline T_ TOKEN_CAT2(prefix_, ) (const char *key_, const DefValT_ &def_val_){	\
+	template<typename T_, typename Def_val_t_>	\
+	inline T_ TOKEN_CAT2(prefix_, ) (const char *key_, const Def_val_t_ &def_val_){	\
 		return module_config_require_nifty_()->get<T_>(key_, def_val_);	\
 	}	\
 	/* Define getters with the suffix `_all`. */	\
@@ -97,16 +97,16 @@ DEFINE_MODULE_CONFIG(path) 在模块被加载时解析指定的配置文件。
 #define DEFINE_MODULE_CONFIG(path_)	\
 	/* Define the config file for this module. */	\
 	namespace {	\
-		::boost::weak_ptr<const ::Poseidon::ConfigFile> g_weak_module_config_nifty_;	\
+		::boost::weak_ptr<const ::Poseidon::Config_file> g_weak_module_config_nifty_;	\
 	}	\
 	/* Define the initialization callback. It must have a very high priority. */	\
 	MODULE_RAII_PRIORITY(handles_, LONG_MIN){	\
-		const AUTO(module_config_, ::boost::make_shared< ::Poseidon::ConfigFile>(path_));	\
+		const AUTO(module_config_, ::boost::make_shared< ::Poseidon::Config_file>(path_));	\
 		handles_.push(module_config_);	\
 		g_weak_module_config_nifty_ = module_config_;	\
 	}	\
 	/* Define the access function for this module. This function will not return a null pointer. */	\
-	::boost::shared_ptr<const ::Poseidon::ConfigFile> module_config_require_nifty_(){	\
+	::boost::shared_ptr<const ::Poseidon::Config_file> module_config_require_nifty_(){	\
 		AUTO(module_config_, g_weak_module_config_nifty_.lock());	\
 		DEBUG_THROW_UNLESS(module_config_, ::Poseidon::Exception, ::Poseidon::sslit("The configuration file for this module has not been loaded"));	\
 		return module_config_;	\

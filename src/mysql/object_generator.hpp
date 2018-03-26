@@ -17,7 +17,7 @@
 #  error Please #include <poseidon/mysql/object_base.hpp> first.
 #endif
 
-class OBJECT_NAME : public ::Poseidon::MySql::ObjectBase {
+class OBJECT_NAME : public ::Poseidon::My_sql::Object_base {
 public:
 
 #undef FIELD_BOOLEAN
@@ -29,14 +29,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                ::Poseidon::MySql::ObjectBase::Field<bool> id_;
-#define FIELD_SIGNED(id_)                 ::Poseidon::MySql::ObjectBase::Field< ::boost::int64_t> id_;
-#define FIELD_UNSIGNED(id_)               ::Poseidon::MySql::ObjectBase::Field< ::boost::uint64_t> id_;
-#define FIELD_DOUBLE(id_)                 ::Poseidon::MySql::ObjectBase::Field<double> id_;
-#define FIELD_STRING(id_)                 ::Poseidon::MySql::ObjectBase::Field< ::std::string> id_;
-#define FIELD_DATETIME(id_)               ::Poseidon::MySql::ObjectBase::Field< ::boost::uint64_t> id_;
-#define FIELD_UUID(id_)                   ::Poseidon::MySql::ObjectBase::Field< ::Poseidon::Uuid> id_;
-#define FIELD_BLOB(id_)                   ::Poseidon::MySql::ObjectBase::Field< ::std::basic_string<unsigned char> > id_;
+#define FIELD_BOOLEAN(id_)                ::Poseidon::My_sql::Object_base::Field<bool> id_;
+#define FIELD_SIGNED(id_)                 ::Poseidon::My_sql::Object_base::Field< ::boost::int64_t> id_;
+#define FIELD_UNSIGNED(id_)               ::Poseidon::My_sql::Object_base::Field< ::boost::uint64_t> id_;
+#define FIELD_DOUBLE(id_)                 ::Poseidon::My_sql::Object_base::Field<double> id_;
+#define FIELD_STRING(id_)                 ::Poseidon::My_sql::Object_base::Field< ::std::string> id_;
+#define FIELD_DATETIME(id_)               ::Poseidon::My_sql::Object_base::Field< ::boost::uint64_t> id_;
+#define FIELD_UUID(id_)                   ::Poseidon::My_sql::Object_base::Field< ::Poseidon::Uuid> id_;
+#define FIELD_BLOB(id_)                   ::Poseidon::My_sql::Object_base::Field< ::std::basic_string<unsigned char> > id_;
 
 	OBJECT_FIELDS
 
@@ -68,7 +68,7 @@ public:
 public:
 	const char *get_table() const OVERRIDE;
 	void generate_sql(::std::ostream &os_) const OVERRIDE;
-	void fetch(const ::boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_) OVERRIDE;
+	void fetch(const ::boost::shared_ptr<const ::Poseidon::My_sql::Connection> &conn_) OVERRIDE;
 };
 
 #ifdef MYSQL_OBJECT_EMIT_EXTERNAL_DEFINITIONS
@@ -76,7 +76,7 @@ public:
 #pragma GCC diagnostic ignored "-Wshadow"
 
 OBJECT_NAME::OBJECT_NAME()
-	: ::Poseidon::MySql::ObjectBase()
+	: ::Poseidon::My_sql::Object_base()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -120,7 +120,7 @@ OBJECT_NAME::OBJECT_NAME()
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
 OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
-	: ::Poseidon::MySql::ObjectBase()
+	: ::Poseidon::My_sql::Object_base()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -155,8 +155,8 @@ const char *OBJECT_NAME::get_table() const {
 void OBJECT_NAME::generate_sql(::std::ostream &os_) const {
 	PROFILE_ME;
 
-	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
-	::Poseidon::MySql::ObjectBase::Delimiter delim_;
+	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
+	::Poseidon::My_sql::Object_base::Delimiter delim_;
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -171,17 +171,17 @@ void OBJECT_NAME::generate_sql(::std::ostream &os_) const {
 #define FIELD_SIGNED(id_)                 os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
 #define FIELD_UNSIGNED(id_)               os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
 #define FIELD_DOUBLE(id_)                 os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
-#define FIELD_STRING(id_)                 os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_);
-#define FIELD_DATETIME(id_)               os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::DateTimeFormatter(id_);
-#define FIELD_UUID(id_)                   os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::UuidFormatter(id_);
-#define FIELD_BLOB(id_)                   os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::MySql::StringEscaper(id_);
+#define FIELD_STRING(id_)                 os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::My_sql::String_escaper(id_);
+#define FIELD_DATETIME(id_)               os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::My_sql::Date_time_formatter(id_);
+#define FIELD_UUID(id_)                   os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::My_sql::Uuid_formatter(id_);
+#define FIELD_BLOB(id_)                   os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::My_sql::String_escaper(id_);
 
 	OBJECT_FIELDS
 }
-void OBJECT_NAME::fetch(const ::boost::shared_ptr<const ::Poseidon::MySql::Connection> &conn_){
+void OBJECT_NAME::fetch(const ::boost::shared_ptr<const ::Poseidon::My_sql::Connection> &conn_){
 	PROFILE_ME;
 
-	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
+	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED

@@ -5,15 +5,15 @@
 #define POSEIDON_WEBSOCKET_FWD_HPP_
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
 class Exception;
 
 class Reader;
 class Writer;
-class LowLevelSession;
+class Low_level_session;
 class Session;
-class LowLevelClient;
+class Low_level_client;
 class Client;
 
 }

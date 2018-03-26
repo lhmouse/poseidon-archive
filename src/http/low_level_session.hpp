@@ -15,63 +15,63 @@
 namespace Poseidon {
 namespace Http {
 
-class UpgradedSessionBase;
-class HeaderOption;
+class Upgraded_session_base;
+class Header_option;
 
-class LowLevelSession : public TcpSessionBase, protected ServerReader, protected ServerWriter {
-	friend UpgradedSessionBase;
+class Low_level_session : public Tcp_session_base, protected Server_reader, protected Server_writer {
+	friend Upgraded_session_base;
 
 private:
 	mutable Mutex m_upgraded_session_mutex;
-	boost::shared_ptr<UpgradedSessionBase> m_upgraded_session;
+	boost::shared_ptr<Upgraded_session_base> m_upgraded_session;
 
 public:
-	explicit LowLevelSession(Move<UniqueFile> socket);
-	~LowLevelSession();
+	explicit Low_level_session(Move<Unique_file> socket);
+	~Low_level_session();
 
 protected:
-	const boost::shared_ptr<UpgradedSessionBase> &get_low_level_upgraded_session() const {
+	const boost::shared_ptr<Upgraded_session_base> &get_low_level_upgraded_session() const {
 		// Epoll 线程读取不需要锁。
 		return m_upgraded_session;
 	}
 
-	// TcpSessionBase
+	// Tcp_session_base
 	void on_connect() OVERRIDE;
 	void on_read_hup() OVERRIDE;
 	void on_close(int err_code) OVERRIDE;
-	void on_receive(StreamBuffer data) OVERRIDE;
+	void on_receive(Stream_buffer data) OVERRIDE;
 
 	// 注意，只能在 timer 线程中调用这些函数。
 	void on_shutdown_timer(boost::uint64_t now) OVERRIDE;
 
-	// ServerReader
-	void on_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE;
-	void on_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
-	bool on_request_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
+	// Server_reader
+	void on_request_headers(Request_headers request_headers, boost::uint64_t content_length) OVERRIDE;
+	void on_request_entity(boost::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
+	bool on_request_end(boost::uint64_t content_length, Optional_map headers) OVERRIDE;
 
-	// ServerWriter
-	long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
+	// Server_writer
+	long on_encoded_data_avail(Stream_buffer encoded) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) = 0;
-	virtual void on_low_level_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) = 0;
-	virtual boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers) = 0;
+	virtual void on_low_level_request_headers(Request_headers request_headers, boost::uint64_t content_length) = 0;
+	virtual void on_low_level_request_entity(boost::uint64_t entity_offset, Stream_buffer entity) = 0;
+	virtual boost::shared_ptr<Upgraded_session_base> on_low_level_request_end(boost::uint64_t content_length, Optional_map headers) = 0;
 
 public:
-	boost::shared_ptr<UpgradedSessionBase> get_upgraded_session() const;
+	boost::shared_ptr<Upgraded_session_base> get_upgraded_session() const;
 
-	virtual bool send(ResponseHeaders response_headers, StreamBuffer entity = StreamBuffer());
-	virtual bool send(StatusCode status_code);
-	virtual bool send(StatusCode status_code, StreamBuffer entity, const HeaderOption &content_type);
-	virtual bool send(StatusCode status_code, OptionalMap headers, StreamBuffer entity = StreamBuffer());
+	virtual bool send(Response_headers response_headers, Stream_buffer entity = Stream_buffer());
+	virtual bool send(Status_code status_code);
+	virtual bool send(Status_code status_code, Stream_buffer entity, const Header_option &content_type);
+	virtual bool send(Status_code status_code, Optional_map headers, Stream_buffer entity = Stream_buffer());
 
-	virtual bool send_chunked_header(ResponseHeaders response_headers);
-	virtual bool send_chunk(StreamBuffer entity);
-	virtual bool send_chunked_trailer(OptionalMap headers = OptionalMap());
+	virtual bool send_chunked_header(Response_headers response_headers);
+	virtual bool send_chunk(Stream_buffer entity);
+	virtual bool send_chunked_trailer(Optional_map headers = Optional_map());
 
-	virtual bool send_default(StatusCode status_code, OptionalMap headers = OptionalMap());
-	virtual bool send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers = OptionalMap()) NOEXCEPT;
-	virtual bool send_default_and_shutdown(StatusCode status_code, Move<OptionalMap> headers) NOEXCEPT;
+	virtual bool send_default(Status_code status_code, Optional_map headers = Optional_map());
+	virtual bool send_default_and_shutdown(Status_code status_code, const Optional_map &headers = Optional_map()) NOEXCEPT;
+	virtual bool send_default_and_shutdown(Status_code status_code, Move<Optional_map> headers) NOEXCEPT;
 };
 
 }

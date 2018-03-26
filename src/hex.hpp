@@ -12,14 +12,14 @@
 
 namespace Poseidon {
 
-class HexEncoder : NONCOPYABLE {
+class Hex_encoder : NONCOPYABLE {
 private:
 	bool m_upper_case;
-	StreamBuffer m_buffer;
+	Stream_buffer m_buffer;
 
 public:
-	explicit HexEncoder(bool upper_case = false);
-	~HexEncoder();
+	explicit Hex_encoder(bool upper_case = false);
+	~Hex_encoder();
 
 public:
 	bool is_upper_case() const {
@@ -29,10 +29,10 @@ public:
 		m_upper_case = upper_case;
 	}
 
-	const StreamBuffer &get_buffer() const {
+	const Stream_buffer &get_buffer() const {
 		return m_buffer;
 	}
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		return m_buffer;
 	}
 
@@ -50,24 +50,24 @@ public:
 	void put(const std::string &str){
 		put(str.data(), str.size());
 	}
-	void put(const StreamBuffer &buffer);
-	StreamBuffer finalize();
+	void put(const Stream_buffer &buffer);
+	Stream_buffer finalize();
 };
 
-class HexDecoder : NONCOPYABLE {
+class Hex_decoder : NONCOPYABLE {
 private:
 	unsigned m_seq;
-	StreamBuffer m_buffer;
+	Stream_buffer m_buffer;
 
 public:
-	HexDecoder();
-	~HexDecoder();
+	Hex_decoder();
+	~Hex_decoder();
 
 public:
-	const StreamBuffer &get_buffer() const {
+	const Stream_buffer &get_buffer() const {
 		return m_buffer;
 	}
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		return m_buffer;
 	}
 
@@ -85,8 +85,8 @@ public:
 	void put(const std::string &str){
 		put(str.data(), str.size());
 	}
-	void put(const StreamBuffer &buffer);
-	StreamBuffer finalize();
+	void put(const Stream_buffer &buffer);
+	Stream_buffer finalize();
 };
 
 extern std::string hex_encode(const void *data, std::size_t size, bool upper_case = false);

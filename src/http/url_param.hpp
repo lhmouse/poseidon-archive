@@ -12,14 +12,14 @@
 namespace Poseidon {
 namespace Http {
 
-class UrlParam {
+class Url_param {
 public:
 	bool m_valid;
 	std::string m_str;
 
 public:
-	UrlParam(const OptionalMap &map_ref, const char *key);
-	UrlParam(Move<OptionalMap> map_ref, const char *key);
+	Url_param(const Optional_map &map_ref, const char *key);
+	Url_param(Move<Optional_map> map_ref, const char *key);
 
 public:
 	bool valid() const NOEXCEPT {
@@ -73,9 +73,9 @@ public:
 		return valid();
 	}
 #else
-	typedef bool (UrlParam::*DummyBool_)() const;
-	operator DummyBool_() const NOEXCEPT {
-		return valid() ? &UrlParam::valid : 0;
+	typedef bool (Url_param::*Dummy_bool_)() const;
+	operator Dummy_bool_() const NOEXCEPT {
+		return valid() ? &Url_param::valid : 0;
 	}
 #endif
 
@@ -87,7 +87,7 @@ public:
 	}
 };
 
-inline std::ostream &operator<<(std::ostream &os, const UrlParam &rhs){
+inline std::ostream &operator<<(std::ostream &os, const Url_param &rhs){
 	return os << rhs.str();
 }
 

@@ -17,10 +17,10 @@ Writer::~Writer(){
 	//
 }
 
-long Writer::put_data_message(boost::uint16_t message_id, StreamBuffer payload){
+long Writer::put_data_message(boost::uint16_t message_id, Stream_buffer payload){
 	PROFILE_ME;
 
-	StreamBuffer frame;
+	Stream_buffer frame;
 	boost::uint16_t temp16;
 	boost::uint64_t temp64;
 	if(payload.size() < 0xFFFF){
@@ -37,10 +37,10 @@ long Writer::put_data_message(boost::uint16_t message_id, StreamBuffer payload){
 	frame.splice(payload);
 	return on_encoded_data_avail(STD_MOVE(frame));
 }
-long Writer::put_control_message(StatusCode status_code, StreamBuffer param){
+long Writer::put_control_message(Status_code status_code, Stream_buffer param){
 	PROFILE_ME;
 
-	StreamBuffer payload;
+	Stream_buffer payload;
 	boost::uint32_t temp32;
 	store_be(temp32, static_cast<boost::uint32_t>(boost::numeric_cast<boost::int32_t>(status_code)));
 	payload.put(&temp32, 4);

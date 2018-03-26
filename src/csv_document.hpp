@@ -15,35 +15,35 @@
 
 namespace Poseidon {
 
-class StreamBuffer;
+class Stream_buffer;
 
 extern const std::string &empty_string() NOEXCEPT;
 
-class CsvDocument {
+class Csv_document {
 private:
-	boost::container::map<SharedNts, boost::container::vector<std::string> > m_elements;
+	boost::container::map<Shared_nts, boost::container::vector<std::string> > m_elements;
 
 public:
-	CsvDocument()
+	Csv_document()
 		: m_elements()
 	{
 		//
 	}
 #ifdef POSEIDON_CXX11
-	explicit CsvDocument(std::initializer_list<SharedNts> header)
+	explicit Csv_document(std::initializer_list<Shared_nts> header)
 		: m_elements()
 	{
 		reset_header(header);
 	}
 #endif
-	explicit CsvDocument(std::istream &is);
+	explicit Csv_document(std::istream &is);
 #ifndef POSEIDON_CXX11
-	CsvDocument(const CsvDocument &rhs)
+	Csv_document(const Csv_document &rhs)
 		: m_elements(rhs.m_elements)
 	{
 		//
 	}
-	CsvDocument &operator=(const CsvDocument &rhs){
+	Csv_document &operator=(const Csv_document &rhs){
 		m_elements = rhs.m_elements;
 		return *this;
 	}
@@ -53,13 +53,13 @@ public:
 	void reset_header(){
 		m_elements.clear();
 	}
-	void reset_header(const boost::container::map<SharedNts, std::string> &row);
+	void reset_header(const boost::container::map<Shared_nts, std::string> &row);
 #ifdef POSEIDON_CXX11
-	void reset_header(std::initializer_list<SharedNts> header);
+	void reset_header(std::initializer_list<Shared_nts> header);
 #endif
-	void append(const boost::container::map<SharedNts, std::string> &row);
+	void append(const boost::container::map<Shared_nts, std::string> &row);
 #ifdef POSEIDON_CXX11
-	void append(boost::container::map<SharedNts, std::string> &&row);
+	void append(boost::container::map<Shared_nts, std::string> &&row);
 #endif
 
 	bool empty() const {
@@ -78,9 +78,9 @@ public:
 	}
 
 	const std::string &get(std::size_t row, const char *key) const { // 若指定的键不存在，则返回空字符串。
-		return get(row, SharedNts::view(key));
+		return get(row, Shared_nts::view(key));
 	}
-	const std::string &get(std::size_t row, const SharedNts &key) const {
+	const std::string &get(std::size_t row, const Shared_nts &key) const {
 		const AUTO(it, m_elements.find(key));
 		if(it == m_elements.end()){
 			return empty_string();
@@ -91,9 +91,9 @@ public:
 		return it->second.at(row);
 	}
 	const std::string &at(std::size_t row, const char *key) const { // 若指定的键不存在，则返回空字符串。
-		return at(row, SharedNts::view(key));
+		return at(row, Shared_nts::view(key));
 	}
-	const std::string &at(std::size_t row, const SharedNts &key) const {
+	const std::string &at(std::size_t row, const Shared_nts &key) const {
 		const AUTO(it, m_elements.find(key));
 		if(it == m_elements.end()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
@@ -104,9 +104,9 @@ public:
 		return it->second.at(row);
 	}
 	std::string &at(std::size_t row, const char *key){ // 若指定的键不存在，则返回空字符串。
-		return at(row, SharedNts::view(key));
+		return at(row, Shared_nts::view(key));
 	}
-	std::string &at(std::size_t row, const SharedNts &key){
+	std::string &at(std::size_t row, const Shared_nts &key){
 		const AUTO(it, m_elements.find(key));
 		if(it == m_elements.end()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
@@ -117,25 +117,25 @@ public:
 		return it->second.at(row);
 	}
 
-	void swap(CsvDocument &rhs) NOEXCEPT {
+	void swap(Csv_document &rhs) NOEXCEPT {
 		using std::swap;
 		swap(m_elements, rhs.m_elements);
 	}
 
-	StreamBuffer dump() const;
+	Stream_buffer dump() const;
 	void dump(std::ostream &os) const;
 	void parse(std::istream &is);
 };
 
-inline void swap(CsvDocument &lhs, CsvDocument &rhs) NOEXCEPT {
+inline void swap(Csv_document &lhs, Csv_document &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const CsvDocument &rhs){
+inline std::ostream &operator<<(std::ostream &os, const Csv_document &rhs){
 	rhs.dump(os);
 	return os;
 }
-inline std::istream &operator>>(std::istream &is, CsvDocument &rhs){
+inline std::istream &operator>>(std::istream &is, Csv_document &rhs){
 	rhs.parse(is);
 	return is;
 }

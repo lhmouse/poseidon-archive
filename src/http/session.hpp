@@ -9,46 +9,46 @@
 namespace Poseidon {
 namespace Http {
 
-class Session : public LowLevelSession {
+class Session : public Low_level_session {
 private:
-	class SyncJobBase;
-	class ReadHupJob;
-	class ExpectJob;
-	class RequestJob;
-	class ErrorJob;
+	class Sync_job_base;
+	class Read_hup_job;
+	class Expect_job;
+	class Request_job;
+	class Error_job;
 
 private:
 	volatile boost::uint64_t m_max_request_length;
 	boost::uint64_t m_size_total;
-	RequestHeaders m_request_headers;
-	StreamBuffer m_entity;
+	Request_headers m_request_headers;
+	Stream_buffer m_entity;
 
 public:
-	explicit Session(Move<UniqueFile> socket);
+	explicit Session(Move<Unique_file> socket);
 	~Session();
 
 protected:
 	boost::uint64_t get_low_level_size_total() const {
 		return m_size_total;
 	}
-	const RequestHeaders &get_low_level_request_headers() const {
+	const Request_headers &get_low_level_request_headers() const {
 		return m_request_headers;
 	}
-	const StreamBuffer &get_low_level_entity() const {
+	const Stream_buffer &get_low_level_entity() const {
 		return m_entity;
 	}
 
-	// TcpSessionBase
+	// Tcp_session_base
 	void on_read_hup() OVERRIDE;
 
-	// LowLevelSession
-	void on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) OVERRIDE;
-	void on_low_level_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) OVERRIDE;
-	boost::shared_ptr<UpgradedSessionBase> on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers) OVERRIDE;
+	// Low_level_session
+	void on_low_level_request_headers(Request_headers request_headers, boost::uint64_t content_length) OVERRIDE;
+	void on_low_level_request_entity(boost::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
+	boost::shared_ptr<Upgraded_session_base> on_low_level_request_end(boost::uint64_t content_length, Optional_map headers) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_sync_expect(RequestHeaders request_headers);
-	virtual void on_sync_request(RequestHeaders request_headers, StreamBuffer entity) = 0;
+	virtual void on_sync_expect(Request_headers request_headers);
+	virtual void on_sync_request(Request_headers request_headers, Stream_buffer entity) = 0;
 
 public:
 	boost::uint64_t get_max_request_length() const;

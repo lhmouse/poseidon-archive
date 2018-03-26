@@ -12,21 +12,21 @@
 namespace Poseidon {
 namespace Http {
 
-HeaderOption::HeaderOption(std::istream &is)
+Header_option::Header_option(std::istream &is)
 	: m_base(), m_options()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, sslit("Http::HeaderOption parser error"));
+	DEBUG_THROW_UNLESS(is, Exception, sslit("Http::Header_option parser error"));
 }
 
-StreamBuffer HeaderOption::dump() const {
+Stream_buffer Header_option::dump() const {
 	PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
-void HeaderOption::dump(std::ostream &os) const {
+void Header_option::dump(std::ostream &os) const {
 	PROFILE_ME;
 
 	os <<m_base;
@@ -40,7 +40,7 @@ void HeaderOption::dump(std::ostream &os) const {
 		}
 	}
 }
-void HeaderOption::parse(std::istream &is){
+void Header_option::parse(std::istream &is){
 	PROFILE_ME;
 
 	VALUE_TYPE(m_base) base;
@@ -99,7 +99,7 @@ void HeaderOption::parse(std::istream &is){
 				continue;
 			}
 			++key_end;
-			SharedNts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
+			Shared_nts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
 			if(equ == std::string::npos){
 				seg.clear();
 			} else {

@@ -126,7 +126,7 @@ T move_as_identity(Move<T> rhs) NOEXCEPT {
 template<typename T>
 typename boost::add_reference<T>::type decl_ref() NOEXCEPT;
 
-struct ValueInitializer {
+struct Value_initializer {
 	template<typename T>
 	operator T() const {
 		return T();
@@ -154,7 +154,7 @@ struct ValueInitializer {
 #  define STD_MOVE(expr_)          (::Poseidon::move(expr_))
 #  define STD_MOVE_IDN(expr_)      (::Poseidon::move_as_identity(expr_))
 #  define DECLREF(t_)              (::Poseidon::decl_ref<t_>())
-#  define VAL_INIT                 (::Poseidon::ValueInitializer())
+#  define VAL_INIT                 (::Poseidon::Value_initializer())
 #  define NULLPTR                  VAL_INIT
 #endif
 
@@ -169,7 +169,7 @@ struct ValueInitializer {
 #else
 #  include <boost/exception_ptr.hpp>
 #  define STD_EXCEPTION_PTR            ::boost::exception_ptr
-#  define STD_CURRENT_EXCEPTION()      (::boost::copy_exception(::Poseidon::TinyException(__PRETTY_FUNCTION__)))
+#  define STD_CURRENT_EXCEPTION()      (::boost::copy_exception(::Poseidon::Tiny_exception(__PRETTY_FUNCTION__)))
 #  define STD_MAKE_EXCEPTION_PTR(e_)   (::boost::copy_exception(e_))
 #  define STD_RETHROW_EXCEPTION(ep_)   (::boost::rethrow_exception(ep_))
 #endif

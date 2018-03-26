@@ -61,12 +61,12 @@ void Deflator::put(const void *data, std::size_t size){
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
 }
-void Deflator::put(const StreamBuffer &buffer){
+void Deflator::put(const Stream_buffer &buffer){
 	PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
-	StreamBuffer::EnumerationCookie cookie;
+	Stream_buffer::Enumeration_cookie cookie;
 	while(buffer.enumerate_chunk(&data, &size, cookie)){
 		put(data, size);
 	}
@@ -90,7 +90,7 @@ void Deflator::flush(){
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
 }
-StreamBuffer Deflator::finalize(){
+Stream_buffer Deflator::finalize(){
 	PROFILE_ME;
 
 	m_stream.next_in = NULLPTR;
@@ -108,7 +108,7 @@ StreamBuffer Deflator::finalize(){
 		}
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
-	StreamBuffer ret;
+	Stream_buffer ret;
 	ret.swap(m_buffer);
 	clear();
 	return ret;
@@ -170,12 +170,12 @@ void Inflator::put(const void *data, std::size_t size){
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
 }
-void Inflator::put(const StreamBuffer &buffer){
+void Inflator::put(const Stream_buffer &buffer){
 	PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
-	StreamBuffer::EnumerationCookie cookie;
+	Stream_buffer::Enumeration_cookie cookie;
 	while(buffer.enumerate_chunk(&data, &size, cookie)){
 		put(data, size);
 	}
@@ -199,7 +199,7 @@ void Inflator::flush(){
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
 }
-StreamBuffer Inflator::finalize(){
+Stream_buffer Inflator::finalize(){
 	PROFILE_ME;
 
 	m_stream.next_in = NULLPTR;
@@ -217,7 +217,7 @@ StreamBuffer Inflator::finalize(){
 		}
 		DEBUG_THROW_ASSERT(err_code == 0);
 	}
-	StreamBuffer ret;
+	Stream_buffer ret;
 	ret.swap(m_buffer);
 	clear();
 	return ret;

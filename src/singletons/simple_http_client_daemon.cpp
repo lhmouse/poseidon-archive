@@ -24,10 +24,10 @@
 
 namespace Poseidon {
 
-template class PromiseContainer<SimpleHttpResponse>;
+template class Promise_container<Simple_http_response>;
 
 namespace {
-	bool can_be_redirected(const SimpleHttpRequest &request){
+	bool can_be_redirected(const Simple_http_request &request){
 		switch(request.request_headers.verb){
 		case Http::verb_head:
 			return false;
@@ -38,7 +38,7 @@ namespace {
 		}
 	}
 
-	bool check_redirect(SimpleHttpRequest &request, const Http::ResponseHeaders &respones_headers){
+	bool check_redirect(Simple_http_request &request, const Http::Response_headers &respones_headers){
 		PROFILE_ME;
 
 		const AUTO_REF(location, respones_headers.headers.get("Location"));
@@ -64,19 +64,19 @@ namespace {
 		}
 	}
 
-	struct SimpleHttpClientParams {
+	struct Simple_http_client_params {
 		std::string host;
 		boost::uint16_t port;
 		bool use_ssl;
-		Http::RequestHeaders request_headers;
+		Http::Request_headers request_headers;
 	};
 
-	SimpleHttpClientParams parse_simple_http_client_params(Http::RequestHeaders request_headers){
+	Simple_http_client_params parse_simple_http_client_params(Http::Request_headers request_headers){
 		PROFILE_ME;
 		DEBUG_THROW_UNLESS(!request_headers.uri.empty(), Exception, sslit("Request URI is empty"));
 		DEBUG_THROW_UNLESS(request_headers.uri.at(0) != '/', Exception, sslit("Relative request URI is not allowed"));
 
-		SimpleHttpClientParams params = { std::string(), 80, false };
+		Simple_http_client_params params = { std::string(), 80, false };
 		// uri = "http://www.example.com:80/foo/bar/page.html?param=value"
 		AUTO(pos, request_headers.uri.find("://"));
 		if(pos != std::string::npos){
@@ -125,9 +125,9 @@ namespace {
 		// uri = "/foo/bar/page.html?param=value"
 		pos = request_headers.uri.find('?');
 		if(pos != std::string::npos){
-			OptionalMap temp_params;
+			Optional_map temp_params;
 			Buffer_istream bis;
-			bis.set_buffer(StreamBuffer(request_headers.uri.c_str() + pos + 1, request_headers.uri.size() - pos - 1));
+			bis.set_buffer(Stream_buffer(request_headers.uri.c_str() + pos + 1, request_headers.uri.size() - pos - 1));
 			Http::url_decode_params(bis, temp_params);
 			if(bis && !temp_params.empty()){
 				for(AUTO(it, request_headers.get_params.begin()); it != request_headers.get_params.end(); ++it){
@@ -147,7 +147,7 @@ namespace {
 		return params;
 	}
 
-	void poll_internal(const boost::shared_ptr<SocketBase> &socket){
+	void poll_internal(const boost::shared_ptr<Socket_base> &socket){
 		PROFILE_ME;
 
 		bool readable = false, writeable = false;
@@ -159,7 +159,7 @@ namespace {
 				err_code = errno;
 				if(err_code != EINTR){
 					LOG_POSEIDON_ERROR("::poll() failed! errno was ", err_code, " (", get_error_desc(err_code), ")");
-					DEBUG_THROW(SystemException, err_code);
+					DEBUG_THROW(System_exception, err_code);
 				}
 				continue;
 			}
@@ -174,7 +174,7 @@ namespace {
 			}
 			if(has_any_flags_of(pset.revents, POLLOUT) && has_none_flags_of(pset.revents, POLLERR)){
 				writeable = true;
-				Mutex::UniqueLock write_lock;
+				Mutex::Unique_lock write_lock;
 				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writeable);
 				LOG_POSEIDON_TRACE("Socket write result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
@@ -200,15 +200,15 @@ namespace {
 		} while(!socket->has_been_shutdown_read());
 	}
 
-	class SimpleHttpClient : public Http::LowLevelClient, public Promise {
+	class Simple_http_client : public Http::Low_level_client, public Promise {
 	private:
-		Http::ResponseHeaders m_response_headers;
-		StreamBuffer m_response_entity;
+		Http::Response_headers m_response_headers;
+		Stream_buffer m_response_entity;
 		bool m_finished;
 
 	public:
-		SimpleHttpClient(const SockAddr &sock_addr, bool use_ssl)
-			: Http::LowLevelClient(sock_addr, use_ssl)
+		Simple_http_client(const Sock_addr &sock_addr, bool use_ssl)
+			: Http::Low_level_client(sock_addr, use_ssl)
 			, m_response_headers(), m_response_entity(), m_finished(false)
 		{
 			//
@@ -217,35 +217,35 @@ namespace {
 	protected:
 		void on_close(int err_code) OVERRIDE {
 			Promise::set_success(false);
-			return Http::LowLevelClient::on_close(err_code);
+			return Http::Low_level_client::on_close(err_code);
 		}
 
-		void on_low_level_response_headers(Http::ResponseHeaders response_headers, boost::uint64_t /*content_length*/) OVERRIDE {
+		void on_low_level_response_headers(Http::Response_headers response_headers, boost::uint64_t /*content_length*/) OVERRIDE {
 			m_response_headers = STD_MOVE(response_headers);
 			m_finished = true;
 		}
-		void on_low_level_response_entity(boost::uint64_t /*entity_offset*/, StreamBuffer entity) OVERRIDE {
+		void on_low_level_response_entity(boost::uint64_t /*entity_offset*/, Stream_buffer entity) OVERRIDE {
 			m_response_entity.splice(entity);
 		}
-		boost::shared_ptr<Http::UpgradedSessionBase> on_low_level_response_end(boost::uint64_t /*content_length*/, OptionalMap /*headers*/) OVERRIDE {
+		boost::shared_ptr<Http::Upgraded_session_base> on_low_level_response_end(boost::uint64_t /*content_length*/, Optional_map /*headers*/) OVERRIDE {
 			shutdown_read();
 			shutdown_write();
 			return VAL_INIT;
 		}
 
 	public:
-		bool send(Http::RequestHeaders request_headers, StreamBuffer request_entity){
+		bool send(Http::Request_headers request_headers, Stream_buffer request_entity){
 			request_headers.headers.set(sslit("Connection"), "Close");
 			request_headers.headers.erase("Expect");
-			DEBUG_THROW_UNLESS(Http::LowLevelClient::send(STD_MOVE(request_headers), STD_MOVE(request_entity)), Exception, sslit("Failed to send data to remote server"));
+			DEBUG_THROW_UNLESS(Http::Low_level_client::send(STD_MOVE(request_headers), STD_MOVE(request_entity)), Exception, sslit("Failed to send data to remote server"));
 			return true;
 		}
 
 		// WARNING: Only call these functions after `has_been_shutdown_read()` returns `true` to avoid race conditions!
-		Http::ResponseHeaders &get_response_headers(){
+		Http::Response_headers &get_response_headers(){
 			return m_response_headers;
 		}
-		StreamBuffer &get_response_entity(){
+		Stream_buffer &get_response_entity(){
 			return m_response_entity;
 		}
 		bool is_finished() const {
@@ -253,13 +253,13 @@ namespace {
 		}
 	};
 
-	class AsyncPerformJob : public JobBase {
+	class Async_perform_job : public Job_base {
 	private:
-		boost::weak_ptr<PromiseContainer<SimpleHttpResponse> > m_weak_promise;
-		SimpleHttpRequest m_request;
+		boost::weak_ptr<Promise_container<Simple_http_response> > m_weak_promise;
+		Simple_http_request m_request;
 
 	public:
-		AsyncPerformJob(const boost::shared_ptr<PromiseContainer<SimpleHttpResponse> > &promise, SimpleHttpRequest request)
+		Async_perform_job(const boost::shared_ptr<Promise_container<Simple_http_response> > &promise, Simple_http_request request)
 			: m_weak_promise(promise), m_request(STD_MOVE(request))
 		{
 			//
@@ -273,30 +273,30 @@ namespace {
 			PROFILE_ME;
 
 			AUTO_REF(request, m_request);
-			SimpleHttpResponse response;
+			Simple_http_response response;
 			STD_EXCEPTION_PTR except;
 			try {
-				boost::shared_ptr<SimpleHttpClient> client;
+				boost::shared_ptr<Simple_http_client> client;
 
 				const bool should_check_redirect = can_be_redirected(request);
-				const AUTO(max_redirect_count, MainConfig::get<std::size_t>("simple_http_client_max_redirect_count", 10));
+				const AUTO(max_redirect_count, Main_config::get<std::size_t>("simple_http_client_max_redirect_count", 10));
 				std::size_t retry_count_remaining = checked_add<std::size_t>(max_redirect_count, 1);
 				do {
 					const AUTO(verb, request.request_headers.verb);
 					LOG_POSEIDON_DEBUG("Trying: ", Http::get_string_from_verb(verb), " ", request.request_headers.uri);
 					AUTO(params, parse_simple_http_client_params(should_check_redirect ? request.request_headers : STD_MOVE_IDN(request.request_headers)));
-					const AUTO(promised_sock_addr, DnsDaemon::enqueue_for_looking_up(params.host, params.port));
-					JobDispatcher::yield(promised_sock_addr, true);
+					const AUTO(promised_sock_addr, Dns_daemon::enqueue_for_looking_up(params.host, params.port));
+					Job_dispatcher::yield(promised_sock_addr, true);
 					const AUTO_REF(sock_addr, promised_sock_addr->get());
-					client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl);
+					client = boost::make_shared<Simple_http_client>(sock_addr, params.use_ssl);
 					client->set_no_delay(true);
 					client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
-					EpollDaemon::add_socket(client);
-					JobDispatcher::yield(client, true);
+					Epoll_daemon::add_socket(client);
+					Job_dispatcher::yield(client, true);
 					DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, sslit("Connection was closed prematurely"));
 				} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
-				SimpleHttpResponse temp = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };
+				Simple_http_response temp = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };
 				response = STD_MOVE(temp);
 			} catch(std::exception &e){
 				LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
@@ -319,7 +319,7 @@ namespace {
 	volatile bool g_running = false;
 }
 
-void SimpleHttpClientDaemon::start(){
+void Simple_http_client_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
@@ -328,7 +328,7 @@ void SimpleHttpClientDaemon::start(){
 
 	//
 }
-void SimpleHttpClientDaemon::stop(){
+void Simple_http_client_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
@@ -337,35 +337,35 @@ void SimpleHttpClientDaemon::stop(){
 	//
 }
 
-SimpleHttpResponse SimpleHttpClientDaemon::perform(SimpleHttpRequest request){
+Simple_http_response Simple_http_client_daemon::perform(Simple_http_request request){
 	PROFILE_ME;
 
-	boost::shared_ptr<SimpleHttpClient> client;
+	boost::shared_ptr<Simple_http_client> client;
 
 	const bool should_check_redirect = can_be_redirected(request);
-	const AUTO(max_redirect_count, MainConfig::get<std::size_t>("simple_http_client_max_redirect_count", 10));
+	const AUTO(max_redirect_count, Main_config::get<std::size_t>("simple_http_client_max_redirect_count", 10));
 	std::size_t retry_count_remaining = checked_add<std::size_t>(max_redirect_count, 1);
 	do {
 		const AUTO(verb, request.request_headers.verb);
 		LOG_POSEIDON_DEBUG("Trying: ", Http::get_string_from_verb(verb), " ", request.request_headers.uri);
 		AUTO(params, parse_simple_http_client_params(should_check_redirect ? request.request_headers : STD_MOVE_IDN(request.request_headers)));
-		const AUTO(sock_addr, DnsDaemon::look_up(params.host, params.port));
-		client = boost::make_shared<SimpleHttpClient>(sock_addr, params.use_ssl);
+		const AUTO(sock_addr, Dns_daemon::look_up(params.host, params.port));
+		client = boost::make_shared<Simple_http_client>(sock_addr, params.use_ssl);
 		client->set_no_delay(true);
 		client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 		poll_internal(client);
 		DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, sslit("Connection was closed prematurely"));
 	} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
-	SimpleHttpResponse response = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };
+	Simple_http_response response = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };
 	return response;
 }
 
-boost::shared_ptr<const PromiseContainer<SimpleHttpResponse> > SimpleHttpClientDaemon::enqueue_for_performing(SimpleHttpRequest request){
+boost::shared_ptr<const Promise_container<Simple_http_response> > Simple_http_client_daemon::enqueue_for_performing(Simple_http_request request){
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<PromiseContainer<SimpleHttpResponse> >());
-	JobDispatcher::enqueue(boost::make_shared<AsyncPerformJob>(promise, STD_MOVE(request)), VAL_INIT);
+	AUTO(promise, boost::make_shared<Promise_container<Simple_http_response> >());
+	Job_dispatcher::enqueue(boost::make_shared<Async_perform_job>(promise, STD_MOVE(request)), VAL_INIT);
 	return STD_MOVE_IDN(promise);
 }
 

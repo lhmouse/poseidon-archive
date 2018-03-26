@@ -7,51 +7,51 @@
 #include "low_level_session.hpp"
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
-class Session : public LowLevelSession {
+class Session : public Low_level_session {
 private:
-	class SyncJobBase;
-	class ReadHupJob;
-	class PingJob;
-	class DataMessageJob;
-	class ControlMessageJob;
+	class Sync_job_base;
+	class Read_hup_job;
+	class Ping_job;
+	class Data_message_job;
+	class Control_message_job;
 
 private:
 	volatile boost::uint64_t m_max_request_length;
 	boost::uint64_t m_size_total;
-	OpCode m_opcode;
-	StreamBuffer m_payload;
+	Op_code m_opcode;
+	Stream_buffer m_payload;
 
 public:
-	explicit Session(const boost::shared_ptr<Http::LowLevelSession> &parent);
+	explicit Session(const boost::shared_ptr<Http::Low_level_session> &parent);
 	~Session();
 
 protected:
 	boost::uint64_t get_low_level_size_total() const {
 		return m_size_total;
 	}
-	OpCode get_low_level_opcode() const {
+	Op_code get_low_level_opcode() const {
 		return m_opcode;
 	}
-	const StreamBuffer &get_low_level_payload() const {
+	const Stream_buffer &get_low_level_payload() const {
 		return m_payload;
 	}
 
-	// UpgradedSessionBase
+	// Upgraded_session_base
 	void on_read_hup() OVERRIDE;
 	void on_shutdown_timer(boost::uint64_t now) OVERRIDE;
 
-	// LowLevelSession
-	void on_low_level_message_header(OpCode opcode) OVERRIDE;
-	void on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) OVERRIDE;
+	// Low_level_session
+	void on_low_level_message_header(Op_code opcode) OVERRIDE;
+	void on_low_level_message_payload(boost::uint64_t whole_offset, Stream_buffer payload) OVERRIDE;
 	bool on_low_level_message_end(boost::uint64_t whole_size) OVERRIDE;
 
-	bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
+	bool on_low_level_control_message(Op_code opcode, Stream_buffer payload) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_sync_data_message(OpCode opcode, StreamBuffer payload) = 0;
-	virtual void on_sync_control_message(OpCode opcode, StreamBuffer payload);
+	virtual void on_sync_data_message(Op_code opcode, Stream_buffer payload) = 0;
+	virtual void on_sync_control_message(Op_code opcode, Stream_buffer payload);
 
 public:
 	boost::uint64_t get_max_request_length() const;

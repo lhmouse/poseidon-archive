@@ -17,10 +17,10 @@ protected:
 	const char *m_file;
 	std::size_t m_line;
 	const char *m_func;
-	SharedNts m_message; // 拷贝构造函数不抛出异常。
+	Shared_nts m_message; // 拷贝构造函数不抛出异常。
 
 public:
-	Exception(const char *file, std::size_t line, const char *func, SharedNts message);
+	Exception(const char *file, std::size_t line, const char *func, Shared_nts message);
 	~Exception() NOEXCEPT;
 
 public:
@@ -42,7 +42,7 @@ public:
 	}
 };
 
-typedef Exception BasicException;
+typedef Exception Basic_exception;
 
 }
 

@@ -7,11 +7,11 @@
 namespace Poseidon {
 namespace Cbpp {
 
-MessageBase::~MessageBase(){
+Message_base::~Message_base(){
 	//
 }
 
-std::ostream &operator<<(std::ostream &os, const MessageBase &rhs){
+std::ostream &operator<<(std::ostream &os, const Message_base &rhs){
 	rhs.dump_debug(os);
 	return os;
 }

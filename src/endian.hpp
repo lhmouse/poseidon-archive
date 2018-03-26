@@ -24,11 +24,11 @@
 
 namespace Poseidon {
 
-template<unsigned kSizeT>
-struct ByteSwapper;
+template<unsigned sizeT>
+struct Byte_swapper;
 
 template<>
-struct ByteSwapper<1> {
+struct Byte_swapper<1> {
 	static boost::uint8_t bswap_unless_be(boost::uint8_t value){
 		return value;
 	}
@@ -38,7 +38,7 @@ struct ByteSwapper<1> {
 };
 
 template<>
-struct ByteSwapper<2> {
+struct Byte_swapper<2> {
 	static boost::uint16_t bswap_unless_be(boost::uint16_t value){
 		return POSEIDON_BSWAP_UNLESS_BE(16)(value);
 	}
@@ -48,7 +48,7 @@ struct ByteSwapper<2> {
 };
 
 template<>
-struct ByteSwapper<4> {
+struct Byte_swapper<4> {
 	static boost::uint32_t bswap_unless_be(boost::uint32_t value){
 		return POSEIDON_BSWAP_UNLESS_BE(32)(value);
 	}
@@ -58,7 +58,7 @@ struct ByteSwapper<4> {
 };
 
 template<>
-struct ByteSwapper<8> {
+struct Byte_swapper<8> {
 	static boost::uint64_t bswap_unless_be(boost::uint64_t value){
 		return POSEIDON_BSWAP_UNLESS_BE(64)(value);
 	}
@@ -71,26 +71,26 @@ template<typename ValueT>
 ValueT load_be(ValueT value){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
-	return static_cast<ValueT>(ByteSwapper<sizeof(temp)>::bswap_unless_be(temp));
+	return static_cast<ValueT>(Byte_swapper<sizeof(temp)>::bswap_unless_be(temp));
 }
 template<typename ValueT>
 void store_be(ValueT &ref, typename boost::common_type<ValueT>::type value){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
-	ref = static_cast<ValueT>(ByteSwapper<sizeof(temp)>::bswap_unless_be(temp));
+	ref = static_cast<ValueT>(Byte_swapper<sizeof(temp)>::bswap_unless_be(temp));
 }
 
 template<typename ValueT>
 ValueT load_le(ValueT value){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
-	return static_cast<ValueT>(ByteSwapper<sizeof(temp)>::bswap_unless_le(temp));
+	return static_cast<ValueT>(Byte_swapper<sizeof(temp)>::bswap_unless_le(temp));
 }
 template<typename ValueT>
 void store_le(ValueT &ref, typename boost::common_type<ValueT>::type value){
 	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
 	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
-	ref = static_cast<ValueT>(ByteSwapper<sizeof(temp)>::bswap_unless_le(temp));
+	ref = static_cast<ValueT>(Byte_swapper<sizeof(temp)>::bswap_unless_le(temp));
 }
 
 }

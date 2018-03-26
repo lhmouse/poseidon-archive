@@ -13,25 +13,25 @@
 namespace Poseidon {
 namespace Http {
 
-class LowLevelSession;
-class LowLevelClient;
+class Low_level_session;
+class Low_level_client;
 
-class UpgradedSessionBase : public SessionBase {
-	friend LowLevelSession;
-	friend LowLevelClient;
+class Upgraded_session_base : public Session_base {
+	friend Low_level_session;
+	friend Low_level_client;
 
 private:
-	const boost::weak_ptr<TcpSessionBase> m_parent;
+	const boost::weak_ptr<Tcp_session_base> m_parent;
 
 public:
-	UpgradedSessionBase(const boost::shared_ptr<TcpSessionBase> &parent);
-	~UpgradedSessionBase();
+	Upgraded_session_base(const boost::shared_ptr<Tcp_session_base> &parent);
+	~Upgraded_session_base();
 
 protected:
 	void on_connect() OVERRIDE = 0;
 	void on_read_hup() OVERRIDE = 0;
 	void on_close(int err_code) OVERRIDE = 0;
-	void on_receive(StreamBuffer data) OVERRIDE = 0;
+	void on_receive(Stream_buffer data) OVERRIDE = 0;
 
 	virtual void on_shutdown_timer(boost::uint64_t now);
 
@@ -42,29 +42,29 @@ public:
 	bool shutdown_write() NOEXCEPT OVERRIDE;
 	void force_shutdown() NOEXCEPT OVERRIDE;
 
-	boost::weak_ptr<const TcpSessionBase> get_weak_parent() const {
+	boost::weak_ptr<const Tcp_session_base> get_weak_parent() const {
 		return m_parent;
 	}
-	boost::weak_ptr<TcpSessionBase> get_weak_parent(){
+	boost::weak_ptr<Tcp_session_base> get_weak_parent(){
 		return m_parent;
 	}
 
-	boost::shared_ptr<const TcpSessionBase> get_parent() const {
+	boost::shared_ptr<const Tcp_session_base> get_parent() const {
 		return m_parent.lock();
 	}
-	boost::shared_ptr<TcpSessionBase> get_parent(){
+	boost::shared_ptr<Tcp_session_base> get_parent(){
 		return m_parent.lock();
 	}
 
-	const IpPort &get_remote_info() const NOEXCEPT;
-	const IpPort &get_local_info() const NOEXCEPT;
+	const Ip_port &get_remote_info() const NOEXCEPT;
+	const Ip_port &get_local_info() const NOEXCEPT;
 
 	bool is_throttled() const;
 
 	void set_no_delay(bool enabled = true);
 	void set_timeout(boost::uint64_t timeout);
 
-	bool send(StreamBuffer buffer) OVERRIDE;
+	bool send(Stream_buffer buffer) OVERRIDE;
 };
 
 }

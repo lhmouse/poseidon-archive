@@ -9,22 +9,22 @@
 namespace Poseidon {
 namespace Cbpp {
 
-class Session : public LowLevelSession {
+class Session : public Low_level_session {
 private:
-	class SyncJobBase;
-	class ReadHupJob;
-	class PingJob;
-	class DataMessageJob;
-	class ControlMessageJob;
+	class Sync_job_base;
+	class Read_hup_job;
+	class Ping_job;
+	class Data_message_job;
+	class Control_message_job;
 
 private:
 	volatile boost::uint64_t m_max_request_length;
 	boost::uint64_t m_size_total;
 	unsigned m_message_id;
-	StreamBuffer m_payload;
+	Stream_buffer m_payload;
 
 public:
-	explicit Session(Move<UniqueFile> socket);
+	explicit Session(Move<Unique_file> socket);
 	~Session();
 
 protected:
@@ -34,24 +34,24 @@ protected:
 	unsigned get_low_level_message_id() const {
 		return m_message_id;
 	}
-	const StreamBuffer &get_low_level_payload() const {
+	const Stream_buffer &get_low_level_payload() const {
 		return m_payload;
 	}
 
-	// TcpSessionBase
+	// Tcp_session_base
 	void on_read_hup() OVERRIDE;
 	void on_shutdown_timer(boost::uint64_t now) OVERRIDE;
 
-	// LowLevelSession
+	// Low_level_session
 	void on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) OVERRIDE;
-	void on_low_level_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload) OVERRIDE;
+	void on_low_level_data_message_payload(boost::uint64_t payload_offset, Stream_buffer payload) OVERRIDE;
 	bool on_low_level_data_message_end(boost::uint64_t payload_size) OVERRIDE;
 
-	bool on_low_level_control_message(StatusCode status_code, StreamBuffer param) OVERRIDE;
+	bool on_low_level_control_message(Status_code status_code, Stream_buffer param) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_sync_data_message(boost::uint16_t message_id, StreamBuffer payload) = 0;
-	virtual void on_sync_control_message(StatusCode status_code, StreamBuffer param);
+	virtual void on_sync_data_message(boost::uint16_t message_id, Stream_buffer payload) = 0;
+	virtual void on_sync_control_message(Status_code status_code, Stream_buffer param);
 
 public:
 	boost::uint64_t get_max_request_length() const;

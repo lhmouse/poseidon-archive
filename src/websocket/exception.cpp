@@ -6,13 +6,13 @@
 #include "../log.hpp"
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
-Exception::Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, SharedNts message)
-	: BasicException(file, line, func, STD_MOVE(message))
+Exception::Exception(const char *file, std::size_t line, const char *func, Status_code status_code, Shared_nts message)
+	: Basic_exception(file, line, func, STD_MOVE(message))
 	, m_status_code(status_code)
 {
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "WebSocket::Exception: status_code = ", get_status_code(), ", what = ", what());
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Web_socket::Exception: status_code = ", get_status_code(), ", what = ", what());
 }
 Exception::~Exception() NOEXCEPT {
 	//

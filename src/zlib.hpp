@@ -20,17 +20,17 @@ namespace Poseidon {
 class Deflator : NONCOPYABLE {
 private:
 	::z_stream m_stream;
-	StreamBuffer m_buffer;
+	Stream_buffer m_buffer;
 
 public:
 	explicit Deflator(bool gzip = false, int level = 8);
 	~Deflator();
 
 public:
-	const StreamBuffer &get_buffer() const {
+	const Stream_buffer &get_buffer() const {
 		return m_buffer;
 	}
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		return m_buffer;
 	}
 
@@ -48,25 +48,25 @@ public:
 	void put(const std::string &str){
 		put(str.data(), str.size());
 	}
-	void put(const StreamBuffer &buffer);
+	void put(const Stream_buffer &buffer);
 	void flush();
-	StreamBuffer finalize();
+	Stream_buffer finalize();
 };
 
 class Inflator : NONCOPYABLE {
 private:
 	::z_stream m_stream;
-	StreamBuffer m_buffer;
+	Stream_buffer m_buffer;
 
 public:
 	explicit Inflator(bool gzip = false);
 	~Inflator();
 
 public:
-	const StreamBuffer &get_buffer() const {
+	const Stream_buffer &get_buffer() const {
 		return m_buffer;
 	}
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		return m_buffer;
 	}
 
@@ -84,9 +84,9 @@ public:
 	void put(const std::string &str){
 		put(str.data(), str.size());
 	}
-	StreamBuffer finalize();
+	Stream_buffer finalize();
 	void flush();
-	void put(const StreamBuffer &buffer);
+	void put(const Stream_buffer &buffer);
 };
 
 }

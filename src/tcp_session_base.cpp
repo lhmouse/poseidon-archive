@@ -20,7 +20,7 @@
 
 namespace Poseidon {
 
-void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now){
+void Tcp_session_base::shutdown_timer_proc(const boost::weak_ptr<Tcp_session_base> &weak, boost::uint64_t now){
 	PROFILE_ME;
 
 	const AUTO(session, weak.lock());
@@ -36,36 +36,36 @@ void TcpSessionBase::shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &
 	}
 }
 
-TcpSessionBase::TcpSessionBase(Move<UniqueFile> socket)
-	: SocketBase(STD_MOVE(socket)), SessionBase()
+Tcp_session_base::Tcp_session_base(Move<Unique_file> socket)
+	: Socket_base(STD_MOVE(socket)), Session_base()
 	, m_connected_notified(false), m_read_hup_notified(false)
 	, m_shutdown_time(-1ull), m_last_use_time(-1ull)
 {
 	//
 }
-TcpSessionBase::~TcpSessionBase(){
+Tcp_session_base::~Tcp_session_base(){
 	//
 }
 
-void TcpSessionBase::init_ssl(boost::scoped_ptr<SslFilter> &ssl_filter){
+void Tcp_session_base::init_ssl(boost::scoped_ptr<Ssl_filter> &ssl_filter){
 	DEBUG_THROW_ASSERT(!m_ssl_filter);
 	swap(m_ssl_filter, ssl_filter);
 }
-void TcpSessionBase::create_shutdown_timer(){
+void Tcp_session_base::create_shutdown_timer(){
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_shutdown_mutex);
+	const Mutex::Unique_lock lock(m_shutdown_mutex);
 	if(m_shutdown_timer){
 		return;
 	}
-	const AUTO(period, MainConfig::get<boost::uint64_t>("tcp_shutdown_timer_period", 15000));
-	m_shutdown_timer = TimerDaemon::register_low_level_timer(period, period, boost::bind(&shutdown_timer_proc, virtual_weak_from_this<TcpSessionBase>(), _2));
+	const AUTO(period, Main_config::get<boost::uint64_t>("tcp_shutdown_timer_period", 15000));
+	m_shutdown_timer = Timer_daemon::register_low_level_timer(period, period, boost::bind(&shutdown_timer_proc, virtual_weak_from_this<Tcp_session_base>(), _2));
 }
 
-int TcpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool /*readable*/){
+int Tcp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool /*readable*/){
 	PROFILE_ME;
 
-	StreamBuffer data;
+	Stream_buffer data;
 	try {
 		::ssize_t result;
 		if(m_ssl_filter){
@@ -104,12 +104,12 @@ int TcpSessionBase::poll_read_and_process(unsigned char *hint_buffer, std::size_
 	}
 	return 0;
 }
-int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable){
+int Tcp_session_base::poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable){
 	PROFILE_ME;
 
 	assert(!write_lock);
 
-	StreamBuffer data;
+	Stream_buffer data;
 	try {
 		if(writeable && !m_connected_notified){
 			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "TCP connection established: local = ", get_local_info(), ", remote = ", get_remote_info());
@@ -117,7 +117,7 @@ int TcpSessionBase::poll_write(Mutex::UniqueLock &write_lock, unsigned char *hin
 			m_connected_notified = true;
 		}
 
-		Mutex::UniqueLock lock(m_send_mutex);
+		Mutex::Unique_lock lock(m_send_mutex);
 		const std::size_t avail = m_send_buffer.peek(hint_buffer, hint_capacity);
 		if(avail == 0){
 _check_shutdown:
@@ -165,14 +165,14 @@ _check_shutdown:
 	return 0;
 }
 
-void TcpSessionBase::on_shutdown_timer(boost::uint64_t now){
+void Tcp_session_base::on_shutdown_timer(boost::uint64_t now){
 	PROFILE_ME;
 
 	const AUTO(shutdown_time, atomic_load(m_shutdown_time, memory_order_consume));
 	if(shutdown_time < now){
 		std::size_t send_buffer_size;
 		{
-			const Mutex::UniqueLock lock(m_send_mutex);
+			const Mutex::Unique_lock lock(m_send_mutex);
 			send_buffer_size = m_send_buffer.size();
 		}
 		if(send_buffer_size == 0){
@@ -186,47 +186,47 @@ force_time_out:
 	}
 
 	const AUTO(last_use_time, atomic_load(m_last_use_time, memory_order_consume));
-	const AUTO(tcp_response_timeout, MainConfig::get<boost::uint64_t>("tcp_response_timeout", 30000));
+	const AUTO(tcp_response_timeout, Main_config::get<boost::uint64_t>("tcp_response_timeout", 30000));
 	if(saturated_sub(now, last_use_time) > tcp_response_timeout){
 		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "The connection seems dead: remote = ", get_remote_info());
 		goto force_time_out;
 	}
 }
 
-bool TcpSessionBase::has_been_shutdown_read() const NOEXCEPT {
-	return SocketBase::has_been_shutdown_read();
+bool Tcp_session_base::has_been_shutdown_read() const NOEXCEPT {
+	return Socket_base::has_been_shutdown_read();
 }
-bool TcpSessionBase::has_been_shutdown_write() const NOEXCEPT {
-	return SocketBase::has_been_shutdown_write();
+bool Tcp_session_base::has_been_shutdown_write() const NOEXCEPT {
+	return Socket_base::has_been_shutdown_write();
 }
-bool TcpSessionBase::shutdown_read() NOEXCEPT {
-	return SocketBase::shutdown_read();
+bool Tcp_session_base::shutdown_read() NOEXCEPT {
+	return Socket_base::shutdown_read();
 }
-bool TcpSessionBase::shutdown_write() NOEXCEPT {
-	return SocketBase::shutdown_write();
+bool Tcp_session_base::shutdown_write() NOEXCEPT {
+	return Socket_base::shutdown_write();
 }
-void TcpSessionBase::force_shutdown() NOEXCEPT {
-	SocketBase::force_shutdown();
+void Tcp_session_base::force_shutdown() NOEXCEPT {
+	Socket_base::force_shutdown();
 }
 
-bool TcpSessionBase::is_using_ssl() const {
+bool Tcp_session_base::is_using_ssl() const {
 	return !!m_ssl_filter;
 }
-bool TcpSessionBase::is_throttled() const {
-	const Mutex::UniqueLock lock(m_send_mutex);
+bool Tcp_session_base::is_throttled() const {
+	const Mutex::Unique_lock lock(m_send_mutex);
 	if(m_send_buffer.size() >= 65536){
 		return true;
 	}
-	return SocketBase::is_throttled();
+	return Socket_base::is_throttled();
 }
 
-void TcpSessionBase::set_no_delay(bool enabled){
+void Tcp_session_base::set_no_delay(bool enabled){
 	PROFILE_ME;
 
 	const int val = enabled;
-	DEBUG_THROW_UNLESS(::setsockopt(get_fd(), IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == 0, SystemException);
+	DEBUG_THROW_UNLESS(::setsockopt(get_fd(), IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == 0, System_exception);
 }
-void TcpSessionBase::set_timeout(boost::uint64_t timeout){
+void Tcp_session_base::set_timeout(boost::uint64_t timeout){
 	PROFILE_ME;
 
 	const AUTO(now, get_fast_mono_clock());
@@ -234,7 +234,7 @@ void TcpSessionBase::set_timeout(boost::uint64_t timeout){
 	create_shutdown_timer();
 }
 
-bool TcpSessionBase::send(StreamBuffer buffer){
+bool Tcp_session_base::send(Stream_buffer buffer){
 	PROFILE_ME;
 
 	if(has_been_shutdown_write()){
@@ -242,9 +242,9 @@ bool TcpSessionBase::send(StreamBuffer buffer){
 		return false;
 	}
 
-	const Mutex::UniqueLock lock(m_send_mutex);
+	const Mutex::Unique_lock lock(m_send_mutex);
 	m_send_buffer.splice(buffer);
-	EpollDaemon::mark_socket_writeable(this);
+	Epoll_daemon::mark_socket_writeable(this);
 	return true;
 }
 

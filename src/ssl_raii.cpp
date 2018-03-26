@@ -6,11 +6,11 @@
 
 namespace Poseidon {
 
-void SslDeleter::operator()(::SSL *ssl) NOEXCEPT {
+void Ssl_deleter::operator()(::SSL *ssl) NOEXCEPT {
 	::SSL_free(ssl);
 }
 
-void SslCtxDeleter::operator()(::SSL_CTX *ssl_ctx) NOEXCEPT {
+void Ssl_ctx_deleter::operator()(::SSL_CTX *ssl_ctx) NOEXCEPT {
 	::SSL_CTX_free(ssl_ctx);
 }
 

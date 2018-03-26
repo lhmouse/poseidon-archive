@@ -15,13 +15,13 @@
 namespace Poseidon {
 namespace Http {
 
-class Session::SyncJobBase : public JobBase {
+class Session::Sync_job_base : public Job_base {
 private:
-	const SocketBase::DelayedShutdownGuard m_guard;
+	const Socket_base::Delayed_shutdown_guard m_guard;
 	const boost::weak_ptr<Session> m_weak_session;
 
 protected:
-	explicit SyncJobBase(const boost::shared_ptr<Session> &session)
+	explicit Sync_job_base(const boost::shared_ptr<Session> &session)
 		: m_guard(session), m_weak_session(session)
 	{
 		//
@@ -57,10 +57,10 @@ protected:
 	virtual void really_perform(const boost::shared_ptr<Session> &session) = 0;
 };
 
-class Session::ReadHupJob : public Session::SyncJobBase {
+class Session::Read_hup_job : public Session::Sync_job_base {
 public:
-	explicit ReadHupJob(const boost::shared_ptr<Session> &session)
-		: SyncJobBase(session)
+	explicit Read_hup_job(const boost::shared_ptr<Session> &session)
+		: Sync_job_base(session)
 	{
 		//
 	}
@@ -73,13 +73,13 @@ protected:
 	}
 };
 
-class Session::ExpectJob : public Session::SyncJobBase {
+class Session::Expect_job : public Session::Sync_job_base {
 private:
-	RequestHeaders m_request_headers;
+	Request_headers m_request_headers;
 
 public:
-	ExpectJob(const boost::shared_ptr<Session> &session, RequestHeaders request_headers)
-		: SyncJobBase(session)
+	Expect_job(const boost::shared_ptr<Session> &session, Request_headers request_headers)
+		: Sync_job_base(session)
 		, m_request_headers(STD_MOVE(request_headers))
 	{
 		//
@@ -93,15 +93,15 @@ protected:
 	}
 };
 
-class Session::RequestJob : public Session::SyncJobBase {
+class Session::Request_job : public Session::Sync_job_base {
 private:
-	RequestHeaders m_request_headers;
-	StreamBuffer m_entity;
+	Request_headers m_request_headers;
+	Stream_buffer m_entity;
 	bool m_keep_alive;
 
 public:
-	RequestJob(const boost::shared_ptr<Session> &session, RequestHeaders request_headers, StreamBuffer entity, bool keep_alive)
-		: SyncJobBase(session)
+	Request_job(const boost::shared_ptr<Session> &session, Request_headers request_headers, Stream_buffer entity, bool keep_alive)
+		: Sync_job_base(session)
 		, m_request_headers(STD_MOVE(request_headers)), m_entity(STD_MOVE(entity)), m_keep_alive(keep_alive)
 	{
 		//
@@ -114,7 +114,7 @@ protected:
 		session->on_sync_request(STD_MOVE(m_request_headers), STD_MOVE(m_entity));
 
 		if(m_keep_alive){
-			const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("http_keep_alive_timeout", 5000));
+			const AUTO(keep_alive_timeout, Main_config::get<boost::uint64_t>("http_keep_alive_timeout", 5000));
 			session->set_timeout(keep_alive_timeout);
 		} else {
 			session->shutdown_write();
@@ -122,9 +122,9 @@ protected:
 	}
 };
 
-Session::Session(Move<UniqueFile> socket)
-	: LowLevelSession(STD_MOVE(socket))
-	, m_max_request_length(MainConfig::get<boost::uint64_t>("http_max_request_length", 16384))
+Session::Session(Move<Unique_file> socket)
+	: Low_level_session(STD_MOVE(socket))
+	, m_max_request_length(Main_config::get<boost::uint64_t>("http_max_request_length", 16384))
 	, m_size_total(0), m_request_headers()
 {
 	//
@@ -136,14 +136,14 @@ Session::~Session(){
 void Session::on_read_hup(){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ReadHupJob>(virtual_shared_from_this<Session>()),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Read_hup_job>(virtual_shared_from_this<Session>()),
 		VAL_INIT);
 
-	LowLevelSession::on_read_hup();
+	Low_level_session::on_read_hup();
 }
 
-void Session::on_low_level_request_headers(RequestHeaders request_headers, boost::uint64_t /*content_length*/){
+void Session::on_low_level_request_headers(Request_headers request_headers, boost::uint64_t /*content_length*/){
 	PROFILE_ME;
 
 	m_size_total = 0;
@@ -152,19 +152,19 @@ void Session::on_low_level_request_headers(RequestHeaders request_headers, boost
 
 	const AUTO_REF(expect, m_request_headers.headers.get("Expect"));
 	if(!expect.empty()){
-		JobDispatcher::enqueue(
-			boost::make_shared<ExpectJob>(virtual_shared_from_this<Session>(), m_request_headers),
+		Job_dispatcher::enqueue(
+			boost::make_shared<Expect_job>(virtual_shared_from_this<Session>(), m_request_headers),
 			VAL_INIT);
 	}
 }
-void Session::on_low_level_request_entity(boost::uint64_t /*entity_offset*/, StreamBuffer entity){
+void Session::on_low_level_request_entity(boost::uint64_t /*entity_offset*/, Stream_buffer entity){
 	PROFILE_ME;
 
 	m_size_total += entity.size();
 	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_payload_too_large);
 	m_entity.splice(entity);
 }
-boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request_end(boost::uint64_t content_length, OptionalMap headers){
+boost::shared_ptr<Upgraded_session_base> Session::on_low_level_request_end(boost::uint64_t content_length, Optional_map headers){
 	PROFILE_ME;
 
 	(void)content_length;
@@ -174,8 +174,8 @@ boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request_end(boost::
 	}
 	const bool keep_alive = is_keep_alive_enabled(m_request_headers);
 
-	JobDispatcher::enqueue(
-		boost::make_shared<RequestJob>(virtual_shared_from_this<Session>(), STD_MOVE(m_request_headers), STD_MOVE(m_entity), keep_alive),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Request_job>(virtual_shared_from_this<Session>(), STD_MOVE(m_request_headers), STD_MOVE(m_entity), keep_alive),
 		VAL_INIT);
 
 	if(!keep_alive){
@@ -184,7 +184,7 @@ boost::shared_ptr<UpgradedSessionBase> Session::on_low_level_request_end(boost::
 	return VAL_INIT;
 }
 
-void Session::on_sync_expect(RequestHeaders request_headers){
+void Session::on_sync_expect(Request_headers request_headers){
 	PROFILE_ME;
 
 	const AUTO_REF(expect, request_headers.headers.get("Expect"));

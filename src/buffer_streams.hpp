@@ -15,7 +15,7 @@ namespace Poseidon {
 
 class Buffer_streambuf : public std::streambuf {
 private:
-	StreamBuffer m_buffer;
+	Stream_buffer m_buffer;
 	std::ios_base::openmode m_which;
 	boost::array<char, 32> m_get_area;
 
@@ -26,7 +26,7 @@ public:
 	{
 		//
 	}
-	explicit Buffer_streambuf(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
+	explicit Buffer_streambuf(Stream_buffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
 		: std::streambuf()
 		, m_buffer(STD_MOVE(buffer)), m_which(which)
 	{
@@ -61,11 +61,11 @@ protected:
 	int_type overflow(int_type c = traits_type::eof()) OVERRIDE;
 
 public:
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		sync();
 		return m_buffer;
 	}
-	void set_buffer(StreamBuffer buffer){
+	void set_buffer(Stream_buffer buffer){
 		sync();
 		m_buffer.swap(buffer);
 	}
@@ -93,7 +93,7 @@ public:
 	{
 		//
 	}
-	explicit Buffer_istream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in)
+	explicit Buffer_istream(Stream_buffer buffer, std::ios_base::openmode which = std::ios_base::in)
 		: std::istream(&m_sb)
 		, m_sb(STD_MOVE(buffer), which | std::ios_base::in)
 	{
@@ -106,13 +106,13 @@ public:
 		return const_cast<Buffer_streambuf *>(&m_sb);
 	}
 
-	const StreamBuffer &get_buffer() const {
+	const Stream_buffer &get_buffer() const {
 		return rdbuf()->get_buffer();
 	}
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		return rdbuf()->get_buffer();
 	}
-	void set_buffer(StreamBuffer buffer){
+	void set_buffer(Stream_buffer buffer){
 		rdbuf()->set_buffer(STD_MOVE(buffer));
 	}
 
@@ -142,7 +142,7 @@ public:
 	{
 		//
 	}
-	explicit Buffer_ostream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::out)
+	explicit Buffer_ostream(Stream_buffer buffer, std::ios_base::openmode which = std::ios_base::out)
 		: std::ostream(&m_sb)
 		, m_sb(STD_MOVE(buffer), which | std::ios_base::out)
 	{
@@ -155,13 +155,13 @@ public:
 		return const_cast<Buffer_streambuf *>(&m_sb);
 	}
 
-	const StreamBuffer &get_buffer() const {
+	const Stream_buffer &get_buffer() const {
 		return rdbuf()->get_buffer();
 	}
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		return rdbuf()->get_buffer();
 	}
-	void set_buffer(StreamBuffer buffer){
+	void set_buffer(Stream_buffer buffer){
 		rdbuf()->set_buffer(STD_MOVE(buffer));
 	}
 
@@ -191,7 +191,7 @@ public:
 	{
 		//
 	}
-	explicit Buffer_stream(StreamBuffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
+	explicit Buffer_stream(Stream_buffer buffer, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
 		: std::iostream(&m_sb)
 		, m_sb(STD_MOVE(buffer), which)
 	{
@@ -204,13 +204,13 @@ public:
 		return const_cast<Buffer_streambuf *>(&m_sb);
 	}
 
-	const StreamBuffer &get_buffer() const {
+	const Stream_buffer &get_buffer() const {
 		return rdbuf()->get_buffer();
 	}
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		return rdbuf()->get_buffer();
 	}
-	void set_buffer(StreamBuffer buffer){
+	void set_buffer(Stream_buffer buffer){
 		rdbuf()->set_buffer(STD_MOVE(buffer));
 	}
 

@@ -11,9 +11,9 @@
 namespace Poseidon {
 
 namespace {
-	const JsonElement g_null_element = JsonNull();
+	const Json_element g_null_element = Json_null();
 
-	extern JsonElement accept_element(std::istream &is);
+	extern Json_element accept_element(std::istream &is);
 
 	std::string accept_string(std::istream &is){
 		PROFILE_ME;
@@ -158,10 +158,10 @@ namespace {
 		}
 		return ret;
 	}
-	JsonObject accept_object(std::istream &is){
+	Json_object accept_object(std::istream &is){
 		PROFILE_ME;
 
-		JsonObject ret;
+		Json_object ret;
 		char ch;
 		if(!(is >>ch)){
 			return ret;
@@ -193,14 +193,14 @@ namespace {
 				is.setstate(std::ios::failbit);
 				return ret;
 			}
-			ret.set(SharedNts(name), accept_element(is));
+			ret.set(Shared_nts(name), accept_element(is));
 		}
 		return ret;
 	}
-	JsonArray accept_array(std::istream &is){
+	Json_array accept_array(std::istream &is){
 		PROFILE_ME;
 
-		JsonArray ret;
+		Json_array ret;
 		char ch;
 		if(!(is >>ch)){
 			return ret;
@@ -250,7 +250,7 @@ namespace {
 			return false;
 		}
 	}
-	JsonNull accept_null(std::istream &is){
+	Json_null accept_null(std::istream &is){
 		PROFILE_ME;
 
 		char ch;
@@ -272,10 +272,10 @@ namespace {
 		}
 	}
 
-	JsonElement accept_element(std::istream &is){
+	Json_element accept_element(std::istream &is){
 		PROFILE_ME;
 
-		JsonElement ret;
+		Json_element ret;
 		char ch;
 		if(!(is >>ch)){
 			LOG_POSEIDON_WARNING("No input character");
@@ -314,25 +314,25 @@ namespace {
 	}
 }
 
-const JsonElement &null_json_element() NOEXCEPT {
+const Json_element &null_json_element() NOEXCEPT {
 	return g_null_element;
 }
 
-JsonObject::JsonObject(std::istream &is)
+Json_object::Json_object(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, sslit("JsonObject parser error"));
+	DEBUG_THROW_UNLESS(is, Exception, sslit("Json_object parser error"));
 }
 
-StreamBuffer JsonObject::dump() const {
+Stream_buffer Json_object::dump() const {
 	PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
-void JsonObject::dump(std::ostream &os) const {
+void Json_object::dump(std::ostream &os) const {
 	PROFILE_ME;
 
 	os <<'{';
@@ -351,7 +351,7 @@ void JsonObject::dump(std::ostream &os) const {
 	}
 	os <<'}';
 }
-void JsonObject::parse(std::istream &is){
+void Json_object::parse(std::istream &is){
 	PROFILE_ME;
 
 	AUTO(obj, accept_object(is));
@@ -360,21 +360,21 @@ void JsonObject::parse(std::istream &is){
 	}
 }
 
-JsonArray::JsonArray(std::istream &is)
+Json_array::Json_array(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, sslit("JsonArray parser error"));
+	DEBUG_THROW_UNLESS(is, Exception, sslit("Json_array parser error"));
 }
 
-StreamBuffer JsonArray::dump() const {
+Stream_buffer Json_array::dump() const {
 	PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
-void JsonArray::dump(std::ostream &os) const {
+void Json_array::dump(std::ostream &os) const {
 	PROFILE_ME;
 
 	os <<'[';
@@ -389,7 +389,7 @@ void JsonArray::dump(std::ostream &os) const {
 	}
 	os <<']';
 }
-void JsonArray::parse(std::istream &is){
+void Json_array::parse(std::istream &is){
 	PROFILE_ME;
 
 	AUTO(arr, accept_array(is));
@@ -398,7 +398,7 @@ void JsonArray::parse(std::istream &is){
 	}
 }
 
-const char *JsonElement::get_type_string(JsonElement::Type type){
+const char *Json_element::get_type_string(Json_element::Type type){
 	switch(type){
 	case type_boolean:
 		return "boolean";
@@ -418,14 +418,14 @@ const char *JsonElement::get_type_string(JsonElement::Type type){
 	}
 }
 
-StreamBuffer JsonElement::dump() const {
+Stream_buffer Json_element::dump() const {
 	PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
-void JsonElement::dump(std::ostream &os) const {
+void Json_element::dump(std::ostream &os) const {
 	PROFILE_ME;
 
 	const Type type = get_type();
@@ -474,10 +474,10 @@ void JsonElement::dump(std::ostream &os) const {
 		os <<'\"';
 		break; }
 	case type_object:
-		os <<get<JsonObject>();
+		os <<get<Json_object>();
 		break;
 	case type_array:
-		os <<get<JsonArray>();
+		os <<get<Json_array>();
 		break;
 	case type_null:
 		os <<"null";
@@ -487,7 +487,7 @@ void JsonElement::dump(std::ostream &os) const {
 		std::abort();
 	}
 }
-void JsonElement::parse(std::istream &is){
+void Json_element::parse(std::istream &is){
 	PROFILE_ME;
 
 	AUTO(elem, accept_element(is));

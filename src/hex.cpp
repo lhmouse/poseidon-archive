@@ -26,19 +26,19 @@ namespace {
 	}
 }
 
-HexEncoder::HexEncoder(bool upper_case)
+Hex_encoder::Hex_encoder(bool upper_case)
 	: m_upper_case(upper_case)
 {
 	//
 }
-HexEncoder::~HexEncoder(){
+Hex_encoder::~Hex_encoder(){
 	//
 }
 
-void HexEncoder::clear(){
+void Hex_encoder::clear(){
 	m_buffer.clear();
 }
-void HexEncoder::put(const void *data, std::size_t size){
+void Hex_encoder::put(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
@@ -47,17 +47,17 @@ void HexEncoder::put(const void *data, std::size_t size){
 		m_buffer.put(to_hex_digit(ch >> 0, m_upper_case));
 	}
 }
-void HexEncoder::put(const StreamBuffer &buffer){
+void Hex_encoder::put(const Stream_buffer &buffer){
 	PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
-	StreamBuffer::EnumerationCookie cookie;
+	Stream_buffer::Enumeration_cookie cookie;
 	while(buffer.enumerate_chunk(&data, &size, cookie)){
 		put(data, size);
 	}
 }
-StreamBuffer HexEncoder::finalize(){
+Stream_buffer Hex_encoder::finalize(){
 	PROFILE_ME;
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
@@ -65,20 +65,20 @@ StreamBuffer HexEncoder::finalize(){
 	return ret;
 }
 
-HexDecoder::HexDecoder()
+Hex_decoder::Hex_decoder()
 	: m_seq(1)
 {
 	//
 }
-HexDecoder::~HexDecoder(){
+Hex_decoder::~Hex_decoder(){
 	//
 }
 
-void HexDecoder::clear(){
+void Hex_decoder::clear(){
 	m_seq = 1;
 	m_buffer.clear();
 }
-void HexDecoder::put(const void *data, std::size_t size){
+void Hex_decoder::put(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
@@ -98,17 +98,17 @@ void HexDecoder::put(const void *data, std::size_t size){
 		}
 	}
 }
-void HexDecoder::put(const StreamBuffer &buffer){
+void Hex_decoder::put(const Stream_buffer &buffer){
 	PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
-	StreamBuffer::EnumerationCookie cookie;
+	Stream_buffer::Enumeration_cookie cookie;
 	while(buffer.enumerate_chunk(&data, &size, cookie)){
 		put(data, size);
 	}
 }
-StreamBuffer HexDecoder::finalize(){
+Stream_buffer Hex_decoder::finalize(){
 	PROFILE_ME;
 
 	DEBUG_THROW_UNLESS(m_seq == 1, Exception, sslit("Incomplete hex data"));
@@ -120,21 +120,21 @@ StreamBuffer HexDecoder::finalize(){
 std::string hex_encode(const void *data, std::size_t size, bool upper_case){
 	PROFILE_ME;
 
-	HexEncoder enc(upper_case);
+	Hex_encoder enc(upper_case);
 	enc.put(data, size);
 	return enc.get_buffer().dump_string();
 }
 std::string hex_encode(const char *str, bool upper_case){
 	PROFILE_ME;
 
-	HexEncoder enc(upper_case);
+	Hex_encoder enc(upper_case);
 	enc.put(str);
 	return enc.get_buffer().dump_string();
 }
 std::string hex_encode(const std::string &str, bool upper_case){
 	PROFILE_ME;
 
-	HexEncoder enc(upper_case);
+	Hex_encoder enc(upper_case);
 	enc.put(str);
 	return enc.get_buffer().dump_string();
 }
@@ -142,21 +142,21 @@ std::string hex_encode(const std::string &str, bool upper_case){
 std::string hex_decode(const void *data, std::size_t size){
 	PROFILE_ME;
 
-	HexDecoder dec;
+	Hex_decoder dec;
 	dec.put(data, size);
 	return dec.get_buffer().dump_string();
 }
 std::string hex_decode(const char *str){
 	PROFILE_ME;
 
-	HexDecoder dec;
+	Hex_decoder dec;
 	dec.put(str);
 	return dec.get_buffer().dump_string();
 }
 std::string hex_decode(const std::string &str){
 	PROFILE_ME;
 
-	HexDecoder dec;
+	Hex_decoder dec;
 	dec.put(str);
 	return dec.get_buffer().dump_string();
 }

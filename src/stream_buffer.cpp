@@ -18,11 +18,11 @@ namespace {
 	}
 }
 
-struct StreamBuffer::ChunkHeader {
-	static ChunkHeader *create(std::size_t min_capacity, ChunkHeader *prev, ChunkHeader *next, bool backward){
+struct Stream_buffer::Chunk_header {
+	static Chunk_header *create(std::size_t min_capacity, Chunk_header *prev, Chunk_header *next, bool backward){
 		const std::size_t capacity = min_capacity | 1024;
 		const std::size_t origin = backward ? capacity : 0;
-		const AUTO(chunk, static_cast<ChunkHeader *>(::operator new(checked_add(sizeof(ChunkHeader), capacity))));
+		const AUTO(chunk, static_cast<Chunk_header *>(::operator new(checked_add(sizeof(Chunk_header), capacity))));
 		chunk->capacity = capacity;
 		chunk->prev = prev;
 		chunk->next = next;
@@ -30,49 +30,49 @@ struct StreamBuffer::ChunkHeader {
 		chunk->end = origin;
 		return chunk;
 	}
-	static void destroy(ChunkHeader *chunk) NOEXCEPT {
+	static void destroy(Chunk_header *chunk) NOEXCEPT {
 		::operator delete(chunk);
 	}
 
 	std::size_t capacity;
-	ChunkHeader *prev;
-	ChunkHeader *next;
+	Chunk_header *prev;
+	Chunk_header *next;
 
 	std::size_t begin;
 	std::size_t end;
 	__extension__ unsigned char data[];
 };
 
-StreamBuffer::StreamBuffer(const void *data, std::size_t count)
+Stream_buffer::Stream_buffer(const void *data, std::size_t count)
 	: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
 {
 	put(data, count);
 }
-StreamBuffer::StreamBuffer(const char *str)
+Stream_buffer::Stream_buffer(const char *str)
 	: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
 {
 	put(str);
 }
-StreamBuffer::StreamBuffer(const std::string &str)
+Stream_buffer::Stream_buffer(const std::string &str)
 	: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
 {
 	put(str);
 }
-StreamBuffer::StreamBuffer(const std::basic_string<unsigned char> &str)
+Stream_buffer::Stream_buffer(const std::basic_string<unsigned char> &str)
 	: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
 {
 	put(str);
 }
-StreamBuffer::StreamBuffer(const StreamBuffer &rhs)
+Stream_buffer::Stream_buffer(const Stream_buffer &rhs)
 	: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
 {
 	put(rhs);
 }
-StreamBuffer::~StreamBuffer(){
+Stream_buffer::~Stream_buffer(){
 	AUTO(chunk, m_first);
 	while(chunk){
 		const AUTO(next, chunk->next);
-		ChunkHeader::destroy(chunk);
+		Chunk_header::destroy(chunk);
 		chunk = next;
 	}
 #ifndef NDEBUG
@@ -82,7 +82,7 @@ StreamBuffer::~StreamBuffer(){
 #endif
 }
 
-void StreamBuffer::clear() NOEXCEPT {
+void Stream_buffer::clear() NOEXCEPT {
 	AUTO(chunk, m_first);
 	while(chunk){
 		chunk->begin = chunk->end;
@@ -92,7 +92,7 @@ void StreamBuffer::clear() NOEXCEPT {
 	m_size = 0;
 }
 
-int StreamBuffer::front() const NOEXCEPT {
+int Stream_buffer::front() const NOEXCEPT {
 	int read = -1;
 	AUTO(chunk, m_first);
 	while(chunk){
@@ -105,7 +105,7 @@ int StreamBuffer::front() const NOEXCEPT {
 	}
 	return read;
 }
-int StreamBuffer::get() NOEXCEPT {
+int Stream_buffer::get() NOEXCEPT {
 	int read = -1;
 	AUTO(chunk, m_first);
 	while(chunk){
@@ -118,12 +118,12 @@ int StreamBuffer::get() NOEXCEPT {
 		const AUTO(next, chunk->next);
 		(next ? next->prev : m_last) = NULLPTR;
 		m_first = next;
-		ChunkHeader::destroy(chunk);
+		Chunk_header::destroy(chunk);
 		chunk = next;
 	}
 	return read;
 }
-bool StreamBuffer::discard() NOEXCEPT {
+bool Stream_buffer::discard() NOEXCEPT {
 	bool discarded = false;
 	AUTO(chunk, m_first);
 	while(chunk){
@@ -136,12 +136,12 @@ bool StreamBuffer::discard() NOEXCEPT {
 		const AUTO(next, chunk->next);
 		(next ? next->prev : m_last) = NULLPTR;
 		m_first = next;
-		ChunkHeader::destroy(chunk);
+		Chunk_header::destroy(chunk);
 		chunk = next;
 	}
 	return discarded;
 }
-void StreamBuffer::put(int data){
+void Stream_buffer::put(int data){
 	AUTO(chunk, m_last);
 	AUTO(prev, chunk);
 	if(chunk && (chunk->capacity == chunk->end)){
@@ -155,7 +155,7 @@ void StreamBuffer::put(int data){
 		}
 	}
 	if(!chunk){
-		const AUTO(next, ChunkHeader::create(1, prev, NULLPTR, false));
+		const AUTO(next, Chunk_header::create(1, prev, NULLPTR, false));
 		(prev ? prev->next : m_first) = next;
 		m_last = next;
 		chunk = next;
@@ -164,7 +164,7 @@ void StreamBuffer::put(int data){
 	chunk->end += 1;
 	m_size += 1;
 }
-int StreamBuffer::back() const NOEXCEPT {
+int Stream_buffer::back() const NOEXCEPT {
 	int read = -1;
 	AUTO(chunk, m_last);
 	while(chunk){
@@ -177,7 +177,7 @@ int StreamBuffer::back() const NOEXCEPT {
 	}
 	return read;
 }
-int StreamBuffer::unput() NOEXCEPT {
+int Stream_buffer::unput() NOEXCEPT {
 	int read = -1;
 	AUTO(chunk, m_last);
 	while(chunk){
@@ -190,12 +190,12 @@ int StreamBuffer::unput() NOEXCEPT {
 		const AUTO(prev, chunk->prev);
 		(prev ? prev->next : m_first) = NULLPTR;
 		m_last = prev;
-		ChunkHeader::destroy(chunk);
+		Chunk_header::destroy(chunk);
 		chunk = prev;
 	}
 	return read;
 }
-void StreamBuffer::unget(int data){
+void Stream_buffer::unget(int data){
 	AUTO(chunk, m_first);
 	AUTO(next, chunk);
 	if(chunk && (chunk->begin == 0)){
@@ -209,7 +209,7 @@ void StreamBuffer::unget(int data){
 		}
 	}
 	if(!chunk){
-		const AUTO(prev, ChunkHeader::create(1, NULLPTR, next, true));
+		const AUTO(prev, Chunk_header::create(1, NULLPTR, next, true));
 		(next ? next->prev : m_last) = prev;
 		m_first = prev;
 		chunk = prev;
@@ -219,7 +219,7 @@ void StreamBuffer::unget(int data){
 	m_size += 1;
 }
 
-std::size_t StreamBuffer::peek(void *data, std::size_t count) const NOEXCEPT {
+std::size_t Stream_buffer::peek(void *data, std::size_t count) const NOEXCEPT {
 	std::size_t total = 0;
 	AUTO(chunk, m_first);
 	while(chunk){
@@ -240,7 +240,7 @@ std::size_t StreamBuffer::peek(void *data, std::size_t count) const NOEXCEPT {
 	}
 	return total;
 }
-std::size_t StreamBuffer::get(void *data, std::size_t count) NOEXCEPT {
+std::size_t Stream_buffer::get(void *data, std::size_t count) NOEXCEPT {
 	std::size_t total = 0;
 	AUTO(chunk, m_first);
 	while(chunk){
@@ -263,12 +263,12 @@ std::size_t StreamBuffer::get(void *data, std::size_t count) NOEXCEPT {
 		const AUTO(next, chunk->next);
 		(next ? next->prev : m_last) = NULLPTR;
 		m_first = next;
-		ChunkHeader::destroy(chunk);
+		Chunk_header::destroy(chunk);
 		chunk = next;
 	}
 	return total;
 }
-std::size_t StreamBuffer::discard(std::size_t count) NOEXCEPT {
+std::size_t Stream_buffer::discard(std::size_t count) NOEXCEPT {
 	std::size_t total = 0;
 	AUTO(chunk, m_first);
 	while(chunk){
@@ -289,12 +289,12 @@ std::size_t StreamBuffer::discard(std::size_t count) NOEXCEPT {
 		const AUTO(next, chunk->next);
 		(next ? next->prev : m_last) = NULLPTR;
 		m_first = next;
-		ChunkHeader::destroy(chunk);
+		Chunk_header::destroy(chunk);
 		chunk = next;
 	}
 	return total;
 }
-void StreamBuffer::put(int data, std::size_t count){
+void Stream_buffer::put(int data, std::size_t count){
 	AUTO(chunk, m_last);
 	AUTO(prev, chunk);
 	if(chunk && (chunk->capacity - chunk->end < count)){
@@ -308,7 +308,7 @@ void StreamBuffer::put(int data, std::size_t count){
 		}
 	}
 	if(!chunk){
-		const AUTO(next, ChunkHeader::create(count, prev, NULLPTR, false));
+		const AUTO(next, Chunk_header::create(count, prev, NULLPTR, false));
 		(prev ? prev->next : m_first) = next;
 		chunk = next;
 		m_last = next;
@@ -317,7 +317,7 @@ void StreamBuffer::put(int data, std::size_t count){
 	chunk->end += count;
 	m_size += count;
 }
-void StreamBuffer::put(const void *data, std::size_t count){
+void Stream_buffer::put(const void *data, std::size_t count){
 	AUTO(chunk, m_last);
 	AUTO(prev, chunk);
 	if(chunk && (chunk->capacity - chunk->end < count)){
@@ -331,7 +331,7 @@ void StreamBuffer::put(const void *data, std::size_t count){
 		}
 	}
 	if(!chunk){
-		const AUTO(next, ChunkHeader::create(count, prev, NULLPTR, false));
+		const AUTO(next, Chunk_header::create(count, prev, NULLPTR, false));
 		(prev ? prev->next : m_first) = next;
 		chunk = next;
 		m_last = next;
@@ -340,7 +340,7 @@ void StreamBuffer::put(const void *data, std::size_t count){
 	chunk->end += count;
 	m_size += count;
 }
-void StreamBuffer::put(const StreamBuffer &data){
+void Stream_buffer::put(const Stream_buffer &data){
 	const AUTO(count, data.size());
 	AUTO(chunk, m_last);
 	AUTO(prev, chunk);
@@ -355,7 +355,7 @@ void StreamBuffer::put(const StreamBuffer &data){
 		}
 	}
 	if(!chunk){
-		const AUTO(next, ChunkHeader::create(count, prev, NULLPTR, false));
+		const AUTO(next, Chunk_header::create(count, prev, NULLPTR, false));
 		(prev ? prev->next : m_first) = next;
 		chunk = next;
 		m_last = next;
@@ -368,19 +368,19 @@ void StreamBuffer::put(const StreamBuffer &data){
 	m_size += count;
 }
 
-void *StreamBuffer::squash(){
+void *Stream_buffer::squash(){
 	AUTO(chunk, m_first);
 	if(!chunk){
 		return NULLPTR;
 	}
 	if(chunk != m_last){
-		StreamBuffer(*this).swap(*this);
+		Stream_buffer(*this).swap(*this);
 		chunk = m_first;
 	}
 	return chunk->data + chunk->begin;
 }
 
-StreamBuffer StreamBuffer::cut_off(std::size_t count){
+Stream_buffer Stream_buffer::cut_off(std::size_t count){
 	std::size_t total = 0;
 	AUTO(chunk, m_first);
 	while(chunk){
@@ -393,7 +393,7 @@ StreamBuffer StreamBuffer::cut_off(std::size_t count){
 			if(avail > remaining){
 				const AUTO(prev, chunk->prev);
 				const AUTO(next, chunk);
-				chunk = ChunkHeader::create(remaining, prev, next, false);
+				chunk = Chunk_header::create(remaining, prev, next, false);
 				std::memcpy(chunk->data, next->data + next->begin, remaining);
 				chunk->end = remaining;
 				next->begin += remaining;
@@ -408,7 +408,7 @@ StreamBuffer StreamBuffer::cut_off(std::size_t count){
 		const AUTO(next, chunk->next);
 		chunk = next;
 	}
-	StreamBuffer head;
+	Stream_buffer head;
 	if(total != 0){
 		const AUTO(first_cut, exchange(m_first, chunk));
 		const AUTO(last_cut, exchange(chunk ? chunk->prev : m_last, NULLPTR));
@@ -420,7 +420,7 @@ StreamBuffer StreamBuffer::cut_off(std::size_t count){
 	}
 	return head;
 }
-void StreamBuffer::splice(StreamBuffer &rhs) NOEXCEPT {
+void Stream_buffer::splice(Stream_buffer &rhs) NOEXCEPT {
 	assert(&rhs != this);
 
 	const AUTO(first_add, exchange(rhs.m_first, NULLPTR));
@@ -433,7 +433,7 @@ void StreamBuffer::splice(StreamBuffer &rhs) NOEXCEPT {
 	m_size += exchange(rhs.m_size, 0);
 }
 
-bool StreamBuffer::enumerate_chunk(const void **data, std::size_t *count, StreamBuffer::EnumerationCookie &cookie) const NOEXCEPT {
+bool Stream_buffer::enumerate_chunk(const void **data, std::size_t *count, Stream_buffer::Enumeration_cookie &cookie) const NOEXCEPT {
 	const AUTO(chunk, cookie.m_prev ? cookie.m_prev->next : m_first);
 	cookie.m_prev = chunk;
 	if(!chunk){
@@ -447,7 +447,7 @@ bool StreamBuffer::enumerate_chunk(const void **data, std::size_t *count, Stream
 	}
 	return true;
 }
-bool StreamBuffer::enumerate_chunk(void **data, std::size_t *count, StreamBuffer::EnumerationCookie &cookie) NOEXCEPT {
+bool Stream_buffer::enumerate_chunk(void **data, std::size_t *count, Stream_buffer::Enumeration_cookie &cookie) NOEXCEPT {
 	const AUTO(chunk, cookie.m_prev ? cookie.m_prev->next : m_first);
 	cookie.m_prev = chunk;
 	if(!chunk){
@@ -462,7 +462,7 @@ bool StreamBuffer::enumerate_chunk(void **data, std::size_t *count, StreamBuffer
 	return true;
 }
 
-std::string StreamBuffer::dump_string() const {
+std::string Stream_buffer::dump_string() const {
 	std::string str;
 	str.reserve(m_size);
 	AUTO(chunk, m_first);
@@ -473,7 +473,7 @@ std::string StreamBuffer::dump_string() const {
 	}
 	return str;
 }
-std::basic_string<unsigned char> StreamBuffer::dump_byte_string() const {
+std::basic_string<unsigned char> Stream_buffer::dump_byte_string() const {
 	std::basic_string<unsigned char> str;
 	str.reserve(m_size);
 	AUTO(chunk, m_first);
@@ -484,7 +484,7 @@ std::basic_string<unsigned char> StreamBuffer::dump_byte_string() const {
 	}
 	return str;
 }
-void StreamBuffer::dump(std::ostream &os) const {
+void Stream_buffer::dump(std::ostream &os) const {
 	AUTO(chunk, m_first);
 	while(chunk){
 		const std::size_t avail = chunk->end - chunk->begin;

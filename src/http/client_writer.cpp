@@ -13,17 +13,17 @@
 namespace Poseidon {
 namespace Http {
 
-ClientWriter::ClientWriter(){
+Client_writer::Client_writer(){
 	//
 }
-ClientWriter::~ClientWriter(){
+Client_writer::~Client_writer(){
 	//
 }
 
-long ClientWriter::put_request(RequestHeaders request_headers, StreamBuffer entity, bool set_content_length){
+long Client_writer::put_request(Request_headers request_headers, Stream_buffer entity, bool set_content_length){
 	PROFILE_ME;
 
-	StreamBuffer data;
+	Stream_buffer data;
 
 	data.put(get_string_from_verb(request_headers.verb));
 	data.put(' ');
@@ -74,10 +74,10 @@ long ClientWriter::put_request(RequestHeaders request_headers, StreamBuffer enti
 	return on_encoded_data_avail(STD_MOVE(data));
 }
 
-long ClientWriter::put_chunked_header(RequestHeaders request_headers){
+long Client_writer::put_chunked_header(Request_headers request_headers){
 	PROFILE_ME;
 
-	StreamBuffer data;
+	Stream_buffer data;
 
 	data.put(get_string_from_verb(request_headers.verb));
 	data.put(' ');
@@ -112,11 +112,11 @@ long ClientWriter::put_chunked_header(RequestHeaders request_headers){
 
 	return on_encoded_data_avail(STD_MOVE(data));
 }
-long ClientWriter::put_chunk(StreamBuffer entity){
+long Client_writer::put_chunk(Stream_buffer entity){
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!entity.empty(), BasicException, sslit("You are not allowed to send an empty chunk"));
+	DEBUG_THROW_UNLESS(!entity.empty(), Basic_exception, sslit("You are not allowed to send an empty chunk"));
 
-	StreamBuffer chunk;
+	Stream_buffer chunk;
 
 	char temp[64];
 	unsigned len = (unsigned)std::sprintf(temp, "%llx\r\n", (unsigned long long)entity.size());
@@ -126,10 +126,10 @@ long ClientWriter::put_chunk(StreamBuffer entity){
 
 	return on_encoded_data_avail(STD_MOVE(chunk));
 }
-long ClientWriter::put_chunked_trailer(OptionalMap headers){
+long Client_writer::put_chunked_trailer(Optional_map headers){
 	PROFILE_ME;
 
-	StreamBuffer data;
+	Stream_buffer data;
 
 	data.put("0\r\n");
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){

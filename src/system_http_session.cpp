@@ -15,18 +15,18 @@
 
 namespace Poseidon {
 
-SystemHttpSession::SystemHttpSession(Move<UniqueFile> socket, boost::shared_ptr<const Http::AuthenticationContext> auth_ctx)
+System_http_session::System_http_session(Move<Unique_file> socket, boost::shared_ptr<const Http::Authentication_context> auth_ctx)
 	: Http::Session(STD_MOVE(socket))
 	, m_auth_ctx(STD_MOVE(auth_ctx))
 	, m_initialized(false), m_decoded_uri(), m_servlet()
 {
-	LOG_POSEIDON_INFO("SystemHttpSession constructor: remote = ", get_remote_info());
+	LOG_POSEIDON_INFO("System_http_session constructor: remote = ", get_remote_info());
 }
-SystemHttpSession::~SystemHttpSession(){
-	LOG_POSEIDON_INFO("SystemHttpSession destructor: remote = ", get_remote_info());
+System_http_session::~System_http_session(){
+	LOG_POSEIDON_INFO("System_http_session destructor: remote = ", get_remote_info());
 }
 
-void SystemHttpSession::initialize_once(const Http::RequestHeaders &request_headers){
+void System_http_session::initialize_once(const Http::Request_headers &request_headers){
 	PROFILE_ME;
 
 	if(m_initialized){
@@ -34,10 +34,10 @@ void SystemHttpSession::initialize_once(const Http::RequestHeaders &request_head
 	}
 
 	const AUTO(user, Http::check_authentication_simple(m_auth_ctx, false, get_remote_info(), request_headers));
-	LOG_POSEIDON_INFO("SystemHttpSession authentication succeeded: remote = ", get_remote_info(), ", user = ", user, ", URI = ", request_headers.uri, ", headers = ", request_headers.headers);
+	LOG_POSEIDON_INFO("System_http_session authentication succeeded: remote = ", get_remote_info(), ", user = ", user, ", URI = ", request_headers.uri, ", headers = ", request_headers.headers);
 
 	Buffer_istream bis;
-	bis.set_buffer(StreamBuffer(request_headers.uri));
+	bis.set_buffer(Stream_buffer(request_headers.uri));
 	Http::url_decode(bis, m_decoded_uri);
 	DEBUG_THROW_UNLESS(!m_decoded_uri.empty(), Http::Exception, Http::status_bad_request);
 	DEBUG_THROW_UNLESS(m_decoded_uri[0] == '/', Http::Exception, Http::status_bad_request);
@@ -50,12 +50,12 @@ void SystemHttpSession::initialize_once(const Http::RequestHeaders &request_head
 	case Http::verb_head:
 	case Http::verb_post:
 		for(;;){
-			m_servlet = SystemHttpServer::get_servlet(m_decoded_uri.c_str());
+			m_servlet = System_http_server::get_servlet(m_decoded_uri.c_str());
 			if(m_servlet){
 				break;
 			}
 			if(*m_decoded_uri.rbegin() == '/'){
-				LOG_POSEIDON_WARNING("SystemHttpSession URI not handled: ", m_decoded_uri);
+				LOG_POSEIDON_WARNING("System_http_session URI not handled: ", m_decoded_uri);
 				DEBUG_THROW(Http::Exception, Http::status_not_found);
 			}
 			m_decoded_uri.push_back('/');
@@ -69,21 +69,21 @@ void SystemHttpSession::initialize_once(const Http::RequestHeaders &request_head
 	++m_initialized;
 }
 
-void SystemHttpSession::on_sync_expect(Http::RequestHeaders request_headers){
+void System_http_session::on_sync_expect(Http::Request_headers request_headers){
 	PROFILE_ME;
 
 	initialize_once(request_headers);
 
 	Http::Session::on_sync_expect(STD_MOVE(request_headers));
 }
-void SystemHttpSession::on_sync_request(Http::RequestHeaders request_headers, StreamBuffer request_entity){
+void System_http_session::on_sync_request(Http::Request_headers request_headers, Stream_buffer request_entity){
 	PROFILE_ME;
 
 	initialize_once(request_headers);
 
 	const bool keep_alive = Http::is_keep_alive_enabled(request_headers);
 
-	Http::ResponseHeaders response_headers;
+	Http::Response_headers response_headers;
 	response_headers.version = 10001;
 	response_headers.status_code = Http::status_ok;
 	response_headers.reason = "OK";
@@ -92,9 +92,9 @@ void SystemHttpSession::on_sync_request(Http::RequestHeaders request_headers, St
 	response_headers.headers.set(sslit("Access-Control-Allow-Headers"), "Authorization, Content-Type");
 	response_headers.headers.set(sslit("Access-Control-Allow-Methods"), "OPTIONS, GET, HEAD, POST");
 
-	JsonObject request;
+	Json_object request;
 	Buffer_istream bis;
-	JsonObject response;
+	Json_object response;
 	Buffer_ostream bos;
 
 	switch(request_headers.verb){
@@ -113,13 +113,13 @@ void SystemHttpSession::on_sync_request(Http::RequestHeaders request_headers, St
 			request.parse(bis);
 			DEBUG_THROW_UNLESS(bis, Http::Exception, Http::status_bad_request);
 		}
-		LOG_POSEIDON_DEBUG("SystemHttpSession request: ", request);
+		LOG_POSEIDON_DEBUG("System_http_session request: ", request);
 		if(request_headers.verb != Http::verb_post){
 			m_servlet->handle_get(response);
 		} else {
 			m_servlet->handle_post(response, STD_MOVE(request));
 		}
-		LOG_POSEIDON_DEBUG("SystemHttpSession response: ", response);
+		LOG_POSEIDON_DEBUG("System_http_session response: ", response);
 		response.dump(bos);
 		response_headers.headers.set(sslit("Content-Type"), "application/json");
 		Http::Session::send_chunked_header(STD_MOVE(response_headers));

@@ -7,15 +7,15 @@
 #include "../exception.hpp"
 
 namespace Poseidon {
-namespace MySql {
+namespace My_sql {
 
-class Exception : public BasicException {
+class Exception : public Basic_exception {
 private:
-	SharedNts m_schema;
+	Shared_nts m_schema;
 	unsigned long m_code;
 
 public:
-	Exception(const char *file, std::size_t line, const char *func, SharedNts schema, unsigned long code, SharedNts message);
+	Exception(const char *file, std::size_t line, const char *func, Shared_nts schema, unsigned long code, Shared_nts message);
 	~Exception() NOEXCEPT;
 
 public:

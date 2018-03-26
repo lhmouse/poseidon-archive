@@ -13,7 +13,7 @@
 #include <mysql/mysql.h>
 
 namespace Poseidon {
-namespace MySql {
+namespace My_sql {
 
 namespace {
 	struct Closer {
@@ -24,7 +24,7 @@ namespace {
 			::mysql_close(mysql);
 		}
 	};
-	struct ResultDeleter {
+	struct Result_deleter {
 		CONSTEXPR ::MYSQL_RES *operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
@@ -33,40 +33,40 @@ namespace {
 		}
 	};
 
-	struct FieldComparator {
+	struct Field_comparator {
 		bool operator()(const char *lhs, const char *rhs) const NOEXCEPT {
 			return std::strcmp(lhs, rhs) < 0;
 		}
 	};
 
-	class DelegatedConnection : public Connection {
+	class Delegated_connection : public Connection {
 	private:
-		SharedNts m_schema;
+		Shared_nts m_schema;
 		::MYSQL m_mysql_storage;
-		UniqueHandle<Closer> m_mysql;
+		Unique_handle<Closer> m_mysql;
 
-		UniqueHandle<ResultDeleter> m_result;
-		boost::container::flat_map<const char *, std::size_t, FieldComparator> m_fields;
+		Unique_handle<Result_deleter> m_result;
+		boost::container::flat_map<const char *, std::size_t, Field_comparator> m_fields;
 		::MYSQL_ROW m_row;
 		unsigned long *m_lengths;
 
 	public:
-		DelegatedConnection(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
+		Delegated_connection(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
 			: m_schema(schema)
 			, m_row(NULLPTR), m_lengths(NULLPTR)
 		{
 			PROFILE_ME;
 
-			DEBUG_THROW_UNLESS(m_mysql.reset(::mysql_init(&m_mysql_storage)), BasicException, sslit("::mysql_init() failed"));
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_COMPRESS"));
+			DEBUG_THROW_UNLESS(m_mysql.reset(::mysql_init(&m_mysql_storage)), Basic_exception, sslit("::mysql_init() failed"));
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) == 0, Basic_exception, sslit("::mysql_options() failed, trying to set MYSQL_OPT_COMPRESS"));
 			static CONSTEXPR const ::my_bool s_true_value = true;
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &s_true_value) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) == 0, BasicException, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &s_true_value) == 0, Basic_exception, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) == 0, Basic_exception, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
 			unsigned long flags = 0;
 			if(use_ssl){
 				flags |= CLIENT_SSL;
 			}
-			DEBUG_THROW_UNLESS(::mysql_real_connect(m_mysql.get(), server_addr, user_name, password, schema, server_port, NULLPTR, flags), Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
+			DEBUG_THROW_UNLESS(::mysql_real_connect(m_mysql.get(), server_addr, user_name, password, schema, server_port, NULLPTR, flags), Exception, m_schema, ::mysql_errno(m_mysql.get()), Shared_nts(::mysql_error(m_mysql.get())));
 		}
 
 	private:
@@ -98,15 +98,15 @@ namespace {
 			discard_result();
 
 			LOG_POSEIDON_DEBUG("Sending query to MySQL server: ", std::string(sql, len));
-			DEBUG_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
-			DEBUG_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), SharedNts(::mysql_error(m_mysql.get())));
+			DEBUG_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Shared_nts(::mysql_error(m_mysql.get())));
+			DEBUG_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Shared_nts(::mysql_error(m_mysql.get())));
 			if(m_result.reset(::mysql_use_result(m_mysql.get()))){
 				const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
 				const AUTO(count, ::mysql_num_fields(m_result.get()));
 				m_fields.reserve(count);
 				for(std::size_t i = 0; i < count; ++i){
 					const char *const name = fields[i].name;
-					DEBUG_THROW_UNLESS(m_fields.emplace(name, i).second, BasicException, sslit("Duplicate field"));
+					DEBUG_THROW_UNLESS(m_fields.emplace(name, i).second, Basic_exception, sslit("Duplicate field"));
 					LOG_POSEIDON_TRACE("MySQL result field: name = ", name, ", index = ", i);
 				}
 			} else {
@@ -164,7 +164,7 @@ namespace {
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
 				value = ::strtoll(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `long long`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `long long`"));
 			}
 			return value;
 		}
@@ -177,7 +177,7 @@ namespace {
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
 				value = ::strtoull(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `unsigned long long`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `unsigned long long`"));
 			}
 			return value;
 		}
@@ -190,7 +190,7 @@ namespace {
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
 				value = ::strtod(data, &eptr);
-				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `double`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `double`"));
 			}
 			return value;
 		}
@@ -223,7 +223,7 @@ namespace {
 			const char *data;
 			std::size_t size;
 			if(find_field_and_check(data, size, name)){
-				DEBUG_THROW_UNLESS(size == 36, BasicException, sslit("Invalid UUID string length"));
+				DEBUG_THROW_UNLESS(size == 36, Basic_exception, sslit("Invalid UUID string length"));
 				value.from_string(*reinterpret_cast<const char (*)[36]>(data));
 			}
 			return value;
@@ -243,7 +243,7 @@ namespace {
 }
 
 boost::shared_ptr<Connection> Connection::create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset){
-	return boost::make_shared<DelegatedConnection>(server_addr, server_port, user_name, password, schema, use_ssl, charset);
+	return boost::make_shared<Delegated_connection>(server_addr, server_port, user_name, password, schema, use_ssl, charset);
 }
 
 Connection::~Connection(){

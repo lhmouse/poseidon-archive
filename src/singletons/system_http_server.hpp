@@ -9,21 +9,21 @@
 
 namespace Poseidon {
 
-class SystemHttpServletBase;
+class System_http_servlet_base;
 
-class SystemHttpServer {
+class System_http_server {
 private:
-	SystemHttpServer();
+	System_http_server();
 
 public:
 	static void start();
 	static void stop();
 
-	static boost::shared_ptr<const SystemHttpServletBase> get_servlet(const char *uri);
-	static void get_all_servlets(boost::container::vector<boost::shared_ptr<const SystemHttpServletBase> > &ret);
+	static boost::shared_ptr<const System_http_servlet_base> get_servlet(const char *uri);
+	static void get_all_servlets(boost::container::vector<boost::shared_ptr<const System_http_servlet_base> > &ret);
 
 	// 返回的 shared_ptr 是该处理程序的唯一持有者。
-	static boost::shared_ptr<const SystemHttpServletBase> register_servlet(boost::shared_ptr<SystemHttpServletBase> servlet);
+	static boost::shared_ptr<const System_http_servlet_base> register_servlet(boost::shared_ptr<System_http_servlet_base> servlet);
 };
 
 }

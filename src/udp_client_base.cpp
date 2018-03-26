@@ -12,19 +12,19 @@
 namespace Poseidon {
 
 namespace {
-	UniqueFile create_udp_socket(const SockAddr &addr){
-		UniqueFile udp;
-		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), SystemException);
+	Unique_file create_udp_socket(const Sock_addr &addr){
+		Unique_file udp;
+		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), System_exception);
 		return udp;
 	}
 }
 
-UdpClientBase::UdpClientBase(const SockAddr &addr)
-	: UdpSessionBase(create_udp_socket(addr))
+Udp_client_base::Udp_client_base(const Sock_addr &addr)
+	: Udp_session_base(create_udp_socket(addr))
 {
 	//
 }
-UdpClientBase::~UdpClientBase(){
+Udp_client_base::~Udp_client_base(){
 	//
 }
 

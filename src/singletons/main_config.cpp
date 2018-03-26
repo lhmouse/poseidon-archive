@@ -16,7 +16,7 @@ namespace Poseidon {
 namespace {
 	CONSTEXPR const char g_main_conf_name[] = "main.conf";
 
-	struct RealPathDeleter {
+	struct Real_path_deleter {
 		CONSTEXPR char *operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
@@ -26,26 +26,26 @@ namespace {
 	};
 
 	Mutex g_mutex;
-	boost::shared_ptr<ConfigFile> g_config;
+	boost::shared_ptr<Config_file> g_config;
 }
 
-void MainConfig::set_run_path(const char *path){
+void Main_config::set_run_path(const char *path){
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Setting new working directory: ", path);
-	UniqueHandle<RealPathDeleter> real_path;
-	DEBUG_THROW_UNLESS(real_path.reset(::realpath(path, NULLPTR)), SystemException);
+	Unique_handle<Real_path_deleter> real_path;
+	DEBUG_THROW_UNLESS(real_path.reset(::realpath(path, NULLPTR)), System_exception);
 	LOG_POSEIDON(Logger::special_major | Logger::level_debug, "> Resolved real path: ", real_path);
-	DEBUG_THROW_UNLESS(::chdir(real_path.get()) == 0, SystemException);
+	DEBUG_THROW_UNLESS(::chdir(real_path.get()) == 0, System_exception);
 }
-void MainConfig::reload(){
+void Main_config::reload(){
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading main config file: ", g_main_conf_name);
-	AUTO(config, boost::make_shared<ConfigFile>(g_main_conf_name));
+	AUTO(config, boost::make_shared<Config_file>(g_main_conf_name));
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Done loading main config file: ", g_main_conf_name);
-	const Mutex::UniqueLock lock(g_mutex);
+	const Mutex::Unique_lock lock(g_mutex);
 	g_config.swap(config);
 }
 
-boost::shared_ptr<const ConfigFile> MainConfig::get_file(){
-	const Mutex::UniqueLock lock(g_mutex);
+boost::shared_ptr<const Config_file> Main_config::get_file(){
+	const Mutex::Unique_lock lock(g_mutex);
 	DEBUG_THROW_UNLESS(g_config, Exception, sslit("Main config file has not been loaded"));
 	return g_config;
 }

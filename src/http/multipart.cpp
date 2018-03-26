@@ -17,7 +17,7 @@ namespace {
 	CONSTEXPR const char     s_boundary_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 	CONSTEXPR const unsigned s_boundary_len     = 60;
 
-	const Http::MultipartElement g_empty_multipart_element;
+	const Http::Multipart_element g_empty_multipart_element;
 
 	inline bool try_pop(std::string &str, char ch){
 		if(str.empty()){
@@ -31,7 +31,7 @@ namespace {
 	}
 }
 
-const MultipartElement &empty_multipart_element() NOEXCEPT {
+const Multipart_element &empty_multipart_element() NOEXCEPT {
 	return g_empty_multipart_element;
 }
 
@@ -39,7 +39,7 @@ Multipart::Multipart(std::string boundary, std::istream &is)
 	: m_boundary(STD_MOVE(boundary)), m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, BasicException, sslit("Http::Multipart parser error"));
+	DEBUG_THROW_UNLESS(is, Basic_exception, sslit("Http::Multipart parser error"));
 }
 
 void Multipart::random_boundary(){
@@ -53,7 +53,7 @@ void Multipart::random_boundary(){
 	m_boundary.swap(boundary);
 }
 
-StreamBuffer Multipart::dump() const {
+Stream_buffer Multipart::dump() const {
 	PROFILE_ME;
 
 	Buffer_ostream bos;
@@ -62,7 +62,7 @@ StreamBuffer Multipart::dump() const {
 }
 void Multipart::dump(std::ostream &os) const {
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!m_boundary.empty(), BasicException, sslit("Multipart boundary not set"));
+	DEBUG_THROW_UNLESS(!m_boundary.empty(), Basic_exception, sslit("Multipart boundary not set"));
 
 	os <<"--" <<m_boundary;
 	for(AUTO(it, m_elements.begin()); it != m_elements.end(); ++it){
@@ -77,13 +77,13 @@ void Multipart::dump(std::ostream &os) const {
 }
 void Multipart::parse(std::istream &is){
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!m_boundary.empty(), BasicException, sslit("Multipart boundary not set"));
+	DEBUG_THROW_UNLESS(!m_boundary.empty(), Basic_exception, sslit("Multipart boundary not set"));
 
 	const AUTO(window_size, m_boundary.size() + 2);
 
 	VALUE_TYPE(m_elements) elements;
 
-	StreamBuffer buffer;
+	Stream_buffer buffer;
 	std::string queue;
 	enum {
 		state_init,
@@ -148,7 +148,7 @@ void Multipart::parse(std::istream &is){
 			}
 			queue.erase(queue.end() - static_cast<std::ptrdiff_t>(window_size), queue.end());
 
-			MultipartElement elem;
+			Multipart_element elem;
 			std::string line;
 			for(;;){
 				AUTO(pos, queue.find('\n'));
@@ -164,8 +164,8 @@ void Multipart::parse(std::istream &is){
 					break;
 				}
 				pos = line.find(':');
-				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("Invalid HTTP header"));
-				SharedNts key(line.data(), pos);
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, sslit("Invalid HTTP header"));
+				Shared_nts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				elem.headers.set(STD_MOVE(key), STD_MOVE(value));
@@ -173,7 +173,7 @@ void Multipart::parse(std::istream &is){
 			if(try_pop(queue, '\n')){
 				try_pop(queue, '\r');
 			}
-			elem.entity = StreamBuffer(queue);
+			elem.entity = Stream_buffer(queue);
 			elements.push_back(STD_MOVE(elem));
 
 			queue.clear();

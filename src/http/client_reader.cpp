@@ -13,18 +13,18 @@
 namespace Poseidon {
 namespace Http {
 
-ClientReader::ClientReader()
+Client_reader::Client_reader()
 	: m_size_expecting(content_length_expecting_endl), m_state(state_first_header)
 {
 	//
 }
-ClientReader::~ClientReader(){
+Client_reader::~Client_reader(){
 	if(m_state != state_first_header){
 		LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature response has to be discarded.");
 	}
 }
 
-bool ClientReader::put_encoded_data(StreamBuffer encoded){
+bool Client_reader::put_encoded_data(Stream_buffer encoded){
 	PROFILE_ME;
 
 	m_queue.splice(encoded);
@@ -35,7 +35,7 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 		if(expecting_new_line){
 			std::ptrdiff_t lf_offset = 0;
-			StreamBuffer::EnumerationCookie cookie;
+			Stream_buffer::Enumeration_cookie cookie;
 			for(;;){
 				const void *data, *pos;
 				std::size_t size;
@@ -74,7 +74,7 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 		case state_first_header:
 			if(!expected.empty()){
-				m_response_headers = ResponseHeaders();
+				m_response_headers = Response_headers();
 				m_content_length = 0;
 				m_content_offset = 0;
 
@@ -82,25 +82,25 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 				for(AUTO(it, line.begin()); it != line.end(); ++it){
 					const unsigned ch = static_cast<unsigned char>(*it);
-					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), BasicException, sslit("Invalid HTTP response header"));
+					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), Basic_exception, sslit("Invalid HTTP response header"));
 				}
 
 				AUTO(pos, line.find(' '));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("No HTTP version in response headers"));
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, sslit("No HTTP version in response headers"));
 				line.at(pos) = 0;
 				long ver_end = 0;
 				char ver_major_str[16], ver_minor_str[16];
-				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, BasicException, sslit("Malformed HTTP version in response headers"));
-				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == pos, BasicException, sslit("Malformed HTTP version in response headers"));
+				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, Basic_exception, sslit("Malformed HTTP version in response headers"));
+				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == pos, Basic_exception, sslit("Malformed HTTP version in response headers"));
 				m_response_headers.version = boost::numeric_cast<unsigned>(std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10));
 				line.erase(0, pos + 1);
 
 				pos = line.find(' ');
-				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("No status code in response headers"));
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, sslit("No status code in response headers"));
 				line[pos] = 0;
 				char *eptr;
 				const unsigned status_code = boost::numeric_cast<unsigned>(std::strtoul(line.c_str(), &eptr, 10));
-				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Malformed status code in response headers"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Malformed status code in response headers"));
 				m_response_headers.status_code = status_code;
 				line.erase(0, pos + 1);
 
@@ -119,8 +119,8 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("Malformed HTTP header in response headers"));
-				SharedNts key(line.data(), pos);
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, sslit("Malformed HTTP header in response headers"));
+				Shared_nts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				m_response_headers.headers.append(STD_MOVE(key), STD_MOVE(value));
@@ -136,14 +136,14 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 					} else {
 						char *eptr;
 						m_content_length = ::strtoull(content_length.c_str(), &eptr, 10);
-						DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Malformed Content-Length header"));
-						DEBUG_THROW_UNLESS(m_content_length <= content_length_max, BasicException, sslit("Inacceptable Content-Length"));
+						DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Malformed Content-Length header"));
+						DEBUG_THROW_UNLESS(m_content_length <= content_length_max, Basic_exception, sslit("Inacceptable Content-Length"));
 					}
 				} else if(::strcasecmp(transfer_encoding.c_str(), "chunked") == 0){
 					m_content_length = content_length_chunked;
 				} else {
 					LOG_POSEIDON_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
-					DEBUG_THROW(BasicException, sslit("Inacceptable Transfer-Encoding"));
+					DEBUG_THROW(Basic_exception, sslit("Inacceptable Transfer-Encoding"));
 				}
 
 				on_response_headers(STD_MOVE(m_response_headers), m_content_length);
@@ -192,8 +192,8 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 
 				char *eptr;
 				m_chunk_size = ::strtoull(line.c_str(), &eptr, 16);
-				DEBUG_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), BasicException, sslit("Malformed chunk header"));
-				DEBUG_THROW_UNLESS(m_chunk_size <= content_length_max, BasicException, sslit("Inacceptable chunk length"));
+				DEBUG_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), Basic_exception, sslit("Malformed chunk header"));
+				DEBUG_THROW_UNLESS(m_chunk_size <= content_length_max, Basic_exception, sslit("Inacceptable chunk length"));
 				if(m_chunk_size == 0){
 					m_size_expecting = content_length_expecting_endl;
 					m_state = state_chunked_trailer;
@@ -228,8 +228,8 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("Invalid HTTP header in chunk trailer"));
-				SharedNts key(line.data(), pos);
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, sslit("Invalid HTTP header in chunk trailer"));
+				Shared_nts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				m_chunked_trailer.append(STD_MOVE(key), STD_MOVE(value));
@@ -249,13 +249,13 @@ bool ClientReader::put_encoded_data(StreamBuffer encoded){
 	return has_next_response;
 }
 
-bool ClientReader::is_content_till_eof() const {
+bool Client_reader::is_content_till_eof() const {
 	if(m_state < state_identity){
 		return false;
 	}
 	return m_content_length == content_length_until_eof;
 }
-bool ClientReader::terminate_content(){
+bool Client_reader::terminate_content(){
 	PROFILE_ME;
 	DEBUG_THROW_ASSERT(is_content_till_eof());
 

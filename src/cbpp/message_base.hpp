@@ -66,25 +66,25 @@
 namespace Poseidon {
 namespace Cbpp {
 
-class MessageBase {
+class Message_base {
 public:
-	virtual ~MessageBase();
+	virtual ~Message_base();
 
 public:
 	virtual boost::uint64_t get_id() const = 0;
-	virtual void serialize(StreamBuffer &buffer) const = 0;
-	virtual void deserialize(StreamBuffer &buffer) = 0;
+	virtual void serialize(Stream_buffer &buffer) const = 0;
+	virtual void deserialize(Stream_buffer &buffer) = 0;
 	virtual void dump_debug(std::ostream &os) const = 0;
 
 public:
-	operator StreamBuffer() const {
-		StreamBuffer buffer;
+	operator Stream_buffer() const {
+		Stream_buffer buffer;
 		serialize(buffer);
 		return buffer;
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const MessageBase &rhs);
+extern std::ostream &operator<<(std::ostream &os, const Message_base &rhs);
 
 }
 }

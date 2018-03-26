@@ -304,7 +304,7 @@ lib_libposeidon_main_la_SOURCES +=	\
 endif
 
 lib_libposeidon_main_la_LDFLAGS =	\
-	-pthread -Wl,--no-undefined -version-info 22:0:0
+	-pthread -Wl,--no-undefined -version-info 23:0:0
 
 lib_libposeidon_main_la_LIBADD =	\
 	${AM_LIBS}

@@ -9,13 +9,13 @@
 
 namespace Poseidon {
 
-class SystemException : public Exception {
+class System_exception : public Exception {
 private:
 	int m_code;
 
 public:
-	SystemException(const char *file, std::size_t line, const char *func, int code = errno);
-	~SystemException() NOEXCEPT;
+	System_exception(const char *file, std::size_t line, const char *func, int code = errno);
+	~System_exception() NOEXCEPT;
 
 public:
 	int get_code() const NOEXCEPT {

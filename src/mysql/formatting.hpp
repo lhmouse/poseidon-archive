@@ -10,14 +10,14 @@
 #include <boost/cstdint.hpp>
 
 namespace Poseidon {
-namespace MySql {
+namespace My_sql {
 
-class StringEscaper {
+class String_escaper {
 private:
 	const std::string &m_ref;
 
 public:
-	explicit CONSTEXPR StringEscaper(const std::string &ref)
+	explicit CONSTEXPR String_escaper(const std::string &ref)
 		: m_ref(ref)
 	{
 		//
@@ -29,14 +29,14 @@ public:
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const StringEscaper &rhs);
+extern std::ostream &operator<<(std::ostream &os, const String_escaper &rhs);
 
-class DateTimeFormatter {
+class Date_time_formatter {
 private:
 	const boost::uint64_t &m_ref;
 
 public:
-	explicit CONSTEXPR DateTimeFormatter(const boost::uint64_t &ref)
+	explicit CONSTEXPR Date_time_formatter(const boost::uint64_t &ref)
 		: m_ref(ref)
 	{
 		//
@@ -48,14 +48,14 @@ public:
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const DateTimeFormatter &rhs);
+extern std::ostream &operator<<(std::ostream &os, const Date_time_formatter &rhs);
 
-class UuidFormatter {
+class Uuid_formatter {
 private:
 	const Uuid &m_ref;
 
 public:
-	explicit CONSTEXPR UuidFormatter(const Uuid &ref)
+	explicit CONSTEXPR Uuid_formatter(const Uuid &ref)
 		: m_ref(ref)
 	{
 		//
@@ -67,7 +67,7 @@ public:
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const UuidFormatter &rhs);
+extern std::ostream &operator<<(std::ostream &os, const Uuid_formatter &rhs);
 
 }
 }

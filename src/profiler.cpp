@@ -14,7 +14,7 @@ namespace {
 }
 
 void Profiler::accumulate_all_in_thread() NOEXCEPT {
-	if(!ProfileDepository::is_enabled()){
+	if(!Profile_depository::is_enabled()){
 		return;
 	}
 	Profiler *cur = t_top;
@@ -29,7 +29,7 @@ void Profiler::accumulate_all_in_thread() NOEXCEPT {
 }
 
 void *Profiler::begin_stack_switch() NOEXCEPT {
-	if(!ProfileDepository::is_enabled()){
+	if(!Profile_depository::is_enabled()){
 		return NULLPTR;
 	}
 	Profiler *cur = t_top;
@@ -57,7 +57,7 @@ Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXC
 	: m_prev(t_top), m_file(file), m_line(line), m_func(func)
 	, m_start(0), m_excluded(0), m_yielded_since(0)
 {
-	if(ProfileDepository::is_enabled()){
+	if(Profile_depository::is_enabled()){
 		const AUTO(now, get_hi_res_mono_clock());
 		m_start = now;
 		t_top = this;
@@ -85,7 +85,7 @@ void Profiler::accumulate(double now, bool new_sample) NOEXCEPT {
 		m_prev->m_excluded += total;
 	}
 
-	ProfileDepository::accumulate(m_file, m_line, m_func, new_sample, total, exclusive);
+	Profile_depository::accumulate(m_file, m_line, m_func, new_sample, total, exclusive);
 }
 
 }

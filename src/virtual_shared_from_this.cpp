@@ -7,13 +7,13 @@
 
 namespace Poseidon {
 
-void VirtualSharedFromThis::fail_dynamic_cast(const std::type_info &dst_type, const VirtualSharedFromThis *src){
+void Virtual_shared_from_this::fail_dynamic_cast(const std::type_info &dst_type, const Virtual_shared_from_this *src){
 	LOG_POSEIDON_ERROR("dynamic_cast to `", dst_type.name(), "` failed on an object having type `", typeid(*src).name(), "`");
 	throw std::bad_cast();
 }
 
 // 虚函数定义在这里，我们在共享库中只保存一份 RTTI。
-VirtualSharedFromThis::~VirtualSharedFromThis(){
+Virtual_shared_from_this::~Virtual_shared_from_this(){
 	//
 }
 

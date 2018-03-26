@@ -23,7 +23,7 @@ Reader::~Reader(){
 	}
 }
 
-bool Reader::put_encoded_data(StreamBuffer encoded){
+bool Reader::put_encoded_data(Stream_buffer encoded){
 	PROFILE_ME;
 
 	m_queue.splice(encoded);
@@ -97,7 +97,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case state_control_payload:
 			{
-				StreamBuffer payload = m_queue.cut_off(boost::numeric_cast<std::size_t>(m_payload_size));
+				Stream_buffer payload = m_queue.cut_off(boost::numeric_cast<std::size_t>(m_payload_size));
 				boost::uint32_t temp32;
 				DEBUG_THROW_UNLESS(payload.get(&temp32, 4) == 4, Exception, status_end_of_stream, sslit("control.code"));
 				has_next_request = on_control_message(static_cast<boost::int32_t>(load_be(temp32)), STD_MOVE(payload));

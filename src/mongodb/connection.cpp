@@ -14,7 +14,7 @@
 #include <libmongoc-1.0/mongoc.h>
 
 namespace Poseidon {
-namespace MongoDb {
+namespace Mongo_db {
 
 namespace {
 	void init_mongoc(){
@@ -29,7 +29,7 @@ namespace {
 		DEBUG_THROW_ASSERT(::pthread_once(&g_mongoc_once, &init_mongoc) == 0);
 	}
 
-	struct UriCloser {
+	struct Uri_closer {
 		CONSTEXPR ::mongoc_uri_t *operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
@@ -37,7 +37,7 @@ namespace {
 			::mongoc_uri_destroy(uri);
 		}
 	};
-	struct ClientCloser {
+	struct Client_closer {
 		CONSTEXPR ::mongoc_client_t *operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
@@ -46,7 +46,7 @@ namespace {
 		}
 	};
 
-	struct BsonCloser {
+	struct Bson_closer {
 		CONSTEXPR ::bson_t *operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
@@ -55,20 +55,20 @@ namespace {
 		}
 	};
 
-	class DelegatedConnection : public Connection {
+	class Delegated_connection : public Connection {
 	private:
-		SharedNts m_database;
-		UniqueHandle<ClientCloser> m_client;
+		Shared_nts m_database;
+		Unique_handle<Client_closer> m_client;
 
 		boost::int64_t m_cursor_id;
 		std::string m_cursor_ns;
-		UniqueHandle<BsonCloser> m_batch_guard;
+		Unique_handle<Bson_closer> m_batch_guard;
 		::bson_iter_t m_batch_it;
 		::bson_t m_element_storage;
-		UniqueHandle<BsonCloser> m_element_guard;
+		Unique_handle<Bson_closer> m_element_guard;
 
 	public:
-		DelegatedConnection(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
+		Delegated_connection(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
 			: m_database(database)
 			, m_cursor_id(0), m_cursor_ns()
 		{
@@ -76,13 +76,13 @@ namespace {
 
 			init_mongoc_once();
 
-			UniqueHandle<UriCloser> uri;
-			DEBUG_THROW_UNLESS(uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port)), BasicException, sslit("::mongoc_uri_new_for_host_port() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_username(uri.get(), user_name), BasicException, sslit("::mongoc_uri_set_username() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_password(uri.get(), password), BasicException, sslit("::mongoc_uri_set_password() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_database(uri.get(), auth_database), BasicException, sslit("::mongoc_uri_set_database() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_option_as_bool(uri.get(), "ssl", use_ssl), BasicException, sslit("::mongoc_uri_set_option_as_bool() failed"));
-			DEBUG_THROW_UNLESS(m_client.reset(::mongoc_client_new_from_uri(uri.get())), BasicException, sslit("::mongoc_client_new_from_uri() failed"));
+			Unique_handle<Uri_closer> uri;
+			DEBUG_THROW_UNLESS(uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port)), Basic_exception, sslit("::mongoc_uri_new_for_host_port() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_username(uri.get(), user_name), Basic_exception, sslit("::mongoc_uri_set_username() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_password(uri.get(), password), Basic_exception, sslit("::mongoc_uri_set_password() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_database(uri.get(), auth_database), Basic_exception, sslit("::mongoc_uri_set_database() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_option_as_bool(uri.get(), "ssl", use_ssl), Basic_exception, sslit("::mongoc_uri_set_option_as_bool() failed"));
+			DEBUG_THROW_UNLESS(m_client.reset(::mongoc_client_new_from_uri(uri.get())), Basic_exception, sslit("::mongoc_client_new_from_uri() failed"));
 		}
 
 	private:
@@ -100,7 +100,7 @@ namespace {
 			::bson_iter_document(&it, &size, &data);
 			::bson_t cursor_storage;
 			DEBUG_THROW_ASSERT(::bson_init_static(&cursor_storage, data, size));
-			const UniqueHandle<BsonCloser> cursor_guard(&cursor_storage);
+			const Unique_handle<Bson_closer> cursor_guard(&cursor_storage);
 			const AUTO(cursor_bt, cursor_guard.get());
 
 			if(::bson_iter_init_find(&it, cursor_bt, "id")){
@@ -144,13 +144,13 @@ namespace {
 		}
 
 	public:
-		void execute_bson(const BsonBuilder &bson) FINAL {
+		void execute_bson(const Bson_builder &bson) FINAL {
 			PROFILE_ME;
 
 			const AUTO(query_data, bson.build(false));
 			::bson_t query_storage;
 			DEBUG_THROW_ASSERT(::bson_init_static(&query_storage, reinterpret_cast<const boost::uint8_t *>(query_data.data()), query_data.size()));
-			const UniqueHandle<BsonCloser> query_guard(&query_storage);
+			const Unique_handle<Bson_closer> query_guard(&query_storage);
 			const AUTO(query_bt, query_guard.get());
 
 			discard_result();
@@ -160,9 +160,9 @@ namespace {
 			::bson_error_t err;
 			bool success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
 			// `reply` is always set.
-			const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
+			const Unique_handle<Bson_closer> reply_guard(&reply_storage);
 			const AUTO(reply_bt, reply_guard.get());
-			DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, SharedNts(err.message));
+			DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, Shared_nts(err.message));
 			parse_reply_cursor(reply_bt, "firstBatch");
 		}
 		void discard_result() NOEXCEPT FINAL {
@@ -190,7 +190,7 @@ namespace {
 				}
 				LOG_POSEIDON_DEBUG("Issuing a `getMore` request: cursor_id = ", m_cursor_id);
 
-				UniqueHandle<BsonCloser> query_guard;
+				Unique_handle<Bson_closer> query_guard;
 				DEBUG_THROW_ASSERT(query_guard.reset(::bson_sized_new(1024)));
 				const AUTO(query_bt, query_guard.get());
 				DEBUG_THROW_ASSERT(::bson_append_int64(query_bt, "getMore", -1, m_cursor_id));
@@ -205,16 +205,16 @@ namespace {
 				::bson_error_t err;
 				bool success = ::mongoc_client_command_simple(m_client.get(), m_database.get(), query_bt, NULLPTR, &reply_storage, &err);
 				// `reply` is always set.
-				const UniqueHandle<BsonCloser> reply_guard(&reply_storage);
+				const Unique_handle<Bson_closer> reply_guard(&reply_storage);
 				const AUTO(reply_bt, reply_guard.get());
-				DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, SharedNts(err.message));
+				DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, Shared_nts(err.message));
 				parse_reply_cursor(reply_bt, "nextBatch");
 			}
 			DEBUG_THROW_ASSERT(::bson_iter_type(&m_batch_it) == BSON_TYPE_DOCUMENT);
 			boost::uint32_t size;
 			const boost::uint8_t *data;
 			::bson_iter_document(&m_batch_it, &size, &data);
-			DEBUG_THROW_UNLESS(::bson_init_static(&m_element_storage, data, size), BasicException, sslit("::bson_init_static() failed"));
+			DEBUG_THROW_UNLESS(::bson_init_static(&m_element_storage, data, size), Basic_exception, sslit("::bson_init_static() failed"));
 			m_element_guard.reset(&m_element_storage);
 			return true;
 		}
@@ -257,7 +257,7 @@ namespace {
 				break;
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -287,11 +287,11 @@ namespace {
 				data = ::bson_iter_utf8(&it, &size);
 				char *eptr;
 				value = ::strtoll(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `long long`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `long long`"));
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -321,11 +321,11 @@ namespace {
 				data = ::bson_iter_utf8(&it, &size);
 				char *eptr;
 				value = ::strtoull(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `unsigned long long`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `unsigned long long`"));
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -355,11 +355,11 @@ namespace {
 				data = ::bson_iter_utf8(&it, &size);
 				char *eptr;
 				value = ::strtod(data, &eptr);
-				DEBUG_THROW_UNLESS(*eptr == 0, BasicException, sslit("Could not convert field data to `double`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `double`"));
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -397,7 +397,7 @@ namespace {
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -417,7 +417,7 @@ namespace {
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -433,12 +433,12 @@ namespace {
 				boost::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
-				DEBUG_THROW_UNLESS(size == 36, BasicException, sslit("Invalid UUID string length"));
+				DEBUG_THROW_UNLESS(size == 36, Basic_exception, sslit("Invalid UUID string length"));
 				value.from_string(*reinterpret_cast<const char (*)[36]>(data));
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -464,7 +464,7 @@ namespace {
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(BasicException, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -472,7 +472,7 @@ namespace {
 }
 
 boost::shared_ptr<Connection> Connection::create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database){
-	return boost::make_shared<DelegatedConnection>(server_addr, server_port, user_name, password, auth_database, use_ssl, database);
+	return boost::make_shared<Delegated_connection>(server_addr, server_port, user_name, password, auth_database, use_ssl, database);
 }
 
 Connection::~Connection(){

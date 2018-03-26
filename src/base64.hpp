@@ -12,20 +12,20 @@
 
 namespace Poseidon {
 
-class Base64Encoder : NONCOPYABLE {
+class Base64_encoder : NONCOPYABLE {
 private:
 	unsigned long m_seq;
-	StreamBuffer m_buffer;
+	Stream_buffer m_buffer;
 
 public:
-	Base64Encoder();
-	~Base64Encoder();
+	Base64_encoder();
+	~Base64_encoder();
 
 public:
-	const StreamBuffer &get_buffer() const {
+	const Stream_buffer &get_buffer() const {
 		return m_buffer;
 	}
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		return m_buffer;
 	}
 
@@ -43,24 +43,24 @@ public:
 	void put(const std::string &str){
 		put(str.data(), str.size());
 	}
-	void put(const StreamBuffer &buffer);
-	StreamBuffer finalize();
+	void put(const Stream_buffer &buffer);
+	Stream_buffer finalize();
 };
 
-class Base64Decoder : NONCOPYABLE {
+class Base64_decoder : NONCOPYABLE {
 private:
 	unsigned long m_seq;
-	StreamBuffer m_buffer;
+	Stream_buffer m_buffer;
 
 public:
-	Base64Decoder();
-	~Base64Decoder();
+	Base64_decoder();
+	~Base64_decoder();
 
 public:
-	const StreamBuffer &get_buffer() const {
+	const Stream_buffer &get_buffer() const {
 		return m_buffer;
 	}
-	StreamBuffer &get_buffer(){
+	Stream_buffer &get_buffer(){
 		return m_buffer;
 	}
 
@@ -78,8 +78,8 @@ public:
 	void put(const std::string &str){
 		put(str.data(), str.size());
 	}
-	void put(const StreamBuffer &buffer);
-	StreamBuffer finalize();
+	void put(const Stream_buffer &buffer);
+	Stream_buffer finalize();
 };
 
 extern std::string base64_encode(const void *data, std::size_t size);

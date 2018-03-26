@@ -39,12 +39,12 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 	class Class_name_ {	\
 	private:	\
 		template<typename ValT>	\
-		class KeySetter {	\
+		class Key_setter {	\
 		private:	\
 			ValT m_val;	\
 			\
 		public:	\
-			KeySetter(::Poseidon::Move<ValT> val)	\
+			Key_setter(::Poseidon::Move<ValT> val)	\
 				: m_val(STD_MOVE_IDN(val))	\
 			{	\
 				/* */	\
@@ -70,13 +70,13 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		base_container m_elements;	\
 		\
 	public:	\
-		template<unsigned kIndexIdT>	\
-		const typename base_container::nth_index<kIndexIdT>::type &get_index() const {	\
-			return m_elements.get<kIndexIdT>();	\
+		template<unsigned indexT>	\
+		const typename base_container::nth_index<indexT>::type &get_index() const {	\
+			return m_elements.get<indexT>();	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type &get_index(){	\
-			return m_elements.get<kIndexIdT>();	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type &get_index(){	\
+			return m_elements.get<indexT>();	\
 		}	\
 		\
 		const_iterator begin() const {	\
@@ -105,38 +105,38 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 			return m_elements.rend();	\
 		}	\
 		\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::const_iterator begin() const {	\
-			return get_index<kIndexIdT>().begin();	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::const_iterator begin() const {	\
+			return get_index<indexT>().begin();	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::iterator begin(){	\
-			return get_index<kIndexIdT>().begin();	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::iterator begin(){	\
+			return get_index<indexT>().begin();	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::const_iterator end() const {	\
-			return get_index<kIndexIdT>().end();	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::const_iterator end() const {	\
+			return get_index<indexT>().end();	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::iterator end(){	\
-			return get_index<kIndexIdT>().end();	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::iterator end(){	\
+			return get_index<indexT>().end();	\
 		}	\
 		\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::const_reverse_iterator rbegin() const {	\
-			return get_index<kIndexIdT>().rbegin();	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::const_reverse_iterator rbegin() const {	\
+			return get_index<indexT>().rbegin();	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::reverse_iterator rbegin(){	\
-			return get_index<kIndexIdT>().rbegin();	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::reverse_iterator rbegin(){	\
+			return get_index<indexT>().rbegin();	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::const_reverse_iterator rend() const {	\
-			return get_index<kIndexIdT>().rend();	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::const_reverse_iterator rend() const {	\
+			return get_index<indexT>().rend();	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::reverse_iterator rend(){	\
-			return get_index<kIndexIdT>().rend();	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::reverse_iterator rend(){	\
+			return get_index<indexT>().rend();	\
 		}	\
 		\
 		bool empty() const {	\
@@ -186,117 +186,117 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		}	\
 	)	\
 		\
-		template<unsigned kIndexIdT>	\
-		::std::pair<typename base_container::nth_index<kIndexIdT>::type::iterator, bool>	insert(const value_type &val){	\
-			return get_index<kIndexIdT>().insert(val);	\
+		template<unsigned indexT>	\
+		::std::pair<typename base_container::nth_index<indexT>::type::iterator, bool>	insert(const value_type &val){	\
+			return get_index<indexT>().insert(val);	\
 		}	\
 	ENABLE_IF_CXX11(	\
-		template<unsigned kIndexIdT>	\
-		::std::pair<typename base_container::nth_index<kIndexIdT>::type::iterator, bool> insert(value_type &&val){	\
-			return get_index<kIndexIdT>().insert(::std::move(val));	\
+		template<unsigned indexT>	\
+		::std::pair<typename base_container::nth_index<indexT>::type::iterator, bool> insert(value_type &&val){	\
+			return get_index<indexT>().insert(::std::move(val));	\
 		}	\
 	)	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::iterator insert(typename base_container::nth_index<kIndexIdT>::type::iterator hint, const value_type &val){	\
-			return get_index<kIndexIdT>().insert(hint, val);	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::iterator insert(typename base_container::nth_index<indexT>::type::iterator hint, const value_type &val){	\
+			return get_index<indexT>().insert(hint, val);	\
 		}	\
 	ENABLE_IF_CXX11(	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::iterator insert(typename base_container::nth_index<kIndexIdT>::type::iterator hint, value_type &&val){	\
-			return get_index<kIndexIdT>().insert(hint, ::std::move(val));	\
-		}	\
-	)	\
-		\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::iterator erase(typename base_container::nth_index<kIndexIdT>::type::const_iterator pos){	\
-			return get_index<kIndexIdT>().erase(pos);	\
-		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::iterator erase(typename base_container::nth_index<kIndexIdT>::type::const_iterator from, typename base_container::nth_index<kIndexIdT>::type::const_iterator to){	\
-			return get_index<kIndexIdT>().erase(from, to);	\
-		}	\
-		template<unsigned kIndexIdT>	\
-		std::size_t erase(const typename base_container::nth_index<kIndexIdT>::type::key_type &key){	\
-			return get_index<kIndexIdT>().erase(key);	\
-		}	\
-		\
-		template<unsigned kIndexIdT>	\
-		bool replace(typename base_container::nth_index<kIndexIdT>::type::iterator pos, const value_type &val){	\
-			return get_index<kIndexIdT>().replace(pos, val);	\
-		}	\
-	ENABLE_IF_CXX11(	\
-		template<unsigned kIndexIdT>	\
-		bool replace(typename base_container::nth_index<kIndexIdT>::type::iterator pos, value_type &&val){	\
-			return get_index<kIndexIdT>().replace(pos, ::std::move(val));	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::iterator insert(typename base_container::nth_index<indexT>::type::iterator hint, value_type &&val){	\
+			return get_index<indexT>().insert(hint, ::std::move(val));	\
 		}	\
 	)	\
 		\
-		template<unsigned kToIndexIdT>	\
-		typename base_container::nth_index<kToIndexIdT>::type::const_iterator project(const_iterator pos) const {	\
-			return m_elements.project<kToIndexIdT>(pos);	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::iterator erase(typename base_container::nth_index<indexT>::type::const_iterator pos){	\
+			return get_index<indexT>().erase(pos);	\
 		}	\
-		template<unsigned kToIndexIdT>	\
-		typename base_container::nth_index<kToIndexIdT>::type::iterator project(iterator pos){	\
-			return m_elements.project<kToIndexIdT>(pos);	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::iterator erase(typename base_container::nth_index<indexT>::type::const_iterator from, typename base_container::nth_index<indexT>::type::const_iterator to){	\
+			return get_index<indexT>().erase(from, to);	\
 		}	\
-		\
-		template<unsigned kToIndexIdT, unsigned kFromIndexIdT>	\
-		typename base_container::nth_index<kToIndexIdT>::type::const_iterator project(typename base_container::nth_index<kFromIndexIdT>::type::const_iterator pos) const {	\
-			return m_elements.project<kToIndexIdT>(pos);	\
-		}	\
-		template<unsigned kToIndexIdT, unsigned kFromIndexIdT>	\
-		typename base_container::nth_index<kToIndexIdT>::type::iterator project(typename base_container::nth_index<kFromIndexIdT>::type::iterator pos){	\
-			return m_elements.project<kToIndexIdT>(pos);	\
+		template<unsigned indexT>	\
+		std::size_t erase(const typename base_container::nth_index<indexT>::type::key_type &key){	\
+			return get_index<indexT>().erase(key);	\
 		}	\
 		\
-		template<unsigned kIndexIdToSetT>	\
-		bool set_key(iterator pos, typename base_container::nth_index<kIndexIdToSetT>::type::key_type key){	\
-			return get_index<kIndexIdToSetT>().modify_key(m_elements.project<kIndexIdToSetT>(pos), KeySetter<VALUE_TYPE(key)>(STD_MOVE(key)));	\
+		template<unsigned indexT>	\
+		bool replace(typename base_container::nth_index<indexT>::type::iterator pos, const value_type &val){	\
+			return get_index<indexT>().replace(pos, val);	\
 		}	\
-		template<unsigned kIndexIdT, unsigned kIndexIdToSetT>	\
-		bool set_key(typename base_container::nth_index<kIndexIdT>::type::iterator pos, typename base_container::nth_index<kIndexIdToSetT>::type::key_type key){	\
-			return get_index<kIndexIdToSetT>().modify_key(m_elements.project<kIndexIdToSetT>(pos), KeySetter<VALUE_TYPE(key)>(STD_MOVE(key)));	\
+	ENABLE_IF_CXX11(	\
+		template<unsigned indexT>	\
+		bool replace(typename base_container::nth_index<indexT>::type::iterator pos, value_type &&val){	\
+			return get_index<indexT>().replace(pos, ::std::move(val));	\
+		}	\
+	)	\
+		\
+		template<unsigned to_indexT>	\
+		typename base_container::nth_index<to_indexT>::type::const_iterator project(const_iterator pos) const {	\
+			return m_elements.project<to_indexT>(pos);	\
+		}	\
+		template<unsigned to_indexT>	\
+		typename base_container::nth_index<to_indexT>::type::iterator project(iterator pos){	\
+			return m_elements.project<to_indexT>(pos);	\
 		}	\
 		\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::const_iterator find(const typename base_container::nth_index<kIndexIdT>::type::key_type &key) const {	\
-			return get_index<kIndexIdT>().find(key);	\
+		template<unsigned to_indexT, unsigned from_indexT>	\
+		typename base_container::nth_index<to_indexT>::type::const_iterator project(typename base_container::nth_index<from_indexT>::type::const_iterator pos) const {	\
+			return m_elements.project<to_indexT>(pos);	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::iterator find(const typename base_container::nth_index<kIndexIdT>::type::key_type &key){	\
-			return get_index<kIndexIdT>().find(key);	\
-		}	\
-		\
-		template<unsigned kIndexIdT>	\
-		::std::size_t count(const typename base_container::nth_index<kIndexIdT>::type::key_type &key) const {	\
-			return get_index<kIndexIdT>().count(key);	\
+		template<unsigned to_indexT, unsigned from_indexT>	\
+		typename base_container::nth_index<to_indexT>::type::iterator project(typename base_container::nth_index<from_indexT>::type::iterator pos){	\
+			return m_elements.project<to_indexT>(pos);	\
 		}	\
 		\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::const_iterator lower_bound(const typename base_container::nth_index<kIndexIdT>::type::key_type &key) const {	\
-			return get_index<kIndexIdT>().lower_bound(key);	\
+		template<unsigned indexToSetT>	\
+		bool set_key(iterator pos, typename base_container::nth_index<indexToSetT>::type::key_type key){	\
+			return get_index<indexToSetT>().modify_key(m_elements.project<indexToSetT>(pos), Key_setter<VALUE_TYPE(key)>(STD_MOVE(key)));	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::iterator lower_bound(const typename base_container::nth_index<kIndexIdT>::type::key_type &key){	\
-			return get_index<kIndexIdT>().lower_bound(key);	\
-		}	\
-		\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::const_iterator upper_bound(const typename base_container::nth_index<kIndexIdT>::type::key_type &key) const {	\
-			return get_index<kIndexIdT>().upper_bound(key);	\
-		}	\
-		template<unsigned kIndexIdT>	\
-		typename base_container::nth_index<kIndexIdT>::type::iterator upper_bound(const typename base_container::nth_index<kIndexIdT>::type::key_type &key){	\
-			return get_index<kIndexIdT>().upper_bound(key);	\
+		template<unsigned indexT, unsigned indexToSetT>	\
+		bool set_key(typename base_container::nth_index<indexT>::type::iterator pos, typename base_container::nth_index<indexToSetT>::type::key_type key){	\
+			return get_index<indexToSetT>().modify_key(m_elements.project<indexToSetT>(pos), Key_setter<VALUE_TYPE(key)>(STD_MOVE(key)));	\
 		}	\
 		\
-		template<unsigned kIndexIdT>	\
-		::std::pair<typename base_container::nth_index<kIndexIdT>::type::const_iterator, typename base_container::nth_index<kIndexIdT>::type::const_iterator> equal_range(const typename base_container::nth_index<kIndexIdT>::type::key_type &key) const {	\
-			return get_index<kIndexIdT>().equal_range(key);	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::const_iterator find(const typename base_container::nth_index<indexT>::type::key_type &key) const {	\
+			return get_index<indexT>().find(key);	\
 		}	\
-		template<unsigned kIndexIdT>	\
-		::std::pair<typename base_container::nth_index<kIndexIdT>::type::iterator, typename base_container::nth_index<kIndexIdT>::type::iterator> equal_range(const typename base_container::nth_index<kIndexIdT>::type::key_type &key){	\
-			return get_index<kIndexIdT>().equal_range(key);	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::iterator find(const typename base_container::nth_index<indexT>::type::key_type &key){	\
+			return get_index<indexT>().find(key);	\
+		}	\
+		\
+		template<unsigned indexT>	\
+		::std::size_t count(const typename base_container::nth_index<indexT>::type::key_type &key) const {	\
+			return get_index<indexT>().count(key);	\
+		}	\
+		\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::const_iterator lower_bound(const typename base_container::nth_index<indexT>::type::key_type &key) const {	\
+			return get_index<indexT>().lower_bound(key);	\
+		}	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::iterator lower_bound(const typename base_container::nth_index<indexT>::type::key_type &key){	\
+			return get_index<indexT>().lower_bound(key);	\
+		}	\
+		\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::const_iterator upper_bound(const typename base_container::nth_index<indexT>::type::key_type &key) const {	\
+			return get_index<indexT>().upper_bound(key);	\
+		}	\
+		template<unsigned indexT>	\
+		typename base_container::nth_index<indexT>::type::iterator upper_bound(const typename base_container::nth_index<indexT>::type::key_type &key){	\
+			return get_index<indexT>().upper_bound(key);	\
+		}	\
+		\
+		template<unsigned indexT>	\
+		::std::pair<typename base_container::nth_index<indexT>::type::const_iterator, typename base_container::nth_index<indexT>::type::const_iterator> equal_range(const typename base_container::nth_index<indexT>::type::key_type &key) const {	\
+			return get_index<indexT>().equal_range(key);	\
+		}	\
+		template<unsigned indexT>	\
+		::std::pair<typename base_container::nth_index<indexT>::type::iterator, typename base_container::nth_index<indexT>::type::iterator> equal_range(const typename base_container::nth_index<indexT>::type::key_type &key){	\
+			return get_index<indexT>().equal_range(key);	\
 		}	\
 	}
 

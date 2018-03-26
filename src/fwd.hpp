@@ -6,23 +6,23 @@
 
 namespace Poseidon {
 
-class TinyException;
+class Tiny_exception;
 class Exception;
-class SystemException;
+class System_exception;
 
 class Thread;
 class Mutex;
-class RecursiveMutex;
-class ConditionVariable;
+class Recursive_mutex;
+class Condition_variable;
 
-class OptionalMap;
-class StreamBuffer;
-class HexPrinter;
-class SharedNts;
-class IpPort;
-class SockAddr;
+class Optional_map;
+class Stream_buffer;
+class Hex_printer;
+class Shared_nts;
+class Ip_port;
+class Sock_addr;
 class Uuid;
-class VirtualSharedFromThis;
+class Virtual_shared_from_this;
 
 class Buffer_streambuf;
 class Buffer_istream;
@@ -38,55 +38,55 @@ class Sha1_ostream;
 class Sha256_streambuf;
 class Sha256_ostream;
 
-class ConfigFile;
-class CsvParser;
-class JsonObject;
-class JsonArray;
-class JsonElement;
+class Config_file;
+class Csv_parser;
+class Json_object;
+class Json_array;
+class Json_element;
 
-class JobBase;
-class EventBase;
-class SystemHttpServletBase;
+class Job_base;
+class Event_base;
+class System_http_servlet_base;
 
 class Promise;
-template<typename> class PromiseContainer;
+template<typename> class Promise_container;
 
-class SocketBase;
-class SessionBase;
-class TcpSessionBase;
-class TcpClientBase;
-class TcpServerBase;
-class UdpSessionBase;
-class UdpClientBase;
-class UdpServerBase;
+class Socket_base;
+class Session_base;
+class Tcp_session_base;
+class Tcp_client_base;
+class Tcp_server_base;
+class Udp_session_base;
+class Udp_client_base;
+class Udp_server_base;
 
-class SystemHttpSession;
+class System_http_session;
 
-class HexEncoder;
-class HexDecoder;
-class Base64Encoder;
-class Base64Decoder;
+class Hex_encoder;
+class Hex_decoder;
+class Base64_encoder;
+class Base64_decoder;
 
 class Deflator;
 class Inflator;
 
-class EventListener;
+class Event_listener;
 class Timer;
 
-class DnsDaemon;
-class EpollDaemon;
-class EventDispatcher;
-class FileSystemDaemon;
-class JobDispatcher;
-class MainConfig;
-class ModuleDepository;
-class MongoDbDaemon;
-class MySqlDaemon;
-class ProfileDepository;
-class SystemHttpServer;
-class TimerDaemon;
-class WorkhorseCamp;
-class MagicDaemon;
+class Dns_daemon;
+class Epoll_daemon;
+class Event_dispatcher;
+class File_system_daemon;
+class Job_dispatcher;
+class Main_config;
+class Module_depository;
+class Mongo_db_daemon;
+class My_sql_daemon;
+class Profile_depository;
+class System_http_server;
+class Timer_daemon;
+class Workhorse_camp;
+class Magic_daemon;
 
 }
 

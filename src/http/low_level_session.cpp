@@ -13,21 +13,21 @@
 namespace Poseidon {
 namespace Http {
 
-LowLevelSession::LowLevelSession(Move<UniqueFile> socket)
-	: TcpSessionBase(STD_MOVE(socket)), ServerReader(), ServerWriter()
+Low_level_session::Low_level_session(Move<Unique_file> socket)
+	: Tcp_session_base(STD_MOVE(socket)), Server_reader(), Server_writer()
 {
 	//
 }
-LowLevelSession::~LowLevelSession(){
+Low_level_session::~Low_level_session(){
 	//
 }
 
-void LowLevelSession::on_connect(){
+void Low_level_session::on_connect(){
 	PROFILE_ME;
 
 	//
 }
-void LowLevelSession::on_read_hup(){
+void Low_level_session::on_read_hup(){
 	PROFILE_ME;
 
 	// epoll 线程读取不需要锁。
@@ -36,7 +36,7 @@ void LowLevelSession::on_read_hup(){
 		upgraded_session->on_read_hup();
 	}
 }
-void LowLevelSession::on_close(int err_code){
+void Low_level_session::on_close(int err_code){
 	PROFILE_ME;
 
 	// epoll 线程读取不需要锁。
@@ -45,7 +45,7 @@ void LowLevelSession::on_close(int err_code){
 		upgraded_session->on_close(err_code);
 	}
 }
-void LowLevelSession::on_receive(StreamBuffer data){
+void Low_level_session::on_receive(Stream_buffer data){
 	PROFILE_ME;
 
 	// epoll 线程读取不需要锁。
@@ -55,21 +55,21 @@ void LowLevelSession::on_receive(StreamBuffer data){
 		return;
 	}
 
-	ServerReader::put_encoded_data(STD_MOVE(data));
+	Server_reader::put_encoded_data(STD_MOVE(data));
 
 	upgraded_session = m_upgraded_session;
 	if(upgraded_session){
 		upgraded_session->on_connect();
 
-		StreamBuffer queue;
-		queue.swap(ServerReader::get_queue());
+		Stream_buffer queue;
+		queue.swap(Server_reader::get_queue());
 		if(!queue.empty()){
 			upgraded_session->on_receive(STD_MOVE(queue));
 		}
 	}
 }
 
-void LowLevelSession::on_shutdown_timer(boost::uint64_t now){
+void Low_level_session::on_shutdown_timer(boost::uint64_t now){
 	PROFILE_ME;
 
 	// timer 线程读取需要锁。
@@ -78,63 +78,63 @@ void LowLevelSession::on_shutdown_timer(boost::uint64_t now){
 		upgraded_session->on_shutdown_timer(now);
 	}
 
-	TcpSessionBase::on_shutdown_timer(now);
+	Tcp_session_base::on_shutdown_timer(now);
 }
 
-void LowLevelSession::on_request_headers(RequestHeaders request_headers, boost::uint64_t content_length){
+void Low_level_session::on_request_headers(Request_headers request_headers, boost::uint64_t content_length){
 	PROFILE_ME;
 
 	on_low_level_request_headers(STD_MOVE(request_headers), content_length);
 }
-void LowLevelSession::on_request_entity(boost::uint64_t entity_offset, StreamBuffer entity){
+void Low_level_session::on_request_entity(boost::uint64_t entity_offset, Stream_buffer entity){
 	PROFILE_ME;
 
 	on_low_level_request_entity(entity_offset, STD_MOVE(entity));
 }
-bool LowLevelSession::on_request_end(boost::uint64_t content_length, OptionalMap headers){
+bool Low_level_session::on_request_end(boost::uint64_t content_length, Optional_map headers){
 	PROFILE_ME;
 
 	AUTO(upgraded_session, on_low_level_request_end(content_length, STD_MOVE(headers)));
 	if(upgraded_session){
-		const Mutex::UniqueLock lock(m_upgraded_session_mutex);
+		const Mutex::Unique_lock lock(m_upgraded_session_mutex);
 		m_upgraded_session = STD_MOVE(upgraded_session);
 		return false;
 	}
 	return true;
 }
 
-long LowLevelSession::on_encoded_data_avail(StreamBuffer encoded){
+long Low_level_session::on_encoded_data_avail(Stream_buffer encoded){
 	PROFILE_ME;
 
-	return TcpSessionBase::send(STD_MOVE(encoded));
+	return Tcp_session_base::send(STD_MOVE(encoded));
 }
 
-boost::shared_ptr<UpgradedSessionBase> LowLevelSession::get_upgraded_session() const {
-	const Mutex::UniqueLock lock(m_upgraded_session_mutex);
+boost::shared_ptr<Upgraded_session_base> Low_level_session::get_upgraded_session() const {
+	const Mutex::Unique_lock lock(m_upgraded_session_mutex);
 	return m_upgraded_session;
 }
 
-bool LowLevelSession::send(ResponseHeaders response_headers, StreamBuffer entity){
+bool Low_level_session::send(Response_headers response_headers, Stream_buffer entity){
 	PROFILE_ME;
 
-	return ServerWriter::put_response(STD_MOVE(response_headers), STD_MOVE(entity), true);
+	return Server_writer::put_response(STD_MOVE(response_headers), STD_MOVE(entity), true);
 }
-bool LowLevelSession::send(StatusCode status_code){
+bool Low_level_session::send(Status_code status_code){
 	PROFILE_ME;
 
-	return send(status_code, OptionalMap(), StreamBuffer());
+	return send(status_code, Optional_map(), Stream_buffer());
 }
-bool LowLevelSession::send(StatusCode status_code, StreamBuffer entity, const HeaderOption &content_type){
+bool Low_level_session::send(Status_code status_code, Stream_buffer entity, const Header_option &content_type){
 	PROFILE_ME;
 
-	OptionalMap headers;
+	Optional_map headers;
 	headers.set(sslit("Content-Type"), content_type.dump().dump_string());
 	return send(status_code, STD_MOVE(headers), STD_MOVE(entity));
 }
-bool LowLevelSession::send(StatusCode status_code, OptionalMap headers, StreamBuffer entity){
+bool Low_level_session::send(Status_code status_code, Optional_map headers, Stream_buffer entity){
 	PROFILE_ME;
 
-	ResponseHeaders response_headers;
+	Response_headers response_headers;
 	response_headers.version = 10001;
 	response_headers.status_code = status_code;
 	response_headers.reason = get_status_code_desc(status_code).desc_short;
@@ -142,35 +142,35 @@ bool LowLevelSession::send(StatusCode status_code, OptionalMap headers, StreamBu
 	return send(STD_MOVE(response_headers), STD_MOVE(entity));
 }
 
-bool LowLevelSession::send_chunked_header(ResponseHeaders response_headers){
+bool Low_level_session::send_chunked_header(Response_headers response_headers){
 	PROFILE_ME;
 
-	return ServerWriter::put_chunked_header(STD_MOVE(response_headers));
+	return Server_writer::put_chunked_header(STD_MOVE(response_headers));
 }
-bool LowLevelSession::send_chunk(StreamBuffer entity){
+bool Low_level_session::send_chunk(Stream_buffer entity){
 	PROFILE_ME;
 
-	return ServerWriter::put_chunk(STD_MOVE(entity));
+	return Server_writer::put_chunk(STD_MOVE(entity));
 }
-bool LowLevelSession::send_chunked_trailer(OptionalMap headers){
+bool Low_level_session::send_chunked_trailer(Optional_map headers){
 	PROFILE_ME;
 
-	return ServerWriter::put_chunked_trailer(STD_MOVE(headers));
+	return Server_writer::put_chunked_trailer(STD_MOVE(headers));
 }
 
-bool LowLevelSession::send_default(StatusCode status_code, OptionalMap headers){
+bool Low_level_session::send_default(Status_code status_code, Optional_map headers){
 	PROFILE_ME;
 
 	AUTO(pair, make_default_response(status_code, STD_MOVE(headers)));
-	return ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
+	return Server_writer::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
 }
-bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, const OptionalMap &headers) NOEXCEPT
+bool Low_level_session::send_default_and_shutdown(Status_code status_code, const Optional_map &headers) NOEXCEPT
 try {
 	PROFILE_ME;
 
 	AUTO(pair, make_default_response(status_code, headers));
 	pair.first.headers.set(sslit("Connection"), "Close");
-	ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
+	Server_writer::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
 	shutdown_read();
 	return shutdown_write();
 } catch(std::exception &e){
@@ -182,7 +182,7 @@ try {
 	force_shutdown();
 	return false;
 }
-bool LowLevelSession::send_default_and_shutdown(StatusCode status_code, Move<OptionalMap> headers) NOEXCEPT
+bool Low_level_session::send_default_and_shutdown(Status_code status_code, Move<Optional_map> headers) NOEXCEPT
 try {
 	PROFILE_ME;
 
@@ -191,7 +191,7 @@ try {
 	}
 	AUTO(pair, make_default_response(status_code, STD_MOVE(headers)));
 	pair.first.headers.set(sslit("Connection"), "Close");
-	ServerWriter::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
+	Server_writer::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
 	shutdown_read();
 	return shutdown_write();
 } catch(std::exception &e){

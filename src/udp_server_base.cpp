@@ -12,22 +12,22 @@
 namespace Poseidon {
 
 namespace {
-	UniqueFile create_udp_socket(const SockAddr &addr){
-		UniqueFile udp;
-		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), SystemException);
+	Unique_file create_udp_socket(const Sock_addr &addr){
+		Unique_file udp;
+		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), System_exception);
 		static CONSTEXPR const int s_true_value = true;
-		DEBUG_THROW_UNLESS(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &s_true_value, sizeof(s_true_value)) == 0, SystemException);
-		DEBUG_THROW_UNLESS(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0, SystemException);
+		DEBUG_THROW_UNLESS(::setsockopt(udp.get(), SOL_SOCKET, SO_REUSEADDR, &s_true_value, sizeof(s_true_value)) == 0, System_exception);
+		DEBUG_THROW_UNLESS(::bind(udp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0, System_exception);
 		return udp;
 	}
 }
 
-UdpServerBase::UdpServerBase(const SockAddr &addr)
-	: UdpSessionBase(create_udp_socket(addr))
+Udp_server_base::Udp_server_base(const Sock_addr &addr)
+	: Udp_session_base(create_udp_socket(addr))
 {
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Created UDP server on ", get_local_info());
 }
-UdpServerBase::~UdpServerBase(){
+Udp_server_base::~Udp_server_base(){
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Destroyed UDP server on ", get_local_info());
 }
 

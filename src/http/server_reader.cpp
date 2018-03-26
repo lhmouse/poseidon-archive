@@ -16,18 +16,18 @@
 namespace Poseidon {
 namespace Http {
 
-ServerReader::ServerReader()
+Server_reader::Server_reader()
 	: m_size_expecting(content_length_expecting_endl), m_state(state_first_header)
 {
 	//
 }
-ServerReader::~ServerReader(){
+Server_reader::~Server_reader(){
 	if(m_state != state_first_header){
 		LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature request has to be discarded.");
 	}
 }
 
-bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_params){
+bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_params){
 	PROFILE_ME;
 
 	m_queue.splice(encoded);
@@ -38,7 +38,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 		if(expecting_new_line){
 			std::ptrdiff_t lf_offset = 0;
-			StreamBuffer::EnumerationCookie cookie;
+			Stream_buffer::Enumeration_cookie cookie;
 			for(;;){
 				const void *data, *pos;
 				std::size_t size;
@@ -55,7 +55,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 			}
 			if(lf_offset < 0){
 				// 没找到换行符。
-				const AUTO(max_line_length, MainConfig::get<std::size_t>("http_max_header_line_length", 8192));
+				const AUTO(max_line_length, Main_config::get<std::size_t>("http_max_header_line_length", 8192));
 				DEBUG_THROW_UNLESS(m_queue.size() <= max_line_length, Exception, status_bad_request); // XXX 用一个别的状态码？
 				break;
 			}
@@ -79,7 +79,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 		case state_first_header:
 			if(!expected.empty()){
-				m_request_headers = RequestHeaders();
+				m_request_headers = Request_headers();
 				m_content_length = 0;
 				m_content_offset = 0;
 
@@ -87,7 +87,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 				for(AUTO(it, line.begin()); it != line.end(); ++it){
 					const unsigned ch = static_cast<unsigned char>(*it);
-					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), BasicException, sslit("Invalid HTTP request header"));
+					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), Basic_exception, sslit("Invalid HTTP request header"));
 				}
 
 				AUTO(pos, line.find(' '));
@@ -113,7 +113,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 					pos = m_request_headers.uri.find('?');
 					if(pos != std::string::npos){
 						Buffer_istream is;
-						is.set_buffer(StreamBuffer(m_request_headers.uri.data() + pos + 1, m_request_headers.uri.size() - pos - 1));
+						is.set_buffer(Stream_buffer(m_request_headers.uri.data() + pos + 1, m_request_headers.uri.size() - pos - 1));
 						url_decode_params(is, m_request_headers.get_params);
 						m_request_headers.uri.erase(pos);
 					}
@@ -130,14 +130,14 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 		case state_headers:
 			if(!expected.empty()){
 				const AUTO(headers, m_request_headers.headers.size());
-				const AUTO(max_headers, MainConfig::get<std::size_t>("http_max_headers_per_request", 64));
+				const AUTO(max_headers, Main_config::get<std::size_t>("http_max_headers_per_request", 64));
 				DEBUG_THROW_UNLESS(headers <= max_headers, Exception, status_bad_request); // XXX 用一个别的状态码？
 
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
 				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
-				SharedNts key(line.data(), pos);
+				Shared_nts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				m_request_headers.headers.append(STD_MOVE(key), STD_MOVE(value));
@@ -160,7 +160,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 					m_content_length = content_length_chunked;
 				} else {
 					LOG_POSEIDON_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
-					DEBUG_THROW(BasicException, sslit("Inacceptable Transfer-Encoding"));
+					DEBUG_THROW(Basic_exception, sslit("Inacceptable Transfer-Encoding"));
 				}
 
 				on_request_headers(STD_MOVE(m_request_headers), m_content_length);
@@ -241,7 +241,7 @@ bool ServerReader::put_encoded_data(StreamBuffer encoded, bool dont_parse_get_pa
 
 				AUTO(pos, line.find(':'));
 				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
-				SharedNts key(line.data(), pos);
+				Shared_nts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				m_chunked_trailer.append(STD_MOVE(key), STD_MOVE(value));

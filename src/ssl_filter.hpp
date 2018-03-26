@@ -11,7 +11,7 @@
 
 namespace Poseidon {
 
-class SslFilter : NONCOPYABLE {
+class Ssl_filter : NONCOPYABLE {
 public:
 	enum Direction {
 		to_connect  = 1,
@@ -19,13 +19,13 @@ public:
 	};
 
 private:
-	const UniqueSsl m_ssl;
+	const Unique_ssl m_ssl;
 
 	mutable Mutex m_mutex;
 
 public:
-	SslFilter(Move<UniqueSsl> ssl, Direction dir, int fd);
-	virtual ~SslFilter();
+	Ssl_filter(Move<Unique_ssl> ssl, Direction dir, int fd);
+	virtual ~Ssl_filter();
 
 public:
 	long recv(void *data, unsigned long size);

@@ -15,7 +15,7 @@ namespace Poseidon {
 
 class Promise : NONCOPYABLE {
 protected:
-	mutable RecursiveMutex m_mutex;
+	mutable Recursive_mutex m_mutex;
 	boost::optional<STD_EXCEPTION_PTR> m_except;
 
 public:
@@ -36,22 +36,22 @@ public:
 };
 
 template<typename ResultT>
-class PromiseContainer : public Promise {
+class Promise_container : public Promise {
 private:
 	mutable boost::optional<typename boost::remove_const<ResultT>::type> m_result;
 	bool m_result_accepted;
 
 public:
-	PromiseContainer()
+	Promise_container()
 		: m_result(), m_result_accepted(false)
 	{
 		//
 	}
-	~PromiseContainer() OVERRIDE;
+	~Promise_container() OVERRIDE;
 
 public:
 	ResultT *try_get() const NOEXCEPT {
-		const RecursiveMutex::UniqueLock lock(m_mutex);
+		const Recursive_mutex::Unique_lock lock(m_mutex);
 		if(Promise::would_throw()){
 			return NULLPTR;
 		}
@@ -59,13 +59,13 @@ public:
 		return m_result.get_ptr();
 	}
 	ResultT &get() const {
-		const RecursiveMutex::UniqueLock lock(m_mutex);
+		const Recursive_mutex::Unique_lock lock(m_mutex);
 		Promise::check_and_rethrow();
 		// Likewise. See comments in `try_get()`.
 		return m_result.get();
 	}
 	void set_success(typename boost::remove_const<ResultT>::type result, bool throw_if_already_set = true){
-		const RecursiveMutex::UniqueLock lock(m_mutex);
+		const Recursive_mutex::Unique_lock lock(m_mutex);
 		// If `m_result_accepted` is true, `Promise::set_success()` will throw an exception eventually. Hence we do not set the value here.
 		if(!m_result_accepted){
 			m_result = STD_MOVE_IDN(result);
@@ -76,14 +76,14 @@ public:
 };
 
 template<typename ResultT>
-PromiseContainer<ResultT>::~PromiseContainer(){
+Promise_container<ResultT>::~Promise_container(){
 	//
 }
 
 extern void yield(const boost::shared_ptr<const Promise> &promise, bool insignificant = true);
 
 template<typename ResultT>
-inline ResultT wait(const boost::shared_ptr<const PromiseContainer<ResultT> > &promise, bool insignificant = true){
+inline ResultT wait(const boost::shared_ptr<const Promise_container<ResultT> > &promise, bool insignificant = true){
 	((yield))(promise, insignificant);
 	return STD_MOVE(promise->get());
 }

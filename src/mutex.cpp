@@ -12,18 +12,18 @@ namespace Poseidon {
 #define ABORT_UNLESS(c_, ...)   do { if(c_){ break; } LOG_POSEIDON_FATAL(__VA_ARGS__); std::abort(); } while(false)
 
 namespace {
-	class MutexAttribute : NONCOPYABLE {
+	class Mutex_attribute : NONCOPYABLE {
 	private:
 		::pthread_mutexattr_t m_attr;
 
 	public:
-		MutexAttribute(){
+		Mutex_attribute(){
 			int err = ::pthread_mutexattr_init(&m_attr);
-			DEBUG_THROW_UNLESS(err == 0, SystemException);
+			DEBUG_THROW_UNLESS(err == 0, System_exception);
 			err = ::pthread_mutexattr_settype(&m_attr, PTHREAD_MUTEX_ERRORCHECK);
 			ABORT_UNLESS(err == 0, "::pthread_mutexattr_settype() failed with ", err, " (", get_error_desc(err), ")");
 		}
-		~MutexAttribute(){
+		~Mutex_attribute(){
 			int err = ::pthread_mutexattr_destroy(&m_attr);
 			ABORT_UNLESS(err == 0, "::pthread_mutexattr_destroy() failed with ", err, " (", get_error_desc(err), ")");
 		}
@@ -35,38 +35,38 @@ namespace {
 	};
 }
 
-Mutex::UniqueLock::UniqueLock()
+Mutex::Unique_lock::Unique_lock()
 	: m_target(NULLPTR), m_locked(false)
 {
 	//
 }
-Mutex::UniqueLock::UniqueLock(Mutex &target, bool locks_target)
+Mutex::Unique_lock::Unique_lock(Mutex &target, bool locks_target)
 	: m_target(&target), m_locked(false)
 {
 	if(locks_target){
 		lock();
 	}
 }
-Mutex::UniqueLock::~UniqueLock(){
+Mutex::Unique_lock::~Unique_lock(){
 	if(m_locked){
 		unlock();
 	}
 }
 
-bool Mutex::UniqueLock::is_locked() const NOEXCEPT {
+bool Mutex::Unique_lock::is_locked() const NOEXCEPT {
 	return m_locked;
 }
-void Mutex::UniqueLock::lock() NOEXCEPT {
-	ABORT_UNLESS(m_target, "No mutex has been assigned to this UniqueLock.");
-	ABORT_UNLESS(!m_locked, "The mutex has already been locked by this UniqueLock.");
+void Mutex::Unique_lock::lock() NOEXCEPT {
+	ABORT_UNLESS(m_target, "No mutex has been assigned to this Unique_lock.");
+	ABORT_UNLESS(!m_locked, "The mutex has already been locked by this Unique_lock.");
 
 	int err = ::pthread_mutex_lock(&(m_target->m_mutex));
 	ABORT_UNLESS(err == 0, "::pthread_mutex_lock() failed with ", err, " (", get_error_desc(err), ")");
 	m_locked = true;
 }
-void Mutex::UniqueLock::unlock() NOEXCEPT {
-	ABORT_UNLESS(m_target, "No mutex has been assigned to this UniqueLock.");
-	ABORT_UNLESS(m_locked, "The mutex has not already been locked by this UniqueLock.");
+void Mutex::Unique_lock::unlock() NOEXCEPT {
+	ABORT_UNLESS(m_target, "No mutex has been assigned to this Unique_lock.");
+	ABORT_UNLESS(m_locked, "The mutex has not already been locked by this Unique_lock.");
 
 	int err = ::pthread_mutex_unlock(&(m_target->m_mutex));
 	ABORT_UNLESS(err == 0, "::pthread_mutex_unlock() failed with ", err, " (", get_error_desc(err), ")");
@@ -74,8 +74,8 @@ void Mutex::UniqueLock::unlock() NOEXCEPT {
 }
 
 Mutex::Mutex(){
-	int err = ::pthread_mutex_init(&m_mutex, MutexAttribute());
-	DEBUG_THROW_UNLESS(err == 0, SystemException, err);
+	int err = ::pthread_mutex_init(&m_mutex, Mutex_attribute());
+	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
 }
 Mutex::~Mutex(){
 	int err = ::pthread_mutex_destroy(&m_mutex);

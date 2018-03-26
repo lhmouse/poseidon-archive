@@ -15,17 +15,17 @@
 #include "../atomic.hpp"
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
-class Session::SyncJobBase : public JobBase {
+class Session::Sync_job_base : public Job_base {
 private:
-	const SocketBase::DelayedShutdownGuard m_guard;
-	const boost::weak_ptr<TcpSessionBase> m_weak_parent;
+	const Socket_base::Delayed_shutdown_guard m_guard;
+	const boost::weak_ptr<Tcp_session_base> m_weak_parent;
 	const boost::weak_ptr<Session> m_weak_session;
 
 protected:
-	explicit SyncJobBase(const boost::shared_ptr<Session> &session)
-		: m_guard(boost::shared_ptr<SocketBase>(session->get_weak_parent())), m_weak_parent(session->get_weak_parent()), m_weak_session(session)
+	explicit Sync_job_base(const boost::shared_ptr<Session> &session)
+		: m_guard(boost::shared_ptr<Socket_base>(session->get_weak_parent())), m_weak_parent(session->get_weak_parent()), m_weak_session(session)
 	{
 		//
 	}
@@ -45,7 +45,7 @@ private:
 		try {
 			really_perform(session);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "WebSocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Web_socket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			session->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
@@ -60,10 +60,10 @@ protected:
 	virtual void really_perform(const boost::shared_ptr<Session> &session) = 0;
 };
 
-class Session::ReadHupJob : public Session::SyncJobBase {
+class Session::Read_hup_job : public Session::Sync_job_base {
 public:
-	explicit ReadHupJob(const boost::shared_ptr<Session> &session)
-		: SyncJobBase(session)
+	explicit Read_hup_job(const boost::shared_ptr<Session> &session)
+		: Sync_job_base(session)
 	{
 		//
 	}
@@ -76,10 +76,10 @@ protected:
 	}
 };
 
-class Session::PingJob : public Session::SyncJobBase {
+class Session::Ping_job : public Session::Sync_job_base {
 public:
-	explicit PingJob(const boost::shared_ptr<Session> &session)
-		: SyncJobBase(session)
+	explicit Ping_job(const boost::shared_ptr<Session> &session)
+		: Sync_job_base(session)
 	{
 		//
 	}
@@ -91,18 +91,18 @@ protected:
 		const boost::uint64_t local_now = get_local_time();
 		char str[256];
 		std::size_t len = format_time(str, sizeof(str), local_now, true);
-		session->send(opcode_ping, StreamBuffer(str, len));
+		session->send(opcode_ping, Stream_buffer(str, len));
 	}
 };
 
-class Session::DataMessageJob : public Session::SyncJobBase {
+class Session::Data_message_job : public Session::Sync_job_base {
 private:
-	OpCode m_opcode;
-	StreamBuffer m_payload;
+	Op_code m_opcode;
+	Stream_buffer m_payload;
 
 public:
-	DataMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
-		: SyncJobBase(session)
+	Data_message_job(const boost::shared_ptr<Session> &session, Op_code opcode, Stream_buffer payload)
+		: Sync_job_base(session)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
 	{
 		//
@@ -115,19 +115,19 @@ protected:
 		LOG_POSEIDON_DEBUG("Dispatching data message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
 		session->on_sync_data_message(m_opcode, STD_MOVE(m_payload));
 
-		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+		const AUTO(keep_alive_timeout, Main_config::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 		session->set_timeout(keep_alive_timeout);
 	}
 };
 
-class Session::ControlMessageJob : public Session::SyncJobBase {
+class Session::Control_message_job : public Session::Sync_job_base {
 private:
-	OpCode m_opcode;
-	StreamBuffer m_payload;
+	Op_code m_opcode;
+	Stream_buffer m_payload;
 
 public:
-	ControlMessageJob(const boost::shared_ptr<Session> &session, OpCode opcode, StreamBuffer payload)
-		: SyncJobBase(session)
+	Control_message_job(const boost::shared_ptr<Session> &session, Op_code opcode, Stream_buffer payload)
+		: Sync_job_base(session)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
 	{
 		//
@@ -140,14 +140,14 @@ protected:
 		LOG_POSEIDON_DEBUG("Dispatching control message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
 		session->on_sync_control_message(m_opcode, STD_MOVE(m_payload));
 
-		const AUTO(keep_alive_timeout, MainConfig::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+		const AUTO(keep_alive_timeout, Main_config::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
 		session->set_timeout(keep_alive_timeout);
 	}
 };
 
-Session::Session(const boost::shared_ptr<Http::LowLevelSession> &parent)
-	: LowLevelSession(parent)
-	, m_max_request_length(MainConfig::get<boost::uint64_t>("websocket_max_request_length", 16384))
+Session::Session(const boost::shared_ptr<Http::Low_level_session> &parent)
+	: Low_level_session(parent)
+	, m_max_request_length(Main_config::get<boost::uint64_t>("websocket_max_request_length", 16384))
 	, m_size_total(0), m_opcode(opcode_invalid)
 {
 	//
@@ -159,30 +159,30 @@ Session::~Session(){
 void Session::on_read_hup(){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ReadHupJob>(virtual_shared_from_this<Session>()),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Read_hup_job>(virtual_shared_from_this<Session>()),
 		VAL_INIT);
 
-	LowLevelSession::on_read_hup();
+	Low_level_session::on_read_hup();
 }
 void Session::on_shutdown_timer(boost::uint64_t now){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<PingJob>(virtual_shared_from_this<Session>()),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Ping_job>(virtual_shared_from_this<Session>()),
 		VAL_INIT);
 
-	LowLevelSession::on_shutdown_timer(now);
+	Low_level_session::on_shutdown_timer(now);
 }
 
-void Session::on_low_level_message_header(OpCode opcode){
+void Session::on_low_level_message_header(Op_code opcode){
 	PROFILE_ME;
 
 	m_size_total = 0;
 	m_opcode = opcode;
 	m_payload.clear();
 }
-void Session::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, StreamBuffer payload){
+void Session::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, Stream_buffer payload){
 	PROFILE_ME;
 
 	m_size_total += payload.size();
@@ -192,23 +192,23 @@ void Session::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, Str
 bool Session::on_low_level_message_end(boost::uint64_t /*whole_size*/){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Session>(), m_opcode, STD_MOVE(m_payload)),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Data_message_job>(virtual_shared_from_this<Session>(), m_opcode, STD_MOVE(m_payload)),
 		VAL_INIT);
 
 	return true;
 }
-bool Session::on_low_level_control_message(OpCode opcode, StreamBuffer payload){
+bool Session::on_low_level_control_message(Op_code opcode, Stream_buffer payload){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Session>(), opcode, STD_MOVE(payload)),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Control_message_job>(virtual_shared_from_this<Session>(), opcode, STD_MOVE(payload)),
 		VAL_INIT);
 
 	return true;
 }
 
-void Session::on_sync_control_message(OpCode opcode, StreamBuffer payload){
+void Session::on_sync_control_message(Op_code opcode, Stream_buffer payload){
 	PROFILE_ME;
 	LOG_POSEIDON_DEBUG("Control frame: opcode = ", opcode);
 

@@ -12,18 +12,18 @@ namespace Poseidon {
 #define ABORT_UNLESS(c_, ...)   do { if(c_){ break; } LOG_POSEIDON_FATAL(__VA_ARGS__); std::abort(); } while(false)
 
 namespace {
-	class MutexAttribute : NONCOPYABLE {
+	class Mutex_attribute : NONCOPYABLE {
 	private:
 		::pthread_mutexattr_t m_attr;
 
 	public:
-		MutexAttribute(){
+		Mutex_attribute(){
 			int err = ::pthread_mutexattr_init(&m_attr);
-			DEBUG_THROW_UNLESS(err == 0, SystemException);
+			DEBUG_THROW_UNLESS(err == 0, System_exception);
 			err = ::pthread_mutexattr_settype(&m_attr, PTHREAD_MUTEX_RECURSIVE);
 			ABORT_UNLESS(err == 0, "::pthread_mutexattr_settype() failed with ", err, " (", get_error_desc(err), ")");
 		}
-		~MutexAttribute(){
+		~Mutex_attribute(){
 			int err = ::pthread_mutexattr_destroy(&m_attr);
 			ABORT_UNLESS(err == 0, "::pthread_mutexattr_destroy() failed with ", err, " (", get_error_desc(err), ")");
 		}
@@ -35,49 +35,49 @@ namespace {
 	};
 }
 
-RecursiveMutex::UniqueLock::UniqueLock()
+Recursive_mutex::Unique_lock::Unique_lock()
 	: m_target(NULLPTR), m_locked(false)
 {
 	//
 }
-RecursiveMutex::UniqueLock::UniqueLock(RecursiveMutex &target, bool locks_target)
+Recursive_mutex::Unique_lock::Unique_lock(Recursive_mutex &target, bool locks_target)
 	: m_target(&target), m_locked(false)
 {
 	if(locks_target){
 		lock();
 	}
 }
-RecursiveMutex::UniqueLock::~UniqueLock(){
+Recursive_mutex::Unique_lock::~Unique_lock(){
 	if(m_locked){
 		unlock();
 	}
 }
 
-bool RecursiveMutex::UniqueLock::is_locked() const NOEXCEPT {
+bool Recursive_mutex::Unique_lock::is_locked() const NOEXCEPT {
 	return m_locked;
 }
-void RecursiveMutex::UniqueLock::lock() NOEXCEPT {
-	ABORT_UNLESS(m_target, "No recursive mutex has been assigned to this UniqueLock.");
-	ABORT_UNLESS(!m_locked, "The recursive mutex has already been locked by this UniqueLock.");
+void Recursive_mutex::Unique_lock::lock() NOEXCEPT {
+	ABORT_UNLESS(m_target, "No recursive mutex has been assigned to this Unique_lock.");
+	ABORT_UNLESS(!m_locked, "The recursive mutex has already been locked by this Unique_lock.");
 
 	int err = ::pthread_mutex_lock(&(m_target->m_mutex));
 	ABORT_UNLESS(err == 0, "::pthread_mutex_lock() failed with ", err, " (", get_error_desc(err), ")");
 	m_locked = true;
 }
-void RecursiveMutex::UniqueLock::unlock() NOEXCEPT {
-	ABORT_UNLESS(m_target, "No recursive mutex has been assigned to this UniqueLock.");
-	ABORT_UNLESS(m_locked, "The recursive mutex has not already been locked by this UniqueLock.");
+void Recursive_mutex::Unique_lock::unlock() NOEXCEPT {
+	ABORT_UNLESS(m_target, "No recursive mutex has been assigned to this Unique_lock.");
+	ABORT_UNLESS(m_locked, "The recursive mutex has not already been locked by this Unique_lock.");
 
 	int err = ::pthread_mutex_unlock(&(m_target->m_mutex));
 	ABORT_UNLESS(err == 0, "::pthread_mutex_unlock() failed with ", err, " (", get_error_desc(err), ")");
 	m_locked = false;
 }
 
-RecursiveMutex::RecursiveMutex(){
-	int err = ::pthread_mutex_init(&m_mutex, MutexAttribute());
-	DEBUG_THROW_UNLESS(err == 0, SystemException, err);
+Recursive_mutex::Recursive_mutex(){
+	int err = ::pthread_mutex_init(&m_mutex, Mutex_attribute());
+	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
 }
-RecursiveMutex::~RecursiveMutex(){
+Recursive_mutex::~Recursive_mutex(){
 	int err = ::pthread_mutex_destroy(&m_mutex);
 	ABORT_UNLESS(err == 0, "::pthread_mutex_destroy() failed with ", err, " (", get_error_desc(err), ")");
 }

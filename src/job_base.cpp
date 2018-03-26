@@ -7,12 +7,12 @@
 
 namespace Poseidon {
 
-JobBase::~JobBase(){
+Job_base::~Job_base(){
 	//
 }
 
-void enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn){
-	JobDispatcher::enqueue(STD_MOVE(job), STD_MOVE(withdrawn));
+void enqueue(boost::shared_ptr<Job_base> job, boost::shared_ptr<const bool> withdrawn){
+	Job_dispatcher::enqueue(STD_MOVE(job), STD_MOVE(withdrawn));
 }
 
 }

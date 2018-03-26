@@ -9,19 +9,19 @@
 
 namespace Poseidon {
 
-class SockAddr;
+class Sock_addr;
 
-class IpPort {
+class Ip_port {
 private:
 	char m_ip[128];
 	boost::uint16_t m_port;
 
 public:
-	IpPort();
-	IpPort(const char *ip_str, boost::uint16_t port_num);
-	IpPort(const SockAddr &sock_addr);
-	IpPort(const IpPort &ip_port) NOEXCEPT;
-	IpPort &operator=(const IpPort &ip_port) NOEXCEPT;
+	Ip_port();
+	Ip_port(const char *ip_str, boost::uint16_t port_num);
+	Ip_port(const Sock_addr &sock_addr);
+	Ip_port(const Ip_port &ip_port) NOEXCEPT;
+	Ip_port &operator=(const Ip_port &ip_port) NOEXCEPT;
 
 public:
 	const char *ip() const {
@@ -32,12 +32,12 @@ public:
 	}
 };
 
-extern const IpPort &unknown_ip_port() NOEXCEPT;
-extern const IpPort &listening_ip_port() NOEXCEPT;
+extern const Ip_port &unknown_ip_port() NOEXCEPT;
+extern const Ip_port &listening_ip_port() NOEXCEPT;
 
-extern bool operator<(const IpPort &lhs, const IpPort &rhs) NOEXCEPT;
+extern bool operator<(const Ip_port &lhs, const Ip_port &rhs) NOEXCEPT;
 
-extern std::ostream &operator<<(std::ostream &os, const IpPort &rhs);
+extern std::ostream &operator<<(std::ostream &os, const Ip_port &rhs);
 
 }
 

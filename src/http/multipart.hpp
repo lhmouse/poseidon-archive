@@ -13,16 +13,16 @@
 namespace Poseidon {
 namespace Http {
 
-struct MultipartElement {
-	OptionalMap headers;
-	StreamBuffer entity;
+struct Multipart_element {
+	Optional_map headers;
+	Stream_buffer entity;
 };
 
-extern const MultipartElement &empty_multipart_element() NOEXCEPT;
+extern const Multipart_element &empty_multipart_element() NOEXCEPT;
 
 class Multipart {
 public:
-	typedef boost::container::deque<MultipartElement> base_container;
+	typedef boost::container::deque<Multipart_element> base_container;
 
 	typedef base_container::value_type        value_type;
 	typedef base_container::const_reference   const_reference;
@@ -136,49 +136,49 @@ public:
 		}
 		return true;
 	}
-	const MultipartElement &get(size_type index) const { // 若指定的下标不存在，则返回空元素。
+	const Multipart_element &get(size_type index) const { // 若指定的下标不存在，则返回空元素。
 		if(index >= size()){
 			return empty_multipart_element();
 		}
 		return begin()[static_cast<difference_type>(index)];
 	}
-	const MultipartElement &at(size_type index) const { // 若指定的下标不存在，则抛出 std::out_of_range。
+	const Multipart_element &at(size_type index) const { // 若指定的下标不存在，则抛出 std::out_of_range。
 		if(index >= size()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
 		}
 		return begin()[static_cast<difference_type>(index)];
 	}
-	MultipartElement &at(size_type index){ // 若指定的下标不存在，则抛出 std::out_of_range。
+	Multipart_element &at(size_type index){ // 若指定的下标不存在，则抛出 std::out_of_range。
 		if(index >= size()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
 		}
 		return begin()[static_cast<difference_type>(index)];
 	}
-	MultipartElement &push_front(MultipartElement val){
+	Multipart_element &push_front(Multipart_element val){
 		m_elements.push_front(STD_MOVE(val));
 		return m_elements.front();
 	}
 	void pop_front(){
 		m_elements.pop_front();
 	}
-	MultipartElement &push_back(MultipartElement val){
+	Multipart_element &push_back(Multipart_element val){
 		m_elements.push_back(STD_MOVE(val));
 		return m_elements.back();
 	}
 	void pop_back(){
 		m_elements.pop_back();
 	}
-	iterator insert(const_iterator pos, MultipartElement val){
+	iterator insert(const_iterator pos, Multipart_element val){
 		return m_elements.insert(pos, STD_MOVE(val));
 	}
 #ifdef POSEIDON_CXX11
 	template<typename ...ParamsT>
-	MultipartElement &emplace_front(ParamsT &&...params){
+	Multipart_element &emplace_front(ParamsT &&...params){
 		m_elements.emplace_front(std::forward<ParamsT>(params)...);
 		return m_elements.front();
 	}
 	template<typename ...ParamsT>
-	MultipartElement &emplace_back(ParamsT &&...params){
+	Multipart_element &emplace_back(ParamsT &&...params){
 		m_elements.emplace_back(std::forward<ParamsT>(params)...);
 		return m_elements.back();
 	}
@@ -193,7 +193,7 @@ public:
 		swap(m_elements, rhs.m_elements);
 	}
 
-	StreamBuffer dump() const;
+	Stream_buffer dump() const;
 	void dump(std::ostream &os) const;
 	void parse(std::istream &is);
 };

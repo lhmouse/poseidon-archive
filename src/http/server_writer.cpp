@@ -11,17 +11,17 @@
 namespace Poseidon {
 namespace Http {
 
-ServerWriter::ServerWriter(){
+Server_writer::Server_writer(){
 	//
 }
-ServerWriter::~ServerWriter(){
+Server_writer::~Server_writer(){
 	//
 }
 
-long ServerWriter::put_response(ResponseHeaders response_headers, StreamBuffer entity, bool set_content_length){
+long Server_writer::put_response(Response_headers response_headers, Stream_buffer entity, bool set_content_length){
 	PROFILE_ME;
 
-	StreamBuffer data;
+	Stream_buffer data;
 
 	const unsigned ver_major = response_headers.version / 10000, ver_minor = response_headers.version % 10000;
 	const unsigned status_code = static_cast<unsigned>(response_headers.status_code);
@@ -59,10 +59,10 @@ long ServerWriter::put_response(ResponseHeaders response_headers, StreamBuffer e
 	return on_encoded_data_avail(STD_MOVE(data));
 }
 
-long ServerWriter::put_chunked_header(ResponseHeaders response_headers){
+long Server_writer::put_chunked_header(Response_headers response_headers){
 	PROFILE_ME;
 
-	StreamBuffer data;
+	Stream_buffer data;
 
 	const unsigned ver_major = response_headers.version / 10000, ver_minor = response_headers.version % 10000;
 	const unsigned status_code = static_cast<unsigned>(response_headers.status_code);
@@ -88,11 +88,11 @@ long ServerWriter::put_chunked_header(ResponseHeaders response_headers){
 
 	return on_encoded_data_avail(STD_MOVE(data));
 }
-long ServerWriter::put_chunk(StreamBuffer entity){
+long Server_writer::put_chunk(Stream_buffer entity){
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!entity.empty(), BasicException, sslit("You are not allowed to send an empty chunk"));
+	DEBUG_THROW_UNLESS(!entity.empty(), Basic_exception, sslit("You are not allowed to send an empty chunk"));
 
-	StreamBuffer chunk;
+	Stream_buffer chunk;
 
 	char temp[64];
 	unsigned len = (unsigned)std::sprintf(temp, "%llx\r\n", (unsigned long long)entity.size());
@@ -102,10 +102,10 @@ long ServerWriter::put_chunk(StreamBuffer entity){
 
 	return on_encoded_data_avail(STD_MOVE(chunk));
 }
-long ServerWriter::put_chunked_trailer(OptionalMap headers){
+long Server_writer::put_chunked_trailer(Optional_map headers){
 	PROFILE_ME;
 
-	StreamBuffer data;
+	Stream_buffer data;
 
 	data.put("0\r\n");
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){

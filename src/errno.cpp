@@ -6,18 +6,18 @@
 
 namespace Poseidon {
 
-SharedNts get_error_desc(int err_code) NOEXCEPT {
+Shared_nts get_error_desc(int err_code) NOEXCEPT {
 	char temp[1024];
 	const char *desc = ::strerror_r(err_code, temp, sizeof(temp));
 	if(desc == temp){
 		try {
-			return SharedNts(desc);
+			return Shared_nts(desc);
 		} catch(...){
 			desc = "Insufficient memory.";
 		}
 	}
 	// desc 指向一个静态的字符串。
-	return SharedNts::view(desc);
+	return Shared_nts::view(desc);
 }
 std::string get_error_desc_as_string(int err_code){
 	std::string ret;

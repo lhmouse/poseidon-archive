@@ -7,9 +7,9 @@
 namespace Poseidon {
 namespace Http {
 
-typedef unsigned StatusCode;
+typedef unsigned Status_code;
 
-namespace StatusCodes {
+namespace Status_codes {
 	enum {
 		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 		status_null                         =   0,
@@ -56,14 +56,14 @@ namespace StatusCodes {
 	};
 }
 
-using namespace StatusCodes;
+using namespace Status_codes;
 
-struct StatusCodeDesc {
+struct Status_code_desc {
 	const char *desc_short;
 	const char *desc_long;
 };
 
-extern StatusCodeDesc get_status_code_desc(StatusCode status_code);
+extern Status_code_desc get_status_code_desc(Status_code status_code);
 
 }
 }

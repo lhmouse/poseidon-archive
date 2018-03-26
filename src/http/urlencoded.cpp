@@ -130,7 +130,7 @@ void url_decode(std::istream &is, std::string &str){
 	url_decode_step(is, str, "");
 }
 
-void url_encode_params(std::ostream &os, const OptionalMap &params){
+void url_encode_params(std::ostream &os, const Optional_map &params){
 	PROFILE_ME;
 
 	AUTO(it, params.begin());
@@ -148,7 +148,7 @@ void url_encode_params(std::ostream &os, const OptionalMap &params){
 		}
 	}
 }
-void url_decode_params(std::istream &is, OptionalMap &params){
+void url_decode_params(std::istream &is, Optional_map &params){
 	PROFILE_ME;
 
 	params.clear();
@@ -164,7 +164,7 @@ void url_decode_params(std::istream &is, OptionalMap &params){
 				break;
 			}
 		}
-		params.append(SharedNts(key), STD_MOVE(val));
+		params.append(Shared_nts(key), STD_MOVE(val));
 		if(is.eof()){
 			break;
 		}

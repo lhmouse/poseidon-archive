@@ -21,7 +21,7 @@
 #  error Please #include <poseidon/mongodb/object_base.hpp> first.
 #endif
 
-class OBJECT_NAME : public ::Poseidon::MongoDb::ObjectBase {
+class OBJECT_NAME : public ::Poseidon::Mongo_db::Object_base {
 public:
 
 #undef FIELD_BOOLEAN
@@ -33,14 +33,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                ::Poseidon::MongoDb::ObjectBase::Field<bool> id_;
-#define FIELD_SIGNED(id_)                 ::Poseidon::MongoDb::ObjectBase::Field< ::boost::int64_t> id_;
-#define FIELD_UNSIGNED(id_)               ::Poseidon::MongoDb::ObjectBase::Field< ::boost::uint64_t> id_;
-#define FIELD_DOUBLE(id_)                 ::Poseidon::MongoDb::ObjectBase::Field<double> id_;
-#define FIELD_STRING(id_)                 ::Poseidon::MongoDb::ObjectBase::Field< ::std::string> id_;
-#define FIELD_DATETIME(id_)               ::Poseidon::MongoDb::ObjectBase::Field< ::boost::uint64_t> id_;
-#define FIELD_UUID(id_)                   ::Poseidon::MongoDb::ObjectBase::Field< ::Poseidon::Uuid> id_;
-#define FIELD_BLOB(id_)                   ::Poseidon::MongoDb::ObjectBase::Field< ::std::basic_string<unsigned char> > id_;
+#define FIELD_BOOLEAN(id_)                ::Poseidon::Mongo_db::Object_base::Field<bool> id_;
+#define FIELD_SIGNED(id_)                 ::Poseidon::Mongo_db::Object_base::Field< ::boost::int64_t> id_;
+#define FIELD_UNSIGNED(id_)               ::Poseidon::Mongo_db::Object_base::Field< ::boost::uint64_t> id_;
+#define FIELD_DOUBLE(id_)                 ::Poseidon::Mongo_db::Object_base::Field<double> id_;
+#define FIELD_STRING(id_)                 ::Poseidon::Mongo_db::Object_base::Field< ::std::string> id_;
+#define FIELD_DATETIME(id_)               ::Poseidon::Mongo_db::Object_base::Field< ::boost::uint64_t> id_;
+#define FIELD_UUID(id_)                   ::Poseidon::Mongo_db::Object_base::Field< ::Poseidon::Uuid> id_;
+#define FIELD_BLOB(id_)                   ::Poseidon::Mongo_db::Object_base::Field< ::std::basic_string<unsigned char> > id_;
 
 	OBJECT_FIELDS
 
@@ -71,9 +71,9 @@ public:
 
 public:
 	const char *get_collection() const OVERRIDE;
-	void generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const OVERRIDE;
+	void generate_document(::Poseidon::Mongo_db::Bson_builder &doc_) const OVERRIDE;
 	::std::string generate_primary_key() const OVERRIDE;
-	void fetch(const ::boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_) OVERRIDE;
+	void fetch(const ::boost::shared_ptr<const ::Poseidon::Mongo_db::Connection> &conn_) OVERRIDE;
 };
 
 #ifdef MONGODB_OBJECT_EMIT_EXTERNAL_DEFINITIONS
@@ -81,7 +81,7 @@ public:
 #pragma GCC diagnostic ignored "-Wshadow"
 
 OBJECT_NAME::OBJECT_NAME()
-	: ::Poseidon::MongoDb::ObjectBase()
+	: ::Poseidon::Mongo_db::Object_base()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -125,7 +125,7 @@ OBJECT_NAME::OBJECT_NAME()
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
 OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
-	: ::Poseidon::MongoDb::ObjectBase()
+	: ::Poseidon::Mongo_db::Object_base()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -157,14 +157,14 @@ OBJECT_NAME::~OBJECT_NAME(){
 const char *OBJECT_NAME::get_collection() const {
 	return OBJECT_COLLECTION;
 }
-void OBJECT_NAME::generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) const {
+void OBJECT_NAME::generate_document(::Poseidon::Mongo_db::Bson_builder &doc_) const {
 	PROFILE_ME;
 
-	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
+	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
 
 	AUTO(pkey_, generate_primary_key());
 	if(!pkey_.empty()){
-		doc_.append_string(::Poseidon::SharedNts::view("_id"), STD_MOVE(pkey_));
+		doc_.append_string(::Poseidon::Shared_nts::view("_id"), STD_MOVE(pkey_));
 	}
 
 #undef FIELD_BOOLEAN
@@ -176,28 +176,28 @@ void OBJECT_NAME::generate_document(::Poseidon::MongoDb::BsonBuilder &doc_) cons
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                doc_.append_boolean  (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_SIGNED(id_)                 doc_.append_signed   (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_UNSIGNED(id_)               doc_.append_unsigned (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_DOUBLE(id_)                 doc_.append_double   (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_STRING(id_)                 doc_.append_string   (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_DATETIME(id_)               doc_.append_datetime (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::SharedNts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_BOOLEAN(id_)                doc_.append_boolean  (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_SIGNED(id_)                 doc_.append_signed   (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_UNSIGNED(id_)               doc_.append_unsigned (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_DOUBLE(id_)                 doc_.append_double   (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_STRING(id_)                 doc_.append_string   (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_DATETIME(id_)               doc_.append_datetime (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
 
 	OBJECT_FIELDS
 }
 ::std::string OBJECT_NAME::generate_primary_key() const {
 	PROFILE_ME;
 
-	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
+	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
 
 	return OBJECT_PRIMARY_KEY;
 }
-void fetch(const ::boost::shared_ptr<const ::Poseidon::MongoDb::Connection> &conn_){
+void fetch(const ::boost::shared_ptr<const ::Poseidon::Mongo_db::Connection> &conn_){
 	PROFILE_ME;
 
-	const ::Poseidon::RecursiveMutex::UniqueLock lock_(m_mutex);
+	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED

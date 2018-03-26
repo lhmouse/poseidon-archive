@@ -13,13 +13,13 @@
 namespace Poseidon {
 namespace Http {
 
-class Client::SyncJobBase : public JobBase {
+class Client::Sync_job_base : public Job_base {
 private:
-	const SocketBase::DelayedShutdownGuard m_guard;
+	const Socket_base::Delayed_shutdown_guard m_guard;
 	const boost::weak_ptr<Client> m_weak_client;
 
 protected:
-	explicit SyncJobBase(const boost::shared_ptr<Client> &client)
+	explicit Sync_job_base(const boost::shared_ptr<Client> &client)
 		: m_guard(client), m_weak_client(client)
 	{
 		//
@@ -57,10 +57,10 @@ protected:
 	virtual void really_perform(const boost::shared_ptr<Client> &client) = 0;
 };
 
-class Client::ConnectJob : public Client::SyncJobBase {
+class Client::Connect_job : public Client::Sync_job_base {
 public:
-	explicit ConnectJob(const boost::shared_ptr<Client> &client)
-		: SyncJobBase(client)
+	explicit Connect_job(const boost::shared_ptr<Client> &client)
+		: Sync_job_base(client)
 	{
 		//
 	}
@@ -73,10 +73,10 @@ protected:
 	}
 };
 
-class Client::ReadHupJob : public Client::SyncJobBase {
+class Client::Read_hup_job : public Client::Sync_job_base {
 public:
-	explicit ReadHupJob(const boost::shared_ptr<Client> &client)
-		: SyncJobBase(client)
+	explicit Read_hup_job(const boost::shared_ptr<Client> &client)
+		: Sync_job_base(client)
 	{
 		//
 	}
@@ -89,14 +89,14 @@ protected:
 	}
 };
 
-class Client::ResponseJob : public Client::SyncJobBase {
+class Client::Response_job : public Client::Sync_job_base {
 private:
-	ResponseHeaders m_response_headers;
-	StreamBuffer m_entity;
+	Response_headers m_response_headers;
+	Stream_buffer m_entity;
 
 public:
-	ResponseJob(const boost::shared_ptr<Client> &client, ResponseHeaders response_headers, StreamBuffer entity)
-		: SyncJobBase(client)
+	Response_job(const boost::shared_ptr<Client> &client, Response_headers response_headers, Stream_buffer entity)
+		: Sync_job_base(client)
 		, m_response_headers(STD_MOVE(response_headers)), m_entity(STD_MOVE(entity))
 	{
 		//
@@ -110,8 +110,8 @@ protected:
 	}
 };
 
-Client::Client(const SockAddr &addr, bool use_ssl, bool verify_peer)
-	: LowLevelClient(addr, use_ssl, verify_peer)
+Client::Client(const Sock_addr &addr, bool use_ssl, bool verify_peer)
+	: Low_level_client(addr, use_ssl, verify_peer)
 {
 	//
 }
@@ -122,42 +122,42 @@ Client::~Client(){
 void Client::on_connect(){
 	PROFILE_ME;
 
-	LowLevelClient::on_connect();
+	Low_level_client::on_connect();
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ConnectJob>(virtual_shared_from_this<Client>()),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Connect_job>(virtual_shared_from_this<Client>()),
 		VAL_INIT);
 }
 void Client::on_read_hup(){
 	PROFILE_ME;
 
-	if(ClientReader::is_content_till_eof()){
-		ClientReader::terminate_content();
+	if(Client_reader::is_content_till_eof()){
+		Client_reader::terminate_content();
 	}
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ReadHupJob>(virtual_shared_from_this<Client>()),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Read_hup_job>(virtual_shared_from_this<Client>()),
 		VAL_INIT);
 
-	LowLevelClient::on_read_hup();
+	Low_level_client::on_read_hup();
 }
 
-void Client::on_low_level_response_headers(ResponseHeaders response_headers, boost::uint64_t /*content_length*/){
+void Client::on_low_level_response_headers(Response_headers response_headers, boost::uint64_t /*content_length*/){
 	PROFILE_ME;
 
 	m_response_headers = STD_MOVE(response_headers);
 	m_entity.clear();
 }
-void Client::on_low_level_response_entity(boost::uint64_t /*entity_offset*/, StreamBuffer entity){
+void Client::on_low_level_response_entity(boost::uint64_t /*entity_offset*/, Stream_buffer entity){
 	PROFILE_ME;
 
 	m_entity.splice(entity);
 }
-boost::shared_ptr<UpgradedSessionBase> Client::on_low_level_response_end(boost::uint64_t /*content_length*/, OptionalMap /*headers*/){
+boost::shared_ptr<Upgraded_session_base> Client::on_low_level_response_end(boost::uint64_t /*content_length*/, Optional_map /*headers*/){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ResponseJob>(virtual_shared_from_this<Client>(), STD_MOVE(m_response_headers), STD_MOVE(m_entity)),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Response_job>(virtual_shared_from_this<Client>(), STD_MOVE(m_response_headers), STD_MOVE(m_entity)),
 		VAL_INIT);
 
 	return VAL_INIT;

@@ -15,15 +15,15 @@
 
 namespace Poseidon {
 
-class IpPort;
+class Ip_port;
 
-class SocketBase : public virtual VirtualSharedFromThis {
+class Socket_base : public virtual Virtual_shared_from_this {
 public:
 	// 至少一个此对象存活的条件下连接不会由于 RDHUP 而被关掉。
-	class DelayedShutdownGuard;
+	class Delayed_shutdown_guard;
 
 private:
-	const UniqueFile m_socket;
+	const Unique_file m_socket;
 	const boost::uint64_t m_creation_time;
 
 	volatile bool m_shutdown_read;
@@ -34,13 +34,13 @@ private:
 	volatile std::size_t m_delayed_shutdown_guard_count;
 
 	mutable Mutex m_info_mutex;
-	mutable boost::optional<IpPort> m_remote_info;
-	mutable boost::optional<IpPort> m_local_info;
+	mutable boost::optional<Ip_port> m_remote_info;
+	mutable boost::optional<Ip_port> m_local_info;
 	mutable boost::optional<bool> m_ipv6;
 
 public:
-	explicit SocketBase(Move<UniqueFile> socket);
-	~SocketBase();
+	explicit Socket_base(Move<Unique_file> socket);
+	~Socket_base();
 
 private:
 	void fetch_remote_info_unlocked() const;
@@ -72,23 +72,23 @@ public:
 
 	bool did_time_out() const NOEXCEPT;
 
-	const IpPort &get_remote_info() const NOEXCEPT;
-	const IpPort &get_local_info() const NOEXCEPT;
+	const Ip_port &get_remote_info() const NOEXCEPT;
+	const Ip_port &get_local_info() const NOEXCEPT;
 	bool is_using_ipv6() const NOEXCEPT;
 
 	// 返回一个 errno 告诉 epoll 如何处理。
 	virtual int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable);
-	virtual int poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable);
+	virtual int poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable);
 	virtual void on_close(int err_code);
 };
 
-class SocketBase::DelayedShutdownGuard : NONCOPYABLE {
+class Socket_base::Delayed_shutdown_guard : NONCOPYABLE {
 private:
-	const boost::weak_ptr<SocketBase> m_weak;
+	const boost::weak_ptr<Socket_base> m_weak;
 
 public:
-	explicit DelayedShutdownGuard(boost::weak_ptr<SocketBase> weak);
-	~DelayedShutdownGuard();
+	explicit Delayed_shutdown_guard(boost::weak_ptr<Socket_base> weak);
+	~Delayed_shutdown_guard();
 };
 
 }

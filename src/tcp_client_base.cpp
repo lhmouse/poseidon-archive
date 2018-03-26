@@ -16,26 +16,26 @@
 namespace Poseidon {
 
 namespace {
-	UniqueFile create_tcp_socket(const SockAddr &addr){
-		UniqueFile tcp;
-		DEBUG_THROW_UNLESS(tcp.reset(::socket(addr.get_family(), SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP)), SystemException);
-		DEBUG_THROW_UNLESS((::connect(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0) || (errno == EINPROGRESS), SystemException);
+	Unique_file create_tcp_socket(const Sock_addr &addr){
+		Unique_file tcp;
+		DEBUG_THROW_UNLESS(tcp.reset(::socket(addr.get_family(), SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP)), System_exception);
+		DEBUG_THROW_UNLESS((::connect(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0) || (errno == EINPROGRESS), System_exception);
 		return tcp;
 	}
 }
 
-TcpClientBase::TcpClientBase(const SockAddr &addr, bool use_ssl, bool verify_peer)
-	: TcpSessionBase(create_tcp_socket(addr))
+Tcp_client_base::Tcp_client_base(const Sock_addr &addr, bool use_ssl, bool verify_peer)
+	: Tcp_session_base(create_tcp_socket(addr))
 {
 	if(use_ssl){
 		LOG_POSEIDON_INFO("Initiating SSL handshake...");
-		m_ssl_factory.reset(new SslClientFactory(verify_peer));
-		boost::scoped_ptr<SslFilter> ssl_filter;
+		m_ssl_factory.reset(new Ssl_client_factory(verify_peer));
+		boost::scoped_ptr<Ssl_filter> ssl_filter;
 		m_ssl_factory->create_ssl_filter(ssl_filter, get_fd());
-		TcpSessionBase::init_ssl(ssl_filter);
+		Tcp_session_base::init_ssl(ssl_filter);
 	}
 }
-TcpClientBase::~TcpClientBase(){
+Tcp_client_base::~Tcp_client_base(){
 	//
 }
 

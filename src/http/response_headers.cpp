@@ -9,12 +9,12 @@
 namespace Poseidon {
 namespace Http {
 
-bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT {
+bool is_keep_alive_enabled(const Response_headers &response_headers) NOEXCEPT {
 	const AUTO_REF(connection, response_headers.headers.get("Connection"));
 	enum { opt_auto, opt_on, opt_off } opt = opt_auto;
 	Buffer_istream is;
-	is.set_buffer(StreamBuffer(connection));
-	HeaderOption connection_option(is);
+	is.set_buffer(Stream_buffer(connection));
+	Header_option connection_option(is);
 	if(is){
 		if(::strcasecmp(connection_option.get_base().c_str(), "Keep-Alive") == 0){
 			opt = opt_on;
@@ -32,15 +32,15 @@ bool is_keep_alive_enabled(const ResponseHeaders &response_headers) NOEXCEPT {
 	return opt == opt_on;
 }
 
-std::pair<ResponseHeaders, StreamBuffer> make_default_response(StatusCode status_code, OptionalMap headers){
-	ResponseHeaders response_headers;
+std::pair<Response_headers, Stream_buffer> make_default_response(Status_code status_code, Optional_map headers){
+	Response_headers response_headers;
 	response_headers.version = 10001;
 	response_headers.status_code = status_code;
 	const AUTO(desc, get_status_code_desc(status_code));
 	response_headers.reason = desc.desc_short;
 	response_headers.headers = STD_MOVE(headers);
 
-	StreamBuffer entity;
+	Stream_buffer entity;
 	if(status_code / 100 >= 4){
 		entity.put("<html><head><title>");
 		entity.put(desc.desc_short);

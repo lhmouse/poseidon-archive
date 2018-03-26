@@ -14,17 +14,17 @@ Promise::~Promise(){
 }
 
 bool Promise::is_satisfied() const NOEXCEPT {
-	const RecursiveMutex::UniqueLock lock(m_mutex);
+	const Recursive_mutex::Unique_lock lock(m_mutex);
 	const STD_EXCEPTION_PTR *const ptr = m_except.get_ptr();
 	return ptr;
 }
 bool Promise::would_throw() const NOEXCEPT {
-	const RecursiveMutex::UniqueLock lock(m_mutex);
+	const Recursive_mutex::Unique_lock lock(m_mutex);
 	const STD_EXCEPTION_PTR *const ptr = m_except.get_ptr();
 	return !ptr || *ptr;
 }
 void Promise::check_and_rethrow() const {
-	const RecursiveMutex::UniqueLock lock(m_mutex);
+	const Recursive_mutex::Unique_lock lock(m_mutex);
 	const STD_EXCEPTION_PTR *const ptr = m_except.get_ptr();
 	if(!ptr){
 		DEBUG_THROW(Exception, sslit("Promise has not been satisfied"));
@@ -38,7 +38,7 @@ void Promise::set_success(bool throw_if_already_set){
 	set_exception(STD_EXCEPTION_PTR(), throw_if_already_set);
 }
 void Promise::set_exception(STD_EXCEPTION_PTR except, bool throw_if_already_set){
-	const RecursiveMutex::UniqueLock lock(m_mutex);
+	const Recursive_mutex::Unique_lock lock(m_mutex);
 	if(m_except){
 		if(throw_if_already_set){
 			DEBUG_THROW(Exception, sslit("Promise has already been satisfied"));
@@ -49,7 +49,7 @@ void Promise::set_exception(STD_EXCEPTION_PTR except, bool throw_if_already_set)
 }
 
 void yield(const boost::shared_ptr<const Promise> &promise, bool insignificant){
-	JobDispatcher::yield(promise, insignificant);
+	Job_dispatcher::yield(promise, insignificant);
 }
 
 }

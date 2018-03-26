@@ -14,8 +14,8 @@ namespace Http {
 extern void url_encode(std::ostream &os, const std::string &str);
 extern void url_decode(std::istream &is, std::string &str);
 
-extern void url_encode_params(std::ostream &os, const OptionalMap &params);
-extern void url_decode_params(std::istream &is, OptionalMap &params);
+extern void url_encode_params(std::ostream &os, const Optional_map &params);
+extern void url_decode_params(std::istream &is, Optional_map &params);
 
 }
 }

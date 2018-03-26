@@ -9,19 +9,19 @@ namespace Poseidon {
 namespace Http {
 
 namespace {
-	struct StatusDescElement {
-		StatusCode status_code;
-		StatusCodeDesc desc;
+	struct Status_desc_element {
+		Status_code status_code;
+		Status_code_desc desc;
 	};
 
-	inline bool operator<(const StatusDescElement &elem, StatusCode status_code){
+	inline bool operator<(const Status_desc_element &elem, Status_code status_code){
 		return elem.status_code < status_code;
 	}
-	inline bool operator<(StatusCode status_code, const StatusDescElement &elem){
+	inline bool operator<(Status_code status_code, const Status_desc_element &elem){
 		return status_code < elem.status_code;
 	}
 
-	const StatusDescElement s_desc_table[] = {
+	const Status_desc_element s_desc_table[] = {
 		{   0, { "Unknown Status Code",
 		         "No description available for this status code." } },
 		// https://www.rfc-editor.org/rfc/rfc7231.txt
@@ -134,7 +134,7 @@ namespace {
 	};
 }
 
-StatusCodeDesc get_status_code_desc(StatusCode status_code){
+Status_code_desc get_status_code_desc(Status_code status_code){
 	const AUTO(ptr, std::lower_bound(BEGIN(s_desc_table) + 1, END(s_desc_table), status_code));
 	if((ptr == END(s_desc_table)) || (ptr->status_code != status_code)){
 		return BEGIN(s_desc_table)->desc;

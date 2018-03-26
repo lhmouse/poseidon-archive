@@ -9,7 +9,7 @@
 
 namespace Poseidon {
 
-void FileCloser::operator()(int fd) const NOEXCEPT {
+void File_closer::operator()(int fd) const NOEXCEPT {
 	if(::close(fd) != 0){
 		const AUTO(desc, get_error_desc());
 		LOG_POSEIDON_WARNING("::close() failed: ", desc);

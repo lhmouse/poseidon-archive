@@ -11,48 +11,48 @@
 namespace Poseidon {
 namespace Http {
 
-UpgradedSessionBase::UpgradedSessionBase(const boost::shared_ptr<TcpSessionBase> &parent)
+Upgraded_session_base::Upgraded_session_base(const boost::shared_ptr<Tcp_session_base> &parent)
 	: m_parent(parent)
 {
 	//
 }
-UpgradedSessionBase::~UpgradedSessionBase(){
+Upgraded_session_base::~Upgraded_session_base(){
 	//
 }
 
-void UpgradedSessionBase::on_shutdown_timer(boost::uint64_t /*now*/){
+void Upgraded_session_base::on_shutdown_timer(boost::uint64_t /*now*/){
 	//
 }
 
-bool UpgradedSessionBase::has_been_shutdown_read() const NOEXCEPT {
+bool Upgraded_session_base::has_been_shutdown_read() const NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return true;
 	}
 	return parent->has_been_shutdown_read();
 }
-bool UpgradedSessionBase::shutdown_read() NOEXCEPT {
+bool Upgraded_session_base::shutdown_read() NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return false;
 	}
 	return parent->shutdown_read();
 }
-bool UpgradedSessionBase::has_been_shutdown_write() const NOEXCEPT {
+bool Upgraded_session_base::has_been_shutdown_write() const NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return true;
 	}
 	return parent->has_been_shutdown_write();
 }
-bool UpgradedSessionBase::shutdown_write() NOEXCEPT {
+bool Upgraded_session_base::shutdown_write() NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return false;
 	}
 	return parent->shutdown_write();
 }
-void UpgradedSessionBase::force_shutdown() NOEXCEPT {
+void Upgraded_session_base::force_shutdown() NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return;
@@ -60,14 +60,14 @@ void UpgradedSessionBase::force_shutdown() NOEXCEPT {
 	parent->force_shutdown();
 }
 
-const IpPort &UpgradedSessionBase::get_remote_info() const NOEXCEPT {
+const Ip_port &Upgraded_session_base::get_remote_info() const NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return unknown_ip_port();
 	}
 	return parent->get_remote_info();
 }
-const IpPort &UpgradedSessionBase::get_local_info() const NOEXCEPT {
+const Ip_port &Upgraded_session_base::get_local_info() const NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return unknown_ip_port();
@@ -75,7 +75,7 @@ const IpPort &UpgradedSessionBase::get_local_info() const NOEXCEPT {
 	return parent->get_local_info();
 }
 
-bool UpgradedSessionBase::is_throttled() const {
+bool Upgraded_session_base::is_throttled() const {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return false;
@@ -83,18 +83,18 @@ bool UpgradedSessionBase::is_throttled() const {
 	return parent->is_throttled();
 }
 
-void UpgradedSessionBase::set_no_delay(bool enabled){
+void Upgraded_session_base::set_no_delay(bool enabled){
 	const AUTO(parent, get_parent());
-	DEBUG_THROW_UNLESS(parent, BasicException, sslit("Parent session is gone"));
+	DEBUG_THROW_UNLESS(parent, Basic_exception, sslit("Parent session is gone"));
 	parent->set_no_delay(enabled);
 }
-void UpgradedSessionBase::set_timeout(boost::uint64_t timeout){
+void Upgraded_session_base::set_timeout(boost::uint64_t timeout){
 	const AUTO(parent, get_parent());
-	DEBUG_THROW_UNLESS(parent, BasicException, sslit("Parent session is gone"));
+	DEBUG_THROW_UNLESS(parent, Basic_exception, sslit("Parent session is gone"));
 	parent->set_timeout(timeout);
 }
 
-bool UpgradedSessionBase::send(StreamBuffer buffer){
+bool Upgraded_session_base::send(Stream_buffer buffer){
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return false;

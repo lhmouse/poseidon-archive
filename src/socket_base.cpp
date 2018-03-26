@@ -19,7 +19,7 @@
 
 namespace Poseidon {
 
-SocketBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::weak_ptr<SocketBase> weak)
+Socket_base::Delayed_shutdown_guard::Delayed_shutdown_guard(boost::weak_ptr<Socket_base> weak)
 	: m_weak(STD_MOVE(weak))
 {
 	const AUTO(socket, m_weak.lock());
@@ -28,7 +28,7 @@ SocketBase::DelayedShutdownGuard::DelayedShutdownGuard(boost::weak_ptr<SocketBas
 	}
 	atomic_add(socket->m_delayed_shutdown_guard_count, 1, memory_order_relaxed);
 }
-SocketBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
+Socket_base::Delayed_shutdown_guard::~Delayed_shutdown_guard(){
 	const AUTO(socket, m_weak.lock());
 	if(!socket){
 		return;
@@ -36,24 +36,24 @@ SocketBase::DelayedShutdownGuard::~DelayedShutdownGuard(){
 	if(atomic_sub(socket->m_delayed_shutdown_guard_count, 1, memory_order_relaxed) == 0){
 		if(atomic_load(socket->m_shutdown_write, memory_order_acquire)){
 			atomic_store(socket->m_really_shutdown_write, true, memory_order_release);
-			EpollDaemon::mark_socket_writeable(socket.get());
+			Epoll_daemon::mark_socket_writeable(socket.get());
 		}
 	}
 }
 
-SocketBase::SocketBase(Move<UniqueFile> socket)
+Socket_base::Socket_base(Move<Unique_file> socket)
 	: m_socket(STD_MOVE(socket)), m_creation_time(get_utc_time())
 	, m_shutdown_read(false), m_shutdown_write(false), m_really_shutdown_write(false)
 	, m_throttled(false), m_timed_out(false), m_delayed_shutdown_guard_count(0)
 {
 	//
 }
-SocketBase::~SocketBase(){
+Socket_base::~Socket_base(){
 	// This FD may have been dup()'d.
 	::shutdown(get_fd(), SHUT_RDWR);
 }
 
-void SocketBase::fetch_remote_info_unlocked() const {
+void Socket_base::fetch_remote_info_unlocked() const {
 	PROFILE_ME;
 
 	if(is_listening()){
@@ -65,10 +65,10 @@ void SocketBase::fetch_remote_info_unlocked() const {
 	if(::getpeername(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
 		return;
 	}
-	const SockAddr sock_addr(&sa, salen);
+	const Sock_addr sock_addr(&sa, salen);
 	m_remote_info = sock_addr;
 }
-void SocketBase::fetch_local_info_unlocked() const {
+void Socket_base::fetch_local_info_unlocked() const {
 	PROFILE_ME;
 
 	::sockaddr_storage sa;
@@ -76,31 +76,31 @@ void SocketBase::fetch_local_info_unlocked() const {
 	if(::getsockname(get_fd(), static_cast< ::sockaddr *>(static_cast<void *>(&sa)), &salen) != 0){
 		return;
 	}
-	const SockAddr sock_addr(&sa, salen);
+	const Sock_addr sock_addr(&sa, salen);
 	m_local_info = sock_addr;
 	m_ipv6 = sock_addr.is_ipv6();
 }
 
-bool SocketBase::should_really_shutdown_write() const NOEXCEPT {
+bool Socket_base::should_really_shutdown_write() const NOEXCEPT {
 	return atomic_load(m_really_shutdown_write, memory_order_acquire);
 }
-void SocketBase::set_timed_out() NOEXCEPT {
+void Socket_base::set_timed_out() NOEXCEPT {
 	atomic_store(m_timed_out, true, memory_order_release);
 }
 
-bool SocketBase::is_listening() const {
+bool Socket_base::is_listening() const {
 	PROFILE_ME;
 
 	int val;
 	::socklen_t len = sizeof(val);
-	DEBUG_THROW_UNLESS(::getsockopt(get_fd(), SOL_SOCKET, SO_ACCEPTCONN, &val, &len) == 0, SystemException);
+	DEBUG_THROW_UNLESS(::getsockopt(get_fd(), SOL_SOCKET, SO_ACCEPTCONN, &val, &len) == 0, System_exception);
 	return (len >= sizeof(int)) && (val != 0);
 }
 
-bool SocketBase::has_been_shutdown_read() const NOEXCEPT {
+bool Socket_base::has_been_shutdown_read() const NOEXCEPT {
 	return atomic_load(m_shutdown_read, memory_order_acquire);
 }
-bool SocketBase::shutdown_read() NOEXCEPT {
+bool Socket_base::shutdown_read() NOEXCEPT {
 	PROFILE_ME;
 
 	bool was_shutdown_read = atomic_load(m_shutdown_read, memory_order_acquire);
@@ -113,10 +113,10 @@ bool SocketBase::shutdown_read() NOEXCEPT {
 	::shutdown(get_fd(), SHUT_RD);
 	return true;
 }
-bool SocketBase::has_been_shutdown_write() const NOEXCEPT {
+bool Socket_base::has_been_shutdown_write() const NOEXCEPT {
 	return atomic_load(m_shutdown_write, memory_order_acquire);
 }
-bool SocketBase::shutdown_write() NOEXCEPT {
+bool Socket_base::shutdown_write() NOEXCEPT {
 	PROFILE_ME;
 
 	bool was_shutdown_write = atomic_load(m_shutdown_write, memory_order_acquire);
@@ -126,16 +126,16 @@ bool SocketBase::shutdown_write() NOEXCEPT {
 	if(was_shutdown_write){
 		return false;
 	}
-	const DelayedShutdownGuard guard(virtual_shared_from_this<SocketBase>());
+	const Delayed_shutdown_guard guard(virtual_shared_from_this<Socket_base>());
 	return true;
 }
-void SocketBase::mark_shutdown() NOEXCEPT {
+void Socket_base::mark_shutdown() NOEXCEPT {
 	PROFILE_ME;
 
 	atomic_store(m_shutdown_read, true, memory_order_release);
 	atomic_store(m_shutdown_write, true, memory_order_release);
 }
-void SocketBase::force_shutdown() NOEXCEPT {
+void Socket_base::force_shutdown() NOEXCEPT {
 	PROFILE_ME;
 
 	bool was_shutdown_read = atomic_load(m_shutdown_read, memory_order_acquire);
@@ -161,22 +161,22 @@ void SocketBase::force_shutdown() NOEXCEPT {
 	::shutdown(get_fd(), SHUT_RDWR);
 }
 
-bool SocketBase::is_throttled() const {
+bool Socket_base::is_throttled() const {
 	return atomic_load(m_throttled, memory_order_acquire);
 }
-void SocketBase::set_throttled(bool throttled){
+void Socket_base::set_throttled(bool throttled){
 	atomic_store(m_throttled, throttled, memory_order_release);
 }
 
-bool SocketBase::did_time_out() const NOEXCEPT {
+bool Socket_base::did_time_out() const NOEXCEPT {
 	return atomic_load(m_timed_out, memory_order_acquire);
 }
 
-const IpPort &SocketBase::get_remote_info() const NOEXCEPT
+const Ip_port &Socket_base::get_remote_info() const NOEXCEPT
 try {
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_info_mutex);
+	const Mutex::Unique_lock lock(m_info_mutex);
 	if(!m_remote_info){
 		fetch_remote_info_unlocked();
 	}
@@ -188,11 +188,11 @@ try {
 	LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 	return unknown_ip_port();
 }
-const IpPort &SocketBase::get_local_info() const NOEXCEPT
+const Ip_port &Socket_base::get_local_info() const NOEXCEPT
 try {
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_info_mutex);
+	const Mutex::Unique_lock lock(m_info_mutex);
 	if(!m_local_info){
 		fetch_local_info_unlocked();
 	}
@@ -204,11 +204,11 @@ try {
 	LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
 	return unknown_ip_port();
 }
-bool SocketBase::is_using_ipv6() const NOEXCEPT
+bool Socket_base::is_using_ipv6() const NOEXCEPT
 try {
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_info_mutex);
+	const Mutex::Unique_lock lock(m_info_mutex);
 	if(!m_ipv6){
 		fetch_local_info_unlocked();
 	}
@@ -221,13 +221,13 @@ try {
 	return false;
 }
 
-int SocketBase::poll_read_and_process(unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*readable*/){
+int Socket_base::poll_read_and_process(unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*readable*/){
 	return EWOULDBLOCK;
 }
-int SocketBase::poll_write(Mutex::UniqueLock &/*write_lock*/, unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*writeable*/){
+int Socket_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*writeable*/){
 	return EWOULDBLOCK;
 }
-void SocketBase::on_close(int /*err_code*/){
+void Socket_base::on_close(int /*err_code*/){
 	//
 }
 

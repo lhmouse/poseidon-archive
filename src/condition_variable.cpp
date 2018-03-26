@@ -14,18 +14,18 @@ namespace Poseidon {
 #define ABORT_UNLESS(c_, ...)   do { if(c_){ break; } LOG_POSEIDON_FATAL(__VA_ARGS__); std::abort(); } while(false)
 
 namespace {
-	class ConditionVariableAttribute : NONCOPYABLE {
+	class Condition_variable_attribute : NONCOPYABLE {
 	private:
 		::pthread_condattr_t m_attr;
 
 	public:
-		ConditionVariableAttribute(){
+		Condition_variable_attribute(){
 			int err = ::pthread_condattr_init(&m_attr);
-			DEBUG_THROW_UNLESS(err == 0, SystemException);
+			DEBUG_THROW_UNLESS(err == 0, System_exception);
 			err = ::pthread_condattr_setclock(&m_attr, CLOCK_MONOTONIC);
 			ABORT_UNLESS(err == 0, "::pthread_condattr_settype() failed with ", err, " (", get_error_desc(err), ")");
 		}
-		~ConditionVariableAttribute(){
+		~Condition_variable_attribute(){
 			int err = ::pthread_condattr_destroy(&m_attr);
 			ABORT_UNLESS(err == 0, "::pthread_condattr_destroy() failed with ", err, " (", get_error_desc(err), ")");
 		}
@@ -37,29 +37,29 @@ namespace {
 	};
 }
 
-ConditionVariable::ConditionVariable(){
-	int err = ::pthread_cond_init(&m_cond, ConditionVariableAttribute());
-	DEBUG_THROW_UNLESS(err == 0, SystemException, err);
+Condition_variable::Condition_variable(){
+	int err = ::pthread_cond_init(&m_cond, Condition_variable_attribute());
+	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
 }
-ConditionVariable::~ConditionVariable(){
+Condition_variable::~Condition_variable(){
 	int err = ::pthread_cond_destroy(&m_cond);
 	ABORT_UNLESS(err == 0, "::pthread_cond_destroy() failed with ", err, " (", get_error_desc(err), ")");
 }
 
-void ConditionVariable::wait(Mutex::UniqueLock &lock){
-	ABORT_UNLESS(lock.m_target, "No mutex has been assigned to that UniqueLock.");
-	ABORT_UNLESS(lock.m_locked, "The mutex has not been locked by that UniqueLock.");
+void Condition_variable::wait(Mutex::Unique_lock &lock){
+	ABORT_UNLESS(lock.m_target, "No mutex has been assigned to that Unique_lock.");
+	ABORT_UNLESS(lock.m_locked, "The mutex has not been locked by that Unique_lock.");
 
 	int err = ::pthread_cond_wait(&m_cond, &(lock.m_target->m_mutex));
-	DEBUG_THROW_UNLESS(err == 0, SystemException, err);
+	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
 }
-bool ConditionVariable::timed_wait(Mutex::UniqueLock &lock, unsigned long long ms){
-	ABORT_UNLESS(lock.m_target, "No mutex has been assigned to that UniqueLock.");
-	ABORT_UNLESS(lock.m_locked, "The mutex has not been locked by that UniqueLock.");
+bool Condition_variable::timed_wait(Mutex::Unique_lock &lock, unsigned long long ms){
+	ABORT_UNLESS(lock.m_target, "No mutex has been assigned to that Unique_lock.");
+	ABORT_UNLESS(lock.m_locked, "The mutex has not been locked by that Unique_lock.");
 
 	::timespec tp;
 	int err = ::clock_gettime(CLOCK_MONOTONIC, &tp);
-	DEBUG_THROW_UNLESS(err == 0, SystemException);
+	DEBUG_THROW_UNLESS(err == 0, System_exception);
 	tp.tv_sec += static_cast<std::time_t>(ms / 1000);
 	tp.tv_nsec += static_cast<long>(ms % 1000 * 1000000);
 	if(tp.tv_nsec >= 1000000000){
@@ -70,15 +70,15 @@ bool ConditionVariable::timed_wait(Mutex::UniqueLock &lock, unsigned long long m
 	if(err == ETIMEDOUT){
 		return false;
 	}
-	DEBUG_THROW_UNLESS(err == 0, SystemException, err);
+	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
 	return true;
 }
 
-void ConditionVariable::signal() NOEXCEPT {
+void Condition_variable::signal() NOEXCEPT {
 	int err = ::pthread_cond_signal(&m_cond);
 	ABORT_UNLESS(err == 0, "::pthread_cond_signal() failed with ", err, " (", get_error_desc(err), ")");
 }
-void ConditionVariable::broadcast() NOEXCEPT {
+void Condition_variable::broadcast() NOEXCEPT {
 	int err = ::pthread_cond_broadcast(&m_cond);
 	ABORT_UNLESS(err == 0, "::pthread_cond_broadcast() failed with ", err, " (", get_error_desc(err), ")");
 }

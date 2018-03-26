@@ -10,18 +10,18 @@
 
 namespace Poseidon {
 
-class ConditionVariable : NONCOPYABLE {
+class Condition_variable : NONCOPYABLE {
 private:
 	::pthread_cond_t m_cond;
 
 public:
-	ConditionVariable();
-	~ConditionVariable();
+	Condition_variable();
+	~Condition_variable();
 
 public:
-	void wait(Mutex::UniqueLock &lock);
+	void wait(Mutex::Unique_lock &lock);
 	// 返回 true 若条件触发，返回 false 若超时。
-	bool timed_wait(Mutex::UniqueLock &lock, unsigned long long ms);
+	bool timed_wait(Mutex::Unique_lock &lock, unsigned long long ms);
 
 	void signal() NOEXCEPT;
 	void broadcast() NOEXCEPT;

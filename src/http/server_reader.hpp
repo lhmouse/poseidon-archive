@@ -14,7 +14,7 @@
 namespace Poseidon {
 namespace Http {
 
-class ServerReader {
+class Server_reader {
 private:
 	enum State {
 		state_first_header      = 0,
@@ -33,42 +33,42 @@ protected:
 	};
 
 private:
-	StreamBuffer m_queue;
+	Stream_buffer m_queue;
 
 	boost::uint64_t m_size_expecting;
 	State m_state;
 
-	RequestHeaders m_request_headers;
+	Request_headers m_request_headers;
 	boost::uint64_t m_content_length;
 	boost::uint64_t m_content_offset;
 
 	boost::uint64_t m_chunk_size;
 	boost::uint64_t m_chunk_offset;
-	OptionalMap m_chunked_trailer;
+	Optional_map m_chunked_trailer;
 
 public:
-	ServerReader();
-	virtual ~ServerReader();
+	Server_reader();
+	virtual ~Server_reader();
 
 protected:
 	// 如果 Transfer-Encoding 为 chunked， content_length 的值为 content_length_chunked。
-	virtual void on_request_headers(RequestHeaders request_headers, boost::uint64_t content_length) = 0;
+	virtual void on_request_headers(Request_headers request_headers, boost::uint64_t content_length) = 0;
 	// 报文可能分几次收到。
-	virtual void on_request_entity(boost::uint64_t entity_offset, StreamBuffer entity) = 0;
+	virtual void on_request_entity(boost::uint64_t entity_offset, Stream_buffer entity) = 0;
 	// 报文接收完毕。
 	// 如果 on_request_headers() 的 content_length 参数为 content_length_chunked，使用这个函数标识结束。
 	// chunked 允许追加报头。
-	virtual bool on_request_end(boost::uint64_t content_length, OptionalMap headers) = 0;
+	virtual bool on_request_end(boost::uint64_t content_length, Optional_map headers) = 0;
 
 public:
-	const StreamBuffer &get_queue() const {
+	const Stream_buffer &get_queue() const {
 		return m_queue;
 	}
-	StreamBuffer &get_queue(){
+	Stream_buffer &get_queue(){
 		return m_queue;
 	}
 
-	bool put_encoded_data(StreamBuffer encoded, bool dont_parse_get_params = false);
+	bool put_encoded_data(Stream_buffer encoded, bool dont_parse_get_params = false);
 };
 
 }

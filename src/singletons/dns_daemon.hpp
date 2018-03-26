@@ -11,21 +11,21 @@
 
 namespace Poseidon {
 
-extern template class PromiseContainer<SockAddr>;
+extern template class Promise_container<Sock_addr>;
 
-class DnsDaemon {
+class Dns_daemon {
 private:
-	DnsDaemon();
+	Dns_daemon();
 
 public:
 	static void start();
 	static void stop();
 
 	// 同步接口。
-	static SockAddr look_up(const std::string &host, boost::uint16_t port, bool prefer_ipv4 = true);
+	static Sock_addr look_up(const std::string &host, boost::uint16_t port, bool prefer_ipv4 = true);
 
 	// 异步接口。
-	static boost::shared_ptr<const PromiseContainer<SockAddr> > enqueue_for_looking_up(std::string host, boost::uint16_t port, bool prefer_ipv4 = true);
+	static boost::shared_ptr<const Promise_container<Sock_addr> > enqueue_for_looking_up(std::string host, boost::uint16_t port, bool prefer_ipv4 = true);
 };
 
 }

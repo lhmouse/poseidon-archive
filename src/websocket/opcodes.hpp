@@ -5,11 +5,11 @@
 #define POSEIDON_WEBSOCKET_OPCODES_HPP_
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
-typedef int OpCode;
+typedef int Op_code;
 
-namespace OpCodes {
+namespace Op_codes {
 	enum {
 		opmask_fin           = 0x80,
 		opmask_rsv1          = 0x40,
@@ -29,7 +29,7 @@ namespace OpCodes {
 	};
 }
 
-using namespace OpCodes;
+using namespace Op_codes;
 
 }
 }

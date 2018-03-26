@@ -11,40 +11,40 @@
 #include "writer.hpp"
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
-class LowLevelSession : public Http::UpgradedSessionBase, protected Reader, protected Writer {
+class Low_level_session : public Http::Upgraded_session_base, protected Reader, protected Writer {
 public:
-	explicit LowLevelSession(const boost::shared_ptr<Http::LowLevelSession> &parent);
-	~LowLevelSession();
+	explicit Low_level_session(const boost::shared_ptr<Http::Low_level_session> &parent);
+	~Low_level_session();
 
 protected:
-	// UpgradedSessionBase
+	// Upgraded_session_base
 	void on_connect() OVERRIDE;
 	void on_read_hup() OVERRIDE;
 	void on_close(int err_code) OVERRIDE;
-	void on_receive(StreamBuffer data) OVERRIDE;
+	void on_receive(Stream_buffer data) OVERRIDE;
 
 	// Reader
-	void on_data_message_header(OpCode opcode) OVERRIDE;
-	void on_data_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) OVERRIDE;
+	void on_data_message_header(Op_code opcode) OVERRIDE;
+	void on_data_message_payload(boost::uint64_t whole_offset, Stream_buffer payload) OVERRIDE;
 	bool on_data_message_end(boost::uint64_t whole_size) OVERRIDE;
 
-	bool on_control_message(OpCode opcode, StreamBuffer payload) OVERRIDE;
+	bool on_control_message(Op_code opcode, Stream_buffer payload) OVERRIDE;
 
 	// Writer
-	long on_encoded_data_avail(StreamBuffer encoded) OVERRIDE;
+	long on_encoded_data_avail(Stream_buffer encoded) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_low_level_message_header(OpCode opcode) = 0;
-	virtual void on_low_level_message_payload(boost::uint64_t whole_offset, StreamBuffer payload) = 0;
+	virtual void on_low_level_message_header(Op_code opcode) = 0;
+	virtual void on_low_level_message_payload(boost::uint64_t whole_offset, Stream_buffer payload) = 0;
 	virtual bool on_low_level_message_end(boost::uint64_t whole_size) = 0;
 
-	virtual bool on_low_level_control_message(OpCode opcode, StreamBuffer payload) = 0;
+	virtual bool on_low_level_control_message(Op_code opcode, Stream_buffer payload) = 0;
 
 public:
-	virtual bool send(OpCode opcode, StreamBuffer payload, bool masked = false);
-	virtual bool shutdown(StatusCode status_code, const char *reason = "") NOEXCEPT;
+	virtual bool send(Op_code opcode, Stream_buffer payload, bool masked = false);
+	virtual bool shutdown(Status_code status_code, const char *reason = "") NOEXCEPT;
 };
 
 }

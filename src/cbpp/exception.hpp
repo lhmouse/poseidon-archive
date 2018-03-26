@@ -10,16 +10,16 @@
 namespace Poseidon {
 namespace Cbpp {
 
-class Exception : public BasicException {
+class Exception : public Basic_exception {
 private:
-	StatusCode m_status_code;
+	Status_code m_status_code;
 
 public:
-	Exception(const char *file, std::size_t line, const char *func, StatusCode status_code, SharedNts message = SharedNts());
+	Exception(const char *file, std::size_t line, const char *func, Status_code status_code, Shared_nts message = Shared_nts());
 	~Exception() NOEXCEPT;
 
 public:
-	StatusCode get_status_code() const NOEXCEPT {
+	Status_code get_status_code() const NOEXCEPT {
 		return m_status_code;
 	}
 };

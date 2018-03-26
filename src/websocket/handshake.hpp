@@ -8,12 +8,12 @@
 #include "../http/response_headers.hpp"
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
-extern Http::ResponseHeaders make_handshake_response(const Http::RequestHeaders &request);
+extern Http::Response_headers make_handshake_response(const Http::Request_headers &request);
 
-extern std::pair<Http::RequestHeaders, std::string> make_handshake_request(std::string uri, OptionalMap get_params, std::string host);
-extern bool check_handshake_response(const Http::ResponseHeaders &response, const std::string &sec_websocket_key);
+extern std::pair<Http::Request_headers, std::string> make_handshake_request(std::string uri, Optional_map get_params, std::string host);
+extern bool check_handshake_response(const Http::Response_headers &response, const std::string &sec_websocket_key);
 
 }
 }

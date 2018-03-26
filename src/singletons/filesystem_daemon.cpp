@@ -19,33 +19,33 @@
 
 namespace Poseidon {
 
-template class PromiseContainer<FileBlockRead>;
+template class Promise_container<File_block_read>;
 
 namespace {
-	FileBlockRead real_load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
-		FileBlockRead block = { };
+	File_block_read real_load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
+		File_block_read block = { };
 
 		int flags = O_RDONLY;
-		UniqueFile file;
+		Unique_file file;
 		if(!file.reset(::open(path.c_str(), flags))){
 			const int err_code = errno;
 			if(!throws_if_does_not_exist && (err_code == ENOENT)){
 				return block;
 			}
 			LOG_POSEIDON_ERROR("Failed to load file: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(SystemException, err_code);
+			DEBUG_THROW(System_exception, err_code);
 		}
 		struct ::stat stat_buf;
 		if(::fstat(file.get(), &stat_buf) != 0){
 			const int err_code = errno;
 			LOG_POSEIDON_ERROR("Failed to retrieve file information: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(SystemException, err_code);
+			DEBUG_THROW(System_exception, err_code);
 		}
 		if(begin != 0){
 			if(::lseek(file.get(), static_cast< ::off_t>(begin), SEEK_SET) == (::off_t)-1){
 				const int err_code = errno;
 				LOG_POSEIDON_ERROR("Failed to seek file: path = ", path, ", err_code = ", err_code);
-				DEBUG_THROW(SystemException, err_code);
+				DEBUG_THROW(System_exception, err_code);
 			}
 		}
 
@@ -56,7 +56,7 @@ namespace {
 		for(;;){
 			char temp[16384];
 			std::size_t avail;
-			if(limit == FileSystemDaemon::limit_eof){
+			if(limit == File_system_daemon::limit_eof){
 				avail = sizeof(temp);
 			} else {
 				avail = static_cast<std::size_t>(std::min<boost::uint64_t>(limit - bytes_read, sizeof(temp)));
@@ -71,7 +71,7 @@ namespace {
 			if(result < 0){
 				const int err_code = errno;
 				LOG_POSEIDON_ERROR("Error loading file: path = ", path, ", err_code = ", err_code);
-				DEBUG_THROW(SystemException, err_code);
+				DEBUG_THROW(System_exception, err_code);
 			}
 			avail = static_cast<std::size_t>(result);
 			block.data.put(temp, avail);
@@ -80,27 +80,27 @@ namespace {
 		LOG_POSEIDON_DEBUG("Finished loading file: path = ", path, ", bytes_read = ", bytes_read);
 		return block;
 	}
-	void real_save(const std::string &path, StreamBuffer data, boost::uint64_t begin, bool throws_if_exists){
+	void real_save(const std::string &path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists){
 		int flags = O_CREAT | O_WRONLY;
-		if(begin == FileSystemDaemon::offset_append){
+		if(begin == File_system_daemon::offset_append){
 			flags |= O_APPEND;
-		} else if(begin == FileSystemDaemon::offset_truncate){
+		} else if(begin == File_system_daemon::offset_truncate){
 			flags |= O_TRUNC;
 		}
 		if(throws_if_exists){
 			flags |= O_EXCL;
 		}
-		UniqueFile file;
+		Unique_file file;
 		if(!file.reset(::open(path.c_str(), flags, static_cast< ::mode_t>(0666)))){
 			const int err_code = errno;
 			LOG_POSEIDON_ERROR("Failed to save file: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(SystemException, err_code);
+			DEBUG_THROW(System_exception, err_code);
 		}
 		if(!(flags & (O_APPEND | O_TRUNC)) && (begin != 0)){
 			if(::lseek(file.get(), static_cast< ::off_t>(begin), SEEK_SET) == (::off_t)-1){
 				const int err_code = errno;
 				LOG_POSEIDON_ERROR("Failed to seek file: path = ", path, ", err_code = ", err_code);
-				DEBUG_THROW(SystemException, err_code);
+				DEBUG_THROW(System_exception, err_code);
 			}
 		}
 
@@ -115,7 +115,7 @@ namespace {
 			if(result < 0){
 				const int err_code = errno;
 				LOG_POSEIDON_ERROR("Error saving file: path = ", path, ", err_code = ", err_code);
-				DEBUG_THROW(SystemException, err_code);
+				DEBUG_THROW(System_exception, err_code);
 			}
 			bytes_written += avail;
 		}
@@ -128,14 +128,14 @@ namespace {
 				return;
 			}
 			LOG_POSEIDON_ERROR("Failed to remove file: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(SystemException, err_code);
+			DEBUG_THROW(System_exception, err_code);
 		}
 	}
 	void real_rename(const std::string &path, const std::string &new_path){
 		if(::rename(path.c_str(), new_path.c_str()) != 0){
 			const int err_code = errno;
 			LOG_POSEIDON_ERROR("Failed to rename file: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(SystemException, err_code);
+			DEBUG_THROW(System_exception, err_code);
 		}
 	}
 	void real_mkdir(const std::string &path, bool throws_if_exists){
@@ -148,7 +148,7 @@ namespace {
 				}
 			}
 			LOG_POSEIDON_ERROR("Failed to make directory: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(SystemException, err_code);
+			DEBUG_THROW(System_exception, err_code);
 		}
 	}
 	void real_rmdir(const std::string &path, bool throws_if_does_not_exist){
@@ -158,22 +158,22 @@ namespace {
 				return;
 			}
 			LOG_POSEIDON_ERROR("Failed to remove directory: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(SystemException, err_code);
+			DEBUG_THROW(System_exception, err_code);
 		}
 	}
 
-	class OperationBase : NONCOPYABLE {
+	class Operation_base : NONCOPYABLE {
 	private:
 		const boost::weak_ptr<Promise> m_weak_promise;
 		const std::string m_path;
 
 	public:
-		OperationBase(const boost::shared_ptr<Promise> &promise, std::string path)
+		Operation_base(const boost::shared_ptr<Promise> &promise, std::string path)
 			: m_weak_promise(promise), m_path(STD_MOVE(path))
 		{
 			//
 		}
-		virtual ~OperationBase(){
+		virtual ~Operation_base(){
 			//
 		}
 
@@ -188,16 +188,16 @@ namespace {
 		virtual void execute() = 0;
 	};
 
-	class LoadOperation : public OperationBase {
+	class Load_operation : public Operation_base {
 	private:
-		boost::shared_ptr<PromiseContainer<FileBlockRead> > m_promised_block;
+		boost::shared_ptr<Promise_container<File_block_read> > m_promised_block;
 		boost::uint64_t m_begin;
 		boost::uint64_t m_limit;
 		bool m_throws_if_does_not_exist;
 
 	public:
-		LoadOperation(boost::shared_ptr<PromiseContainer<FileBlockRead> > promised_block, std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
-			: OperationBase(promised_block, STD_MOVE(path))
+		Load_operation(boost::shared_ptr<Promise_container<File_block_read> > promised_block, std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
+			: Operation_base(promised_block, STD_MOVE(path))
 			, m_promised_block(STD_MOVE(promised_block)), m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{
 			//
@@ -216,15 +216,15 @@ namespace {
 		}
 	};
 
-	class SaveOperation : public OperationBase {
+	class Save_operation : public Operation_base {
 	private:
-		StreamBuffer m_data;
+		Stream_buffer m_data;
 		boost::uint64_t m_begin;
 		bool m_throws_if_exists;
 
 	public:
-		SaveOperation(const boost::shared_ptr<Promise> &promise, std::string path, StreamBuffer data, boost::uint64_t begin, bool throws_if_exists)
-			: OperationBase(promise, STD_MOVE(path))
+		Save_operation(const boost::shared_ptr<Promise> &promise, std::string path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists)
+			: Operation_base(promise, STD_MOVE(path))
 			, m_data(STD_MOVE(data)), m_begin(begin), m_throws_if_exists(throws_if_exists)
 		{
 			//
@@ -238,13 +238,13 @@ namespace {
 		}
 	};
 
-	class RemoveOperation : public OperationBase {
+	class Remove_operation : public Operation_base {
 	private:
 		bool m_throws_if_does_not_exist;
 
 	public:
-		RemoveOperation(const boost::shared_ptr<Promise> &promise, std::string path, bool throws_if_does_not_exist)
-			: OperationBase(promise, STD_MOVE(path))
+		Remove_operation(const boost::shared_ptr<Promise> &promise, std::string path, bool throws_if_does_not_exist)
+			: Operation_base(promise, STD_MOVE(path))
 			, m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{
 			//
@@ -258,13 +258,13 @@ namespace {
 		}
 	};
 
-	class RenameOperation : public OperationBase {
+	class Rename_operation : public Operation_base {
 	private:
 		std::string m_new_path;
 
 	public:
-		RenameOperation(const boost::shared_ptr<Promise> &promise, std::string path, std::string new_path)
-			: OperationBase(promise, STD_MOVE(path))
+		Rename_operation(const boost::shared_ptr<Promise> &promise, std::string path, std::string new_path)
+			: Operation_base(promise, STD_MOVE(path))
 			, m_new_path(STD_MOVE(new_path))
 		{
 			//
@@ -278,13 +278,13 @@ namespace {
 		}
 	};
 
-	class MkdirOperation : public OperationBase {
+	class Mkdir_operation : public Operation_base {
 	private:
 		bool m_throws_if_exists;
 
 	public:
-		MkdirOperation(const boost::shared_ptr<Promise> &promise, std::string path, bool throws_if_exists)
-			: OperationBase(promise, STD_MOVE(path))
+		Mkdir_operation(const boost::shared_ptr<Promise> &promise, std::string path, bool throws_if_exists)
+			: Operation_base(promise, STD_MOVE(path))
 			, m_throws_if_exists(throws_if_exists)
 		{
 			//
@@ -298,13 +298,13 @@ namespace {
 		}
 	};
 
-	class RmdirOperation : public OperationBase {
+	class Rmdir_operation : public Operation_base {
 	private:
 		bool m_throws_if_does_not_exist;
 
 	public:
-		RmdirOperation(const boost::shared_ptr<Promise> &promise, std::string path, bool throws_if_does_not_exist)
-			: OperationBase(promise, STD_MOVE(path))
+		Rmdir_operation(const boost::shared_ptr<Promise> &promise, std::string path, bool throws_if_does_not_exist)
+			: Operation_base(promise, STD_MOVE(path))
 			, m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{
 			//
@@ -321,20 +321,20 @@ namespace {
 	volatile bool g_running = false;
 	Thread g_thread;
 
-	struct OperationQueueElement {
-		boost::shared_ptr<OperationBase> operation;
+	struct Operation_queue_element {
+		boost::shared_ptr<Operation_base> operation;
 	};
 
 	Mutex g_mutex;
-	ConditionVariable g_new_operation;
-	boost::container::deque<OperationQueueElement> g_operations;
+	Condition_variable g_new_operation;
+	boost::container::deque<Operation_queue_element> g_operations;
 
 	bool pump_one_element() NOEXCEPT {
 		PROFILE_ME;
 
-		OperationQueueElement *elem;
+		Operation_queue_element *elem;
 		{
-			const Mutex::UniqueLock lock(g_mutex);
+			const Mutex::Unique_lock lock(g_mutex);
 			if(g_operations.empty()){
 				return false;
 			}
@@ -358,14 +358,14 @@ namespace {
 				promise->set_success(false);
 			}
 		}
-		const Mutex::UniqueLock lock(g_mutex);
+		const Mutex::Unique_lock lock(g_mutex);
 		g_operations.pop_front();
 		return true;
 	}
 
 	void thread_proc(){
 		PROFILE_ME;
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "FileSystem daemon started.");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "File_system daemon started.");
 
 		unsigned timeout = 0;
 		for(;;){
@@ -375,125 +375,125 @@ namespace {
 				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 			} while(busy);
 
-			Mutex::UniqueLock lock(g_mutex);
+			Mutex::Unique_lock lock(g_mutex);
 			if(!atomic_load(g_running, memory_order_consume)){
 				break;
 			}
 			g_new_operation.timed_wait(lock, timeout);
 		}
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "FileSystem daemon stopped.");
+		LOG_POSEIDON(Logger::special_major | Logger::level_info, "File_system daemon stopped.");
 	}
 
-	void submit_operation(boost::shared_ptr<OperationBase> operation){
+	void submit_operation(boost::shared_ptr<Operation_base> operation){
 		PROFILE_ME;
 
-		const Mutex::UniqueLock lock(g_mutex);
-		OperationQueueElement elem = { STD_MOVE(operation) };
+		const Mutex::Unique_lock lock(g_mutex);
+		Operation_queue_element elem = { STD_MOVE(operation) };
 		g_operations.push_back(STD_MOVE(elem));
 		g_new_operation.signal();
 	}
 }
 
-void FileSystemDaemon::start(){
+void File_system_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting FileSystem daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting File_system daemon...");
 
 	Thread(&thread_proc, sslit(" F  "), sslit("Filesystem")).swap(g_thread);
 }
-void FileSystemDaemon::stop(){
+void File_system_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping FileSystem daemon...");
+	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping File_system daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();
 	}
 
-	const Mutex::UniqueLock lock(g_mutex);
+	const Mutex::Unique_lock lock(g_mutex);
 	g_operations.clear();
 }
 
-FileBlockRead FileSystemDaemon::load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
+File_block_read File_system_daemon::load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
 	return real_load(path, begin, limit, throws_if_does_not_exist);
 }
-void FileSystemDaemon::save(const std::string &path, StreamBuffer data, boost::uint64_t begin, bool throws_if_exists){
+void File_system_daemon::save(const std::string &path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists){
 	PROFILE_ME;
 
 	real_save(path, STD_MOVE(data), begin, throws_if_exists);
 }
-void FileSystemDaemon::remove(const std::string &path, bool throws_if_does_not_exist){
+void File_system_daemon::remove(const std::string &path, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
 	real_remove(path, throws_if_does_not_exist);
 }
-void FileSystemDaemon::rename(const std::string &path, const std::string &new_path){
+void File_system_daemon::rename(const std::string &path, const std::string &new_path){
 	PROFILE_ME;
 
 	real_rename(path, new_path);
 }
-void FileSystemDaemon::mkdir(const std::string &path, bool throws_if_exists){
+void File_system_daemon::mkdir(const std::string &path, bool throws_if_exists){
 	PROFILE_ME;
 
 	real_mkdir(path, throws_if_exists);
 }
-void FileSystemDaemon::rmdir(const std::string &path, bool throws_if_does_not_exist){
+void File_system_daemon::rmdir(const std::string &path, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
 	real_rmdir(path, throws_if_does_not_exist);
 }
 
-boost::shared_ptr<const PromiseContainer<FileBlockRead> > FileSystemDaemon::enqueue_for_loading(std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
+boost::shared_ptr<const Promise_container<File_block_read> > File_system_daemon::enqueue_for_loading(std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
-	AUTO(promise, boost::make_shared<PromiseContainer<FileBlockRead> >());
-	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(path), begin, limit, throws_if_does_not_exist));
+	AUTO(promise, boost::make_shared<Promise_container<File_block_read> >());
+	AUTO(operation, boost::make_shared<Load_operation>(promise, STD_MOVE(path), begin, limit, throws_if_does_not_exist));
 	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
-boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_saving(std::string path, StreamBuffer data, boost::uint64_t begin, bool throws_if_exists){
+boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_saving(std::string path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists){
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
-	AUTO(operation, boost::make_shared<SaveOperation>(promise, STD_MOVE(path), STD_MOVE(data), begin, throws_if_exists));
+	AUTO(operation, boost::make_shared<Save_operation>(promise, STD_MOVE(path), STD_MOVE(data), begin, throws_if_exists));
 	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
-boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_removing(std::string path, bool throws_if_does_not_exist){
+boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_removing(std::string path, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
-	AUTO(operation, boost::make_shared<RemoveOperation>(promise, STD_MOVE(path), throws_if_does_not_exist));
+	AUTO(operation, boost::make_shared<Remove_operation>(promise, STD_MOVE(path), throws_if_does_not_exist));
 	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
-boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_renaming(std::string path, std::string new_path){
+boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_renaming(std::string path, std::string new_path){
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
-	AUTO(operation, boost::make_shared<RenameOperation>(promise, STD_MOVE(path), STD_MOVE(new_path)));
+	AUTO(operation, boost::make_shared<Rename_operation>(promise, STD_MOVE(path), STD_MOVE(new_path)));
 	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
-boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_mkdir(std::string path, bool throws_if_exists){
+boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_mkdir(std::string path, bool throws_if_exists){
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
-	AUTO(operation, boost::make_shared<MkdirOperation>(promise, STD_MOVE(path), throws_if_exists));
+	AUTO(operation, boost::make_shared<Mkdir_operation>(promise, STD_MOVE(path), throws_if_exists));
 	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
-boost::shared_ptr<const Promise> FileSystemDaemon::enqueue_for_rmdir(std::string path, bool throws_if_does_not_exist){
+boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_rmdir(std::string path, bool throws_if_does_not_exist){
 	PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
-	AUTO(operation, boost::make_shared<RmdirOperation>(promise, STD_MOVE(path), throws_if_does_not_exist));
+	AUTO(operation, boost::make_shared<Rmdir_operation>(promise, STD_MOVE(path), throws_if_does_not_exist));
 	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }

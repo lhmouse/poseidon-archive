@@ -9,26 +9,26 @@
 
 namespace Poseidon {
 
-class SystemHttpServletBase;
+class System_http_servlet_base;
 
-class SystemHttpSession : public Http::Session {
+class System_http_session : public Http::Session {
 private:
-	const boost::shared_ptr<const Http::AuthenticationContext> m_auth_ctx;
+	const boost::shared_ptr<const Http::Authentication_context> m_auth_ctx;
 
 	bool m_initialized;
 	std::string m_decoded_uri;
-	boost::shared_ptr<const SystemHttpServletBase> m_servlet;
+	boost::shared_ptr<const System_http_servlet_base> m_servlet;
 
 public:
-	SystemHttpSession(Move<UniqueFile> socket, boost::shared_ptr<const Http::AuthenticationContext> auth_ctx);
-	~SystemHttpSession();
+	System_http_session(Move<Unique_file> socket, boost::shared_ptr<const Http::Authentication_context> auth_ctx);
+	~System_http_session();
 
 private:
-	void initialize_once(const Http::RequestHeaders &request_headers);
+	void initialize_once(const Http::Request_headers &request_headers);
 
 protected:
-	void on_sync_expect(Http::RequestHeaders request_headers) OVERRIDE;
-	void on_sync_request(Http::RequestHeaders request_headers, StreamBuffer request_entity) OVERRIDE;
+	void on_sync_expect(Http::Request_headers request_headers) OVERRIDE;
+	void on_sync_request(Http::Request_headers request_headers, Stream_buffer request_entity) OVERRIDE;
 };
 
 }

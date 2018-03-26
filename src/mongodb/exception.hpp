@@ -7,15 +7,15 @@
 #include "../exception.hpp"
 
 namespace Poseidon {
-namespace MongoDb {
+namespace Mongo_db {
 
-class Exception : public BasicException {
+class Exception : public Basic_exception {
 private:
-	SharedNts m_database;
+	Shared_nts m_database;
 	unsigned long m_code;
 
 public:
-	Exception(const char *file, std::size_t line, const char *func, SharedNts database, unsigned long code, SharedNts message);
+	Exception(const char *file, std::size_t line, const char *func, Shared_nts database, unsigned long code, Shared_nts message);
 	~Exception() NOEXCEPT;
 
 public:

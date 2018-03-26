@@ -10,13 +10,13 @@
 
 namespace Poseidon {
 
-class ConfigFile {
+class Config_file {
 private:
-	OptionalMap m_contents;
+	Optional_map m_contents;
 
 public:
-	ConfigFile();
-	explicit ConfigFile(const std::string &path);
+	Config_file();
+	explicit Config_file(const std::string &path);
 
 public:
 	void load(const std::string &path);
@@ -91,13 +91,13 @@ public:
 		return vals;
 	}
 
-	void swap(ConfigFile &rhs) NOEXCEPT {
+	void swap(Config_file &rhs) NOEXCEPT {
 		using std::swap;
 		swap(m_contents, rhs.m_contents);
 	}
 };
 
-inline void swap(ConfigFile &lhs, ConfigFile &rhs) NOEXCEPT {
+inline void swap(Config_file &lhs, Config_file &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 

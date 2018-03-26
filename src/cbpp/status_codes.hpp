@@ -7,9 +7,9 @@
 namespace Poseidon {
 namespace Cbpp {
 
-typedef long StatusCode;
+typedef long Status_code;
 
-namespace StatusCodes {
+namespace Status_codes {
 	enum {
 		status_shutdown                =    3,
 		status_pong                    =    2,
@@ -33,7 +33,7 @@ namespace StatusCodes {
 	};
 }
 
-using namespace StatusCodes;
+using namespace Status_codes;
 
 }
 }

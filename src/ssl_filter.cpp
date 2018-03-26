@@ -46,7 +46,7 @@ namespace {
 	}
 }
 
-SslFilter::SslFilter(Move<UniqueSsl> ssl, SslFilter::Direction dir, int fd)
+Ssl_filter::Ssl_filter(Move<Unique_ssl> ssl, Ssl_filter::Direction dir, int fd)
 	: m_ssl(STD_MOVE(ssl))
 {
 	if(dir == to_connect){
@@ -56,14 +56,14 @@ SslFilter::SslFilter(Move<UniqueSsl> ssl, SslFilter::Direction dir, int fd)
 	}
 	DEBUG_THROW_UNLESS(::SSL_set_fd(m_ssl.get(), fd), Exception, sslit("::SSL_set_fd() failed"));
 }
-SslFilter::~SslFilter(){
+Ssl_filter::~Ssl_filter(){
 	//
 }
 
-long SslFilter::recv(void *data, unsigned long size){
+long Ssl_filter::recv(void *data, unsigned long size){
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_mutex);
+	const Mutex::Unique_lock lock(m_mutex);
 	int bytes_read = ::SSL_read(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
 	if(bytes_read <= 0){
 		if(::SSL_get_shutdown(m_ssl.get()) & SSL_RECEIVED_SHUTDOWN){
@@ -79,10 +79,10 @@ long SslFilter::recv(void *data, unsigned long size){
 	}
 	return bytes_read;
 }
-long SslFilter::send(const void *data, unsigned long size){
+long Ssl_filter::send(const void *data, unsigned long size){
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_mutex);
+	const Mutex::Unique_lock lock(m_mutex);
 	int bytes_written = ::SSL_write(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
 	if(bytes_written <= 0){
 		if(::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN){
@@ -104,10 +104,10 @@ long SslFilter::send(const void *data, unsigned long size){
 	}
 	return bytes_written;
 }
-void SslFilter::send_fin() NOEXCEPT {
+void Ssl_filter::send_fin() NOEXCEPT {
 	PROFILE_ME;
 
-	const Mutex::UniqueLock lock(m_mutex);
+	const Mutex::Unique_lock lock(m_mutex);
 	const int status = ::SSL_shutdown(m_ssl.get());
 	if(status == 1){
 		::shutdown(::SSL_get_wfd(m_ssl.get()), SHUT_WR);

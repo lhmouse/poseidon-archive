@@ -13,9 +13,9 @@
 #include <cstddef>
 
 namespace Poseidon {
-namespace MongoDb {
+namespace Mongo_db {
 
-class BsonBuilder {
+class Bson_builder {
 private:
 	enum Type {
 		type_boolean    =  1,
@@ -37,7 +37,7 @@ private:
 	};
 
 	struct Element {
-		SharedNts name;
+		Shared_nts name;
 		Type type;
 		std::string large;
 		char small[16];
@@ -47,18 +47,18 @@ private:
 	boost::container::deque<Element> m_elements;
 
 public:
-	BsonBuilder()
+	Bson_builder()
 		: m_elements()
 	{
 		//
 	}
 #ifndef POSEIDON_CXX11
-	BsonBuilder(const BsonBuilder &rhs)
+	Bson_builder(const Bson_builder &rhs)
 		: m_elements(rhs.m_elements)
 	{
 		//
 	}
-	BsonBuilder &operator=(const BsonBuilder &rhs){
+	Bson_builder &operator=(const Bson_builder &rhs){
 		m_elements = rhs.m_elements;
 		return *this;
 	}
@@ -68,22 +68,22 @@ private:
 	void internal_build(void *impl, bool as_array) const;
 
 public:
-	void append_boolean(SharedNts name, bool value);
-	void append_signed(SharedNts name, boost::int64_t value);
-	void append_unsigned(SharedNts name, boost::uint64_t value);
-	void append_double(SharedNts name, double value);
-	void append_string(SharedNts name, const std::string &value);
-	void append_datetime(SharedNts name, boost::uint64_t value);
-	void append_uuid(SharedNts name, const Uuid &value);
-	void append_blob(SharedNts name, const std::basic_string<unsigned char> &value);
+	void append_boolean(Shared_nts name, bool value);
+	void append_signed(Shared_nts name, boost::int64_t value);
+	void append_unsigned(Shared_nts name, boost::uint64_t value);
+	void append_double(Shared_nts name, double value);
+	void append_string(Shared_nts name, const std::string &value);
+	void append_datetime(Shared_nts name, boost::uint64_t value);
+	void append_uuid(Shared_nts name, const Uuid &value);
+	void append_blob(Shared_nts name, const std::basic_string<unsigned char> &value);
 
-	void append_js_code(SharedNts name, const std::string &code);
-	void append_regex(SharedNts name, const std::string &regex, const char *options = "");
-	void append_minkey(SharedNts name);
-	void append_maxkey(SharedNts name);
-	void append_null(SharedNts name);
-	void append_object(SharedNts name, const BsonBuilder &obj);
-	void append_array(SharedNts name, const BsonBuilder &arr);
+	void append_js_code(Shared_nts name, const std::string &code);
+	void append_regex(Shared_nts name, const std::string &regex, const char *options = "");
+	void append_minkey(Shared_nts name);
+	void append_maxkey(Shared_nts name);
+	void append_null(Shared_nts name);
+	void append_object(Shared_nts name, const Bson_builder &obj);
+	void append_array(Shared_nts name, const Bson_builder &arr);
 
 	bool empty() const {
 		return m_elements.empty();
@@ -95,7 +95,7 @@ public:
 		m_elements.clear();
 	}
 
-	void swap(BsonBuilder &rhs) NOEXCEPT {
+	void swap(Bson_builder &rhs) NOEXCEPT {
 		using std::swap;
 		swap(m_elements, rhs.m_elements);
 	}
@@ -107,83 +107,83 @@ public:
 	void build_json(std::ostream &os, bool as_array = false) const;
 };
 
-inline void swap(BsonBuilder &lhs, BsonBuilder &rhs) NOEXCEPT {
+inline void swap(Bson_builder &lhs, Bson_builder &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const BsonBuilder &rhs){
+inline std::ostream &operator<<(std::ostream &os, const Bson_builder &rhs){
 	rhs.build_json(os);
 	return os;
 }
 
-inline BsonBuilder bson_scalar_boolean(SharedNts name, bool value){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_boolean(Shared_nts name, bool value){
+	Bson_builder ret;
 	ret.append_boolean(STD_MOVE(name), value);
 	return ret;
 }
-inline BsonBuilder bson_scalar_signed(SharedNts name, boost::int64_t value){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_signed(Shared_nts name, boost::int64_t value){
+	Bson_builder ret;
 	ret.append_signed(STD_MOVE(name), value);
 	return ret;
 }
-inline BsonBuilder bson_scalar_unsigned(SharedNts name, boost::uint64_t value){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_unsigned(Shared_nts name, boost::uint64_t value){
+	Bson_builder ret;
 	ret.append_unsigned(STD_MOVE(name), value);
 	return ret;
 }
-inline BsonBuilder bson_scalar_double(SharedNts name, double value){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_double(Shared_nts name, double value){
+	Bson_builder ret;
 	ret.append_double(STD_MOVE(name), value);
 	return ret;
 }
-inline BsonBuilder bson_scalar_string(SharedNts name, const std::string &value){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_string(Shared_nts name, const std::string &value){
+	Bson_builder ret;
 	ret.append_string(STD_MOVE(name), value);
 	return ret;
 }
-inline BsonBuilder bson_scalar_datetime(SharedNts name, boost::uint64_t value){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_datetime(Shared_nts name, boost::uint64_t value){
+	Bson_builder ret;
 	ret.append_datetime(STD_MOVE(name), value);
 	return ret;
 }
-inline BsonBuilder bson_scalar_uuid(SharedNts name, const Uuid &value){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_uuid(Shared_nts name, const Uuid &value){
+	Bson_builder ret;
 	ret.append_uuid(STD_MOVE(name), value);
 	return ret;
 }
-inline BsonBuilder bson_scalar_blob(SharedNts name, const std::basic_string<unsigned char> &value){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_blob(Shared_nts name, const std::basic_string<unsigned char> &value){
+	Bson_builder ret;
 	ret.append_blob(STD_MOVE(name), value);
 	return ret;
 }
 
-inline BsonBuilder bson_scalar_regex(SharedNts name, const std::string &regex, const char *options = ""){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_regex(Shared_nts name, const std::string &regex, const char *options = ""){
+	Bson_builder ret;
 	ret.append_regex(STD_MOVE(name), regex, options);
 	return ret;
 }
-inline BsonBuilder bson_scalar_minkey(SharedNts name){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_minkey(Shared_nts name){
+	Bson_builder ret;
 	ret.append_minkey(STD_MOVE(name));
 	return ret;
 }
-inline BsonBuilder bson_scalar_maxkey(SharedNts name){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_maxkey(Shared_nts name){
+	Bson_builder ret;
 	ret.append_maxkey(STD_MOVE(name));
 	return ret;
 }
-inline BsonBuilder bson_scalar_null(SharedNts name){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_null(Shared_nts name){
+	Bson_builder ret;
 	ret.append_null(STD_MOVE(name));
 	return ret;
 }
-inline BsonBuilder bson_scalar_object(SharedNts name, const BsonBuilder &obj){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_object(Shared_nts name, const Bson_builder &obj){
+	Bson_builder ret;
 	ret.append_object(STD_MOVE(name), obj);
 	return ret;
 }
-inline BsonBuilder bson_scalar_array(SharedNts name, const BsonBuilder &arr){
-	BsonBuilder ret;
+inline Bson_builder bson_scalar_array(Shared_nts name, const Bson_builder &arr){
+	Bson_builder ret;
 	ret.append_array(STD_MOVE(name), arr);
 	return ret;
 }

@@ -14,7 +14,7 @@
 namespace Poseidon {
 
 namespace {
-	struct MagicCloser {
+	struct Magic_closer {
 		CONSTEXPR ::magic_t operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
@@ -23,35 +23,35 @@ namespace {
 		}
 	};
 
-	UniqueHandle<MagicCloser> open_database(const char *file){
-		UniqueHandle<MagicCloser> cookie;
-		DEBUG_THROW_UNLESS(cookie.reset(::magic_open(MAGIC_MIME_TYPE)), SystemException);
-		DEBUG_THROW_UNLESS(::magic_load(cookie.get(), file) == 0, Exception, SharedNts(::magic_error(cookie.get())));
+	Unique_handle<Magic_closer> open_database(const char *file){
+		Unique_handle<Magic_closer> cookie;
+		DEBUG_THROW_UNLESS(cookie.reset(::magic_open(MAGIC_MIME_TYPE)), System_exception);
+		DEBUG_THROW_UNLESS(::magic_load(cookie.get(), file) == 0, Exception, Shared_nts(::magic_error(cookie.get())));
 		return cookie;
 	}
 
 	const char *checked_look_up(::magic_t cookie, const void *data, std::size_t size){
 		const AUTO(desc, ::magic_buffer(cookie, data, size));
-		DEBUG_THROW_UNLESS(desc, Exception, SharedNts(::magic_error(cookie)));
+		DEBUG_THROW_UNLESS(desc, Exception, Shared_nts(::magic_error(cookie)));
 		return desc;
 	}
 
 	volatile bool g_running = false;
-	UniqueHandle<MagicCloser> g_cookie;
+	Unique_handle<Magic_closer> g_cookie;
 }
 
-void MagicDaemon::start(){
+void Magic_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting magic daemon...");
 
-	const AUTO_REF(database, MainConfig::get<std::string>("magic_database", "/usr/share/misc/magic"));
+	const AUTO_REF(database, Main_config::get<std::string>("magic_database", "/usr/share/misc/magic"));
 	LOG_POSEIDON_INFO("Loading magic database: ", database);
 	open_database(database.c_str()).swap(g_cookie);
 }
-void MagicDaemon::stop(){
+void Magic_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
@@ -60,7 +60,7 @@ void MagicDaemon::stop(){
 	g_cookie.reset();
 }
 
-const char *MagicDaemon::guess_mime_type(const void *data, std::size_t size){
+const char *Magic_daemon::guess_mime_type(const void *data, std::size_t size){
 	PROFILE_ME;
 
 	DEBUG_THROW_ASSERT(data);

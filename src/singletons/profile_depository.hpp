@@ -8,9 +8,9 @@
 
 namespace Poseidon {
 
-class ProfileDepository {
+class Profile_depository {
 public:
-	struct SnapshotElement {
+	struct Snapshot_element {
 		const char *file;
 		unsigned long line;
 		const char *func;
@@ -20,7 +20,7 @@ public:
 	};
 
 private:
-	ProfileDepository();
+	Profile_depository();
 
 public:
 	static void start();
@@ -29,7 +29,7 @@ public:
 	static bool is_enabled() NOEXCEPT;
 	static void accumulate(const char *file, unsigned long line, const char *func, bool new_sample, double total, double exclusive) NOEXCEPT;
 
-	static void snapshot(boost::container::vector<SnapshotElement> &ret);
+	static void snapshot(boost::container::vector<Snapshot_element> &ret);
 	static void clear() NOEXCEPT;
 };
 

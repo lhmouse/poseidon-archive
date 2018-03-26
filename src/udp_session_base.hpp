@@ -13,22 +13,22 @@
 
 namespace Poseidon {
 
-class UdpSessionBase : public SocketBase {
+class Udp_session_base : public Socket_base {
 private:
 	mutable Mutex m_send_mutex;
-	mutable boost::container::deque<std::pair<SockAddr, StreamBuffer> > m_send_queue;
+	mutable boost::container::deque<std::pair<Sock_addr, Stream_buffer> > m_send_queue;
 
 public:
-	explicit UdpSessionBase(Move<UniqueFile> socket);
-	~UdpSessionBase();
+	explicit Udp_session_base(Move<Unique_file> socket);
+	~Udp_session_base();
 
 protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable) OVERRIDE;
-	int poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable) OVERRIDE;
+	int poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable) OVERRIDE;
 
-	virtual void on_receive(const SockAddr &sock_addr, StreamBuffer data) = 0;
-	virtual void on_message_too_large(const SockAddr &sock_addr, StreamBuffer data);
+	virtual void on_receive(const Sock_addr &sock_addr, Stream_buffer data) = 0;
+	virtual void on_message_too_large(const Sock_addr &sock_addr, Stream_buffer data);
 
 public:
 	bool has_been_shutdown_read() const NOEXCEPT OVERRIDE;
@@ -37,12 +37,12 @@ public:
 	bool shutdown_write() NOEXCEPT OVERRIDE;
 	void force_shutdown() NOEXCEPT OVERRIDE;
 
-	void add_membership(const SockAddr &group);
-	void drop_membership(const SockAddr &group);
+	void add_membership(const Sock_addr &group);
+	void drop_membership(const Sock_addr &group);
 	void set_multicast_loop(bool enabled = true);
 	void set_multicast_ttl(int ttl);
 
-	bool send(const SockAddr &sock_addr, StreamBuffer buffer);
+	bool send(const Sock_addr &sock_addr, Stream_buffer buffer);
 };
 
 }

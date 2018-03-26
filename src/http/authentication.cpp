@@ -19,9 +19,9 @@
 namespace Poseidon {
 namespace Http {
 
-class AuthenticationContext : NONCOPYABLE {
+class Authentication_context : NONCOPYABLE {
 private:
-	struct PasswordComparator {
+	struct Password_comparator {
 		bool operator()(const std::string &lhs, const char *rhs) const {
 			return ::strcasecmp(lhs.c_str(), rhs);
 		}
@@ -36,7 +36,7 @@ private:
 	boost::container::vector<std::string> m_passwords;
 
 public:
-	explicit AuthenticationContext(std::string realm)
+	explicit Authentication_context(std::string realm)
 		: m_realm(STD_MOVE(realm))
 	{
 		//
@@ -48,7 +48,7 @@ public:
 	}
 
 	std::pair<const char *, const char *> get_password(const char *username) const {
-		const AUTO(range, std::equal_range(m_passwords.begin(), m_passwords.end(), username, PasswordComparator()));
+		const AUTO(range, std::equal_range(m_passwords.begin(), m_passwords.end(), username, Password_comparator()));
 		if(range.first == range.second){
 			return VAL_INIT;
 		}
@@ -59,7 +59,7 @@ public:
 		str += username;
 		str += '\0';
 		str += password;
-		const AUTO(range, std::equal_range(m_passwords.begin(), m_passwords.end(), username, PasswordComparator()));
+		const AUTO(range, std::equal_range(m_passwords.begin(), m_passwords.end(), username, Password_comparator()));
 		if(range.first == range.second){
 			m_passwords.insert(range.first, STD_MOVE(str));
 		} else {
@@ -68,29 +68,29 @@ public:
 	}
 };
 
-boost::shared_ptr<const AuthenticationContext> create_authentication_context(
+boost::shared_ptr<const Authentication_context> create_authentication_context(
 	const std::string &realm, const boost::container::vector<std::string> &basic_user_pass)
 {
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!basic_user_pass.empty(), BasicException, sslit("No username:password provided"));
+	DEBUG_THROW_UNLESS(!basic_user_pass.empty(), Basic_exception, sslit("No username:password provided"));
 
-	AUTO(context, boost::make_shared<AuthenticationContext>(realm));
+	AUTO(context, boost::make_shared<Authentication_context>(realm));
 	std::string str;
 	for(AUTO(it, basic_user_pass.begin()); it != basic_user_pass.end(); ++it){
 		str = *it;
 		AUTO(pos, str.find('\0'));
-		DEBUG_THROW_UNLESS(pos == std::string::npos, BasicException, sslit("Username or password shall not contain null characters"));
+		DEBUG_THROW_UNLESS(pos == std::string::npos, Basic_exception, sslit("Username or password shall not contain null characters"));
 		pos = str.find(':');
-		DEBUG_THROW_UNLESS(pos != std::string::npos, BasicException, sslit("Colon delimiter not found"));
+		DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, sslit("Colon delimiter not found"));
 		str.at(pos) = 0;
 		const AUTO(old_password, context->get_password(str.c_str()).second);
-		DEBUG_THROW_UNLESS(!old_password, BasicException, sslit("Duplicate username"));
+		DEBUG_THROW_UNLESS(!old_password, Basic_exception, sslit("Duplicate username"));
 		context->set_password(str.c_str(), str.c_str() + pos + 1);
 	}
 	return STD_MOVE_IDN(context);
 }
-std::pair<AuthenticationResult, const char *> check_authentication(
-	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, const RequestHeaders &request_headers)
+std::pair<Authentication_result, const char *> check_authentication(
+	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, const Request_headers &request_headers)
 {
 	PROFILE_ME;
 
@@ -112,14 +112,14 @@ std::pair<AuthenticationResult, const char *> check_authentication(
 	return std::make_pair(auth_scheme_not_supported, NULLPTR);
 }
 __attribute__((__noreturn__)) void throw_authentication_failure(
-	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, AuthenticationResult result)
+	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, Authentication_result result)
 {
 	PROFILE_ME;
 
 	throw_authentication_failure_digest(context, is_proxy, remote_info, result);
 }
 const char *check_authentication_simple(
-	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, const RequestHeaders &request_headers)
+	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, const Request_headers &request_headers)
 {
 	PROFILE_ME;
 
@@ -132,12 +132,12 @@ const char *check_authentication_simple(
 }
 
 namespace {
-	class StringQuoter {
+	class String_quoter {
 	private:
 		const char *m_str;
 
 	public:
-		StringQuoter(const char *str)
+		String_quoter(const char *str)
 			: m_str(str)
 		{
 			//
@@ -149,7 +149,7 @@ namespace {
 		}
 	};
 
-	std::ostream &operator<<(std::ostream &os, const StringQuoter &rhs){
+	std::ostream &operator<<(std::ostream &os, const String_quoter &rhs){
 		PROFILE_ME;
 
 		const char *read = rhs.get();
@@ -168,15 +168,15 @@ namespace {
 	__attribute__((__noreturn__)) void do_throw_authentication_failure(bool is_proxy, std::string authenticate_str){
 		PROFILE_ME;
 
-		OptionalMap headers;
-		headers.set(SharedNts::view(is_proxy ? "Proxy-Authenticate" : "WWW-Authenticate"), STD_MOVE(authenticate_str));
+		Optional_map headers;
+		headers.set(Shared_nts::view(is_proxy ? "Proxy-Authenticate" : "WWW-Authenticate"), STD_MOVE(authenticate_str));
 		DEBUG_THROW(Exception, is_proxy ? status_proxy_auth_required : status_unauthorized, STD_MOVE(headers));
 	}
 }
 
 // Basic
-std::pair<AuthenticationResult, const char *> check_authentication_basic(
-	const boost::shared_ptr<const AuthenticationContext> &context, const std::string &header_value)
+std::pair<Authentication_result, const char *> check_authentication_basic(
+	const boost::shared_ptr<const Authentication_context> &context, const std::string &header_value)
 {
 	PROFILE_ME;
 
@@ -213,13 +213,13 @@ std::pair<AuthenticationResult, const char *> check_authentication_basic(
 	return std::make_pair(auth_succeeded, pair.first);
 }
 __attribute__((__noreturn__)) void throw_authentication_failure_basic(
-	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, AuthenticationResult result)
+	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, Authentication_result result)
 {
 	PROFILE_ME;
 	DEBUG_THROW_ASSERT(result != auth_succeeded);
 
 	Buffer_ostream bos;
-	bos <<"Basic realm=" <<StringQuoter(context->get_realm().c_str());
+	bos <<"Basic realm=" <<String_quoter(context->get_realm().c_str());
 
 	do_throw_authentication_failure(is_proxy, bos.get_buffer().dump_string());
 }
@@ -297,8 +297,8 @@ namespace {
 }
 
 // Digest
-std::pair<AuthenticationResult, const char *> check_authentication_digest(
-	const boost::shared_ptr<const AuthenticationContext> &context, const IpPort &remote_info, Verb verb, const std::string &header_value)
+std::pair<Authentication_result, const char *> check_authentication_digest(
+	const boost::shared_ptr<const Authentication_context> &context, const Ip_port &remote_info, Verb verb, const std::string &header_value)
 {
 	PROFILE_ME;
 
@@ -314,9 +314,9 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 		return std::make_pair(auth_scheme_not_supported, NULLPTR);
 	}
 
-	OptionalMap params;
+	Optional_map params;
 	Buffer_istream bis;
-	bis.set_buffer(StreamBuffer(header_value.c_str() + 7));
+	bis.set_buffer(Stream_buffer(header_value.c_str() + 7));
 	std::string seg;
 	for(;;){
 		seg.clear();
@@ -370,7 +370,7 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 			return std::make_pair(auth_header_format_error, NULLPTR);
 		}
 		++key_end;
-		SharedNts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
+		Shared_nts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
 		if(equ == std::string::npos){
 			seg.clear();
 		} else {
@@ -407,7 +407,7 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 		LOG_POSEIDON_DEBUG("Server ID mismatch: ", std::hex, std::setfill('0'), std::setw(8), nonce->server_id);
 		return std::make_pair(auth_password_incorrect, NULLPTR);
 	}
-	const AUTO(nonce_expiry_time, MainConfig::get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000));
+	const AUTO(nonce_expiry_time, Main_config::get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000));
 	if(nonce->timestamp < saturated_sub(get_utc_time(), nonce_expiry_time)){
 		LOG_POSEIDON_DEBUG("Nonce expired: ", nonce->timestamp);
 		return std::make_pair(auth_request_expired, NULLPTR);
@@ -448,25 +448,25 @@ std::pair<AuthenticationResult, const char *> check_authentication_digest(
 	return std::make_pair(auth_succeeded, pair.first);
 }
 __attribute__((__noreturn__)) void throw_authentication_failure_digest(
-	const boost::shared_ptr<const AuthenticationContext> &context, bool is_proxy, const IpPort &remote_info, AuthenticationResult result)
+	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, Authentication_result result)
 {
 	PROFILE_ME;
 	DEBUG_THROW_ASSERT(result != auth_succeeded);
 
 	Buffer_ostream bos;
-	bos <<"Digest realm=" <<StringQuoter(context->get_realm().c_str());
+	bos <<"Digest realm=" <<String_quoter(context->get_realm().c_str());
 
 	Nonce nonce[1];
 	create_nonce(nonce);
 	char nonce_str[33];
 	encrypt_nonce(nonce_str, nonce, remote_info.ip());
 	LOG_POSEIDON_DEBUG("New nonce: ", nonce_str);
-	bos <<", nonce=" <<StringQuoter(nonce_str);
+	bos <<", nonce=" <<String_quoter(nonce_str);
 
 	if(result == auth_request_expired){
 		bos <<", stale=true";
 	}
-	bos <<", qop=" <<StringQuoter("auth");
+	bos <<", qop=" <<String_quoter("auth");
 
 	do_throw_authentication_failure(is_proxy, bos.get_buffer().dump_string());
 }

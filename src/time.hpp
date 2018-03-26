@@ -19,7 +19,7 @@ extern boost::uint64_t get_local_time_from_utc(boost::uint64_t utc);
 extern boost::uint64_t get_fast_mono_clock() NOEXCEPT;
 extern double get_hi_res_mono_clock() NOEXCEPT;
 
-struct DateTime {
+struct Date_time {
 	unsigned yr;
 	unsigned mon;
 	unsigned day;
@@ -31,8 +31,8 @@ struct DateTime {
 	unsigned ms;
 };
 
-extern DateTime break_down_time(boost::uint64_t ms);
-extern boost::uint64_t assemble_time(const DateTime &dt);
+extern Date_time break_down_time(boost::uint64_t ms);
+extern boost::uint64_t assemble_time(const Date_time &dt);
 
 extern std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms);
 extern boost::uint64_t scan_time(const char *str);

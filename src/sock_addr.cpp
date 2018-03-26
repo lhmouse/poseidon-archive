@@ -54,16 +54,16 @@ namespace {
 	}
 }
 
-SockAddr::SockAddr(){
+Sock_addr::Sock_addr(){
 	as_sa(m_data).sa_family = AF_UNSPEC;
 	m_size = 0;
 }
-SockAddr::SockAddr(const void *addr_data, std::size_t addr_size){
-	DEBUG_THROW_UNLESS(addr_size <= sizeof(m_data), Exception, sslit("Too many bytes for SockAddr"));
+Sock_addr::Sock_addr(const void *addr_data, std::size_t addr_size){
+	DEBUG_THROW_UNLESS(addr_size <= sizeof(m_data), Exception, sslit("Too many bytes for Sock_addr"));
 	std::memcpy(m_data, addr_data, addr_size);
 	m_size = addr_size;
 }
-SockAddr::SockAddr(const IpPort &ip_port){
+Sock_addr::Sock_addr(const Ip_port &ip_port){
 	if(::inet_pton(AF_INET, ip_port.ip(), &(as_sin(m_data).sin_addr)) == 1){
 		::sockaddr_in &sin = as_sin(m_data);
 		BOOST_STATIC_ASSERT(sizeof(m_data) >= sizeof(sin));
@@ -81,24 +81,24 @@ SockAddr::SockAddr(const IpPort &ip_port){
 		DEBUG_THROW(Exception, sslit("Unknown IP address format"));
 	}
 }
-SockAddr::SockAddr(const SockAddr &rhs) NOEXCEPT {
+Sock_addr::Sock_addr(const Sock_addr &rhs) NOEXCEPT {
 	const std::size_t addr_size = rhs.m_size;
 	std::memcpy(m_data, rhs.m_data, addr_size);
 	m_size = addr_size;
 }
-SockAddr &SockAddr::operator=(const SockAddr &rhs) NOEXCEPT {
+Sock_addr &Sock_addr::operator=(const Sock_addr &rhs) NOEXCEPT {
 	const std::size_t addr_size = rhs.m_size;
 	std::memcpy(m_data, rhs.m_data, addr_size);
 	m_size = addr_size;
 	return *this;
 }
 
-int SockAddr::get_family() const {
+int Sock_addr::get_family() const {
 	::sockaddr &sa = as_sa(m_data);
-	DEBUG_THROW_UNLESS(m_size >= sizeof(sa.sa_family), Exception, sslit("Empty SockAddr"));
+	DEBUG_THROW_UNLESS(m_size >= sizeof(sa.sa_family), Exception, sslit("Empty Sock_addr"));
 	return sa.sa_family;
 }
-bool SockAddr::is_ipv6() const {
+bool Sock_addr::is_ipv6() const {
 	const int family = get_family();
 	switch(family){
 	case AF_INET:
@@ -110,17 +110,17 @@ bool SockAddr::is_ipv6() const {
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
 }
-bool SockAddr::is_private() const {
+bool Sock_addr::is_private() const {
 	const int family = get_family();
 	switch(family){
 	case AF_INET: {
 		const ::sockaddr_in &sin = as_sin(m_data);
-		DEBUG_THROW_UNLESS(m_size >= sizeof(sin), Exception, sslit("Invalid IPv4 SockAddr"));
+		DEBUG_THROW_UNLESS(m_size >= sizeof(sin), Exception, sslit("Invalid IPv4 Sock_addr"));
 		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin.sin_addr));
 		return is_ipv4_private(addr); }
 	case AF_INET6: {
 		const ::sockaddr_in6 &sin6 = as_sin6(m_data);
-		DEBUG_THROW_UNLESS(m_size >= sizeof(sin6), Exception, sslit("Invalid IPv6 SockAddr"));
+		DEBUG_THROW_UNLESS(m_size >= sizeof(sin6), Exception, sslit("Invalid IPv6 Sock_addr"));
 		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin6.sin6_addr));
 		if(are_zeroes(addr, 15)){
 			if(addr[15] == 0){ // ::/128: 未指定的地址
@@ -143,17 +143,17 @@ bool SockAddr::is_private() const {
 		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
 	}
 }
-bool SockAddr::is_multicast() const {
+bool Sock_addr::is_multicast() const {
 	const int family = get_family();
 	switch(family){
 	case AF_INET: {
 		const ::sockaddr_in &sin = as_sin(m_data);
-		DEBUG_THROW_UNLESS(m_size >= sizeof(sin), Exception, sslit("Invalid IPv4 SockAddr"));
+		DEBUG_THROW_UNLESS(m_size >= sizeof(sin), Exception, sslit("Invalid IPv4 Sock_addr"));
 		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin.sin_addr));
 		return is_ipv4_multicast(addr); }
 	case AF_INET6: {
 		const ::sockaddr_in6 &sin6 = as_sin6(m_data);
-		DEBUG_THROW_UNLESS(m_size >= sizeof(sin6), Exception, sslit("Invalid IPv6 SockAddr"));
+		DEBUG_THROW_UNLESS(m_size >= sizeof(sin6), Exception, sslit("Invalid IPv6 Sock_addr"));
 		const unsigned char *const addr = reinterpret_cast<const unsigned char *>(&(sin6.sin6_addr));
 		if((addr[0] == 0xFF) && (addr[1] == 0)){
 			return true;

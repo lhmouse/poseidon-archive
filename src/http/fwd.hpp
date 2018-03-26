@@ -7,23 +7,23 @@
 namespace Poseidon {
 namespace Http {
 
-class RequestHeaders;
-class ResponseHeaders;
-class UrlParam;
-class HeaderOption;
+class Request_headers;
+class Response_headers;
+class Url_param;
+class Header_option;
 class Exception;
 
-class AuthenticationContext;
+class Authentication_context;
 class Multipart;
 
-class ServerReader;
-class ServerWriter;
-class ClientReader;
-class ClientWriter;
+class Server_reader;
+class Server_writer;
+class Client_reader;
+class Client_writer;
 
 class Session;
 class Client;
-class UpgradedSessionBase;
+class Upgraded_session_base;
 
 }
 }

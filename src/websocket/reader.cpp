@@ -11,7 +11,7 @@
 #include "../flags.hpp"
 
 namespace Poseidon {
-namespace WebSocket {
+namespace Web_socket {
 
 Reader::Reader(bool force_masked_frames)
 	: m_force_masked_frames(force_masked_frames)
@@ -26,7 +26,7 @@ Reader::~Reader(){
 	}
 }
 
-bool Reader::put_encoded_data(StreamBuffer encoded){
+bool Reader::put_encoded_data(Stream_buffer encoded){
 	PROFILE_ME;
 
 	m_queue.splice(encoded);
@@ -136,7 +136,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 		case state_data_frame:
 			temp64 = std::min<boost::uint64_t>(m_queue.size(), m_frame_size - m_frame_offset);
 			if(temp64 > 0){
-				StreamBuffer payload;
+				Stream_buffer payload;
 				for(std::size_t i = 0; i < temp64; ++i){
 					payload.put(m_queue.get() ^ (int)m_mask);
 					m_mask = (m_mask << 24) | (m_mask >> 8);
@@ -165,7 +165,7 @@ bool Reader::put_encoded_data(StreamBuffer encoded){
 
 		case state_control_frame:
 			{
-				StreamBuffer payload;
+				Stream_buffer payload;
 				for(std::size_t i = 0; i < m_frame_size; ++i){
 					payload.put(m_queue.get() ^ (int)m_mask);
 					m_mask = (m_mask << 24) | (m_mask >> 8);

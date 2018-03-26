@@ -13,13 +13,13 @@
 namespace Poseidon {
 namespace Cbpp {
 
-class Client::SyncJobBase : public JobBase {
+class Client::Sync_job_base : public Job_base {
 private:
-	const SocketBase::DelayedShutdownGuard m_guard;
+	const Socket_base::Delayed_shutdown_guard m_guard;
 	const boost::weak_ptr<Client> m_weak_client;
 
 protected:
-	explicit SyncJobBase(const boost::shared_ptr<Client> &client)
+	explicit Sync_job_base(const boost::shared_ptr<Client> &client)
 		: m_guard(client), m_weak_client(client)
 	{
 		//
@@ -55,10 +55,10 @@ protected:
 	virtual void really_perform(const boost::shared_ptr<Client> &client) = 0;
 };
 
-class Client::ConnectJob : public Client::SyncJobBase {
+class Client::Connect_job : public Client::Sync_job_base {
 public:
-	explicit ConnectJob(const boost::shared_ptr<Client> &client)
-		: SyncJobBase(client)
+	explicit Connect_job(const boost::shared_ptr<Client> &client)
+		: Sync_job_base(client)
 	{
 		//
 	}
@@ -71,10 +71,10 @@ protected:
 	}
 };
 
-class Client::ReadHupJob : public Client::SyncJobBase {
+class Client::Read_hup_job : public Client::Sync_job_base {
 public:
-	explicit ReadHupJob(const boost::shared_ptr<Client> &client)
-		: SyncJobBase(client)
+	explicit Read_hup_job(const boost::shared_ptr<Client> &client)
+		: Sync_job_base(client)
 	{
 		//
 	}
@@ -87,14 +87,14 @@ protected:
 	}
 };
 
-class Client::DataMessageJob : public Client::SyncJobBase {
+class Client::Data_message_job : public Client::Sync_job_base {
 private:
 	boost::uint16_t m_message_id;
-	StreamBuffer m_payload;
+	Stream_buffer m_payload;
 
 public:
-	DataMessageJob(const boost::shared_ptr<Client> &client, boost::uint16_t message_id, StreamBuffer payload)
-		: SyncJobBase(client)
+	Data_message_job(const boost::shared_ptr<Client> &client, boost::uint16_t message_id, Stream_buffer payload)
+		: Sync_job_base(client)
 		, m_message_id(message_id), m_payload(STD_MOVE(payload))
 	{
 		//
@@ -108,14 +108,14 @@ protected:
 	}
 };
 
-class Client::ControlMessageJob : public Client::SyncJobBase {
+class Client::Control_message_job : public Client::Sync_job_base {
 private:
-	StatusCode m_status_code;
-	StreamBuffer m_param;
+	Status_code m_status_code;
+	Stream_buffer m_param;
 
 public:
-	ControlMessageJob(const boost::shared_ptr<Client> &client, StatusCode status_code, StreamBuffer param)
-		: SyncJobBase(client)
+	Control_message_job(const boost::shared_ptr<Client> &client, Status_code status_code, Stream_buffer param)
+		: Sync_job_base(client)
 		, m_status_code(status_code), m_param(STD_MOVE(param))
 	{
 		//
@@ -129,8 +129,8 @@ protected:
 	}
 };
 
-Client::Client(const SockAddr &addr, bool use_ssl, bool verify_peer)
-	: LowLevelClient(addr, use_ssl, verify_peer)
+Client::Client(const Sock_addr &addr, bool use_ssl, bool verify_peer)
+	: Low_level_client(addr, use_ssl, verify_peer)
 {
 	//
 }
@@ -141,20 +141,20 @@ Client::~Client(){
 void Client::on_connect(){
 	PROFILE_ME;
 
-	LowLevelClient::on_connect();
+	Low_level_client::on_connect();
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ConnectJob>(virtual_shared_from_this<Client>()),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Connect_job>(virtual_shared_from_this<Client>()),
 		VAL_INIT);
 }
 void Client::on_read_hup(){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ReadHupJob>(virtual_shared_from_this<Client>()),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Read_hup_job>(virtual_shared_from_this<Client>()),
 		VAL_INIT);
 
-	LowLevelClient::on_read_hup();
+	Low_level_client::on_read_hup();
 }
 
 void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t /*payload_size*/){
@@ -163,7 +163,7 @@ void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost:
 	m_message_id = message_id;
 	m_payload.clear();
 }
-void Client::on_low_level_data_message_payload(boost::uint64_t /*payload_offset*/, StreamBuffer payload){
+void Client::on_low_level_data_message_payload(boost::uint64_t /*payload_offset*/, Stream_buffer payload){
 	PROFILE_ME;
 
 	m_payload.splice(payload);
@@ -171,18 +171,18 @@ void Client::on_low_level_data_message_payload(boost::uint64_t /*payload_offset*
 bool Client::on_low_level_data_message_end(boost::uint64_t /*payload_size*/){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<DataMessageJob>(virtual_shared_from_this<Client>(), m_message_id, STD_MOVE(m_payload)),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Data_message_job>(virtual_shared_from_this<Client>(), m_message_id, STD_MOVE(m_payload)),
 		VAL_INIT);
 
 	return true;
 }
 
-bool Client::on_low_level_control_message(StatusCode status_code, StreamBuffer param){
+bool Client::on_low_level_control_message(Status_code status_code, Stream_buffer param){
 	PROFILE_ME;
 
-	JobDispatcher::enqueue(
-		boost::make_shared<ControlMessageJob>(virtual_shared_from_this<Client>(), status_code, STD_MOVE(param)),
+	Job_dispatcher::enqueue(
+		boost::make_shared<Control_message_job>(virtual_shared_from_this<Client>(), status_code, STD_MOVE(param)),
 		VAL_INIT);
 
 	return true;
@@ -194,7 +194,7 @@ void Client::on_sync_connect(){
 	//
 }
 
-void Client::on_sync_control_message(StatusCode status_code, StreamBuffer param){
+void Client::on_sync_control_message(Status_code status_code, Stream_buffer param){
 	PROFILE_ME;
 	LOG_POSEIDON_TRACE("Received CBPP error message from server: status_code = ", status_code, ", param = ", param);
 

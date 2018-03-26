@@ -8,10 +8,10 @@
 
 namespace Poseidon {
 
-class UdpServerBase : public UdpSessionBase {
+class Udp_server_base : public Udp_session_base {
 public:
-	explicit UdpServerBase(const SockAddr &addr);
-	~UdpServerBase();
+	explicit Udp_server_base(const Sock_addr &addr);
+	~Udp_server_base();
 };
 
 }

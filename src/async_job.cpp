@@ -12,14 +12,14 @@
 namespace Poseidon {
 
 namespace {
-	class AsyncJob : public JobBase {
+	class Async_job : public Job_base {
 	private:
 		const boost::weak_ptr<const void> m_category;
 		const boost::weak_ptr<Promise> m_weak_promise;
 		const boost::function<void ()> m_procedure;
 
 	public:
-		AsyncJob(boost::weak_ptr<const void> category, const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure)
+		Async_job(boost::weak_ptr<const void> category, const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure)
 			: m_category(STD_MOVE(category))
 			, m_weak_promise(promise), m_procedure(STD_MOVE_IDN(procedure))
 		{
@@ -56,10 +56,10 @@ namespace {
 }
 
 void enqueue_async_categorized_job(boost::weak_ptr<const void> category, const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure, boost::shared_ptr<const bool> withdrawn){
-	JobDispatcher::enqueue(boost::make_shared<AsyncJob>(STD_MOVE(category), promise, STD_MOVE_IDN(procedure)), STD_MOVE(withdrawn));
+	Job_dispatcher::enqueue(boost::make_shared<Async_job>(STD_MOVE(category), promise, STD_MOVE_IDN(procedure)), STD_MOVE(withdrawn));
 }
 void enqueue_async_job(const boost::shared_ptr<Promise> &promise, boost::function<void ()> procedure, boost::shared_ptr<const bool> withdrawn){
-	JobDispatcher::enqueue(boost::make_shared<AsyncJob>(boost::weak_ptr<const void>(), promise, STD_MOVE_IDN(procedure)), STD_MOVE(withdrawn));
+	Job_dispatcher::enqueue(boost::make_shared<Async_job>(boost::weak_ptr<const void>(), promise, STD_MOVE_IDN(procedure)), STD_MOVE(withdrawn));
 }
 
 }

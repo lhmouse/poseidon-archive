@@ -48,7 +48,7 @@ boost::uint64_t get_fast_mono_clock() NOEXCEPT {
 	}
 	return (boost::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
-// 在 Windows 上 get_hi_res_mono_clock() 是 QueryPerformanceCounter() 实现的。
+// 在 Windows 上 get_hi_res_mono_clock() 是 Query_performance_counter() 实现的。
 double get_hi_res_mono_clock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
@@ -61,8 +61,8 @@ double get_hi_res_mono_clock() NOEXCEPT {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 
-DateTime break_down_time(boost::uint64_t ms){
-	DateTime dt = { 1234, 1, 1, 0, 0, 0, 0 };
+Date_time break_down_time(boost::uint64_t ms){
+	Date_time dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	if(ms == 0){
 		dt.yr = 0;
 	} else if(ms == -1ull){
@@ -82,7 +82,7 @@ DateTime break_down_time(boost::uint64_t ms){
 	}
 	return dt;
 }
-boost::uint64_t assemble_time(const DateTime &dt){
+boost::uint64_t assemble_time(const Date_time &dt){
 	boost::uint64_t ms;
 	if(dt.yr == 0){
 		ms = 0;
@@ -104,13 +104,13 @@ boost::uint64_t assemble_time(const DateTime &dt){
 #pragma GCC diagnostic pop
 
 std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms){
-	DateTime dt = break_down_time(ms);
+	Date_time dt = break_down_time(ms);
 	return (unsigned)::snprintf(buffer, max, show_ms ? "%04u-%02u-%02u %02u:%02u:%02u.%03u"
 	                                                 : "%04u-%02u-%02u %02u:%02u:%02u",
 		dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec, dt.ms);
 }
 boost::uint64_t scan_time(const char *str){
-	DateTime dt = { 1234, 1, 1, 0, 0, 0, 0 };
+	Date_time dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	if(std::sscanf(str, "%u-%u-%u %u:%u:%u.%u", &dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms) < 3){
 		LOG_POSEIDON_ERROR("Time string is not valid: ", str);
 		DEBUG_THROW(Exception, sslit("Time string is not valid"));

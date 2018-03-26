@@ -12,26 +12,26 @@
 
 namespace Poseidon {
 
-class TcpServerBase;
-class TcpClientBase;
-class SslFilter;
+class Tcp_server_base;
+class Tcp_client_base;
+class Ssl_filter;
 class Timer;
 
-class TcpSessionBase : public SocketBase, public SessionBase {
-	friend TcpServerBase;
-	friend TcpClientBase;
+class Tcp_session_base : public Socket_base, public Session_base {
+	friend Tcp_server_base;
+	friend Tcp_client_base;
 
 private:
-	static void shutdown_timer_proc(const boost::weak_ptr<TcpSessionBase> &weak, boost::uint64_t now);
+	static void shutdown_timer_proc(const boost::weak_ptr<Tcp_session_base> &weak, boost::uint64_t now);
 
 private:
-	boost::scoped_ptr<SslFilter> m_ssl_filter;
+	boost::scoped_ptr<Ssl_filter> m_ssl_filter;
 
 	bool m_connected_notified;
 	bool m_read_hup_notified;
 
 	mutable Mutex m_send_mutex;
-	StreamBuffer m_send_buffer;
+	Stream_buffer m_send_buffer;
 
 	volatile boost::uint64_t m_shutdown_time;
 	volatile boost::uint64_t m_last_use_time;
@@ -39,22 +39,22 @@ private:
 	boost::shared_ptr<Timer> m_shutdown_timer;
 
 public:
-	explicit TcpSessionBase(Move<UniqueFile> socket);
-	~TcpSessionBase();
+	explicit Tcp_session_base(Move<Unique_file> socket);
+	~Tcp_session_base();
 
 private:
-	void init_ssl(boost::scoped_ptr<SslFilter> &ssl_filter);
+	void init_ssl(boost::scoped_ptr<Ssl_filter> &ssl_filter);
 	void create_shutdown_timer();
 
 protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable) OVERRIDE;
-	int poll_write(Mutex::UniqueLock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable) OVERRIDE;
+	int poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable) OVERRIDE;
 
 	void on_connect() OVERRIDE = 0;
 	void on_read_hup() OVERRIDE = 0;
 	void on_close(int err_code) OVERRIDE = 0; // 参数就是 errno。
-	void on_receive(StreamBuffer data) OVERRIDE = 0;
+	void on_receive(Stream_buffer data) OVERRIDE = 0;
 
 	// 注意，只能在 timer 线程中调用这些函数。
 	virtual void on_shutdown_timer(boost::uint64_t now);
@@ -72,7 +72,7 @@ public:
 	void set_no_delay(bool enabled = true);
 	void set_timeout(boost::uint64_t timeout);
 
-	bool send(StreamBuffer buffer) OVERRIDE;
+	bool send(Stream_buffer buffer) OVERRIDE;
 };
 
 }

@@ -17,7 +17,7 @@
 #  error Please #include <poseidon/cbpp/message_base.hpp> first.
 #endif
 
-class MESSAGE_NAME : public ::Poseidon::Cbpp::MessageBase {
+class MESSAGE_NAME : public ::Poseidon::Cbpp::Message_base {
 public:
 	enum {
 		ID = MESSAGE_ID,
@@ -39,7 +39,7 @@ public:
 #define FIELD_FIXED(id_, n_)      ::boost::array<unsigned char, n_> id_;
 #define FIELD_STRING(id_)         ::std::string id_;
 #define FIELD_BLOB(id_)           ::std::basic_string<unsigned char> id_;
-#define FIELD_FLEXIBLE(id_)       ::Poseidon::StreamBuffer id_;
+#define FIELD_FLEXIBLE(id_)       ::Poseidon::Stream_buffer id_;
 #define FIELD_ARRAY(id_, ...)     struct Cbpp##id_##F_ { __VA_ARGS__ };	\
                                   ::boost::container::vector< Cbpp##id_##F_ > id_;
 #define FIELD_LIST(id_, ...)      struct Cbpp##id_##F_ { __VA_ARGS__ };	\
@@ -50,14 +50,14 @@ public:
 public:
 	MESSAGE_NAME();
 
-	explicit MESSAGE_NAME(::Poseidon::StreamBuffer buffer_);
+	explicit MESSAGE_NAME(::Poseidon::Stream_buffer buffer_);
 
 	~MESSAGE_NAME() OVERRIDE;
 
 public:
 	boost::uint64_t get_id() const OVERRIDE;
-	void serialize(::Poseidon::StreamBuffer &buffer_) const OVERRIDE;
-	void deserialize(::Poseidon::StreamBuffer &buffer_) OVERRIDE;
+	void serialize(::Poseidon::Stream_buffer &buffer_) const OVERRIDE;
+	void deserialize(::Poseidon::Stream_buffer &buffer_) OVERRIDE;
 	void dump_debug(::std::ostream &os_) const OVERRIDE;
 };
 
@@ -66,7 +66,7 @@ public:
 #pragma GCC diagnostic ignored "-Wshadow"
 
 MESSAGE_NAME::MESSAGE_NAME()
-	: ::Poseidon::Cbpp::MessageBase()
+	: ::Poseidon::Cbpp::Message_base()
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -91,8 +91,8 @@ MESSAGE_NAME::MESSAGE_NAME()
 	//
 }
 
-MESSAGE_NAME::MESSAGE_NAME(::Poseidon::StreamBuffer buffer_)
-	: ::Poseidon::Cbpp::MessageBase()
+MESSAGE_NAME::MESSAGE_NAME(::Poseidon::Stream_buffer buffer_)
+	: ::Poseidon::Cbpp::Message_base()
 {
 	deserialize(buffer_);
 	if(!buffer_.empty()){
@@ -107,7 +107,7 @@ MESSAGE_NAME::~MESSAGE_NAME(){
 boost::uint64_t MESSAGE_NAME::get_id() const {
 	return ID;
 }
-void MESSAGE_NAME::serialize(::Poseidon::StreamBuffer &buffer_) const {
+void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
 	const AUTO(cur_, this);
 	AUTO_REF(buf_, buffer_);
 
@@ -164,7 +164,7 @@ void MESSAGE_NAME::serialize(::Poseidon::StreamBuffer &buffer_) const {
                                   }
 #define FIELD_LIST(id_, ...)      {	\
                                     for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
-                                      ::Poseidon::StreamBuffer chunk_buf_;	\
+                                      ::Poseidon::Stream_buffer chunk_buf_;	\
                                       {	\
                                         const AUTO(cur_, &*it_);	\
                                         AUTO_REF(buf_, chunk_buf_);	\
@@ -181,7 +181,7 @@ void MESSAGE_NAME::serialize(::Poseidon::StreamBuffer &buffer_) const {
 
 	MESSAGE_FIELDS
 }
-void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
+void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
 	const AUTO(cur_, this);
 	AUTO_REF(buf_, buffer_);
 
@@ -296,7 +296,7 @@ void MESSAGE_NAME::deserialize(::Poseidon::StreamBuffer &buffer_){
                                       if(nreq_ > SIZE_MAX){	\
                                         THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
                                       }	\
-                                      ::Poseidon::StreamBuffer chunk_buf_ = buf_.cut_off(nreq_);	\
+                                      ::Poseidon::Stream_buffer chunk_buf_ = buf_.cut_off(nreq_);	\
                                       if(chunk_buf_.size() < nreq_){	\
                                         THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
@@ -334,7 +334,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_) const {
                                   }
 #define FIELD_FIXED(id_, n_)      {	\
                                     os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": fixed(" <<cur_->id_.size() <<") = ";	\
-                                    os_ << ::Poseidon::HexPrinter(cur_->id_.data(), cur_->id_.size());	\
+                                    os_ << ::Poseidon::Hex_printer(cur_->id_.data(), cur_->id_.size());	\
                                     os_ << ::std::endl;	\
                                   }
 #define FIELD_STRING(id_)         {	\
@@ -342,16 +342,16 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_) const {
                                   }
 #define FIELD_BLOB(id_)           {	\
                                     os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": blob(" <<cur_->id_.size() <<") = ";	\
-                                    os_ << ::Poseidon::HexPrinter(cur_->id_.data(), cur_->id_.size());	\
+                                    os_ << ::Poseidon::Hex_printer(cur_->id_.data(), cur_->id_.size());	\
                                     os_ << ::std::endl;	\
                                   }
 #define FIELD_FLEXIBLE(id_)       {	\
                                     os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": flexible(" <<cur_->id_.size() <<") = ";	\
                                     const void *data_;	\
                                     ::std::size_t size_;	\
-                                    ::Poseidon::StreamBuffer::EnumerationCookie cookie_;	\
+                                    ::Poseidon::Stream_buffer::Enumeration_cookie cookie_;	\
                                     while(cur_->id_.enumerate_chunk(&data_, &size_, cookie_)){	\
-                                      os_ << ::Poseidon::HexPrinter(data_, size_);	\
+                                      os_ << ::Poseidon::Hex_printer(data_, size_);	\
                                     }	\
                                     os_ << ::std::endl;	\
                                   }

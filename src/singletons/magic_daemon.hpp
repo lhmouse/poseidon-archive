@@ -8,9 +8,9 @@
 
 namespace Poseidon {
 
-class MagicDaemon {
+class Magic_daemon {
 private:
-	MagicDaemon();
+	Magic_daemon();
 
 public:
 	static void start();

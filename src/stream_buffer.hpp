@@ -14,47 +14,47 @@
 
 namespace Poseidon {
 
-class StreamBuffer {
+class Stream_buffer {
 private:
-	struct ChunkHeader;
+	struct Chunk_header;
 
 public:
-	class EnumerationCookie;
-	class ReadIterator;
-	class WriteIterator;
+	class Enumeration_cookie;
+	class Read_iterator;
+	class Write_iterator;
 
 private:
-	ChunkHeader *m_first;
-	ChunkHeader *m_last;
+	Chunk_header *m_first;
+	Chunk_header *m_last;
 	std::size_t m_size;
 
 public:
-	CONSTEXPR StreamBuffer() NOEXCEPT
+	CONSTEXPR Stream_buffer() NOEXCEPT
 		: m_first(NULLPTR), m_last(NULLPTR), m_size(0)
 	{
 		//
 	}
-	StreamBuffer(const void *data, std::size_t count);
-	explicit StreamBuffer(const char *str);
-	explicit StreamBuffer(const std::string &str);
-	explicit StreamBuffer(const std::basic_string<unsigned char> &str);
-	StreamBuffer(const StreamBuffer &rhs);
-	StreamBuffer &operator=(const StreamBuffer &rhs){
-		StreamBuffer(rhs).swap(*this);
+	Stream_buffer(const void *data, std::size_t count);
+	explicit Stream_buffer(const char *str);
+	explicit Stream_buffer(const std::string &str);
+	explicit Stream_buffer(const std::basic_string<unsigned char> &str);
+	Stream_buffer(const Stream_buffer &rhs);
+	Stream_buffer &operator=(const Stream_buffer &rhs){
+		Stream_buffer(rhs).swap(*this);
 		return *this;
 	}
 #ifdef POSEIDON_CXX11
-	StreamBuffer(StreamBuffer &&rhs) noexcept
-		: StreamBuffer()
+	Stream_buffer(Stream_buffer &&rhs) noexcept
+		: Stream_buffer()
 	{
 		rhs.swap(*this);
 	}
-	StreamBuffer &operator=(StreamBuffer &&rhs) noexcept {
+	Stream_buffer &operator=(Stream_buffer &&rhs) noexcept {
 		rhs.swap(*this);
 		return *this;
 	}
 #endif
-	~StreamBuffer();
+	~Stream_buffer();
 
 public:
 	bool empty() const NOEXCEPT {
@@ -81,7 +81,7 @@ public:
 	std::size_t discard(std::size_t count) NOEXCEPT;
 	void put(int data, std::size_t count);
 	void put(const void *data, std::size_t count);
-	void put(const StreamBuffer &data);
+	void put(const Stream_buffer &data);
 	void put(const char *str){
 		put(str, std::strlen(str));
 	}
@@ -94,18 +94,18 @@ public:
 
 	void *squash();
 
-	StreamBuffer cut_off(std::size_t count);
-	void splice(StreamBuffer &rhs) NOEXCEPT;
+	Stream_buffer cut_off(std::size_t count);
+	void splice(Stream_buffer &rhs) NOEXCEPT;
 #ifdef POSEIDON_CXX11
-	void splice(StreamBuffer &&rhs) noexcept {
+	void splice(Stream_buffer &&rhs) noexcept {
 		splice(rhs);
 	}
 #endif
 
-	bool enumerate_chunk(const void **data, std::size_t *count, EnumerationCookie &cookie) const NOEXCEPT;
-	bool enumerate_chunk(void **data, std::size_t *count, EnumerationCookie &cookie) NOEXCEPT;
+	bool enumerate_chunk(const void **data, std::size_t *count, Enumeration_cookie &cookie) const NOEXCEPT;
+	bool enumerate_chunk(void **data, std::size_t *count, Enumeration_cookie &cookie) NOEXCEPT;
 
-	void swap(StreamBuffer &rhs) NOEXCEPT {
+	void swap(Stream_buffer &rhs) NOEXCEPT {
 		using std::swap;
 		swap(m_first, rhs.m_first);
 		swap(m_last, rhs.m_last);
@@ -130,23 +130,23 @@ public:
 	}
 };
 
-inline void swap(StreamBuffer &lhs, StreamBuffer &rhs) NOEXCEPT {
+inline void swap(Stream_buffer &lhs, Stream_buffer &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const StreamBuffer &rhs){
+inline std::ostream &operator<<(std::ostream &os, const Stream_buffer &rhs){
 	rhs.dump(os);
 	return os;
 }
 
-class StreamBuffer::EnumerationCookie {
-	friend StreamBuffer;
+class Stream_buffer::Enumeration_cookie {
+	friend Stream_buffer;
 
 private:
-	ChunkHeader *m_prev;
+	Chunk_header *m_prev;
 
 public:
-	CONSTEXPR EnumerationCookie() NOEXCEPT
+	CONSTEXPR Enumeration_cookie() NOEXCEPT
 		: m_prev(NULLPTR)
 	{
 		//
@@ -154,12 +154,12 @@ public:
 };
 
 
-class StreamBuffer::ReadIterator : public std::iterator<std::input_iterator_tag, int> {
+class Stream_buffer::Read_iterator : public std::iterator<std::input_iterator_tag, int> {
 private:
-	StreamBuffer *m_parent;
+	Stream_buffer *m_parent;
 
 public:
-	explicit ReadIterator(StreamBuffer &parent)
+	explicit Read_iterator(Stream_buffer &parent)
 		: m_parent(&parent)
 	{
 		//
@@ -169,39 +169,39 @@ public:
 	int operator*() const {
 		return m_parent->peek();
 	}
-	ReadIterator &operator++(){
+	Read_iterator &operator++(){
 		m_parent->discard();
 		return *this;
 	}
-	ReadIterator &operator++(int){
+	Read_iterator &operator++(int){
 		m_parent->discard();
 		return *this;
 	}
 };
 
-class StreamBuffer::WriteIterator : public std::iterator<std::output_iterator_tag, unsigned char> {
+class Stream_buffer::Write_iterator : public std::iterator<std::output_iterator_tag, unsigned char> {
 private:
-	StreamBuffer *m_parent;
+	Stream_buffer *m_parent;
 
 public:
-	explicit WriteIterator(StreamBuffer &parent)
+	explicit Write_iterator(Stream_buffer &parent)
 		: m_parent(&parent)
 	{
 		//
 	}
 
 public:
-	WriteIterator &operator=(unsigned char byte){
+	Write_iterator &operator=(unsigned char byte){
 		m_parent->put(byte);
 		return *this;
 	}
-	WriteIterator &operator*(){
+	Write_iterator &operator*(){
 		return *this;
 	}
-	WriteIterator &operator++(){
+	Write_iterator &operator++(){
 		return *this;
 	}
-	WriteIterator &operator++(int){
+	Write_iterator &operator++(int){
 		return *this;
 	}
 };

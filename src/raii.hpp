@@ -11,7 +11,7 @@
 namespace Poseidon {
 
 template<typename CloserT>
-class UniqueHandle {
+class Unique_handle {
 private:
 	template<typename T>
 	static T decay_helper(const T &) NOEXCEPT;
@@ -27,47 +27,47 @@ private:
 	Handle m_handle;
 
 public:
-	UniqueHandle() NOEXCEPT
+	Unique_handle() NOEXCEPT
 		: m_handle(CloserT()())
 	{
 		//
 	}
-	explicit UniqueHandle(Handle rhs) NOEXCEPT
+	explicit Unique_handle(Handle rhs) NOEXCEPT
 		: m_handle(rhs)
 	{
 		//
 	}
-	UniqueHandle(Move<UniqueHandle> rhs) NOEXCEPT
+	Unique_handle(Move<Unique_handle> rhs) NOEXCEPT
 		: m_handle(CloserT()())
 	{
 		rhs.swap(*this);
 	}
-	UniqueHandle &operator=(Move<UniqueHandle> rhs) NOEXCEPT {
-		UniqueHandle(STD_MOVE(rhs)).swap(*this);
+	Unique_handle &operator=(Move<Unique_handle> rhs) NOEXCEPT {
+		Unique_handle(STD_MOVE(rhs)).swap(*this);
 		return *this;
 	}
-	~UniqueHandle() NOEXCEPT {
+	~Unique_handle() NOEXCEPT {
 		const Handle old = m_handle;
 		if(old != CloserT()()){
 			CloserT()(old);
 		}
 	}
 #ifdef POSEIDON_CXX11
-	UniqueHandle(const UniqueHandle &) = delete;
-	UniqueHandle &operator=(const UniqueHandle &) = delete;
+	Unique_handle(const Unique_handle &) = delete;
+	Unique_handle &operator=(const Unique_handle &) = delete;
 #else
 	// Move support.
-	UniqueHandle(UniqueHandle &rhs) NOEXCEPT
+	Unique_handle(Unique_handle &rhs) NOEXCEPT
 		: m_handle(CloserT()())
 	{
 		rhs.swap(*this);
 	}
-	UniqueHandle &operator=(UniqueHandle &rhs) NOEXCEPT {
-		UniqueHandle(STD_MOVE(rhs)).swap(*this);
+	Unique_handle &operator=(Unique_handle &rhs) NOEXCEPT {
+		Unique_handle(STD_MOVE(rhs)).swap(*this);
 		return *this;
 	}
-	operator Move<UniqueHandle> (){
-		return Move<UniqueHandle>(*this);
+	operator Move<Unique_handle> (){
+		return Move<Unique_handle>(*this);
 	}
 #endif
 
@@ -80,16 +80,16 @@ public:
 		m_handle = CloserT()();
 		return ret;
 	}
-	UniqueHandle &reset(Handle rhs = CloserT()()) NOEXCEPT {
-		UniqueHandle(rhs).swap(*this);
+	Unique_handle &reset(Handle rhs = CloserT()()) NOEXCEPT {
+		Unique_handle(rhs).swap(*this);
 		return *this;
 	}
-	UniqueHandle &reset(Move<UniqueHandle> rhs) NOEXCEPT {
-		UniqueHandle(STD_MOVE(rhs)).swap(*this);
+	Unique_handle &reset(Move<Unique_handle> rhs) NOEXCEPT {
+		Unique_handle(STD_MOVE(rhs)).swap(*this);
 		return *this;
 	}
 
-	void swap(UniqueHandle &rhs) NOEXCEPT {
+	void swap(Unique_handle &rhs) NOEXCEPT {
 		using std::swap;
 		swap(m_handle, rhs.m_handle);
 	}
@@ -100,109 +100,109 @@ public:
 		return get() != CloserT()();
 	}
 #else
-	typedef Handle (UniqueHandle::*DummyBool_)() const;
-	operator DummyBool_() const NOEXCEPT {
-		return (get() != CloserT()()) ? &UniqueHandle::get : 0;
+	typedef Handle (Unique_handle::*Dummy_bool_)() const;
+	operator Dummy_bool_() const NOEXCEPT {
+		return (get() != CloserT()()) ? &Unique_handle::get : 0;
 	}
 #endif
 };
 
 template<typename CloserT>
-void swap(UniqueHandle<CloserT> &lhs, UniqueHandle<CloserT> &rhs) NOEXCEPT {
+void swap(Unique_handle<CloserT> &lhs, Unique_handle<CloserT> &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
 template<typename CloserT>
-bool operator==(const UniqueHandle<CloserT> &lhs, const UniqueHandle<CloserT> &rhs){
+bool operator==(const Unique_handle<CloserT> &lhs, const Unique_handle<CloserT> &rhs){
 	return lhs.get() == rhs.get();
 }
 template<typename CloserT>
-bool operator==(const UniqueHandle<CloserT> &lhs, typename UniqueHandle<CloserT>::Handle rhs){
+bool operator==(const Unique_handle<CloserT> &lhs, typename Unique_handle<CloserT>::Handle rhs){
 	return lhs.get() == rhs;
 }
 template<typename CloserT>
-bool operator==(typename UniqueHandle<CloserT>::Handle lhs, const UniqueHandle<CloserT> &rhs){
+bool operator==(typename Unique_handle<CloserT>::Handle lhs, const Unique_handle<CloserT> &rhs){
 	return lhs == rhs.get();
 }
 
 template<typename CloserT>
-bool operator!=(const UniqueHandle<CloserT> &lhs, const UniqueHandle<CloserT> &rhs){
+bool operator!=(const Unique_handle<CloserT> &lhs, const Unique_handle<CloserT> &rhs){
 	return lhs.get() != rhs.get();
 }
 template<typename CloserT>
-bool operator!=(const UniqueHandle<CloserT> &lhs, typename UniqueHandle<CloserT>::Handle rhs){
+bool operator!=(const Unique_handle<CloserT> &lhs, typename Unique_handle<CloserT>::Handle rhs){
 	return lhs.get() != rhs;
 }
 template<typename CloserT>
-bool operator!=(typename UniqueHandle<CloserT>::Handle lhs, const UniqueHandle<CloserT> &rhs){
+bool operator!=(typename Unique_handle<CloserT>::Handle lhs, const Unique_handle<CloserT> &rhs){
 	return lhs != rhs.get();
 }
 
 template<typename CloserT>
-bool operator<(const UniqueHandle<CloserT> &lhs, const UniqueHandle<CloserT> &rhs){
+bool operator<(const Unique_handle<CloserT> &lhs, const Unique_handle<CloserT> &rhs){
 	return lhs.get() < rhs.get();
 }
 template<typename CloserT>
-bool operator<(const UniqueHandle<CloserT> &lhs, typename UniqueHandle<CloserT>::Handle rhs){
+bool operator<(const Unique_handle<CloserT> &lhs, typename Unique_handle<CloserT>::Handle rhs){
 	return lhs.get() < rhs;
 }
 template<typename CloserT>
-bool operator<(typename UniqueHandle<CloserT>::Handle lhs, const UniqueHandle<CloserT> &rhs){
+bool operator<(typename Unique_handle<CloserT>::Handle lhs, const Unique_handle<CloserT> &rhs){
 	return lhs < rhs.get();
 }
 
 template<typename CloserT>
-bool operator>(const UniqueHandle<CloserT> &lhs, const UniqueHandle<CloserT> &rhs){
+bool operator>(const Unique_handle<CloserT> &lhs, const Unique_handle<CloserT> &rhs){
 	return lhs.get() > rhs.get();
 }
 template<typename CloserT>
-bool operator>(const UniqueHandle<CloserT> &lhs, typename UniqueHandle<CloserT>::Handle rhs){
+bool operator>(const Unique_handle<CloserT> &lhs, typename Unique_handle<CloserT>::Handle rhs){
 	return lhs.get() > rhs;
 }
 template<typename CloserT>
-bool operator>(typename UniqueHandle<CloserT>::Handle lhs, const UniqueHandle<CloserT> &rhs){
+bool operator>(typename Unique_handle<CloserT>::Handle lhs, const Unique_handle<CloserT> &rhs){
 	return lhs > rhs.get();
 }
 
 template<typename CloserT>
-bool operator<=(const UniqueHandle<CloserT> &lhs, const UniqueHandle<CloserT> &rhs){
+bool operator<=(const Unique_handle<CloserT> &lhs, const Unique_handle<CloserT> &rhs){
 	return lhs.get() <= rhs.get();
 }
 template<typename CloserT>
-bool operator<=(const UniqueHandle<CloserT> &lhs, typename UniqueHandle<CloserT>::Handle rhs){
+bool operator<=(const Unique_handle<CloserT> &lhs, typename Unique_handle<CloserT>::Handle rhs){
 	return lhs.get() <= rhs;
 }
 template<typename CloserT>
-bool operator<=(typename UniqueHandle<CloserT>::Handle lhs, const UniqueHandle<CloserT> &rhs){
+bool operator<=(typename Unique_handle<CloserT>::Handle lhs, const Unique_handle<CloserT> &rhs){
 	return lhs <= rhs.get();
 }
 
 template<typename CloserT>
-bool operator>=(const UniqueHandle<CloserT> &lhs, const UniqueHandle<CloserT> &rhs){
+bool operator>=(const Unique_handle<CloserT> &lhs, const Unique_handle<CloserT> &rhs){
 	return lhs.get() >= rhs.get();
 }
 template<typename CloserT>
-bool operator>=(const UniqueHandle<CloserT> &lhs, typename UniqueHandle<CloserT>::Handle rhs){
+bool operator>=(const Unique_handle<CloserT> &lhs, typename Unique_handle<CloserT>::Handle rhs){
 	return lhs.get() >= rhs;
 }
 template<typename CloserT>
-bool operator>=(typename UniqueHandle<CloserT>::Handle lhs, const UniqueHandle<CloserT> &rhs){
+bool operator>=(typename Unique_handle<CloserT>::Handle lhs, const Unique_handle<CloserT> &rhs){
 	return lhs >= rhs.get();
 }
 
 template<typename CloserT>
-std::ostream &operator<<(std::ostream &os, const UniqueHandle<CloserT> &handle){
+std::ostream &operator<<(std::ostream &os, const Unique_handle<CloserT> &handle){
 	return os <<handle.get();
 }
 
-struct FileCloser {
+struct File_closer {
 	CONSTEXPR int operator()() const NOEXCEPT {
 		return -1;
 	}
 	void operator()(int fd) const NOEXCEPT;
 };
 
-typedef UniqueHandle<FileCloser> UniqueFile;
+typedef Unique_handle<File_closer> Unique_file;
 
 }
 

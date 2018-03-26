@@ -6,7 +6,7 @@
 
 namespace Poseidon {
 
-SystemHttpServletBase::~SystemHttpServletBase(){
+System_http_servlet_base::~System_http_servlet_base(){
 	//
 }
 

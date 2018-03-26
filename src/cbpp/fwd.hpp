@@ -7,7 +7,7 @@
 namespace Poseidon {
 namespace Cbpp {
 
-class MessageBase;
+class Message_base;
 class Exception;
 
 class Reader;

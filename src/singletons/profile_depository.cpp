@@ -11,18 +11,18 @@
 namespace Poseidon {
 
 namespace {
-	struct ProfileKey {
+	struct Profile_key {
 		const char *file;
 		unsigned long line;
 		const char *func;
 	};
-	struct ProfileCounters {
+	struct Profile_counters {
 		unsigned long long samples;
 		double total;
 		double exclusive;
 	};
-	struct ProfileKeyComparator {
-		bool operator()(const ProfileKey &lhs, const ProfileKey &rhs) const NOEXCEPT {
+	struct Profile_key_comparator {
+		bool operator()(const Profile_key &lhs, const Profile_key &rhs) const NOEXCEPT {
 			int cmp = std::strcmp(lhs.file, rhs.file);
 			if(cmp != 0){
 				return cmp < 0;
@@ -30,34 +30,34 @@ namespace {
 			return lhs.line < rhs.line;
 		}
 	};
-	typedef boost::container::flat_map<ProfileKey, ProfileCounters, ProfileKeyComparator> ProfileMap;
+	typedef boost::container::flat_map<Profile_key, Profile_counters, Profile_key_comparator> Profile_map;
 
 	bool g_enabled = false;
 
 	Mutex g_mutex;
-	ProfileMap g_profile;
+	Profile_map g_profile;
 }
 
-void ProfileDepository::start(){
+void Profile_depository::start(){
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting profile depository...");
 
-	g_enabled = MainConfig::get<bool>("profiler_enabled", false);
+	g_enabled = Main_config::get<bool>("profiler_enabled", false);
 }
-void ProfileDepository::stop(){
+void Profile_depository::stop(){
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping profile depository...");
 
-	const Mutex::UniqueLock lock(g_mutex);
+	const Mutex::Unique_lock lock(g_mutex);
 	g_profile.clear();
 }
 
-bool ProfileDepository::is_enabled() NOEXCEPT {
+bool Profile_depository::is_enabled() NOEXCEPT {
 	return g_enabled;
 }
 
-void ProfileDepository::accumulate(const char *file, unsigned long line, const char *func, bool new_sample, double total, double exclusive) NOEXCEPT
+void Profile_depository::accumulate(const char *file, unsigned long line, const char *func, bool new_sample, double total, double exclusive) NOEXCEPT
 try {
-	const Mutex::UniqueLock lock(g_mutex);
-	const ProfileKey key = { file, line, func };
+	const Mutex::Unique_lock lock(g_mutex);
+	const Profile_key key = { file, line, func };
 	AUTO_REF(counters, g_profile[key]);
 	counters.samples += new_sample;
 	counters.total += total;
@@ -66,13 +66,13 @@ try {
 	//
 }
 
-void ProfileDepository::snapshot(boost::container::vector<ProfileDepository::SnapshotElement> &ret){
+void Profile_depository::snapshot(boost::container::vector<Profile_depository::Snapshot_element> &ret){
 	Profiler::accumulate_all_in_thread();
 
-	const Mutex::UniqueLock lock(g_mutex);
+	const Mutex::Unique_lock lock(g_mutex);
 	ret.reserve(ret.size() + g_profile.size());
 	for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
-		SnapshotElement elem = { };
+		Snapshot_element elem = { };
 		elem.file = it->first.file;
 		elem.line = it->first.line;
 		elem.func = it->first.func;
@@ -82,8 +82,8 @@ void ProfileDepository::snapshot(boost::container::vector<ProfileDepository::Sna
 		ret.push_back(STD_MOVE(elem));
 	}
 }
-void ProfileDepository::clear() NOEXCEPT {
-	const Mutex::UniqueLock lock(g_mutex);
+void Profile_depository::clear() NOEXCEPT {
+	const Mutex::Unique_lock lock(g_mutex);
 	g_profile.clear();
 }
 

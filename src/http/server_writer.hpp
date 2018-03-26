@@ -14,20 +14,20 @@
 namespace Poseidon {
 namespace Http {
 
-class ServerWriter {
+class Server_writer {
 public:
-	ServerWriter();
-	virtual ~ServerWriter();
+	Server_writer();
+	virtual ~Server_writer();
 
 protected:
-	virtual long on_encoded_data_avail(StreamBuffer encoded) = 0;
+	virtual long on_encoded_data_avail(Stream_buffer encoded) = 0;
 
 public:
-	long put_response(ResponseHeaders response_headers, StreamBuffer entity, bool set_content_length);
+	long put_response(Response_headers response_headers, Stream_buffer entity, bool set_content_length);
 
-	long put_chunked_header(ResponseHeaders response_headers);
-	long put_chunk(StreamBuffer entity);
-	long put_chunked_trailer(OptionalMap headers);
+	long put_chunked_header(Response_headers response_headers);
+	long put_chunk(Stream_buffer entity);
+	long put_chunked_trailer(Optional_map headers);
 };
 
 }

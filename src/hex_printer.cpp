@@ -6,7 +6,7 @@
 
 namespace Poseidon {
 
-std::ostream &operator<<(std::ostream &os, const HexPrinter &rhs){
+std::ostream &operator<<(std::ostream &os, const Hex_printer &rhs){
 	static CONSTEXPR const char s_hex_table[] = "0123456789abcdef";
 	AUTO(read, static_cast<const unsigned char *>(rhs.get_data()));
 	for(std::size_t i = 0; i < rhs.get_size(); ++i){

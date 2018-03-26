@@ -13,9 +13,9 @@
 #include <boost/shared_ptr.hpp>
 
 namespace Poseidon {
-namespace MongoDb {
+namespace Mongo_db {
 
-class BsonBuilder;
+class Bson_builder;
 
 class Connection : NONCOPYABLE {
 public:
@@ -25,7 +25,7 @@ public:
 	virtual ~Connection();
 
 public:
-	virtual void execute_bson(const BsonBuilder &bson) = 0;
+	virtual void execute_bson(const Bson_builder &bson) = 0;
 	virtual void discard_result() NOEXCEPT = 0;
 
 	virtual bool fetch_document() = 0;

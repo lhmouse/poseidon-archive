@@ -12,9 +12,9 @@ namespace Poseidon {
 
 namespace {
 	template<typename T>
-	class IncrementalAlloc {
+	class Incremental_alloc {
 		template<typename>
-		friend class IncrementalAlloc;
+		friend class Incremental_alloc;
 
 	public:
 		typedef T *             pointer;
@@ -27,7 +27,7 @@ namespace {
 
 		template<typename U>
 		struct rebind {
-			typedef IncrementalAlloc<U> other;
+			typedef Incremental_alloc<U> other;
 		};
 
 	private:
@@ -35,13 +35,13 @@ namespace {
 		size_type m_inc_size;
 
 	public:
-		IncrementalAlloc(void **inc_ptr, size_type inc_size)
+		Incremental_alloc(void **inc_ptr, size_type inc_size)
 			: m_inc_ptr(inc_ptr), m_inc_size(inc_size)
 		{
 			//
 		}
 		template<typename U>
-		IncrementalAlloc(const IncrementalAlloc<U> &rhs)
+		Incremental_alloc(const Incremental_alloc<U> &rhs)
 			: m_inc_ptr(rhs.m_inc_ptr), m_inc_size(rhs.m_inc_size)
 		{
 			//
@@ -74,11 +74,11 @@ namespace {
 		}
 
 		template<typename U>
-		bool operator==(const IncrementalAlloc<U> &) const {
+		bool operator==(const Incremental_alloc<U> &) const {
 			return true;
 		}
 		template<typename U>
-		bool operator!=(const IncrementalAlloc<U> &) const {
+		bool operator!=(const Incremental_alloc<U> &) const {
 			return false;
 		}
 
@@ -96,26 +96,26 @@ namespace {
 	};
 }
 
-void SharedNts::assign(const char *str, std::size_t len){
+void Shared_nts::assign(const char *str, std::size_t len){
 	if(len == 0){
 		m_ptr.reset(boost::shared_ptr<void>(), "");
 	} else {
 		void *dst;
-		AUTO(sp, boost::allocate_shared<char>(IncrementalAlloc<char>(&dst, len + 1)));
+		AUTO(sp, boost::allocate_shared<char>(Incremental_alloc<char>(&dst, len + 1)));
 		std::memcpy(dst, str, len);
 		static_cast<char *>(dst)[len] = 0;
 		m_ptr.reset(STD_MOVE_IDN(sp), static_cast<const char *>(dst));
 	}
 }
 
-std::istream &operator>>(std::istream &is, SharedNts &rhs){
+std::istream &operator>>(std::istream &is, Shared_nts &rhs){
 	std::string str;
 	if(is >>str){
 		rhs.assign(str);
 	}
 	return is;
 }
-std::ostream &operator<<(std::ostream &os, const SharedNts &rhs){
+std::ostream &operator<<(std::ostream &os, const Shared_nts &rhs){
 	os <<rhs.get();
 	return os;
 }

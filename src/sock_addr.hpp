@@ -9,19 +9,19 @@
 
 namespace Poseidon {
 
-class IpPort;
+class Ip_port;
 
-class SockAddr {
+class Sock_addr {
 private:
 	unsigned char m_data[128];
 	std::size_t m_size;
 
 public:
-	SockAddr();
-	SockAddr(const void *addr_data, std::size_t addr_size);
-	SockAddr(const IpPort &ip_port);
-	SockAddr(const SockAddr &rhs) NOEXCEPT;
-	SockAddr &operator=(const SockAddr &rhs) NOEXCEPT;
+	Sock_addr();
+	Sock_addr(const void *addr_data, std::size_t addr_size);
+	Sock_addr(const Ip_port &ip_port);
+	Sock_addr(const Sock_addr &rhs) NOEXCEPT;
+	Sock_addr &operator=(const Sock_addr &rhs) NOEXCEPT;
 
 public:
 	const void *data() const {

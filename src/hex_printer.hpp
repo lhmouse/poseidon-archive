@@ -10,14 +10,14 @@
 
 namespace Poseidon {
 
-class HexPrinter {
+class Hex_printer {
 private:
 	const void *m_data;
 	std::size_t m_size;
 	char m_delimiter;
 
 public:
-	CONSTEXPR HexPrinter(const void *data, std::size_t size, char delimiter = ' ')
+	CONSTEXPR Hex_printer(const void *data, std::size_t size, char delimiter = ' ')
 		: m_data(data), m_size(size), m_delimiter(delimiter)
 	{
 		//
@@ -35,7 +35,7 @@ public:
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const HexPrinter &rhs);
+extern std::ostream &operator<<(std::ostream &os, const Hex_printer &rhs);
 
 }
 

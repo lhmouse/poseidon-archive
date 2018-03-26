@@ -18,25 +18,25 @@ namespace Poseidon {
 
 namespace {
 	// 注意 dl 系列的函数都不是线程安全的。
-	RecursiveMutex g_mutex;
+	Recursive_mutex g_mutex;
 
-	struct ModuleRaiiMapElement {
+	struct Module_raii_map_element {
 		// Indices.
-		ModuleRaiiBase *raii;
+		Module_raii_base *raii;
 		std::pair<void *, long> base_address_priority;
 	};
-	MULTI_INDEX_MAP(ModuleRaiiMap, ModuleRaiiMapElement,
+	MULTI_INDEX_MAP(Module_raii_map, Module_raii_map_element,
 		UNIQUE_MEMBER_INDEX(raii)
 		MULTI_MEMBER_INDEX(base_address_priority)
 	);
-	ModuleRaiiMap g_module_raii_map;
+	Module_raii_map g_module_raii_map;
 
-	struct DynamicLibraryCloser {
+	struct Dynamic_library_closer {
 		CONSTEXPR void *operator()() NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(void *handle) NOEXCEPT {
-			const RecursiveMutex::UniqueLock lock(g_mutex);
+			const Recursive_mutex::Unique_lock lock(g_mutex);
 			if(::dlclose(handle) != 0){
 				const char *const error = ::dlerror();
 				LOG_POSEIDON_WARNING("Error unloading dynamic library: ", error);
@@ -46,14 +46,14 @@ namespace {
 
 	class Module : NONCOPYABLE {
 	private:
-		UniqueHandle<DynamicLibraryCloser> m_dl_handle;
+		Unique_handle<Dynamic_library_closer> m_dl_handle;
 		void *m_base_address;
-		SharedNts m_real_path;
+		Shared_nts m_real_path;
 
-		HandleStack m_handles;
+		Handle_stack m_handles;
 
 	public:
-		Module(Move<UniqueHandle<DynamicLibraryCloser> > dl_handle, void *base_address, SharedNts real_path, Move<HandleStack> handles)
+		Module(Move<Unique_handle<Dynamic_library_closer> > dl_handle, void *base_address, Shared_nts real_path, Move<Handle_stack> handles)
 			: m_dl_handle(STD_MOVE(dl_handle)), m_base_address(base_address), m_real_path(STD_MOVE(real_path))
 			, m_handles(STD_MOVE(handles))
 		{
@@ -72,80 +72,80 @@ namespace {
 		void *get_base_address() const {
 			return m_base_address;
 		}
-		const SharedNts &get_real_path() const {
+		const Shared_nts &get_real_path() const {
 			return m_real_path;
 		}
 
-		const HandleStack &get_handle_stack() const {
+		const Handle_stack &get_handle_stack() const {
 			return m_handles;
 		}
-		HandleStack &get_handle_stack(){
+		Handle_stack &get_handle_stack(){
 			return m_handles;
 		}
 	};
 
-	struct ModuleMapElement {
+	struct Module_map_element {
 		// Invariants.
 		boost::shared_ptr<Module> module;
 		// Indices.
 		void *dl_handle;
 		void *base_address;
 	};
-	MULTI_INDEX_MAP(ModuleMap, ModuleMapElement,
+	MULTI_INDEX_MAP(Module_map, Module_map_element,
 		UNIQUE_MEMBER_INDEX(dl_handle)
 		UNIQUE_MEMBER_INDEX(base_address)
 	);
-	ModuleMap g_module_map;
+	Module_map g_module_map;
 }
 
-void ModuleDepository::register_module_raii(ModuleRaiiBase *raii, long priority){
+void Module_depository::register_module_raii(Module_raii_base *raii, long priority){
 	PROFILE_ME;
 
-	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const Recursive_mutex::Unique_lock lock(g_mutex);
 	::Dl_info info;
 	DEBUG_THROW_UNLESS(::dladdr(raii, &info), Exception, sslit("Error getting base address"));
-	ModuleRaiiMapElement elem = { raii, std::make_pair(info.dli_fbase, priority) };
+	Module_raii_map_element elem = { raii, std::make_pair(info.dli_fbase, priority) };
 	const AUTO(result, g_module_raii_map.insert(STD_MOVE(elem)));
-	DEBUG_THROW_UNLESS(result.second, Exception, sslit("Duplicate ModuleRaii"));
+	DEBUG_THROW_UNLESS(result.second, Exception, sslit("Duplicate Module_raii"));
 }
-void ModuleDepository::unregister_module_raii(ModuleRaiiBase *raii) NOEXCEPT {
+void Module_depository::unregister_module_raii(Module_raii_base *raii) NOEXCEPT {
 	PROFILE_ME;
 
-	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const Recursive_mutex::Unique_lock lock(g_mutex);
 	const AUTO(it, g_module_raii_map.find<0>(raii));
 	if(it == g_module_raii_map.end()){
-		LOG_POSEIDON_ERROR("ModuleRaii not found? raii = ", static_cast<void *>(raii));
+		LOG_POSEIDON_ERROR("Module_raii not found? raii = ", static_cast<void *>(raii));
 		return;
 	}
 	g_module_raii_map.erase<0>(it);
 }
 
-void ModuleDepository::start(){
+void Module_depository::start(){
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting module depository...");
 }
-void ModuleDepository::stop(){
+void Module_depository::stop(){
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unloading all modules...");
 
-	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const Recursive_mutex::Unique_lock lock(g_mutex);
 	g_module_map.clear();
 }
 
-void *ModuleDepository::load(const std::string &path){
+void *Module_depository::load(const std::string &path){
 	PROFILE_ME;
 
-	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const Recursive_mutex::Unique_lock lock(g_mutex);
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading module: ", path);
-	UniqueHandle<DynamicLibraryCloser> dl_handle;
-	DEBUG_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND)), Exception, SharedNts(::dlerror()));
+	Unique_handle<Dynamic_library_closer> dl_handle;
+	DEBUG_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND)), Exception, Shared_nts(::dlerror()));
 	AUTO(it, g_module_map.find<0>(dl_handle.get()));
 	if(it != g_module_map.end()){
 		LOG_POSEIDON_WARNING("Module already loaded: ", path);
 	} else {
 		void *const init_sym = ::dlsym(dl_handle.get(), "_init");
-		DEBUG_THROW_UNLESS(init_sym, Exception, SharedNts(::dlerror()));
+		DEBUG_THROW_UNLESS(init_sym, Exception, Shared_nts(::dlerror()));
 		::Dl_info info;
-		DEBUG_THROW_UNLESS(::dladdr(init_sym, &info), Exception, SharedNts(::dlerror()));
-		HandleStack handles;
+		DEBUG_THROW_UNLESS(::dladdr(init_sym, &info), Exception, Shared_nts(::dlerror()));
+		Handle_stack handles;
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Initializing NEW module: ", info.dli_fname);
 		const AUTO(raii_range_lower, g_module_raii_map.lower_bound<1>(std::make_pair(info.dli_fbase, LONG_MIN)));
 		const AUTO(raii_range_upper, g_module_raii_map.upper_bound<1>(std::make_pair(info.dli_fbase, LONG_MAX)));
@@ -154,8 +154,8 @@ void *ModuleDepository::load(const std::string &path){
 			raii_it->raii->init(handles);
 		}
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Done initializing module: ", info.dli_fname);
-		const AUTO(module, boost::make_shared<Module>(STD_MOVE(dl_handle), info.dli_fbase, SharedNts(info.dli_fname), STD_MOVE(handles)));
-		ModuleMapElement elem = { module, module->get_dl_handle(), module->get_base_address() };
+		const AUTO(module, boost::make_shared<Module>(STD_MOVE(dl_handle), info.dli_fbase, Shared_nts(info.dli_fname), STD_MOVE(handles)));
+		Module_map_element elem = { module, module->get_dl_handle(), module->get_base_address() };
 		const AUTO(result, g_module_map.insert(STD_MOVE(elem)));
 		DEBUG_THROW_ASSERT(result.second);
 		it = result.first;
@@ -163,7 +163,7 @@ void *ModuleDepository::load(const std::string &path){
 	}
 	return it->module->get_base_address();
 }
-void *ModuleDepository::load_nothrow(const std::string &path)
+void *Module_depository::load_nothrow(const std::string &path)
 try {
 	PROFILE_ME;
 
@@ -178,10 +178,10 @@ try {
 	LOG_POSEIDON_ERROR("Unknown exception thrown while loading module: path = ", path);
 	return NULLPTR;
 }
-bool ModuleDepository::unload(void *base_address) NOEXCEPT {
+bool Module_depository::unload(void *base_address) NOEXCEPT {
 	PROFILE_ME;
 
-	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const Recursive_mutex::Unique_lock lock(g_mutex);
 	const AUTO(it, g_module_map.find<1>(base_address));
 	if(it == g_module_map.end<1>()){
 		LOG_POSEIDON_WARNING("Module not found: base_address = ", base_address);
@@ -192,13 +192,13 @@ bool ModuleDepository::unload(void *base_address) NOEXCEPT {
 	return true;
 }
 
-void ModuleDepository::snapshot(boost::container::vector<ModuleDepository::SnapshotElement> &ret){
+void Module_depository::snapshot(boost::container::vector<Module_depository::Snapshot_element> &ret){
 	PROFILE_ME;
 
-	const RecursiveMutex::UniqueLock lock(g_mutex);
+	const Recursive_mutex::Unique_lock lock(g_mutex);
 	ret.reserve(ret.size() + g_module_map.size());
 	for(AUTO(it, g_module_map.begin()); it != g_module_map.end(); ++it){
-		SnapshotElement elem = { };
+		Snapshot_element elem = { };
 		elem.dl_handle = it->module->get_dl_handle();
 		elem.base_address = it->module->get_base_address();
 		elem.real_path = it->module->get_real_path();

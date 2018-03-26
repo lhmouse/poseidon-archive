@@ -10,76 +10,76 @@
 namespace Poseidon {
 namespace Cbpp {
 
-LowLevelClient::LowLevelClient(const SockAddr &addr, bool use_ssl, bool verify_peer)
-	: TcpClientBase(addr, use_ssl, verify_peer), Reader(), Writer()
+Low_level_client::Low_level_client(const Sock_addr &addr, bool use_ssl, bool verify_peer)
+	: Tcp_client_base(addr, use_ssl, verify_peer), Reader(), Writer()
 {
 	//
 }
-LowLevelClient::~LowLevelClient(){
+Low_level_client::~Low_level_client(){
 	//
 }
 
-void LowLevelClient::on_connect(){
+void Low_level_client::on_connect(){
 	//
 }
-void LowLevelClient::on_read_hup(){
+void Low_level_client::on_read_hup(){
 	//
 }
-void LowLevelClient::on_close(int /*err_code*/){
+void Low_level_client::on_close(int /*err_code*/){
 	//
 }
-void LowLevelClient::on_receive(StreamBuffer data){
+void Low_level_client::on_receive(Stream_buffer data){
 	PROFILE_ME;
 
 	Reader::put_encoded_data(STD_MOVE(data));
 }
 
-void LowLevelClient::on_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
+void Low_level_client::on_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size){
 	PROFILE_ME;
 
 	on_low_level_data_message_header(message_id, payload_size);
 }
-void LowLevelClient::on_data_message_payload(boost::uint64_t payload_offset, StreamBuffer payload){
+void Low_level_client::on_data_message_payload(boost::uint64_t payload_offset, Stream_buffer payload){
 	PROFILE_ME;
 
 	on_low_level_data_message_payload(payload_offset, STD_MOVE(payload));
 }
-bool LowLevelClient::on_data_message_end(boost::uint64_t payload_size){
+bool Low_level_client::on_data_message_end(boost::uint64_t payload_size){
 	PROFILE_ME;
 
 	return on_low_level_data_message_end(payload_size);
 }
 
-bool LowLevelClient::on_control_message(StatusCode status_code, StreamBuffer param){
+bool Low_level_client::on_control_message(Status_code status_code, Stream_buffer param){
 	PROFILE_ME;
 
 	return on_low_level_control_message(status_code, STD_MOVE(param));
 }
 
-long LowLevelClient::on_encoded_data_avail(StreamBuffer encoded){
+long Low_level_client::on_encoded_data_avail(Stream_buffer encoded){
 	PROFILE_ME;
 
-	return TcpClientBase::send(STD_MOVE(encoded));
+	return Tcp_client_base::send(STD_MOVE(encoded));
 }
 
-bool LowLevelClient::send(boost::uint16_t message_id, StreamBuffer payload){
+bool Low_level_client::send(boost::uint16_t message_id, Stream_buffer payload){
 	PROFILE_ME;
 
 	return Writer::put_data_message(message_id, STD_MOVE(payload));
 }
-bool LowLevelClient::send_control(StatusCode status_code, StreamBuffer param){
+bool Low_level_client::send_control(Status_code status_code, Stream_buffer param){
 	PROFILE_ME;
 
 	return Writer::put_control_message(status_code, STD_MOVE(param));
 }
-bool LowLevelClient::shutdown(StatusCode status_code, const char *reason) NOEXCEPT
+bool Low_level_client::shutdown(Status_code status_code, const char *reason) NOEXCEPT
 try {
 	PROFILE_ME;
 
 	if(has_been_shutdown_write()){
 		return false;
 	}
-	Writer::put_control_message(status_code, StreamBuffer(reason));
+	Writer::put_control_message(status_code, Stream_buffer(reason));
 	shutdown_read();
 	return shutdown_write();
 } catch(std::exception &e){

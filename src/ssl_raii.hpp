@@ -10,23 +10,23 @@
 
 namespace Poseidon {
 
-struct SslDeleter {
+struct Ssl_deleter {
 	CONSTEXPR ::SSL *operator()() NOEXCEPT {
 		return NULLPTR;
 	}
 	void operator()(::SSL *ssl) NOEXCEPT;
 };
 
-typedef UniqueHandle<SslDeleter> UniqueSsl;
+typedef Unique_handle<Ssl_deleter> Unique_ssl;
 
-struct SslCtxDeleter {
+struct Ssl_ctx_deleter {
 	CONSTEXPR ::SSL_CTX *operator()() NOEXCEPT {
 		return NULLPTR;
 	}
 	void operator()(::SSL_CTX *ssl_ctx) NOEXCEPT;
 };
 
-typedef UniqueHandle<SslCtxDeleter> UniqueSslCtx;
+typedef Unique_handle<Ssl_ctx_deleter> Unique_ssl_ctx;
 
 }
 

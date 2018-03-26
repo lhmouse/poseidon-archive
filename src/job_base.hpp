@@ -12,9 +12,9 @@ namespace Poseidon {
 
 class Promise;
 
-class JobBase : NONCOPYABLE {
+class Job_base : NONCOPYABLE {
 public:
-	virtual ~JobBase();
+	virtual ~Job_base();
 
 public:
 	// 如果一个任务被推迟执行且 Category 非空，
@@ -23,7 +23,7 @@ public:
 	virtual void perform() = 0;
 };
 
-extern void enqueue(boost::shared_ptr<JobBase> job, boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
+extern void enqueue(boost::shared_ptr<Job_base> job, boost::shared_ptr<const bool> withdrawn = boost::shared_ptr<const bool>());
 
 }
 

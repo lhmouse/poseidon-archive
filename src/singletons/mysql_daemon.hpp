@@ -14,28 +14,28 @@ namespace Poseidon {
 
 class Promise;
 
-class MySqlDaemon {
+class My_sql_daemon {
 private:
-	MySqlDaemon();
+	My_sql_daemon();
 
 public:
-	typedef boost::function<void (const boost::shared_ptr<MySql::Connection> &)> QueryCallback;
+	typedef boost::function<void (const boost::shared_ptr<My_sql::Connection> &)> Query_callback;
 
 	static void start();
 	static void stop();
 
 	// 同步接口。
-	static boost::shared_ptr<MySql::Connection> create_connection(bool from_slave = false);
+	static boost::shared_ptr<My_sql::Connection> create_connection(bool from_slave = false);
 
 	static void wait_for_all_async_operations();
 
 	// 异步接口。
-	static boost::shared_ptr<const Promise> enqueue_for_saving(boost::shared_ptr<const MySql::ObjectBase> object, bool to_replace, bool urgent);
-	static boost::shared_ptr<const Promise> enqueue_for_loading(boost::shared_ptr<MySql::ObjectBase> object, std::string query);
+	static boost::shared_ptr<const Promise> enqueue_for_saving(boost::shared_ptr<const My_sql::Object_base> object, bool to_replace, bool urgent);
+	static boost::shared_ptr<const Promise> enqueue_for_loading(boost::shared_ptr<My_sql::Object_base> object, std::string query);
 	static boost::shared_ptr<const Promise> enqueue_for_deleting(const char *table_hint, std::string query);
-	static boost::shared_ptr<const Promise> enqueue_for_batch_loading(QueryCallback callback, const char *table_hint, std::string query);
+	static boost::shared_ptr<const Promise> enqueue_for_batch_loading(Query_callback callback, const char *table_hint, std::string query);
 
-	static void enqueue_for_low_level_access(const boost::shared_ptr<Promise> &promise, QueryCallback callback, const char *table_hint, bool from_slave = false);
+	static void enqueue_for_low_level_access(const boost::shared_ptr<Promise> &promise, Query_callback callback, const char *table_hint, bool from_slave = false);
 
 	static boost::shared_ptr<const Promise> enqueue_for_waiting_for_all_async_operations();
 };

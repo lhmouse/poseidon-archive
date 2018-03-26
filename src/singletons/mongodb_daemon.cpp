@@ -29,40 +29,40 @@
 
 namespace Poseidon {
 
-typedef MongoDbDaemon::QueryCallback QueryCallback;
+typedef Mongo_db_daemon::Query_callback Query_callback;
 
 namespace {
-	boost::shared_ptr<MongoDb::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<MongoDb::Connection> &master_conn){
+	boost::shared_ptr<Mongo_db::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<Mongo_db::Connection> &master_conn){
 		std::string server_addr;
 		boost::uint16_t server_port = 0;
 		if(from_slave){
-			server_addr = MainConfig::get<std::string>("mongodb_slave_addr");
-			server_port = MainConfig::get<boost::uint16_t>("mongodb_slave_port");
+			server_addr = Main_config::get<std::string>("mongodb_slave_addr");
+			server_port = Main_config::get<boost::uint16_t>("mongodb_slave_port");
 		}
 		if(server_addr.empty()){
 			if(master_conn){
 				LOG_POSEIDON_DEBUG("MongoDB slave is not configured. Reuse the master connection as a slave.");
 				return master_conn;
 			}
-			server_addr = MainConfig::get<std::string>("mongodb_server_addr", "localhost");
-			server_port = MainConfig::get<boost::uint16_t>("mongodb_server_port", 27017);
+			server_addr = Main_config::get<std::string>("mongodb_server_addr", "localhost");
+			server_port = Main_config::get<boost::uint16_t>("mongodb_server_port", 27017);
 		}
-		std::string username = MainConfig::get<std::string>("mongodb_username", "root");
-		std::string password = MainConfig::get<std::string>("mongodb_password");
-		std::string auth_db = MainConfig::get<std::string>("mongodb_auth_database", "admin");
-		bool use_ssl = MainConfig::get<bool>("mongodb_use_ssl", false);
-		std::string database = MainConfig::get<std::string>("mongodb_database", "poseidon");
-		return MongoDb::Connection::create(server_addr.c_str(), server_port, username.c_str(), password.c_str(), auth_db.c_str(), use_ssl, database.c_str());
+		std::string username = Main_config::get<std::string>("mongodb_username", "root");
+		std::string password = Main_config::get<std::string>("mongodb_password");
+		std::string auth_db = Main_config::get<std::string>("mongodb_auth_database", "admin");
+		bool use_ssl = Main_config::get<bool>("mongodb_use_ssl", false);
+		std::string database = Main_config::get<std::string>("mongodb_database", "poseidon");
+		return Mongo_db::Connection::create(server_addr.c_str(), server_port, username.c_str(), password.c_str(), auth_db.c_str(), use_ssl, database.c_str());
 	}
 
 	// 对于日志文件的写操作应当互斥。
 	Mutex g_dump_mutex;
 
-	void dump_bson_to_file(const MongoDb::BsonBuilder &query, unsigned long err_code, const char *err_msg) NOEXCEPT
+	void dump_bson_to_file(const Mongo_db::Bson_builder &query, unsigned long err_code, const char *err_msg) NOEXCEPT
 	try {
 		PROFILE_ME;
 
-		const AUTO(dump_dir, MainConfig::get<std::string>("mongodb_dump_dir"));
+		const AUTO(dump_dir, Main_config::get<std::string>("mongodb_dump_dir"));
 		if(dump_dir.empty()){
 			LOG_POSEIDON_WARNING("MongoDB dump is disabled.");
 			return;
@@ -79,7 +79,7 @@ namespace {
 		dump_path.append(temp, len);
 
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Creating BSON dump file: ", dump_path);
-		UniqueFile dump_file;
+		Unique_file dump_file;
 		if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 			const int saved_errno = errno;
 			LOG_POSEIDON_FATAL("Error creating BSON dump file: dump_path = ", dump_path, ", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
@@ -98,7 +98,7 @@ namespace {
 		os <<std::endl <<std::endl;
 		const AUTO(str, os.get_buffer().dump_string());
 
-		const Mutex::UniqueLock lock(g_dump_mutex);
+		const Mutex::Unique_lock lock(g_dump_mutex);
 		std::size_t total = 0;
 		do {
 			::ssize_t written = ::write(dump_file.get(), str.data() + total, str.size() - total);
@@ -112,19 +112,19 @@ namespace {
 	}
 
 	// 数据库线程操作。
-	class OperationBase : NONCOPYABLE {
+	class Operation_base : NONCOPYABLE {
 	private:
 		const boost::weak_ptr<Promise> m_weak_promise;
 
 		boost::shared_ptr<const void> m_probe;
 
 	public:
-		explicit OperationBase(const boost::shared_ptr<Promise> &promise)
+		explicit Operation_base(const boost::shared_ptr<Promise> &promise)
 			: m_weak_promise(promise)
 		{
 			//
 		}
-		virtual ~OperationBase(){
+		virtual ~Operation_base(){
 			//
 		}
 
@@ -137,20 +137,20 @@ namespace {
 			return m_weak_promise.lock();
 		}
 		virtual bool should_use_slave() const = 0;
-		virtual boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const = 0;
+		virtual boost::shared_ptr<const Mongo_db::Object_base> get_combinable_object() const = 0;
 		virtual const char *get_collection() const = 0;
-		virtual void generate_bson(MongoDb::BsonBuilder &query) const = 0;
-		virtual void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) = 0;
+		virtual void generate_bson(Mongo_db::Bson_builder &query) const = 0;
+		virtual void execute(const boost::shared_ptr<Mongo_db::Connection> &conn, const Mongo_db::Bson_builder &query) = 0;
 	};
 
-	class SaveOperation : public OperationBase {
+	class Save_operation : public Operation_base {
 	private:
-		boost::shared_ptr<const MongoDb::ObjectBase> m_object;
+		boost::shared_ptr<const Mongo_db::Object_base> m_object;
 		bool m_to_replace;
 
 	public:
-		SaveOperation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace)
-			: OperationBase(promise)
+		Save_operation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<const Mongo_db::Object_base> object, bool to_replace)
+			: Operation_base(promise)
 			, m_object(STD_MOVE(object)), m_to_replace(to_replace)
 		{
 			//
@@ -160,49 +160,49 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return false;
 		}
-		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mongo_db::Object_base> get_combinable_object() const OVERRIDE {
 			return m_object;
 		}
 		const char *get_collection() const OVERRIDE {
 			return m_object->get_collection();
 		}
-		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
-			MongoDb::BsonBuilder q;
+		void generate_bson(Mongo_db::Bson_builder &query) const OVERRIDE {
+			Mongo_db::Bson_builder q;
 			{
-				MongoDb::BsonBuilder doc;
+				Mongo_db::Bson_builder doc;
 				m_object->generate_document(doc);
 				AUTO(pkey, m_object->generate_primary_key());
 				if(m_to_replace && !pkey.empty()){
-					MongoDb::BsonBuilder upd;
-					upd.append_object(sslit("q"), MongoDb::bson_scalar_string(sslit("_id"), STD_MOVE(pkey)));
+					Mongo_db::Bson_builder upd;
+					upd.append_object(sslit("q"), Mongo_db::bson_scalar_string(sslit("_id"), STD_MOVE(pkey)));
 					upd.append_object(sslit("u"), STD_MOVE(doc));
 					upd.append_boolean(sslit("upsert"), true);
 					LOG_POSEIDON_DEBUG("Upserting: pkey = ", pkey, ", upd = ", upd);
 					q.append_string(sslit("update"), get_collection());
-					q.append_array(sslit("updates"), MongoDb::bson_scalar_object(sslit("0"), STD_MOVE(upd)));
+					q.append_array(sslit("updates"), Mongo_db::bson_scalar_object(sslit("0"), STD_MOVE(upd)));
 				} else {
 					LOG_POSEIDON_DEBUG("Inserting: pkey = ", pkey, ", doc = ", doc);
 					q.append_string(sslit("insert"), get_collection());
-					q.append_array(sslit("documents"), MongoDb::bson_scalar_object(sslit("0"), STD_MOVE(doc)));
+					q.append_array(sslit("documents"), Mongo_db::bson_scalar_object(sslit("0"), STD_MOVE(doc)));
 				}
 			}
 			query = q;
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mongo_db::Connection> &conn, const Mongo_db::Bson_builder &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_bson(query);
 		}
 	};
 
-	class LoadOperation : public OperationBase {
+	class Load_operation : public Operation_base {
 	private:
-		boost::shared_ptr<MongoDb::ObjectBase> m_object;
-		MongoDb::BsonBuilder m_query;
+		boost::shared_ptr<Mongo_db::Object_base> m_object;
+		Mongo_db::Bson_builder m_query;
 
 	public:
-		LoadOperation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query)
-			: OperationBase(promise)
+		Load_operation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<Mongo_db::Object_base> object, Mongo_db::Bson_builder query)
+			: Operation_base(promise)
 			, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
 		{
 			//
@@ -212,16 +212,16 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return true;
 		}
-		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mongo_db::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_collection() const OVERRIDE {
 			return m_object->get_collection();
 		}
-		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
+		void generate_bson(Mongo_db::Bson_builder &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mongo_db::Connection> &conn, const Mongo_db::Bson_builder &query) OVERRIDE {
 			PROFILE_ME;
 
 			if(!get_promise()){
@@ -229,19 +229,19 @@ namespace {
 				return;
 			}
 			conn->execute_bson(query);
-			DEBUG_THROW_UNLESS(conn->fetch_document(), MongoDb::Exception, SharedNts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, sslit("No documents returned"));
+			DEBUG_THROW_UNLESS(conn->fetch_document(), Mongo_db::Exception, Shared_nts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, sslit("No documents returned"));
 			m_object->fetch(conn);
 		}
 	};
 
-	class DeleteOperation : public OperationBase {
+	class Delete_operation : public Operation_base {
 	private:
 		const char *m_collection;
-		MongoDb::BsonBuilder m_query;
+		Mongo_db::Bson_builder m_query;
 
 	public:
-		DeleteOperation(const boost::shared_ptr<Promise> &promise, const char *collection, MongoDb::BsonBuilder query)
-			: OperationBase(promise)
+		Delete_operation(const boost::shared_ptr<Promise> &promise, const char *collection, Mongo_db::Bson_builder query)
+			: Operation_base(promise)
 			, m_collection(collection), m_query(STD_MOVE(query))
 		{
 			//
@@ -251,31 +251,31 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return false;
 		}
-		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mongo_db::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_collection() const OVERRIDE {
 			return m_collection;
 		}
-		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
+		void generate_bson(Mongo_db::Bson_builder &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mongo_db::Connection> &conn, const Mongo_db::Bson_builder &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_bson(query);
 		}
 	};
 
-	class BatchLoadOperation : public OperationBase {
+	class Batch_load_operation : public Operation_base {
 	private:
-		QueryCallback m_callback;
+		Query_callback m_callback;
 		const char *m_collection_hint;
-		MongoDb::BsonBuilder m_query;
+		Mongo_db::Bson_builder m_query;
 
 	public:
-		BatchLoadOperation(const boost::shared_ptr<Promise> &promise, QueryCallback callback, const char *collection_hint, MongoDb::BsonBuilder query)
-			: OperationBase(promise)
+		Batch_load_operation(const boost::shared_ptr<Promise> &promise, Query_callback callback, const char *collection_hint, Mongo_db::Bson_builder query)
+			: Operation_base(promise)
 			, m_callback(STD_MOVE_IDN(callback)), m_collection_hint(collection_hint), m_query(STD_MOVE(query))
 		{
 			//
@@ -285,16 +285,16 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return true;
 		}
-		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mongo_db::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_collection() const OVERRIDE {
 			return m_collection_hint;
 		}
-		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
+		void generate_bson(Mongo_db::Bson_builder &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mongo_db::Connection> &conn, const Mongo_db::Bson_builder &query) OVERRIDE {
 			PROFILE_ME;
 
 			if(!get_promise()){
@@ -312,15 +312,15 @@ namespace {
 		}
 	};
 
-	class LowLevelAccessOperation : public OperationBase {
+	class Low_level_access_operation : public Operation_base {
 	private:
-		QueryCallback m_callback;
+		Query_callback m_callback;
 		const char *m_collection_hint;
 		bool m_from_slave;
 
 	public:
-		LowLevelAccessOperation(const boost::shared_ptr<Promise> &promise, QueryCallback callback, const char *collection_hint, bool from_slave)
-			: OperationBase(promise)
+		Low_level_access_operation(const boost::shared_ptr<Promise> &promise, Query_callback callback, const char *collection_hint, bool from_slave)
+			: Operation_base(promise)
 			, m_callback(STD_MOVE_IDN(callback)), m_collection_hint(collection_hint), m_from_slave(from_slave)
 		{
 			//
@@ -330,31 +330,31 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return m_from_slave;
 		}
-		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mongo_db::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_collection() const OVERRIDE {
 			return m_collection_hint;
 		}
-		void generate_bson(MongoDb::BsonBuilder & /* query */) const OVERRIDE {
+		void generate_bson(Mongo_db::Bson_builder & /* query */) const OVERRIDE {
 			// no query
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder & /* query */) OVERRIDE {
+		void execute(const boost::shared_ptr<Mongo_db::Connection> &conn, const Mongo_db::Bson_builder & /* query */) OVERRIDE {
 			PROFILE_ME;
 
 			m_callback(conn);
 		}
 	};
 
-	class WaitOperation : public OperationBase {
+	class Wait_operation : public Operation_base {
 	public:
-		explicit WaitOperation(const boost::shared_ptr<Promise> &promise)
-			: OperationBase(promise)
+		explicit Wait_operation(const boost::shared_ptr<Promise> &promise)
+			: Operation_base(promise)
 		{
 			//
 		}
-		~WaitOperation() OVERRIDE {
-			const AUTO(promise, OperationBase::get_promise());
+		~Wait_operation() OVERRIDE {
+			const AUTO(promise, Operation_base::get_promise());
 			if(promise){
 				promise->set_success(false);
 			}
@@ -367,26 +367,26 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return false;
 		}
-		boost::shared_ptr<const MongoDb::ObjectBase> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mongo_db::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_collection() const OVERRIDE {
 			return "";
 		}
-		void generate_bson(MongoDb::BsonBuilder &query) const OVERRIDE {
-			query = MongoDb::bson_scalar_signed(sslit("ping"), 1);
+		void generate_bson(Mongo_db::Bson_builder &query) const OVERRIDE {
+			query = Mongo_db::bson_scalar_signed(sslit("ping"), 1);
 		}
-		void execute(const boost::shared_ptr<MongoDb::Connection> &conn, const MongoDb::BsonBuilder &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mongo_db::Connection> &conn, const Mongo_db::Bson_builder &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_bson(query);
 		}
 	};
 
-	class MongoDbThread : NONCOPYABLE {
+	class Mongo_db_thread : NONCOPYABLE {
 	private:
-		struct OperationQueueElement {
-			boost::shared_ptr<OperationBase> operation;
+		struct Operation_queue_element {
+			boost::shared_ptr<Operation_base> operation;
 			boost::uint64_t due_time;
 			std::size_t retry_count;
 		};
@@ -396,12 +396,12 @@ namespace {
 		volatile bool m_running;
 
 		mutable Mutex m_mutex;
-		mutable ConditionVariable m_new_operation;
+		mutable Condition_variable m_new_operation;
 		volatile bool m_urgent; // 无视延迟写入，一次性处理队列中所有操作。
-		boost::container::deque<OperationQueueElement> m_queue;
+		boost::container::deque<Operation_queue_element> m_queue;
 
 	public:
-		MongoDbThread()
+		Mongo_db_thread()
 			: m_running(false)
 			, m_urgent(false)
 		{
@@ -409,13 +409,13 @@ namespace {
 		}
 
 	private:
-		bool pump_one_operation(boost::shared_ptr<MongoDb::Connection> &master_conn, boost::shared_ptr<MongoDb::Connection> &slave_conn) NOEXCEPT {
+		bool pump_one_operation(boost::shared_ptr<Mongo_db::Connection> &master_conn, boost::shared_ptr<Mongo_db::Connection> &slave_conn) NOEXCEPT {
 			PROFILE_ME;
 
 			const AUTO(now, get_fast_mono_clock());
-			OperationQueueElement *elem;
+			Operation_queue_element *elem;
 			{
-				const Mutex::UniqueLock lock(m_mutex);
+				const Mutex::Unique_lock lock(m_mutex);
 				if(m_queue.empty()){
 					atomic_store(m_urgent, false, memory_order_relaxed);
 					return false;
@@ -428,7 +428,7 @@ namespace {
 			const AUTO_REF(operation, elem->operation);
 			AUTO_REF(conn, elem->operation->should_use_slave() ? slave_conn : master_conn);
 
-			MongoDb::BsonBuilder query;
+			Mongo_db::Bson_builder query;
 			STD_EXCEPTION_PTR except;
 			unsigned long err_code = 0;
 			char err_msg[4096];
@@ -452,11 +452,11 @@ namespace {
 					operation->generate_bson(query);
 					LOG_POSEIDON_DEBUG("Executing MongoDB query: collection = ", operation->get_collection(), ", query = ", query);
 					operation->execute(conn, query);
-				} catch(MongoDb::Exception &e){
-					LOG_POSEIDON_WARNING("MongoDb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
+				} catch(Mongo_db::Exception &e){
+					LOG_POSEIDON_WARNING("Mongo_db::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = e.get_code();
-					::snprintf(err_msg, sizeof(err_msg), "MongoDb::Exception: %s", e.what());
+					::snprintf(err_msg, sizeof(err_msg), "Mongo_db::Exception: %s", e.what());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
@@ -471,11 +471,11 @@ namespace {
 				conn->discard_result();
 			}
 			if(except){
-				const AUTO(max_retry_count, MainConfig::get<std::size_t>("mongodb_max_retry_count", 3));
+				const AUTO(max_retry_count, Main_config::get<std::size_t>("mongodb_max_retry_count", 3));
 				const AUTO(retry_count, ++(elem->retry_count));
 				if(retry_count < max_retry_count){
 					LOG_POSEIDON(Logger::special_major | Logger::level_info, "Going to retry MongoDB operation: retry_count = ", retry_count);
-					const AUTO(retry_init_delay, MainConfig::get<boost::uint64_t>("mongodb_retry_init_delay", 1000));
+					const AUTO(retry_init_delay, Main_config::get<boost::uint64_t>("mongodb_retry_init_delay", 1000));
 					elem->due_time = now + (retry_init_delay << retry_count);
 					conn.reset();
 					return true;
@@ -491,7 +491,7 @@ namespace {
 					promise->set_success(false);
 				}
 			}
-			const Mutex::UniqueLock lock(m_mutex);
+			const Mutex::Unique_lock lock(m_mutex);
 			m_queue.pop_front();
 			return true;
 		}
@@ -500,10 +500,10 @@ namespace {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB thread started.");
 
-			boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
+			boost::shared_ptr<Mongo_db::Connection> master_conn, slave_conn;
 			unsigned timeout = 0;
 			for(;;){
-				const AUTO(reconnect_delay, MainConfig::get<boost::uint64_t>("mongodb_reconn_delay", 5000));
+				const AUTO(reconnect_delay, Main_config::get<boost::uint64_t>("mongodb_reconn_delay", 5000));
 				bool busy;
 				do {
 					while(!master_conn){
@@ -536,7 +536,7 @@ namespace {
 					timeout = std::min<unsigned>(timeout * 2u + 1u, !busy * 100u);
 				} while(busy);
 
-				Mutex::UniqueLock lock(m_mutex);
+				Mutex::Unique_lock lock(m_mutex);
 				if(m_queue.empty() && !atomic_load(m_running, memory_order_consume)){
 					break;
 				}
@@ -548,8 +548,8 @@ namespace {
 
 	public:
 		void start(){
-			const Mutex::UniqueLock lock(m_mutex);
-			Thread(boost::bind(&MongoDbThread::thread_proc, this), sslit(" G  "), sslit("MongoDB")).swap(m_thread);
+			const Mutex::Unique_lock lock(m_mutex);
+			Thread(boost::bind(&Mongo_db_thread::thread_proc, this), sslit(" G  "), sslit("MongoDB")).swap(m_thread);
 			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
@@ -566,9 +566,9 @@ namespace {
 		void wait_till_idle(){
 			for(;;){
 				std::size_t pending_objects;
-				MongoDb::BsonBuilder current_bson;
+				Mongo_db::Bson_builder current_bson;
 				{
-					const Mutex::UniqueLock lock(m_mutex);
+					const Mutex::Unique_lock lock(m_mutex);
 					pending_objects = m_queue.size();
 					if(pending_objects == 0){
 						break;
@@ -587,22 +587,22 @@ namespace {
 		}
 
 		std::size_t get_queue_size() const {
-			const Mutex::UniqueLock lock(m_mutex);
+			const Mutex::Unique_lock lock(m_mutex);
 			return m_queue.size();
 		}
-		void add_operation(boost::shared_ptr<OperationBase> operation, bool urgent){
+		void add_operation(boost::shared_ptr<Operation_base> operation, bool urgent){
 			PROFILE_ME;
 
 			const AUTO(combinable_object, operation->get_combinable_object());
 
 			const AUTO(now, get_fast_mono_clock());
-			const AUTO(save_delay, MainConfig::get<boost::uint64_t>("mongodb_save_delay", 5000));
+			const AUTO(save_delay, Main_config::get<boost::uint64_t>("mongodb_save_delay", 5000));
 			// 有紧急操作时无视写入延迟，这个逻辑不在这里处理。
 			const AUTO(due_time, saturated_add(now, save_delay));
 
-			const Mutex::UniqueLock lock(m_mutex);
+			const Mutex::Unique_lock lock(m_mutex);
 			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, sslit("MongoDB thread is being shut down"));
-			OperationQueueElement elem = { STD_MOVE(operation), due_time };
+			Operation_queue_element elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){
 				const AUTO(old_write_stamp, combinable_object->get_combined_write_stamp());
@@ -622,22 +622,22 @@ namespace {
 	Mutex g_router_mutex;
 	struct Route {
 		boost::shared_ptr<const void> probe;
-		boost::shared_ptr<MongoDbThread> thread;
+		boost::shared_ptr<Mongo_db_thread> thread;
 	};
-	boost::container::flat_map<SharedNts, Route> g_router;
+	boost::container::flat_map<Shared_nts, Route> g_router;
 	boost::container::flat_multimap<std::size_t, std::size_t> g_routing_map;
-	boost::container::vector<boost::shared_ptr<MongoDbThread> > g_threads;
+	boost::container::vector<boost::shared_ptr<Mongo_db_thread> > g_threads;
 
-	void add_operation_by_collection(const char *collection, boost::shared_ptr<OperationBase> operation, bool urgent){
+	void add_operation_by_collection(const char *collection, boost::shared_ptr<Operation_base> operation, bool urgent){
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), BasicException, sslit("MongoDB support is not enabled"));
+		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, sslit("MongoDB support is not enabled"));
 
 		boost::shared_ptr<const void> probe;
-		boost::shared_ptr<MongoDbThread> thread;
+		boost::shared_ptr<Mongo_db_thread> thread;
 		{
-			const Mutex::UniqueLock lock(g_router_mutex);
+			const Mutex::Unique_lock lock(g_router_mutex);
 
-			AUTO_REF(route, g_router[SharedNts::view(collection)]);
+			AUTO_REF(route, g_router[Shared_nts::view(collection)]);
 			if(route.probe.use_count() > 1){
 				probe = route.probe;
 				thread = route.thread;
@@ -654,7 +654,7 @@ namespace {
 				AUTO_REF(test_thread, g_threads.at(i));
 				if(!test_thread){
 					LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Creating new MongoDB thread ", i, " for collection ", collection);
-					thread = boost::make_shared<MongoDbThread>();
+					thread = boost::make_shared<Mongo_db_thread>();
 					thread->start();
 					test_thread = thread;
 					route.thread = thread;
@@ -679,11 +679,11 @@ namespace {
 		operation->set_probe(STD_MOVE(probe));
 		thread->add_operation(STD_MOVE(operation), urgent);
 	}
-	void add_operation_all(boost::shared_ptr<OperationBase> operation, bool urgent){
+	void add_operation_all(boost::shared_ptr<Operation_base> operation, bool urgent){
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), BasicException, sslit("MongoDB support is not enabled"));
+		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, sslit("MongoDB support is not enabled"));
 
-		const Mutex::UniqueLock lock(g_router_mutex);
+		const Mutex::Unique_lock lock(g_router_mutex);
 		for(AUTO(it, g_threads.begin()); it != g_threads.end(); ++it){
 			const AUTO_REF(thread, *it);
 			if(!thread){
@@ -694,22 +694,22 @@ namespace {
 	}
 }
 
-void MongoDbDaemon::start(){
+void Mongo_db_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting MongoDB daemon...");
 
-	const AUTO(max_thread_count, MainConfig::get<std::size_t>("mongodb_max_thread_count"));
+	const AUTO(max_thread_count, Main_config::get<std::size_t>("mongodb_max_thread_count"));
 	if(max_thread_count == 0){
 		LOG_POSEIDON_WARNING("MongoDB support has been disabled. To enable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to a value greater than zero.");
 	} else {
-		boost::shared_ptr<MongoDb::Connection> master_conn, slave_conn;
+		boost::shared_ptr<Mongo_db::Connection> master_conn, slave_conn;
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB master server is up...");
 		try {
 			master_conn = real_create_connection(false, VAL_INIT);
-			master_conn->execute_bson(MongoDb::bson_scalar_signed(sslit("ping"), 1));
+			master_conn->execute_bson(Mongo_db::bson_scalar_signed(sslit("ping"), 1));
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MongoDB master server: ", e.what());
 			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
@@ -720,7 +720,7 @@ void MongoDbDaemon::start(){
 		try {
 			slave_conn = real_create_connection(true, master_conn);
 			if(slave_conn != master_conn){
-				slave_conn->execute_bson(MongoDb::bson_scalar_signed(sslit("ping"), 1));
+				slave_conn->execute_bson(Mongo_db::bson_scalar_signed(sslit("ping"), 1));
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MongoDB slave server: ", e.what());
@@ -728,14 +728,14 @@ void MongoDbDaemon::start(){
 			std::abort();
 		}
 
-		const AUTO(dump_dir, MainConfig::get<std::string>("mongodb_dump_dir"));
+		const AUTO(dump_dir, Main_config::get<std::string>("mongodb_dump_dir"));
 		if(dump_dir.empty()){
 			LOG_POSEIDON_WARNING("MongoDB error dump has been disabled. To enable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to the path to the dump directory.");
 		} else {
 			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB dump directory is writeable...");
 			try {
 				const AUTO(placeholder_path, dump_dir + "/placeholder");
-				DEBUG_THROW_ASSERT(UniqueFile(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)));
+				DEBUG_THROW_ASSERT(Unique_file(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)));
 			} catch(std::exception &e){
 				LOG_POSEIDON_FATAL("Could not write MongoDB dump: ", e.what());
 				LOG_POSEIDON_WARNING("To disable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to an empty string.");
@@ -747,7 +747,7 @@ void MongoDbDaemon::start(){
 
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB daemon started.");
 }
-void MongoDbDaemon::stop(){
+void Mongo_db_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
@@ -772,15 +772,15 @@ void MongoDbDaemon::stop(){
 
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB daemon stopped.");
 
-	const Mutex::UniqueLock lock(g_router_mutex);
+	const Mutex::Unique_lock lock(g_router_mutex);
 	g_threads.clear();
 }
 
-boost::shared_ptr<MongoDb::Connection> MongoDbDaemon::create_connection(bool from_slave){
+boost::shared_ptr<Mongo_db::Connection> Mongo_db_daemon::create_connection(bool from_slave){
 	return real_create_connection(from_slave, VAL_INIT);
 }
 
-void MongoDbDaemon::wait_for_all_async_operations(){
+void Mongo_db_daemon::wait_for_all_async_operations(){
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		const AUTO_REF(thread, g_threads.at(i));
 		if(!thread){
@@ -790,50 +790,50 @@ void MongoDbDaemon::wait_for_all_async_operations(){
 	}
 }
 
-boost::shared_ptr<const Promise> MongoDbDaemon::enqueue_for_saving(boost::shared_ptr<const MongoDb::ObjectBase> object, bool to_replace, bool urgent){
+boost::shared_ptr<const Promise> Mongo_db_daemon::enqueue_for_saving(boost::shared_ptr<const Mongo_db::Object_base> object, bool to_replace, bool urgent){
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const collection = object->get_collection();
-	AUTO(operation, boost::make_shared<SaveOperation>(promise, STD_MOVE(object), to_replace));
+	AUTO(operation, boost::make_shared<Save_operation>(promise, STD_MOVE(object), to_replace));
 	add_operation_by_collection(collection, STD_MOVE_IDN(operation), urgent);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const Promise> MongoDbDaemon::enqueue_for_loading(boost::shared_ptr<MongoDb::ObjectBase> object, MongoDb::BsonBuilder query){
+boost::shared_ptr<const Promise> Mongo_db_daemon::enqueue_for_loading(boost::shared_ptr<Mongo_db::Object_base> object, Mongo_db::Bson_builder query){
 	DEBUG_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const collection = object->get_collection();
-	AUTO(operation, boost::make_shared<LoadOperation>(promise, STD_MOVE(object), STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<Load_operation>(promise, STD_MOVE(object), STD_MOVE(query)));
 	add_operation_by_collection(collection, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const Promise> MongoDbDaemon::enqueue_for_deleting(const char *collection_hint, MongoDb::BsonBuilder query){
+boost::shared_ptr<const Promise> Mongo_db_daemon::enqueue_for_deleting(const char *collection_hint, Mongo_db::Bson_builder query){
 	DEBUG_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const collection = collection_hint;
-	AUTO(operation, boost::make_shared<DeleteOperation>(promise, collection_hint, STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<Delete_operation>(promise, collection_hint, STD_MOVE(query)));
 	add_operation_by_collection(collection, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const Promise> MongoDbDaemon::enqueue_for_batch_loading(QueryCallback callback, const char *collection_hint, MongoDb::BsonBuilder query){
+boost::shared_ptr<const Promise> Mongo_db_daemon::enqueue_for_batch_loading(Query_callback callback, const char *collection_hint, Mongo_db::Bson_builder query){
 	DEBUG_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const collection = collection_hint;
-	AUTO(operation, boost::make_shared<BatchLoadOperation>(promise, STD_MOVE(callback), collection_hint, STD_MOVE(query)));
+	AUTO(operation, boost::make_shared<Batch_load_operation>(promise, STD_MOVE(callback), collection_hint, STD_MOVE(query)));
 	add_operation_by_collection(collection, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
 
-void MongoDbDaemon::enqueue_for_low_level_access(const boost::shared_ptr<Promise> &promise, QueryCallback callback, const char *collection_hint, bool from_slave){
+void Mongo_db_daemon::enqueue_for_low_level_access(const boost::shared_ptr<Promise> &promise, Query_callback callback, const char *collection_hint, bool from_slave){
 	const char *const collection = collection_hint;
-	AUTO(operation, boost::make_shared<LowLevelAccessOperation>(promise, STD_MOVE(callback), collection_hint, from_slave));
+	AUTO(operation, boost::make_shared<Low_level_access_operation>(promise, STD_MOVE(callback), collection_hint, from_slave));
 	add_operation_by_collection(collection, STD_MOVE_IDN(operation), true);
 }
 
-boost::shared_ptr<const Promise> MongoDbDaemon::enqueue_for_waiting_for_all_async_operations(){
+boost::shared_ptr<const Promise> Mongo_db_daemon::enqueue_for_waiting_for_all_async_operations(){
 	AUTO(promise, boost::make_shared<Promise>());
-	AUTO(operation, boost::make_shared<WaitOperation>(promise));
+	AUTO(operation, boost::make_shared<Wait_operation>(promise));
 	add_operation_all(STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }

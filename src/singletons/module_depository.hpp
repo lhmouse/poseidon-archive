@@ -11,23 +11,23 @@
 
 namespace Poseidon {
 
-class ModuleRaiiBase;
+class Module_raii_base;
 
-class ModuleDepository {
-	friend ModuleRaiiBase;
+class Module_depository {
+	friend Module_raii_base;
 
 public:
-	struct SnapshotElement {
+	struct Snapshot_element {
 		void *dl_handle;
 		void *base_address;
-		SharedNts real_path;
+		Shared_nts real_path;
 	};
 
 private:
-	static void register_module_raii(ModuleRaiiBase *raii, long priority);
-	static void unregister_module_raii(ModuleRaiiBase *raii) NOEXCEPT;
+	static void register_module_raii(Module_raii_base *raii, long priority);
+	static void unregister_module_raii(Module_raii_base *raii) NOEXCEPT;
 
-	ModuleDepository();
+	Module_depository();
 
 public:
 	static void start();
@@ -37,7 +37,7 @@ public:
 	static void *load_nothrow(const std::string &path);
 	static bool unload(void *base_address) NOEXCEPT;
 
-	static void snapshot(boost::container::vector<SnapshotElement> &ret);
+	static void snapshot(boost::container::vector<Snapshot_element> &ret);
 };
 
 }
