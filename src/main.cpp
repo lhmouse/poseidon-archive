@@ -440,10 +440,10 @@ int main(int argc, char **argv, char **/*envp*/){
 		START(Dns_daemon);
 		START(File_system_daemon);
 #ifdef ENABLE_MYSQL
-		START(My_sql_daemon);
+		START(Mysql_daemon);
 #endif
 #ifdef ENABLE_MONGODB
-		START(Mongo_db_daemon);
+		START(Mongodb_daemon);
 #endif
 		START(Job_dispatcher);
 		START(Workhorse_camp);
@@ -477,11 +477,11 @@ int main(int argc, char **argv, char **/*envp*/){
 
 #ifdef ENABLE_MYSQL
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MySQL operations to complete...");
-		My_sql_daemon::wait_for_all_async_operations();
+		Mysql_daemon::wait_for_all_async_operations();
 #endif
 #ifdef ENABLE_MONGODB
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MongoDB operations to complete...");
-		Mongo_db_daemon::wait_for_all_async_operations();
+		Mongodb_daemon::wait_for_all_async_operations();
 #endif
 
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Entering modal loop...");

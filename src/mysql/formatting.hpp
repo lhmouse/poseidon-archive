@@ -10,7 +10,7 @@
 #include <boost/cstdint.hpp>
 
 namespace Poseidon {
-namespace My_sql {
+namespace Mysql {
 
 class String_escaper {
 private:

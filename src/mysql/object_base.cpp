@@ -8,7 +8,7 @@
 #include "../atomic.hpp"
 
 namespace Poseidon {
-namespace My_sql {
+namespace Mysql {
 
 template class Object_base::Field<bool>;
 template class Object_base::Field<boost::int64_t>;
@@ -37,7 +37,7 @@ try {
 	if(!is_auto_saving_enabled()){
 		return false;
 	}
-	My_sql_daemon::enqueue_for_saving(virtual_shared_from_this<Object_base>(), true, false);
+	Mysql_daemon::enqueue_for_saving(virtual_shared_from_this<Object_base>(), true, false);
 	return true;
 } catch(std::exception &e){
 	LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
@@ -56,7 +56,7 @@ void Object_base::set_combined_write_stamp(void *stamp) const NOEXCEPT {
 
 // Non-member functions.
 void enqueue_for_saving(const boost::shared_ptr<Object_base> &obj){
-	My_sql_daemon::enqueue_for_saving(obj, true, true);
+	Mysql_daemon::enqueue_for_saving(obj, true, true);
 }
 
 }

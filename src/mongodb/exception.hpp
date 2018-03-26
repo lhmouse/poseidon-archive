@@ -7,7 +7,7 @@
 #include "../exception.hpp"
 
 namespace Poseidon {
-namespace Mongo_db {
+namespace Mongodb {
 
 class Exception : public Basic_exception {
 private:

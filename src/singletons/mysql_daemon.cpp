@@ -29,10 +29,10 @@
 
 namespace Poseidon {
 
-typedef My_sql_daemon::Query_callback Query_callback;
+typedef Mysql_daemon::Query_callback Query_callback;
 
 namespace {
-	boost::shared_ptr<My_sql::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<My_sql::Connection> &master_conn){
+	boost::shared_ptr<Mysql::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<Mysql::Connection> &master_conn){
 		std::string server_addr;
 		boost::uint16_t server_port = 0;
 		if(from_slave){
@@ -52,7 +52,7 @@ namespace {
 		std::string schema = Main_config::get<std::string>("mysql_schema", "poseidon");
 		bool use_ssl = Main_config::get<bool>("mysql_use_ssl", false);
 		std::string charset = Main_config::get<std::string>("mysql_charset", "utf8");
-		return My_sql::Connection::create(server_addr.c_str(), server_port, username.c_str(), password.c_str(), schema.c_str(), use_ssl, charset.c_str());
+		return Mysql::Connection::create(server_addr.c_str(), server_port, username.c_str(), password.c_str(), schema.c_str(), use_ssl, charset.c_str());
 	}
 
 	// 对于日志文件的写操作应当互斥。
@@ -137,19 +137,19 @@ namespace {
 			return m_weak_promise.lock();
 		}
 		virtual bool should_use_slave() const = 0;
-		virtual boost::shared_ptr<const My_sql::Object_base> get_combinable_object() const = 0;
+		virtual boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const = 0;
 		virtual const char *get_table() const = 0;
 		virtual void generate_sql(std::string &query) const = 0;
-		virtual void execute(const boost::shared_ptr<My_sql::Connection> &conn, const std::string &query) = 0;
+		virtual void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) = 0;
 	};
 
 	class Save_operation : public Operation_base {
 	private:
-		boost::shared_ptr<const My_sql::Object_base> m_object;
+		boost::shared_ptr<const Mysql::Object_base> m_object;
 		bool m_to_replace;
 
 	public:
-		Save_operation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<const My_sql::Object_base> object, bool to_replace)
+		Save_operation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<const Mysql::Object_base> object, bool to_replace)
 			: Operation_base(promise)
 			, m_object(STD_MOVE(object)), m_to_replace(to_replace)
 		{
@@ -160,7 +160,7 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return false;
 		}
-		boost::shared_ptr<const My_sql::Object_base> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return m_object;
 		}
 		const char *get_table() const OVERRIDE {
@@ -177,7 +177,7 @@ namespace {
 			m_object->generate_sql(os);
 			query = os.get_buffer().dump_string();
 		}
-		void execute(const boost::shared_ptr<My_sql::Connection> &conn, const std::string &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_sql(query);
@@ -186,11 +186,11 @@ namespace {
 
 	class Load_operation : public Operation_base {
 	private:
-		boost::shared_ptr<My_sql::Object_base> m_object;
+		boost::shared_ptr<Mysql::Object_base> m_object;
 		std::string m_query;
 
 	public:
-		Load_operation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<My_sql::Object_base> object, std::string query)
+		Load_operation(const boost::shared_ptr<Promise> &promise, boost::shared_ptr<Mysql::Object_base> object, std::string query)
 			: Operation_base(promise)
 			, m_object(STD_MOVE(object)), m_query(STD_MOVE(query))
 		{
@@ -201,7 +201,7 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return true;
 		}
-		boost::shared_ptr<const My_sql::Object_base> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_table() const OVERRIDE {
@@ -210,7 +210,7 @@ namespace {
 		void generate_sql(std::string &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<My_sql::Connection> &conn, const std::string &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			if(!get_promise()){
@@ -218,7 +218,7 @@ namespace {
 				return;
 			}
 			conn->execute_sql(query);
-			DEBUG_THROW_UNLESS(conn->fetch_row(), My_sql::Exception, Shared_nts::view(get_table()), ER_SP_FETCH_NO_DATA, sslit("No rows returned"));
+			DEBUG_THROW_UNLESS(conn->fetch_row(), Mysql::Exception, Shared_nts::view(get_table()), ER_SP_FETCH_NO_DATA, sslit("No rows returned"));
 			m_object->fetch(conn);
 		}
 	};
@@ -240,7 +240,7 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return false;
 		}
-		boost::shared_ptr<const My_sql::Object_base> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_table() const OVERRIDE {
@@ -249,7 +249,7 @@ namespace {
 		void generate_sql(std::string &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<My_sql::Connection> &conn, const std::string &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_sql(query);
@@ -274,7 +274,7 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return true;
 		}
-		boost::shared_ptr<const My_sql::Object_base> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_table() const OVERRIDE {
@@ -283,7 +283,7 @@ namespace {
 		void generate_sql(std::string &query) const OVERRIDE {
 			query = m_query;
 		}
-		void execute(const boost::shared_ptr<My_sql::Connection> &conn, const std::string &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			if(!get_promise()){
@@ -319,7 +319,7 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return m_from_slave;
 		}
-		boost::shared_ptr<const My_sql::Object_base> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_table() const OVERRIDE {
@@ -328,7 +328,7 @@ namespace {
 		void generate_sql(std::string & /* query */) const OVERRIDE {
 			// no query
 		}
-		void execute(const boost::shared_ptr<My_sql::Connection> &conn, const std::string & /* query */) OVERRIDE {
+		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string & /* query */) OVERRIDE {
 			PROFILE_ME;
 
 			m_callback(conn);
@@ -356,7 +356,7 @@ namespace {
 		bool should_use_slave() const OVERRIDE {
 			return false;
 		}
-		boost::shared_ptr<const My_sql::Object_base> get_combinable_object() const OVERRIDE {
+		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
 		const char *get_table() const OVERRIDE {
@@ -365,14 +365,14 @@ namespace {
 		void generate_sql(std::string &query) const OVERRIDE {
 			query = "DO 0";
 		}
-		void execute(const boost::shared_ptr<My_sql::Connection> &conn, const std::string &query) OVERRIDE {
+		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
 			PROFILE_ME;
 
 			conn->execute_sql(query);
 		}
 	};
 
-	class My_sql_thread : NONCOPYABLE {
+	class Mysql_thread : NONCOPYABLE {
 	private:
 		struct Operation_queue_element {
 			boost::shared_ptr<Operation_base> operation;
@@ -390,7 +390,7 @@ namespace {
 		boost::container::deque<Operation_queue_element> m_queue;
 
 	public:
-		My_sql_thread()
+		Mysql_thread()
 			: m_running(false)
 			, m_urgent(false), m_queue()
 		{
@@ -398,7 +398,7 @@ namespace {
 		}
 
 	private:
-		bool pump_one_operation(boost::shared_ptr<My_sql::Connection> &master_conn, boost::shared_ptr<My_sql::Connection> &slave_conn) NOEXCEPT {
+		bool pump_one_operation(boost::shared_ptr<Mysql::Connection> &master_conn, boost::shared_ptr<Mysql::Connection> &slave_conn) NOEXCEPT {
 			PROFILE_ME;
 
 			const AUTO(now, get_fast_mono_clock());
@@ -441,11 +441,11 @@ namespace {
 					operation->generate_sql(query);
 					LOG_POSEIDON_DEBUG("Executing SQL: table = ", operation->get_table(), ", query = ", query);
 					operation->execute(conn, query);
-				} catch(My_sql::Exception &e){
-					LOG_POSEIDON_WARNING("My_sql::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
+				} catch(Mysql::Exception &e){
+					LOG_POSEIDON_WARNING("Mysql::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = e.get_code();
-					::snprintf(err_msg, sizeof(err_msg), "My_sql::Exception: %s", e.what());
+					::snprintf(err_msg, sizeof(err_msg), "Mysql::Exception: %s", e.what());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
@@ -489,7 +489,7 @@ namespace {
 			PROFILE_ME;
 			LOG_POSEIDON(Logger::special_major | Logger::level_info, "MySQL thread started.");
 
-			boost::shared_ptr<My_sql::Connection> master_conn, slave_conn;
+			boost::shared_ptr<Mysql::Connection> master_conn, slave_conn;
 			unsigned timeout = 0;
 			for(;;){
 				const AUTO(reconnect_delay, Main_config::get<boost::uint64_t>("mysql_reconn_delay", 5000));
@@ -538,7 +538,7 @@ namespace {
 	public:
 		void start(){
 			const Mutex::Unique_lock lock(m_mutex);
-			Thread(boost::bind(&My_sql_thread::thread_proc, this), sslit(" M  "), sslit("MySQL")).swap(m_thread);
+			Thread(boost::bind(&Mysql_thread::thread_proc, this), sslit(" M  "), sslit("MySQL")).swap(m_thread);
 			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
@@ -611,18 +611,18 @@ namespace {
 	Mutex g_router_mutex;
 	struct Route {
 		boost::shared_ptr<const void> probe;
-		boost::shared_ptr<My_sql_thread> thread;
+		boost::shared_ptr<Mysql_thread> thread;
 	};
 	boost::container::flat_map<Shared_nts, Route> g_router;
 	boost::container::flat_multimap<std::size_t, std::size_t> g_routing_map;
-	boost::container::vector<boost::shared_ptr<My_sql_thread> > g_threads;
+	boost::container::vector<boost::shared_ptr<Mysql_thread> > g_threads;
 
 	void add_operation_by_table(const char *table, boost::shared_ptr<Operation_base> operation, bool urgent){
 		PROFILE_ME;
 		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, sslit("MySQL support is not enabled"));
 
 		boost::shared_ptr<const void> probe;
-		boost::shared_ptr<My_sql_thread> thread;
+		boost::shared_ptr<Mysql_thread> thread;
 		{
 			const Mutex::Unique_lock lock(g_router_mutex);
 
@@ -643,7 +643,7 @@ namespace {
 				AUTO_REF(test_thread, g_threads.at(i));
 				if(!test_thread){
 					LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Creating new MySQL thread ", i, " for table ", table);
-					thread = boost::make_shared<My_sql_thread>();
+					thread = boost::make_shared<Mysql_thread>();
 					thread->start();
 					test_thread = thread;
 					route.thread = thread;
@@ -683,7 +683,7 @@ namespace {
 	}
 }
 
-void My_sql_daemon::start(){
+void Mysql_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
 		std::abort();
@@ -694,7 +694,7 @@ void My_sql_daemon::start(){
 	if(max_thread_count == 0){
 		LOG_POSEIDON_WARNING("MySQL support has been disabled. To enable MySQL support, set `mysql_max_thread_count` in `main.conf` to a value greater than zero.");
 	} else {
-		boost::shared_ptr<My_sql::Connection> master_conn, slave_conn;
+		boost::shared_ptr<Mysql::Connection> master_conn, slave_conn;
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MySQL master server is up...");
 		try {
 			master_conn = real_create_connection(false, VAL_INIT);
@@ -736,7 +736,7 @@ void My_sql_daemon::start(){
 
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "MySQL daemon started.");
 }
-void My_sql_daemon::stop(){
+void Mysql_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
@@ -765,11 +765,11 @@ void My_sql_daemon::stop(){
 	g_threads.clear();
 }
 
-boost::shared_ptr<My_sql::Connection> My_sql_daemon::create_connection(bool from_slave){
+boost::shared_ptr<Mysql::Connection> Mysql_daemon::create_connection(bool from_slave){
 	return real_create_connection(from_slave, VAL_INIT);
 }
 
-void My_sql_daemon::wait_for_all_async_operations(){
+void Mysql_daemon::wait_for_all_async_operations(){
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		const AUTO_REF(thread, g_threads.at(i));
 		if(!thread){
@@ -779,14 +779,14 @@ void My_sql_daemon::wait_for_all_async_operations(){
 	}
 }
 
-boost::shared_ptr<const Promise> My_sql_daemon::enqueue_for_saving(boost::shared_ptr<const My_sql::Object_base> object, bool to_replace, bool urgent){
+boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_saving(boost::shared_ptr<const Mysql::Object_base> object, bool to_replace, bool urgent){
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const table = object->get_table();
 	AUTO(operation, boost::make_shared<Save_operation>(promise, STD_MOVE(object), to_replace));
 	add_operation_by_table(table, STD_MOVE_IDN(operation), urgent);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const Promise> My_sql_daemon::enqueue_for_loading(boost::shared_ptr<My_sql::Object_base> object, std::string query){
+boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_loading(boost::shared_ptr<Mysql::Object_base> object, std::string query){
 	DEBUG_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
@@ -795,7 +795,7 @@ boost::shared_ptr<const Promise> My_sql_daemon::enqueue_for_loading(boost::share
 	add_operation_by_table(table, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const Promise> My_sql_daemon::enqueue_for_deleting(const char *table_hint, std::string query){
+boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_deleting(const char *table_hint, std::string query){
 	DEBUG_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
@@ -804,7 +804,7 @@ boost::shared_ptr<const Promise> My_sql_daemon::enqueue_for_deleting(const char 
 	add_operation_by_table(table, STD_MOVE_IDN(operation), true);
 	return STD_MOVE_IDN(promise);
 }
-boost::shared_ptr<const Promise> My_sql_daemon::enqueue_for_batch_loading(Query_callback callback, const char *table_hint, std::string query){
+boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_batch_loading(Query_callback callback, const char *table_hint, std::string query){
 	DEBUG_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
@@ -814,13 +814,13 @@ boost::shared_ptr<const Promise> My_sql_daemon::enqueue_for_batch_loading(Query_
 	return STD_MOVE_IDN(promise);
 }
 
-void My_sql_daemon::enqueue_for_low_level_access(const boost::shared_ptr<Promise> &promise, Query_callback callback, const char *table_hint, bool from_slave){
+void Mysql_daemon::enqueue_for_low_level_access(const boost::shared_ptr<Promise> &promise, Query_callback callback, const char *table_hint, bool from_slave){
 	const char *const table = table_hint;
 	AUTO(operation, boost::make_shared<Low_level_access_operation>(promise, STD_MOVE(callback), table_hint, from_slave));
 	add_operation_by_table(table, STD_MOVE_IDN(operation), true);
 }
 
-boost::shared_ptr<const Promise> My_sql_daemon::enqueue_for_waiting_for_all_async_operations(){
+boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_waiting_for_all_async_operations(){
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<Wait_operation>(promise));
 	add_operation_all(STD_MOVE_IDN(operation), true);

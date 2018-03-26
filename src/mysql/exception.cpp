@@ -6,13 +6,13 @@
 #include "../log.hpp"
 
 namespace Poseidon {
-namespace My_sql {
+namespace Mysql {
 
 Exception::Exception(const char *file, std::size_t line, const char *func, Shared_nts schema, unsigned long code, Shared_nts message)
 	: Basic_exception(file, line, func, STD_MOVE(message))
 	, m_schema(STD_MOVE(schema)), m_code(code)
 {
-	LOG_POSEIDON_ERROR("My_sql::Exception: schema = ", get_schema(), ", code = ", get_code(), ", what = ", what());
+	LOG_POSEIDON_ERROR("Mysql::Exception: schema = ", get_schema(), ", code = ", get_code(), ", what = ", what());
 }
 Exception::~Exception() NOEXCEPT {
 	//

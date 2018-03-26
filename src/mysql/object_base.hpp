@@ -27,7 +27,7 @@
 #include "../uuid.hpp"
 
 namespace Poseidon {
-namespace My_sql {
+namespace Mysql {
 
 class Object_base : NONCOPYABLE, public virtual Virtual_shared_from_this {
 public:

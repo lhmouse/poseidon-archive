@@ -7,7 +7,7 @@
 #include "../exception.hpp"
 
 namespace Poseidon {
-namespace My_sql {
+namespace Mysql {
 
 class Exception : public Basic_exception {
 private:

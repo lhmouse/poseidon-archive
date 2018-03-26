@@ -21,7 +21,7 @@
 #  error Please #include <poseidon/mongodb/object_base.hpp> first.
 #endif
 
-class OBJECT_NAME : public ::Poseidon::Mongo_db::Object_base {
+class OBJECT_NAME : public ::Poseidon::Mongodb::Object_base {
 public:
 
 #undef FIELD_BOOLEAN
@@ -33,14 +33,14 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                ::Poseidon::Mongo_db::Object_base::Field<bool> id_;
-#define FIELD_SIGNED(id_)                 ::Poseidon::Mongo_db::Object_base::Field< ::boost::int64_t> id_;
-#define FIELD_UNSIGNED(id_)               ::Poseidon::Mongo_db::Object_base::Field< ::boost::uint64_t> id_;
-#define FIELD_DOUBLE(id_)                 ::Poseidon::Mongo_db::Object_base::Field<double> id_;
-#define FIELD_STRING(id_)                 ::Poseidon::Mongo_db::Object_base::Field< ::std::string> id_;
-#define FIELD_DATETIME(id_)               ::Poseidon::Mongo_db::Object_base::Field< ::boost::uint64_t> id_;
-#define FIELD_UUID(id_)                   ::Poseidon::Mongo_db::Object_base::Field< ::Poseidon::Uuid> id_;
-#define FIELD_BLOB(id_)                   ::Poseidon::Mongo_db::Object_base::Field< ::std::basic_string<unsigned char> > id_;
+#define FIELD_BOOLEAN(id_)                ::Poseidon::Mongodb::Object_base::Field<bool> id_;
+#define FIELD_SIGNED(id_)                 ::Poseidon::Mongodb::Object_base::Field< ::boost::int64_t> id_;
+#define FIELD_UNSIGNED(id_)               ::Poseidon::Mongodb::Object_base::Field< ::boost::uint64_t> id_;
+#define FIELD_DOUBLE(id_)                 ::Poseidon::Mongodb::Object_base::Field<double> id_;
+#define FIELD_STRING(id_)                 ::Poseidon::Mongodb::Object_base::Field< ::std::string> id_;
+#define FIELD_DATETIME(id_)               ::Poseidon::Mongodb::Object_base::Field< ::boost::uint64_t> id_;
+#define FIELD_UUID(id_)                   ::Poseidon::Mongodb::Object_base::Field< ::Poseidon::Uuid> id_;
+#define FIELD_BLOB(id_)                   ::Poseidon::Mongodb::Object_base::Field< ::std::basic_string<unsigned char> > id_;
 
 	OBJECT_FIELDS
 
@@ -71,9 +71,9 @@ public:
 
 public:
 	const char *get_collection() const OVERRIDE;
-	void generate_document(::Poseidon::Mongo_db::Bson_builder &doc_) const OVERRIDE;
+	void generate_document(::Poseidon::Mongodb::Bson_builder &doc_) const OVERRIDE;
 	::std::string generate_primary_key() const OVERRIDE;
-	void fetch(const ::boost::shared_ptr<const ::Poseidon::Mongo_db::Connection> &conn_) OVERRIDE;
+	void fetch(const ::boost::shared_ptr<const ::Poseidon::Mongodb::Connection> &conn_) OVERRIDE;
 };
 
 #ifdef MONGODB_OBJECT_EMIT_EXTERNAL_DEFINITIONS
@@ -81,7 +81,7 @@ public:
 #pragma GCC diagnostic ignored "-Wshadow"
 
 OBJECT_NAME::OBJECT_NAME()
-	: ::Poseidon::Mongo_db::Object_base()
+	: ::Poseidon::Mongodb::Object_base()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -125,7 +125,7 @@ OBJECT_NAME::OBJECT_NAME()
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
 OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
-	: ::Poseidon::Mongo_db::Object_base()
+	: ::Poseidon::Mongodb::Object_base()
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -157,7 +157,7 @@ OBJECT_NAME::~OBJECT_NAME(){
 const char *OBJECT_NAME::get_collection() const {
 	return OBJECT_COLLECTION;
 }
-void OBJECT_NAME::generate_document(::Poseidon::Mongo_db::Bson_builder &doc_) const {
+void OBJECT_NAME::generate_document(::Poseidon::Mongodb::Bson_builder &doc_) const {
 	PROFILE_ME;
 
 	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
@@ -194,7 +194,7 @@ void OBJECT_NAME::generate_document(::Poseidon::Mongo_db::Bson_builder &doc_) co
 
 	return OBJECT_PRIMARY_KEY;
 }
-void fetch(const ::boost::shared_ptr<const ::Poseidon::Mongo_db::Connection> &conn_){
+void fetch(const ::boost::shared_ptr<const ::Poseidon::Mongodb::Connection> &conn_){
 	PROFILE_ME;
 
 	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);

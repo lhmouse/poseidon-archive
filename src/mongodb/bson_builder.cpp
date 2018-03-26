@@ -11,7 +11,7 @@
 #include <libbson-1.0/bson.h>
 
 namespace Poseidon {
-namespace Mongo_db {
+namespace Mongodb {
 
 namespace {
 	struct Bson_closer {

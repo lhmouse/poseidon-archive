@@ -13,7 +13,7 @@
 #include <mysql/mysql.h>
 
 namespace Poseidon {
-namespace My_sql {
+namespace Mysql {
 
 namespace {
 	struct Closer {

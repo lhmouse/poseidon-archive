@@ -27,7 +27,7 @@
 #include "../uuid.hpp"
 
 namespace Poseidon {
-namespace Mongo_db {
+namespace Mongodb {
 
 class Object_base : NONCOPYABLE, public virtual Virtual_shared_from_this {
 public:

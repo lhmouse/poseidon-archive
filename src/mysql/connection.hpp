@@ -13,7 +13,7 @@
 #include <boost/shared_ptr.hpp>
 
 namespace Poseidon {
-namespace My_sql {
+namespace Mysql {
 
 class Connection : NONCOPYABLE {
 public:

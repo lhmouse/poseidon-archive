@@ -6,7 +6,7 @@
 #include "../time.hpp"
 
 namespace Poseidon {
-namespace My_sql {
+namespace Mysql {
 
 std::ostream &operator<<(std::ostream &os, const String_escaper &rhs){
 	const AUTO_REF(ref, rhs.get());

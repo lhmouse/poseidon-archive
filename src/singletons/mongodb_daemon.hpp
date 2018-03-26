@@ -13,26 +13,26 @@ namespace Poseidon {
 
 class Promise;
 
-class Mongo_db_daemon {
+class Mongodb_daemon {
 private:
-	Mongo_db_daemon();
+	Mongodb_daemon();
 
 public:
-	typedef boost::function<void (const boost::shared_ptr<Mongo_db::Connection> &)> Query_callback;
+	typedef boost::function<void (const boost::shared_ptr<Mongodb::Connection> &)> Query_callback;
 
 	static void start();
 	static void stop();
 
 	// 同步接口。
-	static boost::shared_ptr<Mongo_db::Connection> create_connection(bool from_slave = false);
+	static boost::shared_ptr<Mongodb::Connection> create_connection(bool from_slave = false);
 
 	static void wait_for_all_async_operations();
 
 	// 异步接口。
-	static boost::shared_ptr<const Promise> enqueue_for_saving(boost::shared_ptr<const Mongo_db::Object_base> object, bool to_replace, bool urgent);
-	static boost::shared_ptr<const Promise> enqueue_for_loading(boost::shared_ptr<Mongo_db::Object_base> object, Mongo_db::Bson_builder query);
-	static boost::shared_ptr<const Promise> enqueue_for_deleting(const char *collection, Mongo_db::Bson_builder query);
-	static boost::shared_ptr<const Promise> enqueue_for_batch_loading(Query_callback callback, const char *collection_hint, Mongo_db::Bson_builder query);
+	static boost::shared_ptr<const Promise> enqueue_for_saving(boost::shared_ptr<const Mongodb::Object_base> object, bool to_replace, bool urgent);
+	static boost::shared_ptr<const Promise> enqueue_for_loading(boost::shared_ptr<Mongodb::Object_base> object, Mongodb::Bson_builder query);
+	static boost::shared_ptr<const Promise> enqueue_for_deleting(const char *collection, Mongodb::Bson_builder query);
+	static boost::shared_ptr<const Promise> enqueue_for_batch_loading(Query_callback callback, const char *collection_hint, Mongodb::Bson_builder query);
 
 	static void enqueue_for_low_level_access(const boost::shared_ptr<Promise> &promise, Query_callback callback, const char *collection_hint, bool from_slave = false);
 

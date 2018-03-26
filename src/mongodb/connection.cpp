@@ -14,7 +14,7 @@
 #include <libmongoc-1.0/mongoc.h>
 
 namespace Poseidon {
-namespace Mongo_db {
+namespace Mongodb {
 
 namespace {
 	void init_mongoc(){

@@ -5,7 +5,7 @@
 #define POSEIDON_MONGODB_FWD_HPP_
 
 namespace Poseidon {
-namespace Mongo_db {
+namespace Mongodb {
 
 class Exception;
 

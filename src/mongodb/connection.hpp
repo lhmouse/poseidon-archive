@@ -13,7 +13,7 @@
 #include <boost/shared_ptr.hpp>
 
 namespace Poseidon {
-namespace Mongo_db {
+namespace Mongodb {
 
 class Bson_builder;
 

@@ -5,7 +5,7 @@
 #define POSEIDON_MYSQL_FWD_HPP_
 
 namespace Poseidon {
-namespace My_sql {
+namespace Mysql {
 
 class Exception;
 

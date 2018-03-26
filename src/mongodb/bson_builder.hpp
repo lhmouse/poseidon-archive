@@ -13,7 +13,7 @@
 #include <cstddef>
 
 namespace Poseidon {
-namespace Mongo_db {
+namespace Mongodb {
 
 class Bson_builder {
 private:
