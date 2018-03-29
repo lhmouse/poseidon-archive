@@ -34,7 +34,7 @@ sudo mkdir -p "${prefix}/share/doc"
 
 pushd "src/libbson"
 ./configure --prefix="${prefix}"
-find "src/bson" -name "*.h" -exec sed -i "s@#include <bson.h>@#include \"bson.h\"@" "{}" ";"
+find "src/bson" -name "*.h" -execdir sed -i "s@#include <bson.h>@#include \"bson.h\"@" {} +
 make -j"$(nproc)"
 sudo checkinstall --backup=no --nodoc -y --addso=yes --exclude="${tmpdir}" --exclude="${HOME}"	\
 	--pkgname="libbson-dev" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
@@ -44,7 +44,7 @@ popd
 
 ./configure --prefix="${prefix}"	\
 	--disable-automatic-init-and-cleanup --with-libbson=system
-find "src/mongoc" -name "*.h" -exec sed -i "s@#include <bson.h>@#include <libbson-1.0/bson.h>@" "{}" ";"
+find "src/mongoc" -name "*.h" -execdir sed -i "s@#include <bson.h>@#include <libbson-1.0/bson.h>@" {} +
 make -j"$(nproc)"
 sudo checkinstall --backup=no --nodoc -y --addso=yes --exclude="${tmpdir}" --exclude="${HOME}"	\
 	--pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
