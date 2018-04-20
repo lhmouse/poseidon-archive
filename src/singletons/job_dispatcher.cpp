@@ -22,9 +22,9 @@ namespace Poseidon {
 
 namespace {
 	enum Fiber_state {
-		fiber_state_ready    = 0,
-		fiber_state_running  = 1,
-		fiber_state_yielded  = 2,
+		fiber_state_ready      = 0,
+		fiber_state_running    = 1,
+		fiber_state_suspended  = 2,
 	};
 
 	struct Job_element {
@@ -169,7 +169,7 @@ namespace {
 		t_current_fiber = fiber;
 		const AUTO(profiler_hook, Profiler::begin_stack_switch());
 		{
-			if((fiber->state != fiber_state_ready) && (fiber->state != fiber_state_yielded)){
+			if((fiber->state != fiber_state_ready) && (fiber->state != fiber_state_suspended)){
 				LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(fiber->state));
 				std::abort();
 			}
@@ -220,22 +220,15 @@ namespace {
 
 		bool busy = false;
 		Mutex::Unique_lock lock(g_fiber_map_mutex);
-		AUTO(it, g_fiber_map.begin());
-		for(;;){
-			if(it == g_fiber_map.end()){
-				break;
-			}
+		bool erase_it;
+		for(AUTO(it, g_fiber_map.begin()); it != g_fiber_map.end(); erase_it ? (it = g_fiber_map.erase(it)) : ++it){
 			AUTO(fiber, &(it->second));
 			lock.unlock();
 			{
 				busy += pump_one_fiber(fiber, force_expiry);
 			}
 			lock.lock();
-			if(fiber->queue.empty()){
-				it = g_fiber_map.erase(it);
-			} else {
-				++it;
-			}
+			erase_it = fiber->queue.empty();
 		}
 		return busy;
 	}
@@ -328,7 +321,7 @@ void Job_dispatcher::yield(boost::shared_ptr<const Promise> promise, bool insign
 		elem.insignificant = insignificant;
 		const AUTO(profiler_hook, Profiler::begin_stack_switch());
 		{
-			fiber->state = fiber_state_yielded;
+			fiber->state = fiber_state_suspended;
 			if(::swapcontext(&(fiber->inner), &(fiber->outer)) != 0){
 				const int err_code = errno;
 				LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
