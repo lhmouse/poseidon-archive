@@ -34,7 +34,7 @@ install:
   - "make check"
 
 script:
-  - "exit 0"
+  - "./makedeb.sh"
 
 notifications:
   irc:
