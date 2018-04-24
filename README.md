@@ -1,6 +1,6 @@
-|CI            |Category  |Operating System  |Build Status     |
-|:-------------|:---------|:-----------------|:----------------|
-|**Travis CI** |Primary   |Ubuntu Trusty     | |[![Build Status](https://travis-ci.org/lhmouse/poseidon.svg?branch=master)](https://travis-ci.org/lhmouse/poseidon)  |
+|CI            |Category  |Host OS       |Build for OS  |Build Status     |
+|:-------------|:---------|:-------------|:-------------|:----------------|
+|**Travis CI** |Primary   |Ubuntu Trusty |Ubuntu Trusty |[![Build Status](https://travis-ci.org/lhmouse/poseidon.svg?branch=master)](https://travis-ci.org/lhmouse/poseidon) |
 
 ![GNU nano for the win!](https://raw.githubusercontent.com/lhmouse/poseidon/master/gnu-nano-ftw.png)
 
