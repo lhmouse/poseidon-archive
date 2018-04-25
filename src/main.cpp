@@ -355,7 +355,7 @@ int main(int argc, char **argv, char **/*envp*/){
 	const char *new_wd = NULLPTR;
 
 	int opt;
-	while((opt = ::getopt(argc, argv, "adhv?")) != -1){
+	while((opt = ::getopt(argc, argv, "adhv")) != -1){
 		switch(opt){
 		case 'a':
 			all_logs = true;
@@ -364,14 +364,12 @@ int main(int argc, char **argv, char **/*envp*/){
 			daemonize = true;
 			break;
 		case 'h':
-		case '?':
 			help |= 1;
 			break;
 		case 'v':
 			version = true;
 			break;
 		default:
-			::fprintf(stderr, "Unknown option: %c\n", opt);
 			help |= 2;
 			break;
 		}
@@ -383,7 +381,7 @@ int main(int argc, char **argv, char **/*envp*/){
 		new_wd = argv[optind];
 		break;
 	default:
-		::fprintf(stderr, "Too many arguments: %s\n", argv[optind + 1]);
+		::fprintf(stderr, "%s: too many arguments -- '%s'\n", argv[0], argv[optind + 1]);
 		help |= 2;
 		break;
 	}
@@ -391,10 +389,10 @@ int main(int argc, char **argv, char **/*envp*/){
 		::fprintf(stdout,
             //        1         2         3         4         5         6         7         8
 			// 345678901234567890123456789012345678901234567890123456789012345678901234567890
-			"Usage: %s [-adhv?] [<directory>]\n"
+			"Usage: %s [-adhv] [<directory>]\n"
 			"  -a            do not load `log_masked_levels` from 'main.conf'\n"
 			"  -d            daemonize\n"
-			"  -h -?         show this help message then exit\n"
+			"  -h            show this help message then exit\n"
 			"  -v            print version string then exit\n"
 			"  <directory>   set working directory here before anything else\n"
 			, argv[0]);
@@ -410,9 +408,9 @@ int main(int argc, char **argv, char **/*envp*/){
 		return EXIT_SUCCESS;
 	}
 
-	if(daemonize && (::daemon(true, true) != 0)){
+	if(daemonize && (::daemon(false, true) != 0)){
 		const int err_code = errno;
-		::fprintf(stderr, "Daemonization failed: %d (%s)", err_code, ::strerror(err_code));
+		::fprintf(stderr, "%s: daemonization failed with %d (%s)", argv[0], err_code, ::strerror(err_code));
 		return EXIT_FAILURE;
 	}
 
