@@ -168,10 +168,8 @@ Sha1 Sha1_streambuf::finalize(){
 	if(pptr()){
 		bytes += static_cast<unsigned>(pptr() - m_chunk.begin());
 	}
-	sputc(traits_type::to_char_type(0x80));
-	while(pptr() != m_chunk.begin() + 56){
-		sputc(traits_type::to_char_type(0));
-	}
+	static const unsigned char s_terminator[65] = { 0x80 };
+	xsputn(reinterpret_cast<const char *>(s_terminator), static_cast<int>(64 - (bytes + 8) % 64));
 	boost::uint64_t bits;
 	store_be(bits, bytes * 8);
 	xsputn(reinterpret_cast<const char *>(&bits), sizeof(bits));
