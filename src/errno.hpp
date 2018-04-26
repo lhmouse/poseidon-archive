@@ -6,6 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include "shared_nts.hpp"
+#include <cerrno>
 
 namespace Poseidon {
 

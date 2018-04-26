@@ -4,10 +4,11 @@
 #ifndef POSEIDON_SINGLETONS_DNS_DAEMON_HPP_
 #define POSEIDON_SINGLETONS_DNS_DAEMON_HPP_
 
-#include <boost/shared_ptr.hpp>
-#include <string>
 #include "../sock_addr.hpp"
 #include "../promise.hpp"
+#include <boost/shared_ptr.hpp>
+#include <boost/cstdint.hpp>
+#include <string>
 
 namespace Poseidon {
 

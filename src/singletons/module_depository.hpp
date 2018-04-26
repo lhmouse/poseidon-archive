@@ -7,6 +7,7 @@
 #include <string>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
+#include <boost/container/vector.hpp>
 #include "../shared_nts.hpp"
 
 namespace Poseidon {
