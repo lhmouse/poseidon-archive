@@ -34,9 +34,9 @@ install:
   - "make check"
   # Make sure that all `#include` directives in our headers are met.
   - |
-    for cmd in {"${CXX} -x c++ -std=c++98","${CXX} -x c++ -std=c++11"}; do
-      echo "Checking #include directives using command:" $cmd
-      $cmd -Wall -Wextra -Werror $(find src -name "*_generator.hpp" -prune -or -name "*.hpp" -print) -c /dev/null
+    for _cmd in {"${CXX} -x c++ -std=c++98","${CXX} -x c++ -std=c++11"}; do
+      echo "Checking #include directives using command:" ${_cmd}
+      ${_cmd} -Wall -Wextra -Werror $(find src -name "*_generator.hpp" -prune -or -name "*.hpp" -print) -c /dev/null
     done
 
 script:
