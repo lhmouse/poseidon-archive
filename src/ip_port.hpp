@@ -5,6 +5,7 @@
 #define POSEIDON_IP_PORT_HPP_
 
 #include "cxx_ver.hpp"
+#include <boost/cstdint.hpp>
 #include <cstddef>
 
 namespace Poseidon {

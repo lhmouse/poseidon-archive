@@ -7,6 +7,7 @@
 #include "cxx_ver.hpp"
 #include "optional_map.hpp"
 #include <boost/lexical_cast.hpp>
+#include <boost/container/vector.hpp>
 
 namespace Poseidon {
 

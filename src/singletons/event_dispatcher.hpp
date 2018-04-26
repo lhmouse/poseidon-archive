@@ -5,12 +5,13 @@
 #define POSEIDON_SINGLETONS_EVENT_DISPATCHER_HPP_
 
 #include "../cxx_ver.hpp"
+#include "../exception.hpp"
+#include "../log.hpp"
 #include <typeinfo>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include "../exception.hpp"
-#include "../log.hpp"
+#include <boost/container/vector.hpp>
 
 namespace Poseidon {
 

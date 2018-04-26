@@ -4,6 +4,7 @@
 #ifndef POSEIDON_VIRTUAL_SHARED_FROM_THIS_HPP_
 #define POSEIDON_VIRTUAL_SHARED_FROM_THIS_HPP_
 
+#include "cxx_ver.hpp"
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/type_traits/is_virtual_base_of.hpp>

@@ -4,6 +4,7 @@
 #ifndef POSEIDON_ENDIAN_HPP_
 #define POSEIDON_ENDIAN_HPP_
 
+#include "cxx_ver.hpp"
 #include "cxx_util.hpp"
 #include <boost/cstdint.hpp>
 #include <boost/type_traits/is_integral.hpp>
