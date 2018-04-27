@@ -24,9 +24,7 @@ public:
 	~Exception() NOEXCEPT;
 
 public:
-	const char *what() const NOEXCEPT OVERRIDE {
-		return m_message.get();
-	}
+	const char *what() const NOEXCEPT OVERRIDE;
 
 	const char *get_file() const NOEXCEPT {
 		return m_file;

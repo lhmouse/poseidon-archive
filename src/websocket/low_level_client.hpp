@@ -44,13 +44,6 @@ protected:
 	virtual bool on_low_level_control_message(Op_code opcode, Stream_buffer payload) = 0;
 
 public:
-	bool shutdown_read() NOEXCEPT OVERRIDE {
-		return shutdown(status_normal_closure);
-	}
-	bool shutdown_write() NOEXCEPT OVERRIDE {
-		return shutdown(status_normal_closure);
-	}
-
 	virtual bool send(Op_code opcode, Stream_buffer payload, bool masked = true);
 	virtual bool shutdown(Status_code status_code, const char *reason = "") NOEXCEPT;
 };

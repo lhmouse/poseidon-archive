@@ -16,4 +16,8 @@ Exception::~Exception() NOEXCEPT {
 	//
 }
 
+const char *Exception::what() const NOEXCEPT {
+	return m_message.get();
+}
+
 }
