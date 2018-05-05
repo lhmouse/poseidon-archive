@@ -53,7 +53,7 @@ namespace {
 			if(::munmap(ptr, sizeof(Stack_storage)) != 0){
 				const int err_code = errno;
 				LOG_POSEIDON_ERROR("Failed to deallocate stack: err_code = ", err_code);
-				std::abort();
+				std::terminate();
 			}
 		}
 
@@ -154,7 +154,7 @@ namespace {
 			if(::getcontext(&(fiber->inner)) != 0){
 				const int err_code = errno;
 				LOG_POSEIDON_FATAL("::getcontext() failed: err_code = ", err_code);
-				std::abort();
+				std::terminate();
 			}
 			fiber->inner.uc_stack.ss_sp = fiber->stack.get();
 			fiber->inner.uc_stack.ss_size = sizeof(*(fiber->stack));
@@ -171,13 +171,13 @@ namespace {
 		{
 			if((fiber->state != fiber_state_ready) && (fiber->state != fiber_state_suspended)){
 				LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(fiber->state));
-				std::abort();
+				std::terminate();
 			}
 			fiber->state = fiber_state_running;
 			if(::swapcontext(&(fiber->outer), &(fiber->inner)) != 0){
 				const int err_code = errno;
 				LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
-				std::abort();
+				std::terminate();
 			}
 		}
 		Profiler::end_stack_switch(profiler_hook);
@@ -308,7 +308,7 @@ void Job_dispatcher::yield(boost::shared_ptr<const Promise> promise, bool insign
 	DEBUG_THROW_UNLESS(fiber, Exception, sslit("No current fiber"));
 	if(fiber->queue.empty()){
 		LOG_POSEIDON_FATAL("Not in current fiber?!");
-		std::abort();
+		std::terminate();
 	}
 	if(promise && promise->is_satisfied()){
 		LOG_POSEIDON_TRACE("Skipped yielding from fiber ", static_cast<void *>(fiber));
@@ -325,7 +325,7 @@ void Job_dispatcher::yield(boost::shared_ptr<const Promise> promise, bool insign
 			if(::swapcontext(&(fiber->inner), &(fiber->outer)) != 0){
 				const int err_code = errno;
 				LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
-				std::abort();
+				std::terminate();
 			}
 		}
 		Profiler::end_stack_switch(profiler_hook);

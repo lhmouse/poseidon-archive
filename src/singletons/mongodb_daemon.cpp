@@ -83,7 +83,7 @@ namespace {
 		if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 			const int saved_errno = errno;
 			LOG_POSEIDON_FATAL("Error creating BSON dump file: dump_path = ", dump_path, ", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
-			std::abort();
+			std::terminate();
 		}
 
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Writing MongoDB dump...");
@@ -666,7 +666,7 @@ namespace {
 			}
 			if(g_routing_map.empty()){
 				LOG_POSEIDON_FATAL("No available MongoDB thread?!");
-				std::abort();
+				std::terminate();
 			}
 			const AUTO(index, g_routing_map.begin()->second);
 			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Picking thread ", index, " for collection ", collection);
@@ -697,7 +697,7 @@ namespace {
 void Mongodb_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
-		std::abort();
+		std::terminate();
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting MongoDB daemon...");
 
@@ -713,7 +713,7 @@ void Mongodb_daemon::start(){
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MongoDB master server: ", e.what());
 			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
-			std::abort();
+			std::terminate();
 		}
 
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB slave server is up...");
@@ -725,7 +725,7 @@ void Mongodb_daemon::start(){
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MongoDB slave server: ", e.what());
 			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
-			std::abort();
+			std::terminate();
 		}
 
 		const AUTO(dump_dir, Main_config::get<std::string>("mongodb_dump_dir"));
@@ -739,7 +739,7 @@ void Mongodb_daemon::start(){
 			} catch(std::exception &e){
 				LOG_POSEIDON_FATAL("Could not write MongoDB dump: ", e.what());
 				LOG_POSEIDON_WARNING("To disable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to an empty string.");
-				std::abort();
+				std::terminate();
 			}
 		}
 	}

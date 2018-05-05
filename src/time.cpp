@@ -17,7 +17,7 @@ boost::uint64_t get_utc_time(){
 	::timespec ts;
 	if(::clock_gettime(CLOCK_REALTIME, &ts) != 0){
 		LOG_POSEIDON_FATAL("Realtime clock is not supported.");
-		std::abort();
+		std::terminate();
 	}
 	return (boost::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
@@ -27,14 +27,14 @@ boost::uint64_t get_local_time(){
 boost::uint64_t get_utc_time_from_local(boost::uint64_t local){
 	if(::pthread_once(&g_tz_once, &::tzset) != 0){
 		LOG_POSEIDON_FATAL("::pthread_once() failed.");
-		std::abort();
+		std::terminate();
 	}
 	return local + (boost::uint64_t)(::timezone * 1000);
 }
 boost::uint64_t get_local_time_from_utc(boost::uint64_t utc){
 	if(::pthread_once(&g_tz_once, &::tzset) != 0){
 		LOG_POSEIDON_FATAL("::pthread_once() failed.");
-		std::abort();
+		std::terminate();
 	}
 	return utc - (boost::uint64_t)(::timezone * 1000);
 }
@@ -44,7 +44,7 @@ boost::uint64_t get_fast_mono_clock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
 		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
-		std::abort();
+		std::terminate();
 	}
 	return (boost::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
@@ -53,7 +53,7 @@ double get_hi_res_mono_clock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
 		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
-		std::abort();
+		std::terminate();
 	}
 	return (double)ts.tv_sec * 1e3 + (double)ts.tv_nsec / 1e6;
 }

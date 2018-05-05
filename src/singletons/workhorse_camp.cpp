@@ -182,14 +182,14 @@ namespace {
 void Workhorse_camp::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
-		std::abort();
+		std::terminate();
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting workhorse daemon...");
 
 	const AUTO(max_thread_count, Main_config::get<std::size_t>("workhorse_max_thread_count"));
 	if(max_thread_count == 0){
 		LOG_POSEIDON_FATAL("You shall not set `workhorse_max_thread_count` in `main.conf` to zero.");
-		std::abort();
+		std::terminate();
 	}
 	g_threads.resize(max_thread_count);
 

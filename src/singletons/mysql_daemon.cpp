@@ -83,7 +83,7 @@ namespace {
 		if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 			const int saved_errno = errno;
 			LOG_POSEIDON_FATAL("Error creating SQL dump file: dump_path = ", dump_path, ", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
-			std::abort();
+			std::terminate();
 		}
 
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Writing MySQL dump...");
@@ -655,7 +655,7 @@ namespace {
 			}
 			if(g_routing_map.empty()){
 				LOG_POSEIDON_FATAL("No available MySQL thread?!");
-				std::abort();
+				std::terminate();
 			}
 			const AUTO(index, g_routing_map.begin()->second);
 			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Picking thread ", index, " for table ", table);
@@ -686,7 +686,7 @@ namespace {
 void Mysql_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
-		std::abort();
+		std::terminate();
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting MySQL daemon...");
 
@@ -702,7 +702,7 @@ void Mysql_daemon::start(){
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MySQL master server: ", e.what());
 			LOG_POSEIDON_WARNING("To disable MySQL support, set `mysql_max_thread_count` in `main.conf` to zero.");
-			std::abort();
+			std::terminate();
 		}
 
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MySQL slave server is up...");
@@ -714,7 +714,7 @@ void Mysql_daemon::start(){
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MySQL slave server: ", e.what());
 			LOG_POSEIDON_WARNING("To disable MySQL support, set `mysql_max_thread_count` in `main.conf` to zero.");
-			std::abort();
+			std::terminate();
 		}
 
 		const AUTO(dump_dir, Main_config::get<std::string>("mysql_dump_dir"));
@@ -728,7 +728,7 @@ void Mysql_daemon::start(){
 			} catch(std::exception &e){
 				LOG_POSEIDON_FATAL("Could not write MySQL dump: ", e.what());
 				LOG_POSEIDON_WARNING("To disable MySQL error dump, set `mysql_dump_dir` in `main.conf` to an empty string.");
-				std::abort();
+				std::terminate();
 			}
 		}
 	}

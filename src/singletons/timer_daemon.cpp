@@ -180,7 +180,7 @@ namespace {
 void Timer_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
 		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
-		std::abort();
+		std::terminate();
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting timer daemon...");
 

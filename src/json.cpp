@@ -130,11 +130,11 @@ namespace {
 						state = state_plain;
 						break;
 					default:
-						std::abort();
+						std::terminate();
 					}
 					break;
 				default:
-					std::abort();
+					std::terminate();
 				}
 			} else if(ch == '\\'){
 				state = state_escaped;
@@ -484,7 +484,7 @@ void Json_element::dump(std::ostream &os) const {
 		break;
 	default:
 		LOG_POSEIDON_FATAL("Unknown JSON element type: type = ", static_cast<int>(type));
-		std::abort();
+		std::terminate();
 	}
 }
 void Json_element::parse(std::istream &is){

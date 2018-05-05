@@ -30,7 +30,7 @@ void Deflator::clear(){
 	int err_code = ::deflateReset(&m_stream);
 	if(err_code < 0){
 		LOG_POSEIDON_FATAL("::deflateReset() error: err_code = ", err_code);
-		std::abort();
+		std::terminate();
 	}
 	m_buffer.clear();
 }
@@ -136,7 +136,7 @@ void Inflator::clear(){
 	int err_code = ::inflateReset(&m_stream);
 	if(err_code < 0){
 		LOG_POSEIDON_FATAL("::inflateReset() error: err_code = ", err_code);
-		std::abort();
+		std::terminate();
 	}
 	m_buffer.clear();
 }
