@@ -10,18 +10,13 @@
 
 #include <string>
 #include <iterator>
-#include <algorithm>
 #include <utility>
-#include <functional>
 #include <bitset>
 #include <iomanip>
 #include <ostream>
 
-#include <cassert>
 #include <cstring>
-#include <cstdlib>
 #include <cstddef>
-#include <cstdio>
 #include <cctype>
 
 #include <pthread.h>
