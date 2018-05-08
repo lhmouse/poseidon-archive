@@ -41,7 +41,7 @@ namespace {
 
 	class Delegated_connection : public Connection {
 	private:
-		Shared_nts m_schema;
+		Rcnts m_schema;
 		::MYSQL m_mysql_storage;
 		Unique_handle<Closer> m_mysql;
 
@@ -57,16 +57,16 @@ namespace {
 		{
 			PROFILE_ME;
 
-			DEBUG_THROW_UNLESS(m_mysql.reset(::mysql_init(&m_mysql_storage)), Basic_exception, sslit("::mysql_init() failed"));
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) == 0, Basic_exception, sslit("::mysql_options() failed, trying to set MYSQL_OPT_COMPRESS"));
+			DEBUG_THROW_UNLESS(m_mysql.reset(::mysql_init(&m_mysql_storage)), Basic_exception, Rcnts::view("::mysql_init() failed"));
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) == 0, Basic_exception, Rcnts::view("::mysql_options() failed, trying to set MYSQL_OPT_COMPRESS"));
 			static CONSTEXPR const ::my_bool s_true_value = true;
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &s_true_value) == 0, Basic_exception, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) == 0, Basic_exception, sslit("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &s_true_value) == 0, Basic_exception, Rcnts::view("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
+			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) == 0, Basic_exception, Rcnts::view("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
 			unsigned long flags = 0;
 			if(use_ssl){
 				flags |= CLIENT_SSL;
 			}
-			DEBUG_THROW_UNLESS(::mysql_real_connect(m_mysql.get(), server_addr, user_name, password, schema, server_port, NULLPTR, flags), Exception, m_schema, ::mysql_errno(m_mysql.get()), Shared_nts(::mysql_error(m_mysql.get())));
+			DEBUG_THROW_UNLESS(::mysql_real_connect(m_mysql.get(), server_addr, user_name, password, schema, server_port, NULLPTR, flags), Exception, m_schema, ::mysql_errno(m_mysql.get()), Rcnts(::mysql_error(m_mysql.get())));
 		}
 
 	private:
@@ -98,15 +98,15 @@ namespace {
 			discard_result();
 
 			LOG_POSEIDON_DEBUG("Sending query to MySQL server: ", std::string(sql, len));
-			DEBUG_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Shared_nts(::mysql_error(m_mysql.get())));
-			DEBUG_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Shared_nts(::mysql_error(m_mysql.get())));
+			DEBUG_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Rcnts(::mysql_error(m_mysql.get())));
+			DEBUG_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Rcnts(::mysql_error(m_mysql.get())));
 			if(m_result.reset(::mysql_use_result(m_mysql.get()))){
 				const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
 				const AUTO(count, ::mysql_num_fields(m_result.get()));
 				m_fields.reserve(count);
 				for(std::size_t i = 0; i < count; ++i){
 					const char *const name = fields[i].name;
-					DEBUG_THROW_UNLESS(m_fields.emplace(name, i).second, Basic_exception, sslit("Duplicate field"));
+					DEBUG_THROW_UNLESS(m_fields.emplace(name, i).second, Basic_exception, Rcnts::view("Duplicate field"));
 					LOG_POSEIDON_TRACE("MySQL result field: name = ", name, ", index = ", i);
 				}
 			} else {
@@ -164,7 +164,7 @@ namespace {
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
 				value = ::strtoll(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `long long`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `long long`"));
 			}
 			return value;
 		}
@@ -177,7 +177,7 @@ namespace {
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
 				value = ::strtoull(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `unsigned long long`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `unsigned long long`"));
 			}
 			return value;
 		}
@@ -190,7 +190,7 @@ namespace {
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
 				value = ::strtod(data, &eptr);
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `double`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `double`"));
 			}
 			return value;
 		}
@@ -223,7 +223,7 @@ namespace {
 			const char *data;
 			std::size_t size;
 			if(find_field_and_check(data, size, name)){
-				DEBUG_THROW_UNLESS(size == 36, Basic_exception, sslit("Invalid UUID string length"));
+				DEBUG_THROW_UNLESS(size == 36, Basic_exception, Rcnts::view("Invalid UUID string length"));
 				value.from_string(*reinterpret_cast<const char (*)[36]>(data));
 			}
 			return value;

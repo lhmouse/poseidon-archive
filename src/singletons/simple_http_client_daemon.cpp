@@ -73,8 +73,8 @@ namespace {
 
 	Simple_http_client_params parse_simple_http_client_params(Http::Request_headers request_headers){
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!request_headers.uri.empty(), Exception, sslit("Request URI is empty"));
-		DEBUG_THROW_UNLESS(request_headers.uri.at(0) != '/', Exception, sslit("Relative request URI is not allowed"));
+		DEBUG_THROW_UNLESS(!request_headers.uri.empty(), Exception, Rcnts::view("Request URI is empty"));
+		DEBUG_THROW_UNLESS(request_headers.uri.at(0) != '/', Exception, Rcnts::view("Relative request URI is not allowed"));
 
 		Simple_http_client_params params = { std::string(), 80, false };
 		// uri = "http://www.example.com:80/foo/bar/page.html?param=value"
@@ -90,7 +90,7 @@ namespace {
 				params.use_ssl = true;
 			} else {
 				LOG_POSEIDON_WARNING("Unsupported protocol: ", request_headers.uri.c_str());
-				DEBUG_THROW(Exception, sslit("Unsupported protocol"));
+				DEBUG_THROW(Exception, Rcnts::view("Unsupported protocol"));
 			}
 			request_headers.uri.erase(0, pos + 3);
 		}
@@ -107,7 +107,7 @@ namespace {
 		// uri = "/foo/bar/page.html?param=value"
 		if(params.host.at(0) == '['){
 			pos = params.host.find(']');
-			DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, sslit("Invalid IPv6 address"));
+			DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, Rcnts::view("Invalid IPv6 address"));
 			pos = params.host.find(':', pos + 1);
 		} else {
 			pos = params.host.find(':');
@@ -115,8 +115,8 @@ namespace {
 		if(pos != std::string::npos){
 			char *eptr;
 			const unsigned long port_val = std::strtoul(params.host.c_str() + pos + 1, &eptr, 10);
-			DEBUG_THROW_UNLESS(*eptr == 0, Exception, sslit("Invalid port string"));
-			DEBUG_THROW_UNLESS((1 <= port_val) && (port_val <= 65534), Exception, sslit("Invalid port number"));
+			DEBUG_THROW_UNLESS(*eptr == 0, Exception, Rcnts::view("Invalid port string"));
+			DEBUG_THROW_UNLESS((1 <= port_val) && (port_val <= 65534), Exception, Rcnts::view("Invalid port number"));
 			params.port = boost::numeric_cast<boost::uint16_t>(port_val);
 			params.host.erase(pos);
 		}
@@ -143,7 +143,7 @@ namespace {
 		// get_params = "{ param=value }"
 		params.request_headers = STD_MOVE(request_headers);
 		params.request_headers.version = 10001;
-		params.request_headers.headers.set(sslit("Host"), params.host);
+		params.request_headers.headers.set(Rcnts::view("Host"), params.host);
 		return params;
 	}
 
@@ -235,9 +235,9 @@ namespace {
 
 	public:
 		bool send(Http::Request_headers request_headers, Stream_buffer request_entity){
-			request_headers.headers.set(sslit("Connection"), "Close");
+			request_headers.headers.set(Rcnts::view("Connection"), "Close");
 			request_headers.headers.erase("Expect");
-			DEBUG_THROW_UNLESS(Http::Low_level_client::send(STD_MOVE(request_headers), STD_MOVE(request_entity)), Exception, sslit("Failed to send data to remote server"));
+			DEBUG_THROW_UNLESS(Http::Low_level_client::send(STD_MOVE(request_headers), STD_MOVE(request_entity)), Exception, Rcnts::view("Failed to send data to remote server"));
 			return true;
 		}
 
@@ -293,7 +293,7 @@ namespace {
 					client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 					Epoll_daemon::add_socket(client);
 					Job_dispatcher::yield(client, true);
-					DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, sslit("Connection was closed prematurely"));
+					DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, Rcnts::view("Connection was closed prematurely"));
 				} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
 				Simple_http_response temp = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };
@@ -354,7 +354,7 @@ Simple_http_response Simple_http_client_daemon::perform(Simple_http_request requ
 		client->set_no_delay(true);
 		client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 		poll_internal(client);
-		DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, sslit("Connection was closed prematurely"));
+		DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, Rcnts::view("Connection was closed prematurely"));
 	} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
 	Simple_http_response response = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };

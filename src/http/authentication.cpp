@@ -72,19 +72,19 @@ boost::shared_ptr<const Authentication_context> create_authentication_context(
 	const std::string &realm, const boost::container::vector<std::string> &basic_user_pass)
 {
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!basic_user_pass.empty(), Basic_exception, sslit("No username:password provided"));
+	DEBUG_THROW_UNLESS(!basic_user_pass.empty(), Basic_exception, Rcnts::view("No username:password provided"));
 
 	AUTO(context, boost::make_shared<Authentication_context>(realm));
 	std::string str;
 	for(AUTO(it, basic_user_pass.begin()); it != basic_user_pass.end(); ++it){
 		str = *it;
 		AUTO(pos, str.find('\0'));
-		DEBUG_THROW_UNLESS(pos == std::string::npos, Basic_exception, sslit("Username or password shall not contain null characters"));
+		DEBUG_THROW_UNLESS(pos == std::string::npos, Basic_exception, Rcnts::view("Username or password shall not contain null characters"));
 		pos = str.find(':');
-		DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, sslit("Colon delimiter not found"));
+		DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("Colon delimiter not found"));
 		str.at(pos) = 0;
 		const AUTO(old_password, context->get_password(str.c_str()).second);
-		DEBUG_THROW_UNLESS(!old_password, Basic_exception, sslit("Duplicate username"));
+		DEBUG_THROW_UNLESS(!old_password, Basic_exception, Rcnts::view("Duplicate username"));
 		context->set_password(str.c_str(), str.c_str() + pos + 1);
 	}
 	return STD_MOVE_IDN(context);
@@ -169,7 +169,7 @@ namespace {
 		PROFILE_ME;
 
 		Optional_map headers;
-		headers.set(Shared_nts::view(is_proxy ? "Proxy-Authenticate" : "WWW-Authenticate"), STD_MOVE(authenticate_str));
+		headers.set(Rcnts::view(is_proxy ? "Proxy-Authenticate" : "WWW-Authenticate"), STD_MOVE(authenticate_str));
 		DEBUG_THROW(Exception, is_proxy ? status_proxy_auth_required : status_unauthorized, STD_MOVE(headers));
 	}
 }
@@ -370,7 +370,7 @@ std::pair<Authentication_result, const char *> check_authentication_digest(
 			return std::make_pair(auth_header_format_error, NULLPTR);
 		}
 		++key_end;
-		Shared_nts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
+		Rcnts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
 		if(equ == std::string::npos){
 			seg.clear();
 		} else {

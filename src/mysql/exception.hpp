@@ -11,11 +11,11 @@ namespace Mysql {
 
 class Exception : public Basic_exception {
 private:
-	Shared_nts m_schema;
+	Rcnts m_schema;
 	unsigned long m_code;
 
 public:
-	Exception(const char *file, std::size_t line, const char *func, Shared_nts schema, unsigned long code, Shared_nts message);
+	Exception(const char *file, std::size_t line, const char *func, Rcnts schema, unsigned long code, Rcnts message);
 	~Exception() NOEXCEPT;
 
 public:

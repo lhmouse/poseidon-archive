@@ -219,7 +219,7 @@ void Client::on_sync_control_message(Op_code opcode, Stream_buffer payload){
 		LOG_POSEIDON_DEBUG("Received pong frame from ", parent->get_remote_info());
 		break;
 	default:
-		DEBUG_THROW(Exception, status_protocol_error, sslit("Invalid opcode"));
+		DEBUG_THROW(Exception, status_protocol_error, Rcnts::view("Invalid opcode"));
 	}
 }
 

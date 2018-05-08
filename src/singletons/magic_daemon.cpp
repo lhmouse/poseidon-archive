@@ -26,13 +26,13 @@ namespace {
 	Unique_handle<Magic_closer> open_database(const char *file){
 		Unique_handle<Magic_closer> cookie;
 		DEBUG_THROW_UNLESS(cookie.reset(::magic_open(MAGIC_MIME_TYPE)), System_exception);
-		DEBUG_THROW_UNLESS(::magic_load(cookie.get(), file) == 0, Exception, Shared_nts(::magic_error(cookie.get())));
+		DEBUG_THROW_UNLESS(::magic_load(cookie.get(), file) == 0, Exception, Rcnts(::magic_error(cookie.get())));
 		return cookie;
 	}
 
 	const char *checked_look_up(::magic_t cookie, const void *data, std::size_t size){
 		const AUTO(desc, ::magic_buffer(cookie, data, size));
-		DEBUG_THROW_UNLESS(desc, Exception, Shared_nts(::magic_error(cookie)));
+		DEBUG_THROW_UNLESS(desc, Exception, Rcnts(::magic_error(cookie)));
 		return desc;
 	}
 

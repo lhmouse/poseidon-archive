@@ -108,7 +108,7 @@ DEFINE_MODULE_CONFIG(path) 在模块被加载时解析指定的配置文件。
 	/* Define the access function for this module. This function will not return a null pointer. */	\
 	::boost::shared_ptr<const ::Poseidon::Config_file> module_config_require_nifty_(){	\
 		AUTO(module_config_, g_weak_module_config_nifty_.lock());	\
-		DEBUG_THROW_UNLESS(module_config_, ::Poseidon::Exception, ::Poseidon::sslit("The configuration file for this module has not been loaded"));	\
+		DEBUG_THROW_UNLESS(module_config_, ::Poseidon::Exception, ::Poseidon::Rcnts::view("The configuration file for this module has not been loaded"));	\
 		return module_config_;	\
 	}	\
 	//

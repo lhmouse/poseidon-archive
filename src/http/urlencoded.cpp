@@ -164,7 +164,7 @@ void url_decode_params(std::istream &is, Optional_map &params){
 				break;
 			}
 		}
-		params.append(Shared_nts(key), STD_MOVE(val));
+		params.append(Rcnts(key), STD_MOVE(val));
 		if(is.eof()){
 			break;
 		}

@@ -44,7 +44,7 @@ namespace {
 		if(gai_code != 0){
 			const char *const err_msg = ::gai_strerror(gai_code);
 			LOG_POSEIDON_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
-			DEBUG_THROW(Exception, Shared_nts(err_msg));
+			DEBUG_THROW(Exception, Rcnts(err_msg));
 		}
 		DEBUG_THROW_ASSERT(res.reset(res_ptr));
 
@@ -157,7 +157,7 @@ void Dns_daemon::start(){
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting DNS daemon...");
 
-	Thread(&thread_proc, sslit("   D"), sslit("DNS")).swap(g_thread);
+	Thread(&thread_proc, Rcnts::view("   D"), Rcnts::view("DNS")).swap(g_thread);
 }
 void Dns_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){

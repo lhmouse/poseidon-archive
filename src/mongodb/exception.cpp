@@ -8,7 +8,7 @@
 namespace Poseidon {
 namespace Mongodb {
 
-Exception::Exception(const char *file, std::size_t line, const char *func, Shared_nts database, unsigned long code, Shared_nts message)
+Exception::Exception(const char *file, std::size_t line, const char *func, Rcnts database, unsigned long code, Rcnts message)
 	: Basic_exception(file, line, func, STD_MOVE(message))
 	, m_database(STD_MOVE(database)), m_code(code)
 {

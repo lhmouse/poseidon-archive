@@ -50,10 +50,10 @@ std::pair<Response_headers, Stream_buffer> make_default_response(Status_code sta
 		entity.put(desc.desc_long);
 		entity.put("</p></body></html>");
 
-		response_headers.headers.set(sslit("Content-Type"), "text/html");
+		response_headers.headers.set(Rcnts::view("Content-Type"), "text/html");
 	}
 	response_headers.headers.erase("Transfer-Encoding");
-	response_headers.headers.set(sslit("Content-Length"), boost::lexical_cast<std::string>(entity.size()));
+	response_headers.headers.set(Rcnts::view("Content-Length"), boost::lexical_cast<std::string>(entity.size()));
 
 	return std::make_pair(STD_MOVE(response_headers), STD_MOVE(entity));
 }

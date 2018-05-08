@@ -402,7 +402,7 @@ void File_system_daemon::start(){
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting File_system daemon...");
 
-	Thread(&thread_proc, sslit(" F  "), sslit("Filesystem")).swap(g_thread);
+	Thread(&thread_proc, Rcnts::view(" F  "), Rcnts::view("Filesystem")).swap(g_thread);
 }
 void File_system_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){

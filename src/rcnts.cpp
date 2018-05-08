@@ -2,7 +2,7 @@
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "shared_nts.hpp"
+#include "rcnts.hpp"
 #include "checked_arithmetic.hpp"
 #include <memory>
 #include <iostream>
@@ -96,7 +96,7 @@ namespace {
 	};
 }
 
-void Shared_nts::assign(const char *str, std::size_t len){
+void Rcnts::assign(const char *str, std::size_t len){
 	if(len == 0){
 		m_ptr.reset(boost::shared_ptr<void>(), "");
 	} else {
@@ -108,14 +108,14 @@ void Shared_nts::assign(const char *str, std::size_t len){
 	}
 }
 
-std::istream &operator>>(std::istream &is, Shared_nts &rhs){
+std::istream &operator>>(std::istream &is, Rcnts &rhs){
 	std::string str;
 	if(is >>str){
 		rhs.assign(str);
 	}
 	return is;
 }
-std::ostream &operator<<(std::ostream &os, const Shared_nts &rhs){
+std::ostream &operator<<(std::ostream &os, const Rcnts &rhs){
 	os <<rhs.get();
 	return os;
 }

@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <boost/container/vector.hpp>
 #include <boost/container/map.hpp>
-#include "shared_nts.hpp"
+#include "rcnts.hpp"
 
 namespace Poseidon {
 
@@ -21,7 +21,7 @@ extern const std::string &empty_string() NOEXCEPT;
 
 class Csv_document {
 private:
-	boost::container::map<Shared_nts, boost::container::vector<std::string> > m_elements;
+	boost::container::map<Rcnts, boost::container::vector<std::string> > m_elements;
 
 public:
 	Csv_document()
@@ -30,7 +30,7 @@ public:
 		//
 	}
 #ifdef POSEIDON_CXX11
-	explicit Csv_document(std::initializer_list<Shared_nts> header)
+	explicit Csv_document(std::initializer_list<Rcnts> header)
 		: m_elements()
 	{
 		reset_header(header);
@@ -53,13 +53,13 @@ public:
 	void reset_header(){
 		m_elements.clear();
 	}
-	void reset_header(const boost::container::map<Shared_nts, std::string> &row);
+	void reset_header(const boost::container::map<Rcnts, std::string> &row);
 #ifdef POSEIDON_CXX11
-	void reset_header(std::initializer_list<Shared_nts> header);
+	void reset_header(std::initializer_list<Rcnts> header);
 #endif
-	void append(const boost::container::map<Shared_nts, std::string> &row);
+	void append(const boost::container::map<Rcnts, std::string> &row);
 #ifdef POSEIDON_CXX11
-	void append(boost::container::map<Shared_nts, std::string> &&row);
+	void append(boost::container::map<Rcnts, std::string> &&row);
 #endif
 
 	bool empty() const {
@@ -78,9 +78,9 @@ public:
 	}
 
 	const std::string &get(std::size_t row, const char *key) const { // 若指定的键不存在，则返回空字符串。
-		return get(row, Shared_nts::view(key));
+		return get(row, Rcnts::view(key));
 	}
-	const std::string &get(std::size_t row, const Shared_nts &key) const {
+	const std::string &get(std::size_t row, const Rcnts &key) const {
 		const AUTO(it, m_elements.find(key));
 		if(it == m_elements.end()){
 			return empty_string();
@@ -91,9 +91,9 @@ public:
 		return it->second.at(row);
 	}
 	const std::string &at(std::size_t row, const char *key) const { // 若指定的键不存在，则返回空字符串。
-		return at(row, Shared_nts::view(key));
+		return at(row, Rcnts::view(key));
 	}
-	const std::string &at(std::size_t row, const Shared_nts &key) const {
+	const std::string &at(std::size_t row, const Rcnts &key) const {
 		const AUTO(it, m_elements.find(key));
 		if(it == m_elements.end()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
@@ -104,9 +104,9 @@ public:
 		return it->second.at(row);
 	}
 	std::string &at(std::size_t row, const char *key){ // 若指定的键不存在，则返回空字符串。
-		return at(row, Shared_nts::view(key));
+		return at(row, Rcnts::view(key));
 	}
-	std::string &at(std::size_t row, const Shared_nts &key){
+	std::string &at(std::size_t row, const Rcnts &key){
 		const AUTO(it, m_elements.find(key));
 		if(it == m_elements.end()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);

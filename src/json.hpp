@@ -15,7 +15,7 @@
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/type_traits/is_enum.hpp>
 #include <boost/utility/enable_if.hpp>
-#include "shared_nts.hpp"
+#include "rcnts.hpp"
 
 namespace Poseidon {
 
@@ -34,7 +34,7 @@ extern const Json_element &null_json_element() NOEXCEPT;
 
 class Json_object {
 public:
-	typedef boost::container::map<Shared_nts, Json_element> base_container;
+	typedef boost::container::map<Rcnts, Json_element> base_container;
 
 	typedef base_container::value_type        value_type;
 	typedef base_container::const_reference   const_reference;
@@ -80,46 +80,46 @@ public:
 	iterator erase(const_iterator pos);
 	iterator erase(const_iterator first, const_iterator last);
 	bool erase(const char *key);
-	bool erase(const Shared_nts &key);
+	bool erase(const Rcnts &key);
 
 	const_iterator find(const char *key) const;
-	const_iterator find(const Shared_nts &key) const;
+	const_iterator find(const Rcnts &key) const;
 	iterator find(const char *key);
-	iterator find(const Shared_nts &key);
+	iterator find(const Rcnts &key);
 
 	bool has(const char *key) const;
-	bool has(const Shared_nts &key) const;
-	const Json_element &get(const Shared_nts &key) const; // 若指定的键不存在，则返回空元素。
-	const Json_element &at(const Shared_nts &key) const; // 若指定的键不存在，则抛出 std::out_of_range。
-	Json_element &at(const Shared_nts &key); // 若指定的键不存在，则抛出 std::out_of_range。
+	bool has(const Rcnts &key) const;
+	const Json_element &get(const Rcnts &key) const; // 若指定的键不存在，则返回空元素。
+	const Json_element &at(const Rcnts &key) const; // 若指定的键不存在，则抛出 std::out_of_range。
+	Json_element &at(const Rcnts &key); // 若指定的键不存在，则抛出 std::out_of_range。
 	const Json_element &get(const char *key) const {
-		return get(Shared_nts::view(key));
+		return get(Rcnts::view(key));
 	}
 	const Json_element &at(const char *key) const {
-		return at(Shared_nts::view(key));
+		return at(Rcnts::view(key));
 	}
 	Json_element &at(const char *key){
-		return at(Shared_nts::view(key));
+		return at(Rcnts::view(key));
 	}
 	template<typename T>
-	const T &get(const Shared_nts &key) const;
+	const T &get(const Rcnts &key) const;
 	template<typename T>
-	const T &at(const Shared_nts &key) const;
+	const T &at(const Rcnts &key) const;
 	template<typename T>
-	T &at(const Shared_nts &key);
+	T &at(const Rcnts &key);
 	template<typename T>
 	const T &get(const char *key) const {
-		return get<T>(Shared_nts::view(key));
+		return get<T>(Rcnts::view(key));
 	}
 	template<typename T>
 	const T &at(const char *key) const {
-		return at<T>(Shared_nts::view(key));
+		return at<T>(Rcnts::view(key));
 	}
 	template<typename T>
 	T &at(const char *key){
-		return at<T>(Shared_nts::view(key));
+		return at<T>(Rcnts::view(key));
 	}
-	iterator set(Shared_nts key, Json_element val);
+	iterator set(Rcnts key, Json_element val);
 #ifdef POSEIDON_CXX11
 	template<typename KeyT, typename ...ParamsT>
 	iterator emplace_or_assign(KeyT &&key, ParamsT &&...params);
@@ -415,22 +415,22 @@ inline Json_object::iterator Json_object::erase(Json_object::const_iterator firs
 	return m_elements.erase(first, last);
 }
 inline bool Json_object::erase(const char *key){
-	return erase(Shared_nts::view(key));
+	return erase(Rcnts::view(key));
 }
-inline bool Json_object::erase(const Shared_nts &key){
+inline bool Json_object::erase(const Rcnts &key){
 	return m_elements.erase(key);
 }
 
 inline Json_object::const_iterator Json_object::find(const char *key) const {
-	return find(Shared_nts::view(key));
+	return find(Rcnts::view(key));
 }
-inline Json_object::const_iterator Json_object::find(const Shared_nts &key) const {
+inline Json_object::const_iterator Json_object::find(const Rcnts &key) const {
 	return m_elements.find(key);
 }
 inline Json_object::iterator Json_object::find(const char *key){
-	return find(Shared_nts::view(key));
+	return find(Rcnts::view(key));
 }
-inline Json_object::iterator Json_object::find(const Shared_nts &key){
+inline Json_object::iterator Json_object::find(const Rcnts &key){
 	return m_elements.find(key);
 }
 
@@ -441,28 +441,28 @@ inline bool Json_object::has(const char *key) const {
 	}
 	return true;
 }
-inline bool Json_object::has(const Shared_nts &key) const {
+inline bool Json_object::has(const Rcnts &key) const {
 	const AUTO(it, find(key));
 	if(it == end()){
 		return false;
 	}
 	return true;
 }
-inline const Json_element &Json_object::get(const Shared_nts &key) const {
+inline const Json_element &Json_object::get(const Rcnts &key) const {
 	const AUTO(it, find(key));
 	if(it == end()){
 		return null_json_element();
 	}
 	return it->second;
 }
-inline const Json_element &Json_object::at(const Shared_nts &key) const {
+inline const Json_element &Json_object::at(const Rcnts &key) const {
 	const AUTO(it, find(key));
 	if(it == end()){
 		throw std::out_of_range(__PRETTY_FUNCTION__);
 	}
 	return it->second;
 }
-inline Json_element &Json_object::at(const Shared_nts &key){
+inline Json_element &Json_object::at(const Rcnts &key){
 	const AUTO(it, find(key));
 	if(it == end()){
 		throw std::out_of_range(__PRETTY_FUNCTION__);
@@ -470,18 +470,18 @@ inline Json_element &Json_object::at(const Shared_nts &key){
 	return it->second;
 }
 template<typename T>
-const T &Json_object::get(const Shared_nts &key) const {
+const T &Json_object::get(const Rcnts &key) const {
 	return get(key).get<T>();
 }
 template<typename T>
-const T &Json_object::at(const Shared_nts &key) const {
+const T &Json_object::at(const Rcnts &key) const {
 	return at(key).get<T>();
 }
 template<typename T>
-T &Json_object::at(const Shared_nts &key){
+T &Json_object::at(const Rcnts &key){
 	return at(key).get<T>();
 }
-inline Json_object::iterator Json_object::set(Shared_nts key, Json_element val){
+inline Json_object::iterator Json_object::set(Rcnts key, Json_element val){
 	AUTO(it, m_elements.find(key));
 	if(it == m_elements.end()){
 		it = m_elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(val)).first;

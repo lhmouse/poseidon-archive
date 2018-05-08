@@ -8,7 +8,7 @@
 #include <exception>
 #include <cstddef>
 #include "log.hpp"
-#include "shared_nts.hpp"
+#include "rcnts.hpp"
 
 namespace Poseidon {
 
@@ -17,10 +17,10 @@ protected:
 	const char *m_file;
 	std::size_t m_line;
 	const char *m_func;
-	Shared_nts m_message; // 拷贝构造函数不抛出异常。
+	Rcnts m_message; // 拷贝构造函数不抛出异常。
 
 public:
-	Exception(const char *file, std::size_t line, const char *func, Shared_nts message);
+	Exception(const char *file, std::size_t line, const char *func, Rcnts message);
 	~Exception() NOEXCEPT;
 
 public:
@@ -65,6 +65,6 @@ typedef Exception Basic_exception;
 #define DEBUG_THROW_ASSERT(expr_)	\
 	DEBUG_THROW_IMPL((expr_) ? false : true, ::Poseidon::Exception, {	\
 		LOG_POSEIDON_ERROR("Assertion failure: " #expr_);	\
-		}, ::Poseidon::sslit("Assertion failure: " #expr_))
+		}, ::Poseidon::Rcnts::view("Assertion failure: " #expr_))
 
 #endif

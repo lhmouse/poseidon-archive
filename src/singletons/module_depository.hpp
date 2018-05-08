@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include <boost/container/vector.hpp>
-#include "../shared_nts.hpp"
+#include "../rcnts.hpp"
 
 namespace Poseidon {
 
@@ -21,7 +21,7 @@ public:
 	struct Snapshot_element {
 		void *dl_handle;
 		void *base_address;
-		Shared_nts real_path;
+		Rcnts real_path;
 	};
 
 private:

@@ -166,7 +166,7 @@ void Udp_session_base::on_message_too_large(const Sock_addr &/*sock_addr*/, Stre
 
 void Udp_session_base::add_membership(const Sock_addr &group){
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(is_using_ipv6() == group.is_ipv6(), Exception, sslit("Socket family does not match the group address provided"));
+	DEBUG_THROW_UNLESS(is_using_ipv6() == group.is_ipv6(), Exception, Rcnts::view("Socket family does not match the group address provided"));
 
 	const AUTO(interfaces, get_all_interfaces());
 	Buffer_mreq opt;
@@ -197,7 +197,7 @@ void Udp_session_base::add_membership(const Sock_addr &group){
 }
 void Udp_session_base::drop_membership(const Sock_addr &group){
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(is_using_ipv6() == group.is_ipv6(), Exception, sslit("Socket family does not match the group address provided"));
+	DEBUG_THROW_UNLESS(is_using_ipv6() == group.is_ipv6(), Exception, Rcnts::view("Socket family does not match the group address provided"));
 
 	const AUTO(interfaces, get_all_interfaces());
 	Buffer_mreq opt;

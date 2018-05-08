@@ -87,10 +87,10 @@ void System_http_session::on_sync_request(Http::Request_headers request_headers,
 	response_headers.version = 10001;
 	response_headers.status_code = Http::status_ok;
 	response_headers.reason = "OK";
-	response_headers.headers.set(sslit("Connection"), keep_alive ? "Keep-Alive" : "Close");
-	response_headers.headers.set(sslit("Access-Control-Allow-Origin"), "*");
-	response_headers.headers.set(sslit("Access-Control-Allow-Headers"), "Authorization, Content-Type");
-	response_headers.headers.set(sslit("Access-Control-Allow-Methods"), "OPTIONS, GET, HEAD, POST");
+	response_headers.headers.set(Rcnts::view("Connection"), keep_alive ? "Keep-Alive" : "Close");
+	response_headers.headers.set(Rcnts::view("Access-Control-Allow-Origin"), "*");
+	response_headers.headers.set(Rcnts::view("Access-Control-Allow-Headers"), "Authorization, Content-Type");
+	response_headers.headers.set(Rcnts::view("Access-Control-Allow-Methods"), "OPTIONS, GET, HEAD, POST");
 
 	Json_object request;
 	Buffer_istream bis;
@@ -121,7 +121,7 @@ void System_http_session::on_sync_request(Http::Request_headers request_headers,
 		}
 		LOG_POSEIDON_DEBUG("System_http_session response: ", response);
 		response.dump(bos);
-		response_headers.headers.set(sslit("Content-Type"), "application/json");
+		response_headers.headers.set(Rcnts::view("Content-Type"), "application/json");
 		Http::Session::send_chunked_header(STD_MOVE(response_headers));
 		if(request_headers.verb == Http::verb_head){
 			LOG_POSEIDON_DEBUG("The response entity for a HEAD request will be discarded.");

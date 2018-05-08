@@ -186,7 +186,7 @@ void Session::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, Str
 	PROFILE_ME;
 
 	m_size_total += payload.size();
-	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_message_too_large, sslit("Message too large"));
+	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_message_too_large, Rcnts::view("Message too large"));
 	m_payload.splice(payload);
 }
 bool Session::on_low_level_message_end(boost::uint64_t /*whole_size*/){
@@ -230,7 +230,7 @@ void Session::on_sync_control_message(Op_code opcode, Stream_buffer payload){
 		LOG_POSEIDON_DEBUG("Received pong frame from ", parent->get_remote_info());
 		break;
 	default:
-		DEBUG_THROW(Exception, status_protocol_error, sslit("Invalid opcode"));
+		DEBUG_THROW(Exception, status_protocol_error, Rcnts::view("Invalid opcode"));
 	}
 }
 

@@ -52,12 +52,12 @@ bool Reader::put_encoded_data(Stream_buffer encoded){
 			m_frame_offset = 0;
 
 			ch = m_queue.get();
-			DEBUG_THROW_UNLESS(has_none_flags_of(ch, opmask_rsv1 | opmask_rsv2 | opmask_rsv3), Exception, status_protocol_error, sslit("Reserved bits set"));
+			DEBUG_THROW_UNLESS(has_none_flags_of(ch, opmask_rsv1 | opmask_rsv2 | opmask_rsv3), Exception, status_protocol_error, Rcnts::view("Reserved bits set"));
 			m_opcode = ch & opmask_opcode;
 			m_fin = ch & opmask_fin;
-			DEBUG_THROW_UNLESS(!(has_all_flags_of(m_opcode, opmask_control) && !m_fin), Exception, status_protocol_error, sslit("Control frame fragemented"));
-			DEBUG_THROW_UNLESS(!((m_opcode == opcode_continuation) && m_prev_fin), Exception, status_protocol_error, sslit("Dangling frame continuation"));
-			DEBUG_THROW_UNLESS(!((m_opcode != opcode_continuation) && !m_prev_fin), Exception, status_protocol_error, sslit("Final frame following a frame that needs continuation"));
+			DEBUG_THROW_UNLESS(!(has_all_flags_of(m_opcode, opmask_control) && !m_fin), Exception, status_protocol_error, Rcnts::view("Control frame fragemented"));
+			DEBUG_THROW_UNLESS(!((m_opcode == opcode_continuation) && m_prev_fin), Exception, status_protocol_error, Rcnts::view("Dangling frame continuation"));
+			DEBUG_THROW_UNLESS(!((m_opcode != opcode_continuation) && !m_prev_fin), Exception, status_protocol_error, Rcnts::view("Final frame following a frame that needs continuation"));
 
 			m_size_expecting = 1;
 			m_state = state_frame_size;
@@ -66,10 +66,10 @@ bool Reader::put_encoded_data(Stream_buffer encoded){
 		case state_frame_size:
 			ch = m_queue.get();
 			m_masked = ch & 0x80;
-			DEBUG_THROW_UNLESS(!(m_force_masked_frames && !m_masked), Exception, status_protocol_error, sslit("Non-masked frames not allowed"));
+			DEBUG_THROW_UNLESS(!(m_force_masked_frames && !m_masked), Exception, status_protocol_error, Rcnts::view("Non-masked frames not allowed"));
 			m_frame_size = ch & 0x7F;
 			if(m_frame_size >= 0x7E){
-				DEBUG_THROW_UNLESS(has_none_flags_of(m_opcode, opmask_control), Exception, status_protocol_error, sslit("Control frame too large"));
+				DEBUG_THROW_UNLESS(has_none_flags_of(m_opcode, opmask_control), Exception, status_protocol_error, Rcnts::view("Control frame too large"));
 				if(m_frame_size == 0x7E){
 					m_size_expecting = 2;
 					m_state = state_frame_size_16;

@@ -16,7 +16,7 @@ Header_option::Header_option(std::istream &is)
 	: m_base(), m_options()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, sslit("Http::Header_option parser error"));
+	DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Http::Header_option parser error"));
 }
 
 Stream_buffer Header_option::dump() const {
@@ -99,7 +99,7 @@ void Header_option::parse(std::istream &is){
 				continue;
 			}
 			++key_end;
-			Shared_nts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
+			Rcnts key(seg.data() + key_begin, static_cast<std::size_t>(key_end - key_begin));
 			if(equ == std::string::npos){
 				seg.clear();
 			} else {

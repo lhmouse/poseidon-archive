@@ -57,7 +57,7 @@ namespace {
 
 	class Delegated_connection : public Connection {
 	private:
-		Shared_nts m_database;
+		Rcnts m_database;
 		Unique_handle<Client_closer> m_client;
 
 		boost::int64_t m_cursor_id;
@@ -77,12 +77,12 @@ namespace {
 			init_mongoc_once();
 
 			Unique_handle<Uri_closer> uri;
-			DEBUG_THROW_UNLESS(uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port)), Basic_exception, sslit("::mongoc_uri_new_for_host_port() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_username(uri.get(), user_name), Basic_exception, sslit("::mongoc_uri_set_username() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_password(uri.get(), password), Basic_exception, sslit("::mongoc_uri_set_password() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_database(uri.get(), auth_database), Basic_exception, sslit("::mongoc_uri_set_database() failed"));
-			DEBUG_THROW_UNLESS(::mongoc_uri_set_option_as_bool(uri.get(), "ssl", use_ssl), Basic_exception, sslit("::mongoc_uri_set_option_as_bool() failed"));
-			DEBUG_THROW_UNLESS(m_client.reset(::mongoc_client_new_from_uri(uri.get())), Basic_exception, sslit("::mongoc_client_new_from_uri() failed"));
+			DEBUG_THROW_UNLESS(uri.reset(::mongoc_uri_new_for_host_port(server_addr, server_port)), Basic_exception, Rcnts::view("::mongoc_uri_new_for_host_port() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_username(uri.get(), user_name), Basic_exception, Rcnts::view("::mongoc_uri_set_username() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_password(uri.get(), password), Basic_exception, Rcnts::view("::mongoc_uri_set_password() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_database(uri.get(), auth_database), Basic_exception, Rcnts::view("::mongoc_uri_set_database() failed"));
+			DEBUG_THROW_UNLESS(::mongoc_uri_set_option_as_bool(uri.get(), "ssl", use_ssl), Basic_exception, Rcnts::view("::mongoc_uri_set_option_as_bool() failed"));
+			DEBUG_THROW_UNLESS(m_client.reset(::mongoc_client_new_from_uri(uri.get())), Basic_exception, Rcnts::view("::mongoc_client_new_from_uri() failed"));
 		}
 
 	private:
@@ -162,7 +162,7 @@ namespace {
 			// `reply` is always set.
 			const Unique_handle<Bson_closer> reply_guard(&reply_storage);
 			const AUTO(reply_bt, reply_guard.get());
-			DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, Shared_nts(err.message));
+			DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, Rcnts(err.message));
 			parse_reply_cursor(reply_bt, "firstBatch");
 		}
 		void discard_result() NOEXCEPT FINAL {
@@ -207,14 +207,14 @@ namespace {
 				// `reply` is always set.
 				const Unique_handle<Bson_closer> reply_guard(&reply_storage);
 				const AUTO(reply_bt, reply_guard.get());
-				DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, Shared_nts(err.message));
+				DEBUG_THROW_UNLESS(success, Exception, m_database, err.code, Rcnts(err.message));
 				parse_reply_cursor(reply_bt, "nextBatch");
 			}
 			DEBUG_THROW_ASSERT(::bson_iter_type(&m_batch_it) == BSON_TYPE_DOCUMENT);
 			boost::uint32_t size;
 			const boost::uint8_t *data;
 			::bson_iter_document(&m_batch_it, &size, &data);
-			DEBUG_THROW_UNLESS(::bson_init_static(&m_element_storage, data, size), Basic_exception, sslit("::bson_init_static() failed"));
+			DEBUG_THROW_UNLESS(::bson_init_static(&m_element_storage, data, size), Basic_exception, Rcnts::view("::bson_init_static() failed"));
 			m_element_guard.reset(&m_element_storage);
 			return true;
 		}
@@ -257,7 +257,7 @@ namespace {
 				break;
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, Rcnts::view("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -287,11 +287,11 @@ namespace {
 				data = ::bson_iter_utf8(&it, &size);
 				char *eptr;
 				value = ::strtoll(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `long long`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `long long`"));
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, Rcnts::view("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -321,11 +321,11 @@ namespace {
 				data = ::bson_iter_utf8(&it, &size);
 				char *eptr;
 				value = ::strtoull(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `unsigned long long`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `unsigned long long`"));
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, Rcnts::view("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -355,11 +355,11 @@ namespace {
 				data = ::bson_iter_utf8(&it, &size);
 				char *eptr;
 				value = ::strtod(data, &eptr);
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, sslit("Could not convert field data to `double`"));
+				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `double`"));
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, Rcnts::view("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -397,7 +397,7 @@ namespace {
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, Rcnts::view("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -417,7 +417,7 @@ namespace {
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, Rcnts::view("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -433,12 +433,12 @@ namespace {
 				boost::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
-				DEBUG_THROW_UNLESS(size == 36, Basic_exception, sslit("Invalid UUID string length"));
+				DEBUG_THROW_UNLESS(size == 36, Basic_exception, Rcnts::view("Invalid UUID string length"));
 				value.from_string(*reinterpret_cast<const char (*)[36]>(data));
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, Rcnts::view("Unexpected BSON data type"));
 			}
 			return value;
 		}
@@ -464,7 +464,7 @@ namespace {
 				break; }
 			default:
 				LOG_POSEIDON_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));
-				DEBUG_THROW(Basic_exception, sslit("Unexpected BSON data type"));
+				DEBUG_THROW(Basic_exception, Rcnts::view("Unexpected BSON data type"));
 			}
 			return value;
 		}

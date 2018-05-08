@@ -48,12 +48,12 @@ namespace {
 	private:
 		Unique_handle<Dynamic_library_closer> m_dl_handle;
 		void *m_base_address;
-		Shared_nts m_real_path;
+		Rcnts m_real_path;
 
 		Handle_stack m_handles;
 
 	public:
-		Module(Move<Unique_handle<Dynamic_library_closer> > dl_handle, void *base_address, Shared_nts real_path, Move<Handle_stack> handles)
+		Module(Move<Unique_handle<Dynamic_library_closer> > dl_handle, void *base_address, Rcnts real_path, Move<Handle_stack> handles)
 			: m_dl_handle(STD_MOVE(dl_handle)), m_base_address(base_address), m_real_path(STD_MOVE(real_path))
 			, m_handles(STD_MOVE(handles))
 		{
@@ -72,7 +72,7 @@ namespace {
 		void *get_base_address() const {
 			return m_base_address;
 		}
-		const Shared_nts &get_real_path() const {
+		const Rcnts &get_real_path() const {
 			return m_real_path;
 		}
 
@@ -103,10 +103,10 @@ void Module_depository::register_module_raii(Module_raii_base *raii, long priori
 
 	const Recursive_mutex::Unique_lock lock(g_mutex);
 	::Dl_info info;
-	DEBUG_THROW_UNLESS(::dladdr(raii, &info), Exception, sslit("Error getting base address"));
+	DEBUG_THROW_UNLESS(::dladdr(raii, &info), Exception, Rcnts::view("Error getting base address"));
 	Module_raii_map_element elem = { raii, std::make_pair(info.dli_fbase, priority) };
 	const AUTO(result, g_module_raii_map.insert(STD_MOVE(elem)));
-	DEBUG_THROW_UNLESS(result.second, Exception, sslit("Duplicate Module_raii"));
+	DEBUG_THROW_UNLESS(result.second, Exception, Rcnts::view("Duplicate Module_raii"));
 }
 void Module_depository::unregister_module_raii(Module_raii_base *raii) NOEXCEPT {
 	PROFILE_ME;
@@ -136,15 +136,15 @@ void *Module_depository::load(const std::string &path){
 	const Recursive_mutex::Unique_lock lock(g_mutex);
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading module: ", path);
 	Unique_handle<Dynamic_library_closer> dl_handle;
-	DEBUG_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND)), Exception, Shared_nts(::dlerror()));
+	DEBUG_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND)), Exception, Rcnts(::dlerror()));
 	AUTO(it, g_module_map.find<0>(dl_handle.get()));
 	if(it != g_module_map.end()){
 		LOG_POSEIDON_WARNING("Module already loaded: ", path);
 	} else {
 		void *const init_sym = ::dlsym(dl_handle.get(), "_init");
-		DEBUG_THROW_UNLESS(init_sym, Exception, Shared_nts(::dlerror()));
+		DEBUG_THROW_UNLESS(init_sym, Exception, Rcnts(::dlerror()));
 		::Dl_info info;
-		DEBUG_THROW_UNLESS(::dladdr(init_sym, &info), Exception, Shared_nts(::dlerror()));
+		DEBUG_THROW_UNLESS(::dladdr(init_sym, &info), Exception, Rcnts(::dlerror()));
 		Handle_stack handles;
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Initializing NEW module: ", info.dli_fname);
 		const AUTO(raii_range_lower, g_module_raii_map.lower_bound<1>(std::make_pair(info.dli_fbase, LONG_MIN)));
@@ -154,7 +154,7 @@ void *Module_depository::load(const std::string &path){
 			raii_it->raii->init(handles);
 		}
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Done initializing module: ", info.dli_fname);
-		const AUTO(module, boost::make_shared<Module>(STD_MOVE(dl_handle), info.dli_fbase, Shared_nts(info.dli_fname), STD_MOVE(handles)));
+		const AUTO(module, boost::make_shared<Module>(STD_MOVE(dl_handle), info.dli_fbase, Rcnts(info.dli_fname), STD_MOVE(handles)));
 		Module_map_element elem = { module, module->get_dl_handle(), module->get_base_address() };
 		const AUTO(result, g_module_map.insert(STD_MOVE(elem)));
 		DEBUG_THROW_ASSERT(result.second);

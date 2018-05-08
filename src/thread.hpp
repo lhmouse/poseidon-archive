@@ -6,7 +6,7 @@
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
-#include "shared_nts.hpp"
+#include "rcnts.hpp"
 #include <boost/function.hpp>
 
 namespace Poseidon {
@@ -21,7 +21,7 @@ public:
 	{
 		//
 	}
-	Thread(boost::function<void ()> proc, Shared_nts tag, Shared_nts name);
+	Thread(boost::function<void ()> proc, Rcnts tag, Rcnts name);
 	~Thread(); // The destructor calls `std::terminate()` if `joinable()` returns `true`.
 
 public:

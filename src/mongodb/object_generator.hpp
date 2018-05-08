@@ -164,7 +164,7 @@ void OBJECT_NAME::generate_document(::Poseidon::Mongodb::Bson_builder &doc_) con
 
 	AUTO(pkey_, generate_primary_key());
 	if(!pkey_.empty()){
-		doc_.append_string(::Poseidon::Shared_nts::view("_id"), STD_MOVE(pkey_));
+		doc_.append_string(::Poseidon::Rcnts::view("_id"), STD_MOVE(pkey_));
 	}
 
 #undef FIELD_BOOLEAN
@@ -176,14 +176,14 @@ void OBJECT_NAME::generate_document(::Poseidon::Mongodb::Bson_builder &doc_) con
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                doc_.append_boolean  (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_SIGNED(id_)                 doc_.append_signed   (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_UNSIGNED(id_)               doc_.append_unsigned (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_DOUBLE(id_)                 doc_.append_double   (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_STRING(id_)                 doc_.append_string   (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_DATETIME(id_)               doc_.append_datetime (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::Shared_nts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_BOOLEAN(id_)                doc_.append_boolean  (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_SIGNED(id_)                 doc_.append_signed   (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_UNSIGNED(id_)               doc_.append_unsigned (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_DOUBLE(id_)                 doc_.append_double   (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_STRING(id_)                 doc_.append_string   (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_DATETIME(id_)               doc_.append_datetime (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
 
 	OBJECT_FIELDS
 }

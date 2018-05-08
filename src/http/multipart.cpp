@@ -39,7 +39,7 @@ Multipart::Multipart(std::string boundary, std::istream &is)
 	: m_boundary(STD_MOVE(boundary)), m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Basic_exception, sslit("Http::Multipart parser error"));
+	DEBUG_THROW_UNLESS(is, Basic_exception, Rcnts::view("Http::Multipart parser error"));
 }
 
 void Multipart::random_boundary(){
@@ -62,7 +62,7 @@ Stream_buffer Multipart::dump() const {
 }
 void Multipart::dump(std::ostream &os) const {
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!m_boundary.empty(), Basic_exception, sslit("Multipart boundary not set"));
+	DEBUG_THROW_UNLESS(!m_boundary.empty(), Basic_exception, Rcnts::view("Multipart boundary not set"));
 
 	os <<"--" <<m_boundary;
 	for(AUTO(it, m_elements.begin()); it != m_elements.end(); ++it){
@@ -77,7 +77,7 @@ void Multipart::dump(std::ostream &os) const {
 }
 void Multipart::parse(std::istream &is){
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!m_boundary.empty(), Basic_exception, sslit("Multipart boundary not set"));
+	DEBUG_THROW_UNLESS(!m_boundary.empty(), Basic_exception, Rcnts::view("Multipart boundary not set"));
 
 	const AUTO(window_size, m_boundary.size() + 2);
 
@@ -164,8 +164,8 @@ void Multipart::parse(std::istream &is){
 					break;
 				}
 				pos = line.find(':');
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, sslit("Invalid HTTP header"));
-				Shared_nts key(line.data(), pos);
+				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("Invalid HTTP header"));
+				Rcnts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				elem.headers.set(STD_MOVE(key), STD_MOVE(value));

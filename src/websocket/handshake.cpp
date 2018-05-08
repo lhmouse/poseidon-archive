@@ -53,9 +53,9 @@ Http::Response_headers make_handshake_response(const Http::Request_headers &requ
 		Base64_encoder enc;
 		enc.put(sha1.data(), sha1.size());
 		AUTO(sec_websocket_accept, enc.finalize().dump_string());
-		response.headers.set(sslit("Upgrade"), "websocket");
-		response.headers.set(sslit("Connection"), "Upgrade");
-		response.headers.set(sslit("Sec-Web_socket-Accept"), STD_MOVE(sec_websocket_accept));
+		response.headers.set(Rcnts::view("Upgrade"), "websocket");
+		response.headers.set(Rcnts::view("Connection"), "Upgrade");
+		response.headers.set(Rcnts::view("Sec-Web_socket-Accept"), STD_MOVE(sec_websocket_accept));
 		response.status_code = Http::status_switching_protocols;
 	}
 _done:
@@ -71,12 +71,12 @@ std::pair<Http::Request_headers, std::string> make_handshake_request(std::string
 	request.uri        = STD_MOVE(uri);
 	request.version    = 10001;
 	request.get_params = STD_MOVE(get_params);
-	request.headers.set(sslit("Host"), STD_MOVE(host));
-	request.headers.set(sslit("Upgrade"), "websocket");
-	request.headers.set(sslit("Connection"), "Keep-Alive");
-	request.headers.set(sslit("Sec-Web_socket-Version"), "13");
-	request.headers.set(sslit("Pragma"), "no-cache");
-	request.headers.set(sslit("Cache-Control"), "no-cache");
+	request.headers.set(Rcnts::view("Host"), STD_MOVE(host));
+	request.headers.set(Rcnts::view("Upgrade"), "websocket");
+	request.headers.set(Rcnts::view("Connection"), "Keep-Alive");
+	request.headers.set(Rcnts::view("Sec-Web_socket-Version"), "13");
+	request.headers.set(Rcnts::view("Pragma"), "no-cache");
+	request.headers.set(Rcnts::view("Cache-Control"), "no-cache");
 	boost::uint32_t key[4];
 	for(unsigned i = 0; i < 4; ++i){
 		key[i] = random_uint32();
@@ -84,7 +84,7 @@ std::pair<Http::Request_headers, std::string> make_handshake_request(std::string
 	Base64_encoder enc;
 	enc.put(key, sizeof(key));
 	AUTO(sec_websocket_key, enc.finalize().dump_string());
-	request.headers.set(sslit("Sec-Web_socket-Key"), sec_websocket_key);
+	request.headers.set(Rcnts::view("Sec-Web_socket-Key"), sec_websocket_key);
 	return std::make_pair(STD_MOVE_IDN(request), STD_MOVE_IDN(sec_websocket_key));
 }
 bool check_handshake_response(const Http::Response_headers &response, const std::string &sec_websocket_key){

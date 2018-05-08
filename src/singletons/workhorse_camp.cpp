@@ -104,7 +104,7 @@ namespace {
 	public:
 		void start(){
 			const Mutex::Unique_lock lock(m_mutex);
-			Thread(boost::bind(&Workhorse_thread::thread_proc, this), sslit("  W "), sslit("Workhorse")).swap(m_thread);
+			Thread(boost::bind(&Workhorse_thread::thread_proc, this), Rcnts::view("  W "), Rcnts::view("Workhorse")).swap(m_thread);
 			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
@@ -146,7 +146,7 @@ namespace {
 			PROFILE_ME;
 
 			const Mutex::Unique_lock lock(m_mutex);
-			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, sslit("Workhorse thread is being shut down"));
+			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, Rcnts::view("Workhorse thread is being shut down"));
 			Job_queue_element elem = { promise, STD_MOVE_IDN(procedure) };
 			m_queue.push_back(STD_MOVE(elem));
 			m_new_job.signal();
@@ -160,7 +160,7 @@ namespace {
 
 	void add_job_using_seed(const boost::shared_ptr<Promise> &promise, Job_procedure procedure, boost::uint64_t seed){
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, sslit("Workhorse support is not enabled"));
+		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("Workhorse support is not enabled"));
 
 		boost::shared_ptr<Workhorse_thread> thread;
 		{

@@ -40,10 +40,10 @@ Csv_document::Csv_document(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, sslit("Csv_document parser error"));
+	DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Csv_document parser error"));
 }
 
-void Csv_document::reset_header(const boost::container::map<Shared_nts, std::string> &row){
+void Csv_document::reset_header(const boost::container::map<Rcnts, std::string> &row){
 	VALUE_TYPE(m_elements) elements;
 	for(AUTO(it, row.begin()); it != row.end(); ++it){
 		elements[it->first];
@@ -51,7 +51,7 @@ void Csv_document::reset_header(const boost::container::map<Shared_nts, std::str
 	m_elements.swap(elements);
 }
 #ifdef POSEIDON_CXX11
-void Csv_document::reset_header(std::initializer_list<Shared_nts> header){
+void Csv_document::reset_header(std::initializer_list<Rcnts> header){
 	VALUE_TYPE(m_elements) elements;
 	for(AUTO(it, header.begin()); it != header.end(); ++it){
 		elements[*it];
@@ -59,7 +59,7 @@ void Csv_document::reset_header(std::initializer_list<Shared_nts> header){
 	m_elements.swap(elements);
 }
 #endif
-void Csv_document::append(const boost::container::map<Shared_nts, std::string> &row){
+void Csv_document::append(const boost::container::map<Rcnts, std::string> &row){
 	AUTO(it, m_elements.begin());
 	try {
 		while(it != m_elements.end()){
@@ -80,7 +80,7 @@ void Csv_document::append(const boost::container::map<Shared_nts, std::string> &
 	}
 }
 #ifdef POSEIDON_CXX11
-void Csv_document::append(boost::container::map<Shared_nts, std::string> &&row){
+void Csv_document::append(boost::container::map<Rcnts, std::string> &&row){
 	AUTO(it, m_elements.begin());
 	try {
 		while(it != m_elements.end()){
@@ -232,7 +232,7 @@ void Csv_document::parse(std::istream &is){
 		}
 	}
 	for(AUTO(it, matrix.begin()); it != matrix.end(); ++it){
-		Shared_nts key(it->at(0));
+		Rcnts key(it->at(0));
 		it->erase(it->begin());
 		elements.emplace(STD_MOVE_IDN(key), STD_MOVE_IDN(*it));
 	}

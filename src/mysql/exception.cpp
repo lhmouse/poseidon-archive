@@ -8,7 +8,7 @@
 namespace Poseidon {
 namespace Mysql {
 
-Exception::Exception(const char *file, std::size_t line, const char *func, Shared_nts schema, unsigned long code, Shared_nts message)
+Exception::Exception(const char *file, std::size_t line, const char *func, Rcnts schema, unsigned long code, Rcnts message)
 	: Basic_exception(file, line, func, STD_MOVE(message))
 	, m_schema(STD_MOVE(schema)), m_code(code)
 {

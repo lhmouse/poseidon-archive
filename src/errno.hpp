@@ -5,12 +5,12 @@
 #define POSEIDON_ERRNO_HPP_
 
 #include "cxx_ver.hpp"
-#include "shared_nts.hpp"
+#include "rcnts.hpp"
 #include <cerrno>
 
 namespace Poseidon {
 
-extern Shared_nts get_error_desc(int err_code = errno) NOEXCEPT;
+extern Rcnts get_error_desc(int err_code = errno) NOEXCEPT;
 extern std::string get_error_desc_as_string(int err_code = errno);
 
 }

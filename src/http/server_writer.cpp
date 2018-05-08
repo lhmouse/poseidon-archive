@@ -36,13 +36,13 @@ long Server_writer::put_response(Response_headers response_headers, Stream_buffe
 		headers.erase("Content-Type");
 		headers.erase("Transfer-Encoding");
 		if(set_content_length){
-			headers.set(sslit("Content-Length"), "0");
+			headers.set(Rcnts::view("Content-Length"), "0");
 		}
 	} else {
 		headers.erase("Transfer-Encoding");
 		if(set_content_length){
 			len = (unsigned)std::sprintf(temp, "%llu", (unsigned long long)entity.size());
-			headers.set(sslit("Content-Length"), std::string(temp, len));
+			headers.set(Rcnts::view("Content-Length"), std::string(temp, len));
 		}
 	}
 
@@ -75,7 +75,7 @@ long Server_writer::put_chunked_header(Response_headers response_headers){
 	AUTO_REF(headers, response_headers.headers);
 	const AUTO_REF(transfer_encoding, headers.get("Transfer-Encoding"));
 	if(transfer_encoding.empty() || (::strcasecmp(transfer_encoding.c_str(), "identity") == 0)){
-		headers.set(sslit("Transfer-Encoding"), "chunked");
+		headers.set(Rcnts::view("Transfer-Encoding"), "chunked");
 	}
 
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
@@ -90,7 +90,7 @@ long Server_writer::put_chunked_header(Response_headers response_headers){
 }
 long Server_writer::put_chunk(Stream_buffer entity){
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!entity.empty(), Basic_exception, sslit("You are not allowed to send an empty chunk"));
+	DEBUG_THROW_UNLESS(!entity.empty(), Basic_exception, Rcnts::view("You are not allowed to send an empty chunk"));
 
 	Stream_buffer chunk;
 

@@ -8,7 +8,7 @@
 namespace Poseidon {
 namespace Web_socket {
 
-Exception::Exception(const char *file, std::size_t line, const char *func, Status_code status_code, Shared_nts message)
+Exception::Exception(const char *file, std::size_t line, const char *func, Status_code status_code, Rcnts message)
 	: Basic_exception(file, line, func, STD_MOVE(message))
 	, m_status_code(status_code)
 {

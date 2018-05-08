@@ -11,7 +11,7 @@ Url_param::Url_param(const Optional_map &map_ref, const char *key)
 	: m_valid(false), m_str()
 {
 	const AUTO_REF(map, map_ref);
-	const AUTO(it, map.find(Shared_nts::view(key)));
+	const AUTO(it, map.find(Rcnts::view(key)));
 	if(it != map.end()){
 		m_valid = true;
 		m_str = it->second;
@@ -26,7 +26,7 @@ Url_param::Url_param(Move<Optional_map> map_ref, const char *key)
 	Optional_map map;
 	map_ref.swap(map);
 #endif
-	const AUTO(it, map.find(Shared_nts::view(key)));
+	const AUTO(it, map.find(Rcnts::view(key)));
 	if(it != map.end()){
 		m_valid = true;
 		m_str.swap(it->second);

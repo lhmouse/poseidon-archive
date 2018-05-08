@@ -11,11 +11,11 @@ namespace Mongodb {
 
 class Exception : public Basic_exception {
 private:
-	Shared_nts m_database;
+	Rcnts m_database;
 	unsigned long m_code;
 
 public:
-	Exception(const char *file, std::size_t line, const char *func, Shared_nts database, unsigned long code, Shared_nts message);
+	Exception(const char *file, std::size_t line, const char *func, Rcnts database, unsigned long code, Rcnts message);
 	~Exception() NOEXCEPT;
 
 public:

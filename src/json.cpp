@@ -193,7 +193,7 @@ namespace {
 				is.setstate(std::ios::failbit);
 				return ret;
 			}
-			ret.set(Shared_nts(name), accept_element(is));
+			ret.set(Rcnts(name), accept_element(is));
 		}
 		return ret;
 	}
@@ -322,7 +322,7 @@ Json_object::Json_object(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, sslit("Json_object parser error"));
+	DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Json_object parser error"));
 }
 
 Stream_buffer Json_object::dump() const {
@@ -364,7 +364,7 @@ Json_array::Json_array(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, sslit("Json_array parser error"));
+	DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Json_array parser error"));
 }
 
 Stream_buffer Json_array::dump() const {

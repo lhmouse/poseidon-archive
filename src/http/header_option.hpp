@@ -60,16 +60,16 @@ public:
 	const std::string &get_option(const char *key) const {
 		return m_options.get(key);
 	}
-	const std::string &get_option(const Shared_nts &key) const {
+	const std::string &get_option(const Rcnts &key) const {
 		return m_options.get(key);
 	}
-	void set_option(Shared_nts key, std::string value){
+	void set_option(Rcnts key, std::string value){
 		m_options.set(STD_MOVE(key), STD_MOVE(value));
 	}
 	bool erase_option(const char *key){
 		return m_options.erase(key);
 	}
-	bool erase_option(const Shared_nts &key){
+	bool erase_option(const Rcnts &key){
 		return m_options.erase(key);
 	}
 

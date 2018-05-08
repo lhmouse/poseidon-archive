@@ -133,11 +133,11 @@ void Base64_decoder::put(const void *data, std::size_t size){
 			} else if((seq >= (1ul << 18)) && ((seq >> 18) <= 1)){
 				n_add = 1ul << 18;
 			}
-			DEBUG_THROW_UNLESS(n_add != 0, Exception, sslit("Invalid base64 padding character encountered"));
+			DEBUG_THROW_UNLESS(n_add != 0, Exception, Rcnts::view("Invalid base64 padding character encountered"));
 			seq += n_add;
 		} else {
 			const int digit = from_base64_digit(ch);
-			DEBUG_THROW_UNLESS(digit >= 0, Exception, sslit("Invalid base64 character encountered"));
+			DEBUG_THROW_UNLESS(digit >= 0, Exception, Rcnts::view("Invalid base64 character encountered"));
 			seq += static_cast<unsigned>(digit);
 		}
 		if(seq >= (1ul << 24)){
@@ -156,7 +156,7 @@ void Base64_decoder::put(const void *data, std::size_t size){
 				m_buffer.put((seq >>  0) & 0xFF);
 				break;
 			default:
-				DEBUG_THROW(Exception, sslit("Invalid base64 data"));
+				DEBUG_THROW(Exception, Rcnts::view("Invalid base64 data"));
 			}
 			m_seq = 1;
 		} else {
@@ -177,7 +177,7 @@ void Base64_decoder::put(const Stream_buffer &buffer){
 Stream_buffer Base64_decoder::finalize(){
 	PROFILE_ME;
 
-	DEBUG_THROW_UNLESS(m_seq == 1, Exception, sslit("Incomplete base64 data"));
+	DEBUG_THROW_UNLESS(m_seq == 1, Exception, Rcnts::view("Incomplete base64 data"));
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
 	return ret;

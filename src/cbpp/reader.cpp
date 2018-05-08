@@ -99,7 +99,7 @@ bool Reader::put_encoded_data(Stream_buffer encoded){
 			{
 				Stream_buffer payload = m_queue.cut_off(boost::numeric_cast<std::size_t>(m_payload_size));
 				boost::uint32_t temp32;
-				DEBUG_THROW_UNLESS(payload.get(&temp32, 4) == 4, Exception, status_end_of_stream, sslit("control.code"));
+				DEBUG_THROW_UNLESS(payload.get(&temp32, 4) == 4, Exception, status_end_of_stream, Rcnts::view("control.code"));
 				has_next_request = on_control_message(static_cast<boost::int32_t>(load_be(temp32)), STD_MOVE(payload));
 			}
 			m_payload_offset = m_payload_size;

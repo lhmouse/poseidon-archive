@@ -218,7 +218,7 @@ namespace {
 				return;
 			}
 			conn->execute_sql(query);
-			DEBUG_THROW_UNLESS(conn->fetch_row(), Mysql::Exception, Shared_nts::view(get_table()), ER_SP_FETCH_NO_DATA, sslit("No rows returned"));
+			DEBUG_THROW_UNLESS(conn->fetch_row(), Mysql::Exception, Rcnts::view(get_table()), ER_SP_FETCH_NO_DATA, Rcnts::view("No rows returned"));
 			m_object->fetch(conn);
 		}
 	};
@@ -538,7 +538,7 @@ namespace {
 	public:
 		void start(){
 			const Mutex::Unique_lock lock(m_mutex);
-			Thread(boost::bind(&Mysql_thread::thread_proc, this), sslit(" M  "), sslit("MySQL")).swap(m_thread);
+			Thread(boost::bind(&Mysql_thread::thread_proc, this), Rcnts::view(" M  "), Rcnts::view("MySQL")).swap(m_thread);
 			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
@@ -590,7 +590,7 @@ namespace {
 			const AUTO(due_time, saturated_add(now, save_delay));
 
 			const Mutex::Unique_lock lock(m_mutex);
-			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, sslit("MySQL thread is being shut down"));
+			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, Rcnts::view("MySQL thread is being shut down"));
 			Operation_queue_element elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){
@@ -613,20 +613,20 @@ namespace {
 		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<Mysql_thread> thread;
 	};
-	boost::container::flat_map<Shared_nts, Route> g_router;
+	boost::container::flat_map<Rcnts, Route> g_router;
 	boost::container::flat_multimap<std::size_t, std::size_t> g_routing_map;
 	boost::container::vector<boost::shared_ptr<Mysql_thread> > g_threads;
 
 	void add_operation_by_table(const char *table, boost::shared_ptr<Operation_base> operation, bool urgent){
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, sslit("MySQL support is not enabled"));
+		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MySQL support is not enabled"));
 
 		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<Mysql_thread> thread;
 		{
 			const Mutex::Unique_lock lock(g_router_mutex);
 
-			AUTO_REF(route, g_router[Shared_nts::view(table)]);
+			AUTO_REF(route, g_router[Rcnts::view(table)]);
 			if(route.probe.use_count() > 1){
 				probe = route.probe;
 				thread = route.thread;
@@ -670,7 +670,7 @@ namespace {
 	}
 	void add_operation_all(boost::shared_ptr<Operation_base> operation, bool urgent){
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, sslit("MySQL support is not enabled"));
+		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MySQL support is not enabled"));
 
 		const Mutex::Unique_lock lock(g_router_mutex);
 		for(AUTO(it, g_threads.begin()); it != g_threads.end(); ++it){

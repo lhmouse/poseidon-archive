@@ -15,7 +15,7 @@ private:
 	Status_code m_status_code;
 
 public:
-	Exception(const char *file, std::size_t line, const char *func, Status_code status_code, Shared_nts message = Shared_nts());
+	Exception(const char *file, std::size_t line, const char *func, Status_code status_code, Rcnts message = Rcnts());
 	~Exception() NOEXCEPT;
 
 public:

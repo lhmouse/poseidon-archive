@@ -29,7 +29,7 @@ Ip_port::Ip_port(){
 }
 Ip_port::Ip_port(const char *ip_str, boost::uint16_t port_num){
 	const AUTO(ip_size, std::strlen(ip_str) + 1);
-	DEBUG_THROW_UNLESS(ip_size <= sizeof(m_ip), Exception, sslit("IP address string is too long"));
+	DEBUG_THROW_UNLESS(ip_size <= sizeof(m_ip), Exception, Rcnts::view("IP address string is too long"));
 	std::memcpy(m_ip, ip_str, ip_size);
 	m_port = port_num;
 }
@@ -38,21 +38,21 @@ Ip_port::Ip_port(const Sock_addr &sock_addr){
 	switch(family){
 	case AF_INET: {
 		::sockaddr_in &sin = as_sin(sock_addr.data());
-		DEBUG_THROW_UNLESS(sock_addr.size() >= sizeof(sin), Exception, sslit("Invalid IPv4 Sock_addr"));
+		DEBUG_THROW_UNLESS(sock_addr.size() >= sizeof(sin), Exception, Rcnts::view("Invalid IPv4 Sock_addr"));
 		BOOST_STATIC_ASSERT(sizeof(m_ip) >= INET_ADDRSTRLEN);
 		DEBUG_THROW_UNLESS(::inet_ntop(AF_INET, &(sin.sin_addr), m_ip, sizeof(m_ip)), System_exception);
 		m_port = load_be(sin.sin_port);
 		break; }
 	case AF_INET6: {
 		::sockaddr_in6 &sin6 = as_sin6(sock_addr.data());
-		DEBUG_THROW_UNLESS(sock_addr.size() >= sizeof(sin6), Exception, sslit("Invalid IPv6 Sock_addr"));
+		DEBUG_THROW_UNLESS(sock_addr.size() >= sizeof(sin6), Exception, Rcnts::view("Invalid IPv6 Sock_addr"));
 		BOOST_STATIC_ASSERT(sizeof(m_ip) >= INET6_ADDRSTRLEN);
 		DEBUG_THROW_UNLESS(::inet_ntop(AF_INET6, &(sin6.sin6_addr), m_ip, sizeof(m_ip)), System_exception);
 		m_port = load_be(sin6.sin6_port);
 		break; }
 	default:
 		LOG_POSEIDON_ERROR("Unknown IP protocol: family = ", family);
-		DEBUG_THROW(Exception, sslit("Unknown IP protocol"));
+		DEBUG_THROW(Exception, Rcnts::view("Unknown IP protocol"));
 	}
 }
 Ip_port::Ip_port(const Ip_port &rhs) NOEXCEPT {

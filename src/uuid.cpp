@@ -49,10 +49,10 @@ Uuid Uuid::random() NOEXCEPT {
 }
 
 Uuid::Uuid(const char (&str)[36]){
-	DEBUG_THROW_UNLESS(from_string(str), Exception, sslit("Invalid UUID string"));
+	DEBUG_THROW_UNLESS(from_string(str), Exception, Rcnts::view("Invalid UUID string"));
 }
 Uuid::Uuid(const std::string &str){
-	DEBUG_THROW_UNLESS(from_string(str), Exception, sslit("Invalid UUID string"));
+	DEBUG_THROW_UNLESS(from_string(str), Exception, Rcnts::view("Invalid UUID string"));
 }
 
 void Uuid::to_string(char (&str)[36], bool upper_case) const {

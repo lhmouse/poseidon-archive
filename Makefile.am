@@ -27,7 +27,7 @@ pkginclude_HEADERS =	\
 	poseidon/src/ssl_raii.hpp	\
 	poseidon/src/log.hpp	\
 	poseidon/src/precompiled.hpp	\
-	poseidon/src/shared_nts.hpp	\
+	poseidon/src/rcnts.hpp	\
 	poseidon/src/module_raii.hpp	\
 	poseidon/src/uuid.hpp	\
 	poseidon/src/hex_printer.hpp	\
@@ -197,7 +197,7 @@ lib_libposeidon_main_la_SOURCES =	\
 	poseidon/src/virtual_shared_from_this.cpp	\
 	poseidon/src/stream_buffer.cpp	\
 	poseidon/src/buffer_streams.cpp	\
-	poseidon/src/shared_nts.cpp	\
+	poseidon/src/rcnts.cpp	\
 	poseidon/src/csv_document.cpp	\
 	poseidon/src/job_base.cpp	\
 	poseidon/src/async_job.cpp	\

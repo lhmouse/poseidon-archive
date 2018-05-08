@@ -113,7 +113,7 @@ boost::uint64_t scan_time(const char *str){
 	Date_time dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	if(std::sscanf(str, "%u-%u-%u %u:%u:%u.%u", &dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms) < 3){
 		LOG_POSEIDON_ERROR("Time string is not valid: ", str);
-		DEBUG_THROW(Exception, sslit("Time string is not valid"));
+		DEBUG_THROW(Exception, Rcnts::view("Time string is not valid"));
 	}
 	return assemble_time(dt);
 }

@@ -40,7 +40,7 @@ public:
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
 					LOG_POSEIDON_ERROR("Incorrect dynamic event type: expecting ", typeid(EventT).name(), ", got ", typeid(*event).name());
-					DEBUG_THROW(Exception, sslit("Incorrect dynamic event type"));
+					DEBUG_THROW(Exception, Rcnts::view("Incorrect dynamic event type"));
 				}
 				callback(STD_MOVE(derived));
 			}

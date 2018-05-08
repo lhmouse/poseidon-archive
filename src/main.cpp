@@ -74,7 +74,7 @@ namespace {
 	Json_object make_help(const char *const (*param_info)[2]){
 		Json_object obj;
 		for(AUTO(ptr, param_info); (*ptr)[0]; ++ptr){
-			obj.set(Shared_nts::view((*ptr)[0]), (*ptr)[1]);
+			obj.set(Rcnts::view((*ptr)[0]), (*ptr)[1]);
 		}
 		return obj;
 	}
@@ -84,11 +84,11 @@ namespace {
 			return "/poseidon/help";
 		}
 		void handle_get(Json_object &resp) const FINAL {
-			resp.set(sslit("description"), "Retreive general information about this process.");
+			resp.set(Rcnts::view("description"), "Retreive general information about this process.");
 			static const char *const s_param_info[][2] = {
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(s_param_info));
+			resp.set(Rcnts::view("parameters"), make_help(s_param_info));
 		}
 		void handle_post(Json_object &resp, Json_object /*req*/) const FINAL {
 			// .servlets = list of servlets
@@ -99,7 +99,7 @@ namespace {
 				const AUTO_REF(servlet, *it);
 				arr.push_back(servlet->get_uri());
 			}
-			resp.set(sslit("servlets"), STD_MOVE_IDN(arr));
+			resp.set(Rcnts::view("servlets"), STD_MOVE_IDN(arr));
 		}
 	};
 
@@ -108,7 +108,7 @@ namespace {
 			return "/poseidon/logger";
 		}
 		void handle_get(Json_object &resp) const FINAL {
-			resp.set(sslit("description"), "Enable or disable specific levels of logs.");
+			resp.set(Rcnts::view("description"), "Enable or disable specific levels of logs.");
 			static const char *const s_param_info[][2] = {
 				{ "mask_to_disable",  "Log levels corresponding to bit ones here will be disabled.\n"
 				                      "This parameter shall be a `String` of digit zeroes and ones.\n"
@@ -118,7 +118,7 @@ namespace {
 				                    "This parameter overrides `mask_to_disable`." },
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(s_param_info));
+			resp.set(Rcnts::view("parameters"), make_help(s_param_info));
 		}
 		void handle_post(Json_object &resp, Json_object req) const FINAL {
 			std::bitset<64> mask_to_enable, mask_to_disable;
@@ -127,7 +127,7 @@ namespace {
 					mask_to_enable = std::bitset<64>(req.get("mask_to_enable").get<std::string>());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `mask_to_enable`: It shall be a `String` of digit zeroes and ones.");
+					resp.set(Rcnts::view("error"), "Invalid parameter `mask_to_enable`: It shall be a `String` of digit zeroes and ones.");
 					return;
 				}
 			}
@@ -136,7 +136,7 @@ namespace {
 					mask_to_disable = std::bitset<64>(req.get("mask_to_disable").get<std::string>());
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `mask_to_disable`: It shall be a `String` of digit zeroes and ones.");
+					resp.set(Rcnts::view("error"), "Invalid parameter `mask_to_disable`: It shall be a `String` of digit zeroes and ones.");
 					return;
 				}
 			}
@@ -149,9 +149,9 @@ namespace {
 #endif
 			mask_new = Logger::get_mask();
 			// .mask_old = previous log mask
-			resp.set(sslit("mask_old"), mask_old.to_string());
+			resp.set(Rcnts::view("mask_old"), mask_old.to_string());
 			// .mask_new = current log mask
-			resp.set(sslit("mask_new"), mask_new.to_string());
+			resp.set(Rcnts::view("mask_new"), mask_new.to_string());
 		}
 	};
 
@@ -160,11 +160,11 @@ namespace {
 			return "/poseidon/network";
 		}
 		void handle_get(Json_object &resp) const FINAL {
-			resp.set(sslit("description"), "Retreive information about incoming and outgoing connections in this process.");
+			resp.set(Rcnts::view("description"), "Retreive information about incoming and outgoing connections in this process.");
 			static const char *const s_param_info[][2] = {
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(s_param_info));
+			resp.set(Rcnts::view("parameters"), make_help(s_param_info));
 		}
 		void handle_post(Json_object &resp, Json_object /*req*/) const FINAL {
 			// .sockets = all sockets managed by epoll.
@@ -175,15 +175,15 @@ namespace {
 			for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 				const AUTO_REF(elem, *it);
 				Json_object obj;
-				obj.set(sslit("remote_info"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "%s:%u", elem.remote_info.ip(), elem.remote_info.port())));
-				obj.set(sslit("local_info"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "%s:%u", elem.local_info.ip(), elem.local_info.port())));
-				obj.set(sslit("creation_time"), std::string(str, format_time(str, sizeof(str), elem.creation_time, false)));
-				obj.set(sslit("listening"), elem.listening);
-				obj.set(sslit("readable"), elem.readable);
-				obj.set(sslit("writeable"), elem.writeable);
+				obj.set(Rcnts::view("remote_info"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "%s:%u", elem.remote_info.ip(), elem.remote_info.port())));
+				obj.set(Rcnts::view("local_info"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "%s:%u", elem.local_info.ip(), elem.local_info.port())));
+				obj.set(Rcnts::view("creation_time"), std::string(str, format_time(str, sizeof(str), elem.creation_time, false)));
+				obj.set(Rcnts::view("listening"), elem.listening);
+				obj.set(Rcnts::view("readable"), elem.readable);
+				obj.set(Rcnts::view("writeable"), elem.writeable);
 				arr.push_back(STD_MOVE_IDN(obj));
 			}
-			resp.set(sslit("sockets"), STD_MOVE_IDN(arr));
+			resp.set(Rcnts::view("sockets"), STD_MOVE_IDN(arr));
 		}
 	};
 
@@ -192,12 +192,12 @@ namespace {
 			return "/poseidon/profiler";
 		}
 		void handle_get(Json_object &resp) const FINAL {
-			resp.set(sslit("description"), "View profiling information that has been collected within this process.");
+			resp.set(Rcnts::view("description"), "View profiling information that has been collected within this process.");
 			static const char *const s_param_info[][2] = {
 				{ "clear", "If set to `true`, all data will be purged." },
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(s_param_info));
+			resp.set(Rcnts::view("parameters"), make_help(s_param_info));
 		}
 		void handle_post(Json_object &resp, Json_object req) const FINAL {
 			bool clear = false;
@@ -206,7 +206,7 @@ namespace {
 					clear = req.get("clear").get<bool>();
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `clear`: It shall be a `Boolean`.");
+					resp.set(Rcnts::view("error"), "Invalid parameter `clear`: It shall be a `Boolean`.");
 					return;
 				}
 			}
@@ -222,15 +222,15 @@ namespace {
 			for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 				const AUTO_REF(elem, *it);
 				Json_object obj;
-				obj.set(sslit("file"), elem.file);
-				obj.set(sslit("line"), elem.line);
-				obj.set(sslit("func"), elem.func);
-				obj.set(sslit("samples"), elem.samples);
-				obj.set(sslit("total"), elem.total);
-				obj.set(sslit("exclusive"), elem.exclusive);
+				obj.set(Rcnts::view("file"), elem.file);
+				obj.set(Rcnts::view("line"), elem.line);
+				obj.set(Rcnts::view("func"), elem.func);
+				obj.set(Rcnts::view("samples"), elem.samples);
+				obj.set(Rcnts::view("total"), elem.total);
+				obj.set(Rcnts::view("exclusive"), elem.exclusive);
 				arr.push_back(STD_MOVE_IDN(obj));
 			}
-			resp.set(sslit("profile"), STD_MOVE_IDN(arr));
+			resp.set(Rcnts::view("profile"), STD_MOVE_IDN(arr));
 		}
 	};
 
@@ -239,7 +239,7 @@ namespace {
 			return "/poseidon/modules";
 		}
 		void handle_get(Json_object &resp) const FINAL {
-			resp.set(sslit("description"), "Load or unload modules in the current process.");
+			resp.set(Rcnts::view("description"), "Load or unload modules in the current process.");
 			static const char *const s_param_info[][2] = {
 				{ "path_to_load", "The path to a shared object file which will be loaded.\n"
 				                  "This path will be passed to `dlopen()`, hence the normal library search rules apply.\n"
@@ -249,7 +249,7 @@ namespace {
 				                       "This parameter cannot be specified together with `path_to_load`." },
 				{ NULLPTR }
 			};
-			resp.set(sslit("parameters"), make_help(s_param_info));
+			resp.set(Rcnts::view("parameters"), make_help(s_param_info));
 		}
 		void handle_post(Json_object &resp, Json_object req) const FINAL {
 			bool to_load = false;
@@ -260,7 +260,7 @@ namespace {
 					to_load = true;
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `path_to_load`: It shall be a `String` representing the path of a shared object file to load.");
+					resp.set(Rcnts::view("error"), "Invalid parameter `path_to_load`: It shall be a `String` representing the path of a shared object file to load.");
 					return;
 				}
 			}
@@ -282,13 +282,13 @@ namespace {
 					to_unload = true;
 				} catch(std::exception &e){
 					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
-					resp.set(sslit("error"), "Invalid parameter `address_to_unload`: It shall be a `String` representing a number in decimal, or hexadecimal with the prefix `0x`.");
+					resp.set(Rcnts::view("error"), "Invalid parameter `address_to_unload`: It shall be a `String` representing a number in decimal, or hexadecimal with the prefix `0x`.");
 					return;
 				}
 			}
 			if(to_load && to_unload){
 				LOG_POSEIDON_WARNING("`address_to_load` and `path_to_unload` cannot be specified together.");
-				resp.set(sslit("error"), "`address_to_load` and `path_to_unload` cannot be specified together.");
+				resp.set(Rcnts::view("error"), "`address_to_load` and `path_to_unload` cannot be specified together.");
 				return;
 			}
 
@@ -306,7 +306,7 @@ namespace {
 				}
 				if(!what.empty()){
 					LOG_POSEIDON_WARNING("Failed to load module: ", what);
-					resp.set(sslit("error"), "Failed to load module: " + what);
+					resp.set(Rcnts::view("error"), "Failed to load module: " + what);
 					return;
 				}
 			}
@@ -314,7 +314,7 @@ namespace {
 				const bool result = Module_depository::unload(address_to_unload);
 				if(!result){
 					LOG_POSEIDON_WARNING("Failed to unload module: 0x", std::hex, address_to_unload);
-					resp.set(sslit("error"), "Failed to unload module. Maybe it has been unloaded already?");
+					resp.set(Rcnts::view("error"), "Failed to unload module. Maybe it has been unloaded already?");
 					return;
 				}
 			}
@@ -327,12 +327,12 @@ namespace {
 			for(AUTO(it, snapshot.begin()); it != snapshot.end(); ++it){
 				const AUTO_REF(elem, *it);
 				Json_object obj;
-				obj.set(sslit("dl_handle"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "0x%llx", (unsigned long long)elem.dl_handle)));
-				obj.set(sslit("base_address"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "0x%llx", (unsigned long long)elem.base_address)));
-				obj.set(sslit("real_path"), elem.real_path.get());
+				obj.set(Rcnts::view("dl_handle"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "0x%llx", (unsigned long long)elem.dl_handle)));
+				obj.set(Rcnts::view("base_address"), std::string(str, (unsigned)::snprintf(str, sizeof(str), "0x%llx", (unsigned long long)elem.base_address)));
+				obj.set(Rcnts::view("real_path"), elem.real_path.get());
 				arr.push_back(STD_MOVE_IDN(obj));
 			}
-			resp.set(sslit("modules"), STD_MOVE_IDN(arr));
+			resp.set(Rcnts::view("modules"), STD_MOVE_IDN(arr));
 		}
 	};
 

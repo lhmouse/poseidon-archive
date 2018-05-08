@@ -11,8 +11,8 @@ namespace Poseidon {
 namespace {
 	struct Thread_control_block {
 		boost::function<void ()> proc;
-		Shared_nts tag;
-		Shared_nts name;
+		Rcnts tag;
+		Rcnts name;
 
 		boost::shared_ptr<Thread_control_block> ref;
 		::pthread_t handle;
@@ -36,7 +36,7 @@ namespace {
 	}
 }
 
-Thread::Thread(boost::function<void ()> proc, Shared_nts tag, Shared_nts name){
+Thread::Thread(boost::function<void ()> proc, Rcnts tag, Rcnts name){
 	Thread_control_block temp = { STD_MOVE_IDN(proc), STD_MOVE(tag), STD_MOVE(name) };
 	const AUTO(tcb, boost::make_shared<Thread_control_block>(STD_MOVE(temp)));
 	try {
@@ -63,7 +63,7 @@ bool Thread::joinable() const NOEXCEPT {
 }
 void Thread::join(){
 	const AUTO(tcb, static_cast<Thread_control_block *>(m_tcb.get()));
-	DEBUG_THROW_UNLESS(tcb, Exception, sslit("Thread is not joinable"));
+	DEBUG_THROW_UNLESS(tcb, Exception, Rcnts::view("Thread is not joinable"));
 	int err = ::pthread_join(tcb->handle, NULLPTR);
 	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
 	m_tcb.reset();

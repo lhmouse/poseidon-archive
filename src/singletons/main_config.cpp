@@ -46,7 +46,7 @@ void Main_config::reload(){
 
 boost::shared_ptr<const Config_file> Main_config::get_file(){
 	const Mutex::Unique_lock lock(g_mutex);
-	DEBUG_THROW_UNLESS(g_config, Exception, sslit("Main config file has not been loaded"));
+	DEBUG_THROW_UNLESS(g_config, Exception, Rcnts::view("Main config file has not been loaded"));
 	return g_config;
 }
 

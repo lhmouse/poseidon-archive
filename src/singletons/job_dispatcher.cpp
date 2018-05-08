@@ -305,7 +305,7 @@ void Job_dispatcher::yield(boost::shared_ptr<const Promise> promise, bool insign
 	PROFILE_ME;
 
 	const AUTO(fiber, t_current_fiber);
-	DEBUG_THROW_UNLESS(fiber, Exception, sslit("No current fiber"));
+	DEBUG_THROW_UNLESS(fiber, Exception, Rcnts::view("No current fiber"));
 	if(fiber->queue.empty()){
 		LOG_POSEIDON_FATAL("Not in current fiber?!");
 		std::terminate();

@@ -54,7 +54,7 @@ Ssl_filter::Ssl_filter(Move<Unique_ssl> ssl, Ssl_filter::Direction dir, int fd)
 	} else if(dir == to_accept){
 		::SSL_set_accept_state(m_ssl.get());
 	}
-	DEBUG_THROW_UNLESS(::SSL_set_fd(m_ssl.get(), fd), Exception, sslit("::SSL_set_fd() failed"));
+	DEBUG_THROW_UNLESS(::SSL_set_fd(m_ssl.get(), fd), Exception, Rcnts::view("::SSL_set_fd() failed"));
 }
 Ssl_filter::~Ssl_filter(){
 	//

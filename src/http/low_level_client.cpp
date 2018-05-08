@@ -131,7 +131,7 @@ bool Low_level_client::send(Verb verb, std::string uri, Optional_map get_params,
 	PROFILE_ME;
 
 	Optional_map headers;
-	headers.set(sslit("Content-Type"), content_type.dump().dump_string());
+	headers.set(Rcnts::view("Content-Type"), content_type.dump().dump_string());
 	return send(verb, STD_MOVE(uri), STD_MOVE(get_params), STD_MOVE(headers), STD_MOVE(entity));
 }
 bool Low_level_client::send(Verb verb, std::string uri, Optional_map get_params, Optional_map headers, Stream_buffer entity){

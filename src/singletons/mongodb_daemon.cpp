@@ -174,16 +174,16 @@ namespace {
 				AUTO(pkey, m_object->generate_primary_key());
 				if(m_to_replace && !pkey.empty()){
 					Mongodb::Bson_builder upd;
-					upd.append_object(sslit("q"), Mongodb::bson_scalar_string(sslit("_id"), STD_MOVE(pkey)));
-					upd.append_object(sslit("u"), STD_MOVE(doc));
-					upd.append_boolean(sslit("upsert"), true);
+					upd.append_object(Rcnts::view("q"), Mongodb::bson_scalar_string(Rcnts::view("_id"), STD_MOVE(pkey)));
+					upd.append_object(Rcnts::view("u"), STD_MOVE(doc));
+					upd.append_boolean(Rcnts::view("upsert"), true);
 					LOG_POSEIDON_DEBUG("Upserting: pkey = ", pkey, ", upd = ", upd);
-					q.append_string(sslit("update"), get_collection());
-					q.append_array(sslit("updates"), Mongodb::bson_scalar_object(sslit("0"), STD_MOVE(upd)));
+					q.append_string(Rcnts::view("update"), get_collection());
+					q.append_array(Rcnts::view("updates"), Mongodb::bson_scalar_object(Rcnts::view("0"), STD_MOVE(upd)));
 				} else {
 					LOG_POSEIDON_DEBUG("Inserting: pkey = ", pkey, ", doc = ", doc);
-					q.append_string(sslit("insert"), get_collection());
-					q.append_array(sslit("documents"), Mongodb::bson_scalar_object(sslit("0"), STD_MOVE(doc)));
+					q.append_string(Rcnts::view("insert"), get_collection());
+					q.append_array(Rcnts::view("documents"), Mongodb::bson_scalar_object(Rcnts::view("0"), STD_MOVE(doc)));
 				}
 			}
 			query = q;
@@ -229,7 +229,7 @@ namespace {
 				return;
 			}
 			conn->execute_bson(query);
-			DEBUG_THROW_UNLESS(conn->fetch_document(), Mongodb::Exception, Shared_nts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, sslit("No documents returned"));
+			DEBUG_THROW_UNLESS(conn->fetch_document(), Mongodb::Exception, Rcnts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, Rcnts::view("No documents returned"));
 			m_object->fetch(conn);
 		}
 	};
@@ -374,7 +374,7 @@ namespace {
 			return "";
 		}
 		void generate_bson(Mongodb::Bson_builder &query) const OVERRIDE {
-			query = Mongodb::bson_scalar_signed(sslit("ping"), 1);
+			query = Mongodb::bson_scalar_signed(Rcnts::view("ping"), 1);
 		}
 		void execute(const boost::shared_ptr<Mongodb::Connection> &conn, const Mongodb::Bson_builder &query) OVERRIDE {
 			PROFILE_ME;
@@ -549,7 +549,7 @@ namespace {
 	public:
 		void start(){
 			const Mutex::Unique_lock lock(m_mutex);
-			Thread(boost::bind(&Mongodb_thread::thread_proc, this), sslit(" G  "), sslit("MongoDB")).swap(m_thread);
+			Thread(boost::bind(&Mongodb_thread::thread_proc, this), Rcnts::view(" G  "), Rcnts::view("MongoDB")).swap(m_thread);
 			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
@@ -601,7 +601,7 @@ namespace {
 			const AUTO(due_time, saturated_add(now, save_delay));
 
 			const Mutex::Unique_lock lock(m_mutex);
-			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, sslit("MongoDB thread is being shut down"));
+			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, Rcnts::view("MongoDB thread is being shut down"));
 			Operation_queue_element elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){
@@ -624,20 +624,20 @@ namespace {
 		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<Mongodb_thread> thread;
 	};
-	boost::container::flat_map<Shared_nts, Route> g_router;
+	boost::container::flat_map<Rcnts, Route> g_router;
 	boost::container::flat_multimap<std::size_t, std::size_t> g_routing_map;
 	boost::container::vector<boost::shared_ptr<Mongodb_thread> > g_threads;
 
 	void add_operation_by_collection(const char *collection, boost::shared_ptr<Operation_base> operation, bool urgent){
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, sslit("MongoDB support is not enabled"));
+		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MongoDB support is not enabled"));
 
 		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<Mongodb_thread> thread;
 		{
 			const Mutex::Unique_lock lock(g_router_mutex);
 
-			AUTO_REF(route, g_router[Shared_nts::view(collection)]);
+			AUTO_REF(route, g_router[Rcnts::view(collection)]);
 			if(route.probe.use_count() > 1){
 				probe = route.probe;
 				thread = route.thread;
@@ -681,7 +681,7 @@ namespace {
 	}
 	void add_operation_all(boost::shared_ptr<Operation_base> operation, bool urgent){
 		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, sslit("MongoDB support is not enabled"));
+		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MongoDB support is not enabled"));
 
 		const Mutex::Unique_lock lock(g_router_mutex);
 		for(AUTO(it, g_threads.begin()); it != g_threads.end(); ++it){
@@ -709,7 +709,7 @@ void Mongodb_daemon::start(){
 		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB master server is up...");
 		try {
 			master_conn = real_create_connection(false, VAL_INIT);
-			master_conn->execute_bson(Mongodb::bson_scalar_signed(sslit("ping"), 1));
+			master_conn->execute_bson(Mongodb::bson_scalar_signed(Rcnts::view("ping"), 1));
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MongoDB master server: ", e.what());
 			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
@@ -720,7 +720,7 @@ void Mongodb_daemon::start(){
 		try {
 			slave_conn = real_create_connection(true, master_conn);
 			if(slave_conn != master_conn){
-				slave_conn->execute_bson(Mongodb::bson_scalar_signed(sslit("ping"), 1));
+				slave_conn->execute_bson(Mongodb::bson_scalar_signed(Rcnts::view("ping"), 1));
 			}
 		} catch(std::exception &e){
 			LOG_POSEIDON_FATAL("Could not connect to MongoDB slave server: ", e.what());

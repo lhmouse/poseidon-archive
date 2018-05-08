@@ -227,7 +227,7 @@ void Session::on_sync_control_message(Status_code status_code, Stream_buffer par
 			LOG_POSEIDON_DEBUG("Received PONG frame from ", get_remote_info());
 			break;
 		default:
-			DEBUG_THROW(Exception, status_unknown_control_code, sslit("Unknown control code"));
+			DEBUG_THROW(Exception, status_unknown_control_code, Rcnts::view("Unknown control code"));
 		}
 	}
 }

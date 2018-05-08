@@ -193,18 +193,18 @@ void Config_file::load(const std::string &path){
 		Buffer_istream is(STD_MOVE(buf));
 		std::string key, val;
 		const char key_term = unescape(key, is, "=#");
-		DEBUG_THROW_UNLESS(is, Exception, sslit("Error parsing escape sequence"));
+		DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Error parsing escape sequence"));
 		key = trim(STD_MOVE(key));
 		if(key.empty()){
 			continue;
 		}
 		if(key_term == '='){
 			unescape(val, is, "#");
-			DEBUG_THROW_UNLESS(is, Exception, sslit("Error parsing escape sequence"));
+			DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Error parsing escape sequence"));
 			val = trim(STD_MOVE(val));
 		}
 		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Config: ", std::setw(3), line, " | ", key, " = ", val);
-		contents.append(Shared_nts(key), STD_MOVE(val));
+		contents.append(Rcnts(key), STD_MOVE(val));
 	}
 
 	m_contents.swap(contents);

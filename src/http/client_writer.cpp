@@ -45,19 +45,19 @@ long Client_writer::put_request(Request_headers request_headers, Stream_buffer e
 		headers.erase("Transfer-Encoding");
 		if(set_content_length){
 			if((request_headers.verb == verb_post) || (request_headers.verb == verb_put)){
-				headers.set(sslit("Content-Length"), "0");
+				headers.set(Rcnts::view("Content-Length"), "0");
 			} else {
 				headers.erase("Content-Length");
 			}
 		}
 	} else {
 		if(!headers.has("Content-Type")){
-			headers.set(sslit("Content-Type"), "application/x-www-form-urlencoded");
+			headers.set(Rcnts::view("Content-Type"), "application/x-www-form-urlencoded");
 		}
 		headers.erase("Transfer-Encoding");
 		if(set_content_length){
 			len = (unsigned)std::sprintf(temp, "%llu", (unsigned long long)entity.size());
-			headers.set(sslit("Content-Length"), std::string(temp, len));
+			headers.set(Rcnts::view("Content-Length"), std::string(temp, len));
 		}
 	}
 
@@ -95,11 +95,11 @@ long Client_writer::put_chunked_header(Request_headers request_headers){
 
 	AUTO_REF(headers, request_headers.headers);
 	if(!headers.has("Content-Type")){
-		headers.set(sslit("Content-Type"), "application/x-www-form-urlencoded");
+		headers.set(Rcnts::view("Content-Type"), "application/x-www-form-urlencoded");
 	}
 	const AUTO_REF(transfer_encoding, headers.get("Transfer-Encoding"));
 	if(transfer_encoding.empty() || (::strcasecmp(transfer_encoding.c_str(), "identity") == 0)){
-		headers.set(sslit("Transfer-Encoding"), "chunked");
+		headers.set(Rcnts::view("Transfer-Encoding"), "chunked");
 	}
 
 	for(AUTO(it, headers.begin()); it != headers.end(); ++it){
@@ -114,7 +114,7 @@ long Client_writer::put_chunked_header(Request_headers request_headers){
 }
 long Client_writer::put_chunk(Stream_buffer entity){
 	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!entity.empty(), Basic_exception, sslit("You are not allowed to send an empty chunk"));
+	DEBUG_THROW_UNLESS(!entity.empty(), Basic_exception, Rcnts::view("You are not allowed to send an empty chunk"));
 
 	Stream_buffer chunk;
 

@@ -313,7 +313,7 @@ void Epoll_daemon::start(){
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting epoll daemon...");
 
 	DEBUG_THROW_UNLESS(g_epoll.reset(::epoll_create(100)), System_exception);
-	Thread(&thread_proc, sslit("   N"), sslit("Network")).swap(g_thread);
+	Thread(&thread_proc, Rcnts::view("   N"), Rcnts::view("Network")).swap(g_thread);
 }
 void Epoll_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
@@ -337,7 +337,7 @@ void Epoll_daemon::add_socket(const boost::shared_ptr<Socket_base> &socket, bool
 	const Recursive_mutex::Unique_lock lock(g_mutex);
 	Socket_element elem = { boost::make_shared<Weakable_socket>(take_ownership, socket), socket.get(), now, now, -1 };
 	const AUTO(result, g_socket_map.insert(STD_MOVE(elem)));
-	DEBUG_THROW_UNLESS(result.second, Exception, sslit("Socket is already in epoll"));
+	DEBUG_THROW_UNLESS(result.second, Exception, Rcnts::view("Socket is already in epoll"));
 	try {
 		::epoll_event event = { };
 		event.events = static_cast<boost::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);

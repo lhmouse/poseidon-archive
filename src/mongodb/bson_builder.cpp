@@ -49,130 +49,130 @@ void Bson_builder::internal_build(void *impl, bool as_array) const {
 		case type_boolean: {
 			bool value;
 			std::memcpy(&value, it->small, sizeof(value));
-			DEBUG_THROW_UNLESS(::bson_append_bool(bt, key_str, -1, value), Basic_exception, sslit("BSON builder: bson_append_bool() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_bool(bt, key_str, -1, value), Basic_exception, Rcnts::view("BSON builder: bson_append_bool() failed"));
 			break; }
 		case type_signed: {
 			boost::int64_t value;
 			std::memcpy(&value, it->small, sizeof(value));
-			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, value), Basic_exception, sslit("BSON builder: bson_append_int64() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, value), Basic_exception, Rcnts::view("BSON builder: bson_append_int64() failed"));
 			break; }
 		case type_unsigned: {
 			boost::uint64_t value;
 			std::memcpy(&value, it->small, sizeof(value));
-			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, boost::numeric_cast<boost::int64_t>(value)), Basic_exception, sslit("BSON builder: bson_append_int64() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_int64(bt, key_str, -1, boost::numeric_cast<boost::int64_t>(value)), Basic_exception, Rcnts::view("BSON builder: bson_append_int64() failed"));
 			break; }
 		case type_double: {
 			double value;
 			std::memcpy(&value, it->small, sizeof(value));
-			DEBUG_THROW_UNLESS(::bson_append_double(bt, key_str, -1, value), Basic_exception, sslit("BSON builder: bson_append_double() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_double(bt, key_str, -1, value), Basic_exception, Rcnts::view("BSON builder: bson_append_double() failed"));
 			break; }
 		case type_string: {
-			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, it->large.data(), boost::numeric_cast<int>(it->large.size())), Basic_exception, sslit("BSON builder: bson_append_utf8() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, it->large.data(), boost::numeric_cast<int>(it->large.size())), Basic_exception, Rcnts::view("BSON builder: bson_append_utf8() failed"));
 			break; }
 		case type_datetime: {
 			boost::uint64_t value;
 			std::memcpy(&value, it->small, sizeof(value));
 			char str[64];
 			std::size_t len = format_time(str, sizeof(str), value, true);
-			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, str, static_cast<int>(len)), Basic_exception, sslit("BSON builder: bson_append_utf8() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, str, static_cast<int>(len)), Basic_exception, Rcnts::view("BSON builder: bson_append_utf8() failed"));
 			break; }
 		case type_uuid: {
 			char str[36];
 			Uuid(it->small).to_string(str);
-			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, str, sizeof(str)), Basic_exception, sslit("BSON builder: bson_append_utf8() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_utf8(bt, key_str, -1, str, sizeof(str)), Basic_exception, Rcnts::view("BSON builder: bson_append_utf8() failed"));
 			break; }
 		case type_blob: {
 			DEBUG_THROW_UNLESS(::bson_append_binary(bt, key_str, -1, BSON_SUBTYPE_BINARY,
-				reinterpret_cast<const boost::uint8_t *>(it->large.data()), boost::numeric_cast<unsigned>(it->large.size())), Basic_exception, sslit("BSON builder: bson_append_binary() failed"));
+				reinterpret_cast<const boost::uint8_t *>(it->large.data()), boost::numeric_cast<unsigned>(it->large.size())), Basic_exception, Rcnts::view("BSON builder: bson_append_binary() failed"));
 			break; }
 		case type_js_code: {
-			DEBUG_THROW_UNLESS(::bson_append_code(bt, key_str, -1, it->large.c_str()), Basic_exception, sslit("BSON builder: bson_append_code() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_code(bt, key_str, -1, it->large.c_str()), Basic_exception, Rcnts::view("BSON builder: bson_append_code() failed"));
 			break; }
 		case type_regex: {
-			DEBUG_THROW_UNLESS(::bson_append_regex(bt, key_str, -1, it->large.c_str(), it->small), Basic_exception, sslit("BSON builder: bson_append_regex() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_regex(bt, key_str, -1, it->large.c_str(), it->small), Basic_exception, Rcnts::view("BSON builder: bson_append_regex() failed"));
 			break; }
 		case type_minkey: {
-			DEBUG_THROW_UNLESS(::bson_append_minkey(bt, key_str, -1), Basic_exception, sslit("BSON builder: bson_append_minkey() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_minkey(bt, key_str, -1), Basic_exception, Rcnts::view("BSON builder: bson_append_minkey() failed"));
 			break; }
 		case type_maxkey: {
-			DEBUG_THROW_UNLESS(::bson_append_maxkey(bt, key_str, -1), Basic_exception, sslit("BSON builder: bson_append_maxkey() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_maxkey(bt, key_str, -1), Basic_exception, Rcnts::view("BSON builder: bson_append_maxkey() failed"));
 			break; }
 		case type_null: {
-			DEBUG_THROW_UNLESS(::bson_append_null(bt, key_str, -1), Basic_exception, sslit("BSON builder: bson_append_null() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_null(bt, key_str, -1), Basic_exception, Rcnts::view("BSON builder: bson_append_null() failed"));
 			break; }
 		case type_object: {
 			::bson_t child_storage;
-			DEBUG_THROW_UNLESS(::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()), Basic_exception, sslit("BSON builder: bson_init_static() failed"));
+			DEBUG_THROW_UNLESS(::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()), Basic_exception, Rcnts::view("BSON builder: bson_init_static() failed"));
 			const Unique_handle<Bson_closer> child_guard(&child_storage);
 			const AUTO(child_bt, child_guard.get());
-			DEBUG_THROW_UNLESS(::bson_append_document(bt, key_str, -1, child_bt), Basic_exception, sslit("BSON builder: bson_append_document() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_document(bt, key_str, -1, child_bt), Basic_exception, Rcnts::view("BSON builder: bson_append_document() failed"));
 			break; }
 		case type_array: {
 			::bson_t child_storage;
-			DEBUG_THROW_UNLESS(::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()), Basic_exception, sslit("BSON builder: bson_init_static() failed"));
+			DEBUG_THROW_UNLESS(::bson_init_static(&child_storage, reinterpret_cast<const boost::uint8_t *>(it->large.data()), it->large.size()), Basic_exception, Rcnts::view("BSON builder: bson_init_static() failed"));
 			const Unique_handle<Bson_closer> child_guard(&child_storage);
 			const AUTO(child_bt, child_guard.get());
-			DEBUG_THROW_UNLESS(::bson_append_array(bt, key_str, -1, child_bt), Basic_exception, sslit("BSON builder: bson_append_array() failed"));
+			DEBUG_THROW_UNLESS(::bson_append_array(bt, key_str, -1, child_bt), Basic_exception, Rcnts::view("BSON builder: bson_append_array() failed"));
 			break; }
 		default:
-			DEBUG_THROW(Basic_exception, sslit("BSON builder: Unknown element type"));
+			DEBUG_THROW(Basic_exception, Rcnts::view("BSON builder: Unknown element type"));
 		}
 	}
 }
 
-void Bson_builder::append_boolean(Shared_nts name, bool value){
+void Bson_builder::append_boolean(Rcnts name, bool value){
 	Element elem = { STD_MOVE(name), type_boolean };
 	BOOST_STATIC_ASSERT(sizeof(elem.small) >= sizeof(value));
 	std::memcpy(elem.small, &value, sizeof(value));
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_signed(Shared_nts name, boost::int64_t value){
+void Bson_builder::append_signed(Rcnts name, boost::int64_t value){
 	Element elem = { STD_MOVE(name), type_signed };
 	BOOST_STATIC_ASSERT(sizeof(elem.small) >= sizeof(value));
 	std::memcpy(elem.small, &value, sizeof(value));
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_unsigned(Shared_nts name, boost::uint64_t value){
+void Bson_builder::append_unsigned(Rcnts name, boost::uint64_t value){
 	Element elem = { STD_MOVE(name), type_unsigned };
 	BOOST_STATIC_ASSERT(sizeof(elem.small) >= sizeof(value));
 	std::memcpy(elem.small, &value, sizeof(value));
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_double(Shared_nts name, double value){
+void Bson_builder::append_double(Rcnts name, double value){
 	Element elem = { STD_MOVE(name), type_double };
 	BOOST_STATIC_ASSERT(sizeof(elem.small) >= sizeof(value));
 	std::memcpy(elem.small, &value, sizeof(value));
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_string(Shared_nts name, const std::string &value){
+void Bson_builder::append_string(Rcnts name, const std::string &value){
 	Element elem = { STD_MOVE(name), type_string };
 	elem.large.append(value.data(), value.size());
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_datetime(Shared_nts name, boost::uint64_t value){
+void Bson_builder::append_datetime(Rcnts name, boost::uint64_t value){
 	Element elem = { STD_MOVE(name), type_datetime };
 	BOOST_STATIC_ASSERT(sizeof(elem.small) >= sizeof(value));
 	std::memcpy(elem.small, &value, sizeof(value));
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_uuid(Shared_nts name, const Uuid &value){
+void Bson_builder::append_uuid(Rcnts name, const Uuid &value){
 	Element elem = { STD_MOVE(name), type_uuid };
 	BOOST_STATIC_ASSERT(sizeof(elem.small) >= sizeof(value));
 	std::memcpy(elem.small, value.data(), value.size());
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_blob(Shared_nts name, const std::basic_string<unsigned char> &value){
+void Bson_builder::append_blob(Rcnts name, const std::basic_string<unsigned char> &value){
 	Element elem = { STD_MOVE(name), type_blob };
 	elem.large.append(reinterpret_cast<const char *>(value.data()), value.size());
 	m_elements.push_back(STD_MOVE(elem));
 }
 
-void Bson_builder::append_js_code(Shared_nts name, const std::string &code){
+void Bson_builder::append_js_code(Rcnts name, const std::string &code){
 	Element elem = { STD_MOVE(name), type_js_code };
 	elem.large.append(code.data(), code.size());
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_regex(Shared_nts name, const std::string &regex, const char *options){
+void Bson_builder::append_regex(Rcnts name, const std::string &regex, const char *options){
 	Element elem = { STD_MOVE(name), type_regex };
 	if(options){
 		::stpncpy(elem.small, options, sizeof(elem.small) - 1)[0] = 0;
@@ -182,26 +182,26 @@ void Bson_builder::append_regex(Shared_nts name, const std::string &regex, const
 	elem.large.append(regex.data(), regex.size());
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_minkey(Shared_nts name){
+void Bson_builder::append_minkey(Rcnts name){
 	Element elem = { STD_MOVE(name), type_minkey };
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_maxkey(Shared_nts name){
+void Bson_builder::append_maxkey(Rcnts name){
 	Element elem = { STD_MOVE(name), type_maxkey };
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_null(Shared_nts name){
+void Bson_builder::append_null(Rcnts name){
 	Element elem = { STD_MOVE(name), type_null };
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_object(Shared_nts name, const Bson_builder &obj){
+void Bson_builder::append_object(Rcnts name, const Bson_builder &obj){
 	Element elem = { STD_MOVE(name), type_object };
 	Buffer_ostream os;
 	obj.build(os, false);
 	elem.large = os.get_buffer().dump_string();
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_array(Shared_nts name, const Bson_builder &arr){
+void Bson_builder::append_array(Rcnts name, const Bson_builder &arr){
 	Element elem = { STD_MOVE(name), type_array };
 	Buffer_ostream os;
 	arr.build(os, true);
@@ -245,7 +245,7 @@ void Bson_builder::build_json(std::ostream &os, bool as_array) const {
 	internal_build(bt, as_array);
 
 	const AUTO(json, ::bson_as_json(bt, NULLPTR));
-	DEBUG_THROW_UNLESS(json, Basic_exception, sslit("BSON builder: Failed to convert BSON to JSON"));
+	DEBUG_THROW_UNLESS(json, Basic_exception, Rcnts::view("BSON builder: Failed to convert BSON to JSON"));
 	const Unique_handle<Bson_string_deleter> json_guard(json);
 
 	os <<json;

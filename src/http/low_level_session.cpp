@@ -128,7 +128,7 @@ bool Low_level_session::send(Status_code status_code, Stream_buffer entity, cons
 	PROFILE_ME;
 
 	Optional_map headers;
-	headers.set(sslit("Content-Type"), content_type.dump().dump_string());
+	headers.set(Rcnts::view("Content-Type"), content_type.dump().dump_string());
 	return send(status_code, STD_MOVE(headers), STD_MOVE(entity));
 }
 bool Low_level_session::send(Status_code status_code, Optional_map headers, Stream_buffer entity){
@@ -169,7 +169,7 @@ try {
 	PROFILE_ME;
 
 	AUTO(pair, make_default_response(status_code, headers));
-	pair.first.headers.set(sslit("Connection"), "Close");
+	pair.first.headers.set(Rcnts::view("Connection"), "Close");
 	Server_writer::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
 	shutdown_read();
 	return shutdown_write();
@@ -190,7 +190,7 @@ try {
 		return false;
 	}
 	AUTO(pair, make_default_response(status_code, STD_MOVE(headers)));
-	pair.first.headers.set(sslit("Connection"), "Close");
+	pair.first.headers.set(Rcnts::view("Connection"), "Close");
 	Server_writer::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
 	shutdown_read();
 	return shutdown_write();

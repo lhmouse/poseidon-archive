@@ -87,7 +87,7 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 
 				for(AUTO(it, line.begin()); it != line.end(); ++it){
 					const unsigned ch = static_cast<unsigned char>(*it);
-					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), Basic_exception, sslit("Invalid HTTP request header"));
+					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), Basic_exception, Rcnts::view("Invalid HTTP request header"));
 				}
 
 				AUTO(pos, line.find(' '));
@@ -137,7 +137,7 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 
 				AUTO(pos, line.find(':'));
 				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
-				Shared_nts key(line.data(), pos);
+				Rcnts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				m_request_headers.headers.append(STD_MOVE(key), STD_MOVE(value));
@@ -160,7 +160,7 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 					m_content_length = content_length_chunked;
 				} else {
 					LOG_POSEIDON_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
-					DEBUG_THROW(Basic_exception, sslit("Inacceptable Transfer-Encoding"));
+					DEBUG_THROW(Basic_exception, Rcnts::view("Inacceptable Transfer-Encoding"));
 				}
 
 				on_request_headers(STD_MOVE(m_request_headers), m_content_length);
@@ -241,7 +241,7 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 
 				AUTO(pos, line.find(':'));
 				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
-				Shared_nts key(line.data(), pos);
+				Rcnts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
 				m_chunked_trailer.append(STD_MOVE(key), STD_MOVE(value));

@@ -184,7 +184,7 @@ void Timer_daemon::start(){
 	}
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting timer daemon...");
 
-	Thread(&thread_proc, sslit("  T "), sslit("Timer")).swap(g_thread);
+	Thread(&thread_proc, Rcnts::view("  T "), Rcnts::view("Timer")).swap(g_thread);
 }
 void Timer_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
