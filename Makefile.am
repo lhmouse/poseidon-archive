@@ -156,7 +156,7 @@ pkginclude_cbpp_HEADERS =	\
 	poseidon/src/cbpp/session.hpp	\
 	poseidon/src/cbpp/low_level_client.hpp	\
 	poseidon/src/cbpp/client.hpp	\
-	poseidon/src/cbpp/message_generator.hpp	\
+	poseidon/src/cbpp/message_generator.inl	\
 	poseidon/src/cbpp/status_codes.hpp	\
 	poseidon/src/cbpp/exception.hpp
 
@@ -164,7 +164,7 @@ if ENABLE_MYSQL
 pkginclude_mysqldir = ${pkgincludedir}/mysql
 pkginclude_mysql_HEADERS =	\
 	poseidon/src/mysql/fwd.hpp	\
-	poseidon/src/mysql/object_generator.hpp	\
+	poseidon/src/mysql/object_generator.inl	\
 	poseidon/src/mysql/connection.hpp	\
 	poseidon/src/mysql/object_base.hpp	\
 	poseidon/src/mysql/exception.hpp	\
@@ -175,7 +175,7 @@ if ENABLE_MONGODB
 pkginclude_mongodbdir = ${pkgincludedir}/mongodb
 pkginclude_mongodb_HEADERS =	\
 	poseidon/src/mongodb/fwd.hpp	\
-	poseidon/src/mongodb/object_generator.hpp	\
+	poseidon/src/mongodb/object_generator.inl	\
 	poseidon/src/mongodb/connection.hpp	\
 	poseidon/src/mongodb/object_base.hpp	\
 	poseidon/src/mongodb/exception.hpp	\
