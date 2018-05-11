@@ -4,6 +4,8 @@ AM_CPPFLAGS = -Wall -Wextra -Werror -Wconversion -Wsign-conversion -Wno-error=un
 	-Wundef -Wshadow -Wstrict-aliasing=2 -Wstrict-overflow=2 -Wno-error=pragmas	\
 	-pipe -fPIC -DPIC -pthread
 AM_CXXFLAGS = -Wnon-virtual-dtor
+AM_LDFLAGS = -pthread
+LDADD = lib/libposeidon-main.la
 
 %.hpp.gch: %.hpp
 	${CXX} -x c++-header ${DEFS} -I. ${AM_CPPFLAGS} ${CPPFLAGS} ${AM_CXXFLAGS} ${CXXFLAGS} -Wno-error $< -o $@
@@ -306,20 +308,11 @@ endif
 lib_libposeidon_main_la_LDFLAGS =	\
 	-pthread -Wl,--no-undefined -version-info 23:0:0
 
-lib_libposeidon_main_la_LIBADD =	\
-	${AM_LIBS}
-
 bin_PROGRAMS =	\
 	bin/poseidon
 
 bin_poseidon_SOURCES =	\
 	poseidon/src/main.cpp
-
-bin_poseidon_LDFLAGS =	\
-	-pthread
-
-bin_poseidon_LDADD =	\
-	lib/libposeidon-main.la
 
 sysconf_DATA =
 
