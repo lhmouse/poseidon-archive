@@ -34,13 +34,13 @@ void Sha1_streambuf::eat_chunk(){
 		w[i] = __rold(w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32], 2);
 	}
 
-	register boost::uint32_t a = m_reg[0];
-	register boost::uint32_t b = m_reg[1];
-	register boost::uint32_t c = m_reg[2];
-	register boost::uint32_t d = m_reg[3];
-	register boost::uint32_t e = m_reg[4];
+	boost::uint32_t a = m_reg[0];
+	boost::uint32_t b = m_reg[1];
+	boost::uint32_t c = m_reg[2];
+	boost::uint32_t d = m_reg[3];
+	boost::uint32_t e = m_reg[4];
 
-	register boost::uint32_t f, k;
+	boost::uint32_t f, k;
 
 #define SHA1_STEP(i_, spec_, a_, b_, c_, d_, e_)	\
 	spec_(a_, b_, c_, d_, e_);	\

@@ -25,12 +25,12 @@ void Md5_streambuf::eat_chunk(){
 	// https://en.wikipedia.org/wiki/MD5
 	AUTO_REF(w, *reinterpret_cast<boost::uint32_t (*)[4]>(m_chunk.data()));
 
-	register boost::uint32_t a = m_reg[0];
-	register boost::uint32_t b = m_reg[1];
-	register boost::uint32_t c = m_reg[2];
-	register boost::uint32_t d = m_reg[3];
+	boost::uint32_t a = m_reg[0];
+	boost::uint32_t b = m_reg[1];
+	boost::uint32_t c = m_reg[2];
+	boost::uint32_t d = m_reg[3];
 
-	register boost::uint32_t f, g;
+	boost::uint32_t f, g;
 
 #define MD5_STEP(i_, spec_, a_, b_, c_, d_, k_, r_)	\
 	spec_(i_, a_, b_, c_, d_);	\

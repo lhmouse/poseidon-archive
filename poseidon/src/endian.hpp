@@ -25,7 +25,7 @@
 
 namespace Poseidon {
 
-template<unsigned sizeT>
+template<std::size_t sizeT>
 struct Byte_swapper;
 
 template<>

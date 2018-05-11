@@ -66,7 +66,7 @@ void System_http_session::initialize_once(const Http::Request_headers &request_h
 		DEBUG_THROW(Http::Exception, Http::status_method_not_allowed);
 	}
 
-	++m_initialized;
+	m_initialized = true;
 }
 
 void System_http_session::on_sync_expect(Http::Request_headers request_headers){

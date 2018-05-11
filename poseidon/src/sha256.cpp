@@ -33,16 +33,16 @@ void Sha256_streambuf::eat_chunk(){
 		w[i] = w[i - 16] + w[i - 7] + s0 + s1;
 	}
 
-	register boost::uint32_t a = m_reg[0];
-	register boost::uint32_t b = m_reg[1];
-	register boost::uint32_t c = m_reg[2];
-	register boost::uint32_t d = m_reg[3];
-	register boost::uint32_t e = m_reg[4];
-	register boost::uint32_t f = m_reg[5];
-	register boost::uint32_t g = m_reg[6];
-	register boost::uint32_t h = m_reg[7];
+	boost::uint32_t a = m_reg[0];
+	boost::uint32_t b = m_reg[1];
+	boost::uint32_t c = m_reg[2];
+	boost::uint32_t d = m_reg[3];
+	boost::uint32_t e = m_reg[4];
+	boost::uint32_t f = m_reg[5];
+	boost::uint32_t g = m_reg[6];
+	boost::uint32_t h = m_reg[7];
 
-	register boost::uint32_t S0, maj, t2, S1, ch, t1;
+	boost::uint32_t S0, maj, t2, S1, ch, t1;
 
 #define SHA256_STEP(i_, a_, b_, c_, d_, e_, f_, g_, h_, k_)	\
 	S0 = __rord(__rord(__rord(a_, 9) ^ a_, 11) ^ a_, 2);	\
