@@ -7,6 +7,9 @@
 #define TOKEN_TO_STR_(...)          # __VA_ARGS__
 #define TOKEN_TO_STR(...)           TOKEN_TO_STR_(__VA_ARGS__)
 
+#define GET_FIRST_(x_, ...)         x_
+#define GET_FIRST(...)              GET_FIRST_(__VA_ARGS__)
+
 #define STRIP_FIRST_(x_, ...)       __VA_ARGS__
 #define STRIP_FIRST(...)            STRIP_FIRST_(__VA_ARGS__)
 
