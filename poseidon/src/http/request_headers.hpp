@@ -6,7 +6,7 @@
 
 #include "../cxx_ver.hpp"
 #include "verbs.hpp"
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 
 namespace Poseidon {
 namespace Http {
@@ -15,8 +15,8 @@ struct Request_headers {
 	Verb verb;
 	std::string uri;
 	unsigned version; // x * 10000 + y 表示 HTTP x.y
-	Optional_map get_params;
-	Optional_map headers;
+	Option_map get_params;
+	Option_map headers;
 };
 
 extern bool is_keep_alive_enabled(const Request_headers &request_headers);

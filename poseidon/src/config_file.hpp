@@ -5,7 +5,7 @@
 #define POSEIDON_CONFIG_FILE_HPP_
 
 #include "cxx_ver.hpp"
-#include "optional_map.hpp"
+#include "option_map.hpp"
 #include <boost/lexical_cast.hpp>
 #include <boost/container/vector.hpp>
 
@@ -13,7 +13,7 @@ namespace Poseidon {
 
 class Config_file {
 private:
-	Optional_map m_contents;
+	Option_map m_contents;
 
 public:
 	Config_file();

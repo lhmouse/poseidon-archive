@@ -6,7 +6,7 @@
 
 #include "../cxx_ver.hpp"
 #include "status_codes.hpp"
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 #include "../stream_buffer.hpp"
 
 namespace Poseidon {
@@ -16,12 +16,12 @@ struct Response_headers {
 	unsigned version; // x * 10000 + y 表示 HTTP x.y
 	Status_code status_code;
 	std::string reason;
-	Optional_map headers;
+	Option_map headers;
 };
 
 extern bool is_keep_alive_enabled(const Response_headers &response_headers) NOEXCEPT;
 
-extern std::pair<Response_headers, Stream_buffer> make_default_response(Status_code status_code, Optional_map headers);
+extern std::pair<Response_headers, Stream_buffer> make_default_response(Status_code status_code, Option_map headers);
 
 }
 }

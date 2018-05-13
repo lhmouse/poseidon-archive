@@ -25,7 +25,7 @@ pkginclude_HEADERS =	\
 	poseidon/src/fwd.hpp	\
 	poseidon/src/socket_base.hpp	\
 	poseidon/src/tcp_session_base.hpp	\
-	poseidon/src/optional_map.hpp	\
+	poseidon/src/option_map.hpp	\
 	poseidon/src/ssl_raii.hpp	\
 	poseidon/src/log.hpp	\
 	poseidon/src/precompiled.hpp	\
@@ -204,7 +204,7 @@ lib_libposeidon_main_la_SOURCES =	\
 	poseidon/src/job_base.cpp	\
 	poseidon/src/async_job.cpp	\
 	poseidon/src/system_http_servlet_base.cpp	\
-	poseidon/src/optional_map.cpp	\
+	poseidon/src/option_map.cpp	\
 	poseidon/src/ssl_raii.cpp	\
 	poseidon/src/ssl_filter.cpp	\
 	poseidon/src/ssl_factories.cpp	\
@@ -306,7 +306,7 @@ lib_libposeidon_main_la_SOURCES +=	\
 endif
 
 lib_libposeidon_main_la_LDFLAGS =	\
-	-Wl,--no-undefined -no-undefined -version-info 23:0:0
+	-Wl,--no-undefined -no-undefined -version-info 24:0:0
 
 bin_PROGRAMS =	\
 	bin/poseidon

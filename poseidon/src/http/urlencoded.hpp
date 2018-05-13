@@ -6,7 +6,7 @@
 
 #include <string>
 #include <iosfwd>
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 
 namespace Poseidon {
 namespace Http {
@@ -14,8 +14,8 @@ namespace Http {
 extern void url_encode(std::ostream &os, const std::string &str);
 extern void url_decode(std::istream &is, std::string &str);
 
-extern void url_encode_params(std::ostream &os, const Optional_map &params);
-extern void url_decode_params(std::istream &is, Optional_map &params);
+extern void url_encode_params(std::ostream &os, const Option_map &params);
+extern void url_decode_params(std::istream &is, Option_map &params);
 
 }
 }

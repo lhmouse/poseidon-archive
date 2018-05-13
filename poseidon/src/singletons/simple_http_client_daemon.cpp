@@ -125,7 +125,7 @@ namespace {
 		// uri = "/foo/bar/page.html?param=value"
 		pos = request_headers.uri.find('?');
 		if(pos != std::string::npos){
-			Optional_map temp_params;
+			Option_map temp_params;
 			Buffer_istream bis;
 			bis.set_buffer(Stream_buffer(request_headers.uri.c_str() + pos + 1, request_headers.uri.size() - pos - 1));
 			Http::url_decode_params(bis, temp_params);
@@ -227,7 +227,7 @@ namespace {
 		void on_low_level_response_entity(boost::uint64_t /*entity_offset*/, Stream_buffer entity) OVERRIDE {
 			m_response_entity.splice(entity);
 		}
-		boost::shared_ptr<Http::Upgraded_session_base> on_low_level_response_end(boost::uint64_t /*content_length*/, Optional_map /*headers*/) OVERRIDE {
+		boost::shared_ptr<Http::Upgraded_session_base> on_low_level_response_end(boost::uint64_t /*content_length*/, Option_map /*headers*/) OVERRIDE {
 			shutdown_read();
 			shutdown_write();
 			return VAL_INIT;

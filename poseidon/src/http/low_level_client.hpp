@@ -47,7 +47,7 @@ protected:
 	// Client_reader
 	void on_response_headers(Response_headers response_headers, boost::uint64_t content_length) OVERRIDE;
 	void on_response_entity(boost::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
-	bool on_response_end(boost::uint64_t content_length, Optional_map headers) OVERRIDE;
+	bool on_response_end(boost::uint64_t content_length, Option_map headers) OVERRIDE;
 
 	// Client_writer
 	long on_encoded_data_avail(Stream_buffer encoded) OVERRIDE;
@@ -55,19 +55,19 @@ protected:
 	// 可覆写。
 	virtual void on_low_level_response_headers(Response_headers response_headers, boost::uint64_t content_length) = 0;
 	virtual void on_low_level_response_entity(boost::uint64_t entity_offset, Stream_buffer entity) = 0;
-	virtual boost::shared_ptr<Upgraded_session_base> on_low_level_response_end(boost::uint64_t content_length, Optional_map headers) = 0;
+	virtual boost::shared_ptr<Upgraded_session_base> on_low_level_response_end(boost::uint64_t content_length, Option_map headers) = 0;
 
 public:
 	boost::shared_ptr<Upgraded_session_base> get_upgraded_client() const;
 
 	virtual bool send(Request_headers request_headers, Stream_buffer entity = Stream_buffer());
-	virtual bool send(Verb verb, std::string uri, Optional_map get_params = Optional_map());
-	virtual bool send(Verb verb, std::string uri, Optional_map get_params, Stream_buffer entity, const Header_option &content_type);
-	virtual bool send(Verb verb, std::string uri, Optional_map get_params, Optional_map headers, Stream_buffer entity = Stream_buffer());
+	virtual bool send(Verb verb, std::string uri, Option_map get_params = Option_map());
+	virtual bool send(Verb verb, std::string uri, Option_map get_params, Stream_buffer entity, const Header_option &content_type);
+	virtual bool send(Verb verb, std::string uri, Option_map get_params, Option_map headers, Stream_buffer entity = Stream_buffer());
 
 	virtual bool send_chunked_header(Request_headers request_headers);
 	virtual bool send_chunk(Stream_buffer entity);
-	virtual bool send_chunked_trailer(Optional_map headers);
+	virtual bool send_chunked_trailer(Option_map headers);
 };
 
 }

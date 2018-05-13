@@ -6,7 +6,7 @@
 
 #include <iosfwd>
 #include <cstdlib>
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 #include "../uuid.hpp"
 
 namespace Poseidon {
@@ -18,8 +18,8 @@ public:
 	std::string m_str;
 
 public:
-	Url_param(const Optional_map &map_ref, const char *key);
-	Url_param(Move<Optional_map> map_ref, const char *key);
+	Url_param(const Option_map &map_ref, const char *key);
+	Url_param(Move<Option_map> map_ref, const char *key);
 
 public:
 	bool valid() const NOEXCEPT {

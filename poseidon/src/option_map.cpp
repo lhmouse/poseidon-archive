@@ -2,11 +2,11 @@
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "optional_map.hpp"
+#include "option_map.hpp"
 
 namespace Poseidon {
 
-std::ostream &operator<<(std::ostream &os, const Optional_map &rhs){
+std::ostream &operator<<(std::ostream &os, const Option_map &rhs){
 	os <<"{\n";
 	for(AUTO(it, rhs.begin()); it != rhs.end(); ++it){
 		os <<"  " <<it->first <<": string(" <<it->second.size() <<") = " <<it->second <<"\n";

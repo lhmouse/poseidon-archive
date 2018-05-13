@@ -4,7 +4,7 @@
 #ifndef POSEIDON_HTTP_HEADER_OPTION_HPP_
 #define POSEIDON_HTTP_HEADER_OPTION_HPP_
 
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 #include "../fwd.hpp"
 #include <iosfwd>
 
@@ -14,7 +14,7 @@ namespace Http {
 class Header_option {
 private:
 	std::string m_base;
-	Optional_map m_options;
+	Option_map m_options;
 
 public:
 	Header_option()
@@ -22,7 +22,7 @@ public:
 	{
 		//
 	}
-	Header_option(std::string base, Optional_map options = Optional_map())
+	Header_option(std::string base, Option_map options = Option_map())
 		: m_base(STD_MOVE(base)), m_options(STD_MOVE(options))
 	{
 		//
@@ -39,13 +39,13 @@ public:
 	void set_base(std::string base){
 		m_base = STD_MOVE(base);
 	}
-	const Optional_map &get_options() const {
+	const Option_map &get_options() const {
 		return m_options;
 	}
-	Optional_map &get_options(){
+	Option_map &get_options(){
 		return m_options;
 	}
-	void set_options(Optional_map options){
+	void set_options(Option_map options){
 		m_options = STD_MOVE(options);
 	}
 

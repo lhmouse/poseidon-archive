@@ -9,17 +9,17 @@ namespace Poseidon {
 namespace Http {
 
 namespace {
-	const Optional_map g_empty_headers;
+	const Option_map g_empty_headers;
 }
 
-const Optional_map &empty_headers() NOEXCEPT {
+const Option_map &empty_headers() NOEXCEPT {
 	return g_empty_headers;
 }
 
-Exception::Exception(const char *file, std::size_t line, const char *func, Status_code status_code, Optional_map headers)
+Exception::Exception(const char *file, std::size_t line, const char *func, Status_code status_code, Option_map headers)
 	: Basic_exception(file, line, func, Rcnts::view(get_status_code_desc(status_code).desc_short))
-	, m_status_code(status_code), m_headers(headers.empty() ? boost::shared_ptr<Optional_map>()
-	                                                        : boost::make_shared<Optional_map>(STD_MOVE(headers)))
+	, m_status_code(status_code), m_headers(headers.empty() ? boost::shared_ptr<Option_map>()
+	                                                        : boost::make_shared<Option_map>(STD_MOVE(headers)))
 {
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Http::Exception: status_code = ", get_status_code(), ", what = ", what());
 }

@@ -91,7 +91,7 @@ void Low_level_session::on_request_entity(boost::uint64_t entity_offset, Stream_
 
 	on_low_level_request_entity(entity_offset, STD_MOVE(entity));
 }
-bool Low_level_session::on_request_end(boost::uint64_t content_length, Optional_map headers){
+bool Low_level_session::on_request_end(boost::uint64_t content_length, Option_map headers){
 	PROFILE_ME;
 
 	AUTO(upgraded_session, on_low_level_request_end(content_length, STD_MOVE(headers)));
@@ -122,16 +122,16 @@ bool Low_level_session::send(Response_headers response_headers, Stream_buffer en
 bool Low_level_session::send(Status_code status_code){
 	PROFILE_ME;
 
-	return send(status_code, Optional_map(), Stream_buffer());
+	return send(status_code, Option_map(), Stream_buffer());
 }
 bool Low_level_session::send(Status_code status_code, Stream_buffer entity, const Header_option &content_type){
 	PROFILE_ME;
 
-	Optional_map headers;
+	Option_map headers;
 	headers.set(Rcnts::view("Content-Type"), content_type.dump().dump_string());
 	return send(status_code, STD_MOVE(headers), STD_MOVE(entity));
 }
-bool Low_level_session::send(Status_code status_code, Optional_map headers, Stream_buffer entity){
+bool Low_level_session::send(Status_code status_code, Option_map headers, Stream_buffer entity){
 	PROFILE_ME;
 
 	Response_headers response_headers;
@@ -152,19 +152,19 @@ bool Low_level_session::send_chunk(Stream_buffer entity){
 
 	return Server_writer::put_chunk(STD_MOVE(entity));
 }
-bool Low_level_session::send_chunked_trailer(Optional_map headers){
+bool Low_level_session::send_chunked_trailer(Option_map headers){
 	PROFILE_ME;
 
 	return Server_writer::put_chunked_trailer(STD_MOVE(headers));
 }
 
-bool Low_level_session::send_default(Status_code status_code, Optional_map headers){
+bool Low_level_session::send_default(Status_code status_code, Option_map headers){
 	PROFILE_ME;
 
 	AUTO(pair, make_default_response(status_code, STD_MOVE(headers)));
 	return Server_writer::put_response(pair.first, STD_MOVE(pair.second), false); // no need to adjust Content-Length.
 }
-bool Low_level_session::send_default_and_shutdown(Status_code status_code, const Optional_map &headers) NOEXCEPT
+bool Low_level_session::send_default_and_shutdown(Status_code status_code, const Option_map &headers) NOEXCEPT
 try {
 	PROFILE_ME;
 
@@ -182,7 +182,7 @@ try {
 	force_shutdown();
 	return false;
 }
-bool Low_level_session::send_default_and_shutdown(Status_code status_code, Move<Optional_map> headers) NOEXCEPT
+bool Low_level_session::send_default_and_shutdown(Status_code status_code, Move<Option_map> headers) NOEXCEPT
 try {
 	PROFILE_ME;
 

@@ -32,7 +32,7 @@ bool is_keep_alive_enabled(const Response_headers &response_headers) NOEXCEPT {
 	return opt == opt_on;
 }
 
-std::pair<Response_headers, Stream_buffer> make_default_response(Status_code status_code, Optional_map headers){
+std::pair<Response_headers, Stream_buffer> make_default_response(Status_code status_code, Option_map headers){
 	Response_headers response_headers;
 	response_headers.version = 10001;
 	response_headers.status_code = status_code;

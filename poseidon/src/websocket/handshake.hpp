@@ -12,7 +12,7 @@ namespace Web_socket {
 
 extern Http::Response_headers make_handshake_response(const Http::Request_headers &request);
 
-extern std::pair<Http::Request_headers, std::string> make_handshake_request(std::string uri, Optional_map get_params, std::string host);
+extern std::pair<Http::Request_headers, std::string> make_handshake_request(std::string uri, Option_map get_params, std::string host);
 extern bool check_handshake_response(const Http::Response_headers &response, const std::string &sec_websocket_key);
 
 }

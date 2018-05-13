@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 #include "request_headers.hpp"
 
 namespace Poseidon {
@@ -44,7 +44,7 @@ private:
 
 	boost::uint64_t m_chunk_size;
 	boost::uint64_t m_chunk_offset;
-	Optional_map m_chunked_trailer;
+	Option_map m_chunked_trailer;
 
 public:
 	Server_reader();
@@ -58,7 +58,7 @@ protected:
 	// 报文接收完毕。
 	// 如果 on_request_headers() 的 content_length 参数为 content_length_chunked，使用这个函数标识结束。
 	// chunked 允许追加报头。
-	virtual bool on_request_end(boost::uint64_t content_length, Optional_map headers) = 0;
+	virtual bool on_request_end(boost::uint64_t content_length, Option_map headers) = 0;
 
 public:
 	const Stream_buffer &get_queue() const {

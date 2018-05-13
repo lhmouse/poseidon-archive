@@ -7,14 +7,14 @@
 #include "../cxx_ver.hpp"
 #include <boost/container/deque.hpp>
 #include <stdexcept>
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 #include "../stream_buffer.hpp"
 
 namespace Poseidon {
 namespace Http {
 
 struct Multipart_element {
-	Optional_map headers;
+	Option_map headers;
 	Stream_buffer entity;
 };
 

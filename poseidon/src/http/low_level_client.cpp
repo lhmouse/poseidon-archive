@@ -94,7 +94,7 @@ void Low_level_client::on_response_entity(boost::uint64_t entity_offset, Stream_
 
 	on_low_level_response_entity(entity_offset, STD_MOVE(entity));
 }
-bool Low_level_client::on_response_end(boost::uint64_t content_length, Optional_map headers){
+bool Low_level_client::on_response_end(boost::uint64_t content_length, Option_map headers){
 	PROFILE_ME;
 
 	AUTO(upgraded_client, on_low_level_response_end(content_length, STD_MOVE(headers)));
@@ -122,19 +122,19 @@ bool Low_level_client::send(Request_headers request_headers, Stream_buffer entit
 
 	return Client_writer::put_request(STD_MOVE(request_headers), STD_MOVE(entity), true);
 }
-bool Low_level_client::send(Verb verb, std::string uri, Optional_map get_params){
+bool Low_level_client::send(Verb verb, std::string uri, Option_map get_params){
 	PROFILE_ME;
 
-	return send(verb, STD_MOVE(uri), STD_MOVE(get_params), Optional_map(), Stream_buffer());
+	return send(verb, STD_MOVE(uri), STD_MOVE(get_params), Option_map(), Stream_buffer());
 }
-bool Low_level_client::send(Verb verb, std::string uri, Optional_map get_params, Stream_buffer entity, const Header_option &content_type){
+bool Low_level_client::send(Verb verb, std::string uri, Option_map get_params, Stream_buffer entity, const Header_option &content_type){
 	PROFILE_ME;
 
-	Optional_map headers;
+	Option_map headers;
 	headers.set(Rcnts::view("Content-Type"), content_type.dump().dump_string());
 	return send(verb, STD_MOVE(uri), STD_MOVE(get_params), STD_MOVE(headers), STD_MOVE(entity));
 }
-bool Low_level_client::send(Verb verb, std::string uri, Optional_map get_params, Optional_map headers, Stream_buffer entity){
+bool Low_level_client::send(Verb verb, std::string uri, Option_map get_params, Option_map headers, Stream_buffer entity){
 	PROFILE_ME;
 
 	Request_headers request_headers;
@@ -156,7 +156,7 @@ bool Low_level_client::send_chunk(Stream_buffer entity){
 
 	return Client_writer::put_chunk(STD_MOVE(entity));
 }
-bool Low_level_client::send_chunked_trailer(Optional_map headers){
+bool Low_level_client::send_chunked_trailer(Option_map headers){
 	PROFILE_ME;
 
 	return Client_writer::put_chunked_trailer(STD_MOVE(headers));

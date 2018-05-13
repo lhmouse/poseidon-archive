@@ -63,7 +63,7 @@ _done:
 	return response;
 }
 
-std::pair<Http::Request_headers, std::string> make_handshake_request(std::string uri, Optional_map get_params, std::string host){
+std::pair<Http::Request_headers, std::string> make_handshake_request(std::string uri, Option_map get_params, std::string host){
 	PROFILE_ME;
 
 	Http::Request_headers request = { };

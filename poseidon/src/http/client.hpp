@@ -39,7 +39,7 @@ protected:
 	// Low_level_client
 	void on_low_level_response_headers(Response_headers response_headers, boost::uint64_t content_length) OVERRIDE;
 	void on_low_level_response_entity(boost::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
-	boost::shared_ptr<Upgraded_session_base> on_low_level_response_end(boost::uint64_t content_length, Optional_map headers) OVERRIDE;
+	boost::shared_ptr<Upgraded_session_base> on_low_level_response_end(boost::uint64_t content_length, Option_map headers) OVERRIDE;
 
 	// 可覆写。
 	virtual void on_sync_connect();

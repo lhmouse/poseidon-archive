@@ -5,7 +5,7 @@
 #include "session.hpp"
 #include "exception.hpp"
 #include "../http/low_level_session.hpp"
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 #include "../singletons/main_config.hpp"
 #include "../singletons/job_dispatcher.hpp"
 #include "../log.hpp"

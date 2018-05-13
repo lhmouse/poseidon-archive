@@ -164,7 +164,7 @@ void Session::on_low_level_request_entity(boost::uint64_t /*entity_offset*/, Str
 	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_payload_too_large);
 	m_entity.splice(entity);
 }
-boost::shared_ptr<Upgraded_session_base> Session::on_low_level_request_end(boost::uint64_t content_length, Optional_map headers){
+boost::shared_ptr<Upgraded_session_base> Session::on_low_level_request_end(boost::uint64_t content_length, Option_map headers){
 	PROFILE_ME;
 
 	(void)content_length;

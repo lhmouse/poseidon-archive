@@ -126,7 +126,7 @@ long Client_writer::put_chunk(Stream_buffer entity){
 
 	return on_encoded_data_avail(STD_MOVE(chunk));
 }
-long Client_writer::put_chunked_trailer(Optional_map headers){
+long Client_writer::put_chunked_trailer(Option_map headers){
 	PROFILE_ME;
 
 	Stream_buffer data;

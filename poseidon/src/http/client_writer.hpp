@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <boost/cstdint.hpp>
 #include "../stream_buffer.hpp"
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 #include "request_headers.hpp"
 
 namespace Poseidon {
@@ -27,7 +27,7 @@ public:
 
 	long put_chunked_header(Request_headers request_headers);
 	long put_chunk(Stream_buffer entity);
-	long put_chunked_trailer(Optional_map headers);
+	long put_chunked_trailer(Option_map headers);
 };
 
 }

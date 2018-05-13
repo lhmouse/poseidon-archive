@@ -153,7 +153,7 @@ void Client::on_low_level_response_entity(boost::uint64_t /*entity_offset*/, Str
 
 	m_entity.splice(entity);
 }
-boost::shared_ptr<Upgraded_session_base> Client::on_low_level_response_end(boost::uint64_t /*content_length*/, Optional_map /*headers*/){
+boost::shared_ptr<Upgraded_session_base> Client::on_low_level_response_end(boost::uint64_t /*content_length*/, Option_map /*headers*/){
 	PROFILE_ME;
 
 	Job_dispatcher::enqueue(

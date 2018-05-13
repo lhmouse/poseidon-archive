@@ -15,7 +15,7 @@ class Mutex;
 class Recursive_mutex;
 class Condition_variable;
 
-class Optional_map;
+class Option_map;
 class Stream_buffer;
 class Hex_printer;
 class Rcnts;

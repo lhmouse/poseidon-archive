@@ -7,7 +7,7 @@
 namespace Poseidon {
 namespace Http {
 
-Url_param::Url_param(const Optional_map &map_ref, const char *key)
+Url_param::Url_param(const Option_map &map_ref, const char *key)
 	: m_valid(false), m_str()
 {
 	const AUTO_REF(map, map_ref);
@@ -17,13 +17,13 @@ Url_param::Url_param(const Optional_map &map_ref, const char *key)
 		m_str = it->second;
 	}
 }
-Url_param::Url_param(Move<Optional_map> map_ref, const char *key)
+Url_param::Url_param(Move<Option_map> map_ref, const char *key)
 	: m_valid(false), m_str()
 {
 #ifdef POSEIDON_CXX11
 	auto &map = map_ref;
 #else
-	Optional_map map;
+	Option_map map;
 	map_ref.swap(map);
 #endif
 	const AUTO(it, map.find(Rcnts::view(key)));

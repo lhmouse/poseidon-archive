@@ -1,8 +1,8 @@
 // 这个文件是 Poseidon 服务器应用程序框架的一部分。
 // Copyleft 2014 - 2018, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_OPTIONAL_MAP_HPP_
-#define POSEIDON_OPTIONAL_MAP_HPP_
+#ifndef POSEIDON_OPTION_MAP_HPP_
+#define POSEIDON_OPTION_MAP_HPP_
 
 #include "cxx_ver.hpp"
 #include <boost/container/map.hpp>
@@ -14,7 +14,7 @@ namespace Poseidon {
 
 extern const std::string &empty_string() NOEXCEPT;
 
-class Optional_map {
+class Option_map {
 public:
 	typedef boost::container::multimap<Rcnts, std::string> base_container;
 
@@ -33,18 +33,18 @@ private:
 	base_container m_elements;
 
 public:
-	Optional_map()
+	Option_map()
 		: m_elements()
 	{
 		//
 	}
 #ifndef POSEIDON_CXX11
-	Optional_map(const Optional_map &rhs)
+	Option_map(const Option_map &rhs)
 		: m_elements(rhs.m_elements)
 	{
 		//
 	}
-	Optional_map &operator=(const Optional_map &rhs){
+	Option_map &operator=(const Option_map &rhs){
 		m_elements = rhs.m_elements;
 		return *this;
 	}
@@ -112,7 +112,7 @@ public:
 		return m_elements.erase(key);
 	}
 
-	void swap(Optional_map &rhs) NOEXCEPT {
+	void swap(Option_map &rhs) NOEXCEPT {
 		using std::swap;
 		swap(m_elements, rhs.m_elements);
 	}
@@ -204,11 +204,11 @@ public:
 	}
 };
 
-inline void swap(Optional_map &lhs, Optional_map &rhs) NOEXCEPT {
+inline void swap(Option_map &lhs, Option_map &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-extern std::ostream &operator<<(std::ostream &os, const Optional_map &rhs);
+extern std::ostream &operator<<(std::ostream &os, const Option_map &rhs);
 
 }
 

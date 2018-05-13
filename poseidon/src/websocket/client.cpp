@@ -5,7 +5,7 @@
 #include "client.hpp"
 #include "exception.hpp"
 #include "../http/low_level_client.hpp"
-#include "../optional_map.hpp"
+#include "../option_map.hpp"
 #include "../singletons/job_dispatcher.hpp"
 #include "../log.hpp"
 #include "../job_base.hpp"

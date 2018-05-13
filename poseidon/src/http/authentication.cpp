@@ -168,7 +168,7 @@ namespace {
 	__attribute__((__noreturn__)) void do_throw_authentication_failure(bool is_proxy, std::string authenticate_str){
 		PROFILE_ME;
 
-		Optional_map headers;
+		Option_map headers;
 		headers.set(Rcnts::view(is_proxy ? "Proxy-Authenticate" : "WWW-Authenticate"), STD_MOVE(authenticate_str));
 		DEBUG_THROW(Exception, is_proxy ? status_proxy_auth_required : status_unauthorized, STD_MOVE(headers));
 	}
@@ -314,7 +314,7 @@ std::pair<Authentication_result, const char *> check_authentication_digest(
 		return std::make_pair(auth_scheme_not_supported, NULLPTR);
 	}
 
-	Optional_map params;
+	Option_map params;
 	Buffer_istream bis;
 	bis.set_buffer(Stream_buffer(header_value.c_str() + 7));
 	std::string seg;
