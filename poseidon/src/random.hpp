@@ -13,7 +13,7 @@ extern boost::uint32_t random_uint32();
 extern boost::uint64_t random_uint64();
 extern double random_double();
 
-struct RandomBitGenerator_uint32 {
+struct Random_bit_generator_uint32 {
 	typedef boost::uint32_t result_type;
 
 	static CONSTEXPR result_type min() NOEXCEPT {
@@ -28,7 +28,7 @@ struct RandomBitGenerator_uint32 {
 	}
 };
 
-struct RandomBitGenerator_uint64 {
+struct Random_bit_generator_uint64 {
 	typedef boost::uint64_t result_type;
 
 	static CONSTEXPR result_type min() NOEXCEPT {

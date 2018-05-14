@@ -42,12 +42,12 @@ public:
 		return get_file()->get<T>(key);
 	}
 
-	template<typename T, typename DefValT>
-	static bool get(T &val, const char *key, const DefValT &def_val){
+	template<typename T, typename DefaultT>
+	static bool get(T &val, const char *key, const DefaultT &def_val){
 		return get_file()->get<T>(val, key, def_val);
 	}
-	template<typename T, typename DefValT>
-	static T get(const char *key, const DefValT &def_val){
+	template<typename T, typename DefaultT>
+	static T get(const char *key, const DefaultT &def_val){
 		return get_file()->get<T>(key, def_val);
 	}
 
