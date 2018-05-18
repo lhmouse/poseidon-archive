@@ -22,7 +22,7 @@ public:
 		boost::uint64_t creation_time;
 		bool listening;
 		bool readable;
-		bool writeable;
+		bool writable;
 	};
 
 private:
@@ -33,7 +33,7 @@ public:
 	static void stop();
 
 	static void add_socket(const boost::shared_ptr<Socket_base> &socket, bool take_ownership = false);
-	static bool mark_socket_writeable(const Socket_base *ptr) NOEXCEPT;
+	static bool mark_socket_writable(const Socket_base *ptr) NOEXCEPT;
 
 	static void snapshot(boost::container::vector<Snapshot_element> &ret);
 };

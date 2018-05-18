@@ -180,7 +180,7 @@ namespace {
 				obj.set(Rcnts::view("creation_time"), std::string(str, format_time(str, sizeof(str), elem.creation_time, false)));
 				obj.set(Rcnts::view("listening"), elem.listening);
 				obj.set(Rcnts::view("readable"), elem.readable);
-				obj.set(Rcnts::view("writeable"), elem.writeable);
+				obj.set(Rcnts::view("writable"), elem.writable);
 				arr.push_back(STD_MOVE_IDN(obj));
 			}
 			resp.set(Rcnts::view("sockets"), STD_MOVE_IDN(arr));

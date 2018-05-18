@@ -721,7 +721,7 @@ void Mysql_daemon::start(){
 		if(dump_dir.empty()){
 			LOG_POSEIDON_WARNING("MySQL error dump has been disabled. To enable MySQL error dump, set `mysql_dump_dir` in `main.conf` to the path to the dump directory.");
 		} else {
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MySQL dump directory is writeable...");
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MySQL dump directory is writable...");
 			try {
 				const AUTO(placeholder_path, dump_dir + "/placeholder");
 				DEBUG_THROW_ASSERT(Unique_file(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)));

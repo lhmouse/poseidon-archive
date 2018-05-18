@@ -104,14 +104,14 @@ int Tcp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::siz
 	}
 	return 0;
 }
-int Tcp_session_base::poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable){
+int Tcp_session_base::poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writable){
 	PROFILE_ME;
 
 	assert(!write_lock);
 
 	Stream_buffer data;
 	try {
-		if(writeable && !m_connected_notified){
+		if(writable && !m_connected_notified){
 			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "TCP connection established: local = ", get_local_info(), ", remote = ", get_remote_info());
 			on_connect();
 			m_connected_notified = true;
@@ -244,7 +244,7 @@ bool Tcp_session_base::send(Stream_buffer buffer){
 
 	const Mutex::Unique_lock lock(m_send_mutex);
 	m_send_buffer.splice(buffer);
-	Epoll_daemon::mark_socket_writeable(this);
+	Epoll_daemon::mark_socket_writable(this);
 	return true;
 }
 

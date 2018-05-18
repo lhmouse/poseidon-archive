@@ -60,7 +60,7 @@ namespace {
 		int err_code;
 		// Variables.
 		mutable bool readable;
-		mutable bool writeable;
+		mutable bool writable;
 	};
 	MULTI_INDEX_MAP(Socket_map, Socket_element,
 		UNIQUE_MEMBER_INDEX(ptr)
@@ -107,7 +107,7 @@ namespace {
 				g_socket_map.set_key<0, 1>(it, now);
 			}
 			if(has_any_flags_of(events[i].events, EPOLLOUT) && has_none_flags_of(events[i].events, EPOLLERR)){
-				it->writeable = true;
+				it->writable = true;
 				g_socket_map.set_key<0, 2>(it, now);
 			}
 			if(has_any_flags_of(events[i].events, EPOLLHUP | EPOLLERR)){
@@ -189,12 +189,12 @@ namespace {
 		return true;
 	}
 
-	bool pump_one_writeable_socket(boost::container::vector<unsigned char> &io_buffer) NOEXCEPT {
+	bool pump_one_writable_socket(boost::container::vector<unsigned char> &io_buffer) NOEXCEPT {
 		PROFILE_ME;
 
 		const AUTO(now, get_fast_mono_clock());
 		boost::shared_ptr<Socket_base> socket;
-		bool writeable;
+		bool writable;
 		{
 			const Recursive_mutex::Unique_lock lock(g_mutex);
 			const AUTO(it, g_socket_map.begin<2>());
@@ -209,13 +209,13 @@ namespace {
 				g_socket_map.erase<2>(it);
 				return true;
 			}
-			writeable = it->writeable;
+			writable = it->writable;
 		}
 
 		Mutex::Unique_lock write_lock;
 		int err_code;
 		try {
-			err_code = socket->poll_write(write_lock, io_buffer.data(), io_buffer.size(), writeable);
+			err_code = socket->poll_write(write_lock, io_buffer.data(), io_buffer.size(), writable);
 			LOG_POSEIDON_TRACE("Socket write result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what(), ", socket = ", socket, ", typeid = ", typeid(*socket).name());
@@ -290,7 +290,7 @@ namespace {
 			do {
 				busy = wait_for_sockets(0);
 				busy += pump_one_readable_socket(io_buffer);
-				busy += pump_one_writeable_socket(io_buffer);
+				busy += pump_one_writable_socket(io_buffer);
 				busy += pump_one_closed_socket();
 				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 			} while(busy);
@@ -348,7 +348,7 @@ void Epoll_daemon::add_socket(const boost::shared_ptr<Socket_base> &socket, bool
 		throw;
 	}
 }
-bool Epoll_daemon::mark_socket_writeable(const Socket_base *ptr) NOEXCEPT {
+bool Epoll_daemon::mark_socket_writable(const Socket_base *ptr) NOEXCEPT {
 	PROFILE_ME;
 
 	const Recursive_mutex::Unique_lock lock(g_mutex);
@@ -378,7 +378,7 @@ void Epoll_daemon::snapshot(boost::container::vector<Epoll_daemon::Snapshot_elem
 		elem.creation_time = socket->get_creation_time();
 		elem.listening = socket->is_listening();
 		elem.readable = it->readable;
-		elem.writeable = it->writeable;
+		elem.writable = it->writable;
 		ret.push_back(STD_MOVE(elem));
 	}
 }

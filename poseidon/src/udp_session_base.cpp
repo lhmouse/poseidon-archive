@@ -114,7 +114,7 @@ int Udp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::siz
 	}
 	return 0;
 }
-int Udp_session_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned char *hint_buffer, std::size_t hint_capacity, bool /*writeable*/){
+int Udp_session_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned char *hint_buffer, std::size_t hint_capacity, bool /*writable*/){
 	PROFILE_ME;
 
 	for(unsigned i = 0; i < 256; ++i){
@@ -231,7 +231,7 @@ bool Udp_session_base::send(const Sock_addr &sock_addr, Stream_buffer buffer){
 
 	const Mutex::Unique_lock lock(m_send_mutex);
 	m_send_queue.emplace_back(sock_addr, STD_MOVE(buffer));
-	Epoll_daemon::mark_socket_writeable(this);
+	Epoll_daemon::mark_socket_writable(this);
 	return true;
 }
 

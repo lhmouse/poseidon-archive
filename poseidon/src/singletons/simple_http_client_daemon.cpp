@@ -150,7 +150,7 @@ namespace {
 	void poll_internal(const boost::shared_ptr<Socket_base> &socket){
 		PROFILE_ME;
 
-		bool readable = false, writeable = false;
+		bool readable = false, writable = false;
 		unsigned char buffer[2048];
 		do {
 			::pollfd pset = { socket->get_fd(), POLLIN | POLLOUT };
@@ -173,9 +173,9 @@ namespace {
 				}
 			}
 			if(has_any_flags_of(pset.revents, POLLOUT) && has_none_flags_of(pset.revents, POLLERR)){
-				writeable = true;
+				writable = true;
 				Mutex::Unique_lock write_lock;
-				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writeable);
+				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writable);
 				LOG_POSEIDON_TRACE("Socket write result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
 					LOG_POSEIDON_DEBUG("Socket write error: err_code = ", err_code, " (", get_error_desc(err_code), ")");

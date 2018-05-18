@@ -78,7 +78,7 @@ public:
 
 	// 返回一个 errno 告诉 epoll 如何处理。
 	virtual int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable);
-	virtual int poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writeable);
+	virtual int poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writable);
 	virtual void on_close(int err_code);
 };
 

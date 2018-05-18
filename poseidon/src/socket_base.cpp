@@ -36,7 +36,7 @@ Socket_base::Delayed_shutdown_guard::~Delayed_shutdown_guard(){
 	if(atomic_sub(socket->m_delayed_shutdown_guard_count, 1, memory_order_relaxed) == 0){
 		if(atomic_load(socket->m_shutdown_write, memory_order_acquire)){
 			atomic_store(socket->m_really_shutdown_write, true, memory_order_release);
-			Epoll_daemon::mark_socket_writeable(socket.get());
+			Epoll_daemon::mark_socket_writable(socket.get());
 		}
 	}
 }
@@ -224,7 +224,7 @@ try {
 int Socket_base::poll_read_and_process(unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*readable*/){
 	return EWOULDBLOCK;
 }
-int Socket_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*writeable*/){
+int Socket_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*writable*/){
 	return EWOULDBLOCK;
 }
 void Socket_base::on_close(int /*err_code*/){
