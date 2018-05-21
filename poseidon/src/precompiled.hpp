@@ -24,19 +24,22 @@
 #include <string.h>
 #include <time.h>
 
+#include <boost/numeric/conversion/cast.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/optional.hpp>
+
 #include <boost/array.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/ref.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/cstdlib.hpp>
 #include <boost/cstdint.hpp>
-#include <boost/multi_index_container.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/container/list.hpp>
 #include <boost/container/map.hpp>
@@ -44,7 +47,6 @@
 #include <boost/container/deque.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
-#include <boost/optional.hpp>
 
 #include "cxx_ver.hpp"
 #include "cxx_util.hpp"
