@@ -19,6 +19,9 @@
 
 class MESSAGE_NAME : public ::Poseidon::Cbpp::Message_base {
 public:
+	enum { id = MESSAGE_ID };
+
+public:
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
