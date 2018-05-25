@@ -19,11 +19,6 @@
 
 class MESSAGE_NAME : public ::Poseidon::Cbpp::Message_base {
 public:
-	enum {
-		ID = MESSAGE_ID,
-	};
-
-public:
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -105,7 +100,7 @@ MESSAGE_NAME::~MESSAGE_NAME(){
 }
 
 boost::uint64_t MESSAGE_NAME::get_id() const {
-	return ID;
+	return MESSAGE_ID;
 }
 void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
 	const AUTO(cur_, this);
