@@ -157,6 +157,7 @@ public:
 class Stream_buffer::Read_iterator : public std::iterator<std::input_iterator_tag, int> {
 private:
 	Stream_buffer *m_parent;
+	mutable int m_byte;
 
 public:
 	explicit Read_iterator(Stream_buffer &parent)
@@ -166,8 +167,9 @@ public:
 	}
 
 public:
-	int operator*() const {
-		return m_parent->peek();
+	const int & operator*() const {
+		m_byte = m_parent->peek();
+		return m_byte;
 	}
 	Read_iterator &operator++(){
 		m_parent->discard();
