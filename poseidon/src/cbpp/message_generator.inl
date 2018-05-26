@@ -58,7 +58,7 @@ public:
 	::boost::uint64_t get_id() const OVERRIDE;
 	void serialize(::Poseidon::Stream_buffer &buffer_) const OVERRIDE;
 	void deserialize(::Poseidon::Stream_buffer &buffer_) OVERRIDE;
-	void dump_debug(::std::ostream &os_) const OVERRIDE;
+	void dump_debug(::std::ostream &os_, int indent_initial_ = 0) const OVERRIDE;
 };
 
 #ifdef CBPP_MESSAGE_EMIT_EXTERNAL_DEFINITIONS
@@ -360,11 +360,11 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
 
 	MESSAGE_FIELDS
 }
-void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial = 0) const {
+void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
 	static CONSTEXPR int s_indent_step_ = 2;
 
 	const AUTO(cur_, this);
-	int indent_ = indent_initial;
+	int indent_ = indent_initial_;
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
