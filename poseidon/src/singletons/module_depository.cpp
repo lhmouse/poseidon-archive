@@ -136,7 +136,7 @@ void *Module_depository::load(const std::string &path){
 	const Recursive_mutex::Unique_lock lock(g_mutex);
 	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading module: ", path);
 	Unique_handle<Dynamic_library_closer> dl_handle;
-	DEBUG_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND)), Exception, Rcnts(::dlerror()));
+	DEBUG_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE)), Exception, Rcnts(::dlerror()));
 	AUTO(it, g_module_map.find<0>(dl_handle.get()));
 	if(it != g_module_map.end()){
 		LOG_POSEIDON_WARNING("Module already loaded: ", path);
