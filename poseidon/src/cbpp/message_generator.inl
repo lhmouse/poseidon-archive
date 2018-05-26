@@ -405,6 +405,22 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                     }	\
                                     os_ << ::std::endl;	\
                                   }
+#define FIELD_NESTED(id_, Elem_)  {	\
+                                    os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": nested(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
+                                    indent_ += s_indent_step_;	\
+                                    for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                      os_ << ::std::setw(indent_) <<"" <<"{" << ::std::endl;	\
+                                      indent_ += s_indent_step_;	\
+                                      {	\
+                                        const AUTO(cur_, &*it_);	\
+                                        cur_->dump_debug(os_, indent_);	\
+                                      }	\
+                                      indent_ -= s_indent_step_;	\
+                                      os_ << ::std::setw(indent_) <<"" <<"}" << ::std::endl;	\
+                                    }	\
+                                    indent_ -= s_indent_step_;	\
+                                    os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
+                                  }
 #define FIELD_ARRAY(id_, ...)     {	\
                                     os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": array(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
                                     indent_ += s_indent_step_;	\
