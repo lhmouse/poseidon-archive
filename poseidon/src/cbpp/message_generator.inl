@@ -29,6 +29,7 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
 
@@ -38,6 +39,7 @@ public:
 #define FIELD_STRING(id_)         ::std::string id_;
 #define FIELD_BLOB(id_)           ::std::basic_string<unsigned char> id_;
 #define FIELD_FLEXIBLE(id_)       ::Poseidon::Stream_buffer id_;
+#define FIELD_NESTED(id_, Elem_)  ::boost::container::deque< Elem_ > id_;
 #define FIELD_ARRAY(id_, ...)     struct Cbpp##id_##F_ { __VA_ARGS__ };	\
                                   ::boost::container::vector< Cbpp##id_##F_ > id_;
 #define FIELD_LIST(id_, ...)      struct Cbpp##id_##F_ { __VA_ARGS__ };	\
@@ -72,6 +74,7 @@ MESSAGE_NAME::MESSAGE_NAME()
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
 
@@ -81,6 +84,7 @@ MESSAGE_NAME::MESSAGE_NAME()
 #define FIELD_STRING(id_)         , id_()
 #define FIELD_BLOB(id_)           , id_()
 #define FIELD_FLEXIBLE(id_)       , id_()
+#define FIELD_NESTED(id_, Elem_)  , id_()
 #define FIELD_ARRAY(id_, ...)     , id_()
 #define FIELD_LIST(id_, ...)      , id_()
 
@@ -115,6 +119,7 @@ void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
 
@@ -149,6 +154,22 @@ void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
                                   }
 #define FIELD_FLEXIBLE(id_)       {	\
                                     buf_.put(cur_->id_);	\
+                                  }
+#define FIELD_NESTED(id_, Elem_)  {	\
+                                    for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                      ::Poseidon::Stream_buffer chunk_buf_;	\
+                                      {	\
+                                        const AUTO(cur_, &*it_);	\
+                                        AUTO_REF(buf_, chunk_buf_);	\
+                                        cur_->serialize(buf_);	\
+                                      }	\
+                                      unsigned char temp_[16];	\
+                                      unsigned char *wptr_ = temp_;	\
+                                      ::Poseidon::vuint64_to_binary(chunk_buf_.size(), wptr_);	\
+                                      buf_.put(temp_, static_cast< ::std::size_t>(wptr_ - temp_));	\
+                                      buf_.splice(chunk_buf_);	\
+                                    }	\
+                                    buf_.put(0);	\
                                   }
 #define FIELD_ARRAY(id_, ...)     {	\
                                     unsigned char temp_[16];	\
@@ -189,6 +210,7 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
 
@@ -257,6 +279,35 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                     cur_->id_.clear();	\
                                     cur_->id_.swap(buf_);	\
                                   }
+#define FIELD_NESTED(id_, Elem_)  {	\
+                                    cur_->id_.clear();	\
+                                    for(;;){	\
+                                      ::boost::uint64_t nreq_;	\
+                                      unsigned char temp_[16];	\
+                                      unsigned char *rptr_ = temp_;	\
+                                      const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
+                                      if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
+                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                      }	\
+                                      buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
+                                      if(nreq_ == 0){	\
+                                        break;	\
+                                      }	\
+                                      if(nreq_ > SIZE_MAX){	\
+                                        THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
+                                      }	\
+                                      ::Poseidon::Stream_buffer chunk_buf_ = buf_.cut_off(nreq_);	\
+                                      if(chunk_buf_.size() < nreq_){	\
+                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                      }	\
+                                      {	\
+                                        const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
+                                        const AUTO(cur_, &*it_);	\
+                                        AUTO_REF(buf_, chunk_buf_);	\
+                                        cur_->deserialize(buf_);	\
+                                      }	\
+                                    }	\
+                                  }
 #define FIELD_ARRAY(id_, ...)     {	\
                                     cur_->id_.clear();	\
                                     ::boost::uint64_t nreq_;	\
@@ -309,11 +360,11 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
 
 	MESSAGE_FIELDS
 }
-void MESSAGE_NAME::dump_debug(::std::ostream &os_) const {
+void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial = 0) const {
 	static CONSTEXPR int s_indent_step_ = 2;
 
 	const AUTO(cur_, this);
-	int indent_ = s_indent_step_;
+	int indent_ = indent_initial;
 
 #undef FIELD_VINT
 #undef FIELD_VUINT
@@ -321,6 +372,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_) const {
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
 
@@ -386,9 +438,11 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_) const {
                                     os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
                                   }
 
-	os_ <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<get_id() <<") = {" << ::std::endl;
+	os_ << std::setw(indent_) <<"" <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<get_id() <<") = {" << ::std::endl;
+	indent_ += s_indent_step_;
 	MESSAGE_FIELDS
-	os_ <<"}" << ::std::endl;
+	indent_ -= s_indent_step_;
+	os_ << std::setw(indent_) <<"" <<"}" << ::std::endl;
 }
 
 #pragma GCC diagnostic pop
