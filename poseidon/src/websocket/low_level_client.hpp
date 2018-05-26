@@ -12,7 +12,7 @@
 #include "writer.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 class Low_level_client : public Http::Upgraded_session_base, protected Reader, protected Writer {
 public:

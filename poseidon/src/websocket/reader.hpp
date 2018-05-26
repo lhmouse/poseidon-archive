@@ -10,7 +10,7 @@
 #include "opcodes.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 class Reader {
 private:

@@ -5,7 +5,7 @@
 #define POSEIDON_WEBSOCKET_FWD_HPP_
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 class Exception;
 

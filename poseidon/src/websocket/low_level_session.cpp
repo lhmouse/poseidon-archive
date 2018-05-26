@@ -9,7 +9,7 @@
 #include "../profiler.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 Low_level_session::Low_level_session(const boost::shared_ptr<Http::Low_level_session> &parent)
 	: Http::Upgraded_session_base(parent), Reader(true), Writer()

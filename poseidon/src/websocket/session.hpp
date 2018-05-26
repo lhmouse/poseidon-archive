@@ -7,7 +7,7 @@
 #include "low_level_session.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 class Session : public Low_level_session {
 private:

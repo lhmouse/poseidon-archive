@@ -10,7 +10,7 @@
 #include "../random.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 Writer::Writer(){
 	//

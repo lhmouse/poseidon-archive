@@ -7,7 +7,7 @@
 #include "low_level_client.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 class Client : public Low_level_client {
 private:

@@ -10,7 +10,7 @@
 #include "../stream_buffer.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 class Writer {
 public:

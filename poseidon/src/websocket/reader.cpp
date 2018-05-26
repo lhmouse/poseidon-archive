@@ -11,7 +11,7 @@
 #include "../flags.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 Reader::Reader(bool force_masked_frames)
 	: m_force_masked_frames(force_masked_frames)

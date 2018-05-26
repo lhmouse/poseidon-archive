@@ -5,7 +5,7 @@
 #define POSEIDON_WEBSOCKET_OPCODES_HPP_
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 typedef int Op_code;
 

@@ -5,7 +5,7 @@
 #define POSEIDON_WEBSOCKET_STATUS_CODES_HPP_
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 typedef unsigned Status_code;
 

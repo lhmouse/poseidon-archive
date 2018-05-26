@@ -8,7 +8,7 @@
 #include "../http/response_headers.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 extern Http::Response_headers make_handshake_response(const Http::Request_headers &request);
 

@@ -15,7 +15,7 @@
 #include "../atomic.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 class Session::Sync_job_base : public Job_base {
 private:
@@ -45,7 +45,7 @@ private:
 		try {
 			really_perform(session);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Web_socket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Websocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			session->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
 			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());

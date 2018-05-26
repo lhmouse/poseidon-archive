@@ -8,7 +8,7 @@
 #include "status_codes.hpp"
 
 namespace Poseidon {
-namespace Web_socket {
+namespace Websocket {
 
 class Exception : public Basic_exception {
 private:
