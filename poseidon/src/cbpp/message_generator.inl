@@ -53,7 +53,7 @@ public:
 	~MESSAGE_NAME() OVERRIDE;
 
 public:
-	boost::uint64_t get_id() const OVERRIDE;
+	::boost::uint64_t get_id() const OVERRIDE;
 	void serialize(::Poseidon::Stream_buffer &buffer_) const OVERRIDE;
 	void deserialize(::Poseidon::Stream_buffer &buffer_) OVERRIDE;
 	void dump_debug(::std::ostream &os_) const OVERRIDE;
@@ -102,7 +102,7 @@ MESSAGE_NAME::~MESSAGE_NAME(){
 	//
 }
 
-boost::uint64_t MESSAGE_NAME::get_id() const {
+::boost::uint64_t MESSAGE_NAME::get_id() const {
 	return MESSAGE_ID;
 }
 void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
