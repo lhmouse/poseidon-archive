@@ -73,7 +73,7 @@ public:
 	virtual boost::uint64_t get_id() const = 0;
 	virtual void serialize(Stream_buffer &buffer) const = 0;
 	virtual void deserialize(Stream_buffer &buffer) = 0;
-	virtual void dump_debug(std::ostream &os) const = 0;
+	virtual void dump_debug(std::ostream &os, int indent_initial = 0) const = 0;
 
 public:
 	operator Stream_buffer() const {

@@ -306,7 +306,7 @@ lib_libposeidon_main_la_SOURCES +=	\
 endif
 
 lib_libposeidon_main_la_LDFLAGS =	\
-	-Wl,--no-undefined -no-undefined -version-info 24:0:0
+	-Wl,--no-undefined -no-undefined -version-info 25:0:0
 
 bin_PROGRAMS =	\
 	bin/poseidon
