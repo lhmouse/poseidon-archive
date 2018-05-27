@@ -13,11 +13,8 @@
 #include <boost/container/vector.hpp>
 #include <boost/container/deque.hpp>
 #include <boost/cstdint.hpp>
-#include "../vint64.hpp"
 #include "../stream_buffer.hpp"
 #include "../hex_printer.hpp"
-#include "exception.hpp"
-#include "status_codes.hpp"
 
 /*===========================================================================*\
 
@@ -47,21 +44,6 @@
 
 \*===========================================================================*/
 
-#define POSEIDON_CBPP_THROW_END_OF_STREAM_(message_, field_)	\
-	POSEIDON_THROW(::Poseidon::Cbpp::Exception,	\
-		::Poseidon::Cbpp::status_end_of_stream, ::Poseidon::Rcnts::view(	\
-			"End of stream encountered in message " POSEIDON_STRINGIFY(message_) " while parsing " POSEIDON_STRINGIFY(field_) ))
-
-#define POSEIDON_CBPP_THROW_JUNK_AFTER_PACKET_(message_)	\
-	POSEIDON_THROW(::Poseidon::Cbpp::Exception,	\
-		::Poseidon::Cbpp::status_junk_after_packet, ::Poseidon::Rcnts::view(	\
-			"Junk after message " POSEIDON_STRINGIFY(message_) ))
-
-#define POSEIDON_CBPP_THROW_LENGTH_ERROR_(message_, field_)	\
-	POSEIDON_THROW(::Poseidon::Cbpp::Exception,	\
-		::Poseidon::Cbpp::status_length_error, ::Poseidon::Rcnts::view(	\
-			"Length error in message " POSEIDON_STRINGIFY(message_) " while parsing " POSEIDON_STRINGIFY(field_) ))
-
 namespace Poseidon {
 namespace Cbpp {
 
@@ -87,6 +69,20 @@ inline std::ostream &operator<<(std::ostream &os, const Message_base &rhs){
 	rhs.dump_debug(os);
 	return os;
 }
+
+extern void shift_vint(boost::int64_t &value, Stream_buffer &buf, const char *name);
+extern void shift_vuint(boost::uint64_t &value, Stream_buffer &buf, const char *name);
+extern void shift_string(std::string &value, Stream_buffer &buf, const char *name);
+extern void shift_blob(Stream_buffer &value, Stream_buffer &buf, const char *name);
+extern void shift_fixed(void *data, std::size_t size, Stream_buffer &buf, const char *name);
+extern void shift_flexible(Stream_buffer &value, Stream_buffer &buf, const char *name);
+
+extern void push_vint(Stream_buffer &buf, boost::int64_t value);
+extern void push_vuint(Stream_buffer &buf, boost::uint64_t value);
+extern void push_string(Stream_buffer &buf, const std::string &value);
+extern void push_blob(Stream_buffer &buf, const Stream_buffer &value);
+extern void push_fixed(Stream_buffer &buf, const void *data, std::size_t size);
+extern void push_flexible(Stream_buffer &buf, const Stream_buffer &value);
 
 }
 }
