@@ -46,6 +46,7 @@ public:
 
 public:
 	OBJECT_NAME();
+	~OBJECT_NAME() OVERRIDE;
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -65,9 +66,7 @@ public:
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
-	explicit OBJECT_NAME(POSEIDON_REST(void OBJECT_FIELDS));
-
-	~OBJECT_NAME() OVERRIDE;
+	explicit OBJECT_NAME(POSEIDON_LAZY(POSEIDON_REST, void OBJECT_FIELDS));
 
 public:
 	const char *get_collection() const OVERRIDE;
@@ -102,7 +101,9 @@ OBJECT_NAME::OBJECT_NAME()
 #define FIELD_BLOB(id_)                   , id_(this)
 
 	OBJECT_FIELDS
-{
+{ }
+
+OBJECT_NAME::~OBJECT_NAME(){
 	//
 }
 
@@ -124,7 +125,7 @@ OBJECT_NAME::OBJECT_NAME()
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
-OBJECT_NAME::OBJECT_NAME(POSEIDON_REST(void OBJECT_FIELDS))
+OBJECT_NAME::OBJECT_NAME(POSEIDON_LAZY(POSEIDON_REST, void OBJECT_FIELDS))
 	: ::Poseidon::Mongodb::Object_base()
 
 #undef FIELD_BOOLEAN
@@ -146,19 +147,13 @@ OBJECT_NAME::OBJECT_NAME(POSEIDON_REST(void OBJECT_FIELDS))
 #define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(id_##X_))
 
 	OBJECT_FIELDS
-{
-	//
-}
-
-OBJECT_NAME::~OBJECT_NAME(){
-	//
-}
+{ }
 
 const char *OBJECT_NAME::get_collection() const {
 	return OBJECT_COLLECTION;
 }
 void OBJECT_NAME::generate_document(::Poseidon::Mongodb::Bson_builder &doc_) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
 
@@ -188,14 +183,14 @@ void OBJECT_NAME::generate_document(::Poseidon::Mongodb::Bson_builder &doc_) con
 	OBJECT_FIELDS
 }
 ::std::string OBJECT_NAME::generate_primary_key() const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
 
 	return OBJECT_PRIMARY_KEY;
 }
 void fetch(const ::boost::shared_ptr<const ::Poseidon::Mongodb::Connection> &conn_){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
 

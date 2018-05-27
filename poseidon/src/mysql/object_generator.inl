@@ -41,7 +41,6 @@ public:
 	OBJECT_FIELDS
 
 public:
-	OBJECT_NAME();
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -61,8 +60,9 @@ public:
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
-	explicit OBJECT_NAME(POSEIDON_REST(void OBJECT_FIELDS));
+	explicit OBJECT_NAME(POSEIDON_LAZY(POSEIDON_REST, void OBJECT_FIELDS));
 
+	OBJECT_NAME();
 	~OBJECT_NAME() OVERRIDE;
 
 public:
@@ -97,7 +97,9 @@ OBJECT_NAME::OBJECT_NAME()
 #define FIELD_BLOB(id_)                   , id_(this)
 
 	OBJECT_FIELDS
-{
+{ }
+
+OBJECT_NAME::~OBJECT_NAME(){
 	//
 }
 
@@ -119,7 +121,7 @@ OBJECT_NAME::OBJECT_NAME()
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
-OBJECT_NAME::OBJECT_NAME(POSEIDON_REST(void OBJECT_FIELDS))
+OBJECT_NAME::OBJECT_NAME(POSEIDON_LAZY(POSEIDON_REST, void OBJECT_FIELDS))
 	: ::Poseidon::Mysql::Object_base()
 
 #undef FIELD_BOOLEAN
@@ -141,19 +143,13 @@ OBJECT_NAME::OBJECT_NAME(POSEIDON_REST(void OBJECT_FIELDS))
 #define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(id_##X_))
 
 	OBJECT_FIELDS
-{
-	//
-}
-
-OBJECT_NAME::~OBJECT_NAME(){
-	//
-}
+{ }
 
 const char *OBJECT_NAME::get_table() const {
 	return OBJECT_TABLE;
 }
 void OBJECT_NAME::generate_sql(::std::ostream &os_) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
 	::Poseidon::Mysql::Object_base::Delimiter delim_;
@@ -179,7 +175,7 @@ void OBJECT_NAME::generate_sql(::std::ostream &os_) const {
 	OBJECT_FIELDS
 }
 void OBJECT_NAME::fetch(const ::boost::shared_ptr<const ::Poseidon::Mysql::Connection> &conn_){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
 

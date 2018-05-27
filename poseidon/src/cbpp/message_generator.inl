@@ -114,6 +114,8 @@ MESSAGE_NAME::~MESSAGE_NAME(){
 	return MESSAGE_ID;
 }
 void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
+	POSEIDON_PROFILE_ME;
+
 	const AUTO(cur_, this);
 	AUTO_REF(buf_, buffer_);
 
@@ -209,6 +211,8 @@ void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
 	MESSAGE_FIELDS
 }
 void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
+	POSEIDON_PROFILE_ME;
+
 	const AUTO(cur_, this);
 	AUTO_REF(buf_, buffer_);
 
@@ -373,8 +377,9 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
 	MESSAGE_FIELDS
 }
 void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
-	static CONSTEXPR int s_indent_step_ = 2;
+	POSEIDON_PROFILE_ME;
 
+	static CONSTEXPR int s_indent_step_ = 2;
 	const AUTO(cur_, this);
 	int indent_ = indent_initial_;
 
