@@ -59,7 +59,7 @@ namespace {
 			return m_event;
 		}
 		void perform() OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			const AUTO(listener, m_weak_listener.lock());
 			if(!listener){
@@ -71,19 +71,19 @@ namespace {
 }
 
 void Event_dispatcher::start(){
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting event dispatcher...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting event dispatcher...");
 
 	//
 }
 void Event_dispatcher::stop(){
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping event dispatcher...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping event dispatcher...");
 
 	const Mutex::Unique_lock lock(g_mutex);
 	g_listeners.clear();
 }
 
 void Event_dispatcher::get_listeners(boost::container::vector<boost::shared_ptr<const Event_listener> > &ret, const std::type_info &type_info){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Mutex::Unique_lock lock(g_mutex);
 	const AUTO(range, g_listeners.equal_range(&type_info));
@@ -99,7 +99,7 @@ void Event_dispatcher::get_listeners(boost::container::vector<boost::shared_ptr<
 }
 
 boost::shared_ptr<const Event_listener> Event_dispatcher::register_listener_explicit(const std::type_info &type_info, Event_listener_callback callback){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(listener, boost::make_shared<Event_listener>(STD_MOVE_IDN(callback)));
 	{
@@ -110,7 +110,7 @@ boost::shared_ptr<const Event_listener> Event_dispatcher::register_listener_expl
 }
 
 void Event_dispatcher::sync_raise(const boost::shared_ptr<Event_base> &event){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	boost::container::vector<boost::shared_ptr<const Event_listener> > listeners;
 	get_listeners(listeners, typeid(*event));
@@ -120,7 +120,7 @@ void Event_dispatcher::sync_raise(const boost::shared_ptr<Event_base> &event){
 	}
 }
 void Event_dispatcher::async_raise(const boost::shared_ptr<Event_base> &event, const boost::shared_ptr<const bool> &withdrawn){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	boost::container::vector<boost::shared_ptr<const Event_listener> > listeners;
 	get_listeners(listeners, typeid(*event));

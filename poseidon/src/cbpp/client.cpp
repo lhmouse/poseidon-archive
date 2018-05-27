@@ -30,7 +30,7 @@ private:
 		return m_weak_client;
 	}
 	void perform() FINAL {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const AUTO(client, m_weak_client.lock());
 		if(!client || client->has_been_shutdown_write()){
@@ -40,13 +40,13 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Cbpp::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->force_shutdown();
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
 			client->force_shutdown();
 		} catch(...){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			client->force_shutdown();
 		}
 	}
@@ -65,7 +65,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		client->on_sync_connect();
 	}
@@ -81,7 +81,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		client->shutdown_write();
 	}
@@ -102,7 +102,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		client->on_sync_data_message(m_message_id, STD_MOVE(m_payload));
 	}
@@ -123,7 +123,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		client->on_sync_control_message(m_status_code, STD_MOVE(m_param));
 	}
@@ -139,7 +139,7 @@ Client::~Client(){
 }
 
 void Client::on_connect(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Low_level_client::on_connect();
 
@@ -148,7 +148,7 @@ void Client::on_connect(){
 		VAL_INIT);
 }
 void Client::on_read_hup(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
 		boost::make_shared<Read_hup_job>(virtual_shared_from_this<Client>()),
@@ -158,18 +158,18 @@ void Client::on_read_hup(){
 }
 
 void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t /*payload_size*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_message_id = message_id;
 	m_payload.clear();
 }
 void Client::on_low_level_data_message_payload(boost::uint64_t /*payload_offset*/, Stream_buffer payload){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_payload.splice(payload);
 }
 bool Client::on_low_level_data_message_end(boost::uint64_t /*payload_size*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
 		boost::make_shared<Data_message_job>(virtual_shared_from_this<Client>(), m_message_id, STD_MOVE(m_payload)),
@@ -179,7 +179,7 @@ bool Client::on_low_level_data_message_end(boost::uint64_t /*payload_size*/){
 }
 
 bool Client::on_low_level_control_message(Status_code status_code, Stream_buffer param){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
 		boost::make_shared<Control_message_job>(virtual_shared_from_this<Client>(), status_code, STD_MOVE(param)),
@@ -189,33 +189,33 @@ bool Client::on_low_level_control_message(Status_code status_code, Stream_buffer
 }
 
 void Client::on_sync_connect(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	//
 }
 
 void Client::on_sync_control_message(Status_code status_code, Stream_buffer param){
-	PROFILE_ME;
-	LOG_POSEIDON_TRACE("Received CBPP error message from server: status_code = ", status_code, ", param = ", param);
+	POSEIDON_PROFILE_ME;
+	POSEIDON_LOG_TRACE("Received CBPP error message from server: status_code = ", status_code, ", param = ", param);
 
 	if(status_code < 0){
-		LOG_POSEIDON_WARNING("Received negative status code from ", get_remote_info(), ": status_code = ", status_code);
+		POSEIDON_LOG_WARNING("Received negative status code from ", get_remote_info(), ": status_code = ", status_code);
 		shutdown(status_shutdown, static_cast<char *>(param.squash()));
 	} else {
 		switch(status_code){
 		case status_shutdown:
-			LOG_POSEIDON_INFO("Received SHUTDOWN frame from ", get_remote_info());
+			POSEIDON_LOG_INFO("Received SHUTDOWN frame from ", get_remote_info());
 			shutdown(status_shutdown, static_cast<char *>(param.squash()));
 			break;
 		case status_ping:
-			LOG_POSEIDON_DEBUG("Received PING frame from ", get_remote_info());
+			POSEIDON_LOG_DEBUG("Received PING frame from ", get_remote_info());
 			send_control(status_pong, STD_MOVE(param));
 			break;
 		case status_pong:
-			LOG_POSEIDON_DEBUG("Received PONG frame from ", get_remote_info());
+			POSEIDON_LOG_DEBUG("Received PONG frame from ", get_remote_info());
 			break;
 		default:
-			DEBUG_THROW(Exception, status_unknown_control_code, Rcnts::view("Unknown control code"));
+			POSEIDON_THROW(Exception, status_unknown_control_code, Rcnts::view("Unknown control code"));
 		}
 	}
 }

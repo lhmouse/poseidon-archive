@@ -32,10 +32,10 @@ namespace {
 
 	protected:
 		virtual boost::shared_ptr<Tcp_session_base> on_client_connect(Move<Unique_file> client) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			AUTO(session, boost::make_shared<System_http_session>(STD_MOVE(client), m_auth_ctx));
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Accepted system TCP client from ", session->get_remote_info());
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Accepted system TCP client from ", session->get_remote_info());
 			session->set_no_delay(true);
 			return STD_MOVE_IDN(session);
 		}
@@ -55,7 +55,7 @@ namespace {
 }
 
 void System_http_server::start(){
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting system HTTP server...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting system HTTP server...");
 
 	const AUTO(bind, Main_config::get<std::string>("system_http_bind"));
 	const AUTO(port, Main_config::get<boost::uint16_t>("system_http_port"));
@@ -64,7 +64,7 @@ void System_http_server::start(){
 	const AUTO(relm, Main_config::get<std::string>("system_http_auth_realm", "Poseidon Test Server"));
 	const AUTO(auth, Main_config::get_all<std::string>("system_http_auth_user_pass"));
 	if(bind.empty()){
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "System server is disabled.");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "System server is disabled.");
 	} else {
 		const AUTO(auth_ctx, Http::create_authentication_context(relm, auth));
 		const AUTO(server, boost::make_shared<System_socket_server>(bind, port, cert, pkey, auth_ctx));
@@ -73,7 +73,7 @@ void System_http_server::start(){
 	}
 }
 void System_http_server::stop(){
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping system HTTP server...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping system HTTP server...");
 
 	const Mutex::Unique_lock lock(g_mutex);
 	g_servlet_map.clear();
@@ -81,7 +81,7 @@ void System_http_server::stop(){
 }
 
 boost::shared_ptr<const System_http_servlet_base> System_http_server::get_servlet(const char *uri){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Mutex::Unique_lock lock(g_mutex);
 	const AUTO(it, g_servlet_map.find(uri));
@@ -96,7 +96,7 @@ boost::shared_ptr<const System_http_servlet_base> System_http_server::get_servle
 	return servlet;
 }
 void System_http_server::get_all_servlets(boost::container::vector<boost::shared_ptr<const System_http_servlet_base> > &ret){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Mutex::Unique_lock lock(g_mutex);
 	ret.reserve(ret.size() + g_servlet_map.size());
@@ -110,15 +110,15 @@ void System_http_server::get_all_servlets(boost::container::vector<boost::shared
 }
 
 boost::shared_ptr<const System_http_servlet_base> System_http_server::register_servlet(boost::shared_ptr<System_http_servlet_base> servlet){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Mutex::Unique_lock lock(g_mutex);
 	const char *const uri = servlet->get_uri();
-	DEBUG_THROW_UNLESS(uri[0] == '/', Exception, Rcnts::view("System servlet URI must begin with a slash"));
-	LOG_POSEIDON_DEBUG("Registering system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
+	POSEIDON_THROW_UNLESS(uri[0] == '/', Exception, Rcnts::view("System servlet URI must begin with a slash"));
+	POSEIDON_LOG_DEBUG("Registering system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	const AUTO(pair, g_servlet_map.emplace(uri, servlet));
-	DEBUG_THROW_UNLESS(pair.second, Exception, Rcnts::view("Duplicate system servlet"));
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Registered system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
+	POSEIDON_THROW_UNLESS(pair.second, Exception, Rcnts::view("Duplicate system servlet"));
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Registered system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());
 	return STD_MOVE_IDN(servlet);
 }
 

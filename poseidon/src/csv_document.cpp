@@ -13,7 +13,7 @@ namespace Poseidon {
 
 namespace {
 	std::string escape_csv_field(const char *str, std::size_t len){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		std::string field;
 		field.reserve(len + 4);
@@ -40,7 +40,7 @@ Csv_document::Csv_document(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Csv_document parser error"));
+	POSEIDON_THROW_UNLESS(is, Exception, Rcnts::view("Csv_document parser error"));
 }
 
 void Csv_document::reset_header(const boost::container::map<Rcnts, std::string> &row){
@@ -103,14 +103,14 @@ void Csv_document::append(boost::container::map<Rcnts, std::string> &&row){
 #endif
 
 Stream_buffer Csv_document::dump() const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
 void Csv_document::dump(std::ostream &os) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(it, m_elements.begin());
 	if(it == m_elements.end()){
@@ -138,7 +138,7 @@ void Csv_document::dump(std::ostream &os) const {
 	}
 }
 void Csv_document::parse(std::istream &is){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	VALUE_TYPE(m_elements) elements;
 
@@ -199,7 +199,7 @@ void Csv_document::parse(std::istream &is){
 			if(traits::eq_int_type(next, traits::eof())){
 				break;
 			}
-			LOG_POSEIDON_WARNING("Ignoring empty line ", count);
+			POSEIDON_LOG_WARNING("Ignoring empty line ", count);
 			continue;
 		}
 		++count;
@@ -213,7 +213,7 @@ void Csv_document::parse(std::istream &is){
 			for(std::size_t i = 0; i < line.size(); ++i){
 				for(std::size_t j = 0; j < i; ++j){
 					if(matrix.at(j).at(0) == line.at(i)){
-						LOG_POSEIDON_WARNING("Duplicate CSV header on line ", count, ": ", line.at(i));
+						POSEIDON_LOG_WARNING("Duplicate CSV header on line ", count, ": ", line.at(i));
 						is.setstate(std::ios::failbit);
 						return;
 					}
@@ -222,7 +222,7 @@ void Csv_document::parse(std::istream &is){
 			}
 		} else {
 			if(line.size() != matrix.size()){
-				LOG_POSEIDON_WARNING("Inconsistent CSV column count on line ", count, ": got ", line.size(), ", expecting ", matrix.size());
+				POSEIDON_LOG_WARNING("Inconsistent CSV column count on line ", count, ": got ", line.size(), ", expecting ", matrix.size());
 				is.setstate(std::ios::failbit);
 				return;
 			}

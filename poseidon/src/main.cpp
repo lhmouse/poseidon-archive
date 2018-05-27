@@ -43,12 +43,12 @@ namespace {
 	volatile bool g_running = true;
 
 	void sigterm_proc(int){
-		LOG_POSEIDON_WARNING("Received SIGTERM, will now exit...");
+		POSEIDON_LOG_WARNING("Received SIGTERM, will now exit...");
 		atomic_store(g_running, false, memory_order_release);
 	}
 
 	void sighup_proc(int){
-		LOG_POSEIDON_WARNING("Received SIGHUP, will now exit...");
+		POSEIDON_LOG_WARNING("Received SIGHUP, will now exit...");
 		atomic_store(g_running, false, memory_order_release);
 	}
 
@@ -64,10 +64,10 @@ namespace {
 			s_kill_timer = virtual_now;
 		}
 		if(saturated_sub(virtual_now, s_kill_timer) >= s_kill_timeout){
-			LOG_POSEIDON_FATAL("---------------------- Process is killed ----------------------");
+			POSEIDON_LOG_FATAL("---------------------- Process is killed ----------------------");
 			std::_Exit(EXIT_FAILURE);
 		}
-		LOG_POSEIDON_WARNING("Received SIGINT, trying to exit gracefully... If I don't terminate in ", s_kill_timeout, " milliseconds, press ^C again.");
+		POSEIDON_LOG_WARNING("Received SIGINT, trying to exit gracefully... If I don't terminate in ", s_kill_timeout, " milliseconds, press ^C again.");
 		atomic_store(g_running, false, memory_order_release);
 	}
 
@@ -126,7 +126,7 @@ namespace {
 				try {
 					mask_to_enable = std::bitset<64>(req.get("mask_to_enable").get<std::string>());
 				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
+					POSEIDON_LOG_WARNING("std::exception thrown: ", e.what());
 					resp.set(Rcnts::view("error"), "Invalid parameter `mask_to_enable`: It shall be a `String` of digit zeroes and ones.");
 					return;
 				}
@@ -135,7 +135,7 @@ namespace {
 				try {
 					mask_to_disable = std::bitset<64>(req.get("mask_to_disable").get<std::string>());
 				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
+					POSEIDON_LOG_WARNING("std::exception thrown: ", e.what());
 					resp.set(Rcnts::view("error"), "Invalid parameter `mask_to_disable`: It shall be a `String` of digit zeroes and ones.");
 					return;
 				}
@@ -205,7 +205,7 @@ namespace {
 				try {
 					clear = req.get("clear").get<bool>();
 				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
+					POSEIDON_LOG_WARNING("std::exception thrown: ", e.what());
 					resp.set(Rcnts::view("error"), "Invalid parameter `clear`: It shall be a `Boolean`.");
 					return;
 				}
@@ -259,7 +259,7 @@ namespace {
 					path_to_load = req.get("path_to_load").get<std::string>();
 					to_load = true;
 				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
+					POSEIDON_LOG_WARNING("std::exception thrown: ", e.what());
 					resp.set(Rcnts::view("error"), "Invalid parameter `path_to_load`: It shall be a `String` representing the path of a shared object file to load.");
 					return;
 				}
@@ -281,13 +281,13 @@ namespace {
 #endif
 					to_unload = true;
 				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
+					POSEIDON_LOG_WARNING("std::exception thrown: ", e.what());
 					resp.set(Rcnts::view("error"), "Invalid parameter `address_to_unload`: It shall be a `String` representing a number in decimal, or hexadecimal with the prefix `0x`.");
 					return;
 				}
 			}
 			if(to_load && to_unload){
-				LOG_POSEIDON_WARNING("`address_to_load` and `path_to_unload` cannot be specified together.");
+				POSEIDON_LOG_WARNING("`address_to_load` and `path_to_unload` cannot be specified together.");
 				resp.set(Rcnts::view("error"), "`address_to_load` and `path_to_unload` cannot be specified together.");
 				return;
 			}
@@ -298,14 +298,14 @@ namespace {
 					Module_depository::load(path_to_load);
 					// what.clear();
 				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown: ", e.what());
+					POSEIDON_LOG_WARNING("std::exception thrown: ", e.what());
 					what = e.what();
 				} catch(...){
-					LOG_POSEIDON_WARNING("Unknown exception thrown.");
+					POSEIDON_LOG_WARNING("Unknown exception thrown.");
 					what = "Unknown exception";
 				}
 				if(!what.empty()){
-					LOG_POSEIDON_WARNING("Failed to load module: ", what);
+					POSEIDON_LOG_WARNING("Failed to load module: ", what);
 					resp.set(Rcnts::view("error"), "Failed to load module: " + what);
 					return;
 				}
@@ -313,7 +313,7 @@ namespace {
 			if(to_unload){
 				const bool result = Module_depository::unload(address_to_unload);
 				if(!result){
-					LOG_POSEIDON_WARNING("Failed to unload module: 0x", std::hex, address_to_unload);
+					POSEIDON_LOG_WARNING("Failed to unload module: 0x", std::hex, address_to_unload);
 					resp.set(Rcnts::view("error"), "Failed to unload module. Maybe it has been unloaded already?");
 					return;
 				}
@@ -422,14 +422,14 @@ int main(int argc, char **argv, char **/*envp*/){
 	::signal(SIGCHLD, SIG_IGN);
 	::signal(SIGPIPE, SIG_IGN);
 
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting up: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting up: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
 	try {
 		if(new_wd){
 			Main_config::set_run_path(new_wd);
 		}
 		Main_config::reload();
 
-#define START(x_)   const Raii_singleton_runner<x_> UNIQUE_ID
+#define START(x_)   const Raii_singleton_runner<x_> POSEIDON_UNIQUE_NAME
 
 		START(Profile_depository);
 #ifdef ENABLE_MAGIC
@@ -453,7 +453,7 @@ int main(int argc, char **argv, char **/*envp*/){
 		START(System_http_server);
 		START(Simple_http_client_daemon);
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Setting up built-in system servlets...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Setting up built-in system servlets...");
 		boost::container::vector<boost::shared_ptr<const System_http_servlet_base> > system_http_servlets;
 		system_http_servlets.push_back(System_http_server::register_servlet(boost::make_shared<System_http_servlet_help>()));
 		system_http_servlets.push_back(System_http_server::register_servlet(boost::make_shared<System_http_servlet_logger>()));
@@ -462,38 +462,38 @@ int main(int argc, char **argv, char **/*envp*/){
 		system_http_servlets.push_back(System_http_server::register_servlet(boost::make_shared<System_http_servlet_modules>()));
 
 		if(!all_logs){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Setting new log mask...");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Setting new log mask...");
 			Logger::initialize_mask_from_config();
 		}
 
 		const AUTO(init_modules, Main_config::get_all<std::string>("init_module"));
 		for(AUTO(it, init_modules.begin()); it != init_modules.end(); ++it){
 			const AUTO(path, it->c_str());
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading init module: ", path);
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Loading init module: ", path);
 			Module_depository::load(path);
 		}
 
 #ifdef ENABLE_MYSQL
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MySQL operations to complete...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MySQL operations to complete...");
 		Mysql_daemon::wait_for_all_async_operations();
 #endif
 #ifdef ENABLE_MONGODB
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MongoDB operations to complete...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MongoDB operations to complete...");
 		Mongodb_daemon::wait_for_all_async_operations();
 #endif
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Entering modal loop...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Entering modal loop...");
 		Job_dispatcher::do_modal(g_running);
 	} catch(std::exception &e){
 		Logger::finalize_mask();
-		LOG_POSEIDON_ERROR("std::exception thrown in main(): what = ", e.what());
+		POSEIDON_LOG_ERROR("std::exception thrown in main(): what = ", e.what());
 		return EXIT_FAILURE;
 	} catch(...){
 		Logger::finalize_mask();
-		LOG_POSEIDON_ERROR("Unknown exception thrown in main().");
+		POSEIDON_LOG_ERROR("Unknown exception thrown in main().");
 		return EXIT_FAILURE;
 	}
 	Logger::finalize_mask();
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Shutting down: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Shutting down: ", PACKAGE_STRING, " (built on ", __DATE__, " ", __TIME__, ")");
 	return EXIT_SUCCESS;
 }

@@ -16,7 +16,7 @@ namespace {
 boost::uint64_t get_utc_time(){
 	::timespec ts;
 	if(::clock_gettime(CLOCK_REALTIME, &ts) != 0){
-		LOG_POSEIDON_FATAL("Realtime clock is not supported.");
+		POSEIDON_LOG_FATAL("Realtime clock is not supported.");
 		std::terminate();
 	}
 	return (boost::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
@@ -26,14 +26,14 @@ boost::uint64_t get_local_time(){
 }
 boost::uint64_t get_utc_time_from_local(boost::uint64_t local){
 	if(::pthread_once(&g_tz_once, &::tzset) != 0){
-		LOG_POSEIDON_FATAL("::pthread_once() failed.");
+		POSEIDON_LOG_FATAL("::pthread_once() failed.");
 		std::terminate();
 	}
 	return local + (boost::uint64_t)(::timezone * 1000);
 }
 boost::uint64_t get_local_time_from_utc(boost::uint64_t utc){
 	if(::pthread_once(&g_tz_once, &::tzset) != 0){
-		LOG_POSEIDON_FATAL("::pthread_once() failed.");
+		POSEIDON_LOG_FATAL("::pthread_once() failed.");
 		std::terminate();
 	}
 	return utc - (boost::uint64_t)(::timezone * 1000);
@@ -43,7 +43,7 @@ boost::uint64_t get_local_time_from_utc(boost::uint64_t utc){
 boost::uint64_t get_fast_mono_clock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
-		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
+		POSEIDON_LOG_FATAL("Monotonic clock is not supported.");
 		std::terminate();
 	}
 	return (boost::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
@@ -52,7 +52,7 @@ boost::uint64_t get_fast_mono_clock() NOEXCEPT {
 double get_hi_res_mono_clock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
-		LOG_POSEIDON_FATAL("Monotonic clock is not supported.");
+		POSEIDON_LOG_FATAL("Monotonic clock is not supported.");
 		std::terminate();
 	}
 	return (double)ts.tv_sec * 1e3 + (double)ts.tv_nsec / 1e6;
@@ -112,8 +112,8 @@ std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool 
 boost::uint64_t scan_time(const char *str){
 	Date_time dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	if(std::sscanf(str, "%u-%u-%u %u:%u:%u.%u", &dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms) < 3){
-		LOG_POSEIDON_ERROR("Time string is not valid: ", str);
-		DEBUG_THROW(Exception, Rcnts::view("Time string is not valid"));
+		POSEIDON_LOG_ERROR("Time string is not valid: ", str);
+		POSEIDON_THROW(Exception, Rcnts::view("Time string is not valid"));
 	}
 	return assemble_time(dt);
 }

@@ -31,16 +31,16 @@ namespace {
 			return m_category;
 		}
 		void perform() FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			STD_EXCEPTION_PTR except;
 			try {
 				m_procedure();
 			} catch(std::exception &e){
-				LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
+				POSEIDON_LOG_DEBUG("std::exception thrown: what = ", e.what());
 				except = STD_CURRENT_EXCEPTION();
 			} catch(...){
-				LOG_POSEIDON_DEBUG("Unknown exception thrown.");
+				POSEIDON_LOG_DEBUG("Unknown exception thrown.");
 				except = STD_CURRENT_EXCEPTION();
 			}
 			const AUTO(promise, m_weak_promise.lock());

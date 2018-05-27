@@ -13,18 +13,18 @@ namespace Poseidon {
 namespace Websocket {
 
 Http::Response_headers make_handshake_response(const Http::Request_headers &request){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Http::Response_headers response = { };
 	response.version = 10001;
 	{
 		if(request.version < 10001){
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "HTTP 1.1 is required to use WebSocket");
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "HTTP 1.1 is required to use WebSocket");
 			response.status_code = Http::status_version_not_supported;
 			goto _done;
 		}
 		if(request.verb != Http::verb_get){
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Must use GET verb to use WebSocket");
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Must use GET verb to use WebSocket");
 			response.status_code = Http::status_method_not_allowed;
 			goto _done;
 		}
@@ -32,18 +32,18 @@ Http::Response_headers make_handshake_response(const Http::Request_headers &requ
 		char *endptr;
 		const AUTO(version_num, std::strtol(websocket_version.c_str(), &endptr, 10));
 		if(*endptr){
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Unrecognized HTTP header Sec-WebSocket-Version: ", websocket_version);
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Unrecognized HTTP header Sec-WebSocket-Version: ", websocket_version);
 			response.status_code = Http::status_bad_request;
 			goto _done;
 		}
 		if((version_num < 0) || (version_num < 13)){
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Unsupported Sec-WebSocket-Version: ", websocket_version);
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Unsupported Sec-WebSocket-Version: ", websocket_version);
 			response.status_code = Http::status_bad_request;
 			goto _done;
 		}
 		const AUTO_REF(sec_websocket_key, request.headers.get("Sec-WebSocket-Key"));
 		if(sec_websocket_key.empty()){
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "No Sec-WebSocket-Key specified.");
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "No Sec-WebSocket-Key specified.");
 			response.status_code = Http::status_bad_request;
 			goto _done;
 		}
@@ -64,7 +64,7 @@ _done:
 }
 
 std::pair<Http::Request_headers, std::string> make_handshake_request(std::string uri, Option_map get_params, std::string host){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Http::Request_headers request = { };
 	request.verb       = Http::verb_get;
@@ -88,29 +88,29 @@ std::pair<Http::Request_headers, std::string> make_handshake_request(std::string
 	return std::make_pair(STD_MOVE_IDN(request), STD_MOVE_IDN(sec_websocket_key));
 }
 bool check_handshake_response(const Http::Response_headers &response, const std::string &sec_websocket_key){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	if(response.version < 10001){
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "HTTP 1.1 is required to use WebSocket");
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "HTTP 1.1 is required to use WebSocket");
 		return false;
 	}
 	if(response.status_code != Http::status_switching_protocols){
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Bad HTTP status code: ", response.status_code);
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Bad HTTP status code: ", response.status_code);
 		return false;
 	}
 	const AUTO_REF(upgrade, response.headers.get("Upgrade"));
 	if(upgrade.empty() || (::strcasecmp(upgrade.c_str(), "websocket") != 0)){
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Invalid Upgrade header: ", upgrade);
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Invalid Upgrade header: ", upgrade);
 		return false;
 	}
 	const AUTO_REF(connection, response.headers.get("Connection"));
 	if(connection.empty() || (::strcasecmp(connection.c_str(), "Upgrade") != 0)){
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Invalid Connection header: ", connection);
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Invalid Connection header: ", connection);
 		return false;
 	}
 	const AUTO_REF(sec_websocket_accept, response.headers.get("Sec-WebSocket-Accept"));
 	if(sec_websocket_accept.empty()){
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "No Sec-WebSocket-Accept specified.");
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "No Sec-WebSocket-Accept specified.");
 		return false;
 	}
 	Sha1_ostream sha1_os;
@@ -120,7 +120,7 @@ bool check_handshake_response(const Http::Response_headers &response, const std:
 	enc.put(sha1.data(), sha1.size());
 	AUTO(sec_websocket_accept_expecting, enc.finalize().dump_string());
 	if(sec_websocket_accept != sec_websocket_accept_expecting){
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Bad Sec-WebSocket-Accept: got ", sec_websocket_accept, ", expecting ", sec_websocket_accept_expecting);
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Bad Sec-WebSocket-Accept: got ", sec_websocket_accept, ", expecting ", sec_websocket_accept_expecting);
 		return false;
 	}
 	return true;

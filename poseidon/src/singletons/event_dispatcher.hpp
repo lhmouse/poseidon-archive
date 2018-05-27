@@ -39,8 +39,8 @@ public:
 			static void safe_fwd(boost::function<void (const boost::shared_ptr<EventT> &)> &callback, const boost::shared_ptr<Event_base> &event){
 				AUTO(derived, boost::dynamic_pointer_cast<EventT>(event));
 				if(!derived){
-					LOG_POSEIDON_ERROR("Incorrect dynamic event type: expecting ", typeid(EventT).name(), ", got ", typeid(*event).name());
-					DEBUG_THROW(Exception, Rcnts::view("Incorrect dynamic event type"));
+					POSEIDON_LOG_ERROR("Incorrect dynamic event type: expecting ", typeid(EventT).name(), ", got ", typeid(*event).name());
+					POSEIDON_THROW(Exception, Rcnts::view("Incorrect dynamic event type"));
 				}
 				callback(STD_MOVE(derived));
 			}

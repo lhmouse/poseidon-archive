@@ -40,10 +40,10 @@ try {
 	Mysql_daemon::enqueue_for_saving(virtual_shared_from_this<Object_base>(), true, false);
 	return true;
 } catch(std::exception &e){
-	LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+	POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 	return false;
 } catch(...){
-	LOG_POSEIDON_ERROR("Unknown exception thrown.");
+	POSEIDON_LOG_ERROR("Unknown exception thrown.");
 	return false;
 }
 

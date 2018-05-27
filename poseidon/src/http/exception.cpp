@@ -21,7 +21,7 @@ Exception::Exception(const char *file, std::size_t line, const char *func, Statu
 	, m_status_code(status_code), m_headers(headers.empty() ? boost::shared_ptr<Option_map>()
 	                                                        : boost::make_shared<Option_map>(STD_MOVE(headers)))
 {
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Http::Exception: status_code = ", get_status_code(), ", what = ", what());
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Http::Exception: status_code = ", get_status_code(), ", what = ", what());
 }
 Exception::~Exception() NOEXCEPT {
 	//

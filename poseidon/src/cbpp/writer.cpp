@@ -18,7 +18,7 @@ Writer::~Writer(){
 }
 
 long Writer::put_data_message(boost::uint16_t message_id, Stream_buffer payload){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer frame;
 	boost::uint16_t temp16;
@@ -38,7 +38,7 @@ long Writer::put_data_message(boost::uint16_t message_id, Stream_buffer payload)
 	return on_encoded_data_avail(STD_MOVE(frame));
 }
 long Writer::put_control_message(Status_code status_code, Stream_buffer param){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer payload;
 	boost::uint32_t temp32;

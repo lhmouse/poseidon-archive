@@ -20,12 +20,12 @@ Client_reader::Client_reader()
 }
 Client_reader::~Client_reader(){
 	if(m_state != state_first_header){
-		LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature response has to be discarded.");
+		POSEIDON_LOG_DEBUG("Now that this reader is to be destroyed, a premature response has to be discarded.");
 	}
 }
 
 bool Client_reader::put_encoded_data(Stream_buffer encoded){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_queue.splice(encoded);
 
@@ -82,25 +82,25 @@ bool Client_reader::put_encoded_data(Stream_buffer encoded){
 
 				for(AUTO(it, line.begin()); it != line.end(); ++it){
 					const unsigned ch = static_cast<unsigned char>(*it);
-					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), Basic_exception, Rcnts::view("Invalid HTTP response header"));
+					POSEIDON_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), Basic_exception, Rcnts::view("Invalid HTTP response header"));
 				}
 
 				AUTO(pos, line.find(' '));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("No HTTP version in response headers"));
+				POSEIDON_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("No HTTP version in response headers"));
 				line.at(pos) = 0;
 				long ver_end = 0;
 				char ver_major_str[16], ver_minor_str[16];
-				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, Basic_exception, Rcnts::view("Malformed HTTP version in response headers"));
-				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == pos, Basic_exception, Rcnts::view("Malformed HTTP version in response headers"));
+				POSEIDON_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, Basic_exception, Rcnts::view("Malformed HTTP version in response headers"));
+				POSEIDON_THROW_UNLESS(static_cast<std::size_t>(ver_end) == pos, Basic_exception, Rcnts::view("Malformed HTTP version in response headers"));
 				m_response_headers.version = boost::numeric_cast<unsigned>(std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10));
 				line.erase(0, pos + 1);
 
 				pos = line.find(' ');
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("No status code in response headers"));
+				POSEIDON_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("No status code in response headers"));
 				line[pos] = 0;
 				char *eptr;
 				const unsigned status_code = boost::numeric_cast<unsigned>(std::strtoul(line.c_str(), &eptr, 10));
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Malformed status code in response headers"));
+				POSEIDON_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Malformed status code in response headers"));
 				m_response_headers.status_code = status_code;
 				line.erase(0, pos + 1);
 
@@ -119,7 +119,7 @@ bool Client_reader::put_encoded_data(Stream_buffer encoded){
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("Malformed HTTP header in response headers"));
+				POSEIDON_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("Malformed HTTP header in response headers"));
 				Rcnts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
@@ -136,14 +136,14 @@ bool Client_reader::put_encoded_data(Stream_buffer encoded){
 					} else {
 						char *eptr;
 						m_content_length = ::strtoull(content_length.c_str(), &eptr, 10);
-						DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Malformed Content-Length header"));
-						DEBUG_THROW_UNLESS(m_content_length <= content_length_max, Basic_exception, Rcnts::view("Inacceptable Content-Length"));
+						POSEIDON_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Malformed Content-Length header"));
+						POSEIDON_THROW_UNLESS(m_content_length <= content_length_max, Basic_exception, Rcnts::view("Inacceptable Content-Length"));
 					}
 				} else if(::strcasecmp(transfer_encoding.c_str(), "chunked") == 0){
 					m_content_length = content_length_chunked;
 				} else {
-					LOG_POSEIDON_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
-					DEBUG_THROW(Basic_exception, Rcnts::view("Inacceptable Transfer-Encoding"));
+					POSEIDON_LOG_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
+					POSEIDON_THROW(Basic_exception, Rcnts::view("Inacceptable Transfer-Encoding"));
 				}
 
 				on_response_headers(STD_MOVE(m_response_headers), m_content_length);
@@ -192,8 +192,8 @@ bool Client_reader::put_encoded_data(Stream_buffer encoded){
 
 				char *eptr;
 				m_chunk_size = ::strtoull(line.c_str(), &eptr, 16);
-				DEBUG_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), Basic_exception, Rcnts::view("Malformed chunk header"));
-				DEBUG_THROW_UNLESS(m_chunk_size <= content_length_max, Basic_exception, Rcnts::view("Inacceptable chunk length"));
+				POSEIDON_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), Basic_exception, Rcnts::view("Malformed chunk header"));
+				POSEIDON_THROW_UNLESS(m_chunk_size <= content_length_max, Basic_exception, Rcnts::view("Inacceptable chunk length"));
 				if(m_chunk_size == 0){
 					m_size_expecting = content_length_expecting_endl;
 					m_state = state_chunked_trailer;
@@ -228,7 +228,7 @@ bool Client_reader::put_encoded_data(Stream_buffer encoded){
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("Invalid HTTP header in chunk trailer"));
+				POSEIDON_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("Invalid HTTP header in chunk trailer"));
 				Rcnts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
@@ -256,8 +256,8 @@ bool Client_reader::is_content_till_eof() const {
 	return m_content_length == content_length_until_eof;
 }
 bool Client_reader::terminate_content(){
-	PROFILE_ME;
-	DEBUG_THROW_ASSERT(is_content_till_eof());
+	POSEIDON_PROFILE_ME;
+	POSEIDON_THROW_ASSERT(is_content_till_eof());
 
 	const AUTO(bytes_remaining, m_queue.size());
 	if(bytes_remaining != 0){

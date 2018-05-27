@@ -47,20 +47,20 @@
 
 \*===========================================================================*/
 
-#define THROW_END_OF_STREAM_(message_, field_)	\
-	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
+#define POSEIDON_CBPP_THROW_END_OF_STREAM_(message_, field_)	\
+	POSEIDON_THROW(::Poseidon::Cbpp::Exception,	\
 		::Poseidon::Cbpp::status_end_of_stream, ::Poseidon::Rcnts::view(	\
-			"End of stream encountered in message " TOKEN_TO_STR(message_) " while parsing " TOKEN_TO_STR(field_) ))
+			"End of stream encountered in message " POSEIDON_STRINGIFY(message_) " while parsing " POSEIDON_STRINGIFY(field_) ))
 
-#define THROW_JUNK_AFTER_PACKET_(message_)	\
-	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
+#define POSEIDON_CBPP_THROW_JUNK_AFTER_PACKET_(message_)	\
+	POSEIDON_THROW(::Poseidon::Cbpp::Exception,	\
 		::Poseidon::Cbpp::status_junk_after_packet, ::Poseidon::Rcnts::view(	\
-			"Junk after message " TOKEN_TO_STR(message_) ))
+			"Junk after message " POSEIDON_STRINGIFY(message_) ))
 
-#define THROW_LENGTH_ERROR_(message_, field_)	\
-	DEBUG_THROW(::Poseidon::Cbpp::Exception,	\
+#define POSEIDON_CBPP_THROW_LENGTH_ERROR_(message_, field_)	\
+	POSEIDON_THROW(::Poseidon::Cbpp::Exception,	\
 		::Poseidon::Cbpp::status_length_error, ::Poseidon::Rcnts::view(	\
-			"Length error in message " TOKEN_TO_STR(message_) " while parsing " TOKEN_TO_STR(field_) ))
+			"Length error in message " POSEIDON_STRINGIFY(message_) " while parsing " POSEIDON_STRINGIFY(field_) ))
 
 namespace Poseidon {
 namespace Cbpp {

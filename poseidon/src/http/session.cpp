@@ -32,7 +32,7 @@ private:
 		return m_weak_session;
 	}
 	void perform() FINAL {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const AUTO(session, m_weak_session.lock());
 		if(!session || session->has_been_shutdown_write()){
@@ -42,13 +42,13 @@ private:
 		try {
 			really_perform(session);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Http::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Http::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			session->send_default_and_shutdown(e.get_status_code(), e.get_headers());
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
 			session->send_default_and_shutdown(status_internal_server_error);
 		} catch(...){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			session->force_shutdown();
 		}
 	}
@@ -67,7 +67,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		session->shutdown_write();
 	}
@@ -87,7 +87,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		session->on_sync_expect(STD_MOVE(m_request_headers));
 	}
@@ -109,7 +109,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		session->on_sync_request(STD_MOVE(m_request_headers), STD_MOVE(m_entity));
 
@@ -134,7 +134,7 @@ Session::~Session(){
 }
 
 void Session::on_read_hup(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
 		boost::make_shared<Read_hup_job>(virtual_shared_from_this<Session>()),
@@ -144,7 +144,7 @@ void Session::on_read_hup(){
 }
 
 void Session::on_low_level_request_headers(Request_headers request_headers, boost::uint64_t /*content_length*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_size_total = 0;
 	m_request_headers = STD_MOVE(request_headers);
@@ -158,14 +158,14 @@ void Session::on_low_level_request_headers(Request_headers request_headers, boos
 	}
 }
 void Session::on_low_level_request_entity(boost::uint64_t /*entity_offset*/, Stream_buffer entity){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_size_total += entity.size();
-	DEBUG_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_payload_too_large);
+	POSEIDON_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_payload_too_large);
 	m_entity.splice(entity);
 }
 boost::shared_ptr<Upgraded_session_base> Session::on_low_level_request_end(boost::uint64_t content_length, Option_map headers){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	(void)content_length;
 
@@ -185,20 +185,20 @@ boost::shared_ptr<Upgraded_session_base> Session::on_low_level_request_end(boost
 }
 
 void Session::on_sync_expect(Request_headers request_headers){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const AUTO_REF(expect, request_headers.headers.get("Expect"));
 	if(::strcasecmp(expect.c_str(), "100-continue") == 0){
 		const AUTO_REF(content_length_str, request_headers.headers.get("Content-Length"));
-		DEBUG_THROW_UNLESS(!content_length_str.empty(), Exception, status_length_required);
+		POSEIDON_THROW_UNLESS(!content_length_str.empty(), Exception, status_length_required);
 		char *eptr;
 		const AUTO(content_length, ::strtoull(content_length_str.c_str(), &eptr, 10));
-		DEBUG_THROW_UNLESS(*eptr == 0, Exception, status_bad_request);
-		DEBUG_THROW_UNLESS(content_length <= get_max_request_length(), Exception, status_payload_too_large);
+		POSEIDON_THROW_UNLESS(*eptr == 0, Exception, status_bad_request);
+		POSEIDON_THROW_UNLESS(content_length <= get_max_request_length(), Exception, status_payload_too_large);
 		send_default(status_continue);
 	} else {
-		LOG_POSEIDON_WARNING("Unknown HTTP header Expect: ", expect);
-		DEBUG_THROW(Exception, status_expectation_failed);
+		POSEIDON_LOG_WARNING("Unknown HTTP header Expect: ", expect);
+		POSEIDON_THROW(Exception, status_expectation_failed);
 	}
 }
 

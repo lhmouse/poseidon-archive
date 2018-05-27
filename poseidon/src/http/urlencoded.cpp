@@ -119,19 +119,19 @@ namespace {
 }
 
 void url_encode(std::ostream &os, const std::string &str){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	url_encode_step(os, str);
 }
 void url_decode(std::istream &is, std::string &str){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	str.clear();
 	url_decode_step(is, str, "");
 }
 
 void url_encode_params(std::ostream &os, const Option_map &params){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(it, params.begin());
 	if(it != params.end()){
@@ -149,7 +149,7 @@ void url_encode_params(std::ostream &os, const Option_map &params){
 	}
 }
 void url_decode_params(std::istream &is, Option_map &params){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	params.clear();
 	for(;;){

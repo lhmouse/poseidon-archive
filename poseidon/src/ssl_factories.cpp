@@ -29,7 +29,7 @@ namespace {
 }
 
 void init_ssl_once(){
-	DEBUG_THROW_ASSERT(::pthread_once(&g_ssl_once, &init_openssl) == 0);
+	POSEIDON_THROW_ASSERT(::pthread_once(&g_ssl_once, &init_openssl) == 0);
 }
 
 #else
@@ -42,24 +42,24 @@ void init_ssl_once(){
 
 namespace {
 	Unique_ssl_ctx create_server_ssl_ctx(const char *certificate, const char *private_key){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		init_ssl_once();
 
 		Unique_ssl_ctx ssl_ctx;
-		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_server_method())), Exception, Rcnts::view("::SSLv23_server_method() failed"));
+		POSEIDON_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_server_method())), Exception, Rcnts::view("::SSLv23_server_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv3);
 		if(certificate && *certificate){
-			LOG_POSEIDON_INFO("Loading server certificate: ", certificate);
-			DEBUG_THROW_UNLESS(::SSL_CTX_use_certificate_chain_file(ssl_ctx.get(), certificate) == 1, Exception, Rcnts::view("::SSL_CTX_use_certificate_file() failed"));
-			LOG_POSEIDON_INFO("Loading server private key: ", private_key);
-			DEBUG_THROW_UNLESS(::SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), private_key, SSL_FILETYPE_PEM) == 1, Exception, Rcnts::view("::SSL_CTX_use_PrivateKey_file() failed"));
-			LOG_POSEIDON_INFO("Verifying private key...");
-			DEBUG_THROW_UNLESS(::SSL_CTX_check_private_key(ssl_ctx.get()) == 1, Exception, Rcnts::view("::SSL_CTX_check_private_key() failed"));
-			LOG_POSEIDON_INFO("Setting session ID context...");
+			POSEIDON_LOG_INFO("Loading server certificate: ", certificate);
+			POSEIDON_THROW_UNLESS(::SSL_CTX_use_certificate_chain_file(ssl_ctx.get(), certificate) == 1, Exception, Rcnts::view("::SSL_CTX_use_certificate_file() failed"));
+			POSEIDON_LOG_INFO("Loading server private key: ", private_key);
+			POSEIDON_THROW_UNLESS(::SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), private_key, SSL_FILETYPE_PEM) == 1, Exception, Rcnts::view("::SSL_CTX_use_PrivateKey_file() failed"));
+			POSEIDON_LOG_INFO("Verifying private key...");
+			POSEIDON_THROW_UNLESS(::SSL_CTX_check_private_key(ssl_ctx.get()) == 1, Exception, Rcnts::view("::SSL_CTX_check_private_key() failed"));
+			POSEIDON_LOG_INFO("Setting session ID context...");
 			static CONSTEXPR const unsigned char ssl_session_id[SSL_MAX_SSL_SESSION_ID_LENGTH] = { __DATE__ __TIME__ };
-			DEBUG_THROW_UNLESS(::SSL_CTX_set_session_id_context(ssl_ctx.get(), ssl_session_id, sizeof(ssl_session_id)) == 1, Exception, Rcnts::view("::SSL_CTX_set_session_id_context() failed"));
+			POSEIDON_THROW_UNLESS(::SSL_CTX_set_session_id_context(ssl_ctx.get(), ssl_session_id, sizeof(ssl_session_id)) == 1, Exception, Rcnts::view("::SSL_CTX_set_session_id_context() failed"));
 			::SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_PEER, NULLPTR);
 		} else {
 			::SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_NONE, NULLPTR);
@@ -68,18 +68,18 @@ namespace {
 	}
 
 	Unique_ssl_ctx create_client_ssl_ctx(bool verify_peer){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		init_ssl_once();
 
 		Unique_ssl_ctx ssl_ctx;
-		DEBUG_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_client_method())), Exception, Rcnts::view("::SSLv23_client_method() failed"));
+		POSEIDON_THROW_UNLESS(ssl_ctx.reset(::SSL_CTX_new(::SSLv23_client_method())), Exception, Rcnts::view("::SSLv23_client_method() failed"));
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2);
 		::SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv3);
 		if(verify_peer){
 			const AUTO(ssl_cert_directory, Main_config::get<std::string>("ssl_cert_directory", "/etc/ssl/certs"));
-			LOG_POSEIDON_INFO("Loading trusted CA certificates: ", ssl_cert_directory);
-			DEBUG_THROW_UNLESS(::SSL_CTX_load_verify_locations(ssl_ctx.get(), NULLPTR, ssl_cert_directory.c_str()) == 1, Exception, Rcnts::view("::SSL_CTX_load_verify_locations() failed"));
+			POSEIDON_LOG_INFO("Loading trusted CA certificates: ", ssl_cert_directory);
+			POSEIDON_THROW_UNLESS(::SSL_CTX_load_verify_locations(ssl_ctx.get(), NULLPTR, ssl_cert_directory.c_str()) == 1, Exception, Rcnts::view("::SSL_CTX_load_verify_locations() failed"));
 			::SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_PEER, NULLPTR);
 		} else {
 			::SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_NONE, NULLPTR);
@@ -99,7 +99,7 @@ Ssl_server_factory::~Ssl_server_factory(){
 
 void Ssl_server_factory::create_ssl_filter(boost::scoped_ptr<Ssl_filter> &ssl_filter, int fd){
 	Unique_ssl ssl;
-	DEBUG_THROW_UNLESS(ssl.reset(::SSL_new(m_ssl_ctx.get())), Exception, Rcnts::view("::SSL_new() failed"));
+	POSEIDON_THROW_UNLESS(ssl.reset(::SSL_new(m_ssl_ctx.get())), Exception, Rcnts::view("::SSL_new() failed"));
 	ssl_filter.reset(new Ssl_filter(STD_MOVE(ssl), Ssl_filter::to_accept, fd));
 }
 
@@ -114,7 +114,7 @@ Ssl_client_factory::~Ssl_client_factory(){
 
 void Ssl_client_factory::create_ssl_filter(boost::scoped_ptr<Ssl_filter> &ssl_filter, int fd){
 	Unique_ssl ssl;
-	DEBUG_THROW_UNLESS(ssl.reset(::SSL_new(m_ssl_ctx.get())), Exception, Rcnts::view("::SSL_new() failed"));
+	POSEIDON_THROW_UNLESS(ssl.reset(::SSL_new(m_ssl_ctx.get())), Exception, Rcnts::view("::SSL_new() failed"));
 	ssl_filter.reset(new Ssl_filter(STD_MOVE(ssl), Ssl_filter::to_connect, fd));
 }
 

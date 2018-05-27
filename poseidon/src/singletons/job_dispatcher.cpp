@@ -44,7 +44,7 @@ namespace {
 			void *const ptr = mmap(NULLPTR, sizeof(Stack_storage), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 			if(ptr == MAP_FAILED){
 				const int err_code = errno;
-				LOG_POSEIDON_ERROR("Failed to allocate stack: err_code = ", err_code);
+				POSEIDON_LOG_ERROR("Failed to allocate stack: err_code = ", err_code);
 				throw std::bad_alloc();
 			}
 			return ptr;
@@ -52,7 +52,7 @@ namespace {
 		static void operator delete(void *ptr) NOEXCEPT {
 			if(::munmap(ptr, sizeof(Stack_storage)) != 0){
 				const int err_code = errno;
-				LOG_POSEIDON_ERROR("Failed to deallocate stack: err_code = ", err_code);
+				POSEIDON_LOG_ERROR("Failed to deallocate stack: err_code = ", err_code);
 				std::terminate();
 			}
 		}
@@ -128,32 +128,32 @@ namespace {
 	boost::container::map<boost::weak_ptr<const void>, Fiber_control> g_fiber_map;
 
 	void fiber_proc(int low, int high) NOEXCEPT {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		Fiber_control *fiber;
 		const int params[2] = { low, high };
 		std::memcpy(&fiber, params, sizeof(fiber));
 
-		LOG_POSEIDON_TRACE("Entering fiber ", static_cast<void *>(fiber));
+		POSEIDON_LOG_TRACE("Entering fiber ", static_cast<void *>(fiber));
 		try {
 			fiber->queue.front().job->perform();
 		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+			POSEIDON_LOG_WARNING("std::exception thrown: what = ", e.what());
 		} catch(...){
-			LOG_POSEIDON_WARNING("Unknown exception thrown");
+			POSEIDON_LOG_WARNING("Unknown exception thrown");
 		}
-		LOG_POSEIDON_TRACE("Exited from fiber ", static_cast<void *>(fiber));
+		POSEIDON_LOG_TRACE("Exited from fiber ", static_cast<void *>(fiber));
 
 		fiber->state = fiber_state_ready;
 	}
 
 	void schedule_fiber(Fiber_control *fiber) NOEXCEPT {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		if(fiber->state == fiber_state_ready){
 			if(::getcontext(&(fiber->inner)) != 0){
 				const int err_code = errno;
-				LOG_POSEIDON_FATAL("::getcontext() failed: err_code = ", err_code);
+				POSEIDON_LOG_FATAL("::getcontext() failed: err_code = ", err_code);
 				std::terminate();
 			}
 			fiber->inner.uc_stack.ss_sp = fiber->stack.get();
@@ -170,13 +170,13 @@ namespace {
 		const AUTO(profiler_hook, Profiler::begin_stack_switch());
 		{
 			if((fiber->state != fiber_state_ready) && (fiber->state != fiber_state_suspended)){
-				LOG_POSEIDON_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(fiber->state));
+				POSEIDON_LOG_FATAL("Fiber can't be scheduled: state = ", static_cast<int>(fiber->state));
 				std::terminate();
 			}
 			fiber->state = fiber_state_running;
 			if(::swapcontext(&(fiber->outer), &(fiber->inner)) != 0){
 				const int err_code = errno;
-				LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
+				POSEIDON_LOG_FATAL("::swapcontext() failed: err_code = ", err_code);
 				std::terminate();
 			}
 		}
@@ -185,7 +185,7 @@ namespace {
 	}
 
 	bool pump_one_fiber(Fiber_control *fiber, bool force_expiry) NOEXCEPT {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const AUTO(now, get_fast_mono_clock());
 
@@ -200,12 +200,12 @@ namespace {
 				if((now < elem->expiry_time) && !(elem->insignificant && force_expiry)){
 					return false;
 				}
-				LOG_POSEIDON_WARNING("Job timed out");
+				POSEIDON_LOG_WARNING("Job timed out");
 			}
 			elem->promise.reset();
 		}
 		if((fiber->state == fiber_state_ready) && elem->withdrawn && *(elem->withdrawn)){
-			LOG_POSEIDON_DEBUG("Job is withdrawn");
+			POSEIDON_LOG_DEBUG("Job is withdrawn");
 		} else {
 			schedule_fiber(fiber);
 		}
@@ -216,7 +216,7 @@ namespace {
 		return true;
 	}
 	bool pump_one_round(bool force_expiry) NOEXCEPT {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		bool busy = false;
 		Mutex::Unique_lock lock(g_fiber_map_mutex);
@@ -235,12 +235,12 @@ namespace {
 }
 
 void Job_dispatcher::start(){
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting job dispatcher...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting job dispatcher...");
 
 	//
 }
 void Job_dispatcher::stop(){
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping job dispatcher...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping job dispatcher...");
 
 	Mutex::Unique_lock lock(g_fiber_map_mutex);
 	boost::uint64_t last_info_time = 0;
@@ -253,7 +253,7 @@ void Job_dispatcher::stop(){
 
 		const AUTO(now, get_fast_mono_clock());
 		if(last_info_time + 500 < now){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "There are ", pending_fibers, " fiber(s) remaining.");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "There are ", pending_fibers, " fiber(s) remaining.");
 			last_info_time = now;
 		}
 		pump_one_round(true);
@@ -280,7 +280,7 @@ void Job_dispatcher::do_modal(const volatile bool &running){
 }
 
 void Job_dispatcher::enqueue(boost::shared_ptr<Job_base> job, boost::shared_ptr<const bool> withdrawn){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const boost::weak_ptr<const void> null_weak_ptr;
 	AUTO(category, job->get_category());
@@ -302,18 +302,18 @@ void Job_dispatcher::enqueue(boost::shared_ptr<Job_base> job, boost::shared_ptr<
 	g_new_job.signal();
 }
 void Job_dispatcher::yield(boost::shared_ptr<const Promise> promise, bool insignificant){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const AUTO(fiber, t_current_fiber);
-	DEBUG_THROW_UNLESS(fiber, Exception, Rcnts::view("No current fiber"));
+	POSEIDON_THROW_UNLESS(fiber, Exception, Rcnts::view("No current fiber"));
 	if(fiber->queue.empty()){
-		LOG_POSEIDON_FATAL("Not in current fiber?!");
+		POSEIDON_LOG_FATAL("Not in current fiber?!");
 		std::terminate();
 	}
 	if(promise && promise->is_satisfied()){
-		LOG_POSEIDON_TRACE("Skipped yielding from fiber ", static_cast<void *>(fiber));
+		POSEIDON_LOG_TRACE("Skipped yielding from fiber ", static_cast<void *>(fiber));
 	} else {
-		LOG_POSEIDON_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
+		POSEIDON_LOG_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
 		const AUTO(job_timeout, Main_config::get<boost::uint64_t>("job_timeout", 60000));
 		AUTO_REF(elem, fiber->queue.front());
 		elem.promise = promise;
@@ -324,12 +324,12 @@ void Job_dispatcher::yield(boost::shared_ptr<const Promise> promise, bool insign
 			fiber->state = fiber_state_suspended;
 			if(::swapcontext(&(fiber->inner), &(fiber->outer)) != 0){
 				const int err_code = errno;
-				LOG_POSEIDON_FATAL("::swapcontext() failed: err_code = ", err_code);
+				POSEIDON_LOG_FATAL("::swapcontext() failed: err_code = ", err_code);
 				std::terminate();
 			}
 		}
 		Profiler::end_stack_switch(profiler_hook);
-		LOG_POSEIDON_TRACE("Resumed to fiber ", static_cast<void *>(fiber));
+		POSEIDON_LOG_TRACE("Resumed to fiber ", static_cast<void *>(fiber));
 	}
 
 	if(promise){

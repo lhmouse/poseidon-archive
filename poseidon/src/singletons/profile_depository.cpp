@@ -39,12 +39,12 @@ namespace {
 }
 
 void Profile_depository::start(){
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting profile depository...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting profile depository...");
 
 	g_enabled = Main_config::get<bool>("profiler_enabled", false);
 }
 void Profile_depository::stop(){
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping profile depository...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping profile depository...");
 
 	const Mutex::Unique_lock lock(g_mutex);
 	g_profile.clear();

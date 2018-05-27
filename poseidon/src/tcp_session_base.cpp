@@ -21,7 +21,7 @@
 namespace Poseidon {
 
 void Tcp_session_base::shutdown_timer_proc(const boost::weak_ptr<Tcp_session_base> &weak, boost::uint64_t now){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const AUTO(session, weak.lock());
 	if(!session){
@@ -31,7 +31,7 @@ void Tcp_session_base::shutdown_timer_proc(const boost::weak_ptr<Tcp_session_bas
 	try {
 		session->on_shutdown_timer(now);
 	} catch(std::exception &e){
-		LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+		POSEIDON_LOG_WARNING("std::exception thrown: what = ", e.what());
 		session->force_shutdown();
 	}
 }
@@ -48,11 +48,11 @@ Tcp_session_base::~Tcp_session_base(){
 }
 
 void Tcp_session_base::init_ssl(boost::scoped_ptr<Ssl_filter> &ssl_filter){
-	DEBUG_THROW_ASSERT(!m_ssl_filter);
+	POSEIDON_THROW_ASSERT(!m_ssl_filter);
 	swap(m_ssl_filter, ssl_filter);
 }
 void Tcp_session_base::create_shutdown_timer(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Mutex::Unique_lock lock(m_shutdown_mutex);
 	if(m_shutdown_timer){
@@ -63,7 +63,7 @@ void Tcp_session_base::create_shutdown_timer(){
 }
 
 int Tcp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool /*readable*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer data;
 	try {
@@ -77,14 +77,14 @@ int Tcp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::siz
 			return errno;
 		}
 		data.put(hint_buffer, static_cast<std::size_t>(result));
-		LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", get_remote_info());
+		POSEIDON_LOG_TRACE("Read ", result, " byte(s) from ", get_remote_info());
 
 		const AUTO(now, get_fast_mono_clock());
 		atomic_store(m_last_use_time, now, memory_order_release);
 		create_shutdown_timer();
 
 		if(data.empty() && !m_read_hup_notified){
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "TCP connection read hung up: local = ", get_local_info(), ", remote = ", get_remote_info());
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "TCP connection read hung up: local = ", get_local_info(), ", remote = ", get_remote_info());
 			shutdown_read();
 			on_read_hup();
 			m_read_hup_notified = true;
@@ -94,25 +94,25 @@ int Tcp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::siz
 		}
 		on_receive(STD_MOVE(data));
 	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+		POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 		force_shutdown();
 		return EPIPE;
 	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown.");
+		POSEIDON_LOG_ERROR("Unknown exception thrown.");
 		force_shutdown();
 		return EPIPE;
 	}
 	return 0;
 }
 int Tcp_session_base::poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writable){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	assert(!write_lock);
 
 	Stream_buffer data;
 	try {
 		if(writable && !m_connected_notified){
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "TCP connection established: local = ", get_local_info(), ", remote = ", get_remote_info());
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "TCP connection established: local = ", get_local_info(), ", remote = ", get_remote_info());
 			on_connect();
 			m_connected_notified = true;
 		}
@@ -141,7 +141,7 @@ _check_shutdown:
 		if(result < 0){
 			return errno;
 		}
-		LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", get_remote_info());
+		POSEIDON_LOG_TRACE("Wrote ", result, " byte(s) to ", get_remote_info());
 
 		const AUTO(now, get_fast_mono_clock());
 		atomic_store(m_last_use_time, now, memory_order_release);
@@ -154,11 +154,11 @@ _check_shutdown:
 			goto _check_shutdown;
 		}
 	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+		POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 		force_shutdown();
 		return EPIPE;
 	} catch(...){
-		LOG_POSEIDON_ERROR("Unknown exception thrown.");
+		POSEIDON_LOG_ERROR("Unknown exception thrown.");
 		force_shutdown();
 		return EPIPE;
 	}
@@ -166,7 +166,7 @@ _check_shutdown:
 }
 
 void Tcp_session_base::on_shutdown_timer(boost::uint64_t now){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const AUTO(shutdown_time, atomic_load(m_shutdown_time, memory_order_consume));
 	if(shutdown_time < now){
@@ -176,19 +176,19 @@ void Tcp_session_base::on_shutdown_timer(boost::uint64_t now){
 			send_buffer_size = m_send_buffer.size();
 		}
 		if(send_buffer_size == 0){
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Connection closed due to inactivity: remote = ", get_remote_info());
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Connection closed due to inactivity: remote = ", get_remote_info());
 force_time_out:
 			set_timed_out();
 			force_shutdown();
 			return;
 		}
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Shutdown pending: remote = ", get_remote_info(), ", send_buffer_size = ", send_buffer_size);
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Shutdown pending: remote = ", get_remote_info(), ", send_buffer_size = ", send_buffer_size);
 	}
 
 	const AUTO(last_use_time, atomic_load(m_last_use_time, memory_order_consume));
 	const AUTO(tcp_response_timeout, Main_config::get<boost::uint64_t>("tcp_response_timeout", 30000));
 	if(saturated_sub(now, last_use_time) > tcp_response_timeout){
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "The connection seems dead: remote = ", get_remote_info());
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "The connection seems dead: remote = ", get_remote_info());
 		goto force_time_out;
 	}
 }
@@ -221,13 +221,13 @@ bool Tcp_session_base::is_throttled() const {
 }
 
 void Tcp_session_base::set_no_delay(bool enabled){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const int val = enabled;
-	DEBUG_THROW_UNLESS(::setsockopt(get_fd(), IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == 0, System_exception);
+	POSEIDON_THROW_UNLESS(::setsockopt(get_fd(), IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == 0, System_exception);
 }
 void Tcp_session_base::set_timeout(boost::uint64_t timeout){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const AUTO(now, get_fast_mono_clock());
 	atomic_store(m_shutdown_time, saturated_add(now, timeout), memory_order_release);
@@ -235,10 +235,10 @@ void Tcp_session_base::set_timeout(boost::uint64_t timeout){
 }
 
 bool Tcp_session_base::send(Stream_buffer buffer){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	if(has_been_shutdown_write()){
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "TCP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", get_remote_info());
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "TCP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", get_remote_info());
 		return false;
 	}
 

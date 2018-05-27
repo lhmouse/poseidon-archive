@@ -18,13 +18,13 @@ namespace {
 		while((e = ::ERR_get_error()) != 0){
 			char str[1024];
 			::ERR_error_string_n(e, str, sizeof(str));
-			LOG_POSEIDON_WARNING("SSL error: ", str);
+			POSEIDON_LOG_WARNING("SSL error: ", str);
 		}
 	}
 
 	int get_errno_from_ssl_ret(::SSL *ssl, int ssl_ret){
 		const int err = ::SSL_get_error(ssl, ssl_ret);
-		LOG_POSEIDON_TRACE("SSL error: ssl_ret = ", ssl_ret, ", err = ", err);
+		POSEIDON_LOG_TRACE("SSL error: ssl_ret = ", ssl_ret, ", err = ", err);
 		switch(err){
 		case SSL_ERROR_NONE:
 		case SSL_ERROR_ZERO_RETURN:
@@ -40,7 +40,7 @@ namespace {
 			dump_error_queue();
 			return EPERM;
 		default:
-			LOG_POSEIDON_ERROR("Unknown SSL error: ", ssl_ret);
+			POSEIDON_LOG_ERROR("Unknown SSL error: ", ssl_ret);
 			return EPERM;
 		}
 	}
@@ -54,14 +54,14 @@ Ssl_filter::Ssl_filter(Move<Unique_ssl> ssl, Ssl_filter::Direction dir, int fd)
 	} else if(dir == to_accept){
 		::SSL_set_accept_state(m_ssl.get());
 	}
-	DEBUG_THROW_UNLESS(::SSL_set_fd(m_ssl.get(), fd), Exception, Rcnts::view("::SSL_set_fd() failed"));
+	POSEIDON_THROW_UNLESS(::SSL_set_fd(m_ssl.get(), fd), Exception, Rcnts::view("::SSL_set_fd() failed"));
 }
 Ssl_filter::~Ssl_filter(){
 	//
 }
 
 long Ssl_filter::recv(void *data, unsigned long size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Mutex::Unique_lock lock(m_mutex);
 	int bytes_read = ::SSL_read(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
@@ -80,7 +80,7 @@ long Ssl_filter::recv(void *data, unsigned long size){
 	return bytes_read;
 }
 long Ssl_filter::send(const void *data, unsigned long size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Mutex::Unique_lock lock(m_mutex);
 	int bytes_written = ::SSL_write(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
@@ -91,7 +91,7 @@ long Ssl_filter::send(const void *data, unsigned long size){
 				::shutdown(::SSL_get_wfd(m_ssl.get()), SHUT_WR);
 			}
 			if(status < 0){
-				LOG_POSEIDON_WARNING("::SSL_shutdown() failed: status = ", status);
+				POSEIDON_LOG_WARNING("::SSL_shutdown() failed: status = ", status);
 			}
 		}
 	}
@@ -105,7 +105,7 @@ long Ssl_filter::send(const void *data, unsigned long size){
 	return bytes_written;
 }
 void Ssl_filter::send_fin() NOEXCEPT {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Mutex::Unique_lock lock(m_mutex);
 	const int status = ::SSL_shutdown(m_ssl.get());

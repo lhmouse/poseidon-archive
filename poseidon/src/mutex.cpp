@@ -9,7 +9,7 @@
 
 namespace Poseidon {
 
-#define TERMINATE_UNLESS(c_, ...)   do { if(c_){ break; } LOG_POSEIDON_FATAL(__VA_ARGS__); std::terminate(); } while(false)
+#define TERMINATE_UNLESS(c_, ...)   do { if(c_){ break; } POSEIDON_LOG_FATAL(__VA_ARGS__); std::terminate(); } while(false)
 
 namespace {
 	class Mutex_attribute : NONCOPYABLE {
@@ -19,7 +19,7 @@ namespace {
 	public:
 		Mutex_attribute(){
 			int err = ::pthread_mutexattr_init(&m_attr);
-			DEBUG_THROW_UNLESS(err == 0, System_exception);
+			POSEIDON_THROW_UNLESS(err == 0, System_exception);
 			err = ::pthread_mutexattr_settype(&m_attr, PTHREAD_MUTEX_ERRORCHECK);
 			TERMINATE_UNLESS(err == 0, "::pthread_mutexattr_settype() failed with ", err, " (", get_error_desc(err), ")");
 		}
@@ -75,7 +75,7 @@ void Mutex::Unique_lock::unlock() NOEXCEPT {
 
 Mutex::Mutex(){
 	int err = ::pthread_mutex_init(&m_mutex, Mutex_attribute());
-	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
+	POSEIDON_THROW_UNLESS(err == 0, System_exception, err);
 }
 Mutex::~Mutex(){
 	int err = ::pthread_mutex_destroy(&m_mutex);

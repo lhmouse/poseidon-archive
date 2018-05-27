@@ -80,7 +80,7 @@ namespace {
 			return m_weak_timer;
 		}
 		void perform() OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			const AUTO(timer, m_weak_timer.lock());
 			if(!timer){
@@ -108,7 +108,7 @@ namespace {
 	boost::container::vector<Timer_queue_element> g_timers;
 
 	bool pump_one_element() NOEXCEPT {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const AUTO(now, get_fast_mono_clock());
 
@@ -140,23 +140,23 @@ namespace {
 
 		try {
 			if(timer->is_low_level()){
-				LOG_POSEIDON_TRACE("Dispatching low level timer: timer = ", timer);
+				POSEIDON_LOG_TRACE("Dispatching low level timer: timer = ", timer);
 				timer->get_callback()(timer, now, timer->get_period());
 			} else {
-				LOG_POSEIDON_TRACE("Preparing a timer job for dispatching: timer = ", timer);
+				POSEIDON_LOG_TRACE("Preparing a timer job for dispatching: timer = ", timer);
 				Job_dispatcher::enqueue(boost::make_shared<Timer_job>(timer, now, period), VAL_INIT);
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());
+			POSEIDON_LOG_WARNING("std::exception thrown while dispatching timer job, what = ", e.what());
 		} catch(...){
-			LOG_POSEIDON_WARNING("Unknown exception thrown while dispatching timer job.");
+			POSEIDON_LOG_WARNING("Unknown exception thrown while dispatching timer job.");
 		}
 		return true;
 	}
 
 	void thread_proc(){
-		PROFILE_ME;
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Timer daemon started.");
+		POSEIDON_PROFILE_ME;
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Timer daemon started.");
 
 		unsigned timeout = 0;
 		for(;;){
@@ -173,16 +173,16 @@ namespace {
 			g_new_timer.timed_wait(lock, timeout);
 		}
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Timer daemon stopped.");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Timer daemon stopped.");
 	}
 }
 
 void Timer_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
-		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
+		POSEIDON_LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::terminate();
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting timer daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting timer daemon...");
 
 	Thread(&thread_proc, Rcnts::view("  T "), Rcnts::view("Timer")).swap(g_thread);
 }
@@ -190,7 +190,7 @@ void Timer_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping timer daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping timer daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();
@@ -201,7 +201,7 @@ void Timer_daemon::stop(){
 }
 
 boost::shared_ptr<Timer> Timer_daemon::register_absolute_timer(boost::uint64_t first, boost::uint64_t period, Timer_callback callback){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(timer, boost::make_shared<Timer>(period, STD_MOVE_IDN(callback), false));
 	{
@@ -211,7 +211,7 @@ boost::shared_ptr<Timer> Timer_daemon::register_absolute_timer(boost::uint64_t f
 		std::push_heap(g_timers.begin(), g_timers.end());
 		g_new_timer.signal();
 	}
-	LOG_POSEIDON_DEBUG("Created a timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()), " microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
+	POSEIDON_LOG_DEBUG("Created a timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()), " microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
 	return timer;
 }
 boost::shared_ptr<Timer> Timer_daemon::register_timer(boost::uint64_t delta_first, boost::uint64_t period, Timer_callback callback){
@@ -237,7 +237,7 @@ boost::shared_ptr<Timer> Timer_daemon::register_weekly_timer(unsigned day_of_wee
 }
 
 boost::shared_ptr<Timer> Timer_daemon::register_low_level_absolute_timer(boost::uint64_t first, boost::uint64_t period, Timer_callback callback){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(timer, boost::make_shared<Timer>(period, STD_MOVE_IDN(callback), true));
 	{
@@ -247,7 +247,7 @@ boost::shared_ptr<Timer> Timer_daemon::register_low_level_absolute_timer(boost::
 		std::push_heap(g_timers.begin(), g_timers.end());
 		g_new_timer.signal();
 	}
-	LOG_POSEIDON_DEBUG("Created a low level timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()), " microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
+	POSEIDON_LOG_DEBUG("Created a low level timer which will be triggered ", saturated_sub(first, get_fast_mono_clock()), " microsecond(s) later and has a period of ", timer->get_period(), " microsecond(s).");
 	return timer;
 }
 boost::shared_ptr<Timer> Timer_daemon::register_low_level_timer(boost::uint64_t delta_first, boost::uint64_t period, Timer_callback callback){
@@ -256,7 +256,7 @@ boost::shared_ptr<Timer> Timer_daemon::register_low_level_timer(boost::uint64_t 
 }
 
 void Timer_daemon::set_absolute_time(const boost::shared_ptr<Timer> &timer, boost::uint64_t first, boost::uint64_t period){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Mutex::Unique_lock lock(g_mutex);
 	g_timers.emplace_back(); // This may throw std::bad_alloc.

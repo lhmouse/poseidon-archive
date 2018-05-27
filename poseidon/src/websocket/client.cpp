@@ -32,7 +32,7 @@ private:
 		return m_weak_parent;
 	}
 	void perform() FINAL {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const AUTO(client, m_weak_client.lock());
 		if(!client || client->has_been_shutdown_write()){
@@ -42,13 +42,13 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Websocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Websocket::Exception thrown: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->shutdown(e.get_status_code(), e.what());
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
 			client->shutdown(status_internal_error, e.what());
 		} catch(...){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			client->force_shutdown();
 		}
 	}
@@ -67,7 +67,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		client->on_sync_connect();
 	}
@@ -83,7 +83,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		client->shutdown_write();
 	}
@@ -104,9 +104,9 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
-		LOG_POSEIDON_DEBUG("Dispatching data message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
+		POSEIDON_LOG_DEBUG("Dispatching data message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
 		client->on_sync_data_message(m_opcode, STD_MOVE(m_payload));
 	}
 };
@@ -126,9 +126,9 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
-		LOG_POSEIDON_DEBUG("Dispatching control message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
+		POSEIDON_LOG_DEBUG("Dispatching control message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
 		client->on_sync_control_message(m_opcode, STD_MOVE(m_payload));
 	}
 };
@@ -143,7 +143,7 @@ Client::~Client(){
 }
 
 void Client::on_connect(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Low_level_client::on_connect();
 
@@ -152,7 +152,7 @@ void Client::on_connect(){
 		VAL_INIT);
 }
 void Client::on_read_hup(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
 		boost::make_shared<Read_hup_job>(virtual_shared_from_this<Client>()),
@@ -162,18 +162,18 @@ void Client::on_read_hup(){
 }
 
 void Client::on_low_level_message_header(Op_code opcode){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_opcode = opcode;
 	m_payload.clear();
 }
 void Client::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, Stream_buffer payload){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_payload.splice(payload);
 }
 bool Client::on_low_level_message_end(boost::uint64_t /*whole_size*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
 		boost::make_shared<Data_message_job>(virtual_shared_from_this<Client>(), m_opcode, STD_MOVE(m_payload)),
@@ -182,7 +182,7 @@ bool Client::on_low_level_message_end(boost::uint64_t /*whole_size*/){
 	return true;
 }
 bool Client::on_low_level_control_message(Op_code opcode, Stream_buffer payload){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
 		boost::make_shared<Control_message_job>(virtual_shared_from_this<Client>(), opcode, STD_MOVE(payload)),
@@ -192,14 +192,14 @@ bool Client::on_low_level_control_message(Op_code opcode, Stream_buffer payload)
 }
 
 void Client::on_sync_connect(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	//
 }
 
 void Client::on_sync_control_message(Op_code opcode, Stream_buffer payload){
-	PROFILE_ME;
-	LOG_POSEIDON_DEBUG("Control frame: opcode = ", opcode);
+	POSEIDON_PROFILE_ME;
+	POSEIDON_LOG_DEBUG("Control frame: opcode = ", opcode);
 
 	const AUTO(parent, get_parent());
 	if(!parent){
@@ -208,18 +208,18 @@ void Client::on_sync_control_message(Op_code opcode, Stream_buffer payload){
 
 	switch(opcode){
 	case opcode_close:
-		LOG_POSEIDON_INFO("Received close frame from ", parent->get_remote_info());
+		POSEIDON_LOG_INFO("Received close frame from ", parent->get_remote_info());
 		shutdown(status_normal_closure, "");
 		break;
 	case opcode_ping:
-		LOG_POSEIDON_DEBUG("Received ping frame from ", parent->get_remote_info());
+		POSEIDON_LOG_DEBUG("Received ping frame from ", parent->get_remote_info());
 		send(opcode_pong, STD_MOVE(payload));
 		break;
 	case opcode_pong:
-		LOG_POSEIDON_DEBUG("Received pong frame from ", parent->get_remote_info());
+		POSEIDON_LOG_DEBUG("Received pong frame from ", parent->get_remote_info());
 		break;
 	default:
-		DEBUG_THROW(Exception, status_protocol_error, Rcnts::view("Invalid opcode"));
+		POSEIDON_THROW(Exception, status_protocol_error, Rcnts::view("Invalid opcode"));
 	}
 }
 

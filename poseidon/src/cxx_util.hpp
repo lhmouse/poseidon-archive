@@ -4,25 +4,22 @@
 #ifndef POSEIDON_CXX_UTIL_HPP_
 #define POSEIDON_CXX_UTIL_HPP_
 
-#define TOKEN_TO_STR_(...)          # __VA_ARGS__
-#define TOKEN_TO_STR(...)           TOKEN_TO_STR_(__VA_ARGS__)
+#define POSEIDON_STRINGIFY(...)        #__VA_ARGS__
 
-#define GET_FIRST_(x_, ...)         x_
-#define GET_FIRST(...)              GET_FIRST_(__VA_ARGS__)
+#define POSEIDON_WIDEN(x_)             L##x_
+#define POSEIDON_UTF8(x_)              u8##x_
+#define POSEIDON_UTF16(x_)             u##x_
+#define POSEIDON_UTF32(x_)             U##x_
 
-#define STRIP_FIRST_(x_, ...)       __VA_ARGS__
-#define STRIP_FIRST(...)            STRIP_FIRST_(__VA_ARGS__)
+#define POSEIDON_FIRST(x_, ...)        x_
+#define POSEIDON_REST(x_, ...)         __VA_ARGS__
 
-#define TOKEN_CAT2_(x_, y_)         x_##y_
-#define TOKEN_CAT2(x_, y_)          TOKEN_CAT2_(x_, y_)
+#define POSEIDON_CAT2(x_, y_)          x_##y_
+#define POSEIDON_CAT3(x_, y_, z_)      x_##y_##z_
 
-#define TOKEN_CAT3_(x_, y_, z_)     x_##y_##z_
-#define TOKEN_CAT3(x_, y_, z_)      TOKEN_CAT3_(x_, y_, z_)
+#define POSEIDON_LAZY(f_, ...)         f_(__VA_ARGS__)
 
-#define MAGIC_LN_2_(ln_)            Poseidon_magic_##ln_##X_
-#define MAGIC_LN_1_(ln_)            MAGIC_LN_2_(ln_)
-
-#define UNIQUE_ID                   MAGIC_LN_1_(__COUNTER__)
+#define POSEIDON_UNIQUE_NAME           POSEIDON_LAZY(POSEIDON_CAT3, poseidon_unique_, __COUNTER__, _Ztq_)
 
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>

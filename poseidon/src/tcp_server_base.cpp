@@ -23,11 +23,11 @@ namespace Poseidon {
 namespace {
 	Unique_file create_tcp_socket(const Sock_addr &addr){
 		Unique_file tcp;
-		DEBUG_THROW_UNLESS(tcp.reset(::socket(addr.get_family(), SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP)), System_exception);
+		POSEIDON_THROW_UNLESS(tcp.reset(::socket(addr.get_family(), SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP)), System_exception);
 		static CONSTEXPR const int s_true_value = true;
-		DEBUG_THROW_UNLESS(::setsockopt(tcp.get(), SOL_SOCKET, SO_REUSEADDR, &s_true_value, sizeof(s_true_value)) == 0, System_exception);
-		DEBUG_THROW_UNLESS(::bind(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0, System_exception);
-		DEBUG_THROW_UNLESS(::listen(tcp.get(), SOMAXCONN) == 0, System_exception);
+		POSEIDON_THROW_UNLESS(::setsockopt(tcp.get(), SOL_SOCKET, SO_REUSEADDR, &s_true_value, sizeof(s_true_value)) == 0, System_exception);
+		POSEIDON_THROW_UNLESS(::bind(tcp.get(), static_cast<const ::sockaddr *>(addr.data()), static_cast<unsigned>(addr.size())) == 0, System_exception);
+		POSEIDON_THROW_UNLESS(::listen(tcp.get(), SOMAXCONN) == 0, System_exception);
 		return tcp;
 	}
 }
@@ -39,14 +39,14 @@ Tcp_server_base::Tcp_server_base(const Sock_addr &addr, const char *certificate,
 		m_ssl_factory.reset(new Ssl_server_factory(certificate, private_key));
 	}
 
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Created TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Created TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
 }
 Tcp_server_base::~Tcp_server_base(){
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Destroyed TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Destroyed TCP server on ", get_local_info(), ", SSL = ", !!m_ssl_factory);
 }
 
 int Tcp_server_base::poll_read_and_process(unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*readable*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	for(unsigned i = 0; i < 16; ++i){
 		boost::shared_ptr<Tcp_session_base> session;
@@ -57,14 +57,14 @@ int Tcp_server_base::poll_read_and_process(unsigned char */*hint_buffer*/, std::
 			}
 			session = on_client_connect(STD_MOVE(client));
 			if(!session){
-				LOG_POSEIDON_WARNING("on_client_connect() returns a null pointer.");
+				POSEIDON_LOG_WARNING("on_client_connect() returns a null pointer.");
 				return EWOULDBLOCK;
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 			return EINTR;
 		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown.");
+			POSEIDON_LOG_ERROR("Unknown exception thrown.");
 			return EINTR;
 		}
 		try {
@@ -76,9 +76,9 @@ int Tcp_server_base::poll_read_and_process(unsigned char */*hint_buffer*/, std::
 			const AUTO(tcp_request_timeout, Main_config::get<boost::uint64_t>("tcp_request_timeout", 5000));
 			session->set_timeout(tcp_request_timeout);
 			Epoll_daemon::add_socket(session, true);
-			LOG_POSEIDON_INFO("Accepted TCP connection from ", session->get_remote_info());
+			POSEIDON_LOG_INFO("Accepted TCP connection from ", session->get_remote_info());
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 			session->force_shutdown();
 			continue;
 		}

@@ -19,12 +19,12 @@ Reader::Reader()
 }
 Reader::~Reader(){
 	if(m_state != state_payload_size){
-		LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature message has to be discarded.");
+		POSEIDON_LOG_DEBUG("Now that this reader is to be destroyed, a premature message has to be discarded.");
 	}
 }
 
 bool Reader::put_encoded_data(Stream_buffer encoded){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_queue.splice(encoded);
 
@@ -99,7 +99,7 @@ bool Reader::put_encoded_data(Stream_buffer encoded){
 			{
 				Stream_buffer payload = m_queue.cut_off(boost::numeric_cast<std::size_t>(m_payload_size));
 				boost::uint32_t temp32;
-				DEBUG_THROW_UNLESS(payload.get(&temp32, 4) == 4, Exception, status_end_of_stream, Rcnts::view("control.code"));
+				POSEIDON_THROW_UNLESS(payload.get(&temp32, 4) == 4, Exception, status_end_of_stream, Rcnts::view("control.code"));
 				has_next_request = on_control_message(static_cast<boost::int32_t>(load_be(temp32)), STD_MOVE(payload));
 			}
 			m_payload_offset = m_payload_size;

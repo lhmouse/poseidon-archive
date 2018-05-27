@@ -41,7 +41,7 @@ namespace {
 		}
 		if(server_addr.empty()){
 			if(master_conn){
-				LOG_POSEIDON_DEBUG("MongoDB slave is not configured. Reuse the master connection as a slave.");
+				POSEIDON_LOG_DEBUG("MongoDB slave is not configured. Reuse the master connection as a slave.");
 				return master_conn;
 			}
 			server_addr = Main_config::get<std::string>("mongodb_server_addr", "localhost");
@@ -60,11 +60,11 @@ namespace {
 
 	void dump_bson_to_file(const Mongodb::Bson_builder &query, unsigned long err_code, const char *err_msg) NOEXCEPT
 	try {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const AUTO(dump_dir, Main_config::get<std::string>("mongodb_dump_dir"));
 		if(dump_dir.empty()){
-			LOG_POSEIDON_WARNING("MongoDB dump is disabled.");
+			POSEIDON_LOG_WARNING("MongoDB dump is disabled.");
 			return;
 		}
 
@@ -78,15 +78,15 @@ namespace {
 		dump_path.push_back('/');
 		dump_path.append(temp, len);
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Creating BSON dump file: ", dump_path);
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Creating BSON dump file: ", dump_path);
 		Unique_file dump_file;
 		if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 			const int saved_errno = errno;
-			LOG_POSEIDON_FATAL("Error creating BSON dump file: dump_path = ", dump_path, ", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
+			POSEIDON_LOG_FATAL("Error creating BSON dump file: dump_path = ", dump_path, ", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
 			std::terminate();
 		}
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Writing MongoDB dump...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Writing MongoDB dump...");
 		Buffer_ostream os;
 		len = format_time(temp, sizeof(temp), local_now, false);
 		os <<"// " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
@@ -108,7 +108,7 @@ namespace {
 			total += static_cast<std::size_t>(written);
 		} while(total < str.size());
 	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("Error writing BSON dump: what = ", e.what());
+		POSEIDON_LOG_ERROR("Error writing BSON dump: what = ", e.what());
 	}
 
 	// 数据库线程操作。
@@ -177,11 +177,11 @@ namespace {
 					upd.append_object(Rcnts::view("q"), Mongodb::bson_scalar_string(Rcnts::view("_id"), STD_MOVE(pkey)));
 					upd.append_object(Rcnts::view("u"), STD_MOVE(doc));
 					upd.append_boolean(Rcnts::view("upsert"), true);
-					LOG_POSEIDON_DEBUG("Upserting: pkey = ", pkey, ", upd = ", upd);
+					POSEIDON_LOG_DEBUG("Upserting: pkey = ", pkey, ", upd = ", upd);
 					q.append_string(Rcnts::view("update"), get_collection());
 					q.append_array(Rcnts::view("updates"), Mongodb::bson_scalar_object(Rcnts::view("0"), STD_MOVE(upd)));
 				} else {
-					LOG_POSEIDON_DEBUG("Inserting: pkey = ", pkey, ", doc = ", doc);
+					POSEIDON_LOG_DEBUG("Inserting: pkey = ", pkey, ", doc = ", doc);
 					q.append_string(Rcnts::view("insert"), get_collection());
 					q.append_array(Rcnts::view("documents"), Mongodb::bson_scalar_object(Rcnts::view("0"), STD_MOVE(doc)));
 				}
@@ -189,7 +189,7 @@ namespace {
 			query = q;
 		}
 		void execute(const boost::shared_ptr<Mongodb::Connection> &conn, const Mongodb::Bson_builder &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			conn->execute_bson(query);
 		}
@@ -222,14 +222,14 @@ namespace {
 			query = m_query;
 		}
 		void execute(const boost::shared_ptr<Mongodb::Connection> &conn, const Mongodb::Bson_builder &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			if(!get_promise()){
-				LOG_POSEIDON_WARNING("Discarding isolated MongoDB query: collection = ", get_collection(), ", query = ", query);
+				POSEIDON_LOG_WARNING("Discarding isolated MongoDB query: collection = ", get_collection(), ", query = ", query);
 				return;
 			}
 			conn->execute_bson(query);
-			DEBUG_THROW_UNLESS(conn->fetch_document(), Mongodb::Exception, Rcnts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, Rcnts::view("No documents returned"));
+			POSEIDON_THROW_UNLESS(conn->fetch_document(), Mongodb::Exception, Rcnts::view(get_collection()), MONGOC_ERROR_QUERY_FAILURE, Rcnts::view("No documents returned"));
 			m_object->fetch(conn);
 		}
 	};
@@ -261,7 +261,7 @@ namespace {
 			query = m_query;
 		}
 		void execute(const boost::shared_ptr<Mongodb::Connection> &conn, const Mongodb::Bson_builder &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			conn->execute_bson(query);
 		}
@@ -295,10 +295,10 @@ namespace {
 			query = m_query;
 		}
 		void execute(const boost::shared_ptr<Mongodb::Connection> &conn, const Mongodb::Bson_builder &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			if(!get_promise()){
-				LOG_POSEIDON_WARNING("Discarding isolated MongoDB query: collection = ", get_collection(), ", query = ", query);
+				POSEIDON_LOG_WARNING("Discarding isolated MongoDB query: collection = ", get_collection(), ", query = ", query);
 				return;
 			}
 			conn->execute_bson(query);
@@ -307,7 +307,7 @@ namespace {
 					m_callback(conn);
 				}
 			} else {
-				LOG_POSEIDON_DEBUG("Result discarded.");
+				POSEIDON_LOG_DEBUG("Result discarded.");
 			}
 		}
 	};
@@ -340,7 +340,7 @@ namespace {
 			// no query
 		}
 		void execute(const boost::shared_ptr<Mongodb::Connection> &conn, const Mongodb::Bson_builder & /* query */) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			m_callback(conn);
 		}
@@ -377,7 +377,7 @@ namespace {
 			query = Mongodb::bson_scalar_signed(Rcnts::view("ping"), 1);
 		}
 		void execute(const boost::shared_ptr<Mongodb::Connection> &conn, const Mongodb::Bson_builder &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			conn->execute_bson(query);
 		}
@@ -410,7 +410,7 @@ namespace {
 
 	private:
 		bool pump_one_operation(boost::shared_ptr<Mongodb::Connection> &master_conn, boost::shared_ptr<Mongodb::Connection> &slave_conn) NOEXCEPT {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			const AUTO(now, get_fast_mono_clock());
 			Operation_queue_element *elem;
@@ -450,20 +450,20 @@ namespace {
 			if(execute_it){
 				try {
 					operation->generate_bson(query);
-					LOG_POSEIDON_DEBUG("Executing MongoDB query: collection = ", operation->get_collection(), ", query = ", query);
+					POSEIDON_LOG_DEBUG("Executing MongoDB query: collection = ", operation->get_collection(), ", query = ", query);
 					operation->execute(conn, query);
 				} catch(Mongodb::Exception &e){
-					LOG_POSEIDON_WARNING("Mongodb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
+					POSEIDON_LOG_WARNING("Mongodb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = e.get_code();
 					::snprintf(err_msg, sizeof(err_msg), "Mongodb::Exception: %s", e.what());
 				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+					POSEIDON_LOG_WARNING("std::exception thrown: what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = MONGOC_ERROR_PROTOCOL_ERROR;
 					::snprintf(err_msg, sizeof(err_msg), "std::exception: %s", e.what());
 				} catch(...){
-					LOG_POSEIDON_WARNING("Unknown exception thrown");
+					POSEIDON_LOG_WARNING("Unknown exception thrown");
 					except = STD_CURRENT_EXCEPTION();
 					err_code = MONGOC_ERROR_PROTOCOL_ERROR;
 					::strcpy(err_msg, "Unknown exception");
@@ -474,13 +474,13 @@ namespace {
 				const AUTO(max_retry_count, Main_config::get<std::size_t>("mongodb_max_retry_count", 3));
 				const AUTO(retry_count, ++(elem->retry_count));
 				if(retry_count < max_retry_count){
-					LOG_POSEIDON(Logger::special_major | Logger::level_info, "Going to retry MongoDB operation: retry_count = ", retry_count);
+					POSEIDON_LOG(Logger::special_major | Logger::level_info, "Going to retry MongoDB operation: retry_count = ", retry_count);
 					const AUTO(retry_init_delay, Main_config::get<boost::uint64_t>("mongodb_retry_init_delay", 1000));
 					elem->due_time = now + (retry_init_delay << retry_count);
 					conn.reset();
 					return true;
 				}
-				LOG_POSEIDON_ERROR("Max retry count exceeded.");
+				POSEIDON_LOG_ERROR("Max retry count exceeded.");
 				dump_bson_to_file(query, err_code, err_msg);
 			}
 			const AUTO(promise, elem->operation->get_promise());
@@ -497,8 +497,8 @@ namespace {
 		}
 
 		void thread_proc(){
-			PROFILE_ME;
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB thread started.");
+			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "MongoDB thread started.");
 
 			boost::shared_ptr<Mongodb::Connection> master_conn, slave_conn;
 			unsigned timeout = 0;
@@ -507,12 +507,12 @@ namespace {
 				bool busy;
 				do {
 					while(!master_conn){
-						LOG_POSEIDON(Logger::special_major | Logger::level_info, "Connecting to MongoDB master server...");
+						POSEIDON_LOG(Logger::special_major | Logger::level_info, "Connecting to MongoDB master server...");
 						try {
 							master_conn = real_create_connection(false, VAL_INIT);
-							LOG_POSEIDON(Logger::special_major | Logger::level_info, "Successfully connected to MongoDB master server.");
+							POSEIDON_LOG(Logger::special_major | Logger::level_info, "Successfully connected to MongoDB master server.");
 						} catch(std::exception &e){
-							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+							POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
 							req.tv_sec = (::time_t)(reconnect_delay / 1000);
 							req.tv_nsec = (long)(reconnect_delay % 1000) * 1000 * 1000;
@@ -520,12 +520,12 @@ namespace {
 						}
 					}
 					while(!slave_conn){
-						LOG_POSEIDON(Logger::special_major | Logger::level_info, "Connecting to MongoDB slave server...");
+						POSEIDON_LOG(Logger::special_major | Logger::level_info, "Connecting to MongoDB slave server...");
 						try {
 							slave_conn = real_create_connection(true, master_conn);
-							LOG_POSEIDON(Logger::special_major | Logger::level_info, "Successfully connected to MongoDB slave server.");
+							POSEIDON_LOG(Logger::special_major | Logger::level_info, "Successfully connected to MongoDB slave server.");
 						} catch(std::exception &e){
-							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+							POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
 							req.tv_sec = (::time_t)(reconnect_delay / 1000);
 							req.tv_nsec = (long)(reconnect_delay % 1000) * 1000 * 1000;
@@ -543,7 +543,7 @@ namespace {
 				m_new_operation.timed_wait(lock, timeout);
 			}
 
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB thread stopped.");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "MongoDB thread stopped.");
 		}
 
 	public:
@@ -577,7 +577,7 @@ namespace {
 					atomic_store(m_urgent, true, memory_order_release);
 					m_new_operation.signal();
 				}
-				LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for BSON queries to complete: pending_objects = ", pending_objects, ", current_bson = ", current_bson);
+				POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for BSON queries to complete: pending_objects = ", pending_objects, ", current_bson = ", current_bson);
 
 				::timespec req;
 				req.tv_sec = 0;
@@ -591,7 +591,7 @@ namespace {
 			return m_queue.size();
 		}
 		void add_operation(boost::shared_ptr<Operation_base> operation, bool urgent){
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			const AUTO(combinable_object, operation->get_combinable_object());
 
@@ -601,7 +601,7 @@ namespace {
 			const AUTO(due_time, saturated_add(now, save_delay));
 
 			const Mutex::Unique_lock lock(m_mutex);
-			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, Rcnts::view("MongoDB thread is being shut down"));
+			POSEIDON_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, Rcnts::view("MongoDB thread is being shut down"));
 			Operation_queue_element elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){
@@ -629,8 +629,8 @@ namespace {
 	boost::container::vector<boost::shared_ptr<Mongodb_thread> > g_threads;
 
 	void add_operation_by_collection(const char *collection, boost::shared_ptr<Operation_base> operation, bool urgent){
-		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MongoDB support is not enabled"));
+		POSEIDON_PROFILE_ME;
+		POSEIDON_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MongoDB support is not enabled"));
 
 		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<Mongodb_thread> thread;
@@ -653,7 +653,7 @@ namespace {
 			for(std::size_t i = 0; i < g_threads.size(); ++i){
 				AUTO_REF(test_thread, g_threads.at(i));
 				if(!test_thread){
-					LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Creating new MongoDB thread ", i, " for collection ", collection);
+					POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Creating new MongoDB thread ", i, " for collection ", collection);
 					thread = boost::make_shared<Mongodb_thread>();
 					thread->start();
 					test_thread = thread;
@@ -661,15 +661,15 @@ namespace {
 					goto _use_thread;
 				}
 				const AUTO(queue_size, test_thread->get_queue_size());
-				LOG_POSEIDON_DEBUG("> MongoDB thread ", i, "'s queue size: ", queue_size);
+				POSEIDON_LOG_DEBUG("> MongoDB thread ", i, "'s queue size: ", queue_size);
 				g_routing_map.emplace(queue_size, i);
 			}
 			if(g_routing_map.empty()){
-				LOG_POSEIDON_FATAL("No available MongoDB thread?!");
+				POSEIDON_LOG_FATAL("No available MongoDB thread?!");
 				std::terminate();
 			}
 			const AUTO(index, g_routing_map.begin()->second);
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Picking thread ", index, " for collection ", collection);
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Picking thread ", index, " for collection ", collection);
 			thread = g_threads.at(index);
 			route.thread = thread;
 		}
@@ -680,8 +680,8 @@ namespace {
 		thread->add_operation(STD_MOVE(operation), urgent);
 	}
 	void add_operation_all(boost::shared_ptr<Operation_base> operation, bool urgent){
-		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MongoDB support is not enabled"));
+		POSEIDON_PROFILE_ME;
+		POSEIDON_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MongoDB support is not enabled"));
 
 		const Mutex::Unique_lock lock(g_router_mutex);
 		for(AUTO(it, g_threads.begin()); it != g_threads.end(); ++it){
@@ -696,69 +696,69 @@ namespace {
 
 void Mongodb_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
-		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
+		POSEIDON_LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::terminate();
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting MongoDB daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting MongoDB daemon...");
 
 	const AUTO(max_thread_count, Main_config::get<std::size_t>("mongodb_max_thread_count"));
 	if(max_thread_count == 0){
-		LOG_POSEIDON_WARNING("MongoDB support has been disabled. To enable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to a value greater than zero.");
+		POSEIDON_LOG_WARNING("MongoDB support has been disabled. To enable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to a value greater than zero.");
 	} else {
 		boost::shared_ptr<Mongodb::Connection> master_conn, slave_conn;
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB master server is up...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Checking whether MongoDB master server is up...");
 		try {
 			master_conn = real_create_connection(false, VAL_INIT);
 			master_conn->execute_bson(Mongodb::bson_scalar_signed(Rcnts::view("ping"), 1));
 		} catch(std::exception &e){
-			LOG_POSEIDON_FATAL("Could not connect to MongoDB master server: ", e.what());
-			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
+			POSEIDON_LOG_FATAL("Could not connect to MongoDB master server: ", e.what());
+			POSEIDON_LOG_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
 			std::terminate();
 		}
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB slave server is up...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Checking whether MongoDB slave server is up...");
 		try {
 			slave_conn = real_create_connection(true, master_conn);
 			if(slave_conn != master_conn){
 				slave_conn->execute_bson(Mongodb::bson_scalar_signed(Rcnts::view("ping"), 1));
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_FATAL("Could not connect to MongoDB slave server: ", e.what());
-			LOG_POSEIDON_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
+			POSEIDON_LOG_FATAL("Could not connect to MongoDB slave server: ", e.what());
+			POSEIDON_LOG_WARNING("To disable MongoDB support, set `mongodb_max_thread_count` in `main.conf` to zero.");
 			std::terminate();
 		}
 
 		const AUTO(dump_dir, Main_config::get<std::string>("mongodb_dump_dir"));
 		if(dump_dir.empty()){
-			LOG_POSEIDON_WARNING("MongoDB error dump has been disabled. To enable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to the path to the dump directory.");
+			POSEIDON_LOG_WARNING("MongoDB error dump has been disabled. To enable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to the path to the dump directory.");
 		} else {
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MongoDB dump directory is writable...");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Checking whether MongoDB dump directory is writable...");
 			try {
 				const AUTO(placeholder_path, dump_dir + "/placeholder");
-				DEBUG_THROW_ASSERT(Unique_file(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)));
+				POSEIDON_THROW_ASSERT(Unique_file(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)));
 			} catch(std::exception &e){
-				LOG_POSEIDON_FATAL("Could not write MongoDB dump: ", e.what());
-				LOG_POSEIDON_WARNING("To disable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to an empty string.");
+				POSEIDON_LOG_FATAL("Could not write MongoDB dump: ", e.what());
+				POSEIDON_LOG_WARNING("To disable MongoDB error dump, set `mongodb_dump_dir` in `main.conf` to an empty string.");
 				std::terminate();
 			}
 		}
 	}
 	g_threads.resize(max_thread_count);
 
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB daemon started.");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "MongoDB daemon started.");
 }
 void Mongodb_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping MongoDB daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping MongoDB daemon...");
 
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		const AUTO_REF(thread, g_threads.at(i));
 		if(!thread){
 			continue;
 		}
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping MongoDB thread ", i);
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping MongoDB thread ", i);
 		thread->stop();
 	}
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
@@ -766,11 +766,11 @@ void Mongodb_daemon::stop(){
 		if(!thread){
 			continue;
 		}
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for MongoDB thread ", i, " to terminate...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for MongoDB thread ", i, " to terminate...");
 		thread->safe_join();
 	}
 
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "MongoDB daemon stopped.");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "MongoDB daemon stopped.");
 
 	const Mutex::Unique_lock lock(g_router_mutex);
 	g_threads.clear();
@@ -798,7 +798,7 @@ boost::shared_ptr<const Promise> Mongodb_daemon::enqueue_for_saving(boost::share
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const Promise> Mongodb_daemon::enqueue_for_loading(boost::shared_ptr<Mongodb::Object_base> object, Mongodb::Bson_builder query){
-	DEBUG_THROW_ASSERT(!query.empty());
+	POSEIDON_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const collection = object->get_collection();
@@ -807,7 +807,7 @@ boost::shared_ptr<const Promise> Mongodb_daemon::enqueue_for_loading(boost::shar
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const Promise> Mongodb_daemon::enqueue_for_deleting(const char *collection_hint, Mongodb::Bson_builder query){
-	DEBUG_THROW_ASSERT(!query.empty());
+	POSEIDON_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const collection = collection_hint;
@@ -816,7 +816,7 @@ boost::shared_ptr<const Promise> Mongodb_daemon::enqueue_for_deleting(const char
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const Promise> Mongodb_daemon::enqueue_for_batch_loading(Query_callback callback, const char *collection_hint, Mongodb::Bson_builder query){
-	DEBUG_THROW_ASSERT(!query.empty());
+	POSEIDON_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const collection = collection_hint;

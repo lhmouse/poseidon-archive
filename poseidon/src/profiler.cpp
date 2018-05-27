@@ -65,7 +65,7 @@ Profiler::Profiler(const char *file, unsigned long line, const char *func) NOEXC
 }
 Profiler::~Profiler() NOEXCEPT {
 	if(std::uncaught_exception()){
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Exception backtrace: file = ", m_file, ", line = ", m_line, ", func = ", m_func);
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Exception backtrace: file = ", m_file, ", line = ", m_line, ", func = ", m_func);
 	}
 
 	if(t_top == this){

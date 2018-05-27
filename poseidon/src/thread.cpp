@@ -42,7 +42,7 @@ Thread::Thread(boost::function<void ()> proc, Rcnts tag, Rcnts name){
 	try {
 		// Create a circular reference. This prevents `*tcb` from being deleted before it is consumed by the new thread.
 		int err = ::pthread_create(&(tcb->handle), NULLPTR, &thread_proc, &(tcb->ref = tcb));
-		DEBUG_THROW_UNLESS(err == 0, System_exception, err);
+		POSEIDON_THROW_UNLESS(err == 0, System_exception, err);
 	} catch(...){
 		// Break the circular reference. This allows `*tcb` to be deleted.
 		tcb->ref.reset();
@@ -52,7 +52,7 @@ Thread::Thread(boost::function<void ()> proc, Rcnts tag, Rcnts name){
 }
 Thread::~Thread(){
 	if(joinable()){
-		LOG_POSEIDON_FATAL("Attempting to destroy a joinable thread.");
+		POSEIDON_LOG_FATAL("Attempting to destroy a joinable thread.");
 		std::terminate();
 	}
 }
@@ -63,9 +63,9 @@ bool Thread::joinable() const NOEXCEPT {
 }
 void Thread::join(){
 	const AUTO(tcb, static_cast<Thread_control_block *>(m_tcb.get()));
-	DEBUG_THROW_UNLESS(tcb, Exception, Rcnts::view("Thread is not joinable"));
+	POSEIDON_THROW_UNLESS(tcb, Exception, Rcnts::view("Thread is not joinable"));
 	int err = ::pthread_join(tcb->handle, NULLPTR);
-	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
+	POSEIDON_THROW_UNLESS(err == 0, System_exception, err);
 	m_tcb.reset();
 }
 

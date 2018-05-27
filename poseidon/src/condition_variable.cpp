@@ -11,7 +11,7 @@
 
 namespace Poseidon {
 
-#define TERMINATE_UNLESS(c_, ...)   do { if(c_){ break; } LOG_POSEIDON_FATAL(__VA_ARGS__); std::terminate(); } while(false)
+#define TERMINATE_UNLESS(c_, ...)   do { if(c_){ break; } POSEIDON_LOG_FATAL(__VA_ARGS__); std::terminate(); } while(false)
 
 namespace {
 	class Condition_variable_attribute : NONCOPYABLE {
@@ -21,7 +21,7 @@ namespace {
 	public:
 		Condition_variable_attribute(){
 			int err = ::pthread_condattr_init(&m_attr);
-			DEBUG_THROW_UNLESS(err == 0, System_exception);
+			POSEIDON_THROW_UNLESS(err == 0, System_exception);
 			err = ::pthread_condattr_setclock(&m_attr, CLOCK_MONOTONIC);
 			TERMINATE_UNLESS(err == 0, "::pthread_condattr_settype() failed with ", err, " (", get_error_desc(err), ")");
 		}
@@ -39,7 +39,7 @@ namespace {
 
 Condition_variable::Condition_variable(){
 	int err = ::pthread_cond_init(&m_cond, Condition_variable_attribute());
-	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
+	POSEIDON_THROW_UNLESS(err == 0, System_exception, err);
 }
 Condition_variable::~Condition_variable(){
 	int err = ::pthread_cond_destroy(&m_cond);
@@ -51,7 +51,7 @@ void Condition_variable::wait(Mutex::Unique_lock &lock){
 	TERMINATE_UNLESS(lock.m_locked, "The mutex has not been locked by that Unique_lock.");
 
 	int err = ::pthread_cond_wait(&m_cond, &(lock.m_target->m_mutex));
-	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
+	POSEIDON_THROW_UNLESS(err == 0, System_exception, err);
 }
 bool Condition_variable::timed_wait(Mutex::Unique_lock &lock, unsigned long long ms){
 	TERMINATE_UNLESS(lock.m_target, "No mutex has been assigned to that Unique_lock.");
@@ -59,7 +59,7 @@ bool Condition_variable::timed_wait(Mutex::Unique_lock &lock, unsigned long long
 
 	::timespec tp;
 	int err = ::clock_gettime(CLOCK_MONOTONIC, &tp);
-	DEBUG_THROW_UNLESS(err == 0, System_exception);
+	POSEIDON_THROW_UNLESS(err == 0, System_exception);
 	tp.tv_sec += static_cast<std::time_t>(ms / 1000);
 	tp.tv_nsec += static_cast<long>(ms % 1000 * 1000000);
 	if(tp.tv_nsec >= 1000000000){
@@ -70,7 +70,7 @@ bool Condition_variable::timed_wait(Mutex::Unique_lock &lock, unsigned long long
 	if(err == ETIMEDOUT){
 		return false;
 	}
-	DEBUG_THROW_UNLESS(err == 0, System_exception, err);
+	POSEIDON_THROW_UNLESS(err == 0, System_exception, err);
 	return true;
 }
 

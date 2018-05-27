@@ -36,6 +36,6 @@ private:
 
 }
 
-#define PROFILE_ME  const ::Poseidon::Profiler UNIQUE_ID(__FILE__, __LINE__, __PRETTY_FUNCTION__)
+#define POSEIDON_PROFILE_ME  const ::Poseidon::Profiler POSEIDON_UNIQUE_NAME(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 
 #endif

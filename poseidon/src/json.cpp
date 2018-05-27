@@ -16,7 +16,7 @@ namespace {
 	extern Json_element accept_element(std::istream &is);
 
 	std::string accept_string(std::istream &is){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		std::string ret;
 		char ch;
@@ -24,7 +24,7 @@ namespace {
 			return ret;
 		}
 		if((ch != '\"') && (ch != '\'')){
-			LOG_POSEIDON_WARNING("String open expected");
+			POSEIDON_LOG_WARNING("String open expected");
 			is.setstate(std::ios::failbit);
 			return ret;
 		}
@@ -40,7 +40,7 @@ namespace {
 		unsigned utf16_unit = 0;
 		for(;;){
 			if(!is.get(ch)){
-				LOG_POSEIDON_WARNING("String not closed");
+				POSEIDON_LOG_WARNING("String not closed");
 				is.setstate(std::ios::failbit);
 				return ret;
 			}
@@ -83,7 +83,7 @@ namespace {
 						state = state_utf_zero;
 						break;
 					default:
-						LOG_POSEIDON_WARNING("Unknown escaped character sequence");
+						POSEIDON_LOG_WARNING("Unknown escaped character sequence");
 						is.setstate(std::ios::failbit);
 						return ret;
 					}
@@ -100,7 +100,7 @@ namespace {
 					} else if(('a' <= hexc) && (hexc <= 'f')){
 						hexc -= 'a' - 0x0A;
 					} else {
-						LOG_POSEIDON_WARNING("Invalid hex digit for \\u");
+						POSEIDON_LOG_WARNING("Invalid hex digit for \\u");
 						is.setstate(std::ios::failbit);
 						return ret;
 					}
@@ -148,18 +148,18 @@ namespace {
 		return ret;
 	}
 	double accept_number(std::istream &is){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		double ret = 0;
 		if(!(is >>ret)){
-			LOG_POSEIDON_WARNING("Number expected");
+			POSEIDON_LOG_WARNING("Number expected");
 			is.setstate(std::ios::failbit);
 			return ret;
 		}
 		return ret;
 	}
 	Json_object accept_object(std::istream &is){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		Json_object ret;
 		char ch;
@@ -167,13 +167,13 @@ namespace {
 			return ret;
 		}
 		if(ch != '{'){
-			LOG_POSEIDON_WARNING("Object open expected");
+			POSEIDON_LOG_WARNING("Object open expected");
 			is.setstate(std::ios::failbit);
 			return ret;
 		}
 		for(;;){
 			if(!(is >>ch)){
-				LOG_POSEIDON_WARNING("Object not closed");
+				POSEIDON_LOG_WARNING("Object not closed");
 				is.setstate(std::ios::failbit);
 				return ret;
 			}
@@ -189,7 +189,7 @@ namespace {
 				return ret;
 			}
 			if(ch != ':'){
-				LOG_POSEIDON_WARNING("Colon expected");
+				POSEIDON_LOG_WARNING("Colon expected");
 				is.setstate(std::ios::failbit);
 				return ret;
 			}
@@ -198,7 +198,7 @@ namespace {
 		return ret;
 	}
 	Json_array accept_array(std::istream &is){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		Json_array ret;
 		char ch;
@@ -206,13 +206,13 @@ namespace {
 			return ret;
 		}
 		if(ch != '['){
-			LOG_POSEIDON_WARNING("Array open expected");
+			POSEIDON_LOG_WARNING("Array open expected");
 			is.setstate(std::ios::failbit);
 			return ret;
 		}
 		for(;;){
 			if(!(is >>ch)){
-				LOG_POSEIDON_WARNING("Array not closed");
+				POSEIDON_LOG_WARNING("Array not closed");
 				is.setstate(std::ios::failbit);
 				return ret;
 			}
@@ -228,14 +228,14 @@ namespace {
 		return ret;
 	}
 	bool accept_boolean(std::istream &is){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		char ch;
 		if(!(is >>ch)){
 			return false;
 		}
 		if((ch != 'f') && (ch != 't')){
-			LOG_POSEIDON_WARNING("Boolean expected");
+			POSEIDON_LOG_WARNING("Boolean expected");
 			is.setstate(std::ios::failbit);
 			return false;
 		}
@@ -245,20 +245,20 @@ namespace {
 		} else if((is.readsome(str, 3) == 3) && (std::memcmp(str, "rue", 3) == 0)){
 			return true;
 		} else {
-			LOG_POSEIDON_WARNING("Boolean expected");
+			POSEIDON_LOG_WARNING("Boolean expected");
 			is.setstate(std::ios::failbit);
 			return false;
 		}
 	}
 	Json_null accept_null(std::istream &is){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		char ch;
 		if(!(is >>ch)){
 			return NULLPTR;
 		}
 		if(ch != 'n'){
-			LOG_POSEIDON_WARNING("Boolean expected");
+			POSEIDON_LOG_WARNING("Boolean expected");
 			is.setstate(std::ios::failbit);
 			return NULLPTR;
 		}
@@ -266,19 +266,19 @@ namespace {
 		if((is.readsome(str, 3) == 3) && (std::memcmp(str, "ull", 3) == 0)){
 			return NULLPTR;
 		} else {
-			LOG_POSEIDON_WARNING("Boolean expected");
+			POSEIDON_LOG_WARNING("Boolean expected");
 			is.setstate(std::ios::failbit);
 			return NULLPTR;
 		}
 	}
 
 	Json_element accept_element(std::istream &is){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		Json_element ret;
 		char ch;
 		if(!(is >>ch)){
-			LOG_POSEIDON_WARNING("No input character");
+			POSEIDON_LOG_WARNING("No input character");
 			is.setstate(std::ios::failbit);
 			return ret;
 		}
@@ -306,7 +306,7 @@ namespace {
 			ret = accept_null(is);
 			break;
 		default:
-			LOG_POSEIDON_WARNING("Unknown element type");
+			POSEIDON_LOG_WARNING("Unknown element type");
 			is.setstate(std::ios::failbit);
 			return ret;
 		}
@@ -322,18 +322,18 @@ Json_object::Json_object(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Json_object parser error"));
+	POSEIDON_THROW_UNLESS(is, Exception, Rcnts::view("Json_object parser error"));
 }
 
 Stream_buffer Json_object::dump() const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
 void Json_object::dump(std::ostream &os) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	os <<'{';
 	AUTO(it, begin());
@@ -352,7 +352,7 @@ void Json_object::dump(std::ostream &os) const {
 	os <<'}';
 }
 void Json_object::parse(std::istream &is){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(obj, accept_object(is));
 	if(is){
@@ -364,18 +364,18 @@ Json_array::Json_array(std::istream &is)
 	: m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Json_array parser error"));
+	POSEIDON_THROW_UNLESS(is, Exception, Rcnts::view("Json_array parser error"));
 }
 
 Stream_buffer Json_array::dump() const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
 void Json_array::dump(std::ostream &os) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	os <<'[';
 	AUTO(it, begin());
@@ -390,7 +390,7 @@ void Json_array::dump(std::ostream &os) const {
 	os <<']';
 }
 void Json_array::parse(std::istream &is){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(arr, accept_array(is));
 	if(is){
@@ -413,20 +413,20 @@ const char *Json_element::get_type_string(Json_element::Type type){
 	case type_null:
 		return "null";
 	default:
-		LOG_POSEIDON_WARNING("Unknown JSON element type: type = ", static_cast<int>(type));
+		POSEIDON_LOG_WARNING("Unknown JSON element type: type = ", static_cast<int>(type));
 		return "undefined";
 	}
 }
 
 Stream_buffer Json_element::dump() const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
 void Json_element::dump(std::ostream &os) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const Type type = get_type();
 	switch(type){
@@ -483,12 +483,12 @@ void Json_element::dump(std::ostream &os) const {
 		os <<"null";
 		break;
 	default:
-		LOG_POSEIDON_FATAL("Unknown JSON element type: type = ", static_cast<int>(type));
+		POSEIDON_LOG_FATAL("Unknown JSON element type: type = ", static_cast<int>(type));
 		std::terminate();
 	}
 }
 void Json_element::parse(std::istream &is){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(elem, accept_element(is));
 	if(is){

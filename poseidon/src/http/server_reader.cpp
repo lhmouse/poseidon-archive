@@ -23,12 +23,12 @@ Server_reader::Server_reader()
 }
 Server_reader::~Server_reader(){
 	if(m_state != state_first_header){
-		LOG_POSEIDON_DEBUG("Now that this reader is to be destroyed, a premature request has to be discarded.");
+		POSEIDON_LOG_DEBUG("Now that this reader is to be destroyed, a premature request has to be discarded.");
 	}
 }
 
 bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_params){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_queue.splice(encoded);
 
@@ -56,7 +56,7 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 			if(lf_offset < 0){
 				// 没找到换行符。
 				const AUTO(max_line_length, Main_config::get<std::size_t>("http_max_header_line_length", 8192));
-				DEBUG_THROW_UNLESS(m_queue.size() <= max_line_length, Exception, status_bad_request); // XXX 用一个别的状态码？
+				POSEIDON_THROW_UNLESS(m_queue.size() <= max_line_length, Exception, status_bad_request); // XXX 用一个别的状态码？
 				break;
 			}
 			m_size_expecting = static_cast<std::size_t>(lf_offset) + 1;
@@ -87,27 +87,27 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 
 				for(AUTO(it, line.begin()); it != line.end(); ++it){
 					const unsigned ch = static_cast<unsigned char>(*it);
-					DEBUG_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), Basic_exception, Rcnts::view("Invalid HTTP request header"));
+					POSEIDON_THROW_UNLESS((0x20 <= ch) && (ch <= 0x7E), Basic_exception, Rcnts::view("Invalid HTTP request header"));
 				}
 
 				AUTO(pos, line.find(' '));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
+				POSEIDON_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
 				line.at(pos) = 0;
 				m_request_headers.verb = get_verb_from_string(line.c_str());
-				DEBUG_THROW_UNLESS(m_request_headers.verb != verb_invalid_verb, Exception, status_not_implemented);
+				POSEIDON_THROW_UNLESS(m_request_headers.verb != verb_invalid_verb, Exception, status_not_implemented);
 				line.erase(0, pos + 1);
 
 				pos = line.find(' ');
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
+				POSEIDON_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
 				m_request_headers.uri.assign(line, 0, pos);
 				line.erase(0, pos + 1);
 
 				long ver_end = 0;
 				char ver_major_str[16], ver_minor_str[16];
-				DEBUG_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, Exception, status_bad_request);
-				DEBUG_THROW_UNLESS(static_cast<std::size_t>(ver_end) == line.size(), Exception, status_bad_request);
+				POSEIDON_THROW_UNLESS(std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end) == 2, Exception, status_bad_request);
+				POSEIDON_THROW_UNLESS(static_cast<std::size_t>(ver_end) == line.size(), Exception, status_bad_request);
 				m_request_headers.version = boost::numeric_cast<unsigned>(std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10));
-				DEBUG_THROW_UNLESS(m_request_headers.version <= 10001, Exception, status_version_not_supported);
+				POSEIDON_THROW_UNLESS(m_request_headers.version <= 10001, Exception, status_version_not_supported);
 
 				if(!dont_parse_get_params){
 					pos = m_request_headers.uri.find('?');
@@ -131,12 +131,12 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 			if(!expected.empty()){
 				const AUTO(headers, m_request_headers.headers.size());
 				const AUTO(max_headers, Main_config::get<std::size_t>("http_max_headers_per_request", 64));
-				DEBUG_THROW_UNLESS(headers <= max_headers, Exception, status_bad_request); // XXX 用一个别的状态码？
+				POSEIDON_THROW_UNLESS(headers <= max_headers, Exception, status_bad_request); // XXX 用一个别的状态码？
 
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
+				POSEIDON_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
 				Rcnts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
@@ -153,14 +153,14 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 					} else {
 						char *eptr;
 						m_content_length = ::strtoull(content_length.c_str(), &eptr, 10);
-						DEBUG_THROW_UNLESS(*eptr == 0, Exception, status_bad_request);
-						DEBUG_THROW_UNLESS(m_content_length <= content_length_max, Exception, status_payload_too_large);
+						POSEIDON_THROW_UNLESS(*eptr == 0, Exception, status_bad_request);
+						POSEIDON_THROW_UNLESS(m_content_length <= content_length_max, Exception, status_payload_too_large);
 					}
 				} else if(::strcasecmp(transfer_encoding.c_str(), "chunked") == 0){
 					m_content_length = content_length_chunked;
 				} else {
-					LOG_POSEIDON_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
-					DEBUG_THROW(Basic_exception, Rcnts::view("Inacceptable Transfer-Encoding"));
+					POSEIDON_LOG_WARNING("Inacceptable Transfer-Encoding: ", transfer_encoding);
+					POSEIDON_THROW(Basic_exception, Rcnts::view("Inacceptable Transfer-Encoding"));
 				}
 
 				on_request_headers(STD_MOVE(m_request_headers), m_content_length);
@@ -203,8 +203,8 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 
 				char *eptr;
 				m_chunk_size = ::strtoull(line.c_str(), &eptr, 16);
-				DEBUG_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), Exception, status_bad_request);
-				DEBUG_THROW_UNLESS(m_chunk_size <= content_length_max, Exception, status_payload_too_large);
+				POSEIDON_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), Exception, status_bad_request);
+				POSEIDON_THROW_UNLESS(m_chunk_size <= content_length_max, Exception, status_payload_too_large);
 				if(m_chunk_size == 0){
 					m_size_expecting = content_length_expecting_endl;
 					m_state = state_chunked_trailer;
@@ -240,7 +240,7 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 				std::string line = expected.dump_string();
 
 				AUTO(pos, line.find(':'));
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
+				POSEIDON_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
 				Rcnts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));

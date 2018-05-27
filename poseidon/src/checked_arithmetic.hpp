@@ -18,7 +18,7 @@ inline T checked_add(T lhs, T rhs){
 
 	const T ret = lhs + rhs;
 	if(ret < lhs){
-		DEBUG_THROW(Exception, Rcnts::view("Integral addition overflow"));
+		POSEIDON_THROW(Exception, Rcnts::view("Integral addition overflow"));
 	}
 	return ret;
 }
@@ -39,7 +39,7 @@ inline T checked_sub(T lhs, T rhs){
 
 	const T ret = lhs - rhs;
 	if(ret > lhs){
-		DEBUG_THROW(Exception, Rcnts::view("Integral subtraction overflow"));
+		POSEIDON_THROW(Exception, Rcnts::view("Integral subtraction overflow"));
 	}
 	return ret;
 }
@@ -63,7 +63,7 @@ inline T checked_mul(T lhs, T rhs){
 	}
 	const T ret = lhs * rhs;
 	if(ret / lhs != rhs){
-		DEBUG_THROW(Exception, Rcnts::view("Integral multiplication overflow"));
+		POSEIDON_THROW(Exception, Rcnts::view("Integral multiplication overflow"));
 	}
 	return ret;
 }

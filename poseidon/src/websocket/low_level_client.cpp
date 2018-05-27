@@ -30,48 +30,48 @@ void Low_level_client::on_close(int /*err_code*/){
 	//
 }
 void Low_level_client::on_receive(Stream_buffer data){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Reader::put_encoded_data(STD_MOVE(data));
 }
 
 void Low_level_client::on_data_message_header(Op_code opcode){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	on_low_level_message_header(opcode);
 }
 void Low_level_client::on_data_message_payload(boost::uint64_t whole_offset, Stream_buffer payload){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	on_low_level_message_payload(whole_offset, STD_MOVE(payload));
 }
 bool Low_level_client::on_data_message_end(boost::uint64_t whole_size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	return on_low_level_message_end(whole_size);
 }
 
 bool Low_level_client::on_control_message(Op_code opcode, Stream_buffer payload){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	return on_low_level_control_message(opcode, STD_MOVE(payload));
 }
 
 long Low_level_client::on_encoded_data_avail(Stream_buffer encoded){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	return Upgraded_session_base::send(STD_MOVE(encoded));
 }
 
 bool Low_level_client::send(Op_code opcode, Stream_buffer payload, bool masked){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	return Writer::put_message(opcode, masked, STD_MOVE(payload));
 }
 
 bool Low_level_client::shutdown(Status_code status_code, const char *reason) NOEXCEPT
 try {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	if(has_been_shutdown_write()){
 		return false;
@@ -80,11 +80,11 @@ try {
 	shutdown_read();
 	return shutdown_write();
 } catch(std::exception &e){
-	LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+	POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 	force_shutdown();
 	return false;
 } catch(...){
-	LOG_POSEIDON_ERROR("Unknown exception thrown.");
+	POSEIDON_LOG_ERROR("Unknown exception thrown.");
 	force_shutdown();
 	return false;
 }

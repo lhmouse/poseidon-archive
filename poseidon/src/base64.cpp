@@ -56,7 +56,7 @@ void Base64_encoder::clear(){
 	m_buffer.clear();
 }
 void Base64_encoder::put(const void *data, std::size_t size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
 		const unsigned char ch = static_cast<const unsigned char *>(data)[i];
@@ -74,7 +74,7 @@ void Base64_encoder::put(const void *data, std::size_t size){
 	}
 }
 void Base64_encoder::put(const Stream_buffer &buffer){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
@@ -84,7 +84,7 @@ void Base64_encoder::put(const Stream_buffer &buffer){
 	}
 }
 Stream_buffer Base64_encoder::finalize(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const AUTO(seq, m_seq);
 	if(seq >= (1ul << 16)){
@@ -118,7 +118,7 @@ void Base64_decoder::clear(){
 	m_buffer.clear();
 }
 void Base64_decoder::put(const void *data, std::size_t size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
 		const unsigned char ch = static_cast<const unsigned char *>(data)[i];
@@ -133,11 +133,11 @@ void Base64_decoder::put(const void *data, std::size_t size){
 			} else if((seq >= (1ul << 18)) && ((seq >> 18) <= 1)){
 				n_add = 1ul << 18;
 			}
-			DEBUG_THROW_UNLESS(n_add != 0, Exception, Rcnts::view("Invalid base64 padding character encountered"));
+			POSEIDON_THROW_UNLESS(n_add != 0, Exception, Rcnts::view("Invalid base64 padding character encountered"));
 			seq += n_add;
 		} else {
 			const int digit = from_base64_digit(ch);
-			DEBUG_THROW_UNLESS(digit >= 0, Exception, Rcnts::view("Invalid base64 character encountered"));
+			POSEIDON_THROW_UNLESS(digit >= 0, Exception, Rcnts::view("Invalid base64 character encountered"));
 			seq += static_cast<unsigned>(digit);
 		}
 		if(seq >= (1ul << 24)){
@@ -156,7 +156,7 @@ void Base64_decoder::put(const void *data, std::size_t size){
 				m_buffer.put((seq >>  0) & 0xFF);
 				break;
 			default:
-				DEBUG_THROW(Exception, Rcnts::view("Invalid base64 data"));
+				POSEIDON_THROW(Exception, Rcnts::view("Invalid base64 data"));
 			}
 			m_seq = 1;
 		} else {
@@ -165,7 +165,7 @@ void Base64_decoder::put(const void *data, std::size_t size){
 	}
 }
 void Base64_decoder::put(const Stream_buffer &buffer){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
@@ -175,30 +175,30 @@ void Base64_decoder::put(const Stream_buffer &buffer){
 	}
 }
 Stream_buffer Base64_decoder::finalize(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
-	DEBUG_THROW_UNLESS(m_seq == 1, Exception, Rcnts::view("Incomplete base64 data"));
+	POSEIDON_THROW_UNLESS(m_seq == 1, Exception, Rcnts::view("Incomplete base64 data"));
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
 	return ret;
 }
 
 std::string base64_encode(const void *data, std::size_t size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Base64_encoder enc;
 	enc.put(data, size);
 	return enc.get_buffer().dump_string();
 }
 std::string base64_encode(const char *str){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Base64_encoder enc;
 	enc.put(str);
 	return enc.get_buffer().dump_string();
 }
 std::string base64_encode(const std::string &str){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Base64_encoder enc;
 	enc.put(str);
@@ -206,21 +206,21 @@ std::string base64_encode(const std::string &str){
 }
 
 std::string base64_decode(const void *data, std::size_t size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Base64_decoder dec;
 	dec.put(data, size);
 	return dec.get_buffer().dump_string();
 }
 std::string base64_decode(const char *str){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Base64_decoder dec;
 	dec.put(str);
 	return dec.get_buffer().dump_string();
 }
 std::string base64_decode(const std::string &str){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Base64_decoder dec;
 	dec.put(str);

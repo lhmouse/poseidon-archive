@@ -31,10 +31,10 @@ namespace {
 	};
 
 	Unique_handle<Interface_list_freeer> get_all_interfaces(){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		Unique_handle<Interface_list_freeer> list;
-		DEBUG_THROW_UNLESS(list.reset(::if_nameindex()), System_exception);
+		POSEIDON_THROW_UNLESS(list.reset(::if_nameindex()), System_exception);
 		return list;
 	}
 
@@ -83,7 +83,7 @@ void Udp_session_base::force_shutdown() NOEXCEPT {
 }
 
 int Udp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool /*readable*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	for(unsigned i = 0; i < 256; ++i){
 		Sock_addr sock_addr;
@@ -97,25 +97,25 @@ int Udp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::siz
 			}
 			sock_addr = Sock_addr(&sa, sa_len);
 			data.put(hint_buffer, static_cast<std::size_t>(result));
-			LOG_POSEIDON_TRACE("Read ", result, " byte(s) from ", Ip_port(sock_addr));
+			POSEIDON_LOG_TRACE("Read ", result, " byte(s) from ", Ip_port(sock_addr));
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 			return EINTR;
 		}
 		try {
 			on_receive(sock_addr, STD_MOVE(data));
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 			continue;
 		} catch(...){
-			LOG_POSEIDON_ERROR("Unknown exception thrown.");
+			POSEIDON_LOG_ERROR("Unknown exception thrown.");
 			continue;
 		}
 	}
 	return 0;
 }
 int Udp_session_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned char *hint_buffer, std::size_t hint_capacity, bool /*writable*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	for(unsigned i = 0; i < 256; ++i){
 		Sock_addr sock_addr;
@@ -129,16 +129,16 @@ int Udp_session_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned ch
 			data.swap(m_send_queue.front().second);
 			m_send_queue.pop_front();
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 			return EINTR;
 		}
 		try {
 			::sockaddr_storage sa;
-			DEBUG_THROW_ASSERT(sock_addr.size() <= sizeof(sa));
+			POSEIDON_THROW_ASSERT(sock_addr.size() <= sizeof(sa));
 			::socklen_t sa_len = static_cast<unsigned>(sock_addr.size());
 			const std::size_t avail = data.peek(hint_buffer, hint_capacity);
 			if(avail < data.size()){
-				LOG_POSEIDON(Logger::special_major | Logger::level_debug, "UDP packet is too large: size = ", data.size());
+				POSEIDON_LOG(Logger::special_major | Logger::level_debug, "UDP packet is too large: size = ", data.size());
 		_too_large:
 				on_message_too_large(sock_addr, STD_MOVE(data));
 				continue;
@@ -146,14 +146,14 @@ int Udp_session_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned ch
 			::ssize_t result = ::sendto(get_fd(), hint_buffer, avail, MSG_NOSIGNAL | MSG_DONTWAIT, static_cast< ::sockaddr *>(static_cast<void *>(&sa)), sa_len);
 			if(result < 0){
 				if(errno == EMSGSIZE){
-					LOG_POSEIDON(Logger::special_major | Logger::level_debug, "UDP packet is too large: size = ", data.size());
+					POSEIDON_LOG(Logger::special_major | Logger::level_debug, "UDP packet is too large: size = ", data.size());
 					goto _too_large;
 				}
 				continue;
 			}
-			LOG_POSEIDON_TRACE("Wrote ", result, " byte(s) to ", Ip_port(sock_addr));
+			POSEIDON_LOG_TRACE("Wrote ", result, " byte(s) to ", Ip_port(sock_addr));
 		} catch(std::exception &e){
-			LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+			POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 			continue;
 		}
 	}
@@ -165,67 +165,67 @@ void Udp_session_base::on_message_too_large(const Sock_addr &/*sock_addr*/, Stre
 }
 
 void Udp_session_base::add_membership(const Sock_addr &group){
-	PROFILE_ME;
-	DEBUG_THROW_UNLESS(is_using_ipv6() == group.is_ipv6(), Exception, Rcnts::view("Socket family does not match the group address provided"));
+	POSEIDON_PROFILE_ME;
+	POSEIDON_THROW_UNLESS(is_using_ipv6() == group.is_ipv6(), Exception, Rcnts::view("Socket family does not match the group address provided"));
 
 	const AUTO(interfaces, get_all_interfaces());
 	Buffer_mreq opt;
 	AUTO(ptr, interfaces.get());
 	try {
 		while(ptr->if_name){
-			LOG_POSEIDON_DEBUG("Adding UDP socket to multicast group: group = ", Ip_port(group), ", interface = ", ptr->if_name);
+			POSEIDON_LOG_DEBUG("Adding UDP socket to multicast group: group = ", Ip_port(group), ", interface = ", ptr->if_name);
 			const AUTO(optlen, make_mreq_opt(&opt, group, ptr->if_index));
 			if(::setsockopt(get_fd(), ipproto_of(this), is_using_ipv6() ? IPV6_ADD_MEMBERSHIP : IP_ADD_MEMBERSHIP, &opt, optlen) != 0){
 				const int err_code = errno;
-				LOG_POSEIDON_ERROR("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
-				DEBUG_THROW(System_exception, err_code);
+				POSEIDON_LOG_ERROR("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
+				POSEIDON_THROW(System_exception, err_code);
 			}
 			++ptr;
 		}
 	} catch(...){
 		while(ptr != interfaces.get()){
 			--ptr;
-			LOG_POSEIDON_DEBUG("Removing UDP socket from multicast group: group = ", Ip_port(group), ", interface = ", ptr->if_name);
+			POSEIDON_LOG_DEBUG("Removing UDP socket from multicast group: group = ", Ip_port(group), ", interface = ", ptr->if_name);
 			const AUTO(optlen, make_mreq_opt(&opt, group, ptr->if_index));
 			if(::setsockopt(get_fd(), ipproto_of(this), is_using_ipv6() ? IPV6_DROP_MEMBERSHIP : IP_DROP_MEMBERSHIP, &opt, optlen) != 0){
 				const int err_code = errno;
-				LOG_POSEIDON_WARNING("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
+				POSEIDON_LOG_WARNING("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
 			}
 		}
 		throw;
 	}
 }
 void Udp_session_base::drop_membership(const Sock_addr &group){
-	PROFILE_ME;
-	DEBUG_THROW_UNLESS(is_using_ipv6() == group.is_ipv6(), Exception, Rcnts::view("Socket family does not match the group address provided"));
+	POSEIDON_PROFILE_ME;
+	POSEIDON_THROW_UNLESS(is_using_ipv6() == group.is_ipv6(), Exception, Rcnts::view("Socket family does not match the group address provided"));
 
 	const AUTO(interfaces, get_all_interfaces());
 	Buffer_mreq opt;
 	AUTO(ptr, interfaces.get());
 	while(ptr->if_name){
-		LOG_POSEIDON_DEBUG("Removing UDP socket from multicast group: group = ", Ip_port(group), ", interface = ", ptr->if_name);
+		POSEIDON_LOG_DEBUG("Removing UDP socket from multicast group: group = ", Ip_port(group), ", interface = ", ptr->if_name);
 		const AUTO(optlen, make_mreq_opt(&opt, group, ptr->if_index));
 		if(::setsockopt(get_fd(), ipproto_of(this), is_using_ipv6() ? IPV6_DROP_MEMBERSHIP : IP_DROP_MEMBERSHIP, &opt, optlen) != 0){
 			const int err_code = errno;
-			LOG_POSEIDON_WARNING("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
+			POSEIDON_LOG_WARNING("::setsockopt() failed, errno was ", err_code, " (", get_error_desc(err_code), ")");
 		}
 		++ptr;
 	}
 }
 void Udp_session_base::set_multicast_loop(bool enabled){
 	const int val = enabled;
-	DEBUG_THROW_UNLESS(::setsockopt(get_fd(), ipproto_of(this), is_using_ipv6() ? IPV6_MULTICAST_LOOP : IP_MULTICAST_LOOP, &val, sizeof(val)) == 0, System_exception);
+	POSEIDON_THROW_UNLESS(::setsockopt(get_fd(), ipproto_of(this), is_using_ipv6() ? IPV6_MULTICAST_LOOP : IP_MULTICAST_LOOP, &val, sizeof(val)) == 0, System_exception);
 }
 void Udp_session_base::set_multicast_ttl(int ttl){
 	const int val = ttl;
-	DEBUG_THROW_UNLESS(::setsockopt(get_fd(), ipproto_of(this), is_using_ipv6() ? IPV6_MULTICAST_HOPS : IP_MULTICAST_TTL, &val, sizeof(val)) == 0, System_exception);
+	POSEIDON_THROW_UNLESS(::setsockopt(get_fd(), ipproto_of(this), is_using_ipv6() ? IPV6_MULTICAST_HOPS : IP_MULTICAST_TTL, &val, sizeof(val)) == 0, System_exception);
 }
 
 bool Udp_session_base::send(const Sock_addr &sock_addr, Stream_buffer buffer){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	if(has_been_shutdown_write()){
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "UDP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", Ip_port(sock_addr));
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "UDP socket has been shut down for writing: local = ", get_local_info(), ", remote = ", Ip_port(sock_addr));
 		return false;
 	}
 

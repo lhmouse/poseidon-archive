@@ -32,20 +32,20 @@ namespace {
 			if(!throws_if_does_not_exist && (err_code == ENOENT)){
 				return block;
 			}
-			LOG_POSEIDON_ERROR("Failed to load file: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(System_exception, err_code);
+			POSEIDON_LOG_ERROR("Failed to load file: path = ", path, ", err_code = ", err_code);
+			POSEIDON_THROW(System_exception, err_code);
 		}
 		struct ::stat stat_buf;
 		if(::fstat(file.get(), &stat_buf) != 0){
 			const int err_code = errno;
-			LOG_POSEIDON_ERROR("Failed to retrieve file information: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(System_exception, err_code);
+			POSEIDON_LOG_ERROR("Failed to retrieve file information: path = ", path, ", err_code = ", err_code);
+			POSEIDON_THROW(System_exception, err_code);
 		}
 		if(begin != 0){
 			if(::lseek(file.get(), static_cast< ::off_t>(begin), SEEK_SET) == (::off_t)-1){
 				const int err_code = errno;
-				LOG_POSEIDON_ERROR("Failed to seek file: path = ", path, ", err_code = ", err_code);
-				DEBUG_THROW(System_exception, err_code);
+				POSEIDON_LOG_ERROR("Failed to seek file: path = ", path, ", err_code = ", err_code);
+				POSEIDON_THROW(System_exception, err_code);
 			}
 		}
 
@@ -70,14 +70,14 @@ namespace {
 			}
 			if(result < 0){
 				const int err_code = errno;
-				LOG_POSEIDON_ERROR("Error loading file: path = ", path, ", err_code = ", err_code);
-				DEBUG_THROW(System_exception, err_code);
+				POSEIDON_LOG_ERROR("Error loading file: path = ", path, ", err_code = ", err_code);
+				POSEIDON_THROW(System_exception, err_code);
 			}
 			avail = static_cast<std::size_t>(result);
 			block.data.put(temp, avail);
 			bytes_read += avail;
 		}
-		LOG_POSEIDON_DEBUG("Finished loading file: path = ", path, ", bytes_read = ", bytes_read);
+		POSEIDON_LOG_DEBUG("Finished loading file: path = ", path, ", bytes_read = ", bytes_read);
 		return block;
 	}
 	void real_save(const std::string &path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists){
@@ -93,14 +93,14 @@ namespace {
 		Unique_file file;
 		if(!file.reset(::open(path.c_str(), flags, static_cast< ::mode_t>(0666)))){
 			const int err_code = errno;
-			LOG_POSEIDON_ERROR("Failed to save file: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(System_exception, err_code);
+			POSEIDON_LOG_ERROR("Failed to save file: path = ", path, ", err_code = ", err_code);
+			POSEIDON_THROW(System_exception, err_code);
 		}
 		if(!(flags & (O_APPEND | O_TRUNC)) && (begin != 0)){
 			if(::lseek(file.get(), static_cast< ::off_t>(begin), SEEK_SET) == (::off_t)-1){
 				const int err_code = errno;
-				LOG_POSEIDON_ERROR("Failed to seek file: path = ", path, ", err_code = ", err_code);
-				DEBUG_THROW(System_exception, err_code);
+				POSEIDON_LOG_ERROR("Failed to seek file: path = ", path, ", err_code = ", err_code);
+				POSEIDON_THROW(System_exception, err_code);
 			}
 		}
 
@@ -114,12 +114,12 @@ namespace {
 			::ssize_t result = ::write(file.get(), temp, avail);
 			if(result < 0){
 				const int err_code = errno;
-				LOG_POSEIDON_ERROR("Error saving file: path = ", path, ", err_code = ", err_code);
-				DEBUG_THROW(System_exception, err_code);
+				POSEIDON_LOG_ERROR("Error saving file: path = ", path, ", err_code = ", err_code);
+				POSEIDON_THROW(System_exception, err_code);
 			}
 			bytes_written += avail;
 		}
-		LOG_POSEIDON_DEBUG("Finished saving file: path = ", path, ", bytes_written = ", bytes_written);
+		POSEIDON_LOG_DEBUG("Finished saving file: path = ", path, ", bytes_written = ", bytes_written);
 	}
 	void real_remove(const std::string &path, bool throws_if_does_not_exist){
 		if(::unlink(path.c_str()) != 0){
@@ -127,15 +127,15 @@ namespace {
 			if(!throws_if_does_not_exist && (err_code == ENOENT)){
 				return;
 			}
-			LOG_POSEIDON_ERROR("Failed to remove file: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(System_exception, err_code);
+			POSEIDON_LOG_ERROR("Failed to remove file: path = ", path, ", err_code = ", err_code);
+			POSEIDON_THROW(System_exception, err_code);
 		}
 	}
 	void real_rename(const std::string &path, const std::string &new_path){
 		if(::rename(path.c_str(), new_path.c_str()) != 0){
 			const int err_code = errno;
-			LOG_POSEIDON_ERROR("Failed to rename file: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(System_exception, err_code);
+			POSEIDON_LOG_ERROR("Failed to rename file: path = ", path, ", err_code = ", err_code);
+			POSEIDON_THROW(System_exception, err_code);
 		}
 	}
 	void real_mkdir(const std::string &path, bool throws_if_exists){
@@ -147,8 +147,8 @@ namespace {
 					return;
 				}
 			}
-			LOG_POSEIDON_ERROR("Failed to make directory: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(System_exception, err_code);
+			POSEIDON_LOG_ERROR("Failed to make directory: path = ", path, ", err_code = ", err_code);
+			POSEIDON_THROW(System_exception, err_code);
 		}
 	}
 	void real_rmdir(const std::string &path, bool throws_if_does_not_exist){
@@ -157,8 +157,8 @@ namespace {
 			if(!throws_if_does_not_exist && (err_code == ENOENT)){
 				return;
 			}
-			LOG_POSEIDON_ERROR("Failed to remove directory: path = ", path, ", err_code = ", err_code);
-			DEBUG_THROW(System_exception, err_code);
+			POSEIDON_LOG_ERROR("Failed to remove directory: path = ", path, ", err_code = ", err_code);
+			POSEIDON_THROW(System_exception, err_code);
 		}
 	}
 
@@ -205,10 +205,10 @@ namespace {
 
 	public:
 		void execute() OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			if(!get_promise()){
-				LOG_POSEIDON_DEBUG("Discarding isolated loading operation: path = ", get_path());
+				POSEIDON_LOG_DEBUG("Discarding isolated loading operation: path = ", get_path());
 				return;
 			}
 			AUTO(block, real_load(get_path(), m_begin, m_limit, m_throws_if_does_not_exist));
@@ -232,7 +232,7 @@ namespace {
 
 	public:
 		void execute() OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			real_save(get_path(), m_data, m_begin, m_throws_if_exists);
 		}
@@ -252,7 +252,7 @@ namespace {
 
 	public:
 		void execute() OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			real_remove(get_path(), m_throws_if_does_not_exist);
 		}
@@ -272,7 +272,7 @@ namespace {
 
 	public:
 		void execute() OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			real_rename(get_path(), m_new_path);
 		}
@@ -292,7 +292,7 @@ namespace {
 
 	public:
 		void execute() OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			real_mkdir(get_path(), m_throws_if_exists);
 		}
@@ -312,7 +312,7 @@ namespace {
 
 	public:
 		void execute() OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			real_rmdir(get_path(), m_throws_if_does_not_exist);
 		}
@@ -330,7 +330,7 @@ namespace {
 	boost::container::deque<Operation_queue_element> g_operations;
 
 	bool pump_one_element() NOEXCEPT {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		Operation_queue_element *elem;
 		{
@@ -344,10 +344,10 @@ namespace {
 		try {
 			elem->operation->execute();
 		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+			POSEIDON_LOG_WARNING("std::exception thrown: what = ", e.what());
 			except = STD_CURRENT_EXCEPTION();
 		} catch(...){
-			LOG_POSEIDON_WARNING("Unknown exception thrown.");
+			POSEIDON_LOG_WARNING("Unknown exception thrown.");
 			except = STD_CURRENT_EXCEPTION();
 		}
 		const AUTO(promise, elem->operation->get_promise());
@@ -364,8 +364,8 @@ namespace {
 	}
 
 	void thread_proc(){
-		PROFILE_ME;
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "File_system daemon started.");
+		POSEIDON_PROFILE_ME;
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "File_system daemon started.");
 
 		unsigned timeout = 0;
 		for(;;){
@@ -382,11 +382,11 @@ namespace {
 			g_new_operation.timed_wait(lock, timeout);
 		}
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "File_system daemon stopped.");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "File_system daemon stopped.");
 	}
 
 	void submit_operation(boost::shared_ptr<Operation_base> operation){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const Mutex::Unique_lock lock(g_mutex);
 		Operation_queue_element elem = { STD_MOVE(operation) };
@@ -397,10 +397,10 @@ namespace {
 
 void File_system_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
-		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
+		POSEIDON_LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::terminate();
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting File_system daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting File_system daemon...");
 
 	Thread(&thread_proc, Rcnts::view(" F  "), Rcnts::view("Filesystem")).swap(g_thread);
 }
@@ -408,7 +408,7 @@ void File_system_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping File_system daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping File_system daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();
@@ -419,38 +419,38 @@ void File_system_daemon::stop(){
 }
 
 File_block_read File_system_daemon::load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	return real_load(path, begin, limit, throws_if_does_not_exist);
 }
 void File_system_daemon::save(const std::string &path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	real_save(path, STD_MOVE(data), begin, throws_if_exists);
 }
 void File_system_daemon::remove(const std::string &path, bool throws_if_does_not_exist){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	real_remove(path, throws_if_does_not_exist);
 }
 void File_system_daemon::rename(const std::string &path, const std::string &new_path){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	real_rename(path, new_path);
 }
 void File_system_daemon::mkdir(const std::string &path, bool throws_if_exists){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	real_mkdir(path, throws_if_exists);
 }
 void File_system_daemon::rmdir(const std::string &path, bool throws_if_does_not_exist){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	real_rmdir(path, throws_if_does_not_exist);
 }
 
 boost::shared_ptr<const Promise_container<File_block_read> > File_system_daemon::enqueue_for_loading(std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise_container<File_block_read> >());
 	AUTO(operation, boost::make_shared<Load_operation>(promise, STD_MOVE(path), begin, limit, throws_if_does_not_exist));
@@ -458,7 +458,7 @@ boost::shared_ptr<const Promise_container<File_block_read> > File_system_daemon:
 	return promise;
 }
 boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_saving(std::string path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<Save_operation>(promise, STD_MOVE(path), STD_MOVE(data), begin, throws_if_exists));
@@ -466,7 +466,7 @@ boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_saving(std::str
 	return promise;
 }
 boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_removing(std::string path, bool throws_if_does_not_exist){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<Remove_operation>(promise, STD_MOVE(path), throws_if_does_not_exist));
@@ -474,7 +474,7 @@ boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_removing(std::s
 	return promise;
 }
 boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_renaming(std::string path, std::string new_path){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<Rename_operation>(promise, STD_MOVE(path), STD_MOVE(new_path)));
@@ -482,7 +482,7 @@ boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_renaming(std::s
 	return promise;
 }
 boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_mkdir(std::string path, bool throws_if_exists){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<Mkdir_operation>(promise, STD_MOVE(path), throws_if_exists));
@@ -490,7 +490,7 @@ boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_mkdir(std::stri
 	return promise;
 }
 boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_rmdir(std::string path, bool throws_if_does_not_exist){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());
 	AUTO(operation, boost::make_shared<Rmdir_operation>(promise, STD_MOVE(path), throws_if_does_not_exist));

@@ -39,11 +39,11 @@ Multipart::Multipart(std::string boundary, std::istream &is)
 	: m_boundary(STD_MOVE(boundary)), m_elements()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Basic_exception, Rcnts::view("Http::Multipart parser error"));
+	POSEIDON_THROW_UNLESS(is, Basic_exception, Rcnts::view("Http::Multipart parser error"));
 }
 
 void Multipart::random_boundary(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	std::string boundary;
 	boundary.reserve(s_boundary_len);
@@ -54,15 +54,15 @@ void Multipart::random_boundary(){
 }
 
 Stream_buffer Multipart::dump() const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
 void Multipart::dump(std::ostream &os) const {
-	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!m_boundary.empty(), Basic_exception, Rcnts::view("Multipart boundary not set"));
+	POSEIDON_PROFILE_ME;
+	POSEIDON_THROW_UNLESS(!m_boundary.empty(), Basic_exception, Rcnts::view("Multipart boundary not set"));
 
 	os <<"--" <<m_boundary;
 	for(AUTO(it, m_elements.begin()); it != m_elements.end(); ++it){
@@ -76,8 +76,8 @@ void Multipart::dump(std::ostream &os) const {
 	os <<"--\r\n";
 }
 void Multipart::parse(std::istream &is){
-	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!m_boundary.empty(), Basic_exception, Rcnts::view("Multipart boundary not set"));
+	POSEIDON_PROFILE_ME;
+	POSEIDON_THROW_UNLESS(!m_boundary.empty(), Basic_exception, Rcnts::view("Multipart boundary not set"));
 
 	const AUTO(window_size, m_boundary.size() + 2);
 
@@ -124,7 +124,7 @@ void Multipart::parse(std::istream &is){
 				state = state_segment;
 				break;
 			}
-			LOG_POSEIDON_WARNING("Invalid multipart boundary.");
+			POSEIDON_LOG_WARNING("Invalid multipart boundary.");
 			is.setstate(std::ios::failbit);
 			return;
 
@@ -133,7 +133,7 @@ void Multipart::parse(std::istream &is){
 				state = state_segment;
 				break;
 			}
-			LOG_POSEIDON_WARNING("Invalid multipart boundary.");
+			POSEIDON_LOG_WARNING("Invalid multipart boundary.");
 			is.setstate(std::ios::failbit);
 			return;
 
@@ -164,7 +164,7 @@ void Multipart::parse(std::istream &is){
 					break;
 				}
 				pos = line.find(':');
-				DEBUG_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("Invalid HTTP header"));
+				POSEIDON_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("Invalid HTTP header"));
 				Rcnts key(line.data(), pos);
 				line.erase(0, pos + 1);
 				std::string value(trim(STD_MOVE(line)));
@@ -185,7 +185,7 @@ void Multipart::parse(std::istream &is){
 				state = state_finish;
 				break;
 			}
-			LOG_POSEIDON_WARNING("Invalid multipart termination boundary.");
+			POSEIDON_LOG_WARNING("Invalid multipart termination boundary.");
 			is.setstate(std::ios::failbit);
 			return;
 

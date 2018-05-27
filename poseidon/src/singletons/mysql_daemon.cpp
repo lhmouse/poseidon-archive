@@ -41,7 +41,7 @@ namespace {
 		}
 		if(server_addr.empty()){
 			if(master_conn){
-				LOG_POSEIDON_DEBUG("MySQL slave is not configured. Reuse the master connection as a slave.");
+				POSEIDON_LOG_DEBUG("MySQL slave is not configured. Reuse the master connection as a slave.");
 				return master_conn;
 			}
 			server_addr = Main_config::get<std::string>("mysql_server_addr", "localhost");
@@ -60,11 +60,11 @@ namespace {
 
 	void dump_sql_to_file(const std::string &query, unsigned long err_code, const char *err_msg) NOEXCEPT
 	try {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const AUTO(dump_dir, Main_config::get<std::string>("mysql_dump_dir"));
 		if(dump_dir.empty()){
-			LOG_POSEIDON_WARNING("MySQL dump is disabled.");
+			POSEIDON_LOG_WARNING("MySQL dump is disabled.");
 			return;
 		}
 
@@ -78,15 +78,15 @@ namespace {
 		dump_path.push_back('/');
 		dump_path.append(temp, len);
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Creating SQL dump file: ", dump_path);
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Creating SQL dump file: ", dump_path);
 		Unique_file dump_file;
 		if(!dump_file.reset(::open(dump_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644))){
 			const int saved_errno = errno;
-			LOG_POSEIDON_FATAL("Error creating SQL dump file: dump_path = ", dump_path, ", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
+			POSEIDON_LOG_FATAL("Error creating SQL dump file: dump_path = ", dump_path, ", errno = ", saved_errno, ", desc = ", get_error_desc(saved_errno));
 			std::terminate();
 		}
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Writing MySQL dump...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Writing MySQL dump...");
 		Buffer_ostream os;
 		len = format_time(temp, sizeof(temp), local_now, false);
 		os <<"-- " <<temp <<": err_code = " <<err_code <<", err_msg = " <<err_msg <<std::endl;
@@ -108,7 +108,7 @@ namespace {
 			total += static_cast<std::size_t>(written);
 		} while(total < str.size());
 	} catch(std::exception &e){
-		LOG_POSEIDON_ERROR("Error writing SQL dump: what = ", e.what());
+		POSEIDON_LOG_ERROR("Error writing SQL dump: what = ", e.what());
 	}
 
 	// 数据库线程操作。
@@ -178,7 +178,7 @@ namespace {
 			query = os.get_buffer().dump_string();
 		}
 		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			conn->execute_sql(query);
 		}
@@ -211,14 +211,14 @@ namespace {
 			query = m_query;
 		}
 		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			if(!get_promise()){
-				LOG_POSEIDON_WARNING("Discarding isolated MySQL query: table = ", get_table(), ", query = ", query);
+				POSEIDON_LOG_WARNING("Discarding isolated MySQL query: table = ", get_table(), ", query = ", query);
 				return;
 			}
 			conn->execute_sql(query);
-			DEBUG_THROW_UNLESS(conn->fetch_row(), Mysql::Exception, Rcnts::view(get_table()), ER_SP_FETCH_NO_DATA, Rcnts::view("No rows returned"));
+			POSEIDON_THROW_UNLESS(conn->fetch_row(), Mysql::Exception, Rcnts::view(get_table()), ER_SP_FETCH_NO_DATA, Rcnts::view("No rows returned"));
 			m_object->fetch(conn);
 		}
 	};
@@ -250,7 +250,7 @@ namespace {
 			query = m_query;
 		}
 		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			conn->execute_sql(query);
 		}
@@ -284,10 +284,10 @@ namespace {
 			query = m_query;
 		}
 		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			if(!get_promise()){
-				LOG_POSEIDON_WARNING("Discarding isolated MySQL query: table = ", get_table(), ", query = ", query);
+				POSEIDON_LOG_WARNING("Discarding isolated MySQL query: table = ", get_table(), ", query = ", query);
 				return;
 			}
 			conn->execute_sql(query);
@@ -296,7 +296,7 @@ namespace {
 					m_callback(conn);
 				}
 			} else {
-				LOG_POSEIDON_DEBUG("Result discarded.");
+				POSEIDON_LOG_DEBUG("Result discarded.");
 			}
 		}
 	};
@@ -329,7 +329,7 @@ namespace {
 			// no query
 		}
 		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string & /* query */) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			m_callback(conn);
 		}
@@ -366,7 +366,7 @@ namespace {
 			query = "DO 0";
 		}
 		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			conn->execute_sql(query);
 		}
@@ -399,7 +399,7 @@ namespace {
 
 	private:
 		bool pump_one_operation(boost::shared_ptr<Mysql::Connection> &master_conn, boost::shared_ptr<Mysql::Connection> &slave_conn) NOEXCEPT {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			const AUTO(now, get_fast_mono_clock());
 			Operation_queue_element *elem;
@@ -439,20 +439,20 @@ namespace {
 			if(execute_it){
 				try {
 					operation->generate_sql(query);
-					LOG_POSEIDON_DEBUG("Executing SQL: table = ", operation->get_table(), ", query = ", query);
+					POSEIDON_LOG_DEBUG("Executing SQL: table = ", operation->get_table(), ", query = ", query);
 					operation->execute(conn, query);
 				} catch(Mysql::Exception &e){
-					LOG_POSEIDON_WARNING("Mysql::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
+					POSEIDON_LOG_WARNING("Mysql::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = e.get_code();
 					::snprintf(err_msg, sizeof(err_msg), "Mysql::Exception: %s", e.what());
 				} catch(std::exception &e){
-					LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+					POSEIDON_LOG_WARNING("std::exception thrown: what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = ER_UNKNOWN_ERROR;
 					::snprintf(err_msg, sizeof(err_msg), "std::exception: %s", e.what());
 				} catch(...){
-					LOG_POSEIDON_WARNING("Unknown exception thrown");
+					POSEIDON_LOG_WARNING("Unknown exception thrown");
 					except = STD_CURRENT_EXCEPTION();
 					err_code = ER_UNKNOWN_ERROR;
 					::strcpy(err_msg, "Unknown exception");
@@ -463,13 +463,13 @@ namespace {
 				const AUTO(max_retry_count, Main_config::get<std::size_t>("mysql_max_retry_count", 3));
 				const AUTO(retry_count, ++(elem->retry_count));
 				if(retry_count < max_retry_count){
-					LOG_POSEIDON(Logger::special_major | Logger::level_info, "Going to retry MySQL operation: retry_count = ", retry_count);
+					POSEIDON_LOG(Logger::special_major | Logger::level_info, "Going to retry MySQL operation: retry_count = ", retry_count);
 					const AUTO(retry_init_delay, Main_config::get<boost::uint64_t>("mysql_retry_init_delay", 1000));
 					elem->due_time = now + (retry_init_delay << retry_count);
 					conn.reset();
 					return true;
 				}
-				LOG_POSEIDON_ERROR("Max retry count exceeded.");
+				POSEIDON_LOG_ERROR("Max retry count exceeded.");
 				dump_sql_to_file(query, err_code, err_msg);
 			}
 			const AUTO(promise, elem->operation->get_promise());
@@ -486,8 +486,8 @@ namespace {
 		}
 
 		void thread_proc(){
-			PROFILE_ME;
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "MySQL thread started.");
+			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "MySQL thread started.");
 
 			boost::shared_ptr<Mysql::Connection> master_conn, slave_conn;
 			unsigned timeout = 0;
@@ -496,12 +496,12 @@ namespace {
 				bool busy;
 				do {
 					while(!master_conn){
-						LOG_POSEIDON(Logger::special_major | Logger::level_info, "Connecting to MySQL master server...");
+						POSEIDON_LOG(Logger::special_major | Logger::level_info, "Connecting to MySQL master server...");
 						try {
 							master_conn = real_create_connection(false, VAL_INIT);
-							LOG_POSEIDON(Logger::special_major | Logger::level_info, "Successfully connected to MySQL master server.");
+							POSEIDON_LOG(Logger::special_major | Logger::level_info, "Successfully connected to MySQL master server.");
 						} catch(std::exception &e){
-							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+							POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
 							req.tv_sec = (::time_t)(reconnect_delay / 1000);
 							req.tv_nsec = (long)(reconnect_delay % 1000) * 1000 * 1000;
@@ -509,12 +509,12 @@ namespace {
 						}
 					}
 					while(!slave_conn){
-						LOG_POSEIDON(Logger::special_major | Logger::level_info, "Connecting to MySQL slave server...");
+						POSEIDON_LOG(Logger::special_major | Logger::level_info, "Connecting to MySQL slave server...");
 						try {
 							slave_conn = real_create_connection(true, master_conn);
-							LOG_POSEIDON(Logger::special_major | Logger::level_info, "Successfully connected to MySQL slave server.");
+							POSEIDON_LOG(Logger::special_major | Logger::level_info, "Successfully connected to MySQL slave server.");
 						} catch(std::exception &e){
-							LOG_POSEIDON_ERROR("std::exception thrown: what = ", e.what());
+							POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 							::timespec req;
 							req.tv_sec = (::time_t)(reconnect_delay / 1000);
 							req.tv_nsec = (long)(reconnect_delay % 1000) * 1000 * 1000;
@@ -532,7 +532,7 @@ namespace {
 				m_new_operation.timed_wait(lock, timeout);
 			}
 
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "MySQL thread stopped.");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "MySQL thread stopped.");
 		}
 
 	public:
@@ -566,7 +566,7 @@ namespace {
 					atomic_store(m_urgent, true, memory_order_release);
 					m_new_operation.signal();
 				}
-				LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_sql = ", current_sql);
+				POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for SQL queries to complete: pending_objects = ", pending_objects, ", current_sql = ", current_sql);
 
 				::timespec req;
 				req.tv_sec = 0;
@@ -580,7 +580,7 @@ namespace {
 			return m_queue.size();
 		}
 		void add_operation(boost::shared_ptr<Operation_base> operation, bool urgent){
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			const AUTO(combinable_object, operation->get_combinable_object());
 
@@ -590,7 +590,7 @@ namespace {
 			const AUTO(due_time, saturated_add(now, save_delay));
 
 			const Mutex::Unique_lock lock(m_mutex);
-			DEBUG_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, Rcnts::view("MySQL thread is being shut down"));
+			POSEIDON_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, Rcnts::view("MySQL thread is being shut down"));
 			Operation_queue_element elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
 			if(combinable_object){
@@ -618,8 +618,8 @@ namespace {
 	boost::container::vector<boost::shared_ptr<Mysql_thread> > g_threads;
 
 	void add_operation_by_table(const char *table, boost::shared_ptr<Operation_base> operation, bool urgent){
-		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MySQL support is not enabled"));
+		POSEIDON_PROFILE_ME;
+		POSEIDON_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MySQL support is not enabled"));
 
 		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<Mysql_thread> thread;
@@ -642,7 +642,7 @@ namespace {
 			for(std::size_t i = 0; i < g_threads.size(); ++i){
 				AUTO_REF(test_thread, g_threads.at(i));
 				if(!test_thread){
-					LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Creating new MySQL thread ", i, " for table ", table);
+					POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Creating new MySQL thread ", i, " for table ", table);
 					thread = boost::make_shared<Mysql_thread>();
 					thread->start();
 					test_thread = thread;
@@ -650,15 +650,15 @@ namespace {
 					goto _use_thread;
 				}
 				const AUTO(queue_size, test_thread->get_queue_size());
-				LOG_POSEIDON_DEBUG("> MySQL thread ", i, "'s queue size: ", queue_size);
+				POSEIDON_LOG_DEBUG("> MySQL thread ", i, "'s queue size: ", queue_size);
 				g_routing_map.emplace(queue_size, i);
 			}
 			if(g_routing_map.empty()){
-				LOG_POSEIDON_FATAL("No available MySQL thread?!");
+				POSEIDON_LOG_FATAL("No available MySQL thread?!");
 				std::terminate();
 			}
 			const AUTO(index, g_routing_map.begin()->second);
-			LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Picking thread ", index, " for table ", table);
+			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Picking thread ", index, " for table ", table);
 			thread = g_threads.at(index);
 			route.thread = thread;
 		}
@@ -669,8 +669,8 @@ namespace {
 		thread->add_operation(STD_MOVE(operation), urgent);
 	}
 	void add_operation_all(boost::shared_ptr<Operation_base> operation, bool urgent){
-		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MySQL support is not enabled"));
+		POSEIDON_PROFILE_ME;
+		POSEIDON_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MySQL support is not enabled"));
 
 		const Mutex::Unique_lock lock(g_router_mutex);
 		for(AUTO(it, g_threads.begin()); it != g_threads.end(); ++it){
@@ -685,69 +685,69 @@ namespace {
 
 void Mysql_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
-		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
+		POSEIDON_LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::terminate();
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting MySQL daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting MySQL daemon...");
 
 	const AUTO(max_thread_count, Main_config::get<std::size_t>("mysql_max_thread_count"));
 	if(max_thread_count == 0){
-		LOG_POSEIDON_WARNING("MySQL support has been disabled. To enable MySQL support, set `mysql_max_thread_count` in `main.conf` to a value greater than zero.");
+		POSEIDON_LOG_WARNING("MySQL support has been disabled. To enable MySQL support, set `mysql_max_thread_count` in `main.conf` to a value greater than zero.");
 	} else {
 		boost::shared_ptr<Mysql::Connection> master_conn, slave_conn;
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MySQL master server is up...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Checking whether MySQL master server is up...");
 		try {
 			master_conn = real_create_connection(false, VAL_INIT);
 			master_conn->execute_sql("DO 0");
 		} catch(std::exception &e){
-			LOG_POSEIDON_FATAL("Could not connect to MySQL master server: ", e.what());
-			LOG_POSEIDON_WARNING("To disable MySQL support, set `mysql_max_thread_count` in `main.conf` to zero.");
+			POSEIDON_LOG_FATAL("Could not connect to MySQL master server: ", e.what());
+			POSEIDON_LOG_WARNING("To disable MySQL support, set `mysql_max_thread_count` in `main.conf` to zero.");
 			std::terminate();
 		}
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MySQL slave server is up...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Checking whether MySQL slave server is up...");
 		try {
 			slave_conn = real_create_connection(true, master_conn);
 			if(slave_conn != master_conn){
 				slave_conn->execute_sql("DO 0");
 			}
 		} catch(std::exception &e){
-			LOG_POSEIDON_FATAL("Could not connect to MySQL slave server: ", e.what());
-			LOG_POSEIDON_WARNING("To disable MySQL support, set `mysql_max_thread_count` in `main.conf` to zero.");
+			POSEIDON_LOG_FATAL("Could not connect to MySQL slave server: ", e.what());
+			POSEIDON_LOG_WARNING("To disable MySQL support, set `mysql_max_thread_count` in `main.conf` to zero.");
 			std::terminate();
 		}
 
 		const AUTO(dump_dir, Main_config::get<std::string>("mysql_dump_dir"));
 		if(dump_dir.empty()){
-			LOG_POSEIDON_WARNING("MySQL error dump has been disabled. To enable MySQL error dump, set `mysql_dump_dir` in `main.conf` to the path to the dump directory.");
+			POSEIDON_LOG_WARNING("MySQL error dump has been disabled. To enable MySQL error dump, set `mysql_dump_dir` in `main.conf` to the path to the dump directory.");
 		} else {
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Checking whether MySQL dump directory is writable...");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Checking whether MySQL dump directory is writable...");
 			try {
 				const AUTO(placeholder_path, dump_dir + "/placeholder");
-				DEBUG_THROW_ASSERT(Unique_file(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)));
+				POSEIDON_THROW_ASSERT(Unique_file(::open(placeholder_path.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)));
 			} catch(std::exception &e){
-				LOG_POSEIDON_FATAL("Could not write MySQL dump: ", e.what());
-				LOG_POSEIDON_WARNING("To disable MySQL error dump, set `mysql_dump_dir` in `main.conf` to an empty string.");
+				POSEIDON_LOG_FATAL("Could not write MySQL dump: ", e.what());
+				POSEIDON_LOG_WARNING("To disable MySQL error dump, set `mysql_dump_dir` in `main.conf` to an empty string.");
 				std::terminate();
 			}
 		}
 	}
 	g_threads.resize(max_thread_count);
 
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "MySQL daemon started.");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "MySQL daemon started.");
 }
 void Mysql_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping MySQL daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping MySQL daemon...");
 
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
 		const AUTO_REF(thread, g_threads.at(i));
 		if(!thread){
 			continue;
 		}
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping MySQL thread ", i);
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping MySQL thread ", i);
 		thread->stop();
 	}
 	for(std::size_t i = 0; i < g_threads.size(); ++i){
@@ -755,11 +755,11 @@ void Mysql_daemon::stop(){
 		if(!thread){
 			continue;
 		}
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "Waiting for MySQL thread ", i, " to terminate...");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for MySQL thread ", i, " to terminate...");
 		thread->safe_join();
 	}
 
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "MySQL daemon stopped.");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "MySQL daemon stopped.");
 
 	const Mutex::Unique_lock lock(g_router_mutex);
 	g_threads.clear();
@@ -787,7 +787,7 @@ boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_saving(boost::shared_
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_loading(boost::shared_ptr<Mysql::Object_base> object, std::string query){
-	DEBUG_THROW_ASSERT(!query.empty());
+	POSEIDON_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const table = object->get_table();
@@ -796,7 +796,7 @@ boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_loading(boost::shared
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_deleting(const char *table_hint, std::string query){
-	DEBUG_THROW_ASSERT(!query.empty());
+	POSEIDON_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const table = table_hint;
@@ -805,7 +805,7 @@ boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_deleting(const char *
 	return STD_MOVE_IDN(promise);
 }
 boost::shared_ptr<const Promise> Mysql_daemon::enqueue_for_batch_loading(Query_callback callback, const char *table_hint, std::string query){
-	DEBUG_THROW_ASSERT(!query.empty());
+	POSEIDON_THROW_ASSERT(!query.empty());
 
 	AUTO(promise, boost::make_shared<Promise>());
 	const char *const table = table_hint;

@@ -85,12 +85,12 @@ bool Upgraded_session_base::is_throttled() const {
 
 void Upgraded_session_base::set_no_delay(bool enabled){
 	const AUTO(parent, get_parent());
-	DEBUG_THROW_UNLESS(parent, Basic_exception, Rcnts::view("Parent session is gone"));
+	POSEIDON_THROW_UNLESS(parent, Basic_exception, Rcnts::view("Parent session is gone"));
 	parent->set_no_delay(enabled);
 }
 void Upgraded_session_base::set_timeout(boost::uint64_t timeout){
 	const AUTO(parent, get_parent());
-	DEBUG_THROW_UNLESS(parent, Basic_exception, Rcnts::view("Parent session is gone"));
+	POSEIDON_THROW_UNLESS(parent, Basic_exception, Rcnts::view("Parent session is gone"));
 	parent->set_timeout(timeout);
 }
 

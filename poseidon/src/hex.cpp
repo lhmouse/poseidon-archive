@@ -39,7 +39,7 @@ void Hex_encoder::clear(){
 	m_buffer.clear();
 }
 void Hex_encoder::put(const void *data, std::size_t size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
 		const unsigned ch = static_cast<const unsigned char *>(data)[i];
@@ -48,7 +48,7 @@ void Hex_encoder::put(const void *data, std::size_t size){
 	}
 }
 void Hex_encoder::put(const Stream_buffer &buffer){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
@@ -58,7 +58,7 @@ void Hex_encoder::put(const Stream_buffer &buffer){
 	}
 }
 Stream_buffer Hex_encoder::finalize(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
@@ -79,7 +79,7 @@ void Hex_decoder::clear(){
 	m_buffer.clear();
 }
 void Hex_decoder::put(const void *data, std::size_t size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	for(std::size_t i = 0; i < size; ++i){
 		const unsigned char ch = static_cast<const unsigned char *>(data)[i];
@@ -87,7 +87,7 @@ void Hex_decoder::put(const void *data, std::size_t size){
 			continue;
 		}
 		const int digit = from_hex_digit(ch);
-		DEBUG_THROW_UNLESS(digit >= 0, Exception, Rcnts::view("Invalid hex character encountered"));
+		POSEIDON_THROW_UNLESS(digit >= 0, Exception, Rcnts::view("Invalid hex character encountered"));
 		unsigned seq = m_seq << 4;
 		seq += static_cast<unsigned>(digit);
 		if(seq >= 0x0100){
@@ -99,7 +99,7 @@ void Hex_decoder::put(const void *data, std::size_t size){
 	}
 }
 void Hex_decoder::put(const Stream_buffer &buffer){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const void *data;
 	std::size_t size;
@@ -109,30 +109,30 @@ void Hex_decoder::put(const Stream_buffer &buffer){
 	}
 }
 Stream_buffer Hex_decoder::finalize(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
-	DEBUG_THROW_UNLESS(m_seq == 1, Exception, Rcnts::view("Incomplete hex data"));
+	POSEIDON_THROW_UNLESS(m_seq == 1, Exception, Rcnts::view("Incomplete hex data"));
 	AUTO(ret, STD_MOVE_IDN(m_buffer));
 	clear();
 	return ret;
 }
 
 std::string hex_encode(const void *data, std::size_t size, bool upper_case){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Hex_encoder enc(upper_case);
 	enc.put(data, size);
 	return enc.get_buffer().dump_string();
 }
 std::string hex_encode(const char *str, bool upper_case){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Hex_encoder enc(upper_case);
 	enc.put(str);
 	return enc.get_buffer().dump_string();
 }
 std::string hex_encode(const std::string &str, bool upper_case){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Hex_encoder enc(upper_case);
 	enc.put(str);
@@ -140,21 +140,21 @@ std::string hex_encode(const std::string &str, bool upper_case){
 }
 
 std::string hex_decode(const void *data, std::size_t size){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Hex_decoder dec;
 	dec.put(data, size);
 	return dec.get_buffer().dump_string();
 }
 std::string hex_decode(const char *str){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Hex_decoder dec;
 	dec.put(str);
 	return dec.get_buffer().dump_string();
 }
 std::string hex_decode(const std::string &str){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Hex_decoder dec;
 	dec.put(str);

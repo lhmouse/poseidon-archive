@@ -3,6 +3,8 @@
 
 #include "../precompiled.hpp"
 #include "verbs.hpp"
+#include "../cxx_ver.hpp"
+#include "../cxx_util.hpp"
 
 namespace Poseidon {
 namespace Http {

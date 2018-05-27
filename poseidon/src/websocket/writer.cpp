@@ -20,7 +20,7 @@ Writer::~Writer(){
 }
 
 long Writer::put_message(int opcode, bool masked, Stream_buffer payload){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer frame;
 	unsigned ch = boost::numeric_cast<unsigned>(opcode) | opmask_fin;
@@ -61,7 +61,7 @@ long Writer::put_message(int opcode, bool masked, Stream_buffer payload){
 	return on_encoded_data_avail(STD_MOVE(frame));
 }
 long Writer::put_close_message(Status_code status_code, bool masked, Stream_buffer addition){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer payload;
 	boost::uint16_t temp16;

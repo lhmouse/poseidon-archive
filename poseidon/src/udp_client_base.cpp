@@ -14,7 +14,7 @@ namespace Poseidon {
 namespace {
 	Unique_file create_udp_socket(const Sock_addr &addr){
 		Unique_file udp;
-		DEBUG_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), System_exception);
+		POSEIDON_THROW_UNLESS(udp.reset(::socket(addr.get_family(), SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP)), System_exception);
 		return udp;
 	}
 }

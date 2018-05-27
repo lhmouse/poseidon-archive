@@ -57,6 +57,16 @@ inline void swap(Handle_stack &lhs, Handle_stack &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
+enum {
+	module_init_priority_essential      =   100,
+	module_init_priority_static         = 10000,
+	module_init_priority_high           = 20000,
+	module_init_priority_above_normal   = 30000,
+	module_init_priority_normal         = 40000,
+	module_init_priority_below_normal   = 50000,
+	module_init_priority_low            = 60000,
+};
+
 class Module_raii_base : NONCOPYABLE {
 public:
 	explicit Module_raii_base(long priority);
@@ -68,34 +78,23 @@ public:
 
 }
 
-#define INIT_PRIORITY_ESSENTIAL        100
-#define INIT_PRIORITY_STATIC         10000
-#define INIT_PRIORITY_HIGH           20000
-#define INIT_PRIORITY_ABOVE_NORMAL   30000
-#define INIT_PRIORITY_NORMAL         40000
-#define INIT_PRIORITY_BELOW_NORMAL   50000
-#define INIT_PRIORITY_LOW            60000
-
-#define MODULE_RAII_PRIORITY(handles_, priority_)	\
+#define POSEIDON_MODULE_RAII_PRIORITY(handles_, priority_)	\
 	namespace {	\
-		namespace TOKEN_CAT3(Module_raii_, __LINE__, Stub_) {	\
+		namespace POSEIDON_CAT3(Module_raii_, __LINE__, Stub_) {	\
 			struct Stub_ : public ::Poseidon::Module_raii_base {	\
 				Stub_()	\
 					: ::Poseidon::Module_raii_base(priority_)	\
-				{	\
-					/* */	\
-				}	\
-				void init(::Poseidon::Handle_stack & handle_stack_) const FINAL {	\
-					PROFILE_ME;	\
+				{ }	\
+				void init(::Poseidon::Handle_stack &handle_stack_) const FINAL {	\
+					POSEIDON_PROFILE_ME;	\
 					unwrapped_init_(handle_stack_);	\
 				}	\
 				void unwrapped_init_(::Poseidon::Handle_stack &) const;	\
 			} const stub_;	\
 		}	\
 	}	\
-	void TOKEN_CAT3(Module_raii_, __LINE__, Stub_)::Stub_::unwrapped_init_(::Poseidon::Handle_stack & handles_) const
+	void POSEIDON_CAT3(Module_raii_, __LINE__, Stub_)::Stub_::unwrapped_init_(::Poseidon::Handle_stack &handles_) const
 
-#define MODULE_RAII(handles_)   MODULE_RAII_PRIORITY(handles_, INIT_PRIORITY_NORMAL)
-
+#define POSEIDON_MODULE_RAII(handles_)   POSEIDON_MODULE_RAII_PRIORITY(handles_, ::Poseidon::module_init_priority_normal)
 
 #endif

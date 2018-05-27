@@ -30,7 +30,7 @@ private:
 		return m_weak_client;
 	}
 	void perform() FINAL {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const AUTO(client, m_weak_client.lock());
 		if(!client || client->has_been_shutdown_write()){
@@ -40,15 +40,15 @@ private:
 		try {
 			really_perform(client);
 		} catch(Exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Http::Exception thrown in HTTP servlet: status_code = ", e.get_status_code(), ", what = ", e.what());
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Http::Exception thrown in HTTP servlet: status_code = ", e.get_status_code(), ", what = ", e.what());
 			client->shutdown_read();
 			client->shutdown_write();
 		} catch(std::exception &e){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "std::exception thrown: what = ", e.what());
 			client->shutdown_read();
 			client->shutdown_write();
 		} catch(...){
-			LOG_POSEIDON(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
+			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Unknown exception thrown.");
 			client->force_shutdown();
 		}
 	}
@@ -67,7 +67,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		client->on_sync_connect();
 	}
@@ -83,7 +83,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		client->shutdown_write();
 	}
@@ -104,7 +104,7 @@ public:
 
 protected:
 	void really_perform(const boost::shared_ptr<Client> &client) OVERRIDE {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		client->on_sync_response(STD_MOVE(m_response_headers), STD_MOVE(m_entity));
 	}
@@ -120,7 +120,7 @@ Client::~Client(){
 }
 
 void Client::on_connect(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Low_level_client::on_connect();
 
@@ -129,7 +129,7 @@ void Client::on_connect(){
 		VAL_INIT);
 }
 void Client::on_read_hup(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	if(Client_reader::is_content_till_eof()){
 		Client_reader::terminate_content();
@@ -143,18 +143,18 @@ void Client::on_read_hup(){
 }
 
 void Client::on_low_level_response_headers(Response_headers response_headers, boost::uint64_t /*content_length*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_response_headers = STD_MOVE(response_headers);
 	m_entity.clear();
 }
 void Client::on_low_level_response_entity(boost::uint64_t /*entity_offset*/, Stream_buffer entity){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	m_entity.splice(entity);
 }
 boost::shared_ptr<Upgraded_session_base> Client::on_low_level_response_end(boost::uint64_t /*content_length*/, Option_map /*headers*/){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
 		boost::make_shared<Response_job>(virtual_shared_from_this<Client>(), STD_MOVE(m_response_headers), STD_MOVE(m_entity)),
@@ -164,7 +164,7 @@ boost::shared_ptr<Upgraded_session_base> Client::on_low_level_response_end(boost
 }
 
 void Client::on_sync_connect(){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	//
 }

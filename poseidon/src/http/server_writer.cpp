@@ -19,7 +19,7 @@ Server_writer::~Server_writer(){
 }
 
 long Server_writer::put_response(Response_headers response_headers, Stream_buffer entity, bool set_content_length){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer data;
 
@@ -60,7 +60,7 @@ long Server_writer::put_response(Response_headers response_headers, Stream_buffe
 }
 
 long Server_writer::put_chunked_header(Response_headers response_headers){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer data;
 
@@ -89,8 +89,8 @@ long Server_writer::put_chunked_header(Response_headers response_headers){
 	return on_encoded_data_avail(STD_MOVE(data));
 }
 long Server_writer::put_chunk(Stream_buffer entity){
-	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!entity.empty(), Basic_exception, Rcnts::view("You are not allowed to send an empty chunk"));
+	POSEIDON_PROFILE_ME;
+	POSEIDON_THROW_UNLESS(!entity.empty(), Basic_exception, Rcnts::view("You are not allowed to send an empty chunk"));
 
 	Stream_buffer chunk;
 
@@ -103,7 +103,7 @@ long Server_writer::put_chunk(Stream_buffer entity){
 	return on_encoded_data_avail(STD_MOVE(chunk));
 }
 long Server_writer::put_chunked_trailer(Option_map headers){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer data;
 

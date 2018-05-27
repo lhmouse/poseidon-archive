@@ -12,7 +12,7 @@ Exception::Exception(const char *file, std::size_t line, const char *func, Rcnts
 	: Basic_exception(file, line, func, STD_MOVE(message))
 	, m_database(STD_MOVE(database)), m_code(code)
 {
-	LOG_POSEIDON_ERROR("Mongodb::Exception: database = ", get_database(), ", code = ", get_code(), ", what = ", what());
+	POSEIDON_LOG_ERROR("Mongodb::Exception: database = ", get_database(), ", code = ", get_code(), ", what = ", what());
 }
 Exception::~Exception() NOEXCEPT {
 	//

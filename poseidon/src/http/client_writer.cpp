@@ -21,7 +21,7 @@ Client_writer::~Client_writer(){
 }
 
 long Client_writer::put_request(Request_headers request_headers, Stream_buffer entity, bool set_content_length){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer data;
 
@@ -75,7 +75,7 @@ long Client_writer::put_request(Request_headers request_headers, Stream_buffer e
 }
 
 long Client_writer::put_chunked_header(Request_headers request_headers){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer data;
 
@@ -113,8 +113,8 @@ long Client_writer::put_chunked_header(Request_headers request_headers){
 	return on_encoded_data_avail(STD_MOVE(data));
 }
 long Client_writer::put_chunk(Stream_buffer entity){
-	PROFILE_ME;
-	DEBUG_THROW_UNLESS(!entity.empty(), Basic_exception, Rcnts::view("You are not allowed to send an empty chunk"));
+	POSEIDON_PROFILE_ME;
+	POSEIDON_THROW_UNLESS(!entity.empty(), Basic_exception, Rcnts::view("You are not allowed to send an empty chunk"));
 
 	Stream_buffer chunk;
 
@@ -127,7 +127,7 @@ long Client_writer::put_chunk(Stream_buffer entity){
 	return on_encoded_data_avail(STD_MOVE(chunk));
 }
 long Client_writer::put_chunked_trailer(Option_map headers){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Stream_buffer data;
 

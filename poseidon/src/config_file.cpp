@@ -14,7 +14,7 @@ namespace Poseidon {
 
 namespace {
 	void escape(std::ostream &os, const char *data, std::size_t size){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		for(std::size_t i = 0; i < size; ++i){
 			const unsigned ch = (unsigned char)data[i];
@@ -47,7 +47,7 @@ namespace {
 		}
 	}
 	char unescape(std::string &seg, std::istream &is, const char *stops_at){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		seg.clear();
 
@@ -114,7 +114,7 @@ void Config_file::clear(){
 }
 
 bool Config_file::get_raw(std::string &val, const char *key) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const AUTO(it, m_contents.find(key));
 	if(it == m_contents.end()){
@@ -124,7 +124,7 @@ bool Config_file::get_raw(std::string &val, const char *key) const {
 	return true;
 }
 const std::string &Config_file::get_raw(const char *key) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const AUTO(it, m_contents.find(key));
 	if(it == m_contents.end()){
@@ -134,7 +134,7 @@ const std::string &Config_file::get_raw(const char *key) const {
 }
 
 std::size_t Config_file::get_all_raw(boost::container::vector<std::string> &vals, const char *key, bool including_empty) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	const AUTO(range, m_contents.range(key));
 	vals.reserve(vals.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
@@ -153,7 +153,7 @@ std::size_t Config_file::get_all_raw(boost::container::vector<std::string> &vals
 	return total;
 }
 boost::container::vector<std::string> Config_file::get_all_raw(const char *key, bool including_empty) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	boost::container::vector<std::string> vals;
 	get_all_raw(vals, key, including_empty);
@@ -161,11 +161,11 @@ boost::container::vector<std::string> Config_file::get_all_raw(const char *key, 
 }
 
 void Config_file::load(const std::string &path){
-	PROFILE_ME;
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Loading config file: ", path);
+	POSEIDON_PROFILE_ME;
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Loading config file: ", path);
 
 	AUTO(block, File_system_daemon::load(path));
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Read ", block.size_total, " byte(s) from ", path);
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Read ", block.size_total, " byte(s) from ", path);
 
 	VALUE_TYPE(m_contents) contents;
 
@@ -193,17 +193,17 @@ void Config_file::load(const std::string &path){
 		Buffer_istream is(STD_MOVE(buf));
 		std::string key, val;
 		const char key_term = unescape(key, is, "=#");
-		DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Error parsing escape sequence"));
+		POSEIDON_THROW_UNLESS(is, Exception, Rcnts::view("Error parsing escape sequence"));
 		key = trim(STD_MOVE(key));
 		if(key.empty()){
 			continue;
 		}
 		if(key_term == '='){
 			unescape(val, is, "#");
-			DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Error parsing escape sequence"));
+			POSEIDON_THROW_UNLESS(is, Exception, Rcnts::view("Error parsing escape sequence"));
 			val = trim(STD_MOVE(val));
 		}
-		LOG_POSEIDON(Logger::special_major | Logger::level_debug, "Config: ", std::setw(3), line, " | ", key, " = ", val);
+		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Config: ", std::setw(3), line, " | ", key, " = ", val);
 		contents.append(Rcnts(key), STD_MOVE(val));
 	}
 
@@ -211,24 +211,24 @@ void Config_file::load(const std::string &path){
 }
 int Config_file::load_nothrow(const std::string &path)
 try {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	load(path);
 	return 0;
 } catch(System_exception &e){
-	LOG_POSEIDON_ERROR("System_exception thrown while loading config file: path = ", path, ", code = ", e.get_code(), ", what = ", e.what());
+	POSEIDON_LOG_ERROR("System_exception thrown while loading config file: path = ", path, ", code = ", e.get_code(), ", what = ", e.what());
 	return e.get_code();
 } catch(std::exception &e){
-	LOG_POSEIDON_ERROR("std::exception thrown while loading config file: path = ", path, ", what = ", e.what());
+	POSEIDON_LOG_ERROR("std::exception thrown while loading config file: path = ", path, ", what = ", e.what());
 	return EINVAL;
 } catch(...){
-	LOG_POSEIDON_ERROR("Unknown exception thrown while loading config file: path = ", path);
+	POSEIDON_LOG_ERROR("Unknown exception thrown while loading config file: path = ", path);
 	return EINVAL;
 }
 
 void Config_file::save(const std::string &path){
-	PROFILE_ME;
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Saving config file: ", path);
+	POSEIDON_PROFILE_ME;
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Saving config file: ", path);
 
 	Buffer_ostream os;
 	for(AUTO(it, m_contents.begin()); it != m_contents.end(); ++it){

@@ -55,36 +55,36 @@ namespace {
 			: m_schema(schema)
 			, m_row(NULLPTR), m_lengths(NULLPTR)
 		{
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
-			DEBUG_THROW_UNLESS(m_mysql.reset(::mysql_init(&m_mysql_storage)), Basic_exception, Rcnts::view("::mysql_init() failed"));
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) == 0, Basic_exception, Rcnts::view("::mysql_options() failed, trying to set MYSQL_OPT_COMPRESS"));
+			POSEIDON_THROW_UNLESS(m_mysql.reset(::mysql_init(&m_mysql_storage)), Basic_exception, Rcnts::view("::mysql_init() failed"));
+			POSEIDON_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_COMPRESS, NULLPTR) == 0, Basic_exception, Rcnts::view("::mysql_options() failed, trying to set MYSQL_OPT_COMPRESS"));
 			static CONSTEXPR const ::my_bool s_true_value = true;
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &s_true_value) == 0, Basic_exception, Rcnts::view("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
-			DEBUG_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) == 0, Basic_exception, Rcnts::view("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
+			POSEIDON_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_OPT_RECONNECT, &s_true_value) == 0, Basic_exception, Rcnts::view("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
+			POSEIDON_THROW_UNLESS(::mysql_options(m_mysql.get(), MYSQL_SET_CHARSET_NAME, charset) == 0, Basic_exception, Rcnts::view("::mysql_options() failed, trying to set MYSQL_OPT_RECONNECT"));
 			unsigned long flags = 0;
 			if(use_ssl){
 				flags |= CLIENT_SSL;
 			}
-			DEBUG_THROW_UNLESS(::mysql_real_connect(m_mysql.get(), server_addr, user_name, password, schema, server_port, NULLPTR, flags), Exception, m_schema, ::mysql_errno(m_mysql.get()), Rcnts(::mysql_error(m_mysql.get())));
+			POSEIDON_THROW_UNLESS(::mysql_real_connect(m_mysql.get(), server_addr, user_name, password, schema, server_port, NULLPTR, flags), Exception, m_schema, ::mysql_errno(m_mysql.get()), Rcnts(::mysql_error(m_mysql.get())));
 		}
 
 	private:
 		bool find_field_and_check(const char *&data, std::size_t &size, const char *name) const {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			if(!m_row){
-				LOG_POSEIDON_WARNING("No more results available.");
+				POSEIDON_LOG_WARNING("No more results available.");
 				return false;
 			}
 			const AUTO(it, m_fields.find(name));
 			if(it == m_fields.end()){
-				LOG_POSEIDON_WARNING("Field not found: name = ", name);
+				POSEIDON_LOG_WARNING("Field not found: name = ", name);
 				return false;
 			}
 			data = m_row[it->second];
 			if(!data){
-				LOG_POSEIDON_DEBUG("Field is `null`: name = ", name);
+				POSEIDON_LOG_DEBUG("Field is `null`: name = ", name);
 				return false;
 			}
 			size = m_lengths[it->second];
@@ -93,28 +93,28 @@ namespace {
 
 	public:
 		void execute_sql_explicit(const char *sql, std::size_t len) FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			discard_result();
 
-			LOG_POSEIDON_DEBUG("Sending query to MySQL server: ", std::string(sql, len));
-			DEBUG_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Rcnts(::mysql_error(m_mysql.get())));
-			DEBUG_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Rcnts(::mysql_error(m_mysql.get())));
+			POSEIDON_LOG_DEBUG("Sending query to MySQL server: ", std::string(sql, len));
+			POSEIDON_THROW_UNLESS(::mysql_real_query(m_mysql.get(), sql, len) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Rcnts(::mysql_error(m_mysql.get())));
+			POSEIDON_THROW_UNLESS(::mysql_errno(m_mysql.get()) == 0, Exception, m_schema, ::mysql_errno(m_mysql.get()), Rcnts(::mysql_error(m_mysql.get())));
 			if(m_result.reset(::mysql_use_result(m_mysql.get()))){
 				const AUTO(fields, ::mysql_fetch_fields(m_result.get()));
 				const AUTO(count, ::mysql_num_fields(m_result.get()));
 				m_fields.reserve(count);
 				for(std::size_t i = 0; i < count; ++i){
 					const char *const name = fields[i].name;
-					DEBUG_THROW_UNLESS(m_fields.emplace(name, i).second, Basic_exception, Rcnts::view("Duplicate field"));
-					LOG_POSEIDON_TRACE("MySQL result field: name = ", name, ", index = ", i);
+					POSEIDON_THROW_UNLESS(m_fields.emplace(name, i).second, Basic_exception, Rcnts::view("Duplicate field"));
+					POSEIDON_LOG_TRACE("MySQL result field: name = ", name, ", index = ", i);
 				}
 			} else {
-				LOG_POSEIDON_DEBUG("No result was returned from MySQL server.");
+				POSEIDON_LOG_DEBUG("No result was returned from MySQL server.");
 			}
 		}
 		void discard_result() NOEXCEPT FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			m_result.reset();
 			m_fields.clear();
@@ -127,15 +127,15 @@ namespace {
 		}
 
 		bool fetch_row() FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			if(m_fields.empty()){
-				LOG_POSEIDON_DEBUG("Empty set returned from MySQL server.");
+				POSEIDON_LOG_DEBUG("Empty set returned from MySQL server.");
 				return false;
 			}
 			const AUTO(row, ::mysql_fetch_row(m_result.get()));
 			if(!row){
-				LOG_POSEIDON_DEBUG("No more data.");
+				POSEIDON_LOG_DEBUG("No more data.");
 				return false;
 			}
 			const AUTO(lengths, ::mysql_fetch_lengths(m_result.get()));
@@ -145,7 +145,7 @@ namespace {
 		}
 
 		bool get_boolean(const char *name) const FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			bool value = false;
 			const char *data;
@@ -156,7 +156,7 @@ namespace {
 			return value;
 		}
 		boost::int64_t get_signed(const char *name) const FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			boost::int64_t value = 0;
 			const char *data;
@@ -164,12 +164,12 @@ namespace {
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
 				value = ::strtoll(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `long long`"));
+				POSEIDON_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `long long`"));
 			}
 			return value;
 		}
 		boost::uint64_t get_unsigned(const char *name) const FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			boost::uint64_t value = 0;
 			const char *data;
@@ -177,12 +177,12 @@ namespace {
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
 				value = ::strtoull(data, &eptr, 0);
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `unsigned long long`"));
+				POSEIDON_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `unsigned long long`"));
 			}
 			return value;
 		}
 		double get_double(const char *name) const FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			double value = 0;
 			const char *data;
@@ -190,12 +190,12 @@ namespace {
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
 				value = ::strtod(data, &eptr);
-				DEBUG_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `double`"));
+				POSEIDON_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `double`"));
 			}
 			return value;
 		}
 		std::string get_string(const char *name) const FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			std::string value;
 			const char *data;
@@ -206,7 +206,7 @@ namespace {
 			return value;
 		}
 		boost::uint64_t get_datetime(const char *name) const FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			boost::uint64_t value = 0;
 			const char *data;
@@ -217,19 +217,19 @@ namespace {
 			return value;
 		}
 		Uuid get_uuid(const char *name) const FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			Uuid value;
 			const char *data;
 			std::size_t size;
 			if(find_field_and_check(data, size, name)){
-				DEBUG_THROW_UNLESS(size == 36, Basic_exception, Rcnts::view("Invalid UUID string length"));
+				POSEIDON_THROW_UNLESS(size == 36, Basic_exception, Rcnts::view("Invalid UUID string length"));
 				value.from_string(*reinterpret_cast<const char (*)[36]>(data));
 			}
 			return value;
 		}
 		std::basic_string<unsigned char> get_blob(const char *name) const FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			std::basic_string<unsigned char> value;
 			const char *data;

@@ -43,10 +43,10 @@ namespace {
 		const int gai_code = ::getaddrinfo(host.c_str(), port, NULLPTR, &res_ptr);
 		if(gai_code != 0){
 			const char *const err_msg = ::gai_strerror(gai_code);
-			LOG_POSEIDON_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
-			DEBUG_THROW(Exception, Rcnts(err_msg));
+			POSEIDON_LOG_DEBUG("DNS lookup failure: host:port = ", host, ":", port, ", gai_code = ", gai_code, ", err_msg = ", err_msg);
+			POSEIDON_THROW(Exception, Rcnts(err_msg));
 		}
-		DEBUG_THROW_ASSERT(res.reset(res_ptr));
+		POSEIDON_THROW_ASSERT(res.reset(res_ptr));
 
 		::addrinfo *res_ptr_ipv4 = NULLPTR;
 		::addrinfo *res_ptr_ipv6 = NULLPTR;
@@ -70,7 +70,7 @@ namespace {
 			res_ptr = res.get();
 		}
 		Sock_addr sock_addr(res_ptr->ai_addr, res_ptr->ai_addrlen);
-		LOG_POSEIDON_DEBUG("DNS lookup success: host:port = ", host, ":", port, ", result = ", Ip_port(sock_addr));
+		POSEIDON_LOG_DEBUG("DNS lookup success: host:port = ", host, ":", port, ", result = ", Ip_port(sock_addr));
 		return sock_addr;
 	}
 
@@ -89,7 +89,7 @@ namespace {
 	boost::container::deque<Request_element> g_queue;
 
 	bool pump_one_element() NOEXCEPT {
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		Request_element *elem;
 		{
@@ -108,10 +108,10 @@ namespace {
 		try {
 			sock_addr = real_dns_look_up(elem->host, elem->port, elem->prefer_ipv4);
 		} catch(std::exception &e){
-			LOG_POSEIDON_WARNING("std::exception thrown: what = ", e.what());
+			POSEIDON_LOG_WARNING("std::exception thrown: what = ", e.what());
 			except = STD_CURRENT_EXCEPTION();
 		} catch(...){
-			LOG_POSEIDON_WARNING("Unknown exception thrown.");
+			POSEIDON_LOG_WARNING("Unknown exception thrown.");
 			except = STD_CURRENT_EXCEPTION();
 		}
 		const AUTO(promise, elem->weak_promise.lock());
@@ -128,8 +128,8 @@ namespace {
 	}
 
 	void thread_proc(){
-		PROFILE_ME;
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "DNS daemon started.");
+		POSEIDON_PROFILE_ME;
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "DNS daemon started.");
 
 		unsigned timeout = 0;
 		for(;;){
@@ -146,16 +146,16 @@ namespace {
 			g_new_request.timed_wait(lock, timeout);
 		}
 
-		LOG_POSEIDON(Logger::special_major | Logger::level_info, "DNS daemon stopped.");
+		POSEIDON_LOG(Logger::special_major | Logger::level_info, "DNS daemon stopped.");
 	}
 }
 
 void Dns_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
-		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
+		POSEIDON_LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::terminate();
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting DNS daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting DNS daemon...");
 
 	Thread(&thread_proc, Rcnts::view("   D"), Rcnts::view("DNS")).swap(g_thread);
 }
@@ -163,7 +163,7 @@ void Dns_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping DNS daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping DNS daemon...");
 
 	if(g_thread.joinable()){
 		g_thread.join();
@@ -174,13 +174,13 @@ void Dns_daemon::stop(){
 }
 
 Sock_addr Dns_daemon::look_up(const std::string &host, boost::uint16_t port, bool prefer_ipv4){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	return real_dns_look_up(host, port, prefer_ipv4);
 }
 
 boost::shared_ptr<const Promise_container<Sock_addr> > Dns_daemon::enqueue_for_looking_up(std::string host, boost::uint16_t port, bool prefer_ipv4){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise_container<Sock_addr> >());
 	{

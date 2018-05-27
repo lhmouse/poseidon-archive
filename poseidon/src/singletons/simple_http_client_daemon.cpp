@@ -39,7 +39,7 @@ namespace {
 	}
 
 	bool check_redirect(Simple_http_request &request, const Http::Response_headers &respones_headers){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		const AUTO_REF(location, respones_headers.headers.get("Location"));
 		if(location.empty()){
@@ -49,17 +49,17 @@ namespace {
 		case Http::status_moved_permanently: // 301
 		case Http::status_found: // 302
 		case Http::status_temporary_redirect: // 307
-			LOG_POSEIDON_DEBUG("Redirecting intactly: location = ", location);
+			POSEIDON_LOG_DEBUG("Redirecting intactly: location = ", location);
 			request.request_headers.uri = location;
 			return true;
 		case Http::status_see_other: // 303
-			LOG_POSEIDON_DEBUG("Redirecting intactly: location = ", location);
+			POSEIDON_LOG_DEBUG("Redirecting intactly: location = ", location);
 			request.request_headers.verb = Http::verb_get;
 			request.request_headers.uri = location;
 			request.request_entity.clear();
 			return true;
 		default:
-			LOG_POSEIDON_DEBUG("This is a final response: status_code = ", respones_headers.status_code);
+			POSEIDON_LOG_DEBUG("This is a final response: status_code = ", respones_headers.status_code);
 			return false;
 		}
 	}
@@ -72,16 +72,16 @@ namespace {
 	};
 
 	Simple_http_client_params parse_simple_http_client_params(Http::Request_headers request_headers){
-		PROFILE_ME;
-		DEBUG_THROW_UNLESS(!request_headers.uri.empty(), Exception, Rcnts::view("Request URI is empty"));
-		DEBUG_THROW_UNLESS(request_headers.uri.at(0) != '/', Exception, Rcnts::view("Relative request URI is not allowed"));
+		POSEIDON_PROFILE_ME;
+		POSEIDON_THROW_UNLESS(!request_headers.uri.empty(), Exception, Rcnts::view("Request URI is empty"));
+		POSEIDON_THROW_UNLESS(request_headers.uri.at(0) != '/', Exception, Rcnts::view("Relative request URI is not allowed"));
 
 		Simple_http_client_params params = { std::string(), 80, false };
 		// uri = "http://www.example.com:80/foo/bar/page.html?param=value"
 		AUTO(pos, request_headers.uri.find("://"));
 		if(pos != std::string::npos){
 			request_headers.uri.at(pos) = 0;
-			LOG_POSEIDON_TRACE("Request protocol = ", request_headers.uri.c_str());
+			POSEIDON_LOG_TRACE("Request protocol = ", request_headers.uri.c_str());
 			if(::strcasecmp(request_headers.uri.c_str(), "http") == 0){
 				params.port = 80;
 				params.use_ssl = false;
@@ -89,8 +89,8 @@ namespace {
 				params.port = 443;
 				params.use_ssl = true;
 			} else {
-				LOG_POSEIDON_WARNING("Unsupported protocol: ", request_headers.uri.c_str());
-				DEBUG_THROW(Exception, Rcnts::view("Unsupported protocol"));
+				POSEIDON_LOG_WARNING("Unsupported protocol: ", request_headers.uri.c_str());
+				POSEIDON_THROW(Exception, Rcnts::view("Unsupported protocol"));
 			}
 			request_headers.uri.erase(0, pos + 3);
 		}
@@ -107,7 +107,7 @@ namespace {
 		// uri = "/foo/bar/page.html?param=value"
 		if(params.host.at(0) == '['){
 			pos = params.host.find(']');
-			DEBUG_THROW_UNLESS(pos != std::string::npos, Exception, Rcnts::view("Invalid IPv6 address"));
+			POSEIDON_THROW_UNLESS(pos != std::string::npos, Exception, Rcnts::view("Invalid IPv6 address"));
 			pos = params.host.find(':', pos + 1);
 		} else {
 			pos = params.host.find(':');
@@ -115,8 +115,8 @@ namespace {
 		if(pos != std::string::npos){
 			char *eptr;
 			const unsigned long port_val = std::strtoul(params.host.c_str() + pos + 1, &eptr, 10);
-			DEBUG_THROW_UNLESS(*eptr == 0, Exception, Rcnts::view("Invalid port string"));
-			DEBUG_THROW_UNLESS((1 <= port_val) && (port_val <= 65534), Exception, Rcnts::view("Invalid port number"));
+			POSEIDON_THROW_UNLESS(*eptr == 0, Exception, Rcnts::view("Invalid port string"));
+			POSEIDON_THROW_UNLESS((1 <= port_val) && (port_val <= 65534), Exception, Rcnts::view("Invalid port number"));
 			params.port = boost::numeric_cast<boost::uint16_t>(port_val);
 			params.host.erase(pos);
 		}
@@ -148,7 +148,7 @@ namespace {
 	}
 
 	void poll_internal(const boost::shared_ptr<Socket_base> &socket){
-		PROFILE_ME;
+		POSEIDON_PROFILE_ME;
 
 		bool readable = false, writable = false;
 		unsigned char buffer[2048];
@@ -158,17 +158,17 @@ namespace {
 			if(err_code < 0){
 				err_code = errno;
 				if(err_code != EINTR){
-					LOG_POSEIDON_ERROR("::poll() failed! errno was ", err_code, " (", get_error_desc(err_code), ")");
-					DEBUG_THROW(System_exception, err_code);
+					POSEIDON_LOG_ERROR("::poll() failed! errno was ", err_code, " (", get_error_desc(err_code), ")");
+					POSEIDON_THROW(System_exception, err_code);
 				}
 				continue;
 			}
 			if(has_any_flags_of(pset.revents, POLLIN) && has_none_flags_of(pset.revents, POLLERR)){
 				readable = true;
 				err_code = socket->poll_read_and_process(buffer, sizeof(buffer), readable);
-				LOG_POSEIDON_TRACE("Socket read result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+				POSEIDON_LOG_TRACE("Socket read result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-					LOG_POSEIDON_DEBUG("Socket read error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
+					POSEIDON_LOG_DEBUG("Socket read error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
 					socket->force_shutdown();
 				}
 			}
@@ -176,9 +176,9 @@ namespace {
 				writable = true;
 				Mutex::Unique_lock write_lock;
 				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writable);
-				LOG_POSEIDON_TRACE("Socket write result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
+				POSEIDON_LOG_TRACE("Socket write result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
-					LOG_POSEIDON_DEBUG("Socket write error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
+					POSEIDON_LOG_DEBUG("Socket write error: err_code = ", err_code, " (", get_error_desc(err_code), ")");
 					socket->force_shutdown();
 				}
 			}
@@ -189,7 +189,7 @@ namespace {
 					::socklen_t err_len = sizeof(err_code);
 					if(::getsockopt(socket->get_fd(), SOL_SOCKET, SO_ERROR, &err_code, &err_len) != 0){
 						err_code = errno;
-						LOG_POSEIDON_WARNING("::getsockopt() failed: fd = ", socket->get_fd(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
+						POSEIDON_LOG_WARNING("::getsockopt() failed: fd = ", socket->get_fd(), ", err_code = ", err_code, " (", get_error_desc(err_code), ")");
 					}
 				} else {
 					err_code = 0;
@@ -237,7 +237,7 @@ namespace {
 		bool send(Http::Request_headers request_headers, Stream_buffer request_entity){
 			request_headers.headers.set(Rcnts::view("Connection"), "Close");
 			request_headers.headers.erase("Expect");
-			DEBUG_THROW_UNLESS(Http::Low_level_client::send(STD_MOVE(request_headers), STD_MOVE(request_entity)), Exception, Rcnts::view("Failed to send data to remote server"));
+			POSEIDON_THROW_UNLESS(Http::Low_level_client::send(STD_MOVE(request_headers), STD_MOVE(request_entity)), Exception, Rcnts::view("Failed to send data to remote server"));
 			return true;
 		}
 
@@ -270,7 +270,7 @@ namespace {
 			return VAL_INIT;
 		}
 		void perform() FINAL {
-			PROFILE_ME;
+			POSEIDON_PROFILE_ME;
 
 			AUTO_REF(request, m_request);
 			Simple_http_response response;
@@ -283,7 +283,7 @@ namespace {
 				std::size_t retry_count_remaining = checked_add<std::size_t>(max_redirect_count, 1);
 				do {
 					const AUTO(verb, request.request_headers.verb);
-					LOG_POSEIDON_DEBUG("Trying: ", Http::get_string_from_verb(verb), " ", request.request_headers.uri);
+					POSEIDON_LOG_DEBUG("Trying: ", Http::get_string_from_verb(verb), " ", request.request_headers.uri);
 					AUTO(params, parse_simple_http_client_params(should_check_redirect ? request.request_headers : STD_MOVE_IDN(request.request_headers)));
 					const AUTO(promised_sock_addr, Dns_daemon::enqueue_for_looking_up(params.host, params.port));
 					Job_dispatcher::yield(promised_sock_addr, true);
@@ -293,16 +293,16 @@ namespace {
 					client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 					Epoll_daemon::add_socket(client);
 					Job_dispatcher::yield(client, true);
-					DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, Rcnts::view("Connection was closed prematurely"));
+					POSEIDON_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, Rcnts::view("Connection was closed prematurely"));
 				} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
 				Simple_http_response temp = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };
 				response = STD_MOVE(temp);
 			} catch(std::exception &e){
-				LOG_POSEIDON_DEBUG("std::exception thrown: what = ", e.what());
+				POSEIDON_LOG_DEBUG("std::exception thrown: what = ", e.what());
 				except = STD_CURRENT_EXCEPTION();
 			} catch(...){
-				LOG_POSEIDON_DEBUG("Unknown exception thrown.");
+				POSEIDON_LOG_DEBUG("Unknown exception thrown.");
 				except = STD_CURRENT_EXCEPTION();
 			}
 			const AUTO(promise, m_weak_promise.lock());
@@ -321,10 +321,10 @@ namespace {
 
 void Simple_http_client_daemon::start(){
 	if(atomic_exchange(g_running, true, memory_order_acq_rel) != false){
-		LOG_POSEIDON_FATAL("Only one daemon is allowed at the same time.");
+		POSEIDON_LOG_FATAL("Only one daemon is allowed at the same time.");
 		std::terminate();
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Starting simple HTTP client daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting simple HTTP client daemon...");
 
 	//
 }
@@ -332,13 +332,13 @@ void Simple_http_client_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
 		return;
 	}
-	LOG_POSEIDON(Logger::special_major | Logger::level_info, "Stopping simple HTTP client daemon...");
+	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping simple HTTP client daemon...");
 
 	//
 }
 
 Simple_http_response Simple_http_client_daemon::perform(Simple_http_request request){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	boost::shared_ptr<Simple_http_client> client;
 
@@ -347,14 +347,14 @@ Simple_http_response Simple_http_client_daemon::perform(Simple_http_request requ
 	std::size_t retry_count_remaining = checked_add<std::size_t>(max_redirect_count, 1);
 	do {
 		const AUTO(verb, request.request_headers.verb);
-		LOG_POSEIDON_DEBUG("Trying: ", Http::get_string_from_verb(verb), " ", request.request_headers.uri);
+		POSEIDON_LOG_DEBUG("Trying: ", Http::get_string_from_verb(verb), " ", request.request_headers.uri);
 		AUTO(params, parse_simple_http_client_params(should_check_redirect ? request.request_headers : STD_MOVE_IDN(request.request_headers)));
 		const AUTO(sock_addr, Dns_daemon::look_up(params.host, params.port));
 		client = boost::make_shared<Simple_http_client>(sock_addr, params.use_ssl);
 		client->set_no_delay(true);
 		client->send(STD_MOVE(params.request_headers), should_check_redirect ? request.request_entity : STD_MOVE_IDN(request.request_entity));
 		poll_internal(client);
-		DEBUG_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, Rcnts::view("Connection was closed prematurely"));
+		POSEIDON_THROW_UNLESS(client->is_finished() || (verb == Http::verb_head), Exception, Rcnts::view("Connection was closed prematurely"));
 	} while(should_check_redirect && (--retry_count_remaining != 0) && check_redirect(request, client->get_response_headers()));
 
 	Simple_http_response response = { STD_MOVE(client->get_response_headers()), STD_MOVE(client->get_response_entity()) };
@@ -362,7 +362,7 @@ Simple_http_response Simple_http_client_daemon::perform(Simple_http_request requ
 }
 
 boost::shared_ptr<const Promise_container<Simple_http_response> > Simple_http_client_daemon::enqueue_for_performing(Simple_http_request request){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise_container<Simple_http_response> >());
 	Job_dispatcher::enqueue(boost::make_shared<Async_perform_job>(promise, STD_MOVE(request)), VAL_INIT);

@@ -87,15 +87,14 @@ public:
 
 }
 
-#define LOG_EXPLICIT(mask_, ...)	(::Poseidon::Logger::check_mask(mask_) &&	\
-                                      ((void)(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__), true))
+#define POSEIDON_CHECK_AND_LOG(mask_, ...)  	(::Poseidon::Logger::check_mask(mask_) && (static_cast<void>(::Poseidon::Logger(mask_, __FILE__, __LINE__), __VA_ARGS__), 1))
 
-#define LOG_POSEIDON(level_, ...)   LOG_EXPLICIT(::Poseidon::Logger::special_poseidon | (level_), __VA_ARGS__)
-#define LOG_POSEIDON_FATAL(...)     LOG_POSEIDON(::Poseidon::Logger::level_fatal,   __VA_ARGS__)
-#define LOG_POSEIDON_ERROR(...)     LOG_POSEIDON(::Poseidon::Logger::level_error,   __VA_ARGS__)
-#define LOG_POSEIDON_WARNING(...)   LOG_POSEIDON(::Poseidon::Logger::level_warning, __VA_ARGS__)
-#define LOG_POSEIDON_INFO(...)      LOG_POSEIDON(::Poseidon::Logger::level_info,    __VA_ARGS__)
-#define LOG_POSEIDON_DEBUG(...)     LOG_POSEIDON(::Poseidon::Logger::level_debug,   __VA_ARGS__)
-#define LOG_POSEIDON_TRACE(...)     LOG_POSEIDON(::Poseidon::Logger::level_trace,   __VA_ARGS__)
+#define POSEIDON_LOG(lv_, ...)      POSEIDON_CHECK_AND_LOG((lv_) | ::Poseidon::Logger::special_poseidon, __VA_ARGS__)
+#define POSEIDON_LOG_FATAL(...)     POSEIDON_LOG(::Poseidon::Logger::level_fatal,   __VA_ARGS__)
+#define POSEIDON_LOG_ERROR(...)     POSEIDON_LOG(::Poseidon::Logger::level_error,   __VA_ARGS__)
+#define POSEIDON_LOG_WARNING(...)   POSEIDON_LOG(::Poseidon::Logger::level_warning, __VA_ARGS__)
+#define POSEIDON_LOG_INFO(...)      POSEIDON_LOG(::Poseidon::Logger::level_info,    __VA_ARGS__)
+#define POSEIDON_LOG_DEBUG(...)     POSEIDON_LOG(::Poseidon::Logger::level_debug,   __VA_ARGS__)
+#define POSEIDON_LOG_TRACE(...)     POSEIDON_LOG(::Poseidon::Logger::level_trace,   __VA_ARGS__)
 
 #endif

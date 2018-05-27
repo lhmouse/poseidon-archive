@@ -16,18 +16,18 @@ Header_option::Header_option(std::istream &is)
 	: m_base(), m_options()
 {
 	parse(is);
-	DEBUG_THROW_UNLESS(is, Exception, Rcnts::view("Http::Header_option parser error"));
+	POSEIDON_THROW_UNLESS(is, Exception, Rcnts::view("Http::Header_option parser error"));
 }
 
 Stream_buffer Header_option::dump() const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	Buffer_ostream bos;
 	dump(bos);
 	return STD_MOVE(bos.get_buffer());
 }
 void Header_option::dump(std::ostream &os) const {
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	os <<m_base;
 	for(AUTO(it, m_options.begin()); it != m_options.end(); ++it){
@@ -41,7 +41,7 @@ void Header_option::dump(std::ostream &os) const {
 	}
 }
 void Header_option::parse(std::istream &is){
-	PROFILE_ME;
+	POSEIDON_PROFILE_ME;
 
 	VALUE_TYPE(m_base) base;
 	VALUE_TYPE(m_options) options;

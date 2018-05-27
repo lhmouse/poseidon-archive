@@ -44,7 +44,7 @@ typedef Exception Basic_exception;
 
 }
 
-#define DEBUG_THROW_UNLESS_IMPL_(predictor_, etype_, parenthesis_, ...)	\
+#define POSEIDON_THROW_UNLESS_IMPL_(predictor_, etype_, parenthesis_, ...)	\
 	do {	\
 		if(predictor_){	\
 			break;	\
@@ -54,16 +54,16 @@ typedef Exception Basic_exception;
 		throw e_;	\
 	} while(false)
 
-#define DEBUG_THROW(etype_, ...)	\
-	DEBUG_THROW_UNLESS_IMPL_(false,	\
+#define POSEIDON_THROW(etype_, ...)	\
+	POSEIDON_THROW_UNLESS_IMPL_(false,	\
 		etype_, { }, ## __VA_ARGS__)
 
-#define DEBUG_THROW_UNLESS(expr_, etype_, ...)	\
-	DEBUG_THROW_UNLESS_IMPL_((expr_),	\
-		etype_, { LOG_POSEIDON_ERROR("Pre-condition not met: ", #expr_); }, ## __VA_ARGS__)
+#define POSEIDON_THROW_UNLESS(expr_, etype_, ...)	\
+	POSEIDON_THROW_UNLESS_IMPL_((expr_),	\
+		etype_, { POSEIDON_LOG_ERROR("Pre-condition not met: ", #expr_); }, ## __VA_ARGS__)
 
-#define DEBUG_THROW_ASSERT(expr_)	\
-	DEBUG_THROW_UNLESS_IMPL_((expr_),	\
-		::Poseidon::Exception, { LOG_POSEIDON_ERROR("Assertion failure: " #expr_); }, ::Poseidon::Rcnts::view("Assertion failure: " #expr_))
+#define POSEIDON_THROW_ASSERT(expr_)	\
+	POSEIDON_THROW_UNLESS_IMPL_((expr_),	\
+		::Poseidon::Exception, { POSEIDON_LOG_ERROR("Assertion failure: " #expr_); }, ::Poseidon::Rcnts::view("Assertion failure: " #expr_))
 
 #endif

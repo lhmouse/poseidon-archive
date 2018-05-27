@@ -3,6 +3,8 @@
 
 #include "../precompiled.hpp"
 #include "status_codes.hpp"
+#include "../cxx_ver.hpp"
+#include "../cxx_util.hpp"
 #include <algorithm>
 
 namespace Poseidon {
@@ -22,8 +24,6 @@ namespace {
 	}
 
 	const Status_desc_element s_desc_table[] = {
-		{   0, { "Unknown Status Code",
-		         "No description available for this status code." } },
 		// https://www.rfc-editor.org/rfc/rfc7231.txt
 		{ 100, { "Continue",
 		         "The initial part of a request has been received and has not yet been rejected by the server." } },
@@ -131,13 +131,17 @@ namespace {
 		         "it needed to access in order to complete the request." } },
 		{ 505, { "HTTP Version Not Supported",
 		         "The server does not support, or refuses to support, the major version of  HTTP that was used in the request message." } },
+		{   0, { "Unknown Status Code",
+		         "No description available for this status code." } },
 	};
 }
 
 Status_code_desc get_status_code_desc(Status_code status_code){
-	const AUTO(ptr, std::lower_bound(BEGIN(s_desc_table) + 1, END(s_desc_table), status_code));
-	if((ptr == END(s_desc_table)) || (ptr->status_code != status_code)){
-		return BEGIN(s_desc_table)->desc;
+	const AUTO(begin, BEGIN(s_desc_table));
+	const AUTO(end, END(s_desc_table) - 1); // It points to the last element for invalid status codes.
+	AUTO(ptr, std::lower_bound(begin, end, status_code));
+	if(ptr->status_code != status_code){
+		ptr = end;
 	}
 	return ptr->desc;
 }
