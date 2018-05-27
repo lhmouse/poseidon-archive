@@ -175,6 +175,10 @@ namespace {
 			}
 			os <<" INTO `" <<get_table() <<"` SET ";
 			m_object->generate_sql(os);
+			AUTO(buffer, STD_MOVE_IDN(os.get_buffer()));
+			if(buffer.back() == ','){
+				buffer.unput();
+			}
 			query = os.get_buffer().dump_string();
 		}
 		void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) OVERRIDE {

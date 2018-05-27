@@ -152,7 +152,6 @@ void OBJECT_NAME::generate_sql(::std::ostream &os_) const {
 	POSEIDON_PROFILE_ME;
 
 	const ::Poseidon::Recursive_mutex::Unique_lock lock_(m_mutex);
-	::Poseidon::Mysql::Object_base::Delimiter delim_;
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -163,14 +162,14 @@ void OBJECT_NAME::generate_sql(::std::ostream &os_) const {
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_;
-#define FIELD_SIGNED(id_)                 os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_;
-#define FIELD_UNSIGNED(id_)               os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_;
-#define FIELD_DOUBLE(id_)                 os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_;
-#define FIELD_STRING(id_)                 os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::String_escaper(id_);
-#define FIELD_DATETIME(id_)               os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::Date_time_formatter(id_);
-#define FIELD_UUID(id_)                   os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::Uuid_formatter(id_);
-#define FIELD_BLOB(id_)                   os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::String_escaper(id_);
+#define FIELD_BOOLEAN(id_)                os_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_.get() <<", ";
+#define FIELD_SIGNED(id_)                 os_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_.get() <<", ";
+#define FIELD_UNSIGNED(id_)               os_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_.get() <<", ";
+#define FIELD_DOUBLE(id_)                 os_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_.get() <<", ";
+#define FIELD_STRING(id_)                 os_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::String_escaper(id_.get()) <<", ";
+#define FIELD_DATETIME(id_)               os_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::Date_time_formatter(id_.get()) <<", ";
+#define FIELD_UUID(id_)                   os_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::Uuid_formatter(id_.get()) <<", ";
+#define FIELD_BLOB(id_)                   os_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::String_escaper(id_.get()) <<", ";
 
 	OBJECT_FIELDS
 }

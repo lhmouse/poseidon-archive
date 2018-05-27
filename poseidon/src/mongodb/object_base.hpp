@@ -31,7 +31,8 @@ namespace Mongodb {
 
 class Object_base : NONCOPYABLE, public virtual Virtual_shared_from_this {
 public:
-	template<typename ValueT> class Field;
+	template<typename ValueT>
+	class Field;
 
 private:
 	mutable volatile bool m_auto_saves;

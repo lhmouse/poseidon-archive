@@ -31,8 +31,8 @@ namespace Mysql {
 
 class Object_base : NONCOPYABLE, public virtual Virtual_shared_from_this {
 public:
-	template<typename ValueT> class Field;
-	class Delimiter;
+	template<typename ValueT>
+	class Field;
 
 private:
 	mutable volatile bool m_auto_saves;
@@ -124,31 +124,6 @@ inline std::istream &operator>>(std::istream &is, Object_base::Field<ValueT> &rh
 		rhs.set(STD_MOVE(value));
 	}
 	return is;
-}
-
-class Object_base::Delimiter {
-private:
-	mutable std::size_t m_count;
-
-public:
-	Delimiter()
-		: m_count(0)
-	{
-		//
-	}
-
-public:
-	void apply(std::ostream &os) const {
-		if(m_count != 0){
-			os <<", ";
-		}
-		++m_count;
-	}
-};
-
-inline std::ostream &operator<<(std::ostream &os, const Object_base::Delimiter &rhs){
-	rhs.apply(os);
-	return os;
 }
 
 extern void enqueue_for_saving(const boost::shared_ptr<Object_base> &obj);
