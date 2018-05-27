@@ -61,7 +61,7 @@ public:
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
-	explicit OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS));
+	explicit OBJECT_NAME(POSEIDON_REST(void OBJECT_FIELDS));
 
 	~OBJECT_NAME() OVERRIDE;
 
@@ -119,7 +119,7 @@ OBJECT_NAME::OBJECT_NAME()
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
 
-OBJECT_NAME::OBJECT_NAME(STRIP_FIRST(void OBJECT_FIELDS))
+OBJECT_NAME::OBJECT_NAME(POSEIDON_REST(void OBJECT_FIELDS))
 	: ::Poseidon::Mysql::Object_base()
 
 #undef FIELD_BOOLEAN
