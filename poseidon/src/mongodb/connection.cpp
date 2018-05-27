@@ -221,6 +221,7 @@ namespace {
 
 		bool get_boolean(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG_TRACE("Getting field as `boolean`: ", name);
 
 			bool value = false;
 			::bson_iter_t it;
@@ -263,6 +264,7 @@ namespace {
 		}
 		boost::int64_t get_signed(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG_TRACE("Getting field as `signed`: ", name);
 
 			boost::int64_t value = 0;
 			::bson_iter_t it;
@@ -297,6 +299,7 @@ namespace {
 		}
 		boost::uint64_t get_unsigned(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG_TRACE("Getting field as `unsigned`: ", name);
 
 			boost::uint64_t value = 0;
 			::bson_iter_t it;
@@ -331,6 +334,7 @@ namespace {
 		}
 		double get_double(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG_TRACE("Getting field as `double`: ", name);
 
 			double value = 0;
 			::bson_iter_t it;
@@ -365,6 +369,7 @@ namespace {
 		}
 		std::string get_string(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG_TRACE("Getting field as `string`: ", name);
 
 			std::string value;
 			::bson_iter_t it;
@@ -403,6 +408,7 @@ namespace {
 		}
 		boost::uint64_t get_datetime(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG_TRACE("Getting field as `datetime`: ", name);
 
 			boost::uint64_t value = 0;
 			::bson_iter_t it;
@@ -423,6 +429,7 @@ namespace {
 		}
 		Uuid get_uuid(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG_TRACE("Getting field as `uuid`: ", name);
 
 			Uuid value;
 			::bson_iter_t it;
@@ -444,6 +451,7 @@ namespace {
 		}
 		std::basic_string<unsigned char> get_blob(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
+			POSEIDON_LOG_TRACE("Getting field as `blob`: ", name);
 
 			std::basic_string<unsigned char> value;
 			::bson_iter_t it;
