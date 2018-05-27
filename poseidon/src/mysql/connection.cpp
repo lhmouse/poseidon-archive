@@ -39,7 +39,7 @@ namespace {
 		}
 	};
 
-	class Delegated_connection : public Connection {
+	class Delegated_connection FINAL : public Connection {
 	private:
 		Rcnts m_schema;
 		::MYSQL m_mysql_storage;
@@ -92,7 +92,7 @@ namespace {
 		}
 
 	public:
-		void execute_sql_explicit(const char *sql, std::size_t len) FINAL {
+		void execute_sql_explicit(const char *sql, std::size_t len) OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			discard_result();
@@ -113,7 +113,7 @@ namespace {
 				POSEIDON_LOG_DEBUG("No result was returned from MySQL server.");
 			}
 		}
-		void discard_result() NOEXCEPT FINAL {
+		void discard_result() NOEXCEPT OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			m_result.reset();
@@ -122,11 +122,11 @@ namespace {
 			m_lengths = NULLPTR;
 		}
 
-		boost::uint64_t get_insert_id() const FINAL {
+		boost::uint64_t get_insert_id() const OVERRIDE {
 			return ::mysql_insert_id(m_mysql.get());
 		}
 
-		bool fetch_row() FINAL {
+		bool fetch_row() OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			if(m_fields.empty()){
@@ -144,7 +144,7 @@ namespace {
 			return true;
 		}
 
-		bool get_boolean(const char *name) const FINAL {
+		bool get_boolean(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			bool value = false;
@@ -155,7 +155,7 @@ namespace {
 			}
 			return value;
 		}
-		boost::int64_t get_signed(const char *name) const FINAL {
+		boost::int64_t get_signed(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			boost::int64_t value = 0;
@@ -168,7 +168,7 @@ namespace {
 			}
 			return value;
 		}
-		boost::uint64_t get_unsigned(const char *name) const FINAL {
+		boost::uint64_t get_unsigned(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			boost::uint64_t value = 0;
@@ -181,7 +181,7 @@ namespace {
 			}
 			return value;
 		}
-		double get_double(const char *name) const FINAL {
+		double get_double(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			double value = 0;
@@ -194,7 +194,7 @@ namespace {
 			}
 			return value;
 		}
-		std::string get_string(const char *name) const FINAL {
+		std::string get_string(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			std::string value;
@@ -205,7 +205,7 @@ namespace {
 			}
 			return value;
 		}
-		boost::uint64_t get_datetime(const char *name) const FINAL {
+		boost::uint64_t get_datetime(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			boost::uint64_t value = 0;
@@ -216,7 +216,7 @@ namespace {
 			}
 			return value;
 		}
-		Uuid get_uuid(const char *name) const FINAL {
+		Uuid get_uuid(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			Uuid value;
@@ -228,7 +228,7 @@ namespace {
 			}
 			return value;
 		}
-		std::basic_string<unsigned char> get_blob(const char *name) const FINAL {
+		std::basic_string<unsigned char> get_blob(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
 			std::basic_string<unsigned char> value;
