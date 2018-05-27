@@ -11,10 +11,5 @@ Message_base::~Message_base(){
 	//
 }
 
-std::ostream &operator<<(std::ostream &os, const Message_base &rhs){
-	rhs.dump_debug(os);
-	return os;
-}
-
 }
 }

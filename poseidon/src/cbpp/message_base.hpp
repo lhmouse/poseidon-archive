@@ -76,14 +76,17 @@ public:
 	virtual void dump_debug(std::ostream &os, int indent_initial = 0) const = 0;
 
 public:
-	operator Stream_buffer() const {
+	ENABLE_IF_CXX11(explicit) operator Stream_buffer() const {
 		Stream_buffer buffer;
 		serialize(buffer);
 		return buffer;
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const Message_base &rhs);
+inline std::ostream &operator<<(std::ostream &os, const Message_base &rhs){
+	rhs.dump_debug(os);
+	return os;
+}
 
 }
 }
