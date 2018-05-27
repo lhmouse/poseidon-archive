@@ -80,20 +80,20 @@ public:
 
 #define POSEIDON_MODULE_RAII_PRIORITY(handles_, priority_)	\
 	namespace {	\
-		namespace POSEIDON_LAZY_(POSEIDON_CAT3, Module_raii_, __LINE__, Stub_) {	\
-			struct Stub_ : public ::Poseidon::Module_raii_base {	\
-				Stub_()	\
-					: ::Poseidon::Module_raii_base(priority_)	\
-				{ }	\
-				void init(::Poseidon::Handle_stack &handle_stack_) const FINAL {	\
-					POSEIDON_PROFILE_ME;	\
-					unwrapped_init_(handle_stack_);	\
-				}	\
-				void unwrapped_init_(::Poseidon::Handle_stack &) const;	\
-			} const stub_;	\
-		}	\
+		struct POSEIDON_LAZY(POSEIDON_CAT2, Module_raii_stub_, __LINE__) FINAL : private ::Poseidon::Module_raii_base {	\
+			static void unwrapped_init_(::Poseidon::Handle_stack &);	\
+			/* constructor */	\
+			explicit POSEIDON_LAZY(POSEIDON_CAT2, Module_raii_stub_, __LINE__)()	\
+				: ::Poseidon::Module_raii_base(priority_)	\
+			{ }	\
+			/* overriden virtual function */	\
+			void init(::Poseidon::Handle_stack &handle_stack_) const {	\
+				POSEIDON_PROFILE_ME;	\
+				unwrapped_init_(handle_stack_);	\
+			}	\
+		} const POSEIDON_LAZY(POSEIDON_CAT2, module_raii_stub_, __LINE__);	\
 	}	\
-	void POSEIDON_LAZY_(POSEIDON_CAT3, Module_raii_, __LINE__, Stub_)::Stub_::unwrapped_init_(::Poseidon::Handle_stack &handles_) const
+	void POSEIDON_LAZY(POSEIDON_CAT2, Module_raii_stub_, __LINE__)::unwrapped_init_(::Poseidon::Handle_stack &handles_)
 
 #define POSEIDON_MODULE_RAII(handles_)   POSEIDON_MODULE_RAII_PRIORITY(handles_, ::Poseidon::module_init_priority_normal)
 
