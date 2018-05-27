@@ -80,7 +80,7 @@ public:
 
 #define POSEIDON_MODULE_RAII_PRIORITY(handles_, priority_)	\
 	namespace {	\
-		namespace POSEIDON_CAT3(Module_raii_, __LINE__, Stub_) {	\
+		namespace POSEIDON_LAZY_(POSEIDON_CAT3, Module_raii_, __LINE__, Stub_) {	\
 			struct Stub_ : public ::Poseidon::Module_raii_base {	\
 				Stub_()	\
 					: ::Poseidon::Module_raii_base(priority_)	\
@@ -93,7 +93,7 @@ public:
 			} const stub_;	\
 		}	\
 	}	\
-	void POSEIDON_CAT3(Module_raii_, __LINE__, Stub_)::Stub_::unwrapped_init_(::Poseidon::Handle_stack &handles_) const
+	void POSEIDON_LAZY_(POSEIDON_CAT3, Module_raii_, __LINE__, Stub_)::Stub_::unwrapped_init_(::Poseidon::Handle_stack &handles_) const
 
 #define POSEIDON_MODULE_RAII(handles_)   POSEIDON_MODULE_RAII_PRIORITY(handles_, ::Poseidon::module_init_priority_normal)
 
