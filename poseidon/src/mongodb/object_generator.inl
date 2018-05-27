@@ -176,14 +176,14 @@ void OBJECT_NAME::generate_document(::Poseidon::Mongodb::Bson_builder &doc_) con
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                doc_.append_boolean  (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_SIGNED(id_)                 doc_.append_signed   (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_UNSIGNED(id_)               doc_.append_unsigned (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_DOUBLE(id_)                 doc_.append_double   (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_STRING(id_)                 doc_.append_string   (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_DATETIME(id_)               doc_.append_datetime (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
-#define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::Rcnts::view(TOKEN_TO_STR(id_)), id_);
+#define FIELD_BOOLEAN(id_)                doc_.append_boolean  (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
+#define FIELD_SIGNED(id_)                 doc_.append_signed   (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
+#define FIELD_UNSIGNED(id_)               doc_.append_unsigned (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
+#define FIELD_DOUBLE(id_)                 doc_.append_double   (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
+#define FIELD_STRING(id_)                 doc_.append_string   (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
+#define FIELD_DATETIME(id_)               doc_.append_datetime (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
+#define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
+#define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
 
 	OBJECT_FIELDS
 }
@@ -208,14 +208,14 @@ void fetch(const ::boost::shared_ptr<const ::Poseidon::Mongodb::Connection> &con
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                id_.set(conn_->get_boolean  ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_SIGNED(id_)                 id_.set(conn_->get_signed   ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_UNSIGNED(id_)               id_.set(conn_->get_unsigned ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_DOUBLE(id_)                 id_.set(conn_->get_double   ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_STRING(id_)                 id_.set(conn_->get_string   ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_DATETIME(id_)               id_.set(conn_->get_datetime ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_UUID(id_)                   id_.set(conn_->get_uuid     ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_BLOB(id_)                   id_.set(conn_->get_blob     ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_BOOLEAN(id_)                id_.set(conn_->get_boolean  ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_SIGNED(id_)                 id_.set(conn_->get_signed   ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_UNSIGNED(id_)               id_.set(conn_->get_unsigned ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_DOUBLE(id_)                 id_.set(conn_->get_double   ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_STRING(id_)                 id_.set(conn_->get_string   ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_DATETIME(id_)               id_.set(conn_->get_datetime ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_UUID(id_)                   id_.set(conn_->get_uuid     ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_BLOB(id_)                   id_.set(conn_->get_blob     ( POSEIDON_STRINGIFY(id_) ), false);
 
 	OBJECT_FIELDS
 }

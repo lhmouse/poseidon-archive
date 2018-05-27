@@ -167,14 +167,14 @@ void OBJECT_NAME::generate_sql(::std::ostream &os_) const {
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
-#define FIELD_SIGNED(id_)                 os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
-#define FIELD_UNSIGNED(id_)               os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
-#define FIELD_DOUBLE(id_)                 os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " <<id_;
-#define FIELD_STRING(id_)                 os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::Mysql::String_escaper(id_);
-#define FIELD_DATETIME(id_)               os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::Mysql::Date_time_formatter(id_);
-#define FIELD_UUID(id_)                   os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::Mysql::Uuid_formatter(id_);
-#define FIELD_BLOB(id_)                   os_ <<delim_ <<"`" TOKEN_TO_STR(id_) "` = " << ::Poseidon::Mysql::String_escaper(id_);
+#define FIELD_BOOLEAN(id_)                os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_;
+#define FIELD_SIGNED(id_)                 os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_;
+#define FIELD_UNSIGNED(id_)               os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_;
+#define FIELD_DOUBLE(id_)                 os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " <<id_;
+#define FIELD_STRING(id_)                 os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::String_escaper(id_);
+#define FIELD_DATETIME(id_)               os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::Date_time_formatter(id_);
+#define FIELD_UUID(id_)                   os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::Uuid_formatter(id_);
+#define FIELD_BLOB(id_)                   os_ <<delim_ <<"`" POSEIDON_STRINGIFY(id_) "` = " << ::Poseidon::Mysql::String_escaper(id_);
 
 	OBJECT_FIELDS
 }
@@ -192,14 +192,14 @@ void OBJECT_NAME::fetch(const ::boost::shared_ptr<const ::Poseidon::Mysql::Conne
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                id_.set(conn_->get_boolean  ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_SIGNED(id_)                 id_.set(conn_->get_signed   ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_UNSIGNED(id_)               id_.set(conn_->get_unsigned ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_DOUBLE(id_)                 id_.set(conn_->get_double   ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_STRING(id_)                 id_.set(conn_->get_string   ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_DATETIME(id_)               id_.set(conn_->get_datetime ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_UUID(id_)                   id_.set(conn_->get_uuid     ( TOKEN_TO_STR(id_) ), false);
-#define FIELD_BLOB(id_)                   id_.set(conn_->get_blob     ( TOKEN_TO_STR(id_) ), false);
+#define FIELD_BOOLEAN(id_)                id_.set(conn_->get_boolean  ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_SIGNED(id_)                 id_.set(conn_->get_signed   ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_UNSIGNED(id_)               id_.set(conn_->get_unsigned ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_DOUBLE(id_)                 id_.set(conn_->get_double   ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_STRING(id_)                 id_.set(conn_->get_string   ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_DATETIME(id_)               id_.set(conn_->get_datetime ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_UUID(id_)                   id_.set(conn_->get_uuid     ( POSEIDON_STRINGIFY(id_) ), false);
+#define FIELD_BLOB(id_)                   id_.set(conn_->get_blob     ( POSEIDON_STRINGIFY(id_) ), false);
 
 	OBJECT_FIELDS
 }

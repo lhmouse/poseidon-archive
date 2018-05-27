@@ -102,7 +102,7 @@ MESSAGE_NAME::MESSAGE_NAME(::Poseidon::Stream_buffer buffer_)
 {
 	deserialize(buffer_);
 	if(!buffer_.empty()){
-		THROW_JUNK_AFTER_PACKET_(MESSAGE_NAME);
+		POSEIDON_CBPP_THROW_JUNK_AFTER_PACKET_(MESSAGE_NAME);
 	}
 }
 
@@ -228,7 +228,7 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                       unsigned char *rptr_ = temp_;	\
                                       const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                       if(!::Poseidon::vint64_from_binary(cur_->id_, rptr_, nmax_)){	\
-                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
                                       buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                     }
@@ -237,7 +237,7 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                       unsigned char *rptr_ = temp_;	\
                                       const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                       if(!::Poseidon::vuint64_from_binary(cur_->id_, rptr_, nmax_)){	\
-                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
                                       buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                     }
@@ -245,7 +245,7 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                       ::boost::uint64_t nreq_ = cur_->id_.size();	\
                                       ::std::size_t ngot_ = buf_.get(cur_->id_.data(), nreq_);	\
                                       if(ngot_ < nreq_){	\
-                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
                                     }
 #define FIELD_STRING(id_)           {	\
@@ -254,16 +254,16 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                       unsigned char *rptr_ = temp_;	\
                                       const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                       if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
-                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
                                       buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                       if(nreq_ > SIZE_MAX){	\
-                                        THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
                                       }	\
                                       cur_->id_.resize(nreq_);	\
                                       ::std::size_t ngot_ = buf_.get(&*cur_->id_.begin(), nreq_);	\
                                       if(ngot_ < nreq_){	\
-                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
                                     }
 #define FIELD_BLOB(id_)             {	\
@@ -272,16 +272,16 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                       unsigned char *rptr_ = temp_;	\
                                       const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                       if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
-                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
                                       buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                       if(nreq_ > SIZE_MAX){	\
-                                        THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
                                       }	\
                                       cur_->id_.resize(nreq_);	\
                                       ::std::size_t ngot_ = buf_.get(&*cur_->id_.begin(), nreq_);	\
                                       if(ngot_ < nreq_){	\
-                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
                                     }
 #define FIELD_FLEXIBLE(id_)         {	\
@@ -295,11 +295,11 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                       unsigned char *rptr_ = temp_;	\
                                       const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                       if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
-                                        THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                       }	\
                                       buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                       if(nreq_ > SIZE_MAX){	\
-                                        THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
+                                        POSEIDON_CBPP_THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
                                       }	\
                                       cur_->id_.reserve(nreq_);	\
                                       for(::std::size_t ncur_ = 0; ncur_ < nreq_; ++ncur_){	\
@@ -316,18 +316,18 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                         unsigned char *rptr_ = temp_;	\
                                         const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                         if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
-                                          THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                          POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                         }	\
                                         buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                         if(nreq_ == 0){	\
                                           break;	\
                                         }	\
                                         if(nreq_ > SIZE_MAX){	\
-                                          THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
+                                          POSEIDON_CBPP_THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
                                         }	\
                                         ::Poseidon::Stream_buffer chunk_buf_ = buf_.cut_off(nreq_);	\
                                         if(chunk_buf_.size() < nreq_){	\
-                                          THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                          POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                         }	\
                                         {	\
                                           const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
@@ -348,18 +348,18 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                         unsigned char *rptr_ = temp_;	\
                                         const ::std::size_t nmax_ = buf_.peek(temp_, sizeof(temp_));	\
                                         if(!::Poseidon::vuint64_from_binary(nreq_, rptr_, nmax_)){	\
-                                          THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                          POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                         }	\
                                         buf_.discard(static_cast< ::std::size_t>(rptr_ - temp_));	\
                                         if(nreq_ == 0){	\
                                           break;	\
                                         }	\
                                         if(nreq_ > SIZE_MAX){	\
-                                          THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
+                                          POSEIDON_CBPP_THROW_LENGTH_ERROR_(MESSAGE_NAME, id_);	\
                                         }	\
                                         ::Poseidon::Stream_buffer chunk_buf_ = buf_.cut_off(nreq_);	\
                                         if(chunk_buf_.size() < nreq_){	\
-                                          THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
+                                          POSEIDON_CBPP_THROW_END_OF_STREAM_(MESSAGE_NAME, id_);	\
                                         }	\
                                         {	\
                                           const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
@@ -390,26 +390,26 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
 #undef FIELD_REPEATED
 
 #define FIELD_VINT(id_)             {	\
-                                      os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": vint = " <<cur_->id_ << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": vint = " <<cur_->id_ << ::std::endl;	\
                                     }
 #define FIELD_VUINT(id_)            {	\
-                                      os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": vuint = " <<cur_->id_ << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": vuint = " <<cur_->id_ << ::std::endl;	\
                                     }
 #define FIELD_FIXED(id_, n_)        {	\
-                                      os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": fixed(" <<cur_->id_.size() <<") = ";	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": fixed(" <<cur_->id_.size() <<") = ";	\
                                       os_ << ::Poseidon::Hex_printer(cur_->id_.data(), cur_->id_.size());	\
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_STRING(id_)           {	\
-                                      os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": string(" <<cur_->id_.size() <<") = " <<cur_->id_ << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": string(" <<cur_->id_.size() <<") = " <<cur_->id_ << ::std::endl;	\
                                     }
 #define FIELD_BLOB(id_)             {	\
-                                      os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": blob(" <<cur_->id_.size() <<") = ";	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": blob(" <<cur_->id_.size() <<") = ";	\
                                       os_ << ::Poseidon::Hex_printer(cur_->id_.data(), cur_->id_.size());	\
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_FLEXIBLE(id_)         {	\
-                                      os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": flexible(" <<cur_->id_.size() <<") = ";	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": flexible(" <<cur_->id_.size() <<") = ";	\
                                       const void *data_;	\
                                       ::std::size_t size_;	\
                                       ::Poseidon::Stream_buffer::Enumeration_cookie cookie_;	\
@@ -419,7 +419,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_ARRAY(id_, ...)       {	\
-                                      os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": array(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": array(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
                                       indent_ += s_indent_step_;	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         os_ << ::std::setw(indent_) <<"" <<"{" << ::std::endl;	\
@@ -435,7 +435,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
                                     }
 #define FIELD_LIST(id_, ...)        {	\
-                                      os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": list(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": list(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
                                       indent_ += s_indent_step_;	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         os_ << ::std::setw(indent_) <<"" <<"{" << ::std::endl;	\
@@ -454,7 +454,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       cur_->id_.dump_debug(os_, indent_);	\
                                     }
 #define FIELD_REPEATED(id_, Elem_)  {	\
-                                      os_ << ::std::setw(indent_) <<"" <<TOKEN_TO_STR(id_) <<": nested(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": nested(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
                                       indent_ += s_indent_step_;	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         const AUTO(cur_, &*it_);	\
@@ -464,7 +464,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
                                     }
 
-	os_ << std::setw(indent_) <<"" <<TOKEN_TO_STR(MESSAGE_NAME) <<"(" <<get_id() <<") = {" << ::std::endl;
+	os_ << std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(MESSAGE_NAME) <<"(" <<get_id() <<") = {" << ::std::endl;
 	indent_ += s_indent_step_;
 	MESSAGE_FIELDS
 	indent_ -= s_indent_step_;
