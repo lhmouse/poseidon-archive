@@ -59,7 +59,7 @@ void shift_blob(Stream_buffer &value, Stream_buffer &buf, const char *name){
 		POSEIDON_THROW(Exception, status_end_of_stream, Rcnts::view("End of stream encountered"));
 	}
 }
-void shift_blob(void *data, std::size_t size, Stream_buffer &buf, const char *name){
+void shift_fixed(void *data, std::size_t size, Stream_buffer &buf, const char *name){
 	POSEIDON_LOG_TRACE("Shifting out `fixed`: ", name);
 	if(buf.get(data, size) != size){
 		POSEIDON_THROW(Exception, status_end_of_stream, Rcnts::view("End of stream encountered"));
