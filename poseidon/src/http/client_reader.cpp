@@ -90,7 +90,7 @@ bool Client_reader::put_encoded_data(Stream_buffer encoded){
 				line.at(pos) = 0;
 				long ver_end = 0;
 				char ver_major_str[16], ver_minor_str[16];
-				const auto n_got = std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end);
+				const int n_got = std::sscanf(line.c_str(), "HTTP/%15[0-9].%15[0-9]%ln", ver_major_str, ver_minor_str, &ver_end);
 				POSEIDON_THROW_UNLESS(n_got == 2, Basic_exception, Rcnts::view("Malformed HTTP version in response headers"));
 				POSEIDON_THROW_UNLESS(static_cast<std::size_t>(ver_end) == pos, Basic_exception, Rcnts::view("Malformed HTTP version in response headers"));
 				m_response_headers.version = boost::numeric_cast<unsigned>(std::strtoul(ver_major_str, NULLPTR, 10) * 10000 + std::strtoul(ver_minor_str, NULLPTR, 10));
