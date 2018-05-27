@@ -8,7 +8,6 @@
 #include "../cxx_util.hpp"
 #include "connection.hpp"
 #include "formatting.hpp"
-#include "exception.hpp"
 #include <string>
 #include <exception>
 #include <iosfwd>

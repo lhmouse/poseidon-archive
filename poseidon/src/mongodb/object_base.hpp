@@ -8,7 +8,6 @@
 #include "../cxx_util.hpp"
 #include "connection.hpp"
 #include "bson_builder.hpp"
-#include "exception.hpp"
 #include <string>
 #include <exception>
 #include <iosfwd>
