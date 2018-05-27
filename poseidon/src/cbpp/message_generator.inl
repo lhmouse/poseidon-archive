@@ -469,7 +469,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
                                     }
 
-	os_ << std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(MESSAGE_NAME) <<"(" <<get_id() <<") = {" << ::std::endl;
+	os_ << std::setw(indent_) <<"" <<POSEIDON_LAZY(POSEIDON_STRINGIFY, MESSAGE_NAME) <<"(" <<get_id() <<") = {" << ::std::endl;
 	indent_ += s_indent_step_;
 	MESSAGE_FIELDS
 	indent_ -= s_indent_step_;

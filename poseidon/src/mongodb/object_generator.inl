@@ -171,14 +171,14 @@ void OBJECT_NAME::generate_document(::Poseidon::Mongodb::Bson_builder &doc_) con
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                doc_.append_boolean  (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
-#define FIELD_SIGNED(id_)                 doc_.append_signed   (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
-#define FIELD_UNSIGNED(id_)               doc_.append_unsigned (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
-#define FIELD_DOUBLE(id_)                 doc_.append_double   (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
-#define FIELD_STRING(id_)                 doc_.append_string   (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
-#define FIELD_DATETIME(id_)               doc_.append_datetime (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
-#define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
-#define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::Rcnts::view(POSEIDON_STRINGIFY(id_)), id_);
+#define FIELD_BOOLEAN(id_)                doc_.append_boolean  (::Poseidon::Rcnts::view( POSEIDON_STRINGIFY(id_) ), id_);
+#define FIELD_SIGNED(id_)                 doc_.append_signed   (::Poseidon::Rcnts::view( POSEIDON_STRINGIFY(id_) ), id_);
+#define FIELD_UNSIGNED(id_)               doc_.append_unsigned (::Poseidon::Rcnts::view( POSEIDON_STRINGIFY(id_) ), id_);
+#define FIELD_DOUBLE(id_)                 doc_.append_double   (::Poseidon::Rcnts::view( POSEIDON_STRINGIFY(id_) ), id_);
+#define FIELD_STRING(id_)                 doc_.append_string   (::Poseidon::Rcnts::view( POSEIDON_STRINGIFY(id_) ), id_);
+#define FIELD_DATETIME(id_)               doc_.append_datetime (::Poseidon::Rcnts::view( POSEIDON_STRINGIFY(id_) ), id_);
+#define FIELD_UUID(id_)                   doc_.append_uuid     (::Poseidon::Rcnts::view( POSEIDON_STRINGIFY(id_) ), id_);
+#define FIELD_BLOB(id_)                   doc_.append_blob     (::Poseidon::Rcnts::view( POSEIDON_STRINGIFY(id_) ), id_);
 
 	OBJECT_FIELDS
 }
