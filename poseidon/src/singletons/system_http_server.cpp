@@ -11,7 +11,6 @@
 #include "../system_http_session.hpp"
 #include "../tcp_server_base.hpp"
 #include "../system_http_servlet_base.hpp"
-#include "../mutex.hpp"
 #include "../exception.hpp"
 #include "../http/authentication.hpp"
 
@@ -23,7 +22,7 @@ namespace {
 		const boost::shared_ptr<const Http::Authentication_context> m_auth_ctx;
 
 	public:
-		System_socket_server(const std::string &bind, boost::uint16_t port, const std::string &cert, const std::string &pkey, boost::shared_ptr<const Http::Authentication_context> auth_ctx)
+		System_socket_server(const std::string &bind, std::uint16_t port, const std::string &cert, const std::string &pkey, boost::shared_ptr<const Http::Authentication_context> auth_ctx)
 			: Tcp_server_base(Ip_port(bind.c_str(), port), cert.c_str(), pkey.c_str())
 			, m_auth_ctx(STD_MOVE(auth_ctx))
 		{
@@ -50,7 +49,7 @@ namespace {
 	};
 	typedef boost::container::flat_map<const char *, boost::weak_ptr<const System_http_servlet_base>, Uri_comparator> Servlet_map;
 
-	Mutex g_mutex;
+	std::mutex g_mutex;
 	Servlet_map g_servlet_map;
 }
 
@@ -58,7 +57,7 @@ void System_http_server::start(){
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting system HTTP server...");
 
 	const AUTO(bind, Main_config::get<std::string>("system_http_bind"));
-	const AUTO(port, Main_config::get<boost::uint16_t>("system_http_port"));
+	const AUTO(port, Main_config::get<std::uint16_t>("system_http_port"));
 	const AUTO(cert, Main_config::get<std::string>("system_http_certificate"));
 	const AUTO(pkey, Main_config::get<std::string>("system_http_private_key"));
 	const AUTO(relm, Main_config::get<std::string>("system_http_auth_realm", "Poseidon Test Server"));
@@ -75,7 +74,7 @@ void System_http_server::start(){
 void System_http_server::stop(){
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping system HTTP server...");
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	g_servlet_map.clear();
 	g_server.reset();
 }
@@ -83,7 +82,7 @@ void System_http_server::stop(){
 boost::shared_ptr<const System_http_servlet_base> System_http_server::get_servlet(const char *uri){
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	const AUTO(it, g_servlet_map.find(uri));
 	if(it == g_servlet_map.end()){
 		return VAL_INIT;
@@ -98,7 +97,7 @@ boost::shared_ptr<const System_http_servlet_base> System_http_server::get_servle
 void System_http_server::get_all_servlets(boost::container::vector<boost::shared_ptr<const System_http_servlet_base> > &ret){
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	ret.reserve(ret.size() + g_servlet_map.size());
 	for(AUTO(it, g_servlet_map.begin()); it != g_servlet_map.end(); ++it){
 		AUTO(servlet, it->second.lock());
@@ -112,7 +111,7 @@ void System_http_server::get_all_servlets(boost::container::vector<boost::shared
 boost::shared_ptr<const System_http_servlet_base> System_http_server::register_servlet(boost::shared_ptr<System_http_servlet_base> servlet){
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	const char *const uri = servlet->get_uri();
 	POSEIDON_THROW_UNLESS(uri[0] == '/', Exception, Rcnts::view("System servlet URI must begin with a slash"));
 	POSEIDON_LOG_DEBUG("Registering system servlet: uri = ", uri, ", typeid = ", typeid(*servlet).name());

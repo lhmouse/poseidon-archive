@@ -20,7 +20,7 @@
 
 namespace Poseidon {
 
-void Tcp_session_base::shutdown_timer_proc(const boost::weak_ptr<Tcp_session_base> &weak, boost::uint64_t now){
+void Tcp_session_base::shutdown_timer_proc(const boost::weak_ptr<Tcp_session_base> &weak, std::uint64_t now){
 	POSEIDON_PROFILE_ME;
 
 	const AUTO(session, weak.lock());
@@ -54,12 +54,12 @@ void Tcp_session_base::init_ssl(boost::scoped_ptr<Ssl_filter> &ssl_filter){
 void Tcp_session_base::create_shutdown_timer(){
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(m_shutdown_mutex);
+	const std::lock_guard<std::mutex> lock(m_shutdown_mutex);
 	if(m_shutdown_timer){
 		return;
 	}
-	const AUTO(period, Main_config::get<boost::uint64_t>("tcp_shutdown_timer_period", 15000));
-	m_shutdown_timer = Timer_daemon::register_low_level_timer(period, period, boost::bind(&shutdown_timer_proc, virtual_weak_from_this<Tcp_session_base>(), _2));
+	const AUTO(period, Main_config::get<std::uint64_t>("tcp_shutdown_timer_period", 15000));
+	m_shutdown_timer = Timer_daemon::register_low_level_timer(period, period, std::bind(&shutdown_timer_proc, virtual_weak_from_this<Tcp_session_base>(), std::placeholders::_2));
 }
 
 int Tcp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool /*readable*/){
@@ -104,7 +104,7 @@ int Tcp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::siz
 	}
 	return 0;
 }
-int Tcp_session_base::poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writable){
+int Tcp_session_base::poll_write(std::unique_lock<std::mutex> &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writable){
 	POSEIDON_PROFILE_ME;
 
 	assert(!write_lock);
@@ -117,7 +117,7 @@ int Tcp_session_base::poll_write(Mutex::Unique_lock &write_lock, unsigned char *
 			m_connected_notified = true;
 		}
 
-		Mutex::Unique_lock lock(m_send_mutex);
+		std::unique_lock<std::mutex> lock(m_send_mutex);
 		const std::size_t avail = m_send_buffer.peek(hint_buffer, hint_capacity);
 		if(avail == 0){
 _check_shutdown:
@@ -165,14 +165,14 @@ _check_shutdown:
 	return 0;
 }
 
-void Tcp_session_base::on_shutdown_timer(boost::uint64_t now){
+void Tcp_session_base::on_shutdown_timer(std::uint64_t now){
 	POSEIDON_PROFILE_ME;
 
 	const AUTO(shutdown_time, atomic_load(m_shutdown_time, memory_order_consume));
 	if(shutdown_time < now){
 		std::size_t send_buffer_size;
 		{
-			const Mutex::Unique_lock lock(m_send_mutex);
+			const std::lock_guard<std::mutex> lock(m_send_mutex);
 			send_buffer_size = m_send_buffer.size();
 		}
 		if(send_buffer_size == 0){
@@ -186,7 +186,7 @@ force_time_out:
 	}
 
 	const AUTO(last_use_time, atomic_load(m_last_use_time, memory_order_consume));
-	const AUTO(tcp_response_timeout, Main_config::get<boost::uint64_t>("tcp_response_timeout", 30000));
+	const AUTO(tcp_response_timeout, Main_config::get<std::uint64_t>("tcp_response_timeout", 30000));
 	if(saturated_sub(now, last_use_time) > tcp_response_timeout){
 		POSEIDON_LOG(Logger::special_major | Logger::level_debug, "The connection seems dead: remote = ", get_remote_info());
 		goto force_time_out;
@@ -213,7 +213,7 @@ bool Tcp_session_base::is_using_ssl() const {
 	return !!m_ssl_filter;
 }
 bool Tcp_session_base::is_throttled() const {
-	const Mutex::Unique_lock lock(m_send_mutex);
+	const std::lock_guard<std::mutex> lock(m_send_mutex);
 	if(m_send_buffer.size() >= 65536){
 		return true;
 	}
@@ -226,7 +226,7 @@ void Tcp_session_base::set_no_delay(bool enabled){
 	const int val = enabled;
 	POSEIDON_THROW_UNLESS(::setsockopt(get_fd(), IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == 0, System_exception);
 }
-void Tcp_session_base::set_timeout(boost::uint64_t timeout){
+void Tcp_session_base::set_timeout(std::uint64_t timeout){
 	POSEIDON_PROFILE_ME;
 
 	const AUTO(now, get_fast_mono_clock());
@@ -242,7 +242,7 @@ bool Tcp_session_base::send(Stream_buffer buffer){
 		return false;
 	}
 
-	const Mutex::Unique_lock lock(m_send_mutex);
+	const std::lock_guard<std::mutex> lock(m_send_mutex);
 	m_send_buffer.splice(buffer);
 	Epoll_daemon::mark_socket_writable(this);
 	return true;

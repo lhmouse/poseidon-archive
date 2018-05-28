@@ -7,19 +7,19 @@
 namespace Poseidon {
 namespace Http {
 
-typedef unsigned Verb;
+typedef int Verb;
 
 namespace Verbs {
 	enum {
-		verb_invalid_verb  = 0,
-		verb_get           = 1,
-		verb_post          = 2,
-		verb_head          = 3,
-		verb_put           = 4,
-		verb_delete        = 5,
-		verb_trace         = 6,
-		verb_connect       = 7,
-		verb_options       = 8,
+		verb_invalid  = -1,
+		verb_get      =  0,
+		verb_post     =  1,
+		verb_head     =  2,
+		verb_put      =  3,
+		verb_delete   =  4,
+		verb_trace    =  5,
+		verb_connect  =  6,
+		verb_options  =  7,
 	};
 }
 

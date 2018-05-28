@@ -4,7 +4,6 @@
 #ifndef POSEIDON_BASE64_HPP_
 #define POSEIDON_BASE64_HPP_
 
-#include "cxx_util.hpp"
 #include "stream_buffer.hpp"
 #include <string>
 #include <cstddef>
@@ -12,7 +11,7 @@
 
 namespace Poseidon {
 
-class Base64_encoder : NONCOPYABLE {
+class Base64_encoder {
 private:
 	unsigned long m_seq;
 	Stream_buffer m_buffer;
@@ -20,6 +19,9 @@ private:
 public:
 	Base64_encoder();
 	~Base64_encoder();
+
+	Base64_encoder(const Base64_encoder &);
+	Base64_encoder &operator=(const Base64_encoder &);
 
 public:
 	const Stream_buffer & get_buffer() const {
@@ -47,7 +49,7 @@ public:
 	Stream_buffer finalize();
 };
 
-class Base64_decoder : NONCOPYABLE {
+class Base64_decoder {
 private:
 	unsigned long m_seq;
 	Stream_buffer m_buffer;
@@ -55,6 +57,9 @@ private:
 public:
 	Base64_decoder();
 	~Base64_decoder();
+
+	Base64_decoder(const Base64_decoder &);
+	Base64_decoder &operator=(const Base64_decoder &);
 
 public:
 	const Stream_buffer & get_buffer() const {

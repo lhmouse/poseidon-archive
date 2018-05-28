@@ -19,7 +19,7 @@ namespace Op_codes {
 		opmask_control       = 0x08,
 		opmask_opcode        = 0x0F,
 
-		opcode_invalid       = -1,
+		opcode_invalid       =   -1,
 		opcode_continuation  = 0x00,
 		opcode_data_text     = 0x01,
 		opcode_data_binary   = 0x02,

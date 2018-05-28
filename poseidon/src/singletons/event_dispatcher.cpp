@@ -6,7 +6,6 @@
 #include "job_dispatcher.hpp"
 #include "../event_base.hpp"
 #include "../log.hpp"
-#include "../mutex.hpp"
 #include "../job_base.hpp"
 #include "../profiler.hpp"
 
@@ -14,7 +13,7 @@ namespace Poseidon {
 
 typedef Event_dispatcher::Event_listener_callback Event_listener_callback;
 
-class Event_listener : NONCOPYABLE {
+class Event_listener {
 private:
 	Event_listener_callback m_callback;
 
@@ -24,6 +23,9 @@ public:
 	{
 		//
 	}
+
+	Event_listener(const Event_listener &) = delete;
+	Event_listener &operator=(const Event_listener &) = delete;
 
 public:
 	const Event_listener_callback & get_callback() const {
@@ -39,7 +41,7 @@ namespace {
 	};
 	typedef boost::container::flat_multimap<const std::type_info *, boost::weak_ptr<const Event_listener>, Type_info_comparator> Listener_map;
 
-	Mutex g_mutex;
+	std::mutex g_mutex;
 	Listener_map g_listeners;
 
 	class Event_job : public Job_base {
@@ -78,14 +80,14 @@ void Event_dispatcher::start(){
 void Event_dispatcher::stop(){
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping event dispatcher...");
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	g_listeners.clear();
 }
 
 void Event_dispatcher::get_listeners(boost::container::vector<boost::shared_ptr<const Event_listener> > &ret, const std::type_info &type_info){
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	const AUTO(range, g_listeners.equal_range(&type_info));
 	ret.reserve(ret.size() + static_cast<std::size_t>(std::distance(range.first, range.second)));
 	bool expired;
@@ -103,7 +105,7 @@ boost::shared_ptr<const Event_listener> Event_dispatcher::register_listener_expl
 
 	AUTO(listener, boost::make_shared<Event_listener>(STD_MOVE_IDN(callback)));
 	{
-		const Mutex::Unique_lock lock(g_mutex);
+		const std::lock_guard<std::mutex> lock(g_mutex);
 		g_listeners.emplace(&type_info, listener);
 	}
 	return STD_MOVE_IDN(listener);

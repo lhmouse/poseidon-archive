@@ -18,8 +18,8 @@ private:
 	class Control_message_job;
 
 private:
-	volatile boost::uint64_t m_max_request_length;
-	boost::uint64_t m_size_total;
+	volatile std::uint64_t m_max_request_length;
+	std::uint64_t m_size_total;
 	unsigned m_message_id;
 	Stream_buffer m_payload;
 
@@ -28,7 +28,7 @@ public:
 	~Session();
 
 protected:
-	boost::uint64_t get_low_level_size_total() const {
+	std::uint64_t get_low_level_size_total() const {
 		return m_size_total;
 	}
 	unsigned get_low_level_message_id() const {
@@ -40,22 +40,22 @@ protected:
 
 	// Tcp_session_base
 	void on_read_hup() OVERRIDE;
-	void on_shutdown_timer(boost::uint64_t now) OVERRIDE;
+	void on_shutdown_timer(std::uint64_t now) OVERRIDE;
 
 	// Low_level_session
-	void on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) OVERRIDE;
-	void on_low_level_data_message_payload(boost::uint64_t payload_offset, Stream_buffer payload) OVERRIDE;
-	bool on_low_level_data_message_end(boost::uint64_t payload_size) OVERRIDE;
+	void on_low_level_data_message_header(std::uint16_t message_id, std::uint64_t payload_size) OVERRIDE;
+	void on_low_level_data_message_payload(std::uint64_t payload_offset, Stream_buffer payload) OVERRIDE;
+	bool on_low_level_data_message_end(std::uint64_t payload_size) OVERRIDE;
 
 	bool on_low_level_control_message(Status_code status_code, Stream_buffer param) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_sync_data_message(boost::uint16_t message_id, Stream_buffer payload) = 0;
+	virtual void on_sync_data_message(std::uint16_t message_id, Stream_buffer payload) = 0;
 	virtual void on_sync_control_message(Status_code status_code, Stream_buffer param);
 
 public:
-	boost::uint64_t get_max_request_length() const;
-	void set_max_request_length(boost::uint64_t max_request_length);
+	std::uint64_t get_max_request_length() const;
+	void set_max_request_length(std::uint64_t max_request_length);
 };
 
 }

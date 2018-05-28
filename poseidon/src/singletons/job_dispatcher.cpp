@@ -4,19 +4,17 @@
 #include "../precompiled.hpp"
 #include "job_dispatcher.hpp"
 #include "main_config.hpp"
-#include <ucontext.h>
-#include <sys/mman.h>
 #include "../job_base.hpp"
 #include "../promise.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
-#include "../mutex.hpp"
-#include "../recursive_mutex.hpp"
-#include "../condition_variable.hpp"
 #include "../time.hpp"
 #include "../checked_arithmetic.hpp"
+#include <condition_variable>
+#include <ucontext.h>
+#include <sys/mman.h>
 
 namespace Poseidon {
 
@@ -32,7 +30,7 @@ namespace {
 		boost::shared_ptr<const bool> withdrawn;
 
 		boost::shared_ptr<const Promise> promise;
-		boost::uint64_t expiry_time;
+		std::uint64_t expiry_time;
 		bool insignificant;
 	};
 
@@ -60,22 +58,23 @@ namespace {
 		char bytes[0x40000];
 	};
 
-	class Fiber_stack_allocator : NONCOPYABLE {
+	class Fiber_stack_allocator {
 	private:
-		mutable Mutex m_mutex;
+		mutable std::mutex m_mutex;
 		boost::array<boost::scoped_ptr<Stack_storage>, 64> m_pool;
 		std::size_t m_size;
 
 	public:
 		Fiber_stack_allocator()
 			: m_mutex(), m_pool(), m_size(0)
-		{
-			//
-		}
+		{ }
+
+		Fiber_stack_allocator(const Fiber_stack_allocator &) = delete;
+		Fiber_stack_allocator &operator=(const Fiber_stack_allocator &) = delete;
 
 	public:
 		void allocate(boost::scoped_ptr<Stack_storage> &ptr){
-			const Mutex::Unique_lock lock(m_mutex);
+			const std::lock_guard<std::mutex> lock(m_mutex);
 			if(m_size == 0){
 				ptr.reset(new Stack_storage);
 			} else {
@@ -83,7 +82,7 @@ namespace {
 			}
 		}
 		void deallocate(boost::scoped_ptr<Stack_storage> &ptr) NOEXCEPT {
-			const Mutex::Unique_lock lock(m_mutex);
+			const std::lock_guard<std::mutex> lock(m_mutex);
 			if(m_size == m_pool.size()){
 				ptr.reset();
 			} else {
@@ -92,10 +91,10 @@ namespace {
 		}
 	} g_stack_allocator;
 
-	struct Fiber_control : NONCOPYABLE {
+	struct Fiber_control {
 		struct Initializer { };
 
-		Recursive_mutex queue_mutex;
+		std::recursive_mutex queue_mutex;
 		boost::container::deque<Job_element> queue;
 
 		Fiber_state state;
@@ -119,12 +118,15 @@ namespace {
 			std::memset(&outer, 0xCC, sizeof(outer));
 #endif
 		}
+
+		Fiber_control(const Fiber_control &) = delete;
+		Fiber_control &operator=(const Fiber_control &) = delete;
 	};
 
 	__thread Fiber_control *volatile t_current_fiber = 0; // XXX: NULLPTR
 
-	Mutex g_fiber_map_mutex;
-	Condition_variable g_new_job;
+	std::mutex g_fiber_map_mutex;
+	std::condition_variable g_new_job;
 	boost::container::map<boost::weak_ptr<const void>, Fiber_control> g_fiber_map;
 
 	void fiber_proc(int low, int high) NOEXCEPT {
@@ -191,7 +193,7 @@ namespace {
 
 		Job_element *elem;
 		{
-			const Recursive_mutex::Unique_lock queue_lock(fiber->queue_mutex);
+			const std::lock_guard<std::recursive_mutex> queue_lock(fiber->queue_mutex);
 			if(fiber->queue.empty()){
 				return false;
 			}
@@ -210,7 +212,7 @@ namespace {
 			schedule_fiber(fiber);
 		}
 		if(fiber->state == fiber_state_ready){
-			const Recursive_mutex::Unique_lock queue_lock(fiber->queue_mutex);
+			const std::lock_guard<std::recursive_mutex> queue_lock(fiber->queue_mutex);
 			fiber->queue.pop_front();
 		}
 		return true;
@@ -219,7 +221,7 @@ namespace {
 		POSEIDON_PROFILE_ME;
 
 		bool busy = false;
-		Mutex::Unique_lock lock(g_fiber_map_mutex);
+		std::unique_lock<std::mutex> lock(g_fiber_map_mutex);
 		bool erase_it;
 		for(AUTO(it, g_fiber_map.begin()); it != g_fiber_map.end(); erase_it ? (it = g_fiber_map.erase(it)) : ++it){
 			AUTO(fiber, &(it->second));
@@ -242,8 +244,8 @@ void Job_dispatcher::start(){
 void Job_dispatcher::stop(){
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping job dispatcher...");
 
-	Mutex::Unique_lock lock(g_fiber_map_mutex);
-	boost::uint64_t last_info_time = 0;
+	std::unique_lock<std::mutex> lock(g_fiber_map_mutex);
+	std::uint64_t last_info_time = 0;
 	for(;;){
 		const AUTO(pending_fibers, g_fiber_map.size());
 		if(pending_fibers == 0){
@@ -263,7 +265,7 @@ void Job_dispatcher::stop(){
 }
 
 void Job_dispatcher::do_modal(volatile int &sig_recv){
-	unsigned timeout = 0;
+	int timeout = 0;
 	for(;;){
 		const int sig = atomic_exchange(sig_recv, 0, memory_order_acquire);
 		if(sig != 0){
@@ -272,14 +274,14 @@ void Job_dispatcher::do_modal(volatile int &sig_recv){
 		bool busy;
 		do {
 			busy = pump_one_round(sig != 0);
-			timeout = std::min(timeout * 2u + 1u, !busy * 100u);
+			timeout = std::min(timeout * 2 + 1, (1 - busy) * 128);
 		} while(busy);
 
-		Mutex::Unique_lock lock(g_fiber_map_mutex);
+		std::unique_lock<std::mutex> lock(g_fiber_map_mutex);
 		if(sig != 0){
 			break;
 		}
-		g_new_job.timed_wait(lock, timeout);
+		g_new_job.wait_for(lock, std::chrono::milliseconds(timeout));
 	}
 }
 
@@ -292,18 +294,18 @@ void Job_dispatcher::enqueue(boost::shared_ptr<Job_base> job, boost::shared_ptr<
 		category = job;
 	}
 
-	const Mutex::Unique_lock lock(g_fiber_map_mutex);
+	const std::lock_guard<std::mutex> lock(g_fiber_map_mutex);
 	AUTO(it, g_fiber_map.find(category));
 	if(it == g_fiber_map.end()){
 		it = g_fiber_map.emplace(category, Fiber_control::Initializer()).first;
 	}
 	const AUTO(fiber, &(it->second));
 	{
-		const Recursive_mutex::Unique_lock queue_lock(fiber->queue_mutex);
+		const std::lock_guard<std::recursive_mutex> queue_lock(fiber->queue_mutex);
 		Job_element elem = { STD_MOVE(job), STD_MOVE(withdrawn) };
 		fiber->queue.push_back(STD_MOVE(elem));
 	}
-	g_new_job.signal();
+	g_new_job.notify_one();
 }
 void Job_dispatcher::yield(boost::shared_ptr<const Promise> promise, bool insignificant){
 	POSEIDON_PROFILE_ME;
@@ -318,7 +320,7 @@ void Job_dispatcher::yield(boost::shared_ptr<const Promise> promise, bool insign
 		POSEIDON_LOG_TRACE("Skipped yielding from fiber ", static_cast<void *>(fiber));
 	} else {
 		POSEIDON_LOG_TRACE("Yielding from fiber ", static_cast<void *>(fiber));
-		const AUTO(job_timeout, Main_config::get<boost::uint64_t>("job_timeout", 60000));
+		const AUTO(job_timeout, Main_config::get<std::uint64_t>("job_timeout", 60000));
 		AUTO_REF(elem, fiber->queue.front());
 		elem.promise = promise;
 		elem.expiry_time = saturated_add(get_fast_mono_clock(), job_timeout);

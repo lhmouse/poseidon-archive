@@ -72,7 +72,7 @@ void Low_level_client::on_receive(Stream_buffer data){
 	}
 }
 
-void Low_level_client::on_shutdown_timer(boost::uint64_t now){
+void Low_level_client::on_shutdown_timer(std::uint64_t now){
 	POSEIDON_PROFILE_ME;
 
 	// timer 线程读取需要锁。
@@ -84,22 +84,22 @@ void Low_level_client::on_shutdown_timer(boost::uint64_t now){
 	Tcp_client_base::on_shutdown_timer(now);
 }
 
-void Low_level_client::on_response_headers(Response_headers response_headers, boost::uint64_t content_length){
+void Low_level_client::on_response_headers(Response_headers response_headers, std::uint64_t content_length){
 	POSEIDON_PROFILE_ME;
 
 	on_low_level_response_headers(STD_MOVE(response_headers), content_length);
 }
-void Low_level_client::on_response_entity(boost::uint64_t entity_offset, Stream_buffer entity){
+void Low_level_client::on_response_entity(std::uint64_t entity_offset, Stream_buffer entity){
 	POSEIDON_PROFILE_ME;
 
 	on_low_level_response_entity(entity_offset, STD_MOVE(entity));
 }
-bool Low_level_client::on_response_end(boost::uint64_t content_length, Option_map headers){
+bool Low_level_client::on_response_end(std::uint64_t content_length, Option_map headers){
 	POSEIDON_PROFILE_ME;
 
 	AUTO(upgraded_client, on_low_level_response_end(content_length, STD_MOVE(headers)));
 	if(upgraded_client){
-		const Mutex::Unique_lock lock(m_upgraded_client_mutex);
+		const std::lock_guard<std::mutex> lock(m_upgraded_client_mutex);
 		m_upgraded_client = STD_MOVE(upgraded_client);
 		return false;
 	}
@@ -113,7 +113,7 @@ long Low_level_client::on_encoded_data_avail(Stream_buffer encoded){
 }
 
 boost::shared_ptr<Upgraded_session_base> Low_level_client::get_upgraded_client() const {
-	const Mutex::Unique_lock lock(m_upgraded_client_mutex);
+	const std::lock_guard<std::mutex> lock(m_upgraded_client_mutex);
 	return m_upgraded_client;
 }
 

@@ -4,14 +4,12 @@
 #include "../precompiled.hpp"
 #include "verbs.hpp"
 #include "../cxx_ver.hpp"
-#include "../cxx_util.hpp"
 
 namespace Poseidon {
 namespace Http {
 
 namespace {
-	CONSTEXPR const char g_verb_table[][16] = {
-		"INVALID-VERB",
+	constexpr char g_verb_table[][8] = {
 		"GET",
 		"POST",
 		"HEAD",
@@ -20,31 +18,27 @@ namespace {
 		"TRACE",
 		"CONNECT",
 		"OPTIONS",
+		"???",
 	};
 }
 
 Verb get_verb_from_string(const char *str){
-	const std::size_t len = std::strlen(str);
-	if(len == 0){
-		return verb_invalid_verb;
+	const auto begin = std::begin(g_verb_table);
+	const auto end = std::end(g_verb_table) - 1;
+	const auto ptr = std::find_if(begin, end, [&](const char *cmp){ return std::strcmp(str, cmp) == 0; });
+	if(ptr == end){
+		return verb_invalid;
 	}
-	const char *const begin = g_verb_table[0];
-	const AUTO(pos, static_cast<const char *>(::memmem(begin, sizeof(g_verb_table), str, len + 1)));
-	if(!pos){
-		return verb_invalid_verb;
-	}
-	std::size_t index = static_cast<std::size_t>(pos - begin) / sizeof(g_verb_table[0]);
-	if(pos != g_verb_table[index]){
-		return verb_invalid_verb;
-	}
-	return static_cast<Verb>(index);
+	return static_cast<Verb>(ptr - begin);
 }
 const char * get_string_from_verb(Verb verb){
-	std::size_t index = static_cast<std::size_t>(verb);
-	if(index >= COUNT_OF(g_verb_table)){
-		index = static_cast<unsigned>(verb_invalid_verb);
+	const auto begin = std::begin(g_verb_table);
+	const auto end = std::end(g_verb_table) - 1;
+	if(static_cast<std::size_t>(verb) >= static_cast<std::size_t>(end - begin)){
+		return *end;
 	}
-	return g_verb_table[index];
+	const auto ptr = begin + verb;
+	return *ptr;
 }
 
 }

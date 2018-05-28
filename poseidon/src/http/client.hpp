@@ -37,9 +37,9 @@ protected:
 	void on_read_hup() OVERRIDE;
 
 	// Low_level_client
-	void on_low_level_response_headers(Response_headers response_headers, boost::uint64_t content_length) OVERRIDE;
-	void on_low_level_response_entity(boost::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
-	boost::shared_ptr<Upgraded_session_base> on_low_level_response_end(boost::uint64_t content_length, Option_map headers) OVERRIDE;
+	void on_low_level_response_headers(Response_headers response_headers, std::uint64_t content_length) OVERRIDE;
+	void on_low_level_response_entity(std::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
+	boost::shared_ptr<Upgraded_session_base> on_low_level_response_end(std::uint64_t content_length, Option_map headers) OVERRIDE;
 
 	// 可覆写。
 	virtual void on_sync_connect();

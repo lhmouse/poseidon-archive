@@ -5,7 +5,6 @@
 #define POSEIDON_SSL_FACTORIES_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 #include "ssl_raii.hpp"
 #include <boost/scoped_ptr.hpp>
 
@@ -15,7 +14,7 @@ extern void init_ssl_once();
 
 class Ssl_filter;
 
-class Ssl_server_factory : NONCOPYABLE {
+class Ssl_server_factory {
 private:
 	const Unique_ssl_ctx m_ssl_ctx;
 
@@ -27,7 +26,7 @@ public:
 	void create_ssl_filter(boost::scoped_ptr<Ssl_filter> &ssl_filter, int fd);
 };
 
-class Ssl_client_factory : NONCOPYABLE {
+class Ssl_client_factory {
 private:
 	const Unique_ssl_ctx m_ssl_ctx;
 

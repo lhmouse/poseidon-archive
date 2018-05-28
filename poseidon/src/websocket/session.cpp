@@ -88,7 +88,7 @@ protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 		POSEIDON_PROFILE_ME;
 
-		const boost::uint64_t local_now = get_local_time();
+		const std::uint64_t local_now = get_local_time();
 		char str[256];
 		std::size_t len = format_time(str, sizeof(str), local_now, true);
 		session->send(opcode_ping, Stream_buffer(str, len));
@@ -115,7 +115,7 @@ protected:
 		POSEIDON_LOG_DEBUG("Dispatching data message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
 		session->on_sync_data_message(m_opcode, STD_MOVE(m_payload));
 
-		const AUTO(keep_alive_timeout, Main_config::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+		const AUTO(keep_alive_timeout, Main_config::get<std::uint64_t>("websocket_keep_alive_timeout", 30000));
 		session->set_timeout(keep_alive_timeout);
 	}
 };
@@ -140,14 +140,14 @@ protected:
 		POSEIDON_LOG_DEBUG("Dispatching control message: opcode = ", m_opcode, ", payload_size = ", m_payload.size());
 		session->on_sync_control_message(m_opcode, STD_MOVE(m_payload));
 
-		const AUTO(keep_alive_timeout, Main_config::get<boost::uint64_t>("websocket_keep_alive_timeout", 30000));
+		const AUTO(keep_alive_timeout, Main_config::get<std::uint64_t>("websocket_keep_alive_timeout", 30000));
 		session->set_timeout(keep_alive_timeout);
 	}
 };
 
 Session::Session(const boost::shared_ptr<Http::Low_level_session> &parent)
 	: Low_level_session(parent)
-	, m_max_request_length(Main_config::get<boost::uint64_t>("websocket_max_request_length", 16384))
+	, m_max_request_length(Main_config::get<std::uint64_t>("websocket_max_request_length", 16384))
 	, m_size_total(0), m_opcode(opcode_invalid)
 {
 	//
@@ -165,7 +165,7 @@ void Session::on_read_hup(){
 
 	Low_level_session::on_read_hup();
 }
-void Session::on_shutdown_timer(boost::uint64_t now){
+void Session::on_shutdown_timer(std::uint64_t now){
 	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
@@ -182,14 +182,14 @@ void Session::on_low_level_message_header(Opcode opcode){
 	m_opcode = opcode;
 	m_payload.clear();
 }
-void Session::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, Stream_buffer payload){
+void Session::on_low_level_message_payload(std::uint64_t /*whole_offset*/, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 
 	m_size_total += payload.size();
 	POSEIDON_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_message_too_large, Rcnts::view("Message too large"));
 	m_payload.splice(payload);
 }
-bool Session::on_low_level_message_end(boost::uint64_t /*whole_size*/){
+bool Session::on_low_level_message_end(std::uint64_t /*whole_size*/){
 	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
@@ -234,10 +234,10 @@ void Session::on_sync_control_message(Opcode opcode, Stream_buffer payload){
 	}
 }
 
-boost::uint64_t Session::get_max_request_length() const {
+std::uint64_t Session::get_max_request_length() const {
 	return atomic_load(m_max_request_length, memory_order_consume);
 }
-void Session::set_max_request_length(boost::uint64_t max_request_length){
+void Session::set_max_request_length(std::uint64_t max_request_length){
 	atomic_store(m_max_request_length, max_request_length, memory_order_release);
 }
 

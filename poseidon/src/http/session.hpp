@@ -18,8 +18,8 @@ private:
 	class Error_job;
 
 private:
-	volatile boost::uint64_t m_max_request_length;
-	boost::uint64_t m_size_total;
+	volatile std::uint64_t m_max_request_length;
+	std::uint64_t m_size_total;
 	Request_headers m_request_headers;
 	Stream_buffer m_entity;
 
@@ -28,7 +28,7 @@ public:
 	~Session();
 
 protected:
-	boost::uint64_t get_low_level_size_total() const {
+	std::uint64_t get_low_level_size_total() const {
 		return m_size_total;
 	}
 	const Request_headers & get_low_level_request_headers() const {
@@ -42,17 +42,17 @@ protected:
 	void on_read_hup() OVERRIDE;
 
 	// Low_level_session
-	void on_low_level_request_headers(Request_headers request_headers, boost::uint64_t content_length) OVERRIDE;
-	void on_low_level_request_entity(boost::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
-	boost::shared_ptr<Upgraded_session_base> on_low_level_request_end(boost::uint64_t content_length, Option_map headers) OVERRIDE;
+	void on_low_level_request_headers(Request_headers request_headers, std::uint64_t content_length) OVERRIDE;
+	void on_low_level_request_entity(std::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
+	boost::shared_ptr<Upgraded_session_base> on_low_level_request_end(std::uint64_t content_length, Option_map headers) OVERRIDE;
 
 	// 可覆写。
 	virtual void on_sync_expect(Request_headers request_headers);
 	virtual void on_sync_request(Request_headers request_headers, Stream_buffer entity) = 0;
 
 public:
-	boost::uint64_t get_max_request_length() const;
-	void set_max_request_length(boost::uint64_t max_request_length);
+	std::uint64_t get_max_request_length() const;
+	void set_max_request_length(std::uint64_t max_request_length);
 };
 
 }

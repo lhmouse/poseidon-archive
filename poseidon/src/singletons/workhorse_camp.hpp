@@ -18,7 +18,7 @@ private:
 	Workhorse_camp();
 
 public:
-	typedef boost::function<void ()> Job_procedure;
+	typedef std::function<void ()> Job_procedure;
 
 	static void start();
 	static void stop();

@@ -23,10 +23,10 @@ public:
 	static void stop();
 
 	// 同步接口。
-	static Sock_addr look_up(const std::string &host, boost::uint16_t port, bool prefer_ipv4 = true);
+	static Sock_addr look_up(const std::string &host, std::uint16_t port, bool prefer_ipv4 = true);
 
 	// 异步接口。
-	static boost::shared_ptr<const Promise_container<Sock_addr> > enqueue_for_looking_up(std::string host, boost::uint16_t port, bool prefer_ipv4 = true);
+	static boost::shared_ptr<const Promise_container<Sock_addr> > enqueue_for_looking_up(std::string host, std::uint16_t port, bool prefer_ipv4 = true);
 };
 
 }

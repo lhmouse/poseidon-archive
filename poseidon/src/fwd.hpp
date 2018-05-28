@@ -10,11 +10,6 @@ class Tiny_exception;
 class Exception;
 class System_exception;
 
-class Thread;
-class Mutex;
-class Recursive_mutex;
-class Condition_variable;
-
 class Option_map;
 class Stream_buffer;
 class Hex_printer;

@@ -9,7 +9,7 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<boost::uint32_t, 4> g_md5_reg_init = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u }};
+	CONSTEXPR const boost::array<std::uint32_t, 4> g_md5_reg_init = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u }};
 }
 
 Md5_streambuf::Md5_streambuf()
@@ -23,14 +23,14 @@ Md5_streambuf::~Md5_streambuf(){
 
 void Md5_streambuf::eat_chunk(){
 	// https://en.wikipedia.org/wiki/MD5
-	AUTO_REF(w, *reinterpret_cast<boost::uint32_t (*)[4]>(m_chunk.data()));
+	AUTO_REF(w, *reinterpret_cast<std::uint32_t (*)[4]>(m_chunk.data()));
 
-	boost::uint32_t a = m_reg[0];
-	boost::uint32_t b = m_reg[1];
-	boost::uint32_t c = m_reg[2];
-	boost::uint32_t d = m_reg[3];
+	std::uint32_t a = m_reg[0];
+	std::uint32_t b = m_reg[1];
+	std::uint32_t c = m_reg[2];
+	std::uint32_t d = m_reg[3];
 
-	boost::uint32_t f, g;
+	std::uint32_t f, g;
 
 #define MD5_STEP(i_, spec_, a_, b_, c_, d_, k_, r_)	\
 	spec_(i_, a_, b_, c_, d_);	\
@@ -136,13 +136,13 @@ Md5_streambuf::int_type Md5_streambuf::overflow(Md5_streambuf::int_type c){
 }
 
 Md5 Md5_streambuf::finalize(){
-	boost::uint64_t bytes = m_bytes;
+	std::uint64_t bytes = m_bytes;
 	if(pptr()){
 		bytes += static_cast<unsigned>(pptr() - m_chunk.begin());
 	}
 	static const unsigned char s_terminator[65] = { 0x80 };
 	xsputn(reinterpret_cast<const char *>(s_terminator), static_cast<int>(64 - (bytes + 8) % 64));
-	boost::uint64_t bits;
+	std::uint64_t bits;
 	store_le(bits, bytes * 8);
 	xsputn(reinterpret_cast<const char *>(&bits), sizeof(bits));
 	if(pptr() == m_chunk.end()){
@@ -151,7 +151,7 @@ Md5 Md5_streambuf::finalize(){
 
 	Md5 md5;
 	for(unsigned i = 0; i < m_reg.size(); ++i){
-		store_le(reinterpret_cast<boost::uint32_t *>(md5.data())[i], m_reg[i]);
+		store_le(reinterpret_cast<std::uint32_t *>(md5.data())[i], m_reg[i]);
 	}
 	reset();
 	return md5;

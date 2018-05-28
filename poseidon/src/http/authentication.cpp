@@ -19,7 +19,7 @@
 namespace Poseidon {
 namespace Http {
 
-class Authentication_context : NONCOPYABLE {
+class Authentication_context {
 private:
 	struct Password_comparator {
 		bool operator()(const std::string &lhs, const char *rhs) const {
@@ -213,12 +213,12 @@ __attribute__((__noreturn__)) void throw_authentication_failure_basic(const boos
 }
 
 namespace {
-	const boost::uint32_t g_server_id = random_uint32();
+	const std::uint32_t g_server_id = random_uint32();
 
 	struct Nonce {
-		boost::uint32_t server_id; // g_server_id
-		boost::uint32_t reserved;
-		boost::uint64_t timestamp; // get_utc_time()
+		std::uint32_t server_id; // g_server_id
+		std::uint32_t reserved;
+		std::uint64_t timestamp; // get_utc_time()
 	};
 	BOOST_STATIC_ASSERT(sizeof(Nonce) == 16);
 
@@ -393,7 +393,7 @@ std::pair<Authentication_result, const char *> check_authentication_digest(const
 		POSEIDON_LOG_DEBUG("Server ID mismatch: ", std::hex, std::setfill('0'), std::setw(8), nonce->server_id);
 		return std::make_pair(auth_password_incorrect, NULLPTR);
 	}
-	const AUTO(nonce_expiry_time, Main_config::get<boost::uint64_t>("http_digest_nonce_expiry_time", 60000));
+	const AUTO(nonce_expiry_time, Main_config::get<std::uint64_t>("http_digest_nonce_expiry_time", 60000));
 	if(nonce->timestamp < saturated_sub(get_utc_time(), nonce_expiry_time)){
 		POSEIDON_LOG_DEBUG("Nonce expired: ", nonce->timestamp);
 		return std::make_pair(auth_request_expired, NULLPTR);

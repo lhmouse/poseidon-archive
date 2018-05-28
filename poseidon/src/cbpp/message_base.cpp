@@ -15,14 +15,14 @@ Message_base::~Message_base(){
 	//
 }
 
-void shift_vint(boost::int64_t &value, Stream_buffer &buf, const char *name){
+void shift_vint(std::int64_t &value, Stream_buffer &buf, const char *name){
 	POSEIDON_LOG_TRACE("Shifting out `vint`: ", name);
 	Stream_buffer::Read_iterator rit(buf);
 	if(!vint64_from_binary(value, rit, SIZE_MAX)){
 		POSEIDON_THROW(Exception, status_end_of_stream, Rcnts::view("End of stream encountered"));
 	}
 }
-void shift_vuint(boost::uint64_t &value, Stream_buffer &buf, const char *name){
+void shift_vuint(std::uint64_t &value, Stream_buffer &buf, const char *name){
 	POSEIDON_LOG_TRACE("Shifting out `vuint`: ", name);
 	Stream_buffer::Read_iterator rit(buf);
 	if(!vuint64_from_binary(value, rit, SIZE_MAX)){
@@ -31,7 +31,7 @@ void shift_vuint(boost::uint64_t &value, Stream_buffer &buf, const char *name){
 }
 void shift_string(std::string &value, Stream_buffer &buf, const char *name){
 	POSEIDON_LOG_TRACE("Shifting out `string`: ", name);
-	boost::uint64_t length;
+	std::uint64_t length;
 	Stream_buffer::Read_iterator rit(buf);
 	if(!vuint64_from_binary(length, rit, SIZE_MAX)){
 		POSEIDON_THROW(Exception, status_end_of_stream, Rcnts::view("End of stream encountered"));
@@ -46,7 +46,7 @@ void shift_string(std::string &value, Stream_buffer &buf, const char *name){
 }
 void shift_blob(Stream_buffer &value, Stream_buffer &buf, const char *name){
 	POSEIDON_LOG_TRACE("Shifting out `blob`: ", name);
-	boost::uint64_t length;
+	std::uint64_t length;
 	Stream_buffer::Read_iterator rit(buf);
 	if(!vuint64_from_binary(length, rit, SIZE_MAX)){
 		POSEIDON_THROW(Exception, status_end_of_stream, Rcnts::view("End of stream encountered"));
@@ -71,11 +71,11 @@ void shift_flexible(Stream_buffer &value, Stream_buffer &buf, const char *name){
 	value.swap(buf);
 }
 
-void push_vint(Stream_buffer &buf, boost::int64_t value){
+void push_vint(Stream_buffer &buf, std::int64_t value){
 	Stream_buffer::Write_iterator wit(buf);
 	vint64_to_binary(value, wit);
 }
-void push_vuint(Stream_buffer &buf, boost::uint64_t value){
+void push_vuint(Stream_buffer &buf, std::uint64_t value){
 	Stream_buffer::Write_iterator wit(buf);
 	vuint64_to_binary(value, wit);
 }

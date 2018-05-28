@@ -51,7 +51,7 @@ public:
 		if(m_str.empty()){
 			return 0;
 		}
-		return ::strtoull(m_str.c_str(), NULLPTR, 0);
+		return std::strtoull(m_str.c_str(), NULLPTR, 0);
 	}
 	double as_double() const NOEXCEPT {
 		if(m_str.empty()){

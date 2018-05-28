@@ -110,7 +110,7 @@ Move<T> move(Move<T> rhs) NOEXCEPT {
 	return rhs;
 }
 
-// 对 C++98 中无法移动构造 std::tr1::function / boost::function 的补偿。
+// 对 C++98 中无法移动构造 std::tr1::function / std::function 的补偿。
 // 只能用于直接初始化对象。
 template<typename T>
 T move_as_identity(T &rhs) NOEXCEPT {

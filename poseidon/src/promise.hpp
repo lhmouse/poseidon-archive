@@ -5,26 +5,26 @@
 #define POSEIDON_PROMISE_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
-#include "recursive_mutex.hpp"
+#include <mutex>
 #include <boost/shared_ptr.hpp>
 #include <boost/type_traits/remove_const.hpp>
 #include <boost/optional.hpp>
 
 namespace Poseidon {
 
-class Promise : NONCOPYABLE {
+class Promise {
 protected:
-	mutable Recursive_mutex m_mutex;
+	mutable std::recursive_mutex m_mutex;
 	boost::optional<STD_EXCEPTION_PTR> m_except;
 
 public:
 	Promise()
 		: m_mutex(), m_except()
-	{
-		//
-	}
+	{ }
 	virtual ~Promise();
+
+	Promise(const Promise &) = delete;
+	Promise &operator=(const Promise &) = delete;
 
 public:
 	bool is_satisfied() const NOEXCEPT;
@@ -51,7 +51,7 @@ public:
 
 public:
 	ResultT * try_get() const NOEXCEPT {
-		const Recursive_mutex::Unique_lock lock(m_mutex);
+		const std::lock_guard<std::recursive_mutex> lock(m_mutex);
 		if(Promise::would_throw()){
 			return NULLPTR;
 		}
@@ -59,13 +59,13 @@ public:
 		return m_result.get_ptr();
 	}
 	ResultT & get() const {
-		const Recursive_mutex::Unique_lock lock(m_mutex);
+		const std::lock_guard<std::recursive_mutex> lock(m_mutex);
 		Promise::check_and_rethrow();
 		// Likewise. See comments in `try_get()`.
 		return m_result.get();
 	}
 	void set_success(typename boost::remove_const<ResultT>::type result, bool throw_if_already_set = true){
-		const Recursive_mutex::Unique_lock lock(m_mutex);
+		const std::lock_guard<std::recursive_mutex> lock(m_mutex);
 		// If `m_result_accepted` is true, `Promise::set_success()` will throw an exception eventually. Hence we do not set the value here.
 		if(!m_result_accepted){
 			m_result = STD_MOVE_IDN(result);

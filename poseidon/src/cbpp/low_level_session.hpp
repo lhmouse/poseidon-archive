@@ -25,9 +25,9 @@ protected:
 	void on_receive(Stream_buffer data) OVERRIDE;
 
 	// Reader
-	void on_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) OVERRIDE;
-	void on_data_message_payload(boost::uint64_t payload_offset, Stream_buffer payload) OVERRIDE;
-	bool on_data_message_end(boost::uint64_t payload_size) OVERRIDE;
+	void on_data_message_header(std::uint16_t message_id, std::uint64_t payload_size) OVERRIDE;
+	void on_data_message_payload(std::uint64_t payload_offset, Stream_buffer payload) OVERRIDE;
+	bool on_data_message_end(std::uint64_t payload_size) OVERRIDE;
 
 	bool on_control_message(Status_code status_code, Stream_buffer param) OVERRIDE;
 
@@ -35,14 +35,14 @@ protected:
 	long on_encoded_data_avail(Stream_buffer encoded) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) = 0;
-	virtual void on_low_level_data_message_payload(boost::uint64_t payload_offset, Stream_buffer payload) = 0;
-	virtual bool on_low_level_data_message_end(boost::uint64_t payload_size) = 0;
+	virtual void on_low_level_data_message_header(std::uint16_t message_id, std::uint64_t payload_size) = 0;
+	virtual void on_low_level_data_message_payload(std::uint64_t payload_offset, Stream_buffer payload) = 0;
+	virtual bool on_low_level_data_message_end(std::uint64_t payload_size) = 0;
 
 	virtual bool on_low_level_control_message(Status_code status_code, Stream_buffer param) = 0;
 
 public:
-	virtual bool send(boost::uint16_t message_id, Stream_buffer payload);
+	virtual bool send(std::uint16_t message_id, Stream_buffer payload);
 	virtual bool send_status(Status_code status_code, Stream_buffer param);
 	virtual bool shutdown(Status_code status_code, const char *param = "") NOEXCEPT;
 };

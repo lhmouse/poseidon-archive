@@ -13,40 +13,40 @@ namespace {
 	::pthread_once_t g_tz_once = PTHREAD_ONCE_INIT;
 }
 
-boost::uint64_t get_utc_time(){
+std::uint64_t get_utc_time(){
 	::timespec ts;
 	if(::clock_gettime(CLOCK_REALTIME, &ts) != 0){
 		POSEIDON_LOG_FATAL("Realtime clock is not supported.");
 		std::terminate();
 	}
-	return (boost::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	return (std::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
-boost::uint64_t get_local_time(){
+std::uint64_t get_local_time(){
 	return get_local_time_from_utc(get_utc_time());
 }
-boost::uint64_t get_utc_time_from_local(boost::uint64_t local){
+std::uint64_t get_utc_time_from_local(std::uint64_t local){
 	if(::pthread_once(&g_tz_once, &::tzset) != 0){
 		POSEIDON_LOG_FATAL("::pthread_once() failed.");
 		std::terminate();
 	}
-	return local + (boost::uint64_t)(::timezone * 1000);
+	return local + (std::uint64_t)(::timezone * 1000);
 }
-boost::uint64_t get_local_time_from_utc(boost::uint64_t utc){
+std::uint64_t get_local_time_from_utc(std::uint64_t utc){
 	if(::pthread_once(&g_tz_once, &::tzset) != 0){
 		POSEIDON_LOG_FATAL("::pthread_once() failed.");
 		std::terminate();
 	}
-	return utc - (boost::uint64_t)(::timezone * 1000);
+	return utc - (std::uint64_t)(::timezone * 1000);
 }
 
 // 这里沿用了 MCF 的旧称。在 Windows 上 get_fast_mono_clock() 是 GetTickCount64() 实现的。
-boost::uint64_t get_fast_mono_clock() NOEXCEPT {
+std::uint64_t get_fast_mono_clock() NOEXCEPT {
 	::timespec ts;
 	if(::clock_gettime(CLOCK_MONOTONIC, &ts) != 0){
 		POSEIDON_LOG_FATAL("Monotonic clock is not supported.");
 		std::terminate();
 	}
-	return (boost::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	return (std::uint64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
 // 在 Windows 上 get_hi_res_mono_clock() 是 Query_performance_counter() 实现的。
 double get_hi_res_mono_clock() NOEXCEPT {
@@ -61,7 +61,7 @@ double get_hi_res_mono_clock() NOEXCEPT {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 
-Date_time break_down_time(boost::uint64_t ms){
+Date_time break_down_time(std::uint64_t ms){
 	Date_time dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	if(ms == 0){
 		dt.yr = 0;
@@ -82,8 +82,8 @@ Date_time break_down_time(boost::uint64_t ms){
 	}
 	return dt;
 }
-boost::uint64_t assemble_time(const Date_time &dt){
-	boost::uint64_t ms;
+std::uint64_t assemble_time(const Date_time &dt){
+	std::uint64_t ms;
 	if(dt.yr == 0){
 		ms = 0;
 	} else if(dt.yr == 9999){
@@ -96,20 +96,20 @@ boost::uint64_t assemble_time(const Date_time &dt){
 		desc.tm_hour = dt.hr;
 		desc.tm_min  = dt.min;
 		desc.tm_sec  = dt.sec;
-		ms = (boost::uint64_t)::timegm(&desc) * 1000 + dt.ms;
+		ms = (std::uint64_t)::timegm(&desc) * 1000 + dt.ms;
 	}
 	return ms;
 }
 
 #pragma GCC diagnostic pop
 
-std::size_t format_time(char *buffer, std::size_t max, boost::uint64_t ms, bool show_ms){
+std::size_t format_time(char *buffer, std::size_t max, std::uint64_t ms, bool show_ms){
 	Date_time dt = break_down_time(ms);
-	return (unsigned)::snprintf(buffer, max, show_ms ? "%04u-%02u-%02u %02u:%02u:%02u.%03u"
+	return (unsigned)std::snprintf(buffer, max, show_ms ? "%04u-%02u-%02u %02u:%02u:%02u.%03u"
 	                                                 : "%04u-%02u-%02u %02u:%02u:%02u",
 		dt.yr, dt.mon, dt.day, dt.hr, dt.min, dt.sec, dt.ms);
 }
-boost::uint64_t scan_time(const char *str){
+std::uint64_t scan_time(const char *str){
 	Date_time dt = { 1234, 1, 1, 0, 0, 0, 0 };
 	if(std::sscanf(str, "%u-%u-%u %u:%u:%u.%u", &dt.yr, &dt.mon, &dt.day, &dt.hr, &dt.min, &dt.sec, &dt.ms) < 3){
 		POSEIDON_LOG_ERROR("Time string is not valid: ", str);

@@ -20,8 +20,8 @@ namespace {
 	const Uuid g_min_uuid(g_bytes_min);
 	const Uuid g_max_uuid(g_bytes_max);
 
-	const unsigned g_pid = static_cast<boost::uint16_t>(::getpid());
-	volatile boost::uint32_t g_auto_inc = 0;
+	const unsigned g_pid = static_cast<std::uint16_t>(::getpid());
+	volatile std::uint32_t g_auto_inc = 0;
 }
 
 const Uuid & Uuid::min() NOEXCEPT {
@@ -36,15 +36,15 @@ Uuid Uuid::random() NOEXCEPT {
 	const AUTO(unique, (atomic_add(g_auto_inc, 1, memory_order_relaxed) << 16) | g_pid);
 	union {
 		unsigned char bytes[16];
-		boost::uint16_t u16[8];
-		boost::uint32_t u32[4];
+		std::uint16_t u16[8];
+		std::uint32_t u32[4];
 	} un;
-	store_be(un.u32[0], static_cast<boost::uint32_t>(utc_now >> 12));
-	store_be(un.u16[2], static_cast<boost::uint16_t>((utc_now << 4) | ((unique >> 26) & 0x000F)));
-	store_be(un.u16[3], static_cast<boost::uint16_t>(0xE000 | ((unique >> 14) & 0x0FFFu))); // 版本 = 14
-	store_be(un.u16[4], static_cast<boost::uint16_t>(0xC000 | (unique & 0x3FFF))); // 变种 = 3
-	store_be(un.u16[5], static_cast<boost::uint16_t>(random_uint32()));
-	store_be(un.u32[3], static_cast<boost::uint32_t>(random_uint32()));
+	store_be(un.u32[0], static_cast<std::uint32_t>(utc_now >> 12));
+	store_be(un.u16[2], static_cast<std::uint16_t>((utc_now << 4) | ((unique >> 26) & 0x000F)));
+	store_be(un.u16[3], static_cast<std::uint16_t>(0xE000 | ((unique >> 14) & 0x0FFFu))); // 版本 = 14
+	store_be(un.u16[4], static_cast<std::uint16_t>(0xC000 | (unique & 0x3FFF))); // 变种 = 3
+	store_be(un.u16[5], static_cast<std::uint16_t>(random_uint32()));
+	store_be(un.u32[3], static_cast<std::uint32_t>(random_uint32()));
 	return Uuid(un.bytes);
 }
 

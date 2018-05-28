@@ -19,7 +19,7 @@ public:
 	struct Snapshot_element {
 		Ip_port remote_info;
 		Ip_port local_info;
-		boost::uint64_t creation_time;
+		std::uint64_t creation_time;
 		bool listening;
 		bool readable;
 		bool writable;

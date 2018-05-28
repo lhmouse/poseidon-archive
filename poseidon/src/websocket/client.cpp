@@ -167,12 +167,12 @@ void Client::on_low_level_message_header(Opcode opcode){
 	m_opcode = opcode;
 	m_payload.clear();
 }
-void Client::on_low_level_message_payload(boost::uint64_t /*whole_offset*/, Stream_buffer payload){
+void Client::on_low_level_message_payload(std::uint64_t /*whole_offset*/, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 
 	m_payload.splice(payload);
 }
-bool Client::on_low_level_message_end(boost::uint64_t /*whole_size*/){
+bool Client::on_low_level_message_end(std::uint64_t /*whole_size*/){
 	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(

@@ -85,7 +85,7 @@ protected:
 	void really_perform(const boost::shared_ptr<Session> &session) OVERRIDE {
 		POSEIDON_PROFILE_ME;
 
-		const boost::uint64_t local_now = get_local_time();
+		const std::uint64_t local_now = get_local_time();
 		char str[256];
 		std::size_t len = format_time(str, sizeof(str), local_now, true);
 		session->send_status(status_ping, Stream_buffer(str, len));
@@ -94,11 +94,11 @@ protected:
 
 class Session::Data_message_job : public Session::Sync_job_base {
 private:
-	boost::uint16_t m_message_id;
+	std::uint16_t m_message_id;
 	Stream_buffer m_payload;
 
 public:
-	Data_message_job(const boost::shared_ptr<Session> &session, boost::uint16_t message_id, Stream_buffer payload)
+	Data_message_job(const boost::shared_ptr<Session> &session, std::uint16_t message_id, Stream_buffer payload)
 		: Sync_job_base(session)
 		, m_message_id(message_id), m_payload(STD_MOVE(payload))
 	{
@@ -112,7 +112,7 @@ protected:
 		POSEIDON_LOG_DEBUG("Dispatching message: message_id = ", m_message_id, ", payload_len = ", m_payload.size());
 		session->on_sync_data_message(m_message_id, STD_MOVE(m_payload));
 
-		const AUTO(keep_alive_timeout, Main_config::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+		const AUTO(keep_alive_timeout, Main_config::get<std::uint64_t>("cbpp_keep_alive_timeout", 30000));
 		session->set_timeout(keep_alive_timeout);
 	}
 };
@@ -137,14 +137,14 @@ protected:
 		POSEIDON_LOG_DEBUG("Dispatching control message: status_code = ", m_status_code, ", param = ", m_param);
 		session->on_sync_control_message(m_status_code, STD_MOVE(m_param));
 
-		const AUTO(keep_alive_timeout, Main_config::get<boost::uint64_t>("cbpp_keep_alive_timeout", 30000));
+		const AUTO(keep_alive_timeout, Main_config::get<std::uint64_t>("cbpp_keep_alive_timeout", 30000));
 		session->set_timeout(keep_alive_timeout);
 	}
 };
 
 Session::Session(Move<Unique_file> socket)
 	: Low_level_session(STD_MOVE(socket))
-	, m_max_request_length(Main_config::get<boost::uint64_t>("cbpp_max_request_length", 16384))
+	, m_max_request_length(Main_config::get<std::uint64_t>("cbpp_max_request_length", 16384))
 	, m_size_total(0), m_message_id(0), m_payload()
 {
 	//
@@ -162,7 +162,7 @@ void Session::on_read_hup(){
 
 	Low_level_session::on_read_hup();
 }
-void Session::on_shutdown_timer(boost::uint64_t now){
+void Session::on_shutdown_timer(std::uint64_t now){
 	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
@@ -172,21 +172,21 @@ void Session::on_shutdown_timer(boost::uint64_t now){
 	Low_level_session::on_shutdown_timer(now);
 }
 
-void Session::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t /*payload_size*/){
+void Session::on_low_level_data_message_header(std::uint16_t message_id, std::uint64_t /*payload_size*/){
 	POSEIDON_PROFILE_ME;
 
 	m_size_total = 0;
 	m_message_id = message_id;
 	m_payload.clear();
 }
-void Session::on_low_level_data_message_payload(boost::uint64_t /*payload_offset*/, Stream_buffer payload){
+void Session::on_low_level_data_message_payload(std::uint64_t /*payload_offset*/, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 
 	m_size_total += payload.size();
 	POSEIDON_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_request_too_large);
 	m_payload.splice(payload);
 }
-bool Session::on_low_level_data_message_end(boost::uint64_t /*payload_size*/){
+bool Session::on_low_level_data_message_end(std::uint64_t /*payload_size*/){
 	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
@@ -232,10 +232,10 @@ void Session::on_sync_control_message(Status_code status_code, Stream_buffer par
 	}
 }
 
-boost::uint64_t Session::get_max_request_length() const {
+std::uint64_t Session::get_max_request_length() const {
 	return atomic_load(m_max_request_length, memory_order_consume);
 }
-void Session::set_max_request_length(boost::uint64_t max_request_length){
+void Session::set_max_request_length(std::uint64_t max_request_length){
 	atomic_store(m_max_request_length, max_request_length, memory_order_release);
 }
 

@@ -5,7 +5,6 @@
 #define POSEIDON_ATOMIC_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 #include <boost/type_traits/common_type.hpp>
 
 namespace Poseidon {

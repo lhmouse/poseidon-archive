@@ -4,31 +4,27 @@
 #ifndef POSEIDON_MULTI_INDEX_MAP_HPP_
 #define POSEIDON_MULTI_INDEX_MAP_HPP_
 
-/*
-
-定义时需要指定索引。
-
-typedef ::std::pair<int, ::std::string> Item;
-
-POSEIDON_MULTI_INDEX_MAP(Container, Item,
-	POSEIDON_UNIQUE_MEMBER_INDEX(first)
-	POSEIDON_MULTI_MEMBER_INDEX(second)
-	POSEIDON_SEQUENCE_INDEX()
-);
-
-基本用法和 ::std::map 类似，只是 find, count, lower_bound, upper_bound, equal_range 等
-成员函数需要带一个非类型模板参数，指定使用第几个索引。
-
-Container c;
-c.insert(Item(1, "abc"));
-c.insert(Item(2, "def"));
-::std::cout <<c.find<0>(1)->second <<::std::endl;   // "abc";
-assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
-
-*/
+/* 定义时需要指定索引。
+ *
+ *   using Element = ::std::pair<int, ::std::string>;
+ *   POSEIDON_MULTI_INDEX_MAP(Container, Element,
+ *     POSEIDON_UNIQUE_MEMBER_INDEX(first)
+ *     POSEIDON_MULTI_MEMBER_INDEX(second)
+ *     POSEIDON_SEQUENCE_INDEX()
+ *   );
+ *
+ * 基本用法和 ::std::map 类似，只是 find, count, lower_bound, upper_bound, equal_range 等
+ * 成员函数需要带一个非类型模板参数，指定使用第几个索引。
+ *
+ *   Container c;
+ *   c.insert(Element(1, "abc"));
+ *   c.insert(Element(2, "def"));
+ *   std::cout <<c.find<0>(1)->second <<std::endl;   // "abc";
+ *   assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
+ */
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
+#include "pp_util.hpp"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
@@ -46,9 +42,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		public:	\
 			Key_setter(::Poseidon::Move<ValT> val)	\
 				: m_val(STD_MOVE_IDN(val))	\
-			{	\
-				/* */	\
-			}	\
+			{ }	\
 			\
 		public:	\
 			template<typename TargetT>	\
@@ -249,13 +243,13 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 			return m_elements.project<to_indexT>(pos);	\
 		}	\
 		\
-		template<int indexToSetT>	\
-		bool set_key(iterator pos, typename base_container::nth_index<indexToSetT>::type::key_type key){	\
-			return get_index<indexToSetT>().modify_key(m_elements.project<indexToSetT>(pos), Key_setter<VALUE_TYPE(key)>(STD_MOVE(key)));	\
+		template<int index_to_setT>	\
+		bool set_key(iterator pos, typename base_container::nth_index<index_to_setT>::type::key_type key){	\
+			return get_index<index_to_setT>().modify_key(m_elements.project<index_to_setT>(pos), Key_setter<VALUE_TYPE(key)>(STD_MOVE(key)));	\
 		}	\
-		template<int indexT, int indexToSetT>	\
-		bool set_key(typename base_container::nth_index<indexT>::type::iterator pos, typename base_container::nth_index<indexToSetT>::type::key_type key){	\
-			return get_index<indexToSetT>().modify_key(m_elements.project<indexToSetT>(pos), Key_setter<VALUE_TYPE(key)>(STD_MOVE(key)));	\
+		template<int indexT, int index_to_setT>	\
+		bool set_key(typename base_container::nth_index<indexT>::type::iterator pos, typename base_container::nth_index<index_to_setT>::type::key_type key){	\
+			return get_index<index_to_setT>().modify_key(m_elements.project<index_to_setT>(pos), Key_setter<VALUE_TYPE(key)>(STD_MOVE(key)));	\
 		}	\
 		\
 		template<int indexT>	\

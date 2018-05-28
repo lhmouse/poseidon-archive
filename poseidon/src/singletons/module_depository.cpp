@@ -3,22 +3,21 @@
 
 #include "../precompiled.hpp"
 #include "module_depository.hpp"
-#include <boost/type_traits/decay.hpp>
-#include <dlfcn.h>
 #include "main_config.hpp"
-#include "../recursive_mutex.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 #include "../raii.hpp"
 #include "../exception.hpp"
 #include "../multi_index_map.hpp"
 #include "../module_raii.hpp"
+#include <boost/type_traits/decay.hpp>
+#include <dlfcn.h>
 
 namespace Poseidon {
 
 namespace {
 	// 注意 dl 系列的函数都不是线程安全的。
-	Recursive_mutex g_mutex;
+	std::recursive_mutex g_mutex;
 
 	struct Module_raii_map_element {
 		// Indices.
@@ -36,7 +35,7 @@ namespace {
 			return NULLPTR;
 		}
 		void operator()(void *handle) NOEXCEPT {
-			const Recursive_mutex::Unique_lock lock(g_mutex);
+			const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 			if(::dlclose(handle) != 0){
 				const char *const error = ::dlerror();
 				POSEIDON_LOG_WARNING("Error unloading dynamic library: ", error);
@@ -44,7 +43,7 @@ namespace {
 		}
 	};
 
-	class Module : NONCOPYABLE {
+	class Module {
 	private:
 		Unique_handle<Dynamic_library_closer> m_dl_handle;
 		void *m_base_address;
@@ -101,7 +100,7 @@ namespace {
 void Module_depository::register_module_raii(Module_raii_base *raii, long priority){
 	POSEIDON_PROFILE_ME;
 
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	::Dl_info info;
 	POSEIDON_THROW_UNLESS(::dladdr(raii, &info), Exception, Rcnts::view("Error getting base address"));
 	Module_raii_map_element elem = { raii, std::make_pair(info.dli_fbase, priority) };
@@ -111,7 +110,7 @@ void Module_depository::register_module_raii(Module_raii_base *raii, long priori
 void Module_depository::unregister_module_raii(Module_raii_base *raii) NOEXCEPT {
 	POSEIDON_PROFILE_ME;
 
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	const AUTO(it, g_module_raii_map.find<0>(raii));
 	if(it == g_module_raii_map.end()){
 		POSEIDON_LOG_ERROR("Module_raii not found? raii = ", static_cast<void *>(raii));
@@ -126,14 +125,14 @@ void Module_depository::start(){
 void Module_depository::stop(){
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Unloading all modules...");
 
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	g_module_map.clear();
 }
 
 void * Module_depository::load(const std::string &path){
 	POSEIDON_PROFILE_ME;
 
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Loading module: ", path);
 	Unique_handle<Dynamic_library_closer> dl_handle;
 	POSEIDON_THROW_UNLESS(dl_handle.reset(::dlopen(path.c_str(), RTLD_NOW | RTLD_NODELETE)), Exception, Rcnts(::dlerror()));
@@ -181,7 +180,7 @@ try {
 bool Module_depository::unload(void *base_address) NOEXCEPT {
 	POSEIDON_PROFILE_ME;
 
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	const AUTO(it, g_module_map.find<1>(base_address));
 	if(it == g_module_map.end<1>()){
 		POSEIDON_LOG_WARNING("Module not found: base_address = ", base_address);
@@ -195,7 +194,7 @@ bool Module_depository::unload(void *base_address) NOEXCEPT {
 void Module_depository::snapshot(boost::container::vector<Module_depository::Snapshot_element> &ret){
 	POSEIDON_PROFILE_ME;
 
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	ret.reserve(ret.size() + g_module_map.size());
 	for(AUTO(it, g_module_map.begin()); it != g_module_map.end(); ++it){
 		Snapshot_element elem = { };

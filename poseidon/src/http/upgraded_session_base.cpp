@@ -20,7 +20,7 @@ Upgraded_session_base::~Upgraded_session_base(){
 	//
 }
 
-void Upgraded_session_base::on_shutdown_timer(boost::uint64_t /*now*/){
+void Upgraded_session_base::on_shutdown_timer(std::uint64_t /*now*/){
 	//
 }
 
@@ -88,7 +88,7 @@ void Upgraded_session_base::set_no_delay(bool enabled){
 	POSEIDON_THROW_UNLESS(parent, Basic_exception, Rcnts::view("Parent session is gone"));
 	parent->set_no_delay(enabled);
 }
-void Upgraded_session_base::set_timeout(boost::uint64_t timeout){
+void Upgraded_session_base::set_timeout(std::uint64_t timeout){
 	const AUTO(parent, get_parent());
 	POSEIDON_THROW_UNLESS(parent, Basic_exception, Rcnts::view("Parent session is gone"));
 	parent->set_timeout(timeout);

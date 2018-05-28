@@ -14,17 +14,17 @@ Promise::~Promise(){
 }
 
 bool Promise::is_satisfied() const NOEXCEPT {
-	const Recursive_mutex::Unique_lock lock(m_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(m_mutex);
 	const STD_EXCEPTION_PTR *const ptr = m_except.get_ptr();
 	return ptr;
 }
 bool Promise::would_throw() const NOEXCEPT {
-	const Recursive_mutex::Unique_lock lock(m_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(m_mutex);
 	const STD_EXCEPTION_PTR *const ptr = m_except.get_ptr();
 	return !ptr || *ptr;
 }
 void Promise::check_and_rethrow() const {
-	const Recursive_mutex::Unique_lock lock(m_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(m_mutex);
 	const STD_EXCEPTION_PTR *const ptr = m_except.get_ptr();
 	if(!ptr){
 		POSEIDON_THROW(Exception, Rcnts::view("Promise has not been satisfied"));
@@ -38,7 +38,7 @@ void Promise::set_success(bool throw_if_already_set){
 	set_exception(STD_EXCEPTION_PTR(), throw_if_already_set);
 }
 void Promise::set_exception(STD_EXCEPTION_PTR except, bool throw_if_already_set){
-	const Recursive_mutex::Unique_lock lock(m_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(m_mutex);
 	if(m_except){
 		if(throw_if_already_set){
 			POSEIDON_THROW(Exception, Rcnts::view("Promise has already been satisfied"));

@@ -15,11 +15,11 @@ class Sock_addr;
 class Ip_port {
 private:
 	char m_ip[128];
-	boost::uint16_t m_port;
+	std::uint16_t m_port;
 
 public:
 	Ip_port();
-	Ip_port(const char *ip_str, boost::uint16_t port_num);
+	Ip_port(const char *ip_str, std::uint16_t port_num);
 	Ip_port(const Sock_addr &sock_addr);
 	Ip_port(const Ip_port &ip_port) NOEXCEPT;
 	Ip_port & operator=(const Ip_port &ip_port) NOEXCEPT;
@@ -28,7 +28,7 @@ public:
 	const char * ip() const {
 		return m_ip;
 	}
-	boost::uint16_t port() const {
+	std::uint16_t port() const {
 		return m_port;
 	}
 };

@@ -4,7 +4,6 @@
 #ifndef POSEIDON_JOB_BASE_HPP_
 #define POSEIDON_JOB_BASE_HPP_
 
-#include "cxx_util.hpp"
 #include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -12,9 +11,13 @@ namespace Poseidon {
 
 class Promise;
 
-class Job_base : NONCOPYABLE {
+class Job_base {
 public:
+	Job_base() noexcept = default;
 	virtual ~Job_base();
+
+	Job_base(const Job_base &) = delete;
+	Job_base &operator=(const Job_base &) = delete;
 
 public:
 	// 如果一个任务被推迟执行且 Category 非空，

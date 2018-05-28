@@ -4,19 +4,18 @@
 #include "../precompiled.hpp"
 #include "epoll_daemon.hpp"
 #include "main_config.hpp"
-#include "../thread.hpp"
 #include "../log.hpp"
 #include "../atomic.hpp"
 #include "../time.hpp"
 #include "../socket_base.hpp"
 #include "../profiler.hpp"
-#include "../recursive_mutex.hpp"
 #include "../raii.hpp"
 #include "../multi_index_map.hpp"
 #include "../checked_arithmetic.hpp"
 #include "../system_exception.hpp"
 #include "../errno.hpp"
 #include "../flags.hpp"
+#include <thread>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
@@ -26,7 +25,7 @@ namespace Poseidon {
 
 namespace {
 	volatile bool g_running = false;
-	Thread g_thread;
+	std::thread g_thread;
 
 	class Weakable_socket {
 	private:
@@ -55,8 +54,8 @@ namespace {
 		boost::shared_ptr<const Weakable_socket> weakable;
 		// Indices.
 		const Socket_base *ptr;
-		boost::uint64_t read_time;
-		boost::uint64_t write_time;
+		std::uint64_t read_time;
+		std::uint64_t write_time;
 		int err_code;
 		// Variables.
 		mutable bool readable;
@@ -69,15 +68,15 @@ namespace {
 		POSEIDON_MULTI_MEMBER_INDEX(err_code)
 	);
 
-	Recursive_mutex g_mutex;
+	std::recursive_mutex g_mutex;
 	Unique_file g_epoll;
 	Socket_map g_socket_map;
 
-	bool wait_for_sockets(unsigned timeout) NOEXCEPT {
+	bool wait_for_sockets(int timeout) NOEXCEPT {
 		POSEIDON_PROFILE_ME;
 
 		boost::array< ::epoll_event, 256> events;
-		const int result = ::epoll_wait(g_epoll.get(), events.data(), static_cast<int>(events.size()), static_cast<int>(std::min<unsigned>(timeout, INT_MAX)));
+		const int result = ::epoll_wait(g_epoll.get(), events.data(), static_cast<int>(events.size()), std::min(timeout, INT_MAX));
 		if(result < 0){
 			const int err_code = errno;
 			if(err_code != EINTR){
@@ -89,7 +88,7 @@ namespace {
 			return false;
 		}
 		const AUTO(now, get_fast_mono_clock());
-		const Recursive_mutex::Unique_lock lock(g_mutex);
+		const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 		for(unsigned i = 0; i < static_cast<unsigned>(result); ++i){
 			const AUTO(ptr, static_cast<Socket_base *>(events[i].data.ptr));
 			const AUTO(it, g_socket_map.find<0>(ptr));
@@ -137,7 +136,7 @@ namespace {
 		boost::shared_ptr<Socket_base> socket;
 		bool readable;
 		{
-			const Recursive_mutex::Unique_lock lock(g_mutex);
+			const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 			const AUTO(it, g_socket_map.begin<1>());
 			if(it == g_socket_map.end<1>()){
 				return false;
@@ -155,7 +154,7 @@ namespace {
 
 		if(socket->is_throttled()){
 			POSEIDON_LOG(Logger::special_major | Logger::level_debug, "Socket is throttled: socket = ", socket, ", typeid = ", typeid(*socket).name());
-			const Recursive_mutex::Unique_lock lock(g_mutex);
+			const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 1>(it, now + 5000);
@@ -177,7 +176,7 @@ namespace {
 		if((err_code == 0) || (err_code == EINTR)){
 			// Success.
 		} else if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
-			const Recursive_mutex::Unique_lock lock(g_mutex);
+			const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 1>(it, -1ull);
@@ -196,7 +195,7 @@ namespace {
 		boost::shared_ptr<Socket_base> socket;
 		bool writable;
 		{
-			const Recursive_mutex::Unique_lock lock(g_mutex);
+			const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 			const AUTO(it, g_socket_map.begin<2>());
 			if(it == g_socket_map.end<2>()){
 				return false;
@@ -212,7 +211,7 @@ namespace {
 			writable = it->writable;
 		}
 
-		Mutex::Unique_lock write_lock;
+		std::unique_lock<std::mutex> write_lock;
 		int err_code;
 		try {
 			err_code = socket->poll_write(write_lock, io_buffer.data(), io_buffer.size(), writable);
@@ -227,7 +226,7 @@ namespace {
 		if((err_code == 0) || (err_code == EINTR)){
 			// Success.
 		} else if((err_code == EWOULDBLOCK) || (err_code == EAGAIN)){
-			const Recursive_mutex::Unique_lock lock(g_mutex);
+			const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 			const AUTO(it, g_socket_map.find<0>(socket.get()));
 			if(it != g_socket_map.end<0>()){
 				g_socket_map.set_key<0, 2>(it, -1ull);
@@ -246,7 +245,7 @@ namespace {
 		boost::shared_ptr<Socket_base> socket;
 		int err_code;
 		{
-			const Recursive_mutex::Unique_lock lock(g_mutex);
+			const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 			const AUTO(it, g_socket_map.lower_bound<3>(0));
 			if(it == g_socket_map.end<3>()){
 				return false;
@@ -268,7 +267,7 @@ namespace {
 		} catch(...){
 			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Unknown exception thrown: socket = ", socket, ", typeid = ", typeid(*socket).name());
 		}
-		const Recursive_mutex::Unique_lock lock(g_mutex);
+		const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 		const AUTO(it, g_socket_map.find<0>(socket.get()));
 		if(it != g_socket_map.end<0>()){
 			g_socket_map.erase<0>(it);
@@ -278,13 +277,15 @@ namespace {
 
 	void thread_proc(){
 		POSEIDON_PROFILE_ME;
+
+		Logger::set_thread_tag("   N");
 		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Epoll daemon started.");
 
 		boost::container::vector<unsigned char> io_buffer;
 		const AUTO(io_buffer_size, Main_config::get<std::size_t>("epoll_io_buffer_size", 4096));
 		io_buffer.resize(std::max<std::size_t>(io_buffer_size, 508)); // 508 is the maximum size of UDP packets guaranteed to be transmitted.
 
-		unsigned timeout = 0;
+		int timeout = 0;
 		for(;;){
 			bool busy;
 			do {
@@ -292,7 +293,7 @@ namespace {
 				busy += pump_one_readable_socket(io_buffer);
 				busy += pump_one_writable_socket(io_buffer);
 				busy += pump_one_closed_socket();
-				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
+				timeout = std::min(timeout * 2 + 1, (1 - busy) * 128);
 			} while(busy);
 
 			if(!atomic_load(g_running, memory_order_consume)){
@@ -313,7 +314,7 @@ void Epoll_daemon::start(){
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting epoll daemon...");
 
 	POSEIDON_THROW_UNLESS(g_epoll.reset(::epoll_create(100)), System_exception);
-	Thread(&thread_proc, Rcnts::view("   N"), Rcnts::view("Network")).swap(g_thread);
+	g_thread = std::thread(&thread_proc);
 }
 void Epoll_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
@@ -325,7 +326,7 @@ void Epoll_daemon::stop(){
 		g_thread.join();
 	}
 
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	g_socket_map.clear();
 	g_epoll.reset();
 }
@@ -334,13 +335,13 @@ void Epoll_daemon::add_socket(const boost::shared_ptr<Socket_base> &socket, bool
 	POSEIDON_PROFILE_ME;
 
 	const AUTO(now, get_fast_mono_clock());
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	Socket_element elem = { boost::make_shared<Weakable_socket>(take_ownership, socket), socket.get(), now, now, -1 };
 	const AUTO(result, g_socket_map.insert(STD_MOVE(elem)));
 	POSEIDON_THROW_UNLESS(result.second, Exception, Rcnts::view("Socket is already in epoll"));
 	try {
 		::epoll_event event = { };
-		event.events = static_cast<boost::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
+		event.events = static_cast<std::uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
 		event.data.ptr = socket.get();
 		POSEIDON_THROW_UNLESS(::epoll_ctl(g_epoll.get(), EPOLL_CTL_ADD, socket->get_fd(), &event) == 0, System_exception);
 	} catch(...){
@@ -351,7 +352,7 @@ void Epoll_daemon::add_socket(const boost::shared_ptr<Socket_base> &socket, bool
 bool Epoll_daemon::mark_socket_writable(const Socket_base *ptr) NOEXCEPT {
 	POSEIDON_PROFILE_ME;
 
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	const AUTO(it, g_socket_map.find<0>(ptr));
 	if(it == g_socket_map.end()){
 		POSEIDON_LOG_TRACE("Socket not found in epoll: ptr = ", ptr);
@@ -365,7 +366,7 @@ bool Epoll_daemon::mark_socket_writable(const Socket_base *ptr) NOEXCEPT {
 void Epoll_daemon::snapshot(boost::container::vector<Epoll_daemon::Snapshot_element> &ret){
 	POSEIDON_PROFILE_ME;
 
-	const Recursive_mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::recursive_mutex> lock(g_mutex);
 	ret.reserve(ret.size() + g_socket_map.size());
 	for(AUTO(it, g_socket_map.begin()); it != g_socket_map.end(); ++it){
 		const AUTO(socket, it->weakable->lock());

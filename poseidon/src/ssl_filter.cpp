@@ -63,7 +63,7 @@ Ssl_filter::~Ssl_filter(){
 long Ssl_filter::recv(void *data, unsigned long size){
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(m_mutex);
+	const std::lock_guard<std::mutex> lock(m_mutex);
 	int bytes_read = ::SSL_read(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
 	if(bytes_read <= 0){
 		if(::SSL_get_shutdown(m_ssl.get()) & SSL_RECEIVED_SHUTDOWN){
@@ -82,7 +82,7 @@ long Ssl_filter::recv(void *data, unsigned long size){
 long Ssl_filter::send(const void *data, unsigned long size){
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(m_mutex);
+	const std::lock_guard<std::mutex> lock(m_mutex);
 	int bytes_written = ::SSL_write(m_ssl.get(), data, static_cast<int>(std::min<unsigned long>(size, INT_MAX)));
 	if(bytes_written <= 0){
 		if(::SSL_get_shutdown(m_ssl.get()) & SSL_SENT_SHUTDOWN){
@@ -107,7 +107,7 @@ long Ssl_filter::send(const void *data, unsigned long size){
 void Ssl_filter::send_fin() NOEXCEPT {
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(m_mutex);
+	const std::lock_guard<std::mutex> lock(m_mutex);
 	const int status = ::SSL_shutdown(m_ssl.get());
 	if(status == 1){
 		::shutdown(::SSL_get_wfd(m_ssl.get()), SHUT_WR);

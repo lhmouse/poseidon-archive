@@ -4,7 +4,6 @@
 #ifndef POSEIDON_HEX_HPP_
 #define POSEIDON_HEX_HPP_
 
-#include "cxx_util.hpp"
 #include "stream_buffer.hpp"
 #include <string>
 #include <cstddef>
@@ -12,7 +11,7 @@
 
 namespace Poseidon {
 
-class Hex_encoder : NONCOPYABLE {
+class Hex_encoder {
 private:
 	bool m_upper_case;
 	Stream_buffer m_buffer;
@@ -20,6 +19,9 @@ private:
 public:
 	explicit Hex_encoder(bool upper_case = false);
 	~Hex_encoder();
+
+	Hex_encoder(const Hex_encoder &) = delete;
+	Hex_encoder &operator=(const Hex_encoder &) = delete;
 
 public:
 	bool is_upper_case() const {
@@ -54,7 +56,7 @@ public:
 	Stream_buffer finalize();
 };
 
-class Hex_decoder : NONCOPYABLE {
+class Hex_decoder {
 private:
 	unsigned m_seq;
 	Stream_buffer m_buffer;
@@ -62,6 +64,9 @@ private:
 public:
 	Hex_decoder();
 	~Hex_decoder();
+
+	Hex_decoder(const Hex_decoder &) = delete;
+	Hex_decoder &operator=(const Hex_decoder &) = delete;
 
 public:
 	const Stream_buffer & get_buffer() const {

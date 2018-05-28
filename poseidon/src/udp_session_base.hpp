@@ -10,12 +10,13 @@
 #include "sock_addr.hpp"
 #include "ip_port.hpp"
 #include "stream_buffer.hpp"
+#include <mutex>
 
 namespace Poseidon {
 
 class Udp_session_base : public Socket_base {
 private:
-	mutable Mutex m_send_mutex;
+	mutable std::mutex m_send_mutex;
 	mutable boost::container::deque<std::pair<Sock_addr, Stream_buffer> > m_send_queue;
 
 public:
@@ -25,7 +26,7 @@ public:
 protected:
 	// 注意，只能在 epoll 线程中调用这些函数。
 	int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable) OVERRIDE;
-	int poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writable) OVERRIDE;
+	int poll_write(std::unique_lock<std::mutex> &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writable) OVERRIDE;
 
 	virtual void on_receive(const Sock_addr &sock_addr, Stream_buffer data) = 0;
 	virtual void on_message_too_large(const Sock_addr &sock_addr, Stream_buffer data);

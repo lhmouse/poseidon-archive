@@ -5,7 +5,6 @@
 #define POSEIDON_HTTP_LOW_LEVEL_SESSION_HPP_
 
 #include "../tcp_session_base.hpp"
-#include "../mutex.hpp"
 #include "server_reader.hpp"
 #include "server_writer.hpp"
 #include "request_headers.hpp"
@@ -22,7 +21,7 @@ class Low_level_session : public Tcp_session_base, protected Server_reader, prot
 	friend Upgraded_session_base;
 
 private:
-	mutable Mutex m_upgraded_session_mutex;
+	mutable std::mutex m_upgraded_session_mutex;
 	boost::shared_ptr<Upgraded_session_base> m_upgraded_session;
 
 public:
@@ -42,20 +41,20 @@ protected:
 	void on_receive(Stream_buffer data) OVERRIDE;
 
 	// 注意，只能在 timer 线程中调用这些函数。
-	void on_shutdown_timer(boost::uint64_t now) OVERRIDE;
+	void on_shutdown_timer(std::uint64_t now) OVERRIDE;
 
 	// Server_reader
-	void on_request_headers(Request_headers request_headers, boost::uint64_t content_length) OVERRIDE;
-	void on_request_entity(boost::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
-	bool on_request_end(boost::uint64_t content_length, Option_map headers) OVERRIDE;
+	void on_request_headers(Request_headers request_headers, std::uint64_t content_length) OVERRIDE;
+	void on_request_entity(std::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
+	bool on_request_end(std::uint64_t content_length, Option_map headers) OVERRIDE;
 
 	// Server_writer
 	long on_encoded_data_avail(Stream_buffer encoded) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_low_level_request_headers(Request_headers request_headers, boost::uint64_t content_length) = 0;
-	virtual void on_low_level_request_entity(boost::uint64_t entity_offset, Stream_buffer entity) = 0;
-	virtual boost::shared_ptr<Upgraded_session_base> on_low_level_request_end(boost::uint64_t content_length, Option_map headers) = 0;
+	virtual void on_low_level_request_headers(Request_headers request_headers, std::uint64_t content_length) = 0;
+	virtual void on_low_level_request_entity(std::uint64_t entity_offset, Stream_buffer entity) = 0;
+	virtual boost::shared_ptr<Upgraded_session_base> on_low_level_request_end(std::uint64_t content_length, Option_map headers) = 0;
 
 public:
 	boost::shared_ptr<Upgraded_session_base> get_upgraded_session() const;

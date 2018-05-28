@@ -5,12 +5,12 @@
 #define POSEIDON_HTTP_LOW_LEVEL_CLIENT_HPP_
 
 #include "../tcp_client_base.hpp"
-#include "../mutex.hpp"
 #include "client_reader.hpp"
 #include "client_writer.hpp"
 #include "request_headers.hpp"
 #include "response_headers.hpp"
 #include "status_codes.hpp"
+#include <mutex>
 
 namespace Poseidon {
 namespace Http {
@@ -22,7 +22,7 @@ class Low_level_client : public Tcp_client_base, protected Client_reader, protec
 	friend Upgraded_session_base;
 
 private:
-	mutable Mutex m_upgraded_client_mutex;
+	mutable std::mutex m_upgraded_client_mutex;
 	boost::shared_ptr<Upgraded_session_base> m_upgraded_client;
 
 public:
@@ -42,20 +42,20 @@ protected:
 	void on_receive(Stream_buffer data) OVERRIDE;
 
 	// 注意，只能在 timer 线程中调用这些函数。
-	void on_shutdown_timer(boost::uint64_t now) OVERRIDE;
+	void on_shutdown_timer(std::uint64_t now) OVERRIDE;
 
 	// Client_reader
-	void on_response_headers(Response_headers response_headers, boost::uint64_t content_length) OVERRIDE;
-	void on_response_entity(boost::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
-	bool on_response_end(boost::uint64_t content_length, Option_map headers) OVERRIDE;
+	void on_response_headers(Response_headers response_headers, std::uint64_t content_length) OVERRIDE;
+	void on_response_entity(std::uint64_t entity_offset, Stream_buffer entity) OVERRIDE;
+	bool on_response_end(std::uint64_t content_length, Option_map headers) OVERRIDE;
 
 	// Client_writer
 	long on_encoded_data_avail(Stream_buffer encoded) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_low_level_response_headers(Response_headers response_headers, boost::uint64_t content_length) = 0;
-	virtual void on_low_level_response_entity(boost::uint64_t entity_offset, Stream_buffer entity) = 0;
-	virtual boost::shared_ptr<Upgraded_session_base> on_low_level_response_end(boost::uint64_t content_length, Option_map headers) = 0;
+	virtual void on_low_level_response_headers(Response_headers response_headers, std::uint64_t content_length) = 0;
+	virtual void on_low_level_response_entity(std::uint64_t entity_offset, Stream_buffer entity) = 0;
+	virtual boost::shared_ptr<Upgraded_session_base> on_low_level_response_end(std::uint64_t content_length, Option_map headers) = 0;
 
 public:
 	boost::shared_ptr<Upgraded_session_base> get_upgraded_client() const;

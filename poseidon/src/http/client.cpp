@@ -142,18 +142,18 @@ void Client::on_read_hup(){
 	Low_level_client::on_read_hup();
 }
 
-void Client::on_low_level_response_headers(Response_headers response_headers, boost::uint64_t /*content_length*/){
+void Client::on_low_level_response_headers(Response_headers response_headers, std::uint64_t /*content_length*/){
 	POSEIDON_PROFILE_ME;
 
 	m_response_headers = STD_MOVE(response_headers);
 	m_entity.clear();
 }
-void Client::on_low_level_response_entity(boost::uint64_t /*entity_offset*/, Stream_buffer entity){
+void Client::on_low_level_response_entity(std::uint64_t /*entity_offset*/, Stream_buffer entity){
 	POSEIDON_PROFILE_ME;
 
 	m_entity.splice(entity);
 }
-boost::shared_ptr<Upgraded_session_base> Client::on_low_level_response_end(boost::uint64_t /*content_length*/, Option_map /*headers*/){
+boost::shared_ptr<Upgraded_session_base> Client::on_low_level_response_end(std::uint64_t /*content_length*/, Option_map /*headers*/){
 	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(

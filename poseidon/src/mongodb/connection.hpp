@@ -5,7 +5,6 @@
 #define POSEIDON_MONGODB_CONNECTION_HPP_
 
 #include "../cxx_ver.hpp"
-#include "../cxx_util.hpp"
 #include "../uuid.hpp"
 #include "../fwd.hpp"
 #include <string>
@@ -18,9 +17,9 @@ namespace Mongodb {
 
 class Bson_builder;
 
-class Connection : NONCOPYABLE {
+class Connection {
 public:
-	static boost::shared_ptr<Connection> create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database);
+	static boost::shared_ptr<Connection> create(const char *server_addr, std::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database);
 
 public:
 	virtual ~Connection();
@@ -32,11 +31,11 @@ public:
 	virtual bool fetch_document() = 0;
 
 	virtual bool get_boolean(const char *name) const = 0;
-	virtual boost::int64_t get_signed(const char *name) const = 0;
-	virtual boost::uint64_t get_unsigned(const char *name) const = 0;
+	virtual std::int64_t get_signed(const char *name) const = 0;
+	virtual std::uint64_t get_unsigned(const char *name) const = 0;
 	virtual double get_double(const char *name) const = 0;
 	virtual std::string get_string(const char *name) const = 0;
-	virtual boost::uint64_t get_datetime(const char *name) const = 0;
+	virtual std::uint64_t get_datetime(const char *name) const = 0;
 	virtual Uuid get_uuid(const char *name) const = 0;
 	virtual Stream_buffer get_blob(const char *name) const = 0;
 };

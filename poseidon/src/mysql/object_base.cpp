@@ -12,8 +12,8 @@ namespace Poseidon {
 namespace Mysql {
 
 template class Object_base::Field<bool>;
-template class Object_base::Field<boost::int64_t>;
-template class Object_base::Field<boost::uint64_t>;
+template class Object_base::Field<std::int64_t>;
+template class Object_base::Field<std::uint64_t>;
 template class Object_base::Field<double>;
 template class Object_base::Field<std::string>;
 template class Object_base::Field<Uuid>;

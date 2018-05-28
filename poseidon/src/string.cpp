@@ -16,7 +16,7 @@ const std::string & empty_string() NOEXCEPT {
 }
 
 bool is_valid_utf8_string(const std::string &str){
-	boost::uint32_t code_point;
+	std::uint32_t code_point;
 	for(AUTO(it, str.begin()); it != str.end(); ++it){
 		code_point = static_cast<unsigned char>(*it);
 		if((code_point & 0x80u) == 0){

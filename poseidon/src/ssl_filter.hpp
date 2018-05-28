@@ -5,13 +5,12 @@
 #define POSEIDON_SSL_FILTER_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 #include "ssl_raii.hpp"
-#include "mutex.hpp"
+#include <mutex>
 
 namespace Poseidon {
 
-class Ssl_filter : NONCOPYABLE {
+class Ssl_filter {
 public:
 	enum Direction {
 		to_connect  = 1,
@@ -19,9 +18,8 @@ public:
 	};
 
 private:
-	const Unique_ssl m_ssl;
-
-	mutable Mutex m_mutex;
+	Unique_ssl m_ssl;
+	mutable std::mutex m_mutex;
 
 public:
 	Ssl_filter(Move<Unique_ssl> ssl, Direction dir, int fd);

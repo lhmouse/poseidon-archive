@@ -4,8 +4,9 @@
 #ifndef POSEIDON_CBPP_MESSAGE_BASE_HPP_
 #define POSEIDON_CBPP_MESSAGE_BASE_HPP_
 
-#include "../cxx_ver.hpp"
-#include "../cxx_util.hpp"
+#include "../pp_util.hpp"
+#include "../stream_buffer.hpp"
+#include "../hex_printer.hpp"
 #include <string>
 #include <ostream>
 #include <cstddef>
@@ -13,8 +14,6 @@
 #include <boost/container/vector.hpp>
 #include <boost/container/deque.hpp>
 #include <boost/cstdint.hpp>
-#include "../stream_buffer.hpp"
-#include "../hex_printer.hpp"
 
 /*===========================================================================*\
 
@@ -52,7 +51,7 @@ public:
 	virtual ~Message_base();
 
 public:
-	virtual boost::uint64_t get_id() const = 0;
+	virtual std::uint64_t get_id() const = 0;
 	virtual void serialize(Stream_buffer &buffer) const = 0;
 	virtual void deserialize(Stream_buffer &buffer) = 0;
 	virtual void dump_debug(std::ostream &os, int indent_initial = 0) const = 0;
@@ -70,15 +69,15 @@ inline std::ostream & operator<<(std::ostream &os, const Message_base &rhs){
 	return os;
 }
 
-extern void shift_vint(boost::int64_t &value, Stream_buffer &buf, const char *name);
-extern void shift_vuint(boost::uint64_t &value, Stream_buffer &buf, const char *name);
+extern void shift_vint(std::int64_t &value, Stream_buffer &buf, const char *name);
+extern void shift_vuint(std::uint64_t &value, Stream_buffer &buf, const char *name);
 extern void shift_string(std::string &value, Stream_buffer &buf, const char *name);
 extern void shift_blob(Stream_buffer &value, Stream_buffer &buf, const char *name);
 extern void shift_fixed(void *data, std::size_t size, Stream_buffer &buf, const char *name);
 extern void shift_flexible(Stream_buffer &value, Stream_buffer &buf, const char *name);
 
-extern void push_vint(Stream_buffer &buf, boost::int64_t value);
-extern void push_vuint(Stream_buffer &buf, boost::uint64_t value);
+extern void push_vint(Stream_buffer &buf, std::int64_t value);
+extern void push_vuint(Stream_buffer &buf, std::uint64_t value);
 extern void push_string(Stream_buffer &buf, const std::string &value);
 extern void push_blob(Stream_buffer &buf, const Stream_buffer &value);
 extern void push_fixed(Stream_buffer &buf, const void *data, std::size_t size);

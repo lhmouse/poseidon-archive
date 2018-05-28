@@ -5,11 +5,10 @@
 #define POSEIDON_PROFILER_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 
 namespace Poseidon {
 
-class Profiler : NONCOPYABLE {
+class Profiler {
 public:
 	static void accumulate_all_in_thread() NOEXCEPT;
 
@@ -29,6 +28,9 @@ private:
 public:
 	Profiler(const char *file, unsigned long line, const char *func) NOEXCEPT;
 	~Profiler() NOEXCEPT;
+
+	Profiler(const Profiler &) = delete;
+	Profiler &operator=(const Profiler &) = delete;
 
 private:
 	void accumulate(double now, bool new_sample) NOEXCEPT;

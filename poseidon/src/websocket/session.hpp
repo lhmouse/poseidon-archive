@@ -18,9 +18,9 @@ private:
 	class Control_message_job;
 
 private:
-	volatile boost::uint64_t m_max_request_length;
-	boost::uint64_t m_size_total;
-	Opcode m_opcode;
+	volatile std::uint64_t m_max_request_length;
+	std::uint64_t m_size_total;
+	Op_code m_opcode;
 	Stream_buffer m_payload;
 
 public:
@@ -28,10 +28,10 @@ public:
 	~Session();
 
 protected:
-	boost::uint64_t get_low_level_size_total() const {
+	std::uint64_t get_low_level_size_total() const {
 		return m_size_total;
 	}
-	Opcode get_low_level_opcode() const {
+	Op_code get_low_level_opcode() const {
 		return m_opcode;
 	}
 	const Stream_buffer & get_low_level_payload() const {
@@ -40,22 +40,22 @@ protected:
 
 	// Upgraded_session_base
 	void on_read_hup() OVERRIDE;
-	void on_shutdown_timer(boost::uint64_t now) OVERRIDE;
+	void on_shutdown_timer(std::uint64_t now) OVERRIDE;
 
 	// Low_level_session
-	void on_low_level_message_header(Opcode opcode) OVERRIDE;
-	void on_low_level_message_payload(boost::uint64_t whole_offset, Stream_buffer payload) OVERRIDE;
-	bool on_low_level_message_end(boost::uint64_t whole_size) OVERRIDE;
+	void on_low_level_message_header(Op_code opcode) OVERRIDE;
+	void on_low_level_message_payload(std::uint64_t whole_offset, Stream_buffer payload) OVERRIDE;
+	bool on_low_level_message_end(std::uint64_t whole_size) OVERRIDE;
 
-	bool on_low_level_control_message(Opcode opcode, Stream_buffer payload) OVERRIDE;
+	bool on_low_level_control_message(Op_code opcode, Stream_buffer payload) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_sync_data_message(Opcode opcode, Stream_buffer payload) = 0;
-	virtual void on_sync_control_message(Opcode opcode, Stream_buffer payload);
+	virtual void on_sync_data_message(Op_code opcode, Stream_buffer payload) = 0;
+	virtual void on_sync_control_message(Op_code opcode, Stream_buffer payload);
 
 public:
-	boost::uint64_t get_max_request_length() const;
-	void set_max_request_length(boost::uint64_t max_request_length);
+	std::uint64_t get_max_request_length() const;
+	void set_max_request_length(std::uint64_t max_request_length);
 };
 
 }

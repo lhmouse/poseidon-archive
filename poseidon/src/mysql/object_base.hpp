@@ -5,30 +5,29 @@
 #define POSEIDON_MYSQL_OBJECT_BASE_HPP_
 
 #include "../cxx_ver.hpp"
-#include "../cxx_util.hpp"
+#include "../pp_util.hpp"
 #include "connection.hpp"
 #include "formatting.hpp"
+#include "../rcnts.hpp"
+#include "../profiler.hpp"
+#include "../virtual_shared_from_this.hpp"
+#include "../uuid.hpp"
+#include "../stream_buffer.hpp"
 #include <string>
 #include <exception>
 #include <iosfwd>
-#include <cstdio>
+#include <mutex>
 #include <cstddef>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 #include <boost/utility/enable_if.hpp>
-#include "../rcnts.hpp"
-#include "../profiler.hpp"
-#include "../recursive_mutex.hpp"
-#include "../virtual_shared_from_this.hpp"
-#include "../uuid.hpp"
-#include "../stream_buffer.hpp"
 
 namespace Poseidon {
 namespace Mysql {
 
-class Object_base : NONCOPYABLE, public virtual Virtual_shared_from_this {
+class Object_base : public virtual Virtual_shared_from_this {
 public:
 	template<typename ValueT>
 	class Field;
@@ -38,16 +37,16 @@ private:
 	mutable void *volatile m_combined_write_stamp;
 
 protected:
-	mutable Recursive_mutex m_mutex;
+	mutable std::recursive_mutex m_mutex;
 
 public:
 	Object_base()
 		: m_auto_saves(false), m_combined_write_stamp(NULLPTR)
-	{
-		//
-	}
-	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
+	{ }
 	~Object_base();
+
+	Object_base(const Object_base &) = delete;
+	Object_base &operator=(const Object_base &) = delete;
 
 public:
 	bool is_auto_saving_enabled() const NOEXCEPT;
@@ -65,7 +64,7 @@ public:
 };
 
 template<typename ValueT>
-class Object_base::Field : NONCOPYABLE {
+class Object_base::Field {
 private:
 	Object_base *const m_parent;
 	ValueT m_value;
@@ -73,20 +72,21 @@ private:
 public:
 	explicit Field(Object_base *parent, ValueT value = ValueT())
 		: m_parent(parent), m_value(STD_MOVE_IDN(value))
-	{
-		//
-	}
+	{ }
+
+	Field(const Field &) = delete;
+	Field &operator=(const Field &) = delete;
 
 public:
 	const ValueT & unlocked_get() const {
 		return m_value;
 	}
 	ValueT get() const {
-		const Recursive_mutex::Unique_lock lock(m_parent->m_mutex);
+		const std::lock_guard<std::recursive_mutex> lock(m_parent->m_mutex);
 		return m_value;
 	}
 	void set(ValueT value, bool invalidates_parent = true){
-		const Recursive_mutex::Unique_lock lock(m_parent->m_mutex);
+		const std::lock_guard<std::recursive_mutex> lock(m_parent->m_mutex);
 		m_value = STD_MOVE_IDN(value);
 
 		if(invalidates_parent){
@@ -105,8 +105,8 @@ public:
 };
 
 extern template class Object_base::Field<bool>;
-extern template class Object_base::Field<boost::int64_t>;
-extern template class Object_base::Field<boost::uint64_t>;
+extern template class Object_base::Field<std::int64_t>;
+extern template class Object_base::Field<std::uint64_t>;
 extern template class Object_base::Field<double>;
 extern template class Object_base::Field<std::string>;
 extern template class Object_base::Field<Uuid>;

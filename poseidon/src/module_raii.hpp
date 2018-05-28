@@ -5,7 +5,6 @@
 #define POSEIDON_MODULE_RAII_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 #include "profiler.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/container/deque.hpp>
@@ -67,10 +66,13 @@ enum {
 	module_init_priority_low            = 60000,
 };
 
-class Module_raii_base : NONCOPYABLE {
+class Module_raii_base {
 public:
 	explicit Module_raii_base(long priority);
 	virtual ~Module_raii_base();
+
+	Module_raii_base(const Module_raii_base &) = delete;
+	Module_raii_base &operator=(const Module_raii_base &) = delete;
 
 public:
 	virtual void init(Handle_stack &handles) const = 0;

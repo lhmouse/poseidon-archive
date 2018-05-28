@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "status_codes.hpp"
 #include "../cxx_ver.hpp"
-#include "../cxx_util.hpp"
 #include <algorithm>
 
 namespace Poseidon {
@@ -23,7 +22,7 @@ namespace {
 		return status_code < elem.status_code;
 	}
 
-	const Status_desc_element s_desc_table[] = {
+	constexpr Status_desc_element s_desc_table[] = {
 		// https://www.rfc-editor.org/rfc/rfc7231.txt
 		{ 100, { "Continue",
 		         "The initial part of a request has been received and has not yet been rejected by the server." } },
@@ -131,17 +130,17 @@ namespace {
 		         "it needed to access in order to complete the request." } },
 		{ 505, { "HTTP Version Not Supported",
 		         "The server does not support, or refuses to support, the major version of  HTTP that was used in the request message." } },
-		{   0, { "Unknown Status Code",
+		{ 999, { "Unknown Status Code",
 		         "No description available for this status code." } },
 	};
 }
 
-Status_code_desc get_status_code_desc(Status_code status_code){
-	const AUTO(begin, BEGIN(s_desc_table));
-	const AUTO(end, END(s_desc_table) - 1); // It points to the last element for invalid status codes.
-	AUTO(ptr, std::lower_bound(begin, end, status_code));
+Status_code_desc get_status_code_desc(Status_code status_code) noexcept {
+	const auto begin = std::begin(s_desc_table);
+	const auto end = std::end(s_desc_table) - 1; // This points to the last element for invalid status codes.
+	const auto ptr = std::lower_bound(begin, end, status_code);
 	if(ptr->status_code != status_code){
-		ptr = end;
+		return end->desc;
 	}
 	return ptr->desc;
 }

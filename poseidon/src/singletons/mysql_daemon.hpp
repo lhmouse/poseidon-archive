@@ -19,7 +19,7 @@ private:
 	Mysql_daemon();
 
 public:
-	typedef boost::function<void (const boost::shared_ptr<Mysql::Connection> &)> Query_callback;
+	typedef std::function<void (const boost::shared_ptr<Mysql::Connection> &)> Query_callback;
 
 	static void start();
 	static void stop();

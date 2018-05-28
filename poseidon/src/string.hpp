@@ -5,7 +5,6 @@
 #define POSEIDON_STRING_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 #include "buffer_streams.hpp"
 #include <string>
 #include <cstddef>

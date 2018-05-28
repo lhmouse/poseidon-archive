@@ -6,12 +6,11 @@
 #include "../log.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
-#include "../thread.hpp"
-#include "../mutex.hpp"
-#include "../condition_variable.hpp"
 #include "../ip_port.hpp"
 #include "../raii.hpp"
 #include "../profiler.hpp"
+#include <condition_variable>
+#include <thread>
 #include <netdb.h>
 #include <unistd.h>
 
@@ -29,7 +28,7 @@ namespace {
 		}
 	};
 
-	Sock_addr real_dns_look_up(const std::string &host_raw, boost::uint16_t port_raw, bool prefer_ipv4){
+	Sock_addr real_dns_look_up(const std::string &host_raw, std::uint16_t port_raw, bool prefer_ipv4){
 		Unique_handle<Addrinfo_freeer> res;
 		std::string host;
 		if(!host_raw.empty() && (host_raw.begin()[0] == '[') && (host_raw.end()[-1] == ']')){
@@ -75,17 +74,17 @@ namespace {
 	}
 
 	volatile bool g_running = false;
-	Thread g_thread;
+	std::thread g_thread;
 
 	struct Request_element {
 		boost::weak_ptr<Promise_container<Sock_addr> > weak_promise;
 		std::string host;
-		boost::uint16_t port;
+		std::uint16_t port;
 		bool prefer_ipv4;
 	};
 
-	Mutex g_mutex;
-	Condition_variable g_new_request;
+	std::mutex g_mutex;
+	std::condition_variable g_new_request;
 	boost::container::deque<Request_element> g_queue;
 
 	bool pump_one_element() NOEXCEPT {
@@ -93,7 +92,7 @@ namespace {
 
 		Request_element *elem;
 		{
-			const Mutex::Unique_lock lock(g_mutex);
+			const std::lock_guard<std::mutex> lock(g_mutex);
 			if(g_queue.empty()){
 				return false;
 			}
@@ -122,28 +121,30 @@ namespace {
 				promise->set_success(STD_MOVE(sock_addr), false);
 			}
 		}
-		const Mutex::Unique_lock lock(g_mutex);
+		const std::lock_guard<std::mutex> lock(g_mutex);
 		g_queue.pop_front();
 		return true;
 	}
 
 	void thread_proc(){
 		POSEIDON_PROFILE_ME;
+
+		Logger::set_thread_tag("   D");
 		POSEIDON_LOG(Logger::special_major | Logger::level_info, "DNS daemon started.");
 
-		unsigned timeout = 0;
+		int timeout = 0;
 		for(;;){
 			bool busy;
 			do {
 				busy = pump_one_element();
-				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
+				timeout = std::min(timeout * 2 + 1, (1 - busy) * 128);
 			} while(busy);
 
-			Mutex::Unique_lock lock(g_mutex);
+			std::unique_lock<std::mutex> lock(g_mutex);
 			if(!atomic_load(g_running, memory_order_consume)){
 				break;
 			}
-			g_new_request.timed_wait(lock, timeout);
+			g_new_request.wait_for(lock, std::chrono::milliseconds(timeout));
 		}
 
 		POSEIDON_LOG(Logger::special_major | Logger::level_info, "DNS daemon stopped.");
@@ -157,7 +158,7 @@ void Dns_daemon::start(){
 	}
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting DNS daemon...");
 
-	Thread(&thread_proc, Rcnts::view("   D"), Rcnts::view("DNS")).swap(g_thread);
+	g_thread = std::thread(&thread_proc);
 }
 void Dns_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
@@ -169,25 +170,25 @@ void Dns_daemon::stop(){
 		g_thread.join();
 	}
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	g_queue.clear();
 }
 
-Sock_addr Dns_daemon::look_up(const std::string &host, boost::uint16_t port, bool prefer_ipv4){
+Sock_addr Dns_daemon::look_up(const std::string &host, std::uint16_t port, bool prefer_ipv4){
 	POSEIDON_PROFILE_ME;
 
 	return real_dns_look_up(host, port, prefer_ipv4);
 }
 
-boost::shared_ptr<const Promise_container<Sock_addr> > Dns_daemon::enqueue_for_looking_up(std::string host, boost::uint16_t port, bool prefer_ipv4){
+boost::shared_ptr<const Promise_container<Sock_addr> > Dns_daemon::enqueue_for_looking_up(std::string host, std::uint16_t port, bool prefer_ipv4){
 	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise_container<Sock_addr> >());
 	{
-		const Mutex::Unique_lock lock(g_mutex);
+		const std::lock_guard<std::mutex> lock(g_mutex);
 		Request_element elem = { promise, STD_MOVE(host), port, prefer_ipv4 };
 		g_queue.push_back(STD_MOVE(elem));
-		g_new_request.signal();
+		g_new_request.notify_one();
 	}
 	return STD_MOVE_IDN(promise);
 }

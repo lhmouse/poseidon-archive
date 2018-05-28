@@ -17,14 +17,14 @@ Writer::~Writer(){
 	//
 }
 
-long Writer::put_data_message(boost::uint16_t message_id, Stream_buffer payload){
+long Writer::put_data_message(std::uint16_t message_id, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 
 	Stream_buffer frame;
-	boost::uint16_t temp16;
-	boost::uint64_t temp64;
+	std::uint16_t temp16;
+	std::uint64_t temp64;
 	if(payload.size() < 0xFFFF){
-		store_be(temp16, static_cast<boost::uint16_t>(payload.size()));
+		store_be(temp16, static_cast<std::uint16_t>(payload.size()));
 		frame.put(&temp16, 2);
 	} else {
 		store_be(temp16, 0xFFFF);
@@ -41,8 +41,8 @@ long Writer::put_control_message(Status_code status_code, Stream_buffer param){
 	POSEIDON_PROFILE_ME;
 
 	Stream_buffer payload;
-	boost::uint32_t temp32;
-	store_be(temp32, static_cast<boost::uint32_t>(boost::numeric_cast<boost::int32_t>(status_code)));
+	std::uint32_t temp32;
+	store_be(temp32, static_cast<std::uint32_t>(boost::numeric_cast<std::int32_t>(status_code)));
 	payload.put(&temp32, 4);
 	payload.splice(param);
 	return put_data_message(0, STD_MOVE(payload));

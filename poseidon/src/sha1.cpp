@@ -9,7 +9,7 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<boost::uint32_t, 5> g_sha1_reg_init = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u }};
+	CONSTEXPR const boost::array<std::uint32_t, 5> g_sha1_reg_init = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u }};
 }
 
 Sha1_streambuf::Sha1_streambuf()
@@ -23,9 +23,9 @@ Sha1_streambuf::~Sha1_streambuf(){
 
 void Sha1_streambuf::eat_chunk(){
 	// https://en.wikipedia.org/wiki/SHA-1
-	boost::array<boost::uint32_t, 80> w;
+	boost::array<std::uint32_t, 80> w;
 	for(std::size_t i = 0; i < 16; ++i){
-		w[i] = load_be(reinterpret_cast<const boost::uint32_t *>(m_chunk.data())[i]);
+		w[i] = load_be(reinterpret_cast<const std::uint32_t *>(m_chunk.data())[i]);
 	}
 	for(std::size_t i = 16; i < 32; ++i){
 		w[i] = __rold(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
@@ -34,13 +34,13 @@ void Sha1_streambuf::eat_chunk(){
 		w[i] = __rold(w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32], 2);
 	}
 
-	boost::uint32_t a = m_reg[0];
-	boost::uint32_t b = m_reg[1];
-	boost::uint32_t c = m_reg[2];
-	boost::uint32_t d = m_reg[3];
-	boost::uint32_t e = m_reg[4];
+	std::uint32_t a = m_reg[0];
+	std::uint32_t b = m_reg[1];
+	std::uint32_t c = m_reg[2];
+	std::uint32_t d = m_reg[3];
+	std::uint32_t e = m_reg[4];
 
-	boost::uint32_t f, k;
+	std::uint32_t f, k;
 
 #define SHA1_STEP(i_, spec_, a_, b_, c_, d_, e_)	\
 	spec_(a_, b_, c_, d_, e_);	\
@@ -164,13 +164,13 @@ Sha1_streambuf::int_type Sha1_streambuf::overflow(Sha1_streambuf::int_type c){
 }
 
 Sha1 Sha1_streambuf::finalize(){
-	boost::uint64_t bytes = m_bytes;
+	std::uint64_t bytes = m_bytes;
 	if(pptr()){
 		bytes += static_cast<unsigned>(pptr() - m_chunk.begin());
 	}
 	static const unsigned char s_terminator[65] = { 0x80 };
 	xsputn(reinterpret_cast<const char *>(s_terminator), static_cast<int>(64 - (bytes + 8) % 64));
-	boost::uint64_t bits;
+	std::uint64_t bits;
 	store_be(bits, bytes * 8);
 	xsputn(reinterpret_cast<const char *>(&bits), sizeof(bits));
 	if(pptr() == m_chunk.end()){
@@ -179,7 +179,7 @@ Sha1 Sha1_streambuf::finalize(){
 
 	Sha1 sha1;
 	for(unsigned i = 0; i < m_reg.size(); ++i){
-		store_be(reinterpret_cast<boost::uint32_t *>(sha1.data())[i], m_reg[i]);
+		store_be(reinterpret_cast<std::uint32_t *>(sha1.data())[i], m_reg[i]);
 	}
 	reset();
 	return sha1;

@@ -4,7 +4,6 @@
 #ifndef POSEIDON_SYSTEM_HTTP_SERVLET_BASE_HPP_
 #define POSEIDON_SYSTEM_HTTP_SERVLET_BASE_HPP_
 
-#include "cxx_util.hpp"
 #include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -12,9 +11,13 @@ namespace Poseidon {
 
 class Json_object;
 
-class System_http_servlet_base : NONCOPYABLE {
+class System_http_servlet_base {
 public:
+	System_http_servlet_base() noexcept = default;
 	virtual ~System_http_servlet_base();
+
+	System_http_servlet_base(const System_http_servlet_base &) = delete;
+	System_http_servlet_base &operator=(const System_http_servlet_base &) = delete;
 
 public:
 	virtual const char * get_uri() const = 0;

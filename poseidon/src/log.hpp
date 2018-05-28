@@ -5,14 +5,13 @@
 #define POSEIDON_LOG_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 #include "buffer_streams.hpp"
 #include <cstddef>
 #include <boost/cstdint.hpp>
 
 namespace Poseidon {
 
-class Logger : NONCOPYABLE {
+class Logger {
 public:
 	enum {
 		special_poseidon = 0x80,
@@ -26,10 +25,10 @@ public:
 	};
 
 public:
-	static boost::uint64_t get_mask() NOEXCEPT;
-	static boost::uint64_t set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT;
+	static std::uint64_t get_mask() NOEXCEPT;
+	static std::uint64_t set_mask(std::uint64_t to_disable, std::uint64_t to_enable) NOEXCEPT;
 
-	static bool check_mask(boost::uint64_t mask) NOEXCEPT {
+	static bool check_mask(std::uint64_t mask) NOEXCEPT {
 		return (mask & ((mask & special_major) - 1) & ~get_mask()) == 0;
 	}
 
@@ -40,15 +39,18 @@ public:
 	static void set_thread_tag(const char *tag) NOEXCEPT;
 
 private:
-	const boost::uint64_t m_mask;
+	const std::uint64_t m_mask;
 	const char *const m_file;
 	const std::size_t m_line;
 
 	Buffer_ostream m_stream;
 
 public:
-	Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEPT;
+	Logger(std::uint64_t mask, const char *file, std::size_t line) NOEXCEPT;
 	~Logger() NOEXCEPT;
+
+	Logger(const Logger &) = delete;
+	Logger &operator=(const Logger &) = delete;
 
 private:
 	// operator<< 的 name lookup 拖慢编译速度。

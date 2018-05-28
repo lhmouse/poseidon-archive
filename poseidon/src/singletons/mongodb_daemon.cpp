@@ -8,9 +8,6 @@
 #include "../mongodb/exception.hpp"
 #include "../mongodb/connection.hpp"
 #include "../mongodb/bson_builder.hpp"
-#include "../thread.hpp"
-#include "../mutex.hpp"
-#include "../condition_variable.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -21,6 +18,8 @@
 #include "../errno.hpp"
 #include "../buffer_streams.hpp"
 #include "../checked_arithmetic.hpp"
+#include <condition_variable>
+#include <thread>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -34,10 +33,10 @@ typedef Mongodb_daemon::Query_callback Query_callback;
 namespace {
 	boost::shared_ptr<Mongodb::Connection> real_create_connection(bool from_slave, const boost::shared_ptr<Mongodb::Connection> &master_conn){
 		std::string server_addr;
-		boost::uint16_t server_port = 0;
+		std::uint16_t server_port = 0;
 		if(from_slave){
 			server_addr = Main_config::get<std::string>("mongodb_slave_addr");
-			server_port = Main_config::get<boost::uint16_t>("mongodb_slave_port");
+			server_port = Main_config::get<std::uint16_t>("mongodb_slave_port");
 		}
 		if(server_addr.empty()){
 			if(master_conn){
@@ -45,7 +44,7 @@ namespace {
 				return master_conn;
 			}
 			server_addr = Main_config::get<std::string>("mongodb_server_addr", "localhost");
-			server_port = Main_config::get<boost::uint16_t>("mongodb_server_port", 27017);
+			server_port = Main_config::get<std::uint16_t>("mongodb_server_port", 27017);
 		}
 		std::string username = Main_config::get<std::string>("mongodb_username", "root");
 		std::string password = Main_config::get<std::string>("mongodb_password");
@@ -56,7 +55,7 @@ namespace {
 	}
 
 	// 对于日志文件的写操作应当互斥。
-	Mutex g_dump_mutex;
+	std::mutex g_dump_mutex;
 
 	void dump_bson_to_file(const Mongodb::Bson_builder &query, unsigned long err_code, const char *err_msg) NOEXCEPT
 	try {
@@ -98,7 +97,7 @@ namespace {
 		os <<std::endl <<std::endl;
 		const AUTO(str, os.get_buffer().dump_string());
 
-		const Mutex::Unique_lock lock(g_dump_mutex);
+		const std::lock_guard<std::mutex> lock(g_dump_mutex);
 		std::size_t total = 0;
 		do {
 			::ssize_t written = ::write(dump_file.get(), str.data() + total, str.size() - total);
@@ -112,7 +111,7 @@ namespace {
 	}
 
 	// 数据库线程操作。
-	class Operation_base : NONCOPYABLE {
+	class Operation_base {
 	private:
 		const boost::weak_ptr<Promise> m_weak_promise;
 
@@ -127,6 +126,9 @@ namespace {
 		virtual ~Operation_base(){
 			//
 		}
+
+		Operation_base(const Operation_base &) = delete;
+		Operation_base &operator=(const Operation_base &) = delete;
 
 	public:
 		void set_probe(boost::shared_ptr<const void> probe){
@@ -383,20 +385,20 @@ namespace {
 		}
 	};
 
-	class Mongodb_thread : NONCOPYABLE {
+	class Mongodb_thread {
 	private:
 		struct Operation_queue_element {
 			boost::shared_ptr<Operation_base> operation;
-			boost::uint64_t due_time;
+			std::uint64_t due_time;
 			std::size_t retry_count;
 		};
 
 	private:
-		Thread m_thread;
+		std::thread m_thread;
 		volatile bool m_running;
 
-		mutable Mutex m_mutex;
-		mutable Condition_variable m_new_operation;
+		mutable std::mutex m_mutex;
+		mutable std::condition_variable m_new_operation;
 		volatile bool m_urgent; // 无视延迟写入，一次性处理队列中所有操作。
 		boost::container::deque<Operation_queue_element> m_queue;
 
@@ -415,7 +417,7 @@ namespace {
 			const AUTO(now, get_fast_mono_clock());
 			Operation_queue_element *elem;
 			{
-				const Mutex::Unique_lock lock(m_mutex);
+				const std::lock_guard<std::mutex> lock(m_mutex);
 				if(m_queue.empty()){
 					atomic_store(m_urgent, false, memory_order_relaxed);
 					return false;
@@ -456,12 +458,12 @@ namespace {
 					POSEIDON_LOG_WARNING("Mongodb::Exception thrown: code = ", e.get_code(), ", what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = e.get_code();
-					::snprintf(err_msg, sizeof(err_msg), "Mongodb::Exception: %s", e.what());
+					std::snprintf(err_msg, sizeof(err_msg), "Mongodb::Exception: %s", e.what());
 				} catch(std::exception &e){
 					POSEIDON_LOG_WARNING("std::exception thrown: what = ", e.what());
 					except = STD_CURRENT_EXCEPTION();
 					err_code = MONGOC_ERROR_PROTOCOL_ERROR;
-					::snprintf(err_msg, sizeof(err_msg), "std::exception: %s", e.what());
+					std::snprintf(err_msg, sizeof(err_msg), "std::exception: %s", e.what());
 				} catch(...){
 					POSEIDON_LOG_WARNING("Unknown exception thrown");
 					except = STD_CURRENT_EXCEPTION();
@@ -475,7 +477,7 @@ namespace {
 				const AUTO(retry_count, ++(elem->retry_count));
 				if(retry_count < max_retry_count){
 					POSEIDON_LOG(Logger::special_major | Logger::level_info, "Going to retry MongoDB operation: retry_count = ", retry_count);
-					const AUTO(retry_init_delay, Main_config::get<boost::uint64_t>("mongodb_retry_init_delay", 1000));
+					const AUTO(retry_init_delay, Main_config::get<std::uint64_t>("mongodb_retry_init_delay", 1000));
 					elem->due_time = now + (retry_init_delay << retry_count);
 					conn.reset();
 					return true;
@@ -491,19 +493,21 @@ namespace {
 					promise->set_success(false);
 				}
 			}
-			const Mutex::Unique_lock lock(m_mutex);
+			const std::lock_guard<std::mutex> lock(m_mutex);
 			m_queue.pop_front();
 			return true;
 		}
 
 		void thread_proc(){
 			POSEIDON_PROFILE_ME;
+
+			Logger::set_thread_tag(" G  ");
 			POSEIDON_LOG(Logger::special_major | Logger::level_info, "MongoDB thread started.");
 
 			boost::shared_ptr<Mongodb::Connection> master_conn, slave_conn;
-			unsigned timeout = 0;
+			int timeout = 0;
 			for(;;){
-				const AUTO(reconnect_delay, Main_config::get<boost::uint64_t>("mongodb_reconn_delay", 5000));
+				const AUTO(reconnect_delay, Main_config::get<std::uint64_t>("mongodb_reconn_delay", 5000));
 				bool busy;
 				do {
 					while(!master_conn){
@@ -533,14 +537,14 @@ namespace {
 						}
 					}
 					busy = pump_one_operation(master_conn, slave_conn);
-					timeout = std::min<unsigned>(timeout * 2u + 1u, !busy * 100u);
+					timeout = std::min(timeout * 2 + 1, (1 - busy) * 128);
 				} while(busy);
 
-				Mutex::Unique_lock lock(m_mutex);
+				std::unique_lock<std::mutex> lock(m_mutex);
 				if(m_queue.empty() && !atomic_load(m_running, memory_order_consume)){
 					break;
 				}
-				m_new_operation.timed_wait(lock, timeout);
+				m_new_operation.wait_for(lock, std::chrono::milliseconds(timeout));
 			}
 
 			POSEIDON_LOG(Logger::special_major | Logger::level_info, "MongoDB thread stopped.");
@@ -548,8 +552,8 @@ namespace {
 
 	public:
 		void start(){
-			const Mutex::Unique_lock lock(m_mutex);
-			Thread(boost::bind(&Mongodb_thread::thread_proc, this), Rcnts::view(" G  "), Rcnts::view("MongoDB")).swap(m_thread);
+			const std::lock_guard<std::mutex> lock(m_mutex);
+			m_thread = std::thread(&Mongodb_thread::thread_proc, this);
 			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
@@ -568,14 +572,14 @@ namespace {
 				std::size_t pending_objects;
 				Mongodb::Bson_builder current_bson;
 				{
-					const Mutex::Unique_lock lock(m_mutex);
+					const std::lock_guard<std::mutex> lock(m_mutex);
 					pending_objects = m_queue.size();
 					if(pending_objects == 0){
 						break;
 					}
 					m_queue.front().operation->generate_bson(current_bson);
 					atomic_store(m_urgent, true, memory_order_release);
-					m_new_operation.signal();
+					m_new_operation.notify_one();
 				}
 				POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for BSON queries to complete: pending_objects = ", pending_objects, ", current_bson = ", current_bson);
 
@@ -587,7 +591,7 @@ namespace {
 		}
 
 		std::size_t get_queue_size() const {
-			const Mutex::Unique_lock lock(m_mutex);
+			const std::lock_guard<std::mutex> lock(m_mutex);
 			return m_queue.size();
 		}
 		void add_operation(boost::shared_ptr<Operation_base> operation, bool urgent){
@@ -596,11 +600,11 @@ namespace {
 			const AUTO(combinable_object, operation->get_combinable_object());
 
 			const AUTO(now, get_fast_mono_clock());
-			const AUTO(save_delay, Main_config::get<boost::uint64_t>("mongodb_save_delay", 5000));
+			const AUTO(save_delay, Main_config::get<std::uint64_t>("mongodb_save_delay", 5000));
 			// 有紧急操作时无视写入延迟，这个逻辑不在这里处理。
 			const AUTO(due_time, saturated_add(now, save_delay));
 
-			const Mutex::Unique_lock lock(m_mutex);
+			const std::lock_guard<std::mutex> lock(m_mutex);
 			POSEIDON_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, Rcnts::view("MongoDB thread is being shut down"));
 			Operation_queue_element elem = { STD_MOVE(operation), due_time };
 			m_queue.push_back(STD_MOVE(elem));
@@ -613,13 +617,13 @@ namespace {
 			if(urgent){
 				atomic_store(m_urgent, true, memory_order_release);
 			}
-			m_new_operation.signal();
+			m_new_operation.notify_one();
 		}
 	};
 
 	volatile bool g_running = false;
 
-	Mutex g_router_mutex;
+	std::mutex g_router_mutex;
 	struct Route {
 		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<Mongodb_thread> thread;
@@ -635,7 +639,7 @@ namespace {
 		boost::shared_ptr<const void> probe;
 		boost::shared_ptr<Mongodb_thread> thread;
 		{
-			const Mutex::Unique_lock lock(g_router_mutex);
+			const std::lock_guard<std::mutex> lock(g_router_mutex);
 
 			AUTO_REF(route, g_router[Rcnts::view(collection)]);
 			if(route.probe.use_count() > 1){
@@ -683,7 +687,7 @@ namespace {
 		POSEIDON_PROFILE_ME;
 		POSEIDON_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("MongoDB support is not enabled"));
 
-		const Mutex::Unique_lock lock(g_router_mutex);
+		const std::lock_guard<std::mutex> lock(g_router_mutex);
 		for(AUTO(it, g_threads.begin()); it != g_threads.end(); ++it){
 			const AUTO_REF(thread, *it);
 			if(!thread){
@@ -772,7 +776,7 @@ void Mongodb_daemon::stop(){
 
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "MongoDB daemon stopped.");
 
-	const Mutex::Unique_lock lock(g_router_mutex);
+	const std::lock_guard<std::mutex> lock(g_router_mutex);
 	g_threads.clear();
 }
 

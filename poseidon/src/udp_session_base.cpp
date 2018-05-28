@@ -114,14 +114,14 @@ int Udp_session_base::poll_read_and_process(unsigned char *hint_buffer, std::siz
 	}
 	return 0;
 }
-int Udp_session_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned char *hint_buffer, std::size_t hint_capacity, bool /*writable*/){
+int Udp_session_base::poll_write(std::unique_lock<std::mutex> &/*write_lock*/, unsigned char *hint_buffer, std::size_t hint_capacity, bool /*writable*/){
 	POSEIDON_PROFILE_ME;
 
 	for(unsigned i = 0; i < 256; ++i){
 		Sock_addr sock_addr;
 		Stream_buffer data;
 		try {
-			const Mutex::Unique_lock lock(m_send_mutex);
+			const std::lock_guard<std::mutex> lock(m_send_mutex);
 			if(m_send_queue.empty()){
 				return EWOULDBLOCK;
 			}
@@ -229,7 +229,7 @@ bool Udp_session_base::send(const Sock_addr &sock_addr, Stream_buffer buffer){
 		return false;
 	}
 
-	const Mutex::Unique_lock lock(m_send_mutex);
+	const std::lock_guard<std::mutex> lock(m_send_mutex);
 	m_send_queue.emplace_back(sock_addr, STD_MOVE(buffer));
 	Epoll_daemon::mark_socket_writable(this);
 	return true;

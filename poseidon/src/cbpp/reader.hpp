@@ -25,22 +25,22 @@ private:
 private:
 	Stream_buffer m_queue;
 
-	boost::uint64_t m_size_expecting;
+	std::uint64_t m_size_expecting;
 	State m_state;
 
-	boost::uint64_t m_payload_size;
-	boost::uint16_t m_message_id;
-	boost::uint64_t m_payload_offset;
+	std::uint64_t m_payload_size;
+	std::uint16_t m_message_id;
+	std::uint64_t m_payload_offset;
 
 public:
 	Reader();
 	virtual ~Reader();
 
 protected:
-	virtual void on_data_message_header(boost::uint16_t message_id, boost::uint64_t payload_size) = 0;
-	virtual void on_data_message_payload(boost::uint64_t payload_offset, Stream_buffer payload) = 0;
+	virtual void on_data_message_header(std::uint16_t message_id, std::uint64_t payload_size) = 0;
+	virtual void on_data_message_payload(std::uint64_t payload_offset, Stream_buffer payload) = 0;
 	// 以下两个回调返回 false 导致于当前消息终止后退出循环。
-	virtual bool on_data_message_end(boost::uint64_t payload_size) = 0;
+	virtual bool on_data_message_end(std::uint64_t payload_size) = 0;
 
 	virtual bool on_control_message(Status_code status_code, Stream_buffer param) = 0;
 

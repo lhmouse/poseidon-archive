@@ -35,15 +35,15 @@ protected:
 private:
 	Stream_buffer m_queue;
 
-	boost::uint64_t m_size_expecting;
+	std::uint64_t m_size_expecting;
 	State m_state;
 
 	Request_headers m_request_headers;
-	boost::uint64_t m_content_length;
-	boost::uint64_t m_content_offset;
+	std::uint64_t m_content_length;
+	std::uint64_t m_content_offset;
 
-	boost::uint64_t m_chunk_size;
-	boost::uint64_t m_chunk_offset;
+	std::uint64_t m_chunk_size;
+	std::uint64_t m_chunk_offset;
 	Option_map m_chunked_trailer;
 
 public:
@@ -52,13 +52,13 @@ public:
 
 protected:
 	// 如果 Transfer-Encoding 为 chunked， content_length 的值为 content_length_chunked。
-	virtual void on_request_headers(Request_headers request_headers, boost::uint64_t content_length) = 0;
+	virtual void on_request_headers(Request_headers request_headers, std::uint64_t content_length) = 0;
 	// 报文可能分几次收到。
-	virtual void on_request_entity(boost::uint64_t entity_offset, Stream_buffer entity) = 0;
+	virtual void on_request_entity(std::uint64_t entity_offset, Stream_buffer entity) = 0;
 	// 报文接收完毕。
 	// 如果 on_request_headers() 的 content_length 参数为 content_length_chunked，使用这个函数标识结束。
 	// chunked 允许追加报头。
-	virtual bool on_request_end(boost::uint64_t content_length, Option_map headers) = 0;
+	virtual bool on_request_end(std::uint64_t content_length, Option_map headers) = 0;
 
 public:
 	const Stream_buffer & get_queue() const {

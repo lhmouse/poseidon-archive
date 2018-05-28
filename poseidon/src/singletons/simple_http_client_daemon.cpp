@@ -66,7 +66,7 @@ namespace {
 
 	struct Simple_http_client_params {
 		std::string host;
-		boost::uint16_t port;
+		std::uint16_t port;
 		bool use_ssl;
 		Http::Request_headers request_headers;
 	};
@@ -117,7 +117,7 @@ namespace {
 			const unsigned long port_val = std::strtoul(params.host.c_str() + pos + 1, &eptr, 10);
 			POSEIDON_THROW_UNLESS(*eptr == 0, Exception, Rcnts::view("Invalid port string"));
 			POSEIDON_THROW_UNLESS((1 <= port_val) && (port_val <= 65534), Exception, Rcnts::view("Invalid port number"));
-			params.port = boost::numeric_cast<boost::uint16_t>(port_val);
+			params.port = boost::numeric_cast<std::uint16_t>(port_val);
 			params.host.erase(pos);
 		}
 		// host = "www.example.com"
@@ -174,7 +174,7 @@ namespace {
 			}
 			if(has_any_flags_of(pset.revents, POLLOUT) && has_none_flags_of(pset.revents, POLLERR)){
 				writable = true;
-				Mutex::Unique_lock write_lock;
+				std::unique_lock<std::mutex> write_lock;
 				err_code = socket->poll_write(write_lock, buffer, sizeof(buffer), writable);
 				POSEIDON_LOG_TRACE("Socket write result: socket = ", socket, ", typeid = ", typeid(*socket).name(), ", err_code = ", err_code);
 				if((err_code != 0) && (err_code != EINTR) && (err_code != EWOULDBLOCK) && (err_code != EAGAIN)){
@@ -220,14 +220,14 @@ namespace {
 			return Http::Low_level_client::on_close(err_code);
 		}
 
-		void on_low_level_response_headers(Http::Response_headers response_headers, boost::uint64_t /*content_length*/) OVERRIDE {
+		void on_low_level_response_headers(Http::Response_headers response_headers, std::uint64_t /*content_length*/) OVERRIDE {
 			m_response_headers = STD_MOVE(response_headers);
 			m_finished = true;
 		}
-		void on_low_level_response_entity(boost::uint64_t /*entity_offset*/, Stream_buffer entity) OVERRIDE {
+		void on_low_level_response_entity(std::uint64_t /*entity_offset*/, Stream_buffer entity) OVERRIDE {
 			m_response_entity.splice(entity);
 		}
-		boost::shared_ptr<Http::Upgraded_session_base> on_low_level_response_end(boost::uint64_t /*content_length*/, Option_map /*headers*/) OVERRIDE {
+		boost::shared_ptr<Http::Upgraded_session_base> on_low_level_response_end(std::uint64_t /*content_length*/, Option_map /*headers*/) OVERRIDE {
 			shutdown_read();
 			shutdown_write();
 			return VAL_INIT;

@@ -3,26 +3,25 @@
 
 #include "../precompiled.hpp"
 #include "filesystem_daemon.hpp"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include "../thread.hpp"
-#include "../mutex.hpp"
-#include "../condition_variable.hpp"
 #include "../atomic.hpp"
 #include "../system_exception.hpp"
 #include "../log.hpp"
 #include "../raii.hpp"
 #include "../promise.hpp"
 #include "../profiler.hpp"
+#include <condition_variable>
+#include <thread>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 namespace Poseidon {
 
 template class Promise_container<File_block_read>;
 
 namespace {
-	File_block_read real_load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
+	File_block_read real_load(const std::string &path, std::uint64_t begin, std::uint64_t limit, bool throws_if_does_not_exist){
 		File_block_read block = { };
 
 		int flags = O_RDONLY;
@@ -49,7 +48,7 @@ namespace {
 			}
 		}
 
-		block.size_total = static_cast<boost::uint64_t>(stat_buf.st_size);
+		block.size_total = static_cast<std::uint64_t>(stat_buf.st_size);
 		block.begin = begin;
 
 		std::size_t bytes_read = 0;
@@ -59,7 +58,7 @@ namespace {
 			if(limit == File_system_daemon::limit_eof){
 				avail = sizeof(temp);
 			} else {
-				avail = static_cast<std::size_t>(std::min<boost::uint64_t>(limit - bytes_read, sizeof(temp)));
+				avail = static_cast<std::size_t>(std::min<std::uint64_t>(limit - bytes_read, sizeof(temp)));
 			}
 			if(avail == 0){
 				break;
@@ -80,7 +79,7 @@ namespace {
 		POSEIDON_LOG_DEBUG("Finished loading file: path = ", path, ", bytes_read = ", bytes_read);
 		return block;
 	}
-	void real_save(const std::string &path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists){
+	void real_save(const std::string &path, Stream_buffer data, std::uint64_t begin, bool throws_if_exists){
 		int flags = O_CREAT | O_WRONLY;
 		if(begin == File_system_daemon::offset_append){
 			flags |= O_APPEND;
@@ -162,7 +161,7 @@ namespace {
 		}
 	}
 
-	class Operation_base : NONCOPYABLE {
+	class Operation_base {
 	private:
 		const boost::weak_ptr<Promise> m_weak_promise;
 		const std::string m_path;
@@ -176,6 +175,9 @@ namespace {
 		virtual ~Operation_base(){
 			//
 		}
+
+		Operation_base(const Operation_base &) = delete;
+		Operation_base &operator=(const Operation_base &) = delete;
 
 	public:
 		const std::string & get_path() const {
@@ -191,12 +193,12 @@ namespace {
 	class Load_operation : public Operation_base {
 	private:
 		boost::shared_ptr<Promise_container<File_block_read> > m_promised_block;
-		boost::uint64_t m_begin;
-		boost::uint64_t m_limit;
+		std::uint64_t m_begin;
+		std::uint64_t m_limit;
 		bool m_throws_if_does_not_exist;
 
 	public:
-		Load_operation(boost::shared_ptr<Promise_container<File_block_read> > promised_block, std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist)
+		Load_operation(boost::shared_ptr<Promise_container<File_block_read> > promised_block, std::string path, std::uint64_t begin, std::uint64_t limit, bool throws_if_does_not_exist)
 			: Operation_base(promised_block, STD_MOVE(path))
 			, m_promised_block(STD_MOVE(promised_block)), m_begin(begin), m_limit(limit), m_throws_if_does_not_exist(throws_if_does_not_exist)
 		{
@@ -219,11 +221,11 @@ namespace {
 	class Save_operation : public Operation_base {
 	private:
 		Stream_buffer m_data;
-		boost::uint64_t m_begin;
+		std::uint64_t m_begin;
 		bool m_throws_if_exists;
 
 	public:
-		Save_operation(const boost::shared_ptr<Promise> &promise, std::string path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists)
+		Save_operation(const boost::shared_ptr<Promise> &promise, std::string path, Stream_buffer data, std::uint64_t begin, bool throws_if_exists)
 			: Operation_base(promise, STD_MOVE(path))
 			, m_data(STD_MOVE(data)), m_begin(begin), m_throws_if_exists(throws_if_exists)
 		{
@@ -319,14 +321,14 @@ namespace {
 	};
 
 	volatile bool g_running = false;
-	Thread g_thread;
+	std::thread g_thread;
 
 	struct Operation_queue_element {
 		boost::shared_ptr<Operation_base> operation;
 	};
 
-	Mutex g_mutex;
-	Condition_variable g_new_operation;
+	std::mutex g_mutex;
+	std::condition_variable g_new_operation;
 	boost::container::deque<Operation_queue_element> g_operations;
 
 	bool pump_one_element() NOEXCEPT {
@@ -334,7 +336,7 @@ namespace {
 
 		Operation_queue_element *elem;
 		{
-			const Mutex::Unique_lock lock(g_mutex);
+			const std::lock_guard<std::mutex> lock(g_mutex);
 			if(g_operations.empty()){
 				return false;
 			}
@@ -358,28 +360,30 @@ namespace {
 				promise->set_success(false);
 			}
 		}
-		const Mutex::Unique_lock lock(g_mutex);
+		const std::lock_guard<std::mutex> lock(g_mutex);
 		g_operations.pop_front();
 		return true;
 	}
 
 	void thread_proc(){
 		POSEIDON_PROFILE_ME;
+
+		Logger::set_thread_tag(" F  ");
 		POSEIDON_LOG(Logger::special_major | Logger::level_info, "File_system daemon started.");
 
-		unsigned timeout = 0;
+		int timeout = 0;
 		for(;;){
 			bool busy;
 			do {
 				busy = pump_one_element();
-				timeout = std::min(timeout * 2u + 1u, !busy * 100u);
+				timeout = std::min(timeout * 2 + 1, (1 - busy) * 128);
 			} while(busy);
 
-			Mutex::Unique_lock lock(g_mutex);
+			std::unique_lock<std::mutex> lock(g_mutex);
 			if(!atomic_load(g_running, memory_order_consume)){
 				break;
 			}
-			g_new_operation.timed_wait(lock, timeout);
+			g_new_operation.wait_for(lock, std::chrono::milliseconds(timeout));
 		}
 
 		POSEIDON_LOG(Logger::special_major | Logger::level_info, "File_system daemon stopped.");
@@ -388,10 +392,10 @@ namespace {
 	void submit_operation(boost::shared_ptr<Operation_base> operation){
 		POSEIDON_PROFILE_ME;
 
-		const Mutex::Unique_lock lock(g_mutex);
+		const std::lock_guard<std::mutex> lock(g_mutex);
 		Operation_queue_element elem = { STD_MOVE(operation) };
 		g_operations.push_back(STD_MOVE(elem));
-		g_new_operation.signal();
+		g_new_operation.notify_one();
 	}
 }
 
@@ -402,7 +406,7 @@ void File_system_daemon::start(){
 	}
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Starting File_system daemon...");
 
-	Thread(&thread_proc, Rcnts::view(" F  "), Rcnts::view("Filesystem")).swap(g_thread);
+	g_thread = std::thread(&thread_proc);
 }
 void File_system_daemon::stop(){
 	if(atomic_exchange(g_running, false, memory_order_acq_rel) == false){
@@ -414,16 +418,16 @@ void File_system_daemon::stop(){
 		g_thread.join();
 	}
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	g_operations.clear();
 }
 
-File_block_read File_system_daemon::load(const std::string &path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
+File_block_read File_system_daemon::load(const std::string &path, std::uint64_t begin, std::uint64_t limit, bool throws_if_does_not_exist){
 	POSEIDON_PROFILE_ME;
 
 	return real_load(path, begin, limit, throws_if_does_not_exist);
 }
-void File_system_daemon::save(const std::string &path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists){
+void File_system_daemon::save(const std::string &path, Stream_buffer data, std::uint64_t begin, bool throws_if_exists){
 	POSEIDON_PROFILE_ME;
 
 	real_save(path, STD_MOVE(data), begin, throws_if_exists);
@@ -449,7 +453,7 @@ void File_system_daemon::rmdir(const std::string &path, bool throws_if_does_not_
 	real_rmdir(path, throws_if_does_not_exist);
 }
 
-boost::shared_ptr<const Promise_container<File_block_read> > File_system_daemon::enqueue_for_loading(std::string path, boost::uint64_t begin, boost::uint64_t limit, bool throws_if_does_not_exist){
+boost::shared_ptr<const Promise_container<File_block_read> > File_system_daemon::enqueue_for_loading(std::string path, std::uint64_t begin, std::uint64_t limit, bool throws_if_does_not_exist){
 	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise_container<File_block_read> >());
@@ -457,7 +461,7 @@ boost::shared_ptr<const Promise_container<File_block_read> > File_system_daemon:
 	submit_operation(STD_MOVE_IDN(operation));
 	return promise;
 }
-boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_saving(std::string path, Stream_buffer data, boost::uint64_t begin, bool throws_if_exists){
+boost::shared_ptr<const Promise> File_system_daemon::enqueue_for_saving(std::string path, Stream_buffer data, std::uint64_t begin, bool throws_if_exists){
 	POSEIDON_PROFILE_ME;
 
 	AUTO(promise, boost::make_shared<Promise>());

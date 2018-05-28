@@ -51,7 +51,7 @@ namespace {
 		unsigned long *m_lengths;
 
 	public:
-		Delegated_connection(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
+		Delegated_connection(const char *server_addr, std::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset)
 			: m_schema(schema)
 			, m_row(NULLPTR), m_lengths(NULLPTR)
 		{
@@ -122,7 +122,7 @@ namespace {
 			m_lengths = NULLPTR;
 		}
 
-		boost::uint64_t get_insert_id() const OVERRIDE {
+		std::uint64_t get_insert_id() const OVERRIDE {
 			return ::mysql_insert_id(m_mysql.get());
 		}
 
@@ -156,11 +156,11 @@ namespace {
 			}
 			return value;
 		}
-		boost::int64_t get_signed(const char *name) const OVERRIDE {
+		std::int64_t get_signed(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 			POSEIDON_LOG_TRACE("Getting field as `signed`: ", name);
 
-			boost::int64_t value = 0;
+			std::int64_t value = 0;
 			const char *data;
 			std::size_t size;
 			if(find_field_and_check(data, size, name)){
@@ -170,16 +170,16 @@ namespace {
 			}
 			return value;
 		}
-		boost::uint64_t get_unsigned(const char *name) const OVERRIDE {
+		std::uint64_t get_unsigned(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 			POSEIDON_LOG_TRACE("Getting field as `unsigned`: ", name);
 
-			boost::uint64_t value = 0;
+			std::uint64_t value = 0;
 			const char *data;
 			std::size_t size;
 			if(find_field_and_check(data, size, name)){
 				char *eptr;
-				value = ::strtoull(data, &eptr, 0);
+				value = std::strtoull(data, &eptr, 0);
 				POSEIDON_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `unsigned long long`"));
 			}
 			return value;
@@ -210,11 +210,11 @@ namespace {
 			}
 			return value;
 		}
-		boost::uint64_t get_datetime(const char *name) const OVERRIDE {
+		std::uint64_t get_datetime(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 			POSEIDON_LOG_TRACE("Getting field as `datetime`: ", name);
 
-			boost::uint64_t value = 0;
+			std::uint64_t value = 0;
 			const char *data;
 			std::size_t size;
 			if(find_field_and_check(data, size, name)){
@@ -250,7 +250,7 @@ namespace {
 	};
 }
 
-boost::shared_ptr<Connection> Connection::create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset){
+boost::shared_ptr<Connection> Connection::create(const char *server_addr, std::uint16_t server_port, const char *user_name, const char *password, const char *schema, bool use_ssl, const char *charset){
 	return boost::make_shared<Delegated_connection>(server_addr, server_port, user_name, password, schema, use_ssl, charset);
 }
 

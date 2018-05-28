@@ -21,7 +21,7 @@ protected:
 	virtual long on_encoded_data_avail(Stream_buffer encoded) = 0;
 
 public:
-	long put_data_message(boost::uint16_t message_id, Stream_buffer payload);
+	long put_data_message(std::uint16_t message_id, Stream_buffer payload);
 	long put_control_message(Status_code status_code, Stream_buffer param);
 };
 

@@ -34,8 +34,8 @@ public:
 #undef FIELD_LIST
 #undef FIELD_REPEATED
 
-#define FIELD_VINT(id_)             ::boost::int64_t id_;
-#define FIELD_VUINT(id_)            ::boost::uint64_t id_;
+#define FIELD_VINT(id_)             ::std::int64_t id_;
+#define FIELD_VUINT(id_)            ::std::uint64_t id_;
 #define FIELD_FIXED(id_, n_)        ::boost::array<unsigned char, n_> id_;
 #define FIELD_STRING(id_)           ::std::string id_;
 #define FIELD_BLOB(id_)             ::Poseidon::Stream_buffer id_;
@@ -88,8 +88,8 @@ public:
 #undef FIELD_LIST
 #undef FIELD_REPEATED
 
-#define FIELD_VINT(id_)             , ::boost::int64_t param_##id_##_Svy_
-#define FIELD_VUINT(id_)            , ::boost::uint64_t param_##id_##_Svy_
+#define FIELD_VINT(id_)             , ::std::int64_t param_##id_##_Svy_
+#define FIELD_VUINT(id_)            , ::std::uint64_t param_##id_##_Svy_
 #define FIELD_FIXED(id_, n_)        , const ::boost::array<unsigned char, n_> & param_##id_##_Svy_
 #define FIELD_STRING(id_)           , ::std::string param_##id_##_Svy_
 #define FIELD_BLOB(id_)             , ::Poseidon::Stream_buffer param_##id_##_Svy_
@@ -104,7 +104,7 @@ public:
 #endif // (0 MESSAGE_FIELDS)
 
 public:
-	::boost::uint64_t get_id() const OVERRIDE;
+	::std::uint64_t get_id() const OVERRIDE;
 	void serialize(::Poseidon::Stream_buffer &buffer_) const OVERRIDE;
 	void deserialize(::Poseidon::Stream_buffer &buffer_) OVERRIDE;
 	void dump_debug(::std::ostream &os_, int indent_initial_ = 0) const OVERRIDE;
@@ -183,8 +183,8 @@ MESSAGE_NAME::~MESSAGE_NAME(){
 #undef FIELD_LIST
 #undef FIELD_REPEATED
 
-#define FIELD_VINT(id_)             , ::boost::int64_t param_##id_##_Svy_
-#define FIELD_VUINT(id_)            , ::boost::uint64_t param_##id_##_Svy_
+#define FIELD_VINT(id_)             , ::std::int64_t param_##id_##_Svy_
+#define FIELD_VUINT(id_)            , ::std::uint64_t param_##id_##_Svy_
 #define FIELD_FIXED(id_, n_)        , const ::boost::array<unsigned char, n_> & param_##id_##_Svy_
 #define FIELD_STRING(id_)           , ::std::string param_##id_##_Svy_
 #define FIELD_BLOB(id_)             , ::Poseidon::Stream_buffer param_##id_##_Svy_
@@ -226,7 +226,7 @@ MESSAGE_NAME::MESSAGE_NAME(POSEIDON_LAZY(POSEIDON_REST, void MESSAGE_FIELDS))
 
 #endif // (0 MESSAGE_FIELDS)
 
-::boost::uint64_t MESSAGE_NAME::get_id() const {
+::std::uint64_t MESSAGE_NAME::get_id() const {
 	return MESSAGE_ID;
 }
 void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
@@ -317,7 +317,7 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
 #define FIELD_NESTED(id_, Elem_)    cur_->id_.deserialize(buf_);
 #define FIELD_ARRAY(id_, ...)       {	\
                                       cur_->id_.clear();	\
-                                      ::boost::uint64_t length_;	\
+                                      ::std::uint64_t length_;	\
                                       ::Poseidon::Cbpp::shift_vuint(length_, buf_, POSEIDON_STRINGIFY(id_) ".length");	\
                                       for(;;){	\
                                         if(length_ == 0){	\

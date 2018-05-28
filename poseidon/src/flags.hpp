@@ -4,7 +4,6 @@
 #ifndef POSEIDON_FLAGS_HPP_
 #define POSEIDON_FLAGS_HPP_
 
-#include "cxx_util.hpp"
 #include <boost/type_traits/is_enum.hpp>
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/type_traits/common_type.hpp>

@@ -70,11 +70,11 @@ private:
 
 public:
 	void append_boolean(Rcnts name, bool value);
-	void append_signed(Rcnts name, boost::int64_t value);
-	void append_unsigned(Rcnts name, boost::uint64_t value);
+	void append_signed(Rcnts name, std::int64_t value);
+	void append_unsigned(Rcnts name, std::uint64_t value);
 	void append_double(Rcnts name, double value);
 	void append_string(Rcnts name, const std::string &value);
-	void append_datetime(Rcnts name, boost::uint64_t value);
+	void append_datetime(Rcnts name, std::uint64_t value);
 	void append_uuid(Rcnts name, const Uuid &value);
 	void append_blob(Rcnts name, const Stream_buffer &value);
 
@@ -122,12 +122,12 @@ inline Bson_builder bson_scalar_boolean(Rcnts name, bool value){
 	ret.append_boolean(STD_MOVE(name), value);
 	return ret;
 }
-inline Bson_builder bson_scalar_signed(Rcnts name, boost::int64_t value){
+inline Bson_builder bson_scalar_signed(Rcnts name, std::int64_t value){
 	Bson_builder ret;
 	ret.append_signed(STD_MOVE(name), value);
 	return ret;
 }
-inline Bson_builder bson_scalar_unsigned(Rcnts name, boost::uint64_t value){
+inline Bson_builder bson_scalar_unsigned(Rcnts name, std::uint64_t value){
 	Bson_builder ret;
 	ret.append_unsigned(STD_MOVE(name), value);
 	return ret;
@@ -142,7 +142,7 @@ inline Bson_builder bson_scalar_string(Rcnts name, const std::string &value){
 	ret.append_string(STD_MOVE(name), value);
 	return ret;
 }
-inline Bson_builder bson_scalar_datetime(Rcnts name, boost::uint64_t value){
+inline Bson_builder bson_scalar_datetime(Rcnts name, std::uint64_t value){
 	Bson_builder ret;
 	ret.append_datetime(STD_MOVE(name), value);
 	return ret;

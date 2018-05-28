@@ -39,9 +39,9 @@ bool Reader::put_encoded_data(Stream_buffer encoded){
 
 		switch(m_state){
 			int ch;
-			boost::uint16_t temp16;
-			boost::uint32_t temp32;
-			boost::uint64_t temp64;
+			std::uint16_t temp16;
+			std::uint32_t temp32;
+			std::uint64_t temp64;
 
 		case state_opcode:
 			m_fin = false;
@@ -125,7 +125,7 @@ bool Reader::put_encoded_data(Stream_buffer encoded){
 			}
 
 			if(has_none_flags_of(m_opcode, opmask_control)){
-				m_size_expecting = std::min<boost::uint64_t>(m_frame_size, 4096);
+				m_size_expecting = std::min<std::uint64_t>(m_frame_size, 4096);
 				m_state = state_data_frame;
 			} else {
 				m_size_expecting = m_frame_size;
@@ -134,7 +134,7 @@ bool Reader::put_encoded_data(Stream_buffer encoded){
 			break;
 
 		case state_data_frame:
-			temp64 = std::min<boost::uint64_t>(m_queue.size(), m_frame_size - m_frame_offset);
+			temp64 = std::min<std::uint64_t>(m_queue.size(), m_frame_size - m_frame_offset);
 			if(temp64 > 0){
 				Stream_buffer payload;
 				for(std::size_t i = 0; i < temp64; ++i){
@@ -147,7 +147,7 @@ bool Reader::put_encoded_data(Stream_buffer encoded){
 			m_whole_offset += temp64;
 
 			if(m_frame_offset < m_frame_size){
-				m_size_expecting = std::min<boost::uint64_t>(m_frame_size - m_frame_offset, 4096);
+				m_size_expecting = std::min<std::uint64_t>(m_frame_size - m_frame_offset, 4096);
 				// m_state = state_data_frame;
 			} else {
 				if(m_fin){

@@ -9,7 +9,7 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<boost::uint32_t, 8> g_sha256_reg_init = {{ 0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au, 0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u }};
+	CONSTEXPR const boost::array<std::uint32_t, 8> g_sha256_reg_init = {{ 0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au, 0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u }};
 }
 
 Sha256_streambuf::Sha256_streambuf()
@@ -23,26 +23,26 @@ Sha256_streambuf::~Sha256_streambuf(){
 
 void Sha256_streambuf::eat_chunk(){
 	// https://en.wikipedia.org/wiki/SHA-2
-	boost::array<boost::uint32_t, 64> w;
+	boost::array<std::uint32_t, 64> w;
 	for(std::size_t i = 0; i < 16; ++i){
-		w[i] = load_be(reinterpret_cast<const boost::uint32_t *>(m_chunk.data())[i]);
+		w[i] = load_be(reinterpret_cast<const std::uint32_t *>(m_chunk.data())[i]);
 	}
 	for(std::size_t i = 16; i < 64; ++i){
-		const boost::uint32_t s0 = __rord(__rord(w[i - 15], 11) ^ w[i - 15], 7) ^ (w[i - 15] >> 3);
-		const boost::uint32_t s1 = __rord(__rord(w[i - 2], 2) ^ w[i - 2], 17) ^ (w[i - 2] >> 10);
+		const std::uint32_t s0 = __rord(__rord(w[i - 15], 11) ^ w[i - 15], 7) ^ (w[i - 15] >> 3);
+		const std::uint32_t s1 = __rord(__rord(w[i - 2], 2) ^ w[i - 2], 17) ^ (w[i - 2] >> 10);
 		w[i] = w[i - 16] + w[i - 7] + s0 + s1;
 	}
 
-	boost::uint32_t a = m_reg[0];
-	boost::uint32_t b = m_reg[1];
-	boost::uint32_t c = m_reg[2];
-	boost::uint32_t d = m_reg[3];
-	boost::uint32_t e = m_reg[4];
-	boost::uint32_t f = m_reg[5];
-	boost::uint32_t g = m_reg[6];
-	boost::uint32_t h = m_reg[7];
+	std::uint32_t a = m_reg[0];
+	std::uint32_t b = m_reg[1];
+	std::uint32_t c = m_reg[2];
+	std::uint32_t d = m_reg[3];
+	std::uint32_t e = m_reg[4];
+	std::uint32_t f = m_reg[5];
+	std::uint32_t g = m_reg[6];
+	std::uint32_t h = m_reg[7];
 
-	boost::uint32_t S0, maj, t2, S1, ch, t1;
+	std::uint32_t S0, maj, t2, S1, ch, t1;
 
 #define SHA256_STEP(i_, a_, b_, c_, d_, e_, f_, g_, h_, k_)	\
 	S0 = __rord(__rord(__rord(a_, 9) ^ a_, 11) ^ a_, 2);	\
@@ -157,13 +157,13 @@ Sha256_streambuf::int_type Sha256_streambuf::overflow(Sha256_streambuf::int_type
 }
 
 Sha256 Sha256_streambuf::finalize(){
-	boost::uint64_t bytes = m_bytes;
+	std::uint64_t bytes = m_bytes;
 	if(pptr()){
 		bytes += static_cast<unsigned>(pptr() - m_chunk.begin());
 	}
 	static const unsigned char s_terminator[65] = { 0x80 };
 	xsputn(reinterpret_cast<const char *>(s_terminator), static_cast<int>(64 - (bytes + 8) % 64));
-	boost::uint64_t bits;
+	std::uint64_t bits;
 	store_be(bits, bytes * 8);
 	xsputn(reinterpret_cast<const char *>(&bits), sizeof(bits));
 	if(pptr() == m_chunk.end()){
@@ -172,7 +172,7 @@ Sha256 Sha256_streambuf::finalize(){
 
 	Sha256 sha256;
 	for(unsigned i = 0; i < m_reg.size(); ++i){
-		store_be(reinterpret_cast<boost::uint32_t *>(sha256.data())[i], m_reg[i]);
+		store_be(reinterpret_cast<std::uint32_t *>(sha256.data())[i], m_reg[i]);
 	}
 	reset();
 	return sha256;

@@ -5,7 +5,6 @@
 #define POSEIDON_MODULE_CONFIG_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 #include "config_file.hpp"
 #include "module_raii.hpp"
 #include "exception.hpp"

@@ -114,7 +114,7 @@ protected:
 		session->on_sync_request(STD_MOVE(m_request_headers), STD_MOVE(m_entity));
 
 		if(m_keep_alive){
-			const AUTO(keep_alive_timeout, Main_config::get<boost::uint64_t>("http_keep_alive_timeout", 5000));
+			const AUTO(keep_alive_timeout, Main_config::get<std::uint64_t>("http_keep_alive_timeout", 5000));
 			session->set_timeout(keep_alive_timeout);
 		} else {
 			session->shutdown_write();
@@ -124,7 +124,7 @@ protected:
 
 Session::Session(Move<Unique_file> socket)
 	: Low_level_session(STD_MOVE(socket))
-	, m_max_request_length(Main_config::get<boost::uint64_t>("http_max_request_length", 16384))
+	, m_max_request_length(Main_config::get<std::uint64_t>("http_max_request_length", 16384))
 	, m_size_total(0), m_request_headers()
 {
 	//
@@ -143,7 +143,7 @@ void Session::on_read_hup(){
 	Low_level_session::on_read_hup();
 }
 
-void Session::on_low_level_request_headers(Request_headers request_headers, boost::uint64_t /*content_length*/){
+void Session::on_low_level_request_headers(Request_headers request_headers, std::uint64_t /*content_length*/){
 	POSEIDON_PROFILE_ME;
 
 	m_size_total = 0;
@@ -157,14 +157,14 @@ void Session::on_low_level_request_headers(Request_headers request_headers, boos
 			VAL_INIT);
 	}
 }
-void Session::on_low_level_request_entity(boost::uint64_t /*entity_offset*/, Stream_buffer entity){
+void Session::on_low_level_request_entity(std::uint64_t /*entity_offset*/, Stream_buffer entity){
 	POSEIDON_PROFILE_ME;
 
 	m_size_total += entity.size();
 	POSEIDON_THROW_UNLESS(m_size_total <= get_max_request_length(), Exception, status_payload_too_large);
 	m_entity.splice(entity);
 }
-boost::shared_ptr<Upgraded_session_base> Session::on_low_level_request_end(boost::uint64_t content_length, Option_map headers){
+boost::shared_ptr<Upgraded_session_base> Session::on_low_level_request_end(std::uint64_t content_length, Option_map headers){
 	POSEIDON_PROFILE_ME;
 
 	(void)content_length;
@@ -192,7 +192,7 @@ void Session::on_sync_expect(Request_headers request_headers){
 		const AUTO_REF(content_length_str, request_headers.headers.get("Content-Length"));
 		POSEIDON_THROW_UNLESS(!content_length_str.empty(), Exception, status_length_required);
 		char *eptr;
-		const AUTO(content_length, ::strtoull(content_length_str.c_str(), &eptr, 10));
+		const AUTO(content_length, std::strtoull(content_length_str.c_str(), &eptr, 10));
 		POSEIDON_THROW_UNLESS(*eptr == 0, Exception, status_bad_request);
 		POSEIDON_THROW_UNLESS(content_length <= get_max_request_length(), Exception, status_payload_too_large);
 		send_default(status_continue);
@@ -202,10 +202,10 @@ void Session::on_sync_expect(Request_headers request_headers){
 	}
 }
 
-boost::uint64_t Session::get_max_request_length() const {
+std::uint64_t Session::get_max_request_length() const {
 	return atomic_load(m_max_request_length, memory_order_consume);
 }
-void Session::set_max_request_length(boost::uint64_t max_request_length){
+void Session::set_max_request_length(std::uint64_t max_request_length){
 	atomic_store(m_max_request_length, max_request_length, memory_order_release);
 }
 

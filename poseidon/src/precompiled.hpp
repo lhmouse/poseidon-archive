@@ -8,16 +8,25 @@
 #  include <config.h>
 #endif
 
-#include <string>
 #include <iterator>
 #include <utility>
 #include <bitset>
 #include <iomanip>
 #include <ostream>
-
+#include <memory>
+#include <functional>
 #include <cstring>
 #include <cstddef>
 #include <cctype>
+
+#include <type_traits>
+#include <vector>
+#include <deque>
+#include <unordered_map>
+#include <array>
+#include <atomic>
+#include <mutex>
+#include <cstdint>
 
 #include <pthread.h>
 #include <errno.h>
@@ -27,19 +36,14 @@
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/multi_index_container.hpp>
-#include <boost/optional.hpp>
 
+#include <boost/optional.hpp>
 #include <boost/array.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/ref.hpp>
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
-#include <boost/cstdlib.hpp>
-#include <boost/cstdint.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/container/list.hpp>
 #include <boost/container/map.hpp>

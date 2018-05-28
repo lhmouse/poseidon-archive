@@ -5,11 +5,10 @@
 #define POSEIDON_SOCKET_BASE_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 #include "virtual_shared_from_this.hpp"
 #include "raii.hpp"
-#include "mutex.hpp"
 #include "ip_port.hpp"
+#include <mutex>
 #include <boost/optional.hpp>
 #include <boost/cstdint.hpp>
 
@@ -24,7 +23,7 @@ public:
 
 private:
 	const Unique_file m_socket;
-	const boost::uint64_t m_creation_time;
+	const std::uint64_t m_creation_time;
 
 	volatile bool m_shutdown_read;
 	volatile bool m_shutdown_write;
@@ -33,7 +32,7 @@ private:
 	volatile bool m_timed_out;
 	volatile std::size_t m_delayed_shutdown_guard_count;
 
-	mutable Mutex m_info_mutex;
+	mutable std::mutex m_info_mutex;
 	mutable boost::optional<Ip_port> m_remote_info;
 	mutable boost::optional<Ip_port> m_local_info;
 	mutable boost::optional<bool> m_ipv6;
@@ -41,6 +40,9 @@ private:
 public:
 	explicit Socket_base(Move<Unique_file> socket);
 	~Socket_base();
+
+	Socket_base(const Socket_base &) = delete;
+	Socket_base &operator=(const Socket_base &) = delete;
 
 private:
 	void fetch_remote_info_unlocked() const;
@@ -54,7 +56,7 @@ public:
 	int get_fd() const {
 		return m_socket.get();
 	}
-	boost::uint64_t get_creation_time() const {
+	std::uint64_t get_creation_time() const {
 		return m_creation_time;
 	}
 
@@ -78,17 +80,20 @@ public:
 
 	// 返回一个 errno 告诉 epoll 如何处理。
 	virtual int poll_read_and_process(unsigned char *hint_buffer, std::size_t hint_capacity, bool readable);
-	virtual int poll_write(Mutex::Unique_lock &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writable);
+	virtual int poll_write(std::unique_lock<std::mutex> &write_lock, unsigned char *hint_buffer, std::size_t hint_capacity, bool writable);
 	virtual void on_close(int err_code);
 };
 
-class Socket_base::Delayed_shutdown_guard : NONCOPYABLE {
+class Socket_base::Delayed_shutdown_guard {
 private:
 	const boost::weak_ptr<Socket_base> m_weak;
 
 public:
 	explicit Delayed_shutdown_guard(boost::weak_ptr<Socket_base> weak);
 	~Delayed_shutdown_guard();
+
+	Delayed_shutdown_guard(const Delayed_shutdown_guard &) = delete;
+	Delayed_shutdown_guard &operator=(const Delayed_shutdown_guard &) = delete;
 };
 
 }

@@ -8,11 +8,11 @@
 namespace Poseidon {
 
 namespace {
-	volatile boost::uint64_t s_seed;
+	volatile std::uint64_t s_seed;
 }
 
-boost::uint32_t random_uint32(){
-	boost::uint64_t old_seed, new_seed;
+std::uint32_t random_uint32(){
+	std::uint64_t old_seed, new_seed;
 	{
 		old_seed = atomic_load(s_seed, memory_order_relaxed);
 		do {
@@ -23,13 +23,13 @@ boost::uint32_t random_uint32(){
 			new_seed += 1442695040888963407u;
 		} while(!atomic_compare_exchange(s_seed, old_seed, new_seed, memory_order_relaxed, memory_order_relaxed));
 	}
-	return static_cast<boost::uint32_t>(new_seed >> 32);
+	return static_cast<std::uint32_t>(new_seed >> 32);
 }
-boost::uint64_t random_uint64(){
-	return (static_cast<boost::uint64_t>(random_uint32()) << 32) + random_uint32();
+std::uint64_t random_uint64(){
+	return (static_cast<std::uint64_t>(random_uint32()) << 32) + random_uint32();
 }
 double random_double(){
-	return static_cast<double>(static_cast<boost::int64_t>(random_uint64() >> 1)) / 0x1p63;
+	return static_cast<double>(static_cast<std::int64_t>(random_uint64() >> 1)) / 0x1p63;
 }
 
 }

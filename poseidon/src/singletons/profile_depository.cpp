@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "profile_depository.hpp"
 #include "main_config.hpp"
-#include "../mutex.hpp"
 #include "../log.hpp"
 #include "../profiler.hpp"
 
@@ -34,7 +33,7 @@ namespace {
 
 	bool g_enabled = false;
 
-	Mutex g_mutex;
+	std::mutex g_mutex;
 	Profile_map g_profile;
 }
 
@@ -46,7 +45,7 @@ void Profile_depository::start(){
 void Profile_depository::stop(){
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Stopping profile depository...");
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	g_profile.clear();
 }
 
@@ -56,7 +55,7 @@ bool Profile_depository::is_enabled() NOEXCEPT {
 
 void Profile_depository::accumulate(const char *file, unsigned long line, const char *func, bool new_sample, double total, double exclusive) NOEXCEPT
 try {
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	const Profile_key key = { file, line, func };
 	AUTO_REF(counters, g_profile[key]);
 	counters.samples += new_sample;
@@ -69,7 +68,7 @@ try {
 void Profile_depository::snapshot(boost::container::vector<Profile_depository::Snapshot_element> &ret){
 	Profiler::accumulate_all_in_thread();
 
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	ret.reserve(ret.size() + g_profile.size());
 	for(AUTO(it, g_profile.begin()); it != g_profile.end(); ++it){
 		Snapshot_element elem = { };
@@ -83,7 +82,7 @@ void Profile_depository::snapshot(boost::container::vector<Profile_depository::S
 	}
 }
 void Profile_depository::clear() NOEXCEPT {
-	const Mutex::Unique_lock lock(g_mutex);
+	const std::lock_guard<std::mutex> lock(g_mutex);
 	g_profile.clear();
 }
 

@@ -5,7 +5,6 @@
 #define POSEIDON_ENDIAN_HPP_
 
 #include "cxx_ver.hpp"
-#include "cxx_util.hpp"
 #include <boost/cstdint.hpp>
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/type_traits/make_unsigned.hpp>
@@ -30,40 +29,40 @@ struct Byte_swapper;
 
 template<>
 struct Byte_swapper<1> {
-	static boost::uint8_t bswap_unless_be(boost::uint8_t value){
+	static std::uint8_t bswap_unless_be(std::uint8_t value){
 		return value;
 	}
-	static boost::uint8_t bswap_unless_le(boost::uint8_t value){
+	static std::uint8_t bswap_unless_le(std::uint8_t value){
 		return value;
 	}
 };
 
 template<>
 struct Byte_swapper<2> {
-	static boost::uint16_t bswap_unless_be(boost::uint16_t value){
+	static std::uint16_t bswap_unless_be(std::uint16_t value){
 		return POSEIDON_BSWAP_UNLESS_BE(16)(value);
 	}
-	static boost::uint16_t bswap_unless_le(boost::uint16_t value){
+	static std::uint16_t bswap_unless_le(std::uint16_t value){
 		return POSEIDON_BSWAP_UNLESS_LE(16)(value);
 	}
 };
 
 template<>
 struct Byte_swapper<4> {
-	static boost::uint32_t bswap_unless_be(boost::uint32_t value){
+	static std::uint32_t bswap_unless_be(std::uint32_t value){
 		return POSEIDON_BSWAP_UNLESS_BE(32)(value);
 	}
-	static boost::uint32_t bswap_unless_le(boost::uint32_t value){
+	static std::uint32_t bswap_unless_le(std::uint32_t value){
 		return POSEIDON_BSWAP_UNLESS_LE(32)(value);
 	}
 };
 
 template<>
 struct Byte_swapper<8> {
-	static boost::uint64_t bswap_unless_be(boost::uint64_t value){
+	static std::uint64_t bswap_unless_be(std::uint64_t value){
 		return POSEIDON_BSWAP_UNLESS_BE(64)(value);
 	}
-	static boost::uint64_t bswap_unless_le(boost::uint64_t value){
+	static std::uint64_t bswap_unless_le(std::uint64_t value){
 		return POSEIDON_BSWAP_UNLESS_LE(64)(value);
 	}
 };

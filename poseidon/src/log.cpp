@@ -75,15 +75,15 @@ namespace {
 		return len;
 	}
 
-	volatile boost::uint64_t g_mask = -1ull;
+	volatile std::uint64_t g_mask = -1ull;
 	__thread char t_tag[5] = "----";
 }
 
-boost::uint64_t Logger::get_mask() NOEXCEPT {
+std::uint64_t Logger::get_mask() NOEXCEPT {
 	return atomic_load(g_mask, memory_order_relaxed);
 }
-boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT {
-	boost::uint64_t old_mask, new_mask;
+std::uint64_t Logger::set_mask(std::uint64_t to_disable, std::uint64_t to_enable) NOEXCEPT {
+	std::uint64_t old_mask, new_mask;
 	old_mask = atomic_load(g_mask, memory_order_relaxed);
 	do {
 		new_mask = old_mask;
@@ -98,7 +98,7 @@ bool Logger::initialize_mask_from_config(){
 	if(log_masked_levels.empty()){
 		return false;
 	}
-	boost::uint64_t new_mask = -1ull;
+	std::uint64_t new_mask = -1ull;
 	unsigned index = 0;
 	for(AUTO(it, log_masked_levels.rbegin()); (it != log_masked_levels.rend()) && (index < 64); ++it){
 		switch(*it){
@@ -132,10 +132,10 @@ const char * Logger::get_thread_tag() NOEXCEPT {
 	return t_tag;
 }
 void Logger::set_thread_tag(const char *tag) NOEXCEPT {
-	::snprintf(t_tag, sizeof(t_tag), "%-*s", (int)(sizeof(t_tag) - 1), tag);
+	std::snprintf(t_tag, sizeof(t_tag), "%-*s", (int)(sizeof(t_tag) - 1), tag);
 }
 
-Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEPT
+Logger::Logger(std::uint64_t mask, const char *file, std::size_t line) NOEXCEPT
 	: m_mask(mask), m_file(file), m_line(line)
 {
 	m_stream <<std::boolalpha;

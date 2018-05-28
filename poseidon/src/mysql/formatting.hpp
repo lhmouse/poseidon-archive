@@ -33,17 +33,17 @@ extern std::ostream & operator<<(std::ostream &os, const String_escaper &rhs);
 
 class Date_time_formatter {
 private:
-	const boost::uint64_t &m_ref;
+	const std::uint64_t &m_ref;
 
 public:
-	explicit CONSTEXPR Date_time_formatter(const boost::uint64_t &ref)
+	explicit CONSTEXPR Date_time_formatter(const std::uint64_t &ref)
 		: m_ref(ref)
 	{
 		//
 	}
 
 public:
-	const boost::uint64_t & get() const {
+	const std::uint64_t & get() const {
 		return m_ref;
 	}
 };

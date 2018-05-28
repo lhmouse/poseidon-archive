@@ -4,9 +4,6 @@
 #include "../precompiled.hpp"
 #include "workhorse_camp.hpp"
 #include "main_config.hpp"
-#include "../thread.hpp"
-#include "../mutex.hpp"
-#include "../condition_variable.hpp"
 #include "../atomic.hpp"
 #include "../exception.hpp"
 #include "../log.hpp"
@@ -14,13 +11,15 @@
 #include "../promise.hpp"
 #include "../profiler.hpp"
 #include "../random.hpp"
+#include <condition_variable>
+#include <thread>
 
 namespace Poseidon {
 
 typedef Workhorse_camp::Job_procedure Job_procedure;
 
 namespace {
-	class Workhorse_thread : NONCOPYABLE {
+	class Workhorse_thread {
 	private:
 		struct Job_queue_element {
 			boost::weak_ptr<Promise> weak_promise;
@@ -28,11 +27,11 @@ namespace {
 		};
 
 	private:
-		Thread m_thread;
+		std::thread m_thread;
 		volatile bool m_running;
 
-		mutable Mutex m_mutex;
-		mutable Condition_variable m_new_job;
+		mutable std::mutex m_mutex;
+		mutable std::condition_variable m_new_job;
 		boost::container::deque<Job_queue_element> m_queue;
 
 	public:
@@ -49,7 +48,7 @@ namespace {
 
 			Job_queue_element *elem;
 			{
-				const Mutex::Unique_lock lock(m_mutex);
+				const std::lock_guard<std::mutex> lock(m_mutex);
 				if(m_queue.empty()){
 					return false;
 				}
@@ -74,28 +73,30 @@ namespace {
 					promise->set_success(false);
 				}
 			}
-			const Mutex::Unique_lock lock(m_mutex);
+			const std::lock_guard<std::mutex> lock(m_mutex);
 			m_queue.pop_front();
 			return true;
 		}
 
 		void thread_proc(){
 			POSEIDON_PROFILE_ME;
+
+			Logger::set_thread_tag("  W ");
 			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Workhorse thread started.");
 
-			unsigned timeout = 0;
+			int timeout = 0;
 			for(;;){
 				bool busy;
 				do {
 					busy = pump_one_job();
-					timeout = std::min<unsigned>(timeout * 2u + 1u, !busy * 100u);
+					timeout = std::min(timeout * 2 + 1, (1 - busy) * 128);
 				} while(busy);
 
-				Mutex::Unique_lock lock(m_mutex);
+				std::unique_lock<std::mutex> lock(m_mutex);
 				if(m_queue.empty() && !atomic_load(m_running, memory_order_consume)){
 					break;
 				}
-				m_new_job.timed_wait(lock, timeout);
+				m_new_job.wait_for(lock, std::chrono::milliseconds(timeout));
 			}
 
 			POSEIDON_LOG(Logger::special_major | Logger::level_info, "Workhorse thread stopped.");
@@ -103,8 +104,8 @@ namespace {
 
 	public:
 		void start(){
-			const Mutex::Unique_lock lock(m_mutex);
-			Thread(boost::bind(&Workhorse_thread::thread_proc, this), Rcnts::view("  W "), Rcnts::view("Workhorse")).swap(m_thread);
+			const std::lock_guard<std::mutex> lock(m_mutex);
+			m_thread = std::thread(&Workhorse_thread::thread_proc, this);
 			atomic_store(m_running, true, memory_order_release);
 		}
 		void stop(){
@@ -122,12 +123,12 @@ namespace {
 			for(;;){
 				std::size_t pending_objects;
 				{
-					const Mutex::Unique_lock lock(m_mutex);
+					const std::lock_guard<std::mutex> lock(m_mutex);
 					pending_objects = m_queue.size();
 					if(pending_objects == 0){
 						break;
 					}
-					m_new_job.signal();
+					m_new_job.notify_one();
 				}
 				POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for jobs to complete: pending_objects = ", pending_objects);
 
@@ -139,32 +140,32 @@ namespace {
 		}
 
 		std::size_t get_queue_size() const {
-			const Mutex::Unique_lock lock(m_mutex);
+			const std::lock_guard<std::mutex> lock(m_mutex);
 			return m_queue.size();
 		}
 		void add_job(const boost::shared_ptr<Promise> &promise, Job_procedure procedure){
 			POSEIDON_PROFILE_ME;
 
-			const Mutex::Unique_lock lock(m_mutex);
+			const std::lock_guard<std::mutex> lock(m_mutex);
 			POSEIDON_THROW_UNLESS(atomic_load(m_running, memory_order_consume), Exception, Rcnts::view("Workhorse thread is being shut down"));
 			Job_queue_element elem = { promise, STD_MOVE_IDN(procedure) };
 			m_queue.push_back(STD_MOVE(elem));
-			m_new_job.signal();
+			m_new_job.notify_one();
 		}
 	};
 
 	volatile bool g_running = false;
 
-	Mutex g_router_mutex;
+	std::mutex g_router_mutex;
 	boost::container::vector<boost::shared_ptr<Workhorse_thread> > g_threads;
 
-	void add_job_using_seed(const boost::shared_ptr<Promise> &promise, Job_procedure procedure, boost::uint64_t seed){
+	void add_job_using_seed(const boost::shared_ptr<Promise> &promise, Job_procedure procedure, std::uint64_t seed){
 		POSEIDON_PROFILE_ME;
 		POSEIDON_THROW_UNLESS(!g_threads.empty(), Basic_exception, Rcnts::view("Workhorse support is not enabled"));
 
 		boost::shared_ptr<Workhorse_thread> thread;
 		{
-			const Mutex::Unique_lock lock(g_router_mutex);
+			const std::lock_guard<std::mutex> lock(g_router_mutex);
 			std::size_t i = static_cast<std::size_t>(seed % g_threads.size());
 			thread = g_threads.at(i);
 			if(!thread){
@@ -220,7 +221,7 @@ void Workhorse_camp::stop(){
 
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Workhorse daemon stopped.");
 
-	const Mutex::Unique_lock lock(g_router_mutex);
+	const std::lock_guard<std::mutex> lock(g_router_mutex);
 	g_threads.clear();
 }
 
@@ -228,7 +229,7 @@ void Workhorse_camp::enqueue_isolated(const boost::shared_ptr<Promise> &promise,
 	add_job_using_seed(promise, STD_MOVE_IDN(procedure), random_uint32());
 }
 void Workhorse_camp::enqueue(const boost::shared_ptr<Promise> &promise, Job_procedure procedure, std::size_t thread_hint){
-	add_job_using_seed(promise, STD_MOVE_IDN(procedure), static_cast<boost::uint64_t>(thread_hint) * 134775813 / 65539);
+	add_job_using_seed(promise, STD_MOVE_IDN(procedure), static_cast<std::uint64_t>(thread_hint) * 134775813 / 65539);
 }
 
 }

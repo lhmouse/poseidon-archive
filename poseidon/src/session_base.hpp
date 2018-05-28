@@ -4,7 +4,6 @@
 #ifndef POSEIDON_SESSION_BASE_HPP_
 #define POSEIDON_SESSION_BASE_HPP_
 
-#include "cxx_util.hpp"
 #include <cstddef>
 #include "stream_buffer.hpp"
 #include "virtual_shared_from_this.hpp"
@@ -13,10 +12,13 @@ namespace Poseidon {
 
 class Stream_buffer;
 
-class Session_base : NONCOPYABLE, public virtual Virtual_shared_from_this {
+class Session_base : public virtual Virtual_shared_from_this {
 public:
-	// 不要不写析构函数，否则 RTTI 将无法在动态库中使用。
+	Session_base() noexcept = default;
 	~Session_base();
+
+	Session_base(const Session_base &) = delete;
+	Session_base &operator=(const Session_base &) = delete;
 
 protected:
 	virtual void on_connect() = 0;

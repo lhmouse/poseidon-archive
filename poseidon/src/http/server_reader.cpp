@@ -75,7 +75,7 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 		}
 
 		switch(m_state){
-			boost::uint64_t temp64;
+			std::uint64_t temp64;
 
 		case state_first_header:
 			if(!expected.empty()){
@@ -94,7 +94,7 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 				POSEIDON_THROW_UNLESS(pos != std::string::npos, Exception, status_bad_request);
 				line.at(pos) = 0;
 				m_request_headers.verb = get_verb_from_string(line.c_str());
-				POSEIDON_THROW_UNLESS(m_request_headers.verb != verb_invalid_verb, Exception, status_not_implemented);
+				POSEIDON_THROW_UNLESS(m_request_headers.verb != verb_invalid, Exception, status_not_implemented);
 				line.erase(0, pos + 1);
 
 				pos = line.find(' ');
@@ -152,7 +152,7 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 						m_content_length = 0;
 					} else {
 						char *eptr;
-						m_content_length = ::strtoull(content_length.c_str(), &eptr, 10);
+						m_content_length = std::strtoull(content_length.c_str(), &eptr, 10);
 						POSEIDON_THROW_UNLESS(*eptr == 0, Exception, status_bad_request);
 						POSEIDON_THROW_UNLESS(m_content_length <= content_length_max, Exception, status_payload_too_large);
 					}
@@ -169,21 +169,21 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 					m_size_expecting = content_length_expecting_endl;
 					m_state = state_chunk_header;
 				} else {
-					m_size_expecting = std::min<boost::uint64_t>(m_content_length, 4096);
+					m_size_expecting = std::min<std::uint64_t>(m_content_length, 4096);
 					m_state = state_identity;
 				}
 			}
 			break;
 
 		case state_identity:
-			temp64 = std::min<boost::uint64_t>(expected.size(), m_content_length - m_content_offset);
+			temp64 = std::min<std::uint64_t>(expected.size(), m_content_length - m_content_offset);
 			if(temp64 > 0){
 				on_request_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
 			}
 			m_content_offset += temp64;
 
 			if(m_content_offset < m_content_length){
-				m_size_expecting = std::min<boost::uint64_t>(m_content_length - m_content_offset, 4096);
+				m_size_expecting = std::min<std::uint64_t>(m_content_length - m_content_offset, 4096);
 				// m_state = state_identity;
 			} else {
 				has_next_request = on_request_end(m_content_offset, VAL_INIT);
@@ -202,14 +202,14 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 				std::string line = expected.dump_string();
 
 				char *eptr;
-				m_chunk_size = ::strtoull(line.c_str(), &eptr, 16);
+				m_chunk_size = std::strtoull(line.c_str(), &eptr, 16);
 				POSEIDON_THROW_UNLESS((*eptr == 0) || (*eptr == ' '), Exception, status_bad_request);
 				POSEIDON_THROW_UNLESS(m_chunk_size <= content_length_max, Exception, status_payload_too_large);
 				if(m_chunk_size == 0){
 					m_size_expecting = content_length_expecting_endl;
 					m_state = state_chunked_trailer;
 				} else {
-					m_size_expecting = std::min<boost::uint64_t>(m_chunk_size, 4096);
+					m_size_expecting = std::min<std::uint64_t>(m_chunk_size, 4096);
 					m_state = state_chunk_data;
 				}
 			} else {
@@ -220,14 +220,14 @@ bool Server_reader::put_encoded_data(Stream_buffer encoded, bool dont_parse_get_
 			break;
 
 		case state_chunk_data:
-			temp64 = std::min<boost::uint64_t>(expected.size(), m_chunk_size - m_chunk_offset);
+			temp64 = std::min<std::uint64_t>(expected.size(), m_chunk_size - m_chunk_offset);
 			assert(temp64 > 0);
 			on_request_entity(m_content_offset, expected.cut_off(boost::numeric_cast<std::size_t>(temp64)));
 			m_content_offset += temp64;
 			m_chunk_offset += temp64;
 
 			if(m_chunk_offset < m_chunk_size){
-				m_size_expecting = std::min<boost::uint64_t>(m_chunk_size - m_chunk_offset, 4096);
+				m_size_expecting = std::min<std::uint64_t>(m_chunk_size - m_chunk_offset, 4096);
 				// m_state = state_chunk_data;
 			} else {
 				m_size_expecting = content_length_expecting_endl;

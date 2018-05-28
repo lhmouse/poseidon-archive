@@ -14,8 +14,8 @@
 namespace Poseidon {
 
 struct File_block_read {
-	boost::uint64_t size_total;
-	boost::uint64_t begin;
+	std::uint64_t size_total;
+	std::uint64_t begin;
 	Stream_buffer data;
 };
 
@@ -37,16 +37,16 @@ public:
 	static void stop();
 
 	// 同步接口。
-	static File_block_read load(const std::string &path, boost::uint64_t begin = 0, boost::uint64_t limit = limit_eof, bool throws_if_does_not_exist = true);
-	static void save(const std::string &path, Stream_buffer data, boost::uint64_t begin = offset_truncate, bool throws_if_exists = false);
+	static File_block_read load(const std::string &path, std::uint64_t begin = 0, std::uint64_t limit = limit_eof, bool throws_if_does_not_exist = true);
+	static void save(const std::string &path, Stream_buffer data, std::uint64_t begin = offset_truncate, bool throws_if_exists = false);
 	static void remove(const std::string &path, bool throws_if_does_not_exist = true);
 	static void rename(const std::string &path, const std::string &new_path);
 	static void mkdir(const std::string &path, bool throws_if_exists = false);
 	static void rmdir(const std::string &path, bool throws_if_does_not_exist = true);
 
 	// 异步接口。
-	static boost::shared_ptr<const Promise_container<File_block_read> > enqueue_for_loading(std::string path, boost::uint64_t begin = 0, boost::uint64_t limit = limit_eof, bool throws_if_does_not_exist = true);
-	static boost::shared_ptr<const Promise> enqueue_for_saving(std::string path, Stream_buffer data, boost::uint64_t begin = offset_truncate, bool throws_if_exists = false);
+	static boost::shared_ptr<const Promise_container<File_block_read> > enqueue_for_loading(std::string path, std::uint64_t begin = 0, std::uint64_t limit = limit_eof, bool throws_if_does_not_exist = true);
+	static boost::shared_ptr<const Promise> enqueue_for_saving(std::string path, Stream_buffer data, std::uint64_t begin = offset_truncate, bool throws_if_exists = false);
 	static boost::shared_ptr<const Promise> enqueue_for_removing(std::string path, bool throws_if_does_not_exist = true);
 	static boost::shared_ptr<const Promise> enqueue_for_renaming(std::string path, std::string new_path);
 	static boost::shared_ptr<const Promise> enqueue_for_mkdir(std::string path, bool throws_if_exists = false);

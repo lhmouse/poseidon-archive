@@ -4,7 +4,6 @@
 #ifndef POSEIDON_ZLIB_HPP_
 #define POSEIDON_ZLIB_HPP_
 
-#include "cxx_util.hpp"
 #include "stream_buffer.hpp"
 #include <string>
 #include <cstddef>
@@ -17,7 +16,7 @@
 
 namespace Poseidon {
 
-class Deflator : NONCOPYABLE {
+class Deflator {
 private:
 	::z_stream m_stream;
 	Stream_buffer m_buffer;
@@ -25,6 +24,9 @@ private:
 public:
 	explicit Deflator(bool gzip = false, int level = 8);
 	~Deflator();
+
+	Deflator(const Deflator &) = delete;
+	Deflator &operator=(const Deflator &) = delete;
 
 public:
 	const Stream_buffer & get_buffer() const {
@@ -53,7 +55,7 @@ public:
 	Stream_buffer finalize();
 };
 
-class Inflator : NONCOPYABLE {
+class Inflator {
 private:
 	::z_stream m_stream;
 	Stream_buffer m_buffer;
@@ -61,6 +63,9 @@ private:
 public:
 	explicit Inflator(bool gzip = false);
 	~Inflator();
+
+	Inflator(const Inflator &) = delete;
+	Inflator &operator=(const Inflator &) = delete;
 
 public:
 	const Stream_buffer & get_buffer() const {

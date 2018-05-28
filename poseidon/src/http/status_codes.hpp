@@ -12,7 +12,7 @@ typedef unsigned Status_code;
 namespace Status_codes {
 	enum {
 		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-		status_null                         =   0,
+		static_invalid                      =  -1,
 		status_continue                     = 100,
 		status_switching_protocols          = 101,
 		status_ok                           = 200,
@@ -63,7 +63,7 @@ struct Status_code_desc {
 	const char *desc_long;
 };
 
-extern Status_code_desc get_status_code_desc(Status_code status_code);
+extern Status_code_desc get_status_code_desc(Status_code status_code) noexcept;
 
 }
 }

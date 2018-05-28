@@ -33,7 +33,7 @@ protected:
 	void on_close(int err_code) OVERRIDE = 0;
 	void on_receive(Stream_buffer data) OVERRIDE = 0;
 
-	virtual void on_shutdown_timer(boost::uint64_t now);
+	virtual void on_shutdown_timer(std::uint64_t now);
 
 public:
 	bool has_been_shutdown_read() const NOEXCEPT OVERRIDE;
@@ -62,7 +62,7 @@ public:
 	bool is_throttled() const;
 
 	void set_no_delay(bool enabled = true);
-	void set_timeout(boost::uint64_t timeout);
+	void set_timeout(std::uint64_t timeout);
 
 	bool send(Stream_buffer buffer) OVERRIDE;
 };

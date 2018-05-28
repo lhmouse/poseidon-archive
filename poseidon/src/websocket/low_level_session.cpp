@@ -40,12 +40,12 @@ void Low_level_session::on_data_message_header(Opcode opcode){
 
 	on_low_level_message_header(opcode);
 }
-void Low_level_session::on_data_message_payload(boost::uint64_t whole_offset, Stream_buffer payload){
+void Low_level_session::on_data_message_payload(std::uint64_t whole_offset, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 
 	on_low_level_message_payload(whole_offset, STD_MOVE(payload));
 }
-bool Low_level_session::on_data_message_end(boost::uint64_t whole_size){
+bool Low_level_session::on_data_message_end(std::uint64_t whole_size){
 	POSEIDON_PROFILE_ME;
 
 	return on_low_level_message_end(whole_size);

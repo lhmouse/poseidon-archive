@@ -13,11 +13,11 @@
 
 namespace Poseidon {
 
-typedef boost::uint32_t Crc32;
+typedef std::uint32_t Crc32;
 
 class Crc32_streambuf : public std::streambuf {
 private:
-	boost::uint32_t m_reg;
+	std::uint32_t m_reg;
 
 private:
 	Crc32_streambuf(const Crc32_streambuf &);

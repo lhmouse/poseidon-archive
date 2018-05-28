@@ -23,6 +23,7 @@ EXTRA_DIST =	\
 
 pkginclude_HEADERS =	\
 	poseidon/src/fwd.hpp	\
+	poseidon/src/pp_util.hpp	\
 	poseidon/src/socket_base.hpp	\
 	poseidon/src/tcp_session_base.hpp	\
 	poseidon/src/option_map.hpp	\
@@ -60,7 +61,6 @@ pkginclude_HEADERS =	\
 	poseidon/src/tiny_exception.hpp	\
 	poseidon/src/system_exception.hpp	\
 	poseidon/src/raii.hpp	\
-	poseidon/src/cxx_util.hpp	\
 	poseidon/src/endian.hpp	\
 	poseidon/src/csv_document.hpp	\
 	poseidon/src/string.hpp	\
@@ -71,16 +71,11 @@ pkginclude_HEADERS =	\
 	poseidon/src/flags.hpp	\
 	poseidon/src/atomic.hpp	\
 	poseidon/src/session_base.hpp	\
-	poseidon/src/cxx_ver.hpp	\
 	poseidon/src/ssl_filter.hpp	\
 	poseidon/src/sock_addr.hpp	\
 	poseidon/src/virtual_shared_from_this.hpp	\
 	poseidon/src/json.hpp	\
 	poseidon/src/module_config.hpp	\
-	poseidon/src/thread.hpp	\
-	poseidon/src/mutex.hpp	\
-	poseidon/src/recursive_mutex.hpp	\
-	poseidon/src/condition_variable.hpp	\
 	poseidon/src/promise.hpp	\
 	poseidon/src/system_http_session.hpp	\
 	poseidon/src/zlib.hpp
@@ -230,10 +225,6 @@ lib_libposeidon_main_la_SOURCES =	\
 	poseidon/src/config_file.cpp	\
 	poseidon/src/module_raii.cpp	\
 	poseidon/src/json.cpp	\
-	poseidon/src/thread.cpp	\
-	poseidon/src/mutex.cpp	\
-	poseidon/src/recursive_mutex.cpp	\
-	poseidon/src/condition_variable.cpp	\
 	poseidon/src/promise.cpp	\
 	poseidon/src/system_http_session.cpp	\
 	poseidon/src/zlib.cpp	\

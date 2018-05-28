@@ -60,7 +60,7 @@ namespace {
 		Rcnts m_database;
 		Unique_handle<Client_closer> m_client;
 
-		boost::int64_t m_cursor_id;
+		std::int64_t m_cursor_id;
 		std::string m_cursor_ns;
 		Unique_handle<Bson_closer> m_batch_guard;
 		::bson_iter_t m_batch_it;
@@ -68,7 +68,7 @@ namespace {
 		Unique_handle<Bson_closer> m_element_guard;
 
 	public:
-		Delegated_connection(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
+		Delegated_connection(const char *server_addr, std::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database)
 			: m_database(database)
 			, m_cursor_id(0), m_cursor_ns()
 		{
@@ -95,8 +95,8 @@ namespace {
 				return false;
 			}
 			POSEIDON_THROW_ASSERT(::bson_iter_type(&it) == BSON_TYPE_DOCUMENT);
-			boost::uint32_t size;
-			const boost::uint8_t *data;
+			std::uint32_t size;
+			const std::uint8_t *data;
 			::bson_iter_document(&it, &size, &data);
 			::bson_t cursor_storage;
 			POSEIDON_THROW_ASSERT(::bson_init_static(&cursor_storage, data, size));
@@ -149,7 +149,7 @@ namespace {
 
 			AUTO(query_data, bson.build(false));
 			::bson_t query_storage;
-			POSEIDON_THROW_ASSERT(::bson_init_static(&query_storage, static_cast<const boost::uint8_t *>(query_data.squash()), query_data.size()));
+			POSEIDON_THROW_ASSERT(::bson_init_static(&query_storage, static_cast<const std::uint8_t *>(query_data.squash()), query_data.size()));
 			const Unique_handle<Bson_closer> query_guard(&query_storage);
 			const AUTO(query_bt, query_guard.get());
 
@@ -211,8 +211,8 @@ namespace {
 				parse_reply_cursor(reply_bt, "nextBatch");
 			}
 			POSEIDON_THROW_ASSERT(::bson_iter_type(&m_batch_it) == BSON_TYPE_DOCUMENT);
-			boost::uint32_t size;
-			const boost::uint8_t *data;
+			std::uint32_t size;
+			const std::uint8_t *data;
 			::bson_iter_document(&m_batch_it, &size, &data);
 			POSEIDON_THROW_UNLESS(::bson_init_static(&m_element_storage, data, size), Basic_exception, Rcnts::view("::bson_init_static() failed"));
 			m_element_guard.reset(&m_element_storage);
@@ -241,14 +241,14 @@ namespace {
 				value = ::bson_iter_double(&it) != 0;
 				break;
 			case BSON_TYPE_UTF8: {
-				boost::uint32_t size;
+				std::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
 				value = (size != 0) && (std::strcmp(data, "0") != 0);
 				break; }
 			case BSON_TYPE_BINARY: {
-				boost::uint32_t size;
-				const boost::uint8_t *data;
+				std::uint32_t size;
+				const std::uint8_t *data;
 				::bson_iter_binary(&it, NULLPTR, &size, &data);
 				value = size != 0;
 				break; }
@@ -262,11 +262,11 @@ namespace {
 			}
 			return value;
 		}
-		boost::int64_t get_signed(const char *name) const OVERRIDE {
+		std::int64_t get_signed(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 			POSEIDON_LOG_TRACE("Getting field as `signed`: ", name);
 
-			boost::int64_t value = 0;
+			std::int64_t value = 0;
 			::bson_iter_t it;
 			switch(find_bson_element_and_check(it, name)){
 			case BSON_TYPE_EOD:
@@ -281,10 +281,10 @@ namespace {
 				value = ::bson_iter_int64(&it);
 				break;
 			case BSON_TYPE_DOUBLE:
-				value = boost::numeric_cast<boost::int64_t>(::bson_iter_double(&it));
+				value = boost::numeric_cast<std::int64_t>(::bson_iter_double(&it));
 				break;
 			case BSON_TYPE_UTF8: {
-				boost::uint32_t size;
+				std::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
 				char *eptr;
@@ -297,11 +297,11 @@ namespace {
 			}
 			return value;
 		}
-		boost::uint64_t get_unsigned(const char *name) const OVERRIDE {
+		std::uint64_t get_unsigned(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 			POSEIDON_LOG_TRACE("Getting field as `unsigned`: ", name);
 
-			boost::uint64_t value = 0;
+			std::uint64_t value = 0;
 			::bson_iter_t it;
 			switch(find_bson_element_and_check(it, name)){
 			case BSON_TYPE_EOD:
@@ -310,20 +310,20 @@ namespace {
 				value = ::bson_iter_bool(&it);
 				break;
 			case BSON_TYPE_INT32:
-				value = boost::numeric_cast<boost::uint32_t>(::bson_iter_int32(&it));
+				value = boost::numeric_cast<std::uint32_t>(::bson_iter_int32(&it));
 				break;
 			case BSON_TYPE_INT64:
-				value = boost::numeric_cast<boost::uint64_t>(::bson_iter_int64(&it));
+				value = boost::numeric_cast<std::uint64_t>(::bson_iter_int64(&it));
 				break;
 			case BSON_TYPE_DOUBLE:
-				value = boost::numeric_cast<boost::uint64_t>(::bson_iter_double(&it));
+				value = boost::numeric_cast<std::uint64_t>(::bson_iter_double(&it));
 				break;
 			case BSON_TYPE_UTF8: {
-				boost::uint32_t size;
+				std::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
 				char *eptr;
-				value = ::strtoull(data, &eptr, 0);
+				value = std::strtoull(data, &eptr, 0);
 				POSEIDON_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Could not convert field data to `unsigned long long`"));
 				break; }
 			default:
@@ -354,7 +354,7 @@ namespace {
 				value = ::bson_iter_double(&it);
 				break;
 			case BSON_TYPE_UTF8: {
-				boost::uint32_t size;
+				std::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
 				char *eptr;
@@ -389,14 +389,14 @@ namespace {
 				value = boost::lexical_cast<std::string>(::bson_iter_double(&it));
 				break;
 			case BSON_TYPE_UTF8: {
-				boost::uint32_t size;
+				std::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
 				value.assign(data, size);
 				break; }
 			case BSON_TYPE_BINARY: {
-				boost::uint32_t size;
-				const boost::uint8_t *data;
+				std::uint32_t size;
+				const std::uint8_t *data;
 				::bson_iter_binary(&it, NULLPTR, &size, &data);
 				value.assign(reinterpret_cast<const char *>(data), size);
 				break; }
@@ -406,17 +406,17 @@ namespace {
 			}
 			return value;
 		}
-		boost::uint64_t get_datetime(const char *name) const OVERRIDE {
+		std::uint64_t get_datetime(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 			POSEIDON_LOG_TRACE("Getting field as `datetime`: ", name);
 
-			boost::uint64_t value = 0;
+			std::uint64_t value = 0;
 			::bson_iter_t it;
 			switch(find_bson_element_and_check(it, name)){
 			case BSON_TYPE_EOD:
 				break;
 			case BSON_TYPE_UTF8: {
-				boost::uint32_t size;
+				std::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
 				value = scan_time(data);
@@ -437,7 +437,7 @@ namespace {
 			case BSON_TYPE_EOD:
 				break;
 			case BSON_TYPE_UTF8: {
-				boost::uint32_t size;
+				std::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
 				POSEIDON_THROW_UNLESS(size == 36, Basic_exception, Rcnts::view("Invalid UUID string length"));
@@ -459,14 +459,14 @@ namespace {
 			case BSON_TYPE_EOD:
 				break;
 			case BSON_TYPE_UTF8: {
-				boost::uint32_t size;
+				std::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
 				value.put(data, size);
 				break; }
 			case BSON_TYPE_BINARY: {
-				boost::uint32_t size;
-				const boost::uint8_t *data;
+				std::uint32_t size;
+				const std::uint8_t *data;
 				::bson_iter_binary(&it, NULLPTR, &size, &data);
 				value.put(data, size);
 				break; }
@@ -479,7 +479,7 @@ namespace {
 	};
 }
 
-boost::shared_ptr<Connection> Connection::create(const char *server_addr, boost::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database){
+boost::shared_ptr<Connection> Connection::create(const char *server_addr, std::uint16_t server_port, const char *user_name, const char *password, const char *auth_database, bool use_ssl, const char *database){
 	return boost::make_shared<Delegated_connection>(server_addr, server_port, user_name, password, auth_database, use_ssl, database);
 }
 

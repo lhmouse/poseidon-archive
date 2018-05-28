@@ -34,11 +34,11 @@ public:
 #undef FIELD_BLOB
 
 #define FIELD_BOOLEAN(id_)                ::Poseidon::Mongodb::Object_base::Field<bool> id_;
-#define FIELD_SIGNED(id_)                 ::Poseidon::Mongodb::Object_base::Field< ::boost::int64_t> id_;
-#define FIELD_UNSIGNED(id_)               ::Poseidon::Mongodb::Object_base::Field< ::boost::uint64_t> id_;
+#define FIELD_SIGNED(id_)                 ::Poseidon::Mongodb::Object_base::Field< ::std::int64_t> id_;
+#define FIELD_UNSIGNED(id_)               ::Poseidon::Mongodb::Object_base::Field< ::std::uint64_t> id_;
 #define FIELD_DOUBLE(id_)                 ::Poseidon::Mongodb::Object_base::Field<double> id_;
 #define FIELD_STRING(id_)                 ::Poseidon::Mongodb::Object_base::Field< ::std::string> id_;
-#define FIELD_DATETIME(id_)               ::Poseidon::Mongodb::Object_base::Field< ::boost::uint64_t> id_;
+#define FIELD_DATETIME(id_)               ::Poseidon::Mongodb::Object_base::Field< ::std::uint64_t> id_;
 #define FIELD_UUID(id_)                   ::Poseidon::Mongodb::Object_base::Field< ::Poseidon::Uuid> id_;
 #define FIELD_BLOB(id_)                   ::Poseidon::Mongodb::Object_base::Field< ::std::basic_string<unsigned char> > id_;
 
@@ -78,11 +78,11 @@ public:
 #undef FIELD_BLOB
 
 #define FIELD_BOOLEAN(id_)                , bool param_##id_##_Zky_
-#define FIELD_SIGNED(id_)                 , ::boost::int64_t param_##id_##_Zky_
-#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t param_##id_##_Zky_
+#define FIELD_SIGNED(id_)                 , ::std::int64_t param_##id_##_Zky_
+#define FIELD_UNSIGNED(id_)               , ::std::uint64_t param_##id_##_Zky_
 #define FIELD_DOUBLE(id_)                 , double param_##id_##_Zky_
 #define FIELD_STRING(id_)                 , ::std::string param_##id_##_Zky_
-#define FIELD_DATETIME(id_)               , ::boost::uint64_t param_##id_##_Zky_
+#define FIELD_DATETIME(id_)               , ::std::uint64_t param_##id_##_Zky_
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & param_##id_##_Zky_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> param_##id_##_Zky_
 
@@ -159,11 +159,11 @@ OBJECT_NAME::~OBJECT_NAME(){
 #undef FIELD_BLOB
 
 #define FIELD_BOOLEAN(id_)                , bool param_##id_##_Zky_
-#define FIELD_SIGNED(id_)                 , ::boost::int64_t param_##id_##_Zky_
-#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t param_##id_##_Zky_
+#define FIELD_SIGNED(id_)                 , ::std::int64_t param_##id_##_Zky_
+#define FIELD_UNSIGNED(id_)               , ::std::uint64_t param_##id_##_Zky_
 #define FIELD_DOUBLE(id_)                 , double param_##id_##_Zky_
 #define FIELD_STRING(id_)                 , ::std::string param_##id_##_Zky_
-#define FIELD_DATETIME(id_)               , ::boost::uint64_t param_##id_##_Zky_
+#define FIELD_DATETIME(id_)               , ::std::uint64_t param_##id_##_Zky_
 #define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & param_##id_##_Zky_
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> param_##id_##_Zky_
 

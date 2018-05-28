@@ -27,7 +27,7 @@ Ip_port::Ip_port(){
 	std::strcpy(m_ip, "???");
 	m_port = 0;
 }
-Ip_port::Ip_port(const char *ip_str, boost::uint16_t port_num){
+Ip_port::Ip_port(const char *ip_str, std::uint16_t port_num){
 	const AUTO(ip_size, std::strlen(ip_str) + 1);
 	POSEIDON_THROW_UNLESS(ip_size <= sizeof(m_ip), Exception, Rcnts::view("IP address string is too long"));
 	std::memcpy(m_ip, ip_str, ip_size);

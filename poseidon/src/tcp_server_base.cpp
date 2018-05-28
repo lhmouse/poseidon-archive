@@ -73,7 +73,7 @@ int Tcp_server_base::poll_read_and_process(unsigned char */*hint_buffer*/, std::
 				m_ssl_factory->create_ssl_filter(ssl_filter, session->get_fd());
 				session->init_ssl(ssl_filter);
 			}
-			const AUTO(tcp_request_timeout, Main_config::get<boost::uint64_t>("tcp_request_timeout", 5000));
+			const AUTO(tcp_request_timeout, Main_config::get<std::uint64_t>("tcp_request_timeout", 5000));
 			session->set_timeout(tcp_request_timeout);
 			Epoll_daemon::add_socket(session, true);
 			POSEIDON_LOG_INFO("Accepted TCP connection from ", session->get_remote_info());

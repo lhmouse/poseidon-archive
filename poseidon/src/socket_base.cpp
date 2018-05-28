@@ -176,7 +176,7 @@ const Ip_port & Socket_base::get_remote_info() const NOEXCEPT
 try {
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(m_info_mutex);
+	const std::lock_guard<std::mutex> lock(m_info_mutex);
 	if(!m_remote_info){
 		fetch_remote_info_unlocked();
 	}
@@ -192,7 +192,7 @@ const Ip_port & Socket_base::get_local_info() const NOEXCEPT
 try {
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(m_info_mutex);
+	const std::lock_guard<std::mutex> lock(m_info_mutex);
 	if(!m_local_info){
 		fetch_local_info_unlocked();
 	}
@@ -208,7 +208,7 @@ bool Socket_base::is_using_ipv6() const NOEXCEPT
 try {
 	POSEIDON_PROFILE_ME;
 
-	const Mutex::Unique_lock lock(m_info_mutex);
+	const std::lock_guard<std::mutex> lock(m_info_mutex);
 	if(!m_ipv6){
 		fetch_local_info_unlocked();
 	}
@@ -224,7 +224,7 @@ try {
 int Socket_base::poll_read_and_process(unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*readable*/){
 	return EWOULDBLOCK;
 }
-int Socket_base::poll_write(Mutex::Unique_lock &/*write_lock*/, unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*writable*/){
+int Socket_base::poll_write(std::unique_lock<std::mutex> &/*write_lock*/, unsigned char */*hint_buffer*/, std::size_t /*hint_capacity*/, bool /*writable*/){
 	return EWOULDBLOCK;
 }
 void Socket_base::on_close(int /*err_code*/){

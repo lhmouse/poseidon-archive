@@ -89,11 +89,11 @@ protected:
 
 class Client::Data_message_job : public Client::Sync_job_base {
 private:
-	boost::uint16_t m_message_id;
+	std::uint16_t m_message_id;
 	Stream_buffer m_payload;
 
 public:
-	Data_message_job(const boost::shared_ptr<Client> &client, boost::uint16_t message_id, Stream_buffer payload)
+	Data_message_job(const boost::shared_ptr<Client> &client, std::uint16_t message_id, Stream_buffer payload)
 		: Sync_job_base(client)
 		, m_message_id(message_id), m_payload(STD_MOVE(payload))
 	{
@@ -157,18 +157,18 @@ void Client::on_read_hup(){
 	Low_level_client::on_read_hup();
 }
 
-void Client::on_low_level_data_message_header(boost::uint16_t message_id, boost::uint64_t /*payload_size*/){
+void Client::on_low_level_data_message_header(std::uint16_t message_id, std::uint64_t /*payload_size*/){
 	POSEIDON_PROFILE_ME;
 
 	m_message_id = message_id;
 	m_payload.clear();
 }
-void Client::on_low_level_data_message_payload(boost::uint64_t /*payload_offset*/, Stream_buffer payload){
+void Client::on_low_level_data_message_payload(std::uint64_t /*payload_offset*/, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 
 	m_payload.splice(payload);
 }
-bool Client::on_low_level_data_message_end(boost::uint64_t /*payload_size*/){
+bool Client::on_low_level_data_message_end(std::uint64_t /*payload_size*/){
 	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
