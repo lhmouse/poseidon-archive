@@ -35,7 +35,7 @@ void Low_level_client::on_receive(Stream_buffer data){
 	Reader::put_encoded_data(STD_MOVE(data));
 }
 
-void Low_level_client::on_data_message_header(Op_code opcode){
+void Low_level_client::on_data_message_header(Opcode opcode){
 	POSEIDON_PROFILE_ME;
 
 	on_low_level_message_header(opcode);
@@ -51,7 +51,7 @@ bool Low_level_client::on_data_message_end(boost::uint64_t whole_size){
 	return on_low_level_message_end(whole_size);
 }
 
-bool Low_level_client::on_control_message(Op_code opcode, Stream_buffer payload){
+bool Low_level_client::on_control_message(Opcode opcode, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 
 	return on_low_level_control_message(opcode, STD_MOVE(payload));
@@ -63,7 +63,7 @@ long Low_level_client::on_encoded_data_avail(Stream_buffer encoded){
 	return Upgraded_session_base::send(STD_MOVE(encoded));
 }
 
-bool Low_level_client::send(Op_code opcode, Stream_buffer payload, bool masked){
+bool Low_level_client::send(Opcode opcode, Stream_buffer payload, bool masked){
 	POSEIDON_PROFILE_ME;
 
 	return Writer::put_message(opcode, masked, STD_MOVE(payload));

@@ -91,11 +91,11 @@ protected:
 
 class Client::Data_message_job : public Client::Sync_job_base {
 private:
-	Op_code m_opcode;
+	Opcode m_opcode;
 	Stream_buffer m_payload;
 
 public:
-	Data_message_job(const boost::shared_ptr<Client> &client, Op_code opcode, Stream_buffer payload)
+	Data_message_job(const boost::shared_ptr<Client> &client, Opcode opcode, Stream_buffer payload)
 		: Sync_job_base(client)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
 	{
@@ -113,11 +113,11 @@ protected:
 
 class Client::Control_message_job : public Client::Sync_job_base {
 private:
-	Op_code m_opcode;
+	Opcode m_opcode;
 	Stream_buffer m_payload;
 
 public:
-	Control_message_job(const boost::shared_ptr<Client> &client, Op_code opcode, Stream_buffer payload)
+	Control_message_job(const boost::shared_ptr<Client> &client, Opcode opcode, Stream_buffer payload)
 		: Sync_job_base(client)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
 	{
@@ -161,7 +161,7 @@ void Client::on_read_hup(){
 	Low_level_client::on_read_hup();
 }
 
-void Client::on_low_level_message_header(Op_code opcode){
+void Client::on_low_level_message_header(Opcode opcode){
 	POSEIDON_PROFILE_ME;
 
 	m_opcode = opcode;
@@ -181,7 +181,7 @@ bool Client::on_low_level_message_end(boost::uint64_t /*whole_size*/){
 
 	return true;
 }
-bool Client::on_low_level_control_message(Op_code opcode, Stream_buffer payload){
+bool Client::on_low_level_control_message(Opcode opcode, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
@@ -197,7 +197,7 @@ void Client::on_sync_connect(){
 	//
 }
 
-void Client::on_sync_control_message(Op_code opcode, Stream_buffer payload){
+void Client::on_sync_control_message(Opcode opcode, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 	POSEIDON_LOG_DEBUG("Control frame: opcode = ", opcode);
 

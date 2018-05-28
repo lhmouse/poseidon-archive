@@ -7,7 +7,7 @@
 namespace Poseidon {
 namespace Websocket {
 
-typedef int Op_code;
+typedef int Opcode;
 
 namespace Op_codes {
 	enum {

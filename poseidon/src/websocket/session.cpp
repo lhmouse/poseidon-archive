@@ -97,11 +97,11 @@ protected:
 
 class Session::Data_message_job : public Session::Sync_job_base {
 private:
-	Op_code m_opcode;
+	Opcode m_opcode;
 	Stream_buffer m_payload;
 
 public:
-	Data_message_job(const boost::shared_ptr<Session> &session, Op_code opcode, Stream_buffer payload)
+	Data_message_job(const boost::shared_ptr<Session> &session, Opcode opcode, Stream_buffer payload)
 		: Sync_job_base(session)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
 	{
@@ -122,11 +122,11 @@ protected:
 
 class Session::Control_message_job : public Session::Sync_job_base {
 private:
-	Op_code m_opcode;
+	Opcode m_opcode;
 	Stream_buffer m_payload;
 
 public:
-	Control_message_job(const boost::shared_ptr<Session> &session, Op_code opcode, Stream_buffer payload)
+	Control_message_job(const boost::shared_ptr<Session> &session, Opcode opcode, Stream_buffer payload)
 		: Sync_job_base(session)
 		, m_opcode(opcode), m_payload(STD_MOVE(payload))
 	{
@@ -175,7 +175,7 @@ void Session::on_shutdown_timer(boost::uint64_t now){
 	Low_level_session::on_shutdown_timer(now);
 }
 
-void Session::on_low_level_message_header(Op_code opcode){
+void Session::on_low_level_message_header(Opcode opcode){
 	POSEIDON_PROFILE_ME;
 
 	m_size_total = 0;
@@ -198,7 +198,7 @@ bool Session::on_low_level_message_end(boost::uint64_t /*whole_size*/){
 
 	return true;
 }
-bool Session::on_low_level_control_message(Op_code opcode, Stream_buffer payload){
+bool Session::on_low_level_control_message(Opcode opcode, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 
 	Job_dispatcher::enqueue(
@@ -208,7 +208,7 @@ bool Session::on_low_level_control_message(Op_code opcode, Stream_buffer payload
 	return true;
 }
 
-void Session::on_sync_control_message(Op_code opcode, Stream_buffer payload){
+void Session::on_sync_control_message(Opcode opcode, Stream_buffer payload){
 	POSEIDON_PROFILE_ME;
 	POSEIDON_LOG_DEBUG("Control frame: opcode = ", opcode);
 
