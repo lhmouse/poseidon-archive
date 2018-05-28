@@ -41,6 +41,8 @@ public:
 	OBJECT_FIELDS
 
 public:
+	OBJECT_NAME();
+	~OBJECT_NAME() OVERRIDE;
 
 #undef FIELD_BOOLEAN
 #undef FIELD_SIGNED
@@ -51,19 +53,16 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                , bool id_##X_
-#define FIELD_SIGNED(id_)                 , ::boost::int64_t id_##X_
-#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t id_##X_
-#define FIELD_DOUBLE(id_)                 , double id_##X_
-#define FIELD_STRING(id_)                 , ::std::string id_##X_
-#define FIELD_DATETIME(id_)               , ::boost::uint64_t id_##X_
-#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
-#define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
+#define FIELD_BOOLEAN(id_)                , bool param_##id_##_Zky_
+#define FIELD_SIGNED(id_)                 , ::boost::int64_t param_##id_##_Zky_
+#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t param_##id_##_Zky_
+#define FIELD_DOUBLE(id_)                 , double param_##id_##_Zky_
+#define FIELD_STRING(id_)                 , ::std::string param_##id_##_Zky_
+#define FIELD_DATETIME(id_)               , ::boost::uint64_t param_##id_##_Zky_
+#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & param_##id_##_Zky_
+#define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> param_##id_##_Zky_
 
 	explicit OBJECT_NAME(POSEIDON_LAZY(POSEIDON_REST, void OBJECT_FIELDS));
-
-	OBJECT_NAME();
-	~OBJECT_NAME() OVERRIDE;
 
 public:
 	const char *get_table() const OVERRIDE;
@@ -112,14 +111,14 @@ OBJECT_NAME::~OBJECT_NAME(){
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                , bool id_##X_
-#define FIELD_SIGNED(id_)                 , ::boost::int64_t id_##X_
-#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t id_##X_
-#define FIELD_DOUBLE(id_)                 , double id_##X_
-#define FIELD_STRING(id_)                 , ::std::string id_##X_
-#define FIELD_DATETIME(id_)               , ::boost::uint64_t id_##X_
-#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & id_##X_
-#define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> id_##X_
+#define FIELD_BOOLEAN(id_)                , bool param_##id_##_Zky_
+#define FIELD_SIGNED(id_)                 , ::boost::int64_t param_##id_##_Zky_
+#define FIELD_UNSIGNED(id_)               , ::boost::uint64_t param_##id_##_Zky_
+#define FIELD_DOUBLE(id_)                 , double param_##id_##_Zky_
+#define FIELD_STRING(id_)                 , ::std::string param_##id_##_Zky_
+#define FIELD_DATETIME(id_)               , ::boost::uint64_t param_##id_##_Zky_
+#define FIELD_UUID(id_)                   , const ::Poseidon::Uuid & param_##id_##_Zky_
+#define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> param_##id_##_Zky_
 
 OBJECT_NAME::OBJECT_NAME(POSEIDON_LAZY(POSEIDON_REST, void OBJECT_FIELDS))
 	: ::Poseidon::Mysql::Object_base()
@@ -133,14 +132,14 @@ OBJECT_NAME::OBJECT_NAME(POSEIDON_LAZY(POSEIDON_REST, void OBJECT_FIELDS))
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
-#define FIELD_BOOLEAN(id_)                , id_(this, id_##X_)
-#define FIELD_SIGNED(id_)                 , id_(this, id_##X_)
-#define FIELD_UNSIGNED(id_)               , id_(this, id_##X_)
-#define FIELD_DOUBLE(id_)                 , id_(this, id_##X_)
-#define FIELD_STRING(id_)                 , id_(this, STD_MOVE(id_##X_))
-#define FIELD_DATETIME(id_)               , id_(this, id_##X_)
-#define FIELD_UUID(id_)                   , id_(this, id_##X_)
-#define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(id_##X_))
+#define FIELD_BOOLEAN(id_)                , id_(this, param_##id_##_Zky_)
+#define FIELD_SIGNED(id_)                 , id_(this, param_##id_##_Zky_)
+#define FIELD_UNSIGNED(id_)               , id_(this, param_##id_##_Zky_)
+#define FIELD_DOUBLE(id_)                 , id_(this, param_##id_##_Zky_)
+#define FIELD_STRING(id_)                 , id_(this, STD_MOVE(param_##id_##_Zky_))
+#define FIELD_DATETIME(id_)               , id_(this, param_##id_##_Zky_)
+#define FIELD_UUID(id_)                   , id_(this, param_##id_##_Zky_)
+#define FIELD_BLOB(id_)                   , id_(this, STD_MOVE(param_##id_##_Zky_))
 
 	OBJECT_FIELDS
 { }

@@ -29,9 +29,9 @@ public:
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
-#undef FIELD_NESTED
 #undef FIELD_REPEATED
 
 #define FIELD_VINT(id_)             ::boost::int64_t id_;
@@ -40,11 +40,11 @@ public:
 #define FIELD_STRING(id_)           ::std::string id_;
 #define FIELD_BLOB(id_)             ::Poseidon::Stream_buffer id_;
 #define FIELD_FLEXIBLE(id_)         ::Poseidon::Stream_buffer id_;
-#define FIELD_ARRAY(id_, ...)       struct Cbpp##id_##F_ { __VA_ARGS__ };	\
-                                    ::boost::container::vector< Cbpp##id_##F_ > id_;
-#define FIELD_LIST(id_, ...)        struct Cbpp##id_##F_ { __VA_ARGS__ };	\
-                                    ::boost::container::deque< Cbpp##id_##F_ > id_;
 #define FIELD_NESTED(id_, Elem_)    Elem_ id_;
+#define FIELD_ARRAY(id_, ...)       struct Unnamed_struct_##id_##_Stq_ { __VA_ARGS__ };	\
+                                    ::boost::container::vector< Unnamed_struct_##id_##_Stq_ > id_;
+#define FIELD_LIST(id_, ...)        struct Unnamed_struct_##id_##_Stq_ { __VA_ARGS__ };	\
+                                    ::boost::container::deque< Unnamed_struct_##id_##_Stq_ > id_;
 #define FIELD_REPEATED(id_, Elem_)  ::boost::container::deque< Elem_ > id_;
 
 	MESSAGE_FIELDS
@@ -52,6 +52,30 @@ public:
 public:
 	MESSAGE_NAME();
 	~MESSAGE_NAME() OVERRIDE;
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_FIXED
+#undef FIELD_STRING
+#undef FIELD_BLOB
+#undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
+#undef FIELD_ARRAY
+#undef FIELD_LIST
+#undef FIELD_REPEATED
+
+#define FIELD_VINT(id_)             , ::boost::int64_t param_##id_##_Svy_
+#define FIELD_VUINT(id_)            , ::boost::uint64_t param_##id_##_Svy_
+#define FIELD_FIXED(id_, n_)        , const ::boost::array<unsigned char, n_> & param_##id_##_Svy_
+#define FIELD_STRING(id_)           , ::std::string param_##id_##_Svy_
+#define FIELD_BLOB(id_)             , ::Poseidon::Stream_buffer param_##id_##_Svy_
+#define FIELD_FLEXIBLE(id_)         , ::Poseidon::Stream_buffer param_##id_##_Svy_
+#define FIELD_NESTED(id_, Elem_)    , Elem_ param_##id_##_Svy_
+#define FIELD_ARRAY(id_, ...)       , ::std::size_t param_##id_##_Svy_
+#define FIELD_LIST(id_, ...)        , ::std::size_t param_##id_##_Svy_
+#define FIELD_REPEATED(id_, Elem_)  , ::std::size_t param_##id_##_Svy_
+
+	explicit MESSAGE_NAME(POSEIDON_LAZY(POSEIDON_REST, void MESSAGE_FIELDS));
 
 public:
 	::boost::uint64_t get_id() const OVERRIDE;
@@ -73,9 +97,9 @@ MESSAGE_NAME::MESSAGE_NAME()
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
-#undef FIELD_NESTED
 #undef FIELD_REPEATED
 
 #define FIELD_VINT(id_)             , id_()
@@ -84,9 +108,9 @@ MESSAGE_NAME::MESSAGE_NAME()
 #define FIELD_STRING(id_)           , id_()
 #define FIELD_BLOB(id_)             , id_()
 #define FIELD_FLEXIBLE(id_)         , id_()
+#define FIELD_NESTED(id_, Elem_)    , id_()
 #define FIELD_ARRAY(id_, ...)       , id_()
 #define FIELD_LIST(id_, ...)        , id_()
-#define FIELD_NESTED(id_, Elem_)    , id_()
 #define FIELD_REPEATED(id_, Elem_)  , id_()
 
 	MESSAGE_FIELDS
@@ -95,6 +119,58 @@ MESSAGE_NAME::MESSAGE_NAME()
 }
 
 MESSAGE_NAME::~MESSAGE_NAME(){
+	//
+}
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_FIXED
+#undef FIELD_STRING
+#undef FIELD_BLOB
+#undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
+#undef FIELD_ARRAY
+#undef FIELD_LIST
+#undef FIELD_REPEATED
+
+#define FIELD_VINT(id_)             , ::boost::int64_t param_##id_##_Svy_
+#define FIELD_VUINT(id_)            , ::boost::uint64_t param_##id_##_Svy_
+#define FIELD_FIXED(id_, n_)        , const ::boost::array<unsigned char, n_> & param_##id_##_Svy_
+#define FIELD_STRING(id_)           , ::std::string param_##id_##_Svy_
+#define FIELD_BLOB(id_)             , ::Poseidon::Stream_buffer param_##id_##_Svy_
+#define FIELD_FLEXIBLE(id_)         , ::Poseidon::Stream_buffer param_##id_##_Svy_
+#define FIELD_NESTED(id_, Elem_)    , Elem_ param_##id_##_Svy_
+#define FIELD_ARRAY(id_, ...)       , ::std::size_t param_##id_##_Svy_
+#define FIELD_LIST(id_, ...)        , ::std::size_t param_##id_##_Svy_
+#define FIELD_REPEATED(id_, Elem_)  , ::std::size_t param_##id_##_Svy_
+
+MESSAGE_NAME::MESSAGE_NAME(POSEIDON_LAZY(POSEIDON_REST, void MESSAGE_FIELDS))
+	: ::Poseidon::Cbpp::Message_base()
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_FIXED
+#undef FIELD_STRING
+#undef FIELD_BLOB
+#undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
+#undef FIELD_ARRAY
+#undef FIELD_LIST
+#undef FIELD_REPEATED
+
+#define FIELD_VINT(id_)             , id_(param_##id_##_Svy_)
+#define FIELD_VUINT(id_)            , id_(param_##id_##_Svy_)
+#define FIELD_FIXED(id_, n_)        , id_(param_##id_##_Svy_)
+#define FIELD_STRING(id_)           , id_(STD_MOVE(param_##id_##_Svy_))
+#define FIELD_BLOB(id_)             , id_(STD_MOVE(param_##id_##_Svy_))
+#define FIELD_FLEXIBLE(id_)         , id_(STD_MOVE(param_##id_##_Svy_))
+#define FIELD_NESTED(id_, Elem_)    , id_(STD_MOVE(param_##id_##_Svy_))
+#define FIELD_ARRAY(id_, ...)       , id_(param_##id_##_Svy_)
+#define FIELD_LIST(id_, ...)        , id_(param_##id_##_Svy_)
+#define FIELD_REPEATED(id_, Elem_)  , id_(param_##id_##_Svy_)
+
+	MESSAGE_FIELDS
+{
 	//
 }
 
@@ -113,9 +189,9 @@ void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
-#undef FIELD_NESTED
 #undef FIELD_REPEATED
 
 #define FIELD_VINT(id_)             ::Poseidon::Cbpp::push_vint(buf_, cur_->id_);
@@ -124,18 +200,21 @@ void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
 #define FIELD_STRING(id_)           ::Poseidon::Cbpp::push_string(buf_, cur_->id_);
 #define FIELD_BLOB(id_)             ::Poseidon::Cbpp::push_blob(buf_, cur_->id_);
 #define FIELD_FLEXIBLE(id_)         ::Poseidon::Cbpp::push_flexible(buf_, cur_->id_);
+#define FIELD_NESTED(id_, Elem_)    cur_->id_.serialize(buf_);
 #define FIELD_ARRAY(id_, ...)       {	\
                                       ::Poseidon::Cbpp::push_vuint(buf_, cur_->id_.size());	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
-                                        const AUTO(cur_, &*it_);	\
-                                        __VA_ARGS__	\
+                                        {	\
+                                          const AUTO(cur_, &*it_);	\
+                                          __VA_ARGS__	\
+                                        }	\
                                       }	\
                                     }
 #define FIELD_LIST(id_, ...)        {	\
                                       ::Poseidon::Stream_buffer chunk_;	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
-                                        const AUTO(cur_, &*it_);	\
                                         {	\
+                                          const AUTO(cur_, &*it_);	\
                                           AUTO_REF(buf_, chunk_);	\
                                           __VA_ARGS__	\
                                         }	\
@@ -144,12 +223,11 @@ void MESSAGE_NAME::serialize(::Poseidon::Stream_buffer &buffer_) const {
                                       }	\
                                       buf_.put(0);	\
                                     }
-#define FIELD_NESTED(id_, Elem_)    cur_->id_.serialize(buf_);
 #define FIELD_REPEATED(id_, Elem_)  {	\
                                       ::Poseidon::Stream_buffer chunk_;	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
-                                        const AUTO(cur_, &*it_);	\
                                         {	\
+                                          const AUTO(cur_, &*it_);	\
                                           AUTO_REF(buf_, chunk_);	\
                                           cur_->serialize(buf_);	\
                                         }	\
@@ -173,9 +251,9 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
-#undef FIELD_NESTED
 #undef FIELD_REPEATED
 
 #define FIELD_VINT(id_)             ::Poseidon::Cbpp::shift_vint(cur_->id_, buf_, POSEIDON_STRINGIFY(id_));
@@ -184,6 +262,7 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
 #define FIELD_STRING(id_)           ::Poseidon::Cbpp::shift_string(cur_->id_, buf_, POSEIDON_STRINGIFY(id_));
 #define FIELD_BLOB(id_)             ::Poseidon::Cbpp::shift_blob(cur_->id_, buf_, POSEIDON_STRINGIFY(id_));
 #define FIELD_FLEXIBLE(id_)         ::Poseidon::Cbpp::shift_flexible(cur_->id_, buf_, POSEIDON_STRINGIFY(id_));
+#define FIELD_NESTED(id_, Elem_)    cur_->id_.deserialize(buf_);
 #define FIELD_ARRAY(id_, ...)       {	\
                                       cur_->id_.clear();	\
                                       ::boost::uint64_t length_;	\
@@ -194,37 +273,42 @@ void MESSAGE_NAME::deserialize(::Poseidon::Stream_buffer &buffer_){
                                         }	\
                                         --length_;	\
                                         const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
-                                        const AUTO(cur_, &*it_);	\
-                                        __VA_ARGS__	\
+                                        {	\
+                                          const AUTO(cur_, &*it_);	\
+                                          __VA_ARGS__	\
+                                        }	\
                                       }	\
                                     }
 #define FIELD_LIST(id_, ...)        {	\
                                       cur_->id_.clear();	\
                                       ::Poseidon::Stream_buffer chunk_;	\
                                       for(;;){	\
-                                        ::Poseidon::Cbpp::shift_blob(chunk_, buf_, POSEIDON_STRINGIFY(id_));	\
+                                        ::Poseidon::Cbpp::shift_blob(chunk_, buf_, POSEIDON_STRINGIFY(id_) ".chunk");	\
                                         if(chunk_.empty()){	\
                                           break;	\
                                         }	\
                                         const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
-                                        const AUTO(cur_, &*it_);	\
-                                        AUTO_REF(buf_, chunk_);	\
-                                        __VA_ARGS__	\
+                                        {	\
+                                          const AUTO(cur_, &*it_);	\
+                                          AUTO_REF(buf_, chunk_);	\
+                                          __VA_ARGS__	\
+                                        }	\
                                       }	\
                                     }
-#define FIELD_NESTED(id_, Elem_)    cur_->id_.deserialize(buf_);
 #define FIELD_REPEATED(id_, Elem_)  {	\
                                       cur_->id_.clear();	\
                                       ::Poseidon::Stream_buffer chunk_;	\
                                       for(;;){	\
-                                        ::Poseidon::Cbpp::shift_blob(chunk_, buf_, POSEIDON_STRINGIFY(id_));	\
+                                        ::Poseidon::Cbpp::shift_blob(chunk_, buf_, POSEIDON_STRINGIFY(id_) ".chunk");	\
                                         if(chunk_.empty()){	\
                                           break;	\
                                         }	\
                                         const AUTO(it_, cur_->id_.emplace(cur_->id_.end()));	\
-                                        const AUTO(cur_, &*it_);	\
-                                        AUTO_REF(buf_, chunk_);	\
-                                        cur_->deserialize(buf_);	\
+                                        {	\
+                                          const AUTO(cur_, &*it_);	\
+                                          AUTO_REF(buf_, chunk_);	\
+                                          cur_->deserialize(buf_);	\
+                                        }	\
                                       }	\
                                     }
 
@@ -243,9 +327,9 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
 #undef FIELD_STRING
 #undef FIELD_BLOB
 #undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
 #undef FIELD_ARRAY
 #undef FIELD_LIST
-#undef FIELD_NESTED
 #undef FIELD_REPEATED
 
 #define FIELD_VINT(id_)             {	\
@@ -282,6 +366,9 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       }	\
                                       os_ << ::std::endl;	\
                                     }
+#define FIELD_NESTED(id_, Elem_)    {	\
+                                      cur_->id_.dump_debug(os_, indent_);	\
+                                    }
 #define FIELD_ARRAY(id_, ...)       {	\
                                       os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": array(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
                                       indent_ += s_indent_step_;	\
@@ -313,9 +400,6 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       }	\
                                       indent_ -= s_indent_step_;	\
                                       os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
-                                    }
-#define FIELD_NESTED(id_, Elem_)    {	\
-                                      cur_->id_.dump_debug(os_, indent_);	\
                                     }
 #define FIELD_REPEATED(id_, Elem_)  {	\
                                       os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": nested(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
