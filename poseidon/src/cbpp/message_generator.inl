@@ -64,6 +64,30 @@ public:
 #undef FIELD_LIST
 #undef FIELD_REPEATED
 
+#define FIELD_VINT(id_)             + 1
+#define FIELD_VUINT(id_)            + 1
+#define FIELD_FIXED(id_, n_)        + 1
+#define FIELD_STRING(id_)           + 1
+#define FIELD_BLOB(id_)             + 1
+#define FIELD_FLEXIBLE(id_)         + 1
+#define FIELD_NESTED(id_, Elem_)    + 1
+#define FIELD_ARRAY(id_, ...)       + 1
+#define FIELD_LIST(id_, ...)        + 1
+#define FIELD_REPEATED(id_, Elem_)  + 1
+
+#if (0 MESSAGE_FIELDS)
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_FIXED
+#undef FIELD_STRING
+#undef FIELD_BLOB
+#undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
+#undef FIELD_ARRAY
+#undef FIELD_LIST
+#undef FIELD_REPEATED
+
 #define FIELD_VINT(id_)             , ::boost::int64_t param_##id_##_Svy_
 #define FIELD_VUINT(id_)            , ::boost::uint64_t param_##id_##_Svy_
 #define FIELD_FIXED(id_, n_)        , const ::boost::array<unsigned char, n_> & param_##id_##_Svy_
@@ -76,6 +100,8 @@ public:
 #define FIELD_REPEATED(id_, Elem_)  , ::std::size_t param_##id_##_Svy_
 
 	explicit MESSAGE_NAME(POSEIDON_LAZY(POSEIDON_REST, void MESSAGE_FIELDS));
+
+#endif // (0 MESSAGE_FIELDS)
 
 public:
 	::boost::uint64_t get_id() const OVERRIDE;
@@ -133,6 +159,30 @@ MESSAGE_NAME::~MESSAGE_NAME(){
 #undef FIELD_LIST
 #undef FIELD_REPEATED
 
+#define FIELD_VINT(id_)             + 1
+#define FIELD_VUINT(id_)            + 1
+#define FIELD_FIXED(id_, n_)        + 1
+#define FIELD_STRING(id_)           + 1
+#define FIELD_BLOB(id_)             + 1
+#define FIELD_FLEXIBLE(id_)         + 1
+#define FIELD_NESTED(id_, Elem_)    + 1
+#define FIELD_ARRAY(id_, ...)       + 1
+#define FIELD_LIST(id_, ...)        + 1
+#define FIELD_REPEATED(id_, Elem_)  + 1
+
+#if (0 MESSAGE_FIELDS)
+
+#undef FIELD_VINT
+#undef FIELD_VUINT
+#undef FIELD_FIXED
+#undef FIELD_STRING
+#undef FIELD_BLOB
+#undef FIELD_FLEXIBLE
+#undef FIELD_NESTED
+#undef FIELD_ARRAY
+#undef FIELD_LIST
+#undef FIELD_REPEATED
+
 #define FIELD_VINT(id_)             , ::boost::int64_t param_##id_##_Svy_
 #define FIELD_VUINT(id_)            , ::boost::uint64_t param_##id_##_Svy_
 #define FIELD_FIXED(id_, n_)        , const ::boost::array<unsigned char, n_> & param_##id_##_Svy_
@@ -173,6 +223,8 @@ MESSAGE_NAME::MESSAGE_NAME(POSEIDON_LAZY(POSEIDON_REST, void MESSAGE_FIELDS))
 {
 	//
 }
+
+#endif // (0 MESSAGE_FIELDS)
 
 ::boost::uint64_t MESSAGE_NAME::get_id() const {
 	return MESSAGE_ID;

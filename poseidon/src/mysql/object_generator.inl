@@ -53,6 +53,26 @@ public:
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
+#define FIELD_BOOLEAN(id_)                + 1
+#define FIELD_SIGNED(id_)                 + 1
+#define FIELD_UNSIGNED(id_)               + 1
+#define FIELD_DOUBLE(id_)                 + 1
+#define FIELD_STRING(id_)                 + 1
+#define FIELD_DATETIME(id_)               + 1
+#define FIELD_UUID(id_)                   + 1
+#define FIELD_BLOB(id_)                   + 1
+
+#if (0 OBJECT_FIELDS)
+
+#undef FIELD_BOOLEAN
+#undef FIELD_SIGNED
+#undef FIELD_UNSIGNED
+#undef FIELD_DOUBLE
+#undef FIELD_STRING
+#undef FIELD_DATETIME
+#undef FIELD_UUID
+#undef FIELD_BLOB
+
 #define FIELD_BOOLEAN(id_)                , bool param_##id_##_Zky_
 #define FIELD_SIGNED(id_)                 , ::boost::int64_t param_##id_##_Zky_
 #define FIELD_UNSIGNED(id_)               , ::boost::uint64_t param_##id_##_Zky_
@@ -63,6 +83,8 @@ public:
 #define FIELD_BLOB(id_)                   , ::std::basic_string<unsigned char> param_##id_##_Zky_
 
 	explicit OBJECT_NAME(POSEIDON_LAZY(POSEIDON_REST, void OBJECT_FIELDS));
+
+#endif // (0 OBJECT_FIELDS)
 
 public:
 	const char *get_table() const OVERRIDE;
@@ -111,6 +133,26 @@ OBJECT_NAME::~OBJECT_NAME(){
 #undef FIELD_UUID
 #undef FIELD_BLOB
 
+#define FIELD_BOOLEAN(id_)                + 1
+#define FIELD_SIGNED(id_)                 + 1
+#define FIELD_UNSIGNED(id_)               + 1
+#define FIELD_DOUBLE(id_)                 + 1
+#define FIELD_STRING(id_)                 + 1
+#define FIELD_DATETIME(id_)               + 1
+#define FIELD_UUID(id_)                   + 1
+#define FIELD_BLOB(id_)                   + 1
+
+#if (0 OBJECT_FIELDS)
+
+#undef FIELD_BOOLEAN
+#undef FIELD_SIGNED
+#undef FIELD_UNSIGNED
+#undef FIELD_DOUBLE
+#undef FIELD_STRING
+#undef FIELD_DATETIME
+#undef FIELD_UUID
+#undef FIELD_BLOB
+
 #define FIELD_BOOLEAN(id_)                , bool param_##id_##_Zky_
 #define FIELD_SIGNED(id_)                 , ::boost::int64_t param_##id_##_Zky_
 #define FIELD_UNSIGNED(id_)               , ::boost::uint64_t param_##id_##_Zky_
@@ -143,6 +185,8 @@ OBJECT_NAME::OBJECT_NAME(POSEIDON_LAZY(POSEIDON_REST, void OBJECT_FIELDS))
 
 	OBJECT_FIELDS
 { }
+
+#endif // (0 OBJECT_FIELDS)
 
 const char *OBJECT_NAME::get_table() const {
 	return OBJECT_TABLE;
