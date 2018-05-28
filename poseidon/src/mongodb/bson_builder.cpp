@@ -146,7 +146,7 @@ void Bson_builder::append_double(Rcnts name, double value){
 }
 void Bson_builder::append_string(Rcnts name, const std::string &value){
 	Element elem = { STD_MOVE(name), type_string };
-	elem.large.append(value.data(), value.size());
+	elem.large = value;
 	m_elements.push_back(STD_MOVE(elem));
 }
 void Bson_builder::append_datetime(Rcnts name, boost::uint64_t value){
@@ -161,15 +161,15 @@ void Bson_builder::append_uuid(Rcnts name, const Uuid &value){
 	std::memcpy(elem.small, value.data(), value.size());
 	m_elements.push_back(STD_MOVE(elem));
 }
-void Bson_builder::append_blob(Rcnts name, const std::basic_string<unsigned char> &value){
+void Bson_builder::append_blob(Rcnts name, const Stream_buffer &value){
 	Element elem = { STD_MOVE(name), type_blob };
-	elem.large.append(reinterpret_cast<const char *>(value.data()), value.size());
+	elem.large = value.dump_string();
 	m_elements.push_back(STD_MOVE(elem));
 }
 
 void Bson_builder::append_js_code(Rcnts name, const std::string &code){
 	Element elem = { STD_MOVE(name), type_js_code };
-	elem.large.append(code.data(), code.size());
+	elem.large = code;
 	m_elements.push_back(STD_MOVE(elem));
 }
 void Bson_builder::append_regex(Rcnts name, const std::string &regex, const char *options){
@@ -179,7 +179,7 @@ void Bson_builder::append_regex(Rcnts name, const std::string &regex, const char
 	} else {
 		elem.small[0] = 0;
 	}
-	elem.large.append(regex.data(), regex.size());
+	elem.large = regex;
 	m_elements.push_back(STD_MOVE(elem));
 }
 void Bson_builder::append_minkey(Rcnts name){
@@ -209,12 +209,12 @@ void Bson_builder::append_array(Rcnts name, const Bson_builder &arr){
 	m_elements.push_back(STD_MOVE(elem));
 }
 
-std::basic_string<unsigned char> Bson_builder::build(bool as_array) const {
+Stream_buffer Bson_builder::build(bool as_array) const {
 	POSEIDON_PROFILE_ME;
 
 	Buffer_ostream os;
 	build(os, as_array);
-	return os.get_buffer().dump_byte_string();
+	return STD_MOVE(os.get_buffer());
 }
 void Bson_builder::build(std::ostream &os, bool as_array) const {
 	POSEIDON_PROFILE_ME;

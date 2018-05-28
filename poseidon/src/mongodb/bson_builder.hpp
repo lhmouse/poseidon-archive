@@ -7,6 +7,7 @@
 #include "../cxx_ver.hpp"
 #include "../rcnts.hpp"
 #include "../uuid.hpp"
+#include "../fwd.hpp"
 #include <boost/container/deque.hpp>
 #include <boost/cstdint.hpp>
 #include <iosfwd>
@@ -75,7 +76,7 @@ public:
 	void append_string(Rcnts name, const std::string &value);
 	void append_datetime(Rcnts name, boost::uint64_t value);
 	void append_uuid(Rcnts name, const Uuid &value);
-	void append_blob(Rcnts name, const std::basic_string<unsigned char> &value);
+	void append_blob(Rcnts name, const Stream_buffer &value);
 
 	void append_js_code(Rcnts name, const std::string &code);
 	void append_regex(Rcnts name, const std::string &regex, const char *options = "");
@@ -100,7 +101,7 @@ public:
 		swap(m_elements, rhs.m_elements);
 	}
 
-	std::basic_string<unsigned char> build(bool as_array = false) const;
+	Stream_buffer build(bool as_array = false) const;
 	void build(std::ostream &os, bool as_array = false) const;
 
 	std::string build_json(bool as_array = false) const;
@@ -151,7 +152,7 @@ inline Bson_builder bson_scalar_uuid(Rcnts name, const Uuid &value){
 	ret.append_uuid(STD_MOVE(name), value);
 	return ret;
 }
-inline Bson_builder bson_scalar_blob(Rcnts name, const std::basic_string<unsigned char> &value){
+inline Bson_builder bson_scalar_blob(Rcnts name, const Stream_buffer &value){
 	Bson_builder ret;
 	ret.append_blob(STD_MOVE(name), value);
 	return ret;

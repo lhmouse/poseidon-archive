@@ -147,9 +147,9 @@ namespace {
 		void execute_bson(const Bson_builder &bson) OVERRIDE {
 			POSEIDON_PROFILE_ME;
 
-			const AUTO(query_data, bson.build(false));
+			AUTO(query_data, bson.build(false));
 			::bson_t query_storage;
-			POSEIDON_THROW_ASSERT(::bson_init_static(&query_storage, reinterpret_cast<const boost::uint8_t *>(query_data.data()), query_data.size()));
+			POSEIDON_THROW_ASSERT(::bson_init_static(&query_storage, static_cast<const boost::uint8_t *>(query_data.squash()), query_data.size()));
 			const Unique_handle<Bson_closer> query_guard(&query_storage);
 			const AUTO(query_bt, query_guard.get());
 
@@ -449,11 +449,11 @@ namespace {
 			}
 			return value;
 		}
-		std::basic_string<unsigned char> get_blob(const char *name) const OVERRIDE {
+		Stream_buffer get_blob(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 			POSEIDON_LOG_TRACE("Getting field as `blob`: ", name);
 
-			std::basic_string<unsigned char> value;
+			Stream_buffer value;
 			::bson_iter_t it;
 			switch(find_bson_element_and_check(it, name)){
 			case BSON_TYPE_EOD:
@@ -462,13 +462,13 @@ namespace {
 				boost::uint32_t size;
 				const char *data;
 				data = ::bson_iter_utf8(&it, &size);
-				value.assign(reinterpret_cast<const boost::uint8_t *>(data), size);
+				value.put(data, size);
 				break; }
 			case BSON_TYPE_BINARY: {
 				boost::uint32_t size;
 				const boost::uint8_t *data;
 				::bson_iter_binary(&it, NULLPTR, &size, &data);
-				value.assign(data, size);
+				value.put(data, size);
 				break; }
 			default:
 				POSEIDON_LOG_ERROR("BSON data type not handled: name = ", name, ", type = ", ::bson_iter_type(&it));

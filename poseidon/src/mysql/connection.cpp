@@ -235,15 +235,15 @@ namespace {
 			}
 			return value;
 		}
-		std::basic_string<unsigned char> get_blob(const char *name) const OVERRIDE {
+		Stream_buffer get_blob(const char *name) const OVERRIDE {
 			POSEIDON_PROFILE_ME;
 			POSEIDON_LOG_TRACE("Getting field as `blob`: ", name);
 
-			std::basic_string<unsigned char> value;
+			Stream_buffer value;
 			const char *data;
 			std::size_t size;
 			if(find_field_and_check(data, size, name)){
-				value.assign(reinterpret_cast<const unsigned char *>(data), size);
+				value.put(data, size);
 			}
 			return value;
 		}

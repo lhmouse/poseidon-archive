@@ -7,6 +7,7 @@
 #include "../cxx_ver.hpp"
 #include "../cxx_util.hpp"
 #include "../uuid.hpp"
+#include "../fwd.hpp"
 #include <string>
 #include <cstring>
 #include <boost/cstdint.hpp>
@@ -36,7 +37,7 @@ public:
 	virtual std::string get_string(const char *name) const = 0;
 	virtual boost::uint64_t get_datetime(const char *name) const = 0;
 	virtual Uuid get_uuid(const char *name) const = 0;
-	virtual std::basic_string<unsigned char> get_blob(const char *name) const = 0;
+	virtual Stream_buffer get_blob(const char *name) const = 0;
 
 	void execute_sql(const char *sql, std::size_t len){
 		execute_sql_explicit(sql, len);

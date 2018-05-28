@@ -19,11 +19,11 @@
 #include <boost/type_traits/is_base_of.hpp>
 #include <boost/utility/enable_if.hpp>
 #include "../rcnts.hpp"
-#include "../log.hpp"
 #include "../profiler.hpp"
 #include "../recursive_mutex.hpp"
 #include "../virtual_shared_from_this.hpp"
 #include "../uuid.hpp"
+#include "../stream_buffer.hpp"
 
 namespace Poseidon {
 namespace Mysql {
@@ -110,7 +110,7 @@ extern template class Object_base::Field<boost::uint64_t>;
 extern template class Object_base::Field<double>;
 extern template class Object_base::Field<std::string>;
 extern template class Object_base::Field<Uuid>;
-extern template class Object_base::Field<std::basic_string<unsigned char> >;
+extern template class Object_base::Field<Stream_buffer>;
 
 template<typename ValueT>
 inline std::ostream &operator<<(std::ostream &os, const Object_base::Field<ValueT> &rhs){

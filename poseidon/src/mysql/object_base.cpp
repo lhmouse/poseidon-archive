@@ -6,6 +6,7 @@
 #include "connection.hpp"
 #include "../singletons/mysql_daemon.hpp"
 #include "../atomic.hpp"
+#include "../log.hpp"
 
 namespace Poseidon {
 namespace Mysql {
@@ -16,7 +17,7 @@ template class Object_base::Field<boost::uint64_t>;
 template class Object_base::Field<double>;
 template class Object_base::Field<std::string>;
 template class Object_base::Field<Uuid>;
-template class Object_base::Field<std::basic_string<unsigned char> >;
+template class Object_base::Field<Stream_buffer>;
 
 Object_base::~Object_base(){
 	//
