@@ -100,7 +100,7 @@ bool Client_reader::put_encoded_data(Stream_buffer encoded){
 				POSEIDON_THROW_UNLESS(pos != std::string::npos, Basic_exception, Rcnts::view("No status code in response headers"));
 				line[pos] = 0;
 				char *eptr;
-				const unsigned status_code = boost::numeric_cast<unsigned>(std::strtoul(line.c_str(), &eptr, 10));
+				const auto status_code = boost::numeric_cast<int>(std::strtoul(line.c_str(), &eptr, 10));
 				POSEIDON_THROW_UNLESS(*eptr == 0, Basic_exception, Rcnts::view("Malformed status code in response headers"));
 				m_response_headers.status_code = status_code;
 				line.erase(0, pos + 1);

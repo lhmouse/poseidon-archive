@@ -7,9 +7,9 @@
 namespace Poseidon {
 namespace Http {
 
-typedef int Verb;
+using Verb = int;
 
-namespace Verbs {
+inline namespace Verbs {
 	enum {
 		verb_invalid  = -1,
 		verb_get      =  0,
@@ -22,8 +22,6 @@ namespace Verbs {
 		verb_options  =  7,
 	};
 }
-
-using namespace Verbs;
 
 extern Verb get_verb_from_string(const char *str);
 extern const char * get_string_from_verb(Verb verb);

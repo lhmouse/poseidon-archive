@@ -7,10 +7,11 @@
 namespace Poseidon {
 namespace Websocket {
 
-typedef unsigned Status_code;
+using Status_code = int;
 
-namespace Status_codes {
+inline namespace Status_codes {
 	enum {
+		status_invalid              =   -1,
 		status_normal_closure       = 1000,
 		status_going_away           = 1001,
 		status_protocol_error       = 1002,
@@ -26,8 +27,6 @@ namespace Status_codes {
 		status_reserved_tls         = 1015,
 	};
 }
-
-using namespace Status_codes;
 
 }
 }

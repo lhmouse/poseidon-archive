@@ -26,24 +26,24 @@ protected:
 	void on_receive(Stream_buffer data) OVERRIDE;
 
 	// Reader
-	void on_data_message_header(Op_code opcode) OVERRIDE;
+	void on_data_message_header(Opcode opcode) OVERRIDE;
 	void on_data_message_payload(std::uint64_t whole_offset, Stream_buffer payload) OVERRIDE;
 	bool on_data_message_end(std::uint64_t whole_size) OVERRIDE;
 
-	bool on_control_message(Op_code opcode, Stream_buffer payload) OVERRIDE;
+	bool on_control_message(Opcode opcode, Stream_buffer payload) OVERRIDE;
 
 	// Writer
 	long on_encoded_data_avail(Stream_buffer encoded) OVERRIDE;
 
 	// 可覆写。
-	virtual void on_low_level_message_header(Op_code opcode) = 0;
+	virtual void on_low_level_message_header(Opcode opcode) = 0;
 	virtual void on_low_level_message_payload(std::uint64_t whole_offset, Stream_buffer payload) = 0;
 	virtual bool on_low_level_message_end(std::uint64_t whole_size) = 0;
 
-	virtual bool on_low_level_control_message(Op_code opcode, Stream_buffer payload) = 0;
+	virtual bool on_low_level_control_message(Opcode opcode, Stream_buffer payload) = 0;
 
 public:
-	virtual bool send(Op_code opcode, Stream_buffer payload, bool masked = false);
+	virtual bool send(Opcode opcode, Stream_buffer payload, bool masked = false);
 	virtual bool shutdown(Status_code status_code, const char *reason = "") NOEXCEPT;
 };
 

@@ -7,12 +7,12 @@
 namespace Poseidon {
 namespace Http {
 
-typedef unsigned Status_code;
+using Status_code = int;
 
-namespace Status_codes {
+inline namespace Status_codes {
 	enum {
 		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-		static_invalid                      =  -1,
+		status_invalid                      =  -1,
 		status_continue                     = 100,
 		status_switching_protocols          = 101,
 		status_ok                           = 200,
@@ -55,8 +55,6 @@ namespace Status_codes {
 		status_version_not_supported        = 505,
 	};
 }
-
-using namespace Status_codes;
 
 struct Status_code_desc {
 	const char *desc_short;

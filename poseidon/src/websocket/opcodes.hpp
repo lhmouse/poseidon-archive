@@ -7,9 +7,9 @@
 namespace Poseidon {
 namespace Websocket {
 
-typedef int Opcode;
+using Opcode = int;
 
-namespace Op_codes {
+inline namespace Opcodes {
 	enum {
 		opmask_fin           = 0x80,
 		opmask_rsv1          = 0x40,
@@ -28,8 +28,6 @@ namespace Op_codes {
 		opcode_pong          = 0x0A,
 	};
 }
-
-using namespace Op_codes;
 
 }
 }
