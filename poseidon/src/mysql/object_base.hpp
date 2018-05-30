@@ -21,7 +21,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/cstdint.hpp>
-#include <boost/type_traits/is_base_of.hpp>
 #include <boost/utility/enable_if.hpp>
 
 namespace Poseidon {
@@ -128,7 +127,7 @@ inline std::istream & operator>>(std::istream &is, Object_base::Field<ValueT> &r
 extern void enqueue_for_saving(const boost::shared_ptr<Object_base> &obj);
 
 template<typename ObjectT>
-typename boost::enable_if_c<boost::is_base_of<Object_base, ObjectT>::value,
+typename std::enable_if<std::is_base_of<Object_base, ObjectT>::value,
 	const boost::shared_ptr<ObjectT> &>::type begin_synchronization(const boost::shared_ptr<ObjectT> &obj, bool save_now)
 {
 	obj->enable_auto_saving();

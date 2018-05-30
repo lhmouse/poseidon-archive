@@ -31,9 +31,6 @@
 #ifdef POSEIDON_CXX11
 #  include <type_traits>
 #else
-#  include <boost/type_traits/add_reference.hpp>
-#  include <boost/type_traits/remove_cv.hpp>
-#  include <boost/type_traits/remove_reference.hpp>
 #endif
 
 #ifdef POSEIDON_CXX11
@@ -148,7 +145,7 @@ struct Value_initializer {
 #  define NULLPTR                  nullptr
 #else
 #  define CV_VALUE_TYPE(...)       __typeof__(__VA_ARGS__)
-#  define VALUE_TYPE(...)          typename ::boost::remove_cv<CV_VALUE_TYPE(__VA_ARGS__)>::type
+#  define VALUE_TYPE(...)          typename ::std::remove_cv<CV_VALUE_TYPE(__VA_ARGS__)>::type
 #  define AUTO(id_, ...)           VALUE_TYPE(__VA_ARGS__) id_(__VA_ARGS__)
 #  define AUTO_REF(id_, ...)       CV_VALUE_TYPE(__VA_ARGS__) &id_ = (__VA_ARGS__)
 #  define STD_MOVE(expr_)          (::Poseidon::move(expr_))

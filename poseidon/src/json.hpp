@@ -12,8 +12,6 @@
 #include <boost/container/map.hpp>
 #include <boost/container/deque.hpp>
 #include <boost/variant.hpp>
-#include <boost/type_traits/is_arithmetic.hpp>
-#include <boost/type_traits/is_enum.hpp>
 #include <boost/utility/enable_if.hpp>
 #include "rcnts.hpp"
 
@@ -280,11 +278,11 @@ public:
 		//
 	}
 #ifdef POSEIDON_CXX11
-	template<typename T, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = nullptr>
+	template<typename T, typename std::enable_if<std::is_arithmetic<T>::value || std::is_enum<T>::value>::type * = nullptr>
 	Json_element(T rhs)
 #else
 	template<typename T>
-	Json_element(T rhs, typename boost::enable_if_c<boost::is_arithmetic<T>::value || boost::is_enum<T>::value>::type * = 0)
+	Json_element(T rhs, typename std::enable_if<std::is_arithmetic<T>::value || std::is_enum<T>::value>::type * = 0)
 #endif
 		: m_variant(static_cast<double>(rhs))
 	{

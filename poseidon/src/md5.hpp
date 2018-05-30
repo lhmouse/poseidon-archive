@@ -14,13 +14,13 @@
 
 namespace Poseidon {
 
-typedef boost::array<std::uint8_t, 16> Md5;
+typedef std::array<std::uint8_t, 16> Md5;
 
 class Md5_streambuf : public std::streambuf {
 private:
-	boost::array<std::uint32_t, 4> m_reg;
+	std::array<std::uint32_t, 4> m_reg;
 	std::uint64_t m_bytes;
-	boost::array<char, 64> m_chunk;
+	std::array<char, 64> m_chunk;
 
 private:
 	Md5_streambuf(const Md5_streambuf &);

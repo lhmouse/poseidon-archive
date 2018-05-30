@@ -5,7 +5,7 @@
 #define POSEIDON_VINT64_HPP_
 
 #include <cstddef>
-#include <boost/cstdint.hpp>
+#include <cstdint>
 
 namespace Poseidon {
 

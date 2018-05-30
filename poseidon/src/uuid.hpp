@@ -21,7 +21,7 @@ public:
 	static Uuid random() NOEXCEPT;
 
 private:
-	boost::array<unsigned char, 16> m_bytes;
+	std::array<unsigned char, 16> m_bytes;
 
 public:
 	CONSTEXPR Uuid() NOEXCEPT
@@ -32,7 +32,7 @@ public:
 	explicit Uuid(const unsigned char (&bytes)[16]){
 		std::memcpy(m_bytes.data(), bytes, 16);
 	}
-	explicit Uuid(const boost::array<unsigned char, 16> &bytes){
+	explicit Uuid(const std::array<unsigned char, 16> &bytes){
 		std::memcpy(m_bytes.data(), bytes.data(), 16);
 	}
 	// 字符串不合法则抛出异常。
@@ -44,10 +44,10 @@ public:
 		return m_bytes == min().m_bytes;
 	}
 
-	const boost::array<unsigned char, 16> & as_array() const {
+	const std::array<unsigned char, 16> & as_array() const {
 		return m_bytes;
 	}
-	boost::array<unsigned char, 16> & as_array(){
+	std::array<unsigned char, 16> & as_array(){
 		return m_bytes;
 	}
 
@@ -91,10 +91,10 @@ public:
 	}
 #endif
 
-	operator const boost::array<unsigned char, 16> &() const {
+	operator const std::array<unsigned char, 16> &() const {
 		return as_array();
 	}
-	operator boost::array<unsigned char, 16> &(){
+	operator std::array<unsigned char, 16> &(){
 		return as_array();
 	}
 

@@ -14,13 +14,13 @@
 
 namespace Poseidon {
 
-typedef boost::array<std::uint8_t, 32> Sha256;
+typedef std::array<std::uint8_t, 32> Sha256;
 
 class Sha256_streambuf : public std::streambuf {
 private:
-	boost::array<std::uint32_t, 8> m_reg;
+	std::array<std::uint32_t, 8> m_reg;
 	std::uint64_t m_bytes;
-	boost::array<char, 64> m_chunk;
+	std::array<char, 64> m_chunk;
 
 private:
 	Sha256_streambuf(const Sha256_streambuf &);

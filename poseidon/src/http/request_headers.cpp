@@ -37,7 +37,7 @@ Content_encoding pick_content_encoding(const Request_headers &request_headers){
 	if(accept_encoding.empty()){
 		return content_encoding_identity;
 	}
-	boost::array<double, content_encoding_not_acceptable + 1> encodings;
+	std::array<double, content_encoding_not_acceptable + 1> encodings;
 	encodings.fill(-42);
 	std::size_t begin = 0, end;
 	Buffer_istream is;

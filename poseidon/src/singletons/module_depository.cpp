@@ -10,7 +10,6 @@
 #include "../exception.hpp"
 #include "../multi_index_map.hpp"
 #include "../module_raii.hpp"
-#include <boost/type_traits/decay.hpp>
 #include <dlfcn.h>
 
 namespace Poseidon {

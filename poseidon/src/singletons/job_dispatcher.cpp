@@ -61,7 +61,7 @@ namespace {
 	class Fiber_stack_allocator {
 	private:
 		mutable std::mutex m_mutex;
-		boost::array<boost::scoped_ptr<Stack_storage>, 64> m_pool;
+		std::array<boost::scoped_ptr<Stack_storage>, 64> m_pool;
 		std::size_t m_size;
 
 	public:

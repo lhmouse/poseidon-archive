@@ -9,7 +9,7 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<std::uint32_t, 4> g_md5_reg_init = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u }};
+	CONSTEXPR const std::array<std::uint32_t, 4> g_md5_reg_init = {{ 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u }};
 }
 
 Md5_streambuf::Md5_streambuf()

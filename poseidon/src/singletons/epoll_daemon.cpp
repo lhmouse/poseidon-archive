@@ -75,7 +75,7 @@ namespace {
 	bool wait_for_sockets(int timeout) NOEXCEPT {
 		POSEIDON_PROFILE_ME;
 
-		boost::array< ::epoll_event, 256> events;
+		std::array< ::epoll_event, 256> events;
 		const int result = ::epoll_wait(g_epoll.get(), events.data(), static_cast<int>(events.size()), std::min(timeout, INT_MAX));
 		if(result < 0){
 			const int err_code = errno;

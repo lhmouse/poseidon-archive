@@ -32,7 +32,7 @@ namespace {
 		int color;
 		bool to_stderr;
 	};
-	CONSTEXPR const boost::array<Level_element, 6> g_levels = {{
+	CONSTEXPR const std::array<Level_element, 6> g_levels = {{
 		{ "FATAL", cfg_magneta | cfl_bright, 1 },
 		{ "ERROR", cfg_red     | cfl_bright, 1 },
 		{ "WARN ", cfg_yellow  | cfl_bright, 1 },

@@ -7,7 +7,6 @@
 #include "cxx_ver.hpp"
 #include <mutex>
 #include <boost/shared_ptr.hpp>
-#include <boost/type_traits/remove_const.hpp>
 #include <boost/optional.hpp>
 
 namespace Poseidon {
@@ -38,7 +37,7 @@ public:
 template<typename ResultT>
 class Promise_container : public Promise {
 private:
-	mutable boost::optional<typename boost::remove_const<ResultT>::type> m_result;
+	mutable boost::optional<typename std::remove_const<ResultT>::type> m_result;
 	bool m_result_accepted;
 
 public:
@@ -64,7 +63,7 @@ public:
 		// Likewise. See comments in `try_get()`.
 		return m_result.get();
 	}
-	void set_success(typename boost::remove_const<ResultT>::type result, bool throw_if_already_set = true){
+	void set_success(typename std::remove_const<ResultT>::type result, bool throw_if_already_set = true){
 		const std::lock_guard<std::recursive_mutex> lock(m_mutex);
 		// If `m_result_accepted` is true, `Promise::set_success()` will throw an exception eventually. Hence we do not set the value here.
 		if(!m_result_accepted){

@@ -234,7 +234,7 @@ namespace {
 		::AES_KEY aes_key;
 		int err_code = ::AES_set_encrypt_key(md5.data(), 128, &aes_key);
 		POSEIDON_THROW_ASSERT(err_code == 0);
-		boost::array<unsigned char, 16> out;
+		std::array<unsigned char, 16> out;
 		::AES_encrypt(reinterpret_cast<const unsigned char *>(nonce), out.data(), &aes_key);
 		char *write = str;
 		for(unsigned i = 0; i < 16; ++i){
@@ -252,7 +252,7 @@ namespace {
 		::AES_KEY aes_key;
 		int err_code = ::AES_set_decrypt_key(md5.data(), 128, &aes_key);
 		POSEIDON_THROW_ASSERT(err_code == 0);
-		boost::array<unsigned char, 16> in;
+		std::array<unsigned char, 16> in;
 		const char *read = str;
 		for(unsigned i = 0; i < 16; ++i){
 			const int hi = *(read++) - 'a';

@@ -17,7 +17,7 @@ class Buffer_streambuf : public std::streambuf {
 private:
 	Stream_buffer m_buffer;
 	std::ios_base::openmode m_which;
-	boost::array<char, 32> m_get_area;
+	std::array<char, 32> m_get_area;
 
 public:
 	explicit Buffer_streambuf(std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)

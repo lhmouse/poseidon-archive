@@ -9,7 +9,7 @@
 namespace Poseidon {
 
 namespace {
-	CONSTEXPR const boost::array<std::uint32_t, 8> g_sha256_reg_init = {{ 0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au, 0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u }};
+	CONSTEXPR const std::array<std::uint32_t, 8> g_sha256_reg_init = {{ 0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au, 0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u }};
 }
 
 Sha256_streambuf::Sha256_streambuf()
@@ -23,7 +23,7 @@ Sha256_streambuf::~Sha256_streambuf(){
 
 void Sha256_streambuf::eat_chunk(){
 	// https://en.wikipedia.org/wiki/SHA-2
-	boost::array<std::uint32_t, 64> w;
+	std::array<std::uint32_t, 64> w;
 	for(std::size_t i = 0; i < 16; ++i){
 		w[i] = load_be(reinterpret_cast<const std::uint32_t *>(m_chunk.data())[i]);
 	}

@@ -6,9 +6,6 @@
 
 #include "cxx_ver.hpp"
 #include <boost/cstdint.hpp>
-#include <boost/type_traits/is_integral.hpp>
-#include <boost/type_traits/make_unsigned.hpp>
-#include <boost/type_traits/common_type.hpp>
 #include <boost/static_assert.hpp>
 #include <byteswap.h>
 
@@ -69,27 +66,27 @@ struct Byte_swapper<8> {
 
 template<typename ValueT>
 ValueT load_be(ValueT value){
-	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
-	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
+	BOOST_STATIC_ASSERT(std::is_integral<ValueT>::value);
+	const AUTO(temp, static_cast<typename std::make_unsigned<ValueT>::type>(value));
 	return static_cast<ValueT>(Byte_swapper<sizeof(temp)>::bswap_unless_be(temp));
 }
 template<typename ValueT>
-void store_be(ValueT &ref, typename boost::common_type<ValueT>::type value){
-	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
-	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
+void store_be(ValueT &ref, typename std::common_type<ValueT>::type value){
+	BOOST_STATIC_ASSERT(std::is_integral<ValueT>::value);
+	const AUTO(temp, static_cast<typename std::make_unsigned<ValueT>::type>(value));
 	ref = static_cast<ValueT>(Byte_swapper<sizeof(temp)>::bswap_unless_be(temp));
 }
 
 template<typename ValueT>
 ValueT load_le(ValueT value){
-	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
-	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
+	BOOST_STATIC_ASSERT(std::is_integral<ValueT>::value);
+	const AUTO(temp, static_cast<typename std::make_unsigned<ValueT>::type>(value));
 	return static_cast<ValueT>(Byte_swapper<sizeof(temp)>::bswap_unless_le(temp));
 }
 template<typename ValueT>
-void store_le(ValueT &ref, typename boost::common_type<ValueT>::type value){
-	BOOST_STATIC_ASSERT(boost::is_integral<ValueT>::value);
-	const AUTO(temp, static_cast<typename boost::make_unsigned<ValueT>::type>(value));
+void store_le(ValueT &ref, typename std::common_type<ValueT>::type value){
+	BOOST_STATIC_ASSERT(std::is_integral<ValueT>::value);
+	const AUTO(temp, static_cast<typename std::make_unsigned<ValueT>::type>(value));
 	ref = static_cast<ValueT>(Byte_swapper<sizeof(temp)>::bswap_unless_le(temp));
 }
 

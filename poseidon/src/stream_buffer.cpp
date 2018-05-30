@@ -4,14 +4,13 @@
 #include "precompiled.hpp"
 #include "stream_buffer.hpp"
 #include "checked_arithmetic.hpp"
-#include <boost/type_traits/common_type.hpp>
 
 namespace Poseidon {
 
 namespace {
 	// XXX: Emulate C++14 `std::exchange()`.
 	template<typename T>
-	inline T exchange(T &t, typename boost::common_type<T>::type u){
+	inline T exchange(T &t, typename std::common_type<T>::type u){
 		AUTO(v, STD_MOVE_IDN(t));
 		t = STD_MOVE(u);
 		return v;
