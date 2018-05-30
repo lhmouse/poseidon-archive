@@ -30,7 +30,7 @@ namespace {
 	}
 
 	struct Uri_closer {
-		CONSTEXPR ::mongoc_uri_t *operator()() const NOEXCEPT {
+		CONSTEXPR ::mongoc_uri_t * operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(::mongoc_uri_t *uri) const NOEXCEPT {
@@ -38,7 +38,7 @@ namespace {
 		}
 	};
 	struct Client_closer {
-		CONSTEXPR ::mongoc_client_t *operator()() const NOEXCEPT {
+		CONSTEXPR ::mongoc_client_t * operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(::mongoc_client_t *client) const NOEXCEPT {
@@ -47,7 +47,7 @@ namespace {
 	};
 
 	struct Bson_closer {
-		CONSTEXPR ::bson_t *operator()() const NOEXCEPT {
+		CONSTEXPR ::bson_t * operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(::bson_t *bson) const NOEXCEPT {

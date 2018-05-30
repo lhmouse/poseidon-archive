@@ -45,7 +45,7 @@ public:
 	{
 		//
 	}
-	Rcnts &operator=(const Rcnts &rhs) NOEXCEPT {
+	Rcnts & operator=(const Rcnts &rhs) NOEXCEPT {
 		m_ptr = rhs.m_ptr;
 		return *this;
 	}
@@ -54,7 +54,7 @@ public:
 		assign("", 0);
 		swap(rhs);
 	}
-	Rcnts &operator=(Rcnts &&rhs) NOEXCEPT {
+	Rcnts & operator=(Rcnts &&rhs) NOEXCEPT {
 		swap(rhs);
 		return *this;
 	}
@@ -76,7 +76,7 @@ public:
 	bool empty() const {
 		return m_ptr.get()[0] == 0;
 	}
-	const char *get() const {
+	const char * get() const {
 		return m_ptr.get();
 	}
 
@@ -191,8 +191,8 @@ inline void swap(Rcnts &lhs, Rcnts &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-extern std::istream &operator>>(std::istream &is, Rcnts &rhs);
-extern std::ostream &operator<<(std::ostream &os, const Rcnts &rhs);
+extern std::istream & operator>>(std::istream &is, Rcnts &rhs);
+extern std::ostream & operator<<(std::ostream &os, const Rcnts &rhs);
 
 }
 

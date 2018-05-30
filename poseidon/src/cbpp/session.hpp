@@ -34,7 +34,7 @@ protected:
 	unsigned get_low_level_message_id() const {
 		return m_message_id;
 	}
-	const Stream_buffer &get_low_level_payload() const {
+	const Stream_buffer & get_low_level_payload() const {
 		return m_payload;
 	}
 

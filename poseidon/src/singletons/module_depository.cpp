@@ -32,7 +32,7 @@ namespace {
 	Module_raii_map g_module_raii_map;
 
 	struct Dynamic_library_closer {
-		CONSTEXPR void *operator()() NOEXCEPT {
+		CONSTEXPR void * operator()() NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(void *handle) NOEXCEPT {
@@ -66,20 +66,20 @@ namespace {
 		}
 
 	public:
-		void *get_dl_handle() const {
+		void * get_dl_handle() const {
 			return m_dl_handle.get();
 		}
-		void *get_base_address() const {
+		void * get_base_address() const {
 			return m_base_address;
 		}
-		const Rcnts &get_real_path() const {
+		const Rcnts & get_real_path() const {
 			return m_real_path;
 		}
 
-		const Handle_stack &get_handle_stack() const {
+		const Handle_stack & get_handle_stack() const {
 			return m_handles;
 		}
-		Handle_stack &get_handle_stack(){
+		Handle_stack & get_handle_stack(){
 			return m_handles;
 		}
 	};
@@ -130,7 +130,7 @@ void Module_depository::stop(){
 	g_module_map.clear();
 }
 
-void *Module_depository::load(const std::string &path){
+void * Module_depository::load(const std::string &path){
 	POSEIDON_PROFILE_ME;
 
 	const Recursive_mutex::Unique_lock lock(g_mutex);
@@ -163,7 +163,7 @@ void *Module_depository::load(const std::string &path){
 	}
 	return it->module->get_base_address();
 }
-void *Module_depository::load_nothrow(const std::string &path)
+void * Module_depository::load_nothrow(const std::string &path)
 try {
 	POSEIDON_PROFILE_ME;
 

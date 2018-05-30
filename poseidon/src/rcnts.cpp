@@ -108,14 +108,14 @@ void Rcnts::assign(const char *str, std::size_t len){
 	}
 }
 
-std::istream &operator>>(std::istream &is, Rcnts &rhs){
+std::istream & operator>>(std::istream &is, Rcnts &rhs){
 	std::string str;
 	if(is >>str){
 		rhs.assign(str);
 	}
 	return is;
 }
-std::ostream &operator<<(std::ostream &os, const Rcnts &rhs){
+std::ostream & operator<<(std::ostream &os, const Rcnts &rhs){
 	os <<rhs.get();
 	return os;
 }

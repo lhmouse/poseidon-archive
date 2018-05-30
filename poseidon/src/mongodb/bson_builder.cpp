@@ -15,7 +15,7 @@ namespace Mongodb {
 
 namespace {
 	struct Bson_closer {
-		CONSTEXPR ::bson_t *operator()() const NOEXCEPT {
+		CONSTEXPR ::bson_t * operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(::bson_t *bt) const NOEXCEPT {
@@ -23,7 +23,7 @@ namespace {
 		}
 	};
 	struct Bson_string_deleter {
-		CONSTEXPR char *operator()() const NOEXCEPT {
+		CONSTEXPR char * operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(char *str) const NOEXCEPT {

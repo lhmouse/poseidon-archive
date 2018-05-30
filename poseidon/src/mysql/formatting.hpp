@@ -24,12 +24,12 @@ public:
 	}
 
 public:
-	const std::string &get() const {
+	const std::string & get() const {
 		return m_ref;
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const String_escaper &rhs);
+extern std::ostream & operator<<(std::ostream &os, const String_escaper &rhs);
 
 class Date_time_formatter {
 private:
@@ -43,12 +43,12 @@ public:
 	}
 
 public:
-	const boost::uint64_t &get() const {
+	const boost::uint64_t & get() const {
 		return m_ref;
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const Date_time_formatter &rhs);
+extern std::ostream & operator<<(std::ostream &os, const Date_time_formatter &rhs);
 
 class Uuid_formatter {
 private:
@@ -62,12 +62,12 @@ public:
 	}
 
 public:
-	const Uuid &get() const {
+	const Uuid & get() const {
 		return m_ref;
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const Uuid_formatter &rhs);
+extern std::ostream & operator<<(std::ostream &os, const Uuid_formatter &rhs);
 
 }
 }

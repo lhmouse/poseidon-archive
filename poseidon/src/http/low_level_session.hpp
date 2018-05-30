@@ -30,7 +30,7 @@ public:
 	~Low_level_session();
 
 protected:
-	const boost::shared_ptr<Upgraded_session_base> &get_low_level_upgraded_session() const {
+	const boost::shared_ptr<Upgraded_session_base> & get_low_level_upgraded_session() const {
 		// Epoll 线程读取不需要锁。
 		return m_upgraded_session;
 	}

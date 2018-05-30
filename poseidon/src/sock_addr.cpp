@@ -43,13 +43,13 @@ namespace {
 #endif
 	}
 
-	inline ::sockaddr &as_sa(const void *data) NOEXCEPT {
+	inline ::sockaddr & as_sa(const void *data) NOEXCEPT {
 		return *static_cast< ::sockaddr *>(const_cast<void *>(data));
 	}
-	inline ::sockaddr_in &as_sin(const void *data) NOEXCEPT {
+	inline ::sockaddr_in & as_sin(const void *data) NOEXCEPT {
 		return *static_cast< ::sockaddr_in *>(const_cast<void *>(data));
 	}
-	inline ::sockaddr_in6 &as_sin6(const void *data) NOEXCEPT {
+	inline ::sockaddr_in6 & as_sin6(const void *data) NOEXCEPT {
 		return *static_cast< ::sockaddr_in6 *>(const_cast<void *>(data));
 	}
 }
@@ -86,7 +86,7 @@ Sock_addr::Sock_addr(const Sock_addr &rhs) NOEXCEPT {
 	std::memcpy(m_data, rhs.m_data, addr_size);
 	m_size = addr_size;
 }
-Sock_addr &Sock_addr::operator=(const Sock_addr &rhs) NOEXCEPT {
+Sock_addr & Sock_addr::operator=(const Sock_addr &rhs) NOEXCEPT {
 	const std::size_t addr_size = rhs.m_size;
 	std::memcpy(m_data, rhs.m_data, addr_size);
 	m_size = addr_size;

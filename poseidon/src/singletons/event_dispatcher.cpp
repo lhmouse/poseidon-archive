@@ -26,7 +26,7 @@ public:
 	}
 
 public:
-	const Event_listener_callback &get_callback() const {
+	const Event_listener_callback & get_callback() const {
 		return m_callback;
 	}
 };

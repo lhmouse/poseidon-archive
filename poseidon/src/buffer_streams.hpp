@@ -39,7 +39,7 @@ public:
 	{
 		//
 	}
-	Buffer_streambuf &operator=(Buffer_streambuf &&rhs) noexcept {
+	Buffer_streambuf & operator=(Buffer_streambuf &&rhs) noexcept {
 		sync();
 		m_buffer = std::move(rhs.get_buffer());
 		m_which = rhs.m_which;
@@ -61,7 +61,7 @@ protected:
 	int_type overflow(int_type c = traits_type::eof()) OVERRIDE;
 
 public:
-	Stream_buffer &get_buffer(){
+	Stream_buffer & get_buffer(){
 		sync();
 		return m_buffer;
 	}
@@ -102,14 +102,14 @@ public:
 	~Buffer_istream() OVERRIDE;
 
 public:
-	Buffer_streambuf *rdbuf() const {
+	Buffer_streambuf * rdbuf() const {
 		return const_cast<Buffer_streambuf *>(&m_sb);
 	}
 
-	const Stream_buffer &get_buffer() const {
+	const Stream_buffer & get_buffer() const {
 		return rdbuf()->get_buffer();
 	}
-	Stream_buffer &get_buffer(){
+	Stream_buffer & get_buffer(){
 		return rdbuf()->get_buffer();
 	}
 	void set_buffer(Stream_buffer buffer){
@@ -151,14 +151,14 @@ public:
 	~Buffer_ostream() OVERRIDE;
 
 public:
-	Buffer_streambuf *rdbuf() const {
+	Buffer_streambuf * rdbuf() const {
 		return const_cast<Buffer_streambuf *>(&m_sb);
 	}
 
-	const Stream_buffer &get_buffer() const {
+	const Stream_buffer & get_buffer() const {
 		return rdbuf()->get_buffer();
 	}
-	Stream_buffer &get_buffer(){
+	Stream_buffer & get_buffer(){
 		return rdbuf()->get_buffer();
 	}
 	void set_buffer(Stream_buffer buffer){
@@ -200,14 +200,14 @@ public:
 	~Buffer_stream() OVERRIDE;
 
 public:
-	Buffer_streambuf *rdbuf() const {
+	Buffer_streambuf * rdbuf() const {
 		return const_cast<Buffer_streambuf *>(&m_sb);
 	}
 
-	const Stream_buffer &get_buffer() const {
+	const Stream_buffer & get_buffer() const {
 		return rdbuf()->get_buffer();
 	}
-	Stream_buffer &get_buffer(){
+	Stream_buffer & get_buffer(){
 		return rdbuf()->get_buffer();
 	}
 	void set_buffer(Stream_buffer buffer){

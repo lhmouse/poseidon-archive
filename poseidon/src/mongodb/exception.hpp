@@ -19,7 +19,7 @@ public:
 	~Exception() NOEXCEPT;
 
 public:
-	const char *get_database() const NOEXCEPT {
+	const char * get_database() const NOEXCEPT {
 		return m_database.get();
 	}
 	unsigned long get_code() const NOEXCEPT {

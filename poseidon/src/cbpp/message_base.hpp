@@ -65,7 +65,7 @@ public:
 	}
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Message_base &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Message_base &rhs){
 	rhs.dump_debug(os);
 	return os;
 }

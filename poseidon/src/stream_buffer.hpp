@@ -39,7 +39,7 @@ public:
 	explicit Stream_buffer(const std::string &str);
 	explicit Stream_buffer(const std::basic_string<unsigned char> &str);
 	Stream_buffer(const Stream_buffer &rhs);
-	Stream_buffer &operator=(const Stream_buffer &rhs){
+	Stream_buffer & operator=(const Stream_buffer &rhs){
 		Stream_buffer(rhs).swap(*this);
 		return *this;
 	}
@@ -49,7 +49,7 @@ public:
 	{
 		rhs.swap(*this);
 	}
-	Stream_buffer &operator=(Stream_buffer &&rhs) noexcept {
+	Stream_buffer & operator=(Stream_buffer &&rhs) noexcept {
 		rhs.swap(*this);
 		return *this;
 	}
@@ -92,7 +92,7 @@ public:
 		put(str.data(), str.size());
 	}
 
-	void *squash();
+	void * squash();
 
 	Stream_buffer cut_off(std::size_t count);
 	void splice(Stream_buffer &rhs) NOEXCEPT;
@@ -134,7 +134,7 @@ inline void swap(Stream_buffer &lhs, Stream_buffer &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Stream_buffer &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Stream_buffer &rhs){
 	rhs.dump(os);
 	return os;
 }
@@ -171,11 +171,11 @@ public:
 		m_byte = m_parent->peek();
 		return m_byte;
 	}
-	Read_iterator &operator++(){
+	Read_iterator & operator++(){
 		m_parent->discard();
 		return *this;
 	}
-	Read_iterator &operator++(int){
+	Read_iterator & operator++(int){
 		m_parent->discard();
 		return *this;
 	}
@@ -193,17 +193,17 @@ public:
 	}
 
 public:
-	Write_iterator &operator=(unsigned char byte){
+	Write_iterator & operator=(unsigned char byte){
 		m_parent->put(byte);
 		return *this;
 	}
-	Write_iterator &operator*(){
+	Write_iterator & operator*(){
 		return *this;
 	}
-	Write_iterator &operator++(){
+	Write_iterator & operator++(){
 		return *this;
 	}
-	Write_iterator &operator++(int){
+	Write_iterator & operator++(int){
 		return *this;
 	}
 };

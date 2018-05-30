@@ -19,7 +19,7 @@ namespace {
 }
 
 struct Stream_buffer::Chunk_header {
-	static Chunk_header *create(std::size_t min_capacity, Chunk_header *prev, Chunk_header *next, bool backward){
+	static Chunk_header * create(std::size_t min_capacity, Chunk_header *prev, Chunk_header *next, bool backward){
 		const std::size_t capacity = min_capacity | 1024;
 		const std::size_t origin = backward ? capacity : 0;
 		const AUTO(chunk, static_cast<Chunk_header *>(::operator new(checked_add(sizeof(Chunk_header), capacity))));
@@ -368,7 +368,7 @@ void Stream_buffer::put(const Stream_buffer &data){
 	m_size += count;
 }
 
-void *Stream_buffer::squash(){
+void * Stream_buffer::squash(){
 	AUTO(chunk, m_first);
 	if(!chunk){
 		return NULLPTR;

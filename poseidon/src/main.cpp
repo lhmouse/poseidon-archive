@@ -80,7 +80,7 @@ namespace {
 	}
 
 	struct System_http_servlet_help : public System_http_servlet_base {
-		const char *get_uri() const FINAL {
+		const char * get_uri() const FINAL {
 			return "/poseidon/help";
 		}
 		void handle_get(Json_object &resp) const FINAL {
@@ -104,7 +104,7 @@ namespace {
 	};
 
 	struct System_http_servlet_logger : public System_http_servlet_base {
-		const char *get_uri() const FINAL {
+		const char * get_uri() const FINAL {
 			return "/poseidon/logger";
 		}
 		void handle_get(Json_object &resp) const FINAL {
@@ -156,7 +156,7 @@ namespace {
 	};
 
 	struct System_http_servlet_network : public System_http_servlet_base {
-		const char *get_uri() const FINAL {
+		const char * get_uri() const FINAL {
 			return "/poseidon/network";
 		}
 		void handle_get(Json_object &resp) const FINAL {
@@ -188,7 +188,7 @@ namespace {
 	};
 
 	struct System_http_servlet_profiler : public System_http_servlet_base {
-		const char *get_uri() const FINAL {
+		const char * get_uri() const FINAL {
 			return "/poseidon/profiler";
 		}
 		void handle_get(Json_object &resp) const FINAL {
@@ -235,7 +235,7 @@ namespace {
 	};
 
 	struct System_http_servlet_modules : public System_http_servlet_base {
-		const char *get_uri() const FINAL {
+		const char * get_uri() const FINAL {
 			return "/poseidon/modules";
 		}
 		void handle_get(Json_object &resp) const FINAL {

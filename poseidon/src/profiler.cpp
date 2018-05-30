@@ -28,7 +28,7 @@ void Profiler::accumulate_all_in_thread() NOEXCEPT {
 	} while(cur);
 }
 
-void *Profiler::begin_stack_switch() NOEXCEPT {
+void * Profiler::begin_stack_switch() NOEXCEPT {
 	if(!Profile_depository::is_enabled()){
 		return NULLPTR;
 	}

@@ -128,7 +128,7 @@ void Logger::finalize_mask() NOEXCEPT {
 	set_mask(0, special_poseidon | special_major | level_info | level_warning | level_error | level_fatal);
 }
 
-const char *Logger::get_thread_tag() NOEXCEPT {
+const char * Logger::get_thread_tag() NOEXCEPT {
 	return t_tag;
 }
 void Logger::set_thread_tag(const char *tag) NOEXCEPT {

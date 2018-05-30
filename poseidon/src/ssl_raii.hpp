@@ -11,7 +11,7 @@
 namespace Poseidon {
 
 struct Ssl_deleter {
-	CONSTEXPR ::SSL *operator()() NOEXCEPT {
+	CONSTEXPR ::SSL * operator()() NOEXCEPT {
 		return NULLPTR;
 	}
 	void operator()(::SSL *ssl) NOEXCEPT;
@@ -20,7 +20,7 @@ struct Ssl_deleter {
 typedef Unique_handle<Ssl_deleter> Unique_ssl;
 
 struct Ssl_ctx_deleter {
-	CONSTEXPR ::SSL_CTX *operator()() NOEXCEPT {
+	CONSTEXPR ::SSL_CTX * operator()() NOEXCEPT {
 		return NULLPTR;
 	}
 	void operator()(::SSL_CTX *ssl_ctx) NOEXCEPT;

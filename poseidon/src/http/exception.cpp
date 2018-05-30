@@ -12,7 +12,7 @@ namespace {
 	const Option_map g_empty_headers;
 }
 
-const Option_map &empty_headers() NOEXCEPT {
+const Option_map & empty_headers() NOEXCEPT {
 	return g_empty_headers;
 }
 

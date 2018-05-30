@@ -12,7 +12,7 @@
 
 namespace Poseidon {
 
-extern const std::string &empty_string() NOEXCEPT;
+extern const std::string & empty_string() NOEXCEPT;
 
 class Option_map {
 public:
@@ -44,7 +44,7 @@ public:
 	{
 		//
 	}
-	Option_map &operator=(const Option_map &rhs){
+	Option_map & operator=(const Option_map &rhs){
 		m_elements = rhs.m_elements;
 		return *this;
 	}
@@ -148,30 +148,30 @@ public:
 		}
 	}
 
-	const std::string &get(const char *key) const { // 若指定的键不存在，则返回空字符串。
+	const std::string & get(const char *key) const { // 若指定的键不存在，则返回空字符串。
 		return get(Rcnts::view(key));
 	};
-	const std::string &get(const Rcnts &key) const {
+	const std::string & get(const Rcnts &key) const {
 		const AUTO(it, find(key));
 		if(it == end()){
 			return empty_string();
 		}
 		return it->second;
 	}
-	const std::string &at(const char *key) const { // 若指定的键不存在，则抛出 std::out_of_range。
+	const std::string & at(const char *key) const { // 若指定的键不存在，则抛出 std::out_of_range。
 		return at(Rcnts::view(key));
 	};
-	const std::string &at(const Rcnts &key) const {
+	const std::string & at(const Rcnts &key) const {
 		const AUTO(it, find(key));
 		if(it == end()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
 		}
 		return it->second;
 	}
-	std::string &at(const char *key){ // 若指定的键不存在，则抛出 std::out_of_range。
+	std::string & at(const char *key){ // 若指定的键不存在，则抛出 std::out_of_range。
 		return at(Rcnts::view(key));
 	};
-	std::string &at(const Rcnts &key){
+	std::string & at(const Rcnts &key){
 		const AUTO(it, find(key));
 		if(it == end()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
@@ -208,7 +208,7 @@ inline void swap(Option_map &lhs, Option_map &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-extern std::ostream &operator<<(std::ostream &os, const Option_map &rhs);
+extern std::ostream & operator<<(std::ostream &os, const Option_map &rhs);
 
 }
 

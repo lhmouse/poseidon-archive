@@ -21,7 +21,7 @@ private:
 
 private:
 	Crc32_streambuf(const Crc32_streambuf &);
-	Crc32_streambuf &operator=(const Crc32_streambuf &);
+	Crc32_streambuf & operator=(const Crc32_streambuf &);
 
 public:
 	Crc32_streambuf();
@@ -48,7 +48,7 @@ public:
 	~Crc32_ostream() OVERRIDE;
 
 public:
-	Crc32_streambuf *rdbuf() const {
+	Crc32_streambuf * rdbuf() const {
 		return const_cast<Crc32_streambuf *>(&m_sb);
 	}
 

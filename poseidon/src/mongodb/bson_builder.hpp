@@ -59,7 +59,7 @@ public:
 	{
 		//
 	}
-	Bson_builder &operator=(const Bson_builder &rhs){
+	Bson_builder & operator=(const Bson_builder &rhs){
 		m_elements = rhs.m_elements;
 		return *this;
 	}
@@ -112,7 +112,7 @@ inline void swap(Bson_builder &lhs, Bson_builder &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Bson_builder &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Bson_builder &rhs){
 	rhs.build_json(os);
 	return os;
 }

@@ -14,7 +14,7 @@
 
 namespace Poseidon {
 
-extern const std::string &empty_string() NOEXCEPT;
+extern const std::string & empty_string() NOEXCEPT;
 
 // 参考 PHP 的 explode() 函数。
 template<typename T>

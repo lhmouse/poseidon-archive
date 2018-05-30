@@ -17,7 +17,7 @@ namespace Mysql {
 
 namespace {
 	struct Closer {
-		CONSTEXPR ::MYSQL *operator()() const NOEXCEPT {
+		CONSTEXPR ::MYSQL * operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(::MYSQL *mysql) const NOEXCEPT {
@@ -25,7 +25,7 @@ namespace {
 		}
 	};
 	struct Result_deleter {
-		CONSTEXPR ::MYSQL_RES *operator()() const NOEXCEPT {
+		CONSTEXPR ::MYSQL_RES * operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(::MYSQL_RES *result) const NOEXCEPT {

@@ -22,10 +22,10 @@ public:
 	Ip_port(const char *ip_str, boost::uint16_t port_num);
 	Ip_port(const Sock_addr &sock_addr);
 	Ip_port(const Ip_port &ip_port) NOEXCEPT;
-	Ip_port &operator=(const Ip_port &ip_port) NOEXCEPT;
+	Ip_port & operator=(const Ip_port &ip_port) NOEXCEPT;
 
 public:
-	const char *ip() const {
+	const char * ip() const {
 		return m_ip;
 	}
 	boost::uint16_t port() const {
@@ -33,12 +33,12 @@ public:
 	}
 };
 
-extern const Ip_port &unknown_ip_port() NOEXCEPT;
-extern const Ip_port &listening_ip_port() NOEXCEPT;
+extern const Ip_port & unknown_ip_port() NOEXCEPT;
+extern const Ip_port & listening_ip_port() NOEXCEPT;
 
 extern bool operator<(const Ip_port &lhs, const Ip_port &rhs) NOEXCEPT;
 
-extern std::ostream &operator<<(std::ostream &os, const Ip_port &rhs);
+extern std::ostream & operator<<(std::ostream &os, const Ip_port &rhs);
 
 }
 

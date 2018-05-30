@@ -56,10 +56,10 @@ public:
 
 	bool invalidate() const NOEXCEPT;
 
-	void *get_combined_write_stamp() const NOEXCEPT;
+	void * get_combined_write_stamp() const NOEXCEPT;
 	void set_combined_write_stamp(void *stamp) const NOEXCEPT;
 
-	virtual const char *get_table() const = 0;
+	virtual const char * get_table() const = 0;
 	virtual void generate_sql(std::ostream &os) const = 0;
 	virtual void fetch(const boost::shared_ptr<const Connection> &conn) = 0;
 };
@@ -78,7 +78,7 @@ public:
 	}
 
 public:
-	const ValueT &unlocked_get() const {
+	const ValueT & unlocked_get() const {
 		return m_value;
 	}
 	ValueT get() const {
@@ -98,7 +98,7 @@ public:
 	operator const ValueT &() const {
 		return unlocked_get();
 	}
-	Field &operator=(ValueT value){
+	Field & operator=(ValueT value){
 		set(STD_MOVE_IDN(value));
 		return *this;
 	}
@@ -113,11 +113,11 @@ extern template class Object_base::Field<Uuid>;
 extern template class Object_base::Field<Stream_buffer>;
 
 template<typename ValueT>
-inline std::ostream &operator<<(std::ostream &os, const Object_base::Field<ValueT> &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Object_base::Field<ValueT> &rhs){
 	return os <<rhs.unlocked_get();
 }
 template<typename ValueT>
-inline std::istream &operator>>(std::istream &is, Object_base::Field<ValueT> &rhs){
+inline std::istream & operator>>(std::istream &is, Object_base::Field<ValueT> &rhs){
 	ValueT value;
 	if(is >>value){
 		rhs.set(STD_MOVE(value));

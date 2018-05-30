@@ -45,10 +45,10 @@ protected:
 	virtual bool on_control_message(Status_code status_code, Stream_buffer param) = 0;
 
 public:
-	const Stream_buffer &get_queue() const {
+	const Stream_buffer & get_queue() const {
 		return m_queue;
 	}
-	Stream_buffer &get_queue(){
+	Stream_buffer & get_queue(){
 		return m_queue;
 	}
 

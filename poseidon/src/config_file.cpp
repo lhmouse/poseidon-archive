@@ -123,7 +123,7 @@ bool Config_file::get_raw(std::string &val, const char *key) const {
 	val = it->second;
 	return true;
 }
-const std::string &Config_file::get_raw(const char *key) const {
+const std::string & Config_file::get_raw(const char *key) const {
 	POSEIDON_PROFILE_ME;
 
 	const AUTO(it, m_contents.find(key));

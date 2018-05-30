@@ -15,10 +15,10 @@
 namespace Poseidon {
 
 namespace {
-	inline ::sockaddr_in &as_sin(const void *data) NOEXCEPT {
+	inline ::sockaddr_in & as_sin(const void *data) NOEXCEPT {
 		return *static_cast< ::sockaddr_in *>(const_cast<void *>(data));
 	}
-	inline ::sockaddr_in6 &as_sin6(const void *data) NOEXCEPT {
+	inline ::sockaddr_in6 & as_sin6(const void *data) NOEXCEPT {
 		return *static_cast< ::sockaddr_in6 *>(const_cast<void *>(data));
 	}
 }
@@ -59,7 +59,7 @@ Ip_port::Ip_port(const Ip_port &rhs) NOEXCEPT {
 	std::strcpy(m_ip, rhs.m_ip);
 	m_port = rhs.m_port;
 }
-Ip_port &Ip_port::operator=(const Ip_port &rhs) NOEXCEPT {
+Ip_port & Ip_port::operator=(const Ip_port &rhs) NOEXCEPT {
 	std::strcpy(m_ip, rhs.m_ip);
 	m_port = rhs.m_port;
 	return *this;
@@ -70,10 +70,10 @@ namespace {
 	const Ip_port g_listening_ip_port("<listening>", 0);
 }
 
-const Ip_port &unknown_ip_port() NOEXCEPT {
+const Ip_port & unknown_ip_port() NOEXCEPT {
 	return g_unknown_ip_port;
 }
-const Ip_port &listening_ip_port() NOEXCEPT {
+const Ip_port & listening_ip_port() NOEXCEPT {
 	return g_listening_ip_port;
 }
 
@@ -85,7 +85,7 @@ bool operator<(const Ip_port &lhs, const Ip_port &rhs) NOEXCEPT {
 	return lhs.port() < rhs.port();
 }
 
-std::ostream &operator<<(std::ostream &os, const Ip_port &rhs){
+std::ostream & operator<<(std::ostream &os, const Ip_port &rhs){
 	return os <<rhs.ip() <<':' <<rhs.port();
 }
 

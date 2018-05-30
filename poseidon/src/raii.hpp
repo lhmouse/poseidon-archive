@@ -42,7 +42,7 @@ public:
 	{
 		rhs.swap(*this);
 	}
-	Unique_handle &operator=(Move<Unique_handle> rhs) NOEXCEPT {
+	Unique_handle & operator=(Move<Unique_handle> rhs) NOEXCEPT {
 		Unique_handle(STD_MOVE(rhs)).swap(*this);
 		return *this;
 	}
@@ -54,7 +54,7 @@ public:
 	}
 #ifdef POSEIDON_CXX11
 	Unique_handle(const Unique_handle &) = delete;
-	Unique_handle &operator=(const Unique_handle &) = delete;
+	Unique_handle & operator=(const Unique_handle &) = delete;
 #else
 	// Move support.
 	Unique_handle(Unique_handle &rhs) NOEXCEPT
@@ -62,7 +62,7 @@ public:
 	{
 		rhs.swap(*this);
 	}
-	Unique_handle &operator=(Unique_handle &rhs) NOEXCEPT {
+	Unique_handle & operator=(Unique_handle &rhs) NOEXCEPT {
 		Unique_handle(STD_MOVE(rhs)).swap(*this);
 		return *this;
 	}
@@ -80,11 +80,11 @@ public:
 		m_handle = CloserT()();
 		return ret;
 	}
-	Unique_handle &reset(Handle rhs = CloserT()()) NOEXCEPT {
+	Unique_handle & reset(Handle rhs = CloserT()()) NOEXCEPT {
 		Unique_handle(rhs).swap(*this);
 		return *this;
 	}
-	Unique_handle &reset(Move<Unique_handle> rhs) NOEXCEPT {
+	Unique_handle & reset(Move<Unique_handle> rhs) NOEXCEPT {
 		Unique_handle(STD_MOVE(rhs)).swap(*this);
 		return *this;
 	}
@@ -191,7 +191,7 @@ bool operator>=(typename Unique_handle<CloserT>::Handle lhs, const Unique_handle
 }
 
 template<typename CloserT>
-std::ostream &operator<<(std::ostream &os, const Unique_handle<CloserT> &handle){
+std::ostream & operator<<(std::ostream &os, const Unique_handle<CloserT> &handle){
 	return os <<handle.get();
 }
 

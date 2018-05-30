@@ -151,7 +151,7 @@ Sha256_streambuf::int_type Sha256_streambuf::overflow(Sha256_streambuf::int_type
 		return traits_type::not_eof(c);
 	}
 	setp(m_chunk.begin(), m_chunk.end());
-	*pptr() = traits_type::to_char_type(c);
+	*(pptr()) = traits_type::to_char_type(c);
 	pbump(1);
 	return c;
 }

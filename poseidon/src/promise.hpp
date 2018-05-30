@@ -50,7 +50,7 @@ public:
 	~Promise_container() OVERRIDE;
 
 public:
-	ResultT *try_get() const NOEXCEPT {
+	ResultT * try_get() const NOEXCEPT {
 		const Recursive_mutex::Unique_lock lock(m_mutex);
 		if(Promise::would_throw()){
 			return NULLPTR;
@@ -58,7 +58,7 @@ public:
 		// `m_result_accepted` will not be false if `Promise::would_throw()` yields true.
 		return m_result.get_ptr();
 	}
-	ResultT &get() const {
+	ResultT & get() const {
 		const Recursive_mutex::Unique_lock lock(m_mutex);
 		Promise::check_and_rethrow();
 		// Likewise. See comments in `try_get()`.

@@ -24,7 +24,7 @@ private:
 
 private:
 	Sha1_streambuf(const Sha1_streambuf &);
-	Sha1_streambuf &operator=(const Sha1_streambuf &);
+	Sha1_streambuf & operator=(const Sha1_streambuf &);
 
 public:
 	Sha1_streambuf();
@@ -54,7 +54,7 @@ public:
 	~Sha1_ostream() OVERRIDE;
 
 public:
-	Sha1_streambuf *rdbuf() const {
+	Sha1_streambuf * rdbuf() const {
 		return const_cast<Sha1_streambuf *>(&m_sb);
 	}
 

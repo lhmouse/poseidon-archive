@@ -25,10 +25,10 @@ public:
 	~Client();
 
 protected:
-	const Response_headers &get_low_level_response_headers() const {
+	const Response_headers & get_low_level_response_headers() const {
 		return m_response_headers;
 	}
-	const Stream_buffer &get_low_level_entity() const {
+	const Stream_buffer & get_low_level_entity() const {
 		return m_entity;
 	}
 

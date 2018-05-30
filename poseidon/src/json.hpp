@@ -30,7 +30,7 @@ using Json_null = std::nullptr_t;
 typedef struct Json_null_ *Json_null;
 #endif
 
-extern const Json_element &null_json_element() NOEXCEPT;
+extern const Json_element & null_json_element() NOEXCEPT;
 
 class Json_object {
 public:
@@ -55,7 +55,7 @@ public:
 	explicit Json_object(std::istream &is);
 #ifndef POSEIDON_CXX11
 	Json_object(const Json_object &rhs);
-	Json_object &operator=(const Json_object &rhs);
+	Json_object & operator=(const Json_object &rhs);
 #endif
 
 public:
@@ -89,34 +89,34 @@ public:
 
 	bool has(const char *key) const;
 	bool has(const Rcnts &key) const;
-	const Json_element &get(const Rcnts &key) const; // 若指定的键不存在，则返回空元素。
-	const Json_element &at(const Rcnts &key) const; // 若指定的键不存在，则抛出 std::out_of_range。
-	Json_element &at(const Rcnts &key); // 若指定的键不存在，则抛出 std::out_of_range。
-	const Json_element &get(const char *key) const {
+	const Json_element & get(const Rcnts &key) const; // 若指定的键不存在，则返回空元素。
+	const Json_element & at(const Rcnts &key) const; // 若指定的键不存在，则抛出 std::out_of_range。
+	Json_element & at(const Rcnts &key); // 若指定的键不存在，则抛出 std::out_of_range。
+	const Json_element & get(const char *key) const {
 		return get(Rcnts::view(key));
 	}
-	const Json_element &at(const char *key) const {
+	const Json_element & at(const char *key) const {
 		return at(Rcnts::view(key));
 	}
-	Json_element &at(const char *key){
+	Json_element & at(const char *key){
 		return at(Rcnts::view(key));
 	}
 	template<typename T>
-	const T &get(const Rcnts &key) const;
+	const T & get(const Rcnts &key) const;
 	template<typename T>
-	const T &at(const Rcnts &key) const;
+	const T & at(const Rcnts &key) const;
 	template<typename T>
-	T &at(const Rcnts &key);
+	T & at(const Rcnts &key);
 	template<typename T>
-	const T &get(const char *key) const {
+	const T & get(const char *key) const {
 		return get<T>(Rcnts::view(key));
 	}
 	template<typename T>
-	const T &at(const char *key) const {
+	const T & at(const char *key) const {
 		return at<T>(Rcnts::view(key));
 	}
 	template<typename T>
-	T &at(const char *key){
+	T & at(const char *key){
 		return at<T>(Rcnts::view(key));
 	}
 	iterator set(Rcnts key, Json_element val);
@@ -136,11 +136,11 @@ inline void swap(Json_object &lhs, Json_object &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Json_object &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Json_object &rhs){
 	rhs.dump(os);
 	return os;
 }
-inline std::istream &operator>>(std::istream &is, Json_object &rhs){
+inline std::istream & operator>>(std::istream &is, Json_object &rhs){
 	rhs.parse(is);
 	return is;
 }
@@ -168,7 +168,7 @@ public:
 	explicit Json_array(std::istream &is);
 #ifndef POSEIDON_CXX11
 	Json_array(const Json_array &rhs);
-	Json_array &operator=(const Json_array &rhs);
+	Json_array & operator=(const Json_array &rhs);
 #endif
 
 public:
@@ -195,25 +195,25 @@ public:
 	bool erase(size_type index);
 
 	bool has(size_type index) const;
-	const Json_element &get(size_type index) const; // 若指定的下标不存在，则返回空元素。
-	const Json_element &at(size_type index) const; // 若指定的下标不存在，则抛出 std::out_of_range。
-	Json_element &at(size_type index); // 若指定的下标不存在，则抛出 std::out_of_range。
+	const Json_element & get(size_type index) const; // 若指定的下标不存在，则返回空元素。
+	const Json_element & at(size_type index) const; // 若指定的下标不存在，则抛出 std::out_of_range。
+	Json_element & at(size_type index); // 若指定的下标不存在，则抛出 std::out_of_range。
 	template<typename T>
-	const T &get(size_type index) const;
+	const T & get(size_type index) const;
 	template<typename T>
-	const T &at(size_type index) const;
+	const T & at(size_type index) const;
 	template<typename T>
-	T &at(size_type index);
-	Json_element &push_front(Json_element val);
+	T & at(size_type index);
+	Json_element & push_front(Json_element val);
 	void pop_front();
-	Json_element &push_back(Json_element val);
+	Json_element & push_back(Json_element val);
 	void pop_back();
 	iterator insert(const_iterator pos, Json_element val);
 #ifdef POSEIDON_CXX11
 	template<typename ...ParamsT>
-	Json_element &emplace_front(ParamsT &&...params);
+	Json_element & emplace_front(ParamsT &&...params);
 	template<typename ...ParamsT>
-	Json_element &emplace_back(ParamsT &&...params);
+	Json_element & emplace_back(ParamsT &&...params);
 	template<typename ...ParamsT>
 	iterator emplace(const_iterator pos, ParamsT &&...params);
 #endif
@@ -229,11 +229,11 @@ inline void swap(Json_array &lhs, Json_array &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Json_array &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Json_array &rhs){
 	rhs.dump(os);
 	return os;
 }
-inline std::istream &operator>>(std::istream &is, Json_array &rhs){
+inline std::istream & operator>>(std::istream &is, Json_array &rhs){
 	rhs.parse(is);
 	return is;
 }
@@ -257,7 +257,7 @@ public:
 	typedef Json_array   Type_array;
 
 public:
-	static const char *get_type_string(Type type);
+	static const char * get_type_string(Type type);
 
 private:
 	boost::variant< Type_null
@@ -317,11 +317,11 @@ public:
 	}
 
 	template<typename T>
-	const T &get() const {
+	const T & get() const {
 		return boost::get<T>(m_variant);
 	}
 	template<typename T>
-	T &get(){
+	T & get(){
 		return boost::get<T>(m_variant);
 	}
 	template<typename T>
@@ -354,7 +354,7 @@ inline Json_object::Json_object(const Json_object &rhs)
 {
 	//
 }
-inline Json_object &Json_object::operator=(const Json_object &rhs){
+inline Json_object & Json_object::operator=(const Json_object &rhs){
 	m_elements = rhs.m_elements;
 	return *this;
 }
@@ -448,21 +448,21 @@ inline bool Json_object::has(const Rcnts &key) const {
 	}
 	return true;
 }
-inline const Json_element &Json_object::get(const Rcnts &key) const {
+inline const Json_element & Json_object::get(const Rcnts &key) const {
 	const AUTO(it, find(key));
 	if(it == end()){
 		return null_json_element();
 	}
 	return it->second;
 }
-inline const Json_element &Json_object::at(const Rcnts &key) const {
+inline const Json_element & Json_object::at(const Rcnts &key) const {
 	const AUTO(it, find(key));
 	if(it == end()){
 		throw std::out_of_range(__PRETTY_FUNCTION__);
 	}
 	return it->second;
 }
-inline Json_element &Json_object::at(const Rcnts &key){
+inline Json_element & Json_object::at(const Rcnts &key){
 	const AUTO(it, find(key));
 	if(it == end()){
 		throw std::out_of_range(__PRETTY_FUNCTION__);
@@ -470,15 +470,15 @@ inline Json_element &Json_object::at(const Rcnts &key){
 	return it->second;
 }
 template<typename T>
-const T &Json_object::get(const Rcnts &key) const {
+const T & Json_object::get(const Rcnts &key) const {
 	return get(key).get<T>();
 }
 template<typename T>
-const T &Json_object::at(const Rcnts &key) const {
+const T & Json_object::at(const Rcnts &key) const {
 	return at(key).get<T>();
 }
 template<typename T>
-T &Json_object::at(const Rcnts &key){
+T & Json_object::at(const Rcnts &key){
 	return at(key).get<T>();
 }
 inline Json_object::iterator Json_object::set(Rcnts key, Json_element val){
@@ -519,7 +519,7 @@ inline Json_array::Json_array(const Json_array &rhs)
 {
 	//
 }
-inline Json_array &Json_array::operator=(const Json_array &rhs){
+inline Json_array & Json_array::operator=(const Json_array &rhs){
 	m_elements = rhs.m_elements;
 	return *this;
 }
@@ -593,44 +593,44 @@ inline bool Json_array::has(Json_array::size_type index) const {
 	}
 	return true;
 }
-inline const Json_element &Json_array::get(Json_array::size_type index) const {
+inline const Json_element & Json_array::get(Json_array::size_type index) const {
 	if(index >= size()){
 		return null_json_element();
 	}
 	return begin()[static_cast<difference_type>(index)];
 }
-inline const Json_element &Json_array::at(Json_array::size_type index) const {
+inline const Json_element & Json_array::at(Json_array::size_type index) const {
 	if(index >= size()){
 		throw std::out_of_range(__PRETTY_FUNCTION__);
 	}
 	return begin()[static_cast<difference_type>(index)];
 }
-inline Json_element &Json_array::at(Json_array::size_type index){
+inline Json_element & Json_array::at(Json_array::size_type index){
 	if(index >= size()){
 		throw std::out_of_range(__PRETTY_FUNCTION__);
 	}
 	return begin()[static_cast<difference_type>(index)];
 }
 template<typename T>
-inline const T &Json_array::get(Json_array::size_type index) const {
+inline const T & Json_array::get(Json_array::size_type index) const {
 	return get(index).get<T>();
 }
 template<typename T>
-inline const T &Json_array::at(Json_array::size_type index) const {
+inline const T & Json_array::at(Json_array::size_type index) const {
 	return at(index).get<T>();
 }
 template<typename T>
-inline T &Json_array::at(Json_array::size_type index){
+inline T & Json_array::at(Json_array::size_type index){
 	return at(index).get<T>();
 }
-inline Json_element &Json_array::push_front(Json_element val){
+inline Json_element & Json_array::push_front(Json_element val){
 	m_elements.push_front(STD_MOVE(val));
 	return m_elements.front();
 }
 inline void Json_array::pop_front(){
 	m_elements.pop_front();
 }
-inline Json_element &Json_array::push_back(Json_element val){
+inline Json_element & Json_array::push_back(Json_element val){
 	m_elements.push_back(STD_MOVE(val));
 	return m_elements.front();
 }
@@ -642,12 +642,12 @@ inline Json_array::iterator Json_array::insert(Json_array::const_iterator pos, J
 }
 #ifdef POSEIDON_CXX11
 template<typename ...ParamsT>
-inline Json_element &Json_array::emplace_front(ParamsT &&...params){
+inline Json_element & Json_array::emplace_front(ParamsT &&...params){
 	m_elements.emplace_front(std::forward<ParamsT>(params)...);
 	return m_elements.front();
 }
 template<typename ...ParamsT>
-inline Json_element &Json_array::emplace_back(ParamsT &&...params){
+inline Json_element & Json_array::emplace_back(ParamsT &&...params){
 	m_elements.emplace_back(std::forward<ParamsT>(params)...);
 	return m_elements.back();
 }
@@ -662,11 +662,11 @@ inline void Json_array::swap(Json_array &rhs) NOEXCEPT {
 	swap(m_elements, rhs.m_elements);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Json_element &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Json_element &rhs){
 	rhs.dump(os);
 	return os;
 }
-inline std::istream &operator>>(std::istream &is, Json_element &rhs){
+inline std::istream & operator>>(std::istream &is, Json_element &rhs){
 	rhs.parse(is);
 	return is;
 }

@@ -31,7 +31,7 @@ namespace {
 	}
 }
 
-const Multipart_element &empty_multipart_element() NOEXCEPT {
+const Multipart_element & empty_multipart_element() NOEXCEPT {
 	return g_empty_multipart_element;
 }
 

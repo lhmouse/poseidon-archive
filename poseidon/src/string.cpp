@@ -11,7 +11,7 @@ namespace {
 	const std::string g_empty_string;
 }
 
-const std::string &empty_string() NOEXCEPT {
+const std::string & empty_string() NOEXCEPT {
 	return g_empty_string;
 }
 

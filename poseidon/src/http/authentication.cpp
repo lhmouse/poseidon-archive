@@ -43,7 +43,7 @@ public:
 	}
 
 public:
-	const std::string &get_realm() const {
+	const std::string & get_realm() const {
 		return m_realm;
 	}
 
@@ -68,9 +68,7 @@ public:
 	}
 };
 
-boost::shared_ptr<const Authentication_context> create_authentication_context(
-	const std::string &realm, const boost::container::vector<std::string> &basic_user_pass)
-{
+boost::shared_ptr<const Authentication_context> create_authentication_context(const std::string &realm, const boost::container::vector<std::string> &basic_user_pass){
 	POSEIDON_PROFILE_ME;
 	POSEIDON_THROW_UNLESS(!basic_user_pass.empty(), Basic_exception, Rcnts::view("No username:password provided"));
 
@@ -89,9 +87,7 @@ boost::shared_ptr<const Authentication_context> create_authentication_context(
 	}
 	return STD_MOVE_IDN(context);
 }
-std::pair<Authentication_result, const char *> check_authentication(
-	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, const Request_headers &request_headers)
-{
+std::pair<Authentication_result, const char *> check_authentication(const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, const Request_headers &request_headers){
 	POSEIDON_PROFILE_ME;
 
 	if(!context){
@@ -111,16 +107,12 @@ std::pair<Authentication_result, const char *> check_authentication(
 	POSEIDON_LOG_WARNING("HTTP authentication scheme not supported: ", header_value);
 	return std::make_pair(auth_scheme_not_supported, NULLPTR);
 }
-__attribute__((__noreturn__)) void throw_authentication_failure(
-	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, Authentication_result result)
-{
+__attribute__((__noreturn__)) void throw_authentication_failure(const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, Authentication_result result){
 	POSEIDON_PROFILE_ME;
 
 	throw_authentication_failure_digest(context, is_proxy, remote_info, result);
 }
-const char *check_authentication_simple(
-	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, const Request_headers &request_headers)
-{
+const char * check_authentication_simple(const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, const Request_headers &request_headers){
 	POSEIDON_PROFILE_ME;
 
 	const AUTO(pair, check_authentication(context, is_proxy, remote_info, request_headers));
@@ -144,12 +136,12 @@ namespace {
 		}
 
 	public:
-		const char *get() const {
+		const char * get() const {
 			return m_str;
 		}
 	};
 
-	std::ostream &operator<<(std::ostream &os, const String_quoter &rhs){
+	std::ostream & operator<<(std::ostream &os, const String_quoter &rhs){
 		POSEIDON_PROFILE_ME;
 
 		const char *read = rhs.get();
@@ -175,9 +167,7 @@ namespace {
 }
 
 // Basic
-std::pair<Authentication_result, const char *> check_authentication_basic(
-	const boost::shared_ptr<const Authentication_context> &context, const std::string &header_value)
-{
+std::pair<Authentication_result, const char *> check_authentication_basic(const boost::shared_ptr<const Authentication_context> &context, const std::string &header_value){
 	POSEIDON_PROFILE_ME;
 
 	if(!context){
@@ -212,9 +202,7 @@ std::pair<Authentication_result, const char *> check_authentication_basic(
 	POSEIDON_LOG_INFO("HTTP authentication succeeded (using password via the Basic scheme): ", pair.first);
 	return std::make_pair(auth_succeeded, pair.first);
 }
-__attribute__((__noreturn__)) void throw_authentication_failure_basic(
-	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, Authentication_result result)
-{
+__attribute__((__noreturn__)) void throw_authentication_failure_basic(const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, Authentication_result result){
 	POSEIDON_PROFILE_ME;
 	POSEIDON_THROW_ASSERT(result != auth_succeeded);
 
@@ -297,9 +285,7 @@ namespace {
 }
 
 // Digest
-std::pair<Authentication_result, const char *> check_authentication_digest(
-	const boost::shared_ptr<const Authentication_context> &context, const Ip_port &remote_info, Verb verb, const std::string &header_value)
-{
+std::pair<Authentication_result, const char *> check_authentication_digest(const boost::shared_ptr<const Authentication_context> &context, const Ip_port &remote_info, Verb verb, const std::string &header_value){
 	POSEIDON_PROFILE_ME;
 
 	if(!context){
@@ -447,9 +433,7 @@ std::pair<Authentication_result, const char *> check_authentication_digest(
 	POSEIDON_LOG_INFO("HTTP authentication succeeded (using password via the Digest scheme): ", pair.first);
 	return std::make_pair(auth_succeeded, pair.first);
 }
-__attribute__((__noreturn__)) void throw_authentication_failure_digest(
-	const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, Authentication_result result)
-{
+__attribute__((__noreturn__)) void throw_authentication_failure_digest(const boost::shared_ptr<const Authentication_context> &context, bool is_proxy, const Ip_port &remote_info, Authentication_result result){
 	POSEIDON_PROFILE_ME;
 	POSEIDON_THROW_ASSERT(result != auth_succeeded);
 

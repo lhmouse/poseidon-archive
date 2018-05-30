@@ -13,7 +13,7 @@ class Profiler : NONCOPYABLE {
 public:
 	static void accumulate_all_in_thread() NOEXCEPT;
 
-	static void *begin_stack_switch() NOEXCEPT;
+	static void * begin_stack_switch() NOEXCEPT;
 	static void end_stack_switch(void *opaque) NOEXCEPT;
 
 private:

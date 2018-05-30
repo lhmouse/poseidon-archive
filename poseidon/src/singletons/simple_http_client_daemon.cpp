@@ -242,10 +242,10 @@ namespace {
 		}
 
 		// WARNING: Only call these functions after `has_been_shutdown_read()` returns `true` to avoid race conditions!
-		Http::Response_headers &get_response_headers(){
+		Http::Response_headers & get_response_headers(){
 			return m_response_headers;
 		}
-		Stream_buffer &get_response_entity(){
+		Stream_buffer & get_response_entity(){
 			return m_response_entity;
 		}
 		bool is_finished() const {

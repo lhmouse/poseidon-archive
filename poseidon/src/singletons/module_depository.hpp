@@ -34,8 +34,8 @@ public:
 	static void start();
 	static void stop();
 
-	static void *load(const std::string &path);
-	static void *load_nothrow(const std::string &path);
+	static void * load(const std::string &path);
+	static void * load_nothrow(const std::string &path);
 	static bool unload(void *base_address) NOEXCEPT;
 
 	static void snapshot(boost::container::vector<Snapshot_element> &ret);

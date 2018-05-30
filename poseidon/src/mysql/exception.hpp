@@ -19,7 +19,7 @@ public:
 	~Exception() NOEXCEPT;
 
 public:
-	const char *get_schema() const NOEXCEPT {
+	const char * get_schema() const NOEXCEPT {
 		return m_schema.get();
 	}
 	unsigned long get_code() const NOEXCEPT {

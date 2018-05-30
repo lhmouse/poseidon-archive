@@ -17,7 +17,7 @@ public:
 	virtual ~System_http_servlet_base();
 
 public:
-	virtual const char *get_uri() const = 0;
+	virtual const char * get_uri() const = 0;
 	virtual void handle_get(Json_object &response) const = 0;
 	virtual void handle_post(Json_object &response, Json_object request) const = 0;
 };

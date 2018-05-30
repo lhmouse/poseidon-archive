@@ -16,7 +16,7 @@ public:
 	static void start();
 	static void stop();
 
-	static const char *guess_mime_type(const void *data, std::size_t size);
+	static const char * guess_mime_type(const void *data, std::size_t size);
 };
 
 }

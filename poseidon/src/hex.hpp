@@ -29,10 +29,10 @@ public:
 		m_upper_case = upper_case;
 	}
 
-	const Stream_buffer &get_buffer() const {
+	const Stream_buffer & get_buffer() const {
 		return m_buffer;
 	}
-	Stream_buffer &get_buffer(){
+	Stream_buffer & get_buffer(){
 		return m_buffer;
 	}
 
@@ -64,10 +64,10 @@ public:
 	~Hex_decoder();
 
 public:
-	const Stream_buffer &get_buffer() const {
+	const Stream_buffer & get_buffer() const {
 		return m_buffer;
 	}
-	Stream_buffer &get_buffer(){
+	Stream_buffer & get_buffer(){
 		return m_buffer;
 	}
 

@@ -17,21 +17,21 @@ namespace Poseidon {
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 
 template<typename T>
-inline T &add_flags(T &val, typename boost::common_type<T>::type flags){
+inline T & add_flags(T &val, typename boost::common_type<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
 	val |= flags;
 	return val;
 }
 template<typename T>
-inline T &remove_flags(T &val, typename boost::common_type<T>::type flags){
+inline T & remove_flags(T &val, typename boost::common_type<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
 	val &= ~flags;
 	return val;
 }
 template<typename T>
-inline T &flip_flags(T &val, typename boost::common_type<T>::type flags){
+inline T & flip_flags(T &val, typename boost::common_type<T>::type flags){
 	BOOST_STATIC_ASSERT((boost::is_enum<T>::value || boost::is_integral<T>::value));
 
 	val ^= flags;

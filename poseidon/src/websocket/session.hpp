@@ -34,7 +34,7 @@ protected:
 	Opcode get_low_level_opcode() const {
 		return m_opcode;
 	}
-	const Stream_buffer &get_low_level_payload() const {
+	const Stream_buffer & get_low_level_payload() const {
 		return m_payload;
 	}
 

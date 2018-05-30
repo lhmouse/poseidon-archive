@@ -39,7 +39,7 @@ Verb get_verb_from_string(const char *str){
 	}
 	return static_cast<Verb>(index);
 }
-const char *get_string_from_verb(Verb verb){
+const char * get_string_from_verb(Verb verb){
 	std::size_t index = static_cast<std::size_t>(verb);
 	if(index >= COUNT_OF(g_verb_table)){
 		index = static_cast<unsigned>(verb_invalid_verb);

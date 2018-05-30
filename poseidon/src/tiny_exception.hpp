@@ -21,7 +21,7 @@ public:
 	~Tiny_exception() throw();
 
 public:
-	const char *what() const throw() {
+	const char * what() const throw() {
 		return m_static_msg;
 	}
 };

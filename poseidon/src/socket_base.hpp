@@ -72,8 +72,8 @@ public:
 
 	bool did_time_out() const NOEXCEPT;
 
-	const Ip_port &get_remote_info() const NOEXCEPT;
-	const Ip_port &get_local_info() const NOEXCEPT;
+	const Ip_port & get_remote_info() const NOEXCEPT;
+	const Ip_port & get_local_info() const NOEXCEPT;
 	bool is_using_ipv6() const NOEXCEPT;
 
 	// 返回一个 errno 告诉 epoll 如何处理。

@@ -18,7 +18,7 @@ namespace {
 		::pthread_t handle;
 	};
 
-	void *thread_proc(void *param)
+	void * thread_proc(void *param)
 	try {
 		boost::shared_ptr<Thread_control_block> tcb;
 		// Break the circular reference. This allows `*tcb` to be deleted.

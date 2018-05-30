@@ -30,19 +30,19 @@ public:
 	explicit Header_option(std::istream &is);
 
 public:
-	const std::string &get_base() const {
+	const std::string & get_base() const {
 		return m_base;
 	}
-	std::string &get_base(){
+	std::string & get_base(){
 		return m_base;
 	}
 	void set_base(std::string base){
 		m_base = STD_MOVE(base);
 	}
-	const Option_map &get_options() const {
+	const Option_map & get_options() const {
 		return m_options;
 	}
-	Option_map &get_options(){
+	Option_map & get_options(){
 		return m_options;
 	}
 	void set_options(Option_map options){
@@ -57,10 +57,10 @@ public:
 		m_options.clear();
 	}
 
-	const std::string &get_option(const char *key) const {
+	const std::string & get_option(const char *key) const {
 		return m_options.get(key);
 	}
-	const std::string &get_option(const Rcnts &key) const {
+	const std::string & get_option(const Rcnts &key) const {
 		return m_options.get(key);
 	}
 	void set_option(Rcnts key, std::string value){
@@ -88,11 +88,11 @@ inline void swap(Header_option &lhs, Header_option &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Header_option &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Header_option &rhs){
 	rhs.dump(os);
 	return os;
 }
-inline std::istream &operator>>(std::istream &is, Header_option &rhs){
+inline std::istream & operator>>(std::istream &is, Header_option &rhs){
 	rhs.parse(is);
 	return is;
 }

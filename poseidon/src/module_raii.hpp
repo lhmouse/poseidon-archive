@@ -28,7 +28,7 @@ public:
 	{
 		//
 	}
-	Handle_stack &operator=(const Handle_stack &rhs){
+	Handle_stack & operator=(const Handle_stack &rhs){
 		m_queue = rhs.m_queue;
 		return *this;
 	}

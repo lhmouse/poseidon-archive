@@ -30,7 +30,7 @@ namespace {
 		return cookie;
 	}
 
-	const char *checked_look_up(::magic_t cookie, const void *data, std::size_t size){
+	const char * checked_look_up(::magic_t cookie, const void *data, std::size_t size){
 		const AUTO(desc, ::magic_buffer(cookie, data, size));
 		POSEIDON_THROW_UNLESS(desc, Exception, Rcnts(::magic_error(cookie)));
 		return desc;
@@ -60,7 +60,7 @@ void Magic_daemon::stop(){
 	g_cookie.reset();
 }
 
-const char *Magic_daemon::guess_mime_type(const void *data, std::size_t size){
+const char * Magic_daemon::guess_mime_type(const void *data, std::size_t size){
 	POSEIDON_PROFILE_ME;
 
 	POSEIDON_THROW_ASSERT(data);

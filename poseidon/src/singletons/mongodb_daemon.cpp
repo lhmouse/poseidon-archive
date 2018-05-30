@@ -138,7 +138,7 @@ namespace {
 		}
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const Mongodb::Object_base> get_combinable_object() const = 0;
-		virtual const char *get_collection() const = 0;
+		virtual const char * get_collection() const = 0;
 		virtual void generate_bson(Mongodb::Bson_builder &query) const = 0;
 		virtual void execute(const boost::shared_ptr<Mongodb::Connection> &conn, const Mongodb::Bson_builder &query) = 0;
 	};
@@ -163,7 +163,7 @@ namespace {
 		boost::shared_ptr<const Mongodb::Object_base> get_combinable_object() const OVERRIDE {
 			return m_object;
 		}
-		const char *get_collection() const OVERRIDE {
+		const char * get_collection() const OVERRIDE {
 			return m_object->get_collection();
 		}
 		void generate_bson(Mongodb::Bson_builder &query) const OVERRIDE {
@@ -215,7 +215,7 @@ namespace {
 		boost::shared_ptr<const Mongodb::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_collection() const OVERRIDE {
+		const char * get_collection() const OVERRIDE {
 			return m_object->get_collection();
 		}
 		void generate_bson(Mongodb::Bson_builder &query) const OVERRIDE {
@@ -254,7 +254,7 @@ namespace {
 		boost::shared_ptr<const Mongodb::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_collection() const OVERRIDE {
+		const char * get_collection() const OVERRIDE {
 			return m_collection;
 		}
 		void generate_bson(Mongodb::Bson_builder &query) const OVERRIDE {
@@ -288,7 +288,7 @@ namespace {
 		boost::shared_ptr<const Mongodb::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_collection() const OVERRIDE {
+		const char * get_collection() const OVERRIDE {
 			return m_collection_hint;
 		}
 		void generate_bson(Mongodb::Bson_builder &query) const OVERRIDE {
@@ -333,7 +333,7 @@ namespace {
 		boost::shared_ptr<const Mongodb::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_collection() const OVERRIDE {
+		const char * get_collection() const OVERRIDE {
 			return m_collection_hint;
 		}
 		void generate_bson(Mongodb::Bson_builder & /* query */) const OVERRIDE {
@@ -370,7 +370,7 @@ namespace {
 		boost::shared_ptr<const Mongodb::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_collection() const OVERRIDE {
+		const char * get_collection() const OVERRIDE {
 			return "";
 		}
 		void generate_bson(Mongodb::Bson_builder &query) const OVERRIDE {

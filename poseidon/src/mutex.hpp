@@ -35,7 +35,7 @@ private:
 
 private:
 	Unique_lock(const Unique_lock &rhs);
-	Unique_lock &operator=(const Unique_lock &rhs);
+	Unique_lock & operator=(const Unique_lock &rhs);
 
 public:
 	Unique_lock();
@@ -45,7 +45,7 @@ public:
 	{
 		rhs.swap(*this);
 	}
-	Unique_lock &operator=(Move<Unique_lock> rhs) NOEXCEPT {
+	Unique_lock & operator=(Move<Unique_lock> rhs) NOEXCEPT {
 		Unique_lock(STD_MOVE(rhs)).swap(*this);
 		return *this;
 	}

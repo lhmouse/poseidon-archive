@@ -57,10 +57,10 @@ protected:
 	virtual bool on_control_message(Opcode opcode, Stream_buffer payload) = 0;
 
 public:
-	const Stream_buffer &get_queue() const {
+	const Stream_buffer & get_queue() const {
 		return m_queue;
 	}
-	Stream_buffer &get_queue(){
+	Stream_buffer & get_queue(){
 		return m_queue;
 	}
 

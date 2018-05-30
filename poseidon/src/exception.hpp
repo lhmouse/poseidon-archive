@@ -24,18 +24,18 @@ public:
 	~Exception() NOEXCEPT;
 
 public:
-	const char *what() const NOEXCEPT OVERRIDE;
+	const char * what() const NOEXCEPT OVERRIDE;
 
-	const char *get_file() const NOEXCEPT {
+	const char * get_file() const NOEXCEPT {
 		return m_file;
 	}
 	std::size_t get_line() const NOEXCEPT {
 		return m_line;
 	}
-	const char *get_func() const NOEXCEPT {
+	const char * get_func() const NOEXCEPT {
 		return m_func;
 	}
-	const char *get_message() const NOEXCEPT {
+	const char * get_message() const NOEXCEPT {
 		return m_message.get();
 	}
 };

@@ -178,7 +178,7 @@ namespace {
 		}
 
 	public:
-		const std::string &get_path() const {
+		const std::string & get_path() const {
 			return m_path;
 		}
 

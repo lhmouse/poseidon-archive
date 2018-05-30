@@ -31,10 +31,10 @@ protected:
 	boost::uint64_t get_low_level_size_total() const {
 		return m_size_total;
 	}
-	const Request_headers &get_low_level_request_headers() const {
+	const Request_headers & get_low_level_request_headers() const {
 		return m_request_headers;
 	}
-	const Stream_buffer &get_low_level_entity() const {
+	const Stream_buffer & get_low_level_entity() const {
 		return m_entity;
 	}
 

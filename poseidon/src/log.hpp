@@ -36,7 +36,7 @@ public:
 	static bool initialize_mask_from_config();
 	static void finalize_mask() NOEXCEPT;
 
-	static const char *get_thread_tag() NOEXCEPT;
+	static const char * get_thread_tag() NOEXCEPT;
 	static void set_thread_tag(const char *tag) NOEXCEPT;
 
 private:
@@ -76,7 +76,7 @@ private:
 
 public:
 	template<typename T>
-	Logger &operator,(const T &val) NOEXCEPT
+	Logger & operator,(const T &val) NOEXCEPT
 	try {
 		this->put(val);
 		return *this;

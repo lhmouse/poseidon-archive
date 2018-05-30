@@ -21,10 +21,10 @@ public:
 	Sock_addr(const void *addr_data, std::size_t addr_size);
 	Sock_addr(const Ip_port &ip_port);
 	Sock_addr(const Sock_addr &rhs) NOEXCEPT;
-	Sock_addr &operator=(const Sock_addr &rhs) NOEXCEPT;
+	Sock_addr & operator=(const Sock_addr &rhs) NOEXCEPT;
 
 public:
-	const void *data() const {
+	const void * data() const {
 		return m_data;
 	}
 	std::size_t size() const {

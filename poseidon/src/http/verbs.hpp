@@ -26,7 +26,7 @@ namespace Verbs {
 using namespace Verbs;
 
 extern Verb get_verb_from_string(const char *str);
-extern const char *get_string_from_verb(Verb verb);
+extern const char * get_string_from_verb(Verb verb);
 
 }
 }

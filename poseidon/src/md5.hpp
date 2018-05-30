@@ -24,7 +24,7 @@ private:
 
 private:
 	Md5_streambuf(const Md5_streambuf &);
-	Md5_streambuf &operator=(const Md5_streambuf &);
+	Md5_streambuf & operator=(const Md5_streambuf &);
 
 public:
 	Md5_streambuf();
@@ -54,7 +54,7 @@ public:
 	~Md5_ostream() OVERRIDE;
 
 public:
-	Md5_streambuf *rdbuf() const {
+	Md5_streambuf * rdbuf() const {
 		return const_cast<Md5_streambuf *>(&m_sb);
 	}
 

@@ -6,7 +6,7 @@
 
 namespace Poseidon {
 
-std::ostream &operator<<(std::ostream &os, const Option_map &rhs){
+std::ostream & operator<<(std::ostream &os, const Option_map &rhs){
 	os <<"{\n";
 	for(AUTO(it, rhs.begin()); it != rhs.end(); ++it){
 		os <<"  " <<it->first <<": string(" <<it->second.size() <<") = " <<it->second <<"\n";

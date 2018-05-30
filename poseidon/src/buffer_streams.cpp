@@ -47,7 +47,7 @@ Buffer_streambuf::int_type Buffer_streambuf::underflow(){
 			return traits_type::eof();
 		}
 		setg(m_get_area.begin(), m_get_area.begin(), m_get_area.begin() + n_peeked);
-		return traits_type::to_int_type(*gptr());
+		return traits_type::to_int_type(*(gptr()));
 	} else {
 		return traits_type::eof();
 	}

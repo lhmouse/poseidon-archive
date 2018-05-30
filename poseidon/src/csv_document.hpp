@@ -17,7 +17,7 @@ namespace Poseidon {
 
 class Stream_buffer;
 
-extern const std::string &empty_string() NOEXCEPT;
+extern const std::string & empty_string() NOEXCEPT;
 
 class Csv_document {
 private:
@@ -43,7 +43,7 @@ public:
 	{
 		//
 	}
-	Csv_document &operator=(const Csv_document &rhs){
+	Csv_document & operator=(const Csv_document &rhs){
 		m_elements = rhs.m_elements;
 		return *this;
 	}
@@ -77,10 +77,10 @@ public:
 		}
 	}
 
-	const std::string &get(std::size_t row, const char *key) const { // 若指定的键不存在，则返回空字符串。
+	const std::string & get(std::size_t row, const char *key) const { // 若指定的键不存在，则返回空字符串。
 		return get(row, Rcnts::view(key));
 	}
-	const std::string &get(std::size_t row, const Rcnts &key) const {
+	const std::string & get(std::size_t row, const Rcnts &key) const {
 		const AUTO(it, m_elements.find(key));
 		if(it == m_elements.end()){
 			return empty_string();
@@ -90,10 +90,10 @@ public:
 		}
 		return it->second.at(row);
 	}
-	const std::string &at(std::size_t row, const char *key) const { // 若指定的键不存在，则返回空字符串。
+	const std::string & at(std::size_t row, const char *key) const { // 若指定的键不存在，则返回空字符串。
 		return at(row, Rcnts::view(key));
 	}
-	const std::string &at(std::size_t row, const Rcnts &key) const {
+	const std::string & at(std::size_t row, const Rcnts &key) const {
 		const AUTO(it, m_elements.find(key));
 		if(it == m_elements.end()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
@@ -103,10 +103,10 @@ public:
 		}
 		return it->second.at(row);
 	}
-	std::string &at(std::size_t row, const char *key){ // 若指定的键不存在，则返回空字符串。
+	std::string & at(std::size_t row, const char *key){ // 若指定的键不存在，则返回空字符串。
 		return at(row, Rcnts::view(key));
 	}
-	std::string &at(std::size_t row, const Rcnts &key){
+	std::string & at(std::size_t row, const Rcnts &key){
 		const AUTO(it, m_elements.find(key));
 		if(it == m_elements.end()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
@@ -131,11 +131,11 @@ inline void swap(Csv_document &lhs, Csv_document &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Csv_document &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Csv_document &rhs){
 	rhs.dump(os);
 	return os;
 }
-inline std::istream &operator>>(std::istream &is, Csv_document &rhs){
+inline std::istream & operator>>(std::istream &is, Csv_document &rhs){
 	rhs.parse(is);
 	return is;
 }

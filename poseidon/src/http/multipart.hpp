@@ -18,7 +18,7 @@ struct Multipart_element {
 	Stream_buffer entity;
 };
 
-extern const Multipart_element &empty_multipart_element() NOEXCEPT;
+extern const Multipart_element & empty_multipart_element() NOEXCEPT;
 
 class Multipart {
 public:
@@ -52,7 +52,7 @@ public:
 	{
 		//
 	}
-	Multipart &operator=(const Multipart &rhs){
+	Multipart & operator=(const Multipart &rhs){
 		m_boundary = rhs.m_boundary;
 		m_elements = rhs.m_elements;
 		return *this;
@@ -60,7 +60,7 @@ public:
 #endif
 
 public:
-	const std::string &get_boundary() const {
+	const std::string & get_boundary() const {
 		return m_boundary;
 	}
 	void set_boundary(std::string boundary){
@@ -136,32 +136,32 @@ public:
 		}
 		return true;
 	}
-	const Multipart_element &get(size_type index) const { // 若指定的下标不存在，则返回空元素。
+	const Multipart_element & get(size_type index) const { // 若指定的下标不存在，则返回空元素。
 		if(index >= size()){
 			return empty_multipart_element();
 		}
 		return begin()[static_cast<difference_type>(index)];
 	}
-	const Multipart_element &at(size_type index) const { // 若指定的下标不存在，则抛出 std::out_of_range。
+	const Multipart_element & at(size_type index) const { // 若指定的下标不存在，则抛出 std::out_of_range。
 		if(index >= size()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
 		}
 		return begin()[static_cast<difference_type>(index)];
 	}
-	Multipart_element &at(size_type index){ // 若指定的下标不存在，则抛出 std::out_of_range。
+	Multipart_element & at(size_type index){ // 若指定的下标不存在，则抛出 std::out_of_range。
 		if(index >= size()){
 			throw std::out_of_range(__PRETTY_FUNCTION__);
 		}
 		return begin()[static_cast<difference_type>(index)];
 	}
-	Multipart_element &push_front(Multipart_element val){
+	Multipart_element & push_front(Multipart_element val){
 		m_elements.push_front(STD_MOVE(val));
 		return m_elements.front();
 	}
 	void pop_front(){
 		m_elements.pop_front();
 	}
-	Multipart_element &push_back(Multipart_element val){
+	Multipart_element & push_back(Multipart_element val){
 		m_elements.push_back(STD_MOVE(val));
 		return m_elements.back();
 	}
@@ -173,12 +173,12 @@ public:
 	}
 #ifdef POSEIDON_CXX11
 	template<typename ...ParamsT>
-	Multipart_element &emplace_front(ParamsT &&...params){
+	Multipart_element & emplace_front(ParamsT &&...params){
 		m_elements.emplace_front(std::forward<ParamsT>(params)...);
 		return m_elements.front();
 	}
 	template<typename ...ParamsT>
-	Multipart_element &emplace_back(ParamsT &&...params){
+	Multipart_element & emplace_back(ParamsT &&...params){
 		m_elements.emplace_back(std::forward<ParamsT>(params)...);
 		return m_elements.back();
 	}
@@ -202,11 +202,11 @@ inline void swap(Multipart &lhs, Multipart &rhs) NOEXCEPT {
 	lhs.swap(rhs);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Multipart &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Multipart &rhs){
 	rhs.dump(os);
 	return os;
 }
-inline std::istream &operator>>(std::istream &is, Multipart &rhs){
+inline std::istream & operator>>(std::istream &is, Multipart &rhs){
 	rhs.parse(is);
 	return is;
 }

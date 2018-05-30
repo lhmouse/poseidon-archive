@@ -48,7 +48,7 @@ try {
 	return false;
 }
 
-void *Object_base::get_combined_write_stamp() const NOEXCEPT {
+void * Object_base::get_combined_write_stamp() const NOEXCEPT {
 	return atomic_load(m_combined_write_stamp, memory_order_consume);
 }
 void Object_base::set_combined_write_stamp(void *stamp) const NOEXCEPT {

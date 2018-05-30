@@ -24,10 +24,10 @@ namespace {
 	volatile boost::uint32_t g_auto_inc = 0;
 }
 
-const Uuid &Uuid::min() NOEXCEPT {
+const Uuid & Uuid::min() NOEXCEPT {
 	return g_min_uuid;
 }
-const Uuid &Uuid::max() NOEXCEPT {
+const Uuid & Uuid::max() NOEXCEPT {
 	return g_max_uuid;
 }
 
@@ -144,7 +144,7 @@ bool Uuid::from_string(const std::string &str){
 	return from_string(reinterpret_cast<const char (&)[36]>(str[0]));
 }
 
-std::ostream &operator<<(std::ostream &os, const Uuid &rhs){
+std::ostream & operator<<(std::ostream &os, const Uuid &rhs){
 	char temp[37];
 	rhs.to_string(reinterpret_cast<char (&)[36]>(temp));
 	temp[36] = 0;

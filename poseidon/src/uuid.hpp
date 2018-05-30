@@ -15,8 +15,8 @@ namespace Poseidon {
 
 class Uuid {
 public:
-	static const Uuid &min() NOEXCEPT;
-	static const Uuid &max() NOEXCEPT;
+	static const Uuid & min() NOEXCEPT;
+	static const Uuid & max() NOEXCEPT;
 
 	static Uuid random() NOEXCEPT;
 
@@ -44,29 +44,29 @@ public:
 		return m_bytes == min().m_bytes;
 	}
 
-	const boost::array<unsigned char, 16> &as_array() const {
+	const boost::array<unsigned char, 16> & as_array() const {
 		return m_bytes;
 	}
-	boost::array<unsigned char, 16> &as_array(){
+	boost::array<unsigned char, 16> & as_array(){
 		return m_bytes;
 	}
 
-	const unsigned char *begin() const {
+	const unsigned char * begin() const {
 		return m_bytes.data();
 	}
-	unsigned char *begin(){
+	unsigned char * begin(){
 		return m_bytes.data();
 	}
-	const unsigned char *end() const {
+	const unsigned char * end() const {
 		return m_bytes.data() + m_bytes.size();
 	}
-	unsigned char *end(){
+	unsigned char * end(){
 		return m_bytes.data() + m_bytes.size();
 	}
-	const unsigned char *data() const {
+	const unsigned char * data() const {
 		return m_bytes.data();
 	}
-	unsigned char *data(){
+	unsigned char * data(){
 		return m_bytes.data();
 	}
 	std::size_t size() const {
@@ -98,10 +98,10 @@ public:
 		return as_array();
 	}
 
-	const unsigned char &operator[](std::size_t index) const {
+	const unsigned char & operator[](std::size_t index) const {
 		return as_array()[index];
 	}
-	unsigned char &operator[](std::size_t index){
+	unsigned char & operator[](std::size_t index){
 		return as_array()[index];
 	}
 };
@@ -125,7 +125,7 @@ inline bool operator>=(const Uuid &lhs, const Uuid &rhs){
 	return std::memcmp(lhs.data(), rhs.data(), lhs.size()) >= 0;
 }
 
-extern std::ostream &operator<<(std::ostream &os, const Uuid &rhs);
+extern std::ostream & operator<<(std::ostream &os, const Uuid &rhs);
 
 }
 

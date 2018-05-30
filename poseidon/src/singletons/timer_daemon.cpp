@@ -40,7 +40,7 @@ public:
 	unsigned long get_stamp() const {
 		return m_stamp;
 	}
-	const Timer_callback &get_callback() const {
+	const Timer_callback & get_callback() const {
 		return m_callback;
 	}
 	bool is_low_level() const {

@@ -24,7 +24,7 @@ public:
 	}
 
 public:
-	const void *get_data() const {
+	const void * get_data() const {
 		return m_data;
 	}
 	std::size_t get_size() const {
@@ -35,7 +35,7 @@ public:
 	}
 };
 
-extern std::ostream &operator<<(std::ostream &os, const Hex_printer &rhs);
+extern std::ostream & operator<<(std::ostream &os, const Hex_printer &rhs);
 
 }
 

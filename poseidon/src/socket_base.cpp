@@ -172,7 +172,7 @@ bool Socket_base::did_time_out() const NOEXCEPT {
 	return atomic_load(m_timed_out, memory_order_acquire);
 }
 
-const Ip_port &Socket_base::get_remote_info() const NOEXCEPT
+const Ip_port & Socket_base::get_remote_info() const NOEXCEPT
 try {
 	POSEIDON_PROFILE_ME;
 
@@ -188,7 +188,7 @@ try {
 	POSEIDON_LOG_ERROR("std::exception thrown: what = ", e.what());
 	return unknown_ip_port();
 }
-const Ip_port &Socket_base::get_local_info() const NOEXCEPT
+const Ip_port & Socket_base::get_local_info() const NOEXCEPT
 try {
 	POSEIDON_PROFILE_ME;
 

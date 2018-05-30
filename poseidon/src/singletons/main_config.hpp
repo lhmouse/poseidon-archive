@@ -22,7 +22,7 @@ public:
 	static bool get_raw(std::string &val, const char *key){
 		return get_file()->get_raw(val, key);
 	}
-	static const std::string &get_raw(const char *key){
+	static const std::string & get_raw(const char *key){
 		return get_file()->get_raw(key);
 	}
 

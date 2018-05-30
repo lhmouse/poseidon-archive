@@ -43,7 +43,7 @@ public:
 
 private:
 	Noncopyable(const Noncopyable &);
-	Noncopyable &operator=(const Noncopyable &);
+	Noncopyable & operator=(const Noncopyable &);
 };
 
 }

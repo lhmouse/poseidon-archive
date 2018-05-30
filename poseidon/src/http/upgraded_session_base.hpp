@@ -56,8 +56,8 @@ public:
 		return m_parent.lock();
 	}
 
-	const Ip_port &get_remote_info() const NOEXCEPT;
-	const Ip_port &get_local_info() const NOEXCEPT;
+	const Ip_port & get_remote_info() const NOEXCEPT;
+	const Ip_port & get_local_info() const NOEXCEPT;
 
 	bool is_throttled() const;
 

@@ -11,7 +11,7 @@
 namespace Poseidon {
 namespace Http {
 
-extern const Option_map &empty_headers() NOEXCEPT;
+extern const Option_map & empty_headers() NOEXCEPT;
 
 class Exception : public Basic_exception {
 private:
@@ -26,7 +26,7 @@ public:
 	Status_code get_status_code() const NOEXCEPT {
 		return m_status_code;
 	}
-	const Option_map &get_headers() const NOEXCEPT {
+	const Option_map & get_headers() const NOEXCEPT {
 		return m_headers ? *m_headers : empty_headers();
 	}
 };

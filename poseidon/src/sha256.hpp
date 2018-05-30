@@ -24,7 +24,7 @@ private:
 
 private:
 	Sha256_streambuf(const Sha256_streambuf &);
-	Sha256_streambuf &operator=(const Sha256_streambuf &);
+	Sha256_streambuf & operator=(const Sha256_streambuf &);
 
 public:
 	Sha256_streambuf();
@@ -54,7 +54,7 @@ public:
 	~Sha256_ostream() OVERRIDE;
 
 public:
-	Sha256_streambuf *rdbuf() const {
+	Sha256_streambuf * rdbuf() const {
 		return const_cast<Sha256_streambuf *>(&m_sb);
 	}
 

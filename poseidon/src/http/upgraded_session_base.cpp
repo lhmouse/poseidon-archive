@@ -60,14 +60,14 @@ void Upgraded_session_base::force_shutdown() NOEXCEPT {
 	parent->force_shutdown();
 }
 
-const Ip_port &Upgraded_session_base::get_remote_info() const NOEXCEPT {
+const Ip_port & Upgraded_session_base::get_remote_info() const NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return unknown_ip_port();
 	}
 	return parent->get_remote_info();
 }
-const Ip_port &Upgraded_session_base::get_local_info() const NOEXCEPT {
+const Ip_port & Upgraded_session_base::get_local_info() const NOEXCEPT {
 	const AUTO(parent, get_parent());
 	if(!parent){
 		return unknown_ip_port();

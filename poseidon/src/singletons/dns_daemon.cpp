@@ -21,7 +21,7 @@ template class Promise_container<Sock_addr>;
 
 namespace {
 	struct Addrinfo_freeer {
-		CONSTEXPR ::addrinfo *operator()() const NOEXCEPT {
+		CONSTEXPR ::addrinfo * operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(::addrinfo *res) const NOEXCEPT {

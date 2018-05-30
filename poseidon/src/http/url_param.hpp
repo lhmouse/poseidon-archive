@@ -25,14 +25,14 @@ public:
 	bool valid() const NOEXCEPT {
 		return m_valid;
 	}
-	const std::string &str() const NOEXCEPT {
+	const std::string & str() const NOEXCEPT {
 		return m_str;
 	}
-	std::string &str() NOEXCEPT {
+	std::string & str() NOEXCEPT {
 		return m_str;
 	}
 
-	const std::string &as_string() const NOEXCEPT {
+	const std::string & as_string() const NOEXCEPT {
 		return m_str;
 	}
 	bool as_boolean() const NOEXCEPT {
@@ -87,7 +87,7 @@ public:
 	}
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Url_param &rhs){
+inline std::ostream & operator<<(std::ostream &os, const Url_param &rhs){
 	return os << rhs.str();
 }
 

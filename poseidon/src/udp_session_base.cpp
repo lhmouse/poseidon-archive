@@ -22,7 +22,7 @@ namespace {
 	}
 
 	struct Interface_list_freeer {
-		CONSTEXPR struct ::if_nameindex *operator()() NOEXCEPT {
+		CONSTEXPR struct ::if_nameindex * operator()() NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(struct ::if_nameindex *ptr) NOEXCEPT {

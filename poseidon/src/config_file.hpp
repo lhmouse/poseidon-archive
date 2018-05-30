@@ -29,7 +29,7 @@ public:
 	void clear();
 
 	bool get_raw(std::string &val, const char *key) const;
-	const std::string &get_raw(const char *key) const;
+	const std::string & get_raw(const char *key) const;
 
 	std::size_t get_all_raw(boost::container::vector<std::string> &vals, const char *key, bool including_empty = false) const;
 	boost::container::vector<std::string> get_all_raw(const char *key, bool including_empty = false) const;

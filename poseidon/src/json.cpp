@@ -314,7 +314,7 @@ namespace {
 	}
 }
 
-const Json_element &null_json_element() NOEXCEPT {
+const Json_element & null_json_element() NOEXCEPT {
 	return g_null_element;
 }
 
@@ -398,7 +398,7 @@ void Json_array::parse(std::istream &is){
 	}
 }
 
-const char *Json_element::get_type_string(Json_element::Type type){
+const char * Json_element::get_type_string(Json_element::Type type){
 	switch(type){
 	case type_boolean:
 		return "boolean";

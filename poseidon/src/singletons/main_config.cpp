@@ -17,7 +17,7 @@ namespace {
 	CONSTEXPR const char g_main_conf_name[] = "main.conf";
 
 	struct Real_path_deleter {
-		CONSTEXPR char *operator()() const NOEXCEPT {
+		CONSTEXPR char * operator()() const NOEXCEPT {
 			return NULLPTR;
 		}
 		void operator()(char *ptr) const NOEXCEPT {

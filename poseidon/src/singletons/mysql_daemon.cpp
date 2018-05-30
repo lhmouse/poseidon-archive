@@ -138,7 +138,7 @@ namespace {
 		}
 		virtual bool should_use_slave() const = 0;
 		virtual boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const = 0;
-		virtual const char *get_table() const = 0;
+		virtual const char * get_table() const = 0;
 		virtual void generate_sql(std::string &query) const = 0;
 		virtual void execute(const boost::shared_ptr<Mysql::Connection> &conn, const std::string &query) = 0;
 	};
@@ -163,7 +163,7 @@ namespace {
 		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return m_object;
 		}
-		const char *get_table() const OVERRIDE {
+		const char * get_table() const OVERRIDE {
 			return m_object->get_table();
 		}
 		void generate_sql(std::string &query) const OVERRIDE {
@@ -205,7 +205,7 @@ namespace {
 		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_table() const OVERRIDE {
+		const char * get_table() const OVERRIDE {
 			return m_object->get_table();
 		}
 		void generate_sql(std::string &query) const OVERRIDE {
@@ -244,7 +244,7 @@ namespace {
 		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_table() const OVERRIDE {
+		const char * get_table() const OVERRIDE {
 			return m_table_hint;
 		}
 		void generate_sql(std::string &query) const OVERRIDE {
@@ -278,7 +278,7 @@ namespace {
 		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_table() const OVERRIDE {
+		const char * get_table() const OVERRIDE {
 			return m_table_hint;
 		}
 		void generate_sql(std::string &query) const OVERRIDE {
@@ -323,7 +323,7 @@ namespace {
 		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_table() const OVERRIDE {
+		const char * get_table() const OVERRIDE {
 			return m_table_hint;
 		}
 		void generate_sql(std::string & /* query */) const OVERRIDE {
@@ -360,7 +360,7 @@ namespace {
 		boost::shared_ptr<const Mysql::Object_base> get_combinable_object() const OVERRIDE {
 			return VAL_INIT; // 不能合并。
 		}
-		const char *get_table() const OVERRIDE {
+		const char * get_table() const OVERRIDE {
 			return "";
 		}
 		void generate_sql(std::string &query) const OVERRIDE {

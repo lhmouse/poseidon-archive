@@ -8,7 +8,7 @@
 namespace Poseidon {
 namespace Mysql {
 
-std::ostream &operator<<(std::ostream &os, const String_escaper &rhs){
+std::ostream & operator<<(std::ostream &os, const String_escaper &rhs){
 	const AUTO_REF(ref, rhs.get());
 	os <<'\'';
 	for(AUTO(it, ref.begin()); it != ref.end(); ++it){
@@ -44,7 +44,7 @@ std::ostream &operator<<(std::ostream &os, const String_escaper &rhs){
 	return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const Date_time_formatter &rhs){
+std::ostream & operator<<(std::ostream &os, const Date_time_formatter &rhs){
 	const AUTO_REF(ref, rhs.get());
 	char str[256];
 	format_time(str, sizeof(str), ref, true);
@@ -54,7 +54,7 @@ std::ostream &operator<<(std::ostream &os, const Date_time_formatter &rhs){
 	return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const Uuid_formatter &rhs){
+std::ostream & operator<<(std::ostream &os, const Uuid_formatter &rhs){
 	const AUTO_REF(ref, rhs.get());
 	os <<'\'';
 	os <<ref;

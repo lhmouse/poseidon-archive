@@ -71,11 +71,11 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		\
 	public:	\
 		template<int indexT>	\
-		const typename base_container::nth_index<indexT>::type &get_index() const {	\
+		const typename base_container::nth_index<indexT>::type & get_index() const {	\
 			return m_elements.get<indexT>();	\
 		}	\
 		template<int indexT>	\
-		typename base_container::nth_index<indexT>::type &get_index(){	\
+		typename base_container::nth_index<indexT>::type & get_index(){	\
 			return m_elements.get<indexT>();	\
 		}	\
 		\

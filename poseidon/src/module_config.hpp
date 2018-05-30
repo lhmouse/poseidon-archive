@@ -20,7 +20,7 @@
 POSEIDON_DECLARE_MODULE_CONFIG(get_config) 展开后生成以下接口：
 
   bool get_config_raw(std::string &val, const char *key);
-  const std::string &get_config_raw(const char *key);
+  const std::string & get_config_raw(const char *key);
 
   std::size_t get_config_all_raw(boost::container::vector<std::string> &vals,
       const char *key, bool including_empty = false);
