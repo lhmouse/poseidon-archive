@@ -32,7 +32,8 @@ sudo mkdir -p "${prefix}/man"
 sudo mkdir -p "${prefix}/sbin"
 sudo mkdir -p "${prefix}/share/doc"
 
-cmake . -DCMAKE_INSTALL_PREFIX="${prefix}" -DINSTALL_INCLUDEDIR="${prefix}/include/mysql"	\
+cmake . -DCMAKE_INSTALL_PREFIX="${prefix}/mysql"	\
+	-DINSTALL_INCLUDEDIR="../include/mysql" -DINSTALL_LIBDIR="../lib"	\
 	-DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DMYSQL_UNIX_ADDR="/var/run/mysqld/mysqld.sock"
 make -j"$(nproc)"
 sudo checkinstall --backup=no --nodoc -y --addso=yes --exclude="${tmpdir}" --exclude="${HOME}"	\
