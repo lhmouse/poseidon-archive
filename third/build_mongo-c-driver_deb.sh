@@ -18,9 +18,9 @@ mkdir -p "${tmpdir}"
 cd "${tmpdir}"
 
 _archive="$(basename -- ${pkgsource})"
-[[ -f "${_archive}" ]] || (wget -O "${_archive}~" "${pkgsource}" && mv -f "${_archive}~" "${_archive}")
+test -f "${_archive}" || (wget -O "${_archive}~" "${pkgsource}" && mv -f "${_archive}~" "${_archive}")
 _unpackeddir="$(basename "${_archive}" ".tar.gz")"
-[[ -z "${_unpackeddir}" ]] || rm -rf "${_unpackeddir}"
+test -z "${_unpackeddir}" || rm -rf "${_unpackeddir}"
 tar -xzvf "${_archive}"
 cd "${_unpackeddir}"
 
