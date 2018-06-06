@@ -192,8 +192,7 @@ try {
 	buf.put(' ');
 	// Append the level name in reverse color.
 	if(output_color){
-		flags = lc->color;
-		flags ^= cfl_reverse;
+		flags = lc->color | cfl_reverse;
 		len = begin_color(str, flags);
 		buf.put(str, len);
 	}
