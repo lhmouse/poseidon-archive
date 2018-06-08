@@ -454,7 +454,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
                                     }
 #define FIELD_REPEATED(id_, Elem_)  {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": nested(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": repeated(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
                                       indent_ += s_indent_step_;	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         const AUTO(cur_, &*it_);	\
