@@ -40,7 +40,7 @@ void shift_string(std::string &value, Stream_buffer &buf, const char *name){
 		POSEIDON_THROW(Exception, status_length_error, Rcnts::view("String length too large"));
 	}
 	value.resize(static_cast<std::size_t>(length));
-	if(buf.get(&value[0], value.size()) != length){
+	if((length != 0) && (buf.get(&value[0], value.size()) != length)){
 		POSEIDON_THROW(Exception, status_end_of_stream, Rcnts::view("End of stream encountered"));
 	}
 }
