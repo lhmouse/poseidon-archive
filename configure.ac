@@ -7,6 +7,7 @@ AC_PROG_CXX
 AC_LANG([C++])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_SILENT_RULES([yes])
 LT_INIT([disable-static dlopen])
 
 AC_CHECK_LIB([rt], [clock_gettime], [], [AC_MSG_ERROR([Could not find clock library.])])
