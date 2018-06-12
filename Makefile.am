@@ -8,7 +8,7 @@ AM_LDFLAGS = -pthread
 LDADD = lib/libposeidon-main.la
 
 %.hpp.gch: %.hpp
-	${CXX} -x c++-header ${DEFS} -I. ${AM_CPPFLAGS} ${CPPFLAGS} ${AM_CXXFLAGS} ${CXXFLAGS} -Wno-error $< -o $@
+	${AM_V_CXX}${CXX} -x c++-header ${DEFS} -I. ${AM_CPPFLAGS} ${CPPFLAGS} ${AM_CXXFLAGS} ${CXXFLAGS} -Wno-error $< -o $@
 
 BUILT_SOURCES =	\
 	poseidon/src/precompiled.hpp.gch
