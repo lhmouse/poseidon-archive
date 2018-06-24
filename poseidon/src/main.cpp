@@ -43,11 +43,13 @@ namespace {
 	volatile bool g_running = true;
 
 	void sigterm_proc(int){
+		// FIXME: It is not safe to print logs inside signal handlers!
 		POSEIDON_LOG_WARNING("Received SIGTERM, will now exit...");
 		atomic_store(g_running, false, memory_order_release);
 	}
 
 	void sighup_proc(int){
+		// FIXME: It is not safe to print logs inside signal handlers!
 		POSEIDON_LOG_WARNING("Received SIGHUP, will now exit...");
 		atomic_store(g_running, false, memory_order_release);
 	}
@@ -64,9 +66,11 @@ namespace {
 			s_kill_timer = virtual_now;
 		}
 		if(saturated_sub(virtual_now, s_kill_timer) >= s_kill_timeout){
+			// FIXME: It is not safe to print logs inside signal handlers!
 			POSEIDON_LOG_FATAL("---------------------- Process is killed ----------------------");
 			std::_Exit(EXIT_FAILURE);
 		}
+		// FIXME: It is not safe to print logs inside signal handlers!
 		POSEIDON_LOG_WARNING("Received SIGINT, trying to exit gracefully... If I don't terminate in ", s_kill_timeout, " milliseconds, press ^C again.");
 		atomic_store(g_running, false, memory_order_release);
 	}
