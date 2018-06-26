@@ -262,17 +262,21 @@ void Job_dispatcher::stop(){
 	}
 }
 
-void Job_dispatcher::do_modal(const volatile bool &running){
+void Job_dispatcher::do_modal(volatile int &sig_recv){
 	unsigned timeout = 0;
 	for(;;){
+		const int sig = atomic_exchange(sig_recv, 0, memory_order_acquire);
+		if(sig != 0){
+			POSEIDON_LOG_WARNING("Received signal: ", sig);
+		}
 		bool busy;
 		do {
-			busy = pump_one_round(!atomic_load(running, memory_order_consume));
+			busy = pump_one_round(sig != 0);
 			timeout = std::min(timeout * 2u + 1u, !busy * 100u);
 		} while(busy);
 
 		Mutex::Unique_lock lock(g_fiber_map_mutex);
-		if(!atomic_load(running, memory_order_consume)){
+		if(sig != 0){
 			break;
 		}
 		g_new_job.timed_wait(lock, timeout);

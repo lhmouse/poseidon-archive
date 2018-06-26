@@ -40,39 +40,26 @@
 using namespace Poseidon;
 
 namespace {
-	volatile bool g_running = true;
+	volatile int g_sig_recv = 0;
 
-	void sigterm_proc(int){
-		// FIXME: It is not safe to print logs inside signal handlers!
-		POSEIDON_LOG_WARNING("Received SIGTERM, will now exit...");
-		atomic_store(g_running, false, memory_order_release);
-	}
-
-	void sighup_proc(int){
-		// FIXME: It is not safe to print logs inside signal handlers!
-		POSEIDON_LOG_WARNING("Received SIGHUP, will now exit...");
-		atomic_store(g_running, false, memory_order_release);
-	}
-
-	void sigint_proc(int){
-		static const boost::uint64_t s_kill_timeout = 5000;
-		static const boost::uint64_t s_reset_timeout = 10000;
-		static boost::uint64_t s_kill_timer = 0;
-
-		// 系统启动的时候这个时间是从 0 开始的，如果这时候按下 Ctrl+C 就会立即终止。
-		// 因此将计时器的起点设为该区间以外。
-		const AUTO(virtual_now, saturated_add(get_fast_mono_clock(), s_reset_timeout));
-		if(saturated_sub(virtual_now, s_kill_timer) >= s_reset_timeout){
-			s_kill_timer = virtual_now;
+	void sig_proc(int sig){
+		if(sig == SIGINT){
+			static CONSTEXPR const boost::uint64_t s_kill_timeout = 5000;
+			static CONSTEXPR const boost::uint64_t s_reset_timeout = 10000;
+			static volatile boost::uint64_t s_kill_timer = 0;
+			// 系统启动的时候这个时间是从 0 开始的，如果这时候按下 Ctrl+C 就会立即终止。
+			// 因此将计时器的起点调整为该区间以外。
+			const AUTO(virtual_now, saturated_add(get_fast_mono_clock(), s_reset_timeout));
+			AUTO(delta, saturated_sub(virtual_now, atomic_load(s_kill_timer, memory_order_relaxed)));
+			if(delta >= s_reset_timeout){
+				atomic_store(s_kill_timer, virtual_now, memory_order_relaxed);
+				delta = 0;
+			}
+			if(delta >= s_kill_timeout){
+				::raise(SIGQUIT);
+			}
 		}
-		if(saturated_sub(virtual_now, s_kill_timer) >= s_kill_timeout){
-			// FIXME: It is not safe to print logs inside signal handlers!
-			POSEIDON_LOG_FATAL("---------------------- Process is killed ----------------------");
-			std::_Exit(EXIT_FAILURE);
-		}
-		// FIXME: It is not safe to print logs inside signal handlers!
-		POSEIDON_LOG_WARNING("Received SIGINT, trying to exit gracefully... If I don't terminate in ", s_kill_timeout, " milliseconds, press ^C again.");
-		atomic_store(g_running, false, memory_order_release);
+		atomic_store(g_sig_recv, sig, memory_order_release);
 	}
 
 	Json_object make_help(const char *const (*param_info)[2]){
@@ -420,9 +407,9 @@ int main(int argc, char **argv, char **/*envp*/){
 
 	Logger::set_thread_tag("P   "); // Primary
 
-	::signal(SIGHUP, &sighup_proc);
-	::signal(SIGTERM, &sigterm_proc);
-	::signal(SIGINT, &sigint_proc);
+	::signal(SIGHUP, &sig_proc);
+	::signal(SIGTERM, &sig_proc);
+	::signal(SIGINT, &sig_proc);
 	::signal(SIGCHLD, SIG_IGN);
 	::signal(SIGPIPE, SIG_IGN);
 
@@ -487,7 +474,7 @@ int main(int argc, char **argv, char **/*envp*/){
 #endif
 
 		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Entering modal loop...");
-		Job_dispatcher::do_modal(g_running);
+		Job_dispatcher::do_modal(g_sig_recv);
 	} catch(std::exception &e){
 		Logger::finalize_mask();
 		POSEIDON_LOG_ERROR("std::exception thrown in main(): what = ", e.what());

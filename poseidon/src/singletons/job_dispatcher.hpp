@@ -20,7 +20,7 @@ public:
 	static void start();
 	static void stop();
 
-	static void do_modal(const volatile bool &running);
+	static void do_modal(volatile int &sig_recv);
 
 	static void enqueue(boost::shared_ptr<Job_base> job, boost::shared_ptr<const bool> withdrawn);
 	// Pass `promise` by value to avoid false aliasing.
