@@ -32,7 +32,6 @@ pkginclude_HEADERS =	\
 	poseidon/src/rcnts.hpp	\
 	poseidon/src/module_raii.hpp	\
 	poseidon/src/uuid.hpp	\
-	poseidon/src/hex_printer.hpp	\
 	poseidon/src/tcp_server_base.hpp	\
 	poseidon/src/event_base.hpp	\
 	poseidon/src/vint64.hpp	\
@@ -226,7 +225,6 @@ lib_libposeidon_main_la_SOURCES =	\
 	poseidon/src/hex.cpp	\
 	poseidon/src/base64.cpp	\
 	poseidon/src/uuid.cpp	\
-	poseidon/src/hex_printer.cpp	\
 	poseidon/src/config_file.cpp	\
 	poseidon/src/module_raii.cpp	\
 	poseidon/src/json.cpp	\

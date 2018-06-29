@@ -395,32 +395,41 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_FIXED(id_, n_)        {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": fixed(" <<cur_->id_.size() <<") = ";	\
-                                      os_ << ::Poseidon::Hex_printer(cur_->id_.data(), cur_->id_.size());	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": fixed(" << ::std::dec <<cur_->id_.size() <<") = ";	\
+                                      os_ << ::std::hex << ::std::setfill('0');	\
+                                      for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
+                                        os_ << ::std::setw(2) <<(*it_ & 0xFF) <<' ';	\
+                                      }	\
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_STRING(id_)           {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": string(" <<cur_->id_.size() <<") = ";	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": string(" << ::std::dec <<cur_->id_.size() <<") = ";	\
                                       os_ <<cur_->id_;	\
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_BLOB(id_)             {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": flexible(" <<cur_->id_.size() <<") = ";	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": flexible(" << ::std::dec <<cur_->id_.size() <<") = ";	\
                                       const void *data_;	\
                                       ::std::size_t size_;	\
                                       ::Poseidon::Stream_buffer::Enumeration_cookie cookie_;	\
+                                      os_ << ::std::hex << ::std::setfill('0');	\
                                       while(cur_->id_.enumerate_chunk(&data_, &size_, cookie_)){	\
-                                        os_ << ::Poseidon::Hex_printer(data_, size_);	\
+                                        for(::std::size_t i_ = 0; i_ < size_; ++i_){	\
+                                          os_ << ::std::setw(2) <<(static_cast<const unsigned char *>(data_)[i_] & 0xFF) <<' ';	\
+                                        }	\
                                       }	\
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_FLEXIBLE(id_)         {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": flexible(" <<cur_->id_.size() <<") = ";	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": flexible(" << ::std::dec <<cur_->id_.size() <<") = ";	\
                                       const void *data_;	\
                                       ::std::size_t size_;	\
                                       ::Poseidon::Stream_buffer::Enumeration_cookie cookie_;	\
+                                      os_ << ::std::hex << ::std::setfill('0');	\
                                       while(cur_->id_.enumerate_chunk(&data_, &size_, cookie_)){	\
-                                        os_ << ::Poseidon::Hex_printer(data_, size_);	\
+                                        for(::std::size_t i_ = 0; i_ < size_; ++i_){	\
+                                          os_ << ::std::setw(2) <<(static_cast<const unsigned char *>(data_)[i_] & 0xFF) <<' ';	\
+                                        }	\
                                       }	\
                                       os_ << ::std::endl;	\
                                     }
@@ -430,7 +439,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_ARRAY(id_, ...)       {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": array(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": array(" << ::std::dec <<cur_->id_.size() <<") = [" << ::std::endl;	\
                                       indent_ += s_indent_step_;	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         os_ << ::std::setw(indent_) <<"" <<"{" << ::std::endl;	\
@@ -447,7 +456,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_LIST(id_, ...)        {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": list(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": list(" << ::std::dec <<cur_->id_.size() <<") = [" << ::std::endl;	\
                                       indent_ += s_indent_step_;	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         os_ << ::std::setw(indent_) <<"" <<"{" << ::std::endl;	\
@@ -464,7 +473,7 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_REPEATED(id_, Elem_)  {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": repeated(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": repeated(" << ::std::dec <<cur_->id_.size() <<") = [" << ::std::endl;	\
                                       indent_ += s_indent_step_;	\
                                       for(AUTO(it_, cur_->id_.begin()); it_ != cur_->id_.end(); ++it_){	\
                                         const AUTO(cur_, &*it_);	\

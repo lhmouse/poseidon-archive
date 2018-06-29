@@ -17,7 +17,6 @@ class Condition_variable;
 
 class Option_map;
 class Stream_buffer;
-class Hex_printer;
 class Rcnts;
 class Ip_port;
 class Sock_addr;

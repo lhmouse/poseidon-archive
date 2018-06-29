@@ -15,9 +15,7 @@ Poseidon is a C++ framework for game server development.
 
 * CBPP  
     CBPP 是 Compressed Binary Protocol for Poseidon 的缩写，  
-    简介参见 src/cbpp/message_base.hpp 中的注释。  
     CBPP is short for 'Compressed Binary Protocol for Poseidon'.  
-    Specification of CBPP can be found in file 'src/cbpp/message_base.hpp'.  
 * HTTP 1.1  
 * WebSocket  
 * MySQL  
