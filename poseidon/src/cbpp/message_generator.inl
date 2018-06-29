@@ -385,10 +385,14 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
 #undef FIELD_REPEATED
 
 #define FIELD_VINT(id_)             {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": vint = " <<cur_->id_ << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": vint = ";	\
+                                      os_ <<cur_->id_;	\
+                                      os_ << ::std::endl;	\
                                     }
 #define FIELD_VUINT(id_)            {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": vuint = " <<cur_->id_ << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": vuint = ";	\
+                                      os_ <<cur_->id_;	\
+                                      os_ << ::std::endl;	\
                                     }
 #define FIELD_FIXED(id_, n_)        {	\
                                       os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": fixed(" <<cur_->id_.size() <<") = ";	\
@@ -396,7 +400,9 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_STRING(id_)           {	\
-                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": string(" <<cur_->id_.size() <<") = " <<cur_->id_ << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": string(" <<cur_->id_.size() <<") = ";	\
+                                      os_ <<cur_->id_;	\
+                                      os_ << ::std::endl;	\
                                     }
 #define FIELD_BLOB(id_)             {	\
                                       os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": flexible(" <<cur_->id_.size() <<") = ";	\
@@ -419,7 +425,9 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                       os_ << ::std::endl;	\
                                     }
 #define FIELD_NESTED(id_, Elem_)    {	\
+                                      os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": nested = ";	\
                                       cur_->id_.dump_debug(os_, indent_);	\
+                                      os_ << ::std::endl;	\
                                     }
 #define FIELD_ARRAY(id_, ...)       {	\
                                       os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": array(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
@@ -435,7 +443,8 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                         os_ << ::std::setw(indent_) <<"" <<"}" << ::std::endl;	\
                                       }	\
                                       indent_ -= s_indent_step_;	\
-                                      os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<"]";	\
+                                      os_ << ::std::endl;	\
                                     }
 #define FIELD_LIST(id_, ...)        {	\
                                       os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": list(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
@@ -451,7 +460,8 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                         os_ << ::std::setw(indent_) <<"" <<"}" << ::std::endl;	\
                                       }	\
                                       indent_ -= s_indent_step_;	\
-                                      os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<"]";	\
+                                      os_ << ::std::endl;	\
                                     }
 #define FIELD_REPEATED(id_, Elem_)  {	\
                                       os_ << ::std::setw(indent_) <<"" <<POSEIDON_STRINGIFY(id_) <<": repeated(" <<cur_->id_.size() <<") = [" << ::std::endl;	\
@@ -461,14 +471,15 @@ void MESSAGE_NAME::dump_debug(::std::ostream &os_, int indent_initial_) const {
                                         cur_->dump_debug(os_, indent_);	\
                                       }	\
                                       indent_ -= s_indent_step_;	\
-                                      os_ << ::std::setw(indent_) <<"" <<"]" << ::std::endl;	\
+                                      os_ << ::std::setw(indent_) <<"" <<"]";	\
+                                      os_ << ::std::endl;	\
                                     }
 
 	os_ << std::setw(indent_) <<"" <<POSEIDON_LAZY(POSEIDON_STRINGIFY, MESSAGE_NAME) <<"(" <<get_id() <<") = {" << ::std::endl;
 	indent_ += s_indent_step_;
 	MESSAGE_FIELDS
 	indent_ -= s_indent_step_;
-	os_ << std::setw(indent_) <<"" <<"}" << ::std::endl;
+	os_ << std::setw(indent_) <<"" <<"}";
 }
 
 #pragma GCC diagnostic pop
