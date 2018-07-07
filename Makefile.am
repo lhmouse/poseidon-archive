@@ -7,7 +7,7 @@ AM_CXXFLAGS = -Wnon-virtual-dtor
 AM_LDFLAGS = -pthread
 LDADD = lib/libposeidon-main.la
 
-%.hpp.gch: %.hpp
+%.hpp.gch: %.hpp config.h
 	${AM_V_CXX}${CXX} -x c++-header ${DEFS} -I. ${AM_CPPFLAGS} ${CPPFLAGS} ${AM_CXXFLAGS} ${CXXFLAGS} -Wno-error $< -o $@
 
 BUILT_SOURCES =	\
