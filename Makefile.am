@@ -182,7 +182,8 @@ pkginclude_mongodb_HEADERS =	\
 endif
 
 lib_LTLIBRARIES =	\
-	lib/libposeidon-main.la
+	lib/libposeidon-main.la	\
+	lib/libposeidon-test.la
 
 lib_libposeidon_main_la_SOURCES =	\
 	poseidon/src/string.cpp	\
@@ -305,6 +306,15 @@ endif
 
 lib_libposeidon_main_la_LDFLAGS =	\
 	-Wl,--no-undefined -no-undefined -version-info 25:0:0
+
+lib_libposeidon_test_la_SOURCES =	\
+	poseidon/src/test.cpp
+
+lib_libposeidon_test_la_LDFLAGS =	\
+	-Wl,--no-undefined -no-undefined -version-info 0:0:0
+
+lib_libposeidon_test_la_LIBADD =	\
+	-lposeidon-main
 
 bin_PROGRAMS =	\
 	bin/poseidon
