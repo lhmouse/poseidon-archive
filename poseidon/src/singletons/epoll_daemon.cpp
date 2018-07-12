@@ -54,7 +54,7 @@ namespace {
 		// Invariants.
 		boost::shared_ptr<const Weakable_socket> weakable;
 		// Indices.
-		const Socket_base *ptr;
+		const volatile Socket_base *ptr;
 		boost::uint64_t read_time;
 		boost::uint64_t write_time;
 		int err_code;
@@ -348,7 +348,7 @@ void Epoll_daemon::add_socket(const boost::shared_ptr<Socket_base> &socket, bool
 		throw;
 	}
 }
-bool Epoll_daemon::mark_socket_writable(const Socket_base *ptr) NOEXCEPT {
+bool Epoll_daemon::mark_socket_writable(const volatile Socket_base *ptr) NOEXCEPT {
 	POSEIDON_PROFILE_ME;
 
 	const Recursive_mutex::Unique_lock lock(g_mutex);
