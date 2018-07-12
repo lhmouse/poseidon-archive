@@ -314,7 +314,7 @@ lib_libposeidon_test_la_LDFLAGS =	\
 	-Wl,--no-undefined -no-undefined -version-info 0:0:0
 
 lib_libposeidon_test_la_LIBADD =	\
-	-lposeidon-main
+	${LDADD}
 
 bin_PROGRAMS =	\
 	bin/poseidon
