@@ -4,7 +4,6 @@ AM_CPPFLAGS = -Wall -Wextra -Werror -Wconversion -Wsign-conversion	\
 	-Wundef -Wshadow -Wstrict-aliasing=2 -Wstrict-overflow=2 -Wno-error=pragmas	\
 	-Wno-long-long -Wno-variadic-macros -Wno-error=unused-{function,variable,parameter}	\
 	-pipe -fPIC -DPIC -pthread
-
 AM_CXXFLAGS = -Wnon-virtual-dtor
 AM_LDFLAGS = -pthread
 LDADD = lib/libposeidon-main.la
