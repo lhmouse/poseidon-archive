@@ -1,8 +1,10 @@
 ACLOCAL_AMFLAGS = -I m4
-AM_CPPFLAGS = -Wall -Wextra -Wconversion -Wsign-conversion -Wno-error=unused	\
-	-Winvalid-pch -Wwrite-strings -Wsuggest-attribute=noreturn -Wswitch-enum -Wundef -Wshadow	\
-	-Wstrict-aliasing=2 -Wstrict-overflow=2 -Wno-error=pragmas -Wno-error=unknown-warning-option	\
+AM_CPPFLAGS = -Wall -Wextra -Werror -Wconversion -Wsign-conversion	\
+	-Winvalid-pch -Wno-missing-field-initializers -Wwrite-strings -Wsuggest-attribute=noreturn	\
+	-Wundef -Wshadow -Wstrict-aliasing=2 -Wstrict-overflow=2 -Wno-error=pragmas	\
+	-Wno-long-long -Wno-variadic-macros -Wno-error=unused-{function,variable,parameter}	\
 	-pipe -fPIC -DPIC -pthread
+
 AM_CXXFLAGS = -Wnon-virtual-dtor
 AM_LDFLAGS = -pthread
 LDADD = lib/libposeidon-main.la
