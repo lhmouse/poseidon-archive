@@ -267,7 +267,7 @@ void Job_dispatcher::do_modal(volatile int &sig_recv){
 	for(;;){
 		const int sig = atomic_exchange(sig_recv, 0, memory_order_acquire);
 		if(sig != 0){
-			POSEIDON_LOG_WARNING("Received signal: ", sig);
+			POSEIDON_LOG_WARNING("Received signal: ", sig, " (", ::strsignal(sig), ")");
 		}
 		bool busy;
 		do {
