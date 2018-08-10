@@ -203,7 +203,6 @@ lib_libposeidon_main_la_SOURCES =	\
 	poseidon/src/rcnts.cpp	\
 	poseidon/src/csv_document.cpp	\
 	poseidon/src/job_base.cpp	\
-	poseidon/src/async_job.cpp	\
 	poseidon/src/system_http_servlet_base.cpp	\
 	poseidon/src/option_map.cpp	\
 	poseidon/src/ssl_raii.cpp	\
@@ -306,7 +305,7 @@ lib_libposeidon_main_la_SOURCES +=	\
 endif
 
 lib_libposeidon_main_la_LDFLAGS =	\
-	-Wl,--no-undefined -no-undefined -version-info 25:0:0
+	-Wl,--no-undefined -no-undefined -version-info 26:0:0
 
 lib_libposeidon_test_la_SOURCES =	\
 	poseidon/src/test.cpp
