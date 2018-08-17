@@ -45,8 +45,6 @@ namespace {
 		std::size_t len = 0;
 		buf[len++] = '\x1B';
 		buf[len++] = '[';
-		buf[len++] = '0';
-		buf[len++] = ';';
 		buf[len++] = '3';
 		buf[len++] = (char)('0' + (((flags & 0007) >> 0) & 7));
 		if(flags & cfl_bright){
@@ -69,7 +67,6 @@ namespace {
 		std::size_t len = 0;
 		buf[len++] = '\x1B';
 		buf[len++] = '[';
-		buf[len++] = '0';
 		buf[len++] = 'm';
 		buf[len] = 0;
 		return len;
