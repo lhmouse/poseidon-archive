@@ -1,6 +1,4 @@
-#!/bin/bash
-
-set -e
+#!/bin/bash -e
 
 _common_pp="-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC"
 _c_pp="-std=c99"

@@ -1,6 +1,4 @@
-#!/bin/bash
-
-set -e
+#!/bin/bash -e
 
 _pwd="$(pwd)"
 _cmd="${_pwd}/bin/poseidon"

@@ -1,6 +1,4 @@
-#!/bin/bash
-
-set -e
+#!/bin/bash -e
 
 _common_pp="-DNDEBUG"
 _c_pp="-std=c99"
