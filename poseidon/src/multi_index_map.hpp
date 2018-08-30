@@ -156,7 +156,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		::std::pair<iterator, bool> insert(const value_type &val){	\
 			return m_elements.insert(val);	\
 		}	\
-	ENABLE_IF_CXX11(	\
+	POSEIDON_ENABLE_IF_CXX11(	\
 		::std::pair<iterator, bool> insert(value_type &&val){	\
 			return m_elements.insert(::std::move(val));	\
 		}	\
@@ -164,7 +164,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		iterator insert(iterator pos, const value_type &val){	\
 			return m_elements.insert(pos, val);	\
 		}	\
-	ENABLE_IF_CXX11(	\
+	POSEIDON_ENABLE_IF_CXX11(	\
 		iterator insert(iterator pos, value_type &&val){	\
 			return m_elements.insert(pos, ::std::move(val));	\
 		}	\
@@ -180,7 +180,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		bool replace(iterator pos, const value_type &val){	\
 			return m_elements.replace(pos, val);	\
 		}	\
-	ENABLE_IF_CXX11(	\
+	POSEIDON_ENABLE_IF_CXX11(	\
 		bool replace(iterator pos, value_type &&val){	\
 			return m_elements.replace(pos, ::std::move(val));	\
 		}	\
@@ -190,7 +190,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		::std::pair<typename base_container::nth_index<indexT>::type::iterator, bool>	insert(const value_type &val){	\
 			return get_index<indexT>().insert(val);	\
 		}	\
-	ENABLE_IF_CXX11(	\
+	POSEIDON_ENABLE_IF_CXX11(	\
 		template<int indexT>	\
 		::std::pair<typename base_container::nth_index<indexT>::type::iterator, bool> insert(value_type &&val){	\
 			return get_index<indexT>().insert(::std::move(val));	\
@@ -200,7 +200,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		typename base_container::nth_index<indexT>::type::iterator insert(typename base_container::nth_index<indexT>::type::iterator hint, const value_type &val){	\
 			return get_index<indexT>().insert(hint, val);	\
 		}	\
-	ENABLE_IF_CXX11(	\
+	POSEIDON_ENABLE_IF_CXX11(	\
 		template<int indexT>	\
 		typename base_container::nth_index<indexT>::type::iterator insert(typename base_container::nth_index<indexT>::type::iterator hint, value_type &&val){	\
 			return get_index<indexT>().insert(hint, ::std::move(val));	\
@@ -224,7 +224,7 @@ assert(c.upper_bound<1>("zzz") == c.end<1>());  // 通过。
 		bool replace(typename base_container::nth_index<indexT>::type::iterator pos, const value_type &val){	\
 			return get_index<indexT>().replace(pos, val);	\
 		}	\
-	ENABLE_IF_CXX11(	\
+	POSEIDON_ENABLE_IF_CXX11(	\
 		template<int indexT>	\
 		bool replace(typename base_container::nth_index<indexT>::type::iterator pos, value_type &&val){	\
 			return get_index<indexT>().replace(pos, ::std::move(val));	\

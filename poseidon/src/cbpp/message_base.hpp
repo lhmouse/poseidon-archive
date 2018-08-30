@@ -29,7 +29,7 @@ public:
 	virtual void dump_debug(std::ostream &os, int indent_initial = 0) const = 0;
 
 public:
-	ENABLE_IF_CXX11(explicit) operator Stream_buffer() const {
+	POSEIDON_ENABLE_IF_CXX11(explicit) operator Stream_buffer() const {
 		Stream_buffer buffer;
 		serialize(buffer);
 		return buffer;

@@ -99,13 +99,13 @@ pkginclude_singletons_HEADERS =	\
 	poseidon/src/singletons/profile_depository.hpp	\
 	poseidon/src/singletons/workhorse_camp.hpp	\
 	poseidon/src/singletons/simple_http_client_daemon.hpp
-if ENABLE_MYSQL
+if enable_mysql
 pkginclude_singletons_HEADERS += poseidon/src/singletons/mysql_daemon.hpp
 endif
-if ENABLE_MONGODB
+if enable_mongodb
 pkginclude_singletons_HEADERS += poseidon/src/singletons/mongodb_daemon.hpp
 endif
-if ENABLE_MAGIC
+if enable_magic
 pkginclude_singletons_HEADERS += poseidon/src/singletons/magic_daemon.hpp
 endif
 
@@ -160,7 +160,7 @@ pkginclude_cbpp_HEADERS =	\
 	poseidon/src/cbpp/status_codes.hpp	\
 	poseidon/src/cbpp/exception.hpp
 
-if ENABLE_MYSQL
+if enable_mysql
 pkginclude_mysqldir = ${pkgincludedir}/mysql
 pkginclude_mysql_HEADERS =	\
 	poseidon/src/mysql/fwd.hpp	\
@@ -171,7 +171,7 @@ pkginclude_mysql_HEADERS =	\
 	poseidon/src/mysql/formatting.hpp
 endif
 
-if ENABLE_MONGODB
+if enable_mongodb
 pkginclude_mongodbdir = ${pkgincludedir}/mongodb
 pkginclude_mongodb_HEADERS =	\
 	poseidon/src/mongodb/fwd.hpp	\
@@ -283,7 +283,7 @@ lib_libposeidon_main_la_SOURCES =	\
 	poseidon/src/websocket/low_level_client.cpp	\
 	poseidon/src/websocket/client.cpp	\
 	poseidon/src/websocket/exception.cpp
-if ENABLE_MYSQL
+if enable_mysql
 lib_libposeidon_main_la_SOURCES +=	\
 	poseidon/src/singletons/mysql_daemon.cpp	\
 	poseidon/src/mysql/object_base.cpp	\
@@ -291,7 +291,7 @@ lib_libposeidon_main_la_SOURCES +=	\
 	poseidon/src/mysql/formatting.cpp	\
 	poseidon/src/mysql/connection.cpp
 endif
-if ENABLE_MONGODB
+if enable_mongodb
 lib_libposeidon_main_la_SOURCES +=	\
 	poseidon/src/singletons/mongodb_daemon.cpp	\
 	poseidon/src/mongodb/object_base.cpp	\
@@ -299,7 +299,7 @@ lib_libposeidon_main_la_SOURCES +=	\
 	poseidon/src/mongodb/connection.cpp	\
 	poseidon/src/mongodb/bson_builder.cpp
 endif
-if ENABLE_MAGIC
+if enable_magic
 lib_libposeidon_main_la_SOURCES +=	\
 	poseidon/src/singletons/magic_daemon.cpp
 endif

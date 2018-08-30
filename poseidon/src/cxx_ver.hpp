@@ -17,15 +17,15 @@
 #endif
 
 #ifdef POSEIDON_CXX11
-#  define ENABLE_IF_CXX11(...)     __VA_ARGS__
+#  define POSEIDON_ENABLE_IF_CXX11(...)     __VA_ARGS__
 #else
-#  define ENABLE_IF_CXX11(...)
+#  define POSEIDON_ENABLE_IF_CXX11(...)
 #endif
 
 #ifdef POSEIDON_CXX14
-#  define ENABLE_IF_CXX14(...)     __VA_ARGS__
+#  define POSEIDON_ENABLE_IF_CXX14(...)     __VA_ARGS__
 #else
-#  define ENABLE_IF_CXX14(...)
+#  define POSEIDON_ENABLE_IF_CXX14(...)
 #endif
 
 #ifdef POSEIDON_CXX11

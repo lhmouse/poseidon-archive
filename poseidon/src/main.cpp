@@ -15,13 +15,13 @@
 #include "singletons/filesystem_daemon.hpp"
 #include "singletons/profile_depository.hpp"
 #include "singletons/simple_http_client_daemon.hpp"
-#ifdef ENABLE_MYSQL
+#ifdef POSEIDON_ENABLE_MYSQL
 #  include "singletons/mysql_daemon.hpp"
 #endif
-#ifdef ENABLE_MONGODB
+#ifdef POSEIDON_ENABLE_MONGODB
 #  include "singletons/mongodb_daemon.hpp"
 #endif
-#ifdef ENABLE_MAGIC
+#ifdef POSEIDON_ENABLE_MAGIC
 #  include "singletons/magic_daemon.hpp"
 #endif
 #include "log.hpp"
@@ -423,15 +423,15 @@ int main(int argc, char **argv, char **/*envp*/){
 #define START(x_)   const Raii_singleton_runner<x_> POSEIDON_UNIQUE_NAME
 
 		START(Profile_depository);
-#ifdef ENABLE_MAGIC
+#ifdef POSEIDON_ENABLE_MAGIC
 		START(Magic_daemon);
 #endif
 		START(Dns_daemon);
 		START(File_system_daemon);
-#ifdef ENABLE_MYSQL
+#ifdef POSEIDON_ENABLE_MYSQL
 		START(Mysql_daemon);
 #endif
-#ifdef ENABLE_MONGODB
+#ifdef POSEIDON_ENABLE_MONGODB
 		START(Mongodb_daemon);
 #endif
 		START(Job_dispatcher);
@@ -464,11 +464,11 @@ int main(int argc, char **argv, char **/*envp*/){
 			Module_depository::load(path);
 		}
 
-#ifdef ENABLE_MYSQL
+#ifdef POSEIDON_ENABLE_MYSQL
 		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MySQL operations to complete...");
 		Mysql_daemon::wait_for_all_async_operations();
 #endif
-#ifdef ENABLE_MONGODB
+#ifdef POSEIDON_ENABLE_MONGODB
 		POSEIDON_LOG(Logger::special_major | Logger::level_info, "Waiting for all asynchronous MongoDB operations to complete...");
 		Mongodb_daemon::wait_for_all_async_operations();
 #endif
