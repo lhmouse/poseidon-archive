@@ -6,6 +6,7 @@
 #include "atomic.hpp"
 #include "time.hpp"
 #include "singletons/main_config.hpp"
+#include "flags.hpp"
 #include <unistd.h>
 #include <sys/syscall.h>
 
@@ -46,16 +47,16 @@ namespace {
 		buf[len++] = '\x1B';
 		buf[len++] = '[';
 		buf[len++] = '3';
-		buf[len++] = (char)('0' + (((flags & 0007) >> 0) & 7));
-		if(flags & cfl_bright){
+		buf[len++] = static_cast<char>('0' + (((flags & 0007) >> 0) & 7));
+		if(has_any_flags_of(flags, cfl_bright) && has_none_flags_of(flags, cfl_reverse)){
 			buf[len++] = ';';
 			buf[len++] = '1';
 		}
-		if(flags & cfl_blinking){
+		if(has_any_flags_of(flags, cfl_blinking)){
 			buf[len++] = ';';
 			buf[len++] = '5';
 		}
-		if(flags & cfl_reverse){
+		if(has_any_flags_of(flags, cfl_reverse)){
 			buf[len++] = ';';
 			buf[len++] = '7';
 		}
@@ -80,14 +81,14 @@ boost::uint64_t Logger::get_mask() NOEXCEPT {
 	return atomic_load(g_mask, memory_order_relaxed);
 }
 boost::uint64_t Logger::set_mask(boost::uint64_t to_disable, boost::uint64_t to_enable) NOEXCEPT {
-	boost::uint64_t old_mask, new_mask;
-	old_mask = atomic_load(g_mask, memory_order_relaxed);
+	boost::uint64_t mask_old, mask_new;
+	mask_old = atomic_load(g_mask, memory_order_relaxed);
 	do {
-		new_mask = old_mask;
-		new_mask &= ~to_disable;
-		new_mask |= to_enable;
-	} while(!atomic_compare_exchange(g_mask, old_mask, new_mask, memory_order_relaxed, memory_order_relaxed));
-	return old_mask;
+		mask_new = mask_old;
+		remove_flags(mask_new, to_disable);
+		add_flags(mask_new, to_enable);
+	} while(!atomic_compare_exchange(g_mask, mask_old, mask_new, memory_order_relaxed, memory_order_relaxed));
+	return mask_old;
 }
 
 bool Logger::initialize_mask_from_config(){
@@ -95,16 +96,16 @@ bool Logger::initialize_mask_from_config(){
 	if(log_masked_levels.empty()){
 		return false;
 	}
-	boost::uint64_t new_mask = -1ull;
+	boost::uint64_t mask_new = -1ull;
 	unsigned index = 0;
 	for(AUTO(it, log_masked_levels.rbegin()); (it != log_masked_levels.rend()) && (index < 64); ++it){
 		switch(*it){
 		case '0':
-			new_mask |= (1ull << index);
+			add_flags(mask_new, 1ull << index);
 			++index;
 			break;
 		case '1':
-			new_mask &= ~(1ull << index);
+			remove_flags(mask_new, 1ull << index);
 			++index;
 			break;
 		case ' ':
@@ -118,7 +119,7 @@ bool Logger::initialize_mask_from_config(){
 			throw std::invalid_argument("Invalid log_masked_levels string in main.conf");
 		}
 	}
-	set_mask(-1ull, new_mask);
+	set_mask(-1ull, mask_new);
 	return true;
 }
 void Logger::finalize_mask() NOEXCEPT {
@@ -140,7 +141,7 @@ Logger::Logger(boost::uint64_t mask, const char *file, std::size_t line) NOEXCEP
 Logger::~Logger() NOEXCEPT
 try {
 	const unsigned level = static_cast<unsigned>(__builtin_ctzll(m_mask | level_trace));
-	const Level_element *const lc = &g_levels.at(level);
+	const Level_element *const lc = g_levels.data() + level;
 	const int output_fd = lc->to_stderr ? STDERR_FILENO : STDOUT_FILENO;
 	const bool output_color = ::isatty(output_fd);
 
