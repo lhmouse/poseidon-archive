@@ -19,7 +19,7 @@ namespace {
 		cfg_green    = 0002,
 		cfg_yellow   = 0003,
 		cfg_blue     = 0004,
-		cfg_magneta  = 0005,
+		cfg_magenta  = 0005,
 		cfg_cyan     = 0006,
 		cfg_white    = 0007,
 
@@ -34,7 +34,7 @@ namespace {
 		bool to_stderr;
 	};
 	CONSTEXPR const boost::array<Level_element, 6> g_levels = {{
-		{ "FATAL", cfg_magneta | cfl_bright, 1 },
+		{ "FATAL", cfg_magenta | cfl_bright, 1 },
 		{ "ERROR", cfg_red     | cfl_bright, 1 },
 		{ "WARN ", cfg_yellow  | cfl_bright, 1 },
 		{ "INFO ", cfg_green               , 0 },
@@ -162,9 +162,9 @@ try {
 		buf.put(str, len);
 	}
 	buf.put(' ');
-	// Append the thread tag in reverse brightred (when outputting to stderr) or yellow (when outputting to stdout).
+	// Append the thread tag in reverse brightyellow (when outputting to stderr) or cyan (when outputting to stdout).
 	if(output_color){
-		flags = lc->to_stderr ? (cfg_red | cfl_bright) : cfg_yellow;
+		flags = lc->to_stderr ? (cfg_yellow | cfl_bright) : cfg_cyan;
 		flags ^= cfl_reverse;
 		len = begin_color(str, flags);
 		buf.put(str, len);
@@ -175,9 +175,9 @@ try {
 		buf.put(str, len);
 	}
 	buf.put(' ');
-	// Append the thread id in brightred (when outputting to stderr) or yellow (when outputting to stdout).
+	// Append the thread id in brightyellow (when outputting to stderr) or cyan (when outputting to stdout).
 	if(output_color){
-		flags = lc->to_stderr ? (cfg_red | cfl_bright) : cfg_yellow;
+		flags = lc->to_stderr ? (cfg_yellow | cfl_bright) : cfg_cyan;
 		len = begin_color(str, flags);
 		buf.put(str, len);
 	}
