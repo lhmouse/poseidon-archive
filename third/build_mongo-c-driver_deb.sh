@@ -3,7 +3,7 @@
 prefix="/usr/local"
 
 pkgname="libmongoc-dev"
-pkgversion="1.9.5"
+pkgversion="1.13.0"
 pkglicense="Apache"
 pkggroup="http://mongoc.org/"
 pkgsource="https://github.com/mongodb/mongo-c-driver/releases/download/${pkgversion}/mongo-c-driver-${pkgversion}.tar.gz"
@@ -30,19 +30,11 @@ sudo mkdir -p "${prefix}/man"
 sudo mkdir -p "${prefix}/sbin"
 sudo mkdir -p "${prefix}/share/doc"
 
-pushd "src/libbson"
-./configure --prefix="${prefix}"
-find "src/bson" -name "*.h" -execdir sed -i "s@#include <bson.h>@#include \"bson.h\"@" {} +
-make -j"$(nproc)"
-sudo checkinstall --backup=no --nodoc -y --addso=yes --exclude="${tmpdir}" --exclude="${HOME}"	\
-	--pkgname="libbson-dev" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
-	--pkgsource="${pkgsource}" --maintainer="${maintainer}" --provides="libbson-1.0-dev"
-sudo mv *.deb "${dstdir}/"
-popd
+echo 'install (FILES ${HEADERS} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/bson")' >>"src/libbson/CMakeLists.txt"
+echo 'install (FILES ${HEADERS} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/mongoc")' >>"src/libmongoc/CMakeLists.txt"
 
-./configure --prefix="${prefix}"	\
-	--disable-automatic-init-and-cleanup --with-libbson=system
-find "src/mongoc" -name "*.h" -execdir sed -i "s@#include <bson.h>@#include <libbson-1.0/bson.h>@" {} +
+cmake . -DCMAKE_INSTALL_PREFIX="${prefix}"	\
+	-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_BSON=ON
 make -j"$(nproc)"
 sudo checkinstall --backup=no --nodoc -y --addso=yes --exclude="${tmpdir}" --exclude="${HOME}"	\
 	--pkgname="${pkgname}" --pkgversion="${pkgversion}" --pkglicense="${pkglicense}" --pkggroup="${pkggroup}"	\
