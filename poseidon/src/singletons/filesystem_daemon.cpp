@@ -49,6 +49,7 @@ namespace {
 			}
 		}
 
+		block.found = true;
 		block.size_total = static_cast<boost::uint64_t>(stat_buf.st_size);
 		block.begin = begin;
 

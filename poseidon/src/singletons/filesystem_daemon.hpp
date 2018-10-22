@@ -14,6 +14,7 @@
 namespace Poseidon {
 
 struct File_block_read {
+	bool found;
 	boost::uint64_t size_total;
 	boost::uint64_t begin;
 	Stream_buffer data;
