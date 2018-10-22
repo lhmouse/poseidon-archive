@@ -427,7 +427,7 @@ int main(int argc, char **argv, char **/*envp*/){
 		START(Magic_daemon);
 #endif
 		START(Dns_daemon);
-		START(File_system_daemon);
+		START(Filesystem_daemon);
 #ifdef POSEIDON_ENABLE_MYSQL
 		START(Mysql_daemon);
 #endif

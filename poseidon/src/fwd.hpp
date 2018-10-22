@@ -75,7 +75,7 @@ class Timer;
 class Dns_daemon;
 class Epoll_daemon;
 class Event_dispatcher;
-class File_system_daemon;
+class Filesystem_daemon;
 class Job_dispatcher;
 class Main_config;
 class Module_depository;

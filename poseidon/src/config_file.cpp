@@ -164,7 +164,7 @@ void Config_file::load(const std::string &path){
 	POSEIDON_PROFILE_ME;
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Loading config file: ", path);
 
-	AUTO(block, File_system_daemon::load(path));
+	AUTO(block, Filesystem_daemon::load(path));
 	POSEIDON_LOG(Logger::special_major | Logger::level_info, "Read ", block.size_total, " byte(s) from ", path);
 
 	VALUE_TYPE(m_contents) contents;
@@ -237,7 +237,7 @@ void Config_file::save(const std::string &path){
 		escape(os, it->second.data(), it->second.size());
 		os <<std::endl;
 	}
-	File_system_daemon::save(path, STD_MOVE(os.get_buffer()));
+	Filesystem_daemon::save(path, STD_MOVE(os.get_buffer()));
 }
 
 }

@@ -21,7 +21,7 @@ struct File_block_read {
 
 extern template class Promise_container<File_block_read>;
 
-class File_system_daemon {
+class Filesystem_daemon {
 public:
 	enum {
 		limit_eof        = -1ull,
@@ -30,7 +30,7 @@ public:
 	};
 
 private:
-	File_system_daemon();
+	Filesystem_daemon();
 
 public:
 	static void start();
