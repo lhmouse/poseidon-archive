@@ -90,12 +90,13 @@ boost::uint64_t assemble_time(const Date_time &dt){
 		ms = -1ull;
 	} else {
 		::tm desc;
-		desc.tm_year = dt.yr - 1900;
-		desc.tm_mon  = dt.mon - 1;
-		desc.tm_mday = dt.day;
-		desc.tm_hour = dt.hr;
-		desc.tm_min  = dt.min;
-		desc.tm_sec  = dt.sec;
+		desc.tm_year  = dt.yr - 1900;
+		desc.tm_mon   = dt.mon - 1;
+		desc.tm_mday  = dt.day;
+		desc.tm_hour  = dt.hr;
+		desc.tm_min   = dt.min;
+		desc.tm_sec   = dt.sec;
+		desc.tm_isdst = -1;
 		ms = (boost::uint64_t)::timegm(&desc) * 1000 + dt.ms;
 	}
 	return ms;
