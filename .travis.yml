@@ -14,29 +14,28 @@ addons:
       - cmake
       - checkinstall
 
-matrix:
-  include:
-    - env: "_config=debug_cxx98"
-    - env: "_config=debug_cxx11"
-    - env: "_config=optimized_debug_cxx98"
-    - env: "_config=optimized_debug_cxx11"
-    - env: "_config=release_cxx98"
-    - env: "_config=release_cxx11"
+env:
+  - _config="debug_cxx98"
+  - _config="debug_cxx11"
+  - _config="optimized_debug_cxx98"
+  - _config="optimized_debug_cxx11"
+  - _config="release_cxx98"
+  - _config="release_cxx11"
 
 before_install:
-  - "pushd third"
-  - "./build_mysql-connector-c_deb.sh"
-  - "./build_mongo-c-driver_deb.sh"
-  - "popd"
+  - pushd third
+  - ./build_mysql-connector-c_deb.sh
+  - ./build_mongo-c-driver_deb.sh
+  - popd
 
 install:
-  - "./reconfig_${_config}.sh"
-  - "make -j$(nproc)"
-  - "make check"
-  - "./check_includes.sh"
+  - ./reconfig_${_config}.sh
+  - make -j$(nproc)
+  - make check
+  - ./check_includes.sh
 
 script:
-  - "./makedeb.sh"
+  - ./makedeb.sh
 
 notifications:
   irc:
