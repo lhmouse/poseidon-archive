@@ -1,4 +1,4 @@
-|CI            |Category  |Host OS       |Build for OS  |Build Status     |
+|CI            |Category  |Build on OS   |Host OS       |Build Status     |
 |:-------------|:---------|:-------------|:-------------|:----------------|
 |**Travis CI** |Primary   |Ubuntu Trusty |Ubuntu Trusty |[![Build Status](https://travis-ci.org/lhmouse/poseidon.svg?branch=master)](https://travis-ci.org/lhmouse/poseidon) |
 
