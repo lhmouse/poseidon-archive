@@ -1,0 +1,3 @@
+[submodule "asteria"]
+	path = asteria
+	url = https://github.com/lhmouse/asteria.git
