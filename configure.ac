@@ -12,7 +12,8 @@ LT_INIT([disable-static])
 
 AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR(dl library not found)])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR(pthread library not found)])
-AC_CHECK_LIB([asteria], [_ZN7Asteria14Global_ContextD2Ev], [], [AC_MSG_ERROR(libasteria not found)])
+AC_CHECK_LIB([asteria], [_ZN7Asteria14Global_ContextD2Ev], [], [AC_MSG_ERROR(Asteria not found)])
+AC_CHECK_LIB([ssl], [SSL_CTX_new], [], [AC_MSG_ERROR(OpenSSL not found)])
 
 AC_ARG_ENABLE([debug-checks], AS_HELP_STRING([--enable-debug-checks], [enable assertions]))
 AM_CONDITIONAL([enable_debug_checks], [test "${enable_debug_checks}" == "yes"])
