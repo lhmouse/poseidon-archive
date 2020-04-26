@@ -18,9 +18,6 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/fwd.cpp  \
   ${NOTHING}
 
-lib_libposeidon_la_LIBADD =  \
-  lib/librocket.la
-
 lib_libposeidon_la_LDFLAGS =  \
   -Wl,--no-undefined -no-undefined -version-info 0:0:0
 

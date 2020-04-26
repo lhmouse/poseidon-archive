@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 NOTHING =
 
 # Compiler options
-AM_CPPFLAGS = -pipe -pthread -Wall -Wextra  \
+AM_CPPFLAGS = -pipe -pthread -Wall -Wextra -fPIC -DPIC  \
   -D_FILE_OFFSET_BITS=64 -D_POSIX_C_SOURCE=200809 -D_GNU_SOURCE -D_WIN32_WINNT=0x0600  \
   -f{inline-limit=2400,strict-{aliasing,overflow},merge-all-constants}  \
   -fno-{math-errno,trapping-math,devirtualize-speculatively}  \
@@ -15,7 +15,7 @@ AM_CXXFLAGS = -include .pch.hpp -std=gnu++14 -Wp,-std=c++11 -fno-gnu-keywords  \
   -Werror={non-virtual-dtor,missing-declarations}
 
 AM_DEFAULT_SOURCE_EXT = .cpp
-LDADD = lib/libposeidon.la lib/libasteria.la
+LDADD = lib/libposeidon.la
 
 # Pre-compiled header
 BUILT_SOURCES =  \
@@ -45,18 +45,17 @@ noinst_LIBRARIES =
 noinst_LTLIBRARIES =
 TESTS = ${check_PROGRAMS}
 
-pkginclude_HEADERS =
+include_HEADERS =
 lib_LIBRARIES =
 lib_LTLIBRARIES =
 bin_PROGRAMS =
 
 check_HEADERS =
-check_LTRARIES =
 check_LIBRARIES =
+check_LTLIBRARIES =
 check_PROGRAMS =
 
 # Programs and libraries
-include asteria/rocket/Makefile.inc.am
 include poseidon/src/Makefile.inc.am
 
 # Tests
