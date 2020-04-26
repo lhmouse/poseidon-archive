@@ -21,5 +21,6 @@
 #include <algorithm>
 #include <memory>
 #include <functional>
+#include <mutex>
 
 #endif
