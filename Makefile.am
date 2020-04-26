@@ -58,5 +58,13 @@ check_PROGRAMS =
 # Programs and libraries
 include poseidon/src/Makefile.inc.am
 
+if enable_mysql
+include poseidon/src/mysql/Makefile.inc.am
+endif
+
+if enable_mongodb
+include poseidon/src/mongodb/Makefile.inc.am
+endif
+
 # Tests
 #include poseidon/test/Makefile.inc.am

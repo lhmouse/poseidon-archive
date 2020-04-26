@@ -8,7 +8,7 @@ export CXXFLAGS='-std=gnu++14 -fno-gnu-keywords -Wno-zero-as-null-pointer-consta
 # note: `sem` is not always available
 _sem="parallel --will-cite --semaphore"
 
-for _file in $(find -L "poseidon" -name "*.[hc]pp")
+for _file in $(find -L "asteria" -name "*.[hc]pp")
 do
   _cmd="${CXX} ${CPPFLAGS} ${CXXFLAGS} -x c++ -fsyntax-only -DHAVE_CONFIG_H -I."
   echo "Checking \`#include\` directives:  ${_cmd}  \"${_file}\""
