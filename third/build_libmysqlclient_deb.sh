@@ -3,14 +3,14 @@
 # Destination path settings
 _prefix="/usr/local"
 _dstdir="$(pwd)"
-_version="1.16.2"
+_version="6.1.11"
 _release="1"
 
 # Package settings
-_pkgname="libmongoc-dev"
+_pkgname="libmysqlclient-dev"
 _pkggroup="libdevel"
-_pkgsource="https://github.com/mongodb/mongo-c-driver/releases/download/${_version}/mongo-c-driver-${_version}.tar.gz"
-_pkglicense="Apache 2.0"
+_pkgsource="https://dev.mysql.com/get/Downloads/Connector-C/mysql-connector-c-${_version}-src.tar.gz"
+_pkglicense="GPL v2.0"
 _pkgversion="${_version}"
 _pkgrelease="${_release}"
 _maintainer="LH_Mouse"
@@ -38,15 +38,15 @@ sudo mkdir -p "${_prefix}/etc"
 sudo mkdir -p "${_prefix}/man"
 sudo mkdir -p "${_prefix}/share/doc"
 
-# Replace stupid header paths with sane ones
-echo 'install (FILES ${HEADERS} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/bson")' >> "src/libbson/CMakeLists.txt"
-echo 'install (FILES ${HEADERS} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/mongoc")' >> "src/libmongoc/CMakeLists.txt"
+# Fuck you retards
+sed -Ei '/SET\(SHARED_LIB_MINOR_VERSION/aSET(SHARED_LIB_PATCH_VERSION "0")' 'cmake/mysql_version.cmake'
 
 # Configure and build
 cmake .  \
-  -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF  \
-  -DENABLE_BSON=ON  \
-  -DCMAKE_INSTALL_PREFIX="${_prefix}"
+  -DMYSQL_UNIX_ADDR="/var/run/mysqld/mysqld.sock"  \
+  -DCMAKE_INSTALL_PREFIX="${_prefix}/mysql"  \
+  -DINSTALL_INCLUDEDIR="../include/mysql"  \
+  -DINSTALL_LIBDIR="../lib"
 
 make -j"$(nproc)"
 
@@ -63,4 +63,4 @@ sudo "${_dstdir}/../ci/checkinstall"  \
   --exclude="${_tmpdir}"  \
   --exclude="*/install_manifest.txt"
 
-sudo mv *.deb "${_dstdir}/"
+sudo mv "${_pkgname}"_*.deb "${_dstdir}/"
