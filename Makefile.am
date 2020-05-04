@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 NOTHING =
 
-# Compiler options
+## Compiler options
 AM_CPPFLAGS = -pipe -pthread -Wall -Wextra -fPIC -DPIC  \
   -D_FILE_OFFSET_BITS=64 -D_POSIX_C_SOURCE=200809 -D_GNU_SOURCE -D_WIN32_WINNT=0x0600  \
   -f{inline-limit=2400,strict-{aliasing,overflow},merge-all-constants}  \
@@ -17,7 +17,7 @@ AM_CXXFLAGS = -include .pch.hpp -std=gnu++14 -Wp,-std=c++11 -fno-gnu-keywords  \
 AM_DEFAULT_SOURCE_EXT = .cpp
 LDADD = lib/libposeidon.la
 
-# Pre-compiled header
+## Pre-compiled header
 BUILT_SOURCES =  \
   .pch.hpp  \
   .pch.hpp.gch  \
@@ -30,19 +30,19 @@ CLEANFILES =  \
   ${NOTHING}
 
 .pch.hpp: ${srcdir}/poseidon/src/precompiled.hpp
-	# Build the wrapper header, which contains the absolute path to the plain header.
+	## Build the wrapper header, which contains the absolute path to the plain header.
 	${AM_V_GEN}echo "#include \"$$(cygpath -m $< 2>/dev/null || readlink -f $<)\"" >$@
 
 .pch.hpp.gch: .pch.hpp config.h
-	# Compile the header. This must use LTCXXCOMPILE due to some nasty PIC flags...
+	## Compile the header. This must use LTCXXCOMPILE due to some nasty PIC flags...
 	${AM_V_CXX}${LTCXXCOMPILE} -x c++-header -Wno-error $< -o $@.o
-	# ..., but it causes the 'real' output to go into './libs/' and leaves a text file outside,
-	# so move it to the correct location, ...
+	## ..., but it causes the 'real' output to go into './libs/' and leaves a text file outside,
+	## so move it to the correct location, ...
 	@${LIBTOOL} ${AM_V_lt} --tag=CXX --mode=link sh -c 'mv -f "$$1" "$$2"' _ $@.lo $@ -o $@
-	# ..., then libtool creates another text file as the 'executable', so delete it.
+	## ..., then libtool creates another text file as the 'executable', so delete it.
 	@test -z "${EXEEXT}" || rm -f $@${EXEEXT}
 
-# Initialization
+## Initialization
 EXTRA_DIST =  \
   ${NOTHING}
 
@@ -60,7 +60,7 @@ check_LIBRARIES =
 check_LTLIBRARIES =
 check_PROGRAMS =
 
-# Programs and libraries
+## Programs and libraries
 include poseidon/src/Makefile.inc.am
 
 if enable_mysql
@@ -71,5 +71,5 @@ if enable_mongodb
 include poseidon/src/mongodb/Makefile.inc.am
 endif
 
-# Tests
+## Tests
 #include poseidon/test/Makefile.inc.am
