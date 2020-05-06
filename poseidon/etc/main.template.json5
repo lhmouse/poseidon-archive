@@ -1,0 +1,89 @@
+// This is a sample config file.
+// You may copy it to `main.json5` and make modifications at your disposal.
+
+{
+
+logger:
+  {
+    /* Six levels are defined here, each of which is assigned a hard-coded
+     * name.
+     *
+     *   color:
+     *     [ANSI codes]  = set color (do not edit unless you know them)
+     *
+     *   stream:
+     *     "stdout"    = standard output (see below)
+     *     "stderr"    = standard error (see below)
+     *     null or ""  = disabled
+     */
+    levels:
+      {
+        trace:
+          {
+            color: "34;1",  // bright blue
+            stream: "stdout",
+          },
+
+        debug:
+          {
+            color: "36",  // cyan
+            stream: "stdout",
+          },
+
+        info:
+          {
+            color: "32",  // green
+            stream: "stdout",
+          },
+
+        warning:
+          {
+            color: "33",  // yellow
+            stream: "stderr",
+          },
+
+        error:
+          {
+            color: "31;1",  // bright red
+            stream: "stderr",
+          },
+
+        fatal:
+          {
+            color: "35;1",  // bright magenta
+            stream: "stderr",
+          },
+      },
+
+    /* By convention, {trace,debug,info} logs are sent to standard output
+     * and {warning,error,fatal} logs are sent to standard error. However,
+     * if the process is a daemon, both streams will have been closed. The
+     * files specified here are always written, even after the process has
+     * daemonized itself.
+     *
+     *   color:
+     *     null   = enabled if terminal, disabled otheriwse
+     *     true   = enabled
+     *     false  = disabled
+     *
+     *   file:
+     *     [path]      = copy text to this file in append mode
+     *     null or ""  = do not copy anywhere
+     */
+    streams:
+      {
+        stdout:
+          {
+            color: true,
+            file: "../var/poseidon/server.log",
+          },
+
+        stderr:
+          {
+            color: true,
+            file: "../var/poseidon/server.err",
+          },
+      },
+  },
+
+}

@@ -44,6 +44,11 @@ CLEANFILES =  \
 
 ## Initialization
 EXTRA_DIST =  \
+  poseidon/etc/main.json5  \
+  ${NOTHING}
+
+sysconf_DATA =  \
+  poseidon/etc/main.template.json5  \
   ${NOTHING}
 
 noinst_LIBRARIES =
