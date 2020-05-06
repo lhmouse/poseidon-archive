@@ -15,7 +15,7 @@ logger:
      *     "stdout"    = standard output (see below)
      *     "stderr"    = standard error (see below)
      *     null or ""  = disabled
-     */
+    **/
     levels:
       {
         trace:
@@ -69,7 +69,7 @@ logger:
      *   file:
      *     [path]      = copy text to this file in append mode
      *     null or ""  = do not copy anywhere
-     */
+    **/
     streams:
       {
         stdout:
