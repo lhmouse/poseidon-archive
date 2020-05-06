@@ -2,13 +2,15 @@
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
+#include "utilities.hpp"
 #include <locale.h>
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 
-//using namespace poseidon;
+using namespace poseidon;
 
 namespace {
 
@@ -20,10 +22,18 @@ do_print_help_and_exit(const char* self)
 //        1         2         3         4         5         6         7     |
 // 3456789012345678901234567890123456789012345678901234567890123456789012345|
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""" R"'''''''''''''''(
-Usage: %s [OPTIONS] [[--] FILE [ARGUMENTS]...]
+Usage: %s [OPTIONS] [[--] DIRECTORY]
 
+  -d      daemonize
   -h      show help message then exit
   -V      show version information then exit
+  -v      enable verbose mode
+
+Daemonization, if requested, is performed after loading config files. Early
+failues are printed to standard error.
+
+If DIRECTORY is specified, the working directory is switched there before
+doing everything else.
 
 Visit the homepage at <%s>.
 Report bugs to <%s>.
@@ -34,7 +44,8 @@ Report bugs to <%s>.
       PACKAGE_URL,
       PACKAGE_BUGREPORT);
 
-    ::exit(0);
+    ::fflush(stdout);
+    ::quick_exit(0);
   }
 
 const char*
@@ -71,20 +82,61 @@ Report bugs to <%s>.
       PACKAGE_URL,
       PACKAGE_BUGREPORT);
 
-    ::exit(0);
+    ::fflush(stdout);
+    ::quick_exit(0);
   }
 
 // We want to detect Ctrl-C.
-volatile ::sig_atomic_t interrupted;
+::std::atomic<bool> exit_now;
 
 void
-do_trap_sigint()
+do_trap_exit_signal(int sig)
 noexcept
   {
     // Trap Ctrl-C. Failure to set the signal handler is ignored.
     struct ::sigaction sigx = { };
-    sigx.sa_handler = [](int) { interrupted = 1;  };
-    ::sigaction(SIGINT, &sigx, nullptr);
+    sigx.sa_handler = [](int) { exit_now = 1;  };
+    ::sigaction(sig, &sigx, nullptr);
+  }
+
+// Define command-line options here.
+struct Command_Line_Options
+  {
+    // options
+    bool daemonize = false;
+    bool verbose = false;
+
+    // non-options
+    cow_string cd_here;
+  };
+
+// These may also be automatic objects. They are declared here for convenience.
+Command_Line_Options cmdline;
+
+// These are process exit status codes.
+enum Exit_Code : uint8_t
+  {
+    exit_success            = 0,
+    exit_system_error       = 1,
+    exit_invalid_argument   = 2,
+  };
+
+[[noreturn]]
+int
+do_exit(Exit_Code code, const char* fmt = nullptr, ...)
+noexcept
+  {
+    // Output the string to standard error.
+    if(fmt) {
+      ::va_list ap;
+      va_start(ap, fmt);
+      ::vfprintf(stderr, fmt, ap);
+      va_end(ap);
+    }
+
+    // Perform fast exit.
+    ::fflush(nullptr);
+    ::quick_exit(static_cast<int>(code));
   }
 
 void
@@ -92,6 +144,10 @@ do_parse_command_line(int argc, char** argv)
   {
     bool help = false;
     bool version = false;
+
+    opt<bool> daemonize;
+    opt<bool> verbose;
+    opt<cow_string> cd_here;
 
     // Check for some common options before calling `getopt()`.
     if(argc > 1) {
@@ -104,9 +160,13 @@ do_parse_command_line(int argc, char** argv)
 
     // Parse command-line options.
     int ch;
-    while((ch = ::getopt(argc, argv, "+hV")) != -1) {
+    while((ch = ::getopt(argc, argv, "+dhVv")) != -1) {
       // Identify a single option.
       switch(ch) {
+        case 'd':
+          daemonize = true;
+          continue;
+
         case 'h':
           help = true;
           continue;
@@ -114,11 +174,14 @@ do_parse_command_line(int argc, char** argv)
         case 'V':
           version = true;
           continue;
+
+        case 'v':
+          verbose = true;
+          continue;
       }
 
       // `getopt()` will have written an error message to standard error.
-      ::fprintf(stderr, "Try `%s -h` for help.\n", argv[0]);
-      ::exit(2);
+      do_exit(exit_invalid_argument, "Try `%s -h` for help.\n", argv[0]);
     }
 
     // Check for early exit conditions.
@@ -128,21 +191,68 @@ do_parse_command_line(int argc, char** argv)
     if(version)
       do_print_version_and_exit();
 
-    // If more arguments follow, they denote the script to execute.
+    // If more arguments follow, they denote the working directory.
     if(optind < argc) {
-// TODO
+      if(argc - optind > 1)
+        do_exit(exit_invalid_argument,
+                "%s: too many arguments -- '%s'\n"
+                "Try `%s -h` for help.\n",
+                argv[0], argv[optind+1], argv[0]);
+
+      cd_here = cow_string(argv[optind]);
     }
+
+    // Daemonization mode is off by default.
+    if(daemonize)
+      cmdline.daemonize = *daemonize;
+
+    // Verbose mode is off by default.
+    if(verbose)
+      cmdline.verbose = *verbose;
+
+    // The default working directory is empty which means 'do not switch'.
+    if(cd_here)
+      cmdline.cd_here = ::std::move(*cd_here);
   }
 
 }  // namespace
 
 int
 main(int argc, char** argv)
-  {
+  try {
     // Select the C locale. UTF-8 is required for wide-oriented standard streams.
     ::setlocale(LC_ALL, "C.UTF-8");
 
     // Note that this function shall not return in case of errors.
     do_parse_command_line(argc, argv);
 
+    // Set current working directory if one is specified.
+    if(cmdline.cd_here.size())
+      if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
+        ASTERIA_THROW_SYSTEM_ERROR("chdir");
+
+    // TODO Perform global initialization
+
+    // Daemonize the process before enter modal loop.
+    // This must be the last operation, so any earlier failures are visible to the user.
+    if(cmdline.daemonize)
+      if(::daemon(1, 0) != 0)
+        ASTERIA_THROW_SYSTEM_ERROR("daemon");
+
+    // Trap exit signals. Failure to set signal handlers is ignored.
+    // This also makes I/O functions fail immediately, instead of attempting to try again.
+    do_trap_exit_signal(SIGINT);
+    do_trap_exit_signal(SIGTERM);
+    do_trap_exit_signal(SIGHUP);
+
+    // Ignore `SIGPIPE` for good.
+    ::signal(SIGPIPE, SIG_IGN);
+
+    // TODO
+    ::sleep(1);
+    ::fputs("meow\n", stderr);
+  }
+  catch(::std::exception& except) {
+    // Print the message in `except`. There isn't much we can do.
+    do_exit(exit_system_error, "%s\n[exception class `%s`]\n", except.what(), typeid(except).name());
   }

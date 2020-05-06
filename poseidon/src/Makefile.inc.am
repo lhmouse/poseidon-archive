@@ -4,6 +4,7 @@ bin_PROGRAMS += bin/poseidon
 include_poseidondir = ${pkgincludedir}/poseidon
 include_poseidon_HEADERS =  \
   %reldir%/precompiled.hpp  \
+  %reldir%/utilities.hpp  \
   %reldir%/fwd.hpp  \
   ${NOTHING}
 
@@ -16,6 +17,7 @@ include_poseidon_HEADERS =  \
 
 lib_libposeidon_la_SOURCES =  \
   %reldir%/fwd.cpp  \
+  %reldir%/utilities.cpp  \
   %reldir%/exit_stubs.c  \
   ${NOTHING}
 
