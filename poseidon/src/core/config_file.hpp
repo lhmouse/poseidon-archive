@@ -74,39 +74,74 @@ class Config_File
     Config_File&
     reload(const char* path);
 
-    // This function gets a value denoted by `path`, which shall not be empty.
+    // This function gets a value denoted by a path, which shall not be empty.
     // If the path does not denote an existent value, a statically allocated
     // null value is returned. If during path resolution, an attempt is made
     // to get a field of a value which is not an object, an exception is thrown.
     const ::asteria::Value&
-    get_value(initializer_list<const char*> path)
+    get_value(const char* const* psegs, size_t nsegs)
     const;
+
+    const ::asteria::Value&
+    get_value(initializer_list<const char*> path)
+    const
+      { return this->get_value(path.begin(), path.size());  }
 
     // These functions behave like `query_value()` except that they perform
     // type checking and conversion as needed.
     opt<bool>
+    get_bool_opt(const char* const* psegs, size_t nsegs)
+    const;
+
+    opt<bool>
     get_bool_opt(initializer_list<const char*> path)
+    const
+      { return this->get_bool_opt(path.begin(), path.size());  }
+
+    opt<int64_t>
+    get_int64_opt(const char* const* psegs, size_t nsegs)
     const;
 
     opt<int64_t>
     get_int64_opt(initializer_list<const char*> path)
+    const
+      { return this->get_int64_opt(path.begin(), path.size());  }
+
+    opt<double>
+    get_double_opt(const char* const* psegs, size_t nsegs)
     const;
 
     opt<double>
     get_double_opt(initializer_list<const char*> path)
+    const
+      { return this->get_double_opt(path.begin(), path.size());  }
+
+    opt<cow_string>
+    get_string_opt(const char* const* psegs, size_t nsegs)
     const;
 
     opt<cow_string>
     get_string_opt(initializer_list<const char*> path)
+    const
+      { return this->get_string_opt(path.begin(), path.size());  }
+
+    opt<::asteria::V_array>
+    get_array_opt(const char* const* psegs, size_t nsegs)
     const;
 
     opt<::asteria::V_array>
     get_array_opt(initializer_list<const char*> path)
+    const
+      { return this->get_array_opt(path.begin(), path.size());  }
+
+    opt<::asteria::V_object>
+    get_object_opt(const char* const* psegs, size_t nsegs)
     const;
 
     opt<::asteria::V_object>
     get_object_opt(initializer_list<const char*> path)
-    const;
+    const
+      { return this->get_object_opt(path.begin(), path.size());  }
   };
 
 inline
