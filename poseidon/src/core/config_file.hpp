@@ -68,13 +68,13 @@ class Config_File
         return *this;
       }
 
-    // This function loads the file denoted by `path`.
+    // Loads the file denoted by `path`.
     // If this function fails, an exception is thrown and the contents are
     // indeterminate (basic exception safety guarantee).
     Config_File&
     reload(const char* path);
 
-    // This function gets a value denoted by a path, which shall not be empty.
+    // Gets a value denoted by a path, which shall not be empty.
     // If the path does not denote an existent value, a statically allocated
     // null value is returned. If during path resolution, an attempt is made
     // to get a field of a value which is not an object, an exception is thrown.
