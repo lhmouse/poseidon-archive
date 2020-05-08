@@ -69,8 +69,8 @@ class Config_File
       }
 
     // This function loads the file denoted by `path`.
-    // If this function fails, an exception is thrown and there is no
-    // effect (strong exception safety guarantee).
+    // If this function fails, an exception is thrown and the contents are
+    // indeterminate (basic exception safety guarantee).
     Config_File&
     reload(const char* path);
 

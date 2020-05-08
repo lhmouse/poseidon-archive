@@ -322,13 +322,16 @@ Config_File&
 Config_File::
 reload(const char* path)
   {
-    // Resolve the path to an absolute one.
-    uptr<char, void (&)(void*)> rpath(::realpath(path, nullptr), ::free);
-    if(!rpath)
-      ASTERIA_THROW_SYSTEM_ERROR("realpath");
-    cow_string abspath(rpath);
+    this->m_abspath.clear();
+    this->m_root.clear();
 
-    ::rocket::unique_posix_file fp(::fopen(rpath, "r"), ::fclose);
+    // Resolve the path to an absolute one.
+    uptr<char, void (&)(void*)> abspath(::realpath(path, nullptr), ::free);
+    if(!abspath)
+      ASTERIA_THROW_SYSTEM_ERROR("realpath");
+    this->m_abspath.assign(abspath.get());
+
+    ::rocket::unique_posix_file fp(::fopen(abspath, "r"), ::fclose);
     if(!fp)
       ASTERIA_THROW_SYSTEM_ERROR("fopen");
     ::setbuf(fp, nullptr);
@@ -342,21 +345,17 @@ reload(const char* path)
     opts.keywords_as_identifiers = true;
 
     ::asteria::Token_Stream tstrm(opts);
-    tstrm.reload(cbuf, abspath);
+    tstrm.reload(cbuf, this->m_abspath);
 
     // Parse a sequence of key-value pairs.
-    ::asteria::V_object root;
     while(auto qkey = do_accept_object_key_opt(tstrm))
-      do_insert_unique(root, ::std::move(*qkey), do_parse_value_nonrecursive(tstrm));
+      do_insert_unique(this->m_root,
+                       ::std::move(*qkey), do_parse_value_nonrecursive(tstrm));
 
     // Ensure all data have been consumed.
     if(!tstrm.empty())
       throw ::asteria::Parser_Error(::asteria::parser_status_identifier_expected,
                                     tstrm.next_sloc(), tstrm.next_length());
-
-    // Accept the value.
-    this->m_abspath = ::std::move(abspath);
-    this->m_root = ::std::move(root);
     return *this;
   }
 
