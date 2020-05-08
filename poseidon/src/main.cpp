@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+// TODO
+#include "core/config_file.hpp"
+
 using namespace poseidon;
 
 namespace {
@@ -249,8 +252,7 @@ main(int argc, char** argv)
     ::signal(SIGPIPE, SIG_IGN);
 
     // TODO
-    ::sleep(1);
-    ::fputs("meow\n", stderr);
+    Config_File file("etc/main.conf");
   }
   catch(::std::exception& except) {
     // Print the message in `except`. There isn't much we can do.

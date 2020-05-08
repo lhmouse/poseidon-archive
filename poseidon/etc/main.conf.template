@@ -1,9 +1,16 @@
-// This is a sample config file.
-// The syntax is identical to JSON, except that equals signs are used in
-// place of colons and commas are omitted. C-style comments are supported.
-// You may copy it to `main.conf` and make modifications at your disposal.
+/* This is a sample config file for Poseidon. No rights reserved.
+ *
+ * The syntax is similar to JSON5, with a few differences:
+ * 1. Equals signs may be used in place of colons.
+ * 2. Commas shall not be used as element delimiters.
+ * 3. Genuine signed 64-bit integers are supported.
+ * 4. Strings cannot straddle multiple lines.
+ * 5. Single-quoted strings do not support escapes, like in Perl or Shell.
+ *
+ * You may copy it to `main.conf` and make modifications at your disposal.
+**/
 
-logger
+logger:
   {
     /* Six levels are defined here, each of which is assigned a hard-coded
      * name.
@@ -16,42 +23,42 @@ logger
      *     "stderr"    = standard error (see below)
      *     null or ""  = disabled
     **/
-    levels
+    levels:
       {
-        trace
+        trace:
           {
-            color = "34;1"  // bright blue
-            stream = "stdout"
+            color: "34;1"  // bright blue
+            stream: "stdout"
           }
 
-        debug
+        debug:
           {
-            color = "36"  // cyan
-            stream = "stdout"
+            color: "36"  // cyan
+            stream: "stdout"
           }
 
-        info
+        info:
           {
-            color = "32"  // green
-            stream = "stdout"
+            color: "32"  // green
+            stream: "stdout"
           }
 
-        warning
+        warning:
           {
-            color = "33"  // yellow
-            stream = "stderr"
+            color: "33"  // yellow
+            stream: "stderr"
           }
 
-        error
+        error:
           {
-            color = "31;1"  // bright red
-            stream = "stderr"
+            color: "31;1"  // bright red
+            stream: "stderr"
           }
 
-        fatal
+        fatal:
           {
-            color = "35;1"  // bright magenta
-            stream = "stderr"
+            color: "35;1"  // bright magenta
+            stream: "stderr"
           }
       }
 
@@ -70,18 +77,18 @@ logger
      *     [path]      = copy text to this file in append mode
      *     null or ""  = do not copy anywhere
     **/
-    streams
+    streams:
       {
-        stdout
+        stdout:
           {
-            color = true
-            file = "../var/poseidon/server.log"
+            color: true
+            file: "../var/poseidon/server.log"
           }
 
-        stderr
+        stderr:
           {
-            color = true
-            file = "../var/poseidon/server.err"
+            color: true
+            file: "../var/poseidon/server.err"
           }
       }
   }

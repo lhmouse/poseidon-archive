@@ -12,6 +12,7 @@
 
 namespace poseidon {
 
+// Aliases
 using ::std::initializer_list;
 using ::std::integer_sequence;
 using ::std::index_sequence;
@@ -60,6 +61,12 @@ using ::asteria::sso_vector;
 using ::asteria::array;
 using ::asteria::opt;
 using ::asteria::refp;
+
+// Core
+class Config_File;
+
+// Singletons
+class Mail_Config;
 
 }  // namespace poseidon
 

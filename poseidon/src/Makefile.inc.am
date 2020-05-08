@@ -4,21 +4,20 @@ bin_PROGRAMS += bin/poseidon
 include_poseidondir = ${pkgincludedir}/poseidon
 include_poseidon_HEADERS =  \
   %reldir%/precompiled.hpp  \
-  %reldir%/utilities.hpp  \
   %reldir%/fwd.hpp  \
+  %reldir%/utilities.hpp  \
   ${NOTHING}
 
-#include_poseidon_lldsdir = ${pkgincludedir}/poseidon/llds
-#include_poseidon_llds_HEADERS =  \
-#  %reldir%/llds/variable_hashset.hpp  \
-#  %reldir%/llds/reference_dictionary.hpp  \
-#  %reldir%/llds/avmc_queue.hpp  \
-#  ${NOTHING}
+include_poseidon_coredir = ${pkgincludedir}/poseidon/core
+include_poseidon_core_HEADERS =  \
+  %reldir%/core/config_file.hpp  \
+  ${NOTHING}
 
 lib_libposeidon_la_SOURCES =  \
+  %reldir%/exit_stubs.c  \
   %reldir%/fwd.cpp  \
   %reldir%/utilities.cpp  \
-  %reldir%/exit_stubs.c  \
+  %reldir%/core/config_file.cpp  \
   ${NOTHING}
 
 lib_libposeidon_la_LDFLAGS =  \
