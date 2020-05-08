@@ -295,6 +295,22 @@ do_parse_value_nonrecursive(::asteria::Token_Stream& tstrm)
     }
   }
 
+[[noreturn]]
+void
+do_throw_type_mismatch(const char* const* bptr, const char* const* eptr,
+                       const char* expect, const ::asteria::Value& value)
+  {
+    // Compose the path.
+    cow_string path;
+    path << '`';
+    ::std::for_each(bptr, eptr, [&](const char* s) { path << s << '.';  });
+    path.mut_back() = '`';
+
+    // Throw the exception now.
+    ASTERIA_THROW("unexpected type of $1 (expecting $2, but got `$3`)",
+                  path, expect, ::asteria::describe_vtype(value.vtype()));
+  }
+
 }  // namespace
 
 Config_File::
@@ -342,6 +358,126 @@ reload(const char* path)
     this->m_abspath = ::std::move(abspath);
     this->m_root = ::std::move(root);
     return *this;
+  }
+
+const ::asteria::Value&
+Config_File::
+get_value(initializer_list<const char*> path)
+const
+  {
+    auto sptr = path.begin();
+    if(sptr == path.end())
+      ASTERIA_THROW("empty path not valid");
+
+    auto qobj = ::rocket::ref(this->m_root);
+    for(;;) {
+      // Find the child denoted by `*sptr`.
+      // Return null if no such child exists or if an explicit null is found.
+      auto qchild = qobj->get_ptr(::rocket::sref(*sptr));
+      if(!qchild || qchild->is_null())
+        return ::asteria::null_value;
+
+      // Advance to the next segment.
+      // If the end of `path` is encountered, we are done.
+      if(++sptr == path.end())
+        return *qchild;
+
+      // If more segments follow, the child must be an object.
+      if(!qchild->is_object())
+        do_throw_type_mismatch(path.begin(), sptr, "`object`", *qchild);
+
+      qobj = ::rocket::ref(qchild->as_object());
+    }
+  }
+
+opt<bool>
+Config_File::
+get_bool_opt(initializer_list<const char*> path)
+const
+  {
+    const auto& value = this->get_value(path);
+    if(value.is_null())
+      return nullopt;
+
+    if(!value.is_boolean())
+      do_throw_type_mismatch(path.begin(), path.end(), "`boolean`", value);
+
+    return value.as_boolean();
+  }
+
+opt<int64_t>
+Config_File::
+get_int64_opt(initializer_list<const char*> path)
+const
+  {
+    const auto& value = this->get_value(path);
+    if(value.is_null())
+      return nullopt;
+
+    if(!value.is_integer())
+      do_throw_type_mismatch(path.begin(), path.end(), "`integer`", value);
+
+    return value.as_integer();
+  }
+
+opt<double>
+Config_File::
+get_double_opt(initializer_list<const char*> path)
+const
+  {
+    const auto& value = this->get_value(path);
+    if(value.is_null())
+      return nullopt;
+
+    if(!value.is_convertible_to_real())
+      do_throw_type_mismatch(path.begin(), path.end(), "`integer` or `real`", value);
+
+    return value.convert_to_real();
+  }
+
+opt<cow_string>
+Config_File::
+get_string_opt(initializer_list<const char*> path)
+const
+  {
+    const auto& value = this->get_value(path);
+    if(value.is_null())
+      return nullopt;
+
+    if(!value.is_string())
+      do_throw_type_mismatch(path.begin(), path.end(), "`string`", value);
+
+    return value.as_string();
+  }
+
+opt<::asteria::V_array>
+Config_File::
+get_array_opt(initializer_list<const char*> path)
+const
+  {
+    const auto& value = this->get_value(path);
+    if(value.is_null())
+      return nullopt;
+
+    if(!value.is_array())
+      do_throw_type_mismatch(path.begin(), path.end(), "`array`", value);
+
+    return value.as_array();
+  }
+
+opt<::asteria::V_object>
+Config_File::
+get_object_opt(initializer_list<const char*> path)
+const
+  {
+    const auto& value = this->get_value(path);
+    if(value.is_null())
+      return nullopt;
+
+    if(!value.is_object())
+      do_throw_type_mismatch(path.begin(), path.end(), "`object`", value);
+
+    return value.as_object();
   }
 
 }  // namespace poseidon

@@ -74,7 +74,39 @@ class Config_File
     Config_File&
     reload(const char* path);
 
-    
+    // This function gets a value denoted by `path`, which shall not be empty.
+    // If the path does not denote an existent value, a statically allocated
+    // null value is returned. If during path resolution, an attempt is made
+    // to get a field of a value which is not an object, an exception is thrown.
+    const ::asteria::Value&
+    get_value(initializer_list<const char*> path)
+    const;
+
+    // These functions behave like `query_value()` except that they perform
+    // type checking and conversion as needed.
+    opt<bool>
+    get_bool_opt(initializer_list<const char*> path)
+    const;
+
+    opt<int64_t>
+    get_int64_opt(initializer_list<const char*> path)
+    const;
+
+    opt<double>
+    get_double_opt(initializer_list<const char*> path)
+    const;
+
+    opt<cow_string>
+    get_string_opt(initializer_list<const char*> path)
+    const;
+
+    opt<::asteria::V_array>
+    get_array_opt(initializer_list<const char*> path)
+    const;
+
+    opt<::asteria::V_object>
+    get_object_opt(initializer_list<const char*> path)
+    const;
   };
 
 inline
