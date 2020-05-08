@@ -66,7 +66,7 @@ using ::asteria::refp;
 class Config_File;
 
 // Singletons
-class Mail_Config;
+class Main_Config;
 
 }  // namespace poseidon
 
