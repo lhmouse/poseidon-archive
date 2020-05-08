@@ -295,10 +295,18 @@ do_parse_value_nonrecursive(::asteria::Token_Stream& tstrm)
     }
   }
 
-[[noreturn]]
-void
+}  // namespace
+
+Config_File::
+~Config_File()
+  {
+  }
+
+const ::asteria::Value&
+Config_File::
 do_throw_type_mismatch(const char* const* bptr, size_t epos, const char* expect,
                        const ::asteria::Value& value)
+const
   {
     // Compose the path.
     cow_string path;
@@ -307,15 +315,10 @@ do_throw_type_mismatch(const char* const* bptr, size_t epos, const char* expect,
     path.mut_back() = '`';
 
     // Throw the exception now.
-    ASTERIA_THROW("unexpected type of $1 (expecting $2, but got `$3`)",
-                  path, expect, ::asteria::describe_vtype(value.vtype()));
-  }
-
-}  // namespace
-
-Config_File::
-~Config_File()
-  {
+    ASTERIA_THROW("unexpected type of $1 (expecting $2, but got `$3`)\n"
+                  "[in file '$4']",
+                  path, expect, ::asteria::describe_vtype(value.vtype()),
+                  this->m_abspath);
   }
 
 Config_File&

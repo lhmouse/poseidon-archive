@@ -26,6 +26,13 @@ class Config_File
 
     ASTERIA_COPYABLE_DESTRUCTOR(Config_File);
 
+  private:
+    [[noreturn]]
+    const ::asteria::Value&
+    do_throw_type_mismatch(const char* const* bptr, size_t epos, const char* expect,
+                           const ::asteria::Value& value)
+    const;
+
   public:
     const cow_string&
     abspath()
