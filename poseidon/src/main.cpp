@@ -10,9 +10,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-// TODO
-#include "core/config_file.hpp"
-
 using namespace poseidon;
 
 namespace {
@@ -113,7 +110,7 @@ struct Command_Line_Options
     cow_string cd_here;
   };
 
-// These may also be automatic objects. They are declared here for convenience.
+// This may also be automatic objects. It is declared here for convenience.
 Command_Line_Options cmdline;
 
 // These are process exit status codes.
@@ -184,7 +181,8 @@ do_parse_command_line(int argc, char** argv)
       }
 
       // `getopt()` will have written an error message to standard error.
-      do_exit(exit_invalid_argument, "Try `%s -h` for help.\n", argv[0]);
+      do_exit(exit_invalid_argument, "Try `%s -h` for help.\n",
+                                     argv[0]);
     }
 
     // Check for early exit conditions.
@@ -195,15 +193,14 @@ do_parse_command_line(int argc, char** argv)
       do_print_version_and_exit();
 
     // If more arguments follow, they denote the working directory.
-    if(optind < argc) {
-      if(argc - optind > 1)
-        do_exit(exit_invalid_argument,
-                "%s: too many arguments -- '%s'\n"
-                "Try `%s -h` for help.\n",
-                argv[0], argv[optind+1], argv[0]);
+    if(argc - optind > 1)
+      do_exit(exit_invalid_argument, "%s: too many arguments -- '%s'\n"
+                                     "Try `%s -h` for help.\n",
+                                     argv[0], argv[optind+1],
+                                     argv[0]);
 
+    if(argc - optind > 0)
       cd_here = cow_string(argv[optind]);
-    }
 
     // Daemonization mode is off by default.
     if(daemonize)
@@ -223,7 +220,8 @@ do_parse_command_line(int argc, char** argv)
 int
 main(int argc, char** argv)
   try {
-    // Select the C locale. UTF-8 is required for wide-oriented standard streams.
+    // Select the C locale.
+    // UTF-8 is required for wide-oriented standard streams.
     ::setlocale(LC_ALL, "C.UTF-8");
 
     // Note that this function shall not return in case of errors.
@@ -237,24 +235,23 @@ main(int argc, char** argv)
     // TODO Perform global initialization
 
     // Daemonize the process before enter modal loop.
-    // This must be the last operation, so any earlier failures are visible to the user.
+    // This must be the last operation, so any earlier failures are visible
+    // to the user.
     if(cmdline.daemonize)
       if(::daemon(1, 0) != 0)
         ASTERIA_THROW_SYSTEM_ERROR("daemon");
 
     // Trap exit signals. Failure to set signal handlers is ignored.
-    // This also makes I/O functions fail immediately, instead of attempting to try again.
+    // This also makes stdio functions fail immediately.
     do_trap_exit_signal(SIGINT);
     do_trap_exit_signal(SIGTERM);
     do_trap_exit_signal(SIGHUP);
 
     // Ignore `SIGPIPE` for good.
     ::signal(SIGPIPE, SIG_IGN);
-
-    // TODO
-    Config_File file("etc/main.conf");
   }
   catch(::std::exception& except) {
     // Print the message in `except`. There isn't much we can do.
-    do_exit(exit_system_error, "%s\n[exception class `%s`]\n", except.what(), typeid(except).name());
+    do_exit(exit_system_error, "%s\n[exception class `%s`]\n",
+                               except.what(), typeid(except).name());
   }
