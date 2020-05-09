@@ -1,0 +1,4 @@
+sysconf_poseidondir = ${sysconfdir}/poseidon
+sysconf_poseidon_DATA =  \
+  %reldir%/main.conf.template  \
+  ${NOTHING}

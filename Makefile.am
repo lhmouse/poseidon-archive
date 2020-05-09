@@ -48,10 +48,6 @@ EXTRA_DIST =  \
   poseidon/etc/main.conf  \
   ${NOTHING}
 
-sysconf_DATA =  \
-  poseidon/etc/main.conf.template  \
-  ${NOTHING}
-
 noinst_LIBRARIES =
 noinst_LTLIBRARIES =
 TESTS = ${check_PROGRAMS}
@@ -60,6 +56,7 @@ include_HEADERS =
 lib_LIBRARIES =
 lib_LTLIBRARIES =
 bin_PROGRAMS =
+sysconf_DATA =
 
 check_HEADERS =
 check_LIBRARIES =
@@ -76,6 +73,9 @@ endif
 if enable_mongodb
 include poseidon/src/mongodb/Makefile.inc.am
 endif
+
+## Configuration files
+include poseidon/etc/Makefile.inc.am
 
 ## Tests
 #include poseidon/test/Makefile.inc.am

@@ -1,18 +1,16 @@
-lib_LTLIBRARIES += lib/libposeidon.la
-bin_PROGRAMS += bin/poseidon
-
-include_poseidondir = ${pkgincludedir}/poseidon
+include_poseidondir = ${includedir}/poseidon
 include_poseidon_HEADERS =  \
   %reldir%/precompiled.hpp  \
   %reldir%/fwd.hpp  \
   %reldir%/utilities.hpp  \
   ${NOTHING}
 
-include_poseidon_coredir = ${pkgincludedir}/poseidon/core
+include_poseidon_coredir = ${includedir}/poseidon/core
 include_poseidon_core_HEADERS =  \
   %reldir%/core/config_file.hpp  \
   ${NOTHING}
 
+lib_LTLIBRARIES += lib/libposeidon.la
 lib_libposeidon_la_SOURCES =  \
   %reldir%/exit_stubs.c  \
   %reldir%/fwd.cpp  \
@@ -23,8 +21,6 @@ lib_libposeidon_la_SOURCES =  \
 lib_libposeidon_la_LDFLAGS =  \
   -Wl,--no-undefined -no-undefined -version-info 0:0:0
 
+bin_PROGRAMS += bin/poseidon
 bin_poseidon_SOURCES =  \
   %reldir%/main.cpp
-
-bin_poseidon_LDADD =  \
-  lib/libposeidon.la
