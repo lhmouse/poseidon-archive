@@ -3,6 +3,7 @@
 
 #include "precompiled.hpp"
 #include "utilities.hpp"
+#include "static/main_config.hpp"
 #include <locale.h>
 #include <unistd.h>
 #include <signal.h>
@@ -230,16 +231,21 @@ main(int argc, char** argv)
     // Set current working directory if one is specified.
     if(cmdline.cd_here.size())
       if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
-        ASTERIA_THROW_SYSTEM_ERROR("chdir");
+        ASTERIA_THROW("could not set working directory to '$2'\n"
+                      "[`chdir()` failed: $1]'",
+                      format_errno(errno), cmdline.cd_here);
 
-    // TODO Perform global initialization
+    // Perform global initialization.
+    Main_Config::reload();
 
     // Daemonize the process before enter modal loop.
     // This must be the last operation, so any earlier failures are visible
     // to the user.
     if(cmdline.daemonize)
       if(::daemon(1, 0) != 0)
-        ASTERIA_THROW_SYSTEM_ERROR("daemon");
+        ASTERIA_THROW("could not daemonize process\n"
+                      "[`chdir()` failed: $1]'",
+                      format_errno(errno));
 
     // Trap exit signals. Failure to set signal handlers is ignored.
     // This also makes stdio functions fail immediately.

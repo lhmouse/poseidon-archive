@@ -10,12 +10,18 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/config_file.hpp  \
   ${NOTHING}
 
+include_poseidon_staticdir = ${includedir}/poseidon/static
+include_poseidon_static_HEADERS =  \
+  %reldir%/static/main_config.hpp  \
+  ${NOTHING}
+
 lib_LTLIBRARIES += lib/libposeidon.la
 lib_libposeidon_la_SOURCES =  \
   %reldir%/exit_stubs.c  \
   %reldir%/fwd.cpp  \
   %reldir%/utilities.cpp  \
   %reldir%/core/config_file.cpp  \
+  %reldir%/static/main_config.cpp  \
   ${NOTHING}
 
 lib_libposeidon_la_LDFLAGS =  \

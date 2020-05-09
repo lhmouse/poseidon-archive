@@ -17,7 +17,7 @@ using ::asteria::utf16_decode;
 using ::asteria::format_string;
 using ::asteria::weaken_enum;
 using ::asteria::generate_random_seed;
-using ::asteria::throw_system_error;
+using ::asteria::format_errno;
 
 }  // namespace asteria
 

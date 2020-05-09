@@ -325,21 +325,25 @@ Config_File&
 Config_File::
 reload(const char* path)
   {
-    this->m_abspath.clear();
-    this->m_root.clear();
-
     // Resolve the path to an absolute one.
     uptr<char, void (&)(void*)> abspath(::realpath(path, nullptr), ::free);
     if(!abspath)
-      ASTERIA_THROW_SYSTEM_ERROR("realpath");
-    this->m_abspath.assign(abspath.get());
+      ASTERIA_THROW("could not open config file '$2'\n"
+                    "[`realpath()` failed: $1]'",
+                    format_errno(errno), path);
 
     ::rocket::unique_posix_file fp(::fopen(abspath, "r"), ::fclose);
     if(!fp)
-      ASTERIA_THROW_SYSTEM_ERROR("fopen");
-    ::setbuf(fp, nullptr);
+      ASTERIA_THROW("could not open config file '$2'\n"
+                    "[`fopen()` failed: $1]'",
+                    format_errno(errno), abspath);
+
+    // Initialize.
+    this->m_abspath.assign(abspath.get());
+    this->m_root.clear();
 
     // Parse characters from the file.
+    ::setbuf(fp, nullptr);
     ::rocket::tinybuf_file cbuf(::std::move(fp));
 
     // Initialize tokenizer options.
