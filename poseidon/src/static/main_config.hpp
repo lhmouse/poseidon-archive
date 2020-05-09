@@ -30,7 +30,7 @@ class Main_Config
     void
     reload();
 
-    // Obtains a copy the global config file.
+    // Obtains a copy of the global config file.
     // Because config files are copy-on-write, this function never fails.
     // This function is thread-safe.
     static
