@@ -21,6 +21,10 @@
 #include <algorithm>
 #include <memory>
 #include <functional>
-#include <mutex>
+
+#include <rocket/mutex.hpp>
+#include <rocket/recursive_mutex.hpp>
+#include <rocket/condition_variable.hpp>
+#include <rocket/once_flag.hpp>
 
 #endif
