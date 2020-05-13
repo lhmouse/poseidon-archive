@@ -20,7 +20,7 @@
 #include <unordered_set>
 #include <algorithm>
 #include <memory>
-#include <functional>
+#include <cstdio>
 
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
