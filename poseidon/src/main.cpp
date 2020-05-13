@@ -235,12 +235,11 @@ main(int argc, char** argv)
                       "[`chdir()` failed: $1]'",
                       format_errno(errno), cmdline.cd_here);
 
-    // Perform global initialization.
+    // Load 'main.conf' before daemonization, so any earlier failures are
+    // visible to the user.
     Main_Config::reload();
 
-    // Daemonize the process before enter modal loop.
-    // This must be the last operation, so any earlier failures are visible
-    // to the user.
+    // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)
       if(::daemon(1, 0) != 0)
         ASTERIA_THROW("could not daemonize process\n"
