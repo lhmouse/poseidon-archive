@@ -315,7 +315,7 @@ const
     path.mut_back() = '`';
 
     // Throw the exception now.
-    ASTERIA_THROW("unexpected type of $1 (expecting $2, but got `$3`)\n"
+    ASTERIA_THROW("unexpected type of $1 (expecting $2, got `$3`)\n"
                   "[in file '$4']",
                   path, expect, ::asteria::describe_vtype(value.vtype()),
                   this->m_abspath);
@@ -356,13 +356,14 @@ reload(const char* path)
 
     // Parse a sequence of key-value pairs.
     while(auto qkey = do_accept_object_key_opt(tstrm))
-      do_insert_unique(this->m_root,
-                       ::std::move(*qkey), do_parse_value_nonrecursive(tstrm));
+      do_insert_unique(this->m_root, ::std::move(*qkey),
+                       do_parse_value_nonrecursive(tstrm));
 
     // Ensure all data have been consumed.
     if(!tstrm.empty())
       throw ::asteria::Parser_Error(::asteria::parser_status_identifier_expected,
                                     tstrm.next_sloc(), tstrm.next_length());
+
     return *this;
   }
 

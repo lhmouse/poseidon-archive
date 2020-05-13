@@ -71,6 +71,7 @@ class Config_File
     swap(Config_File& other)
     noexcept
       {
+        this->m_abspath.swap(other.m_abspath);
         this->m_root.swap(other.m_root);
         return *this;
       }
