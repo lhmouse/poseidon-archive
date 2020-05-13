@@ -6,12 +6,12 @@
 #include "../utilities.hpp"
 
 namespace poseidon {
-namespace {
 
-::std::mutex s_mutex;
-Config_File s_conf;
-
-}  // namespace
+POSEIDON_STATIC_CLASS_DEFINE(Main_Config)
+  {
+    ::rocket::mutex m_mutex;
+    Config_File m_data;
+  };
 
 void
 Main_Config::
@@ -24,8 +24,8 @@ noexcept
     // During destruction of `temp` the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    ::std::lock_guard<::std::mutex> lock(s_mutex);
-    s_conf.swap(temp);
+    ::rocket::mutex::unique_lock lock(self->m_mutex);
+    self->m_data.swap(temp);
   }
 
 void
@@ -39,8 +39,8 @@ reload()
     // During destruction of `temp` the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    ::std::lock_guard<::std::mutex> lock(s_mutex);
-    s_conf.swap(temp);
+    ::rocket::mutex::unique_lock lock(self->m_mutex);
+    self->m_data.swap(temp);
   }
 
 Config_File
@@ -49,8 +49,8 @@ copy()
 noexcept
   {
     // Note again config files are copy-on-write and cheap to copy.
-    ::std::lock_guard<::std::mutex> lock(s_mutex);
-    return s_conf;
+    ::rocket::mutex::unique_lock lock(self->m_mutex);
+    return self->m_data;
   }
 
 }  // poseidon

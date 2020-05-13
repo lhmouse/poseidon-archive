@@ -11,9 +11,7 @@ namespace poseidon {
 
 class Main_Config
   {
-  private:
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Main_Config)
-      = delete;
+    POSEIDON_STATIC_CLASS_DECLARE(Main_Config);
 
   public:
     // Clears all data.
