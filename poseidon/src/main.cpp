@@ -258,8 +258,8 @@ main(int argc, char** argv)
     // Ignore `SIGPIPE` for good.
     ::signal(SIGPIPE, SIG_IGN);
   }
-  catch(::std::exception& except) {
-    // Print the message in `except`. There isn't much we can do.
+  catch(::std::exception& stdex) {
+    // Print the message in `stdex`. There isn't much we can do.
     do_exit(exit_system_error, "%s\n[exception class `%s`]\n",
-                               except.what(), typeid(except).name());
+                               stdex.what(), typeid(stdex).name());
   }
