@@ -44,7 +44,7 @@ CLEANFILES =  \
 
 ## Initialization
 EXTRA_DIST =  \
-  poseidon/etc/main.conf.template  \
+  poseidon/etc/main.template.conf  \
   poseidon/etc/main.conf  \
   ${NOTHING}
 
