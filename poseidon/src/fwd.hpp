@@ -12,6 +12,28 @@
 
 namespace poseidon {
 
+// Macros
+#define POSEIDON_STATIC_CLASS_DECLARE(C)  \
+  private:  \
+     struct C##_self;  \
+     static C##_self* const self;  \
+     constexpr C() noexcept = default;  \
+     C(const C&) = delete;  \
+     C& operator=(const C&) = delete;  \
+     ~C() = default  // no semicolon
+
+#define POSEIDON_STATIC_CLASS_DEFINE(C)  \
+  template<typename TmIkbXn1>  \
+    ROCKET_ARTIFICIAL_FUNCTION static inline  \
+    TmIkbXn1* C##_instance()  \
+      { static TmIkbXn1 instance[1];  \
+        return instance;  }  \
+    class C;  \
+    struct C::C##_self* const C::self =  \
+        C##_instance<struct C::C##_self>();  \
+    struct C::C##_self : C  \
+      // add members here
+
 // Aliases
 using ::std::initializer_list;
 using ::std::integer_sequence;
@@ -67,28 +89,6 @@ class Config_File;
 
 // Singletons
 class Main_Config;
-
-// Macros
-#define POSEIDON_STATIC_CLASS_DECLARE(C)  \
-  private:  \
-     struct C##_self;  \
-     static C##_self* const self;  \
-     constexpr C() noexcept = default;  \
-     C(const C&) = delete;  \
-     C& operator=(const C&) = delete;  \
-     ~C() = default  // no semicolon
-
-#define POSEIDON_STATIC_CLASS_DEFINE(C)  \
-  template<typename TmIkbXn1>  \
-    ROCKET_ARTIFICIAL_FUNCTION static inline  \
-    TmIkbXn1* C##_instance()  \
-      { static TmIkbXn1 instance[1];  \
-        return instance;  }  \
-    class C;  \
-    struct C::C##_self* const C::self =  \
-        C##_instance<struct C::C##_self>();  \
-    struct C::C##_self : C  \
-      // add members here
 
 }  // namespace poseidon
 
