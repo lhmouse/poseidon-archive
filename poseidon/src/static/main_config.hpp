@@ -13,13 +13,6 @@ class Main_Config
     POSEIDON_STATIC_CLASS_DECLARE(Main_Config);
 
   public:
-    // Clears all data.
-    // This function is thread-safe.
-    static
-    void
-    clear()
-    noexcept;
-
     // Reloads the file `etc/poseidon/main.conf'.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.

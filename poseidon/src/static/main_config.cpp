@@ -16,21 +16,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Main_Config)
 
 void
 Main_Config::
-clear()
-noexcept
-  {
-    // Create an empty file.
-    Config_File temp;
-
-    // During destruction of `temp` the mutex should have been unlocked.
-    // The swap operation is presumed to be fast, so we don't hold the mutex
-    // for too long.
-    ::rocket::mutex::unique_lock lock(self->m_mutex);
-    self->m_data.swap(temp);
-  }
-
-void
-Main_Config::
 reload()
   {
     // Load the global config file by relative path.
