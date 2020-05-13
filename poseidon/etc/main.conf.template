@@ -69,9 +69,9 @@ logger:
      * daemonized itself.
      *
      *   color:
-     *     null   = enabled if terminal, disabled otheriwse
      *     true   = enabled
      *     false  = disabled
+     *     null   = enabled if terminal, disabled otheriwse
      *
      *   file:
      *     [path]      = copy text to this file in append mode
