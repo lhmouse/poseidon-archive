@@ -13,7 +13,7 @@ class Main_Config
     POSEIDON_STATIC_CLASS_DECLARE(Main_Config);
 
   public:
-    // Reloads the file `etc/poseidon/main.conf'.
+    // Reloads `main.conf`.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static

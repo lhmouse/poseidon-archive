@@ -20,7 +20,7 @@ reload()
   {
     // Load the global config file by relative path.
     // An exception is thrown upon failure.
-    Config_File temp("etc/poseidon/main.conf");
+    Config_File temp("main.conf");
 
     // During destruction of `temp` the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
