@@ -9,9 +9,8 @@
 namespace poseidon {
 
 // Creates a thread that invokes `funcT` repeatedly and never exits.
-// If `false` is returned, the thread will sleep for a short period.
 // Exceptions thrown from the thread procedure are ignored.
-template<typename PointerT, bool funcT(PointerT)>
+template<typename PointerT, void funcT(PointerT)>
 ::pthread_t
 create_daemon_thread(PointerT param, const char* name)
   {
@@ -23,9 +22,7 @@ create_daemon_thread(PointerT param, const char* name)
       {
         do
           try {
-            bool busy = funcT(static_cast<PointerT>(ptr));
-            if(!busy)
-              ::usleep(10'000);
+            funcT(static_cast<PointerT>(ptr));
           }
           catch(exception& stdex) {
             ::std::fprintf(stderr,

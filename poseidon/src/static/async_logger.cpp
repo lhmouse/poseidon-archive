@@ -130,8 +130,32 @@ constexpr char s_escapes[][8] =
     "\\xF8",  "\\xF9",  "\\xFA",  "\\xFB",  "\\xFC",  "\\xFD",  "\\xFE",  "\\xFF",
   };
 
+const char*
+do_write_loop(int fd, const char* data, size_t size)
+  {
+    auto bp = static_cast<const char*>(data);
+    const auto ep = bp + size;
+
+    for(;;) {
+      ::size_t nrem = static_cast<size_t>(ep - bp);
+      if(nrem == 0)
+        break;  // succeed
+
+      ::ssize_t nwrtn;
+      do
+        nwrtn = ::write(fd, bp, nrem);
+      while((nwrtn < 0) && (errno == EINTR));
+
+      if(nwrtn <= 0)
+        break;  // fail
+
+      bp += nwrtn;
+    }
+    return bp;
+  }
+
 template<typename SelfT>
-bool
+void
 do_logger_loop(SelfT* self)
   {
     // Await an entry and pop it.
@@ -142,10 +166,12 @@ do_logger_loop(SelfT* self)
     if(++(self->m_queue.bpos) == static_cast<ptrdiff_t>(self->m_queue.stor.size()))
       self->m_queue.bpos = 0;
 
+    bool needs_sync = self->m_queue.bpos == self->m_queue.epos;   // needs sync if empty
+
     // Get configuration for this level.
     lock.assign(self->m_config.mutex);
     if(entry.level >= self->m_config.levels.size())
-      return true;
+      return;
 
     auto conf = self->m_config.levels[entry.level];
     const auto& names = s_level_names[entry.level];
@@ -169,7 +195,7 @@ do_logger_loop(SelfT* self)
 
     // If no stream is opened, return immediately.
     if(strms.empty())
-      return true;
+      return;
 
     // Compose the string to write.
     ::rocket::tinyfmt_str fmt;
@@ -268,25 +294,12 @@ do_logger_loop(SelfT* self)
     const auto str = fmt.extract_string();
 
     // Write data to all streams.
-    for(const auto& fd : strms) {
-      const char* bp = str.data();
-      const char* ep = str.data() + str.size();
-      ::ssize_t nwritten;
+    for(const auto& fd : strms)
+      do_write_loop(fd, str.data(), str.size());
 
-      // Write the string, ignoring write errors.
-      while(bp < ep) {
-        nwritten = ::write(fd, bp, static_cast<size_t>(ep - bp));
-
-        if((nwritten < 0) && (errno == EINTR))
-          continue;  // retry
-
-        if(nwritten <= 0)
-          break;  // fail
-
-        bp += nwritten;
-      }
-    }
-    return true;
+    if(needs_sync)
+      for(const auto& fd : strms)
+        ::fdatasync(fd);
   }
 
 }  // namespace
