@@ -260,6 +260,7 @@ do_logger_loop(SelfT* self)
       else
         fmt << sq;
     }
+
     if(conf.color.size()) {
       fmt << "\x1B[0m";  // reset
     }
