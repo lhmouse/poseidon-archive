@@ -308,7 +308,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         // circular queue (if `bpos == epos` then empty)
         ptrdiff_t bpos = 0;
         ptrdiff_t epos = 0;
-        ::std::vector<Entry> stor;
+        std_vector<Entry> stor;
       }
       m_queue;
 

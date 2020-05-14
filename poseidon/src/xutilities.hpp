@@ -27,7 +27,7 @@ create_daemon_thread(PointerT param, const char* name)
             if(!busy)
               ::usleep(10'000);
           }
-          catch(::std::exception& stdex) {
+          catch(exception& stdex) {
             ::std::fprintf(stderr,
               "WARNING: daemon error: %s\n"
               "[exception `%s` thrown from %p (`%s`)]\n",

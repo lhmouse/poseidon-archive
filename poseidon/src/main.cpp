@@ -275,7 +275,7 @@ for(int i = 0; i < 100; ++i) {
     sleep(10000);
     do_exit(exit_success);
   }
-  catch(::std::exception& stdex) {
+  catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
     do_exit(exit_system_error, "%s\n[exception class `%s`]\n",
                                stdex.what(), typeid(stdex).name());

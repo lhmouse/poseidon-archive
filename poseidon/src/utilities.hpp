@@ -49,7 +49,7 @@ noexcept
     Async_Logger::write(::std::move(entry));
     return true;
   }
-  catch(::std::exception& stdex) {
+  catch(exception& stdex) {
     // Ignore this exception, but print a message.
     ::std::fprintf(stderr,
         "WARNING: %s: could not format log: %s\n"

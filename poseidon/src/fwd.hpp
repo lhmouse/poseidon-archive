@@ -9,6 +9,9 @@
 #endif
 
 #include <asteria/fwd.hpp>
+#include <string>
+#include <vector>
+#include <memory>
 
 namespace poseidon {
 
@@ -56,6 +59,7 @@ using ::std::ptrdiff_t;
 using ::std::size_t;
 using ::std::wint_t;
 using ::std::exception;
+using ::std::exception_ptr;
 using ::std::type_info;
 using ::std::pair;
 
@@ -83,6 +87,18 @@ using ::asteria::sso_vector;
 using ::asteria::array;
 using ::asteria::opt;
 using ::asteria::refp;
+
+// Aliases
+using std_string = ::std::string;
+
+template<typename T>
+using std_vector = ::std::vector<T>;
+
+template<typename T>
+using sptr = ::std::shared_ptr<T>;
+
+template<typename T>
+using wptr = ::std::weak_ptr<T>;
 
 // Core
 class Config_File;
