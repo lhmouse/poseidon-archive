@@ -10,7 +10,7 @@ namespace poseidon {
 
 POSEIDON_STATIC_CLASS_DEFINE(Main_Config)
   {
-    ::rocket::mutex m_mutex;
+    mutable ::rocket::mutex m_mutex;
     Config_File m_data;
   };
 
