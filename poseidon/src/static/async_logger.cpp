@@ -236,7 +236,7 @@ do_logger_loop(SelfT* self)
 
     // Write the file name and line number.
     if(conf.color.size()) {
-      fmt << "\x1B[34m";  // blue
+      fmt << "\x1B[34;1m";  // bright blue
     }
     fmt << "@ " << entry.file << ':' << entry.line;
 
