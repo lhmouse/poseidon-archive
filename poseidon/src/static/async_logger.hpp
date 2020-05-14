@@ -57,6 +57,7 @@ class Async_Logger
     start();
 
     // Checks whether a given level of log has any output streams.
+    // This function is thread-safe.
     ROCKET_PURE_FUNCTION
     static
     bool
@@ -64,6 +65,8 @@ class Async_Logger
     noexcept;
 
     // Writes a line of log.
+    // If this function fails, an exception is thrown, and there is no effect.
+    // This function is thread-safe.
     static
     void
     write(Entry&& entry);
