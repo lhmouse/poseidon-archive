@@ -17,16 +17,15 @@ struct Level_Name
   {
     char conf_name[8];
     char fmt_name[8];
-    char time_color[8];
   }
 constexpr s_level_names[] =
   {
-    { "fatal",  " FATAL ",  "31;1"  },
-    { "error",  " ERROR ",  "31;1"  },
-    { "warn",   " WARN  ",  "31;1"  },
-    { "info",   " INFO  ",  "32"    },
-    { "debug",  " DEBUG ",  "32"    },
-    { "trace",  " TRACE ",  "32"    },
+    { "fatal",  " FATAL "  },
+    { "error",  " ERROR "  },
+    { "warn",   " WARN  "  },
+    { "info",   " INFO  "  },
+    { "debug",  " DEBUG "  },
+    { "trace",  " TRACE "  },
   };
 
 struct Level_Config
@@ -184,7 +183,7 @@ do_logger_loop(SelfT* self)
     ::localtime_r(&(ts.tv_sec), &tr);
 
     if(conf.color.size()) {
-      fmt << "\x1B[" << names.time_color << "m";
+      fmt << "\x1B[" << conf.color << "m";
     }
     // 'yyyy-mmmm-dd HH:MM:SS.sss'
     ::rocket::ascii_numput nump;
