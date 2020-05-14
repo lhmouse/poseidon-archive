@@ -307,6 +307,8 @@ do_logger_loop(SelfT* self)
 
 POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
   {
+    opt<::pthread_t> m_thread;
+
     struct
       {
         mutable ::rocket::mutex mutex;
@@ -325,9 +327,18 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         std_vector<Entry> stor;
       }
       m_queue;
-
-    opt<::pthread_t> m_thread;
   };
+
+void
+Async_Logger::
+start()
+  {
+    if(self->m_thread)
+      return;
+
+    // Create the thread. Note it is never joined or detached.
+    self->m_thread = create_daemon_thread<decltype(self), do_logger_loop>(self, "logger");
+  }
 
 void
 Async_Logger::
@@ -344,17 +355,6 @@ reload()
     // for too long.
     ::rocket::mutex::unique_lock lock(self->m_config.mutex);
     self->m_config.levels.swap(temp);
-  }
-
-void
-Async_Logger::
-start()
-  {
-    if(self->m_thread)
-      return;
-
-    // Create the thread. Note it is never joined or detached.
-    self->m_thread = create_daemon_thread<decltype(self), do_logger_loop>(self, "logger");
   }
 
 bool
