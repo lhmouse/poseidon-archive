@@ -4,6 +4,7 @@
 #include "precompiled.hpp"
 #include "utilities.hpp"
 #include "static/main_config.hpp"
+#include "static/async_logger.hpp"
 #include <locale.h>
 #include <unistd.h>
 #include <signal.h>
@@ -238,6 +239,7 @@ main(int argc, char** argv)
     // Load 'main.conf' before daemonization, so any earlier failures are
     // visible to the user.
     Main_Config::reload();
+    Async_Logger::reload();
 
     // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)
@@ -257,6 +259,21 @@ main(int argc, char** argv)
 
     // Ignore `SIGPIPE` for good.
     ::signal(SIGPIPE, SIG_IGN);
+
+    // Start daemon threads.
+    Async_Logger::start();
+
+for(int i = 0; i < 100; ++i) {
+  POSEIDON_LOG_TRACE("trace ======> $1", i);
+  POSEIDON_LOG_DEBUG("debug");
+  POSEIDON_LOG_INFO("info");
+  POSEIDON_LOG_WARN("warning $2 $1", 1, 2);
+  POSEIDON_LOG_ERROR("error");
+  POSEIDON_LOG_FATAL("fatal");
+}
+
+    sleep(10000);
+    do_exit(exit_success);
   }
   catch(::std::exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.

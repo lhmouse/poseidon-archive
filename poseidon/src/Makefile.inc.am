@@ -3,6 +3,7 @@ include_poseidon_HEADERS =  \
   %reldir%/precompiled.hpp  \
   %reldir%/fwd.hpp  \
   %reldir%/utilities.hpp  \
+  %reldir%/xutilities.hpp  \
   ${NOTHING}
 
 include_poseidon_coredir = ${includedir}/poseidon/core
@@ -13,15 +14,17 @@ include_poseidon_core_HEADERS =  \
 include_poseidon_staticdir = ${includedir}/poseidon/static
 include_poseidon_static_HEADERS =  \
   %reldir%/static/main_config.hpp  \
+  %reldir%/static/async_logger.hpp  \
   ${NOTHING}
 
 lib_LTLIBRARIES += lib/libposeidon.la
 lib_libposeidon_la_SOURCES =  \
   %reldir%/exit_stubs.c  \
   %reldir%/fwd.cpp  \
-  %reldir%/utilities.cpp  \
+  %reldir%/xutilities.cpp  \
   %reldir%/core/config_file.cpp  \
   %reldir%/static/main_config.cpp  \
+  %reldir%/static/async_logger.cpp  \
   ${NOTHING}
 
 lib_libposeidon_la_LDFLAGS =  \

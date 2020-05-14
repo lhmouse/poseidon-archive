@@ -89,6 +89,7 @@ class Config_File;
 
 // Singletons
 class Main_Config;
+class Async_Logger;
 
 }  // namespace poseidon
 
