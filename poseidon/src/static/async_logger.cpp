@@ -166,7 +166,8 @@ do_logger_loop(SelfT* self)
     if(++(self->m_queue.bpos) == static_cast<ptrdiff_t>(self->m_queue.stor.size()))
       self->m_queue.bpos = 0;
 
-    bool needs_sync = self->m_queue.bpos == self->m_queue.epos;   // needs sync if empty
+    bool needs_sync = (self->m_queue.bpos == self->m_queue.epos) ||  // needs sync if empty
+                      (entry.level <= SelfT::level_error);  // or something very bad happens
 
     // Get configuration for this level.
     lock.assign(self->m_config.mutex);
