@@ -337,7 +337,8 @@ start()
       return;
 
     // Create the thread. Note it is never joined or detached.
-    self->m_thread = create_daemon_thread<decltype(self), do_logger_loop>(self, "logger");
+    auto thr = create_daemon_thread<decltype(self), do_logger_loop>(self, "logger");
+    self->m_thread = ::std::move(thr);
   }
 
 void
