@@ -35,7 +35,7 @@ class Async_Logger
 
         struct
           {
-            long id;
+            unsigned long tid;
             char name[16];
           }
           thread;

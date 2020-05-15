@@ -29,7 +29,7 @@ do_xlog_format(Async_Logger::Level level, const char* file, long line,
                const char* func, const ParamsT&... params)
 noexcept
   try {
-    // Compose the entry.
+    // Initialize the entry.
     Async_Logger::Entry entry = { };
     entry.level = level;
 
@@ -37,10 +37,14 @@ noexcept
     entry.line = line;
     entry.func = func;
 
-    entry.thread.id = ::syscall(SYS_gettid);
+    // Get the thread ID.
+    entry.thread.tid = ::pthread_self();
+
+    // Get the thread name, if one is available.
     ::pthread_getname_np(::pthread_self(),
                          entry.thread.name, sizeof(entry.thread.name));
 
+    // Compose the message.
     ::rocket::tinyfmt_str fmt;
     format(fmt, params...);  // ADL intended
     entry.text = fmt.extract_string();

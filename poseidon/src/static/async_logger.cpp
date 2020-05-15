@@ -242,7 +242,7 @@ do_logger_loop(SelfT* self)
     if(conf.color.size()) {
       fmt << "\x1B[30;1m";  // grey
     }
-    fmt << "thread " << entry.thread.id << " [" << entry.thread.name << "]";
+    fmt << "thread " << entry.thread.tid << " [" << entry.thread.name << "]";
 
     if(conf.color.size()) {
       fmt << "\x1B[0m";  // reset

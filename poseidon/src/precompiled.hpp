@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <memory>
 #include <cstdio>
-#include <sys/syscall.h>  // for `SYS_gettid`
 
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
