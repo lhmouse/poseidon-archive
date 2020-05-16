@@ -8,9 +8,9 @@
 
 namespace poseidon {
 
-// Creates a thread that invokes `funcT` repeatedly and never exits.
+// Creates a thread that invokes `procedureT` repeatedly and never exits.
 // Exceptions thrown from the thread procedure are ignored.
-template<typename PointerT, void funcT(PointerT)>
+template<typename PointerT, void procedureT(PointerT)>
 ::pthread_t
 create_daemon_thread(PointerT param, const char* name)
   {
@@ -18,25 +18,25 @@ create_daemon_thread(PointerT param, const char* name)
     ROCKET_ASSERT_MSG(::std::strlen(name) < 15, "thread name too long");
 
     // This is the thread routine. It never returns.
-    const auto thunk_proc = +[](void* ptr) -> void*
+    const auto thread_thunk = +[](void* ptr) -> void*
       {
         do
           try {
-            funcT(static_cast<PointerT>(ptr));
+            procedureT(static_cast<PointerT>(ptr));
           }
           catch(exception& stdex) {
             ::std::fprintf(stderr,
               "WARNING: daemon error: %s\n"
               "[exception `%s` thrown from %p (`%s`)]\n",
               stdex.what(), typeid(stdex).name(),
-              reinterpret_cast<void*>(funcT), typeid(funcT).name());
+              reinterpret_cast<void*>(procedureT), typeid(procedureT).name());
           }
         while(true);
       };
 
     // Create the thread first.
     ::pthread_t thr;
-    int err = ::pthread_create(&thr, nullptr, thunk_proc, param);
+    int err = ::pthread_create(&thr, nullptr, thread_thunk, param);
     if(err != 0)
       ASTERIA_THROW("could not create $2 thread\n"
                     "[`pthread_create()` failed: $1]'",
