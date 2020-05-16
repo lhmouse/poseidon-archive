@@ -12,6 +12,11 @@ class Async_Logger
   {
     POSEIDON_STATIC_CLASS_DECLARE(Async_Logger);
 
+  private:
+    static
+    void
+    do_thread_loop(void* param);
+
   public:
     // Note each level has a hardcoded name and number.
     // Don't change their values or reorder them.

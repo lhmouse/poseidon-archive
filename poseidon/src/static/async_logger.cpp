@@ -166,9 +166,35 @@ do_write_loop(int fd, const char* data, size_t size)
     return bp;
   }
 
-template<typename SelfT>
+}  // namespace
+
+POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
+  {
+    opt<::pthread_t> m_thread;
+
+    struct
+      {
+        mutable ::rocket::mutex mutex;
+        Level_Config_Array levels;
+      }
+      m_config;
+
+    struct
+      {
+        mutable ::rocket::mutex mutex;
+        ::rocket::condition_variable avail;
+
+        // circular queue (if `bpos == epos` then empty)
+        ptrdiff_t bpos = 0;
+        ptrdiff_t epos = 0;
+        std_vector<Entry> stor;
+      }
+      m_queue;
+  };
+
 void
-do_logger_loop(SelfT* self)
+Async_Logger::
+do_thread_loop(void* /*param*/)
   {
     // Await an entry and pop it.
     ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
@@ -180,7 +206,7 @@ do_logger_loop(SelfT* self)
       self->m_queue.bpos = 0;
 
     bool needs_sync = (self->m_queue.bpos == self->m_queue.epos) ||  // needs sync if empty
-                      (entry.level <= SelfT::level_error);  // or something very bad happens
+                      (entry.level <= level_error);  // or something very bad happens
 
     // Get configuration for this level.
     lock.assign(self->m_config.mutex);
@@ -316,32 +342,6 @@ do_logger_loop(SelfT* self)
         ::fdatasync(fd);
   }
 
-}  // namespace
-
-POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
-  {
-    opt<::pthread_t> m_thread;
-
-    struct
-      {
-        mutable ::rocket::mutex mutex;
-        Level_Config_Array levels;
-      }
-      m_config;
-
-    struct
-      {
-        mutable ::rocket::mutex mutex;
-        ::rocket::condition_variable avail;
-
-        // circular queue (if `bpos == epos` then empty)
-        ptrdiff_t bpos = 0;
-        ptrdiff_t epos = 0;
-        std_vector<Entry> stor;
-      }
-      m_queue;
-  };
-
 void
 Async_Logger::
 start()
@@ -350,7 +350,7 @@ start()
       return;
 
     // Create the thread. Note it is never joined or detached.
-    auto thr = noadl::create_daemon_thread<decltype(self), do_logger_loop>(self, "logger");
+    auto thr = noadl::create_daemon_thread<do_thread_loop>("logger");
     self->m_thread = ::std::move(thr);
   }
 

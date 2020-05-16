@@ -8,35 +8,40 @@
 
 namespace poseidon {
 
-// Creates a thread that invokes `procedureT` repeatedly and never exits.
+// Creates a thread that invokes `loopfnT` repeatedly and never exits.
 // Exceptions thrown from the thread procedure are ignored.
-template<typename PointerT, void procedureT(PointerT)>
+template<void loopfnT(void*)>
 ::pthread_t
-create_daemon_thread(PointerT param, const char* name)
+create_daemon_thread(const char* name, void* param = nullptr)
   {
     ROCKET_ASSERT_MSG(name, "no thread name specified");
     ROCKET_ASSERT_MSG(::std::strlen(name) <= 15, "thread name too long");
 
     // This is the thread routine. It never returns.
-    const auto thread_thunk = +[](void* ptr) -> void*
+    struct Thunk
       {
-        do
-          try {
-            procedureT(static_cast<PointerT>(ptr));
+        [[noreturn]] static
+        void*
+        do_loop(void* xparam)
+          {
+            do
+              try {
+                loopfnT(xparam);
+              }
+              catch(exception& stdex) {
+                ::std::fprintf(stderr,
+                  "WARNING: daemon error: %s\n"
+                  "[exception `%s` thrown from %p (`%s`)]\n",
+                  stdex.what(), typeid(stdex).name(),
+                  reinterpret_cast<void*>(loopfnT), typeid(loopfnT).name());
+              }
+            while(true);
           }
-          catch(exception& stdex) {
-            ::std::fprintf(stderr,
-              "WARNING: daemon error: %s\n"
-              "[exception `%s` thrown from %p (`%s`)]\n",
-              stdex.what(), typeid(stdex).name(),
-              reinterpret_cast<void*>(procedureT), typeid(procedureT).name());
-          }
-        while(true);
       };
 
     // Create the thread first.
     ::pthread_t thr;
-    int err = ::pthread_create(&thr, nullptr, thread_thunk, param);
+    int err = ::pthread_create(&thr, nullptr, Thunk::do_loop, param);
     if(err != 0)
       ASTERIA_THROW("could not create $2 thread\n"
                     "[`pthread_create()` failed: $1]'",
