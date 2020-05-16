@@ -14,6 +14,7 @@
 #include <memory>
 
 namespace poseidon {
+namespace noadl = poseidon;
 
 // Macros
 #define POSEIDON_STATIC_CLASS_DECLARE(C)  \
