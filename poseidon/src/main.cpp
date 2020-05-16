@@ -249,7 +249,7 @@ main(int argc, char** argv)
                       format_errno(errno));
 
     // Set name of the main thread. Failure to set the name is ignored.
-    ::pthread_setname_np(::pthread_self(), "main");
+    ::pthread_setname_np(::pthread_self(), "poseidon");
 
     // Trap exit signals. Failure to set signal handlers is ignored.
     // This also makes stdio functions fail immediately.
