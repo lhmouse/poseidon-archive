@@ -15,7 +15,7 @@ template<typename PointerT, void procedureT(PointerT)>
 create_daemon_thread(PointerT param, const char* name)
   {
     ROCKET_ASSERT_MSG(name, "no thread name specified");
-    ROCKET_ASSERT_MSG(::std::strlen(name) < 15, "thread name too long");
+    ROCKET_ASSERT_MSG(::std::strlen(name) <= 15, "thread name too long");
 
     // This is the thread routine. It never returns.
     const auto thread_thunk = +[](void* ptr) -> void*
@@ -44,7 +44,6 @@ create_daemon_thread(PointerT param, const char* name)
 
     // Set the thread name. Failure to set the name is ignored.
     ::pthread_setname_np(thr, name);
-
     return thr;
   }
 
