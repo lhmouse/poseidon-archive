@@ -103,10 +103,12 @@ using wptr = ::std::weak_ptr<T>;
 
 // Core
 class Config_File;
+class Abstract_Timer;
 
 // Singletons
 class Main_Config;
 class Async_Logger;
+class Timer_Driver;
 
 }  // namespace poseidon
 

@@ -6,6 +6,8 @@
 
 #include "fwd.hpp"
 #include "static/async_logger.hpp"
+#include "core/abstract_timer.hpp"
+#include "static/timer_driver.hpp"
 #include <asteria/utilities.hpp>
 #include <cstdio>
 
@@ -59,6 +61,50 @@ noexcept
 #define POSEIDON_LOG_INFO(...)    POSEIDON_XLOG_(::poseidon::Async_Logger::level_info,   __VA_ARGS__)
 #define POSEIDON_LOG_DEBUG(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_debug,  __VA_ARGS__)
 #define POSEIDON_LOG_TRACE(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_trace,  __VA_ARGS__)
+
+// Creates an asynchronous timer. The timer function will be called by
+// the timer thread, so thread safety must be taken into account.
+template<typename FuncT>
+rcptr<Abstract_Timer>
+create_async_timer(int64_t next, int64_t period, FuncT&& func)
+  {
+    // This is the concrete timer class.
+    struct Concrete_Timer : Abstract_Timer
+      {
+        typename ::std::decay<FuncT>::type m_func;
+
+        Concrete_Timer(int64_t next, int64_t period, FuncT&& func)
+          : Abstract_Timer(next, period),
+            m_func(::std::forward<FuncT>(func))
+          { }
+
+        void
+        do_on_async_timer(int64_t now)
+        const override
+          { this->m_func(now);  }
+      };
+
+    // Allocate an abstract timer and insert it.
+    auto timer = ::rocket::make_unique<Concrete_Timer>(next, period,
+                                                       ::std::forward<FuncT>(func));
+    return Timer_Driver::insert(::std::move(timer));
+  }
+
+// Creates a one-shot timer. The timer is deleted after being triggered.
+template<typename FuncT>
+rcptr<Abstract_Timer>
+create_async_timer_oneshot(int64_t next, FuncT&& func)
+  {
+    return noadl::create_async_timer(next, 0, ::std::forward<FuncT>(func));
+  }
+
+// Creates a periodic timer.
+template<typename FuncT>
+rcptr<Abstract_Timer>
+create_async_timer_periodic(int64_t period, FuncT&& func)
+  {
+    return noadl::create_async_timer(period, period, ::std::forward<FuncT>(func));
+  }
 
 }  // namespace asteria
 

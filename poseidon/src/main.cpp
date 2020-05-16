@@ -2,9 +2,10 @@
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
-#include "utilities.hpp"
 #include "static/main_config.hpp"
 #include "static/async_logger.hpp"
+#include "static/timer_driver.hpp"
+#include "utilities.hpp"
 #include <locale.h>
 #include <unistd.h>
 #include <signal.h>
@@ -262,18 +263,26 @@ main(int argc, char** argv)
 
     // Start daemon threads.
     Async_Logger::start();
+    Timer_Driver::start();
 
-for(int i = 0; i < 100; ++i) {
-  POSEIDON_LOG_TRACE("trace ======> $1", i);
-  POSEIDON_LOG_DEBUG("debug");
-  POSEIDON_LOG_INFO("info");
-  POSEIDON_LOG_WARN("warning $2 $1", 1, 2);
-  POSEIDON_LOG_ERROR("error");
-  POSEIDON_LOG_FATAL("fatal");
-}
+// TODO: Remove this in the future
+auto t = create_async_timer(1000, 2000, [](int64_t now) { POSEIDON_LOG_INFO("timer: $1", now);  });
+POSEIDON_LOG_ERROR("timer inserted!");
+
+sleep(10);
+if(exit_now)
+  do_exit(exit_success, "interrupt\n");
+t->reset(5000, INT64_MAX);
+POSEIDON_LOG_ERROR("timer reset! 5 secs, no repeat");
+
+sleep(10);
+if(exit_now)
+  do_exit(exit_success, "interrupt\n");
+t->reset(5000, 1000);
+POSEIDON_LOG_ERROR("timer reset! 5 secs, 1 repeat");
 
     sleep(10000);
-    do_exit(exit_success);
+    do_exit(exit_success, "interrupt\n");
   }
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
