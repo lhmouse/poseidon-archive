@@ -172,7 +172,8 @@ do_logger_loop(SelfT* self)
   {
     // Await an entry and pop it.
     ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
-    self->m_queue.avail.wait(lock, [&] { return self->m_queue.bpos != self->m_queue.epos;  });
+    while(self->m_queue.bpos == self->m_queue.epos)
+      self->m_queue.avail.wait(lock);
 
     auto entry = ::std::move(self->m_queue.stor[static_cast<size_t>(self->m_queue.bpos)]);
     if(++(self->m_queue.bpos) == static_cast<ptrdiff_t>(self->m_queue.stor.size()))
@@ -388,14 +389,12 @@ noexcept
     return (conf.out_fd != -1) || conf.out_path.size();
   }
 
-void
+bool
 Async_Logger::
 write(Level level, const char* file, long line, const char* func, cow_string&& text)
   {
     // Compose the entry.
     Entry entry = { level, file, line, func, ::std::move(text), "", 0 };
-
-    // Get the name and LWP ID of calling thread.
     ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
     entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
 
@@ -426,7 +425,9 @@ write(Level level, const char* file, long line, const char* func, cow_string&& t
     self->m_queue.stor[static_cast<size_t>(self->m_queue.epos)] = ::std::move(entry);
     if(++(self->m_queue.epos) == static_cast<ptrdiff_t>(self->m_queue.stor.size()))
       self->m_queue.epos = 0;
+
     self->m_queue.avail.notify_one();
+    return true;
   }
 
 }  // poseidon
