@@ -8,7 +8,6 @@
 #include "static/async_logger.hpp"
 #include <asteria/utilities.hpp>
 #include <cstdio>
-#include <sys/syscall.h>
 
 namespace poseidon {
 
@@ -29,28 +28,13 @@ do_xlog_format(Async_Logger::Level level, const char* file, long line,
                const char* func, const ParamsT&... params)
 noexcept
   try {
-    // Initialize the entry.
-    Async_Logger::Entry entry = { };
-    entry.level = level;
-
-    entry.file = file;
-    entry.line = line;
-    entry.func = func;
-
-    // Get the thread ID.
-    entry.thread.tid = ::pthread_self();
-
-    // Get the thread name, if one is available.
-    ::pthread_getname_np(::pthread_self(),
-                         entry.thread.name, sizeof(entry.thread.name));
-
     // Compose the message.
     ::rocket::tinyfmt_str fmt;
     format(fmt, params...);  // ADL intended
-    entry.text = fmt.extract_string();
+    auto text = fmt.extract_string();
 
-    // Push an entry.
-    Async_Logger::write(::std::move(entry));
+    // Push a new entry.
+    Async_Logger::write(level, file, line, func, ::std::move(text));
     return true;
   }
   catch(exception& stdex) {

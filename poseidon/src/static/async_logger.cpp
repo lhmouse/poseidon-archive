@@ -6,12 +6,12 @@
 #include "main_config.hpp"
 #include "../core/config_file.hpp"
 #include "../xutilities.hpp"
+#include <sys/syscall.h>
 
 namespace poseidon {
 namespace {
 
 using Level = Async_Logger::Level;
-using Entry = Async_Logger::Entry;
 
 struct Level_Name
   {
@@ -93,6 +93,18 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
       conf.out_path = ::rocket::sref("");
     }
   }
+
+struct Entry
+  {
+    Level level;
+    const char* file;
+    long line;
+    const char* func;
+    cow_string text;
+
+    char thr_name[16];  // thread name
+    ::pid_t thr_lwpid;  // kernel thread (LWP) ID, not pthread_t
+  };
 
 constexpr char s_escapes[][8] =
   {
@@ -242,7 +254,7 @@ do_logger_loop(SelfT* self)
     if(conf.color.size()) {
       fmt << "\x1B[30;1m";  // grey
     }
-    fmt << "thread " << entry.thread.tid << " [" << entry.thread.name << "]";
+    fmt << "Thread \"" << entry.thr_name << "\" [" << entry.thr_lwpid << "]";
 
     if(conf.color.size()) {
       fmt << "\x1B[0m";  // reset
@@ -253,7 +265,7 @@ do_logger_loop(SelfT* self)
     if(conf.color.size()) {
       fmt << "\x1B[37;1m";  // bright white
     }
-    fmt << "function `" << entry.func << "`";
+    fmt << "Function `" << entry.func << "`";
 
     if(conf.color.size()) {
       fmt << "\x1B[0m";  // reset
@@ -378,8 +390,15 @@ noexcept
 
 void
 Async_Logger::
-write(Entry&& entry)
+write(Level level, const char* file, long line, const char* func, cow_string&& text)
   {
+    // Compose the entry.
+    Entry entry = { level, file, line, func, ::std::move(text), "", 0 };
+
+    // Get the name and LWP ID of calling thread.
+    ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
+    entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
+
     // Lock queue for modification.
     ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
 

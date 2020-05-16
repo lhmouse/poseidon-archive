@@ -25,24 +25,6 @@ class Async_Logger
         level_trace  = 5,
       };
 
-    struct Entry
-      {
-        Level level;
-
-        const char* file;
-        long line;
-        const char* func;
-
-        struct
-          {
-            unsigned long tid;
-            char name[16];
-          }
-          thread;
-
-        cow_string text;
-      };
-
   public:
     // Creates the logger thread if one hasn't been created.
     static
@@ -69,7 +51,7 @@ class Async_Logger
     // This function is thread-safe.
     static
     void
-    write(Entry&& entry);
+    write(Level level, const char* file, long line, const char* func, cow_string&& text);
   };
 
 }  // namespace poseidon
