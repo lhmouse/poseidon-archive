@@ -281,7 +281,7 @@ do_thread_loop(void* /*param*/)
     if(conf.color.size()) {
       fmt << "\x1B[30;1m";  // grey
     }
-    fmt << "Thread \"" << entry.thr_name << "\" [" << entry.thr_lwpid << "]";
+    fmt << "Thread \"" << entry.thr_name << "\" [LWP " << entry.thr_lwpid << "]";
 
     if(conf.color.size()) {
       fmt << "\x1B[0m";  // reset
