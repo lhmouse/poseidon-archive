@@ -50,7 +50,8 @@ noexcept
 // Note the format string must be a string literal.
 #define POSEIDON_XLOG_(level, ...)  \
             (::poseidon::Async_Logger::is_enabled(level) &&  \
-             ::poseidon::do_xlog_format(level, __FILE__, __LINE__, __func__, "" __VA_ARGS__))
+             ::poseidon::do_xlog_format(level, __FILE__, __LINE__,  \
+                                        __PRETTY_FUNCTION__, "" __VA_ARGS__))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_fatal,  __VA_ARGS__)
 #define POSEIDON_LOG_ERROR(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_error,  __VA_ARGS__)
