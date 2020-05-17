@@ -12,14 +12,7 @@
 
 #include <string>
 #include <vector>
-#include <deque>
-#include <list>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
 #include <algorithm>
-#include <memory>
 #include <cstdio>
 
 #include <rocket/mutex.hpp>

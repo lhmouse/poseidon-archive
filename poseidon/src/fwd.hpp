@@ -11,7 +11,6 @@
 #include <asteria/fwd.hpp>
 #include <string>
 #include <vector>
-#include <memory>
 
 namespace poseidon {
 namespace noadl = poseidon;
@@ -94,12 +93,6 @@ using std_string = ::std::string;
 
 template<typename T>
 using std_vector = ::std::vector<T>;
-
-template<typename T>
-using sptr = ::std::shared_ptr<T>;
-
-template<typename T>
-using wptr = ::std::weak_ptr<T>;
 
 // Core
 class Config_File;
