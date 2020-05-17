@@ -252,6 +252,9 @@ main(int argc, char** argv)
     // Set name of the main thread. Failure to set the name is ignored.
     ::pthread_setname_np(::pthread_self(), "poseidon");
 
+    // Disable cancellation for safety. Failure to set the cancel state is ignored.
+    ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
+
     // Trap exit signals. Failure to set signal handlers is ignored.
     // This also makes stdio functions fail immediately.
     do_trap_exit_signal(SIGINT);

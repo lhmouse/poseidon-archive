@@ -24,6 +24,10 @@ create_daemon_thread(const char* name, void* param = nullptr)
         void*
         do_loop(void* xparam)
           {
+            // Disable cancellation for safety. Failure to set the cancel state is ignored.
+            ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
+
+            // Execute `loopfnT` repeatedly. The thread never exits.
             do
               try {
                 loopfnT(xparam);
@@ -49,6 +53,7 @@ create_daemon_thread(const char* name, void* param = nullptr)
 
     // Set the thread name. Failure to set the name is ignored.
     ::pthread_setname_np(thr, name);
+
     return thr;
   }
 
