@@ -393,7 +393,7 @@ write(Level level, const char* file, long line, const char* func, cow_string&& t
     ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
     self->m_queue.entries.emplace_back(::std::move(entry));
     self->m_queue.avail.notify_one();
-    return self->m_queue.size();
+    return self->m_queue.entries.size();
   }
 
 }  // poseidon
