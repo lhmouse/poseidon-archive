@@ -165,7 +165,6 @@ insert(uptr<Abstract_Timer>&& utimer)
     // Insert the timer.
     self->m_queue.heap.push_back({ next, timer });
     ::std::push_heap(self->m_queue.heap.begin(), self->m_queue.heap.end(), pq_compare);
-
     self->m_queue.avail.notify_one();
     return timer;
   }
@@ -192,7 +191,6 @@ noexcept
     // Update the element in place.
     qelem->next = next;
     ::std::make_heap(self->m_queue.heap.begin(), self->m_queue.heap.end(), pq_compare);
-
     self->m_queue.avail.notify_one();
     return true;
   }
