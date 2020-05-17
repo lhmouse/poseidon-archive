@@ -108,39 +108,61 @@ struct Entry
 
 constexpr char s_escapes[][8] =
   {
-    "\\0",    "\\x01",  "\\x02",  "\\x03",  "\\x04",  "\\x05",  "\\x06",  "\\a",
-    "\\b",    "\\t",    "\\n",    "\\v",    "\\f",    "\\r",    "\\x0E",  "\\x0F",
-    "\\x10",  "\\x11",  "\\x12",  "\\x13",  "\\x14",  "\\x15",  "\\x16",  "\\x17",
-    "\\x18",  "\\x19",  "\\x1A",  "\\x1B",  "\\x1C",  "\\x1D",  "\\x1E",  "\\x1F",
-    " ",      "!",      "\\\"",   "#",      "$",      "%",      "&",      "\\'",
-    "(",      ")",      "*",      "+",      ",",      "-",      ".",      "/",
-    "0",      "1",      "2",      "3",      "4",      "5",      "6",      "7",
-    "8",      "9",      ":",      ";",      "<",      "=",      ">",      "?",
-    "@",      "A" ,     "B",      "C" ,     "D",      "E",      "F" ,     "G",
-    "H",      "I",      "J",      "K",      "L",      "M",      "N",      "O",
-    "P",      "Q",      "R",      "S",      "T",      "U",      "V",      "W",
-    "X",      "Y",      "Z",      "[",      "\\\\",   "]",      "^",      "_",
-    "`",      "a",      "b",      "c",      "d",      "e",      "f",      "g",
-    "h",      "i" ,     "j",      "k" ,     "l",      "m",      "n" ,     "o",
-    "p",      "q",      "r",      "s",      "t",      "u",      "v",      "w",
-    "x",      "y",      "z",      "{",      "|",      "}",      "~",      "\\x7F",
-    "\x80",   "\x81",   "\x82",   "\x83",   "\x84",   "\x85",   "\x86",   "\x87",
-    "\x88",   "\x89",   "\x8A",   "\x8B",   "\x8C",   "\x8D",   "\x8E",   "\x8F",
-    "\x90",   "\x91",   "\x92",   "\x93",   "\x94",   "\x95",   "\x96",   "\x97",
-    "\x98",   "\x99",   "\x9A",   "\x9B",   "\x9C",   "\x9D",   "\x9E",   "\x9F",
-    "\xA0",   "\xA1",   "\xA2",   "\xA3",   "\xA4",   "\xA5",   "\xA6",   "\xA7",
-    "\xA8",   "\xA9",   "\xAA",   "\xAB",   "\xAC",   "\xAD",   "\xAE",   "\xAF",
-    "\xB0",   "\xB1",   "\xB2",   "\xB3",   "\xB4",   "\xB5",   "\xB6",   "\xB7",
-    "\xB8",   "\xB9",   "\xBA",   "\xBB",   "\xBC",   "\xBD",   "\xBE",   "\xBF",
-    "\\xC0",  "\\xC1",  "\xC2",   "\xC3",   "\xC4",   "\xC5",   "\xC6",   "\xC7",
-    "\xC8",   "\xC9",   "\xCA",   "\xCB",   "\xCC",   "\xCD",   "\xCE",   "\xCF",
-    "\xD0",   "\xD1",   "\xD2",   "\xD3",   "\xD4",   "\xD5",   "\xD6",   "\xD7",
-    "\xD8",   "\xD9",   "\xDA",   "\xDB",   "\xDC",   "\xDD",   "\xDE",   "\xDF",
-    "\xE0",   "\xE1",   "\xE2",   "\xE3",   "\xE4",   "\xE5",   "\xE6",   "\xE7",
-    "\xE8",   "\xE9",   "\xEA",   "\xEB",   "\xEC",   "\xED",   "\xEE",   "\xEF",
-    "\xF0",   "\xF1",   "\xF2",   "\xF3",   "\xF4",   "\\xF5",  "\\xF6",  "\\xF7",
-    "\\xF8",  "\\xF9",  "\\xFA",  "\\xFB",  "\\xFC",  "\\xFD",  "\\xFE",  "\\xFF",
+    "\\0",   "\\x01", "\\x02", "\\x03", "\\x04", "\\x05", "\\x06", "\\a",
+    "\\b",   "\\t",   "\n\t",  "\\v",   "\\f",   "\\r",   "\\x0E", "\\x0F",
+    "\\x10", "\\x11", "\\x12", "\\x13", "\\x14", "\\x15", "\\x16", "\\x17",
+    "\\x18", "\\x19", "\\x1A", "\\x1B", "\\x1C", "\\x1D", "\\x1E", "\\x1F",
+    " ",     "!",     "\"",    "#",     "$",     "%",     "&",     "\'",
+    "(",     ")",     "*",     "+",     ",",     "-",     ".",     "/",
+    "0",     "1",     "2",     "3",     "4",     "5",     "6",     "7",
+    "8",     "9",     ":",     ";",     "<",     "=",     ">",     "?",
+    "@",     "A",     "B",     "C",     "D",     "E",     "F",     "G",
+    "H",     "I",     "J",     "K",     "L",     "M",     "N",     "O",
+    "P",     "Q",     "R",     "S",     "T",     "U",     "V",     "W",
+    "X",     "Y",     "Z",     "[",     "\\",    "]",     "^",     "_",
+    "`",     "a",     "b",     "c",     "d",     "e",     "f",     "g",
+    "h",     "i",     "j",     "k",     "l",     "m",     "n",     "o",
+    "p",     "q",     "r",     "s",     "t",     "u",     "v",     "w",
+    "x",     "y",     "z",     "{",     "|",     "}",     "~",     "\x7F",
+    "\x80",  "\x81",  "\x82",  "\x83",  "\x84",  "\x85",  "\x86",  "\x87",
+    "\x88",  "\x89",  "\x8A",  "\x8B",  "\x8C",  "\x8D",  "\x8E",  "\x8F",
+    "\x90",  "\x91",  "\x92",  "\x93",  "\x94",  "\x95",  "\x96",  "\x97",
+    "\x98",  "\x99",  "\x9A",  "\x9B",  "\x9C",  "\x9D",  "\x9E",  "\x9F",
+    "\xA0",  "\xA1",  "\xA2",  "\xA3",  "\xA4",  "\xA5",  "\xA6",  "\xA7",
+    "\xA8",  "\xA9",  "\xAA",  "\xAB",  "\xAC",  "\xAD",  "\xAE",  "\xAF",
+    "\xB0",  "\xB1",  "\xB2",  "\xB3",  "\xB4",  "\xB5",  "\xB6",  "\xB7",
+    "\xB8",  "\xB9",  "\xBA",  "\xBB",  "\xBC",  "\xBD",  "\xBE",  "\xBF",
+    "\\xC0", "\\xC1", "\xC2",  "\xC3",  "\xC4",  "\xC5",  "\xC6",  "\xC7",
+    "\xC8",  "\xC9",  "\xCA",  "\xCB",  "\xCC",  "\xCD",  "\xCE",  "\xCF",
+    "\xD0",  "\xD1",  "\xD2",  "\xD3",  "\xD4",  "\xD5",  "\xD6",  "\xD7",
+    "\xD8",  "\xD9",  "\xDA",  "\xDB",  "\xDC",  "\xDD",  "\xDE",  "\xDF",
+    "\xE0",  "\xE1",  "\xE2",  "\xE3",  "\xE4",  "\xE5",  "\xE6",  "\xE7",
+    "\xE8",  "\xE9",  "\xEA",  "\xEB",  "\xEC",  "\xED",  "\xEE",  "\xEF",
+    "\xF0",  "\xF1",  "\xF2",  "\xF3",  "\xF4",  "\\xF5", "\\xF6", "\\xF7",
+    "\\xF8", "\\xF9", "\\xFA", "\\xFB", "\\xFC", "\\xFD", "\\xFE", "\\xFF",
   };
+
+template<typename... ParamsT>
+bool
+do_color(tinyfmt& fmt, const Level_Config& conf, const ParamsT&... params)
+  {
+    if(conf.color.empty())
+      return false;
+
+    void* unused[] = { &(fmt << "\x1B["), &(fmt << params)..., &(fmt << 'm') };
+    (void)unused;
+    return true;
+  }
+
+bool
+do_end_color(tinyfmt& fmt, const Level_Config& conf)
+  {
+    if(conf.color.empty())
+      return false;
+
+    fmt << "\x1B[0m";
+    return true;
+  }
 
 const char*
 do_write_loop(int fd, const char* data, size_t size)
@@ -149,7 +171,7 @@ do_write_loop(int fd, const char* data, size_t size)
     const auto ep = bp + size;
 
     for(;;) {
-      ::size_t nrem = static_cast<size_t>(ep - bp);
+      ::size_t nrem = size_t(ep - bp);
       if(nrem == 0)
         break;  // succeed
 
@@ -185,8 +207,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         ::rocket::condition_variable avail;
 
         // circular queue (if `bpos == epos` then empty)
-        ptrdiff_t bpos = 0;
-        ptrdiff_t epos = 0;
+        size_t bpos = 0;
+        size_t epos = 0;
         std_vector<Entry> stor;
       }
       m_queue;
@@ -201,9 +223,9 @@ do_thread_loop(void* /*param*/)
     while(self->m_queue.bpos == self->m_queue.epos)
       self->m_queue.avail.wait(lock);
 
-    auto entry = ::std::move(self->m_queue.stor[static_cast<size_t>(self->m_queue.bpos)]);
-    if(++(self->m_queue.bpos) == static_cast<ptrdiff_t>(self->m_queue.stor.size()))
-      self->m_queue.bpos = 0;
+    size_t bpos = self->m_queue.bpos;
+    auto entry = ::std::move(self->m_queue.stor[bpos]);
+    self->m_queue.bpos = (++bpos < self->m_queue.stor.size()) ? bpos : 0;
 
     bool needs_sync = (self->m_queue.bpos == self->m_queue.epos) ||  // needs sync if empty
                       (entry.level <= level_error);  // or something very bad happens
@@ -248,11 +270,9 @@ do_thread_loop(void* /*param*/)
     ::tm tr;
     ::localtime_r(&(ts.tv_sec), &tr);
 
-    if(conf.color.size()) {
-      fmt << "\x1B[" << conf.color << "m";
-    }
-    // 'yyyy-mmmm-dd HH:MM:SS.sss'
+    do_color(fmt, conf, conf.color);
     ::rocket::ascii_numput nump;
+    // 'yyyy-mmmm-dd HH:MM:SS.sss'
     fmt << nump.put_DU(static_cast<uint64_t>(tr.tm_year + 1900), 4);
     fmt << '-' << nump.put_DU(static_cast<uint64_t>(tr.tm_mon + 1), 2);
     fmt << '-' << nump.put_DU(static_cast<uint64_t>(tr.tm_mday), 2);
@@ -260,75 +280,53 @@ do_thread_loop(void* /*param*/)
     fmt << ':' << nump.put_DU(static_cast<uint64_t>(tr.tm_min), 2);
     fmt << ':' << nump.put_DU(static_cast<uint64_t>(tr.tm_sec), 2);
     fmt << '.' << nump.put_DU(static_cast<uint64_t>(ts.tv_nsec), 9);
-
-    if(conf.color.size()) {
-      fmt << "\x1B[0m";  // reset
-    }
+    do_end_color(fmt, conf);
     fmt << ' ';
 
     // Write the log level string.
-    if(conf.color.size()) {
-      fmt << "\x1B[" << conf.color << ";7m";  // reverse
-    }
+    do_color(fmt, conf, conf.color, ";7");  // reverse
     fmt << names.fmt_name;
-
-    if(conf.color.size()) {
-      fmt << "\x1B[0m";  // reset
-    }
+    do_end_color(fmt, conf);
     fmt << ' ';
 
     // Write the thread ID and name.
-    if(conf.color.size()) {
-      fmt << "\x1B[30;1m";  // grey
-    }
+    do_color(fmt, conf, "30;1");  // grey
     fmt << "Thread \"" << entry.thr_name << "\" [LWP " << entry.thr_lwpid << "]";
-
-    if(conf.color.size()) {
-      fmt << "\x1B[0m";  // reset
-    }
+    do_end_color(fmt, conf);
     fmt << ' ';
 
     // Write the function name.
-    if(conf.color.size()) {
-      fmt << "\x1B[37;1m";  // bright white
-    }
+    do_color(fmt, conf, "37;1");  // bright white
     fmt << "Function `" << entry.func << "`";
-
-    if(conf.color.size()) {
-      fmt << "\x1B[0m";  // reset
-    }
+    do_end_color(fmt, conf);
     fmt << ' ';
 
     // Write the file name and line number.
-    if(conf.color.size()) {
-      fmt << "\x1B[34;1m";  // bright blue
-    }
+    do_color(fmt, conf, "34;1");  // bright blue
     fmt << "@ " << entry.file << ':' << entry.line;
-
-    if(conf.color.size()) {
-      fmt << "\x1B[0m";  // reset
-    }
+    do_end_color(fmt, conf);
     fmt << "\n\t";
 
     // Write the message.
-    if(conf.color.size()) {
-      fmt << "\x1B[" << conf.color << "m";
+    do_color(fmt, conf, conf.color);
+    for(size_t k = 0;  k != entry.text.size();  ++k) {
+      const auto& seq = s_escapes[uint8_t(entry.text[k])];
+      if(ROCKET_EXPECT(seq[1] == 0)) {
+        // Optimize the operation a little if it is a non-escaped character.
+        fmt << seq[0];
+      }
+      else if(ROCKET_EXPECT(seq[0] != '\\')) {
+        // Insert non-escaped characters verbatim.
+        fmt << seq;
+      }
+      else {
+        // Write an escaped sequence.
+        do_color(fmt, conf, "7");  // reverse
+        fmt << seq;
+        do_color(fmt, conf, "27");  // reverse
+      }
     }
-    size_t bp = 0;
-    do {
-      // Insert an escapd sequence.
-      // Optimize the operation a little if it consists of only one character.
-      const auto& sq = s_escapes[uint8_t(entry.text[bp])];
-      if(ROCKET_EXPECT(sq[1] == 0))
-        fmt << sq[0];
-      else
-        fmt << sq;
-    }
-    while(++bp != entry.text.size());
-
-    if(conf.color.size()) {
-      fmt << "\x1B[0m";  // reset
-    }
+    do_end_color(fmt, conf);
     fmt << '\n';
 
     auto str = fmt.extract_string();
@@ -402,29 +400,29 @@ write(Level level, const char* file, long line, const char* func, cow_string&& t
     ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
 
     // Get the number of unused elements in the queue.
-    // Note the queue is empty if `bpos == epos`.do_logger_loop
-    ptrdiff_t navail = self->m_queue.bpos - self->m_queue.epos;
-    if(navail < 0)
-      navail += static_cast<ptrdiff_t>(self->m_queue.stor.size());
+    // Note the queue is empty if `bpos == epos`.
+    size_t navail = self->m_queue.bpos - self->m_queue.epos;
+    if(self->m_queue.bpos < self->m_queue.epos)
+      navail += self->m_queue.stor.size();
 
     // Ensure the queue will not be full after pushing, otherwise it would be
     // impractical to tell whether the queue is empty or full when `bpos == epos`.
-    constexpr ptrdiff_t nrsrv = 10;
+    constexpr size_t nrsrv = 10;
     if(ROCKET_UNEXPECT(navail < nrsrv)) {
       // Insert elements at `epos`, pushing elements towards the back.
-      self->m_queue.stor.insert(self->m_queue.stor.begin() + self->m_queue.epos,
+      self->m_queue.stor.insert(self->m_queue.stor.begin() + ptrdiff_t(self->m_queue.epos),
                                 nrsrv, { });
+      navail += nrsrv;
 
       // Update `bpos` as necessary, unless the queue is empty.
       if(self->m_queue.epos < self->m_queue.bpos)
         self->m_queue.bpos += nrsrv;
-      navail += nrsrv;
     }
 
     // Push the element.
-    self->m_queue.stor[static_cast<size_t>(self->m_queue.epos)] = ::std::move(entry);
-    if(++(self->m_queue.epos) == static_cast<ptrdiff_t>(self->m_queue.stor.size()))
-      self->m_queue.epos = 0;
+    size_t epos = self->m_queue.epos;
+    self->m_queue.stor[epos] = ::std::move(entry);
+    self->m_queue.epos = (++epos < self->m_queue.stor.size()) ? epos : 0;
 
     self->m_queue.avail.notify_one();
     return true;
