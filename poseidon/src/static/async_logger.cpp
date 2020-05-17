@@ -239,7 +239,7 @@ do_thread_loop(void* /*param*/)
 
     // Compose the string to write.
     ::rocket::tinyfmt_str fmt;
-    fmt.set_string(cow_string(1023, '/'));
+    fmt.set_string(cow_string(2047, '/'));
     fmt.clear_string();
 
     // Write the timestamp.
@@ -314,24 +314,24 @@ do_thread_loop(void* /*param*/)
     if(conf.color.size()) {
       fmt << "\x1B[" << conf.color << "m";
     }
-    for(size_t k = 0;  k < entry.text.size();  ++k) {
-      size_t ch = entry.text[k] & 0xFF;
-      const auto& sq = s_escapes[ch];
-
-      // Insert this escapd sequence.
+    size_t bp = 0;
+    do {
+      // Insert an escapd sequence.
       // Optimize the operation a little if it consists of only one character.
+      const auto& sq = s_escapes[uint8_t(entry.text[bp])];
       if(ROCKET_EXPECT(sq[1] == 0))
         fmt << sq[0];
       else
         fmt << sq;
     }
+    while(++bp != entry.text.size());
 
     if(conf.color.size()) {
       fmt << "\x1B[0m";  // reset
     }
     fmt << '\n';
 
-    const auto str = fmt.extract_string();
+    auto str = fmt.extract_string();
 
     // Write data to all streams.
     for(const auto& fd : strms)
