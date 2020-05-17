@@ -205,11 +205,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
       {
         mutable ::rocket::mutex mutex;
         ::rocket::condition_variable avail;
-
-        // circular queue (if `bpos == epos` then empty)
-        size_t bpos = 0;
-        size_t epos = 0;
-        std_vector<Entry> stor;
+        std_deque<Entry> entries;
       }
       m_queue;
   };
@@ -220,15 +216,12 @@ do_thread_loop(void* /*param*/)
   {
     // Await an entry and pop it.
     ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
-    while(self->m_queue.bpos == self->m_queue.epos)
+    while(self->m_queue.entries.empty())
       self->m_queue.avail.wait(lock);
 
-    size_t bpos = self->m_queue.bpos;
-    auto entry = ::std::move(self->m_queue.stor[bpos]);
-    self->m_queue.bpos = (++bpos < self->m_queue.stor.size()) ? bpos : 0;
-
-    bool needs_sync = (self->m_queue.bpos == self->m_queue.epos) ||  // needs sync if empty
-                      (entry.level <= level_error);  // or something very bad happens
+    auto entry = ::std::move(self->m_queue.entries.front());
+    self->m_queue.entries.pop_front();
+    bool needs_sync = (entry.level <= level_error) || self->m_queue.entries.empty();
 
     // Get configuration for this level.
     lock.assign(self->m_config.mutex);
@@ -242,7 +235,7 @@ do_thread_loop(void* /*param*/)
     lock.unlock();
 
     // Get list of streams to write.
-    sso_vector<::rocket::unique_posix_fd, 3> strms;
+    sso_vector<::rocket::unique_posix_fd, 4> strms;
 
     if(conf.out_fd != -1)
       strms.emplace_back(conf.out_fd, nullptr);  // don't close
@@ -387,7 +380,7 @@ noexcept
     return (conf.out_fd != -1) || conf.out_path.size();
   }
 
-bool
+size_t
 Async_Logger::
 write(Level level, const char* file, long line, const char* func, cow_string&& text)
   {
@@ -396,36 +389,11 @@ write(Level level, const char* file, long line, const char* func, cow_string&& t
     ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
     entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
 
-    // Lock queue for modification.
-    ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
-
-    // Get the number of unused elements in the queue.
-    // Note the queue is empty if `bpos == epos`.
-    size_t navail = self->m_queue.bpos - self->m_queue.epos;
-    if(self->m_queue.bpos < self->m_queue.epos)
-      navail += self->m_queue.stor.size();
-
-    // Ensure the queue will not be full after pushing, otherwise it would be
-    // impractical to tell whether the queue is empty or full when `bpos == epos`.
-    constexpr size_t nrsrv = 10;
-    if(ROCKET_UNEXPECT(navail < nrsrv)) {
-      // Insert elements at `epos`, pushing elements towards the back.
-      self->m_queue.stor.insert(self->m_queue.stor.begin() + ptrdiff_t(self->m_queue.epos),
-                                nrsrv, { });
-      navail += nrsrv;
-
-      // Update `bpos` as necessary, unless the queue is empty.
-      if(self->m_queue.epos < self->m_queue.bpos)
-        self->m_queue.bpos += nrsrv;
-    }
-
     // Push the element.
-    size_t epos = self->m_queue.epos;
-    self->m_queue.stor[epos] = ::std::move(entry);
-    self->m_queue.epos = (++epos < self->m_queue.stor.size()) ? epos : 0;
-
+    ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
+    self->m_queue.entries.emplace_back(::std::move(entry));
     self->m_queue.avail.notify_one();
-    return true;
+    return self->m_queue.size();
   }
 
 }  // poseidon

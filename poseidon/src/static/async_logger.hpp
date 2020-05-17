@@ -51,11 +51,11 @@ class Async_Logger
     is_enabled(Level level)
     noexcept;
 
-    // Writes a line of log.
+    // Enqueues a log entry and returns the total number of entries that are pending.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static
-    bool
+    size_t
     write(Level level, const char* file, long line, const char* func, cow_string&& text);
   };
 
