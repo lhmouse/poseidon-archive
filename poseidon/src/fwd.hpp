@@ -11,6 +11,7 @@
 #include <asteria/fwd.hpp>
 #include <string>
 #include <vector>
+#include <deque>
 
 namespace poseidon {
 namespace noadl = poseidon;
@@ -93,6 +94,9 @@ using std_string = ::std::string;
 
 template<typename T>
 using std_vector = ::std::vector<T>;
+
+template<typename T>
+using std_deque = ::std::deque<T>;
 
 // Core
 class Config_File;

@@ -12,6 +12,7 @@
 
 #include <string>
 #include <vector>
+#include <deque>
 #include <algorithm>
 #include <cstdio>
 
