@@ -22,11 +22,11 @@ class Abstract_Socket
       };
 
   private:
-    ::rocket::unique_posix_fd m_fd;
+    unique_posix_fd m_fd;
 
   public:
     explicit
-    Abstract_Socket(::rocket::unique_posix_fd&& fd)
+    Abstract_Socket(unique_posix_fd&& fd)
       : m_fd(::std::move(fd))
       { this->do_set_common_options();  }
 

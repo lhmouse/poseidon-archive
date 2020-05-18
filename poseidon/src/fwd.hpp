@@ -9,6 +9,9 @@
 #endif
 
 #include <asteria/fwd.hpp>
+#include <rocket/unique_posix_fd.hpp>
+#include <rocket/unique_posix_file.hpp>
+#include <rocket/unique_posix_dir.hpp>
 #include <string>
 #include <vector>
 #include <deque>
@@ -63,6 +66,10 @@ using ::std::exception;
 using ::std::exception_ptr;
 using ::std::type_info;
 using ::std::pair;
+
+using ::rocket::unique_posix_fd;
+using ::rocket::unique_posix_file;
+using ::rocket::unique_posix_dir;
 
 using ::asteria::nullopt_t;
 using ::asteria::cow_string;

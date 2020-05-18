@@ -235,15 +235,15 @@ do_thread_loop(void* /*param*/)
     lock.unlock();
 
     // Get list of streams to write.
-    sso_vector<::rocket::unique_posix_fd, 4> strms;
+    sso_vector<unique_posix_fd, 4> strms;
 
     if(conf.out_fd != -1)
       strms.emplace_back(conf.out_fd, nullptr);  // don't close
 
     if(conf.out_path.size()) {
-      ::rocket::unique_posix_fd fd(::open(conf.out_path.c_str(),
-                                          O_WRONLY | O_APPEND | O_CREAT, 0666),
-                                   ::close);
+      unique_posix_fd fd(::open(conf.out_path.c_str(),
+                                O_WRONLY | O_APPEND | O_CREAT, 0666),
+                         ::close);
       if(fd != -1)
         strms.emplace_back(::std::move(fd));
     }
