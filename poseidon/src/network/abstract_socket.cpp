@@ -39,7 +39,7 @@ const
 
     if(::getsockname(this->m_fd, addr, &size) != 0)
       POSEIDON_THROW("could not get local socket address\n"
-                     "[`getsockname()` failed: $1]",
+                     "[`getsockname()` failed: $1]'",
                      format_errno(errno));
 
     return Socket_Address(addr, size);
@@ -55,7 +55,7 @@ const
 
     if(::getpeername(this->m_fd, addr, &size) != 0)
       POSEIDON_THROW("could not get remote socket address\n"
-                     "[`getpeername()` failed: $1]",
+                     "[`getpeername()` failed: $1]'",
                      format_errno(errno));
 
     return Socket_Address(addr, size);
