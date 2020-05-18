@@ -15,6 +15,16 @@ Abstract_Socket::
 
 void
 Abstract_Socket::
+do_set_common_options()
+  {
+    // Enable non-blocking mode.
+    int flags = ::fcntl(this->m_fd, F_GETFL);
+    if((flags & O_NONBLOCK) == 0)
+      ::fcntl(this->m_fd, F_SETFL, flags | O_NONBLOCK);
+  }
+
+void
+Abstract_Socket::
 terminate()
 noexcept
   {

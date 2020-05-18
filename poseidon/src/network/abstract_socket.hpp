@@ -19,11 +19,15 @@ class Abstract_Socket
   public:
     explicit
     Abstract_Socket(::rocket::unique_posix_fd&& fd)
-    noexcept
       : m_fd(::std::move(fd))
-      { }
+      { this->do_set_common_options();  }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Socket);
+
+  private:
+    // Enables non-blocking mode, etc.
+    void
+    do_set_common_options();
 
   protected:
     // The network driver notifies incoming data via this callback.
