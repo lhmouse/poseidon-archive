@@ -153,7 +153,7 @@ insert(uptr<Abstract_Timer>&& utimer)
     // Take ownership of `timer`.
     rcptr<Abstract_Timer> timer(utimer.release());
     if(!timer)
-      ASTERIA_THROW("null timer pointer not valid");
+      POSEIDON_THROW("null timer pointer not valid");
 
     // Get the next trigger time.
     // The timer is considered to be owned uniquely, so there is no need to lock it.

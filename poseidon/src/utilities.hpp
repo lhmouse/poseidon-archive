@@ -26,34 +26,32 @@ using ::asteria::format_errno;
 template<typename... ParamsT>
 ROCKET_NOINLINE
 bool
-do_xlog_format(Async_Logger::Level level, const char* file, long line,
-               const char* func, const ParamsT&... params)
+do_xlog_format(Async_Logger::Level level, const char* file, long line, const char* func,
+               const char* templ, const ParamsT&... params)
 noexcept
   try {
     // Compose the message.
     ::rocket::tinyfmt_str fmt;
-    format(fmt, params...);  // ADL intended
+    format(fmt, templ, params...);  // ADL intended
     auto text = fmt.extract_string();
 
-    // Push a new entry.
+    // Push a new log entry.
     Async_Logger::write(level, file, line, func, ::std::move(text));
     return true;
   }
   catch(exception& stdex) {
     // Ignore this exception, but print a message.
     ::std::fprintf(stderr,
-        "WARNING: %s: could not format log: %s\n"
-        "[exception `%s` thrown from '%s:%ld'\n",
-        func, stdex.what(),
-        typeid(stdex).name(), file, line);
+        "WARNING: %s: could not format log: %s\n[exception `%s` thrown from '%s:%ld'\n",
+        func, stdex.what(), typeid(stdex).name(), file, line);
     return false;
   }
 
 // Note the format string must be a string literal.
 #define POSEIDON_XLOG_(level, ...)  \
-            (::poseidon::Async_Logger::is_enabled(level) &&  \
-             ::poseidon::do_xlog_format(level, __FILE__, __LINE__,  \
-                                        __PRETTY_FUNCTION__, "" __VA_ARGS__))
+    (::poseidon::Async_Logger::is_enabled(level) &&  \
+         ::poseidon::do_xlog_format(level, __FILE__, __LINE__,  \
+         __PRETTY_FUNCTION__, "" __VA_ARGS__))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_fatal,  __VA_ARGS__)
 #define POSEIDON_LOG_ERROR(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_error,  __VA_ARGS__)
@@ -61,6 +59,32 @@ noexcept
 #define POSEIDON_LOG_INFO(...)    POSEIDON_XLOG_(::poseidon::Async_Logger::level_info,   __VA_ARGS__)
 #define POSEIDON_LOG_DEBUG(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_debug,  __VA_ARGS__)
 #define POSEIDON_LOG_TRACE(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_trace,  __VA_ARGS__)
+
+template<typename... ParamsT>
+[[noreturn]] ROCKET_NOINLINE
+bool
+do_xthrow_format(const char* file, long line, const char* func, const char* prefix,
+                 const char* templ, const ParamsT&... params)
+  {
+    // Compose the message.
+    ::rocket::tinyfmt_str fmt;
+    format(fmt, templ, params...);  // ADL intended
+    auto text = fmt.extract_string();
+
+    // Push a new log entry.
+    static constexpr auto level = Async_Logger::level_warn;
+    if(Async_Logger::is_enabled(level))
+      Async_Logger::write(level, file, line, func, text);
+
+    // Throw the exception.
+    ::rocket::sprintf_and_throw<::std::runtime_error>(
+        "%s: %s\n[thrown from '%s:%ld']",
+        prefix, text.c_str(), file, line);
+  }
+
+#define POSEIDON_THROW(...)  \
+    (::poseidon::do_xthrow_format(__FILE__, __LINE__,  \
+         __PRETTY_FUNCTION__, __func__, "" __VA_ARGS__))
 
 // Creates an asynchronous timer. The timer function will be called by
 // the timer thread, so thread safety must be taken into account.

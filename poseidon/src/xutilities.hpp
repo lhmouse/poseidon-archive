@@ -47,7 +47,7 @@ create_daemon_thread(const char* name, void* param = nullptr)
     ::pthread_t thr;
     int err = ::pthread_create(&thr, nullptr, Thunk::do_loop, param);
     if(err != 0)
-      ASTERIA_THROW("could not create $2 thread\n"
+      POSEIDON_THROW("could not create $2 thread\n"
                     "[`pthread_create()` failed: $1]'",
                     format_errno(err), name);
 

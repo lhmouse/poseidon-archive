@@ -382,7 +382,7 @@ noexcept
 
 size_t
 Async_Logger::
-write(Level level, const char* file, long line, const char* func, cow_string&& text)
+write(Level level, const char* file, long line, const char* func, cow_string text)
   {
     // Compose the entry.
     Entry entry = { level, file, line, func, ::std::move(text), "", 0 };

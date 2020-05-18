@@ -56,7 +56,7 @@ class Async_Logger
     // This function is thread-safe.
     static
     size_t
-    write(Level level, const char* file, long line, const char* func, cow_string&& text);
+    write(Level level, const char* file, long line, const char* func, cow_string text);
   };
 
 }  // namespace poseidon

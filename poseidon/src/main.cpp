@@ -233,9 +233,9 @@ main(int argc, char** argv)
     // Set current working directory if one is specified.
     if(cmdline.cd_here.size())
       if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
-        ASTERIA_THROW("could not set working directory to '$2'\n"
-                      "[`chdir()` failed: $1]'",
-                      format_errno(errno), cmdline.cd_here);
+        POSEIDON_THROW("could not set working directory to '$2'\n"
+                       "[`chdir()` failed: $1]'",
+                       format_errno(errno), cmdline.cd_here);
 
     // Load 'main.conf' before daemonization, so any earlier failures are
     // visible to the user.
@@ -245,9 +245,9 @@ main(int argc, char** argv)
     // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)
       if(::daemon(1, 0) != 0)
-        ASTERIA_THROW("could not daemonize process\n"
-                      "[`chdir()` failed: $1]'",
-                      format_errno(errno));
+        POSEIDON_THROW("could not daemonize process\n"
+                       "[`chdir()` failed: $1]'",
+                       format_errno(errno));
 
     // Set name of the main thread. Failure to set the name is ignored.
     ::pthread_setname_np(::pthread_self(), "poseidon");
