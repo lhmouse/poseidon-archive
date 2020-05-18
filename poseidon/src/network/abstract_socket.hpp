@@ -16,9 +16,10 @@ class Abstract_Socket
   public:
     enum IO_Result
       {
-        io_result_end_of_stream  = 0,
-        io_result_would_block    = 1,
-        io_result_interrupted    = 2,
+        io_result_success        = 0,
+        io_result_end_of_stream  = 1,
+        io_result_would_block    = 2,
+        io_result_interrupted    = 3,
       };
 
   private:
