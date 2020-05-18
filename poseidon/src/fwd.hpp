@@ -95,6 +95,7 @@ class Abstract_Timer;
 
 // Network
 class Socket_Address;
+class Abstract_TLS_IO;
 
 // Singletons
 class Main_Config;

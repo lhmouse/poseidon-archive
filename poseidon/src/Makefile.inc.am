@@ -15,6 +15,7 @@ include_poseidon_core_HEADERS =  \
 include_poseidon_networkdir = ${includedir}/poseidon/network
 include_poseidon_network_HEADERS =  \
   %reldir%/network/socket_address.hpp  \
+  %reldir%/network/abstract_tls_io.hpp  \
   ${NOTHING}
 
 include_poseidon_staticdir = ${includedir}/poseidon/static
@@ -32,6 +33,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/config_file.cpp  \
   %reldir%/core/abstract_timer.cpp  \
   %reldir%/network/socket_address.cpp  \
+  %reldir%/network/abstract_tls_io.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
