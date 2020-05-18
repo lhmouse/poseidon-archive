@@ -235,7 +235,7 @@ main(int argc, char** argv)
       if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
         POSEIDON_THROW("could not set working directory to '$2'\n"
                        "[`chdir()` failed: $1]",
-                       format_errno(errno), cmdline.cd_here);
+                       noadl::format_errno(errno), cmdline.cd_here);
 
     // Load 'main.conf' before daemonization, so any earlier failures are
     // visible to the user.
@@ -247,7 +247,7 @@ main(int argc, char** argv)
       if(::daemon(1, 0) != 0)
         POSEIDON_THROW("could not daemonize process\n"
                        "[`chdir()` failed: $1]",
-                       format_errno(errno));
+                       noadl::format_errno(errno));
 
     // Set name of the main thread. Failure to set the name is ignored.
     ::pthread_setname_np(::pthread_self(), "poseidon");

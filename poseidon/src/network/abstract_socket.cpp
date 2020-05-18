@@ -51,7 +51,7 @@ const
     if(::getsockname(this->get_fd(), addr, &size) != 0)
       POSEIDON_THROW("could not get local socket address\n"
                      "[`getsockname()` failed: $1]",
-                     format_errno(errno));
+                     noadl::format_errno(errno));
 
     return Socket_Address(addr, size);
   }
@@ -67,7 +67,7 @@ const
     if(::getpeername(this->get_fd(), addr, &size) != 0)
       POSEIDON_THROW("could not get remote socket address\n"
                      "[`getpeername()` failed: $1]",
-                     format_errno(errno));
+                     noadl::format_errno(errno));
 
     return Socket_Address(addr, size);
   }

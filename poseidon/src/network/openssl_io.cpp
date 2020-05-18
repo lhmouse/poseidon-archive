@@ -99,7 +99,7 @@ read(void* data, size_t size)
 
     POSEIDON_THROW("OpenSSL read error\n"
                    "[`SSL_read()` returned `$1`: $2]",
-                   nread, format_errno(err));
+                   nread, noadl::format_errno(err));
   }
 
 ptrdiff_t
@@ -124,7 +124,7 @@ write(const void* data, size_t size)
 
     POSEIDON_THROW("OpenSSL write error\n"
                    "[`SSL_write()` returned `$1`: $2]",
-                   nwritten, format_errno(err));
+                   nwritten, noadl::format_errno(err));
   }
 
 bool
@@ -146,7 +146,7 @@ shutdown()
 
     POSEIDON_THROW("OpenSSL shutdown error\n"
                    "[`SSL_shutdown()` returned `$1`: $2]",
-                   result, format_errno(err));
+                   result, noadl::format_errno(err));
   }
 
 }  // namespace poseidon

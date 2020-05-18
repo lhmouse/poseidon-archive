@@ -330,13 +330,13 @@ reload(const char* path)
     if(!abspath)
       POSEIDON_THROW("could not open config file '$2'\n"
                      "[`realpath()` failed: $1]",
-                     format_errno(errno), path);
+                     noadl::format_errno(errno), path);
 
     unique_posix_file fp(::fopen(abspath, "r"), ::fclose);
     if(!fp)
       POSEIDON_THROW("could not open config file '$2'\n"
                      "[`fopen()` failed: $1]",
-                     format_errno(errno), abspath);
+                     noadl::format_errno(errno), abspath);
 
     // Initialize.
     this->m_abspath.assign(abspath.get());
