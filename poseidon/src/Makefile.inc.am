@@ -18,6 +18,7 @@ include_poseidon_network_HEADERS =  \
   %reldir%/network/abstract_tls_io.hpp  \
   %reldir%/network/openssl_io.hpp  \
   %reldir%/network/abstract_socket.hpp  \
+  %reldir%/network/accept_socket.hpp  \
   ${NOTHING}
 
 include_poseidon_staticdir = ${includedir}/poseidon/static
@@ -38,6 +39,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/network/abstract_tls_io.cpp  \
   %reldir%/network/openssl_io.cpp  \
   %reldir%/network/abstract_socket.cpp  \
+  %reldir%/network/accept_socket.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \

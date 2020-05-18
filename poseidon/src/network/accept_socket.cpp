@@ -18,38 +18,101 @@ Accept_Socket::
 do_set_common_options()
   {
     // Enable reusing addresses.
-    int val = 1;
-    ::setsockopt(this->get_fd(), SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
+    static constexpr int true_val[] = { -1 };
+    ::setsockopt(this->get_fd(), SOL_SOCKET, SO_REUSEADDR, true_val, sizeof(true_val));
   }
 
-/*IO_Result
-do_on_async_read(::rocket::mutex::unique_lock& lock, void* hint, size_t size)
-override;
+Abstract_Socket::IO_Result
+Accept_Socket::
+do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hine*/, size_t /*size*/)
+  {
+    // Try accepting a socket.
+    Socket_Address::storage_type addr;
+    Socket_Address::size_type size = sizeof(addr);
 
-// Does nothing.
-// This function always returns zero.
-// `lock` is ignored.
+    unique_posix_fd fd(::accept4(this->get_fd(), addr, &size, SOCK_NONBLOCK), ::close);
+    if(!fd) {
+      // Handle errors.
+      int err = errno;
+      if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
+        return io_result_would_block;
+
+      if(err == EINTR)
+        return io_result_interrupted;
+
+      POSEIDON_THROW("error accepting incoming connection\n"
+                     "[`accept4()` failed: $1]",
+                     noadl::format_errno(err));
+    }
+
+    try {
+      // Create a new socket object.
+      auto sock = this->do_on_async_accept(::std::move(fd));
+      if(!sock)
+        POSEIDON_THROW("null pointer returned from `do_on_async_accept()`\n"
+                       "[socket class `$1`]",
+                       typeid(*this).name());
+
+      POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'",
+                        sock->get_local_address(), sock->get_remote_address());
+
+      // TODO register socket
+      return io_result_success;
+    }
+    catch(exception& stdex) {
+      // It is probably bad to let the exception propagate to network driver and kill
+      // this server socket... so we catch and ignore this exception.
+      POSEIDON_LOG_ERROR("Error accepting incoming connection: $2\n"
+                         "[socket class `$1`]",
+                         typeid(*this).name(), stdex.what());
+      return io_result_interrupted;
+    }
+  }
+
 size_t
-do_write_queue_size(::rocket::mutex::unique_lock& lock)
-const noexcept override;
+Accept_Socket::
+do_write_queue_size(::rocket::mutex::unique_lock& /*lock*/)
+const noexcept
+  {
+    return 0;
+  }
 
-// Does nothing.
-// This function always returns `io_result_end_of_stream`.
-// `lock` is ignored.
-IO_Result
-do_on_async_write(::rocket::mutex::unique_lock& lock, void* hint, size_t size)
-override;
+Abstract_Socket::IO_Result
+Accept_Socket::
+do_on_async_write(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+  {
+    return io_result_end_of_stream;
+  }
 
-// Prints a line of text but does nothing otherwise.
 void
+Accept_Socket::
 do_on_async_shutdown(int err)
-override;
+  {
+    POSEIDON_LOG_INFO("Stopped listening on '$1': $2",
+                      this->get_local_address(),
+                      noadl::noadl::format_errno(err));
+  }
 
-blic:
-// Binds this socket to the specified address and starts listening.
-// `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values
-// are truncated silently.
 void
-bind_and_listen(const Socket_Address& addr, uint32_t backlog = UINT32_MAX);
-*/
+Accept_Socket::
+bind_and_listen(const Socket_Address& addr, uint32_t backlog)
+  {
+    // Bind onto `addr`.
+    if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)
+      POSEIDON_THROW("failed to bind socket onto '$2'\n",
+                     "[`bind()` failed: $1]",
+                     noadl::format_errno(errno), addr);
+
+    // Start listening.
+    static constexpr uint32_t backlog_min = 1;
+    static constexpr uint32_t backlog_max = SOMAXCONN;
+
+    if(::listen(this->get_fd(), static_cast<int>(::rocket::clamp(backlog, backlog_min, backlog_max))) != 0)
+      POSEIDON_THROW("failed to set up listen socket on '$2'\n",
+                     "[`listen()` failed: $1]",
+                     noadl::format_errno(errno), this->get_local_address());
+
+     POSEIDON_LOG_INFO("Started listening on '$1'...", this->get_local_address());
+  }
+
 }  // namespace poseidon

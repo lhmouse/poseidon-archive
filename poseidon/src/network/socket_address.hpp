@@ -102,7 +102,7 @@ class Socket_Address
     const noexcept
       { return this->m_stor;  }
 
-    size_t
+    ::socklen_t
     size()
     const noexcept
       { return this->m_size;  }

@@ -56,10 +56,8 @@ class Accept_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     uptr<Abstract_Socket>
-    do_on_async_accept(
-
-    
-    ::rocket::unique_posix_fd&& fd
+    do_on_async_accept(unique_posix_fd&& fd)
+      = 0;
 
   public:
     // Binds this socket to the specified address and starts listening.
