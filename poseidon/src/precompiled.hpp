@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <bitset>
 #include <cstdio>
+#include <endian.h>
 
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
