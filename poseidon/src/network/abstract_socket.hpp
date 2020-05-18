@@ -13,6 +13,14 @@ class Abstract_Socket
   {
     friend Network_Driver;
 
+  public:
+    enum IO_Result
+      {
+        io_result_end_of_stream  = 0,
+        io_result_would_block    = 1,
+        io_result_interrupted    = 2,
+      };
+
   private:
     ::rocket::unique_posix_fd m_fd;
 
@@ -31,14 +39,17 @@ class Abstract_Socket
 
   protected:
     // The network driver notifies incoming data via this callback.
+    // `lock` shall lock `*this` after the call if locking is supported.
+    // `hint` points to a temporary buffer of `size` bytes that may be used by this
+    // function for any purpose.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
-    void
-    do_on_async_read(void* data, size_t size)
+    IO_Result
+    do_on_async_read(::rocket::mutex::unique_lock& lock, void* hint, size_t size)
       = 0;
 
     // This function shall return the number of bytes that are pending for writing.
-    // The argument shall lock `*this` after the call, if locking is supported.
+    // `lock` shall lock `*this` after the call if locking is supported.
     virtual
     size_t
     do_write_queue_size(::rocket::mutex::unique_lock& lock)
@@ -46,13 +57,13 @@ class Abstract_Socket
       = 0;
 
     // The network driver notifies possibility of outgoing data via this callback.
-    // This function shall return `true` if some data have been written, or `false`
-    // if nothing is to be written. The argument shall lock `*this` after the call,
-    // if locking is supported.
+    // `lock` shall lock `*this` after the call if locking is supported.
+    // `hint` points to a temporary buffer of `size` bytes that may be used by this
+    // function for any purpose.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
-    bool
-    do_on_async_write(::rocket::mutex::unique_lock& lock)
+    IO_Result
+    do_on_async_write(::rocket::mutex::unique_lock& lock, void* hint, size_t size)
       = 0;
 
     // The network driver notifies closure via this callback.
