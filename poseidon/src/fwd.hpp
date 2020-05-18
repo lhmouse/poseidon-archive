@@ -82,6 +82,7 @@ using ::asteria::nullopt;
 
 using ::asteria::uptr;
 using ::asteria::rcptr;
+using ::asteria::rcfwdp;
 using ::asteria::cow_vector;
 using ::asteria::cow_bivector;
 using ::asteria::sso_vector;
@@ -97,11 +98,13 @@ class Abstract_Timer;
 class Socket_Address;
 class Abstract_TLS_IO;
 class OpenSSL_IO;
+class Abstract_Socket;
 
 // Singletons
 class Main_Config;
 class Async_Logger;
 class Timer_Driver;
+class Network_Driver;
 
 }  // namespace poseidon
 
