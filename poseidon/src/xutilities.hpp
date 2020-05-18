@@ -48,7 +48,7 @@ create_daemon_thread(const char* name, void* param = nullptr)
     int err = ::pthread_create(&thr, nullptr, Thunk::do_loop, param);
     if(err != 0)
       POSEIDON_THROW("could not create $2 thread\n"
-                    "[`pthread_create()` failed: $1]'",
+                    "[`pthread_create()` failed: $1]",
                     format_errno(err), name);
 
     // Set the thread name. Failure to set the name is ignored.

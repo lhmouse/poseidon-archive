@@ -98,7 +98,7 @@ read(void* data, size_t size)
       return -1;  // retry
 
     POSEIDON_THROW("OpenSSL read error\n"
-                   "[`SSL_read()` returned `$1`: $2]'",
+                   "[`SSL_read()` returned `$1`: $2]",
                    nread, format_errno(err));
   }
 
@@ -123,7 +123,7 @@ write(const void* data, size_t size)
       return -1;  // retry
 
     POSEIDON_THROW("OpenSSL write error\n"
-                   "[`SSL_write()` returned `$1`: $2]'",
+                   "[`SSL_write()` returned `$1`: $2]",
                    nwritten, format_errno(err));
   }
 
@@ -145,7 +145,7 @@ shutdown()
       return true;  // ?????
 
     POSEIDON_THROW("OpenSSL shutdown error\n"
-                   "[`SSL_shutdown()` returned `$1`: $2]'",
+                   "[`SSL_shutdown()` returned `$1`: $2]",
                    result, format_errno(err));
   }
 
