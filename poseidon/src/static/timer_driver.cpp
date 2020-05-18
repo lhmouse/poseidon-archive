@@ -53,13 +53,13 @@ struct PQ_Compare
 
 POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
   {
-    opt<::pthread_t> m_thread;
+    ::pthread_t m_thread;
 
     struct
       {
         mutable ::rocket::mutex mutex;
         ::rocket::condition_variable avail;
-        std_vector<PQ_Element> heap;
+        ::std::vector<PQ_Element> heap;
       }
       m_queue;
   };

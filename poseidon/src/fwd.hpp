@@ -30,7 +30,7 @@ namespace noadl = poseidon;
   template<typename TmIkbXn1>  \
     ROCKET_ARTIFICIAL_FUNCTION static inline  \
     TmIkbXn1* C##_instance()  \
-      { static TmIkbXn1 instance[1];  \
+      { static TmIkbXn1 instance[1] = { };  \
         return instance;  }  \
     class C;  \
     struct C::C##_self* const C::self =  \
@@ -88,15 +88,6 @@ using ::asteria::sso_vector;
 using ::asteria::array;
 using ::asteria::opt;
 using ::asteria::refp;
-
-// Aliases
-using std_string = ::std::string;
-
-template<typename T>
-using std_vector = ::std::vector<T>;
-
-template<typename T>
-using std_deque = ::std::deque<T>;
 
 // Core
 class Config_File;

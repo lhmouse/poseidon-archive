@@ -14,6 +14,7 @@
 #include <vector>
 #include <deque>
 #include <algorithm>
+#include <bitset>
 #include <cstdio>
 
 #include <rocket/mutex.hpp>

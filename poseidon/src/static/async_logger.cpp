@@ -192,7 +192,7 @@ do_write_loop(int fd, const char* data, size_t size)
 
 POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
   {
-    opt<::pthread_t> m_thread;
+    ::pthread_t m_thread;
 
     struct
       {
@@ -205,7 +205,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
       {
         mutable ::rocket::mutex mutex;
         ::rocket::condition_variable avail;
-        std_deque<Entry> entries;
+        ::std::deque<Entry> entries;
       }
       m_queue;
   };
