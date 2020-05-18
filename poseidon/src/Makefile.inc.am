@@ -12,6 +12,11 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/abstract_timer.hpp  \
   ${NOTHING}
 
+include_poseidon_networkdir = ${includedir}/poseidon/network
+include_poseidon_network_HEADERS =  \
+  %reldir%/network/socket_address.hpp  \
+  ${NOTHING}
+
 include_poseidon_staticdir = ${includedir}/poseidon/static
 include_poseidon_static_HEADERS =  \
   %reldir%/static/main_config.hpp  \
@@ -26,6 +31,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/xutilities.cpp  \
   %reldir%/core/config_file.cpp  \
   %reldir%/core/abstract_timer.cpp  \
+  %reldir%/network/socket_address.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \

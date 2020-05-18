@@ -93,6 +93,9 @@ using ::asteria::refp;
 class Config_File;
 class Abstract_Timer;
 
+// Network
+class Socket_Address;
+
 // Singletons
 class Main_Config;
 class Async_Logger;
