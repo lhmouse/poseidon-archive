@@ -50,8 +50,7 @@ noexcept
 // Note the format string must be a string literal.
 #define POSEIDON_XLOG_(level, ...)  \
     (::poseidon::Async_Logger::is_enabled(level) &&  \
-         ::poseidon::do_xlog_format(level, __FILE__, __LINE__,  \
-         __PRETTY_FUNCTION__, "" __VA_ARGS__))
+         ::poseidon::do_xlog_format(level, __FILE__, __LINE__, __func__, "" __VA_ARGS__))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_fatal,  __VA_ARGS__)
 #define POSEIDON_LOG_ERROR(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_error,  __VA_ARGS__)
@@ -63,7 +62,7 @@ noexcept
 template<typename... ParamsT>
 [[noreturn]] ROCKET_NOINLINE
 bool
-do_xthrow_format(const char* file, long line, const char* func, const char* prefix,
+do_xthrow_format(const char* file, long line, const char* func,
                  const char* templ, const ParamsT&... params)
   {
     // Compose the message.
@@ -79,12 +78,11 @@ do_xthrow_format(const char* file, long line, const char* func, const char* pref
     // Throw the exception.
     ::rocket::sprintf_and_throw<::std::runtime_error>(
         "%s: %s\n[thrown from '%s:%ld']",
-        prefix, text.c_str(), file, line);
+        func, text.c_str(), file, line);
   }
 
 #define POSEIDON_THROW(...)  \
-    (::poseidon::do_xthrow_format(__FILE__, __LINE__,  \
-         __PRETTY_FUNCTION__, __func__, "" __VA_ARGS__))
+    (::poseidon::do_xthrow_format(__FILE__, __LINE__, __func__, "" __VA_ARGS__))
 
 // Creates an asynchronous timer. The timer function will be called by
 // the timer thread, so thread safety must be taken into account.
