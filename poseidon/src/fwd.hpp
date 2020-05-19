@@ -107,6 +107,7 @@ class Abstract_TLS_IO;
 class OpenSSL_IO;
 class Abstract_Socket;
 class Abstract_Accept_Socket;
+enum IO_Result : ptrdiff_t;
 
 // Singletons
 class Main_Config;

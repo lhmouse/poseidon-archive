@@ -39,17 +39,17 @@ final
     noexcept;
 
     // Reads some data, like `::read()`.
-    ptrdiff_t
+    IO_Result
     read(void* data, size_t size)
     override;
 
     // Writes some data, like `::write()`.
-    ptrdiff_t
+    IO_Result
     write(const void* data, size_t size)
     override;
 
     // Initiates normal shutdown of this stream.
-    bool
+    IO_Result
     shutdown()
     override;
   };

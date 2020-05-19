@@ -16,7 +16,7 @@ do_print_errors()
     char sbuf[1024];
     size_t index = 0;
 
-    while(auto err = ::ERR_get_error()) {
+    while(unsigned long err = ::ERR_get_error()) {
       ::ERR_error_string_n(err, sbuf, sizeof(sbuf));
       POSEIDON_LOG_ERROR("OpenSSL error: [$1] $2", index, err);
       ++index;
@@ -24,38 +24,45 @@ do_print_errors()
     return index;
   }
 
-int
-do_errno_from(::SSL* ssl, int ret)
+IO_Result
+do_translate_ssl_error(const char* func, ::SSL* ssl, int res)
   {
-    int err = ::SSL_get_error(ssl, ret);
+    int err = ::SSL_get_error(ssl, res);
     switch(err) {
       case SSL_ERROR_NONE:
       case SSL_ERROR_ZERO_RETURN:
         // normal closure
-        err = 0;
-        break;
+        return io_result_eof;
 
       case SSL_ERROR_WANT_READ:
       case SSL_ERROR_WANT_WRITE:
       case SSL_ERROR_WANT_CONNECT:
       case SSL_ERROR_WANT_ACCEPT:
         // retry
-        err = EAGAIN;
-        break;
+        return io_result_again;
 
       case SSL_ERROR_SYSCALL:
+        // dump and clear the thread-local error queue
+        do_print_errors();
+
         // forward `errno` verbatim
         err = errno;
-        do_print_errors();
-        break;
+        if(err == EINTR)
+          return io_result_intr;
+
+        POSEIDON_THROW("OpenSSL reported an irrecoverable I/O error\n"
+                       "[`$1()` returned `$2`; errno: $3]",
+                       func, res, noadl::format_errno(errno));
 
       default:
-        // generic failure
-        err = EPERM;
+        // dump and clear the thread-local error queue
         do_print_errors();
-        break;
+
+        // report generic failure
+        POSEIDON_THROW("OpenSSL reported an irrecoverable error\n"
+                       "[`$1()` returned `$2`]",
+                       func, res);
     }
-    return err;
   }
 
 }  // namespace
@@ -77,76 +84,49 @@ noexcept
       ::SSL_set_accept_state(this->m_ssl);
   }
 
-ptrdiff_t
+IO_Result
 OpenSSL_IO::
 read(void* data, size_t size)
   {
     // Try reading some data.
-    // Note: According to OpenSSL documentation, unlike `::read()`,
-    //       a return value of zero indates failure.
-    int nread = ::SSL_read(this->m_ssl, data,
-                           static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
-    if(nread > 0)
-      return nread;  // success
+    // Note: According to OpenSSL documentation, unlike `::read()`, a return
+    //       value of zero indates failure, rather than EOF.
+    int res = ::SSL_read(this->m_ssl, data,
+                         static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
+    if(res > 0)
+      return static_cast<IO_Result>(res);  // success
 
-    // Find out why.
-    int err = do_errno_from(this->m_ssl, nread);
-    if(err == 0)
-      return 0;  // normal closure
-
-    if(::rocket::is_any_of(err, { EINTR, EAGAIN, EWOULDBLOCK }))
-      return -1;  // retry
-
-    POSEIDON_THROW("OpenSSL read error\n"
-                   "[`SSL_read()` returned `$1`: $2]",
-                   nread, noadl::format_errno(err));
+    return do_translate_ssl_error("SSL_read", this->m_ssl, res);
   }
 
-ptrdiff_t
+IO_Result
 OpenSSL_IO::
 write(const void* data, size_t size)
   {
     // Try writing some data.
-    // Note: According to OpenSSL documentation, unlike `::write()`,
-    //       a return value of zero indates failure.
-    int nwritten = ::SSL_write(this->m_ssl, data,
-                               static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
-    if(nwritten > 0)
-      return nwritten;  // success
+    // Note: According to OpenSSL documentation, unlike `::write()`, a return
+    //       value of zero indates failure.
+    int res = ::SSL_write(this->m_ssl, data,
+                          static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
+    if(res > 0)
+      return static_cast<IO_Result>(res);  // success
 
-    // Find out why.
-    int err = do_errno_from(this->m_ssl, nwritten);
-    if(err == 0)
-      return 0;  // ?????
-
-    if(::rocket::is_any_of(err, { EINTR, EAGAIN, EWOULDBLOCK }))
-      return -1;  // retry
-
-    POSEIDON_THROW("OpenSSL write error\n"
-                   "[`SSL_write()` returned `$1`: $2]",
-                   nwritten, noadl::format_errno(err));
+    return do_translate_ssl_error("SSL_write", this->m_ssl, res);
   }
 
-bool
+IO_Result
 OpenSSL_IO::
 shutdown()
   {
     // Perform normal closure.
-    int result = ::SSL_shutdown(this->m_ssl);
-    if(result == 1)
-      return true;  // complete
+    int res = ::SSL_shutdown(this->m_ssl);
+    if(res == 1)
+      return io_result_eof;  // complete
 
-    if(result == 0)
-      return false;  // not complete
+    if(res == 0)
+      return io_result_again;  // not complete
 
-    // Find out why.
-    int err = do_errno_from(this->m_ssl, result);
-    if(err == 0)
-      return true;  // ?????
-
-    POSEIDON_THROW("OpenSSL shutdown error\n"
-                   "[`SSL_shutdown()` returned `$1`: $2]",
-                   result, noadl::format_errno(err));
+    return do_translate_ssl_error("SSL_shutdown", this->m_ssl, res);
   }
 
 }  // namespace poseidon

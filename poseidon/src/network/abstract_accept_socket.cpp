@@ -24,7 +24,7 @@ do_set_common_options()
     ROCKET_ASSERT(res == 0);
   }
 
-Abstract_Socket::IO_Result
+IO_Result
 Abstract_Accept_Socket::
 do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   try {
@@ -36,11 +36,11 @@ do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t 
     if(!fd) {
       // Handle errors.
       int err = errno;
-      if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
-        return io_result_would_block;
-
       if(err == EINTR)
-        return io_result_interrupted;
+        return io_result_intr;
+
+      if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
+        return io_result_again;
 
       POSEIDON_THROW("error accepting incoming connection\n"
                      "[`accept4()` failed: $1]",
@@ -56,9 +56,8 @@ do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t 
 
     POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'",
                       sock->get_local_address(), sock->get_remote_address());
-
     // TODO register socket
-    return io_result_success;
+    return io_result_not_eof;
   }
   catch(exception& stdex) {
     // It is probably bad to let the exception propagate to network driver and kill
@@ -66,7 +65,9 @@ do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t 
     POSEIDON_LOG_ERROR("Error accepting incoming connection: $2\n"
                        "[socket class `$1`]",
                        typeid(*this).name(), stdex.what());
-    return io_result_interrupted;
+
+    // Accept other connections. The error is considered non-fatal.
+    return io_result_intr;
   }
 
 size_t
@@ -77,11 +78,11 @@ const
     return 0;
   }
 
-Abstract_Socket::IO_Result
+IO_Result
 Abstract_Accept_Socket::
 do_on_async_write(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   {
-    return io_result_end_of_stream;
+    return io_result_eof;
   }
 
 void

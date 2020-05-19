@@ -42,7 +42,7 @@ class Abstract_Accept_Socket
     const final;
 
     // Does nothing.
-    // This function always returns `io_result_end_of_stream`.
+    // This function always returns `io_result_eof`.
     // `lock` is ignored.
     IO_Result
     do_on_async_write(::rocket::mutex::unique_lock& lock, void* hint, size_t size)

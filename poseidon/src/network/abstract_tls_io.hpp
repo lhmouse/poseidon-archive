@@ -5,6 +5,7 @@
 #define POSEIDON_NETWORK_ABSTRACT_TLS_IO_HPP_
 
 #include "../fwd.hpp"
+#include "enums.hpp"
 
 namespace poseidon {
 
@@ -24,7 +25,7 @@ class Abstract_TLS_IO
     // such as `EINTR` and `EAGAIN`. An exception shall be thrown in case of
     // non-restartable errors.
     virtual
-    ptrdiff_t
+    IO_Result
     read(void* data, size_t size)
       = 0;
 
@@ -33,7 +34,7 @@ class Abstract_TLS_IO
     // such as `EINTR` and `EAGAIN`. An exception shall be thrown in case of
     // non-restartable errors.
     virtual
-    ptrdiff_t
+    IO_Result
     write(const void* data, size_t size)
       = 0;
 
@@ -41,7 +42,7 @@ class Abstract_TLS_IO
     // This function may be called repeatedly. Only after it returns `true`
     // shall the stream be considered to have been closed completely.
     virtual
-    bool
+    IO_Result
     shutdown()
       = 0;
   };

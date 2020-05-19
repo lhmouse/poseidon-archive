@@ -5,6 +5,7 @@
 #define POSEIDON_NETWORK_ABSTRACT_SOCKET_HPP_
 
 #include "../fwd.hpp"
+#include "enums.hpp"
 
 namespace poseidon {
 
@@ -12,15 +13,6 @@ class Abstract_Socket
   : public virtual ::asteria::Rcbase
   {
     friend Network_Driver;
-
-  public:
-    enum IO_Result
-      {
-        io_result_success        = 0,
-        io_result_end_of_stream  = 1,
-        io_result_would_block    = 2,
-        io_result_interrupted    = 3,
-      };
 
   private:
     unique_posix_fd m_fd;
