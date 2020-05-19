@@ -12,9 +12,12 @@ class Abstract_Accept_Socket
   : public Abstract_Socket
   {
   public:
+    using base_type = Abstract_Socket;
+
+  public:
     explicit
     Abstract_Accept_Socket(::rocket::unique_posix_fd&& fd)
-      : Abstract_Socket(::std::move(fd))
+      : base_type(::std::move(fd))
       { this->do_set_common_options();  }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Accept_Socket);
