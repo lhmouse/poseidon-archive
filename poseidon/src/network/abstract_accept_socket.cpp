@@ -19,12 +19,14 @@ do_set_common_options()
   {
     // Enable reusing addresses.
     static constexpr int true_val[] = { -1 };
-    ::setsockopt(this->get_fd(), SOL_SOCKET, SO_REUSEADDR, true_val, sizeof(true_val));
+    int res = ::setsockopt(this->get_fd(), SOL_SOCKET, SO_REUSEADDR,
+                           true_val, sizeof(true_val));
+    ROCKET_ASSERT(res == 0);
   }
 
 Abstract_Socket::IO_Result
 Abstract_Accept_Socket::
-do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hine*/, size_t /*size*/)
+do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
     Socket_Address::storage_type addr;
@@ -105,7 +107,8 @@ bind_and_listen(const Socket_Address& addr, uint32_t backlog)
     static constexpr uint32_t backlog_min = 1;
     static constexpr uint32_t backlog_max = SOMAXCONN;
 
-    if(::listen(this->get_fd(), static_cast<int>(::rocket::clamp(backlog, backlog_min, backlog_max))) != 0)
+    if(::listen(this->get_fd(), static_cast<int>(::rocket::clamp(backlog,
+                                                       backlog_min, backlog_max))) != 0)
       POSEIDON_THROW("failed to set up listen socket on '$2'\n",
                      "[`listen()` failed: $1]",
                      noadl::format_errno(errno), this->get_local_address());

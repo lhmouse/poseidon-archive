@@ -20,8 +20,10 @@ do_set_common_options()
     // Enable non-blocking mode.
     int fl_old = ::fcntl(this->get_fd(), F_GETFL);
     int fl_new = fl_old | O_NONBLOCK;
-    if(fl_old != fl_new)
-      ::fcntl(this->get_fd(), F_SETFL, fl_new);
+    if(fl_old != fl_new) {
+      int res = ::fcntl(this->get_fd(), F_SETFL, fl_new);
+      ROCKET_ASSERT(res == 0);
+    }
   }
 
 void
