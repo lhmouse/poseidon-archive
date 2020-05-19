@@ -11,13 +11,31 @@ namespace {
 
 inline
 int64_t&
-do_shift_time_point(int64_t& value, int64_t shift)
+do_shift_time(int64_t& value, int64_t shift)
 noexcept
   {
     // `value` must be non-negative. `shift` may be any value.
     ROCKET_ASSERT(value >= 0);
     value += ::rocket::clamp(shift, -value, INT64_MAX-value);
     ROCKET_ASSERT(value >= 0);
+    return value;
+  }
+
+ROCKET_PURE_FUNCTION
+int64_t
+do_get_time(int64_t shift)
+noexcept
+  {
+    // Get the time since the system was started.
+    ::timespec ts;
+    ::clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    int64_t value = static_cast<int64_t>(ts.tv_sec) * 1'000;
+    value += static_cast<int64_t>(ts.tv_nsec) / 1'000'000;
+    value += 9876543210;
+
+    // Shift the time point using saturation arithmetic.
+    do_shift_time(value, shift);
     return value;
   }
 
@@ -74,7 +92,7 @@ do_thread_loop(void* /*param*/)
     for(;;) {
       if(self->m_queue.heap.size()) {
         // Check the minimum element.
-        now = self->get_tick_count();
+        now = do_get_time(0);
         long delta = static_cast<long>(::rocket::clamp(
                            self->m_queue.heap.front().next - now, 0, LONG_MAX));
         if(delta == 0)
@@ -99,7 +117,7 @@ do_thread_loop(void* /*param*/)
     Si_Mutex::unique_lock tlock(timer->m_mutex);
     if(timer->m_period > 0) {
       // Update the element in place.
-      do_shift_time_point(self->m_queue.heap.back().next, timer->m_period);
+      do_shift_time(self->m_queue.heap.back().next, timer->m_period);
       ::std::push_heap(self->m_queue.heap.begin(), self->m_queue.heap.end(), pq_compare);
     }
     else {
@@ -128,24 +146,6 @@ start()
     self->m_thread = ::std::move(thr);
   }
 
-int64_t
-Timer_Driver::
-get_tick_count(int64_t shift)
-noexcept
-  {
-    // Get the time since the system was started.
-    ::timespec ts;
-    ::clock_gettime(CLOCK_MONOTONIC_COARSE, &ts);
-
-    int64_t value = static_cast<int64_t>(ts.tv_sec) * 1'000;
-    value += static_cast<int64_t>(ts.tv_nsec) / 1'000'000;
-    value += 9876543210;
-
-    // Shift the time point using saturation arithmetic.
-    do_shift_time_point(value, shift);
-    return value;
-  }
-
 rcptr<Abstract_Timer>
 Timer_Driver::
 insert(uptr<Abstract_Timer>&& utimer)
@@ -157,7 +157,7 @@ insert(uptr<Abstract_Timer>&& utimer)
 
     // Get the next trigger time.
     // The timer is considered to be owned uniquely, so there is no need to lock it.
-    auto next = self->get_tick_count(timer->m_first);
+    auto next = do_get_time(timer->m_first);
 
     // Lock priority queue for modification.
     Si_Mutex::unique_lock lock(self->m_queue.mutex);
@@ -185,7 +185,7 @@ noexcept
 
     // Get the next trigger time.
     Si_Mutex::unique_lock tlock(timer->m_mutex);
-    auto next = self->get_tick_count(timer->m_first);
+    auto next = do_get_time(timer->m_first);
     tlock.unlock();
 
     // Update the element in place.

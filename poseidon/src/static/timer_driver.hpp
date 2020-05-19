@@ -23,16 +23,6 @@ class Timer_Driver
     void
     start();
 
-    // Gets the absolute time of the monotonic clock used by all timers.
-    // All values are measured in milliseconds. This function adds `shift` to the value
-    // with saturation semantics. The result is always non-negative.
-    // This function is thread-safe.
-    ROCKET_PURE_FUNCTION
-    static
-    int64_t
-    get_tick_count(int64_t shift = 0)
-    noexcept;
-
     // Inserts a timer.
     // The driver holds a reference-counted pointer to the timer. If it becomes a unique
     // reference, the timer is deleted.
