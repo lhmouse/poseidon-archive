@@ -20,7 +20,7 @@ class Accept_Socket
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Accept_Socket);
 
   private:
-    // Enables non-blocking mode, etc.
+    // Enables `SO_REUSEADDR`, etc.
     void
     do_set_common_options();
 
@@ -37,7 +37,7 @@ class Accept_Socket
     // `lock` is ignored.
     size_t
     do_write_queue_size(::rocket::mutex::unique_lock& lock)
-    const noexcept override;
+    const override;
 
     // Does nothing.
     // This function always returns `io_result_end_of_stream`.

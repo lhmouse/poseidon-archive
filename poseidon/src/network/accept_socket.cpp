@@ -25,7 +25,7 @@ do_set_common_options()
 Abstract_Socket::IO_Result
 Accept_Socket::
 do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hine*/, size_t /*size*/)
-  {
+  try {
     // Try accepting a socket.
     Socket_Address::storage_type addr;
     Socket_Address::size_type size = sizeof(addr);
@@ -45,34 +45,32 @@ do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hine*/, size_t 
                      noadl::format_errno(err));
     }
 
-    try {
-      // Create a new socket object.
-      auto sock = this->do_on_async_accept(::std::move(fd));
-      if(!sock)
-        POSEIDON_THROW("null pointer returned from `do_on_async_accept()`\n"
+    // Create a new socket object.
+    auto sock = this->do_on_async_accept(::std::move(fd));
+    if(!sock)
+      POSEIDON_THROW("null pointer returned from `do_on_async_accept()`\n"
+                     "[socket class `$1`]",
+                     typeid(*this).name());
+
+    POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'",
+                      sock->get_local_address(), sock->get_remote_address());
+
+    // TODO register socket
+    return io_result_success;
+  }
+  catch(exception& stdex) {
+    // It is probably bad to let the exception propagate to network driver and kill
+    // this server socket... so we catch and ignore this exception.
+    POSEIDON_LOG_ERROR("Error accepting incoming connection: $2\n"
                        "[socket class `$1`]",
-                       typeid(*this).name());
-
-      POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'",
-                        sock->get_local_address(), sock->get_remote_address());
-
-      // TODO register socket
-      return io_result_success;
-    }
-    catch(exception& stdex) {
-      // It is probably bad to let the exception propagate to network driver and kill
-      // this server socket... so we catch and ignore this exception.
-      POSEIDON_LOG_ERROR("Error accepting incoming connection: $2\n"
-                         "[socket class `$1`]",
-                         typeid(*this).name(), stdex.what());
-      return io_result_interrupted;
-    }
+                       typeid(*this).name(), stdex.what());
+    return io_result_interrupted;
   }
 
 size_t
 Accept_Socket::
 do_write_queue_size(::rocket::mutex::unique_lock& /*lock*/)
-const noexcept
+const
   {
     return 0;
   }
