@@ -150,7 +150,7 @@ rcptr<Abstract_Timer>
 Timer_Driver::
 insert(uptr<Abstract_Timer>&& utimer)
   {
-    // Take ownership of `timer`.
+    // Take ownership of `utimer`.
     rcptr<Abstract_Timer> timer(utimer.release());
     if(!timer)
       POSEIDON_THROW("null timer pointer not valid");
