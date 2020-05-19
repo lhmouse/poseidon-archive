@@ -9,11 +9,11 @@
 namespace poseidon {
 
 // This is the return type of I/O functions.
-// Note that positive values denote number of bytes transferred.
 // `io_result_not_eof` may be returned to indicate success of a
-// non-stream operation, such as `accept()`, `recvfrom()`, or
-// `shutdown(). I/O functions shall throw exceptions for errors
-// that are not listed here.
+// non-stream operation, such as `accept()` or `recvfrom()`.
+// I/O functions shall throw exceptions for errors that are not
+// listed here.
+// Note that positive values denote number of bytes transferred.
 enum IO_Result : ptrdiff_t
   {
     io_result_intr     = -2,  // EINTR
