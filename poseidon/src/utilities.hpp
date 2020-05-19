@@ -103,7 +103,7 @@ create_async_timer(int64_t next, int64_t period, FuncT&& func)
 
         void
         do_on_async_timer(int64_t now)
-        const override
+        override
           { this->m_func(now);  }
       };
 

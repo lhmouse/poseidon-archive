@@ -15,15 +15,6 @@ Abstract_Timer::
 
 void
 Abstract_Timer::
-do_on_async_timer(int64_t /*now*/)
-const
-  {
-    POSEIDON_LOG_ERROR("TODO: Please override `do_on_async_timer()` in `$1`",
-                       typeid(*this).name());
-  }
-
-void
-Abstract_Timer::
 reset(int64_t first, int64_t period)
 noexcept
   {

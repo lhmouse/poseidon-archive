@@ -33,7 +33,7 @@ class Abstract_Timer
     virtual
     void
     do_on_async_timer(int64_t now)
-    const;
+      = 0;
 
   public:
     // Resets the first triggered time and the period.
