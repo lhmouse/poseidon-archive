@@ -12,6 +12,9 @@
 #include <rocket/unique_posix_fd.hpp>
 #include <rocket/unique_posix_file.hpp>
 #include <rocket/unique_posix_dir.hpp>
+#include <rocket/mutex.hpp>
+#include <rocket/recursive_mutex.hpp>
+#include <rocket/condition_variable.hpp>
 #include <string>
 #include <vector>
 #include <deque>
@@ -97,17 +100,23 @@ using ::asteria::array;
 using ::asteria::opt;
 using ::asteria::refp;
 
+using Si_Mutex = ::rocket::mutex;
+using Rc_Mutex = ::rocket::recursive_mutex;
+using Cond_Var = ::rocket::condition_variable;
+
 // Core
 class Config_File;
 class Abstract_Timer;
 
 // Network
 enum IO_Result : ptrdiff_t;
+enum Connection_State : uint8_t;
 class Socket_Address;
-class Abstract_TLS_IO;
-class OpenSSL_IO;
 class Abstract_Socket;
 class Abstract_Accept_Socket;
+class Abstract_TCP_Socket;
+class Abstract_TLS_TCP_Socket;
+class Abstract_UDP_Socket;
 
 // Singletons
 class Main_Config;

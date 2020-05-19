@@ -28,7 +28,7 @@ reset(int64_t first, int64_t period)
 noexcept
   {
     // Update data members.
-    ::rocket::mutex::unique_lock lock(this->m_mutex);
+    Si_Mutex::unique_lock lock(this->m_mutex);
     this->m_first = first;
     this->m_period = period;
     lock.unlock();

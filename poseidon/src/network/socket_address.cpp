@@ -19,7 +19,7 @@ noexcept
     return bits;
   }
 
-constexpr
+inline
 ::std::bitset<32>
 do_make_ipv4(const array<uint8_t, 4>& segs)
 noexcept
@@ -41,7 +41,7 @@ noexcept
     return bits;
   }
 
-constexpr
+inline
 ::std::bitset<128>
 do_make_ipv6(const array<uint16_t, 8>& segs)
 noexcept

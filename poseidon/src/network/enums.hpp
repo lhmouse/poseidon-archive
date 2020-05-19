@@ -22,6 +22,18 @@ enum IO_Result : ptrdiff_t
     io_result_not_eof  =  1,
   };
 
+// This describes the lifetime of a connection.
+// It is mainly designed for stream-oriented protocols such as
+// TCP and SCTP.
+enum Connection_State : uint8_t
+  {
+    connection_state_initial      = 0,  // W allowed
+    connection_state_connecting   = 1,  // W allowed
+    connection_state_established  = 2,  // R/W allowed
+    connection_state_closing      = 3,  // R/W forbidden
+    connection_state_closed       = 4,  // R/W forbidden
+  };
+
 }  // namespace poseidon
 
 #endif

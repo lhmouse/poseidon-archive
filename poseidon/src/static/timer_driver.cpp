@@ -57,8 +57,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
 
     struct
       {
-        mutable ::rocket::mutex mutex;
-        ::rocket::condition_variable avail;
+        mutable Si_Mutex mutex;
+        Cond_Var avail;
         ::std::vector<PQ_Element> heap;
       }
       m_queue;
@@ -69,7 +69,7 @@ Timer_Driver::
 do_thread_loop(void* /*param*/)
   {
     // Await an element and pop it.
-    ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
+    Si_Mutex::unique_lock lock(self->m_queue.mutex);
     int64_t now;
     for(;;) {
       if(self->m_queue.heap.size()) {
@@ -96,7 +96,7 @@ do_thread_loop(void* /*param*/)
     }
 
     // Get the next trigger time.
-    ::rocket::mutex::unique_lock tlock(timer->m_mutex);
+    Si_Mutex::unique_lock tlock(timer->m_mutex);
     if(timer->m_period > 0) {
       // Update the element in place.
       do_shift_time_point(self->m_queue.heap.back().next, timer->m_period);
@@ -160,7 +160,7 @@ insert(uptr<Abstract_Timer>&& utimer)
     auto next = self->get_tick_count(timer->m_first);
 
     // Lock priority queue for modification.
-    ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
+    Si_Mutex::unique_lock lock(self->m_queue.mutex);
 
     // Insert the timer.
     self->m_queue.heap.push_back({ next, timer });
@@ -175,7 +175,7 @@ invalidate_internal(Abstract_Timer* timer)
 noexcept
   {
     // Lock priority queue for modification.
-    ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
+    Si_Mutex::unique_lock lock(self->m_queue.mutex);
 
     // Don't do anything if the timer does not exist in the queue.
     auto qelem = ::std::find_if(self->m_queue.heap.begin(), self->m_queue.heap.end(),
@@ -184,7 +184,7 @@ noexcept
       return false;
 
     // Get the next trigger time.
-    ::rocket::mutex::unique_lock tlock(timer->m_mutex);
+    Si_Mutex::unique_lock tlock(timer->m_mutex);
     auto next = self->get_tick_count(timer->m_first);
     tlock.unlock();
 

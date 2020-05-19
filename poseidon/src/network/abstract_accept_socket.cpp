@@ -26,7 +26,7 @@ do_set_common_options()
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_read(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
     Socket_Address::storage_type addr;
@@ -72,7 +72,7 @@ do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t 
 
 size_t
 Abstract_Accept_Socket::
-do_write_queue_size(::rocket::mutex::unique_lock& /*lock*/)
+do_write_queue_size(Rc_Mutex::unique_lock& /*lock*/)
 const
   {
     return 0;
@@ -80,7 +80,7 @@ const
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_async_write(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_write(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   {
     return io_result_eof;
   }

@@ -14,7 +14,7 @@ class Abstract_Timer
     friend Timer_Driver;
 
   private:
-    mutable ::rocket::mutex m_mutex;
+    mutable Si_Mutex m_mutex;
     int64_t m_first;  // absolute time in milliseconds
     int64_t m_period;  // period in milliseconds
 

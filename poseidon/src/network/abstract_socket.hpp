@@ -38,14 +38,14 @@ class Abstract_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     IO_Result
-    do_on_async_read(::rocket::mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
       = 0;
 
     // This function shall return the number of bytes that are pending for writing.
     // `lock` shall lock `*this` after the call if locking is supported.
     virtual
     size_t
-    do_write_queue_size(::rocket::mutex::unique_lock& lock)
+    do_write_queue_size(Rc_Mutex::unique_lock& lock)
     const
       = 0;
 
@@ -56,7 +56,7 @@ class Abstract_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     IO_Result
-    do_on_async_write(::rocket::mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_write(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
       = 0;
 
     // The network driver notifies closure via this callback.

@@ -194,15 +194,15 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
 
     struct
       {
-        mutable ::rocket::mutex mutex;
+        mutable Si_Mutex mutex;
         Level_Config_Array levels;
       }
       m_config;
 
     struct
       {
-        mutable ::rocket::mutex mutex;
-        ::rocket::condition_variable avail;
+        mutable Si_Mutex mutex;
+        Cond_Var avail;
         ::std::deque<Entry> entries;
       }
       m_queue;
@@ -213,7 +213,7 @@ Async_Logger::
 do_thread_loop(void* /*param*/)
   {
     // Await an entry and pop it.
-    ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
+    Si_Mutex::unique_lock lock(self->m_queue.mutex);
     while(self->m_queue.entries.empty())
       self->m_queue.avail.wait(lock);
 
@@ -356,7 +356,7 @@ reload()
     // During destruction of `temp` the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    ::rocket::mutex::unique_lock lock(self->m_config.mutex);
+    Si_Mutex::unique_lock lock(self->m_config.mutex);
     self->m_config.levels.swap(temp);
   }
 
@@ -366,7 +366,7 @@ is_enabled(Log_Level level)
 noexcept
   {
     // Lock config for reading.
-    ::rocket::mutex::unique_lock lock(self->m_config.mutex);
+    Si_Mutex::unique_lock lock(self->m_config.mutex);
 
     // Validate arguments.
     if(level >= self->m_config.levels.size())
@@ -388,7 +388,7 @@ write(Log_Level level, const char* file, long line, const char* func, cow_string
     entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
 
     // Push the element.
-    ::rocket::mutex::unique_lock lock(self->m_queue.mutex);
+    Si_Mutex::unique_lock lock(self->m_queue.mutex);
     self->m_queue.entries.emplace_back(::std::move(entry));
     self->m_queue.avail.notify_one();
     return self->m_queue.entries.size();
