@@ -171,7 +171,7 @@ insert(uptr<Abstract_Timer>&& utimer)
 
 bool
 Timer_Driver::
-invalidate_internal(Abstract_Timer* timer)
+invalidate_internal(const Abstract_Timer* ctimer)
 noexcept
   {
     // Lock priority queue for modification.
@@ -179,13 +179,13 @@ noexcept
 
     // Don't do anything if the timer does not exist in the queue.
     auto qelem = ::std::find_if(self->m_queue.pq.begin(), self->m_queue.pq.end(),
-                     [&](const PQ_Element& elem) { return elem.timer.get() == timer;  });
+                     [&](const PQ_Element& elem) { return elem.timer.get() == ctimer;  });
     if(qelem == self->m_queue.pq.end())
       return false;
 
     // Get the next trigger time.
-    Si_Mutex::unique_lock tlock(timer->m_mutex);
-    auto next = do_get_time(timer->m_first);
+    Si_Mutex::unique_lock tlock(ctimer->m_mutex);
+    auto next = do_get_time(ctimer->m_first);
     tlock.unlock();
 
     // Update the element in place.

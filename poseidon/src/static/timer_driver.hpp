@@ -38,7 +38,7 @@ class Timer_Driver
     // This function is thread-safe.
     static
     bool
-    invalidate_internal(Abstract_Timer* timer)
+    invalidate_internal(const Abstract_Timer* timer)
     noexcept;
   };
 
