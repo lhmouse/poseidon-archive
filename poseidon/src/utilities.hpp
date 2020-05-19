@@ -26,7 +26,7 @@ using ::asteria::format_errno;
 template<typename... ParamsT>
 ROCKET_NOINLINE
 bool
-do_xlog_format(Async_Logger::Level level, const char* file, long line, const char* func,
+do_xlog_format(Log_Level level, const char* file, long line, const char* func,
                const char* templ, const ParamsT&... params)
 noexcept
   try {
@@ -53,12 +53,12 @@ noexcept
          ::poseidon::do_xlog_format(level, __FILE__, __LINE__, __func__,  \
                                     "" __VA_ARGS__))
 
-#define POSEIDON_LOG_FATAL(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_fatal,  __VA_ARGS__)
-#define POSEIDON_LOG_ERROR(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_error,  __VA_ARGS__)
-#define POSEIDON_LOG_WARN(...)    POSEIDON_XLOG_(::poseidon::Async_Logger::level_warn,   __VA_ARGS__)
-#define POSEIDON_LOG_INFO(...)    POSEIDON_XLOG_(::poseidon::Async_Logger::level_info,   __VA_ARGS__)
-#define POSEIDON_LOG_DEBUG(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_debug,  __VA_ARGS__)
-#define POSEIDON_LOG_TRACE(...)   POSEIDON_XLOG_(::poseidon::Async_Logger::level_trace,  __VA_ARGS__)
+#define POSEIDON_LOG_FATAL(...)   POSEIDON_XLOG_(::poseidon::log_level_fatal,  __VA_ARGS__)
+#define POSEIDON_LOG_ERROR(...)   POSEIDON_XLOG_(::poseidon::log_level_error,  __VA_ARGS__)
+#define POSEIDON_LOG_WARN(...)    POSEIDON_XLOG_(::poseidon::log_level_warn,   __VA_ARGS__)
+#define POSEIDON_LOG_INFO(...)    POSEIDON_XLOG_(::poseidon::log_level_info,   __VA_ARGS__)
+#define POSEIDON_LOG_DEBUG(...)   POSEIDON_XLOG_(::poseidon::log_level_debug,  __VA_ARGS__)
+#define POSEIDON_LOG_TRACE(...)   POSEIDON_XLOG_(::poseidon::log_level_trace,  __VA_ARGS__)
 
 template<typename... ParamsT>
 [[noreturn]] ROCKET_NOINLINE
@@ -72,9 +72,8 @@ do_xthrow_format(const char* file, long line, const char* func,
     auto text = fmt.extract_string();
 
     // Push a new log entry.
-    static constexpr auto level = Async_Logger::level_warn;
-    if(Async_Logger::is_enabled(level))
-      Async_Logger::write(level, file, line, func, text);
+    if(Async_Logger::is_enabled(log_level_warn))
+      Async_Logger::write(log_level_warn, file, line, func, text);
 
     // Throw the exception.
     ::rocket::sprintf_and_throw<::std::runtime_error>(

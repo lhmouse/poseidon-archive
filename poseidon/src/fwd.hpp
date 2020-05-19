@@ -102,18 +102,31 @@ class Config_File;
 class Abstract_Timer;
 
 // Network
+enum IO_Result : ptrdiff_t;
 class Socket_Address;
 class Abstract_TLS_IO;
 class OpenSSL_IO;
 class Abstract_Socket;
 class Abstract_Accept_Socket;
-enum IO_Result : ptrdiff_t;
 
 // Singletons
 class Main_Config;
 class Async_Logger;
 class Timer_Driver;
 class Network_Driver;
+
+// Log levels
+// Note each level has a hardcoded name and number.
+// Don't change their values or reorder them.
+enum Log_Level : uint8_t
+  {
+    log_level_fatal  = 0,
+    log_level_error  = 1,
+    log_level_warn   = 2,
+    log_level_info   = 3,
+    log_level_debug  = 4,
+    log_level_trace  = 5,
+  };
 
 }  // namespace poseidon
 

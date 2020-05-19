@@ -11,8 +11,6 @@
 namespace poseidon {
 namespace {
 
-using Level = Async_Logger::Level;
-
 struct Level_Name
   {
     char conf_name[8];
@@ -96,7 +94,7 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
 
 struct Entry
   {
-    Level level;
+    Log_Level level;
     const char* file;
     long line;
     const char* func;
@@ -221,7 +219,7 @@ do_thread_loop(void* /*param*/)
 
     auto entry = ::std::move(self->m_queue.entries.front());
     self->m_queue.entries.pop_front();
-    bool needs_sync = (entry.level <= level_error) || self->m_queue.entries.empty();
+    bool needs_sync = (entry.level < log_level_warn) || self->m_queue.entries.empty();
 
     // Get configuration for this level.
     lock.assign(self->m_config.mutex);
@@ -364,7 +362,7 @@ reload()
 
 bool
 Async_Logger::
-is_enabled(Level level)
+is_enabled(Log_Level level)
 noexcept
   {
     // Lock config for reading.
@@ -382,7 +380,7 @@ noexcept
 
 size_t
 Async_Logger::
-write(Level level, const char* file, long line, const char* func, cow_string text)
+write(Log_Level level, const char* file, long line, const char* func, cow_string text)
   {
     // Compose the entry.
     Entry entry = { level, file, line, func, ::std::move(text), "", 0 };

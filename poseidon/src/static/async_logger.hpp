@@ -18,19 +18,6 @@ class Async_Logger
     do_thread_loop(void* param);
 
   public:
-    // Note each level has a hardcoded name and number.
-    // Don't change their values or reorder them.
-    enum Level : uint8_t
-      {
-        level_fatal  = 0,
-        level_error  = 1,
-        level_warn   = 2,
-        level_info   = 3,
-        level_debug  = 4,
-        level_trace  = 5,
-      };
-
-  public:
     // Creates the logger thread if one hasn't been created.
     static
     void
@@ -48,7 +35,7 @@ class Async_Logger
     ROCKET_PURE_FUNCTION
     static
     bool
-    is_enabled(Level level)
+    is_enabled(Log_Level level)
     noexcept;
 
     // Enqueues a log entry and returns the total number of entries that are pending.
@@ -56,7 +43,7 @@ class Async_Logger
     // This function is thread-safe.
     static
     size_t
-    write(Level level, const char* file, long line, const char* func, cow_string text);
+    write(Log_Level level, const char* file, long line, const char* func, cow_string text);
   };
 
 }  // namespace poseidon
