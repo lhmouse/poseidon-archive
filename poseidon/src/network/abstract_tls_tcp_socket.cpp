@@ -244,10 +244,14 @@ async_connect(const Socket_Address& addr)
   {
     Rc_Mutex::unique_lock lock(this->m_mutex);
     if(this->m_cstate != connection_state_initial)
-      POSEIDON_THROW("another connection is already in progress");
+      POSEIDON_THROW("another connection already in progress");
 
+    // Reset SSL method to client mode.
     ::SSL_set_connect_state(this->m_ssl);
 
+    // Initiate the connection.
+    // Whether `::connect()` succeeds or fails with `EINPROGRESS`, the current
+    // socket is set to the CONNECTING state.
     if(::connect(this->get_fd(), addr.data(), addr.size()) != 0) {
       int err = errno;
       if(err != EINPROGRESS)
@@ -255,7 +259,6 @@ async_connect(const Socket_Address& addr)
                        "[`connect()` failed: $1]",
                        noadl::format_errno(err), addr);
     }
-
     this->m_cstate = connection_state_connecting;
   }
 
@@ -263,11 +266,11 @@ bool
 Abstract_TLS_TCP_Socket::
 async_send(const void* data, size_t size)
   {
-    // Append data to the write queue.
     Rc_Mutex::unique_lock lock(this->m_mutex);
     if(this->m_cstate > connection_state_established)
       return false;
 
+    // Append data to the write queue.
     this->m_wqueue.putn(static_cast<const char*>(data), size);
     lock.unlock();
 
