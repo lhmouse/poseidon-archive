@@ -24,28 +24,28 @@ class Abstract_Accept_Socket
     void
     do_set_common_options();
 
-  protected:
     // Accepts a socket in non-blocking mode.
     // `lock` and `hint` are ignored.
     // Please mind thread safety, as this function is called by the network thread.
     IO_Result
     do_on_async_read(::rocket::mutex::unique_lock& lock, void* hint, size_t size)
-    override;
+    final;
 
     // Does nothing.
     // This function always returns zero.
     // `lock` is ignored.
     size_t
     do_write_queue_size(::rocket::mutex::unique_lock& lock)
-    const override;
+    const final;
 
     // Does nothing.
     // This function always returns `io_result_end_of_stream`.
     // `lock` is ignored.
     IO_Result
     do_on_async_write(::rocket::mutex::unique_lock& lock, void* hint, size_t size)
-    override;
+    final;
 
+  protected:
     // Prints a line of text but does nothing otherwise.
     void
     do_on_async_shutdown(int err)
