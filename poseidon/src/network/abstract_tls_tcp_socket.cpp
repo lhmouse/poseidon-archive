@@ -141,7 +141,7 @@ noexcept
 
 IO_Result
 Abstract_TLS_TCP_Socket::
-do_on_async_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+do_on_async_poll_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
   {
     // Lock the stream before performing other operations.
     lock.assign(this->m_mutex);
@@ -177,7 +177,7 @@ const
 
 IO_Result
 Abstract_TLS_TCP_Socket::
-do_on_async_write(Rc_Mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_write(Rc_Mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/)
   {
     // Lock the stream before performing other operations.
     lock.assign(this->m_mutex);
@@ -232,7 +232,7 @@ do_on_async_establish()
 
 void
 Abstract_TLS_TCP_Socket::
-do_on_async_shutdown(int err)
+do_on_async_poll_shutdown(int err)
   {
     POSEIDON_LOG_INFO("Secure TCP connection closed: local '$1', reason: $2",
                       this->get_local_address(), noadl::format_errno(err));

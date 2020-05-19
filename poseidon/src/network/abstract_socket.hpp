@@ -38,7 +38,7 @@ class Abstract_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     IO_Result
-    do_on_async_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
       = 0;
 
     // This function shall return the number of bytes that are pending for writing.
@@ -56,7 +56,7 @@ class Abstract_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     IO_Result
-    do_on_async_write(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_write(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
       = 0;
 
     // The network driver notifies closure via this callback.
@@ -64,7 +64,7 @@ class Abstract_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_async_shutdown(int err)
+    do_on_async_poll_shutdown(int err)
       = 0;
 
   public:

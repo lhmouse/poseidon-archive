@@ -31,7 +31,7 @@ class Abstract_Accept_Socket
     // `lock` and `hint` are ignored.
     // Please mind thread safety, as this function is called by the network thread.
     IO_Result
-    do_on_async_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
     // Does nothing.
@@ -45,7 +45,7 @@ class Abstract_Accept_Socket
     // This function always returns `io_result_eof`.
     // `lock` is ignored.
     IO_Result
-    do_on_async_write(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_write(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
   protected:
@@ -60,7 +60,7 @@ class Abstract_Accept_Socket
     // Prints a line of text but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_async_shutdown(int err)
+    do_on_async_poll_shutdown(int err)
     override;
 
   public:

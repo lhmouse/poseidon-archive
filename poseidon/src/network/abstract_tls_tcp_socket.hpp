@@ -45,7 +45,7 @@ class Abstract_TLS_TCP_Socket
     // `hint` is used as the I/O buffer. `size` specifies the maximum number of
     // bytes to read.
     IO_Result
-    do_on_async_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
     // Returns the size of data pending for writing.
@@ -58,7 +58,7 @@ class Abstract_TLS_TCP_Socket
     // `lock` will lock `*this` after the call if locking is supported.
     // `hint` and `size` are ignored.
     IO_Result
-    do_on_async_write(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_write(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
   protected:
@@ -80,7 +80,7 @@ class Abstract_TLS_TCP_Socket
     // The default implementation does nothing.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_async_shutdown(int err)
+    do_on_async_poll_shutdown(int err)
     override;
 
   public:

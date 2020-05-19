@@ -26,7 +26,7 @@ do_set_common_options()
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_async_read(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_read(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
     Socket_Address::storage_type addr;
@@ -80,14 +80,14 @@ const
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_async_write(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_write(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   {
     return io_result_eof;
   }
 
 void
 Abstract_Accept_Socket::
-do_on_async_shutdown(int err)
+do_on_async_poll_shutdown(int err)
   {
     POSEIDON_LOG_INFO("Stopped listening on '$1': $2",
                       this->get_local_address(),
