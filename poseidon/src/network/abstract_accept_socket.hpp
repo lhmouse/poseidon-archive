@@ -49,11 +49,6 @@ class Abstract_Accept_Socket
     final;
 
   protected:
-    // Prints a line of text but does nothing otherwise.
-    void
-    do_on_async_shutdown(int err)
-    override;
-
     // Consumes an accepted socket.
     // This function shall allocate and return a new socket object.
     // Please mind thread safety, as this function is called by the network thread.
@@ -61,6 +56,12 @@ class Abstract_Accept_Socket
     uptr<Abstract_Socket>
     do_on_async_accept(unique_posix_fd&& fd)
       = 0;
+
+    // Prints a line of text but does nothing otherwise.
+    // Please mind thread safety, as this function is called by the network thread.
+    void
+    do_on_async_shutdown(int err)
+    override;
 
   public:
     // Binds this socket to the specified address and starts listening.
