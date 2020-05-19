@@ -24,16 +24,16 @@ namespace noadl = poseidon;
 
 // Macros
 #define POSEIDON_STATIC_CLASS_DECLARE(C)  \
-  private:  \
-     struct C##_self;  \
-     static C##_self* const self;  \
-     constexpr C() noexcept = default;  \
-     C(const C&) = delete;  \
-     C& operator=(const C&) = delete;  \
-     ~C() = default  // no semicolon
+    private:  \
+      struct C##_self;  \
+      static C##_self* const self;  \
+      constexpr C() noexcept = default;  \
+      C(const C&) = delete;  \
+      C& operator=(const C&) = delete;  \
+      ~C() = default  // no semicolon
 
 #define POSEIDON_STATIC_CLASS_DEFINE(C)  \
-  template<typename TmIkbXn1>  \
+    template<typename TmIkbXn1>  \
     ROCKET_ARTIFICIAL_FUNCTION static inline  \
     TmIkbXn1* C##_instance()  \
       { static TmIkbXn1 instance[1] = { };  \
@@ -114,6 +114,8 @@ enum Connection_State : uint8_t;
 class Socket_Address;
 class Abstract_Socket;
 class Abstract_Accept_Socket;
+class Abstract_Stream_Socket;
+class Abstract_Datagram_Socket;
 class Abstract_TCP_Socket;
 class Abstract_TLS_TCP_Socket;
 class Abstract_UDP_Socket;

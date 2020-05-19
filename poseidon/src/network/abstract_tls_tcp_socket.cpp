@@ -5,7 +5,6 @@
 #include "abstract_tls_tcp_socket.hpp"
 #include "socket_address.hpp"
 #include "../utilities.hpp"
-#include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <openssl/err.h>
 
@@ -45,13 +44,9 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
         return io_result_again;
 
       case SSL_ERROR_SYSCALL:
-        // get syscall errno
+        // syscall errno
         err = errno;
-
-        // dump and clear the thread-local error queue
         do_print_errors();
-
-        // forward `errno` verbatim
         if(err == EINTR)
           return io_result_intr;
 
@@ -60,10 +55,8 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
                        func, ret, noadl::format_errno(errno));
 
       default:
-        // dump and clear the thread-local error queue
         do_print_errors();
 
-        // report generic failure
         POSEIDON_THROW("OpenSSL reported an irrecoverable error\n"
                        "[`$1()` returned `$2`]",
                        func, ret);
@@ -99,127 +92,54 @@ do_set_common_options()
                      res);
     }
 
-    // Set default SSL mode. This will be changed if `connect()` is called.
+    // Set default SSL mode. This can be overwritten if `async_connect()`
+    // is called later.
     ::SSL_set_accept_state(this->m_ssl);
   }
 
 void
 Abstract_TLS_TCP_Socket::
-do_async_shutdown_nolock()
-noexcept
+do_stream_preconnect_nolock()
   {
-    switch(this->m_cstate) {
-      case connection_state_initial:
-      case connection_state_connecting:
-        // Shut down the connection. Discard pending data.
-        ::shutdown(this->get_fd(), SHUT_RDWR);
-        this->m_cstate = connection_state_closed;
-        break;
-
-      case connection_state_established:
-        // Shut down the read part.
-        if(this->m_wqueue.size()) {
-          ::shutdown(this->get_fd(), SHUT_RD);
-          ::SSL_shutdown(this->m_ssl);
-          this->m_cstate = connection_state_closing;
-          POSEIDON_LOG_TRACE("Marked secure TCP socket as CLOSING (data pending): $1", this);
-          break;
-        }
-
-        // Shut down the connection if there are no pending data.
-        ::shutdown(this->get_fd(), SHUT_RDWR);
-        this->m_cstate = connection_state_closed;
-        POSEIDON_LOG_TRACE("Marked secure TCP socket as CLOSED (no data pending): $1", this);
-        break;
-
-      case connection_state_closing:
-      case connection_state_closed:
-        // Do nothing.
-        break;
-    }
+    ::SSL_set_connect_state(this->m_ssl);
   }
 
 IO_Result
 Abstract_TLS_TCP_Socket::
-do_on_async_poll_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+do_stream_read_nolock(void* data, size_t size)
   {
-    // Lock the stream before performing other operations.
-    lock.assign(this->m_mutex);
-
-    // Try reading some bytes.
-    // Note: According to OpenSSL documentation, unlike `::read()`, a return value
-    //       of zero indates failure, rather than EOF.
-    int nread = ::SSL_read(this->m_ssl, hint,
-                           static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
-    if(nread > 0) {
-      this->do_on_async_receive(hint, static_cast<size_t>(nread));
+    int nread = ::SSL_read(this->m_ssl, data,
+                     static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
+    if(nread > 0)
       return static_cast<IO_Result>(nread);
-    }
-
-    // Shut down the connection if FIN received.
-    if(::SSL_get_shutdown(this->m_ssl) & SSL_RECEIVED_SHUTDOWN)
-       this->do_async_shutdown_nolock();
 
     return do_translate_ssl_error("SSL_read", this->m_ssl, nread);
   }
 
-size_t
+IO_Result
 Abstract_TLS_TCP_Socket::
-do_write_queue_size(Rc_Mutex::unique_lock& lock)
-const
+do_stream_write_nolock(const void* data, size_t size)
   {
-    // Lock the stream before performing other operations.
-    lock.assign(this->m_mutex);
+    int nwritten = ::SSL_write(this->m_ssl, data,
+                        static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
+    if(nwritten > 0)
+      return static_cast<IO_Result>(nwritten);
 
-    // Get the size of pending data.
-    return this->m_wqueue.size();
+    return do_translate_ssl_error("SSL_write", this->m_ssl, nwritten);
   }
 
 IO_Result
 Abstract_TLS_TCP_Socket::
-do_on_async_poll_write(Rc_Mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/)
+do_stream_preshutdown_nolock()
   {
-    // Lock the stream before performing other operations.
-    lock.assign(this->m_mutex);
+    int ret = ::SSL_shutdown(this->m_ssl);
+    if(ret == 0)
+      ret = ::SSL_shutdown(this->m_ssl);
 
-    // Mark the connection fully established.
-    if(this->m_cstate < connection_state_established) {
-      this->m_cstate = connection_state_established;
-      this->do_on_async_establish();
-    }
-
-    // If the write queue is empty, there is nothing to do.
-    size_t size = this->m_wqueue.size();
-    if(size == 0) {
-      // Check for pending shutdown requests.
-      if(this->m_cstate != connection_state_closing)
-        return io_result_eof;
-
-      // Request bidirectional shutdown.
-      int ret = ::SSL_shutdown(this->m_ssl);
-      if(ret == 0)
-        ret = ::SSL_shutdown(this->m_ssl);
-
-      auto io_res = do_translate_ssl_error("SSL_shutdown", this->m_ssl, ret);
-      if(io_res != io_result_eof)
-        return io_res;
-
-      // Shut down the connection completely now.
-      ::shutdown(this->get_fd(), SHUT_RDWR);
-      this->m_cstate = connection_state_closed;
-      POSEIDON_LOG_TRACE("Marked secure TCP socket as CLOSED (pending data cleared): $1", this);
+    if(ret == 1)
       return io_result_eof;
-    }
 
-    // Try writing some bytes.
-    int nwritten = ::SSL_write(this->m_ssl, this->m_wqueue.data(),
-                               static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
-    if(nwritten > 0) {
-      this->m_wqueue.discard(static_cast<size_t>(nwritten));
-      return static_cast<IO_Result>(nwritten);
-    }
-
-    return do_translate_ssl_error("SSL_write", this->m_ssl, nwritten);
+    return do_translate_ssl_error("SSL_shutdown", this->m_ssl, ret);
   }
 
 void
@@ -232,59 +152,10 @@ do_on_async_establish()
 
 void
 Abstract_TLS_TCP_Socket::
-do_on_async_poll_shutdown(int err)
+do_on_async_shutdown(int err)
   {
     POSEIDON_LOG_INFO("Secure TCP connection closed: local '$1', reason: $2",
                       this->get_local_address(), noadl::format_errno(err));
-  }
-
-void
-Abstract_TLS_TCP_Socket::
-async_connect(const Socket_Address& addr)
-  {
-    Rc_Mutex::unique_lock lock(this->m_mutex);
-    if(this->m_cstate != connection_state_initial)
-      POSEIDON_THROW("another connection already in progress");
-
-    // Reset SSL method to client mode.
-    ::SSL_set_connect_state(this->m_ssl);
-
-    // Initiate the connection.
-    // Whether `::connect()` succeeds or fails with `EINPROGRESS`, the current
-    // socket is set to the CONNECTING state.
-    if(::connect(this->get_fd(), addr.data(), addr.size()) != 0) {
-      int err = errno;
-      if(err != EINPROGRESS)
-        POSEIDON_THROW("failed to initiate connection to '$2'\n",
-                       "[`connect()` failed: $1]",
-                       noadl::format_errno(err), addr);
-    }
-    this->m_cstate = connection_state_connecting;
-  }
-
-bool
-Abstract_TLS_TCP_Socket::
-async_send(const void* data, size_t size)
-  {
-    Rc_Mutex::unique_lock lock(this->m_mutex);
-    if(this->m_cstate > connection_state_established)
-      return false;
-
-    // Append data to the write queue.
-    this->m_wqueue.putn(static_cast<const char*>(data), size);
-    lock.unlock();
-
-    // TODO notify network driver
-    return true;
-  }
-
-void
-Abstract_TLS_TCP_Socket::
-async_shutdown()
-noexcept
-  {
-    Rc_Mutex::unique_lock lock(this->m_mutex);
-    this->do_async_shutdown_nolock();
   }
 
 }  // namespace poseidon

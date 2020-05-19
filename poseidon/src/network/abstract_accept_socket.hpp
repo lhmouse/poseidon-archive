@@ -31,21 +31,21 @@ class Abstract_Accept_Socket
     // `lock` and `hint` are ignored.
     // Please mind thread safety, as this function is called by the network thread.
     IO_Result
-    do_on_async_poll_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_read(Si_Mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
     // Does nothing.
     // This function always returns zero.
     // `lock` is ignored.
     size_t
-    do_write_queue_size(Rc_Mutex::unique_lock& lock)
+    do_write_queue_size(Si_Mutex::unique_lock& lock)
     const final;
 
     // Does nothing.
     // This function always returns `io_result_eof`.
     // `lock` is ignored.
     IO_Result
-    do_on_async_poll_write(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
   protected:

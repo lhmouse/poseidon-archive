@@ -4,21 +4,15 @@
 #ifndef POSEIDON_NETWORK_ABSTRACT_TCP_SOCKET_HPP_
 #define POSEIDON_NETWORK_ABSTRACT_TCP_SOCKET_HPP_
 
-#include "abstract_socket.hpp"
-#include <rocket/linear_buffer.hpp>
+#include "abstract_stream_socket.hpp"
 
 namespace poseidon {
 
 class Abstract_TCP_Socket
-  : public Abstract_Socket
+  : public Abstract_Stream_Socket
   {
   public:
-    using base_type = Abstract_Socket;
-
-  private:
-    mutable Rc_Mutex m_mutex;
-    Connection_State m_cstate = connection_state_initial;
-    ::rocket::linear_buffer m_wqueue;  // write queue
+    using base_type = Abstract_Stream_Socket;
 
   public:
     explicit
@@ -33,74 +27,60 @@ class Abstract_TCP_Socket
     void
     do_set_common_options();
 
-    inline
+    // Does nothing as no preparation is needed.
     void
-    do_async_shutdown_nolock()
-    noexcept;
-
-    // Reads some data.
-    // `lock` will lock `*this` after the call if locking is supported.
-    // `hint` is used as the I/O buffer. `size` specifies the maximum number of
-    // bytes to read.
-    IO_Result
-    do_on_async_poll_read(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_stream_preconnect_nolock()
     final;
 
-    // Returns the size of data pending for writing.
-    // `lock` will lock `*this` after the call if locking is supported.
-    size_t
-    do_write_queue_size(Rc_Mutex::unique_lock& lock)
-    const final;
-
-    // Writes some data.
-    // `lock` will lock `*this` after the call if locking is supported.
-    // `hint` and `size` are ignored.
+    // Calls `::read()`.
     IO_Result
-    do_on_async_poll_write(Rc_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_stream_read_nolock(void* data, size_t size)
+    final;
+
+    // Calls `::write()`.
+    IO_Result
+    do_stream_write_nolock(const void* data, size_t size)
+    final;
+
+    // Does nothing as no preparation is needed.
+    // This function always returns `io_result_eof`.
+    IO_Result
+    do_stream_preshutdown_nolock()
     final;
 
   protected:
     // Notifies a full-duplex channel has been established.
-    // The default implementation does nothing.
+    // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
     void
-    do_on_async_establish();
+    do_on_async_establish()
+    override;
 
     // Consumes incoming data.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
     void
     do_on_async_receive(void* data, size_t size)
+    override
       = 0;
 
     // Notifies a full-duplex channel has been closed.
-    // The default implementation does nothing.
+    // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_async_poll_shutdown(int err)
+    do_on_async_shutdown(int err)
     override;
 
   public:
-    // Initiates a new connection to the specified address.
-    void
-    async_connect(const Socket_Address& addr);
+    // These are functions inherited from `Abstract_Socket`.
+    using base_type::get_fd;
+    using base_type::terminate;
+    using base_type::get_local_address;
+    using base_type::get_remote_address;
 
-    // Enqueues some data for writing.
-    // This function returns `true` if the data have been queued, or `false` if a
-    // shutdown request has been initiated.
-    // This function is thread-safe.
-    bool
-    async_send(const void* data, size_t size);
-
-    // Initiates normal closure of this stream.
-    // The read stream is closed immediately. No further data will be received from
-    // this socket, but the connection cannot be closed until all pending data are
-    // delivered to the remote peer.
-    // Note half-closed connections are not supported.
-    void
-    async_shutdown()
-    noexcept;
+    // These are functions inherited from `Abstract_Stream_Socket`.
+    using base_type::async_connect;
+    using base_type::async_send;
+    using base_type::async_shutdown;
   };
 
 }  // namespace poseidon

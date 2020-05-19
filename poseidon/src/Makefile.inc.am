@@ -18,6 +18,8 @@ include_poseidon_network_HEADERS =  \
   %reldir%/network/socket_address.hpp  \
   %reldir%/network/abstract_socket.hpp  \
   %reldir%/network/abstract_accept_socket.hpp  \
+  %reldir%/network/abstract_stream_socket.hpp  \
+  %reldir%/network/abstract_datagram_socket.hpp  \
   %reldir%/network/abstract_tcp_socket.hpp  \
   %reldir%/network/abstract_tls_tcp_socket.hpp  \
   %reldir%/network/abstract_udp_socket.hpp  \
@@ -28,6 +30,7 @@ include_poseidon_static_HEADERS =  \
   %reldir%/static/main_config.hpp  \
   %reldir%/static/async_logger.hpp  \
   %reldir%/static/timer_driver.hpp  \
+  %reldir%/static/network_driver.hpp  \
   ${NOTHING}
 
 lib_LTLIBRARIES += lib/libposeidon.la
@@ -40,12 +43,15 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/network/socket_address.cpp  \
   %reldir%/network/abstract_socket.cpp  \
   %reldir%/network/abstract_accept_socket.cpp  \
+  %reldir%/network/abstract_stream_socket.cpp  \
+  %reldir%/network/abstract_datagram_socket.cpp  \
   %reldir%/network/abstract_tcp_socket.cpp  \
   %reldir%/network/abstract_tls_tcp_socket.cpp  \
   %reldir%/network/abstract_udp_socket.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
+  %reldir%/static/network_driver.cpp  \
   ${NOTHING}
 
 lib_libposeidon_la_LDFLAGS =  \

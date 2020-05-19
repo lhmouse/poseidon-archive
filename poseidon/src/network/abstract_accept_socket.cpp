@@ -4,6 +4,7 @@
 #include "../precompiled.hpp"
 #include "abstract_accept_socket.hpp"
 #include "socket_address.hpp"
+#include "../static/network_driver.hpp"
 #include "../utilities.hpp"
 
 namespace poseidon {
@@ -26,7 +27,7 @@ do_set_common_options()
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_async_poll_read(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_read(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
     Socket_Address::storage_type addr;
@@ -51,12 +52,17 @@ do_on_async_poll_read(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*
     auto sock = this->do_on_async_accept(::std::move(fd));
     if(!sock)
       POSEIDON_THROW("null pointer returned from `do_on_async_accept()`\n"
-                     "[socket class `$1`]",
+                     "[acceptor socket class `$1`]",
                      typeid(*this).name());
 
-    POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'",
-                      sock->get_local_address(), sock->get_remote_address());
-    // TODO register socket
+    POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'\n"
+                      "[acceptor socket class `$3`; new socket class `$4`]",
+                      sock->get_local_address(), sock->get_remote_address(),
+                      typeid(*this).name(), typeid(*sock).name());
+
+    Network_Driver::insert(::std::move(sock));
+
+    // Report success.
     return io_result_not_eof;
   }
   catch(exception& stdex) {
@@ -72,7 +78,7 @@ do_on_async_poll_read(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*
 
 size_t
 Abstract_Accept_Socket::
-do_write_queue_size(Rc_Mutex::unique_lock& /*lock*/)
+do_write_queue_size(Si_Mutex::unique_lock& /*lock*/)
 const
   {
     return 0;
@@ -80,7 +86,7 @@ const
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_async_poll_write(Rc_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_write(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   {
     return io_result_eof;
   }
@@ -114,7 +120,7 @@ bind_and_listen(const Socket_Address& addr, uint32_t backlog)
                      "[`listen()` failed: $1]",
                      noadl::format_errno(errno), this->get_local_address());
 
-     POSEIDON_LOG_INFO("Started listening on '$1'...", this->get_local_address());
+    POSEIDON_LOG_INFO("Started listening on '$1'...", this->get_local_address());
   }
 
 }  // namespace poseidon
