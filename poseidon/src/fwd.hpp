@@ -106,6 +106,7 @@ class Socket_Address;
 class Abstract_TLS_IO;
 class OpenSSL_IO;
 class Abstract_Socket;
+class Abstract_Accept_Socket;
 
 // Singletons
 class Main_Config;

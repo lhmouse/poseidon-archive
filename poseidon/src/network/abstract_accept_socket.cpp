@@ -2,19 +2,19 @@
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "accept_socket.hpp"
+#include "abstract_accept_socket.hpp"
 #include "socket_address.hpp"
 #include "../utilities.hpp"
 
 namespace poseidon {
 
-Accept_Socket::
-~Accept_Socket()
+Abstract_Accept_Socket::
+~Abstract_Accept_Socket()
   {
   }
 
 void
-Accept_Socket::
+Abstract_Accept_Socket::
 do_set_common_options()
   {
     // Enable reusing addresses.
@@ -23,7 +23,7 @@ do_set_common_options()
   }
 
 Abstract_Socket::IO_Result
-Accept_Socket::
+Abstract_Accept_Socket::
 do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hine*/, size_t /*size*/)
   try {
     // Try accepting a socket.
@@ -68,7 +68,7 @@ do_on_async_read(::rocket::mutex::unique_lock& /*lock*/, void* /*hine*/, size_t 
   }
 
 size_t
-Accept_Socket::
+Abstract_Accept_Socket::
 do_write_queue_size(::rocket::mutex::unique_lock& /*lock*/)
 const
   {
@@ -76,14 +76,14 @@ const
   }
 
 Abstract_Socket::IO_Result
-Accept_Socket::
+Abstract_Accept_Socket::
 do_on_async_write(::rocket::mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   {
     return io_result_end_of_stream;
   }
 
 void
-Accept_Socket::
+Abstract_Accept_Socket::
 do_on_async_shutdown(int err)
   {
     POSEIDON_LOG_INFO("Stopped listening on '$1': $2",
@@ -92,7 +92,7 @@ do_on_async_shutdown(int err)
   }
 
 void
-Accept_Socket::
+Abstract_Accept_Socket::
 bind_and_listen(const Socket_Address& addr, uint32_t backlog)
   {
     // Bind onto `addr`.
