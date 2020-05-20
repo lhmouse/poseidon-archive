@@ -32,14 +32,17 @@ do_get_size_config(const Config_File& file, const char* name, size_t defval)
 
 POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
   {
+    // constant data
     ::pthread_t m_thread;
     int m_epoll = -1;
 
+    // configuration
     mutable Si_Mutex m_conf_mutex;
     size_t m_conf_event_count = 1;
     size_t m_conf_io_buffer_size = 1;
     size_t m_conf_throttle_size = 1;
 
+    // dynamic data
     mutable Si_Mutex m_poll_mutex;
     
   };

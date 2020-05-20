@@ -71,8 +71,10 @@ struct PQ_Compare
 
 POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
   {
+    // constant data
     ::pthread_t m_thread;
 
+    // dynamic data
     mutable Si_Mutex m_pq_mutex;
     Cond_Var m_pq_avail;
     ::std::vector<PQ_Element> m_pq;

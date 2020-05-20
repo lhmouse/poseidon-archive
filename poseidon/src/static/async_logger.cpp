@@ -170,11 +170,14 @@ do_write_loop(int fd, const char* data, size_t size)
 
 POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
   {
+    // constant data
     ::pthread_t m_thread;
 
+    // configuration
     mutable Si_Mutex m_conf_mutex;
     Level_Config_Array m_conf_levels;
 
+    // dynamic data
     mutable Si_Mutex m_queue_mutex;
     Cond_Var m_queue_avail;
     ::std::deque<Entry> m_queue;
