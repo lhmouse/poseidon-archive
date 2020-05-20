@@ -192,20 +192,12 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
   {
     ::pthread_t m_thread;
 
-    struct
-      {
-        mutable Si_Mutex mutex;
-        Level_Config_Array levels;
-      }
-      m_config;
+    mutable Si_Mutex m_conf_mutex;
+    Level_Config_Array m_conf_levels;
 
-    struct
-      {
-        mutable Si_Mutex mutex;
-        Cond_Var avail;
-        ::std::deque<Entry> entries;
-      }
-      m_queue;
+    mutable Si_Mutex m_queue_mutex;
+    Cond_Var m_queue_avail;
+    ::std::deque<Entry> m_queue;
   };
 
 void
@@ -213,20 +205,20 @@ Async_Logger::
 do_thread_loop(void* /*param*/)
   {
     // Await an entry and pop it.
-    Si_Mutex::unique_lock lock(self->m_queue.mutex);
-    while(self->m_queue.entries.empty())
-      self->m_queue.avail.wait(lock);
+    Si_Mutex::unique_lock lock(self->m_queue_mutex);
+    while(self->m_queue.empty())
+      self->m_queue_avail.wait(lock);
 
-    auto entry = ::std::move(self->m_queue.entries.front());
-    self->m_queue.entries.pop_front();
-    bool needs_sync = (entry.level < log_level_warn) || self->m_queue.entries.empty();
+    auto entry = ::std::move(self->m_queue.front());
+    self->m_queue.pop_front();
+    bool needs_sync = (entry.level < log_level_warn) || self->m_queue.empty();
 
     // Get configuration for this level.
-    lock.assign(self->m_config.mutex);
-    if(entry.level >= self->m_config.levels.size())
+    lock.assign(self->m_conf_mutex);
+    if(entry.level >= self->m_conf_levels.size())
       return;
 
-    auto conf = self->m_config.levels[entry.level];
+    auto conf = self->m_conf_levels[entry.level];
     const auto& names = s_level_names[entry.level];
 
     // Leave critical section.
@@ -356,8 +348,8 @@ reload()
     // During destruction of `temp` the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    Si_Mutex::unique_lock lock(self->m_config.mutex);
-    self->m_config.levels.swap(temp);
+    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+    self->m_conf_levels.swap(temp);
   }
 
 bool
@@ -366,13 +358,13 @@ is_enabled(Log_Level level)
 noexcept
   {
     // Lock config for reading.
-    Si_Mutex::unique_lock lock(self->m_config.mutex);
+    Si_Mutex::unique_lock lock(self->m_conf_mutex);
 
     // Validate arguments.
-    if(level >= self->m_config.levels.size())
+    if(level >= self->m_conf_levels.size())
       return false;
 
-    const auto& conf = self->m_config.levels[level];
+    const auto& conf = self->m_conf_levels[level];
 
     // The level is enabled if at least one stream is enabled.
     return (conf.out_fd != -1) || conf.out_path.size();
@@ -388,10 +380,10 @@ write(Log_Level level, const char* file, long line, const char* func, cow_string
     entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
 
     // Push the element.
-    Si_Mutex::unique_lock lock(self->m_queue.mutex);
-    self->m_queue.entries.emplace_back(::std::move(entry));
-    self->m_queue.avail.notify_one();
-    return self->m_queue.entries.size();
+    Si_Mutex::unique_lock lock(self->m_queue_mutex);
+    self->m_queue.emplace_back(::std::move(entry));
+    self->m_queue_avail.notify_one();
+    return self->m_queue.size();
   }
 
 }  // poseidon

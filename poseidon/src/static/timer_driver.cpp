@@ -73,13 +73,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
   {
     ::pthread_t m_thread;
 
-    struct
-      {
-        mutable Si_Mutex mutex;
-        Cond_Var avail;
-        ::std::vector<PQ_Element> pq;
-      }
-      m_queue;
+    mutable Si_Mutex m_pq_mutex;
+    Cond_Var m_pq_avail;
+    ::std::vector<PQ_Element> m_pq;
   };
 
 void
@@ -87,29 +83,29 @@ Timer_Driver::
 do_thread_loop(void* /*param*/)
   {
     // Await an element and pop it.
-    Si_Mutex::unique_lock lock(self->m_queue.mutex);
+    Si_Mutex::unique_lock lock(self->m_pq_mutex);
     int64_t now;
     for(;;) {
-      if(self->m_queue.pq.size()) {
+      if(self->m_pq.size()) {
         // Check the minimum element.
         now = do_get_time(0);
-        int64_t delta = self->m_queue.pq.front().next - now;
+        int64_t delta = self->m_pq.front().next - now;
         if(delta <= 0)
           break;
-        self->m_queue.avail.wait_for(lock,
-                              static_cast<long>(::rocket::min(delta, LONG_MAX)));
+        self->m_pq_avail.wait_for(lock,
+                    static_cast<long>(::rocket::min(delta, LONG_MAX)));
       }
       else
         // Wait until an element becomes available.
-        self->m_queue.avail.wait(lock);
+        self->m_pq_avail.wait(lock);
     }
-    ::std::pop_heap(self->m_queue.pq.begin(), self->m_queue.pq.end(), pq_compare);
+    ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
 
     // Process this timer!
-    auto timer = self->m_queue.pq.back().timer;
+    auto timer = self->m_pq.back().timer;
     if(timer->use_count() == 2) {
       // Delete this timer when no other reference of it exists.
-      self->m_queue.pq.pop_back();
+      self->m_pq.pop_back();
       return;
     }
 
@@ -117,12 +113,12 @@ do_thread_loop(void* /*param*/)
     Si_Mutex::unique_lock tlock(timer->m_mutex);
     if(timer->m_period > 0) {
       // Update the element in place.
-      do_shift_time(self->m_queue.pq.back().next, timer->m_period);
-      ::std::push_heap(self->m_queue.pq.begin(), self->m_queue.pq.end(), pq_compare);
+      do_shift_time(self->m_pq.back().next, timer->m_period);
+      ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     }
     else {
       // Delete this one-shot timer.
-      self->m_queue.pq.pop_back();
+      self->m_pq.pop_back();
     }
     tlock.unlock();
 
@@ -160,12 +156,12 @@ insert(uptr<Abstract_Timer>&& utimer)
     auto next = do_get_time(timer->m_first);
 
     // Lock priority queue for modification.
-    Si_Mutex::unique_lock lock(self->m_queue.mutex);
+    Si_Mutex::unique_lock lock(self->m_pq_mutex);
 
     // Insert the timer.
-    self->m_queue.pq.push_back({ next, timer });
-    ::std::push_heap(self->m_queue.pq.begin(), self->m_queue.pq.end(), pq_compare);
-    self->m_queue.avail.notify_one();
+    self->m_pq.push_back({ next, timer });
+    ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+    self->m_pq_avail.notify_one();
     return timer;
   }
 
@@ -175,12 +171,12 @@ invalidate_internal(const Abstract_Timer* ctimer)
 noexcept
   {
     // Lock priority queue for modification.
-    Si_Mutex::unique_lock lock(self->m_queue.mutex);
+    Si_Mutex::unique_lock lock(self->m_pq_mutex);
 
     // Don't do anything if the timer does not exist in the queue.
-    auto qelem = ::std::find_if(self->m_queue.pq.begin(), self->m_queue.pq.end(),
+    auto qelem = ::std::find_if(self->m_pq.begin(), self->m_pq.end(),
                      [&](const PQ_Element& elem) { return elem.timer.get() == ctimer;  });
-    if(qelem == self->m_queue.pq.end())
+    if(qelem == self->m_pq.end())
       return false;
 
     // Get the next trigger time.
@@ -190,8 +186,8 @@ noexcept
 
     // Update the element in place.
     qelem->next = next;
-    ::std::make_heap(self->m_queue.pq.begin(), self->m_queue.pq.end(), pq_compare);
-    self->m_queue.avail.notify_one();
+    ::std::make_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+    self->m_pq_avail.notify_one();
     return true;
   }
 
