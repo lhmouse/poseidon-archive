@@ -13,7 +13,7 @@ class Network_Driver
     POSEIDON_STATIC_CLASS_DECLARE(Network_Driver);
 
   private:
-    static
+    static inline
     void
     do_thread_loop(void* param);
 

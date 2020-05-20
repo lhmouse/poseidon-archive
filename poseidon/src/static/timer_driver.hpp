@@ -13,7 +13,7 @@ class Timer_Driver
     POSEIDON_STATIC_CLASS_DECLARE(Timer_Driver);
 
   private:
-    static
+    static inline
     void
     do_thread_loop(void* param);
 

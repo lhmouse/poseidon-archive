@@ -13,7 +13,7 @@ class Async_Logger
     POSEIDON_STATIC_CLASS_DECLARE(Async_Logger);
 
   private:
-    static
+    static inline
     void
     do_thread_loop(void* param);
 
