@@ -68,7 +68,7 @@ class Abstract_Accept_Socket
     // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values
     // are truncated silently.
     void
-    bind_and_listen(const Socket_Address& addr, uint32_t backlog = UINT32_MAX);
+    listen(const Socket_Address& addr, uint32_t backlog = UINT32_MAX);
   };
 
 }  // namespace poseidon

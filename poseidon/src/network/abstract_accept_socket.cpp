@@ -102,7 +102,7 @@ do_on_async_poll_shutdown(int err)
 
 void
 Abstract_Accept_Socket::
-bind_and_listen(const Socket_Address& addr, uint32_t backlog)
+listen(const Socket_Address& addr, uint32_t backlog)
   {
     // Bind onto `addr`.
     if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)
