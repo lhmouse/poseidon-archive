@@ -23,6 +23,13 @@ class Network_Driver
     void
     start();
 
+    // Reloads settings from main config.
+    // If this function fails, an exception is thrown, and there is no effect.
+    // This function is thread-safe.
+    static
+    void
+    reload();
+
     // Adds a socket for polling.
     // The driver holds a reference-counted pointer to the socket. If it becomes a unique
     // reference, the socket is closed and deleted.
@@ -31,13 +38,13 @@ class Network_Driver
     // This function is thread-safe.
     static
     rcptr<Abstract_Socket>
-    insert(uptr<Abstract_Socket>&& sock);
+    insert(uptr<Abstract_Socket>&& usock);
 
     // Notifies the network thread about existence of writable data on a socket.
     // This is an internal function. You will not want to call it.
     // This function is thread-safe.
     static
-    void
+    bool
     notify_writable_internal(const Abstract_Socket* csock)
     noexcept;
   };

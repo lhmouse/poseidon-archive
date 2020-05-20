@@ -5,6 +5,7 @@
 #include "static/main_config.hpp"
 #include "static/async_logger.hpp"
 #include "static/timer_driver.hpp"
+#include "static/network_driver.hpp"
 #include "utilities.hpp"
 #include <locale.h>
 #include <unistd.h>
@@ -241,6 +242,7 @@ main(int argc, char** argv)
     // visible to the user.
     Main_Config::reload();
     Async_Logger::reload();
+    Network_Driver::reload();
 
     // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)
@@ -267,22 +269,7 @@ main(int argc, char** argv)
     // Start daemon threads.
     Async_Logger::start();
     Timer_Driver::start();
-
-// TODO: Remove this in the future
-auto t = create_async_timer(1000, 2000, [](int64_t now) { POSEIDON_LOG_INFO("timer: $1", now);  });
-POSEIDON_LOG_ERROR("timer inserted!");
-
-sleep(10);
-if(exit_now)
-  do_exit(exit_success, "interrupt\n");
-t->reset(5000, INT64_MAX);
-POSEIDON_LOG_ERROR("timer reset! 5 secs, no repeat");
-
-sleep(10);
-if(exit_now)
-  do_exit(exit_success, "interrupt\n");
-t->reset(5000, 1000);
-POSEIDON_LOG_ERROR("timer reset! 5 secs, 1 repeat");
+    Network_Driver::start();
 
     sleep(10000);
     do_exit(exit_success, "interrupt\n");

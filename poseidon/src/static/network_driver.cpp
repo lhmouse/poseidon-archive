@@ -3,197 +3,110 @@
 
 #include "../precompiled.hpp"
 #include "network_driver.hpp"
+#include "main_config.hpp"
+#include "../core/config_file.hpp"
 #include "../network/abstract_socket.hpp"
 #include "../xutilities.hpp"
-#if 0
+#include <sys/epoll.h>
+
 namespace poseidon {
 namespace {
 
-inline
-int64_t&
-do_shift_time(int64_t& value, int64_t shift)
-noexcept
+size_t
+do_get_size_config(const Config_File& file, const char* name, size_t defval)
   {
-    // `value` must be non-negative. `shift` may be any value.
-    ROCKET_ASSERT(value >= 0);
-    value += ::rocket::clamp(shift, -value, INT64_MAX-value);
-    ROCKET_ASSERT(value >= 0);
-    return value;
+    const auto qval = file.get_int64_opt({"network","poll",name});
+    if(!qval)
+      return defval;
+
+    int64_t rval = ::rocket::clamp(*qval, 1, 0x10'00000);   // 16MiB
+    if(*qval != rval)
+      POSEIDON_LOG_WARN("Config value `network.poll.$1` truncated to `$2`\n"
+                        "[value `$3` was out of range]",
+                        name, rval, *qval);
+
+    return static_cast<size_t>(rval);
   }
-
-ROCKET_PURE_FUNCTION
-int64_t
-do_get_time(int64_t shift)
-noexcept
-  {
-    // Get the time since the system was started.
-    ::timespec ts;
-    ::clock_gettime(CLOCK_MONOTONIC, &ts);
-
-    int64_t value = static_cast<int64_t>(ts.tv_sec) * 1'000;
-    value += static_cast<int64_t>(ts.tv_nsec) / 1'000'000;
-    value += 9876543210;
-
-    // Shift the time point using saturation arithmetic.
-    do_shift_time(value, shift);
-    return value;
-  }
-
-struct PQ_Element
-  {
-    int64_t next;
-    rcptr<Abstract_Timer> timer;
-  };
-
-struct PQ_Compare
-  {
-    constexpr
-    bool
-    operator()(const PQ_Element& lhs, const PQ_Element& rhs)
-    const noexcept
-      { return lhs.next > rhs.next;  }
-
-    constexpr
-    bool
-    operator()(const PQ_Element& lhs, int64_t rhs)
-    const noexcept
-      { return lhs.next > rhs;  }
-
-    constexpr
-    bool
-    operator()(int64_t lhs, const PQ_Element& rhs)
-    const noexcept
-      { return lhs > rhs.next;  }
-  }
-  constexpr pq_compare;
 
 }  // namespace
 
-POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
+POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
   {
     ::pthread_t m_thread;
+    int m_epoll = -1;
 
-    struct
-      {
-        mutable Si_Mutex mutex;
-        Cond_Var avail;
-        ::std::vector<PQ_Element> pq;
-      }
-      m_queue;
+    mutable Si_Mutex m_conf_mutex;
+    size_t m_conf_event_count = 1;
+    size_t m_conf_io_buffer_size = 1;
+    size_t m_conf_throttle_size = 1;
+
+    mutable Si_Mutex m_poll_mutex;
+    
   };
 
 void
-Timer_Driver::
+Network_Driver::
 do_thread_loop(void* /*param*/)
   {
-    // Await an element and pop it.
-    Si_Mutex::unique_lock lock(self->m_queue.mutex);
-    int64_t now;
-    for(;;) {
-      if(self->m_queue.pq.size()) {
-        // Check the minimum element.
-        now = do_get_time(0);
-        int64_t delta = self->m_queue.pq.front().next - now;
-        if(delta <= 0)
-          break;
-        self->m_queue.avail.wait_for(lock,
-                              static_cast<long>(::rocket::min(delta, LONG_MAX)));
-      }
-      else
-        // Wait until an element becomes available.
-        self->m_queue.avail.wait(lock);
-    }
-    ::std::pop_heap(self->m_queue.pq.begin(), self->m_queue.pq.end(), pq_compare);
-
-    // Process this timer!
-    auto timer = self->m_queue.pq.back().timer;
-    if(timer->use_count() == 2) {
-      // Delete this timer when no other reference of it exists.
-      self->m_queue.pq.pop_back();
-      return;
-    }
-
-    // Get the next trigger time.
-    Si_Mutex::unique_lock tlock(timer->m_mutex);
-    if(timer->m_period > 0) {
-      // Update the element in place.
-      do_shift_time(self->m_queue.pq.back().next, timer->m_period);
-      ::std::push_heap(self->m_queue.pq.begin(), self->m_queue.pq.end(), pq_compare);
-    }
-    else {
-      // Delete this one-shot timer.
-      self->m_queue.pq.pop_back();
-    }
-    tlock.unlock();
-
-    // Leave critical section.
-    lock.unlock();
-
-    // Execute the timer procedure.
-    // The argument is a snapshot of the monotonic clock, not its real-time value.
-    timer->do_on_async_timer(now);
+    POSEIDON_LOG_FATAL("EPOLL RUNNING");
+    sleep(1);
   }
 
 void
-Timer_Driver::
+Network_Driver::
 start()
   {
     if(self->m_thread)
       return;
 
+    // Create an epoll object.
+    if(self->m_epoll == -1) {
+      int fd = ::epoll_create(100);
+      if(fd == -1)
+        POSEIDON_THROW("could not create epoll object\n"
+                       "[`epoll_create()` failed: $1]",
+                       format_errno(errno));
+
+      self->m_epoll = fd;
+    }
+
     // Create the thread. Note it is never joined or detached.
-    auto thr = create_daemon_thread<do_thread_loop>("timer");
+    auto thr = create_daemon_thread<do_thread_loop>("network");
     self->m_thread = ::std::move(thr);
   }
 
-rcptr<Abstract_Timer>
-Timer_Driver::
-insert(uptr<Abstract_Timer>&& utimer)
+void
+Network_Driver::
+reload()
   {
-    // Take ownership of `timer`.
-    rcptr<Abstract_Timer> timer(utimer.release());
-    if(!timer)
-      POSEIDON_THROW("null timer pointer not valid");
+    // Load logger settings into temporary objects.
+    auto file = Main_Config::copy();
+    size_t event_count = do_get_size_config(file, "event_count", 1024);
+    size_t io_buffer_size = do_get_size_config(file, "io_buffer_size", 65536);
+    size_t throttle_size = do_get_size_config(file, "throttle_size", 1048576);
 
-    // Get the next trigger time.
-    // The timer is considered to be owned uniquely, so there is no need to lock it.
-    auto next = do_get_time(timer->m_first);
+    // During destruction of temporary objects the mutex should have been unlocked.
+    // The swap operation is presumed to be fast, so we don't hold the mutex
+    // for too long.
+    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+    self->m_conf_event_count = event_count;
+    self->m_conf_io_buffer_size = io_buffer_size;
+    self->m_conf_throttle_size = throttle_size;
+  }
 
-    // Lock priority queue for modification.
-    Si_Mutex::unique_lock lock(self->m_queue.mutex);
-
-    // Insert the timer.
-    self->m_queue.pq.push_back({ next, timer });
-    ::std::push_heap(self->m_queue.pq.begin(), self->m_queue.pq.end(), pq_compare);
-    self->m_queue.avail.notify_one();
-    return timer;
+rcptr<Abstract_Socket>
+Network_Driver::
+insert(uptr<Abstract_Socket>&& usock)
+  {
+    return nullptr;
   }
 
 bool
-Timer_Driver::
-invalidate_internal(Abstract_Timer* timer)
+Network_Driver::
+notify_writable_internal(const Abstract_Socket* csock)
 noexcept
   {
-    // Lock priority queue for modification.
-    Si_Mutex::unique_lock lock(self->m_queue.mutex);
-
-    // Don't do anything if the timer does not exist in the queue.
-    auto qelem = ::std::find_if(self->m_queue.pq.begin(), self->m_queue.pq.end(),
-                     [&](const PQ_Element& elem) { return elem.timer.get() == timer;  });
-    if(qelem == self->m_queue.pq.end())
-      return false;
-
-    // Get the next trigger time.
-    Si_Mutex::unique_lock tlock(timer->m_mutex);
-    auto next = do_get_time(timer->m_first);
-    tlock.unlock();
-
-    // Update the element in place.
-    qelem->next = next;
-    ::std::make_heap(self->m_queue.pq.begin(), self->m_queue.pq.end(), pq_compare);
-    self->m_queue.avail.notify_one();
-    return true;
+    return 1;
   }
 
 }  // namespace poseidon
-#endif
