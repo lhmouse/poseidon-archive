@@ -75,9 +75,8 @@ Abstract_TLS_TCP_Socket::
 do_set_common_options()
   {
     // Disables Nagle algorithm.
-    static constexpr int true_val[] = { -1 };
-    int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY,
-                           true_val, sizeof(true_val));
+    static constexpr int yes[] = { -1 };
+    int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY, yes, sizeof(yes));
     ROCKET_ASSERT(res == 0);
 
     // Create BIO.

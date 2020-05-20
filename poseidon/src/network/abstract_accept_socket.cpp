@@ -19,9 +19,8 @@ Abstract_Accept_Socket::
 do_set_common_options()
   {
     // Enable reusing addresses.
-    static constexpr int true_val[] = { -1 };
-    int res = ::setsockopt(this->get_fd(), SOL_SOCKET, SO_REUSEADDR,
-                           true_val, sizeof(true_val));
+    static constexpr int yes[] = { -1 };
+    int res = ::setsockopt(this->get_fd(), SOL_SOCKET, SO_REUSEADDR, yes, sizeof(yes));
     ROCKET_ASSERT(res == 0);
   }
 
