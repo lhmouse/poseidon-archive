@@ -40,11 +40,11 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
   {
     // Read color settings.
     // If we decide to disable color later on, we clear this string.
-    if(const auto qcolor = file.get_string_opt({ "logger", "levels", name, "color" }))
+    if(const auto qcolor = file.get_string_opt({"logger","levels",name,"color"}))
       conf.color = ::std::move(*qcolor);
 
     // Read stream settings.
-    if(const auto qstrm = file.get_string_opt({ "logger", "levels", name, "stream" })) {
+    if(const auto qstrm = file.get_string_opt({"logger","levels",name,"stream"})) {
       const auto strm = qstrm->safe_c_str();
 
       // Set standard file descriptors.
@@ -56,7 +56,7 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
 
       // Read the color setting for this stream.
       bool real_color;
-      if(const auto qcolor = file.get_bool_opt({ "logger", "streams", strm, "color" }))
+      if(const auto qcolor = file.get_bool_opt({"logger","streams",strm,"color"}))
         real_color = *qcolor;
       else
         real_color = ::isatty(conf.out_fd);
@@ -65,7 +65,7 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
         conf.color.clear();
 
       // Read the alternative output file.
-      if(const auto qfile = file.get_string_opt({ "logger", "streams", strm, "file" }))
+      if(const auto qfile = file.get_string_opt({"logger","streams",strm,"file"}))
         conf.out_path = ::std::move(*qfile);
       else
         conf.out_path = ::rocket::sref("");
