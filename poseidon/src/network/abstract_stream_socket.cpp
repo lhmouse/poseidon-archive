@@ -20,6 +20,22 @@ do_set_common_options()
   {
   }
 
+IO_Result
+Abstract_Stream_Socket::
+do_call_stream_preshutdown_nolock()
+noexcept
+  {
+    // Call `do_stream_preshutdown_nolock()`, ignoring any exeptions.
+    auto io_res = io_result_eof;
+    try {
+      io_res = this->do_stream_preshutdown_nolock();
+    }
+    catch(const exception& stdex) {
+      POSEIDON_LOG_WARN("Failed to perform graceful shutdown on stream socket: $1", this);
+    }
+    return io_res;
+  }
+
 void
 Abstract_Stream_Socket::
 do_async_shutdown_nolock()
@@ -37,7 +53,7 @@ noexcept
       case connection_state_established:
       case connection_state_closing:
         // Ensure pending data are delivered.
-        if(this->m_wqueue.size() || (this->do_stream_preshutdown_nolock() != io_result_eof)) {
+        if(this->m_wqueue.size() || (this->do_call_stream_preshutdown_nolock() != io_result_eof)) {
           ::shutdown(this->get_fd(), SHUT_RD);
           this->m_cstate = connection_state_closing;
           POSEIDON_LOG_TRACE("Marked stream socket as CLOSING (data pending): $1", this);
@@ -126,15 +142,15 @@ do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* /*hint*/, size_t /*siz
       return io_result_eof;
 
     // Shut down the connection completely now.
-    auto io_res = this->do_stream_preshutdown_nolock();
-    if(io_res < 0)
+    auto io_res = this->do_call_stream_preshutdown_nolock();
+    if(io_res != io_result_eof)
       return io_res;
 
     // Shutdown complete. Close thw connection now.
     ::shutdown(this->get_fd(), SHUT_RDWR);
     this->m_cstate = connection_state_closed;
     POSEIDON_LOG_TRACE("Marked stream socket as CLOSED (pending data clear): $1", this);
-    return io_result_eof;
+    return io_res;
   }
 
 void

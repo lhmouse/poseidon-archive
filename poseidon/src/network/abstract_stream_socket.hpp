@@ -34,6 +34,11 @@ class Abstract_Stream_Socket
     do_set_common_options();
 
     inline
+    IO_Result
+    do_call_stream_preshutdown_nolock()
+    noexcept;
+
+    inline
     void
     do_async_shutdown_nolock()
     noexcept;
@@ -100,7 +105,6 @@ class Abstract_Stream_Socket
     virtual
     IO_Result
     do_stream_preshutdown_nolock()
-    noexcept
       = 0;
 
     // Notifies a full-duplex channel has been established.
