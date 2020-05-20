@@ -40,55 +40,35 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
   {
     // Read color settings.
     // If we decide to disable color later on, we clear this string.
-    if(const auto qcolor = file.get_string_opt({ "logger", "levels", name, "color" })) {
-      // Set the color string.
+    if(const auto qcolor = file.get_string_opt({ "logger", "levels", name, "color" }))
       conf.color = ::std::move(*qcolor);
-    }
-    else {
-      // Disable color.
-      conf.color = ::rocket::sref("");
-    }
 
     // Read stream settings.
     if(const auto qstrm = file.get_string_opt({ "logger", "levels", name, "stream" })) {
-      // Set standard file descriptors.
       const auto strm = qstrm->safe_c_str();
-      if(::strcmp(strm, "stdout") == 0) {
+
+      // Set standard file descriptors.
+      if(*qstrm == "stdout")
         conf.out_fd = STDOUT_FILENO;
-      }
-      else if(::strcmp(strm, "stderr") == 0) {
+
+      if(*qstrm == "stderr")
         conf.out_fd = STDERR_FILENO;
-      }
-      else {
-        conf.out_fd = -1;
-      }
 
       // Read the color setting for this stream.
-      if(const auto qcolor = file.get_bool_opt({ "logger", "streams", strm, "color" })) {
-        // Honor the user's specification.
-        if(!*qcolor)
-          conf.color = ::rocket::sref("");
-      }
-      else {
-        // Disable color if the stream is not a terminal.
-        if(!::isatty(conf.out_fd))
-          conf.color = ::rocket::sref("");
-      }
+      bool real_color;
+      if(const auto qcolor = file.get_bool_opt({ "logger", "streams", strm, "color" }))
+        real_color = *qcolor;
+      else
+        real_color = ::isatty(conf.out_fd);
+
+      if(!real_color)
+        conf.color.clear();
 
       // Read the alternative output file.
-      if(const auto qfile = file.get_string_opt({ "logger", "streams", strm, "file" })) {
-        // Set the output file path.
+      if(const auto qfile = file.get_string_opt({ "logger", "streams", strm, "file" }))
         conf.out_path = ::std::move(*qfile);
-      }
-      else {
-        // Disable output file.
+      else
         conf.out_path = ::rocket::sref("");
-      }
-    }
-    else {
-      // Disable all outputs.
-      conf.out_fd = -1;
-      conf.out_path = ::rocket::sref("");
     }
   }
 
