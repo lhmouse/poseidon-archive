@@ -339,8 +339,8 @@ Async_Logger::
 reload()
   {
     // Load logger settings into this temporary array.
-    Level_Config_Array temp;
     auto file = Main_Config::copy();
+    Level_Config_Array temp;
     for(size_t k = 0;  k < temp.size();  ++k)
       do_load_level_config(temp[k], file, s_level_names[k].conf_name);
 
