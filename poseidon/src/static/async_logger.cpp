@@ -319,8 +319,7 @@ do_thread_loop(void* /*param*/)
       do_write_loop(fd, str.data(), str.size());
 
     if(needs_sync)
-      for(const auto& fd : strms)
-        ::fdatasync(fd);
+      ::sync();
   }
 
 void
