@@ -8,6 +8,23 @@
 #include "../utilities.hpp"
 
 namespace poseidon {
+namespace {
+
+IO_Result
+do_translate_syscall_error(const char* func, int err)
+  {
+    if(err == EINTR)
+      return io_result_intr;
+
+    if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
+      return io_result_again;
+
+    POSEIDON_THROW("failed to accept incoming connection\n"
+                   "[`$1()` failed: $2]",
+                   func, noadl::format_errno(err));
+  }
+
+}  // namespace
 
 Abstract_Accept_Socket::
 ~Abstract_Accept_Socket()
@@ -33,19 +50,8 @@ do_on_async_poll_read(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*
     Socket_Address::size_type size = sizeof(addr);
 
     unique_posix_fd fd(::accept4(this->get_fd(), addr, &size, SOCK_NONBLOCK), ::close);
-    if(!fd) {
-      // Handle errors.
-      int err = errno;
-      if(err == EINTR)
-        return io_result_intr;
-
-      if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
-        return io_result_again;
-
-      POSEIDON_THROW("error accepting incoming connection\n"
-                     "[`accept4()` failed: $1]",
-                     noadl::format_errno(err));
-    }
+    if(!fd)
+      return do_translate_syscall_error("accept4", errno);
 
     // Create a new socket object.
     auto sock = this->do_on_async_accept(::std::move(fd));
