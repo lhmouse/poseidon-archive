@@ -177,7 +177,7 @@ noexcept
 
     // Don't do anything if the timer does not exist in the queue.
     auto qelem = ::std::find_if(self->m_pq.begin(), self->m_pq.end(),
-                     [&](const PQ_Element& elem) { return elem.timer.get() == ctimer;  });
+                     [&](const PQ_Element& r) { return r.timer.get() == ctimer;  });
     if(qelem == self->m_pq.end())
       return false;
 
