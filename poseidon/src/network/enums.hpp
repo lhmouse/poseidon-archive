@@ -18,7 +18,7 @@ enum IO_Result : ptrdiff_t
   {
     io_result_again    = -1,  // EAGAIN or EWOULDBLOCK
     io_result_eof      =  0,
-    io_result_not_eof  =  1,  // EINTR
+    io_result_not_eof  =  PTRDIFF_MAX,  // EINTR
   };
 
 // This describes the lifetime of a connection.
