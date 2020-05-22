@@ -77,7 +77,7 @@ class Abstract_TLS_TCP_Socket
   public:
     // These are functions inherited from `Abstract_Socket`.
     using base_type::get_fd;
-    using base_type::terminate;
+    using base_type::abort;
     using base_type::get_local_address;
     using base_type::get_remote_address;
 
