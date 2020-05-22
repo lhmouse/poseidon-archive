@@ -176,9 +176,10 @@ noexcept
     Si_Mutex::unique_lock lock(self->m_pq_mutex);
 
     // Don't do anything if the timer does not exist in the queue.
-    auto qelem = ::std::find_if(self->m_pq.begin(), self->m_pq.end(),
-                     [&](const PQ_Element& r) { return r.timer.get() == ctimer;  });
-    if(qelem == self->m_pq.end())
+    PQ_Element* qelem;
+    if(::std::none_of(self->m_pq.begin(), self->m_pq.end(),
+                      [&](PQ_Element& r)
+                        { return (qelem = &r)->timer.get() == ctimer;  }))
       return false;
 
     // Get the next trigger time.
