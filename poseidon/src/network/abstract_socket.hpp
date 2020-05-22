@@ -15,6 +15,7 @@ class Abstract_Socket
     friend Network_Driver;
 
   private:
+    uint64_t m_epoll_data = 123456789;  // used by network driver for quick lookups
     unique_posix_fd m_fd;
 
   public:
