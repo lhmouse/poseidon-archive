@@ -201,7 +201,7 @@ do_thread_loop(void* /*param*/)
     if(entry.level >= self->m_conf_levels.size())
       return;
 
-    auto conf = self->m_conf_levels[entry.level];
+    const auto conf = self->m_conf_levels[entry.level];
     const auto& names = s_level_names[entry.level];
 
     // Leave critical section.
