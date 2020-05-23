@@ -18,7 +18,7 @@ class Abstract_Socket
     unique_posix_fd m_fd;
 
     // These are used by network driver.
-    uint64_t m_epoll_data = 123456789;
+    uint64_t m_epoll_data = 1234567890123456789;
     uint32_t m_epoll_events = 0;
 
   public:
