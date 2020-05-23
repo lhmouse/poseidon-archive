@@ -14,7 +14,7 @@ IO_Result
 do_translate_syscall_error(const char* func, int err)
   {
     if(err == EINTR)
-      return io_result_intr;
+      return io_result_not_eof;
 
     if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
       return io_result_again;

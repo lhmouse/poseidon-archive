@@ -16,10 +16,9 @@ namespace poseidon {
 // Note that positive values denote number of bytes transferred.
 enum IO_Result : ptrdiff_t
   {
-    io_result_intr     = -2,  // EINTR
     io_result_again    = -1,  // EAGAIN or EWOULDBLOCK
     io_result_eof      =  0,
-    io_result_not_eof  =  1,
+    io_result_not_eof  =  1,  // EINTR
   };
 
 // This describes the lifetime of a connection.
