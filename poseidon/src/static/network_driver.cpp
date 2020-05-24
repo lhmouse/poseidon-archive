@@ -39,14 +39,14 @@ struct Config_Scalars
 
 enum : uint32_t
   {
-    poll_list_nil   = 0xFFFFFFFF,  // bad position - uninitialized
-    poll_list_end   = 0xFFFFFFFE,  // end of list
+    poll_index_max    = 0xFFFFF0,    // 24 bits
+    poll_index_event  = 0xFFFFF1,    // index for the eventfd
   };
 
 enum : uint32_t
   {
-    poll_index_max    = 0xFFFFF0,    // 24 bits
-    poll_index_event  = 0xFFFFF1,    // index for the eventfd
+    poll_list_nil  = 0xFFFFFFFF,  // bad position - uninitialized
+    poll_list_end  = 0xFFFFFFFE,  // end of list
   };
 
 struct Poll_List_mixin
