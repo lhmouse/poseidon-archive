@@ -77,6 +77,10 @@ do_on_async_poll_read(Si_Mutex::unique_lock& lock, void* hint, size_t size)
   {
     lock.assign(this->m_mutex);
 
+    // If the stream is in CLOSED state, fail.
+    if(this->m_cstate == connection_state_closed)
+      return io_result_eof;
+
     // Try reading some bytes.
     auto io_res = this->do_stream_read_nolock(hint, size);
     if(io_res < 0)
@@ -119,6 +123,10 @@ Abstract_Stream_Socket::
 do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/)
   {
     lock.assign(this->m_mutex);
+
+    // If the stream is in CLOSED state, fail.
+    if(this->m_cstate == connection_state_closed)
+      return io_result_eof;
 
     // If the stream is in CONNECTING state, mark it ESTABLISHED.
     if(this->m_cstate < connection_state_established) {
