@@ -52,7 +52,7 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
 
         POSEIDON_THROW("OpenSSL reported an irrecoverable I/O error\n"
                        "[`$1()` returned `$2`; errno: $3]",
-                       func, ret, noadl::format_errno(errno));
+                       func, ret, noadl::format_errno(err));
 
       default:
         do_print_errors();
