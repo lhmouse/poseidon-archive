@@ -82,8 +82,10 @@ do_on_async_poll_read(Si_Mutex::unique_lock& lock, void* hint, size_t size)
     if(io_res < 0)
       return io_res;
 
-    if(io_res == io_result_eof)
+    if(io_res == io_result_eof) {
       this->do_async_shutdown_nolock();
+      return io_res;
+    }
 
     // Process the data that have been read.
     lock.unlock();
