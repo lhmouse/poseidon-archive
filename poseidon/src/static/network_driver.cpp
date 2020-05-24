@@ -9,6 +9,7 @@
 #include "../xutilities.hpp"
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <signal.h>
 
 namespace poseidon {
 namespace {
@@ -226,21 +227,18 @@ do_thread_loop(void* /*param*/)
     lock.assign(self->m_poll_mutex);
     if(self->poll_lists_empty()) {
       lock.unlock();
-      POSEIDON_LOG_TRACE("Start polling: event_buffer_size = $1", conf.event_buffer_size);
-
       int res = ::epoll_wait(self->m_epoll, self->m_event_buffer.data(),
-                             static_cast<int>(self->m_event_buffer.size()), 100);
+                             static_cast<int>(self->m_event_buffer.size()), 5000);
       if(res < 0) {
-        POSEIDON_LOG_DEBUG("`epoll_wait()` failed: $1", noadl::format_errno(errno));
+        POSEIDON_LOG_TRACE("`epoll_wait()` failed: $1", noadl::format_errno(errno));
         return;
       }
-      size_t events_received = static_cast<unsigned>(res);
-      POSEIDON_LOG_TRACE("Finish polling: events_received = $1", events_received);
+      size_t nevents = unsigned(res);
 
       // Process all events that have been received so far.
       // Note the loop below will not throw exceptions.
       lock.assign(self->m_poll_mutex);
-      for(size_t k = 0;  k < events_received;  ++k) {
+      for(size_t k = 0;  k < nevents;  ++k) {
         ::epoll_event& event = self->m_event_buffer[k];
 
         // Find the socket.
@@ -519,6 +517,11 @@ noexcept
     uint32_t index = self->find_poll_socket(csock->m_epoll_data);
     if(index == poll_list_nil)
       return false;
+
+    // If the network thread might be blocking on epoll, wake it up.
+    // This is merely a hint due to lack of condition variable semantics.
+    if(ROCKET_UNEXPECT(self->poll_lists_empty()))
+      ::pthread_kill(self->m_thread, SIGINT);
 
     // Append the socket to write list if writing is possible.
     if(csock->m_epoll_events & EPOLLOUT)
