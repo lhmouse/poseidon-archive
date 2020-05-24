@@ -259,8 +259,10 @@ do_thread_loop(void* /*param*/)
         // The special event is not associated with any socket.
         if(self->index_from_epoll_data(event.data.u64) == poll_index_event) {
           uint64_t discard[1];
-          while(::read(self->m_eventfd, discard, sizeof(discard)) > 0)
-            ;
+          ::ssize_t nread;
+          do
+            nread = ::read(self->m_eventfd, discard, sizeof(discard));
+          while((nread > 0) || (errno == EINTR));
           continue;
         }
 
