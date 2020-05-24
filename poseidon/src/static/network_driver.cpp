@@ -9,7 +9,6 @@
 #include "../xutilities.hpp"
 #include <sys/epoll.h>
 #include <sys/socket.h>
-#include <signal.h>
 
 namespace poseidon {
 namespace {
@@ -228,9 +227,9 @@ do_thread_loop(void* /*param*/)
     if(self->poll_lists_empty()) {
       lock.unlock();
       int res = ::epoll_wait(self->m_epoll, self->m_event_buffer.data(),
-                             static_cast<int>(self->m_event_buffer.size()), 5000);
+                             static_cast<int>(self->m_event_buffer.size()), 200);
       if(res < 0) {
-        POSEIDON_LOG_TRACE("`epoll_wait()` failed: $1", noadl::format_errno(errno));
+        POSEIDON_LOG_FATAL("`epoll_wait()` failed: $1", noadl::format_errno(errno));
         return;
       }
       size_t nevents = unsigned(res);
@@ -517,11 +516,6 @@ noexcept
     uint32_t index = self->find_poll_socket(csock->m_epoll_data);
     if(index == poll_list_nil)
       return false;
-
-    // If the network thread might be blocking on epoll, wake it up.
-    // This is merely a hint due to lack of condition variable semantics.
-    if(ROCKET_UNEXPECT(self->poll_lists_empty()))
-      ::pthread_kill(self->m_thread, SIGINT);
 
     // Append the socket to write list if writing is possible.
     if(csock->m_epoll_events & EPOLLOUT)
