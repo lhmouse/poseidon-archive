@@ -9,6 +9,7 @@
 #include "../xutilities.hpp"
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <sys/eventfd.h>
 
 namespace poseidon {
 namespace {
@@ -38,8 +39,14 @@ struct Config_Scalars
 
 enum : uint32_t
   {
-    poll_list_nil  = 0xFFFFFFFF,  // bad position - uninitialized
-    poll_list_end  = 0xFFFFFFFE,  // end of list
+    poll_list_nil   = 0xFFFFFFFF,  // bad position - uninitialized
+    poll_list_end   = 0xFFFFFFFE,  // end of list
+  };
+
+enum : uint32_t
+  {
+    poll_index_max    = 0xFFFFF0,    // 24 bits
+    poll_index_event  = 0xFFFFF1,    // index for the eventfd
   };
 
 struct Poll_List_mixin
@@ -69,7 +76,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
   {
     // constant data
     ::pthread_t m_thread;
-    int m_epoll = -1;
+    int m_epollfd = -1;
+    int m_eventfd = -1;
 
     // configuration
     mutable Si_Mutex m_conf_mutex;
@@ -91,10 +99,18 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     // The serial number takes up 40 bits. That's ~1.1T historical connections.
     static constexpr
     uint64_t
-    make_epoll_data(uint32_t index, uint64_t serial)
+    make_epoll_data(uint64_t index, uint64_t serial)
     noexcept
       {
-        return (uint64_t(index) << 40) | (serial & 0xFF'FFFF'FFFF);
+        return (index << 40) | ((serial << 24) >> 24);
+      }
+
+    static constexpr
+    uint32_t
+    index_from_epoll_data(uint64_t epoll_data)
+    noexcept
+      {
+        return static_cast<uint32_t>(epoll_data >> 40);
       }
 
     // Note epoll events are bound to kernel files, not individual file descriptors.
@@ -106,7 +122,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     noexcept
       {
         // Perform fast lookup using the hint value.
-        uint32_t index = uint32_t(epoll_data >> 40);
+        uint32_t index = self->index_from_epoll_data(epoll_data);
         if(ROCKET_EXPECT((index < self->m_poll_elems.size())
                          && (self->m_poll_elems[index].sock->m_epoll_data == epoll_data))) {
           // Hint valid.
@@ -125,7 +141,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           ::epoll_event event;
           event.data.u64 = self->make_epoll_data(index, epoll_data);
           event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-          if(::epoll_ctl(self->m_epoll, EPOLL_CTL_MOD, elem.sock->get_fd(), &event) != 0)
+          if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_MOD, elem.sock->get_fd(), &event) != 0)
             POSEIDON_LOG_ERROR("failed to modify socket in epoll\n"
                                "[`epoll_ctl()` failed: $1]",
                                noadl::format_errno(errno));
@@ -226,19 +242,27 @@ do_thread_loop(void* /*param*/)
     lock.assign(self->m_poll_mutex);
     if(self->poll_lists_empty()) {
       lock.unlock();
-      int res = ::epoll_wait(self->m_epoll, self->m_event_buffer.data(),
-                             static_cast<int>(self->m_event_buffer.size()), 200);
+      int res = ::epoll_wait(self->m_epollfd, self->m_event_buffer.data(),
+                             static_cast<int>(self->m_event_buffer.size()), -1);
       if(res < 0) {
         POSEIDON_LOG_FATAL("`epoll_wait()` failed: $1", noadl::format_errno(errno));
         return;
       }
-      size_t nevents = unsigned(res);
+      size_t nevents = static_cast<uint32_t>(res);
 
       // Process all events that have been received so far.
       // Note the loop below will not throw exceptions.
       lock.assign(self->m_poll_mutex);
       for(size_t k = 0;  k < nevents;  ++k) {
         ::epoll_event& event = self->m_event_buffer[k];
+
+        // The special event is not associated with any socket.
+        if(self->index_from_epoll_data(event.data.u64) == poll_index_event) {
+          uint64_t discard[1];
+          while(::read(self->m_eventfd, discard, sizeof(discard)) > 0)
+            ;
+          continue;
+        }
 
         // Find the socket.
         uint32_t index = self->find_poll_socket(event.data.u64);
@@ -383,7 +407,7 @@ do_thread_loop(void* /*param*/)
       POSEIDON_LOG_TRACE("Socket closed: $1 ($2)", sock, noadl::format_errno(err));
 
       // Remove the socket from epoll. Errors are ignored.
-      if(::epoll_ctl(self->m_epoll, EPOLL_CTL_DEL, sock->get_fd(), (::epoll_event*)1) != 0)
+      if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_DEL, sock->get_fd(), (::epoll_event*)1) != 0)
         POSEIDON_THROW("failed to remove socket from epoll\n"
                        "[`epoll_ctl()` failed: $1]",
                        noadl::format_errno(errno));
@@ -434,16 +458,32 @@ start()
       return;
 
     // Create an epoll object.
-    unique_posix_fd epoll(::epoll_create(100), ::close);
-    if(!epoll)
+    unique_posix_fd epollfd(::epoll_create(100), ::close);
+    if(!epollfd)
       POSEIDON_THROW("could not create epoll object\n"
                      "[`epoll_create()` failed: $1]",
                      format_errno(errno));
 
+    // Create the notification eventfd and add it into epoll.
+    unique_posix_fd eventfd(::eventfd(0, EFD_NONBLOCK), ::close);
+    if(!eventfd)
+      POSEIDON_THROW("could not create eventfd object\n"
+                     "[`eventfd()` failed: $1]",
+                     format_errno(errno));
+
+    ::epoll_event event;
+    event.data.u64 = self->make_epoll_data(poll_index_event, 0);
+    event.events = EPOLLIN | EPOLLET;
+    if(::epoll_ctl(epollfd, EPOLL_CTL_ADD, eventfd, &event) != 0)
+      POSEIDON_THROW("failed to add socket into epoll\n"
+                     "[`epoll_ctl()` failed: $1]",
+                     noadl::format_errno(errno));
+
     // Create the thread. Note it is never joined or detached.
     auto thr = create_daemon_thread<do_thread_loop>("network");
     self->m_thread = ::std::move(thr);
-    self->m_epoll = epoll.release();
+    self->m_epollfd = epollfd.release();
+    self->m_eventfd = eventfd.release();
   }
 
 void
@@ -477,8 +517,8 @@ insert(uptr<Abstract_Socket>&& usock)
     Si_Mutex::unique_lock lock(self->m_poll_mutex);
 
     // Initialize the hint value for lookups.
-    uint32_t index = self->m_poll_elems.size() & 0xFF'FFFF;
-    if(index != self->m_poll_elems.size())
+    size_t index = self->m_poll_elems.size();
+    if(index > poll_index_max)
       POSEIDON_THROW("too many simultaneous connections");
 
     // Make sure later `emplace_back()` will not throw an exception.
@@ -488,7 +528,7 @@ insert(uptr<Abstract_Socket>&& usock)
     ::epoll_event event;
     event.data.u64 = self->make_epoll_data(index, self->m_poll_serial++);
     event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    if(::epoll_ctl(self->m_epoll, EPOLL_CTL_ADD, sock->get_fd(), &event) != 0)
+    if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_ADD, sock->get_fd(), &event) != 0)
       POSEIDON_THROW("failed to add socket into epoll\n"
                      "[`epoll_ctl()` failed: $1]",
                      noadl::format_errno(errno));
@@ -516,6 +556,12 @@ noexcept
     uint32_t index = self->find_poll_socket(csock->m_epoll_data);
     if(index == poll_list_nil)
       return false;
+
+    // If the network thread might be blocking on epoll, wake it up.
+    // This is merely a hint due to lack of condition variable semantics.
+    static constexpr uint64_t one[] = { 1 };
+    if(ROCKET_UNEXPECT(self->poll_lists_empty()))
+      ::write(self->m_eventfd, one, sizeof(one));
 
     // Append the socket to write list if writing is possible.
     if(csock->m_epoll_events & EPOLLOUT)
