@@ -169,7 +169,7 @@ do_on_async_poll_shutdown(int err)
 
 void
 Abstract_Stream_Socket::
-async_connect(const Socket_Address& addr)
+do_async_connect(const Socket_Address& addr)
   {
     // Lock the stream and examine connection state.
     Si_Mutex::unique_lock lock(this->m_mutex);

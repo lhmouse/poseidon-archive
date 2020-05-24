@@ -130,11 +130,11 @@ class Abstract_Stream_Socket
     do_on_async_shutdown(int err)
       = 0;
 
-  public:
     // Initiates a new connection to the specified address.
     void
-    async_connect(const Socket_Address& addr);
+    do_async_connect(const Socket_Address& addr);
 
+  public:
     // Enqueues some data for writing.
     // This function returns `true` if the data have been queued, or `false` if a
     // shutdown request has been initiated.

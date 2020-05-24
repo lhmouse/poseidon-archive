@@ -82,7 +82,6 @@ class Abstract_TLS_TCP_Socket
     using base_type::get_remote_address;
 
     // These are functions inherited from `Abstract_Stream_Socket`.
-    using base_type::async_connect;
     using base_type::async_send;
     using base_type::async_shutdown;
   };
