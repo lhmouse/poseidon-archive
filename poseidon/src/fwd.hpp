@@ -111,6 +111,7 @@ class Abstract_Timer;
 // Network
 enum IO_Result : ptrdiff_t;
 enum Connection_State : uint8_t;
+enum Address_Class : uint8_t;
 class Socket_Address;
 class Abstract_Socket;
 class Abstract_Accept_Socket;

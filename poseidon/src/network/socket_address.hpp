@@ -5,6 +5,7 @@
 #define POSEIDON_NETWORK_SOCKET_ADDRESS_HPP_
 
 #include "../fwd.hpp"
+#include "enums.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -126,11 +127,31 @@ class Socket_Address
         return *this;
       }
 
-    // Checks whether this is a private or local address.
+    // Classifies this address.
     ROCKET_PURE_FUNCTION
+    Address_Class
+    classify()
+    const noexcept;
+
+    bool
+    is_loopback()
+    const noexcept
+      { return this->classify() == address_class_loopback;  }
+
     bool
     is_private()
-    const noexcept;
+    const noexcept
+      { return this->classify() == address_class_private;  }
+
+    bool
+    is_multicast()
+    const noexcept
+      { return this->classify() == address_class_multicast;  }
+
+    bool
+    is_public()
+    const noexcept
+      { return this->classify() == address_class_public;  }
 
     // Sets contents from the result of a call to `recvfrom()`.
     // Either an IPv4 or IPv6 address may be specified. The address family is
