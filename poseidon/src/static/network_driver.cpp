@@ -58,9 +58,9 @@ struct Poll_List_mixin
 struct Poll_Socket
   {
     rcptr<Abstract_Socket> sock;
+    Poll_List_mixin node_cl;  // closed
     Poll_List_mixin node_rd;  // readable
     Poll_List_mixin node_wr;  // writable
-    Poll_List_mixin node_cl;  // closed
   };
 
 template<Poll_List_mixin Poll_Socket::* mptrT>
@@ -91,9 +91,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     mutable Si_Mutex m_poll_mutex;
     ::std::vector<Poll_Socket> m_poll_elems;
     uint64_t m_poll_serial = 0;
+    Poll_List_root<&Poll_Socket::node_cl> m_poll_root_cl;
     Poll_List_root<&Poll_Socket::node_rd> m_poll_root_rd;
     Poll_List_root<&Poll_Socket::node_wr> m_poll_root_wr;
-    Poll_List_root<&Poll_Socket::node_cl> m_poll_root_cl;
 
     // The index takes up 24 bits. That's 16M simultaneous connections.
     // The serial number takes up 40 bits. That's ~1.1T historical connections.
@@ -133,7 +133,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
         // Perform a brute-force search.
         for(index = 0;  index < self->m_poll_elems.size();  ++index) {
-          auto& elem = self->m_poll_elems[index];
+          const auto& elem = self->m_poll_elems[index];
           if(elem.sock->m_epoll_data != epoll_data)
             continue;
 
@@ -163,9 +163,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     poll_lists_empty()
     noexcept
       {
-        return (self->m_poll_root_rd.head == poll_list_end) &&  // read list empty
-               (self->m_poll_root_wr.head == poll_list_end) &&  // write list empty
-               (self->m_poll_root_cl.head == poll_list_end);    // close list empty
+        return (self->m_poll_root_cl.head == poll_list_end) &&  // close list empty
+               (self->m_poll_root_rd.head == poll_list_end) &&  // read list empty
+               (self->m_poll_root_wr.head == poll_list_end);    // write list empty
       }
 
     template<Poll_List_mixin Poll_Socket::* mptrT>
@@ -272,16 +272,76 @@ do_thread_loop(void* /*param*/)
           continue;
 
         // Update socket event flags.
-        self->m_poll_elems[index].sock->m_epoll_events |= event.events;
+        const auto& elem = self->m_poll_elems[index];
+        elem.sock->m_epoll_events |= event.events;
 
         // Update close/read/write lists.
+        if(event.events & (EPOLLERR | EPOLLHUP))
+          self->poll_list_attach(self->m_poll_root_cl, index);
         if(event.events & EPOLLIN)
           self->poll_list_attach(self->m_poll_root_rd, index);
         if(event.events & EPOLLOUT)
           self->poll_list_attach(self->m_poll_root_wr, index);
-        if(event.events & (EPOLLERR | EPOLLHUP))
-          self->poll_list_attach(self->m_poll_root_cl, index);
       }
+    }
+
+    // Process closed sockets.
+    lock.assign(self->m_poll_mutex);
+    self->poll_list_collect(self->m_poll_root_cl);
+    for(const auto& sock : self->m_ready_socks) {
+      // Set `err` to zero if normal closure, and to the error code otherwise.
+      lock.assign(self->m_poll_mutex);
+      int err = sock->m_epoll_events & EPOLLERR;
+      lock.unlock();
+
+      if(err) {
+        ::socklen_t optlen = sizeof(err);
+        if(::getsockopt(sock->get_fd(), SOL_SOCKET, SO_ERROR, &err, &optlen) != 0)
+          err = errno;
+      }
+      POSEIDON_LOG_TRACE("Socket closed: $1 ($2)", sock, noadl::format_errno(err));
+
+      // Remove the socket from epoll. Errors are ignored.
+      if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_DEL, sock->get_fd(), (::epoll_event*)1) != 0)
+        POSEIDON_THROW("failed to remove socket from epoll\n"
+                       "[`epoll_ctl()` failed: $1]",
+                       noadl::format_errno(errno));
+
+      // Deliver a shutdown notification. Exceptions are caught and ignored.
+      try {
+        sock->do_on_async_poll_shutdown(err);
+      }
+      catch(exception& stdex) {
+        POSEIDON_LOG_WARN("Socket shutdown error: $1\n"
+                          "[socket class `$2`]",
+                          stdex.what(), typeid(*sock).name());
+      }
+
+      // Remove the socket, no matter whether an exception was thrown or not.
+      lock.assign(self->m_poll_mutex);
+      uint32_t index = self->find_poll_socket(sock->m_epoll_data);
+      if(index == poll_list_nil)
+        continue;
+
+      self->poll_list_detach(self->m_poll_root_cl, index);
+      self->poll_list_detach(self->m_poll_root_rd, index);
+      self->poll_list_detach(self->m_poll_root_wr, index);
+
+      // Swap the socket with the last element for removal.
+      uint32_t ilast = static_cast<uint32_t>(self->m_poll_elems.size() - 1);
+      if(index != ilast) {
+        swap(self->m_poll_elems[ilast].sock,
+           self->m_poll_elems[index].sock);
+
+        if(self->poll_list_detach(self->m_poll_root_cl, ilast))
+          self->poll_list_attach(self->m_poll_root_cl, index);
+        if(self->poll_list_detach(self->m_poll_root_rd, ilast))
+          self->poll_list_attach(self->m_poll_root_rd, index);
+        if(self->poll_list_detach(self->m_poll_root_wr, ilast))
+          self->poll_list_attach(self->m_poll_root_wr, index);
+      }
+      self->m_poll_elems.pop_back();
+      POSEIDON_LOG_TRACE("Socket removed: $1", sock);
     }
 
     // Process readable sockets.
@@ -390,65 +450,6 @@ do_thread_loop(void* /*param*/)
 
       if(unthrottle && (sock->m_epoll_events & EPOLLIN))
         self->poll_list_attach(self->m_poll_root_rd, index);
-    }
-
-    // Process closed sockets.
-    lock.assign(self->m_poll_mutex);
-    self->poll_list_collect(self->m_poll_root_cl);
-    for(const auto& sock : self->m_ready_socks) {
-      // Set `err` to zero if normal closure, and to the error code otherwise.
-      lock.assign(self->m_poll_mutex);
-      int err = sock->m_epoll_events & EPOLLERR;
-      lock.unlock();
-
-      if(err) {
-        ::socklen_t optlen = sizeof(err);
-        if(::getsockopt(sock->get_fd(), SOL_SOCKET, SO_ERROR, &err, &optlen) != 0)
-          err = errno;
-      }
-      POSEIDON_LOG_TRACE("Socket closed: $1 ($2)", sock, noadl::format_errno(err));
-
-      // Remove the socket from epoll. Errors are ignored.
-      if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_DEL, sock->get_fd(), (::epoll_event*)1) != 0)
-        POSEIDON_THROW("failed to remove socket from epoll\n"
-                       "[`epoll_ctl()` failed: $1]",
-                       noadl::format_errno(errno));
-
-      // Deliver a shutdown notification. Exceptions are caught and ignored.
-      try {
-        sock->do_on_async_poll_shutdown(err);
-      }
-      catch(exception& stdex) {
-        POSEIDON_LOG_WARN("Socket shutdown error: $1\n"
-                          "[socket class `$2`]",
-                          stdex.what(), typeid(*sock).name());
-      }
-
-      // Remove the socket, no matter whether an exception was thrown or not.
-      lock.assign(self->m_poll_mutex);
-      uint32_t index = self->find_poll_socket(sock->m_epoll_data);
-      if(index == poll_list_nil)
-        continue;
-
-      self->poll_list_detach(self->m_poll_root_cl, index);
-      self->poll_list_detach(self->m_poll_root_rd, index);
-      self->poll_list_detach(self->m_poll_root_wr, index);
-
-      // Swap the socket with the last element for removal.
-      uint32_t ilast = static_cast<uint32_t>(self->m_poll_elems.size() - 1);
-      if(index != ilast) {
-        swap(self->m_poll_elems[ilast].sock,
-           self->m_poll_elems[index].sock);
-
-        if(self->poll_list_detach(self->m_poll_root_cl, ilast))
-          self->poll_list_attach(self->m_poll_root_cl, index);
-        if(self->poll_list_detach(self->m_poll_root_rd, ilast))
-          self->poll_list_attach(self->m_poll_root_rd, index);
-        if(self->poll_list_detach(self->m_poll_root_wr, ilast))
-          self->poll_list_attach(self->m_poll_root_wr, index);
-      }
-      self->m_poll_elems.pop_back();
-      POSEIDON_LOG_TRACE("Socket removed: $1", sock);
     }
   }
 
