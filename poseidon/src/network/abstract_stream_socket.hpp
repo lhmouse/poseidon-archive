@@ -24,15 +24,11 @@ class Abstract_Stream_Socket
     explicit
     Abstract_Stream_Socket(unique_posix_fd&& fd)
       : base_type(::std::move(fd))
-      { this->do_set_common_options();  }
+      { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Stream_Socket);
 
   private:
-    // Disables Nagle algorithm, etc.
-    void
-    do_set_common_options();
-
     inline
     IO_Result
     do_call_stream_preshutdown_nolock()
@@ -44,7 +40,7 @@ class Abstract_Stream_Socket
     noexcept;
 
     // Reads some data.
-    // `lock` will lock `*this` after the call if locking is supported.
+    // `lock` will lock `*this` after the call.
     // `hint` is used as the I/O buffer. `size` specifies the maximum number of
     // bytes to read.
     IO_Result
@@ -52,24 +48,22 @@ class Abstract_Stream_Socket
     final;
 
     // Returns the size of data pending for writing.
-    // `lock` will lock `*this` after the call if locking is supported.
+    // `lock` will lock `*this` after the call.
     size_t
     do_write_queue_size(Si_Mutex::unique_lock& lock)
     const final;
 
     // Writes some data.
-    // `lock` will lock `*this` after the call if locking is supported.
+    // `lock` will lock `*this` after the call.
     // `hint` and `size` are ignored.
     IO_Result
     do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
     // Notifies a full-duplex channel has been closed.
-    // The default implementation does nothing.
-    // Please mind thread safety, as this function is called by the network thread.
     void
     do_on_async_poll_shutdown(int err)
-    override;
+    final;
 
   protected:
     // Performs outgoing connecting preparation.
@@ -115,15 +109,14 @@ class Abstract_Stream_Socket
     do_on_async_establish()
       = 0;
 
-    // Consumes incoming data.
+    // Consumes an incoming packet.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
     do_on_async_receive(void* data, size_t size)
       = 0;
 
-    // Notifies a full-duplex channel has been closed.
-    // The default implementation does nothing.
+    // Notifies a socket has been closed.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void

@@ -14,12 +14,6 @@ Abstract_Stream_Socket::
   {
   }
 
-void
-Abstract_Stream_Socket::
-do_set_common_options()
-  {
-  }
-
 IO_Result
 Abstract_Stream_Socket::
 do_call_stream_preshutdown_nolock()
@@ -130,10 +124,11 @@ do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* /*hint*/, size_t /*siz
 
     // If the stream is in CONNECTING state, mark it ESTABLISHED.
     if(this->m_cstate < connection_state_established) {
+      this->m_cstate = connection_state_established;
+
       lock.unlock();
       this->do_on_async_establish();
       lock.assign(this->m_mutex);
-      this->m_cstate = connection_state_established;
     }
 
     size_t size = this->m_wqueue.size();
@@ -171,7 +166,6 @@ do_on_async_poll_shutdown(int err)
     this->m_cstate = connection_state_closed;
     lock.unlock();
 
-    // The network driver says the connection has been closed.
     this->do_on_async_shutdown(err);
   }
 
