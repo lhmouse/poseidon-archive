@@ -102,7 +102,6 @@ class Abstract_Stream_Socket
       = 0;
 
     // Notifies a full-duplex channel has been established.
-    // The default implementation does nothing.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
