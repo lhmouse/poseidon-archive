@@ -33,6 +33,17 @@ enum Connection_State : uint8_t
     connection_state_closed       = 4,  // R/W forbidden
   };
 
+// This classifies IP addresses.
+// These values are shared by IPv4 and IPv6.
+enum Address_Class : uint8_t
+  {
+    address_class_reserved   = 0,
+    address_class_loopback   = 1,
+    address_class_private    = 2,
+    address_class_multicast  = 3,
+    address_class_public     = 4,
+  };
+
 }  // namespace poseidon
 
 #endif
