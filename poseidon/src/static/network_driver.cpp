@@ -133,7 +133,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
         // Perform a brute-force search.
         for(index = 0;  index < self->m_poll_elems.size();  ++index) {
-          const auto& elem = self->m_poll_elems[index];
+          auto& elem = self->m_poll_elems[index];
           if(elem.sock->m_epoll_data != epoll_data)
             continue;
 
@@ -272,25 +272,14 @@ do_thread_loop(void* /*param*/)
           continue;
 
         // Update socket event flags.
-        const auto& elem = self->m_poll_elems[index];
-        elem.sock->m_epoll_events |= event.events;
+        self->m_poll_elems[index].sock->m_epoll_events |= event.events;
 
         // Update close/read/write lists.
         if(event.events & EPOLLIN)
           self->poll_list_attach(self->m_poll_root_rd, index);
-
         if(event.events & EPOLLOUT)
           self->poll_list_attach(self->m_poll_root_wr, index);
-
-        if(event.events & EPOLLERR) {
-          ::socklen_t optlen = sizeof(elem.sock->m_epoll_error);
-          ::getsockopt(elem.sock->get_fd(), SOL_SOCKET, SO_ERROR,
-                       &(elem.sock->m_epoll_error), &optlen);
-
-          self->poll_list_attach(self->m_poll_root_cl, index);
-        }
-
-        if(event.events & EPOLLHUP)
+        if(event.events & (EPOLLERR | EPOLLHUP))
           self->poll_list_attach(self->m_poll_root_cl, index);
       }
     }
@@ -409,9 +398,14 @@ do_thread_loop(void* /*param*/)
     for(const auto& sock : self->m_ready_socks) {
       // Set `err` to zero if normal closure, and to the error code otherwise.
       lock.assign(self->m_poll_mutex);
-      int err = sock->m_epoll_error;
+      int err = sock->m_epoll_events & EPOLLERR;
       lock.unlock();
 
+      if(err) {
+        ::socklen_t optlen = sizeof(err);
+        if(::getsockopt(sock->get_fd(), SOL_SOCKET, SO_ERROR, &err, &optlen) != 0)
+          err = errno;
+      }
       POSEIDON_LOG_TRACE("Socket closed: $1 ($2)", sock, noadl::format_errno(err));
 
       // Remove the socket from epoll. Errors are ignored.
