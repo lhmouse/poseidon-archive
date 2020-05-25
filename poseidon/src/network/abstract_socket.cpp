@@ -47,15 +47,15 @@ Abstract_Socket::
 get_local_address()
 const
   {
-    Socket_Address::storage_type addr;
-    Socket_Address::size_type size = sizeof(addr);
-
-    if(::getsockname(this->get_fd(), addr, &size) != 0)
+    // Try getting the local address.
+    Socket_Address::storage_type addrst;
+    Socket_Address::size_type addrlen = sizeof(addrst);
+    if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
       POSEIDON_THROW("could not get local socket address\n"
                      "[`getsockname()` failed: $1]",
                      noadl::format_errno(errno));
 
-    return Socket_Address(addr, size);
+    return Socket_Address(addrst, addrlen);
   }
 
 Socket_Address
@@ -63,15 +63,15 @@ Abstract_Socket::
 get_remote_address()
 const
   {
-    Socket_Address::storage_type addr;
-    Socket_Address::size_type size = sizeof(addr);
-
-    if(::getpeername(this->get_fd(), addr, &size) != 0)
+    // Try getting the remote address.
+    Socket_Address::storage_type addrst;
+    Socket_Address::size_type addrlen = sizeof(addrst);
+    if(::getpeername(this->get_fd(), addrst, &addrlen) != 0)
       POSEIDON_THROW("could not get remote socket address\n"
                      "[`getpeername()` failed: $1]",
                      noadl::format_errno(errno));
 
-    return Socket_Address(addr, size);
+    return Socket_Address(addrst, addrlen);
   }
 
 }  // namespace poseidon
