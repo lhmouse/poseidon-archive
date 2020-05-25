@@ -39,20 +39,16 @@ struct Config_Scalars
 
 enum : uint32_t
   {
-    poll_index_max    = 0xFFFFF0,    // 24 bits
-    poll_index_event  = 0xFFFFF1,    // index for the eventfd
-  };
-
-enum : uint32_t
-  {
-    poll_list_nil  = 0xFFFFFFFF,  // bad position - uninitialized
-    poll_list_end  = 0xFFFFFFFE,  // end of list
+    poll_index_max    = 0x00FFFFF0,  // 24 bits
+    poll_index_event  = 0x00FFFFF1,  // index for the eventfd
+    poll_index_end    = 0xFFFFFFFE,  // end of list
+    poll_index_nil    = 0xFFFFFFFF,  // bad position
   };
 
 struct Poll_List_mixin
   {
-    uint32_t next = poll_list_nil;
-    uint32_t prev = poll_list_nil;
+    uint32_t next = poll_index_nil;
+    uint32_t prev = poll_index_nil;
   };
 
 struct Poll_Socket
@@ -66,8 +62,8 @@ struct Poll_Socket
 template<Poll_List_mixin Poll_Socket::* mptrT>
 struct Poll_List_root
   {
-    uint32_t head = poll_list_end;
-    uint32_t tail = poll_list_end;
+    uint32_t head = poll_index_end;
+    uint32_t tail = poll_index_end;
   };
 
 }  // namespace
@@ -126,7 +122,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         if(ROCKET_EXPECT((index < self->m_poll_elems.size())
                          && (self->m_poll_elems[index].sock->m_epoll_data == epoll_data))) {
           // Hint valid.
-          ROCKET_ASSERT(index != poll_list_nil);
+          ROCKET_ASSERT(index != poll_index_nil);
           return index;
         }
         POSEIDON_LOG_DEBUG("Epoll lookup hint invalidated: value = $1", epoll_data);
@@ -150,12 +146,12 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           POSEIDON_LOG_DEBUG("Epoll lookup hint updated: value = $1", event.data.u64);
 
           // Return the new index.
-          ROCKET_ASSERT(index != poll_list_nil);
+          ROCKET_ASSERT(index != poll_index_nil);
           return index;
         }
 
         POSEIDON_LOG_ERROR("Socket not found: epoll_data = $1", epoll_data);
-        return poll_list_nil;
+        return poll_index_nil;
       }
 
     ROCKET_PURE_FUNCTION static
@@ -163,9 +159,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     poll_lists_empty()
     noexcept
       {
-        return (self->m_poll_root_cl.head == poll_list_end) &&  // close list empty
-               (self->m_poll_root_rd.head == poll_list_end) &&  // read list empty
-               (self->m_poll_root_wr.head == poll_list_end);    // write list empty
+        return (self->m_poll_root_cl.head == poll_index_end) &&  // close list empty
+               (self->m_poll_root_rd.head == poll_index_end) &&  // read list empty
+               (self->m_poll_root_wr.head == poll_index_end);    // write list empty
       }
 
     template<Poll_List_mixin Poll_Socket::* mptrT>
@@ -177,8 +173,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
         // Iterate over all elements and push them all.
         uint32_t index = root.head;
-        while(index != poll_list_end) {
-          ROCKET_ASSERT(index != poll_list_nil);
+        while(index != poll_index_end) {
+          ROCKET_ASSERT(index != poll_index_nil);
           const auto& elem = self->m_poll_elems[index];
           index = (elem.*mptrT).next;
           self->m_ready_socks.emplace_back(elem.sock);
@@ -194,13 +190,13 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       {
         // Don't perform any operation if the element has already been attached.
         auto& elem = self->m_poll_elems[index];
-        if((elem.*mptrT).next != poll_list_nil)
+        if((elem.*mptrT).next != poll_index_nil)
           return false;
 
         // Insert this node into the end of the doubly linked list.
         uint32_t prev = ::std::exchange(root.tail, index);
-        ((prev != poll_list_end) ? (self->m_poll_elems[prev].*mptrT).next : root.head) = index;
-        (elem.*mptrT).next = poll_list_end;
+        ((prev != poll_index_end) ? (self->m_poll_elems[prev].*mptrT).next : root.head) = index;
+        (elem.*mptrT).next = poll_index_end;
         (elem.*mptrT).prev = prev;
         return true;
       }
@@ -213,14 +209,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       {
         // Don't perform any operation if the element has not been attached.
         auto& elem = self->m_poll_elems[index];
-        if((elem.*mptrT).next == poll_list_nil)
+        if((elem.*mptrT).next == poll_index_nil)
           return false;
 
         // Remove this node from the doubly linked list.
-        uint32_t next = ::std::exchange((elem.*mptrT).next, poll_list_nil);
-        uint32_t prev = ::std::exchange((elem.*mptrT).prev, poll_list_nil);
-        ((next != poll_list_end) ? (self->m_poll_elems[next].*mptrT).prev : root.tail) = prev;
-        ((prev != poll_list_end) ? (self->m_poll_elems[prev].*mptrT).next : root.head) = next;
+        uint32_t next = ::std::exchange((elem.*mptrT).next, poll_index_nil);
+        uint32_t prev = ::std::exchange((elem.*mptrT).prev, poll_index_nil);
+        ((next != poll_index_end) ? (self->m_poll_elems[next].*mptrT).prev : root.tail) = prev;
+        ((prev != poll_index_end) ? (self->m_poll_elems[prev].*mptrT).next : root.head) = next;
         return true;
       }
   };
@@ -268,7 +264,7 @@ do_thread_loop(void* /*param*/)
 
         // Find the socket.
         uint32_t index = self->find_poll_socket(event.data.u64);
-        if(index == poll_list_nil)
+        if(index == poll_index_nil)
           continue;
 
         // Update socket event flags.
@@ -320,7 +316,7 @@ do_thread_loop(void* /*param*/)
       // Remove the socket, no matter whether an exception was thrown or not.
       lock.assign(self->m_poll_mutex);
       uint32_t index = self->find_poll_socket(sock->m_epoll_data);
-      if(index == poll_list_nil)
+      if(index == poll_index_nil)
         continue;
 
       self->poll_list_detach(self->m_poll_root_cl, index);
@@ -386,7 +382,7 @@ do_thread_loop(void* /*param*/)
       // Update the socket.
       lock.assign(self->m_poll_mutex);
       uint32_t index = self->find_poll_socket(sock->m_epoll_data);
-      if(index == poll_list_nil)
+      if(index == poll_index_nil)
         continue;
 
       if(detach)
@@ -439,7 +435,7 @@ do_thread_loop(void* /*param*/)
       // Update the socket.
       lock.assign(self->m_poll_mutex);
       uint32_t index = self->find_poll_socket(sock->m_epoll_data);
-      if(index == poll_list_nil)
+      if(index == poll_index_nil)
         continue;
 
       if(detach)
@@ -557,7 +553,7 @@ noexcept
 
     // Don't do anything if the socket does not exist in epoll.
     uint32_t index = self->find_poll_socket(csock->m_epoll_data);
-    if(index == poll_list_nil)
+    if(index == poll_index_nil)
       return false;
 
     // If the network thread might be blocking on epoll, wake it up.
