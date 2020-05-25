@@ -137,7 +137,7 @@ class Abstract_Stream_Socket
     // Initiates normal closure of this stream.
     // This function returns `true` if the shutdown request completes immediately,
     // or `false` if there are still data pending. In either case, the socket is
-    // considered closed. No further date may be read from or written through it.
+    // considered closed. No further data may be read from or written through it.
     // Note half-closed connections are not supported.
     bool
     async_shutdown()
