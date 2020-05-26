@@ -35,7 +35,7 @@ class Abstract_Stream_Socket
     noexcept;
 
     inline
-    void
+    IO_Result
     do_async_shutdown_nolock()
     noexcept;
 
