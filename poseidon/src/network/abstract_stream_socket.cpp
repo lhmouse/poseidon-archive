@@ -187,7 +187,7 @@ do_async_connect(const Socket_Address& addr)
     if(::connect(this->get_fd(), addr.data(), addr.size()) != 0) {
       int err = errno;
       if(err != EINPROGRESS)
-        POSEIDON_THROW("failed to initiate connection to '$2'\n",
+        POSEIDON_THROW("failed to initiate connection to '$2'\n"
                        "[`connect()` failed: $1]",
                        noadl::format_errno(err), addr);
     }

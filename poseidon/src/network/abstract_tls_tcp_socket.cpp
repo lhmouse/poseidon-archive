@@ -86,7 +86,7 @@ do_set_common_options()
       // 'the error stack'... where is it?
       do_print_errors();
 
-      POSEIDON_THROW("could not set OpenSSL file descriptor\n",
+      POSEIDON_THROW("could not set OpenSSL file descriptor\n"
                      "[`SSL_set_fd()` returned `$1`]",
                      res);
     }

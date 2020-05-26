@@ -108,7 +108,7 @@ listen(const Socket_Address& addr, uint32_t backlog)
   {
     // Bind onto `addr`.
     if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)
-      POSEIDON_THROW("failed to bind accept socket onto '$2'\n",
+      POSEIDON_THROW("failed to bind accept socket onto '$2'\n"
                      "[`bind()` failed: $1]",
                      noadl::format_errno(errno), addr);
 
@@ -118,7 +118,7 @@ listen(const Socket_Address& addr, uint32_t backlog)
 
     if(::listen(this->get_fd(), static_cast<int>(::rocket::clamp(backlog,
                                                        backlog_min, backlog_max))) != 0)
-      POSEIDON_THROW("failed to set up listen socket on '$2'\n",
+      POSEIDON_THROW("failed to set up listen socket on '$2'\n"
                      "[`listen()` failed: $1]",
                      noadl::format_errno(errno), this->get_local_address());
 
