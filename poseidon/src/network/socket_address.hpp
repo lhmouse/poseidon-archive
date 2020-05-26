@@ -24,6 +24,16 @@ class Socket_Address
         ::sockaddr_in6 addr6;
 
         constexpr operator
+        const void*()
+        const noexcept
+          { return &(this->addr);  }
+
+        operator
+        void*()
+        noexcept
+          { return &(this->addr);  }
+
+        constexpr operator
         const sockaddr*()
         const noexcept
           { return &(this->addr);  }
