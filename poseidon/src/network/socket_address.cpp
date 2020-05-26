@@ -238,7 +238,7 @@ const
       return fmt << "[" << host << "]:" << be16toh(this->m_stor.addr6.sin6_port);
     }
     else
-      return fmt << "<unknown address family" << this->family() << ">";
+      return fmt << "<unknown address family `" << this->family() << "`>";
   }
 
 }  // namespace poseidon
