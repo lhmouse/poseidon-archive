@@ -275,6 +275,9 @@ do_thread_loop(void* /*param*/)
         if(elem.sock.unique()) {
           elem.sock->abort();
           POSEIDON_LOG_DEBUG("Killed orphan socket: $1", elem.sock);
+
+          elem.sock->m_epoll_events |= EPOLLHUP;
+          self->poll_list_attach(self->m_poll_root_cl, index);
           continue;
         }
 
