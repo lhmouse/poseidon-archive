@@ -282,19 +282,19 @@ set_multicast(int ifindex, uint8_t ttl, bool loop)
     else if(family == AF_INET6) {
       // IPv6
       if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_IF, &ifindex, sizeof(ifindex)) != 0)
-        POSEIDON_THROW("failed to join IPv6 multicast interface to `$2`\n"
+        POSEIDON_THROW("failed to set IPv6 multicast interface to `$2`\n"
                        "[`setsockopt()` failed: $1]",
                        noadl::format_errno(errno), ifindex);
 
       int value = ttl;
       if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &value, sizeof(value)) != 0)
-        POSEIDON_THROW("failed to join IPv6 multicast TTL to `$2`\n"
+        POSEIDON_THROW("failed to set IPv6 multicast TTL to `$2`\n"
                        "[`setsockopt()` failed: $1]",
                        noadl::format_errno(errno), value);
 
       value = -loop;
       if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &value, sizeof(value)) != 0)
-        POSEIDON_THROW("failed to join IPv6 multicast loopback to `$2`\n"
+        POSEIDON_THROW("failed to set IPv6 multicast loopback to `$2`\n"
                        "[`setsockopt()` failed: $1]",
                        noadl::format_errno(errno), value);
     }
