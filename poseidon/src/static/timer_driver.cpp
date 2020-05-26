@@ -104,8 +104,8 @@ do_thread_loop(void* /*param*/)
     ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
 
     // Process this timer!
-    auto timer = self->m_pq.back().timer;
-    if(timer->use_count() == 2) {
+    auto timer = ::std::move(self->m_pq.back().timer);
+    if(timer.unique()) {
       // Delete this timer when no other reference of it exists.
       self->m_pq.pop_back();
       return;
@@ -115,6 +115,7 @@ do_thread_loop(void* /*param*/)
     Si_Mutex::unique_lock tlock(timer->m_mutex);
     if(timer->m_period > 0) {
       // Update the element in place.
+      self->m_pq.back().timer = timer;
       do_shift_time(self->m_pq.back().next, timer->m_period);
       ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     }
