@@ -94,7 +94,7 @@ void
 Abstract_TCP_Socket::
 do_on_async_shutdown(int err)
   {
-    POSEIDON_LOG_INFO("TCP connection closed: local '$1', reason: $2",
+    POSEIDON_LOG_INFO("TCP connection closed: local '$1', $2",
                       this->get_local_address(), noadl::format_errno(err));
   }
 

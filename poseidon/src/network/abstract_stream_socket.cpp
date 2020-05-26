@@ -66,9 +66,11 @@ noexcept
       }
 
       case connection_state_closed:
-      default:
         // Do nothing.
         return io_result_eof;
+
+      default:
+        ROCKET_ASSERT(false);
     }
   }
 
