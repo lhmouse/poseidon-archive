@@ -47,7 +47,7 @@ class Abstract_Stream_Socket
     do_on_async_poll_read(Si_Mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
-    // Returns the size of data pending for writing.
+    // Returns the estimated size of data pending for writing.
     // `lock` will lock `*this` after the call.
     size_t
     do_write_queue_size(Si_Mutex::unique_lock& lock)

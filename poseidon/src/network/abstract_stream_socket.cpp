@@ -131,9 +131,12 @@ do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* /*hint*/, size_t /*siz
       lock.assign(this->m_mutex);
     }
 
-    size_t size = this->m_wqueue.size();
-    if(size != 0) {
+    if(this->m_cstate <= connection_state_established) {
       // Try writing some bytes.
+      size_t size = this->m_wqueue.size();
+      if(size == 0)
+        return io_result_eof;
+
       auto io_res = this->do_stream_write_nolock(this->m_wqueue.data(), size);
       if(io_res < 0)
         return io_res;
@@ -142,9 +145,6 @@ do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* /*hint*/, size_t /*siz
       this->m_wqueue.discard(static_cast<size_t>(io_res));
       return io_res;
     }
-
-    if(this->m_cstate <= connection_state_established)
-      return io_result_eof;
 
     // Shut down the connection completely now.
     auto io_res = this->do_call_stream_preshutdown_nolock();
