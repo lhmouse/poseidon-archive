@@ -108,7 +108,7 @@ listen(const Socket_Address& addr, uint32_t backlog)
   {
     // Bind onto `addr`.
     if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)
-      POSEIDON_THROW("failed to bind socket onto '$2'\n",
+      POSEIDON_THROW("failed to bind accept socket onto '$2'\n",
                      "[`bind()` failed: $1]",
                      noadl::format_errno(errno), addr);
 
@@ -122,7 +122,7 @@ listen(const Socket_Address& addr, uint32_t backlog)
                      "[`listen()` failed: $1]",
                      noadl::format_errno(errno), this->get_local_address());
 
-    POSEIDON_LOG_INFO("Started listening on '$1'...", this->get_local_address());
+    POSEIDON_LOG_INFO("Stream socket listening on '$1'", this->get_local_address());
   }
 
 }  // namespace poseidon
