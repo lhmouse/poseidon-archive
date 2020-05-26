@@ -216,7 +216,7 @@ async_shutdown()
 noexcept
   {
     Si_Mutex::unique_lock lock(this->m_mutex);
-    if(this->m_cstate == connection_state_closed)
+    if(this->m_cstate > connection_state_established)
       return false;
 
     // Initiate asynchronous shutdown.
