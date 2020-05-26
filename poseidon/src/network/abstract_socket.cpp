@@ -54,8 +54,7 @@ const
       POSEIDON_THROW("could not get local socket address\n"
                      "[`getsockname()` failed: $1]",
                      noadl::format_errno(errno));
-
-    return Socket_Address(addrst, addrlen);
+    return { addrst, addrlen };
   }
 
 Socket_Address
@@ -70,8 +69,7 @@ const
       POSEIDON_THROW("could not get remote socket address\n"
                      "[`getpeername()` failed: $1]",
                      noadl::format_errno(errno));
-
-    return Socket_Address(addrst, addrlen);
+    return { addrst, addrlen };
   }
 
 }  // namespace poseidon
