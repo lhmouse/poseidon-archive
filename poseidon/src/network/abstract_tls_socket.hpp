@@ -12,11 +12,22 @@ namespace poseidon {
 class Abstract_TLS_Socket
   : public Abstract_Stream_Socket
   {
+  public:
+    struct SSL_deleter
+      {
+        void
+        operator()(::SSL* ssl)
+        noexcept
+          { ::SSL_free(ssl);  }
+      };
+
+    using unique_SSL = uptr<::SSL, SSL_deleter>;
+
   private:
-    uptr<::SSL, void (&)(::SSL*)> m_ssl;
+    unique_SSL m_ssl;
 
   public:
-    Abstract_TLS_Socket(unique_posix_fd&& fd, uptr<::SSL, void (&)(::SSL*)>&& ssl)
+    Abstract_TLS_Socket(unique_posix_fd&& fd, unique_SSL&& ssl)
       : Abstract_Stream_Socket(::std::move(fd)),
         m_ssl(::std::move(ssl))
       { this->do_set_common_options();  }
