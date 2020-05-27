@@ -12,12 +12,9 @@ class Abstract_Listen_Socket
   : public Abstract_Socket
   {
   public:
-    using base_type = Abstract_Socket;
-
-  public:
     explicit
     Abstract_Listen_Socket(::rocket::unique_posix_fd&& fd)
-      : base_type(::std::move(fd))
+      : Abstract_Socket(::std::move(fd))
       { this->do_set_common_options();  }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Listen_Socket);
@@ -64,10 +61,9 @@ class Abstract_Listen_Socket
     override;
 
   public:
-    // These are functions inherited from `Abstract_Socket`.
-    using base_type::get_fd;
-    using base_type::abort;
-    using base_type::get_local_address;
+    using Abstract_Socket::get_fd;
+    using Abstract_Socket::abort;
+    using Abstract_Socket::get_local_address;
 
     // Binds this socket to the specified address and starts listening.
     // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values

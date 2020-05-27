@@ -12,9 +12,6 @@ namespace poseidon {
 class Abstract_Stream_Socket
   : public Abstract_Socket
   {
-  public:
-    using base_type = Abstract_Socket;
-
   private:
     mutable Si_Mutex m_mutex;
     Connection_State m_cstate = connection_state_initial;
@@ -23,7 +20,7 @@ class Abstract_Stream_Socket
   public:
     explicit
     Abstract_Stream_Socket(unique_posix_fd&& fd)
-      : base_type(::std::move(fd))
+      : Abstract_Socket(::std::move(fd))
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Stream_Socket);

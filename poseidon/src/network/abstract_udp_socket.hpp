@@ -12,9 +12,6 @@ namespace poseidon {
 class Abstract_UDP_Socket
   : public Abstract_Socket
   {
-  public:
-    using base_type = Abstract_Socket;
-
   private:
     mutable Si_Mutex m_mutex;
     Connection_State m_cstate = connection_state_initial;
@@ -23,7 +20,7 @@ class Abstract_UDP_Socket
   public:
     explicit
     Abstract_UDP_Socket(unique_posix_fd&& fd)
-      : base_type(::std::move(fd))
+      : Abstract_Socket(::std::move(fd))
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_UDP_Socket);
@@ -83,10 +80,9 @@ class Abstract_UDP_Socket
     do_on_async_shutdown(int err);
 
   public:
-    // These are functions inherited from `Abstract_Socket`.
-    using base_type::get_fd;
-    using base_type::abort;
-    using base_type::get_local_address;
+    using Abstract_Socket::get_fd;
+    using Abstract_Socket::abort;
+    using Abstract_Socket::get_local_address;
 
     // Binds this socket to the specified address.
     void

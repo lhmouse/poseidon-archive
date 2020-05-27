@@ -12,12 +12,9 @@ class Abstract_TCP_Socket
   : public Abstract_Stream_Socket
   {
   public:
-    using base_type = Abstract_Stream_Socket;
-
-  public:
     explicit
     Abstract_TCP_Socket(unique_posix_fd&& fd)
-      : base_type(::std::move(fd))
+      : Abstract_Stream_Socket(::std::move(fd))
       { this->do_set_common_options();  }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TCP_Socket);
@@ -71,15 +68,13 @@ class Abstract_TCP_Socket
     override;
 
   public:
-    // These are functions inherited from `Abstract_Socket`.
-    using base_type::get_fd;
-    using base_type::abort;
-    using base_type::get_local_address;
+    using Abstract_Socket::get_fd;
+    using Abstract_Socket::abort;
+    using Abstract_Socket::get_local_address;
 
-    // These are functions inherited from `Abstract_Stream_Socket`.
-    using base_type::get_remote_address;
-    using base_type::async_send;
-    using base_type::async_shutdown;
+    using Abstract_Stream_Socket::get_remote_address;
+    using Abstract_Stream_Socket::async_send;
+    using Abstract_Stream_Socket::async_shutdown;
   };
 
 }  // namespace poseidon
