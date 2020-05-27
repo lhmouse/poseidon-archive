@@ -117,7 +117,7 @@ class Abstract_Socket;
 class Abstract_Accept_Socket;
 class Abstract_Stream_Socket;
 class Abstract_TCP_Socket;
-class Abstract_TLS_TCP_Socket;
+class Abstract_TLS_Socket;
 class Abstract_UDP_Socket;
 
 // Singletons

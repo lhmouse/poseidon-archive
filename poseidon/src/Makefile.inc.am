@@ -20,7 +20,7 @@ include_poseidon_network_HEADERS =  \
   %reldir%/network/abstract_accept_socket.hpp  \
   %reldir%/network/abstract_stream_socket.hpp  \
   %reldir%/network/abstract_tcp_socket.hpp  \
-  %reldir%/network/abstract_tls_tcp_socket.hpp  \
+  %reldir%/network/abstract_tls_socket.hpp  \
   %reldir%/network/abstract_udp_socket.hpp  \
   ${NOTHING}
 
@@ -44,7 +44,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/network/abstract_accept_socket.cpp  \
   %reldir%/network/abstract_stream_socket.cpp  \
   %reldir%/network/abstract_tcp_socket.cpp  \
-  %reldir%/network/abstract_tls_tcp_socket.cpp  \
+  %reldir%/network/abstract_tls_socket.cpp  \
   %reldir%/network/abstract_udp_socket.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \

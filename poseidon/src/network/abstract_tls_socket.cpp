@@ -2,7 +2,7 @@
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "abstract_tls_tcp_socket.hpp"
+#include "abstract_tls_socket.hpp"
 #include "socket_address.hpp"
 #include "../utilities.hpp"
 #include <netinet/tcp.h>
@@ -65,13 +65,13 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
 
 }  // namespace
 
-Abstract_TLS_TCP_Socket::
-~Abstract_TLS_TCP_Socket()
+Abstract_TLS_Socket::
+~Abstract_TLS_Socket()
   {
   }
 
 void
-Abstract_TLS_TCP_Socket::
+Abstract_TLS_Socket::
 do_set_common_options()
   {
     // Disables Nagle algorithm.
@@ -97,14 +97,14 @@ do_set_common_options()
   }
 
 void
-Abstract_TLS_TCP_Socket::
+Abstract_TLS_Socket::
 do_stream_preconnect_nolock()
   {
     ::SSL_set_connect_state(this->m_ssl);
   }
 
 IO_Result
-Abstract_TLS_TCP_Socket::
+Abstract_TLS_Socket::
 do_stream_read_nolock(void* data, size_t size)
   {
     int nread = ::SSL_read(this->m_ssl, data,
@@ -116,7 +116,7 @@ do_stream_read_nolock(void* data, size_t size)
   }
 
 IO_Result
-Abstract_TLS_TCP_Socket::
+Abstract_TLS_Socket::
 do_stream_write_nolock(const void* data, size_t size)
   {
     int nwritten = ::SSL_write(this->m_ssl, data,
@@ -128,7 +128,7 @@ do_stream_write_nolock(const void* data, size_t size)
   }
 
 IO_Result
-Abstract_TLS_TCP_Socket::
+Abstract_TLS_Socket::
 do_stream_preshutdown_nolock()
   {
     int ret = ::SSL_shutdown(this->m_ssl);
@@ -142,7 +142,7 @@ do_stream_preshutdown_nolock()
   }
 
 void
-Abstract_TLS_TCP_Socket::
+Abstract_TLS_Socket::
 do_on_async_establish()
   {
     POSEIDON_LOG_INFO("Secure TCP connection established: local '$1', remote '$2'",
@@ -150,7 +150,7 @@ do_on_async_establish()
   }
 
 void
-Abstract_TLS_TCP_Socket::
+Abstract_TLS_Socket::
 do_on_async_shutdown(int err)
   {
     POSEIDON_LOG_INFO("Secure TCP connection closed: local '$1', $2",

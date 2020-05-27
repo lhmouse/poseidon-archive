@@ -1,15 +1,15 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_NETWORK_ABSTRACT_TLS_TCP_SOCKET_HPP_
-#define POSEIDON_NETWORK_ABSTRACT_TLS_TCP_SOCKET_HPP_
+#ifndef POSEIDON_NETWORK_ABSTRACT_TLS_SOCKET_HPP_
+#define POSEIDON_NETWORK_ABSTRACT_TLS_SOCKET_HPP_
 
 #include "abstract_stream_socket.hpp"
 #include <openssl/ssl.h>
 
 namespace poseidon {
 
-class Abstract_TLS_TCP_Socket
+class Abstract_TLS_Socket
   : public Abstract_Stream_Socket
   {
   public:
@@ -19,12 +19,12 @@ class Abstract_TLS_TCP_Socket
     uptr<::SSL, void (&)(::SSL*)> m_ssl;
 
   public:
-    Abstract_TLS_TCP_Socket(unique_posix_fd&& fd, uptr<::SSL, void (&)(::SSL*)>&& ssl)
+    Abstract_TLS_Socket(unique_posix_fd&& fd, uptr<::SSL, void (&)(::SSL*)>&& ssl)
       : base_type(::std::move(fd)),
         m_ssl(::std::move(ssl))
       { this->do_set_common_options();  }
 
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_TCP_Socket);
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Socket);
 
   private:
     // Disables Nagle algorithm, etc.
