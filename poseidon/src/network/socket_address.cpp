@@ -188,6 +188,22 @@ const noexcept
       return address_class_reserved;
   }
 
+unique_posix_fd
+Socket_Address::
+create_socket(int type, int protocol)
+const
+  {
+    if(this->family() == 0)
+      POSEIDON_THROW("null address family");
+
+    unique_posix_fd fd(::socket(this->family(), type, protocol), ::close);
+    if(!fd)
+      POSEIDON_THROW("could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
+                     "[`socket()` failed: $1]",
+                     noadl::format_errno(errno), this->family(), type, protocol);
+    return fd;
+  }
+
 Socket_Address&
 Socket_Address::
 parse(const char* host, uint16_t port)
@@ -209,7 +225,7 @@ parse(const char* host, uint16_t port)
       return *this;
     }
     else
-      POSEIDON_THROW("unrecognized host format: $1", host);
+      POSEIDON_THROW("unrecognized host format '$1'", host);
   }
 
 tinyfmt&

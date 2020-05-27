@@ -9,18 +9,6 @@
 
 namespace poseidon {
 
-unique_posix_fd
-Abstract_Socket::
-do_create_socket(int family, int type, int protocol)
-  {
-    unique_posix_fd fd(::socket(family, type, protocol), ::close);
-    if(!fd)
-      POSEIDON_THROW("could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
-                     "[`getsockname()` failed: $1]",
-                     noadl::format_errno(errno), family, type, protocol);
-    return fd;
-  }
-
 Abstract_Socket::
 ~Abstract_Socket()
   {

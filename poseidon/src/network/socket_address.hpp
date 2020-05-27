@@ -177,6 +177,12 @@ class Socket_Address
         return *this;
       }
 
+    // Creates a socket of this family.
+    // This function throws an exception on failure, and there is no effect.
+    unique_posix_fd
+    create_socket(int type, int protocol)
+    const;
+
     // Loads address from a string.
     // Either an IPv4 or IPv6 address may be specified. The address family is
     // detected automatically.

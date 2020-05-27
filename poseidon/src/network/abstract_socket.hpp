@@ -14,13 +14,6 @@ class Abstract_Socket
   {
     friend Network_Driver;
 
-  protected:
-    // Creates a socket.
-    // This function throws an exception on failure, and there is no effect.
-    static
-    unique_posix_fd
-    do_create_socket(int family, int type, int protocol);
-
   private:
     unique_posix_fd m_fd;
 
