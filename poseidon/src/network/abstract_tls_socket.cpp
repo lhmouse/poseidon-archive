@@ -6,25 +6,9 @@
 #include "socket_address.hpp"
 #include "../utilities.hpp"
 #include <netinet/tcp.h>
-#include <openssl/err.h>
 
 namespace poseidon {
 namespace {
-
-ROCKET_NOINLINE
-size_t
-do_print_errors()
-  {
-    char sbuf[1024];
-    size_t index = 0;
-
-    while(unsigned long err = ::ERR_get_error()) {
-      ::ERR_error_string_n(err, sbuf, sizeof(sbuf));
-      POSEIDON_LOG_ERROR("OpenSSL error: [$1] $2", index, err);
-      ++index;
-    }
-    return index;
-  }
 
 IO_Result
 do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
@@ -46,7 +30,7 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
       case SSL_ERROR_SYSCALL:
         // syscall errno
         err = errno;
-        do_print_errors();
+        dump_ssl_errors();
         if(err == EINTR)
           return io_result_not_eof;
 
@@ -55,7 +39,7 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
                        func, ret, noadl::format_errno(err));
 
       default:
-        do_print_errors();
+        dump_ssl_errors();
 
         POSEIDON_THROW("OpenSSL reported an irrecoverable error\n"
                        "[`$1()` returned `$2`]",
@@ -84,7 +68,7 @@ do_set_common_options()
     if(res == 0) {
       // The OpenSSL documentation says errors are to be retrieved from
       // 'the error stack'... where is it?
-      do_print_errors();
+      dump_ssl_errors();
 
       POSEIDON_THROW("could not set OpenSSL file descriptor\n"
                      "[`SSL_set_fd()` returned `$1`]",

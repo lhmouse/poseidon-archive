@@ -56,6 +56,13 @@ create_daemon_thread(const char* name, void* param = nullptr)
     return thr;
   }
 
+// Prints all errors in OpenSSL error queue, then clears it.
+// Returns the number of errors that have been dumped.
+extern
+size_t
+dump_ssl_errors()
+noexcept;
+
 }  // namespace asteria
 
 #endif

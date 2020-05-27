@@ -29,6 +29,11 @@ struct SSL_CTX_deleter
 
 using unique_SSL_CTX = uptr<::SSL_CTX, SSL_CTX_deleter>;
 
+extern
+void
+dump_ssl_errors()
+noexcept;
+
 }  // namespace poseidon
 
 #endif
