@@ -271,6 +271,8 @@ main(int argc, char** argv)
     Timer_Driver::start();
     Network_Driver::start();
 
+    POSEIDON_LOG_INFO(PACKAGE_STRING " started up successfully (PID $1)", ::getpid());
+
     sleep(10000);
     do_exit(exit_success, "interrupt\n");
   }
