@@ -235,8 +235,6 @@ void
 Abstract_UDP_Socket::
 do_on_async_establish()
   {
-    POSEIDON_LOG_INFO("UDP socket opened: local '$1'",
-                      this->get_local_address());
   }
 
 void
@@ -257,7 +255,8 @@ bind(const Socket_Address& addr)
                      "[`bind()` failed: $1]",
                      noadl::format_errno(errno), addr);
 
-    POSEIDON_LOG_INFO("UDP socket listening on '$1'", this->get_local_address());
+    POSEIDON_LOG_INFO("UDP socket opened: local '$1'",
+                      this->get_local_address());
   }
 
 void

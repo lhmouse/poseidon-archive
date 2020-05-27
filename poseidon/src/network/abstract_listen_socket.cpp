@@ -99,14 +99,13 @@ void
 Abstract_Listen_Socket::
 do_on_async_poll_shutdown(int err)
   {
-    POSEIDON_LOG_INFO("Stopped listening on '$1': $2",
-                      this->get_local_address(),
-                      noadl::noadl::format_errno(err));
+    POSEIDON_LOG_INFO("Listen socket closed: local '$1', $2",
+                      this->get_local_address(), noadl::format_errno(err));
   }
 
 void
 Abstract_Listen_Socket::
-listen(const Socket_Address& addr, uint32_t backlog)
+do_listen(const Socket_Address& addr, int backlog)
   {
     // Bind onto `addr`.
     if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)
@@ -115,16 +114,13 @@ listen(const Socket_Address& addr, uint32_t backlog)
                      noadl::format_errno(errno), addr);
 
     // Start listening.
-    static constexpr uint32_t backlog_min = 1;
-    static constexpr uint32_t backlog_max = SOMAXCONN;
-
-    if(::listen(this->get_fd(), static_cast<int>(::rocket::clamp(backlog,
-                                                       backlog_min, backlog_max))) != 0)
+    if(::listen(this->get_fd(), ::rocket::clamp(backlog, 1, SOMAXCONN)) != 0)
       POSEIDON_THROW("failed to set up listen socket on '$2'\n"
                      "[`listen()` failed: $1]",
                      noadl::format_errno(errno), this->get_local_address());
 
-    POSEIDON_LOG_INFO("Stream socket listening on '$1'", this->get_local_address());
+    POSEIDON_LOG_INFO("Listen socket opened: local '$1'",
+                      this->get_local_address());
   }
 
 }  // namespace poseidon

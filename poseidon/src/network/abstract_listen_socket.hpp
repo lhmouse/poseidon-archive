@@ -60,16 +60,11 @@ class Abstract_Listen_Socket
     do_on_async_poll_shutdown(int err)
     override;
 
-  public:
-    using Abstract_Socket::get_fd;
-    using Abstract_Socket::abort;
-    using Abstract_Socket::get_local_address;
-
     // Binds this socket to the specified address and starts listening.
     // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values
     // are truncated silently.
     void
-    listen(const Socket_Address& addr, uint32_t backlog = UINT32_MAX);
+    do_listen(const Socket_Address& addr, int backlog = INT_MAX);
   };
 
 }  // namespace poseidon
