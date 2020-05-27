@@ -150,7 +150,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           return index;
         }
 
-        POSEIDON_LOG_TRACE("Socket not found: epoll_data = $1", epoll_data);
+        POSEIDON_LOG_ERROR("Socket not found: epoll_data = $1", epoll_data);
         return poll_index_nil;
       }
 
@@ -276,10 +276,8 @@ do_thread_loop(void* /*param*/)
 
         // Find the socket.
         uint32_t index = self->find_poll_socket(event.data.u64);
-        if(index == poll_index_nil) {
-          POSEIDON_LOG_ERROR("Socket not found: epoll_data = $1", event.data.u64);
+        if(index == poll_index_nil)
           continue;
-        }
 
         // Update socket event flags.
         const auto& elem = self->m_poll_elems[index];
@@ -330,10 +328,8 @@ do_thread_loop(void* /*param*/)
       // Remove the socket, no matter whether an exception was thrown or not.
       lock.assign(self->m_poll_mutex);
       uint32_t index = self->find_poll_socket(sock->m_epoll_data);
-      if(index == poll_index_nil) {
-        POSEIDON_LOG_ERROR("Socket not found: epoll_data = $1", sock->m_epoll_data);
+      if(index == poll_index_nil)
         continue;
-      }
 
       self->poll_list_detach(self->m_poll_root_cl, index);
       self->poll_list_detach(self->m_poll_root_rd, index);
@@ -398,10 +394,8 @@ do_thread_loop(void* /*param*/)
       // Update the socket.
       lock.assign(self->m_poll_mutex);
       uint32_t index = self->find_poll_socket(sock->m_epoll_data);
-      if(index == poll_index_nil) {
-        POSEIDON_LOG_ERROR("Socket not found: epoll_data = $1", sock->m_epoll_data);
+      if(index == poll_index_nil)
         continue;
-      }
 
       if(detach)
         self->poll_list_detach(self->m_poll_root_rd, index);
@@ -453,10 +447,8 @@ do_thread_loop(void* /*param*/)
       // Update the socket.
       lock.assign(self->m_poll_mutex);
       uint32_t index = self->find_poll_socket(sock->m_epoll_data);
-      if(index == poll_index_nil) {
-        POSEIDON_LOG_ERROR("Socket not found: epoll_data = $1", sock->m_epoll_data);
+      if(index == poll_index_nil)
         continue;
-      }
 
       if(detach)
         self->poll_list_detach(self->m_poll_root_wr, index);
@@ -570,6 +562,9 @@ noexcept
   {
     // Lock epoll for modification.
     Si_Mutex::unique_lock lock(self->m_poll_mutex);
+
+    if(csock->m_epoll_events & (EPOLLERR | EPOLLHUP))
+      return false;
 
     // Don't do anything if the socket does not exist in epoll.
     uint32_t index = self->find_poll_socket(csock->m_epoll_data);
