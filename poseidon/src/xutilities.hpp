@@ -56,15 +56,6 @@ create_daemon_thread(const char* name, void* param = nullptr)
     return thr;
   }
 
-// Prints all errors in OpenSSL error queue, then clears it.
-// Returns the number of errors that have been dumped.
-extern
-size_t
-dump_ssl_errors()
-noexcept;
-
-#define POSEIDON_SSL_THROW(...)   (::poseidon::dump_ssl_errors(), POSEIDON_THROW(__VA_ARGS__))
-
 }  // namespace asteria
 
 #endif

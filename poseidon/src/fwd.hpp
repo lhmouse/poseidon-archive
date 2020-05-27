@@ -139,7 +139,11 @@ class Abstract_Socket;
 class Abstract_Listen_Socket;
 class Abstract_Stream_Socket;
 class Abstract_TCP_Socket;
+class Abstract_TCP_Server_Socket;
+class Abstract_TCP_Client_Socket;
 class Abstract_TLS_Socket;
+class Abstract_TLS_Server_Socket;
+class Abstract_TLS_Client_Socket;
 class Abstract_UDP_Socket;
 
 // Singletons

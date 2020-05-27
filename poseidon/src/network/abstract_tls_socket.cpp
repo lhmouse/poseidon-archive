@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "abstract_tls_socket.hpp"
 #include "socket_address.hpp"
-#include "../xutilities.hpp"
+#include "../utilities.hpp"
 #include <netinet/tcp.h>
 
 namespace poseidon {
@@ -53,29 +53,15 @@ Abstract_TLS_Socket::
 
 void
 Abstract_TLS_Socket::
-do_set_common_options(::SSL_CTX* ctx)
+do_set_common_options()
   {
     // Disables Nagle algorithm.
     static constexpr int yes[] = { -1 };
     int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY, yes, sizeof(yes));
     ROCKET_ASSERT(res == 0);
 
-    // Create SSL structure.
-    unique_SSL ssl(::SSL_new(ctx));
-    if(!ssl)
-      POSEIDON_SSL_THROW("could not create SSL structure\n"
-                         "[`SSL_new()` failed]");
-
-    res = ::SSL_set_fd(ssl, this->get_fd());
-    if(res != 1)
-      POSEIDON_SSL_THROW("could not set OpenSSL file descriptor\n"
-                         "[`SSL_set_fd()` returned `$1`]",
-                         res);
-
     // This can be overwritten if `async_connect()` is called later.
-    ::SSL_set_accept_state(ssl);
-
-    this->m_ssl = ::std::move(ssl);
+    ::SSL_set_accept_state(this->m_ssl);
   }
 
 void

@@ -17,8 +17,9 @@ class Abstract_TLS_Socket
 
   public:
     Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx)
-      : Abstract_Stream_Socket(::std::move(fd))
-      { this->do_set_common_options(ctx);  }
+      : Abstract_Stream_Socket(::std::move(fd)),
+        m_ssl(noadl::create_ssl(ctx, this->get_fd()))
+      { this->do_set_common_options();  }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Socket);
 
@@ -26,7 +27,7 @@ class Abstract_TLS_Socket
     // Disables Nagle algorithm, etc.
     // Calls `::SSL_set_accept_state()`.
     void
-    do_set_common_options(::SSL_CTX* ctx);
+    do_set_common_options();
 
     // Calls `::SSL_set_connect_state()`.
     void
