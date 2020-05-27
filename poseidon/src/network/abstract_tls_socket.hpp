@@ -5,24 +5,13 @@
 #define POSEIDON_NETWORK_ABSTRACT_TLS_SOCKET_HPP_
 
 #include "abstract_stream_socket.hpp"
-#include <openssl/ssl.h>
+#include "openssl.hpp"
 
 namespace poseidon {
 
 class Abstract_TLS_Socket
   : public Abstract_Stream_Socket
   {
-  public:
-    struct SSL_deleter
-      {
-        void
-        operator()(::SSL* ssl)
-        noexcept
-          { ::SSL_free(ssl);  }
-      };
-
-    using unique_SSL = uptr<::SSL, SSL_deleter>;
-
   private:
     unique_SSL m_ssl;
 

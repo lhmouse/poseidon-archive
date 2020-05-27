@@ -16,6 +16,7 @@ include_poseidon_networkdir = ${includedir}/poseidon/network
 include_poseidon_network_HEADERS =  \
   %reldir%/network/enums.hpp  \
   %reldir%/network/socket_address.hpp  \
+  %reldir%/network/openssl.hpp  \
   %reldir%/network/abstract_socket.hpp  \
   %reldir%/network/abstract_listen_socket.hpp  \
   %reldir%/network/abstract_stream_socket.hpp  \

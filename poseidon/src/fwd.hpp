@@ -130,6 +130,10 @@ class Abstract_Timer;
 enum IO_Result : ptrdiff_t;
 enum Connection_State : uint8_t;
 enum Address_Class : uint8_t;
+
+struct SSL_deleter;
+struct SSL_CTX_deleter;
+
 class Socket_Address;
 class Abstract_Socket;
 class Abstract_Listen_Socket;
