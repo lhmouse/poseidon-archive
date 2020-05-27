@@ -107,6 +107,7 @@ do_thread_loop(void* /*param*/)
     auto timer = ::std::move(self->m_pq.back().timer);
     if(timer.unique()) {
       // Delete this timer when no other reference of it exists.
+      POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
       self->m_pq.pop_back();
       return;
     }
