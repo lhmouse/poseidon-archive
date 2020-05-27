@@ -237,9 +237,19 @@ do_thread_loop(void* /*param*/)
     // Try polling if there is nothing to do.
     lock.assign(self->m_poll_mutex);
     if(self->poll_lists_empty()) {
+      // Delete sockets that have no other references to them.
+      for(const auto& elem : self->m_poll_elems) {
+        if(!elem.sock.unique())
+          continue;
+
+        elem.sock->abort();
+        POSEIDON_LOG_DEBUG("Killed orphan socket: $1", elem.sock);
+      }
       lock.unlock();
+
+      // Await I/O events.
       int res = ::epoll_wait(self->m_epollfd, self->m_event_buffer.data(),
-                             static_cast<int>(self->m_event_buffer.size()), -1);
+                             static_cast<int>(self->m_event_buffer.size()), 60'000);
       if(res < 0) {
         int err = errno;
         if(err != EINTR)
@@ -274,16 +284,6 @@ do_thread_loop(void* /*param*/)
         // Update socket event flags.
         const auto& elem = self->m_poll_elems[index];
         elem.sock->m_epoll_events |= event.events;
-
-        // Delete this timer when no other reference of it exists.
-        if(elem.sock.unique()) {
-          elem.sock->abort();
-          POSEIDON_LOG_DEBUG("Killed orphan socket: $1", elem.sock);
-
-          elem.sock->m_epoll_events |= EPOLLHUP;
-          self->poll_list_attach(self->m_poll_root_cl, index);
-          continue;
-        }
 
         // Update close/read/write lists.
         if(event.events & (EPOLLERR | EPOLLHUP))
