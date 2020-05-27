@@ -99,12 +99,6 @@ class Abstract_Socket
     Socket_Address
     get_local_address()
     const;
-
-    // Gets the (connected) address of the remote peer.
-    // This function throws an exception if no peer has connected.
-    Socket_Address
-    get_remote_address()
-    const;
   };
 
 }  // namespace poseidon

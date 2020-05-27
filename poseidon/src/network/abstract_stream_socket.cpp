@@ -194,6 +194,21 @@ do_async_connect(const Socket_Address& addr)
     this->m_cstate = connection_state_connecting;
   }
 
+Socket_Address
+Abstract_Stream_Socket::
+get_remote_address()
+const
+  {
+    // Try getting the remote address.
+    Socket_Address::storage_type addrst;
+    Socket_Address::size_type addrlen = sizeof(addrst);
+    if(::getpeername(this->get_fd(), addrst, &addrlen) != 0)
+      POSEIDON_THROW("could not get remote socket address\n"
+                     "[`getpeername()` failed: $1]",
+                     noadl::format_errno(errno));
+    return { addrst, addrlen };
+  }
+
 bool
 Abstract_Stream_Socket::
 async_send(const void* data, size_t size)

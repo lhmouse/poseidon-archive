@@ -70,19 +70,4 @@ const
     return { addrst, addrlen };
   }
 
-Socket_Address
-Abstract_Socket::
-get_remote_address()
-const
-  {
-    // Try getting the remote address.
-    Socket_Address::storage_type addrst;
-    Socket_Address::size_type addrlen = sizeof(addrst);
-    if(::getpeername(this->get_fd(), addrst, &addrlen) != 0)
-      POSEIDON_THROW("could not get remote socket address\n"
-                     "[`getpeername()` failed: $1]",
-                     noadl::format_errno(errno));
-    return { addrst, addrlen };
-  }
-
 }  // namespace poseidon

@@ -46,7 +46,9 @@ Abstract_Listen_Socket::
 do_on_async_poll_read(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
-    unique_posix_fd fd(::accept4(this->get_fd(), nullptr, nullptr, SOCK_NONBLOCK), ::close);
+    Socket_Address::storage_type addrst;
+    Socket_Address::size_type addrlen = sizeof(addrst);
+    unique_posix_fd fd(::accept4(this->get_fd(), addrst, &addrlen, SOCK_NONBLOCK), ::close);
     if(!fd)
       return do_translate_syscall_error("accept4", errno);
 
@@ -59,7 +61,7 @@ do_on_async_poll_read(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*
 
     POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'\n"
                       "[acceptor socket class `$3`; new socket class `$4`]",
-                      sock->get_local_address(), sock->get_remote_address(),
+                      sock->get_local_address(), Socket_Address(addrst, addrlen),
                       typeid(*this).name(), typeid(*sock).name());
 
     Network_Driver::insert(::std::move(sock));

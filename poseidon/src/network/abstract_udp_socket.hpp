@@ -87,7 +87,6 @@ class Abstract_UDP_Socket
     using base_type::get_fd;
     using base_type::abort;
     using base_type::get_local_address;
-    using base_type::get_remote_address;
 
     // Binds this socket to the specified address.
     void

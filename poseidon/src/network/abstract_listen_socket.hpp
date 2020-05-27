@@ -68,7 +68,6 @@ class Abstract_Listen_Socket
     using base_type::get_fd;
     using base_type::abort;
     using base_type::get_local_address;
-    using base_type::get_remote_address;
 
     // Binds this socket to the specified address and starts listening.
     // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values
