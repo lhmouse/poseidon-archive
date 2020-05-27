@@ -15,7 +15,7 @@ class Abstract_Socket
     friend Network_Driver;
 
   private:
-    unique_posix_fd m_fd;
+    unique_FD m_fd;
 
     // These are used by network driver.
     uint64_t m_epoll_data = 1234567890123456789;
@@ -23,7 +23,7 @@ class Abstract_Socket
 
   public:
     explicit
-    Abstract_Socket(unique_posix_fd&& fd)
+    Abstract_Socket(unique_FD&& fd)
       : m_fd(::std::move(fd))
       { this->do_set_common_options();  }
 

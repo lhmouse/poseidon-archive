@@ -34,10 +34,10 @@ create_daemon_thread(const char* name, void* param = nullptr)
               }
               catch(exception& stdex) {
                 ::std::fprintf(stderr,
-                  "WARNING: daemon error: %s\n"
-                  "[exception `%s` thrown from %p (`%s`)]\n",
-                  stdex.what(), typeid(stdex).name(),
-                  reinterpret_cast<void*>(loopfnT), typeid(loopfnT).name());
+                    "WARNING: daemon thread loop error: %s\n"
+                    "[exception `%s` thrown from %p (`%s`)]\n",
+                    stdex.what(), typeid(stdex).name(),
+                    reinterpret_cast<void*>(loopfnT), typeid(loopfnT).name());
               }
             while(true);
           }

@@ -179,7 +179,7 @@ class Socket_Address
 
     // Creates a socket of this family.
     // This function throws an exception on failure, and there is no effect.
-    unique_posix_fd
+    unique_FD
     create_socket(int type, int protocol)
     const;
 

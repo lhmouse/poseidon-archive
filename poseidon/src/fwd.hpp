@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <deque>
+#include <unistd.h>
 
 namespace poseidon {
 namespace noadl = poseidon;
@@ -70,10 +71,6 @@ using ::std::exception_ptr;
 using ::std::type_info;
 using ::std::pair;
 
-using ::rocket::unique_posix_fd;
-using ::rocket::unique_posix_file;
-using ::rocket::unique_posix_dir;
-
 using ::asteria::nullopt_t;
 using ::asteria::cow_string;
 using ::asteria::cow_u16string;
@@ -103,6 +100,27 @@ using ::asteria::refp;
 using Si_Mutex = ::rocket::mutex;
 using Rc_Mutex = ::rocket::recursive_mutex;
 using Cond_Var = ::rocket::condition_variable;
+
+struct FD_Closer
+  {
+    constexpr
+    int
+    null()
+    const noexcept
+      { return -1;  }
+
+    constexpr
+    bool
+    is_null(int fd)
+    const noexcept
+      { return fd == -1;  }
+
+    void
+    close(int fd)
+      { ::close(fd);  }
+  };
+
+using unique_FD = ::rocket::unique_handle<int, FD_Closer>;
 
 // Core
 class Config_File;

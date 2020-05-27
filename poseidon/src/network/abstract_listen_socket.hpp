@@ -13,7 +13,7 @@ class Abstract_Listen_Socket
   {
   public:
     explicit
-    Abstract_Listen_Socket(::rocket::unique_posix_fd&& fd)
+    Abstract_Listen_Socket(unique_FD&& fd)
       : Abstract_Socket(::std::move(fd))
       { this->do_set_common_options();  }
 
@@ -51,7 +51,7 @@ class Abstract_Listen_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     uptr<Abstract_Socket>
-    do_on_async_accept(unique_posix_fd&& fd)
+    do_on_async_accept(unique_FD&& fd)
       = 0;
 
     // Prints a line of text but does nothing otherwise.

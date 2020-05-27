@@ -27,7 +27,7 @@ class Abstract_TLS_Socket
     unique_SSL m_ssl;
 
   public:
-    Abstract_TLS_Socket(unique_posix_fd&& fd, unique_SSL&& ssl)
+    Abstract_TLS_Socket(unique_FD&& fd, unique_SSL&& ssl)
       : Abstract_Stream_Socket(::std::move(fd)),
         m_ssl(::std::move(ssl))
       { this->do_set_common_options();  }

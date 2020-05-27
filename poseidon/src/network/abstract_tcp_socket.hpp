@@ -13,7 +13,7 @@ class Abstract_TCP_Socket
   {
   public:
     explicit
-    Abstract_TCP_Socket(unique_posix_fd&& fd)
+    Abstract_TCP_Socket(unique_FD&& fd)
       : Abstract_Stream_Socket(::std::move(fd))
       { this->do_set_common_options();  }
 

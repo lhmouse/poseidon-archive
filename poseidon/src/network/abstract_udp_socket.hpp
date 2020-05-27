@@ -19,7 +19,7 @@ class Abstract_UDP_Socket
 
   public:
     explicit
-    Abstract_UDP_Socket(unique_posix_fd&& fd)
+    Abstract_UDP_Socket(unique_FD&& fd)
       : Abstract_Socket(::std::move(fd))
       { }
 

@@ -469,14 +469,14 @@ start()
       return;
 
     // Create an epoll object.
-    unique_posix_fd epollfd(::epoll_create(100), ::close);
+    unique_FD epollfd(::epoll_create(100));
     if(!epollfd)
       POSEIDON_THROW("could not create epoll object\n"
                      "[`epoll_create()` failed: $1]",
                      format_errno(errno));
 
     // Create the notification eventfd and add it into epoll.
-    unique_posix_fd eventfd(::eventfd(0, EFD_NONBLOCK), ::close);
+    unique_FD eventfd(::eventfd(0, EFD_NONBLOCK));
     if(!eventfd)
       POSEIDON_THROW("could not create eventfd object\n"
                      "[`eventfd()` failed: $1]",

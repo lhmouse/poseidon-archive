@@ -332,7 +332,7 @@ reload(const char* path)
                      "[`realpath()` failed: $1]",
                      noadl::format_errno(errno), path);
 
-    unique_posix_file fp(::fopen(abspath, "r"), ::fclose);
+    ::rocket::unique_posix_file fp(::fopen(abspath, "r"), ::fclose);
     if(!fp)
       POSEIDON_THROW("could not open config file '$2'\n"
                      "[`fopen()` failed: $1]",

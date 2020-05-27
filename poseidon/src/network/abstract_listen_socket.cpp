@@ -48,7 +48,7 @@ do_on_async_poll_read(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*
     // Try accepting a socket.
     Socket_Address::storage_type addrst;
     Socket_Address::size_type addrlen = sizeof(addrst);
-    unique_posix_fd fd(::accept4(this->get_fd(), addrst, &addrlen, SOCK_NONBLOCK), ::close);
+    unique_FD fd(::accept4(this->get_fd(), addrst, &addrlen, SOCK_NONBLOCK));
     if(!fd)
       return do_translate_syscall_error("accept4", errno);
 

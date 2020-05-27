@@ -188,7 +188,7 @@ const noexcept
       return address_class_reserved;
   }
 
-unique_posix_fd
+unique_FD
 Socket_Address::
 create_socket(int type, int protocol)
 const
@@ -196,7 +196,7 @@ const
     if(this->family() == 0)
       POSEIDON_THROW("null address family");
 
-    unique_posix_fd fd(::socket(this->family(), type, protocol), ::close);
+    unique_FD fd(::socket(this->family(), type, protocol));
     if(!fd)
       POSEIDON_THROW("could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
                      "[`socket()` failed: $1]",
