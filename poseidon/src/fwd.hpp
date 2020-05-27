@@ -114,7 +114,7 @@ enum Connection_State : uint8_t;
 enum Address_Class : uint8_t;
 class Socket_Address;
 class Abstract_Socket;
-class Abstract_Accept_Socket;
+class Abstract_Listen_Socket;
 class Abstract_Stream_Socket;
 class Abstract_TCP_Socket;
 class Abstract_TLS_Socket;

@@ -2,7 +2,7 @@
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.hpp"
-#include "abstract_accept_socket.hpp"
+#include "abstract_listen_socket.hpp"
 #include "socket_address.hpp"
 #include "../static/network_driver.hpp"
 #include "../utilities.hpp"
@@ -26,13 +26,13 @@ do_translate_syscall_error(const char* func, int err)
 
 }  // namespace
 
-Abstract_Accept_Socket::
-~Abstract_Accept_Socket()
+Abstract_Listen_Socket::
+~Abstract_Listen_Socket()
   {
   }
 
 void
-Abstract_Accept_Socket::
+Abstract_Listen_Socket::
 do_set_common_options()
   {
     // Enable reusing addresses.
@@ -42,7 +42,7 @@ do_set_common_options()
   }
 
 IO_Result
-Abstract_Accept_Socket::
+Abstract_Listen_Socket::
 do_on_async_poll_read(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
@@ -79,7 +79,7 @@ do_on_async_poll_read(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*
   }
 
 size_t
-Abstract_Accept_Socket::
+Abstract_Listen_Socket::
 do_write_queue_size(Si_Mutex::unique_lock& /*lock*/)
 const
   {
@@ -87,14 +87,14 @@ const
   }
 
 IO_Result
-Abstract_Accept_Socket::
+Abstract_Listen_Socket::
 do_on_async_poll_write(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   {
     return io_result_eof;
   }
 
 void
-Abstract_Accept_Socket::
+Abstract_Listen_Socket::
 do_on_async_poll_shutdown(int err)
   {
     POSEIDON_LOG_INFO("Stopped listening on '$1': $2",
@@ -103,7 +103,7 @@ do_on_async_poll_shutdown(int err)
   }
 
 void
-Abstract_Accept_Socket::
+Abstract_Listen_Socket::
 listen(const Socket_Address& addr, uint32_t backlog)
   {
     // Bind onto `addr`.
