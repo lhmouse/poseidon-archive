@@ -94,7 +94,8 @@ class Abstract_UDP_Socket
     bind(const Socket_Address& addr);
 
     // Sets multicast parameters.
-    // `ifindex` is the inteface index.
+    // `ifindex` is the inteface index (zero = use default).
+    // `ifname` is the interface name (empty string = use default).
     // `ttl` sets the TTL of packets.
     // `loop` specifies whether packets should be looped back to the sender.
     // If this function fails, an exception is thrown, and the state of this socket
@@ -102,9 +103,13 @@ class Abstract_UDP_Socket
     void
     set_multicast(int ifindex, uint8_t ttl, bool loop);
 
+    void
+    set_multicast(const char* ifname, uint8_t ttl, bool loop);
+
     // Joins/leaves a multicast group.
     // `maddr` is the multicast group to join/leave.
-    // `ifindex` is the inteface index.
+    // `ifindex` is the inteface index (zero = use default).
+    // `ifname` is the interface name (empty string = use default).
     // If this function fails, an exception is thrown, and the state of this socket
     // is unspecified.
     // This function is thread-safe.
@@ -112,7 +117,13 @@ class Abstract_UDP_Socket
     join_multicast_group(const Socket_Address& maddr, int ifindex);
 
     void
+    join_multicast_group(const Socket_Address& maddr, const char* ifname);
+
+    void
     leave_multicast_group(const Socket_Address& maddr, int ifindex);
+
+    void
+    leave_multicast_group(const Socket_Address& maddr, const char* ifname);
 
     // Enqueues a packet for writing.
     // This function returns `true` if the data have been queued, or `false` if a

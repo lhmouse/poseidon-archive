@@ -6,6 +6,7 @@
 #include "socket_address.hpp"
 #include "../static/network_driver.hpp"
 #include "../utilities.hpp"
+#include <net/if.h>
 
 namespace poseidon {
 namespace {
@@ -36,6 +37,21 @@ noexcept
   {
     ::std::memcpy(wqueue.mut_end(), data, size);
     wqueue.accept(size);
+  }
+
+int
+do_ifname_to_ifindex(const char* ifname)
+  {
+    if(*ifname == 0)
+      return 0;  // default
+
+    unsigned ifindex = ::if_nametoindex(ifname);
+    if(ifindex == 0)
+      POSEIDON_THROW("invalid network interface `$2`\n"
+                     "[`$1()` failed: $1]",
+                     noadl::format_errno(errno), ifname);
+
+    return static_cast<int>(ifindex);
   }
 
 }  // namespace
@@ -304,6 +320,13 @@ set_multicast(int ifindex, uint8_t ttl, bool loop)
 
 void
 Abstract_UDP_Socket::
+set_multicast(const char* ifname, uint8_t ttl, bool loop)
+  {
+    return this->set_multicast(do_ifname_to_ifindex(ifname), ttl, loop);
+  }
+
+void
+Abstract_UDP_Socket::
 join_multicast_group(const Socket_Address& maddr, int ifindex)
   {
     if(!maddr.is_multicast())
@@ -336,6 +359,13 @@ join_multicast_group(const Socket_Address& maddr, int ifindex)
 
 void
 Abstract_UDP_Socket::
+join_multicast_group(const Socket_Address& maddr, const char* ifname)
+  {
+    return this->join_multicast_group(maddr, do_ifname_to_ifindex(ifname));
+  }
+
+void
+Abstract_UDP_Socket::
 leave_multicast_group(const Socket_Address& maddr, int ifindex)
   {
     if(!maddr.is_multicast())
@@ -364,6 +394,13 @@ leave_multicast_group(const Socket_Address& maddr, int ifindex)
     }
     else
       POSEIDON_THROW("unsupported multicast address family `$1`", maddr.family());
+  }
+
+void
+Abstract_UDP_Socket::
+leave_multicast_group(const Socket_Address& maddr, const char* ifname)
+  {
+    return this->leave_multicast_group(maddr, do_ifname_to_ifindex(ifname));
   }
 
 bool
