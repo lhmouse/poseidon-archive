@@ -40,7 +40,7 @@ namespace noadl = poseidon;
         return instance;  }  \
     class C;  \
     struct C::C##_self* const C::self =  \
-        C##_instance<struct C::C##_self>();  \
+      C##_instance<struct C::C##_self>();  \
     struct C::C##_self : C  \
       // add members here
 
