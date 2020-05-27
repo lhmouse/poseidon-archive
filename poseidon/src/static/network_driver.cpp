@@ -241,8 +241,10 @@ do_thread_loop(void* /*param*/)
       int res = ::epoll_wait(self->m_epollfd, self->m_event_buffer.data(),
                              static_cast<int>(self->m_event_buffer.size()), -1);
       if(res < 0) {
-        POSEIDON_LOG_FATAL("`epoll_wait()` failed: $1", noadl::format_errno(errno));
-        return;
+        int err = errno;
+        if(err != EINTR)
+          POSEIDON_LOG_FATAL("`epoll_wait()` failed: $1", noadl::format_errno(err));
+        res = 0;
       }
       size_t nevents = static_cast<uint32_t>(res);
 
