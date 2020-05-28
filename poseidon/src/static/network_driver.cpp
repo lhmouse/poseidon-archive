@@ -470,6 +470,8 @@ start()
     if(self->m_thread)
       return;
 
+    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+
     // Create an epoll object.
     unique_FD epollfd(::epoll_create(100));
     if(!epollfd)
