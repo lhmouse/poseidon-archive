@@ -19,13 +19,13 @@ do_create_server_ssl_ctx(const char* cert, const char* pkey)
       POSEIDON_SSL_THROW("could not create server SSL context\n"
                          "[`SSL_CTX_new()` failed]");
 
-    POSEIDON_LOG_DEBUG("Loading SSL certificate: $1", cert);
+    POSEIDON_LOG_INFO("Loading SSL certificate: $1", cert);
     if(::SSL_CTX_use_certificate_chain_file(ctx, cert) != 1)
       POSEIDON_SSL_THROW("could not load certificate '$1'\n"
                          "[`SSL_CTX_use_certificate_chain_file()` failed]",
                          cert);
 
-    POSEIDON_LOG_DEBUG("Loading SSL private key: $1", pkey);
+    POSEIDON_LOG_INFO("Loading SSL private key: $1", pkey);
     if(::SSL_CTX_use_PrivateKey_file(ctx, pkey, SSL_FILETYPE_PEM) != 1)
       POSEIDON_SSL_THROW("could not load private key '$1'\n"
                          "[`SSL_CTX_use_PrivateKey_file()` failed]",
@@ -71,17 +71,17 @@ do_create_default_client_ssl_ctx()
       POSEIDON_LOG_WARN("Note: CA certificate validation has been disabled."
                         " This configuration is not suitable for production use.\n"
                         "Set `network.tls.trusted_ca_path` to enable.");
-
       ::SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, nullptr);
+      return ctx;
     }
-    else {
-      if(::SSL_CTX_load_verify_locations(ctx, nullptr, ktpath->safe_c_str()) != 1)
-        POSEIDON_SSL_THROW("could not set CA certificate path to '$1'\n"
-                           "[`SSL_CTX_set_default_verify_paths()` failed]",
-                           *ktpath);
 
-      ::SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
-    }
+    POSEIDON_LOG_INFO("Setting SSL CA certificate path: $1", *ktpath);
+    if(::SSL_CTX_load_verify_locations(ctx, nullptr, ktpath->safe_c_str()) != 1)
+      POSEIDON_SSL_THROW("could not set CA certificate path to '$1'\n"
+                         "[`SSL_CTX_set_default_verify_paths()` failed]",
+                         *ktpath);
+
+    ::SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
     return ctx;
   }
 
