@@ -145,7 +145,6 @@ get_client_ssl_ctx()
 unique_SSL
 create_ssl(::SSL_CTX* ctx, int fd)
   {
-    // Create SSL structure and assign `fd` to it.
     unique_SSL ssl(::SSL_new(ctx));
     if(!ssl)
       POSEIDON_SSL_THROW("could not create SSL structure\n"
@@ -154,9 +153,6 @@ create_ssl(::SSL_CTX* ctx, int fd)
     if(::SSL_set_fd(ssl, fd) != 1)
       POSEIDON_SSL_THROW("could not set OpenSSL file descriptor\n"
                          "[`SSL_set_fd()` failed]");
-
-    // This can be overwritten if `async_connect()` is called later.
-    ::SSL_set_accept_state(ssl);
     return ssl;
   }
 
