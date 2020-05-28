@@ -2,6 +2,7 @@
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
 #include "precompiled.hpp"
+#include "core/config_file.hpp"
 #include "static/main_config.hpp"
 #include "static/async_logger.hpp"
 #include "static/timer_driver.hpp"
@@ -13,6 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <dlfcn.h>
 
 using namespace poseidon;
 
@@ -138,6 +140,12 @@ noexcept
       va_end(ap);
     }
 
+    // Sleep one second so pending logs are flushed.
+    ::timespec ts;
+    ts.tv_sec = 1;
+    ts.tv_nsec = 0;
+    ::nanosleep(&ts, nullptr);
+
     // Perform fast exit.
     ::fflush(nullptr);
     ::quick_exit(static_cast<int>(code));
@@ -219,6 +227,25 @@ do_parse_command_line(int argc, char** argv)
       cmdline.cd_here = ::std::move(*cd_here);
   }
 
+::std::deque<cow_string>
+do_get_addons()
+  {
+    auto file = Main_Config::copy();
+
+    ::std::deque<cow_string> addons;
+    auto qarr = file.get_array_opt({"addons"});
+    if(!qarr)
+      return addons;
+
+    POSEIDON_LOG_DEBUG("Parsed list of add-ons: $1", *qarr);
+    for(const auto& val : *qarr) {
+      if(!val.is_string())
+        POSEIDON_THROW("invalid add-on path (`$1` is not a string)", val);
+      addons.emplace_back(val.as_string());
+    }
+    return addons;
+  }
+
 }  // namespace
 
 int
@@ -243,6 +270,9 @@ main(int argc, char** argv)
     Main_Config::reload();
     Async_Logger::reload();
     Network_Driver::reload();
+
+    // Get list of addons to load later.
+    auto addons = do_get_addons();
 
     // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)
@@ -271,7 +301,21 @@ main(int argc, char** argv)
     Timer_Driver::start();
     Network_Driver::start();
 
-    POSEIDON_LOG_INFO(PACKAGE_STRING " started up successfully (PID $1)", ::getpid());
+    // Load addons.
+    while(!addons.empty()) {
+      auto path = ::std::move(addons.front());
+      addons.pop_front();
+
+      POSEIDON_LOG_INFO("Started loading add-on: $1", path);
+
+      if(::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE) == nullptr)
+        POSEIDON_THROW("could not load shared library '$1'\n"
+                       "[`dlopen()` failed: $2]",
+                       path, ::dlerror());
+
+      POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
+    }
+    POSEIDON_LOG_INFO("" PACKAGE_STRING " started up successfully (PID $1)", ::getpid());
 
     sleep(10000);
     do_exit(exit_success, "interrupt\n");
