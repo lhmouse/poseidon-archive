@@ -26,6 +26,10 @@ class Abstract_TCP_Server_Socket
     do_on_async_accept(unique_FD&& fd)
     final;
 
+    void
+    do_on_async_register(rcptr<Abstract_Socket>&& sock)
+    final;
+
   protected:
     // Consumes an accepted socket.
     // This function shall allocate and return a new socket object.
@@ -33,6 +37,15 @@ class Abstract_TCP_Server_Socket
     virtual
     uptr<Abstract_TCP_Socket>
     do_on_async_accept_tcp(unique_FD&& fd)
+      = 0;
+
+    // Registers a socket object.
+    // This function shall ensure `sock` is not orphaned by storing the pointer
+    // somewhere (for example into a user-defined client map).
+    // Please mind thread safety, as this function is called by the network thread.
+    virtual
+    void
+    do_on_async_register_tcp(rcptr<Abstract_TCP_Socket>&& sock)
       = 0;
 
   public:

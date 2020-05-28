@@ -46,12 +46,21 @@ class Abstract_Listen_Socket
     final;
 
   protected:
-    // Consumes an accepted socket.
+    // Consumes an accepted socket descriptor.
     // This function shall allocate and return a new socket object.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     uptr<Abstract_Socket>
     do_on_async_accept(unique_FD&& fd)
+      = 0;
+
+    // Registers a socket object.
+    // This function shall ensure `sock` is not orphaned by storing the pointer
+    // somewhere (for example into a user-defined client map).
+    // Please mind thread safety, as this function is called by the network thread.
+    virtual
+    void
+    do_on_async_register(rcptr<Abstract_Socket>&& sock)
       = 0;
 
     // Prints a line of text but does nothing otherwise.

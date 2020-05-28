@@ -64,7 +64,8 @@ do_on_async_poll_read(Si_Mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*
                       sock->get_local_address(), Socket_Address(addrst, addrlen),
                       typeid(*this).name(), typeid(*sock).name());
 
-    Network_Driver::insert(::std::move(sock));
+    // Register the socket.
+    this->do_on_async_register(Network_Driver::insert(::std::move(sock)));
 
     // Report success.
     return io_result_not_eof;
