@@ -30,6 +30,9 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
       case SSL_ERROR_SYSCALL:
         // syscall errno
         err = errno;
+        if(err == 0)
+          return io_result_eof;
+
         if(err == EINTR)
           return io_result_not_eof;
 

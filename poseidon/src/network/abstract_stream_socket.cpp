@@ -23,7 +23,9 @@ noexcept
     return this->do_stream_preshutdown_nolock();
   }
   catch(const exception& stdex) {
-    POSEIDON_LOG_WARN("Failed to perform graceful shutdown on stream socket: $1", this);
+    POSEIDON_LOG_WARN("Failed to perform graceful shutdown on stream socket: $1\n"
+                      "[exception class `$2`]",
+                      stdex.what(), typeid(stdex).name());
     return io_result_eof;
   }
 
