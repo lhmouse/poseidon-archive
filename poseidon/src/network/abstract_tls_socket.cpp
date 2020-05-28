@@ -30,7 +30,7 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
       case SSL_ERROR_SYSCALL:
         // syscall errno
         err = errno;
-        dump_ssl_errors();
+        noadl::dump_ssl_errors();
         if(err == EINTR)
           return io_result_not_eof;
 
@@ -39,7 +39,7 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
                        func, ret, noadl::format_errno(err));
 
       default:
-        dump_ssl_errors();
+        noadl::dump_ssl_errors();
 
         POSEIDON_THROW("OpenSSL reported an irrecoverable error\n"
                        "[`$1()` returned `$2`]",
@@ -68,7 +68,7 @@ do_set_common_options()
     if(res == 0) {
       // The OpenSSL documentation says errors are to be retrieved from
       // 'the error stack'... where is it?
-      dump_ssl_errors();
+      noadl::dump_ssl_errors();
 
       POSEIDON_THROW("could not set OpenSSL file descriptor\n"
                      "[`SSL_set_fd()` returned `$1`]",
