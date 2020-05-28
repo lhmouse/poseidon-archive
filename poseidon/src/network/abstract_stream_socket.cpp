@@ -110,6 +110,7 @@ do_on_async_poll_read(Si_Mutex::unique_lock& lock, void* hint, size_t size)
       return io_res;
 
     if(io_res == io_result_eof) {
+      POSEIDON_LOG_TRACE("End of stream encountered: $1", this);
       this->do_async_shutdown_nolock();
       return io_result_eof;
     }
