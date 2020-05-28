@@ -19,6 +19,10 @@ class Abstract_TCP_Server_Socket
       : Abstract_Listen_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP))
       { this->do_listen(addr);  }
 
+    Abstract_TCP_Server_Socket(const char* bind, uint16_t port)
+      : Abstract_TCP_Server_Socket(Socket_Address(bind, port))
+      { }
+
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TCP_Server_Socket);
 
   private:
