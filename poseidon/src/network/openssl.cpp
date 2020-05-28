@@ -36,6 +36,14 @@ do_create_server_ssl_ctx(const char* cert, const char* pkey)
                          "[`SSL_CTX_check_private_key()` failed]",
                          cert, pkey);
 
+    // Set the session ID.
+    // This is carried over processes, so we use a hard-coded string in the executable.
+    static constexpr unsigned char session_id[] = { __DATE__ __TIME__ };
+    static_assert(sizeof(session_id) <= SSL_MAX_SSL_SESSION_ID_LENGTH);
+    if(::SSL_CTX_set_session_id_context(ctx, session_id, sizeof(session_id)) != 1)
+      POSEIDON_SSL_THROW("could not set SSL session id context\n"
+                         "[`SSL_CTX_set_session_id_context()` failed]");
+
     ::SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
     return ctx;
   }
@@ -104,7 +112,7 @@ noexcept
 
     while(unsigned long err = ::ERR_get_error()) {
       ::ERR_error_string_n(err, sbuf, sizeof(sbuf));
-      POSEIDON_LOG_ERROR("OpenSSL error: [$1] $2", index, err);
+      POSEIDON_LOG_ERROR("OpenSSL error: [$1] $2", index, sbuf);
       ++index;
     }
     return index;
