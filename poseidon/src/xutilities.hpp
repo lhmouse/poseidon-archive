@@ -63,6 +63,8 @@ size_t
 dump_ssl_errors()
 noexcept;
 
+#define POSEIDON_SSL_THROW(...)   (::poseidon::dump_ssl_errors(), POSEIDON_THROW(__VA_ARGS__))
+
 }  // namespace asteria
 
 #endif

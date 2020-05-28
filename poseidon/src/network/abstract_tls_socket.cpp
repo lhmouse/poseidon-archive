@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "abstract_tls_socket.hpp"
 #include "socket_address.hpp"
-#include "../utilities.hpp"
+#include "../xutilities.hpp"
 #include <netinet/tcp.h>
 
 namespace poseidon {
@@ -30,20 +30,17 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
       case SSL_ERROR_SYSCALL:
         // syscall errno
         err = errno;
-        noadl::dump_ssl_errors();
         if(err == EINTR)
           return io_result_not_eof;
 
-        POSEIDON_THROW("OpenSSL reported an irrecoverable I/O error\n"
-                       "[`$1()` returned `$2`; errno: $3]",
-                       func, ret, noadl::format_errno(err));
+        POSEIDON_SSL_THROW("irrecoverable SSL I/O error\n"
+                           "[`$1()` returned `$2`; errno: $3]",
+                           func, ret, noadl::format_errno(err));
 
       default:
-        noadl::dump_ssl_errors();
-
-        POSEIDON_THROW("OpenSSL reported an irrecoverable error\n"
-                       "[`$1()` returned `$2`]",
-                       func, ret);
+        POSEIDON_SSL_THROW("irrecoverable SSL error\n"
+                           "[`$1()` returned `$2`]",
+                           func, ret);
     }
   }
 
@@ -56,28 +53,29 @@ Abstract_TLS_Socket::
 
 void
 Abstract_TLS_Socket::
-do_set_common_options()
+do_set_common_options(::SSL_CTX* ctx)
   {
     // Disables Nagle algorithm.
     static constexpr int yes[] = { -1 };
     int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY, yes, sizeof(yes));
     ROCKET_ASSERT(res == 0);
 
-    // Create BIO.
-    res = ::SSL_set_fd(this->m_ssl, this->get_fd());
-    if(res == 0) {
-      // The OpenSSL documentation says errors are to be retrieved from
-      // 'the error stack'... where is it?
-      noadl::dump_ssl_errors();
+    // Create SSL structure.
+    unique_SSL ssl(::SSL_new(ctx));
+    if(!ssl)
+      POSEIDON_SSL_THROW("could not create SSL structure\n"
+                         "[`SSL_new()` failed]");
 
-      POSEIDON_THROW("could not set OpenSSL file descriptor\n"
-                     "[`SSL_set_fd()` returned `$1`]",
-                     res);
-    }
+    res = ::SSL_set_fd(ssl, this->get_fd());
+    if(res != 1)
+      POSEIDON_SSL_THROW("could not set OpenSSL file descriptor\n"
+                         "[`SSL_set_fd()` returned `$1`]",
+                         res);
 
-    // Set default SSL mode. This can be overwritten if `async_connect()`
-    // is called later.
-    ::SSL_set_accept_state(this->m_ssl);
+    // This can be overwritten if `async_connect()` is called later.
+    ::SSL_set_accept_state(ssl);
+
+    this->m_ssl = ::std::move(ssl);
   }
 
 void
