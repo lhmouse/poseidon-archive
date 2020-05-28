@@ -52,12 +52,12 @@ unique_SSL_CTX
 do_create_default_server_ssl_ctx()
   {
     auto file = Main_Config::copy();
-    auto qcert = file.get_string_opt({"network","tls","default_certificate"});
-    auto kpkey = file.get_string_opt({"network","tls","default_private_key"});
 
+    auto qcert = file.get_string_opt({"network","tls","default_certificate"});
     if(!qcert)
       POSEIDON_THROW("no default `network.tls.default_certificate` available");
 
+    auto kpkey = file.get_string_opt({"network","tls","default_private_key"});
     if(!kpkey)
       POSEIDON_THROW("no default `network.tls.default_private_key` available");
 
@@ -68,17 +68,17 @@ unique_SSL_CTX
 do_create_default_client_ssl_ctx()
   {
     auto file = Main_Config::copy();
-    auto ktpath = file.get_string_opt({"network","tls","trusted_ca_path"});
 
     unique_SSL_CTX ctx(::SSL_CTX_new(::TLS_client_method()));
     if(!ctx)
       POSEIDON_SSL_THROW("could not create client SSL context\n"
                          "[`SSL_CTX_new()` failed]");
 
+    auto ktpath = file.get_string_opt({"network","tls","trusted_ca_path"});
     if(!ktpath) {
       POSEIDON_LOG_WARN("Note: CA certificate validation has been disabled."
                         " This configuration is not suitable for production use.\n"
-                        "Set `network.tls.trusted_ca_path` to enable.");
+                        "      Set `network.tls.trusted_ca_path` to enable.");
       ::SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, nullptr);
       return ctx;
     }
