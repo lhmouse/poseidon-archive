@@ -43,24 +43,42 @@ noexcept
         POSEIDON_LOG_TRACE("Marked stream socket as CLOSED (not established): $1", this);
         return io_result_eof;
 
-      case connection_state_established:
-      case connection_state_closing: {
+      case connection_state_established: {
         // Ensure pending data are delivered.
         if(this->m_wqueue.size()) {
+          ::shutdown(this->get_fd(), SHUT_RD);
           this->m_cstate = connection_state_closing;
           POSEIDON_LOG_TRACE("Marked stream socket as CLOSING (data pending): $1", this);
           return io_result_not_eof;
         }
 
-        // Pending data have been cleared. Try shutting down.
+        // Wait for shutdown.
         auto io_res = this->do_call_stream_preshutdown_nolock();
         if(io_res != io_result_eof) {
+          ::shutdown(this->get_fd(), SHUT_RD);
           this->m_cstate = connection_state_closing;
           POSEIDON_LOG_TRACE("Marked stream socket as CLOSING (preshutdown pending): $1", this);
           return io_res;
         }
 
-        // Shutdown completed.
+        // Close the connection.
+        ::shutdown(this->get_fd(), SHUT_RDWR);
+        this->m_cstate = connection_state_closed;
+        POSEIDON_LOG_TRACE("Marked stream socket as CLOSED (pending data clear): $1", this);
+        return io_result_eof;
+      }
+
+      case connection_state_closing: {
+        // Ensure pending data are delivered.
+        if(this->m_wqueue.size())
+          return io_result_not_eof;
+
+        // Wait for shutdown.
+        auto io_res = this->do_call_stream_preshutdown_nolock();
+        if(io_res != io_result_eof)
+          return io_res;
+
+        // Close the connection.
         ::shutdown(this->get_fd(), SHUT_RDWR);
         this->m_cstate = connection_state_closed;
         POSEIDON_LOG_TRACE("Marked stream socket as CLOSED (pending data clear): $1", this);
