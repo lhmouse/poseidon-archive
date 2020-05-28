@@ -357,6 +357,7 @@ do_thread_loop(void* /*param*/)
     self->poll_list_collect(self->m_poll_root_rd);
     for(const auto& sock : self->m_ready_socks) {
       // Perform a single read operation (no retry upon EINTR).
+      lock.unlock();
       bool detach;
       bool clear_status;
 
@@ -409,6 +410,7 @@ do_thread_loop(void* /*param*/)
     self->poll_list_collect(self->m_poll_root_wr);
     for(const auto& sock : self->m_ready_socks) {
       // Perform a single write operation (no retry upon EINTR).
+      lock.unlock();
       bool detach;
       bool clear_status;
       bool unthrottle;
