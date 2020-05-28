@@ -19,7 +19,7 @@ class Abstract_Socket
 
     // These are used by network driver.
     uint64_t m_epoll_data = 1234567890123456789;
-    uint32_t m_epoll_events = 0;
+    uint32_t m_epoll_events = UINT32_MAX;
 
   public:
     explicit

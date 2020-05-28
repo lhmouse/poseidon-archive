@@ -550,7 +550,9 @@ insert(uptr<Abstract_Socket>&& usock)
     elem.sock = sock;
     self->m_poll_elems.emplace_back(::std::move(elem));
 
+    // Initialize epoll data.
     sock->m_epoll_data = event.data.u64;
+    sock->m_epoll_events = 0;
     POSEIDON_LOG_TRACE("Socket added: $1", sock);
     return sock;
   }
