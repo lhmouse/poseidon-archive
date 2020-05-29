@@ -247,7 +247,7 @@ do_on_async_shutdown(int err)
 
 void
 Abstract_UDP_Socket::
-bind(const Socket_Address& addr)
+do_bind(const Socket_Address& addr)
   {
     // Bind onto `addr`.
     if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)

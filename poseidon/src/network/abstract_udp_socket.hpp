@@ -79,14 +79,14 @@ class Abstract_UDP_Socket
     void
     do_on_async_shutdown(int err);
 
+    // Binds this socket to the specified address.
+    void
+    do_bind(const Socket_Address& addr);
+
   public:
     using Abstract_Socket::get_fd;
     using Abstract_Socket::abort;
     using Abstract_Socket::get_local_address;
-
-    // Binds this socket to the specified address.
-    void
-    bind(const Socket_Address& addr);
 
     // Sets multicast parameters.
     // `ifindex` is the inteface index (zero = use default).

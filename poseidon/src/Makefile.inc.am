@@ -27,6 +27,8 @@ include_poseidon_network_HEADERS =  \
   %reldir%/network/abstract_tls_server_socket.hpp  \
   %reldir%/network/abstract_tls_client_socket.hpp  \
   %reldir%/network/abstract_udp_socket.hpp  \
+  %reldir%/network/abstract_udp_server_socket.hpp  \
+  %reldir%/network/abstract_udp_client_socket.hpp  \
   ${NOTHING}
 
 include_poseidon_staticdir = ${includedir}/poseidon/static
@@ -56,6 +58,8 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/network/abstract_tls_server_socket.cpp  \
   %reldir%/network/abstract_tls_client_socket.cpp  \
   %reldir%/network/abstract_udp_socket.cpp  \
+  %reldir%/network/abstract_udp_server_socket.cpp  \
+  %reldir%/network/abstract_udp_client_socket.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
