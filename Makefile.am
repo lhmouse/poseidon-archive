@@ -75,6 +75,9 @@ if enable_mongodb
 include poseidon/src/mongodb/Makefile.inc.am
 endif
 
+## Sample add-ons
+include poseidon/addon/Makefile.inc.am
+
 ## Configuration files
 include poseidon/etc/Makefile.inc.am
 
