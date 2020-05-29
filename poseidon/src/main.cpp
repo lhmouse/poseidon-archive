@@ -140,11 +140,13 @@ noexcept
       va_end(ap);
     }
 
-    // Sleep one second so pending logs are flushed.
-    ::timespec ts;
-    ts.tv_sec = 1;
-    ts.tv_nsec = 0;
-    ::nanosleep(&ts, nullptr);
+    // Sleep for a few moments so pending logs are flushed.
+    if(Async_Logger::queue_size() != 0) {
+      ::usleep(100'000);
+
+      if(Async_Logger::queue_size() != 0)
+        ::sleep(5);
+    }
 
     // Perform fast exit.
     ::fflush(nullptr);
