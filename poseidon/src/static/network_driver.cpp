@@ -495,8 +495,7 @@ start()
                      noadl::format_errno(errno));
 
     // Create the thread. Note it is never joined or detached.
-    auto thr = create_daemon_thread<do_thread_loop>("network");
-    self->m_thread = ::std::move(thr);
+    self->m_thread = create_daemon_thread<do_thread_loop>("network");
     self->m_epollfd = epollfd.release();
     self->m_eventfd = eventfd.release();
   }

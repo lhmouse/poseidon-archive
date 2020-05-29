@@ -144,8 +144,7 @@ start()
     Si_Mutex::unique_lock lock(self->m_pq_mutex);
 
     // Create the thread. Note it is never joined or detached.
-    auto thr = create_daemon_thread<do_thread_loop>("timer");
-    self->m_thread = ::std::move(thr);
+    self->m_thread = create_daemon_thread<do_thread_loop>("timer");
   }
 
 rcptr<Abstract_Timer>

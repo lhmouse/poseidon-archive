@@ -319,8 +319,7 @@ start()
     Si_Mutex::unique_lock lock(self->m_queue_mutex);
 
     // Create the thread. Note it is never joined or detached.
-    auto thr = noadl::create_daemon_thread<do_thread_loop>("logger");
-    self->m_thread = ::std::move(thr);
+    self->m_thread = noadl::create_daemon_thread<do_thread_loop>("logger");
   }
 
 void
