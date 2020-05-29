@@ -470,8 +470,6 @@ start()
     if(self->m_thread)
       return;
 
-    Si_Mutex::unique_lock lock(self->m_conf_mutex);
-
     // Create an epoll object.
     unique_FD epollfd(::epoll_create(100));
     if(!epollfd)
@@ -495,6 +493,7 @@ start()
                      noadl::format_errno(errno));
 
     // Create the thread. Note it is never joined or detached.
+    Si_Mutex::unique_lock lock(self->m_conf_mutex);
     self->m_thread = create_daemon_thread<do_thread_loop>("network");
     self->m_epollfd = epollfd.release();
     self->m_eventfd = eventfd.release();
