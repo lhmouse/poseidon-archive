@@ -24,7 +24,7 @@ do_get_size_config(const Config_File& file, const char* name, size_t defval)
     int64_t rval = ::rocket::clamp(*qval, 1, 0x10'00000);   // 16MiB
     if(*qval != rval)
       POSEIDON_LOG_WARN("Config value `network.poll.$1` truncated to `$2`\n"
-                        "[value `$3` was out of range]",
+                        "[value `$3` out of range]",
                         name, rval, *qval);
 
     return static_cast<size_t>(rval);
