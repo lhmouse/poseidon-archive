@@ -36,7 +36,7 @@ noexcept
     auto text = fmt.extract_string();
 
     // Push a new log entry.
-    Async_Logger::write(level, file, line, func, ::std::move(text));
+    Async_Logger::enqueue(level, file, line, func, ::std::move(text));
     return true;
   }
   catch(exception& stdex) {
@@ -73,7 +73,7 @@ do_xthrow_format(const char* file, long line, const char* func,
 
     // Push a new log entry.
     if(Async_Logger::is_enabled(log_level_debug))
-      Async_Logger::write(log_level_debug, file, line, func, text);
+      Async_Logger::enqueue(log_level_debug, file, line, func, text);
 
     // Throw the exception.
     ::rocket::sprintf_and_throw<::std::runtime_error>(

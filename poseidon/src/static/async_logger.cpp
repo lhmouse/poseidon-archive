@@ -351,15 +351,26 @@ noexcept
     if(level >= self->m_conf_levels.size())
       return false;
 
-    const auto& conf = self->m_conf_levels[level];
-
     // The level is enabled if at least one stream is enabled.
+    const auto& conf = self->m_conf_levels[level];
     return (conf.out_fd != -1) || conf.out_path.size();
   }
 
 size_t
 Async_Logger::
-write(Log_Level level, const char* file, long line, const char* func, cow_string text)
+queue_size()
+noexcept
+  {
+    // Lock config for reading.
+    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+
+    // Return the number of pending entries.
+    return self->m_queue.size();
+  }
+
+size_t
+Async_Logger::
+enqueue(Log_Level level, const char* file, long line, const char* func, cow_string text)
   {
     // Compose the entry.
     Entry entry = { level, file, line, func, ::std::move(text), "", 0 };
