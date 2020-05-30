@@ -273,9 +273,6 @@ main(int argc, char** argv)
     Async_Logger::reload();
     Network_Driver::reload();
 
-    // Get list of addons to load later.
-    auto addons = do_get_addons();
-
     // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)
       if(::daemon(1, 0) != 0)
@@ -304,11 +301,9 @@ main(int argc, char** argv)
     Network_Driver::start();
 
     // Load addons.
-    while(!addons.empty()) {
-      auto path = ::std::move(addons.front());
-      addons.pop_front();
-
-      POSEIDON_LOG_INFO("Started loading add-on: $1", path);
+    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
+    for(const auto& path : do_get_addons()) {
+      POSEIDON_LOG_INFO("Loading add-on: $1", path);
 
       if(::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE) == nullptr)
         POSEIDON_THROW("could not load shared library '$1'\n"
@@ -317,7 +312,7 @@ main(int argc, char** argv)
 
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
     }
-    POSEIDON_LOG_INFO("" PACKAGE_STRING " started up successfully (PID $1)", ::getpid());
+    POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, ::getpid());
 
     sleep(10000);
     do_exit(exit_success, "interrupt\n");
