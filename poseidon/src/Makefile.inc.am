@@ -40,6 +40,7 @@ include_poseidon_static_HEADERS =  \
   %reldir%/static/async_logger.hpp  \
   %reldir%/static/timer_driver.hpp  \
   %reldir%/static/network_driver.hpp  \
+  %reldir%/static/worker_pool.hpp  \
   ${NOTHING}
 
 lib_LTLIBRARIES += lib/libposeidon.la
@@ -68,6 +69,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
   %reldir%/static/network_driver.cpp  \
+  %reldir%/static/worker_pool.cpp  \
   ${NOTHING}
 
 lib_libposeidon_la_LDFLAGS =  \

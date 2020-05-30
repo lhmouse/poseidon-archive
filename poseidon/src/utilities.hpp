@@ -8,6 +8,10 @@
 #include "static/async_logger.hpp"
 #include "core/abstract_timer.hpp"
 #include "static/timer_driver.hpp"
+#include "core/abstract_async_function.hpp"
+#include "core/promise.hpp"
+#include "core/future.hpp"
+#include "static/worker_pool.hpp"
 #include <asteria/utilities.hpp>
 #include <cstdio>
 
@@ -128,6 +132,80 @@ rcptr<Abstract_Timer>
 create_async_timer_periodic(int64_t period, FuncT&& func)
   {
     return noadl::create_async_timer(period, period, ::std::forward<FuncT>(func));
+  }
+
+// Enqueues an asynchronous function and returns a future to its result.
+// Functions with the same key will always be delivered to the same worker.
+template<typename FuncT>
+futp<typename ::std::result_of<FuncT ()>::type>
+enqueue_async_function_keyed(uintptr_t key, FuncT&& func)
+  {
+    // // This is the concrete function class.
+    struct Concrete_Async_Function : Abstract_Async_Function
+      {
+        prom<typename ::std::result_of<FuncT ()>::type> m_prom;
+        typename ::std::decay<FuncT>::type m_func;
+
+        explicit
+        Concrete_Async_Function(uintptr_t key, FuncT&& func)
+          : Abstract_Async_Function(key),
+            m_func(::std::forward<FuncT>(func))
+          { }
+
+        void
+        do_execute()
+        override
+          { this->m_prom.set_value(this->m_func());  }
+
+        void
+        do_set_exception(const ::std::exception_ptr& eptr)
+        override
+          { this->m_prom.set_exception(eptr);  }
+      };
+
+    // Allocate a function object.
+    auto async = ::rocket::make_unique<Concrete_Async_Function>(key,
+                                           ::std::forward<FuncT>(func));
+    auto futr = async->m_prom.future();
+    Worker_Pool::insert(::std::move(async));
+    return futr;
+  }
+
+// Enqueues an asynchronous function and returns a future to its result.
+// The function is delivered to a random worker.
+template<typename FuncT>
+futp<typename ::std::result_of<FuncT ()>::type>
+enqueue_async_function_random(FuncT&& func)
+  {
+    // // This is the concrete function class.
+    struct Concrete_Async_Function : Abstract_Async_Function
+      {
+        prom<typename ::std::result_of<FuncT ()>::type> m_prom;
+        typename ::std::decay<FuncT>::type m_func;
+
+        explicit
+        Concrete_Async_Function(FuncT&& func)
+          : Abstract_Async_Function(reinterpret_cast<uintptr_t>(this)),
+            m_func(::std::forward<FuncT>(func))
+          { }
+
+        void
+        do_execute()
+        override
+          { this->m_prom.set_value(this->m_func());  }
+
+        void
+        do_set_exception(const ::std::exception_ptr& eptr)
+        override
+          { this->m_prom.set_exception(eptr);  }
+      };
+
+    // Allocate a function object.
+    auto async = ::rocket::make_unique<Concrete_Async_Function>(
+                                           ::std::forward<FuncT>(func));
+    auto futr = async->m_prom.future();
+    Worker_Pool::insert(::std::move(async));
+    return futr;
   }
 
 }  // namespace asteria
