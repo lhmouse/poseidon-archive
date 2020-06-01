@@ -358,11 +358,19 @@ do_thread_loop(void* /*param*/)
     for(const auto& sock : self->m_ready_socks) {
       // Perform a single read operation (no retry upon EINTR).
       lock.unlock();
+
+      bool throttle;
       bool detach;
       bool clear_status;
-
       try {
-        if(sock->do_write_queue_size(lock) <= conf.throttle_size) {
+        // Check whether the socket should be throttled.
+        throttle = sock->do_write_queue_size(lock) > conf.throttle_size;
+        if(throttle) {
+          // If the socket is throttled, remove it from read queue.
+          detach = true;
+          clear_status = false;
+        }
+        else {
           // If the socket is not throttled, try reading some bytes.
           auto io_res = sock->do_on_async_poll_read(lock,
                                    self->m_io_buffer.data(), self->m_io_buffer.size());
@@ -371,11 +379,6 @@ do_thread_loop(void* /*param*/)
           // shall be removed from read queue and the `EPOLLIN` status shall be cleared.
           detach = io_res <= 0;
           clear_status = io_res <= 0;
-        }
-        else {
-          // If the socket is throttled, remove it from read queue.
-          detach = true;
-          clear_status = false;
         }
       }
       catch(exception& stdex) {
@@ -388,6 +391,7 @@ do_thread_loop(void* /*param*/)
 
         // If a read error occurs, the socket shall be removed from read queue and the
         // `EPOLLIN` status shall be cleared.
+        throttle = false;
         detach = true;
         clear_status = true;
       }
@@ -411,10 +415,10 @@ do_thread_loop(void* /*param*/)
     for(const auto& sock : self->m_ready_socks) {
       // Perform a single write operation (no retry upon EINTR).
       lock.unlock();
+
       bool detach;
       bool clear_status;
-      bool unthrottle;
-
+      bool throttle;
       try {
         // Try writing some bytes.
         auto io_res = sock->do_on_async_poll_write(lock,
@@ -429,7 +433,7 @@ do_thread_loop(void* /*param*/)
         clear_status = io_res == io_result_again;
 
         // Check whether the socket should be unthrottled.
-        unthrottle = sock->do_write_queue_size(lock) <= conf.throttle_size;
+        throttle = sock->do_write_queue_size(lock) > conf.throttle_size;
       }
       catch(exception& stdex) {
         POSEIDON_LOG_WARN("Socket write error: $1\n"
@@ -443,7 +447,7 @@ do_thread_loop(void* /*param*/)
         // `EPOLLOUT` status shall be cleared.
         detach = true;
         clear_status = true;
-        unthrottle = false;
+        throttle = true;
       }
 
       // Update the socket.
@@ -458,7 +462,7 @@ do_thread_loop(void* /*param*/)
       if(clear_status)
         sock->m_epoll_events &= ~EPOLLOUT;
 
-      if(unthrottle && (sock->m_epoll_events & EPOLLIN))
+      if(!throttle && (sock->m_epoll_events & EPOLLIN))
         self->poll_list_attach(self->m_poll_root_rd, index);
     }
   }
