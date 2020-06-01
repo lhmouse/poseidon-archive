@@ -121,6 +121,7 @@ struct FD_Closer
   };
 
 using unique_FD = ::rocket::unique_handle<int, FD_Closer>;
+static_assert(sizeof(unique_FD) == sizeof(int));
 
 // Core
 class Config_File;
