@@ -526,6 +526,9 @@ insert(uptr<Abstract_Socket>&& usock)
     if(!sock)
       POSEIDON_THROW("null socket pointer not valid");
 
+    if(!sock.unique())
+      POSEIDON_THROW("socket pointer must be unique");
+
     // Lock epoll for modification.
     Si_Mutex::unique_lock lock(self->m_poll_mutex);
 

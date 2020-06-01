@@ -155,6 +155,9 @@ insert(uptr<Abstract_Timer>&& utimer)
     if(!timer)
       POSEIDON_THROW("null timer pointer not valid");
 
+    if(!timer.unique())
+      POSEIDON_THROW("timer pointer must be unique");
+
     // Get the next trigger time.
     // The timer is considered to be owned uniquely, so there is no need to lock it.
     auto next = do_get_time(timer->m_first);
