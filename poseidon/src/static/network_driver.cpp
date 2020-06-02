@@ -138,7 +138,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           event.data.u64 = self->make_epoll_data(index, epoll_data);
           event.events = EPOLLIN | EPOLLOUT | EPOLLET;
           if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_MOD, elem.sock->get_fd(), &event) != 0)
-            POSEIDON_LOG_ERROR("failed to modify socket in epoll\n"
+            POSEIDON_LOG_FATAL("failed to modify socket in epoll\n"
                                "[`epoll_ctl()` failed: $1]",
                                noadl::format_errno(errno));
 
@@ -311,9 +311,9 @@ do_thread_loop(void* /*param*/)
 
       // Remove the socket from epoll. Errors are ignored.
       if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_DEL, sock->get_fd(), (::epoll_event*)1) != 0)
-        POSEIDON_THROW("failed to remove socket from epoll\n"
-                       "[`epoll_ctl()` failed: $1]",
-                       noadl::format_errno(errno));
+        POSEIDON_LOG_FATAL("failed to remove socket from epoll\n"
+                           "[`epoll_ctl()` failed: $1]",
+                           noadl::format_errno(errno));
 
       // Deliver a shutdown notification. Exceptions are caught and ignored.
       try {
