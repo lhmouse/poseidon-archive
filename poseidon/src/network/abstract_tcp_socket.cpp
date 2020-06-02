@@ -65,11 +65,11 @@ IO_Result
 Abstract_TCP_Socket::
 do_stream_write_nolock(const void* data, size_t size)
   {
-    ::ssize_t nread = ::write(this->get_fd(), data, size);
-    if(nread > 0)
-      return static_cast<IO_Result>(nread);
+    ::ssize_t nwritten = ::write(this->get_fd(), data, size);
+    if(nwritten > 0)
+      return static_cast<IO_Result>(nwritten);
 
-    if(nread == 0)
+    if(nwritten == 0)
       return io_result_not_eof;
 
     return do_translate_syscall_error("write", errno);
