@@ -127,6 +127,12 @@ static_assert(sizeof(unique_FD) == sizeof(int));
 class Config_File;
 class Abstract_Timer;
 
+template<typename V> class Promise;
+template<typename V> class Future;
+
+template<typename V> using prom = Promise<V>;
+template<typename V> using futp = rcptr<Future<V>>;
+
 // Network
 enum IO_Result : ptrdiff_t;
 enum Connection_State : uint8_t;
@@ -164,6 +170,14 @@ enum Log_Level : uint8_t
     log_level_info   = 3,
     log_level_debug  = 4,
     log_level_trace  = 5,
+  };
+
+// Future states
+enum Future_State : uint8_t
+  {
+    future_state_empty   = 0,
+    future_state_value   = 1,
+    future_state_except  = 2,
   };
 
 }  // namespace poseidon
