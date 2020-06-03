@@ -62,6 +62,15 @@ class Future
   public:
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
     // or `future_state_except`.
+    //
+    // * `future_state_empty` indicates no value has been set yet.
+    //   Any retrieval operation shall block.
+    // * `future_state_value` indicates a value has been set and can be read.
+    //   Any retrieval operation shall unblock and return the value.
+    // * `future_state_except` indicates either an exception has been set or the
+    //   associated promise went out of scope without setting a value.
+    //   Any retrieval operation shall unblock and throw an exception.
+    ROCKET_PURE_FUNCTION
     Future_State
     state()
     const noexcept
@@ -69,31 +78,6 @@ class Future
         Si_Mutex::unique_lock lock(this->m_mutex);
         return static_cast<Future_State>(this->m_stor.index());
       }
-
-    // Checks whether this future is in `future_state_empty`.
-    // This state indicates no value has been set yet.
-    // Any retrieval operation shall block.
-    bool
-    empty()
-    const noexcept
-      { return this->state() == future_state_empty;  }
-
-    // Checks whether this future is in `future_state_value`.
-    // This state indicates a value has been set and can be read.
-    // Any retrieval operation shall unblock and return the value.
-    bool
-    has_value()
-    const noexcept
-      { return this->state() == future_state_value;  }
-
-    // Checks whether this future is in `future_state_except`.
-    // This state indicates either an exception has been set or the associated
-    // promise went out of scope without setting a value.
-    // Any retrieval operation shall unblock and throw an exception.
-    bool
-    has_exception()
-    const noexcept
-      { return this->state() == future_state_except;  }
 
     // Retrieves the value, if one has been set.
     // If no value has been set, an exception is thrown, and there is no effect.
