@@ -132,20 +132,20 @@ int
 do_exit(Exit_Code code, const char* fmt = nullptr, ...)
 noexcept
   {
-    // Output the string to standard error.
-    if(fmt) {
-      ::va_list ap;
-      va_start(ap, fmt);
-      ::vfprintf(stderr, fmt, ap);
-      va_end(ap);
-    }
-
     // Sleep for a few moments so pending logs are flushed.
     if(Async_Logger::queue_size() != 0) {
       ::usleep(100'000);
 
       if(Async_Logger::queue_size() != 0)
         ::sleep(5);
+    }
+
+    // Output the string to standard error.
+    if(fmt) {
+      ::va_list ap;
+      va_start(ap, fmt);
+      ::vfprintf(stderr, fmt, ap);
+      va_end(ap);
     }
 
     // Perform fast exit.
@@ -319,6 +319,6 @@ main(int argc, char** argv)
   }
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
-    do_exit(exit_system_error, "%s\n[exception class `%s`]\n",
+    do_exit(exit_system_error, "unhandled exception: %s\n[exception class `%s`]\n",
                                stdex.what(), typeid(stdex).name());
   }
