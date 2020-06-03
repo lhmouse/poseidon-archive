@@ -21,21 +21,44 @@ class Promise
     noexcept
       { }
 
-    ASTERIA_MOVABLE_DESTRUCTOR(Promise)
+    Promise(Promise&& other)
+    noexcept
+      : m_futp(::std::move(other.m_futp))
+      { }
+
+    Promise&
+    operator=(Promise&& other)
+    noexcept
+      {
+        if(this->m_futp == other.m_futp)
+          return *this;
+
+        this->do_dispose();
+        this->m_futp = ::std::move(other.m_futp);
+        return *this;
+      }
+
+    ~Promise()
+      { this->do_dispose();  }
+
+  private:
+    bool
+    do_dispose()
+    noexcept
       {
         auto futp = this->m_futp.get();
         if(!futp)
-          return;
+          return false;
 
         Si_Mutex::unique_lock lock(futp->m_mutex);
         if(futp->m_stor.index() != future_state_empty)
-          return;
+          return false;
 
         // Mark the future broken.
         futp->m_stor.template emplace<future_state_except>();
+        return true;
       }
 
-  private:
     [[noreturn]]
     void
     do_throw_no_future()
