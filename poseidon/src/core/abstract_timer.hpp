@@ -9,7 +9,7 @@
 namespace poseidon {
 
 class Abstract_Timer
-  : public virtual ::asteria::Rcbase
+  : public ::asteria::Rcfwd<Abstract_Timer>
   {
     friend Timer_Driver;
 

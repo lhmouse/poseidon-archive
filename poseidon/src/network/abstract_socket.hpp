@@ -10,7 +10,7 @@
 namespace poseidon {
 
 class Abstract_Socket
-  : public virtual ::asteria::Rcbase
+  : public ::asteria::Rcfwd<Abstract_Socket>
   {
     friend Network_Driver;
 
