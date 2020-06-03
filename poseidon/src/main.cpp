@@ -327,14 +327,15 @@ main(int argc, char** argv)
 prom<int> p;
 auto f1 = p.future();
 auto f2 = p.future();
-ROCKET_ASSERT(f1->empty());
-ROCKET_ASSERT(f2->empty());
-p.set_value(42);
+ROCKET_ASSERT(f1->state() == future_state_empty);
+ROCKET_ASSERT(f2->state() == future_state_empty);
+//p.set_value(42);
 //p.set_exception(::std::make_exception_ptr(::std::runtime_error("boom")));
-ROCKET_ASSERT(f1->has_value());
-ROCKET_ASSERT(!f1->has_exception());
-ROCKET_ASSERT(f2->has_value());
-ROCKET_ASSERT(!f2->has_exception());
+p = { };
+ROCKET_ASSERT(f1->state() != future_state_value);
+ROCKET_ASSERT(f1->state() == future_state_except);
+ROCKET_ASSERT(f2->state() != future_state_value);
+ROCKET_ASSERT(f2->state() == future_state_except);
 POSEIDON_LOG_INFO("FUTURE: $1", f1->move_value());
 POSEIDON_LOG_INFO("FUTURE: $1", f1->copy_value());
 
