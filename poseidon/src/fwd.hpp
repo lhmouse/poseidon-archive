@@ -126,6 +126,7 @@ static_assert(sizeof(unique_FD) == sizeof(int));
 // Core
 class Config_File;
 class Abstract_Timer;
+class Abstract_Async_Function;
 
 template<typename V> class Promise;
 template<typename V> class Future;
@@ -158,6 +159,7 @@ class Main_Config;
 class Async_Logger;
 class Timer_Driver;
 class Network_Driver;
+class Worker_Pool;
 
 // Log levels
 // Note each level has a hardcoded name and number.
