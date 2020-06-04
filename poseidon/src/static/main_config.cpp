@@ -39,4 +39,4 @@ noexcept
     return self->m_data;
   }
 
-}  // poseidon
+}  // namespace poseidon

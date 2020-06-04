@@ -383,4 +383,4 @@ enqueue(Log_Level level, const char* file, long line, const char* func, cow_stri
     return self->m_queue.size();
   }
 
-}  // poseidon
+}  // namespace poseidon
