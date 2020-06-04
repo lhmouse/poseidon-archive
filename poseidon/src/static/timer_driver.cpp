@@ -21,7 +21,6 @@ noexcept
     return value;
   }
 
-ROCKET_PURE_FUNCTION
 int64_t
 do_get_time(int64_t shift)
 noexcept
