@@ -16,9 +16,6 @@
 #include <stdarg.h>
 #include <dlfcn.h>
 
-#include "core/promise.hpp"
-#include "core/future.hpp"
-
 using namespace poseidon;
 
 namespace {
@@ -253,13 +250,6 @@ do_get_addons()
 
 }  // namespace
 
-namespace poseidon {
-  template class Promise<int>;
-  template class Future<int>;
-  template class Promise<void>;
-  template class Future<void>;
-}
-
 int
 main(int argc, char** argv)
   try {
@@ -323,21 +313,6 @@ main(int argc, char** argv)
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
     }
     POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, ::getpid());
-
-prom<int> p;
-auto f1 = p.future();
-auto f2 = p.future();
-ROCKET_ASSERT(f1->state() == future_state_empty);
-ROCKET_ASSERT(f2->state() == future_state_empty);
-//p.set_value(42);
-//p.set_exception(::std::make_exception_ptr(::std::runtime_error("boom")));
-p = { };
-ROCKET_ASSERT(f1->state() != future_state_value);
-ROCKET_ASSERT(f1->state() == future_state_except);
-ROCKET_ASSERT(f2->state() != future_state_value);
-ROCKET_ASSERT(f2->state() == future_state_except);
-POSEIDON_LOG_INFO("FUTURE: $1", f1->move_value());
-POSEIDON_LOG_INFO("FUTURE: $1", f1->copy_value());
 
     sleep(10000);
     do_exit(exit_success, "interrupt\n");
