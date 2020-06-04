@@ -83,49 +83,55 @@ void
 Timer_Driver::
 do_thread_loop(void* /*param*/)
   {
+    rcptr<Abstract_Timer> timer;
+    int64_t now;
+
     // Await an element and pop it.
     Si_Mutex::unique_lock lock(self->m_pq_mutex);
-    int64_t now;
     for(;;) {
-      if(self->m_pq.size()) {
-        // Check the minimum element.
-        now = do_get_time(0);
-        int64_t delta = self->m_pq.front().next - now;
-        if(delta <= 0)
-          break;
-        self->m_pq_avail.wait_for(lock,
-                    static_cast<long>(::rocket::min(delta, LONG_MAX)));
-      }
-      else
+      timer.reset();
+      if(self->m_pq.empty()) {
         // Wait until an element becomes available.
         self->m_pq_avail.wait(lock);
-    }
-    ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+        continue;
+      }
 
-    // Process this timer!
-    auto timer = ::std::move(self->m_pq.back().timer);
-    if(timer.unique()) {
+      // Check the first element.
+      now = do_get_time(0);
+      int64_t delta = self->m_pq.front().next - now;
+      if(delta > 0) {
+        // Wait for it.
+        self->m_pq_avail.wait_for(lock,
+                    static_cast<long>(::rocket::min(delta, LONG_MAX)));
+        continue;
+      }
+
+      // Pop it.
+      ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+      timer = ::std::move(self->m_pq.back().timer);
+      if(!timer.unique()) {
+        // Process this timer!
+        Si_Mutex::unique_lock tlock(timer->m_mutex);
+        auto period = timer->m_period;
+        tlock.unlock();
+
+        if(period > 0) {
+          // The timer is periodic. Insert it back.
+          self->m_pq.back().timer = timer;
+          do_shift_time(self->m_pq.back().next, period);
+          ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+        }
+        else {
+          // The timer is one-shot. Delete it.
+          self->m_pq.pop_back();
+        }
+        break;
+      }
+
       // Delete this timer when no other reference of it exists.
       POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
       self->m_pq.pop_back();
-      return;
     }
-
-    // Get the next trigger time.
-    Si_Mutex::unique_lock tlock(timer->m_mutex);
-    if(timer->m_period > 0) {
-      // Update the element in place.
-      self->m_pq.back().timer = timer;
-      do_shift_time(self->m_pq.back().next, timer->m_period);
-      ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-    }
-    else {
-      // Delete this one-shot timer.
-      self->m_pq.pop_back();
-    }
-    tlock.unlock();
-
-    // Leave critical section.
     lock.unlock();
 
     // Execute the timer procedure.
