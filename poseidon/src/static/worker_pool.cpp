@@ -59,6 +59,7 @@ do_thread_loop(void* param)
 
     // Execute the function.
     // See comments in 'abstract_async_function.hpp' for details.
+    func->m_state.store(async_state_started, ::std::memory_order_relaxed);
     try {
       func->do_execute();
     }
@@ -69,6 +70,7 @@ do_thread_loop(void* param)
 
       func->do_set_exception(::std::current_exception());
     }
+    func->m_state.store(async_state_finished, ::std::memory_order_release);
   }
 
 void
@@ -126,6 +128,7 @@ insert(uptr<Abstract_Async_Function>&& ufunc)
 
     // Insert the function.
     worker.queue.emplace_back(func);
+    func->m_state.store(async_state_pending, ::std::memory_order_relaxed);
     worker.avail.notify_one();
     return func;
   }

@@ -15,13 +15,13 @@ class Abstract_Async_Function
 
   private:
     uintptr_t m_key;
-    ::std::atomic<bool> m_finished;
+    ::std::atomic<Async_State> m_state;
 
   public:
     explicit
     Abstract_Async_Function(uintptr_t key)
     noexcept
-      : m_key(key), m_finished(false)
+      : m_key(key), m_state(async_state_initial)
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Async_Function);
@@ -47,10 +47,10 @@ class Abstract_Async_Function
   public:
     // Checks whether a worker has finished this function.
     ROCKET_PURE_FUNCTION
-    bool
-    finished()
+    Async_State
+    state()
     const noexcept
-      { return this->m_finished.load(::std::memory_order_acquire);  }
+      { return this->m_state.load(::std::memory_order_acquire);  }
   };
 
 }  // namespace poseidon
