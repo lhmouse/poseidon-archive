@@ -131,7 +131,14 @@ do_thread_loop(void* /*param*/)
 
     // Execute the timer procedure.
     // The argument is a snapshot of the monotonic clock, not its real-time value.
-    timer->do_on_async_timer(now);
+    try {
+      timer->do_on_async_timer(now);
+    }
+    catch(exception& stdex) {
+      POSEIDON_LOG_WARN("Exception thrown from timer: $1\n"
+                        "[timer class `$2`]",
+                        stdex.what(), typeid(*timer).name());
+    }
   }
 
 void
