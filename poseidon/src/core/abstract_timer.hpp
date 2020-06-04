@@ -15,13 +15,16 @@ class Abstract_Timer
 
   private:
     mutable Si_Mutex m_mutex;
+    ::std::atomic<uint64_t> m_count;
+
     int64_t m_first;  // absolute time in milliseconds
     int64_t m_period;  // period in milliseconds
 
   public:
     Abstract_Timer(int64_t first, int64_t period)
     noexcept
-      : m_first(first), m_period(period)
+      : m_count(0),
+        m_first(first), m_period(period)
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Timer);
@@ -36,6 +39,13 @@ class Abstract_Timer
       = 0;
 
   public:
+    // Gets the counter.
+    ROCKET_PURE_FUNCTION
+    uint64_t
+    count()
+    const noexcept
+      { return this->m_count.load(::std::memory_order_acq_rel);  }
+
     // Resets the first triggered time and the period.
     void
     reset(int64_t first, int64_t period)

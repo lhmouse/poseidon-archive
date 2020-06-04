@@ -138,6 +138,7 @@ do_thread_loop(void* /*param*/)
                         "[timer class `$2`]",
                         stdex.what(), typeid(*timer).name());
     }
+    timer->m_count.fetch_add(1, ::std::memory_order_release);
   }
 
 void
