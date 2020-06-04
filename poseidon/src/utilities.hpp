@@ -96,6 +96,7 @@ create_async_timer(int64_t next, int64_t period, FuncT&& func)
       {
         typename ::std::decay<FuncT>::type m_func;
 
+        explicit
         Concrete_Timer(int64_t next, int64_t period, FuncT&& func)
           : Abstract_Timer(next, period),
             m_func(::std::forward<FuncT>(func))
@@ -109,7 +110,7 @@ create_async_timer(int64_t next, int64_t period, FuncT&& func)
 
     // Allocate an abstract timer and insert it.
     auto timer = ::rocket::make_unique<Concrete_Timer>(next, period,
-                                                       ::std::forward<FuncT>(func));
+                                           ::std::forward<FuncT>(func));
     return Timer_Driver::insert(::std::move(timer));
   }
 
