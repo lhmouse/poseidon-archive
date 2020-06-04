@@ -112,7 +112,7 @@ do_thread_loop(void* /*param*/)
       if(!timer.unique()) {
         // Process this timer!
         Si_Mutex::unique_lock tlock(timer->m_mutex);
-        auto period = timer->m_period;
+        int64_t period = timer->m_period;
         tlock.unlock();
 
         if(period > 0) {
@@ -173,7 +173,7 @@ insert(uptr<Abstract_Timer>&& utimer)
 
     // Get the next trigger time.
     // The timer is considered to be owned uniquely, so there is no need to lock it.
-    auto next = do_get_time(timer->m_first);
+    int64_t next = do_get_time(timer->m_first);
 
     // Lock priority queue for modification.
     Si_Mutex::unique_lock lock(self->m_pq_mutex);
@@ -202,7 +202,7 @@ noexcept
 
     // Get the next trigger time.
     Si_Mutex::unique_lock tlock(ctimer->m_mutex);
-    auto next = do_get_time(ctimer->m_first);
+    int64_t next = do_get_time(ctimer->m_first);
     tlock.unlock();
 
     // Update the element in place.
