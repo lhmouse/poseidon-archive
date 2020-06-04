@@ -85,29 +85,10 @@ class Promise
         return futp;
       }
 
-    // Value-initializes a value into the associated future.
-    // If the future is not empty, `false` is returned, and there is no effect.
-    bool
-    set_value()
-      {
-        auto futp = this->m_futp.get();
-        if(!futp)
-          this->do_throw_no_future();
-
-        Si_Mutex::unique_lock lock(futp->m_mutex);
-        if(futp->m_stor.index() != future_state_empty)
-          return false;
-
-        // Construct a new value in the future.
-        futp->m_stor.template emplace<future_state_value>();
-        return true;
-      }
-
     // Puts a value into the associated future.
     // If the future is not empty, `false` is returned, and there is no effect.
     template<typename... ParamsT,
-    ROCKET_DISABLE_IF(::std::is_void<typename ::std::conditional<
-                               sizeof...(ParamsT), ValueT, ValueT>::type>::value)>
+    ROCKET_DISABLE_IF(::std::is_void<ValueT>::type && sizeof...(ParamsT))>
     bool
     set_value(ParamsT&&... params)
       {
