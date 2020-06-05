@@ -19,10 +19,8 @@ reset(int64_t first, int64_t period)
 noexcept
   {
     // Update data members.
-    Si_Mutex::unique_lock lock(this->m_mutex);
-    this->m_first = first;
-    this->m_period = period;
-    lock.unlock();
+    this->m_first.store(first, ::std::memory_order_relaxed);
+    this->m_period.store(period, ::std::memory_order_relaxed);
 
     // Notify the driver about the update.
     Timer_Driver::invalidate_internal(this);

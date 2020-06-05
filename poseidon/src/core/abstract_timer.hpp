@@ -14,17 +14,15 @@ class Abstract_Timer
     friend Timer_Driver;
 
   private:
-    mutable Si_Mutex m_mutex;
+    ::std::atomic<int64_t> m_first;  // absolute time in milliseconds
+    ::std::atomic<int64_t> m_period;  // period in milliseconds
     ::std::atomic<uint64_t> m_count;
-
-    int64_t m_first;  // absolute time in milliseconds
-    int64_t m_period;  // period in milliseconds
 
   public:
     Abstract_Timer(int64_t first, int64_t period)
     noexcept
-      : m_count(0),
-        m_first(first), m_period(period)
+      : m_first(first), m_period(period),
+        m_count(0)
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Timer);

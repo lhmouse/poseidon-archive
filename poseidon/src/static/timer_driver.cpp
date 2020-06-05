@@ -111,10 +111,7 @@ do_thread_loop(void* /*param*/)
       timer = ::std::move(self->m_pq.back().timer);
       if(!timer.unique()) {
         // Process this timer!
-        Si_Mutex::unique_lock tlock(timer->m_mutex);
-        int64_t period = timer->m_period;
-        tlock.unlock();
-
+        int64_t period = timer->m_period.load(::std::memory_order_relaxed);
         if(period > 0) {
           // The timer is periodic. Insert it back.
           self->m_pq.back().timer = timer;
@@ -196,17 +193,11 @@ noexcept
     // Don't do anything if the timer does not exist in the queue.
     PQ_Element* qelem;
     if(::std::none_of(self->m_pq.begin(), self->m_pq.end(),
-                      [&](PQ_Element& r)
-                        { return (qelem = &r)->timer.get() == ctimer;  }))
+                      [&](PQ_Element& r) { return (qelem = &r)->timer.get() == ctimer;  }))
       return false;
 
-    // Get the next trigger time.
-    Si_Mutex::unique_lock tlock(ctimer->m_mutex);
-    int64_t next = do_get_time(ctimer->m_first);
-    tlock.unlock();
-
     // Update the element in place.
-    qelem->next = next;
+    qelem->next = do_get_time(ctimer->m_first.load(::std::memory_order_relaxed));
     ::std::make_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     self->m_pq_avail.notify_one();
     return true;
