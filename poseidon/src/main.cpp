@@ -7,6 +7,7 @@
 #include "static/async_logger.hpp"
 #include "static/timer_driver.hpp"
 #include "static/network_driver.hpp"
+#include "static/worker_pool.hpp"
 #include "utilities.hpp"
 #include <locale.h>
 #include <unistd.h>
@@ -272,6 +273,7 @@ main(int argc, char** argv)
     Main_Config::reload();
     Async_Logger::reload();
     Network_Driver::reload();
+    Worker_Pool::reload();
 
     // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)

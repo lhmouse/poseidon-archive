@@ -18,12 +18,14 @@ class Worker_Pool
     do_thread_loop(void* param);
 
   public:
-    // Initializes the thread pool.
-    // Note this doesn't create threads. They are created only when needed.
-    // The pool cannot be resized.
+    // Reloads settings from main config.
+    // If this function fails, an exception is thrown, and there is no effect.
+    // Note that the number of threads is set upon the first call and cannot be
+    // changed thereafter.
+    // This function is thread-safe.
     static
     void
-    start();
+    reload();
 
     // Retrieves the maximum number of worker threads.
     // This function is thread-safe.

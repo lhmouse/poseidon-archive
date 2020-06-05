@@ -75,19 +75,17 @@ do_thread_loop(void* param)
 
 void
 Worker_Pool::
-start()
+reload()
   {
-    if(self->m_workers.size())
-      return;
-
-    // Get the max number of threads.
+    // Load worker settings into temporary objects.
     auto file = Main_Config::copy();
-
     size_t thread_count = do_get_size_config(file, "thread_count", 256, 1);
-    POSEIDON_LOG_DEBUG("Resizing thread pool to `$1`", thread_count);
 
     // Create the pool without creating threads.
-    self->m_workers = ::std::vector<Worker>(thread_count);
+    // Note the pool cannot be resized, so we only have to do this once.
+    // No locking is needed.
+    if(self->m_workers.empty())
+      self->m_workers = ::std::vector<Worker>(thread_count);
   }
 
 size_t
