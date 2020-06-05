@@ -32,13 +32,13 @@ class Worker_Pool
     thread_count()
     noexcept;
 
-    // Inserts an asynchronous function.
+    // Inserts an asynchronous job.
     // Functions with the same key will be delivered to the same worker thread.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static
-    rcptr<Abstract_Async_Function>
-    insert(uptr<Abstract_Async_Function>&& ufunc);
+    rcptr<Abstract_Async_Job>
+    insert(uptr<Abstract_Async_Job>&& ufunc);
   };
 
 }  // namespace poseidon

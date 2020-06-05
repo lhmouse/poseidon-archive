@@ -1,15 +1,15 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_ABSTRACT_ASYNC_FUNCTION_HPP_
-#define POSEIDON_CORE_ABSTRACT_ASYNC_FUNCTION_HPP_
+#ifndef POSEIDON_CORE_ABSTRACT_ASYNC_JOB_HPP_
+#define POSEIDON_CORE_ABSTRACT_ASYNC_JOB_HPP_
 
 #include "../fwd.hpp"
 
 namespace poseidon {
 
-class Abstract_Async_Function
-  : public ::asteria::Rcfwd<Abstract_Async_Function>
+class Abstract_Async_Job
+  : public ::asteria::Rcfwd<Abstract_Async_Job>
   {
     friend Worker_Pool;
 
@@ -19,17 +19,17 @@ class Abstract_Async_Function
 
   public:
     explicit
-    Abstract_Async_Function(uintptr_t key)
+    Abstract_Async_Job(uintptr_t key)
     noexcept
       : m_key(key), m_state(async_state_initial)
       { }
 
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Async_Function);
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Async_Job);
 
   protected:
-    // Executes this function and stores a value somewhere.
+    // Executes this job and satisfies some promise of the derived class.
     // This function is called only once. No matter whether it returns or
-    // throws an exception, this object is deleted from the worker queue.
+    // throws an exception, this job is deleted from the worker queue.
     virtual
     void
     do_execute()

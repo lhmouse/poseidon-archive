@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "worker_pool.hpp"
 #include "main_config.hpp"
-#include "../core/abstract_async_function.hpp"
+#include "../core/abstract_async_job.hpp"
 #include "../core/config_file.hpp"
 #include "../xutilities.hpp"
 
@@ -32,7 +32,7 @@ struct Worker
     Si_Mutex mutex;
     Cond_Var avail;
     ::pthread_t thread;
-    ::std::deque<rcptr<Abstract_Async_Function>> queue;
+    ::std::deque<rcptr<Abstract_Async_Job>> queue;
   };
 
 }  // namespace
@@ -58,13 +58,13 @@ do_thread_loop(void* param)
     lock.unlock();
 
     // Execute the function.
-    // See comments in 'abstract_async_function.hpp' for details.
+    // See comments in 'abstract_async_job.hpp' for details.
     func->m_state.store(async_state_running, ::std::memory_order_relaxed);
     try {
       func->do_execute();
     }
     catch(exception& stdex) {
-      POSEIDON_LOG_WARN("Exception thrown from asynchronous function: $1\n"
+      POSEIDON_LOG_WARN("Exception thrown from asynchronous job: $1\n"
                         "[function class `$2`]",
                         stdex.what(), typeid(*func).name());
 
@@ -98,12 +98,12 @@ noexcept
     return self->m_workers.size();
   }
 
-rcptr<Abstract_Async_Function>
+rcptr<Abstract_Async_Job>
 Worker_Pool::
-insert(uptr<Abstract_Async_Function>&& ufunc)
+insert(uptr<Abstract_Async_Job>&& ufunc)
   {
     // Take ownership of `ufunc`.
-    rcptr<Abstract_Async_Function> func(ufunc.release());
+    rcptr<Abstract_Async_Job> func(ufunc.release());
     if(!func)
       POSEIDON_THROW("null function pointer not valid");
 

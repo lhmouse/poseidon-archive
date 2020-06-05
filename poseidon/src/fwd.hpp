@@ -126,7 +126,7 @@ static_assert(sizeof(unique_FD) == sizeof(int));
 // Core
 class Config_File;
 class Abstract_Timer;
-class Abstract_Async_Function;
+class Abstract_Async_Job;
 
 template<typename V> class Promise;
 template<typename V> class Future;
