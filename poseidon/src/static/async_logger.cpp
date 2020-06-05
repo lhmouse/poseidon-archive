@@ -343,6 +343,9 @@ Async_Logger::
 is_enabled(Log_Level level)
 noexcept
   {
+    if(!self->m_thread)
+      return false;
+
     // Lock config for reading.
     Si_Mutex::unique_lock lock(self->m_conf_mutex);
 
