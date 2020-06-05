@@ -45,7 +45,7 @@ class Abstract_Async_Job
       = 0;
 
   public:
-    // Checks whether a worker has finished this function.
+    // Gets the asynchrnous state, which is set by worker threads.
     ROCKET_PURE_FUNCTION
     Async_State
     state()
