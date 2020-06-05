@@ -187,7 +187,7 @@ enum Async_State : uint8_t
   {
     async_state_initial   = 0,
     async_state_pending   = 1,
-    async_state_started   = 2,
+    async_state_running   = 2,
     async_state_finished  = 3,
   };
 

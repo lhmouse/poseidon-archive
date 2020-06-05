@@ -59,7 +59,7 @@ do_thread_loop(void* param)
 
     // Execute the function.
     // See comments in 'abstract_async_function.hpp' for details.
-    func->m_state.store(async_state_started, ::std::memory_order_relaxed);
+    func->m_state.store(async_state_running, ::std::memory_order_relaxed);
     try {
       func->do_execute();
     }
