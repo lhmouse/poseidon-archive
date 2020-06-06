@@ -32,22 +32,22 @@ class Abstract_TLS_Socket
 
     // Calls `::SSL_set_connect_state()`.
     void
-    do_stream_preconnect_nolock()
+    do_stream_preconnect_unlocked()
     final;
 
     // Calls `::SSL_read()`.
     IO_Result
-    do_stream_read_nolock(void* data, size_t size)
+    do_stream_read_unlocked(void* data, size_t size)
     final;
 
     // Calls `::SSL_write()`.
     IO_Result
-    do_stream_write_nolock(const void* data, size_t size)
+    do_stream_write_unlocked(const void* data, size_t size)
     final;
 
     // Calls `::SSL_shutdown()`.
     IO_Result
-    do_stream_preshutdown_nolock()
+    do_stream_preshutdown_unlocked()
     final;
 
   protected:

@@ -29,12 +29,12 @@ class Abstract_Stream_Socket
   private:
     inline
     IO_Result
-    do_call_stream_preshutdown_nolock()
+    do_call_stream_preshutdown_unlocked()
     noexcept;
 
     inline
     IO_Result
-    do_async_shutdown_nolock()
+    do_async_shutdown_unlocked()
     noexcept;
 
     // Reads some data.
@@ -70,7 +70,7 @@ class Abstract_Stream_Socket
     // This function is not called on incoming connections.
     virtual
     void
-    do_stream_preconnect_nolock()
+    do_stream_preconnect_unlocked()
       = 0;
 
     // Performs read operation.
@@ -78,7 +78,7 @@ class Abstract_Stream_Socket
     // been locked by its caller. No synchronization is required.
     virtual
     IO_Result
-    do_stream_read_nolock(void* data, size_t size)
+    do_stream_read_unlocked(void* data, size_t size)
       = 0;
 
     // Performs write operation.
@@ -86,7 +86,7 @@ class Abstract_Stream_Socket
     // been locked by its caller. No synchronization is required.
     virtual
     IO_Result
-    do_stream_write_nolock(const void* data, size_t size)
+    do_stream_write_unlocked(const void* data, size_t size)
       = 0;
 
     // Performs shutdown preparation.
@@ -96,7 +96,7 @@ class Abstract_Stream_Socket
     // either completed or failed due to some irrecoverable errors.
     virtual
     IO_Result
-    do_stream_preshutdown_nolock()
+    do_stream_preshutdown_unlocked()
       = 0;
 
     // Notifies a full-duplex channel has been established.

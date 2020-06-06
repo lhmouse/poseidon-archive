@@ -29,7 +29,7 @@ class Abstract_UDP_Socket
   private:
     inline
     IO_Result
-    do_async_shutdown_nolock()
+    do_async_shutdown_unlocked()
     noexcept;
 
     // Reads some data.

@@ -69,14 +69,14 @@ do_set_common_options()
 
 void
 Abstract_TLS_Socket::
-do_stream_preconnect_nolock()
+do_stream_preconnect_unlocked()
   {
     ::SSL_set_connect_state(this->m_ssl);
   }
 
 IO_Result
 Abstract_TLS_Socket::
-do_stream_read_nolock(void* data, size_t size)
+do_stream_read_unlocked(void* data, size_t size)
   {
     int nread = ::SSL_read(this->m_ssl, data,
                      static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
@@ -88,7 +88,7 @@ do_stream_read_nolock(void* data, size_t size)
 
 IO_Result
 Abstract_TLS_Socket::
-do_stream_write_nolock(const void* data, size_t size)
+do_stream_write_unlocked(const void* data, size_t size)
   {
     int nwritten = ::SSL_write(this->m_ssl, data,
                         static_cast<int>(::rocket::min(size, UINT_MAX / 2)));
@@ -100,7 +100,7 @@ do_stream_write_nolock(const void* data, size_t size)
 
 IO_Result
 Abstract_TLS_Socket::
-do_stream_preshutdown_nolock()
+do_stream_preshutdown_unlocked()
   {
     int ret = ::SSL_shutdown(this->m_ssl);
     if(ret == 0)

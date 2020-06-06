@@ -27,23 +27,23 @@ class Abstract_TCP_Socket
 
     // Does nothing as no preparation is needed.
     void
-    do_stream_preconnect_nolock()
+    do_stream_preconnect_unlocked()
     final;
 
     // Calls `::read()`.
     IO_Result
-    do_stream_read_nolock(void* data, size_t size)
+    do_stream_read_unlocked(void* data, size_t size)
     final;
 
     // Calls `::write()`.
     IO_Result
-    do_stream_write_nolock(const void* data, size_t size)
+    do_stream_write_unlocked(const void* data, size_t size)
     final;
 
     // Does nothing as no preparation is needed.
     // This function always returns `io_result_eof`.
     IO_Result
-    do_stream_preshutdown_nolock()
+    do_stream_preshutdown_unlocked()
     final;
 
   protected:

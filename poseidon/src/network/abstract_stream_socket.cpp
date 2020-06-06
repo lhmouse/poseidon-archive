@@ -16,11 +16,11 @@ Abstract_Stream_Socket::
 
 IO_Result
 Abstract_Stream_Socket::
-do_call_stream_preshutdown_nolock()
+do_call_stream_preshutdown_unlocked()
 noexcept
   try {
-    // Call `do_stream_preshutdown_nolock()`, ignoring any exeptions.
-    return this->do_stream_preshutdown_nolock();
+    // Call `do_stream_preshutdown_unlocked()`, ignoring any exeptions.
+    return this->do_stream_preshutdown_unlocked();
   }
   catch(const exception& stdex) {
     POSEIDON_LOG_WARN("Failed to perform graceful shutdown on stream socket: $1\n"
@@ -31,7 +31,7 @@ noexcept
 
 IO_Result
 Abstract_Stream_Socket::
-do_async_shutdown_nolock()
+do_async_shutdown_unlocked()
 noexcept
   {
     switch(this->m_cstate) {
@@ -53,7 +53,7 @@ noexcept
         }
 
         // Wait for shutdown.
-        auto io_res = this->do_call_stream_preshutdown_nolock();
+        auto io_res = this->do_call_stream_preshutdown_unlocked();
         if(io_res != io_result_eof) {
           ::shutdown(this->get_fd(), SHUT_RD);
           this->m_cstate = connection_state_closing;
@@ -74,7 +74,7 @@ noexcept
           return io_result_not_eof;
 
         // Wait for shutdown.
-        auto io_res = this->do_call_stream_preshutdown_nolock();
+        auto io_res = this->do_call_stream_preshutdown_unlocked();
         if(io_res != io_result_eof)
           return io_res;
 
@@ -105,13 +105,13 @@ do_on_async_poll_read(Si_Mutex::unique_lock& lock, void* hint, size_t size)
       return io_result_eof;
 
     // Try reading some bytes.
-    auto io_res = this->do_stream_read_nolock(hint, size);
+    auto io_res = this->do_stream_read_unlocked(hint, size);
     if(io_res < 0)
       return io_res;
 
     if(io_res == io_result_eof) {
       POSEIDON_LOG_TRACE("End of stream encountered: $1", this);
-      this->do_async_shutdown_nolock();
+      this->do_async_shutdown_unlocked();
       return io_result_eof;
     }
 
@@ -168,10 +168,10 @@ do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* /*hint*/, size_t /*siz
         return io_result_eof;
 
       // Shut down the connection completely now.
-      return this->do_async_shutdown_nolock();
+      return this->do_async_shutdown_unlocked();
     }
 
-    auto io_res = this->do_stream_write_nolock(this->m_wqueue.data(), size);
+    auto io_res = this->do_stream_write_unlocked(this->m_wqueue.data(), size);
     if(io_res < 0)
       return io_res;
 
@@ -201,7 +201,7 @@ do_async_connect(const Socket_Address& addr)
       POSEIDON_THROW("another connection already in progress or established");
 
     // Initiate the connection.
-    this->do_stream_preconnect_nolock();
+    this->do_stream_preconnect_unlocked();
 
     // No matter whether `::connect()` succeeds or fails with `EINPROGRESS`, the current
     // socket is set to the CONNECTING state.
@@ -257,7 +257,7 @@ noexcept
       return false;
 
     // Initiate asynchronous shutdown.
-    this->do_async_shutdown_nolock();
+    this->do_async_shutdown_unlocked();
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.

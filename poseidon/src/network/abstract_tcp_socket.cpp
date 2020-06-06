@@ -43,13 +43,13 @@ do_set_common_options()
 
 void
 Abstract_TCP_Socket::
-do_stream_preconnect_nolock()
+do_stream_preconnect_unlocked()
   {
   }
 
 IO_Result
 Abstract_TCP_Socket::
-do_stream_read_nolock(void* data, size_t size)
+do_stream_read_unlocked(void* data, size_t size)
   {
     ::ssize_t nread = ::read(this->get_fd(), data, size);
     if(nread > 0)
@@ -63,7 +63,7 @@ do_stream_read_nolock(void* data, size_t size)
 
 IO_Result
 Abstract_TCP_Socket::
-do_stream_write_nolock(const void* data, size_t size)
+do_stream_write_unlocked(const void* data, size_t size)
   {
     ::ssize_t nwritten = ::write(this->get_fd(), data, size);
     if(nwritten > 0)
@@ -77,7 +77,7 @@ do_stream_write_nolock(const void* data, size_t size)
 
 IO_Result
 Abstract_TCP_Socket::
-do_stream_preshutdown_nolock()
+do_stream_preshutdown_unlocked()
   {
     return io_result_eof;
   }

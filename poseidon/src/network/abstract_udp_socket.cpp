@@ -63,7 +63,7 @@ Abstract_UDP_Socket::
 
 IO_Result
 Abstract_UDP_Socket::
-do_async_shutdown_nolock()
+do_async_shutdown_unlocked()
 noexcept
   {
     switch(this->m_cstate) {
@@ -186,7 +186,7 @@ do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* /*hint*/, size_t /*siz
         return io_result_eof;
 
       // Shut down the connection completely now.
-      return this->do_async_shutdown_nolock();
+      return this->do_async_shutdown_unlocked();
     }
 
     // Get the destination address.
@@ -438,7 +438,7 @@ noexcept
       return false;
 
     // Initiate asynchronous shutdown.
-    this->do_async_shutdown_nolock();
+    this->do_async_shutdown_unlocked();
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.

@@ -34,7 +34,7 @@ class Future
   private:
     [[noreturn]]
     void
-    do_throw_no_value_nolock()
+    do_throw_no_value_unlocked()
     const
       {
         // Check whether this future is empty.
@@ -86,7 +86,7 @@ class Future
       {
         Si_Mutex::unique_lock lock(this->m_mutex);
         if(this->m_stor.index() != future_state_value)
-          this->do_throw_no_value_nolock();
+          this->do_throw_no_value_unlocked();
 
         // The cast is necessary when `ValueT` is `void`.
         return static_cast<typename ::std::add_lvalue_reference<const ValueT>::type>(
@@ -99,7 +99,7 @@ class Future
       {
         Si_Mutex::unique_lock lock(this->m_mutex);
         if(this->m_stor.index() != future_state_value)
-          this->do_throw_no_value_nolock();
+          this->do_throw_no_value_unlocked();
 
         // The cast is necessary when `ValueT` is `void`.
         return static_cast<typename ::std::add_lvalue_reference<const ValueT>::type>(
@@ -111,7 +111,7 @@ class Future
       {
         Si_Mutex::unique_lock lock(this->m_mutex);
         if(this->m_stor.index() != future_state_value)
-          this->do_throw_no_value_nolock();
+          this->do_throw_no_value_unlocked();
 
         // The cast is necessary when `ValueT` is `void`.
         return static_cast<typename ::std::add_lvalue_reference<ValueT>::type>(
@@ -123,7 +123,7 @@ class Future
       {
         Si_Mutex::unique_lock lock(this->m_mutex);
         if(this->m_stor.index() != future_state_value)
-          this->do_throw_no_value_nolock();
+          this->do_throw_no_value_unlocked();
 
         // The cast is necessary when `ValueT` is `void`.
         return static_cast<typename ::std::add_rvalue_reference<ValueT>::type>(
