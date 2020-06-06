@@ -11,6 +11,7 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/config_file.hpp  \
   %reldir%/core/abstract_timer.hpp  \
   %reldir%/core/promise.hpp  \
+  %reldir%/core/abstract_future.hpp  \
   %reldir%/core/future.hpp  \
   %reldir%/core/abstract_async_job.hpp  \
   ${NOTHING}
@@ -50,6 +51,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/xutilities.cpp  \
   %reldir%/core/config_file.cpp  \
   %reldir%/core/abstract_timer.cpp  \
+  %reldir%/core/abstract_future.cpp  \
   %reldir%/core/abstract_async_job.cpp  \
   %reldir%/network/openssl.cpp  \
   %reldir%/network/socket_address.cpp  \

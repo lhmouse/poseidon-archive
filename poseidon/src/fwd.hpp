@@ -127,6 +127,7 @@ static_assert(sizeof(unique_FD) == sizeof(int));
 class Config_File;
 class Abstract_Timer;
 class Abstract_Async_Job;
+class Abstract_Future;
 
 template<typename V> class Promise;
 template<typename V> class Future;

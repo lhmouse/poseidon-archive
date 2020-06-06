@@ -4,19 +4,18 @@
 #ifndef POSEIDON_CORE_FUTURE_HPP_
 #define POSEIDON_CORE_FUTURE_HPP_
 
-#include "../fwd.hpp"
+#include "abstract_future.hpp"
 
 namespace poseidon {
 
 template<typename ValueT>
 class Future
-  : public ::asteria::Rcfwd<Future<ValueT>>
+  : public ::asteria::Rcfwd<Future<ValueT>>,
+    public Abstract_Future
   {
     friend Promise<ValueT>;
 
   private:
-    mutable Si_Mutex m_mutex;
-
     ::rocket::variant<
           ::rocket::nullopt_t,    // future_state_empty
           typename ::std::conditional<
@@ -73,7 +72,7 @@ class Future
     ROCKET_PURE_FUNCTION
     Future_State
     state()
-    const noexcept
+    const noexcept override
       {
         Si_Mutex::unique_lock lock(this->m_mutex);
         return static_cast<Future_State>(this->m_stor.index());
