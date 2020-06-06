@@ -10,7 +10,8 @@
 namespace poseidon {
 
 class Abstract_TCP_Client_Socket
-  : public Abstract_TCP_Socket
+  : public ::asteria::Rcfwd<Abstract_TCP_Client_Socket>,
+    public Abstract_TCP_Socket
   {
   public:
     explicit

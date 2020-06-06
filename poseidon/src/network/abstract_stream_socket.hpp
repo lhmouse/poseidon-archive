@@ -10,7 +10,8 @@
 namespace poseidon {
 
 class Abstract_Stream_Socket
-  : public Abstract_Socket
+  : public ::asteria::Rcfwd<Abstract_Stream_Socket>,
+    public Abstract_Socket
   {
   private:
     mutable Si_Mutex m_mutex;

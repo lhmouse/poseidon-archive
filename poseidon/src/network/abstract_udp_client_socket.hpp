@@ -11,7 +11,8 @@
 namespace poseidon {
 
 class Abstract_UDP_Client_Socket
-  : public Abstract_UDP_Socket
+  : public ::asteria::Rcfwd<Abstract_UDP_Client_Socket>,
+    public Abstract_UDP_Socket
   {
   public:
     explicit

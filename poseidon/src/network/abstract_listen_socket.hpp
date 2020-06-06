@@ -9,7 +9,8 @@
 namespace poseidon {
 
 class Abstract_Listen_Socket
-  : public Abstract_Socket
+  : public ::asteria::Rcfwd<Abstract_Listen_Socket>,
+    public Abstract_Socket
   {
   public:
     explicit

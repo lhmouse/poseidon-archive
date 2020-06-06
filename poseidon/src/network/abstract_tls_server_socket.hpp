@@ -12,7 +12,8 @@
 namespace poseidon {
 
 class Abstract_TLS_Server_Socket
-  : public Abstract_Listen_Socket
+  : public ::asteria::Rcfwd<Abstract_TLS_Server_Socket>,
+    public Abstract_Listen_Socket
   {
   private:
     unique_SSL_CTX m_ctx;

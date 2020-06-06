@@ -11,7 +11,8 @@
 namespace poseidon {
 
 class Abstract_TCP_Server_Socket
-  : public Abstract_Listen_Socket
+  : public ::asteria::Rcfwd<Abstract_TCP_Server_Socket>,
+    public Abstract_Listen_Socket
   {
   public:
     explicit

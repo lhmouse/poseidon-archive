@@ -10,7 +10,8 @@
 namespace poseidon {
 
 class Abstract_TLS_Socket
-  : public Abstract_Stream_Socket
+  : public ::asteria::Rcfwd<Abstract_TLS_Socket>,
+    public Abstract_Stream_Socket
   {
   private:
     unique_SSL m_ssl;
