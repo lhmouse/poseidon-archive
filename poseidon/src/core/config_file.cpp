@@ -87,7 +87,7 @@ do_parse_value_nonrecursive(::asteria::Token_Stream& tstrm)
     ::asteria::Value value;
 
     // Implement a non-recursive descent parser.
-    cow_vector<Xparse> stack;
+    ::std::vector<Xparse> stack;
 
     for(;;) {
       // Accept a value. No other things such as closed brackets are allowed.
@@ -246,7 +246,7 @@ do_parse_value_nonrecursive(::asteria::Token_Stream& tstrm)
           return value;
 
         if(stack.back().index() == 0) {
-          auto& ctxa = stack.mut_back().as<0>();
+          auto& ctxa = stack.back().as<0>();
           ctxa.arr.emplace_back(::std::move(value));
 
           // Check for termination.
@@ -265,7 +265,7 @@ do_parse_value_nonrecursive(::asteria::Token_Stream& tstrm)
           value = ::std::move(ctxa.arr);
         }
         else {
-          auto& ctxo = stack.mut_back().as<1>();
+          auto& ctxo = stack.back().as<1>();
           do_insert_unique(ctxo.obj, ::std::move(ctxo.key), ::std::move(value));
 
           // Check for termination.

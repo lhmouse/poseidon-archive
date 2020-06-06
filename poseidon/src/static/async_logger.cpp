@@ -208,7 +208,7 @@ do_thread_loop(void* /*param*/)
     lock.unlock();
 
     // Get list of streams to write.
-    sso_vector<::rocket::unique_posix_fd, 4> strms;
+    ::rocket::static_vector<::rocket::unique_posix_fd, 4> strms;
 
     if(conf.out_fd != -1)
       strms.emplace_back(conf.out_fd, nullptr);  // don't close
