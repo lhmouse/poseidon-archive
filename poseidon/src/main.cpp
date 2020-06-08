@@ -94,7 +94,13 @@ Report bugs to <%s>.
   }
 
 // We want to detect Ctrl-C.
-::std::atomic<bool> exit_now;
+::std::atomic<int> exit_sig;
+
+void
+do_set_exit_sig(int sig)
+  {
+    exit_sig.store(sig, ::std::memory_order_relaxed);
+  }
 
 void
 do_trap_exit_signal(int sig)
@@ -102,7 +108,7 @@ noexcept
   {
     // Trap Ctrl-C. Failure to set the signal handler is ignored.
     struct ::sigaction sigx = { };
-    sigx.sa_handler = [](int) { exit_now = 1;  };
+    sigx.sa_handler = do_set_exit_sig;
     ::sigaction(sig, &sigx, nullptr);
   }
 
@@ -282,6 +288,8 @@ main(int argc, char** argv)
                        "[`chdir()` failed: $1]",
                        noadl::format_errno(errno));
 
+    const auto pid = ::getpid();
+
     // Set name of the main thread. Failure to set the name is ignored.
     ::pthread_setname_np(::pthread_self(), "poseidon");
 
@@ -297,27 +305,26 @@ main(int argc, char** argv)
     // Ignore `SIGPIPE` for good.
     ::signal(SIGPIPE, SIG_IGN);
 
-    // Start daemon threads.
+    // Start daemon threads and load add-ons.
+    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, pid);
+
     Async_Logger::start();
     Timer_Driver::start();
     Network_Driver::start();
 
-    // Load addons.
-    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
     for(const auto& path : do_get_addons()) {
       POSEIDON_LOG_INFO("Loading add-on: $1", path);
-
       if(::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE) == nullptr)
-        POSEIDON_THROW("could not load shared library '$1'\n"
+        POSEIDON_THROW("error loading add-on '$1'\n"
                        "[`dlopen()` failed: $2]",
                        path, ::dlerror());
-
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
     }
-    POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, ::getpid());
 
-    sleep(10000);
-    do_exit(exit_success, "interrupt\n");
+    POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, pid);
+
+    ::sleep(100000);
+    do_exit(exit_success);
   }
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
