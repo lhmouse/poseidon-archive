@@ -166,49 +166,12 @@ do_write_loop(int fd, const char* data, size_t size)
     return bp;
   }
 
-}  // namespace
-
-POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
-  {
-    // constant data
-    ::pthread_t m_thread;
-
-    // configuration
-    mutable Si_Mutex m_conf_mutex;
-    Level_Config_Array m_conf_levels;
-
-    // dynamic data
-    mutable Si_Mutex m_queue_mutex;
-    Cond_Var m_queue_avail;
-    ::std::deque<Entry> m_queue;
-  };
-
 void
-Async_Logger::
-do_thread_loop(void* /*param*/)
+do_write_log_entry(const Level_Config& conf, Entry&& entry)
   {
-    // Await an entry and pop it.
-    Si_Mutex::unique_lock lock(self->m_queue_mutex);
-    while(self->m_queue.empty())
-      self->m_queue_avail.wait(lock);
-
-    auto entry = ::std::move(self->m_queue.front());
-    self->m_queue.pop_front();
-    bool needs_sync = (entry.level < log_level_warn) || self->m_queue.empty();
-
-    // Get configuration for this level.
-    lock.assign(self->m_conf_mutex);
-    if(entry.level >= self->m_conf_levels.size())
-      return;
-
-    const auto conf = self->m_conf_levels[entry.level];
-    const auto& names = s_level_names[entry.level];
-
-    // Leave critical section.
-    lock.unlock();
-
     // Get list of streams to write.
     ::rocket::static_vector<::rocket::unique_posix_fd, 4> strms;
+    const auto& names = s_level_names[entry.level];
 
     if(conf.out_fd != -1)
       strms.emplace_back(conf.out_fd, nullptr);  // don't close
@@ -304,6 +267,48 @@ do_thread_loop(void* /*param*/)
     // Write data to all streams.
     for(const auto& fd : strms)
       do_write_loop(fd, str.data(), str.size());
+  }
+
+}  // namespace
+
+POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
+  {
+    // constant data
+    ::pthread_t m_thread;
+
+    // configuration
+    mutable Si_Mutex m_conf_mutex;
+    Level_Config_Array m_conf_levels;
+
+    // dynamic data
+    mutable Si_Mutex m_queue_mutex;
+    Cond_Var m_queue_avail;
+    ::std::deque<Entry> m_queue;
+  };
+
+void
+Async_Logger::
+do_thread_loop(void* /*param*/)
+  {
+    // Await an entry and pop it.
+    Si_Mutex::unique_lock lock(self->m_queue_mutex);
+    while(self->m_queue.empty())
+      self->m_queue_avail.wait(lock);
+
+    auto entry = ::std::move(self->m_queue.front());
+    self->m_queue.pop_front();
+    bool needs_sync = (entry.level < log_level_warn) || self->m_queue.empty();
+
+    // Get configuration for this level.
+    lock.assign(self->m_conf_mutex);
+    if(entry.level >= self->m_conf_levels.size())
+      return;
+
+    const auto conf = self->m_conf_levels[entry.level];
+    lock.unlock();
+
+    // Write this entry.
+    do_write_log_entry(conf, ::std::move(entry));
 
     if(needs_sync)
       ::sync();
@@ -343,9 +348,6 @@ Async_Logger::
 is_enabled(Log_Level level)
 noexcept
   {
-    if(!self->m_thread)
-      return false;
-
     // Lock config for reading.
     Si_Mutex::unique_lock lock(self->m_conf_mutex);
 
@@ -379,6 +381,16 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
     Entry entry = { level, file, line, func, ::std::move(text), "", 0 };
     ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
     entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
+
+    if(ROCKET_UNEXPECT(!self->m_thread)) {
+      // If the logger thread has not been created, write it immediately.
+      if(entry.level >= self->m_conf_levels.size())
+        return 0;
+
+      const auto& conf = self->m_conf_levels[entry.level];
+      do_write_log_entry(conf, ::std::move(entry));
+      return 1;
+    }
 
     // Push the element.
     Si_Mutex::unique_lock lock(self->m_queue_mutex);
