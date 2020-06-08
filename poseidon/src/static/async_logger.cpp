@@ -11,29 +11,12 @@
 namespace poseidon {
 namespace {
 
-struct Level_Name
-  {
-    char conf_name[8];
-    char fmt_name[8];
-  }
-constexpr s_level_names[] =
-  {
-    { "fatal",  " FATAL "  },
-    { "error",  " ERROR "  },
-    { "warn",   " WARN  "  },
-    { "info",   " INFO  "  },
-    { "debug",  " DEBUG "  },
-    { "trace",  " TRACE "  },
-  };
-
 struct Level_Config
   {
     cow_string color;
     int out_fd = -1;
     cow_string out_path;
   };
-
-using Level_Config_Array = array<Level_Config, ::rocket::countof(s_level_names)>;
 
 void
 do_load_level_config(Level_Config& conf, const Config_File& file, const char* name)
@@ -141,6 +124,23 @@ do_end_color(tinyfmt& fmt, const Level_Config& conf)
     fmt << "\x1B[0m";
     return true;
   }
+
+struct Level_Name
+  {
+    char conf_name[8];
+    char fmt_name[8];
+  }
+constexpr s_level_names[] =
+  {
+    { "fatal",  " FATAL "  },
+    { "error",  " ERROR "  },
+    { "warn",   " WARN  "  },
+    { "info",   " INFO  "  },
+    { "debug",  " DEBUG "  },
+    { "trace",  " TRACE "  },
+  };
+
+using Level_Config_Array = array<Level_Config, ::rocket::countof(s_level_names)>;
 
 const char*
 do_write_loop(int fd, const char* data, size_t size)
