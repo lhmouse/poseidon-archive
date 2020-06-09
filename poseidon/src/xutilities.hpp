@@ -53,7 +53,6 @@ create_daemon_thread(const char* name, void* param = nullptr)
 
     // Set the thread name. Failure to set the name is ignored.
     ::pthread_setname_np(thr, name);
-
     return thr;
   }
 
