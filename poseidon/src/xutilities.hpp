@@ -20,6 +20,21 @@ create_daemon_thread(const char* name, void* param = nullptr)
     // This is the thread routine. It never returns.
     struct Thunk
       {
+        static
+        void
+        do_repeat(void* xparam)
+          try {
+            loopfnT(xparam);
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_ERROR("Caught exception: $1\n"
+                               "[exception class `$2`]\n"
+                               "[thrown from daemon thread loop function $3 (`$4`)]",
+                               stdex.what(),
+                               typeid(stdex).name(),
+                               loopfnT, typeid(loopfnT).name());
+          }
+
         [[noreturn]] static
         void*
         do_loop(void* xparam)
@@ -28,18 +43,8 @@ create_daemon_thread(const char* name, void* param = nullptr)
             ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
 
             // Execute `loopfnT` repeatedly. The thread never exits.
-            do
-              try {
-                loopfnT(xparam);
-              }
-              catch(exception& stdex) {
-                ::std::fprintf(stderr,
-                    "WARNING: daemon thread loop error: %s\n"
-                    "[exception `%s` thrown from %p (`%s`)]\n",
-                    stdex.what(), typeid(stdex).name(),
-                    reinterpret_cast<void*>(loopfnT), typeid(loopfnT).name());
-              }
-            while(true);
+            for(;;)
+              do_repeat(xparam);
           }
       };
 
