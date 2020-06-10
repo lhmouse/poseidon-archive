@@ -26,8 +26,9 @@ namespace noadl = poseidon;
 // Macros
 #define POSEIDON_STATIC_CLASS_DECLARE(C)  \
     private:  \
-      struct C##_self;  \
+      struct __attribute__((__visibility__("hidden"))) C##_self;  \
       static C##_self* const self;  \
+      \
       constexpr C() noexcept = default;  \
       C(const C&) = delete;  \
       C& operator=(const C&) = delete;  \
@@ -37,8 +38,10 @@ namespace noadl = poseidon;
     template<typename TmIkbXn1>  \
     ROCKET_ARTIFICIAL_FUNCTION static inline  \
     TmIkbXn1* C##_instance()  \
-      { static TmIkbXn1 instance[1] = { };  \
-        return instance;  }  \
+      {  \
+        static TmIkbXn1 instance[1] = { };  \
+        return instance;  \
+      }  \
     class C;  \
     struct C::C##_self* const C::self =  \
       C##_instance<struct C::C##_self>();  \
