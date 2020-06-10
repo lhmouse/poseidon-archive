@@ -14,6 +14,7 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/abstract_future.hpp  \
   %reldir%/core/future.hpp  \
   %reldir%/core/abstract_async_job.hpp  \
+  %reldir%/core/abstract_fiber.hpp  \
   ${NOTHING}
 
 include_poseidon_networkdir = ${includedir}/poseidon/network
@@ -42,6 +43,7 @@ include_poseidon_static_HEADERS =  \
   %reldir%/static/timer_driver.hpp  \
   %reldir%/static/network_driver.hpp  \
   %reldir%/static/worker_pool.hpp  \
+  %reldir%/static/fiber_scheduler.hpp  \
   ${NOTHING}
 
 lib_LTLIBRARIES += lib/libposeidon.la
@@ -53,6 +55,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_timer.cpp  \
   %reldir%/core/abstract_future.cpp  \
   %reldir%/core/abstract_async_job.cpp  \
+  %reldir%/core/abstract_fiber.cpp  \
   %reldir%/network/openssl.cpp  \
   %reldir%/network/socket_address.cpp  \
   %reldir%/network/abstract_socket.cpp  \
@@ -72,6 +75,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/static/timer_driver.cpp  \
   %reldir%/static/network_driver.cpp  \
   %reldir%/static/worker_pool.cpp  \
+  %reldir%/static/fiber_scheduler.cpp  \
   ${NOTHING}
 
 lib_libposeidon_la_LDFLAGS =  \

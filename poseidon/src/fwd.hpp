@@ -128,6 +128,7 @@ class Config_File;
 class Abstract_Timer;
 class Abstract_Async_Job;
 class Abstract_Future;
+class Abstract_Fiber;
 
 template<typename V> class Promise;
 template<typename V> class Future;
@@ -161,6 +162,7 @@ class Async_Logger;
 class Timer_Driver;
 class Network_Driver;
 class Worker_Pool;
+class Fiber_Scheduler;
 
 // Log levels
 // Note each level has a hardcoded name and number.

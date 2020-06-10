@@ -8,6 +8,7 @@
 #include "static/timer_driver.hpp"
 #include "static/network_driver.hpp"
 #include "static/worker_pool.hpp"
+#include "static/fiber_scheduler.hpp"
 #include "utilities.hpp"
 #include <locale.h>
 #include <unistd.h>
@@ -280,6 +281,7 @@ main(int argc, char** argv)
     Async_Logger::reload();
     Network_Driver::reload();
     Worker_Pool::reload();
+    Fiber_Scheduler::reload();
 
     // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)
@@ -323,7 +325,10 @@ main(int argc, char** argv)
 
     POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, pid);
 
-    ::sleep(100000);
+    // Schedule fibers until a termination signal is caught.
+    Fiber_Scheduler::modal_loop(exit_sig);
+    const auto sig = exit_sig.load(::std::memory_order_relaxed);
+    POSEIDON_LOG_INFO("Shutting down due to signal $1: $2", sig, ::sys_siglist[sig]);
     do_exit(exit_success);
   }
   catch(exception& stdex) {
