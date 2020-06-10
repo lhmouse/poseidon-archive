@@ -29,9 +29,11 @@ do_get_size_config(const Config_File& file, const char* name, long max, size_t d
 
 struct Worker
   {
+    ptrdiff_t index = -1;
+    ::pthread_t thread;
+
     Si_Mutex mutex;
     Cond_Var avail;
-    ::pthread_t thread;
     ::std::deque<rcptr<Abstract_Async_Job>> queue;
   };
 
@@ -114,14 +116,18 @@ insert(uptr<Abstract_Async_Job>&& ufunc)
     if(bptr == eptr)
       POSEIDON_THROW("no worker available");
 
-    auto& worker = *(::rocket::get_probing_origin(bptr, eptr, func->m_key));
+    eptr = ::rocket::get_probing_origin(bptr, eptr, func->m_key);
+    auto& worker = *eptr;
+
     Si_Mutex::unique_lock lock(worker.mutex);
 
     // If the worker thread is not running, create it.
-    if(ROCKET_UNEXPECT(!worker.thread)) {
-      auto name = format_string("worker $1", &worker - bptr);
+    if(ROCKET_UNEXPECT(worker.index == -1)) {
+      ptrdiff_t index = eptr - bptr;
+      auto name = format_string("worker $1", index);
       POSEIDON_LOG_INFO("Creating new worker thread: $1", name);
-      worker.thread = create_daemon_thread<do_thread_loop>(name.c_str(), &worker);
+      worker.thread = create_daemon_thread<do_thread_loop>(name.c_str(), eptr);
+      worker.index = index;
     }
 
     // Insert the function.

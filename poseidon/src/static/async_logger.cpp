@@ -274,6 +274,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
 POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
   {
     // constant data
+    bool m_running = false;
     ::pthread_t m_thread;
 
     // configuration
@@ -318,12 +319,13 @@ void
 Async_Logger::
 start()
   {
-    if(self->m_thread)
+    if(self->m_running)
       return;
 
     // Create the thread. Note it is never joined or detached.
     Si_Mutex::unique_lock lock(self->m_queue_mutex);
     self->m_thread = noadl::create_daemon_thread<do_thread_loop>("logger");
+    self->m_running = true;
   }
 
 void
@@ -372,31 +374,31 @@ noexcept
     return self->m_queue.size();
   }
 
-size_t
+bool
 Async_Logger::
 enqueue(Log_Level level, const char* file, long line, const char* func,
         cow_string&& text)
   {
+    if(level >= self->m_conf_levels.size())
+      return false;
+
     // Compose the entry.
     Entry entry = { level, file, line, func, ::std::move(text), "", 0 };
     ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
     entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
 
-    if(ROCKET_UNEXPECT(!self->m_thread)) {
+    if(ROCKET_UNEXPECT(!self->m_running)) {
       // If the logger thread has not been created, write it immediately.
-      if(entry.level >= self->m_conf_levels.size())
-        return 0;
-
       const auto& conf = self->m_conf_levels[entry.level];
       do_write_log_entry(conf, ::std::move(entry));
-      return 1;
+      return true;
     }
 
     // Push the element.
     Si_Mutex::unique_lock lock(self->m_queue_mutex);
     self->m_queue.emplace_back(::std::move(entry));
     self->m_queue_avail.notify_one();
-    return self->m_queue.size();
+    return true;
   }
 
 }  // namespace poseidon

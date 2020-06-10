@@ -71,6 +71,7 @@ struct PQ_Compare
 POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
   {
     // constant data
+    bool m_running = false;
     ::pthread_t m_thread;
 
     // dynamic data
@@ -148,12 +149,13 @@ void
 Timer_Driver::
 start()
   {
-    if(self->m_thread)
+    if(self->m_running)
       return;
 
     // Create the thread. Note it is never joined or detached.
     Si_Mutex::unique_lock lock(self->m_pq_mutex);
     self->m_thread = create_daemon_thread<do_thread_loop>("timer");
+    self->m_running = true;
   }
 
 rcptr<Abstract_Timer>

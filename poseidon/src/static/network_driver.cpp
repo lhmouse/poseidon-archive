@@ -71,9 +71,9 @@ struct Poll_List_root
 POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
   {
     // constant data
+    int m_epoll_fd = -1;
+    int m_event_fd = -1;
     ::pthread_t m_thread;
-    int m_epollfd = -1;
-    int m_eventfd = -1;
 
     // configuration
     mutable Si_Mutex m_conf_mutex;
@@ -137,7 +137,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           ::epoll_event event;
           event.data.u64 = self->make_epoll_data(index, epoll_data);
           event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-          if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_MOD, elem.sock->get_fd(), &event) != 0)
+          if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_MOD, elem.sock->get_fd(), &event) != 0)
             POSEIDON_LOG_FATAL("failed to modify socket in epoll\n"
                                "[`epoll_ctl()` failed: $1]",
                                noadl::format_errno(errno));
@@ -248,7 +248,7 @@ do_thread_loop(void* /*param*/)
       lock.unlock();
 
       // Await I/O events.
-      int res = ::epoll_wait(self->m_epollfd, self->m_event_buffer.data(),
+      int res = ::epoll_wait(self->m_epoll_fd, self->m_event_buffer.data(),
                              static_cast<int>(self->m_event_buffer.size()), 60'000);
       if(res < 0) {
         int err = errno;
@@ -269,7 +269,7 @@ do_thread_loop(void* /*param*/)
           uint64_t discard[1];
           ::ssize_t nread;
           do
-            nread = ::read(self->m_eventfd, discard, sizeof(discard));
+            nread = ::read(self->m_event_fd, discard, sizeof(discard));
           while((nread > 0) || (errno == EINTR));
           continue;
         }
@@ -310,7 +310,7 @@ do_thread_loop(void* /*param*/)
       POSEIDON_LOG_TRACE("Socket closed: $1 ($2)", sock, noadl::format_errno(err));
 
       // Remove the socket from epoll. Errors are ignored.
-      if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_DEL, sock->get_fd(), (::epoll_event*)1) != 0)
+      if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_DEL, sock->get_fd(), (::epoll_event*)1) != 0)
         POSEIDON_LOG_FATAL("failed to remove socket from epoll\n"
                            "[`epoll_ctl()` failed: $1]",
                            noadl::format_errno(errno));
@@ -471,7 +471,7 @@ void
 Network_Driver::
 start()
   {
-    if(self->m_thread)
+    if(self->m_epoll_fd != -1)
       return;
 
     // Create an epoll object.
@@ -499,8 +499,8 @@ start()
     // Create the thread. Note it is never joined or detached.
     Si_Mutex::unique_lock lock(self->m_conf_mutex);
     self->m_thread = create_daemon_thread<do_thread_loop>("network");
-    self->m_epollfd = epollfd.release();
-    self->m_eventfd = eventfd.release();
+    self->m_epoll_fd = epollfd.release();
+    self->m_event_fd = eventfd.release();
   }
 
 void
@@ -548,7 +548,7 @@ insert(uptr<Abstract_Socket>&& usock)
     ::epoll_event event;
     event.data.u64 = self->make_epoll_data(index, self->m_poll_serial++);
     event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    if(::epoll_ctl(self->m_epollfd, EPOLL_CTL_ADD, sock->get_fd(), &event) != 0)
+    if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_ADD, sock->get_fd(), &event) != 0)
       POSEIDON_THROW("failed to add socket into epoll\n"
                      "[`epoll_ctl()` failed: $1]",
                      noadl::format_errno(errno));
@@ -586,7 +586,7 @@ noexcept
     // This is merely a hint due to lack of condition variable semantics.
     static constexpr uint64_t one[] = { 1 };
     if(ROCKET_UNEXPECT(self->poll_lists_empty()))
-      ::write(self->m_eventfd, one, sizeof(one));
+      ::write(self->m_event_fd, one, sizeof(one));
 
     // Append the socket to write list if writing is possible.
     if(csock->m_epoll_events & EPOLLOUT)
