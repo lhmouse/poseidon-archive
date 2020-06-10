@@ -102,7 +102,7 @@ class Promise
 
         // Construct a new value in the future.
         futp->m_stor.template emplace<future_state_value>(
-                                ::std::forward<ParamsT>(params)...);
+                                          ::std::forward<ParamsT>(params)...);
         return true;
       }
 
@@ -132,8 +132,7 @@ class Promise
           return false;
 
         // Construct a exception pointer in the future.
-        futp->m_stor.template emplace<future_state_except>(
-                                ::std::move(eptr));
+        futp->m_stor.template emplace<future_state_except>(::std::move(eptr));
         return true;
       }
   };
