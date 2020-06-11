@@ -186,10 +186,11 @@ enum Future_State : uint8_t
 // Asynchronous function states
 enum Async_State : uint8_t
   {
-    async_state_initial   = 0,
-    async_state_pending   = 1,
-    async_state_running   = 2,
-    async_state_finished  = 3,
+    async_state_initial    = 0,
+    async_state_pending    = 1,
+    async_state_suspended  = 2,
+    async_state_running    = 3,
+    async_state_finished   = 4,
   };
 
 }  // namespace poseidon
