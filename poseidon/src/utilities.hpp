@@ -76,9 +76,9 @@ do_xthrow_format(const char* file, long line, const char* func,
     auto text = fmt.extract_string();
 
     // Push a new log entry.
-    if(Async_Logger::is_enabled(log_level_debug))
-      Async_Logger::enqueue(log_level_debug, file, line, func,
-                            "POSEIDON_THROW: " + text);
+    static constexpr auto level = log_level_warn;
+    if(Async_Logger::is_enabled(level))
+      Async_Logger::enqueue(level, file, line, func, "POSEIDON_THROW: " + text);
 
     // Throw the exception.
     ::rocket::sprintf_and_throw<::std::runtime_error>(
