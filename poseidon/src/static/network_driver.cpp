@@ -194,7 +194,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         if((elem.*mptrT).next != poll_index_nil)
           return false;
 
-        // Insert this node into the end of the doubly linked list.
+        // Insert this node at the end of the doubly linked list.
         uint32_t prev = ::std::exchange(root.tail, index);
         ((prev != poll_index_end) ? (self->m_poll_elems[prev].*mptrT).next : root.head) = index;
         (elem.*mptrT).next = poll_index_end;
