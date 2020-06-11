@@ -278,12 +278,12 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     ::pthread_t m_thread;
 
     // configuration
-    mutable Si_Mutex m_conf_mutex;
+    mutable mutex m_conf_mutex;
     Level_Config_Array m_conf_levels;
 
     // dynamic data
-    mutable Si_Mutex m_queue_mutex;
-    Cond_Var m_queue_avail;
+    mutable mutex m_queue_mutex;
+    condition_variable m_queue_avail;
     ::std::deque<Entry> m_queue;
   };
 
@@ -292,7 +292,7 @@ Async_Logger::
 do_thread_loop(void* /*param*/)
   {
     // Await an entry and pop it.
-    Si_Mutex::unique_lock lock(self->m_queue_mutex);
+    mutex::unique_lock lock(self->m_queue_mutex);
     while(self->m_queue.empty())
       self->m_queue_avail.wait(lock);
 
@@ -323,7 +323,7 @@ start()
       return;
 
     // Create the thread. Note it is never joined or detached.
-    Si_Mutex::unique_lock lock(self->m_queue_mutex);
+    mutex::unique_lock lock(self->m_queue_mutex);
     self->m_thread = noadl::create_daemon_thread<do_thread_loop>("logger");
     self->m_running = true;
   }
@@ -341,7 +341,7 @@ reload()
     // During destruction of `temp` the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+    mutex::unique_lock lock(self->m_conf_mutex);
     self->m_conf_levels.swap(temp);
   }
 
@@ -351,7 +351,7 @@ is_enabled(Log_Level level)
 noexcept
   {
     // Lock config for reading.
-    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+    mutex::unique_lock lock(self->m_conf_mutex);
 
     // Validate arguments.
     if(level >= self->m_conf_levels.size())
@@ -368,7 +368,7 @@ queue_size()
 noexcept
   {
     // Lock config for reading.
-    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+    mutex::unique_lock lock(self->m_conf_mutex);
 
     // Return the number of pending entries.
     return self->m_queue.size();
@@ -395,7 +395,7 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
     }
 
     // Push the element.
-    Si_Mutex::unique_lock lock(self->m_queue_mutex);
+    mutex::unique_lock lock(self->m_queue_mutex);
     self->m_queue.emplace_back(::std::move(entry));
     self->m_queue_avail.notify_one();
     return true;

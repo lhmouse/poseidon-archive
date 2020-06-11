@@ -14,7 +14,7 @@ class Abstract_UDP_Socket
     public Abstract_Socket
   {
   private:
-    mutable Si_Mutex m_mutex;
+    mutable mutex m_mutex;
     Connection_State m_cstate = connection_state_initial;
     ::rocket::linear_buffer m_wqueue;  // write queue
 
@@ -37,20 +37,20 @@ class Abstract_UDP_Socket
     // `hint` is used as the I/O buffer. `size` specifies the maximum number of
     // bytes to read.
     IO_Result
-    do_on_async_poll_read(Si_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_read(mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
     // Returns `0` due to lack of congestion control.
     // `lock` will lock `*this` after the call, nevertheless.
     size_t
-    do_write_queue_size(Si_Mutex::unique_lock& lock)
+    do_write_queue_size(mutex::unique_lock& lock)
     const final;
 
     // Writes some data.
     // `lock` will lock `*this` after the call.
     // `hint` and `size` are ignored.
     IO_Result
-    do_on_async_poll_write(Si_Mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_write(mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
     // Notifies this socket has been closed.

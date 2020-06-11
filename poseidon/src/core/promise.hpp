@@ -50,7 +50,7 @@ class Promise
         if(!futp)
           return false;
 
-        Si_Mutex::unique_lock lock(futp->m_mutex);
+        mutex::unique_lock lock(futp->m_mutex);
         if(futp->m_stor.index() != future_state_empty)
           return false;
 
@@ -96,7 +96,7 @@ class Promise
         if(!futp)
           this->do_throw_no_future();
 
-        Si_Mutex::unique_lock lock(futp->m_mutex);
+        mutex::unique_lock lock(futp->m_mutex);
         if(futp->m_stor.index() != future_state_empty)
           return false;
 
@@ -127,7 +127,7 @@ class Promise
             typeid(ValueT).name());
 
         // Check future state.
-        Si_Mutex::unique_lock lock(futp->m_mutex);
+        mutex::unique_lock lock(futp->m_mutex);
         if(futp->m_stor.index() != future_state_empty)
           return false;
 

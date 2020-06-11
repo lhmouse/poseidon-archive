@@ -74,7 +74,7 @@ class Future
     state()
     const noexcept override
       {
-        Si_Mutex::unique_lock lock(this->m_mutex);
+        mutex::unique_lock lock(this->m_mutex);
         return static_cast<Future_State>(this->m_stor.index());
       }
 
@@ -84,7 +84,7 @@ class Future
     get_value()
     const
       {
-        Si_Mutex::unique_lock lock(this->m_mutex);
+        mutex::unique_lock lock(this->m_mutex);
         if(this->m_stor.index() != future_state_value)
           this->do_throw_no_value_unlocked();
 
@@ -97,7 +97,7 @@ class Future
     copy_value()
     const
       {
-        Si_Mutex::unique_lock lock(this->m_mutex);
+        mutex::unique_lock lock(this->m_mutex);
         if(this->m_stor.index() != future_state_value)
           this->do_throw_no_value_unlocked();
 
@@ -109,7 +109,7 @@ class Future
     typename ::std::add_lvalue_reference<ValueT>::type
     open_value()
       {
-        Si_Mutex::unique_lock lock(this->m_mutex);
+        mutex::unique_lock lock(this->m_mutex);
         if(this->m_stor.index() != future_state_value)
           this->do_throw_no_value_unlocked();
 
@@ -121,7 +121,7 @@ class Future
     ValueT
     move_value()
       {
-        Si_Mutex::unique_lock lock(this->m_mutex);
+        mutex::unique_lock lock(this->m_mutex);
         if(this->m_stor.index() != future_state_value)
           this->do_throw_no_value_unlocked();
 

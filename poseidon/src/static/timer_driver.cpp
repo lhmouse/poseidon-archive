@@ -75,8 +75,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     ::pthread_t m_thread;
 
     // dynamic data
-    mutable Si_Mutex m_pq_mutex;
-    Cond_Var m_pq_avail;
+    mutable mutex m_pq_mutex;
+    condition_variable m_pq_avail;
     ::std::vector<PQ_Element> m_pq;
   };
 
@@ -88,7 +88,7 @@ do_thread_loop(void* /*param*/)
     int64_t now;
 
     // Await an element and pop it.
-    Si_Mutex::unique_lock lock(self->m_pq_mutex);
+    mutex::unique_lock lock(self->m_pq_mutex);
     for(;;) {
       timer.reset();
       if(self->m_pq.empty()) {
@@ -153,7 +153,7 @@ start()
       return;
 
     // Create the thread. Note it is never joined or detached.
-    Si_Mutex::unique_lock lock(self->m_pq_mutex);
+    mutex::unique_lock lock(self->m_pq_mutex);
     self->m_thread = create_daemon_thread<do_thread_loop>("timer");
     self->m_running = true;
   }
@@ -175,7 +175,7 @@ insert(uptr<Abstract_Timer>&& utimer)
     int64_t next = do_get_time(timer->m_first);
 
     // Lock priority queue for modification.
-    Si_Mutex::unique_lock lock(self->m_pq_mutex);
+    mutex::unique_lock lock(self->m_pq_mutex);
 
     // Insert the timer.
     self->m_pq.push_back({ next, timer });
@@ -190,7 +190,7 @@ invalidate_internal(const Abstract_Timer* ctimer)
 noexcept
   {
     // Lock priority queue for modification.
-    Si_Mutex::unique_lock lock(self->m_pq_mutex);
+    mutex::unique_lock lock(self->m_pq_mutex);
 
     // Don't do anything if the timer does not exist in the queue.
     PQ_Element* qelem;

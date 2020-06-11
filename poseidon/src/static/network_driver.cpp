@@ -76,7 +76,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     ::pthread_t m_thread;
 
     // configuration
-    mutable Si_Mutex m_conf_mutex;
+    mutable mutex m_conf_mutex;
     Config_Scalars m_conf;
 
     // dynamic data
@@ -84,7 +84,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     ::std::vector<rcptr<Abstract_Socket>> m_ready_socks;
     ::std::vector<uint8_t> m_io_buffer;
 
-    mutable Si_Mutex m_poll_mutex;
+    mutable mutex m_poll_mutex;
     ::std::vector<Poll_Socket> m_poll_elems;
     uint64_t m_poll_serial = 0;
     Poll_List_root<&Poll_Socket::node_cl> m_poll_root_cl;
@@ -226,7 +226,7 @@ Network_Driver::
 do_thread_loop(void* /*param*/)
   {
     // Reload configuration.
-    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+    mutex::unique_lock lock(self->m_conf_mutex);
     const auto conf = self->m_conf;
     lock.unlock();
 
@@ -497,7 +497,7 @@ start()
                      noadl::format_errno(errno));
 
     // Create the thread. Note it is never joined or detached.
-    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+    mutex::unique_lock lock(self->m_conf_mutex);
     self->m_thread = create_daemon_thread<do_thread_loop>("network");
     self->m_epoll_fd = epollfd.release();
     self->m_event_fd = eventfd.release();
@@ -517,7 +517,7 @@ reload()
     // During destruction of temporary objects the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    Si_Mutex::unique_lock lock(self->m_conf_mutex);
+    mutex::unique_lock lock(self->m_conf_mutex);
     self->m_conf = conf;
   }
 
@@ -534,7 +534,7 @@ insert(uptr<Abstract_Socket>&& usock)
       POSEIDON_THROW("socket pointer must be unique");
 
     // Lock epoll for modification.
-    Si_Mutex::unique_lock lock(self->m_poll_mutex);
+    mutex::unique_lock lock(self->m_poll_mutex);
 
     // Initialize the hint value for lookups.
     size_t index = self->m_poll_elems.size();
@@ -572,7 +572,7 @@ notify_writable_internal(const Abstract_Socket* csock)
 noexcept
   {
     // Lock epoll for modification.
-    Si_Mutex::unique_lock lock(self->m_poll_mutex);
+    mutex::unique_lock lock(self->m_poll_mutex);
 
     if(csock->m_epoll_events & (EPOLLERR | EPOLLHUP))
       return false;

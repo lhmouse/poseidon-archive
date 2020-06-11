@@ -32,8 +32,8 @@ struct Worker
     ptrdiff_t index = -1;
     ::pthread_t thread;
 
-    Si_Mutex mutex;
-    Cond_Var avail;
+    mutex queue_mutex;
+    condition_variable queue_avail;
     ::std::deque<rcptr<Abstract_Async_Job>> queue;
   };
 
@@ -51,9 +51,9 @@ do_thread_loop(void* param)
   {
     // Await a function and pop it.
     auto& worker = *(static_cast<Worker*>(param));
-    Si_Mutex::unique_lock lock(worker.mutex);
+    mutex::unique_lock lock(worker.queue_mutex);
     while(worker.queue.empty())
-      worker.avail.wait(lock);
+      worker.queue_avail.wait(lock);
 
     const auto func = ::std::move(worker.queue.front());
     worker.queue.pop_front();
@@ -119,7 +119,7 @@ insert(uptr<Abstract_Async_Job>&& ufunc)
     eptr = ::rocket::get_probing_origin(bptr, eptr, func->m_key);
     auto& worker = *eptr;
 
-    Si_Mutex::unique_lock lock(worker.mutex);
+    mutex::unique_lock lock(worker.queue_mutex);
 
     // If the worker thread is not running, create it.
     if(ROCKET_UNEXPECT(worker.index == -1)) {
@@ -133,7 +133,7 @@ insert(uptr<Abstract_Async_Job>&& ufunc)
     // Insert the function.
     worker.queue.emplace_back(func);
     func->m_state.store(async_state_pending, ::std::memory_order_relaxed);
-    worker.avail.notify_one();
+    worker.queue_avail.notify_one();
     return func;
   }
 

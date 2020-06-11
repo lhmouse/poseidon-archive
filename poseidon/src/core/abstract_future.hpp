@@ -12,7 +12,7 @@ class Abstract_Future
   : public ::asteria::Rcfwd<Abstract_Future>
   {
   protected:
-    mutable Si_Mutex m_mutex;
+    mutable mutex m_mutex;
 
   public:
     Abstract_Future()

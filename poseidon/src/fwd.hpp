@@ -97,9 +97,9 @@ using ::asteria::array;
 using ::asteria::opt;
 using ::asteria::refp;
 
-using Si_Mutex = ::rocket::mutex;
-using Rc_Mutex = ::rocket::recursive_mutex;
-using Cond_Var = ::rocket::condition_variable;
+using ::rocket::mutex;
+using ::rocket::recursive_mutex;
+using ::rocket::condition_variable;
 
 struct FD_Closer
   {
