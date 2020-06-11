@@ -15,7 +15,7 @@ class Worker_Pool
   private:
     static inline
     void
-    do_thread_loop(void* param);
+    do_worker_thread_loop(void* param);
 
   public:
     // Reloads settings from main config.

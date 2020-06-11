@@ -29,12 +29,12 @@ do_get_size_config(const Config_File& file, const char* name, long max, size_t d
 
 struct Worker
   {
-    ptrdiff_t index = -1;
-    ::pthread_t thread;
+    ::rocket::once_flag m_init_once;
+    ::pthread_t m_thread;
 
-    mutex queue_mutex;
-    condition_variable queue_avail;
-    ::std::deque<rcptr<Abstract_Async_Job>> queue;
+    mutex m_queue_mutex;
+    condition_variable m_queue_avail;
+    ::std::deque<rcptr<Abstract_Async_Job>> m_queue;
   };
 
 }  // namespace
@@ -47,16 +47,16 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
 
 void
 Worker_Pool::
-do_thread_loop(void* param)
+do_worker_thread_loop(void* param)
   {
     // Await a function and pop it.
     auto& worker = *(static_cast<Worker*>(param));
-    mutex::unique_lock lock(worker.queue_mutex);
-    while(worker.queue.empty())
-      worker.queue_avail.wait(lock);
+    mutex::unique_lock lock(worker.m_queue_mutex);
+    while(worker.m_queue.empty())
+      worker.m_queue_avail.wait(lock);
 
-    const auto func = ::std::move(worker.queue.front());
-    worker.queue.pop_front();
+    const auto func = ::std::move(worker.m_queue.front());
+    worker.m_queue.pop_front();
     lock.unlock();
 
     // Execute the function.
@@ -119,21 +119,22 @@ insert(uptr<Abstract_Async_Job>&& ufunc)
     eptr = ::rocket::get_probing_origin(bptr, eptr, func->m_key);
     auto& worker = *eptr;
 
-    mutex::unique_lock lock(worker.queue_mutex);
+    mutex::unique_lock lock(worker.m_queue_mutex);
 
-    // If the worker thread is not running, create it.
-    if(ROCKET_UNEXPECT(worker.index == -1)) {
-      ptrdiff_t index = eptr - bptr;
-      auto name = format_string("worker $1", index);
-      POSEIDON_LOG_INFO("Creating new worker thread: $1", name);
-      worker.thread = create_daemon_thread<do_thread_loop>(name.c_str(), eptr);
-      worker.index = index;
-    }
+    // Create the worker on demand.
+    ::rocket::call_once(worker.m_init_once,
+      [&] {
+        ptrdiff_t index = eptr - bptr;
+        auto name = format_string("worker $1", index);
+        POSEIDON_LOG_INFO("Creating new worker thread: $1", name);
+        worker.m_thread = create_daemon_thread<do_worker_thread_loop>(
+                                                        name.c_str(), eptr);
+      });
 
     // Insert the function.
-    worker.queue.emplace_back(func);
+    worker.m_queue.emplace_back(func);
     func->m_state.store(async_state_pending, ::std::memory_order_relaxed);
-    worker.queue_avail.notify_one();
+    worker.m_queue_avail.notify_one();
     return func;
   }
 

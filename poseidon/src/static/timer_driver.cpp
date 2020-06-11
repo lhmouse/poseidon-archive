@@ -71,7 +71,7 @@ struct PQ_Compare
 POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
   {
     // constant data
-    bool m_running = false;
+    ::rocket::once_flag m_init_once;
     ::pthread_t m_thread;
 
     // dynamic data
@@ -149,13 +149,12 @@ void
 Timer_Driver::
 start()
   {
-    if(self->m_running)
-      return;
-
-    // Create the thread. Note it is never joined or detached.
-    mutex::unique_lock lock(self->m_pq_mutex);
-    self->m_thread = create_daemon_thread<do_thread_loop>("timer");
-    self->m_running = true;
+    ::rocket::call_once(self->m_init_once,
+      [] {
+        // Create the thread. Note it is never joined or detached.
+        mutex::unique_lock lock(self->m_pq_mutex);
+        self->m_thread = create_daemon_thread<do_thread_loop>("timer");
+      });
   }
 
 rcptr<Abstract_Timer>

@@ -274,8 +274,8 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
 POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
   {
     // constant data
-    bool m_running = false;
-    ::pthread_t m_thread;
+    ::rocket::once_flag m_init_once;
+    ::pthread_t m_thread = 0;
 
     // configuration
     mutable mutex m_conf_mutex;
@@ -319,13 +319,12 @@ void
 Async_Logger::
 start()
   {
-    if(self->m_running)
-      return;
-
-    // Create the thread. Note it is never joined or detached.
-    mutex::unique_lock lock(self->m_queue_mutex);
-    self->m_thread = noadl::create_daemon_thread<do_thread_loop>("logger");
-    self->m_running = true;
+    ::rocket::call_once(self->m_init_once,
+      []{
+        // Create the thread. Note it is never joined or detached.
+        mutex::unique_lock lock(self->m_queue_mutex);
+        self->m_thread = noadl::create_daemon_thread<do_thread_loop>("logger");
+      });
   }
 
 void
@@ -387,7 +386,7 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
     ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
     entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
 
-    if(ROCKET_UNEXPECT(!self->m_running)) {
+    if(ROCKET_UNEXPECT(self->m_thread == 0)) {
       // If the logger thread has not been created, write it immediately.
       const auto& conf = self->m_conf_levels[entry.level];
       do_write_log_entry(conf, ::std::move(entry));

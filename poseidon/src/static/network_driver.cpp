@@ -71,9 +71,10 @@ struct Poll_List_root
 POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
   {
     // constant data
+    ::rocket::once_flag m_init_once;
+    ::pthread_t m_thread;
     int m_epoll_fd = -1;
     int m_event_fd = -1;
-    ::pthread_t m_thread;
 
     // configuration
     mutable mutex m_conf_mutex;
@@ -471,36 +472,36 @@ void
 Network_Driver::
 start()
   {
-    if(self->m_epoll_fd != -1)
-      return;
+    ::rocket::call_once(self->m_init_once,
+      [] {
+        // Create an epoll object.
+        unique_FD epollfd(::epoll_create(100));
+        if(!epollfd)
+          POSEIDON_THROW("could not create epoll object\n"
+                         "[`epoll_create()` failed: $1]",
+                         format_errno(errno));
 
-    // Create an epoll object.
-    unique_FD epollfd(::epoll_create(100));
-    if(!epollfd)
-      POSEIDON_THROW("could not create epoll object\n"
-                     "[`epoll_create()` failed: $1]",
-                     format_errno(errno));
+        // Create the notification eventfd and add it into epoll.
+        unique_FD eventfd(::eventfd(0, EFD_NONBLOCK));
+        if(!eventfd)
+          POSEIDON_THROW("could not create eventfd object\n"
+                         "[`eventfd()` failed: $1]",
+                         format_errno(errno));
 
-    // Create the notification eventfd and add it into epoll.
-    unique_FD eventfd(::eventfd(0, EFD_NONBLOCK));
-    if(!eventfd)
-      POSEIDON_THROW("could not create eventfd object\n"
-                     "[`eventfd()` failed: $1]",
-                     format_errno(errno));
+        ::epoll_event event;
+        event.data.u64 = self->make_epoll_data(poll_index_event, 0);
+        event.events = EPOLLIN | EPOLLET;
+        if(::epoll_ctl(epollfd, EPOLL_CTL_ADD, eventfd, &event) != 0)
+          POSEIDON_THROW("failed to add socket into epoll\n"
+                         "[`epoll_ctl()` failed: $1]",
+                         noadl::format_errno(errno));
 
-    ::epoll_event event;
-    event.data.u64 = self->make_epoll_data(poll_index_event, 0);
-    event.events = EPOLLIN | EPOLLET;
-    if(::epoll_ctl(epollfd, EPOLL_CTL_ADD, eventfd, &event) != 0)
-      POSEIDON_THROW("failed to add socket into epoll\n"
-                     "[`epoll_ctl()` failed: $1]",
-                     noadl::format_errno(errno));
-
-    // Create the thread. Note it is never joined or detached.
-    mutex::unique_lock lock(self->m_conf_mutex);
-    self->m_thread = create_daemon_thread<do_thread_loop>("network");
-    self->m_epoll_fd = epollfd.release();
-    self->m_event_fd = eventfd.release();
+        // Create the thread. Note it is never joined or detached.
+        mutex::unique_lock lock(self->m_conf_mutex);
+        self->m_thread = create_daemon_thread<do_thread_loop>("network");
+        self->m_epoll_fd = epollfd.release();
+        self->m_event_fd = eventfd.release();
+      });
   }
 
 void
