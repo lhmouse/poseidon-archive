@@ -12,11 +12,6 @@ class Network_Driver
   {
     POSEIDON_STATIC_CLASS_DECLARE(Network_Driver);
 
-  private:
-    static inline
-    void
-    do_thread_loop(void* param);
-
   public:
     // Creates the network thread if one hasn't been created.
     static

@@ -12,11 +12,6 @@ class Worker_Pool
   {
     POSEIDON_STATIC_CLASS_DECLARE(Worker_Pool);
 
-  private:
-    static inline
-    void
-    do_worker_thread_loop(void* param);
-
   public:
     // Reloads settings from main config.
     // If this function fails, an exception is thrown, and there is no effect.
@@ -40,7 +35,7 @@ class Worker_Pool
     // This function is thread-safe.
     static
     rcptr<Abstract_Async_Job>
-    insert(uptr<Abstract_Async_Job>&& ufunc);
+    insert(uptr<Abstract_Async_Job>&& ujob);
   };
 
 }  // namespace poseidon

@@ -12,11 +12,6 @@ class Timer_Driver
   {
     POSEIDON_STATIC_CLASS_DECLARE(Timer_Driver);
 
-  private:
-    static inline
-    void
-    do_thread_loop(void* param);
-
   public:
     // Creates the timer thread if one hasn't been created.
     static

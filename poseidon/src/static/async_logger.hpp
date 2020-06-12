@@ -12,11 +12,6 @@ class Async_Logger
   {
     POSEIDON_STATIC_CLASS_DECLARE(Async_Logger);
 
-  private:
-    static inline
-    void
-    do_thread_loop(void* param);
-
   public:
     // Creates the logger thread if one hasn't been created.
     static

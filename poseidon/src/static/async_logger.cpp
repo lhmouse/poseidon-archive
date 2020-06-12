@@ -285,46 +285,50 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     mutable mutex m_queue_mutex;
     condition_variable m_queue_avail;
     ::std::deque<Entry> m_queue;
+
+    static
+    void
+    do_init_once()
+      {
+        // Create the thread. Note it is never joined or detached.
+        mutex::unique_lock lock(self->m_queue_mutex);
+        self->m_thread = noadl::create_daemon_thread<do_thread_loop>("logger");
+      }
+
+    static
+    void
+    do_thread_loop(void* /*param*/)
+      {
+        // Await an entry and pop it.
+        mutex::unique_lock lock(self->m_queue_mutex);
+        while(self->m_queue.empty())
+          self->m_queue_avail.wait(lock);
+
+        auto entry = ::std::move(self->m_queue.front());
+        self->m_queue.pop_front();
+        bool needs_sync = (entry.level < log_level_warn) || self->m_queue.empty();
+
+        // Get configuration for this level.
+        lock.assign(self->m_conf_mutex);
+        if(entry.level >= self->m_conf_levels.size())
+          return;
+
+        const auto conf = self->m_conf_levels[entry.level];
+        lock.unlock();
+
+        // Write this entry.
+        do_write_log_entry(conf, ::std::move(entry));
+
+        if(needs_sync)
+          ::sync();
+      }
   };
-
-void
-Async_Logger::
-do_thread_loop(void* /*param*/)
-  {
-    // Await an entry and pop it.
-    mutex::unique_lock lock(self->m_queue_mutex);
-    while(self->m_queue.empty())
-      self->m_queue_avail.wait(lock);
-
-    auto entry = ::std::move(self->m_queue.front());
-    self->m_queue.pop_front();
-    bool needs_sync = (entry.level < log_level_warn) || self->m_queue.empty();
-
-    // Get configuration for this level.
-    lock.assign(self->m_conf_mutex);
-    if(entry.level >= self->m_conf_levels.size())
-      return;
-
-    const auto conf = self->m_conf_levels[entry.level];
-    lock.unlock();
-
-    // Write this entry.
-    do_write_log_entry(conf, ::std::move(entry));
-
-    if(needs_sync)
-      ::sync();
-  }
 
 void
 Async_Logger::
 start()
   {
-    ::rocket::call_once(self->m_init_once,
-      []{
-        // Create the thread. Note it is never joined or detached.
-        mutex::unique_lock lock(self->m_queue_mutex);
-        self->m_thread = noadl::create_daemon_thread<do_thread_loop>("logger");
-      });
+    ::rocket::call_once(self->m_init_once, self->do_init_once);
   }
 
 void

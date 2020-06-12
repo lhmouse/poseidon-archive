@@ -78,83 +78,87 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     mutable mutex m_pq_mutex;
     condition_variable m_pq_avail;
     ::std::vector<PQ_Element> m_pq;
-  };
 
-void
-Timer_Driver::
-do_thread_loop(void* /*param*/)
-  {
-    rcptr<Abstract_Timer> timer;
-    int64_t now;
-
-    // Await an element and pop it.
-    mutex::unique_lock lock(self->m_pq_mutex);
-    for(;;) {
-      timer.reset();
-      if(self->m_pq.empty()) {
-        // Wait until an element becomes available.
-        self->m_pq_avail.wait(lock);
-        continue;
+    static
+    void
+    do_init_once()
+      {
+        // Create the thread. Note it is never joined or detached.
+        mutex::unique_lock lock(self->m_pq_mutex);
+        self->m_thread = create_daemon_thread<do_thread_loop>("timer");
       }
 
-      // Check the first element.
-      now = do_get_time(0);
-      int64_t delta = self->m_pq.front().next - now;
-      if(delta > 0) {
-        // Wait for it.
-        self->m_pq_avail.wait_for(lock,
-                    static_cast<long>(::rocket::min(delta, LONG_MAX)));
-        continue;
-      }
+    static
+    void
+    do_thread_loop(void* /*param*/)
+      {
+        rcptr<Abstract_Timer> timer;
+        int64_t now;
 
-      // Pop it.
-      ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-      timer = ::std::move(self->m_pq.back().timer);
-      if(!timer.unique()) {
-        // Process this timer!
-        int64_t period = timer->m_period.load(::std::memory_order_relaxed);
-        if(period > 0) {
-          // The timer is periodic. Insert it back.
-          self->m_pq.back().timer = timer;
-          do_shift_time(self->m_pq.back().next, period);
-          ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-        }
-        else {
-          // The timer is one-shot. Delete it.
+        // Await an element and pop it.
+        mutex::unique_lock lock(self->m_pq_mutex);
+        for(;;) {
+          timer.reset();
+          if(self->m_pq.empty()) {
+            // Wait until an element becomes available.
+            self->m_pq_avail.wait(lock);
+            continue;
+          }
+
+          // Check the first element.
+          now = do_get_time(0);
+          int64_t delta = self->m_pq.front().next - now;
+          if(delta > 0) {
+            // Wait for it.
+            delta = ::rocket::min(delta, LONG_MAX);
+            self->m_pq_avail.wait_for(lock, static_cast<long>(delta));
+            continue;
+          }
+
+          // Pop it.
+          ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+          timer = ::std::move(self->m_pq.back().timer);
+          if(!timer.unique()) {
+            // Process this timer!
+            int64_t period = timer->m_period.load(::std::memory_order_relaxed);
+            if(period > 0) {
+              // The timer is periodic. Insert it back.
+              self->m_pq.back().timer = timer;
+              do_shift_time(self->m_pq.back().next, period);
+              ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+            }
+            else {
+              // The timer is one-shot. Delete it.
+              self->m_pq.pop_back();
+            }
+            break;
+          }
+
+          // Delete this timer when no other reference of it exists.
+          POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
           self->m_pq.pop_back();
         }
-        break;
+        lock.unlock();
+
+        // Execute the timer procedure.
+        // The argument is a snapshot of the monotonic clock, not its real-time value.
+        try {
+          timer->do_on_async_timer(now);
+        }
+        catch(exception& stdex) {
+          POSEIDON_LOG_WARN("Exception thrown from timer: $1\n"
+                            "[timer class `$2`]",
+                            stdex.what(), typeid(*timer).name());
+        }
+        timer->m_count.fetch_add(1, ::std::memory_order_release);
       }
-
-      // Delete this timer when no other reference of it exists.
-      POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
-      self->m_pq.pop_back();
-    }
-    lock.unlock();
-
-    // Execute the timer procedure.
-    // The argument is a snapshot of the monotonic clock, not its real-time value.
-    try {
-      timer->do_on_async_timer(now);
-    }
-    catch(exception& stdex) {
-      POSEIDON_LOG_WARN("Exception thrown from timer: $1\n"
-                        "[timer class `$2`]",
-                        stdex.what(), typeid(*timer).name());
-    }
-    timer->m_count.fetch_add(1, ::std::memory_order_release);
-  }
+  };
 
 void
 Timer_Driver::
 start()
   {
-    ::rocket::call_once(self->m_init_once,
-      [] {
-        // Create the thread. Note it is never joined or detached.
-        mutex::unique_lock lock(self->m_pq_mutex);
-        self->m_thread = create_daemon_thread<do_thread_loop>("timer");
-      });
+    ::rocket::call_once(self->m_init_once, self->do_init_once);
   }
 
 rcptr<Abstract_Timer>
