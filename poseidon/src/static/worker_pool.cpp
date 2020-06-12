@@ -131,7 +131,7 @@ insert(uptr<Abstract_Async_Job>&& ujob)
                                self->m_workers.data() + self->m_workers.size(), job->m_key);
 
     // Perform lazy initialization as necessary.
-    ::rocket::call_once(qwrk->init_once, self->do_worker_init_once, qwrk);
+    qwrk->init_once.call(self->do_worker_init_once, qwrk);
 
     // Lock the job queue for modification.
     mutex::unique_lock lock(qwrk->queue_mutex);

@@ -506,7 +506,7 @@ void
 Network_Driver::
 start()
   {
-    ::rocket::call_once(self->m_init_once, self->do_init_once);
+    self->m_init_once.call(self->do_init_once);
   }
 
 void
