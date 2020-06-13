@@ -9,9 +9,6 @@
 #endif
 
 #include <asteria/fwd.hpp>
-#include <rocket/unique_posix_fd.hpp>
-#include <rocket/unique_posix_file.hpp>
-#include <rocket/unique_posix_dir.hpp>
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
 #include <rocket/condition_variable.hpp>
@@ -37,14 +34,14 @@ namespace noadl = poseidon;
 #define POSEIDON_STATIC_CLASS_DEFINE(C)  \
     template<typename TmIkbXn1>  \
     ROCKET_ARTIFICIAL_FUNCTION static inline  \
-    TmIkbXn1* C##_instance()  \
+    TmIkbXn1* C##_inst()  \
       {  \
         static TmIkbXn1 instance[1] = { };  \
         return instance;  \
       }  \
+    \
     class C;  \
-    struct C::C##_self* const C::self =  \
-      C##_instance<struct C::C##_self>();  \
+    struct C::C##_self* const C::self = C##_inst<C::C##_self>();  \
     struct C::C##_self : C  \
       // add members here
 
