@@ -118,25 +118,26 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           // Pop it.
           ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
           timer = ::std::move(self->m_pq.back().timer);
-          if(!timer.unique()) {
-            // Process this timer!
-            int64_t period = timer->m_period.load(::std::memory_order_relaxed);
-            if(period > 0) {
-              // The timer is periodic. Insert it back.
-              self->m_pq.back().timer = timer;
-              do_shift_time(self->m_pq.back().next, period);
-              ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-            }
-            else {
-              // The timer is one-shot. Delete it.
-              self->m_pq.pop_back();
-            }
-            break;
+          if(timer.unique()) {
+            // Delete this timer when no other reference of it exists.
+            POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
+            self->m_pq.pop_back();
+            continue;
           }
 
-          // Delete this timer when no other reference of it exists.
-          POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
-          self->m_pq.pop_back();
+          // Process this timer!
+          int64_t period = timer->m_period.load(::std::memory_order_relaxed);
+          if(period > 0) {
+            // The timer is periodic. Insert it back.
+            self->m_pq.back().timer = timer;
+            do_shift_time(self->m_pq.back().next, period);
+            ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+          }
+          else {
+            // The timer is one-shot. Delete it.
+            self->m_pq.pop_back();
+          }
+          break;
         }
         lock.unlock();
 
