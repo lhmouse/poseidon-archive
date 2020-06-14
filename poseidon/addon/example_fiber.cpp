@@ -43,12 +43,24 @@ struct Example_Fiber : Abstract_Fiber
         POSEIDON_LOG_ERROR("new fiber `$1`: $2", this, this->value);
       }
 
+    ~Example_Fiber()
+    override
+      {
+        POSEIDON_LOG_ERROR("delete fiber `$1`: $2", this, this->value);
+      }
+
     void
     do_execute()
       {
         POSEIDON_LOG_WARN("fiber `$1`: init", this);
+
         auto timer = Timer_Driver::insert(::rocket::make_unique<Promise_Timer>(this->value));
         auto futr = ::rocket::static_pointer_cast<Promise_Timer>(timer)->prom.future();
+        Fiber_Scheduler::yield(futr);
+        POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->get_value());
+
+        timer = Timer_Driver::insert(::rocket::make_unique<Promise_Timer>(this->value + 3));
+        futr = ::rocket::static_pointer_cast<Promise_Timer>(timer)->prom.future();
         Fiber_Scheduler::yield(futr);
         POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->get_value());
       }
