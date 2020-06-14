@@ -28,7 +28,6 @@ class Network_Driver
     // Adds a socket for polling.
     // The driver holds a reference-counted pointer to the socket. If it becomes a unique
     // reference, the socket is closed and deleted.
-    // To prevent the socket from being deleted, call `.release()` of the returned pointer.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static

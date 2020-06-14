@@ -21,7 +21,6 @@ class Timer_Driver
     // Inserts a timer.
     // The driver holds a reference-counted pointer to the timer. If it becomes a unique
     // reference, the timer is deleted.
-    // To prevent the timer from being deleted, call `.release()` of the returned pointer.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static
