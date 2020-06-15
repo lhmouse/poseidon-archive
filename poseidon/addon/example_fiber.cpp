@@ -21,13 +21,21 @@ struct Promise_Timer : Abstract_Timer
     Promise_Timer(int64_t seconds)
       : Abstract_Timer(seconds * 1000, 0),
         value(seconds)
-      { }
+      {
+        POSEIDON_LOG_FATAL("new timer `$1`", this);
+      }
+
+    ~Promise_Timer()
+    override
+      {
+        POSEIDON_LOG_FATAL("delete timer `$1`", this);
+      }
 
     void
     do_on_async_timer(int64_t /*now*/)
     override
       {
-        POSEIDON_LOG_DEBUG("set promise: $1", this->value);
+        POSEIDON_LOG_FATAL("set promise: $1", this->value);
         this->prom.set_value(this->value);
       }
   };
@@ -66,11 +74,18 @@ struct Example_Fiber : Abstract_Fiber
       }
   };
 
-const auto fib1 = Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(1));
-const auto fib2 = Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(2));
-const auto fib3 = Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(3));
-const auto fib4 = Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(1));
-const auto fib5 = Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(2));
-const auto fib6 = Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(3));
+const auto plain =
+  {
+    Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(1)),
+    Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(2)),
+    Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(3)),
+  };
+
+const auto resident =
+  {
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(1))->set_resident(), 1),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(2))->set_resident(), 1),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(3))->set_resident(), 1),
+  };
 
 }  // namespace

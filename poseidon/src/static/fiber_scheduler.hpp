@@ -47,10 +47,22 @@ class Fiber_Scheduler
     yield(rcptr<const Abstract_Future> futr_opt);
 
     // Inserts a fiber.
+    // The scheduler holds a reference-counted pointer to the fiber. If the fiber has
+    // no other references elsewhere and has not started execution, it is deleted
+    // without being executed at all.
+    // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static
     rcptr<Abstract_Fiber>
     insert(uptr<Abstract_Fiber>&& ufiber);
+
+    // Wakes up a scheduler thread.
+    // This function is thread-safe.
+    // This function is asynchronous-signal-safe.
+    static
+    void
+    signal()
+    noexcept;
   };
 
 }  // namespace poseidon

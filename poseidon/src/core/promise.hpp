@@ -5,6 +5,7 @@
 #define POSEIDON_CORE_PROMISE_HPP_
 
 #include "future.hpp"
+#include "../static/fiber_scheduler.hpp"
 
 namespace poseidon {
 
@@ -56,6 +57,7 @@ class Promise
 
         // Mark the future broken.
         futp->m_stor.template emplace<future_state_except>();
+        Fiber_Scheduler::signal();
         return true;
       }
 
@@ -103,6 +105,7 @@ class Promise
         // Construct a new value in the future.
         futp->m_stor.template emplace<future_state_value>(
                                           ::std::forward<ParamsT>(params)...);
+        Fiber_Scheduler::signal();
         return true;
       }
 
@@ -133,6 +136,7 @@ class Promise
 
         // Construct a exception pointer in the future.
         futp->m_stor.template emplace<future_state_except>(::std::move(eptr));
+        Fiber_Scheduler::signal();
         return true;
       }
   };

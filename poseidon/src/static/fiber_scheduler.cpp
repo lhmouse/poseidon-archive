@@ -22,49 +22,8 @@ noexcept
     return ts.tv_sec;
   }
 
-struct VM_ptr
-  {
-    uintptr_t bits;
-
-    constexpr
-    VM_ptr(nullptr_t = nullptr)
-    noexcept
-      : bits(0)
-      { }
-
-    VM_ptr(void* base, size_t size)
-    noexcept
-      {
-        // Validate that `base` is aligned to a 4KiB boundary.
-        uintptr_t mbase = reinterpret_cast<uintptr_t>(base);
-        ROCKET_ASSERT_MSG((mbase & 0xFFF) == 0, "unaligned mapping base address");
-
-        // Validate that `size` is a multiple of 64KiB and is not zero.
-        uintptr_t msize = (size >> 16) - 1;
-        ROCKET_ASSERT_MSG(((msize & 0xFFF) + 1) << 16 == size, "invalid mapping size");
-
-        this->bits = mbase | msize;
-      }
-
-    explicit constexpr operator
-    bool()
-    const noexcept
-      { return this->bits != 0;  }
-
-    void*
-    base()
-    const noexcept
-      { return reinterpret_cast<void*>(this->bits & uintptr_t(~0xFFF));  }
-
-    size_t
-    size()
-    const noexcept
-      { return ((this->bits & 0xFFF) + 1) << 16;  }
-  };
-
+// Virtual memory management for fiber stacks
 const size_t page_size = static_cast<size_t>(::sysconf(_SC_PAGESIZE));
-mutex s_stack_pool_mutex;
-VM_ptr s_stack_pool_head;
 
 size_t
 do_validate_stack_size(size_t stack_size)
@@ -82,85 +41,141 @@ do_validate_stack_size(size_t stack_size)
     return stack_size;
   }
 
-void
-do_alloc_stack(::stack_t& stack, size_t stack_size)
+struct Stack_Pointer
   {
-    const auto vmp_unmap = [](VM_ptr* mp) { ::munmap(mp->base(), mp->size());  };
-    size_t size = do_validate_stack_size(stack_size);
-    VM_ptr vmp;
+    void* base;
+    size_t size;
 
+    constexpr
+    Stack_Pointer(nullptr_t = nullptr)
+    noexcept
+      : base(nullptr), size(0)
+      { }
+
+    constexpr
+    Stack_Pointer(const ::stack_t& st)
+      : base(st.ss_sp), size(st.ss_size)
+      { }
+
+    constexpr
+    Stack_Pointer(void* xbase, size_t xsize)
+    noexcept
+      : base(xbase), size(xsize)
+      { }
+
+    explicit constexpr operator
+    bool()
+    const noexcept
+      { return bool(this->base);  }
+
+    operator
+    ::stack_t()
+    const noexcept
+      {
+        ::stack_t st;
+        st.ss_sp = this->base;
+        st.ss_size = this->size;
+        return st;
+      }
+  };
+
+mutex s_stack_pool_mutex;
+Stack_Pointer s_stack_pool_head;
+
+void
+do_unmap_stack_aux(Stack_Pointer sp)
+noexcept
+  {
+    char* vm_base = static_cast<char*>(sp.base) - page_size;
+    size_t vm_size = sp.size + page_size * 2;
+
+    // Note that on Linux `munmap()` may fail with `ENOMEM`.
+    // There is little we can do so we ignore this error.
+    if(::munmap(vm_base, vm_size) != 0)
+      POSEIDON_LOG_FATAL("Could not deallocate virtual memory (base `$2`, size `$3`)\n"
+                         "[`munmap()` failed: $1]",
+                         noadl::format_errno(errno), vm_base, vm_size);
+  }
+
+struct Stack_Closer
+  {
+    constexpr
+    Stack_Pointer
+    null()
+    const noexcept
+      { return nullptr;  }
+
+    constexpr
+    bool
+    is_null(Stack_Pointer sp)
+    const noexcept
+      { return sp.base == nullptr;  }
+
+    void
+    close(Stack_Pointer sp)
+      {
+        mutex::unique_lock lock(s_stack_pool_mutex);
+
+        // Insert the region at the beginning.
+        auto qnext = static_cast<Stack_Pointer*>(sp.base);
+        qnext = ::rocket::construct_at(qnext, s_stack_pool_head);
+        s_stack_pool_head = sp;
+      }
+  };
+
+using poolable_stack = ::rocket::unique_handle<Stack_Pointer, Stack_Closer>;
+
+poolable_stack
+do_allocate_stack(size_t stack_size)
+  {
+    Stack_Pointer sp;
+    char* vm_base;
+    size_t vm_size = do_validate_stack_size(stack_size);
+
+    // Check whether we can get a region from the pool.
     for(;;) {
-      // Check whether we can get a block from the pool.
       mutex::unique_lock lock(s_stack_pool_mutex);
 
-      vmp = s_stack_pool_head;
-      if(ROCKET_UNEXPECT(!vmp))
+      sp = s_stack_pool_head;
+      if(ROCKET_UNEXPECT(!sp))
         break;
 
-      // Exclude guard pages from both ends.
-      ROCKET_ASSERT(vmp.size() >= page_size * 2);
-      stack.ss_sp = static_cast<char*>(vmp.base()) + page_size;
-      stack.ss_size = vmp.size() - page_size * 2;
-
-      // Remove it from the pool.
-      auto qnext = reinterpret_cast<VM_ptr*>(stack.ss_sp);
-      s_stack_pool_head = ::std::move(*qnext);
+      // Remove this region from the pool.
+      auto qnext = static_cast<Stack_Pointer*>(sp.base);
+      s_stack_pool_head = *qnext;
       ::rocket::destroy_at(qnext);
 
       lock.unlock();
 
-      // Return this block if it is large enough.
-      if(ROCKET_EXPECT(vmp.size() >= stack_size))
-        return;
+      // Use this region if it is large enough.
+      if(ROCKET_EXPECT(sp.size + page_size * 2 >= vm_size))
+        return poolable_stack(sp);
 
-      // Unmap this block and try the next one.
-      vmp_unmap(&vmp);
+      // Unmap this region and try the next one.
+      do_unmap_stack_aux(sp);
     }
 
-    // Map a new block (including guard pages) if the pool has been exhausted.
+    // Allocate a new region with guard pages, if the pool has been exhausted.
     // Note `mmap()` returns `MAP_FAILED` upon failure, which is not a null pointer.
-    void* base = ::mmap(nullptr, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK,
-                                       -1, 0);
-    if(base == MAP_FAILED) {
-      POSEIDON_THROW("Error allocating virtual memory (size `$2`)\n"
+    vm_base = static_cast<char*>(::mmap(nullptr, vm_size, PROT_NONE,
+                                        MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0));
+    if(vm_base == MAP_FAILED)
+      POSEIDON_THROW("Could not allocate virtual memory (size `$2`)\n"
                      "[`mmap()` failed: $1]",
-                     noadl::format_errno(errno), size);
-    }
-    vmp = { base, size };
-    uptr<VM_ptr, decltype((vmp_unmap))> vmp_guard(&vmp, vmp_unmap);
+                     noadl::format_errno(errno), vm_size);
 
-    // Exclude guard pages from both ends.
-    ROCKET_ASSERT(vmp.size() >= page_size * 2);
-    stack.ss_sp = static_cast<char*>(vmp.base()) + page_size;
-    stack.ss_size = vmp.size() - page_size * 2;
+    sp.base = vm_base + page_size;
+    sp.size = vm_size - page_size * 2;
+    auto sp_guard = ::rocket::make_unique_handle(sp, do_unmap_stack_aux);
 
     // Mark stack area writable.
-    if(::mprotect(stack.ss_sp, stack.ss_size, PROT_READ | PROT_WRITE) != 0)
-      POSEIDON_THROW("Error changing stack memory permission (base `$2`, size `$3`)\n"
+    if(::mprotect(sp.base, sp.size, PROT_READ | PROT_WRITE) != 0)
+      POSEIDON_THROW("Could not set stack memory permission (base `$2`, size `$3`)\n"
                      "[`mprotect()` failed: $1]",
-                     noadl::format_errno(errno), stack.ss_sp, stack.ss_size);
+                     noadl::format_errno(errno), sp.base, sp.size);
 
-    // Release its ownership.
-    // The block is never unmapped. It will be pooled for reuse by later fibers.
-    vmp_guard.release();
-  }
-
-void
-do_free_stack(const ::stack_t& stack)
-noexcept
-  {
-    if(!stack.ss_sp)
-      return;
-
-    // Put the block back into the pool.
-    mutex::unique_lock lock(s_stack_pool_mutex);
-
-    void* base = static_cast<char*>(stack.ss_sp) - page_size;
-    size_t size = stack.ss_size + page_size * 2;
-
-    auto qnext = reinterpret_cast<VM_ptr*>(stack.ss_sp);
-    qnext = ::rocket::construct_at(qnext, ::std::move(s_stack_pool_head));
-    s_stack_pool_head = { base, size };
+    // The stack need not be unmapped once all permissions have been set.
+    return poolable_stack(sp_guard.release());
   }
 
 struct Config_Scalars
@@ -195,6 +210,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
       };
 
     mutable mutex m_sched_mutex;
+    condition_variable m_sched_avail;
     Fiber_List_root m_sched_ready_q;  // ready queue
     Fiber_List_root m_sched_sleep_q;  // sleep queue
 
@@ -203,16 +219,16 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     do_init_once()
       {
         // Create a thread-specific key for the per-thread context.
-        const auto delete_context = [](void* ptr) { delete static_cast<Thread_Context*>(ptr);  };
-        const auto delete_key = [](::pthread_key_t* ptr) { ::pthread_key_delete(*ptr);  };
-
+        // Note it is never destroyed.
         ::pthread_key_t ckey[1];
-        int err = ::pthread_key_create(ckey, delete_context);
+        int err = ::pthread_key_create(ckey, nullptr);
         if(err != 0)
-          POSEIDON_THROW("Error allocating thread-specific key for fiber scheduling\n"
+          POSEIDON_THROW("Failed to allocate thread-specific key for fibers\n"
                          "[`pthread_key_create()` failed: $1]",
                          noadl::format_errno(err));
-        uptr<::pthread_key_t, decltype((delete_key))> key_guard(ckey, delete_key);
+
+        auto key_guard = ::rocket::make_unique_handle(ckey,
+                               [](::pthread_key_t* ptr) { ::pthread_key_delete(*ptr);  });
 
         // Set up initialized data.
         mutex::unique_lock lock(self->m_sched_mutex);
@@ -228,15 +244,16 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           return static_cast<Thread_Context*>(ptr);
 
         // Allocate it if one hasn't been allocated yet.
-        auto uctx = ::rocket::make_unique<Thread_Context>();
-        POSEIDON_LOG_DEBUG("Created new fiber scheduler thread context `$1`", uctx);
+        auto qctx = ::rocket::make_unique<Thread_Context>();
+        POSEIDON_LOG_DEBUG("Created new fiber scheduler thread context `$1`", qctx);
 
-        int err = ::pthread_setspecific(self->m_sched_key, uctx.get());
+        int err = ::pthread_setspecific(self->m_sched_key, qctx);
         if(err != 0)
           POSEIDON_THROW("Could not set fiber scheduler thread context\n"
                          "[`pthread_setspecific()` failed: $1]",
                          noadl::format_errno(err));
-        return uctx.release();
+
+        return qctx.release();
       }
 
     static
@@ -269,26 +286,32 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
     static
     void
-    do_fiber_execute(int param_0, int param_1)
+    do_execute_fiber(int param_0, int param_1)
+    noexcept
       {
         Abstract_Fiber* fiber;
 
-        // Decode the `this` pointer.
+        // Decode the `this` pointer to the fiber.
         int params[2] = { param_0, param_1 };
         ::std::memcpy(&fiber, params, sizeof(fiber));
 
         // Execute the fiber.
-        POSEIDON_LOG_TRACE("Fiber `$1` started", fiber);
+        ROCKET_ASSERT(fiber->state() == async_state_suspended);
+        fiber->do_set_state(async_state_running);
+        POSEIDON_LOG_TRACE("Starting execution of fiber `$1`", fiber);
+
         try {
           fiber->do_execute();
-          POSEIDON_LOG_TRACE("Fiber `$1` finished", fiber);
         }
         catch(exception& stdex) {
-          // Ignore this exeption.
-          POSEIDON_LOG_WARN("Fiber `$1` threw an exception: $2", fiber, stdex.what());
+          POSEIDON_LOG_WARN("Caught an exception thrown from fiber: $1\n"
+                            "[fiber class `$2`]",
+                            stdex.what(), typeid(*fiber).name());
         }
-        ROCKET_ASSERT(fiber->m_state.load(::std::memory_order_relaxed) == async_state_running);
-        fiber->m_state.store(async_state_finished, ::std::memory_order_relaxed);
+
+        ROCKET_ASSERT(fiber->state() == async_state_running);
+        fiber->do_set_state(async_state_finished);
+        POSEIDON_LOG_TRACE("Finished execution of fiber `$1`", fiber);
       }
 
     static
@@ -297,7 +320,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
       {
         const auto& exit_sig = *(const volatile ::std::atomic<int>*)param;
         const auto myctx = self->open_thread_context();
-        Abstract_Fiber* fiber;
+
+        rcptr<Abstract_Fiber> fiber;
+        bool needs_init;
+        poolable_stack stack;
+        int ret;
 
         // Reload configuration.
         mutex::unique_lock lock(self->m_conf_mutex);
@@ -306,94 +333,115 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         // Try getting a fiber from ready queue.
         lock.assign(self->m_sched_mutex);
-        fiber = self->sched_dequeue_opt(self->m_sched_ready_q);
-        if(!fiber) {
-          ::std::swap(self->m_sched_ready_q, self->m_sched_sleep_q);
-          lock.unlock();
+        for(;;) {
+          fiber.reset(self->sched_dequeue_opt(self->m_sched_ready_q));
+          if(!fiber) {
+            // Check for exit condition.
+            if(exit_sig.load(::std::memory_order_relaxed) != 0)
+              return;
 
-          // Wait a moment.
-          if(exit_sig.load(::std::memory_order_relaxed) == 0)
-            ::usleep(200'000);
-          return;
+            // Move all fibers from sleep queue to ready queue, then wait a moment.
+            ::std::swap(self->m_sched_ready_q, self->m_sched_sleep_q);
+            self->m_sched_avail.wait_for(lock, 1000);
+            continue;
+          }
+
+          // This indicates whether a stack has been allocated for the fiber.
+          // If the stack is in use, we cannot safely deallocate it.
+          // As such, the fiber shall not be deleted until it completes execution.
+          ROCKET_ASSERT(fiber->state() != async_state_initial);
+          needs_init = fiber->state() == async_state_pending;
+
+          if(needs_init && fiber.unique() && !fiber->resident()) {
+            // Delete this fiber when no other reference of it exists.
+            POSEIDON_LOG_DEBUG("Killed orphan fiber: $1", fiber);
+            continue;
+          }
+
+          // Use it.
+          break;
         }
         lock.unlock();
 
-        // Perform some initialization if the fiber is in pending state.
-        if(fiber->state() == async_state_pending) {
+        if(needs_init) {
+          // Perform some initialization that might throw exceptions here.
+          try {
+            stack = do_allocate_stack(conf.stack_size);
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_ERROR("Failed to initialize fiber: $1", stdex.what());
+
+            // The fiber cannot be scheduled.
+            // Put it back to the sleep queue.
+            lock.assign(self->m_sched_mutex);
+            self->sched_enqueue(self->m_sched_sleep_q, fiber.release());
+            return;
+          }
+
+          // No exception shall be thrown until the end of this block.
           fiber->m_sched_time = 0;
           fiber->m_sched_warn = 0;
           fiber->m_sched_futr = nullptr;
 
-          int ret = ::getcontext(fiber->m_sched_uctx);
+          ret = ::getcontext(fiber->m_sched_uctx);
           ROCKET_ASSERT(ret == 0);
 
-          try {
-            do_alloc_stack(fiber->m_sched_uctx->uc_stack, conf.stack_size);
-          }
-          catch(exception& stdex) {
-            POSEIDON_LOG_ERROR("Failed to allocate fiber stack of size `$1`: $2",
-                               conf.stack_size, stdex.what());
-
-            // Put the fiber back into sleep queue.
-            self->sched_enqueue(self->m_sched_sleep_q, fiber);
-            return;
-          }
           fiber->m_sched_uctx->uc_link = myctx->return_uctx;
+          fiber->m_sched_uctx->uc_stack = stack.release();
 
-          // Encode the `this` pointer.
-          int params[2];
+          // Encode the `this` pointer to the fiber.
+          int params[2] = { };
           ::std::memcpy(params, &fiber, sizeof(fiber));
 
-          ::makecontext(fiber->m_sched_uctx, reinterpret_cast<void (*)()>(do_fiber_execute),
+          ::makecontext(fiber->m_sched_uctx, reinterpret_cast<void (*)()>(do_execute_fiber),
                                              2, params[0], params[1]);
 
-          fiber->m_state.store(async_state_suspended, ::std::memory_order_relaxed);
+          // Finish initialization.
+          // This is the only place where the fiber state is not updated by itself.
+          fiber->do_set_state(async_state_suspended);
         }
 
-        // Check for blocking conditions.
-        if(fiber->m_sched_futr && (fiber->m_sched_futr->state() == future_state_empty)) {
+        auto futr = fiber->m_sched_futr;
+        if(futr && (futr->state() == future_state_empty)) {
           // Print a warning message if the fiber has been suspended for too long.
           int64_t now = do_get_monotonic_seconds();
           if(now - fiber->m_sched_warn >= conf.warn_timeout) {
             fiber->m_sched_warn = now;
 
-            POSEIDON_LOG_WARN(
-                "Fiber `$1` has been suspended for `$2` seconds, which seems too long",
-                fiber, now - fiber->m_sched_time);
+            POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds",
+                              fiber, now - fiber->m_sched_time);
           }
 
-          // Put the fiber back into sleep queue.
-          self->sched_enqueue(self->m_sched_sleep_q, fiber);
+          // Wait for the future to be set.
+          // Put it back to the sleep queue.
+          lock.assign(self->m_sched_mutex);
+          self->sched_enqueue(self->m_sched_sleep_q, fiber.release());
           return;
         }
 
+        // Resume fhe fiber...
         ROCKET_ASSERT(fiber->state() == async_state_suspended);
-        fiber->m_state.store(async_state_running, ::std::memory_order_relaxed);
-
-        // Resume the fiber...
         myctx->current = fiber;
+        POSEIDON_LOG_TRACE("Resuming execution of fiber `$1`", fiber);
 
-        POSEIDON_LOG_TRACE("Control flow entering fiber `$1`", fiber);
-        int ret = ::swapcontext(myctx->return_uctx, fiber->m_sched_uctx);
+        ret = ::swapcontext(myctx->return_uctx, fiber->m_sched_uctx);
         ROCKET_ASSERT(ret == 0);
-        POSEIDON_LOG_TRACE("Control flow left fiber `$1`", fiber);
 
+        // ... and return here.
         myctx->current = nullptr;
+        POSEIDON_LOG_TRACE("Suspended execution of fiber `$1`", fiber);
 
-        // ... and check whether it returned or was suspended.
-        if(ROCKET_EXPECT(fiber->state() == async_state_finished)) {
-          // Delete the fiber from scheduler.
-          do_free_stack(fiber->m_sched_uctx->uc_stack);
-          static_cast<void>(rcptr<Abstract_Fiber>(fiber));
+        if(fiber->state() == async_state_suspended) {
+          // Put it back to the sleep queue.
+          lock.assign(self->m_sched_mutex);
+          self->sched_enqueue(self->m_sched_sleep_q, fiber.release());
           return;
         }
 
-        ROCKET_ASSERT(fiber->state() == async_state_running);
-
-        // Put the fiber back into sleep queue.
-        fiber->m_state.store(async_state_suspended, ::std::memory_order_relaxed);
-        lock.assign(self->m_sched_mutex);
-        self->sched_enqueue(self->m_sched_sleep_q, fiber);
+        // Otherwise, the fiber shall have completed execution.
+        // Free its stack. The fiber can be safely deleted thereafter.
+        ROCKET_ASSERT(fiber->state() == async_state_finished);
+        stack.reset(fiber->m_sched_uctx->uc_stack);
       }
   };
 
@@ -427,6 +475,7 @@ reload()
         POSEIDON_LOG_WARN("Config value `fiber.stack_size` truncated to `$1`\n"
                           "[value `$2` out of range]",
                           rval, *qval);
+
       conf.stack_size = static_cast<size_t>(rval);
     }
     else {
@@ -436,6 +485,7 @@ reload()
         POSEIDON_THROW("Could not get thread stack size\n"
                        "[`getrlimit()` failed: $1]",
                        noadl::format_errno(errno));
+
       conf.stack_size = static_cast<size_t>(rlim.rlim_cur);
     }
     do_validate_stack_size(conf.stack_size);
@@ -464,7 +514,7 @@ noexcept
     if(!fiber)
       return nullptr;
 
-    ROCKET_ASSERT(fiber->m_state.load(::std::memory_order_relaxed) == async_state_running);
+    ROCKET_ASSERT(fiber->state() == async_state_running);
     return fiber;
   }
 
@@ -481,20 +531,23 @@ yield(rcptr<const Abstract_Future> futr_opt)
       POSEIDON_THROW("Invalid call to `yield()` outside a fiber");
 
     // Suspend the current fiber...
-    ROCKET_ASSERT(fiber->m_state.load(::std::memory_order_relaxed) == async_state_running);
+    ROCKET_ASSERT(fiber->state() == async_state_running);
+    fiber->do_set_state(async_state_suspended);
+    POSEIDON_LOG_TRACE("Suspending execution of fiber `$1`", fiber);
+
     int64_t now = do_get_monotonic_seconds();
     fiber->m_sched_time = now;
     fiber->m_sched_warn = now;
     fiber->m_sched_futr = futr_opt.get();
 
-    POSEIDON_LOG_TRACE("Control flow leaving fiber `$1`", fiber);
     int ret = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
     ROCKET_ASSERT(ret == 0);
-    POSEIDON_LOG_TRACE("Control flow entered fiber `$1`", fiber);
 
     // ... and resume here.
     ROCKET_ASSERT(myctx->current == fiber);
-    ROCKET_ASSERT(fiber->m_state.load(::std::memory_order_relaxed) == async_state_running);
+    ROCKET_ASSERT(fiber->state() == async_state_suspended);
+    fiber->do_set_state(async_state_running);
+    POSEIDON_LOG_TRACE("Resumed execution of fiber `$1`", fiber);
   }
 
 rcptr<Abstract_Fiber>
@@ -515,8 +568,17 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     // Insert this fiber at the end of ready queue.
     self->sched_enqueue(self->m_sched_ready_q, fiber);
     fiber->add_reference();
-    fiber->m_state.store(async_state_pending, ::std::memory_order_relaxed);
+    fiber->do_set_state(async_state_pending);
+    self->m_sched_avail.notify_one();
     return fiber;
+  }
+
+void
+Fiber_Scheduler::
+signal()
+noexcept
+  {
+    self->m_sched_avail.notify_one();
   }
 
 }  // namespace poseidon

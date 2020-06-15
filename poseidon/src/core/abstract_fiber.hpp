@@ -15,6 +15,7 @@ class Abstract_Fiber
     friend Fiber_Scheduler;
 
   private:
+    ::std::atomic<bool> m_resident;  // don't delete if orphaned
     ::std::atomic<Async_State> m_state;
 
     // These are scheduler data.
@@ -29,7 +30,7 @@ class Abstract_Fiber
   public:
     Abstract_Fiber()
     noexcept
-      : m_state(async_state_initial)
+      : m_resident(false), m_state(async_state_initial)
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Fiber);
@@ -50,6 +51,18 @@ class Abstract_Fiber
       = 0;
 
   public:
+    // Should this timer be deleted if timer driver holds its last reference?
+    ROCKET_PURE_FUNCTION
+    bool
+    resident()
+    const noexcept
+      { return this->m_resident.load(::std::memory_order_relaxed);  }
+
+    void
+    set_resident(bool value = true)
+    noexcept
+      { this->m_resident.store(value, ::std::memory_order_relaxed);  }
+
     // Gets the fiber state, which is set by the scheduler.
     ROCKET_PURE_FUNCTION
     Async_State

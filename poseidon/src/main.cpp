@@ -101,6 +101,7 @@ void
 do_set_exit_sig(int sig)
   {
     exit_sig.store(sig, ::std::memory_order_relaxed);
+    Fiber_Scheduler::signal();
   }
 
 void
