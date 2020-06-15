@@ -60,7 +60,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
     void
     do_worker_thread_loop(void* param)
       {
-        Worker* const qwrk = static_cast<Worker*>(param);
+        auto qwrk = static_cast<Worker*>(param);
         rcptr<Abstract_Async_Job> job;
 
         // Await a job and pop it.
@@ -146,10 +146,9 @@ insert(uptr<Abstract_Async_Job>&& ujob)
     if(self->m_workers.empty())
       POSEIDON_THROW("No worker available");
 
-    Worker* const qwrk = ::rocket::get_probing_origin(
-                                      self->m_workers.data(),
-                                      self->m_workers.data() + self->m_workers.size(),
-                                      job->m_key);
+    auto qwrk = ::rocket::get_probing_origin(self->m_workers.data(),
+                             self->m_workers.data() + self->m_workers.size(),
+                             job->m_key);
 
     // Perform lazy initialization as necessary.
     qwrk->init_once.call(self->do_worker_init_once, qwrk);
