@@ -166,7 +166,7 @@ enqueue_async_job_keyed(uintptr_t key, FuncT&& func)
 
     // Allocate a function object.
     auto async = ::rocket::make_unique<Concrete_Async_Job>(key,
-                                           ::std::forward<FuncT>(func));
+                                               ::std::forward<FuncT>(func));
     auto futr = async->m_prom.future();
     Worker_Pool::insert(::std::move(async));
     return futr;
@@ -203,7 +203,7 @@ enqueue_async_job_random(FuncT&& func)
 
     // Allocate a function object.
     auto async = ::rocket::make_unique<Concrete_Async_Job>(
-                                           ::std::forward<FuncT>(func));
+                                               ::std::forward<FuncT>(func));
     auto futr = async->m_prom.future();
     Worker_Pool::insert(::std::move(async));
     return futr;
