@@ -31,6 +31,9 @@ class Worker_Pool
 
     // Inserts an asynchronous job.
     // Functions with the same key will be delivered to the same worker thread.
+    // The worker pool holds a reference-counted pointer to the job. If the job has no
+    // other references elsewhere and has not started execution, it is deleted without
+    // being executed at all.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static

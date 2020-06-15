@@ -15,13 +15,16 @@ class Abstract_Async_Job
 
   private:
     uintptr_t m_key;
+
+    ::std::atomic<bool> m_resident;  // don't delete if orphaned
     ::std::atomic<Async_State> m_state;
 
   public:
     explicit
     Abstract_Async_Job(uintptr_t key)
     noexcept
-      : m_key(key), m_state(async_state_initial)
+      : m_key(key),
+        m_resident(false), m_state(async_state_initial)
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Async_Job);
@@ -45,6 +48,18 @@ class Abstract_Async_Job
       = 0;
 
   public:
+    // Should this job be deleted if worker pool holds its last reference?
+    ROCKET_PURE_FUNCTION
+    bool
+    resident()
+    const noexcept
+      { return this->m_resident.load(::std::memory_order_relaxed);  }
+
+    void
+    set_resident(bool value = true)
+    noexcept
+      { this->m_resident.store(value, ::std::memory_order_relaxed);  }
+
     // Gets the asynchrnous state, which is set by worker threads.
     ROCKET_PURE_FUNCTION
     Async_State

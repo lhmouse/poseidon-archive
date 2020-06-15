@@ -61,19 +61,37 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
     do_worker_thread_loop(void* param)
       {
         Worker* const qwrk = static_cast<Worker*>(param);
+        rcptr<Abstract_Async_Job> job;
 
         // Await a job and pop it.
         mutex::unique_lock lock(qwrk->queue_mutex);
-        while(qwrk->queue.empty())
-          qwrk->queue_avail.wait(lock);
+        for(;;) {
+          job.reset();
+          if(qwrk->queue.empty()) {
+            // Wait until an element becomes available.
+            qwrk->queue_avail.wait(lock);
+            continue;
+          }
 
-        const auto job = ::std::move(qwrk->queue.front());
-        qwrk->queue.pop_front();
+          // Pop it.
+          job = ::std::move(qwrk->queue.front());
+          qwrk->queue.pop_front();
+
+          if(job.unique() && !job->m_resident.load(::std::memory_order_relaxed)) {
+            // Delete this job when no other reference of it exists.
+            POSEIDON_LOG_DEBUG("Killed orphan asynchronous job: $1", job);
+            continue;
+          }
+
+          // Use it.
+          POSEIDON_LOG_TRACE("Starting execution of asynchronous job `$1`", job);
+          break;
+        }
         lock.unlock();
 
         // Execute the job.
         // See comments in 'abstract_async_job.hpp' for details.
-        job->m_state.store(async_state_running, ::std::memory_order_relaxed);
+        job->m_state.store(async_state_running, ::std::memory_order_release);
         try {
           job->do_execute();
         }
@@ -82,9 +100,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
                             "[job class `$2`]",
                             stdex.what(), typeid(*job).name());
 
+          // Mark failure.
           job->do_set_exception(::std::current_exception());
         }
         job->m_state.store(async_state_finished, ::std::memory_order_release);
+        POSEIDON_LOG_TRACE("Finished execution of asynchronous job `$1`", job);
       }
   };
 
@@ -127,8 +147,10 @@ insert(uptr<Abstract_Async_Job>&& ujob)
     if(self->m_workers.empty())
       POSEIDON_THROW("no worker available");
 
-    Worker* const qwrk = ::rocket::get_probing_origin(self->m_workers.data(),
-                               self->m_workers.data() + self->m_workers.size(), job->m_key);
+    Worker* const qwrk = ::rocket::get_probing_origin(
+                                      self->m_workers.data(),
+                                      self->m_workers.data() + self->m_workers.size(),
+                                      job->m_key);
 
     // Perform lazy initialization as necessary.
     qwrk->init_once.call(self->do_worker_init_once, qwrk);
@@ -138,7 +160,7 @@ insert(uptr<Abstract_Async_Job>&& ujob)
 
     // Insert the job.
     qwrk->queue.emplace_back(job);
-    job->m_state.store(async_state_pending, ::std::memory_order_relaxed);
+    job->m_state.store(async_state_pending, ::std::memory_order_release);
     qwrk->queue_avail.notify_one();
     return job;
   }
