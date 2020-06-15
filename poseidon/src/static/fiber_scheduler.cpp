@@ -578,6 +578,7 @@ Fiber_Scheduler::
 signal()
 noexcept
   {
+    // This function has to be AC-safe.
     self->m_sched_avail.notify_one();
   }
 
