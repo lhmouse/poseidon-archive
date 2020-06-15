@@ -102,6 +102,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
                             stdex.what(), typeid(*job).name());
         }
 
+        ROCKET_ASSERT(job->state() == async_state_running);
         job->do_set_state(async_state_finished);
         POSEIDON_LOG_TRACE("Finished execution of asynchronous job `$1`", job);
       }
