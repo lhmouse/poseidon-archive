@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_NETWORK_SOCKET_ADDRESS_HPP_
-#define POSEIDON_NETWORK_SOCKET_ADDRESS_HPP_
+#ifndef POSEIDON_SOCKET_SOCKET_ADDRESS_HPP_
+#define POSEIDON_SOCKET_SOCKET_ADDRESS_HPP_
 
 #include "../fwd.hpp"
 #include "enums.hpp"
@@ -139,29 +139,29 @@ class Socket_Address
 
     // Classifies this address.
     ROCKET_PURE_FUNCTION
-    Address_Class
+    Socket_Address_Class
     classify()
     const noexcept;
 
     bool
     is_loopback()
     const noexcept
-      { return this->classify() == address_class_loopback;  }
+      { return this->classify() == socket_address_class_loopback;  }
 
     bool
     is_private()
     const noexcept
-      { return this->classify() == address_class_private;  }
+      { return this->classify() == socket_address_class_private;  }
 
     bool
     is_multicast()
     const noexcept
-      { return this->classify() == address_class_multicast;  }
+      { return this->classify() == socket_address_class_multicast;  }
 
     bool
     is_public()
     const noexcept
-      { return this->classify() == address_class_public;  }
+      { return this->classify() == socket_address_class_public;  }
 
     // Sets contents from the result of a call to `recvfrom()`.
     // Either an IPv4 or IPv6 address may be specified. The address family is

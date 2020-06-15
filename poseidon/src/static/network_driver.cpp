@@ -5,7 +5,7 @@
 #include "network_driver.hpp"
 #include "main_config.hpp"
 #include "../core/config_file.hpp"
-#include "../network/abstract_socket.hpp"
+#include "../socket/abstract_socket.hpp"
 #include "../xutilities.hpp"
 #include <sys/epoll.h>
 #include <sys/socket.h>

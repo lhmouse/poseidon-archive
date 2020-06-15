@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_NETWORK_ABSTRACT_TCP_SERVER_SOCKET_HPP_
-#define POSEIDON_NETWORK_ABSTRACT_TCP_SERVER_SOCKET_HPP_
+#ifndef POSEIDON_SOCKET_ABSTRACT_TCP_SERVER_SOCKET_HPP_
+#define POSEIDON_SOCKET_ABSTRACT_TCP_SERVER_SOCKET_HPP_
 
 #include "abstract_listen_socket.hpp"
 #include "socket_address.hpp"

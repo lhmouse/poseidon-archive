@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_NETWORK_ENUMS_HPP_
-#define POSEIDON_NETWORK_ENUMS_HPP_
+#ifndef POSEIDON_SOCKET_ENUMS_HPP_
+#define POSEIDON_SOCKET_ENUMS_HPP_
 
 #include "../fwd.hpp"
 
@@ -35,13 +35,13 @@ enum Connection_State : uint8_t
 
 // This classifies IP addresses.
 // These values are shared by IPv4 and IPv6.
-enum Address_Class : uint8_t
+enum Socket_Address_Class : uint8_t
   {
-    address_class_reserved   = 0,
-    address_class_loopback   = 1,
-    address_class_private    = 2,
-    address_class_multicast  = 3,
-    address_class_public     = 4,
+    socket_address_class_reserved   = 0,
+    socket_address_class_loopback   = 1,
+    socket_address_class_private    = 2,
+    socket_address_class_multicast  = 3,
+    socket_address_class_public     = 4,
   };
 
 }  // namespace poseidon

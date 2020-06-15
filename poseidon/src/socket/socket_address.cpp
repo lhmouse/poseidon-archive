@@ -67,56 +67,56 @@ noexcept
     return (addr & mask) == comp;
   }
 
-Address_Class
+Socket_Address_Class
 do_classify_ipv4(const ::std::bitset<32>& addr)
 noexcept
   {
     // 0.0.0.0/8: Local Identification
     if(do_match(addr, do_make_ipv4({0,0,0,0}), 8))
-      return address_class_reserved;
+      return socket_address_class_reserved;
 
     // 10.0.0.0/8: Class A Private-Use
     if(do_match(addr, do_make_ipv4({10,0,0,0}), 8))
-      return address_class_private;
+      return socket_address_class_private;
 
     // 127.0.0.0/8: Loopback
     if(do_match(addr, do_make_ipv4({127,0,0,0}), 8))
-      return address_class_loopback;
+      return socket_address_class_loopback;
 
     // 172.16.0.0/12: Class B Private-Use
     if(do_match(addr, do_make_ipv4({172,16,0,0}), 12))
-      return address_class_private;
+      return socket_address_class_private;
 
     // 169.254.0.0/16: Link Local
     if(do_match(addr, do_make_ipv4({169,254,0,0}), 16))
-      return address_class_private;
+      return socket_address_class_private;
 
     // 192.168.0.0/16: Class C Private-Use
     if(do_match(addr, do_make_ipv4({192,168,0,0}), 16))
-      return address_class_private;
+      return socket_address_class_private;
 
     // 224.0.0.0/4: Class D Multicast
     if(do_match(addr, do_make_ipv4({224,0,0,0}), 4))
-      return address_class_multicast;
+      return socket_address_class_multicast;
 
     // 240.0.0.0/4: Class E
     if(do_match(addr, do_make_ipv4({240,0,0,0}), 4))
-      return address_class_reserved;
+      return socket_address_class_reserved;
 
-    return address_class_public;
+    return socket_address_class_public;
   }
 
-Address_Class
+Socket_Address_Class
 do_classify_ipv6(const ::std::bitset<128>& addr)
 noexcept
   {
     // ::/128: Unspecified
     if(do_match(addr, do_make_ipv6({0,0,0,0,0,0,0,0}), 128))
-      return address_class_reserved;
+      return socket_address_class_reserved;
 
     // ::1/128: Loopback
     if(do_match(addr, do_make_ipv6({0,0,0,0,0,0,0,1}), 128))
-      return address_class_loopback;
+      return socket_address_class_loopback;
 
     // ::ffff:0:0/96: IPv4-mapped
     if(do_match(addr, do_make_ipv6({0,0,0,0,0,0xffff,0,0}), 96))
@@ -128,15 +128,15 @@ noexcept
 
     // 64:ff9b:1::/48: Local-Use IPv4/IPv6
     if(do_match(addr, do_make_ipv6({0x64,0xff9b,1,0,0,0,0,0}), 48))
-      return address_class_private;
+      return socket_address_class_private;
 
     // 100::/64: Discard-Only
     if(do_match(addr, do_make_ipv6({0x100,0,0,0,0,0,0,0}), 64))
-      return address_class_reserved;
+      return socket_address_class_reserved;
 
     // 2001:db8::/32: Documentation
     if(do_match(addr, do_make_ipv6({0x2001,0xdb8,0,0,0,0,0,0}), 32))
-      return address_class_reserved;
+      return socket_address_class_reserved;
 
     // 2002::/16: 6to4
     if(do_match(addr, do_make_ipv6({0x2002,0,0,0,0,0,0,0}), 16))
@@ -144,25 +144,25 @@ noexcept
 
     // 4000::/2: Reserved
     if(do_match(addr, do_make_ipv6({0x4000,0,0,0,0,0,0,0}), 2))
-      return address_class_reserved;
+      return socket_address_class_reserved;
 
     // FC00::/7: Unique Local Unicast
     if(do_match(addr, do_make_ipv6({0xFC00,0,0,0,0,0,0,0}), 7))
-      return address_class_private;
+      return socket_address_class_private;
 
     // FE80::/10: Link-Scoped Unicast
     if(do_match(addr, do_make_ipv6({0xFE80,0,0,0,0,0,0,0}), 10))
-      return address_class_private;
+      return socket_address_class_private;
 
     // FF00::/8: Multicast
     if(do_match(addr, do_make_ipv6({0xFF00,0,0,0,0,0,0,0}), 8))
-      return address_class_multicast;
+      return socket_address_class_multicast;
 
     // C000::/2: Reserved (other than Link-Scoped Unicast and Multicast)
     if(do_match(addr, do_make_ipv6({0xC000,0,0,0,0,0,0,0}), 2))
-      return address_class_reserved;
+      return socket_address_class_reserved;
 
-    return address_class_public;
+    return socket_address_class_public;
   }
 
 }  // namespace
@@ -171,7 +171,7 @@ static_assert(::std::is_trivially_copy_constructible<Socket_Address>::value &&
               ::std::is_trivially_move_constructible<Socket_Address>::value &&
               ::std::is_trivially_destructible<Socket_Address>::value);
 
-Address_Class
+Socket_Address_Class
 Socket_Address::
 classify()
 const noexcept
@@ -185,7 +185,7 @@ const noexcept
       return do_classify_ipv6(do_cast_ipv6(this->m_stor.addr6.sin6_addr));
     }
     else
-      return address_class_reserved;
+      return socket_address_class_reserved;
   }
 
 unique_FD

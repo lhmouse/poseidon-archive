@@ -2,7 +2,7 @@
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
 #include "../src/precompiled.hpp"
-#include "../src/network/abstract_udp_server_socket.hpp"
+#include "../src/socket/abstract_udp_server_socket.hpp"
 #include "../src/static/network_driver.hpp"
 #include "../src/utilities.hpp"
 

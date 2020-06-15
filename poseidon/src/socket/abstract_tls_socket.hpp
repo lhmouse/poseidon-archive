@@ -1,47 +1,51 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_NETWORK_ABSTRACT_TCP_SOCKET_HPP_
-#define POSEIDON_NETWORK_ABSTRACT_TCP_SOCKET_HPP_
+#ifndef POSEIDON_SOCKET_ABSTRACT_TLS_SOCKET_HPP_
+#define POSEIDON_SOCKET_ABSTRACT_TLS_SOCKET_HPP_
 
 #include "abstract_stream_socket.hpp"
+#include "openssl.hpp"
 
 namespace poseidon {
 
-class Abstract_TCP_Socket
-  : public ::asteria::Rcfwd<Abstract_TCP_Socket>,
+class Abstract_TLS_Socket
+  : public ::asteria::Rcfwd<Abstract_TLS_Socket>,
     public Abstract_Stream_Socket
   {
+  private:
+    unique_SSL m_ssl;
+
   public:
-    explicit
-    Abstract_TCP_Socket(unique_FD&& fd)
-      : Abstract_Stream_Socket(::std::move(fd))
+    Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx)
+      : Abstract_Stream_Socket(::std::move(fd)),
+        m_ssl(noadl::create_ssl(ctx, this->get_fd()))
       { this->do_set_common_options();  }
 
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TCP_Socket);
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Socket);
 
   private:
     // Disables Nagle algorithm, etc.
+    // Calls `::SSL_set_accept_state()`.
     void
     do_set_common_options();
 
-    // Does nothing as no preparation is needed.
+    // Calls `::SSL_set_connect_state()`.
     void
     do_stream_preconnect_unlocked()
     final;
 
-    // Calls `::read()`.
+    // Calls `::SSL_read()`.
     IO_Result
     do_stream_read_unlocked(void* data, size_t size)
     final;
 
-    // Calls `::write()`.
+    // Calls `::SSL_write()`.
     IO_Result
     do_stream_write_unlocked(const void* data, size_t size)
     final;
 
-    // Does nothing as no preparation is needed.
-    // This function always returns `io_result_eof`.
+    // Calls `::SSL_shutdown()`.
     IO_Result
     do_stream_preshutdown_unlocked()
     final;

@@ -17,23 +17,23 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/abstract_fiber.hpp  \
   ${NOTHING}
 
-include_poseidon_networkdir = ${includedir}/poseidon/network
-include_poseidon_network_HEADERS =  \
-  %reldir%/network/enums.hpp  \
-  %reldir%/network/socket_address.hpp  \
-  %reldir%/network/openssl.hpp  \
-  %reldir%/network/abstract_socket.hpp  \
-  %reldir%/network/abstract_listen_socket.hpp  \
-  %reldir%/network/abstract_stream_socket.hpp  \
-  %reldir%/network/abstract_tcp_socket.hpp  \
-  %reldir%/network/abstract_tcp_server_socket.hpp  \
-  %reldir%/network/abstract_tcp_client_socket.hpp  \
-  %reldir%/network/abstract_tls_socket.hpp  \
-  %reldir%/network/abstract_tls_server_socket.hpp  \
-  %reldir%/network/abstract_tls_client_socket.hpp  \
-  %reldir%/network/abstract_udp_socket.hpp  \
-  %reldir%/network/abstract_udp_server_socket.hpp  \
-  %reldir%/network/abstract_udp_client_socket.hpp  \
+include_poseidon_socketdir = ${includedir}/poseidon/socket
+include_poseidon_socket_HEADERS =  \
+  %reldir%/socket/enums.hpp  \
+  %reldir%/socket/socket_address.hpp  \
+  %reldir%/socket/openssl.hpp  \
+  %reldir%/socket/abstract_socket.hpp  \
+  %reldir%/socket/abstract_listen_socket.hpp  \
+  %reldir%/socket/abstract_stream_socket.hpp  \
+  %reldir%/socket/abstract_tcp_socket.hpp  \
+  %reldir%/socket/abstract_tcp_server_socket.hpp  \
+  %reldir%/socket/abstract_tcp_client_socket.hpp  \
+  %reldir%/socket/abstract_tls_socket.hpp  \
+  %reldir%/socket/abstract_tls_server_socket.hpp  \
+  %reldir%/socket/abstract_tls_client_socket.hpp  \
+  %reldir%/socket/abstract_udp_socket.hpp  \
+  %reldir%/socket/abstract_udp_server_socket.hpp  \
+  %reldir%/socket/abstract_udp_client_socket.hpp  \
   ${NOTHING}
 
 include_poseidon_staticdir = ${includedir}/poseidon/static
@@ -56,20 +56,20 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_future.cpp  \
   %reldir%/core/abstract_async_job.cpp  \
   %reldir%/core/abstract_fiber.cpp  \
-  %reldir%/network/openssl.cpp  \
-  %reldir%/network/socket_address.cpp  \
-  %reldir%/network/abstract_socket.cpp  \
-  %reldir%/network/abstract_listen_socket.cpp  \
-  %reldir%/network/abstract_stream_socket.cpp  \
-  %reldir%/network/abstract_tcp_socket.cpp  \
-  %reldir%/network/abstract_tcp_server_socket.cpp  \
-  %reldir%/network/abstract_tcp_client_socket.cpp  \
-  %reldir%/network/abstract_tls_socket.cpp  \
-  %reldir%/network/abstract_tls_server_socket.cpp  \
-  %reldir%/network/abstract_tls_client_socket.cpp  \
-  %reldir%/network/abstract_udp_socket.cpp  \
-  %reldir%/network/abstract_udp_server_socket.cpp  \
-  %reldir%/network/abstract_udp_client_socket.cpp  \
+  %reldir%/socket/openssl.cpp  \
+  %reldir%/socket/socket_address.cpp  \
+  %reldir%/socket/abstract_socket.cpp  \
+  %reldir%/socket/abstract_listen_socket.cpp  \
+  %reldir%/socket/abstract_stream_socket.cpp  \
+  %reldir%/socket/abstract_tcp_socket.cpp  \
+  %reldir%/socket/abstract_tcp_server_socket.cpp  \
+  %reldir%/socket/abstract_tcp_client_socket.cpp  \
+  %reldir%/socket/abstract_tls_socket.cpp  \
+  %reldir%/socket/abstract_tls_server_socket.cpp  \
+  %reldir%/socket/abstract_tls_client_socket.cpp  \
+  %reldir%/socket/abstract_udp_socket.cpp  \
+  %reldir%/socket/abstract_udp_server_socket.cpp  \
+  %reldir%/socket/abstract_udp_client_socket.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
