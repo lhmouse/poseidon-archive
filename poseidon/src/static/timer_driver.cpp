@@ -118,7 +118,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           // Pop it.
           ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
           timer = ::std::move(self->m_pq.back().timer);
-          if(timer.unique()) {
+          if(timer.unique() && !timer->m_resident.load(::std::memory_order_relaxed)) {
             // Delete this timer when no other reference of it exists.
             POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
             self->m_pq.pop_back();
@@ -151,7 +151,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
                             "[timer class `$2`]",
                             stdex.what(), typeid(*timer).name());
         }
-        timer->m_count.fetch_add(1, ::std::memory_order_release);
+        timer->m_count.fetch_add(1, ::std::memory_order_relaxed);
       }
   };
 

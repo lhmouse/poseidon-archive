@@ -14,6 +14,8 @@ class Abstract_Timer
     friend Timer_Driver;
 
   private:
+    ::std::atomic<bool> m_resident;  // don't delete if orphaned
+
     ::std::atomic<int64_t> m_first;  // absolute time in milliseconds
     ::std::atomic<int64_t> m_period;  // period in milliseconds
     ::std::atomic<uint64_t> m_count;
@@ -21,7 +23,8 @@ class Abstract_Timer
   public:
     Abstract_Timer(int64_t first, int64_t period)
     noexcept
-      : m_first(first), m_period(period),
+      : m_resident(false),
+        m_first(first), m_period(period),
         m_count(0)
       { }
 
@@ -37,12 +40,24 @@ class Abstract_Timer
       = 0;
 
   public:
+    // Should this timer be deleted if timer driver holds its last reference?
+    ROCKET_PURE_FUNCTION
+    bool
+    resident()
+    const noexcept
+      { return this->m_resident.load(::std::memory_order_relaxed);  }
+
+    void
+    set_resident(bool value = true)
+    noexcept
+      { this->m_resident.store(value, ::std::memory_order_relaxed);  }
+
     // Gets the counter.
     ROCKET_PURE_FUNCTION
     uint64_t
     count()
     const noexcept
-      { return this->m_count.load(::std::memory_order_acq_rel);  }
+      { return this->m_count.load(::std::memory_order_relaxed);  }
 
     // Resets the first triggered time and the period.
     void
