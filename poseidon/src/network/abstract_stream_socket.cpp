@@ -198,7 +198,7 @@ do_async_connect(const Socket_Address& addr)
     // Lock the stream and examine connection state.
     mutex::unique_lock lock(this->m_mutex);
     if(this->m_cstate != connection_state_initial)
-      POSEIDON_THROW("another connection already in progress or established");
+      POSEIDON_THROW("Another connection already in progress or established");
 
     // Initiate the connection.
     this->do_stream_preconnect_unlocked();
@@ -208,7 +208,7 @@ do_async_connect(const Socket_Address& addr)
     if(::connect(this->get_fd(), addr.data(), addr.size()) != 0) {
       int err = errno;
       if(err != EINPROGRESS)
-        POSEIDON_THROW("failed to initiate connection to '$2'\n"
+        POSEIDON_THROW("Failed to initiate connection to '$2'\n"
                        "[`connect()` failed: $1]",
                        noadl::format_errno(err), addr);
     }
@@ -224,7 +224,7 @@ const
     Socket_Address::storage_type addrst;
     Socket_Address::size_type addrlen = sizeof(addrst);
     if(::getpeername(this->get_fd(), addrst, &addrlen) != 0)
-      POSEIDON_THROW("could not get remote socket address\n"
+      POSEIDON_THROW("Could not get remote socket address\n"
                      "[`getpeername()` failed: $1]",
                      noadl::format_errno(errno));
     return { addrst, addrlen };

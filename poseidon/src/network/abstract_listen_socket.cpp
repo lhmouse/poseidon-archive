@@ -19,7 +19,7 @@ do_translate_syscall_error(const char* func, int err)
     if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
       return io_result_again;
 
-    POSEIDON_THROW("failed to accept incoming connection\n"
+    POSEIDON_THROW("Failed to accept incoming connection\n"
                    "[`$1()` failed: $2]",
                    func, noadl::format_errno(err));
   }
@@ -55,7 +55,7 @@ do_on_async_poll_read(mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*siz
     // Create a new socket object.
     auto sock = this->do_on_async_accept(::std::move(fd));
     if(!sock)
-      POSEIDON_THROW("null pointer returned from `do_on_async_accept()`\n"
+      POSEIDON_THROW("Null pointer returned from `do_on_async_accept()`\n"
                      "[acceptor socket class `$1`]",
                      typeid(*this).name());
 
@@ -110,13 +110,13 @@ do_listen(const Socket_Address& addr, int backlog)
   {
     // Bind onto `addr`.
     if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)
-      POSEIDON_THROW("failed to bind accept socket onto '$2'\n"
+      POSEIDON_THROW("Failed to bind accept socket onto '$2'\n"
                      "[`bind()` failed: $1]",
                      noadl::format_errno(errno), addr);
 
     // Start listening.
     if(::listen(this->get_fd(), ::rocket::clamp(backlog, 1, SOMAXCONN)) != 0)
-      POSEIDON_THROW("failed to set up listen socket on '$2'\n"
+      POSEIDON_THROW("Failed to set up listen socket on '$2'\n"
                      "[`listen()` failed: $1]",
                      noadl::format_errno(errno), this->get_local_address());
 

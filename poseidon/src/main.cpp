@@ -250,7 +250,7 @@ do_get_addons()
     POSEIDON_LOG_DEBUG("Parsed list of add-ons: $1", *qarr);
     for(const auto& val : *qarr) {
       if(!val.is_string())
-        POSEIDON_THROW("invalid add-on path (`$1` is not a string)", val);
+        POSEIDON_THROW("Invalid add-on path (`$1` is not a string)", val);
       addons.emplace_back(val.as_string());
     }
     return addons;
@@ -271,7 +271,7 @@ main(int argc, char** argv)
     // Set current working directory if one is specified.
     if(cmdline.cd_here.size())
       if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
-        POSEIDON_THROW("could not set working directory to '$2'\n"
+        POSEIDON_THROW("Could not set working directory to '$2'\n"
                        "[`chdir()` failed: $1]",
                        noadl::format_errno(errno), cmdline.cd_here);
 
@@ -286,7 +286,7 @@ main(int argc, char** argv)
     // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)
       if(::daemon(1, 0) != 0)
-        POSEIDON_THROW("could not daemonize process\n"
+        POSEIDON_THROW("Could not daemonize process\n"
                        "[`chdir()` failed: $1]",
                        noadl::format_errno(errno));
 
@@ -317,7 +317,7 @@ main(int argc, char** argv)
     for(const auto& path : do_get_addons()) {
       POSEIDON_LOG_INFO("Loading add-on: $1", path);
       if(::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE) == nullptr)
-        POSEIDON_THROW("error loading add-on '$1'\n"
+        POSEIDON_THROW("Error loading add-on '$1'\n"
                        "[`dlopen()` failed: $2]",
                        path, ::dlerror());
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);

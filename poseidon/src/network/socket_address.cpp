@@ -194,11 +194,11 @@ create_socket(int type, int protocol)
 const
   {
     if(this->family() == 0)
-      POSEIDON_THROW("null address family");
+      POSEIDON_THROW("Null address family");
 
     unique_FD fd(::socket(this->family(), type, protocol));
     if(!fd)
-      POSEIDON_THROW("could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
+      POSEIDON_THROW("Could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
                      "[`socket()` failed: $1]",
                      noadl::format_errno(errno), this->family(), type, protocol);
     return fd;
@@ -225,7 +225,7 @@ parse(const char* host, uint16_t port)
       return *this;
     }
     else
-      POSEIDON_THROW("unrecognized host format '$1'", host);
+      POSEIDON_THROW("Unrecognized host format '$1'", host);
   }
 
 tinyfmt&

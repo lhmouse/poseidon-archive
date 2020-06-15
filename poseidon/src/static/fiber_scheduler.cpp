@@ -70,14 +70,14 @@ size_t
 do_validate_stack_size(size_t stack_size)
   {
     if(stack_size & 0xFFFF)
-      POSEIDON_THROW("stack size `$1` not a multiple of 64KiB", stack_size);
+      POSEIDON_THROW("Stack size `$1` not a multiple of 64KiB", stack_size);
 
     uintptr_t msize = (stack_size >> 16) - 1;
     if(msize > 0xFFF)
-      POSEIDON_THROW("stack size `$1` out of range", stack_size);
+      POSEIDON_THROW("Stack size `$1` out of range", stack_size);
 
     if(stack_size < page_size * 4)
-      POSEIDON_THROW("stack size `$1` less than 4 pages", stack_size);
+      POSEIDON_THROW("Stack size `$1` less than 4 pages", stack_size);
 
     return stack_size;
   }
@@ -122,7 +122,7 @@ do_alloc_stack(::stack_t& stack, size_t stack_size)
     void* base = ::mmap(nullptr, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK,
                                        -1, 0);
     if(base == MAP_FAILED) {
-      POSEIDON_THROW("error allocating virtual memory (size `$2`)\n"
+      POSEIDON_THROW("Error allocating virtual memory (size `$2`)\n"
                      "[`mmap()` failed: $1]",
                      noadl::format_errno(errno), size);
     }
@@ -136,7 +136,7 @@ do_alloc_stack(::stack_t& stack, size_t stack_size)
 
     // Mark stack area writable.
     if(::mprotect(stack.ss_sp, stack.ss_size, PROT_READ | PROT_WRITE) != 0)
-      POSEIDON_THROW("error changing stack memory permission (base `$2`, size `$3`)\n"
+      POSEIDON_THROW("Error changing stack memory permission (base `$2`, size `$3`)\n"
                      "[`mprotect()` failed: $1]",
                      noadl::format_errno(errno), stack.ss_sp, stack.ss_size);
 
@@ -209,7 +209,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         ::pthread_key_t ckey[1];
         int err = ::pthread_key_create(ckey, delete_context);
         if(err != 0)
-          POSEIDON_THROW("error allocating thread-specific key for fiber scheduling\n"
+          POSEIDON_THROW("Error allocating thread-specific key for fiber scheduling\n"
                          "[`pthread_key_create()` failed: $1]",
                          noadl::format_errno(err));
         uptr<::pthread_key_t, decltype((delete_key))> key_guard(ckey, delete_key);
@@ -233,7 +233,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         int err = ::pthread_setspecific(self->m_sched_key, uctx.get());
         if(err != 0)
-          POSEIDON_THROW("could not set fiber scheduler thread context\n"
+          POSEIDON_THROW("Could not set fiber scheduler thread context\n"
                          "[`pthread_setspecific()` failed: $1]",
                          noadl::format_errno(err));
         return uctx.release();
@@ -433,7 +433,7 @@ reload()
       // Get system thread stack size.
       ::rlimit rlim;
       if(::getrlimit(RLIMIT_STACK, &rlim) != 0)
-        POSEIDON_THROW("could not get thread stack size\n"
+        POSEIDON_THROW("Could not get thread stack size\n"
                        "[`getrlimit()` failed: $1]",
                        noadl::format_errno(errno));
       conf.stack_size = static_cast<size_t>(rlim.rlim_cur);
@@ -474,11 +474,11 @@ yield(rcptr<const Abstract_Future> futr_opt)
   {
     const auto myctx = static_cast<Thread_Context*>(::pthread_getspecific(self->m_sched_key));
     if(!myctx)
-      POSEIDON_THROW("invalid call to `yield()` inside a non-scheduler thread");
+      POSEIDON_THROW("Invalid call to `yield()` inside a non-scheduler thread");
 
     auto fiber = myctx->current;
     if(!fiber)
-      POSEIDON_THROW("invalid call to `yield()` outside a fiber");
+      POSEIDON_THROW("Invalid call to `yield()` outside a fiber");
 
     // Suspend the current fiber...
     ROCKET_ASSERT(fiber->m_state.load(::std::memory_order_relaxed) == async_state_running);
@@ -504,10 +504,10 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     // Take ownership of `ufiber`.
     rcptr<Abstract_Fiber> fiber(ufiber.release());
     if(!fiber)
-      POSEIDON_THROW("null fiber pointer not valid");
+      POSEIDON_THROW("Null fiber pointer not valid");
 
     if(!fiber.unique())
-      POSEIDON_THROW("fiber pointer must be unique");
+      POSEIDON_THROW("Fiber pointer must be unique");
 
     // Lock fiber queue for modification.
     mutex::unique_lock lock(self->m_sched_mutex);

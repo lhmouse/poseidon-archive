@@ -55,11 +55,11 @@ do_create_default_server_ssl_ctx()
 
     auto qcert = file.get_string_opt({"network","tls","default_certificate"});
     if(!qcert)
-      POSEIDON_THROW("no default `network.tls.default_certificate` available");
+      POSEIDON_THROW("No default `network.tls.default_certificate` available");
 
     auto kpkey = file.get_string_opt({"network","tls","default_private_key"});
     if(!kpkey)
-      POSEIDON_THROW("no default `network.tls.default_private_key` available");
+      POSEIDON_THROW("No default `network.tls.default_private_key` available");
 
     return do_create_server_ssl_ctx(qcert->safe_c_str(), kpkey->safe_c_str());
   }
@@ -125,7 +125,7 @@ create_server_ssl_ctx(const char* cert_opt, const char* pkey_opt)
       return do_create_server_ssl_ctx(cert_opt, pkey_opt);
 
     if(cert_opt || cert_opt)
-      POSEIDON_THROW("certificate and private key must be both specified or both absent");
+      POSEIDON_THROW("Certificate and private key must be both specified or both absent");
 
     // Cache the default context.
     static const auto s_default_ctx = do_create_default_server_ssl_ctx();

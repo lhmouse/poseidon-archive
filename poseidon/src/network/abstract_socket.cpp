@@ -52,7 +52,7 @@ const
     Socket_Address::storage_type addrst;
     Socket_Address::size_type addrlen = sizeof(addrst);
     if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
-      POSEIDON_THROW("could not get local socket address\n"
+      POSEIDON_THROW("Could not get local socket address\n"
                      "[`getsockname()` failed: $1]",
                      noadl::format_errno(errno));
     return { addrst, addrlen };

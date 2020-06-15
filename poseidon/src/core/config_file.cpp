@@ -315,7 +315,7 @@ const
     path.mut_back() = '`';
 
     // Throw the exception now.
-    POSEIDON_THROW("unexpected type of $1 (expecting $2, got `$3`)\n"
+    POSEIDON_THROW("Unexpected type of $1 (expecting $2, got `$3`)\n"
                    "[in file '$4']",
                    path, expect, ::asteria::describe_vtype(value.vtype()),
                    this->m_abspath);
@@ -328,13 +328,13 @@ reload(const char* path)
     // Resolve the path to an absolute one.
     uptr<char, void (&)(void*)> abspath(::realpath(path, nullptr), ::free);
     if(!abspath)
-      POSEIDON_THROW("could not open config file '$2'\n"
+      POSEIDON_THROW("Could not open config file '$2'\n"
                      "[`realpath()` failed: $1]",
                      noadl::format_errno(errno), path);
 
     ::rocket::unique_posix_file fp(::fopen(abspath, "r"), ::fclose);
     if(!fp)
-      POSEIDON_THROW("could not open config file '$2'\n"
+      POSEIDON_THROW("Could not open config file '$2'\n"
                      "[`fopen()` failed: $1]",
                      noadl::format_errno(errno), abspath);
 
@@ -375,7 +375,7 @@ const
     auto qobj = ::rocket::ref(this->m_root);
     size_t icur = 0;
     if(icur == nsegs)
-      POSEIDON_THROW("empty path not valid");
+      POSEIDON_THROW("Empty path not valid");
 
     for(;;) {
       // Find the child denoted by `*sptr`.
