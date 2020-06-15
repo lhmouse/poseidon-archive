@@ -299,21 +299,29 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     void
     do_thread_loop(void* /*param*/)
       {
+        Entry entry;
+        bool needs_sync;
+
         // Await an entry and pop it.
         mutex::unique_lock lock(self->m_queue_mutex);
-        while(self->m_queue.empty())
-          self->m_queue_avail.wait(lock);
+        for(;;) {
+          if(self->m_queue.empty()) {
+            // Wait until an entry becomes available.
+            self->m_queue_avail.wait(lock);
+            continue;
+          }
 
-        auto entry = ::std::move(self->m_queue.front());
-        self->m_queue.pop_front();
-        bool needs_sync = (entry.level < log_level_warn) || self->m_queue.empty();
+          // Pop it.
+          entry = ::std::move(self->m_queue.front());
+          self->m_queue.pop_front();
+          needs_sync = (entry.level < log_level_warn) || self->m_queue.empty();
+          break;
+        }
+        lock.unlock();
 
         // Get configuration for this level.
         lock.assign(self->m_conf_mutex);
-        if(entry.level >= self->m_conf_levels.size())
-          return;
-
-        const auto conf = self->m_conf_levels[entry.level];
+        const auto conf = self->m_conf_levels.at(entry.level);
         lock.unlock();
 
         // Write this entry.
@@ -392,12 +400,12 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
 
     if(ROCKET_UNEXPECT(self->m_thread == 0)) {
       // If the logger thread has not been created, write it immediately.
-      const auto& conf = self->m_conf_levels[entry.level];
+      const auto& conf = self->m_conf_levels.at(entry.level);
       do_write_log_entry(conf, ::std::move(entry));
       return true;
     }
 
-    // Push the element.
+    // Push the entry.
     mutex::unique_lock lock(self->m_queue_mutex);
     self->m_queue.emplace_back(::std::move(entry));
     self->m_queue_avail.notify_one();
