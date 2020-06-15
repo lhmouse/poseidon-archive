@@ -255,6 +255,24 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     static
+    size_t
+    do_epoll_wait()
+    noexcept
+      {
+        int ret = ::epoll_wait(self->m_epoll_fd, self->m_event_buffer.data(),
+                                                 static_cast<int>(self->m_event_buffer.size()),
+                                                 60'000);  // one minute
+        if(ROCKET_EXPECT(ret >= 0))
+          return static_cast<uint32_t>(ret);
+
+        int err = errno;
+        if(err != EINTR)
+          POSEIDON_LOG_FATAL("`epoll_wait()` failed: $1", noadl::format_errno(err));
+
+        return 0;  // no events
+      }
+
+    static
     void
     do_thread_loop(void* /*param*/)
       {
@@ -275,21 +293,16 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             if(!elem.sock.unique())
               continue;
 
-            elem.sock->abort();
+            if(elem.sock->m_resident.load(::std::memory_order_relaxed))
+              continue;
+
             POSEIDON_LOG_DEBUG("Killed orphan socket: $1", elem.sock);
+            elem.sock->abort();
           }
           lock.unlock();
 
           // Await I/O events.
-          int res = ::epoll_wait(self->m_epoll_fd, self->m_event_buffer.data(),
-                                 static_cast<int>(self->m_event_buffer.size()), 60'000);
-          if(res < 0) {
-            int err = errno;
-            if(err != EINTR)
-              POSEIDON_LOG_FATAL("`epoll_wait()` failed: $1", noadl::format_errno(err));
-            res = 0;
-          }
-          size_t nevents = static_cast<uint32_t>(res);
+          size_t nevents = self->do_epoll_wait();
 
           // Process all events that have been received so far.
           // Note the loop below will not throw exceptions.

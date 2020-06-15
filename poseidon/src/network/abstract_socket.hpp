@@ -15,6 +15,7 @@ class Abstract_Socket
     friend Network_Driver;
 
   private:
+    ::std::atomic<bool> m_resident;  // don't delete if orphaned
     unique_FD m_fd;
 
     // These are used by network driver.
@@ -24,7 +25,7 @@ class Abstract_Socket
   public:
     explicit
     Abstract_Socket(unique_FD&& fd)
-      : m_fd(::std::move(fd))
+      : m_resident(false), m_fd(::std::move(fd))
       { this->do_set_common_options();  }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Socket);
@@ -72,6 +73,18 @@ class Abstract_Socket
       = 0;
 
   public:
+    // Should this socket be deleted if network driver holds its last reference?
+    ROCKET_PURE_FUNCTION
+    bool
+    resident()
+    const noexcept
+      { return this->m_resident.load(::std::memory_order_relaxed);  }
+
+    void
+    set_resident(bool value = true)
+    noexcept
+      { this->m_resident.store(value, ::std::memory_order_relaxed);  }
+
     // Returns the stream descriptor.
     // This is used to query and adjust stream flags. You shall not perform I/O
     // operations on it.
