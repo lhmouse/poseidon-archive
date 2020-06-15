@@ -44,15 +44,6 @@ class Abstract_Async_Job
     do_execute()
       = 0;
 
-    // Assigns an exception as the result.
-    // This function is called after `do_execute()` throws an exception.
-    // An overriden function should not throw exceptions. If another value
-    // has already been assigned, this call shall have no effect.
-    virtual
-    void
-    do_set_exception(const ::std::exception_ptr& eptr)
-      = 0;
-
   public:
     // Should this job be deleted if worker pool holds its last reference?
     ROCKET_PURE_FUNCTION

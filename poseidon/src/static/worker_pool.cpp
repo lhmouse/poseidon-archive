@@ -84,24 +84,24 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
           }
 
           // Use it.
-          POSEIDON_LOG_TRACE("Starting execution of asynchronous job `$1`", job);
           break;
         }
         lock.unlock();
 
         // Execute the job.
-        // See comments in 'abstract_async_job.hpp' for details.
+        ROCKET_ASSERT(job->state() == async_state_pending);
         job->do_set_state(async_state_running);
+        POSEIDON_LOG_TRACE("Starting execution of asynchronous job `$1`", job);
+
         try {
           job->do_execute();
         }
         catch(exception& stdex) {
-          POSEIDON_LOG_WARN("Exception thrown from asynchronous job: $1\n"
+          POSEIDON_LOG_WARN("Caught an exception thrown from asynchronous job: $1\n"
                             "[job class `$2`]",
                             stdex.what(), typeid(*job).name());
-
-          job->do_set_exception(::std::current_exception());
         }
+
         job->do_set_state(async_state_finished);
         POSEIDON_LOG_TRACE("Finished execution of asynchronous job `$1`", job);
       }

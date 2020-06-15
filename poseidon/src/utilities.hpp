@@ -156,12 +156,12 @@ enqueue_async_job_keyed(uintptr_t key, FuncT&& func)
         void
         do_execute()
         override
-          { this->m_prom.set_value(this->m_func());  }
-
-        void
-        do_set_exception(const ::std::exception_ptr& eptr)
-        override
-          { this->m_prom.set_exception(eptr);  }
+          try {
+            this->m_prom.set_value(this->m_func());
+          }
+          catch(...) {
+            this->m_prom.set_exception(::std::current_exception());
+          }
       };
 
     // Allocate a function object.
@@ -193,12 +193,12 @@ enqueue_async_job_random(FuncT&& func)
         void
         do_execute()
         override
-          { this->m_prom.set_value(this->m_func());  }
-
-        void
-        do_set_exception(const ::std::exception_ptr& eptr)
-        override
-          { this->m_prom.set_exception(eptr);  }
+          try {
+            this->m_prom.set_value(this->m_func());
+          }
+          catch(...) {
+            this->m_prom.set_exception(::std::current_exception());
+          }
       };
 
     // Allocate a function object.
