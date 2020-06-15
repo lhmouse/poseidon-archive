@@ -29,6 +29,12 @@ class Abstract_Async_Job
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Async_Job);
 
+  private:
+    void
+    do_set_state(Async_State state)
+    noexcept
+      { this->m_state.store(state, ::std::memory_order_release);  }
+
   protected:
     // Executes this job and satisfies some promise of the derived class.
     // This function is called only once. No matter whether it returns or

@@ -34,6 +34,12 @@ class Abstract_Fiber
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Fiber);
 
+  private:
+    void
+    do_set_state(Async_State state)
+    noexcept
+      { this->m_state.store(state, ::std::memory_order_release);  }
+
   protected:
     // Executes this fiber.
     // This function is called only once. No matter whether it returns or

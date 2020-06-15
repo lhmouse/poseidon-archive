@@ -77,7 +77,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
           job = ::std::move(qwrk->queue.front());
           qwrk->queue.pop_front();
 
-          if(job.unique() && !job->m_resident.load(::std::memory_order_relaxed)) {
+          if(job.unique() && !job->resident()) {
             // Delete this job when no other reference of it exists.
             POSEIDON_LOG_DEBUG("Killed orphan asynchronous job: $1", job);
             continue;
@@ -91,7 +91,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
 
         // Execute the job.
         // See comments in 'abstract_async_job.hpp' for details.
-        job->m_state.store(async_state_running, ::std::memory_order_release);
+        job->do_set_state(async_state_running);
         try {
           job->do_execute();
         }
@@ -100,10 +100,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
                             "[job class `$2`]",
                             stdex.what(), typeid(*job).name());
 
-          // Mark failure.
           job->do_set_exception(::std::current_exception());
         }
-        job->m_state.store(async_state_finished, ::std::memory_order_release);
+        job->do_set_state(async_state_finished);
         POSEIDON_LOG_TRACE("Finished execution of asynchronous job `$1`", job);
       }
   };
@@ -160,7 +159,7 @@ insert(uptr<Abstract_Async_Job>&& ujob)
 
     // Insert the job.
     qwrk->queue.emplace_back(job);
-    job->m_state.store(async_state_pending, ::std::memory_order_release);
+    job->do_set_state(async_state_pending);
     qwrk->queue_avail.notify_one();
     return job;
   }
