@@ -16,18 +16,18 @@ do_create_server_ssl_ctx(const char* cert, const char* pkey)
   {
     unique_SSL_CTX ctx(::SSL_CTX_new(::TLS_server_method()));
     if(!ctx)
-      POSEIDON_SSL_THROW("could not create server SSL context\n"
+      POSEIDON_SSL_THROW("Could not create server SSL context\n"
                          "[`SSL_CTX_new()` failed]");
 
     POSEIDON_LOG_INFO("Loading SSL certificate: $1", cert);
     if(::SSL_CTX_use_certificate_chain_file(ctx, cert) != 1)
-      POSEIDON_SSL_THROW("could not load certificate '$1'\n"
+      POSEIDON_SSL_THROW("Could not load certificate '$1'\n"
                          "[`SSL_CTX_use_certificate_chain_file()` failed]",
                          cert);
 
     POSEIDON_LOG_INFO("Loading SSL private key: $1", pkey);
     if(::SSL_CTX_use_PrivateKey_file(ctx, pkey, SSL_FILETYPE_PEM) != 1)
-      POSEIDON_SSL_THROW("could not load private key '$1'\n"
+      POSEIDON_SSL_THROW("Could not load private key '$1'\n"
                          "[`SSL_CTX_use_PrivateKey_file()` failed]",
                          pkey);
 
@@ -41,7 +41,7 @@ do_create_server_ssl_ctx(const char* cert, const char* pkey)
     static constexpr unsigned char session_id[] = { __DATE__ __TIME__ };
     static_assert(sizeof(session_id) <= SSL_MAX_SSL_SESSION_ID_LENGTH);
     if(::SSL_CTX_set_session_id_context(ctx, session_id, sizeof(session_id)) != 1)
-      POSEIDON_SSL_THROW("could not set SSL session id context\n"
+      POSEIDON_SSL_THROW("Could not set SSL session id context\n"
                          "[`SSL_CTX_set_session_id_context()` failed]");
 
     ::SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
@@ -71,7 +71,7 @@ do_create_default_client_ssl_ctx()
 
     unique_SSL_CTX ctx(::SSL_CTX_new(::TLS_client_method()));
     if(!ctx)
-      POSEIDON_SSL_THROW("could not create client SSL context\n"
+      POSEIDON_SSL_THROW("Could not create client SSL context\n"
                          "[`SSL_CTX_new()` failed]");
 
     auto ktpath = file.get_string_opt({"network","tls","trusted_ca_path"});
@@ -85,7 +85,7 @@ do_create_default_client_ssl_ctx()
 
     POSEIDON_LOG_INFO("Setting SSL CA certificate path: $1", *ktpath);
     if(::SSL_CTX_load_verify_locations(ctx, nullptr, ktpath->safe_c_str()) != 1)
-      POSEIDON_SSL_THROW("could not set CA certificate path to '$1'\n"
+      POSEIDON_SSL_THROW("Could not set CA certificate path to '$1'\n"
                          "[`SSL_CTX_set_default_verify_paths()` failed]",
                          *ktpath);
 
@@ -147,11 +147,11 @@ create_ssl(::SSL_CTX* ctx, int fd)
   {
     unique_SSL ssl(::SSL_new(ctx));
     if(!ssl)
-      POSEIDON_SSL_THROW("could not create SSL structure\n"
+      POSEIDON_SSL_THROW("Could not create SSL structure\n"
                          "[`SSL_new()` failed]");
 
     if(::SSL_set_fd(ssl, fd) != 1)
-      POSEIDON_SSL_THROW("could not set OpenSSL file descriptor\n"
+      POSEIDON_SSL_THROW("Could not set OpenSSL file descriptor\n"
                          "[`SSL_set_fd()` failed]");
     return ssl;
   }

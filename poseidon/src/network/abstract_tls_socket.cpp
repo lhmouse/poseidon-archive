@@ -36,12 +36,12 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
         if(err == EINTR)
           return io_result_not_eof;
 
-        POSEIDON_SSL_THROW("irrecoverable SSL I/O error\n"
+        POSEIDON_SSL_THROW("Irrecoverable SSL I/O error\n"
                            "[`$1()` returned `$2`; $3]",
                            func, ret, noadl::format_errno(err));
 
       default:
-        POSEIDON_SSL_THROW("irrecoverable SSL error\n"
+        POSEIDON_SSL_THROW("Irrecoverable SSL error\n"
                            "[`$1()` returned `$2`]",
                            func, ret);
     }
