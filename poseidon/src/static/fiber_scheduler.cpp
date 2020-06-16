@@ -181,7 +181,7 @@ do_allocate_stack(size_t stack_size)
 struct Config_Scalars
   {
     size_t stack_size = 0x2'00000;  // 2MiB
-    int64_t warn_timeout = 600; // 10min
+    int64_t warn_timeout = 600;  // 10min
   };
 
 struct Thread_Context

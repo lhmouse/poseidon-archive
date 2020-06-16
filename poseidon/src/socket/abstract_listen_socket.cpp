@@ -60,7 +60,7 @@ do_on_async_poll_read(mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*siz
                      typeid(*this).name());
 
     POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'\n"
-                      "[acceptor socket class `$3`; new socket class `$4`]",
+                      "[acceptor socket class `$3`, new socket class `$4`]",
                       sock->get_local_address(), Socket_Address(addrst, addrlen),
                       typeid(*this).name(), typeid(*sock).name());
 
