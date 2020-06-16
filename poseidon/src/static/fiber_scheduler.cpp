@@ -211,6 +211,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
     mutable mutex m_sched_mutex;
     condition_variable m_sched_avail;
+    ::std::atomic<long> m_sched_wait;
     Fiber_List_root m_sched_ready_q;  // ready queue
     Fiber_List_root m_sched_sleep_q;  // sleep queue
 
@@ -322,9 +323,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         const auto myctx = self->open_thread_context();
 
         rcptr<Abstract_Fiber> fiber;
-        bool needs_init;
         poolable_stack stack;
-        int ret;
 
         // Reload configuration.
         mutex::unique_lock lock(self->m_conf_mutex);
@@ -342,20 +341,70 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             // Move all fibers from sleep queue to ready queue, then wait a moment.
             ::std::swap(self->m_sched_ready_q, self->m_sched_sleep_q);
-            self->m_sched_avail.wait_for(lock, 1000);
+            long wait = self->m_sched_wait.exchange(1000, ::std::memory_order_relaxed);
+            self->m_sched_avail.wait_for(lock, wait);
+            continue;
+          }
+
+          auto futr = fiber->m_sched_futr;
+          if(futr && (futr->state() == future_state_empty)) {
+            // Print a warning message if the fiber has been suspended for too long.
+            int64_t now = do_get_monotonic_seconds();
+            if(now - fiber->m_sched_warn >= conf.warn_timeout) {
+              fiber->m_sched_warn = now;
+
+              POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds",
+                                fiber, now - fiber->m_sched_time);
+            }
+
+            // Wait for the future to be set.
+            self->sched_enqueue(self->m_sched_sleep_q, fiber.release());
             continue;
           }
 
           // This indicates whether a stack has been allocated for the fiber.
-          // If the stack is in use, we cannot safely deallocate it.
-          // As such, the fiber shall not be deleted until it completes execution.
           ROCKET_ASSERT(fiber->state() != async_state_initial);
-          needs_init = fiber->state() == async_state_pending;
+          if(fiber->state() == async_state_pending) {
+            // If the stack is in use, we cannot deallocate it safely.
+            // As such, the fiber shall not be deleted until it completes execution.
+            if(fiber.unique() && !fiber->resident()) {
+              // Delete this fiber when no other reference of it exists.
+              POSEIDON_LOG_DEBUG("Killed orphan fiber: $1", fiber);
+              continue;
+            }
 
-          if(needs_init && fiber.unique() && !fiber->resident()) {
-            // Delete this fiber when no other reference of it exists.
-            POSEIDON_LOG_DEBUG("Killed orphan fiber: $1", fiber);
-            continue;
+            // Perform some initialization that might throw exceptions here.
+            try {
+              stack = do_allocate_stack(conf.stack_size);
+            }
+            catch(exception& stdex) {
+              POSEIDON_LOG_ERROR("Failed to initialize fiber: $1", stdex.what());
+
+              // The fiber cannot be scheduled.
+              // Put it back to the sleep queue.
+              self->sched_enqueue(self->m_sched_sleep_q, fiber.release());
+              continue;
+            }
+
+            // No exception shall be thrown until the end of this block.
+            int ret = ::getcontext(fiber->m_sched_uctx);
+            ROCKET_ASSERT(ret == 0);
+
+            fiber->m_sched_uctx->uc_link = myctx->return_uctx;
+            fiber->m_sched_uctx->uc_stack = stack.release();
+
+            // Encode the `this` pointer to the fiber.
+            int params[2] = { };
+            ::std::memcpy(params, &fiber, sizeof(fiber));
+
+            ::makecontext(fiber->m_sched_uctx,
+                          reinterpret_cast<void (*)()>(do_execute_fiber),
+                          2, params[0], params[1]);
+
+            // Finish initialization.
+            // Note this is the only scenerio where the fiber state is not updated
+            // by itself.
+            fiber->do_set_state(async_state_suspended);
           }
 
           // Use it.
@@ -363,68 +412,12 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         }
         lock.unlock();
 
-        if(needs_init) {
-          // Perform some initialization that might throw exceptions here.
-          try {
-            stack = do_allocate_stack(conf.stack_size);
-          }
-          catch(exception& stdex) {
-            POSEIDON_LOG_ERROR("Failed to initialize fiber: $1", stdex.what());
-
-            // The fiber cannot be scheduled.
-            // Put it back to the sleep queue.
-            lock.assign(self->m_sched_mutex);
-            self->sched_enqueue(self->m_sched_sleep_q, fiber.release());
-            return;
-          }
-
-          // No exception shall be thrown until the end of this block.
-          fiber->m_sched_time = 0;
-          fiber->m_sched_warn = 0;
-          fiber->m_sched_futr = nullptr;
-
-          ret = ::getcontext(fiber->m_sched_uctx);
-          ROCKET_ASSERT(ret == 0);
-
-          fiber->m_sched_uctx->uc_link = myctx->return_uctx;
-          fiber->m_sched_uctx->uc_stack = stack.release();
-
-          // Encode the `this` pointer to the fiber.
-          int params[2] = { };
-          ::std::memcpy(params, &fiber, sizeof(fiber));
-
-          ::makecontext(fiber->m_sched_uctx, reinterpret_cast<void (*)()>(do_execute_fiber),
-                                             2, params[0], params[1]);
-
-          // Finish initialization.
-          // This is the only place where the fiber state is not updated by itself.
-          fiber->do_set_state(async_state_suspended);
-        }
-
-        auto futr = fiber->m_sched_futr;
-        if(futr && (futr->state() == future_state_empty)) {
-          // Print a warning message if the fiber has been suspended for too long.
-          int64_t now = do_get_monotonic_seconds();
-          if(now - fiber->m_sched_warn >= conf.warn_timeout) {
-            fiber->m_sched_warn = now;
-
-            POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds",
-                              fiber, now - fiber->m_sched_time);
-          }
-
-          // Wait for the future to be set.
-          // Put it back to the sleep queue.
-          lock.assign(self->m_sched_mutex);
-          self->sched_enqueue(self->m_sched_sleep_q, fiber.release());
-          return;
-        }
-
         // Resume fhe fiber...
         ROCKET_ASSERT(fiber->state() == async_state_suspended);
         myctx->current = fiber;
         POSEIDON_LOG_TRACE("Resuming execution of fiber `$1`", fiber);
 
-        ret = ::swapcontext(myctx->return_uctx, fiber->m_sched_uctx);
+        int ret = ::swapcontext(myctx->return_uctx, fiber->m_sched_uctx);
         ROCKET_ASSERT(ret == 0);
 
         // ... and return here.
@@ -562,6 +555,11 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     if(!fiber.unique())
       POSEIDON_THROW("Fiber pointer must be unique");
 
+    // Clear data members.
+    fiber->m_sched_time = 0;
+    fiber->m_sched_warn = 0;
+    fiber->m_sched_futr = nullptr;
+
     // Lock fiber queue for modification.
     mutex::unique_lock lock(self->m_sched_mutex);
 
@@ -579,6 +577,7 @@ signal()
 noexcept
   {
     // This function has to be AC-safe.
+    self->m_sched_wait.store(0, ::std::memory_order_relaxed);
     self->m_sched_avail.notify_one();
   }
 
