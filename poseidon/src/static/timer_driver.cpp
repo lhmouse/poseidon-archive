@@ -176,7 +176,7 @@ insert(uptr<Abstract_Timer>&& utimer)
 
     // Get the next trigger time.
     // The timer is considered to be owned uniquely, so there is no need to lock it.
-    int64_t next = do_get_time(timer->m_first);
+    int64_t next = do_get_time(timer->m_first.load(::std::memory_order_relaxed));
 
     // Lock priority queue for modification.
     mutex::unique_lock lock(self->m_pq_mutex);
