@@ -239,6 +239,18 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
     static
     Thread_Context*
+    get_thread_context()
+      {
+        auto ptr = ::pthread_getspecific(self->m_sched_key);
+        if(ROCKET_EXPECT(ptr))
+          return static_cast<Thread_Context*>(ptr);
+
+        POSEIDON_LOG_ERROR("No fiber scheduler thread context (wrong thread?)");
+        return nullptr;
+      }
+
+    static
+    Thread_Context*
     open_thread_context()
       {
         auto ptr = ::pthread_getspecific(self->m_sched_key);
@@ -516,7 +528,7 @@ Fiber_Scheduler::
 current_opt()
 noexcept
   {
-    const auto myctx = static_cast<Thread_Context*>(::pthread_getspecific(self->m_sched_key));
+    const auto myctx = self->get_thread_context();
     if(!myctx)
       return nullptr;
 
@@ -532,7 +544,7 @@ void
 Fiber_Scheduler::
 yield(rcptr<const Abstract_Future> futr_opt)
   {
-    const auto myctx = static_cast<Thread_Context*>(::pthread_getspecific(self->m_sched_key));
+    const auto myctx = self->get_thread_context();
     if(!myctx)
       POSEIDON_THROW("Invalid call to `yield()` inside a non-scheduler thread");
 
@@ -595,7 +607,7 @@ Fiber_Scheduler::
 signal()
 noexcept
   {
-    // This function has to be AC-safe.
+    // This function has to be AS-safe.
     self->m_sched_wait.store(0, ::std::memory_order_relaxed);
     self->m_sched_avail.notify_one();
   }
