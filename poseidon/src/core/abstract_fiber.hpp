@@ -50,6 +50,28 @@ class Abstract_Fiber
     do_execute()
       = 0;
 
+    // These are callbacks for profiling.
+    // The default implementations do nothing.
+    virtual
+    void
+    do_on_start()
+    noexcept;
+
+    virtual
+    void
+    do_on_suspend()
+    noexcept;
+
+    virtual
+    void
+    do_on_resume()
+    noexcept;
+
+    virtual
+    void
+    do_on_finish()
+    noexcept;
+
   public:
     // Should this timer be deleted if timer driver holds its last reference?
     ROCKET_PURE_FUNCTION

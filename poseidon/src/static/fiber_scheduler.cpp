@@ -300,6 +300,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         // Execute the fiber.
         ROCKET_ASSERT(fiber->state() == async_state_suspended);
         fiber->do_set_state(async_state_running);
+        fiber->do_on_start();
         POSEIDON_LOG_TRACE("Starting execution of fiber `$1`", fiber);
 
         try {
@@ -313,6 +314,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         ROCKET_ASSERT(fiber->state() == async_state_running);
         fiber->do_set_state(async_state_finished);
+        fiber->do_on_finish();
         POSEIDON_LOG_TRACE("Finished execution of fiber `$1`", fiber);
       }
 
@@ -541,6 +543,7 @@ yield(rcptr<const Abstract_Future> futr_opt)
     // Suspend the current fiber...
     ROCKET_ASSERT(fiber->state() == async_state_running);
     fiber->do_set_state(async_state_suspended);
+    fiber->do_on_suspend();
     POSEIDON_LOG_TRACE("Suspending execution of fiber `$1`", fiber);
 
     int64_t now = do_get_monotonic_seconds();
@@ -555,6 +558,7 @@ yield(rcptr<const Abstract_Future> futr_opt)
     ROCKET_ASSERT(myctx->current == fiber);
     ROCKET_ASSERT(fiber->state() == async_state_suspended);
     fiber->do_set_state(async_state_running);
+    fiber->do_on_resume();
     POSEIDON_LOG_TRACE("Resumed execution of fiber `$1`", fiber);
   }
 

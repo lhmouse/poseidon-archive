@@ -12,4 +12,32 @@ Abstract_Fiber::
   {
   }
 
+void
+Abstract_Fiber::
+do_on_start()
+noexcept
+  {
+  }
+
+void
+Abstract_Fiber::
+do_on_suspend()
+noexcept
+  {
+  }
+
+void
+Abstract_Fiber::
+do_on_resume()
+noexcept
+  {
+  }
+
+void
+Abstract_Fiber::
+do_on_finish()
+noexcept
+  {
+  }
+
 }  // namespace poseidon
