@@ -212,7 +212,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
     mutable mutex m_sched_mutex;
     condition_variable m_sched_avail;
-    ::std::atomic<long> m_sched_wait;
     Fiber_List_root m_sched_ready_q;  // ready queue
     Fiber_List_root m_sched_sleep_q;  // sleep queue
 
@@ -356,8 +355,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             // Move all fibers from sleep queue to ready queue, then wait a moment.
             ::std::swap(self->m_sched_ready_q, self->m_sched_sleep_q);
-            long wait = self->m_sched_wait.exchange(1000, ::std::memory_order_relaxed);
-            self->m_sched_avail.wait_for(lock, wait);
+            self->m_sched_avail.wait_for(lock, 100);
             continue;
           }
 
@@ -607,8 +605,7 @@ Fiber_Scheduler::
 signal()
 noexcept
   {
-    // This function has to be AS-safe.
-    self->m_sched_wait.store(0, ::std::memory_order_relaxed);
+    mutex::unique_lock lock(self->m_sched_mutex);
     self->m_sched_avail.notify_one();
   }
 

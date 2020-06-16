@@ -58,7 +58,6 @@ class Fiber_Scheduler
 
     // Wakes up a scheduler thread.
     // This function is thread-safe.
-    // This function is asynchronous-signal-safe.
     static
     void
     signal()
