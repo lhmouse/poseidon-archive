@@ -67,8 +67,8 @@ class Promise
     const
       {
         ::rocket::sprintf_and_throw<::std::invalid_argument>(
-          "Promise: no future associated (value type `%s`)",
-          typeid(ValueT).name());
+              "Promise: no future associated (value type `%s`)",
+              typeid(ValueT).name());
       }
 
   public:
