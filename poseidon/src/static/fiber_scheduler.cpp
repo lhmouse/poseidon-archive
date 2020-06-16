@@ -26,19 +26,19 @@ noexcept
 const size_t page_size = static_cast<size_t>(::sysconf(_SC_PAGESIZE));
 
 size_t
-do_validate_stack_size(size_t stack_size)
+do_validate_stack_vm_size(size_t stack_vm_size)
   {
-    if(stack_size & 0xFFFF)
-      POSEIDON_THROW("Stack size `$1` not a multiple of 64KiB", stack_size);
+    if(stack_vm_size & 0xFFFF)
+      POSEIDON_THROW("Stack size `$1` not a multiple of 64KiB", stack_vm_size);
 
-    uintptr_t msize = (stack_size >> 16) - 1;
+    uintptr_t msize = (stack_vm_size >> 16) - 1;
     if(msize > 0xFFF)
-      POSEIDON_THROW("Stack size `$1` out of range", stack_size);
+      POSEIDON_THROW("Stack size `$1` out of range", stack_vm_size);
 
-    if(stack_size < page_size * 4)
-      POSEIDON_THROW("Stack size `$1` less than 4 pages", stack_size);
+    if(stack_vm_size < page_size * 4)
+      POSEIDON_THROW("Stack size `$1` less than 4 pages", stack_vm_size);
 
-    return stack_size;
+    return stack_vm_size;
   }
 
 struct Stack_Pointer
@@ -126,11 +126,11 @@ struct Stack_Closer
 using poolable_stack = ::rocket::unique_handle<Stack_Pointer, Stack_Closer>;
 
 poolable_stack
-do_allocate_stack(size_t stack_size)
+do_allocate_stack(size_t stack_vm_size)
   {
     Stack_Pointer sp;
     char* vm_base;
-    size_t vm_size = do_validate_stack_size(stack_size);
+    size_t vm_size = do_validate_stack_vm_size(stack_vm_size);
 
     // Check whether we can get a region from the pool.
     for(;;) {
@@ -180,8 +180,9 @@ do_allocate_stack(size_t stack_size)
 
 struct Config_Scalars
   {
-    size_t stack_size = 0x2'00000;  // 2MiB
-    int64_t warn_timeout = 600;  // 10min
+    size_t stack_vm_size = 0x2'00000;  // 2MiB
+    int64_t warn_timeout = 15;  // 15sec
+    int64_t fail_timeout = 300;  // 5min
   };
 
 struct Thread_Context
@@ -348,23 +349,34 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
           auto futr = fiber->m_sched_futr;
           if(futr && (futr->state() == future_state_empty)) {
-            // Print a warning message if the fiber has been suspended for too long.
+            // Check timeouts.
             int64_t now = do_get_monotonic_seconds();
+            int64_t delta = now - fiber->m_sched_time;
+
+            // Print a warning message if the fiber has been suspended for too long.
             if(now - fiber->m_sched_warn >= conf.warn_timeout) {
               fiber->m_sched_warn = now;
 
-              POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds",
-                                fiber, now - fiber->m_sched_time);
+              POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds.",
+                                fiber, delta);
             }
 
-            // Wait for the future to be set.
-            self->sched_enqueue(self->m_sched_sleep_q, fiber.release());
-            continue;
+            if(delta < conf.fail_timeout) {
+              // Wait for the future to be set.
+              self->sched_enqueue(self->m_sched_sleep_q, fiber.release());
+              continue;
+            }
+
+            // Proceed anyway.
+            // This usually causes an exception to be thrown after `yield()` returns.
+            POSEIDON_LOG_ERROR("Suspension of fiber `$1` has exceeded `$2` seconds.\n"
+                               "This is likely permanent. Please check for deadlocks.",
+                               fiber, conf.fail_timeout);
           }
 
-          // This indicates whether a stack has been allocated for the fiber.
           ROCKET_ASSERT(fiber->state() != async_state_initial);
           if(fiber->state() == async_state_pending) {
+            // This indicates whether a stack has been allocated for the fiber.
             // If the stack is in use, we cannot deallocate it safely.
             // As such, the fiber shall not be deleted until it completes execution.
             if(fiber.unique() && !fiber->resident()) {
@@ -375,7 +387,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             // Perform some initialization that might throw exceptions here.
             try {
-              stack = do_allocate_stack(conf.stack_size);
+              stack = do_allocate_stack(conf.stack_vm_size);
             }
             catch(exception& stdex) {
               POSEIDON_LOG_ERROR("Failed to initialize fiber: $1", stdex.what());
@@ -458,18 +470,18 @@ reload()
     auto file = Main_Config::copy();
     Config_Scalars conf;
 
-    if(const auto qval = file.get_int64_opt({"fiber","stack_size"})) {
+    if(const auto qval = file.get_int64_opt({"fiber","stack_vm_size"})) {
       // Clamp the stack size between 256KiB and 256MiB for safety.
       // The upper bound (256MiB) is a hard limit, because we encode the number of
       // 64KiB chunks inside the pointer itself, so we can have at most 4096 64KiB
       // pages, which makes up 256MiB in total.
       int64_t rval = ::rocket::clamp(*qval, 0x4'0000, 0x1000'0000);
       if(*qval != rval)
-        POSEIDON_LOG_WARN("Config value `fiber.stack_size` truncated to `$1`\n"
+        POSEIDON_LOG_WARN("Config value `fiber.stack_vm_size` truncated to `$1`\n"
                           "[value `$2` out of range]",
                           rval, *qval);
 
-      conf.stack_size = static_cast<size_t>(rval);
+      conf.stack_vm_size = static_cast<size_t>(rval);
     }
     else {
       // Get system thread stack size.
@@ -479,13 +491,16 @@ reload()
                        "[`getrlimit()` failed: $1]",
                        noadl::format_errno(errno));
 
-      conf.stack_size = static_cast<size_t>(rlim.rlim_cur);
+      conf.stack_vm_size = static_cast<size_t>(rlim.rlim_cur);
     }
-    do_validate_stack_size(conf.stack_size);
+    do_validate_stack_vm_size(conf.stack_vm_size);
 
     // Note a negative value indicates an infinite timeout.
     if(const auto qval = file.get_int64_opt({"fiber","warn_timeout"}))
       conf.warn_timeout = (*qval < 0) ? INT64_MAX : *qval;
+
+    if(const auto qval = file.get_int64_opt({"fiber","fail_timeout"}))
+      conf.fail_timeout = (*qval < 0) ? INT64_MAX : *qval;
 
     // During destruction of temporary objects the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
