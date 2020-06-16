@@ -11,7 +11,10 @@ namespace poseidon {
 class Abstract_Future
   : public ::asteria::Rcfwd<Abstract_Future>
   {
-  protected:
+    template<typename> friend class Promise;
+    template<typename> friend class Future;
+
+  private:
     mutable mutex m_mutex;
 
   public:
