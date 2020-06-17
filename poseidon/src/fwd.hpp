@@ -131,7 +131,7 @@ template<typename V> class Promise;
 template<typename V> class Future;
 
 template<typename V> using prom = Promise<V>;
-template<typename V> using futp = rcptr<Future<V>>;
+template<typename V> using futp = rcptr<const Future<V>>;
 
 // Socket
 enum IO_Result : ptrdiff_t;

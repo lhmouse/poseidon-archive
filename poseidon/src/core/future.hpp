@@ -31,33 +31,6 @@ class Future
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Future);
 
-  private:
-    [[noreturn]]
-    void
-    do_throw_valueless_unlocked()
-    const
-      {
-        // Check whether this future is empty.
-        if(this->m_stor.index() == future_state_empty)
-          ::rocket::sprintf_and_throw<::std::invalid_argument>(
-              "Future: no value set yet (value type `%s`)",
-              typeid(ValueT).name());
-
-        // Check for pending exceptions.
-        ROCKET_ASSERT(this->m_stor.index() == future_state_except);
-        const auto& eptr = this->m_stor.template as<future_state_except>();
-
-        // This state indicates either an exception has been set or the associated
-        // promise went out of scope without setting a value.
-        if(!eptr)
-          ::rocket::sprintf_and_throw<::std::invalid_argument>(
-              "Future: broken promise (value type `%s`)",
-              typeid(ValueT).name());
-
-        // Rethrow the pending exception.
-        ::std::rethrow_exception(eptr);
-      }
-
   public:
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
     // or `future_state_except`.
@@ -85,49 +58,33 @@ class Future
     const
       {
         mutex::unique_lock lock(this->m_mutex);
-        if(this->m_stor.index() != future_state_value)
-          this->do_throw_valueless_unlocked();
+        switch(this->m_stor.index()) {
+          case future_state_empty:
+            // Nothing has been set yet.
+            ::rocket::sprintf_and_throw<::std::invalid_argument>(
+                "Future: no value set yet (value type `%s`)",
+                typeid(ValueT).name());
 
-        // The cast is necessary when `ValueT` is `void`.
-        return static_cast<typename ::std::add_lvalue_reference<const ValueT>::type>(
-                     this->m_stor.template as<future_state_value>());
-      }
+          case future_state_value:
+            // The cast is necessary when `ValueT` is `void`.
+            return static_cast<typename ::std::add_lvalue_reference<const ValueT>::type>(
+                         this->m_stor.template as<future_state_value>());
 
-    ValueT
-    copy_value()
-    const
-      {
-        mutex::unique_lock lock(this->m_mutex);
-        if(this->m_stor.index() != future_state_value)
-          this->do_throw_valueless_unlocked();
+          case future_state_except:
+            // This state indicates either an exception has been set or the associated
+            // promise went out of scope without setting a value.
+            if(const auto& eptr = this->m_stor.template as<future_state_except>())
+              ::std::rethrow_exception(eptr);
 
-        // The cast is necessary when `ValueT` is `void`.
-        return static_cast<typename ::std::add_lvalue_reference<const ValueT>::type>(
-                     this->m_stor.template as<future_state_value>());
-      }
+            // Report broken promise if a null exception pointer has been set,
+            // anticipatedly by the destructor of the associated promise.
+            ::rocket::sprintf_and_throw<::std::invalid_argument>(
+                "Future: broken promise (value type `%s`)",
+                typeid(ValueT).name());
 
-    typename ::std::add_lvalue_reference<ValueT>::type
-    open_value()
-      {
-        mutex::unique_lock lock(this->m_mutex);
-        if(this->m_stor.index() != future_state_value)
-          this->do_throw_valueless_unlocked();
-
-        // The cast is necessary when `ValueT` is `void`.
-        return static_cast<typename ::std::add_lvalue_reference<ValueT>::type>(
-                     this->m_stor.template as<future_state_value>());
-      }
-
-    ValueT
-    move_value()
-      {
-        mutex::unique_lock lock(this->m_mutex);
-        if(this->m_stor.index() != future_state_value)
-          this->do_throw_valueless_unlocked();
-
-        // The cast is necessary when `ValueT` is `void`.
-        return static_cast<typename ::std::add_rvalue_reference<ValueT>::type>(
-                     this->m_stor.template as<future_state_value>());
+          default:
+            ROCKET_ASSERT(false);
+        }
       }
   };
 
