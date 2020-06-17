@@ -15,17 +15,16 @@ class Abstract_Timer
 
   private:
     ::std::atomic<bool> m_resident;  // don't delete if orphaned
+    ::std::atomic<uint64_t> m_count;
 
     ::std::atomic<int64_t> m_first;  // absolute time in milliseconds
     ::std::atomic<int64_t> m_period;  // period in milliseconds
-    ::std::atomic<uint64_t> m_count;
 
   public:
     Abstract_Timer(int64_t first, int64_t period)
     noexcept
-      : m_resident(false),
-        m_first(first), m_period(period),
-        m_count(0)
+      : m_resident(false), m_count(0),
+        m_first(first), m_period(period)
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Timer);
