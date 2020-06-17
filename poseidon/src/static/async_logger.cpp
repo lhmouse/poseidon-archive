@@ -361,10 +361,8 @@ Async_Logger::
 is_enabled(Log_Level level)
 noexcept
   {
-    // Lock config for reading.
-    mutex::unique_lock lock(self->m_conf_mutex);
-
     // Validate arguments.
+    mutex::unique_lock lock(self->m_conf_mutex);
     if(level >= self->m_conf_levels.size())
       return false;
 
@@ -378,10 +376,8 @@ Async_Logger::
 queue_size()
 noexcept
   {
-    // Lock config for reading.
-    mutex::unique_lock lock(self->m_conf_mutex);
-
     // Return the number of pending entries.
+    mutex::unique_lock lock(self->m_conf_mutex);
     return self->m_queue.size();
   }
 

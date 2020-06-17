@@ -588,9 +588,8 @@ Network_Driver::
 notify_writable_internal(const Abstract_Socket* csock)
 noexcept
   {
-    // Lock epoll for modification.
+    // If the socket has been removed, don't do anything.
     mutex::unique_lock lock(self->m_poll_mutex);
-
     if(csock->m_epoll_events & (EPOLLERR | EPOLLHUP))
       return false;
 

@@ -178,10 +178,8 @@ insert(uptr<Abstract_Timer>&& utimer)
     // The timer is considered to be owned uniquely, so there is no need to lock it.
     int64_t next = do_get_time(timer->m_first.load(::std::memory_order_relaxed));
 
-    // Lock priority queue for modification.
-    mutex::unique_lock lock(self->m_pq_mutex);
-
     // Insert the timer.
+    mutex::unique_lock lock(self->m_pq_mutex);
     self->m_pq.push_back({ next, timer });
     ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     timer->m_count.store(0, ::std::memory_order_relaxed);
@@ -194,10 +192,8 @@ Timer_Driver::
 invalidate_internal(const Abstract_Timer* ctimer)
 noexcept
   {
-    // Lock priority queue for modification.
-    mutex::unique_lock lock(self->m_pq_mutex);
-
     // Don't do anything if the timer does not exist in the queue.
+    mutex::unique_lock lock(self->m_pq_mutex);
     PQ_Element* qelem;
     if(::std::none_of(self->m_pq.begin(), self->m_pq.end(),
                       [&](PQ_Element& r) { return (qelem = &r)->timer.get() == ctimer;  }))

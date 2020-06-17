@@ -154,10 +154,8 @@ insert(uptr<Abstract_Async_Job>&& ujob)
     // Perform lazy initialization as necessary.
     qwrk->init_once.call(self->do_worker_init_once, qwrk);
 
-    // Lock the job queue for modification.
-    mutex::unique_lock lock(qwrk->queue_mutex);
-
     // Insert the job.
+    mutex::unique_lock lock(qwrk->queue_mutex);
     qwrk->queue.emplace_back(job);
     job->do_set_state(async_state_pending);
     qwrk->queue_avail.notify_one();
