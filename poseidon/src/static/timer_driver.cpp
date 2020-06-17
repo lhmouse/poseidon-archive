@@ -184,6 +184,7 @@ insert(uptr<Abstract_Timer>&& utimer)
     // Insert the timer.
     self->m_pq.push_back({ next, timer });
     ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+    timer->m_count.store(0, ::std::memory_order_relaxed);
     self->m_pq_avail.notify_one();
     return timer;
   }
