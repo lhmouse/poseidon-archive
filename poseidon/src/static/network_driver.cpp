@@ -526,6 +526,7 @@ reload()
   {
     // Load logger settings into temporary objects.
     auto file = Main_Config::copy();
+
     Config_Scalars conf;
     conf.event_buffer_size = do_get_size_config(file, "event_buffer_size", 1024);
     conf.io_buffer_size = do_get_size_config(file, "io_buffer_size", 65536);

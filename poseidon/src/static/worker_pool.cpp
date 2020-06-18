@@ -114,6 +114,7 @@ reload()
   {
     // Load worker settings into temporary objects.
     auto file = Main_Config::copy();
+
     size_t thread_count = do_get_size_config(file, "thread_count", 256, 1);
 
     // Create the pool without creating threads.

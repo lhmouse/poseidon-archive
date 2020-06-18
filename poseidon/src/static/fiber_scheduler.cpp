@@ -414,14 +414,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             // Try popping a fiber from the scheduler queue.
             if(self->m_sched_pq.empty()) {
               // Wait until a fiber becomes available.
-              self->m_sched_avail.wait_for(lock, 500);
+              self->m_sched_avail.wait_for(lock, 200);
               continue;
             }
 
             // Check the first element.
             int64_t delta = self->m_sched_pq.front().time - now;
             if(delta > 0) {
-              self->m_sched_avail.wait_for(lock, 500);
+              self->m_sched_avail.wait_for(lock, 200);
               continue;
             }
           }
@@ -430,7 +430,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             if(self->m_sched_pq.empty()) {
               // Exit if there are no more fibers.
               POSEIDON_LOG_INFO("Shutting down due to signal $1: $2", sig, ::sys_siglist[sig]);
-              ::usleep(500);
+              ::sleep(1);
               ::std::quick_exit(0);
             }
           }
@@ -557,6 +557,7 @@ reload()
   {
     // Load fiber settings into temporary objects.
     auto file = Main_Config::copy();
+
     Config_Scalars conf;
 
     if(const auto qval = file.get_int64_opt({"fiber","stack_vm_size"})) {
@@ -586,10 +587,10 @@ reload()
 
     // Note a negative value indicates an infinite timeout.
     if(const auto qval = file.get_int64_opt({"fiber","warn_timeout"}))
-      conf.warn_timeout = (*qval < 0) ? INT64_MAX : *qval;
+      conf.warn_timeout = (*qval | *qval >> 63) & INT64_MAX;
 
     if(const auto qval = file.get_int64_opt({"fiber","fail_timeout"}))
-      conf.fail_timeout = (*qval < 0) ? INT64_MAX : *qval;
+      conf.fail_timeout = (*qval | *qval >> 63) & INT64_MAX;
 
     // During destruction of temporary objects the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
