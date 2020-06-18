@@ -118,6 +118,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           // Pop it.
           ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
           timer = ::std::move(self->m_pq.back().timer);
+
           if(timer.unique() && !timer->resident()) {
             // Delete this timer when no other reference of it exists.
             POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
