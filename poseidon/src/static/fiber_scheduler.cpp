@@ -693,10 +693,12 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     if(!fiber.unique())
       POSEIDON_THROW("Fiber pointer must be unique");
 
-    // Attach this fiber to the recycle queue.
-    mutex::unique_lock lock(self->m_sched_mutex);
+    // Perform some initialization. No locking is needed here.
     fiber->m_sched_yield_time = 0;
     fiber->m_sched_futp = nullptr;
+
+    // Attach this fiber to the recycle queue.
+    mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_next = ::std::exchange(self->m_sched_recq, fiber);
     fiber->add_reference();
     fiber->do_set_state(async_state_pending);
