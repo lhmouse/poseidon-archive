@@ -117,7 +117,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
 
           // Pop it.
           ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-          timer = ::std::move(self->m_pq.back().timer);
+          auto& elem = self->m_pq.back();
+          timer = ::std::move(elem.timer);
 
           if(timer.unique() && !timer->resident()) {
             // Delete this timer when no other reference of it exists.
@@ -130,8 +131,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           int64_t period = timer->m_period.load(::std::memory_order_relaxed);
           if(period > 0) {
             // The timer is periodic. Insert it back.
-            self->m_pq.back().timer = timer;
-            do_shift_time(self->m_pq.back().next, period);
+            elem.timer = timer;
+            do_shift_time(elem.next, period);
             ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
           }
           else {
