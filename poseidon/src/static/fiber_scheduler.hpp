@@ -17,7 +17,7 @@ class Fiber_Scheduler
     // This function is typically called by the main thread. Multiple worker
     // threads are allowed.
     // This function is thread-safe.
-    static
+    [[noreturn]] static
     void
     modal_loop(const volatile ::std::atomic<int>& exit_sig);
 
@@ -37,14 +37,14 @@ class Fiber_Scheduler
     noexcept;
 
     // Suspends the current fiber until `promise` becomes satisfied.
-    // `current_opt()` must not return null when this function is called. It is
-    // taken by value because it has to have a copy on the current call stack.
-    // If `futr_opt` is null, the current time slice is relinquished, similar
-    // to `sched_yield()`.
+    // `current_opt()` must not return null when this function is called.
+    // The argument is taken by value because it has to have a copy on the current
+    // call stack. If `futr_opt` is null, the current time slice is relinquished,
+    // similar to `sched_yield()`.
     // This function is thread-safe.
     static
     void
-    yield(rcptr<const Abstract_Future> futr_opt);
+    yield(rcptr<const Abstract_Future> futp_opt);
 
     // Inserts a fiber.
     // The scheduler holds a reference-counted pointer to the fiber. If the fiber has
@@ -59,8 +59,8 @@ class Fiber_Scheduler
     // Wakes up a scheduler thread.
     // This function is thread-safe.
     static
-    void
-    signal()
+    bool
+    signal(const Abstract_Future& futr)
     noexcept;
   };
 

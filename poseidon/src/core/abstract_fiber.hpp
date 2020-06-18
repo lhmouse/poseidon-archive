@@ -19,12 +19,10 @@ class Abstract_Fiber
     ::std::atomic<Async_State> m_state;
 
     // These are scheduler data.
+    uint32_t m_sched_version;
+    int64_t m_sched_yield_time;
+    const Abstract_Future* m_sched_futp;
     Abstract_Fiber* m_sched_next;
-    Abstract_Fiber* m_sched_prev;
-
-    int64_t m_sched_time;
-    int64_t m_sched_warn;
-    const Abstract_Future* m_sched_futr;
     ::ucontext_t m_sched_uctx[1];
 
   public:

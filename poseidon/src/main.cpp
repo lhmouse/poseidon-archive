@@ -137,7 +137,7 @@ enum Exit_Code : uint8_t
 
 [[noreturn]]
 int
-do_exit(Exit_Code code, const char* fmt = nullptr, ...)
+do_exit(Exit_Code code, const char* fmt, ...)
 noexcept
   {
     // Sleep for a few moments so pending logs are flushed.
@@ -149,12 +149,10 @@ noexcept
     }
 
     // Output the string to standard error.
-    if(fmt) {
-      ::va_list ap;
-      va_start(ap, fmt);
-      ::vfprintf(stderr, fmt, ap);
-      va_end(ap);
-    }
+    ::va_list ap;
+    va_start(ap, fmt);
+    ::vfprintf(stderr, fmt, ap);
+    va_end(ap);
 
     // Perform fast exit.
     ::fflush(nullptr);
@@ -327,9 +325,6 @@ main(int argc, char** argv)
 
     // Schedule fibers until a termination signal is caught.
     Fiber_Scheduler::modal_loop(exit_sig);
-    const auto sig = exit_sig.load(::std::memory_order_relaxed);
-    POSEIDON_LOG_INFO("Shutting down due to signal $1: $2", sig, ::sys_siglist[sig]);
-    do_exit(exit_success);
   }
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.

@@ -13,9 +13,13 @@ class Abstract_Future
   {
     template<typename> friend class Promise;
     template<typename> friend class Future;
+    friend Fiber_Scheduler;
 
   private:
     mutable mutex m_mutex;
+
+    // These are scheduler data.
+    mutable Abstract_Fiber* m_sched_head = nullptr;
 
   public:
     Abstract_Future()
@@ -32,6 +36,11 @@ class Abstract_Future
     state()
     const noexcept
       = 0;
+
+    bool
+    empty()
+    const noexcept
+      { return this->state() == future_state_empty;  }
   };
 
 }  // namespace poseidon
