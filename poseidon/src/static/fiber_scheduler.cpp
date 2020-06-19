@@ -433,15 +433,29 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             continue;
           }
 
-          if(fiber.unique() && !fiber->resident() && (fiber->state() == async_state_pending)) {
-            // Delete this fiber when no other reference of it exists.
-            POSEIDON_LOG_DEBUG("Killed orphan fiber: $1", fiber);
-            self->m_sched_pq.pop_back();
-            continue;
+          // Check for early exit conditions.
+          if(fiber->state() == async_state_pending) {
+            // Note cancellation is only possible before initialization.
+            // If the fiber stack is in use, it cannot be deallocated without possibility of
+            // resource leaks.
+            if(sig != 0) {
+              // Delete this fiber when the process is shutting down.
+              POSEIDON_LOG_DEBUG("Killed pending fiber because of shutdown: $1", fiber);
+              self->m_sched_pq.pop_back();
+              continue;
+            }
+
+            if(fiber.unique() && !fiber->resident()) {
+              // Delete this fiber when no other reference of it exists.
+              POSEIDON_LOG_DEBUG("Killed orphan fiber: $1", fiber);
+              self->m_sched_pq.pop_back();
+              continue;
+            }
           }
 
           // Check for blocking conditions.
           if((sig == 0) && fiber->m_sched_futp && fiber->m_sched_futp->empty()) {
+            // Check wait duration.
             int64_t delta = now - fiber->m_sched_yield_time;
             if(delta < conf.fail_timeout) {
               // Print a warning message if the fiber has been suspended for too long.
