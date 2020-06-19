@@ -284,6 +284,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     // dynamic data
     mutable mutex m_queue_mutex;
     condition_variable m_queue_avail;
+    condition_variable m_queue_empty;
     ::std::deque<Entry> m_queue;
 
     static
@@ -307,6 +308,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         for(;;) {
           if(self->m_queue.empty()) {
             // Wait until an entry becomes available.
+            self->m_queue_empty.notify_all();
             self->m_queue_avail.wait(lock);
             continue;
           }
@@ -372,16 +374,6 @@ noexcept
     return (conf.out_fd != -1) || conf.out_path.size();
   }
 
-size_t
-Async_Logger::
-queue_size()
-noexcept
-  {
-    // Return the number of pending entries.
-    mutex::unique_lock lock(self->m_conf_mutex);
-    return self->m_queue.size();
-  }
-
 bool
 Async_Logger::
 enqueue(Log_Level level, const char* file, long line, const char* func,
@@ -408,5 +400,16 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
     self->m_queue_avail.notify_one();
     return true;
   }
+
+void
+Async_Logger::
+synchronize(long msecs)
+noexcept
+  {
+    // Wait until the log queue becomes empty.
+    mutex::unique_lock lock(self->m_conf_mutex);
+    self->m_queue_empty.wait_for(lock, msecs);
+  }
+
 
 }  // namespace poseidon

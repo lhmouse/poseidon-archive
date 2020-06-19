@@ -430,7 +430,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             if(self->m_sched_pq.empty()) {
               // Exit if there are no more fibers.
               POSEIDON_LOG_INFO("Shutting down due to signal $1: $2", sig, ::sys_siglist[sig]);
-              ::sleep(1);
+              Async_Logger::synchronize(1000);
               ::std::quick_exit(0);
             }
           }

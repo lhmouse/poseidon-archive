@@ -141,12 +141,7 @@ do_exit(Exit_Code code, const char* fmt, ...)
 noexcept
   {
     // Sleep for a few moments so pending logs are flushed.
-    if(Async_Logger::queue_size() != 0) {
-      ::usleep(100'000);
-
-      if(Async_Logger::queue_size() != 0)
-        ::sleep(5);
-    }
+    Async_Logger::synchronize(1000);
 
     // Output the string to standard error.
     ::va_list ap;
