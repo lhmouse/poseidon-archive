@@ -237,28 +237,11 @@ union Fancy_Fiber_Pointer
       : words{ word_0, word_1 }
       { }
 
-    constexpr
-    Abstract_Fiber&
-    operator*()
-    const noexcept
-      { return *(this->fiber);  }
-
-    constexpr
-    Abstract_Fiber*
-    operator->()
-    const noexcept
-      { return this->fiber;  }
-
     constexpr operator
     Abstract_Fiber*()
     const noexcept
       { return this->fiber;  }
   };
-
-inline
-tinyfmt&
-operator<<(tinyfmt& fmt, const Fancy_Fiber_Pointer& fcptr)
-  { return fmt << static_cast<Abstract_Fiber*>(fcptr);  }
 
 }  // namespace
 
@@ -339,26 +322,28 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     noexcept
       {
         Fancy_Fiber_Pointer fcptr(word_0, word_1);
+        Abstract_Fiber* fiber = fcptr;
 
         // Execute the fiber.
-        ROCKET_ASSERT(fcptr->state() == async_state_suspended);
-        fcptr->do_set_state(async_state_running);
-        fcptr->do_on_start();
-        POSEIDON_LOG_TRACE("Starting execution of fiber `$1`", fcptr);
+        ROCKET_ASSERT(fiber->state() == async_state_suspended);
+        fiber->do_set_state(async_state_running);
+        fiber->do_on_start();
+        POSEIDON_LOG_TRACE("Starting execution of fiber `$1`", fiber);
 
         try {
-          fcptr->do_execute();
+          fiber->do_execute();
         }
         catch(exception& stdex) {
-          POSEIDON_LOG_WARN("Caught an exception thrown from fiber: $1\n"
-                            "[fiber class `$2`]",
-                            stdex.what(), typeid(*fcptr).name());
+          POSEIDON_LOG_WARN("An unhandled exception was thrown from fiber `$1`: $2\n"
+                            "[exception class `$3`]\n"
+                            "[fiber class `$4`]",
+                            fiber, stdex.what(), typeid(stdex).name(), typeid(*fiber).name());
         }
 
-        ROCKET_ASSERT(fcptr->state() == async_state_running);
-        fcptr->do_set_state(async_state_finished);
-        fcptr->do_on_finish();
-        POSEIDON_LOG_TRACE("Finished execution of fiber `$1`", fcptr);
+        ROCKET_ASSERT(fiber->state() == async_state_running);
+        fiber->do_set_state(async_state_finished);
+        fiber->do_on_finish();
+        POSEIDON_LOG_TRACE("Finished execution of fiber `$1`", fiber);
       }
 
     static
@@ -504,8 +489,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           fiber->m_sched_uctx->uc_stack = stack.release();
 
           // Initialize the fiber context.
-          Fancy_Fiber_Pointer fcptr(fiber.get());
-
+          Fancy_Fiber_Pointer fcptr(fiber);
           ::makecontext(fiber->m_sched_uctx, reinterpret_cast<void (*)()>(do_execute_fiber),
                                              2, fcptr.words[0], fcptr.words[1]);
 
