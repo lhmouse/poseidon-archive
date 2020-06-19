@@ -380,6 +380,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             elem.version = ++(qhead->m_sched_version);
             elem.fiber.reset(qhead);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
+            POSEIDON_LOG_TRACE("Collected fiber `$1` from ready queue", qhead);
           }
 
           while(auto qhead = self->m_sched_sleep_head) {
@@ -393,6 +394,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             elem.version = ++(qhead->m_sched_version);
             elem.fiber.reset(qhead);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
+            POSEIDON_LOG_TRACE("Collected fiber `$1` from sleep queue", qhead);
           }
 
           if(sig == 0) {
