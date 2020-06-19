@@ -10,6 +10,7 @@
 #include <sys/resource.h>
 #include <sys/mman.h>
 #include <semaphore.h>
+#include <signal.h>
 
 namespace poseidon {
 namespace {
