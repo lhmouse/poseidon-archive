@@ -276,7 +276,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     mutable mutex m_sched_mutex;
     condition_variable m_sched_avail;
     ::std::vector<PQ_Element> m_sched_pq;
-    Abstract_Fiber* m_sched_recq = nullptr;
+    Abstract_Fiber* m_sched_ready_head = nullptr;
+    Abstract_Fiber* m_sched_sleep_head = nullptr;
 
     static
     void
@@ -334,22 +335,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
     static
     void
-    do_push_fiber_unchecked(int64_t now, uint32_t version, rcptr<Abstract_Fiber>&& fiber)
-    noexcept
-      {
-        // The caller must have reserved space in the scheduler queue.
-        PQ_Element elem;
-        elem.time = now;
-        elem.version = version;
-        elem.fiber = ::std::move(fiber);
-
-        ROCKET_ASSERT(self->m_sched_pq.size() < self->m_sched_pq.capacity());
-        self->m_sched_pq.emplace_back(::std::move(elem));
-        ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
-      }
-
-    static
-    void
     do_execute_fiber(int word_0, int word_1)
     noexcept
       {
@@ -396,18 +381,33 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         lock.assign(self->m_sched_mutex);
         for(;;) {
           fiber.reset();
-          int sig = exit_sig.load(::std::memory_order_relaxed);
           now = do_get_monotonic_seconds();
+          int sig = exit_sig.load(::std::memory_order_relaxed);
 
-          // Move all fibers from the recycle queue to the scheduler queue.
-          self->m_sched_pq.reserve(self->m_sched_pq.size() + 100);
-          while(fiber.reset(self->m_sched_recq)) {
-            // Note pushing cannot throw exceptions.
-            self->m_sched_recq = ::std::exchange(fiber->m_sched_next, nullptr);
-            self->do_push_fiber_unchecked(now, ++(fiber->m_sched_version), ::std::move(fiber));
+          while(auto qhead = self->m_sched_ready_head) {
+            // Move a fiber from the ready queue into the scheduler queue.
+            // Note this shall guarantee strong exception safety.
+            self->m_sched_pq.emplace_back();
+            self->m_sched_ready_head = qhead->m_sched_ready_next;
 
-            // Ensure we always have some space reserved at the end after this loop.
-            self->m_sched_pq.reserve(self->m_sched_pq.size() + 20);
+            auto& elem = self->m_sched_pq.back();
+            elem.time = now;
+            elem.version = ++(qhead->m_sched_version);
+            elem.fiber.reset(qhead);
+            ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
+          }
+
+          while(auto qhead = self->m_sched_sleep_head) {
+            // Move a fiber from the sleep queue into the scheduler queue.
+            // Note this shall guarantee strong exception safety.
+            self->m_sched_pq.emplace_back();
+            self->m_sched_sleep_head = qhead->m_sched_sleep_next;
+
+            auto& elem = self->m_sched_pq.back();
+            elem.time = now + conf.warn_timeout;
+            elem.version = ++(qhead->m_sched_version);
+            elem.fiber.reset(qhead);
+            ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
           }
 
           if(sig == 0) {
@@ -489,8 +489,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           }
           catch(exception& stdex) {
             POSEIDON_LOG_ERROR("Failed to initialize fiber: $1", stdex.what());
+
+            // Put the fiber back into the sleep queue.
             lock.assign(self->m_sched_mutex);
-            self->do_push_fiber_unchecked(now + 1, fiber->m_sched_version, ::std::move(fiber));
+            fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
+            fiber.release();
             return;
           }
 
@@ -525,10 +528,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         POSEIDON_LOG_TRACE("Suspended execution of fiber `$1`", fiber);
 
         if(fiber->state() == async_state_suspended) {
-          // Push a sentinel.
+          // Put the fiber back into the sleep queue.
           lock.assign(self->m_sched_mutex);
-          self->do_push_fiber_unchecked(now + conf.warn_timeout, fiber->m_sched_version,
-                                        ::std::move(fiber));
+          fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
+          fiber.release();
           return;
         }
 
@@ -643,7 +646,7 @@ yield(rcptr<const Abstract_Future> futp_opt)
       // Attach the fiber to the future's wait queue if one is provided.
       // The queue shall own a reference to the fiber.
       const auto& futr = *futp_opt;
-      fiber->m_sched_next = ::std::exchange(futr.m_sched_head, fiber);
+      fiber->m_sched_ready_next = ::std::exchange(futr.m_sched_ready_head, fiber);
       fiber->add_reference();
       lock.unlock();
 
@@ -653,19 +656,26 @@ yield(rcptr<const Abstract_Future> futp_opt)
       // If the fiber resumes execution because suspension timed out, remove it
       // from the future's wait queue.
       lock.assign(self->m_sched_mutex);
-      for(auto qrefl = &(futr.m_sched_head);  *qrefl;
-                                 qrefl = &((*qrefl)->m_sched_next))
-        if(*qrefl == fiber) {
-          *qrefl = fiber->m_sched_next;
+      auto mref = ::rocket::ref(futr.m_sched_ready_head);
+      for(;;) {
+        if(!mref) {
+          // Do nothing if the fiber is not found.
+          break;
+        }
+        if(mref == fiber) {
+          // Remove the fiber from this queue.
+          mref.get() = fiber->m_sched_ready_next;
           fiber->drop_reference();
           break;
         }
+        mref = ::rocket::ref(mref.get()->m_sched_ready_next);
+      }
       lock.unlock();
     }
     else {
-      // Attach the fiber to the recycle queue of the current thread otherwise.
+      // Attach the fiber to the ready queue of the current thread otherwise.
       // The queue shall own a reference to the fiber.
-      fiber->m_sched_next = ::std::exchange(self->m_sched_recq, fiber);
+      fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
       fiber->add_reference();
       lock.unlock();
 
@@ -697,9 +707,10 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     fiber->m_sched_yield_time = 0;
     fiber->m_sched_futp = nullptr;
 
-    // Attach this fiber to the recycle queue.
+    // Attach this fiber to the ready queue.
     mutex::unique_lock lock(self->m_sched_mutex);
-    fiber->m_sched_next = ::std::exchange(self->m_sched_recq, fiber);
+    fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
+    fiber->m_sched_sleep_next = nullptr;
     fiber->add_reference();
     fiber->do_set_state(async_state_pending);
     self->m_sched_avail.notify_one();
@@ -711,23 +722,24 @@ Fiber_Scheduler::
 signal(const Abstract_Future& futr)
 noexcept
   {
-    // Lock the future's wait queue and the global recycle queue.
+    // Move all fibers from the future's wait queue to the ready queue.
     mutex::unique_lock lock(self->m_sched_mutex);
-
-    // Move all fibers from the future's wait queue to the recycle queue.
-    auto qhead = futr.m_sched_head;
-    if(!qhead)
+    auto head = ::std::exchange(futr.m_sched_ready_head, nullptr);
+    if(!head)
       return false;
 
-    // Locate the last node.
-    auto qtail = ::std::exchange(futr.m_sched_head, nullptr);
-    while(qtail->m_sched_next)
-      qtail = qtail->m_sched_next;
-
     // Splice the two queues.
-    // Fibers are moved from one queue to the other, so there is no need to
-    // tamper with reference counts here.
-    qtail->m_sched_next = ::std::exchange(self->m_sched_recq, qhead);
+    // Fibers are moved from one queue to the other, so there is no need to tamper
+    // with reference counts here.
+    auto tail = head;
+    for(;;) {
+      auto next = tail->m_sched_ready_next;
+      if(!next) {
+        tail->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, head);
+        break;
+      }
+      tail = next;
+    }
     self->m_sched_avail.notify_one();
     return true;
   }

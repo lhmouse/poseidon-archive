@@ -19,7 +19,7 @@ class Abstract_Future
     mutable mutex m_mutex;
 
     // These are scheduler data.
-    mutable Abstract_Fiber* m_sched_head = nullptr;
+    mutable Abstract_Fiber* m_sched_ready_head = nullptr;
 
   public:
     Abstract_Future()
