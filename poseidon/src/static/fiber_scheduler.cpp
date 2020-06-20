@@ -605,6 +605,20 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         ROCKET_ASSERT(fiber->state() == async_state_finished);
         stack.reset(fiber->m_sched_uctx->uc_stack);
       }
+
+    static
+    void
+    do_signal_if_queues_empty()
+    noexcept
+      {
+        if(ROCKET_EXPECT(self->m_sched_ready_head))
+          return;
+
+        if(ROCKET_EXPECT(self->m_sched_sleep_head))
+          return;
+
+        self->m_sched_avail.post();
+      }
   };
 
 void
@@ -702,7 +716,9 @@ yield(rcptr<const Abstract_Future> futp_opt)
     fiber->do_on_suspend();
     POSEIDON_LOG_TRACE("Suspending execution of fiber `$1`", fiber);
 
+    // These are thread-safe but (probably) slow operations.
     int64_t now = do_get_monotonic_seconds();
+    fiber->add_reference();
 
     mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_yield_time = now;
@@ -712,7 +728,6 @@ yield(rcptr<const Abstract_Future> futp_opt)
       // The queue shall own a reference to the fiber.
       const auto& futr = *futp_opt;
       fiber->m_sched_ready_next = ::std::exchange(futr.m_sched_ready_head, fiber);
-      fiber->add_reference();
       lock.unlock();
 
       int ret = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
@@ -738,8 +753,8 @@ yield(rcptr<const Abstract_Future> futp_opt)
     else {
       // Attach the fiber to the ready queue of the current thread otherwise.
       // The queue shall own a reference to the fiber.
+      self->do_signal_if_queues_empty();
       fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
-      fiber->add_reference();
       lock.unlock();
 
       int ret = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
@@ -776,8 +791,8 @@ insert(uptr<Abstract_Fiber>&& ufiber)
 
     // Attach this fiber to the ready queue.
     mutex::unique_lock lock(self->m_sched_mutex);
+    self->do_signal_if_queues_empty();
     fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
-    self->m_sched_avail.post();
     return fiber;
   }
 
@@ -800,8 +815,8 @@ noexcept
     // Splice the two queues.
     // Fibers are moved from one queue to the other, so there is no need to tamper
     // with reference counts here.
+    self->do_signal_if_queues_empty();
     tail->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, head);
-    self->m_sched_avail.post();
     return true;
   }
 
