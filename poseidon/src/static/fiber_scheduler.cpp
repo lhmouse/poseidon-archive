@@ -537,7 +537,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             // Proceed anyway.
             // This usually causes an exception to be thrown after `yield()` returns.
             POSEIDON_LOG_ERROR("Suspension of fiber `$1` has exceeded `$2` seconds.\n"
-                               "This circumstance might be permanent. Please check for deadlocks.",
+                               "This circumstance looks permanent. Please check for deadlocks.",
                                fiber, conf.fail_timeout);
           }
 
@@ -604,17 +604,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         // Free its stack. The fiber can be safely deleted thereafter.
         ROCKET_ASSERT(fiber->state() == async_state_finished);
         stack.reset(fiber->m_sched_uctx->uc_stack);
-      }
-
-    static
-    void
-    unlock_and_post_if(mutex::unique_lock& lock, Abstract_Fiber* fiber)
-    noexcept
-      {
-        lock.unlock();
-
-        if(fiber)
-          self->m_sched_avail.post();
       }
   };
 
@@ -788,7 +777,7 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     // Attach this fiber to the ready queue.
     mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
-    self->unlock_and_post_if(lock, fiber->m_sched_ready_next);
+    self->m_sched_avail.post();
     return fiber;
   }
 
@@ -812,7 +801,7 @@ noexcept
     // Fibers are moved from one queue to the other, so there is no need to tamper
     // with reference counts here.
     tail->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, head);
-    self->unlock_and_post_if(lock, tail->m_sched_ready_next);
+    self->m_sched_avail.post();
     return true;
   }
 
