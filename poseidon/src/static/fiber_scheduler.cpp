@@ -9,6 +9,7 @@
 #include "../utilities.hpp"
 #include <sys/resource.h>
 #include <sys/mman.h>
+#include <semaphore.h>
 
 namespace poseidon {
 namespace {
@@ -243,6 +244,90 @@ union Fancy_Fiber_Pointer
       { return this->fiber;  }
   };
 
+class Queue_Semaphore
+  {
+  private:
+    ::sem_t m_sem;
+
+  public:
+    Queue_Semaphore()
+      {
+        int r = ::sem_init(&(this->m_sem), 0, 0);
+        if(r != 0)
+          POSEIDON_THROW("Failed to initialize semaphore\n"
+                         "[`sem_init()` failed: $1]",
+                         noadl::format_errno(errno));
+      }
+
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Queue_Semaphore)
+      {
+        int r = ::sem_destroy(&(this->m_sem));
+        ROCKET_ASSERT(r == 0);
+      }
+
+  public:
+    bool
+    wait_for(long secs)
+    noexcept
+      {
+        // Check for immediate timeouts.
+        int r;
+        if(secs <= 0) {
+          // Note `sem_trywait()` cannot return `EINTR`.
+          r = ::sem_trywait(&(this->m_sem));
+          POSEIDON_LOG_TRACE("`sem_trywait()` returned `$1`: $2",
+                             r, noadl::format_errno(errno));
+          return r == 0;
+        }
+
+        // Get the current time.
+        ::timespec ts;
+        r = ::clock_gettime(CLOCK_REALTIME, &ts);
+        ROCKET_ASSERT(r == 0);
+
+        // Ensure we don't cause overflows.
+        if(secs <= ::std::numeric_limits<::time_t>::max() - ts.tv_sec) {
+          // Add `secs` to the current time to get the end time point.
+          ts.tv_sec += static_cast<::time_t>(secs);
+
+          // Note `sem_timedwait()` may return `EINTR`.
+          r = ::sem_timedwait(&(this->m_sem), &ts);
+          POSEIDON_LOG_TRACE("`sem_timedwait()` returned `$1`: $2",
+                             r, noadl::format_errno(errno));
+        }
+        else {
+          // Note `sem_wait()` may return `EINTR`.
+          r = ::sem_wait(&(this->m_sem));
+          POSEIDON_LOG_TRACE("`sem_wait()` returned `$1`: $2",
+                             r, noadl::format_errno(errno));
+        }
+        ROCKET_ASSERT(r != EINVAL);
+        return r == 0;
+      }
+
+    bool
+    wait()
+    noexcept
+      {
+        // Note `sem_wait()` may return `EINTR`.
+        int r = ::sem_wait(&(this->m_sem));
+        ROCKET_ASSERT(r != EINVAL);
+        return r == 0;
+      }
+
+    bool
+    post()
+    noexcept
+      {
+        // Note `sem_post()` may return `EOVERFLOW`.
+        // The semaphore only indicates whether the queue is non-empty,
+        // so we may ignore this error.
+        int r = ::sem_post(&(this->m_sem));
+        ROCKET_ASSERT(r != EINVAL);
+        return r == 0;
+      }
+  };
+
 }  // namespace
 
 POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
@@ -257,7 +342,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
     // dynamic data
     mutable mutex m_sched_mutex;
-    condition_variable m_sched_avail;
+    Queue_Semaphore m_sched_avail;
     ::std::vector<PQ_Element> m_sched_pq;
     Abstract_Fiber* m_sched_ready_head = nullptr;
     Abstract_Fiber* m_sched_sleep_head = nullptr;
@@ -401,14 +486,16 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             // Try popping a fiber from the scheduler queue.
             if(self->m_sched_pq.empty()) {
               // Wait until a fiber becomes available.
-              self->m_sched_avail.wait_for(lock, 200);
+              lock.unlock();
+              self->m_sched_avail.wait();
               continue;
             }
 
             // Check the first element.
             int64_t delta = self->m_sched_pq.front().time - now;
             if(delta > 0) {
-              self->m_sched_avail.wait_for(lock, 200);
+              lock.unlock();
+              self->m_sched_avail.wait_for(static_cast<long>(delta));
               continue;
             }
           }
@@ -540,6 +627,17 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         ROCKET_ASSERT(fiber->state() == async_state_finished);
         stack.reset(fiber->m_sched_uctx->uc_stack);
       }
+
+    static
+    void
+    unlock_and_post_if(mutex::unique_lock& lock, Abstract_Fiber* fiber)
+    noexcept
+      {
+        lock.unlock();
+
+        if(fiber)
+          self->m_sched_avail.post();
+      }
   };
 
 void
@@ -656,19 +754,17 @@ yield(rcptr<const Abstract_Future> futp_opt)
       // If the fiber resumes execution because suspension timed out, remove it
       // from the future's wait queue.
       lock.assign(self->m_sched_mutex);
-      auto mref = ::rocket::ref(futr.m_sched_ready_head);
+      auto mref = &(futr.m_sched_ready_head);
       for(;;) {
-        if(!mref) {
-          // Do nothing if the fiber is not found.
+        if(!*mref) {
           break;
         }
-        if(mref == fiber) {
-          // Remove the fiber from this queue.
-          mref.get() = fiber->m_sched_ready_next;
+        if(*mref == fiber) {
+          *mref = fiber->m_sched_ready_next;
           fiber->drop_reference();
           break;
         }
-        mref = ::rocket::ref(mref.get()->m_sched_ready_next);
+        mref = &((*mref)->m_sched_ready_next);
       }
       lock.unlock();
     }
@@ -706,14 +802,15 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     // Perform some initialization. No locking is needed here.
     fiber->m_sched_yield_time = 0;
     fiber->m_sched_futp = nullptr;
+    fiber->m_sched_sleep_next = nullptr;
+
+    fiber->do_set_state(async_state_pending);
+    fiber->add_reference();
 
     // Attach this fiber to the ready queue.
     mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
-    fiber->m_sched_sleep_next = nullptr;
-    fiber->add_reference();
-    fiber->do_set_state(async_state_pending);
-    self->m_sched_avail.notify_one();
+    self->unlock_and_post_if(lock, fiber->m_sched_ready_next);
     return fiber;
   }
 
@@ -728,19 +825,16 @@ noexcept
     if(!head)
       return false;
 
+    // Locate the last node.
+    auto tail = head;
+    while(auto next = tail->m_sched_ready_next)
+      tail = next;
+
     // Splice the two queues.
     // Fibers are moved from one queue to the other, so there is no need to tamper
     // with reference counts here.
-    auto tail = head;
-    for(;;) {
-      auto next = tail->m_sched_ready_next;
-      if(!next) {
-        tail->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, head);
-        break;
-      }
-      tail = next;
-    }
-    self->m_sched_avail.notify_one();
+    tail->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, head);
+    self->unlock_and_post_if(lock, tail->m_sched_ready_next);
     return true;
   }
 
