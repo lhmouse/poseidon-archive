@@ -152,13 +152,15 @@ insert(uptr<Abstract_Async_Job>&& ujob)
                              self->m_workers.data() + self->m_workers.size(),
                              job->m_key);
 
-    // Perform lazy initialization as necessary.
+    // Initialize the worker as necessary.
     qwrk->init_once.call(self->do_worker_init_once, qwrk);
+
+    // Perform some initialization. No locking is needed here.
+    job->do_set_state(async_state_pending);
 
     // Insert the job.
     mutex::unique_lock lock(qwrk->queue_mutex);
     qwrk->queue.emplace_back(job);
-    job->do_set_state(async_state_pending);
     qwrk->queue_avail.notify_one();
     return job;
   }
