@@ -97,15 +97,15 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     do_init_once()
       {
         // Create an epoll object.
-        unique_FD epollfd(::epoll_create(100));
-        if(!epollfd)
+        unique_FD epoll_fd(::epoll_create(100));
+        if(!epoll_fd)
           POSEIDON_THROW("Could not create epoll object\n"
                          "[`epoll_create()` failed: $1]",
                          format_errno(errno));
 
         // Create the notification eventfd and add it into epoll.
-        unique_FD eventfd(::eventfd(0, EFD_NONBLOCK));
-        if(!eventfd)
+        unique_FD event_fd(::eventfd(0, EFD_NONBLOCK));
+        if(!event_fd)
           POSEIDON_THROW("Could not create eventfd object\n"
                          "[`eventfd()` failed: $1]",
                          format_errno(errno));
@@ -113,7 +113,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         ::epoll_event event;
         event.data.u64 = self->make_epoll_data(poll_index_event, 0);
         event.events = EPOLLIN | EPOLLET;
-        if(::epoll_ctl(epollfd, EPOLL_CTL_ADD, eventfd, &event) != 0)
+        if(::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &event) != 0)
           POSEIDON_THROW("Failed to add socket into epoll\n"
                          "[`epoll_ctl()` failed: $1]",
                          noadl::format_errno(errno));
@@ -121,8 +121,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         // Create the thread. Note it is never joined or detached.
         mutex::unique_lock lock(self->m_conf_mutex);
         self->m_thread = create_daemon_thread<do_thread_loop>("network");
-        self->m_epoll_fd = epollfd.release();
-        self->m_event_fd = eventfd.release();
+        self->m_epoll_fd = epoll_fd.release();
+        self->m_event_fd = event_fd.release();
       }
 
     // The index takes up 24 bits. That's 16M simultaneous connections.
@@ -273,6 +273,25 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     static
+    bool
+    do_event_wait()
+    noexcept
+      {
+        // Repeat reading until the operation fails with something other than EINTR.
+        int err;
+        ::eventfd_t discard;
+
+        for(;;)
+          if((::eventfd_read(self->m_event_fd, &discard) != 0) && ((err = errno) != EINTR))
+            break;
+
+        if(!::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
+          POSEIDON_LOG_FATAL("`eventfd_read()` failed: $1", noadl::format_errno(err));
+
+        return true;
+      }
+
+    static
     void
     do_thread_loop(void* /*param*/)
       {
@@ -310,11 +329,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
             // The special event is not associated with any socket.
             if(self->index_from_epoll_data(event.data.u64) == poll_index_event) {
-              uint64_t discard[1];
-              ::ssize_t nread;
-              do
-                nread = ::read(self->m_event_fd, discard, sizeof(discard));
-              while((nread > 0) || (errno == EINTR));
+              self->do_event_wait();
               continue;
             }
 
@@ -601,9 +616,8 @@ noexcept
 
     // If the network thread might be blocking on epoll, wake it up.
     // This is merely a hint due to lack of condition variable semantics.
-    static constexpr uint64_t one[] = { 1 };
     if(ROCKET_UNEXPECT(self->poll_lists_empty()))
-      ::write(self->m_event_fd, one, sizeof(one));
+      ::eventfd_write(self->m_event_fd, 1);
 
     // Append the socket to write list if writing is possible.
     if(csock->m_epoll_events & EPOLLOUT)
