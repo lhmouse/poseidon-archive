@@ -271,60 +271,38 @@ class Queue_Semaphore
     noexcept
       {
         // Check for immediate timeouts.
-        int r;
-        if(secs <= 0) {
-          // Note `sem_trywait()` cannot return `EINTR`.
-          r = ::sem_trywait(&(this->m_sem));
-          POSEIDON_LOG_TRACE("`sem_trywait()` returned `$1`: $2",
-                             r, noadl::format_errno(errno));
-          return r == 0;
-        }
+        if(secs <= 0)
+          return ::sem_trywait(&(this->m_sem)) == 0;
 
         // Get the current time.
         ::timespec ts;
-        r = ::clock_gettime(CLOCK_REALTIME, &ts);
+        int r = ::clock_gettime(CLOCK_REALTIME, &ts);
         ROCKET_ASSERT(r == 0);
 
         // Ensure we don't cause overflows.
-        if(secs <= ::std::numeric_limits<::time_t>::max() - ts.tv_sec) {
-          // Add `secs` to the current time to get the end time point.
-          ts.tv_sec += static_cast<::time_t>(secs);
+        if(secs > ::std::numeric_limits<::time_t>::max() - ts.tv_sec)
+          return ::sem_wait(&(this->m_sem)) == 0;
 
-          // Note `sem_timedwait()` may return `EINTR`.
-          r = ::sem_timedwait(&(this->m_sem), &ts);
-          POSEIDON_LOG_TRACE("`sem_timedwait()` returned `$1`: $2",
-                             r, noadl::format_errno(errno));
-        }
-        else {
-          // Note `sem_wait()` may return `EINTR`.
-          r = ::sem_wait(&(this->m_sem));
-          POSEIDON_LOG_TRACE("`sem_wait()` returned `$1`: $2",
-                             r, noadl::format_errno(errno));
-        }
-        ROCKET_ASSERT(r != EINVAL);
-        return r == 0;
+        // Add `secs` to the current time to get the end time point.
+        ts.tv_sec += static_cast<::time_t>(secs);
+        return ::sem_timedwait(&(this->m_sem), &ts) == 0;
       }
 
     bool
     wait()
     noexcept
       {
-        // Note `sem_wait()` may return `EINTR`.
-        int r = ::sem_wait(&(this->m_sem));
-        ROCKET_ASSERT(r != EINVAL);
-        return r == 0;
+        return ::sem_wait(&(this->m_sem)) == 0;
       }
 
     bool
     post()
     noexcept
       {
-        // Note `sem_post()` may return `EOVERFLOW`.
+        // Note `sem_post()` may fail with `EOVERFLOW`.
         // The semaphore only indicates whether the queue is non-empty,
         // so we may ignore this error.
-        int r = ::sem_post(&(this->m_sem));
-        ROCKET_ASSERT(r != EINVAL);
-        return r == 0;
+        return ::sem_post(&(this->m_sem)) == 0;
       }
   };
 
