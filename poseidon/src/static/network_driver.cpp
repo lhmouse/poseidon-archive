@@ -59,6 +59,48 @@ struct Poll_Socket
     Poll_List_mixin node_wr;  // writable
   };
 
+void
+do_event_wait(int fd)
+noexcept
+  {
+    int err;
+
+    // Repeat reading until the operation fails with something other than EINTR.
+    for(;;) {
+      ::eventfd_t ignored;
+      if(::eventfd_read(fd, &ignored) == 0)
+        continue;
+
+      err = errno;
+      if(err != EINTR)
+        break;
+    }
+
+    if(::rocket::is_none_of(err, { EAGAIN, EWOULDBLOCK }))
+      POSEIDON_LOG_FATAL("`eventfd_read()` failed: $1", noadl::format_errno(err));
+  }
+
+void
+do_event_signal(int fd)
+noexcept
+  {
+    int err;
+
+    // Repeat writing until the operation succeeds or fails with something other than EINTR.
+    for(;;) {
+      err = 0;
+      if(::eventfd_write(fd, 1) == 0)
+        break;
+
+      err = errno;
+      if(err != EINTR)
+        break;
+    }
+
+    if(err != 0)
+      POSEIDON_LOG_FATAL("`eventfd_write()` failed: $1", noadl::format_errno(err));
+  }
+
 }  // namespace
 
 POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
@@ -273,25 +315,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     static
-    bool
-    do_event_wait()
-    noexcept
-      {
-        // Repeat reading until the operation fails with something other than EINTR.
-        int err;
-        ::eventfd_t discard;
-
-        for(;;)
-          if((::eventfd_read(self->m_event_fd, &discard) != 0) && ((err = errno) != EINTR))
-            break;
-
-        if(!::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
-          POSEIDON_LOG_FATAL("`eventfd_read()` failed: $1", noadl::format_errno(err));
-
-        return true;
-      }
-
-    static
     void
     do_thread_loop(void* /*param*/)
       {
@@ -329,7 +352,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
             // The special event is not associated with any socket.
             if(self->index_from_epoll_data(event.data.u64) == poll_index_event) {
-              self->do_event_wait();
+              do_event_wait(self->m_event_fd);
               continue;
             }
 
@@ -345,8 +368,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             // Update close/read/write lists.
             if(event.events & (EPOLLERR | EPOLLHUP))
               self->poll_list_attach(self->m_poll_root_cl, index);
+
             if(event.events & EPOLLIN)
               self->poll_list_attach(self->m_poll_root_rd, index);
+
             if(event.events & EPOLLOUT)
               self->poll_list_attach(self->m_poll_root_wr, index);
           }
@@ -401,8 +426,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
             if(self->poll_list_detach(self->m_poll_root_cl, ilast))
               self->poll_list_attach(self->m_poll_root_cl, index);
+
             if(self->poll_list_detach(self->m_poll_root_rd, ilast))
               self->poll_list_attach(self->m_poll_root_rd, index);
+
             if(self->poll_list_detach(self->m_poll_root_wr, ilast))
               self->poll_list_attach(self->m_poll_root_wr, index);
           }
@@ -526,6 +553,17 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             self->poll_list_attach(self->m_poll_root_rd, index);
         }
       }
+
+    static
+    void
+    do_signal_if_poll_lists_empty()
+    noexcept
+      {
+        if(ROCKET_EXPECT(!self->poll_lists_empty()))
+          return;
+
+        do_event_signal(self->m_event_fd);
+      }
   };
 
 void
@@ -586,15 +624,15 @@ insert(uptr<Abstract_Socket>&& usock)
                      "[`epoll_ctl()` failed: $1]",
                      noadl::format_errno(errno));
 
+    // Initialize epoll data.
+    sock->m_epoll_data = event.data.u64;
+    sock->m_epoll_events = 0;
+
     // Push the new element.
     // Space has been reserved so no exception can be thrown.
     Poll_Socket elem;
     elem.sock = sock;
     self->m_poll_elems.emplace_back(::std::move(elem));
-
-    // Initialize epoll data.
-    sock->m_epoll_data = event.data.u64;
-    sock->m_epoll_events = 0;
     POSEIDON_LOG_TRACE("Socket added: $1", sock);
     return sock;
   }
@@ -604,9 +642,9 @@ Network_Driver::
 notify_writable_internal(const Abstract_Socket* csock)
 noexcept
   {
-    // If the socket has been removed, don't do anything.
+    // If the socket has been removed or is not writable , don't do anything.
     mutex::unique_lock lock(self->m_poll_mutex);
-    if(csock->m_epoll_events & (EPOLLERR | EPOLLHUP))
+    if((csock->m_epoll_events & (EPOLLOUT | EPOLLERR | EPOLLHUP)) != EPOLLOUT)
       return false;
 
     // Don't do anything if the socket does not exist in epoll.
@@ -614,14 +652,10 @@ noexcept
     if(index == poll_index_nil)
       return false;
 
-    // If the network thread might be blocking on epoll, wake it up.
-    // This is merely a hint due to lack of condition variable semantics.
-    if(ROCKET_UNEXPECT(self->poll_lists_empty()))
-      ::eventfd_write(self->m_event_fd, 1);
-
     // Append the socket to write list if writing is possible.
-    if(csock->m_epoll_events & EPOLLOUT)
-      self->poll_list_attach(self->m_poll_root_wr, index);
+    // If the network thread might be blocking on epoll, wake it up.
+    self->do_signal_if_poll_lists_empty();
+    self->poll_list_attach(self->m_poll_root_wr, index);
     return true;
   }
 
