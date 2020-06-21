@@ -104,7 +104,7 @@ IO_Result
 Abstract_UDP_Socket::
 do_on_async_poll_read(mutex::unique_lock& lock, void* hint, size_t size)
   try {
-    lock.assign(this->m_mutex);
+    lock.lock(this->m_mutex);
 
     // If the socket is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
@@ -120,7 +120,7 @@ do_on_async_poll_read(mutex::unique_lock& lock, void* hint, size_t size)
     // Process the packet that has been read.
     lock.unlock();
     this->do_on_async_receive({ addrst, addrlen }, hint, static_cast<size_t>(nread));
-    lock.assign(this->m_mutex);
+    lock.lock(this->m_mutex);
 
     // Warning: Don't return `io_result_eof` i.e. zero.
     return io_result_not_eof;
@@ -141,7 +141,7 @@ Abstract_UDP_Socket::
 do_write_queue_size(mutex::unique_lock& lock)
 const
   {
-    lock.assign(this->m_mutex);
+    lock.lock(this->m_mutex);
 
     // Get the size of pending data.
     // This is guaranteed to be zero when no data are to be sent.
@@ -161,7 +161,7 @@ IO_Result
 Abstract_UDP_Socket::
 do_on_async_poll_write(mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/)
   try {
-    lock.assign(this->m_mutex);
+    lock.lock(this->m_mutex);
 
     // If the socket is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
@@ -175,7 +175,7 @@ do_on_async_poll_write(mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/
 
       lock.unlock();
       this->do_on_async_establish();
-      lock.assign(this->m_mutex);
+      lock.lock(this->m_mutex);
     }
 
     // Try extracting a packet.

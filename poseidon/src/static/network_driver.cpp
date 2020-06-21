@@ -328,7 +328,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         self->m_io_buffer.resize(conf.io_buffer_size);
 
         // Try polling if there is nothing to do.
-        lock.assign(self->m_poll_mutex);
+        lock.lock(self->m_poll_mutex);
         if(self->poll_lists_empty()) {
           // Delete sockets that have no other references to them.
           for(const auto& elem : self->m_poll_elems) {
@@ -346,7 +346,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
           // Process all events that have been received so far.
           // Note the loop below will not throw exceptions.
-          lock.assign(self->m_poll_mutex);
+          lock.lock(self->m_poll_mutex);
           for(size_t k = 0;  k < nevents;  ++k) {
             ::epoll_event& event = self->m_event_buffer[k];
 
@@ -378,11 +378,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         }
 
         // Process closed sockets.
-        lock.assign(self->m_poll_mutex);
+        lock.lock(self->m_poll_mutex);
         self->poll_list_collect(self->m_poll_root_cl);
         for(const auto& sock : self->m_ready_socks) {
           // Set `err` to zero if normal closure, and to the error code otherwise.
-          lock.assign(self->m_poll_mutex);
+          lock.lock(self->m_poll_mutex);
           int err = sock->m_epoll_events & EPOLLERR;
           lock.unlock();
 
@@ -409,7 +409,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           }
 
           // Remove the socket, no matter whether an exception was thrown or not.
-          lock.assign(self->m_poll_mutex);
+          lock.lock(self->m_poll_mutex);
           uint32_t index = self->find_poll_socket(sock->m_epoll_data);
           if(index == poll_index_nil)
             continue;
@@ -438,7 +438,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         }
 
         // Process readable sockets.
-        lock.assign(self->m_poll_mutex);
+        lock.lock(self->m_poll_mutex);
         self->poll_list_collect(self->m_poll_root_rd);
         for(const auto& sock : self->m_ready_socks) {
           // Perform a single read operation (no retry upon EINTR).
@@ -483,7 +483,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           }
 
           // Update the socket.
-          lock.assign(self->m_poll_mutex);
+          lock.lock(self->m_poll_mutex);
           uint32_t index = self->find_poll_socket(sock->m_epoll_data);
           if(index == poll_index_nil)
             continue;
@@ -496,7 +496,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         }
 
         // Process writable sockets.
-        lock.assign(self->m_poll_mutex);
+        lock.lock(self->m_poll_mutex);
         self->poll_list_collect(self->m_poll_root_wr);
         for(const auto& sock : self->m_ready_socks) {
           // Perform a single write operation (no retry upon EINTR).
@@ -538,7 +538,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           }
 
           // Update the socket.
-          lock.assign(self->m_poll_mutex);
+          lock.lock(self->m_poll_mutex);
           uint32_t index = self->find_poll_socket(sock->m_epoll_data);
           if(index == poll_index_nil)
             continue;

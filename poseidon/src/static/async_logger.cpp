@@ -321,7 +321,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         lock.unlock();
 
         // Get configuration for this level.
-        lock.assign(self->m_conf_mutex);
+        lock.lock(self->m_conf_mutex);
         const auto conf = self->m_conf_levels.at(entry.level);
         lock.unlock();
 

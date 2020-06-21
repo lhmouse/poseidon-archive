@@ -98,7 +98,7 @@ IO_Result
 Abstract_Stream_Socket::
 do_on_async_poll_read(mutex::unique_lock& lock, void* hint, size_t size)
   {
-    lock.assign(this->m_mutex);
+    lock.lock(this->m_mutex);
 
     // If the stream is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
@@ -118,7 +118,7 @@ do_on_async_poll_read(mutex::unique_lock& lock, void* hint, size_t size)
     // Process the data that have been read.
     lock.unlock();
     this->do_on_async_receive(hint, static_cast<size_t>(io_res));
-    lock.assign(this->m_mutex);
+    lock.lock(this->m_mutex);
     return io_res;
   }
 
@@ -127,7 +127,7 @@ Abstract_Stream_Socket::
 do_write_queue_size(mutex::unique_lock& lock)
 const
   {
-    lock.assign(this->m_mutex);
+    lock.lock(this->m_mutex);
 
     // Get the size of pending data.
     size_t size = this->m_wqueue.size();
@@ -146,7 +146,7 @@ IO_Result
 Abstract_Stream_Socket::
 do_on_async_poll_write(mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/)
   {
-    lock.assign(this->m_mutex);
+    lock.lock(this->m_mutex);
 
     // If the stream is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
@@ -158,7 +158,7 @@ do_on_async_poll_write(mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/
 
       lock.unlock();
       this->do_on_async_establish();
-      lock.assign(this->m_mutex);
+      lock.lock(this->m_mutex);
     }
 
     // Try writing some bytes.

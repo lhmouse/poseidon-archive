@@ -428,7 +428,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         lock.unlock();
 
         // Await a fiber and pop it.
-        lock.assign(self->m_sched_mutex);
+        lock.lock(self->m_sched_mutex);
         for(;;) {
           fiber.reset();
           now = do_get_monotonic_seconds();
@@ -562,7 +562,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             POSEIDON_LOG_ERROR("Failed to initialize fiber: $1", stdex.what());
 
             // Put the fiber back into the sleep queue.
-            lock.assign(self->m_sched_mutex);
+            lock.lock(self->m_sched_mutex);
             fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
             fiber.release();
             return;
@@ -599,7 +599,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         if(fiber->state() == async_state_suspended) {
           // Put the fiber back into the sleep queue.
-          lock.assign(self->m_sched_mutex);
+          lock.lock(self->m_sched_mutex);
           fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
           fiber.release();
           return;
@@ -739,7 +739,7 @@ yield(rcptr<const Abstract_Future> futp_opt)
 
       // If the fiber resumes execution because suspension timed out, remove it
       // from the future's wait queue.
-      lock.assign(self->m_sched_mutex);
+      lock.lock(self->m_sched_mutex);
       auto mref = &(futr.m_sched_ready_head);
       for(;;) {
         if(!*mref) {
