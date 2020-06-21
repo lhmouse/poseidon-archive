@@ -28,13 +28,12 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
 
     // Read stream settings.
     if(const auto qstrm = file.get_string_opt({"logger","levels",name,"stream"})) {
-      const auto strm = qstrm->safe_c_str();
-
       // Set standard file descriptors.
-      if(*qstrm == "stdout")
+      const char* strm = qstrm->safe_c_str();
+      if(::strcmp(strm, "stdout") == 0)
         conf.out_fd = STDOUT_FILENO;
 
-      if(*qstrm == "stderr")
+      if(::strcmp(strm, "stderr") == 0)
         conf.out_fd = STDERR_FILENO;
 
       // Read the color setting for this stream.
