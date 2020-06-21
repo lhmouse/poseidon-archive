@@ -31,19 +31,6 @@ class Future
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Future);
 
-  private:
-    // Checks whether a value or exception has been set.
-    // This functions is called by the fiber scheduler with the global mutex
-    // locked. In case of potential deadlocks, `false` shall be returned.
-    ROCKET_PURE_FUNCTION
-    bool
-    do_is_ready_weak()
-    const noexcept final
-      {
-        mutex::unique_lock lock;
-        return lock.try_lock(this->m_mutex) && (this->m_stor.index() != future_state_empty);
-      }
-
   public:
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
     // or `future_state_except`.

@@ -17,6 +17,7 @@ class Abstract_Future
 
   private:
     mutable mutex m_mutex;
+    ::std::atomic<bool> m_ready = { false };
 
     // These are scheduler data.
     mutable Abstract_Fiber* m_sched_ready_head = nullptr;
@@ -30,13 +31,12 @@ class Abstract_Future
 
   private:
     // Checks whether a value or exception has been set.
-    // This functions is called by the fiber scheduler with the global mutex
-    // locked. In case of potential deadlocks, `false` shall be returned.
-    ROCKET_PURE_FUNCTION virtual
+    // This functions is called by the fiber scheduler with the global mutex locked.
+    ROCKET_PURE_FUNCTION
     bool
     do_is_ready_weak()
     const noexcept
-      = 0;
+      { return this->m_ready.load(::std::memory_order_relaxed);  }
 
   public:
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
