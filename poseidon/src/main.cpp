@@ -135,7 +135,7 @@ enum Exit_Code : uint8_t
     exit_invalid_argument   = 2,
   };
 
-[[noreturn]]
+[[noreturn]] ROCKET_NOINLINE
 int
 do_exit(Exit_Code code, const char* fmt, ...)
 noexcept
@@ -154,6 +154,7 @@ noexcept
     ::quick_exit(static_cast<int>(code));
   }
 
+ROCKET_NOINLINE
 void
 do_parse_command_line(int argc, char** argv)
   {
@@ -230,23 +231,31 @@ do_parse_command_line(int argc, char** argv)
       cmdline.cd_here = ::std::move(*cd_here);
   }
 
-::std::deque<cow_string>
-do_get_addons()
+ROCKET_NOINLINE
+void
+do_load_addons()
   {
     auto file = Main_Config::copy();
+    const auto qaddons = file.get_array_opt({"addons"});
+    if(!qaddons)
+      return;
 
-    ::std::deque<cow_string> addons;
-    auto qarr = file.get_array_opt({"addons"});
-    if(!qarr)
-      return addons;
+    POSEIDON_LOG_DEBUG("List of add-ons to load: $1", *qaddons);
+    for(const auto& addon : *qaddons) {
+      // Load the shared library denoted by `addon`
+      if(!addon.is_string())
+        POSEIDON_THROW("Invalid add-on path (`$1` is not a string)", addon);
 
-    POSEIDON_LOG_DEBUG("Parsed list of add-ons: $1", *qarr);
-    for(const auto& val : *qarr) {
-      if(!val.is_string())
-        POSEIDON_THROW("Invalid add-on path (`$1` is not a string)", val);
-      addons.emplace_back(val.as_string());
+      const char* path = addon.as_string().safe_c_str();
+      POSEIDON_LOG_INFO("Loading add-on: $1", path);
+
+      if(::dlopen(path, RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE) == nullptr)
+        POSEIDON_THROW("Error loading add-on '$1'\n"
+                       "[`dlopen()` failed: $2]",
+                       path, ::dlerror());
+
+      POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
     }
-    return addons;
   }
 
 }  // namespace
@@ -283,8 +292,6 @@ main(int argc, char** argv)
                        "[`chdir()` failed: $1]",
                        noadl::format_errno(errno));
 
-    const auto pid = ::getpid();
-
     // Set name of the main thread. Failure to set the name is ignored.
     ::pthread_setname_np(::pthread_self(), "poseidon");
 
@@ -300,23 +307,13 @@ main(int argc, char** argv)
     // Ignore `SIGPIPE` for good.
     ::signal(SIGPIPE, SIG_IGN);
 
-    // Start daemon threads and load add-ons.
-    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, pid);
-
+    // Start daemon threads.
+    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
     Async_Logger::start();
     Timer_Driver::start();
     Network_Driver::start();
-
-    for(const auto& path : do_get_addons()) {
-      POSEIDON_LOG_INFO("Loading add-on: $1", path);
-      if(::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE) == nullptr)
-        POSEIDON_THROW("Error loading add-on '$1'\n"
-                       "[`dlopen()` failed: $2]",
-                       path, ::dlerror());
-      POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
-    }
-
-    POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, pid);
+    do_load_addons();
+    POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, ::getpid());
 
     // Schedule fibers until a termination signal is caught.
     Fiber_Scheduler::modal_loop(exit_sig);
