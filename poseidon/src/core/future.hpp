@@ -54,7 +54,7 @@ class Future
     // Retrieves the value, if one has been set.
     // If no value has been set, an exception is thrown, and there is no effect.
     typename ::std::add_lvalue_reference<const ValueT>::type
-    get_value()
+    value()
     const
       {
         mutex::unique_lock lock(this->m_mutex);

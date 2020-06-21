@@ -65,12 +65,12 @@ struct Example_Fiber : Abstract_Fiber
         auto timer = Timer_Driver::insert(::rocket::make_unique<Promise_Timer>(this->value));
         auto futr = ::rocket::static_pointer_cast<Promise_Timer>(timer)->prom.future();
         Fiber_Scheduler::yield(futr);
-        POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->get_value());
+        POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->value());
 
         timer = Timer_Driver::insert(::rocket::make_unique<Promise_Timer>(this->value + 3));
         futr = ::rocket::static_pointer_cast<Promise_Timer>(timer)->prom.future();
         Fiber_Scheduler::yield(futr);
-        POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->get_value());
+        POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->value());
       }
   };
 
