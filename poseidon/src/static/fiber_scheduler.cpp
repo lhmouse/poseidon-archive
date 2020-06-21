@@ -432,32 +432,32 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           now = do_get_monotonic_seconds();
           int sig = exit_sig.load(::std::memory_order_relaxed);
 
-          while(auto qhead = self->m_sched_sleep_head) {
+          while(auto head = self->m_sched_sleep_head) {
             // Move a fiber from the sleep queue into the scheduler queue.
             // Note this shall guarantee strong exception safety.
             self->m_sched_pq.emplace_back();
-            self->m_sched_sleep_head = qhead->m_sched_sleep_next;
+            self->m_sched_sleep_head = head->m_sched_sleep_next;
 
             auto& elem = self->m_sched_pq.back();
             elem.time = now + conf.warn_timeout;
-            elem.version = ++(qhead->m_sched_version);
-            elem.fiber.reset(qhead);
+            elem.version = ++(head->m_sched_version);
+            elem.fiber.reset(head);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
-            POSEIDON_LOG_TRACE("Collected fiber `$1` from sleep queue", qhead);
+            POSEIDON_LOG_TRACE("Collected fiber `$1` from sleep queue", head);
           }
 
-          while(auto qhead = self->m_sched_ready_head) {
+          while(auto head = self->m_sched_ready_head) {
             // Move a fiber from the ready queue into the scheduler queue.
             // Note this shall guarantee strong exception safety.
             self->m_sched_pq.emplace_back();
-            self->m_sched_ready_head = qhead->m_sched_ready_next;
+            self->m_sched_ready_head = head->m_sched_ready_next;
 
             auto& elem = self->m_sched_pq.back();
             elem.time = now;
-            elem.version = ++(qhead->m_sched_version);
-            elem.fiber.reset(qhead);
+            elem.version = ++(head->m_sched_version);
+            elem.fiber.reset(head);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
-            POSEIDON_LOG_TRACE("Collected fiber `$1` from ready queue", qhead);
+            POSEIDON_LOG_TRACE("Collected fiber `$1` from ready queue", head);
           }
 
           if(sig == 0) {
