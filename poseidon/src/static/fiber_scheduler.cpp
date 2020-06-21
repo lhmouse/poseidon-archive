@@ -531,7 +531,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           // This is resolved by introduction of `Abstract_Future::do_is_ready_weak()`. It does not
           // wait for the mutex, but only tries locking it. If the mutex cannot be locked, the
           // future is presumed to have a value under construction and is not considered ready.
-          if((sig == 0) && fiber->m_sched_futp && fiber->m_sched_futp->do_is_ready_weak()) {
+          if((sig == 0) && fiber->m_sched_futp && !fiber->m_sched_futp->do_is_ready_weak()) {
             // Check wait duration.
             int64_t delta = now - fiber->m_sched_yield_time;
             if(delta < conf.fail_timeout) {
