@@ -397,10 +397,12 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           fiber->do_execute();
         }
         catch(exception& stdex) {
-          POSEIDON_LOG_WARN("An unhandled exception was thrown from fiber `$1`: $2\n"
+          POSEIDON_LOG_WARN("Caught an exception from fiber `$1`: $2\n"
                             "[exception class `$3`]\n"
                             "[fiber class `$4`]",
-                            fiber, stdex.what(), typeid(stdex).name(), typeid(*fiber).name());
+                            fiber, stdex.what(),
+                            typeid(stdex).name(),
+                            typeid(*fiber).name());
         }
 
         ROCKET_ASSERT(fiber->state() == async_state_running);
