@@ -439,7 +439,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             self->m_sched_sleep_head = head->m_sched_sleep_next;
 
             auto& elem = self->m_sched_pq.back();
-            elem.time = now + conf.warn_timeout;
+            elem.time = ::rocket::min(head->m_sched_yield_time + conf.fail_timeout,
+                                      now + conf.warn_timeout);
             elem.version = head->m_sched_version;
             elem.fiber.reset(head);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
@@ -528,8 +529,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
                 POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds.", fiber, delta);
 
               // Put the fiber back into the queue.
+              elem.time = ::rocket::min(fiber->m_sched_yield_time + conf.fail_timeout,
+                                        now + conf.warn_timeout);
               elem.fiber = ::std::move(fiber);
-              elem.time = now + ::rocket::min(conf.warn_timeout, delta);
               ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
               continue;
             }
