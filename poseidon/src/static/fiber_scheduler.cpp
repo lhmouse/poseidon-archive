@@ -716,9 +716,7 @@ yield(rcptr<const Abstract_Future> futp_opt)
     fiber->do_on_suspend();
     POSEIDON_LOG_TRACE("Suspending execution of fiber `$1`", fiber);
 
-    // These are thread-safe but (probably) slow operations.
     int64_t now = do_get_monotonic_seconds();
-    fiber->add_reference();
 
     mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_yield_time = now;
@@ -728,6 +726,7 @@ yield(rcptr<const Abstract_Future> futp_opt)
       // The queue shall own a reference to the fiber.
       const auto& futr = *futp_opt;
       fiber->m_sched_ready_next = ::std::exchange(futr.m_sched_ready_head, fiber);
+      fiber->add_reference();
       lock.unlock();
 
       int ret = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
@@ -755,6 +754,7 @@ yield(rcptr<const Abstract_Future> futp_opt)
       // The queue shall own a reference to the fiber.
       self->do_signal_if_queues_empty();
       fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
+      fiber->add_reference();
       lock.unlock();
 
       int ret = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
@@ -785,14 +785,13 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     fiber->m_sched_yield_time = 0;
     fiber->m_sched_futp = nullptr;
     fiber->m_sched_sleep_next = nullptr;
-
     fiber->do_set_state(async_state_pending);
-    fiber->add_reference();
 
     // Attach this fiber to the ready queue.
     mutex::unique_lock lock(self->m_sched_mutex);
     self->do_signal_if_queues_empty();
     fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
+    fiber->add_reference();
     return fiber;
   }
 
