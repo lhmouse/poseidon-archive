@@ -522,7 +522,15 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           }
 
           // Check for blocking conditions.
-          if((sig == 0) && fiber->m_sched_futp && fiber->m_sched_futp->empty()) {
+          // Note that `Promise::set_value()` first attempts to lock the future, then constructs
+          // the value, and if the construction succeeds, it calls `Fiber_Scheduler::signal()` with
+          // the future mutex locked. That is, the future mutex is locked prior to the scheduler
+          // mutex. However, when we are here, the scheduler mutex has already been locked, so
+          // attempting to lock the future mutex results in a deadlock.
+          // This is resolved by introduction of `Abstract_Future::do_is_ready_weak()`. It does not
+          // wait for the mutex, but only tries locking it. If the mutex cannot be locked, the
+          // future is presumed to have a value under construction and is not considered ready.
+          if((sig == 0) && fiber->m_sched_futp && fiber->m_sched_futp->do_is_ready_weak()) {
             // Check wait duration.
             int64_t delta = now - fiber->m_sched_yield_time;
             if(delta < conf.fail_timeout) {
@@ -721,14 +729,16 @@ yield(rcptr<const Abstract_Future> futp_opt)
     fiber->do_on_suspend();
     POSEIDON_LOG_TRACE("Suspending execution of fiber `$1`", fiber);
 
-    int64_t now = do_get_monotonic_seconds();
-
     mutex::unique_lock lock(self->m_sched_mutex);
-    fiber->m_sched_yield_time = now;
-    fiber->m_sched_futp = futp_opt.get();
-    if(futp_opt) {
-      // Attach the fiber to the future's wait queue if one is provided.
-      // The queue shall own a reference to the fiber.
+    fiber->m_sched_yield_time = do_get_monotonic_seconds();
+    if(futp_opt && !futp_opt->do_is_ready_weak()) {
+      // See comments in `do_thread_loop()` for detailed discussion of the necessity
+      // of `Abstract_Future::do_is_ready_weak()`.
+      // The value in the future object may be still under construction, but the lock
+      // here prevents the other thread from modifying the scheduler queue. We still
+      // attach the fiber to the future's wait queue. The other thread may move it
+      // into the ready queue once the scheduler mutex is unlocked.
+      fiber->m_sched_futp = futp_opt.get();
       const auto& futr = *futp_opt;
       fiber->m_sched_ready_next = ::std::exchange(futr.m_sched_ready_head, fiber);
       fiber->add_reference();
@@ -737,8 +747,8 @@ yield(rcptr<const Abstract_Future> futp_opt)
       int ret = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
       ROCKET_ASSERT(ret == 0);
 
-      // If the fiber resumes execution because suspension timed out, remove it
-      // from the future's wait queue.
+      // If the fiber resumes execution because suspension timed out, remove it from
+      // the future's wait queue.
       lock.lock(self->m_sched_mutex);
       auto mref = &(futr.m_sched_ready_head);
       for(;;) {
@@ -757,6 +767,7 @@ yield(rcptr<const Abstract_Future> futp_opt)
     else {
       // Attach the fiber to the ready queue of the current thread otherwise.
       // The queue shall own a reference to the fiber.
+      fiber->m_sched_futp = nullptr;
       self->do_signal_if_queues_empty();
       fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
       fiber->add_reference();

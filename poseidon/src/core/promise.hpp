@@ -57,8 +57,6 @@ class Promise
 
         // Mark the future broken.
         futp->m_stor.template emplace<future_state_except>();
-        lock.unlock();
-
         Fiber_Scheduler::signal(*futp);
         return true;
       }
@@ -91,10 +89,10 @@ class Promise
 
     // Puts a value into the associated future.
     // If the future is not empty, `false` is returned, and there is no effect.
-    template<typename... ParamsT,
-    ROCKET_DISABLE_IF(::std::is_void<ValueT>::value && sizeof...(ParamsT))>
+    template<typename... ArgsT,
+    ROCKET_DISABLE_IF(::std::is_void<ValueT>::value && sizeof...(ArgsT))>
     bool
-    set_value(ParamsT&&... params)
+    set_value(ArgsT&&... args)
       {
         auto futp = this->m_futp.get();
         if(!futp)
@@ -105,10 +103,7 @@ class Promise
           return false;
 
         // Construct a new value in the future.
-        futp->m_stor.template emplace<future_state_value>(
-                                          ::std::forward<ParamsT>(params)...);
-        lock.unlock();
-
+        futp->m_stor.template emplace<future_state_value>(::std::forward<ArgsT>(args)...);
         Fiber_Scheduler::signal(*futp);
         return true;
       }
@@ -140,8 +135,6 @@ class Promise
 
         // Construct a exception pointer in the future.
         futp->m_stor.template emplace<future_state_except>(::std::move(eptr));
-        lock.unlock();
-
         Fiber_Scheduler::signal(*futp);
         return true;
       }
